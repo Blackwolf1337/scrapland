@@ -141,7 +141,7 @@ void __thiscall cHangarShipScorer_Draw(cHangarShipScorer *self, int player) {
 		self->cam->target = *c;
 		Camera_SetCurrent(self->cam);
 		Entity_GetAng(ship, &ang);
-		uint32_t fx = CGameModel_GetEffect(&Veh(ship)->model, NULL);
+		uint32_t fx = CGameModel_GetEffect(&Veh(ship)->wl.obj.model, NULL);
 		byte reset = self->reset;
 		self->reset = 0;
 		if (!reset) {

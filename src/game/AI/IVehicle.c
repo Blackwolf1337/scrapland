@@ -98,7 +98,7 @@ void *__thiscall cAIVehicle_ctor(void *mem, cEntity *v, void *p1, void *p2, void
 	self->internState = AIVI_STATE_INTERN_NONE;
 	cAIVehicle_Debugf(self, "Entidad CREADA");
 	self->damageTime = 0.0f;
-	self->lifeMark = Veh(self->vehicle)->life;
+	self->lifeMark = Veh(self->vehicle)->wl.life;
 	self->itemLifeMark = self->lifeMark;
 	self->track = -1;
 	self->node = -1;
@@ -217,7 +217,7 @@ byte __thiscall cAIVehicle_Think(cAIVehicle *self) {
 	self->damageTime = t;
 	if (t >= g_TimeDamageAI) {
 		self->damageTime = 0.0f;
-		self->lifeMark = Veh(self->vehicle)->life;
+		self->lifeMark = Veh(self->vehicle)->wl.life;
 	}
 	switch (self->state) {
 	case AIV_GO_TO:
@@ -730,7 +730,7 @@ byte __thiscall cAIVehicle_InHookRange(cAIVehicle *self, cEntity *e) {
 	d.x = p->x - v->x;
 	d.y = p->y - v->y;
 	d.z = p->z - v->z;
-	return AIV_HookAngle(self, &d, d.y * d.y + d.x * d.x + d.z * d.z, Veh(self->vehicle)->radius + Veh(e)->radius);
+	return AIV_HookAngle(self, &d, d.y * d.y + d.x * d.x + d.z * d.z, Veh(self->vehicle)->wl.prim.radius + Veh(e)->wl.prim.radius);
 }
 
 byte __thiscall cAIVehicle_CanHook(cAIVehicle *self, cEntity *e) {
@@ -752,7 +752,7 @@ byte __thiscall cAIVehicle_InHookRangePos(cAIVehicle *self, const vec3_t *p) {
 	d.x = p->x - v->x;
 	d.y = p->y - v->y;
 	d.z = p->z - v->z;
-	return AIV_HookAngle(self, &d, d.y * d.y + d.x * d.x + d.z * d.z, Veh(self->vehicle)->radius);
+	return AIV_HookAngle(self, &d, d.y * d.y + d.x * d.x + d.z * d.z, Veh(self->vehicle)->wl.prim.radius);
 }
 
 byte __stdcall cAIVehicle_IsGroupState(int state) {
@@ -1120,7 +1120,7 @@ byte __thiscall cAIVehicle_PlaceOnTrack(cAIVehicle *ai, int type, const vec3_t *
 	vec3_t np, d, ang, tmp;
 
 	self->trackType = type;
-	if (cWorld_TestSphereEntities(g_pWorld, v, (void *)1, pos, Veh(v)->radius * 3.0f, &hit, 1, 0)) {
+	if (cWorld_TestSphereEntities(g_pWorld, v, (void *)1, pos, Veh(v)->wl.prim.radius * 3.0f, &hit, 1, 0)) {
 		return 0;
 	}
 	cAIVehicleControl_ClearDest(self->control);
@@ -1548,7 +1548,7 @@ byte __thiscall cAIVehicle_ReposTraffic(cAIVehicle *self, vec3_t *out, float min
 		}
 	}
 	cEntity *hit;
-	if (cWorld_TestSphereEntities(g_pWorld, self->vehicle, (void *)0x11, &p, Veh(self->vehicle)->radius *
+	if (cWorld_TestSphereEntities(g_pWorld, self->vehicle, (void *)0x11, &p, Veh(self->vehicle)->wl.prim.radius *
 			AIV_REPOS_SPHERE, &hit, 1, 0)) {
 		return 0;
 	}
@@ -1616,7 +1616,7 @@ byte __thiscall cAIVehicle_Repos(cAIVehicle *self) {
 		}
 	}
 	cEntity *hit;
-	if (cWorld_TestSphereEntities(g_pWorld, self->vehicle, (void *)0x11, &p, Veh(self->vehicle)->radius *
+	if (cWorld_TestSphereEntities(g_pWorld, self->vehicle, (void *)0x11, &p, Veh(self->vehicle)->wl.prim.radius *
 			AIV_REPOS_SPHERE_W, &hit, 1, 0)) {
 		return 0;
 	}
@@ -2027,7 +2027,7 @@ change:
 	self->changing = 1;
 	self->changed = 1;
 	self->vehicle->vftable->SetActive(self->vehicle, 1);
-	self->lifeMark = Veh(self->vehicle)->life;
+	self->lifeMark = Veh(self->vehicle)->wl.life;
 	cAIVehicleControl_SetFlagB0(self->control, 0);
 	self->prevState = self->state;
 	self->state = state;
@@ -2498,7 +2498,7 @@ static void AIV_GoToItem(cAIVehicle *self, int intern, cEntity *e) {
 }
 
 static void AIV_GoToLife(cAIVehicle *self, cEntity *e) {
-	self->itemLifeMark = Veh(self->vehicle)->life;
+	self->itemLifeMark = Veh(self->vehicle)->wl.life;
 	AIV_GoToItem(self, AIVI_FINISHING_LINE_LIFE, e);
 }
 
@@ -2511,7 +2511,7 @@ static void AIV_Chase(cAIVehicle *self, int intern) {
 static byte AIV_NeedLife(cAIVehicle *self) {
 	cVehicleEntity *v = Veh(self->vehicle);
 
-	return (float)v->maxLife * self->params.damageItemLife > (float)v->life;
+	return (float)v->maxLife * self->params.damageItemLife > (float)v->wl.life;
 }
 
 /* the life item the AI goes for was taken (it respawns): on to the next one, unless the vehicle got life meanwhile */
@@ -2520,7 +2520,7 @@ static int AIV_RetryLife(cAIVehicle *self) {
 	if (!(((cItemEntity *)self->itemLifeEnt)->respawn > 0.0f)) {
 		return AIV_ITEM_THERE;
 	}
-	if (Veh(self->vehicle)->life > self->itemLifeMark) {
+	if (Veh(self->vehicle)->wl.life > self->itemLifeMark) {
 		return AIV_ITEM_GOT_LIFE;
 	}
 	cEntity *e = AIV_FindLifeItem(self);
@@ -2602,7 +2602,7 @@ void __thiscall cAIVehicle_ReactHook(cAIVehicle *self) {
 		/* FIGHTING without a new hook, then to the life item */
 		int keep = self->params.percHookGetAway;
 		t = AIV_Target(self);
-		self->itemLifeMark = Veh(self->vehicle)->life;
+		self->itemLifeMark = Veh(self->vehicle)->wl.life;
 		self->params.percHookGetAway = 0;
 		cAIVehicle_SetStateIntern(self, AIV_FIGHTING, t);
 		self->params.percHookGetAway = keep;
@@ -2638,7 +2638,7 @@ void __thiscall cAIVehicle_ReactGetAway(cAIVehicle *self) {
 	}
 	if (!AIV_TargetInBox(self, g_DistNotGetAwayAI)) {
 		cEntity *t = AIV_Target(self);
-		self->lifeMark = Veh(self->vehicle)->life;
+		self->lifeMark = Veh(self->vehicle)->wl.life;
 		cAIVehicle_SetStateIntern(self, AIV_FIGHTING, t);
 		return;
 	}
@@ -2913,7 +2913,7 @@ void __thiscall cAIVehicle_ThinkRace(cAIVehicle *self) {
 					/* the head of the links to the vehicle */
 					Nto1Head_Link((Nto1Node *)((byte *)e + 0x254), &self->target);
 				}
-				float r = Veh(self->vehicle)->radius + Veh(AIV_Target(self))->radius;
+				float r = Veh(self->vehicle)->wl.prim.radius + Veh(AIV_Target(self))->wl.prim.radius;
 				cAIVehicle_SetInternState(self, AIVI_CHASE_SHOOTING, (double)r, (double)(r + r));
 				self->f330 = 0.0f;
 				break;
@@ -2949,7 +2949,7 @@ void __thiscall cAIVehicle_ItemsChase(cAIVehicle *self) {
 
 	if (in == AIVI_FINISHING_LINE_LIFE) {
 		cVehicleEntity *v = Veh(self->vehicle);
-		if (v->life < v->maxLife) {
+		if (v->wl.life < v->maxLife) {
 			switch (AIV_RetryLife(self)) {
 			case AIV_ITEM_THERE:
 			case AIV_ITEM_NEXT:
@@ -2963,7 +2963,7 @@ void __thiscall cAIVehicle_ItemsChase(cAIVehicle *self) {
 		return;
 	}
 	if (in != AIVI_CHASE_NOT_SHOOTING || !AIV_NeedLife(self) ||
-			(float)Veh(self->vehicle)->life * 0.5f > (float)Veh(AIV_Target(self))->life) {
+			(float)Veh(self->vehicle)->wl.life * 0.5f > (float)Veh(AIV_Target(self))->wl.life) {
 		return;
 	}
 	self->b340 = 1;
@@ -2982,7 +2982,7 @@ void __thiscall cAIVehicle_ItemsFighting(cAIVehicle *self) {
 
 	switch (self->internState) {
 	case AIVI_FINISHING_LINE_LIFE:
-		if (v->life < v->maxLife) {
+		if (v->wl.life < v->maxLife) {
 			int r = AIV_RetryLife(self);
 			if (r == AIV_ITEM_THERE || r == AIV_ITEM_NEXT) {
 				return;
@@ -3004,7 +3004,7 @@ void __thiscall cAIVehicle_ItemsFighting(cAIVehicle *self) {
 		return;
 	}
 	case AIVI_CHASE_SHOOTING:
-		if (AIV_NeedLife(self) && !((float)v->life * 0.5f > (float)Veh(AIV_Target(self))->life)) {
+		if (AIV_NeedLife(self) && !((float)v->wl.life * 0.5f > (float)Veh(AIV_Target(self))->wl.life)) {
 			self->b340 = 1;
 			if (AIV_FindLifeItem(self)) {
 				if (!AIV_HookChance(self, 2)) {
@@ -3017,7 +3017,7 @@ void __thiscall cAIVehicle_ItemsFighting(cAIVehicle *self) {
 			}
 		}
 		v = Veh(self->vehicle);
-		if (!((float)(self->lifeMark - v->life) > (float)v->maxLife * self->params.damageGetAway)) {
+		if (!((float)(self->lifeMark - v->wl.life) > (float)v->maxLife * self->params.damageGetAway)) {
 			return;
 		}
 		if (AIV_HookChance(self, 1)) {
@@ -3095,7 +3095,7 @@ void __thiscall cAIVehicle_FightingAfterItem(cAIVehicle *self) {
 		self->b354 = 0;
 		self->i3ac = 3;
 		cVehicleEntity *v = Veh(self->vehicle);
-		if (v->life < v->maxLife) {
+		if (v->wl.life < v->maxLife) {
 			cItemDesc desc;
 			float dist;
 			cString_ctor(&desc.name);

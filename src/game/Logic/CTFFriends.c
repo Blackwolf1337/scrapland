@@ -128,7 +128,7 @@ void CTFFriends_OnDamage(cAbstractFile *params) {
 	}
 	CHECK(v->vftable->IsType(v, TYEN_CAR));
 	cVehicleEntity *veh = (cVehicleEntity *)v;
-	if (veh->life >= (int)((float)veh->maxLife * 0.75f)) {
+	if (veh->wl.life >= (int)((float)veh->maxLife * 0.75f)) {
 		return;
 	}
 	cAIVehicle *ai = v->vftable->GetAI(v);

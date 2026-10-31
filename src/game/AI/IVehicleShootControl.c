@@ -134,7 +134,7 @@ cAIVehicleShoot *__thiscall cAIVehicleShoot_ctor(void *mem, cEntity *v, cAIVehic
 	self->mode = 0;
 	self->modeCM = 0;
 	self->target = NULL;
-	self->lifeMark = Veh(self->vehicle)->life;
+	self->lifeMark = Veh(self->vehicle)->wl.life;
 	self->damaged = 0;
 	return self;
 }
@@ -295,7 +295,7 @@ void __fastcall cAIVehicleShoot_Fire(cAIVehicleShoot *self) {
 		self->ctl->fire = 0;
 		return;
 	}
-	if (self->lifeMark > Veh(self->vehicle)->life) {
+	if (self->lifeMark > Veh(self->vehicle)->wl.life) {
 		self->damaged = 1;
 	}
 	if ((byte)cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &t)) {
@@ -323,7 +323,7 @@ void __fastcall cAIVehicleShoot_Fire(cAIVehicleShoot *self) {
 		} while (cSlotController_FireReset(slot, &t));
 	}
 done:
-	self->lifeMark = Veh(self->vehicle)->life;
+	self->lifeMark = Veh(self->vehicle)->wl.life;
 }
 
 /* the ammo button for countermeasures at a target near behind the vehicle (or while it strafes) */
@@ -868,7 +868,7 @@ byte __thiscall cAIVehicleShoot_SetMode(cAIVehicleShoot *self, int a, int b, byt
 	self->fireTimeCM = 0.0f;
 	self->weapTime = g_TimeChangeWeapAI;
 	self->weapTimeCM = g_TimeChangeWeapCMAI;
-	self->lifeMark = Veh(self->vehicle)->life;
+	self->lifeMark = Veh(self->vehicle)->wl.life;
 	if (a == 0) {
 		cAIVehicleShoot_Update(self, 0.0f);
 	} else if (a == 1) {

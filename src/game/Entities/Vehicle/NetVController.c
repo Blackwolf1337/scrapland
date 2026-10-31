@@ -5,6 +5,7 @@
  */
 #include "scrap/objentity.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/camcontrol.h"
 #include "scrap/collisiongrid.h"
 #include "scrap/controls.h"
 #include "scrap/crt.h"
@@ -143,10 +144,10 @@ void __thiscall cNetVController_Read(cNetVController *self, void *m) {
 	NETV_VEH(self)->emi = (self->keys & NETV_KEY_EMI) ? NETV_EMI_TIME : 0.0f;
 	uint16_t life;
 	NetV_Read(msg, &life, 2);
-	if (NETV_VEH(self)->life > 0 && life == 0) {
+	if (NETV_VEH(self)->wl.life > 0 && life == 0) {
 		self->vehicle->vftable->SetActive(self->vehicle, 1);
 	}
-	NETV_VEH(self)->life = life;
+	NETV_VEH(self)->wl.life = life;
 	byte w;
 	NetV_Read(msg, &w, 1);
 	int old = NETV_VEH(self)->weapons.curWeap;
@@ -308,7 +309,7 @@ void __thiscall cNetVController_Write(cNetVController *self, byte flags, cEntity
 		self->keys |= NETV_KEY_CANFIRE;
 	}
 	v = NETV_VEH(self);
-	if (v->base.flag_4c) {
+	if (v->wl.obj.base.flag_4c) {
 		self->keys |= NETV_KEY_ACTIVE;
 	}
 	if (((cWithLifeEntity *)v)->fireRemain > 0.0f) {
@@ -333,7 +334,7 @@ void __thiscall cNetVController_Write(cNetVController *self, byte flags, cEntity
 			self->keys |= NETV_KEY_CLOUD_ON;
 		}
 	}
-	if (((const cWithLifeEntityVtblFull *)v->base.vftable)->IsEMIed(&v->base)) {
+	if (((const cWithLifeEntityVtblFull *)v->wl.obj.base.vftable)->IsEMIed(&v->wl.obj.base)) {
 		self->keys |= NETV_KEY_EMI;
 	}
 	u = self->keys;
@@ -341,9 +342,9 @@ void __thiscall cNetVController_Write(cNetVController *self, byte flags, cEntity
 	if (isNet) {
 		b = (byte)Controls_GetWeapon(NETV_VEH(self)->controls);
 		NetV_Write(msg, &b, 1);
-		byte *player = NETV_VEH(self)->player;
-		if (player) {
-			self->height = (float)Game_Sin((double)-*(float *)(player + 0x218)) * *(float *)(player + 0x1f0);
+		cFollowCamEntity *cam = (cFollowCamEntity *)NETV_VEH(self)->wl.obj.cam;
+		if (cam) {
+			self->height = (float)Game_Sin((double)-cam->camAng) * cam->dist;
 		} else {
 			self->height = 0.0f;
 		}
@@ -398,7 +399,7 @@ target:
 		NetV_Write(msg, &b, 1);
 	}
 	v = NETV_VEH(self);
-	u = 0.0f >= (float)v->life ? 0 : (uint16_t)v->life;
+	u = 0.0f >= (float)v->wl.life ? 0 : (uint16_t)v->wl.life;
 	NetV_Write(msg, &u, 2);
 	byte wf = (byte)NETV_VEH(self)->weapons.curWeap;
 	b = wf;

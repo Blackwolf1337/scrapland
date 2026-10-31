@@ -751,11 +751,11 @@ static void Ctl_EmptyWeapon(cVehicleControls *c, cWeaponManager *wm, float dt) {
 static void Ctl_PadRumble(cVehicleControls *c, cEntity *v, int slot) {
 	cVehicleEntity *veh = Veh(v);
 	float lim = WLife(v)->attack.hitTime + g_AttackerMarkTime;
-	float hit = Ctl_X87SubDiv(Timer_GetTime(&veh->timer), lim, g_AttackerMarkTime);
-	byte *pl = veh->player;
+	float hit = Ctl_X87SubDiv(Timer_GetTime(&veh->wl.obj.timer), lim, g_AttackerMarkTime);
+	cFollowCamEntity *cam = (cFollowCamEntity *)veh->wl.obj.cam;
 
-	if (*(float *)(pl + 0x220) > 0.025f) {
-		float p = *(float *)(pl + 0x224);
+	if (cam->quakeTime > 0.025f) {
+		float p = cam->quakeFactor;
 		if (p * 30.0f > hit) {
 			hit = p * 50.0f;
 		}
@@ -802,7 +802,7 @@ void __thiscall cVehicleControls_Tick(void *controls, cEntity *v, float dt) {
 	if (Ctl_Pressed(set, CTL_FIRE, slot)) {
 		c->netFire = !c->netFire;
 	}
-	if (slot != -1 && Input_GetActionSet() == 1 && Veh(v)->player) {
+	if (slot != -1 && Input_GetActionSet() == 1 && Veh(v)->wl.obj.cam) {
 		Ctl_PadRumble(c, v, slot);
 	}
 	float ra = c->rumbleA - c->rumbleARate * dt;

@@ -117,7 +117,7 @@ static byte VC_Free(cAIVehicleControl *self, const vec3_t *p) {
 }
 
 static inline void VC_LifeMark(cAIVehicleControl *self) {
-	int mark = Veh(self->vehicle)->life + 1;
+	int mark = Veh(self->vehicle)->wl.life + 1;
 
 	self->strafeWait = 0.0f;
 	self->lifeMark = mark;
@@ -210,7 +210,7 @@ cAIVehicleControl *__thiscall cAIVehicleControl_ctor(void *mem, cEntity *v, cAIV
 	self->strafeOn = 0;
 	self->strafeElapsed = 0.0f;
 	self->strafeWait = 0.0f;
-	self->lifeMark = Veh(self->vehicle)->life;
+	self->lifeMark = Veh(self->vehicle)->wl.life;
 	self->strafing = 0;
 	self->direct = 1;
 	self->inertia = 1;
@@ -960,16 +960,16 @@ byte __fastcall cAIVehicleControl_StrafeDodge(cAIVehicleControl *self) {
 			rnd = crt_rand() % 25 == 0;
 		}
 		cVehicleEntity *v = Veh(self->vehicle);
-		if (self->strafeElapsed >= self->strafeWait && v->life == self->lifeMark && !rnd) {
+		if (self->strafeElapsed >= self->strafeWait && v->wl.life == self->lifeMark && !rnd) {
 			self->strafeX = 0.0f;
 			go = 0;
-		} else if (v->life < self->lifeMark || rnd) {
+		} else if (v->wl.life < self->lifeMark || rnd) {
 			float next = self->strafeNext + 1.0f;
 			self->strafeElapsed = 0.0f;
 			self->strafeWait = 10.0f;
 			self->strafeTime = next;
 		}
-		self->lifeMark = v->life;
+		self->lifeMark = v->wl.life;
 		if (go) {
 			const vec3_t *p = VC_Pos(self, &b);
 			float dx = p->x - self->point.x, dy = p->y - self->point.y, dz = p->z - self->point.z;
@@ -1727,7 +1727,7 @@ byte __thiscall cAIVehicleControl_SetChase(cAIVehicleControl *self, Nto1Node *no
 
 	CHECK(node != NULL);
 	CHECK(node->target != NULL);
-	int mark = Veh(self->vehicle)->life + 1;
+	int mark = Veh(self->vehicle)->wl.life + 1;
 	self->chaseMin = chaseMin;
 	self->lifeMark = mark;
 	self->chaseMax = chaseMax;
@@ -1891,7 +1891,7 @@ void __thiscall cAIVehicleControl_RandomNear(cAIVehicleControl *self, vec3_t *p)
 byte __thiscall cAIVehicleControl_SetOrient(cAIVehicleControl *self, Nto1Node *node) {
 	CHECK(node != NULL);
 	CHECK(node->target != NULL);
-	int mark = Veh(self->vehicle)->life + 1;
+	int mark = Veh(self->vehicle)->wl.life + 1;
 	self->target = node;
 	self->lifeMark = mark;
 	self->strafeWait = 0.0f;
@@ -1942,7 +1942,7 @@ byte __thiscall cAIVehicleControl_MovePoint(cAIVehicleControl *self, const vec3_
 byte __thiscall cAIVehicleControl_MoveDirect(cAIVehicleControl *self, const vec3_t *dest, float dist, byte boost,
 	float accel, float rotA, float rotB) {
 	self->distMin = Float_MinSS(self->radius, dist);
-	self->lifeMark = Veh(self->vehicle)->life + 1;
+	self->lifeMark = Veh(self->vehicle)->wl.life + 1;
 	self->accel = accel;
 	self->boost = boost;
 	self->rotA = rotA;

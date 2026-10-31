@@ -38,7 +38,7 @@ typedef struct cWithLifeEntity {
 	Nto1Node targets;		/* 0x254 head of the links to the entity (the AI targets), target the entity */
 	cPy_Function onDeath;		/* 0x264 "OnDeath" (name, attacker) */
 	cPy_Function onDamage;		/* 0x278 "OnDamage" (name, attacker, damage) */
-	float fireAtt;			/* 0x28c "FireAtenuationFactor", -1 for no fire */
+	float fireAtt;			/* 0x28c "FireAtenuationFactor", -1 for no fire; a vehicle sets its smooth speed / 16800 */
 	float fireDelay;		/* 0x290 "FireDelayTime": the time per life point */
 	float fireRemain;		/* 0x294 "FireRemainTime" */
 	cVehicleAttack attack;		/* 0x298 "Hit_" */

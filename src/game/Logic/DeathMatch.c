@@ -87,7 +87,7 @@ void DeathMatch_OnDamage(cAbstractFile *params) {
 	cAIVehicle *ai = v->vftable->GetAI(v);
 	CHECK(ai);
 	cVehicleEntity *veh = (cVehicleEntity *)v;
-	if (veh->life < veh->maxLife / 2) {
+	if (veh->wl.life < veh->maxLife / 2) {
 		cAIVehicle_SetState(ai, AIV_STATE_ATTACK, a);
 	}
 }

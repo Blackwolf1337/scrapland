@@ -22,7 +22,7 @@
 #define VEFF_RAND_SCALE 3.051850947599719e-05	/* 1 / 32767 (the double at rva 0x3a3d60) */
 
 static inline cEntity *VE_Ent(cVehicleEntity *v) {
-	return &v->base;
+	return &v->wl.obj.base;
 }
 
 static inline CGameModel *VE_Model(cVehicleEntity *v) {
@@ -432,7 +432,7 @@ void __thiscall cVehicleEffects_UpdateState(cVehicleEffects *self, float dt) {
 
 	CHECK(self->owner);
 	cVehicleEntity *o = self->owner;
-	int life = o->life;
+	int life = o->wl.life;
 	int percent = life * 100 / o->maxLife;
 	if (!self->damageOn && life > 0 && percent < g_FXSetOnFireLifePercent) {
 		self->damageTime += dt;
@@ -458,7 +458,7 @@ void __thiscall cVehicleEffects_UpdateState(cVehicleEffects *self, float dt) {
 		self->emiTime = 0.0f;
 	}
 	o = self->owner;
-	float burn = o->burnTime;
+	float burn = o->wl.fireRemain;
 	if (!self->fireOn) {
 		if (burn > 0.5f) {
 			self->fireTime = dt + self->fireTime;
@@ -471,7 +471,7 @@ void __thiscall cVehicleEffects_UpdateState(cVehicleEffects *self, float dt) {
 		self->fireOn = 0;
 		self->fireTime = 0.0f;
 	}
-	if (!g_WindFxSmoke || !self->owner->player || g_FreeSpaceMagnet) {
+	if (!g_WindFxSmoke || !self->owner->wl.obj.cam || g_FreeSpaceMagnet) {
 		return;
 	}
 	float now = Timer_GetTime(&g_pWorld->timer);
@@ -670,16 +670,16 @@ void __thiscall cVehicleTubes_Update(cVehicleTubes *self, float dt) {
 	vec3_t pos, rot;
 
 	CHECK(self->owner);
-	CHECK(self->owner->embeddedFX);
+	CHECK(self->owner->wl.obj.fx);
 	CGameModel *model = VE_Model(self->owner);
 	if (!CGameModel_IsLoaded(model)) {
 		return;
 	}
 	CHECK(CGameModel_IsLoaded(model));
-	if (!CGameModel_IsVisible(model) || !self->owner->base.flag_4c) {
+	if (!CGameModel_IsVisible(model) || !self->owner->wl.obj.base.flag_4c) {
 		return;
 	}
-	uint32_t fx = CGameModel_GetEffect(&self->owner->model, NULL);
+	uint32_t fx = CGameModel_GetEffect(&self->owner->wl.obj.model, NULL);
 	if (fx) {
 		return;
 	}
@@ -849,7 +849,7 @@ static void VS_NodePos(cVehicleEffects *self, CGameModel *model, int ammo, int s
 
 	CHECK(node > -1);
 	CGameModel_NodePos(model, &np, (uint32_t)node, 0);
-	vec3_t root = self->owner->embeddedFX->rootPos;
+	vec3_t root = Veh_FX(self->owner)->rootPos;
 	d->x = np.x - root.x;
 	d->y = np.y - root.y;
 	d->z = np.z - root.z;
@@ -1246,16 +1246,16 @@ void __thiscall cVehicleEffects_Shoot(void *effects, int weap, int slot) {
 	cVehicleEffects *self = effects;
 
 	CHECK(self->owner);
-	CHECK(self->owner->embeddedFX);
+	CHECK(self->owner->wl.obj.fx);
 	CGameModel *model = VE_Model(self->owner);
 	if (!CGameModel_IsLoaded(model)) {
 		return;
 	}
-	if (!CGameModel_IsVisible(model) && !self->owner->embeddedFX->followed) {
+	if (!CGameModel_IsVisible(model) && !Veh_FX(self->owner)->followed) {
 		return;
 	}
 	CHECK(CGameModel_IsLoaded(model));
-	cEmbeddedFXVehicle *fx = self->owner->embeddedFX;
+	cEmbeddedFXVehicle *fx = Veh_FX(self->owner);
 	CHECK(fx->follow2.ParticleSystem);
 	CGameParticles *p = &fx->follow2;
 	if (!p->ParticleSystem || weap == g_LaserIDWeap) {

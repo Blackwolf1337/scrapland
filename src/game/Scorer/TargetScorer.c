@@ -130,7 +130,7 @@ static void Target_DrawAttacker(cTargetScorer *self, cEntity *ship) {
 	float t = sw->attack.hitTime + g_AttackerMarkTime;
 	float r = Weap_X87Sub(t, Timer_GetTime(&sw->obj.timer));
 	float f = (r + r) / g_AttackerMarkTime;
-	if (!(f > 0.0f) || !(0.0f >= Veh(ship)->burnTime)) {
+	if (!(f > 0.0f) || !(0.0f >= Veh(ship)->wl.fireRemain)) {
 		return;
 	}
 	cEntity *e = World_FindEntity(Nto1Node_TargetName(&sw->attack.hitBy));

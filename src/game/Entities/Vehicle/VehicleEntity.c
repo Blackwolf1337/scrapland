@@ -59,9 +59,6 @@ CGameModel *__fastcall CGameModel_ctorDefault(CGameModel *self) {
 #define g_NPCSndMotorVolFactor GAME_GLOBAL_IN(float, GVar_NPCSndMotorVolFactor, 16, 0x448268)
 
 /* the camera data of a player ship (vehicle + 0xf0) */
-#define VehPlayer_Shake(p) (*(int *)((p) + 0x200))
-#define VehPlayer_CrashA(p) (*(uint32_t *)((p) + 0x220))
-#define VehPlayer_CrashB(p) (*(uint32_t *)((p) + 0x224))
 
 /* the pilot slots: only slot 0 has storage, the original indexes by slot anyway */
 static inline CGameModel *Veh_PilotModel(cVehicleEntity *v, int slot) {
@@ -98,8 +95,8 @@ static inline float Veh_Len(const vec3_t *v) {
 
 /* the speed and the speed history from the velocity */
 static void Veh_ResetHistory(cVehicleEntity *self) {
-	self->histSpeed = Veh_Len(&self->vel);
-	self->histVel = self->vel;
+	self->histSpeed = Veh_Len(&self->wl.obj.vel);
+	self->histVel = self->wl.obj.vel;
 	self->histAcc.x = 0.0f;
 	self->histAcc.y = 0.0f;
 	self->histAcc.z = 0.0f;
@@ -112,7 +109,7 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	cVehicleEntity *self = mem;
 
 	cWithLifeEntity_ctor(mem, name, x, y, z);
-	self->base.vftable = CVEHICLEENTITY_VFTABLE;
+	self->wl.obj.base.vftable = CVEHICLEENTITY_VFTABLE;
 	*(int *)(self->collision + 0) = 0;
 	*(int *)(self->collision + 4) = 0;
 	Controls_ctor(self->controls);
@@ -123,7 +120,7 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	cAutoAim_ctor((cAutoAim *)self->autoAim);
 	cVehicleMotors_ctor((cVehicleMotors *)self->motors);
 	cVehicleEffects_ctor(&self->effects);
-	self->base.mask |= 1;
+	self->wl.obj.base.mask |= 1;
 	self->thrust = 0.0f;
 	self->turnSpeedX = 0.0f;
 	self->turnSpeedY = 0.0f;
@@ -131,7 +128,7 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	self->speed = 0.0f;
 	self->money = 0;
 	self->trustTime = 0.5f;
-	self->mass = 2800.0f;
+	self->wl.mass = 2800.0f;
 	self->style = 2800.0f;
 	self->engine = 2800.0f;
 	cVehicleEntity_UpdateTrust(self);
@@ -141,10 +138,10 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	cVehicleMotors_SetOwner((cVehicleMotors *)self->motors, Veh_Ent(self));
 	cWeaponManager_Init(&self->weapons, Veh_Ent(self));
 	self->netCtrl = NULL;
-	if (self->net) {
-		operator_delete_sized(self->net, 0x5c);
+	if (Veh_Net(self)) {
+		operator_delete_sized(self->wl.obj.net, 0x5c);
 		void *n = operator_new(CNETVCONTROLLER_SIZE);
-		self->net = n ? cNetVController_ctor(n, Veh_Ent(self)) : NULL;
+		self->wl.obj.net = n ? (cNetController *)cNetVController_ctor(n, Veh_Ent(self)) : NULL;
 	}
 	self->pilotNode = -1;
 	/* the loop of the original runs over the animations of all slots with the stride of a slot (0x14): it also
@@ -155,7 +152,7 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	*(cVehicleEntity **)self->o648 = self;
 	self->minLife = 100;
 	self->maxLife = 150;
-	self->acMass = self->mass;
+	self->acMass = self->wl.mass;
 	self->noFire = 0.0f;
 	self->boostTime = 10.0f;
 	self->boost = 0.0f;
@@ -214,22 +211,22 @@ void __fastcall cAutoAim_dtor(void *self) {
 }
 
 void __fastcall cVehicleEntity_dtor(cVehicleEntity *self) {
-	self->base.vftable = CVEHICLEENTITY_VFTABLE;
+	self->wl.obj.base.vftable = CVEHICLEENTITY_VFTABLE;
 	if (self->netCtrl) {
 		operator_delete_sized(self->netCtrl, 0x5c);
 		self->netCtrl = NULL;
 	}
-	if (self->base.ai) {
-		(*(void(__thiscall **)(void *, int))*(void **)self->base.ai)(self->base.ai, 1);
+	if (self->wl.obj.base.ai) {
+		(*(void(__thiscall **)(void *, int))*(void **)self->wl.obj.base.ai)(self->wl.obj.base.ai, 1);
 	}
-	self->base.ai = NULL;
+	self->wl.obj.base.ai = NULL;
 	cVehicleEffects_dtor(&self->effects);
 	cVehicleMotors_dtor((cVehicleMotors *)self->motors);
 	cAutoAim_dtor((cAutoAim *)self->autoAim);
 	cVehicleO648_dtor(self->o648);
 	cWeaponManager_dtor(&self->weapons);
 	crt_eh_vector_dtor(&self->pilot, sizeof(CGameModel), 1, GAME_FUNC(CGameModel_Reset, CGAMEMODEL_DTOR));
-	cWithLifeEntity_dtor(&self->base);
+	cWithLifeEntity_dtor(&self->wl.obj.base);
 }
 
 cVehicleEntity *__thiscall cVehicleEntity_Delete(cVehicleEntity *self, byte flags) {
@@ -249,25 +246,25 @@ void __thiscall cVehicleEntity_Touch(cVehicleEntity *self, cEntity *e, const vec
 	if (!(e->mask & 1)) {
 		return;
 	}
-	self->hitTime = Timer_GetTime(&self->timer);
+	self->hitTime = Timer_GetTime(&self->wl.obj.timer);
 	CHECK(Entity_IsType(e, TYEN_VEHICLE));
 	cVehicleEntity *o = Veh(e);
-	vec3_t selfVel = self->vel;
-	vec3_t otherVel = o->vel;
-	float dvx = self->vel.x - o->vel.x;
-	float dvy = self->vel.y - o->vel.y;
-	float dvz = self->vel.z - o->vel.z;
+	vec3_t selfVel = self->wl.obj.vel;
+	vec3_t otherVel = o->wl.obj.vel;
+	float dvx = self->wl.obj.vel.x - o->wl.obj.vel.x;
+	float dvy = self->wl.obj.vel.y - o->wl.obj.vel.y;
+	float dvz = self->wl.obj.vel.z - o->wl.obj.vel.z;
 	vec3_t *po = e->vftable->GetPos(e, &tmp1);
-	vec3_t *ps = self->base.vftable->GetPos(Veh_Ent(self), &tmp2);
+	vec3_t *ps = self->wl.obj.base.vftable->GetPos(Veh_Ent(self), &tmp2);
 	float py = ps->y - po->y, px = ps->x - po->x, pz = ps->z - po->z;
 	float dist = (float)__builtin_sqrt((double)(py * py + px * px + pz * pz));
 	float dot = py * dvy + px * dvx + pz * dvz;
-	if ((dot > 0.0f || 1.0f > dvy * dvy + dvx * dvx + dvz * dvz || 10.0f > dist) && !self->dying && !o->dying) {
+	if ((dot > 0.0f || 1.0f > dvy * dvy + dvx * dvx + dvz * dvz || 10.0f > dist) && !self->wl.obj.move.active && !o->wl.obj.move.active) {
 		/* inside each other: pushed apart along the line of the centers */
 		float nx, ny, nz;
-		Con_Debugf("LOW LEVEL WARNING : Problematic Collision between %s %s\n", e->name, self->base.name);
+		Con_Debugf("LOW LEVEL WARNING : Problematic Collision between %s %s\n", e->name, self->wl.obj.base.name);
 		if (!(0.0f >= dist)) {
-			vec3_t *s = self->base.vftable->GetPos(Veh_Ent(self), &tmp2);
+			vec3_t *s = self->wl.obj.base.vftable->GetPos(Veh_Ent(self), &tmp2);
 			vec3_t *p = e->vftable->GetPos(e, &out);
 			float inv = 1.0f / dist;
 			nz = (p->z - s->z) * inv;
@@ -278,30 +275,30 @@ void __thiscall cVehicleEntity_Touch(cVehicleEntity *self, cEntity *e, const vec
 			ny = 0.0f;
 			nz = 0.0f;
 		}
-		float pen = (o->radius + self->radius) - dist;
-		float k = pen / *(float *)(self->phys + 8) + 10.0f;
-		self->vel.x = self->vel.x + nx * k;
-		self->vel.y = self->vel.y + ny * k;
-		self->vel.z = self->vel.z + nz * k;
-		k = pen / *(float *)(self->phys + 8) + 10.0f;
-		out.x = o->vel.x - nx * k;
-		out.y = o->vel.y - ny * k;
-		out.z = o->vel.z - nz * k;
+		float pen = (o->wl.prim.radius + self->wl.prim.radius) - dist;
+		float k = pen / self->wl.obj.slot->interval + 10.0f;
+		self->wl.obj.vel.x = self->wl.obj.vel.x + nx * k;
+		self->wl.obj.vel.y = self->wl.obj.vel.y + ny * k;
+		self->wl.obj.vel.z = self->wl.obj.vel.z + nz * k;
+		k = pen / self->wl.obj.slot->interval + 10.0f;
+		out.x = o->wl.obj.vel.x - nx * k;
+		out.y = o->wl.obj.vel.y - ny * k;
+		out.z = o->wl.obj.vel.z - nz * k;
 	} else {
-		out = o->vel;
-		Vec3_Bounce(normal, self->mass, o->mass, &self->vel, &out);
+		out = o->wl.obj.vel;
+		Vec3_Bounce(normal, self->wl.mass, o->wl.mass, &self->wl.obj.vel, &out);
 	}
 	Veh_Vtbl(o)->SetVel(o, &out);
 	if (Net_IsNetEntity(Veh_Ent(self))) {
 		if (o->netCtrl) {
 			o->netCtrl->i6c = 3;
 		} else {
-			o->vel = otherVel;
+			o->wl.obj.vel = otherVel;
 		}
 		if (self->netCtrl) {
 			self->netCtrl->i6c = 3;
 		} else {
-			self->vel = selfVel;
+			self->wl.obj.vel = selfVel;
 		}
 	}
 	if (Veh_IsServer()) {
@@ -317,9 +314,9 @@ void __thiscall cVehicleEntity_Touch(cVehicleEntity *self, cEntity *e, const vec
 /* ---- the flight values ---- */
 
 void __fastcall cVehicleEntity_UpdateTrust(cVehicleEntity *self) {
-	self->acMass = self->mass;
-	if (self->life > self->minLife) {
-		self->acMass = (float)(self->life - self->minLife) * g_AmorPieceWeight + self->mass;
+	self->acMass = self->wl.mass;
+	if (self->wl.life > self->minLife) {
+		self->acMass = (float)(self->wl.life - self->minLife) * g_AmorPieceWeight + self->wl.mass;
 	}
 	float engine = self->engine;
 	if (self->cloud > 0.0f) {
@@ -391,17 +388,17 @@ void __thiscall cVehicleEntity_NoFireTick(cVehicleEntity *self, float dt) {
 
 void __thiscall cVehicleEntity_PushTick(cVehicleEntity *self, float dt) {
 	if (self->pushTime > 0.0f) {
-		float k = dt * 1000.0f / self->mass;
+		float k = dt * 1000.0f / self->wl.mass;
 		self->pushTime = self->pushTime - dt;
-		self->vel.x = self->vel.x + self->push.x * k;
-		self->vel.y = self->vel.y + self->push.y * k;
-		self->vel.z = self->vel.z + self->push.z * k;
+		self->wl.obj.vel.x = self->wl.obj.vel.x + self->push.x * k;
+		self->wl.obj.vel.y = self->wl.obj.vel.y + self->push.y * k;
+		self->wl.obj.vel.z = self->wl.obj.vel.z + self->push.z * k;
 	}
 }
 
 void __thiscall cVehicleEntity_SetMass(cVehicleEntity *self, float mass) {
 	CHECK(mass > 0.0f);
-	self->mass = mass;
+	self->wl.mass = mass;
 	cVehicleEntity_UpdateTrust(self);
 }
 
@@ -427,7 +424,7 @@ int __thiscall cVehicleEntity_IsEMIed(cVehicleEntity *self) {
 
 int __fastcall cVehicleEntity_CanFire(cVehicleEntity *self) {
 	if (Net_IsNetEntity(Veh_Ent(self))) {
-		return (self->net->keys >> 2) & 1;
+		return (Veh_Net(self)->keys >> 2) & 1;
 	}
 	return 0.0f >= self->noFire;
 }
@@ -436,21 +433,21 @@ int __fastcall cVehicleEntity_CanFire(cVehicleEntity *self) {
 void __thiscall cVehicleEntity_UpdateHistory(cVehicleEntity *self) {
 	vec3_t acc, jerk;
 
-	float dt = Weap_X87Sub(Timer_GetTime(&self->timer), self->histTime);
+	float dt = Weap_X87Sub(Timer_GetTime(&self->wl.obj.timer), self->histTime);
 	if (0.001 >= (double)dt) {
 		return;
 	}
-	self->speed = Veh_Len(&self->vel);
+	self->speed = Veh_Len(&self->wl.obj.vel);
 	float inv = 1.0f / dt;
-	acc.x = (self->histVel.x - self->vel.x) * inv;
-	acc.y = (self->histVel.y - self->vel.y) * inv;
-	acc.z = (self->histVel.z - self->vel.z) * inv;
+	acc.x = (self->histVel.x - self->wl.obj.vel.x) * inv;
+	acc.y = (self->histVel.y - self->wl.obj.vel.y) * inv;
+	acc.z = (self->histVel.z - self->wl.obj.vel.z) * inv;
 	jerk.x = self->histAcc.x + acc.x;
 	jerk.y = self->histAcc.y + acc.y;
 	jerk.z = self->histAcc.z + acc.z;
 	float accLen = (float)__builtin_sqrt((double)(acc.y * acc.y + acc.x * acc.x + acc.z * acc.z));
 	float jerkLen = (float)__builtin_sqrt((double)(jerk.y * jerk.y + jerk.x * jerk.x + jerk.z * jerk.z));
-	float since = Weap_X87Sub(Timer_GetTime(&self->timer), self->hitTime);
+	float since = Weap_X87Sub(Timer_GetTime(&self->wl.obj.timer), self->hitTime);
 	if (g_VehicleCrashMinTime > since && self->histAccLen > g_VehicleCrashAccLo) {
 		Veh_Vtbl(self)->Crash(self, &jerk, jerkLen);
 		self->histAcc.x = 0.0f;
@@ -459,7 +456,7 @@ void __thiscall cVehicleEntity_UpdateHistory(cVehicleEntity *self) {
 		self->histAcc.z = 0.0f;
 	}
 	self->histTime = self->histTime + dt;
-	self->histVel = self->vel;
+	self->histVel = self->wl.obj.vel;
 	self->histSpeed = self->speed;
 	self->histAcc = acc;
 	self->histAccLen = accLen;
@@ -467,28 +464,28 @@ void __thiscall cVehicleEntity_UpdateHistory(cVehicleEntity *self) {
 
 void __thiscall cVehicleEntity_Crash(cVehicleEntity *self, const vec3_t *acc, float force) {
 	(void)acc;
-	byte *p = self->player;
+	cFollowCamEntity *cam = (cFollowCamEntity *)self->wl.obj.cam;
 	int snd;
-	uint32_t shake;
+	float shake;
 
-	if (p) {
-		VehPlayer_CrashA(p) = 0x3e4ccccd;	/* 0.2f */
+	if (cam) {
+		cam->quakeTime = 0.2f;
 	}
 	if (g_VehicleCrashAccMed > force) {
 		snd = 0x1b;
-		shake = 0x3c0efa35;
+		shake = 0x1.1df46ap-7f;	/* 0.5 degrees */
 	} else if (g_VehicleCrashAccHi > force) {
 		snd = 0x1c;
-		shake = 0x3c3ea2f1;
+		shake = 0x1.7d45e2p-7f;	/* 2/3 degrees */
 	} else if (g_VehicleCrashAccHev > force) {
 		snd = 0x1d;
-		shake = 0x3c8efa35;
+		shake = 0x1.1df46ap-6f;	/* 1 degree */
 	} else {
 		snd = 0x1e;
-		shake = 0x3cbea2f1;
+		shake = 0x1.7d45e2p-6f;	/* 4/3 degrees */
 	}
-	if (p) {
-		VehPlayer_CrashB(p) = shake;
+	if (cam) {
+		cam->quakeFactor = shake;
 	}
 	Vehicle_StartSnd(Veh_Ent(self), snd);
 }
@@ -508,12 +505,12 @@ void __thiscall cVehicleEntity_Smooth(cVehicleEntity *self, float dt) {
 	Float_Approach(&self->smoothSpeed, self->speed,
 		(float)__builtin_fabs((double)(self->speed - self->smoothSpeed)) * dt * g_FxSpeedVariation);
 	float step = dt * 12.566371f;
-	Float_Approach(&self->smoothRotVel.x, self->rotVel.x, step);
-	Float_Approach(&self->smoothRotVel.y, self->rotVel.y, step);
-	Float_Approach(&self->smoothRotVel.z, self->rotVel.z, step);
-	d.x = self->ang.x - self->smoothAng.x;
-	d.y = self->ang.y - self->smoothAng.y;
-	d.z = self->ang.z - self->smoothAng.z;
+	Float_Approach(&self->smoothRotVel.x, self->wl.obj.rotVel.x, step);
+	Float_Approach(&self->smoothRotVel.y, self->wl.obj.rotVel.y, step);
+	Float_Approach(&self->smoothRotVel.z, self->wl.obj.rotVel.z, step);
+	d.x = self->wl.obj.ang.x - self->smoothAng.x;
+	d.y = self->wl.obj.ang.y - self->smoothAng.y;
+	d.z = self->wl.obj.ang.z - self->smoothAng.z;
 	vec3_t *na = Vec3_NormAng(&n, &d);
 	step = g_FxAngVariation * dt;
 	float ty = self->smoothAng.y + na->y;
@@ -525,7 +522,7 @@ void __thiscall cVehicleEntity_Smooth(cVehicleEntity *self, float dt) {
 	ang.x = self->smoothAng.x;
 	ang.y = self->smoothAng.y;
 	ang.z = 0.0f;
-	Vec3_RotateInv(&local, &self->vel, &ang);
+	Vec3_RotateInv(&local, &self->wl.obj.vel, &ang);
 	vec3_t last = self->localVel;
 	step = g_FxVelVariation * dt;
 	Float_Approach(&self->localVel.x, local.x, (float)__builtin_fabs((double)(local.x - self->localVel.x)) * step);
@@ -541,10 +538,10 @@ void __thiscall cVehicleEntity_Smooth(cVehicleEntity *self, float dt) {
 		Float_Approach(&self->localAcc.y, ay, (float)__builtin_fabs((double)(ay - self->localAcc.y)) * step);
 		Float_Approach(&self->localAcc.z, az, (float)__builtin_fabs((double)(az - self->localAcc.z)) * step);
 	}
-	Float_Approach(&self->inAtmosphere, self->base.pos.y > g_AtmosphereLimit ? 0.0f : 1.0f, dt + dt);
+	Float_Approach(&self->inAtmosphere, self->wl.obj.base.pos.y > g_AtmosphereLimit ? 0.0f : 1.0f, dt + dt);
 	float on = 1.0f;
-	if (!self->base.flag_4c ||
-		(!(g_pApp->flags & APPF_CLIENT) && self->dying && self->f1a4 >= self->f1a8)) {
+	if (!self->wl.obj.base.flag_4c ||
+		(!(g_pApp->flags & APPF_CLIENT) && self->wl.obj.move.active && self->wl.obj.move.time >= self->wl.obj.move.moveTime)) {
 		on = 0.0f;
 	}
 	Float_Approach(&self->active, on, dt);
@@ -557,17 +554,17 @@ void __thiscall cVehicleEntity_Smooth(cVehicleEntity *self, float dt) {
 /* ---- the moves ---- */
 
 void __thiscall cVehicleEntity_Collide(cVehicleEntity *self, vec3_t *from, float dt) {
-	vec3_t *pos = &self->base.pos;
+	vec3_t *pos = &self->wl.obj.base.pos;
 	vec3_t to = *pos;
 
-	float speed = Veh_Len(&self->vel);
+	float speed = Veh_Len(&self->wl.obj.vel);
 	self->speed = speed;
 	if (to.y > g_SpaceLimit) {
 		to.y = g_SpaceLimit;
 	}
 	if (from->x != to.x || from->y != to.y || from->z != to.z) {
 		if (cVehicleTraffic_Move((cVehicleTraffic *)self->traffic, from, &to, self->wRadius, pos, speed, (CSphereBox *)self->collision)) {
-			self->hitTime = Timer_GetTime(&self->timer);
+			self->hitTime = Timer_GetTime(&self->wl.obj.timer);
 			float inv = 1.0f / dt;
 			vec3_t v;
 			v.x = (pos->x - from->x) * inv;
@@ -575,106 +572,106 @@ void __thiscall cVehicleEntity_Collide(cVehicleEntity *self, vec3_t *from, float
 			v.z = (pos->z - from->z) * inv;
 			float len = (float)__builtin_sqrt((double)(v.y * v.y + v.x * v.x + v.z * v.z));
 			if (self->speed > len) {
-				self->vel = v;
+				self->wl.obj.vel = v;
 				self->speed = len;
 			}
 		}
 	}
 	if (cVehicleTraffic_CollideEntities((cVehicleTraffic *)self->traffic) &&
-		cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), (void *)1, from, self->radius, NULL, 0,
+		cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), (void *)1, from, self->wl.prim.radius, NULL, 0,
 			(int)(intptr_t)pos)) {
-		self->hitTime = Timer_GetTime(&self->timer);
-		to.x = from->x + self->vel.x * dt;
-		to.y = from->y + self->vel.y * dt;
-		to.z = from->z + self->vel.z * dt;
+		self->hitTime = Timer_GetTime(&self->wl.obj.timer);
+		to.x = from->x + self->wl.obj.vel.x * dt;
+		to.y = from->y + self->wl.obj.vel.y * dt;
+		to.z = from->z + self->wl.obj.vel.z * dt;
 		cVehicleTraffic_Move((cVehicleTraffic *)self->traffic, from, &to, self->wRadius, pos, self->speed, (CSphereBox *)self->collision);
-		if (cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), (void *)1, pos, self->radius, NULL, 1, 0)) {
+		if (cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), (void *)1, pos, self->wl.prim.radius, NULL, 1, 0)) {
 			*pos = *from;
 		}
 	}
-	if (self->base.pos.y > g_SpaceLimit) {
+	if (self->wl.obj.base.pos.y > g_SpaceLimit) {
 		*pos = *from;
 	}
 }
 
 void __thiscall cVehicleEntity_NetMove(cVehicleEntity *self, float dt) {
-	vec3_t from = self->base.pos;
+	vec3_t from = self->wl.obj.base.pos;
 
 	cVehicleEntity_Step(self, dt);
 	cVehicleEntity_Collide(self, &from, dt);
-	cNetVController *net = self->net;
+	cNetVController *net = Veh_Net(self);
 	if (net->force) {
 		net->force = 0;
-		self->net->hit = 0;
+		Veh_Net(self)->hit = 0;
 		self->netCtrl->i6c = 0;
-		self->vel = self->net->vel;
-		self->base.pos = self->net->pos;
-		self->ang.x = self->net->ang.x;
-		self->ang.y = self->net->ang.y;
-		if (self->player) {
-			VehPlayer_Shake(self->player) = 10;
+		self->wl.obj.vel = Veh_Net(self)->vel;
+		self->wl.obj.base.pos = Veh_Net(self)->pos;
+		self->wl.obj.ang.x = Veh_Net(self)->ang.x;
+		self->wl.obj.ang.y = Veh_Net(self)->ang.y;
+		if (self->wl.obj.cam) {
+			((cFollowCamEntity *)self->wl.obj.cam)->slowFrames = 10;
 		}
 	} else if (net->hit) {
 		net->hit = 0;
 		self->netCtrl->i6c = 0;
-		self->vel = self->net->vel;
+		self->wl.obj.vel = Veh_Net(self)->vel;
 	}
 }
 
 void __thiscall cVehicleEntity_ClientMove(cVehicleEntity *self, float dt) {
-	cNetVController *net = self->net;
+	cNetVController *net = Veh_Net(self);
 
 	if (net->wait == 0.5f) {
 		net->vftable->Move(net, Veh_Ent(self), dt, 1);
 		return;
 	}
-	vec3_t from = self->base.pos;
+	vec3_t from = self->wl.obj.base.pos;
 	net->vftable->Move(net, Veh_Ent(self), dt, 1);
-	if (!(self->net->flags & 0x40)) {
-		self->rotVel.z = 0.0f;
+	if (!(Veh_Net(self)->flags & 0x40)) {
+		self->wl.obj.rotVel.z = 0.0f;
 	}
 	cVehicleEntity_Collide(self, &from, dt);
 }
 
 void __thiscall cVehicleEntity_ServerMove(cVehicleEntity *self, float dt) {
-	vec3_t *pos = &self->base.pos;
+	vec3_t *pos = &self->wl.obj.base.pos;
 	vec3_t start = *pos;
-	cNetVController *net = self->net;
+	cNetVController *net = Veh_Net(self);
 
 	if (net->wait == 0.5f) {
-		if (cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), (void *)1, &net->pos, self->radius, NULL, 1, 0)) {
+		if (cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), (void *)1, &net->pos, self->wl.prim.radius, NULL, 1, 0)) {
 			self->netCtrl->force = 2;
 		}
 		cNetVController *nc = self->netCtrl;
 		if (!nc->force) {
 			if (nc->hit) {
-				self->net->flags &= 0xef;
+				Veh_Net(self)->flags &= 0xef;
 			}
-			self->net->vftable->Move(self->net, Veh_Ent(self), dt, 1);
+			Veh_Net(self)->vftable->Move(Veh_Net(self), Veh_Ent(self), dt, 1);
 			cAutoAim_Update((cAutoAim *)self->autoAim, Veh_Ent(self), dt);
 		} else {
-			self->net->wait = self->net->wait - dt;
+			Veh_Net(self)->wait = Veh_Net(self)->wait - dt;
 		}
 	} else {
-		pos->x = pos->x + self->vel.x * dt;
-		pos->y = self->vel.y * dt + pos->y;
-		pos->z = self->vel.z * dt + pos->z;
+		pos->x = pos->x + self->wl.obj.vel.x * dt;
+		pos->y = self->wl.obj.vel.y * dt + pos->y;
+		pos->z = self->wl.obj.vel.z * dt + pos->z;
 		float wait = net->wait;
 		if (wait > 0.0f) {
 			net->wait = wait - dt;
 		} else if (wait == -10000.0f) {
 			float fr = self->friction;
-			self->vel.x = self->vel.x - self->vel.x * dt * fr;
-			self->vel.y = self->vel.y - self->vel.y * dt * fr;
-			self->vel.z = self->vel.z - self->vel.z * dt * fr;
+			self->wl.obj.vel.x = self->wl.obj.vel.x - self->wl.obj.vel.x * dt * fr;
+			self->wl.obj.vel.y = self->wl.obj.vel.y - self->wl.obj.vel.y * dt * fr;
+			self->wl.obj.vel.z = self->wl.obj.vel.z - self->wl.obj.vel.z * dt * fr;
 		} else {
 			net->wait = -10000.0f;
-			self->vel.x = 0.0f;
-			self->vel.y = 0.0f;
-			self->vel.z = 0.0f;
-			self->rotVel.x = 0.0f;
-			self->rotVel.y = 0.0f;
-			self->rotVel.z = 0.0f;
+			self->wl.obj.vel.x = 0.0f;
+			self->wl.obj.vel.y = 0.0f;
+			self->wl.obj.vel.z = 0.0f;
+			self->wl.obj.rotVel.x = 0.0f;
+			self->wl.obj.rotVel.y = 0.0f;
+			self->wl.obj.rotVel.z = 0.0f;
 		}
 	}
 	if (start.x != pos->x || start.y != pos->y || start.z != pos->z) {
@@ -691,7 +688,7 @@ void __thiscall cVehicleEntity_ServerMove(cVehicleEntity *self, float dt) {
 }
 
 void __thiscall cVehicleEntity_Move(cVehicleEntity *self, float dt) {
-	vec3_t from = self->base.pos;
+	vec3_t from = self->wl.obj.base.pos;
 
 	cVehicleEntity_Step(self, dt);
 	cVehicleEntity_Collide(self, &from, dt);
@@ -700,7 +697,7 @@ void __thiscall cVehicleEntity_Move(cVehicleEntity *self, float dt) {
 void __thiscall cVehicleEntity_Tick(cVehicleEntity *self, float dt) {
 	if ((Net_IsNetEntity(Veh_Ent(self)) && !Veh_IsPlayerSlot(self->slot)) || (Veh_IsServer() && self->netCtrl)) {
 		Controls_FromNet(self->controls, Veh_Ent(self), dt);
-		if (self->boost == 0.0f && !(self->net->keys & 0x1000)) {
+		if (self->boost == 0.0f && !(Veh_Net(self)->keys & 0x1000)) {
 			cVehicleEntity_StartBoost(self);
 			self->boost = self->boostTime + 0.1f;
 		}
@@ -714,7 +711,7 @@ void __thiscall cVehicleEntity_Tick(cVehicleEntity *self, float dt) {
 	} else if (Veh_IsServer() && self->netCtrl) {
 		cVehicleEntity_ServerMove(self, dt);
 	} else {
-		vec3_t from = self->base.pos;
+		vec3_t from = self->wl.obj.base.pos;
 		cVehicleEntity_Step(self, dt);
 		cVehicleEntity_Collide(self, &from, dt);
 	}
@@ -739,14 +736,14 @@ void __thiscall cVehicleEntity_Tick(cVehicleEntity *self, float dt) {
 	if (0.0f >= self->boost) {
 		self->boost = 0.0f;
 	}
-	self->speedFactor = self->smoothSpeed / 16800.0f;
+	self->wl.fireAtt = self->smoothSpeed / 16800.0f;
 	cWithLifeEntity_Tick(Veh_Ent(self), dt);
 	Veh_Vtbl(self)->UpdateHistory(self);
 }
 
 void __thiscall cVehicleEntity_Update(cVehicleEntity *self) {
 	cObjEntity_UpdateTimer(Veh_Ent(self));
-	float dt = cTimer_GetDelta(&self->timer);
+	float dt = cTimer_GetDelta(&self->wl.obj.timer);
 	if (1e-06f >= dt) {
 		return;
 	}
@@ -760,17 +757,17 @@ void __thiscall cVehicleEntity_Update(cVehicleEntity *self) {
 }
 
 void __thiscall cVehicleEntity_SetVel(cVehicleEntity *self, const vec3_t *vel) {
-	if (self->dying) {
+	if (self->wl.obj.move.active) {
 		return;
 	}
 	cObjEntity_SetVel(Veh_Ent(self), vel);
-	float speed = Veh_Len(&self->vel);
+	float speed = Veh_Len(&self->wl.obj.vel);
 	self->speed = speed;
 	if (speed > 42000.0f) {
 		float k = 42000.0f / speed;
-		self->vel.x = self->vel.x * k;
-		self->vel.y = self->vel.y * k;
-		self->vel.z = self->vel.z * k;
+		self->wl.obj.vel.x = self->wl.obj.vel.x * k;
+		self->wl.obj.vel.y = self->wl.obj.vel.y * k;
+		self->wl.obj.vel.z = self->wl.obj.vel.z * k;
 		self->speed = 42000.0f;
 	}
 }
@@ -812,13 +809,13 @@ static void Veh_MotorSnd(cSndItem *s, float t, float f, byte fast) {
 }
 
 void __thiscall cVehicleEntity_UpdateSounds(cVehicleEntity *self, float dt) {
-	cSndInterface *snd = &self->sounds;
+	cSndInterface *snd = &self->wl.obj.snd;
 	cSndItem *a, *b, *c, *d;
 	byte alt;
 
 	alt = PtrArray_Get(snd, 8) == NULL;
 	if (!alt) {
-		alt = self->player || (self->dying && self->f1a4 >= self->f1a8);
+		alt = self->wl.obj.cam || (self->wl.obj.move.active && self->wl.obj.move.time >= self->wl.obj.move.moveTime);
 		((cSndItem *)PtrArray_Get(snd, alt ? 8 : 0))->volume = 0.0f;
 	}
 	if (!self->cloudOn && !(self->cloud > 0.0f)) {
@@ -840,8 +837,8 @@ void __thiscall cVehicleEntity_UpdateSounds(cVehicleEntity *self, float dt) {
 			c->volume = 0.0f;
 			return;
 		}
-		byte *p = self->player;
-		if (!p) {
+		cEntity *cam = self->wl.obj.cam;
+		if (!cam) {
 			d->volume = 0.0f;
 		}
 		float t = Float_MinSS(1.0f, self->smoothTurnX * self->smoothTurnX + self->smoothThrust * self->smoothThrust);
@@ -852,12 +849,12 @@ void __thiscall cVehicleEntity_UpdateSounds(cVehicleEntity *self, float dt) {
 			f = (self->speed - max) / (28000.0f - max);
 		}
 		Veh_MotorSnd(b, t, f, fast);
-		if (p) {
+		if (cam) {
 			Veh_MotorSnd(d, t, f, fast);
 		}
 		Vehicle_SndCrossFade(b, a);
 		Vehicle_SndCrossFade(d, c);
-		if (self->base.vftable->GetAI(Veh_Ent(self)) || Net_IsNetEntity(Veh_Ent(self))) {
+		if (self->wl.obj.base.vftable->GetAI(Veh_Ent(self)) || Net_IsNetEntity(Veh_Ent(self))) {
 			b->volume = b->volume * g_NPCSndMotorVolFactor;
 			d->volume = d->volume * g_NPCSndMotorVolFactor;
 			a->volume = a->volume * g_NPCSndMotorVolFactor;
@@ -887,7 +884,7 @@ void __fastcall cVehicleEntity_NetDelete(cVehicleEntity *self) {
 
 void __thiscall cVehicleEntity_NetRead(cVehicleEntity *self, void *msg, int unused) {
 	(void)unused;
-	self->net->vftable->Read(self->net, msg);
+	Veh_Net(self)->vftable->Read(Veh_Net(self), msg);
 }
 
 void __thiscall cVehicleEntity_NetWrite(cVehicleEntity *self, float dist2, void *msg, int full) {
@@ -905,7 +902,7 @@ void __thiscall cVehicleEntity_NetWrite(cVehicleEntity *self, float dist2, void 
 	uint32_t bits;
 	memcpy(&bits, &dist2, sizeof(bits));
 	bits = (bits & ~0xffu) | kind;
-	cNetVController *net = self->netCtrl ? self->netCtrl : self->net;
+	cNetVController *net = self->netCtrl ? self->netCtrl : Veh_Net(self);
 	net->vftable->Write(net, (int)bits, Veh_Ent(self), msg, full);
 }
 
@@ -917,15 +914,15 @@ void __thiscall cVehicleEntity_SetUsrControl(cVehicleEntity *self, int slot) {
 		Controls_Reset(self->controls);
 	}
 	int old = self->slot;
-	byte *phys = self->phys;
+	cSlotController *sc = self->wl.obj.slot;
 	self->slot = slot;
 	if (slot == -1) {
-		*(uint32_t *)(phys + 0xc) = 0x3d4ccccd;	/* 0.05f */
+		sc->minDiff = 0.05f;
 		if ((uint32_t)old <= 3 && cWorld_GetUsrEntity(g_pWorld, old) == Veh_Ent(self)) {
 			g_pWorld->owners[old] = NULL;
 		}
 	} else {
-		*(uint32_t *)(phys + 0xc) = 0x3c888889;	/* 1 / 60.0f */
+		sc->minDiff = 0x1.111112p-6f;	/* 1 / 60 */
 		g_pWorld->owners[self->slot] = Veh_Ent(self);
 	}
 	cVehicleO648_SetSlot(self->o648, slot);
@@ -938,15 +935,15 @@ void __thiscall cVehicleEntity_SetUsrControl(cVehicleEntity *self, int slot) {
 
 void __thiscall cVehicleEntity_EnableAI(cVehicleEntity *self, byte enable, void *p1, void *p2, void *p3) {
 	if (!enable) {
-		if (self->base.ai) {
-			(*(void(__thiscall **)(void *, int))*(void **)self->base.ai)(self->base.ai, 1);
+		if (self->wl.obj.base.ai) {
+			(*(void(__thiscall **)(void *, int))*(void **)self->wl.obj.base.ai)(self->wl.obj.base.ai, 1);
 		}
-		self->base.ai = NULL;
+		self->wl.obj.base.ai = NULL;
 		return;
 	}
-	if (!self->base.ai) {
+	if (!self->wl.obj.base.ai) {
 		void *mem = operator_new(CAIVEHICLE_SIZE);
-		self->base.ai = mem ? cAIVehicle_ctor(mem, Veh_Ent(self), p1, p2, p3) : NULL;
+		self->wl.obj.base.ai = mem ? cAIVehicle_ctor(mem, Veh_Ent(self), p1, p2, p3) : NULL;
 	}
 }
 
@@ -966,7 +963,7 @@ byte __thiscall cVehicleEntity_GetPilotPos(cVehicleEntity *self, int slot, vec3_
 	if (slot != 0 || *Veh_PilotNode(self, slot) == -1) {
 		return 0;
 	}
-	CGameModel_NodeMatrix(&self->model, &m, (uint32_t)*Veh_PilotNode(self, slot), 0, NULL, 0);
+	CGameModel_NodeMatrix(&self->wl.obj.model, &m, (uint32_t)*Veh_PilotNode(self, slot), 0, NULL, 0);
 	if (pos) {
 		pos->x = m.m[12];
 		pos->y = m.m[13];
@@ -997,7 +994,7 @@ byte __thiscall cVehicleEntity_SetPilot(cVehicleEntity *self, int slot, const ch
 	}
 	memcpy(node, "DC_Player_01", 13);
 	node[11] = (char)(node[11] + slot);
-	int n = CGameModel_FindRenderNode(&self->model, node);
+	int n = CGameModel_FindRenderNode(&self->wl.obj.model, node);
 	*Veh_PilotNode(self, slot) = n;
 	if (n == -1) {
 		return 0;
@@ -1015,9 +1012,9 @@ byte __thiscall cVehicleEntity_SetPilot(cVehicleEntity *self, int slot, const ch
 	CGameModel *m = Veh_PilotModel(self, slot);
 	CGameModel_LoadScaled(m, path, &scale);
 	CGameModel_SetPivotNode(m, "DC_Ship_Link");
-	CGameModel_SetPos(m, &self->base.pos);
-	CGameModel_SetRot(m, &self->ang);
-	if (!self->base.flag_4c) {
+	CGameModel_SetPos(m, &self->wl.obj.base.pos);
+	CGameModel_SetRot(m, &self->wl.obj.ang);
+	if (!self->wl.obj.base.flag_4c) {
 		CGameModel_Disable(m);
 	}
 	return 1;
@@ -1046,7 +1043,7 @@ byte __thiscall cVehicleEntity_SetPilotAnim(cVehicleEntity *self, int slot, int 
 void __thiscall cVehicleEntity_UpdatePilot(cVehicleEntity *self, int slot, float dt) {
 	(void)dt;
 	CGameModel *m = Veh_PilotModel(self, slot);
-	float roll = self->renderRot.z;
+	float roll = self->wl.obj.renderAng.z;
 	float t;
 
 	int a2 = *Veh_PilotAnim(self, slot, 2), a3 = *Veh_PilotAnim(self, slot, 3);
@@ -1101,7 +1098,7 @@ void __thiscall cVehicleEntity_UpdatePilot(cVehicleEntity *self, int slot, float
 	int *relax = Veh_PilotAnim(self, slot, 4);
 	if (*relax != -1) {
 		float len = *Veh_PilotAnimLen(self, slot, 4);
-		float loops = Weap_X87Div(Timer_GetTime(&self->timer), len);
+		float loops = Weap_X87Div(Timer_GetTime(&self->wl.obj.timer), len);
 		/* the relax animation plays in 5 of every 10 loops (the jump table of the original) */
 		switch ((int)loops % 10) {
 		case 0:
@@ -1109,7 +1106,7 @@ void __thiscall cVehicleEntity_UpdatePilot(cVehicleEntity *self, int slot, float
 		case 4:
 		case 7:
 		case 9:
-			t = (float)Game_Fmod((double)Timer_GetTime(&self->timer), (double)len);
+			t = (float)Game_Fmod((double)Timer_GetTime(&self->wl.obj.timer), (double)len);
 			CGameModel_SetAnim(m, *relax, 0, 0);
 			CGameModel_AnimDelta(m, 0, t, NULL);
 			return;
@@ -1124,7 +1121,7 @@ void __thiscall cVehicleEntity_UpdatePilotPos(cVehicleEntity *self, byte on) {
 	matrix_t m;
 	vec3_t e, pos;
 
-	float dt = cTimer_GetDelta(&self->timer);
+	float dt = cTimer_GetDelta(&self->wl.obj.timer);
 	if (self->pilotNode == -1) {
 		return;
 	}
@@ -1134,7 +1131,7 @@ void __thiscall cVehicleEntity_UpdatePilotPos(cVehicleEntity *self, byte on) {
 	} else {
 		CGameModel_Disable(pm);
 	}
-	CGameModel_NodeMatrix(&self->model, &m, (uint32_t)self->pilotNode, 0, NULL, 0);
+	CGameModel_NodeMatrix(&self->wl.obj.model, &m, (uint32_t)self->pilotNode, 0, NULL, 0);
 	CGameModel_SetRot(pm, Matrix_GetEuler(&m, &e));
 	pos.x = m.m[12];
 	pos.y = m.m[13];
@@ -1170,7 +1167,7 @@ void __thiscall cVehicleEntity_SetModel(cVehicleEntity *self, const char *file, 
 		Str_Copy(path, file, 0x200);
 	}
 	cObjEntity_SetModel(Veh_Ent(self), path, sx, sy, sz, 1);
-	CGameModel *model = &self->model;
+	CGameModel *model = &self->wl.obj.model;
 	vec3_t root = *CGameModel_NodePos(model, &tmp, (uint32_t)CGameModel_FindRenderNode(model, "DC_Root"), 0);
 	vec3_t w = *CGameModel_NodePos(model, &tmp, (uint32_t)CGameModel_FindRenderNode(model, "DC_WRadius"), 0);
 	vec3_t v = *CGameModel_NodePos(model, &tmp, (uint32_t)CGameModel_FindRenderNode(model, "DC_VRadius"), 0);
@@ -1199,34 +1196,34 @@ void __thiscall cVehicleEntity_SetModel(cVehicleEntity *self, const char *file, 
 
 void __thiscall cVehicleEntity_SetEmbeddedFX(cVehicleEntity *self, const char *fxType) {
 	if (!strcmp(fxType, "EmbeddedFX")) {
-		cEmbeddedFXVehicle *fx = self->embeddedFX;
+		cEmbeddedFXVehicle *fx = Veh_FX(self);
 		if (fx) {
 			fx->vftable->Done(fx);
-			if (self->embeddedFX) {
-				self->embeddedFX->vftable->Delete(self->embeddedFX, 1);
-				self->embeddedFX = NULL;
+			if (Veh_FX(self)) {
+				Veh_FX(self)->vftable->Delete(Veh_FX(self), 1);
+				self->wl.obj.fx = NULL;
 			}
 		}
 		void *mem = operator_new(CEMBEDDEDFXVEHICLE_SIZE);
 		fx = mem ? cEmbeddedFXVehicle_ctor(mem) : NULL;
-		self->embeddedFX = fx;
+		self->wl.obj.fx = (struct cEmbeddedFX *)fx;
 		cEmbeddedFXVehicle_SetTraffic(fx, self->typeName[0] == 'T');
-		self->embeddedFX->vftable->Init(self->embeddedFX);
-		cEmbeddedFXVehicle_SetOwner(self->embeddedFX, Veh_Ent(self));
+		Veh_FX(self)->vftable->Init(Veh_FX(self));
+		cEmbeddedFXVehicle_SetOwner(Veh_FX(self), Veh_Ent(self));
 	}
 	cVehicleEffects_Start(&self->effects, fxType);
 	cObjEntity_SetEmbeddedFX(Veh_Ent(self), fxType);
 }
 
 void __fastcall cVehicleEntity_StartFade(cVehicleEntity *self) {
-	if (self->embeddedFX) {
-		cEmbeddedFXVehicle_StartFade(self->embeddedFX);
+	if (Veh_FX(self)) {
+		cEmbeddedFXVehicle_StartFade(Veh_FX(self));
 	}
 }
 
 void __thiscall cVehicleEntity_SetAIRange(cVehicleEntity *self, byte on) {
-	if (self->embeddedFX) {
-		cEmbeddedFXVehicle_SetAIRange(self->embeddedFX, on);
+	if (Veh_FX(self)) {
+		cEmbeddedFXVehicle_SetAIRange(Veh_FX(self), on);
 	}
 }
 
@@ -1249,17 +1246,17 @@ void __thiscall cVehicleEntity_SetFXParam(cVehicleEntity *self, int i, float v) 
 }
 
 void __thiscall cVehicleEntity_SetActive(cVehicleEntity *self, byte on) {
-	if (on == self->base.flag_4c) {
+	if (on == self->wl.obj.base.flag_4c) {
 		return;
 	}
-	if (!on && self->base.flag_4c) {
+	if (!on && self->wl.obj.base.flag_4c) {
 		Controls_Reset(self->controls);
 		cWeaponManager_Update(&self->weapons, 0.005f);
 		self->active = 0.0f;
 	}
 	cWithLifeEntity_SetActive(Veh_Ent(self), on);
-	if (CGameModel_IsLoaded(&self->model) && self->pilotNode != -1) {
-		if (self->base.flag_4c) {
+	if (CGameModel_IsLoaded(&self->wl.obj.model) && self->pilotNode != -1) {
+		if (self->wl.obj.base.flag_4c) {
 			CGameModel_Enable(&self->pilot);
 		} else {
 			CGameModel_Disable(&self->pilot);
@@ -1267,7 +1264,7 @@ void __thiscall cVehicleEntity_SetActive(cVehicleEntity *self, byte on) {
 	}
 	cVehicleEffects_SetActive(&self->effects, on);
 	cVehicleMotors_SetEnabled((cVehicleMotors *)self->motors, on);
-	if (self->slot != -1 && self->base.flag_4c) {
+	if (self->slot != -1 && self->wl.obj.base.flag_4c) {
 		g_pWorld->owners[self->slot] = Veh_Ent(self);
 	}
 }
@@ -1279,13 +1276,13 @@ void __thiscall cVehicleEntity_RenderNow(cVehicleEntity *self) {
 	if (!Veh_Vtbl(self)->GetModel(self) || !CGameModel_IsLoaded(Veh_Vtbl(self)->GetModel(self))) {
 		return;
 	}
-	vec3_t pos = self->renderPos;
-	vec3_t rot = self->renderRot;
-	self->renderPos = *CGameModel_GetPos(Veh_Vtbl(self)->GetModel(self), &tmp);
-	self->renderRot = *CGameModel_GetRot(Veh_Vtbl(self)->GetModel(self), &tmp);
+	vec3_t pos = self->wl.obj.renderPos;
+	vec3_t rot = self->wl.obj.renderAng;
+	self->wl.obj.renderPos = *CGameModel_GetPos(Veh_Vtbl(self)->GetModel(self), &tmp);
+	self->wl.obj.renderAng = *CGameModel_GetRot(Veh_Vtbl(self)->GetModel(self), &tmp);
 	self->rendering = 1;
 	Veh_Vtbl(self)->UpdateModel(self);
-	uint32_t fx = CGameModel_GetEffect(&self->model, NULL);
+	uint32_t fx = CGameModel_GetEffect(&self->wl.obj.model, NULL);
 	if (fx == 3) {
 		Veh_Vtbl(self)->SetFX(self, 0);
 	}
@@ -1297,11 +1294,11 @@ void __thiscall cVehicleEntity_RenderNow(cVehicleEntity *self) {
 	if (fx == 3) {
 		Veh_Vtbl(self)->SetFX(self, 3);
 	}
-	if (self->embeddedFX) {
-		cEmbeddedFXVehicle_Render(self->embeddedFX);
+	if (Veh_FX(self)) {
+		cEmbeddedFXVehicle_Render(Veh_FX(self));
 	}
-	self->renderPos = pos;
-	self->renderRot = rot;
+	self->wl.obj.renderPos = pos;
+	self->wl.obj.renderAng = rot;
 	Veh_Vtbl(self)->UpdateModel(self);
 	self->rendering = 0;
 }
@@ -1313,15 +1310,15 @@ void __thiscall cVehicleEntity_GetCamPoint(cVehicleEntity *self, vec3_t *pos, ve
 		cObjEntity_GetCamera(Veh_Ent(self), pos, ang);
 		return;
 	}
-	cNetVController *net = self->net;
+	cNetVController *net = Veh_Net(self);
 	ang->x = -net->ang.x;
 	ang->y = net->ang.y + 3.1415927f;
 	ang->z = 0.0f;
-	v.x = self->camOfs.x + 0.0f;
-	v.y = self->camOfs.y + self->net->height;
-	v.z = self->camOfs.z + 0.0f;
+	v.x = self->wl.obj.camOff.x + 0.0f;
+	v.y = self->wl.obj.camOff.y + Veh_Net(self)->height;
+	v.z = self->wl.obj.camOff.z + 0.0f;
 	vec3_t *rp = Vec3_Rotate(&r, &v, ang);
-	net = self->net;
+	net = Veh_Net(self);
 	pos->x = net->pos.x + rp->x;
 	pos->y = net->pos.y + rp->y;
 	pos->z = net->pos.z + rp->z;
@@ -1711,43 +1708,43 @@ static inline void Veh_StepThrust(cVehicleEntity *self, float dt) {
 /* below the atmosphere: the thrust, the turn, the friction and the speed limit */
 static void Veh_StepFly(cVehicleEntity *self, float dt, float ax, float ay) {
 	vec3_t in, out;
-	float vx = self->vel.x;
-	float vy = self->vel.y;
-	float vz = self->vel.z;
+	float vx = self->wl.obj.vel.x;
+	float vy = self->wl.obj.vel.y;
+	float vz = self->wl.obj.vel.z;
 	float before = (float)__builtin_sqrt((double)(vx * vx + vy * vy + vz * vz));
 
 	in.x = 0.0f;
 	in.y = 0.0f;
 	in.z = self->thrust * dt;
 	const vec3_t *r = Vec3_RotateXY(&out, &in, ax, ay);
-	self->vel.x = self->vel.x - r->x;
-	self->vel.y = self->vel.y - r->y;
-	self->vel.z = self->vel.z - r->z;
+	self->wl.obj.vel.x = self->wl.obj.vel.x - r->x;
+	self->wl.obj.vel.y = self->wl.obj.vel.y - r->y;
+	self->wl.obj.vel.z = self->wl.obj.vel.z - r->z;
 	in.x = 0.0f;
 	in.z = 0.0f;
 	in.y = self->turnSpeedY * dt;
-	r = Vec3_RotateXY(&out, &in, self->ang.x, self->ang.y);
-	self->vel.x = self->vel.x - r->x;
-	self->vel.y = self->vel.y - r->y;
-	self->vel.z = self->vel.z - r->z;
+	r = Vec3_RotateXY(&out, &in, self->wl.obj.ang.x, self->wl.obj.ang.y);
+	self->wl.obj.vel.x = self->wl.obj.vel.x - r->x;
+	self->wl.obj.vel.y = self->wl.obj.vel.y - r->y;
+	self->wl.obj.vel.z = self->wl.obj.vel.z - r->z;
 	/* the side push of the turn */
 	float k = self->turnSpeedX * dt;
-	double a = (double)self->ang.y + 1.5707963267948966;
-	self->vel.x = (float)Game_Sin(a) * k + self->vel.x;
-	self->vel.z = (float)Game_Cos(a) * k + self->vel.z;
-	float fx = self->vel.x * dt;
-	float fy = self->vel.y * dt;
-	float fz = self->vel.z * dt;
+	double a = (double)self->wl.obj.ang.y + 1.5707963267948966;
+	self->wl.obj.vel.x = (float)Game_Sin(a) * k + self->wl.obj.vel.x;
+	self->wl.obj.vel.z = (float)Game_Cos(a) * k + self->wl.obj.vel.z;
+	float fx = self->wl.obj.vel.x * dt;
+	float fy = self->wl.obj.vel.y * dt;
+	float fz = self->wl.obj.vel.z * dt;
 	float fr = self->friction;
 	fx = fx * fr;
 	fy = fy * fr;
 	fz = fz * fr;
-	self->vel.x = self->vel.x - fx;
-	self->vel.y = self->vel.y - fy;
-	self->vel.z = self->vel.z - fz;
-	vx = self->vel.x;
-	vy = self->vel.y;
-	vz = self->vel.z;
+	self->wl.obj.vel.x = self->wl.obj.vel.x - fx;
+	self->wl.obj.vel.y = self->wl.obj.vel.y - fy;
+	self->wl.obj.vel.z = self->wl.obj.vel.z - fz;
+	vx = self->wl.obj.vel.x;
+	vy = self->wl.obj.vel.y;
+	vz = self->wl.obj.vel.z;
 	float sp = (float)__builtin_sqrt((double)(vx * vx + vy * vy + vz * vz));
 	float ms = self->maxSpeed;
 	self->speed = sp;
@@ -1755,17 +1752,17 @@ static void Veh_StepFly(cVehicleEntity *self, float dt, float ax, float ay) {
 	if (sp > ms && sp >= before) {
 		float lim = Float_MaxSS(ms, before);
 		float f = lim / sp;
-		self->vel.x = f * self->vel.x;
-		self->vel.y = self->vel.y * f;
-		self->vel.z = self->vel.z * f;
+		self->wl.obj.vel.x = f * self->wl.obj.vel.x;
+		self->wl.obj.vel.y = self->wl.obj.vel.y * f;
+		self->wl.obj.vel.z = self->wl.obj.vel.z * f;
 		self->speed = lim;
 	}
 }
 
 static void Veh_StepMagnet(cVehicleEntity *self, float dt) {
-	float dy = g_FreeSpaceMagnetCenterY - self->base.pos.y;
-	float dx = g_FreeSpaceMagnetCenterX - self->base.pos.x;
-	float dz = g_FreeSpaceMagnetCenterZ - self->base.pos.z;
+	float dy = g_FreeSpaceMagnetCenterY - self->wl.obj.base.pos.y;
+	float dx = g_FreeSpaceMagnetCenterX - self->wl.obj.base.pos.x;
+	float dz = g_FreeSpaceMagnetCenterZ - self->wl.obj.base.pos.z;
 	float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 	float lo = g_FreeSpaceMagnetLoRadius;
 
@@ -1778,30 +1775,30 @@ static void Veh_StepMagnet(cVehicleEntity *self, float dt) {
 	float px = dx * dt;
 	float py = dy * dt;
 	float pz = dz * dt;
-	self->vel.x = f * px + self->vel.x;
-	self->vel.y = f * py + self->vel.y;
-	self->vel.z = f * pz + self->vel.z;
+	self->wl.obj.vel.x = f * px + self->wl.obj.vel.x;
+	self->wl.obj.vel.y = f * py + self->wl.obj.vel.y;
+	self->wl.obj.vel.z = f * pz + self->wl.obj.vel.z;
 }
 
 void __thiscall cVehicleEntity_Step(cVehicleEntity *self, float dt) {
 	vec3_t in, out;
-	byte high = self->base.pos.y > g_AtmosphereLimit;
+	byte high = self->wl.obj.base.pos.y > g_AtmosphereLimit;
 	float sx = Veh_StepCurve(self->stickX);
 	float sy = Veh_StepCurve(self->stickY);
 
 	if (self->pushTime > 0.0f) {
 		self->pushTime = self->pushTime - dt;
-		float k = dt * 1000.0f / self->mass;
-		self->vel.x = k * self->push.x + self->vel.x;
-		self->vel.y = self->vel.y + self->push.y * k;
-		self->vel.z = self->vel.z + self->push.z * k;
+		float k = dt * 1000.0f / self->wl.mass;
+		self->wl.obj.vel.x = k * self->push.x + self->wl.obj.vel.x;
+		self->wl.obj.vel.y = self->wl.obj.vel.y + self->push.y * k;
+		self->wl.obj.vel.z = self->wl.obj.vel.z + self->push.z * k;
 	}
 	Veh_StepThrust(self, dt);
 	float tx = self->turnX;
-	float ay = self->ang.y - tx * VEH_PI_F * 0.125f;
+	float ay = self->wl.obj.ang.y - tx * VEH_PI_F * 0.125f;
 	self->turnSpeedX = tx * self->strTrust;
 	float ty = self->turnY;
-	float ax = self->ang.x - ty * VEH_PI_F * 0.125f;
+	float ax = self->wl.obj.ang.x - ty * VEH_PI_F * 0.125f;
 	self->turnSpeedY = ty * self->strTrust;
 	/* the boost: forward at the boost speed */
 	if (!self->traffic[0x1c] && !self->cloudOn && self->boostKey && 0.0f >= self->boost &&
@@ -1817,21 +1814,21 @@ void __thiscall cVehicleEntity_Step(cVehicleEntity *self, float dt) {
 		in.x = 0.0f;
 		in.y = 0.0f;
 		in.z = -self->speed;
-		self->vel = *Vec3_RotateXY(&out, &in, ax, ay);
+		self->wl.obj.vel = *Vec3_RotateXY(&out, &in, ax, ay);
 		cVehicleEntity_StartBoost(self);
 	}
 	if (high) {
 		/* above the atmosphere the ship falls back, slower towards the space limit */
-		float lim = (g_SpaceLimit - self->base.pos.y) * VEH_BOOST_SPEED / (g_SpaceLimit - g_AtmosphereLimit);
-		float vy = self->vel.y - g_DebrisDefault * dt;
-		self->vel.y = vy;
+		float lim = (g_SpaceLimit - self->wl.obj.base.pos.y) * VEH_BOOST_SPEED / (g_SpaceLimit - g_AtmosphereLimit);
+		float vy = self->wl.obj.vel.y - g_DebrisDefault * dt;
+		self->wl.obj.vel.y = vy;
 		if (vy > lim) {
-			self->vel.y = lim;
+			self->wl.obj.vel.y = lim;
 		}
-		float pitch = self->ang.x;
+		float pitch = self->wl.obj.ang.x;
 		self->thrust = 0.0f;
 		if (pitch > 0.0f) {
-			self->ang.x = pitch - dt;
+			self->wl.obj.ang.x = pitch - dt;
 		}
 	} else {
 		Veh_StepFly(self, dt, ax, ay);
@@ -1842,36 +1839,36 @@ void __thiscall cVehicleEntity_Step(cVehicleEntity *self, float dt) {
 	float sp = self->speed;
 	if (sp > VEH_TOP_SPEED) {
 		float f = VEH_TOP_SPEED / sp;
-		self->vel.x = f * self->vel.x;
-		self->vel.y = self->vel.y * f;
-		self->vel.z = self->vel.z * f;
+		self->wl.obj.vel.x = f * self->wl.obj.vel.x;
+		self->wl.obj.vel.y = self->wl.obj.vel.y * f;
+		self->wl.obj.vel.z = self->wl.obj.vel.z * f;
 		self->speed = VEH_TOP_SPEED;
 	}
-	self->base.pos.x = self->base.pos.x + self->vel.x * dt;
-	self->base.pos.y = self->vel.y * dt + self->base.pos.y;
-	self->base.pos.z = self->vel.z * dt + self->base.pos.z;
+	self->wl.obj.base.pos.x = self->wl.obj.base.pos.x + self->wl.obj.vel.x * dt;
+	self->wl.obj.base.pos.y = self->wl.obj.vel.y * dt + self->wl.obj.base.pos.y;
+	self->wl.obj.base.pos.z = self->wl.obj.vel.z * dt + self->wl.obj.base.pos.z;
 	/* the turn gets slower with the speed */
 	float ms = self->maxSpeed;
 	float g = (ms + ms) / (self->speed + ms);
 	float rx = g * sy;
-	self->rotVel.x = rx;
-	float pitch = rx * dt + self->ang.x;
-	self->ang.x = pitch;
+	self->wl.obj.rotVel.x = rx;
+	float pitch = rx * dt + self->wl.obj.ang.x;
+	self->wl.obj.ang.x = pitch;
 	if (pitch > VEH_PI_2_F) {
-		self->ang.x = VEH_PI_2_F;
+		self->wl.obj.ang.x = VEH_PI_2_F;
 	} else if (-VEH_PI_2_F > pitch) {
-		self->ang.x = -VEH_PI_2_F;
+		self->wl.obj.ang.x = -VEH_PI_2_F;
 	}
 	float s2 = sx + sx;
 	float roll = (float)Game_Atan((double)(s2 - self->turnX)) * 0.5f;
 	self->roll = roll;
-	float az = self->ang.z;
+	float az = self->wl.obj.ang.z;
 	float rz = (roll - az) * 4.0f;
-	self->rotVel.z = rz;
+	self->wl.obj.rotVel.z = rz;
 	float ry = s2 * g;
-	self->rotVel.y = ry;
-	self->ang.z = rz * dt + az;
-	self->ang.y = ry * dt + self->ang.y;
+	self->wl.obj.rotVel.y = ry;
+	self->wl.obj.ang.z = rz * dt + az;
+	self->wl.obj.ang.y = ry * dt + self->wl.obj.ang.y;
 }
 
 /* ---- the model and the camera of a slot (vf24, rva 0x105ea0) ---- */
@@ -1882,30 +1879,23 @@ void __thiscall cVehicleEntity_Step(cVehicleEntity *self, float dt) {
 #define g_MotorTrustRotationY GAME_GLOBAL_IN(float, GVar_MotorTrustRotationY, 16, 0x447f98)
 #define g_PilotViewDist GAME_GLOBAL_IN(float, GVar_PilotViewDist, 16, 0x448238)	/* the pilot is drawn nearer to the camera */
 
-/* the camera data of the ship of a player (+0xf0) */
-#define VehCam_Fov(p) (*(float *)((p) + 0xa8))
-#define VehCam_Dist(p) (*(float *)((p) + 0x214))
-#define VehCam_Pitch(p) (*(uint32_t *)((p) + 0x218))
-#define VehCam_Shake(p) (*(float *)((p) + 0x21c))
-#define VehCam_F220(p) (*(float *)((p) + 0x220))
-
-#define VEH_CAM_PITCH 0xbe860a92u			/* -15 degrees */
+#define VEH_CAM_PITCH -0x1.0c1524p-2f			/* -15 degrees */
 #define VEH_FLOAT_PERIOD 25.132741228718345		/* 8 pi */
 
 /* the camera of a player ship: the shake, the field of view by the speed, the distance and the motion blur */
 static void Veh_UpdateCamera(cVehicleEntity *self) {
-	byte *pl = self->player;
+	cFollowCamEntity *cam = (cFollowCamEntity *)self->wl.obj.cam;
 	float sh = self->shake;
 	float lo = -sh;
 	double range = (double)(sh - Float_Keep(lo));
 	float r = (float)((double)(crt_rand() & 0x7fff) * 3.051850947599719e-05 * range + (double)lo);
 
-	VehCam_Shake(pl) = r * 0x1.99999ap-7f;
+	cam->camRot = r * 0x1.99999ap-7f;
 	float fov = (g_HiRacerFov - g_LoRacerFov) * self->smoothSpeed / VEH_TOP_SPEED + g_LoRacerFov;
-	VehCam_Fov(self->player) = (float)((double)fov * M_PI_D / 180.0);
-	VehCam_Dist(self->player) = self->slot == 1 ? g_VehicleCamDist2 : g_VehicleCamDist;
-	VehCam_Pitch(self->player) = VEH_CAM_PITCH;
-	float m = VehCam_F220(self->player) * 4.0f;
+	cam->base.cam.fov = (float)((double)fov * M_PI_D / 180.0);
+	cam->camDist = self->slot == 1 ? g_VehicleCamDist2 : g_VehicleCamDist;
+	cam->camAng = VEH_CAM_PITCH;
+	float m = cam->quakeTime * 4.0f;
 	float c = 0x1.666666p-2f;
 	float lim = c > m ? m : c;
 	float q = self->shake * 0x1.99999ap-1f;
@@ -1940,7 +1930,7 @@ static void Veh_UpdatePilotModel(cVehicleEntity *self, const vec3_t *pos, float 
 	matrix_t mtx;
 	byte near = 0;
 
-	if (g_SplitScreenGame || self->base.flag_4c) {
+	if (g_SplitScreenGame || self->wl.obj.base.flag_4c) {
 		cam = g_pWorld->camPos[g_pWorld->curCam];
 		float dy = pos->y - cam.y;
 		float dx = pos->x - cam.x;
@@ -1954,12 +1944,12 @@ static void Veh_UpdatePilotModel(cVehicleEntity *self, const vec3_t *pos, float 
 		if (u && u->vftable->IsType(u, TYEN_CAR) && Veh(u)->target[0]) {
 			/* the first two bytes as a short, then the rest */
 			uint16_t a, b;
-			memcpy(&a, self->base.name, 2);
+			memcpy(&a, self->wl.obj.base.name, 2);
 			memcpy(&b, Veh(u)->target, 2);
-			target = a == b && !strcmp(self->base.name + 2, Veh(u)->target + 2);
+			target = a == b && !strcmp(self->wl.obj.base.name + 2, Veh(u)->target + 2);
 		}
 	}
-	if (!self->base.flag_4c || (!near && !target)) {
+	if (!self->wl.obj.base.flag_4c || (!near && !target)) {
 		if (self->pilotNode != -1 && CGameModel_IsEnabled(&self->pilot)) {
 			CGameModel_Disable(&self->pilot);
 		}
@@ -1973,7 +1963,7 @@ static void Veh_UpdatePilotModel(cVehicleEntity *self, const vec3_t *pos, float 
 	} else {
 		CGameModel_Disable(&self->pilot);
 	}
-	CGameModel_NodeMatrix(&self->model, &mtx, (uint32_t)self->pilotNode, 0, NULL, 0);
+	CGameModel_NodeMatrix(&self->wl.obj.model, &mtx, (uint32_t)self->pilotNode, 0, NULL, 0);
 	CGameModel_SetRot(&self->pilot, Matrix_GetEuler(&mtx, &ang));
 	ppos.x = mtx.m[12];
 	ppos.y = mtx.m[13];
@@ -1984,11 +1974,11 @@ static void Veh_UpdatePilotModel(cVehicleEntity *self, const vec3_t *pos, float 
 
 void __thiscall cVehicleEntity_UpdateModel(cVehicleEntity *self) {
 	vec3_t rot, pos;
-	float h = (self->base.pos.y - g_AtmosphereLimit) / (g_SpaceLimit - g_AtmosphereLimit);
-	float t = Timer_GetTime(&self->timer) + self->timeOfs;
+	float h = (self->wl.obj.base.pos.y - g_AtmosphereLimit) / (g_SpaceLimit - g_AtmosphereLimit);
+	float t = Timer_GetTime(&self->wl.obj.timer) + self->timeOfs;
 
-	rot = self->renderRot;
-	pos = self->renderPos;
+	rot = self->wl.obj.renderAng;
+	pos = self->wl.obj.renderPos;
 	if (self->fixedModel) {
 		rot.x = 0.0f;
 		rot.y = 0.0f;
@@ -2002,24 +1992,24 @@ void __thiscall cVehicleEntity_UpdateModel(cVehicleEntity *self) {
 		rot.y = (float)(Game_Sin((double)(t * 0.5f)) * (double)h * 1.600000023841858) + rot.y;
 		rot.z = (float)(Game_Sin((double)(t * 0x1.666666p-1f)) * (double)h * 1.100000023841858) + rot.z;
 	}
-	if (self->player && self->slot != -1) {
+	if (self->wl.obj.cam && self->slot != -1) {
 		Veh_UpdateCamera(self);
 	}
-	if (self->fixedModel || self->player ||
-		(self->dying && self->f1a4 >= self->f1a8 && CGameModel_IsVisible(&self->model))) {
+	if (self->fixedModel || self->wl.obj.cam ||
+		(self->wl.obj.move.active && self->wl.obj.move.time >= self->wl.obj.move.moveTime && CGameModel_IsVisible(&self->wl.obj.model))) {
 		Veh_UpdateFloating(self, t, &rot, &pos);
 	}
-	if (CGameModel_IsLoaded(&self->model)) {
-		float dt = cTimer_GetDelta(&self->timer);
-		CGameModel_SetRot(&self->model, &rot);
-		CGameModel_SetPos(&self->model, &pos);
+	if (CGameModel_IsLoaded(&self->wl.obj.model)) {
+		float dt = cTimer_GetDelta(&self->wl.obj.timer);
+		CGameModel_SetRot(&self->wl.obj.model, &rot);
+		CGameModel_SetPos(&self->wl.obj.model, &pos);
 		Veh_UpdatePilotModel(self, &pos, dt);
 		cVehicleMotors_Update(Vehicle_Motors(self));
 		if (!self->rendering) {
 			cVehicleEffects_Update(&self->effects, dt);
 		}
 	}
-	if (self->embeddedFX && !self->rendering) {
-		self->embeddedFX->vftable->Update(self->embeddedFX);
+	if (Veh_FX(self) && !self->rendering) {
+		Veh_FX(self)->vftable->Update(Veh_FX(self));
 	}
 }

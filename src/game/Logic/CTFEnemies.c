@@ -227,7 +227,7 @@ void CTFEnemies_OnDamage(cAbstractFile *params) {
 	}
 	CHECK(v->vftable->IsType(v, TYEN_CAR));
 	cVehicleEntity *veh = (cVehicleEntity *)v;
-	if (veh->life >= (int)((float)veh->maxLife * 0.75f) || !attacker[0]) {
+	if (veh->wl.life >= (int)((float)veh->maxLife * 0.75f) || !attacker[0]) {
 		return;
 	}
 	cEntity *a = World_FindEntity(attacker);

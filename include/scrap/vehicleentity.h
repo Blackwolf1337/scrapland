@@ -12,6 +12,7 @@
 #include "scrap/sound.h"
 #include "scrap/timer.h"
 #include "scrap/vehicleeffects.h"
+#include "scrap/withlifeentity.h"
 
 #define CVEHICLEENTITY_VFTABLE GAME_VFTABLE(cVehicleEntity_vftable, 0x3b52bc)
 #define CVEHICLEENTITY_SIZE 0x814
@@ -59,42 +60,8 @@ SD_OFFSET(cNetVController, keys, 0x74);
 SD_SIZE(cNetVController, CNETVCONTROLLER_SIZE);
 
 struct cVehicleEntity {
-	cEntity base;			/* 0x000 */
-	byte pad_7c[0x94 - 0x7c];
-	vec3_t renderRot;		/* 0x094 the angles the model is drawn with */
-	vec3_t renderPos;		/* 0x0a0 */
-	vec3_t ang;			/* 0x0ac */
-	CGameModel model;		/* 0x0b8 */
-	vec3_t vel;			/* 0x0d4 */
-	vec3_t rotVel;			/* 0x0e0 */
-	byte pad_ec[0xf0 - 0xec];
-	byte *player;			/* 0x0f0 the camera data of the ship of a player, NULL else */
-	cNetVController *net;		/* 0x0f4 */
-	vec3_t camOfs;			/* 0x0f8 */
-	byte pad_104[0x110 - 0x104];
-	cTimer timer;			/* 0x110 */
-	byte pad_138[0x140 - 0x138];
-	byte *phys;			/* 0x140 the collision primitive: radius at 0x8, a float at 0xc */
-	cSndInterface sounds;		/* 0x144 */
-	byte pad_160[0x1a4 - 0x160];
-	float f1a4;			/* 0x1a4 */
-	float f1a8;			/* 0x1a8 */
-	byte dying;			/* 0x1ac */
-	byte pad_1ad[0x224 - 0x1ad];
-	struct cEmbeddedFXVehicle *embeddedFX;	/* 0x224 */
-	byte pad_228[0x230 - 0x228];
-	float mass;			/* 0x230 cWithLifeEntity */
-	byte pad_234[0x238 - 0x234];
-	int life;			/* 0x238 > 0 while the ship is alive (SLogic.GetNearestShip) */
-	byte pad_23c[0x28c - 0x23c];
-	float speedFactor;		/* 0x28c the smooth speed / 1000 */
-	byte pad_290[0x294 - 0x290];
-	float burnTime;			/* 0x294 */
-	byte pad_298[0x3a0 - 0x298];
-	float radius;			/* 0x3a0 of the collision sphere */
-	byte pad_3a4[0x3c4 - 0x3a4];
-	cSndInterface lifeSounds;	/* 0x3c4 */
-	byte pad_3e0[0x3e8 - 0x3e0];
+	cWithLifeEntity wl;		/* 0x000 */
+	/* cVehicleEntity */
 	float timeOfs;			/* 0x3e8 random, for the hover wobble */
 	byte launchTaunts;		/* 0x3ec "LaunchTaunts" */
 	byte pad_3ed[3];
@@ -177,16 +144,6 @@ struct cVehicleEntity {
 	int money;			/* 0x7ec "Money" */
 	cVehicleEffects effects;	/* 0x7f0 */
 };
-SD_OFFSET(cVehicleEntity, renderRot, 0x94);
-SD_OFFSET(cVehicleEntity, model, 0xb8);
-SD_OFFSET(cVehicleEntity, net, 0xf4);
-SD_OFFSET(cVehicleEntity, timer, 0x110);
-SD_OFFSET(cVehicleEntity, sounds, 0x144);
-SD_OFFSET(cVehicleEntity, dying, 0x1ac);
-SD_OFFSET(cVehicleEntity, embeddedFX, 0x224);
-SD_OFFSET(cVehicleEntity, life, 0x238);
-SD_OFFSET(cVehicleEntity, burnTime, 0x294);
-SD_OFFSET(cVehicleEntity, lifeSounds, 0x3c4);
 SD_OFFSET(cVehicleEntity, collision, 0x3f0);
 SD_OFFSET(cVehicleEntity, slot, 0x410);
 SD_OFFSET(cVehicleEntity, boostKey, 0x438);
@@ -212,7 +169,16 @@ static inline cVehicleEntity *Veh(cEntity *e) {
 }
 
 static inline cEntity *Veh_Ent(cVehicleEntity *v) {
-	return &v->base;
+	return &v->wl.obj.base;
+}
+
+/* the net controller of a vehicle is a cNetVController */
+static inline cNetVController *Veh_Net(const cVehicleEntity *v) {
+	return (cNetVController *)v->wl.obj.net;
+}
+
+static inline struct cEmbeddedFXVehicle *Veh_FX(const cVehicleEntity *v) {
+	return (struct cEmbeddedFXVehicle *)v->wl.obj.fx;
 }
 
 /* the cVehicleEntity vtable slots called here (thiscall) */
@@ -254,7 +220,7 @@ SD_OFFSET(cVehicleEntityVtbl2, SetPilot, 0xf0);
 SD_OFFSET(cVehicleEntityVtbl2, Crash, 0x104);
 
 static inline const cVehicleEntityVtbl2 *Veh_Vtbl(cVehicleEntity *v) {
-	return (const cVehicleEntityVtbl2 *)v->base.vftable;
+	return (const cVehicleEntityVtbl2 *)v->wl.obj.base.vftable;
 }
 
 /* the motors (rva 0x10d270.., not decompiled yet): their variables through the vtable at 0x720 */

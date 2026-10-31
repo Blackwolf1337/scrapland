@@ -109,7 +109,7 @@ PyObject *SLogic_GetNearestShip(PyObject *self, PyObject *args) {
 			if (e && !Entity_IsType(e, TYEN_CAR)) {
 				e = NULL;
 			}
-			if (!strcmp(e->name, exclude) || ((cVehicleEntity *)e)->life <= 0) {
+			if (!strcmp(e->name, exclude) || ((cVehicleEntity *)e)->wl.life <= 0) {
 				continue;
 			}
 			vec3_t tmp;

@@ -955,7 +955,7 @@ void __thiscall cObjElementFXVehicleEMI_Update(cObjElementFXVehicleEMI *self, cD
 	}
 	FX_Vtbl(self->entity)->SetFXParam(self->entity, 0, v);
 
-	if (!FXV_Veh(self->entity)->player) {
+	if (!FXV_Veh(self->entity)->wl.obj.cam) {
 		if (!CGameTrail_IsRender(&self->trails[0]) && !CGameTrail_IsRender(&self->trails[1])) {
 			return;
 		}
@@ -1206,12 +1206,12 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 		v = v * 5.0f;
 	}
 	FX_Vtbl(self->entity)->SetFXParam(self->entity, 0, v);
-	if (!(debris->speed > 0.0f) || !(self->emitTime > 0.04f) || !(FXV_Veh(self->entity)->burnTime > 0.5f)) {
+	if (!(debris->speed > 0.0f) || !(self->emitTime > 0.04f) || !(FXV_Veh(self->entity)->wl.fireRemain > 0.5f)) {
 		return;
 	}
 
 	const cVehicleEntity *veh = FXV_Veh(self->entity);
-	float life = (1.0f - veh->speedFactor * 0.25f) * 0.75f;
+	float life = (1.0f - veh->wl.fireAtt * 0.25f) * 0.75f;
 	float rad = FX_Vtbl(self->entity)->GetRadius(self->entity);
 	float s1 = FXV_Rand(0.20000000298023224, 0.20000000298023224) * rad;
 	float s2 = FXV_Rand(0.25, 0.8500000238418579) * rad;
@@ -1335,7 +1335,7 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 
 	/* the smoke behind an AI ship faster than 250 */
 	veh = FXV_Veh(self->entity);
-	if (!veh->player && veh->speed > 250.0f) {
+	if (!veh->wl.obj.cam && veh->speed > 250.0f) {
 		CGameParticles *po = &self->particlesOut;
 		float t;
 		po->birthRate = 0;
@@ -1888,10 +1888,10 @@ void __thiscall cObjElementFXVehicleDamage_Update(cObjElementFXVehicleDamage *se
 	e = self->entity;
 	float rad = FX_Vtbl(e)->GetRadius(e);
 	const cVehicleEntity *veh = FXV_Veh(self->entity);
-	byte *player = veh->player;
+	cEntity *cam = veh->wl.obj.cam;
 	Float_Approach(&self->level, (float)self->lifePct / (float)g_FXSetOnFireLifePercent, t);
-	CHECK(FXV_Veh(self->entity)->embeddedFX);
-	cEmbeddedFXVehicle *efx = FXV_Veh(self->entity)->embeddedFX;
+	CHECK(FXV_Veh(self->entity)->wl.obj.fx);
+	cEmbeddedFXVehicle *efx = Veh_FX(FXV_Veh(self->entity));
 	byte followed = efx->followed;
 	if (followed && Vehicle_Life(self->entity) > 0) {
 		cEmbeddedFXVehicle_SetAttached(efx, self);
@@ -1902,7 +1902,7 @@ void __thiscall cObjElementFXVehicleDamage_Update(cObjElementFXVehicleDamage *se
 
 	/* the smoke and sparks drawn once with the followed ship (FXVehicle_RenderAttached) */
 	byte vis;
-	if (player) {
+	if (cam) {
 		vis = !followed;
 	} else if (followed) {
 		vis = 0;
@@ -1922,7 +1922,7 @@ void __thiscall cObjElementFXVehicleDamage_Update(cObjElementFXVehicleDamage *se
 	}
 
 trail:
-	if (player && !g_SplitScreenGame) {
+	if (cam && !g_SplitScreenGame) {
 		return;
 	}
 	FXV_DamageTrail(self, &pos, &rot, t, rad);
@@ -2652,7 +2652,7 @@ void __thiscall cObjElementFXVehicleAccelerator_Update(cObjElementFXVehicleAccel
 	}
 	CGameModel_SetSortZ(Debris_Model(debris), -47.0f, 0.0f);
 	cEntity *e = self->owner;
-	if (!e || !e->vftable->IsType(e, TYEN_CAR) || !FXV_Veh(e)->player) {
+	if (!e || !e->vftable->IsType(e, TYEN_CAR) || !FXV_Veh(e)->wl.obj.cam) {
 		if (CGameParticles_IsVisible(&self->particles)) {
 			for (int i = 0; i < FXVACCEL_TRAILS; i++) {
 				self->fade[i] = 0.0f;

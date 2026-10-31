@@ -371,7 +371,7 @@ void __thiscall cWeaponScorer_Draw(cWeaponScorer *self, int player) {
 		uv1[1], sv0[0], sv0[1], sv1[0], sv1[1], 0, 0);
 	/* the row of the slots shows again after a change of the weapon or of the selection */
 	float show = g_WeaponChangeShowTime;
-	if ((v->life > 0 && show > 0.0f && w != sel) || w != self->lastWeapon) {
+	if ((v->wl.life > 0 && show > 0.0f && w != sel) || w != self->lastWeapon) {
 		self->slotsTime = show;
 		g_WeaponSlotCount = 0;
 		int k = WEAPON_LASER_WEAPON;

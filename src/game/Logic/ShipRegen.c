@@ -54,8 +54,8 @@ void __thiscall ShipRegen_UpdateShip(cShipRegen *self, float dt) {
 	}
 	cVehicleEntity *v = Veh(e);
 	s = self->ship;
-	if (s->endRate > 0.0f && s->rate > 0.0f && v->life > 0 && v->life < v->maxLife) {
-		int life = v->life;
+	if (s->endRate > 0.0f && s->rate > 0.0f && v->wl.life > 0 && v->wl.life < v->maxLife) {
+		int life = v->wl.life;
 		int at = g_LifeToLaunchCallback;
 		if (s->life >= at) {
 			if (at > life) {
@@ -64,15 +64,15 @@ void __thiscall ShipRegen_UpdateShip(cShipRegen *self, float dt) {
 		} else if (!(at > life)) {
 			ShipRegen_Callback(e, 1);
 		}
-		self->ship->life = v->life;
+		self->ship->life = v->wl.life;
 		self->ship->time = self->ship->time - dt;
 		float range = (float)v->maxLife - (float)g_LifeToLaunchCallback;
 		if (0.0f >= self->ship->time) {
 			do {
 				if (!Entity_God(e)) {
-					v->life++;
+					v->wl.life++;
 				}
-				float f = ((float)v->life - (float)g_LifeToLaunchCallback) / range;
+				float f = ((float)v->wl.life - (float)g_LifeToLaunchCallback) / range;
 				if (f > 1.0f) {
 					break;
 				}
@@ -84,13 +84,13 @@ void __thiscall ShipRegen_UpdateShip(cShipRegen *self, float dt) {
 				}
 			} while (0.0f >= self->ship->time);
 		}
-		if (v->life > v->maxLife && !Entity_God(e)) {
-			v->life = v->maxLife;
+		if (v->wl.life > v->maxLife && !Entity_God(e)) {
+			v->wl.life = v->maxLife;
 		}
 	}
 	cScorerItem *item = cScorer_FindItem(Scorer_Get(0), g_RegenerationItem);
 	if (item) {
-		double val = (double)(v->life - g_LifeToLaunchCallback) / (double)(v->maxLife - g_LifeToLaunchCallback);
+		double val = (double)(v->wl.life - g_LifeToLaunchCallback) / (double)(v->maxLife - g_LifeToLaunchCallback);
 		item->vftable->Var(item, "Value", 1, NULL, &val, NULL);
 	}
 }
