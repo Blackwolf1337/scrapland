@@ -67,15 +67,25 @@ SD_OFFSET(cAIVehicleGroup, numStoppedRoute, 0x70);
 SD_OFFSET(cAIVehicleGroup, numElevators, 0xec);
 SD_SIZE(cAIVehicleGroup, 0xf4);
 
-/* the first slots of every AI (cAIVehicle, cAIChar); variadic methods are __cdecl with self on the stack */
+/* the first slots of every AI (cAI::vftable of cAIVehicle, cAIChar); variadic methods are __cdecl with self on
+ * the stack */
 typedef struct cAIVtbl {
-	void *vf00_05[6];
+	void *(__thiscall *Delete)(void *self, byte flags);	/* 0x00 */
+	void(__thiscall *Update)(void *self, float dt);	/* 0x04 */
+	void(__thiscall *UpdateOff)(void *self, float dt);	/* 0x08 */
+	void(__thiscall *Draw)(void *self);			/* 0x0c */
+	byte(__thiscall *GetChanged)(void *self);		/* 0x10 */
+	byte(__thiscall *IsVisible)(void *self);		/* 0x14 */
 	void (*Debugf)(void *self, const char *fmt, ...);	/* 0x18 text of the AI debug view */
 } cAIVtbl;
 SD_OFFSET(cAIVtbl, Debugf, 0x18);
 
+static inline const cAIVtbl *AI_Vtbl(void *ai) {
+	return *(const cAIVtbl **)ai;
+}
+
 static inline void AI_Debugf(void *ai, const char *text) {
-	(*(const cAIVtbl **)ai)->Debugf(ai, text);
+	AI_Vtbl(ai)->Debugf(ai, text);
 }
 
 /* ---- the AI of a walking character (AI/AIChar.cpp, src/game/AI/IChar.c; the states and the functions in

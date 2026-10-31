@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/ai.h"
 #include "scrap/camcontrol.h"
 #include "scrap/collisiongrid.h"
 #include "scrap/console.h"
@@ -51,22 +52,12 @@ typedef struct cObjCamVtbl {
 } cObjCamVtbl;
 SD_OFFSET(cObjCamVtbl, UpdateOff, 0x70);
 
-typedef struct cObjAIVtbl {
-	void *vf00;
-	void(__thiscall *Tick)(void *ai, float dt);			/* 0x04 */
-	void(__thiscall *UpdateOff)(void *ai, float dt);		/* 0x08 */
-} cObjAIVtbl;
-
 static inline cObjEntity *Obj(cEntity *e) {
 	return (cObjEntity *)e;
 }
 
 static inline const cObjCamVtbl *Cam_Vtbl(cEntity *cam) {
 	return (const cObjCamVtbl *)cam->vftable;
-}
-
-static inline const cObjAIVtbl *AI_Vtbl(void *ai) {
-	return *(const cObjAIVtbl **)ai;
 }
 
 static inline uint32_t Float_Bits(float f) {
@@ -492,7 +483,7 @@ void __thiscall cObjEntity_Tick(cEntity *self, float dt) {
 	cObjMove_Tick(&Obj(self)->move, self, dt);
 	cObjEntity_RadarTick(self, dt);
 	if (self->ai) {
-		AI_Vtbl(self->ai)->Tick(self->ai, dt);
+		AI_Vtbl(self->ai)->Update(self->ai, dt);
 	}
 }
 

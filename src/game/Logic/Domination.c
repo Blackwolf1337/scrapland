@@ -117,7 +117,7 @@ void __thiscall cDominationLogic_UpdateShip(cDominationLogic *self, cEntity *v, 
 		if (st == AIV_STATE_CHASE || st == 0) {
 			enemy = cDominationLogic_FindEnemy(self, v->vftable->GetPos(v, &t2), baton, g_DominMaxRangeDist);
 		} else {
-			enemy = Logic_AsCar(Logic_AIVtbl(ai)->GetTarget(ai));
+			enemy = Logic_AsCar(ai->vftable->GetTargetEnt(ai));
 		}
 		if (!enemy) {
 			if (st != AIV_STATE_CHASE) {

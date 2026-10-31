@@ -121,7 +121,7 @@ void __thiscall cSentinelLocalLogic_Think(cSentinelLocalLogic *self, float dt, b
 		self->time = self->time - dt;
 	} else {
 		cAIChar *ai = p->vftable->GetAI(p);
-		if (!Logic_CharAIVtbl(ai)->Vf94(ai)) {
+		if (!ai->vftable->GetDirect(ai)) {
 			self->time = self->time - dt;
 		}
 	}
@@ -287,7 +287,7 @@ void __thiscall cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEnti
 					break;
 				}
 			}
-			if (Logic_CharAIVtbl(ai)->Vf94(ai)) {
+			if (ai->vftable->GetDirect(ai)) {
 				self->time = g_SentinelAcuseTime;
 			}
 			WChar_B381(p) = 0;

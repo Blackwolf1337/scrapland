@@ -9,16 +9,6 @@
 #include "scrap/fxelements.h"
 #include "scrap/primitive.h"
 
-/* the AI of the nurse: whether it has a target and which */
-typedef struct NurseAIVtbl {
-	void *vf00_0d[14];
-	int(__thiscall *HasTarget)(void *ai);			/* 0x38 */
-	void *vf0f_11[3];
-	cEntity *(__thiscall *GetTarget)(void *ai);		/* 0x48 */
-} NurseAIVtbl;
-SD_OFFSET(NurseAIVtbl, HasTarget, 0x38);
-SD_OFFSET(NurseAIVtbl, GetTarget, 0x48);
-
 /* the sphere test of the hit: params a character, not the nurse; the player is never the target */
 void ChType_NurseSphereHit(cAbstractFile *params) {
 	char name[0x80];
@@ -283,10 +273,9 @@ void ChType_NurseHit(void) {
 	if (!v->vftable->GetAI(v)) {
 		cWorld_SphereCallF(g_pWorld, 0x10, &hit, g_NurseDispRad, g_ChTypeSphereFunc, 0);
 	} else {
-		void *ai = v->vftable->GetAI(v);
-		const NurseAIVtbl *vt = *(const NurseAIVtbl **)ai;
-		if (vt->HasTarget(ai)) {
-			g_NurseTarget = vt->GetTarget(ai);
+		cAIChar *ai = v->vftable->GetAI(v);
+		if (ai->vftable->GetTarget(ai)) {
+			g_NurseTarget = ai->vftable->GetTargetEnt(ai);
 			if (!g_NurseTarget) {
 				goto fail;
 			}

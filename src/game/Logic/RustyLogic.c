@@ -111,7 +111,7 @@ void __thiscall cRustyLocalLogic_Update(cRustyLocalLogic *self, float dt) {
 	}
 	if (st == 7) {
 		cAIChar *ai = p->vftable->GetAI(p);
-		if (ai->vftable->GetState(ai) || !Logic_CharAIVtbl(ai)->Stopped(ai)) {
+		if (ai->vftable->GetState(ai) || !ai->vftable->GetArrived(ai)) {
 			return;
 		}
 		if (strcmp(p->vftable->GetClassName(p), TYEN_WALKCHAR)) {

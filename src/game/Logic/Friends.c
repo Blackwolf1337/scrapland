@@ -53,7 +53,7 @@ void __thiscall cFriends_Attack(cFriends *self, cEntity *usr) {
 			continue;
 		}
 		if (st == AIV_STATE_ATTACK) {
-			cEntity *t = Logic_AIVtbl(ai)->GetTarget(ai);
+			cEntity *t = ai->vftable->GetTargetEnt(ai);
 			if (!t || !Friends_IsEnemyCar(v, t)) {
 				cAIVehicle_SetState(ai, 0);
 			}

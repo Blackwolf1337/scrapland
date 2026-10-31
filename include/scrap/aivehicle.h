@@ -80,7 +80,9 @@ typedef struct cAIVehicleVtbl {
 	void *vf08_0c[5];
 	void(__thiscall *OnEvent)(cAIVehicle *self, int ev);				/* 0x34 the debug text of the event */
 	Nto1Node *(__thiscall *GetTargetNode)(cAIVehicle *self);			/* 0x38 &target */
-	void *vf0f_15[7];
+	void *vf0f_11[3];
+	cEntity *(__thiscall *GetTargetEnt)(cAIVehicle *self);				/* 0x48 the target */
+	void *vf13_15[3];
 	byte(__thiscall *Event)(cAIVehicle *self, int ev);				/* 0x58 vf22 */
 	byte(__thiscall *IsMoving)(cAIVehicle *self);					/* 0x5c vf23 */
 	byte(__thiscall *CanTarget)(cAIVehicle *self, cEntity *e);			/* 0x60 */

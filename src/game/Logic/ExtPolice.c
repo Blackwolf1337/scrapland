@@ -99,7 +99,7 @@ void ExtPolice_CopDamage(const char *name, const char *attacker, byte died) {
 	if (!cEntity_GetListName(a) || strcmp(cEntity_GetListName(a), "Friends")) {
 		return;
 	}
-	if (cAIVehicle_GetState(ai) == AIV_STATE_ATTACK && Logic_AIVtbl(ai)->GetTarget(ai) == cWorld_GetUsrEntity(g_pWorld,
+	if (cAIVehicle_GetState(ai) == AIV_STATE_ATTACK && ai->vftable->GetTargetEnt(ai) == cWorld_GetUsrEntity(g_pWorld,
 		0)) {
 		cAIVehicle_SetState(ai, AIV_STATE_ATTACK, a);
 	}
@@ -157,7 +157,7 @@ void __fastcall cExtPolice_Think(cExtPolice *self) {
 				continue;
 			}
 		} else if (alarm) {
-			if (cAIVehicle_ControlFlag(ai) && Logic_AIVtbl(ai)->GetTarget(ai) == usr) {
+			if (cAIVehicle_ControlFlag(ai) && ai->vftable->GetTargetEnt(ai) == usr) {
 				Alarm_Set(&g_pWorld->alarm, 1.0f);
 				self->raised = 1;
 			}
@@ -202,7 +202,7 @@ void __fastcall cExtPolice_Think(cExtPolice *self) {
 			} else if (0.0f >= self->retarget) {
 				int st = cAIVehicle_GetState(ai);
 				if ((st != AIV_STATE_ATTACK && cAIVehicle_GetState(ai) != AIV_STATE_CHASE) ||
-					Logic_AIVtbl(ai)->GetTarget(ai) != usr) {
+					ai->vftable->GetTargetEnt(ai) != usr) {
 					ExtPolice_Hunt(ai, usr);
 				}
 			}
@@ -246,7 +246,7 @@ byte ExtPolice_IsChased(cEntity *e) {
 			continue;
 		}
 		cAIVehicle *ai = c->vftable->GetAI(c);
-		if (ai && Logic_AIVtbl(ai)->GetTarget(ai) == e) {
+		if (ai && ai->vftable->GetTargetEnt(ai) == e) {
 			return 1;
 		}
 	}

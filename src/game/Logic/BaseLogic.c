@@ -153,7 +153,7 @@ byte __thiscall cBaseLocalLogic_UpdateBusy(cBaseLocalLogic *self) {
  * AI states */
 void Logic_ShowChar(Nto1Node *node, const char **names) {
 	char state[0x100], sub[0x100];
-	byte goal[0xc8];
+	cAICharSaved goal;
 	vec3_t p, lp, tmp;
 	CFont *font;
 
@@ -161,17 +161,17 @@ void Logic_ShowChar(Nto1Node *node, const char **names) {
 	cBaseLocalLogic *l = e->lLogic;
 	e->vftable->GetPos(e, &p);
 	int st = l->state;
-	void *ai = e->vftable->GetAI(e);
-	Logic_CharAIVtbl(ai)->GetStateName(ai, state);
-	Logic_CharAIVtbl(ai)->GetSubStateName(ai, sub);
+	cAIChar *ai = e->vftable->GetAI(e);
+	ai->vftable->GetStateName(ai, state);
+	ai->vftable->GetInternStateName(ai, sub);
 	cEntity *t = l->target.target;
 	if (t) {
 		DebugUtils_DrawLine(&p, t->vftable->GetPos(t, &tmp), 0xff0000);
 	} else {
 		ai = e->vftable->GetAI(e);
-		if (ai && Logic_CharAIVtbl(ai)->GetState(ai) == 4) {
-			Logic_CharAIVtbl(ai)->GetGoal(ai, goal);
-			DebugUtils_DrawLine(&p, (vec3_t *)(goal + 8), 0xff0000);
+		if (ai && ai->vftable->GetState(ai) == 4) {
+			ai->vftable->SaveTo(ai, &goal);
+			DebugUtils_DrawLine(&p, &goal.dest, 0xff0000);
 		}
 	}
 	if (l->busy) {
@@ -216,8 +216,8 @@ void Logic_ShowShip(cEntity *e) {
 	cAIVehicle_GetStateName(ai, state);
 	cAIVehicle_GetInternStateName(ai, sub);
 	int st = cAIVehicle_GetState(ai);
-	if ((st == AIV_STATE_ATTACK || st == AIV_STATE_CHASE) && Logic_AIVtbl(ai)->GetTarget(ai)) {
-		cEntity *t = Logic_AIVtbl(ai)->GetTarget(ai);
+	if ((st == AIV_STATE_ATTACK || st == AIV_STATE_CHASE) && ai->vftable->GetTargetEnt(ai)) {
+		cEntity *t = ai->vftable->GetTargetEnt(ai);
 		DebugUtils_DrawLine(&p, t->vftable->GetPos(t, &lp), 0xff0000);
 	}
 	g_FontTerminal8->color = 0xffffff;
@@ -341,8 +341,8 @@ void __thiscall cBaseLocalLogic_Refresh(cBaseLocalLogic *self) {
 	if (self->idle || self->alwaysLock || self->busy || !p->vftable->IsType(p, TYEN_WALKCHAR)) {
 		return;
 	}
-	void *ai = p->vftable->GetAI(p);
-	if (Logic_CharAIVtbl(ai)->GetState(ai) == 6) {
+	cAIChar *ai = p->vftable->GetAI(p);
+	if (ai->vftable->GetState(ai) == 6) {
 		self->idle = 1;
 		self->vftable->SetState(self, self->state, self->target.target);
 	}

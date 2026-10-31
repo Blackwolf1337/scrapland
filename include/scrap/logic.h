@@ -10,6 +10,7 @@
 
 #include "scrap/actions.h"
 #include "scrap/ai.h"
+#include "scrap/aivehicle.h"
 #include "scrap/alarm.h"
 #include "scrap/collisiongrid.h"
 #include "scrap/cstring.h"
@@ -341,30 +342,6 @@ void Logic_ShowShip(cEntity *e);
 void Logic_ShowShips(void);
 void Logic_ShowShipList(const char *name, byte visible);
 void Logic_ShowAI(byte visible);
-/* the slots of the AI of a character the logics call (the debug texts, the walks) */
-typedef struct cLogicAICharVtbl {
-	void *vf00_12[19];
-	byte(__thiscall *Stopped)(void *self);				/* 0x4c cAIMove vf19: the byte at 0x85 */
-	void *vf14_1e[11];
-	int(__thiscall *GetState)(void *self);				/* 0x7c */
-	void *vf20_21[2];
-	void(__thiscall *GetStateName)(void *self, char *out);		/* 0x88 */
-	void *vf23;
-	void(__thiscall *GetSubStateName)(void *self, char *out);	/* 0x90 */
-	byte(__thiscall *Vf94)(void *self);				/* 0x94 slot 0x28 of its control (0x19c) */
-	void *vf26_28[3];
-	void(__thiscall *GetGoal)(void *self, void *out);		/* 0xa4 a point at +8 of out */
-} cLogicAICharVtbl;
-SD_OFFSET(cLogicAICharVtbl, Stopped, 0x4c);
-SD_OFFSET(cLogicAICharVtbl, GetState, 0x7c);
-SD_OFFSET(cLogicAICharVtbl, GetStateName, 0x88);
-SD_OFFSET(cLogicAICharVtbl, Vf94, 0x94);
-SD_OFFSET(cLogicAICharVtbl, GetGoal, 0xa4);
-
-static inline const cLogicAICharVtbl *Logic_CharAIVtbl(void *ai) {
-	return *(const cLogicAICharVtbl **)ai;
-}
-
 /* the slots without code shared by the logic classes */
 byte __thiscall Logic_True(void *self);
 byte __thiscall Logic_False(void *self);
@@ -405,22 +382,8 @@ void __thiscall cGenCharLocalLogic_OnRobbery(cGenCharLocalLogic *self, cEntity *
 const char *__thiscall cActCtrl_GetDefLoopName(void *ctrl);
 
 /* ---- the multiplayer modes (of cLogicControl) ---- */
-/* the AI vehicle slots the modes use */
-typedef struct cLogicAIVehicleVtbl {
-	void *vf00_0d[14];
-	void *(__thiscall *GetAttack)(cAIVehicle *self);	/* 0x38 the attack data, the target at +8 */
-	void *vf0f_11[3];
-	cEntity *(__thiscall *GetTarget)(cAIVehicle *self);	/* 0x48 the same target */
-} cLogicAIVehicleVtbl;
-SD_OFFSET(cLogicAIVehicleVtbl, GetAttack, 0x38);
-SD_OFFSET(cLogicAIVehicleVtbl, GetTarget, 0x48);
-
-static inline const cLogicAIVehicleVtbl *Logic_AIVtbl(cAIVehicle *ai) {
-	return *(const cLogicAIVehicleVtbl **)ai;
-}
-
 static inline cEntity *Logic_AttackTarget(cAIVehicle *ai) {
-	return *(cEntity **)((byte *)Logic_AIVtbl(ai)->GetAttack(ai) + 8);
+	return (cEntity *)ai->vftable->GetTargetNode(ai)->target;
 }
 
 /* the vehicle AI state constants the modes use */
