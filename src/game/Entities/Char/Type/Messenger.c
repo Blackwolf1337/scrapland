@@ -65,7 +65,7 @@ void ChType_MessengerAttack(cAbstractFile *params) {
 		cPad_Rumble(&g_Pads[0], 0.0f, 0.75f, 0.125f);
 	}
 	if (target) {
-		const char *cls = *(const char **)(ChType_ActClass(ChType_ActCtrl(target)) + 4);
+		const char *cls = ChType_ActClass(ChType_ActCtrl(target))->name;
 		const char *dpn = g_MessengerDataPack;
 		if (!strcmp(cls, "Messenger") && *dpn) {
 			cEntity *dp = World_FindEntity(dpn);
@@ -125,7 +125,7 @@ void ChType_MessengerTakeDataPack(cAbstractFile *params) {
 	cAbstractFile_ReadString(params, name, 0x80);
 	cEntity *m = World_FindEntity(name);
 	if (!m || !m->vftable->IsType(m, TYEN_WALKCHAR) ||
-		strcmp(*(const char **)(ChType_ActClass(ChType_ActCtrl(m)) + 4), "Messenger") ||
+		strcmp(ChType_ActClass(ChType_ActCtrl(m))->name, "Messenger") ||
 		strcmp(g_MessengerDataPack, item) ||
 		!crt_strncmp(cActCtrl_GetActionName(ChType_ActCtrl(m), 0), "Flashed", 7)) {
 		return;

@@ -2773,7 +2773,7 @@ void __thiscall cObjElementFXBankMasterAttack_Update(cObjElementFXBankMasterAtta
 	byte action = 0;
 	if (ctrl) {
 		action = cActCtrl_IsActive(ctrl, "Action");
-		layer = *cActCtrl_GetLayer(ctrl, 0) / 1.33f;
+		layer = cActCtrl_GetLayer(ctrl, 0)->time / 1.33f;
 	}
 	if (!action) {
 		self->t = dt + self->t;

@@ -13,7 +13,7 @@ static inline cFollowCamEntity *Dtritus_Cam(cEntity *v) {
 
 /* the relax action of the class: RelaxAlarm while the alarm runs, when the class has one */
 static const char *Dtritus_Relax(cEntity *v) {
-	if (ChType_ActCtrl(v) && ChType_ActClass(ChType_ActCtrl(v))[0x18b] &&
+	if (ChType_ActCtrl(v) && ChType_ActClass(ChType_ActCtrl(v))->relaxAlarm &&
 		(g_pWorld->alarm.hasGuaranteed || g_pWorld->alarm.on)) {
 		return "RelaxAlarm";
 	}

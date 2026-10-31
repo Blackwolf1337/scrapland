@@ -105,7 +105,7 @@ void ChType_BishopAttack(cAbstractFile *params) {
 		}
 		cVehicleAttack_HitBy(WChar_Attack(target), v->name);
 		if (!cWalkCharEntity_GetOwnerSlot(v)) {
-			const char *cls = *(const char **)(ChType_ActClass(ChType_ActCtrl(target)) + 4);
+			const char *cls = ChType_ActClass(ChType_ActCtrl(target))->name;
 			float level;
 			if (WChar_Life(target) <= 0) {
 				if (WChar_PrevLife(target) > 0) {

@@ -159,16 +159,16 @@ void ChType_FXDesktopFallEnd(cAbstractFile *params) {
 
 /* the characters a landing pays twice for */
 static byte Desktop_BonusClass(cEntity *t) {
-	const char *cls = *(const char **)(ChType_ActClass(ChType_ActCtrl(t)) + 4);
+	const char *cls = ChType_ActClass(ChType_ActCtrl(t))->name;
 
 	if (!strcmp(cls, "Gear")) {
 		return 1;
 	}
-	cls = *(const char **)(ChType_ActClass(ChType_ActCtrl(t)) + 4);
+	cls = ChType_ActClass(ChType_ActCtrl(t))->name;
 	if (!strcmp(cls, "Police")) {
 		return 1;
 	}
-	cls = *(const char **)(ChType_ActClass(ChType_ActCtrl(t)) + 4);
+	cls = ChType_ActClass(ChType_ActCtrl(t))->name;
 	return !strcmp(cls, "Sentinel");
 }
 

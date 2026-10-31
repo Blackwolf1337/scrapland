@@ -222,8 +222,8 @@ const char *__thiscall cActCtrl_GetActionName(void *ctrl, int i) {
 	return ACT_EMPTY;
 }
 
-float *__thiscall cActCtrl_GetLayer(void *ctrl, int i) {
-	return (float *)&((cActCtrl *)ctrl)->layers[i];
+cActLayer *__thiscall cActCtrl_GetLayer(void *ctrl, int i) {
+	return &((cActCtrl *)ctrl)->layers[i];
 }
 
 const char *__thiscall cActCtrl_GetDefLoopName(void *ctrl) {

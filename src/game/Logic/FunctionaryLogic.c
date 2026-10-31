@@ -142,7 +142,7 @@ byte __thiscall cFunctionaryLocalLogic_Vf02(cFunctionaryLocalLogic *self) {
 		return 1;
 	}
 	cEntity *usr = ChType_Usr0();
-	if (strcmp(*(char **)(ChType_ActClass(ChType_ActCtrl(usr)) + 4), "Functionary") &&
+	if (strcmp(ChType_ActClass(ChType_ActCtrl(usr))->name, "Functionary") &&
 		!Func_Vtbl(self)->CanTalk(self)) {
 		Func_Vtbl(self)->SetState(self, 3, usr);
 		return 0;

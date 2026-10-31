@@ -323,7 +323,7 @@ found:
 	vec3_t a = *WChar_Ang(v);
 	WChar_DisplAng(v) = NormAng(r.y - a.y);
 	WChar_DisplOn(v) = 1;
-	const char *cls = *(const char **)(ChType_ActClass(ChType_ActCtrl(g_NurseTarget)) + 4);
+	const char *cls = ChType_ActClass(ChType_ActCtrl(g_NurseTarget))->name;
 	const char *act = cActCtrl_GetActionName(ChType_ActCtrl(g_NurseTarget), 0);
 	if (usr && crt_strncmp(act, "Dazed", 5)) {
 		AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, v->vftable->GetPos(v, &t3));

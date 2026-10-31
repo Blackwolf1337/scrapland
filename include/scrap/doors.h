@@ -48,7 +48,6 @@ byte __thiscall cActCtrl_Play(void *ctrl, const char *action, int arg, float spe
 /* the action that runs when nothing else does; a warning if the class has no such action */
 void __thiscall cActCtrl_SetDefLoop(void *ctrl, const char *action, byte force);
 /* the layer i of the actions (16 bytes, the time of its action first) */
-float *__thiscall cActCtrl_GetLayer(void *ctrl, int i);
 
 /* vehicles: a state flag for the network game, and the speed from the velocity */
 void __thiscall cVehicleEntity_SetNetFlag(cEntity *self, byte on);

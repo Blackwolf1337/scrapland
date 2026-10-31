@@ -188,7 +188,7 @@ void __thiscall Alarm_Update(cAlarm *self, float dt) {
 		return;
 	}
 	if (usr->vftable->IsType(usr, TYEN_WALKCHAR)) {
-		Str_Copy(self->chars, *(char **)(ChType_ActClass(ChType_ActCtrl(usr)) + 4), 0x200);
+		Str_Copy(self->chars, ChType_ActClass(ChType_ActCtrl(usr))->name, 0x200);
 	} else if (usr->vftable->IsType(usr, TYEN_CAR)) {
 		const char *pilot = Veh_Vtbl((cVehicleEntity *)usr)->GetPilot((cVehicleEntity *)usr, 0);
 		if (*pilot) {

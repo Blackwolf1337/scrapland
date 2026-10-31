@@ -403,10 +403,10 @@ void __thiscall cBaseLocalLogic_Update(cBaseLocalLogic *self, float dt) {
 		if (self->rageTime > g_GearRageMaxTime && !g_pWorld->alarm.on) {
 			cEntity *t = World_FindEntity(Nto1Node_TargetName(WChar_Link(p)));
 			if (t && t != cWorld_GetUsrEntity(g_pWorld, 0) &&
-				strcmp(*(char **)(ChType_ActClass(ChType_ActCtrl(t)) + 4), g_NotCleanableByGear)) {
+				strcmp(ChType_ActClass(ChType_ActCtrl(t))->name, g_NotCleanableByGear)) {
 				cEntity *victim = t;
 				if (t->vftable->IsType(t, TYEN_WALKCHAR) &&
-					(!strcmp(*(char **)(ChType_ActClass(ChType_ActCtrl(t)) + 4), "Gear") ||
+					(!strcmp(ChType_ActClass(ChType_ActCtrl(t))->name, "Gear") ||
 					((cObjEntity *)t)->radarShow)) {
 					victim = p;
 				}

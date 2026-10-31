@@ -73,17 +73,13 @@ static inline void *ChType_ActCtrl(cEntity *e) {
 }
 
 /* the action class of the controller */
-static inline byte *ChType_ActClass(void *ctrl) {
-	return *(byte **)((byte *)ctrl + 8);
+static inline cActClass *ChType_ActClass(void *ctrl) {
+	return ((cActCtrl *)ctrl)->cls;
 }
-
-/* a layer of the controller (cActCtrl_GetLayer): its action and the time in it */
-#define ChType_LayerAction(l) (*(void **)((byte *)(l) + 4))
-#define ChType_LayerTime(l) (*(float *)((byte *)(l) + 8))
 
 /* the action of layer 0 of the controller has a priority (another one runs) */
 static inline int ChType_ActPriority(void *ctrl) {
-	return *(int *)(*(byte **)((byte *)ctrl + 0x14) + 0x64);
+	return ((cActCtrl *)ctrl)->layers[0].action->priority;
 }
 
 /* the slots of the local logic of a character the types call */
@@ -111,10 +107,10 @@ SD_OFFSET(cChTypeLogicVtbl, SetPaused, 0x50);
 SD_OFFSET(cChTypeLogicVtbl, Resume, 0x60);
 
 /* the fields of the local logic of a character (cBaseLocalLogic, Logic/BaseLogic.cpp) */
-#define ChLogic_Target(l) (*(cEntity **)((byte *)(l) + 0x10))		/* of the state */
-#define ChLogic_Paused(l) (*(byte *)((byte *)(l) + 0x28))
-#define ChLogic_B2a(l) (*(byte *)((byte *)(l) + 0x2a))
-#define ChLogic_I74(l) (*(int *)((byte *)(l) + 0x74))
+#define ChLogic_Target(l) ((cEntity *)((cBaseLocalLogic *)(l))->target.target)	/* of the state */
+#define ChLogic_Idle(l) (((cBaseLocalLogic *)(l))->idle)
+#define ChLogic_AlwaysLock(l) (((cBaseLocalLogic *)(l))->alwaysLock)
+#define ChLogic_PoliceResult(l) (((cLittlePoliceLocalLogic *)(l))->policeResult)	/* of a police logic */
 
 /* the action of layer 0 of the controller */
 #define ChType_Action0(ctrl) ((void *)((cActCtrl *)(ctrl))->layers[0].action)
@@ -340,7 +336,7 @@ void ChType_ActionSound(cEntity *v, byte loop, byte stop);
 
 /* the class name of the action class of a character */
 static inline const char *ChType_ClassName(cEntity *e) {
-	return *(const char **)(ChType_ActClass(ChType_ActCtrl(e)) + 4);
+	return ChType_ActClass(ChType_ActCtrl(e))->name;
 }
 
 #define WChar_DisplOn(e) (WChar(e)->disableControl)		/* "DisableControl": the slot only turns the body */

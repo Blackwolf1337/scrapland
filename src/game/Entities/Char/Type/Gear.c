@@ -512,8 +512,8 @@ int ChType_FlashChar(cEntity *e) {
 	if (!flashed) {
 		return 0;
 	}
-	if (flashed == ChType_LayerAction(cActCtrl_GetLayer(ChType_ActCtrl(e), 0))) {
-		ChType_LayerTime(cActCtrl_GetLayer(ChType_ActCtrl(e), 0)) = 0.0f;
+	if (flashed == cActCtrl_GetLayer(ChType_ActCtrl(e), 0)->action) {
+		cActCtrl_GetLayer(ChType_ActCtrl(e), 0)->event = NULL;
 		return 1;
 	}
 	if (cActCtrl_PlayNew(ChType_ActCtrl(e), "FlashedInit", 0, 1.0f)) {
@@ -555,11 +555,11 @@ void ChType_FlashHit(cAbstractFile *params) {
 	if (FLASH_ANGLE > __builtin_fabs((double)n)) {
 		return;
 	}
-	if (flashed == ChType_LayerAction(cActCtrl_GetLayer(ChType_ActCtrl(e), 0))) {
+	if (flashed == cActCtrl_GetLayer(ChType_ActCtrl(e), 0)->action) {
 		if (g_FlashResult <= 0) {
 			g_FlashResult = 1;
 		}
-		ChType_LayerTime(cActCtrl_GetLayer(ChType_ActCtrl(e), 0)) = 0.0f;
+		cActCtrl_GetLayer(ChType_ActCtrl(e), 0)->event = NULL;
 		return;
 	}
 	if (g_FlashMax != -1 && g_FlashCount >= g_FlashMax) {

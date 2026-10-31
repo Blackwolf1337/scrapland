@@ -21,7 +21,7 @@ void ChType_ListeningMayor(cAbstractFile *params) {
 	void *acm = ChType_Vtbl(g_MayorEnt)->FindAction(g_MayorEnt, "MayorListen");
 	cLocalLogic *ll = Logic_GetLocalLogic(g_MayorEnt);
 	CHECK(ll && acm);
-	if (!ChLogic_Paused(ll) && !ChLogic_B2a(ll)) {
+	if (!ChLogic_Idle(ll) && !ChLogic_AlwaysLock(ll)) {
 		ChLogic_Vtbl(ll)->SetPaused(ll, 1);
 	} else {
 		cEntity *mayor = WChar_Listen(g_MayorEnt);
@@ -88,7 +88,7 @@ void ChType_MayorSphereHit(cAbstractFile *params) {
 		return;
 	}
 	byte usr = cWalkCharEntity_GetOwnerSlot(g_MayorEnt) != -1;
-	if (!alarm && (!usr || strcmp(*(const char **)(ChType_ActClass(ChType_ActCtrl(e)) + 4), "Sentinel"))) {
+	if (!alarm && (!usr || strcmp(ChType_ActClass(ChType_ActCtrl(e))->name, "Sentinel"))) {
 		if (ChType_Action0(ChType_ActCtrl(e)) == acm) {
 			goto sleep;
 		}

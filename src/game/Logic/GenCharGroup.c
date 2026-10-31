@@ -122,7 +122,7 @@ static const struct {
 void *GenCharGroup_MakeLogic(cEntity *e) {
 	CHECK(e && "e");
 	CHECK(e->vftable->IsType(e, TYEN_WALKCHAR) && "e->IsType(TYEN_WALKCHAR)");
-	const char *type = *(char **)(ChType_ActClass(ChType_ActCtrl(e)) + 4);
+	const char *type = ChType_ActClass(ChType_ActCtrl(e))->name;
 	for (size_t i = 0; i < sizeof(g_GenCharTypes) / sizeof(g_GenCharTypes[0]); i++) {
 		size_t n = g_GenCharTypes[i].prefix;
 		if (n ? strncmp(type, g_GenCharTypes[i].type, n) : strcmp(type, g_GenCharTypes[i].type)) {

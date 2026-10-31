@@ -968,7 +968,7 @@ void __thiscall cObjElementFXSceneDecontamination_Update(cObjElementFXSceneDecon
 	cEntity *te = self->target;
 	CHECK(WithLife_Vtbl(te)->GetActCtrl(te));
 	byte active = cActCtrl_IsActive(WithLife_Vtbl(te)->GetActCtrl(te), self->action);
-	float actT = *cActCtrl_GetLayer(WithLife_Vtbl(te)->GetActCtrl(te), 0);
+	float actT = cActCtrl_GetLayer(WithLife_Vtbl(te)->GetActCtrl(te), 0)->time;
 	CHECK(CGameModel_IsLoaded(FX_Vtbl(self->ent)->GetModel(self->ent)));
 	CGameModel *target = FX_Vtbl(te)->GetModel(te);
 	CHECK(CGameModel_IsLoaded(target));

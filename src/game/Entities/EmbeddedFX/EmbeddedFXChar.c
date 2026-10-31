@@ -1395,8 +1395,8 @@ void __thiscall cEmbeddedFXCrazyGambler_Update(cEmbeddedFXCrazyGambler *self, fl
 	self->visible = vis;
 	byte hand = cActCtrl_IsActive(WLife_Vtbl(e)->GetActCtrl(e), "Relax1");
 	if (hand) {
-		const float *t = cActCtrl_GetLayer(WLife_Vtbl(e)->GetActCtrl(e), 0);
-		if (1.5f > *t || *t > 5.0f) {
+		const cActLayer *l = cActCtrl_GetLayer(WLife_Vtbl(e)->GetActCtrl(e), 0);
+		if (1.5f > l->time || l->time > 5.0f) {
 			hand = 0;
 		}
 	}

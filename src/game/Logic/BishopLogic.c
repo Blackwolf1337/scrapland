@@ -77,7 +77,7 @@ cEntity *__thiscall cBishopLocalLogic_FindTarget(cBishopLocalLogic *self) {
 	cEntity *p = self->base.parent;
 	cEntity *e = Logic_FindInView(p, g_pWorld->logic.genChars.genChars, g_GenCharStdFar, g_GenCharStdFovY,
 		g_GenCharStdFovX, 1, NULL);
-	if (e && strcmp(*(char **)(ChType_ActClass(ChType_ActCtrl(e)) + 4), "Bishop")) {
+	if (e && strcmp(ChType_ActClass(ChType_ActCtrl(e))->name, "Bishop")) {
 		return e;
 	}
 	for (size_t i = 0; i < sizeof(lists) / sizeof(lists[0]); i++) {

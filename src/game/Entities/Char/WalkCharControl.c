@@ -175,7 +175,7 @@ void __thiscall cWalkCharControl_Update(cWalkCharControl *self, cEntity *wle, fl
 	if (lock >= 0.850000024f && 0.850000024f > lockPrev) {
 		self->lockStart = 1;
 	}
-	if (g_WalkCameraCenter != 0.0f && ChType_ActClass(ChType_ActCtrl(wle))[0x189]) {
+	if (g_WalkCameraCenter != 0.0f && ChType_ActClass(ChType_ActCtrl(wle))->fireAsSelect) {
 		b = WCC_Value(WCC_ACTION, slot) > 0.5f;
 		if (cInputAction_Pressed(WCC_Action(WCC_ACTION), slot)) {
 			self->lockStart = 1;

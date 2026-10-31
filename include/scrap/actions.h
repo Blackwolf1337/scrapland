@@ -284,7 +284,7 @@ byte __thiscall cActCtrl_VarV(cActCtrl *self, const char *name, double *x, doubl
 /* the name of the action of layer i, "" when it does not run (rva 0x62c40) */
 const char *__thiscall cActCtrl_GetActionName(void *ctrl, int i);
 /* the layer i of the actions (16 bytes, the time of its action first) */
-float *__thiscall cActCtrl_GetLayer(void *ctrl, int i);
+cActLayer *__thiscall cActCtrl_GetLayer(void *ctrl, int i);
 /* the name of the default loop action of the controller, "" without one (rva 0x62c80) */
 const char *__thiscall cActCtrl_GetDefLoopName(void *ctrl);
 void __fastcall cActCtrl_InitHeads(cActCtrl *self);

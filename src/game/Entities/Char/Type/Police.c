@@ -82,7 +82,7 @@ void ChType_ListeningPolice(cAbstractFile *params) {
 	void *acm = ChType_Vtbl(me)->FindAction(me, "PoliceListen");
 	cLocalLogic *ll = Logic_GetLocalLogic(me);
 	CHECK(ll && acm);
-	if (!ChLogic_Paused(ll) && !ChLogic_B2a(ll)) {
+	if (!ChLogic_Idle(ll) && !ChLogic_AlwaysLock(ll)) {
 		ChLogic_Vtbl(ll)->SetPaused(ll, 1);
 	} else {
 		cEntity *police = WChar_Listen(me);
@@ -114,7 +114,7 @@ byte ChType_PoliceFindListener(cEntity *v, cEntity **victim, byte *usr, void **a
 		cLocalLogic *l = Logic_GetLocalLogic(v);
 		if (l) {
 			*victim = ChLogic_Target(l);
-			ChLogic_I74(l) = 0;
+			ChLogic_PoliceResult(l) = 0;
 		}
 	}
 	if (!*victim || !(*victim)->vftable->IsType(*victim, TYEN_WALKCHAR)) {
@@ -124,7 +124,7 @@ byte ChType_PoliceFindListener(cEntity *v, cEntity **victim, byte *usr, void **a
 	if (!ctrl) {
 		return 0;
 	}
-	cActClass *cls = (cActClass *)ChType_ActClass(ctrl);
+	cActClass *cls = ChType_ActClass(ctrl);
 	if (!cls) {
 		return 0;
 	}
@@ -201,7 +201,7 @@ void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 	if (victim) {
 		usr = cWalkCharEntity_GetOwnerSlot(victim) != -1;
 		if (usr) {
-			if (ChLogic_I74(ll) == -1) {
+			if (ChLogic_PoliceResult(ll) == -1) {
 				act = "ActionBad";
 				Alarm_Set(&g_pWorld->alarm, 1.0f);
 			} else {
@@ -214,7 +214,7 @@ void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 		} else {
 			cLocalLogic *vl = Logic_GetLocalLogic(victim);
 			if (vl) {
-				const char *cls = *(const char **)(ChType_ActClass(ChType_ActCtrl(victim)) + 4);
+				const char *cls = ChType_ActClass(ChType_ActCtrl(victim))->name;
 				if (me == cWorld_GetUsrEntity(g_pWorld, 0) &&
 					(!strcmp(cls, "Police") || !strcmp(cls, "Sentinel") || !strcmp(cls, "Gear"))) {
 					act = "Relax";
