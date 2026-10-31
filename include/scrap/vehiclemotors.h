@@ -10,8 +10,10 @@
 #ifndef SCRAP_VEHICLEMOTORS_H
 #define SCRAP_VEHICLEMOTORS_H
 
-#include "scrap/embeddedfxvehicle.h"
-#include "scrap/weaps2.h"
+#include "scrap/entity.h"
+#include "scrap/scrapmodel.h"
+#include "scrap/scrapparticles.h"
+#include "scrap/scraptrails.h"
 
 #define VM_MOTORS 4
 #define VM_SIDES 2
@@ -100,19 +102,18 @@ SD_OFFSET(cVehicleMotors, speed, 0x1c);
 SD_OFFSET(cVehicleMotors, effects, 0x20);
 SD_SIZE(cVehicleMotors, 0xc8);
 
-#define Vehicle_Motors(e) ((cVehicleMotors *)((byte *)(e) + 0x720))
+#define Vehicle_Motors(e) (&((cVehicleEntity *)(e))->motors)
 
 /* the vehicle fields the motors read */
-#define VM_FIELD(e, type, off) (*(type *)((byte *)(e) + (off)))
 #define VM_Timer(e) (&((cObjEntity *)(e))->timer)
-#define VM_Thrust(e) VM_FIELD(e, float, 0x4b0)		/* negative backwards */
-#define VM_F490(e) VM_FIELD(e, float, 0x490)
-#define VM_F494(e) VM_FIELD(e, float, 0x494)
-#define VM_F4bc(e) VM_FIELD(e, float, 0x4bc)
-#define VM_F4c4(e) VM_FIELD(e, float, 0x4c4)
-#define VM_F4c8(e) VM_FIELD(e, float, 0x4c8)
-#define VM_LocalVel(e) VM_FIELD(e, vec3_t, 0x4e4)	/* z the forward speed */
-#define VM_Hidden(e) VM_FIELD(e, byte, 0x588)		/* no exhaust effects */
+#define VM_Thrust(e) (Veh(e)->smoothThrust)		/* negative backwards */
+#define VM_Boost(e) (Veh(e)->boost)
+#define VM_BoostTime(e) (Veh(e)->boostTime)
+#define VM_InAtmosphere(e) (Veh(e)->inAtmosphere)
+#define VM_SmoothSpeed(e) (Veh(e)->smoothSpeed)
+#define VM_Shake(e) (Veh(e)->shake)
+#define VM_LocalVel(e) (Veh(e)->localVel)		/* z the forward speed */
+#define VM_Hidden(e) (Veh(e)->rendering)		/* inside the extra render: no exhaust effects */
 #define VM_Team(e) ((void *)&WLife(e)->arrow)	/* for cArrowIndicator_GetColor */
 
 /* the emit positions of the Calima particles of all motors (8) */

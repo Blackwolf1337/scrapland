@@ -14,6 +14,7 @@
 #include "scrap/sound.h"
 #include "scrap/timer.h"
 #include "scrap/vehicleeffects.h"
+#include "scrap/vehiclemotors.h"
 #include "scrap/withlifeentity.h"
 
 #define CVEHICLEENTITY_VFTABLE GAME_VFTABLE(cVehicleEntity_vftable, 0x3b52bc)
@@ -132,7 +133,7 @@ struct cVehicleEntity {
 	byte o648[0x650 - 0x648];	/* 0x648 updated for player ships */
 	char target[0x80];		/* 0x650 "Target" */
 	cAutoAim autoAim;		/* 0x6d0 */
-	byte motors[0x7e8 - 0x720];	/* 0x720 cVehicleMotors (vftable with VarI, VarF, VarS, VarV) */
+	cVehicleMotors motors;		/* 0x720 */
 	float vertBalance;		/* 0x7e8 "VerticalBalance" */
 	int money;			/* 0x7ec "Money" */
 	cVehicleEffects effects;	/* 0x7f0 */
@@ -234,7 +235,7 @@ typedef struct cVehicleMotorsVtbl {
 } cVehicleMotorsVtbl;
 
 static inline const cVehicleMotorsVtbl *Veh_MotorsVtbl(cVehicleEntity *v) {
-	return *(const cVehicleMotorsVtbl **)v->motors;
+	return (const cVehicleMotorsVtbl *)v->motors.vftable;
 }
 
 /* the engine variables */

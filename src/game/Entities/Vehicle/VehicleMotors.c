@@ -5,8 +5,11 @@
 #include <string.h>
 
 #include "scrap/arrowindicator.h"
+#include "scrap/embeddedfxvehicle.h"
+#include "scrap/fxmisc.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/vehiclemotors.h"
+#include "scrap/weaps2.h"
 
 #define VM_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* the "" of the exe */
 
@@ -54,7 +57,6 @@ static inline int VM_Digit(char c) {
 	return c >= '0' && c <= '3';
 }
 
-#define VM_EmbeddedFX(e) (*(cEmbeddedFXVehicle **)((byte *)(e) + 0x224))
 
 /* the values of cVehicleMotors_Update the effects of every motor and of the ship use */
 typedef struct VMUpdate {
@@ -163,7 +165,7 @@ void __fastcall cVehicleMotors_Update(cVehicleMotors *self) {
 
 	u.dt = cTimer_GetDelta(VM_Timer(owner));
 	float a = VM_Thrust(owner);
-	float s = VM_F4c4(owner) + VM_F4c4(owner);
+	float s = VM_SmoothSpeed(owner) + VM_SmoothSpeed(owner);
 	u.speed = Vehicle_Speed(owner);
 	float f = a > 0.0f ? a * 2.0f + 1.0f : 1.0f - a;
 	float animStep = (s / 28000.0f + f) * (u.speed * u.dt) * 0.25f;
@@ -173,8 +175,8 @@ void __fastcall cVehicleMotors_Update(cVehicleMotors *self) {
 	}
 	u.player = Vehicle_Player(owner);
 	u.cloud = Vehicle_CloudTime(owner) > 0.0f;
-	CHECK(VM_EmbeddedFX(owner));
-	cEmbeddedFXVehicle *fx = VM_EmbeddedFX(self->owner);
+	CHECK(Veh_FX(Veh(owner)));
+	cEmbeddedFXVehicle *fx = Veh_FX(Veh(self->owner));
 	u.glowPs = &fx->follow;
 	CHECK(fx->follow.ParticleSystem);
 	u.alpha = fx->alpha;
@@ -208,11 +210,11 @@ void __fastcall cVehicleMotors_Update(cVehicleMotors *self) {
 	owner = self->owner;
 	float th = VM_Thrust(owner);
 	u.thrust = 0.0f > th ? th * 0.5f : Float_MinSS(1.0f, th);
-	u.k4c8 = VM_F4c8(owner);
+	u.k4c8 = VM_Shake(owner);
 	if (u.k4c8 > 1.0f) {
 		u.k4c8 = 1.0f;
 	}
-	u.k4bc = VM_F4bc(owner);
+	u.k4bc = VM_InAtmosphere(owner);
 	u.first = 0;
 	u.smokePs = NULL;
 	if (u.speed > 0.0f && u.cloud) {
@@ -261,7 +263,7 @@ void __fastcall cVehicleMotors_Update(cVehicleMotors *self) {
 		VM_Haze(self, &u);
 	}
 	owner = self->owner;
-	if (VM_Thrust(owner) == 0.0f && VM_F490(owner) / VM_F494(owner) == 0.0f && Vehicle_Speed(owner) == 0.0f &&
+	if (VM_Thrust(owner) == 0.0f && VM_Boost(owner) / VM_BoostTime(owner) == 0.0f && Vehicle_Speed(owner) == 0.0f &&
 		!u.cloud && self->lastVisible) {
 		self->stopped = 1;
 	} else {

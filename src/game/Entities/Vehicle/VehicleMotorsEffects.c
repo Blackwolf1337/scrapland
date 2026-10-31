@@ -7,8 +7,11 @@
  */
 #include <string.h>
 
+#include "scrap/embeddedfxvehicle.h"
+#include "scrap/fxmisc.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/vehiclemotors.h"
+#include "scrap/weaps2.h"
 
 #define g_RandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
 

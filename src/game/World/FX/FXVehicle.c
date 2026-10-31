@@ -881,9 +881,9 @@ void __thiscall cObjElementFXFiredEntity_Update(cObjElementFXFiredEntity *self, 
 	self->pos = pos;
 }
 
-/* the model of exhaust ex of the ship e: the motor holds one per side (side * 0x1c) */
+/* the model of exhaust ex of the ship e: the motor holds one per side */
 static inline CGameModel *FXV_ExhaustModel(cEntity *e, const FXVExhaust *ex) {
-	return (CGameModel *)(FXVeh_Motor(e, ex->motor) + ex->side * (int)sizeof(CGameModel));
+	return &FXVeh_Motor(e, ex->motor)->model[ex->side];
 }
 
 /* ---- EMI ---- */
@@ -2587,8 +2587,7 @@ void __thiscall cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *
 					self->rayWidth[i] = FXV_Rand(3.5, 4.0);
 					if (!FXV_RandMod(12) && self->numExhausts > 0) {
 						int k = self->numExhausts > 1 ? FXV_RandMod(self->numExhausts) : 0;
-						src = (CGameModel *)(FXVeh_Motor(self->entity, self->exhausts[k].motor)
-							+ self->exhausts[k].side * sizeof(CGameModel));
+						src = FXV_ExhaustModel(self->entity, &self->exhausts[k]);
 					}
 					CGameModel_Vertices(src, &self->rayPos[i], NULL, NULL, 1, -1, NULL, 0xffffffffu, NULL);
 					float s = FXV_Rand(8.0, 0.0);

@@ -34,8 +34,8 @@
 #define FXVSPUTNIK_RANDS 195
 
 /* the vehicle fields the effects read */
-#define FXVeh_Motor(e, i) (((byte **)((byte *)(e) + 0x728))[i])
-#define FXVeh_MotorNode(m, side) (*(int *)((m) + 0x38 + (side) * 4))
+#define FXVeh_Motor(e, i) (Veh(e)->motors.motor[i])
+#define FXVeh_MotorNode(m, side) ((m)->node[side])
 #define FXVeh_EmbeddedFX(e) ((void *)((cObjEntity *)(e))->fx)
 #define FXVeh_BurnTime(e) (WLife(e)->fireRemain)
 #define FXVeh_MaxLife(e) (Veh(e)->maxLife)		/* of a "Car" */

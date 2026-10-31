@@ -166,7 +166,7 @@ static inline const cNetEntityVtbl *Net_Vtbl(cEntity *e) {
 #define NetEnt_TypeName(e) (Veh(e)->typeName)		/* cVehicleEntity.typeName */
 #define NetEnt_Weapons(e) ((void *)&Veh(e)->weapons)	/* cWeaponManager */
 #define NetEnt_MaxLife(e) (Veh(e)->maxLife)
-#define NetEnt_Motors(e) ((void *)((byte *)(e) + 0x720))	/* cVehicleMotors */
+#define NetEnt_Motors(e) ((void *)&Veh(e)->motors)
 #define NetEnt_Target(e) (Veh(e)->target)
 #define NetEnt_Kind(e) (((cObjEntity *)(e))->netRes)			/* the byte after the id in the entity stream */
 
