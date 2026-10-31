@@ -238,10 +238,10 @@ void __thiscall CScene_Read(CScene *self, CFileIO *f, byte bAnim) {
 			CNode3D *node = p ? CNode3D_ctor(p) : NULL;
 			CScene_AddNode(self, node);
 			CFileIO_Read(f, &node->index, 4);
-			CFileIO_Read(f, &node->i48, 4);
+			CFileIO_Read(f, &node->slot, 4);
 			CFileIO_Read(f, &node->renderNode, 4);
 			CFileIO_Read(f, &node->flags, 4);
-			CFileIO_Read(f, &node->i50, 4);
+			CFileIO_Read(f, &node->aniLocked, 4);
 			String_Read(&node->name, f);
 			CFileIO_ReadString(f, buf, sizeof(buf));
 			CNode3D_SetParentName(node, buf[0] ? buf : NULL);
@@ -307,10 +307,10 @@ void __thiscall CScene_Write(CScene *self, CFileIO *f, byte bAnim) {
 	CFileIO_WriteInt(f, CScene_NumNodes(self));
 	for (CNode3D *n = self->Node3D; n; n = n->next) {
 		CFileIO_Write(f, &n->index, 4);
-		CFileIO_Write(f, &n->i48, 4);
+		CFileIO_Write(f, &n->slot, 4);
 		CFileIO_Write(f, &n->renderNode, 4);
 		CFileIO_Write(f, &n->flags, 4);
-		CFileIO_Write(f, &n->i50, 4);
+		CFileIO_Write(f, &n->aniLocked, 4);
 		String_Write(&n->name, f);
 		CFileIO_WriteString(f, n->parent ? n->parent->name : NULL);
 		CFileIO_Write(f, &n->pos, 0xc);
@@ -747,7 +747,7 @@ void __thiscall CScene_SetAlpha(CScene *self, float alpha, const char *name) {
 
 void __thiscall CScene_SetNodes54(CScene *self, int v) {
 	for (CNode3D *n = self->Node3D; n; n = n->next) {
-		n->i54 = v;
+		n->mark = v;
 	}
 }
 

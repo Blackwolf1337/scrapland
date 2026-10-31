@@ -214,10 +214,10 @@ typedef struct CNode3D {
 	IObject3D *obj3D;		/* 0x3c owned */
 	CScene *scene;		/* 0x40 */
 	int index;			/* 0x44 the track of the node in the animations, -1: none */
-	int i48;			/* 0x48 -1 */
+	int slot;			/* 0x48 in the node table of the scene (Scene_NodeTable), render nodes first; -1 */
 	int renderNode;			/* 0x4c -1, else Update goes to CRenderNode_UpdateNode */
-	int i50;			/* 0x50 */
-	int i54;			/* 0x54 CScene_SetNodes54 */
+	int aniLocked;		/* 0x50 ANIM_* channels whose animation is discarded (~AniMask) */
+	int mark;			/* 0x54 scratch: sort order, tree item of the debug view (CScene_SetNodes54) */
 	IObject3D *obj58;		/* 0x58 owned, deleted through its vftable[0] */
 	matrix_t m;			/* 0x5c world, the position in m[12..14] */
 	matrix_t mObj;			/* 0x9c the object in the node */

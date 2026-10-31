@@ -595,7 +595,7 @@ void Scene_Particles(CScene *scn) {
 		if (CNode3D_Class(n2) != CLASS_OBJ3D_PARTICLESYSTEM) {
 			CheckFailed("nodo2->clase_obj3D() == CLASE_OBJ3D_SISTPART", __FILE__, __TIMESTAMP__, __LINE__);
 		}
-		n->renderNode = n2->i48;
+		n->renderNode = n2->slot;
 		if (n->obj3D) {
 			CheckFailed("!nodo->obj3D", __FILE__, __TIMESTAMP__, __LINE__);
 		}
@@ -1619,12 +1619,12 @@ void Scene_NodeTable(CScene *scn) {
 	CScene_NumNodes(scn);
 	for (CNode3D *n = scn->Node3D; n; n = n->next) {
 		if (!(n->flags & NODE_NO_RENDERNODE)) {
-			n->i48 = k++;
+			n->slot = k++;
 		}
 	}
 	for (CNode3D *n = scn->Node3D; n; n = n->next) {
 		if (n->flags & NODE_NO_RENDERNODE) {
-			n->i48 = k++;
+			n->slot = k++;
 		}
 	}
 	for (CNode3D *n = scn->Node3D; n; n = n->next) {
@@ -1644,9 +1644,9 @@ void Scene_NodeTable(CScene *scn) {
 			byte *p = s + 1;
 			do {
 				CNode3D *bone = CScene_NodeObject(scn, *p);
-				CHECK(bone && (uint32_t)bone->i48 < 256);
+				CHECK(bone && (uint32_t)bone->slot < 256);
 				CHECK(bone->flags & NODE_BONE);
-				*p++ = (byte)bone->i48;
+				*p++ = (byte)bone->slot;
 			} while ((int)(p - s - 1) < (int)s[0]);
 		}
 	}
@@ -1688,7 +1688,7 @@ void Scene_NodeTable(CScene *scn) {
 				mask |= 0x80;
 			}
 		}
-		n->i50 = (int)~mask;
+		n->aniLocked = (int)~mask;
 	}
 }
 
@@ -1700,11 +1700,11 @@ void Scene_SetupLOD(CScene *scn) {
 		CIniFile *ini = g_SceneLODParent->ini;
 		if (ini && CIniFile_GetInt(ini, "XRefNodes", n->name, 0)) {
 			CHECK(n2);
-			n->renderNode = n2->i48;
+			n->renderNode = n2->slot;
 		}
 		if (n->flags & NODE_FX) {
 			CHECK(n2);
-			n->renderNode = n2->i48;
+			n->renderNode = n2->slot;
 		}
 		if (n->renderNode >= 0) {
 			CHECK(n->parent);
@@ -1745,7 +1745,7 @@ void Scene_SetupLOD(CScene *scn) {
 		if (!n->parent || !n2->parent || strcmp(n->parent->name, n2->parent->name)) {
 			Con_Warnf("WARN: LOD node parent mismatch [Node: %s]\n", n->name);
 		}
-		if (!(n2->i50 & 1) && (n->pos.x != n2->pos.x || n->pos.y != n2->pos.y || n->pos.z != n2->pos.z)) {
+		if (!(n2->aniLocked & 1) && (n->pos.x != n2->pos.x || n->pos.y != n2->pos.y || n->pos.z != n2->pos.z)) {
 			if (!((double)0.025f > __builtin_fabs((double)(n->pos.x - n2->pos.x)) &&
 				    (double)0.025f > __builtin_fabs((double)(n->pos.y - n2->pos.y)) &&
 				    (double)0.025f > __builtin_fabs((double)(n->pos.z - n2->pos.z)))) {
@@ -1753,7 +1753,7 @@ void Scene_SetupLOD(CScene *scn) {
 				Con_Warnf("WARN: LOD node Pos mismatch [Node: %s] (%s)\n", n->name, Vec3_Str(&d, 0, 6));
 			}
 		}
-		if (!(n2->i50 & 2) && (n->rot.x != n2->rot.x || n->rot.y != n2->rot.y || n->rot.z != n2->rot.z ||
+		if (!(n2->aniLocked & 2) && (n->rot.x != n2->rot.x || n->rot.y != n2->rot.y || n->rot.z != n2->rot.z ||
 					     n->rot.w != n2->rot.w)) {
 			double d = Quat_DotAbs(&n->rot, &n2->rot);
 			if (Game_Cos(0x1.c98710add7e36p-10) > d) {
@@ -1821,10 +1821,10 @@ static void Scene_SortNodes(CScene *scn) {
 
 	CScene_SetNodes54(scn, 0);
 	for (CNode3D *n = scn->Node3D; n; n = n->next) {
-		if (n->parent && !n->parent->i54) {
+		if (n->parent && !n->parent->mark) {
 			change = 1;
 		}
-		n->i54 = k++;
+		n->mark = k++;
 	}
 	if (!change) {
 		return;
@@ -2655,7 +2655,7 @@ static uint32_t M3D_ReadAnimNode(CScene *scn, CNode3D *node, M3DNode *dat, int k
 			}
 			mask = 0;
 		} else {
-			uint32_t v = ~(uint32_t)m->i50 & mask;
+			uint32_t v = ~(uint32_t)m->aniLocked & mask;
 
 			if (v != mask) {
 				E3D_LogWhite(g_FileLog, "Animation node masked: %s (node animation discarded)", node->name);

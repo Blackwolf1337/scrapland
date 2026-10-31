@@ -493,8 +493,8 @@ void Scene_ShowTree(CScene *scn, CNode3D *parent, int indent) {
 		}
 		Con_Verbosef("%*s%s", indent + 2, "", n->name);
 		int len = (int)strlen(n->name);
-		Con_Debugf("%*s  %3d %3d %3d  c:%-8s  f:%08X  a:%04X", 0x30 - len - indent, "", n->index, n->i48, n->renderNode,
-			Obj3D_ClassName(CNode3D_Class(n)), n->flags, (uint16_t)n->i50);
+		Con_Debugf("%*s  %3d %3d %3d  c:%-8s  f:%08X  a:%04X", 0x30 - len - indent, "", n->index, n->slot, n->renderNode,
+			Obj3D_ClassName(CNode3D_Class(n)), n->flags, (uint16_t)n->aniLocked);
 		if (CNode3D_Class(n) == CLASS_OBJ3D_TRIMESH) {
 			CTriMesh *mt = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_TRIMESH);
 			if (mt->pSkin) {

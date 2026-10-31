@@ -267,7 +267,7 @@ void __thiscall CModel_SetupRender(CModel *self, NodeAnimCtx *ctx) {
 
 CRenderNode *__thiscall CModel_GetRenderNode(CModel *self, CNode3D *node) {
 	CHECK(0);
-	return Model_RenderNode(self->renderNodes, node->i48);
+	return Model_RenderNode(self->renderNodes, node->slot);
 }
 
 matrix_t *__thiscall CModel_GetNodeMatrix(CModel *self, matrix_t *m, uint32_t inodo, byte anim, uint32_t slot,
@@ -758,7 +758,7 @@ void __thiscall CModel_SetSlotAnim(CModel *self, uint32_t slot, CAnimGroup *a) {
 static int Model_AddRenderNodes(CModel *self, int k, uint32_t pass) {
 	for (CNode3D *n = self->scene->Node3D; n; n = n->next) {
 		if ((n->flags >> 22 & 1) == pass) {
-			CHECK(n->i48 == k);
+			CHECK(n->slot == k);
 			CRenderNode *e = &((CRenderNode *)self->renderNodes->p)[k++];
 			e->owner = (byte *)self;
 			CRenderNode_SetNode(e, n);

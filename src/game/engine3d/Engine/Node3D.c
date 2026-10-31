@@ -110,9 +110,9 @@ CNode3D *__fastcall CNode3D_ctor(CNode3D *self) {
 	self->obj3D = NULL;
 	self->scene = NULL;
 	self->index = -1;
-	self->i48 = -1;
+	self->slot = -1;
 	self->renderNode = -1;
-	self->i50 = 0;
+	self->aniLocked = 0;
 	self->obj58 = NULL;
 	Matrix_LoadIdentity(&self->m);
 	Matrix_LoadIdentity(&self->mObj);

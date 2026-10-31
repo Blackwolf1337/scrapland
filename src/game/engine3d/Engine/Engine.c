@@ -920,7 +920,7 @@ intptr_t __stdcall Engine_SceneDlgProc(void *hwnd, uint32_t msg, uintptr_t wPara
 		n = *(CNode3D **)(lParam + 0x5c);
 		if (n) {
 			Bprintf(buf, 0x100, "%s\niObjeto: %d\niNodeTab: %d\niNodeXRef: %d\nAniMask: %04X\nRefs: %d\nant: %s\nsig: %s",
-				n->name, n->index, n->i48, n->renderNode, (uint16_t)n->i50, n->Refs, Node_RefName(n->prev),
+				n->name, n->index, n->slot, n->renderNode, (uint16_t)n->aniLocked, n->Refs, Node_RefName(n->prev),
 				Node_RefName(n->next));
 		} else {
 			Bprintf(buf, 0x100, "AnimM3D: %s\nFileINI: %s\nCollideMesh: %s\nNodeTab: %s", Engine_BoolStr(scn->AnimM3D != NULL),
@@ -986,14 +986,14 @@ intptr_t __stdcall Engine_SceneDlgProc(void *hwnd, uint32_t msg, uintptr_t wPara
 	TreeView_InsertItemf(tree, &tv, "MainLOD: %s", scn->mainLOD);
 	CScene_SetNodes54(scn, 0);
 	for (n = scn->Node3D; n; n = n->next) {
-		tv.hParent = n->parent ? n->parent->i54 : TVI_ROOT;
+		tv.hParent = n->parent ? n->parent->mark : TVI_ROOT;
 		tv.hInsertAfter = TVI_LAST;
 		tv.mask = TVIF_TEXT | TVIF_STATE | TVIF_PARAM;
 		tv.stateMask = TVIS_EXPANDED;
 		tv.state = n == scn->Node3D ? TVIS_EXPANDED : 0;
 		tv.lParam = (intptr_t)n;
-		n->i54 = (int)TreeView_InsertItemf(tree, &tv, "%s", n->name);
-		tv.hParent = n->i54;
+		n->mark = (int)TreeView_InsertItemf(tree, &tv, "%s", n->name);
+		tv.hParent = n->mark;
 		tv.hInsertAfter = TVI_LAST;
 		tv.mask = TVIF_TEXT | TVIF_PARAM;
 		tv.lParam = (intptr_t)n;

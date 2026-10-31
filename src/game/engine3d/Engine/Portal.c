@@ -46,11 +46,11 @@ void __fastcall CPortal_LinkZones(CPortal *self) {
 		return;
 	}
 	for (CNode3D *n = self->node->scene->Node3D; n; n = n->next) {
-		if (n->i48 < 0) {
+		if (n->slot < 0) {
 			continue;
 		}
 		for (int i = 0; i < 2; i++) {
-			if (n->i48 == self->idZone[i]) {
+			if (n->slot == self->idZone[i]) {
 				n->Refs++;
 				ObjRef_Drop(&self->zones[i]);
 				self->zones[i] = n;
@@ -76,8 +76,8 @@ byte __thiscall CPortal_Write(CPortal *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CHECK(self->node == ctx->node);
 	CFileIO_BeginBlockWrite(f, "PORT");
 	CFileIO_WriteInt(f, 1);
-	CFileIO_WriteInt(f, self->zones[0] ? self->zones[0]->i48 : -1);
-	CFileIO_WriteInt(f, self->zones[1] ? self->zones[1]->i48 : -1);
+	CFileIO_WriteInt(f, self->zones[0] ? self->zones[0]->slot : -1);
+	CFileIO_WriteInt(f, self->zones[1] ? self->zones[1]->slot : -1);
 	CFileIO_Write(f, &self->width, 4);
 	CFileIO_Write(f, &self->height, 4);
 	CFileIO_EndBlockWrite(f, "PORT");
