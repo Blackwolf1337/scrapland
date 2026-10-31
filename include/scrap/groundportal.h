@@ -23,8 +23,8 @@ typedef struct CZone {
 	struct CZone *zones[MAX_PORTALS];	/* 0x0b4 the sector behind each portal */
 	int numPortals;		/* 0x134 */
 	byte exterior;			/* 0x138 */
-	byte b139;			/* 0x139 counted into the rectangle of all seen sectors */
-	byte b13a;			/* 0x13a */
+	byte sky;			/* 0x139 "(+sky_sector)": counted into the rectangle of all seen sectors */
+	byte outside;		/* 0x13a "(+out_sector)" */
 	byte pad_13b;
 } CZone;
 SD_SIZE(CZone, 0x13c);
@@ -47,7 +47,7 @@ typedef struct SectorVis {
 #define g_PortalFront GAME_GLOBAL_IN(int, GVar_R_PortalNorm, 16, 0x4b0110)	/* portals the camera is in front of beyond the near distance are skipped */
 #define g_PortalExterior GAME_GLOBAL_IN(int, GVar_R_PortalEnd, 16, 0x4b1190)	/* exterior sectors do not look into interior ones */
 #define g_PortalNear GAME_GLOBAL_IN(float, GVar_R_PortalDist, 16, 0x4b0140)	/* the near distance of the portals, times zNear / 256 * 128 */
-#define g_PortalUnion GAME_GLOBAL_IN(int, g_Zones, 516, 0x4b00dc)	/* the rectangle of all seen sectors with b139 is kept */
+#define g_PortalUnion GAME_GLOBAL_IN(int, g_Zones, 516, 0x4b00dc)	/* the rectangle of all seen sectors with sky is kept */
 
 /* the sectors seen this frame (zones a pintar) and their screen rectangles */
 #define MAX_PAINT_ZONES 0x80
@@ -59,7 +59,7 @@ typedef struct PaintZone {
 SD_SIZE(PaintZone, 0x20);
 #define g_PaintZones (GAME_ARRAY(PaintZone, g_PaintZones, 0x4b0168))
 #define g_NumPaintZones GAME_GLOBAL(int, g_NumPaintZones, 0x4afed0)
-/* the union of the rectangles of the seen sectors with b139 */
+/* the union of the rectangles of the seen sectors with sky */
 #define g_PaintI148 GAME_GLOBAL_IN(int, g_PaintAll, 0, 0x4b0148)
 #define g_PaintRect (GAME_GLOBAL_IN(box_t, g_PaintAll, 4, 0x4b014c))
 #define g_PaintNum GAME_GLOBAL_IN(int, g_PaintAll, 28, 0x4b0164)

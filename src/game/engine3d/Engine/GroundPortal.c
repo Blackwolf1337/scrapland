@@ -38,8 +38,8 @@ CZone *__fastcall CZone_ctor(CZone *self) {
 	self->numNodes = 0;
 	self->numPortals = 0;
 	self->exterior = 0;
-	self->b139 = 0;
-	self->b13a = 0;
+	self->sky = 0;
+	self->outside = 0;
 	self->nodes[0] = NULL;
 	self->nodes[1] = NULL;
 	memset(self->portals, 0, sizeof(self->portals));
@@ -170,11 +170,11 @@ byte Sector_IsOutside(int sector) {
 	if (sector == -1) {
 		return 0;
 	}
-	return Sector_Get((uint32_t)sector)->b13a;
+	return Sector_Get((uint32_t)sector)->outside;
 }
 
 byte Sector_Get139(int sector) {
-	return Sector_Get((uint32_t)sector)->b139;
+	return Sector_Get((uint32_t)sector)->sky;
 }
 
 byte Sector_IsVisible(int sector) {
@@ -485,7 +485,7 @@ void Portals_Cull(uint32_t sector) {
 		int n = 0;
 		for (int i = 0; i < g_NumPaintZones; i++) {
 			PaintZone *e = &g_PaintZones[i];
-			if (!g_Zones[e->zone]->b139) {
+			if (!g_Zones[e->zone]->sky) {
 				continue;
 			}
 			box_t *u = &g_PaintRect;
@@ -604,15 +604,15 @@ void Sectors_Create(CScene *scn) {
 			}
 			if (strstr(zn->name, "(+sky_sector)")) {
 				g_PortalUnion++;
-				z->b139 = 1;
+				z->sky = 1;
 			} else {
-				z->b139 = 0;
+				z->sky = 0;
 			}
 			if (strstr(zn->name, "(+out_sector)")) {
 				g_NumOutSectors++;
-				z->b13a = 1;
+				z->outside = 1;
 			} else {
-				z->b13a = 0;
+				z->outside = 0;
 			}
 		}
 	}
