@@ -320,8 +320,8 @@ void __thiscall cObjElementFXMaintenanceWork_Attach(cObjElementFXMaintenanceWork
 
 void __thiscall cObjElementFXMaintenanceWork_Reset(cObjElementFXMaintenanceWork *self, int arg) {
 	(void)arg;
-	self->fc0 = 0.0f;
-	self->fbc = 0.0f;
+	self->time = 0.0f;
+	self->emitTime = 0.0f;
 	CGameParticles_KillAll(&self->particles);
 	CGameTrail_Clear(&self->trails[0]);
 	CGameTrail_Clear(&self->trails[1]);
@@ -718,8 +718,8 @@ void __thiscall cObjElementFXMaintenanceWork_Update(cObjElementFXMaintenanceWork
 	}
 	CGameModel_SetSortZ(Debris_Model(d), -75.0f, 0.0f);
 	float delta = FXC_Delta();
-	self->fc0 = self->fc0 + delta;
-	self->fbc = self->fbc + delta;
+	self->time = self->time + delta;
+	self->emitTime = self->emitTime + delta;
 	/* the work ends with the edit door of the ship changing or the robot not working */
 	cEntity *door = World_FindEntity("DM_Door_EditShip_00");
 	if (!door || (self->life > 0.0f && cActCtrl_IsActive(WithLife_Vtbl(door)->GetActCtrl(door), "Change"))) {
@@ -768,10 +768,10 @@ void __thiscall cObjElementFXMaintenanceWork_Update(cObjElementFXMaintenanceWork
 	CGameParticles_SetParticle(sp, 3, c.x, c.y, c.z, 30.0f, FXC_Alpha(alpha, 8, 0xdcdcff), 1, 0.0f);
 	CGameParticles_SetParticle(sp, 4, c.x, c.y, c.z, 95.0f, FXC_Alpha(alpha, 64, 0xa2a2ff), 1, 0.0f);
 	CGameParticles_SetParticle(sp, 5, c.x, c.y, c.z, 155.0f, FXC_Alpha(alpha, 192, 0x4040ff), 2, 0.0f);
-	if (!(self->fbc > 0.04f)) {
+	if (!(self->emitTime > 0.04f)) {
 		return;
 	}
-	self->fbc = 0.0f;
+	self->emitTime = 0.0f;
 	/* the flashes and sparks at the ship */
 	sp->birthRate = 0;
 	CGameParticles_SetColorRampOn(sp, 1);

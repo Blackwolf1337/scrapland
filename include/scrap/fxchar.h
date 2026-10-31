@@ -143,8 +143,8 @@ typedef struct cObjElementFXMaintenanceWork {
 	cEntity *maintenance;		/* 0x04 the robot */
 	cEntity *ship;			/* 0x08 */
 	CGameParticles particles;	/* 0x0c on Dummy01 */
-	float fbc;			/* 0xbc */
-	float fc0;			/* 0xc0 */
+	float emitTime;		/* 0xbc the particles are emitted every 0.04 s of it */
+	float time;			/* 0xc0 since the start */
 	float life;			/* 0xc4 the life of the debris at the start */
 	CGameTrail trails[2];		/* 0xc8 */
 	int vertex;			/* 0xd0 the vertex of the ship nearest to the laser */

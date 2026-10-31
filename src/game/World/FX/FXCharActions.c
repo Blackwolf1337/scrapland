@@ -121,8 +121,8 @@ void *__thiscall cObjElementFXBankMasterAttack_ctor(void *self) {
 	CGameTrail_ctor(&s->trail2);
 	s->started = 0;
 	s->ent = NULL;
-	s->fbc = 0.0f;
-	s->fb8 = 0.0f;
+	s->time = 0.0f;
+	s->emitTime = 0.0f;
 	return s;
 }
 
@@ -135,8 +135,8 @@ void *__thiscall cObjElementFXBankMasterSuction_ctor(void *self) {
 	s->started = 0;
 	s->ent = NULL;
 	s->target = NULL;
-	s->fc0 = 0.0f;
-	s->fbc = 0.0f;
+	s->time = 0.0f;
+	s->emitTime = 0.0f;
 	return s;
 }
 
@@ -162,8 +162,8 @@ void *__thiscall cObjElementFXBertoAttack_ctor(void *self) {
 	CGameParticles_ctor(&s->particles);
 	s->started = 0;
 	s->ent = NULL;
-	s->fbc = 0.0f;
-	s->fb8 = 0.0f;
+	s->time = 0.0f;
+	s->emitTime = 0.0f;
 	return s;
 }
 
@@ -176,8 +176,8 @@ void *__thiscall cObjElementFXBertoFlash_ctor(void *self) {
 	s->started = 0;
 	s->ent = NULL;
 	s->target = NULL;
-	s->fc0 = 0.0f;
-	s->fbc = 0.0f;
+	s->time = 0.0f;
+	s->emitTime = 0.0f;
 	return s;
 }
 
@@ -205,8 +205,8 @@ static void FXKill_Ctor(cObjElementFXKill *s, void *vt) {
 	FXA_TrailsCtor(s->trails, FXKILL_TRAILS);
 	s->started = 0;
 	s->ent = NULL;
-	s->fbc = 0.0f;
-	s->fb8 = 0.0f;
+	s->time = 0.0f;
+	s->emitTime = 0.0f;
 }
 
 cObjElementFXBettyKill *__thiscall cObjElementFXBettyKill_ctor(cObjElementFXBettyKill *self) {
@@ -251,8 +251,8 @@ void *__thiscall cObjElementFXDTritusAttack_ctor(void *self) {
 	FXA_TrailsCtor(s->trails, FXDTRITUSATTACK_TRAILS);
 	s->started = 0;
 	s->ent = NULL;
-	s->fbc = 0.0f;
-	s->fb8 = 0.0f;
+	s->time = 0.0f;
+	s->emitTime = 0.0f;
 	return s;
 }
 
@@ -269,8 +269,8 @@ void *__thiscall cObjElementFXFunctionarySpecialAction_ctor(void *self) {
 	FXA_TrailsCtor(s->trails, FXFUNCTIONARY_TRAILS);
 	s->started = 0;
 	s->ent = NULL;
-	s->fbc = 0.0f;
-	s->fb8 = 0.0f;
+	s->time = 0.0f;
+	s->emitTime = 0.0f;
 	return s;
 }
 
@@ -298,8 +298,8 @@ void *__thiscall cObjElementFXMercenaryDrink_ctor(void *self) {
 	CGameParticles_ctor(&s->particles);
 	s->started = 0;
 	s->ent = NULL;
-	s->fbc = 0.0f;
-	s->fb8 = 0.0f;
+	s->time = 0.0f;
+	s->emitTime = 0.0f;
 	return s;
 }
 
@@ -352,7 +352,7 @@ void *__thiscall cObjElementFXPoliceSteal_ctor(void *self) {
 	s->started = 0;
 	s->ent = NULL;
 	s->target = NULL;
-	s->fbc = 0.0f;
+	s->emitTime = 0.0f;
 	s->fc0 = 0;
 	s->fc4 = -1;
 	return s;
@@ -366,8 +366,8 @@ void *__thiscall cObjElementFXSebastianFlash_ctor(void *self) {
 	FXA_TrailsCtor(s->trails, FXSEBASTIAN_TRAILS);
 	s->started = 0;
 	s->ent = NULL;
-	s->fbc = 0.0f;
-	s->fb8 = 0.0f;
+	s->time = 0.0f;
+	s->emitTime = 0.0f;
 	return s;
 }
 
@@ -918,8 +918,8 @@ void __thiscall cObjElementFXSebastianFlash_Attach(cObjElementFXSebastianFlash *
 
 void __thiscall cObjElementFXBankMasterAttack_Reset(cObjElementFXBankMasterAttack *self, int arg) {
 	(void)arg;
-	self->fbc = 0.0f;
-	self->fb8 = 0.0f;
+	self->time = 0.0f;
+	self->emitTime = 0.0f;
 	CGameTrail_Clear(&self->trail);
 	CGameTrail_Clear(&self->trail2);
 	self->t = 0.0f;
@@ -927,8 +927,8 @@ void __thiscall cObjElementFXBankMasterAttack_Reset(cObjElementFXBankMasterAttac
 
 void __thiscall cObjElementFXBankMasterSuction_Reset(cObjElementFXBankMasterSuction *self, int arg) {
 	(void)arg;
-	self->fc0 = 0.0f;
-	self->fbc = 0.0f;
+	self->time = 0.0f;
+	self->emitTime = 0.0f;
 	self->count = 0;
 	self->lastSound = 0;
 }
@@ -942,15 +942,15 @@ void __thiscall cObjElementFXBankerSteal_Reset(cObjElementFXBankerSteal *self, i
 
 void __thiscall cObjElementFXBertoAttack_Reset(cObjElementFXBertoAttack *self, int arg) {
 	(void)arg;
-	self->fbc = 0.0f;
-	self->fb8 = 0.0f;
+	self->time = 0.0f;
+	self->emitTime = 0.0f;
 	CGameParticles_KillAll(&self->particles);
 }
 
 void __thiscall cObjElementFXBertoFlash_Reset(cObjElementFXBertoFlash *self, int arg) {
 	(void)arg;
-	self->fc0 = 0.0f;
-	self->fbc = 0.0f;
+	self->time = 0.0f;
+	self->emitTime = 0.0f;
 	FXA_ClearTrails(self->trails, FXBERTOFLASH_TRAILS);
 	CGameParticles_KillAll(&self->particles);
 }
@@ -972,8 +972,8 @@ void __thiscall cObjElementFXBettyAttack_Reset(cObjElementFXBettyAttack *self, i
 
 void __thiscall cObjElementFXKill_Reset(cObjElementFXKill *self, int arg) {
 	(void)arg;
-	self->fbc = 0.0f;
-	self->fb8 = 0.0f;
+	self->time = 0.0f;
+	self->emitTime = 0.0f;
 	FXA_ClearTrails(self->trails, FXKILL_TRAILS);
 	CGameParticles_KillAll(&self->particles);
 }
@@ -998,16 +998,16 @@ void __thiscall cObjElementFXBishopSellLife_Reset(cObjElementFXBishopSellLife *s
 
 void __thiscall cObjElementFXDTritusAttack_Reset(cObjElementFXDTritusAttack *self, int arg) {
 	(void)arg;
-	self->fbc = 0.0f;
-	self->fb8 = 0.0f;
+	self->time = 0.0f;
+	self->emitTime = 0.0f;
 	FXA_ClearTrails(self->trails, FXDTRITUSATTACK_TRAILS);
 	CGameParticles_KillAll(&self->particles);
 }
 
 void __thiscall cObjElementFXFunctionarySpecialAction_Reset(cObjElementFXFunctionarySpecialAction *self, int arg) {
 	(void)arg;
-	self->fbc = 0.0f;
-	self->fb8 = 0.0f;
+	self->time = 0.0f;
+	self->emitTime = 0.0f;
 	CGameParticles_KillAll(&self->particles);
 	FXA_ClearTrails(self->trails, FXFUNCTIONARY_TRAILS);
 	self->alpha = 0.0f;
@@ -1029,8 +1029,8 @@ void __thiscall cObjElementFXGearMissile_Reset(cObjElementFXGearMissile *self, i
 
 void __thiscall cObjElementFXMercenaryDrink_Reset(cObjElementFXMercenaryDrink *self, int arg) {
 	(void)arg;
-	self->fbc = 0.0f;
-	self->fb8 = 0.0f;
+	self->time = 0.0f;
+	self->emitTime = 0.0f;
 }
 
 void __thiscall cObjElementFXMessengerAttack_Reset(cObjElementFXMessengerAttack *self, int arg) {
@@ -1070,13 +1070,13 @@ void __thiscall cObjElementFXPoliceSteal_Reset(cObjElementFXPoliceSteal *self, i
 	(void)arg;
 	self->ent = NULL;
 	self->target = NULL;
-	self->fbc = 0.0f;
+	self->emitTime = 0.0f;
 }
 
 void __thiscall cObjElementFXSebastianFlash_Reset(cObjElementFXSebastianFlash *self, int arg) {
 	(void)arg;
-	self->fbc = 0.0f;
-	self->fb8 = 0.0f;
+	self->time = 0.0f;
+	self->emitTime = 0.0f;
 	FXA_ClearTrails(self->trails, FXSEBASTIAN_TRAILS);
 	CGameParticles_KillAll(&self->particles);
 }
@@ -2730,11 +2730,11 @@ static void FXKill_Update(cObjElementFXKill *self, cDebris *d, float sortBias, f
 	CGameModel *m = FXA_Model(self->ent);
 	FXA_FollowModel(d, m, &pos, &rot, sortBias);
 	float dt = FXA_Delta();
-	self->fbc = self->fbc + dt;
-	self->fb8 = self->fb8 + dt;
+	self->time = self->time + dt;
+	self->emitTime = self->emitTime + dt;
 	FXBeams b = { &self->particles, self->trails, FXKILL_TRAILS, FXKILL_POINTS, self->point, self->f69c, self->f7c8,
 		self->scale, &self->angles, 12000.0f, 0.84f, fadeOut, inner, outer, rgb };
-	FXBeams_Draw(&b, self->fbc, dt, &pos, &rot);
+	FXBeams_Draw(&b, self->time, dt, &pos, &rot);
 }
 
 void __thiscall cObjElementFXBettyKill_Update(cObjElementFXBettyKill *self, cDebris *d, float dt) {
@@ -2766,8 +2766,8 @@ void __thiscall cObjElementFXBankMasterAttack_Update(cObjElementFXBankMasterAtta
 	CGameModel_SetPos(Debris_Model(d), &base);
 	CGameModel_SetRot(Debris_Model(d), &rot);
 	float delta = FXA_Delta();
-	self->fbc = delta + self->fbc;
-	self->fb8 = delta + self->fb8;
+	self->time = delta + self->time;
+	self->emitTime = delta + self->emitTime;
 	float layer = 0.0f;
 	void *ctrl = WithLife_Vtbl(self->ent)->GetActCtrl(self->ent);
 	byte action = 0;
@@ -2824,10 +2824,10 @@ void __thiscall cObjElementFXBertoAttack_Update(cObjElementFXBertoAttack *self, 
 	CGameModel_SetRot(Debris_Model(d), &rot);
 	CGameModel_SetSortZ(Debris_Model(d), -81.0f, 0.0f);
 	float delta = FXA_Delta();
-	self->fbc = delta + self->fbc;
-	self->fb8 = delta + self->fb8;
+	self->time = delta + self->time;
+	self->emitTime = delta + self->emitTime;
 	int alpha = 0;
-	if (FX_InRange(self->fbc, 0.0f, 0.6f, &f)) {
+	if (FX_InRange(self->time, 0.0f, 0.6f, &f)) {
 		alpha = 0xff - (int)(f * 255.0f);
 	}
 	if (0.95f > Debris_Life(d)) {
@@ -2866,12 +2866,12 @@ void __thiscall cObjElementFXDTritusAttack_Update(cObjElementFXDTritusAttack *se
 	CGameModel_SetRot(Debris_Model(d), &rot);
 	CGameModel_SetSortZ(Debris_Model(d), -78.0f, 0.0f);
 	float delta = FXA_Delta();
-	self->fbc = delta + self->fbc;
-	self->fb8 = delta + self->fb8;
+	self->time = delta + self->time;
+	self->emitTime = delta + self->emitTime;
 	CGameModel_Vertices(m, &pos, NULL, NULL, 1, 0, NULL, (uint32_t)self->nodeMaster, NULL);
 	FXBeams b = { &self->particles, self->trails, FXDTRITUSATTACK_TRAILS, FXDTRITUSATTACK_POINTS, self->point,
 		self->fc7c, self->fed4, self->fa24, NULL, 2000.0f, 0.72f, 0.1f, 0x40f54019, 0xffe1190a, 0xf54019 };
-	FXBeams_Draw(&b, self->fbc, delta, &pos, &rot);
+	FXBeams_Draw(&b, self->time, delta, &pos, &rot);
 }
 
 #define FXA_RAMP_POLICESTEAL 0x4307ac
@@ -2893,12 +2893,12 @@ void __thiscall cObjElementFXPoliceSteal_Update(cObjElementFXPoliceSteal *self, 
 	}
 	CGameModel_SetPos(Debris_Model(d), Obj_Vtbl(self->ent)->GetViewPos(self->ent, &tmp));
 	CGameModel_SetRot(Debris_Model(d), Obj_Vtbl(self->ent)->GetViewAng(self->ent, &tmp));
-	float t = self->fbc + FXA_Delta();
-	self->fbc = t;
+	float t = self->emitTime + FXA_Delta();
+	self->emitTime = t;
 	if (0.04f > t) {
 		return;
 	}
-	self->fbc = 0.0f;
+	self->emitTime = 0.0f;
 	Obj_Vtbl(self->target)->GetViewPos(self->target, &b);
 	Obj_Vtbl(self->ent)->GetViewPos(self->ent, &a);
 	float az = FXA_Rand((double)6.28318548f, 0.0);
@@ -2961,9 +2961,9 @@ void __thiscall cObjElementFXSebastianFlash_Update(cObjElementFXSebastianFlash *
 	CGameModel_SetRot(Debris_Model(d), &rot);
 	CGameModel_SetSortZ(Debris_Model(d), -82.0f, 0.0f);
 	float delta = FXA_Delta();
-	float time = delta + self->fbc;
-	self->fb8 = delta + self->fb8;
-	self->fbc = time;
+	float time = delta + self->time;
+	self->emitTime = delta + self->emitTime;
+	self->time = time;
 	if (0.1f > time) {
 		FX_InRange(time, 0.0f, 0.1f, &f);
 		float g = 1.0f - f;
@@ -3048,12 +3048,12 @@ void __thiscall cObjElementFXBertoFlash_Update(cObjElementFXBertoFlash *self, cD
 	CGameModel_SetRot(Debris_Model(d), &rot);
 	CGameModel_SetSortZ(Debris_Model(d), -82.0f, 0.0f);
 	float delta = FXA_Delta();
-	self->fc0 = self->fc0 + delta;
-	self->fbc = self->fbc + delta;
-	if (FX_InRange(self->fc0, 0.0f, 0.2f, &f)) {
+	self->time = self->time + delta;
+	self->emitTime = self->emitTime + delta;
+	if (FX_InRange(self->time, 0.0f, 0.2f, &f)) {
 		float g = 1.0f - f;
 		v = g * g * (2.0f - g);
-	} else if (FX_InRange(self->fc0, 0.2f, 0.7f, &f)) {
+	} else if (FX_InRange(self->time, 0.2f, 0.7f, &f)) {
 		v = (3.0f - f * 2.0f) * (f * f);
 	} else {
 		Debris_Life(d) = 0.0f;
@@ -3252,8 +3252,8 @@ void __thiscall cObjElementFXBankMasterSuction_Update(cObjElementFXBankMasterSuc
 	CGameModel_SetPos(Debris_Model(d), &pos);
 	CGameModel_SetRot(Debris_Model(d), &rot);
 	float delta = FXA_Delta();
-	self->fc0 = self->fc0 + delta;
-	self->fbc = self->fbc + delta;
+	self->time = self->time + delta;
+	self->emitTime = self->emitTime + delta;
 	float radius = Obj_Vtbl(self->target)->GetRadius(self->target) * 0.5f;
 	Obj_Vtbl(self->target)->GetViewPos(self->target, &t);
 	off.x = g_BankMasterBatonPosX;
@@ -3344,8 +3344,8 @@ void __thiscall cObjElementFXFunctionarySpecialAction_Update(cObjElementFXFuncti
 	}
 	CHECK(CGameModel_IsLoaded(m));
 	float delta = FXA_Delta();
-	self->fbc = self->fbc + delta;
-	self->fb8 = self->fb8 + delta;
+	self->time = self->time + delta;
+	self->emitTime = self->emitTime + delta;
 	if (Entity_LifeI(self->ent) <= 0) {
 		if (Debris_Life(d) > 0.4f) {
 			Debris_Life(d) = 0.4f;
@@ -3398,7 +3398,7 @@ void __thiscall cObjElementFXFunctionarySpecialAction_Update(cObjElementFXFuncti
 		float dz = p->z - pts[i].z;
 		if (dy * dy + dx * dx + dz * dz > 3600.0f) {
 			*p = pts[i];
-			self->fb8 = 0.0f;
+			self->emitTime = 0.0f;
 			if (!run) {
 				continue;
 			}
@@ -3428,17 +3428,17 @@ void __thiscall cObjElementFXFunctionarySpecialAction_Update(cObjElementFXFuncti
 			CGameParticles_EmitN(sp, 1, 0);
 		} else {
 			CGameTrail_SetLastPos(t, pts[i]);
-			if (self->fb8 > 0.01f && 1.0f >= speed && self->fb8 > 0.0f) {
+			if (self->emitTime > 0.01f && 1.0f >= speed && self->emitTime > 0.0f) {
 				float k = 0.0f;
 				do {
 					CGameTrail_Shrink(t);
 					k = k + 0.01f;
-				} while (self->fb8 > k);
+				} while (self->emitTime > k);
 			}
 		}
 	}
-	if (self->fb8 > 0.01f) {
-		self->fb8 = 0.0f;
+	if (self->emitTime > 0.01f) {
+		self->emitTime = 0.0f;
 	}
 }
 
@@ -3715,13 +3715,13 @@ void __thiscall cObjElementFXMercenaryDrink_Update(cObjElementFXMercenaryDrink *
 	CGameModel_SetRot(Debris_Model(d), &rot);
 	CGameModel_SetSortZ(Debris_Model(d), -91.0f, 0.0f);
 	float delta = FXA_Delta();
-	self->fbc = self->fbc + delta;
-	float t = self->fb8 + delta;
-	self->fb8 = t;
+	self->time = self->time + delta;
+	float t = self->emitTime + delta;
+	self->emitTime = t;
 	if (!(t > 0.03f)) {
 		return;
 	}
-	self->fb8 = 0.0f;
+	self->emitTime = 0.0f;
 	Vec3_Rotate(&o, &self->offset, &rot);
 	CGameModel_Vertices(m, pts, NULL, NULL, 2, -1, NULL, (uint32_t)self->nodeJar, idx);
 	dir.x = pts[0].x - pts[1].x;
@@ -3732,7 +3732,7 @@ void __thiscall cObjElementFXMercenaryDrink_Update(cObjElementFXMercenaryDrink *
 	mouth.x = pts[0].x + r->x;
 	mouth.y = r->y + pts[0].y;
 	mouth.z = r->z + pts[0].z;
-	if (!FX_InRange(self->fbc, 0.5f, 1.3f, &f)) {
+	if (!FX_InRange(self->time, 0.5f, 1.3f, &f)) {
 		return;
 	}
 	float scale = 1.0f;

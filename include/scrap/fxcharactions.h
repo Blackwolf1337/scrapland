@@ -84,8 +84,8 @@ typedef struct cObjElementFXBankMasterAttack {
 	void *vftable;			/* 0x00 */
 	cEntity *ent;			/* 0x04 */
 	CGameParticles particles;	/* 0x08 on Dummy01 */
-	float fb8;			/* 0xb8 */
-	float fbc;			/* 0xbc */
+	float emitTime;		/* 0xb8 the particles are emitted every 0.04 s of it */
+	float time;			/* 0xbc since the start */
 	CGameTrail trail;		/* 0xc0 */
 	CGameTrail trail2;		/* 0xc4 */
 	int nodeBaton;			/* 0xc8 DF_Batton of the character */
@@ -101,8 +101,8 @@ typedef struct cObjElementFXBankMasterSuction {
 	cEntity *ent;			/* 0x004 */
 	cEntity *target;		/* 0x008 */
 	CGameParticles particles;	/* 0x00c on Dummy01 */
-	float fbc;			/* 0x0bc */
-	float fc0;			/* 0x0c0 */
+	float emitTime;		/* 0x0bc the particles are emitted every 0.04 s of it */
+	float time;			/* 0x0c0 since the start */
 	float phase[FXBMSUCTION_POINTS];	/* 0x0c4 -0.9..0 */
 	vec3_t dir[FXBMSUCTION_POINTS];	/* 0x0fc random directions of length 0.25..1 */
 	float angle[FXBMSUCTION_POINTS];	/* 0x1a4 0..2 pi */
@@ -133,8 +133,8 @@ typedef struct cObjElementFXBertoAttack {
 	void *vftable;			/* 0x00 */
 	cEntity *ent;			/* 0x04 */
 	CGameParticles particles;	/* 0x08 on Dummy01 */
-	float fb8;			/* 0xb8 */
-	float fbc;			/* 0xbc */
+	float emitTime;		/* 0xb8 the particles are emitted every 0.04 s of it */
+	float time;			/* 0xbc since the start */
 	int fc0;			/* 0xc0 */
 	int nodeGlass;		/* 0xc4 R_Berto_TroncoInf-cristal */
 	byte started;			/* 0xc8 */
@@ -147,8 +147,8 @@ typedef struct cObjElementFXBertoFlash {
 	cEntity *ent;			/* 0x004 */
 	cEntity *target;		/* 0x008 */
 	CGameParticles particles;	/* 0x00c on Dummy01 */
-	float fbc;			/* 0x0bc */
-	float fc0;			/* 0x0c0 */
+	float emitTime;		/* 0x0bc the particles are emitted every 0.04 s of it */
+	float time;			/* 0x0c0 since the start */
 	vec3_t dir[FXBERTOFLASH_POINTS];	/* 0x0c4 length 10..14 */
 	vec3_t dir2[FXBERTOFLASH_POINTS];	/* 0x394 length 0.65..0.85 of the target radius */
 	CGameTrail trails[FXBERTOFLASH_TRAILS];	/* 0x664 */
@@ -183,8 +183,8 @@ typedef struct cObjElementFXKill {
 	void *vftable;			/* 0x000 */
 	cEntity *ent;			/* 0x004 */
 	CGameParticles particles;	/* 0x008 on Dummy01 */
-	float fb8;			/* 0x0b8 */
-	float fbc;			/* 0x0bc */
+	float emitTime;		/* 0x0b8 the particles are emitted every 0.04 s of it */
+	float time;			/* 0x0bc since the start */
 	int vertex[FXKILL_POINTS];	/* 0x0c0 random vertices of the model */
 	vec3_t point[FXKILL_POINTS];	/* 0x1ec the vertices in the model space (unrotated) */
 	float scale[FXKILL_POINTS];	/* 0x570 15..75 times the radius / 90 */
@@ -236,8 +236,8 @@ typedef struct cObjElementFXDTritusAttack {
 	void *vftable;			/* 0x0000 */
 	cEntity *ent;			/* 0x0004 */
 	CGameParticles particles;	/* 0x0008 on Dummy01 */
-	float fb8;			/* 0x00b8 */
-	float fbc;			/* 0x00bc */
+	float emitTime;		/* 0x00b8 the particles are emitted every 0.04 s of it */
+	float time;			/* 0x00bc since the start */
 	int nodeMaster;			/* 0x00c0 R_Detritus_Tronco */
 	int vertex[FXDTRITUSATTACK_POINTS];	/* 0x00c4 */
 	vec3_t point[FXDTRITUSATTACK_POINTS];	/* 0x031c relative to the trunk, unrotated */
@@ -256,8 +256,8 @@ typedef struct cObjElementFXFunctionarySpecialAction {
 	void *vftable;			/* 0x000 */
 	cEntity *ent;			/* 0x004 a WalkChar */
 	CGameParticles particles;	/* 0x008 on Dummy01 */
-	float fb8;			/* 0x0b8 */
-	float fbc;			/* 0x0bc */
+	float emitTime;		/* 0x0b8 the particles are emitted every 0.04 s of it */
+	float time;			/* 0x0bc since the start */
 	byte pad_c0[4];
 	CGameTrail trails[FXFUNCTIONARY_TRAILS];	/* 0x0c4 */
 	vec3_t pos[FXFUNCTIONARY_TRAILS];	/* 0x0fc the vertices of g_FXFunctionaryVertex */
@@ -299,8 +299,8 @@ typedef struct cObjElementFXMercenaryDrink {
 	void *vftable;			/* 0x00 */
 	cEntity *ent;			/* 0x04 */
 	CGameParticles particles;	/* 0x08 on Dummy01 */
-	float fb8;			/* 0xb8 */
-	float fbc;			/* 0xbc */
+	float emitTime;		/* 0xb8 the particles are emitted every 0.04 s of it */
+	float time;			/* 0xbc since the start */
 	vec3_t offset;			/* 0xc0 from the mouth of the jar, in its frame */
 	int nodeJar;			/* 0xcc OB_JarraMercurio_MercA */
 	byte started;			/* 0xd0 */
@@ -389,7 +389,7 @@ typedef struct cObjElementFXPoliceSteal {
 	cEntity *ent;			/* 0x04 */
 	cEntity *target;		/* 0x08 */
 	CGameParticles particles;	/* 0x0c on Dummy01 */
-	float fbc;			/* 0xbc */
+	float emitTime;		/* 0xbc the particles are emitted every 0.04 s of it */
 	int fc0;			/* 0xc0 */
 	int fc4;			/* 0xc4 */
 	byte started;			/* 0xc8 */
@@ -400,8 +400,8 @@ typedef struct cObjElementFXSebastianFlash {
 	void *vftable;			/* 0x000 */
 	cEntity *ent;			/* 0x004 */
 	CGameParticles particles;	/* 0x008 on Dummy01 */
-	float fb8;			/* 0x0b8 */
-	float fbc;			/* 0x0bc */
+	float emitTime;		/* 0x0b8 the particles are emitted every 0.04 s of it */
+	float time;			/* 0x0bc since the start */
 	vec3_t dir[FXSEBASTIAN_POINTS];	/* 0x0c0 length 0..3 */
 	vec3_t dir2[FXSEBASTIAN_POINTS];	/* 0x444 length 15..80 */
 	CGameTrail trails[FXSEBASTIAN_TRAILS];	/* 0x7c8 */

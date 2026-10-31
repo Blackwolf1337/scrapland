@@ -6,10 +6,16 @@
 # shows it.
 #
 # usage: tools/fixmembers.py <root> <struct> <map file: "old new" per line, # comments>
+#        tools/fixmembers.py <root> - <map file: "struct old new" per line> (several structs at once)
 import re, subprocess, sys, os
 root, struct, mapfile = sys.argv[1:4]
-m = dict(l.split() for l in open(mapfile) if l.strip() and not l.startswith('#'))
-pat = re.compile(r"^(\S+?):(\d+):(\d+): error: '%s' has no member named '(\w+)'" % re.escape(struct))
+rows = [l.split() for l in open(mapfile) if l.strip() and not l.startswith('#')]
+if struct == '-':
+	m = {(r[0], r[1]): r[2] for r in rows}
+	pat = re.compile(r"^(\S+?):(\d+):(\d+): error: '(\w+)' has no member named '(\w+)'")
+else:
+	m = {(struct, r[0]): r[1] for r in rows}
+	pat = re.compile(r"^(\S+?):(\d+):(\d+): error: '(%s)' has no member named '(\w+)'" % re.escape(struct))
 # gcc columns count a tab as up to 8 display columns
 def byteidx(s, col):
 	d = 1
@@ -25,8 +31,8 @@ for rnd in range(10):
 	hits = {}
 	for line in (r.stdout + r.stderr).splitlines():
 		g = pat.match(line)
-		if g and g.group(4) in m:
-			hits.setdefault(g.group(1), set()).add((int(g.group(2)), int(g.group(3)), g.group(4)))
+		if g and (g.group(4), g.group(5)) in m:
+			hits.setdefault(g.group(1), set()).add((int(g.group(2)), int(g.group(3)), g.group(5), g.group(4)))
 	if not hits:
 		left = [l for l in (r.stdout + r.stderr).splitlines() if ': error:' in l]
 		print('round %d: done, %d other errors' % (rnd, len(set(left))))
@@ -35,7 +41,7 @@ for rnd in range(10):
 	for f, hs in hits.items():
 		lines = open(f).read().split('\n')
 		# right to left per line, so the columns stay valid
-		for ln, col, name in sorted(hs, key=lambda h: (h[0], -h[1])):
+		for ln, col, name, st in sorted(hs, key=lambda h: (h[0], -h[1])):
 			s = lines[ln - 1]
 			i = byteidx(s, col)
 			# at the -> or ., or at the name itself when gcc adds a "did you mean"
@@ -44,7 +50,7 @@ for rnd in range(10):
 				i = i + g.end() if g else None
 			if i is None or not re.match(r'%s\b' % name, s[i:]) or (i and re.match(r'\w', s[i - 1])):
 				print('not found: %s:%d:%d %s' % (f, ln, col, name)); continue
-			lines[ln - 1] = s[:i] + m[name] + s[i + len(name):]
+			lines[ln - 1] = s[:i] + m[(st, name)] + s[i + len(name):]
 			n += 1
 		open(f, 'w').write('\n'.join(lines))
 	print('round %d: %d replaced in %d files' % (rnd, n, len(hits)))
