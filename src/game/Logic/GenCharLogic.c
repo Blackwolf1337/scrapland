@@ -159,9 +159,8 @@ static inline byte GenChar_Rand101(void) {
 	return 101.0f > (float)(Weap_Rand01() * 100.0 + 0.0);
 }
 
-/* slot 0x80 of the AI of a character */
 static inline int GenChar_AISubState(cAIChar *ai) {
-	return (*(int(__thiscall **)(cAIChar *))((byte *)ai->vftable + 0x80))(ai);
+	return ai->vftable->GetInternState(ai);
 }
 
 /* vf17 */

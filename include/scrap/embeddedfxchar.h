@@ -149,7 +149,7 @@ SD_OFFSET(cEmbeddedFXMercenary, isL, 0x178);
 SD_SIZE(cEmbeddedFXMercenary, 0x230);
 
 #define FXMESSENGER_RAYS 8
-#define FXMESSENGER_TRAILS 12
+#define FXEMBMESSENGER_TRAILS 12
 
 typedef struct cEmbeddedFXMessenger {
 	cEmbeddedFX base;
@@ -160,11 +160,11 @@ typedef struct cEmbeddedFXMessenger {
 	CGameParticles glow;		/* 0x014 4 glows per bolt, at both ends */
 	int nodeRays[FXMESSENGER_RAYS];	/* 0x0c4 DF_Rayos_01.. */
 	int order[FXMESSENGER_RAYS];	/* 0x0e4 the pairs of rays a bolt joins */
-	float life[FXMESSENGER_TRAILS];	/* 0x104 of the bolts */
-	int rays[FXMESSENGER_TRAILS][2];	/* 0x134 the two rays of a bolt */
-	int verts[FXMESSENGER_TRAILS][2];	/* 0x194 the vertex on each ray */
-	CGameTrail trails[FXMESSENGER_TRAILS];	/* 0x1f4 */
-	vec3_t offs[FXMESSENGER_TRAILS];	/* 0x224 the bend of the middle of a bolt */
+	float life[FXEMBMESSENGER_TRAILS];	/* 0x104 of the bolts */
+	int rays[FXEMBMESSENGER_TRAILS][2];	/* 0x134 the two rays of a bolt */
+	int verts[FXEMBMESSENGER_TRAILS][2];	/* 0x194 the vertex on each ray */
+	CGameTrail trails[FXEMBMESSENGER_TRAILS];	/* 0x1f4 */
+	vec3_t offs[FXEMBMESSENGER_TRAILS];	/* 0x224 the bend of the middle of a bolt */
 	byte used[FXMESSENGER_RAYS][16];	/* 0x2b4 the vertices of the rays a bolt ends at */
 	byte b334;			/* 0x334 */
 	byte pad_335[3];

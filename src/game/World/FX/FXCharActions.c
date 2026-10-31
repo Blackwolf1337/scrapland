@@ -308,7 +308,7 @@ void *__thiscall cObjElementFXMessengerAttack_ctor(void *self) {
 
 	FXA_SetVtbl(s, VT_FXMESSENGERATTACK);
 	CGameParticles_ctor(&s->particles);
-	FXA_TrailsCtor(s->trails, FXMESSENGER_TRAILS);
+	FXA_TrailsCtor(s->trails, FXMESSENGERATTACK_TRAILS);
 	s->started = 0;
 	s->ent = NULL;
 	s->f10 = 0.0f;
@@ -484,7 +484,7 @@ void __thiscall cObjElementFXMercenaryDrink_dtor(void *self) {
 }
 
 void __thiscall cObjElementFXMessengerAttack_dtor(void *self) {
-	FXA_DtorTrails(self, VT_FXMESSENGERATTACK, 0x14, 0xe8, FXMESSENGER_TRAILS);
+	FXA_DtorTrails(self, VT_FXMESSENGERATTACK, 0x14, 0xe8, FXMESSENGERATTACK_TRAILS);
 }
 
 void __thiscall cObjElementFXMessengerTakeDataPack_dtor(void *self) {
@@ -829,7 +829,7 @@ static void FXMessenger_Trail(CGameTrail *t, byte segments, byte main) {
 void __thiscall cObjElementFXMessengerAttack_Attach(cObjElementFXMessengerAttack *self, cDebris *d) {
 	FXA_AttachDummy01(&self->particles, d);
 	CHECK(self->particles.ParticleSystem);
-	for (int i = 0; i < FXMESSENGER_TRAILS; i++) {
+	for (int i = 0; i < FXMESSENGERATTACK_TRAILS; i++) {
 		FXMessenger_Trail(&self->trails[i], 31, i == 0);
 	}
 }
@@ -1038,7 +1038,7 @@ void __thiscall cObjElementFXMessengerAttack_Reset(cObjElementFXMessengerAttack 
 	self->f10 = 0.0f;
 	self->fc = 0.0f;
 	CGameParticles_KillAll(&self->particles);
-	FXA_ClearTrails(self->trails, FXMESSENGER_TRAILS);
+	FXA_ClearTrails(self->trails, FXMESSENGERATTACK_TRAILS);
 }
 
 void __thiscall cObjElementFXMessengerTakeDataPack_Reset(cObjElementFXMessengerTakeDataPack *self, int arg) {

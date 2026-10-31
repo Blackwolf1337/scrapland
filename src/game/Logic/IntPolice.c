@@ -17,9 +17,9 @@
 #define AICTRL_MAKESENTINEL 0x14fcf0
 #define AICTRL_SENTINELDEATH 0x14fd60
 
-/* slot 0xac of the AI of a character: it may act */
+/* the AI of the character may act */
 static inline byte AICtrl_AIActive(cAIChar *ai) {
-	return (*(byte(__thiscall **)(cAIChar *))((byte *)ai->vftable + 0xac))(ai);
+	return ai->vftable->GetRepos(ai);
 }
 
 /* the slots 0x64 and 0x68 of the sentinel logic: the accuse (no other sentinel accuses) and the update */

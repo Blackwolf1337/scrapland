@@ -35,16 +35,17 @@ static cEntity *World_Lookup(cWorld *w, const char *name) {
 }
 
 typedef cEntity *(__thiscall *AIGetTarget_t)(void *ai);
-typedef void(__thiscall *AIGroupUpdate_t)(void *group, float dt);
 
 /* the target of an AI (vtable slot 0x48) */
 static cEntity *AI_GetTarget(void *ai) {
 	return (*(AIGetTarget_t *)(*(byte **)ai + 0x48))(ai);
 }
 
-/* the update of an AI group (vtable slot 0x20) */
+/* the update of an AI group (the vehicles or the characters) */
 static void AIGroup_Update(void *group, float dt) {
-	(*(AIGroupUpdate_t *)(*(byte **)group + 0x20))(group, dt);
+	cAIEntityGroup *g = group;
+
+	g->vftable->Update(g, dt);
 }
 
 static int World_IsIgnoredInline(cWorld *self, cEntity *e) {

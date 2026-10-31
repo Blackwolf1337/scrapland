@@ -4,6 +4,7 @@
 #include "scrap/chartype.h"
 #include "scrap/actions.h"
 #include "scrap/arrowindicator.h"
+#include "scrap/embeddedfxchar.h"
 #include "scrap/fxelements.h"
 #include "scrap/missileentity.h"
 #include "scrap/vehicleentity.h"
@@ -162,8 +163,8 @@ void __thiscall cWalkCharEntity_ActionTick(cEntity *self, float dt) {
 				cPy_Function_AddParamS(&WCE_Class(w)->photoPress, self->name);
 				cPy_Function_Execute(&WCE_Class(w)->photoPress, 0);
 			} else {
-				void *l = t->lLogic;
-				if (!l || (*(byte(__thiscall **)(void *))(*(byte **)l + 8))(l)) {
+				cLocalLogic *l = t->lLogic;
+				if (!l || l->vftable->Vf02(l)) {
 					cArrowIndicator_Execute(&WLife(t)->arrow, self);
 				}
 			}
@@ -227,9 +228,9 @@ void __thiscall cWalkCharEntity_UpdateModel(cEntity *self) {
 				cActClassCam_Update(&WCE_Class(w)->cam, o->cam, self);
 			}
 		}
-		void *fx = o->fx;
+		struct cEmbeddedFX *fx = o->fx;
 		if (fx) {
-			(*(void(__thiscall **)(void *))(*(byte **)fx + 0x10))(fx);
+			fx->vftable->Tick(fx);
 		}
 	}
 }

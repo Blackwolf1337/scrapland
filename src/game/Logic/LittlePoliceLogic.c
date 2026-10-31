@@ -14,9 +14,9 @@
 #define LP_VT(self) ((self)->base.base.vftable)
 #define LP_BASE(self) (&(self)->base.base)
 
-/* slot 0x94 of the AI of a character: it still has its target */
+/* the AI of the character still has its target */
 static inline byte LP_AIHasTarget(cAIChar *ai) {
-	return (*(byte(__thiscall **)(cAIChar *))((byte *)ai->vftable + 0x94))(ai);
+	return ai->vftable->GetDirect(ai);
 }
 
 static inline float LP_DistSq(const vec3_t *a, const vec3_t *b) {

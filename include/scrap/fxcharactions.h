@@ -46,7 +46,7 @@
 #define FXGEARMISSILE_TRAILS 10
 #define FXGEARMISSILE_SLOTS 10
 #define FXGEARMISSILE_POINTS 6
-#define FXMESSENGER_TRAILS 6
+#define FXMESSENGERATTACK_TRAILS 6
 #define FXMESSENGER_POINTS 10		/* per line */
 #define FXMESSENGER_LINES 5
 #define FXDATAPACK_TRAILS 4
@@ -318,7 +318,7 @@ typedef struct cObjElementFXMessengerAttack {
 	vec3_t from;			/* 0x0c4 */
 	vec3_t to;			/* 0x0d0 */
 	vec3_t dir;			/* 0x0dc */
-	CGameTrail trails[FXMESSENGER_TRAILS];	/* 0x0e8 */
+	CGameTrail trails[FXMESSENGERATTACK_TRAILS];	/* 0x0e8 */
 	/* 0x100 the ray from .. to (the middle points moved at random), then the 5 branches off it */
 	vec3_t lines[1 + FXMESSENGER_LINES][FXMESSENGER_POINTS];
 	float width[1 + FXMESSENGER_LINES];	/* 0x3d0 */

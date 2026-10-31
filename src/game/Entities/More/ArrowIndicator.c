@@ -17,9 +17,9 @@
 #define CSTRING_CTOR 0x133980
 #define CSTRING_DTOR 0x133990
 
-/* the vtable slot of the parent called after a new use or view function */
+/* called after a new use or view function */
 static inline void Arrow_FuncsChanged(cEntity *parent) {
-	(*(void(__thiscall **)(cEntity *))((const byte *)parent->vftable + 0xc0))(parent);
+	WithLife_Vtbl(parent)->UnlinkListen(parent);
 }
 
 float *Vec2_Normalize(float *out, const float *in) {

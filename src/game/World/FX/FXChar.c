@@ -2467,8 +2467,8 @@ void FX_CharacterTeleport(cAbstractFile *params) {
 		cDebrisSys_Drop(sys, d);
 	} else if (Debris_Element(d)) {
 		/* the element of a reused debris starts over (vf04) */
-		void *el = Debris_Element(d);
-		(*(void(__thiscall **)(void *, cDebris *))(*(byte **)el + 0x10))(el, d);
+		cObjElementFX *el = Debris_Element(d);
+		el->vftable->Reset(el, d);
 	}
 	cObjElementFXCharacterTeleport *el = Debris_Element(d);
 	if (el) {

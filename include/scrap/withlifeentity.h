@@ -66,7 +66,8 @@ SD_SIZE(cWithLifeEntity, CWITHLIFEENTITY_SIZE);
 typedef struct cWithLifeEntityVtbl {
 	cObjEntityVtbl base;
 	void(__thiscall *CheckLife)(cEntity *self);						/* 0xbc vf47 */
-	void *vf48;
+	/* nothing; a character unlinks its listener (the arrow calls it after a new use or view function) */
+	void(__thiscall *UnlinkListen)(cEntity *self);						/* 0xc0 vf48 */
 	void(__thiscall *OnDeath)(cEntity *self);						/* 0xc4 vf49 */
 	void(__thiscall *OnDamage)(cEntity *self, int damage);				/* 0xc8 vf50 */
 	void(__thiscall *SetMass)(cEntity *self, float mass);					/* 0xcc vf51 */

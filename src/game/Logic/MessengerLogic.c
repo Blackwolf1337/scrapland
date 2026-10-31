@@ -8,8 +8,6 @@
 
 #include "scrap/arrowindicator.h"
 #include "scrap/chartype.h"
-/* fxcharactions.h and embeddedfxchar.h both name their trail counts so; neither is used here */
-#undef FXMESSENGER_TRAILS
 #include "scrap/embeddedfxmisc.h"
 #include "scrap/itementity.h"
 #include "scrap/modmove.h"

@@ -7,8 +7,6 @@
 
 #include "scrap/chartype.h"
 #include "scrap/crt.h"
-/* fxcharactions.h (from chartype.h) names its trail count so too; the one of embeddedfxchar.h counts here */
-#undef FXMESSENGER_TRAILS
 #include "scrap/embeddedfxchar.h"
 #include "scrap/fxmisc.h"
 #include "scrap/global.h"
@@ -206,7 +204,7 @@ cEmbeddedFX *__fastcall cEmbeddedFXMessenger_ctor(void *p) {
 	cEmbeddedFXMessenger *self = p;
 	EFX_CtorVtbl(self, VT_MESSENGER);
 	CGameParticles_ctor(&self->glow);
-	EFX_TrailsCtor(self->trails, FXMESSENGER_TRAILS);
+	EFX_TrailsCtor(self->trails, FXEMBMESSENGER_TRAILS);
 	self->b334 = 0;
 	self->base.ent = NULL;
 	self->i08 = 0;
@@ -313,7 +311,7 @@ void __fastcall cEmbeddedFXMercenary_dtor(cEmbeddedFXMercenary *self) {
 
 void __fastcall cEmbeddedFXMessenger_dtor(cEmbeddedFXMessenger *self) {
 	EFX_SetVtbl(self, VT_MESSENGER);
-	EFX_TrailsDtor(self->trails, FXMESSENGER_TRAILS);
+	EFX_TrailsDtor(self->trails, FXEMBMESSENGER_TRAILS);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);
 }
@@ -449,7 +447,7 @@ void __fastcall cEmbeddedFXMercenary_Release(cEmbeddedFXMercenary *self) {
 
 void __fastcall cEmbeddedFXMessenger_Release(cEmbeddedFXMessenger *self) {
 	self->i08 = 0;
-	for (int i = 0; i < FXMESSENGER_TRAILS; i++) {
+	for (int i = 0; i < FXEMBMESSENGER_TRAILS; i++) {
 		self->life[i] = 0.0f;
 		CGameTrail_Clear(&self->trails[i]);
 	}
@@ -501,7 +499,7 @@ void __fastcall cEmbeddedFXCrazyGambler_Clear(cEmbeddedFXCrazyGambler *self) {
 }
 
 void __fastcall cEmbeddedFXMessenger_Clear(cEmbeddedFXMessenger *self) {
-	for (int i = 0; i < FXMESSENGER_TRAILS; i++) {
+	for (int i = 0; i < FXEMBMESSENGER_TRAILS; i++) {
 		CGameTrail_Clear(&self->trails[i]);
 	}
 	CGameParticles_KillAll(&self->glow);
@@ -588,7 +586,7 @@ byte __fastcall cEmbeddedFXMercenary_Reset(cEmbeddedFXMercenary *self) {
 }
 
 byte __fastcall cEmbeddedFXMessenger_Reset(cEmbeddedFXMessenger *self) {
-	for (int i = 0; i < FXMESSENGER_TRAILS; i++) {
+	for (int i = 0; i < FXEMBMESSENGER_TRAILS; i++) {
 		self->life[i] = 0.0f;
 		EFX_TrailStyle(&self->trails[i], 8, 0, 3, 1.0f, 0);
 	}
@@ -1637,7 +1635,7 @@ void __thiscall cEmbeddedFXMessenger_Update(cEmbeddedFXMessenger *self, float dt
 		return;
 	}
 	self->on = vis;
-	for (int i = 0; i < FXMESSENGER_TRAILS; i++) {
+	for (int i = 0; i < FXEMBMESSENGER_TRAILS; i++) {
 		CGameTrail *trail = &self->trails[i];
 		int *ray = self->rays[i];
 		int *vert = self->verts[i];

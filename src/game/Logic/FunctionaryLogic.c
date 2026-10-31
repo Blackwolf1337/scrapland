@@ -238,8 +238,8 @@ void __thiscall cFunctionaryLocalLogic_Work(cFunctionaryLocalLogic *self, float 
 		return;
 	}
 	cEntity *p = Func_Parent(self);
-	void *ai = p->vftable->GetAI(p);
-	if ((*(byte(__thiscall **)(void *))(*(byte **)ai + 0x44))(ai)) {
+	cAIChar *ai = p->vftable->GetAI(p);
+	if (ai->vftable->IsPaused(ai)) {
 		return;
 	}
 	int st = self->base.base.state;
@@ -293,7 +293,7 @@ void __thiscall cFunctionaryLocalLogic_Work(cFunctionaryLocalLogic *self, float 
 		return;
 	}
 	if (((cAIChar *)ai)->vftable->GetState(ai) != 0 ||
-		!(*(byte(__thiscall **)(void *))(*(byte **)ai + 0x4c))(ai) ||
+		!((cAIChar *)ai)->vftable->GetArrived(ai) ||
 		strcmp(p->vftable->GetClassName(p), TYEN_WALKCHAR)) {
 		return;
 	}

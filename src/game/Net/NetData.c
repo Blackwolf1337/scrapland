@@ -11,8 +11,6 @@
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/net.h"
-/* fxcharactions.h and embeddedfxchar.h both name their trail counts so; neither is used here */
-#undef FXMESSENGER_TRAILS
 #include "scrap/vehicleentity.h"
 #include "scrap/vehiclemotors.h"
 #include "scrap/weapons.h"

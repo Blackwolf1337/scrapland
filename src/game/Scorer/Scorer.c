@@ -1818,7 +1818,7 @@ void Scorer_DrawDebug(void) {
 		if (e->flag_4c) {
 			void *ai = e->vftable->GetAI(e);
 			if (ai) {
-				DBG_VF(ai, 0x0c)(ai);
+				AI_Vtbl(ai)->Draw(ai);
 			}
 		}
 	}

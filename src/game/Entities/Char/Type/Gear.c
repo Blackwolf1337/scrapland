@@ -7,8 +7,6 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
-/* fxcharactions.h (from chartype.h) names its trail count so too; not used here */
-#undef FXMESSENGER_TRAILS
 #include "scrap/embeddedfxchar.h"
 #include "scrap/missileentity.h"
 #include "scrap/primitive.h"

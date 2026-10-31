@@ -27,9 +27,11 @@ int Vec3_Differ(const float *a, const float *b);
 
 #define Gear_Vtbl(self) ((self)->base.vftable)
 
-/* slot 0x94 of the AI of a character: it still has its target */
+/* the AI of the character still has its target */
 static inline byte Gear_AIHasTarget(void *ai) {
-	return (*(byte(__thiscall **)(void *))(*(byte **)ai + 0x94))(ai);
+	cAIChar *a = ai;
+
+	return a->vftable->GetDirect(a);
 }
 
 static inline cAIChar *Gear_AI(cGearLocalLogic *self) {

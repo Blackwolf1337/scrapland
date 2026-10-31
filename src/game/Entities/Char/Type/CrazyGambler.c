@@ -5,8 +5,6 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
-/* fxcharactions.h and embeddedfxchar.h both name their trail counts so; neither is used here */
-#undef FXMESSENGER_TRAILS
 #include "scrap/embeddedfxchar.h"
 
 /* params: an event, the head entity, a float. The hair glow of the gambler goes to the head node of that model. */
