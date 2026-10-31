@@ -48,18 +48,18 @@ typedef struct cAIVehicleSaved {
 	int internState;		/* 0x04 */
 	vec3_t dest;			/* 0x08 */
 	float speed;			/* 0x14 */
-	byte b18;			/* 0x18 */
+	byte boost;			/* 0x18 */
 	char target[0x9c - 0x19];	/* 0x19 the name of the target entity, "" for none */
 	vec3_t dest2;			/* 0x9c */
-	float f2f0;			/* 0xa8 */
-	byte b20;			/* 0xac */
+	float awayDist;			/* 0xa8 */
+	byte changing;			/* 0xac */
 	byte pad_ad[3];
-	float f30c;			/* 0xb0 */
+	float accel;			/* 0xb0 */
 	byte repos;			/* 0xb4 */
 	byte pad_b5[3];
 	float chaseMin;			/* 0xb8 */
 	float chaseMax;			/* 0xbc */
-	byte b32c;			/* 0xc0 */
+	byte stopAtGoal;		/* 0xc0 */
 	byte pad_c1[3];
 	float rotA;			/* 0xc4 */
 	float rotB;			/* 0xc8 */
@@ -113,11 +113,11 @@ struct cAIVehicle {
 	byte pad_60[0x64 - 0x60];
 	vec3_t dest2;			/* 0x064 */
 	byte pad_70[0x81 - 0x70];
-	byte b81;			/* 0x081 */
+	byte flat;			/* 0x081 the path move stays flat */
 	byte pad_82[0x86 - 0x82];
 	byte repos;			/* 0x086 "Repos" */
 	byte pad_87;
-	byte b88;			/* 0x088 TRAFFIC with a kind of track */
+	byte trafficPlaced;		/* 0x088 TRAFFIC with a kind of track: placed, repositioned like a visible one */
 	byte pad_89[0x90 - 0x89];
 	cAIVehicleSaved pending;	/* 0x090 state AIV_STATE_NONE for none */
 	byte(*onArrive)(cAIVehicle *self);	/* 0x15c GO_TO arrived: 1 if it took care of it */
@@ -130,7 +130,7 @@ struct cAIVehicle {
 	int state;			/* 0x19c AIV_ */
 	int prevState;			/* 0x1a0 */
 	int internState;		/* 0x1a4 AIVI_ */
-	byte b1a8;			/* 0x1a8 */
+	byte boost;			/* 0x1a8 the boost of the moves to a point and along the path */
 	byte pad_1a9[3];
 	int lifeMark;			/* 0x1ac the life of the vehicle at the last damage check */
 	float damageTime;		/* 0x1b0 */
@@ -139,35 +139,35 @@ struct cAIVehicle {
 	cAIVehicleSaved saved;		/* 0x20c */
 	int track;			/* 0x2d8 */
 	int node;			/* 0x2dc */
-	byte b2e0;			/* 0x2e0 */
+	byte reposBehind;		/* 0x2e0 the next repos is behind the camera */
 	byte pad_2e1[3];
 	vec3_t trackOfs;		/* 0x2e4 */
-	float f2f0;			/* 0x2f0 */
+	float awayDist;			/* 0x2f0 GET_AWAY_STOP: the half size of the box around the target to leave */
 	float maxDistRepos;		/* 0x2f4 */
 	float minDistRepos;		/* 0x2f8 */
 	float maxDistReposNotVis;	/* 0x2fc */
 	float minDistReposNotVis;	/* 0x300 */
 	float rotA;			/* 0x304 */
 	float rotB;			/* 0x308 */
-	float f30c;			/* 0x30c */
+	float accel;			/* 0x30c the acceleration of the move to a point */
 	float chaseMin;			/* 0x310 */
 	float chaseMax;			/* 0x314 */
 	byte b318;			/* 0x318 */
 	byte pad_319[3];
 	int trackType;			/* 0x31c 0..4, 5 none */
 	vec3_t trackPos;		/* 0x320 */
-	byte b32c;			/* 0x32c */
+	byte stopAtGoal;		/* 0x32c the move to a point stops there */
 	byte pad_32d[3];
-	float f330;			/* 0x330 */
-	int i334;			/* 0x334 */
+	float targetTime;		/* 0x330 the time the target is held (the hook, the lost path) */
+	int hookSide;			/* 0x334 the side of the next hook point, 0..2 */
 	int hookMode;			/* 0x338 */
 	int hookSaved;			/* 0x33c */
-	byte b340;			/* 0x340 */
+	byte goingForLife;		/* 0x340 on the way to a life item */
 	byte pad_341[3];
 	cItemDesc itemLife;		/* 0x344 the nearest life item */
 	cEntity *itemLifeEnt;		/* 0x34c */
 	int itemLifeMark;		/* 0x350 */
-	byte b354;			/* 0x354 */
+	byte goingForAmmo;		/* 0x354 on the way to an ammo item */
 	byte pad_355[3];
 	cItemDesc itemAmmo;		/* 0x358 the nearest ammo item */
 	cItemDesc itemAmmoK[3];		/* 0x360 the nearest of each kind */
@@ -180,7 +180,7 @@ struct cAIVehicle {
 	byte b3a8;			/* 0x3a8 */
 	byte b3a9[2];			/* 0x3a9 */
 	byte pad_3ab;
-	int i3ac;			/* 0x3ac */
+	int ammoSearch;			/* 0x3ac the nearest ammo first (0) or the farthest (1), 3 none */
 };
 SD_OFFSET(cAIVehicle, slotThink, 0x10);
 SD_OFFSET(cAIVehicle, target, 0x38);
@@ -325,12 +325,12 @@ void __thiscall cAIVehicle_GraphTrafficInDoor(cAIVehicle *self);
 void __thiscall cAIVehicle_ThinkRace(cAIVehicle *self);
 /* the internal state (AIVI_) and its move; the arguments by state, floats as double, bytes as int:
  * STOPPED, ORIENT_SHOOTING: none
- * FINISHING_LINE: vec3_t dest, speed, b1a8, a, b, f30c, b32c
- * FINISHING_LINE_WITH_SHOOT_CM, _LIFE, _AMMO: vec3_t dest, speed (WITH_SHOOT_CM also b1a8)
- * FINISHING_LINE_DIRECT: vec3_t dest, speed, b1a8, rotA, rotB
+ * FINISHING_LINE: vec3_t dest, speed, boost, a, b, accel, stopAtGoal
+ * FINISHING_LINE_WITH_SHOOT_CM, _LIFE, _AMMO: vec3_t dest, speed (WITH_SHOOT_CM also boost)
+ * FINISHING_LINE_DIRECT: vec3_t dest, speed, boost, rotA, rotB
  * CHASE_SHOOTING: chaseMin, chaseMax; CHASE_NOT_SHOOTING: chaseMin, rotB
- * FOLLOW_THE_PATH: vec3_t dir, speed, b1a8, b81, repos, a, b; FOLLOW_THE_PATH_WITH_SHOOT_CM: vec3_t dir, speed,
- * b1a8, b81 */
+ * FOLLOW_THE_PATH: vec3_t dir, speed, boost, flat, repos, a, b; FOLLOW_THE_PATH_WITH_SHOOT_CM: vec3_t dir, speed,
+ * boost, flat */
 void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...);
 /* the external state from SetState: 0 if the arguments did not fit */
 byte __thiscall cAIVehicle_ChangeState(cAIVehicle *self, int state, va_list args);
