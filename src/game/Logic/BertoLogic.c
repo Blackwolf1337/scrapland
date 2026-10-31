@@ -51,7 +51,7 @@ void __thiscall cBertoLocalLogic_ReleaseDesktop(cBertoLocalLogic *self) {
 /* vf17 (also of Betty): the default character takes its desktop */
 void __thiscall cBertoLocalLogic_Update(cBertoLocalLogic *self, float dt) {
 	if (self->isDefault && !cFunctionaryLocalLogic_GetDesktop(&self->base)) {
-		self->base.base.base.vftable->AssignDesktop(self, 0);
+		Functionary_Vtbl(self)->AssignDesktop(self, 0);
 		self->isDefault = 0;
 	}
 	cFunctionaryLocalLogic_Update(&self->base, dt);

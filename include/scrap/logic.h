@@ -53,13 +53,13 @@ typedef struct cLocalLogicVtbl {
 	byte(__thiscall *VarV)(void *self, const char *name, double *x, double *y, double *z, byte set); /* 0x18 */
 	byte(__thiscall *UpdateBusy)(void *self);						/* 0x1c */
 	void(__thiscall *Refresh)(void *self);						/* 0x20 */
-	void *vf09;
+	byte(__thiscall *Listens)(void *self, cEntity *talker);				/* 0x24 vf09 the mayor */
 	void(__thiscall *OnHit)(void *self, cEntity *attacker);				/* 0x28 */
 	void(__thiscall *OnSeen)(void *self, cEntity *e);					/* 0x2c vf11 */
-	void *vf12;
-	void *vf13;
-	void *vf14;
-	void *vf15;
+	void(__thiscall *OnAttack)(void *self, cEntity *attacker, float value);		/* 0x30 vf12 */
+	void(__thiscall *OnShot)(void *self, cEntity *attacker);				/* 0x34 vf13 */
+	void(__thiscall *OnHammer)(void *self, cEntity *nurse);				/* 0x38 vf14 */
+	byte(__thiscall *GivesMoney)(void *self, cEntity *police);				/* 0x3c vf15 */
 	void(__thiscall *OnAlarm)(void *self, cEntity *e);				/* 0x40 vf16 */
 	void(__thiscall *Update)(void *self, float dt);					/* 0x44 */
 	void(__thiscall *SetOriginFrom)(void *self, cEntity *e);				/* 0x48 */
@@ -69,6 +69,15 @@ typedef struct cLocalLogicVtbl {
 	void(__thiscall *SetOrigin)(void *self, float x, float y, float z);			/* 0x58 */
 	void(__thiscall *SetOriginAng)(void *self, float x, float y, float z);		/* 0x5c */
 	byte(__thiscall *RestartState)(void *self);						/* 0x60 */
+} cLocalLogicVtbl;
+
+static inline const cLocalLogicVtbl *Logic_Vtbl(const void *l) {
+	return *(const cLocalLogicVtbl *const *)l;
+}
+
+/* the slots of the logics of the generic characters (cGenCharLocalLogic and its children) */
+typedef struct cGenCharLocalLogicVtbl {
+	cLocalLogicVtbl base;
 	byte(__thiscall *CanAttack)(void *self, cEntity *e);		/* 0x64 vf25 the special attack against e */
 	void(__thiscall *UpdateView)(void *self);			/* 0x68 vf26 the view flag (+0x381) and the team */
 	void(__thiscall *ToRelax)(void *self, void *ai);			/* 0x6c vf27 the AI to its zone, relaxed */
@@ -80,20 +89,47 @@ typedef struct cLocalLogicVtbl {
 	void(__thiscall *Vf33)(void *self, byte restart);			/* 0x84 */
 	void(__thiscall *GoTo)(void *self, void *ai, cEntity *e);		/* 0x88 vf34 the AI walks to e */
 	void(__thiscall *UpdateGetIt)(void *self, void *ai, float dt);	/* 0x8c vf35 state 10 */
+} cGenCharLocalLogicVtbl;
+SD_OFFSET(cGenCharLocalLogicVtbl, CanAttack, 0x64);
+SD_OFFSET(cGenCharLocalLogicVtbl, UpdateView, 0x68);
+SD_OFFSET(cGenCharLocalLogicVtbl, Work, 0x80);
+
+static inline const cGenCharLocalLogicVtbl *GenChar_Vtbl(const void *l) {
+	return *(const cGenCharLocalLogicVtbl *const *)l;
+}
+
+/* the functionaries and the desk characters (cFunctionaryLocalLogic, Berto, Betty, Humphrey) */
+typedef struct cFunctionaryLocalLogicVtbl {
+	cGenCharLocalLogicVtbl base;
 	byte(__thiscall *CanTalk)(void *self);				/* 0x90 vf36 */
 	void(__thiscall *StopWork)(void *self, byte restart);			/* 0x94 vf37 */
 	vec3_t *(__thiscall *GetWorkAng)(void *self, vec3_t *out);		/* 0x98 vf38 */
 	byte(__thiscall *FastEscape)(void *self);				/* 0x9c vf39 */
 	void(__thiscall *AssignDesktop)(void *self, float maxDist);				/* 0xa0 vf40 */
 	void(__thiscall *ReleaseDesktop)(void *self);					/* 0xa4 vf41 */
-} cLocalLogicVtbl;
-SD_OFFSET(cLocalLogicVtbl, UpdateView, 0x68);
-SD_OFFSET(cLocalLogicVtbl, Work, 0x80);
-SD_OFFSET(cLocalLogicVtbl, FastEscape, 0x9c);
+} cFunctionaryLocalLogicVtbl;
+SD_OFFSET(cFunctionaryLocalLogicVtbl, CanTalk, 0x90);
+SD_OFFSET(cFunctionaryLocalLogicVtbl, FastEscape, 0x9c);
+SD_OFFSET(cFunctionaryLocalLogicVtbl, AssignDesktop, 0xa0);
+
+static inline const cFunctionaryLocalLogicVtbl *Functionary_Vtbl(const void *l) {
+	return *(const cFunctionaryLocalLogicVtbl *const *)l;
+}
+
+/* the sentinels: the accuse when seen (no other sentinel accuses) and the think */
+typedef struct cSentinelLocalLogicVtbl {
+	cLocalLogicVtbl base;
+	byte(__thiscall *Seen)(void *self);					/* 0x64 */
+	void(__thiscall *Think)(void *self, float dt, byte other);		/* 0x68 */
+} cSentinelLocalLogicVtbl;
+SD_OFFSET(cSentinelLocalLogicVtbl, Seen, 0x64);
+
+static inline const cSentinelLocalLogicVtbl *Sentinel_Vtbl(const void *l) {
+	return *(const cSentinelLocalLogicVtbl *const *)l;
+}
 SD_OFFSET(cLocalLogicVtbl, Update, 0x44);
 SD_OFFSET(cLocalLogicVtbl, SetState, 0x4c);
 SD_OFFSET(cLocalLogicVtbl, RestartState, 0x60);
-SD_OFFSET(cLocalLogicVtbl, AssignDesktop, 0xa0);
 
 /* Logic/LocalLogic.h, 8 bytes: the logic of the CTFEnemies ships is this only */
 struct cLocalLogic {

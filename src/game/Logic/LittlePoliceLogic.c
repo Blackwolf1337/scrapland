@@ -11,7 +11,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
 
-#define LP_VT(self) ((self)->base.base.vftable)
+#define LP_VT(self) GenChar_Vtbl(self)
 #define LP_BASE(self) (&(self)->base.base)
 
 /* the AI of the character still has its target */
@@ -28,7 +28,7 @@ void *__thiscall cLittlePoliceLocalLogic_ctor(void *mem, cEntity *parent) {
 	cLittlePoliceLocalLogic *self = mem;
 
 	cGenCharLocalLogic_ctor(&self->base, parent, 0);
-	LP_VT(self) = CLITTLEPOLICELOCALLOGIC_VFTABLE;
+	self->base.base.vftable = CLITTLEPOLICELOCALLOGIC_VFTABLE;
 	self->lostTime = 0.0f;
 	float t = (float)(Weap_Rand01() * (double)0.2f + 0.0);
 	self->policeResult = 0;
@@ -38,7 +38,7 @@ void *__thiscall cLittlePoliceLocalLogic_ctor(void *mem, cEntity *parent) {
 }
 
 cLittlePoliceLocalLogic *__thiscall cLittlePoliceLocalLogic_Delete(cLittlePoliceLocalLogic *self, byte flags) {
-	LP_VT(self) = CLITTLEPOLICELOCALLOGIC_VFTABLE;
+	self->base.base.vftable = CLITTLEPOLICELOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -67,7 +67,7 @@ void __fastcall cLittlePoliceLocalLogic_UpdateBribe(cLittlePoliceLocalLogic *sel
 		if (t == ChType_Usr0()) {
 			usrAttack = 1;
 			if (!cGenCharGroup_TakeAttack((&g_pWorld->logic.genChars))) {
-				LP_VT(self)->RestartState(self);
+				Logic_Vtbl(self)->RestartState(self);
 				return;
 			}
 		} else {
@@ -75,7 +75,7 @@ void __fastcall cLittlePoliceLocalLogic_UpdateBribe(cLittlePoliceLocalLogic *sel
 			cEntity *te = b->target.target;
 			if (lt && (((lt->idle || lt->alwaysLock) && WChar_Listen(te) != p) || !WChar_B381(te))) {
 				self->base.searchTime = g_GenCharMaxSpecialActionTime;
-				LP_VT(self)->SetState(self, 0, NULL);
+				Logic_Vtbl(self)->SetState(self, 0, NULL);
 				return;
 			}
 		}
@@ -198,13 +198,13 @@ byte __fastcall cLittlePoliceLocalLogic_GoMainMission(cLittlePoliceLocalLogic *s
 	if (g_MainMissionStopDist * g_MainMissionStopDist > LP_DistSq(ep, pp)) {
 		g_LittlePoliceArrived = 0;
 	} else {
-		LP_VT(self)->SetState(self, GENCHAR_GET_IT, e);
+		Logic_Vtbl(self)->SetState(self, GENCHAR_GET_IT, e);
 		if (g_LittlePoliceArrived) {
 			self->policeResult = 1;
 			return 1;
 		}
 	}
-	LP_VT(self)->RestartState(self);
+	Logic_Vtbl(self)->RestartState(self);
 	return 0;
 }
 
@@ -288,7 +288,7 @@ void __thiscall cLittlePoliceLocalLogic_Update(cLittlePoliceLocalLogic *self, fl
 		case 2: {
 			if (ai->vftable->GetState(ai) != 3) {
 				if (!accuse) {
-					LP_VT(self)->SetState(self, 1, NULL);
+					Logic_Vtbl(self)->SetState(self, 1, NULL);
 					return;
 				}
 				if (!Logic_InView(p, usr->vftable->GetPos(usr, &t1), g_LittlePoliceMaxDistFar, g_GenCharStdFovY,
@@ -303,7 +303,7 @@ void __thiscall cLittlePoliceLocalLogic_Update(cLittlePoliceLocalLogic *self, fl
 				return;
 			}
 			if (!alarm) {
-				LP_VT(self)->RestartState(self);
+				Logic_Vtbl(self)->RestartState(self);
 				self->lostTime = 0.0f;
 				return;
 			}
@@ -328,7 +328,7 @@ void __thiscall cLittlePoliceLocalLogic_Update(cLittlePoliceLocalLogic *self, fl
 			}
 			return;
 alert:
-			LP_VT(self)->SetState(self, 1, NULL);
+			Logic_Vtbl(self)->SetState(self, 1, NULL);
 			self->lostTime = 0.0f;
 			return;
 		}
@@ -336,14 +336,14 @@ alert:
 			cEntity *te = b->target.target;
 			cLocalLogic *lt;
 			if (!te || !(lt = Logic_GetLocalLogic(te))) {
-				LP_VT(self)->RestartState(self);
+				Logic_Vtbl(self)->RestartState(self);
 				return;
 			}
 			if (!CGameModel_IsVisible(Obj_Vtbl(p)->GetModel(p))) {
 				const vec3_t *up = usr->vftable->GetPos(usr, &t1);
 				if (LP_DistSq(p->vftable->GetPos(p, &t2), up) >
 					g_LittlePoliceStopAcusingMaxDistFromUser * g_LittlePoliceStopAcusingMaxDistFromUser) {
-					LP_VT(self)->RestartState(self);
+					Logic_Vtbl(self)->RestartState(self);
 					lt->vftable->RestartState(lt);
 					return;
 				}
@@ -358,7 +358,7 @@ alert:
 				lt->vftable->OnAlarm(lt, p);
 				return;
 			}
-			LP_VT(self)->SetState(self, 8, te);
+			Logic_Vtbl(self)->SetState(self, 8, te);
 			lt->vftable->OnAlarm(lt, p);
 			return;
 		}
@@ -366,14 +366,14 @@ alert:
 			cEntity *te = b->target.target;
 			cLocalLogic *lt;
 			if (!te || !(lt = Logic_GetLocalLogic(te))) {
-				LP_VT(self)->RestartState(self);
+				Logic_Vtbl(self)->RestartState(self);
 				return;
 			}
 			if (!CGameModel_IsVisible(Obj_Vtbl(p)->GetModel(p))) {
 				const vec3_t *up = usr->vftable->GetPos(usr, &t1);
 				if (LP_DistSq(p->vftable->GetPos(p, &t2), up) >
 					g_LittlePoliceStopAcusingMaxDistFromUser * g_LittlePoliceStopAcusingMaxDistFromUser) {
-					LP_VT(self)->RestartState(self);
+					Logic_Vtbl(self)->RestartState(self);
 					lt->vftable->RestartState(lt);
 					return;
 				}
@@ -382,12 +382,12 @@ alert:
 			if (LP_DistSq(p->vftable->GetPos(p, &t1), &o) > b->actionRadius * b->actionRadius) {
 				cActCtrl_Play(ChType_ActCtrl(p), "ActionBad", 1, 1.0f);
 				cActCtrl_SetDefLoop(ChType_ActCtrl(p), "Relax", 1);
-				LP_VT(self)->RestartState(self);
+				Logic_Vtbl(self)->RestartState(self);
 				lt->vftable->RestartState(lt);
 				return;
 			}
 			if (Logic_InView(p, te->vftable->GetPos(te, &t1), g_GenCharStdFar, g_GenCharStdFovY, g_GenCharStdFovX, 1)) {
-				LP_VT(self)->SetState(self, 7, te);
+				Logic_Vtbl(self)->SetState(self, 7, te);
 			}
 			lt->vftable->SetState(lt, 3, p);
 			return;
@@ -415,7 +415,7 @@ void __thiscall cLittlePoliceLocalLogic_OnSeen(cLittlePoliceLocalLogic *self, cE
 	}
 	if (e == ChType_Usr0()) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
-		LP_VT(self)->SetState(self, 2, e);
+		Logic_Vtbl(self)->SetState(self, 2, e);
 	}
 }
 
@@ -455,7 +455,7 @@ void __thiscall cLittlePoliceLocalLogic_UpdateLook(cLittlePoliceLocalLogic *self
 	if (usr && Logic_InView(p, usr->vftable->GetPos(usr, &t), g_LittlePoliceMaxDistFar, g_GenCharStdFovY,
 		g_GenCharStdFovX, 1)) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
-		LP_VT(self)->SetState(self, 2, usr);
+		Logic_Vtbl(self)->SetState(self, 2, usr);
 	}
 }
 
@@ -484,13 +484,13 @@ void __thiscall cLittlePoliceLocalLogic_UpdateGetIt(cLittlePoliceLocalLogic *sel
 				return;
 			}
 			if (g_EnergyBarActive != 1 || g_SpecialActionActive != 2) {
-				LP_VT(self)->SetState(self, 0, usr);
+				Logic_Vtbl(self)->SetState(self, 0, usr);
 				return;
 			}
 			if (!(500.0f > d) || !ChType_ActCtrl(usr) || !strcmp(Logic_TypeName(usr), "Police")) {
 				return;
 			}
-			LP_VT(self)->SetState(self, 4, usr);
+			Logic_Vtbl(self)->SetState(self, 4, usr);
 			return;
 		}
 		float lt = self->lostTime - dt;
@@ -499,7 +499,7 @@ void __thiscall cLittlePoliceLocalLogic_UpdateGetIt(cLittlePoliceLocalLogic *sel
 			return;
 		}
 	}
-	LP_VT(self)->RestartState(self);
+	Logic_Vtbl(self)->RestartState(self);
 }
 
 /* vf34: the AI walks to e and stops at MainMissionStopDist */

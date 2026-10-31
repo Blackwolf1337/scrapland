@@ -68,30 +68,6 @@ static inline int ChType_ActPriority(void *ctrl) {
 	return ((cActCtrl *)ctrl)->layers[0].action->priority;
 }
 
-/* the slots of the local logic of a character the types call */
-typedef struct cChTypeLogicVtbl {
-	void *vf00_08[9];
-	byte(__thiscall *Listens)(cLocalLogic *self, cEntity *talker);			/* 0x24 vf09 the mayor */
-	void(__thiscall *OnHit)(cLocalLogic *self, cEntity *attacker);			/* 0x28 */
-	void(__thiscall *OnSeen)(cLocalLogic *self, cEntity *sentinel);		/* 0x2c vf11 the sentinel */
-	void(__thiscall *OnAttack)(cLocalLogic *self, cEntity *attacker, float value);	/* 0x30 */
-	void(__thiscall *OnShot)(cLocalLogic *self, cEntity *attacker);		/* 0x34 */
-	void(__thiscall *OnHammer)(cLocalLogic *self, cEntity *nurse);			/* 0x38 vf14 */
-	byte(__thiscall *GivesMoney)(cLocalLogic *self, cEntity *police);		/* 0x3c vf15 */
-	void *vf10_12[3];
-	void(__thiscall *SetState)(cLocalLogic *self, int state, cEntity *target);	/* 0x4c vf19 */
-	void(__thiscall *SetPaused)(cLocalLogic *self, byte on);			/* 0x50 vf20 */
-	void *vf15_17[3];
-	void(__thiscall *Resume)(cLocalLogic *self);					/* 0x60 vf24 the state again */
-} cChTypeLogicVtbl;
-SD_OFFSET(cChTypeLogicVtbl, Listens, 0x24);
-SD_OFFSET(cChTypeLogicVtbl, OnHit, 0x28);
-SD_OFFSET(cChTypeLogicVtbl, OnShot, 0x34);
-SD_OFFSET(cChTypeLogicVtbl, GivesMoney, 0x3c);
-SD_OFFSET(cChTypeLogicVtbl, SetState, 0x4c);
-SD_OFFSET(cChTypeLogicVtbl, SetPaused, 0x50);
-SD_OFFSET(cChTypeLogicVtbl, Resume, 0x60);
-
 /* the fields of the local logic of a character (cBaseLocalLogic, Logic/BaseLogic.cpp) */
 #define ChLogic_Target(l) ((cEntity *)((cBaseLocalLogic *)(l))->target.target)	/* of the state */
 #define ChLogic_Idle(l) (((cBaseLocalLogic *)(l))->idle)
@@ -100,10 +76,6 @@ SD_OFFSET(cChTypeLogicVtbl, Resume, 0x60);
 
 /* the action of layer 0 of the controller */
 #define ChType_Action0(ctrl) ((void *)((cActCtrl *)(ctrl))->layers[0].action)
-
-static inline const cChTypeLogicVtbl *ChLogic_Vtbl(cLocalLogic *l) {
-	return (const cChTypeLogicVtbl *)l->vftable;
-}
 
 /* the C function of the sphere tests of the natives (also g_DoorSphereFunc, g_InfernoSphereFunc) */
 #define g_ChTypeSphereFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0, 0x46679c))

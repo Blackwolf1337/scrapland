@@ -22,7 +22,7 @@ void ChType_ListeningMayor(cAbstractFile *params) {
 	cLocalLogic *ll = Logic_GetLocalLogic(g_MayorEnt);
 	CHECK(ll && acm);
 	if (!ChLogic_Idle(ll) && !ChLogic_AlwaysLock(ll)) {
-		ChLogic_Vtbl(ll)->SetPaused(ll, 1);
+		Logic_Vtbl(ll)->SetIdle(ll, 1);
 	} else {
 		cEntity *mayor = WChar_Listen(g_MayorEnt);
 		if (mayor && Entity_IsType(mayor, TYEN_WALKCHAR)) {
@@ -44,7 +44,7 @@ void ChType_ListeningMayor(cAbstractFile *params) {
 	Nto1Node *n = WChar_ListenNode(g_MayorEnt);
 	CHECK(n->data);
 	Nto1Node_Unlink(n);
-	ChLogic_Vtbl(ll)->SetPaused(ll, 0);
+	Logic_Vtbl(ll)->SetIdle(ll, 0);
 	cActCtrl_Play(ChType_ActCtrl(g_MayorEnt), "Relax", 1, 1.0f);
 }
 
@@ -84,7 +84,7 @@ void ChType_MayorSphereHit(cAbstractFile *params) {
 	}
 	void *acm = WithLife_Vtbl(e)->GetAction(e, "MayorListen");
 	cLocalLogic *ll = Logic_GetLocalLogic(e);
-	if (!ll || !acm || !ChLogic_Vtbl(ll)->Listens(ll, g_MayorEnt)) {
+	if (!ll || !acm || !Logic_Vtbl(ll)->Listens(ll, g_MayorEnt)) {
 		return;
 	}
 	byte usr = cWalkCharEntity_GetOwnerSlot(g_MayorEnt) != -1;
@@ -99,7 +99,7 @@ void ChType_MayorSphereHit(cAbstractFile *params) {
 		if (usr || (!((cObjEntity *)e)->radarShow && g_MayorListenPercent > FxElem_Rand(100.0, 0.0))) {
 			cActCtrl_PlayAction(ChType_ActCtrl(e), acm, 0, 1, 1.0f);
 			if (ChType_Action0(ChType_ActCtrl(e)) == acm) {
-				ChLogic_Vtbl(ll)->SetPaused(ll, 1);
+				Logic_Vtbl(ll)->SetIdle(ll, 1);
 				cEntity_AddLink(g_MayorEnt, WChar_ListenNode(e));
 				cLocalLogic *ml = Logic_GetLocalLogic(g_MayorEnt);
 				if (ml) {

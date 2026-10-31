@@ -26,7 +26,7 @@
 #define g_FunctionaryEffectFastSoundVol GAME_GLOBAL_IN(float, GVar_FunctionaryEffectFastSoundVol, 16, 0x446750)
 #define g_CharProcessReduction GAME_GLOBAL_IN(float, GVar_CharProcessReduction, 16, 0x447254)
 
-#define Func_Vtbl(self) ((self)->base.base.vftable)
+#define Func_Vtbl(self) Functionary_Vtbl(self)
 #define Func_Parent(self) ((self)->base.base.parent)
 
 static inline cTimer *Func_Timer(cEntity *e) {
@@ -43,7 +43,7 @@ static void Func_SetWorkTime(cFunctionaryLocalLogic *self) {
 
 cFunctionaryLocalLogic *__thiscall cFunctionaryLocalLogic_ctor(cFunctionaryLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(&self->base, parent, 0);
-	Func_Vtbl(self) = CFUNCTIONARYLOCALLOGIC_VFTABLE;
+	self->base.base.vftable = CFUNCTIONARYLOCALLOGIC_VFTABLE;
 	self->desktop.target = NULL;
 	self->desktop.data = NULL;
 	self->desktop.next = &self->desktop;
@@ -79,7 +79,7 @@ cFunctionaryLocalLogic *__thiscall cFunctionaryLocalLogic_ctor(cFunctionaryLocal
 }
 
 void __fastcall cFunctionaryLocalLogic_dtor(cFunctionaryLocalLogic *self) {
-	Func_Vtbl(self) = CFUNCTIONARYLOCALLOGIC_VFTABLE;
+	self->base.base.vftable = CFUNCTIONARYLOCALLOGIC_VFTABLE;
 	cFunctionaryLocalLogic_ReleaseDesktop(self);
 	g_DesktopsList = NULL;
 	Nto1Node_Done(&self->desktop);
@@ -144,7 +144,7 @@ byte __thiscall cFunctionaryLocalLogic_Vf02(cFunctionaryLocalLogic *self) {
 	cEntity *usr = ChType_Usr0();
 	if (strcmp(ChType_ActClass(ChType_ActCtrl(usr))->name, "Functionary") &&
 		!Func_Vtbl(self)->CanTalk(self)) {
-		Func_Vtbl(self)->SetState(self, 3, usr);
+		Logic_Vtbl(self)->SetState(self, 3, usr);
 		return 0;
 	}
 	return 1;
@@ -227,7 +227,7 @@ static void Func_SitDown(cFunctionaryLocalLogic *self, cEntity *p) {
 		}
 	}
 	Func_SetWorkTime(self);
-	Func_Vtbl(self)->SetState(self, 8, NULL);
+	Logic_Vtbl(self)->SetState(self, 8, NULL);
 }
 
 /* vf32: the wait before the walk to the desktop, the arrival at it, the work and the relax there */
@@ -247,7 +247,7 @@ void __thiscall cFunctionaryLocalLogic_Work(cFunctionaryLocalLogic *self, float 
 		float t = self->sitTime - dt;
 		self->sitTime = t;
 		if (0.0f >= t) {
-			Func_Vtbl(self)->SetState(self, 7, NULL);
+			Logic_Vtbl(self)->SetState(self, 7, NULL);
 		}
 		return;
 	}
@@ -367,7 +367,7 @@ void __thiscall cFunctionaryLocalLogic_StopWork(cFunctionaryLocalLogic *self, by
 		self->sitTime = Rand_FloatRange(g_FunctionaryMinTimeToSitDown, g_FunctionaryMaxTimeToSitDown);
 	}
 	if (restart) {
-		Func_Vtbl(self)->SetState(self, 0, NULL);
+		Logic_Vtbl(self)->SetState(self, 0, NULL);
 	}
 }
 
@@ -465,15 +465,15 @@ void __thiscall cFunctionaryLocalLogic_Update(cFunctionaryLocalLogic *self, floa
 	vec3_t t1, t2;
 
 	if (self->forceSpecial) {
-		Func_Vtbl(self)->Work(self, dt);
+		GenChar_Vtbl(self)->Work(self, dt);
 		self->forceSpecial = 0;
-		Func_Vtbl(self)->UpdateView(self);
+		GenChar_Vtbl(self)->UpdateView(self);
 		return;
 	}
 	if (self->forceCancel) {
 		Func_Vtbl(self)->StopWork(self, 1);
 		self->forceCancel = 0;
-		Func_Vtbl(self)->UpdateView(self);
+		GenChar_Vtbl(self)->UpdateView(self);
 		return;
 	}
 	if (self->special) {
@@ -497,7 +497,7 @@ void __thiscall cFunctionaryLocalLogic_Update(cFunctionaryLocalLogic *self, floa
 						cFunctionaryLocalLogic_SlowEffect(self, p);
 					}
 				}
-				Func_Vtbl(self)->UpdateView(self);
+				GenChar_Vtbl(self)->UpdateView(self);
 				return;
 			}
 		}
@@ -508,11 +508,11 @@ void __thiscall cFunctionaryLocalLogic_Update(cFunctionaryLocalLogic *self, floa
 		if (Func_Vtbl(self)->FastEscape(self)) {
 			cFunctionaryLocalLogic_NormalSpeed(self, p);
 		}
-		Func_Vtbl(self)->SetState(self, self->prevState == 3 ? 0 : self->prevState, NULL);
+		Logic_Vtbl(self)->SetState(self, self->prevState == 3 ? 0 : self->prevState, NULL);
 		if (idle) {
-			Func_Vtbl(self)->SetIdle(self, 1);
+			Logic_Vtbl(self)->SetIdle(self, 1);
 		}
-		Func_Vtbl(self)->UpdateView(self);
+		GenChar_Vtbl(self)->UpdateView(self);
 		return;
 	}
 	if (self->escapeInRadius) {
@@ -524,10 +524,10 @@ void __thiscall cFunctionaryLocalLogic_Update(cFunctionaryLocalLogic *self, floa
 			const vec3_t *pp = p->vftable->GetPos(p, &t2);
 			float dy = pp->y - up->y, dx = pp->x - up->x, dz = pp->z - up->z;
 			if (self->escapeRadiusSqr >= dy * dy + dx * dx + dz * dz) {
-				Func_Vtbl(self)->SetState(self, 3, usr);
+				Logic_Vtbl(self)->SetState(self, 3, usr);
 			}
 		}
-		Func_Vtbl(self)->UpdateView(self);
+		GenChar_Vtbl(self)->UpdateView(self);
 		return;
 	}
 	cGenCharLocalLogic_Update(&self->base, dt);
@@ -544,7 +544,7 @@ void __thiscall cFunctionaryLocalLogic_OnRobbery(cFunctionaryLocalLogic *self, c
 void __thiscall cFunctionaryLocalLogic_SetOriginFrom(cFunctionaryLocalLogic *self, cEntity *e) {
 	Func_Vtbl(self)->ReleaseDesktop(self);
 	Func_Vtbl(self)->AssignDesktop(self, g_FunctionaryAssignWorkDistance);
-	Func_Vtbl(self)->SetState(self, 0, NULL);
+	Logic_Vtbl(self)->SetState(self, 0, NULL);
 	self->sitTime = 0.1f;
 	cEntity *d = cFunctionaryLocalLogic_GetDesktop(self);
 	if (d) {
@@ -560,7 +560,7 @@ void __thiscall cFunctionaryLocalLogic_SetIdle(cFunctionaryLocalLogic *self, byt
 		if (self->base.base.state == 8) {
 			self->base.base.state = 7;
 		}
-		Func_Vtbl(self)->SetState(self, self->base.base.state, self->base.base.target.target);
+		Logic_Vtbl(self)->SetState(self, self->base.base.state, self->base.base.target.target);
 		return;
 	}
 	cBaseLocalLogic_SetIdle(&self->base.base, idle);
@@ -602,7 +602,7 @@ int __thiscall cFunctionaryLocalLogic_SetState(cFunctionaryLocalLogic *self, int
 		byte ok = (byte)cBaseLocalLogic_SetState(b, 0, target);
 		cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 		if (ok) {
-			Func_Vtbl(self)->UpdateView(self);
+			GenChar_Vtbl(self)->UpdateView(self);
 		}
 		if (b->state == 0 && ok) {
 			ai->vftable->SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_GenCharRelaxSpeed, 0);
@@ -631,7 +631,7 @@ int __thiscall cFunctionaryLocalLogic_SetState(cFunctionaryLocalLogic *self, int
 	}
 	if (state == 7) {
 		if ((byte)cBaseLocalLogic_SetState(b, 7, target)) {
-			Func_Vtbl(self)->UpdateView(self);
+			GenChar_Vtbl(self)->UpdateView(self);
 			Func_GoToWork(self, b->parent->vftable->GetAI(b->parent));
 		}
 		return 1;

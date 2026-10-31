@@ -6,17 +6,17 @@
 
 #include "scrap/chartype.h"
 
-#define Humphrey_Vtbl(self) ((self)->base.base.base.vftable)
+#define Humphrey_Vtbl(self) Functionary_Vtbl(self)
 
 cHumphreyLocalLogic *__thiscall cHumphreyLocalLogic_ctor(cHumphreyLocalLogic *self, cEntity *parent) {
 	cFunctionaryLocalLogic_ctor(&self->base, parent);
-	Humphrey_Vtbl(self) = CHUMPHREYLOCALLOGIC_VFTABLE;
+	self->base.base.base.vftable = CHUMPHREYLOCALLOGIC_VFTABLE;
 	self->isDefault = !strcmp(parent->name, "Humphrey_Default");
 	return self;
 }
 
 cHumphreyLocalLogic *__thiscall cHumphreyLocalLogic_Delete(cHumphreyLocalLogic *self, byte flags) {
-	Humphrey_Vtbl(self) = CHUMPHREYLOCALLOGIC_VFTABLE;
+	self->base.base.base.vftable = CHUMPHREYLOCALLOGIC_VFTABLE;
 	cFunctionaryLocalLogic_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));

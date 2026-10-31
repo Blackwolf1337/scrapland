@@ -121,7 +121,7 @@ void ChType_BankMasterSuction(cAbstractFile *params) {
 	}
 	cLocalLogic *l = Logic_GetLocalLogic(victim);
 	if (l) {
-		ChLogic_Vtbl(l)->OnAttack(l, g_BankMasterEnt, 100.0f);
+		Logic_Vtbl(l)->OnAttack(l, g_BankMasterEnt, 100.0f);
 	}
 }
 

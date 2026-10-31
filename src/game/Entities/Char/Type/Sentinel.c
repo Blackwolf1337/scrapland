@@ -90,6 +90,6 @@ void ChType_SentinelPoint(cAbstractFile *params) {
 	}
 	cLocalLogic *l = Logic_GetLocalLogic(t);
 	if (l) {
-		ChLogic_Vtbl(l)->OnSeen(l, v);
+		Logic_Vtbl(l)->OnSeen(l, v);
 	}
 }

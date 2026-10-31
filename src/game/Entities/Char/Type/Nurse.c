@@ -323,7 +323,7 @@ found:
 		}
 		cLocalLogic *l = Logic_GetLocalLogic(g_NurseTarget);
 		if (l) {
-			ChLogic_Vtbl(l)->OnHammer(l, v);
+			Logic_Vtbl(l)->OnHammer(l, v);
 		}
 	}
 	if (!strcmp(cls, "GateKeeper")) {

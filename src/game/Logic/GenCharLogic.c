@@ -110,7 +110,7 @@ void __thiscall cGenCharLocalLogic_ToRelax(cGenCharLocalLogic *self, cAIChar *ai
 
 /* ---- part 3 (rva 0x14c4f0) ---- */
 
-#define GENCHAR_VT(self) ((self)->base.vftable)
+#define GENCHAR_VT(self) GenChar_Vtbl(self)
 
 static inline void GenChar_SetDefaultState(cGenCharLocalLogic *self, int ds) {
 	CHECK((ds == GENCHAR_STAY) || (ds == GENCHAR_RELAX) || (ds == GENCHAR_CHASE) || (ds == GENCHAR_GET_IT));
@@ -214,7 +214,7 @@ states:
 	if (st == GENCHAR_RELAX || st == GENCHAR_STAY || st == 7 || st == 8) {
 		if (alarm) {
 			if (!self->ignoreAlarm) {
-				GENCHAR_VT(self)->SetState(self, GENCHAR_ALERT, NULL);
+				Logic_Vtbl(self)->SetState(self, GENCHAR_ALERT, NULL);
 			}
 		} else if (((cObjEntity *)p)->move.active && (b->idle || b->alwaysLock)) {
 			cObjMove_SetTime(&((cObjEntity *)p)->move, 0.0f);
@@ -224,7 +224,7 @@ states:
 			if (GENCHAR_VT(self)->CanAttack(self, p) && (e = GENCHAR_VT(self)->FindTarget(self)) != NULL) {
 				if (e->vftable->IsType(e, TYEN_WITH_LIFE) && !Logic_RadarShow(e) &&
 					Logic_InView(p, usr->vftable->GetPos(usr, &t), 3000.0f, 6.2831855f, 6.2831855f, 1)) {
-					GENCHAR_VT(self)->SetState(self, GENCHAR_ATTACK, e);
+					Logic_Vtbl(self)->SetState(self, GENCHAR_ATTACK, e);
 					self->specialOn = 1;
 				}
 			} else if (b->state != GENCHAR_ATTACK) {
@@ -235,12 +235,12 @@ states:
 	switch (b->state) {
 	case GENCHAR_ALERT:
 		if (!alarm) {
-			GENCHAR_VT(self)->RestartState(self);
+			Logic_Vtbl(self)->RestartState(self);
 		}
 		return;
 	case GENCHAR_ACCUSE:
 		if (!b->target.target) {
-			GENCHAR_VT(self)->RestartState(self);
+			Logic_Vtbl(self)->RestartState(self);
 			return;
 		}
 		cGenCharLocalLogic_Discover(self);
@@ -257,7 +257,7 @@ states:
 				return;
 			}
 		}
-		GENCHAR_VT(self)->SetState(self, GENCHAR_ALERT, NULL);
+		Logic_Vtbl(self)->SetState(self, GENCHAR_ALERT, NULL);
 		return;
 	case GENCHAR_GETAWAY: {
 		if (cAIChar_TestFlags(self)) {
@@ -269,11 +269,11 @@ states:
 		if (tm > g_GenCharGetAwayTime) {
 			self->time = 0.0f;
 			if (!alarm) {
-				GENCHAR_VT(self)->RestartState(self);
+				Logic_Vtbl(self)->RestartState(self);
 				return;
 			}
 			if (!self->ignoreAlarm) {
-				GENCHAR_VT(self)->SetState(self, GENCHAR_ALERT, NULL);
+				Logic_Vtbl(self)->SetState(self, GENCHAR_ALERT, NULL);
 			}
 		}
 		return;
@@ -281,13 +281,13 @@ states:
 	case GENCHAR_ATTACK:
 		if (!alarm || self->alarmState == GENCHAR_ATTACK) {
 			if (!b->target.target || GENCHAR_VT(self)->TargetDone(self)) {
-				GENCHAR_VT(self)->RestartState(self);
+				Logic_Vtbl(self)->RestartState(self);
 				cGenCharLocalLogic_ResetSpecial(self);
 			}
 			return;
 		}
 		if (!self->ignoreAlarm) {
-			GENCHAR_VT(self)->SetState(self, GENCHAR_ALERT, NULL);
+			Logic_Vtbl(self)->SetState(self, GENCHAR_ALERT, NULL);
 		}
 		cGenCharLocalLogic_ResetSpecial(self);
 		return;
@@ -297,8 +297,8 @@ states:
 			const vec3_t *pp = b->parent->vftable->GetPos(b->parent, &t);
 			float dy = pp->y - o.y, dx = pp->x - o.x, dz = pp->z - o.z;
 			if (dy * dy + dx * dx + dz * dz > 40000.0f) {
-				GENCHAR_VT(self)->SetIdle(self, 1);
-				GENCHAR_VT(self)->SetState(self, GENCHAR_STAY, NULL);
+				Logic_Vtbl(self)->SetIdle(self, 1);
+				Logic_Vtbl(self)->SetState(self, GENCHAR_STAY, NULL);
 			}
 		}
 		return;
@@ -311,7 +311,7 @@ states:
 /* vf12: a robbery seen, with the chance GenCharRobberyDetection plus the amount */
 void __thiscall cGenCharLocalLogic_OnRobbery(cGenCharLocalLogic *self, cEntity *e, float amount) {
 	if (amount > 0.0f && Logic_Chance(&self->base, e, g_GenCharRobberyDetection + amount)) {
-		GENCHAR_VT(self)->SetState(self, self->alarmState, e);
+		Logic_Vtbl(self)->SetState(self, self->alarmState, e);
 		cGenCharLocalLogic_ResetSpecial(self);
 	}
 }
@@ -322,7 +322,7 @@ void __thiscall cGenCharLocalLogic_OnHit(cGenCharLocalLogic *self, cEntity *atta
 		return;
 	}
 	self->accuseAgain = g_GenCharAcuseAgainTime;
-	GENCHAR_VT(self)->SetState(self, self->alarmState, attacker);
+	Logic_Vtbl(self)->SetState(self, self->alarmState, attacker);
 	cGenCharLocalLogic_ResetSpecial(self);
 }
 
@@ -331,7 +331,7 @@ void __thiscall cGenCharLocalLogic_OnSeen(cGenCharLocalLogic *self, cEntity *e) 
 	if (self->base.state == GENCHAR_ACCUSE || self->base.busy || !GenChar_Rand101()) {
 		return;
 	}
-	GENCHAR_VT(self)->SetState(self, self->alarmState, e);
+	Logic_Vtbl(self)->SetState(self, self->alarmState, e);
 	cGenCharLocalLogic_ResetSpecial(self);
 }
 
@@ -342,7 +342,7 @@ byte __thiscall cGenCharLocalLogic_GivesMoney(cGenCharLocalLogic *self, cEntity 
 	if (!self->base.busy && refuse > (float)(Weap_Rand01() * 100.0 + 0.0)) {
 		return 1;
 	}
-	GENCHAR_VT(self)->SetState(self, self->alarmState, police);
+	Logic_Vtbl(self)->SetState(self, self->alarmState, police);
 	return 0;
 }
 
@@ -350,7 +350,7 @@ byte __thiscall cGenCharLocalLogic_GivesMoney(cGenCharLocalLogic *self, cEntity 
 void __thiscall cGenCharLocalLogic_UpdateGetIt(cGenCharLocalLogic *self, cAIChar *ai, float dt) {
 	(void)dt;
 	if (ai->vftable->GetState(ai) != 4) {
-		GENCHAR_VT(self)->RestartState(self);
+		Logic_Vtbl(self)->RestartState(self);
 	}
 }
 
@@ -375,10 +375,10 @@ void __fastcall cGenCharLocalLogic_Discover(cGenCharLocalLogic *self) {
 byte __thiscall cGenCharLocalLogic_RestartState(cGenCharLocalLogic *self) {
 	cGenCharLocalLogic_ResetSpecial(self);
 	if (g_pWorld->alarm.on && !self->ignoreAlarm) {
-		return GENCHAR_VT(self)->SetState(self, GENCHAR_ALERT, NULL);
+		return Logic_Vtbl(self)->SetState(self, GENCHAR_ALERT, NULL);
 	}
 	cEntity *t = World_FindEntity(self->defaultTarget);
-	byte ok = GENCHAR_VT(self)->SetState(self, self->defaultState, t);
+	byte ok = Logic_Vtbl(self)->SetState(self, self->defaultState, t);
 	if (ok && (byte)cPy_Function_IsValid(g_OnDefStateCallback)) {
 		cPy_Function_AddParamS(g_OnDefStateCallback, self->base.parent->name);
 		cPy_Function_Execute(g_OnDefStateCallback, 0);

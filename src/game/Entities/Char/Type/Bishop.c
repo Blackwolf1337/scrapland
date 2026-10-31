@@ -122,7 +122,7 @@ void ChType_BishopAttack(cAbstractFile *params) {
 		}
 		cLocalLogic *l = Logic_GetLocalLogic(target);
 		if (l) {
-			ChLogic_Vtbl(l)->OnShot(l, v);
+			Logic_Vtbl(l)->OnShot(l, v);
 		}
 	} else {
 		target = NULL;

@@ -22,13 +22,13 @@ static inline byte AICtrl_AIActive(cAIChar *ai) {
 	return ai->vftable->GetRepos(ai);
 }
 
-/* the slots 0x64 and 0x68 of the sentinel logic: the accuse (no other sentinel accuses) and the update */
+/* the sentinel logic: the accuse (no other sentinel accuses) and the think */
 static inline byte AICtrl_SentinelAccuses(cBaseLocalLogic *l) {
-	return (*(byte(__thiscall **)(cBaseLocalLogic *))((byte *)l->vftable + 0x64))(l);
+	return Sentinel_Vtbl(l)->Seen(l);
 }
 
 static inline void AICtrl_SentinelUpdate(cBaseLocalLogic *l, float dt, byte other) {
-	(*(void(__thiscall **)(cBaseLocalLogic *, float, byte))((byte *)l->vftable + 0x68))(l, dt, other);
+	Sentinel_Vtbl(l)->Think(l, dt, other);
 }
 
 /* prefix and the rest of a name, like "Gear" and the number of "Police01" (the original copies unbounded) */

@@ -83,7 +83,7 @@ void ChType_ListeningPolice(cAbstractFile *params) {
 	cLocalLogic *ll = Logic_GetLocalLogic(me);
 	CHECK(ll && acm);
 	if (!ChLogic_Idle(ll) && !ChLogic_AlwaysLock(ll)) {
-		ChLogic_Vtbl(ll)->SetPaused(ll, 1);
+		Logic_Vtbl(ll)->SetIdle(ll, 1);
 	} else {
 		cEntity *police = WChar_Listen(me);
 		if (police && Entity_IsType(police, TYEN_WALKCHAR) &&
@@ -94,7 +94,7 @@ void ChType_ListeningPolice(cAbstractFile *params) {
 	Nto1Node *n = WChar_ListenNode(me);
 	CHECK(n->data);
 	Nto1Node_Unlink(n);
-	ChLogic_Vtbl(ll)->SetPaused(ll, 0);
+	Logic_Vtbl(ll)->SetIdle(ll, 0);
 	cActCtrl_Play(ChType_ActCtrl(me), "Relax", 1, 1.0f);
 }
 
@@ -179,8 +179,8 @@ void ChType_PoliceActionPress(cAbstractFile *params) {
 	}
 	cLocalLogic *l = Logic_GetLocalLogic(victim);
 	if (l && WChar_B381(victim) && cActCtrl_PlayAction(ChType_ActCtrl(victim), action, 0, 1, 1.0f)) {
-		ChLogic_Vtbl(l)->SetPaused(l, 0);
-		ChLogic_Vtbl(l)->SetPaused(l, 1);
+		Logic_Vtbl(l)->SetIdle(l, 0);
+		Logic_Vtbl(l)->SetIdle(l, 1);
 		cEntity_AddLink(v, WChar_ListenNode(victim));
 	}
 }
@@ -220,7 +220,7 @@ void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 					act = "Relax";
 				}
 				if (cActCtrl_IsActive(ChType_ActCtrl(victim), "PoliceListen") &&
-					ChLogic_Vtbl(vl)->GivesMoney(vl, me) &&
+					Logic_Vtbl(vl)->GivesMoney(vl, me) &&
 					ChType_Steal(&me, &victim, g_PoliceStealAmount, "Stats.Police", 1.0f)) {
 					act = "ActionOK";
 					FX_PoliceSteal(me, victim);
@@ -229,7 +229,7 @@ void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 		}
 	}
 	if (ll && strcmp(act, "Relax")) {
-		ChLogic_Vtbl(ll)->Resume(ll);
+		Logic_Vtbl(ll)->RestartState(ll);
 	}
 	if (cWalkCharEntity_GetOwnerSlot(me) != -1) {
 		WChar_ListenOn(me) = 1;
@@ -241,7 +241,7 @@ void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 			if (!strcmp(cActCtrl_GetActionName(ChType_ActCtrl(me), 0), "Fusion")) {
 				return;
 			}
-			ChLogic_Vtbl(ll)->SetState(ll, 7, victim);
+			Logic_Vtbl(ll)->SetState(ll, 7, victim);
 		}
 	}
 	Nto1Node *n = WChar_ListenNode(me);

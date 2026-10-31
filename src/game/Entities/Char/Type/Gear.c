@@ -75,7 +75,7 @@ void ChType_GearHitChar(const char *name, byte noLogic) {
 		}
 		cLocalLogic *l = Logic_GetLocalLogic(e);
 		if (l && !noLogic) {
-			ChLogic_Vtbl(l)->OnHit(l, gear);
+			Logic_Vtbl(l)->OnHit(l, gear);
 		}
 		if (usr && gear == cWorld_GetUsrEntity(g_pWorld, 0)) {
 			if (WChar_Life(e) <= damage) {

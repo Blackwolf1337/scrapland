@@ -85,7 +85,7 @@ void ChType_BankerAttack(cAbstractFile *params) {
 		} else if (f > 75.0f) {
 			f = 100.0f;
 		}
-		ChLogic_Vtbl(l)->OnAttack(l, v, f);
+		Logic_Vtbl(l)->OnAttack(l, v, f);
 	}
 	if (v && victim) {
 		cObjElementFXBankerSteal *el = FX_DropNew(g_FXBankerStealFile, 1.35f);
