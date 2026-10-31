@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/camcontrol.h"
 #include "scrap/collisiongrid.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"

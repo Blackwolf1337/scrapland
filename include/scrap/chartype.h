@@ -117,7 +117,7 @@ SD_OFFSET(cChTypeLogicVtbl, Resume, 0x60);
 #define ChLogic_I74(l) (*(int *)((byte *)(l) + 0x74))
 
 /* the action of layer 0 of the controller */
-#define ChType_Action0(ctrl) (*(void **)((byte *)(ctrl) + 0x14))
+#define ChType_Action0(ctrl) ((void *)((cActCtrl *)(ctrl))->layers[0].action)
 
 static inline const cChTypeLogicVtbl *ChLogic_Vtbl(cLocalLogic *l) {
 	return (const cChTypeLogicVtbl *)l->vftable;
@@ -345,7 +345,7 @@ static inline const char *ChType_ClassName(cEntity *e) {
 
 #define WChar_DisplOn(e) (WChar(e)->disableControl)		/* "DisableControl": the slot only turns the body */
 /* a flag of the AI controller of the world (aiCtrl + 0x31): with the alarm on the sentinels call no others */
-#define World_AlarmChase(w) (*(byte *)((byte *)(w) + 0x21f9))
+#define World_AlarmChase(w) ((w)->logic.aiCtrl.accusing)
 
 /* the natives one native binds to a sphere test or an OnTake (rva, the same pointer as the original) */
 #define CHTYPE_MAYORSPHEREHIT 0x0c9c20

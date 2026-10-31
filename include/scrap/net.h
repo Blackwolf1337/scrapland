@@ -163,12 +163,12 @@ static inline const cNetEntityVtbl *Net_Vtbl(cEntity *e) {
 /* the fields of a vehicle the player descriptors carry */
 #define NetEnt_UsrName(e) (WLife(e)->usrName)	/* cString, cWithLifeEntity */
 #define NetEnt_Team(e) (WLife(e)->arrow.tgType)
-#define NetEnt_TypeName(e) ((char *)(e) + 0x568)		/* cVehicleEntity.typeName */
+#define NetEnt_TypeName(e) (Veh(e)->typeName)		/* cVehicleEntity.typeName */
 #define NetEnt_Weapons(e) ((void *)&Veh(e)->weapons)	/* cWeaponManager */
 #define NetEnt_MaxLife(e) (Veh(e)->maxLife)
 #define NetEnt_Motors(e) ((void *)((byte *)(e) + 0x720))	/* cVehicleMotors */
-#define NetEnt_Target(e) ((char *)(e) + 0x650)
-#define NetEnt_Kind(e) (*((byte *)(e) + 0xec))			/* the byte after the id in the entity stream */
+#define NetEnt_Target(e) (Veh(e)->target)
+#define NetEnt_Kind(e) (((cObjEntity *)(e))->netRes)			/* the byte after the id in the entity stream */
 
 /* the time of the net code: CApp GetTime in milliseconds (x87 multiply, __dtoui3) */
 static inline uint32_t Net_TimeMs(void) {

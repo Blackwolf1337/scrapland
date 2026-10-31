@@ -104,7 +104,7 @@ SD_SIZE(cVehicleMotors, 0xc8);
 
 /* the vehicle fields the motors read */
 #define VM_FIELD(e, type, off) (*(type *)((byte *)(e) + (off)))
-#define VM_Timer(e) ((cTimer *)((byte *)(e) + 0x110))
+#define VM_Timer(e) (&((cObjEntity *)(e))->timer)
 #define VM_Thrust(e) VM_FIELD(e, float, 0x4b0)		/* negative backwards */
 #define VM_F490(e) VM_FIELD(e, float, 0x490)
 #define VM_F494(e) VM_FIELD(e, float, 0x494)
@@ -113,7 +113,7 @@ SD_SIZE(cVehicleMotors, 0xc8);
 #define VM_F4c8(e) VM_FIELD(e, float, 0x4c8)
 #define VM_LocalVel(e) VM_FIELD(e, vec3_t, 0x4e4)	/* z the forward speed */
 #define VM_Hidden(e) VM_FIELD(e, byte, 0x588)		/* no exhaust effects */
-#define VM_Team(e) ((void *)((byte *)(e) + 0x314))	/* for cArrowIndicator_GetColor */
+#define VM_Team(e) ((void *)&WLife(e)->arrow)	/* for cArrowIndicator_GetColor */
 
 /* the emit positions of the Calima particles of all motors (8) */
 #define g_HazePos (GAME_ARRAY(vec3_t, g_HazePos, 0x4482b8))

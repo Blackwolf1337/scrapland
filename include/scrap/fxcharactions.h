@@ -78,7 +78,7 @@
 /* the timer of a character (cWalkChar + 0x110) */
 #define Entity_Timer(e) (&((cObjEntity *)(e))->timer)
 /* a float of the Police character: its center is this much above the feet */
-#define Entity_F45C(e) (*(float *)((byte *)(e) + 0x45c))
+#define Entity_F45C(e) (WChar(e)->floorDist)
 
 typedef struct cObjElementFXBankMasterAttack {
 	void *vftable;			/* 0x00 */

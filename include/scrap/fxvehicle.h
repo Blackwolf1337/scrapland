@@ -36,11 +36,10 @@
 /* the vehicle fields the effects read */
 #define FXVeh_Motor(e, i) (((byte **)((byte *)(e) + 0x728))[i])
 #define FXVeh_MotorNode(m, side) (*(int *)((m) + 0x38 + (side) * 4))
-#define FXVeh_EmbeddedFX(e) (*(void **)((byte *)(e) + 0x224))
-#define FXVeh_BurnTime(e) (*(float *)((byte *)(e) + 0x294))
-#define FXVeh_EMITime(e) (*(uint32_t *)((byte *)(e) + 0x58c))	/* copied as bits */
-#define FXVeh_MaxLife(e) (*(int *)((byte *)(e) + 0x640))		/* of a "Car" */
-#define FXVeh_Effects(e) ((void *)((byte *)(e) + 0x7f0))		/* Entities/Vehicle/VehicleEffects.cpp */
+#define FXVeh_EmbeddedFX(e) ((void *)((cObjEntity *)(e))->fx)
+#define FXVeh_BurnTime(e) (WLife(e)->fireRemain)
+#define FXVeh_MaxLife(e) (Veh(e)->maxLife)		/* of a "Car" */
+#define FXVeh_Effects(e) ((void *)&Veh(e)->effects)		/* Entities/Vehicle/VehicleEffects.cpp */
 
 /* the engine variables */
 #define g_StdMaxLife GAME_GLOBAL_IN(int, GVar_StdMaxLife, 16, 0x44ab34)			/* StdMaxLife */

@@ -2853,7 +2853,7 @@ byte __thiscall cObjElementFXVehicleEMI_IsAlive(cObjElementFXVehicleEMI *self, c
 		return 0;
 	}
 	/* the debris lives as long as the interference */
-	*(uint32_t *)&debris->speed = FXVeh_EMITime(self->entity);
+	debris->speed = Veh(self->entity)->emi;
 	if (cDebris_Update(debris, sys)) {
 		return 1;
 	}

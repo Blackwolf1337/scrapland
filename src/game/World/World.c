@@ -1104,7 +1104,7 @@ void __thiscall cWorld_UpdateListeners(cWorld *self, float dt) {
 		if (!cam || !WEnt_Vtbl(cam)->IsType(cam, "Cam")) {
 			continue;
 		}
-		if (WEnt_Vtbl(cam)->IsType(cam, "FCam") && cCamEntity_GetTarget(cam) && !CamEntity_NoFollow(cam)) {
+		if (WEnt_Vtbl(cam)->IsType(cam, "FCam") && cCamEntity_GetTarget(cam) && !((cCamControl *)cam)->link[0]) {
 			cEntity *t = cCamEntity_GetTarget(cam);
 			const CSoundSysVtbl *svt = g_pSound->vftable;
 			vec3_t vel, pos;

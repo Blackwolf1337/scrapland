@@ -38,8 +38,8 @@ SD_OFFSET(cCollisionGrid, steps, 0x98);
 SD_SIZE(cCollisionGrid, 0x9c);
 
 /* the fields of the entities the grid uses */
-#define Entity_Pos(e) ((vec3_t *)((byte *)(e) + 0x28))
-#define Entity_GridNode(e) ((Nto1Node *)((byte *)(e) + 0x34))	/* target the cell, data the entity */
+#define Entity_Pos(e) (&((cEntity *)(e))->pos)
+#define Entity_GridNode(e) (&((cEntity *)(e))->gridNode)	/* target the cell, data the entity */
 
 /* the engine variables (Gvars) */
 #define g_GridUseTopLimit GAME_GLOBAL_IN(int, GVar_GridUseTopLimit, 16, 0x466df0)

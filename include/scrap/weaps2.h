@@ -287,7 +287,6 @@ void FXSwarm_Hit(float x, float y, float z, float vx, float vy, float vz, float 
 	float dz);
 
 #define WEAP_PI 3.141592653589793			/* rva 0x3a3700 */
-#define Ent_Sounds(e) (&((cObjEntity *)(e))->snd)
 
 /* the shared code of the weapons, inlined in the original */
 static inline cEntity *Weap_Vehicle(const char *name) {

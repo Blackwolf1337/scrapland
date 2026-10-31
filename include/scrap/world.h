@@ -94,9 +94,8 @@ static inline const cWorldEntityVtbl *WEnt_Vtbl(cEntity *e) {
 #define Entity_Mask(e) (((cEntity *)(e))->mask)		/* the entity lists it is in, a bit each */
 #define Entity_Team(e) (WLife(e)->arrow.tgType)		/* characters: 3 neutral, 4 against all */
 #define CamEntity_Cam(e) (&((cCamControl *)(e))->cam.pos)		/* the camera of a "Cam", its position first */
-#define CamEntity_Orient(e) ((vec3_t *)((byte *)(e) + 0x88))
-#define CamEntity_Slot(e) (*(int *)((byte *)(e) + 0xb8))		/* the view it shows, -1 for none */
-#define CamEntity_NoFollow(e) (*(byte *)((byte *)(e) + 0xbc))
+#define CamEntity_Orient(e) (&((cCamControl *)(e))->cam.rot)
+#define CamEntity_Slot(e) (((cCamControl *)(e))->slot)		/* the view it shows, -1 for none */
 
 /* World/MapFloors.cpp: the floors of the 2D map (cWorld floor) */
 #define MAX_2D_MAPS 16

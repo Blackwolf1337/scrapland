@@ -104,6 +104,9 @@ SD_OFFSET(cObjEntity, mod, 0x1e4);
 SD_OFFSET(cObjEntity, fx, 0x224);
 SD_SIZE(cObjEntity, COBJENTITY_SIZE);
 
+/* the sound interface of an object (the weapon and effect sounds by index) */
+#define Ent_Sounds(e) (&((cObjEntity *)(e))->snd)
+
 /* the slots of cObjEntity::vftable after the 23 of cEntity */
 typedef struct cObjEntityVtbl {
 	cEntityVtbl base;
