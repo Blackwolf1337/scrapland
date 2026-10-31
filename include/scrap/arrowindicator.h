@@ -52,7 +52,7 @@ typedef struct cArrowIndicator {
 	byte canView;			/* 0x6e "ArrowCanView" */
 	byte canMission;		/* 0x6f "ArrowCanMission" */
 	byte alwaysUse;			/* 0x70 "AlwaysUse" */
-	byte b71;			/* 0x71 */
+	byte visible;		/* 0x71 the line from the player to it is free, retested every testTime of the target scorer */
 	byte pad_72[2];
 	int tgType;			/* 0x74 "TgType": red, blue, green, none, killer */
 	int coneStatus;			/* 0x78 "ConeStatus": off, relax, alert, danger */

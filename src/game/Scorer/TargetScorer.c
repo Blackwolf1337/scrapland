@@ -72,9 +72,9 @@ static void Target_DrawMark(cTargetScorer *self, cEntity *ship, cEntity *e) {
 	pos = *vt->GetViewPos(e, &tmp);
 	if (0.0f >= self->testTime) {
 		const vec3_t *from = ship->vftable->GetPos(ship, &tmp);
-		ew->arrow.b71 = !Engine_TestLine(from, &pos, NULL, NULL);
+		ew->arrow.visible = !Engine_TestLine(from, &pos, NULL, NULL);
 	}
-	byte vis = ew->arrow.b71;
+	byte vis = ew->arrow.visible;
 	byte on = Engine_WorldToScreen(&pos, scr, &depth);
 	Target_SplitY(self, scr);
 	if (vis && on) {
@@ -283,9 +283,9 @@ void __thiscall cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship) {
 			CamCtl_Vtbl(fc)->GetCamPos(fc, &cam.x, &cam.y, &cam.z);
 		}
 		if (0.0f >= self->testTime) {
-			w->arrow.b71 = !Engine_TestLine(vt->GetViewPos(e, &tmp), &cam, NULL, NULL);
+			w->arrow.visible = !Engine_TestLine(vt->GetViewPos(e, &tmp), &cam, NULL, NULL);
 		}
-		if (!w->arrow.b71) {
+		if (!w->arrow.visible) {
 			continue;
 		}
 		float h = X87_MulMulF(vt->GetRadius(e), TS_MARK_HEIGHT, depth);

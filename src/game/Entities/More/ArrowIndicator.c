@@ -55,7 +55,7 @@ cArrowIndicator *__fastcall cArrowIndicator_ctor(cArrowIndicator *self) {
 	self->canView = 0;
 	self->canMission = 0;
 	self->alwaysUse = 0;
-	self->b71 = 0;
+	self->visible = 0;
 	self->tgType = 3;
 	self->coneStatus = 0;
 	self->coneFov = 0x1.0c1524p+0f;		/* 60 degrees */
