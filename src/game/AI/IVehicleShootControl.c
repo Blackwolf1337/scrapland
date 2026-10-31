@@ -120,7 +120,7 @@ cAIVehicleShoot *__thiscall cAIVehicleShoot_ctor(void *mem, cEntity *v, cAIVehic
 	self->params = *(const cAIVehicleParams3 *)params;
 	self->paramsInit = *(const cAIVehicleParams3 *)params;
 	self->vehicle = v;
-	self->ctl = (cVehicleControls *)Veh(v)->controls;
+	self->ctl = &Veh(v)->controls;
 	self->cadenceMul = 1;
 	self->cadenceMulCM = 2;
 	self->weap.weapon = -1;
@@ -484,14 +484,14 @@ pickNear:
 pick:
 		sel = self->weaps[i];
 		if (sel.weapon != -1) {
-			Controls_SetWeapon((byte *)self->ctl, sel.weapon);
+			Controls_SetWeapon(self->ctl, sel.weapon);
 			goto store;
 		}
 none:
 		if (g_LaserDistLimit > dist) {
 			sel = self->weaps[AIVS_LASER];
 			if (sel.weapon != -1) {
-				Controls_SetWeapon((byte *)self->ctl, sel.weapon);
+				Controls_SetWeapon(self->ctl, sel.weapon);
 			}
 		}
 store:
@@ -557,7 +557,7 @@ void __fastcall cAIVehicleShoot_SelectCM(cAIVehicleShoot *self) {
 		}
 		sel = self->weaps[i];
 		if (sel.weapon != -1) {
-			Controls_SetWeapon((byte *)self->ctl, sel.weapon);
+			Controls_SetWeapon(self->ctl, sel.weapon);
 		}
 	}
 store:
@@ -878,7 +878,7 @@ byte __thiscall cAIVehicleShoot_SetMode(cAIVehicleShoot *self, int a, int b, byt
 		cAIVehicleShoot_Update2(self, 0.0f);
 	} else if (b == 2) {
 		self->cm = self->weaps[AIVS_LASER];
-		Controls_SetWeapon((byte *)self->ctl, self->cm.weapon);
+		Controls_SetWeapon(self->ctl, self->cm.weapon);
 	} else if (b == 1) {
 		cAIVehicleShoot_SelectCM(self);
 	}

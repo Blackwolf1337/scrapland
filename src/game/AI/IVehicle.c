@@ -772,7 +772,7 @@ byte __thiscall cAIVehicle_IsMoving(cAIVehicle *self) {
 		return 0;
 	}
 	cVehicleEntity *v = Veh(self->vehicle);
-	return v->thrustIn != 0.0f || v->turnX != 0.0f || v->turnY != 0.0f;
+	return v->controls.acc != 0.0f || v->controls.str != 0.0f || v->controls.vStr != 0.0f;
 }
 
 /* ---- the debug text: "[time] (vehicle) [state - internal state] - text" on the console ---- */
@@ -2707,7 +2707,7 @@ byte __thiscall cAIVehicle_TryHook(cAIVehicle *self, int a, int b) {
 	cTargetLock *w = &Veh(self->vehicle)->weapons;
 
 	if (!cTargetLock_GetPoint(w)) {
-		if (!(Veh(self->vehicle)->thrustIn > 0.0f)) {
+		if (!(Veh(self->vehicle)->controls.acc > 0.0f)) {
 			goto done;
 		}
 		int map = self->params.hookMap;
@@ -2893,7 +2893,7 @@ void __thiscall cAIVehicle_ThinkRace(cAIVehicle *self) {
 					return;
 				}
 			}
-			if (0.0f >= Veh(self->vehicle)->thrustIn) {
+			if (0.0f >= Veh(self->vehicle)->controls.acc) {
 				return;
 			}
 			int race = self->params.hookRace;

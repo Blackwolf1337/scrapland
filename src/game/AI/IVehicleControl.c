@@ -76,7 +76,7 @@ static inline const vec3_t *VC_TargetPos(cAIVehicleControl *self, vec3_t *buf) {
 }
 
 static inline cAutoAim *VC_AutoAim(cAIVehicleControl *self) {
-	return (cAutoAim *)Veh(self->vehicle)->autoAim;
+	return &Veh(self->vehicle)->autoAim;
 }
 
 /* the three coordinates equal (ucomiss: NaN is unequal) */
@@ -129,7 +129,7 @@ static inline void VC_Release(cAIVehicleControl *self) {
 	c->acc = 0.0f;
 	c->vRot = 0.0f;
 	c->hRot = 0.0f;
-	c->b24 = 0;
+	c->boostKey = 0;
 	c = self->ctl;
 	c->str = 0.0f;
 	c->vStr = 0.0f;
@@ -161,7 +161,7 @@ cAIVehicleControl *__thiscall cAIVehicleControl_ctor(void *mem, cEntity *v, cAIV
 	self->dest.x = 0.0f;
 	self->point = self->dest;
 	self->v168 = self->point;
-	self->ctl = (cVehicleControls *)Veh(self->vehicle)->controls;
+	self->ctl = &Veh(self->vehicle)->controls;
 	self->radius = VC_Radius(self);
 	self->params = *(const cAIVehicleParams2 *)params;
 	self->paramsInit = *(const cAIVehicleParams2 *)params;
@@ -1121,7 +1121,7 @@ static float VC_NoseAngle(cAIVehicleControl *self, vec3_t *fwd) {
 
 /* the boost button: on near the goal of the point (when given) or far from it with the nose on it */
 static void VC_Boost(cAIVehicleControl *self, byte nearGoal, float distP, float ang) {
-	self->ctl->b24 = Veh(self->vehicle)->boost == 0.0f && self->boost &&
+	self->ctl->boostKey = Veh(self->vehicle)->boost == 0.0f && self->boost &&
 		(nearGoal || (distP > g_DistBoostAI && M_PI_F / 16.0f > ang));
 }
 
@@ -1211,11 +1211,11 @@ void __fastcall cAIVehicleControl_AccelChase(cAIVehicleControl *self) {
 		float ts = VC_Len(tv->x, tv->y, tv->z);
 		float rel = VC_Speed(self) - ts;
 		if (!(rel > AIVC_REL_SPEED) || dist / rel > g_TimeMaxReachBoostAI) {
-			self->ctl->b24 = 1;
+			self->ctl->boostKey = 1;
 			return;
 		}
 	}
-	self->ctl->b24 = 0;
+	self->ctl->boostKey = 0;
 }
 
 /* the acceleration along a path: the brakes before the point (TIME_REACT_TURN) and at the goal, the velocity along
@@ -1453,7 +1453,7 @@ void __thiscall cAIVehicleControl_Draw(cAIVehicleControl *self) {
 		CFont_PrintfColor(g_FontTerminal8, 10.0f, 130.0f, 0xffff00, "Control Acceleration: %.2f",
 			(double)self->ctl->acc);
 		CFont_PrintfColor(g_FontTerminal8, 10.0f, 150.0f, 0xffff00, "Control Boost: %s",
-			self->ctl->b24 ? "ACTIVO" : "INACTIVO");
+			self->ctl->boostKey ? "ACTIVO" : "INACTIVO");
 	}
 }
 
@@ -1655,7 +1655,7 @@ byte __thiscall cAIVehicleControl_UpdateOrient(cAIVehicleControl *self, float dt
 	self->ctl->str = 0.0f;
 	self->ctl->vStr = 0.0f;
 	self->ctl->acc = 0.0f;
-	self->ctl->b24 = 0;
+	self->ctl->boostKey = 0;
 	return 1;
 }
 

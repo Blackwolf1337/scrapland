@@ -38,7 +38,8 @@ for rnd in range(10):
 		for ln, col, name in sorted(hs, key=lambda h: (h[0], -h[1])):
 			s = lines[ln - 1]
 			i = byteidx(s, col)
-			if i is not None:
+			# at the -> or ., or at the name itself when gcc adds a "did you mean"
+			if i is not None and not s[i:].startswith(name):
 				g = re.match(r'(->|\.)\s*', s[i:])
 				i = i + g.end() if g else None
 			if i is None or not re.match(r'%s\b' % name, s[i:]) or (i and re.match(r'\w', s[i - 1])):

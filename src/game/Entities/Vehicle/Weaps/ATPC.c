@@ -156,8 +156,8 @@ void ATPC_Create(cAbstractFile *params) {
 			cObjElementFXATPC_Shoot(fx, v, g_ATPCVictim, hit, origin);
 		}
 	}
-	byte *shake = Entity_Shake(v);
-	if (shake) {
+	cFollowCamEntity *cam = Entity_FollowCam(v);
+	if (cam) {
 		int n = 0;
 		for (int i = 0; i < 4; i++) {
 			if (cTargetLock_HasSlot(wm, g_ATPCIDWeap, i)) {
@@ -165,8 +165,8 @@ void ATPC_Create(cAbstractFile *params) {
 			}
 		}
 		float k = (float)n * 0.25f;
-		*(float *)(shake + 0x220) = k * 0.2f + 0.25f;
-		*(float *)(shake + 0x224) = (float)((double)(k * 1.5f + 1.3f) * 3.141592653589793) / 180.0f;
+		cam->quakeTime = k * 0.2f + 0.25f;
+		cam->quakeFactor = (float)((double)(k * 1.5f + 1.3f) * 3.141592653589793) / 180.0f;
 	}
 	cEntity *w = g_ATPCVictim[0] ? World_FindEntity(g_ATPCVictim) : NULL;
 	if (w) {
@@ -186,7 +186,7 @@ void ATPC_Create(cAbstractFile *params) {
 		CHECK(Entity_IsType(world->owners[0], TYEN_WITH_LIFE));
 	}
 	cEntity *u = world->owners[0];
-	if (!u || u == v || !Entity_IsType(u, TYEN_WITH_LIFE) || !Entity_Shake(u)) {
+	if (!u || u == v || !Entity_IsType(u, TYEN_WITH_LIFE) || !Entity_FollowCam(u)) {
 		return;
 	}
 	float dist = Dist_PointSegment(&origin, &hit, u->vftable->GetPos(u, &c), &near);
@@ -200,10 +200,10 @@ void ATPC_Create(cAbstractFile *params) {
 	}
 	float f = 1.0f - dist / radius;
 	float t = (3.0f - (f + f)) * (f * f);
-	shake = Entity_Shake(u);
-	if (shake) {
-		*(float *)(shake + 0x224) = t * 0.0104719754f;
-		*(float *)(shake + 0x220) = t * 0.04f;
+	cam = Entity_FollowCam(u);
+	if (cam) {
+		cam->quakeFactor = t * 0.0104719754f;
+		cam->quakeTime = t * 0.04f;
 	}
 	if (up == 10) {
 		ATPC_PlaySound(g_ATPCCapsuleExtendedSound, &near, g_ATPCCapsuleExtendedSoundAttIni,
@@ -295,8 +295,8 @@ void ATPC_Fire(cAbstractFile *params) {
 	}
 	cWeaponManager_SetAmmo(wm, g_ATPCIDAmmo, rest);
 
-	ang[0] = Vehicle_AimAng(v)[0];
-	ang[1] = Vehicle_AimAng(v)[1];
+	ang[0] = Veh(v)->autoAim.ax;
+	ang[1] = Veh(v)->autoAim.ay;
 	ang[2] = 0.0f;
 	target = NULL;
 	dist = g_ATPCRange;
@@ -453,8 +453,8 @@ void ATPC_XplosionCall(cAbstractFile *params) {
 		n.z = vel->z + dz;
 		Entity_SetVel(victim, &n);
 	}
-	if (Entity_IsType(victim, TYEN_VEHICLE) && Vehicle_Hit(victim)) {
-		*(int *)(Vehicle_Hit(victim) + 0x64) = 2;
+	if (Entity_IsType(victim, TYEN_VEHICLE) && Vehicle_NetCtrl(victim)) {
+		Vehicle_NetCtrl(victim)->hit = 2;
 	}
 }
 
@@ -509,7 +509,7 @@ void Cloud_Fire(cAbstractFile *params) {
 	cPy_Function_Execute(g_SetUpCloudFunc, 0);
 	cMissileEntity_SetLifeTime((cMissileEntity *)cloud, g_CloudLifeTime - 0.2f);
 	cPy_Function_SetFunc(Missile_OnHit(cloud), "!CloudOnHit");
-	cWeaponManager_SetAmmo(Vehicle_WeapMgr(v), g_CloudIDAmmo, (float)(ammo - Missile_Ammo(cloud)));
+	cWeaponManager_SetAmmo(Vehicle_WeapMgr(v), g_CloudIDAmmo, (float)(ammo - Missile_SwarmCount(cloud)));
 }
 
 /* "!CloudOnHit" (cloud, ?, entity, strong): a vehicle in the cloud for 100 or 5 seconds, a missile slowed */
@@ -531,6 +531,6 @@ void Cloud_OnHit(cAbstractFile *params) {
 	}
 	if (Entity_IsType(e, "Missile") && strong) {
 		cMissileEntity_SetType((cMissileEntity *)e, 3);
-		cMissileEntity_SetSwarmSpeed((cMissileEntity *)e, Missile_F594(e) / 5.0f);
+		cMissileEntity_SetSwarmSpeed((cMissileEntity *)e, Missile_SwarmSpeed(e) / 5.0f);
 	}
 }

@@ -91,7 +91,6 @@ static inline const WeapEntityVtbl *Weap_Vtbl(cEntity *e) {
 
 /* the fields of the ships */
 #define Veh_HitInfo(v) ((void *)((byte *)(v) + 0x298))	/* the last entity or point the ship hit */
-#define Veh_Kick(v) ((void *)((byte *)(v) + 0x414))	/* the recoil of the shots */
 #define Veh_Speed(v) WFIELD(v, float, 0x46c)
 #define Veh_PushTime(v) WFIELD(v, float, 0x470)	/* the push of the Tesla upgrade 5 against the flight */
 #define Veh_Push(v) WFIELD(v, vec3_t, 0x474)

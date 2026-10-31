@@ -9,6 +9,7 @@
 #define SCRAP_WEAPONS_H
 
 #include "scrap/autoaim.h"
+#include "scrap/camcontrol.h"
 #include "scrap/controls.h"
 #include "scrap/crt.h"
 #include "scrap/entity.h"
@@ -17,6 +18,7 @@
 #include "scrap/missileentity.h"
 #include "scrap/sound.h"
 #include "scrap/vehicleattack.h"
+#include "scrap/vehicleentity.h"
 #include "scrap/world.h"
 
 typedef cTargetLock cWeaponManager;
@@ -25,31 +27,29 @@ typedef cTargetLock cWeaponManager;
 #define TYEN_VEHICLE "Car"			/* the string at rva 0x3a77b8 */
 
 /* the fields of the vehicles (cVehicleEntity) and other entities the weapons use */
-#define Vehicle_Sounds(e) ((cSndInterface *)((byte *)(e) + 0x144))	/* the weapon sounds by index */
-#define Entity_Shake(e) (*(byte **)((byte *)(e) + 0xf0))	/* of a player: +0x220 strength, +0x224 angle */
-#define Entity_Mass(e) (*(float *)((byte *)(e) + 0x230))
-#define Entity_LifeI(e) (*(int *)((byte *)(e) + 0x238))			/* WithLife */
-#define Entity_God(e) (*(byte *)((byte *)(e) + 0x23c))			/* no damage */
-#define Vehicle_Attack(e) ((void *)((byte *)(e) + 0x298))
-#define Entity_Radius(e) (*(float *)((byte *)(e) + 0x3a0))
-#define Vehicle_NetSlot(e) (*(int *)((byte *)(e) + 0x410))		/* 0..3 on a net client */
-#define Vehicle_Controls(e) ((byte *)(e) + 0x414)
-#define Vehicle_Hit(e) (*(byte **)((byte *)(e) + 0x4fc))		/* its +0x64 is set to 2 by a hit */
-#define Missile_Ammo(e) (*(int *)((byte *)(e) + 0x588))
-#define Vehicle_EMITime(e) (*(float *)((byte *)(e) + 0x58c))
-#define Vehicle_CloudTime(e) (*(float *)((byte *)(e) + 0x590))		/* set by cVehicleEntity_SetCloud */
-#define Missile_F594(e) (*(float *)((byte *)(e) + 0x594))
-#define Missile_Radius(e) (*(float *)((byte *)(e) + 0x5a4))		/* the EMI */
-#define Vehicle_WeapMgr(e) ((cWeaponManager *)((byte *)(e) + 0x5f0))
-#define Vehicle_CanFire(e) (*(byte *)((byte *)(e) + 0x644))
-#define Vehicle_AutoAim(e) ((void *)((byte *)(e) + 0x6d0))
-#define Vehicle_AimAng(e) ((float *)((byte *)(e) + 0x6dc))		/* x, y */
-#define Vehicle_AimTarget(e) (*(cEntity **)((byte *)(e) + 0x6ec))
-#define Vehicle_AimF6f4(e) (*(float *)((byte *)(e) + 0x6f4))
-#define Vehicle_AimRange(e) (*(float *)((byte *)(e) + 0x6f8))
-#define Vehicle_AimMode(e) (*(int *)((byte *)(e) + 0x718))		/* 1 Devastator, 4 ATPC, 0 off */
-#define Vehicle_Effects(e) ((void *)((byte *)(e) + 0x7f0))		/* Entities/Vehicle/VehicleEffects.cpp */
-#define Missile_OnHit(e) ((cPy_Function *)((byte *)(e) + 0x7d4))
+#define Vehicle_Sounds(e) (&Veh(e)->wl.obj.snd)		/* the weapon sounds by index */
+#define Entity_FollowCam(e) ((cFollowCamEntity *)((cObjEntity *)(e))->cam)	/* of a player, NULL else */
+#define Entity_Mass(e) (WLife(e)->mass)
+#define Entity_LifeI(e) (WLife(e)->life)
+#define Entity_God(e) (WLife(e)->god)			/* no damage */
+#define Vehicle_Attack(e) (&WLife(e)->attack)
+#define Entity_Radius(e) (WLife(e)->prim.radius)
+#define Vehicle_NetSlot(e) (Veh(e)->slot)		/* 0..3 on a net client */
+#define Vehicle_Controls(e) (&Veh(e)->controls)
+#define Vehicle_NetCtrl(e) (Veh(e)->netCtrl)		/* the server side controller of a player ship */
+#define Missile_SwarmCount(e) (Missile(e)->swarmCount)
+#define Vehicle_EMITime(e) (Veh(e)->emi)
+#define Vehicle_CloudTime(e) (Veh(e)->cloud)		/* set by cVehicleEntity_SetCloud */
+#define Missile_SwarmSpeed(e) (Missile(e)->swarmSpeed)
+#define Missile_Radius(e) (Missile(e)->radius)		/* the EMI */
+#define Vehicle_WeapMgr(e) (&Veh(e)->weapons)
+#define Vehicle_CanFire(e) (Veh(e)->isInit)
+#define Vehicle_AutoAim(e) (&Veh(e)->autoAim)
+#define Vehicle_AimTarget(e) ((cEntity *)Veh(e)->autoAim.target.target)
+#define Vehicle_AimRange(e) (Veh(e)->autoAim.distLimit)
+#define Vehicle_AimMode(e) (Veh(e)->autoAim.status)	/* 1 Devastator, 4 ATPC, 0 off */
+#define Vehicle_Effects(e) ((void *)&Veh(e)->effects)	/* Entities/Vehicle/VehicleEffects.cpp */
+#define Missile_OnHit(e) (&Missile(e)->onHit)
 
 /* the entity vtable slots of the weapons that entity.h and world.h do not name */
 #define ENT_VF(e, off, type) ((type)(((void *const *)(e)->vftable)[(off) / 4]))
@@ -63,11 +63,6 @@ static inline byte Vehicle_IsEMIed(cEntity *e) {
 	return ENT_VF(e, 0xdc, byte(__thiscall *)(cEntity *))(e);
 }
 
-/* the controls of a vehicle (+0x414): the selected weapon first, the fire buttons of this and the last frame */
-#define Controls_Fire(c) ((c)[0x22])
-#define Controls_FirePrev(c) ((c)[0x20])
-#define Controls_CM(c) ((c)[0x23])			/* the ammo button (countermeasures) */
-#define Controls_CMPrev(c) ((c)[0x21])
 
 /* the debris cloud on a vehicle for time (rva 0x10a150) */
 void __thiscall cVehicleEntity_SetCloud(cEntity *self, float time, byte on);

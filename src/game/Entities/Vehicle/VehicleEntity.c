@@ -112,12 +112,12 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	self->wl.obj.base.vftable = CVEHICLEENTITY_VFTABLE;
 	*(int *)(self->collision + 0) = 0;
 	*(int *)(self->collision + 4) = 0;
-	Controls_ctor(self->controls);
+	Controls_ctor(&self->controls);
 	crt_eh_vector_ctor(&self->pilot, sizeof(CGameModel), 1, GAME_FUNC(CGameModel_ctorDefault, CGAMEMODEL_CTOR), GAME_FUNC(CGameModel_Reset, CGAMEMODEL_DTOR));
 	cVehicleTraffic_ctor((cVehicleTraffic *)self->traffic);
 	cWeaponManager_ctor(&self->weapons);
 	cVehicleO648_ctor(self->o648);
-	cAutoAim_ctor((cAutoAim *)self->autoAim);
+	cAutoAim_ctor(&self->autoAim);
 	cVehicleMotors_ctor((cVehicleMotors *)self->motors);
 	cVehicleEffects_ctor(&self->effects);
 	self->wl.obj.base.mask |= 1;
@@ -222,7 +222,7 @@ void __fastcall cVehicleEntity_dtor(cVehicleEntity *self) {
 	self->wl.obj.base.ai = NULL;
 	cVehicleEffects_dtor(&self->effects);
 	cVehicleMotors_dtor((cVehicleMotors *)self->motors);
-	cAutoAim_dtor((cAutoAim *)self->autoAim);
+	cAutoAim_dtor(&self->autoAim);
 	cVehicleO648_dtor(self->o648);
 	cWeaponManager_dtor(&self->weapons);
 	crt_eh_vector_dtor(&self->pilot, sizeof(CGameModel), 1, GAME_FUNC(CGameModel_Reset, CGAMEMODEL_DTOR));
@@ -494,13 +494,13 @@ void __thiscall cVehicleEntity_Crash(cVehicleEntity *self, const vec3_t *acc, fl
 void __thiscall cVehicleEntity_Smooth(cVehicleEntity *self, float dt) {
 	vec3_t d, n, ang, local;
 
-	float thrust = self->thrustIn;
+	float thrust = self->controls.acc;
 	if (!(thrust > 0.0f)) {
 		thrust = thrust * 0.5f;
 	}
 	float f = Float_MinSS(1.0f, self->speed / 16800.0f);
 	float k = dt / ((1.0f - f) * self->fxEngineTime + self->fxBoostEngineTime * f);
-	Float_Approach(&self->smoothTurnX, self->turnX * 0.5f, k);
+	Float_Approach(&self->smoothTurnX, self->controls.str * 0.5f, k);
 	Float_Approach(&self->smoothThrust, thrust, k);
 	Float_Approach(&self->smoothSpeed, self->speed,
 		(float)__builtin_fabs((double)(self->speed - self->smoothSpeed)) * dt * g_FxSpeedVariation);
@@ -648,7 +648,7 @@ void __thiscall cVehicleEntity_ServerMove(cVehicleEntity *self, float dt) {
 				Veh_Net(self)->flags &= 0xef;
 			}
 			Veh_Net(self)->vftable->Move(Veh_Net(self), Veh_Ent(self), dt, 1);
-			cAutoAim_Update((cAutoAim *)self->autoAim, Veh_Ent(self), dt);
+			cAutoAim_Update(&self->autoAim, Veh_Ent(self), dt);
 		} else {
 			Veh_Net(self)->wait = Veh_Net(self)->wait - dt;
 		}
@@ -696,7 +696,7 @@ void __thiscall cVehicleEntity_Move(cVehicleEntity *self, float dt) {
 
 void __thiscall cVehicleEntity_Tick(cVehicleEntity *self, float dt) {
 	if ((Net_IsNetEntity(Veh_Ent(self)) && !Veh_IsPlayerSlot(self->slot)) || (Veh_IsServer() && self->netCtrl)) {
-		Controls_FromNet(self->controls, Veh_Ent(self), dt);
+		Controls_FromNet(&self->controls, Veh_Ent(self), dt);
 		if (self->boost == 0.0f && !(Veh_Net(self)->keys & 0x1000)) {
 			cVehicleEntity_StartBoost(self);
 			self->boost = self->boostTime + 0.1f;
@@ -749,7 +749,7 @@ void __thiscall cVehicleEntity_Update(cVehicleEntity *self) {
 	}
 	cVehicleEffects_UpdateState(&self->effects, dt);
 	if (Veh_IsPlayerSlot(self->slot)) {
-		cVehicleControls_Tick(self->controls, Veh_Ent(self), dt);
+		cVehicleControls_Tick(&self->controls, Veh_Ent(self), dt);
 	}
 	cWithLifeEntity_Update(Veh_Ent(self));
 	Veh_Vtbl(self)->UpdateSounds(self, dt);
@@ -911,7 +911,7 @@ void __thiscall cVehicleEntity_SetUsrControl(cVehicleEntity *self, int slot) {
 		self->money = -1;
 	}
 	if (Veh_IsPlayerSlot(self->slot)) {
-		Controls_Reset(self->controls);
+		Controls_Reset(&self->controls);
 	}
 	int old = self->slot;
 	cSlotController *sc = self->wl.obj.slot;
@@ -1250,7 +1250,7 @@ void __thiscall cVehicleEntity_SetActive(cVehicleEntity *self, byte on) {
 		return;
 	}
 	if (!on && self->wl.obj.base.flag_4c) {
-		Controls_Reset(self->controls);
+		Controls_Reset(&self->controls);
 		cWeaponManager_Update(&self->weapons, 0.005f);
 		self->active = 0.0f;
 	}
@@ -1396,7 +1396,7 @@ byte __thiscall cVehicleEntity_VarF(cVehicleEntity *self, const char *name, doub
 	if (!*name) {
 		return 0;
 	}
-	if (!crt_strncmp("InCtrl_", name, 7) && Controls_VarF(self->controls, name + 7, d, set)) {
+	if (!crt_strncmp("InCtrl_", name, 7) && Controls_VarF(&self->controls, name + 7, d, set)) {
 		return 1;
 	}
 	if (!strncmp(name, "Traf_", 5)) {
@@ -1444,7 +1444,7 @@ byte __thiscall cVehicleEntity_VarF(cVehicleEntity *self, const char *name, doub
 	if (!strcmp(name, "TrustTime")) {
 		return Veh_VarFloat(&self->trustTime, d, set);
 	}
-	if (!crt_strncmp("Can_", name, 4) && cAutoAim_VarF((cAutoAim *)self->autoAim, name + 4, d, set)) {
+	if (!crt_strncmp("Can_", name, 4) && cAutoAim_VarF(&self->autoAim, name + 4, d, set)) {
 		return 1;
 	}
 	if (!(byte)set) {
@@ -1610,7 +1610,7 @@ byte __thiscall cVehicleEntity_VarS(cVehicleEntity *self, const char *name, char
 		}
 		return 1;
 	}
-	if (!crt_strncmp("Can_", name, 4) && cAutoAim_VarS((cAutoAim *)self->autoAim, name + 4, s, set)) {
+	if (!crt_strncmp("Can_", name, 4) && cAutoAim_VarS(&self->autoAim, name + 4, s, set)) {
 		return 1;
 	}
 	return cWithLifeEntity_VarS(Veh_Ent(self), name, s, set);
@@ -1686,20 +1686,20 @@ static inline void Veh_StepThrust(cVehicleEntity *self, float dt) {
 	float th = self->thrust;
 
 	if (th >= 0.0f) {
-		if (self->fullThrust) {
-			self->thrust = self->frwTrust * self->thrustIn;
+		if (self->controls.fullThrust) {
+			self->thrust = self->frwTrust * self->controls.acc;
 			return;
 		}
 		float frw = self->frwTrust;
-		float t = frw * dt / self->trustTime * self->thrustIn + th;
+		float t = frw * dt / self->trustTime * self->controls.acc + th;
 		self->thrust = t;
 		if (t > frw) {
 			self->thrust = frw;
 		}
 		return;
 	}
-	if (0.0f > self->thrustIn) {
-		self->thrust = self->backTrust * self->thrustIn;
+	if (0.0f > self->controls.acc) {
+		self->thrust = self->backTrust * self->controls.acc;
 	} else {
 		self->thrust = 0.0f;
 	}
@@ -1783,8 +1783,8 @@ static void Veh_StepMagnet(cVehicleEntity *self, float dt) {
 void __thiscall cVehicleEntity_Step(cVehicleEntity *self, float dt) {
 	vec3_t in, out;
 	byte high = self->wl.obj.base.pos.y > g_AtmosphereLimit;
-	float sx = Veh_StepCurve(self->stickX);
-	float sy = Veh_StepCurve(self->stickY);
+	float sx = Veh_StepCurve(self->controls.hRot);
+	float sy = Veh_StepCurve(self->controls.vRot);
 
 	if (self->pushTime > 0.0f) {
 		self->pushTime = self->pushTime - dt;
@@ -1794,14 +1794,14 @@ void __thiscall cVehicleEntity_Step(cVehicleEntity *self, float dt) {
 		self->wl.obj.vel.z = self->wl.obj.vel.z + self->push.z * k;
 	}
 	Veh_StepThrust(self, dt);
-	float tx = self->turnX;
+	float tx = self->controls.str;
 	float ay = self->wl.obj.ang.y - tx * VEH_PI_F * 0.125f;
 	self->turnSpeedX = tx * self->strTrust;
-	float ty = self->turnY;
+	float ty = self->controls.vStr;
 	float ax = self->wl.obj.ang.x - ty * VEH_PI_F * 0.125f;
 	self->turnSpeedY = ty * self->strTrust;
 	/* the boost: forward at the boost speed */
-	if (!self->traffic[0x1c] && !self->cloudOn && self->boostKey && 0.0f >= self->boost &&
+	if (!self->traffic[0x1c] && !self->cloudOn && self->controls.boostKey && 0.0f >= self->boost &&
 		self->thrust > self->frwTrust * 0.5f) {
 		float s = self->speed;
 		self->cloud = 0.0f;
@@ -1860,7 +1860,7 @@ void __thiscall cVehicleEntity_Step(cVehicleEntity *self, float dt) {
 		self->wl.obj.ang.x = -VEH_PI_2_F;
 	}
 	float s2 = sx + sx;
-	float roll = (float)Game_Atan((double)(s2 - self->turnX)) * 0.5f;
+	float roll = (float)Game_Atan((double)(s2 - self->controls.str)) * 0.5f;
 	self->roll = roll;
 	float az = self->wl.obj.ang.z;
 	float rz = (roll - az) * 4.0f;

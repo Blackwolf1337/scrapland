@@ -21,8 +21,8 @@ typedef struct cVehicleControls {
 	byte cmPrev;			/* 0x21 */
 	byte fire;			/* 0x22 */
 	byte cm;			/* 0x23 the ammo button (countermeasures) */
-	byte b24;			/* 0x24 */
-	byte b25;			/* 0x25 1 after Reset: the second accelerate action counts */
+	byte boostKey;			/* 0x24 the boost button */
+	byte fullThrust;		/* 0x25 1 after Reset: the second accelerate action counts, the thrust follows it at once */
 	byte b26;			/* 0x26 the target in view is picked */
 	byte netFire;			/* 0x27 the toggle bit of the fire of the network state */
 	byte b28;			/* 0x28 the aim follows the target */
@@ -39,18 +39,18 @@ SD_OFFSET(cVehicleControls, netFire, 0x27);
 SD_OFFSET(cVehicleControls, rumbleA, 0x34);
 SD_SIZE(cVehicleControls, 0x44);
 
-byte *__fastcall Controls_ctor(byte *self);
+cVehicleControls *__fastcall Controls_ctor(cVehicleControls *self);
 /* the first weapon of the world, everything else 0 */
-void __fastcall Controls_Reset(byte *self);
-byte __thiscall Controls_VarF(byte *self, const char *name, double *d, int set);
-int __thiscall Controls_GetWeapon(byte *self);
+void __fastcall Controls_Reset(cVehicleControls *self);
+byte __thiscall Controls_VarF(cVehicleControls *self, const char *name, double *d, int set);
+int __thiscall Controls_GetWeapon(cVehicleControls *self);
 /* the buttons and axes from the network state of the vehicle v (its +0xf4, bits at +0x74) */
-void __thiscall Controls_FromNet(byte *self, cEntity *v, float dt);
+void __thiscall Controls_FromNet(cVehicleControls *self, cEntity *v, float dt);
 /* clears both fire buttons and +0x18 when the weapon changes */
-void __thiscall Controls_SetWeapon(byte *self, int w);
+void __thiscall Controls_SetWeapon(cVehicleControls *self, int w);
 /* the two force feedback motors: strength and fade time */
-void __thiscall Controls_RumbleA(byte *self, float strength, float time);
-void __thiscall Controls_RumbleB(byte *self, float strength, float time);
+void __thiscall Controls_RumbleA(cVehicleControls *self, float strength, float time);
+void __thiscall Controls_RumbleB(cVehicleControls *self, float strength, float time);
 
 /* the native functions of the items a ship takes (item name, ship name): the ammo or life of the Item...Adds
  * engine variables, the item hidden for its Item...RespawnTime */

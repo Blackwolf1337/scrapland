@@ -236,7 +236,7 @@ void Hook_UpdateNative(cAbstractFile *f) {
 	byte pullV = Hook_Pulls(v, isClient);
 	if (pullV) {
 		vmaxV = Hook_MaxSpeed(v);
-		Controls_RumbleB(Veh_Kick(v), 0.15f, 0.4f);
+		Controls_RumbleB(Vehicle_Controls(v), 0.15f, 0.4f);
 	}
 	if (pt) {
 		if (!pullV) {
@@ -614,7 +614,7 @@ void Laser_FireNative(cAbstractFile *f) {
 		left = 0.0f;
 	}
 	cWeaponManager_SetAmmo(Veh_Weapons(v), g_LaserIDAmmo, left);
-	Controls_RumbleB(Veh_Kick(v), 1.0f, 0.2f);
+	Controls_RumbleB(Vehicle_Controls(v), 1.0f, 0.2f);
 }
 
 /* the shot pushes an entity with life that walks not, away from the ship */
@@ -654,7 +654,7 @@ void Hook_StartSound(cEntity *v) {
 		s->volume = s->vols[0];
 		s->pitch = s->pitches[0];
 		cSndItem_Play(s, v);
-		Controls_RumbleB(Veh_Kick(v), 0.2f, 0.2f);
+		Controls_RumbleB(Vehicle_Controls(v), 0.2f, 0.2f);
 	}
 }
 
@@ -704,7 +704,7 @@ void Sonic_FireNative(cAbstractFile *f) {
 	if (!m) {
 		return;
 	}
-	Controls_RumbleA(Veh_Kick(v), 0.4f, 0.2f);
+	Controls_RumbleA(Vehicle_Controls(v), 0.4f, 0.2f);
 	cMissileEntity_SetSpeed((cMissileEntity *)m, 0.0f);
 	cMissileEntity_SetTurnSpeed((cMissileEntity *)m, 0.0f);
 	g_DebrisDrop[0] = pos;

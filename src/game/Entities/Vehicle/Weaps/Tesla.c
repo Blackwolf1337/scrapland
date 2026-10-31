@@ -77,7 +77,7 @@ void Tesla_HudNative(cAbstractFile *f) {
 		float min = Veh_TeslaMinAng(v);
 		k = (Veh_AimLimit(v) - min) / (Veh_TeslaAng(v) - min);
 	}
-	if (Controls_Fire(Vehicle_Controls(v)) && level == TESLA_UPG_WIDE) {
+	if (Vehicle_Controls(v)->fire && level == TESLA_UPG_WIDE) {
 		k = Float_MaxSS(0.25f, k);
 	}
 	float size = k * 4.0f + 20.0f;

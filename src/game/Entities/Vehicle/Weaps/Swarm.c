@@ -134,8 +134,8 @@ void Swarm_FireNative(cAbstractFile *f) {
 	if (!m) {
 		return;
 	}
-	Controls_RumbleA(Veh_Kick(v), 1.0f, 0.3f);
-	Controls_RumbleB(Veh_Kick(v), 0.5f, 0.5f);
+	Controls_RumbleA(Vehicle_Controls(v), 1.0f, 0.3f);
+	Controls_RumbleB(Vehicle_Controls(v), 0.5f, 0.5f);
 	cPy_Function_SetNative(Mis_OnHit(m), (nativefunc_t)GAME_FUNC(Swarm_ServerHitNative, 0x127430));
 	cPy_Function_SetNative(Ent_OnDeath(m), (nativefunc_t)GAME_FUNC(Swarm_OnDeathNative, 0x126fc0));
 	cPy_Function_SetNative(Ent_OnDamage(m), (nativefunc_t)GAME_FUNC(Swarm_OnDamageNative, 0x126e80));
@@ -431,7 +431,7 @@ byte Tesla_Shoot(cEntity *v) {
 	if (!(cTargetLock_GetAmmo(Veh_Weapons(v), g_TeslaIDAmmo) > 0.0f)) {
 		return 0;
 	}
-	Controls_RumbleA(Veh_Kick(v), 1.0f, 0.2f);
+	Controls_RumbleA(Vehicle_Controls(v), 1.0f, 0.2f);
 	int level = cWeaponManager_GetUpgrade(Veh_Weapons(v), g_TeslaIDWeap);
 	float down;
 	if (g_VehicleCenterPadLock != 0.0f && cVehicleEntity_GetOwnerSlot(v) != -1) {

@@ -201,8 +201,8 @@ void Vulcan_Shoot(cEntity *v) {
 	if (!(ammo > 0.0f)) {
 		return;
 	}
-	Controls_RumbleA(Veh_Kick(v), 0.5f, 0.2f);
-	Controls_RumbleB(Veh_Kick(v), 0.35f, 0.2f);
+	Controls_RumbleA(Vehicle_Controls(v), 0.5f, 0.2f);
+	Controls_RumbleB(Vehicle_Controls(v), 0.35f, 0.2f);
 	if (Veh_Seat(v) == -1) {
 		cWeaponManager_SetWeapSnd(wm, VULCAN_SND_SHOT);
 		cSndItem *s = PtrArray_Get(Ent_Sounds(v), VULCAN_SND_SHOT);
@@ -445,7 +445,7 @@ void Vulcan_HudNative(cAbstractFile *f) {
 		return;
 	}
 	float delta = Scorer_Delta(Scorer_Get(player));
-	if (Controls_Fire(Vehicle_Controls(v)) &&
+	if (Vehicle_Controls(v)->fire &&
 		cWeaponManager_GetUpgrade(Veh_Weapons(v), g_VulcanIDWeap) == VULCAN_UPG_WIDE) {
 		Item_Rot(item) = Item_Rot(item) + Scorer_Delta(Scorer_Get(player)) * 0x1.921fb6p+1f;
 	} else {

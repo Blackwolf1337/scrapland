@@ -138,8 +138,8 @@ void Inferno_FireNative(cAbstractFile *f) {
 	if (!m) {
 		return;
 	}
-	Controls_RumbleA(Veh_Kick(v), 1.0f, 0.3f);
-	Controls_RumbleB(Veh_Kick(v), 1.0f, 0.5f);
+	Controls_RumbleA(Vehicle_Controls(v), 1.0f, 0.3f);
+	Controls_RumbleB(Vehicle_Controls(v), 1.0f, 0.5f);
 	cPy_Function_SetNative(Mis_OnHit(m), (nativefunc_t)GAME_FUNC(Inferno_ServerHitNative, 0x122780));
 	cPy_Function_SetNative(Ent_OnDeath(m), (nativefunc_t)GAME_FUNC(Inferno_OnDeathNative, 0x122200));
 	cPy_Function_SetNative(Ent_OnDamage(m), (nativefunc_t)GAME_FUNC(Inferno_OnDamageNative, 0x1220e0));

@@ -90,7 +90,7 @@ void __thiscall cNetVController_Read(cNetVController *self, void *m) {
 		byte w;
 		uint16_t id;
 		NetV_Read(msg, &w, 1);
-		Controls_SetWeapon(NETV_VEH(self)->controls, w);
+		Controls_SetWeapon(&NETV_VEH(self)->controls, w);
 		NetV_Read(msg, &self->height, 4);
 		NetV_Read(msg, &id, 2);
 		crt_sprintf(NETV_VEH(self)->target, "net%d", id);
@@ -281,7 +281,7 @@ static void NetV_WriteOffset(cNetVController *self, cAbstractFile *msg, const ve
 void __thiscall cNetVController_Write(cNetVController *self, byte flags, cEntity *e, void *m, byte force) {
 	cAbstractFile *msg = m;
 	cVehicleEntity *v = NETV_VEH(self);
-	cVehicleControls *c = (cVehicleControls *)v->controls;
+	cVehicleControls *c = &v->controls;
 	byte isNet = Net_IsNetEntity(self->vehicle);
 	uint32_t u;
 	byte b;
@@ -325,7 +325,7 @@ void __thiscall cNetVController_Write(cNetVController *self, byte flags, cEntity
 		self->keys |= NETV_KEY_LOCK_POINT;
 	}
 	v = NETV_VEH(self);
-	if (((cVehicleControls *)v->controls)->netFire) {
+	if (v->controls.netFire) {
 		self->keys |= NETV_KEY_TOGGLE;
 	}
 	if (v->cloud > 0.0f) {
@@ -340,7 +340,7 @@ void __thiscall cNetVController_Write(cNetVController *self, byte flags, cEntity
 	u = self->keys;
 	NetV_Write(msg, &u, 2);
 	if (isNet) {
-		b = (byte)Controls_GetWeapon(NETV_VEH(self)->controls);
+		b = (byte)Controls_GetWeapon(&NETV_VEH(self)->controls);
 		NetV_Write(msg, &b, 1);
 		cFollowCamEntity *cam = (cFollowCamEntity *)NETV_VEH(self)->wl.obj.cam;
 		if (cam) {

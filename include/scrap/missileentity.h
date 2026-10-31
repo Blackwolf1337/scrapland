@@ -80,6 +80,10 @@ SD_OFFSET(cMissileEntity, swarmCount, 0x588);
 SD_OFFSET(cMissileEntity, hits, 0x5b4);
 SD_OFFSET(cMissileEntity, hitType, 0x7b4);
 SD_OFFSET(cMissileEntity, onHit, 0x7d4);
+
+static inline cMissileEntity *Missile(const void *e) {
+	return (cMissileEntity *)e;
+}
 SD_SIZE(cMissileEntity, CMISSILEENTITY_SIZE);
 
 /* the WithLife entities the missiles touched, by name (4 of 0x80) */

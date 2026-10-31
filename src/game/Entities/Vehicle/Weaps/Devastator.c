@@ -72,7 +72,7 @@ void Devastator_Create(cAbstractFile *params) {
 	cAbstractFile_ReadString(params, g_DevVictim, 0x80);
 	params->vftable->Read(params, &shot, 4);
 	cEntity *v = Weap_GetVehicle(g_DevShooter);
-	byte *shake = Entity_Shake(v);
+	cFollowCamEntity *playerCam = Entity_FollowCam(v);
 	cWeaponManager *wm = Vehicle_WeapMgr(v);
 	int num = cWeaponManager_NumSlots(wm, g_DevastatorIDWeap, 1);
 	if (!num) {
@@ -95,7 +95,7 @@ void Devastator_Create(cAbstractFile *params) {
 		p.x = m->m[12];
 		p.y = m->m[13];
 		p.z = m->m[14];
-		if (shake) {
+		if (playerCam) {
 			cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_DevastatorBulletFile);
 			cDebris *bullet = cDebrisSys_NewElement(sys);
 			bullet->drop[0] = p;
@@ -215,11 +215,11 @@ void Devastator_Create(cAbstractFile *params) {
 		if (g_DevVictim[0]) {
 			/* larger and a shake when the player is hit */
 			cEntity *w = World_FindEntity(g_DevVictim);
-			if (w && w == cWorld_GetUsrEntity(g_pWorld, 0) && Entity_IsType(w, TYEN_WITH_LIFE) && Entity_Shake(w)) {
-				byte *ws = Entity_Shake(w);
+			if (w && w == cWorld_GetUsrEntity(g_pWorld, 0) && Entity_IsType(w, TYEN_WITH_LIFE) && Entity_FollowCam(w)) {
+				cFollowCamEntity *ws = Entity_FollowCam(w);
 				scale = scale + scale;
-				*(float *)(ws + 0x224) = 0x1.015bf8p-5f;
-				*(float *)(ws + 0x220) = 0.2f;
+				ws->quakeFactor = 0x1.015bf8p-5f;
+				ws->quakeTime = 0.2f;
 			}
 		}
 		float R = g_FXDevastatorRadius;
@@ -392,7 +392,7 @@ void Devastator_FX(cAbstractFile *params) {
 	}
 	float dt = Scorer_Delta(Scorer_Get(player));
 	int up = cWeaponManager_GetUpgrade(Vehicle_WeapMgr(v), g_DevastatorIDWeap);
-	if (Controls_Fire(Vehicle_Controls(v)) && up == 8) {
+	if (Vehicle_Controls(v)->fire && up == 8) {
 		ScorerItem_Angle(item) = dt * DEV_PI + ScorerItem_Angle(item);
 	} else {
 		float s = dt * DEV_PI;
@@ -406,7 +406,7 @@ void Devastator_FX(cAbstractFile *params) {
 			ScorerItem_Angle(item) = 0.0f;
 		}
 	}
-	if (Controls_Fire(Vehicle_Controls(v)) && up == 7) {
+	if (Vehicle_Controls(v)->fire && up == 7) {
 		float time = Scorer_Time(Scorer_Get(player));
 		int k = (int)((double)time * 1024.0);
 		int m = k % 0x1fe - 0xff;
@@ -448,8 +448,8 @@ void Devastator_Fire(cAbstractFile *params) {
 	float rx = (float)(Weap_Rand01() * (double)range + dlo);
 	float ry = (float)(Weap_Rand01() * (double)range + dlo);
 	ang[2] = 0.0f;
-	ang[0] = Vehicle_AimAng(v)[0] + ry;
-	ang[1] = Vehicle_AimAng(v)[1] + rx;
+	ang[0] = Veh(v)->autoAim.ax + ry;
+	ang[1] = Veh(v)->autoAim.ay + rx;
 	Controls_RumbleA(Vehicle_Controls(v), 0.7f, 0.2f);
 	Controls_RumbleB(Vehicle_Controls(v), 0.35f, 0.2f);
 	dist = g_DevastatorRange;
@@ -524,7 +524,7 @@ void Devastator_SetUp(cEntity *v) {
 	} else {
 		ang = 0.2443461f;
 	}
-	Vehicle_AimF6f4(v) = 0.75049156f;
+	Veh(v)->autoAim.speed = 0.75049156f;
 	cAutoAim_SetAngle(Vehicle_AutoAim(v), ang);
 	Vehicle_AimRange(v) = g_DevastatorDistLimit;
 	cAutoAim_Update(Vehicle_AutoAim(v), v, 0.025f);
@@ -597,8 +597,8 @@ void Devastator_XplosionCall(cAbstractFile *params) {
 		n.z = vel->z + z;
 		Entity_SetVel(victim, &n);
 	}
-	if (Entity_IsType(victim, TYEN_VEHICLE) && Vehicle_Hit(victim)) {
-		*(int *)(Vehicle_Hit(victim) + 0x64) = 2;
+	if (Entity_IsType(victim, TYEN_VEHICLE) && Vehicle_NetCtrl(victim)) {
+		Vehicle_NetCtrl(victim)->hit = 2;
 	}
 }
 
@@ -655,7 +655,7 @@ void EMI_Fire(cAbstractFile *params) {
 	cPy_Function_Execute(g_SetUpEMIFunc, 0);
 	cMissileEntity_SetLifeTime((cMissileEntity *)emi, g_EMILifeTime - 0.2f);
 	cPy_Function_SetFunc(Missile_OnHit(emi), "!EMIOnHit");
-	cWeaponManager_SetAmmo(wm, g_EMIIDAmmo, (float)(ammo - Missile_Ammo(emi)));
+	cWeaponManager_SetAmmo(wm, g_EMIIDAmmo, (float)(ammo - Missile_SwarmCount(emi)));
 }
 
 /* "!EMIOnHit" (EMI, ?, entity): a vehicle near the EMI is out for 10 seconds, further away for a random time (or not

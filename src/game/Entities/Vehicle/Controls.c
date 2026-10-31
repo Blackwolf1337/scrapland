@@ -19,41 +19,35 @@
 
 #define CONTROLS_MIN_FADE 0.01f		/* rva 0x3b10d8 */
 
-static inline cVehicleControls *Ctl(byte *p) {
-	return (cVehicleControls *)p;
-}
-
-byte *__fastcall Controls_ctor(byte *self) {
+cVehicleControls *__fastcall Controls_ctor(cVehicleControls *self) {
 	Controls_Reset(self);
-	Ctl(self)->firePrev = 0;
-	Ctl(self)->cmPrev = 0;
+	self->firePrev = 0;
+	self->cmPrev = 0;
 	return self;
 }
 
-void __fastcall Controls_Reset(byte *self) {
-	cVehicleControls *c = Ctl(self);
-
-	c->weapon = g_pWorld->firstWeapon;
-	c->str = 0.0f;
-	c->acc = 0.0f;
-	c->vRot = 0.0f;
-	c->hRot = 0.0f;
-	c->vStr = 0.0f;
-	c->cm = 0;
-	c->b24 = 0;
-	c->b25 = 1;
-	c->b26 = 0;
-	c->fire = 0;
-	c->emptyTime = 0.0f;
-	c->netFire = 0;
-	c->b28 = 0;
-	c->fireWait = 0.0f;
-	c->padBounce = 0.0f;
-	c->rumbleA = 0.0f;
-	c->rumbleB = 0.0f;
-	c->rumbleARate = 0.0f;
-	c->rumbleBRate = 0.0f;
-	c->attackTime = 0.0f;
+void __fastcall Controls_Reset(cVehicleControls *self) {
+	self->weapon = g_pWorld->firstWeapon;
+	self->str = 0.0f;
+	self->acc = 0.0f;
+	self->vRot = 0.0f;
+	self->hRot = 0.0f;
+	self->vStr = 0.0f;
+	self->cm = 0;
+	self->boostKey = 0;
+	self->fullThrust = 1;
+	self->b26 = 0;
+	self->fire = 0;
+	self->emptyTime = 0.0f;
+	self->netFire = 0;
+	self->b28 = 0;
+	self->fireWait = 0.0f;
+	self->padBounce = 0.0f;
+	self->rumbleA = 0.0f;
+	self->rumbleB = 0.0f;
+	self->rumbleARate = 0.0f;
+	self->rumbleBRate = 0.0f;
+	self->attackTime = 0.0f;
 }
 
 /* a float of the controls from the double variable */
@@ -65,91 +59,86 @@ static inline void Ctl_Var(float *f, double *d, int set) {
 	}
 }
 
-byte __thiscall Controls_VarF(byte *self, const char *name, double *d, int set) {
-	cVehicleControls *c = Ctl(self);
-
+byte __thiscall Controls_VarF(cVehicleControls *self, const char *name, double *d, int set) {
 	if (!strcmp(name, "Acc")) {
-		Ctl_Var(&c->acc, d, set);
+		Ctl_Var(&self->acc, d, set);
 		return 1;
 	}
 	if (!strcmp(name, "VStr")) {
-		Ctl_Var(&c->vStr, d, set);
+		Ctl_Var(&self->vStr, d, set);
 		return 1;
 	}
 	if (!strcmp(name, "Str")) {
-		Ctl_Var(&c->str, d, set);
+		Ctl_Var(&self->str, d, set);
 		return 1;
 	}
 	if (!strcmp(name, "HRot")) {
-		Ctl_Var(&c->hRot, d, set);
+		Ctl_Var(&self->hRot, d, set);
 		return 1;
 	}
 	if (!strcmp(name, "VRot")) {
-		Ctl_Var(&c->vRot, d, set);
+		Ctl_Var(&self->vRot, d, set);
 		return 1;
 	}
 	return 0;
 }
 
-int __thiscall Controls_GetWeapon(byte *self) {
-	return Ctl(self)->weapon;
+int __thiscall Controls_GetWeapon(cVehicleControls *self) {
+	return self->weapon;
 }
 
-void __thiscall Controls_FromNet(byte *self, cEntity *v, float dt) {
-	cVehicleControls *c = Ctl(self);
+void __thiscall Controls_FromNet(cVehicleControls *self, cEntity *v, float dt) {
 	const byte *net = *(byte **)((byte *)v + 0xf4);
 	uint16_t bits = *(const uint16_t *)(net + 0x74);
 	byte toggle = (byte)(bits >> 15) & 1;
 
 	(void)dt;
-	if (c->netFire == toggle) {
-		c->fire = (byte)bits & 1;
+	if (self->netFire == toggle) {
+		self->fire = (byte)bits & 1;
 	} else {
-		c->fire = 1;
-		if (c->firePrev) {
-			c->netFire = toggle;
+		self->fire = 1;
+		if (self->firePrev) {
+			self->netFire = toggle;
 		}
 	}
-	c->cm = ((byte)bits >> 1) & 1;
+	self->cm = ((byte)bits >> 1) & 1;
 	if (bits & 0x100) {
-		c->acc = 1.0f;
+		self->acc = 1.0f;
 	} else if (bits & 0x200) {
-		c->acc = -1.0f;
+		self->acc = -1.0f;
 	} else {
-		c->acc = 0.0f;
+		self->acc = 0.0f;
 	}
 	if (bits & 0x800) {
-		c->str = 1.0f;
+		self->str = 1.0f;
 	} else if (bits & 0x400) {
-		c->str = -1.0f;
+		self->str = -1.0f;
 	} else {
-		c->str = 0.0f;
+		self->str = 0.0f;
 	}
 }
 
-void __thiscall Controls_SetWeapon(byte *self, int w) {
-	cVehicleControls *c = Ctl(self);
-
-	if (c->weapon != w) {
-		c->weapon = w;
-		c->fire = 0;
-		c->cm = 0;
-		c->fireWait = 0.0f;
+void __thiscall Controls_SetWeapon(cVehicleControls *self, int w) {
+	if (self->weapon != w) {
+		self->weapon = w;
+		self->fire = 0;
+		self->cm = 0;
+		self->fireWait = 0.0f;
 	}
 }
 
-void __thiscall Controls_RumbleA(byte *self, float strength, float time) {
+void __thiscall Controls_RumbleA(cVehicleControls *self, float strength, float time) {
 	float t = Float_MaxSS(CONTROLS_MIN_FADE, time);
 
-	Ctl(self)->rumbleA = strength;
-	Ctl(self)->rumbleARate = strength / t;
+	self->rumbleA = strength;
+	self->rumbleARate = strength / t;
 }
 
-void __thiscall Controls_RumbleB(byte *self, float strength, float time) {
+void __thiscall Controls_RumbleB(cVehicleControls *self, float strength, float time) {
 	float t = Float_MaxSS(CONTROLS_MIN_FADE, time);
 
-	Ctl(self)->rumbleB = strength;
-	Ctl(self)->rumbleBRate = strength / t;
+	self->rumbleB = strength;
+	self->rumbleBRate = strength / t;
 }
 
 /* ---- the items a ship takes (native functions "TakeEner", "TakeLife", "TakeMiss", "TakePart") ---- */
@@ -505,7 +494,7 @@ byte __fastcall cVehicleO648_IsStale(void *o) {
 #define CTL_ACCEL2 6
 #define CTL_BRAKE 7
 #define CTL_ACCEL 8
-#define CTL_B24 9
+#define CTL_BOOST 9
 #define CTL_STR_LEFT 10
 #define CTL_STR_RIGHT 11
 #define CTL_VSTR_DOWN 12
@@ -599,13 +588,13 @@ static void Ctl_Axes(cVehicleControls *c, cEntity *v, cActionSet *set, int slot,
 	float acc = Ctl_Value(set, CTL_ACCEL, slot);
 	float acc2 = Ctl_Value(set, CTL_ACCEL2, slot);
 	if (acc > 0.5f) {
-		c->b25 = 0;
+		c->fullThrust = 0;
 	}
 	if (acc2 > 0.5f) {
-		c->b25 = 1;
+		c->fullThrust = 1;
 	}
-	c->acc = c->b25 ? acc2 : acc;
-	c->b24 = Ctl_Value(set, CTL_B24, slot) > 0.5f;
+	c->acc = c->fullThrust ? acc2 : acc;
+	c->boostKey = Ctl_Value(set, CTL_BOOST, slot) > 0.5f;
 	c->acc = c->acc - Ctl_Value(set, CTL_BRAKE, slot);
 	c->str = Ctl_Value(set, CTL_STR_LEFT, slot);
 	c->str = c->str - Ctl_Value(set, CTL_STR_RIGHT, slot);
@@ -767,8 +756,7 @@ static void Ctl_PadRumble(cVehicleControls *c, cEntity *v, int slot) {
 	cPad_Rumble(&g_Pads[slot], a + h, b + shake, 0.25f);
 }
 
-void __thiscall cVehicleControls_Tick(void *controls, cEntity *v, float dt) {
-	cVehicleControls *c = controls;
+void __thiscall cVehicleControls_Tick(cVehicleControls *c, cEntity *v, float dt) {
 	int slot = cVehicleEntity_GetOwnerSlot(v);
 	cActionSet *set = TABLE_AT(g_ActionSets, 1);
 

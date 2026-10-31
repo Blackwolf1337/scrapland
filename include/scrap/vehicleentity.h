@@ -7,6 +7,8 @@
 #ifndef SCRAP_VEHICLEENTITY_H
 #define SCRAP_VEHICLEENTITY_H
 
+#include "scrap/autoaim.h"
+#include "scrap/controls.h"
 #include "scrap/fxcountermeasures.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/sound.h"
@@ -67,16 +69,7 @@ struct cVehicleEntity {
 	byte pad_3ed[3];
 	byte collision[0x410 - 0x3f0];	/* 0x3f0 the state of the world collision */
 	int slot;			/* 0x410 "UsrControl": the player slot 0..3, -1 for the AI */
-	byte controls[0x418 - 0x414];	/* 0x414 */
-	float stickX;			/* 0x418 */
-	float stickY;			/* 0x41c */
-	float thrustIn;			/* 0x420 -1..1 */
-	float turnX;			/* 0x424 */
-	float turnY;			/* 0x428 */
-	byte pad_42c[0x438 - 0x42c];
-	byte boostKey;			/* 0x438 */
-	byte fullThrust;		/* 0x439 */
-	byte pad_43a[0x458 - 0x43a];
+	cVehicleControls controls;	/* 0x414 */
 	float wRadius;			/* 0x458 "WRadius" */
 	float thrust;			/* 0x45c */
 	float turnSpeedX;		/* 0x460 */
@@ -138,7 +131,7 @@ struct cVehicleEntity {
 	byte pad_645[3];
 	byte o648[0x650 - 0x648];	/* 0x648 updated for player ships */
 	char target[0x80];		/* 0x650 "Target" */
-	byte autoAim[0x720 - 0x6d0];	/* 0x6d0 cAutoAim, its target link at +0x14 */
+	cAutoAim autoAim;		/* 0x6d0 */
 	byte motors[0x7e8 - 0x720];	/* 0x720 cVehicleMotors (vftable with VarI, VarF, VarS, VarV) */
 	float vertBalance;		/* 0x7e8 "VerticalBalance" */
 	int money;			/* 0x7ec "Money" */
@@ -146,7 +139,7 @@ struct cVehicleEntity {
 };
 SD_OFFSET(cVehicleEntity, collision, 0x3f0);
 SD_OFFSET(cVehicleEntity, slot, 0x410);
-SD_OFFSET(cVehicleEntity, boostKey, 0x438);
+SD_OFFSET(cVehicleEntity, controls, 0x414);
 SD_OFFSET(cVehicleEntity, wRadius, 0x458);
 SD_OFFSET(cVehicleEntity, speed, 0x46c);
 SD_OFFSET(cVehicleEntity, acMass, 0x4a8);
@@ -248,7 +241,7 @@ void __thiscall cVehicleEntity_Step(cVehicleEntity *self, float dt);
 void __thiscall cVehicleEntity_UpdateModel(cVehicleEntity *self);
 void *__fastcall cVehicleMotors_ctor(void *motors);
 void __fastcall cVehicleMotors_dtor(void *motors);
-void __thiscall cVehicleControls_Tick(void *controls, cEntity *v, float dt);
+void __thiscall cVehicleControls_Tick(cVehicleControls *c, cEntity *v, float dt);
 
 /*
  * The target selection of a player ship (o648 at 0x648 and the "Target" after it; src/game/Entities/Vehicle/

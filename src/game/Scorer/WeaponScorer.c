@@ -328,7 +328,7 @@ void __thiscall cWeaponScorer_Draw(cWeaponScorer *self, int player) {
 	int w = wm->curWeap;
 	int kind = TABLE_AT(g_pWorld->weapons, w)->ammo;
 	int upg = cWeaponManager_GetUpgrade(wm, w);
-	int sel = Controls_GetWeapon(v->controls);
+	int sel = Controls_GetWeapon(&v->controls);
 	if (self->lastWeapon == -100) {
 		self->lastWeapon = w;
 		self->lastUpgrade = upg;
