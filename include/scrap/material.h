@@ -44,18 +44,18 @@ SD_SIZE(CTextStatic, 0x8);
 typedef struct CMap {
 	char *Name;			/* 0x00 as in the model */
 	char *path;			/* 0x04 the file found (CMap_ResolvePath) */
-	byte b8;			/* 0x08 */
+	byte filter;			/* 0x08 0 for "Filter: no" */
 	byte lightmap;			/* 0x09 lightmap level, 0 for none */
 	byte ba;			/* 0x0a */
-	byte bb;			/* 0x0b */
-	byte bc;			/* 0x0c */
-	byte bd;			/* 0x0d */
+	byte env2;			/* 0x0b "(env2)" in the name of the reflection map */
+	byte tile;			/* 0x0c "TileU" (bit 0), "TileV" (bit 1) */
+	byte mirror;			/* 0x0d "EspejoU" (bit 0), "EspejoV" (bit 1) */
 	byte fx;			/* 0x0e kind of FXTexture, 0 for none */
 	byte pad_f;
-	float f10[2];			/* 0x10 */
-	float f18[2];			/* 0x18 */
-	float v20[3];			/* 0x20 */
-	float f2c;			/* 0x2c */
+	float uvOffset[2];		/* 0x10 "DesplazU", "DesplazV" */
+	float uvScale[2];		/* 0x18 "EscalaU", "EscalaV" */
+	float uvRot[3];			/* 0x20 the "Angulo" in z */
+	float amount;			/* 0x2c of the map in the material */
 	CTextStatic *cur;			/* 0x30 est or a frame of TextAni */
 	CTextStatic staticTex;			/* 0x34 */
 	byte animated;			/* 0x3c pathAni is set */
@@ -66,7 +66,7 @@ typedef struct CMap {
 	void *AnimMat;			/* 0x4c 0x2c bytes */
 	void *FXTexture;		/* 0x50 object with a virtual deleting destructor at [0] */
 	byte hasAlpha;			/* 0x54 */
-	byte b55;			/* 0x55 */
+	byte compressed;		/* 0x55 the texture is compressed */
 	byte pad_56[2];
 	int state;			/* 0x58 MAP_MISSING: the file was not found */
 	void *MultiSprite;		/* 0x5c */
@@ -86,16 +86,17 @@ typedef struct CMatParams {
 	float power;			/* 0x20 */
 	float specLevel;		/* 0x24 */
 	byte color[4];			/* 0x28 */
-	int i2c;			/* 0x2c */
+	int matClass;			/* 0x2c 0 "Standard", 1 "Multi/Sub-Object" */
 	int srcBlend;			/* 0x30 5 */
 	int dstBlend;			/* 0x34 6 */
-	byte b38;			/* 0x38 */
-	byte b39;			/* 0x39 */
+	byte twoSided;			/* 0x38 "TwoSided" */
+	byte lighting;			/* 0x39 D3DRS_LIGHTING with the material colors */
 	byte transp;			/* 0x3a */
-	byte b3b;			/* 0x3b */
+	byte reflection;		/* 0x3b a reflection map is set */
 	uint16_t attrib;			/* 0x3c MAT_* */
-	uint16_t w3e;			/* 0x3e */
-	int i40;			/* 0x40 */
+	byte fog;			/* 0x3e D3DRS_FOGENABLE when the fog is on */
+	byte zWrite;			/* 0x3f D3DRS_ZWRITEENABLE */
+	int zFunc;			/* 0x40 D3DRS_ZFUNC: 4 less or equal, 8 always */
 } CMatParams;
 SD_SIZE(CMatParams, 0x34);
 
@@ -293,7 +294,7 @@ static inline byte Mat_IsTransp(const CMaterial *m) {
 	if (m->params.attrib & 0x20) {
 		return 0;
 	}
-	return m->params.transp || (m->map[1] && !m->params.b3b);
+	return m->params.transp || (m->map[1] && !m->params.reflection);
 }
 void DDS_Hide(const char *name, uint32_t attr);
 void DDS_Unhide(const char *name, uint32_t attr);

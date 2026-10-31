@@ -74,8 +74,9 @@ void MeshEffect_Render(void) {
 	}
 	if (!g_MeshEffectMatInit) {
 		CMaterial *m = g_MeshEffectMat;
-		m->params.w3e = 0;
-		m->params.i40 = (g_MeshEffectStencil != 0) + 4;
+		m->params.fog = 0;
+		m->params.zWrite = 0;
+		m->params.zFunc = (g_MeshEffectStencil != 0) + 4;
 		memset(m->params.ambient, 0, 4);
 		memset(m->params.diffuse, 0, 4);
 		const byte emissive[4] = { 0x10, 0x10, 0x30, 0 };

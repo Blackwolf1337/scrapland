@@ -2278,9 +2278,9 @@ void __fastcall CGround_DrawDebug(CGround *self) {
 	CMatParams *p = &g_CollideMat.params;
 	p->srcBlend = 2;
 	p->dstBlend = 2;
-	p->b39 = 0;
+	p->lighting = 0;
 	p->transp = 1;
-	((byte *)&p->w3e)[1] = 0;
+	p->zWrite = 0;
 	p->attrib = 0x800;
 	Render_SetMaterial(&g_CollideMat, 0);
 	if (g_ShowMapSolid) {

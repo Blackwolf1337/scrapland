@@ -739,8 +739,8 @@ void __thiscall CBsp_DrawTri(CBsp *self, BspTri *tri, byte pass) {
 		Render_SetLightmapMat(NULL, 1);
 		return;
 	}
-	CHECK(!tri->Mat->params.b39);
-	CHECK(!tri->LMap || !tri->LMap->Mat->params.b39);
+	CHECK(!tri->Mat->params.lighting);
+	CHECK(!tri->LMap || !tri->LMap->Mat->params.lighting);
 	if (!g_ShadowMapMultitext) {
 		CHECK(0);
 		Render_SetMaterial(tri->Mat, 0);
@@ -2008,9 +2008,9 @@ void __thiscall BspLMap_CreateMat(BspLMap *self, const char *name, byte level) {
 	CMaterial_ctor(&m);
 	String_Set(&m.Name, Path_FileName(name));
 	CMaterial_SetMap(&m, MAP_DIFFUSE, name);
-	m.params.b39 = 0;
+	m.params.lighting = 0;
 	m.map[MAP_DIFFUSE]->lightmap = level;
-	((byte *)&m.params.w3e)[1] = 0;
+	m.params.zWrite = 0;
 	if (!g_ShadowMapMultitext) {
 		m.params.dstBlend = 3;
 		m.params.transp = 1;
@@ -3299,11 +3299,11 @@ void __fastcall CBsp_InitD3D(CBsp *self) {
 	CMaterial_ctor(&mat);
 	String_Set(&mat.Name, "MatVerMapas");
 	CMaterial_SetMap(&mat, MAP_DIFFUSE, "bmp/rgb_grey.tga");
-	mat.params.b39 = 0;
+	mat.params.lighting = 0;
 	self->matFX = Mat_New(&mat, 1);
 	String_Set(&mat.Name, "MatVerMalla");
 	CMaterial_SetMap(&mat, MAP_DIFFUSE, "bmp/rgb_white.tga");
-	mat.params.b39 = 0;
+	mat.params.lighting = 0;
 	mat.params.attrib = 0x800;
 	self->matWire = Mat_New(&mat, 1);
 	CModel_InitD3D(self->model, ENGINE_DEV(g_Engine), 1);

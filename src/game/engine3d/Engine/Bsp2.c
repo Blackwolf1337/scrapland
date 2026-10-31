@@ -111,7 +111,7 @@ int Bsp2_CheckLine(const vec3_t *a, const vec3_t *b, vec3_t *out, Bsp2Node *node
 	for (int i = 0; i < n; i++) {
 		const Bsp2Tri *t = Bsp2_Tri(node, i);
 		const CMaterial *mat = t->Mat;
-		if (!(mat->params.attrib & MAT_SHADOW) && (mat->params.transp || (mat->map[1] && !mat->params.b3b))) {
+		if (!(mat->params.attrib & MAT_SHADOW) && (mat->params.transp || (mat->map[1] && !mat->params.reflection))) {
 			continue;
 		}
 		g_Bsp2NTriCmp++;

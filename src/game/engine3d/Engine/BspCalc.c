@@ -249,7 +249,7 @@ void __fastcall CBsp_CreateBuffers(CBsp *self) {
 				BspVert e;
 				e.pos = t->v[k];
 				e.n = (vec3_t){ 0.0f, 0.0f, 0.0f };
-				if (list->Mat->params.b3b) {
+				if (list->Mat->params.reflection) {
 					e.n.x = Bsp_Quantize(t->n[k].x);
 					e.n.y = Bsp_Quantize(t->n[k].y);
 					e.n.z = Bsp_Quantize(t->n[k].z);
@@ -285,7 +285,7 @@ void __fastcall CBsp_CreateBuffers(CBsp *self) {
 				idx[k] = (uint16_t)nv;
 			}
 		}
-		byte normal = list->Mat->params.b3b;
+		byte normal = list->Mat->params.reflection;
 		int frmt = normal ? VERT_LTEX2N : VERT_LTEX2;
 		if (list->flags & BSPTRI_NOLMAP) {
 			frmt = normal ? VERT_LTEX1N : VERT_LTEX1;
@@ -1369,7 +1369,7 @@ static void Bsp_TakeTriangles(CScene *scn, byte allow) {
 		for (int pass = 0; pass < 2; pass++) {
 			for (int i = 0; i < mesh->nTri; i++) {
 				CMeshTri *tm = CTriMesh_GetTri(mesh, (uint32_t)i);
-				if (pass && !((CMaterial *)tm->mat)->params.b38) {
+				if (pass && !((CMaterial *)tm->mat)->params.twoSided) {
 					continue;
 				}
 				memset(vm, 0, sizeof(vm));
@@ -1415,7 +1415,7 @@ static void Bsp_TakeTriangles(CScene *scn, byte allow) {
 				t->Mat = tm->mat;
 				t->zone = zone;
 				t->node = n;
-				t->Mat->params.b39 = 0;
+				t->Mat->params.lighting = 0;
 				if (n->flags >> 27 & 1 && (allow || outSector)) {
 					t->flags |= BSPTRI_NOLMAP;
 				}

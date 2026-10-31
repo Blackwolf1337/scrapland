@@ -59,7 +59,7 @@ void __thiscall CMatId_Register(CMatId *self, CMaterial *mat) {
 	byte env = 0;
 	byte mask = 0;
 	if (g_EnvMap) {
-		env = mat->params.b3b;
+		env = mat->params.reflection;
 		mask = env && alpha;
 	}
 	if (glow) {
@@ -79,7 +79,7 @@ void __thiscall CMatId_Register(CMatId *self, CMaterial *mat) {
 	int mode = Shader_Find(CMaterial_GetShaderName(mat, buf, sizeof(buf)) ? buf : name);
 	CHECK(self->id == -1);
 	self->id = mode;
-	if (mat->params.b3b && !(mat->params.attrib & MAT_SHADER)) {
+	if (mat->params.reflection && !(mat->params.attrib & MAT_SHADER)) {
 		alpha = 0;
 	}
 	if (!(mat->params.attrib & MAT_SHADER) && (glow || bump) && env && !mask) {

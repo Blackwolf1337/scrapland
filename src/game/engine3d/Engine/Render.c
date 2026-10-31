@@ -746,12 +746,12 @@ void Mat_StageEnvBump(CMaterial *mat, uint32_t flags, uint32_t stageEnv, uint32_
 	float bias = 0.0f;
 	if (flags & 5) {
 		const CMap *bump = mat->map[3];
-		float s = bump->f2c * g_EnvBumpScale;
-		if (bump->b55 && g_EnvBumpBias) {
+		float s = bump->amount * g_EnvBumpScale;
+		if (bump->compressed && g_EnvBumpBias) {
 			bias = s * -0.5f;
 			s = (float)((double)s + (double)s);
 		}
-		float rot = bump->v20[2] != 0.0f ? Time_Float() * 0.001f * bump->v20[2] : 0.0f;
+		float rot = bump->uvRot[2] != 0.0f ? Time_Float() * 0.001f * bump->uvRot[2] : 0.0f;
 		Mat_StageBumpMat(mat, flags, stageBump, 0.0f, s, rot);
 	}
 	if (flags & 2) {
@@ -775,14 +775,14 @@ void Mat_StageEnvMap(CMaterial *mat, uint32_t flags, uint32_t stage, float bias)
 			m.m[12] = 0.0f;
 			m.m[13] = 0.0f;
 			m.m[14] = 0.0f;
-			vec3_t s = { env->f18[0] * g_EnvMapScale, -env->f18[1] * g_EnvMapScale, g_EnvMapScale };
+			vec3_t s = { env->uvScale[0] * g_EnvMapScale, -env->uvScale[1] * g_EnvMapScale, g_EnvMapScale };
 			Matrix_PostScale(&m, &s);
 		} else {
-			m.m[0] = env->f18[0] * g_EnvMapScale;
-			m.m[5] = -(env->f18[1] * g_EnvMapScale);
+			m.m[0] = env->uvScale[0] * g_EnvMapScale;
+			m.m[5] = -(env->uvScale[1] * g_EnvMapScale);
 		}
-		m.m[12] = -g_EnvMapOffset - env->f10[0];
-		m.m[13] = env->f10[0] + g_EnvMapOffset;
+		m.m[12] = -g_EnvMapOffset - env->uvOffset[0];
+		m.m[13] = env->uvOffset[0] + g_EnvMapOffset;
 		if (g_EnvMapViewDep == 1) {
 			matrix_t v;
 			void *dev = g_pd3dDevice;
@@ -841,10 +841,10 @@ void Mat_StageScroll(CMaterial *mat, uint32_t mapid, uint32_t flags, uint32_t st
 		CHECK(mapid < MAP_TOTAL);
 		const CMap *map = mat->map[mapid];
 		CHECK(map);
-		if (map->f10[0] == 0.0f && map->f10[1] == 0.0f && map->v20[2] == 0.0f) {
+		if (map->uvOffset[0] == 0.0f && map->uvOffset[1] == 0.0f && map->uvRot[2] == 0.0f) {
 			Tex_StageTransform(mat, 2, stage, 0.0f, 0.0f, 1.0f, 0.0f);
 		} else {
-			Tex_StageTransform(mat, flags, stage, map->f10[0], map->f10[1], map->f18[0], map->v20[2] * k);
+			Tex_StageTransform(mat, flags, stage, map->uvOffset[0], map->uvOffset[1], map->uvScale[0], map->uvRot[2] * k);
 		}
 	}
 	if (flags & 2) {
@@ -885,7 +885,7 @@ void Mat_StageBumpMat(CMaterial *mat, uint32_t flags, uint32_t stage, float k, f
 		return;
 	}
 	if (k != 0.0f) {
-		s = mat->map[3]->f2c * k + s;
+		s = mat->map[3]->amount * k + s;
 	}
 	float c = 1.0f, sn = 0.0f;
 	if (rot != 0.0f) {
@@ -1115,8 +1115,8 @@ void Shader_Waves(CMaterial *mat, uint32_t flags) {
 			CheckFailed("mat->params.dif_alpha", __FILE__, __TIMESTAMP__, __LINE__);
 		}
 		const CMap *m = mat->map[MAP_DIFFUSE];
-		Tex_StageTransform(mat, flags, 0, m->f10[0], m->f10[1], m->f18[0], m->v20[2]);
-		Tex_StageTransform(mat, flags, 1, -m->f10[0], -m->f10[1], m->f18[0], m->v20[2]);
+		Tex_StageTransform(mat, flags, 0, m->uvOffset[0], m->uvOffset[1], m->uvScale[0], m->uvRot[2]);
+		Tex_StageTransform(mat, flags, 1, -m->uvOffset[0], -m->uvOffset[1], m->uvScale[0], m->uvRot[2]);
 		Render_SetMap(1, mat->map[MAP_BUMP]);
 		Render_SetMap(2, mat->map[MAP_ENVIRONMENT]);
 		Render_SetMap(3, mat->map[MAP_DIFFUSE]);
@@ -1371,8 +1371,8 @@ void Render_IniD3D(void) {
 	void *dev = ENGINE_DEV(motor);
 	g_pd3dDevice = dev;
 	memcpy(caps, ENGINE_CAPS(motor), sizeof(caps));
-	((CMaterial *)g_MatLine)->params.b39 = 0;
-	((CMaterial *)g_MatDefault)->params.b39 = 0;
+	((CMaterial *)g_MatLine)->params.lighting = 0;
+	((CMaterial *)g_MatDefault)->params.lighting = 0;
 	memcpy(&g_Adapter, ENGINE_ADAPTERS(motor) + ENGINE_ADAPTER(motor) * 0x438c, sizeof(g_Adapter));
 	const uint16_t *ver = g_Adapter.DriverVersion;
 	Bprintf(g_DriverStr, 0x100, "%s [%s]  %d.%02d.%02d.%04d", g_Adapter.Description, g_Adapter.Driver, ver[3],
@@ -1438,9 +1438,9 @@ void Render_IniD3D(void) {
 		if (defMats[i].file) {
 			CMaterial_SetMap(&m, 0, defMats[i].file);
 		} else {
-			m.params.i40 = 1;
+			m.params.zFunc = 1;
 		}
-		m.params.b39 = 0;
+		m.params.lighting = 0;
 		*slots[i] = Mat_New(&m, 1);
 		CMaterial_dtor(&m);
 	}
@@ -1606,7 +1606,7 @@ static void Mat_Blend(void *dev, const CMaterial *mat, byte shAlphaTest, byte sh
 	if (!alphaTest && !blending) {
 		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHABLENDENABLE, 0);
 		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_FOGENABLE,
-			mat->params.w3e & 0xff ? (uint32_t)g_FogActive : 0);
+			mat->params.fog ? (uint32_t)g_FogActive : 0);
 		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_COLORWRITEENABLE, 0xf);
 		if (g_PSOn) {
 			D3D_METHOD(dev, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(dev, 0, D3DTSS_ALPHAOP,
@@ -1619,7 +1619,7 @@ static void Mat_Blend(void *dev, const CMaterial *mat, byte shAlphaTest, byte sh
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_DESTBLEND, (uint32_t)dst);
 	D3D_METHOD(dev, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(dev, 0, D3DTSS_ALPHAOP,
 		!blending ? D3DTOP_SELECTARG1 : alphaTest ? D3DTOP_MODULATE : D3DTOP_SELECTARG2);
-	byte fog = mat->params.w3e & 0xff && g_FogActive && g_AlphaFog && (g_AlphaFog != 1 || (src == 5 && dst == 6));
+	byte fog = mat->params.fog && g_FogActive && g_AlphaFog && (g_AlphaFog != 1 || (src == 5 && dst == 6));
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_FOGENABLE, fog);
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_COLORWRITEENABLE,
 		src == 2 && dst == 2 ? 0xf : 7);
@@ -1658,11 +1658,11 @@ int Render_SetMaterial(void *m, int pass) {
 			E3D_LogWhite(g_FileLog, "MatLog: %d %d %d [%s] [%s]", g_FrameCount, g_MatChanges,
 				CMaterial_GetId((CMaterial *)mat, NULL), mat->Name, ctx);
 		}
-		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZWRITEENABLE, mat->params.w3e >> 8);
-		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZFUNC, (uint32_t)mat->params.i40);
+		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZWRITEENABLE, mat->params.zWrite);
+		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZFUNC, (uint32_t)mat->params.zFunc);
 		Render_State(D3DRS_ZBIAS, mat->params.attrib & 0x800 ? g_DecalZBias : 0);
 		uint32_t light = 0;
-		if (mat->params.b39) {
+		if (mat->params.lighting) {
 			Render_D3DMaterial(mat, g_MatFX3 ? g_MatFX3->colors : mat->colors);
 			light = 1;
 		}
@@ -1671,7 +1671,7 @@ int Render_SetMaterial(void *m, int pass) {
 		if (g_UseShaders) {
 			CHECK(!pass);
 			Mat_Shader(mat, frameChanged, &shAlphaTest, &shBlend, &shAlpha);
-		} else if (mat->params.b3b && pass == 1) {
+		} else if (mat->params.reflection && pass == 1) {
 			D3D_METHOD(dev, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(dev, 0, D3DTSS_TEXCOORDINDEX, 1);
 		} else {
 			D3D_METHOD(dev, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(dev, 0, D3DTSS_TEXCOORDINDEX, 0);
@@ -1819,14 +1819,14 @@ int Render_SetMap(uint32_t stage, CMap *map) {
 			fx = map->FXTexture;
 			tex = ((fxTexGet_t)(*(void ***)fx)[2])(fx);
 		}
-		if (map->b8 != g_StageMip[stage]) {
-			g_StageMip[stage] = map->b8;
-			Render_TSS(stage, D3DTSS_MIPFILTER, map->b8 && g_MipmapsOn ? g_FilterMip : 0);
+		if (map->filter != g_StageMip[stage]) {
+			g_StageMip[stage] = map->filter;
+			Render_TSS(stage, D3DTSS_MIPFILTER, map->filter && g_MipmapsOn ? g_FilterMip : 0);
 		}
-		if (map->bc != g_StageTile[stage]) {
-			g_StageTile[stage] = map->bc;
-			Render_TSS(stage, D3DTSS_ADDRESSU, (~((uint32_t)map->bc * 2) & 2) | 1);
-			Render_TSS(stage, D3DTSS_ADDRESSV, (~(uint32_t)map->bc & 2) | 1);
+		if (map->tile != g_StageTile[stage]) {
+			g_StageTile[stage] = map->tile;
+			Render_TSS(stage, D3DTSS_ADDRESSU, (~((uint32_t)map->tile * 2) & 2) | 1);
+			Render_TSS(stage, D3DTSS_ADDRESSV, (~(uint32_t)map->tile & 2) | 1);
 		}
 		Render_TSS(stage, D3DTSS_MAXANISOTROPY, map->lightmap ? 1 : g_AnisotropyCur);
 		if (!tex) {
@@ -2198,7 +2198,7 @@ int Render_MeshD3D(CMeshD3D *m, CRenderNode *r) {
 		}
 		return 0;
 	}
-	if (g_RenderOnlyB38 && m->mat && !m->mat->params.b38) {
+	if (g_RenderOnlyB38 && m->mat && !m->mat->params.twoSided) {
 		return 0;
 	}
 	void *dev = g_EngineDev;
@@ -2206,7 +2206,7 @@ int Render_MeshD3D(CMeshD3D *m, CRenderNode *r) {
 		return E_FAIL;
 	}
 	byte pass1 = 0, envSoft = 0;
-	if (m->mat && m->mat->params.b3b) {
+	if (m->mat && m->mat->params.reflection) {
 		pass1 = 1;
 		if (!g_UseHWEnvMap) {
 			matrix_t view, world;

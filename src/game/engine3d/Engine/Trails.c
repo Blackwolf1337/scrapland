@@ -724,13 +724,13 @@ int Trails_Init(void) {
 	CMaterial_ctor(&mat);
 	for (int i = 0; i < MAX_TRAILS_TEXTURES; i++) {
 		CMaterial_SetMap(&mat, 0, trailsMats[i].map);
-		mat.params.b39 = 0;
+		mat.params.lighting = 0;
 		mat.params.transp = 1;
 		mat.params.srcBlend = trailsMats[i].srcBlend;
 		mat.params.dstBlend = trailsMats[i].dstBlend;
-		((byte *)&mat.params.w3e)[1] = 0;
-		mat.params.i40 = 2;
-		mat.map[0]->b8 = trailsMats[i].dudv;
+		mat.params.zWrite = 0;
+		mat.params.zFunc = 2;
+		mat.map[0]->filter = trailsMats[i].dudv;
 		CMaterial_Prepare(&mat, g_EngineDev);
 		g_TrailsMat[i] = Mat_New(&mat, 0);
 	}

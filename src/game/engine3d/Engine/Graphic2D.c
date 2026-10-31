@@ -173,15 +173,15 @@ void __thiscall CGraphic2D_CreateMat(CGraphic2D *self, const char *tex, const ch
 	m.params.dstBlend = dst;
 	m.params.transp = alpha != 0;
 	m.params.diffuse[3] = alpha;
-	m.params.b39 = 0;
-	((byte *)&m.params.w3e)[0] = 0;
-	((byte *)&m.params.w3e)[1] = flags >> 3 & 1;
-	m.params.i40 = flags & GRAPHIC2D_MAT_I40 ? 2 : 8;
+	m.params.lighting = 0;
+	m.params.fog = 0;
+	m.params.zWrite = flags >> 3 & 1;
+	m.params.zFunc = flags & GRAPHIC2D_MAT_I40 ? 2 : 8;
 	m.params.attrib = flags & GRAPHIC2D_ATTRIB_20 ? 0x60 : 0x40;
 	if (m.map[0]) {
-		m.map[0]->b8 = 0;
+		m.map[0]->filter = 0;
 		if (!(flags & GRAPHIC2D_MAP_BC)) {
-			m.map[0]->bc = 0;
+			m.map[0]->tile = 0;
 		}
 	}
 	if (flags & GRAPHIC2D_MAP_BA && m.map[0]) {

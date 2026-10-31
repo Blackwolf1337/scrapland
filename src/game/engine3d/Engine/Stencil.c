@@ -467,8 +467,8 @@ void ShadowsStencil_Render(void) {
 		return;
 	}
 	Render_SetWorldMatrix(g_MatIdentity, 0);
-	g_StencilMat->params.b39 = 0;
-	g_StencilMat->params.i40 = (g_ShowStencil != 2) + 4;
+	g_StencilMat->params.lighting = 0;
+	g_StencilMat->params.zFunc = (g_ShowStencil != 2) + 4;
 	Render_SetMaterial(g_StencilMat, 0);
 	/* the volumes: front faces count up, back faces down */
 	Stencil_RS(RS_ZWRITEENABLE, 0);

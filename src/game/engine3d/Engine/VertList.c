@@ -1226,8 +1226,8 @@ void __thiscall CVertList_EnvMapUV(CVertList *self, const matrix_t *world, const
 	CHECK(Matrix_Invert(&inv, view) == 0);
 	float u0 = wv.m[0], u1 = wv.m[4], u2 = wv.m[8];
 	float v0 = wv.m[1], v1 = wv.m[5], v2 = wv.m[9];
-	float offU = map->f10[0], offV = map->f10[1];
-	float scaleU = map->f18[0], scaleV = map->f18[1];
+	float offU = map->uvOffset[0], offV = map->uvOffset[1];
+	float scaleU = map->uvScale[0], scaleV = map->uvScale[1];
 	CHECK(itex >= 0);
 	CHECK(LVERT_TEX2D_SET1 + itex <= LVERT_TEX2D_SET1 + 7);
 	byte *pv = CVertList_GetField(self, LVERT_POS, 0);
@@ -1235,7 +1235,7 @@ void __thiscall CVertList_EnvMapUV(CVertList *self, const matrix_t *world, const
 	byte *pt = CVertList_GetField(self, LVERT_TEX2D_SET1 + itex, 0);
 	int stride = VertList_FormatSize(self->frmt);
 	CHECK(pv && pn && pt);
-	if (map->bb == 1) {
+	if (map->env2 == 1) {
 		for (int i = 0; i < self->nVert; i++) {
 			vec3_t p, n, r;
 			Vec3_TransformH(&p, (const vec3_t *)pv, world);

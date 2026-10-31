@@ -506,7 +506,7 @@ void __thiscall CMeshD3D_Build(CMeshD3D *self, CTriMesh *mesh, uint32_t flags) {
 	int nBack = 0;
 	for (int i = 0; i < nTri; i++) {
 		CMaterial *mat = src->pTri[i].mat;
-		if (mat && !(mat->params.attrib & MAT_ONESIDED) && !(flags & MESHD3D_ONESIDED) && mat->params.b38) {
+		if (mat && !(mat->params.attrib & MAT_ONESIDED) && !(flags & MESHD3D_ONESIDED) && mat->params.twoSided) {
 			nBack++;
 		}
 	}
@@ -515,7 +515,7 @@ void __thiscall CMeshD3D_Build(CMeshD3D *self, CTriMesh *mesh, uint32_t flags) {
 	int n = 0;
 	for (int i = src->nTri - 1; i >= 0 && nBack; i--) {
 		CMaterial *mat = src->pTri[i].mat;
-		if (mat && mat->params.b38) {
+		if (mat && mat->params.twoSided) {
 			MeshD3D_FillTri(&tmp[n], src, i, 0);
 			n++;
 		}
@@ -606,7 +606,7 @@ void __thiscall CMeshD3D_Build(CMeshD3D *self, CTriMesh *mesh, uint32_t flags) {
 		}
 		cur->mat = o->mat;
 		CMeshD3D_AllocTri(cur, o->nTri);
-		if (!cur->mat || !cur->mat->params.b3b) {
+		if (!cur->mat || !cur->mat->params.reflection) {
 			CVertList_SetFormat(&cur->vert, (self->b50 || self->b51) ? VERT_TEX1_B1 : VERT_TEX1);
 		} else {
 			CVertList_SetFormat(&cur->vert, g_UseHWEnvMap ? VERT_TEX1 : VERT_TEX2);

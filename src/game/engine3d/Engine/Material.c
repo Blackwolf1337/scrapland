@@ -118,17 +118,17 @@ CTextStatic *__thiscall CTextStatic_Delete(CTextStatic *self, byte flags) {
 
 void __thiscall CMap_Assign(CMap *self, const CMap *orig) {
 	String_Set(&self->Name, orig->Name);
-	self->b8 = orig->b8;
+	self->filter = orig->filter;
 	self->lightmap = orig->lightmap;
 	self->ba = orig->ba;
-	self->bb = orig->bb;
-	self->bc = orig->bc;
-	self->bd = orig->bd;
+	self->env2 = orig->env2;
+	self->tile = orig->tile;
+	self->mirror = orig->mirror;
 	self->fx = orig->fx;
-	memcpy(self->f10, orig->f10, sizeof(self->f10));
-	memcpy(self->f18, orig->f18, sizeof(self->f18));
-	memcpy(self->v20, orig->v20, sizeof(self->v20));
-	self->f2c = orig->f2c;
+	memcpy(self->uvOffset, orig->uvOffset, sizeof(self->uvOffset));
+	memcpy(self->uvScale, orig->uvScale, sizeof(self->uvScale));
+	memcpy(self->uvRot, orig->uvRot, sizeof(self->uvRot));
+	self->amount = orig->amount;
 }
 
 void __thiscall CMaterial_Assign(CMaterial *self, const CMaterial *orig) {
@@ -218,18 +218,18 @@ int __thiscall CMap_Read(CMap *self, CFileIO *f) {
 	CHECK(version >= 2 && version <= 3);
 	CFileIO_ReadString(f, buf, MAX_FILEPATH);
 	String_Set(&self->Name, buf);
-	CFileIO_Read(f, &self->b8, 1);
+	CFileIO_Read(f, &self->filter, 1);
 	CFileIO_Read(f, &self->lightmap, 1);
 	CFileIO_Read(f, &self->ba, 1);
-	CFileIO_Read(f, &self->bb, 1);
-	CFileIO_Read(f, &self->bc, 1);
-	CFileIO_Read(f, &self->bd, 1);
+	CFileIO_Read(f, &self->env2, 1);
+	CFileIO_Read(f, &self->tile, 1);
+	CFileIO_Read(f, &self->mirror, 1);
 	CFileIO_Read(f, &self->fx, 1);
-	CFileIO_Read(f, self->f10, 8);
-	CFileIO_Read(f, self->f18, 8);
-	CFileIO_Read(f, &self->f2c, 4);
+	CFileIO_Read(f, self->uvOffset, 8);
+	CFileIO_Read(f, self->uvScale, 8);
+	CFileIO_Read(f, &self->amount, 4);
 	if (version > 2) {
-		CFileIO_Read(f, self->v20, 0xc);
+		CFileIO_Read(f, self->uvRot, 0xc);
 	}
 	return CFileIO_Error(f, "MAP");
 }
@@ -251,7 +251,7 @@ int __thiscall CMaterial_Read(CMaterial *self, CFileIO *f) {
 	CFileIO_Read(f, self->params.emissive, 4);
 	CFileIO_Read(f, &self->params.power, 4);
 	CFileIO_Read(f, &self->params.specLevel, 4);
-	CFileIO_Read(f, &self->params.i2c, 0x18);
+	CFileIO_Read(f, &self->params.matClass, 0x18);
 	for (uint32_t i = 0; i < MAP_TOTAL; i++) {
 		CHECK(i < MAP_TOTAL);
 		Mat_DeleteMap(&self->map[i]);
@@ -398,17 +398,17 @@ int __thiscall CMap_Write(CMap *self, CFileIO *f) {
 	CHECK(self->Name);
 	Path_Part(buf, self->Name, PATH_DIR | PATH_NAME | PATH_EXT);
 	CFileIO_WriteString(f, buf);
-	CFileIO_Write(f, &self->b8, 1);
+	CFileIO_Write(f, &self->filter, 1);
 	CFileIO_Write(f, &self->lightmap, 1);
 	CFileIO_Write(f, &self->ba, 1);
-	CFileIO_Write(f, &self->bb, 1);
-	CFileIO_Write(f, &self->bc, 1);
-	CFileIO_Write(f, &self->bd, 1);
+	CFileIO_Write(f, &self->env2, 1);
+	CFileIO_Write(f, &self->tile, 1);
+	CFileIO_Write(f, &self->mirror, 1);
 	CFileIO_Write(f, &self->fx, 1);
-	CFileIO_Write(f, self->f10, 8);
-	CFileIO_Write(f, self->f18, 8);
-	CFileIO_Write(f, &self->f2c, 4);
-	CFileIO_Write(f, self->v20, 0xc);
+	CFileIO_Write(f, self->uvOffset, 8);
+	CFileIO_Write(f, self->uvScale, 8);
+	CFileIO_Write(f, &self->amount, 4);
+	CFileIO_Write(f, self->uvRot, 0xc);
 	return CFileIO_EndBlockWrite(f, "MAP");
 }
 
@@ -423,7 +423,7 @@ int __thiscall CMaterial_Write(CMaterial *self, CFileIO *f) {
 	CFileIO_Write(f, self->params.emissive, 4);
 	CFileIO_Write(f, &self->params.power, 4);
 	CFileIO_Write(f, &self->params.specLevel, 4);
-	CFileIO_Write(f, &self->params.i2c, 0x18);
+	CFileIO_Write(f, &self->params.matClass, 0x18);
 	for (int i = 0; i < MAP_TOTAL; i++) {
 		if (self->map[i]) {
 			CFileIO_WriteInt(f, 1);
@@ -562,7 +562,7 @@ CMaterial *__thiscall CMatList_Find(CMatList *self, const CMaterial *mat) {
 		const CMatParams *a = &m->params, *b = &mat->params;
 		/* the four colors up to power as bytes */
 		if (!memcmp(a->ambient, b->ambient, 0x10) && a->power == b->power && a->specLevel == b->specLevel
-			&& Color_Equal(a->color, b->color) && MatParams_Equal((const uint32_t *)&a->i2c, (const uint32_t *)&b->i2c)) {
+			&& Color_Equal(a->color, b->color) && MatParams_Equal((const uint32_t *)&a->matClass, (const uint32_t *)&b->matClass)) {
 			int i;
 			for (i = 0; i < MAP_TOTAL; i++) {
 				if (!CMap_Equal(m->map[i], mat->map[i])) {
@@ -746,7 +746,7 @@ void __thiscall CMap_LoadTexture(CMap *self, void *dev, CMap *alpha, int kind) {
 		}
 	}
 	int flags, flagsAlt;
-	if (self->b8 && !self->fx) {
+	if (self->filter && !self->fx) {
 		flags = 0x100;
 		flagsAlt = 0x180;
 	} else {
@@ -813,7 +813,7 @@ void __thiscall CMap_LoadTexture(CMap *self, void *dev, CMap *alpha, int kind) {
 	}
 	if (!Texture_GetInfo(self->staticTex.Hint, info)) {
 		self->hasAlpha = info[3] != 0;
-		self->b55 = info[4] != 0;
+		self->compressed = info[4] != 0;
 	}
 	if (alpha && alpha->state == MAP_MISSING && !self->hasAlpha) {
 		Con_Warnf("WARN: Opacity map not found: '%s'\n", alpha->Name);
@@ -829,7 +829,7 @@ void __thiscall CMaterial_Prepare(CMaterial *self, void *dev) {
 		if (self->map[0]) {
 			CMap_LoadTexture(self->map[0], dev, self->map[1], 0);
 		}
-		if (self->map[2] && self->params.b3b) {
+		if (self->map[2] && self->params.reflection) {
 			CMap_LoadTexture(self->map[2], dev, NULL, 1);
 		}
 		if (self->map[3]) {
@@ -858,14 +858,14 @@ byte CMap_Equal(const CMap *a, const CMap *b) {
 	if (!a || !b) {
 		return 0;
 	}
-	if (strcmp(a->Name, b->Name) || a->b8 != b->b8 || a->lightmap != b->lightmap || a->ba != b->ba || a->bb != b->bb
-		|| a->bc != b->bc || a->bd != b->bd || a->fx != b->fx) {
+	if (strcmp(a->Name, b->Name) || a->filter != b->filter || a->lightmap != b->lightmap || a->ba != b->ba || a->env2 != b->env2
+		|| a->tile != b->tile || a->mirror != b->mirror || a->fx != b->fx) {
 		return 0;
 	}
-	if ((byte)Vec2_Differ(a->f10, b->f10) || (byte)Vec2_Differ(a->f18, b->f18) || (byte)Vec3_Differ(a->v20, b->v20)) {
+	if ((byte)Vec2_Differ(a->uvOffset, b->uvOffset) || (byte)Vec2_Differ(a->uvScale, b->uvScale) || (byte)Vec3_Differ(a->uvRot, b->uvRot)) {
 		return 0;
 	}
-	return a->f2c == b->f2c;
+	return a->amount == b->amount;
 }
 
 int __thiscall CMatList_Count(CMatList *self, byte sub) {
@@ -942,8 +942,8 @@ int Mat_Compare(const CMaterial *a, const CMaterial *b) {
 	if (ta != Mat_IsTransp(b)) {
 		return ta ? 1 : -1;
 	}
-	if (a->params.b3b != b->params.b3b) {
-		return a->params.b3b ? 1 : -1;
+	if (a->params.reflection != b->params.reflection) {
+		return a->params.reflection ? 1 : -1;
 	}
 	if (!a->map[3] != !b->map[3]) {
 		return a->map[3] ? 1 : -1;
@@ -1191,21 +1191,21 @@ CMap *__thiscall CMap_ctor(CMap *self) {
 	self->staticTex.tex = NULL;
 	self->staticTex.Hint = NULL;
 	self->pathAni = NULL;
-	self->f10[0] = 0.0f;
-	self->f10[1] = 0.0f;
-	self->f18[0] = 1.0f;
-	self->f18[1] = 1.0f;
-	self->v20[0] = 0.0f;
-	self->v20[1] = 0.0f;
-	self->v20[2] = 0.0f;
-	self->b8 = 1;
+	self->uvOffset[0] = 0.0f;
+	self->uvOffset[1] = 0.0f;
+	self->uvScale[0] = 1.0f;
+	self->uvScale[1] = 1.0f;
+	self->uvRot[0] = 0.0f;
+	self->uvRot[1] = 0.0f;
+	self->uvRot[2] = 0.0f;
+	self->filter = 1;
 	self->lightmap = 0;
 	self->ba = 0;
-	self->bb = 0;
-	self->bc = 3;
-	self->bd = 0;
+	self->env2 = 0;
+	self->tile = 3;
+	self->mirror = 0;
 	self->fx = 0;
-	self->f2c = 1.0f;
+	self->amount = 1.0f;
 	self->cur = NULL;
 	self->animated = 0;
 	self->frames = 0;
@@ -1213,7 +1213,7 @@ CMap *__thiscall CMap_ctor(CMap *self) {
 	self->AnimMat = NULL;
 	self->FXTexture = NULL;
 	self->hasAlpha = 0;
-	self->b55 = 0;
+	self->compressed = 0;
 	self->state = 0;
 	self->MultiSprite = NULL;
 	return self;
@@ -1240,16 +1240,17 @@ CMaterial *__thiscall CMaterial_ctor(CMaterial *self) {
 	memset(p->emissive, 0, sizeof(p->emissive));
 	p->power = 0.0f;
 	p->specLevel = 0.0f;
-	p->i2c = 0;
+	p->matClass = 0;
 	p->srcBlend = 5;
 	p->dstBlend = 6;
-	p->b38 = 0;
-	p->b39 = 1;
+	p->twoSided = 0;
+	p->lighting = 1;
 	p->transp = 0;
-	p->b3b = 0;
+	p->reflection = 0;
 	p->attrib = 0;
-	p->w3e = 0x100;
-	p->i40 = 4;
+	p->fog = 0;
+	p->zWrite = 1;
+	p->zFunc = 4;
 	for (i = 0; i < MAP_TOTAL; i++) {
 		self->map[i] = NULL;
 	}

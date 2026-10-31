@@ -30,11 +30,12 @@ void __fastcall CBackground2D_Init(CBackground2D *self) {
 	CMaterial_ctor(&m);
 	String_Set(&m.Name, "CFondo2D");
 	CMaterial_SetMap(&m, MAP_DIFFUSE, "bmp/fondo_256x256.bmp");
-	m.params.b39 = 0;
-	m.params.w3e = 0;
-	m.params.i40 = 8;
-	m.map[MAP_DIFFUSE]->b8 = 0;
-	m.map[MAP_DIFFUSE]->bc = 0;
+	m.params.lighting = 0;
+	m.params.fog = 0;
+	m.params.zWrite = 0;
+	m.params.zFunc = 8;
+	m.map[MAP_DIFFUSE]->filter = 0;
+	m.map[MAP_DIFFUSE]->tile = 0;
 	m.map[MAP_DIFFUSE]->ba = 1;
 	self->Mat = CMatList_Find(g_MatList, &m);
 	if (!self->Mat) {

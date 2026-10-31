@@ -113,6 +113,6 @@ void __thiscall CMeshD3D_CalcIllum(CMeshD3D *self, CNode3D *node, CScene *scn) {
 	}
 	CVertList_Swap(&self->vert, &lv);
 	CVertList_Free(&lv);
-	self->mat->params.b39 = 0;
+	self->mat->params.lighting = 0;
 	CVertList_Free(&lv);
 }

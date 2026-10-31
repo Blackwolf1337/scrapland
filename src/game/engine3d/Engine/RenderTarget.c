@@ -315,17 +315,17 @@ static CMaterial *RT_MakeMat(const CMaterial *cur, const char *name, const char 
 		CMaterial_SetMap(&m, MAP_BUMP, map);
 	}
 	m.params.attrib = attrib;
-	m.params.b39 = 0;
+	m.params.lighting = 0;
 	m.params.transp = transp;
-	((byte *)&m.params.w3e)[1] = 0;
-	m.params.i40 = 8;
+	m.params.zWrite = 0;
+	m.params.zFunc = 8;
 	m.params.srcBlend = srcBlend;
 	m.params.dstBlend = dstBlend;
-	m.map[MAP_DIFFUSE]->bc = 0;
-	m.map[MAP_DIFFUSE]->b8 = 0;
+	m.map[MAP_DIFFUSE]->tile = 0;
+	m.map[MAP_DIFFUSE]->filter = 0;
 	if (bump) {
-		m.map[MAP_BUMP]->bc = 0;
-		m.map[MAP_BUMP]->b8 = 0;
+		m.map[MAP_BUMP]->tile = 0;
+		m.map[MAP_BUMP]->filter = 0;
 	}
 	CHECK(!cur);
 	r = Mat_New(&m, share);

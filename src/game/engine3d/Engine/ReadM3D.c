@@ -751,7 +751,7 @@ CMaterial *M3D_FindMat(int iMat, int iSubmat) {
 			if (!res) {
 				CHECK(res);
 			} else {
-				while (res->params.i2c == 1 && res->sub) {
+				while (res->params.matClass == 1 && res->sub) {
 					res = res->sub->first;
 					Con_FatalErrorf("Hay un multimaterial dentro de otro multimaterial: %s", res->Name);
 				}
@@ -790,7 +790,7 @@ void M3D_MatUsado(CMaterial *mat) {
 
 void M3D_ShareMats(CMatList *list) {
 	for (int i = 0; i < g_M3DNumMat; i++) {
-		if (g_M3DMat[i]->params.i2c == 1) {
+		if (g_M3DMat[i]->params.matClass == 1) {
 			continue;
 		}
 		CHECK(!g_M3DMat[i]->sub);
@@ -1244,7 +1244,7 @@ void Scene_UsedMats(CScene *scn) {
 	for (int i = 0; i < g_M3DNumMat; i++) {
 		CMaterial *mat = g_M3DMat[i];
 		if (!g_M3DMatUsado[i]) {
-			const char *type = mat->params.i2c == 1 ? "multimat" : "material";
+			const char *type = mat->params.matClass == 1 ? "multimat" : "material";
 			E3D_LogDebug(g_FileLog, "WARN: Unused %s: [%s] [%s]", type, mat->Name, CMaterial_GetMapName(mat, 0));
 			continue;
 		}
@@ -2284,9 +2284,9 @@ void M3D_ReadMap(CMaterial *mat, int iMat, int iSubmat, int idx, int type) {
 			if (shader || (g_UseEnvMap && g_M3DUseEnvmap)) {
 				CHECK(!CMaterial_GetMapName(mat, MAP_ENVIRONMENT));
 				map = CMaterial_SetMap(mat, MAP_ENVIRONMENT, buf);
-				mat->params.b3b = buf[0] != 0;
+				mat->params.reflection = buf[0] != 0;
 				if (strstr(name, "(env2)")) {
-					map->bb = 1;
+					map->env2 = 1;
 				}
 			}
 			break;
@@ -2306,7 +2306,7 @@ void M3D_ReadMap(CMaterial *mat, int iMat, int iSubmat, int idx, int type) {
 			break;
 		}
 		if (map) {
-			map->f2c = quantity;
+			map->amount = quantity;
 			map->fx = FXTexture_Kind(name);
 		}
 		if (g_M3DVersion > 8) {
@@ -2315,8 +2315,8 @@ void M3D_ReadMap(CMaterial *mat, int iMat, int iSubmat, int idx, int type) {
 			byte eu = M3D_ReadBool("EspejoU:");
 			byte ev = M3D_ReadBool("EspejoV:");
 			if (map) {
-				map->bc = (tv ? 2 : 0) | (tu != 0);
-				map->bd = (ev ? 2 : 0) | (eu != 0);
+				map->tile = (tv ? 2 : 0) | (tu != 0);
+				map->mirror = (ev ? 2 : 0) | (eu != 0);
 			}
 		}
 		if (g_M3DVersion > 7) {
@@ -2328,19 +2328,19 @@ void M3D_ReadMap(CMaterial *mat, int iMat, int iSubmat, int idx, int type) {
 				float sv = M3D_ReadFloat("EscalaV:");
 				float ang = M3D_ReadFloat("Angulo:");
 				if (map) {
-					map->f10[0] = du;
-					map->f10[1] = dv;
-					map->f18[0] = su;
-					map->f18[1] = sv;
-					map->v20[0] = 0.0f;
-					map->v20[1] = 0.0f;
-					map->v20[2] = ang;
+					map->uvOffset[0] = du;
+					map->uvOffset[1] = dv;
+					map->uvScale[0] = su;
+					map->uvScale[1] = sv;
+					map->uvRot[0] = 0.0f;
+					map->uvRot[1] = 0.0f;
+					map->uvRot[2] = ang;
 				}
 			}
 			M3D_ReadBool("TexInvert:");
 			M3D_ReadString("Filter:", buf, sizeof(buf), 0);
 			if (map && !strcmp(buf, "no")) {
-				map->b8 = 0;
+				map->filter = 0;
 			}
 		}
 	} else if (!strcmp(class, "Mask")) {
@@ -2417,7 +2417,7 @@ void M3D_ReadMaterial(CMatList *list, int iMat, int iSubmat) {
 	if (!strcmp(buf, "Multi/Sub-Object")) {
 		class = 1;
 	}
-	mat->params.i2c = class;
+	mat->params.matClass = class;
 	M3D_ReadColors(mat);
 	if (!class) {
 		M3D_ReadString("Shading:", NULL, 0, 0);
@@ -2427,7 +2427,7 @@ void M3D_ReadMaterial(CMatList *list, int iMat, int iSubmat) {
 		mat->params.emissive[0] = b;
 		mat->params.emissive[1] = b;
 		mat->params.emissive[2] = b;
-		mat->params.b38 = M3D_ReadBool("TwoSided:");
+		mat->params.twoSided = M3D_ReadBool("TwoSided:");
 		M3D_ReadBool("FaceMap:");
 		M3D_ReadString("TransparencyType:", NULL, 0, 0);
 		if (!strcmp(g_M3DString, "Additive")) {
@@ -2477,21 +2477,21 @@ void M3D_ReadMaterial(CMatList *list, int iMat, int iSubmat) {
 		*(uint32_t *)mat->params.ambient = 0;
 		*(uint32_t *)mat->params.diffuse = 0x301010;
 		*(uint32_t *)mat->params.emissive = 0xffffff;
-		if (mat->params.b3b) {
+		if (mat->params.reflection) {
 			*(uint32_t *)mat->params.diffuse = 0x301060;
 		}
-		mat->params.b3b = 0;
-		mat->params.w3e &= 0xff;
+		mat->params.reflection = 0;
+		mat->params.zWrite = 0;
 	}
-	mat->params.w3e = (uint16_t)((mat->params.w3e & 0xff00) | 1);
+	mat->params.fog = 1;
 	if (Mat_IsTransp(mat)) {
-		mat->params.w3e &= 0xff;
+		mat->params.zWrite = 0;
 	}
-	if (!mat->params.transp && mat->map[MAP_OPACITY] && !mat->params.b3b && mat->map[MAP_GLOW]) {
+	if (!mat->params.transp && mat->map[MAP_OPACITY] && !mat->params.reflection && mat->map[MAP_GLOW]) {
 		mat->params.diffuse[3] = 0xff;
 		mat->params.transp = 1;
 	}
-	if (mat->params.transp && mat->params.b3b && mat->params.srcBlend == 5) {
+	if (mat->params.transp && mat->params.reflection && mat->params.srcBlend == 5) {
 		E3D_LogVerbose(g_FileLog, "WARN: transparent environment mapped material without (+transp:premult)  [%s]",
 			mat->Name);
 		mat->params.srcBlend = 2;
@@ -2511,10 +2511,11 @@ void M3D_ReadMaterial(CMatList *list, int iMat, int iSubmat) {
 		mat->params.srcBlend = 2;
 		mat->params.dstBlend = 2;
 		mat->params.transp = 1;
-		mat->params.w3e = 0;
+		mat->params.fog = 0;
+		mat->params.zWrite = 0;
 		mat->params.diffuse[3] = e;
 	}
-	if (!g_UseTextures && !texsi && mat->map[MAP_DIFFUSE] && mat->map[MAP_DIFFUSE]->b8 == 1) {
+	if (!g_UseTextures && !texsi && mat->map[MAP_DIFFUSE] && mat->map[MAP_DIFFUSE]->filter == 1) {
 		CMaterial_MapToColor(mat);
 	}
 }

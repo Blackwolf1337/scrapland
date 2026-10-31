@@ -387,7 +387,7 @@ void __thiscall CLight_Render(CLight *self, void *dev, CRenderNode *r) {
 		}
 	}
 	Render_SetWorld();
-	g_LightMat.params.b39 = 0;
+	g_LightMat.params.lighting = 0;
 	Render_SetMaterial(&g_LightMat, 0);
 	color = Color_FromFloat(&self->d3d.Diffuse.r);
 	Render_GetWorld(&m);

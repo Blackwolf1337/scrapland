@@ -171,11 +171,11 @@ void __thiscall CGraphic3D_CreateMat(CGraphic3D *self, const char *tex, const ch
 	m.params.dstBlend = dst;
 	m.params.transp = alpha != 0;
 	m.params.diffuse[3] = alpha;
-	m.params.b39 = 0;
-	((byte *)&m.params.w3e)[1] = 0;
+	m.params.lighting = 0;
+	m.params.zWrite = 0;
 	if (m.map[0]) {
-		m.map[0]->b8 = 0;
-		m.map[0]->bc = 0;
+		m.map[0]->filter = 0;
+		m.map[0]->tile = 0;
 	}
 	self->Mat = CMatList_Find(g_MatList, &m);
 	if (!self->Mat) {

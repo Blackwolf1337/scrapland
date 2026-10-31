@@ -643,8 +643,8 @@ void __fastcall CParticleSystem_CreateMat(CParticleSystem *self) {
 		String_Set(&m.Name, "MatSistPart");
 		CMaterial_SetMap(&m, 0, pa->texture);
 		if (m.map[0]) {
-			m.map[0]->b8 = (pa->flags & PARTICLESYSTEM_MIPMAP) != 0;
-			m.map[0]->bc = 0;
+			m.map[0]->filter = (pa->flags & PARTICLESYSTEM_MIPMAP) != 0;
+			m.map[0]->tile = 0;
 		}
 		if (!pa->additiveAlpha) {
 			m.params.srcBlend = 2;
@@ -657,14 +657,14 @@ void __fastcall CParticleSystem_CreateMat(CParticleSystem *self) {
 			m.params.attrib |= 0x400;
 		}
 		m.params.transp = 1;
-		((byte *)&m.params.w3e)[1] = 0;
+		m.params.zWrite = 0;
 		if (strstr(pa->texture, ".DUDV")) {
 			m.params.srcBlend = 2;
 			m.params.dstBlend = 2;
 			m.params.transp = 1;
-			((byte *)&m.params.w3e)[1] = 0;
+			m.params.zWrite = 0;
 		}
-		m.params.b39 = 0;
+		m.params.lighting = 0;
 		self->mat = Mat_New(&m, 1);
 		CMaterial_dtor(&m);
 	}

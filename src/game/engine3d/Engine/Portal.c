@@ -113,8 +113,8 @@ void __thiscall CPortal_DrawDebug(CPortal *self, uint32_t color) {
 			crt_Init_thread_footer(g_PortalMatGuard);
 		}
 	}
-	g_PortalMat.params.b39 = 0;
-	g_PortalMat.params.i40 = 8;
+	g_PortalMat.params.lighting = 0;
+	g_PortalMat.params.zFunc = 8;
 	g_MatFX1 = &g_PortalMat;
 	vec3_t mn = { -hw, 0.0f, -hh }, mx = { hw, 0.0f, hh };
 	Debug_DrawBoxM(&self->node->m, &mn, &mx, color);

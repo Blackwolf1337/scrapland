@@ -45,13 +45,14 @@ static void Scene_Draw(const CModel *m, NodeAnimCtx *ctx) {
 }
 
 /* the blend states of the shared effect material */
-static void FXMat_Set(int src, int dst, byte b39, int i40, uint16_t w3e) {
+static void FXMat_Set(int src, int dst, byte lighting, int zFunc, byte zWrite) {
 	g_FXMat.params.srcBlend = src;
 	g_FXMat.params.dstBlend = dst;
-	g_FXMat.params.b39 = b39;
+	g_FXMat.params.lighting = lighting;
 	g_FXMat.params.transp = 1;
-	g_FXMat.params.i40 = i40;
-	g_FXMat.params.w3e = w3e;
+	g_FXMat.params.zFunc = zFunc;
+	g_FXMat.params.fog = 0;
+	g_FXMat.params.zWrite = zWrite;
 }
 
 static void FXMat_Colors(uint32_t ambient, uint32_t diffuse, uint32_t emissive) {
@@ -67,10 +68,10 @@ static uint32_t FX_Gray(void) {
 }
 
 /* the model drawn with the material forced into every draw */
-static void ModelFX_Forced(const CModel *m, NodeAnimCtx *ctx, int i40) {
+static void ModelFX_Forced(const CModel *m, NodeAnimCtx *ctx, int zFunc) {
 	Render_ClearForced();
 	g_MatFX1 = &g_FXMat;
-	FXMat_Set(1, 2, 0, i40, 0x100);
+	FXMat_Set(1, 2, 0, zFunc, 1);
 	Scene_Draw(m, ctx);
 }
 
@@ -148,7 +149,7 @@ void ModelFX_Static2(CModel *m, NodeAnimCtx *ctx) {
 	Render_ClearForced();
 	FXMat_Colors(0x808080, 0xff5040, 0);
 	g_MatFX1 = &g_FXMat;
-	FXMat_Set(6, 2, 1, 4, 0x100);
+	FXMat_Set(6, 2, 1, 4, 1);
 	g_FXMat.params.diffuse[3] = (byte)Rand_Flicker(4);
 	uint32_t e = FX_Gray();
 	memcpy(g_FXMat.params.emissive, &e, 4);
@@ -352,10 +353,11 @@ static CMaterial *FXMat_Shader(const char *name, const char *bump, const char *g
 	m.params.srcBlend = 2;
 	m.params.attrib |= MAT_SHADER;
 	m.params.dstBlend = 2;
-	m.params.b39 = 0;
+	m.params.lighting = 0;
 	m.params.transp = 1;
-	m.params.i40 = 4;
-	m.params.w3e = 0;
+	m.params.zFunc = 4;
+	m.params.fog = 0;
+	m.params.zWrite = 0;
 	CMaterial_SetMap(&m, MAP_DIFFUSE, bump);
 	CMaterial_SetMap(&m, MAP_GLOW, glow);
 	CMaterial_SetMap(&m, MAP_BUMP, mask);
@@ -386,12 +388,13 @@ void ModelFX_InitD3D(void) {
 	m.params.attrib |= MAT_SHADER;
 	m.params.srcBlend = 5;
 	m.params.dstBlend = 6;
-	m.params.b39 = 0;
+	m.params.lighting = 0;
 	m.params.transp = 1;
-	m.params.i40 = 4;
-	m.params.w3e = 0;
+	m.params.zFunc = 4;
+	m.params.fog = 0;
+	m.params.zWrite = 0;
 	CMaterial_SetMap(&m, MAP_DIFFUSE, "bmp/noise2.tga");
-	m.map[MAP_DIFFUSE]->b8 = 0;
+	m.map[MAP_DIFFUSE]->filter = 0;
 	CMaterial_Prepare(&m, g_pd3dDevice);
 	g_MatNoise = Mat_New(&m, 1);
 	CMaterial_dtor(&m);

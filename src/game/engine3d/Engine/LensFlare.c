@@ -101,13 +101,13 @@ int LensFlare_Init(void) {
 
 	CMaterial_ctor(&m);
 	CMaterial_SetMap(&m, MAP_DIFFUSE, "BMP/LensFlare.bmp");
-	m.params.b39 = 0;
+	m.params.lighting = 0;
 	m.params.transp = 1;
 	m.params.srcBlend = 5;
 	m.params.dstBlend = 2;
-	((byte *)&m.params.w3e)[1] = 0;
-	m.params.i40 = 2;
-	m.map[MAP_DIFFUSE]->b8 = 0;
+	m.params.zWrite = 0;
+	m.params.zFunc = 2;
+	m.map[MAP_DIFFUSE]->filter = 0;
 	CMaterial_Prepare(&m, ENGINE_DEV(g_Engine));
 	g_LensFlareMat = Mat_New(&m, 1);
 	CMaterial_GetMultiSprite(g_LensFlareMat, 0);

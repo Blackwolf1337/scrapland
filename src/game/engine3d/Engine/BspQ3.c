@@ -256,7 +256,7 @@ void __fastcall CBspQ3_ReadFaces(CBspQ3 *self) {
 		CMaterial_ctor(&tmp);
 		String_Set(&tmp.Name, self->faces[i].shader->name);
 		CMaterial_SetMap(&tmp, MAP_DIFFUSE, buf);
-		tmp.params.b39 = 0;
+		tmp.params.lighting = 0;
 		CMaterial *mat = CMatList_Find(g_MatList, &tmp);
 		if (!mat) {
 			mat = operator_new(sizeof(CMaterial));
@@ -319,9 +319,9 @@ void __fastcall CBspQ3_ReadLMaps(CBspQ3 *self) {
 		mat = mat ? CMaterial_ctor(mat) : NULL;
 		String_Printf(&mat->Name, "Lightmap Mat %04d", i);
 		CMaterial_SetMap(mat, MAP_DIFFUSE, path);
-		mat->params.b39 = 0;
+		mat->params.lighting = 0;
 		mat->map[MAP_DIFFUSE]->lightmap = 1;
-		mat->params.w3e &= 0xff;
+		mat->params.zWrite = 0;
 		CMaterial_Prepare(mat, g_EngineDev);
 		CMatList_Add(g_MatList, mat);
 		if (!g_BspQ3LMapNoBlend) {

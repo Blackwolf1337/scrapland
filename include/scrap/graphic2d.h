@@ -16,7 +16,7 @@ enum {
 	GRAPHIC2D_SCREEN = 0x001,	/* the position is a part of the screen */
 	GRAPHIC2D_SCREEN_SIZE = 0x002,	/* the size too */
 	GRAPHIC2D_MAP_BA = 0x004,		/* the map gets ba */
-	GRAPHIC2D_MAT_3F = 0x008,		/* the material gets w3e high byte 1 */
+	GRAPHIC2D_MAT_3F = 0x008,		/* the material writes z (zWrite) */
 	GRAPHIC2D_MAT_I40 = 0x010,		/* i40 of the material 2, else 8 */
 	GRAPHIC2D_MAP_BC = 0x020,		/* bc of the map kept */
 	GRAPHIC2D_MULTISPRITE = 0x040,	/* the frames of a multi sprite map are made */

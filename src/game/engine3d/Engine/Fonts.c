@@ -499,11 +499,12 @@ static CMaterial *Fnt_MatOutline(CMaterial *src, CMaterial **mat, int *init, con
 	CMaterial_SetMap(&m, 0, CMaterial_GetMapName(src, 0));
 	m.params.srcBlend = 5;
 	m.params.dstBlend = 6;
-	m.params.b39 = 0;
+	m.params.lighting = 0;
 	m.params.transp = 1;
-	m.params.i40 = 8;
+	m.params.zFunc = 8;
 	m.params.attrib = 0x40;
-	m.params.w3e = 0;
+	m.params.fog = 0;
+	m.params.zWrite = 0;
 	*mat = Mat_New(&m, 1);
 	CMaterial_dtor(&m);
 	return *mat;
