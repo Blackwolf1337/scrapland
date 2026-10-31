@@ -1217,7 +1217,7 @@ static void AIV_Unit(vec3_t *out, const vec3_t *v) {
 
 #define AIV_HOOK_AHEAD 2.0f		/* rva 0x3a8e38 */
 
-/* a line from the vehicle to a point at HookRange in turn ahead-right, ahead-up and ahead-left (i334 counts); 1 if
+/* a line from the vehicle to a point at HookRange in turn ahead-right, ahead-up and ahead-left (hookSide counts); 1 if
  * it hits the scene, the hit point in p */
 byte __thiscall cAIVehicle_TestHookPoint(cAIVehicle *self, vec3_t *p) {
 	vec3_t rot, f, d, c, n, e, h, u, o, tmp;
