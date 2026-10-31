@@ -188,19 +188,19 @@ CNodesWorld *__thiscall CNodesWorld_ctor(void *mem) {
 		g_NWNodeRadius = 751.0f;
 		g_NWF60 = 4000.0f;
 		self->maxVisDist = 200000.0f;
-		self->f54 = 12500.0f;
-		self->f40 = 25000.0f;
+		self->gridCell = 12500.0f;
+		self->pairRange = 25000.0f;
 		self->linkDist = 50000.0f;
-		self->f5c = 27500.0f;
+		self->startVisDist = 27500.0f;
 		return self;
 	}
 	g_NWNodeRadius = 131.0f;
 	g_NWF60 = 130.0f;
 	self->maxVisDist = 10000.0f;
-	self->f54 = 750.0f;
-	self->f40 = 1500.0f;
+	self->gridCell = 750.0f;
+	self->pairRange = 1500.0f;
 	self->linkDist = 1500.0f;
-	self->f5c = 1650.0f;
+	self->startVisDist = 1650.0f;
 	return self;
 }
 
@@ -548,7 +548,7 @@ byte __thiscall CNodesWorld_TestSurface(CNodesWorld *self, const vec3_t *a, cons
 	if (!(v.x * n.x + v.y * n.y + v.z * n.z <= -0.1f)) {
 		return 0;
 	}
-	if (!self->b3b0) {
+	if (!self->firstSaved) {
 		self->hitFrom.x = ax;
 		self->hitFrom.y = a->y;
 		self->hitFrom.z = a->z;
@@ -922,7 +922,7 @@ byte __thiscall CNodesWorld_BuildPath(CNodesWorld *self, cNWVecList *path, int d
 		cand[0] = cur;
 		ncand = 1;
 	} else {
-		CNodesWorld_GetPointsVis(self, &s, (const vec3_t **)cand, 7, &slot, radius, 0.0f, self->f5c, 1, 0);
+		CNodesWorld_GetPointsVis(self, &s, (const vec3_t **)cand, 7, &slot, radius, 0.0f, self->startVisDist, 1, 0);
 		ncand = slot;
 		if (!ncand) {
 			return 0;
@@ -1133,9 +1133,9 @@ void __thiscall CNodesWorld_Load(CNodesWorld *self, int arg, const char *name, c
 	Con_Bluef("%s", NW_EMPTY);
 	self->nodeSize = *pos;
 	NW_SetNodeSize(self);
-	self->f44.x = self->nodeSize.x * 0.1f;
-	self->f44.y = self->nodeSize.y * 0.1f;
-	self->f44.z = self->nodeSize.z * 0.1f;
+	self->nodeTenth.x = self->nodeSize.x * 0.1f;
+	self->nodeTenth.y = self->nodeSize.y * 0.1f;
+	self->nodeTenth.z = self->nodeSize.z * 0.1f;
 	self->margin = Float_MinSS(self->nodeSize.z, Float_MinSS(self->nodeSize.y, self->nodeSize.x)) / 100.0f;
 	World_GetCollideBox(&box);
 	self->min = box.min;
@@ -1386,7 +1386,7 @@ void __thiscall CNodesWorld_GetPairs(CNodesWorld *self, cNWPairList *list) {
 			const vec3_t *q = &qn->pos;
 			float dx = p->x - q->x, dy = p->y - q->y, dz = p->z - q->z;
 			float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
-			if (self->f40 + self->f40 > d && !self->vftable->Linked(self, p, q)) {
+			if (self->pairRange + self->pairRange > d && !self->vftable->Linked(self, p, q)) {
 				cNWPair pair;
 				float ex = p->x - q->x, ey = p->y - q->y, ez = p->z - q->z;
 				pair.a = (int)(uintptr_t)p;
@@ -1595,7 +1595,7 @@ byte __thiscall CNodesWorld_IniBuffer(CNodesWorld *self, const vec3_t *init, con
 
 /* the cell n joins the region of the point at start: nearer than f40 and the sphere goes there free */
 static int NW_RegionReach(CNodesWorld *self, const vec3_t *start, const vec3_t *n) {
-	return !(NWSup_Dist(start, n) >= self->f40) && !Engine_TestSphere(start, n, g_NWNodeRadius, NULL, NULL);
+	return !(NWSup_Dist(start, n) >= self->pairRange) && !Engine_TestSphere(start, n, g_NWNodeRadius, NULL, NULL);
 }
 
 void __thiscall CNodesWorld_CreateRegion(CNodesWorld *self, const vec3_t *start) {
@@ -1786,7 +1786,7 @@ byte __thiscall CNodesWorld_AnalyzeMap(CNodesWorld *self, const vec3_t *init, co
 	NWTriList_Clear(&self->tris);
 	DListVec3_Clear(&self->errCollide);
 	DListVec3_Clear(&self->errUnlinked);
-	self->b3b0 = 0;
+	self->firstSaved = 0;
 	byte ok = CNodesWorld_IniBuffer(self, &p, min, max);
 	const char *res = self->open ? "\n\nESCENARIO ABIERTO!\n" : "\n\nESCENARIO CERRADO\n";
 	crt_fwrite(res, 1, strlen(res), self->file);
@@ -1808,7 +1808,7 @@ void __thiscall CNodesWorld_DrawLinkTest(CNodesWorld *self, const vec3_t *a, con
 
 	if (Collision_Box(b, &neg, &self->halfNode) ||
 		Engine_TestSphere(a, b, Obj_Vtbl(t)->GetRadius(t), NULL, NULL)) {
-		self->i358++;
+		self->debugHits++;
 		color = 0xff0000;
 	}
 	DebugUtils_DrawSphere(a, 50.0f, color, 2, 2);

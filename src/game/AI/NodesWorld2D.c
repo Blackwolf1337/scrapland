@@ -93,10 +93,10 @@ CNodesWorld2D *__thiscall CNodesWorld2D_ctor(void *mem) {
 	w->vftable = CNODESWORLD2D_VFTABLE;
 	memset(&self->regions, 0, sizeof(self->regions));
 	w->maxVisDist = 5000.0f;
-	w->f54 = 750.0f;
-	w->f40 = 1500.0f;
+	w->gridCell = 750.0f;
+	w->pairRange = 1500.0f;
 	w->linkDist = 1500.0f;
-	w->f5c = 1650.0f;
+	w->startVisDist = 1650.0f;
 	return self;
 }
 
@@ -688,7 +688,7 @@ void __thiscall CNodesWorld2D_GetPairs(CNodesWorld2D *self, cNWPairList *list) {
 			const vec3_t *q = &qn->pos;
 			float dx = p->x - q->x, dy = p->y - q->y, dz = p->z - q->z;
 			float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
-			if (w->f40 + w->f40 > d && !w->vftable->Linked(w, p, q)) {
+			if (w->pairRange + w->pairRange > d && !w->vftable->Linked(w, p, q)) {
 				cNWPair pair;
 				float ex = p->x - q->x, ez = p->z - q->z;
 				pair.a = (int)(uintptr_t)p;
@@ -1084,7 +1084,7 @@ byte __thiscall CNodesWorld2D_BuildPath(CNodesWorld2D *self, cNWVecList *path, i
 		cand[0] = cur;
 		ncand = 1;
 	} else {
-		CNodesWorld2D_GetPointsVis(self, &s, (const vec3_t **)cand, 7, &slot, r, h1, h2, 0.0f, w->f5c, 1, 0);
+		CNodesWorld2D_GetPointsVis(self, &s, (const vec3_t **)cand, 7, &slot, r, h1, h2, 0.0f, w->startVisDist, 1, 0);
 		ncand = slot;
 		if (!ncand) {
 			return 0;
@@ -1201,9 +1201,9 @@ void __thiscall CNodesWorld2D_Load(CNodesWorld2D *self, int arg, const char *nam
 	memcpy(g_NW2DBodies, bodies, sizeof(bodies));
 	w->nodeSize = *pos;
 	NW2D_SetNodeSize(w);
-	w->f44.z = w->nodeSize.z * 0.1f;
-	w->f44.x = w->nodeSize.x * 0.1f;
-	w->f44.y = w->nodeSize.y * 0.1f;
+	w->nodeTenth.z = w->nodeSize.z * 0.1f;
+	w->nodeTenth.x = w->nodeSize.x * 0.1f;
+	w->nodeTenth.y = w->nodeSize.y * 0.1f;
 	w->margin = Float_MinSS(w->nodeSize.z, Float_MinSS(w->nodeSize.y, w->nodeSize.x)) / 100.0f;
 	World_GetCollideBox(&box);
 	w->min = box.min;
@@ -1389,7 +1389,7 @@ static int NW2D_RegionReach(CNodesWorld *w, const vec3_t *start, const vec3_t *n
 	float dz = start->z - n->z, dx = start->x - n->x;
 	float d = (float)__builtin_sqrt((double)(dz * dz + dx * dx));
 
-	return !(d >= w->f40) && NW2D_GroundsSee(self, start, n) && CNodesWorld2D_TestWalk(self, start, n, 0.0f);
+	return !(d >= w->pairRange) && NW2D_GroundsSee(self, start, n) && CNodesWorld2D_TestWalk(self, start, n, 0.0f);
 }
 
 void __thiscall CNodesWorld2D_CreateRegion(CNodesWorld2D *self, const vec3_t *start) {

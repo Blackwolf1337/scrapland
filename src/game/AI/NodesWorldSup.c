@@ -517,9 +517,9 @@ void __thiscall CNodesWorldSup_BuildGrid(CNodesWorld *self) {
 		}
 		top.y = pos.y + 5000.0f;
 	}
-	int nx = (int)crt_ceil((double)((top.x - self->min.x) / self->f54));
-	double ny = crt_ceil((double)((top.y - self->min.y) / self->f54));
-	double nz = crt_ceil((double)((top.z - self->min.z) / self->f54));
+	int nx = (int)crt_ceil((double)((top.x - self->min.x) / self->gridCell));
+	double ny = crt_ceil((double)((top.y - self->min.y) / self->gridCell));
+	double nz = crt_ceil((double)((top.z - self->min.z) / self->gridCell));
 	cGridElements *grid = operator_new(sizeof(cGridElements));
 	if (grid) {
 		grid = NWGrid_ctor(grid, &top, &self->min, nx, (int)ny, (int)nz);
@@ -1121,7 +1121,7 @@ float NWSup_PairDist(const vec3_t *c, const vec3_t *const *pair, byte flat) {
 }
 
 byte NWSup_Near(const CNodesWorld *self, const vec3_t *c, const vec3_t *const *pair) {
-	return self->f40 > NWSup_Dist(c, pair[0]) && self->f40 > NWSup_Dist(c, pair[1]);
+	return self->pairRange > NWSup_Dist(c, pair[0]) && self->pairRange > NWSup_Dist(c, pair[1]);
 }
 
 /* both points in the set of the cell, not reachable from each other over the links of the set */
@@ -1334,9 +1334,9 @@ byte NWSup_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, c
 				DListVec3_Add(&self->errUnlinked, p);
 			}
 			if (CNodesWorld_TestSurfaceAround(self, p, &hit, &tri)) {
-				if (!self->b3b0) {
+				if (!self->firstSaved) {
 					memcpy(self->firstTri, &tri, sizeof(tri));
-					self->b3b0 = 1;
+					self->firstSaved = 1;
 				}
 				CNodesWorld_LogTri(self, p, &hit, &tri);
 			}

@@ -339,7 +339,7 @@ CAStarSup *__fastcall CAStarSup_ctor(CAStarSup *self) {
 	self->start.z = self->goal.z;
 	self->radius = 0.0f;
 	self->numClosed = 0;
-	self->maxDist = g_NodesWorld->f40 * 1.25f;
+	self->maxDist = g_NodesWorld->pairRange * 1.25f;
 	return self;
 }
 

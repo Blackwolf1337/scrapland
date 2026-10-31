@@ -212,12 +212,12 @@ typedef struct CNodesWorldSup {
 	vec3_t halfNode;		/* 0x004 half of nodeSize */
 	vec3_t axis[3];			/* 0x010 nodeSize along x, y and z */
 	vec3_t nodeSize;		/* 0x034 vectInterNod */
-	float f40;			/* 0x040 25000 outdoors, 1500 indoors */
-	vec3_t f44;			/* 0x044 */
+	float pairRange;		/* 0x040 25000 outdoors, 1500 indoors: a link is tried up to twice it */
+	vec3_t nodeTenth;		/* 0x044 nodeSize / 10 */
 	float margin;			/* 0x050 the smallest component of nodeSize / 100 */
-	float f54;			/* 0x054 */
+	float gridCell;			/* 0x054 the cell of the grid of the level, 12500 outdoors, 750 indoors */
 	float linkDist;			/* 0x058 */
-	float f5c;			/* 0x05c */
+	float startVisDist;		/* 0x05c the search of the visible points a path starts at, 27500 or 1650 */
 	float maxVisDist;		/* 0x060 the searches of points of visibility end at this distance */
 	vec3_t nodeInit;		/* 0x064 PointNodeInit */
 	byte created;			/* 0x070 */
@@ -248,7 +248,7 @@ typedef struct CNodesWorldSup {
 	cNWVecList errCollide;		/* 0x310 AnalizeGraph: the links through the level, 3 points each */
 	cNWVecList errUnlinked;		/* 0x328 the nodes without links */
 	cNWVecList errOneWay;		/* 0x340 the links without the link back, 2 points each */
-	int i358;			/* 0x358 */
+	int debugHits;			/* 0x358 the nodes the debug test found blocked */
 	byte b35c;			/* 0x35c */
 	byte pad_35d[3];
 } CNodesWorldSup;
@@ -266,12 +266,12 @@ struct CNodesWorld {
 	vec3_t halfNode;		/* 0x004 half of nodeSize */
 	vec3_t axis[3];			/* 0x010 nodeSize along x, y and z */
 	vec3_t nodeSize;		/* 0x034 vectInterNod */
-	float f40;			/* 0x040 25000 outdoors, 1500 indoors */
-	vec3_t f44;			/* 0x044 */
+	float pairRange;		/* 0x040 25000 outdoors, 1500 indoors: a link is tried up to twice it */
+	vec3_t nodeTenth;		/* 0x044 nodeSize / 10 */
 	float margin;			/* 0x050 the smallest component of nodeSize / 100 */
-	float f54;			/* 0x054 */
+	float gridCell;			/* 0x054 the cell of the grid of the level, 12500 outdoors, 750 indoors */
 	float linkDist;			/* 0x058 */
-	float f5c;			/* 0x05c */
+	float startVisDist;		/* 0x05c the search of the visible points a path starts at, 27500 or 1650 */
 	float maxVisDist;		/* 0x060 the searches of points of visibility end at this distance */
 	vec3_t nodeInit;		/* 0x064 PointNodeInit */
 	byte created;			/* 0x070 */
@@ -302,7 +302,7 @@ struct CNodesWorld {
 	cNWVecList errCollide;		/* 0x310 AnalizeGraph: the links through the level, 3 points each */
 	cNWVecList errUnlinked;		/* 0x328 the nodes without links */
 	cNWVecList errOneWay;		/* 0x340 the links without the link back, 2 points each */
-	int i358;			/* 0x358 */
+	int debugHits;			/* 0x358 the nodes the debug test found blocked */
 	byte b35c;			/* 0x35c */
 	byte pad_35d[3];
 	/* CNodesWorld */
@@ -312,7 +312,7 @@ struct CNodesWorld {
 	byte open;			/* 0x368 the level is open */
 	byte pad_369[3];
 	byte firstTri[0x44];		/* 0x36c the first triangle the analysis found (a CCollisionTri) */
-	byte b3b0;			/* 0x3b0 */
+	byte firstSaved;		/* 0x3b0 the first bad triangle and hit are kept */
 	byte pad_3b1[3];
 	vec3_t analyzeSize;		/* 0x3b4 */
 	vec3_t hitFrom;			/* 0x3c0 */
