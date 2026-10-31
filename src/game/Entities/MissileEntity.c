@@ -99,8 +99,8 @@ cEntity *__thiscall cMissileEntity_ctor(void *mem, const char *name, float x, fl
 	for (int i = 0; i < 4; i++) {
 		self->hits[i][0] = 0;
 	}
-	self->flag584 = 1;
-	self->flag585 = 0;
+	self->beesGather = 1;
+	self->beesHit = 0;
 	self->level = 0;
 	return &self->wl.obj.base;
 }
@@ -407,7 +407,7 @@ byte __thiscall cMissileEntity_Hit(cMissileEntity *self, int n, int unused) {
 		Missile_CallHit(self, self->target);
 		cPy_Function_Execute(&self->onHit, 0);
 	}
-	if (!self->flag584 && !self->flag585) {
+	if (!self->beesGather && !self->beesHit) {
 		self->wl.life = 0;
 	}
 	const vec3_t *at = &self->wl.obj.base.pos;
@@ -447,7 +447,7 @@ void __thiscall cMissileEntity_SetAng(cMissileEntity *self, const vec3_t *ang) {
 }
 
 void __thiscall cMissileEntity_SetFlag585(cMissileEntity *self, byte v) {
-	self->flag585 = v;
+	self->beesHit = v;
 }
 
 void __thiscall cMissileEntity_SetHiddenSwarm(cMissileEntity *self, byte on) {
@@ -548,7 +548,7 @@ void __thiscall cMissileEntity_SetSwarm(cMissileEntity *self, int n) {
 }
 
 void __thiscall cMissileEntity_SetFlag584(cMissileEntity *self, byte v) {
-	self->flag584 = v;
+	self->beesGather = v;
 }
 
 void __thiscall cMissileEntity_SetSwarmSpeed(cMissileEntity *self, float speed) {
@@ -998,7 +998,7 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 			self->target[0] = 0;
 		}
 		if (!hitWorld) {
-			int k = self->flag585 ? self->swarmCount + 1 : 1;
+			int k = self->beesHit ? self->swarmCount + 1 : 1;
 			if (Missile_Vtbl(self)->Hit(self, k, dt)) {
 				return 1;
 			}
@@ -1288,7 +1288,7 @@ void __thiscall cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at) {
 			if (0.01 > (double)t) {
 				t = 0.01f;
 			}
-			if (self->flag584) {
+			if (self->beesGather) {
 				float k = 1.0f / t;
 				d->drop[2].x = (ax - d->drop[0].x) * k;
 				d->drop[2].y = (ay - d->drop[0].y) * k;
@@ -1311,7 +1311,7 @@ void __thiscall cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at) {
 				self->swarm->speed = t;
 			} else {
 				d->speed = 0.0f;
-				if (!self->flag585) {
+				if (!self->beesHit) {
 					cPy_Function_AddParamS(&self->onBeeDeath, self->wl.obj.base.name);
 					cPy_Function_AddParamF(&self->onBeeDeath, d->drop[0].x);
 					cPy_Function_AddParamF(&self->onBeeDeath, d->drop[0].y);

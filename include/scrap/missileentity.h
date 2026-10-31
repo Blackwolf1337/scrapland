@@ -36,8 +36,8 @@ typedef struct cMissileEntity {
 	char swarmSys[0x80];		/* 0x4fc the debris system of the bees */
 	int type;			/* 0x57c Linear 0, Dumb 1, Cloud 2, Fall 3 */
 	float beeTime;			/* 0x580 the bees get a random push every 0.05 s of it */
-	byte flag584;			/* 0x584 */
-	byte flag585;			/* 0x585 */
+	byte beesGather;		/* 0x584 1: on Explode the bees fly into the point; Swarm, Inferno and Gear clear it */
+	byte beesHit;		/* 0x585 1: the bees count in the hits (swarmCount + 1) and die without OnBeeDeath */
 	byte pad_586[2];
 	int swarmCount;			/* 0x588 bees */
 	byte hiddenSwarm;		/* 0x58c */
@@ -132,7 +132,7 @@ void __thiscall cMissileEntity_NetRead(cMissileEntity *self, void *msg, int isNe
 void __thiscall cMissileEntity_Swarm(cMissileEntity *self, float dt);
 /* vf64: n new bees */
 void __thiscall cMissileEntity_AddToSwarm(cMissileEntity *self, int n);
-/* vf66: the bees fly to at (flag584) or die where they are */
+/* vf66: the bees fly to at (beesGather) or die where they are */
 void __thiscall cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at);
 cMissileEntity *__thiscall cMissileEntity_Delete(cMissileEntity *self, uint32_t flags);
 void __thiscall cMissileEntity_RotStep(cMissileEntity *self, float dt);
