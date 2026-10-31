@@ -693,7 +693,7 @@ void __thiscall cObjElementFXFiredEntity_Update(cObjElementFXFiredEntity *self, 
 	cEntity *e = self->entity;
 	if (!e || !e->flag_4c || !CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e))
 		|| !CGameModel_IsVisible(Obj_Vtbl(self->entity)->GetModel(self->entity))) {
-		self->b08 = 0;
+		self->posValid = 0;
 		return;
 	}
 	CGameModel *em = Obj_Vtbl(self->entity)->GetModel(self->entity);
@@ -712,11 +712,11 @@ void __thiscall cObjElementFXFiredEntity_Update(cObjElementFXFiredEntity *self, 
 	if (size > 350.0f) {
 		scale = (size - 350.0f) / 900.0f + scale;
 	}
-	if (!self->b08) {
+	if (!self->posValid) {
 		self->pos = pos;
 	}
 	float time = self->time + d;
-	self->b08 = 1;
+	self->posValid = 1;
 	self->time = time;
 	dv.x = self->pos.x - pos.x;
 	dv.y = self->pos.y - pos.y;
@@ -2921,7 +2921,7 @@ void __thiscall cObjElementFXFiredEntity_Start(cObjElementFXFiredEntity *self, c
 	CGameModel *model = Debris_Model(debris);
 	CGameParticles_Attach(&self->particles, model, FXV_Node(model, "Dummy01"));
 	self->time = 0.0f;
-	self->b08 = 0;
+	self->posValid = 0;
 }
 
 void __thiscall cObjElementFXSmokeDebris_Start(cObjElementFXSmokeDebris *self, cDebris *debris) {
@@ -3058,7 +3058,7 @@ void __thiscall cObjElementFXFiredEntity_Reset(cObjElementFXFiredEntity *self, c
 	(void)debris;
 	self->entity = NULL;
 	self->time = 0.0f;
-	self->b08 = 0;
+	self->posValid = 0;
 }
 
 void __thiscall cObjElementFXSmokeDebris_Reset(cObjElementFXSmokeDebris *self, cDebris *debris) {

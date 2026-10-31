@@ -84,7 +84,7 @@ typedef cObjElementFXDevastatorShoot cObjElementFXVehicleDeathTrail;
 typedef struct cObjElementFXFiredEntity {
 	cObjElementFX base;
 	cEntity *entity;		/* 0x04 */
-	byte b08;			/* 0x08 */
+	byte posValid;		/* 0x08 pos holds the position of the last frame */
 	byte pad_09[3];
 	float radius;			/* 0x0c of its model */
 	vec3_t pos;			/* 0x10 of its model */
