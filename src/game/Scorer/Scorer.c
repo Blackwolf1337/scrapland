@@ -11,6 +11,8 @@
 #include "scrap/console.h"
 #include "scrap/embeddedfxchar.h"
 #include "scrap/fonts.h"
+#include "scrap/itementity.h"
+#include "scrap/missileentity.h"
 #include "scrap/nodesworld.h"
 #include "scrap/nodesworld2d.h"
 #include "scrap/pymempool.h"
@@ -20,6 +22,7 @@
 #include "scrap/sound.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
+#include "scrap/withlifeentity.h"
 #include "scrap/world.h"
 #include "scrap/global.h"
 #include "scrap/win32.h"
@@ -1648,11 +1651,11 @@ enum {
 
 /* slot off of the vftable of any object, called without arguments */
 #define DBG_VF(p, off) ((void(__thiscall *)(void *))(*(void *const *const *)(p))[(off) / 4])
-#define DBG_LIFE_RADIUS(e) (*(float *)((byte *)(e) + 0x3a0))	/* cWithLifeEntity prim.radius */
-#define DBG_MISSILE_RADIUS(e) (*(float *)((byte *)(e) + 0x5a4))
-#define DBG_ITEM_RADIUS(e) (*(float *)((byte *)(e) + 0x360))
-#define DBG_FCAM_POS(e) ((vec3_t *)((byte *)(e) + 0x1f4))	/* the point a "FCam" follows */
-#define DBG_FCAM_DIST(e) (*(float *)((byte *)(e) + 0xa0))
+#define DBG_LIFE_RADIUS(e) (WLife(e)->prim.radius)
+#define DBG_MISSILE_RADIUS(e) (Missile(e)->radius)
+#define DBG_ITEM_RADIUS(e) (((cItemEntity *)(e))->radius)
+#define DBG_FCAM_POS(e) (&((cFollowCamEntity *)(e))->center)	/* the point a "FCam" follows */
+#define DBG_FCAM_DIST(e) (((cCamControl *)(e))->cam.zNear)
 #define DBG_FCAM_SCALE 1.65f
 #define DBG_FLOOR_DIST(e) (WChar(e)->floorDist)
 #define DBG_SPHERE_DIV 10

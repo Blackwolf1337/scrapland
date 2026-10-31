@@ -13,21 +13,17 @@
 
 #define TYEN_OBJECT "Obj"
 
-#define Usr_Radius(e) (*(float *)((byte *)(e) + 0x3a0))
-#define Car_Turn0(e) (*(float *)((byte *)(e) + 0x420))
-#define Car_Turn1(e) (*(float *)((byte *)(e) + 0x424))
-
 static inline const cDoorEntityVtbl *Door_Vtbl(cEntity *e) {
 	return (const cDoorEntityVtbl *)e->vftable;
 }
 
 /* the radius of the door sphere: a value of the action class */
 static inline float ActCtrl_Radius(void *ctrl) {
-	return *(float *)(*(byte **)((byte *)ctrl + 8) + 0x164);
+	return ((cActCtrl *)ctrl)->cls->wRadius;
 }
 
 static inline const char *ActCtrl_ClassName(void *ctrl) {
-	return *(const char **)(*(byte **)((byte *)ctrl + 8) + 4);
+	return ((cActCtrl *)ctrl)->cls->name;
 }
 
 static inline byte Door_IsActive(cEntity *door, const char *action) {
@@ -63,7 +59,7 @@ void Doors_AcceleratorOnEnter(cAbstractFile *params) {
 	if (!car->vftable->IsType(car, TYEN_CAR)) {
 		return;
 	}
-	if (0.5 > __builtin_fabs((double)Car_Turn0(car)) && 0.5 > __builtin_fabs((double)Car_Turn1(car))) {
+	if (0.5 > __builtin_fabs((double)Veh(car)->controls.acc) && 0.5 > __builtin_fabs((double)Veh(car)->controls.str)) {
 		return;
 	}
 	cEntity *obj = World_FindEntity(objName);
@@ -231,7 +227,7 @@ void Doors_Usr0AutoDoorSlot(cAbstractFile *params) {
 		return;
 	}
 	cEntity *door = World_FindEntity(name);
-	float r = ActCtrl_Radius(Door_Vtbl(door)->GetActCtrl(door)) + Usr_Radius(usr);
+	float r = ActCtrl_Radius(Door_Vtbl(door)->GetActCtrl(door)) + WLife(usr)->prim.radius;
 	const vec3_t *pu = usr->vftable->GetPos(usr, &t1);
 	const vec3_t *pd = door->vftable->GetPos(door, &t2);
 	float dy = pd->y - pu->y;
@@ -244,6 +240,6 @@ void Doors_Usr0AutoDoorSlot(cAbstractFile *params) {
 	} else if (!Door_IsActive(door, "Close") && !Door_IsActive(door, "Closed")) {
 		Door_Play(door, "Close", "Closed");
 		/* the slot function of the door */
-		cPy_Function_SetNative((cPy_Function *)((byte *)door + 0x160), NULL);
+		cPy_Function_SetNative(&((cObjEntity *)door)->onObjSlot, NULL);
 	}
 }

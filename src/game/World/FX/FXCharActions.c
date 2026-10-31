@@ -3317,8 +3317,8 @@ void __thiscall cObjElementFXBankMasterSuction_Update(cObjElementFXBankMasterSuc
 	}
 }
 
-/* a player character: its controller at 0xf0 */
-#define FXA_Player(e) (*(int *)((byte *)(e) + 0xf0))
+/* a player character: it has a follow camera */
+#define FXA_Player(e) (((cObjEntity *)(e))->cam)
 
 static inline uint32_t FXA_Bits(float f) {
 	uint32_t u;

@@ -61,24 +61,26 @@ CGameModel *__fastcall CGameModel_ctorDefault(CGameModel *self) {
 /* the camera data of a player ship (vehicle + 0xf0) */
 
 /* the pilot slots: only slot 0 has storage, the original indexes by slot anyway */
+#define VEH_PILOT_AT(v, field, off) ((byte *)(v) + offsetof(cVehicleEntity, field) + (off))
+
 static inline CGameModel *Veh_PilotModel(cVehicleEntity *v, int slot) {
-	return (CGameModel *)((byte *)v + 0x500 + slot * (int)sizeof(CGameModel));
+	return (CGameModel *)VEH_PILOT_AT(v, pilot, slot * (int)sizeof(CGameModel));
 }
 
 static inline int *Veh_PilotNode(cVehicleEntity *v, int slot) {
-	return (int *)((byte *)v + 0x51c + slot * 4);
+	return (int *)VEH_PILOT_AT(v, pilotNode, slot * (int)sizeof(int));
 }
 
 static inline char *Veh_PilotName(cVehicleEntity *v, int slot) {
-	return (char *)v + 0x520 + slot * 0x20;
+	return (char *)VEH_PILOT_AT(v, pilotName, slot * (int)sizeof(v->pilotName));
 }
 
 static inline int *Veh_PilotAnim(cVehicleEntity *v, int slot, int i) {
-	return (int *)((byte *)v + 0x540 + (slot * VEH_PILOT_ANIMS + i) * 4);
+	return (int *)VEH_PILOT_AT(v, pilotAnims, (slot * VEH_PILOT_ANIMS + i) * (int)sizeof(int));
 }
 
 static inline float *Veh_PilotAnimLen(cVehicleEntity *v, int slot, int i) {
-	return (float *)((byte *)v + 0x554 + (slot * VEH_PILOT_ANIMS + i) * 4);
+	return (float *)VEH_PILOT_AT(v, pilotAnimLen, (slot * VEH_PILOT_ANIMS + i) * (int)sizeof(float));
 }
 
 static inline byte Veh_IsServer(void) {
@@ -133,7 +135,7 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	self->engine = 2800.0f;
 	cVehicleEntity_UpdateTrust(self);
 	self->wRadius = 150.0f;
-	cPrimitive_SetSize((cPrimitive *)((byte *)self + 0x39c), 130.0f);
+	cPrimitive_SetSize(&self->wl.prim, 130.0f);
 	self->slot = -1;
 	cVehicleMotors_SetOwner(&self->motors, Veh_Ent(self));
 	cWeaponManager_Init(&self->weapons, Veh_Ent(self));
@@ -147,7 +149,7 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	/* the loop of the original runs over the animations of all slots with the stride of a slot (0x14): it also
 	 * sets the first length, typeName + 0x0 and + 0x14 and cloud */
 	for (int i = 0; i < VEH_PILOT_ANIMS; i++) {
-		*(int *)((byte *)self + 0x540 + i * 0x14) = -1;
+		*Veh_PilotAnim(self, i, 0) = -1;
 	}
 	*(cVehicleEntity **)self->o648 = self;
 	self->minLife = 100;
@@ -200,14 +202,14 @@ cEntity *__thiscall cVehicleEntity_ctor(void *mem, const char *name, float x, fl
 	self->timeOfs = (float)((double)(crt_rand() & 0x7fff) * VEH_RAND_SCALE * 100.0 + 0.0);
 	cVehicleEffects_SetOwner(&self->effects, Veh_Ent(self));
 	cVehicleTraffic_SetParent((cVehicleTraffic *)self->traffic, Veh_Ent(self));
-	*((byte *)self + 0x384) = 1;
+	self->wl.arrow.alwaysUse = 1;
 	self->fixedModel = 0;
 	self->typeName[0] = 0;
 	return Veh_Ent(self);
 }
 
 void __fastcall cAutoAim_dtor(void *self) {
-	Nto1Node_Done((Nto1Node *)((byte *)self + 0x14));
+	Nto1Node_Done(&((cAutoAim *)self)->target);
 }
 
 void __fastcall cVehicleEntity_dtor(cVehicleEntity *self) {
@@ -1176,7 +1178,7 @@ void __thiscall cVehicleEntity_SetModel(cVehicleEntity *self, const char *file, 
 	dx = root.x - v.x;
 	dy = root.y - v.y;
 	dz = root.z - v.z;
-	cPrimitive_SetSize((cPrimitive *)((byte *)self + 0x39c), (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)));
+	cPrimitive_SetSize(&self->wl.prim, (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)));
 	for (int i = 0; i < g_pWorld->ammo.count; i++) {
 		for (int j = 0; j < 4; j++) {
 			cWorld *wd = g_pWorld;

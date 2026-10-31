@@ -7,6 +7,7 @@
 #ifndef SCRAP_DOORS_H
 #define SCRAP_DOORS_H
 
+#include "scrap/actions.h"
 #include "scrap/filesys.h"
 #include "scrap/objentity.h"
 #include "scrap/pyfunction.h"
@@ -41,13 +42,6 @@ typedef struct cDoorEntityVtbl {
 SD_OFFSET(cDoorEntityVtbl, GetAng, 0x80);
 SD_OFFSET(cDoorEntityVtbl, SetVel, 0x8c);
 SD_OFFSET(cDoorEntityVtbl, GetActCtrl, 0xd4);
-
-/* the action controller of an entity: the action class at 0x8 (its name at 0x4, the door radius at 0x164) */
-byte __thiscall cActCtrl_IsActive(void *ctrl, const char *action);
-byte __thiscall cActCtrl_Play(void *ctrl, const char *action, int arg, float speed);
-/* the action that runs when nothing else does; a warning if the class has no such action */
-void __thiscall cActCtrl_SetDefLoop(void *ctrl, const char *action, byte force);
-/* the layer i of the actions (16 bytes, the time of its action first) */
 
 /* vehicles: a state flag for the network game, and the speed from the velocity */
 void __thiscall cVehicleEntity_SetNetFlag(cEntity *self, byte on);
