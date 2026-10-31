@@ -74,7 +74,7 @@ typedef struct BspArea {
 	vec3_t pos;			/* 0x00 */
 	float weight;			/* 0x0c */
 	uint16_t x, y;			/* 0x10 */
-	float f14;			/* 0x14 */
+	float glow;			/* 0x14 the mean glow of the texel */
 } BspArea;
 SD_SIZE(BspArea, 0x18);
 
@@ -101,7 +101,7 @@ typedef struct BspTri {
 	CBmpFlt2 rad2;			/* 0x108 */
 	CBmp mask;			/* 0x114 the list of each texel (color swapped) */
 	CBmp mask2;			/* 0x120 */
-	int i12c;			/* 0x12c */
+	int maskColor;			/* 0x12c of the triangle in the debug mask (mask2) */
 	int i130;			/* 0x130 */
 	BspName *names;		/* 0x134 */
 	char *name;			/* 0x138 Cad */
@@ -109,14 +109,14 @@ typedef struct BspTri {
 	float radInt;			/* 0x140 */
 	float col144[4];		/* 0x144 */
 	byte radlight_ok;			/* 0x154 */
-	byte b155;			/* 0x155 */
+	byte glowOn;			/* 0x155 the glow map (lglow) is on: its average is not black */
 	byte big;			/* 0x156 */
 	byte pad157;
-	float f158[4];			/* 0x158 */
-	float f168[4];			/* 0x168 */
-	float f178;			/* 0x178 */
-	int i17c;			/* 0x17c */
-	int i180;			/* 0x180 */
+	float glowSum[4];		/* 0x158 r, g, b of the areas summed and the count + 1 */
+	float listGlowSum[4];		/* 0x168 the same of the whole list (in its first triangle) */
+	float glowMax;			/* 0x178 the largest channel of the glow at an area: the LOD */
+	int glowAreas;			/* 0x17c the areas summed */
+	int listGlowAreas;		/* 0x180 of the whole list */
 	CTable areas[4];		/* 0x184 BspArea, by level of detail */
 	int numAreas;			/* 0x1a4 */
 	vec3_t center;			/* 0x1a8 */
@@ -141,7 +141,7 @@ SD_OFFSET(BspTri, plane, 0x94);
 SD_OFFSET(BspTri, Mat, 0xac);
 SD_OFFSET(BspTri, mask, 0x114);
 SD_OFFSET(BspTri, name, 0x138);
-SD_OFFSET(BspTri, f178, 0x178);
+SD_OFFSET(BspTri, glowMax, 0x178);
 SD_OFFSET(BspTri, areas, 0x184);
 SD_OFFSET(BspTri, region, 0x1bc);
 SD_OFFSET(BspTri, lv, 0x1d8);

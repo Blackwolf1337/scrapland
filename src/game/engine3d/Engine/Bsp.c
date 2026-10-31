@@ -183,7 +183,7 @@ BspTri *__fastcall BspTri_ctor(BspTri *self) {
 	self->zone = -1;
 	self->zone_next = NULL;
 	self->region = NULL;
-	self->i12c = 0;
+	self->maskColor = 0;
 	return self;
 }
 
@@ -1239,7 +1239,7 @@ CTable *BspTri_GetAreas(BspTri *tri, float dist, byte big) {
 		}
 		return &tri->areas[3];
 	}
-	float k = tri->f178;
+	float k = tri->glowMax;
 	float c = 0.25f;
 	if (!(0.25f >= k)) {
 		c = Float_MinSS(10.0f, k);
@@ -1675,7 +1675,7 @@ void BspTri_AreasLod(CTable *dst, const CTable *src, int w, int h, int dim) {
 	Table_Alloc18(&tmp, src->n);
 	for (int yb = 0; yb < h; yb += dim) {
 		for (int xb = 0; xb < w; xb += dim) {
-			float sx = 0.0f, sy = 0.0f, sz = 0.0f, weight = 0.0f, f14 = 0.0f;
+			float sx = 0.0f, sy = 0.0f, sz = 0.0f, weight = 0.0f, glow = 0.0f;
 			uint16_t ux = 0, uy = 0;
 			int cnt = 0;
 			for (int i = 0; i < src->n; i++) {
@@ -1686,7 +1686,7 @@ void BspTri_AreasLod(CTable *dst, const CTable *src, int w, int h, int dim) {
 					sy = sy + a->pos.y;
 					sz = sz + a->pos.z;
 					weight = weight + a->weight;
-					f14 = f14 + a->f14;
+					glow = glow + a->glow;
 					ux += a->x;
 					uy += a->y;
 					cnt++;
@@ -1705,7 +1705,7 @@ void BspTri_AreasLod(CTable *dst, const CTable *src, int w, int h, int dim) {
 			o->weight = weight;
 			o->x = (uint16_t)((int)ux / cnt);
 			o->y = (uint16_t)((int)uy / cnt);
-			o->f14 = f14 / fc;
+			o->glow = glow / fc;
 		}
 	}
 	if (n) {
@@ -2044,7 +2044,7 @@ void __fastcall CBsp_AreasGlow(CBsp *self) {
 				BspArea *a = &((BspArea *)a0->p)[k];
 				const float *p = CBmpFlt2_Pixel(&list->rad2, a->x, a->y);
 				float r = p[0], g = p[1], b = p[2];
-				a->f14 = (g * 0.05f + r * 0.05f + b * 0.05f) / 3.0f;
+				a->glow = (g * 0.05f + r * 0.05f + b * 0.05f) / 3.0f;
 			}
 			BspTri_AreasLod(&t->areas[1], a0, list->mask.width, list->mask.height, 2);
 			BspTri_AreasLod(&t->areas[2], a0, list->mask.width, list->mask.height, 4);
@@ -2057,36 +2057,36 @@ void __fastcall CBsp_AreasGlow(CBsp *self) {
 void __fastcall CBsp_AreasMax(CBsp *self) {
 	for (int i = 0; i < self->num_lists; i++) {
 		BspTri *list = self->lists[i];
-		list->f168[0] = 0.0f;
-		list->f168[1] = 0.0f;
-		list->f168[2] = 0.0f;
-		list->f168[3] = 1.0f;
-		list->i180 = 0;
+		list->listGlowSum[0] = 0.0f;
+		list->listGlowSum[1] = 0.0f;
+		list->listGlowSum[2] = 0.0f;
+		list->listGlowSum[3] = 1.0f;
+		list->listGlowAreas = 0;
 		for (BspTri *t = list; t; t = t->next) {
-			t->i17c = 0;
-			t->f158[0] = 0.0f;
-			t->f158[1] = 0.0f;
-			t->f158[2] = 0.0f;
-			t->f158[3] = 1.0f;
-			t->f178 = 0.0f;
+			t->glowAreas = 0;
+			t->glowSum[0] = 0.0f;
+			t->glowSum[1] = 0.0f;
+			t->glowSum[2] = 0.0f;
+			t->glowSum[3] = 1.0f;
+			t->glowMax = 0.0f;
 			for (int k = 0; k < t->areas[0].n; k++) {
 				TABLE_CHECK(t->areas[0].p, k, t->areas[0].n);
 				const BspArea *a = &((const BspArea *)t->areas[0].p)[k];
 				const float *p = CBmpFlt2_Pixel(&list->rad2, a->x, a->y);
 				float r = p[0], g = p[1], b = p[2];
-				t->f158[0] = t->f158[0] + r;
-				t->f158[1] = t->f158[1] + g;
+				t->glowSum[0] = t->glowSum[0] + r;
+				t->glowSum[1] = t->glowSum[1] + g;
 				float m = Float_MaxSS(b, Float_MaxSS(g, r));
-				t->f158[2] = t->f158[2] + b;
-				t->f158[3] = t->f158[3] + 1.0f;
-				t->i17c++;
-				t->f178 = Float_MaxSS(t->f178, m);
+				t->glowSum[2] = t->glowSum[2] + b;
+				t->glowSum[3] = t->glowSum[3] + 1.0f;
+				t->glowAreas++;
+				t->glowMax = Float_MaxSS(t->glowMax, m);
 			}
-			list->f168[0] = list->f168[0] + t->f158[0];
-			list->f168[1] = t->f158[1] + list->f168[1];
-			list->f168[2] = t->f158[2] + list->f168[2];
-			list->f168[3] = t->f158[3] + list->f168[3];
-			list->i180 += t->i17c;
+			list->listGlowSum[0] = list->listGlowSum[0] + t->glowSum[0];
+			list->listGlowSum[1] = t->glowSum[1] + list->listGlowSum[1];
+			list->listGlowSum[2] = t->glowSum[2] + list->listGlowSum[2];
+			list->listGlowSum[3] = t->glowSum[3] + list->listGlowSum[3];
+			list->listGlowAreas += t->glowAreas;
 		}
 	}
 }
@@ -2836,7 +2836,7 @@ void __fastcall CBsp_InitAreas(CBsp *self) {
 					TABLE_CHECK(tmp.p, n, tmp.n);
 					a->y = (uint16_t)y;
 					TABLE_CHECK(tmp.p, n, tmp.n);
-					a->f14 = 0.0f;
+					a->glow = 0.0f;
 					n++;
 				}
 			}

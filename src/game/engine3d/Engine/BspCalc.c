@@ -177,7 +177,7 @@ void BspTri_Mask(BspTri *list, CBmp *cob) {
 				/* the mask holds the triangle itself */
 				*CBmp_Pixel(&list->mask, rx, ry) = Color_SwapRB((uint32_t)(uintptr_t)t);
 				if (list->mask2.img) {
-					*CBmp_Pixel(&list->mask2, rx, ry) = Color_SwapRB((uint32_t)t->i12c);
+					*CBmp_Pixel(&list->mask2, rx, ry) = Color_SwapRB((uint32_t)t->maskColor);
 				}
 			}
 		}
@@ -833,7 +833,7 @@ void __fastcall CBsp_RadGlobal(CBsp *self) {
 										continue;
 									}
 									for (BspTri *S = L; S; S = S->next) {
-										if (S == t || !S->areas[0].n || S->f178 == 0.0f) {
+										if (S == t || !S->areas[0].n || S->glowMax == 0.0f) {
 											continue;
 										}
 										float lod = g_BspLodLevel;
@@ -858,7 +858,7 @@ void __fastcall CBsp_RadGlobal(CBsp *self) {
 												continue;
 											}
 											float cc = r.cb * r.ca;
-											if (!((double)(ar->f14 * cc) > (double)r.den * 1.25e-06)) {
+											if (!((double)(ar->glow * cc) > (double)r.den * 1.25e-06)) {
 												nNo++;
 												continue;
 											}
@@ -984,7 +984,7 @@ void __fastcall CBsp_RadAreas(CBsp *self) {
 		static const float zero[3] = { 0.0f, 0.0f, 0.0f };
 		BspTri *list = self->lists[i];
 		RadAreaLight *al = BspTri_AreaLight(list);
-		list->b155 = 0;
+		list->glowOn = 0;
 		list->radlight_ok = CRadiosity_ReadMatWarn(&rad, list->Mat, al);
 		Img_Create(&list->rad, list->light.width, list->light.height, 0xc);
 		CBmpFlt2_Fill(&list->rad, zero);
@@ -1047,8 +1047,8 @@ void __fastcall CBsp_RadAreas(CBsp *self) {
 			const char *m4 = CMaterial_GetMapName(list->Mat, 4);
 			Con_Verbosef("  lglow (average): %f %f %f [%s] [%s]\n", (double)v[0], (double)v[1], (double)v[2],
 				list->Mat->Name, m4);
-			list->b155 = Float_MaxSS(v[2], Float_MaxSS(v[1], v[0])) > 0.0f;
-			if (!list->b155) {
+			list->glowOn = Float_MaxSS(v[2], Float_MaxSS(v[1], v[0])) > 0.0f;
+			if (!list->glowOn) {
 				Con_Warnf("  lglow disabled (average is black) [%s]\n", list->Mat->Name);
 			}
 			if (list->radlight_ok) {
@@ -1057,12 +1057,12 @@ void __fastcall CBsp_RadAreas(CBsp *self) {
 			Img_Free(&avg, 0x10);
 		}
 		nArea += list->radlight_ok != 0;
-		nGlow += list->b155 != 0;
+		nGlow += list->glowOn != 0;
 		if (list->radlight_ok) {
 			Con_Verbosef(" area light: %s (rgbi = %d %d %d %.2f)\n", list->Mat->Name, al->rgbi[0], al->rgbi[1],
 				al->rgbi[2], (double)al->intensity);
 		}
-		if (list->b155) {
+		if (list->glowOn) {
 			Con_Verbosef(" lglow light: %s [%s] (%dx%d)\n", list->Mat->Name, CMaterial_GetMapName(list->Mat, 4),
 				list->lightA.width, list->lightA.height);
 		}
@@ -1114,7 +1114,7 @@ void __fastcall CBsp_RadAreas(CBsp *self) {
 							float dn = -(n.y * p.y + n.x * p.x + n.z * p.z);
 							for (int j = 0; j < self->num_lists; j++) {
 								BspTri *L = self->lists[j];
-								if (!L->radlight_ok && !L->b155) {
+								if (!L->radlight_ok && !L->glowOn) {
 									continue;
 								}
 								if (g_RadSkipBySectors && L->zone != zone) {
@@ -1148,7 +1148,7 @@ void __fastcall CBsp_RadAreas(CBsp *self) {
 											c[2] = (float)lal->rgbi[2] * s + 0.0f;
 											c[3] = (float)lal->rgbi[3] * s + 0.0f;
 										}
-										if (L->b155) {
+										if (L->glowOn) {
 											const float *g = CBmpFlt_Pixel(&L->lightA, ar->x, ar->y);
 											c[3] = c[3] + 1.0f;
 											c[0] = c[0] + g[0];
@@ -1261,12 +1261,12 @@ static int BspTri_Join(BspTri *list, box_t *box) {
 				for (BspTri *p = list; p; p = p->next) {
 					if (BspTri_InsideXZ(p, cx, cz)) {
 						above = 1;
-						c->i12c = 0xffff00;
+						c->maskColor = 0xffff00;
 					}
 				}
 			}
 			if (k > 2) {
-				c->i12c = 0xff0000;
+				c->maskColor = 0xff0000;
 				pp = &c->next;
 				continue;
 			}
