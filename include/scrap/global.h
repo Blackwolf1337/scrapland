@@ -12,11 +12,17 @@
 /* "FATAL ERROR: Check failed!" report of the engine (rva 0xbcdb0), logs expression, file, date and line */
 void CheckFailed(const char *expr, const char *file, const char *date, int line);
 
-/* the original macro passes __FILE__ and __TIMESTAMP__ of the .cpp file, ours those of the .c file */
+/* the original macro passes __FILE__ and __TIMESTAMP__ of the .cpp file, ours those of the .c file; SD_CODECMP
+   (tools/codecmp.sh) leaves out the expression text too, so a rename does not change the binary */
+#ifdef SD_CODECMP
+#define CHECK_EXPR(expr) ""
+#else
+#define CHECK_EXPR(expr) #expr
+#endif
 #define CHECK(expr) \
 	do { \
 		if (!(expr)) { \
-			CheckFailed(#expr, __FILE__, __TIMESTAMP__, __LINE__); \
+			CheckFailed(CHECK_EXPR(expr), __FILE__, __TIMESTAMP__, __LINE__); \
 		} \
 	} while (0)
 
