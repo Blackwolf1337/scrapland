@@ -3,9 +3,11 @@
  */
 #include <string.h>
 
+#include "scrap/camcontrol.h"
 #include "scrap/fxelements.h"
 #include "scrap/fxmisc.h"
 #include "scrap/mathlib.h"
+#include "scrap/objentity.h"
 #include "scrap/scrap.h"
 #include "scrap/world.h"
 
@@ -311,12 +313,12 @@ static inline void Entity_SetEffectParam(cEntity *e, int i, float v) {
 	((void(__thiscall *)(cEntity *, int, float))((void **)e->vftable)[0xb4 / 4])(e, i, v);
 }
 
-/* the shaking of the camera of a car (the data at +0xf0 of the entity) */
-#define Car_Data(e) (*(byte **)((byte *)(e) + 0xf0))
-#define CarData_QuakeTime(d) (*(float *)((d) + 0x220))
-#define CarData_QuakeFactor(d) (*(float *)((d) + 0x224))
+/* the follow camera of a car (of a player) and its shaking */
+#define Car_Data(e) ((cFollowCamEntity *)((cObjEntity *)(e))->cam)
+#define CarData_QuakeTime(d) ((d)->quakeTime)
+#define CarData_QuakeFactor(d) ((d)->quakeFactor)
 /* the model of an entity with render effects */
-#define Entity_FxModel(e) ((CGameModel *)((byte *)(e) + 0xb8))
+#define Entity_FxModel(e) (&((cObjEntity *)(e))->model)
 
 /* the particles of the near limit on a grid of angles around dir (ang its angles), at the radius */
 static void Limit_NearGrid(cFXElementsABFakeLimit *self, const vec3_t *ang) {
@@ -491,7 +493,7 @@ static void Limit_Car(cFXElementsABFakeLimit *self, cEntity *e, float dt) {
 	if (dist > inner) {
 		nearF = (dist - inner) / g_ABLimitDistLighting;
 		if (nearF > 0.0f) {
-			byte *car = Car_Data(e);
+			cFollowCamEntity *car = Car_Data(e);
 			float quake = nearF * g_ABLimitQuakeFactor;
 			if (car && (quake > CarData_QuakeFactor(car) || 0.01f > CarData_QuakeTime(car))) {
 				CarData_QuakeFactor(car) = quake;

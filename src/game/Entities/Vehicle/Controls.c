@@ -88,8 +88,7 @@ int __thiscall Controls_GetWeapon(cVehicleControls *self) {
 }
 
 void __thiscall Controls_FromNet(cVehicleControls *self, cEntity *v, float dt) {
-	const byte *net = *(byte **)((byte *)v + 0xf4);
-	uint16_t bits = *(const uint16_t *)(net + 0x74);
+	uint16_t bits = Veh_Net(Veh(v))->keys;
 	byte toggle = (byte)(bits >> 15) & 1;
 
 	(void)dt;

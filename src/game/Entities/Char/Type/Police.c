@@ -135,7 +135,7 @@ byte ChType_PoliceFindListener(cEntity *v, cEntity **victim, byte *usr, void **a
 	if (cWalkCharEntity_GetOwnerSlot(*victim) == -1) {
 		return WChar_B381(*victim) ? 1 : 0;
 	}
-	if (!strcmp(*(const char **)((byte *)cls + 4), "Police") &&
+	if (!strcmp(cls->name, "Police") &&
 		!crt_strncmp(cActCtrl_GetActionName(ctrl, 0), "Action", 6)) {
 		return 0;
 	}

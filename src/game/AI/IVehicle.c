@@ -317,8 +317,8 @@ void __thiscall cAIVehicle_UpdateGraph(cAIVehicle *self) {
 }
 
 /* the camera entity of view 0: its rotation at 0x88, its field of view at 0xa8 */
-#define AIV_CAM_ROT(c) ((const vec3_t *)((byte *)(c) + 0x88))
-#define AIV_CAM_FOV(c) (*(float *)((byte *)(c) + 0xa8))
+#define AIV_CAM_ROT(c) ((const vec3_t *)&((cCamControl *)(c))->cam.rot)
+#define AIV_CAM_FOV(c) (((cCamControl *)(c))->cam.fov)
 
 /* the vehicle too far from the camera: in view farther than MaxDistReposAI, out of view farther than
  * MaxDistReposNotVisAI or (unseen) farther than MinDistReposNotVisAI; the repos distances of the AI reset */
@@ -1936,7 +1936,7 @@ static void AIV_LinkTarget(cAIVehicle *self, cEntity *e) {
 	if (AIV_Target(self)) {
 		Nto1Node_UnlinkChecked(&self->target);
 	}
-	Nto1Head_Link((Nto1Node *)((byte *)e + 0x254), &self->target);
+	Nto1Head_Link(&WLife(e)->targets, &self->target);
 }
 
 /* the states from FIGHTING_HOOK on; 0 for an unknown state or a target the AI cannot have */
@@ -2911,7 +2911,7 @@ void __thiscall cAIVehicle_ThinkRace(cAIVehicle *self) {
 						Nto1Node_UnlinkChecked(&self->target);
 					}
 					/* the head of the links to the vehicle */
-					Nto1Head_Link((Nto1Node *)((byte *)e + 0x254), &self->target);
+					Nto1Head_Link(&WLife(e)->targets, &self->target);
 				}
 				float r = Veh(self->vehicle)->wl.prim.radius + Veh(AIV_Target(self))->wl.prim.radius;
 				cAIVehicle_SetInternState(self, AIVI_CHASE_SHOOTING, (double)r, (double)(r + r));

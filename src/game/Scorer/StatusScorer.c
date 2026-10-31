@@ -11,7 +11,6 @@
 #include "scrap/withlifeentity.h"
 
 /* a byte of the ship regeneration state of the world (SLogic.SetShipToRegenerate): the siren plays while set */
-#define World_RegenOn() (*((byte *)g_pWorld + 0x2150))
 
 static CPsaImage *Status_NewWhite(void) {
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
@@ -41,7 +40,7 @@ cStatusScorer *__fastcall cStatusScorer_ctor(cStatusScorer *self) {
 	self->lowLife.desc.loop = 1;
 	cSound_SetSound(&self->alarm, g_StatusAlarmSound, 0);
 	self->alarm.desc.loop = 1;
-	self->alarmOn = World_RegenOn();
+	self->alarmOn = g_pWorld->logic.shipRegen.noLoss;
 	self->lifeIconIndex = 0;
 	self->hullIconIndex = 0;
 	self->moneyIconIndex = 0;
@@ -440,14 +439,14 @@ void __thiscall cStatusScorer_Draw(cStatusScorer *self, int player) {
 		CPsaImage_DrawFrame(img, self->hullIconIndex, self->hullIconOffX + self->base.x,
 			self->hullIconOffY + self->base.y);
 	}
-	if (!g_pApp->flags && !g_SplitScreenGame && lowVol != 0.0f && !World_RegenOn()) {
+	if (!g_pApp->flags && !g_SplitScreenGame && lowVol != 0.0f && !g_pWorld->logic.shipRegen.noLoss) {
 		self->lowLife.desc.volume = Snd_Volume(lowVol);
 		self->lowLife.desc.pan = 0;
 		cSound_Update(&self->lowLife);
 	} else {
 		cSound_Stop(&self->lowLife);
 	}
-	if (World_RegenOn()) {
+	if (g_pWorld->logic.shipRegen.noLoss) {
 		self->alarm.desc.volume = Snd_Volume(g_RegenerationSoundVol);
 		self->alarm.desc.pan = 0;
 		float p = (g_RegenerationSoundPitchMax - g_RegenerationSoundPitchMin) * (float)pct / 100.0f +
@@ -458,13 +457,13 @@ void __thiscall cStatusScorer_Draw(cStatusScorer *self, int player) {
 	} else {
 		cSound_Stop(&self->alarm);
 	}
-	if (self->alarmOn != World_RegenOn()) {
-		if (World_RegenOn()) {
+	if (self->alarmOn != g_pWorld->logic.shipRegen.noLoss) {
+		if (g_pWorld->logic.shipRegen.noLoss) {
 			Scorer_PlaySound(g_InitRegenerationSound, g_InitRegenerationSoundVol);
 		} else {
 			Scorer_PlaySound(g_EndRegenerationSound, g_EndRegenerationSoundVol);
 		}
-		self->alarmOn = World_RegenOn();
+		self->alarmOn = g_pWorld->logic.shipRegen.noLoss;
 	}
 	if (self->boostIconIndex) {
 		Status_DrawBoostIcon(self);

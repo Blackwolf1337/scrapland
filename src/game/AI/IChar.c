@@ -51,7 +51,7 @@ static inline void *AIC_ActCtrl(cEntity *e) {
 
 /* the head node of an entity with life the target links to */
 static inline Nto1Node *AIC_Head(cEntity *e) {
-	return (Nto1Node *)((byte *)e + 0x254);
+	return &WLife(e)->targets;
 }
 
 /* the slots of the move control without a name in aicharcontrol.h */

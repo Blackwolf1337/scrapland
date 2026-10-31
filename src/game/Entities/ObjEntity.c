@@ -367,8 +367,8 @@ void __thiscall cObjEntity_GetCamera(cEntity *self, vec3_t *pos, vec3_t *ang) {
 		rot.y = ang->y + M_PI_F;
 		ang->z = orient->z;
 		rot.z = ang->z;
-		float s = (float)Game_Sin((double)-*(float *)((byte *)cam + 0x218));
-		s = s * *(float *)((byte *)o->cam + 0x1f0);
+		float s = (float)Game_Sin((double)-((cFollowCamEntity *)cam)->camAng);
+		s = s * ((cFollowCamEntity *)o->cam)->dist;
 		off.x = o->camOff.x + 0.0f;
 		off.y = o->camOff.y + s;
 		off.z = o->camOff.z + 0.0f;

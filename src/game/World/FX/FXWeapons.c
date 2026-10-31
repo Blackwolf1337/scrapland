@@ -1434,9 +1434,8 @@ void __thiscall cObjElementFXSwarmMissile_Reset(cObjElementFXSwarmMissile *self,
 #define g_FXTeslaStepTime GAME_GLOBAL_IN(float, GVar_FXTeslaStepTime, 16, 0x44a760)
 #define g_FXTeslaRandRadius GAME_GLOBAL_IN(float, GVar_FXTeslaRandRadius, 16, 0x44a840)
 #define FXTESLA_RAMP_SPARK 0x431930		/* [2] */
-#define Entity_TeslaAng(e) ((float *)((byte *)(e) + 0x6dc))	/* the aim angles x and y */
-#define Entity_HitInfo(e) ((cVehicleAttack *)((byte *)(e) + 0x298))
-#define Entity_F3a0(e) (*(float *)((byte *)(e) + 0x3a0))
+#define Entity_HitInfo(e) (&WLife(e)->attack)
+#define Entity_F3a0(e) (WLife(e)->prim.radius)
 
 /* the end moved back from the target towards the emitter by 0.2..0.5 of r along n */
 static void FXW_TeslaBack(vec3_t *tpos, const vec3_t *n, float r) {
@@ -1515,8 +1514,8 @@ void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *deb
 		vec3_t ang;
 		cEntity *hit = NULL;
 		e = self->emitter;
-		ang.x = Entity_TeslaAng(e)[0];
-		ang.y = Entity_TeslaAng(e)[1];
+		ang.x = Veh(e)->autoAim.ax;
+		ang.y = Veh(e)->autoAim.ay;
 		ang.z = 0.0f;
 		float range = g_TeslaRange;
 		e->vftable->GetTargetAngle(e, &ang.x, range, &hit);

@@ -10,11 +10,12 @@
 #include "scrap/cstring.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/timer.h"
+#include "scrap/vehicleentity.h"
 
 #define LOGIC_SETORIGINFUNC 0x151ce0
 #define g_NotCleanableByGearDef (GAME_ARRAY_IN(cString, GVar_NotCleanableByGear, 20, 0x44cba4))
-#define Car_B43a(e) (*(byte *)((byte *)(e) + 0x43a))
-#define Car_Radius(e) (*(float *)((byte *)(e) + 0x3a0))
+#define Car_TargetPicked(e) (Veh(e)->controls.b26)	/* the target in view is picked */
+#define Car_Radius(e) (WLife(e)->prim.radius)
 
 /* the x87 code of the original: a float plus a float, rounded by the x87 control word, then to float */
 static inline float Logic_X87Add(float a, float b) {
@@ -111,7 +112,7 @@ void __thiscall Logic_UpdateTaunts(cLogicControl *self, float dt) {
 		}
 	}
 	cEntity *usr = ChType_Usr0();
-	if (usr && usr->vftable->IsType(usr, TYEN_CAR) && Car_B43a(usr)) {
+	if (usr && usr->vftable->IsType(usr, TYEN_CAR) && Car_TargetPicked(usr)) {
 		float now = Timer_GetTime(&g_pWorld->timer);
 		if (self->talkEnd > now) {
 			g_RemainTalkTime = 0.0f;

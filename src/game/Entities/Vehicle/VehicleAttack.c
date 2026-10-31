@@ -138,7 +138,7 @@ void __thiscall cVehicleAttack_ShotAt(cVehicleAttack *self, const char *name, in
 		return;
 	}
 	cEntity_AddLink(e, &self->target);
-	cVehicleAttack_HitBy((cVehicleAttack *)((byte *)e + 0x298), self->owner->name);
+	cVehicleAttack_HitBy(&WLife(e)->attack, self->owner->name);
 	self->count += n;
 	self->netCount += n;
 	self->point = *e->vftable->GetPos(e, &pos);

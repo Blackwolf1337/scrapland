@@ -170,7 +170,7 @@ void ATPC_Create(cAbstractFile *params) {
 	}
 	cEntity *w = g_ATPCVictim[0] ? World_FindEntity(g_ATPCVictim) : NULL;
 	if (w) {
-		cSndItem *it = PtrArray_Get((byte *)w + 0x3a8, 6);
+		cSndItem *it = PtrArray_Get(&WLife(w)->hitSounds, 6);
 		if (it) {
 			it->volume = it->vols[0];
 			it->pitch = it->pitches[0];

@@ -163,7 +163,7 @@ byte ChType_Steal(cEntity **thief, cEntity **victim, int amount, const char *sta
 		return 0;
 	}
 	/* the character the logic deals with */
-	*victim = *(cEntity **)((byte *)l + 0x10);
+	*victim = ChLogic_Target(l);
 	if (!ChType_CanRob(*thief, *victim)) {
 		return 0;
 	}

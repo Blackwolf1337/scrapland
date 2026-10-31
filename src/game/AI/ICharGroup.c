@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "scrap/aichar.h"
+#include "scrap/camcontrol.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/fxmisc.h"
@@ -346,7 +347,7 @@ byte __thiscall cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity 
 	vec3_t cam = w->camPos[w->curCam];
 	cEntity *camEnt = World_FindEntity(cWorld_GetCamName(w, 0));
 	/* 0x88 of the camera entity: its angles */
-	Vec3_Rotate(&look, &fwd, (const vec3_t *)((byte *)camEnt + 0x88));
+	Vec3_Rotate(&look, &fwd, &((cCamControl *)camEnt)->cam.rot);
 	for (zi = 0; zi < self->numZones; zi++) {
 		if (!strcmp(name, self->zones[zi].name)) {
 			break;

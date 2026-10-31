@@ -563,7 +563,7 @@ byte __thiscall cAICharControl_CheckFollow(cAICharControl *self) {
 
 /* the head of the links to a character (the controls that strafe around it) */
 static inline Nto1Node *AICC_CharHead(cEntity *e) {
-	return (Nto1Node *)((byte *)e + 0x254);
+	return &WLife(e)->targets;
 }
 
 /* the name of the action class of a character */
