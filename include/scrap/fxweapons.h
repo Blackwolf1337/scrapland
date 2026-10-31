@@ -44,7 +44,7 @@ int __thiscall CGameLensFlare_GetI1c(const void *self);			/* rva 0x232f70 */
 float __thiscall cTargetLock_GetAmmo(cTargetLock *self, int ammo);
 byte __thiscall cTargetLock_HasSlot(cTargetLock *self, int weap, int slot);
 #define Entity_Fire(e) (Veh(e)->controls.fire)
-#define Entity_B636(e) (Veh(e)->weapons.flag46)
+#define Entity_B636(e) (Veh(e)->weapons.teslaFiring)
 #define Entity_CurWeapon(e) (Veh(e)->weapons.curWeap)	/* the selected weapon kind */
 
 /* the engine variables */

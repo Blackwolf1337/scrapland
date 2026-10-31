@@ -437,7 +437,7 @@ void __thiscall cWeaponManager_LockPoint(cWeaponManager *self, const vec3_t *p) 
 }
 
 void __thiscall cWeaponManager_SetFlag46(cWeaponManager *self, byte v) {
-	self->flag46 = v;
+	self->teslaFiring = v;
 }
 
 /* the slots of weapon w from the bits of mask, up to the first slot without node; the new slots */
@@ -816,7 +816,7 @@ cWeaponManager *__fastcall cWeaponManager_ctor(cWeaponManager *self) {
 	self->owner = NULL;
 	self->on = 0;
 	self->wasOn = 0;
-	self->flag46 = 0;
+	self->teslaFiring = 0;
 	self->lock.data = self;
 	return self;
 }

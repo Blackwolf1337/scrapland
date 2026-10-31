@@ -174,7 +174,7 @@ typedef struct cTargetLock {
 	vec3_t point;			/* 0x38 the locked point without entity */
 	byte on;			/* 0x44 */
 	byte wasOn;			/* 0x45 on of the last Update */
-	byte flag46;			/* 0x46 */
+	byte teslaFiring;	/* 0x46 a Tesla ray of a net shot is on (Tesla_CreateNative), cleared when it ends */
 	byte pad_47;
 } cTargetLock;
 SD_OFFSET(cTargetLock, weaps, 0x18);

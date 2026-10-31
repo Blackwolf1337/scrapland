@@ -22,7 +22,7 @@ void Tesla_CreateNative(cAbstractFile *f) {
 	cAbstractFile_ReadString(f, targetName, 0x80);
 	cEntity *v = Weap_Vehicle(name);
 	cTargetLock *wm = Veh_Weapons(v);
-	byte shooting = wm->flag46;
+	byte shooting = wm->teslaFiring;
 	cWeaponManager_SetFlag46(wm, 1);
 	int n = 0;
 	if (Obj_Vtbl(v)->GetModel(v)) {
