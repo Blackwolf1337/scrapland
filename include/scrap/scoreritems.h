@@ -451,7 +451,7 @@ typedef struct cCircuitFlare {
 	float delay;			/* 0x08 the pause before the next run */
 	int path;			/* 0x0c */
 	int reverse;			/* 0x10 */
-	int i14;			/* 0x14 */
+	int unused_14;			/* 0x14 */
 } cCircuitFlare;
 SD_SIZE(cCircuitFlare, 0x18);
 
@@ -493,7 +493,7 @@ typedef struct cCopMeterScorer {
 	float target;			/* 0xdc the alarm level of the world */
 	byte on;			/* 0xe0 the alarm is on */
 	byte pad_e1[3];
-	int ie4;			/* 0xe4 */
+	int unused_e4;			/* 0xe4 */
 	float fade;			/* 0xe8 0..1 */
 	float blink;			/* 0xec 0..0.9 the blink phase */
 } cCopMeterScorer;

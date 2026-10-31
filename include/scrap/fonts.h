@@ -26,7 +26,7 @@ typedef struct CFont3 {
 	float wave;			/* 0x0c 1, the scale of FNT_WAVE */
 	uint32_t color;			/* 0x10 Font_SetColor */
 	uint32_t flags;			/* 0x14 Font_SetFlags, FNT_SHADOW */
-	int i18;			/* 0x18 */
+	int unused_18;			/* 0x18 */
 	byte round;			/* 0x1c positions rounded to pixels */
 	byte mono;			/* 0x1d monospaced */
 	byte pad_1e[2];
@@ -63,17 +63,17 @@ typedef struct CFontGrid {
 	byte pad_46[2];
 	int cellWidth;			/* 0x48 pixels of a 256 wide texture */
 	int cellHeight;			/* 0x4c */
-	int i50;			/* 0x50 */
-	int i54;			/* 0x54 */
+	int unused_50;			/* 0x50 */
+	int unused_54;			/* 0x54 */
 	float space;			/* 0x58 the advance */
 } CFontGrid;
 SD_SIZE(CFontGrid, 0x5c);
 
 typedef struct CDigits {
 	CGraphic2D digit[10];		/* 0x000 bmp/digitos/digito0001.tga .. 0010 */
-	int i2a8;			/* 0x2a8 */
-	int i2ac;			/* 0x2ac */
-	float f2b0;			/* 0x2b0 24 */
+	int unused_2a8;			/* 0x2a8 */
+	int unused_2ac;			/* 0x2ac */
+	float unused_2b0;			/* 0x2b0 24 */
 } CDigits;
 SD_SIZE(CDigits, 0x2b4);
 

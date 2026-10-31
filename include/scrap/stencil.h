@@ -29,7 +29,7 @@ typedef struct StencilBlock {
 	vec3_t lightDirObj;		/* 0x28 */
 	matrix_t world;			/* 0x34 moved by R_StencilViewDisp along the view */
 	int useg;			/* 0x74 the segments end here */
-	int i78;			/* 0x78 */
+	int unused_78;			/* 0x78 */
 	int utri;			/* 0x7c the cap triangles end here */
 } StencilBlock;
 SD_SIZE(StencilBlock, 0x80);

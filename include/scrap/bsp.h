@@ -102,7 +102,7 @@ typedef struct BspTri {
 	CBmp mask;			/* 0x114 the list of each texel (color swapped) */
 	CBmp mask2;			/* 0x120 */
 	int maskColor;			/* 0x12c of the triangle in the debug mask (mask2) */
-	int i130;			/* 0x130 */
+	int unused_130;			/* 0x130 */
 	BspName *names;		/* 0x134 */
 	char *name;			/* 0x138 Cad */
 	uint32_t radColor;		/* 0x13c area light color, bytes */
@@ -185,7 +185,7 @@ SD_SIZE(BspNode, 0x2c);
 /* a sector: its lists (through zone_next) and the vertex buffers by vertex format */
 typedef struct BspZone {
 	BspTri *tris;			/* 0x00 */
-	int i04;			/* 0x04 */
+	int unused_04;			/* 0x04 */
 	CRenderVB vb[8];		/* 0x08 */
 	CRenderIB ib;			/* 0xa8 */
 } BspZone;
@@ -558,7 +558,7 @@ typedef struct RadAreaLight {
 	char *name;			/* 0x04 String_Set */
 	byte rgbi[4];			/* 0x08 r g b, from the diffuse color of the material */
 	float intensity;		/* 0x0c */
-	float f10;			/* 0x10 */
+	float unused_10;			/* 0x10 */
 	float atten[2];			/* 0x14 */
 	float falloff;			/* 0x1c */
 } RadAreaLight;

@@ -10,7 +10,7 @@ void *__fastcall cAIEntityGroup_ctor(void *self) {
 
 	g->vftable = CAIENTITYGROUP_VFTABLE;
 	g->num = 0;
-	g->b58 = 0;
+	g->unused_58 = 0;
 	g->changeTime = g_TimeBetwChangeStateAI;
 	return g;
 }

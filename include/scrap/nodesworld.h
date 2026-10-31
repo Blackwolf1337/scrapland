@@ -249,7 +249,7 @@ typedef struct CNodesWorldSup {
 	cNWVecList errUnlinked;		/* 0x328 the nodes without links */
 	cNWVecList errOneWay;		/* 0x340 the links without the link back, 2 points each */
 	int debugHits;			/* 0x358 the nodes the debug test found blocked */
-	byte b35c;			/* 0x35c */
+	byte unused_35c;			/* 0x35c */
 	byte pad_35d[3];
 } CNodesWorldSup;
 SD_OFFSET(CNodesWorldSup, maxVisDist, 0x60);
@@ -303,7 +303,7 @@ struct CNodesWorld {
 	cNWVecList errUnlinked;		/* 0x328 the nodes without links */
 	cNWVecList errOneWay;		/* 0x340 the links without the link back, 2 points each */
 	int debugHits;			/* 0x358 the nodes the debug test found blocked */
-	byte b35c;			/* 0x35c */
+	byte unused_35c;			/* 0x35c */
 	byte pad_35d[3];
 	/* CNodesWorld */
 	byte analyzing;			/* 0x360 Analyze: Load analyzes the level instead of making the graph */

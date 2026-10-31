@@ -99,7 +99,7 @@ typedef struct cObjElementFXItemTake {
 	vec3_t offset[FXITEMTAKE_LINES * FXITEMTAKE_POINTS];	/* 0x2b0 */
 	uint32_t color[FXITEMTAKE_LINES * FXITEMTAKE_POINTS];	/* 0x550 */
 	int mode;			/* 0x630 */
-	float f634;			/* 0x634 */
+	float unused_634;			/* 0x634 */
 	float t;			/* 0x638 */
 	float emitT;			/* 0x63c */
 	float scale;			/* 0x640 */

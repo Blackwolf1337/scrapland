@@ -166,7 +166,7 @@ CTexture *__thiscall CTexture_ctor(CTexture *self, const char *name, const char 
 	self->ddx = 0;
 	self->ddy = 0;
 	self->ddv = 0;
-	self->b245 = 0;
+	self->unused_245 = 0;
 	if (flags & TEXF_FIXEDBPP) {
 		self->mipmap = 0;
 	}

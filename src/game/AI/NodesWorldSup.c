@@ -186,8 +186,8 @@ CNodesWorld *__thiscall CNodesWorldSup_ctor(CNodesWorld *self) {
 	self->name[0] = 0;
 	self->nodeInitDummy = 1;
 	memset(&self->grid, 0, offsetof(CNodesWorld, fileStart) - offsetof(CNodesWorld, grid));
-	memset(&self->numFiles, 0, offsetof(CNodesWorld, b35c) - offsetof(CNodesWorld, numFiles));
-	self->b35c = 0;
+	memset(&self->numFiles, 0, offsetof(CNodesWorld, unused_35c) - offsetof(CNodesWorld, numFiles));
+	self->unused_35c = 0;
 	return self;
 }
 

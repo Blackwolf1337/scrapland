@@ -73,7 +73,7 @@ typedef struct CTrail {
 	byte pad_3d[3];
 	vec3_t orientVec;		/* 0x40 */
 	float uLen;			/* 0x4c the points for du */
-	float f50;			/* 0x50 */
+	float unused_50;			/* 0x50 */
 } CTrail;
 SD_SIZE(CTrail, 0x54);
 SD_OFFSET(CTrail, m_pTrails, 0x28);

@@ -181,7 +181,7 @@ SD_OFFSET(cParking, items, 0x1c);
 SD_SIZE(cParking, 0x34);
 
 typedef struct cShipRegen {
-	byte b0;			/* 0x00 0, not used */
+	byte unused_00;			/* 0x00 0, not used */
 	byte pad_1[3];
 	cShipRegenShip *ship;		/* 0x04 made by the first ShipRegen_Set */
 	float time;			/* 0x08 to the next check of the player */

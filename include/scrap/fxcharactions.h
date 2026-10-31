@@ -135,7 +135,7 @@ typedef struct cObjElementFXBertoAttack {
 	CGameParticles particles;	/* 0x08 on Dummy01 */
 	float emitTime;		/* 0xb8 the particles are emitted every 0.04 s of it */
 	float time;			/* 0xbc since the start */
-	int fc0;			/* 0xc0 */
+	int unused_c0;			/* 0xc0 */
 	int nodeGlass;		/* 0xc4 R_Berto_TroncoInf-cristal */
 	byte started;			/* 0xc8 */
 } cObjElementFXBertoAttack;
@@ -390,8 +390,8 @@ typedef struct cObjElementFXPoliceSteal {
 	cEntity *target;		/* 0x08 */
 	CGameParticles particles;	/* 0x0c on Dummy01 */
 	float emitTime;		/* 0xbc the particles are emitted every 0.04 s of it */
-	int fc0;			/* 0xc0 */
-	int fc4;			/* 0xc4 */
+	int unused_c0;			/* 0xc0 */
+	int unused_c4;			/* 0xc4 */
 	byte started;			/* 0xc8 */
 } cObjElementFXPoliceSteal;
 SD_SIZE(cObjElementFXPoliceSteal, 0xcc);

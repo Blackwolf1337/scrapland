@@ -353,8 +353,8 @@ void *__thiscall cObjElementFXPoliceSteal_ctor(void *self) {
 	s->ent = NULL;
 	s->target = NULL;
 	s->emitTime = 0.0f;
-	s->fc0 = 0;
-	s->fc4 = -1;
+	s->unused_c0 = 0;
+	s->unused_c4 = -1;
 	return s;
 }
 

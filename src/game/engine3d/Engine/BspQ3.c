@@ -292,7 +292,7 @@ void __fastcall CBspQ3_ReadLMaps(CBspQ3 *self) {
 		lm->bpp = 3;
 		lm->height = BSPQ3_LMAP_SIZE;
 		lm->width = BSPQ3_LMAP_SIZE;
-		lm->i00 = -1;
+		lm->unused_00 = -1;
 		Path_Part(path, self->name, PATH_DRIVE | PATH_DIR | PATH_NAME);
 		size_t len = strlen(path);
 		Bprintf(path + len, (int)(sizeof(path) - len), "_lmap%04d.bmp", i);

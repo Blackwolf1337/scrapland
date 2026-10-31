@@ -22,7 +22,7 @@
 #define g_LifeReachedCallback (GAME_ARRAY_IN(cPy_Function, GVar_LifeReachedCallback, 16, 0x44d7d0))
 
 cShipRegen *__fastcall ShipRegen_ctor(cShipRegen *self) {
-	self->b0 = 0;
+	self->unused_00 = 0;
 	self->ship = NULL;
 	self->time = g_RegenerationTimeRate;
 	self->life = g_StdMaxLife;

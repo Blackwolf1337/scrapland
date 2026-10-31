@@ -18,8 +18,8 @@ CFontGrid *__thiscall CFontGrid_ctor(CFontGrid *self, const char *tex, const cha
 	CGraphic2D_SetTexture(&self->graphic, tex, opac, 0);
 	self->graphic.screen = 1;
 	self->graphic.screenSize = 1;
-	self->i54 = 0;
-	self->i50 = 0;
+	self->unused_54 = 0;
+	self->unused_50 = 0;
 	CHECK(first <= last);
 	self->cellWidth = cellWidth;
 	self->cellHeight = cellHeight;
@@ -61,9 +61,9 @@ CDigits *__fastcall CDigits_ctor(CDigits *self) {
 		self->digit[i].screen = 1;
 		self->digit[i].screenSize = 1;
 	}
-	self->i2ac = 0;
-	self->i2a8 = 0;
-	self->f2b0 = 24.0f;
+	self->unused_2ac = 0;
+	self->unused_2a8 = 0;
+	self->unused_2b0 = 24.0f;
 	return self;
 }
 
@@ -220,7 +220,7 @@ CFont3 *__thiscall CFont3_ctor(CFont3 *self, const char *tex, const char *opac, 
 	self->wave = 1.0f;
 	self->color = 0xffffff;
 	self->flags = 0;
-	self->i18 = 0;
+	self->unused_18 = 0;
 	self->round = 0;
 	self->mono = 0;
 	CHECK(first <= last);

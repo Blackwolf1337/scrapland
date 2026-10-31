@@ -46,7 +46,7 @@ struct CModel;
 /* a level of detail: the model of the level (Modelo.h) */
 typedef struct CLod {
 	struct CModel *model;		/* 0x0 */
-	int f4;				/* 0x4 */
+	int unused_04;				/* 0x4 */
 } CLod;
 SD_SIZE(CLod, 8);
 

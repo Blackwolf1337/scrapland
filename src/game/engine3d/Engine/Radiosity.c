@@ -35,7 +35,7 @@ RadAreaLight *__fastcall RadAreaLight_ctor(RadAreaLight *self) {
 	self->rgbi[0] = self->rgbi[1] = self->rgbi[2] = self->rgbi[3] = 0;
 	self->intensity = 1.0f;
 	self->next = NULL;
-	self->f10 = 0.0f;
+	self->unused_10 = 0.0f;
 	self->atten[1] = 0.0f;
 	self->atten[0] = 0.0f;
 	self->falloff = 1.0f;
@@ -263,7 +263,7 @@ found:
 		byte r = Rad_Byte(Mat->params.diffuse[0]);
 		byte g = Rad_Byte(Mat->params.diffuse[1]);
 		byte b = Rad_Byte(Mat->params.diffuse[2]);
-		dest->f10 = 0.0f;
+		dest->unused_10 = 0.0f;
 		dest->atten[0] = 0.0f;
 		dest->atten[1] = Rad_Float(RAD_ATTEN_MAX);
 		dest->falloff = 1.0f;

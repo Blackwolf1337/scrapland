@@ -41,7 +41,7 @@ typedef struct cVehicleMotorsEffects {
 	vec3_t lastPos;			/* 0x48 the position of the last trail segment */
 	float dist;			/* 0x54 from lastPos (squared at a low thrust) */
 	float shrinkTime;		/* 0x58 the trails shrink every 0.05 s at a low thrust */
-	float f5c;			/* 0x5c */
+	float unused_5c;			/* 0x5c */
 	float colorBlend;		/* 0x60 towards 1 while the color is not white */
 	float segDist;			/* 0x64 the length of a trail segment, longer with the speed */
 	byte trailsOn;			/* 0x68 the first trail update only sets it */

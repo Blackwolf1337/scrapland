@@ -55,7 +55,7 @@ void *__thiscall cAIMove_ctor(void *mem, cEntity *e) {
 	self->arrived = 0;
 	self->repos = 0;
 	self->reposing = 0;
-	self->b88 = 0;
+	self->unused_88 = 0;
 	self->dest.y = 0.0f;
 	self->dest.z = 0.0f;
 	self->dest.x = 0.0f;

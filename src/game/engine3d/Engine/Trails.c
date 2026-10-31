@@ -20,7 +20,7 @@ CTrail *__fastcall CTrail_ctor(CTrail *self) {
 	self->du = 1.0f;
 	self->dv = 1.0f;
 	self->uLen = 1.0f;
-	self->f50 = 1.0f;
+	self->unused_50 = 1.0f;
 	self->orientVec = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->render = 0;
 	self->RenderIndex = -1;
@@ -648,7 +648,7 @@ void __thiscall CTrail_SetFade(CTrail *self, byte on) {
 
 void __thiscall CTrail_SetULen(CTrail *self, float uLen, float f50) {
 	self->uLen = uLen;
-	self->f50 = f50;
+	self->unused_50 = f50;
 }
 
 void Trail_SetRender(CTrail *t, byte on) {

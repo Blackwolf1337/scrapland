@@ -215,7 +215,7 @@ void FX_ItemFade(cEntity *e, int mode, float scale, cEntity *target) {
 				take->started = 1;
 			}
 			take->mode = mode;
-			take->f634 = 1.0f;
+			take->unused_634 = 1.0f;
 			take->scale = scale;
 			cObjElementFXItemTake_Start(take, e);
 			take->target = target;

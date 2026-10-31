@@ -240,7 +240,7 @@ struct cAIChar {
 	int relaxCount;			/* 0x024 the relax actions played in the internal state */
 	byte changed;			/* 0x028 the internal state changed in this frame */
 	byte pad_29;
-	byte b2a;			/* 0x02a */
+	byte unused_2a;			/* 0x02a */
 	byte pad_2b;
 	float stateTime;		/* 0x02c */
 	byte pad_30[8];
@@ -262,7 +262,7 @@ struct cAIChar {
 	byte arrived;			/* 0x085 GO_TO reached the end */
 	byte repos;			/* 0x086 "Repos" */
 	byte reposing;			/* 0x087 inside Repos */
-	byte b88;			/* 0x088 */
+	byte unused_88;			/* 0x088 */
 	byte pad_89[3];
 	float stopTime;			/* 0x08c the time without a velocity */
 	cAICharSaved pending;		/* 0x090 state AIC_STATE_NONE for none */
@@ -505,7 +505,7 @@ typedef struct cAIMove {
 	byte arrived;			/* 0x85 GO_TO reached the end */
 	byte repos;			/* 0x86 "Repos" */
 	byte reposing;			/* 0x87 */
-	byte b88;			/* 0x88 */
+	byte unused_88;			/* 0x88 */
 	byte pad_89[3];
 	float stopTime;			/* 0x8c the time without a velocity */
 } cAIMove;
@@ -541,7 +541,7 @@ struct cAIEntityGroup {
 	const cAIEntityGroupVtbl *vftable;	/* 0x00 */
 	cEntity *ents[CAIENTITYGROUP_MAX];	/* 0x04 */
 	int num;				/* 0x54 */
-	byte b58;				/* 0x58 */
+	byte unused_58;				/* 0x58 */
 	byte pad_59[3];
 	float changeTime;			/* 0x5c */
 };

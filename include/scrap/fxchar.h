@@ -58,7 +58,7 @@ typedef struct cObjElementFXCharacterConversion {
 	float time;			/* 0x16c since the start */
 	float emitT;			/* 0x170 since the last sparks */
 	byte pad_174[4];
-	float f178;			/* 0x178 */
+	float unused_178;			/* 0x178 */
 	CGameTrail trails[FXCONVERSION_TRAILS];	/* 0x17c */
 	vec3_t dir[FXCONVERSION_POINTS];	/* 0x190 random directions of length 0.3..1 */
 	float phase[FXCONVERSION_POINTS];	/* 0x514 0..1 */
@@ -162,8 +162,8 @@ typedef struct cObjElementFXMoneyTransfer {
 	cEntity *to;			/* 0x08 */
 	CGameParticles particles;	/* 0x0c on Dummy01 */
 	float emitT;			/* 0xbc the time since the last coin */
-	float fc0;			/* 0xc0 */
-	int fc4;			/* 0xc4 */
+	float unused_c0;			/* 0xc0 */
+	int unused_c4;			/* 0xc4 */
 	byte started;			/* 0xc8 */
 } cObjElementFXMoneyTransfer;
 SD_OFFSET(cObjElementFXMoneyTransfer, emitT, 0xbc);

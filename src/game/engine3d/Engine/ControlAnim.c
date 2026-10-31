@@ -27,7 +27,7 @@ CAnimCtrl *__fastcall CAnimCtrl_ctor(CAnimCtrl *self) {
 	self->step = 0.0f;
 	self->frame = 0.0f;
 	self->state = ANIM_END;
-	self->i58 = 0;
+	self->unused_58 = 0;
 	self->relative = 0;
 	self->scale = 1.0f;
 	self->event = NULL;
@@ -89,7 +89,7 @@ void __fastcall CAnimCtrl_Start(CAnimCtrl *self) {
 	self->frame = (float)self->firstFrame;
 	self->relative = 0;
 	self->scale = 1.0f;
-	self->i58 = 0;
+	self->unused_58 = 0;
 	self->event = self->events ? *self->events : NULL;
 	self->state = ANIM_REPR;
 }

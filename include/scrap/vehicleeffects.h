@@ -47,7 +47,7 @@ SD_SIZE(cVehicleTrails, 0x60);
 typedef struct cVehicleTubes {
 	cVehicleEntity *owner;		/* 0x00 m_Owner */
 	int count;			/* 0x04 the nodes found */
-	int i08;			/* 0x08 */
+	int unused_08;			/* 0x08 */
 	int kind;			/* 0x0c VEFF_TUBES_ */
 	float time;			/* 0x10 since the last emission */
 	int nodes[VEFF_TUBES];		/* 0x14 -1 for none */

@@ -69,7 +69,7 @@ typedef struct CTexture {
 	byte ddx;			/* 0x242 */
 	byte ddy;			/* 0x243 */
 	byte ddv;			/* 0x244 */
-	byte b245;			/* 0x245 */
+	byte unused_245;			/* 0x245 */
 	byte pad_246[2];
 	CMultiSprite multi;		/* 0x248 */
 } CTexture;

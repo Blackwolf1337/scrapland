@@ -153,7 +153,7 @@ cEmbeddedFX *__fastcall cEmbeddedFXCrazyGambler_ctor(void *p) {
 	EFX_CtorVtbl(self, VT_CRAZYGAMBLER);
 	CGameParticles_ctor(&self->particles);
 	EFX_TrailsCtor(self->trails, FXGAMBLER_ARCS);
-	self->b2188 = 0;
+	self->unused_2188 = 0;
 	self->base.ent = NULL;
 	self->arcT = 0.0f;
 	self->t = 0.0f;
@@ -205,9 +205,9 @@ cEmbeddedFX *__fastcall cEmbeddedFXMessenger_ctor(void *p) {
 	EFX_CtorVtbl(self, VT_MESSENGER);
 	CGameParticles_ctor(&self->glow);
 	EFX_TrailsCtor(self->trails, FXEMBMESSENGER_TRAILS);
-	self->b334 = 0;
+	self->unused_334 = 0;
 	self->base.ent = NULL;
-	self->i08 = 0;
+	self->unused_08 = 0;
 	self->on = 0;
 	return &self->base;
 }
@@ -446,7 +446,7 @@ void __fastcall cEmbeddedFXMercenary_Release(cEmbeddedFXMercenary *self) {
 }
 
 void __fastcall cEmbeddedFXMessenger_Release(cEmbeddedFXMessenger *self) {
-	self->i08 = 0;
+	self->unused_08 = 0;
 	for (int i = 0; i < FXEMBMESSENGER_TRAILS; i++) {
 		self->life[i] = 0.0f;
 		CGameTrail_Clear(&self->trails[i]);
@@ -629,7 +629,7 @@ byte __fastcall cEmbeddedFXSentinel_Reset(cEmbeddedFXSentinel *self) {
 	self->phase[1].z = 1.5707964f;
 	self->phase[2].z = 3.1415927f;
 	self->phase[3].z = 4.712389f;
-	self->f170 = 0.0f;
+	self->unused_170 = 0.0f;
 	self->alpha = 1.0f;
 	cEmbeddedFXAlarm_Reset(&self->alarm);
 	self->alarm.lights = 0;

@@ -14,7 +14,7 @@ CFont *__thiscall CFont_ctor(CFont *self, const char *name, void *unused) {
 	self->x = 0.0f;
 	self->y = 0.0f;
 	self->incx = 0.0f;
-	self->i0c = 0;
+	self->unused_0c = 0;
 	self->align = 0;
 	self->color = 0xffffff;
 	self->f18 = 1.0f;
@@ -113,7 +113,7 @@ void __thiscall CFont_Load(CFont *self, const char *name, void *unused, CIniFile
 	self->Font = f ? CFont3_ctor(f, tex, opac[0] ? opac : NULL, (byte)first, (byte)last, 0.0f, 0, 0, 1.0f) : NULL;
 	float k = 640.0f / (float)bres;
 	CFont3_SetScale(self->Font, k, k);
-	self->i0c = 0;
+	self->unused_0c = 0;
 	self->incx = incx;
 	self->Font->mono = incx != 0.0f;
 	self->Font->uniScale[0] = scale[0];

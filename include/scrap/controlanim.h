@@ -68,7 +68,7 @@ typedef struct CAnimCtrl {
 	float step;			/* 0x4c factor times the time of the last update */
 	float frame;			/* 0x50 */
 	int state;			/* 0x54 ANIM_* */
-	int i58;			/* 0x58 */
+	int unused_58;			/* 0x58 */
 	byte relative;			/* 0x5c EVENT_MOVEMENT: the y of the root motion goes into move, not ofs */
 	byte pad_5d[3];
 	float scale;			/* 0x60 EVENT_SCALE, 1 */

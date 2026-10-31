@@ -52,7 +52,7 @@ cEntity *__thiscall cWalkCharEntity_ctor(void *mem, const char *name, float x, f
 	w->falling = 0;
 	w->walking = 0;
 	w->displAng = 0.0f;
-	w->f46c = 0.0f;
+	w->unused_46c = 0.0f;
 	w->lastMove = 0.0f;
 	w->lastDisplAng = 0.0f;
 	w->walkTime = 0.0f;

@@ -202,7 +202,7 @@ cAIVehicleControl *__thiscall cAIVehicleControl_ctor(void *mem, cEntity *v, cAIV
 	self->pathNode = NULL;
 	self->pathState = 0;
 	self->lost = 0;
-	self->b191 = 0;
+	self->unused_191 = 0;
 	self->strafeOn = 0;
 	self->strafeElapsed = 0.0f;
 	self->strafeWait = 0.0f;

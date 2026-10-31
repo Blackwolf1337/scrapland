@@ -15,7 +15,7 @@
 typedef struct CFont {
 	float x, y;			/* 0x00 the cursor, the end of the last text */
 	float incx;			/* 0x08 the advance of a monospaced font */
-	int i0c;			/* 0x0c */
+	int unused_0c;			/* 0x0c */
 	uint32_t align;			/* 0x10 FNT_ALIGN_* with CFONT_ALIGN */
 	uint32_t color;			/* 0x14 with CFONT_COLOR, else white */
 	float f18, f1c;			/* 0x18 1 */

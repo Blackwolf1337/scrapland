@@ -38,7 +38,7 @@ typedef struct CFXTexScroll {
 	CBmp *orig;			/* 0x08 */
 	uint32_t lastTime;		/* 0x0c */
 	int offset;			/* 0x10 the pixels scrolled */
-	int i14;			/* 0x14 */
+	int unused_14;			/* 0x14 */
 } CFXTexScroll;
 SD_SIZE(CFXTexScroll, 0x18);
 

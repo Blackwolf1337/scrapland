@@ -302,7 +302,7 @@ struct cAICharControl {
 	vec3_t *prevPoint;		/* 0x134 the one before it UpdatePath skipped */
 	float turnXNew;			/* 0x138 */
 	float turnYNew;			/* 0x13c */
-	byte b140;			/* 0x140 */
+	byte unused_140;			/* 0x140 */
 	byte goalLost;			/* 0x141 the goal was not reachable at the last UpdatePath */
 	byte pad_142[2];
 	cAICCSlot slotDirect;	/* 0x144 the direct follow checks the way (0.2 s) */

@@ -74,7 +74,7 @@ cAICharControl *__thiscall cAICharControl_ctor(void *mem, cEntity *ent, cAIChar 
 	self->waitTime = 0.0f;
 	self->waitTargetPos.x = self->waitTargetPos.y = self->waitTargetPos.z = 0.0f;
 	self->waitPos.x = self->waitPos.y = self->waitPos.z = 0.0f;
-	self->b140 = 1;
+	self->unused_140 = 1;
 	self->path.maxFree = GAME_GLOBAL(int, cAICharControl_ctor_3a9a2c, 0x3a9a2c);
 	self->stopped = 0;
 	self->orbitSide = 0;

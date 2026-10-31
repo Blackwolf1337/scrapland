@@ -103,7 +103,7 @@ typedef struct cAIVehicleControl {
 	byte pad_18a[2];
 	int pathState;			/* 0x18c */
 	byte lost;			/* 0x190 the path is blocked, a new one is searched */
-	byte b191;			/* 0x191 */
+	byte unused_191;			/* 0x191 */
 	byte strafeOn;			/* 0x192 */
 	byte strafing;			/* 0x193 */
 	float strafeElapsed;		/* 0x194 */
@@ -138,11 +138,11 @@ enum {
 
 typedef struct cAIVSWeap {
 	int kind;			/* 0x00 0, 1, 2 the upgraded vulcan */
-	int i04;			/* 0x04 */
-	int i08;			/* 0x08 */
+	int unused_04;			/* 0x04 */
+	int unused_08;			/* 0x08 */
 	int weapon;			/* 0x0c the weapon id, -1 none */
 	int upgrade;			/* 0x10 */
-	byte b14;			/* 0x14 */
+	byte unused_14;			/* 0x14 */
 	byte avail;			/* 0x15 the vehicle has slots for it */
 	byte pad_16[2];
 } cAIVSWeap;

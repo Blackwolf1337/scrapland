@@ -14,7 +14,7 @@ cEmbeddedFXHeadCrazyGambler *__fastcall cEmbeddedFXHeadCrazyGambler_ctor(cEmbedd
 	self->vftable = NULL;
 	self->vftable = VT_HEADCRAZYGAMBLER;
 	CGameParticles_ctor(&self->particles);
-	self->bc0 = 0;
+	self->unused_c0 = 0;
 	self->owner = NULL;
 	self->t = 0.0f;
 	self->nodeHead = -1;

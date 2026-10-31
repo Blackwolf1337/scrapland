@@ -85,14 +85,14 @@ SD_SIZE(BspQ3FileFace, 0x68);
 
 /* a face as the loader keeps it */
 typedef struct BspQ3Face {
-	int i00;			/* 0x00 */
+	int unused_00;			/* 0x00 */
 	int type;			/* 0x04 BSPQ3_POLYGON .. */
 	BspQ3Shader *shader;		/* 0x08 */
 	CMaterial *mat;			/* 0x0c polygons, of the shader texture as .tga */
 	int lmIndex;			/* 0x10 -1 for shaders without light map */
 	BspQ3Vert *verts;		/* 0x14 */
 	int nVerts;			/* 0x18 */
-	int i1c;			/* 0x1c */
+	int unused_1c;			/* 0x1c */
 	int nMeshVerts;			/* 0x20 */
 	int dist;			/* 0x24 polygon: the plane distance, truncated; patch: its index */
 	vec3_t normal;			/* 0x28 polygon */
@@ -108,7 +108,7 @@ typedef struct BspQ3FaceRef {
 } BspQ3FaceRef;
 
 typedef struct BspQ3LMap {
-	int i00;			/* 0x00 -1 */
+	int unused_00;			/* 0x00 -1 */
 	byte *data;			/* 0x04 RGB in the file buffer while loading, then NULL */
 	int width;			/* 0x08 */
 	int height;			/* 0x0c */
@@ -139,21 +139,21 @@ typedef struct CBspQ3 {
 	char *name;			/* 0x00 Cad */
 	byte *lump;			/* 0x04 the whole file while loading */
 	BspQ3Header *head;		/* 0x08 */
-	int i0c;			/* 0x0c */
+	int unused_0c;			/* 0x0c */
 	int nVerts;			/* 0x10 */
-	int i14[3];			/* 0x14 */
+	int unused_14[3];			/* 0x14 */
 	int nShaders;			/* 0x20 */
 	int nFaces;			/* 0x24 */
-	int i28[2];			/* 0x28 */
+	int unused_28[2];			/* 0x28 */
 	int nLMaps;			/* 0x30 */
-	int i34[3];			/* 0x34 */
+	int unused_34[3];			/* 0x34 */
 	BspQ3Vert *verts;		/* 0x40 new[] */
 	BspQ3Shader *shaders;		/* 0x44 new[] */
 	BspQ3LMap *lmaps;		/* 0x48 new[] */
 	int nPatches;			/* 0x4c */
 	BspQ3Face *faces;		/* 0x50 new[] */
 	BspQ3FaceRef *faceRefs;		/* 0x54 new[] */
-	int i58[2];			/* 0x58 */
+	int unused_58[2];			/* 0x58 */
 	CMeshD3D *MeshD3D;		/* 0x60 all polygons */
 	void *pMesh;			/* 0x64 ID3DXMesh, drawn instead with the L key held */
 	BspQ3Meshes *MeshList;	/* 0x68 */

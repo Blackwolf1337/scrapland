@@ -149,7 +149,7 @@ void __fastcall Table_DeleteLods(CTable *t) {
 
 CLod *__fastcall CLod_ctor(CLod *self) {
 	self->model = NULL;
-	self->f4 = 0;
+	self->unused_04 = 0;
 	return self;
 }
 
@@ -311,7 +311,7 @@ void __thiscall CModel_SetNumLods(CModel *self, int n) {
 void __thiscall CModel_SetLod(CModel *self, uint32_t i, CModel *model) {
 	CHECK(model);
 	Model_Lod(self, i)->model = model;
-	Model_Lod(self, i)->f4 = 0;
+	Model_Lod(self, i)->unused_04 = 0;
 	CHECK(model->scene->mainLOD);
 	const char *mainLOD = model->scene->mainLOD;
 	const char *name = Path_FileName(self->scene->name);

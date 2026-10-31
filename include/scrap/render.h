@@ -142,7 +142,7 @@ typedef struct ShaderTab {
 	uint32_t Index;			/* 0x00 its own index */
 	const char *Name;		/* 0x04 */
 	const char *File;		/* 0x08 the .psh, NULL without a pixel shader */
-	int i0c;			/* 0x0c */
+	int unused_0c;			/* 0x0c */
 	uint32_t flags;			/* 0x10 0x100, 0x101 */
 	shaderRender_t fnRender;	/* 0x14 */
 } ShaderTab;

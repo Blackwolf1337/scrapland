@@ -954,11 +954,11 @@ void __fastcall cAIVehicleShoot_InitWeapons(cAIVehicleShoot *self) {
 			avail = 0;
 		}
 		e->kind = kind;
-		e->i04 = 0;
-		e->i08 = 0;
+		e->unused_04 = 0;
+		e->unused_08 = 0;
 		e->weapon = w;
 		e->upgrade = upgrade;
-		e->b14 = 0;
+		e->unused_14 = 0;
 		e->avail = avail;
 	}
 }

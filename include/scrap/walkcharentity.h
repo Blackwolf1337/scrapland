@@ -38,7 +38,7 @@ typedef struct cWalkCharEntity {
 	byte walking;			/* 0x465 "isWalking" */
 	byte pad_466[2];
 	float displAng;			/* 0x468 "DisplAng": the walk direction against the view */
-	float f46c;			/* 0x46c */
+	float unused_46c;			/* 0x46c */
 	float lastMove;			/* 0x470 the move of the walk while it stops */
 	float lastDisplAng;		/* 0x474 */
 	float walkTime;			/* 0x478 the stop is kept that long */

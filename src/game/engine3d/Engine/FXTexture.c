@@ -153,7 +153,7 @@ CFXTexScroll *__thiscall CFXTexScroll_ctor(CFXTexScroll *self, const char *file)
 	self->base.vftable = CFXTEXSCROLL_VFTABLE;
 	self->lastTime = 0;
 	self->offset = 0;
-	self->i14 = 0;
+	self->unused_14 = 0;
 	FXTex_LoadBmps(&self->bmp, &self->orig, file);
 	CHECK(self->bmp->width == FXTEX_SIZE && self->bmp->height == FXTEX_SIZE);
 	return self;

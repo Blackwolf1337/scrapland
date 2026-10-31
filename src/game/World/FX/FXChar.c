@@ -189,7 +189,7 @@ static void FXConversion_RandomPoints(cObjElementFXCharacterConversion *self) {
 		self->phase[i] = (float)(FXC_Rnd() + 0.0);
 		FXConversion_NewPoint(self, i);
 	}
-	self->f178 = 0.0f;
+	self->unused_178 = 0.0f;
 }
 
 void __thiscall cObjElementFXCharacterConversion_Attach(cObjElementFXCharacterConversion *self, cDebris *d) {
