@@ -60,7 +60,7 @@ typedef CParticle CParticleStatic;
 
 typedef struct CParticleActive {
 	CParticle p;			/* 0x00 */
-	byte b34;			/* 0x34 */
+	byte manual;		/* 0x34 placed by CGameParticles_SetParticle: the system does not update it */
 	byte pad_35[3];
 	float t;			/* 0x38 the life, 0 to 1 */
 	float life;			/* 0x3c the life time */

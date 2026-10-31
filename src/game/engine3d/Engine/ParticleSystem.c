@@ -73,7 +73,7 @@ void __fastcall CParticleActive_Init(CParticle *self) {
 	a->vel = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	a->acc = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	a->sparks = 0;
-	a->b34 = 0;
+	a->manual = 0;
 	a->t = 0.0f;
 	a->life = 1.0f;
 	a->delay = 0.0f;
@@ -531,7 +531,7 @@ void __thiscall CParticleSystem_GenParticle(CParticleSystem *self, CParticle *p)
 		return;
 	}
 	CParticleActive *a = (CParticleActive *)p;
-	a->b34 = 0;
+	a->manual = 0;
 	a->t = 0.0f;
 	a->life = pa->lifeTime * g_ParticleSystemLifeScale;
 	a->delay = 0.0f;
@@ -944,7 +944,7 @@ void __thiscall CParticleSystem_Update(CParticleSystem *self, CRenderNode *r) {
 	if (self->numActive) {
 		for (int i = 0; i < self->params.nParticles; i++) {
 			CParticle *p = self->Particles[i];
-			if (p->active && PARTICLE_TYPE(p) == PARTICLE_ACTIVE && !((CParticleActive *)p)->b34) {
+			if (p->active && PARTICLE_TYPE(p) == PARTICLE_ACTIVE && !((CParticleActive *)p)->manual) {
 				PARTICLE_UPDATE(p, self, dt, self->MultiSpr);
 			}
 		}

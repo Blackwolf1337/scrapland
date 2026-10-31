@@ -121,7 +121,7 @@ static void CGameParticles_KillParticle(CGameParticles *self, CParticle *p) {
 	CParticleSystem_SetActive(self->ParticleSystem, p, 0);
 	if (PARTICLE_TYPE(p) == PARTICLE_ACTIVE) {
 		CParticleActive *a = (CParticleActive *)p;
-		a->b34 = 0;
+		a->manual = 0;
 		a->t = 1.0f;
 		a->life = 0.0f;
 	}
@@ -173,7 +173,7 @@ void __thiscall CGameParticles_SetParticle(CGameParticles *self, int i, float x,
 	p->rot = rot;
 	if (PARTICLE_TYPE(p) == PARTICLE_ACTIVE) {
 		CParticleActive *a = (CParticleActive *)p;
-		a->b34 = 1;
+		a->manual = 1;
 		a->t = 0.0f;
 	}
 	CMultiSprite *ms = self->ParticleSystem->MultiSpr;
