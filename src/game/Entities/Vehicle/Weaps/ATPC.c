@@ -98,7 +98,7 @@ void ATPC_Create(cAbstractFile *params) {
 		in.x = 0.0f;
 		in.y = 0.0f;
 		in.z = d2 * g_ATPCConvDist / d;
-		const vec3_t *r = Vec3_Rotate(&out, &in, Entity_GetAng(v, &rot));
+		const vec3_t *r = Vec3_Rotate(&out, &in, Obj_Vtbl(v)->GetAng(v, &rot));
 		origin.x = avg.x - r->x;
 		origin.y = avg.y - r->y;
 		origin.z = avg.z - r->z;
@@ -451,7 +451,7 @@ void ATPC_XplosionCall(cAbstractFile *params) {
 		n.x = dx + vel->x;
 		n.y = vel->y + dy;
 		n.z = vel->z + dz;
-		Entity_SetVel(victim, &n);
+		Obj_Vtbl(victim)->SetVel(victim, &n);
 	}
 	if (Entity_IsType(victim, TYEN_VEHICLE) && Vehicle_NetCtrl(victim)) {
 		Vehicle_NetCtrl(victim)->hit = 2;
@@ -488,7 +488,7 @@ void Cloud_Fire(cAbstractFile *params) {
 	}
 	Net_GetObjName(cloudName);
 	v->vftable->GetPos(v, &pos);
-	Entity_GetAng(v, &ang);
+	Obj_Vtbl(v)->GetAng(v, &ang);
 	cPy_Function_AddParamS(g_CreateCloudFunc, cloudName);
 	cPy_Function_AddParamF(g_CreateCloudFunc, pos.x);
 	cPy_Function_AddParamF(g_CreateCloudFunc, pos.y);

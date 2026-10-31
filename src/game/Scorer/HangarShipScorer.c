@@ -11,23 +11,6 @@
 
 static const char *const s_GridColors[4] = {"GridColorRed", "GridColorGreen", "GridColorBlue", "GridColorAlpha"};
 
-/* the vehicle slots used here: center (0x74), angles (0x80, 0x84), the model effect (0xb0), the render (0xb8) */
-static inline vec3_t *Hangar_GetCenter(cEntity *e, vec3_t *out) {
-	return ENT_VF(e, 0x74, vec3_t * (__thiscall *)(cEntity *, vec3_t *))(e, out);
-}
-
-static inline void Hangar_SetAng(cEntity *e, const vec3_t *ang) {
-	ENT_VF(e, 0x84, void(__thiscall *)(cEntity *, const vec3_t *))(e, ang);
-}
-
-static inline void Hangar_SetFX(cEntity *e, uint32_t fx) {
-	ENT_VF(e, 0xb0, void(__thiscall *)(cEntity *, uint32_t))(e, fx);
-}
-
-static inline void Hangar_Render(cEntity *e) {
-	ENT_VF(e, 0xb8, void(__thiscall *)(cEntity *))(e);
-}
-
 cHangarShipScorer *__fastcall cHangarShipScorer_ctor(cHangarShipScorer *self) {
 	cSpriteScorer_ctor(&self->base);
 	self->base.base.vftable = CHANGARSHIPSCORER_VFTABLE;
@@ -130,17 +113,17 @@ void __thiscall cHangarShipScorer_Draw(cHangarShipScorer *self, int player) {
 		self->cam->aspectScreen = it->w / it->h;
 		float dz = self->camDist * -1.0f;
 		float dxy = self->camDist * 0.0f;
-		const vec3_t *c = Hangar_GetCenter(ship, &tmp);
+		const vec3_t *c = Obj_Vtbl(ship)->GetViewPos(ship, &tmp);
 		float cy = c->y;
 		CGameCamera *cam = self->cam;
 		cam->pos.z = c->z + dz;
 		cam->pos.x = c->x + dxy;
 		cam->pos.y = cy + dxy;
 		self->cam->fov = (float)((double)self->camFov * 3.141592653589793 / 180.0);
-		c = Hangar_GetCenter(ship, &tmp);
+		c = Obj_Vtbl(ship)->GetViewPos(ship, &tmp);
 		self->cam->target = *c;
 		Camera_SetCurrent(self->cam);
-		Entity_GetAng(ship, &ang);
+		Obj_Vtbl(ship)->GetAng(ship, &ang);
 		uint32_t fx = CGameModel_GetEffect(&Veh(ship)->wl.obj.model, NULL);
 		byte reset = self->reset;
 		self->reset = 0;
@@ -150,22 +133,22 @@ void __thiscall cHangarShipScorer_Draw(cHangarShipScorer *self, int player) {
 			if (r >= 6.2831855f) {
 				self->rot.y = r - 6.2831855f;
 			}
-			Hangar_SetAng(ship, &self->rot);
+			Obj_Vtbl(ship)->SetAng(ship, &self->rot);
 		} else {
 			self->rot.x = 0.0f;
 			self->rot.y = 0.0f;
 			self->rot.z = 0.0f;
-			Hangar_SetAng(ship, &self->rot);
+			Obj_Vtbl(ship)->SetAng(ship, &self->rot);
 		}
 		if (self->grid) {
 			self->grid->color = self->gridColor;
 			CPsaImage_DrawFrame(self->grid, self->gridIndex, it->x, it->y);
 		}
-		Hangar_SetFX(ship, 4);
+		Obj_Vtbl(ship)->SetEffect(ship, 4);
 		cVehicleEntity_UpdatePilotPos(Veh(ship), 1);
-		Hangar_Render(ship);
-		Hangar_SetAng(ship, &ang);
-		Hangar_SetFX(ship, fx);
+		Obj_Vtbl(ship)->Render(ship);
+		Obj_Vtbl(ship)->SetAng(ship, &ang);
+		Obj_Vtbl(ship)->SetEffect(ship, fx);
 		Camera_SetCurrent(cur);
 	}
 	Eng_ResetViewRect();

@@ -40,11 +40,6 @@ void Devastator_Start(cEntity *v) {
 	}
 }
 
-/* entity vtable slot 0x78: the angles of the object (the rotation of Vec3_Rotate) */
-static inline vec3_t *Dev_GetRot(cEntity *e, vec3_t *out) {
-	return ENT_VF(e, 0x78, vec3_t * (__thiscall *)(cEntity *, vec3_t *))(e, out);
-}
-
 /* the sizes and the life of the explosion particles: rand01 * a + b as a float */
 static inline float Dev_Rand(double a, double b) {
 	return (float)(Weap_Rand01() * a + b);
@@ -99,7 +94,7 @@ void Devastator_Create(cAbstractFile *params) {
 			cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_DevastatorBulletFile);
 			cDebris *bullet = cDebrisSys_NewElement(sys);
 			bullet->drop[0] = p;
-			bullet->drop[1] = *Dev_GetRot(v, &rot);
+			bullet->drop[1] = *Obj_Vtbl(v)->GetViewAng(v, &rot);
 			float rz = Dev_Rand(14.0, -7.0);
 			float ry = Dev_Rand(2000.0, 0.0);
 			float rx = Dev_Rand(200.0, -100.0);
@@ -191,12 +186,12 @@ void Devastator_Create(cAbstractFile *params) {
 		CGameParticles *pt = &fx->particles;
 		/* the floor normal at the hit, else the up of the shooter */
 		in = (vec3_t){ 0.0f, 0.0f, 25.0f };
-		const vec3_t *ro = Vec3_Rotate(&r, &in, Dev_GetRot(v, &rot));
+		const vec3_t *ro = Vec3_Rotate(&r, &in, Obj_Vtbl(v)->GetViewAng(v, &rot));
 		a.x = C->x + ro->x;
 		a.z = ro->z + C->z;
 		a.y = ro->y + C->y;
 		in = (vec3_t){ 0.0f, 0.0f, -25.0f };
-		ro = Vec3_Rotate(&r, &in, Dev_GetRot(v, &rot));
+		ro = Vec3_Rotate(&r, &in, Obj_Vtbl(v)->GetViewAng(v, &rot));
 		b.z = ro->z + C->z;
 		b.x = ro->x + C->x;
 		b.y = ro->y + C->y;
@@ -204,7 +199,7 @@ void Devastator_Create(cAbstractFile *params) {
 			n = tri.plane.n;
 		} else {
 			in = (vec3_t){ 0.0f, 0.0f, 1.0f };
-			n = *Vec3_Rotate(&r, &in, Dev_GetRot(v, &rot));
+			n = *Vec3_Rotate(&r, &in, Obj_Vtbl(v)->GetViewAng(v, &rot));
 		}
 		int up = cWeaponManager_GetUpgrade(wm, g_DevastatorIDWeap);
 		float t = 1.0f - camDist / g_FXDevastatorDistance;
@@ -595,7 +590,7 @@ void Devastator_XplosionCall(cAbstractFile *params) {
 		n.x = x + vel->x;
 		n.y = vel->y + y;
 		n.z = vel->z + z;
-		Entity_SetVel(victim, &n);
+		Obj_Vtbl(victim)->SetVel(victim, &n);
 	}
 	if (Entity_IsType(victim, TYEN_VEHICLE) && Vehicle_NetCtrl(victim)) {
 		Vehicle_NetCtrl(victim)->hit = 2;
@@ -615,7 +610,7 @@ void EMI_Fire(cAbstractFile *params) {
 	cWeaponManager *wm = Vehicle_WeapMgr(v);
 	float fammo = cTargetLock_GetAmmo(wm, g_EMIIDAmmo);
 	int ammo = (int)fammo;
-	if (Vehicle_IsEMIed(v) || ammo < 1) {
+	if (WithLife_Vtbl(v)->IsEMIed(v) || ammo < 1) {
 		return;
 	}
 	Vehicle_WeapMgr(v)->cmStamp = -g_EMIRechargeTime;
@@ -633,7 +628,7 @@ void EMI_Fire(cAbstractFile *params) {
 	}
 	Net_GetObjName(emiName);
 	v->vftable->GetPos(v, &pos);
-	Entity_GetAng(v, &ang);
+	Obj_Vtbl(v)->GetAng(v, &ang);
 	cPy_Function_AddParamS(g_CreateEMIFunc, emiName);
 	cPy_Function_AddParamF(g_CreateEMIFunc, pos.x);
 	cPy_Function_AddParamF(g_CreateEMIFunc, pos.y);

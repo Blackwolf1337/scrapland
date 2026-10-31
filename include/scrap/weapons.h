@@ -52,18 +52,6 @@ typedef cTargetLock cWeaponManager;
 #define Vehicle_Effects(e) ((void *)&Veh(e)->effects)	/* Entities/Vehicle/VehicleEffects.cpp */
 #define Missile_OnHit(e) (&Missile(e)->onHit)
 
-/* the entity vtable slots of the weapons that entity.h and world.h do not name */
-#define ENT_VF(e, off, type) ((type)(((void *const *)(e)->vftable)[(off) / 4]))
-static inline vec3_t *Entity_GetAng(cEntity *e, vec3_t *out) {
-	return ENT_VF(e, 0x80, vec3_t * (__thiscall *)(cEntity *, vec3_t *))(e, out);
-}
-static inline void Entity_SetVel(cEntity *e, const vec3_t *v) {
-	ENT_VF(e, 0x8c, void(__thiscall *)(cEntity *, const vec3_t *))(e, v);
-}
-static inline byte Vehicle_IsEMIed(cEntity *e) {
-	return ENT_VF(e, 0xdc, byte(__thiscall *)(cEntity *))(e);
-}
-
 
 /* the debris cloud on a vehicle for time (rva 0x10a150) */
 void __thiscall cVehicleEntity_SetCloud(cEntity *self, float time, byte on);

@@ -217,7 +217,7 @@ void __thiscall cCannonScorer_Draw(cCannonScorer *self, int player) {
 		}
 	}
 	cCannonScorer_DrawCenter(self, player, ship);
-	if (!Vehicle_IsEMIed(ship)) {
+	if (!WithLife_Vtbl(ship)->IsEMIed(ship)) {
 		cPy_Function *f = &TABLE_AT(g_pWorld->weapons, Vehicle_WeapMgr(ship)->curWeap)->setFx;
 		cPy_Function_AddParamS(f, ship->name);
 		cPy_Function_AddParamI(f, player);

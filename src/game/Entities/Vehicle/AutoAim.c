@@ -163,7 +163,7 @@ void __thiscall cAutoAim_Update(cAutoAim *self, cEntity *owner, float dt) {
 	vec3_t cp, ca, pos, d, tmp;
 	float dot, found;
 
-	if (!self->on || Vehicle_IsEMIed(owner)) {
+	if (!self->on || WithLife_Vtbl(owner)->IsEMIed(owner)) {
 		self->prevAx = self->ax;
 		self->prevAy = self->ay;
 		self->interval = dt;

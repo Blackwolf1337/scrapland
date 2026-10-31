@@ -19,7 +19,6 @@
 /* the turn of the camera of the radar (FCam) */
 #define CamEntity_AngY(e) (((cCamControl *)(e))->cam.rot.y)
 /* the center of an entity (slot 0x74) */
-#define Entity_GetCenter(e, out) ENT_VF(e, 0x74, vec3_t * (__thiscall *)(cEntity *, vec3_t *))(e, out)
 
 static CPsaImage *Radar_White(uint32_t flags) {
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
@@ -368,7 +367,7 @@ void __thiscall cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntit
 	if (car) {
 		g_RadarScale = self->map2dScaleFactor * ((cVehicleEntity *)target)->smoothSpeed + scale;
 	}
-	Entity_GetCenter(target, &c);
+	Obj_Vtbl(target)->GetViewPos(target, &c);
 	if (self->menuMap) {
 		g_RadarAngle = 0.0f;
 	} else {
@@ -879,7 +878,7 @@ void __thiscall cRadarScorer_Draw(cRadarScorer *self, int player) {
 		cRadarScorer_DrawRadar(self, target, cam);
 		return;
 	}
-	Entity_GetCenter(target, &c);
+	Obj_Vtbl(target)->GetViewPos(target, &c);
 	self->halfW = 200.0f;
 	self->halfW2 = 200.0f;
 	self->halfH = 100.0f;

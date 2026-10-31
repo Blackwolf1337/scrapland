@@ -304,14 +304,6 @@ static void Limit_Rings(cFXElementsABFakeLimit *self, float dt) {
 	}
 }
 
-/* cEntity slots 0xb0 and 0xb4: the render effect of the model and its parameter */
-static inline void Entity_SetEffect(cEntity *e, int fx) {
-	((void(__thiscall *)(cEntity *, int))((void **)e->vftable)[0xb0 / 4])(e, fx);
-}
-
-static inline void Entity_SetEffectParam(cEntity *e, int i, float v) {
-	((void(__thiscall *)(cEntity *, int, float))((void **)e->vftable)[0xb4 / 4])(e, i, v);
-}
 
 /* the follow camera of a car (of a player) and its shaking */
 #define Car_Data(e) ((cFollowCamEntity *)((cObjEntity *)(e))->cam)
@@ -506,11 +498,11 @@ static void Limit_Car(cFXElementsABFakeLimit *self, cEntity *e, float dt) {
 	uint32_t fx = CGameModel_GetEffect(Entity_FxModel(e), NULL);
 	if (nearF > 0.0f) {
 		if (fx == 0 || fx == 6) {
-			Entity_SetEffect(e, 6);
-			Entity_SetEffectParam(e, 0, nearF * nearF * (2.0f - nearF));
+			Obj_Vtbl(e)->SetEffect(e, 6);
+			Obj_Vtbl(e)->SetEffectParam(e, 0, nearF * nearF * (2.0f - nearF));
 		}
 	} else if (fx == 6) {
-		Entity_SetEffect(e, 0);
+		Obj_Vtbl(e)->SetEffect(e, 0);
 	}
 	if (nearF > 0.0f) {
 		CGameParticles_SetAlpha(&self->nearParts,

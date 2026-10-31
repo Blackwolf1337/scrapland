@@ -11,7 +11,6 @@
 #include "scrap/world.h"
 
 /* the entity callback of the sphere test: other touched self at point */
-typedef void(__thiscall *touchfn_t)(cEntity *self, cEntity *other, const vec3_t *point, const vec3_t *dir);
 
 cPrimitive *__fastcall cPrimitive_ctor(cPrimitive *self) {
 	self->on = 0;
@@ -125,7 +124,7 @@ byte __thiscall cPrimitive_SphereHit(cPrimitive *self, cEntity *other, const vec
 		q.x = p->x + ox;
 		q.y = p->y + oy;
 		q.z = p->z + oz;
-		((touchfn_t)((void *const *)other->vftable)[0x2c / 4])(other, self->owner, &q, &n);
+		other->vftable->Touch(other, self->owner, &q, &n);
 	}
 	return 1;
 }

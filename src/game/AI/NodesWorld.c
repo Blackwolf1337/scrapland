@@ -12,6 +12,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/fxmisc.h"
 #include "scrap/nodesworldsup.h"
+#include "scrap/objentity.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/scrapfont.h"
@@ -1800,14 +1801,13 @@ byte __thiscall CNodesWorld_AnalyzeMap(CNodesWorld *self, const vec3_t *init, co
 /* not called in the exe: debug tools of the generation */
 
 void __thiscall CNodesWorld_DrawLinkTest(CNodesWorld *self, const vec3_t *a, const vec3_t *b) {
-	typedef float(__thiscall * getRadius_t)(cEntity * e);
 	cEntity *cam = World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
 	cEntity *t = cCamEntity_GetTarget(cam);
 	vec3_t neg = { -self->halfNode.x, -self->halfNode.y, -self->halfNode.z };
 	uint32_t color = 0xff00;
 
 	if (Collision_Box(b, &neg, &self->halfNode) ||
-		Engine_TestSphere(a, b, ((getRadius_t)((void *const *)t->vftable)[0xa0 / 4])(t), NULL, NULL)) {
+		Engine_TestSphere(a, b, Obj_Vtbl(t)->GetRadius(t), NULL, NULL)) {
 		self->i358++;
 		color = 0xff0000;
 	}

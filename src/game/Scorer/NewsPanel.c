@@ -17,9 +17,7 @@
 /* the three watched entity lists of the world */
 #define World_WatchedList(off) (*(cEntityList **)((byte *)g_pWorld + (off)))
 /* the model of an entity with life (slot 0x98) */
-#define Entity_GetModel(e) ENT_VF(e, 0x98, CGameModel * (__thiscall *)(cEntity *))(e)
 /* its render (slot 0xb8) */
-#define Entity_RenderNow(e) ENT_VF(e, 0xb8, void(__thiscall *)(cEntity *))(e)
 
 cNewsPanel *__fastcall cNewsPanel_ctor(cNewsPanel *self) {
 	cString_ctor(&self->head);
@@ -130,14 +128,14 @@ void __fastcall cNewsPanel_Update(cNewsPanel *self) {
 void __thiscall cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e) {
 	vec3_t tmp;
 
-	if (!e || !e->vftable->IsType(e, TYEN_WITH_LIFE) || !Entity_GetModel(e)) {
+	if (!e || !e->vftable->IsType(e, TYEN_WITH_LIFE) || !Obj_Vtbl(e)->GetModel(e)) {
 		return;
 	}
 	g_NewsPanelAspect = 1.33333004f;
 	CGameCamera *cur = Camera_GetCurrent();
 	CGameCamera_Copy(self->cam, cur);
 	CGameCamera_SetLookAt(self->cam, 1);
-	const vec3_t *p = CGameModel_GetPos(Entity_GetModel(e), &tmp);
+	const vec3_t *p = CGameModel_GetPos(Obj_Vtbl(e)->GetModel(e), &tmp);
 	CGameCamera *cam = self->cam;
 	cam->target = *p;
 	float dy = self->camPos.y - cam->target.y;
@@ -161,7 +159,7 @@ void __thiscall cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e) {
 	cam->fov = NEWS_FOV;
 	self->cam->aspectScreen = g_NewsPanelAspect;
 	Camera_SetCurrent(self->cam);
-	Entity_RenderNow(e);
+	Obj_Vtbl(e)->Render(e);
 	Camera_SetCurrent(cur);
 }
 
@@ -209,8 +207,8 @@ void __thiscall cNewsPanel_DrawNews(cNewsPanel *self, float dt) {
 		} else {
 			g_NewsPanelAspect = 1.33333337f;
 			cEntity *e = World_FindEntity(*g_NewsHead);
-			if (e && e->vftable->IsType(e, TYEN_WITH_LIFE) && Entity_GetModel(e)) {
-				self->model = Entity_GetModel(e);
+			if (e && e->vftable->IsType(e, TYEN_WITH_LIFE) && Obj_Vtbl(e)->GetModel(e)) {
+				self->model = Obj_Vtbl(e)->GetModel(e);
 			}
 		}
 	}
