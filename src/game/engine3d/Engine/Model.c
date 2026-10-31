@@ -135,8 +135,8 @@ CModel *__fastcall CModel_ctor(CModel *self) {
 	self->cbArg2 = NULL;
 	self->list = NULL;
 	self->lodDist = 1.0f;
-	self->f10c = 0;
-	self->f110 = 0;
+	self->renderEffect = 0;
+	self->effectParam = 0;
 	self->sortZBias = 0.0f;
 	self->sortZMult = 1.0f;
 	self->stencilDist = STENCIL_DIST;
@@ -980,8 +980,8 @@ found:
 	m->dynLight = self->dynLight;
 	m->alwaysVisible = self->alwaysVisible;
 	m->visible = self->visible;
-	m->f10c = self->f10c;
-	m->f110 = self->f110;
+	m->renderEffect = self->renderEffect;
+	m->effectParam = self->effectParam;
 	/* the first two animation slots */
 	memcpy(m->slots.p, self->slots.p, 2 * sizeof(CAnimSlot));
 	CModel_Render(m);
@@ -1133,7 +1133,7 @@ void __fastcall CModel_Render(CModel *self) {
 		}
 	}
 	CScene_Update(self->scene, &ctx);
-	if (self->f10c) {
+	if (self->renderEffect) {
 		ModelFX_Render(self, &ctx);
 	} else {
 		CScene_Render(self->scene, &ctx);

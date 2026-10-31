@@ -80,8 +80,8 @@ typedef struct CModel {
 	struct CModelList *list;	/* 0x0fc its entry in the model list */
 	CTable lods;			/* 0x100 CLod[] */
 	float lodDist;			/* 0x108 */
-	int f10c;			/* 0x10c */
-	int f110;			/* 0x110 */
+	int renderEffect;		/* 0x10c MODEL_EFFECT_*, ModelFX_Render */
+	int effectParam;		/* 0x110 the float parameter of the effect (0..1) as bits */
 	float sortZBias;		/* 0x114 */
 	float sortZMult;		/* 0x118 */
 	float stencilDist;		/* 0x11c */
@@ -270,8 +270,8 @@ CModel *Create_Model2(const char *name, const char *name2, uint32_t flags);
 CModel *Create_Model4(const char *name, const char *name2, float threshold, uint32_t flags);
 int ModelList_CompareKey(const void *a, const void *b);	/* qsort, larger sortKey first */
 
-/* Engine/ModelFX.cpp (src/game/engine3d/Engine/ModelFX.c): the render effects of a model, f10c the effect (1..8,
- * MODEL_EFFECT_LAST), the float in f110 its parameter. Drawn in the passes 0, 3 and 13 as several draws of the scene
+/* Engine/ModelFX.cpp (src/game/engine3d/Engine/ModelFX.c): the render effects of a model, renderEffect the effect (1..8,
+ * MODEL_EFFECT_LAST), the float in effectParam its parameter. Drawn in the passes 0, 3 and 13 as several draws of the scene
  * with g_MatFX1 or g_MatForced; 6..8 need the pixel shaders. */
 struct CGraphic2D;
 #define g_FXMat (GAME_GLOBAL(CMaterial, g_FXMat, 0x4e1c68))	/* the colors and blends of the effects */

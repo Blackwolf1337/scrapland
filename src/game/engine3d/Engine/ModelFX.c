@@ -17,7 +17,7 @@
 /* the parameter of the effect, 0..1 */
 static float ModelFX_Param(const CModel *m) {
 	float f;
-	memcpy(&f, &m->f110, sizeof(f));
+	memcpy(&f, &m->effectParam, sizeof(f));
 	return f;
 }
 
@@ -289,14 +289,14 @@ void ModelFX_Noise(CModel *m, NodeAnimCtx *ctx) {
 }
 
 void __thiscall ModelFX_Render(CModel *self, NodeAnimCtx *ctx) {
-	if (!g_PSOn && self->f10c >= 6 && self->f10c <= 8) {
+	if (!g_PSOn && self->renderEffect >= 6 && self->renderEffect <= 8) {
 		/* the shader effects need the pixel shaders */
 		Scene_Draw(self, ctx);
 		return;
 	}
 	int pass = g_RenderPass;
 	if (pass != 0 && pass != 3 && pass != 0xd) {
-		if (self->f10c == 6 || self->f10c == 7) {
+		if (self->renderEffect == 6 || self->renderEffect == 7) {
 			Scene_Draw(self, ctx);
 		}
 		return;
@@ -309,7 +309,7 @@ void __thiscall ModelFX_Render(CModel *self, NodeAnimCtx *ctx) {
 	g_RenderFlagNeg = 0;
 	g_RenderClassMask = 0xa70000e0;
 	g_RenderPass = 0;
-	switch (self->f10c) {
+	switch (self->renderEffect) {
 	case 1:
 		ModelFX_Static(self, ctx);
 		break;

@@ -297,7 +297,7 @@ void __thiscall CGameModel_SetSortZ(CGameModel *self, float bias, float mult) {
 
 uint32_t __thiscall CGameModel_GetEffect(const CGameModel *self, uint32_t *out) {
 	GM_CHECK(self);
-	uint32_t fx = (uint32_t)self->Model->f10c;
+	uint32_t fx = (uint32_t)self->Model->renderEffect;
 	if (fx > MODEL_EFFECT_LAST) {
 		CheckFailed("fx <= MODEL_EFFECT_LAST", __FILE__, __TIMESTAMP__, __LINE__);
 	}
@@ -312,8 +312,8 @@ void __thiscall CGameModel_SetEffect(CGameModel *self, uint32_t fx) {
 	if (fx > MODEL_EFFECT_LAST) {
 		CheckFailed("(dword)RenderEffect <= MODEL_EFFECT_LAST", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	if ((uint32_t)self->Model->f10c != fx) {
-		self->Model->f10c = (int)fx;
+	if ((uint32_t)self->Model->renderEffect != fx) {
+		self->Model->renderEffect = (int)fx;
 	}
 }
 
@@ -324,7 +324,7 @@ void __thiscall CGameModel_GetEffectParam(const CGameModel *self, int i, uint32_
 	if (i) {
 		CheckFailed("(dword)Param < MAX_RENDERFX_PARAM", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	*out = (uint32_t)(&self->Model->f110)[i];
+	*out = (uint32_t)(&self->Model->effectParam)[i];
 }
 
 void __thiscall CGameModel_SetEffectParam(CGameModel *self, int i, uint32_t v) {
@@ -332,7 +332,7 @@ void __thiscall CGameModel_SetEffectParam(CGameModel *self, int i, uint32_t v) {
 	if (i) {
 		CheckFailed("(dword)Param < MAX_RENDERFX_PARAM", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	(&self->Model->f110)[i] = (int)v;
+	(&self->Model->effectParam)[i] = (int)v;
 }
 
 /* the render state an immediate draw clears */
