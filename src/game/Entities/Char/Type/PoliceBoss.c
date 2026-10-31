@@ -42,7 +42,7 @@ void ChType_FXPoliceBossBrup(cAbstractFile *params) {
 	for (; n > 0; n--) {
 		cDebrisSys *s = sys[crt_rand() % PB_SYSTEMS];
 		cDebris *d = cDebrisSys_NewElement(s);
-		Debris_Life(d) = FxElem_Rand(0.3500000238418579, 0.75) * scale;
+		d->life = FxElem_Rand(0.3500000238418579, 0.75) * scale;
 		cDebrisSys_Drop(s, d);
 		/* the direction: down along the view turned by up to DirRand half turns */
 		float f = FxElem_Rand(0.05000000074505806, -0.02500000037252903) + g_PoliceBossBrupDirRand;
@@ -123,8 +123,8 @@ void ChType_PoliceBossBrupBounce(cDebris *d, const byte *hit) {
 	d->drop[1].y = -d->drop[1].y;
 	d->drop[1].z = -d->drop[1].z;
 	Vec3_Reflect((const vec3_t *)(hit + 0x24), vel, vel);
-	if (Debris_Life(d) > 0.25f && 10000.0f > vel->x * vel->x + vel->y * vel->y + vel->z * vel->z) {
-		Debris_Life(d) = 0.25f;
+	if (d->life > 0.25f && 10000.0f > vel->x * vel->x + vel->y * vel->y + vel->z * vel->z) {
+		d->life = 0.25f;
 	}
 	if (!(0.0f >= g_PoliceBossBrupBounceSoundVol)) {
 		int r = crt_rand();

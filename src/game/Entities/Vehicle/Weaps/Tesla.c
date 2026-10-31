@@ -30,7 +30,7 @@ void Tesla_CreateNative(cAbstractFile *f) {
 		if (n > 0 && !shooting) {
 			cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_TeslaShootFile);
 			cDebris *d = cDebrisSys_NewElement(sys);
-			d->speed = 0.0f;
+			d->life = 0.0f;
 			cDebrisSys_Drop(sys, d);
 			cObjElementFXTesla *fx = Debris_Element(d);
 			if (fx) {

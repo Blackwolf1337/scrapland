@@ -1547,7 +1547,7 @@ PyObject *Scrap_DropDebris(PyObject *self, PyObject *args) {
 	for (int i = 0; i < 4; i++) {
 		deb->drop[i] = g_DebrisDrop[i];
 	}
-	deb->speed = (float)speed;
+	deb->life = (float)speed;
 	cDebrisSys_Drop(sys, deb);
 	return ReturnNone();
 }

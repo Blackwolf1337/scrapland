@@ -1774,7 +1774,7 @@ static void EFX_MercSmoke(cEmbeddedFXMercenary *self, CGameModel *model) {
 	cWorld *w = g_pWorld;
 	vec3_t cam = w->camPos[w->curCam];
 	CGameModel_SetPos(Debris_Mod(d), &cam);
-	d->speed = 1.0f;
+	d->life = 1.0f;
 	if (!cDebrisSys_IsIdle(sys, d)) {
 		cDebrisSys_Drop(sys, d);
 	}

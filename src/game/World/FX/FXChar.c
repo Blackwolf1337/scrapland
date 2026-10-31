@@ -423,7 +423,7 @@ byte __thiscall cObjElementFXMaintenanceWork_Alive(cObjElementFXMaintenanceWork 
 
 byte __thiscall cObjElementFXSputnik_Alive(cObjElementFXSputnik *self, cDebris *d, cDebrisSys *sys) {
 	if (self->duration == 0.0f) {
-		Debris_Life(d) = 1.0f;
+		d->life = 1.0f;
 	}
 	return cDebris_Update(d, sys);
 }
@@ -442,7 +442,7 @@ void __thiscall cObjElementFXMoneyTransfer_Update(cObjElementFXMoneyTransfer *se
 	if (!self->to || !self->to->active) {
 		return;
 	}
-	if (0.65f > Debris_Life(d)) {
+	if (0.65f > d->life) {
 		return;
 	}
 	Obj_Vtbl(self->from)->GetViewPos(self->from, &a);
@@ -783,7 +783,7 @@ void __thiscall cObjElementFXMaintenanceWork_Update(cObjElementFXMaintenanceWork
 	sp->sizeLife = 0.15f;
 	sp->spriteIni = 5;
 	sp->spriteEnd = 5;
-	sp->lifeTime = Float_MinSS(Debris_Life(d) - dt, lt);
+	sp->lifeTime = Float_MinSS(d->life - dt, lt);
 	CGameParticles_Apply(sp);
 	CGameParticles_EmitN(sp, 1, 1);
 	CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXMaintenanceWork_Update_430520, 0, 0x430520));
@@ -794,7 +794,7 @@ void __thiscall cObjElementFXMaintenanceWork_Update(cObjElementFXMaintenanceWork
 	sp->sizeLife = 0.15f;
 	sp->spriteIni = 1;
 	sp->spriteEnd = 1;
-	sp->lifeTime = Float_MinSS(Debris_Life(d) - dt, lt);
+	sp->lifeTime = Float_MinSS(d->life - dt, lt);
 	CGameParticles_Apply(sp);
 	CGameParticles_EmitN(sp, 1, 1);
 	int sparks = (int)FXC_Rand(5.0, 3.0);
@@ -826,7 +826,7 @@ void __thiscall cObjElementFXMaintenanceWork_Update(cObjElementFXMaintenanceWork
 		sp->initAccMin.z = a * sp->initVelMin.z + 0.0f;
 		sp->initAccMax = sp->initAccMin;
 		float e = FXC_Rand(0.029999999329447746, 0.0);
-		float rem = Debris_Life(d) - dt;
+		float rem = d->life - dt;
 		lt = Float_MinSS(rem, FXC_Rand(0.09999999403953552, 0.30000001192092896));
 		CGameParticles_SetSparksOn(sp, 1);
 		sp->lifeTime = lt;
@@ -1499,7 +1499,7 @@ static void FXConversor_Glow(CGameParticles *sp, cDebris *d, float x, float y, f
 	sp->rotIni = sp->rotEnd = FXC_Rand(6.2831854820251465, 0.0);
 	float lt = FXC_Rand(0.019999995827674866, 0.18000000715255737);
 	sp->sizeLife = 1.0f;
-	sp->lifeTime = Float_MinSS(Debris_Life(d) * 0.9f, lt);
+	sp->lifeTime = Float_MinSS(d->life * 0.9f, lt);
 	sp->spriteIni = 9;
 	sp->spriteEnd = 9;
 	sp->sizeIni = sp->sizeEnd = FXC_Rand(0.099999904632568359, 1.2000000476837158) * r;
@@ -1514,7 +1514,7 @@ static void FXConversor_Glow(CGameParticles *sp, cDebris *d, float x, float y, f
 	sp->rotIni = sp->rotEnd = FXC_Rand(6.2831854820251465, 0.0);
 	lt = FXC_Rand(0.049999982118606567, 0.30000001192092896);
 	sp->sizeLife = 1.0f;
-	sp->lifeTime = Float_MinSS(Debris_Life(d) * 0.9f, lt);
+	sp->lifeTime = Float_MinSS(d->life * 0.9f, lt);
 	sp->spriteIni = 0x2b;
 	sp->spriteEnd = 0x2b;
 	sp->sizeIni = sp->sizeEnd = FXC_Rand(0.10000002384185791, 1.0) * r;
@@ -2109,7 +2109,7 @@ void __thiscall cObjElementFXMaintenanceWork_Start(cObjElementFXMaintenanceWork 
 	vec3_t laser, pos;
 	cSoundDesc desc;
 
-	self->life = Debris_Life(d);
+	self->life = d->life;
 	CGameModel *m = Obj_Vtbl(self->maintenance)->GetModel(self->maintenance);
 	CHECK(CGameModel_IsLoaded(m));
 	CGameModel_Vertices(m, &laser, NULL, NULL, 1, 0, NULL, (uint32_t)self->nodeLaser, NULL);
@@ -2146,7 +2146,7 @@ void FX_CharacterConversion(cEntity *attacker, cEntity *attacked, float time) {
 
 	t1 = FXC_CamPos();
 	CGameModel_SetPos(Debris_Model(d), &t1);
-	Debris_Life(d) = time + 0.25f;
+	d->life = time + 0.25f;
 	cDebrisSys_Drop(sys, d);
 	cObjElementFXCharacterConversion *el = Debris_Element(d);
 	if (el) {
@@ -2183,7 +2183,7 @@ void FX_CharacterConversor(cEntity *character, cEntity *conversor, int phase, fl
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXCharacterConversorFile);
 	cDebris *d = cDebrisSys_NewElement(sys);
 	CGameModel_SetPos(Debris_Model(d), conversor->vftable->GetPos(conversor, &tmp));
-	Debris_Life(d) = a;
+	d->life = a;
 	cDebrisSys_Drop(sys, d);
 	cObjElementFXCharacterConversor *el = Debris_Element(d);
 	if (!el) {
@@ -2233,7 +2233,7 @@ void FX_Character(cEntity *e, const char *name) {
 		cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXCharacterDeathFile);
 		sys->radiusSq = 0.0f;
 		cDebris *d = cDebrisSys_NewElement(sys);
-		Debris_Life(d) = 2.0f;
+		d->life = 2.0f;
 		cDebrisSys_Drop(sys, d);
 		cObjElementFXCharacterDeath *el = Debris_Element(d);
 		if (el) {
@@ -2304,7 +2304,7 @@ static cDebris *FXC_IdleDebris(cDebrisSys *sys, const vec3_t *pos, float life) {
 	cDebris *d = cDebrisSys_GetIdle(sys);
 
 	CGameModel_SetPos(Debris_Model(d), pos);
-	Debris_Life(d) = life;
+	d->life = life;
 	if (!cDebrisSys_IsIdle(sys, d)) {
 		cDebrisSys_Drop(sys, d);
 	}
@@ -2462,7 +2462,7 @@ void FX_CharacterTeleport(cAbstractFile *params) {
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXCharacterTeleportFile);
 	cDebris *d = cDebrisSys_GetIdle(sys);
 	CGameModel_SetPos(Debris_Model(d), tp->vftable->GetPos(tp, &tmp));
-	Debris_Life(d) = 1.1f;
+	d->life = 1.1f;
 	if (!cDebrisSys_IsIdle(sys, d)) {
 		cDebrisSys_Drop(sys, d);
 	} else if (Debris_Element(d)) {

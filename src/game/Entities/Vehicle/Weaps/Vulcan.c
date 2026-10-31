@@ -58,7 +58,7 @@ static void Vulcan_Shells(cEntity *v) {
 			d->drop[3].x = Vul_Rand(14.0, -7.0);
 			d->drop[3].y = ay;
 			d->drop[3].z = az;
-			d->speed = 0.4f;
+			d->life = 0.4f;
 			cDebrisSys_Drop(sys, d);
 		}
 		cVehicleEffects_Shoot(Veh_Effects(v), g_VulcanIDWeap, i);
@@ -339,7 +339,7 @@ void Vulcan_CreateNative(cAbstractFile *f) {
 	wo = g_pWorld;
 	cam = wo->camPos[wo->curCam];
 	CGameModel_SetPos(Debris_Model(d), &cam);
-	d->speed = 0.6f;
+	d->life = 0.6f;
 	if (!cDebrisSys_IsIdle(sys, d)) {
 		cDebrisSys_Drop(sys, d);
 	}

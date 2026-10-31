@@ -80,7 +80,7 @@ void *FX_DropNew(const char *file, float life) {
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, file);
 	cDebris *d = cDebrisSys_NewElement(sys);
 
-	Debris_Life(d) = life;
+	d->life = life;
 	cDebrisSys_Drop(sys, d);
 	return Debris_Element(d);
 }
@@ -148,7 +148,7 @@ void FX_ItemBlink(cEntity *e) {
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXItemBlinkFile);
 	cDebris *d = cDebrisSys_GetIdle(sys);
 	CGameModel_SetSortZ(Debris_Model(d), -0.05f, 0.0f);
-	Debris_Life(d) = 1.0f;
+	d->life = 1.0f;
 	if (!cDebrisSys_IsIdle(sys, d)) {
 		cDebrisSys_Drop(sys, d);
 	}
@@ -380,7 +380,7 @@ void __thiscall cObjElementFXModelFade_Update(cObjElementFXModelFade *self, cDeb
 	}
 	float t = cTimer_GetDelta(&g_pWorld->timer) + self->t;
 	self->t = t;
-	float rem = Debris_Life(d) - dt;
+	float rem = d->life - dt;
 	if (self->duration > t) {
 		f = t / self->duration;
 	} else if (0.0f >= rem) {

@@ -16,7 +16,7 @@ void ChType_FXMercenaryDrink(cAbstractFile *params) {
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXMercenaryDrinkFile);
 	cDebris *d = cDebrisSys_NewElement(sys);
 	CGameModel_SetPos(Debris_Model(d), v->vftable->GetPos(v, &tmp));
-	Debris_Life(d) = 2.0f;
+	d->life = 2.0f;
 	cDebrisSys_Drop(sys, d);
 	cObjElementFXMercenaryDrink *el = Debris_Element(d);
 	if (el) {

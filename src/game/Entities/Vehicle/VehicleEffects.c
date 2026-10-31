@@ -37,7 +37,7 @@ static void *VE_Drop(const char *file, float life, byte noRadius, uint32_t size,
 		sys->radiusSq = 0.0f;
 	}
 	cDebris *d = cDebrisSys_NewElement(sys);
-	Debris_Life(d) = life;
+	d->life = life;
 	cDebrisSys_Drop(sys, d);
 	if (ctor && !Debris_Element(d)) {
 		void *mem = operator_new(size);
@@ -727,7 +727,7 @@ void __thiscall cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float 
 	cDebris *d = cDebrisSys_GetIdle(sys);
 	cam = g_pWorld->camPos[g_pWorld->curCam];
 	CGameModel_SetPos(Debris_Model(d), &cam);
-	d->speed = 1.0f;
+	d->life = 1.0f;
 	if (!cDebrisSys_IsIdle(sys, d)) {
 		cDebrisSys_Drop(sys, d);
 	}

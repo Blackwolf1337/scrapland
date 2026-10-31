@@ -111,7 +111,7 @@ void Devastator_Create(cAbstractFile *params) {
 			bullet->drop[3].x = Dev_Rand(14.0, -7.0);
 			bullet->drop[3].y = sy;
 			bullet->drop[3].z = sz;
-			bullet->speed = 0.4f;
+			bullet->life = 0.4f;
 			cDebrisSys_Drop(sys, bullet);
 		}
 		cVehicleEffects_Shoot(Vehicle_Effects(v), g_DevastatorIDWeap, i);
@@ -170,7 +170,7 @@ void Devastator_Create(cAbstractFile *params) {
 		cDebris *dhit = cDebrisSys_GetIdle(sys);
 		cam = g_pWorld->camPos[g_pWorld->curCam];
 		CGameModel_SetPos(Debris_Mod(dhit), &cam);
-		dhit->speed = 1.2f;
+		dhit->life = 1.2f;
 		if (!cDebrisSys_IsIdle(sys, dhit)) {
 			cDebrisSys_Drop(sys, dhit);
 		}
@@ -275,7 +275,7 @@ void Devastator_Create(cAbstractFile *params) {
 		/* the shot trail from the slot to the explosion */
 		sys = cWorld_GetDebrisSys(g_pWorld, g_DevastatorShootFile);
 		cDebris *dshot = cDebrisSys_NewElement(sys);
-		dshot->speed = 0.05f;
+		dshot->life = 0.05f;
 		cDebrisSys_Drop(sys, dshot);
 		cObjElementFXDevastatorShoot *sfx = Debris_Element(dshot);
 		if (sfx) {
@@ -328,7 +328,7 @@ void Devastator_Create(cAbstractFile *params) {
 		cDebris *dsp = cDebrisSys_GetIdle(sys);
 		cam = g_pWorld->camPos[g_pWorld->curCam];
 		CGameModel_SetPos(Debris_Mod(dsp), &cam);
-		dsp->speed = 1.0f;
+		dsp->life = 1.0f;
 		if (!cDebrisSys_IsIdle(sys, dsp)) {
 			cDebrisSys_Drop(sys, dsp);
 		}

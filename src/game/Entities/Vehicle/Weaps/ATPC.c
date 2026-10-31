@@ -146,7 +146,7 @@ void ATPC_Create(cAbstractFile *params) {
 		}
 		cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_ATPCShootFile);
 		cDebris *debris = cDebrisSys_NewElement(sys);
-		debris->speed = g_ATPCTrailTime * 2.0f;
+		debris->life = g_ATPCTrailTime * 2.0f;
 		cDebrisSys_Drop(sys, debris);
 		cObjElementFXATPC *fx = Debris_Element(debris);
 		if (fx) {

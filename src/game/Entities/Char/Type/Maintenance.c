@@ -24,7 +24,7 @@ void ChType_FXMaintenanceWork(cAbstractFile *params) {
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXMaintenanceWorkFile);
 	cDebris *d = cDebrisSys_NewElement(sys);
 	CGameModel_SetPos(Debris_Model(d), v->vftable->GetPos(v, &tmp));
-	Debris_Life(d) = time;
+	d->life = time;
 	cDebrisSys_Drop(sys, d);
 	cObjElementFXMaintenanceWork *el = Debris_Element(d);
 	if (el) {

@@ -124,7 +124,7 @@ static void VM_Haze(cVehicleMotors *self, VMUpdate *u) {
 
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXMotorHazeFile);
 	cDebris *d = cDebrisSys_GetIdle(sys);
-	d->speed = 1.0f;
+	d->life = 1.0f;
 	if (!cDebrisSys_IsIdle(sys, d)) {
 		cDebrisSys_Drop(sys, d);
 	}
@@ -223,7 +223,7 @@ void __fastcall cVehicleMotors_Update(cVehicleMotors *self) {
 		vec3_t cam = g_pWorld->camPos[g_pWorld->curCam];
 		CGameModel_SetPos(Debris_Model(d), &cam);
 		CGameModel_SetSortZ(Debris_Model(d), -0.1f, 0.0f);
-		d->speed = 0.5f;
+		d->life = 0.5f;
 		if (!cDebrisSys_IsIdle(sys, d)) {
 			cDebrisSys_Drop(sys, d);
 		}
@@ -816,7 +816,7 @@ void __fastcall cVehicleMotorsEffects_Stop(cVehicleMotorsEffects *self) {
 		if (CGameTrail_IsRender(self->trail[i]) && self->owner && Veh(self->owner)->wl.life <= 0) {
 			cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXVehicleDeathTrailFile);
 			cDebris *d = cDebrisSys_NewElement(sys);
-			d->speed = 1.0f;
+			d->life = 1.0f;
 			cDebrisSys_Drop(sys, d);
 			cObjElementFXDevastatorShoot *fx = Debris_Element(d);
 			if (fx) {

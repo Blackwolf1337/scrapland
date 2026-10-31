@@ -1924,7 +1924,7 @@ void FXSwarm_BeeDeath(float x, float y, float z, float vx, float vy, float vz, f
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_SwarmBeeExplosionFile);
 	cDebris *debris = cDebrisSys_GetIdle(sys);
 	CGameModel_SetSortZ(Debris_Model(debris), -0.5f, 0.0f);
-	Debris_Life(debris) = time + time;
+	debris->life = time + time;
 	if (!cDebrisSys_IsIdle(sys, debris)) {
 		cDebrisSys_Drop(sys, debris);
 	}
@@ -2120,7 +2120,7 @@ void FXSwarm_Hit(float x, float y, float z, float vx, float vy, float vz, float 
 			cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXSmokeDebrisFile);
 			cDebris *deb = cDebrisSys_NewElement(sys);
 			vec3_t v, o;
-			deb->speed = FXW_Rand(0.30000007152557373, 1.649999976158142) * time;
+			deb->life = FXW_Rand(0.30000007152557373, 1.649999976158142) * time;
 			cDebrisSys_Drop(sys, deb);
 			float a1 = FXW_Rand(3.1415927410125732, -1.5707963705062866);
 			float a2 = FXW_Rand(3.1415927410125732, -1.5707963705062866);
@@ -2201,7 +2201,7 @@ void FXSwarm_Hit(float x, float y, float z, float vx, float vy, float vz, float 
 	dp.z = r->z + z;
 	CGameModel_SetPos(Debris_Model(deb), &dp);
 	CGameModel_SetSortZ(Debris_Model(deb), -0.4f, 0.0f);
-	deb->speed = time + time;
+	deb->life = time + time;
 	cDebrisSys_Drop(sys, deb);
 	CGameParticles *p = FXW_ParticleSystem(deb);
 	if (!p) {

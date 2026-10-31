@@ -379,7 +379,7 @@ void Laser_CreateNative(cAbstractFile *f) {
 		d->drop[3].x = 0.0f;
 		d->drop[3].y = 0.0f;
 		d->drop[3].z = 0.0f;
-		d->speed = time;
+		d->life = time;
 		cDebrisSys_Drop(sys, d);
 		shots++;
 		cObjElementFXLaser *fx = Debris_Element(d);
@@ -410,7 +410,7 @@ void Laser_CreateNative(cAbstractFile *f) {
 		cWorld *wo = g_pWorld;
 		cam = wo->camPos[wo->curCam];
 		CGameModel_SetPos(Debris_Model(d), &cam);
-		d->speed = 1.0f;
+		d->life = 1.0f;
 		if (!cDebrisSys_IsIdle(sys, d)) {
 			cDebrisSys_Drop(sys, d);
 		}
@@ -739,7 +739,7 @@ void Sonic_ExplodeNative(cAbstractFile *f) {
 	cDebris *d = cDebrisSys_NewElement(sys);
 	CGameModel_SetPos(Debris_Model(d), p);
 	CGameModel_SetSortZ(Debris_Model(d), -50.0f, 0.0f);
-	d->speed = 2.0f;
+	d->life = 2.0f;
 	cDebrisSys_Drop(sys, d);
 	cObjElementFXSonicExplosion *fx = Debris_Element(d);
 	if (fx) {

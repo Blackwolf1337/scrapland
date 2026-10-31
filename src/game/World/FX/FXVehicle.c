@@ -381,7 +381,7 @@ void __thiscall cObjElementFXFiredDebris_Update(cObjElementFXFiredDebris *self, 
 	CGameParticles_SetColorRampOn(p, 1);
 
 	/* the glow at the debris fades in its last half second */
-	float f = debris->speed - dt;
+	float f = debris->life - dt;
 	f = f + f;
 	int a = (int)((1.0f - Float_MinSS(1.0f, f)) * 255.0f);
 	int a0 = a + 0xa4;
@@ -401,7 +401,7 @@ void __thiscall cObjElementFXFiredDebris_Update(cObjElementFXFiredDebris *self, 
 	float dx = pos.x - self->last.x;
 	float dz = pos.z - self->last.z;
 	float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
-	if (!CGameModel_IsVisible(model) || !(debris->speed > 0.4f) || !(d > 0.01f)) {
+	if (!CGameModel_IsVisible(model) || !(debris->life > 0.4f) || !(d > 0.01f)) {
 		return;
 	}
 	float minDist = self->minDist;
@@ -433,7 +433,7 @@ void __thiscall cObjElementFXFiredDebris_Update(cObjElementFXFiredDebris *self, 
 		p->sizeIni = FXV_Rand(0.5, -0.25) * s1 + s1;
 		p->sizeEnd = FXV_Rand(0.5, -0.25) * s2 + s2;
 		t = FXV_Rand(0.30000001192092896, 0.6499999761581421) * life;
-		p->lifeTime = Float_MinSS(debris->speed, t);
+		p->lifeTime = Float_MinSS(debris->life, t);
 		p->rotIni = FXV_Rand(6.2831854820251465, 0.0);
 		p->rotVar = 0.0f;
 		p->rotEnd = FXV_Rand(1.5707963705062866, -0.7853981852531433) + p->rotIni;
@@ -453,7 +453,7 @@ void __thiscall cObjElementFXFiredDebris_Update(cObjElementFXFiredDebris *self, 
 		r = FXV_Rand(0.5, -0.25);
 		p->sizeEnd = FXV_Rand(0.09999996423721313, 0.800000011920929) * (r * s2) + s2;
 		t = FXV_Rand(0.30000001192092896, 0.550000011920929) * life;
-		p->lifeTime = Float_MinSS(debris->speed, t);
+		p->lifeTime = Float_MinSS(debris->life, t);
 		p->rotIni = FXV_Rand(6.2831854820251465, 0.0);
 		p->rotVar = 0.0f;
 		p->rotEnd = FXV_Rand(1.5707963705062866, -0.7853981852531433) + p->rotIni;
@@ -469,7 +469,7 @@ void __thiscall cObjElementFXFiredDebris_Update(cObjElementFXFiredDebris *self, 
 		r = FXV_Rand(0.5, -0.25);
 		p->sizeEnd = FXV_Rand(0.09999996423721313, 0.6000000238418579) * (r * s2 + s2);
 		t = FXV_Rand(0.04999998211860657, 0.30000001192092896) * life;
-		p->lifeTime = Float_MinSS(debris->speed, t);
+		p->lifeTime = Float_MinSS(debris->life, t);
 		p->rotIni = FXV_Rand(6.2831854820251465, 0.0);
 		p->rotVar = 0.0f;
 		p->rotEnd = FXV_Rand(3.1415927410125732, -1.5707963705062866) + p->rotIni;
@@ -492,7 +492,7 @@ void __thiscall cObjElementFXSmokeDebris_Update(cObjElementFXSmokeDebris *self, 
 
 	cDebris_Move(debris, dt);
 	self->time = cTimer_GetDelta(&g_pWorld->timer) + self->time;
-	if (1.0f > debris->speed - dt) {
+	if (1.0f > debris->life - dt) {
 		return;
 	}
 	CHECK(CGameModel_IsLoaded(model));
@@ -525,7 +525,7 @@ void __thiscall cObjElementFXSmokeDebris_Update(cObjElementFXSmokeDebris *self, 
 			float r;
 
 			/* the dark smoke while the debris has more than 1.15 to live */
-			if (debris->speed - dt > 1.15f) {
+			if (debris->life - dt > 1.15f) {
 				FXV_Box(p, x, y, z, self->spread, self->spread);
 				p->sizeIni = FXV_Rand(0.5, -0.25) * s1 + s1;
 				p->sizeEnd = FXV_Rand(0.5, -0.25) * s2 + s2;
@@ -545,7 +545,7 @@ void __thiscall cObjElementFXSmokeDebris_Update(cObjElementFXSmokeDebris *self, 
 			p->sizeIni = FXV_Rand(0.050000011920928955, 0.25) * (r * s1 + s1);
 			r = FXV_Rand(0.5, -0.25);
 			p->sizeEnd = FXV_Rand(0.050000011920928955, 0.25) * (r * s2 + s2);
-			p->lifeTime = Float_MinSS(debris->speed, FXV_Rand(0.050000011920928955, 0.25));
+			p->lifeTime = Float_MinSS(debris->life, FXV_Rand(0.050000011920928955, 0.25));
 			r = FXV_Rand(6.2831854820251465, 0.0);
 			p->rotIni = r;
 			p->rotEnd = r;
@@ -944,7 +944,7 @@ void __thiscall cObjElementFXVehicleEMI_Update(cObjElementFXVehicleEMI *self, cD
 	Obj_Vtbl(self->entity)->SetEffect(self->entity, 6);
 	float v = self->time;
 	if (v > 0.5f) {
-		v = debris->speed - dt;
+		v = debris->life - dt;
 		if (v > 0.5f) {
 			v = 1.0f;
 		} else {
@@ -978,7 +978,7 @@ void __thiscall cObjElementFXVehicleEMI_Update(cObjElementFXVehicleEMI *self, cD
 		for (int i = 0; i < self->numTrails; i++, partIdx += 3) {
 			CGameTrail *tr = &self->trails[i];
 			if (!(self->rayTime[i] > 0.0f)) {
-				if (!(debris->speed >= 0.6f)) {
+				if (!(debris->life >= 0.6f)) {
 					continue;
 				}
 				/* a new ray from a random vertex of the ship, later also of a motor */
@@ -1196,7 +1196,7 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 	Obj_Vtbl(self->entity)->SetEffect(self->entity, 7);
 	float v = self->time;
 	if (v > 0.2f) {
-		v = debris->speed - dt;
+		v = debris->life - dt;
 		if (v > 0.2f) {
 			v = 1.0f;
 		} else {
@@ -1206,7 +1206,7 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 		v = v * 5.0f;
 	}
 	Obj_Vtbl(self->entity)->SetEffectParam(self->entity, 0, v);
-	if (!(debris->speed > 0.0f) || !(self->emitTime > 0.04f) || !(FXV_Veh(self->entity)->wl.fireRemain > 0.5f)) {
+	if (!(debris->life > 0.0f) || !(self->emitTime > 0.04f) || !(FXV_Veh(self->entity)->wl.fireRemain > 0.5f)) {
 		return;
 	}
 
@@ -1265,7 +1265,7 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 			p->sizeIni = FXV_FireSize(s1, FXV_Rand(0.10000002384185791, 0.5));
 			p->sizeEnd = FXV_FireSize(s2, FXV_Rand(0.10000002384185791, 0.699999988079071));
 			t = FXV_Rand(0.19999998807907104, 0.25) * life;
-			p->lifeTime = Float_MinSS(debris->speed, t);
+			p->lifeTime = Float_MinSS(debris->life, t);
 			t = FXV_Rand(6.2831854820251465, 0.0);
 			p->rotIni = t;
 			p->rotEnd = t;
@@ -1293,7 +1293,7 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 			p->sizeIni = FXV_FireSize(s1, FXV_Rand(0.10000002384185791, 0.5));
 			p->sizeEnd = FXV_FireSize(s2, FXV_Rand(0.10000002384185791, 0.699999988079071));
 			t = FXV_Rand(0.19999998807907104, 0.25) * life;
-			p->lifeTime = Float_MinSS(debris->speed, t);
+			p->lifeTime = Float_MinSS(debris->life, t);
 			t = FXV_Rand(6.2831854820251465, 0.0);
 			p->rotIni = t;
 			p->rotEnd = t;
@@ -1319,7 +1319,7 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 			p->sizeIni = FXV_FireSize(s1, FXV_Rand(0.10000000894069672, 0.20000000298023224));
 			p->sizeEnd = FXV_FireSize(s2, FXV_Rand(0.19999998807907104, 0.699999988079071));
 			t = FXV_Rand(0.19999998807907104, 0.30000001192092896) * life;
-			p->lifeTime = Float_MinSS(debris->speed, t);
+			p->lifeTime = Float_MinSS(debris->life, t);
 			t = FXV_Rand(1.5707963705062866, -0.7853981852531433);
 			p->rotIni = t;
 			p->rotEnd = t;
@@ -1353,7 +1353,7 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 		po->sizeIni = FXV_FireSize(s1, FXV_Rand(0.5, 1.0));
 		po->sizeEnd = FXV_FireSize(s2, FXV_Rand(1.2000000476837158, 2.200000047683716));
 		t = FXV_Rand(0.09999999403953552, 0.25);
-		po->lifeTime = Float_MinSS(debris->speed, t);
+		po->lifeTime = Float_MinSS(debris->life, t);
 		t = FXV_Rand(6.2831854820251465, 0.0);
 		po->rotIni = t;
 		po->rotEnd = t;
@@ -1383,7 +1383,7 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 		po->sizeIni = FXV_FireSize(s1, FXV_Rand(0.7999999523162842, 2.0));
 		po->sizeEnd = FXV_FireSize(s2, FXV_Rand(1.2000000476837158, 3.700000047683716));
 		t = FXV_Rand(0.20999997854232788, 0.7400000095367432);
-		po->lifeTime = Float_MinSS(debris->speed, t);
+		po->lifeTime = Float_MinSS(debris->life, t);
 		t = FXV_Rand(6.2831854820251465, 0.0);
 		po->rotIni = t;
 		po->rotEnd = t;
@@ -1493,7 +1493,7 @@ static void FXV_DamageFlame(cObjElementFXVehicleDamage *self, cDebris *debris, c
 		p->sizeIni = FXV_FlameSize(c3, 0.10000002384185791, 0.5);
 		p->sizeEnd = FXV_FlameSize(c4, 0.099999964237213135, 0.60000002384185791);
 		t = FXV_Rand(0.19999998807907104, 0.25) * 0.75f;
-		p->lifeTime = Float_MinSS(debris->speed, t);
+		p->lifeTime = Float_MinSS(debris->life, t);
 		t = FXV_Rand(FXV_PI2, 0.0);
 		p->rotIni = t;
 		p->rotEnd = t;
@@ -1513,7 +1513,7 @@ static void FXV_DamageFlame(cObjElementFXVehicleDamage *self, cDebris *debris, c
 		p->sizeIni = FXV_FlameSize(c3, 0.10000002384185791, 0.5);
 		p->sizeEnd = FXV_FlameSize(c4, 0.099999964237213135, 0.60000002384185791);
 		t = FXV_Rand(0.19999998807907104, 0.25) * 0.75f;
-		p->lifeTime = Float_MinSS(debris->speed, t);
+		p->lifeTime = Float_MinSS(debris->life, t);
 		t = FXV_Rand(FXV_PI2, 0.0);
 		p->rotIni = t;
 		p->rotEnd = t;
@@ -1531,7 +1531,7 @@ static void FXV_DamageFlame(cObjElementFXVehicleDamage *self, cDebris *debris, c
 		p->sizeIni = FXV_FlameSize(c3, 0.10000000894069672, 0.20000000298023224);
 		p->sizeEnd = FXV_FlameSize(c4, 0.19999998807907104, 0.60000002384185791);
 		t = FXV_Rand(0.19999998807907104, 0.30000001192092896) * 0.75f;
-		p->lifeTime = Float_MinSS(debris->speed, t);
+		p->lifeTime = Float_MinSS(debris->life, t);
 		t = FXV_Rand(1.5707963705062866, -0.7853981852531433);
 		p->rotIni = t;
 		p->rotEnd = t;
@@ -1995,7 +1995,7 @@ static void FXV_ShipDebris(cDebrisSys *sys, int n, const vec3_t *pos, float scal
 
 	for (int k = n; k; k--) {
 		cDebris *d = cDebrisSys_NewElement(sys);
-		d->speed = FXV_Rand(lifeRange, lifeAdd) * time;
+		d->life = FXV_Rand(lifeRange, lifeAdd) * time;
 		cDebrisSys_Drop(sys, d);
 		FX_RandomDir(&dir);
 		float s = FXV_Rand(115.0, 120.0);
@@ -2297,7 +2297,7 @@ void FX_ShipExplosion(vec3_t pos, vec3_t vel, float scale, float time, int numFl
 	const vec3_t *r = FX_RandomDir(&tmp);
 	vec3_t at = { r->x + pos.x, r->y + pos.y, r->z + pos.z };
 	CGameModel_SetPos(Debris_Model(d), &at);
-	d->speed = time * 1.5f;
+	d->life = time * 1.5f;
 	cDebrisSys_Drop(sys, d);
 	cObjElementFXParticleSystem *el = (cObjElementFXParticleSystem *)d->fx;
 	if (!el) {
@@ -2806,8 +2806,8 @@ byte __thiscall cObjElementFXFiredEntity_IsAlive(cObjElementFXFiredEntity *self,
 	/* the smoke of a gone entity ends within 1.5 */
 	cEntity *e = self->entity;
 	if (!e || Entity_Removed(e) || !e->active) {
-		if (debris->speed > 1.5f) {
-			debris->speed = 1.5f;
+		if (debris->life > 1.5f) {
+			debris->life = 1.5f;
 		}
 	}
 	return 1;
@@ -2834,7 +2834,7 @@ byte __thiscall cObjElementFXVehicleDamage_IsAlive(cObjElementFXVehicleDamage *s
 			cVehicleEffects_ClearDamage(FXVeh_Effects(self->entity));
 			self->active = 0;
 		} else {
-			debris->speed = 1.5f;
+			debris->life = 1.5f;
 		}
 	}
 	if (cDebris_Update(debris, sys)) {
@@ -2852,7 +2852,7 @@ byte __thiscall cObjElementFXVehicleEMI_IsAlive(cObjElementFXVehicleEMI *self, c
 		return 0;
 	}
 	/* the debris lives as long as the interference */
-	debris->speed = Veh(self->entity)->emi;
+	debris->life = Veh(self->entity)->emi;
 	if (cDebris_Update(debris, sys)) {
 		return 1;
 	}
@@ -2870,7 +2870,7 @@ byte __thiscall cObjElementFXVehicleFire_IsAlive(cObjElementFXVehicleFire *self,
 	}
 	float t = WLife(e)->fireRemain;
 	if (!(0.0f >= t)) {
-		debris->speed = t;
+		debris->life = t;
 		if (cDebris_Update(debris, sys)) {
 			return 1;
 		}

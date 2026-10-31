@@ -398,7 +398,7 @@ byte __thiscall cMissileEntity_Hit(cMissileEntity *self, int n, int unused) {
 			cPy_Function_AddParamF(&self->onBeeDeath, d->drop[0].y);
 			cPy_Function_AddParamF(&self->onBeeDeath, d->drop[0].z);
 			cPy_Function_Execute(&self->onBeeDeath, 0);
-			d->speed = 0.0f;
+			d->life = 0.0f;
 			cDebrisSys_Drop(sys, d);
 		}
 		return 0;
@@ -761,7 +761,7 @@ static cDebris *Missile_FXDebris(cMissileEntity *self, const char *sysName, byte
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, sysName);
 	cDebris *d = cDebrisSys_NewElement(sys);
 
-	d->speed = extra ? self->lifeTime + 1.5f : self->lifeTime;
+	d->life = extra ? self->lifeTime + 1.5f : self->lifeTime;
 	cDebrisSys_Drop(sys, d);
 	return d;
 }
@@ -1308,16 +1308,16 @@ void __thiscall cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at) {
 				s->drop[3].x = k * s->drop[3].x;
 				s->drop[3].y = k * s->drop[3].y;
 				s->drop[3].z = k * s->drop[3].z;
-				self->swarm->speed = t;
+				self->swarm->life = t;
 			} else {
-				d->speed = 0.0f;
+				d->life = 0.0f;
 				if (!self->beesHit) {
 					cPy_Function_AddParamS(&self->onBeeDeath, self->wl.obj.base.name);
 					cPy_Function_AddParamF(&self->onBeeDeath, d->drop[0].x);
 					cPy_Function_AddParamF(&self->onBeeDeath, d->drop[0].y);
 					cPy_Function_AddParamF(&self->onBeeDeath, d->drop[0].z);
 					cPy_Function_Execute(&self->onBeeDeath, 0);
-					d->speed = 0.0f;
+					d->life = 0.0f;
 				}
 			}
 			self->swarm = Debris_Next(self->swarm);

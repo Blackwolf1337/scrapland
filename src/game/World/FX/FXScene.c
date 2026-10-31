@@ -87,7 +87,7 @@ static cDebris *FXS_Drop(const char *file, float life) {
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, file);
 	cDebris *d = cDebrisSys_NewElement(sys);
 
-	Debris_Life(d) = life;
+	d->life = life;
 	cDebrisSys_Drop(sys, d);
 	return d;
 }
@@ -482,7 +482,7 @@ void __thiscall cObjElementFXSceneHumanCD_Update(cObjElementFXSceneHumanCD *self
 
 	(void)dt;
 	if (!FXS_Alive(&self->ent)) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	CHECK(g_MentalMainFX);
@@ -522,7 +522,7 @@ void __thiscall cObjElementFXSceneTheEndB_Update(cObjElementFXSceneTheEndB *self
 
 	(void)dt;
 	if (!FXS_Alive(&self->ent)) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	if (!self->bike) {
@@ -584,7 +584,7 @@ void __thiscall cObjElementFXSceneYakuzzi_Update(cObjElementFXSceneYakuzzi *self
 
 	(void)dt;
 	if (!FXS_Alive(&self->ent)) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	float delta = FXS_Delta();
@@ -715,7 +715,7 @@ void __thiscall cObjElementFXSceneBishops_Update(cObjElementFXSceneBishops *self
 
 	(void)dt;
 	if (!FXS_Alive(&self->ent)) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	FXS_Follow(self->ent, d, -101.0f, &pos, &rot);
@@ -950,7 +950,7 @@ void __thiscall cObjElementFXSceneDecontamination_Update(cObjElementFXSceneDecon
 
 	(void)dt;
 	if (!FXS_Alive(&self->ent)) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	FXS_Follow(self->ent, d, -100.0f, &pos, &rot);
@@ -1355,7 +1355,7 @@ void __thiscall cObjElementFXSceneBeatPickus_Update(cObjElementFXSceneBeatPickus
 
 	(void)dt;
 	if (!FXS_Alive(&self->ent)) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	float delta = FXS_Delta();
@@ -1732,7 +1732,7 @@ void __thiscall cObjElementFXSceneBillArrives_A_Update(cObjElementFXSceneBillArr
 
 	(void)dt;
 	if (!FXS_Alive(&self->ent)) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	if (!self->capsule) {
@@ -2174,7 +2174,7 @@ void __thiscall cObjElementFXSceneEnterMatrix_Update(cObjElementFXSceneEnterMatr
 
 	(void)dt;
 	if (!FXS_Alive(&self->ent)) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	float delta = FXS_Delta();

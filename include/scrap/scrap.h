@@ -187,11 +187,11 @@ SD_SIZE(cDebrisSys, 0x38);
 struct cDebris {
 	byte Mod[0x1c];			/* 0x00 CGameModel (scrapmodel.h) */
 	vec3_t drop[4];			/* 0x1c copy of g_DebrisDrop */
-	float speed;			/* 0x4c the life time left */
+	float life;			/* 0x4c the time left, counts down by 0.05 a step and ends at 0 */
 	cDebris *next;			/* 0x50 in the idle or active list */
 	struct cObjElementFX *fx;	/* 0x54 */
 };
-SD_OFFSET(cDebris, speed, 0x4c);
+SD_OFFSET(cDebris, life, 0x4c);
 SD_SIZE(cDebris, 0x58);
 #define Debris_Mod(d) ((CGameModel *)(d)->Mod)
 

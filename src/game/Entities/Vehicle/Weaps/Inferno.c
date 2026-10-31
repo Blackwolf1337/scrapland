@@ -189,7 +189,7 @@ cEntity *Inferno_Hit(const char *name) {
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_InfernoExplosionFile);
 	cDebris *d = cDebrisSys_NewElement(sys);
 	CGameModel_SetPos(Debris_Model(d), &pos);
-	d->speed = g_FXInfernoExplosionTime;
+	d->life = g_FXInfernoExplosionTime;
 	cDebrisSys_Drop(sys, d);
 	cObjElementFXInfernoExplosion *fx = Debris_Element(d);
 	if (fx) {

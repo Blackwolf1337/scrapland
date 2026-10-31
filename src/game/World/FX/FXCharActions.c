@@ -615,11 +615,11 @@ byte __thiscall FXCharActions_AliveAction(void *self, cDebris *d, cDebrisSys *sy
 	if (e && WithLife_Vtbl(e)->GetActCtrl(e)) {
 		e = *(cEntity **)((byte *)self + 4);
 		if (cActCtrl_IsActive(WithLife_Vtbl(e)->GetActCtrl(e), "Action")) {
-			Debris_Life(d) = 1.0f;
+			d->life = 1.0f;
 		} else {
 			e = *(cEntity **)((byte *)self + 4);
 			if (cActCtrl_IsActive(WithLife_Vtbl(e)->GetActCtrl(e), "ActionInit")) {
-				Debris_Life(d) = 1.0f;
+				d->life = 1.0f;
 			}
 		}
 	}
@@ -646,11 +646,11 @@ byte __thiscall cObjElementFXFunctionarySpecialAction_Alive(cObjElementFXFunctio
 		}
 		return 0;
 	}
-	if (Debris_Life(d) > 0.4f && !self->ent) {
-		Debris_Life(d) = 0.4f;
+	if (d->life > 0.4f && !self->ent) {
+		d->life = 0.4f;
 	}
 	if (self->ent && cTimer_GetSpeed(Entity_Timer(self->ent)) == 1.0f
-		&& cTimer_GetSpeedTo(Entity_Timer(self->ent)) == 1.0f && 0.4f >= Debris_Life(d)) {
+		&& cTimer_GetSpeedTo(Entity_Timer(self->ent)) == 1.0f && 0.4f >= d->life) {
 		m = Obj_Vtbl(self->ent)->GetModel(self->ent);
 		if (!CGameModel_IsLoaded(m)) {
 			return 0;
@@ -1354,7 +1354,7 @@ static void GM_NewBolt(cObjElementFXGearMissile *self, int i, const vec3_t *pos,
 		}
 	}
 	float L = self->fadeLife;
-	float life = Debris_Life(debris);
+	float life = debris->life;
 	float factor;
 	if (life > L) {
 		factor = kind == 1 ? 1.3f : (kind == 2 ? 0.15f : 0.45f);
@@ -1589,7 +1589,7 @@ static void GM_FadeSparks(cObjElementFXGearMissile *self, cDebris *debris, float
 		p->initAccMax = p->initAccMin;
 		float lt = FXA_Rand(0.099999994039535522, 0.34999999403953552);
 		p->lifeTime = lt;
-		p->lifeTime = Float_MinSS(Debris_Life(debris) - dt, lt);
+		p->lifeTime = Float_MinSS(debris->life - dt, lt);
 		GM_NoRot(p);
 		float size = FXA_Rand(30.0, 40.0);
 		p->sizeIni = size;
@@ -1623,8 +1623,8 @@ void __thiscall cObjElementFXGearMissile_Update(cObjElementFXGearMissile *self, 
 	}
 	e = self->entity;
 	if (!e || !e->active || self->node == -1) {
-		if (Debris_Life(debris) > self->fadeLife) {
-			Debris_Life(debris) = self->fadeLife;
+		if (debris->life > self->fadeLife) {
+			debris->life = self->fadeLife;
 		}
 	}
 	float t = cTimer_GetDelta(&g_pWorld->timer);
@@ -1643,14 +1643,14 @@ void __thiscall cObjElementFXGearMissile_Update(cObjElementFXGearMissile *self, 
 		for (int i = 0; i < FXGEARMISSILE_TRAILS; i++) {
 			if (self->boltTime[i] > 0.0f) {
 				GM_Bolt(self, i, &pos, t);
-			} else if (Debris_Life(debris) - dt > 0.25f) {
+			} else if (debris->life - dt > 0.25f) {
 				GM_NewBolt(self, i, &pos, debris, dt);
 			}
 		}
 	}
 
 	/* the tail */
-	float life = Debris_Life(debris);
+	float life = debris->life;
 	float L = self->fadeLife;
 	int fade = 0;
 	if (L > life) {
@@ -1665,7 +1665,7 @@ void __thiscall cObjElementFXGearMissile_Update(cObjElementFXGearMissile *self, 
 	self->trailStep = ts;
 	if (ts > 0.025f) {
 		self->trailStep = 0.0f;
-		if (Debris_Life(debris) > L) {
+		if (debris->life > L) {
 			CGameTrail_Add(&self->trail, pos, 95.0f, 0x604040ff);
 		} else if (CGameTrail_IsRender(&self->trail)) {
 			CGameTrail_SetLastPos(&self->trail, pos);
@@ -1686,17 +1686,17 @@ void __thiscall cObjElementFXGearMissile_Update(cObjElementFXGearMissile *self, 
 	CGameParticles_SetParticle(p, 1, 0.0f, 0.0f, 0.0f, FXA_Rand(50.0, 270.0), c, 2, 0.0f);
 	c = GM_Color(fade + 0x10, 0xa4a4ff);
 	CGameParticles_SetParticle(p, 0, 0.0f, 0.0f, 0.0f, FXA_Rand(35.0, 175.0), c, 1, 0.0f);
-	if (Debris_Life(debris) > self->fadeLife && self->emitTime > 0.02f) {
+	if (debris->life > self->fadeLife && self->emitTime > 0.02f) {
 		self->emitTime = 0.0f;
 		GM_Puffs(self, &pos);
 	}
 
-	life = Debris_Life(debris);
+	life = debris->life;
 	L = self->fadeLife;
 	if (!(L < life)) {
 		GM_Fade(self, (life - dt) / L);
 	}
-	life = Debris_Life(debris);
+	life = debris->life;
 	L = self->fadeLife;
 	if (!(L < life) && life - dt > 0.2f && self->emitTime > 0.015f) {
 		GM_FadeSparks(self, debris, dt);
@@ -1905,7 +1905,7 @@ void __thiscall cObjElementFXBettyAttack_Update(cObjElementFXBettyAttack *self, 
 		self->ent = NULL;
 	}
 	if (!self->ent || !self->ent->active) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	CGameModel *m = FXA_Model(self->ent);
@@ -2724,7 +2724,7 @@ static void FXKill_Update(cObjElementFXKill *self, cDebris *d, float sortBias, f
 
 	FXA_Keep(&self->ent);
 	if (!self->ent || !self->ent->active) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	CGameModel *m = FXA_Model(self->ent);
@@ -2753,7 +2753,7 @@ void __thiscall cObjElementFXBankMasterAttack_Update(cObjElementFXBankMasterAtta
 
 	FXA_Keep(&self->ent);
 	if (!self->ent || !self->ent->active) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	CGameModel *m = FXA_Model(self->ent);
@@ -2814,7 +2814,7 @@ void __thiscall cObjElementFXBertoAttack_Update(cObjElementFXBertoAttack *self, 
 
 	FXA_Keep(&self->ent);
 	if (!self->ent || !self->ent->active) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	CGameModel *m = FXA_Model(self->ent);
@@ -2830,8 +2830,8 @@ void __thiscall cObjElementFXBertoAttack_Update(cObjElementFXBertoAttack *self, 
 	if (FX_InRange(self->time, 0.0f, 0.6f, &f)) {
 		alpha = 0xff - (int)(f * 255.0f);
 	}
-	if (0.95f > Debris_Life(d)) {
-		FX_InRange(Debris_Life(d) - dt, 0.0f, 1.0f, &f);
+	if (0.95f > d->life) {
+		FX_InRange(d->life - dt, 0.0f, 1.0f, &f);
 		alpha = 0xff - (int)(f * 255.0f);
 	}
 	CGameParticles *sp = &self->particles;
@@ -2856,7 +2856,7 @@ void __thiscall cObjElementFXDTritusAttack_Update(cObjElementFXDTritusAttack *se
 	(void)dt;
 	FXA_Keep(&self->ent);
 	if (!self->ent || !self->ent->active) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	CGameModel *m = FXA_Model(self->ent);
@@ -2888,7 +2888,7 @@ void __thiscall cObjElementFXPoliceSteal_Update(cObjElementFXPoliceSteal *self, 
 	if (!self->target || !self->target->active) {
 		return;
 	}
-	if (0.65f > Debris_Life(d)) {
+	if (0.65f > d->life) {
 		return;
 	}
 	CGameModel_SetPos(Debris_Model(d), Obj_Vtbl(self->ent)->GetViewPos(self->ent, &tmp));
@@ -2951,7 +2951,7 @@ void __thiscall cObjElementFXSebastianFlash_Update(cObjElementFXSebastianFlash *
 	(void)dt;
 	FXA_Keep(&self->ent);
 	if (!self->ent || !self->ent->active) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	CGameModel *m = FXA_Model(self->ent);
@@ -2974,7 +2974,7 @@ void __thiscall cObjElementFXSebastianFlash_Update(cObjElementFXSebastianFlash *
 		FX_InRange(time, 1.3f, 1.5f, &f);
 		alpha = (int)((3.0f - f * 2.0f) * (f * f) * 255.0f);
 	} else {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	for (int k = 0; k < FXSEBASTIAN_TRAILS; k++) {
@@ -3033,12 +3033,12 @@ void __thiscall cObjElementFXBertoFlash_Update(cObjElementFXBertoFlash *self, cD
 	(void)dt;
 	FXA_Keep(&self->ent);
 	if (!self->ent) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	FXA_Keep(&self->target);
 	if (!self->target) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	CGameModel *m = FXA_Model(self->ent);
@@ -3056,7 +3056,7 @@ void __thiscall cObjElementFXBertoFlash_Update(cObjElementFXBertoFlash *self, cD
 	} else if (FX_InRange(self->time, 0.2f, 0.7f, &f)) {
 		v = (3.0f - f * 2.0f) * (f * f);
 	} else {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	int alpha = (int)(v * 255.0f);
@@ -3145,7 +3145,7 @@ void __thiscall cObjElementFXBankerSteal_Update(cObjElementFXBankerSteal *self, 
 	if (!self->target || !self->target->active) {
 		return;
 	}
-	if (0.65f > Debris_Life(d)) {
+	if (0.65f > d->life) {
 		return;
 	}
 	CGameModel *m = Obj_Vtbl(self->ent)->GetModel(self->ent);
@@ -3238,12 +3238,12 @@ void __thiscall cObjElementFXBankMasterSuction_Update(cObjElementFXBankMasterSuc
 	(void)dt;
 	FXA_Keep(&self->ent);
 	if (!self->ent) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	FXA_Keep(&self->target);
 	if (!self->target) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	CGameModel *m = FXA_Model(self->ent);
@@ -3347,8 +3347,8 @@ void __thiscall cObjElementFXFunctionarySpecialAction_Update(cObjElementFXFuncti
 	self->time = self->time + delta;
 	self->emitTime = self->emitTime + delta;
 	if (WLife(self->ent)->life <= 0) {
-		if (Debris_Life(d) > 0.4f) {
-			Debris_Life(d) = 0.4f;
+		if (d->life > 0.4f) {
+			d->life = 0.4f;
 		}
 		return;
 	}
@@ -3366,12 +3366,12 @@ void __thiscall cObjElementFXFunctionarySpecialAction_Update(cObjElementFXFuncti
 			run = 1;
 		}
 	}
-	if (self->ent && FXA_Player(self->ent) && speed == 1.0f && Debris_Life(d) > 0.4f) {
-		Debris_Life(d) = 0.4f;
+	if (self->ent && FXA_Player(self->ent) && speed == 1.0f && d->life > 0.4f) {
+		d->life = 0.4f;
 	}
 	target = (speed - 1.0f) / 3.0f;
-	if (0.4f > Debris_Life(d)) {
-		FX_InRange(Debris_Life(d) - dt, 0.0f, 0.4f, &target);
+	if (0.4f > d->life) {
+		FX_InRange(d->life - dt, 0.0f, 0.4f, &target);
 	} else {
 		FX_InRange(target, 0.0f, 1.0f, &target);
 	}
@@ -3705,7 +3705,7 @@ void __thiscall cObjElementFXMercenaryDrink_Update(cObjElementFXMercenaryDrink *
 	(void)dt;
 	FXA_Keep(&self->ent);
 	if (!self->ent) {
-		Debris_Life(d) = 0.0f;
+		d->life = 0.0f;
 		return;
 	}
 	CGameModel *m = FXA_Model(self->ent);

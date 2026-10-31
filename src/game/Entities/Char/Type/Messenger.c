@@ -156,7 +156,7 @@ void ChType_MessengerTakeDataPack(cAbstractFile *params) {
 	}
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXMessengerTakeDataPackFile);
 	cDebris *d = cDebrisSys_NewElement(sys);
-	Debris_Life(d) = 0.699999988f;
+	d->life = 0.699999988f;
 	cDebrisSys_Drop(sys, d);
 	cObjElementFXMessengerTakeDataPack *el = Debris_Element(d);
 	if (el) {

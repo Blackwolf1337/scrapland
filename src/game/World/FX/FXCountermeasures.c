@@ -141,7 +141,7 @@ static void FXHook_Sparks(cObjElementFXHook *self, const vec3_t *end, vec3_t dir
 	cDebris *d = cDebrisSys_GetIdle(sys);
 	vec3_t cam = g_pWorld->camPos[g_pWorld->curCam];
 	CGameModel_SetPos(Debris_Model(d), &cam);
-	Debris_Life(d) = 1.0f;
+	d->life = 1.0f;
 	if (!cDebrisSys_IsIdle(sys, d)) {
 		cDebrisSys_Drop(sys, d);
 	}

@@ -256,7 +256,7 @@ cDebris *__thiscall cDebrisSys_NewElement(cDebrisSys *sys) {
 	d->drop[3].x = 0.0f;
 	d->drop[3].y = 0.0f;
 	d->drop[3].z = 0.0f;
-	d->speed = 0.0f;
+	d->life = 0.0f;
 	d->next = NULL;
 	d->fx = NULL;
 	cDebris_SetFX(sys->fxType, d);
@@ -324,8 +324,8 @@ byte __thiscall cDebris_Update(cDebris *d, cDebrisSys *sys) {
 	if (sys->radiusSq != 0.0f && cWorld_GetMinCamDistSq(g_pWorld, pos) >= sys->radiusSq) {
 		return 0;
 	}
-	d->speed = d->speed - DEBRIS_STEP;
-	if (0.0f >= d->speed) {
+	d->life = d->life - DEBRIS_STEP;
+	if (0.0f >= d->life) {
 		return 0;
 	}
 	from = *pos;
@@ -409,7 +409,7 @@ void __thiscall cDebrisSys_ShowInfo(cDebrisSys *sys, int x, int y, float *line) 
 		my = CGameModel_GetPos(Debris_Mod(d), &c)->y;
 		CFont_PrintfColor(g_FontTerminal8, (float)x + 10.0f, fy, 0xff00,
 			"Pos:(%.2f,%.2f,%.2f) Model:(%.2f,%.2f,%.2f) Time:%f %s", (double)d->drop[0].x,
-			(double)d->drop[0].y, (double)d->drop[0].z, (double)p->x, (double)my, (double)z, (double)d->speed,
+			(double)d->drop[0].y, (double)d->drop[0].z, (double)p->x, (double)my, (double)z, (double)d->life,
 			fx);
 		d = d->next;
 	} while (d);

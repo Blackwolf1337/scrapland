@@ -19,7 +19,6 @@
 
 /* the debris an element rides on: its model first (CGameModel), the element at 0x54 */
 #define Debris_Model(d) ((CGameModel *)(d))
-#define Debris_Life(d) ((d)->speed)		/* 0x4c counts down by 0.05 a step, ends at 0 */
 #define Debris_Element(d) ((void *)((cDebris *)(d))->fx)
 
 /* Debris.cpp (rva 0x204940..) */

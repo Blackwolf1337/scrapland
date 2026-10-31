@@ -58,7 +58,7 @@ void ChType_FXDesktopFallEnd(cAbstractFile *params) {
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXDesktopFallEndFile);
 	cDebris *dbr = cDebrisSys_NewElement(sys);
 	CGameModel_SetPos(Debris_Model(dbr), Obj_Vtbl(v)->GetViewPos(v, &tmp));
-	Debris_Life(dbr) = 1.0f;
+	dbr->life = 1.0f;
 	cDebrisSys_Drop(sys, dbr);
 	byte *el = Debris_Element(dbr);
 	if (!el) {
