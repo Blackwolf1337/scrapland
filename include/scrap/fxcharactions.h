@@ -188,14 +188,14 @@ typedef struct cObjElementFXKill {
 	int vertex[FXKILL_POINTS];	/* 0x0c0 random vertices of the model */
 	vec3_t point[FXKILL_POINTS];	/* 0x1ec the vertices in the model space (unrotated) */
 	float scale[FXKILL_POINTS];	/* 0x570 15..75 times the radius / 90 */
-	float f69c[FXKILL_POINTS];	/* 0x69c 105..135 */
-	float f7c8[FXKILL_POINTS];	/* 0x7c8 525..625 */
+	float len[FXKILL_POINTS];	/* 0x69c of the beams, approaches lenTarget */
+	float lenTarget[FXKILL_POINTS];	/* 0x7c8 525..625 */
 	CGameTrail trails[FXKILL_TRAILS];	/* 0x8f4 */
 	vec3_t angles;			/* 0x908 the turn of the beams */
 	byte started;			/* 0x914 */
 } cObjElementFXKill;
 SD_OFFSET(cObjElementFXKill, point, 0x1ec);
-SD_OFFSET(cObjElementFXKill, f7c8, 0x7c8);
+SD_OFFSET(cObjElementFXKill, lenTarget, 0x7c8);
 SD_OFFSET(cObjElementFXKill, trails, 0x8f4);
 SD_SIZE(cObjElementFXKill, 0x918);
 typedef cObjElementFXKill cObjElementFXBettyKill;
@@ -205,8 +205,8 @@ typedef struct cObjElementFXBishopAttack {
 	void *vftable;			/* 0x00 */
 	cEntity *ent;			/* 0x04 */
 	byte pad_08[4];
-	float fc;			/* 0x0c */
-	float f10;			/* 0x10 */
+	float emitTime;		/* 0x0c the particles are emitted every 0.02 s of it */
+	float time;			/* 0x10 since the start */
 	CGameParticles particles;	/* 0x14 on Dummy01 */
 	CGameTrail trails[FXBISHOPATTACK_TRAILS];	/* 0xc4 */
 	vec3_t from;			/* 0xd4 */
@@ -224,8 +224,8 @@ typedef struct cObjElementFXBishopSellLife {
 	cEntity *attacked;		/* 0x008 */
 	CGameParticles glow;		/* 0x00c on Dummy01 */
 	CGameParticles dataCodec;	/* 0x0bc on Dummy02 */
-	float f16c;			/* 0x16c */
-	float f170;			/* 0x170 */
+	float time;			/* 0x16c since the start */
+	float emitTime;		/* 0x170 the particles are emitted every 0.02 s of it */
 	int nodeHand[2];		/* 0x174 R_Bishop_Mano_Izq, R_Bishop_Mano_Der */
 	byte started;			/* 0x17c */
 } cObjElementFXBishopSellLife;
@@ -241,14 +241,14 @@ typedef struct cObjElementFXDTritusAttack {
 	int nodeMaster;			/* 0x00c0 R_Detritus_Tronco */
 	int vertex[FXDTRITUSATTACK_POINTS];	/* 0x00c4 */
 	vec3_t point[FXDTRITUSATTACK_POINTS];	/* 0x031c relative to the trunk, unrotated */
-	float fa24[FXDTRITUSATTACK_POINTS];	/* 0x0a24 40..55 */
-	float fc7c[FXDTRITUSATTACK_POINTS];	/* 0x0c7c 25..35 */
-	float fed4[FXDTRITUSATTACK_POINTS];	/* 0x0ed4 375..425 */
+	float width[FXDTRITUSATTACK_POINTS];	/* 0x0a24 of the beams, 40..55 */
+	float len[FXDTRITUSATTACK_POINTS];	/* 0x0c7c approaches lenTarget, starts at 25..35 */
+	float lenTarget[FXDTRITUSATTACK_POINTS];	/* 0x0ed4 375..425 */
 	CGameTrail trails[FXDTRITUSATTACK_TRAILS];	/* 0x112c */
 	byte started;			/* 0x1154 */
 } cObjElementFXDTritusAttack;
 SD_OFFSET(cObjElementFXDTritusAttack, point, 0x31c);
-SD_OFFSET(cObjElementFXDTritusAttack, fed4, 0xed4);
+SD_OFFSET(cObjElementFXDTritusAttack, lenTarget, 0xed4);
 SD_OFFSET(cObjElementFXDTritusAttack, trails, 0x112c);
 SD_SIZE(cObjElementFXDTritusAttack, 0x1158);
 
@@ -312,8 +312,8 @@ typedef struct cObjElementFXMessengerAttack {
 	void *vftable;			/* 0x000 */
 	cEntity *ent;			/* 0x004 */
 	byte pad_08[4];
-	float fc;			/* 0x00c */
-	float f10;			/* 0x010 */
+	float emitTime;		/* 0x00c the particles are emitted every 0.02 s of it */
+	float time;			/* 0x010 since the start */
 	CGameParticles particles;	/* 0x014 on Dummy01 */
 	vec3_t from;			/* 0x0c4 */
 	vec3_t to;			/* 0x0d0 */
@@ -333,7 +333,7 @@ typedef struct cObjElementFXMessengerTakeDataPack {
 	void *vftable;			/* 0x000 */
 	cEntity *owner;			/* 0x004 a WalkChar */
 	cEntity *item;			/* 0x008 an Obj */
-	float fc;			/* 0x00c */
+	float time;			/* 0x00c since the start */
 	CGameParticles particles;	/* 0x010 on Dummy01 */
 	CGameTrail trails[FXDATAPACK_TRAILS];	/* 0x0c0 */
 	vec3_t points[FXDATAPACK_TRAILS][FXDATAPACK_POINTS];	/* 0x0d0 */

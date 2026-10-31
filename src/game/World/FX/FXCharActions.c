@@ -224,8 +224,8 @@ void *__thiscall cObjElementFXBishopAttack_ctor(void *self) {
 	}
 	s->started = 0;
 	s->ent = NULL;
-	s->f10 = 0.0f;
-	s->fc = 0.0f;
+	s->time = 0.0f;
+	s->emitTime = 0.0f;
 	return s;
 }
 
@@ -236,8 +236,8 @@ void *__thiscall cObjElementFXBishopSellLife_ctor(void *self) {
 	CGameParticles_ctor(&s->glow);
 	CGameParticles_ctor(&s->dataCodec);
 	s->started = 0;
-	s->f16c = 0.0f;
-	s->f170 = 0.0f;
+	s->time = 0.0f;
+	s->emitTime = 0.0f;
 	s->attacker = NULL;
 	s->attacked = NULL;
 	return s;
@@ -311,8 +311,8 @@ void *__thiscall cObjElementFXMessengerAttack_ctor(void *self) {
 	FXA_TrailsCtor(s->trails, FXMESSENGERATTACK_TRAILS);
 	s->started = 0;
 	s->ent = NULL;
-	s->f10 = 0.0f;
-	s->fc = 0.0f;
+	s->time = 0.0f;
+	s->emitTime = 0.0f;
 	return s;
 }
 
@@ -324,7 +324,7 @@ void *__thiscall cObjElementFXMessengerTakeDataPack_ctor(void *self) {
 	FXA_TrailsCtor(s->trails, FXDATAPACK_TRAILS);
 	s->started = 0;
 	s->owner = NULL;
-	s->fc = 0.0f;
+	s->time = 0.0f;
 	return s;
 }
 
@@ -980,16 +980,16 @@ void __thiscall cObjElementFXKill_Reset(cObjElementFXKill *self, int arg) {
 
 void __thiscall cObjElementFXBishopAttack_Reset(cObjElementFXBishopAttack *self, int arg) {
 	(void)arg;
-	self->f10 = 0.0f;
-	self->fc = 0.0f;
+	self->time = 0.0f;
+	self->emitTime = 0.0f;
 	CGameParticles_KillAll(&self->particles);
 	FXA_ClearTrails(self->trails, FXBISHOPATTACK_TRAILS);
 }
 
 void __thiscall cObjElementFXBishopSellLife_Reset(cObjElementFXBishopSellLife *self, int arg) {
 	(void)arg;
-	self->f16c = 0.0f;
-	self->f170 = 0.0f;
+	self->time = 0.0f;
+	self->emitTime = 0.0f;
 	self->attacker = NULL;
 	self->attacked = NULL;
 	CGameParticles_KillAll(&self->glow);
@@ -1035,15 +1035,15 @@ void __thiscall cObjElementFXMercenaryDrink_Reset(cObjElementFXMercenaryDrink *s
 
 void __thiscall cObjElementFXMessengerAttack_Reset(cObjElementFXMessengerAttack *self, int arg) {
 	(void)arg;
-	self->f10 = 0.0f;
-	self->fc = 0.0f;
+	self->time = 0.0f;
+	self->emitTime = 0.0f;
 	CGameParticles_KillAll(&self->particles);
 	FXA_ClearTrails(self->trails, FXMESSENGERATTACK_TRAILS);
 }
 
 void __thiscall cObjElementFXMessengerTakeDataPack_Reset(cObjElementFXMessengerTakeDataPack *self, int arg) {
 	(void)arg;
-	self->fc = 0.0f;
+	self->time = 0.0f;
 	CGameParticles_KillAll(&self->particles);
 	FXA_ClearTrails(self->trails, FXDATAPACK_TRAILS);
 }
@@ -1758,8 +1758,8 @@ void __thiscall cObjElementFXKill_Start(cObjElementFXKill *self, cEntity *e) {
 		rel.z = pts[i].z - center.z;
 		self->point[i] = *Vec3_RotateSC(&tmp, &rel, &c, &s);
 		self->scale[i] = FXA_Rand(15.0, 60.0) * scale;
-		self->f7c8[i] = FXA_Rand(100.0, 525.0);
-		self->f69c[i] = FXA_Rand(30.0, 105.0);
+		self->lenTarget[i] = FXA_Rand(100.0, 525.0);
+		self->len[i] = FXA_Rand(30.0, 105.0);
 	}
 }
 
@@ -1781,9 +1781,9 @@ void __thiscall cObjElementFXDTritusAttack_Start(cObjElementFXDTritusAttack *sel
 		rel.y = pts[i].y - center.y;
 		rel.z = pts[i].z - center.z;
 		self->point[i] = *Vec3_RotateSC(&tmp, &rel, &c, &s);
-		self->fa24[i] = FXA_Rand(15.0, 40.0);
-		self->fed4[i] = FXA_Rand(50.0, 375.0);
-		self->fc7c[i] = FXA_Rand(10.0, 25.0);
+		self->width[i] = FXA_Rand(15.0, 40.0);
+		self->lenTarget[i] = FXA_Rand(50.0, 375.0);
+		self->len[i] = FXA_Rand(10.0, 25.0);
 	}
 }
 
@@ -2732,7 +2732,7 @@ static void FXKill_Update(cObjElementFXKill *self, cDebris *d, float sortBias, f
 	float dt = FXA_Delta();
 	self->time = self->time + dt;
 	self->emitTime = self->emitTime + dt;
-	FXBeams b = { &self->particles, self->trails, FXKILL_TRAILS, FXKILL_POINTS, self->point, self->f69c, self->f7c8,
+	FXBeams b = { &self->particles, self->trails, FXKILL_TRAILS, FXKILL_POINTS, self->point, self->len, self->lenTarget,
 		self->scale, &self->angles, 12000.0f, 0.84f, fadeOut, inner, outer, rgb };
 	FXBeams_Draw(&b, self->time, dt, &pos, &rot);
 }
@@ -2870,7 +2870,7 @@ void __thiscall cObjElementFXDTritusAttack_Update(cObjElementFXDTritusAttack *se
 	self->emitTime = delta + self->emitTime;
 	CGameModel_Vertices(m, &pos, NULL, NULL, 1, 0, NULL, (uint32_t)self->nodeMaster, NULL);
 	FXBeams b = { &self->particles, self->trails, FXDTRITUSATTACK_TRAILS, FXDTRITUSATTACK_POINTS, self->point,
-		self->fc7c, self->fed4, self->fa24, NULL, 2000.0f, 0.72f, 0.1f, 0x40f54019, 0xffe1190a, 0xf54019 };
+		self->len, self->lenTarget, self->width, NULL, 2000.0f, 0.72f, 0.1f, 0x40f54019, 0xffe1190a, 0xf54019 };
 	FXBeams_Draw(&b, self->time, delta, &pos, &rot);
 }
 
@@ -3463,9 +3463,9 @@ void __thiscall cObjElementFXMessengerAttack_Update(cObjElementFXMessengerAttack
 	CGameModel_SetRot(Debris_Model(d), &rot);
 	CGameModel_SetSortZ(Debris_Model(d), -84.0f, 0.0f);
 	float delta = FXA_Delta();
-	self->fc = delta + self->fc;
-	float t = delta + self->f10;
-	self->f10 = t;
+	self->emitTime = delta + self->emitTime;
+	float t = delta + self->time;
+	self->time = t;
 	if (0.08f > t) {
 		FX_InRange(t, 0.0f, 0.08f, &f);
 		a = f;
@@ -3550,8 +3550,8 @@ void __thiscall cObjElementFXMessengerAttack_Update(cObjElementFXMessengerAttack
 		CGameParticles_SetParticle(sp, base + 3, p9->x, p9->y, p9->z, self->width[k] * 120.0f,
 			(uint32_t)e3 << 24 | 0x4040ff, 2, 0.0f);
 	}
-	if (!(0.02f > self->fc)) {
-		self->fc = 0.0f;
+	if (!(0.02f > self->emitTime)) {
+		self->emitTime = 0.0f;
 	}
 }
 
@@ -3573,8 +3573,8 @@ void __thiscall cObjElementFXMessengerTakeDataPack_Update(cObjElementFXMessenger
 	CGameModel_SetRot(Debris_Model(d), &rot);
 	CGameModel_SetSortZ(Debris_Model(d), -85.0f, 0.0f);
 	float delta = FXA_Delta();
-	float t = delta + self->fc;
-	self->fc = t;
+	float t = delta + self->time;
+	self->time = t;
 	if (0.05f > t) {
 		FX_InRange(t, 0.0f, 0.05f, &f);
 		a = f;
@@ -3879,9 +3879,9 @@ void __thiscall cObjElementFXBishopAttack_Update(cObjElementFXBishopAttack *self
 	CGameModel_SetRot(Debris_Model(d), &rot);
 	CGameModel_SetSortZ(Debris_Model(d), -80.0f, 0.0f);
 	float delta = FXA_Delta();
-	self->fc = delta + self->fc;
-	float t = delta + self->f10;
-	self->f10 = t;
+	self->emitTime = delta + self->emitTime;
+	float t = delta + self->time;
+	self->time = t;
 	if (0.06f > t) {
 		FX_InRange(t, 0.0f, 0.06f, &f);
 		a = f;
@@ -3916,7 +3916,7 @@ void __thiscall cObjElementFXBishopAttack_Update(cObjElementFXBishopAttack *self
 		p = (vec3_t){ self->to.x + ex, self->to.y + ey, self->to.z + ez };
 		CGameTrail_Add(&self->trails[1], p, w, col);
 	}
-	CGameTrail_SetUV(&self->trails[1], self->f10 * -8.0f, 0.0f);
+	CGameTrail_SetUV(&self->trails[1], self->time * -8.0f, 0.0f);
 	CGameTrail_Reset(&self->trails[2]);
 	uint32_t c4 = (uint32_t)FXA_Min255(alpha + 8) << 24 | 0x3040c0;
 	FXBishop_Sparks(&self->trails[2], &self->from, &self->dir, 150.0f, 1.0f, c4, c4 | 0xff000000);
@@ -3925,8 +3925,8 @@ void __thiscall cObjElementFXBishopAttack_Update(cObjElementFXBishopAttack *self
 	CGameTrail_Reset(&self->trails[3]);
 	FXBishop_Sparks(&self->trails[3], &self->to, &self->dir, 160.0f, -1.0f, c4, c4 | 0xff000000);
 	FXBishop_Flashes(sp, 0xc, &self->to, &self->dir, -15.0f, 20.0f, toSizes, 115.0f, alpha);
-	if (!(0.02f > self->fc)) {
-		self->fc = 0.0f;
+	if (!(0.02f > self->emitTime)) {
+		self->emitTime = 0.0f;
 	}
 }
 
@@ -3980,9 +3980,9 @@ void __thiscall cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *
 	}
 	CGameModel_SetSortZ(Debris_Model(d), -79.0f, 0.0f);
 	float delta = FXA_Delta();
-	self->f16c = self->f16c + delta;
-	float t = self->f170 + delta;
-	self->f170 = t;
+	self->time = self->time + delta;
+	float t = self->emitTime + delta;
+	self->emitTime = t;
 	if (0.02f > t) {
 		return;
 	}
@@ -4002,7 +4002,7 @@ void __thiscall cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *
 		for (int k = 0; k < 2; k++) {
 			CGameModel_Vertices(mb, &hand[k], NULL, NULL, 1, 0, NULL, (uint32_t)self->nodeHand[k], NULL);
 		}
-		if (FX_InRange(self->f16c, 0.2f, 4.5f, &f)) {
+		if (FX_InRange(self->time, 0.2f, 4.5f, &f)) {
 			for (int k = 0; k < 2; k++) {
 				const vec3_t *h = &hand[k];
 				glow->birthRate = 0;
@@ -4044,7 +4044,7 @@ void __thiscall cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *
 				FXSellLife_Code(code);
 			}
 		}
-		if (FX_InRange(self->f16c, 3.9f, 5.0f, &f)) {
+		if (FX_InRange(self->time, 3.9f, 5.0f, &f)) {
 			mid.x = hand[0].x + (hand[1].x - hand[0].x) * 0.5f;
 			mid.y = hand[0].y + (hand[1].y - hand[0].y) * 0.5f;
 			mid.z = hand[0].z + (hand[1].z - hand[0].z) * 0.5f;
@@ -4091,7 +4091,7 @@ void __thiscall cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *
 	}
 	float lo = self->attacker ? 4.0f : 0.0f;
 	float hi = self->attacker ? 5.5f : 1.5f;
-	if (FX_InRange(self->f16c, lo, hi, &f)) {
+	if (FX_InRange(self->time, lo, hi, &f)) {
 		cWorld *w = g_pWorld;
 		cam = w->camPos[w->curCam];
 		const vec3_t *c = Obj_Vtbl(self->attacked)->GetViewPos(self->attacked, &tmp);
@@ -4170,5 +4170,5 @@ void __thiscall cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *
 			}
 		}
 	}
-	self->f170 = 0.0f;
+	self->emitTime = 0.0f;
 }

@@ -12,10 +12,10 @@ root, struct, mapfile = sys.argv[1:4]
 rows = [l.split() for l in open(mapfile) if l.strip() and not l.startswith('#')]
 if struct == '-':
 	m = {(r[0], r[1]): r[2] for r in rows}
-	pat = re.compile(r"^(\S+?):(\d+):(\d+): error: '(\w+)' has no member named '(\w+)'")
+	pat = re.compile(r"^(\S+?):(\d+):(\d+): error: '(?:struct )?(\w+)' has no member named '(\w+)'")
 else:
 	m = {(struct, r[0]): r[1] for r in rows}
-	pat = re.compile(r"^(\S+?):(\d+):(\d+): error: '(%s)' has no member named '(\w+)'" % re.escape(struct))
+	pat = re.compile(r"^(\S+?):(\d+):(\d+): error: '(?:struct )?(%s)' has no member named '(\w+)'" % re.escape(struct))
 # gcc columns count a tab as up to 8 display columns
 def byteidx(s, col):
 	d = 1
@@ -54,3 +54,5 @@ for rnd in range(10):
 			n += 1
 		open(f, 'w').write('\n'.join(lines))
 	print('round %d: %d replaced in %d files' % (rnd, n, len(hits)))
+	if not n:
+		break
