@@ -77,7 +77,7 @@ void ATPC_Create(cAbstractFile *params) {
 				continue;
 			}
 			int node = wm->nodes[g_ATPCIDAmmo][i];
-			const matrix_t *m = CGameModel_NodeMatrix(WEnt_Vtbl(v)->GetObjData(v), &mat, node, 0, NULL, 0);
+			const matrix_t *m = CGameModel_NodeMatrix(Obj_Vtbl(v)->GetModel(v), &mat, node, 0, NULL, 0);
 			p.x = m->m[12];
 			p.y = m->m[13];
 			p.z = m->m[14];
@@ -124,7 +124,7 @@ void ATPC_Create(cAbstractFile *params) {
 			CHECK(w);
 			CHECK(Entity_IsType(w, TYEN_WITH_LIFE));
 			float rad = Entity_Radius(w);
-			const vec3_t *pc = WEnt_Vtbl(v)->GetCenter(v, &c);
+			const vec3_t *pc = Obj_Vtbl(v)->GetViewPos(v, &c);
 			float cy = pc->y - hit.y;
 			float cx = pc->x - hit.x;
 			float cz = pc->z - hit.z;
@@ -447,7 +447,7 @@ void ATPC_XplosionCall(cAbstractFile *params) {
 		dx = dx * f * k;
 		dy = dy * f * k;
 		dz = dz * f * k;
-		const vec3_t *vel = WEnt_Vtbl(victim)->GetVel(victim, &r);
+		const vec3_t *vel = Obj_Vtbl(victim)->GetVel(victim, &r);
 		n.x = dx + vel->x;
 		n.y = vel->y + dy;
 		n.z = vel->z + dz;

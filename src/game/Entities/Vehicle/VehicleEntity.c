@@ -581,7 +581,7 @@ void __thiscall cVehicleEntity_Collide(cVehicleEntity *self, vec3_t *from, float
 	}
 	if (cVehicleTraffic_CollideEntities(&self->traffic) &&
 		cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), (void *)1, from, self->wl.prim.radius, NULL, 0,
-			(int)(intptr_t)pos)) {
+			pos)) {
 		self->hitTime = Timer_GetTime(&self->wl.obj.timer);
 		to.x = from->x + self->wl.obj.vel.x * dt;
 		to.y = from->y + self->wl.obj.vel.y * dt;

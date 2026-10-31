@@ -159,7 +159,7 @@ void ChType_BishopAttack(cAbstractFile *params) {
 	from.z = s->z + mp.z;
 	to = hit;
 	if (target) {
-		to = *WEnt_Vtbl(target)->GetCenter(target, &t1);
+		to = *Obj_Vtbl(target)->GetViewPos(target, &t1);
 	}
 	FXMisc_SetEntity(el, v);
 	float k1 = FxElem_Rand(0.20000004768371582, 0.8999999761581421);

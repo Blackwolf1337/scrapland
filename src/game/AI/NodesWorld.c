@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "scrap/ai.h"
+#include "scrap/camcontrol.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"
@@ -823,10 +824,9 @@ byte __thiscall CNodesWorld_HasPointVis(CNodesWorld *self, const vec3_t *pos, fl
 }
 
 void NW_CamPos(float *x, float *y, float *z) {
-	typedef void(__thiscall * getCamPos_t)(cEntity * e, float *x, float *y, float *z);
 	cEntity *e = World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
 
-	((getCamPos_t)((void *const *)e->vftable)[0x5c / 4])(e, x, y, z);
+	CamCtl_Vtbl(e)->GetCamPos(e, x, y, z);
 }
 
 byte __thiscall CNodesWorld_PointSeen(CNodesWorld *self, const vec3_t *pos) {

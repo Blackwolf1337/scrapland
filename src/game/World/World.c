@@ -91,15 +91,15 @@ cEntity *Entity_FindInView(cEntity *self, float range, float *outDot, float *out
 	float range2 = range * range;
 	vec3_t pos, ang, tmp;
 
-	WEnt_Vtbl(self)->GetView(self, &pos, &ang);
+	Obj_Vtbl(self)->GetCamera(self, &pos, &ang);
 	ang.x = ang.x + PI_F;
-	byte hasAI = WEnt_Vtbl(self)->GetAI(self) != NULL;
-	cEntity *e = hasAI ? AI_GetTarget(WEnt_Vtbl(self)->GetAI(self)) : cWorld_GetFirstEntity(g_pWorld);
+	byte hasAI = self->vftable->GetAI(self) != NULL;
+	cEntity *e = hasAI ? AI_GetTarget(self->vftable->GetAI(self)) : cWorld_GetFirstEntity(g_pWorld);
 	if (!e) {
 		return NULL;
 	}
 	for (;;) {
-		if (e->flag_4c && e != self && WEnt_Vtbl(e)->IsType(e, TYEN_CAR)) {
+		if (e->flag_4c && e != self && e->vftable->IsType(e, TYEN_CAR)) {
 			int take;
 			if (hasAI || mode == 2) {
 				take = 1;
@@ -110,7 +110,7 @@ cEntity *Entity_FindInView(cEntity *self, float range, float *outDot, float *out
 				take = mode == 0 && Entity_Team(e) != 3;
 			}
 			if (take) {
-				vec3_t tp = *WEnt_Vtbl(e)->GetPos(e, &tmp);
+				vec3_t tp = *e->vftable->GetPos(e, &tmp);
 				float dx = tp.x - pos.x;
 				float dy = tp.y - pos.y;
 				float dz = tp.z - pos.z;
@@ -583,11 +583,11 @@ byte __thiscall cWorld_LineCallF(cWorld *self, uint32_t mask, const vec3_t *from
 		if (!(Entity_Mask(e) & mask)) {
 			continue;
 		}
-		float d2 = Dist2_PointSegment(from, to, WEnt_Vtbl(e)->GetPos(e, &pos), &closest);
-		if (!WEnt_Vtbl(e)->TestSphere(e, NULL, &closest, radius, 0)) {
+		float d2 = Dist2_PointSegment(from, to, e->vftable->GetPos(e, &pos), &closest);
+		if (!e->vftable->TestSphere(e, NULL, &closest, radius, 0)) {
 			continue;
 		}
-		if (Engine_TestLine(&closest, WEnt_Vtbl(e)->GetPos(e, &pos2), NULL, NULL)) {
+		if (Engine_TestLine(&closest, e->vftable->GetPos(e, &pos2), NULL, NULL)) {
 			continue;
 		}
 		cPy_Function_AddParamS(func, e->name);
@@ -627,8 +627,8 @@ byte __thiscall cWorld_LineFirst(cWorld *self, cEntity *exclude, uint32_t mask, 
 		if (!(Entity_Mask(e) & mask)) {
 			continue;
 		}
-		Dist2_PointSegment(from, to, WEnt_Vtbl(e)->GetPos(e, &pos), &closest);
-		if (e != exclude && WEnt_Vtbl(e)->TestSphere(e, NULL, &closest, radius, 0)) {
+		Dist2_PointSegment(from, to, e->vftable->GetPos(e, &pos), &closest);
+		if (e != exclude && e->vftable->TestSphere(e, NULL, &closest, radius, 0)) {
 			if (target) {
 				*target = e;
 			}
@@ -744,8 +744,8 @@ void __fastcall cWorld_Clear(cWorld *self) {
 	Scheduler_Clear((cScheduledFuncStack *)self->scheduler);
 	for (n = self->entityList.next; n->data && n; n = n->next) {
 		cEntity *e = n->data;
-		if (WEnt_Vtbl(e)->IsType(e, "Cam")) {
-			WEnt_Vtbl(e)->SetTarget(e, NULL);
+		if (e->vftable->IsType(e, "Cam")) {
+			CamCtl_Vtbl(e)->SetTarget(e, NULL);
 		}
 	}
 	Camera_SetCurrent(NULL);
@@ -760,7 +760,7 @@ void __fastcall cWorld_Clear(cWorld *self) {
 		}
 		cEntity *e = n->data;
 		if (e) {
-			WEnt_Vtbl(e)->Delete(e, 1);
+			e->vftable->Delete(e, 1);
 		}
 	}
 	while (self->debrisList) {
@@ -958,8 +958,8 @@ void *__thiscall cWorld_GetObjData(cWorld *self, const char *name) {
 	(void)self;
 	if (*name) {
 		cEntity *e = World_Lookup(g_pWorld, name);
-		if (e && WEnt_Vtbl(e)->IsType(e, "Obj")) {
-			return WEnt_Vtbl(e)->GetObjData(e);
+		if (e && e->vftable->IsType(e, "Obj")) {
+			return Obj_Vtbl(e)->GetModel(e);
 		}
 	}
 	return NULL;
@@ -1028,7 +1028,7 @@ byte __thiscall cWorld_TestLineEntities(cWorld *world, int arg, void *list, cons
 		if (e == exclude || !(Entity_Mask(e) & mask) || World_IsIgnoredInline(world, e)) {
 			continue;
 		}
-		if (WEnt_Vtbl(e)->TestLine(e, from, hit)) {
+		if (e->vftable->TestLine(e, from, hit)) {
 			if (target) {
 				*target = e;
 			}
@@ -1066,14 +1066,14 @@ int __thiscall cWorld_SetCam(cWorld *world, int i, const char *name) {
 		if (it) {
 			cam = it->value;
 		}
-		if (!cam || !WEnt_Vtbl(cam)->IsType(cam, "Cam")) {
+		if (!cam || !cam->vftable->IsType(cam, "Cam")) {
 			return 2;
 		}
 	}
 	char *key = world->camName[i];
 	if (*key) {
 		cEntity *old = World_Lookup(world, key);
-		if (old && WEnt_Vtbl(old)->IsType(old, "Cam")) {
+		if (old && old->vftable->IsType(old, "Cam")) {
 			CamEntity_Slot(old) = -1;
 		}
 	}
@@ -1102,15 +1102,15 @@ void __thiscall cWorld_UpdateListeners(cWorld *self, float dt) {
 			continue;
 		}
 		cEntity *cam = World_Lookup(self, key);
-		if (!cam || !WEnt_Vtbl(cam)->IsType(cam, "Cam")) {
+		if (!cam || !cam->vftable->IsType(cam, "Cam")) {
 			continue;
 		}
-		if (WEnt_Vtbl(cam)->IsType(cam, "FCam") && cCamEntity_GetTarget(cam) && !((cCamControl *)cam)->link[0]) {
+		if (cam->vftable->IsType(cam, "FCam") && cCamEntity_GetTarget(cam) && !((cCamControl *)cam)->link[0]) {
 			cEntity *t = cCamEntity_GetTarget(cam);
 			const CSoundSysVtbl *svt = g_pSound->vftable;
 			vec3_t vel, pos;
-			vec3_t *pv = WEnt_Vtbl(t)->GetVel(t, &vel);
-			vec3_t *pp = WEnt_Vtbl(t)->GetCenter(t, &pos);
+			vec3_t *pv = Obj_Vtbl(t)->GetVel(t, &vel);
+			vec3_t *pp = Obj_Vtbl(t)->GetViewPos(t, &pos);
 			Snd_SetListener(svt)(g_pSound, i, pp, CamEntity_Orient(cam), pv);
 		} else {
 			float inv = 1.0f / dt;
@@ -1146,7 +1146,7 @@ void __thiscall cWorld_Update(cWorld *self, float dt) {
 		if (*key) {
 			cEntity *cam = World_Lookup(self, key);
 			if (cam) {
-				CHECK(WEnt_Vtbl(cam)->IsType(cam, "Cam"));
+				CHECK(cam->vftable->IsType(cam, "Cam"));
 				Camera_SetCurrent((CGameCamera *)CamEntity_Cam(cam));
 			}
 		}
@@ -1157,9 +1157,9 @@ void __thiscall cWorld_Update(cWorld *self, float dt) {
 		for (n = self->entityList.next; n->data && n; n = n->next) {
 			cEntity *e = n->data;
 			if (e->flag_4c) {
-				WEnt_Vtbl(e)->Update(e);
+				e->vftable->Update(e);
 			} else {
-				WEnt_Vtbl(e)->UpdateOff(e);
+				e->vftable->UpdateOff(e);
 			}
 		}
 		for (cDebrisSys *d = self->debrisList; d; d = d->next) {
@@ -1173,7 +1173,7 @@ void __thiscall cWorld_Update(cWorld *self, float dt) {
 			}
 			cEntity *e = n->data;
 			PtrTable_Delete(&self->entities, e->name);
-			WEnt_Vtbl(e)->Delete(e, 1);
+			e->vftable->Delete(e, 1);
 		}
 		for (int i = 0; i < 4; i++) {
 			self->owners[i] = NULL;
@@ -1181,12 +1181,12 @@ void __thiscall cWorld_Update(cWorld *self, float dt) {
 		for (n = self->entityList.next; n->data && n; n = n->next) {
 			cEntity *e = n->data;
 			uint32_t slot;
-			if (!e->flag_4c || !WEnt_Vtbl(e)->IsType(e, TYEN_WITH_LIFE)) {
+			if (!e->flag_4c || !e->vftable->IsType(e, TYEN_WITH_LIFE)) {
 				continue;
 			}
-			if (WEnt_Vtbl(e)->IsType(e, TYEN_CAR)) {
+			if (e->vftable->IsType(e, TYEN_CAR)) {
 				slot = cVehicleEntity_GetOwnerSlot(e);
-			} else if (WEnt_Vtbl(e)->IsType(e, TYEN_WALKCHAR)) {
+			} else if (e->vftable->IsType(e, TYEN_WALKCHAR)) {
 				slot = cWalkCharEntity_GetOwnerSlot(e);
 			} else {
 				continue;
@@ -1225,10 +1225,10 @@ byte __thiscall cWorld_SphereCallF(cWorld *self, uint32_t mask, const vec3_t *ce
 	CHECK(Grid_IsOk(self->grid));
 	World_SphereBox(center, radius, &lo, &hi);
 	for (cEntity *e = Grid_FirstInBox(self->grid, &lo, &hi); e; e = Grid_NextInBox(self->grid)) {
-		if (!(Entity_Mask(e) & mask) || !WEnt_Vtbl(e)->TestSphere(e, NULL, center, radius, 0)) {
+		if (!(Entity_Mask(e) & mask) || !e->vftable->TestSphere(e, NULL, center, radius, 0)) {
 			continue;
 		}
-		if (!(byte)noWall && Engine_TestLine(center, WEnt_Vtbl(e)->GetPos(e, &pos), NULL, NULL)) {
+		if (!(byte)noWall && Engine_TestLine(center, e->vftable->GetPos(e, &pos), NULL, NULL)) {
 			continue;
 		}
 		cPy_Function_AddParamS(func, e->name);
@@ -1251,7 +1251,7 @@ byte __thiscall cWorld_SphereCall(cWorld *world, void *list, const vec3_t *cente
 
 /* the entities of mask (not exclude, not ignored) in the sphere, the last one in *target; the ignore list is emptied */
 byte __thiscall cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, void *list, const vec3_t *center,
-	float radius, cEntity **target, int a, int b) {
+	float radius, cEntity **target, int a, const vec3_t *prev) {
 	uint32_t mask = (uint32_t)list;
 	byte found = 0;
 	vec3_t lo, hi;
@@ -1266,7 +1266,7 @@ byte __thiscall cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, void 
 		if (!(Entity_Mask(e) & mask) || e == exclude || World_IsIgnoredInline(world, e)) {
 			continue;
 		}
-		if (WEnt_Vtbl(e)->TestSphere(e, exclude, center, radius, b)) {
+		if (e->vftable->TestSphere(e, exclude, center, radius, prev)) {
 			if (target) {
 				*target = e;
 			}

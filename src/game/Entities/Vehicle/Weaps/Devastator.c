@@ -86,7 +86,7 @@ void Devastator_Create(cAbstractFile *params) {
 			continue;
 		}
 		int node = wm->nodes[g_DevastatorIDAmmo][i];
-		const matrix_t *m = CGameModel_NodeMatrix(WEnt_Vtbl(v)->GetObjData(v), &mat, node, 0, NULL, 0);
+		const matrix_t *m = CGameModel_NodeMatrix(Obj_Vtbl(v)->GetModel(v), &mat, node, 0, NULL, 0);
 		p.x = m->m[12];
 		p.y = m->m[13];
 		p.z = m->m[14];
@@ -98,11 +98,11 @@ void Devastator_Create(cAbstractFile *params) {
 			float rz = Dev_Rand(14.0, -7.0);
 			float ry = Dev_Rand(2000.0, 0.0);
 			float rx = Dev_Rand(200.0, -100.0);
-			const vec3_t *pc = WEnt_Vtbl(v)->GetCenter(v, &rot);
+			const vec3_t *pc = Obj_Vtbl(v)->GetViewPos(v, &rot);
 			float dx = (bullet->drop[0].x - pc->x) * 10.0f;
 			float dy = (bullet->drop[0].y - pc->y) * 10.0f;
 			float dz = (bullet->drop[0].z - pc->z) * 10.0f;
-			const vec3_t *vel = WEnt_Vtbl(v)->GetVel(v, &c);
+			const vec3_t *vel = Obj_Vtbl(v)->GetVel(v, &c);
 			bullet->drop[2].x = dx + vel->x * 0.5f + rx;
 			bullet->drop[2].z = dz + vel->z * 0.5f + rz;
 			bullet->drop[2].y = dy + vel->y * 0.5f + ry;
@@ -135,7 +135,7 @@ void Devastator_Create(cAbstractFile *params) {
 			CHECK(w);
 			CHECK(Entity_IsType(w, TYEN_WITH_LIFE));
 			float rad = Entity_Radius(w);
-			const vec3_t *pc = WEnt_Vtbl(v)->GetCenter(v, &c);
+			const vec3_t *pc = Obj_Vtbl(v)->GetViewPos(v, &c);
 			float cy = pc->y - C->y;
 			float cx = pc->x - C->x;
 			float cz = pc->z - C->z;
@@ -586,7 +586,7 @@ void Devastator_XplosionCall(cAbstractFile *params) {
 		x = x * k;
 		y = y * k;
 		z = z * k;
-		const vec3_t *vel = WEnt_Vtbl(victim)->GetVel(victim, &r);
+		const vec3_t *vel = Obj_Vtbl(victim)->GetVel(victim, &r);
 		n.x = x + vel->x;
 		n.y = vel->y + y;
 		n.z = vel->z + z;

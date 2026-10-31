@@ -23,13 +23,13 @@ void ChType_FXDesktopFallEnd(cAbstractFile *params) {
 	if (WChar_Cam(v)) {
 		cPad_Rumble(&g_Pads[0], 0.5f, 0.0f, 0.125f);
 	}
-	const vec3_t *c = WEnt_Vtbl(v)->GetCenter(v, &tmp);
+	const vec3_t *c = Obj_Vtbl(v)->GetViewPos(v, &tmp);
 	if (!FX_IsVisible(c->x, c->y, c->z, 250.0f, g_FXDesktopFallEndDist, NULL, 0)) {
 		return;
 	}
 	cWorld *w = g_pWorld;
 	vec3_t cp = w->camPos[w->curCam];
-	c = WEnt_Vtbl(v)->GetCenter(v, &tmp);
+	c = Obj_Vtbl(v)->GetViewPos(v, &tmp);
 	float dx = cp.x - c->x;
 	float dy = cp.y - c->y;
 	float dz = cp.z - c->z;
@@ -57,7 +57,7 @@ void ChType_FXDesktopFallEnd(cAbstractFile *params) {
 	}
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXDesktopFallEndFile);
 	cDebris *dbr = cDebrisSys_NewElement(sys);
-	CGameModel_SetPos(Debris_Model(dbr), WEnt_Vtbl(v)->GetCenter(v, &tmp));
+	CGameModel_SetPos(Debris_Model(dbr), Obj_Vtbl(v)->GetViewPos(v, &tmp));
 	Debris_Life(dbr) = 1.0f;
 	cDebrisSys_Drop(sys, dbr);
 	byte *el = Debris_Element(dbr);
@@ -240,7 +240,7 @@ void ChType_DesktopActionPress(cAbstractFile *params) {
 	target = NULL;
 	float radius = Entity_Radius(v);
 	p = v->vftable->GetPos(v, &t3);
-	if (!cWorld_TestSphereEntities(g_pWorld, v, (void *)0x10, p, radius, &target, 1, (int)&c) || !target ||
+	if (!cWorld_TestSphereEntities(g_pWorld, v, (void *)0x10, p, radius, &target, 1, &c) || !target ||
 		!target->vftable->IsType(target, TYEN_WALKCHAR) || !ChType_ActCtrl(target)) {
 		return;
 	}

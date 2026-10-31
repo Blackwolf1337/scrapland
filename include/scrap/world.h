@@ -53,43 +53,6 @@ SD_SIZE(cAmmoInfo, 0x5c);
 #define CWORLD_VFTABLE GAME_VFTABLE(cWorld_vftable, 0x3cec84)
 #define CWORLD_SIZE 0x225c
 
-/* the slots of the entity vtables the world calls; entity.h has the first ones by their script use */
-typedef struct cWorldEntityVtbl {
-	void(__thiscall *Update)(cEntity *self);			/* 0x00 every frame while flag_4c is set */
-	void *vf01;
-	void(__thiscall *UpdateOff)(cEntity *self);			/* 0x08 every frame otherwise */
-	void(__thiscall *Delete)(cEntity *self, int flags);		/* 0x0c deleting destructor */
-	void *vf04;
-	byte(__thiscall *IsType)(cEntity *self, const char *type);	/* 0x14 */
-	vec3_t *(__thiscall *GetPos)(cEntity *self, vec3_t *out);	/* 0x18 */
-	void *vf07_08[2];
-	/* the segment from -> *hit against the entity; on a hit *hit is moved to it */
-	byte(__thiscall *TestLine)(cEntity *self, const vec3_t *from, vec3_t *hit);			/* 0x24 */
-	byte(__thiscall *TestSphere)(cEntity *self, cEntity *exclude, const vec3_t *center, float radius, int arg); /* 0x28 */
-	void *vf0b_15[11];
-	void *(__thiscall *GetAI)(cEntity *self);			/* 0x58 */
-	void *vf17_1a[4];
-	void(__thiscall *SetTarget)(cEntity *self, const char *name);	/* 0x6c cameras */
-	void *vf1c;
-	vec3_t *(__thiscall *GetCenter)(cEntity *self, vec3_t *out);	/* 0x74 the vector at +0xa0 of an object */
-	void *vf1e_21[4];
-	vec3_t *(__thiscall *GetVel)(cEntity *self, vec3_t *out);	/* 0x88 the vector at +0xd4 of an object */
-	void *vf23_25[3];
-	void *(__thiscall *GetObjData)(cEntity *self);			/* 0x98 "Obj": the data at +0xb8 */
-	void(__thiscall *GetView)(cEntity *self, vec3_t *pos, vec3_t *ang);	/* 0x9c eye position and angles */
-} cWorldEntityVtbl;
-SD_OFFSET(cWorldEntityVtbl, Delete, 0x0c);
-SD_OFFSET(cWorldEntityVtbl, TestSphere, 0x28);
-SD_OFFSET(cWorldEntityVtbl, GetAI, 0x58);
-SD_OFFSET(cWorldEntityVtbl, SetTarget, 0x6c);
-SD_OFFSET(cWorldEntityVtbl, GetCenter, 0x74);
-SD_OFFSET(cWorldEntityVtbl, GetVel, 0x88);
-SD_OFFSET(cWorldEntityVtbl, GetView, 0x9c);
-
-static inline const cWorldEntityVtbl *WEnt_Vtbl(cEntity *e) {
-	return (const cWorldEntityVtbl *)e->vftable;
-}
-
 /* the fields of entities the world reads */
 #define Entity_Mask(e) (((cEntity *)(e))->mask)		/* the entity lists it is in, a bit each */
 #define Entity_Team(e) (WLife(e)->arrow.tgType)		/* characters: 3 neutral, 4 against all */

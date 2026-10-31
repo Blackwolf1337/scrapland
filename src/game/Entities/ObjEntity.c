@@ -42,22 +42,8 @@
 #define NET_ROT_SHORT_MAX 214466.0584850632	/* rva 0x3b38e8, 32000 * NET_ROT_SHORT */
 #define NET_ROT_BYTE_MAX 13.29940890019679	/* rva 0x3b38c0, 127 * NET_ROT_BYTE */
 
-/* the slots of the follow camera of an object and of the AI the object calls */
-typedef struct cObjCamVtbl {
-	void *vf00_24[25];
-	void(__thiscall *Lerp)(cEntity *cam, float f);			/* 0x64 */
-	void(__thiscall *Slot)(cEntity *cam, float dt);			/* 0x68 */
-	void *vf27;
-	void(__thiscall *UpdateOff)(cEntity *cam, float dt);		/* 0x70 */
-} cObjCamVtbl;
-SD_OFFSET(cObjCamVtbl, UpdateOff, 0x70);
-
 static inline cObjEntity *Obj(cEntity *e) {
 	return (cObjEntity *)e;
-}
-
-static inline const cObjCamVtbl *Cam_Vtbl(cEntity *cam) {
-	return (const cObjCamVtbl *)cam->vftable;
 }
 
 static inline uint32_t Float_Bits(float f) {
@@ -408,7 +394,7 @@ void __thiscall cObjEntity_UpdateOff(cEntity *self) {
 	cSndInterface_StopAll(&o->snd, (int)Float_Bits(dt));
 	cEntity_UpdateOff(self);
 	if (o->cam) {
-		Cam_Vtbl(o->cam)->UpdateOff(o->cam, dt);
+		CamCtl_Vtbl(o->cam)->UpdateOff(o->cam, dt);
 	}
 }
 
@@ -673,7 +659,7 @@ void __thiscall cObjEntity_Update(cEntity *self) {
 	cModMove_Update(&o->mod, dt);
 	Obj_Vtbl(self)->UpdateModel(self);
 	if (o->cam) {
-		Cam_Vtbl(o->cam)->Lerp(o->cam, f);
+		CamCtl_Vtbl(o->cam)->Lerp(o->cam, f);
 	}
 	if ((byte)cSlotController_Tick(o->slot, dt)) {
 		float iv;
@@ -701,7 +687,7 @@ void __thiscall cObjEntity_Update(cEntity *self) {
 			}
 			Obj_Vtbl(self)->Tick(self, iv);
 			if (o->cam) {
-				Cam_Vtbl(o->cam)->Slot(o->cam, iv);
+				CamCtl_Vtbl(o->cam)->Slot(o->cam, iv);
 			}
 		}
 		float cx = self->pos.x, cy = self->pos.y, cz = self->pos.z;

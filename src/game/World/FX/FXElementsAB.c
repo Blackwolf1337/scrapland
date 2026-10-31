@@ -459,9 +459,9 @@ static void Limit_Car(cFXElementsABFakeLimit *self, cEntity *e, float dt) {
 	vec3_t tmp, dirA, dirB, dirc, angTmp;
 	const vec3_t *dir;
 
-	CGameModel *carModel = WEnt_Vtbl(e)->GetObjData(e);
+	CGameModel *carModel = Obj_Vtbl(e)->GetModel(e);
 	CHECK(carModel && CGameModel_IsLoaded(carModel));
-	const vec3_t *c = WEnt_Vtbl(e)->GetCenter(e, &tmp);
+	const vec3_t *c = Obj_Vtbl(e)->GetViewPos(e, &tmp);
 	float dy = c->y - self->centre.y;
 	float dx = c->x - self->centre.x;
 	float dz = c->z - self->centre.z;
@@ -534,10 +534,10 @@ void __thiscall cFXElementsABFakeLimit_Update(cFXElementsABFakeLimit *self, floa
 	cWorld *w = g_pWorld;
 	cEntity *e = w->owners[0];
 	if (e) {
-		CHECK(WEnt_Vtbl(e)->IsType(e, TYEN_WITH_LIFE));
+		CHECK(e->vftable->IsType(e, TYEN_WITH_LIFE));
 	}
 	e = w->owners[0];
-	if (e && WEnt_Vtbl(e)->IsType(e, TYEN_CAR) && Car_Data(e)) {
+	if (e && e->vftable->IsType(e, TYEN_CAR) && Car_Data(e)) {
 		Limit_Car(self, e, dt);
 		return;
 	}

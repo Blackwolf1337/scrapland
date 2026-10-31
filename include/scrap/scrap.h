@@ -211,7 +211,7 @@ void *EntityLists_Get(const char *name);
 byte __thiscall cWorld_TestLineEntities(cWorld *world, int arg, void *list, const vec3_t *from, const vec3_t *to,
 	vec3_t *hit, cEntity **target, int flag);
 byte __thiscall cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, void *list, const vec3_t *center,
-	float radius, cEntity **target, int a, int b);
+	float radius, cEntity **target, int a, const vec3_t *prev);
 byte __thiscall cWorld_SphereCall(cWorld *world, void *list, const vec3_t *center, float radius, const char *func,
 	int flag);
 byte DummySearch_Next(char *buf, int size, vec3_t *pos, float *ang, byte *flag);

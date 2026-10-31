@@ -14,7 +14,6 @@
 #define ITEM_CLASSNAME GAME_STR(str_3af3f8, 0x3af3f8)	/* "item" */
 
 /* the entity callback of the sphere test: other touched self at point */
-typedef void(__thiscall *touchfn_t)(cEntity *self, cEntity *other, const vec3_t *point, const vec3_t *dir);
 
 int Vec3_Differ(const float *a, const float *b);
 
@@ -541,7 +540,7 @@ byte __thiscall cItemEntity_TestSphere(cItemEntity *self, cEntity *other, const 
 		point.y = p->y + oy;
 		point.z = p->z + oz;
 		/* slot 11 of the other entity: touched by the item */
-		((touchfn_t)WEnt_Vtbl(other)->vf0b_15[0])(other, Item_Ent(self), &point, &dir);
+		other->vftable->Touch(other, Item_Ent(self), &point, &dir);
 	}
 	return 1;
 }

@@ -1183,7 +1183,7 @@ void __thiscall cObjElementFXGearMissile_Run(void *self, cDebris *d) {
 
 /* the slot 0x80 of the entity vtable: the angles into out */
 static inline vec3_t *GM_EntityRot(cEntity *e, vec3_t *out) {
-	return ((vec3_t * (__thiscall *)(cEntity *, vec3_t *)) WEnt_Vtbl(e)->vf1e_21[2])(e, out);
+	return Obj_Vtbl(e)->GetAng(e, out);
 }
 
 static uint32_t GM_Color(int a, uint32_t rgb) {

@@ -452,7 +452,7 @@ void __thiscall cWalkCharEntity_Walk(cEntity *self, float dt) {
 	w->wl.obj.vel.y = 0.0f;
 	w->wl.obj.vel.z = 0.0f;
 	hit = NULL;
-	if (!cWorld_TestSphereEntities(g_pWorld, self, WCE_HIT_LISTS, &old, w->wl.prim.radius, &hit, 0, (int)pos)) {
+	if (!cWorld_TestSphereEntities(g_pWorld, self, WCE_HIT_LISTS, &old, w->wl.prim.radius, &hit, 0, pos)) {
 		Nto1Node_UnlinkChecked(&w->collide);
 		goto speed;
 	}

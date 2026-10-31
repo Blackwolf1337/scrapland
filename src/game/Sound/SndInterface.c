@@ -4,12 +4,9 @@
  */
 #include <string.h>
 
+#include "scrap/objentity.h"
 #include "scrap/sound.h"
 #include "scrap/world.h"
-
-/* the position the sounds of an entity play at (vtable slot 0x7c) */
-typedef vec3_t *(__thiscall *SndPosFn)(cEntity *self, vec3_t *out);
-#define Entity_SoundPos(e) ((SndPosFn)WEnt_Vtbl(e)->vf1e_21[1])
 
 /* a field of a sound by the character of an "xxx%c" variable, which the original does not check */
 #define SndItem_Field(it, type, c, base) ((type *)((byte *)(it) + (c) * 4 - (base)))
@@ -43,8 +40,8 @@ cSndItem *__fastcall cSndItem_ctor(cSndItem *self) {
 void __thiscall cSndItem_UpdateAt(cSndItem *self, cEntity *e) {
 	vec3_t vel, pos;
 
-	const vec3_t *pv = WEnt_Vtbl(e)->GetVel(e, &vel);
-	const vec3_t *pp = Entity_SoundPos(e)(e, &pos);
+	const vec3_t *pv = Obj_Vtbl(e)->GetVel(e, &vel);
+	const vec3_t *pp = Obj_Vtbl(e)->GetSndPos(e, &pos);
 	cSound_SetPosVel(&self->sound, pp, pv);
 	self->sound.desc.volume += Snd_Volume(self->volume);
 	cSound_SetPitch(&self->sound, self->pitch);

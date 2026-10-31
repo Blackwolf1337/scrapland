@@ -23,11 +23,11 @@
 
 /* cEntity slot 0x78: the angles of the entity into out */
 static inline vec3_t *Entity_GetRot(cEntity *e, vec3_t *out) {
-	return ((vec3_t * (__thiscall *)(cEntity *, vec3_t *)) WEnt_Vtbl(e)->vf1e_21[0])(e, out);
+	return Obj_Vtbl(e)->GetViewAng(e, out);
 }
 
 static inline CGameModel *Entity_Model(cEntity *e) {
-	return WEnt_Vtbl(e)->GetObjData(e);
+	return Obj_Vtbl(e)->GetModel(e);
 }
 
 /* rand() in [0, 1] times range, plus add (all in double) */
@@ -82,7 +82,7 @@ void __thiscall cObjElementFXHook_StartTarget(cObjElementFXHook *self, cEntity *
 	self->points[1].z = self->points[0].z + r.z;
 	end = NULL;
 	if (self->target && self->target->flag_4c && Entity_IsType(self->target, TYEN_WITH_LIFE)) {
-		end = WEnt_Vtbl(self->target)->GetCenter(self->target, &r);
+		end = Obj_Vtbl(self->target)->GetViewPos(self->target, &r);
 	} else if (self->active && cTargetLock_GetPoint(Entity_TargetLock(self->emitter))) {
 		end = cTargetLock_GetPoint(Entity_TargetLock(self->emitter));
 	}
