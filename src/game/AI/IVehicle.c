@@ -326,7 +326,7 @@ byte __thiscall cAIVehicle_NeedRepos(cAIVehicle *self) {
 		}
 	}
 	else if (!(dist > self->maxDistReposNotVis)) {
-		if (!(dist > self->minDistReposNotVis) || self->vftable->Vf05(self)) {
+		if (!(dist > self->minDistReposNotVis) || self->vftable->IsVisible(self)) {
 			return 0;
 		}
 	}
@@ -1123,7 +1123,7 @@ byte __thiscall cAIVehicle_PlaceOnTrack(cAIVehicle *ai, int type, const vec3_t *
 	Obj_Vtbl(self->vehicle)->SetVel(self->vehicle, &tmp);
 	np = *cAIVehicle_TrackPointRandom(self, &tmp, &np, self->track, self->node);
 	AIV_StartTrack(self, 1, &np);
-	self->i34 = 2;
+	self->seen = 2;
 	return 1;
 }
 
@@ -3171,7 +3171,7 @@ void __thiscall cAIVehicle_GraphTraffic(cAIVehicle *self) {
 	double ang = Vec3_Angle(&d, &dir);
 	if (ang > (double)(cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV) && !self->b88) {
 		if (!(dist > self->maxDistReposNotVis)) {
-			if (!(dist > self->minDistReposNotVis) || self->vftable->Vf05(self)) {
+			if (!(dist > self->minDistReposNotVis) || self->vftable->IsVisible(self)) {
 				return;
 			}
 		}
@@ -3212,13 +3212,13 @@ void __thiscall cAIVehicle_GraphTrafficInDoor(cAIVehicle *self) {
 	if (in != AIVI_FINISHING_LINE_DIRECT) {
 		return;
 	}
-	switch (self->i34) {
+	switch (self->seen) {
 	case 0:
-		if (self->vftable->Vf05(self)) {
-			self->i34 = 1;
+		if (self->vftable->IsVisible(self)) {
+			self->seen = 1;
 			return;
 		}
-		if (self->f30 > 1.0f) {
+		if (self->waitTime > 1.0f) {
 			CNodesTraffic *t = AIV_Indoor();
 			t->vftable->RemoveVehicle(t, self->track);
 			cAIVehicle_SetInternState(self, AIVI_STOPPED);
@@ -3226,18 +3226,18 @@ void __thiscall cAIVehicle_GraphTrafficInDoor(cAIVehicle *self) {
 		}
 		return;
 	case 1:
-		if (!self->vftable->Vf05(self)) {
-			self->i34 = 0;
+		if (!self->vftable->IsVisible(self)) {
+			self->seen = 0;
 		}
 		return;
 	case 2:
-		if (self->vftable->Vf05(self)) {
-			self->i34 = 1;
+		if (self->vftable->IsVisible(self)) {
+			self->seen = 1;
 			return;
 		}
 		if (!CNodesTrafficInDoor_SectorHasTrack((CNodesTrafficInDoor *)g_NodesTrafficInDoor, self->track,
 				self->trackType)) {
-			self->i34 = 0;
+			self->seen = 0;
 		}
 		return;
 	}

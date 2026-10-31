@@ -74,7 +74,7 @@ typedef struct cAIVehicleVtbl {
 	void(__thiscall *UpdateOff)(cAIVehicle *self, float dt);				/* 0x08 */
 	void(__thiscall *Draw)(cAIVehicle *self);						/* 0x0c */
 	byte(__thiscall *GetChanged)(cAIVehicle *self);					/* 0x10 */
-	byte(__thiscall *Vf05)(cAIVehicle *self);						/* 0x14 */
+	byte(__thiscall *IsVisible)(cAIVehicle *self);					/* 0x14 */
 	void (*Debugf)(cAIVehicle *self, const char *fmt, ...);				/* 0x18 */
 	byte(__thiscall *VarI)(cAIVehicle *self, const char *name, int *i, byte set);	/* 0x1c */
 	void *vf08_0c[5];
@@ -103,8 +103,8 @@ struct cAIVehicle {
 	byte changed;			/* 0x028 the state changed in this frame */
 	byte pad_29[0x2c - 0x29];
 	float stateTime;		/* 0x02c */
-	float f30;			/* 0x030 */
-	int i34;			/* 0x034 */
+	float waitTime;			/* 0x030 of cAI: the time out of view */
+	int seen;			/* 0x034 of cAI: 0 out of view, 1 seen, 2 not seen yet */
 	Nto1Node target;		/* 0x038 the target entity at 0x40 */
 	byte pad_48[0x4c - 0x48];
 	vec3_t dest;			/* 0x04c */

@@ -607,7 +607,7 @@ static byte AIC_PauseWanted(cAIChar *self) {
 			return 0;
 		}
 	}
-	return !self->vftable->InView(self);
+	return !self->vftable->IsVisible(self);
 }
 
 void __thiscall cAIChar_CheckPause(cAIChar *self) {
@@ -654,7 +654,7 @@ void __thiscall cAIChar_CheckRepos(cAIChar *self) {
 				int f = Floor_Get(&g_pWorld->floor, cam.y);
 
 				p = AIC_Pos(self->ent, &b);
-				if (f == Floor_Get(&g_pWorld->floor, p->y) || self->vftable->InView(self)) {
+				if (f == Floor_Get(&g_pWorld->floor, p->y) || self->vftable->IsVisible(self)) {
 					continue;
 				}
 			}

@@ -32,8 +32,8 @@ cAI *__thiscall cAI_ctor(cAI *self, cEntity *e) {
 	self->dt = 0.0f;
 	self->changed = 0;
 	self->changing = 0;
-	self->i34 = 0;
-	self->i24 = 0;
+	self->seen = 0;
+	self->relaxCount = 0;
 	self->stateTime = 0.0f;
 	return self;
 }
@@ -58,7 +58,7 @@ cAI *__thiscall cAI_Delete(cAI *self, byte flags) {
 void __thiscall cAI_Update(cAI *self, float dt) {
 	self->dt = dt;
 	self->stateTime = self->stateTime + dt;
-	if (self->i34 == 0) {
+	if (self->seen == 0) {
 		self->waitTime = self->waitTime + dt;
 	} else {
 		self->waitTime = 0.0f;

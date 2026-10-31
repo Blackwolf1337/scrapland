@@ -114,7 +114,7 @@ typedef struct cAICharVtbl {
 	void(__thiscall *UpdateOff)(cAIChar *self, float dt);						/* 0x08 */
 	void(__thiscall *Draw)(cAIChar *self);								/* 0x0c */
 	byte(__thiscall *GetChanged)(cAIChar *self);							/* 0x10 */
-	byte(__thiscall *InView)(cAIChar *self);							/* 0x14 */
+	byte(__thiscall *IsVisible)(cAIChar *self);						/* 0x14 */
 	void (*Debugf)(cAIChar *self, const char *fmt, ...);						/* 0x18 */
 	byte(__thiscall *VarI)(cAIChar *self, const char *name, int *i, byte set);			/* 0x1c */
 	byte(__thiscall *VarF)(cAIChar *self, const char *name, double *d, byte set);			/* 0x20 */
@@ -448,12 +448,12 @@ struct cAI {
 	byte slot[0x10];		/* 0x10 cSlotController of 0.5 s (slotcontroller.h) */
 	byte changing;			/* 0x20 */
 	byte pad_21[3];
-	int i24;			/* 0x24 */
+	int relaxCount;			/* 0x24 the relax actions a character played in its internal state */
 	byte changed;			/* 0x28 GetChanged, cleared by every update */
 	byte pad_29[3];
 	float stateTime;		/* 0x2c the time in the state */
-	float waitTime;			/* 0x30 counts while i34 is 0 */
-	int i34;			/* 0x34 */
+	float waitTime;			/* 0x30 counts while seen is 0 */
+	int seen;			/* 0x34 0 out of view, 1 seen, 2 not seen yet */
 };
 SD_OFFSET(cAI, changed, 0x28);
 SD_SIZE(cAI, 0x38);
