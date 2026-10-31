@@ -463,7 +463,7 @@ cWorld *__thiscall cWorld_ctor(cWorld *self) {
 	self->ammo.items = NULL;
 	self->ammo.count = 0;
 	Grid_ctor(self->grid);
-	Alarm_ctor(self->alarm);
+	Alarm_ctor(&self->alarm);
 	cStrMoney_ctor(self->strMoney);
 	Logic_ctor(self->taunts);
 	self->nameCount = 0;
@@ -1194,7 +1194,7 @@ void __thiscall cWorld_Update(cWorld *self, float dt) {
 		}
 		Sound_Update(cTimer_GetDelta(timer));
 		cWorld_UpdateListeners(self, cTimer_GetDelta(timer));
-		Alarm_Update(self->alarm, cTimer_GetDelta(timer));
+		Alarm_Update(&self->alarm, cTimer_GetDelta(timer));
 		cStrMoney_Update(self->strMoney, cTimer_GetDelta(timer));
 		if (g_VehicleGroup) {
 			AIGroup_Update(g_VehicleGroup, cTimer_GetDelta(timer));

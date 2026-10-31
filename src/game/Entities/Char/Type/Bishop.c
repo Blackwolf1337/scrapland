@@ -116,9 +116,9 @@ void ChType_BishopAttack(cAbstractFile *params) {
 			} else if (Bishop_AlarmClass(cls)) {
 				level = 1.0f;
 			} else {
-				level = g_pWorld->alarmLevel + 0.100000001f;
+				level = g_pWorld->alarm.value + 0.100000001f;
 			}
-			Alarm_Set(g_pWorld->alarm, level);
+			Alarm_Set(&g_pWorld->alarm, level);
 		}
 		cLocalLogic *l = Logic_GetLocalLogic(target);
 		if (l) {

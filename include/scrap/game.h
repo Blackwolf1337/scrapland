@@ -8,6 +8,7 @@
 #ifndef SCRAP_GAME_H
 #define SCRAP_GAME_H
 
+#include "scrap/alarm.h"
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
 #include "scrap/nto1links.h"
@@ -227,11 +228,7 @@ typedef struct cWorld {
 	int firstWeapon;		/* 0x1bc0 SWeap.GetFirstiWeap */
 	TABLE(cAmmoInfo) ammo;		/* 0x1bc4 SWeap.InitAmmo, GetNAmmo */
 	byte grid[0x1c68 - 0x1bcc];	/* 0x1bcc Scrap.SetGrid */
-	byte alarm[0x1c6c - 0x1c68];	/* 0x1c68 alarm object (Scrap.GetAlarm, GetLockAlarm) */
-	float alarmLevel;		/* 0x1c6c */
-	byte alarmOn;			/* 0x1c70 */
-	char alarmChars[0x1e71 - 0x1c71]; /* 0x1c71 Scrap.GetAlarmChars */
-	char alarmChars2[0x2078 - 0x1e71]; /* 0x1e71 */
+	cAlarm alarm;			/* 0x1c68 Scrap.GetAlarm, GetLockAlarm */
 	byte strMoney[0x2090 - 0x2078];	/* 0x2078 the digits of the money (cStrMoney, logic.h), its int is money */
 	int money;			/* 0x2090 Scrap.GetMoney */
 	/* embedded objects of unknown size, only their addresses are used so far */
@@ -259,8 +256,6 @@ SD_OFFSET(cWorld, timer, 0x02c8);
 SD_OFFSET(cWorld, floor, 0x02f0);
 SD_OFFSET(cWorld, elements, 0x1bb4);
 SD_OFFSET(cWorld, alarm, 0x1c68);
-SD_OFFSET(cWorld, alarmChars, 0x1c71);
-SD_OFFSET(cWorld, alarmChars2, 0x1e71);
 SD_OFFSET(cWorld, weapons, 0x1bb8);
 SD_OFFSET(cWorld, firstWeapon, 0x1bc0);
 SD_OFFSET(cWorld, ammo, 0x1bc4);

@@ -332,9 +332,9 @@ PyObject *Scrap_GetAlarm(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	float level = g_pWorld->alarmLevel;
-	byte on = g_pWorld->alarmOn;
-	int value = Alarm_GetValue(g_pWorld->alarm);
+	float level = g_pWorld->alarm.value;
+	byte on = g_pWorld->alarm.on;
+	int value = Alarm_GetValue(&g_pWorld->alarm);
 	return Py_BuildValue("ifi", on != 0, (double)level, value);
 }
 
@@ -344,7 +344,7 @@ PyObject *Scrap_GetAlarmChars(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	return Py_BuildValue("ss", g_pWorld->alarmChars, g_pWorld->alarmChars2);
+	return Py_BuildValue("ss", g_pWorld->alarm.chars, g_pWorld->alarm.lastChars);
 }
 
 /* GetCam(i) : name of the camera */
@@ -447,7 +447,7 @@ PyObject *Scrap_GetLockAlarm(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	return Py_BuildValue("i", Alarm_IsLocked(g_pWorld->alarm) != 0);
+	return Py_BuildValue("i", Alarm_IsLocked(&g_pWorld->alarm) != 0);
 }
 
 /* GetNetFlags() : (bit 0, bit 1, bit 2) of the application flags */
@@ -799,7 +799,7 @@ PyObject *Scrap_SetAlarm(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "f", &level)) {
 		return NULL;
 	}
-	Alarm_Set(g_pWorld->alarm, level);
+	Alarm_Set(&g_pWorld->alarm, level);
 	return ReturnNone();
 }
 
@@ -811,7 +811,7 @@ PyObject *Scrap_SetAlarmChar(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "s", &name)) {
 		return NULL;
 	}
-	Alarm_SetChar(g_pWorld->alarm, name);
+	Alarm_SetChar(&g_pWorld->alarm, name);
 	return ReturnNone();
 }
 
@@ -823,7 +823,7 @@ PyObject *Scrap_SetAlarmGrow(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "i", &grow)) {
 		return NULL;
 	}
-	Alarm_SetGrow(g_pWorld->alarm, grow);
+	Alarm_SetGrow(&g_pWorld->alarm, grow);
 	return ReturnNone();
 }
 
@@ -871,7 +871,7 @@ PyObject *Scrap_SetLockAlarm(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "i", &lock)) {
 		return NULL;
 	}
-	Alarm_SetLock(g_pWorld->alarm, lock != 0);
+	Alarm_SetLock(&g_pWorld->alarm, lock != 0);
 	return ReturnNone();
 }
 

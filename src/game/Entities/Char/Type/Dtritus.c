@@ -14,7 +14,7 @@ static inline cFollowCamEntity *Dtritus_Cam(cEntity *v) {
 /* the relax action of the class: RelaxAlarm while the alarm runs, when the class has one */
 static const char *Dtritus_Relax(cEntity *v) {
 	if (ChType_ActCtrl(v) && ChType_ActClass(ChType_ActCtrl(v))[0x18b] &&
-		(((byte *)g_pWorld)[0x2074] || g_pWorld->alarmOn)) {
+		(g_pWorld->alarm.hasGuaranteed || g_pWorld->alarm.on)) {
 		return "RelaxAlarm";
 	}
 	return "Relax";
@@ -66,7 +66,7 @@ void ChType_DtritusKill(cAbstractFile *params) {
 	}
 	cEntity_CollisionOff(e);
 	cPrimitive_SetSize(WChar_Shadow(e), 0.0f);
-	Alarm_Set(g_pWorld->alarm, 1.0f);
+	Alarm_Set(&g_pWorld->alarm, 1.0f);
 	cTimer_SetSpeedChecked(&g_pWorld->timer, g_DTritusHitTimeSpeed);
 	cTimer_SetSpeedTo(&g_pWorld->timer, 1.0f);
 	cTimer_SetBlend(&g_pWorld->timer, g_DTritusHitTimeFader);

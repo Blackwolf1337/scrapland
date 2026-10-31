@@ -117,12 +117,12 @@ static void Gear_ToDefault(cGearLocalLogic *self) {
 /* the view of the AI and the actions of the state */
 void __thiscall cGearLocalLogic_UpdateAnim(cGearLocalLogic *self, cEntity *p, float dt) {
 	cBaseLocalLogic *b = &self->base;
-	byte alarm = g_pWorld->alarmOn;
+	byte alarm = g_pWorld->alarm.on;
 
 	(void)dt;
 	WChar_ViewFovY(p) = g_GearStdFovY;
 	WChar_ViewFar(p) = g_GearStdFar;
-	if (g_pWorld->alarmOn) {
+	if (g_pWorld->alarm.on) {
 		cEntity *t = b->target.target;
 		if (t && b->state == 2 && t == cWorld_GetUsrEntity(g_pWorld, 0)) {
 			WChar_ViewMode(p) = 3;
@@ -130,7 +130,7 @@ void __thiscall cGearLocalLogic_UpdateAnim(cGearLocalLogic *self, cEntity *p, fl
 			WChar_ViewMode(p) = 2;
 		}
 	} else {
-		WChar_ViewMode(p) = World_Alarm()->notGuaranteed != 0;
+		WChar_ViewMode(p) = g_pWorld->alarm.notGuaranteed != 0;
 	}
 	switch (b->state) {
 	case 0:
@@ -169,7 +169,7 @@ void __thiscall cGearLocalLogic_UpdateAnim(cGearLocalLogic *self, cEntity *p, fl
 void __thiscall cGearLocalLogic_Update(cGearLocalLogic *self, float dt) {
 	vec3_t tp, op;
 	cBaseLocalLogic *b = &self->base;
-	byte alarm = g_pWorld->alarmOn;
+	byte alarm = g_pWorld->alarm.on;
 	cEntity *p = b->parent;
 
 	if (alarm) {
@@ -198,7 +198,7 @@ void __thiscall cGearLocalLogic_Update(cGearLocalLogic *self, float dt) {
 	if (!usr) {
 		return;
 	}
-	byte same = World_Alarm()->sameChar;
+	byte same = g_pWorld->alarm.sameChar;
 	byte seen = Logic_InView(p, usr->vftable->GetPos(usr, &tp), g_GearStdFar, g_GearStdFovY, g_GearStdFovX, 1);
 	byte locked = b->idle || b->alwaysLock;
 	switch (st) {
@@ -276,7 +276,7 @@ attack:
 	case 2: {
 		if (same && seen && b->target.target == cWorld_GetUsrEntity(g_pWorld, 0)) {
 			AICtrl_RaiseLevel(g_pWorld->aiCtrl, 0);
-			Alarm_Set(g_pWorld->alarm, 1.0f);
+			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		}
 		cAIChar *ai = Gear_AI(self);
 		if (!b->target.target) {
@@ -287,7 +287,7 @@ attack:
 			if (Engine_TestLine(usr->vftable->GetPos(usr, &op), gp, NULL, NULL)) {
 				goto check;
 			}
-			Alarm_SetOn(g_pWorld->alarm, 1);
+			Alarm_SetOn(&g_pWorld->alarm, 1);
 			Gear_Vtbl(self)->SetState(self, 2, usr);
 			goto check;
 		}
@@ -318,8 +318,8 @@ attack:
 deflt:
 	Gear_ToDefault(self);
 check:
-	if (seen && st != 2 && World_Alarm()->notGuaranteed) {
-		Alarm_Set(g_pWorld->alarm, 1.0f);
+	if (seen && st != 2 && g_pWorld->alarm.notGuaranteed) {
+		Alarm_Set(&g_pWorld->alarm, 1.0f);
 		Gear_Vtbl(self)->SetState(self, 2, usr);
 	}
 anim:
@@ -330,7 +330,7 @@ anim:
 void __thiscall cGearLocalLogic_OnRobbery(cGearLocalLogic *self, cEntity *e, float amount) {
 	if (amount > 0.0f && Logic_Chance(&self->base, e, g_GearRobberyDetection + amount)) {
 		if (e == cWorld_GetUsrEntity(g_pWorld, 0)) {
-			Alarm_Set(g_pWorld->alarm, 1.0f);
+			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		}
 		Gear_Vtbl(self)->SetState(self, 2, e);
 	}
@@ -342,7 +342,7 @@ static byte Gear_React(cGearLocalLogic *self, cEntity *e) {
 		return 0;
 	}
 	if (e == ChType_Usr0()) {
-		Alarm_Set(g_pWorld->alarm, 1.0f);
+		Alarm_Set(&g_pWorld->alarm, 1.0f);
 	}
 	return 1;
 }
@@ -375,7 +375,7 @@ byte __thiscall cGearLocalLogic_Vf15(cGearLocalLogic *self, cEntity *e) {
 /* vf18: the gear becomes a police, during an alarm only with Gear2PoliceAlways */
 void __thiscall cGearLocalLogic_ToPolice(cGearLocalLogic *self, cEntity *e) {
 	(void)self;
-	if (!g_Gear2PoliceAlways && g_pWorld->alarmOn) {
+	if (!g_Gear2PoliceAlways && g_pWorld->alarm.on) {
 		return;
 	}
 	AICtrl_GearToPolice(g_pWorld->aiCtrl, e);

@@ -136,8 +136,6 @@ void __thiscall Elements_Update(void *elements, float dt);
 struct cMapElement *__thiscall Elements_Find(void *elements, const char *name, vec3_t pos, float maxDist);
 /* an element of a saved game: name, position, radius of the search, on or off */
 void Elements_Load(cAbstractFile *f);
-void *__thiscall Alarm_ctor(void *alarm);
-void __thiscall Alarm_Update(void *alarm, float dt);
 void *__thiscall cStrMoney_ctor(void *obj);
 void __thiscall cStrMoney_Update(void *obj, float dt);
 void *__thiscall Logic_ctor(void *logic);

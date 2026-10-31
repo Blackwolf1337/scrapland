@@ -80,13 +80,13 @@ void ExtPolice_CopDamage(const char *name, const char *attacker, byte died) {
 		return;
 	}
 	if (a == cWorld_GetUsrEntity(g_pWorld, 0)) {
-		Alarm_Set(g_pWorld->alarm, 1.0f);
+		Alarm_Set(&g_pWorld->alarm, 1.0f);
 		if (died && strstr(((cVehicleEntity *)cop)->typeName, "Poli")) {
 			SaveVar_Inc("Stats.OutPolice", 1);
 		}
 		return;
 	}
-	if (!g_pWorld->alarmOn) {
+	if (!g_pWorld->alarm.on) {
 		if (cAIVehicle_GetState(ai) != 0) {
 			return;
 		}
@@ -129,11 +129,11 @@ static void ExtPolice_Taunt(cExtPolice *self) {
 void __fastcall cExtPolice_Think(cExtPolice *self) {
 	vec3_t tmp;
 	Nto1Node *n = Logic_ListFirst(self->list);
-	byte alarm = g_pWorld->alarmOn;
+	byte alarm = g_pWorld->alarm.on;
 
 	if (alarm && !self->alarm && (byte)Talk_IsShown()) {
 		alarm = 0;
-		Alarm_Set(g_pWorld->alarm, 1.0f);
+		Alarm_Set(&g_pWorld->alarm, 1.0f);
 		self->raised = 1;
 	} else {
 		self->raised = -1;
@@ -158,7 +158,7 @@ void __fastcall cExtPolice_Think(cExtPolice *self) {
 			}
 		} else if (alarm) {
 			if (cAIVehicle_ControlFlag(ai) && Logic_AIVtbl(ai)->GetTarget(ai) == usr) {
-				Alarm_Set(g_pWorld->alarm, 1.0f);
+				Alarm_Set(&g_pWorld->alarm, 1.0f);
 				self->raised = 1;
 			}
 		}

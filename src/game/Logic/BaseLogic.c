@@ -400,7 +400,7 @@ void __thiscall cBaseLocalLogic_Update(cBaseLocalLogic *self, float dt) {
 		self->rageTime = 0.0f;
 	} else {
 		self->rageTime = dt + self->rageTime;
-		if (self->rageTime > g_GearRageMaxTime && !g_pWorld->alarmOn) {
+		if (self->rageTime > g_GearRageMaxTime && !g_pWorld->alarm.on) {
 			cEntity *t = World_FindEntity(Nto1Node_TargetName(WChar_Link(p)));
 			if (t && t != cWorld_GetUsrEntity(g_pWorld, 0) &&
 				strcmp(*(char **)(ChType_ActClass(ChType_ActCtrl(t)) + 4), g_NotCleanableByGear)) {

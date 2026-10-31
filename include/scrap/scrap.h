@@ -24,8 +24,6 @@
 void __thiscall Elements_Call(void *elements, const char *name);
 void __thiscall Elements_Create(void *elements);
 int __thiscall Floor_Get(void *floor, float y);
-int __thiscall Alarm_GetValue(void *alarm);
-byte __thiscall Alarm_IsLocked(void *alarm);
 
 void *__thiscall cWorld_NewEntityList(cWorld *world, const char *name);
 const char *__thiscall cWorld_GetCamName(cWorld *world, int i);
@@ -248,10 +246,6 @@ const char *Version_Get(void);
 void __thiscall CWinApp_LoadLevel(CWinApp *app, const char *level);
 int __thiscall cWorld_SetCam(cWorld *world, int i, const char *name);
 cEntity *__thiscall cWorld_GetUsrEntity(cWorld *world, int player);
-void __thiscall Alarm_Set(void *alarm, float level);
-void __thiscall Alarm_SetChar(void *alarm, const char *name);
-void __thiscall Alarm_SetGrow(void *alarm, int grow);
-void __thiscall Alarm_SetLock(void *alarm, int lock);
 
 /* steam_api: SteamInternal_ContextInit through the import table of the exe, context data at rva 0x428a30 */
 typedef void *(__cdecl *SteamContextInit_t)(void *ctx);

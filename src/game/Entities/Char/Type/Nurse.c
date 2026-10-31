@@ -328,9 +328,9 @@ found:
 	if (usr && crt_strncmp(act, "Dazed", 5)) {
 		AICtrl_SendSentinelToWatch(g_pWorld->aiCtrl, v->vftable->GetPos(v, &t3));
 		if (!strcmp(cls, "Gear") || !strcmp(cls, "Sentinel") || !strcmp(cls, "Police") || !strcmp(cls, "Desktop")) {
-			Alarm_Set(g_pWorld->alarm, 1.0f);
+			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		} else {
-			Alarm_Set(g_pWorld->alarm, g_pWorld->alarmLevel + g_NurseAlarmHit);
+			Alarm_Set(&g_pWorld->alarm, g_pWorld->alarm.value + g_NurseAlarmHit);
 		}
 		cLocalLogic *l = Logic_GetLocalLogic(g_NurseTarget);
 		if (l) {

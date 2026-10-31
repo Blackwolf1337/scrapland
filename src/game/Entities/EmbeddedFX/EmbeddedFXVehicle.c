@@ -467,7 +467,7 @@ void __fastcall cFXVehicleSirens_Update(cFXVehicleSirens *self) {
 	if (Vehicle_Player(v) && !g_pApp->flags) {
 		return;
 	}
-	byte alarm = g_pWorld->alarmOn;
+	byte alarm = g_pWorld->alarm.on;
 	float dt = cTimer_GetDelta(&g_pWorld->timer);
 	cEmbeddedFXVehicle *fx = self->owner;
 	if (fx->followed) {

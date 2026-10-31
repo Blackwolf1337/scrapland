@@ -209,10 +209,10 @@ void __fastcall AICtrl_Think(void *ctrl) {
 	vec3_t t;
 
 	self->level = -1;
-	self->alarmOn = g_pWorld->alarmOn;
+	self->alarmOn = g_pWorld->alarm.on;
 	self->usr = ChType_Usr0();
-	self->sameChar = self->alarmOn && !strcmp(g_pWorld->alarmChars2, g_pWorld->alarmChars);
-	self->notDefChar = cString_CmpStr(g_UsrDefChar, g_pWorld->alarmChars) != 0;
+	self->sameChar = self->alarmOn && !strcmp(g_pWorld->alarm.lastChars, g_pWorld->alarm.chars);
+	self->notDefChar = cString_CmpStr(g_UsrDefChar, g_pWorld->alarm.chars) != 0;
 	if (!self->usr) {
 		return;
 	}
@@ -481,7 +481,7 @@ byte __thiscall AICtrl_SendAccuser(void *ctrl, byte check) {
 	cAICtrl *self = ctrl;
 	vec3_t t, t2, t3;
 
-	if (!g_pWorld->alarmOn) {
+	if (!g_pWorld->alarm.on) {
 		return 0;
 	}
 	cEntity *usr = ChType_Usr0();
@@ -512,7 +512,7 @@ void __thiscall AICtrl_SendSentinelToNPC(void *ctrl, cEntity *e) {
 	cAICtrl *self = ctrl;
 	vec3_t t, t2, t3;
 
-	if (!cEntityList_GetFirst((cEntityList *)self->sentinels) || self->alerted || g_pWorld->alarmOn) {
+	if (!cEntityList_GetFirst((cEntityList *)self->sentinels) || self->alerted || g_pWorld->alarm.on) {
 		return;
 	}
 	if (e->vftable->IsType(e, TYEN_WALKCHAR) &&
@@ -557,7 +557,7 @@ void __thiscall AICtrl_Update(void *ctrl, float dt) {
 	}
 	self->timer = 0.0f;
 	AICtrl_Think(self);
-	if (!g_pWorld->alarmOn) {
+	if (!g_pWorld->alarm.on) {
 		float r = (float)(Weap_Rand01() * 99.0 + 1.0);
 		if ((float)g_PoliceLogicBelligerant > r) {
 			AICtrl_Belligerant(self);

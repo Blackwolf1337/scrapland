@@ -579,7 +579,7 @@ void GearAim_SphereFunc(cAbstractFile *params) {
 				kind = 3;
 			}
 		}
-		if (g_pWorld->alarmOn) {
+		if (g_pWorld->alarm.on) {
 			if (Logic_RadarShow(e) == 1) {
 				kind = 5;
 			} else if (!strcmp(Logic_TypeName(e), "Gear")) {

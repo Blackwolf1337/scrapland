@@ -203,13 +203,13 @@ void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 		if (usr) {
 			if (ChLogic_I74(ll) == -1) {
 				act = "ActionBad";
-				Alarm_Set(g_pWorld->alarm, 1.0f);
+				Alarm_Set(&g_pWorld->alarm, 1.0f);
 			} else {
 				if (WChar_ActionPress(me)) {
 					return;
 				}
 				act = "Relax";
-				Alarm_Set(g_pWorld->alarm, g_pWorld->alarmLevel + g_PoliceAlarmStepSTM);
+				Alarm_Set(&g_pWorld->alarm, g_pWorld->alarm.value + g_PoliceAlarmStepSTM);
 			}
 		} else {
 			cLocalLogic *vl = Logic_GetLocalLogic(victim);

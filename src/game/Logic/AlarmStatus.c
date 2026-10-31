@@ -28,15 +28,15 @@ static void Alarm_CopyChars(char *dst, const char *src) {
 	dst[n] = 0;
 }
 
-void *__thiscall Alarm_ctor(void *alarm) {
-	Alarm_Reset(alarm);
+cAlarm *__thiscall Alarm_ctor(cAlarm *self) {
+	Alarm_Reset(self);
 	cPy_Function_SetFunc(g_AlarmCallback, LOGIC_EMPTY);
-	return alarm;
+	return self;
 }
 
 /* the sign of the grow rate (-1, 0, 1), not of the level: the exe reads the float at +0 */
-int __thiscall Alarm_GetValue(void *alarm) {
-	float v = ((cAlarm *)alarm)->grow;
+int __thiscall Alarm_GetValue(cAlarm *self) {
+	float v = self->grow;
 
 	if (v == 0.0f) {
 		return 0;
@@ -44,9 +44,7 @@ int __thiscall Alarm_GetValue(void *alarm) {
 	return !(0.0f > v) * 2 - 1;
 }
 
-byte __thiscall Alarm_IsLocked(void *alarm) {
-	cAlarm *self = alarm;
-
+byte __thiscall Alarm_IsLocked(cAlarm *self) {
 	if (self->locked) {
 		return 1;
 	}
@@ -56,9 +54,7 @@ byte __thiscall Alarm_IsLocked(void *alarm) {
 	return 0;
 }
 
-void __fastcall Alarm_Reset(void *alarm) {
-	cAlarm *self = alarm;
-
+void __fastcall Alarm_Reset(cAlarm *self) {
 	self->value = 0.0f;
 	self->on = 0;
 	self->chars[0] = 0;
@@ -75,8 +71,7 @@ void __fastcall Alarm_Reset(void *alarm) {
 }
 
 /* on: the callback and the attack; while on the type is kept and the gears and a sentinel go for the player */
-void __thiscall Alarm_SetOn(void *alarm, byte on) {
-	cAlarm *self = alarm;
+void __thiscall Alarm_SetOn(cAlarm *self, byte on) {
 	vec3_t tmp;
 
 	if (!Alarm_Open(self)) {
@@ -109,18 +104,14 @@ void __thiscall Alarm_SetOn(void *alarm, byte on) {
 	AICtrl_SendSentinelToWatch(g_pWorld->aiCtrl, usr->vftable->GetPos(usr, &tmp));
 }
 
-void __thiscall Alarm_SetGrowRate(void *alarm, float grow) {
-	cAlarm *self = alarm;
-
+void __thiscall Alarm_SetGrowRate(cAlarm *self, float grow) {
 	if (Alarm_Open(self)) {
 		self->grow = grow;
 	}
 }
 
 /* 1 grow, 0 stop, -1 fall (slower in the mission map of an outdoor map and in an easy single game) */
-void __thiscall Alarm_SetGrow(void *alarm, int grow) {
-	cAlarm *self = alarm;
-
+void __thiscall Alarm_SetGrow(cAlarm *self, int grow) {
 	if (!Alarm_Open(self)) {
 		return;
 	}
@@ -151,14 +142,12 @@ void __thiscall Alarm_SetGrow(void *alarm, int grow) {
 	}
 }
 
-void __thiscall Alarm_SetLock(void *alarm, int lock) {
-	((cAlarm *)alarm)->locked = (byte)lock;
+void __thiscall Alarm_SetLock(cAlarm *self, int lock) {
+	self->locked = (byte)lock;
 }
 
 /* the level clamped to 0 .. 1, the alarm off at 0 and on at 1 (the first full alarm of an outdoor map taunts) */
-void __thiscall Alarm_Set(void *alarm, float level) {
-	cAlarm *self = alarm;
-
+void __thiscall Alarm_Set(cAlarm *self, float level) {
 	if (!Alarm_Open(self)) {
 		return;
 	}
@@ -179,9 +168,7 @@ void __thiscall Alarm_Set(void *alarm, float level) {
 	}
 }
 
-void __thiscall Alarm_SetChar(void *alarm, const char *name) {
-	cAlarm *self = alarm;
-
+void __thiscall Alarm_SetChar(cAlarm *self, const char *name) {
 	if (Alarm_Open(self)) {
 		Str_Copy(self->lastChars, name, 0x200);
 		Str_Copy(self->chars, name, 0x200);
@@ -189,8 +176,7 @@ void __thiscall Alarm_SetChar(void *alarm, const char *name) {
 }
 
 /* the level by the rate, the type of the player (the class of a character, the pilot of a ship) and its tests */
-void __thiscall Alarm_Update(void *alarm, float dt) {
-	cAlarm *self = alarm;
+void __thiscall Alarm_Update(cAlarm *self, float dt) {
 	char buf[0x80];
 
 	if (!Alarm_Open(self)) {

@@ -34,10 +34,10 @@ cCopMeterScorer *__fastcall cCopMeterScorer_ctor(cCopMeterScorer *self) {
 	img = img ? CPsaImage_ctor(img, "2D/white.tga", 0x20) : NULL;
 	self->flash = img;
 	img->color = 0xffffffff;
-	float level = g_pWorld->alarmLevel;
+	float level = g_pWorld->alarm.value;
 	self->target = level;
 	self->percent = level;
-	self->on = g_pWorld->alarmOn;
+	self->on = g_pWorld->alarm.on;
 	self->fade = 0.0f;
 	self->blink = 0.0f;
 	return self;
@@ -127,11 +127,11 @@ static void CopMeter_Flash(cCopMeterScorer *self, float t, int frame, float x) {
 }
 
 void __thiscall cCopMeterScorer_Draw(cCopMeterScorer *self, int player) {
-	float level = g_pWorld->alarmLevel;
+	float level = g_pWorld->alarm.value;
 	float v;
 
 	self->target = level;
-	self->on = g_pWorld->alarmOn;
+	self->on = g_pWorld->alarm.on;
 	if (!(0.0f >= self->fade)) {
 		if (0.0f >= level) {
 			v = self->fade - Scorer_Get(player)->frameTime;

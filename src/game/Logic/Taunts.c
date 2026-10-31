@@ -229,7 +229,7 @@ void Taunts_Think(float dt) {
 	int n = 1;
 	switch (r) {
 	case 0:
-		if (g_pWorld->alarmOn) {
+		if (g_pWorld->alarm.on) {
 			list = lc->extPolice.list;
 			break;
 		}
@@ -265,7 +265,7 @@ byte Taunts_Warnings(float dt) {
 	vec3_t t1, t2;
 
 	(void)dt;
-	if (!g_pWorld->alarmOn) {
+	if (!g_pWorld->alarm.on) {
 		return 0;
 	}
 	cEntityListData *cabs = (cEntityListData *)cWorld_GetList(g_pWorld, "PhoneCabs");

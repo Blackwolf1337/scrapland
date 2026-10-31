@@ -258,7 +258,7 @@ void __fastcall cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 	cEntity *usr = ChType_Usr0();
 	cEntity *f1 = NULL;
 	cEntity *f2 = NULL;
-	byte alarm = g_pWorld->alarmOn;
+	byte alarm = g_pWorld->alarm.on;
 	byte canFight = usr && !alarm;
 	byte f2Other = 0;
 	vec3_t up;
@@ -384,7 +384,7 @@ void __fastcall cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 			cEntity_SetList(last, "Traffic");
 			nEnemies2--;
 			const char *s = SaveVar_Get("RobotsControlledByBoss");
-			if (!g_pWorld->alarmOn || (s && !strcmp(s, "1"))) {
+			if (!g_pWorld->alarm.on || (s && !strcmp(s, "1"))) {
 				Taunts_Ship(last, 7);
 			}
 		}
@@ -471,7 +471,7 @@ void Traffic_DeathNative(cAbstractFile *params) {
 		return;
 	}
 	if (!ExtPolice_IsChased(e)) {
-		Alarm_Set(g_pWorld->alarm, 1.0f);
+		Alarm_Set(&g_pWorld->alarm, 1.0f);
 		return;
 	}
 	if ((byte)cPy_Function_IsValid(g_OnPlayerHelpedPolice)) {

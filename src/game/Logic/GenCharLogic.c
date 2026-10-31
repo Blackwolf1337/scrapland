@@ -58,7 +58,7 @@ void __thiscall cGenCharLocalLogic_UpdateView(cGenCharLocalLogic *self) {
 		WChar_B381(p) = 0;
 	} else {
 		int st = b->state;
-		WChar_B381(p) = !b->busy && !g_pWorld->alarmOn && st != 4 && st != 3 && st != 5 && st != 10;
+		WChar_B381(p) = !b->busy && !g_pWorld->alarm.on && st != 4 && st != 3 && st != 5 && st != 10;
 	}
 	WChar_ViewMode(p) = 0;
 	Entity_Team(p) = 3;
@@ -75,7 +75,7 @@ byte __thiscall cGenCharLocalLogic_CanDiscover(cGenCharLocalLogic *self, cEntity
 	if (strcmp(type, "Berto") && strcmp(type, "Betty")) {
 		return 1;
 	}
-	return cString_CmpStr(g_UsrDefChar, g_pWorld->alarmChars) != 0;
+	return cString_CmpStr(g_UsrDefChar, g_pWorld->alarm.chars) != 0;
 }
 
 void __thiscall cGenCharLocalLogic_SetB58(cGenCharLocalLogic *self, byte v) {
@@ -131,7 +131,7 @@ byte __thiscall cGenCharLocalLogic_VarI(cGenCharLocalLogic *self, const char *na
 }
 
 byte Logic_IsSuspectType(const char *type) {
-	if (Alarm_IsLocked(g_pWorld->alarm)) {
+	if (Alarm_IsLocked(&g_pWorld->alarm)) {
 		return 0;
 	}
 	return !strcmp(type, "PoliceBoss") || !strcmp(type, "Betty") || !strcmp(type, "Berto") || !strcmp(type, "Mayor");
@@ -189,17 +189,17 @@ void __thiscall cGenCharLocalLogic_Update(cGenCharLocalLogic *self, float dt) {
 	const char *type = Logic_TypeName(p);
 	const char *usrType = Logic_TypeName(usr);
 	byte discover = cGenCharLocalLogic_CanDiscover(self, p) && self->accuseAgain == 0.0f;
-	byte alarm = g_pWorld->alarmOn && !self->ignoreAlarm;
-	byte sameChar = World_Alarm()->sameChar;
+	byte alarm = g_pWorld->alarm.on && !self->ignoreAlarm;
+	byte sameChar = g_pWorld->alarm.sameChar;
 	byte seen = Logic_InView(p, usr->vftable->GetPos(usr, &t), g_GenCharStdFar, g_GenCharStdFovY, g_GenCharStdFovX, 1);
 	byte suspect = Logic_IsSuspectType(type);
 	byte same = !strcmp(type, usrType) && suspect;
 	cAIChar *ai = b->parent->vftable->GetAI(b->parent);
-	if (suspect && !Alarm_IsLocked(g_pWorld->alarm)) {
+	if (suspect && !Alarm_IsLocked(&g_pWorld->alarm)) {
 		WChar_ViewFovY(p) = g_GenCharStdFovY;
 		WChar_ViewFar(p) = g_GenCharStdFar;
 		WChar_ViewMode(p) = same ? 2 : 0;
-		Entity_Team(p) = same ? (g_pWorld->alarmOn ? 0 : 2) : 3;
+		Entity_Team(p) = same ? (g_pWorld->alarm.on ? 0 : 2) : 3;
 	}
 	int st = b->state;
 	if (st != GENCHAR_ACCUSE && seen && discover) {
@@ -207,7 +207,7 @@ void __thiscall cGenCharLocalLogic_Update(cGenCharLocalLogic *self, float dt) {
 			if (!same) {
 				goto states;
 			}
-			Alarm_Set(g_pWorld->alarm, 1.0f);
+			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		}
 		GENCHAR_VT(self)->Accuse(self, usr);
 	}
@@ -375,7 +375,7 @@ void __fastcall cGenCharLocalLogic_Discover(cGenCharLocalLogic *self) {
  * (name) when that state was taken */
 byte __thiscall cGenCharLocalLogic_RestartState(cGenCharLocalLogic *self) {
 	cGenCharLocalLogic_ResetSpecial(self);
-	if (g_pWorld->alarmOn && !self->ignoreAlarm) {
+	if (g_pWorld->alarm.on && !self->ignoreAlarm) {
 		return GENCHAR_VT(self)->SetState(self, GENCHAR_ALERT, NULL);
 	}
 	cEntity *t = World_FindEntity(self->defaultTarget);
@@ -444,7 +444,7 @@ byte __thiscall cGenCharLocalLogic_SetState(cGenCharLocalLogic *self, int state,
 		}
 		break;
 	case GENCHAR_ACCUSE:
-		if (ok && World_Alarm()->sameChar) {
+		if (ok && g_pWorld->alarm.sameChar) {
 			self->time = g_GenCharAcuseTime;
 			ai->vftable->SetState(ai, 8, target, 1);
 			if (ChType_Vtbl(p)->FindAction(p, "Discover")) {

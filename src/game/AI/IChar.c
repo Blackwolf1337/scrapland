@@ -1031,7 +1031,7 @@ void __thiscall cAIChar_ThinkPatrol(cAIChar *self) {
 		}
 		return;
 	case AICI_RELAX:
-		if (!g_pWorld->alarmOn) {
+		if (!g_pWorld->alarm.on) {
 			AICC_Vtbl(self->control)->SetHold(self->control, 1);
 			if (AIC_ActionIs(self->ent, 1, 3)) {
 				return;
@@ -1067,7 +1067,7 @@ void __thiscall cAIChar_CheckTalk(cAIChar *self) {
 
 	if (!self->canTalk ||
 		(self->internState != AICI_FINISHING_LINE && self->internState != AICI_FOLLOW_THE_PATH) ||
-		g_pWorld->alarmOn || !(self->routeTime > 5.0f)) {
+		g_pWorld->alarm.on || !(self->routeTime > 5.0f)) {
 		return;
 	}
 	o = self->vftable->GetCollide(self);

@@ -94,7 +94,7 @@ cNurseLocalLogic *__thiscall cNurseLocalLogic_Delete(cNurseLocalLogic *self, byt
 
 /* back to the relax, the alert with the alarm */
 byte __fastcall cNurseLocalLogic_Relax(cNurseLocalLogic *self) {
-	if (g_pWorld->alarmOn) {
+	if (g_pWorld->alarm.on) {
 		return NURSE_VT(self)->SetState(self, 1, NULL);
 	}
 	return NURSE_VT(self)->SetState(self, 0, NULL);
@@ -106,18 +106,18 @@ void __thiscall cNurseLocalLogic_Update(cNurseLocalLogic *self, float dt) {
 	cEntity *p = b->parent;
 
 	cBaseLocalLogic_Update(b, dt);
-	WChar_B381(b->parent) = !b->busy && !g_pWorld->alarmOn && b->state != 3 && b->state != 2;
+	WChar_B381(b->parent) = !b->busy && !g_pWorld->alarm.on && b->state != 3 && b->state != 2;
 	if (b->busy) {
 		return;
 	}
 	switch (b->state) {
 	case 0:
-		if (g_pWorld->alarmOn) {
+		if (g_pWorld->alarm.on) {
 			NURSE_VT(self)->SetState(self, 1, NULL);
 		}
 		return;
 	case 1:
-		if (!g_pWorld->alarmOn) {
+		if (!g_pWorld->alarm.on) {
 			NURSE_VT(self)->SetState(self, 0, NULL);
 		}
 		return;
@@ -205,7 +205,7 @@ byte __thiscall cNurseLocalLogic_SetState(cNurseLocalLogic *self, int state, cEn
 	cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 
 	if (ok) {
-		WChar_B381(b->parent) = !b->busy && !g_pWorld->alarmOn && b->state != 3 && b->state != 2;
+		WChar_B381(b->parent) = !b->busy && !g_pWorld->alarm.on && b->state != 3 && b->state != 2;
 	}
 	switch (b->state) {
 	case 0:

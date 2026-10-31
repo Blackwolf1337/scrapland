@@ -180,7 +180,7 @@ void __thiscall Logic_Update(void *logic, float dt) {
 	if (self->extPolice.raised > level) {
 		level = self->extPolice.raised;
 	}
-	Alarm_SetGrow(g_pWorld->alarm, level);
+	Alarm_SetGrow(&g_pWorld->alarm, level);
 	Logic_UpdateTaunts(self, dt);
 }
 

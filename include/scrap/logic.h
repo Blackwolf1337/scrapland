@@ -9,6 +9,7 @@
 #define SCRAP_LOGIC_H
 
 #include "scrap/ai.h"
+#include "scrap/alarm.h"
 #include "scrap/collisiongrid.h"
 #include "scrap/cstring.h"
 #include "scrap/dlist.h"
@@ -18,24 +19,7 @@
 
 #define LOGIC_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* "" of the exe */
 
-/* ---- AlarmStatus.cpp: g_pWorld->alarm (0x410 bytes at 0x1c68 of cWorld) ---- */
-typedef struct cAlarm {
-	float grow;			/* 0x000 change per second (Scrap.SetAlarmGrow) */
-	float value;			/* 0x004 0 .. 1 (g_pWorld->alarmLevel) */
-	byte on;			/* 0x008 set at 1, cleared at 0 (g_pWorld->alarmOn) */
-	char chars[0x200];		/* 0x009 the type of the player character (Scrap.GetAlarmChars) */
-	char lastChars[0x200];		/* 0x209 the type when the alarm went on */
-	byte sameChar;			/* 0x409 the alarm is on and lastChars is the type of now (or not guaranteed) */
-	byte notDefChar;		/* 0x40a the type is not UsrDefChar (or not guaranteed) */
-	byte notGuaranteed;		/* 0x40b the type is not in GuaranteedChars */
-	byte hasGuaranteed;		/* 0x40c GuaranteedChars is set */
-	byte locked;			/* 0x40d Scrap.SetLockAlarm: no changes */
-	byte tauntReady;		/* 0x40e the police taunt of the next full alarm */
-	byte pad_40f;
-} cAlarm;
-SD_OFFSET(cAlarm, lastChars, 0x209);
-SD_OFFSET(cAlarm, locked, 0x40d);
-SD_SIZE(cAlarm, 0x410);
+/* ---- AlarmStatus.cpp: the cAlarm of include/scrap/alarm.h ---- */
 
 /* engine variables (Gvars) */
 #define g_AlarmCallback (GAME_ARRAY_IN(cPy_Function, GVar_AlarmCallback, 16, 0x44cb1c))	/* AlarmCallback (on) */
@@ -47,11 +31,6 @@ SD_SIZE(cAlarm, 0x410);
 #define g_PoliceTauntRace (GAME_ARRAY_IN(cString, GVar_PoliceTauntRace, 16, 0x44cabc))	/* the default at +4 */
 #define g_UsrDefChar (GAME_ARRAY_IN(cString, GVar_UsrDefChar, 16, 0x44cb40))
 #define g_GenCharAttackActive GAME_GLOBAL_IN(int, GVar_GenCharAttackActive, 16, 0x44d1dc)
-
-/* the void * arguments are g_pWorld->alarm (Alarm_ctor and Alarm_Update in world.h, the others in scrap.h) */
-void __fastcall Alarm_Reset(void *alarm);
-void __thiscall Alarm_SetOn(void *alarm, byte on);
-void __thiscall Alarm_SetGrowRate(void *alarm, float grow);
 
 /* a taunt of the ship of that name ("" none), kind 1 or 2 (rva 0x155210) */
 void Taunts_Play(const char *ship, const char *race, int kind);
@@ -739,7 +718,6 @@ typedef struct cGearLocalLogic {
 } cGearLocalLogic;
 SD_SIZE(cGearLocalLogic, 0x5c);
 
-#define World_Alarm() ((cAlarm *)g_pWorld->alarm)
 #define World_AICtrlI4() (*(int *)((byte *)g_pWorld + 0x21cc))	/* of g_pWorld->aiCtrl */
 /* the view of the AI of a character */
 #define WChar_ViewMode(e) (*(int *)((byte *)(e) + 0x38c))

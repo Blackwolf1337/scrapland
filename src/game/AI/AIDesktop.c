@@ -37,7 +37,7 @@ void __thiscall cAIDesktop_UpdateAction0(cAIDesktop *self) {
 	byte act = 0;
 
 	if ((self->state == AIC_GET_AWAY ||
-			(self->state == AIC_PATROL_ZONE && self->ctrl->walk == 1.0f && g_pWorld->alarmOn)) &&
+			(self->state == AIC_PATROL_ZONE && self->ctrl->walk == 1.0f && g_pWorld->alarm.on)) &&
 		self->ctrl->strafe == 0.0f) {
 		uint32_t i;
 		for (i = 0; i < sizeof(busy) / sizeof(busy[0]); i++) {

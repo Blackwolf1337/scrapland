@@ -78,7 +78,7 @@ cGateKeeperLocalLogic *__thiscall cGateKeeperLocalLogic_Delete(cGateKeeperLocalL
 void __thiscall cGateKeeperLocalLogic_UpdateView(cGateKeeperLocalLogic *self) {
 	cEntity *p = self->base.parent;
 
-	WChar_B381(p) = !self->base.busy && !g_pWorld->alarmOn && self->base.state != 1;
+	WChar_B381(p) = !self->base.busy && !g_pWorld->alarm.on && self->base.state != 1;
 }
 
 /* vf16 of the gatekeepers and the gears: they never run from the police */
@@ -109,7 +109,7 @@ void __thiscall cGateKeeperLocalLogic_Update(cGateKeeperLocalLogic *self, float 
 			self->hiddenTime = self->hiddenTime - dt;
 			return;
 		}
-		if (!g_pWorld->alarmOn) {
+		if (!g_pWorld->alarm.on) {
 			b->vftable->SetState(self, 0, NULL);
 		}
 		return;
@@ -140,7 +140,7 @@ void __thiscall cGateKeeperLocalLogic_Update(cGateKeeperLocalLogic *self, float 
 		}
 	}
 alarm:
-	if (g_pWorld->alarmOn) {
+	if (g_pWorld->alarm.on) {
 		b->vftable->SetState(self, 1, NULL);
 	}
 }
@@ -180,7 +180,7 @@ void __thiscall cGateKeeperLocalLogic_Vf11(cGateKeeperLocalLogic *self, cEntity 
 
 /* vf24: hidden while the alarm is on */
 void __thiscall cGateKeeperLocalLogic_RestartState(cGateKeeperLocalLogic *self) {
-	self->base.vftable->SetState(self, g_pWorld->alarmOn != 0, NULL);
+	self->base.vftable->SetState(self, g_pWorld->alarm.on != 0, NULL);
 }
 
 /* vf19: state 1 needs the action Hide */

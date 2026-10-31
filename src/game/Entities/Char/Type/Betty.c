@@ -123,7 +123,7 @@ void ChType_BettyKill(cAbstractFile *params) {
 	}
 	cEntity_CollisionOff(e);
 	cPrimitive_SetSize(WChar_Shadow(e), 0.0f);
-	Alarm_Set(g_pWorld->alarm, 1.0f);
+	Alarm_Set(&g_pWorld->alarm, 1.0f);
 	cObjElementFXKill *el = FX_DropNew(g_FXBettyKillFile, 1.0f);
 	if (!el) {
 		return;

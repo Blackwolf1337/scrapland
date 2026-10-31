@@ -76,7 +76,7 @@ void ChType_MayorSphereHit(cAbstractFile *params) {
 	CHECK(g_MayorEnt);
 	cAbstractFile_ReadString(params, name, 0x80);
 	cEntity *e = World_FindEntity(name);
-	byte alarm = g_pWorld->alarmOn;
+	byte alarm = g_pWorld->alarm.on;
 	CHECK(g_MayorEnt);
 	CHECK(Entity_IsType(g_MayorEnt, TYEN_WALKCHAR));
 	if (!e) {

@@ -1189,7 +1189,7 @@ static void EFX_SentinelClear(cEmbeddedFXSentinel *self) {
  */
 void __thiscall cEmbeddedFXSentinel_Update(cEmbeddedFXSentinel *self, float dt) {
 	cEntity *e = self->base.ent;
-	byte on = g_pWorld->alarmOn;
+	byte on = g_pWorld->alarm.on;
 
 	if (WLife(e)->obj.cam) {
 		on = 0;

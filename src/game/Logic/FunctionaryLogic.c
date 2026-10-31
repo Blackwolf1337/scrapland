@@ -104,7 +104,7 @@ void __thiscall cFunctionaryLocalLogic_UpdateView(cFunctionaryLocalLogic *self) 
 		usr->vftable->IsType(usr, TYEN_WALKCHAR);
 	}
 	int st = self->base.base.state;
-	if (!self->base.base.busy && !g_pWorld->alarmOn && st != 4 && st != 5 && st != 10) {
+	if (!self->base.base.busy && !g_pWorld->alarm.on && st != 4 && st != 5 && st != 10) {
 		WChar_B381(p) = 1;
 		Entity_Team(p) = 3;
 		return;

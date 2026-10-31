@@ -32,7 +32,7 @@ void ChType_SentinelActionRelease(cAbstractFile *params) {
 cEntity *ChType_SentinelTarget(cEntity *e) {
 	cWorld *w = g_pWorld;
 
-	if (w->alarmOn && World_AlarmChase(w)) {
+	if (w->alarm.on && World_AlarmChase(w)) {
 		return NULL;
 	}
 	if (!e) {
@@ -48,7 +48,7 @@ cEntity *ChType_SentinelTarget(cEntity *e) {
 byte ChType_SentinelCanCall(void) {
 	cWorld *w = g_pWorld;
 
-	if (w->alarmOn && World_AlarmChase(w)) {
+	if (w->alarm.on && World_AlarmChase(w)) {
 		return 0;
 	}
 	return 1;
@@ -72,12 +72,12 @@ void ChType_SentinelPoint(cAbstractFile *params) {
 		return;
 	}
 	if (!strcmp(ChType_ClassName(t), "Sentinel")) {
-		Alarm_Set(g_pWorld->alarm, 1.0f);
+		Alarm_Set(&g_pWorld->alarm, 1.0f);
 	} else {
-		if (!g_pWorld->alarmOn && !strcmp(ChType_ClassName(t), "Gear")) {
-			Alarm_Set(g_pWorld->alarm, 1.0f);
-		} else if (!g_pWorld->alarmOn && !strcmp(ChType_ClassName(t), "Police")) {
-			Alarm_Set(g_pWorld->alarm, 1.0f);
+		if (!g_pWorld->alarm.on && !strcmp(ChType_ClassName(t), "Gear")) {
+			Alarm_Set(&g_pWorld->alarm, 1.0f);
+		} else if (!g_pWorld->alarm.on && !strcmp(ChType_ClassName(t), "Police")) {
+			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		} else {
 			if (ChType_SentinelCanCall()) {
 				AICtrl_GearsChase(g_pWorld->aiCtrl, t);

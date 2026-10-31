@@ -104,7 +104,7 @@ void __thiscall cSentinelLocalLogic_Think(cSentinelLocalLogic *self, float dt, b
 	self->seen = 0;
 	cEntity *usr = ChType_Usr0();
 	cBaseLocalLogic_Update(b, dt);
-	Entity_Team(p) = g_pWorld->alarmOn ? 0 : 2;
+	Entity_Team(p) = g_pWorld->alarm.on ? 0 : 2;
 	if (b->busy) {
 		WChar_ViewMode(p) = 0;
 		WChar_B381(p) = 0;
@@ -113,7 +113,7 @@ void __thiscall cSentinelLocalLogic_Think(cSentinelLocalLogic *self, float dt, b
 	if (0.0f >= self->time || !b->target.target || quiet) {
 		int st = b->state;
 		if (st != 1 && st != 0 && st != 5 && !b->idle && !b->alwaysLock) {
-			SENT_VT(self)->SetState(self, g_pWorld->alarmOn ? 1 : 0, NULL);
+			SENT_VT(self)->SetState(self, g_pWorld->alarm.on ? 1 : 0, NULL);
 		}
 	}
 	int st = b->state;
@@ -127,15 +127,15 @@ void __thiscall cSentinelLocalLogic_Think(cSentinelLocalLogic *self, float dt, b
 	}
 	if (!quiet && usr && Logic_InView(p, usr->vftable->GetPos(usr, &tmp), g_SentinelStdFar, g_SentinelStdFovY,
 			g_SentinelStdFovX, 1)) {
-		cAlarm *a = World_Alarm();
+		cAlarm *a = &g_pWorld->alarm;
 		self->seen = 1;
 		if (a->notGuaranteed) {
-			Alarm_Set(g_pWorld->alarm, 1.0f);
+			Alarm_Set(&g_pWorld->alarm, 1.0f);
 			SENT_VT(self)->SetState(self, 2, usr);
 		} else if (a->sameChar) {
 			SENT_VT(self)->SetState(self, 2, usr);
 		} else if (a->notDefChar) {
-			if (g_pWorld->alarmOn) {
+			if (g_pWorld->alarm.on) {
 				SENT_VT(self)->SetState(self, 4, usr);
 			} else if (b->state != 6) {
 				SENT_VT(self)->SetState(self, 3, usr);
@@ -154,7 +154,7 @@ void __thiscall cSentinelLocalLogic_OnRobbery(cSentinelLocalLogic *self, cEntity
 	if (e == ChType_Usr0()) {
 		if (amount > 0.0f && g_SentinelBankerDetect + amount >= (float)(Weap_Rand01() * 100.0 + 0.0)) {
 			SENT_VT(self)->SetState(self, 2, e);
-			Alarm_Set(g_pWorld->alarm, 1.0f);
+			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		}
 		return;
 	}
@@ -169,7 +169,7 @@ void __thiscall cSentinelLocalLogic_OnAttack(cSentinelLocalLogic *self, cEntity 
 		return;
 	}
 	if (e == ChType_Usr0()) {
-		Alarm_Set(g_pWorld->alarm, 1.0f);
+		Alarm_Set(&g_pWorld->alarm, 1.0f);
 		SENT_VT(self)->SetState(self, 2, e);
 		return;
 	}
@@ -182,7 +182,7 @@ void __thiscall cSentinelLocalLogic_OnUsr(cSentinelLocalLogic *self, cEntity *e)
 		return;
 	}
 	if (e == ChType_Usr0()) {
-		Alarm_Set(g_pWorld->alarm, 1.0f);
+		Alarm_Set(&g_pWorld->alarm, 1.0f);
 		SENT_VT(self)->SetState(self, 2, e);
 	}
 }
@@ -191,7 +191,7 @@ void __thiscall cSentinelLocalLogic_OnUsr(cSentinelLocalLogic *self, cEntity *e)
 byte __thiscall cSentinelLocalLogic_GivesMoney(cSentinelLocalLogic *self, cEntity *e) {
 	if (!self->base.busy) {
 		if (e == ChType_Usr0()) {
-			Alarm_Set(g_pWorld->alarm, 1.0f);
+			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		}
 		SENT_VT(self)->SetState(self, 2, e);
 	}
@@ -217,20 +217,20 @@ void __thiscall cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEnti
 	cBaseLocalLogic *b = &self->base;
 	cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 	cEntity *s = b->parent;
-	cAlarm *a = World_Alarm();
+	cAlarm *a = &g_pWorld->alarm;
 	vec3_t tmp;
 
 	(void)dt;
 	WChar_ViewFovY(p) = g_SentinelStdFovY;
 	WChar_ViewFar(p) = g_SentinelStdFar;
-	WChar_B381(p) = !g_pWorld->alarmOn && !a->notDefChar;
+	WChar_B381(p) = !g_pWorld->alarm.on && !a->notDefChar;
 	switch (b->state) {
 	case 0:
 	case 1:
 		WChar_ViewMode(p) = a->sameChar ? 2 : 1;
 		return;
 	case 2:
-		if (!b->target.target || !g_pWorld->alarmOn) {
+		if (!b->target.target || !g_pWorld->alarm.on) {
 			cSentinelLocalLogic_Return(self);
 		}
 		if (!self->seen) {
@@ -239,7 +239,7 @@ void __thiscall cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEnti
 		}
 		WChar_ViewMode(p) = 3;
 		AICtrl_RaiseLevel(g_pWorld->aiCtrl, 1);
-		Alarm_Set(g_pWorld->alarm, 1.0f);
+		Alarm_Set(&g_pWorld->alarm, 1.0f);
 		if (cWorld_GetUsrEntity(g_pWorld, 0)) {
 			AICtrl_GearAttack(g_pWorld->aiCtrl, cWorld_GetUsrEntity(g_pWorld, 0), 0);
 		}
@@ -279,7 +279,7 @@ void __thiscall cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEnti
 		WChar(s)->control.hRot = 0.0f;
 		break;
 	case 6:
-		if (!g_pWorld->alarmOn && b->target.target && ai->vftable->GetState(ai)) {
+		if (!g_pWorld->alarm.on && b->target.target && ai->vftable->GetState(ai)) {
 			if (!CGameModel_IsVisible(Obj_Vtbl(p)->GetModel(p))) {
 				float d = cWorld_GetMinCamDistSq(g_pWorld, p->vftable->GetPos(p, &tmp));
 				float r = g_SentinelAbortyNPCAttDist;
@@ -318,7 +318,7 @@ void __fastcall cSentinelLocalLogic_Return(void *sentinel) {
 	if (self->base.idle || self->base.alwaysLock) {
 		return;
 	}
-	if (g_pWorld->alarmOn) {
+	if (g_pWorld->alarm.on) {
 		SENT_VT(self)->SetState(self, 1, NULL);
 		return;
 	}

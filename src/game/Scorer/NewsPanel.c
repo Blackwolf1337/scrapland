@@ -104,12 +104,12 @@ void __fastcall cNewsPanel_Update(cNewsPanel *self) {
 		self->engineInits = g_EngineInits;
 		int v = Scorer_Abs(0xff - (int)(Game_FtoUI(t * 1024.0f) % 0x1ff));
 		if (Eng_RenderTargetBegin("NewsPanel")) {
-			if (!g_pWorld->alarmOn) {
+			if (!g_pWorld->alarm.on) {
 				cNewsPanel_DrawNews(self, dt);
 			} else {
 				self->closedDrawn = 0;
-				/* a byte of the world (in alarmChars2): the own ship instead of the watched entities */
-				if (((byte *)g_pWorld)[0x2071]) {
+				/* the alarm is on for the character type of now: the own ship instead of the watched entities */
+				if (g_pWorld->alarm.sameChar) {
 					Render_ClearRect(0.0f, 0.0f, 640.0f, 480.0f, 1, (uint32_t)v << 16);
 					cNewsPanel_DrawEntity(self, cWorld_GetUsrEntity(g_pWorld, 0));
 				} else {

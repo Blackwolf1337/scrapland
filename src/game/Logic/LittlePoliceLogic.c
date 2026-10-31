@@ -50,8 +50,8 @@ cLittlePoliceLocalLogic *__thiscall cLittlePoliceLocalLogic_Delete(cLittlePolice
 void __thiscall cLittlePoliceLocalLogic_UpdateView(cLittlePoliceLocalLogic *self) {
 	cEntity *p = LP_BASE(self)->parent;
 
-	WChar_B381(p) = !LP_BASE(self)->busy && !g_pWorld->alarmOn && (self->bribe || LP_BASE(self)->state != 4);
-	Entity_Team(p) = g_pWorld->alarmOn ? 0 : 2;
+	WChar_B381(p) = !LP_BASE(self)->busy && !g_pWorld->alarm.on && (self->bribe || LP_BASE(self)->state != 4);
+	Entity_Team(p) = g_pWorld->alarm.on ? 0 : 2;
 }
 
 /* the money of the player in state 4: the bribe options of the arrow while the talk runs, else the talk option */
@@ -259,7 +259,7 @@ void __thiscall cLittlePoliceLocalLogic_Update(cLittlePoliceLocalLogic *self, fl
 	(*(void(__thiscall **)(void *))((byte *)LP_VT(self) + 0x90))(self);
 	cLittlePoliceLocalLogic_UpdateBribe(self);
 	int st = b->state;
-	byte alarm = g_pWorld->alarmOn;
+	byte alarm = g_pWorld->alarm.on;
 	if (alarm) {
 		self->sirenTime = self->sirenTime - dt;
 	}
@@ -282,7 +282,7 @@ void __thiscall cLittlePoliceLocalLogic_Update(cLittlePoliceLocalLogic *self, fl
 		if (!usr || b->busy) {
 			return;
 		}
-		byte accuse = World_Alarm()->sameChar && b->target.target;
+		byte accuse = g_pWorld->alarm.sameChar && b->target.target;
 		cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 		switch (b->state) {
 		case 2: {
@@ -298,7 +298,7 @@ void __thiscall cLittlePoliceLocalLogic_Update(cLittlePoliceLocalLogic *self, fl
 				}
 				cGenCharLocalLogic_Discover(&self->base);
 				cGenCharGroup_RaiseLevel(World_GenCharGroup(), 0);
-				Alarm_Set(g_pWorld->alarm, 1.0f);
+				Alarm_Set(&g_pWorld->alarm, 1.0f);
 				AICtrl_GearAttack(g_pWorld->aiCtrl, usr, 0);
 				return;
 			}
@@ -403,7 +403,7 @@ alert:
 /* vf10: the alarm when the player hits it */
 void __thiscall cLittlePoliceLocalLogic_OnHit(cLittlePoliceLocalLogic *self, cEntity *attacker) {
 	if (attacker == ChType_Usr0()) {
-		Alarm_Set(g_pWorld->alarm, 1.0f);
+		Alarm_Set(&g_pWorld->alarm, 1.0f);
 	}
 	cGenCharLocalLogic_OnHit(&self->base, attacker);
 }
@@ -414,7 +414,7 @@ void __thiscall cLittlePoliceLocalLogic_OnSeen(cLittlePoliceLocalLogic *self, cE
 		return;
 	}
 	if (e == ChType_Usr0()) {
-		Alarm_Set(g_pWorld->alarm, 1.0f);
+		Alarm_Set(&g_pWorld->alarm, 1.0f);
 		LP_VT(self)->SetState(self, 2, e);
 	}
 }
@@ -438,7 +438,7 @@ void __thiscall cLittlePoliceLocalLogic_UpdateLook(cLittlePoliceLocalLogic *self
 	cEntity *usr = ChType_Usr0();
 	WChar_ViewFovY(p) = g_GenCharStdFovY;
 	WChar_ViewFar(p) = g_LittlePoliceMaxDistFar;
-	if (g_pWorld->alarmOn) {
+	if (g_pWorld->alarm.on) {
 		cEntity *te = b->target.target;
 		if (te && b->state == 2 && te == cWorld_GetUsrEntity(g_pWorld, 0)) {
 			WChar_ViewMode(p) = 3;
@@ -447,14 +447,14 @@ void __thiscall cLittlePoliceLocalLogic_UpdateLook(cLittlePoliceLocalLogic *self
 		}
 		return;
 	}
-	if (!World_Alarm()->notGuaranteed) {
+	if (!g_pWorld->alarm.notGuaranteed) {
 		WChar_ViewMode(p) = 0;
 		return;
 	}
 	WChar_ViewMode(p) = 1;
 	if (usr && Logic_InView(p, usr->vftable->GetPos(usr, &t), g_LittlePoliceMaxDistFar, g_GenCharStdFovY,
 		g_GenCharStdFovX, 1)) {
-		Alarm_Set(g_pWorld->alarm, 1.0f);
+		Alarm_Set(&g_pWorld->alarm, 1.0f);
 		LP_VT(self)->SetState(self, 2, usr);
 	}
 }
