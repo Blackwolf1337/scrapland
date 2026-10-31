@@ -19,7 +19,7 @@ void ChType_EndActionEnd(cAbstractFile *params) {
 	cEntity *usr = ChType_Usr0();
 	CHECK(v);
 	CHECK(Entity_IsType(v, TYEN_WALKCHAR));
-	if ((usr != v || !(WChar_EnergyBarDecr(v) > 1.0f - WChar_EnergyUsed(v))) && WChar_ActionPress(v)) {
+	if ((usr != v || !(WChar(v)->energyBarDecr > 1.0f - WChar(v)->energyUsed)) && WChar(v)->control.act) {
 		cActCtrl_Play(ChType_ActCtrl(v), "ActionInit", 1, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(v), "Action", 1);
 	}
@@ -39,11 +39,11 @@ void ChType_BishopAttack(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, name, 0x80);
 	cEntity *v = World_FindEntity(name);
-	float energy = 1.0f - WChar_EnergyUsed(v);
-	if (WChar_Life(v) <= 0) {
+	float energy = 1.0f - WChar(v)->energyUsed;
+	if (WChar(v)->wl.life <= 0) {
 		return;
 	}
-	if ((!cWalkCharEntity_GetOwnerSlot(v) && g_GearLowWeaponEnergy > energy) || !WChar_ActionPress(v)) {
+	if ((!cWalkCharEntity_GetOwnerSlot(v) && g_GearLowWeaponEnergy > energy) || !WChar(v)->control.act) {
 		cActCtrl_Play(ChType_ActCtrl(v), "ActionEnd", 1, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(v), "Relax", 1);
 	}
@@ -75,7 +75,7 @@ void ChType_BishopAttack(cAbstractFile *params) {
 	aim.x = 0.0f;
 	aim.y = 0.0f;
 	aim.z = 0.0f;
-	if (!WChar_ViewLock(v)) {
+	if (!WChar(v)->viewLock) {
 		aim.x = Obj_Vtbl(v)->GetAng(v, &t1)->x;
 		aim.y = Obj_Vtbl(v)->GetAng(v, &t1)->y;
 		target = NULL;
@@ -93,22 +93,22 @@ void ChType_BishopAttack(cAbstractFile *params) {
 	}
 	v->vftable->AimWeapon(v, aim.x, aim.y, &dist, &hit, &target, 0x11);
 	if (target && target->vftable->IsType(target, TYEN_WITH_LIFE)) {
-		if (WChar_Cam(target)) {
+		if (WChar(target)->wl.obj.cam) {
 			cPad_Rumble(&g_Pads[0], 1.0f, 0.0f, 0.5f);
 		}
 		int damage = g_BishopWeaponDamage;
 		if (v->vftable->GetAI(v) && World_IsEasySingle()) {
 			damage = damage / 2;
 		}
-		if (!WChar_God(target)) {
-			WChar_Life(target) -= damage;
+		if (!WChar(target)->wl.god) {
+			WChar(target)->wl.life -= damage;
 		}
-		cVehicleAttack_HitBy(WChar_Attack(target), v->name);
+		cVehicleAttack_HitBy(&WChar(target)->wl.attack, v->name);
 		if (!cWalkCharEntity_GetOwnerSlot(v)) {
 			const char *cls = ChType_ActClass(ChType_ActCtrl(target))->name;
 			float level;
-			if (WChar_Life(target) <= 0) {
-				if (WChar_PrevLife(target) > 0) {
+			if (WChar(target)->wl.life <= 0) {
+				if (WChar(target)->wl.prevLife > 0) {
 					SaveVar_Inc("Stats.Bishop", 1);
 					SaveVar_Inc("Stats.Killer", 1);
 				}
@@ -179,7 +179,7 @@ void ChType_BishopAttack(cAbstractFile *params) {
 	snd = g_pSound;
 	vol = Snd_Volume(g_BishopHitSoundVol);
 	snd->vftable->PlayAt(g_pSound, snd2, &to, vol);
-	if (WChar_Cam(v)) {
+	if (WChar(v)->wl.obj.cam) {
 		cPad_Rumble(&g_Pads[0], 0.5f, 0.5f, 0.25f);
 	}
 }

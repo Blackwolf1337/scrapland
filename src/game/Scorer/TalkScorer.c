@@ -83,14 +83,14 @@ cEntity *__stdcall Talk_GetUseTarget(int player) {
 		return NULL;
 	}
 	cEntity *ch = cCamEntity_GetTarget(cam);
-	if (!ch || !Entity_IsType(ch, TYEN_WALKCHAR) || !WChar_ListenOn(ch)) {
+	if (!ch || !Entity_IsType(ch, TYEN_WALKCHAR) || !WChar(ch)->listenOn) {
 		return NULL;
 	}
 	cEntity *t = WChar_Listen(ch);
 	if (!t || !Entity_IsType(t, TYEN_WITH_LIFE)) {
 		return NULL;
 	}
-	return WChar_B381(t) ? t : NULL;
+	return WChar(t)->wl.arrow.canUse ? t : NULL;
 }
 
 int __thiscall cTalkScorer_Var(cTalkScorer *self, const char *name, byte set, char **s, double *d, int *i) {
@@ -219,7 +219,7 @@ void __thiscall cTalkScorer_DrawUse(cTalkScorer *self, int player, float *pos) {
 	if (!t) {
 		return;
 	}
-	arrow = Ent_Arrow(t);
+	arrow = &WLife(t)->arrow;
 	opt = cArrowIndicator_GetOpt(arrow, arrow->iOpt);
 	if (!opt || !(p = strchr(opt, ':'))) {
 		return;

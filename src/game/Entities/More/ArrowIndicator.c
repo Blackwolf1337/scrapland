@@ -144,7 +144,7 @@ byte ArrowIndicator_Visible(cEntity *self, cEntity *other, float ang, float maxD
 	float v[2], r[2], n[2], s, c;
 
 	if (self == other || !self->active || !other->active ||
-		(!Ent_Arrow(other)->canUse && !Ent_Arrow(other)->canView)) {
+		(!WLife(other)->arrow.canUse && !WLife(other)->arrow.canView)) {
 		return 0;
 	}
 	const vec3_t *p = self->vftable->GetPos(self, &ps);
@@ -153,25 +153,25 @@ byte ArrowIndicator_Visible(cEntity *self, cEntity *other, float ang, float maxD
 	float dy = q->y - p->y;
 	float dz = q->z - p->z;
 	float l = (float)__builtin_sqrt((double)(dx * dx + dy * dy + dz * dz));
-	float ro = Ent_ArrowRadius(other);
-	float d = l - (Ent_ArrowRadius(self) + ro);
+	float ro = WLife(other)->prim.radius;
+	float d = l - (WLife(self)->prim.radius + ro);
 	if (mark) {
-		Ent_Arrow(other)->shown = g_ArrowNearDist > d;
+		WLife(other)->arrow.shown = g_ArrowNearDist > d;
 	}
 	if (!(maxDist > d)) {
 		return 0;
 	}
-	if (!(Ent_ArrowRadius(self) + ro + g_ArrowYMargin > (float)__builtin_fabs((double)dy))) {
+	if (!(WLife(self)->prim.radius + ro + g_ArrowYMargin > (float)__builtin_fabs((double)dy))) {
 		return 0;
 	}
 	c = 1.0f;
-	if (useAng && Ent_Arrow(self)->useAngSel) {
-		if (Ent_Arrow(other)->useAngSel) {
+	if (useAng && WLife(self)->arrow.useAngSel) {
+		if (WLife(other)->arrow.useAngSel) {
 			v[0] = dx;
 			v[1] = dz;
 			const float *rv = Vec2_Rotate(r, v, ang + 0x1.921fb6p+0f);
 			c = Vec2_Normalize(n, rv)[0];
-		} else if (Ent_Arrow(other)->useAbsAngSel) {
+		} else if (WLife(other)->arrow.useAbsAngSel) {
 			const vec3_t *oa = Obj_Vtbl(other)->GetAng(other, &a);
 			X87_SinCos(ang - oa->y + M_PI_F, &s, &c);
 		}
@@ -179,7 +179,7 @@ byte ArrowIndicator_Visible(cEntity *self, cEntity *other, float ang, float maxD
 	if (!(c >= (float)Game_Cos(0.7853981633974483))) {
 		return 0;
 	}
-	if (Ent_Arrow(other)->useMapCheck && Ent_Arrow(self)->useMapCheck) {
+	if (WLife(other)->arrow.useMapCheck && WLife(self)->arrow.useMapCheck) {
 		const vec3_t *to = other->vftable->GetPos(other, &po);
 		const vec3_t *from = self->vftable->GetPos(self, &ps);
 		if (Engine_TestLine(from, to, NULL, NULL)) {
@@ -211,8 +211,8 @@ void GameModelList_Free(void) {
 void ArrowIndicator_ClearSel(void) {
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
 		if (e->active && e->vftable->IsType(e, TYEN_WITH_LIFE)) {
-			Ent_Arrow(e)->selected = 0;
-			Ent_Arrow(e)->shown = 0;
+			WLife(e)->arrow.selected = 0;
+			WLife(e)->arrow.shown = 0;
 		}
 	}
 }
@@ -230,20 +230,20 @@ cEntity *ArrowIndicator_FindSel(cEntity *self, float ang) {
 	cEntity *sel = NULL;
 
 	self->vftable->GetPos(self, &pos);
-	Ent_Arrow(self)->shown = 0;
-	Ent_Arrow(self)->selected = 0;
+	WLife(self)->arrow.shown = 0;
+	WLife(self)->arrow.selected = 0;
 	float best = g_ArrowMaxDist;
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
 		if (!e->vftable->IsType(e, TYEN_WITH_LIFE)) {
 			continue;
 		}
-		Ent_Arrow(e)->selected = 0;
+		WLife(e)->arrow.selected = 0;
 		if (ArrowIndicator_Visible(self, e, ang, best, &best, 1, 1)) {
 			sel = e;
 		}
 	}
 	if (sel) {
-		Ent_Arrow(sel)->selected = 1;
+		WLife(sel)->arrow.selected = 1;
 	}
 	return sel;
 }
@@ -821,9 +821,9 @@ void MissionArrows_Switch(const char *on, const char *off) {
 	cString_Set(g_MissionArrowOn, on);
 	cString_Set(g_MissionArrowOff, off);
 	for (; e; e = cEntity_Next(e)) {
-		if (e->vftable->IsType(e, TYEN_WITH_LIFE) && Ent_Arrow(e)->mission &&
-			CGameModel_IsLoaded(Ent_Arrow(e)->mission)) {
-			cArrowIndicator_LoadMission(Ent_Arrow(e), Arrow_MissionName(Ent_Arrow(e)));
+		if (e->vftable->IsType(e, TYEN_WITH_LIFE) && WLife(e)->arrow.mission &&
+			CGameModel_IsLoaded(WLife(e)->arrow.mission)) {
+			cArrowIndicator_LoadMission(&WLife(e)->arrow, Arrow_MissionName(&WLife(e)->arrow));
 		}
 	}
 }

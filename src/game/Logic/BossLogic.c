@@ -73,7 +73,7 @@ void __thiscall cBossLocalLogic_Update(cBossLocalLogic *self, float dt) {
 		m->moveAng.y = self->workAng[1];
 		m->moveAng.z = 0.0f;
 		vec3_t pos = self->workPos;
-		if (cWorld_TestSphereEntities(g_pWorld, p, (void *)0x10, &pos, WChar_Radius(p), NULL, 1, 0)) {
+		if (cWorld_TestSphereEntities(g_pWorld, p, (void *)0x10, &pos, WLife(p)->prim.radius, NULL, 1, 0)) {
 			return;
 		}
 		m->movePos = self->workPos;

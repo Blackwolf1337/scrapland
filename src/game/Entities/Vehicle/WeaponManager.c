@@ -58,7 +58,7 @@ byte __thiscall cWeaponManager_VarF(cWeaponManager *self, const char *name, doub
 		return 1;
 	}
 	if (!strcmp(name, "AcUAmmo")) {
-		cVehicleControls *ctl = Vehicle_Controls(self->owner);
+		cVehicleControls *ctl = &Veh(self->owner)->controls;
 		if (set) {
 			float f = (float)*v;
 			cWeaponManager_SetUAmmo(self, Controls_GetWeapon(ctl), f);
@@ -93,7 +93,7 @@ byte __thiscall cWeaponManager_VarF(cWeaponManager *self, const char *name, doub
 		return 1;
 	}
 	if (!strcmp(name, "AmmoAc")) {
-		cVehicleControls *ctl = Vehicle_Controls(self->owner);
+		cVehicleControls *ctl = &Veh(self->owner)->controls;
 		if (set) {
 			float f = (float)*v;
 			cWeaponManager_SetAmmo(self, TABLE_AT(WEAPS, Controls_GetWeapon(ctl))->ammo, f);
@@ -261,7 +261,7 @@ void __thiscall cWeaponManager_Init(cWeaponManager *self, cEntity *owner) {
 	}
 	self->curWeap = w;
 	self->prevWeap = w;
-	Controls_SetWeapon(Vehicle_Controls(self->owner), w);
+	Controls_SetWeapon(&Veh(self->owner)->controls, w);
 	self->fireStamp = 0.0f;
 	self->cmStamp = 0.0f;
 	self->weapSnd = -1;
@@ -301,7 +301,7 @@ byte __thiscall cWeaponManager_VarI(cWeaponManager *self, const char *name, int 
 		return 1;
 	}
 	if (!strcmp(name, "AcUpgrd")) {
-		cVehicleControls *ctl = Vehicle_Controls(self->owner);
+		cVehicleControls *ctl = &Veh(self->owner)->controls;
 		if (set) {
 			cWeaponManager_SetUpgrade(self, Controls_GetWeapon(ctl), *v);
 		} else {
@@ -358,11 +358,11 @@ byte __thiscall cWeaponManager_VarI(cWeaponManager *self, const char *name, int 
 		return 1;
 	}
 	if (!set && !strcmp(name, "AcAmmo")) {
-		*v = TABLE_AT(WEAPS, Controls_GetWeapon(Vehicle_Controls(self->owner)))->ammo;
+		*v = TABLE_AT(WEAPS, Controls_GetWeapon(&Veh(self->owner)->controls))->ammo;
 		return 1;
 	}
 	if (!strcmp(name, "AcWeap")) {
-		cVehicleControls *ctl = Vehicle_Controls(self->owner);
+		cVehicleControls *ctl = &Veh(self->owner)->controls;
 		if (set) {
 			Controls_SetWeapon(ctl, *v);
 		} else {
@@ -553,13 +553,13 @@ byte __thiscall cWeaponManager_SetUAmmo(cWeaponManager *self, int w, float v) {
 void __thiscall cWeaponManager_SetWeapSnd(cWeaponManager *self, int snd) {
 	cEntity *owner = self->owner;
 	int a = TABLE_AT(WEAPS, self->curWeap)->ammo;
-	if (!(a < g_pWorld->ammo.count && !(0.0f >= self->ammo[a]) && Vehicle_Controls(owner)->fire)) {
+	if (!(a < g_pWorld->ammo.count && !(0.0f >= self->ammo[a]) && Veh(owner)->controls.fire)) {
 		snd = -1;
 	}
 	if (snd == self->weapSnd) {
 		return;
 	}
-	cSndItem *it = PtrArray_Get(Vehicle_Sounds(self->owner), self->weapSnd);
+	cSndItem *it = PtrArray_Get(&Veh(self->owner)->wl.obj.snd, self->weapSnd);
 	if (it && it->sound.desc.loop) {
 		it->volume = 0.0f;
 		it->pitch = 0.0f;
@@ -571,7 +571,7 @@ void __thiscall cWeaponManager_SetWeapSnd(cWeaponManager *self, int snd) {
 /* the weapon callbacks of the frame: CM and fire press and release, the ammo charge, OnFire, the weapon change */
 void __thiscall cWeaponManager_Update(cWeaponManager *self, float dt) {
 	cEntity *owner = self->owner;
-	cVehicleControls *ctl = Vehicle_Controls(owner);
+	cVehicleControls *ctl = &Veh(owner)->controls;
 	const char *name;
 
 	if (!CGameModel_IsLoaded(Obj_Vtbl(owner)->GetModel(owner))) {
@@ -623,7 +623,7 @@ void __thiscall cWeaponManager_Update(cWeaponManager *self, float dt) {
 		}
 	}
 	int a = TABLE_AT(WEAPS, self->curWeap)->ammo;
-	if (ctl->fire && self->fireStamp >= 0.0f && self->ammo[a] > 0.0f && Vehicle_CanFire(self->owner)) {
+	if (ctl->fire && self->fireStamp >= 0.0f && self->ammo[a] > 0.0f && Veh(self->owner)->isInit) {
 		name = self->owner->name;
 		cPy_Function_AddParamS(&TABLE_AT(WEAPS, self->curWeap)->onFire, name);
 		cPy_Function_Execute(&TABLE_AT(WEAPS, self->curWeap)->onFire, 0);
@@ -639,12 +639,12 @@ void __thiscall cWeaponManager_Update(cWeaponManager *self, float dt) {
 		cPy_Function_AddParamS(&TABLE_AT(AMMOS, a)->onFire, name);
 		cPy_Function_Execute(&TABLE_AT(AMMOS, a)->onFire, 0);
 	}
-	cAutoAim_Update(Vehicle_AutoAim(self->owner), self->owner, dt);
-	cVehicleAttack_Update(Vehicle_Attack(self->owner));
+	cAutoAim_Update(&Veh(self->owner)->autoAim, self->owner, dt);
+	cVehicleAttack_Update(&WLife(self->owner)->attack);
 
 	/* sw: a net vehicle switches (prevWeap is set after OnEnd), else the stamps allow the change */
 	if (net) {
-		int slot = Vehicle_NetSlot(self->owner);
+		int slot = Veh(self->owner)->slot;
 		if (slot < 0 || slot >= 4) {
 			Controls_GetWeapon(ctl);
 			Controls_SetWeapon(ctl, self->curWeap);
@@ -690,7 +690,7 @@ hook:
 		cPy_Function_Execute(g_HookPlugFunc, 0);
 	}
 	if (self->curWeap != g_LaserIDWeap || !ctl->cm) {
-		cSndItem *it = PtrArray_Get(Vehicle_Sounds(self->owner), 0x18);
+		cSndItem *it = PtrArray_Get(&Veh(self->owner)->wl.obj.snd, 0x18);
 		if (it && it->playing) {
 			it->volume = 0.0f;
 			it->pitch = 0.0f;
@@ -708,7 +708,7 @@ hook:
 void __thiscall cWeaponManager_NextWeapSnd(cWeaponManager *self, int unused) {
 	(void)unused;
 	cWeaponManager_SetWeapSnd(self, self->weapSnd);
-	cSndItem *it = PtrArray_Get(Vehicle_Sounds(self->owner), self->weapSnd);
+	cSndItem *it = PtrArray_Get(&Veh(self->owner)->wl.obj.snd, self->weapSnd);
 	if (!it || it->sound.desc.loop || !(it->times[0] > 0.0f) || !(it->time > it->times[0])) {
 		return;
 	}
@@ -723,7 +723,7 @@ void __thiscall cWeaponManager_NextWeapSnd(cWeaponManager *self, int unused) {
 		}
 	}
 	int next = d + self->weapSnd;
-	cSndItem *n = PtrArray_Get(Vehicle_Sounds(self->owner), next);
+	cSndItem *n = PtrArray_Get(&Veh(self->owner)->wl.obj.snd, next);
 	float rest = it->time - it->times[0];
 	if (rest > it->times[0]) {
 		n->time = 0.0f;

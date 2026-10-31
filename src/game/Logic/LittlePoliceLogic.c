@@ -50,8 +50,9 @@ cLittlePoliceLocalLogic *__thiscall cLittlePoliceLocalLogic_Delete(cLittlePolice
 void __thiscall cLittlePoliceLocalLogic_UpdateView(cLittlePoliceLocalLogic *self) {
 	cEntity *p = LP_BASE(self)->parent;
 
-	WChar_B381(p) = !LP_BASE(self)->busy && !g_pWorld->alarm.on && (self->bribe || LP_BASE(self)->state != 4);
-	Entity_Team(p) = g_pWorld->alarm.on ? 0 : 2;
+	WChar(p)->wl.arrow.canUse = !LP_BASE(self)->busy && !g_pWorld->alarm.on && (self->bribe ||
+		LP_BASE(self)->state != 4);
+	WLife(p)->arrow.tgType = g_pWorld->alarm.on ? 0 : 2;
 }
 
 /* the money of the player in state 4: the bribe options of the arrow while the talk runs, else the talk option */
@@ -73,7 +74,8 @@ void __fastcall cLittlePoliceLocalLogic_UpdateBribe(cLittlePoliceLocalLogic *sel
 		} else {
 			cBaseLocalLogic *lt = (cBaseLocalLogic *)Logic_GetLocalLogic(b->target.target);
 			cEntity *te = b->target.target;
-			if (lt && (((lt->idle || lt->alwaysLock) && WChar_Listen(te) != p) || !WChar_B381(te))) {
+			if (lt && (((lt->idle || lt->alwaysLock) && WChar_Listen(te) != p) ||
+				!WChar(te)->wl.arrow.canUse)) {
 				self->base.searchTime = g_GenCharMaxSpecialActionTime;
 				Logic_Vtbl(self)->SetState(self, 0, NULL);
 				return;
@@ -90,7 +92,7 @@ void __fastcall cLittlePoliceLocalLogic_UpdateBribe(cLittlePoliceLocalLogic *sel
 	if (self->bribe == old) {
 		return;
 	}
-	cArrowIndicator *arrow = Ent_Arrow(p);
+	cArrowIndicator *arrow = &WLife(p)->arrow;
 	if (self->bribe) {
 		cArrowIndicator_ClearOpts(arrow);
 		Str_PrintfQuiet(buf, sizeof(buf), "GiveWhy:%s", Lang_GetStr("Generics_PoliceBribeGiveWhyOpt"));
@@ -432,26 +434,26 @@ void __thiscall cLittlePoliceLocalLogic_UpdateLook(cLittlePoliceLocalLogic *self
 	cEntity *p = b->parent;
 
 	if (b->busy) {
-		WChar_ConeStatus(p) = 0;
+		WLife(p)->arrow.coneStatus = 0;
 		return;
 	}
 	cEntity *usr = ChType_Usr0();
-	WChar_ConeFov(p) = g_GenCharStdFovY;
-	WChar_ConeDist(p) = g_LittlePoliceMaxDistFar;
+	WLife(p)->arrow.coneFov = g_GenCharStdFovY;
+	WLife(p)->arrow.coneDist = g_LittlePoliceMaxDistFar;
 	if (g_pWorld->alarm.on) {
 		cEntity *te = b->target.target;
 		if (te && b->state == 2 && te == cWorld_GetUsrEntity(g_pWorld, 0)) {
-			WChar_ConeStatus(p) = 3;
+			WLife(p)->arrow.coneStatus = 3;
 		} else {
-			WChar_ConeStatus(p) = 2;
+			WLife(p)->arrow.coneStatus = 2;
 		}
 		return;
 	}
 	if (!g_pWorld->alarm.notGuaranteed) {
-		WChar_ConeStatus(p) = 0;
+		WLife(p)->arrow.coneStatus = 0;
 		return;
 	}
-	WChar_ConeStatus(p) = 1;
+	WLife(p)->arrow.coneStatus = 1;
 	if (usr && Logic_InView(p, usr->vftable->GetPos(usr, &t), g_LittlePoliceMaxDistFar, g_GenCharStdFovY,
 		g_GenCharStdFovX, 1)) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);

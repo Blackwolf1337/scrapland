@@ -36,7 +36,7 @@ void Net_AsePlayer(int n) {
 	if (!e || !e->vftable->IsType(e, TYEN_CAR)) {
 		return;
 	}
-	const char *team = Net_TeamName(NetEnt_Team(e));
+	const char *team = Net_TeamName(WLife(e)->arrow.tgType);
 	Str_PrintfQuiet(ping, sizeof(ping), "%d", Net_GetPing(name));
 	score[0] = 0;
 	PyObject *o = PyImport_AddModule("Ffa");
@@ -44,7 +44,7 @@ void Net_AsePlayer(int n) {
 		(o = PyDict_GetItemString(o, name))) {
 		Str_PrintfQuiet(score, sizeof(score), "%d", (int)((PyIntObject *)o)->ob_ival);
 	}
-	Ase_AddPlayer(NetEnt_UsrName(e) ? NetEnt_UsrName(e) : "", team, NetEnt_TypeName(e), score, ping, 0);
+	Ase_AddPlayer(WLife(e)->usrName ? WLife(e)->usrName : "", team, Veh(e)->typeName, score, ping, 0);
 }
 
 void Net_AseShutdown(void) {

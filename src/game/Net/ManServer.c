@@ -311,7 +311,7 @@ void __thiscall cClientNetManager_Send(cClientNetManager *self, uint32_t time) {
 		if (me->active) {
 			o = me->vftable->GetPos(me, &tmp);
 		} else {
-			cEntity *t = World_FindEntity(NetEnt_Target(me));
+			cEntity *t = World_FindEntity(Veh(me)->target);
 			if (t) {
 				o = t->vftable->GetPos(t, &tmp);
 			}
@@ -337,7 +337,7 @@ void __thiscall cClientNetManager_Send(cClientNetManager *self, uint32_t time) {
 			if (!me) {
 				near = 0;
 			} else {
-				near = me == e || !strcmp(name, NetEnt_Target(me));
+				near = me == e || !strcmp(name, Veh(me)->target);
 			}
 			CHECK(e->vftable->IsType(e, TYEN_OBJECT));
 			byte hdr[3];
@@ -408,14 +408,14 @@ void __fastcall cClientNetManager_SetLocalData(cClientNetManager *self) {
 
 	Con_Printf("SetLocalData()->%s\n", self->name);
 	CHECK(e && e->vftable->IsType(e, TYEN_CAR));
-	Str_Copy(self->model, NetEnt_TypeName(e), sizeof(self->model));
-	self->maxLife = (uint16_t)NetEnt_MaxLife(e);
-	Str_Copy(self->usrName, NetEnt_UsrName(e) ? NetEnt_UsrName(e) : "", sizeof(self->usrName));
+	Str_Copy(self->model, Veh(e)->typeName, sizeof(self->model));
+	self->maxLife = (uint16_t)Veh(e)->maxLife;
+	Str_Copy(self->usrName, WLife(e)->usrName ? WLife(e)->usrName : "", sizeof(self->usrName));
 	Str_Copy(self->pilot, Veh_Vtbl(Veh(e))->GetPilot(Veh(e), 0), sizeof(self->pilot));
 	for (uint32_t m = 0; m < 4; m++) {
 		Str_Copy(self->motors[m], cVehicleMotors_GetMotorName(NetEnt_Motors(e), m, NULL), sizeof(self->motors[m]));
 	}
 	Str_Copy(self->weapons, cWeaponManager_GetWeapList(NetEnt_Weapons(e)), sizeof(self->weapons));
-	self->team = NetEnt_Team(e);
+	self->team = WLife(e)->arrow.tgType;
 	cClientNetManager_SendUsers(self, 1);
 }

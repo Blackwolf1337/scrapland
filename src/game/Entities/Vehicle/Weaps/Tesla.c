@@ -21,7 +21,7 @@ void Tesla_CreateNative(cAbstractFile *f) {
 	Weap_ReadVec(f, &hit);
 	cAbstractFile_ReadString(f, targetName, 0x80);
 	cEntity *v = Weap_Vehicle(name);
-	cTargetLock *wm = Veh_Weapons(v);
+	cTargetLock *wm = &Veh(v)->weapons;
 	byte shooting = wm->teslaFiring;
 	cWeaponManager_SetFlag46(wm, 1);
 	int n = 0;
@@ -53,7 +53,8 @@ void Tesla_CreateNative(cAbstractFile *f) {
 		down = 1.0f / g_TeslaDownRangeTime;
 	}
 	float up = 1.0f / g_TeslaUpRangeTime;
-	cAutoAim_SetAngle(Veh_Aim(v), (Veh_TeslaAng(v) - Veh_TeslaMinAng(v)) * 0.05f * (up + down) + Veh_AimLimit(v));
+	cAutoAim_SetAngle(Veh_Aim(v),
+		(Veh(v)->autoAim.hiAng - Veh(v)->autoAim.loAng) * 0.05f * (up + down) + Veh(v)->autoAim.ang);
 	cWithLifeEntity_SetSndTime(w, 0.5f, (n - 1) / 2);
 }
 
@@ -72,12 +73,12 @@ void Tesla_HudNative(cAbstractFile *f) {
 		return;
 	}
 	float k = 0.0f;
-	int level = cWeaponManager_GetUpgrade(Veh_Weapons(v), g_TeslaIDWeap);
-	if (Veh_TeslaAngSpeed(v) != 0.0f) {
-		float min = Veh_TeslaMinAng(v);
-		k = (Veh_AimLimit(v) - min) / (Veh_TeslaAng(v) - min);
+	int level = cWeaponManager_GetUpgrade(&Veh(v)->weapons, g_TeslaIDWeap);
+	if (Veh(v)->autoAim.deltaAng != 0.0f) {
+		float min = Veh(v)->autoAim.loAng;
+		k = (Veh(v)->autoAim.ang - min) / (Veh(v)->autoAim.hiAng - min);
 	}
-	if (Vehicle_Controls(v)->fire && level == TESLA_UPG_WIDE) {
+	if (Veh(v)->controls.fire && level == TESLA_UPG_WIDE) {
 		k = Float_MaxSS(0.25f, k);
 	}
 	float size = k * 4.0f + 20.0f;
@@ -107,8 +108,8 @@ void Tesla_FireNative(cAbstractFile *f) {
 	cAbstractFile_ReadString(f, name, 0x80);
 	cEntity *v = Weap_Vehicle(name);
 	byte shot = Tesla_Shoot(v);
-	ang.x = Veh_AimAng(v);
-	ang.y = Veh_AimAngY(v);
+	ang.x = Veh(v)->autoAim.ax;
+	ang.y = Veh(v)->autoAim.ay;
 	ang.z = 0.0f;
 	target = NULL;
 	dist = g_TeslaRange;
@@ -121,7 +122,7 @@ void Tesla_FireNative(cAbstractFile *f) {
 		cVehicleAttack_ShotAtPoint(Veh_HitInfo(v), &out, 0);
 		return;
 	}
-	cTargetLock *wm = Veh_Weapons(v);
+	cTargetLock *wm = &Veh(v)->weapons;
 	int n = cWeaponManager_NumSlots(wm, g_TeslaIDWeap, 1);
 	if (!n) {
 		return;
@@ -136,8 +137,8 @@ void Tesla_FireNative(cAbstractFile *f) {
 		cVehicleAttack_ShotAtPoint(Veh_HitInfo(v), &out, 1);
 	}
 	if (isLife) {
-		if (!Ent_God(target)) {
-			Ent_Life(target) -= n;
+		if (!WLife(target)->god) {
+			WLife(target)->life -= n;
 		}
 		if (!isCar) {
 			Tesla_Push(v, target, n);
@@ -166,7 +167,7 @@ void Tesla_Push(cEntity *v, cEntity *e, int n) {
 	if (!e || !Entity_IsType(e, TYEN_WITH_LIFE)) {
 		return;
 	}
-	int level = cWeaponManager_GetUpgrade(Veh_Weapons(v), g_TeslaIDWeap);
+	int level = cWeaponManager_GetUpgrade(&Veh(v)->weapons, g_TeslaIDWeap);
 	if (Entity_IsType(e, TYEN_WALKCHAR)) {
 		return;
 	}
@@ -176,10 +177,10 @@ void Tesla_Push(cEntity *v, cEntity *e, int n) {
 		float y = -dir->y;
 		float z = -dir->z;
 		float k = (float)n * g_TeslaTrackForce;
-		Veh_PushTime(e) = 0.3f;
-		Veh_Push(e).x = x * k;
-		Veh_Push(e).y = y * k;
-		Veh_Push(e).z = z * k;
+		Veh(e)->pushTime = 0.3f;
+		Veh(e)->push.x = x * k;
+		Veh(e)->push.y = y * k;
+		Veh(e)->push.z = z * k;
 		return;
 	}
 	Weap_PushAway(v, e, n, g_TeslaHitForce);
@@ -191,7 +192,7 @@ void Tesla_AimOnNative(cAbstractFile *f) {
 	cAbstractFile_ReadString(f, name, 0x80);
 	cEntity *v = Weap_Vehicle(name);
 	Tesla_AimOn(v);
-	cWeaponManager_SetFlag46(Veh_Weapons(v), 0);
+	cWeaponManager_SetFlag46(&Veh(v)->weapons, 0);
 }
 
 void Tesla_AimOffNative(cAbstractFile *f) {
@@ -199,23 +200,23 @@ void Tesla_AimOffNative(cAbstractFile *f) {
 
 	cAbstractFile_ReadString(f, name, 0x80);
 	cEntity *v = Weap_Vehicle(name);
-	Veh_AimMode(v) = 0;
-	Veh_TeslaAngSpeed(v) = 0.0f;
-	cWeaponManager_SetFlag46(Veh_Weapons(v), 0);
+	Veh(v)->autoAim.status = 0;
+	Veh(v)->autoAim.deltaAng = 0.0f;
+	cWeaponManager_SetFlag46(&Veh(v)->weapons, 0);
 }
 
 /* the aim help of the Tesla: the cone opens wide (wider with a pad and VehicleCenterPadLock) */
 void Tesla_AimOn(cEntity *v) {
-	Veh_AimMode(v) = 2;
-	Veh_AimCone(v) = TESLA_CONE;
+	Veh(v)->autoAim.status = 2;
+	Veh(v)->autoAim.speed = TESLA_CONE;
 	float min = (float)(((double)g_TeslaMinAngRange * WEAP_PI) / 180.0);
-	Veh_AimDist(v) = g_TeslaDistLimit;
+	Veh(v)->autoAim.distLimit = g_TeslaDistLimit;
 	float max = g_TeslaMaxAngRange;
 	if (g_VehicleCenterPadLock != 0.0f && cVehicleEntity_GetOwnerSlot(v) != -1) {
 		max = g_TeslaMaxAngRangePad;
 	}
-	Veh_TeslaAngSpeed(v) = 0.0f;
-	Veh_TeslaAng(v) = (float)(((double)max * WEAP_PI) / 180.0);
-	Veh_TeslaMinAng(v) = min;
+	Veh(v)->autoAim.deltaAng = 0.0f;
+	Veh(v)->autoAim.hiAng = (float)(((double)max * WEAP_PI) / 180.0);
+	Veh(v)->autoAim.loAng = min;
 	cAutoAim_SetAngle(Veh_Aim(v), min);
 }

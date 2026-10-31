@@ -113,7 +113,7 @@ void __thiscall cItemEntity_Touch(cItemEntity *self, cEntity *other, const vec3_
 		return;
 	}
 	if (self->typeMask != 0xffff && (!other->vftable->IsType(other, TYEN_WITH_LIFE) ||
-		!(self->typeMask & (1u << (Entity_Team(other) & 31))))) {
+		!(self->typeMask & (1u << (WLife(other)->arrow.tgType & 31))))) {
 		return;
 	}
 	if (self->base.deadNode.target || !(other->mask & 0x11) || !(byte)cPy_Function_IsValid(&self->onTake)) {

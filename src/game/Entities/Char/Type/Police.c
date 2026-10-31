@@ -91,7 +91,7 @@ void ChType_ListeningPolice(cAbstractFile *params) {
 			return;
 		}
 	}
-	Nto1Node *n = WChar_ListenNode(me);
+	Nto1Node *n = &WChar(me)->listen;
 	CHECK(n->data);
 	Nto1Node_Unlink(n);
 	Logic_Vtbl(ll)->SetIdle(ll, 0);
@@ -102,12 +102,12 @@ void ChType_ListeningPolice(cAbstractFile *params) {
  * logic. 1 when that one can listen (its class has PoliceListen in *action): an AI only when awake (0x381), the
  * player not while a police of the player still runs an Action. usr: v is a player. */
 byte ChType_PoliceFindListener(cEntity *v, cEntity **victim, byte *usr, void **action) {
-	if (WChar_Falling(v)) {
+	if (WChar(v)->falling) {
 		return 0;
 	}
 	*usr = cWalkCharEntity_GetOwnerSlot(v) != -1;
 	if (*usr) {
-		if (WChar_Listen(v) && WChar_ListenOn(v)) {
+		if (WChar_Listen(v) && WChar(v)->listenOn) {
 			*victim = WChar_Listen(v);
 		}
 	} else {
@@ -133,7 +133,7 @@ byte ChType_PoliceFindListener(cEntity *v, cEntity **victim, byte *usr, void **a
 		return 0;
 	}
 	if (cWalkCharEntity_GetOwnerSlot(*victim) == -1) {
-		return WChar_B381(*victim) ? 1 : 0;
+		return WChar(*victim)->wl.arrow.canUse ? 1 : 0;
 	}
 	if (!strcmp(cls->name, "Police") &&
 		!crt_strncmp(cActCtrl_GetActionName(ctrl, 0), "Action", 6)) {
@@ -158,7 +158,7 @@ void ChType_PoliceActionPress(cAbstractFile *params) {
 	if (!ChType_PoliceFindListener(v, &victim, &usr, &action)) {
 		return;
 	}
-	cEntity_AddLink(victim, WChar_ListenNode(v));
+	cEntity_AddLink(victim, &WChar(v)->listen);
 	if (!cActCtrl_Play(ChType_ActCtrl(v), usr ? "ActionInit" : "ActionInitNPC", 0, 1.0f)) {
 		return;
 	}
@@ -174,14 +174,14 @@ void ChType_PoliceActionPress(cAbstractFile *params) {
 	move->viewAng = 0;
 	cActCtrl_SetDefLoop(ChType_ActCtrl(v), usr ? "Action" : "ActionNPC", 0);
 	if (usr) {
-		WChar_ListenOn(v) = 0;
+		WChar(v)->listenOn = 0;
 		AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, v->vftable->GetPos(v, &t2));
 	}
 	cLocalLogic *l = Logic_GetLocalLogic(victim);
-	if (l && WChar_B381(victim) && cActCtrl_PlayAction(ChType_ActCtrl(victim), action, 0, 1, 1.0f)) {
+	if (l && WChar(victim)->wl.arrow.canUse && cActCtrl_PlayAction(ChType_ActCtrl(victim), action, 0, 1, 1.0f)) {
 		Logic_Vtbl(l)->SetIdle(l, 0);
 		Logic_Vtbl(l)->SetIdle(l, 1);
-		cEntity_AddLink(v, WChar_ListenNode(victim));
+		cEntity_AddLink(v, &WChar(victim)->listen);
 	}
 }
 
@@ -205,7 +205,7 @@ void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 				act = "ActionBad";
 				Alarm_Set(&g_pWorld->alarm, 1.0f);
 			} else {
-				if (WChar_ActionPress(me)) {
+				if (WChar(me)->control.act) {
 					return;
 				}
 				act = "Relax";
@@ -232,7 +232,7 @@ void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 		Logic_Vtbl(ll)->RestartState(ll);
 	}
 	if (cWalkCharEntity_GetOwnerSlot(me) != -1) {
-		WChar_ListenOn(me) = 1;
+		WChar(me)->listenOn = 1;
 	} else if (victim && !strcmp(act, "ActionBad")) {
 		act = "Relax";
 		if (!usr) {
@@ -244,7 +244,7 @@ void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 			Logic_Vtbl(ll)->SetState(ll, 7, victim);
 		}
 	}
-	Nto1Node *n = WChar_ListenNode(me);
+	Nto1Node *n = &WChar(me)->listen;
 	CHECK(n->data);
 	Nto1Node_Unlink(n);
 	cActCtrl_Play(ChType_ActCtrl(me), act, 1, 1.0f);

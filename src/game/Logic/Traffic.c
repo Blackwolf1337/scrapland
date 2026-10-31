@@ -328,7 +328,7 @@ void __fastcall cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 		cEntity *e = cEntityList_GetFirst((cEntityList *)self->traffic);
 		while (e && e->vftable->IsType(e, TYEN_CAR)) {
 			cEntity_SetList(e, "EnemiesTraffic");
-			Entity_Team(e) = 0;
+			WLife(e)->arrow.tgType = 0;
 			CHECK(e->vftable->IsType(e, TYEN_CAR) && "e->IsType(TYEN_VEHICLE)");
 			cAIVehicle *ai = Traffic_AI(e);
 			if (usr) {
@@ -345,7 +345,7 @@ void __fastcall cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 	for (Nto1Node *n = Logic_ListFirst(self->chasing); n;) {
 		cEntity *e = Logic_AsCar(n->data);
 		CHECK(e->vftable->IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
-		Entity_Team(e) = 0;
+		WLife(e)->arrow.tgType = 0;
 		cAIVehicle *ai = Traffic_AI(e);
 		n = Logic_ListNext(n);
 		if (usr && (usr != self->usr || cAIVehicle_GetState(ai) != AIV_STATE_CHASE)) {
@@ -380,7 +380,7 @@ void __fastcall cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 		if (0.0f >= self->attackTime) {
 			self->attackTime = t;
 			Traffic_Patrol(lastAi);
-			Entity_Team(last) = 3;
+			WLife(last)->arrow.tgType = 3;
 			cEntity_SetList(last, "Traffic");
 			nEnemies2--;
 			const char *s = SaveVar_Get("RobotsControlledByBoss");
@@ -442,18 +442,18 @@ void Traffic_DamageNative(cAbstractFile *params) {
 	if (!a || a != ChType_Usr0()) {
 		return;
 	}
-	if (Entity_LifeI(e) + g_TrafficDamageTolerance > Veh(e)->maxLife) {
+	if (WLife(e)->life + g_TrafficDamageTolerance > Veh(e)->maxLife) {
 		return;
 	}
-	if (Entity_Team(e)) {
+	if (WLife(e)->arrow.tgType) {
 		PoliceAI_RestoreParams(ai);
-		Entity_Team(e) = 0;
+		WLife(e)->arrow.tgType = 0;
 		cAIVehicle_SetState(ai, 2, a);
 	}
 	byte wasEnemy = cEntity_GetListName(e) && !strcmp(cEntity_GetListName(e), "EnemiesTraffic");
 	cEntity_SetList(e, "EnemiesTraffic");
 	g_pWorld->logic.enemiesTraffic.attackTime = g_MaxTrafficEnemyTime;
-	if (!wasEnemy && Entity_LifeI(e) > 0) {
+	if (!wasEnemy && WLife(e)->life > 0) {
 		Taunts_Ship(e, 1);
 	}
 }

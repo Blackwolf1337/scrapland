@@ -9,7 +9,7 @@
 #define BANKMASTER_SUCTION_ANG 1.0471975511965976	/* rva 0x3ad5f8, 60 degrees */
 
 void ChType_ActionSound(cEntity *v, byte loop, byte stop) {
-	cSndItem *s = PtrArray_Get(WChar_Sounds(v), 0);
+	cSndItem *s = PtrArray_Get(&WChar(v)->wl.obj.snd, 0);
 
 	if (s) {
 		s->volume = 0.0f;
@@ -27,8 +27,8 @@ void ChType_BankMasterActionEnd(cAbstractFile *params) {
 	ChType_ReadParams(params, name, event);
 	cEntity *v = ChType_CheckChar(name);
 	ChType_ActionSound(v, 0, 1);
-	if ((cWalkCharEntity_GetOwnerSlot(v) || !(WChar_EnergyBarDecr(v) > 1.0f - WChar_EnergyUsed(v))) &&
-		WChar_ActionPress(v)) {
+	if ((cWalkCharEntity_GetOwnerSlot(v) || !(WChar(v)->energyBarDecr > 1.0f - WChar(v)->energyUsed)) &&
+		WChar(v)->control.act) {
 		cActCtrl_Play(ChType_ActCtrl(v), "ActionInit", 1, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(v), "Action", 1);
 	}
@@ -50,7 +50,7 @@ void ChType_ActionPress(cAbstractFile *params) {
 		return;
 	}
 	cEntity *v = World_FindEntity(name);
-	if (v && v->vftable->IsType(v, TYEN_WALKCHAR) && !WChar_Falling(v) && !ChType_ActPriority(ChType_ActCtrl(v))) {
+	if (v && v->vftable->IsType(v, TYEN_WALKCHAR) && !WChar(v)->falling && !ChType_ActPriority(ChType_ActCtrl(v))) {
 		cActCtrl_SetDefLoop(ChType_ActCtrl(v), "Action", 0);
 		cActCtrl_Play(ChType_ActCtrl(v), "ActionInit", 0, 1.0f);
 	}
@@ -61,8 +61,8 @@ void ChType_Attack(cAbstractFile *params, float cost) {
 
 	cAbstractFile_ReadString(params, name, 0x80);
 	cEntity *v = World_FindEntity(name);
-	float energy = 1.0f - WChar_EnergyUsed(v);
-	if ((!cWalkCharEntity_GetOwnerSlot(v) && g_GearLowWeaponEnergy > energy) || !WChar_ActionPress(v)) {
+	float energy = 1.0f - WChar(v)->energyUsed;
+	if ((!cWalkCharEntity_GetOwnerSlot(v) && g_GearLowWeaponEnergy > energy) || !WChar(v)->control.act) {
 		cActCtrl_Play(ChType_ActCtrl(v), "ActionEnd", 1, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(v), "Relax", 1);
 	}
@@ -88,7 +88,7 @@ void ChType_BankMasterSuction(cAbstractFile *params) {
 	}
 	victim = World_FindEntity(name);
 	if (!victim || g_BankMasterEnt == victim || !victim->vftable->IsType(victim, TYEN_WALKCHAR) ||
-		WChar_God(victim) || WChar_Life(victim) <= 0) {
+		WChar(victim)->wl.god || WChar(victim)->wl.life <= 0) {
 		return;
 	}
 	const vec3_t *p = g_BankMasterEnt->vftable->GetPos(g_BankMasterEnt, &t1);
@@ -96,7 +96,7 @@ void ChType_BankMasterSuction(cAbstractFile *params) {
 	d.x = q->x - p->x;
 	d.y = q->y - p->y;
 	d.z = q->z - p->z;
-	float ax = WChar_Ang(g_BankMasterEnt)->x + 0.0f;
+	float ax = WChar(g_BankMasterEnt)->view.x + 0.0f;
 	float ay = Obj_Vtbl(g_BankMasterEnt)->GetAng(g_BankMasterEnt, &t3)->y + M_PI_F;
 	const vec3_t *r = Vec3_GetRotAng(&t4, &d);
 	diff.y = ay - r->y;
@@ -134,10 +134,10 @@ void ChType_BankMasterHitEvent(cAbstractFile *params) {
 	g_BankMasterEnt = World_FindEntity(name);
 	CHECK(g_BankMasterEnt);
 	CHECK(Entity_IsType(g_BankMasterEnt, TYEN_WALKCHAR));
-	if (WChar_Cam(g_BankMasterEnt)) {
+	if (WChar(g_BankMasterEnt)->wl.obj.cam) {
 		cPad_Rumble(&g_Pads[0], 0.0f, 0.5f, 0.35f);
 	}
-	cWalkCharEntity_SetEnergy(g_BankMasterEnt, (1.0f - WChar_EnergyUsed(g_BankMasterEnt)) - g_BankMasterAmmoCost);
+	cWalkCharEntity_SetEnergy(g_BankMasterEnt, (1.0f - WChar(g_BankMasterEnt)->energyUsed) - g_BankMasterAmmoCost);
 	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)GAME_FUNC(ChType_BankMasterSuction, CHTYPE_BANKMASTERSUCTION));
 	float radius = g_BankMasterVacumDist;
 	const vec3_t *pos = g_BankMasterEnt->vftable->GetPos(g_BankMasterEnt, &tmp);

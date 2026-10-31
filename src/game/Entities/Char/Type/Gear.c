@@ -78,7 +78,7 @@ void ChType_GearHitChar(const char *name, byte noLogic) {
 			Logic_Vtbl(l)->OnHit(l, gear);
 		}
 		if (usr && gear == cWorld_GetUsrEntity(g_pWorld, 0)) {
-			if (WChar_Life(e) <= damage) {
+			if (WChar(e)->wl.life <= damage) {
 				Alarm_Set(&g_pWorld->alarm, 1.0f);
 				SaveVar_Inc("Stats.Gear", 1);
 				SaveVar_Inc("Stats.Killer", 1);
@@ -87,14 +87,14 @@ void ChType_GearHitChar(const char *name, byte noLogic) {
 			}
 		}
 	}
-	if (WChar_Cam(e)) {
+	if (WChar(e)->wl.obj.cam) {
 		cPad_Rumble(&g_Pads[0], 1.0f, 0.0f, 0.5f);
 	}
-	if (!WChar_God(e)) {
-		WChar_Life(e) -= damage;
+	if (!WChar(e)->wl.god) {
+		WChar(e)->wl.life -= damage;
 	}
 	if (g_GearSw) {
-		cVehicleAttack_HitBy(WChar_Attack(e), Gear_Missile(g_GearSw)->parent);
+		cVehicleAttack_HitBy(&WChar(e)->wl.attack, Gear_Missile(g_GearSw)->parent);
 	}
 }
 
@@ -112,7 +112,7 @@ void ChType_GearActionPress(cAbstractFile *params) {
 		cActCtrl_Play(ctrl, "ActionInit", 0, 1.0f);
 		if (strcmp(cActCtrl_GetActionName(ctrl, 0), "ActionInit")) {
 			/* the button and the byte after it */
-			*(uint16_t *)&WChar_ActionPress(v) = 0;
+			*(uint16_t *)&WChar(v)->control.act = 0;
 			return;
 		}
 	}
@@ -128,10 +128,10 @@ void ChType_GearEndAction(cAbstractFile *params) {
 	cEntity *usr = ChType_Usr0();
 	CHECK(v);
 	CHECK(Entity_IsType(v, TYEN_WALKCHAR));
-	if (!WChar_ActionPress(v) || (usr == v && WChar_EnergyBarDecr(v) > 1.0f - WChar_EnergyUsed(v))) {
+	if (!WChar(v)->control.act || (usr == v && WChar(v)->energyBarDecr > 1.0f - WChar(v)->energyUsed)) {
 		cActCtrl_Play(ChType_ActCtrl(v), "ActionEnd", 1, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(v), "Relax", 1);
-		*(uint16_t *)&WChar_ActionPress(v) = 0;
+		*(uint16_t *)&WChar(v)->control.act = 0;
 	}
 }
 
@@ -187,7 +187,7 @@ void ChType_GearShoot(cAbstractFile *params) {
 	cEntity *v = World_FindEntity(name);
 	CHECK(v);
 	CHECK(Entity_IsType(v, TYEN_WALKCHAR));
-	a = *WChar_Ang(v);
+	a = WChar(v)->view;
 	rot.x = a.x * 0.5f;
 	rot.y = a.y;
 	rot.z = 0.0f;
@@ -220,7 +220,7 @@ void ChType_GearShoot(cAbstractFile *params) {
 	} else {
 		usr = 0;
 	}
-	if (WChar_Cam(v)) {
+	if (WChar(v)->wl.obj.cam) {
 		cPad_Rumble(&g_Pads[0], 0.75f, 0.0f, 0.125f);
 	}
 	cEntity *e = cWorld_CreateEntity(g_pWorld, "GearMissile", start.x, start.y, start.z, TYEN_MISSILE);
@@ -230,13 +230,13 @@ void ChType_GearShoot(cAbstractFile *params) {
 		Obj_Vtbl(e)->SetAng(e, &ang);
 		cMissileEntity_SetLifeTime(m, 5.0f);
 		cMissileEntity_SetSwarmSpeed(m, 20000.0f);
-		if (!WChar_God(e)) {
-			WChar_Life(e) = 50;
+		if (!WChar(e)->wl.god) {
+			WChar(e)->wl.life = 50;
 		}
 		cMissileEntity_SetNoWorldHit(m, 0);
 		cMissileEntity_SetFlag584(m, 0);
 		cMissileEntity_SetFlag585(m, 1);
-		cPrimitive_SetSize(WChar_Shadow(e), 40.0f);
+		cPrimitive_SetSize(&WChar(e)->wl.prim, 40.0f);
 		cMissileEntity_SetRadius(m, 50.0f);
 		cMissileEntity_SetTopRadius(m, 50.0f);
 		cMissileEntity_SetRadiusGrow(m, 2000.0f);
@@ -244,8 +244,8 @@ void ChType_GearShoot(cAbstractFile *params) {
 		cMissileEntity_SetTurnSpeed(m, 50.0f);
 		cPy_Function_SetNative(&m->onHit, (nativefunc_t)GAME_FUNC(ChType_GearHit, CHTYPE_GEARHIT));
 		cMissileEntity_SetParent(m, name);
-		if (!WChar_ViewLock(v)) {
-			vec3_t va = *WChar_Ang(v);
+		if (!WChar(v)->viewLock) {
+			vec3_t va = WChar(v)->view;
 			ma.x = va.x;
 			ma.y = Obj_Vtbl(v)->GetAng(v, &t2)->y;
 			ma.z = 0.0f;
@@ -258,7 +258,7 @@ void ChType_GearShoot(cAbstractFile *params) {
 		}
 		Missile_Vtbl(Missile(e))->AddToSwarm(Missile(e), 0);
 		e->vftable->SetEmbeddedFX(e, "GearMissile");
-		cSndInterface *snd = WChar_Sounds(e);
+		cSndInterface *snd = &WChar(e)->wl.obj.snd;
 		cSndInterface_Resize(snd, 1);
 		cSndInterface_SetSound(snd, 0, g_GearMissileSound);
 		cSndItem *s = PtrArray_Get(snd, 0);
@@ -268,10 +268,10 @@ void ChType_GearShoot(cAbstractFile *params) {
 		}
 	}
 	Gear_Sound(v, usr, &g_GearShootSound, &g_GearShootSoundVol);
-	float used = WChar_EnergyBarDecr(v) + WChar_EnergyUsed(v);
-	WChar_EnergyUsed(v) = used;
+	float used = WChar(v)->energyBarDecr + WChar(v)->energyUsed;
+	WChar(v)->energyUsed = used;
 	if (used >= 1.0f) {
-		WChar_EnergyUsed(v) = 1.0f;
+		WChar(v)->energyUsed = 1.0f;
 	}
 }
 
@@ -516,7 +516,7 @@ int ChType_FlashChar(cEntity *e) {
 	}
 	if (cActCtrl_PlayNew(ChType_ActCtrl(e), "FlashedInit", 0, 1.0f)) {
 		cActCtrl_SetDefLoop(ChType_ActCtrl(e), "Relax", 1);
-		WChar_B381(e) = 0;
+		WChar(e)->wl.arrow.canUse = 0;
 		r = 2;
 		if (cPy_Function_IsValid(g_OnFlash)) {
 			cPy_Function_AddParamS(g_OnFlash, e->name);
@@ -566,7 +566,7 @@ void ChType_FlashHit(cAbstractFile *params) {
 	if (cActCtrl_PlayNew(ChType_ActCtrl(e), "FlashedInit", 0, 1.0f)) {
 		g_FlashCount++;
 		cActCtrl_SetDefLoop(ChType_ActCtrl(e), "Relax", 1);
-		WChar_B381(e) = 0;
+		WChar(e)->wl.arrow.canUse = 0;
 		g_FlashResult = 2;
 		if (cPy_Function_IsValid(g_OnFlash)) {
 			cPy_Function_AddParamS(g_OnFlash, e->name);

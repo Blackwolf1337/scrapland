@@ -324,7 +324,7 @@ void __thiscall cWeaponScorer_Draw(cWeaponScorer *self, int player) {
 		return;
 	}
 	cVehicleEntity *v = Veh(ship);
-	cWeaponManager *wm = Entity_TargetLock(ship);
+	cWeaponManager *wm = &Veh(ship)->weapons;
 	int w = wm->curWeap;
 	int kind = TABLE_AT(g_pWorld->weapons, w)->ammo;
 	int upg = cWeaponManager_GetUpgrade(wm, w);

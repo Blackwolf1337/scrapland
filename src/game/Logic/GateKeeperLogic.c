@@ -78,7 +78,7 @@ cGateKeeperLocalLogic *__thiscall cGateKeeperLocalLogic_Delete(cGateKeeperLocalL
 void __thiscall cGateKeeperLocalLogic_UpdateView(cGateKeeperLocalLogic *self) {
 	cEntity *p = self->base.parent;
 
-	WChar_B381(p) = !self->base.busy && !g_pWorld->alarm.on && self->base.state != 1;
+	WChar(p)->wl.arrow.canUse = !self->base.busy && !g_pWorld->alarm.on && self->base.state != 1;
 }
 
 /* vf16 of the gatekeepers and the gears: they never run from the police */
@@ -94,11 +94,11 @@ void __thiscall cGateKeeperLocalLogic_Update(cGateKeeperLocalLogic *self, float 
 	cBaseLocalLogic *b = &self->base;
 	cEntity *p = b->parent;
 
-	if (!WChar_God(p)) {
-		WChar_Life(p) = 32000;
+	if (!WChar(p)->wl.god) {
+		WChar(p)->wl.life = 32000;
 	}
-	WChar_Money(p) = 0;
-	WChar_MoneyReward(p) = 0;
+	WChar(p)->money = 0;
+	WChar(p)->moneyReward = 0;
 	cBaseLocalLogic_Update(b, dt);
 	cGateKeeperLocalLogic_UpdateView(self);
 	if (b->busy) {
@@ -125,13 +125,13 @@ void __thiscall cGateKeeperLocalLogic_Update(cGateKeeperLocalLogic *self, float 
 				g_GateKeeperStdFovX, 1)) {
 				if (cActCtrl_IsActive(ChType_ActCtrl(p), "Relax")) {
 					cActCtrl_PlayNew(ChType_ActCtrl(p), "FaceToTalk", 0, 1.0f);
-					cEntity_AddLink(cWorld_GetUsrEntity(g_pWorld, 0), WChar_ListenNode(p));
+					cEntity_AddLink(cWorld_GetUsrEntity(g_pWorld, 0), &WChar(p)->listen);
 				}
 				goto alarm;
 			}
 		}
 		if (cActCtrl_IsActive(ChType_ActCtrl(p), "FaceToTalk")) {
-			Nto1Node *n = WChar_ListenNode(p);
+			Nto1Node *n = &WChar(p)->listen;
 			CHECK(n->data);
 			Nto1Node_Unlink(n);
 			cActCtrl_PlayNew(ChType_ActCtrl(p), "Relax0", 1, 1.0f);

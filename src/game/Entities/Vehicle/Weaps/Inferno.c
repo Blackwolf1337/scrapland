@@ -15,11 +15,11 @@ static const char *const inferno_types[] = {
 /* the reload sound, the delay of the next shot and the shoot effect at every mounted bay */
 void Inferno_Shoot(const char *name) {
 	cEntity *v = Weap_Vehicle(name);
-	if (cTargetLock_GetAmmo(Veh_Weapons(v), g_InfernoIDAmmo) >= (float)g_InfernoAmmoCost) {
+	if (cTargetLock_GetAmmo(&Veh(v)->weapons, g_InfernoIDAmmo) >= (float)g_InfernoAmmoCost) {
 		Weap_PlaySound(v, 0x15);
-		Veh_FireTime(v) = -g_InfernoTimeDelay;
+		Veh(v)->weapons.fireStamp = -g_InfernoTimeDelay;
 		for (int i = 0; i < 4; i++) {
-			if (cTargetLock_HasSlot(Veh_Weapons(v), g_InfernoIDWeap, i)) {
+			if (cTargetLock_HasSlot(&Veh(v)->weapons, g_InfernoIDWeap, i)) {
 				cVehicleEffects_Shoot(Veh_Effects(v), g_InfernoIDWeap, i);
 			}
 		}
@@ -46,7 +46,7 @@ cEntity *Inferno_NetCreate(const char *name, vec3_t pos, vec3_t dir) {
 	Obj_Vtbl(m)->SetAng(m, &dir);
 	cMissileEntity_SetSwarmSpeed((cMissileEntity *)m, g_InfernoBeesSpeed);
 	cMissileEntity_SetLifeTime((cMissileEntity *)m, g_InfernoLifeTime);
-	cPy_Function_SetNative(Mis_OnHit(m), (nativefunc_t)GAME_FUNC(Inferno_HitNative, 0x121ae0));
+	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)GAME_FUNC(Inferno_HitNative, 0x121ae0));
 	cEntity_SetNetResource(m, "Inferno");
 	return m;
 }
@@ -68,15 +68,15 @@ void Weap_UpdateHud(cAbstractFile *f, char (*targets)[0x80], float *times, int l
 		return;
 	}
 	float dt = Scorer_Get(player)->frameTime;
-	if (strcmp(Nto1Node_TargetName(Veh_TargetLink(v)), targets[player])) {
-		Str_Copy(targets[player], Nto1Node_TargetName(Veh_TargetLink(v)), 0x80);
-		times[player] = Veh_TargetLink(v)->target ? 1.0f : 0.0f;
+	if (strcmp(Nto1Node_TargetName(&Veh(v)->autoAim.target), targets[player])) {
+		Str_Copy(targets[player], Nto1Node_TargetName(&Veh(v)->autoAim.target), 0x80);
+		times[player] = Veh(v)->autoAim.target.target ? 1.0f : 0.0f;
 	}
 	float t = times[player];
 	if (0.0f >= t) {
 		times[player] = t - dt;
-		int level = cWeaponManager_GetUpgrade(Veh_Weapons(v), Veh_CurWeapon(v));
-		if (Veh_TargetLink(v)->target && (level == levelRot || level == levelSize)) {
+		int level = cWeaponManager_GetUpgrade(&Veh(v)->weapons, Veh(v)->weapons.curWeap);
+		if (Veh(v)->autoAim.target.target && (level == levelRot || level == levelSize)) {
 			if (-0.5f >= times[player]) {
 				times[player] = 0.0f;
 			}
@@ -126,7 +126,7 @@ void Inferno_FireNative(cAbstractFile *f) {
 	cAbstractFile_ReadString(f, name, 0x80);
 	Inferno_Shoot(name);
 	cEntity *v = Weap_Vehicle(name);
-	float ammo = cTargetLock_GetAmmo(Veh_Weapons(v), g_InfernoIDAmmo);
+	float ammo = cTargetLock_GetAmmo(&Veh(v)->weapons, g_InfernoIDAmmo);
 	if (!(ammo >= (float)g_InfernoAmmoCost)) {
 		return;
 	}
@@ -138,30 +138,30 @@ void Inferno_FireNative(cAbstractFile *f) {
 	if (!m) {
 		return;
 	}
-	Controls_RumbleA(Vehicle_Controls(v), 1.0f, 0.3f);
-	Controls_RumbleB(Vehicle_Controls(v), 1.0f, 0.5f);
-	cPy_Function_SetNative(Mis_OnHit(m), (nativefunc_t)GAME_FUNC(Inferno_ServerHitNative, 0x122780));
-	cPy_Function_SetNative(Ent_OnDeath(m), (nativefunc_t)GAME_FUNC(Inferno_OnDeathNative, 0x122200));
-	cPy_Function_SetNative(Ent_OnDamage(m), (nativefunc_t)GAME_FUNC(Inferno_OnDamageNative, 0x1220e0));
+	Controls_RumbleA(&Veh(v)->controls, 1.0f, 0.3f);
+	Controls_RumbleB(&Veh(v)->controls, 1.0f, 0.5f);
+	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)GAME_FUNC(Inferno_ServerHitNative, 0x122780));
+	cPy_Function_SetNative(&WLife(m)->onDeath, (nativefunc_t)GAME_FUNC(Inferno_OnDeathNative, 0x122200));
+	cPy_Function_SetNative(&WLife(m)->onDamage, (nativefunc_t)GAME_FUNC(Inferno_OnDamageNative, 0x1220e0));
 	cMissileEntity_SetFlag585((cMissileEntity *)m, 1);
-	if (!Ent_God(m)) {
-		Ent_Life(m) = g_InfernoArmor;
+	if (!WLife(m)->god) {
+		WLife(m)->life = g_InfernoArmor;
 	}
 	cPrimitive_SetSize(Mis_Size(m), 50.0f);
 	cMissileEntity_SetParent((cMissileEntity *)m, name);
-	cMissileEntity_SetTarget((cMissileEntity *)m, Nto1Node_TargetName(Veh_TargetLink(v)));
+	cMissileEntity_SetTarget((cMissileEntity *)m, Nto1Node_TargetName(&Veh(v)->autoAim.target));
 	Inferno_NetSetUp(m->name);
 	int n = (int)ammo / g_InfernoAmmoCost;
-	if (Mis_Bees(m) > n) {
+	if (Missile(m)->swarmCount > n) {
 		Missile_Vtbl(Missile(m))->SetSwarm(Missile(m), n);
 	}
-	cPrimitive_SetSize(Mis_Size(m), Mis_Radius(m) * 0.6f);
-	if (!Ent_God(m)) {
-		Ent_Life(m) = Mis_Bees(m) * g_InfernoArmor;
+	cPrimitive_SetSize(Mis_Size(m), Missile(m)->topRadius * 0.6f);
+	if (!WLife(m)->god) {
+		WLife(m)->life = Missile(m)->swarmCount * g_InfernoArmor;
 	}
-	cMissileEntity_SetLifeTime((cMissileEntity *)m, Mis_Bees(m) ? g_InfernoLifeTime - 0.2f : 0.1f);
-	cWeaponManager_SetAmmo(Veh_Weapons(v), g_InfernoIDAmmo,
-		(float)(int)ammo - (float)(Mis_Bees(m) * g_InfernoAmmoCost));
+	cMissileEntity_SetLifeTime((cMissileEntity *)m, Missile(m)->swarmCount ? g_InfernoLifeTime - 0.2f : 0.1f);
+	cWeaponManager_SetAmmo(&Veh(v)->weapons, g_InfernoIDAmmo,
+		(float)(int)ammo - (float)(Missile(m)->swarmCount * g_InfernoAmmoCost));
 }
 
 /* missile name, two names not used */
@@ -180,8 +180,8 @@ cEntity *Inferno_Hit(const char *name) {
 
 	cEntity *m = Weap_Missile(name);
 	m->vftable->GetPos(m, &pos);
-	float range = (float)Mis_Bees(m) * g_InfernoRangeBay + g_InfernoRangeMin;
-	uint32_t type = (uint32_t)Mis_Type(m);
+	float range = (float)Missile(m)->swarmCount * g_InfernoRangeBay + g_InfernoRangeMin;
+	uint32_t type = (uint32_t)Missile(m)->level;
 	Con_Print(0x606060, type < 3 ? inferno_types[type] : "Misil Inferno Desconocido\n", 0);
 	if (!FX_IsVisible(pos.x, pos.y, pos.z, range, g_FXInfernoExplosionMaxDist, NULL, 1)) {
 		return m;
@@ -196,7 +196,7 @@ cEntity *Inferno_Hit(const char *name) {
 		if (!fx->on) {
 			fx->on = 1;
 		}
-		cObjElementFXInfernoExplosion_Explode(fx, pos.x, pos.y, pos.z, range, Mis_Bees(m), 0);
+		cObjElementFXInfernoExplosion_Explode(fx, pos.x, pos.y, pos.z, range, Missile(m)->swarmCount, 0);
 	}
 	int i = 0;
 	do {
@@ -219,7 +219,7 @@ cEntity *Inferno_Hit(const char *name) {
 					Vec3_NormalizeTo(&nrm, &rnd);
 					dist = 1.0f;
 				}
-				dist = Float_MaxSS(1.0f, dist - Ent_Radius(o));
+				dist = Float_MaxSS(1.0f, dist - WLife(o)->prim.radius);
 				if (range >= dist) {
 					float w = (range - dist) / range;
 					w = w * w * (2.0f - w);
@@ -274,7 +274,7 @@ void Inferno_OnDamageNative(cAbstractFile *f) {
 	f->vftable->Read(f, &damage, 4);
 	cEntity *m = Weap_Missile(name);
 	int bees;
-	if (Ent_Active(m) && (bees = Mis_Bees(m)) > 0) {
+	if (Ent_Active(m) && (bees = Missile(m)->swarmCount) > 0) {
 		int armor = g_InfernoArmor;
 		if (damage >= armor) {
 			int n = damage / armor;
@@ -308,7 +308,7 @@ void Inferno_SlowNative(cAbstractFile *f) {
 	cAbstractFile_ReadString(f, name, 0x80);
 	f->vftable->Read(f, &unused, 4);
 	cEntity *m = Weap_Missile(name);
-	float speed = Mis_Speed(m);
+	float speed = Missile(m)->speed;
 	float norm = g_InfernoNormSpeed;
 	if (speed > norm) {
 		cMissileEntity_SetSpeed((cMissileEntity *)m, (speed - norm) * 0.9f + norm);
@@ -349,8 +349,8 @@ void Inferno_Explode(const char *name) {
 	g_InfernoPos.y = p->y;
 	g_InfernoPos.z = p->z;
 	m = g_InfernoMissile;
-	const char *owner = Mis_Owner(m);
-	g_InfernoRange = (float)Mis_Bees(m) * g_InfernoRangeBay + g_InfernoRangeMin;
+	const char *owner = Missile(m)->parent;
+	g_InfernoRange = (float)Missile(m)->swarmCount * g_InfernoRangeBay + g_InfernoRangeMin;
 	if (*owner) {
 		HashTable *t = &g_pWorld->entities;
 		HashNode *node = HashTable_Find(t, owner, HashTable_Hash(t, owner));
@@ -389,32 +389,32 @@ void Inferno_NetSetUp(const char *name) {
 	cMissileEntity_SetSpeed((cMissileEntity *)m, g_InfernoNormSpeed);
 	cMissileEntity_SetTurnSpeed((cMissileEntity *)m, (float)(((double)g_InfernoTurnSpeed * WEAP_PI) / 180.0));
 	cMissileEntity_SetFlag584((cMissileEntity *)m, 0);
-	cEntity *v = Weap_FindVehicle(Mis_Owner(m));
+	cEntity *v = Weap_FindVehicle(Missile(m)->parent);
 	if (v) {
 		float top = g_InfernoUpTopSpeed;
-		if (Veh_Speed(v) > g_InfernoNormSpeed - top) {
-			cMissileEntity_SetSpeed((cMissileEntity *)m, top + Veh_Speed(v));
+		if (Veh(v)->speed > g_InfernoNormSpeed - top) {
+			cMissileEntity_SetSpeed((cMissileEntity *)m, top + Veh(v)->speed);
 		}
-		cTargetLock *wm = Veh_Weapons(v);
+		cTargetLock *wm = &Veh(v)->weapons;
 		for (int i = 0; i < 4; i++) {
 			if (!cTargetLock_HasSlot(wm, g_InfernoIDWeap, i)) {
 				continue;
 			}
 			Weap_DropAtNode(v, Veh(v)->weapons.nodes[g_InfernoIDAmmo][i], &mtx, &ang, &vel);
 			Missile_Vtbl(Missile(m))->AddToSwarm(Missile(m), 1);
-			if (i == 0 && Mis_Debris(m) && Debris_Element(Mis_Debris(m))) {
-				cObjElementFXInfernoMissile_SetFlare(Debris_Element(Mis_Debris(m)), 1);
+			if (i == 0 && Missile(m)->swarm && Debris_Element(Missile(m)->swarm)) {
+				cObjElementFXInfernoMissile_SetFlare(Debris_Element(Missile(m)->swarm), 1);
 			}
 		}
 		int level = cWeaponManager_GetUpgrade(wm, g_InfernoIDWeap);
-		Mis_Type(m) = level;
+		Missile(m)->level = level;
 		if ((g_SplitScreenGame || g_pApp->flags) && (level == 11 || level == 12)) {
-			int bees = Mis_Bees(m);
-			Mis_Type(m) = level - 10;
+			int bees = Missile(m)->swarmCount;
+			Missile(m)->level = level - 10;
 			float left = cWeaponManager_GetUAmmo(wm, g_InfernoIDWeap) - (float)(bees * 51);
 			cWeaponManager_SetUAmmo(wm, g_InfernoIDWeap, left);
 			if (0.0f >= left) {
-				cPy_Function_AddParamI(g_RestoreUpgradeFunc, Mis_Type(m) + 10);
+				cPy_Function_AddParamI(g_RestoreUpgradeFunc, Missile(m)->level + 10);
 				cPy_Function_Execute(g_RestoreUpgradeFunc, 0);
 				cWeaponManager_SetUpgrade(wm, g_InfernoIDWeap, 0);
 			}
@@ -422,7 +422,7 @@ void Inferno_NetSetUp(const char *name) {
 	}
 	Missile_Vtbl(Missile(m))->SetSwarm(Missile(m), cMissileEntity_GetSwarmCount((cMissileEntity *)m));
 	WithLife_Vtbl(m)->SetMass(m, 6000.0f);
-	Mis_FallOut(m) = 1;
+	Missile(m)->fallOut = 1;
 	Weap_EngineSound(m, g_InfernoEngineSound, g_InfernoEngineSoundVol, g_InfernoEngineSoundAttIni,
 		g_InfernoEngineSoundAttEnd, g_InfernoEngineSoundDoppler);
 }
@@ -444,7 +444,7 @@ void Inferno_SphereHit(cAbstractFile *f) {
 	if (!e || !Entity_IsType(e, TYEN_WITH_LIFE)) {
 		return;
 	}
-	int life = Ent_Life(e);
+	int life = WLife(e)->life;
 	const vec3_t *p = e->vftable->GetPos(e, &tmp);
 	float dy = p->y - g_InfernoPos.y;
 	float dx = p->x - g_InfernoPos.x;
@@ -469,9 +469,9 @@ void Inferno_SphereHit(cAbstractFile *f) {
 		dz = n->z;
 		dist = 1.0f;
 	}
-	float d = Float_MaxSS(1.0f, dist - Ent_Radius(e));
+	float d = Float_MaxSS(1.0f, dist - WLife(e)->prim.radius);
 	float k = (g_InfernoRange - d) / g_InfernoRange;
-	if (Mis_Type(g_InfernoMissile) == 1) {
+	if (Missile(g_InfernoMissile)->level == 1) {
 		float inv = g_InfernoInvUpgExtraDamage;
 		if (k > inv) {
 			k = 1.0f;
@@ -480,13 +480,13 @@ void Inferno_SphereHit(cAbstractFile *f) {
 		}
 	}
 	float w = k * k * (2.0f - k);
-	if (!Ent_God(e)) {
-		Ent_Life(e) -= (int)((g_InfernoMaxDamage - g_InfernoMinDamage) * w);
+	if (!WLife(e)->god) {
+		WLife(e)->life -= (int)((g_InfernoMaxDamage - g_InfernoMinDamage) * w);
 	}
 	byte isWalk = Entity_IsType(e, TYEN_WALKCHAR);
 	byte isCar = Entity_IsType(e, TYEN_VEHICLE);
 	if (isWalk || isCar) {
-		if (g_InfernoOwner && life > Ent_Life(e)) {
+		if (g_InfernoOwner && life > WLife(e)->life) {
 			cVehicleAttack_ShotAt(Veh_HitInfo(g_InfernoOwner), g_InfernoHitName, 0);
 		}
 	}
@@ -494,7 +494,7 @@ void Inferno_SphereHit(cAbstractFile *f) {
 		float px = dx * w;
 		float py = dy * w;
 		float pz = dz * w;
-		float force = g_InfernoHitForce * 1000.0f / Ent_Mass(e);
+		float force = g_InfernoHitForce * 1000.0f / WLife(e)->mass;
 		px *= force;
 		py *= force;
 		pz *= force;
@@ -504,13 +504,13 @@ void Inferno_SphereHit(cAbstractFile *f) {
 		vel.z = ov->z + pz;
 		Obj_Vtbl(e)->SetVel(e, &vel);
 	}
-	if (isCar && Vehicle_NetCtrl(e)) {
-		Vehicle_NetCtrl(e)->hit = 2;
+	if (isCar && Veh(e)->netCtrl) {
+		Veh(e)->netCtrl->hit = 2;
 	}
-	if (Ent_Life(e) > 0 && Mis_Type(g_InfernoMissile) == 2) {
-		Ent_BurnLen(e) = g_InfernoUpgFireTime;
-		Ent_BurnTime(e) = 0.0f;
-		Ent_BurnRate(e) = ((1.0f - w) + 0.1f) / g_InfernoUpgFireFactor;
+	if (WLife(e)->life > 0 && Missile(g_InfernoMissile)->level == 2) {
+		WLife(e)->fireRemain = g_InfernoUpgFireTime;
+		WLife(e)->fireAtt = 0.0f;
+		WLife(e)->fireDelay = ((1.0f - w) + 0.1f) / g_InfernoUpgFireFactor;
 		cWithLifeEntity_SetBurner(e, g_InfernoOwner);
 	}
 }

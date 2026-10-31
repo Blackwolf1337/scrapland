@@ -15,25 +15,25 @@
 
 /* the shot sounds 0xd..0xf of the vehicle loop with the recharge time of one slot */
 void Devastator_Start(cEntity *v) {
-	if (!(cTargetLock_GetAmmo(Vehicle_WeapMgr(v), g_DevastatorIDAmmo) > 0.0f)) {
+	if (!(cTargetLock_GetAmmo(&Veh(v)->weapons, g_DevastatorIDAmmo) > 0.0f)) {
 		return;
 	}
 	Devastator_SetUp(v);
-	int n = cWeaponManager_NumSlots(Vehicle_WeapMgr(v), g_DevastatorIDWeap, 1);
+	int n = cWeaponManager_NumSlots(&Veh(v)->weapons, g_DevastatorIDWeap, 1);
 	if (!n) {
 		return;
 	}
-	if (Vehicle_WeapMgr(v)->weapSnd == -1) {
-		cWeaponManager_SetWeapSnd(Vehicle_WeapMgr(v), 0xd);
-		cSndItem *it = PtrArray_Get(Vehicle_Sounds(v), 0xd);
+	if (Veh(v)->weapons.weapSnd == -1) {
+		cWeaponManager_SetWeapSnd(&Veh(v)->weapons, 0xd);
+		cSndItem *it = PtrArray_Get(&Veh(v)->wl.obj.snd, 0xd);
 		if (it) {
 			it->time = 0.0f;
 		}
 	}
 	float t = g_DevastatorRechargeTime / (float)n;
-	cWeaponManager_DelayFire(Vehicle_WeapMgr(v), t);
+	cWeaponManager_DelayFire(&Veh(v)->weapons, t);
 	for (int i = 0xd; i <= 0xf; i++) {
-		cSndItem *it = PtrArray_Get(Vehicle_Sounds(v), i);
+		cSndItem *it = PtrArray_Get(&Veh(v)->wl.obj.snd, i);
 		if (it) {
 			it->times[0] = t;
 		}
@@ -68,7 +68,7 @@ void Devastator_Create(cAbstractFile *params) {
 	params->vftable->Read(params, &shot, 4);
 	cEntity *v = Weap_GetVehicle(g_DevShooter);
 	cFollowCamEntity *playerCam = Entity_FollowCam(v);
-	cWeaponManager *wm = Vehicle_WeapMgr(v);
+	cWeaponManager *wm = &Veh(v)->weapons;
 	int num = cWeaponManager_NumSlots(wm, g_DevastatorIDWeap, 1);
 	if (!num) {
 		return;
@@ -134,7 +134,7 @@ void Devastator_Create(cAbstractFile *params) {
 			cEntity *w = World_FindEntity(g_DevVictim);
 			CHECK(w);
 			CHECK(Entity_IsType(w, TYEN_WITH_LIFE));
-			float rad = Entity_Radius(w);
+			float rad = WLife(w)->prim.radius;
 			const vec3_t *pc = Obj_Vtbl(v)->GetViewPos(v, &c);
 			float cy = pc->y - C->y;
 			float cx = pc->x - C->x;
@@ -386,8 +386,8 @@ void Devastator_FX(cAbstractFile *params) {
 		return;
 	}
 	float dt = Scorer_Get(player)->frameTime;
-	int up = cWeaponManager_GetUpgrade(Vehicle_WeapMgr(v), g_DevastatorIDWeap);
-	if (Vehicle_Controls(v)->fire && up == 8) {
+	int up = cWeaponManager_GetUpgrade(&Veh(v)->weapons, g_DevastatorIDWeap);
+	if (Veh(v)->controls.fire && up == 8) {
 		Cannon_Angle(item) = dt * DEV_PI + Cannon_Angle(item);
 	} else {
 		float s = dt * DEV_PI;
@@ -401,7 +401,7 @@ void Devastator_FX(cAbstractFile *params) {
 			Cannon_Angle(item) = 0.0f;
 		}
 	}
-	if (Vehicle_Controls(v)->fire && up == 7) {
+	if (Veh(v)->controls.fire && up == 7) {
 		float time = Scorer_Get(player)->time;
 		int k = (int)((double)time * 1024.0);
 		int m = k % 0x1fe - 0xff;
@@ -432,7 +432,7 @@ void Devastator_Fire(cAbstractFile *params) {
 	if (g_pApp->flags & APPF_CLIENT) {
 		return;
 	}
-	cWeaponManager *wm = Vehicle_WeapMgr(v);
+	cWeaponManager *wm = &Veh(v)->weapons;
 	float spread = (float)((double)g_DevastatorSpreadAngle * 3.141592653589793 / 180.0);
 	if (cWeaponManager_GetUpgrade(wm, g_DevastatorIDWeap) == 8) {
 		spread = spread * 0.75f;
@@ -445,8 +445,8 @@ void Devastator_Fire(cAbstractFile *params) {
 	ang[2] = 0.0f;
 	ang[0] = Veh(v)->autoAim.ax + ry;
 	ang[1] = Veh(v)->autoAim.ay + rx;
-	Controls_RumbleA(Vehicle_Controls(v), 0.7f, 0.2f);
-	Controls_RumbleB(Vehicle_Controls(v), 0.35f, 0.2f);
+	Controls_RumbleA(&Veh(v)->controls, 0.7f, 0.2f);
+	Controls_RumbleB(&Veh(v)->controls, 0.35f, 0.2f);
 	dist = g_DevastatorRange;
 	target = Vehicle_AimTarget(v);
 	if (target) {
@@ -465,15 +465,15 @@ void Devastator_Fire(cAbstractFile *params) {
 	v->vftable->GetTargetAngle(v, ang, dist, &target);
 	v->vftable->AimWeapon(v, ang[0], ang[1], &dist, &hit, &target, 8);
 	if (target) {
-		if (Entity_IsType(target, TYEN_WITH_LIFE) && !Entity_God(target)) {
-			Entity_LifeI(target)--;
+		if (Entity_IsType(target, TYEN_WITH_LIFE) && !WLife(target)->god) {
+			WLife(target)->life--;
 		}
 		if (target && Entity_IsType(target, TYEN_VEHICLE)) {
-			cVehicleAttack_ShotAt(Vehicle_Attack(v), target->name, 1);
+			cVehicleAttack_ShotAt(&WLife(v)->attack, target->name, 1);
 			goto ammo;
 		}
 	}
-	cVehicleAttack_ShotAtPoint(Vehicle_Attack(v), &hit, 1);
+	cVehicleAttack_ShotAtPoint(&WLife(v)->attack, &hit, 1);
 ammo:;
 	float rest = Weap_X87Sub(cTargetLock_GetAmmo(wm, g_DevastatorIDAmmo), g_DevastatorAmmoCost);
 	cWeaponManager_SetAmmo(wm, g_DevastatorIDAmmo, Float_MaxSS(0.0f, rest));
@@ -507,12 +507,12 @@ void Devastator_Release(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, name, 0x80);
 	cEntity *v = Weap_GetVehicle(name);
-	Vehicle_AimMode(v) = 0;
+	Veh(v)->autoAim.status = 0;
 }
 
 /* the aim help of the Devastator, wider for a pad with VehicleCenterPadLock */
 void Devastator_SetUp(cEntity *v) {
-	Vehicle_AimMode(v) = 1;
+	Veh(v)->autoAim.status = 1;
 	float ang;
 	if (g_VehicleCenterPadLock != 0.0f && cVehicleEntity_GetOwnerSlot(v) != -1) {
 		ang = 0.34906584f;
@@ -520,9 +520,9 @@ void Devastator_SetUp(cEntity *v) {
 		ang = 0.2443461f;
 	}
 	Veh(v)->autoAim.speed = 0.75049156f;
-	cAutoAim_SetAngle(Vehicle_AutoAim(v), ang);
-	Vehicle_AimRange(v) = g_DevastatorDistLimit;
-	cAutoAim_Update(Vehicle_AutoAim(v), v, 0.025f);
+	cAutoAim_SetAngle(&Veh(v)->autoAim, ang);
+	Veh(v)->autoAim.distLimit = g_DevastatorDistLimit;
+	cAutoAim_Update(&Veh(v)->autoAim, v, 0.025f);
 }
 
 /* "!DevastatorXplosionCall" (entity): the damage and push of the explosion at g_DevCenter */
@@ -534,7 +534,7 @@ void Devastator_XplosionCall(cAbstractFile *params) {
 	if (!victim || !Entity_IsType(victim, TYEN_WITH_LIFE)) {
 		return;
 	}
-	int oldLife = Entity_LifeI(victim);
+	int oldLife = WLife(victim)->life;
 	const vec3_t *pp = victim->vftable->GetPos(victim, &p);
 	float dy = pp->y - g_DevCenter->y;
 	float dx = pp->x - g_DevCenter->x;
@@ -561,7 +561,7 @@ void Devastator_XplosionCall(cAbstractFile *params) {
 		d = 1.0f;
 	}
 	float rad = g_DevastatorExplosionRadius * 1.5f;
-	float f = (rad - Float_MaxSS(1.0f, d - Entity_Radius(victim))) / rad;
+	float f = (rad - Float_MaxSS(1.0f, d - WLife(victim)->prim.radius)) / rad;
 	int dmg = (int)(g_DevastatorExtraDamage * f + g_DevastatorMinDamage);
 	if (World_IsEasySingle()) {
 		cEntity *shooter = World_FindEntity(g_DevShooter);
@@ -572,17 +572,17 @@ void Devastator_XplosionCall(cAbstractFile *params) {
 			}
 		}
 	}
-	if (!Entity_God(victim)) {
-		Entity_LifeI(victim) -= dmg;
+	if (!WLife(victim)->god) {
+		WLife(victim)->life -= dmg;
 	}
-	if (oldLife > Entity_LifeI(victim)) {
-		cVehicleAttack_HitBy(Vehicle_Attack(victim), g_DevShooter);
+	if (oldLife > WLife(victim)->life) {
+		cVehicleAttack_HitBy(&WLife(victim)->attack, g_DevShooter);
 	}
 	if (!Entity_IsType(victim, TYEN_WALKCHAR)) {
 		float x = dx * f;
 		float y = dy * f;
 		float z = dz * f;
-		float k = g_DevastatorHitForce * 1000.0f / Entity_Mass(victim);
+		float k = g_DevastatorHitForce * 1000.0f / WLife(victim)->mass;
 		x = x * k;
 		y = y * k;
 		z = z * k;
@@ -592,8 +592,8 @@ void Devastator_XplosionCall(cAbstractFile *params) {
 		n.z = vel->z + z;
 		Obj_Vtbl(victim)->SetVel(victim, &n);
 	}
-	if (Entity_IsType(victim, TYEN_VEHICLE) && Vehicle_NetCtrl(victim)) {
-		Vehicle_NetCtrl(victim)->hit = 2;
+	if (Entity_IsType(victim, TYEN_VEHICLE) && Veh(victim)->netCtrl) {
+		Veh(victim)->netCtrl->hit = 2;
 	}
 }
 
@@ -607,16 +607,16 @@ void EMI_Fire(cAbstractFile *params) {
 	if (!v || !Entity_IsType(v, TYEN_VEHICLE)) {
 		return;
 	}
-	cWeaponManager *wm = Vehicle_WeapMgr(v);
+	cWeaponManager *wm = &Veh(v)->weapons;
 	float fammo = cTargetLock_GetAmmo(wm, g_EMIIDAmmo);
 	int ammo = (int)fammo;
 	if (WithLife_Vtbl(v)->IsEMIed(v) || ammo < 1) {
 		return;
 	}
-	Vehicle_WeapMgr(v)->cmStamp = -g_EMIRechargeTime;
-	cSndItem *it = PtrArray_Get(Vehicle_Sounds(v), 0x13);
+	Veh(v)->weapons.cmStamp = -g_EMIRechargeTime;
+	cSndItem *it = PtrArray_Get(&Veh(v)->wl.obj.snd, 0x13);
 	if (it) {
-		cSndItem *src = PtrArray_Get(Vehicle_Sounds(v), 9);
+		cSndItem *src = PtrArray_Get(&Veh(v)->wl.obj.snd, 9);
 		if (src) {
 			it->volume = src->vols[0];
 			it->pitch = src->pitches[0];
@@ -641,7 +641,7 @@ void EMI_Fire(cAbstractFile *params) {
 	if (!emi) {
 		return;
 	}
-	Controls_RumbleA(Vehicle_Controls(v), 0.4f, 0.2f);
+	Controls_RumbleA(&Veh(v)->controls, 0.4f, 0.2f);
 	cMissileEntity_SetSpeed((cMissileEntity *)emi, 0.0f);
 	cMissileEntity_SetTurnSpeed((cMissileEntity *)emi, 0.0f);
 	ammo = (int)fammo;
@@ -649,8 +649,8 @@ void EMI_Fire(cAbstractFile *params) {
 	cPy_Function_AddParamS(g_SetUpEMIFunc, emi->name);
 	cPy_Function_Execute(g_SetUpEMIFunc, 0);
 	cMissileEntity_SetLifeTime((cMissileEntity *)emi, g_EMILifeTime - 0.2f);
-	cPy_Function_SetFunc(Missile_OnHit(emi), "!EMIOnHit");
-	cWeaponManager_SetAmmo(wm, g_EMIIDAmmo, (float)(ammo - Missile_SwarmCount(emi)));
+	cPy_Function_SetFunc(&Missile(emi)->onHit, "!EMIOnHit");
+	cWeaponManager_SetAmmo(wm, g_EMIIDAmmo, (float)(ammo - Missile(emi)->swarmCount));
 }
 
 /* "!EMIOnHit" (EMI, ?, entity): a vehicle near the EMI is out for 10 seconds, further away for a random time (or not
@@ -673,23 +673,23 @@ void EMI_OnHit(cAbstractFile *params) {
 	float dy = pb->y - pa->y;
 	float dz = pb->z - pa->z;
 	float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
-	float r = Missile_Radius(emi);
+	float r = Missile(emi)->radius;
 	if (Entity_IsType(e, TYEN_VEHICLE)) {
 		if (g_EMILowRadiusFactor * r >= d) {
-			Vehicle_EMITime(e) = 10.0f;
+			Veh(e)->emi = 10.0f;
 			return;
 		}
-		float t = Vehicle_EMITime(e);
+		float t = Veh(e)->emi;
 		if (1.0f > t) {
 			if (crt_rand() & 1) {
-				Vehicle_EMITime(e) = 0.0f;
+				Veh(e)->emi = 0.0f;
 				return;
 			}
-			Vehicle_EMITime(e) = Rand_FloatRange(0.0f, d / r);
+			Veh(e)->emi = Rand_FloatRange(0.0f, d / r);
 			return;
 		}
 		if (t > 5.0f) {
-			Vehicle_EMITime(e) = 5.0f;
+			Veh(e)->emi = 5.0f;
 		}
 		return;
 	}

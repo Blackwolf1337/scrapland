@@ -104,10 +104,10 @@ cEntity *Entity_FindInView(cEntity *self, float range, float *outDot, float *out
 			if (hasAI || mode == 2) {
 				take = 1;
 			} else if (mode == 1) {
-				int et = Entity_Team(e), st = Entity_Team(self);
+				int et = WLife(e)->arrow.tgType, st = WLife(self)->arrow.tgType;
 				take = et != 3 && st != 3 && (et != st || et == 4 || st == 4);
 			} else {
-				take = mode == 0 && Entity_Team(e) != 3;
+				take = mode == 0 && WLife(e)->arrow.tgType != 3;
 			}
 			if (take) {
 				vec3_t tp = *e->vftable->GetPos(e, &tmp);

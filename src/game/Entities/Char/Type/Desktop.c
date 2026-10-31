@@ -20,7 +20,7 @@ void ChType_FXDesktopFallEnd(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, name, 0x80);
 	cEntity *v = ChType_CheckChar(name);
-	if (WChar_Cam(v)) {
+	if (WChar(v)->wl.obj.cam) {
 		cPad_Rumble(&g_Pads[0], 0.5f, 0.0f, 0.125f);
 	}
 	const vec3_t *c = Obj_Vtbl(v)->GetViewPos(v, &tmp);
@@ -36,7 +36,7 @@ void ChType_FXDesktopFallEnd(cAbstractFile *params) {
 	if (dy * dy + dx * dx + dz * dz > g_FXDesktopFallEndDist * g_FXDesktopFallEndDist) {
 		return;
 	}
-	vec3_t fall = WChar_FallVel(v);
+	vec3_t fall = WChar(v)->fallVel;
 	if (fall.y > -g_FallSoundVel) {
 		return;
 	}
@@ -184,7 +184,7 @@ void ChType_DesktopActionPress(cAbstractFile *params) {
 	cAbstractFile_ReadString(params, name, 0x80);
 	cEntity *v = ChType_CheckChar(name);
 	const char *act = cActCtrl_GetActionName(ChType_ActCtrl(v), 0);
-	if (!WChar_Falling(v) || WChar_SlideTime(v) > g_DesktopJumpSlideTime) {
+	if (!WChar(v)->falling || WChar(v)->slideTime > g_DesktopJumpSlideTime) {
 		if (!strcmp(act, "Back")) {
 			jump = "ActUpB";
 		} else if (!strcmp(act, "StrLeft")) {
@@ -199,15 +199,15 @@ void ChType_DesktopActionPress(cAbstractFile *params) {
 			return;
 		}
 		cWalkCharEntity_SetFalling(v, 1);
-		float ay = WChar_Ang(v)->y;
+		float ay = WChar(v)->view.y;
 		up.x = 0.0f;
 		up.y = g_DesktopJumpSpeed;
 		up.z = 0.0f;
 		/* the walk direction (the control at 0x4f8, 0x4fc) turns the jump, its length tilts it */
-		double a = Game_Atan2((double)-WChar_ControlF4fc(v), (double)-WChar_ControlF4f8(v));
+		double a = Game_Atan2((double)-WChar(v)->control.strafe, (double)-WChar(v)->control.walk);
 		float yaw = (float)a + ay;
-		float len = (float)__builtin_sqrt((double)(WChar_ControlF4f8(v) * WChar_ControlF4f8(v) +
-			WChar_ControlF4fc(v) * WChar_ControlF4fc(v)));
+		float len = (float)__builtin_sqrt((double)(WChar(v)->control.walk * WChar(v)->control.walk +
+			WChar(v)->control.strafe * WChar(v)->control.strafe));
 		const vec3_t *vel = Vec3_RotateXY(&t1, &up, len * 0.25f, yaw);
 		Obj_Vtbl(v)->SetVel(v, vel);
 		cActCtrl_Play(ChType_ActCtrl(v), jump, 0, 1.0f);
@@ -228,17 +228,17 @@ void ChType_DesktopActionPress(cAbstractFile *params) {
 		cActCtrl_Play(ChType_ActCtrl(v), "ActMoreF", 0, 1.0f);
 	} else if (!strcmp(act, "ActUpL")) {
 		cActCtrl_Play(ChType_ActCtrl(v), "ActMoreF", 0, 1.0f);
-		WChar_DisplAng(v) = -1.04719758f;
+		WChar(v)->displAng = -1.04719758f;
 	} else if (!strcmp(act, "ActUpR")) {
 		cActCtrl_Play(ChType_ActCtrl(v), "ActMoreF", 0, 1.0f);
-		WChar_DisplAng(v) = 1.04719758f;
+		WChar(v)->displAng = 1.04719758f;
 	}
 	const vec3_t *p = v->vftable->GetPos(v, &t3);
 	c.x = p->x + 0.0f;
 	c.y = p->y - 400.0f;
 	c.z = p->z + 0.0f;
 	target = NULL;
-	float radius = Entity_Radius(v);
+	float radius = WLife(v)->prim.radius;
 	p = v->vftable->GetPos(v, &t3);
 	if (!cWorld_TestSphereEntities(g_pWorld, v, (void *)0x10, p, radius, &target, 1, &c) || !target ||
 		!target->vftable->IsType(target, TYEN_WALKCHAR) || !ChType_ActCtrl(target)) {

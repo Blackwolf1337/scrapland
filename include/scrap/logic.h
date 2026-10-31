@@ -311,9 +311,6 @@ static inline int Logic_Count(const int *numElems) {
 }
 
 /* the fields of the characters the logics use (chartype.h has more) */
-#define WChar_Link(e) (&WChar(e)->collide)
-#define WChar_Radius(e) (WLife(e)->prim.radius)
-#define WChar_ControlTurn(e) (WChar(e)->control.vRot)
 
 /* engine variables of the logics */
 #define g_DefActionRadius GAME_GLOBAL_IN(float, GVar_DefActionRadius, 16, 0x44cbb8)
@@ -572,7 +569,6 @@ void __fastcall cEnemies_Relax(cEnemies *self);
 #define g_ExtPoliceChasing GAME_GLOBAL_IN(int, GVar_DoResetOutPolice, 16, 0x44cea8)		/* the cars were sent after the player */
 #define g_PoliceWaveEliminated (GAME_ARRAY_IN(cPy_Function, GVar_PoliceWaveEliminated, 16, 0x44ce84))	/* no police car left */
 #define g_TrafficFightingMaxDist GAME_GLOBAL_IN(float, GVar_TrafficFightingMaxDist, 16, 0x44dc40)
-#define Entity_ArrowCanMission(e) (WLife(e)->arrow.canMission)
 
 /* the AI parameters of a police car back to the defaults or random (rva 0x15b2f0, 0x15b3c0) */
 void PoliceAI_RestoreParams(cAIVehicle *ai);
@@ -626,9 +622,6 @@ typedef struct cGearLocalLogic {
 SD_SIZE(cGearLocalLogic, 0x5c);
 
 /* the view cone of the arrow of a character (its AI sees in it) */
-#define WChar_ConeStatus(e) (WLife(e)->arrow.coneStatus)
-#define WChar_ConeFov(e) (WLife(e)->arrow.coneFov)
-#define WChar_ConeDist(e) (WLife(e)->arrow.coneDist)
 
 /* the AI control: level to at least level (rva 0x14fb00), the gear becomes a police (rva 0x14eb50) */
 void __thiscall AICtrl_RaiseLevel(void *aiCtrl, int level);

@@ -8,7 +8,7 @@
 #include "scrap/vehicleattack.h"
 
 static inline cFollowCamEntity *Dtritus_Cam(cEntity *v) {
-	return (cFollowCamEntity *)WChar_Cam(v);
+	return (cFollowCamEntity *)WChar(v)->wl.obj.cam;
 }
 
 /* the relax action of the class: RelaxAlarm while the alarm runs, when the class has one */
@@ -29,16 +29,16 @@ void ChType_DtritusActionPress(cAbstractFile *params) {
 		return;
 	}
 	cEntity *v = World_FindEntity(name);
-	if (!v || !v->vftable->IsType(v, TYEN_WALKCHAR) || WChar_Falling(v) || ChType_ActPriority(ChType_ActCtrl(v)) ||
-		!(1.0f - WChar_EnergyUsed(v) >= 0.9f)) {
+	if (!v || !v->vftable->IsType(v, TYEN_WALKCHAR) || WChar(v)->falling || ChType_ActPriority(ChType_ActCtrl(v)) ||
+		!(1.0f - WChar(v)->energyUsed >= 0.9f)) {
 		return;
 	}
 	cActCtrl_SetDefLoop(ChType_ActCtrl(v), "ActionFail", 0);
 	cActCtrl_Play(ChType_ActCtrl(v), "Action", 0, 1.0f);
-	cWalkCharEntity_SetEnergy(v, (1.0f - WChar_EnergyUsed(v)) - 1.0f);
-	cWalkCharControl_Reset(WChar_Control(v), 1);
-	if (WChar_ViewLock(v)) {
-		WChar_DisplAng(v) = 0.0f;
+	cWalkCharEntity_SetEnergy(v, (1.0f - WChar(v)->energyUsed) - 1.0f);
+	cWalkCharControl_Reset(&WChar(v)->control, 1);
+	if (WChar(v)->viewLock) {
+		WChar(v)->displAng = 0.0f;
 	}
 }
 
@@ -55,17 +55,17 @@ void ChType_DtritusKill(cAbstractFile *params) {
 		return;
 	}
 	cEntity *e = World_FindEntity(name);
-	if (!e || g_DtritusEnt == e || !e->vftable->IsType(e, TYEN_WALKCHAR) || WChar_God(e)) {
+	if (!e || g_DtritusEnt == e || !e->vftable->IsType(e, TYEN_WALKCHAR) || WChar(e)->wl.god) {
 		return;
 	}
 	SaveVar_Inc("Stats.Dtritus", 1);
 	SaveVar_Inc("Stats.Killer", 1);
-	cVehicleAttack_HitBy(WChar_Attack(e), g_DtritusEnt->name);
-	if (!WChar_God(e)) {
-		WChar_Life(e) = 0;
+	cVehicleAttack_HitBy(&WChar(e)->wl.attack, g_DtritusEnt->name);
+	if (!WChar(e)->wl.god) {
+		WChar(e)->wl.life = 0;
 	}
 	cEntity_CollisionOff(e);
-	cPrimitive_SetSize(WChar_Shadow(e), 0.0f);
+	cPrimitive_SetSize(&WChar(e)->wl.prim, 0.0f);
 	Alarm_Set(&g_pWorld->alarm, 1.0f);
 	cTimer_SetSpeedChecked(&g_pWorld->timer, g_DTritusHitTimeSpeed);
 	cTimer_SetSpeedTo(&g_pWorld->timer, 1.0f);
@@ -82,7 +82,7 @@ void ChType_DtritusKill(cAbstractFile *params) {
 	ang.y = y;
 	ang.z = 0.0f;
 	WChar_Vtbl(g_DtritusEnt)->SetViewAng(g_DtritusEnt, &ang);
-	WChar_DisplAng(g_DtritusEnt) = -(float)turn;
+	WChar(g_DtritusEnt)->displAng = -(float)turn;
 	const char *act = FxElem_Rand(1.0, 0.0) > 0.5f ? "ActionOK1" : "ActionOK";
 	cActCtrl_SetDefLoop(ChType_ActCtrl(g_DtritusEnt), act, 0);
 	cFollowCamEntity *cam = Dtritus_Cam(g_DtritusEnt);
@@ -119,15 +119,15 @@ void ChType_DtritusEndEvent(cAbstractFile *params) {
 	v.z = 0.0f;
 	Obj_Vtbl(g_DtritusEnt)->SetVel(g_DtritusEnt, &v);
 	cTimer_SetSpeedChecked(&g_pWorld->timer, 1.0f);
-	if (WChar_ViewLock(g_DtritusEnt)) {
+	if (WChar(g_DtritusEnt)->viewLock) {
 		WChar_Vtbl(g_DtritusEnt)->SetViewAng(g_DtritusEnt, Obj_Vtbl(g_DtritusEnt)->GetAng(g_DtritusEnt, &v));
-		WChar_DisplAng(g_DtritusEnt) = 0.0f;
+		WChar(g_DtritusEnt)->displAng = 0.0f;
 	}
-	cWalkCharControl_Reset(WChar_Control(g_DtritusEnt), 0);
-	if (WChar_OwnerSlot(g_DtritusEnt) >= 0 && WChar_OwnerSlot(g_DtritusEnt) < 4) {
-		cWalkCharControl_Update(WChar_Control(g_DtritusEnt), g_DtritusEnt, 0.0f);
+	cWalkCharControl_Reset(&WChar(g_DtritusEnt)->control, 0);
+	if (WChar(g_DtritusEnt)->ownerSlot >= 0 && WChar(g_DtritusEnt)->ownerSlot < 4) {
+		cWalkCharControl_Update(&WChar(g_DtritusEnt)->control, g_DtritusEnt, 0.0f);
 	}
-	if (WChar_ControlF4f8(g_DtritusEnt) > 0.5f) {
+	if (WChar(g_DtritusEnt)->control.walk > 0.5f) {
 		const char *relax = Dtritus_Relax(g_DtritusEnt);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(g_DtritusEnt), relax, 1);
 	}

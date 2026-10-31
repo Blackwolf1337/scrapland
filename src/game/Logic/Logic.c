@@ -14,8 +14,6 @@
 
 #define LOGIC_SETORIGINFUNC 0x151ce0
 #define g_NotCleanableByGearDef (GAME_ARRAY_IN(cString, GVar_NotCleanableByGear, 20, 0x44cba4))
-#define Car_TargetPicked(e) (Veh(e)->controls.viewTarget)	/* the target in view is picked */
-#define Car_Radius(e) (WLife(e)->prim.radius)
 
 /* the x87 code of the original: a float plus a float, rounded by the x87 control word, then to float */
 static inline float Logic_X87Add(float a, float b) {
@@ -112,7 +110,7 @@ void __thiscall Logic_UpdateTaunts(cLogicControl *self, float dt) {
 		}
 	}
 	cEntity *usr = ChType_Usr0();
-	if (usr && usr->vftable->IsType(usr, TYEN_CAR) && Car_TargetPicked(usr)) {
+	if (usr && usr->vftable->IsType(usr, TYEN_CAR) && Veh(usr)->controls.viewTarget) {
 		float now = Timer_GetTime(&g_pWorld->timer);
 		if (self->talkEnd > now) {
 			g_RemainTalkTime = 0.0f;
@@ -224,12 +222,12 @@ byte Logic_CarOnFloor(cEntity *e) {
 		Con_Bluef("B R U T A L    E R R O R : Parked Ship %s was created in an invalid position.\n", e->name);
 		return 0;
 	}
-	float r = Car_Radius(e);
+	float r = WLife(e)->prim.radius;
 	float y;
 	if (Obj_Vtbl(e)->GetRadius(e) > r) {
 		y = Obj_Vtbl(e)->GetRadius(e);
 	} else {
-		y = Car_Radius(e);
+		y = WLife(e)->prim.radius;
 	}
 	to.y = y + hit.y;
 	to.x = hit.x + 0.0f;

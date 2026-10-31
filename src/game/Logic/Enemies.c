@@ -67,12 +67,12 @@ void __thiscall cEnemies_Attack(cEnemies *self, cEntity *usr) {
 		CHECK(e->vftable->IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
 		cAIVehicle *ai = e->vftable->GetAI(e);
 		CHECK(ai && "enemyAI");
-		Entity_Team(e) = 0;
+		WLife(e)->arrow.tgType = 0;
 		byte ignore = self->ignoreFriends;
 		int st = cAIVehicle_GetState(ai);
 		if (!ignore && st != 0) {
 			cEntity *t = Logic_AttackTarget(ai);
-			if (t && Team_IsEnemy(Entity_Team(e), Entity_Team(t))) {
+			if (t && Team_IsEnemy(WLife(e)->arrow.tgType, WLife(t)->arrow.tgType)) {
 				goto keep;
 			}
 		}

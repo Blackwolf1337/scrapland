@@ -38,7 +38,7 @@ static inline const vec3_t *AIC_Pos(cEntity *e, vec3_t *buf) {
 }
 
 static inline float AIC_Radius(cEntity *e) {
-	return Ent_Primitive(e)->radius;
+	return WLife(e)->prim.radius;
 }
 
 static inline cAIChar *AIC_AI(cEntity *e) {

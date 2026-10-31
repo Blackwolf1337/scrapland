@@ -57,7 +57,7 @@ void __fastcall cVehicleMotorsEffects_Init(cVehicleMotorsEffects *self) {
 	self->on = 0;
 	self->type = 0;
 	self->numExhausts = 0;
-	const char *type = Vehicle_TypeName(self->owner);
+	const char *type = Veh(self->owner)->typeName;
 	if (!crt_stricmp(type, "TVoteMayor") || !crt_stricmp(type, "TVoteBishop")) {
 		return;
 	}

@@ -106,14 +106,6 @@ SD_SIZE(cVehicleMotors, 0xc8);
 
 /* the vehicle fields the motors read */
 #define VM_Timer(e) (&((cObjEntity *)(e))->timer)
-#define VM_Thrust(e) (Veh(e)->smoothThrust)		/* negative backwards */
-#define VM_Boost(e) (Veh(e)->boost)
-#define VM_BoostTime(e) (Veh(e)->boostTime)
-#define VM_InAtmosphere(e) (Veh(e)->inAtmosphere)
-#define VM_SmoothSpeed(e) (Veh(e)->smoothSpeed)
-#define VM_Shake(e) (Veh(e)->shake)
-#define VM_LocalVel(e) (Veh(e)->localVel)		/* z the forward speed */
-#define VM_Hidden(e) (Veh(e)->rendering)		/* inside the extra render: no exhaust effects */
 #define VM_Team(e) ((void *)&WLife(e)->arrow)	/* for cArrowIndicator_GetColor */
 
 /* the emit positions of the Calima particles of all motors (8) */

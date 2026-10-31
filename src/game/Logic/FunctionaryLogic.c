@@ -105,12 +105,12 @@ void __thiscall cFunctionaryLocalLogic_UpdateView(cFunctionaryLocalLogic *self) 
 	}
 	int st = self->base.base.state;
 	if (!self->base.base.busy && !g_pWorld->alarm.on && st != 4 && st != 5 && st != 10) {
-		WChar_B381(p) = 1;
-		Entity_Team(p) = 3;
+		WChar(p)->wl.arrow.canUse = 1;
+		WLife(p)->arrow.tgType = 3;
 		return;
 	}
-	WChar_B381(p) = 0;
-	Entity_Team(p) = 3;
+	WChar(p)->wl.arrow.canUse = 0;
+	WLife(p)->arrow.tgType = 3;
 }
 
 /* vf40: the nearest desktop (within maxDist when above 0) taken out of the desktop list and linked */
@@ -203,7 +203,7 @@ static void Func_SitDown(cFunctionaryLocalLogic *self, cEntity *p) {
 	pos.x = (float)x;
 	pos.y = (float)y;
 	pos.z = (float)z;
-	if (cWorld_TestSphereEntities(g_pWorld, p, (void *)0x10, &pos, Entity_Radius(p), NULL, 1, 0)) {
+	if (cWorld_TestSphereEntities(g_pWorld, p, (void *)0x10, &pos, WLife(p)->prim.radius, NULL, 1, 0)) {
 		return;
 	}
 	o->move.movePos.x = (float)x;

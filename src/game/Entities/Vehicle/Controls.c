@@ -195,7 +195,7 @@ void Controls_TakeLifeNative(cAbstractFile *f) {
 		return;
 	}
 	cWithLifeEntity *w = WLife(v);
-	int max = NetEnt_MaxLife(v);
+	int max = Veh(v)->maxLife;
 	if (w->life >= max) {
 		return;
 	}
@@ -285,7 +285,7 @@ void __fastcall cVehicleO648_Rebuild(void *o) {
 		if (*name) {
 			cEntity *e = World_FindEntity(name);
 			if (e && e != t->owner && e->vftable->IsType(e, TYEN_WITH_LIFE) &&
-				Team_IsEnemy(NetEnt_Team(e), NetEnt_Team(t->owner))) {
+				Team_IsEnemy(WLife(e)->arrow.tgType, WLife(t->owner)->arrow.tgType)) {
 				cVehicleTargetList *l = t->list;
 				int n = l->count;
 				dist[n] = 0.0f;
@@ -301,7 +301,7 @@ void __fastcall cVehicleO648_Rebuild(void *o) {
 			continue;
 		}
 		cEntity *own = t->owner;
-		if (!strcmp(e->name, own->name) || !Team_IsEnemy(NetEnt_Team(e), NetEnt_Team(own)) ||
+		if (!strcmp(e->name, own->name) || !Team_IsEnemy(WLife(e)->arrow.tgType, WLife(own)->arrow.tgType) ||
 			!strcmp(e->name, t->target)) {
 			continue;
 		}
@@ -427,7 +427,8 @@ void __thiscall cVehicleO648_Update(void *o, float dt) {
 	}
 	/* the target is dropped when it is gone, inactive or of team 3 */
 	cEntity *e = World_FindEntity(t->target);
-	if (!e || e == t->owner || !e->active || !e->vftable->IsType(e, TYEN_WITH_LIFE) || NetEnt_Team(e) == 3) {
+	if (!e || e == t->owner || !e->active || !e->vftable->IsType(e, TYEN_WITH_LIFE) ||
+		WLife(e)->arrow.tgType == 3) {
 		t->target[0] = 0;
 	}
 	if (!t->target[0] && 0.0f >= t->list->wait) {

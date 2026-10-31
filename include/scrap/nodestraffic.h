@@ -362,6 +362,5 @@ byte __thiscall CNodesTrafficInDoor_PickPoint(CNodesTrafficInDoor *self, int *ou
 void *__thiscall cAIVehicle_GetVehicle(cAIVehicle *ai);
 int __thiscall cAIVehicle_GetInternState(cAIVehicle *ai);
 byte __thiscall cAIVehicle_PlaceOnTrack(cAIVehicle *ai, int type, const vec3_t *pos, int track, int node);
-#define VEHICLE_CLASS(v) (Veh(v)->traffic.type)	/* 0 light, 1 medium, 2 heavy */
 
 #endif

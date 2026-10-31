@@ -56,7 +56,7 @@ void ChType_BankDirectorEndActionInit(cAbstractFile *params) {
 	cEntity *v = ChType_CheckChar(name);
 	void *ctrl = ChType_ActCtrl(v);
 	CHECK(ctrl);
-	if (!WChar_ActionPress(v)) {
+	if (!WChar(v)->control.act) {
 		cActCtrl_SetDefLoop(ctrl, "Relax", 1);
 		cActCtrl_Play(ctrl, "ActionEnd", 0, 1.0f);
 	}
@@ -78,7 +78,7 @@ void ChType_BankerAttack(cAbstractFile *params) {
 	ChType_Steal(&thief, &victim, g_BankerStealAmount, "Stats.BankDirector", 1.0f);
 	cLocalLogic *l = Logic_GetLocalLogic(victim);
 	if (l) {
-		float d = NormAng(WChar_Ang(victim)->y - WChar_Ang(v)->y);
+		float d = NormAng(WChar(victim)->view.y - WChar(v)->view.y);
 		float f = (float)((__builtin_fabs((double)d) * 100.0) / M_PI_D);
 		if (25.0f > f) {
 			f = 0.0f;
@@ -105,7 +105,7 @@ cEntity *ChType_BankerVictim(cEntity *v) {
 	if (!e || !e->vftable->IsType(e, TYEN_WALKCHAR)) {
 		return NULL;
 	}
-	if (WChar_Money(e) <= 0 && e != cWorld_GetUsrEntity(g_pWorld, 0)) {
+	if (WChar(e)->money <= 0 && e != cWorld_GetUsrEntity(g_pWorld, 0)) {
 		return NULL;
 	}
 	if (g_pWorld->money <= 0 && e == cWorld_GetUsrEntity(g_pWorld, 0)) {
@@ -119,7 +119,7 @@ byte ChType_CanRob(cEntity *thief, cEntity *v) {
 	if (!v || !v->vftable->IsType(v, TYEN_WALKCHAR)) {
 		return 0;
 	}
-	if (WChar_Money(v) <= 0 && v != cWorld_GetUsrEntity(g_pWorld, 0)) {
+	if (WChar(v)->money <= 0 && v != cWorld_GetUsrEntity(g_pWorld, 0)) {
 		return 0;
 	}
 	if (g_pWorld->money <= 0 && v == cWorld_GetUsrEntity(g_pWorld, 0)) {
@@ -144,18 +144,18 @@ byte ChType_Steal(cEntity **thief, cEntity **victim, int amount, const char *sta
 		if (!v) {
 			return 0;
 		}
-		int n = (int)((float)WChar_MoneyReward(v) * frac);
+		int n = (int)((float)WChar(v)->moneyReward * frac);
 		if (n <= 0) {
 			n = 1;
 		}
-		if (WChar_Money(v) < n) {
-			n = WChar_Money(v);
+		if (WChar(v)->money < n) {
+			n = WChar(v)->money;
 		}
 		g_pWorld->money += n;
 		if (stat) {
 			SaveVar_Inc(stat, n);
 		}
-		WChar_Money(*victim) -= n;
+		WChar(*victim)->money -= n;
 		return n != 0;
 	}
 	cLocalLogic *l = Logic_GetLocalLogic(*thief);
@@ -176,17 +176,17 @@ byte ChType_Steal(cEntity **thief, cEntity **victim, int amount, const char *sta
 		if (g_pWorld->money < 0) {
 			g_pWorld->money = 0;
 		}
-		WChar_Money(*thief) += amount;
-		WChar_MoneyReward(*thief) += amount / 10;
+		WChar(*thief)->money += amount;
+		WChar(*thief)->moneyReward += amount / 10;
 		return 1;
 	}
-	int m = WChar_Money(v);
-	int n = WChar_MoneyReward(v);
+	int m = WChar(v)->money;
+	int n = WChar(v)->moneyReward;
 	if (m < n) {
 		n = m;
 	}
-	WChar_Money(v) = m - n;
-	WChar_Money(*thief) += n;
-	WChar_MoneyReward(*thief) += n / 10;
+	WChar(v)->money = m - n;
+	WChar(*thief)->money += n;
+	WChar(*thief)->moneyReward += n / 10;
 	return n != 0;
 }

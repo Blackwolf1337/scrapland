@@ -141,7 +141,7 @@ void __thiscall cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e) {
 	float dy = self->camPos.y - cam->target.y;
 	float dx = self->camPos.x - cam->target.x;
 	float dz = self->camPos.z - cam->target.z;
-	float r = Entity_Radius(e) * 4.0f;
+	float r = WLife(e)->prim.radius * 4.0f;
 	float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 	if (d > r + r) {
 		/* a new point around the entity */

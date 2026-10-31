@@ -178,12 +178,6 @@ static inline struct cEmbeddedFXVehicle *Veh_FX(const cVehicleEntity *v) {
 
 /* the fields of a vehicle the embedded effects read */
 #define Vehicle_Player(e) (Veh(e)->wl.obj.cam)		/* the follow camera: driven by a player */
-#define Vehicle_Speed(e) (Veh(e)->active)		/* approaches 1 while active */
-#define Vehicle_TypeName(e) (Veh(e)->typeName)
-#define Vehicle_Life(e) (Veh(e)->wl.life)
-#define Vehicle_Model(e) (&Veh(e)->wl.obj.model)
-#define Vehicle_IsTraffic(e) (Veh(e)->traffic.active)
-#define Vehicle_FollowName(e) (Veh(e)->target)	/* the car of a player */
 
 /* the cVehicleEntity vtable slots called here (thiscall) */
 /* cVehicleEntity::vftable: the slots of the vehicle after the ones of cWithLifeEntity */

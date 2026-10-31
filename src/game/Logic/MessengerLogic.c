@@ -332,11 +332,11 @@ void __thiscall cMessengerLocalLogic_ToAlert(cMessengerLocalLogic *self, cAIChar
 /* vf17: team 3, 0 while it attacks a player */
 void __thiscall cMessengerLocalLogic_Update(cMessengerLocalLogic *self, float dt) {
 	cGenCharLocalLogic_Update(self, dt);
-	Entity_Team(self->base.parent) = 3;
+	WLife(self->base.parent)->arrow.tgType = 3;
 	if (self->base.state == GENCHAR_ATTACK) {
 		cEntity *t = self->base.target.target;
 		if (t && t->vftable->IsType(t, TYEN_WALKCHAR) && cWalkCharEntity_GetOwnerSlot(t) != -1) {
-			Entity_Team(self->base.parent) = 0;
+			WLife(self->base.parent)->arrow.tgType = 0;
 		}
 	}
 }

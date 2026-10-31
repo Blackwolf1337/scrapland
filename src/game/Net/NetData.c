@@ -166,15 +166,15 @@ void NetData_ReadUsrDescriptors(cAbstractFile *f) {
 		}
 		NetData_ReadUsrDescriptor(f, e);
 		cPy_Function_AddParamS(g_ClientSetConfig, e->name);
-		cPy_Function_AddParamS(g_ClientSetConfig, NetEnt_TypeName(e));
-		cPy_Function_AddParamI(g_ClientSetConfig, NetEnt_MaxLife(e));
-		cPy_Function_AddParamS(g_ClientSetConfig, NetEnt_UsrName(e) ? NetEnt_UsrName(e) : "");
+		cPy_Function_AddParamS(g_ClientSetConfig, Veh(e)->typeName);
+		cPy_Function_AddParamI(g_ClientSetConfig, Veh(e)->maxLife);
+		cPy_Function_AddParamS(g_ClientSetConfig, WLife(e)->usrName ? WLife(e)->usrName : "");
 		cPy_Function_AddParamS(g_ClientSetConfig, Veh_Vtbl(Veh(e))->GetPilot(Veh(e), 0));
 		for (uint32_t m = 0; m < 4; m++) {
 			cPy_Function_AddParamS(g_ClientSetConfig, cVehicleMotors_GetMotorName(NetEnt_Motors(e), m, NULL));
 		}
 		cPy_Function_AddParamS(g_ClientSetConfig, cWeaponManager_GetWeapList(NetEnt_Weapons(e)));
-		cPy_Function_AddParamI(g_ClientSetConfig, NetEnt_Team(e));
+		cPy_Function_AddParamI(g_ClientSetConfig, WLife(e)->arrow.tgType);
 		cPy_Function_Execute(g_ClientSetConfig, 0);
 	}
 }
@@ -185,7 +185,7 @@ void NetData_ReadUsrDescriptor(cAbstractFile *f, cEntity *e) {
 	int team;
 
 	cAbstractFile_ReadString8(f, s, sizeof(s));
-	cString_Set(&NetEnt_UsrName(e), s);
+	cString_Set(&WLife(e)->usrName, s);
 	cAbstractFile_ReadString8(f, s, sizeof(s));
 	if (cActClassList_Get(g_pActClassList, s)) {
 		WithLife_Vtbl(e)->SetActCtrl(e, s);
@@ -198,7 +198,7 @@ void NetData_ReadUsrDescriptor(cAbstractFile *f, cEntity *e) {
 		e->vftable->SetModel(e, s, 1.0f, 1.0f, 1.0f, 1);
 	}
 	f->vftable->Read(f, &maxLife, 2);
-	NetEnt_MaxLife(e) = maxLife;
+	Veh(e)->maxLife = maxLife;
 	for (uint32_t m = 0; m < 4; m++) {
 		cAbstractFile_ReadString8(f, s, sizeof(s));
 		cVehicleMotors_SetMotor(NetEnt_Motors(e), m, s, 1.0f, 1.0f, 1.0f);
@@ -208,7 +208,7 @@ void NetData_ReadUsrDescriptor(cAbstractFile *f, cEntity *e) {
 	cAbstractFile_ReadString8(f, s, sizeof(s));
 	cWeaponManager_SetWeapList(NetEnt_Weapons(e), s);
 	f->vftable->Read(f, &team, 4);
-	NetEnt_Team(e) = team;
+	WLife(e)->arrow.tgType = team;
 }
 
 void NetData_WriteResources(cAbstractFile *f, uint16_t first, byte count) {
@@ -314,16 +314,16 @@ void NetData_WriteUsr(cAbstractFile *f, uint16_t slot) {
 void NetData_WriteUsrDescriptor(cAbstractFile *f, cEntity *e) {
 	uint32_t v;
 
-	cAbstractFile_WriteString8(f, NetEnt_UsrName(e) ? NetEnt_UsrName(e) : "");
-	cAbstractFile_WriteString8(f, NetEnt_TypeName(e));
-	v = (uint16_t)NetEnt_MaxLife(e);
+	cAbstractFile_WriteString8(f, WLife(e)->usrName ? WLife(e)->usrName : "");
+	cAbstractFile_WriteString8(f, Veh(e)->typeName);
+	v = (uint16_t)Veh(e)->maxLife;
 	f->vftable->Write(f, &v, 2);
 	for (uint32_t m = 0; m < 4; m++) {
 		cAbstractFile_WriteString8(f, cVehicleMotors_GetMotorName(NetEnt_Motors(e), m, NULL));
 	}
 	cAbstractFile_WriteString8(f, Veh_Vtbl(Veh(e))->GetPilot(Veh(e), 0));
 	cAbstractFile_WriteString8(f, cWeaponManager_GetWeapList(NetEnt_Weapons(e)));
-	v = (uint32_t)NetEnt_Team(e);
+	v = (uint32_t)WLife(e)->arrow.tgType;
 	f->vftable->Write(f, &v, 4);
 }
 

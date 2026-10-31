@@ -89,7 +89,7 @@ void __thiscall cSentinelLocalLogic_Watch(void *sentinel, const vec3_t *pos) {
 		dir.z = pos->z - pp->z;
 		dir.x = pos->x - pp->x;
 		dir.y = 0.0f;
-		ai->vftable->SetState(ai, 4, *pos, dir, (double)(WChar_Radius(b->parent) + g_SentinelGotoRadius),
+		ai->vftable->SetState(ai, 4, *pos, dir, (double)(WLife(b->parent)->prim.radius + g_SentinelGotoRadius),
 			(double)g_SentinelGotoSpeed);
 	}
 	self->time = g_SentinelGotoTime;
@@ -104,10 +104,10 @@ void __thiscall cSentinelLocalLogic_Think(cSentinelLocalLogic *self, float dt, b
 	self->seen = 0;
 	cEntity *usr = ChType_Usr0();
 	cBaseLocalLogic_Update(b, dt);
-	Entity_Team(p) = g_pWorld->alarm.on ? 0 : 2;
+	WLife(p)->arrow.tgType = g_pWorld->alarm.on ? 0 : 2;
 	if (b->busy) {
-		WChar_ConeStatus(p) = 0;
-		WChar_B381(p) = 0;
+		WLife(p)->arrow.coneStatus = 0;
+		WChar(p)->wl.arrow.canUse = 0;
 		return;
 	}
 	if (0.0f >= self->time || !b->target.target || quiet) {
@@ -221,23 +221,23 @@ void __thiscall cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEnti
 	vec3_t tmp;
 
 	(void)dt;
-	WChar_ConeFov(p) = g_SentinelStdFovY;
-	WChar_ConeDist(p) = g_SentinelStdFar;
-	WChar_B381(p) = !g_pWorld->alarm.on && !a->notDefChar;
+	WLife(p)->arrow.coneFov = g_SentinelStdFovY;
+	WLife(p)->arrow.coneDist = g_SentinelStdFar;
+	WChar(p)->wl.arrow.canUse = !g_pWorld->alarm.on && !a->notDefChar;
 	switch (b->state) {
 	case 0:
 	case 1:
-		WChar_ConeStatus(p) = a->sameChar ? 2 : 1;
+		WLife(p)->arrow.coneStatus = a->sameChar ? 2 : 1;
 		return;
 	case 2:
 		if (!b->target.target || !g_pWorld->alarm.on) {
 			cSentinelLocalLogic_Return(self);
 		}
 		if (!self->seen) {
-			WChar_ConeStatus(p) = 2;
+			WLife(p)->arrow.coneStatus = 2;
 			return;
 		}
-		WChar_ConeStatus(p) = 3;
+		WLife(p)->arrow.coneStatus = 3;
 		AICtrl_RaiseLevel(&g_pWorld->logic.aiCtrl, 1);
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
 		if (cWorld_GetUsrEntity(g_pWorld, 0)) {
@@ -255,17 +255,17 @@ void __thiscall cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEnti
 			return;
 		}
 		if (!self->seen) {
-			WChar_ConeStatus(p) = 1;
+			WLife(p)->arrow.coneStatus = 1;
 			return;
 		}
 		Sentinel_Relax(s);
 		AICtrl_RaiseLevel(&g_pWorld->logic.aiCtrl, 1);
-		WChar_ConeStatus(p) = 2;
+		WLife(p)->arrow.coneStatus = 2;
 		return;
 	}
 	case 5:
-		WChar_B381(p) = 0;
-		WChar_ConeStatus(p) = a->sameChar ? 2 : 1;
+		WChar(p)->wl.arrow.canUse = 0;
+		WLife(p)->arrow.coneStatus = a->sameChar ? 2 : 1;
 		if (ai->vftable->GetState(ai)) {
 			self->time = g_SentinelGotoTime;
 			return;
@@ -290,8 +290,8 @@ void __thiscall cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEnti
 			if (ai->vftable->GetDirect(ai)) {
 				self->time = g_SentinelAcuseTime;
 			}
-			WChar_B381(p) = 0;
-			WChar_ConeStatus(p) = 0;
+			WChar(p)->wl.arrow.canUse = 0;
+			WLife(p)->arrow.coneStatus = 0;
 			AICtrl_GearAttack(&g_pWorld->logic.aiCtrl, b->target.target, 0);
 			cLocalLogic *l = Logic_GetLocalLogic(b->target.target);
 			if (l) {

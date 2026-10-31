@@ -12,7 +12,6 @@
 
 #define MAINT_VT(self) ((self)->base.base.vftable)
 #define MAINT_BASE(self) (&(self)->base.base)
-#define Car_Radius(e) (WLife(e)->prim.radius)
 
 /* the x87 code of the original: a float plus two floats, rounded by the x87 control word, then to float */
 static inline float Maint_X87Add2(float a, float b, float c) {
@@ -193,7 +192,7 @@ void __fastcall cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self) {
 	ai->vftable->SetState(ai, 4, *c, dir, 100.0, 0.5);
 	c = &self->points[self->point];
 	sp.y = c->y;
-	float sr = Car_Radius(g_MaintenanceShip);
+	float sr = WLife(g_MaintenanceShip)->prim.radius;
 	vec3_t d;
 	d.x = c->x - sp.x;
 	d.z = c->z - sp.z;
@@ -208,7 +207,7 @@ void __fastcall cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self) {
 		v.y = d.y * inv;
 		v.z = d.z * inv;
 	}
-	float rr = WChar_Radius(p) + sr;
+	float rr = WLife(p)->prim.radius + sr;
 	self->reposition.x = v.x * rr + sp.x;
 	self->reposition.y = v.y * rr + sp.y;
 	self->reposition.z = v.z * rr + sp.z;

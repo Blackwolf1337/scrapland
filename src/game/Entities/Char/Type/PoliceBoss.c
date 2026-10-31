@@ -147,7 +147,7 @@ void ChType_PoliceBossAction(cAbstractFile *params) {
 }
 
 void ChType_PoliceBossTryAction(cEntity *v) {
-	if (!WChar_Falling(v) && !ChType_ActPriority(ChType_ActCtrl(v))) {
+	if (!WChar(v)->falling && !ChType_ActPriority(ChType_ActCtrl(v))) {
 		cActCtrl_Play(ChType_ActCtrl(v), "Action", 0, 1.0f);
 	}
 }
@@ -179,6 +179,6 @@ void ChType_PoliceBossSphereHit(cAbstractFile *params) {
 	if (e && !strcmp(ChType_ClassName(e), "Police") && !ChType_ActPriority(ChType_ActCtrl(e)) &&
 		Logic_GetLocalLogic(e)) {
 		cActCtrl_Play(ChType_ActCtrl(e), "Laugh", 0, 1.0f);
-		cEntity_AddLink(g_PoliceBossEnt, WChar_ListenNode(e));
+		cEntity_AddLink(g_PoliceBossEnt, &WChar(e)->listen);
 	}
 }

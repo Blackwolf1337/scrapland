@@ -16,16 +16,16 @@
 
 /* the recharge of the next shot (the upgrade 9 is faster) and the start sound of the upgrade */
 void ATPC_SetRecharge(cEntity *v) {
-	int up = cWeaponManager_GetUpgrade(Vehicle_WeapMgr(v), g_ATPCIDWeap);
-	float ammo = cTargetLock_GetAmmo(Vehicle_WeapMgr(v), g_ATPCIDAmmo);
+	int up = cWeaponManager_GetUpgrade(&Veh(v)->weapons, g_ATPCIDWeap);
+	float ammo = cTargetLock_GetAmmo(&Veh(v)->weapons, g_ATPCIDAmmo);
 	int snd;
 	if (ammo > 0.0f) {
 		if (up == 9) {
-			Vehicle_WeapMgr(v)->fireStamp = -g_ATPCUpgradeDelay;
+			Veh(v)->weapons.fireStamp = -g_ATPCUpgradeDelay;
 			Vehicle_StartSnd(v, 0x11);
 			return;
 		}
-		Vehicle_WeapMgr(v)->fireStamp = -g_ATPCDelay;
+		Veh(v)->weapons.fireStamp = -g_ATPCDelay;
 	}
 	if (up == 9) {
 		snd = 0x11;
@@ -62,7 +62,7 @@ void ATPC_Create(cAbstractFile *params) {
 	params->vftable->Read(params, &hit.z, 4);
 	cAbstractFile_ReadString(params, g_ATPCVictim, 0x80);
 	cEntity *v = Weap_GetVehicle(g_ATPCShooter);
-	cWeaponManager *wm = Vehicle_WeapMgr(v);
+	cWeaponManager *wm = &Veh(v)->weapons;
 	const vec3_t *pa = v->vftable->GetPos(v, &a);
 	float dy = hit.y - pa->y;
 	float dx = hit.x - pa->x;
@@ -123,7 +123,7 @@ void ATPC_Create(cAbstractFile *params) {
 			cEntity *w = World_FindEntity(g_ATPCVictim);
 			CHECK(w);
 			CHECK(Entity_IsType(w, TYEN_WITH_LIFE));
-			float rad = Entity_Radius(w);
+			float rad = WLife(w)->prim.radius;
 			const vec3_t *pc = Obj_Vtbl(v)->GetViewPos(v, &c);
 			float cy = pc->y - hit.y;
 			float cx = pc->x - hit.x;
@@ -227,9 +227,9 @@ void ATPC_FX(cAbstractFile *params) {
 	if (!item) {
 		return;
 	}
-	float stamp = Vehicle_WeapMgr(v)->fireStamp;
+	float stamp = Veh(v)->weapons.fireStamp;
 	float delay;
-	if (cWeaponManager_GetUpgrade(Vehicle_WeapMgr(v), g_ATPCIDWeap) == 9) {
+	if (cWeaponManager_GetUpgrade(&Veh(v)->weapons, g_ATPCIDWeap) == 9) {
 		delay = g_ATPCUpgradeDelay;
 	} else {
 		delay = g_ATPCDelay;
@@ -276,12 +276,12 @@ void ATPC_Fire(cAbstractFile *params) {
 	cEntity *v = Weap_GetVehicle(name);
 	ATPC_SetRecharge(v);
 	float conv = 1.0f;
-	Controls_RumbleA(Vehicle_Controls(v), 1.0f, 0.2f);
-	Controls_RumbleB(Vehicle_Controls(v), 1.0f, 0.5f);
+	Controls_RumbleA(&Veh(v)->controls, 1.0f, 0.2f);
+	Controls_RumbleB(&Veh(v)->controls, 1.0f, 0.5f);
 	if (g_pApp->flags & APPF_CLIENT) {
 		return;
 	}
-	cWeaponManager *wm = Vehicle_WeapMgr(v);
+	cWeaponManager *wm = &Veh(v)->weapons;
 	g_ATPCNumSlots = 0.0f;
 	for (int i = 0; i < 4; i++) {
 		if (cTargetLock_HasSlot(wm, g_ATPCIDWeap, i)) {
@@ -309,7 +309,7 @@ void ATPC_Fire(cAbstractFile *params) {
 		hit = *target->vftable->GetPos(target, &t);
 		if (target && Entity_IsType(target, TYEN_VEHICLE)) {
 			cEntity *tg = target;
-			cVehicleAttack_ShotAt(Vehicle_Attack(v), tg->name, 1);
+			cVehicleAttack_ShotAt(&WLife(v)->attack, tg->name, 1);
 			const vec3_t *pa = v->vftable->GetPos(v, &a);
 			const vec3_t *pb = tg->vftable->GetPos(tg, &b);
 			float dx = (pb->x - pa->x) * conv;
@@ -324,7 +324,7 @@ void ATPC_Fire(cAbstractFile *params) {
 			goto upgrade;
 		}
 	}
-	cVehicleAttack_ShotAtPoint(Vehicle_Attack(v), &hit, 1);
+	cVehicleAttack_ShotAtPoint(&WLife(v)->attack, &hit, 1);
 	{
 		const vec3_t *pa = v->vftable->GetPos(v, &t);
 		float dx = (hit.x - pa->x) * conv;
@@ -358,7 +358,7 @@ void ATPC_OnEnd(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, name, 0x80);
 	cEntity *v = Weap_GetVehicle(name);
-	Vehicle_AimMode(v) = 0;
+	Veh(v)->autoAim.status = 0;
 }
 
 /* "!ATPCOnStart" (vehicle): the aim help of the ATPC, wider for a pad with VehicleCenterPadLock */
@@ -367,15 +367,15 @@ void ATPC_OnStart(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, name, 0x80);
 	cEntity *v = Weap_GetVehicle(name);
-	Vehicle_AimMode(v) = 4;
-	cAutoAim_SetRange(Vehicle_AutoAim(v), g_ATPCRange);
+	Veh(v)->autoAim.status = 4;
+	cAutoAim_SetRange(&Veh(v)->autoAim, g_ATPCRange);
 	float ang;
 	if (g_VehicleCenterPadLock != 0.0f && cVehicleEntity_GetOwnerSlot(v) != -1) {
 		ang = 0.34906584f;
 	} else {
 		ang = 0.31415927f;
 	}
-	cAutoAim_SetAngle(Vehicle_AutoAim(v), ang);
+	cAutoAim_SetAngle(&Veh(v)->autoAim, ang);
 }
 
 /* "!ATPCXplosionCall" (entity, center, distance): the damage and push of the shot of g_ATPCShooter */
@@ -393,9 +393,9 @@ void ATPC_XplosionCall(cAbstractFile *params) {
 	if (!victim || !Entity_IsType(victim, TYEN_WITH_LIFE) || (g_pApp->flags & APPF_CLIENT)) {
 		return;
 	}
-	int oldLife = Entity_LifeI(victim);
+	int oldLife = WLife(victim)->life;
 	int dmg = 0;
-	byte ext = shooter && cWeaponManager_GetUpgrade(Vehicle_WeapMgr(shooter), g_ATPCIDWeap) == 10;
+	byte ext = shooter && cWeaponManager_GetUpgrade(&Veh(shooter)->weapons, g_ATPCIDWeap) == 10;
 	const vec3_t *pp = victim->vftable->GetPos(victim, &p);
 	float inv = 1.0f / dist;
 	float dx = (pp->x - center.x) * inv;
@@ -415,7 +415,7 @@ void ATPC_XplosionCall(cAbstractFile *params) {
 		dz = d->z;
 		dist = 1.0f;
 	}
-	dist = dist - Entity_Radius(victim);
+	dist = dist - WLife(victim)->prim.radius;
 	if (dist > g_ATPCExplosionRadius) {
 		return;
 	}
@@ -436,14 +436,14 @@ void ATPC_XplosionCall(cAbstractFile *params) {
 			dmg = 1;
 		}
 	}
-	if (!Entity_God(victim)) {
-		Entity_LifeI(victim) -= dmg;
+	if (!WLife(victim)->god) {
+		WLife(victim)->life -= dmg;
 	}
-	if (oldLife > Entity_LifeI(victim)) {
-		cVehicleAttack_HitBy(Vehicle_Attack(victim), g_ATPCShooter);
+	if (oldLife > WLife(victim)->life) {
+		cVehicleAttack_HitBy(&WLife(victim)->attack, g_ATPCShooter);
 	}
 	if (!Entity_IsType(victim, TYEN_WALKCHAR)) {
-		float k = g_ATPCNumSlots * 1000.0f * g_ATPCHitForce / Entity_Mass(victim);
+		float k = g_ATPCNumSlots * 1000.0f * g_ATPCHitForce / WLife(victim)->mass;
 		dx = dx * f * k;
 		dy = dy * f * k;
 		dz = dz * f * k;
@@ -453,8 +453,8 @@ void ATPC_XplosionCall(cAbstractFile *params) {
 		n.z = vel->z + dz;
 		Obj_Vtbl(victim)->SetVel(victim, &n);
 	}
-	if (Entity_IsType(victim, TYEN_VEHICLE) && Vehicle_NetCtrl(victim)) {
-		Vehicle_NetCtrl(victim)->hit = 2;
+	if (Entity_IsType(victim, TYEN_VEHICLE) && Veh(victim)->netCtrl) {
+		Veh(victim)->netCtrl->hit = 2;
 	}
 }
 
@@ -468,15 +468,15 @@ void Cloud_Fire(cAbstractFile *params) {
 	if (!v || !Entity_IsType(v, TYEN_VEHICLE)) {
 		return;
 	}
-	float fammo = cTargetLock_GetAmmo(Vehicle_WeapMgr(v), g_CloudIDAmmo);
+	float fammo = cTargetLock_GetAmmo(&Veh(v)->weapons, g_CloudIDAmmo);
 	int ammo = (int)fammo;
-	if (Vehicle_CloudTime(v) > 0.0f || ammo < 1) {
+	if (Veh(v)->cloud > 0.0f || ammo < 1) {
 		return;
 	}
-	Vehicle_WeapMgr(v)->cmStamp = g_CloudRechargeTime;
-	cSndItem *it = PtrArray_Get(Vehicle_Sounds(v), 0x13);
+	Veh(v)->weapons.cmStamp = g_CloudRechargeTime;
+	cSndItem *it = PtrArray_Get(&Veh(v)->wl.obj.snd, 0x13);
 	if (it) {
-		cSndItem *src = PtrArray_Get(Vehicle_Sounds(v), 9);
+		cSndItem *src = PtrArray_Get(&Veh(v)->wl.obj.snd, 9);
 		if (src) {
 			it->volume = src->vols[0];
 			it->pitch = src->pitches[0];
@@ -503,13 +503,13 @@ void Cloud_Fire(cAbstractFile *params) {
 	}
 	cMissileEntity_SetSpeed((cMissileEntity *)cloud, 0.0f);
 	cMissileEntity_SetTurnSpeed((cMissileEntity *)cloud, 0.0f);
-	Controls_RumbleA(Vehicle_Controls(v), 0.4f, 0.2f);
+	Controls_RumbleA(&Veh(v)->controls, 0.4f, 0.2f);
 	cMissileEntity_SetCount((cMissileEntity *)cloud, g_CloudAmmoNeed <= ammo ? g_CloudAmmoNeed : ammo);
 	cPy_Function_AddParamS(g_SetUpCloudFunc, cloud->name);
 	cPy_Function_Execute(g_SetUpCloudFunc, 0);
 	cMissileEntity_SetLifeTime((cMissileEntity *)cloud, g_CloudLifeTime - 0.2f);
-	cPy_Function_SetFunc(Missile_OnHit(cloud), "!CloudOnHit");
-	cWeaponManager_SetAmmo(Vehicle_WeapMgr(v), g_CloudIDAmmo, (float)(ammo - Missile_SwarmCount(cloud)));
+	cPy_Function_SetFunc(&Missile(cloud)->onHit, "!CloudOnHit");
+	cWeaponManager_SetAmmo(&Veh(v)->weapons, g_CloudIDAmmo, (float)(ammo - Missile(cloud)->swarmCount));
 }
 
 /* "!CloudOnHit" (cloud, ?, entity, strong): a vehicle in the cloud for 100 or 5 seconds, a missile slowed */
@@ -531,6 +531,6 @@ void Cloud_OnHit(cAbstractFile *params) {
 	}
 	if (Entity_IsType(e, "Missile") && strong) {
 		cMissileEntity_SetType((cMissileEntity *)e, 3);
-		cMissileEntity_SetSwarmSpeed((cMissileEntity *)e, Missile_SwarmSpeed(e) / 5.0f);
+		cMissileEntity_SetSwarmSpeed((cMissileEntity *)e, Missile(e)->swarmSpeed / 5.0f);
 	}
 }

@@ -84,8 +84,8 @@ void ChType_SentinelPoint(cAbstractFile *params) {
 			}
 			AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, v->vftable->GetPos(v, &tmp));
 		}
-		if (!WChar_Control(v)->target.target) {
-			cWalkCharControl_SetTarget(WChar_Control(v), t);
+		if (!WChar(v)->control.target.target) {
+			cWalkCharControl_SetTarget(&WChar(v)->control, t);
 		}
 	}
 	cLocalLogic *l = Logic_GetLocalLogic(t);

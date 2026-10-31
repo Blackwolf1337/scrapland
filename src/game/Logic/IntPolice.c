@@ -143,7 +143,8 @@ byte __thiscall AICtrl_CanFuse(void *ctrl, cEntity *e) {
 	cEntity *hit;
 
 	(void)ctrl;
-	if (!e || !e->vftable->IsType(e, TYEN_WALKCHAR) || WChar_Life(e) <= 0 || strcmp(Logic_TypeName(e), "Police")) {
+	if (!e || !e->vftable->IsType(e, TYEN_WALKCHAR) || WChar(e)->wl.life <= 0 || strcmp(Logic_TypeName(e),
+		"Police")) {
 		return 0;
 	}
 	cBaseLocalLogic *l = (cBaseLocalLogic *)Logic_GetLocalLogic(e);
@@ -173,7 +174,8 @@ byte __thiscall AICtrl_CanBePolice(void *ctrl, cEntity *e) {
 	char name[0x80];
 
 	(void)ctrl;
-	if (!e || !e->vftable->IsType(e, TYEN_WALKCHAR) || WChar_Life(e) <= 0 || strcmp(Logic_TypeName(e), "Gear")) {
+	if (!e || !e->vftable->IsType(e, TYEN_WALKCHAR) || WChar(e)->wl.life <= 0 || strcmp(Logic_TypeName(e),
+		"Gear")) {
 		return 0;
 	}
 	AICtrl_Rename(name, "Police", e->name + 4);
@@ -261,9 +263,9 @@ byte __thiscall AICtrl_Fuse(void *ctrl, cEntity *police, cEntity **out) {
 	o->move.moveAng = *Obj_Vtbl(police)->GetAng(police, &t);
 	cObjMove_SetTime(&o->move, 0.01f);
 	cEntity_CollisionOff(police);
-	cPrimitive_SetSize(WChar_Shadow(police), 0.0f);
-	*(uint16_t *)&WChar_B381(police) = 0;
-	WChar_God(police) = 1;
+	cPrimitive_SetSize(&WChar(police)->wl.prim, 0.0f);
+	*(uint16_t *)&WChar(police)->wl.arrow.canUse = 0;
+	WChar(police)->wl.god = 1;
 	AICtrl_Rename(name, "Gear", police->name + 6);
 	cPy_Function_AddParamS(g_CreateGear, name);
 	cPy_Function_AddParamF(g_CreateGear, police->vftable->GetPos(police, &t)->x);
@@ -278,7 +280,7 @@ byte __thiscall AICtrl_Fuse(void *ctrl, cEntity *police, cEntity **out) {
 	Obj_Vtbl(gear)->SetAng(gear, Obj_Vtbl(police)->GetAng(police, &t));
 	cActCtrl_Play(ChType_ActCtrl(gear), "PostFusion", 1, 1.0f);
 	cTimer_SetSpeedChecked(&((cObjEntity *)gear)->timer, 0.001f);
-	WChar_God(gear) = 1;
+	WChar(gear)->wl.god = 1;
 	if (out) {
 		*out = gear;
 	}
@@ -380,7 +382,7 @@ void AICtrl_Police2GearEnd(cAbstractFile *params) {
 	Obj_Vtbl(gear)->SetEffect(gear, 0);
 	Obj_Vtbl(gear)->SetEffectParam(gear, 0, 0.0f);
 	cTimer_SetSpeedChecked(&((cObjEntity *)gear)->timer, 1.0f);
-	WChar_God(gear) = 0;
+	WChar(gear)->wl.god = 0;
 	cEntity_Del(poli);
 }
 

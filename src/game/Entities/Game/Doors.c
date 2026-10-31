@@ -59,7 +59,7 @@ void Doors_AcceleratorOnEnter(cAbstractFile *params) {
 		return;
 	}
 	cEntity *obj = World_FindEntity(objName);
-	if (!obj->vftable->IsType(obj, TYEN_OBJECT) || Vehicle_IsTraffic(car)) {
+	if (!obj->vftable->IsType(obj, TYEN_OBJECT) || Veh(car)->traffic.active) {
 		return;
 	}
 	float speed = 28000.0f;

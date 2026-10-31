@@ -200,7 +200,7 @@ void __thiscall cWalkCharControl_Update(cWalkCharControl *self, cEntity *wle, fl
 		d.x = wp->x - tp->x;
 		d.y = wp->y - tp->y;
 		d.z = wp->z - tp->z;
-		a = *WChar_Ang(wle);
+		a = WChar(wle)->view;
 		const vec3_t *r = Vec3_GetRotAng(&t2, &d);
 		float dy = r->y - a.y;
 		self->vRot = NormAng(r->x - a.x);
@@ -216,9 +216,9 @@ void __thiscall cWalkCharControl_Update(cWalkCharControl *self, cEntity *wle, fl
 				if (!relax || relax->rotSpeed != 0.0f) {
 					self->centerTime = g_WalkCameraCenter;
 				} else {
-					a = *WChar_Ang(wle);
+					a = WChar(wle)->view;
 					self->vRot = -a.x;
-					a = *WChar_Ang(wle);
+					a = WChar(wle)->view;
 					self->hRot = NormAng(Obj_Vtbl(wle)->GetAng(wle, &t1)->y - a.y);
 				}
 			}
@@ -235,14 +235,14 @@ void __thiscall cWalkCharControl_Update(cWalkCharControl *self, cEntity *wle, fl
 	self->act2 = WCC_Value(WCC_ACT2, slot) > 0.5f;
 	byte next = cInputAction_Pressed(WCC_Action(WCC_NEXTOPT), slot);
 	byte prev = cInputAction_Pressed(WCC_Action(WCC_PREVOPT), slot);
-	if ((next || prev) && WChar_ListenOn(wle) && WChar_Listen(wle)) {
+	if ((next || prev) && WChar(wle)->listenOn && WChar_Listen(wle)) {
 		cEntity *l = WChar_Listen(wle);
 		CHECK(Entity_IsType(l, TYEN_WITH_LIFE));
 		if (next) {
-			cArrowIndicator_NextOpt(Ent_Arrow(l));
+			cArrowIndicator_NextOpt(&WLife(l)->arrow);
 		}
 		if (prev) {
-			cArrowIndicator_PrevOpt(Ent_Arrow(l));
+			cArrowIndicator_PrevOpt(&WLife(l)->arrow);
 		}
 	}
 }

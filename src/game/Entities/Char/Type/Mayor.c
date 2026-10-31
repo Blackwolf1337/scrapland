@@ -41,7 +41,7 @@ void ChType_ListeningMayor(cAbstractFile *params) {
 			}
 		}
 	}
-	Nto1Node *n = WChar_ListenNode(g_MayorEnt);
+	Nto1Node *n = &WChar(g_MayorEnt)->listen;
 	CHECK(n->data);
 	Nto1Node_Unlink(n);
 	Logic_Vtbl(ll)->SetIdle(ll, 0);
@@ -61,7 +61,7 @@ void ChType_MayorEndAction(cAbstractFile *params) {
 	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)GAME_FUNC(ChType_MayorSphereHit, CHTYPE_MAYORSPHEREHIT));
 	cWorld_SphereCallF(g_pWorld, 0x10, g_MayorEnt->vftable->GetPos(g_MayorEnt, &tmp), g_MayorBlabliblaRadius,
 		g_ChTypeSphereFunc, 0);
-	if (!WChar_ActionPress(g_MayorEnt)) {
+	if (!WChar(g_MayorEnt)->control.act) {
 		cActCtrl_Play(ChType_ActCtrl(g_MayorEnt), "ActionEnd", 1, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(g_MayorEnt), "Relax", 1);
 	}
@@ -100,7 +100,7 @@ void ChType_MayorSphereHit(cAbstractFile *params) {
 			cActCtrl_PlayAction(ChType_ActCtrl(e), acm, 0, 1, 1.0f);
 			if (ChType_Action0(ChType_ActCtrl(e)) == acm) {
 				Logic_Vtbl(ll)->SetIdle(ll, 1);
-				cEntity_AddLink(g_MayorEnt, WChar_ListenNode(e));
+				cEntity_AddLink(g_MayorEnt, &WChar(e)->listen);
 				cLocalLogic *ml = Logic_GetLocalLogic(g_MayorEnt);
 				if (ml) {
 					cMayorLocalLogic_SetListener(ml, e);

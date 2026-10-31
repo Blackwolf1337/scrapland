@@ -115,7 +115,7 @@ static void ExtPolice_Hunt(cAIVehicle *ai, cEntity *usr) {
 }
 
 static void ExtPolice_Relax(cEntity *e, cAIVehicle *ai) {
-	cAIVehicle_SetState(ai, 3, Entity_ArrowCanMission(e) == 0, 5.0, 2.0);
+	cAIVehicle_SetState(ai, 3, WLife(e)->arrow.canMission == 0, 5.0, 2.0);
 }
 
 /* the police taunt when the alarm was on */
@@ -163,7 +163,7 @@ void __fastcall cExtPolice_Think(cExtPolice *self) {
 			}
 		}
 		if (strstr(((cVehicleEntity *)e)->typeName, "Poli")) {
-			cSndItem *siren = PtrArray_Get(Vehicle_Sounds(e), 0x1f);
+			cSndItem *siren = PtrArray_Get(&Veh(e)->wl.obj.snd, 0x1f);
 			if (siren) {
 				if (!alarm && cAIVehicle_GetState(ai) != AIV_STATE_ATTACK) {
 					siren->volume = 0.0f;
@@ -179,9 +179,9 @@ void __fastcall cExtPolice_Think(cExtPolice *self) {
 				if (cAIVehicle_GetState(ai) == AIV_STATE_ATTACK) {
 					PoliceAI_RestoreParams(ai);
 				}
-				Entity_Team(e) = 0;
+				WLife(e)->arrow.tgType = 0;
 			} else {
-				Entity_Team(e) = 3;
+				WLife(e)->arrow.tgType = 3;
 				ExtPolice_Relax(e, ai);
 				g_ExtPoliceChasing = 1;
 				ExtPolice_Taunt(self);

@@ -28,55 +28,17 @@
 /* the fields of the entities with life (ships, characters, missiles) */
 #define Ent_Active(e) (((cEntity *)(e))->active)
 #define Ent_Cam(e) (((cObjEntity *)(e))->cam)		/* the camera entity of a player character */
-#define Ent_Mass(e) (WLife(e)->mass)
-#define Ent_Life(e) (WLife(e)->life)
-#define Ent_God(e) (WLife(e)->god)			/* the life does not change */
-#define Ent_OnDeath(e) (&WLife(e)->onDeath)
-#define Ent_OnDamage(e) (&WLife(e)->onDamage)
-#define Ent_BurnTime(e) (WLife(e)->fireAtt)		/* the burn of the Inferno Napalm */
-#define Ent_BurnRate(e) (WLife(e)->fireDelay)
-#define Ent_BurnLen(e) (WLife(e)->fireRemain)
-#define Ent_Radius(e) (WLife(e)->prim.radius)
-#define Ent_HitSounds(e) (&WLife(e)->hitSounds)	/* the laser hit sounds of an entity with life */
 #define Cam_ShakeTime(c) (((cFollowCamEntity *)(c))->quakeTime)
 #define Cam_Shake(c) (((cFollowCamEntity *)(c))->quakeFactor)
 
 /* the fields of the ships */
 #define Veh_HitInfo(v) ((void *)&WLife(v)->attack)	/* the last entity or point the ship hit */
-#define Veh_Speed(v) (Veh(v)->speed)
-#define Veh_PushTime(v) (Veh(v)->pushTime)		/* the push of the Tesla upgrade 5 against the flight */
-#define Veh_Push(v) (Veh(v)->push)
-#define Veh_EMITime(v) (Veh(v)->emi)			/* the electromagnetic interference of the Hook */
-#define Veh_Weapons(v) (&Veh(v)->weapons)
-#define Veh_CurWeapon(v) (Veh(v)->weapons.curWeap)
-#define Veh_FireTime(v) (Veh(v)->weapons.fireStamp)	/* negative while it reloads */
-#define Veh_FireTime2(v) (Veh(v)->weapons.cmStamp)	/* the Hook and the Sonic */
 #define Veh_Player(v) (Veh(v)->slot)			/* 0..3 for the ship of a local player */
 #define Veh_Aim(v) ((void *)&Veh(v)->autoAim)
-#define Veh_AimLimit(v) (Veh(v)->autoAim.ang)
-#define Veh_AimAng(v) (Veh(v)->autoAim.ax)
-#define Veh_AimAngY(v) (Veh(v)->autoAim.ay)
-#define Veh_TargetLink(v) (&Veh(v)->autoAim.target)	/* the target entity of the ship */
-#define Veh_AimCone(v) (Veh(v)->autoAim.speed)
-#define Veh_AimDist(v) (Veh(v)->autoAim.distLimit)
-#define Veh_AimMode(v) (Veh(v)->autoAim.status)
 #define Veh_Effects(v) ((void *)&Veh(v)->effects)	/* VehicleEffects.cpp: the shoot effects */
-#define Veh_TeslaAng(v) (Veh(v)->autoAim.hiAng)
-#define Veh_TeslaMinAng(v) (Veh(v)->autoAim.loAng)
-#define Veh_TeslaAngSpeed(v) (Veh(v)->autoAim.deltaAng)
 
 /* the fields of the missiles (cMissileEntity) */
-#define Mis_Sounds(m) (&Missile(m)->wl.obj.snd)
 #define Mis_Size(m) ((void *)&Missile(m)->wl.prim)	/* Primitive.cpp: the collision size */
-#define Mis_Speed(m) (Missile(m)->speed)
-#define Mis_Owner(m) (Missile(m)->parent)		/* the name of the ship that shot it */
-#define Mis_Bees(m) (Missile(m)->swarmCount)
-#define Mis_Debris(m) (Missile(m)->swarm)		/* the effect debris of the bees */
-#define Mis_Radius(m) (Missile(m)->topRadius)
-#define Mis_Type(m) (Missile(m)->level)
-#define Mis_FallOut(m) (Missile(m)->fallOut)
-#define Mis_OnBeeHit(m) (&Missile(m)->onBeeDeath)
-#define Mis_OnHit(m) (&Missile(m)->onHit)
 
 /* a field of an effect element of the debris by offset (Vulcan and Laser), until the elements have a struct */
 #define WFIELD(e, type, off) (*(type *)((byte *)(e) + (off)))
@@ -294,7 +256,7 @@ static inline cEntity *Weap_SetAimMode(cAbstractFile *f, int mode) {
 
 	cAbstractFile_ReadString(f, name, 0x80);
 	cEntity *v = Weap_Vehicle(name);
-	Veh_AimMode(v) = mode;
+	Veh(v)->autoAim.status = mode;
 	return v;
 }
 
@@ -353,7 +315,7 @@ static inline void Weap_Norm(vec3_t *out, float x, float y, float z) {
 static inline void Weap_PushAway(cEntity *v, cEntity *e, int n, float force) {
 	vec3_t a, b, d, nd, ov, vel;
 
-	float mass = Ent_Mass(e);
+	float mass = WLife(e)->mass;
 	const vec3_t *pv = v->vftable->GetPos(v, &a);
 	const vec3_t *pe = e->vftable->GetPos(e, &b);
 	d.x = pe->x - pv->x;

@@ -31,7 +31,7 @@ cBaseLocalLogic *__thiscall cBaseLocalLogic_ctor(cBaseLocalLogic *self, cEntity 
 	self->target.prev = &self->target;
 	self->origin = *parent->vftable->GetPos(parent, &tmp);
 	CHECK(!strcmp(parent->vftable->GetClassName(parent), TYEN_WALKCHAR));
-	ang = *WChar_Ang(parent);
+	ang = WChar(parent)->view;
 	vec3_t dir = { 0.0f, 0.0f, -1.0f };
 	self->originAng = *Vec3_Rotate(&out, &dir, &ang);
 	self->state = 0;
@@ -389,19 +389,19 @@ void __thiscall cBaseLocalLogic_Update(cBaseLocalLogic *self, float dt) {
 		self->vftable->SetIdle(self, self->busy);
 	}
 	if ((self->idle || self->alwaysLock) && !self->busy && cActCtrl_IsActive(ChType_ActCtrl(p), "Relax")) {
-		float ax = WChar_Ang(p)->x;
+		float ax = WChar(p)->view.x;
 		if (__builtin_fabs((double)ax) > 0x1.41b2f769cf0e0p-3) {
-			WChar_ControlTurn(p) = WChar_Ang(p)->x / -5.0f;
+			WChar(p)->control.vRot = WChar(p)->view.x / -5.0f;
 		} else {
-			WChar_ControlTurn(p) = 0.0f;
+			WChar(p)->control.vRot = 0.0f;
 		}
 	}
-	if (!*Nto1Node_TargetName(WChar_Link(p))) {
+	if (!*Nto1Node_TargetName(&WChar(p)->collide)) {
 		self->rageTime = 0.0f;
 	} else {
 		self->rageTime = dt + self->rageTime;
 		if (self->rageTime > g_GearRageMaxTime && !g_pWorld->alarm.on) {
-			cEntity *t = World_FindEntity(Nto1Node_TargetName(WChar_Link(p)));
+			cEntity *t = World_FindEntity(Nto1Node_TargetName(&WChar(p)->collide));
 			if (t && t != cWorld_GetUsrEntity(g_pWorld, 0) &&
 				strcmp(ChType_ActClass(ChType_ActCtrl(t))->name, g_NotCleanableByGear)) {
 				cEntity *victim = t;

@@ -24,7 +24,7 @@ static void Vulcan_Shells(cEntity *v) {
 
 	cEntity *player = Ent_Cam(v);
 	for (int i = 0; i < 4; i++) {
-		if (!cTargetLock_HasSlot(Veh_Weapons(v), g_VulcanIDWeap, i)) {
+		if (!cTargetLock_HasSlot(&Veh(v)->weapons, g_VulcanIDWeap, i)) {
 			continue;
 		}
 		const matrix_t *m = CGameModel_NodeMatrix(Obj_Vtbl(v)->GetModel(v), &mtx,
@@ -196,13 +196,13 @@ static void Vul_Puff(CGameParticles *p, float size, double ini, double iniAdd, d
 
 /* the reload of a shot (with ammo): the recoil, the sound times and the delay of the next shot */
 void Vulcan_Shoot(cEntity *v) {
-	cTargetLock *wm = Veh_Weapons(v);
+	cTargetLock *wm = &Veh(v)->weapons;
 	float ammo = cTargetLock_GetAmmo(wm, g_VulcanIDAmmo);
 	if (!(ammo > 0.0f)) {
 		return;
 	}
-	Controls_RumbleA(Vehicle_Controls(v), 0.5f, 0.2f);
-	Controls_RumbleB(Vehicle_Controls(v), 0.35f, 0.2f);
+	Controls_RumbleA(&Veh(v)->controls, 0.5f, 0.2f);
+	Controls_RumbleB(&Veh(v)->controls, 0.35f, 0.2f);
 	if (Veh(v)->weapons.weapSnd == -1) {
 		cWeaponManager_SetWeapSnd(wm, VULCAN_SND_SHOT);
 		cSndItem *s = PtrArray_Get(Ent_Sounds(v), VULCAN_SND_SHOT);
@@ -287,7 +287,7 @@ void Vulcan_CreateNative(cAbstractFile *f) {
 		cEntity *w = World_FindEntity(targetName);
 		CHECK(w);
 		CHECK(Entity_IsType(w, TYEN_WITH_LIFE));
-		float rad = Ent_Radius(w);
+		float rad = WLife(w)->prim.radius;
 		const vec3_t *c = Obj_Vtbl(v)->GetViewPos(v, &tmp);
 		Weap_Norm(&n, c->x - hit.x, c->y - hit.y, c->z - hit.z);
 		float rr = Vul_Rand(0.30000001192092896, 0.30000001192092896);
@@ -417,7 +417,7 @@ target:
 	if (*targetName) {
 		cEntity *t = World_FindEntity(targetName);
 		if (t) {
-			cSndItem *s = PtrArray_Get(Ent_HitSounds(t), crt_rand() % 2);
+			cSndItem *s = PtrArray_Get(&WLife(t)->hitSounds, crt_rand() % 2);
 			if (s) {
 				s->volume = s->vols[0];
 				s->pitch = s->pitches[0];
@@ -445,8 +445,8 @@ void Vulcan_HudNative(cAbstractFile *f) {
 		return;
 	}
 	float delta = Scorer_Get(player)->frameTime;
-	if (Vehicle_Controls(v)->fire &&
-		cWeaponManager_GetUpgrade(Veh_Weapons(v), g_VulcanIDWeap) == VULCAN_UPG_WIDE) {
+	if (Veh(v)->controls.fire &&
+		cWeaponManager_GetUpgrade(&Veh(v)->weapons, g_VulcanIDWeap) == VULCAN_UPG_WIDE) {
 		Cannon_Angle(item) = Cannon_Angle(item) + Scorer_Get(player)->frameTime * 0x1.921fb6p+1f;
 	} else {
 		Weap_HudSpinDown(item, delta * 0x1.921fb6p+3f);
@@ -470,14 +470,14 @@ void Vulcan_FireNative(cAbstractFile *f) {
 	if (g_pApp->flags & APPF_CLIENT) {
 		return;
 	}
-	cTargetLock *wm = Veh_Weapons(v);
+	cTargetLock *wm = &Veh(v)->weapons;
 	int n = cWeaponManager_NumSlots(wm, g_VulcanIDWeap, 1);
 	if (!n) {
 		return;
 	}
 	target = NULL;
-	ang.x = Veh_AimAng(v);
-	ang.y = Veh_AimAngY(v);
+	ang.x = Veh(v)->autoAim.ax;
+	ang.y = Veh(v)->autoAim.ay;
 	ang.z = 0.0f;
 	dist = g_VulcanRange;
 	v->vftable->GetTargetAngle(v, &ang.x, dist, &target);
@@ -491,8 +491,8 @@ void Vulcan_FireNative(cAbstractFile *f) {
 	}
 	if (isLife) {
 		int damage = v->vftable->GetAI(v) && World_IsEasySingle() ? g_VulcanDamageEasy : g_VulcanDamage;
-		if (!Ent_God(target)) {
-			Ent_Life(target) -= damage * n;
+		if (!WLife(target)->god) {
+			WLife(target)->life -= damage * n;
 		}
 		if (!isCar) {
 			Vulcan_Push(v, target, n);
@@ -534,25 +534,25 @@ void Vulcan_AimOffNative(cAbstractFile *f) {
 
 /* the aim help of the Vulcan: wider with the upgrade 2 and for a pad with VehicleCenterPadLock */
 void Vulcan_AimOn(cEntity *v) {
-	Veh_AimMode(v) = 1;
+	Veh(v)->autoAim.status = 1;
 	if (g_VehicleCenterPadLock != 0.0f && cVehicleEntity_GetOwnerSlot(v) != -1) {
-		if (cWeaponManager_GetUpgrade(Veh_Weapons(v), g_VulcanIDWeap) == VULCAN_UPG_WIDE) {
-			Veh_AimCone(v) = 0x1.9b0f58p+0f;
+		if (cWeaponManager_GetUpgrade(&Veh(v)->weapons, g_VulcanIDWeap) == VULCAN_UPG_WIDE) {
+			Veh(v)->autoAim.speed = 0x1.9b0f58p+0f;
 			cAutoAim_SetAngle(Veh_Aim(v), 0x1.893012p-2f);
 		} else {
-			Veh_AimCone(v) = 0x1.226c3cp+0f;
+			Veh(v)->autoAim.speed = 0x1.226c3cp+0f;
 			cAutoAim_SetAngle(Veh_Aim(v), 0x1.657184p-2f);
 		}
-		Veh_AimDist(v) = g_VulcanDistLimitUPG;
+		Veh(v)->autoAim.distLimit = g_VulcanDistLimitUPG;
 		return;
 	}
-	if (cWeaponManager_GetUpgrade(Veh_Weapons(v), g_VulcanIDWeap) == VULCAN_UPG_WIDE) {
-		Veh_AimCone(v) = 0x1.80406ep+0f;
+	if (cWeaponManager_GetUpgrade(&Veh(v)->weapons, g_VulcanIDWeap) == VULCAN_UPG_WIDE) {
+		Veh(v)->autoAim.speed = 0x1.80406ep+0f;
 		cAutoAim_SetAngle(Veh_Aim(v), 0x1.41b2f8p-2f);
-		Veh_AimDist(v) = g_VulcanDistLimitUPG;
+		Veh(v)->autoAim.distLimit = g_VulcanDistLimitUPG;
 		return;
 	}
-	Veh_AimCone(v) = 0x1.80406ep-1f;
+	Veh(v)->autoAim.speed = 0x1.80406ep-1f;
 	cAutoAim_SetAngle(Veh_Aim(v), 0x1.f46bbap-3f);
-	Veh_AimDist(v) = g_VulcanDistLimit;
+	Veh(v)->autoAim.distLimit = g_VulcanDistLimit;
 }

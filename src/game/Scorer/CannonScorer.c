@@ -8,8 +8,6 @@
 #include "scrap/weapons.h"
 
 /* the lock of the target of a ship: on, and the time of the lock (0 while searching) */
-#define Vehicle_LockOn(e) (Veh(e)->controls.follow)
-#define Vehicle_LockTime(e) (Veh(e)->controls.attackTime)
 
 cCannonScorer *__fastcall cCannonScorer_ctor(cCannonScorer *self) {
 	cScorerItem_ctor(&self->base);
@@ -112,7 +110,7 @@ void __thiscall cCannonScorer_DrawShipAim(cCannonScorer *self, int player, cEnti
 	float screen[2];
 	byte shown;
 
-	cAutoAim_GetAimPos(Vehicle_AutoAim(ship), &aim, ship);
+	cAutoAim_GetAimPos(&Veh(ship)->autoAim, &aim, ship);
 	if (!Engine_WorldToScreen(&aim, screen, NULL)) {
 		return;
 	}
@@ -122,7 +120,7 @@ void __thiscall cCannonScorer_DrawShipAim(cCannonScorer *self, int player, cEnti
 			screen[1] += 240.0f;
 		}
 	}
-	cWeaponManager *wm = Vehicle_WeapMgr(ship);
+	cWeaponManager *wm = &Veh(ship)->weapons;
 	if (!(byte)cWeaponManager_HasMinAmmo(wm, wm->curWeap)
 		&& !((int)(Timer_GetTime(&g_pWorld->timer) * 10.0f) & 1)) {
 		/* without ammo the aim blinks */
@@ -130,7 +128,7 @@ void __thiscall cCannonScorer_DrawShipAim(cCannonScorer *self, int player, cEnti
 	} else {
 		int w = wm->curWeap;
 		shown = 1;
-		uint32_t color = w == Controls_GetWeapon(Vehicle_Controls(ship)) ? self->color : 0xc0ffffff;
+		uint32_t color = w == Controls_GetWeapon(&Veh(ship)->controls) ? self->color : 0xc0ffffff;
 		cCannonScorer_DrawAim(self, w, screen, self->size, &self->base.w, self->angle, color);
 	}
 	if (self->shown && !shown) {
@@ -166,7 +164,7 @@ void __thiscall cCannonScorer_DrawCenter(cCannonScorer *self, int player, cEntit
 	CPsaImage_DrawPoly(self->img, corners, uv, 0, 4, 6);
 	((void(__thiscall *)(cCannonScorer *, int, const float *))self->base.vftable->vf04)(self, player,
 		&self->img->x);
-	if (Entity_LifeI(ship) * 100 / Veh(ship)->maxLife < g_WarningLifeLevel) {
+	if (WLife(ship)->life * 100 / Veh(ship)->maxLife < g_WarningLifeLevel) {
 		cScorer *sc = Scorer_Get(player);
 		int v = Scorer_Abs((int)(sc->time * 1024.0f) % 511 - 255);
 		CFont_PrintfAlignColor(g_FontHoratioSmall, self->img->x, self->img->y - 50.0f, TEXTSCORER_CENTER,
@@ -218,7 +216,7 @@ void __thiscall cCannonScorer_Draw(cCannonScorer *self, int player) {
 	}
 	cCannonScorer_DrawCenter(self, player, ship);
 	if (!WithLife_Vtbl(ship)->IsEMIed(ship)) {
-		cPy_Function *f = &TABLE_AT(g_pWorld->weapons, Vehicle_WeapMgr(ship)->curWeap)->setFx;
+		cPy_Function *f = &TABLE_AT(g_pWorld->weapons, Veh(ship)->weapons.curWeap)->setFx;
 		cPy_Function_AddParamS(f, ship->name);
 		cPy_Function_AddParamI(f, player);
 		cPy_Function_AddParamS(f, self->base.name);
@@ -236,10 +234,10 @@ void __thiscall cCannonScorer_DrawLock(cCannonScorer *self, int player, const fl
 	(void)self;
 	CHECK(!e || e->vftable->IsType(e, TYEN_WITH_LIFE));
 	e = g_pWorld->owners[player];
-	if (!e || !e->vftable->IsType(e, TYEN_CAR) || !Vehicle_LockOn(e)) {
+	if (!e || !e->vftable->IsType(e, TYEN_CAR) || !Veh(e)->controls.follow) {
 		return;
 	}
-	float t = Vehicle_LockTime(e);
+	float t = Veh(e)->controls.attackTime;
 	if (t == 0.0f) {
 		text = "Searching...";
 		v = Scorer_Abs((int)(Scorer_Get(player)->time * 1024.0f) % 511 - 255);

@@ -1345,7 +1345,7 @@ static void GM_NewBolt(cObjElementFXGearMissile *self, int i, const vec3_t *pos,
 		hit.y = c->y + oy;
 		hit.z = c->z + oz;
 		if (found->vftable->IsType(found, "WithLife")) {
-			if (Entity_LifeI(found) <= 0) {
+			if (WLife(found)->life <= 0) {
 				kind = 0;
 			} else if (0.4f > self->time && self->entity &&
 				!strcmp(((cMissileEntity *)self->entity)->parent, found->name)) {
@@ -2251,7 +2251,7 @@ void __thiscall cObjElementFXPoliceGearConversion_Update(cObjElementFXPoliceGear
 		/* new bubbles on a ring around the waist */
 		while (self->count < FXGEAR_BUBBLES) {
 			float r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
-			float hh = Entity_F45C(self->ent);
+			float hh = WChar(self->ent)->floorDist;
 			float a1 = FXA_Rand(6.2831854820251465, -3.1415927410125732);
 			ang.x = FXA_Rand(6.2831854820251465, -3.1415927410125732);
 			ang.y = 0.0f;
@@ -2551,7 +2551,7 @@ void __thiscall cObjElementFXPoliceGearConversion_Start(cObjElementFXPoliceGearC
 	if (!CGameModel_IsVisible(m)) {
 		return;
 	}
-	float h = Entity_F45C(self->ent);
+	float h = WChar(self->ent)->floorDist;
 	const vec3_t *c = Obj_Vtbl(self->ent)->GetViewPos(self->ent, &t);
 	base.x = (c->x - 0.0f) + 0.0f;
 	base.y = (c->y - h) + 15.0f;
@@ -3346,7 +3346,7 @@ void __thiscall cObjElementFXFunctionarySpecialAction_Update(cObjElementFXFuncti
 	float delta = FXA_Delta();
 	self->time = self->time + delta;
 	self->emitTime = self->emitTime + delta;
-	if (Entity_LifeI(self->ent) <= 0) {
+	if (WLife(self->ent)->life <= 0) {
 		if (Debris_Life(d) > 0.4f) {
 			Debris_Life(d) = 0.4f;
 		}

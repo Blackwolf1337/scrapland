@@ -289,7 +289,7 @@ void ChType_NurseHit(void) {
 					float dx = hit.x - tp->x;
 					float dz = hit.z - tp->z;
 					float dist = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
-					if (!(dist - Ent_Primitive(g_NurseTarget)->radius > g_NurseDispRad)) {
+					if (!(dist - WLife(g_NurseTarget)->prim.radius > g_NurseDispRad)) {
 						goto found;
 					}
 				}
@@ -309,9 +309,9 @@ found:
 	d.y = vp->y - tp->y;
 	d.z = vp->z - tp->z;
 	Vec3_GetRotAng(&r, &d);
-	vec3_t a = *WChar_Ang(v);
-	WChar_DisplAng(v) = NormAng(r.y - a.y);
-	WChar_DisplOn(v) = 1;
+	vec3_t a = WChar(v)->view;
+	WChar(v)->displAng = NormAng(r.y - a.y);
+	WChar(v)->disableControl = 1;
 	const char *cls = ChType_ActClass(ChType_ActCtrl(g_NurseTarget))->name;
 	const char *act = cActCtrl_GetActionName(ChType_ActCtrl(g_NurseTarget), 0);
 	if (usr && crt_strncmp(act, "Dazed", 5)) {
@@ -332,7 +332,7 @@ found:
 	}
 	if (!strcmp(cls, "Gear")) {
 		cActCtrl_Play(ChType_ActCtrl(v), "ActionBlock", 0, 1.0f);
-		if (WChar_Cam(v)) {
+		if (WChar(v)->wl.obj.cam) {
 			cPad_Rumble(&g_Pads[0], 1.0f, 0.0f, 0.25f);
 		}
 		return;
@@ -342,13 +342,13 @@ found:
 		cActCtrl_SetDefLoop(ChType_ActCtrl(g_NurseTarget), "Relax", 1);
 		cActCtrl_Play(ChType_ActCtrl(g_NurseTarget), "BlockHit", 1, 1.0f);
 		cWalkCharEntity_SetViewFrom(g_NurseTarget, v->vftable->GetPos(v, &t3));
-		if (WChar_Cam(v)) {
+		if (WChar(v)->wl.obj.cam) {
 			cPad_Rumble(&g_Pads[0], 0.75f, 0.5f, 0.25f);
 		}
 		return;
 	}
 	cActCtrl_Play(ChType_ActCtrl(v), "ActionOK", 0, 1.0f);
-	if (WChar_Cam(v)) {
+	if (WChar(v)->wl.obj.cam) {
 		cPad_Rumble(&g_Pads[0], 0.75f, 1.0f, 0.25f);
 	}
 	if (!strcmp(act, "Dazed")) {
@@ -361,8 +361,8 @@ found:
 			SaveVar_Inc("Stats.Nurse.Kill", 1);
 			SaveVar_Inc("Stats.Killer", 1);
 		}
-		if (!WChar_God(g_NurseTarget)) {
-			WChar_Life(g_NurseTarget) = 0;
+		if (!WChar(g_NurseTarget)->wl.god) {
+			WChar(g_NurseTarget)->wl.life = 0;
 		}
 		return;
 	}
@@ -403,7 +403,7 @@ void ChType_NurseBackHitControl(cAbstractFile *params) {
 
 	ChType_ReadParams(params, name, event);
 	cEntity *v = ChType_CheckChar(name);
-	WChar_DisplOn(v) = 0;
+	WChar(v)->disableControl = 0;
 }
 
 /* params: the nurse, an event, a float: the hammer effect and a shake of the camera */
@@ -412,9 +412,9 @@ void ChType_NurseDoHammerHit(cAbstractFile *params) {
 
 	ChType_ReadParams(params, name, event);
 	cEntity *v = ChType_CheckChar(name);
-	WChar_DisplOn(v) = 0;
+	WChar(v)->disableControl = 0;
 	Nurse_HammerFX(v);
-	cFollowCamEntity *cam = (cFollowCamEntity *)WChar_Cam(v);
+	cFollowCamEntity *cam = (cFollowCamEntity *)WChar(v)->wl.obj.cam;
 	if (cam) {
 		cam->quakeFactor = 0.05235987901687622f;
 		cam->quakeTime = 0.200000003f;
@@ -431,7 +431,7 @@ void ChType_NurseInitHammerLoop(cAbstractFile *params) {
 	params->vftable->Read(params, &unused, 4);
 	cEntity *v = ChType_CheckChar(g_NurseName);
 	cActCtrl_Play(ChType_ActCtrl(v), "ActionLoop", 0, 1.0f);
-	if (!WChar_ActionPress(v)) {
+	if (!WChar(v)->control.act) {
 		ChType_NurseHit();
 	}
 }
@@ -445,7 +445,7 @@ void ChType_NurseTryHammerAgain(cAbstractFile *params) {
 	cAbstractFile_ReadString(params, event, 0x80);
 	params->vftable->Read(params, &unused, 4);
 	cEntity *v = ChType_CheckChar(g_NurseName);
-	if (WChar_ActionPress(v)) {
+	if (WChar(v)->control.act) {
 		cActCtrl_Play(ChType_ActCtrl(v), "ActionInit", 1, 1.0f);
 	}
 }

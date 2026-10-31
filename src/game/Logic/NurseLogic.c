@@ -106,7 +106,7 @@ void __thiscall cNurseLocalLogic_Update(cNurseLocalLogic *self, float dt) {
 	cEntity *p = b->parent;
 
 	cBaseLocalLogic_Update(b, dt);
-	WChar_B381(b->parent) = !b->busy && !g_pWorld->alarm.on && b->state != 3 && b->state != 2;
+	WChar(b->parent)->wl.arrow.canUse = !b->busy && !g_pWorld->alarm.on && b->state != 3 && b->state != 2;
 	if (b->busy) {
 		return;
 	}
@@ -137,7 +137,7 @@ void __thiscall cNurseLocalLogic_Update(cNurseLocalLogic *self, float dt) {
 			cNurseLocalLogic_Relax(self);
 			return;
 		}
-		if (!*Nto1Node_TargetName(WChar_Link(p))) {
+		if (!*Nto1Node_TargetName(&WChar(p)->collide)) {
 			if (!cActCtrl_IsActive(ChType_ActCtrl(b->target.target), "Dazed")) {
 				cNurseLocalLogic_Relax(self);
 			}
@@ -205,7 +205,7 @@ byte __thiscall cNurseLocalLogic_SetState(cNurseLocalLogic *self, int state, cEn
 	cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 
 	if (ok) {
-		WChar_B381(b->parent) = !b->busy && !g_pWorld->alarm.on && b->state != 3 && b->state != 2;
+		WChar(b->parent)->wl.arrow.canUse = !b->busy && !g_pWorld->alarm.on && b->state != 3 && b->state != 2;
 	}
 	switch (b->state) {
 	case 0:

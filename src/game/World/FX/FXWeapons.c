@@ -302,7 +302,7 @@ void __thiscall cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debri
 	CGameModel_SetPos(dm, &cam);
 	int up = 0;
 	if (self->shooter) {
-		up = cWeaponManager_GetUpgrade(Vehicle_WeapMgr(self->shooter), g_ATPCIDWeap);
+		up = cWeaponManager_GetUpgrade(&Veh(self->shooter)->weapons, g_ATPCIDWeap);
 	}
 	float u = self->time / g_ATPCTrailTime;
 	float s1 = FXW_Smooth(u);
@@ -542,7 +542,7 @@ void __thiscall cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, con
 	CHECK(CGameModel_IsLoaded(model));
 	self->numSlots = 0;
 	for (int i = 0; i < FXATPC_SLOTS; i++) {
-		if (cTargetLock_HasSlot(Entity_TargetLock(self->shooter), g_ATPCIDWeap, i)) {
+		if (cTargetLock_HasSlot(&Veh(self->shooter)->weapons, g_ATPCIDWeap, i)) {
 			const matrix_t *m = CGameModel_NodeMatrix(model, &mat,
 				(uint32_t)Veh(self->shooter)->weapons.nodes[g_ATPCIDAmmo][i], 0, NULL, 0);
 			self->numSlots++;
@@ -1434,8 +1434,6 @@ void __thiscall cObjElementFXSwarmMissile_Reset(cObjElementFXSwarmMissile *self,
 #define g_FXTeslaStepTime GAME_GLOBAL_IN(float, GVar_FXTeslaStepTime, 16, 0x44a760)
 #define g_FXTeslaRandRadius GAME_GLOBAL_IN(float, GVar_FXTeslaRandRadius, 16, 0x44a840)
 #define FXTESLA_RAMP_SPARK 0x431930		/* [2] */
-#define Entity_HitInfo(e) (&WLife(e)->attack)
-#define Entity_F3a0(e) (WLife(e)->prim.radius)
 
 /* the end moved back from the target towards the emitter by 0.2..0.5 of r along n */
 static void FXW_TeslaBack(vec3_t *tpos, const vec3_t *n, float r) {
@@ -1451,7 +1449,7 @@ void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *deb
 	(void)dt;
 	cEntity *e = self->emitter;
 	if (e && (Entity_Removed(e) || !e->active)) {
-		cWeaponManager_SetFlag46(Vehicle_WeapMgr(e), 0);
+		cWeaponManager_SetFlag46(&Veh(e)->weapons, 0);
 		self->emitter = NULL;
 	}
 	if (!self->emitter) {
@@ -1464,7 +1462,7 @@ void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *deb
 	float d = FXW_Delta();
 	e = self->emitter;
 	self->time = d + self->time;
-	if (!Entity_B636(e)) {
+	if (!Veh(e)->weapons.teslaFiring) {
 		self->shooting = 0;
 	}
 	CGameModel_SetSortZ(dm, -33.0f, 0.0f);
@@ -1480,9 +1478,9 @@ void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *deb
 	}
 
 	/* the target of the hit info of the emitter */
-	if (*cHitInfo_GetName(Entity_HitInfo(self->emitter))) {
-		if (strcmp(self->name, cHitInfo_GetName(Entity_HitInfo(self->emitter))) != 0) {
-			Str_Copy(self->name, cHitInfo_GetName(Entity_HitInfo(self->emitter)), sizeof(self->name));
+	if (*cHitInfo_GetName(&WLife(self->emitter)->attack)) {
+		if (strcmp(self->name, cHitInfo_GetName(&WLife(self->emitter)->attack)) != 0) {
+			Str_Copy(self->name, cHitInfo_GetName(&WLife(self->emitter)->attack), sizeof(self->name));
 			HashNode *node = NULL;
 			if (self->name[0]) {
 				HashTable *ht = &g_pWorld->entities;
@@ -1505,7 +1503,7 @@ void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *deb
 	vec3_t *tp = &self->tpos;
 	if (self->target) {
 		*tp = *Obj_Vtbl(self->target)->GetViewPos(self->target, &tmp);
-		float r = Entity_F3a0(self->target);
+		float r = WLife(self->target)->prim.radius;
 		const vec3_t *ec = Obj_Vtbl(self->emitter)->GetViewPos(self->emitter, &tmp);
 		vec3_t n;
 		FX_Normalize(&n, ec->x - tp->x, ec->y - tp->y, ec->z - tp->z);
@@ -1521,7 +1519,7 @@ void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *deb
 		e->vftable->GetTargetAngle(e, &ang.x, range, &hit);
 		if (hit && hit->vftable->IsType(hit, TYEN_CAR)) {
 			*tp = *Obj_Vtbl(hit)->GetViewPos(hit, &tmp);
-			float r = Entity_F3a0(hit);
+			float r = WLife(hit)->prim.radius;
 			const vec3_t *ec = Obj_Vtbl(self->emitter)->GetViewPos(self->emitter, &tmp);
 			vec3_t dv, n;
 			dv.x = ec->x - tp->x;
@@ -1803,8 +1801,8 @@ byte __thiscall cObjElementFXTesla_IsAlive(cObjElementFXTesla *self, cDebris *de
 		return 0;
 	}
 	/* the fade starts when the emitter stops shooting the Tesla (or has no ammo left) */
-	if (!self->shooting || !Entity_B636(e) || !Entity_Fire(e) || Entity_CurWeapon(e) != g_TeslaIDWeap
-		|| 0.0f >= cTargetLock_GetAmmo(Entity_TargetLock(e), g_TeslaIDAmmo)) {
+	if (!self->shooting || !Veh(e)->weapons.teslaFiring || !Veh(e)->controls.fire ||
+		Veh(e)->weapons.curWeap != g_TeslaIDWeap || 0.0f >= cTargetLock_GetAmmo(&Veh(e)->weapons, g_TeslaIDAmmo)) {
 		self->shooting = 0;
 		if (0.0f > self->fadeStart) {
 			self->fadeStart = self->time;
@@ -1870,7 +1868,7 @@ void __thiscall cObjElementFXTesla_SetEmitter(cObjElementFXTesla *self, cEntity 
 	CHECK(CGameModel_IsLoaded(Obj_Vtbl(self->emitter)->GetModel(self->emitter)));
 	self->numSlots = 0;
 	for (int i = 0; i < FXTESLA_SLOTS; i++) {
-		if (cTargetLock_HasSlot(Entity_TargetLock(self->emitter), g_TeslaIDWeap, i)) {
+		if (cTargetLock_HasSlot(&Veh(self->emitter)->weapons, g_TeslaIDWeap, i)) {
 			self->numSlots++;
 			self->slotOn[i] = 1;
 		} else {

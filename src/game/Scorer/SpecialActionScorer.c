@@ -360,7 +360,7 @@ void __thiscall SpecialAction_DrawDefault(cSpecialActionScorer *self, int player
 	if (!e) {
 		return;
 	}
-	if (0.9f > 1.0f - WChar_EnergyUsed(e)) {
+	if (0.9f > 1.0f - WChar(e)->energyUsed) {
 		state = 0;
 	} else {
 		state = SpecialAction_IsActive(e, TYEN_ACTION) ? 2 : 1;
@@ -388,7 +388,7 @@ void __thiscall SpecialAction_DrawBanker(cSpecialActionScorer *self, int player)
 	self->sprite->color = self->batteryColor;
 	Menu_DrawStretch(self->sprite, 0x22, self->base.x + self->textOffX - 4.0f, self->base.y + self->textOffY + 1.0f,
 		60.0f, 1.0f);
-	crt_ltoa(WChar_Money(v), buf, 10);
+	crt_ltoa(WChar(v)->money, buf, 10);
 	CFont_PrintfAlignColor(self->textFont, self->base.x + self->textOffX, self->base.y + self->textOffY,
 		TEXTSCORER_LEFT, self->textColor, buf);
 }
@@ -467,7 +467,7 @@ void __thiscall SpecialAction_DrawLowEnergy(cSpecialActionScorer *self, int play
 	if (!e) {
 		return;
 	}
-	if (g_GearLowWeaponEnergy > 1.0f - WChar_EnergyUsed(e)) {
+	if (g_GearLowWeaponEnergy > 1.0f - WChar(e)->energyUsed) {
 		state = 0;
 	} else if (SpecialAction_IsActive(e, TYEN_ACTION) || SpecialAction_IsActive(e, TYEN_ACTIONINIT)
 		|| SpecialAction_IsActive(e, TYEN_ACTIONEND)) {
@@ -487,7 +487,7 @@ void __thiscall SpecialAction_DrawFunctionary(cSpecialActionScorer *self, int pl
 	if (!e) {
 		return;
 	}
-	if (g_FunctionarySpecialActionLow > 1.0f - WChar_EnergyUsed(e)) {
+	if (g_FunctionarySpecialActionLow > 1.0f - WChar(e)->energyUsed) {
 		state = 0;
 	} else {
 		state = WChar(e)->energyTime == 0.0f ? 1 : 2;
@@ -503,7 +503,7 @@ void __thiscall SpecialAction_DrawEnergyOnly(cSpecialActionScorer *self, int pla
 	if (!e) {
 		return;
 	}
-	cSpecialActionScorer_DrawIcon(self, player, !(0.9f > 1.0f - WChar_EnergyUsed(e)));
+	cSpecialActionScorer_DrawIcon(self, player, !(0.9f > 1.0f - WChar(e)->energyUsed));
 	cSpecialActionScorer_DrawEnergy(self);
 }
 

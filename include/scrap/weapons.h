@@ -28,29 +28,9 @@ typedef cTargetLock cWeaponManager;
 #define TYEN_VEHICLE "Car"			/* the string at rva 0x3a77b8 */
 
 /* the fields of the vehicles (cVehicleEntity) and other entities the weapons use */
-#define Vehicle_Sounds(e) (&Veh(e)->wl.obj.snd)		/* the weapon sounds by index */
 #define Entity_FollowCam(e) ((cFollowCamEntity *)((cObjEntity *)(e))->cam)	/* of a player, NULL else */
-#define Entity_Mass(e) (WLife(e)->mass)
-#define Entity_LifeI(e) (WLife(e)->life)
-#define Entity_God(e) (WLife(e)->god)			/* no damage */
-#define Vehicle_Attack(e) (&WLife(e)->attack)
-#define Entity_Radius(e) (WLife(e)->prim.radius)
-#define Vehicle_NetSlot(e) (Veh(e)->slot)		/* 0..3 on a net client */
-#define Vehicle_Controls(e) (&Veh(e)->controls)
-#define Vehicle_NetCtrl(e) (Veh(e)->netCtrl)		/* the server side controller of a player ship */
-#define Missile_SwarmCount(e) (Missile(e)->swarmCount)
-#define Vehicle_EMITime(e) (Veh(e)->emi)
-#define Vehicle_CloudTime(e) (Veh(e)->cloud)		/* set by cVehicleEntity_SetCloud */
-#define Missile_SwarmSpeed(e) (Missile(e)->swarmSpeed)
-#define Missile_Radius(e) (Missile(e)->radius)		/* the EMI */
-#define Vehicle_WeapMgr(e) (&Veh(e)->weapons)
-#define Vehicle_CanFire(e) (Veh(e)->isInit)
-#define Vehicle_AutoAim(e) (&Veh(e)->autoAim)
 #define Vehicle_AimTarget(e) ((cEntity *)Veh(e)->autoAim.target.target)
-#define Vehicle_AimRange(e) (Veh(e)->autoAim.distLimit)
-#define Vehicle_AimMode(e) (Veh(e)->autoAim.status)	/* 1 Devastator, 4 ATPC, 0 off */
 #define Vehicle_Effects(e) ((void *)&Veh(e)->effects)	/* Entities/Vehicle/VehicleEffects.cpp */
-#define Missile_OnHit(e) (&Missile(e)->onHit)
 
 
 /* the debris cloud on a vehicle for time (rva 0x10a150) */
@@ -260,7 +240,7 @@ void Inferno_ClientFireNet(cAbstractFile *params);
 
 /* the start sound of the weapon sound i of the vehicle (inlined in the original) */
 static inline void Vehicle_StartSnd(cEntity *e, int i) {
-	cSndItem *it = PtrArray_Get(Vehicle_Sounds(e), i);
+	cSndItem *it = PtrArray_Get(&Veh(e)->wl.obj.snd, i);
 	if (it) {
 		it->volume = it->vols[0];
 		it->pitch = it->pitches[0];

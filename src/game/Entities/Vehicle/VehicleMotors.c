@@ -82,7 +82,7 @@ typedef struct VMUpdate {
 static void VM_UpdateEffects(cVehicleMotors *self, cVehicleMotorsEffects *eff, VMUpdate *u) {
 	vec3_t a, c;
 
-	if (!eff->on || VM_Hidden(self->owner)) {
+	if (!eff->on || Veh(self->owner)->rendering) {
 		return;
 	}
 	if (u->visible || self->lastVisible) {
@@ -110,7 +110,7 @@ static void VM_UpdateEffects(cVehicleMotors *self, cVehicleMotorsEffects *eff, V
 		cVehicleMotorsEffects_HideTrails(eff);
 		return;
 	}
-	vec3_t vel = VM_LocalVel(self->owner);
+	vec3_t vel = Veh(self->owner)->localVel;
 	vec3_t *pa = Obj_Vtbl(self->owner)->GetViewAng(self->owner, &a);
 	vec3_t *pc = Obj_Vtbl(self->owner)->GetViewPos(self->owner, &c);
 	uint32_t color = cArrowIndicator_GetColor((cArrowIndicator *)VM_Team(self->owner));
@@ -164,17 +164,17 @@ void __fastcall cVehicleMotors_Update(cVehicleMotors *self) {
 	int i, j;
 
 	u.dt = cTimer_GetDelta(VM_Timer(owner));
-	float a = VM_Thrust(owner);
-	float s = VM_SmoothSpeed(owner) + VM_SmoothSpeed(owner);
-	u.speed = Vehicle_Speed(owner);
+	float a = Veh(owner)->smoothThrust;
+	float s = Veh(owner)->smoothSpeed + Veh(owner)->smoothSpeed;
+	u.speed = Veh(owner)->active;
 	float f = a > 0.0f ? a * 2.0f + 1.0f : 1.0f - a;
 	float animStep = (s / 28000.0f + f) * (u.speed * u.dt) * 0.25f;
-	float animF = VM_Thrust(owner);
+	float animF = Veh(owner)->smoothThrust;
 	if (0.0f > animF) {
 		animF = animF + animF;
 	}
 	u.player = Vehicle_Player(owner);
-	u.cloud = Vehicle_CloudTime(owner) > 0.0f;
+	u.cloud = Veh(owner)->cloud > 0.0f;
 	CHECK(Veh_FX(Veh(owner)));
 	cEmbeddedFXVehicle *fx = Veh_FX(Veh(self->owner));
 	u.glowPs = &fx->follow;
@@ -208,13 +208,13 @@ void __fastcall cVehicleMotors_Update(cVehicleMotors *self) {
 		}
 	}
 	owner = self->owner;
-	float th = VM_Thrust(owner);
+	float th = Veh(owner)->smoothThrust;
 	u.thrust = 0.0f > th ? th * 0.5f : Float_MinSS(1.0f, th);
-	u.k4c8 = VM_Shake(owner);
+	u.k4c8 = Veh(owner)->shake;
 	if (u.k4c8 > 1.0f) {
 		u.k4c8 = 1.0f;
 	}
-	u.k4bc = VM_InAtmosphere(owner);
+	u.k4bc = Veh(owner)->inAtmosphere;
 	u.first = 0;
 	u.smokePs = NULL;
 	if (u.speed > 0.0f && u.cloud) {
@@ -263,8 +263,8 @@ void __fastcall cVehicleMotors_Update(cVehicleMotors *self) {
 		VM_Haze(self, &u);
 	}
 	owner = self->owner;
-	if (VM_Thrust(owner) == 0.0f && VM_Boost(owner) / VM_BoostTime(owner) == 0.0f && Vehicle_Speed(owner) == 0.0f &&
-		!u.cloud && self->lastVisible) {
+	if (Veh(owner)->smoothThrust == 0.0f && Veh(owner)->boost / Veh(owner)->boostTime == 0.0f &&
+		Veh(owner)->active == 0.0f && !u.cloud && self->lastVisible) {
 		self->stopped = 1;
 	} else {
 		self->stopped = 0;
@@ -813,7 +813,7 @@ void __fastcall cVehicleMotorsEffects_Stop(cVehicleMotorsEffects *self) {
 		if (!self->trail[i]) {
 			continue;
 		}
-		if (CGameTrail_IsRender(self->trail[i]) && self->owner && Vehicle_Life(self->owner) <= 0) {
+		if (CGameTrail_IsRender(self->trail[i]) && self->owner && Veh(self->owner)->wl.life <= 0) {
 			cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, g_FXVehicleDeathTrailFile);
 			cDebris *d = cDebrisSys_NewElement(sys);
 			d->speed = 1.0f;

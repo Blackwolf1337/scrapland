@@ -55,13 +55,14 @@ void __thiscall cGenCharLocalLogic_UpdateView(cGenCharLocalLogic *self) {
 
 	if (usr && usr->vftable->IsType(usr, TYEN_WALKCHAR) && Logic_IsSuspectType(type) &&
 		!strcmp(type, Logic_TypeName(usr))) {
-		WChar_B381(p) = 0;
+		WChar(p)->wl.arrow.canUse = 0;
 	} else {
 		int st = b->state;
-		WChar_B381(p) = !b->busy && !g_pWorld->alarm.on && st != 4 && st != 3 && st != 5 && st != 10;
+		WChar(p)->wl.arrow.canUse = !b->busy && !g_pWorld->alarm.on && st != 4 && st != 3 && st != 5 &&
+			st != 10;
 	}
-	WChar_ConeStatus(p) = 0;
-	Entity_Team(p) = 3;
+	WLife(p)->arrow.coneStatus = 0;
+	WLife(p)->arrow.tgType = 3;
 }
 
 /* e can discover the player: it has the action Discover, Berto and Betty only when the player is not of the type
@@ -195,10 +196,10 @@ void __thiscall cGenCharLocalLogic_Update(cGenCharLocalLogic *self, float dt) {
 	byte same = !strcmp(type, usrType) && suspect;
 	cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 	if (suspect && !Alarm_IsLocked(&g_pWorld->alarm)) {
-		WChar_ConeFov(p) = g_GenCharStdFovY;
-		WChar_ConeDist(p) = g_GenCharStdFar;
-		WChar_ConeStatus(p) = same ? 2 : 0;
-		Entity_Team(p) = same ? (g_pWorld->alarm.on ? 0 : 2) : 3;
+		WLife(p)->arrow.coneFov = g_GenCharStdFovY;
+		WLife(p)->arrow.coneDist = g_GenCharStdFar;
+		WLife(p)->arrow.coneStatus = same ? 2 : 0;
+		WLife(p)->arrow.tgType = same ? (g_pWorld->alarm.on ? 0 : 2) : 3;
 	}
 	int st = b->state;
 	if (st != GENCHAR_ACCUSE && seen && discover) {
@@ -363,7 +364,7 @@ void __fastcall cGenCharLocalLogic_ResetSpecial(cGenCharLocalLogic *self) {
 void __fastcall cGenCharLocalLogic_Discover(cGenCharLocalLogic *self) {
 	cEntity *p = self->base.parent;
 
-	if (WChar_ControlF4f8(p) == 0.0f && WChar_ControlF4fc(p) == 0.0f &&
+	if (WChar(p)->control.walk == 0.0f && WChar(p)->control.strafe == 0.0f &&
 		!cActCtrl_IsActive(ChType_ActCtrl(p), "Discover")) {
 		cActCtrl_PlayNew(ChType_ActCtrl(p), "DiscoverInit", 0, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(p), "Discover", 0);

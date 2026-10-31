@@ -1893,7 +1893,7 @@ void __thiscall cObjElementFXVehicleDamage_Update(cObjElementFXVehicleDamage *se
 	CHECK(FXV_Veh(self->entity)->wl.obj.fx);
 	cEmbeddedFXVehicle *efx = Veh_FX(FXV_Veh(self->entity));
 	byte followed = efx->followed;
-	if (followed && Vehicle_Life(self->entity) > 0) {
+	if (followed && Veh(self->entity)->wl.life > 0) {
 		cEmbeddedFXVehicle_SetAttached(efx, self);
 	}
 	X87_SinCos(-rot.x, &sn.x, &c.x);
@@ -2821,10 +2821,10 @@ byte __thiscall cObjElementFXVehicleDamage_IsAlive(cObjElementFXVehicleDamage *s
 		self->lifePct = 100;
 		int maxLife = g_StdMaxLife;
 		if (e->vftable->IsType(e, TYEN_WITH_LIFE)) {
-			self->life = Vehicle_Life(self->entity);
+			self->life = Veh(self->entity)->wl.life;
 		}
 		if (self->entity->vftable->IsType(self->entity, TYEN_CAR)) {
-			maxLife = FXVeh_MaxLife(self->entity);
+			maxLife = Veh(self->entity)->maxLife;
 		}
 		int life = self->life;
 		int pct = life * 100 / maxLife;
@@ -2868,7 +2868,7 @@ byte __thiscall cObjElementFXVehicleFire_IsAlive(cObjElementFXVehicleFire *self,
 	if (!e) {
 		return 0;
 	}
-	float t = FXVeh_BurnTime(e);
+	float t = WLife(e)->fireRemain;
 	if (!(0.0f >= t)) {
 		debris->speed = t;
 		if (cDebris_Update(debris, sys)) {

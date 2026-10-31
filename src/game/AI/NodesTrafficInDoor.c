@@ -402,7 +402,7 @@ void __stdcall TrafficSectors_SetTracks(cTrafficSector *list, int num) {
 }
 
 void __thiscall CNodesTrafficInDoor_AddVehicle(CNodesTrafficInDoor *self, cAIVehicle *ai) {
-	switch (VEHICLE_CLASS(cAIVehicle_GetVehicle(ai))) {
+	switch (Veh(cAIVehicle_GetVehicle(ai))->traffic.type) {
 	case 0:
 		self->lightAI[self->numLightAI++] = ai;
 		break;
@@ -461,7 +461,7 @@ byte __thiscall CNodesTrafficInDoor_SectorHasTrack(CNodesTrafficInDoor *self, in
 
 byte __thiscall CNodesTrafficInDoor_GetRespawnPoint(CNodesTrafficInDoor *self, cAIVehicle *ai, int *outType,
 	vec3_t *out, int *outTrack, int *outNode) {
-	switch (VEHICLE_CLASS(cAIVehicle_GetVehicle(ai))) {
+	switch (Veh(cAIVehicle_GetVehicle(ai))->traffic.type) {
 	case 0:
 		return CNodesTrafficInDoor_PickPoint(self, outType, out, outTrack, outNode, TRAFFIC_LIGHT, self->light.list,
 			self->light.num, TRAFFIC_HEAVY_LIGHT, self->heavyLight.list, self->heavyLight.num,

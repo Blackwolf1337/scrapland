@@ -37,8 +37,6 @@
 #define FXVeh_Motor(e, i) (Veh(e)->motors.motor[i])
 #define FXVeh_MotorNode(m, side) ((m)->node[side])
 #define FXVeh_EmbeddedFX(e) ((void *)((cObjEntity *)(e))->fx)
-#define FXVeh_BurnTime(e) (WLife(e)->fireRemain)
-#define FXVeh_MaxLife(e) (Veh(e)->maxLife)		/* of a "Car" */
 #define FXVeh_Effects(e) ((void *)&Veh(e)->effects)		/* Entities/Vehicle/VehicleEffects.cpp */
 
 /* the engine variables */

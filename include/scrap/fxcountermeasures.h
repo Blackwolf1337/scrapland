@@ -142,7 +142,6 @@ SD_OFFSET(cObjElementFXDebrisCloud, on, 0x1f0);
 SD_SIZE(cObjElementFXDebrisCloud, 0x1f4);
 
 /* the fields of the ships the hook reads */
-#define Entity_TargetLock(e) (&Veh(e)->weapons)
 #define WEAPON_LASER 0x18						/* the slot of the laser in Entity_Weapons */
 #define Entity_PlayerCam(e) (((cObjEntity *)(e))->cam)	/* the camera data of the ship of a player, NULL else */
 

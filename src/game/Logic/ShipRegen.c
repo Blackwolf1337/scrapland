@@ -69,7 +69,7 @@ void __thiscall ShipRegen_UpdateShip(cShipRegen *self, float dt) {
 		float range = (float)v->maxLife - (float)g_LifeToLaunchCallback;
 		if (0.0f >= self->ship->time) {
 			do {
-				if (!Entity_God(e)) {
+				if (!WLife(e)->god) {
 					v->wl.life++;
 				}
 				float f = ((float)v->wl.life - (float)g_LifeToLaunchCallback) / range;
@@ -84,7 +84,7 @@ void __thiscall ShipRegen_UpdateShip(cShipRegen *self, float dt) {
 				}
 			} while (0.0f >= self->ship->time);
 		}
-		if (v->wl.life > v->maxLife && !Entity_God(e)) {
+		if (v->wl.life > v->maxLife && !WLife(e)->god) {
 			v->wl.life = v->maxLife;
 		}
 	}
@@ -98,7 +98,7 @@ void __thiscall ShipRegen_UpdateShip(cShipRegen *self, float dt) {
 void __thiscall ShipRegen_Set(void *shipRegen, cEntity *ship, float speed, float endSpeed) {
 	cShipRegen *self = shipRegen;
 
-	if (!ship || !ship->vftable->IsType(ship, TYEN_WITH_LIFE) || Entity_LifeI(ship) <= 0) {
+	if (!ship || !ship->vftable->IsType(ship, TYEN_WITH_LIFE) || WLife(ship)->life <= 0) {
 		return;
 	}
 	if (!self->ship) {
@@ -114,7 +114,7 @@ void __thiscall ShipRegen_Set(void *shipRegen, cEntity *ship, float speed, float
 	self->ship->rate = rate;
 	self->ship->endRate = endRate;
 	self->ship->time = self->ship->rate;
-	self->ship->life = Entity_LifeI(ship);
+	self->ship->life = WLife(ship)->life;
 }
 
 void __thiscall ShipRegen_Update(cShipRegen *self, float dt) {
@@ -125,7 +125,7 @@ void __thiscall ShipRegen_Update(cShipRegen *self, float dt) {
 		ShipRegen_UpdateShip(self, dt);
 	}
 	cEntity *usr = cWorld_GetUsrEntity(g_pWorld, 0);
-	if (!usr || !usr->vftable->IsType(usr, TYEN_WITH_LIFE) || Entity_LifeI(usr) <= 0) {
+	if (!usr || !usr->vftable->IsType(usr, TYEN_WITH_LIFE) || WLife(usr)->life <= 0) {
 		return;
 	}
 	byte onFoot = usr->vftable->IsType(usr, TYEN_WALKCHAR);
@@ -138,19 +138,19 @@ void __thiscall ShipRegen_Update(cShipRegen *self, float dt) {
 		self->time = 5.0f;
 		return;
 	}
-	self->noLoss = self->life == Entity_LifeI(usr);
+	self->noLoss = self->life == WLife(usr)->life;
 	if (self->noLoss) {
 		self->time = onFoot ? g_RegenerationCharTimeRate : g_RegenerationTimeRate;
 		if (World_IsEasySingle()) {
 			self->time = self->time * 0.5f;
 		}
 		int max = usr->vftable->IsType(usr, TYEN_CAR) ? Veh(usr)->minLife : g_StdMaxLife;
-		if (!(max > Entity_LifeI(usr))) {
+		if (!(max > WLife(usr)->life)) {
 			self->noLoss = 0;
 		}
-		if (self->noLoss && !Entity_God(usr)) {
-			Entity_LifeI(usr)++;
-			self->life = Entity_LifeI(usr);
+		if (self->noLoss && !WLife(usr)->god) {
+			WLife(usr)->life++;
+			self->life = WLife(usr)->life;
 			return;
 		}
 	} else {
@@ -159,5 +159,5 @@ void __thiscall ShipRegen_Update(cShipRegen *self, float dt) {
 			self->time = self->time * 0.5f;
 		}
 	}
-	self->life = Entity_LifeI(usr);
+	self->life = WLife(usr)->life;
 }

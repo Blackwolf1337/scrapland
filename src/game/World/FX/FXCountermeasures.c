@@ -83,8 +83,8 @@ void __thiscall cObjElementFXHook_StartTarget(cObjElementFXHook *self, cEntity *
 	end = NULL;
 	if (self->target && self->target->active && Entity_IsType(self->target, TYEN_WITH_LIFE)) {
 		end = Obj_Vtbl(self->target)->GetViewPos(self->target, &r);
-	} else if (self->active && cTargetLock_GetPoint(Entity_TargetLock(self->emitter))) {
-		end = cTargetLock_GetPoint(Entity_TargetLock(self->emitter));
+	} else if (self->active && cTargetLock_GetPoint(&Veh(self->emitter)->weapons)) {
+		end = cTargetLock_GetPoint(&Veh(self->emitter)->weapons);
 	}
 	if (end) {
 		self->points[self->numPoints] = *end;
@@ -249,8 +249,8 @@ void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debri
 		e = self->target;
 		if (e && e->active && Entity_IsType(e, TYEN_WITH_LIFE)) {
 			end = Obj_Vtbl(self->target)->GetViewPos(self->target, &tmp);
-		} else if (self->active && cTargetLock_GetPoint(Entity_TargetLock(self->emitter))) {
-			end = cTargetLock_GetPoint(Entity_TargetLock(self->emitter));
+		} else if (self->active && cTargetLock_GetPoint(&Veh(self->emitter)->weapons)) {
+			end = cTargetLock_GetPoint(&Veh(self->emitter)->weapons);
 		}
 		if (end) {
 			self->points[self->numPoints] = *end;
@@ -376,16 +376,16 @@ byte __thiscall cObjElementFXHook_IsAlive(cObjElementFXHook *self, cDebris *debr
 	(void)debris;
 	(void)sys;
 	if (self->withTarget) {
-		if (self->emitter && (cTargetLock_GetPoint(Entity_TargetLock(self->emitter))
-				|| cTargetLock_GetEntity(Entity_TargetLock(self->emitter)))
+		if (self->emitter && (cTargetLock_GetPoint(&Veh(self->emitter)->weapons)
+				|| cTargetLock_GetEntity(&Veh(self->emitter)->weapons))
 			&& !(self->fade > 0.0f)) {
 			return 1;
 		}
 		self->active = 0;
 		return !(self->fade >= g_FXHookFadeTime);
 	}
-	if (self->emitter && !cTargetLock_GetPoint(Entity_TargetLock(self->emitter))
-		&& !cTargetLock_GetEntity(Entity_TargetLock(self->emitter))) {
+	if (self->emitter && !cTargetLock_GetPoint(&Veh(self->emitter)->weapons)
+		&& !cTargetLock_GetEntity(&Veh(self->emitter)->weapons)) {
 		if (!self->emitter) {
 			return 1;
 		}
@@ -751,7 +751,7 @@ static void EMI_NewBolt(cObjElementFXEMI *self, int i, const vec3_t *pos, float 
 		hit.z = c->z + oz;
 		cVehicleEntity *v = (cVehicleEntity *)found;
 		if (found->vftable->IsType(found, "WithLife") &&
-			(Entity_LifeI(found) <= 0 || (found->vftable->IsType(found, "Car") && 0.0f >= v->emi))) {
+			(WLife(found)->life <= 0 || (found->vftable->IsType(found, "Car") && 0.0f >= v->emi))) {
 			found = NULL;
 			kind = 0;
 		} else if (found && (Entity_Removed(found) || !found->active)) {

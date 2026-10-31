@@ -122,39 +122,39 @@ void __thiscall cGearLocalLogic_UpdateAnim(cGearLocalLogic *self, cEntity *p, fl
 	byte alarm = g_pWorld->alarm.on;
 
 	(void)dt;
-	WChar_ConeFov(p) = g_GearStdFovY;
-	WChar_ConeDist(p) = g_GearStdFar;
+	WLife(p)->arrow.coneFov = g_GearStdFovY;
+	WLife(p)->arrow.coneDist = g_GearStdFar;
 	if (g_pWorld->alarm.on) {
 		cEntity *t = b->target.target;
 		if (t && b->state == 2 && t == cWorld_GetUsrEntity(g_pWorld, 0)) {
-			WChar_ConeStatus(p) = 3;
+			WLife(p)->arrow.coneStatus = 3;
 		} else {
-			WChar_ConeStatus(p) = 2;
+			WLife(p)->arrow.coneStatus = 2;
 		}
 	} else {
-		WChar_ConeStatus(p) = g_pWorld->alarm.notGuaranteed != 0;
+		WLife(p)->arrow.coneStatus = g_pWorld->alarm.notGuaranteed != 0;
 	}
 	switch (b->state) {
 	case 0:
 		self->called = 0;
-		WChar_B381(p) = alarm == 0;
+		WChar(p)->wl.arrow.canUse = alarm == 0;
 		if (!b->idle && !b->alwaysLock && !cActCtrl_IsActive(ChType_ActCtrl(p), "Patrol")) {
 			cActCtrl_PlayNew(ChType_ActCtrl(p), "Patrol0", 0, 1.0f);
 		}
 		break;
 	case 1:
 	case 2:
-		WChar_B381(p) = 0;
+		WChar(p)->wl.arrow.canUse = 0;
 		cGearLocalLogic_Relax(self);
 		break;
 	case 3:
 		self->called = 0;
-		WChar_B381(p) = alarm == 0;
+		WChar(p)->wl.arrow.canUse = alarm == 0;
 		cGearLocalLogic_Relax(self);
 		break;
 	case 4:
 		self->called = 0;
-		WChar_B381(p) = alarm == 0;
+		WChar(p)->wl.arrow.canUse = alarm == 0;
 		if (!b->idle && !b->alwaysLock && !cActCtrl_IsActive(ChType_ActCtrl(p), "Patrol")) {
 			cActCtrl_PlayNew(ChType_ActCtrl(p), "Patrol0", 0, 1.0f);
 		}
@@ -190,10 +190,10 @@ void __thiscall cGearLocalLogic_Update(cGearLocalLogic *self, float dt) {
 		cActCtrl_Play(ChType_ActCtrl(p), "SirenEnd", 0, 1.0f);
 	}
 	cBaseLocalLogic_Update(b, dt);
-	WChar_B381(p) = 0;
-	Entity_Team(p) = alarm ? 0 : 2;
+	WChar(p)->wl.arrow.canUse = 0;
+	WLife(p)->arrow.tgType = alarm ? 0 : 2;
 	if (b->busy) {
-		WChar_ConeStatus(p) = 0;
+		WLife(p)->arrow.coneStatus = 0;
 		return;
 	}
 	cEntity *usr = ChType_Usr0();

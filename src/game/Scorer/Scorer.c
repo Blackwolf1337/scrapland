@@ -1652,13 +1652,10 @@ enum {
 
 /* slot off of the vftable of any object, called without arguments */
 #define DBG_VF(p, off) ((void(__thiscall *)(void *))(*(void *const *const *)(p))[(off) / 4])
-#define DBG_LIFE_RADIUS(e) (WLife(e)->prim.radius)
-#define DBG_MISSILE_RADIUS(e) (Missile(e)->radius)
 #define DBG_ITEM_RADIUS(e) (((cItemEntity *)(e))->radius)
 #define DBG_FCAM_POS(e) (&((cFollowCamEntity *)(e))->center)	/* the point a "FCam" follows */
 #define DBG_FCAM_DIST(e) (((cCamControl *)(e))->cam.zNear)
 #define DBG_FCAM_SCALE 1.65f
-#define DBG_FLOOR_DIST(e) (WChar(e)->floorDist)
 #define DBG_SPHERE_DIV 10
 #define DBG_ARROW_Y 5.0f
 
@@ -1702,18 +1699,18 @@ static void Dbg_DrawWalkChar(cEntity *e) {
 	mx.y = p->y + 0.0f;
 	mx.z = p->z + r;
 	float nr = -r;
-	float ny = -DBG_FLOOR_DIST(e);
+	float ny = -WChar(e)->floorDist;
 	p = e->vftable->GetPos(e, &t);
 	mn.x = nr + p->x;
 	mn.y = p->y + ny;
 	mn.z = p->z + nr;
 	DebugUtils_DrawBox(&mn, &mx, 0xffff00);
-	float lo = -DBG_FLOOR_DIST(e) - fall;
+	float lo = -WChar(e)->floorDist - fall;
 	p = e->vftable->GetPos(e, &t);
 	mx.x = p->x + r;
 	mx.y = p->y + lo;
 	mx.z = p->z + r;
-	ny = -DBG_FLOOR_DIST(e);
+	ny = -WChar(e)->floorDist;
 	p = e->vftable->GetPos(e, &t);
 	mn.x = nr + p->x;
 	mn.y = p->y + ny;
@@ -1721,12 +1718,12 @@ static void Dbg_DrawWalkChar(cEntity *e) {
 	DebugUtils_DrawBox(&mn, &mx, 0xff0000);
 	float ang = vt->GetViewAng(e, &t)->y;
 	if (!Dbg_ActClass(e)->canFly) {
-		Dbg_DrawArrow(e, ang, DBG_ARROW_Y - DBG_FLOOR_DIST(e), 100.0f, 50.0f, 0xff);
+		Dbg_DrawArrow(e, ang, DBG_ARROW_Y - WChar(e)->floorDist, 100.0f, 50.0f, 0xff);
 	} else {
-		Dbg_DrawArrow(e, ang, DBG_ARROW_Y - DBG_LIFE_RADIUS(e), 100.0f, 50.0f, 0xff);
+		Dbg_DrawArrow(e, ang, DBG_ARROW_Y - WLife(e)->prim.radius, 100.0f, 50.0f, 0xff);
 	}
 	ang = vt->GetRenderAng(e, &t)->y;
-	Dbg_DrawArrow(e, ang, DBG_ARROW_Y - DBG_FLOOR_DIST(e), 50.0f, 25.0f, 0xff00);
+	Dbg_DrawArrow(e, ang, DBG_ARROW_Y - WChar(e)->floorDist, 50.0f, 25.0f, 0xff00);
 	float wr = Dbg_ActClass(e)->wRadius;
 	DebugUtils_DrawSphere(e->vftable->GetPos(e, &t), wr, 0xc0c0c0, DBG_SPHERE_DIV, 0);
 }
@@ -1741,7 +1738,8 @@ static void Dbg_DrawEntities(void) {
 		}
 		const cObjEntityVtbl *vt = (const cObjEntityVtbl *)e->vftable;
 		if (e->vftable->IsType(e, "WithLife")) {
-			DebugUtils_DrawSphere(e->vftable->GetPos(e, &t), DBG_LIFE_RADIUS(e), 0xff, DBG_SPHERE_DIV, 0);
+			DebugUtils_DrawSphere(e->vftable->GetPos(e, &t), WLife(e)->prim.radius, 0xff, DBG_SPHERE_DIV,
+				0);
 		}
 		if (e->vftable->IsType(e, "Car")) {
 			float r = vt->GetRadius(e);
@@ -1750,7 +1748,8 @@ static void Dbg_DrawEntities(void) {
 			DebugUtils_DrawLine(&a, vt->GetViewPos(e, &t), 0xffff00);
 		}
 		if (e->vftable->IsType(e, "Missile")) {
-			DebugUtils_DrawSphere(e->vftable->GetPos(e, &t), DBG_MISSILE_RADIUS(e), 0xffff00, DBG_SPHERE_DIV, 0);
+			DebugUtils_DrawSphere(e->vftable->GetPos(e, &t), Missile(e)->radius, 0xffff00, DBG_SPHERE_DIV,
+				0);
 		}
 		if (e->vftable->IsType(e, "item")) {
 			DebugUtils_DrawSphere(e->vftable->GetPos(e, &t), DBG_ITEM_RADIUS(e), 0xff00, DBG_SPHERE_DIV, 0);

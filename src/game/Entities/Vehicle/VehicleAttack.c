@@ -159,10 +159,10 @@ void __thiscall cVehicleAttack_ShotAtPoint(cVehicleAttack *self, const vec3_t *p
 void __thiscall cVehicleAttack_Update(cVehicleAttack *self) {
 	cEntity *owner = self->owner;
 
-	if (self->count <= 0 || !owner->vftable->IsType(owner, TYEN_VEHICLE) || !Vehicle_CanFire(self->owner)) {
+	if (self->count <= 0 || !owner->vftable->IsType(owner, TYEN_VEHICLE) || !Veh(self->owner)->isInit) {
 		return;
 	}
-	cPy_Function *f = &TABLE_AT(g_pWorld->weapons, Vehicle_WeapMgr(self->owner)->curWeap)->onHit;
+	cPy_Function *f = &TABLE_AT(g_pWorld->weapons, Veh(self->owner)->weapons.curWeap)->onHit;
 	for (int i = 1; i < self->count; i++) {
 		int n = self->count;
 		float a = (float)(n - i);

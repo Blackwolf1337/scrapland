@@ -11,7 +11,7 @@
 #include "scrap/vehicleattack.h"
 
 static inline cFollowCamEntity *Betty_Cam(cEntity *v) {
-	return (cFollowCamEntity *)WChar_Cam(v);
+	return (cFollowCamEntity *)WChar(v)->wl.obj.cam;
 }
 
 /* the point of the shot in front of v */
@@ -38,15 +38,15 @@ void ChType_BettyActionPress(cAbstractFile *params) {
 		return;
 	}
 	cEntity *v = World_FindEntity(name);
-	if (!v || !v->vftable->IsType(v, TYEN_WALKCHAR) || WChar_Falling(v) || ChType_ActPriority(ChType_ActCtrl(v)) ||
-		!(1.0f - WChar_EnergyUsed(v) >= 0.9f)) {
+	if (!v || !v->vftable->IsType(v, TYEN_WALKCHAR) || WChar(v)->falling || ChType_ActPriority(ChType_ActCtrl(v)) ||
+		!(1.0f - WChar(v)->energyUsed >= 0.9f)) {
 		return;
 	}
 	cActCtrl_Play(ChType_ActCtrl(v), "Action", 0, 1.0f);
-	cWalkCharEntity_SetEnergy(v, (1.0f - WChar_EnergyUsed(v)) - 1.0f);
-	cWalkCharControl_Reset(WChar_Control(v), 1);
+	cWalkCharEntity_SetEnergy(v, (1.0f - WChar(v)->energyUsed) - 1.0f);
+	cWalkCharControl_Reset(&WChar(v)->control, 1);
 	cFollowCamEntity *cam = Betty_Cam(v);
-	WChar_DisplAng(v) = 0.0f;
+	WChar(v)->displAng = 0.0f;
 	if (cam) {
 		float y = Obj_Vtbl(v)->GetAng(v, &tmp)->y;
 		ang.x = 0.0f;
@@ -80,7 +80,7 @@ void ChType_BettyCameraSet(cAbstractFile *params) {
 	cam->vSpeed = g_BettyVSpeed;
 	cam->hSpeed = g_BettyHSpeed;
 	cam->addTurn = Cam_Deg2Rad(crt_atof(arg));
-	float y = WChar_Ang(g_BettyEnt)->y;
+	float y = WChar(g_BettyEnt)->view.y;
 	ang.x = Cam_Deg2Rad(crt_atof(pitch));
 	ang.y = y;
 	ang.z = 0.0f;
@@ -106,7 +106,8 @@ void ChType_BettyKill(cAbstractFile *params) {
 		return;
 	}
 	cEntity *e = World_FindEntity(name);
-	if (!e || g_BettyEnt == e || !e->vftable->IsType(e, TYEN_WALKCHAR) || WChar_God(e) || WChar_Life(e) <= 0) {
+	if (!e || g_BettyEnt == e || !e->vftable->IsType(e, TYEN_WALKCHAR) || WChar(e)->wl.god ||
+		WChar(e)->wl.life <= 0) {
 		return;
 	}
 	const vec3_t *p = g_BettyEnt->vftable->GetPos(g_BettyEnt, &t1);
@@ -117,12 +118,12 @@ void ChType_BettyKill(cAbstractFile *params) {
 	}
 	SaveVar_Inc("Stats.Betty", 1);
 	SaveVar_Inc("Stats.Killer", 1);
-	cVehicleAttack_HitBy(WChar_Attack(e), g_BettyEnt->name);
-	if (!WChar_God(e)) {
-		WChar_Life(e) = 0;
+	cVehicleAttack_HitBy(&WChar(e)->wl.attack, g_BettyEnt->name);
+	if (!WChar(e)->wl.god) {
+		WChar(e)->wl.life = 0;
 	}
 	cEntity_CollisionOff(e);
-	cPrimitive_SetSize(WChar_Shadow(e), 0.0f);
+	cPrimitive_SetSize(&WChar(e)->wl.prim, 0.0f);
 	Alarm_Set(&g_pWorld->alarm, 1.0f);
 	cObjElementFXKill *el = FX_DropNew(g_FXBettyKillFile, 1.0f);
 	if (!el) {
@@ -157,10 +158,10 @@ void ChType_BettyEndEvent(cAbstractFile *params) {
 	v.y = 0.0f;
 	v.z = 0.0f;
 	Obj_Vtbl(g_BettyEnt)->SetVel(g_BettyEnt, &v);
-	cWalkCharControl_Reset(WChar_Control(g_BettyEnt), 0);
+	cWalkCharControl_Reset(&WChar(g_BettyEnt)->control, 0);
 	WChar_Vtbl(g_BettyEnt)->SetViewAng(g_BettyEnt, Obj_Vtbl(g_BettyEnt)->GetAng(g_BettyEnt, &v));
 	cFollowCamEntity *cam = Betty_Cam(g_BettyEnt);
-	WChar_DisplAng(g_BettyEnt) = 0.0f;
+	WChar(g_BettyEnt)->displAng = 0.0f;
 	if (cam) {
 		cam->addTurn = Cam_Deg2Rad(crt_atof(arg));
 	}
@@ -184,7 +185,7 @@ void ChType_BettyHitEvent(cAbstractFile *params) {
 	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)GAME_FUNC(ChType_BettyKill, CHTYPE_BETTYKILL));
 	const vec3_t *pos = g_BettyEnt->vftable->GetPos(g_BettyEnt, &tmp);
 	cWorld_SphereCallF(g_pWorld, 0x10, pos, radius, g_ChTypeSphereFunc, 0);
-	if (WChar_Cam(g_BettyEnt)) {
+	if (WChar(g_BettyEnt)->wl.obj.cam) {
 		cPad_Rumble(&g_Pads[0], k, 0.3f, 0.35f);
 	}
 }

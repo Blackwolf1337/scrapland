@@ -38,7 +38,7 @@ void ChType_BertoFlashHit(cAbstractFile *params) {
 		return;
 	}
 	cEntity *e = World_FindEntity(name);
-	if (!e || g_BertoEnt == e || !e->vftable->IsType(e, TYEN_WALKCHAR) || WChar_God(e)) {
+	if (!e || g_BertoEnt == e || !e->vftable->IsType(e, TYEN_WALKCHAR) || WChar(e)->wl.god) {
 		return;
 	}
 	cObjElementFXBertoFlash *el = FX_DropNew(g_FXBertoFlashFile, 0.8f);
@@ -66,7 +66,7 @@ void ChType_BertoHitEvent(cAbstractFile *params) {
 	g_BertoEnt = World_FindEntity(name);
 	CHECK(g_BertoEnt);
 	CHECK(Entity_IsType(g_BertoEnt, TYEN_WALKCHAR));
-	if (WChar_Cam(g_BertoEnt)) {
+	if (WChar(g_BertoEnt)->wl.obj.cam) {
 		cPad_Rumble(&g_Pads[0], 0.0f, 0.5f, 0.25f);
 	}
 	cPy_Function_SetNative(g_OnFlash, (nativefunc_t)GAME_FUNC(ChType_BertoFlashHit, CHTYPE_BERTOFLASHHIT));

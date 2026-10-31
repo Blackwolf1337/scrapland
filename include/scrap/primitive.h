@@ -16,7 +16,6 @@ typedef struct cPrimitive {
 } cPrimitive;
 SD_SIZE(cPrimitive, 0xc);
 
-#define Ent_Primitive(e) (&WLife(e)->prim)
 
 cPrimitive *__fastcall cPrimitive_ctor(cPrimitive *self);
 byte __thiscall cPrimitive_VarF(cPrimitive *self, const char *name, double *d, int set);

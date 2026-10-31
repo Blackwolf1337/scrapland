@@ -55,7 +55,7 @@ int __thiscall cBankDirectorLocalLogic_LoseTarget(cBankDirectorLocalLogic *self)
 	if (!t || !t->vftable->IsType(t, TYEN_WALKCHAR)) {
 		return 1;
 	}
-	int money = t == cWorld_GetUsrEntity(g_pWorld, 0) ? g_pWorld->money : WChar_Money(t);
+	int money = t == cWorld_GetUsrEntity(g_pWorld, 0) ? g_pWorld->money : WChar(t)->money;
 	cEntity *p = self->base.parent;
 	if (money <= 25 || self->specialTime > g_GenCharSpecialActionTime) {
 		return 1;

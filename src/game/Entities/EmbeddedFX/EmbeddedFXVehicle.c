@@ -171,8 +171,8 @@ void __thiscall cEmbeddedFXVehicle_Configure(cEmbeddedFXVehicle *self, int unuse
 			CheckFailed("UsrEntities[i]->IsType(\"WithLife\")", "World.h", __TIMESTAMP__, __LINE__);
 		}
 		pl = g_pWorld->owners[0];
-		if (pl && pl->vftable->IsType(pl, TYEN_CAR) && Vehicle_FollowName(pl)[0]) {
-			self->followed = Str_EqualW(self->owner->name, Vehicle_FollowName(pl));
+		if (pl && pl->vftable->IsType(pl, TYEN_CAR) && Veh(pl)->target[0]) {
+			self->followed = Str_EqualW(self->owner->name, Veh(pl)->target);
 		}
 	}
 	if (g_SplitScreenGame) {
@@ -181,7 +181,7 @@ void __thiscall cEmbeddedFXVehicle_Configure(cEmbeddedFXVehicle *self, int unuse
 	}
 	ai = self->owner->vftable->GetAI(self->owner);
 	if (!ai) {
-		self->traffic = Vehicle_IsTraffic(self->owner);
+		self->traffic = Veh(self->owner)->traffic.active;
 		return;
 	}
 	int state = cAIVehicle_GetState(ai);
@@ -250,7 +250,7 @@ void __fastcall cEmbeddedFXVehicle_Update(cEmbeddedFXVehicle *self) {
 		} else {
 			self->alpha = Float_MinSS(self->time, 1.0f - (self->camDist - nearDist) / (farDist - nearDist));
 		}
-		uint32_t fx = CGameModel_GetEffect(Vehicle_Model(self->owner), NULL);
+		uint32_t fx = CGameModel_GetEffect(&Veh(self->owner)->wl.obj.model, NULL);
 		if (self->alpha >= 1.0f) {
 			if (fx == VEHICLE_FX_FADE) {
 				Obj_Vtbl(self->owner)->SetEffect(self->owner, 0);
@@ -284,7 +284,7 @@ void __fastcall cEmbeddedFXVehicle_Hide(cEmbeddedFXVehicle *self) {
 	self->alpha = 1.0f;
 	self->time = 0.0f;
 	self->fading = 0;
-	if (CGameModel_GetEffect(Vehicle_Model(self->owner), NULL) == VEHICLE_FX_FADE) {
+	if (CGameModel_GetEffect(&Veh(self->owner)->wl.obj.model, NULL) == VEHICLE_FX_FADE) {
 		Obj_Vtbl(self->owner)->SetEffect(self->owner, 0);
 		Obj_Vtbl(self->owner)->SetEffectParam(self->owner, 0, 0.0f);
 	}
@@ -298,7 +298,7 @@ void __fastcall cEmbeddedFXVehicle_Render(cEmbeddedFXVehicle *self) {
 		self->attached = NULL;
 		return;
 	}
-	if (self->attached && self->owner && Vehicle_Life(self->owner) > 0) {
+	if (self->attached && self->owner && Veh(self->owner)->wl.life > 0) {
 		FXVehicle_RenderAttached(self->attached);
 		self->attached = NULL;
 	}
@@ -325,7 +325,7 @@ void __thiscall cEmbeddedFXVehicle_SetOwner(cEmbeddedFXVehicle *self, cEntity *o
 	CHECK(root != -1);
 	self->rootPos = (vec3_t){0.0f, 0.0f, 0.0f};
 	self->rootPos = *CGameModel_NodePos(model, &t, root, 0);
-	if (crt_strncmp(Vehicle_TypeName(self->owner), "SPoli", 5) == 0) {
+	if (crt_strncmp(Veh(self->owner)->typeName, "SPoli", 5) == 0) {
 		if (!self->sirens) {
 			cFXVehicleSirens *s = operator_new(sizeof(cFXVehicleSirens));
 			if (s) {
@@ -341,15 +341,15 @@ void __thiscall cEmbeddedFXVehicle_SetOwner(cEmbeddedFXVehicle *self, cEntity *o
 		Sirens_Delete(self);
 	}
 	Other_Delete(self);
-	if (crt_stricmp(Vehicle_TypeName(self->owner), "TProbe") == 0) {
+	if (crt_stricmp(Veh(self->owner)->typeName, "TProbe") == 0) {
 		p = operator_new(sizeof(cEmbeddedFXVehicleProbe));
 		self->other = p ? (cEmbeddedFXVehicleSub *)cEmbeddedFXVehicleProbe_ctor(p, self) : NULL;
-	} else if (crt_stricmp(Vehicle_TypeName(self->owner), "TVoteMayor") == 0) {
+	} else if (crt_stricmp(Veh(self->owner)->typeName, "TVoteMayor") == 0) {
 		p = operator_new(sizeof(cEmbeddedFXVehicleVote));
 		cEmbeddedFXVehicleVote *v = p ? cEmbeddedFXVehicleVote_ctor(p, self) : NULL;
 		self->other = (cEmbeddedFXVehicleSub *)v;
 		v->type = VOTE_MAYOR;
-	} else if (crt_stricmp(Vehicle_TypeName(self->owner), "TVoteBishop") == 0) {
+	} else if (crt_stricmp(Veh(self->owner)->typeName, "TVoteBishop") == 0) {
 		p = operator_new(sizeof(cEmbeddedFXVehicleVote));
 		cEmbeddedFXVehicleVote *v = p ? cEmbeddedFXVehicleVote_ctor(p, self) : NULL;
 		self->other = (cEmbeddedFXVehicleSub *)v;
@@ -462,7 +462,7 @@ void __fastcall cFXVehicleSirens_Update(cFXVehicleSirens *self) {
 	vec3_t pos, rot;
 
 	CHECK(v);
-	if (!self->owner->visible || !(Vehicle_Speed(v) > 0.0f) || !(self->owner->alpha >= 0.8f)) {
+	if (!self->owner->visible || !(Veh(v)->active > 0.0f) || !(self->owner->alpha >= 0.8f)) {
 		return;
 	}
 	if (Vehicle_Player(v) && !g_pApp->flags) {

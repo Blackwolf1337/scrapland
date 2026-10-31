@@ -22,11 +22,11 @@ void ChType_MessengerAttack(cAbstractFile *params) {
 
 	cAbstractFile_ReadString(params, name, 0x80);
 	cEntity *v = World_FindEntity(name);
-	float energy = 1.0f - WChar_EnergyUsed(v);
-	if (WChar_Life(v) <= 0) {
+	float energy = 1.0f - WChar(v)->energyUsed;
+	if (WChar(v)->wl.life <= 0) {
 		return;
 	}
-	if ((!cWalkCharEntity_GetOwnerSlot(v) && g_GearLowWeaponEnergy > energy) || !WChar_ActionPress(v)) {
+	if ((!cWalkCharEntity_GetOwnerSlot(v) && g_GearLowWeaponEnergy > energy) || !WChar(v)->control.act) {
 		cActCtrl_Play(ChType_ActCtrl(v), "ActionEnd", 1, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(v), "Relax", 1);
 	}
@@ -41,8 +41,8 @@ void ChType_MessengerAttack(cAbstractFile *params) {
 	ang.x = 0.0f;
 	ang.y = 0.0f;
 	ang.z = 0.0f;
-	if (!WChar_ViewLock(v)) {
-		ang.x = WChar_Ang(v)->x;
+	if (!WChar(v)->viewLock) {
+		ang.x = WChar(v)->view.x;
 		ang.y = Obj_Vtbl(v)->GetAng(v, &t1)->y;
 		target = NULL;
 	} else if (target && target->vftable->IsType(target, TYEN_WITH_LIFE)) {
@@ -61,7 +61,7 @@ void ChType_MessengerAttack(cAbstractFile *params) {
 	if (!target || !target->vftable->IsType(target, TYEN_WITH_LIFE)) {
 		target = NULL;
 	}
-	if (WChar_Cam(v)) {
+	if (WChar(v)->wl.obj.cam) {
 		cPad_Rumble(&g_Pads[0], 0.0f, 0.75f, 0.125f);
 	}
 	if (target) {
@@ -82,7 +82,7 @@ void ChType_MessengerAttack(cAbstractFile *params) {
 			}
 		}
 		ChType_FlashChar(target);
-		if (WChar_Cam(target)) {
+		if (WChar(target)->wl.obj.cam) {
 			cPad_Rumble(&g_Pads[0], 0.0f, 1.0f, 0.75f);
 		}
 	}
