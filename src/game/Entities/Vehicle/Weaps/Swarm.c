@@ -389,7 +389,7 @@ void Swarm_NetSetUp(const char *name) {
 			if (!cTargetLock_HasSlot(wm, g_SwarmIDWeap, i)) {
 				continue;
 			}
-			Weap_DropAtNode(v, Veh_WeapNodes(v)[i + g_SwarmIDAmmo * 4], &mtx, &ang, &vel);
+			Weap_DropAtNode(v, Veh(v)->weapons.nodes[g_SwarmIDAmmo][i], &mtx, &ang, &vel);
 			Weap_Vtbl(m)->AddBees(m, *g_SwarmSlotData[i]);
 		}
 		int level = cWeaponManager_GetUpgrade(wm, g_SwarmIDWeap);
@@ -419,7 +419,7 @@ void Swarm_NetSetUp(const char *name) {
 	}
 	Weap_Vtbl(m)->SetMaxSpeed(m, 3000.0f);
 	float r = (float)Mis_Bees(m) * g_SwarmBeeRadius + g_SwarmMinRadius;
-	Mis_B7bd(m) = 1;
+	Mis_FallOut(m) = 1;
 	cMissileEntity_SetRadius((cMissileEntity *)m, r * 0.25f);
 	cMissileEntity_SetTopRadius((cMissileEntity *)m, r);
 	Weap_EngineSound(m, g_SwarmEngineSound, g_SwarmEngineSoundVol, g_SwarmEngineSoundAttIni,
@@ -446,7 +446,7 @@ byte Tesla_Shoot(cEntity *v) {
 	if (!*cHitInfo_GetName(Veh_HitInfo(v))) {
 		Veh_TeslaAngSpeed(v) = -((Veh_TeslaAng(v) - Veh_TeslaMinAng(v)) / down);
 	}
-	if (Veh_Seat(v) == -1) {
+	if (Veh(v)->weapons.weapSnd == -1) {
 		Weap_PlaySound(v, 10);
 	}
 	cWeaponManager_SetWeapSnd(Veh_Weapons(v), (level == 5) + 11);

@@ -71,69 +71,61 @@ static inline const WeapEntityVtbl *Weap_Vtbl(cEntity *e) {
 	return (const WeapEntityVtbl *)e->vftable;
 }
 
-#define WFIELD(e, type, off) (*(type *)((byte *)(e) + (off)))
-
 /* the fields of the entities with life (ships, characters, missiles) */
-#define Ent_Active(e) WFIELD(e, byte, 0x4c)
-#define Ent_Cam(e) WFIELD(e, cEntity *, 0xf0)		/* the camera entity of a player character */
-#define Ent_Mass(e) WFIELD(e, float, 0x230)
-#define Ent_Life(e) WFIELD(e, int, 0x238)
-#define Ent_God(e) WFIELD(e, byte, 0x23c)		/* the life does not change */
-#define Ent_OnDeath(e) ((cPy_Function *)((byte *)(e) + 0x264))
-#define Ent_OnDamage(e) ((cPy_Function *)((byte *)(e) + 0x278))
-#define Ent_BurnTime(e) WFIELD(e, float, 0x28c)		/* the burn of the Inferno Napalm */
-#define Ent_BurnRate(e) WFIELD(e, float, 0x290)
-#define Ent_BurnLen(e) WFIELD(e, float, 0x294)
-#define Ent_Radius(e) WFIELD(e, float, 0x3a0)
-#define Ent_HitSounds(e) ((cSndInterface *)((byte *)(e) + 0x3a8))	/* the laser hit sounds of an entity with life */
-#define Cam_ShakeTime(c) WFIELD(c, float, 0x220)
-#define Cam_Shake(c) WFIELD(c, float, 0x224)
+#define Ent_Active(e) (((cEntity *)(e))->flag_4c)
+#define Ent_Cam(e) (((cObjEntity *)(e))->cam)		/* the camera entity of a player character */
+#define Ent_Mass(e) (WLife(e)->mass)
+#define Ent_Life(e) (WLife(e)->life)
+#define Ent_God(e) (WLife(e)->god)			/* the life does not change */
+#define Ent_OnDeath(e) (&WLife(e)->onDeath)
+#define Ent_OnDamage(e) (&WLife(e)->onDamage)
+#define Ent_BurnTime(e) (WLife(e)->fireAtt)		/* the burn of the Inferno Napalm */
+#define Ent_BurnRate(e) (WLife(e)->fireDelay)
+#define Ent_BurnLen(e) (WLife(e)->fireRemain)
+#define Ent_Radius(e) (WLife(e)->prim.radius)
+#define Ent_HitSounds(e) (&WLife(e)->hitSounds)	/* the laser hit sounds of an entity with life */
+#define Cam_ShakeTime(c) (((cFollowCamEntity *)(c))->quakeTime)
+#define Cam_Shake(c) (((cFollowCamEntity *)(c))->quakeFactor)
 
 /* the fields of the ships */
-#define Veh_HitInfo(v) ((void *)((byte *)(v) + 0x298))	/* the last entity or point the ship hit */
-#define Veh_Speed(v) WFIELD(v, float, 0x46c)
-#define Veh_PushTime(v) WFIELD(v, float, 0x470)	/* the push of the Tesla upgrade 5 against the flight */
-#define Veh_Push(v) WFIELD(v, vec3_t, 0x474)
-#define Veh_AI(v) WFIELD(v, byte *, 0x4fc)		/* its int at +0x64 is set to 2 by a hit */
-#define Veh_EMITime(v) WFIELD(v, float, 0x58c)	/* the electromagnetic interference of the Hook */
-#define Veh_Weapons(v) ((cTargetLock *)((byte *)(v) + 0x5f0))
-#define Veh_CurWeapon(v) WFIELD(v, int, 0x5fc)
-#define Veh_FireTime(v) WFIELD(v, float, 0x600)	/* +0x10 of the weapon block: negative while it reloads */
-#define Veh_FireTime2(v) WFIELD(v, float, 0x604)	/* +0x14, the Hook and the Sonic */
-#define Veh_WeapNodes(v) WFIELD(v, uint32_t *, 0x60c)	/* render node per ammo kind and slot: [ammo * 4 + slot] */
-#define Veh_Player(v) WFIELD(v, int, 0x410)		/* 0..3 for the ship of a local player */
-#define Veh_Aim(v) ((void *)((byte *)(v) + 0x6d0))
-#define Veh_AimLimit(v) WFIELD(v, float, 0x6d8)	/* +0x8 of the aim, "AngLimit" */
-#define Veh_AimAng(v) WFIELD(v, float, 0x6dc)		/* the aim angles x, y */
-#define Veh_AimAngY(v) WFIELD(v, float, 0x6e0)
-#define Veh_TargetLink(v) ((Nto1Node *)((byte *)(v) + 0x6e4))	/* the target entity of the ship */
-#define Veh_AimCone(v) WFIELD(v, float, 0x6f4)	/* +0x24 of the aim */
-#define Veh_AimDist(v) WFIELD(v, float, 0x6f8)	/* +0x28 of the aim */
-#define Veh_AimMode(v) WFIELD(v, int, 0x718)
-#define Veh_Effects(v) ((void *)((byte *)(v) + 0x7f0))	/* VehicleEffects.cpp: the shoot effects */
-#define Veh_TeslaAng(v) WFIELD(v, float, 0x6fc)
-#define Veh_TeslaMinAng(v) WFIELD(v, float, 0x700)
-#define Veh_TeslaAngSpeed(v) WFIELD(v, float, 0x704)
-#define Veh_Seat(v) WFIELD(v, int, 0x614)
+#define Veh_HitInfo(v) ((void *)&WLife(v)->attack)	/* the last entity or point the ship hit */
+#define Veh_Speed(v) (Veh(v)->speed)
+#define Veh_PushTime(v) (Veh(v)->pushTime)		/* the push of the Tesla upgrade 5 against the flight */
+#define Veh_Push(v) (Veh(v)->push)
+#define Veh_EMITime(v) (Veh(v)->emi)			/* the electromagnetic interference of the Hook */
+#define Veh_Weapons(v) (&Veh(v)->weapons)
+#define Veh_CurWeapon(v) (Veh(v)->weapons.curWeap)
+#define Veh_FireTime(v) (Veh(v)->weapons.fireStamp)	/* negative while it reloads */
+#define Veh_FireTime2(v) (Veh(v)->weapons.cmStamp)	/* the Hook and the Sonic */
+#define Veh_Player(v) (Veh(v)->slot)			/* 0..3 for the ship of a local player */
+#define Veh_Aim(v) ((void *)&Veh(v)->autoAim)
+#define Veh_AimLimit(v) (Veh(v)->autoAim.ang)
+#define Veh_AimAng(v) (Veh(v)->autoAim.ax)
+#define Veh_AimAngY(v) (Veh(v)->autoAim.ay)
+#define Veh_TargetLink(v) (&Veh(v)->autoAim.target)	/* the target entity of the ship */
+#define Veh_AimCone(v) (Veh(v)->autoAim.speed)
+#define Veh_AimDist(v) (Veh(v)->autoAim.distLimit)
+#define Veh_AimMode(v) (Veh(v)->autoAim.status)
+#define Veh_Effects(v) ((void *)&Veh(v)->effects)	/* VehicleEffects.cpp: the shoot effects */
+#define Veh_TeslaAng(v) (Veh(v)->autoAim.hiAng)
+#define Veh_TeslaMinAng(v) (Veh(v)->autoAim.loAng)
+#define Veh_TeslaAngSpeed(v) (Veh(v)->autoAim.deltaAng)
 
 /* the fields of the missiles (cMissileEntity) */
-#define Mis_Sounds(m) ((cSndInterface *)((byte *)(m) + 0x144))
-#define Mis_Size(m) ((void *)((byte *)(m) + 0x39c))	/* Primitive.cpp: the collision size */
-#define Mis_Speed(m) WFIELD(m, float, 0x3f4)
-#define Mis_Owner(m) ((char *)((byte *)(m) + 0x3fc))	/* the name of the ship that shot it */
-#define Mis_Bees(m) WFIELD(m, int, 0x588)
-#define Mis_Debris(m) WFIELD(m, cDebris *, 0x590)	/* the effect debris of the bees, linked at +0x50 */
-#define Mis_Radius(m) WFIELD(m, float, 0x5a8)
-#define Mis_Type(m) WFIELD(m, int, 0x7b8)		/* Inferno: 0 Uranio, 1 Hidrogeno, 2 Napalm; Swarm upgrade */
-#define Mis_B7bd(m) WFIELD(m, byte, 0x7bd)
-#define Mis_OnBeeHit(m) ((cPy_Function *)((byte *)(m) + 0x7c0))
-#define Mis_OnHit(m) ((cPy_Function *)((byte *)(m) + 0x7d4))
+#define Mis_Sounds(m) (&Missile(m)->wl.obj.snd)
+#define Mis_Size(m) ((void *)&Missile(m)->wl.prim)	/* Primitive.cpp: the collision size */
+#define Mis_Speed(m) (Missile(m)->speed)
+#define Mis_Owner(m) (Missile(m)->parent)		/* the name of the ship that shot it */
+#define Mis_Bees(m) (Missile(m)->swarmCount)
+#define Mis_Debris(m) (Missile(m)->swarm)		/* the effect debris of the bees */
+#define Mis_Radius(m) (Missile(m)->topRadius)
+#define Mis_Type(m) (Missile(m)->level)
+#define Mis_FallOut(m) (Missile(m)->fallOut)
+#define Mis_OnBeeHit(m) (&Missile(m)->onBeeDeath)
+#define Mis_OnHit(m) (&Missile(m)->onHit)
 
-/* the fields of a scorer item the weapons draw */
-#define Item_Rot(i) WFIELD(i, float, 0xb4)
-#define Item_SizeX(i) WFIELD(i, float, 0xb8)
-#define Item_SizeY(i) WFIELD(i, float, 0xbc)
-#define Item_Color(i) WFIELD(i, uint32_t, 0xc0)
+/* a field of an effect element of the debris by offset (Vulcan and Laser), until the elements have a struct */
+#define WFIELD(e, type, off) (*(type *)((byte *)(e) + (off)))
 
 /* engine variables (Gvars, the value at +0x10 of the variable object) */
 #define g_SwarmIDWeap GAME_GLOBAL_IN(int, GVar_SwarmIDWeap, 16, 0x448800)
@@ -295,7 +287,7 @@ void FXSwarm_Hit(float x, float y, float z, float vx, float vy, float vz, float 
 	float dz);
 
 #define WEAP_PI 3.141592653589793			/* rva 0x3a3700 */
-#define Ent_Sounds(e) ((cSndInterface *)((byte *)(e) + 0x144))
+#define Ent_Sounds(e) (&((cObjEntity *)(e))->snd)
 
 /* the shared code of the weapons, inlined in the original */
 static inline cEntity *Weap_Vehicle(const char *name) {
@@ -428,15 +420,15 @@ static inline void Weap_PushAway(cEntity *v, cEntity *e, int n, float force) {
 
 /* the HUD item of a weapon that does not fire turns back to the angle 0 by d */
 static inline void Weap_HudSpinDown(cScorerItem *item, float d) {
-	float a = NormAng(Item_Rot(item));
-	Item_Rot(item) = a;
+	float a = NormAng(ScorerItem_Angle(item));
+	ScorerItem_Angle(item) = a;
 	float s = a + d;
 	if (0.0f > s) {
-		Item_Rot(item) = s;
+		ScorerItem_Angle(item) = s;
 		return;
 	}
 	float t = a - d;
-	Item_Rot(item) = t > 0.0f ? t : 0.0f;
+	ScorerItem_Angle(item) = t > 0.0f ? t : 0.0f;
 }
 
 /* Inferno.c; the natives with their names in the registry of C functions ("!name" for cPy_Function_SetFunc),

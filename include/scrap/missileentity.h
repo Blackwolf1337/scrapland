@@ -11,6 +11,7 @@
 #include "scrap/pyfunction.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/timer.h"
+#include "scrap/withlifeentity.h"
 #include "scrap/world.h"
 
 #define CMISSILEENTITY_VFTABLE GAME_VFTABLE(cMissileEntity_vftable, 0x3b2b24)
@@ -22,21 +23,8 @@
 #define MISSILE_HIT_INSIDE 3
 
 typedef struct cMissileEntity {
-	cEntity base;			/* 0x000 */
-	byte pad_7c[0xac - 0x7c];
-	vec3_t ang;			/* 0x0ac */
-	CGameModel model;		/* 0x0b8 */
-	vec3_t vel;			/* 0x0d4 */
-	vec3_t rotVel;			/* 0x0e0 */
-	byte pad_ec[0x110 - 0xec];
-	cTimer timer;			/* 0x110 the time of the entity */
-	byte pad_138[0x140 - 0x138];
-	byte *obj140;			/* 0x140 the floats at 0x4 and 0x8 are set to the one at 0xc */
-	byte weapons[0x238 - 0x144];	/* 0x144 PtrArray of the weapons (and more) */
-	int life;			/* 0x238 */
-	byte pad_23c[0x28c - 0x23c];
-	float f28c;			/* 0x28c -1 */
-	byte pad_290[0x3e8 - 0x290];
+	cWithLifeEntity wl;		/* 0x000 */
+	/* cMissileEntity */
 	byte hideMain;			/* 0x3e8 the model hidden */
 	byte pad_3e9[3];
 	float swDthTime;		/* 0x3ec */
@@ -63,16 +51,13 @@ typedef struct cMissileEntity {
 	int netSwarmCount;		/* 0x5b0 the count of a network copy */
 	char hits[4][0x80];		/* 0x5b4 the entities it went through (InOut) */
 	int hitType;			/* 0x7b4 MISSILE_HIT_ */
-	int hideMainVar;		/* 0x7b8 the variable "HideMain" */
+	int level;			/* 0x7b8 "HideMain": the upgrade level (Inferno: 0 Uranio, 1 Hidrogeno, 2 Napalm; Swarm) */
 	byte noWorldHit;		/* 0x7bc */
 	byte fallOut;			/* 0x7bd "FallOutAtmosphere" */
 	byte pad_7be[2];
 	cPy_Function onBeeDeath;	/* 0x7c0 (missile, x, y, z) */
 	cPy_Function onHit;		/* 0x7d4 (missile, parent, target or the entity it went through, ...) */
 } cMissileEntity;
-SD_OFFSET(cMissileEntity, ang, 0xac);
-SD_OFFSET(cMissileEntity, timer, 0x110);
-SD_OFFSET(cMissileEntity, life, 0x238);
 SD_OFFSET(cMissileEntity, hideMain, 0x3e8);
 SD_OFFSET(cMissileEntity, parent, 0x3fc);
 SD_OFFSET(cMissileEntity, type, 0x57c);
@@ -162,7 +147,7 @@ void __thiscall cMissileEntity_SetTurnSpeed(cMissileEntity *self, float speed);
 void __thiscall cMissileEntity_UpdateVel(cMissileEntity *self);
 void __thiscall cMissileEntity_SetVel(cMissileEntity *self, const vec3_t *vel);
 void __thiscall cMissileEntity_Update(cMissileEntity *self);
-/* the values of the first weapon scaled with the bees */
+/* the volume of the first sound scaled with the bees */
 void __thiscall cMissileEntity_ScaleWeapon(cMissileEntity *self, int unused);
 byte __thiscall cMissileEntity_VarS(cMissileEntity *self, const char *name, char **s, int set);
 byte __thiscall cMissileEntity_VarV(cMissileEntity *self, const char *name, double *x, double *y, double *z, int set);

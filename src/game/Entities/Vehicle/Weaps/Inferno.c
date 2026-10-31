@@ -82,35 +82,35 @@ void Weap_UpdateHud(cAbstractFile *f, char (*targets)[0x80], float *times, int l
 			}
 			float x = (float)__builtin_fabs((double)(times[player] * 4.0f + 1.0f));
 			uint32_t a = (uint32_t)(-1 - (int)(x * 64.0f));
-			Item_Color(item) = ((((a << 8) | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8) |
+			ScorerItem_Color(item) = ((((a << 8) | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8) |
 				g_CannonScorerColorBlue;
 			if (level == levelRot) {
-				Item_SizeX(item) = 20.0f;
-				Item_SizeY(item) = 20.0f;
-				Item_Rot(item) = (1.0f - x) * 3.14159274f * 0.25f;
+				ScorerItem_SizeX(item) = 20.0f;
+				ScorerItem_SizeY(item) = 20.0f;
+				ScorerItem_Angle(item) = (1.0f - x) * 3.14159274f * 0.25f;
 			} else {
 				float s = (1.0f - x) * 7.0f + 20.0f;
-				Item_SizeX(item) = s;
-				Item_SizeY(item) = s;
-				Item_Rot(item) = 0.0f;
+				ScorerItem_SizeX(item) = s;
+				ScorerItem_SizeY(item) = s;
+				ScorerItem_Angle(item) = 0.0f;
 			}
 			return;
 		}
-		Item_SizeX(item) = 20.0f;
-		Item_SizeY(item) = 20.0f;
-		Item_Color(item) = (((g_CannonScorerColorRed | 0xffffbf00u) << 8 | g_CannonScorerColorGreen) << 8) |
+		ScorerItem_SizeX(item) = 20.0f;
+		ScorerItem_SizeY(item) = 20.0f;
+		ScorerItem_Color(item) = (((g_CannonScorerColorRed | 0xffffbf00u) << 8 | g_CannonScorerColorGreen) << 8) |
 			g_CannonScorerColorBlue;
-		Item_Rot(item) = 0.0f;
+		ScorerItem_Angle(item) = 0.0f;
 		return;
 	}
 	t = t - dt * 3.0f;
 	times[player] = t;
-	Item_Rot(item) = t * 1.57079637f;
+	ScorerItem_Angle(item) = t * 1.57079637f;
 	float s = times[player] * 50.0f + 20.0f;
-	Item_SizeX(item) = s;
-	Item_SizeY(item) = s;
+	ScorerItem_SizeX(item) = s;
+	ScorerItem_SizeY(item) = s;
 	uint32_t a = (uint32_t)(-64 - (int)(times[player] * 192.0f));
-	Item_Color(item) = ((((a << 8) | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8) |
+	ScorerItem_Color(item) = ((((a << 8) | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8) |
 		g_CannonScorerColorBlue;
 }
 
@@ -400,7 +400,7 @@ void Inferno_NetSetUp(const char *name) {
 			if (!cTargetLock_HasSlot(wm, g_InfernoIDWeap, i)) {
 				continue;
 			}
-			Weap_DropAtNode(v, Veh_WeapNodes(v)[i + g_InfernoIDAmmo * 4], &mtx, &ang, &vel);
+			Weap_DropAtNode(v, Veh(v)->weapons.nodes[g_InfernoIDAmmo][i], &mtx, &ang, &vel);
 			Weap_Vtbl(m)->AddBees(m, 1);
 			if (i == 0 && Mis_Debris(m) && Debris_Element(Mis_Debris(m))) {
 				cObjElementFXInfernoMissile_SetFlare(Debris_Element(Mis_Debris(m)), 1);
@@ -422,7 +422,7 @@ void Inferno_NetSetUp(const char *name) {
 	}
 	Weap_Vtbl(m)->SetBees(m, cMissileEntity_GetSwarmCount((cMissileEntity *)m));
 	Weap_Vtbl(m)->SetMaxSpeed(m, 6000.0f);
-	Mis_B7bd(m) = 1;
+	Mis_FallOut(m) = 1;
 	Weap_EngineSound(m, g_InfernoEngineSound, g_InfernoEngineSoundVol, g_InfernoEngineSoundAttIni,
 		g_InfernoEngineSoundAttEnd, g_InfernoEngineSoundDoppler);
 }
@@ -504,8 +504,8 @@ void Inferno_SphereHit(cAbstractFile *f) {
 		vel.z = ov->z + pz;
 		Weap_Vtbl(e)->SetVel(e, &vel);
 	}
-	if (isCar && Veh_AI(e)) {
-		*(int *)(Veh_AI(e) + 0x64) = 2;
+	if (isCar && Vehicle_NetCtrl(e)) {
+		Vehicle_NetCtrl(e)->hit = 2;
 	}
 	if (Ent_Life(e) > 0 && Mis_Type(g_InfernoMissile) == 2) {
 		Ent_BurnLen(e) = g_InfernoUpgFireTime;

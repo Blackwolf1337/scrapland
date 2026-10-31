@@ -346,7 +346,7 @@ void Laser_CreateNative(cAbstractFile *f) {
 			continue;
 		}
 		const matrix_t *m = CGameModel_NodeMatrix(Weap_Vtbl(v)->GetModel(v), &mtx,
-			Veh_WeapNodes(v)[i + g_LaserIDAmmo * 4], 0, NULL, 0);
+			Veh(v)->weapons.nodes[g_LaserIDAmmo][i], 0, NULL, 0);
 		s.x = m->m[12];
 		s.y = m->m[13];
 		s.z = m->m[14];
@@ -551,15 +551,15 @@ void Laser_HudNative(cAbstractFile *f) {
 		if (b < 0) {
 			b = 0;
 		}
-		Item_Color(item) = (((uint32_t)g | (g_CannonScorerColorRed | 0xffffbf00u) << 8) << 8) | (uint32_t)b;
+		ScorerItem_Color(item) = (((uint32_t)g | (g_CannonScorerColorRed | 0xffffbf00u) << 8) << 8) | (uint32_t)b;
 	} else {
 		int k = (int)(time * 1024.0f) % 512 - 255;
 		uint32_t a = (uint32_t)(k < 0 ? -k : k);
-		Item_Color(item) = ((((g_CannonScorerColorRed | 0xffffbf00u) << 8) | a) << 8) | a;
+		ScorerItem_Color(item) = ((((g_CannonScorerColorRed | 0xffffbf00u) << 8) | a) << 8) | a;
 	}
-	Item_SizeX(item) = 20.0f;
-	Item_SizeY(item) = 20.0f;
-	Item_Rot(item) = 0.0f;
+	ScorerItem_SizeX(item) = 20.0f;
+	ScorerItem_SizeY(item) = 20.0f;
+	ScorerItem_Angle(item) = 0.0f;
 }
 
 static void Laser_AimOn(cEntity *v) {

@@ -28,7 +28,7 @@ static void Vulcan_Shells(cEntity *v) {
 			continue;
 		}
 		const matrix_t *m = CGameModel_NodeMatrix(Weap_Vtbl(v)->GetModel(v), &mtx,
-			Veh_WeapNodes(v)[i + g_VulcanIDAmmo * 4], 0, NULL, 0);
+			Veh(v)->weapons.nodes[g_VulcanIDAmmo][i], 0, NULL, 0);
 		float sx = m->m[12];
 		float sy = m->m[13];
 		float sz = m->m[14];
@@ -203,7 +203,7 @@ void Vulcan_Shoot(cEntity *v) {
 	}
 	Controls_RumbleA(Vehicle_Controls(v), 0.5f, 0.2f);
 	Controls_RumbleB(Vehicle_Controls(v), 0.35f, 0.2f);
-	if (Veh_Seat(v) == -1) {
+	if (Veh(v)->weapons.weapSnd == -1) {
 		cWeaponManager_SetWeapSnd(wm, VULCAN_SND_SHOT);
 		cSndItem *s = PtrArray_Get(Ent_Sounds(v), VULCAN_SND_SHOT);
 		if (s) {
@@ -447,13 +447,13 @@ void Vulcan_HudNative(cAbstractFile *f) {
 	float delta = Scorer_Delta(Scorer_Get(player));
 	if (Vehicle_Controls(v)->fire &&
 		cWeaponManager_GetUpgrade(Veh_Weapons(v), g_VulcanIDWeap) == VULCAN_UPG_WIDE) {
-		Item_Rot(item) = Item_Rot(item) + Scorer_Delta(Scorer_Get(player)) * 0x1.921fb6p+1f;
+		ScorerItem_Angle(item) = ScorerItem_Angle(item) + Scorer_Delta(Scorer_Get(player)) * 0x1.921fb6p+1f;
 	} else {
 		Weap_HudSpinDown(item, delta * 0x1.921fb6p+3f);
 	}
-	Item_SizeX(item) = 20.0f;
-	Item_SizeY(item) = 20.0f;
-	Item_Color(item) = Weap_CannonColor();
+	ScorerItem_SizeX(item) = 20.0f;
+	ScorerItem_SizeY(item) = 20.0f;
+	ScorerItem_Color(item) = Weap_CannonColor();
 }
 
 /* ship name: the shot (not on clients) hurts what it aims at */
