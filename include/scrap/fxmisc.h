@@ -20,7 +20,7 @@
 /* the debris an element rides on: its model first (CGameModel), the element at 0x54 */
 #define Debris_Model(d) ((CGameModel *)(d))
 #define Debris_Life(d) ((d)->speed)		/* 0x4c counts down by 0.05 a step, ends at 0 */
-#define Debris_Element(d) (*(void **)((byte *)(d) + 0x54))
+#define Debris_Element(d) ((void *)((cDebris *)(d))->fx)
 
 /* Debris.cpp (rva 0x204940..) */
 /* the destructor of the base class: the vtable of cObjElementAbstract */
@@ -70,7 +70,7 @@ static inline float FX_Rand(double range, double add) {
 }
 
 /* an entity that is deleted (the int at 0x20) or off: the effect lets it go */
-#define Entity_Removed(e) (*(int *)((byte *)(e) + 0x20))
+#define Entity_Removed(e) (((cEntity *)(e))->deadNode.target)
 
 /* the engine variables (Gvars): the files of the debris systems of the effects */
 #define g_FXItemBlinkFile GAME_GLOBAL_IN(const char *, GVar_FXItemBlinkFile, 16, 0x467240)

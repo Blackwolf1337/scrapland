@@ -91,9 +91,9 @@ static inline const cWorldEntityVtbl *WEnt_Vtbl(cEntity *e) {
 }
 
 /* the fields of entities the world reads */
-#define Entity_Mask(e) (*(uint32_t *)((byte *)(e) + 0x48))		/* the entity lists it is in, a bit each */
-#define Entity_Team(e) (*(int *)((byte *)(e) + 0x388))		/* characters: 3 neutral, 4 against all */
-#define CamEntity_Cam(e) ((vec3_t *)((byte *)(e) + 0x7c))		/* the camera of a "Cam", its position first */
+#define Entity_Mask(e) (((cEntity *)(e))->mask)		/* the entity lists it is in, a bit each */
+#define Entity_Team(e) (WLife(e)->arrow.tgType)		/* characters: 3 neutral, 4 against all */
+#define CamEntity_Cam(e) (&((cCamControl *)(e))->cam.pos)		/* the camera of a "Cam", its position first */
 #define CamEntity_Orient(e) ((vec3_t *)((byte *)(e) + 0x88))
 #define CamEntity_Slot(e) (*(int *)((byte *)(e) + 0xb8))		/* the view it shows, -1 for none */
 #define CamEntity_NoFollow(e) (*(byte *)((byte *)(e) + 0xbc))

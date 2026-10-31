@@ -4,10 +4,12 @@
 #include <string.h>
 
 #include "scrap/ai.h"
+#include "scrap/camcontrol.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/doors.h"
 #include "scrap/embeddedfxvehicle.h"
+#include "scrap/vehicleentity.h"
 
 #define TYEN_OBJECT "Obj"
 
@@ -90,10 +92,10 @@ void Doors_AcceleratorOnEnter(cAbstractFile *params) {
 	cVehicleEntity_SetNetFlag(car, 1);
 	cVehicleEntity_UpdateSpeed(car);
 	if (cVehicleEntity_GetOwnerSlot(car) != -1) {
-		byte *driver = (byte *)Vehicle_Player(car);
-		if (driver && *(float *)(driver + 0x220) <= 0.0f) {
-			*(float *)(driver + 0x224) = 1e-8f;
-			*(float *)(driver + 0x220) = 0.35f;
+		cFollowCamEntity *cam = (cFollowCamEntity *)Vehicle_Player(car);
+		if (cam && cam->quakeTime <= 0.0f) {
+			cam->quakeFactor = 1e-8f;
+			cam->quakeTime = 0.35f;
 		}
 	}
 }

@@ -11,6 +11,7 @@
 #include "scrap/crt.h"
 #include "scrap/net.h"
 #include "scrap/python.h"
+#include "scrap/withlifeentity.h"
 
 static const char *Net_TeamName(int team) {
 	switch (team) {

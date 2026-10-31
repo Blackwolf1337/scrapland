@@ -142,9 +142,8 @@ SD_OFFSET(cObjElementFXDebrisCloud, on, 0x1f0);
 SD_SIZE(cObjElementFXDebrisCloud, 0x1f4);
 
 /* the fields of the ships the hook reads */
-#define Entity_TargetLock(e) ((cTargetLock *)((byte *)(e) + 0x5f0))
+#define Entity_TargetLock(e) (&Veh(e)->weapons)
 #define Entity_Weapons(e) ((void *)((byte *)(e) + 0x144))		/* the weapons (PtrArray) */
-#define Entity_WeapNodes(e) (*(int **)((byte *)(e) + 0x60c))	/* render node per ammo kind and slot: [ammo * 4 + slot] */
 #define WEAPON_LASER 0x18						/* the slot of the laser in Entity_Weapons */
 #define Weapon_HookOn(w) (*(byte *)((byte *)(w) + 0x9c))
 #define Entity_PlayerCam(e) (*(void **)((byte *)(e) + 0xf0))	/* the camera data of the ship of a player, NULL else */

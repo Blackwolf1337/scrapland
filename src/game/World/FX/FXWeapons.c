@@ -544,7 +544,7 @@ void __thiscall cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, con
 	for (int i = 0; i < FXATPC_SLOTS; i++) {
 		if (cTargetLock_HasSlot(Entity_TargetLock(self->shooter), g_ATPCIDWeap, i)) {
 			const matrix_t *m = CGameModel_NodeMatrix(model, &mat,
-				(uint32_t)Entity_WeapNodes(self->shooter)[i + g_ATPCIDAmmo * 4], 0, NULL, 0);
+				(uint32_t)Veh(self->shooter)->weapons.nodes[g_ATPCIDAmmo][i], 0, NULL, 0);
 			self->numSlots++;
 			self->slotOn[i] = 1;
 			self->slotPos[i].x = m->m[12];
@@ -1558,7 +1558,7 @@ void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *deb
 
 		/* the line from the weapon node of the slot to the end */
 		const matrix_t *m = CGameModel_NodeMatrix(em, &mat,
-			(uint32_t)Entity_WeapNodes(self->emitter)[i + g_TeslaIDAmmo * 4], 0, NULL, 0);
+			(uint32_t)Veh(self->emitter)->weapons.nodes[g_TeslaIDAmmo][i], 0, NULL, 0);
 		v.x = 0.0f;
 		v.y = 0.0f;
 		v.z = -500.0f;

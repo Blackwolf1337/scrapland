@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "scrap/arrowindicator.h"
+#include "scrap/vehicleentity.h"
 #include "scrap/vehiclemotors.h"
 
 #define VM_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* the "" of the exe */
@@ -66,7 +67,7 @@ typedef struct VMUpdate {
 	float alpha;			/* of the embedded effects */
 	float camDist;
 	float fxTime;			/* since the visibility of the ship changed */
-	int player;
+	const cEntity *player;		/* the follow camera of a player ship */
 	byte cloud;
 	byte visible;
 	byte followed;

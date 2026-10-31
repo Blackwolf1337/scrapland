@@ -9,6 +9,7 @@
 #include "scrap/crt.h"
 #include "scrap/objentity.h"
 #include "scrap/scrapcollision.h"
+#include "scrap/withlifeentity.h"
 
 #define ARROW_POOL_MAX 5			/* more free models are deleted */
 #define ARROW_FADE_SPEED 4.0f			/* rva 0x3a5aac */

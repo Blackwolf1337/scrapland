@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "scrap/ai.h"
+#include "scrap/camcontrol.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/hashtable.h"
@@ -15,6 +16,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapworld.h"
 #include "scrap/sound.h"
+#include "scrap/withlifeentity.h"
 #include "scrap/world.h"
 
 #define PI_F 3.14159265f

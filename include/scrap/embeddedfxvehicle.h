@@ -110,13 +110,6 @@ SD_OFFSET(cEmbeddedFXVehicleVote, type, 0x2dc);
 SD_SIZE(cEmbeddedFXVehicleVote, 0x2e0);
 
 /* the vehicle fields used here */
-#define Vehicle_Model(e) ((CGameModel *)((byte *)(e) + 0xb8))
-#define Vehicle_Player(e) (*(int *)((byte *)(e) + 0xf0))	/* driven by a player */
-#define Vehicle_Life(e) (*(int *)((byte *)(e) + 0x238))
-#define Vehicle_Speed(e) (*(float *)((byte *)(e) + 0x4c0))
-#define Vehicle_TypeName(e) ((char *)((byte *)(e) + 0x568))
-#define Vehicle_IsTraffic(e) (*((byte *)(e) + 0x5e0))
-#define Vehicle_FollowName(e) ((char *)((byte *)(e) + 0x650))	/* the car of a player */
 
 /* the shared siren model and particles */
 #define g_SirenModel (GAME_ARRAY(CGameModel, g_SirenModel, 0x447478))

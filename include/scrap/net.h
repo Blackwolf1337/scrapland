@@ -161,11 +161,11 @@ static inline const cNetEntityVtbl *Net_Vtbl(cEntity *e) {
 }
 
 /* the fields of a vehicle the player descriptors carry */
-#define NetEnt_UsrName(e) (*(char **)((byte *)(e) + 0x250))	/* cString, cWithLifeEntity */
-#define NetEnt_Team(e) (*(int *)((byte *)(e) + 0x388))
+#define NetEnt_UsrName(e) (WLife(e)->usrName)	/* cString, cWithLifeEntity */
+#define NetEnt_Team(e) (WLife(e)->arrow.tgType)
 #define NetEnt_TypeName(e) ((char *)(e) + 0x568)		/* cVehicleEntity.typeName */
-#define NetEnt_Weapons(e) ((void *)((byte *)(e) + 0x5f0))	/* cWeaponManager */
-#define NetEnt_MaxLife(e) (*(int *)((byte *)(e) + 0x640))
+#define NetEnt_Weapons(e) ((void *)&Veh(e)->weapons)	/* cWeaponManager */
+#define NetEnt_MaxLife(e) (Veh(e)->maxLife)
 #define NetEnt_Motors(e) ((void *)((byte *)(e) + 0x720))	/* cVehicleMotors */
 #define NetEnt_Target(e) ((char *)(e) + 0x650)
 #define NetEnt_Kind(e) (*((byte *)(e) + 0xec))			/* the byte after the id in the entity stream */

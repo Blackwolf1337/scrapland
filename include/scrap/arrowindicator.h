@@ -70,8 +70,6 @@ SD_OFFSET(cArrowIndicator, coneFov, 0x7c);
 SD_SIZE(cArrowIndicator, 0x88);
 
 /* the arrow and the collision sphere of an entity with life */
-#define Ent_Arrow(e) ((cArrowIndicator *)((byte *)(e) + 0x314))
-#define Ent_ArrowRadius(e) (*(float *)((byte *)(e) + 0x3a0))
 
 /* the globals of ArrowIndicator.cpp */
 #define g_ArrowPool GAME_GLOBAL(cArrowModel *, g_ArrowPool, 0x4479a8)

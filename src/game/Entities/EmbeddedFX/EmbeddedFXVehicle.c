@@ -9,6 +9,7 @@
 #include "scrap/embeddedfxvehicle.h"
 #include "scrap/fxmisc.h"
 #include "scrap/mathlib.h"
+#include "scrap/vehicleentity.h"
 #include "scrap/world.h"
 
 #define g_RandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */

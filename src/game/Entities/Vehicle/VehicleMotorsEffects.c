@@ -7,6 +7,7 @@
  */
 #include <string.h>
 
+#include "scrap/vehicleentity.h"
 #include "scrap/vehiclemotors.h"
 
 #define g_RandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */

@@ -68,7 +68,7 @@ void __thiscall cObjElementFXHook_StartTarget(cObjElementFXHook *self, cEntity *
 	self->slot = slot;
 	self->active = 1;
 	self->fade = 0.0f;
-	const matrix_t *m = CGameModel_NodeMatrix(model, &mat, Entity_WeapNodes(self->emitter)[slot + g_LaserIDAmmo * 4],
+	const matrix_t *m = CGameModel_NodeMatrix(model, &mat, Veh(self->emitter)->weapons.nodes[g_LaserIDAmmo][slot],
 		0, NULL, 0);
 	off.x = 0.0f;
 	off.y = 0.0f;
@@ -211,7 +211,7 @@ void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debri
 			}
 		}
 		const matrix_t *m = CGameModel_NodeMatrix(model, &mat,
-			Entity_WeapNodes(self->emitter)[self->slot + g_LaserIDAmmo * 4], 0, NULL, 0);
+			Veh(self->emitter)->weapons.nodes[g_LaserIDAmmo][self->slot], 0, NULL, 0);
 		vec3_t off = { 0.0f, 0.0f, -g_HookRange };
 		self->points[0].x = m->m[12];
 		self->points[0].y = m->m[13];
@@ -236,7 +236,7 @@ void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debri
 		model = Entity_Model(e);
 		CHECK(CGameModel_IsLoaded(model));
 		const matrix_t *m = CGameModel_NodeMatrix(model, &mat,
-			Entity_WeapNodes(self->emitter)[self->slot + g_LaserIDAmmo * 4], 0, NULL, 0);
+			Veh(self->emitter)->weapons.nodes[g_LaserIDAmmo][self->slot], 0, NULL, 0);
 		vec3_t off = { 0.0f, 0.0f, -500.0f };
 		self->points[0].x = m->m[12];
 		self->points[0].y = m->m[13];

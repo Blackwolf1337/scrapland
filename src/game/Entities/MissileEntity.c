@@ -19,7 +19,7 @@
 
 #define MISSILE_PI_2 0x1.921fb6p+0f				/* pi / 2 as float (0x3fc90fdb) */
 
-#define Debris_Next(d) (*(cDebris **)((byte *)(d) + 0x50))
+#define Debris_Next(d) (((cDebris *)(d))->next)
 
 /* the debris systems of the fire effects (SetEmbeddedFX) */
 #define g_MissileFXDumbMotor GAME_GLOBAL_IN(const char *, GVar_FXDumbMotorFile, 16, 0x448478)

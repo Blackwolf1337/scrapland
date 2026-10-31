@@ -42,7 +42,7 @@ static void *VE_Drop(const char *file, float life, byte noRadius, uint32_t size,
 	if (ctor && !Debris_Element(d)) {
 		void *mem = operator_new(size);
 		cObjElementFX *el = mem ? ctor(mem) : NULL;
-		Debris_Element(d) = el;
+		d->fx = el;
 		el->vftable->Start(el, d);
 	}
 	return Debris_Element(d);

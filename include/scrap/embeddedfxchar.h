@@ -14,6 +14,7 @@
 
 #include "scrap/entity.h"
 #include "scrap/filesys.h"
+#include "scrap/objentity.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapparticles.h"
 #include "scrap/scraptrails.h"
@@ -37,7 +38,7 @@ struct cEmbeddedFX {
 SD_SIZE(cEmbeddedFX, 8);
 
 /* the embedded effect of an entity with life */
-#define Entity_EmbeddedFX(e) (*(cEmbeddedFX **)((byte *)(e) + 0x224))
+#define Entity_EmbeddedFX(e) (((cObjEntity *)(e))->fx)
 
 /* the blinking alarm light of the police, the gears and the sentinels (no vtable, a member) */
 typedef struct cEmbeddedFXAlarm {

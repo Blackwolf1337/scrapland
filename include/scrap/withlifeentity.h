@@ -83,6 +83,9 @@ static inline cWithLifeEntity *WLife(const void *e) {
 	return (cWithLifeEntity *)e;
 }
 
+#define Ent_Arrow(e) (&WLife(e)->arrow)
+#define Ent_ArrowRadius(e) (WLife(e)->prim.radius)
+
 static inline const cWithLifeEntityVtblFull *WLife_Vtbl(const cEntity *e) {
 	return (const cWithLifeEntityVtblFull *)e->vftable;
 }

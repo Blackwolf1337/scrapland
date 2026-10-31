@@ -9,6 +9,7 @@
 #include "scrap/itementity.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/sound.h"
+#include "scrap/withlifeentity.h"
 
 #define ITEM_CLASSNAME GAME_STR(str_3af3f8, 0x3af3f8)	/* "item" */
 
