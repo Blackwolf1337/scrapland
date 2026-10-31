@@ -458,7 +458,7 @@ cWorld *__thiscall cWorld_ctor(cWorld *self) {
 	HashTable_ctor(&self->debris, 0x1c9, 1);
 	HashTable_ctor(&self->lists, 0x1f, 1);
 	cTimer_ctor(&self->timer);
-	Floor_ctor(self->floor);
+	Floor_ctor(&self->floor);
 	Elements_ctor(self->elements);
 	self->weapons.items = NULL;
 	self->weapons.count = 0;
@@ -538,7 +538,7 @@ void __fastcall cWorld_dtor(cWorld *self) {
 	AmmoTable_Free(&self->ammo);
 	WeapTable_Free(&self->weapons);
 	Elements_dtor(self->elements);
-	Floor_dtor(self->floor);
+	Floor_dtor(&self->floor);
 	PtrTable_Clear(&self->lists);
 	PtrTable_Clear(&self->debris);
 	cScheduledFuncStack_dtor(self->scheduler);

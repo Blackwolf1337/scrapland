@@ -19,6 +19,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/sound.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/walkcharentity.h"
 #include "scrap/world.h"
 #include "scrap/global.h"
 #include "scrap/win32.h"
@@ -1653,7 +1654,7 @@ enum {
 #define DBG_FCAM_POS(e) ((vec3_t *)((byte *)(e) + 0x1f4))	/* the point a "FCam" follows */
 #define DBG_FCAM_DIST(e) (*(float *)((byte *)(e) + 0xa0))
 #define DBG_FCAM_SCALE 1.65f
-#define DBG_FLOOR_DIST(e) (*(float *)((byte *)(e) + 0x45c))	/* cWalkCharEntity floorDist */
+#define DBG_FLOOR_DIST(e) (WChar(e)->floorDist)
 #define DBG_SPHERE_DIV 10
 #define DBG_ARROW_Y 5.0f
 

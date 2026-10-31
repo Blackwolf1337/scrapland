@@ -10,6 +10,7 @@
 
 #include "scrap/alarm.h"
 #include "scrap/global.h"
+#include "scrap/mapfloors.h"
 #include "scrap/mathlib.h"
 #include "scrap/nto1links.h"
 #include "scrap/timer.h"
@@ -199,7 +200,7 @@ typedef struct cWorld {
 	byte checkInput;		/* 0x02c4 the input events are called every frame */
 	byte pad_02c5[3];
 	cTimer timer;			/* 0x02c8 world time (Scrap.GetTime, GetTimeSpeed) */
-	byte floor[0x1bb4 - 0x02f0];	/* 0x02f0 Scrap.GetFloor */
+	MapFloors floor;		/* 0x02f0 Scrap.GetFloor */
 	byte elements[0x1bb8 - 0x1bb4]; /* 0x1bb4 map elements (Scrap.CreateElements, CallElements) */
 	TABLE(cWeapInfo) weapons;	/* 0x1bb8 SWeap.InitWeap, GetNWeap */
 	int firstWeapon;		/* 0x1bc0 SWeap.GetFirstiWeap */

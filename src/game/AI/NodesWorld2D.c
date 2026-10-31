@@ -814,8 +814,8 @@ void __thiscall CNodesWorld2D_CollectCell(CNodesWorld2D *self, const vec3_t *pos
 			} else if (mode == 1) {
 				add = CNodesWorld2D_GroundSees(self, &q, pos, h1);
 			} else if (mode == 2 && !g_IsMapOutDoor) {
-				int f = Floor_Get(g_pWorld->floor, pos->y);
-				add = f == Floor_Get(g_pWorld->floor, q.y);
+				int f = Floor_Get(&g_pWorld->floor, pos->y);
+				add = f == Floor_Get(&g_pWorld->floor, q.y);
 			} else {
 				add = 1;
 			}

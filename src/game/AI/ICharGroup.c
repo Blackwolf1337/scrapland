@@ -393,7 +393,7 @@ byte __thiscall cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity 
 		if (d > maxDist * maxDist) {
 			continue;
 		}
-		if (Floor_Get(g_pWorld->floor, cam.y) != Floor_Get(g_pWorld->floor, AICG_Point(self, zi, idx)->pos.y)) {
+		if (Floor_Get(&g_pWorld->floor, cam.y) != Floor_Get(&g_pWorld->floor, AICG_Point(self, zi, idx)->pos.y)) {
 			continue;
 		}
 		p = AICG_Point(self, zi, idx);

@@ -75,7 +75,7 @@ cRadarScorer *__fastcall cRadarScorer_ctor(cRadarScorer *self) {
 	self->mapH = z1 - z0;
 	self->mapX0 = x0;
 	self->mapZ0 = z0;
-	for (int k = 0; k < World_NumFloors(); k++) {
+	for (int k = 0; k < g_pWorld->floor.count; k++) {
 		snprintf(buf, sizeof(buf), g_FileNameMap2D, k);
 		CPsaImage *img = operator_new(sizeof(CPsaImage));
 		self->floorMaps[k] = img ? CPsaImage_ctor(img, buf, 0x2024) : NULL;
@@ -95,7 +95,7 @@ void __fastcall cRadarScorer_dtor(cRadarScorer *self) {
 	Radar_FreeImage(self->icons);
 	Radar_FreeImage(self->noise);
 	Radar_FreeImage(self->cone);
-	for (int k = 0; k < World_NumFloors(); k++) {
+	for (int k = 0; k < g_pWorld->floor.count; k++) {
 		Radar_FreeImage(self->floorMaps[k]);
 	}
 	cScorerItem_dtor(&self->base);
@@ -119,10 +119,10 @@ cRadarScorer *__thiscall cRadarScorer_Delete(cRadarScorer *self, byte flags) {
 
 void __thiscall cRadarScorer_UpdateFloor(cRadarScorer *self, float y) {
 	int old = self->floor;
-	int n = World_NumFloors();
+	int n = g_pWorld->floor.count;
 	int k = 1;
 
-	while (k < n && !(World_FloorHeight(k) > y)) {
+	while (k < n && !(g_pWorld->floor.levels[k].y > y)) {
 		k++;
 	}
 	self->floor = k - 1;
@@ -140,22 +140,22 @@ void __thiscall cRadarScorer_DrawCone(cRadarScorer *self, const vec3_t *pos, flo
 	int side;
 
 	/* on the floor shown, or on the one before while it fades */
-	if (World_FloorHeight(self->floor) > y) {
+	if (g_pWorld->floor.levels[self->floor].y > y) {
 		side = -1;
-	} else if (self->floor + 1 >= World_NumFloors()) {
+	} else if (self->floor + 1 >= g_pWorld->floor.count) {
 		side = 0;
 	} else {
-		side = !(World_FloorHeight(self->floor + 1) >= y);
+		side = !(g_pWorld->floor.levels[self->floor + 1].y >= y);
 	}
 	if (side) {
 		if (self->floorFade >= 1.0f) {
 			return;
 		}
 		int p = self->prevFloor;
-		if (World_FloorHeight(p) > y) {
+		if (g_pWorld->floor.levels[p].y > y) {
 			return;
 		}
-		if (p + 1 < World_NumFloors() && !(World_FloorHeight(p + 1) >= y)) {
+		if (p + 1 < g_pWorld->floor.count && !(g_pWorld->floor.levels[p + 1].y >= y)) {
 			return;
 		}
 	}
@@ -234,12 +234,12 @@ void __thiscall cRadarScorer_DrawIcon(cRadarScorer *self, const vec3_t *pos, int
 	float a, dist, size;
 	int side;
 
-	if (World_FloorHeight(self->floor) > y) {
+	if (g_pWorld->floor.levels[self->floor].y > y) {
 		side = -1;
-	} else if (self->floor + 1 >= World_NumFloors()) {
+	} else if (self->floor + 1 >= g_pWorld->floor.count) {
 		side = 0;
 	} else {
-		side = World_FloorHeight(self->floor + 1) < y;
+		side = g_pWorld->floor.levels[self->floor + 1].y < y;
 	}
 	if (!always && side) {
 		if (self->floorFade >= 1.0f) {
@@ -437,7 +437,6 @@ void __thiscall cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntit
 
 #define g_RadarShowAll GAME_GLOBAL_IN(int, GVar_RadarShowAll, 16, 0x45fe00)		/* RadarShowAll: the neutral vehicles and characters too */
 #define g_IsSecondMission GAME_GLOBAL_IN(int, GVar_IsSecondMission, 16, 0x4678d8)	/* IsSecondMission */
-#define Radar_Floor(i) (&((MapFloors *)((byte *)g_pWorld + 0x2f0))->levels[i])
 
 #define RADAR_PI 3.14159274f
 #define RADAR_TEAM_NEUTRAL 3		/* arrow.tgType */
@@ -562,15 +561,15 @@ static float Radar_FloorWay(cRadarScorer *self, cEntity *target, byte up, vec3_t
 
 	const vec3_t *tp = target->vftable->GetPos(target, &t);
 	if (up) {
-		const MapLevel *l = Radar_Floor(self->floor);
+		const MapLevel *l = (&g_pWorld->floor.levels[self->floor]);
 		int k = MapLevel_NearestUp(l, tp);
-		l = Radar_Floor(self->floor);
+		l = (&g_pWorld->floor.levels[self->floor]);
 		*p = l->up[k];
 		return l->upAng[k];
 	}
-	const MapLevel *l = Radar_Floor(self->floor + 1);
+	const MapLevel *l = (&g_pWorld->floor.levels[self->floor + 1]);
 	int k = MapLevel_NearestDown(l, tp);
-	l = Radar_Floor(self->floor + 1);
+	l = (&g_pWorld->floor.levels[self->floor + 1]);
 	*p = l->down[k];
 	return l->downAng[k];
 }
@@ -590,12 +589,12 @@ static void Radar_DrawMission(cRadarScorer *self, cEntity *target, cEntity *e, c
 	}
 	if (kind == 1) {
 		byte isNearest = !nearest || nearest == e;
-		const MapLevel *l = Radar_Floor(self->floor);
+		const MapLevel *l = (&g_pWorld->floor.levels[self->floor]);
 		if (l->y > p.y) {
 			ang = Radar_FloorWay(self, target, 1, &p) + RADAR_PI;
 			outIcon = 22;
 			icon = 9;
-		} else if (self->floor + 1 < World_NumFloors() && !(Radar_Floor(self->floor + 1)->y >= p.y)) {
+		} else if (self->floor + 1 < g_pWorld->floor.count && !((&g_pWorld->floor.levels[self->floor + 1])->y >= p.y)) {
 			ang = Radar_FloorWay(self, target, 0, &p) + RADAR_PI;
 			outIcon = 22;
 			icon = 9;
@@ -696,7 +695,7 @@ void __thiscall cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEnt
 			}
 			const vec3_t *tp = target->vftable->GetPos(target, &t);
 			const vec3_t *ep = e->vftable->GetPos(e, &a);
-			float d = Floor_Dist((byte *)g_pWorld + 0x2f0, *ep, *tp);
+			float d = Floor_Dist(&g_pWorld->floor, *ep, *tp);
 			if (best > d) {
 				nearest = e;
 				best = d;
@@ -724,25 +723,25 @@ void __thiscall cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEnt
 byte __thiscall cRadarScorer_OnPrevFloor(cRadarScorer *self, float y) {
 	int p = self->prevFloor;
 
-	if (World_FloorHeight(p) > y) {
+	if (g_pWorld->floor.levels[p].y > y) {
 		return 0;
 	}
-	if (p + 1 >= World_NumFloors()) {
+	if (p + 1 >= g_pWorld->floor.count) {
 		return 1;
 	}
-	return World_FloorHeight(p + 1) >= y;
+	return g_pWorld->floor.levels[p + 1].y >= y;
 }
 
 int __thiscall cRadarScorer_FloorSide(cRadarScorer *self, float y) {
 	int f = self->floor;
 
-	if (World_FloorHeight(f) > y) {
+	if (g_pWorld->floor.levels[f].y > y) {
 		return -1;
 	}
-	if (f + 1 >= World_NumFloors()) {
+	if (f + 1 >= g_pWorld->floor.count) {
 		return 0;
 	}
-	return !(World_FloorHeight(f + 1) >= y);
+	return !(g_pWorld->floor.levels[f + 1].y >= y);
 }
 
 int __thiscall cRadarScorer_Var(cRadarScorer *self, const char *name, byte set, char **s, double *d, int *i) {

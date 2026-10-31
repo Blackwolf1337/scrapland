@@ -513,7 +513,7 @@ cEntity *__thiscall cEntityList_GetFirst(cEntityList *list) {
 cEntity *__thiscall cEntityList_Nearest(void *list, const vec3_t *pos, cEntity *exclude, float *dist) {
 	cEntityListData *self = list;
 	cEntity *best = NULL;
-	float level = (float)Floor_Get(g_pWorld->floor, pos->y);
+	float level = (float)Floor_Get(&g_pWorld->floor, pos->y);
 	float bestD = 3.4028235e38f;
 
 	for (Nto1Node *n = Ring_First(&self->ring); n; n = Ring_First(n)) {
@@ -528,7 +528,7 @@ cEntity *__thiscall cEntityList_Nearest(void *list, const vec3_t *pos, cEntity *
 		float dy = p->y - pos->y;
 		float dz = p->z - pos->z;
 		p = e->vftable->GetPos(e, &tmp2);
-		float dl = level - (float)Floor_Get(g_pWorld->floor, p->y);
+		float dl = level - (float)Floor_Get(&g_pWorld->floor, p->y);
 		float d = (float)__builtin_fabs((double)dl) * 400000000.0f + (dy * dy + dx * dx + dz * dz);
 		if (bestD > d) {
 			best = e;

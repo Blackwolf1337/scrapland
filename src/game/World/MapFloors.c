@@ -10,8 +10,7 @@
 #include "scrap/scrapworld.h"
 #include "scrap/world.h"
 
-void *__thiscall Floor_ctor(void *floor) {
-	MapFloors *self = floor;
+MapFloors *__thiscall Floor_ctor(MapFloors *self) {
 	WorldNodeInfo info;
 	char buf[0x100];
 	int i;
@@ -70,22 +69,21 @@ void *__thiscall Floor_ctor(void *floor) {
 	return self;
 }
 
-void __thiscall Floor_dtor(void *floor) {
-	(void)floor;
+void __thiscall Floor_dtor(MapFloors *self) {
+	(void)self;
 }
 
 /* the distance from a to b with 200000 more for each floor between them */
-float __thiscall Floor_Dist(void *floor, vec3_t a, vec3_t b) {
+float __thiscall Floor_Dist(MapFloors *self, vec3_t a, vec3_t b) {
 	float dy = a.y - b.y, dx = a.x - b.x, dz = a.z - b.z;
 	float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
-	int n = Floor_Get(floor, b.y) - Floor_Get(floor, a.y);
+	int n = Floor_Get(self, b.y) - Floor_Get(self, a.y);
 
 	return (float)__builtin_fabs((double)(float)n) * 200000.0f + d;
 }
 
 /* the floor at the height y: the first one above it, 1.. */
-int __thiscall Floor_Get(void *floor, float y) {
-	const MapFloors *self = floor;
+int __thiscall Floor_Get(const MapFloors *self, float y) {
 	int i;
 
 	for (i = 1; i < self->count; i++) {

@@ -583,10 +583,10 @@ static byte AIC_PauseWanted(cAIChar *self) {
 		dz = self->center.z - cam.z;
 		d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 		if (self->radius + g_DistRadPauseCharAI > d) {
-			int f = Floor_Get(g_pWorld->floor, cam.y);
+			int f = Floor_Get(&g_pWorld->floor, cam.y);
 
 			p = AIC_Pos(self->ent, &a);
-			if (f == Floor_Get(g_pWorld->floor, p->y)) {
+			if (f == Floor_Get(&g_pWorld->floor, p->y)) {
 				return 0;
 			}
 		}
@@ -600,10 +600,10 @@ static byte AIC_PauseWanted(cAIChar *self) {
 		return 1;
 	}
 	if (!(d > g_DistMinCheckPauseAI)) {
-		int f = Floor_Get(g_pWorld->floor, cam.y);
+		int f = Floor_Get(&g_pWorld->floor, cam.y);
 
 		p = AIC_Pos(self->ent, &a);
-		if (f == Floor_Get(g_pWorld->floor, p->y)) {
+		if (f == Floor_Get(&g_pWorld->floor, p->y)) {
 			return 0;
 		}
 	}
@@ -651,10 +651,10 @@ void __thiscall cAIChar_CheckRepos(cAIChar *self) {
 			dz = p->z - cam.z;
 			max = g_DistMaxCheckReposAI;
 			if (max * max > dy * dy + dx * dx + dz * dz) {
-				int f = Floor_Get(g_pWorld->floor, cam.y);
+				int f = Floor_Get(&g_pWorld->floor, cam.y);
 
 				p = AIC_Pos(self->ent, &b);
-				if (f == Floor_Get(g_pWorld->floor, p->y) || self->vftable->InView(self)) {
+				if (f == Floor_Get(&g_pWorld->floor, p->y) || self->vftable->InView(self)) {
 					continue;
 				}
 			}

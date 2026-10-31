@@ -621,8 +621,8 @@ void __thiscall CNodesWorld_CollectCell(CNodesWorld *self, const vec3_t *pos, cN
 			} else if (mode == 1) {
 				add = !Engine_TestLine(pos, &q, NULL, NULL);
 			} else if (mode == 2 && !g_IsMapOutDoor) {
-				int f = Floor_Get(g_pWorld->floor, pos->y);
-				add = f == Floor_Get(g_pWorld->floor, q.y);
+				int f = Floor_Get(&g_pWorld->floor, pos->y);
+				add = f == Floor_Get(&g_pWorld->floor, q.y);
 			} else {
 				add = 1;
 			}

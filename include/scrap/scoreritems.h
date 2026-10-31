@@ -840,8 +840,6 @@ SD_OFFSET(cRadarScorer, noise, 0x8c4);
 SD_OFFSET(cRadarScorer, map2dScale, 0x91c);
 
 /* a floor of the world (0x18c bytes from world + 0x2f4, their count at 0x2f0): its lowest height first */
-#define World_NumFloors() (*(int *)((byte *)g_pWorld + 0x2f0))
-#define World_FloorHeight(i) (*(float *)((byte *)g_pWorld + 0x2f4 + (i) * 0x18c))
 /* the view of the radar: the turn and center of the map, its scale */
 #define g_RadarAngle GAME_GLOBAL(float, g_RadarAngle, 0x45fe84)
 #define g_RadarCenterX GAME_GLOBAL(float, g_RadarCenterX, 0x45fe88)

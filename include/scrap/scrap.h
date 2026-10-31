@@ -23,7 +23,6 @@
 
 void __thiscall Elements_Call(void *elements, const char *name);
 void __thiscall Elements_Create(void *elements);
-int __thiscall Floor_Get(void *floor, float y);
 
 void *__thiscall cWorld_NewEntityList(cWorld *world, const char *name);
 const char *__thiscall cWorld_GetCamName(cWorld *world, int i);

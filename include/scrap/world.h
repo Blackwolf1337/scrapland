@@ -97,33 +97,6 @@ static inline const cWorldEntityVtbl *WEnt_Vtbl(cEntity *e) {
 #define CamEntity_Orient(e) (&((cCamControl *)(e))->cam.rot)
 #define CamEntity_Slot(e) (((cCamControl *)(e))->slot)		/* the view it shows, -1 for none */
 
-/* World/MapFloors.cpp: the floors of the 2D map (cWorld floor) */
-#define MAX_2D_MAPS 16
-#define MAX_2D_LINKS 8
-typedef struct MapLevel {
-	float y;			/* 0x000 the height where the floor starts, the first one -FLT_MAX */
-	int nUp;			/* 0x004 */
-	vec3_t up[MAX_2D_LINKS];	/* 0x008 the ways to the next floor up, y + 1 */
-	float upAng[MAX_2D_LINKS];	/* 0x068 the angle y of the dummy */
-	int nDown;			/* 0x088 */
-	vec3_t down[MAX_2D_LINKS];	/* 0x08c y - 1 */
-	float downAng[MAX_2D_LINKS];	/* 0x0ec */
-	char name[0x80];		/* 0x10c behind DM_2DMapSwitch */
-} MapLevel;
-SD_OFFSET(MapLevel, nDown, 0x88);
-SD_OFFSET(MapLevel, name, 0x10c);
-SD_SIZE(MapLevel, 0x18c);
-
-typedef struct MapFloors {
-	int count;			/* 0x000 */
-	MapLevel levels[MAX_2D_MAPS];	/* 0x004 sorted by y */
-} MapFloors;
-SD_SIZE(MapFloors, 0x18c4);
-
-void *__thiscall Floor_ctor(void *floor);
-void __thiscall Floor_dtor(void *floor);
-float __thiscall Floor_Dist(void *floor, vec3_t a, vec3_t b);
-int __thiscall MapLevel_NearestDown(const MapLevel *self, const vec3_t *p);
 int __thiscall MapLevel_NearestUp(const MapLevel *self, const vec3_t *p);
 int MapLevel_CompareY(const void *a, const void *b);
 

@@ -378,7 +378,7 @@ PyObject *Scrap_GetFloor(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "f", &y)) {
 		return NULL;
 	}
-	return Py_BuildValue("i", Floor_Get(g_pWorld->floor, y));
+	return Py_BuildValue("i", Floor_Get(&g_pWorld->floor, y));
 }
 
 /* GetFreeBlocks() : no Xbox, always 50000 */
