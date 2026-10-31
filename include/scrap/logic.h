@@ -17,6 +17,7 @@
 #include "scrap/entity.h"
 #include "scrap/filesys.h"
 #include "scrap/pyfunction.h"
+#include "scrap/withlifeentity.h"
 
 #define LOGIC_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* "" of the exe */
 

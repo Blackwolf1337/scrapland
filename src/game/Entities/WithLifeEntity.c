@@ -163,7 +163,7 @@ byte __thiscall cWithLifeEntity_VarF(cEntity *self, const char *name, double *d,
 	}
 	if (!strcmp(name, "Mass")) {
 		if ((byte)set) {
-			WLife_Vtbl(self)->SetMass(self, (float)*d);
+			WithLife_Vtbl(self)->SetMass(self, (float)*d);
 		} else {
 			*d = w->mass;
 		}
@@ -201,7 +201,7 @@ byte __thiscall cWithLifeEntity_VarF(cEntity *self, const char *name, double *d,
 }
 
 cAction *__thiscall cWithLifeEntity_GetAction(cEntity *self, const char *name) {
-	cActCtrl *c = WLife_Vtbl(self)->GetActCtrl(self);
+	cActCtrl *c = WithLife_Vtbl(self)->GetActCtrl(self);
 	if (c && c->cls) {
 		return cActClass_GetAction(c->cls, name);
 	}
@@ -262,7 +262,7 @@ void __thiscall cWithLifeEntity_UpdateOff(cEntity *self) {
 	w->fireDelay = 0.0f;
 	w->fireAtt = -1.0f;
 	cWithLifeEntity_Burn(self, dt);
-	WLife_Vtbl(self)->CheckLife(self);
+	WithLife_Vtbl(self)->CheckLife(self);
 	cObjEntity_UpdateOff(self);
 }
 
@@ -337,10 +337,10 @@ void __thiscall cWithLifeEntity_CheckLife(cEntity *self) {
 			cPy_Function_AddParamI(g_OnGeneralDamage, w->prevLife - w->life);
 			cPy_Function_Execute(g_OnGeneralDamage, 0);
 		}
-		WLife_Vtbl(self)->OnDamage(self, w->prevLife - w->life);
+		WithLife_Vtbl(self)->OnDamage(self, w->prevLife - w->life);
 		if (w->life <= 0) {
 			w->life = 0;
-			WLife_Vtbl(self)->OnDeath(self);
+			WithLife_Vtbl(self)->OnDeath(self);
 		}
 	}
 	w->prevLife = w->life;
@@ -382,7 +382,7 @@ void __thiscall cWithLifeEntity_FadeSounds(cEntity *self, float dt) {
 }
 
 void __thiscall cWithLifeEntity_Tick(cEntity *self, float dt) {
-	WLife_Vtbl(self)->CheckLife(self);
+	WithLife_Vtbl(self)->CheckLife(self);
 	cWithLifeEntity_Burn(self, dt);
 	cWithLifeEntity_FadeSounds(self, dt);
 	Grid_Add(g_pWorld->grid, self);
@@ -552,7 +552,7 @@ byte __thiscall cWithLifeEntity_VarS(cEntity *self, const char *name, char **s, 
 	}
 	if (!strcmp(name, "ActCtrl")) {
 		if ((byte)set) {
-			WLife_Vtbl(self)->SetActCtrl(self, *s);
+			WithLife_Vtbl(self)->SetActCtrl(self, *s);
 		} else {
 			*s = w->actCtrl ? w->actCtrl->cls->name : ACT_EMPTY;
 		}

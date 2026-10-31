@@ -27,7 +27,11 @@ typedef struct cEntityVtbl {
 	vec3_t *(__thiscall *GetPos)(cEntity *self, vec3_t *out);		/* 0x18 vf06, returns out */
 	void(__thiscall *SetPos)(cEntity *self, const vec3_t *pos);		/* 0x1c vf07 */
 	void(__thiscall *SetActive)(cEntity *self, byte on);			/* 0x20 vf08 flag_4c */
-	void *vf09_11[3];
+	/* the tests of the collision sphere (no hit in cEntity) and the touch of another entity */
+	byte(__thiscall *TestLine)(cEntity *self, const vec3_t *from, vec3_t *hit);		/* 0x24 vf09 */
+	byte(__thiscall *TestSphere)(cEntity *self, cEntity *exclude, const vec3_t *center, float radius,
+		const vec3_t *prev);							/* 0x28 vf10 */
+	void(__thiscall *Touch)(cEntity *self, cEntity *e, const vec3_t *point, const vec3_t *normal);	/* 0x2c vf11 */
 	void(__thiscall *SetModel)(cEntity *self, const char *file, float sx, float sy, float sz, int flag); /* 0x30 */
 	/* angle to the target in ang (in: x, y; out: x, y), target found in *target */
 	void(__thiscall *GetTargetAngle)(cEntity *self, float *ang, float dist, cEntity **target);	/* 0x34 vf13 */
@@ -45,13 +49,6 @@ typedef struct cEntityVtbl {
 } cEntityVtbl;
 SD_SIZE(cEntityVtbl, 23 * 4);
 
-/* entities with life (characters derive from it): cWithLifeEntity::vftable continues the one of cEntity */
-typedef struct cWithLifeEntityVtbl {
-	cEntityVtbl base;
-	void *vf23_52[30];
-	void *(__thiscall *GetActCtrl)(cEntity *self);				/* 0xd4 vf53 */
-} cWithLifeEntityVtbl;
-SD_OFFSET(cWithLifeEntityVtbl, GetActCtrl, 0xd4);
 SD_OFFSET(cEntityVtbl, GetClassName, 0x10);
 SD_OFFSET(cEntityVtbl, IsType, 0x14);
 SD_OFFSET(cEntityVtbl, SetActive, 0x20);
@@ -177,25 +174,6 @@ int __thiscall cEntity_Vf21(cEntity *self, int a);
 /* the network game: an entity named "net..." of a client is the copy of a server one */
 byte Net_IsNetEntity(cEntity *e);
 int Net_GetSendRate(void);
-
-/* vehicles ("Car") and characters ("WalkChar") continue the vtable of cWithLifeEntity */
-typedef struct cVehicleEntityVtbl {
-	cWithLifeEntityVtbl base;
-	void *vf54_57[4];
-	void(__thiscall *EnableAI)(cEntity *self, byte enable, void *p1, void *p2, void *p3);	/* 0xe8 vf58 */
-} cVehicleEntityVtbl;
-SD_OFFSET(cVehicleEntityVtbl, EnableAI, 0xe8);
-
-typedef struct cWalkCharEntityVtbl {
-	cWithLifeEntityVtbl base;
-	void *vf54_55[2];
-	void(__thiscall *EnableAI)(cEntity *self, byte enable, int *arg);	/* 0xe0 vf56 */
-} cWalkCharEntityVtbl;
-SD_OFFSET(cWalkCharEntityVtbl, EnableAI, 0xe0);
-
-static inline const cWithLifeEntityVtbl *WithLife_Vtbl(cEntity *e) {
-	return (const cWithLifeEntityVtbl *)e->vftable;
-}
 
 static inline int Entity_IsType(cEntity *e, const char *type) {
 	return e->vftable->IsType(e, type) != 0;

@@ -721,7 +721,7 @@ void __thiscall cMonitorScorer_DrawMonitor(cMonitorScorer *self, int player, cEn
 			self->textTime = tt - (frameTime + frameTime);
 		}
 	}
-	if (isCar && ((const cWithLifeEntityVtblFull *)target->vftable)->IsEMIed(target)) {
+	if (isCar && ((const cWithLifeEntityVtbl *)target->vftable)->IsEMIed(target)) {
 		/* the EMI: noise and no text */
 		self->noise = 0.9f;
 		self->textTime = 1.0f;

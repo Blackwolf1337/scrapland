@@ -236,7 +236,7 @@ static inline byte Tgt_Blocked(cVehicleTargets *t) {
 	if (g_VehicleCenterPadLock != 0.0f && cVehicleEntity_GetOwnerSlot(t->owner) != -1) {
 		return 0;
 	}
-	return WLife_Vtbl(t->owner)->IsEMIed(t->owner) ? 1 : 0;
+	return WithLife_Vtbl(t->owner)->IsEMIed(t->owner) ? 1 : 0;
 }
 
 /* the unbounded copies of the original; every name of the list came through Str_Copy */

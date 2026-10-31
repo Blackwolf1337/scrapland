@@ -411,7 +411,7 @@ static float Ship_Wrap(cActLayer *l, cAction *a, float t) {
 static float Ship_AngZ(cVehicleEntity *v) {
 	vec3_t ang;
 
-	return Veh_Vtbl(v)->GetAngles(v, &ang)->z;
+	return Obj_Vtbl(Veh_Ent(v))->GetViewAng(Veh_Ent(v), &ang)->z;
 }
 
 void __thiscall cActCtrl_UpdateShip(cActCtrl *self, float dt) {

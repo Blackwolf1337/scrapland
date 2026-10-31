@@ -186,26 +186,12 @@ static inline struct cEmbeddedFXVehicle *Veh_FX(const cVehicleEntity *v) {
 #define Vehicle_FollowName(e) (Veh(e)->target)	/* the car of a player */
 
 /* the cVehicleEntity vtable slots called here (thiscall) */
-typedef struct cVehicleEntityVtbl2 {
-	void *vf00_0e[15];
-	void(__thiscall *SetEmbeddedFX)(cVehicleEntity *self, const char *fxType);		/* 0x3c */
-	void *vf10_17[8];
-	void(__thiscall *UpdateModel)(cVehicleEntity *self);					/* 0x60 vf24 */
-	void *vf19_1c[4];
-	vec3_t *(__thiscall *GetCenter)(cVehicleEntity *self, vec3_t *out);			/* 0x74 */
-	vec3_t *(__thiscall *GetAngles)(cVehicleEntity *self, vec3_t *out);			/* 0x78 */
-	void *vf1f_22[4];
-	void(__thiscall *SetVel)(cVehicleEntity *self, const vec3_t *vel);			/* 0x8c vf35 */
-	void *vf24_25[2];
-	CGameModel *(__thiscall *GetModel)(cVehicleEntity *self);				/* 0x98 */
-	void *vf27;
-	float(__thiscall *GetRadius)(cVehicleEntity *self);					/* 0xa0 */
-	void *vf29_2b[3];
-	void(__thiscall *SetFX)(cVehicleEntity *self, int fx);				/* 0xb0 */
-	void *vf2d_37[11];
+/* cVehicleEntity::vftable: the slots of the vehicle after the ones of cWithLifeEntity */
+typedef struct cVehicleEntityVtbl {
+	cWithLifeEntityVtbl base;
 	void(__thiscall *UpdateSounds)(cVehicleEntity *self, float dt);			/* 0xe0 vf56 */
 	void(__thiscall *UpdateHistory)(cVehicleEntity *self);				/* 0xe4 vf57 */
-	void *vf3a;
+	void(__thiscall *EnableAI)(cEntity *self, byte enable, void *p1, void *p2, void *p3);	/* 0xe8 vf58 */
 	byte(__thiscall *GetLaunchTaunts)(cVehicleEntity *self);				/* 0xec vf59 */
 	byte(__thiscall *SetPilot)(cVehicleEntity *self, int slot, const char *name, float sx, float sy, float sz);
 												/* 0xf0 vf60 */
@@ -214,17 +200,14 @@ typedef struct cVehicleEntityVtbl2 {
 	void(__thiscall *UpdatePilot)(cVehicleEntity *self, int slot, float dt);		/* 0xfc vf63 */
 	byte(__thiscall *GetPilotPos)(cVehicleEntity *self, int slot, vec3_t *pos, vec3_t *ang);	/* 0x100 vf64 */
 	void(__thiscall *Crash)(cVehicleEntity *self, const vec3_t *acc, float force);	/* 0x104 vf65 */
-} cVehicleEntityVtbl2;
-SD_OFFSET(cVehicleEntityVtbl2, UpdateModel, 0x60);
-SD_OFFSET(cVehicleEntityVtbl2, SetVel, 0x8c);
-SD_OFFSET(cVehicleEntityVtbl2, GetModel, 0x98);
-SD_OFFSET(cVehicleEntityVtbl2, SetFX, 0xb0);
-SD_OFFSET(cVehicleEntityVtbl2, UpdateSounds, 0xe0);
-SD_OFFSET(cVehicleEntityVtbl2, SetPilot, 0xf0);
-SD_OFFSET(cVehicleEntityVtbl2, Crash, 0x104);
+} cVehicleEntityVtbl;
+SD_OFFSET(cVehicleEntityVtbl, UpdateSounds, 0xe0);
+SD_OFFSET(cVehicleEntityVtbl, EnableAI, 0xe8);
+SD_OFFSET(cVehicleEntityVtbl, SetPilot, 0xf0);
+SD_OFFSET(cVehicleEntityVtbl, Crash, 0x104);
 
-static inline const cVehicleEntityVtbl2 *Veh_Vtbl(cVehicleEntity *v) {
-	return (const cVehicleEntityVtbl2 *)v->wl.obj.base.vftable;
+static inline const cVehicleEntityVtbl *Veh_Vtbl(cVehicleEntity *v) {
+	return (const cVehicleEntityVtbl *)v->wl.obj.base.vftable;
 }
 
 /* the motors (rva 0x10d270.., not decompiled yet): their variables through the vtable at 0x720 */

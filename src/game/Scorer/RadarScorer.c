@@ -342,7 +342,7 @@ void __thiscall cRadarScorer_DrawIcon(cRadarScorer *self, const vec3_t *pos, int
 #define RADAR_MAP_UV_ANG1 3.926991f
 
 static inline byte Radar_IsEMIed(cEntity *e) {
-	return ((const cWithLifeEntityVtblFull *)e->vftable)->IsEMIed(e);
+	return ((const cWithLifeEntityVtbl *)e->vftable)->IsEMIed(e);
 }
 
 /* the map image of a floor at the center of the radar with the alpha, turned by the texture coordinates */
@@ -458,7 +458,7 @@ static void Radar_Icon(cRadarScorer *self, cEntity *e, int icon, float ang, int 
 
 /* the class name of the action controller of e starts with cls (n letters; 0: the whole name) */
 static byte Radar_ActIs(cEntity *e, const char *cls, size_t n) {
-	const cWithLifeEntityVtblFull *vt = (const cWithLifeEntityVtblFull *)e->vftable;
+	const cWithLifeEntityVtbl *vt = (const cWithLifeEntityVtbl *)e->vftable;
 	if (!vt->GetActCtrl(e)) {
 		return 0;
 	}

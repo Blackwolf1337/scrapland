@@ -1204,7 +1204,7 @@ void __thiscall cEmbeddedFXSentinel_Update(cEmbeddedFXSentinel *self, float dt) 
 	self->state = WLife(e)->arrow.coneStatus;
 	/* a player sentinel in its "Action..." actions: danger with a target, else alert */
 	if (e->vftable->IsType(e, TYEN_WALKCHAR) && cWalkCharEntity_GetOwnerSlot(e) != -1
-		&& !crt_strncmp(cActCtrl_GetActionName(WLife_Vtbl(e)->GetActCtrl(e), 0), "Action", 6)) {
+		&& !crt_strncmp(cActCtrl_GetActionName(WithLife_Vtbl(e)->GetActCtrl(e), 0), "Action", 6)) {
 		self->state = (ChType_SentinelTarget(e) != NULL) + 2;
 	} else if (self->state == 0 && e->vftable->GetAI(e)) {
 		cAIChar *ai = e->vftable->GetAI(e);
@@ -1393,9 +1393,9 @@ void __thiscall cEmbeddedFXCrazyGambler_Update(cEmbeddedFXCrazyGambler *self, fl
 		return;
 	}
 	self->visible = vis;
-	byte hand = cActCtrl_IsActive(WLife_Vtbl(e)->GetActCtrl(e), "Relax1");
+	byte hand = cActCtrl_IsActive(WithLife_Vtbl(e)->GetActCtrl(e), "Relax1");
 	if (hand) {
-		const cActLayer *l = cActCtrl_GetLayer(WLife_Vtbl(e)->GetActCtrl(e), 0);
+		const cActLayer *l = cActCtrl_GetLayer(WithLife_Vtbl(e)->GetActCtrl(e), 0);
 		if (1.5f > l->time || l->time > 5.0f) {
 			hand = 0;
 		}
@@ -1560,8 +1560,8 @@ static byte EFX_MessengerShown(cEmbeddedFXMessenger *self, CGameModel *model, by
 	if (dy * dy + dx * dx + dz * dz > g_MessengerLightingDist * g_MessengerLightingDist) {
 		return 0;
 	}
-	if (WLife_Vtbl(e)->GetActCtrl(e)
-		&& !strcmp(cActCtrl_GetActionName(WLife_Vtbl(e)->GetActCtrl(e), 0), "Relax")) {
+	if (WithLife_Vtbl(e)->GetActCtrl(e)
+		&& !strcmp(cActCtrl_GetActionName(WithLife_Vtbl(e)->GetActCtrl(e), 0), "Relax")) {
 		return 0;
 	}
 	return 1;
@@ -1790,11 +1790,11 @@ static void EFX_MercSmoke(cEmbeddedFXMercenary *self, CGameModel *model) {
 		el->on = 1;
 		CGameModel_SetSortZ(Debris_Mod(d), -0.03f, 0.0f);
 	}
-	if (!e || !WLife_Vtbl(e)->GetActCtrl(e)) {
+	if (!e || !WithLife_Vtbl(e)->GetActCtrl(e)) {
 		return;
 	}
 	for (uint32_t i = 0; i < sizeof(efx_mercQuiet) / sizeof(efx_mercQuiet[0]); i++) {
-		if (cActCtrl_IsActive(WLife_Vtbl(e)->GetActCtrl(e), efx_mercQuiet[i])) {
+		if (cActCtrl_IsActive(WithLife_Vtbl(e)->GetActCtrl(e), efx_mercQuiet[i])) {
 			return;
 		}
 	}

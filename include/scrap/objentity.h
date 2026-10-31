@@ -128,7 +128,10 @@ typedef struct cObjEntityVtbl {
 	CGameModel *(__thiscall *GetModel)(cEntity *self);					/* 0x98 */
 	void(__thiscall *GetCamera)(cEntity *self, vec3_t *pos, vec3_t *ang);			/* 0x9c */
 	float(__thiscall *GetRadius)(cEntity *self);						/* 0xa0 */
-	void *vf41_43[3];
+	/* the network copy of the object (vehicles, missiles, items; nothing in cObjEntity) */
+	void(__thiscall *NetWrite)(cEntity *self, float dist2, void *msg, int full);		/* 0xa4 vf41 */
+	byte(__thiscall *NetNeedsSend)(cEntity *self, float dist2);				/* 0xa8 vf42 */
+	void(__thiscall *NetRead)(cEntity *self, void *msg, int isNew);			/* 0xac vf43 */
 	void(__thiscall *SetEffect)(cEntity *self, uint32_t fx);				/* 0xb0 */
 	void(__thiscall *SetEffectParam)(cEntity *self, int i, float v);			/* 0xb4 */
 	void(__thiscall *Render)(cEntity *self);						/* 0xb8 */

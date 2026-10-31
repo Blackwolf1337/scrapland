@@ -98,7 +98,6 @@ static inline cActCtrl *WChar_Ctrl(const void *e) {
 /* the slots of the character vtable after the ones of cWithLifeEntity */
 typedef struct cWalkCharVtbl {
 	cWithLifeEntityVtbl base;
-	void *vf54_55[2];
 	void(__thiscall *EnableAI)(cEntity *self, byte on, int *arg);			/* 0xe0 vf56 */
 	void(__thiscall *UpdateSelect)(cEntity *self, float dt);			/* 0xe4 vf57 */
 	void(__thiscall *Turn)(cEntity *self, float dt);				/* 0xe8 vf58 */

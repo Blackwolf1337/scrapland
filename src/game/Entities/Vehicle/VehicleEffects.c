@@ -26,7 +26,7 @@ static inline cEntity *VE_Ent(cVehicleEntity *v) {
 }
 
 static inline CGameModel *VE_Model(cVehicleEntity *v) {
-	return Veh_Vtbl(v)->GetModel(v);
+	return Obj_Vtbl(Veh_Ent(v))->GetModel(Veh_Ent(v));
 }
 
 /* the element of a new debris of the effect file with the life, made when the debris has none; noRadius: the
@@ -211,7 +211,7 @@ void __thiscall cVehicleTrails_Update(cVehicleTrails *self, float dt) {
 		}
 	}
 	Float_Approach(&self->fade, f, dt);
-	Veh_Vtbl(self->owner)->GetCenter(self->owner, &c);
+	Obj_Vtbl(Veh_Ent(self->owner))->GetViewPos(Veh_Ent(self->owner), &c);
 	float seg = g_FXVehicleSpeedTrailDist;
 	Float_Approach(&self->segment, Float_MaxSS(seg * 0.25f, seg - __builtin_fabsf(v.x * 0.5f)), dt * 1500.0f);
 	float dx = c.x - self->last.x, dy = c.y - self->last.y, dz = c.z - self->last.z;
@@ -496,9 +496,9 @@ void __thiscall cVehicleEffects_UpdateState(cVehicleEffects *self, float dt) {
 	float ax = o->smoothAng.x, ay = o->smoothAng.y;
 	v.x = 0.0f;
 	v.y = 0.0f;
-	v.z = -Veh_Vtbl(o)->GetRadius(o);
+	v.z = -Obj_Vtbl(Veh_Ent(o))->GetRadius(Veh_Ent(o));
 	vec3_t *r = Vec3_RotateXY(&out, &v, ax, ay);
-	vec3_t *c = Veh_Vtbl(self->owner)->GetCenter(self->owner, &center);
+	vec3_t *c = Obj_Vtbl(Veh_Ent(self->owner))->GetViewPos(Veh_Ent(self->owner), &center);
 	from.x = c->x + r->x;
 	from.y = c->y + r->y;
 	from.z = c->z + r->z;
@@ -738,7 +738,7 @@ void __thiscall cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float 
 	}
 	CGameParticles *p = &el->particles;
 	p->birthRate = 0;
-	const vec3_t *c = Veh_Vtbl(self->owner)->GetCenter(self->owner, &tmp);
+	const vec3_t *c = Obj_Vtbl(Veh_Ent(self->owner))->GetViewPos(Veh_Ent(self->owner), &tmp);
 	float dy = y - c->y;
 	float dx = x - c->x;
 	float dz = z - c->z;
@@ -747,7 +747,7 @@ void __thiscall cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float 
 	if (q > md * md) {
 		return;
 	}
-	float radius = Veh_Vtbl(self->owner)->GetRadius(self->owner);
+	float radius = Obj_Vtbl(Veh_Ent(self->owner))->GetRadius(Veh_Ent(self->owner));
 	float len = (float)__builtin_sqrt((double)q);
 	if (len == 0.0f) {
 		n.x = dx;
@@ -767,7 +767,7 @@ void __thiscall cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float 
 	float bx = x - back * n.x;
 	float by = y - back * n.y;
 	float bz = z - back * n.z;
-	Vec3_Rotate(&side, &unit, Veh_Vtbl(self->owner)->GetAngles(self->owner, &ang));
+	Vec3_Rotate(&side, &unit, Obj_Vtbl(Veh_Ent(self->owner))->GetViewAng(Veh_Ent(self->owner), &ang));
 	float scale = radius / g_WindFXSmokeSizeDiv;
 	float posLo = radius * 0x1.333334p-3f;
 	float posRange = radius * 0x1.333334p+0f - posLo;

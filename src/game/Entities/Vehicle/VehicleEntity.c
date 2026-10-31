@@ -290,7 +290,7 @@ void __thiscall cVehicleEntity_Touch(cVehicleEntity *self, cEntity *e, const vec
 		out = o->wl.obj.vel;
 		Vec3_Bounce(normal, self->wl.mass, o->wl.mass, &self->wl.obj.vel, &out);
 	}
-	Veh_Vtbl(o)->SetVel(o, &out);
+	Obj_Vtbl(Veh_Ent(o))->SetVel(Veh_Ent(o), &out);
 	if (Net_IsNetEntity(Veh_Ent(self))) {
 		if (o->netCtrl) {
 			o->netCtrl->i6c = 3;
@@ -1193,7 +1193,7 @@ void __thiscall cVehicleEntity_SetModel(cVehicleEntity *self, const char *file, 
 	cWeaponManager_ClearAmmo(&self->weapons);
 	cVehicleEffects_Init(&self->effects);
 	cVehicleMotors_InitEffects(&self->motors);
-	Veh_Vtbl(self)->SetEmbeddedFX(self, "EmbeddedFX");
+	Veh_Ent(self)->vftable->SetEmbeddedFX(Veh_Ent(self), "EmbeddedFX");
 }
 
 void __thiscall cVehicleEntity_SetEmbeddedFX(cVehicleEntity *self, const char *fxType) {
@@ -1275,18 +1275,18 @@ void __thiscall cVehicleEntity_SetActive(cVehicleEntity *self, byte on) {
 void __thiscall cVehicleEntity_RenderNow(cVehicleEntity *self) {
 	vec3_t tmp;
 
-	if (!Veh_Vtbl(self)->GetModel(self) || !CGameModel_IsLoaded(Veh_Vtbl(self)->GetModel(self))) {
+	if (!Obj_Vtbl(Veh_Ent(self))->GetModel(Veh_Ent(self)) || !CGameModel_IsLoaded(Obj_Vtbl(Veh_Ent(self))->GetModel(Veh_Ent(self)))) {
 		return;
 	}
 	vec3_t pos = self->wl.obj.renderPos;
 	vec3_t rot = self->wl.obj.renderAng;
-	self->wl.obj.renderPos = *CGameModel_GetPos(Veh_Vtbl(self)->GetModel(self), &tmp);
-	self->wl.obj.renderAng = *CGameModel_GetRot(Veh_Vtbl(self)->GetModel(self), &tmp);
+	self->wl.obj.renderPos = *CGameModel_GetPos(Obj_Vtbl(Veh_Ent(self))->GetModel(Veh_Ent(self)), &tmp);
+	self->wl.obj.renderAng = *CGameModel_GetRot(Obj_Vtbl(Veh_Ent(self))->GetModel(Veh_Ent(self)), &tmp);
 	self->rendering = 1;
-	Veh_Vtbl(self)->UpdateModel(self);
+	Obj_Vtbl(Veh_Ent(self))->UpdateModel(Veh_Ent(self));
 	uint32_t fx = CGameModel_GetEffect(&self->wl.obj.model, NULL);
 	if (fx == 3) {
-		Veh_Vtbl(self)->SetFX(self, 0);
+		Obj_Vtbl(Veh_Ent(self))->SetEffect(Veh_Ent(self), 0);
 	}
 	cWithLifeEntity_RenderNow(Veh_Ent(self));
 	if (self->pilotNode != -1) {
@@ -1294,14 +1294,14 @@ void __thiscall cVehicleEntity_RenderNow(cVehicleEntity *self) {
 	}
 	cVehicleMotors_Render(&self->motors);
 	if (fx == 3) {
-		Veh_Vtbl(self)->SetFX(self, 3);
+		Obj_Vtbl(Veh_Ent(self))->SetEffect(Veh_Ent(self), 3);
 	}
 	if (Veh_FX(self)) {
 		cEmbeddedFXVehicle_Render(Veh_FX(self));
 	}
 	self->wl.obj.renderPos = pos;
 	self->wl.obj.renderAng = rot;
-	Veh_Vtbl(self)->UpdateModel(self);
+	Obj_Vtbl(Veh_Ent(self))->UpdateModel(Veh_Ent(self));
 	self->rendering = 0;
 }
 

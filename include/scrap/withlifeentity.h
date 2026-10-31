@@ -62,9 +62,9 @@ SD_OFFSET(cWithLifeEntity, lifeSounds, 0x3c4);
 SD_OFFSET(cWithLifeEntity, headAnim, 0x3e4);
 SD_SIZE(cWithLifeEntity, CWITHLIFEENTITY_SIZE);
 
-/* the slots of cWithLifeEntity::vftable after the ones of cObjEntity (0x5c..0xb8) */
-typedef struct cWithLifeEntityVtblFull {
-	cObjEntityVtbl obj;
+/* cWithLifeEntity::vftable continues the one of cObjEntity; characters, vehicles and missiles continue it */
+typedef struct cWithLifeEntityVtbl {
+	cObjEntityVtbl base;
 	void(__thiscall *CheckLife)(cEntity *self);						/* 0xbc vf47 */
 	void *vf48;
 	void(__thiscall *OnDeath)(cEntity *self);						/* 0xc4 vf49 */
@@ -74,10 +74,11 @@ typedef struct cWithLifeEntityVtblFull {
 	cActCtrl *(__thiscall *GetActCtrl)(cEntity *self);					/* 0xd4 vf53 */
 	void(__thiscall *SetActCtrl)(cEntity *self, const char *cls);				/* 0xd8 vf54 */
 	byte(__thiscall *IsEMIed)(cEntity *self);						/* 0xdc vf55 */
-} cWithLifeEntityVtblFull;
-SD_OFFSET(cWithLifeEntityVtblFull, CheckLife, 0xbc);
-SD_OFFSET(cWithLifeEntityVtblFull, SetMass, 0xcc);
-SD_OFFSET(cWithLifeEntityVtblFull, IsEMIed, 0xdc);
+} cWithLifeEntityVtbl;
+SD_OFFSET(cWithLifeEntityVtbl, CheckLife, 0xbc);
+SD_OFFSET(cWithLifeEntityVtbl, SetMass, 0xcc);
+SD_OFFSET(cWithLifeEntityVtbl, GetActCtrl, 0xd4);
+SD_OFFSET(cWithLifeEntityVtbl, IsEMIed, 0xdc);
 
 static inline cWithLifeEntity *WLife(const void *e) {
 	return (cWithLifeEntity *)e;
@@ -86,8 +87,8 @@ static inline cWithLifeEntity *WLife(const void *e) {
 #define Ent_Arrow(e) (&WLife(e)->arrow)
 #define Ent_ArrowRadius(e) (WLife(e)->prim.radius)
 
-static inline const cWithLifeEntityVtblFull *WLife_Vtbl(const cEntity *e) {
-	return (const cWithLifeEntityVtblFull *)e->vftable;
+static inline const cWithLifeEntityVtbl *WithLife_Vtbl(const cEntity *e) {
+	return (const cWithLifeEntityVtbl *)e->vftable;
 }
 
 /* the variable slots of cActCtrl::vftable (rva 0x3a38a0) */

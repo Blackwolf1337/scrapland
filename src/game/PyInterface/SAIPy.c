@@ -8,6 +8,8 @@
 #include "scrap/ai.h"
 #include "scrap/console.h"
 #include "scrap/global.h"
+#include "scrap/vehicleentity.h"
+#include "scrap/walkcharentity.h"
 
 static PyObject *ReturnNone(void) {
 	Py_INCREF(Py_None);
@@ -646,7 +648,7 @@ PyObject *SAI_EnableAIVehicle(PyObject *self, PyObject *args) {
 		*cAIVehicle_GetParams3(ai) = p3;
 	}
 	else {
-		((const cVehicleEntityVtbl *)e->vftable)->EnableAI(e, on, &p1, &p2, &p3);
+		Veh_Vtbl(Veh(e))->EnableAI(e, on, &p1, &p2, &p3);
 	}
 	return Py_BuildValue("i", 1);
 }
@@ -664,7 +666,7 @@ PyObject *SAI_EnableAIChar(PyObject *self, PyObject *args) {
 	if (!e || cWalkCharEntity_GetOwnerSlot(e) >= 0 || strcmp(name, e->name)) {
 		return NULL;
 	}
-	((const cWalkCharEntityVtbl *)e->vftable)->EnableAI(e, enable != 0, &arg);
+	WChar_Vtbl(e)->EnableAI(e, enable != 0, &arg);
 	return ReturnNone();
 }
 

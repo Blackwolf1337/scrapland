@@ -334,7 +334,7 @@ void __thiscall cNetVController_Write(cNetVController *self, byte flags, cEntity
 			self->keys |= NETV_KEY_CLOUD_ON;
 		}
 	}
-	if (((const cWithLifeEntityVtblFull *)v->wl.obj.base.vftable)->IsEMIed(&v->wl.obj.base)) {
+	if (((const cWithLifeEntityVtbl *)v->wl.obj.base.vftable)->IsEMIed(&v->wl.obj.base)) {
 		self->keys |= NETV_KEY_EMI;
 	}
 	u = self->keys;
