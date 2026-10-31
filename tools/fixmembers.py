@@ -16,6 +16,15 @@ if struct == '-':
 else:
 	m = {(struct, r[0]): r[1] for r in rows}
 	pat = re.compile(r"^(\S+?):(\d+):(\d+): error: '(?:struct )?(\w+)'(?: \{aka '(?:struct )?(\w+)'\})? has no member named '(\w+)'")
+# SD_OFFSET and offsetof name the struct themselves: gcc reports them inside the macro, so they go first by text
+import glob
+for f in glob.glob(os.path.join(root, 'include/**/*.h'), recursive=True) + glob.glob(os.path.join(root, 'src/**/*.c'), recursive=True):
+	s = t = open(f).read()
+	for (st, old), new in m.items():
+		t = re.sub(r'\b(SD_OFFSET|SD_SIZE|offsetof)\((%s), %s\b' % (st, old), r'\1(\2, %s' % new, t)
+	if t != s:
+		open(f, 'w').write(t)
+
 # gcc columns count a tab as up to 8 display columns
 def byteidx(s, col):
 	d = 1
