@@ -689,7 +689,7 @@ byte __thiscall cAIChar_Repos(cAIChar *self, float minDist, float maxDist, byte 
 	zero.z = 0.0f;
 	Obj_Vtbl(self->ent)->SetVel(self->ent, &zero);
 	Logic_CharOnFloor(self->ent);
-	if (!self->ent->flag_4c) {
+	if (!self->ent->active) {
 		self->ent->vftable->SetActive(self->ent, 1);
 	}
 	self->vftable->AfterRepos(self);
@@ -753,7 +753,7 @@ byte __thiscall cAIChar_React(cAIChar *self) {
 	case AIC_ORIENT_DYNAMIC_OBJECTIVE:
 	case AIC_ORIENT_DYNAMIC_OBJECTIVE_WITH_ACTION:
 		t = AIC_Target(self);
-		if (!t || !t->flag_4c) {
+		if (!t || !t->active) {
 			self->vftable->Event(self, 3);
 		}
 		break;
@@ -765,7 +765,7 @@ byte __thiscall cAIChar_React(cAIChar *self) {
 		break;
 	case AIC_LOST_PATH_CHASE:
 		t = AIC_Target(self);
-		if (t && t->flag_4c) {
+		if (t && t->active) {
 			self->vftable->ReactLostPathChase(self);
 		} else {
 			self->vftable->Event(self, 3);
@@ -780,7 +780,7 @@ byte __thiscall cAIChar_CheckAction(cAIChar *self) {
 
 	if (self->action == 1) {
 		t = AIC_Target(self);
-		if (!t || !t->flag_4c) {
+		if (!t || !t->active) {
 			Con_Bluef("OBJECTIVE_DIED - cAIChar::CheckIntensiveAction - Entidad: %s - State: %d - StateIntern: %d\n",
 				self->ent->name, self->state, self->internState);
 			self->vftable->Event(self, 3);
@@ -793,7 +793,7 @@ byte __thiscall cAIChar_CheckAction(cAIChar *self) {
 void __thiscall cAIChar_ReactPatrol(cAIChar *self) {
 	cEntity *t = AIC_Target(self);
 
-	if (self->internState == AICI_TALK_TO && (!t || !t->flag_4c)) {
+	if (self->internState == AICI_TALK_TO && (!t || !t->active)) {
 		AIC_ResumePatrol(self);
 		self->talking = 0;
 	}
@@ -803,7 +803,7 @@ void __thiscall cAIChar_ReactPatrol(cAIChar *self) {
 void __thiscall cAIChar_ReactInRoute(cAIChar *self) {
 	cEntity *t = AIC_Target(self);
 
-	if (self->internState == AICI_TALK_TO && (!t || !t->flag_4c)) {
+	if (self->internState == AICI_TALK_TO && (!t || !t->active)) {
 		AIC_ResumeRoute(self);
 		self->talking = 0;
 	}

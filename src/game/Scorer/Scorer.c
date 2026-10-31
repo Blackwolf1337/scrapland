@@ -1736,7 +1736,7 @@ static void Dbg_DrawEntities(void) {
 	vec3_t t, a, b;
 
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
-		if (!e->flag_4c) {
+		if (!e->active) {
 			continue;
 		}
 		const cObjEntityVtbl *vt = (const cObjEntityVtbl *)e->vftable;
@@ -1816,7 +1816,7 @@ void Scorer_DrawDebug(void) {
 		CAStar2D_DrawDebug((CAStar *)g_AStar2D);
 	}
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
-		if (e->flag_4c) {
+		if (e->active) {
 			void *ai = e->vftable->GetAI(e);
 			if (ai) {
 				AI_Vtbl(ai)->Draw(ai);

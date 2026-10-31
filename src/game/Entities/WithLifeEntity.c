@@ -425,7 +425,7 @@ void __thiscall cWithLifeEntity_RenderNow(cEntity *self) {
 
 	cObjEntity_Render(self);
 	CGameModel *m = w->arrow.mission;
-	if (!self->flag_4c || !m || !CGameModel_IsLoaded(m) || !CGameModel_IsEnabled(w->arrow.mission)) {
+	if (!self->active || !m || !CGameModel_IsLoaded(m) || !CGameModel_IsEnabled(w->arrow.mission)) {
 		return;
 	}
 	cArrowGlow *glow = w->arrow.glow;
@@ -469,7 +469,7 @@ void __thiscall cWithLifeEntity_SetActCtrl(cEntity *self, const char *cls) {
 
 void __thiscall cWithLifeEntity_SetActive(cEntity *self, byte on) {
 	cWithLifeEntity *w = WLife(self);
-	byte was = self->flag_4c;
+	byte was = self->active;
 
 	cArrowIndicator_SetModels(&w->arrow, on);
 	cObjEntity_SetActive(self, on);

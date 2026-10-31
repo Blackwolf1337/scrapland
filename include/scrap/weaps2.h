@@ -26,7 +26,7 @@
 #define TYEN_MISSILE "Missile"
 
 /* the fields of the entities with life (ships, characters, missiles) */
-#define Ent_Active(e) (((cEntity *)(e))->flag_4c)
+#define Ent_Active(e) (((cEntity *)(e))->active)
 #define Ent_Cam(e) (((cObjEntity *)(e))->cam)		/* the camera entity of a player character */
 #define Ent_Mass(e) (WLife(e)->mass)
 #define Ent_Life(e) (WLife(e)->life)

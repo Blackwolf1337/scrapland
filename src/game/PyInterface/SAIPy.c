@@ -20,10 +20,10 @@ static PyObject *ReturnNone(void) {
 /* new T, NULL if the memory is not there (the original wraps the constructor in an EH frame for the delete) */
 #define NEW_OBJ(size, ctor, ...) ({ void *mem_ = operator_new(size); mem_ ? ctor(mem_, ##__VA_ARGS__) : NULL; })
 
-/* an entity that is a Car or WalkChar with flag_4c set, else NULL */
+/* an entity that is a Car or WalkChar with active set, else NULL */
 static cEntity *FindAIEntity(const char *name, const char *type) {
 	cEntity *e = World_FindEntity(name);
-	if (!e || !e->flag_4c || !Entity_IsType(e, type)) {
+	if (!e || !e->active || !Entity_IsType(e, type)) {
 		return NULL;
 	}
 	return e;
@@ -195,7 +195,7 @@ static int CheckAIEntity(cEntity *e, const char *type) {
 	if (!Entity_IsType(e, type)) {
 		return SSERR_ENTITY_TYPE;
 	}
-	if (e->flag_4c && !e->vftable->GetAI(e)) {
+	if (e->active && !e->vftable->GetAI(e)) {
 		return SSERR_NO_AI;
 	}
 	return 0;
@@ -225,7 +225,7 @@ int SetState_CheckTarget(cEntity *e) {
 	if (!e) {
 		return SSERR_TARGET_NULL;
 	}
-	return e->flag_4c ? 0 : SSERR_TARGET_INACTIVE;
+	return e->active ? 0 : SSERR_TARGET_INACTIVE;
 }
 
 /* the AI of the entity after the check, NULL with *err set */

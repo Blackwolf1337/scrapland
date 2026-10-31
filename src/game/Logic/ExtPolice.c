@@ -52,7 +52,7 @@ cEntity *ExtPolice_CallCop(cEntity *e) {
 		}
 	}
 	if (best) {
-		if (!best->flag_4c) {
+		if (!best->active) {
 			best->vftable->SetActive(best, 1);
 		}
 		cAIVehicle *ai = best->vftable->GetAI(best);
@@ -90,7 +90,7 @@ void ExtPolice_CopDamage(const char *name, const char *attacker, byte died) {
 		if (cAIVehicle_GetState(ai) != 0) {
 			return;
 		}
-		if (!cop->flag_4c) {
+		if (!cop->active) {
 			cop->vftable->SetActive(cop, 1);
 		}
 		cAIVehicle_SetState(ai, AIV_STATE_ATTACK, a);
@@ -208,7 +208,7 @@ void __fastcall cExtPolice_Think(cExtPolice *self) {
 			}
 			continue;
 		}
-		if (!e->flag_4c) {
+		if (!e->active) {
 			e->vftable->SetActive(e, 1);
 		}
 		ExtPolice_Hunt(ai, usr);

@@ -99,7 +99,7 @@ cEntity *Entity_FindInView(cEntity *self, float range, float *outDot, float *out
 		return NULL;
 	}
 	for (;;) {
-		if (e->flag_4c && e != self && e->vftable->IsType(e, TYEN_CAR)) {
+		if (e->active && e != self && e->vftable->IsType(e, TYEN_CAR)) {
 			int take;
 			if (hasAI || mode == 2) {
 				take = 1;
@@ -1156,7 +1156,7 @@ void __thiscall cWorld_Update(cWorld *self, float dt) {
 		Scheduler_Run((cScheduledFuncStack *)self->scheduler, Timer_GetTime(timer));
 		for (n = self->entityList.next; n->data && n; n = n->next) {
 			cEntity *e = n->data;
-			if (e->flag_4c) {
+			if (e->active) {
 				e->vftable->Update(e);
 			} else {
 				e->vftable->UpdateOff(e);
@@ -1181,7 +1181,7 @@ void __thiscall cWorld_Update(cWorld *self, float dt) {
 		for (n = self->entityList.next; n->data && n; n = n->next) {
 			cEntity *e = n->data;
 			uint32_t slot;
-			if (!e->flag_4c || !e->vftable->IsType(e, TYEN_WITH_LIFE)) {
+			if (!e->active || !e->vftable->IsType(e, TYEN_WITH_LIFE)) {
 				continue;
 			}
 			if (e->vftable->IsType(e, TYEN_CAR)) {

@@ -297,7 +297,7 @@ void __fastcall cVehicleO648_Rebuild(void *o) {
 	}
 	/* the enemies by distance, an insertion into the sorted list */
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
-		if (!e->flag_4c || !e->vftable->IsType(e, TYEN_WITH_LIFE)) {
+		if (!e->active || !e->vftable->IsType(e, TYEN_WITH_LIFE)) {
 			continue;
 		}
 		cEntity *own = t->owner;
@@ -427,7 +427,7 @@ void __thiscall cVehicleO648_Update(void *o, float dt) {
 	}
 	/* the target is dropped when it is gone, inactive or of team 3 */
 	cEntity *e = World_FindEntity(t->target);
-	if (!e || e == t->owner || !e->flag_4c || !e->vftable->IsType(e, TYEN_WITH_LIFE) || NetEnt_Team(e) == 3) {
+	if (!e || e == t->owner || !e->active || !e->vftable->IsType(e, TYEN_WITH_LIFE) || NetEnt_Team(e) == 3) {
 		t->target[0] = 0;
 	}
 	if (!t->target[0] && 0.0f >= t->list->wait) {
@@ -470,7 +470,7 @@ byte __fastcall cVehicleO648_IsStale(void *o) {
 		if (!e) {
 			return 1;
 		}
-		return !e->flag_4c;
+		return !e->active;
 	}
 	return 1;
 }

@@ -323,7 +323,7 @@ void __thiscall Grid_Add(void *grid, cEntity *e) {
 	int x = (int)((Entity_Pos(e)->x - g->min.x) / g->cell.x);
 	int y = (int)((Entity_Pos(e)->y - g->min.y) / g->cell.y);
 	int z = (int)((Entity_Pos(e)->z - g->min.z) / g->cell.z);
-	if (!e->flag_4c) {
+	if (!e->active) {
 		cell = NULL;
 	} else if (x < 0 || x >= g->nx || y < 0 || y >= g->ny || z < 0 || z >= g->nz) {
 		cell = &g->outside;

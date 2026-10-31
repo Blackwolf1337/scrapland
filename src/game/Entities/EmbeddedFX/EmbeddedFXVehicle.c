@@ -198,7 +198,7 @@ void __fastcall cEmbeddedFXVehicle_Update(cEmbeddedFXVehicle *self) {
 	CHECK(self->owner);
 	model = Obj_Vtbl(self->owner)->GetModel(self->owner);
 	CHECK(CGameModel_IsLoaded(model));
-	if (CGameModel_IsEnabled(model) && CGameModel_IsVisible(model) && self->owner->flag_4c) {
+	if (CGameModel_IsEnabled(model) && CGameModel_IsVisible(model) && self->owner->active) {
 		if (!self->visible || !CGameModel_IsEnabled(&self->model)) {
 			CGameModel_Enable(&self->model);
 			self->visible = 1;

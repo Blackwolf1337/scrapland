@@ -29,10 +29,10 @@ static inline float FXS_Delta(void) {
 static int FXS_Alive(cEntity **ent) {
 	cEntity *e = *ent;
 
-	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+	if (e && (Entity_Removed(e) || !e->active)) {
 		*ent = NULL;
 	}
-	return *ent && (*ent)->flag_4c;
+	return *ent && (*ent)->active;
 }
 
 /* the model of the debris to the position and angles of the model of e (into pos and rot) */
@@ -1945,7 +1945,7 @@ static void FXS_MatrixRays1(cObjElementFXSceneEnterMatrix *self, float delta) {
 	vec3_t tmp, ang, in, B, T, dir;
 
 	cEntity *m = World_FindEntity("EnterMatrixMatrix");
-	if (m && m->flag_4c && !Entity_Removed(m)) {
+	if (m && m->active && !Entity_Removed(m)) {
 		self->center = *Obj_Vtbl(m)->GetViewPos(m, &tmp);
 	}
 	int idx = 4;

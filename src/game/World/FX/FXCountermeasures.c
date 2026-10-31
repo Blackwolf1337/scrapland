@@ -81,7 +81,7 @@ void __thiscall cObjElementFXHook_StartTarget(cObjElementFXHook *self, cEntity *
 	self->points[1].y = self->points[0].y + r.y;
 	self->points[1].z = self->points[0].z + r.z;
 	end = NULL;
-	if (self->target && self->target->flag_4c && Entity_IsType(self->target, TYEN_WITH_LIFE)) {
+	if (self->target && self->target->active && Entity_IsType(self->target, TYEN_WITH_LIFE)) {
 		end = Obj_Vtbl(self->target)->GetViewPos(self->target, &r);
 	} else if (self->active && cTargetLock_GetPoint(Entity_TargetLock(self->emitter))) {
 		end = cTargetLock_GetPoint(Entity_TargetLock(self->emitter));
@@ -174,17 +174,17 @@ void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debri
 
 	(void)dt;
 	cEntity *e = self->emitter;
-	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+	if (e && (Entity_Removed(e) || !e->active)) {
 		self->emitter = NULL;
 	}
 	e = self->target;
-	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+	if (e && (Entity_Removed(e) || !e->active)) {
 		self->target = NULL;
 	}
 	float delta = cTimer_GetDelta(&g_pWorld->timer);
 	self->sparkTime = self->sparkTime + delta;
 	e = self->emitter;
-	if (e && e->flag_4c) {
+	if (e && e->active) {
 		CGameModel_SetPos(Debris_Model(debris), Obj_Vtbl(e)->GetViewPos(e, &tmp));
 		CGameModel_SetSortZ(Debris_Model(debris), -5.0f, 1.0f);
 	}
@@ -192,7 +192,7 @@ void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debri
 
 	if (!self->withTarget) {
 		/* the line without target */
-		if (!e || !e->flag_4c) {
+		if (!e || !e->active) {
 			return;
 		}
 		model = Entity_Model(e);
@@ -232,7 +232,7 @@ void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debri
 	}
 
 	/* with target: the points between are pulled to the line by the tensor */
-	if (e && e->flag_4c) {
+	if (e && e->active) {
 		model = Entity_Model(e);
 		CHECK(CGameModel_IsLoaded(model));
 		const matrix_t *m = CGameModel_NodeMatrix(model, &mat,
@@ -247,7 +247,7 @@ void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debri
 		self->points[1].z = self->points[0].z + v->z;
 		const vec3_t *end = NULL;
 		e = self->target;
-		if (e && e->flag_4c && Entity_IsType(e, TYEN_WITH_LIFE)) {
+		if (e && e->active && Entity_IsType(e, TYEN_WITH_LIFE)) {
 			end = Obj_Vtbl(self->target)->GetViewPos(self->target, &tmp);
 		} else if (self->active && cTargetLock_GetPoint(Entity_TargetLock(self->emitter))) {
 			end = cTargetLock_GetPoint(Entity_TargetLock(self->emitter));
@@ -328,7 +328,7 @@ void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debri
 	vec3_t end = self->points[np];
 	vec3_t nd = FXHook_Dir(&self->points[np - 1], &self->points[np]);
 	e = self->emitter;
-	if (e && e->flag_4c && Entity_PlayerCam(e) && !self->target && 0.0f >= self->fade && self->sparkTime > 0.04f) {
+	if (e && e->active && Entity_PlayerCam(e) && !self->target && 0.0f >= self->fade && self->sparkTime > 0.04f) {
 		FXHook_Sparks(self, &end, nd);
 		self->sparkTime = 0.0f;
 	}
@@ -754,7 +754,7 @@ static void EMI_NewBolt(cObjElementFXEMI *self, int i, const vec3_t *pos, float 
 			(Entity_LifeI(found) <= 0 || (found->vftable->IsType(found, "Car") && 0.0f >= v->emi))) {
 			found = NULL;
 			kind = 0;
-		} else if (found && (Entity_Removed(found) || !found->flag_4c)) {
+		} else if (found && (Entity_Removed(found) || !found->active)) {
 			found = NULL;
 		}
 		factor = 0.1f;
@@ -850,7 +850,7 @@ void __thiscall cObjElementFXEMI_Update(cObjElementFXEMI *self, cDebris *debris,
 
 	(void)dt;
 	cEntity *e = self->entity;
-	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+	if (e && (Entity_Removed(e) || !e->active)) {
 		self->entity = NULL;
 	}
 	if (!self->entity) {
@@ -863,7 +863,7 @@ void __thiscall cObjElementFXEMI_Update(cObjElementFXEMI *self, cDebris *debris,
 	CGameModel_GetPos(model, &pos);
 	CGameModel_GetRot(model, &rot);
 	e = self->entity;
-	if (e && e->flag_4c) {
+	if (e && e->active) {
 		pos = *Obj_Vtbl(e)->GetViewPos(e, &tmp);
 		CGameModel_SetPos(model, &pos);
 		CGameModel_SetRot(model, &rot);
@@ -1199,7 +1199,7 @@ void __thiscall cObjElementFXDebrisCloud_Update(cObjElementFXDebrisCloud *self, 
 
 	(void)dt;
 	cEntity *e = self->entity;
-	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+	if (e && (Entity_Removed(e) || !e->active)) {
 		self->entity = NULL;
 	}
 	if (!self->entity) {
@@ -1209,7 +1209,7 @@ void __thiscall cObjElementFXDebrisCloud_Update(cObjElementFXDebrisCloud *self, 
 	self->time = self->time + delta;
 	self->emitT = self->emitT + delta;
 	e = self->entity;
-	if (e && e->flag_4c) {
+	if (e && e->active) {
 		Obj_Vtbl(e)->GetViewPos(e, &pos);
 		Obj_Vtbl(self->entity)->GetViewAng(self->entity, &rot);
 		CGameModel_SetPos(model, &pos);

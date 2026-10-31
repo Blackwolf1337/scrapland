@@ -208,7 +208,7 @@ byte __thiscall cAIMove_CanTarget(void *self, cEntity *e) {
 		Con_Warnf("Objetivo din\xe1mico = NULL\n");
 		return 0;
 	}
-	if (!e->flag_4c) {
+	if (!e->active) {
 		Con_Warnf("Objetivo din\xe1mico: %s Inactivo\n", e->name);
 		return 0;
 	}

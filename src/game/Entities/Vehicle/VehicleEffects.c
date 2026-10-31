@@ -676,7 +676,7 @@ void __thiscall cVehicleTubes_Update(cVehicleTubes *self, float dt) {
 		return;
 	}
 	CHECK(CGameModel_IsLoaded(model));
-	if (!CGameModel_IsVisible(model) || !self->owner->wl.obj.base.flag_4c) {
+	if (!CGameModel_IsVisible(model) || !self->owner->wl.obj.base.active) {
 		return;
 	}
 	uint32_t fx = CGameModel_GetEffect(&self->owner->wl.obj.model, NULL);

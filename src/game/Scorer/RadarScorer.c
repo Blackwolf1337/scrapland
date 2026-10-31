@@ -470,7 +470,7 @@ static void Radar_DrawCones(cRadarScorer *self, cEntity *target) {
 	vec3_t a, p;
 
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
-		if (e == target || !e->flag_4c || !Entity_IsType(e, TYEN_WITH_LIFE)) {
+		if (e == target || !e->active || !Entity_IsType(e, TYEN_WITH_LIFE)) {
 			continue;
 		}
 		cArrowIndicator *ar = &WLife(e)->arrow;
@@ -672,7 +672,7 @@ void __thiscall cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEnt
 	cEntity *scrapyard = World_FindEntity("DM_OutLink_Scrapyard");
 	g_NumEnemiesInRadar = 0;
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
-		if (e != target && e->flag_4c) {
+		if (e != target && e->active) {
 			Radar_DrawEntity(self, target, e, isCar, scrapyard, friendColor, enemyColor);
 		}
 	}
@@ -689,7 +689,7 @@ void __thiscall cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEnt
 	if (g_RadarMMSelect) {
 		float best = 3.40282347e+38f;
 		for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
-			if (e == target || !e->flag_4c || !Entity_IsType(e, "Obj") || ((cObjEntity *)e)->radarShow != 1) {
+			if (e == target || !e->active || !Entity_IsType(e, "Obj") || ((cObjEntity *)e)->radarShow != 1) {
 				continue;
 			}
 			const vec3_t *tp = target->vftable->GetPos(target, &t);
@@ -702,7 +702,7 @@ void __thiscall cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEnt
 		}
 	}
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
-		if (e != target && e->flag_4c && Entity_IsType(e, "Obj")) {
+		if (e != target && e->active && Entity_IsType(e, "Obj")) {
 			Radar_DrawMission(self, target, e, nearest);
 		}
 	}
@@ -863,7 +863,7 @@ void __thiscall cRadarScorer_Draw(cRadarScorer *self, int player) {
 	if (fade >= 1.0f) {
 		self->floorFade = 1.0f;
 	}
-	if (!cam || !cam->flag_4c || !cam->vftable->IsType(cam, "FCam")) {
+	if (!cam || !cam->active || !cam->vftable->IsType(cam, "FCam")) {
 		return;
 	}
 	cEntity *target = cCamEntity_GetTarget(cam);

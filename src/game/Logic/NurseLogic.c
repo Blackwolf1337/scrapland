@@ -35,7 +35,7 @@ void __fastcall cNurses_Think(cNurses *self) {
 		l->vftable->Update(l, 0.73f);
 	}
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
-		if (!e->flag_4c || !e->vftable->IsType(e, TYEN_WALKCHAR) || !ChType_ActCtrl(e) ||
+		if (!e->active || !e->vftable->IsType(e, TYEN_WALKCHAR) || !ChType_ActCtrl(e) ||
 			!cActCtrl_IsActive(ChType_ActCtrl(e), "Dazed")) {
 			continue;
 		}

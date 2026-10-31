@@ -542,7 +542,7 @@ void __thiscall cVehicleEntity_Smooth(cVehicleEntity *self, float dt) {
 	}
 	Float_Approach(&self->inAtmosphere, self->wl.obj.base.pos.y > g_AtmosphereLimit ? 0.0f : 1.0f, dt + dt);
 	float on = 1.0f;
-	if (!self->wl.obj.base.flag_4c ||
+	if (!self->wl.obj.base.active ||
 		(!(g_pApp->flags & APPF_CLIENT) && self->wl.obj.move.active && self->wl.obj.move.time >= self->wl.obj.move.moveTime)) {
 		on = 0.0f;
 	}
@@ -1016,7 +1016,7 @@ byte __thiscall cVehicleEntity_SetPilot(cVehicleEntity *self, int slot, const ch
 	CGameModel_SetPivotNode(m, "DC_Ship_Link");
 	CGameModel_SetPos(m, &self->wl.obj.base.pos);
 	CGameModel_SetRot(m, &self->wl.obj.ang);
-	if (!self->wl.obj.base.flag_4c) {
+	if (!self->wl.obj.base.active) {
 		CGameModel_Disable(m);
 	}
 	return 1;
@@ -1248,17 +1248,17 @@ void __thiscall cVehicleEntity_SetFXParam(cVehicleEntity *self, int i, float v) 
 }
 
 void __thiscall cVehicleEntity_SetActive(cVehicleEntity *self, byte on) {
-	if (on == self->wl.obj.base.flag_4c) {
+	if (on == self->wl.obj.base.active) {
 		return;
 	}
-	if (!on && self->wl.obj.base.flag_4c) {
+	if (!on && self->wl.obj.base.active) {
 		Controls_Reset(&self->controls);
 		cWeaponManager_Update(&self->weapons, 0.005f);
 		self->active = 0.0f;
 	}
 	cWithLifeEntity_SetActive(Veh_Ent(self), on);
 	if (CGameModel_IsLoaded(&self->wl.obj.model) && self->pilotNode != -1) {
-		if (self->wl.obj.base.flag_4c) {
+		if (self->wl.obj.base.active) {
 			CGameModel_Enable(&self->pilot);
 		} else {
 			CGameModel_Disable(&self->pilot);
@@ -1266,7 +1266,7 @@ void __thiscall cVehicleEntity_SetActive(cVehicleEntity *self, byte on) {
 	}
 	cVehicleEffects_SetActive(&self->effects, on);
 	cVehicleMotors_SetEnabled(&self->motors, on);
-	if (self->slot != -1 && self->wl.obj.base.flag_4c) {
+	if (self->slot != -1 && self->wl.obj.base.active) {
 		g_pWorld->owners[self->slot] = Veh_Ent(self);
 	}
 }
@@ -1932,7 +1932,7 @@ static void Veh_UpdatePilotModel(cVehicleEntity *self, const vec3_t *pos, float 
 	matrix_t mtx;
 	byte near = 0;
 
-	if (g_SplitScreenGame || self->wl.obj.base.flag_4c) {
+	if (g_SplitScreenGame || self->wl.obj.base.active) {
 		cam = g_pWorld->camPos[g_pWorld->curCam];
 		float dy = pos->y - cam.y;
 		float dx = pos->x - cam.x;
@@ -1951,7 +1951,7 @@ static void Veh_UpdatePilotModel(cVehicleEntity *self, const vec3_t *pos, float 
 			target = a == b && !strcmp(self->wl.obj.base.name + 2, Veh(u)->target + 2);
 		}
 	}
-	if (!self->wl.obj.base.flag_4c || (!near && !target)) {
+	if (!self->wl.obj.base.active || (!near && !target)) {
 		if (self->pilotNode != -1 && CGameModel_IsEnabled(&self->pilot)) {
 			CGameModel_Disable(&self->pilot);
 		}

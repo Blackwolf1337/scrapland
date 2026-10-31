@@ -87,7 +87,7 @@ cEntity *__thiscall cEntity_ctor(void *mem, const char *name, float x, float y, 
 	self->pos.z = z;
 	self->savedMask = 0;
 	self->mask = 0;
-	self->flag_4c = 1;
+	self->active = 1;
 	self->listNode.node.data = self;
 	self->lLogic = NULL;
 	self->ai = NULL;
@@ -278,7 +278,7 @@ byte __thiscall cEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 		if ((byte)set) {
 			self->vftable->SetActive(self, *i != 0);
 		} else {
-			*i = self->flag_4c != 0;
+			*i = self->active != 0;
 		}
 		return 1;
 	}
@@ -345,7 +345,7 @@ void __thiscall cEntity_Render(cEntity *self, void *arg) {
 }
 
 void __thiscall cEntity_SetActive(cEntity *self, byte on) {
-	self->flag_4c = on;
+	self->active = on;
 	if (!on) {
 		Grid_Add(g_pWorld->grid, self);
 	}

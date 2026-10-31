@@ -84,7 +84,7 @@ void __thiscall cMaintenanceLocalLogic_SetPlatform(cMaintenanceLocalLogic *self,
 cEntity *Maintenance_FindShip(void) {
 	cEntity *e = cWorld_GetFirstEntity(g_pWorld);
 
-	while (e && !(e->flag_4c && e->vftable->IsType(e, TYEN_CAR))) {
+	while (e && !(e->active && e->vftable->IsType(e, TYEN_CAR))) {
 		e = cEntity_Next(e);
 	}
 	if (!e) {

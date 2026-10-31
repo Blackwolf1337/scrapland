@@ -1,6 +1,6 @@
 /*
  * World/CollisionGrid.cpp of the game: the entity grid of the world (g_pWorld->grid). The box of the floor is cut
- * into cells; every entity with flag_4c is linked into the cell of its position (Nto1Links: the cell is the head,
+ * into cells; every entity with active is linked into the cell of its position (Nto1Links: the cell is the head,
  * the node of the entity at +0x34), the others outside. The queries walk the cells of a box or of the boxes along a
  * segment, one query at a time. A segment query marks the cells it has seen with a stamp, so the boxes along it give
  * each entity once. Also here: the collision masks of the entity tests, the debug draws of the cells and the world
@@ -65,7 +65,7 @@ void __thiscall Grid_Free(void *grid);
 void __thiscall Grid_Init(void *grid, const vec3_t *min, const vec3_t *max, const vec3_t *cell);
 /* the grid made again with the cells of size; the top of the box is TopLimit with GridUseTopLimit */
 void __thiscall Grid_Set(void *grid, const vec3_t *size);
-/* the entity into the cell of its position (none without flag_4c) */
+/* the entity into the cell of its position (none without active) */
 void __thiscall Grid_Add(void *grid, cEntity *e);
 /* the first entity of cell x y z (outside of the box: the outside list); NULL for an empty cell or one the segment
  * query has seen */

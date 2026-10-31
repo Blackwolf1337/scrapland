@@ -38,7 +38,7 @@ cNetVController *__thiscall cNetVController_ctor(void *mem, cEntity *v) {
 
 /* vf03: an active vehicle always sends its position */
 byte __thiscall cNetVController_Changed(cNetVController *self, byte flags, cEntity *e) {
-	if (self->vehicle->flag_4c) {
+	if (self->vehicle->active) {
 		byte f = cNetController_Changed((cNetController *)self, flags, e) | NETC_POS;
 		self->flags = f;
 		return f;
@@ -309,7 +309,7 @@ void __thiscall cNetVController_Write(cNetVController *self, byte flags, cEntity
 		self->keys |= NETV_KEY_CANFIRE;
 	}
 	v = NETV_VEH(self);
-	if (v->wl.obj.base.flag_4c) {
+	if (v->wl.obj.base.active) {
 		self->keys |= NETV_KEY_ACTIVE;
 	}
 	if (((cWithLifeEntity *)v)->fireRemain > 0.0f) {
@@ -350,7 +350,7 @@ void __thiscall cNetVController_Write(cNetVController *self, byte flags, cEntity
 		}
 		float h = self->height;
 		NetV_Write(msg, &h, 4);
-		if (!self->vehicle->flag_4c) {
+		if (!self->vehicle->active) {
 			/* the original calls IsType on a NULL camera when the camera has no name */
 			cEntity *cam = World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
 			if (cam->vftable->IsType(cam, "FCam")) {

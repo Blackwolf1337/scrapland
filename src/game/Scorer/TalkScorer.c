@@ -79,7 +79,7 @@ cEntity *__stdcall Talk_GetUseTarget(int player) {
 		return NULL;
 	}
 	cEntity *cam = World_FindEntity(cWorld_GetCamName(g_pWorld, player));
-	if (!cam || !cam->flag_4c || !Entity_IsType(cam, TYEN_FCAM)) {
+	if (!cam || !cam->active || !Entity_IsType(cam, TYEN_FCAM)) {
 		return NULL;
 	}
 	cEntity *ch = cCamEntity_GetTarget(cam);

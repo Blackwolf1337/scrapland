@@ -39,7 +39,7 @@ cEntity *__fastcall cMessengers_FindDesk(cMessengers *self) {
 	int found = 0;
 
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
-		if (!e->flag_4c || !e->vftable->IsType(e, TYEN_WITH_LIFE) || Logic_RadarShow(e) || !ChType_ActCtrl(e) ||
+		if (!e->active || !e->vftable->IsType(e, TYEN_WITH_LIFE) || Logic_RadarShow(e) || !ChType_ActCtrl(e) ||
 			strcmp(Logic_TypeName(e), type)) {
 			continue;
 		}

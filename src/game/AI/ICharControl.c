@@ -176,7 +176,7 @@ void __fastcall DListSeg_Clear(cNWSegList *list) {
 byte __thiscall cAICharControl_CheckTarget(cAICharControl *self) {
 	if (self->mode >= AICC_FOLLOW && (self->mode <= AICC_FOLLOW_PATH || self->mode == AICC_AWAY)) {
 		cEntity *t = AICC_TargetEnt(self);
-		if (!t || !t->flag_4c) {
+		if (!t || !t->active) {
 			const char *name = self->ent->name;
 			int in = AICC_OwnerVtbl(self->ai)->GetInternState(self->ai);
 			int st = AICC_OwnerVtbl(self->ai)->GetState(self->ai);

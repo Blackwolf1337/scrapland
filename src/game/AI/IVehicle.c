@@ -391,7 +391,7 @@ byte __thiscall cAIVehicle_CheckTarget(cAIVehicle *self) {
 		}
 		return 0;
 	}
-	if (!t->flag_4c) {
+	if (!t->active) {
 		cAIVehicle_SetStateIntern(self, AIV_FREEZE);
 		return 0;
 	}
@@ -2848,7 +2848,7 @@ void __thiscall cAIVehicle_ThinkRace(cAIVehicle *self) {
 
 	self->targetTime = self->dt + self->targetTime;
 	cAIVehicleShoot_GetInfo(self->shoot, &a, &kind, &flag);
-	if (kind == 2 && flag && (!AIV_Target(self) || !AIV_Target(self)->flag_4c)) {
+	if (kind == 2 && flag && (!AIV_Target(self) || !AIV_Target(self)->active)) {
 		goto race;
 	}
 	if (!cSlotController_Tick(slot, self->dt) || !cSlotController_FireReset(slot, &t)) {

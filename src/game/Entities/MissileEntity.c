@@ -109,7 +109,7 @@ void __fastcall cMissileEntity_dtor(cMissileEntity *self) {
 	int n = self->swarmCount;
 
 	self->wl.obj.base.vftable = CMISSILEENTITY_VFTABLE;
-	if (n > 0 || self->wl.obj.base.flag_4c) {
+	if (n > 0 || self->wl.obj.base.active) {
 		cMissileEntity_Hit(self, n + 1, 0);
 	}
 	cPy_Function_dtor(&self->onHit);
@@ -169,7 +169,7 @@ void __thiscall cMissileEntity_LifeTick(cMissileEntity *self) {
 			cMissileEntity_SetHitType(self, MISSILE_HIT_NONE);
 		}
 		self->target[0] = 0;
-		if (self->wl.obj.base.flag_4c) {
+		if (self->wl.obj.base.active) {
 			Missile_Vtbl(self)->Hit(self, self->swarmCount + 1, 0);
 		}
 		cEntity_Del(Missile_Ent(self));
@@ -461,7 +461,7 @@ void __thiscall cMissileEntity_SetHiddenSwarm(cMissileEntity *self, byte on) {
 void __thiscall cMissileEntity_SetHideMain(cMissileEntity *self, byte on) {
 	self->hideMain = on;
 	if (CGameModel_IsLoaded(&self->wl.obj.model)) {
-		if (!self->hideMain && self->wl.obj.base.flag_4c) {
+		if (!self->hideMain && self->wl.obj.base.active) {
 			CGameModel_Enable(&self->wl.obj.model);
 		} else {
 			CGameModel_Disable(&self->wl.obj.model);
@@ -843,7 +843,7 @@ static void Missile_NetTick(cMissileEntity *self, float dt) {
 		self->wl.obj.vel.z = vz;
 		self->speed = (float)__builtin_sqrt((double)(vx * vx + vy * vy + vz * vz));
 		net->age = net->age - dt;
-		if (self->netSwarmCount < self->swarmCount && self->wl.obj.base.flag_4c) {
+		if (self->netSwarmCount < self->swarmCount && self->wl.obj.base.active) {
 			self->wl.obj.base.pos = net->pos;
 			Missile_Vtbl(self)->Hit(self, self->swarmCount - self->netSwarmCount, dt);
 			return;
@@ -1065,7 +1065,7 @@ static inline uint32_t Missile_NetId(const char *name) {
 void __thiscall cMissileEntity_NetWrite(cMissileEntity *self, float dist2, void *msg, int full) {
 	cAbstractFile *f = msg;
 	cNetController *net = WLife(self)->obj.net;
-	byte active = self->wl.obj.base.flag_4c;
+	byte active = self->wl.obj.base.active;
 	byte flags = (byte)((active ? 0 : 0x80) | ((25000000.0f > dist2) + 0x1e));
 	uint32_t v;
 

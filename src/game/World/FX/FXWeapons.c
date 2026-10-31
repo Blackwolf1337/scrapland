@@ -290,7 +290,7 @@ static void FXW_RingPoint(vec3_t *out, float a, const vec3_t *ang) {
 void __thiscall cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debris, float dt) {
 	(void)dt;
 	cEntity *e = self->shooter;
-	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+	if (e && (Entity_Removed(e) || !e->active)) {
 		self->shooter = NULL;
 	}
 	float d = FXW_Delta();
@@ -1450,7 +1450,7 @@ static void FXW_TeslaBack(vec3_t *tpos, const vec3_t *n, float r) {
 void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *debris, float dt) {
 	(void)dt;
 	cEntity *e = self->emitter;
-	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+	if (e && (Entity_Removed(e) || !e->active)) {
 		cWeaponManager_SetFlag46(Vehicle_WeapMgr(e), 0);
 		self->emitter = NULL;
 	}
@@ -1497,7 +1497,7 @@ void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *deb
 		self->followTime = g_FXTeslaFollowTime * 5.0f;
 	}
 	cEntity *t = self->target;
-	if (t && (Entity_Removed(t) || !t->flag_4c)) {
+	if (t && (Entity_Removed(t) || !t->active)) {
 		self->target = NULL;
 	}
 
@@ -1657,7 +1657,7 @@ void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *deb
 
 		/* the points follow their offsets */
 		e = self->emitter;
-		if (e && e->flag_4c) {
+		if (e && e->active) {
 			pts[0] = P[1];
 			pts[self->numPts - 1] = P[self->numPts];
 			float k1 = Float_MinSS(1.0f, 1.0f / g_FXTeslaFollowTime * d);

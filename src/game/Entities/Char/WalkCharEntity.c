@@ -549,7 +549,7 @@ void __thiscall cWalkCharEntity_PlayWalk(cEntity *self, const char *init, const 
 void __thiscall cWalkCharEntity_UpdateHitFlash(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
 
-	if (self->flag_4c && w->wl.life > 0 && w->wl.prevLife > w->wl.life) {
+	if (self->active && w->wl.life > 0 && w->wl.prevLife > w->wl.life) {
 		w->hitFlash = 1.5f;
 	}
 	if (!(w->hitFlash > 0.0f)) {
@@ -1248,7 +1248,7 @@ void __thiscall cWalkCharEntity_SetActive(cEntity *self, byte on) {
 	cWalkCharEntity *w = WChar(self);
 
 	cWithLifeEntity_SetActive(self, on);
-	if (w->ownerSlot != -1 && self->flag_4c) {
+	if (w->ownerSlot != -1 && self->active) {
 		g_pWorld->owners[w->ownerSlot] = self;
 	}
 	cWalkCharEntity_UpdateViewLock(self, 0.0f);

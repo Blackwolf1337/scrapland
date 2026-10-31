@@ -523,7 +523,7 @@ int __thiscall cVehicleMotor_Load(cVehicleMotor *self, cEntity *owner, byte moto
 		CGameModel_SetPivotNode(&self->model[i], "DC_Ship_Link");
 		CGameModel_SetPos(&self->model[i], owner->vftable->GetPos(owner, &v));
 		CGameModel_SetRot(&self->model[i], Obj_Vtbl(owner)->GetAng(owner, &v));
-		if (!owner->flag_4c) {
+		if (!owner->active) {
 			CGameModel_Disable(&self->model[i]);
 		}
 	}

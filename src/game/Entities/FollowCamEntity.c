@@ -493,11 +493,11 @@ void __thiscall cFollowCamEntity_Update(cEntity *self) {
 			cInputAction_Pressed(TABLE_AT(TABLE_AT(g_ActionSets, 3)->actions, 18), fc->base.slot)))) {
 		cEntity *e = fc->target ? cEntity_Next(fc->target) : cWorld_GetFirstEntity(g_pWorld);
 		while (e) {
-			if (e->flag_4c) {
+			if (e->active) {
 				if (e->vftable->IsType(e, TYEN_CAR) && (Net_IsNetEntity(e) || e->vftable->GetAI(e))) {
 					break;
 				}
-				if (e->flag_4c && e->vftable->IsType(e, TYEN_WALKCHAR)) {
+				if (e->active && e->vftable->IsType(e, TYEN_WALKCHAR)) {
 					break;
 				}
 			}

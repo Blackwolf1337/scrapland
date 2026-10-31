@@ -1611,8 +1611,8 @@ void __thiscall cObjElementFXGearMissile_Update(cObjElementFXGearMissile *self, 
 	vec3_t pos, rot, a, b, tmp;
 
 	cEntity *e = self->entity;
-	if (e && (Entity_Removed(e) || !e->flag_4c)) {
-		if (!e->flag_4c) {
+	if (e && (Entity_Removed(e) || !e->active)) {
+		if (!e->active) {
 			e->vftable->GetPos(e, &a);
 			GM_EntityRot(self->entity, &b);
 			CGameModel_SetPos(model, &a);
@@ -1622,7 +1622,7 @@ void __thiscall cObjElementFXGearMissile_Update(cObjElementFXGearMissile *self, 
 		self->entity = NULL;
 	}
 	e = self->entity;
-	if (!e || !e->flag_4c || self->node == -1) {
+	if (!e || !e->active || self->node == -1) {
 		if (Debris_Life(debris) > self->fadeLife) {
 			Debris_Life(debris) = self->fadeLife;
 		}
@@ -1633,7 +1633,7 @@ void __thiscall cObjElementFXGearMissile_Update(cObjElementFXGearMissile *self, 
 	CGameModel_GetPos(model, &pos);
 	CGameModel_GetRot(model, &rot);
 	e = self->entity;
-	if (e && e->flag_4c) {
+	if (e && e->active) {
 		pos = *Obj_Vtbl(e)->GetViewPos(e, &tmp);
 		CGameModel_SetPos(model, &pos);
 		CGameModel_SetRot(model, &rot);
@@ -1701,7 +1701,7 @@ void __thiscall cObjElementFXGearMissile_Update(cObjElementFXGearMissile *self, 
 	if (!(L < life) && life - dt > 0.2f && self->emitTime > 0.015f) {
 		GM_FadeSparks(self, debris, dt);
 	}
-	if (self->entity && self->entity->flag_4c) {
+	if (self->entity && self->entity->active) {
 		self->lastPos = pos;
 	}
 }
@@ -1901,10 +1901,10 @@ void __thiscall cObjElementFXBettyAttack_Update(cObjElementFXBettyAttack *self, 
 
 	(void)dt;
 	cEntity *e = self->ent;
-	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+	if (e && (Entity_Removed(e) || !e->active)) {
 		self->ent = NULL;
 	}
-	if (!self->ent || !self->ent->flag_4c) {
+	if (!self->ent || !self->ent->active) {
 		Debris_Life(d) = 0.0f;
 		return;
 	}
@@ -2156,11 +2156,11 @@ void __thiscall cObjElementFXPoliceGearConversion_Update(cObjElementFXPoliceGear
 
 	(void)dt;
 	cEntity *e = self->ent;
-	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+	if (e && (Entity_Removed(e) || !e->active)) {
 		self->ent = NULL;
 		FXGear_HideArmors(self);
 	}
-	if (!self->ent || !self->ent->flag_4c) {
+	if (!self->ent || !self->ent->active) {
 		return;
 	}
 	CGameModel *m = FXA_Model(self->ent);
@@ -2633,7 +2633,7 @@ static inline float FXA_Delta(void) {
 
 /* an entity that is deleted or off is let go */
 static inline void FXA_Keep(cEntity **e) {
-	if (*e && (Entity_Removed(*e) || !(*e)->flag_4c)) {
+	if (*e && (Entity_Removed(*e) || !(*e)->active)) {
 		*e = NULL;
 	}
 }
@@ -2723,7 +2723,7 @@ static void FXKill_Update(cObjElementFXKill *self, cDebris *d, float sortBias, f
 	vec3_t pos, rot;
 
 	FXA_Keep(&self->ent);
-	if (!self->ent || !self->ent->flag_4c) {
+	if (!self->ent || !self->ent->active) {
 		Debris_Life(d) = 0.0f;
 		return;
 	}
@@ -2752,7 +2752,7 @@ void __thiscall cObjElementFXBankMasterAttack_Update(cObjElementFXBankMasterAtta
 	matrix_t mtx;
 
 	FXA_Keep(&self->ent);
-	if (!self->ent || !self->ent->flag_4c) {
+	if (!self->ent || !self->ent->active) {
 		Debris_Life(d) = 0.0f;
 		return;
 	}
@@ -2813,7 +2813,7 @@ void __thiscall cObjElementFXBertoAttack_Update(cObjElementFXBertoAttack *self, 
 	float f;
 
 	FXA_Keep(&self->ent);
-	if (!self->ent || !self->ent->flag_4c) {
+	if (!self->ent || !self->ent->active) {
 		Debris_Life(d) = 0.0f;
 		return;
 	}
@@ -2855,7 +2855,7 @@ void __thiscall cObjElementFXDTritusAttack_Update(cObjElementFXDTritusAttack *se
 
 	(void)dt;
 	FXA_Keep(&self->ent);
-	if (!self->ent || !self->ent->flag_4c) {
+	if (!self->ent || !self->ent->active) {
 		Debris_Life(d) = 0.0f;
 		return;
 	}
@@ -2881,11 +2881,11 @@ void __thiscall cObjElementFXPoliceSteal_Update(cObjElementFXPoliceSteal *self, 
 
 	(void)dt;
 	FXA_Keep(&self->ent);
-	if (!self->ent || !self->ent->flag_4c) {
+	if (!self->ent || !self->ent->active) {
 		return;
 	}
 	FXA_Keep(&self->target);
-	if (!self->target || !self->target->flag_4c) {
+	if (!self->target || !self->target->active) {
 		return;
 	}
 	if (0.65f > Debris_Life(d)) {
@@ -2950,7 +2950,7 @@ void __thiscall cObjElementFXSebastianFlash_Update(cObjElementFXSebastianFlash *
 
 	(void)dt;
 	FXA_Keep(&self->ent);
-	if (!self->ent || !self->ent->flag_4c) {
+	if (!self->ent || !self->ent->active) {
 		Debris_Life(d) = 0.0f;
 		return;
 	}
@@ -3138,11 +3138,11 @@ void __thiscall cObjElementFXBankerSteal_Update(cObjElementFXBankerSteal *self, 
 
 	(void)dt;
 	FXA_Keep(&self->ent);
-	if (!self->ent || !self->ent->flag_4c) {
+	if (!self->ent || !self->ent->active) {
 		return;
 	}
 	FXA_Keep(&self->target);
-	if (!self->target || !self->target->flag_4c) {
+	if (!self->target || !self->target->active) {
 		return;
 	}
 	if (0.65f > Debris_Life(d)) {
@@ -3334,7 +3334,7 @@ void __thiscall cObjElementFXFunctionarySpecialAction_Update(cObjElementFXFuncti
 	float target;
 
 	FXA_Keep(&self->ent);
-	if (!self->ent || !self->ent->flag_4c) {
+	if (!self->ent || !self->ent->active) {
 		return;
 	}
 	CGameModel *m = Obj_Vtbl(self->ent)->GetModel(self->ent);
@@ -3453,7 +3453,7 @@ void __thiscall cObjElementFXMessengerAttack_Update(cObjElementFXMessengerAttack
 
 	(void)dt;
 	FXA_Keep(&self->ent);
-	if (!self->ent || !self->ent->flag_4c) {
+	if (!self->ent || !self->ent->active) {
 		return;
 	}
 	CGameModel *m = FXA_Model(self->ent);
@@ -3563,7 +3563,7 @@ void __thiscall cObjElementFXMessengerTakeDataPack_Update(cObjElementFXMessenger
 
 	(void)dt;
 	FXA_Keep(&self->owner);
-	if (!self->owner || !self->owner->flag_4c) {
+	if (!self->owner || !self->owner->active) {
 		return;
 	}
 	CGameModel *m = FXA_Model(self->owner);
@@ -3869,7 +3869,7 @@ void __thiscall cObjElementFXBishopAttack_Update(cObjElementFXBishopAttack *self
 
 	(void)dt;
 	FXA_Keep(&self->ent);
-	if (!self->ent || !self->ent->flag_4c) {
+	if (!self->ent || !self->ent->active) {
 		return;
 	}
 	CGameModel *m = FXA_Model(self->ent);
@@ -3975,7 +3975,7 @@ void __thiscall cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *
 	(void)dt;
 	FXA_Keep(&self->attacker);
 	FXA_Keep(&self->attacked);
-	if (!self->attacked || !self->attacked->flag_4c) {
+	if (!self->attacked || !self->attacked->active) {
 		return;
 	}
 	CGameModel_SetSortZ(Debris_Model(d), -79.0f, 0.0f);

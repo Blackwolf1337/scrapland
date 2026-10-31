@@ -258,7 +258,7 @@ typedef struct cObjElementFXVehicleSputnik {
 	float time2;			/* 0x00bc */
 	int phase;			/* 0x00c0 1 */
 	float duration;			/* 0x00c4 0.8 */
-	byte active;			/* 0x00c8 the flag_4c of the entity at the start, a change ends the effect */
+	byte active;			/* 0x00c8 the active of the entity at the start, a change ends the effect */
 	byte pad_c9[3];
 	int numExhausts;		/* 0x00cc */
 	FXVExhaust exhausts[FXV_EXHAUSTS];	/* 0x00d0 */

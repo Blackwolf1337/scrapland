@@ -100,7 +100,7 @@ static byte AIVS_TargetDied(cAIVehicleShoot *self, const char *fmt) {
 
 static inline byte AIVS_TargetActive(cAIVehicleShoot *self) {
 	cEntity *t = AIVS_Target(self);
-	return t && t->flag_4c;
+	return t && t->active;
 }
 
 /* ---- construction ---- */

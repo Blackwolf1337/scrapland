@@ -143,7 +143,7 @@ byte ArrowIndicator_Visible(cEntity *self, cEntity *other, float ang, float maxD
 	vec3_t ps, po, a;
 	float v[2], r[2], n[2], s, c;
 
-	if (self == other || !self->flag_4c || !other->flag_4c ||
+	if (self == other || !self->active || !other->active ||
 		(!Ent_Arrow(other)->canUse && !Ent_Arrow(other)->canView)) {
 		return 0;
 	}
@@ -210,7 +210,7 @@ void GameModelList_Free(void) {
 
 void ArrowIndicator_ClearSel(void) {
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
-		if (e->flag_4c && e->vftable->IsType(e, TYEN_WITH_LIFE)) {
+		if (e->active && e->vftable->IsType(e, TYEN_WITH_LIFE)) {
 			Ent_Arrow(e)->selected = 0;
 			Ent_Arrow(e)->shown = 0;
 		}
@@ -565,7 +565,7 @@ void __fastcall cArrowIndicator_Update(cArrowIndicator *self) {
 	cObjEntity *p = (cObjEntity *)self->parent;
 	vec3_t off, a, r, rp, pos, rot;
 
-	if (!self->parent->flag_4c) {
+	if (!self->parent->active) {
 		cArrowIndicator_ReleaseArrow(self);
 		cArrowIndicator_ReleaseMission(self);
 		return;

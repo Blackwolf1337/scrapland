@@ -24,7 +24,7 @@ static void Friends_Follow(cAIVehicle *ai, cEntity *usr) {
 
 /* t is an active enemy car of v */
 static byte Friends_IsEnemyCar(cEntity *v, cEntity *t) {
-	return t->flag_4c && t->vftable->IsType(t, TYEN_CAR) && Team_IsEnemy(Entity_Team(t), Entity_Team(v));
+	return t->active && t->vftable->IsType(t, TYEN_CAR) && Team_IsEnemy(Entity_Team(t), Entity_Team(v));
 }
 
 void __thiscall cFriends_Attack(cFriends *self, cEntity *usr) {

@@ -486,7 +486,7 @@ void __thiscall cObjEntity_SetActive(cEntity *self, byte on) {
 
 	cEntity_SetActive(self, on);
 	if (CGameModel_IsLoaded(&o->model)) {
-		if (self->flag_4c) {
+		if (self->active) {
 			CGameModel_Enable(&o->model);
 			cModMove_Update(&o->mod, 0.0f);
 			Obj_Vtbl(self)->UpdateModel(self);
@@ -555,7 +555,7 @@ void __thiscall cObjEntity_SetModel(cEntity *self, const char *file, float sx, f
 		o->camOff.y = c->y - root->y;
 		o->camOff.z = c->z - root->z;
 	}
-	if (!self->flag_4c) {
+	if (!self->active) {
 		CGameModel_Disable(&o->model);
 	}
 	if (self->vftable->IsType(self, "item")) {

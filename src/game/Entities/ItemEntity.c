@@ -278,7 +278,7 @@ void __thiscall cItemEntity_Tick(cItemEntity *self, float dt) {
 	} else if (self->owner[0]) {
 		/* an owner that is gone frees the item */
 		cEntity *o = World_FindEntity(self->owner);
-		if (o && !o->flag_4c) {
+		if (o && !o->active) {
 			self->owner[0] = 0;
 		}
 	} else {

@@ -566,7 +566,7 @@ void __thiscall cObjElementFXSmokeDebris_Update(cObjElementFXSmokeDebris *self, 
 /* the entity of an effect let go when it is deleted or off */
 static inline void FXV_CheckEntity(cEntity **entity) {
 	cEntity *e = *entity;
-	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+	if (e && (Entity_Removed(e) || !e->active)) {
 		*entity = NULL;
 	}
 }
@@ -576,7 +576,7 @@ void __thiscall cObjElementFXVehicleSpawn_Update(cObjElementFXVehicleSpawn *self
 	(void)dt;
 	FXV_CheckEntity(&self->entity);
 	cEntity *e = self->entity;
-	if (!e || !e->flag_4c) {
+	if (!e || !e->active) {
 		return;
 	}
 	CGameModel *em = Obj_Vtbl(e)->GetModel(e);
@@ -691,7 +691,7 @@ void __thiscall cObjElementFXFiredEntity_Update(cObjElementFXFiredEntity *self, 
 	FXV_CheckEntity(&self->entity);
 	float d = cTimer_GetDelta(&g_pWorld->timer);
 	cEntity *e = self->entity;
-	if (!e || !e->flag_4c || !CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e))
+	if (!e || !e->active || !CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e))
 		|| !CGameModel_IsVisible(Obj_Vtbl(self->entity)->GetModel(self->entity))) {
 		self->posValid = 0;
 		return;
@@ -920,12 +920,12 @@ static inline uint16_t *FXV_EMIMark(cObjElementFXVehicleEMI *self, int i, int vi
 /* the rays jump from vertex to vertex, each step to the nearest free one more than 16 away from the last point */
 void __thiscall cObjElementFXVehicleEMI_Update(cObjElementFXVehicleEMI *self, cDebris *debris, float dt) {
 	cEntity *e = self->entity;
-	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+	if (e && (Entity_Removed(e) || !e->active)) {
 		Obj_Vtbl(e)->SetEffect(e, 0);
 		self->entity = NULL;
 	}
 	e = self->entity;
-	if (!e || !e->flag_4c) {
+	if (!e || !e->active) {
 		return;
 	}
 	CGameModel *model = Obj_Vtbl(e)->GetModel(e);
@@ -1171,7 +1171,7 @@ static inline float FXV_FireSize(float s, float r) {
 /* the flames along the ship (16 of its vertices and 8 of a motor) and the smoke behind a fast AI ship */
 void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, cDebris *debris, float dt) {
 	cEntity *e = self->entity;
-	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+	if (e && (Entity_Removed(e) || !e->active)) {
 		Obj_Vtbl(e)->SetEffect(e, 0);
 		self->entity = NULL;
 	}
@@ -1179,7 +1179,7 @@ void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, 
 	e = self->entity;
 	self->time = self->time + d;
 	self->emitTime = self->emitTime + d;
-	if (!e || !e->flag_4c || !CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e))
+	if (!e || !e->active || !CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e))
 		|| !CGameModel_IsVisible(Obj_Vtbl(self->entity)->GetModel(self->entity))) {
 		return;
 	}
@@ -1862,7 +1862,7 @@ void __thiscall cObjElementFXVehicleDamage_Update(cObjElementFXVehicleDamage *se
 
 	(void)dt;
 	cEntity *e = self->entity;
-	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+	if (e && (Entity_Removed(e) || !e->active)) {
 		if (FXVeh_EmbeddedFX(e)) {
 			cEmbeddedFXVehicle_SetAttached(FXVeh_EmbeddedFX(e), NULL);
 		}
@@ -1870,7 +1870,7 @@ void __thiscall cObjElementFXVehicleDamage_Update(cObjElementFXVehicleDamage *se
 	}
 	float t = cTimer_GetDelta(&g_pWorld->timer);
 	e = self->entity;
-	if (!e || !e->flag_4c || !CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e))
+	if (!e || !e->active || !CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e))
 		|| !CGameModel_IsVisible(Obj_Vtbl(self->entity)->GetModel(self->entity))) {
 		self->seen = 0;
 		return;
@@ -2409,13 +2409,13 @@ static inline int FXV_RandMod(int n) {
 void __thiscall cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *self, cDebris *debris, float dt) {
 	(void)dt;
 	cEntity *e = self->entity;
-	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+	if (e && (Entity_Removed(e) || !e->active)) {
 		Obj_Vtbl(e)->SetEffect(e, 0);
 		Obj_Vtbl(self->entity)->SetEffectParam(self->entity, 0, 0.0f);
 		self->entity = NULL;
 	}
 	e = self->entity;
-	if (!e || !e->flag_4c) {
+	if (!e || !e->active) {
 		return;
 	}
 	CGameModel *em = Obj_Vtbl(e)->GetModel(e);
@@ -2646,7 +2646,7 @@ void __thiscall cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *
 void __thiscall cObjElementFXVehicleAccelerator_Update(cObjElementFXVehicleAccelerator *self, cDebris *debris,
 	float dt) {
 	FXV_CheckEntity(&self->owner);
-	if (!self->owner || !self->owner->flag_4c) {
+	if (!self->owner || !self->owner->active) {
 		return;
 	}
 	CGameModel_SetSortZ(Debris_Model(debris), -47.0f, 0.0f);
@@ -2805,7 +2805,7 @@ byte __thiscall cObjElementFXFiredEntity_IsAlive(cObjElementFXFiredEntity *self,
 	}
 	/* the smoke of a gone entity ends within 1.5 */
 	cEntity *e = self->entity;
-	if (!e || Entity_Removed(e) || !e->flag_4c) {
+	if (!e || Entity_Removed(e) || !e->active) {
 		if (debris->speed > 1.5f) {
 			debris->speed = 1.5f;
 		}
@@ -2816,7 +2816,7 @@ byte __thiscall cObjElementFXFiredEntity_IsAlive(cObjElementFXFiredEntity *self,
 byte __thiscall cObjElementFXVehicleDamage_IsAlive(cObjElementFXVehicleDamage *self, cDebris *debris,
 	cDebrisSys *sys) {
 	cEntity *e;
-	if (self->active && (e = self->entity) != NULL && e->flag_4c) {
+	if (self->active && (e = self->entity) != NULL && e->active) {
 		self->life = 0;
 		self->lifePct = 100;
 		int maxLife = g_StdMaxLife;
@@ -2857,7 +2857,7 @@ byte __thiscall cObjElementFXVehicleEMI_IsAlive(cObjElementFXVehicleEMI *self, c
 		return 1;
 	}
 	cEntity *e = self->entity;
-	if (e && e->flag_4c) {
+	if (e && e->active) {
 		Obj_Vtbl(e)->SetEffect(e, 0);
 	}
 	return 0;
@@ -2879,7 +2879,7 @@ byte __thiscall cObjElementFXVehicleFire_IsAlive(cObjElementFXVehicleFire *self,
 			return 0;
 		}
 	}
-	if (e->flag_4c) {
+	if (e->active) {
 		Obj_Vtbl(e)->SetEffect(e, 0);
 	}
 	return 0;
@@ -2890,7 +2890,7 @@ byte __thiscall cObjElementFXVehicleSputnik_IsAlive(cObjElementFXVehicleSputnik 
 	if (!self->entity) {
 		return 0;
 	}
-	byte changed = self->entity->flag_4c != self->active;
+	byte changed = self->entity->active != self->active;
 	if (cDebris_Update(debris, sys) && !changed) {
 		return 1;
 	}
@@ -3174,7 +3174,7 @@ void __thiscall cObjElementFXVehicleSputnik_SetEntity(cObjElementFXVehicleSputni
 	/* both results are not used */
 	CGameModel_GetPos(model, &pos);
 	CGameModel_GetRot(model, &rot);
-	self->active = self->entity->flag_4c;
+	self->active = self->entity->active;
 	FXV_Exhausts(self->entity, &self->numExhausts, self->exhausts);
 	self->sputnikNode = -1;
 	HashTable *t = &g_pWorld->entities;

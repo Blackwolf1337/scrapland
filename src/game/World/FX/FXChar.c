@@ -35,7 +35,7 @@ static inline float FXC_Delta(void) {
 
 /* an entity that is deleted or off is let go */
 static inline cEntity *FXC_Keep(cEntity *e) {
-	if (e && (Entity_Removed(e) || !e->flag_4c)) {
+	if (e && (Entity_Removed(e) || !e->active)) {
 		return NULL;
 	}
 	return e;
@@ -435,11 +435,11 @@ void __thiscall cObjElementFXMoneyTransfer_Update(cObjElementFXMoneyTransfer *se
 
 	(void)dt;
 	self->from = FXC_Keep(self->from);
-	if (!self->from || !self->from->flag_4c) {
+	if (!self->from || !self->from->active) {
 		return;
 	}
 	self->to = FXC_Keep(self->to);
-	if (!self->to || !self->to->flag_4c) {
+	if (!self->to || !self->to->active) {
 		return;
 	}
 	if (0.65f > Debris_Life(d)) {
@@ -531,11 +531,11 @@ void __thiscall cObjElementFXCharacterConversion_Update(cObjElementFXCharacterCo
 
 	(void)dt;
 	self->attacker = FXC_Keep(self->attacker);
-	if (!self->attacker || !self->attacker->flag_4c) {
+	if (!self->attacker || !self->attacker->active) {
 		return;
 	}
 	self->attacked = FXC_Keep(self->attacked);
-	if (!self->attacked || !self->attacked->flag_4c) {
+	if (!self->attacked || !self->attacked->active) {
 		return;
 	}
 	tmp = FXC_CamPos();
@@ -709,11 +709,11 @@ void __thiscall cObjElementFXMaintenanceWork_Update(cObjElementFXMaintenanceWork
 	vec3_t laserPos, c, diff, n, dir, rot;
 
 	self->maintenance = FXC_Keep(self->maintenance);
-	if (!self->maintenance || !self->maintenance->flag_4c) {
+	if (!self->maintenance || !self->maintenance->active) {
 		return;
 	}
 	self->ship = FXC_Keep(self->ship);
-	if (!self->ship || !self->ship->flag_4c) {
+	if (!self->ship || !self->ship->active) {
 		return;
 	}
 	CGameModel_SetSortZ(Debris_Model(d), -75.0f, 0.0f);
@@ -968,11 +968,11 @@ void __thiscall cObjElementFXCharacterTeleport_Update(cObjElementFXCharacterTele
 
 	(void)dt;
 	self->character = FXC_Keep(self->character);
-	if (!self->character || !self->character->flag_4c) {
+	if (!self->character || !self->character->active) {
 		return;
 	}
 	self->teleport = FXC_Keep(self->teleport);
-	if (!self->teleport || !self->teleport->flag_4c) {
+	if (!self->teleport || !self->teleport->active) {
 		return;
 	}
 	vec3_t cam = FXC_CamPos();
@@ -1233,7 +1233,7 @@ void __thiscall cObjElementFXCharacterDeath_Update(cObjElementFXCharacterDeath *
 
 	(void)dt;
 	self->ent = FXC_Keep(self->ent);
-	if (!self->ent || !self->ent->flag_4c) {
+	if (!self->ent || !self->ent->active) {
 		return;
 	}
 	float delta = FXC_Delta();
@@ -1546,7 +1546,7 @@ void __thiscall cObjElementFXCharacterConversor_Update(cObjElementFXCharacterCon
 
 	(void)dt;
 	cEntity *ch = self->character;
-	if (ch && (Entity_Removed(ch) || !ch->flag_4c)) {
+	if (ch && (Entity_Removed(ch) || !ch->active)) {
 		/* the character went: its model back to normal */
 		CGameModel *m = Obj_Vtbl(ch)->GetModel(ch);
 		if (!m || !CGameModel_IsLoaded(m)) {
@@ -1565,7 +1565,7 @@ void __thiscall cObjElementFXCharacterConversor_Update(cObjElementFXCharacterCon
 		}
 		self->character = NULL;
 	}
-	if (!self->character || !self->character->flag_4c) {
+	if (!self->character || !self->character->active) {
 		return;
 	}
 	self->conversor = FXC_Keep(self->conversor);
@@ -1874,7 +1874,7 @@ void __thiscall cObjElementFXSputnik_Update(cObjElementFXSputnik *self, cDebris 
 
 	(void)dt;
 	self->ent = FXC_Keep(self->ent);
-	if (!self->ent || !self->ent->flag_4c) {
+	if (!self->ent || !self->ent->active) {
 		return;
 	}
 	CGameModel *m = FXC_Model(self->ent);

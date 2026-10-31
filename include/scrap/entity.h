@@ -26,7 +26,7 @@ typedef struct cEntityVtbl {
 	byte(__thiscall *IsType)(cEntity *self, const char *type);		/* 0x14 vf05 */
 	vec3_t *(__thiscall *GetPos)(cEntity *self, vec3_t *out);		/* 0x18 vf06, returns out */
 	void(__thiscall *SetPos)(cEntity *self, const vec3_t *pos);		/* 0x1c vf07 */
-	void(__thiscall *SetActive)(cEntity *self, byte on);			/* 0x20 vf08 flag_4c */
+	void(__thiscall *SetActive)(cEntity *self, byte on);			/* 0x20 vf08 active */
 	/* the tests of the collision sphere (no hit in cEntity) and the touch of another entity */
 	byte(__thiscall *TestLine)(cEntity *self, const vec3_t *from, vec3_t *hit);		/* 0x24 vf09 */
 	byte(__thiscall *TestSphere)(cEntity *self, cEntity *exclude, const vec3_t *center, float radius,
@@ -80,7 +80,7 @@ struct cEntity {
 	Nto1Node gridNode;		/* 0x34 cell of the collision grid, data the entity */
 	uint32_t savedMask;		/* 0x44 the mask while the collision is off (ActiveCMask 0) */
 	uint32_t mask;			/* 0x48 the entity lists it is in, a bit each */
-	byte flag_4c;			/* 0x4c "Active"; checked by the SAI functions before they touch the AI */
+	byte active;			/* 0x4c "Active"; checked by the SAI functions before they touch the AI */
 	byte pad_4d[3];
 	EntityDNode listNode;		/* 0x50 in the ring of its cEntityListData ("EntityList"), target the list */
 	Nto1Node links;			/* 0x64 head of the script handles (cPyEntity), target the entity */
@@ -90,7 +90,7 @@ struct cEntity {
 SD_OFFSET(cEntity, name, 0x4);
 SD_OFFSET(cEntity, pos, 0x28);
 SD_OFFSET(cEntity, mask, 0x48);
-SD_OFFSET(cEntity, flag_4c, 0x4c);
+SD_OFFSET(cEntity, active, 0x4c);
 SD_OFFSET(cEntity, listNode, 0x50);
 SD_OFFSET(cEntity, links, 0x64);
 SD_OFFSET(cEntity, ai, 0x78);

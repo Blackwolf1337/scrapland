@@ -308,7 +308,7 @@ void __thiscall cClientNetManager_Send(cClientNetManager *self, uint32_t time) {
 	const vec3_t *o = NULL;
 	if (me) {
 		CHECK(me->vftable->IsType(me, TYEN_CAR));
-		if (me->flag_4c) {
+		if (me->active) {
 			o = me->vftable->GetPos(me, &tmp);
 		} else {
 			cEntity *t = World_FindEntity(NetEnt_Target(me));

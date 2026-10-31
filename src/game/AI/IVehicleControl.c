@@ -435,7 +435,7 @@ byte __thiscall cAIVehicleControl_TestEndTo(cAIVehicleControl *self, const vec3_
 byte __fastcall cAIVehicleControl_CheckTarget(cAIVehicleControl *self) {
 	if (self->mode == AIVC_CHASE || self->mode == AIVC_ORIENT) {
 		cEntity *t = VC_Target(self);
-		if (!t || !t->flag_4c) {
+		if (!t || !t->active) {
 			const char *name = self->vehicle->name;
 			int in = cAIVehicle_GetInternState(self->ai);
 			int st = cAIVehicle_GetState(self->ai);

@@ -45,7 +45,7 @@ static inline uint32_t FX_Bits(float f) {
 }
 
 static inline int FX_Gone(cEntity *e) {
-	return Entity_Removed(e) || !e->flag_4c;
+	return Entity_Removed(e) || !e->active;
 }
 
 /* the model effect of the item fades: 1 off and disabled, 2 off and enabled */
@@ -340,7 +340,7 @@ void __thiscall cObjElementFXItemFade_Update(cObjElementFXItemFade *self, cDebri
 		FX_EndFade(m, self->mode);
 		self->ent = NULL;
 	}
-	if (!self->ent || !self->ent->flag_4c) {
+	if (!self->ent || !self->ent->active) {
 		return;
 	}
 	float t = self->t + cTimer_GetDelta(&g_pWorld->timer);
@@ -404,7 +404,7 @@ void __thiscall cObjElementFXModelNoise_Update(cObjElementFXModelNoise *self, cD
 		Obj_Vtbl(e)->SetEffect(e, 0);
 		self->ent = NULL;
 	}
-	if (!self->ent || !self->ent->flag_4c) {
+	if (!self->ent || !self->ent->active) {
 		return;
 	}
 	float t = self->t + cTimer_GetDelta(&g_pWorld->timer);
@@ -747,13 +747,13 @@ void __thiscall cObjElementFXItemTake_Update(cObjElementFXItemTake *self, cDebri
 	if (self->ent && FX_Gone(self->ent)) {
 		self->ent = NULL;
 	}
-	if (!self->ent || !self->ent->flag_4c) {
+	if (!self->ent || !self->ent->active) {
 		return;
 	}
 	if (self->target && FX_Gone(self->target)) {
 		self->target = NULL;
 	}
-	if (!self->target || !self->target->flag_4c) {
+	if (!self->target || !self->target->active) {
 		return;
 	}
 	float delta = cTimer_GetDelta(&g_pWorld->timer);

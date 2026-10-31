@@ -263,7 +263,7 @@ void __thiscall cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship) {
 	self->img->pivotX = (uv1[0] - uv0[0]) * 0.5f;
 	for (; e; e = cEntity_Next(e)) {
 		cWithLifeEntity *w = (cWithLifeEntity *)e;
-		if (e == ship || !e->flag_4c || !e->vftable->IsType(e, "WithLife") || w->arrow.canMission) {
+		if (e == ship || !e->active || !e->vftable->IsType(e, "WithLife") || w->arrow.canMission) {
 			continue;
 		}
 		byte enemy = Team_IsEnemy(sw->arrow.tgType, w->arrow.tgType);
