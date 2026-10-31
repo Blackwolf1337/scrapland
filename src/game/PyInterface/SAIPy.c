@@ -8,6 +8,7 @@
 #include "scrap/ai.h"
 #include "scrap/console.h"
 #include "scrap/global.h"
+#include "scrap/nodestraffic.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 
@@ -40,7 +41,7 @@ PyObject *SAI_IniAI(PyObject *self, PyObject *args) {
 	CHECK(g_NodesWorld);
 	vec3_t zero = { 0.0f, 0.0f, 0.0f };
 	CNodesWorld_Load(g_NodesWorld, -1, name, &zero);
-	cNodesTraffic *traffic;
+	CNodesTraffic *traffic;
 	if (!g_IsMapOutDoor) {
 		g_NodesWorld2D = NEW_OBJ(0x378, CNodesWorld2D_ctor);
 		CHECK(g_NodesWorld2D);
@@ -125,7 +126,7 @@ PyObject *SAI_AnalyzeTraffic(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	cNodesTraffic *traffic = g_IsMapOutDoor ? g_NodesTraffic : g_NodesTrafficInDoor;
+	CNodesTraffic *traffic = g_IsMapOutDoor ? g_NodesTraffic : g_NodesTrafficInDoor;
 	traffic->vftable->Analyze(traffic);
 	g_TrafficState = 3;
 	return ReturnNone();

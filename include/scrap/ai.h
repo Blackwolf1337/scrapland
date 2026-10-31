@@ -20,19 +20,7 @@ typedef struct cAIVehicle cAIVehicle;
 typedef struct cAIChar cAIChar;
 
 /* CNodesTraffic or CNodesTrafficInDoor */
-typedef struct cNodesTraffic cNodesTraffic;
-typedef struct cNodesTrafficVtbl {
-	void *vf00_06[7];
-	void(__thiscall *Init)(cNodesTraffic *self);		/* 0x1c */
-	void *vf08_0f[8];
-	void(__thiscall *Analyze)(cNodesTraffic *self);		/* 0x40 */
-} cNodesTrafficVtbl;
-SD_OFFSET(cNodesTrafficVtbl, Init, 0x1c);
-SD_OFFSET(cNodesTrafficVtbl, Analyze, 0x40);
-
-struct cNodesTraffic {
-	const cNodesTrafficVtbl *vftable;
-};
+typedef struct CNodesTraffic CNodesTraffic;	/* include/scrap/nodestraffic.h */
 
 typedef struct cAIVehicleGroupVtbl {
 	void *vf00;
@@ -365,8 +353,8 @@ SD_SIZE(cAIVehicleParams3, 0x1c);
 #define g_IsMapOutDoor GAME_GLOBAL_IN(int, GVar_IsMapOutDoor, 16, 0x4677e8)	/* value of the engine variable IsMapOutDoor */
 #define g_NodesWorld GAME_GLOBAL(CNodesWorld *, g_NodesWorld, 0x444d34)
 #define g_NodesWorld2D GAME_GLOBAL(CNodesWorld2D *, g_NodesWorld2D, 0x444dc8)
-#define g_NodesTrafficInDoor GAME_GLOBAL(cNodesTraffic *, g_NodesTrafficInDoor, 0x444d2c)
-#define g_NodesTraffic GAME_GLOBAL(cNodesTraffic *, g_NodesTraffic, 0x444c98)
+#define g_NodesTrafficInDoor GAME_GLOBAL(CNodesTraffic *, g_NodesTrafficInDoor, 0x444d2c)
+#define g_NodesTraffic GAME_GLOBAL(CNodesTraffic *, g_NodesTraffic, 0x444c98)
 #define g_AStar GAME_GLOBAL(void *, g_AStar, 0x444c78)
 #define g_AStar2D GAME_GLOBAL(void *, g_AStar2D, 0x444c7c)
 #define g_VehicleGroup GAME_GLOBAL(cAIVehicleGroup *, g_VehicleGroup, 0x444b84)
@@ -376,8 +364,8 @@ SD_SIZE(cAIVehicleParams3, 0x1c);
 /* constructors (thiscall on the memory from operator_new) */
 CNodesWorld *__thiscall CNodesWorld_ctor(void *mem);
 CNodesWorld2D *__thiscall CNodesWorld2D_ctor(void *mem);
-cNodesTraffic *__thiscall CNodesTrafficInDoor_ctor(void *mem);
-cNodesTraffic *__thiscall CNodesTraffic_ctor(void *mem);
+CNodesTraffic *__thiscall CNodesTrafficInDoor_ctor(void *mem);
+CNodesTraffic *__thiscall CNodesTraffic_ctor(void *mem);
 void *__thiscall CAStar_ctor(void *mem, CNodesWorld *nodes);
 void *__thiscall CAStar2D_ctor(void *mem, CNodesWorld2D *nodes);
 cAIVehicleGroup *__thiscall cAIVehicleGroup_ctor(void *mem);

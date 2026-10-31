@@ -13,6 +13,7 @@
 #include "scrap/fonts.h"
 #include "scrap/itementity.h"
 #include "scrap/missileentity.h"
+#include "scrap/nodestraffic.h"
 #include "scrap/nodesworld.h"
 #include "scrap/nodesworld2d.h"
 #include "scrap/pymempool.h"
@@ -1800,10 +1801,10 @@ void Scorer_DrawDebug(void) {
 		CNodesWorld2D_Draw(g_NodesWorld2D);
 	}
 	if (g_NodesTraffic) {
-		DBG_VF(g_NodesTraffic, 0x3c)(g_NodesTraffic);
+		g_NodesTraffic->vftable->Draw(g_NodesTraffic);
 	}
 	if (g_NodesTrafficInDoor) {
-		DBG_VF(g_NodesTrafficInDoor, 0x3c)(g_NodesTrafficInDoor);
+		g_NodesTrafficInDoor->vftable->Draw(g_NodesTrafficInDoor);
 	}
 	if (g_VehicleGroup) {
 		cAIVehicleGroup_Draw(g_VehicleGroup);

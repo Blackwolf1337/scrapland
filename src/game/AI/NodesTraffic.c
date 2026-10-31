@@ -266,7 +266,7 @@ static void NodesWorld_GetBox(vec3_t *min, vec3_t *max) {
 	((getBox_t)((void *const *)w->vftable)[1])(w, min, max);
 }
 
-cNodesTraffic *__thiscall CNodesTraffic_ctor(void *mem) {
+CNodesTraffic *__thiscall CNodesTraffic_ctor(void *mem) {
 	CNodesTraffic *self = mem;
 
 	self->vftable = CNODESTRAFFIC_VFTABLE;

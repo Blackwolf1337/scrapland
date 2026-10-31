@@ -21,7 +21,7 @@ static int Sector_NextTrack(int j, int up, int numT) {
 	return j - 1;
 }
 
-cNodesTraffic *__thiscall CNodesTrafficInDoor_ctor(void *mem) {
+CNodesTraffic *__thiscall CNodesTrafficInDoor_ctor(void *mem) {
 	CNodesTrafficInDoor *self = mem;
 
 	CNodesTraffic_ctor(mem);
