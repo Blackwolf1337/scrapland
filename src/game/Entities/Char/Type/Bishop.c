@@ -108,7 +108,7 @@ void ChType_BishopAttack(cAbstractFile *params) {
 			const char *cls = *(const char **)(ChType_ActClass(ChType_ActCtrl(target)) + 4);
 			float level;
 			if (WChar_Life(target) <= 0) {
-				if (WChar_MaxLife(target) > 0) {
+				if (WChar_PrevLife(target) > 0) {
 					SaveVar_Inc("Stats.Bishop", 1);
 					SaveVar_Inc("Stats.Killer", 1);
 				}

@@ -11,29 +11,15 @@
 #ifndef SCRAP_WALKCHARENTITY_H
 #define SCRAP_WALKCHARENTITY_H
 
-#include "scrap/arrowindicator.h"
-#include "scrap/objentity.h"
-#include "scrap/primitive.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/walkcharcontrol.h"
+#include "scrap/withlifeentity.h"
 
 #define CWALKCHARENTITY_VFTABLE GAME_VFTABLE(cWalkCharEntity_vftable, 0x3b03bc)
 #define CWALKCHARENTITY_SIZE 0x574
 
 typedef struct cWalkCharEntity {
-	cObjEntity obj;			/* 0x000 */
-	/* cWithLifeEntity */
-	int i228;			/* 0x228 */
-	int maxLife;			/* 0x22c */
-	float mass;			/* 0x230 vf51 */
-	void *actCtrl;			/* 0x234 the action controller (cActCtrl), NULL without a class */
-	int life;			/* 0x238 */
-	byte god;			/* 0x23c no damage */
-	byte pad_23d[0x298 - 0x23d];
-	byte attack[0x314 - 0x298];	/* 0x298 who hit it last (cVehicleAttack) */
-	cArrowIndicator arrow;		/* 0x314 */
-	cPrimitive prim;		/* 0x39c the collision sphere ("VRadius") */
-	byte wl3a8[0x3e8 - 0x3a8];
+	cWithLifeEntity wl;		/* 0x000 */
 	/* cWalkCharEntity */
 	Nto1Node collide;		/* 0x3e8 "CollideEntity": the entity it ran into */
 	float moved2;			/* 0x3f8 the square of the distance of the last walk step */
@@ -60,7 +46,7 @@ typedef struct cWalkCharEntity {
 	vec3_t fallVel;			/* 0x480 the velocity of the fall */
 	byte disableControl;		/* 0x48c "DisableControl" */
 	byte pad_48d[3];
-	void *walkEnd;			/* 0x490 the end action of the walk (cAction) */
+	cAction *walkEnd;		/* 0x490 the end action of the walk */
 	float yModelDisp;		/* 0x494 "YModelDisp" */
 	float energyUsed;		/* 0x498 1 minus the weapon energy */
 	cPy_Function onEnergyFull;	/* 0x49c "OnEnergyBarFull" */
@@ -86,11 +72,6 @@ typedef struct cWalkCharEntity {
 	float abortTime;		/* 0x56c the selection is kept that long without a change */
 	int abortOpt;			/* 0x570 the option of the arrow at the last slot */
 } cWalkCharEntity;
-SD_OFFSET(cWalkCharEntity, maxLife, 0x22c);
-SD_OFFSET(cWalkCharEntity, actCtrl, 0x234);
-SD_OFFSET(cWalkCharEntity, attack, 0x298);
-SD_OFFSET(cWalkCharEntity, arrow, 0x314);
-SD_OFFSET(cWalkCharEntity, prim, 0x39c);
 SD_OFFSET(cWalkCharEntity, collide, 0x3e8);
 SD_OFFSET(cWalkCharEntity, sphereBox, 0x404);
 SD_OFFSET(cWalkCharEntity, ownerSlot, 0x424);
@@ -110,82 +91,8 @@ static inline cWalkCharEntity *WChar(const void *e) {
 	return (cWalkCharEntity *)e;
 }
 
-/* the variables of the action class of a character (cActClass, Actions/) the walk uses */
-typedef struct cActClassChar {
-	byte pad_0[0x138];
-	float turnAng;			/* 0x138 the Turn action plays for a bigger turn of the view */
-	byte pad_13c[0x14c - 0x13c];
-	float stopTime;			/* 0x14c the walk is kept that long after the stop */
-	float relaxMax;			/* 0x150 the time between two relax actions */
-	float relaxMin;			/* 0x154 */
-	float stepHeight;		/* 0x158 */
-	const char *fallSound;		/* 0x15c */
-	float fallSoundVol;		/* 0x160 */
-	float radius;			/* 0x164 */
-	float f168;			/* 0x168 */
-	float floorRadius;		/* 0x16c of the sphere of the floor test */
-	float airAccel;			/* 0x170 */
-	float friction;			/* 0x174 */
-	float maxSpeed;			/* 0x178 */
-	float accel;			/* 0x17c */
-	byte pad_180[4];
-	byte victim;			/* 0x184 a thief may act on it */
-	byte b185;			/* 0x185 */
-	byte canFly;			/* 0x186 "CanFly" */
-	byte fallUp;			/* 0x187 the fall may go up */
-	byte viewLock;			/* 0x188 */
-	byte b189;			/* 0x189 */
-	byte strafeInit;		/* 0x18a no init action between the walk actions */
-	byte alarmAnims;		/* 0x18b the alarm versions of Relax, Turn and Run */
-	float endSpeed;			/* 0x18c of the walk end action */
-} cActClassChar;
-SD_OFFSET(cActClassChar, turnAng, 0x138);
-SD_OFFSET(cActClassChar, stopTime, 0x14c);
-SD_OFFSET(cActClassChar, accel, 0x17c);
-SD_OFFSET(cActClassChar, endSpeed, 0x18c);
-
-/* the variables of an action of a character (cAction) */
-typedef struct cActionChar {
-	byte pad_0[0x38];
-	float turnSpeed;		/* 0x38 of the body to the view */
-	float maxTurn;			/* 0x3c between the body and the view (the view lock) */
-	byte pad_40[0x48 - 0x40];
-	byte rootMove;			/* 0x48 the walk takes the motion of the root node */
-	byte walk;			/* 0x49 the control moves it */
-	byte hover;			/* 0x4a flies without the control */
-	byte pad_4b;
-	int moveType;			/* 0x4c 0 the root motion moves it (and the strafe actions play), 1..4 the acceleration */
-	float lookAt;			/* 0x50 the turn of the view to the listener per second */
-	float lookY;			/* 0x54 */
-	float lookX;			/* 0x58 */
-	byte pad_5c[4];
-	byte headNode;			/* 0x60 the head angle from the camera node */
-	byte pad_61[3];
-	int priority;			/* 0x64 */
-} cActionChar;
-SD_OFFSET(cActionChar, rootMove, 0x48);
-SD_OFFSET(cActionChar, moveType, 0x4c);
-SD_OFFSET(cActionChar, headNode, 0x60);
-SD_OFFSET(cActionChar, priority, 0x64);
-
-/* the action controller (cActCtrl, Actions/) */
-typedef struct cActCtrlChar {
-	byte pad_0[8];
-	cActClassChar *cls;		/* 0x08 */
-	void *defLoop;			/* 0x0c */
-	byte pad_10[4];
-	cActionChar *action0;		/* 0x14 the action of layer 0 */
-	byte pad_18[0x5c - 0x18];
-	float root[4];			/* 0x5c */
-	vec3_t rootMove;		/* 0x6c the motion of the root node in the slot */
-	float walkSpeed;		/* 0x78 of the walk actions */
-} cActCtrlChar;
-SD_OFFSET(cActCtrlChar, action0, 0x14);
-SD_OFFSET(cActCtrlChar, root, 0x5c);
-SD_OFFSET(cActCtrlChar, walkSpeed, 0x78);
-
-static inline cActCtrlChar *WChar_Ctrl(const void *e) {
-	return (cActCtrlChar *)WChar(e)->actCtrl;
+static inline cActCtrl *WChar_Ctrl(const void *e) {
+	return WChar(e)->wl.actCtrl;
 }
 
 /* the slots of the character vtable after the ones of cWithLifeEntity */

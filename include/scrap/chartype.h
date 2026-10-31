@@ -25,15 +25,15 @@
 #include "scrap/world.h"
 
 /* the fields of the characters (cWalkCharEntity) the types use */
-#define WChar_Cam(e) (WChar(e)->obj.cam)		/* the follow camera of a player */
-#define WChar_Sounds(e) (&WChar(e)->obj.snd)
-#define WChar_FX(e) (*(void **)((byte *)(e) + 0x224))			/* the embedded effect */
-#define WChar_MaxLife(e) (WChar(e)->maxLife)
-#define WChar_Life(e) (WChar(e)->life)
-#define WChar_God(e) (WChar(e)->god)			/* no damage */
-#define WChar_Attack(e) ((void *)WChar(e)->attack)		/* who hit it last (cVehicleAttack) */
-#define WChar_Shadow(e) ((void *)&WChar(e)->prim)		/* cPrimitive */
-#define WChar_B381(e) (WChar(e)->arrow.canUse)		/* "ArrowCanUse", cleared by the flash */
+#define WChar_Cam(e) (WChar(e)->wl.obj.cam)		/* the follow camera of a player */
+#define WChar_Sounds(e) (&WChar(e)->wl.obj.snd)
+#define WChar_FX(e) ((void *)WChar(e)->wl.obj.fx)		/* the embedded effect */
+#define WChar_PrevLife(e) (WChar(e)->wl.prevLife)
+#define WChar_Life(e) (WChar(e)->wl.life)
+#define WChar_God(e) (WChar(e)->wl.god)			/* no damage */
+#define WChar_Attack(e) (&WChar(e)->wl.attack)		/* who hit it last (cVehicleAttack) */
+#define WChar_Shadow(e) (&WChar(e)->wl.prim)		/* cPrimitive */
+#define WChar_B381(e) (WChar(e)->wl.arrow.canUse)		/* "ArrowCanUse", cleared by the flash */
 #define WChar_OwnerSlot(e) (WChar(e)->ownerSlot)		/* "UsrControl", -1 for an AI */
 #define WChar_Ang(e) (&WChar(e)->view)
 #define WChar_FallVel(e) (WChar(e)->fallVel)		/* the velocity of the fall */
@@ -50,9 +50,9 @@
 #define WChar_ControlF4fc(e) (WChar(e)->control.strafe)
 #define WChar_ActionPress(e) (WChar(e)->control.act)		/* the action button is down */
 #define WChar_ListenNode(e) (&WChar(e)->listen)	/* to the character it listens to */
-#define WChar_Listen(e) (*(cEntity **)((byte *)(e) + 0x528))		/* its target: the mayor, the police */
+#define WChar_Listen(e) ((cEntity *)WChar(e)->listen.target)		/* its target: the mayor, the police */
 #define WChar_ListenOn(e) (WChar(e)->listenOn)		/* the player still talks to it */
-#define WChar_Victim(e) (*(cEntity **)((byte *)(e) + 0x53c))		/* the character the banker robs */
+#define WChar_Victim(e) ((cEntity *)WChar(e)->victim.target)		/* the character the banker robs */
 
 /* the slots of the character vtables the types call (after the ones of cObjEntityVtbl) */
 typedef struct cChTypeVtbl {

@@ -77,18 +77,18 @@ struct cActClass {
 	int users;			/* 0x058 the controllers on the class; Del refuses while it has any */
 	cActNodeMod nodes[ACT_NODEMODS];	/* 0x05c the end is the first node -1 */
 	cActClassCam cam;		/* 0x110 */
-	float turnAngLimit;		/* 0x138 "TurnAngLimit" */
+	float turnAngLimit;		/* 0x138 "TurnAngLimit": the Turn action plays for a bigger turn of the view */
 	vec3_t soundDisp;		/* 0x13c "SoundDispX".."Z" */
 	int pretransformChan;		/* 0x148 "PretransformChan" */
-	float minTimeWalking;		/* 0x14c "MinTimeWalking" */
-	float maxTimeToExtraRelax;	/* 0x150 */
+	float minTimeWalking;		/* 0x14c "MinTimeWalking": the walk is kept that long after the stop */
+	float maxTimeToExtraRelax;	/* 0x150 the time between two relax actions */
 	float minTimeToExtraRelax;	/* 0x154 */
 	float minFallDist;		/* 0x158 "MinFallDist" */
 	char *fallSound;		/* 0x15c "FallSound" cString */
 	float fallSoundVol;		/* 0x160 "FallSoundVol" */
 	float wRadius;			/* 0x164 "WRadius" */
 	float vRadius;			/* 0x168 "VRadius" */
-	float sRadius;			/* 0x16c "SRadius" */
+	float sRadius;			/* 0x16c "SRadius": of the sphere of the floor test */
 	float flyAccel;			/* 0x170 "FlyAccel" */
 	float flyFric;			/* 0x174 "FlyFric" */
 	float flySpeed;			/* 0x178 "FlySpeed" */
@@ -97,12 +97,12 @@ struct cActClass {
 	byte canBePossessed;		/* 0x184 */
 	byte discardable;		/* 0x185 */
 	byte canFly;			/* 0x186 */
-	byte canJump;			/* 0x187 */
-	byte strafeChar;		/* 0x188 */
+	byte canJump;			/* 0x187 the fall may go up */
+	byte strafeChar;		/* 0x188 the actions set the view angles (the view lock of the walk) */
 	byte fireAsSelect;		/* 0x189 */
-	byte skipInitOnChange;		/* 0x18a */
-	byte relaxAlarm;		/* 0x18b */
-	float initEndWalkInterpFactor;	/* 0x18c */
+	byte skipInitOnChange;		/* 0x18a no init action between the walk actions */
+	byte relaxAlarm;		/* 0x18b the alarm versions of Relax, Turn and Run */
+	float initEndWalkInterpFactor;	/* 0x18c the speed of the walk end action */
 	cPy_Function actionPress;	/* 0x190 */
 	cPy_Function actionRelease;	/* 0x1a4 */
 	cPy_Function photoPress;	/* 0x1b8 */
@@ -156,20 +156,20 @@ struct cAction {
 	float angleModifierSpeed;	/* 0x30 */
 	byte isLoop;			/* 0x34 */
 	byte pad_35[3];
-	float rotSpeed;			/* 0x38 "RotSpeed" */
-	float angRotLimit;		/* 0x3c "AngRotLimit" */
+	float rotSpeed;			/* 0x38 "RotSpeed": of the body to the view */
+	float angRotLimit;		/* 0x3c "AngRotLimit": between the body and the view (the view lock) */
 	float maxSpeed;			/* 0x40 the animation speed at the walk speed 1 */
 	float minSpeed;			/* 0x44 at 0 */
-	byte useDisp;			/* 0x48 */
-	byte useFlyDisp;		/* 0x49 */
-	byte useFlyFall;		/* 0x4a */
+	byte useDisp;			/* 0x48 the walk takes the motion of the root node */
+	byte useFlyDisp;		/* 0x49 the control moves it */
+	byte useFlyFall;		/* 0x4a flies without the control */
 	byte pad_4b;
-	int slideAsFly;			/* 0x4c */
-	float autoFaceSpeed;		/* 0x50 */
+	int slideAsFly;			/* 0x4c 0 the root motion moves it (and the strafe actions play), 1..4 the acceleration */
+	float autoFaceSpeed;		/* 0x50 the turn of the view to the listener per second */
 	float autoFaceOffsetH;		/* 0x54 */
 	float autoFaceOffsetV;		/* 0x58 */
 	float interpTime;		/* 0x5c "InterpTime" of the blend into it */
-	byte anmConeView;		/* 0x60 */
+	byte anmConeView;		/* 0x60 the head angle from the camera node */
 	byte pad_61[3];
 	int priority;			/* 0x64 "PriorityLevel" */
 	int chanel;			/* 0x68 "Chanel": its layer */

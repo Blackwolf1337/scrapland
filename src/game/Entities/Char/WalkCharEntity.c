@@ -9,22 +9,13 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 
-#define WC_F(e, o) (*(float *)((byte *)(e) + (o)))
-#define WC_I(e, o) (*(int *)((byte *)(e) + (o)))
-#define WC_B(e, o) (*(byte *)((byte *)(e) + (o)))
-#define WC_P(e, o) (*(void **)((byte *)(e) + (o)))
-#define WC_NODE(e, o) ((Nto1Node *)((byte *)(e) + (o)))
-#define WC_FUNC(e, o) ((cPy_Function *)((byte *)(e) + (o)))
+static inline cActClass *WCE_Class(const cWalkCharEntity *w) {
+	return w->wl.actCtrl->cls;
+}
 
-/* the action controller of the character and the callbacks of its class (cActClass) */
-#define WChar_ActCtrlPtr(e) (*(void **)((byte *)(e) + 0x234))
-#define WChar_OnEnergyFull(e) WC_FUNC(e, 0x49c)		/* the energy used up while an action takes it */
-#define WChar_EnergyTime(e) WC_F(e, 0x4b4)		/* the seconds an action takes the energy in, 0 recharges */
-#define WChar_ViewLockF(e) WC_F(e, 0x4d8)		/* the blend of the view lock, 0..1 */
-#define ActClass_OnPress(c) WC_FUNC(c, 0x190)
-#define ActClass_OnRelease(c) WC_FUNC(c, 0x1a4)
-#define ActClass_OnTalk(c) WC_FUNC(c, 0x1b8)
-#define ActClass_OnVictim(c) WC_FUNC(c, 0x1cc)
+static inline cAction *WCE_Action0(const cWalkCharEntity *w) {
+	return w->wl.actCtrl->layers[0].action;
+}
 
 /* the turn of the head of the controller towards ang (x, y) in dt (rva 0x62dc0) and the camera of the class
  * (rva 0x616e0) */
@@ -33,68 +24,72 @@ void __thiscall cActClassCam_Update(void *cam, cEntity *followCam, cEntity *e);
 
 cEntity *__thiscall cWalkCharEntity_ctor(void *mem, const char *name, float x, float y, float z) {
 	cEntity *self = mem;
+	cWalkCharEntity *w = mem;
 
 	cWithLifeEntity_ctor(mem, name, x, y, z);
 	self->vftable = CWALKCHARENTITY_VFTABLE;
-	Nto1Node_Init(WC_NODE(self, 0x3e8));
-	WC_I(self, 0x404) = 0;
-	WC_I(self, 0x408) = 0;
-	cPy_Function_ctor(WChar_OnEnergyFull(self));
-	Nto1Node_Init(WC_NODE(self, 0x4bc));
-	cWalkCharControl_ctor(WChar_Control(self));
-	Nto1Node_Init(WChar_ListenNode(self));
-	Nto1Node_Init(WC_NODE(self, 0x534));
-	cPy_Function_ctor(WC_FUNC(self, 0x544));
-	cPy_Function_ctor(WC_FUNC(self, 0x558));
-	WChar_OwnerSlot(self) = -1;
-	for (int o = 0x428; o < 0x458; o += 4) {
-		WC_I(self, o) = 0;
-	}
+	Nto1Node_Init(&w->collide);
+	w->sphereBox.flags = 0;
+	w->sphereBox.wait = 0;
+	w->sphereBox.id = 0;
+	cPy_Function_ctor(&w->onEnergyFull);
+	Nto1Node_Init(&w->reposHead);
+	cWalkCharControl_ctor(&w->control);
+	Nto1Node_Init(&w->listen);
+	Nto1Node_Init(&w->victim);
+	cPy_Function_ctor(&w->outSelect);
+	cPy_Function_ctor(&w->abortSelect);
+	w->ownerSlot = -1;
+	w->view = (vec3_t){0.0f, 0.0f, 0.0f};
+	w->viewVel = (vec3_t){0.0f, 0.0f, 0.0f};
+	w->slotView = (vec3_t){0.0f, 0.0f, 0.0f};
+	w->renderView = (vec3_t){0.0f, 0.0f, 0.0f};
 	float r = FxElem_Rand(4.0, 2.0);
 	self->mask |= 0x10;
-	WC_F(self, 0x458) = r;
-	WC_F(self, 0x45c) = 128.0f;
-	*(uint16_t *)((byte *)self + 0x464) = 0;
-	for (int o = 0x468; o <= 0x478; o += 4) {
-		WC_I(self, o) = 0;
-	}
-	WC_I(self, 0x490) = 0;
-	WC_I(self, 0x480) = 0;
-	WC_I(self, 0x484) = 0;
-	WC_I(self, 0x488) = 0;
-	WC_B(self, 0x48c) = 0;
-	WChar_ListenNode(self)->data = self;
-	WC_NODE(self, 0x534)->data = self;
-	WChar_ListenOn(self) = 0;
-	WC_I(self, 0x494) = 0;
-	WC_I(self, 0x47c) = 0;
-	WC_I(self, 0x498) = 0;
-	WC_F(self, 0x230) = 5000.0f;
-	WChar_Money(self) = 0;
-	WChar_MoneyReward(self) = 0;
-	WC_F(self, 0x3f8) = 1000.0f;
-	WC_B(self, 0x4dc) = 0;
-	WC_I(self, 0x4e0) = 0;
-	WC_I(self, 0x4e4) = 0;
-	WC_I(self, 0x4e8) = 0;
-	WChar_MaxLife(self) = WChar_Life(self);
-	WChar_EnergyBarDecr(self) = 0.200000003f;
-	WChar_EnergyTime(self) = 0.0f;
-	WC_NODE(self, 0x3e8)->data = self;
-	WC_I(self, 0x56c) = 0;
-	WC_I(self, 0x570) = 0;
-	WC_I(self, 0x3fc) = 0;
-	WC_NODE(self, 0x4bc)->target = self;
-	WChar_ViewLock(self) = 1;
-	WChar_ViewLockF(self) = 1.0f;
-	WC_I(self, 0x4b8) = 0;
-	WC_I(self, 0x460) = 0;
+	w->relaxTime = r;
+	w->floorDist = 128.0f;
+	w->falling = 0;
+	w->walking = 0;
+	w->displAng = 0.0f;
+	w->f46c = 0.0f;
+	w->lastMove = 0.0f;
+	w->lastDisplAng = 0.0f;
+	w->walkTime = 0.0f;
+	w->walkEnd = NULL;
+	w->fallVel = (vec3_t){0.0f, 0.0f, 0.0f};
+	w->disableControl = 0;
+	w->listen.data = self;
+	w->victim.data = self;
+	w->listenOn = 0;
+	w->yModelDisp = 0.0f;
+	w->move = 0.0f;
+	w->energyUsed = 0.0f;
+	w->wl.mass = 5000.0f;
+	w->money = 0;
+	w->moneyReward = 0;
+	w->moved2 = 1000.0f;
+	w->pushOn = 0;
+	w->push = (vec3_t){0.0f, 0.0f, 0.0f};
+	w->wl.prevLife = w->wl.life;
+	w->energyBarDecr = 0.200000003f;
+	w->energyTime = 0.0f;
+	w->collide.data = self;
+	w->abortTime = 0.0f;
+	w->abortOpt = 0;
+	w->headPitch = 0.0f;
+	w->reposHead.target = self;
+	w->viewLock = 1;
+	w->viewLockF = 1.0f;
+	w->hitFlash = 0.0f;
+	w->slideTime = 0.0f;
 	return self;
 }
 
 void __fastcall cWalkCharEntity_dtor(cEntity *self) {
+	cWalkCharEntity *w = WChar(self);
+
 	self->vftable = CWALKCHARENTITY_VFTABLE;
-	if (WChar_ActCtrlPtr(self)) {
+	if (w->wl.actCtrl) {
 		void *ai = self->ai;
 		if (ai) {
 			/* the deleting destructor of the AI */
@@ -102,14 +97,14 @@ void __fastcall cWalkCharEntity_dtor(cEntity *self) {
 		}
 		self->ai = NULL;
 	}
-	cPy_Function_dtor(WC_FUNC(self, 0x558));
-	cPy_Function_dtor(WC_FUNC(self, 0x544));
-	Nto1Node_Done(WC_NODE(self, 0x534));
-	Nto1Node_Done(WChar_ListenNode(self));
-	Nto1Node_Done(&WChar_Control(self)->target);
-	Nto1Node_Done(WC_NODE(self, 0x4bc));
-	cPy_Function_dtor(WChar_OnEnergyFull(self));
-	Nto1Node_Done(WC_NODE(self, 0x3e8));
+	cPy_Function_dtor(&w->abortSelect);
+	cPy_Function_dtor(&w->outSelect);
+	Nto1Node_Done(&w->victim);
+	Nto1Node_Done(&w->listen);
+	Nto1Node_Done(&w->control.target);
+	Nto1Node_Done(&w->reposHead);
+	cPy_Function_dtor(&w->onEnergyFull);
+	Nto1Node_Done(&w->collide);
 	cWithLifeEntity_dtor(self);
 }
 
@@ -122,85 +117,85 @@ cEntity *__thiscall cWalkCharEntity_Delete(cEntity *self, uint32_t flags) {
 }
 
 void __thiscall cWalkCharEntity_ActionTick(cEntity *self, float dt) {
-	void *ctrl = WChar_ActCtrlPtr(self);
+	cWalkCharEntity *w = WChar(self);
+	cActCtrl *ctrl = w->wl.actCtrl;
 
 	if (!ctrl) {
 		return;
 	}
-	int slot = WChar_OwnerSlot(self);
-	if ((g_EnergyBarActive || slot < 0 || slot >= 4) && WC_B(self, 0x505) != WChar_ActionPress(self)) {
-		byte *cls = ChType_ActClass(ctrl);
-		if (WChar_ActionPress(self)) {
-			cPy_Function_AddParamS(ActClass_OnPress(cls), self->name);
-			cPy_Function_Execute(ActClass_OnPress(ChType_ActClass(WChar_ActCtrlPtr(self))), 0);
+	int slot = w->ownerSlot;
+	if ((g_EnergyBarActive || slot < 0 || slot >= 4) && w->control.prevAct != w->control.act) {
+		cActClass *cls = ctrl->cls;
+		if (w->control.act) {
+			cPy_Function_AddParamS(&cls->actionPress, self->name);
+			cPy_Function_Execute(&WCE_Class(w)->actionPress, 0);
 		} else {
-			cPy_Function_AddParamS(ActClass_OnRelease(cls), self->name);
-			cPy_Function_Execute(ActClass_OnRelease(ChType_ActClass(WChar_ActCtrlPtr(self))), 0);
+			cPy_Function_AddParamS(&cls->actionRelease, self->name);
+			cPy_Function_Execute(&WCE_Class(w)->actionRelease, 0);
 		}
 	}
-	if (!WC_B(self, 0x508)) {
-		if (!WChar_ActionPress(self) && WC_B(self, 0x506) && !WC_B(self, 0x507) &&
-			cWalkCharEntity_CanActOnVictim(self, 0)) {
-			cPy_Function_AddParamS(ActClass_OnVictim(ChType_ActClass(WChar_ActCtrlPtr(self))), self->name);
-			byte *cls = ChType_ActClass(WChar_ActCtrlPtr(self));
-			cPy_Function_AddParamS(ActClass_OnVictim(cls), Nto1Node_TargetName(WC_NODE(self, 0x534)));
-			cPy_Function_Execute(ActClass_OnVictim(ChType_ActClass(WChar_ActCtrlPtr(self))), 0);
+	if (!w->control.act3) {
+		if (!w->control.act && w->control.act2 && !w->control.prevAct2 && cWalkCharEntity_CanActOnVictim(self, 0)) {
+			cPy_Function_AddParamS(&WCE_Class(w)->possessionPress, self->name);
+			cActClass *cls = WCE_Class(w);
+			cPy_Function_AddParamS(&cls->possessionPress, Nto1Node_TargetName(&w->victim));
+			cPy_Function_Execute(&WCE_Class(w)->possessionPress, 0);
 		}
-		if (!WC_B(self, 0x508)) {
+		if (!w->control.act3) {
 			goto energy;
 		}
 	}
-	if (!WC_B(self, 0x509) && !ChType_ActPriority(WChar_ActCtrlPtr(self))) {
+	if (!w->control.prevAct3 && !ChType_ActPriority(w->wl.actCtrl)) {
 		cEntity *t;
 		byte ok;
-		if (WChar_ListenOn(self) && (t = WChar_Listen(self)) != NULL) {
+		if (w->listenOn && (t = WChar_Listen(self)) != NULL) {
 			ok = t->vftable->IsType(t, TYEN_WITH_LIFE);
 		} else {
 			t = WChar_Victim(self);
 			if (!t || !t->vftable->IsType(t, TYEN_WITH_LIFE)) {
 				goto energy;
 			}
-			ok = WC_B(t, 0x384);
+			ok = WLife(t)->arrow.alwaysUse;
 		}
 		if (ok) {
-			if (WC_B(t, 0x398)) {
-				cPy_Function_AddParamS(ActClass_OnTalk(ChType_ActClass(WChar_ActCtrlPtr(self))), self->name);
-				cPy_Function_Execute(ActClass_OnTalk(ChType_ActClass(WChar_ActCtrlPtr(self))), 0);
+			if (WLife(t)->arrow.canPhoto) {
+				cPy_Function_AddParamS(&WCE_Class(w)->photoPress, self->name);
+				cPy_Function_Execute(&WCE_Class(w)->photoPress, 0);
 			} else {
 				void *l = t->lLogic;
 				if (!l || (*(byte(__thiscall **)(void *))(*(byte **)l + 8))(l)) {
-					cArrowIndicator_Execute(Ent_Arrow(t), self);
+					cArrowIndicator_Execute(&WLife(t)->arrow, self);
 				}
 			}
 		}
 	}
 energy:
 	if (!g_EnergyBarActive) {
-		WChar_EnergyUsed(self) = 1.0f;
+		w->energyUsed = 1.0f;
 		return;
 	}
-	float time = WChar_EnergyTime(self);
+	float time = w->energyTime;
 	if (time > 0.0f) {
-		float used = dt / time + WChar_EnergyUsed(self);
-		WChar_EnergyUsed(self) = used;
+		float used = dt / time + w->energyUsed;
+		w->energyUsed = used;
 		if (used >= 1.0f) {
-			WChar_EnergyUsed(self) = 1.0f;
-			if (cPy_Function_IsValid(WChar_OnEnergyFull(self))) {
-				cPy_Function_AddParamS(WChar_OnEnergyFull(self), self->name);
-				cPy_Function_Execute(WChar_OnEnergyFull(self), 0);
+			w->energyUsed = 1.0f;
+			if (cPy_Function_IsValid(&w->onEnergyFull)) {
+				cPy_Function_AddParamS(&w->onEnergyFull, self->name);
+				cPy_Function_Execute(&w->onEnergyFull, 0);
 			}
 		}
 	} else {
-		float used = WChar_EnergyUsed(self);
+		float used = w->energyUsed;
 		int i = (int)(used - 0.999899983f);
 		int lo = 0;
 		if (i <= 0) {
 			lo = i;
 		}
 		used = used - dt / g_EnergyRechargeTime;
-		WChar_EnergyUsed(self) = used;
+		w->energyUsed = used;
 		if ((float)lo >= used) {
-			WChar_EnergyUsed(self) = (float)lo;
+			w->energyUsed = (float)lo;
 		}
 	}
 }
@@ -208,30 +203,31 @@ energy:
 void __thiscall cWalkCharEntity_UpdateModel(cEntity *self) {
 	vec3_t n, d, pos;
 	float head[2];
-	cObjEntity *o = (cObjEntity *)self;
+	cWalkCharEntity *w = WChar(self);
+	cObjEntity *o = &w->wl.obj;
 
 	vec3_t ang = o->renderAng;
-	d.x = WC_F(self, 0x44c) - o->renderAng.x;
-	d.y = WC_F(self, 0x450) - o->renderAng.y;
-	d.z = WC_F(self, 0x454) - o->renderAng.z;
+	d.x = w->renderView.x - o->renderAng.x;
+	d.y = w->renderView.y - o->renderAng.y;
+	d.z = w->renderView.z - o->renderAng.z;
 	Vec3_NormAng(&n, &d);
 	float dt = cTimer_GetDelta(&o->timer);
 	if (!(0.00000099999999747f >= dt)) {
 		CGameModel_SetRot(&o->model, &ang);
 		pos.x = o->renderPos.x + 0.0f;
-		pos.y = o->renderPos.y + WC_F(self, 0x494);
+		pos.y = o->renderPos.y + w->yModelDisp;
 		pos.z = o->renderPos.z + 0.0f;
 		CGameModel_SetPos(&o->model, &pos);
-		void *ctrl = WChar_ActCtrlPtr(self);
+		cActCtrl *ctrl = w->wl.actCtrl;
 		if (ctrl) {
 			head[0] = n.x;
-			head[1] = WChar_ViewLockF(self) * n.y;
+			head[1] = w->viewLockF * n.y;
 			cActCtrl_TurnHead(ctrl, head, dt);
-			if (WChar_Cam(self)) {
-				cActClassCam_Update(ChType_ActClass(WChar_ActCtrlPtr(self)) + 0x110, WChar_Cam(self), self);
+			if (o->cam) {
+				cActClassCam_Update(&WCE_Class(w)->cam, o->cam, self);
 			}
 		}
-		void **fx = WChar_FX(self);
+		void *fx = o->fx;
 		if (fx) {
 			(*(void(__thiscall **)(void *))(*(byte **)fx + 0x10))(fx);
 		}
@@ -239,42 +235,48 @@ void __thiscall cWalkCharEntity_UpdateModel(cEntity *self) {
 }
 
 void __thiscall cWalkCharEntity_UpdateViewLock(cEntity *self, float dt) {
-	void *ctrl = WChar_ActCtrlPtr(self);
+	cWalkCharEntity *w = WChar(self);
+	cActCtrl *ctrl = w->wl.actCtrl;
 
-	if (ctrl && ChType_ActClass(ctrl)) {
-		byte b = ChType_ActClass(ctrl)[0x188];
-		byte old = WChar_ViewLock(self);
-		WChar_ViewLock(self) = b;
-		if (b && (g_WalkCameraCenter == 0.0f || WChar_OwnerSlot(self) == -1 || WC_B(self, 0x50c))) {
+	if (ctrl && ctrl->cls) {
+		byte b = ctrl->cls->strafeChar;
+		byte old = w->viewLock;
+		w->viewLock = b;
+		if (b && (g_WalkCameraCenter == 0.0f || w->ownerSlot == -1 || w->control.lock)) {
 			b = 1;
 		} else {
 			b = 0;
 		}
-		WChar_ViewLock(self) = b;
+		w->viewLock = b;
 		if (!old && b) {
-			WC_B(self, 0x465) = 1;
+			w->walking = 1;
 		}
 	}
 	float target = 0.0f;
-	if (WChar_ViewLock(self)) {
+	if (w->viewLock) {
 		target = 1.0f;
 	}
-	Float_Approach(&WChar_ViewLockF(self), target, dt + dt);
+	Float_Approach(&w->viewLockF, target, dt + dt);
 }
 
 byte __thiscall cWalkCharEntity_CanActOnVictim(cEntity *self, byte checkClass) {
-	if (!(0.0f >= WChar_EnergyUsed(self))) {
+	cWalkCharEntity *w = WChar(self);
+
+	if (!(0.0f >= w->energyUsed)) {
 		return 0;
 	}
 	cEntity *v = WChar_Victim(self);
-	if (!v || !WChar_ActCtrlPtr(self) || ChType_ActPriority(WChar_ActCtrlPtr(self))) {
+	if (!v || !w->wl.actCtrl || ChType_ActPriority(w->wl.actCtrl)) {
 		return 0;
 	}
 	if (!v->vftable->IsType(v, TYEN_WALKCHAR)) {
 		return 0;
 	}
-	if (checkClass && !ChType_ActClass(ChType_ActCtrl(v))[0x184]) {
-		return 0;
+	if (checkClass) {
+		cActCtrl *vctrl = ChType_ActCtrl(v);
+		if (!vctrl->cls->canBePossessed) {
+			return 0;
+		}
 	}
 	return 1;
 }
@@ -302,17 +304,9 @@ void __fastcall cWalkCharEntity_Unlink3e8(cEntity *self) {
 /* the WithLife entity hit test of the walk */
 #define WCE_HIT_LISTS ((void *)0x11)
 
-static inline cActClassChar *WCE_Class(const cWalkCharEntity *w) {
-	return ((cActCtrlChar *)w->actCtrl)->cls;
-}
-
-static inline cActionChar *WCE_Action0(const cWalkCharEntity *w) {
-	return ((cActCtrlChar *)w->actCtrl)->action0;
-}
-
 /* the name of the action of layer 0 starts with s (n characters) */
 static inline byte WCE_Action0Is(const cWalkCharEntity *w, const char *s, size_t n) {
-	return !crt_strncmp(cActCtrl_GetActionName(w->actCtrl, 0), s, n);
+	return !crt_strncmp(cActCtrl_GetActionName(w->wl.actCtrl, 0), s, n);
 }
 
 /* the alarm flags of the world the alarm actions follow */
@@ -327,7 +321,7 @@ static inline cEntity *WCE_Usr0(void) {
 
 /* the push of an AI moves it, once */
 static inline void WCE_ApplyPush(cWalkCharEntity *w, float dt) {
-	vec3_t *pos = &w->obj.base.pos;
+	vec3_t *pos = &w->wl.obj.base.pos;
 
 	if (w->ownerSlot == -1 && w->pushOn) {
 		pos->y = w->push.y * dt + pos->y;
@@ -341,8 +335,8 @@ static inline void WCE_ApplyPush(cWalkCharEntity *w, float dt) {
 
 /* the friction of the class over dt, the stop below 2 and the speed limit (the walk and the flight) */
 static inline void WCE_Friction(cWalkCharEntity *w, float dt, float maxSpeed) {
-	vec3_t *v = &w->obj.vel;
-	float f = WCE_Class(w)->friction;
+	vec3_t *v = &w->wl.obj.vel;
+	float f = WCE_Class(w)->flyFric;
 
 	v->x = v->x - dt * v->x * f;
 	v->y = v->y - v->y * dt * f;
@@ -372,17 +366,17 @@ void __thiscall cWalkCharEntity_Touch(cEntity *self, cEntity *e, const vec3_t *p
 
 	(void)point;
 	(void)normal;
-	if (!w->actCtrl || !(e->mask & 0x11)) {
+	if (!w->wl.actCtrl || !(e->mask & 0x11)) {
 		return;
 	}
 	CHECK(e->vftable->IsType(e, TYEN_WITH_LIFE));
 	p = self->pos;
 	byte xz = !w->falling && !WCE_Class(w)->canFly;
 	const vec3_t *from = e->vftable->GetPos(e, &epos);
-	cPrimitive_UnelasticDisp(&w->prim, &p, from, &WChar(e)->prim, xz);
-	w->obj.vel.x = w->obj.vel.x + (p.x - self->pos.x);
-	w->obj.vel.y = (p.y - self->pos.y) + w->obj.vel.y;
-	w->obj.vel.z = (p.z - self->pos.z) + w->obj.vel.z;
+	cPrimitive_UnelasticDisp(&w->wl.prim, &p, from, &WChar(e)->wl.prim, xz);
+	w->wl.obj.vel.x = w->wl.obj.vel.x + (p.x - self->pos.x);
+	w->wl.obj.vel.y = (p.y - self->pos.y) + w->wl.obj.vel.y;
+	w->wl.obj.vel.z = (p.z - self->pos.z) + w->wl.obj.vel.z;
 }
 
 /* the push of a WalkChar the character ran into: dir normalized times CharUsrPushSpeed */
@@ -402,7 +396,7 @@ void __thiscall cWalkCharEntity_Walk(cEntity *self, float dt) {
 	vec3_t old, t, a, b;
 	cEntity *hit;
 
-	if (!w->actCtrl) {
+	if (!w->wl.actCtrl) {
 		return;
 	}
 	byte fly = WCE_Class(w)->canFly;
@@ -419,7 +413,7 @@ void __thiscall cWalkCharEntity_Walk(cEntity *self, float dt) {
 	float dx = old.x - pos->x;
 	float dy = old.y - pos->y;
 	float dz = old.z - pos->z;
-	float r = WCE_Class(w)->radius;
+	float r = WCE_Class(w)->wRadius;
 	float d2 = dx * dx + dy * dy + dz * dz;
 	w->moved2 = d2;
 	if (WCE_MIN_MOVE2 > d2) {
@@ -453,20 +447,20 @@ void __thiscall cWalkCharEntity_Walk(cEntity *self, float dt) {
 		Collision_Slide2D(&a, pos, r, &t, &w->sphereBox);
 		*pos = t;
 	}
-	w->obj.vel.x = 0.0f;
-	w->obj.vel.y = 0.0f;
-	w->obj.vel.z = 0.0f;
+	w->wl.obj.vel.x = 0.0f;
+	w->wl.obj.vel.y = 0.0f;
+	w->wl.obj.vel.z = 0.0f;
 	hit = NULL;
-	if (!cWorld_TestSphereEntities(g_pWorld, self, WCE_HIT_LISTS, &old, w->prim.radius, &hit, 0, (int)pos)) {
+	if (!cWorld_TestSphereEntities(g_pWorld, self, WCE_HIT_LISTS, &old, w->wl.prim.radius, &hit, 0, (int)pos)) {
 		Nto1Node_UnlinkChecked(&w->collide);
 		goto speed;
 	}
 	cEntity_AddLink(hit, &w->collide);
 	if (hit->vftable->IsType(hit, WCE_WALKCHAR)) {
 		if (w->ownerSlot != -1) {
-			a.x = -w->obj.vel.x;
-			a.y = -w->obj.vel.y;
-			a.z = -w->obj.vel.z;
+			a.x = -w->wl.obj.vel.x;
+			a.y = -w->wl.obj.vel.y;
+			a.z = -w->wl.obj.vel.z;
 			WCE_PushHit(hit, &a);
 		} else if (w->pushOn) {
 			vec3_t sp, hp;
@@ -478,21 +472,21 @@ void __thiscall cWalkCharEntity_Walk(cEntity *self, float dt) {
 			WCE_PushHit(hit, &a);
 		}
 	}
-	pos->x = w->obj.vel.x + pos->x;
-	pos->y = w->obj.vel.y + pos->y;
-	pos->z = w->obj.vel.z + pos->z;
+	pos->x = w->wl.obj.vel.x + pos->x;
+	pos->y = w->wl.obj.vel.y + pos->y;
+	pos->z = w->wl.obj.vel.z + pos->z;
 	if (Engine_TestSphere(pos, pos, r, NULL, NULL)) {
 		*pos = old;
-	} else if (cWorld_TestSphereEntities(g_pWorld, self, WCE_HIT_LISTS, pos, w->prim.radius, &hit, 1, 0)) {
+	} else if (cWorld_TestSphereEntities(g_pWorld, self, WCE_HIT_LISTS, pos, w->wl.prim.radius, &hit, 1, 0)) {
 		*pos = old;
 		cEntity_AddLink(hit, &w->collide);
 	}
 speed:;
 	float inv = 1.0f / dt;
-	w->obj.vel.y = (pos->y - old.y) * inv;
-	w->obj.vel.z = (pos->z - old.z) * inv;
-	w->obj.vel.x = (pos->x - old.x) * inv;
-	vec3_t *v = &w->obj.vel;
+	w->wl.obj.vel.y = (pos->y - old.y) * inv;
+	w->wl.obj.vel.z = (pos->z - old.z) * inv;
+	w->wl.obj.vel.x = (pos->x - old.x) * inv;
+	vec3_t *v = &w->wl.obj.vel;
 	float s = (float)__builtin_sqrt((double)(v->x * v->x + v->y * v->y + v->z * v->z));
 	if (s > WCE_MAX_SPEED) {
 		double prev = (double)(float)((__builtin_sqrt((double)w->moved2) / (double)dt) / (double)WCE_KMH);
@@ -511,7 +505,7 @@ speed:;
 void __thiscall cWalkCharEntity_Turn(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
 
-	if (!w->actCtrl) {
+	if (!w->wl.actCtrl) {
 		return;
 	}
 	float t = w->control.hRot + w->control.hRot;
@@ -541,12 +535,12 @@ void __thiscall cWalkCharEntity_Turn(cEntity *self, float dt) {
 void __thiscall cWalkCharEntity_PlayWalk(cEntity *self, const char *init, const char *loop, const char *end) {
 	cWalkCharEntity *w = WChar(self);
 
-	if (!w->actCtrl || cActCtrl_IsActive(w->actCtrl, init) || cActCtrl_IsActive(w->actCtrl, loop)) {
+	if (!w->wl.actCtrl || cActCtrl_IsActive(w->wl.actCtrl, init) || cActCtrl_IsActive(w->wl.actCtrl, loop)) {
 		return;
 	}
-	cActCtrl_SetDefLoop(w->actCtrl, loop, 0);
-	if (!*init || !cActCtrl_PlayNew(w->actCtrl, init, 0, 1.0f)) {
-		cActCtrl_PlayNew(w->actCtrl, loop, 0, 1.0f);
+	cActCtrl_SetDefLoop(w->wl.actCtrl, loop, 0);
+	if (!*init || !cActCtrl_PlayNew(w->wl.actCtrl, init, 0, 1.0f)) {
+		cActCtrl_PlayNew(w->wl.actCtrl, loop, 0, 1.0f);
 	}
 	w->walkEnd = cActClass_GetAction((cActClass *)WCE_Class(w), end);
 }
@@ -554,13 +548,13 @@ void __thiscall cWalkCharEntity_PlayWalk(cEntity *self, const char *init, const 
 void __thiscall cWalkCharEntity_UpdateHitFlash(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
 
-	if (self->flag_4c && w->life > 0 && w->maxLife > w->life) {
+	if (self->flag_4c && w->wl.life > 0 && w->wl.prevLife > w->wl.life) {
 		w->hitFlash = 1.5f;
 	}
 	if (!(w->hitFlash > 0.0f)) {
 		return;
 	}
-	uint32_t fx = CGameModel_GetEffect(&w->obj.model, NULL);
+	uint32_t fx = CGameModel_GetEffect(&w->wl.obj.model, NULL);
 	if (fx != 0 && fx != 6) {
 		return;
 	}
@@ -605,7 +599,7 @@ static const struct {
 void __thiscall cWalkCharEntity_EnableAI(cEntity *self, byte on, int *arg) {
 	cWalkCharEntity *w = WChar(self);
 
-	if (!w->actCtrl) {
+	if (!w->wl.actCtrl) {
 		return;
 	}
 	if (!on) {
@@ -619,7 +613,7 @@ void __thiscall cWalkCharEntity_EnableAI(cEntity *self, byte on, int *arg) {
 	if (self->ai) {
 		return;
 	}
-	const char *name = *(const char **)((byte *)WCE_Class(w) + 4);
+	const char *name = WCE_Class(w)->name;
 	int i = 0;
 	while (wce_ais[i].cls && strcmp(name, wce_ais[i].cls)) {
 		i++;
@@ -717,22 +711,22 @@ void __thiscall cWalkCharEntity_Fall(cEntity *self, float dt) {
 	vec3_t *pos = &self->pos;
 	vec3_t a, b;
 
-	if (!w->actCtrl) {
+	if (!w->wl.actCtrl) {
 		return;
 	}
-	cActClassChar *cls = WCE_Class(w);
+	cActClass *cls = WCE_Class(w);
 	byte falling = w->falling;
-	float h = falling ? 0.0f : cls->stepHeight;
-	float vy = w->obj.vel.y;
+	float h = falling ? 0.0f : cls->minFallDist;
+	float vy = w->wl.obj.vel.y;
 	h = h - vy * dt;
 	a.x = pos->x - 0.0f;
-	a.y = pos->y - ((w->floorDist + h) - cls->floorRadius);
+	a.y = pos->y - ((w->floorDist + h) - cls->sRadius);
 	a.z = pos->z - 0.0f;
 	b = a;
 	if (WCE_MIN_MOVE2 > w->moved2 && !falling) {
 		b.y = a.y + h;
 	} else if (0.0f > vy || !falling) {
-		byte r = Engine_TestSphere(pos, &a, cls->floorRadius, &b, NULL);
+		byte r = Engine_TestSphere(pos, &a, cls->sRadius, &b, NULL);
 		cWalkCharEntity_SetFalling(self, r == 0);
 	}
 	if (!w->falling) {
@@ -740,55 +734,55 @@ void __thiscall cWalkCharEntity_Fall(cEntity *self, float dt) {
 		if (1.5 > __builtin_fabs((double)d)) {
 			d = 0.0f;
 		}
-		w->obj.vel.y = d / dt;
-		if (WCE_Action0(w)->moveType) {
+		w->wl.obj.vel.y = d / dt;
+		if (WCE_Action0(w)->slideAsFly) {
 			WChar_Vtbl(self)->Accel(self, dt);
 		} else {
-			w->obj.vel.x = 0.0f;
-			w->obj.vel.z = 0.0f;
+			w->wl.obj.vel.x = 0.0f;
+			w->wl.obj.vel.z = 0.0f;
 		}
 	} else {
-		float v = w->obj.vel.y - g_CharGrav * dt;
-		w->obj.vel.y = v;
+		float v = w->wl.obj.vel.y - g_CharGrav * dt;
+		w->wl.obj.vel.y = v;
 		if (-WCE_MAX_FALL > v) {
-			w->obj.vel.y = -WCE_MAX_FALL;
-		} else if (WCE_Class(w)->fallUp) {
+			w->wl.obj.vel.y = -WCE_MAX_FALL;
+		} else if (WCE_Class(w)->canJump) {
 			if (v > WCE_MAX_FALL) {
-				w->obj.vel.y = WCE_MAX_FALL;
+				w->wl.obj.vel.y = WCE_MAX_FALL;
 			}
 		} else if (v > 0.0f) {
-			w->obj.vel.y = 0.0f;
+			w->wl.obj.vel.y = 0.0f;
 		}
-		w->fallVel = w->obj.vel;
+		w->fallVel = w->wl.obj.vel;
 	}
-	pos->x = pos->x + w->obj.vel.x * dt;
-	pos->y = pos->y + w->obj.vel.y * dt;
-	pos->z = pos->z + w->obj.vel.z * dt;
+	pos->x = pos->x + w->wl.obj.vel.x * dt;
+	pos->y = pos->y + w->wl.obj.vel.y * dt;
+	pos->z = pos->z + w->wl.obj.vel.z * dt;
 	WChar_Vtbl(self)->WalkSound(self, dt);
 }
 
 void __thiscall cWalkCharEntity_Fly(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
 	vec3_t *pos = &self->pos;
-	vec3_t *v = &w->obj.vel;
+	vec3_t *v = &w->wl.obj.vel;
 	vec3_t in, tmp, a, hit;
 	byte move;
 
-	if (!w->actCtrl) {
+	if (!w->wl.actCtrl) {
 		goto stop;
 	}
-	cActionChar *act = WCE_Action0(w);
-	if (act->walk) {
+	cAction *act = WCE_Action0(w);
+	if (act->useFlyDisp) {
 		move = w->control.strafe * w->control.strafe + w->control.jump * w->control.jump +
 			w->control.walk * w->control.walk > WCE_MIN_INPUT2;
-	} else if (act->hover) {
+	} else if (act->useFlyFall) {
 		move = 0;
 	} else {
 		goto stop;
 	}
-	cActClassChar *cls = WCE_Class(w);
-	float maxSpeed = cls->maxSpeed;
-	float f = cls->airAccel * dt;
+	cActClass *cls = WCE_Class(w);
+	float maxSpeed = cls->flySpeed;
+	float f = cls->flyAccel * dt;
 	in.x = -(w->control.strafe * f);
 	in.y = w->control.walk * f;
 	in.z = w->control.jump * f;
@@ -800,15 +794,15 @@ void __thiscall cWalkCharEntity_Fly(cEntity *self, float dt) {
 		v->z = v->z + add.z;
 	}
 	WCE_Friction(w, dt, maxSpeed);
-	if (!move && WCE_Action0(w)->hover && CGameModel_IsVisible(Obj_Vtbl(self)->GetModel(self))) {
+	if (!move && WCE_Action0(w)->useFlyFall && CGameModel_IsVisible(Obj_Vtbl(self)->GetModel(self))) {
 		cls = WCE_Class(w);
 		a = *pos;
-		a.y = pos->y - ((cls->stepHeight + w->floorDist) - cls->floorRadius);
-		Engine_TestSphere(pos, &a, WCE_Class(w)->floorRadius, &hit, NULL);
+		a.y = pos->y - ((cls->minFallDist + w->floorDist) - cls->sRadius);
+		Engine_TestSphere(pos, &a, WCE_Class(w)->sRadius, &hit, NULL);
 		cls = WCE_Class(w);
-		float k = (((pos->y - hit.y) - w->floorDist) + cls->floorRadius) / cls->stepHeight;
+		float k = (((pos->y - hit.y) - w->floorDist) + cls->sRadius) / cls->minFallDist;
 		if (k > 0.0f) {
-			v->y = v->y - cls->accel * k * dt;
+			v->y = v->y - cls->flyFallAccel * k * dt;
 		}
 	}
 	goto end;
@@ -824,7 +818,7 @@ end:
 }
 
 void *__thiscall cWithLifeEntity_GetActCtrl(cEntity *self) {
-	return WChar(self)->actCtrl;
+	return WChar(self)->wl.actCtrl;
 }
 
 float __thiscall cWalkCharEntity_GetEnergyFrac(cEntity *e) {
@@ -855,8 +849,8 @@ static inline byte WCE_Alarm(cEntity *self) {
 	if (!WithLife_Vtbl(self)->GetActCtrl(self)) {
 		return 0;
 	}
-	cActCtrlChar *ctrl = WithLife_Vtbl(self)->GetActCtrl(self);
-	return ctrl->cls->alarmAnims && WCE_AlarmOn();
+	cActCtrl *ctrl = WithLife_Vtbl(self)->GetActCtrl(self);
+	return ctrl->cls->relaxAlarm && WCE_AlarmOn();
 }
 
 const char *__fastcall cWalkCharEntity_RelaxName(cEntity *self) {
@@ -871,7 +865,7 @@ void __thiscall cWalkCharEntity_GetCamera(cEntity *self, vec3_t *pos, vec3_t *an
 	cWalkCharEntity *w = WChar(self);
 
 	cObjEntity_GetCamera(self, pos, ang);
-	if (!w->obj.cam) {
+	if (!w->wl.obj.cam) {
 		ang->x = -w->renderView.x;
 		ang->y = w->renderView.y + M_PI_F;
 		ang->z = w->renderView.z;
@@ -890,8 +884,8 @@ int __thiscall cWalkCharEntity_GetOwnerSlot(cEntity *e) {
 float __thiscall cWalkCharEntity_GetRadius(cEntity *self) {
 	cWalkCharEntity *w = WChar(self);
 
-	if (w->actCtrl) {
-		return WCE_Class(w)->radius;
+	if (w->wl.actCtrl) {
+		return WCE_Class(w)->wRadius;
 	}
 	return 150.0f;
 }
@@ -1003,12 +997,12 @@ byte __thiscall cWalkCharEntity_IsType(cEntity *self, const char *type) {
 }
 
 byte __thiscall cWithLifeEntity_TestLine(cEntity *self, const vec3_t *from, vec3_t *hit) {
-	return cPrimitive_TestSegment(&WChar(self)->prim, from, hit);
+	return cPrimitive_TestSegment(&WChar(self)->wl.prim, from, hit);
 }
 
 byte __thiscall cWithLifeEntity_TestSphere(cEntity *self, cEntity *exclude, const vec3_t *center, float radius,
 	const vec3_t *prev) {
-	return cPrimitive_TestSphere(&WChar(self)->prim, exclude, center, radius, prev);
+	return cPrimitive_TestSphere(&WChar(self)->wl.prim, exclude, center, radius, prev);
 }
 
 void __thiscall cObjEntity_Vf41(cEntity *self, int a, int b, int c) {
@@ -1033,15 +1027,15 @@ void __thiscall cObjEntity_Vf43(cEntity *self, int a, int b) {
 void __thiscall cWalkCharEntity_Tick(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
 
-	if (!g_ActiveExtrapolation || w->obj.cam) {
+	if (!g_ActiveExtrapolation || w->wl.obj.cam) {
 		w->slotView = w->view;
 	} else {
-		float iv = w->obj.slot->interval;
+		float iv = w->wl.obj.slot->interval;
 		w->slotView.x = w->viewVel.x * iv + w->view.x;
 		w->slotView.y = w->view.y + w->viewVel.y * iv;
 		w->slotView.z = w->view.z + w->viewVel.z * iv;
 	}
-	if (!w->obj.move.active) {
+	if (!w->wl.obj.move.active) {
 		WChar_Vtbl(self)->UpdateSelect(self, dt);
 		if (w->disableControl) {
 			WChar_Vtbl(self)->Idle(self, dt);
@@ -1049,7 +1043,7 @@ void __thiscall cWalkCharEntity_Tick(cEntity *self, float dt) {
 			cWalkCharEntity_Walk(self, dt);
 		}
 	} else {
-		if (w->obj.move.viewAng) {
+		if (w->wl.obj.move.viewAng) {
 			goto tick;
 		}
 		WChar_Vtbl(self)->UpdateSelect(self, dt);
@@ -1058,7 +1052,7 @@ void __thiscall cWalkCharEntity_Tick(cEntity *self, float dt) {
 	Grid_Add(g_pWorld->grid, self);
 tick:
 	cWithLifeEntity_Tick(self, dt);
-	w->abortOpt = w->arrow.iOpt;
+	w->abortOpt = w->wl.arrow.iOpt;
 }
 
 void __thiscall cWalkCharEntity_UnlinkListen(cEntity *self) {
@@ -1079,13 +1073,13 @@ void __thiscall cWalkCharEntity_Idle(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
 	vec3_t ang, t1;
 
-	if (!w->actCtrl) {
+	if (!w->wl.actCtrl) {
 		return;
 	}
-	cActionChar *act = WCE_Action0(w);
-	float maxTurn = w->viewLock ? act->maxTurn : M_2PI_F;
-	float *body = &w->obj.ang.y;
-	float step = act->turnSpeed * dt;
+	cAction *act = WCE_Action0(w);
+	float maxTurn = w->viewLock ? act->angRotLimit : M_2PI_F;
+	float *body = &w->wl.obj.ang.y;
+	float step = act->rotSpeed * dt;
 	float a = NormAng((w->view.y - *body) + w->displAng);
 	float old = *body;
 	Float_Approach(body, old + a, step);
@@ -1095,7 +1089,7 @@ void __thiscall cWalkCharEntity_Idle(cEntity *self, float dt) {
 	} else if (-maxTurn > d) {
 		*body = (w->view.y + w->displAng) + maxTurn;
 	}
-	w->obj.rotVel.y = (old - *body) / dt;
+	w->wl.obj.rotVel.y = (old - *body) / dt;
 	if (w->control.lockStart) {
 		w->control.lockStart = 0;
 		cWalkCharControl_SetTarget(&w->control, WChar_Victim(self));
@@ -1103,47 +1097,47 @@ void __thiscall cWalkCharEntity_Idle(cEntity *self, float dt) {
 		ang.y = Obj_Vtbl(self)->GetAng(self, &t1)->y;
 		ang.z = 0.0f;
 		WChar_Vtbl(self)->SetViewAng(self, &ang);
-		if (w->obj.cam) {
-			((cFollowCamEntity *)w->obj.cam)->vSpeed = 1.10000002f;
-			((cFollowCamEntity *)w->obj.cam)->hSpeed = 1.10000002f;
+		if (w->wl.obj.cam) {
+			((cFollowCamEntity *)w->wl.obj.cam)->vSpeed = 1.10000002f;
+			((cFollowCamEntity *)w->wl.obj.cam)->hSpeed = 1.10000002f;
 		}
 	}
 	if (w->control.lock && !w->control.target.target) {
 		cWalkCharControl_SetTarget(&w->control, WChar_Victim(self));
 	}
-	if (w->obj.cam) {
-		((cFollowCamEntity *)w->obj.cam)->tiltTo = w->viewLock ? 0.0f : w->control.strafe;
+	if (w->wl.obj.cam) {
+		((cFollowCamEntity *)w->wl.obj.cam)->tiltTo = w->viewLock ? 0.0f : w->control.strafe;
 	}
 	byte turns;
 	if (g_WalkCameraCenter == 0.0f || w->ownerSlot == -1 || w->control.lock) {
 		turns = 1;
-		if (__builtin_fabs((double)d) > (double)WCE_Class(w)->turnAng && WCE_Action0Is(w, "Relax", 5)) {
-			cActCtrl_Play(w->actCtrl, WCE_Alarm(self) ? "TurnAlarm" : "Turn", 0, 1.0f);
+		if (__builtin_fabs((double)d) > (double)WCE_Class(w)->turnAngLimit && WCE_Action0Is(w, "Relax", 5)) {
+			cActCtrl_Play(w->wl.actCtrl, WCE_Alarm(self) ? "TurnAlarm" : "Turn", 0, 1.0f);
 		}
 	} else {
 		turns = 0;
 	}
 	byte relaxing = WCE_Action0Is(w, "Relax", 5);
 	if (WCE_Alarm(self) && relaxing) {
-		if (strcmp(cActCtrl_GetDefLoopName(w->actCtrl), "RelaxAlarm")) {
-			cActCtrl_SetDefLoop(w->actCtrl, WCE_RELAXALARM, 0);
+		if (strcmp(cActCtrl_GetDefLoopName(w->wl.actCtrl), "RelaxAlarm")) {
+			cActCtrl_SetDefLoop(w->wl.actCtrl, WCE_RELAXALARM, 0);
 		}
 		float t = w->relaxTime - dt;
 		w->relaxTime = t;
 		if (0.0f < t) {
 			goto look;
 		}
-		cActCtrl_PlayNew(w->actCtrl, "RelaxAlarm0", 0, 1.0f);
-		float hi = WCE_Class(w)->relaxMin;
+		cActCtrl_PlayNew(w->wl.actCtrl, "RelaxAlarm0", 0, 1.0f);
+		float hi = WCE_Class(w)->minTimeToExtraRelax;
 		WCE_RelaxTime(w, hi * 0.5f, hi);
 		goto look;
 	}
-	if (!WCE_Alarm(self) && relaxing && cActCtrl_IsActive(w->actCtrl, WCE_RELAXALARM)) {
-		cActCtrl_PlayNew(w->actCtrl, WCE_RELAX, 0, 2.0f);
-		cActCtrl_SetDefLoop(w->actCtrl, WCE_RELAX, 0);
+	if (!WCE_Alarm(self) && relaxing && cActCtrl_IsActive(w->wl.actCtrl, WCE_RELAXALARM)) {
+		cActCtrl_PlayNew(w->wl.actCtrl, WCE_RELAX, 0, 2.0f);
+		cActCtrl_SetDefLoop(w->wl.actCtrl, WCE_RELAX, 0);
 		goto look;
 	}
-	if (cActCtrl_IsActive(w->actCtrl, cWalkCharEntity_RelaxName(self))) {
+	if (cActCtrl_IsActive(w->wl.actCtrl, cWalkCharEntity_RelaxName(self))) {
 		float t = w->relaxTime - dt;
 		w->relaxTime = t;
 		if (0.0f < t) {
@@ -1151,22 +1145,22 @@ void __thiscall cWalkCharEntity_Idle(cEntity *self, float dt) {
 		}
 		char name[7] = "Relax0";
 		if (turns && __builtin_fabs((double)d) > 0.10000000149011612) {
-			cActCtrl_Play(w->actCtrl, WCE_Alarm(self) ? "TurnAlarm" : "Turn", 0, 1.0f);
+			cActCtrl_Play(w->wl.actCtrl, WCE_Alarm(self) ? "TurnAlarm" : "Turn", 0, 1.0f);
 		} else {
 			do {
 				name[5] = (char)(crt_rand() % 5 + '0');
-			} while (!cActCtrl_Play(w->actCtrl, name, 0, 1.0f) && name[5] > '0');
+			} while (!cActCtrl_Play(w->wl.actCtrl, name, 0, 1.0f) && name[5] > '0');
 		}
-		WCE_RelaxTime(w, WCE_Class(w)->relaxMin, WCE_Class(w)->relaxMax);
+		WCE_RelaxTime(w, WCE_Class(w)->minTimeToExtraRelax, WCE_Class(w)->maxTimeToExtraRelax);
 	} else if (!relaxing) {
 		if (w->ownerSlot >= 0) {
-			WCE_RelaxTime(w, WCE_Class(w)->relaxMin, WCE_Class(w)->relaxMax);
+			WCE_RelaxTime(w, WCE_Class(w)->minTimeToExtraRelax, WCE_Class(w)->maxTimeToExtraRelax);
 		} else {
-			w->relaxTime = WCE_Class(w)->relaxMin;
+			w->relaxTime = WCE_Class(w)->minTimeToExtraRelax;
 		}
 	}
 look:;
-	float look = WCE_Action0(w)->lookAt;
+	float look = WCE_Action0(w)->autoFaceSpeed;
 	cEntity *l = WChar_Listen(self);
 	if (look > 0.0f && l) {
 		vec3_t lp, mp, dir, n;
@@ -1177,8 +1171,8 @@ look:;
 		dir.z = m->z - p->z;
 		Vec3_GetRotAng(&ang, &dir);
 		act = WCE_Action0(w);
-		dir.x = (ang.x - w->view.x) - act->lookX;
-		dir.y = (ang.y - w->view.y) - act->lookY;
+		dir.x = (ang.x - w->view.x) - act->autoFaceOffsetV;
+		dir.y = (ang.y - w->view.y) - act->autoFaceOffsetH;
 		dir.z = (ang.z - w->view.z) - 0.0f;
 		const vec3_t *r = Vec3_NormAng(&n, &dir);
 		float inv = 1.0f / dt;
@@ -1194,11 +1188,11 @@ look:;
 void __thiscall cWalkCharEntity_UpdateSelect(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
 
-	if (!w->actCtrl) {
+	if (!w->wl.actCtrl) {
 		return;
 	}
 	if (w->ownerSlot != -1) {
-		cEntity *sel = ArrowIndicator_FindSel(self, w->viewLock ? w->view.y : w->obj.ang.y);
+		cEntity *sel = ArrowIndicator_FindSel(self, w->viewLock ? w->view.y : w->wl.obj.ang.y);
 		if (sel) {
 			cEntity_AddLink(sel, &w->victim);
 		} else {
@@ -1213,7 +1207,7 @@ void __thiscall cWalkCharEntity_UpdateSelect(cEntity *self, float dt) {
 	cEntity *l;
 	if (cPy_Function_IsValid(&w->outSelect) && (l = WChar_Listen(self)) != NULL) {
 		if (l->vftable->IsType(l, TYEN_WITH_LIFE)) {
-			if (WChar(l)->arrow.canUse &&
+			if (WChar(l)->wl.arrow.canUse &&
 				ArrowIndicator_Visible(self, l, w->view.y, g_ArrowDeactivationRadius, NULL, 0, 0)) {
 				goto abort;
 			}
@@ -1230,11 +1224,11 @@ abort:
 		return;
 	}
 	w->abortTime = w->abortTime - dt;
-	if (w->abortOpt != w->arrow.iOpt || !cActCtrl_IsActive(w->actCtrl, cWalkCharEntity_RelaxName(self))) {
+	if (w->abortOpt != w->wl.arrow.iOpt || !cActCtrl_IsActive(w->wl.actCtrl, cWalkCharEntity_RelaxName(self))) {
 		w->abortTime = g_TimeToAbortSelectChar;
 	}
 	cEntity *usr = WCE_Usr0();
-	if (w->arrow.canUse && !(0.0f >= w->abortTime) && usr) {
+	if (w->wl.arrow.canUse && !(0.0f >= w->abortTime) && usr) {
 		vec3_t sp, up;
 		const vec3_t *s = self->vftable->GetPos(self, &sp);
 		const vec3_t *u = usr->vftable->GetPos(usr, &up);
@@ -1287,7 +1281,7 @@ void __thiscall cWalkCharEntity_SetEmbeddedFX(cEntity *self, const char *fxType)
 
 void __thiscall cWalkCharEntity_SetFalling(cEntity *self, byte on) {
 	cWalkCharEntity *w = WChar(self);
-	void *ctrl = w->actCtrl;
+	void *ctrl = w->wl.actCtrl;
 
 	if (!ctrl || w->falling == on || WCE_Class(w)->canFly) {
 		return;
@@ -1295,26 +1289,26 @@ void __thiscall cWalkCharEntity_SetFalling(cEntity *self, byte on) {
 	w->falling = on;
 	if (on) {
 		cActCtrl_SetDefLoop(ctrl, "Fall", 0);
-		if (!cActCtrl_Play(w->actCtrl, "FallInit", 0, 1.0f)) {
-			cActCtrl_Play(w->actCtrl, "Fall", 0, 1.0f);
+		if (!cActCtrl_Play(w->wl.actCtrl, "FallInit", 0, 1.0f)) {
+			cActCtrl_Play(w->wl.actCtrl, "Fall", 0, 1.0f);
 		}
-		if (w->walking && w->obj.vel.y > 0.0f) {
-			w->obj.vel.y = 0.0f;
+		if (w->walking && w->wl.obj.vel.y > 0.0f) {
+			w->wl.obj.vel.y = 0.0f;
 			w->walking = 0;
 			return;
 		}
 	} else {
-		cActCtrl_SetDefLoop(w->actCtrl, cWalkCharEntity_RelaxName(self), 0);
-		if (!cActCtrl_Play(w->actCtrl, "FallEnd", 0, 1.0f)) {
-			cActCtrl_Play(w->actCtrl, cWalkCharEntity_RelaxName(self), 0, 1.0f);
+		cActCtrl_SetDefLoop(w->wl.actCtrl, cWalkCharEntity_RelaxName(self), 0);
+		if (!cActCtrl_Play(w->wl.actCtrl, "FallEnd", 0, 1.0f)) {
+			cActCtrl_Play(w->wl.actCtrl, cWalkCharEntity_RelaxName(self), 0, 1.0f);
 		}
 		if (-g_FallSoundVel > w->fallVel.y) {
-			cActClassChar *cls = WCE_Class(w);
+			cActClass *cls = WCE_Class(w);
 			float vol = cls->fallSoundVol;
 			const char *snd = cls->fallSound;
 			if (vol > 0.0f && snd && *snd) {
 				int v = Snd_Volume(vol);
-				g_pSound->vftable->PlayAt(g_pSound, snd, &w->obj.renderPos, v);
+				g_pSound->vftable->PlayAt(g_pSound, snd, &w->wl.obj.renderPos, v);
 			}
 		}
 	}
@@ -1323,7 +1317,7 @@ void __thiscall cWalkCharEntity_SetFalling(cEntity *self, byte on) {
 
 void __thiscall cWithLifeEntity_SetMass(cEntity *self, float mass) {
 	CHECK(mass > 0.0f);
-	WChar(self)->mass = mass;
+	WChar(self)->wl.mass = mass;
 }
 
 void __thiscall cWalkCharEntity_SetModel(cEntity *self, const char *file, float sx, float sy, float sz, int flag) {
@@ -1336,7 +1330,7 @@ void __thiscall cWalkCharEntity_SetModel(cEntity *self, const char *file, float 
 	}
 	w->yModelDisp = 0.0f;
 	cObjEntity_SetModel(self, file, sx, sy, sz, flag);
-	CGameModel *m = &w->obj.model;
+	CGameModel *m = &w->wl.obj.model;
 	CGameModel_NodePos(m, &root, CGameModel_FindRenderNode(m, "DC_Root"), 0);
 	CGameModel_NodePos(m, &floor, CGameModel_FindRenderNode(m, "DC_Floor"), 0);
 	w->camNode = CGameModel_FindRenderNode(m, "DC_Camera");
@@ -1357,7 +1351,7 @@ void __thiscall cWalkCharEntity_UpdateSlotRate(cEntity *self, float dt) {
 		float d = cWorld_GetMinCamDistSq(g_pWorld, &self->pos);
 		target = g_CharProcessReduction * g_CharProcessReduction > d ? 0.0500000007f : 0.100000001f;
 	}
-	Float_Approach(&w->obj.slot->minDiff, target, dt / 10.0f);
+	Float_Approach(&w->wl.obj.slot->minDiff, target, dt / 10.0f);
 }
 
 byte __thiscall cWalkCharEntity_SetPush(cEntity *self, const vec3_t *push) {
@@ -1384,13 +1378,13 @@ void __thiscall cWalkCharEntity_SetUsrControl(cEntity *self, int slot) {
 	int old = w->ownerSlot;
 	w->ownerSlot = slot;
 	if (slot == -1) {
-		w->obj.slot->minDiff = 0.0500000007f;
+		w->wl.obj.slot->minDiff = 0.0500000007f;
 		if ((uint32_t)old <= 3 && cWorld_GetUsrEntity(g_pWorld, old) == self) {
 			g_pWorld->owners[old] = NULL;
 			ArrowIndicator_ClearSel();
 		}
 	} else {
-		w->obj.slot->minDiff = 0.0166666675f;
+		w->wl.obj.slot->minDiff = 0.0166666675f;
 		g_pWorld->owners[w->ownerSlot] = self;
 	}
 }
@@ -1398,11 +1392,11 @@ void __thiscall cWalkCharEntity_SetUsrControl(cEntity *self, int slot) {
 void __thiscall cWalkCharEntity_SetVel(cEntity *self, const vec3_t *vel) {
 	cWalkCharEntity *w = WChar(self);
 
-	if (w->obj.move.active) {
+	if (w->wl.obj.move.active) {
 		return;
 	}
 	cObjEntity_SetVel(self, vel);
-	if (w->obj.vel.y > 0.0f) {
+	if (w->wl.obj.vel.y > 0.0f) {
 		cWalkCharEntity_SetFalling(self, 1);
 	}
 }
@@ -1434,22 +1428,22 @@ void __thiscall cWalkCharEntity_SetYModelDisp(cEntity *self, float y) {
 	cWalkCharEntity *w = WChar(self);
 	float d = w->yModelDisp - y;
 
-	w->obj.camOff.y = w->obj.camOff.y - d;
+	w->wl.obj.camOff.y = w->wl.obj.camOff.y - d;
 	w->yModelDisp = w->yModelDisp - d;
 	w->floorDist = d + w->floorDist;
 }
 
 void __thiscall cWalkCharEntity_Accel(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
-	vec3_t *v = &w->obj.vel;
+	vec3_t *v = &w->wl.obj.vel;
 	vec3_t in, tmp;
 
-	if (!w->actCtrl) {
+	if (!w->wl.actCtrl) {
 		return;
 	}
-	cActClassChar *cls = WCE_Class(w);
-	float maxSpeed = cls->maxSpeed;
-	float f = cls->accel * dt;
+	cActClass *cls = WCE_Class(w);
+	float maxSpeed = cls->flySpeed;
+	float f = cls->flyFallAccel * dt;
 	in.x = -(f * w->control.strafe);
 	in.y = 0.0f;
 	in.z = -(w->control.walk * f);
@@ -1468,20 +1462,20 @@ void __thiscall cWalkCharEntity_Update(cEntity *self) {
 	vec3_t base, d, n, t;
 	matrix_t m;
 
-	if (!w->actCtrl) {
+	if (!w->wl.actCtrl) {
 		return;
 	}
-	float dt = cTimer_GetDelta(&w->obj.timer);
+	float dt = cTimer_GetDelta(&w->wl.obj.timer);
 	cWalkCharEntity_UpdateSlotRate(self, dt);
 	cWalkCharEntity_UpdateHitFlash(self, dt);
 	cWithLifeEntity_Update(self);
 	if (WCE_MIN_DT >= dt) {
 		return;
 	}
-	float iv = w->obj.slot->interval;
-	float k = w->obj.slot->time / iv;
+	float iv = w->wl.obj.slot->interval;
+	float k = w->wl.obj.slot->time / iv;
 	base = w->view;
-	if (g_ActiveExtrapolation && !w->obj.cam) {
+	if (g_ActiveExtrapolation && !w->wl.obj.cam) {
 		base.y = base.y + w->viewVel.y * iv;
 		base.x = base.x + w->viewVel.x * iv;
 		base.z = base.z + w->viewVel.z * iv;
@@ -1498,7 +1492,7 @@ void __thiscall cWalkCharEntity_Update(cEntity *self) {
 	if (w->ownerSlot >= 0 && w->ownerSlot < 4) {
 		cWalkCharControl_Update(&w->control, self, dt);
 	}
-	if (WCE_Action0(w)->headNode) {
+	if (WCE_Action0(w)->anmConeView) {
 		CGameModel *model = Obj_Vtbl(self)->GetModel(self);
 		const matrix_t *mat = CGameModel_NodeMatrix(model, &m, w->camNode, 1, NULL, 0);
 		w->headPitch = Matrix_GetRotAng(mat, &t)->y + M_PI_F;
@@ -1514,15 +1508,15 @@ static inline float WCE_SndMix(const float *v, float inv, float k) {
 
 void __thiscall cWalkCharEntity_FlySound(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
-	cSndItem *s = PtrArray_Get(&w->obj.snd, 0);
-	vec3_t *v = &w->obj.vel;
+	cSndItem *s = PtrArray_Get(&w->wl.obj.snd, 0);
+	vec3_t *v = &w->wl.obj.vel;
 
 	(void)dt;
-	if (!w->actCtrl || !s) {
+	if (!w->wl.actCtrl || !s) {
 		return;
 	}
 	float sp = (float)__builtin_sqrt((double)(v->x * v->x + v->y * v->y + v->z * v->z));
-	float k = sp / WCE_Class(w)->maxSpeed;
+	float k = sp / WCE_Class(w)->flySpeed;
 	float c = 0.0f;
 	if (!(0.0f > k)) {
 		c = Float_MinSS(1.0f, k);
@@ -1534,7 +1528,7 @@ void __thiscall cWalkCharEntity_FlySound(cEntity *self, float dt) {
 
 void __thiscall cWalkCharEntity_WalkSound(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
-	cSndItem *s = PtrArray_Get(&w->obj.snd, 0);
+	cSndItem *s = PtrArray_Get(&w->wl.obj.snd, 0);
 
 	if (!s || s->ints[0] != 1) {
 		return;
@@ -1543,7 +1537,7 @@ void __thiscall cWalkCharEntity_WalkSound(cEntity *self, float dt) {
 	float k = s->times[0];
 	float inv = 1.0f - k;
 	s->pitch = WCE_SndMix(s->pitches, inv, k);
-	float mul = w->obj.cam ? 1.0f : g_SndLoopCharNPCMul;
+	float mul = w->wl.obj.cam ? 1.0f : g_SndLoopCharNPCMul;
 	s->volume = WCE_SndMix(s->vols, inv, k) * mul;
 }
 
@@ -1636,8 +1630,8 @@ static byte __fastcall WCE_StrafeOrMove(cEntity *self) {
 
 void __thiscall cWalkCharEntity_WalkAnim(cEntity *self, float dt) {
 	cWalkCharEntity *w = WChar(self);
-	cActCtrlChar *ctrl = w->actCtrl;
-	vec3_t *v = &w->obj.vel;
+	cActCtrl *ctrl = w->wl.actCtrl;
+	vec3_t *v = &w->wl.obj.vel;
 	vec3_t *pos = &self->pos;
 	float in[2], out[2], mx, mz;
 
@@ -1645,7 +1639,7 @@ void __thiscall cWalkCharEntity_WalkAnim(cEntity *self, float dt) {
 		return;
 	}
 	byte wasWalking = w->walking;
-	byte strafeInit = ctrl->cls->strafeInit;
+	byte strafeInit = ctrl->cls->skipInitOnChange;
 	float s2 = w->control.strafe * w->control.strafe + w->control.walk * w->control.walk;
 	float s = (float)__builtin_sqrt((double)s2);
 	w->move = s;
@@ -1659,7 +1653,7 @@ void __thiscall cWalkCharEntity_WalkAnim(cEntity *self, float dt) {
 		}
 	}
 	if (w->falling) {
-		float f = ctrl->cls->airAccel * dt;
+		float f = ctrl->cls->flyAccel * dt;
 		in[0] = -(w->control.strafe * f);
 		in[1] = -(w->control.walk * f);
 		goto move;
@@ -1676,20 +1670,20 @@ void __thiscall cWalkCharEntity_WalkAnim(cEntity *self, float dt) {
 		}
 		if (w->walkEnd) {
 			const char *loop = cActCtrl_GetDefLoopName(ctrl);
-			if (!strcmp(cActCtrl_GetActionName(w->actCtrl, 0), loop)) {
-				cActCtrl_PlayAction(w->actCtrl, w->walkEnd, 0, 1, 1.0f);
+			if (!strcmp(cActCtrl_GetActionName(w->wl.actCtrl, 0), loop)) {
+				cActCtrl_PlayAction(w->wl.actCtrl, w->walkEnd, 0, 1, 1.0f);
 			} else {
-				cActCtrl_PlayAction(w->actCtrl, w->walkEnd, 0, 1, WCE_Class(w)->endSpeed);
+				cActCtrl_PlayAction(w->wl.actCtrl, w->walkEnd, 0, 1, WCE_Class(w)->initEndWalkInterpFactor);
 			}
 		} else {
-			cActCtrl_Play(w->actCtrl, cWalkCharEntity_RelaxName(self), 0, 1.0f);
+			cActCtrl_Play(w->wl.actCtrl, cWalkCharEntity_RelaxName(self), 0, 1.0f);
 		}
-		cActCtrl_SetDefLoop(w->actCtrl, cWalkCharEntity_RelaxName(self), 0);
+		cActCtrl_SetDefLoop(w->wl.actCtrl, cWalkCharEntity_RelaxName(self), 0);
 		WChar_Ctrl(w)->walkSpeed = 0.0f;
 		w->walking = 0;
 		goto still;
 	}
-	if (ctrl->action0->moveType == 4) {
+	if (ctrl->layers[0].action->slideAsFly == 4) {
 		w->displAng = 0.0f;
 	} else {
 		float a = (float)Game_Atan2((double)w->control.walk, (double)w->control.strafe);
@@ -1706,7 +1700,7 @@ void __thiscall cWalkCharEntity_WalkAnim(cEntity *self, float dt) {
 	if (lock) {
 		float da = w->displAng;
 		if (da > 0.785398185f && 2.356194490192345 > (double)da) {
-			switch (WCE_Action0(w)->moveType) {
+			switch (WCE_Action0(w)->slideAsFly) {
 			case 1:
 				w->displAng = WCE_PITCH_FLY;
 				break;
@@ -1729,7 +1723,7 @@ void __thiscall cWalkCharEntity_WalkAnim(cEntity *self, float dt) {
 	if (lock) {
 		float da = w->displAng;
 		if (-0.785398185f > da && (double)da > -2.356194490192345) {
-			switch (WCE_Action0(w)->moveType) {
+			switch (WCE_Action0(w)->slideAsFly) {
 			case 1:
 				w->displAng = -WCE_PITCH_FLY;
 				break;
@@ -1752,7 +1746,7 @@ void __thiscall cWalkCharEntity_WalkAnim(cEntity *self, float dt) {
 	if (lock && __builtin_fabs((double)w->displAng) > 1.5707963705062866) {
 		cWalkCharEntity_PlayWalk(self, WCE_Init(self, strafeInit, cWalkCharEntity_IsStrafeAnim, "BackInit"), "Back",
 			"BackEnd");
-		if (WCE_Action0(w)->moveType != 4) {
+		if (WCE_Action0(w)->slideAsFly != 4) {
 			w->displAng = w->displAng + M_PI_F;
 		}
 		x = mv;
@@ -1787,24 +1781,24 @@ still:
 	in[0] = 0.0f;
 	in[1] = 0.0f;
 move:
-	ctrl = w->actCtrl;
-	if (ctrl->action0->rootMove && !w->falling) {
+	ctrl = w->wl.actCtrl;
+	if (ctrl->layers[0].action->useDisp && !w->falling) {
 		in[0] = ctrl->rootMove.x;
 		in[1] = ctrl->rootMove.z;
 	}
-	ctrl->root[0] = 0.0f;
-	ctrl->root[1] = 0.0f;
-	ctrl->root[2] = 0.0f;
-	ctrl->root[3] = 0.0f;
+	ctrl->rootSum.x = 0.0f;
+	ctrl->rootSum.y = 0.0f;
+	ctrl->rootSum.z = 0.0f;
+	ctrl->rootTime = 0.0f;
 	if (w->falling) {
 		const float *r = Vec2_Rotate(out, in, -w->view.y);
 		float vx = v->x * dt;
 		float vz = v->z * dt;
-		float k = WCE_Class(w)->friction;
+		float k = WCE_Class(w)->flyFric;
 		mz = r[1] - k * vz;
 		mx = r[0] - k * vx;
 	} else {
-		const float *r = Vec2_Rotate(out, in, -w->obj.ang.y);
+		const float *r = Vec2_Rotate(out, in, -w->wl.obj.ang.y);
 		mx = r[0];
 		mz = r[1];
 	}
@@ -1815,7 +1809,7 @@ move:
 		float vx = v->x;
 		float vz = v->z;
 		float sp = (float)__builtin_sqrt((double)(vz * vz + vx * vx));
-		float max = WCE_Class(w)->maxSpeed;
+		float max = WCE_Class(w)->flySpeed;
 		if (sp > max) {
 			float q = sp / max;
 			v->x = vx / q;
@@ -1833,7 +1827,7 @@ move:
 		if (wasWalking) {
 			w->walkTime = w->walkTime - dt;
 		} else {
-			w->walkTime = WCE_Class(w)->stopTime;
+			w->walkTime = WCE_Class(w)->minTimeWalking;
 		}
 	}
 }
@@ -1841,7 +1835,7 @@ move:
 byte __fastcall cWalkCharEntity_IsMoveAnim(cEntity *self) {
 	cWalkCharEntity *w = WChar(self);
 
-	if (!w->actCtrl) {
+	if (!w->wl.actCtrl) {
 		return 0;
 	}
 	return WCE_Action0Is(w, "Run", 3) || WCE_Action0Is(w, "Walk", 4) || WCE_Action0Is(w, "Sprint", 6);
@@ -1850,7 +1844,7 @@ byte __fastcall cWalkCharEntity_IsMoveAnim(cEntity *self) {
 byte __fastcall cWalkCharEntity_IsBackOrMoveAnim(cEntity *self) {
 	cWalkCharEntity *w = WChar(self);
 
-	if (!w->actCtrl) {
+	if (!w->wl.actCtrl) {
 		return 0;
 	}
 	return WCE_Action0Is(w, "Back", 4) || cWalkCharEntity_IsMoveAnim(self);
@@ -1859,7 +1853,7 @@ byte __fastcall cWalkCharEntity_IsBackOrMoveAnim(cEntity *self) {
 byte __fastcall cWalkCharEntity_IsStrafeAnim(cEntity *self) {
 	cWalkCharEntity *w = WChar(self);
 
-	if (!w->actCtrl) {
+	if (!w->wl.actCtrl) {
 		return 0;
 	}
 	return WCE_Action0Is(w, "StrRight", 8) || WCE_Action0Is(w, "StrLeft", 7);

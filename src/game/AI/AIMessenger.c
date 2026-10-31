@@ -47,7 +47,7 @@ void __thiscall cAIMessenger_CheckActDist(cAIMessenger *self) {
 	d.y = tp->y - op->y;
 	d.z = tp->z - op->z;
 	float dist = (float)__builtin_sqrt((double)(d.x * d.x + 0.0f + d.z * d.z));
-	if (!AIChar_Action0(c->ent)->walk || !c->vftable->GetDirect2(c) || AIChar_Action0(c->ent)->priority > 0x65 ||
+	if (!AIChar_Action0(c->ent)->useFlyDisp || !c->vftable->GetDirect2(c) || AIChar_Action0(c->ent)->priority > 0x65 ||
 		!(dist > c->actMin) || !(c->actMax > dist)) {
 		goto done;
 	}

@@ -27,8 +27,8 @@ static float AICC2D_DistTo(cAICharControl *self, float tx, float tz) {
 }
 
 static inline float AICC_FloorRadius(cAICharControl *self) {
-	cActCtrlChar *ac = ((const cWithLifeEntityVtbl *)self->ent->vftable)->GetActCtrl(self->ent);
-	return ac->cls->floorRadius;
+	cActCtrl *ac = ((const cWithLifeEntityVtbl *)self->ent->vftable)->GetActCtrl(self->ent);
+	return ac->cls->sRadius;
 }
 
 /* (x, 0, z) made a unit vector, the length from the squares of x and z */
@@ -445,12 +445,12 @@ float __thiscall cAICharControl2D_DistSq(cAICharControl2D *self, const vec3_t *a
 
 float __thiscall cAICharControl2D_KeepDist(cAICharControl2D *self, cEntity *hitEnt) {
 	CHECK(hitEnt != NULL);
-	float er = WChar(hitEnt)->prim.radius;
+	float er = WChar(hitEnt)->wl.prim.radius;
 	float shirk = g_DistShirkCharAI;
 	float t = AICC_X87AddMul(Obj_Vtbl(self->ent)->GetRadius(self->ent), er, shirk);
-	er = WChar(hitEnt)->prim.radius;
+	er = WChar(hitEnt)->wl.prim.radius;
 	float c = AICC_X87AddAdd(Obj_Vtbl(self->ent)->GetRadius(self->ent), er, t);
-	float d = WChar(self->ent)->prim.radius + WChar(hitEnt)->prim.radius + t;
+	float d = WChar(self->ent)->wl.prim.radius + WChar(hitEnt)->wl.prim.radius + t;
 	return Float_MaxSS(c, d);
 }
 
@@ -1023,7 +1023,7 @@ static int AICC2D_ArcFloor(cAICharControl *self, const vec3_t *p, vec3_t *out) {
 	if (g_ShowShirkAI == 1) {
 		DListVec3_Add(&self->debug330, out);
 	}
-	float r = WChar(self->ent)->prim.radius + 1.0f - g_MarginCollCharAI;
+	float r = WChar(self->ent)->wl.prim.radius + 1.0f - g_MarginCollCharAI;
 	return !cWorld_TestSphereEntities(g_pWorld, self->ent, (void *)0x10, out, r, &hit, 1, 0);
 }
 
@@ -1073,7 +1073,7 @@ byte __thiscall cAICharControl2D_TryStrafe(cAICharControl2D *self, int side, cEn
 	sp = AICC_Pos(self, &b1);
 	float gx = self->goal.x - sp->x;
 	float gz = self->goal.z - sp->z;
-	float R = (float)__builtin_sqrt((double)(A.x * A.x + A.y * A.y + A.z * A.z)) + WChar(hitEnt)->prim.radius;
+	float R = (float)__builtin_sqrt((double)(A.x * A.x + A.y * A.y + A.z * A.z)) + WChar(hitEnt)->wl.prim.radius;
 	vec3_t N = AICC2D_FlatNorm(gx, gz);
 	float ox = N.x * R;
 	float oz = N.z * R;

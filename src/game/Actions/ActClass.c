@@ -396,7 +396,7 @@ void __thiscall cActClassCam_Update(void *cam, cEntity *followCam, cEntity *e) {
 	fc->camRot = c->camRot;
 	if (e && strcmp(Ent_ActClass(e)->name, "Functionary") == 0) {
 		cWalkCharEntity *w = WChar(e);
-		float dt = cTimer_GetDelta(&w->obj.timer);
+		float dt = cTimer_GetDelta(&w->wl.obj.timer);
 		byte act = w->control.act;
 
 		/* the zoom goes back while the action button is up (or the energy bar does not run) */

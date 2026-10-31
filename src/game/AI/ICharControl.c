@@ -122,7 +122,7 @@ cAICharControl *__thiscall cAICharControl_ctor(void *mem, cEntity *ent, cAIChar 
 	self->orbitStart = 1;
 	self->orbitDir.x = self->orbitDir.y = self->orbitDir.z = 0.0f;
 	self->seen = 0;
-	self->lifeMark = WChar(self->ent)->life;
+	self->lifeMark = WChar(self->ent)->wl.life;
 	cAICharControl_ClearAvoid(self);
 	cAICharControl_SetTurnSpeed(self, self->speed);
 	memset(self->debugSegs, 0, sizeof(self->debugSegs));
@@ -301,7 +301,7 @@ static void AICC_FindNear(cAICharControl *self) {
 	g_AICCNumNear = 0;
 	g_AICCNearSelf = self->ent;
 	cPy_Function_SetNative(g_AICCNearFunc, AICC_NEAR_NATIVE);
-	float r = g_MarginDetectCollCharAI + WChar(self->ent)->prim.radius;
+	float r = g_MarginDetectCollCharAI + WChar(self->ent)->wl.prim.radius;
 	cWorld_SphereCallF(g_pWorld, 0x10, AICC_Pos(self, &buf), r, g_AICCNearFunc, 1);
 }
 
@@ -568,8 +568,8 @@ static inline Nto1Node *AICC_CharHead(cEntity *e) {
 
 /* the name of the action class of a character */
 static inline const char *AICC_ClassName(cEntity *e) {
-	cActCtrlChar *ac = WithLife_Vtbl(e)->GetActCtrl(e);
-	return *(const char *const *)((const byte *)ac->cls + 4);
+	cActCtrl *ac = WithLife_Vtbl(e)->GetActCtrl(e);
+	return ac->cls->name;
 }
 
 /* the avoided character becomes e */
@@ -1216,7 +1216,7 @@ static void AICC_DrawShirk(cAICharControl *self) {
 		cNWVecNode *node = self->debug330.head->prev;
 		self->debug330.iter = node;
 		while (node) {
-			float r = WChar(self->ent)->prim.radius - (g_MarginCollCharAI + 5.0f);
+			float r = WChar(self->ent)->wl.prim.radius - (g_MarginCollCharAI + 5.0f);
 			DebugUtils_DrawSphere(&node->v, r, 0xff00, 20, 20);
 			node = self->debug330.iter->prev;
 			self->debug330.iter = node;
@@ -1854,7 +1854,7 @@ byte cAICharControl_SetMove(cAICharControl *self, int mode, ...) {
 	self->avoidDir.x = 0.0f;
 	self->avoidDir.y = 0.0f;
 	self->avoidDir.z = 0.0f;
-	self->lifeMark = WChar(self->ent)->life;
+	self->lifeMark = WChar(self->ent)->wl.life;
 	switch (self->mode) {
 	case AICC_STOP:
 		vt->Stop2(self);
@@ -1918,7 +1918,7 @@ void __thiscall cAICharControl_Away(cAICharControl *self, Nto1Node *target, byte
 	AICC_Vtbl(self)->SetSpeed(self, 0.0f);
 	self->target = target;
 	self->awayFlag = flag;
-	float near = WChar(target->target)->prim.radius * 1.5f + WChar(self->ent)->prim.radius;
+	float near = WChar(target->target)->wl.prim.radius * 1.5f + WChar(self->ent)->wl.prim.radius;
 	self->speed = 1.0f;
 	self->nearDist = near;
 	self->farDist = near * 3.0f;

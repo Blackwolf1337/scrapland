@@ -40,7 +40,7 @@ void __thiscall cAIPolice_SetDists(cAIPolice *self) {
 	float d;
 
 	if (self->state == 2) {
-		d = WChar(self->target.target)->prim.radius * 1.5f + WChar(self->ent)->prim.radius;
+		d = WChar(self->target.target)->wl.prim.radius * 1.5f + WChar(self->ent)->wl.prim.radius;
 		self->chaseNear = d;
 		d = d + 100.0f;
 		self->actMin = self->chaseNear;
@@ -52,7 +52,7 @@ void __thiscall cAIPolice_SetDists(cAIPolice *self) {
 		cAIChar_SetDists(self);
 		return;
 	}
-	d = WChar(self->ent)->prim.radius * 3.5f + WChar(self->target.target)->prim.radius;
+	d = WChar(self->ent)->wl.prim.radius * 3.5f + WChar(self->target.target)->wl.prim.radius;
 	self->chaseNear = d;
 	self->chaseFar = d + 100.0f;
 }

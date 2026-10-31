@@ -35,7 +35,7 @@ cAISentinel *__thiscall cAISentinel_Delete(cAISentinel *self, byte flags) {
 void __thiscall cAISentinel_CheckActDist(cAISentinel *self) {
 	float dist = AIChar_TargetDist(self);
 
-	self->ctrl->act = AIChar_Action0(self->ent)->walk && AIChar_Action0(self->ent)->priority <= 0x65 &&
+	self->ctrl->act = AIChar_Action0(self->ent)->useFlyDisp && AIChar_Action0(self->ent)->priority <= 0x65 &&
 		dist > self->actMin && self->actMax > dist;
 }
 
@@ -43,7 +43,7 @@ void __thiscall cAISentinel_SetDists(cAISentinel *self) {
 	float d;
 
 	if (self->state == 2) {
-		d = WChar(self->ent)->prim.radius * 1.25f + WChar(self->target.target)->prim.radius;
+		d = WChar(self->ent)->wl.prim.radius * 1.25f + WChar(self->target.target)->wl.prim.radius;
 		self->actMin = 0.0f;
 		self->actMax = 2500.0f;
 		self->chaseFar = 750.0f;
@@ -54,7 +54,7 @@ void __thiscall cAISentinel_SetDists(cAISentinel *self) {
 		cAIChar_SetDists(self);
 		return;
 	}
-	d = WChar(self->ent)->prim.radius * 1.25f + WChar(self->target.target)->prim.radius;
+	d = WChar(self->ent)->wl.prim.radius * 1.25f + WChar(self->target.target)->wl.prim.radius;
 	self->chaseFar = 750.0f;
 	self->chaseNear = d;
 }

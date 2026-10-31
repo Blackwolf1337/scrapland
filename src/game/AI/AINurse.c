@@ -39,7 +39,7 @@ void __thiscall cAINurse_CheckActDist(cAINurse *self) {
 	cAIChar *c = &self->base;
 	float dist = AIChar_TargetDist(c);
 
-	if (AIChar_Action0(c->ent)->walk && AIChar_ActionIs(c->target.target, "Dazed") &&
+	if (AIChar_Action0(c->ent)->useFlyDisp && AIChar_ActionIs(c->target.target, "Dazed") &&
 		((g_DistActionNurseAI > dist && dist > c->actMax) || (c->actMax > dist && self->fresh))) {
 		self->fresh = 0;
 		c->ctrl->act = 1;
@@ -56,7 +56,7 @@ void __thiscall cAINurse_SetDists(cAINurse *self) {
 		cAIChar_SetDists(c);
 		return;
 	}
-	float nearD = WChar(c->ent)->prim.radius * 1.1f + WChar(c->target.target)->prim.radius;
+	float nearD = WChar(c->ent)->wl.prim.radius * 1.1f + WChar(c->target.target)->wl.prim.radius;
 	c->chaseNear = nearD;
 	float farD = nearD + g_OffsetMoveNurseAI;
 	c->actMin = c->chaseNear;

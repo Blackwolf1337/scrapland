@@ -129,8 +129,8 @@ void __fastcall cAICGZoneList_dtor(cAICGZoneList *list);
 void __fastcall cAICGPosList_Clear(cAICGPosList *list);
 void __fastcall cAICGZoneData_dtor(cAICGZoneData *zone);
 /* the action of layer 0 of a character and its name, as the AIs read them (one GetActCtrl each) */
-static inline cActionChar *AIChar_Action0(cEntity *e) {
-	return ((cActCtrlChar *)WithLife_Vtbl(e)->GetActCtrl(e))->action0;
+static inline cAction *AIChar_Action0(cEntity *e) {
+	return ((cActCtrl *)WithLife_Vtbl(e)->GetActCtrl(e))->layers[0].action;
 }
 
 static inline int AIChar_ActionIs(cEntity *e, const char *name) {

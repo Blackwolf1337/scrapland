@@ -544,10 +544,10 @@ void __thiscall cAIChar_UpdateAction1(cAIChar *self) {
 }
 
 void __thiscall cAIChar_CheckActDist(cAIChar *self) {
-	cActCtrlChar *ac = AIC_ActCtrl(self->ent);
+	cActCtrl *ac = AIC_ActCtrl(self->ent);
 	byte act = 0;
 
-	if (ac->action0->priority <= 0x65 && AIC_CtlByte(self->control, 0x2c)) {
+	if (ac->layers[0].action->priority <= 0x65 && AIC_CtlByte(self->control, 0x2c)) {
 		cEntity *t = AIC_Target(self);
 		vec3_t a, b;
 		const vec3_t *p = AIC_Pos(self->ent, &a);
@@ -827,8 +827,8 @@ void __thiscall cAIChar_ReactLostPath(cAIChar *self) {
 
 			on = CNodesWorld_HasPointVis(g_NodesWorld, AIC_Pos(e, &a), r);
 		} else {
-			cActCtrlChar *ac = AIC_ActCtrl(e);
-			float h2 = ac->cls->floorRadius;
+			cActCtrl *ac = AIC_ActCtrl(e);
+			float h2 = ac->cls->sRadius;
 			float h1 = WChar(e)->floorDist;
 			float r = Obj_Vtbl(e)->GetRadius(e);
 

@@ -380,7 +380,7 @@ byte __thiscall cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity 
 		if (t || front) {
 			continue;
 		}
-		if (cWorld_TestSphereEntities(g_pWorld, e, (void *)0x10, &p->pos, WChar(e)->prim.radius, &hit, 1, 0)) {
+		if (cWorld_TestSphereEntities(g_pWorld, e, (void *)0x10, &p->pos, WChar(e)->wl.prim.radius, &hit, 1, 0)) {
 			continue;
 		}
 		if (!flag) {

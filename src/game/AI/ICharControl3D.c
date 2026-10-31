@@ -552,12 +552,12 @@ float __thiscall cAICharControl3D_KeepDist(cAICharControl3D *self, cEntity *hitE
 	vec3_t b1, b2;
 
 	CHECK(hitEnt != NULL);
-	float er = WChar(hitEnt)->prim.radius;
+	float er = WChar(hitEnt)->wl.prim.radius;
 	float shirk = g_DistShirkCharAI;
 	float t = AICC_X87AddMul(Obj_Vtbl(self->ent)->GetRadius(self->ent), er, shirk);
-	er = WChar(hitEnt)->prim.radius;
+	er = WChar(hitEnt)->wl.prim.radius;
 	float c = AICC_X87AddAdd(Obj_Vtbl(self->ent)->GetRadius(self->ent), er, t);
-	float d = WChar(self->ent)->prim.radius + WChar(hitEnt)->prim.radius + t;
+	float d = WChar(self->ent)->wl.prim.radius + WChar(hitEnt)->wl.prim.radius + t;
 	float k = Float_MaxSS(c, d);
 	const vec3_t *s = AICC_Pos(self, &b1);
 	const vec3_t *p = AICC_EntPos(hitEnt, &b2);
@@ -567,7 +567,7 @@ float __thiscall cAICharControl3D_KeepDist(cAICharControl3D *self, cEntity *hitE
 
 float __thiscall cAICharControl3D_StrafeDist(cAICharControl3D *self, cEntity *hitEnt) {
 	CHECK(hitEnt != NULL);
-	return AICC_X87AddAdd(WChar(self->ent)->prim.radius, WChar(hitEnt)->prim.radius, g_MarginCollCharAI);
+	return AICC_X87AddAdd(WChar(self->ent)->wl.prim.radius, WChar(hitEnt)->wl.prim.radius, g_MarginCollCharAI);
 }
 
 /* the angle between the view (the axis fwd turned by it) and the way to e below ang */
@@ -692,7 +692,7 @@ byte __thiscall cAICharControl3D_TryStrafe(cAICharControl3D *self, int side, cEn
 	G.x = self->goal.x - sp->x;
 	G.y = self->goal.y - sp->y;
 	G.z = self->goal.z - sp->z;
-	float R = AICC3D_Len(A.x, A.y, A.z) + WChar(hitEnt)->prim.radius;
+	float R = AICC3D_Len(A.x, A.y, A.z) + WChar(hitEnt)->wl.prim.radius;
 	Vec3_NormalizeTo(&N, &G);
 	float ox = N.x * R;
 	float oy = N.y * R;
@@ -858,7 +858,7 @@ byte __thiscall cAICharControl3D_StrafeBack(cAICharControl3D *self, const vec3_t
 static byte AICC3D_ArcFree(cAICharControl *self, const vec3_t *p) {
 	cEntity *hit;
 
-	float r = WChar(self->ent)->prim.radius + 1.0f - g_MarginCollCharAI;
+	float r = WChar(self->ent)->wl.prim.radius + 1.0f - g_MarginCollCharAI;
 	return !cWorld_TestSphereEntities(g_pWorld, self->ent, (void *)0x10, p, r, &hit, 1, 0);
 }
 

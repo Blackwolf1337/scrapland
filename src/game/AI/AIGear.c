@@ -67,8 +67,8 @@ void __thiscall cAIGear_CheckActDist(cAIGear *self) {
 
 	self->blocked = 0;
 	if (1.0f > f) {
-		self->targetLife = WChar(c->target.target)->life;
-	} else if (f > GEAR_BLOCK_TIME && self->targetLife <= WChar(c->target.target)->life) {
+		self->targetLife = WChar(c->target.target)->wl.life;
+	} else if (f > GEAR_BLOCK_TIME && self->targetLife <= WChar(c->target.target)->wl.life) {
 		/* hit since the last check: is the way to the target free */
 		cEntity *tgt = c->target.target;
 		cAICharControl *ctl = c->control;

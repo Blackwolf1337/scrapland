@@ -62,7 +62,7 @@ double Vec3_Angle(const vec3_t *a, const vec3_t *b) {
 }
 
 static int Ent_Life(cEntity *e) {
-	return WChar(e)->life;
+	return WChar(e)->wl.life;
 }
 
 void __thiscall cAIBishop_CheckAttack(cAIBishop *self) {

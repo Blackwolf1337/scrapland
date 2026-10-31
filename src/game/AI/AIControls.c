@@ -701,11 +701,11 @@ off:
 	self->side = 0;
 hit:
 	/* hit since the last frame */
-	if (self->side == 0 && c->lifeMark > WChar(c->ent)->life) {
+	if (self->side == 0 && c->lifeMark > WChar(c->ent)->wl.life) {
 		ACtl_RandomSide(self);
 	}
 	int side = self->side;
-	c->lifeMark = WChar(c->ent)->life;
+	c->lifeMark = WChar(c->ent)->wl.life;
 	if (side != 0) {
 		cSlotController *s = AICC_Slot(&self->slotSide);
 		if (cSlotController_Tick(s, c->dt) && cSlotController_FireReset(s, &f)) {

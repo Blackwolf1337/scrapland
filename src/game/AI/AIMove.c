@@ -42,7 +42,7 @@ void *__thiscall cAIMove_ctor(void *mem, cEntity *e) {
 	self->flying = 0;
 	cEntity *o = self->owner;
 	if (o->vftable->IsType(o, "WalkChar")) {
-		fly = ((cActCtrlChar *)WithLife_Vtbl(o)->GetActCtrl(o))->cls->canFly;
+		fly = ((cActCtrl *)WithLife_Vtbl(o)->GetActCtrl(o))->cls->canFly;
 	} else {
 		fly = o->vftable->IsType(o, "Car");
 	}
@@ -237,10 +237,10 @@ vec3_t *__thiscall cAIMove_RandomPoint(void *mem, vec3_t *out, const vec3_t *p, 
 			q.y = p->y + oy;
 			q.z = p->z + 0.0f;
 			cEntity *o = self->owner;
-			cActCtrlChar *ac = WithLife_Vtbl(o)->GetActCtrl(o);
+			cActCtrl *ac = WithLife_Vtbl(o)->GetActCtrl(o);
 			o = self->owner;
 			float h = WChar(o)->floorDist;
-			float h2 = ac->cls->floorRadius;
+			float h2 = ac->cls->sRadius;
 			float r1 = Obj_Vtbl(o)->GetRadius(o);
 			float r2 = Obj_Vtbl(o)->GetRadius(o);
 			ok = CNodesWorld2D_TestPath(g_NodesWorld2D, p, &q, r2, r1, h, h2, NULL);
