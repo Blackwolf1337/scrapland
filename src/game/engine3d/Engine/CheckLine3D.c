@@ -196,7 +196,7 @@ static byte Ground_SegWalk(CGround *self, const vec3_t *a, const vec3_t *b, int 
 				}
 				if (best > th) {
 					if (info) {
-						info->i0 = g_QuadTriCacheID;
+						info->queryId = g_QuadTriCacheID;
 						info->tri = k;
 						info->quad = q;
 					}
@@ -254,7 +254,7 @@ byte __thiscall CGround_Trace(void *ground, const vec3_t *from, const vec3_t *to
 	if (!c) {
 		c = (CGroundHit *)self->cache;
 	}
-	if (c->quad && c->i0 == g_QuadTriCacheID && !out) {
+	if (c->quad && c->queryId == g_QuadTriCacheID && !out) {
 		CCollideMesh *mesh = c->quad->Mesh;
 		CCollideTri *tri = &mesh->pTri[c->quad->pTri[c->tri]];
 		float da = Plane_Side(&tri->plane, from);
@@ -267,7 +267,7 @@ byte __thiscall CGround_Trace(void *ground, const vec3_t *from, const vec3_t *to
 			}
 		}
 		self->traceStats[2]++;
-		c->i0 = 0;
+		c->queryId = 0;
 		c->tri = 0;
 		c->quad = NULL;
 	}
@@ -336,7 +336,7 @@ byte __thiscall CGround_Trace(void *ground, const vec3_t *from, const vec3_t *to
 					continue;
 				}
 				if (!out) {
-					c->i0 = g_QuadTriCacheID;
+					c->queryId = g_QuadTriCacheID;
 					c->tri = k;
 					c->quad = q;
 					return 1;
@@ -344,7 +344,7 @@ byte __thiscall CGround_Trace(void *ground, const vec3_t *from, const vec3_t *to
 				if (best > t) {
 					best = t;
 					c->tri = k;
-					c->i0 = g_QuadTriCacheID;
+					c->queryId = g_QuadTriCacheID;
 					c->quad = q;
 				}
 			}

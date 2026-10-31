@@ -292,7 +292,7 @@ byte Ground_SegEdge(const vec3_t *a, const vec3_t *b, const vec3_t *p, const vec
 byte Ground_SphereTri(const vec3_t *c, float r, const CCollideTri *tri, const CCollideMesh *mesh, vec3_t *res);
 /* the triangle a segment hit (CGround_TraceSeg): quad->pTri[tri] in the mesh of the quad */
 typedef struct CGroundHit {
-	int i0;
+	int queryId;		/* 0x0 g_QuadTriCacheID when it was found */
 	int tri;
 	CCollideQuad *quad;
 } CGroundHit;
