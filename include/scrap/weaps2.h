@@ -420,15 +420,15 @@ static inline void Weap_PushAway(cEntity *v, cEntity *e, int n, float force) {
 
 /* the HUD item of a weapon that does not fire turns back to the angle 0 by d */
 static inline void Weap_HudSpinDown(cScorerItem *item, float d) {
-	float a = NormAng(ScorerItem_Angle(item));
-	ScorerItem_Angle(item) = a;
+	float a = NormAng(Cannon_Angle(item));
+	Cannon_Angle(item) = a;
 	float s = a + d;
 	if (0.0f > s) {
-		ScorerItem_Angle(item) = s;
+		Cannon_Angle(item) = s;
 		return;
 	}
 	float t = a - d;
-	ScorerItem_Angle(item) = t > 0.0f ? t : 0.0f;
+	Cannon_Angle(item) = t > 0.0f ? t : 0.0f;
 }
 
 /* Inferno.c; the natives with their names in the registry of C functions ("!name" for cPy_Function_SetFunc),

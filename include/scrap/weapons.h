@@ -16,6 +16,7 @@
 #include "scrap/filesys.h"
 #include "scrap/fxweapons.h"
 #include "scrap/missileentity.h"
+#include "scrap/scoreritems.h"
 #include "scrap/sound.h"
 #include "scrap/vehicleattack.h"
 #include "scrap/vehicleentity.h"
@@ -82,13 +83,11 @@ void __thiscall cSndItem_UpdateAt(cSndItem *self, cEntity *e);
 byte __thiscall cSndItem_Play(cSndItem *self, cEntity *e);
 void __fastcall cSndItem_Restart(cSndItem *self);
 
-/* the fields of the scorer items the weapons animate (the HUD of the weapon) */
-#define ScorerItem_Angle(i) (*(float *)((byte *)(i) + 0xb4))
-#define ScorerItem_SizeX(i) (*(float *)((byte *)(i) + 0xb8))
-#define ScorerItem_SizeY(i) (*(float *)((byte *)(i) + 0xbc))
-#define ScorerItem_Color(i) (*(uint32_t *)((byte *)(i) + 0xc0))
-#define Scorer_Time(s) (*(float *)((byte *)(s) + 0x20))
-#define Scorer_Delta(s) (*(float *)((byte *)(s) + 0x28))
+/* the crosshair item of the HUD the weapons animate (a cCannonScorer, found by its name) */
+#define Cannon_Angle(i) (((cCannonScorer *)(i))->angle)
+#define Cannon_SizeX(i) (((cCannonScorer *)(i))->size[0])
+#define Cannon_SizeY(i) (((cCannonScorer *)(i))->size[1])
+#define Cannon_Color(i) (((cCannonScorer *)(i))->color)
 
 /* the engine variables */
 #define g_LaserIDWeap GAME_GLOBAL_IN(int, GVar_LaserIDWeap, 16, 0x4487d0)

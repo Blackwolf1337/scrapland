@@ -236,11 +236,11 @@ void ATPC_FX(cAbstractFile *params) {
 	}
 	if (-0.25f > stamp) {
 		float t = (stamp + 0.25f) / (0.25f - delay);
-		ScorerItem_Color(item) = Weap_CannonColor();
+		Cannon_Color(item) = Weap_CannonColor();
 		float size = 30.0f - t * 10.0f;
-		ScorerItem_SizeX(item) = size;
-		ScorerItem_SizeY(item) = size;
-		ScorerItem_Angle(item) = t * ATPC_PI;
+		Cannon_SizeX(item) = size;
+		Cannon_SizeY(item) = size;
+		Cannon_Angle(item) = t * ATPC_PI;
 		return;
 	}
 	if (0.0f > stamp) {
@@ -252,15 +252,15 @@ void ATPC_FX(cAbstractFile *params) {
 			blue = 0xff;
 		}
 		c = ((c << 8 | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8 | (uint32_t)blue;
-		ScorerItem_Color(item) = c;
-		ScorerItem_SizeX(item) = size;
-		ScorerItem_SizeY(item) = size;
+		Cannon_Color(item) = c;
+		Cannon_SizeX(item) = size;
+		Cannon_SizeY(item) = size;
 	} else {
-		ScorerItem_Color(item) = Weap_CannonColor();
-		ScorerItem_SizeX(item) = 20.0f;
-		ScorerItem_SizeY(item) = 20.0f;
+		Cannon_Color(item) = Weap_CannonColor();
+		Cannon_SizeX(item) = 20.0f;
+		Cannon_SizeY(item) = 20.0f;
 	}
-	ScorerItem_Angle(item) = 0.0f;
+	Cannon_Angle(item) = 0.0f;
 }
 
 /* "!ATPCFire" (vehicle): the ammo of the shot, the aim and the line of the hit */

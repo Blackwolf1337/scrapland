@@ -67,7 +67,7 @@ void Weap_UpdateHud(cAbstractFile *f, char (*targets)[0x80], float *times, int l
 	if (!item) {
 		return;
 	}
-	float dt = Scorer_Delta(Scorer_Get(player));
+	float dt = Scorer_Get(player)->frameTime;
 	if (strcmp(Nto1Node_TargetName(Veh_TargetLink(v)), targets[player])) {
 		Str_Copy(targets[player], Nto1Node_TargetName(Veh_TargetLink(v)), 0x80);
 		times[player] = Veh_TargetLink(v)->target ? 1.0f : 0.0f;
@@ -82,35 +82,35 @@ void Weap_UpdateHud(cAbstractFile *f, char (*targets)[0x80], float *times, int l
 			}
 			float x = (float)__builtin_fabs((double)(times[player] * 4.0f + 1.0f));
 			uint32_t a = (uint32_t)(-1 - (int)(x * 64.0f));
-			ScorerItem_Color(item) = ((((a << 8) | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8) |
+			Cannon_Color(item) = ((((a << 8) | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8) |
 				g_CannonScorerColorBlue;
 			if (level == levelRot) {
-				ScorerItem_SizeX(item) = 20.0f;
-				ScorerItem_SizeY(item) = 20.0f;
-				ScorerItem_Angle(item) = (1.0f - x) * 3.14159274f * 0.25f;
+				Cannon_SizeX(item) = 20.0f;
+				Cannon_SizeY(item) = 20.0f;
+				Cannon_Angle(item) = (1.0f - x) * 3.14159274f * 0.25f;
 			} else {
 				float s = (1.0f - x) * 7.0f + 20.0f;
-				ScorerItem_SizeX(item) = s;
-				ScorerItem_SizeY(item) = s;
-				ScorerItem_Angle(item) = 0.0f;
+				Cannon_SizeX(item) = s;
+				Cannon_SizeY(item) = s;
+				Cannon_Angle(item) = 0.0f;
 			}
 			return;
 		}
-		ScorerItem_SizeX(item) = 20.0f;
-		ScorerItem_SizeY(item) = 20.0f;
-		ScorerItem_Color(item) = (((g_CannonScorerColorRed | 0xffffbf00u) << 8 | g_CannonScorerColorGreen) << 8) |
+		Cannon_SizeX(item) = 20.0f;
+		Cannon_SizeY(item) = 20.0f;
+		Cannon_Color(item) = (((g_CannonScorerColorRed | 0xffffbf00u) << 8 | g_CannonScorerColorGreen) << 8) |
 			g_CannonScorerColorBlue;
-		ScorerItem_Angle(item) = 0.0f;
+		Cannon_Angle(item) = 0.0f;
 		return;
 	}
 	t = t - dt * 3.0f;
 	times[player] = t;
-	ScorerItem_Angle(item) = t * 1.57079637f;
+	Cannon_Angle(item) = t * 1.57079637f;
 	float s = times[player] * 50.0f + 20.0f;
-	ScorerItem_SizeX(item) = s;
-	ScorerItem_SizeY(item) = s;
+	Cannon_SizeX(item) = s;
+	Cannon_SizeY(item) = s;
 	uint32_t a = (uint32_t)(-64 - (int)(times[player] * 192.0f));
-	ScorerItem_Color(item) = ((((a << 8) | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8) |
+	Cannon_Color(item) = ((((a << 8) | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8) |
 		g_CannonScorerColorBlue;
 }
 

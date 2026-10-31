@@ -537,7 +537,7 @@ void Laser_HudNative(cAbstractFile *f) {
 	if (!item) {
 		return;
 	}
-	float time = Scorer_Time(Scorer_Get(player));
+	float time = Scorer_Get(player)->time;
 	float ammo = cTargetLock_GetAmmo(Veh_Weapons(v), g_LaserIDAmmo);
 	cAmmoInfo *info = TABLE_AT(g_pWorld->ammo, g_LaserIDAmmo);
 	int level = (int)(ammo * 255.0f / info->max);
@@ -551,15 +551,15 @@ void Laser_HudNative(cAbstractFile *f) {
 		if (b < 0) {
 			b = 0;
 		}
-		ScorerItem_Color(item) = (((uint32_t)g | (g_CannonScorerColorRed | 0xffffbf00u) << 8) << 8) | (uint32_t)b;
+		Cannon_Color(item) = (((uint32_t)g | (g_CannonScorerColorRed | 0xffffbf00u) << 8) << 8) | (uint32_t)b;
 	} else {
 		int k = (int)(time * 1024.0f) % 512 - 255;
 		uint32_t a = (uint32_t)(k < 0 ? -k : k);
-		ScorerItem_Color(item) = ((((g_CannonScorerColorRed | 0xffffbf00u) << 8) | a) << 8) | a;
+		Cannon_Color(item) = ((((g_CannonScorerColorRed | 0xffffbf00u) << 8) | a) << 8) | a;
 	}
-	ScorerItem_SizeX(item) = 20.0f;
-	ScorerItem_SizeY(item) = 20.0f;
-	ScorerItem_Angle(item) = 0.0f;
+	Cannon_SizeX(item) = 20.0f;
+	Cannon_SizeY(item) = 20.0f;
+	Cannon_Angle(item) = 0.0f;
 }
 
 static void Laser_AimOn(cEntity *v) {

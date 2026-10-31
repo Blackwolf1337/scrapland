@@ -444,16 +444,16 @@ void Vulcan_HudNative(cAbstractFile *f) {
 	if (!item) {
 		return;
 	}
-	float delta = Scorer_Delta(Scorer_Get(player));
+	float delta = Scorer_Get(player)->frameTime;
 	if (Vehicle_Controls(v)->fire &&
 		cWeaponManager_GetUpgrade(Veh_Weapons(v), g_VulcanIDWeap) == VULCAN_UPG_WIDE) {
-		ScorerItem_Angle(item) = ScorerItem_Angle(item) + Scorer_Delta(Scorer_Get(player)) * 0x1.921fb6p+1f;
+		Cannon_Angle(item) = Cannon_Angle(item) + Scorer_Get(player)->frameTime * 0x1.921fb6p+1f;
 	} else {
 		Weap_HudSpinDown(item, delta * 0x1.921fb6p+3f);
 	}
-	ScorerItem_SizeX(item) = 20.0f;
-	ScorerItem_SizeY(item) = 20.0f;
-	ScorerItem_Color(item) = Weap_CannonColor();
+	Cannon_SizeX(item) = 20.0f;
+	Cannon_SizeY(item) = 20.0f;
+	Cannon_Color(item) = Weap_CannonColor();
 }
 
 /* ship name: the shot (not on clients) hurts what it aims at */

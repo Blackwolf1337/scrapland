@@ -81,19 +81,19 @@ void Tesla_HudNative(cAbstractFile *f) {
 		k = Float_MaxSS(0.25f, k);
 	}
 	float size = k * 4.0f + 20.0f;
-	ScorerItem_SizeX(item) = size;
-	ScorerItem_SizeY(item) = size;
+	Cannon_SizeX(item) = size;
+	Cannon_SizeY(item) = size;
 	int b = (int)g_CannonScorerColorBlue - (int)(k * -255.0f);
 	uint32_t a = 0xffffffbfu - (uint32_t)(int)(k * -64.0f);
 	if (b > 0xff) {
 		b = 0xff;
 	}
-	ScorerItem_Color(item) = (((a << 8 | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8) | (uint32_t)b;
-	float delta = Scorer_Delta(Scorer_Get(player));
+	Cannon_Color(item) = (((a << 8 | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8) | (uint32_t)b;
+	float delta = Scorer_Get(player)->frameTime;
 	if (k == 0.0f) {
 		Weap_HudSpinDown(item, delta * 0x1.921fb6p+3f);
 	} else {
-		ScorerItem_Angle(item) = ScorerItem_Angle(item) - k * 0x1.f6a7a2p+3f * delta;
+		Cannon_Angle(item) = Cannon_Angle(item) - k * 0x1.f6a7a2p+3f * delta;
 	}
 }
 
