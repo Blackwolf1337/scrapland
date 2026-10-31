@@ -36,11 +36,11 @@ void __fastcall Controls_Reset(cVehicleControls *self) {
 	self->cm = 0;
 	self->boostKey = 0;
 	self->fullThrust = 1;
-	self->b26 = 0;
+	self->viewTarget = 0;
 	self->fire = 0;
 	self->emptyTime = 0.0f;
 	self->netFire = 0;
-	self->b28 = 0;
+	self->follow = 0;
 	self->fireWait = 0.0f;
 	self->padBounce = 0.0f;
 	self->rumbleA = 0.0f;
@@ -599,7 +599,7 @@ static void Ctl_Axes(cVehicleControls *c, cEntity *v, cActionSet *set, int slot,
 	c->str = c->str - Ctl_Value(set, CTL_STR_RIGHT, slot);
 	c->vStr = Ctl_Value(set, CTL_VSTR_UP, slot);
 	c->vStr = c->vStr - Ctl_Value(set, CTL_VSTR_DOWN, slot);
-	c->b28 = Ctl_Value(set, CTL_FOLLOW, slot) > 0.5f;
+	c->follow = Ctl_Value(set, CTL_FOLLOW, slot) > 0.5f;
 	if (strafe) {
 		c->attackTime = 0.0f;
 		c->hRot = 0.0f;
@@ -621,7 +621,7 @@ static void Ctl_Axes(cVehicleControls *c, cEntity *v, cActionSet *set, int slot,
 	c->hRot = c->hRot - Ctl_Value(set, CTL_TURN_LEFT, slot);
 	float vr = Ctl_Value(set, CTL_LOOK_UP, slot);
 	vr = vr - Ctl_Value(set, CTL_LOOK_DOWN, slot);
-	if (c->b28) {
+	if (c->follow) {
 		c->padBounce = g_VehicleCenterPadBounce;
 	}
 	if (slot == -1 || g_VehicleCenterPadLock == 0.0f) {
@@ -649,7 +649,7 @@ static void Ctl_Axes(cVehicleControls *c, cEntity *v, cActionSet *set, int slot,
 			attack = !t->vftable->IsType(t, TYEN_CAR);
 		}
 	}
-	if (t && c->b28) {
+	if (t && c->follow) {
 		Ctl_FollowTarget(c, v, t, attack, vr, dt);
 		return;
 	}
@@ -768,11 +768,11 @@ void __thiscall cVehicleControls_Tick(cVehicleControls *c, cEntity *v, float dt)
 	if (Ctl_Pressed(set, CTL_PREV_TARGET, slot)) {
 		cVehicleO648_Cycle(Veh(v)->o648, 0);
 	}
-	c->b26 = Ctl_Value(set, CTL_VIEW_TARGET, slot) > 0.5f;
-	if (c->b26) {
+	c->viewTarget = Ctl_Value(set, CTL_VIEW_TARGET, slot) > 0.5f;
+	if (c->viewTarget) {
 		cVehicleO648_PickInView(Veh(v)->o648);
 	}
-	c->b26 = c->b26 || Ctl_Value(set, CTL_NEXT_TARGET, slot) > 0.5f;
+	c->viewTarget = c->viewTarget || Ctl_Value(set, CTL_NEXT_TARGET, slot) > 0.5f;
 	c->cm = Ctl_Value(set, CTL_CM, slot) > 0.5f;
 	cWeaponManager *wm = NetEnt_Weapons(v);
 	if (c->weapon == wm->curWeap && !(byte)cWeaponManager_HasMinAmmo(wm, (uint32_t)c->weapon)) {

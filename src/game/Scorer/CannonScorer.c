@@ -8,7 +8,7 @@
 #include "scrap/weapons.h"
 
 /* the lock of the target of a ship: on, and the time of the lock (0 while searching) */
-#define Vehicle_LockOn(e) (Veh(e)->controls.b28)
+#define Vehicle_LockOn(e) (Veh(e)->controls.follow)
 #define Vehicle_LockTime(e) (Veh(e)->controls.attackTime)
 
 cCannonScorer *__fastcall cCannonScorer_ctor(cCannonScorer *self) {

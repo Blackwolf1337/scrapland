@@ -518,8 +518,8 @@ void __thiscall cAIControlGear_SetTurnSpeed(cAICharControl *self, float speed) {
 		self->turnStep = a + a + 1.0f;
 		self->turnGain = b + b + 5.0f;
 	}
-	self->f204 = 10.0f;
-	self->f208 = 1.0f;
+	self->viewGain = 10.0f;
+	self->viewStep = 1.0f;
 }
 
 /* ---- the messenger ---- */
@@ -588,8 +588,8 @@ void __thiscall cAIControlMessenger_SetTurnSpeed(cAIControlMessenger *self, floa
 		self->turnGain = 30.0f;
 		self->turnStep = 20.0f;
 	}
-	self->f204 = g_VelRotDynamicMessengerAI;
-	self->f208 = g_LimVelRotDynamicMessengerAI;
+	self->viewGain = g_VelRotDynamicMessengerAI;
+	self->viewStep = g_LimVelRotDynamicMessengerAI;
 }
 
 /* ---- the nurse ---- */

@@ -14,7 +14,7 @@
 
 #define LOGIC_SETORIGINFUNC 0x151ce0
 #define g_NotCleanableByGearDef (GAME_ARRAY_IN(cString, GVar_NotCleanableByGear, 20, 0x44cba4))
-#define Car_TargetPicked(e) (Veh(e)->controls.b26)	/* the target in view is picked */
+#define Car_TargetPicked(e) (Veh(e)->controls.viewTarget)	/* the target in view is picked */
 #define Car_Radius(e) (WLife(e)->prim.radius)
 
 /* the x87 code of the original: a float plus a float, rounded by the x87 control word, then to float */

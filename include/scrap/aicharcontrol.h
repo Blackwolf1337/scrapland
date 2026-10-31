@@ -267,7 +267,7 @@ struct cAICharControl {
 	int soft;			/* 0x07c the argument of the constructor: the path search may give up first */
 	float turnX;			/* 0x080 the vertical turn of the last frame */
 	float turnY;			/* 0x084 the horizontal turn of the last frame */
-	byte b88;			/* 0x088 */
+	byte targetChanged;		/* 0x088 a follow move got a new target */
 	byte pad_89[3];
 	float turnGain;			/* 0x08c the turn for an angle of pi */
 	float turnStep;			/* 0x090 the change of the turn in a frame at most */
@@ -285,7 +285,7 @@ struct cAICharControl {
 	float avoidTime;		/* 0x0c0 the time of the strafe around a character */
 	Nto1Node link;			/* 0x0c4 to the character avoided (the head at 0x254 of it), data the AI */
 	byte blocked;			/* 0x0d4 */
-	byte bd5;			/* 0x0d5 */
+	byte blockedByChar;		/* 0x0d5 other characters are in the way (the collision event may fire) */
 	byte pad_d6[2];
 	vec3_t avoidDir;		/* 0x0d8 0 for none */
 	byte avoidFound;		/* 0x0e4 FindAvoid found a character */
@@ -328,8 +328,8 @@ struct cAICharControl {
 	byte stuck;			/* 0x200 the follow sees no way */
 	byte avoidChar;			/* 0x201 FindAvoid linked a character */
 	byte pad_202[2];
-	float f204;			/* 0x204 */
-	float f208;			/* 0x208 */
+	float viewGain;			/* 0x204 the turn of the view to the dest (VelRotDynamic...) */
+	float viewStep;			/* 0x208 (LimVelRotDynamic...) */
 	int orbitSide;			/* 0x20c the strafe around the target: 0 none, 1, 2 */
 	byte orbitStart;		/* 0x210 StartOrbit may run */
 	byte pad_211[3];

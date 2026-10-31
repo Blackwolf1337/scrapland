@@ -23,9 +23,9 @@ typedef struct cVehicleControls {
 	byte cm;			/* 0x23 the ammo button (countermeasures) */
 	byte boostKey;			/* 0x24 the boost button */
 	byte fullThrust;		/* 0x25 1 after Reset: the second accelerate action counts, the thrust follows it at once */
-	byte b26;			/* 0x26 the target in view is picked */
+	byte viewTarget;		/* 0x26 the view-target or next-target button */
 	byte netFire;			/* 0x27 the toggle bit of the fire of the network state */
-	byte b28;			/* 0x28 the aim follows the target */
+	byte follow;			/* 0x28 the follow button: the aim follows the target */
 	byte pad_29[3];
 	float attackTime;		/* 0x2c the target is followed */
 	float emptyTime;		/* 0x30 without ammo, the next weapon after TimeWSwitchNo */

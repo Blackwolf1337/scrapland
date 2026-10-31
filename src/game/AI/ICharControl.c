@@ -98,7 +98,7 @@ cAICharControl *__thiscall cAICharControl_ctor(void *mem, cEntity *ent, cAIChar 
 	self->speed = 0.0f;
 	self->prevMode = 0;
 	self->mode = 0;
-	self->b88 = 0;
+	self->targetChanged = 0;
 	self->flying = 0;
 	self->newPath = 0;
 	self->goalLost = 0;
@@ -117,7 +117,7 @@ cAICharControl *__thiscall cAICharControl_ctor(void *mem, cEntity *ent, cAIChar 
 	self->avoidChar = 0;
 	self->pathRes = 0;
 	self->blocked = 0;
-	self->bd5 = 0;
+	self->blockedByChar = 0;
 	self->avoidDir.x = self->avoidDir.y = self->avoidDir.z = 0.0f;
 	self->orbitStart = 1;
 	self->orbitDir.x = self->orbitDir.y = self->orbitDir.z = 0.0f;
@@ -457,7 +457,7 @@ void __thiscall cAICharControl_TurnFollow(cAICharControl *self) {
 	} else {
 		d = self->avoidDir;
 	}
-	AICC_TurnView(self, &na, &d, self->f204, self->f208);
+	AICC_TurnView(self, &na, &d, self->viewGain, self->viewStep);
 }
 
 /* the segment of the last path check: the character and the goal */
@@ -624,7 +624,7 @@ void __thiscall cAICharControl_UpdateAvoid(cAICharControl *self) {
 	if (vt->InWay(self, self->dest, self->link.target)) {
 		if (self->mode != AICC_FOLLOW && self->mode != AICC_FOLLOW_PATH) {
 			self->blocked = 1;
-			self->bd5 = 1;
+			self->blockedByChar = 1;
 			self->side = 0;
 		}
 		return;
@@ -665,7 +665,7 @@ void __thiscall cAICharControl_UpdateAvoid(cAICharControl *self) {
 	self->avoidDir.y = 0.0f;
 	self->avoidDir.z = 0.0f;
 	self->blocked = 1;
-	self->bd5 = 1;
+	self->blockedByChar = 1;
 	self->side = 0;
 	return;
 
@@ -694,7 +694,7 @@ void __thiscall cAICharControl_StrafeWalk(cAICharControl *self) {
 }
 
 byte __thiscall cAICharControl_FindAvoid(cAICharControl *self) {
-	self->bd5 = 0;
+	self->blockedByChar = 0;
 	AICC_FindNear(self);
 	if (g_AICCNumNear <= 1) {
 		return 0;
@@ -716,7 +716,7 @@ byte __thiscall cAICharControl_FindAvoid(cAICharControl *self) {
 	}
 	if (found > 0) {
 		self->blocked = 1;
-		self->bd5 = 1;
+		self->blockedByChar = 1;
 	} else {
 		self->blocked = 0;
 	}
@@ -756,7 +756,7 @@ void __thiscall cAICharControl_Strafe(cAICharControl *self) {
 			}
 			if (self->blocked) {
 				self->collStopTime = 0.0f;
-				if (self->bd5 && self->collEventTime > g_TimeBetweenEventCollCharAI &&
+				if (self->blockedByChar && self->collEventTime > g_TimeBetweenEventCollCharAI &&
 						AICC_OwnerVtbl(self->ai)->Event(self->ai, 10)) {
 					self->collEventTime = 0.0f;
 				clear:
@@ -1732,7 +1732,7 @@ byte __thiscall cAICharControl_Avoid(cAICharControl *self, cEntity *e, byte *fou
 		if (self->mode != AICC_FOLLOW && self->mode != AICC_FOLLOW_PATH) {
 			self->side = 0;
 			self->blocked = 1;
-			self->bd5 = 1;
+			self->blockedByChar = 1;
 			return 1;
 		}
 		return res;
@@ -1813,7 +1813,7 @@ byte __thiscall cAICharControl_FollowPath(cAICharControl *self, Nto1Node *target
 	if (self->mode == self->prevMode && self->targetEnt == target->target) {
 		return 1;
 	}
-	self->b88 = 1;
+	self->targetChanged = 1;
 	return AICC_FollowStart(self, target);
 }
 
@@ -1997,8 +1997,8 @@ void __thiscall cAICharControl_SetTurnSpeed(cAICharControl *self, float speed) {
 		self->turnStep = a + 1.0f;
 		self->turnGain = b + 5.0f;
 	}
-	self->f204 = 15.0f;
-	self->f208 = 1.0f;
+	self->viewGain = 15.0f;
+	self->viewStep = 1.0f;
 }
 
 void __thiscall cAICharControl_Stop2(cAICharControl *self) {
