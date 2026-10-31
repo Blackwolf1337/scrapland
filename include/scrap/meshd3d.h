@@ -19,8 +19,8 @@
 /* Build flags */
 #define MESHD3D_ONESIDED 0x01		/* no back faces for two sided materials */
 #define MESHD3D_VERTORIG 0x02		/* keep the CTriMesh index of each vertex */
-#define MESHD3D_WEIGHT 0x04		/* b50: vertices with a weight (VERT_TEX1_B1) */
-#define MESHD3D_WEIGHT2 0x08		/* b51: the same */
+#define MESHD3D_WEIGHT 0x04		/* weight: vertices with a weight (VERT_TEX1_B1) */
+#define MESHD3D_WEIGHT2 0x08		/* weight2: the same */
 #define MESHD3D_POS 0x10		/* keep the positions and make the segments (CMeshD3D_CalcSegments) */
 #define MESHD3D_TRIFLAGS 0x20		/* keep the triangle flags */
 
@@ -64,15 +64,15 @@ typedef struct CMeshD3D {
 	uint16_t *vertOrig;		/* 0x28 the CTriMesh vertex of each vertex (MESHD3D_VERTORIG) */
 	int triBase;			/* 0x2c the first triangle of this mesh in the list (CalcSegmentos) */
 	uint32_t nSeg;			/* 0x30 the triangles of the whole list (pSeg) */
-	uint32_t n34;			/* 0x34 */
+	uint32_t numSegs;		/* 0x34 of segs, the closing one too */
 	uint32_t nPos;			/* 0x38 */
 	void *pSeg;			/* 0x3c TriMeshPlane of each triangle of the list, the shadow volume (pTriSeg) */
-	void *p40;			/* 0x40 8 bytes each */
+	void *segs;			/* 0x40 MeshSeg (8 bytes): the edges of the shadow volume, an end marker last */
 	vec3_t *pPos;			/* 0x44 the CTriMesh positions (MESHD3D_POS), of the frame with a skin (pVertOrig) */
 	uint32_t *triFlags;		/* 0x48 NULL for none */
 	CMaterial *mat;			/* 0x4c */
-	byte b50;			/* 0x50 MESHD3D_WEIGHT */
-	byte b51;			/* 0x51 MESHD3D_WEIGHT2 */
+	byte weight;			/* 0x50 MESHD3D_WEIGHT */
+	byte weight2;			/* 0x51 MESHD3D_WEIGHT2 */
 	byte pad_52[2];
 	box_t box;			/* 0x54 with the rest of the list */
 	box_t ext;			/* 0x6c of the vertices */
@@ -88,8 +88,8 @@ typedef struct CMeshD3D {
 	void *pVertVB;			/* 0xac IDirect3DVertexBuffer8 */
 	void *pVertIB;			/* 0xb0 IDirect3DIndexBuffer8 */
 	CNode3D *node;			/* 0xb4 referenced */
-	void *ib8;			/* 0xb8 the render node of the last skinning (RenderEVA_DrawSkin) */
-	int ibc;			/* 0xbc its frame */
+	void *skinNode;			/* 0xb8 the render node of the last skinning (RenderEVA_DrawSkin) */
+	int skinFrame;			/* 0xbc its frame */
 	void *pc0;			/* 0xc0 COM objects released with the buffers */
 	void *pc4;			/* 0xc4 */
 } CMeshD3D;

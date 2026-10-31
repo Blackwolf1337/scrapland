@@ -32,7 +32,7 @@ static uint16_t *MeshD3D_Tri(CMeshD3D *m, uint32_t i) {
 
 void __thiscall CMeshD3D_CalcSegments(CMeshD3D *self, byte all) {
 	CHECK(self->vertOrig);
-	CHECK(!self->p40);
+	CHECK(!self->segs);
 	CHECK(!self->pSeg);
 	CHECK(self->pPos);
 	int numTri = (int)self->nTri;
@@ -116,7 +116,7 @@ void __thiscall CMeshD3D_CalcSegments(CMeshD3D *self, byte all) {
 	if (segs) {
 		operator_delete_sized(segs, sizeof(MeshSeg));
 	}
-	self->p40 = out;
-	self->n34 = (uint32_t)numSeg + 1;
+	self->segs = out;
+	self->numSegs = (uint32_t)numSeg + 1;
 	E3D_LogWhite(g_FileLog, "INFO: Segmentos: %d [Mat: %s]", numSeg, self->mat->Name);
 }

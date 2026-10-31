@@ -2217,12 +2217,12 @@ int Render_MeshD3D(CMeshD3D *m, CRenderNode *r) {
 		}
 	}
 	Render_SetMaterial(m->mat, 0);
-	CHECK(!m->b50);
+	CHECK(!m->weight);
 	if (m->pSkin) {
 		RenderEVA_DrawSkin(m, r);
 	} else if (r && r->skin) {
 		RenderEVA_DrawSkinNode(m, r, r->skin);
-	} else if (m->b51) {
+	} else if (m->weight2) {
 		CHECK(0);
 	} else {
 		if (m->pVertVB && g_UseVB && !envSoft) {

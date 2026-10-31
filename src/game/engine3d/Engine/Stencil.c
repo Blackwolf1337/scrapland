@@ -554,7 +554,7 @@ void Stencil_Mesh(struct CVertList *v, const void *tris, uint32_t nTri, struct C
 	if (m->node->flags >> 5 & 1) {
 		return;
 	}
-	const uint16_t *edges = m->p40;
+	const uint16_t *edges = m->segs;
 	const TriMeshPlane *planes = m->pSeg;
 	int nTriSeg = (int)m->nSeg;
 	const vec3_t *pos = m->pPos;

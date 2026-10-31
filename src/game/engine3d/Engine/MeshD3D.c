@@ -68,10 +68,10 @@ void __fastcall CMeshD3D_Init(CMeshD3D *self) {
 	self->vertOrig = NULL;
 	self->triBase = 0;
 	self->nSeg = 0;
-	self->n34 = 0;
+	self->numSegs = 0;
 	self->nPos = 0;
 	self->pSeg = NULL;
-	self->p40 = NULL;
+	self->segs = NULL;
 	self->pPos = NULL;
 	self->triFlags = NULL;
 	self->pVertVB = NULL;
@@ -82,14 +82,14 @@ void __fastcall CMeshD3D_Init(CMeshD3D *self) {
 	self->StripList = 0;
 	self->node = NULL;
 	self->mat = NULL;
-	self->b50 = 0;
-	self->b51 = 0;
+	self->weight = 0;
+	self->weight2 = 0;
 	self->center.z = 0.0f;
 	self->nSkin = 0;
 	self->pSkin = NULL;
 	self->skinRef = 0;
-	self->ib8 = 0;
-	self->ibc = 0;
+	self->skinNode = 0;
+	self->skinFrame = 0;
 	self->pc0 = NULL;
 	self->pc4 = NULL;
 }
@@ -108,10 +108,10 @@ CMeshD3D *__thiscall CMeshD3D_ctorMesh(CMeshD3D *self, CTriMesh *mesh, uint32_t 
 	CHECK(mesh);
 	CMeshD3D_Init(self);
 	if (flags & MESHD3D_WEIGHT) {
-		self->b50 = 1;
+		self->weight = 1;
 	}
 	if (flags & MESHD3D_WEIGHT2) {
-		self->b51 = 1;
+		self->weight2 = 1;
 	}
 	if (node && (node->flags & NODE_NOPOS)) {
 		flags &= ~MESHD3D_POS;
@@ -153,7 +153,7 @@ void __fastcall CMeshD3D_dtor(CMeshD3D *self) {
 	}
 	MeshD3D_DeleteArray((void **)&self->pTri);
 	MeshD3D_DeleteArray((void **)&self->vertOrig);
-	MeshD3D_DeleteArray(&self->p40);
+	MeshD3D_DeleteArray(&self->segs);
 	MeshD3D_DeleteArray(&self->pSeg);
 	MeshD3D_DeleteArray((void **)&self->pPos);
 	MeshD3D_DeleteArray((void **)&self->triFlags);
@@ -260,7 +260,7 @@ byte __thiscall CMeshD3D_Read(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) 
 	CFileIO_Read4(f, &self->triBase);
 	/* the copy at rva 0x2af4e0 */
 	Array_Read10(f, &self->pSeg, &self->nSeg);
-	Array_Read8(f, &self->p40, &self->n34);
+	Array_Read8(f, &self->segs, &self->numSegs);
 	Array_ReadC(f, (void **)&self->pPos, &self->nPos);
 	Array_Read4(f, (void **)&self->triFlags, &n);
 	CHECK(!self->triFlags || n == self->nTri);
@@ -284,8 +284,8 @@ byte __thiscall CMeshD3D_Read(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) 
 		CHECK(mats->p && (uint32_t)i < (uint32_t)mats->n);
 		self->mat = ((CMaterial **)mats->p)[i];
 	}
-	self->b50 = CFileIO_ReadBool(f);
-	self->b51 = CFileIO_ReadBool(f);
+	self->weight = CFileIO_ReadBool(f);
+	self->weight2 = CFileIO_ReadBool(f);
 	CFileIO_Read(f, &self->box, sizeof(self->box));
 	CFileIO_Read(f, &self->ext, sizeof(self->ext));
 	CFileIO_Read(f, &self->center, sizeof(self->center));
@@ -324,7 +324,7 @@ byte __thiscall CMeshD3D_Write(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx)
 	Array_Write2(f, self->vertOrig, self->vert.nVert);
 	CFileIO_WriteInt(f, self->triBase);
 	Array_Write10(f, self->pSeg, self->nSeg);
-	Array_Write8(f, self->p40, self->n34);
+	Array_Write8(f, self->segs, self->numSegs);
 	Array_WriteC(f, self->pPos, self->nPos);
 	CHECK(!self->triFlags);
 	Array_Write4(f, self->triFlags, self->nTri);
@@ -349,8 +349,8 @@ byte __thiscall CMeshD3D_Write(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx)
 		CHECK(self->node->flags & NODE_NO_RENDER);
 		self->mat = NULL;
 	}
-	CFileIO_WriteInt(f, self->b50);
-	CFileIO_WriteInt(f, self->b51);
+	CFileIO_WriteInt(f, self->weight);
+	CFileIO_WriteInt(f, self->weight2);
 	CFileIO_Write(f, &self->box, sizeof(self->box));
 	CFileIO_Write(f, &self->ext, sizeof(self->ext));
 	CFileIO_Write(f, &self->center, sizeof(self->center));
@@ -600,18 +600,18 @@ void __thiscall CMeshD3D_Build(CMeshD3D *self, CTriMesh *mesh, uint32_t flags) {
 				m = CMeshD3D_ctor(m);
 			}
 			cur->next = m;
-			m->b50 = cur->b50;
-			cur->next->b51 = cur->b51;
+			m->weight = cur->weight;
+			cur->next->weight2 = cur->weight2;
 			cur = cur->next;
 		}
 		cur->mat = o->mat;
 		CMeshD3D_AllocTri(cur, o->nTri);
 		if (!cur->mat || !cur->mat->params.reflection) {
-			CVertList_SetFormat(&cur->vert, (self->b50 || self->b51) ? VERT_TEX1_B1 : VERT_TEX1);
+			CVertList_SetFormat(&cur->vert, (self->weight || self->weight2) ? VERT_TEX1_B1 : VERT_TEX1);
 		} else {
 			CVertList_SetFormat(&cur->vert, g_UseHWEnvMap ? VERT_TEX1 : VERT_TEX2);
-			self->b50 = 0;
-			self->b51 = 0;
+			self->weight = 0;
+			self->weight2 = 0;
 		}
 		CVertList_Alloc(&cur->vert, o->nVert, 0);
 		CHECK(!cur->vertOrig);

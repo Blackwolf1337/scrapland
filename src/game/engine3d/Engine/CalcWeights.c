@@ -22,7 +22,7 @@ SD_SIZE(VertTex1B1, 0x24);
 #define WEIGHTS_FLT_MAX 3.40282347e+38f
 
 byte __thiscall CMeshD3D_CalcWeights(CMeshD3D *self, CNode3D *node) {
-	if (!self->b50 && !self->b51) {
+	if (!self->weight && !self->weight2) {
 		return 0;
 	}
 	CHECK(node && node->scene);

@@ -267,8 +267,8 @@ int RenderEVA_DrawSkin(CMeshD3D *m, CRenderNode *r) {
 	world.m[13] = -off.y;
 	world.m[14] = -off.z;
 	Render_SetWorldD3D(&world);
-	m->ibc = g_FrameCount;
-	m->ib8 = r;
+	m->skinFrame = g_FrameCount;
+	m->skinNode = r;
 	int n = m->vert.nVert;
 	CMeshVert *dst = NULL;
 	if (draw) {
@@ -326,7 +326,7 @@ int RenderEVA_DrawSkin(CMeshD3D *m, CRenderNode *r) {
 		Mesh_TriPlanes(m, main);
 		/* the shadow volume once all meshes of the list are moved for r in this frame */
 		for (const CMeshD3D *mm = main; mm; mm = mm->next) {
-			if (mm->ibc != g_FrameCount || mm->ib8 != r) {
+			if (mm->skinFrame != g_FrameCount || mm->skinNode != r) {
 				return 0;
 			}
 		}
