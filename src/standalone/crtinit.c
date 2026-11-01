@@ -110,10 +110,6 @@ void operator_delete_sized(void *p, uint32_t size) {
 
 /* what the CRT initializers of the __xi table set that the game sees */
 static void Crt_InitState(void) {
-	/* __scrt_initialize_default_local_stdio_options (rva 0x314f44, again at 0x37b3a8): the option words of the
-	 * inline printf and scanf get _CRT_INTERNAL_PRINTF_LEGACY_WIDE_SPECIFIERS and the scanf one */
-	*crt_local_printf_options() |= 4;
-	*crt_local_scanf_options() |= 2;
 	__setusermatherr((int (*)(struct _exception *))E3D_MathErr);
 }
 

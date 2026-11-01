@@ -31,7 +31,6 @@
 #include <time.h>
 #include <windows.h>
 
-#include "crtnum.h"
 #include "scrap/crt.h"
 #include "scrap/game.h"
 
@@ -135,30 +134,40 @@ int crt_fileno(void *f) {
 	return _fileno(f);
 }
 
-/*
- * The number formatting and parsing are C of their own (src/standalone/crtfmt.c and crtscan.c), the same as the
- * original's static UCRT. A locale object would be one of the linked UCRT, so calls with one stay there.
- */
-int crt_stdio_common_vsprintf(uint64_t options, char *buf, size_t count, const char *fmt, void *locale, va_list ap) {
-	if (!locale) {
-		return Crt_VFormat(options, buf, count, fmt, ap);
-	}
-	return __stdio_common_vsprintf(options, buf, count, fmt, locale, ap);
+/* the formatting of the platform's libc; sprintf has no size like the original's callers (bounded later) */
+int crt_vsprintf(char *buf, const char *fmt, va_list ap) {
+	return vsprintf(buf, fmt, ap);
 }
 
-/* the text goes to the FILE of the linked UCRT */
-int crt_stdio_common_vfprintf(uint64_t options, void *f, const char *fmt, void *locale, va_list ap) {
-	if (!locale) {
-		return Crt_VFormatFile(options, f, fmt, ap);
-	}
-	return __stdio_common_vfprintf(options, f, fmt, locale, ap);
+int crt_sprintf(char *buf, const char *fmt, ...) {
+	va_list ap;
+
+	va_start(ap, fmt);
+	int r = vsprintf(buf, fmt, ap);
+	va_end(ap);
+	return r;
 }
 
-int crt_stdio_common_vsscanf(uint64_t options, const char *buf, size_t count, const char *fmt, void *locale, va_list ap) {
-	if (!locale) {
-		return Crt_VScan(options, buf, count, fmt, ap);
-	}
-	return __stdio_common_vsscanf(options, buf, count, fmt, locale, ap);
+int crt_vfprintf(void *f, const char *fmt, va_list ap) {
+	return vfprintf(f, fmt, ap);
+}
+
+int crt_fprintf(void *f, const char *fmt, ...) {
+	va_list ap;
+
+	va_start(ap, fmt);
+	int r = vfprintf(f, fmt, ap);
+	va_end(ap);
+	return r;
+}
+
+int crt_sscanf(const char *s, const char *fmt, ...) {
+	va_list ap;
+
+	va_start(ap, fmt);
+	int r = vsscanf(s, fmt, ap);
+	va_end(ap);
+	return r;
 }
 
 int crt_remove(const char *name) {
@@ -349,13 +358,8 @@ size_t crt_strxfrm(char *dst, const char *src, size_t n) {
 	return strxfrm(dst, src, n);
 }
 
-/* the text in a buffer of the thread, which a caller may change, as the runtime keeps it */
 char *crt_strerror(int code) {
-	static thread_local char buf[134];
-	const char *text = Crt_ErrorText(code);
-
-	memcpy(buf, text, strlen(text) + 1);
-	return buf;
+	return strerror(code);
 }
 
 int crt_atoi(const char *s) {
@@ -363,11 +367,11 @@ int crt_atoi(const char *s) {
 }
 
 double crt_atof(const char *s) {
-	return Crt_Atof(s);
+	return atof(s);
 }
 
 double crt_strtod(const char *s, char **end) {
-	return Crt_Strtod(s, end);
+	return strtod(s, end);
 }
 
 char *crt_ltoa(long v, char *buf, int radix) {

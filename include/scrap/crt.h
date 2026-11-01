@@ -60,7 +60,6 @@ char *crt_ltoa(long v, char *buf, int radix);
 int crt_chmod(const char *path, int mode);
 double crt_atof(const char *s);
 char *crt_strncat(char *dst, const char *src, size_t n);
-int crt_stdio_common_vsprintf(uint64_t options, char *buf, size_t count, const char *fmt, void *locale, va_list ap);
 int crt_strnicmp(const char *a, const char *b, size_t n);
 char *crt_strlwr(char *s);
 int crt_fputs(const char *s, void *f);
@@ -97,11 +96,6 @@ int crt_ungetc(int c, void *f);
 int crt_isalnum(int c);
 int crt_isxdigit(int c);
 void *crt_iob_func(unsigned index);
-int crt_stdio_common_vfprintf(uint64_t options, void *f, const char *fmt, void *locale, va_list ap);
-int crt_stdio_common_vsscanf(uint64_t options, const char *buf, size_t count, const char *fmt, void *locale, va_list ap);
-/* the inline parts of the CRT headers in the exe (src/game/Global/StdioInline.c) */
-uint64_t *crt_local_printf_options(void);
-uint64_t *crt_local_scanf_options(void);
 size_t crt_strcspn(const char *s, const char *set);
 int crt_fpclass(double x);
 char *crt_mbsrchr(const char *s, unsigned int c);
@@ -111,8 +105,7 @@ int crt_atexit(void (*func)(void));
 int crt_open(const char *name, int flags, ...);
 int crt_read(int fd, void *buf, unsigned int size);
 int crt_close(int fd);
-/* the rest of the libc of the Python library (src/python/pyshim.h); the inline vsprintf and vfprintf of the headers
- * are C (src/game/Global/StdioInline.c), stat and fstat fill a struct crt_stat32 there */
+/* more of the libc (the vsprintf and vfprintf of the formatting above) */
 int crt_vsprintf(char *buf, const char *fmt, va_list ap);
 int crt_vfprintf(void *f, const char *fmt, va_list ap);
 char *crt_strdup(const char *s);

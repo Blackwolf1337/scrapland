@@ -3,6 +3,7 @@
  * the UTF-8 conversion of texts for the engine fonts.
  */
 #include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "scrap/console.h"
@@ -10,9 +11,6 @@
 #include "scrap/scorer.h"
 
 /* __local_stdio_printf_options of the UCRT in the exe */
-extern uint64_t g_PrintfOptions;
-/* _CRT_INTERNAL_PRINTF_LEGACY_VSPRINTF_NULL_TERMINATION */
-#define PRINTF_LEGACY_NULL_TERMINATION 1
 
 extern char g_Utf8Buf[1024];	/* 0x400 bytes, the result of Str_FromUTF8 */
 extern char g_VersionBuf[256];
@@ -29,8 +27,8 @@ static int Str_Format(char *dst, int size, const char *fmt, va_list ap, int warn
 	if (!dst || !fmt || size < 1) {
 		return 0;
 	}
-	int n = crt_stdio_common_vsprintf(g_PrintfOptions | PRINTF_LEGACY_NULL_TERMINATION, dst, size, fmt, NULL, ap);
-	if (n < 0) {
+	int n = vsnprintf(dst, (size_t)size, fmt, ap);
+	if (n < 0 || n >= size) {
 		dst[size - 1] = 0;
 		n = (int)strlen(dst);
 		if (warn) {

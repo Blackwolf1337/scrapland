@@ -1,12 +1,12 @@
 /*
  * Data files of the engine3d as lists of lines, original source Util/Arch_dat.cpp (include/scrap/e3dutil.h).
  */
+#include <stdio.h>
 #include <string.h>
 
 #include "scrap/archio.h"
 #include "scrap/e3dutil.h"
 
-extern uint64_t g_PrintfOptions;
 
 extern int g_FileErr;	/* the code of "Faltan datos", -1 until the first DataFile_New */
 
@@ -446,6 +446,6 @@ void DataFile_Printf(const char *fmt, ...) {
 	va_list ap;
 
 	va_start(ap, fmt);
-	crt_stdio_common_vfprintf(g_PrintfOptions, crt_iob_func(1), fmt, NULL, ap);
+	vfprintf(stdout, fmt, ap);
 	va_end(ap);
 }
