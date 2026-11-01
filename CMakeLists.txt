@@ -31,6 +31,7 @@ target_include_directories(scrapcode PUBLIC
 	src
 	third_party/python-1.5.2/config
 	third_party/python-1.5.2/Include
+	third_party/vulkan/include
 )
 # Scrap.exe does its float math with SSE2 (MSVC /arch:SSE2): same here, x87 80 bit intermediates would change
 # the last bits of results

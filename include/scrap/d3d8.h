@@ -7,7 +7,9 @@
 
 #include "scrap/mathlib.h"
 
+#ifndef E_FAIL
 #define E_FAIL ((int)0x80004005)
+#endif
 
 #define D3D_METHOD(obj, type, off) ((type)(*(void ***)(obj))[(off) / 4])
 

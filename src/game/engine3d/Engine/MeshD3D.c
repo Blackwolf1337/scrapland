@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/trimesh.h"
@@ -39,13 +40,12 @@ typedef int(*meshD3DRestore_t)(CMeshD3D *self, void *dev);
 typedef void(*meshD3DInvalidate_t)(CMeshD3D *self, void *dev);
 typedef byte(*meshD3DFile_t)(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
 typedef void(*nodeDelete_t)(CNode3D *self, int flags);
-typedef uint32_t(__stdcall *comRelease_t)(void *self);
 
 /* IUnknown::Release of a COM object, the pointer cleared */
 static void MeshD3D_Release(void **p) {
 	void *obj = *p;
 	if (obj) {
-		((comRelease_t)(*(void ***)obj)[2])(obj);
+		Rd_Release(obj);
 		*p = NULL;
 	}
 }

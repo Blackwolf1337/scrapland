@@ -101,6 +101,7 @@ typedef struct RdBackend {
 
 extern const RdBackend *rd;
 extern const RdBackend rd_d3d8;
+extern const RdBackend rd_vk;
 
 /* the D3D log of the tests (RdevLog.c): calls on rd_logDevice are written, then go to rd_logReal */
 extern void *rd_logDevice;

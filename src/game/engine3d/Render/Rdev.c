@@ -3,13 +3,21 @@
  * the D3D log first (RdevLog.c), then every call goes to the backend.
  */
 #include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "rdevbackend.h"
 #include "scrap/rdev.h"
 
 const RdBackend *rd = &rd_d3d8;
 
+/* SCRAP_RENDER=vulkan picks the Vulkan backend (until it replaces the D3D8 one) */
 void *Rd_Direct3DCreate8(uint32_t sdk) {
+	const char *r = getenv("SCRAP_RENDER");
+	if (r && !strcmp(r, "vulkan")) {
+		rd = &rd_vk;
+	}
+	Com_Printf("render device: %s\n", rd->name);
 	return rd->Direct3DCreate8(sdk);
 }
 

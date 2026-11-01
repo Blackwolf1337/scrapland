@@ -1139,12 +1139,10 @@ void CEngineApp_UpdateMenu(CEngineApp *self) {
 #define MF_BYPOSITION 0x400
 #define D3DRS_88 0x88
 #define D3DRS_89 0x89
-#define DEV_VT_SETRENDERSTATE 0xc8
 #define ENGINE_BUILD 0x15f8
 
 /* InitDeviceObjects: the device objects of the engine, the cameras menu, the title, the input on the window */
 int CEngineApp_InitDeviceObjects(CEngineApp *self) {
-	typedef int(__stdcall * setrenderstate_t)(void *, uint32_t, uint32_t);
 	void *dev = self->base.device;
 	char title[0x100];
 	int hr;
@@ -1162,8 +1160,8 @@ int CEngineApp_InitDeviceObjects(CEngineApp *self) {
 	Render_SetCamera(World_Get()->cam);
 	Render_SetWorldMatrix(g_MatIdentity, 0);
 	CScene_FindClass(self->scene, NULL, CLASS_OBJ3D_LIGHT);
-	((setrenderstate_t)(*(void ***)dev)[DEV_VT_SETRENDERSTATE / 4])(dev, D3DRS_88, 1);
-	((setrenderstate_t)(*(void ***)dev)[DEV_VT_SETRENDERSTATE / 4])(dev, D3DRS_89, 1);
+	Rd_DevSetRenderState(dev, D3DRS_88, 1);
+	Rd_DevSetRenderState(dev, D3DRS_89, 1);
 	self->menu = exe_GetMenu(self->base.hWnd);
 	CEngineApp_UpdateMenu(self);
 	CHECK(!self->table.p);
