@@ -3,8 +3,8 @@
 #   - SDTest.Call(rva or name, sig, args...): the number of arguments must match the signature (sig: optional 't', the
 #     return kind, then one letter an argument)
 #   - every name of the game (the first argument of SDTest.Call, Peek, Poke, ConvU, sym() and symva()) is in
-#     src/core/testsyms.inc (tools/test/testsyms.py -w writes it)
-#   - by name, the signature fits the C function: thiscall with 't' and its arguments; cdecl without 't', at least its
+#     src/core/testsyms.inc (kept by hand since the tag hooked-final)
+#   - by name, the signature fits the C function: cdecl with or without 't' (this as the first argument), at least its
 #     arguments when it takes '...'; fastcall with one argument as 't' (ecx), without arguments as plain; stdcall as 't'
 #     with a dummy this (the callee pops like thiscall). A vec3_t by value is 3 words, a double or 64 bit int 2; a struct
 #     of another type by value is not counted
@@ -117,7 +117,8 @@ def fits(conv, params, thiscall, nargs):
 		return thiscall and (n is None or nargs == n + 1) or n == 0 and nargs == 0
 	if conv == '__fastcall':
 		return n is None and thiscall or n == 0 and nargs == 0 or n == 1 and thiscall and nargs == 1
-	return not thiscall and (n is None or nargs == n or varargs and nargs >= n)
+	# cdecl: 't' only says the first argument is this, the same call
+	return n is None or nargs == n or varargs and nargs >= n
 
 
 NAME_USE = re.compile(r"(?:SDTest\.(?:Call|Peek|Poke|ConvU|PeekSpan|PokeSpan)\(\s*|\bsym(?:va)?\(\s*)'([^']*)'")
