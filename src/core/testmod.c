@@ -132,27 +132,34 @@ static float Call_StdFloat(void *fn, const uint32_t *a, int n) {
 	CALL_THIS(stdf, fn, a, n)
 }
 
-/* the __stdcall functions the tests call (their assembler names without the decoration, --enable-stdcall-fixup) */
+/* the __stdcall functions the tests call (the decorated names _name@n of the exe that the scripts name; the label
+ * without the decoration resolves through --enable-stdcall-fixup) */
 #define TEST_STDCALL(name) extern char sds_##name[] __asm__("_" #name);
 #define TEST_STDCALLS \
 	TEST_STDCALL(D3DX_AssembleShader) TEST_STDCALL(D3DX_CheckTextureRequirements) \
 	TEST_STDCALL(D3DX_LoadSurfaceFromSurface) TEST_STDCALL(D3DX_MatrixInverse) TEST_STDCALL(D3DX_MatrixMultiply) \
 	TEST_STDCALL(D3DX_MatrixRotationQuaternion) TEST_STDCALL(D3DX_MatrixRotationX) TEST_STDCALL(D3DX_MatrixRotationY) \
 	TEST_STDCALL(D3DX_MatrixRotationYPR) TEST_STDCALL(D3DX_MatrixRotationZ) TEST_STDCALL(D3DX_MatrixTranspose) \
-	TEST_STDCALL(D3DX_Vec3Normalize) TEST_STDCALL(D3DX_Vec3Transform) TEST_STDCALL(DbgWin_DlgProc) \
-	TEST_STDCALL(Engine_SceneDlgProc) TEST_STDCALL(Friends_IsEnemyTarget) TEST_STDCALL(Music_FileClose) \
-	TEST_STDCALL(Music_FileOpen) TEST_STDCALL(Music_FileRead) TEST_STDCALL(Music_FileSeek) \
+	TEST_STDCALL(D3DX_QuaternionRotationYPR) TEST_STDCALL(D3DX_Vec3Normalize) TEST_STDCALL(D3DX_Vec3Transform) \
+	TEST_STDCALL(DbgWin_DlgProc) TEST_STDCALL(Engine_SceneDlgProc) TEST_STDCALL(Friends_IsEnemyTarget) \
+	TEST_STDCALL(Music_FileClose) TEST_STDCALL(Music_FileOpen) TEST_STDCALL(Music_FileRead) TEST_STDCALL(Music_FileSeek) \
 	TEST_STDCALL(Music_FileTell) TEST_STDCALL(Music_True16a) TEST_STDCALL(Music_True16b) \
 	TEST_STDCALL(Nto1Node_UnlinkOpt) TEST_STDCALL(TrafficSectors_Add) TEST_STDCALL(TrafficSectors_SetTracks) \
-	TEST_STDCALL(VMEffects_SetupHaze) TEST_STDCALL(cAIVehicleShoot_WeaponName) \
-	TEST_STDCALL(cAIVehicle_InternStateName) TEST_STDCALL(cAIVehicle_IsGroupState) TEST_STDCALL(cAIVehicle_StateName)
+	TEST_STDCALL(VMEffects_SetupHaze) TEST_STDCALL(cAIVehicleShoot_WeaponName) TEST_STDCALL(cAIVehicle_InternStateName) \
+	TEST_STDCALL(cAIVehicle_IsGroupState) TEST_STDCALL(cAIVehicle_StateName)
 TEST_STDCALLS
 #undef TEST_STDCALL
 #define TEST_STDCALL(name) sds_##name,
 static const char *const testStdcalls[] = { TEST_STDCALLS };
 #undef TEST_STDCALL
 
+/* also every function outside the exe: the methods of COM objects and the Win32 functions of SDTest.Proc */
 static int TestMod_IsStdcall(const void *fn) {
+	const IMAGE_DOS_HEADER *dos = (const IMAGE_DOS_HEADER *)game_base;
+	const IMAGE_NT_HEADERS32 *nt = (const IMAGE_NT_HEADERS32 *)(game_base + dos->e_lfanew);
+	if ((uintptr_t)fn < game_base || (uintptr_t)fn >= game_base + nt->OptionalHeader.SizeOfImage) {
+		return 1;
+	}
 	for (size_t i = 0; i < sizeof(testStdcalls) / sizeof(testStdcalls[0]); i++) {
 		if (testStdcalls[i] == fn) {
 			return 1;
