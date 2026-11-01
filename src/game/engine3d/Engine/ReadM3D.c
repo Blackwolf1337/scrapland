@@ -53,13 +53,13 @@ char **__fastcall String_ctor(char **self) {
 }
 
 M3DTrack *__fastcall M3DTrack_ctor(M3DTrack *self) {
-	crt_eh_vector_ctor(&self->pos, sizeof(M3DTable), 4, GAME_FUNC(M3DTable_ctor), GAME_FUNC(Table_Free));
+	crt_eh_vector_ctor(&self->pos, sizeof(M3DTable), 4, (void *)M3DTable_ctor, (void *)Table_Free);
 	self->sgn.p = NULL;
 	self->sgn.n = 0;
 	self->sgn.fixed = 0;
-	crt_eh_vector_ctor(&self->rot, sizeof(M3DTable), 4, GAME_FUNC(M3DTable_ctor), GAME_FUNC(Table_Free));
-	crt_eh_vector_ctor(&self->rotScale, sizeof(M3DTable), 4, GAME_FUNC(M3DTable_ctor), GAME_FUNC(Table_Free));
-	crt_eh_vector_ctor(&self->scale, sizeof(M3DTable), 4, GAME_FUNC(M3DTable_ctor), GAME_FUNC(Table_Free));
+	crt_eh_vector_ctor(&self->rot, sizeof(M3DTable), 4, (void *)M3DTable_ctor, (void *)Table_Free);
+	crt_eh_vector_ctor(&self->rotScale, sizeof(M3DTable), 4, (void *)M3DTable_ctor, (void *)Table_Free);
+	crt_eh_vector_ctor(&self->scale, sizeof(M3DTable), 4, (void *)M3DTable_ctor, (void *)Table_Free);
 	return self;
 }
 
@@ -79,24 +79,24 @@ M3DNode *__fastcall M3DNode_ctor(M3DNode *self) {
 }
 
 M3DSkinVert *__fastcall M3DSkinVert_ctor(M3DSkinVert *self) {
-	crt_eh_vector_ctor(self->bone, sizeof(char *), SKIN_MAX_BONES, GAME_FUNC(String_ctor), GAME_FUNC(String_dtor));
+	crt_eh_vector_ctor(self->bone, sizeof(char *), SKIN_MAX_BONES, (void *)String_ctor, (void *)String_dtor);
 	return self;
 }
 
 void __fastcall M3DSkinVert_dtor(M3DSkinVert *self) {
-	crt_eh_vector_dtor(self->bone, sizeof(char *), SKIN_MAX_BONES, GAME_FUNC(String_dtor));
+	crt_eh_vector_dtor(self->bone, sizeof(char *), SKIN_MAX_BONES, (void *)String_dtor);
 }
 
 void __fastcall M3DTable4_dtor(M3DTable4 *self) {
-	crt_eh_vector_dtor(self->t, sizeof(M3DTable), 4, GAME_FUNC(Table_Free));
+	crt_eh_vector_dtor(self->t, sizeof(M3DTable), 4, (void *)Table_Free);
 }
 
 void __fastcall M3DTrack_dtor(M3DTrack *self) {
-	crt_eh_vector_dtor(&self->scale, sizeof(M3DTable), 4, GAME_FUNC(Table_Free));
-	crt_eh_vector_dtor(&self->rotScale, sizeof(M3DTable), 4, GAME_FUNC(Table_Free));
-	crt_eh_vector_dtor(&self->rot, sizeof(M3DTable), 4, GAME_FUNC(Table_Free));
+	crt_eh_vector_dtor(&self->scale, sizeof(M3DTable), 4, (void *)Table_Free);
+	crt_eh_vector_dtor(&self->rotScale, sizeof(M3DTable), 4, (void *)Table_Free);
+	crt_eh_vector_dtor(&self->rot, sizeof(M3DTable), 4, (void *)Table_Free);
 	Table_Free((CTable *)&self->sgn);
-	crt_eh_vector_dtor(&self->pos, sizeof(M3DTable), 4, GAME_FUNC(Table_Free));
+	crt_eh_vector_dtor(&self->pos, sizeof(M3DTable), 4, (void *)Table_Free);
 }
 
 void __fastcall M3DTable6_dtor(M3DTable *self) {
@@ -107,7 +107,7 @@ void __fastcall M3DTable6_dtor(M3DTable *self) {
 
 void __fastcall M3DSkin_Free(CTable *self) {
 	if (self->p) {
-		Delete_Objects(self->p, sizeof(M3DSkinVert), GAME_FUNC(M3DSkinVert_dtor));
+		Delete_Objects(self->p, sizeof(M3DSkinVert), (void *)M3DSkinVert_dtor);
 		self->p = NULL;
 		self->n = 0;
 	}
@@ -126,7 +126,7 @@ void __fastcall M3DNode_dtor(M3DNode *self) {
 M3DNode *__thiscall M3DNode_Delete(M3DNode *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(M3DNode), *mem, GAME_FUNC(M3DNode_dtor));
+		crt_eh_vector_dtor(self, sizeof(M3DNode), *mem, (void *)M3DNode_dtor);
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
@@ -142,7 +142,7 @@ M3DNode *__thiscall M3DNode_Delete(M3DNode *self, uint32_t flags) {
 M3DSkinVert *__thiscall M3DSkinVert_Delete(M3DSkinVert *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(M3DSkinVert), *mem, GAME_FUNC(M3DSkinVert_dtor));
+		crt_eh_vector_dtor(self, sizeof(M3DSkinVert), *mem, (void *)M3DSkinVert_dtor);
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
@@ -2574,7 +2574,7 @@ static void M3D_ReadEVA(CNode3D *node, M3DNode *dat) {
 	m = *Matrix_MulD3D(&res, &piv, M3DNode_FrameMatrix(dat, &tmp, 0));
 	for (i = 0; i < nv; i++) {
 		CHECK(M3D_ReadInt("Vertice:") == i);
-		crt_eh_vector_ctor(t.t, sizeof(M3DTable), 4, GAME_FUNC(M3DTable_ctor), GAME_FUNC(Table_Free));
+		crt_eh_vector_ctor(t.t, sizeof(M3DTable), 4, (void *)M3DTable_ctor, (void *)Table_Free);
 		M3DTable_ReadFloat(&t.t[0], "EVA_X");
 		M3DTable_ReadFloat(&t.t[2], "EVA_Y");
 		M3DTable_ReadFloat(&t.t[1], "EVA_Z");
@@ -2586,7 +2586,7 @@ static void M3D_ReadEVA(CNode3D *node, M3DNode *dat) {
 			Vec3_TransformH(&v, &v, &m);
 			*CAnimVert_Frame(av, (uint32_t)f) = v;
 		}
-		crt_eh_vector_dtor(t.t, sizeof(M3DTable), 4, GAME_FUNC(Table_Free));
+		crt_eh_vector_dtor(t.t, sizeof(M3DTable), 4, (void *)Table_Free);
 	}
 	before = CEVA_MemSize(dat->AnimNode->EVA);
 	CAnimNode_OptimizeEVA(dat->AnimNode);
@@ -3190,7 +3190,7 @@ CScene *Scene_Load(const char *name, int arg, const char *name2) {
 		CAnimation_Init(scn->AnimM3D, nObj, g_M3DFrames, g_M3DFirstFrame);
 		scn->AnimM3D->fps = (float)fps;
 	}
-	g_M3DNodes = New_Objects((uint32_t)nObj, sizeof(M3DNode), GAME_FUNC(M3DNode_ctor), GAME_FUNC(M3DNode_dtor));
+	g_M3DNodes = New_Objects((uint32_t)nObj, sizeof(M3DNode), (void *)M3DNode_ctor, (void *)M3DNode_dtor);
 	if (bStatic) {
 		M3D_ReadSceneColor("LuzAmbiente:", &scn->ambient);
 	}
@@ -3267,7 +3267,7 @@ CScene *Scene_Load(const char *name, int arg, const char *name2) {
 	Scene_MatricesObj(scn);
 	Scene_PhysiqueSkin(scn);
 	if (g_M3DNodes) {
-		Delete_Objects(g_M3DNodes, sizeof(M3DNode), GAME_FUNC(M3DNode_dtor));
+		Delete_Objects(g_M3DNodes, sizeof(M3DNode), (void *)M3DNode_dtor);
 		g_M3DNodes = NULL;
 	}
 	if (g_M3DSceneTables) {

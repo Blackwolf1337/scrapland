@@ -123,7 +123,7 @@ void Net_Init(void) {
 	g_NetObjCounter = NET_PLAYER_MAX_ID + 1;
 	g_NetBotCounter = 0x100;
 	cGVar_SetFlag(g_GVarServerType, 1, Net_IsServer() || Net_IsClient());
-	g_MasterCommandCallback = (netmastercmd_t)GAME_FUNC(NetData_OnMasterCommand);
+	g_MasterCommandCallback = (netmastercmd_t)NetData_OnMasterCommand;
 }
 
 void NetData_ReadResources(cAbstractFile *f) {

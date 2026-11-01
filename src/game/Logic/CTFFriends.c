@@ -7,6 +7,9 @@
 #include "scrap/chartype.h"
 #include "scrap/vehicleentity.h"
 
+/* defined further down or in another file without a header */
+void CTFFriends_OnDamage(cAbstractFile *params);
+
 cEntity *Logic_FindCar(const char *name) {
 	return Logic_AsCar(World_FindEntity(name));
 }
@@ -101,7 +104,7 @@ void __fastcall cCTFFriends_Init(cCTFFriends *self) {
 	cCTFFriendsData *d = self->d;
 
 	d->list = cWorld_NewEntityList(g_pWorld, "CTFFriends");
-	cPy_Function_SetNative(&d->list->onDamage, (nativefunc_t)GAME_FUNC(CTFFriends_OnDamage));
+	cPy_Function_SetNative(&d->list->onDamage, (nativefunc_t)CTFFriends_OnDamage);
 }
 
 /* the native of the hits: the ship and its attacker */

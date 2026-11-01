@@ -1046,11 +1046,11 @@ void __thiscall cObjElementFXSparks_Emit(cObjElementFXSparks *self, int n, float
  */
 
 static inline void FX_TrailsCtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor), GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, (void *)CGameTrail_ctor, (void *)CGameTrail_dtor);
 }
 
 static inline void FX_TrailsDtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, (void *)CGameTrail_dtor);
 }
 
 /* the start of every constructor: the base class leaves 0, then the vtable of the class */

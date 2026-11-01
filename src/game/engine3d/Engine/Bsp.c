@@ -323,7 +323,7 @@ void __fastcall BspVB_Unwind(CRenderVB *self) {
 BspZone *__thiscall BspZone_Delete(BspZone *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(BspZone), *mem, GAME_FUNC(BspZone_dtor));
+		crt_eh_vector_dtor(self, sizeof(BspZone), *mem, (void *)BspZone_dtor);
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
@@ -338,7 +338,7 @@ BspZone *__thiscall BspZone_Delete(BspZone *self, uint32_t flags) {
 
 void __fastcall Table_FreeB4(CTable *t) {
 	if (t->p) {
-		Delete_Objects(t->p, sizeof(BspZone), GAME_FUNC(BspZone_dtor));
+		Delete_Objects(t->p, sizeof(BspZone), (void *)BspZone_dtor);
 		t->p = NULL;
 		t->n = 0;
 	}
@@ -820,7 +820,7 @@ void __thiscall CBsp_DrawPass(CBsp *self, byte pass) {
 	}
 	TABLE_CHECK(self->zones.p, 0, self->zones.n);
 	n = CBsp_ListZone(((BspZone *)self->zones.p)->tris, -1, pass, n);
-	crt_qsort(g_TriList, (size_t)n, sizeof(BspTri *), (int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpMat));
+	crt_qsort(g_TriList, (size_t)n, sizeof(BspTri *), (int (*)(const void *, const void *))(void *)BspTri_CmpMat);
 	for (int i = 0; i < n; i++) {
 		CBsp_DrawTri(self, g_TriList[i], pass);
 	}
@@ -1020,7 +1020,7 @@ void Bsp_Render(void) {
 	if (!g_ShadowMapUse || !g_RenderMap) {
 		return;
 	}
-	g_StencilRender = g_ShadowsStencil ? GAME_FUNC(Bsp_RenderStencil) : g_StencilRender;
+	g_StencilRender = g_ShadowsStencil ? (void *)Bsp_RenderStencil : g_StencilRender;
 	CBsp_Render(g_Bsp);
 	CModel_UpdateAnims(g_Bsp->model, 0.0f, -1);
 	CModel_Render(g_Bsp->model);
@@ -1532,7 +1532,7 @@ void __fastcall CBsp_GroupMaps(CBsp *self) {
 		self->lists[self->num_lists++] = self->nolmap[self->num_nolmap];
 	}
 	crt_qsort(self->lists, (size_t)self->num_lists, sizeof(BspTri *),
-		(int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpZone));
+		(int (*)(const void *, const void *))(void *)BspTri_CmpZone);
 	for (int i = 0; i < self->num_lists; i++) {
 		BspTri *list = self->lists[i];
 		E3D_DebugPrintf("agrupar mapas:  %d / %d   mem: %d Kb  \r", i + 1, self->num_lists, g_MemStats->bytes / 1024);
@@ -1584,7 +1584,7 @@ void __fastcall CBsp_GroupMaps(CBsp *self) {
 		BspLMap_CreateMat(l2, name2, 2);
 	}
 	crt_qsort(self->lists, (size_t)self->num_lists, sizeof(BspTri *),
-		(int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpZone));
+		(int (*)(const void *, const void *))(void *)BspTri_CmpZone);
 }
 
 
@@ -1594,7 +1594,7 @@ void __fastcall CBsp_CreateZones(CBsp *self) {
 	int n = Sector_Num() + 1;
 
 	crt_qsort(self->lists, (size_t)self->num_lists, sizeof(BspTri *),
-		(int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpZone));
+		(int (*)(const void *, const void *))(void *)BspTri_CmpZone);
 	Table_NewB4(&self->zones, n);
 	CHECK(self->zones.p);
 	memset(self->zones.p, 0, (size_t)self->zones.n * sizeof(BspZone));
@@ -2354,7 +2354,7 @@ void __thiscall Bsp_EndMessage(CBsp *self, int secs) {
 /* the map: made from the floor of the world */
 
 #define g_LmapSaveIni GAME_GLOBAL_IN(int, g_BspLodDist, 24)	/* the settings back into the .ini of the map */
-#define g_ShadowMapDlgCalc ((void *)GAME_FUNC(Bsp_DlgProc))	/* Bsp_DlgProc */
+#define g_ShadowMapDlgCalc ((void *)Bsp_DlgProc)	/* Bsp_DlgProc */
 
 typedef int(__stdcall *isdlgbuttonchecked_t)(void *hwnd, int id);
 typedef int(__stdcall *checkdlgbutton_t)(void *hwnd, int id, unsigned check);
@@ -3163,7 +3163,7 @@ void __fastcall CBsp_Prepare(CBsp *self) {
 		}
 	}
 	E3D_LogDebug(g_FileLog, "\nTotal map triangles by material:");
-	crt_qsort(tab.p, (size_t)tab.n, sizeof(BspMatStat), (int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpId));
+	crt_qsort(tab.p, (size_t)tab.n, sizeof(BspMatStat), (int (*)(const void *, const void *))(void *)BspTri_CmpId);
 	int totTri = 0, totVert = 0;
 	for (int i = 0; i < tab.n; i++) {
 		BspMatStat *e = BspMatStat_Get(&tab, i);

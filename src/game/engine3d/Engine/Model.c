@@ -89,7 +89,7 @@ static void Model_AddMove(CModel *self, const vec3_t *r) {
 
 static void Lods_Delete(CTable *t) {
 	if (t->p) {
-		Delete_Objects(t->p, sizeof(CLod), GAME_FUNC(CLod_dtor));
+		Delete_Objects(t->p, sizeof(CLod), (void *)CLod_dtor);
 		t->p = NULL;
 		t->n = 0;
 	}
@@ -184,7 +184,7 @@ static void *DeleteVecArray(void *self, uint32_t flags, uint32_t size, void *dto
 
 void *__thiscall CLod_DeleteVec(CLod *self, uint32_t flags) {
 	if (flags & 2) {
-		return DeleteVecArray(self, flags, sizeof(CLod), GAME_FUNC(CLod_dtor));
+		return DeleteVecArray(self, flags, sizeof(CLod), (void *)CLod_dtor);
 	}
 	CLod_dtor(self);
 	if (flags & 1) {
@@ -195,7 +195,7 @@ void *__thiscall CLod_DeleteVec(CLod *self, uint32_t flags) {
 
 void *__thiscall CRenderNode_DeleteVec(CRenderNode *self, uint32_t flags) {
 	if (flags & 2) {
-		return DeleteVecArray(self, flags, sizeof(CRenderNode), GAME_FUNC(CRenderNode_dtor));
+		return DeleteVecArray(self, flags, sizeof(CRenderNode), (void *)CRenderNode_dtor);
 	}
 	CRenderNode_dtor(self);
 	if (flags & 1) {
@@ -629,7 +629,7 @@ void __thiscall CModel_SetScene(CModel *self, CScene *scn) {
 
 	if (tab) {
 		if (tab->p) {
-			Delete_Objects(tab->p, sizeof(CRenderNode), GAME_FUNC(CRenderNode_dtor));
+			Delete_Objects(tab->p, sizeof(CRenderNode), (void *)CRenderNode_dtor);
 			tab->p = NULL;
 			tab->n = 0;
 		}

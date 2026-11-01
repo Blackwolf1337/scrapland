@@ -7,6 +7,9 @@
 
 #include "scrap/chartype.h"
 
+/* defined further down or in another file without a header */
+void *GenCharGroup_MakeLogic(cEntity *e);
+
 cGenCharGroup *__fastcall cGenCharGroup_ctor(cGenCharGroup *self) {
 	self->level = -1;
 	self->timer = 0.0f;
@@ -56,7 +59,7 @@ int __fastcall cGenCharGroup_GetLevel(cGenCharGroup *self) {
 }
 
 void __fastcall cGenCharGroup_Init(cGenCharGroup *self) {
-	int (*make)(void) = (int (*)(void))GAME_FUNC(GenCharGroup_MakeLogic);
+	int (*make)(void) = (int (*)(void))(void *)GenCharGroup_MakeLogic;
 	cEntityListData *l = cWorld_NewEntityList(g_pWorld, "Bishop");
 
 	self->bishops = l;

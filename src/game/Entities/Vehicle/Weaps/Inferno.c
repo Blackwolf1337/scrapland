@@ -46,7 +46,7 @@ cEntity *Inferno_NetCreate(const char *name, vec3_t pos, vec3_t dir) {
 	Obj_Vtbl(m)->SetAng(m, &dir);
 	cMissileEntity_SetSwarmSpeed((cMissileEntity *)m, g_InfernoBeesSpeed);
 	cMissileEntity_SetLifeTime((cMissileEntity *)m, g_InfernoLifeTime);
-	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)GAME_FUNC(Inferno_HitNative));
+	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)Inferno_HitNative);
 	cEntity_SetNetResource(m, "Inferno");
 	return m;
 }
@@ -140,9 +140,9 @@ void Inferno_FireNative(cAbstractFile *f) {
 	}
 	Controls_RumbleA(&Veh(v)->controls, 1.0f, 0.3f);
 	Controls_RumbleB(&Veh(v)->controls, 1.0f, 0.5f);
-	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)GAME_FUNC(Inferno_ServerHitNative));
-	cPy_Function_SetNative(&WLife(m)->onDeath, (nativefunc_t)GAME_FUNC(Inferno_OnDeathNative));
-	cPy_Function_SetNative(&WLife(m)->onDamage, (nativefunc_t)GAME_FUNC(Inferno_OnDamageNative));
+	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)Inferno_ServerHitNative);
+	cPy_Function_SetNative(&WLife(m)->onDeath, (nativefunc_t)Inferno_OnDeathNative);
+	cPy_Function_SetNative(&WLife(m)->onDamage, (nativefunc_t)Inferno_OnDamageNative);
 	cMissileEntity_SetBeesHit((cMissileEntity *)m, 1);
 	if (!WLife(m)->god) {
 		WLife(m)->life = g_InfernoArmor;

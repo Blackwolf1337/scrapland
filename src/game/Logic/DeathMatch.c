@@ -6,6 +6,9 @@
 #include "scrap/chartype.h"
 #include "scrap/vehicleentity.h"
 
+/* defined further down or in another file without a header */
+void DeathMatch_OnDamage(cAbstractFile *params);
+
 cDeathMatch *__fastcall cDeathMatch_ctor(cDeathMatch *self) {
 	self->list = NULL;
 	self->timer = 0.0f;
@@ -62,7 +65,7 @@ void __fastcall cDeathMatch_Think(cDeathMatch *self) {
 
 void __fastcall cDeathMatch_Init(cDeathMatch *self) {
 	self->list = cWorld_NewEntityList(g_pWorld, "DeathMatch");
-	cPy_Function_SetNative(&self->list->onDamage, (nativefunc_t)GAME_FUNC(DeathMatch_OnDamage));
+	cPy_Function_SetNative(&self->list->onDamage, (nativefunc_t)DeathMatch_OnDamage);
 }
 
 /* the native of the hits: the ship and its attacker */

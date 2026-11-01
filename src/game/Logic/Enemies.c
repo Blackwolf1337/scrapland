@@ -10,6 +10,9 @@
 #include "scrap/input.h"
 #include "scrap/world.h"
 
+/* defined further down or in another file without a header */
+cLocalLogic *Enemies_MakeLogic(cEntity *e);
+
 cEnemies *__fastcall cEnemies_ctor(cEnemies *self) {
 	self->usr = NULL;
 	self->ignoreFriends = 0;
@@ -138,9 +141,9 @@ void __fastcall cEnemies_Think(cEnemies *self) {
 void __fastcall cEnemies_Init(cEnemies *self) {
 	self->attacking = 0;
 	self->list = cWorld_NewEntityList(g_pWorld, "Enemies");
-	cPy_Function_SetNative(&self->list->onDamage, (nativefunc_t)GAME_FUNC(Logic_NativeNop));
-	cPy_Function_SetNative(&self->list->onDeath, (nativefunc_t)GAME_FUNC(Logic_NativeNop));
-	self->list->func = (int (*)(void))GAME_FUNC(Enemies_MakeLogic);
+	cPy_Function_SetNative(&self->list->onDamage, (nativefunc_t)Logic_NativeNop);
+	cPy_Function_SetNative(&self->list->onDeath, (nativefunc_t)Logic_NativeNop);
+	self->list->func = (int (*)(void))(void *)Enemies_MakeLogic;
 }
 
 /* "IgnoreFriends", a flag of the world (+0x2174, the field of World_Enemies) for every ship */

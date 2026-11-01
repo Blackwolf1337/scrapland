@@ -20,7 +20,7 @@
 #define g_AICCNumNear GAME_GLOBAL(int, g_AICCNumNear)
 #define g_AICCNearSelf GAME_GLOBAL(cEntity *, g_AICCNearSelf)	/* the character itself, left out */
 #define g_AICCNearFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0))
-#define AICC_NEAR_NATIVE ((nativefunc_t)GAME_FUNC(AICC_NearChar))	/* AICC_NearChar (its C version behind the hook) */
+#define AICC_NEAR_NATIVE ((nativefunc_t)AICC_NearChar)	/* AICC_NearChar (its C version behind the hook) */
 #define AICC_MAX_NEAR 20
 
 #define AICC_EXE_EMPTY GAME_STR(str_Empty)	/* "" */

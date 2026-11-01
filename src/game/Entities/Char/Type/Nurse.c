@@ -255,7 +255,7 @@ void ChType_NurseHit(void) {
 	if (!cActCtrl_IsActive(ChType_ActCtrl(v), "ActionLoop")) {
 		return;
 	}
-	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)GAME_FUNC(ChType_NurseSphereHit));
+	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)ChType_NurseSphereHit);
 	cActCtrl_SetDefLoop(ChType_ActCtrl(v), "Relax", 1);
 	float ay = Obj_Vtbl(v)->GetAng(v, &t1)->y;
 	rot.x = 0.0f;

@@ -37,13 +37,13 @@ cFXElementsMentalControllerMainFX *__thiscall cFXElementsMentalControllerMainFX_
 	cFXElementsMentalControllerMainFX *self, const char *name, const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSMENTALCONTROLLERMAINFX_VFTABLE;
-	crt_eh_vector_ctor(self->tubeTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, GAME_FUNC(CGameTrail_ctor),
-		GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_ctor(self->tubeTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, (void *)CGameTrail_ctor,
+		(void *)CGameTrail_dtor);
 	CGameParticles_ctor(&self->dataFluid);
-	crt_eh_vector_ctor(self->glowTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, GAME_FUNC(CGameTrail_ctor),
-		GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_ctor(self->glowTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, (void *)CGameTrail_ctor,
+		(void *)CGameTrail_dtor);
 	CGameParticles_ctor(&self->tubeGlow);
-	crt_eh_vector_ctor(self->topTrails, sizeof(CGameTrail), 2, GAME_FUNC(CGameTrail_ctor), GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_ctor(self->topTrails, sizeof(CGameTrail), 2, (void *)CGameTrail_ctor, (void *)CGameTrail_dtor);
 	for (int i = 0; i < FXMENTALCONTROLLERMAINCOUNT; i++) {
 		self->controllers[i] = NULL;
 	}
@@ -69,11 +69,11 @@ void __fastcall cFXElementsMentalControllerDamageFX_dtor(cFXElementsMentalContro
 void __fastcall cFXElementsMentalControllerMainFX_dtor(cFXElementsMentalControllerMainFX *self) {
 	self->base.vftable = CFXELEMENTSMENTALCONTROLLERMAINFX_VFTABLE;
 	CGameParticles_Release(&self->dataFluid);
-	crt_eh_vector_dtor(self->topTrails, sizeof(CGameTrail), 2, GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_dtor(self->topTrails, sizeof(CGameTrail), 2, (void *)CGameTrail_dtor);
 	CGameParticles_Release(&self->tubeGlow);
-	crt_eh_vector_dtor(self->glowTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_dtor(self->glowTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, (void *)CGameTrail_dtor);
 	CGameParticles_Release(&self->dataFluid);
-	crt_eh_vector_dtor(self->tubeTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_dtor(self->tubeTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, (void *)CGameTrail_dtor);
 	cMapElement_dtor(&self->base);
 }
 

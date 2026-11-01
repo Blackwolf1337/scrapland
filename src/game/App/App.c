@@ -20,14 +20,15 @@
 #include "scrap/sound.h"
 #include "scrap/win32.h"
 #include "scrap/world.h"
+#include "scrap/scoreritems.h"
 
 #define APP_EMPTY GAME_STR(str_Empty)	/* "" of the exe */
 #define APP_RANDSCALE GAME_GLOBAL(double, g_FxRandScale)	/* 1 / 32767 */
 
 /* the engine callbacks of the exe (Engine_SetCallback) */
-#define APP_CB_WORLDFRAME ((void (*)(void))GAME_FUNC(Scorer_Render))
-#define APP_CB_LOADINGXBOX ((void (*)(void))GAME_FUNC(Loading_DrawXbox))
-#define APP_CB_LOADING ((void (*)(void))GAME_FUNC(Loading_Draw))
+#define APP_CB_WORLDFRAME ((void (*)(void))(void *)Scorer_Render)
+#define APP_CB_LOADINGXBOX ((void (*)(void))(void *)Loading_DrawXbox)
+#define APP_CB_LOADING ((void (*)(void))(void *)Loading_Draw)
 
 #define PSAIMAGE_SIZE 0x44
 

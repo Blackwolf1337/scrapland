@@ -36,6 +36,7 @@
 #include "scrap/scrap.h"
 #include "scrap/utild3d.h"
 #include "scrap/weapons.h"
+#include "scrap/scorerhud.h"
 
 #define CSCORER_VFTABLE GAME_VFTABLE(cScorer_vftable)
 #define CSCORERITEM_VFTABLE GAME_VFTABLE(cScorerItem_vftable)
@@ -196,7 +197,7 @@ void __fastcall cScorerItem_dtor(cScorerItem *self) {
 cScorer *__thiscall cScorer_Delete(cScorer *self, byte flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(cScorer), *mem, GAME_FUNC(cScorer_dtor));
+		crt_eh_vector_dtor(self, sizeof(cScorer), *mem, (void *)cScorer_dtor);
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
@@ -392,38 +393,38 @@ cScorerItem *__thiscall cScorer_AddItem(cScorer *scorer, const char *name, const
 		uint32_t size;
 		void *ctor;			/* fastcall */
 	} s_ItemTypes[] = {
-		{"Hint", 0xd0, GAME_FUNC(cHintScorer_ctor)},
-		{"Label", 0xd0, GAME_FUNC(cLabelScorer_ctor)},
-		{"Msg", 0xc8, GAME_FUNC(cMsgScorer_ctor)},
-		{"Timer", 0xf0, GAME_FUNC(cTimerScorer_ctor)},
-		{"Talk", 0x1a80, GAME_FUNC(cTalkScorer_ctor)},
-		{"Chat", 0xbc, GAME_FUNC(cChatScorer_ctor)},
-		{"WindFx", 0x100, GAME_FUNC(cWindFxScorer_ctor)},
-		{"Bar", 0x108, GAME_FUNC(cBarScorer_ctor)},
-		{"Cannon", 0xec, GAME_FUNC(cCannonScorer_ctor)},
-		{"Monitor", 0x354, GAME_FUNC(cMonitorScorer_ctor)},
-		{"Target", 0x148, GAME_FUNC(cTargetScorer_ctor)},
-		{"Waypoint", 0xc4, GAME_FUNC(cWaypointScorer_ctor)},
-		{"Radar", 0x94c, GAME_FUNC(cRadarScorer_ctor)},
-		{"Sprite", 0xc4, GAME_FUNC(cSpriteScorer_ctor)},
-		{"Text", 0xdc, GAME_FUNC(cTextScorer_ctor)},
-		{"NetStats", 0x230, GAME_FUNC(cNetStatsScorer_ctor)},
-		{"Weapon", 0x1c4, GAME_FUNC(cWeaponScorer_ctor)},
-		{"Status", 0x1fc, GAME_FUNC(cStatusScorer_ctor)},
-		{"CopMeter", 0xf0, GAME_FUNC(cCopMeterScorer_ctor)},
-		{"Button", 0x168, GAME_FUNC(cButtonScorer_ctor)},
-		{"SpecialAction", 0x138, GAME_FUNC(cSpecialActionScorer_ctor)},
-		{"HangarShip", 0xf0, GAME_FUNC(cHangarShipScorer_ctor)},
-		{"Circuit", 0xc8, GAME_FUNC(cCircuitScorer_ctor)},
-		{"Tab", 0xf0, GAME_FUNC(cTabScorer_ctor)},
-		{"Slider", 0xf8, GAME_FUNC(cSliderScorer_ctor)},
-		{"Head", 0xc4, GAME_FUNC(cHeadScorer_ctor)},
-		{"Mission", 0xec, GAME_FUNC(cMissionScorer_ctor)},
-		{"Credits", 0x32dc, GAME_FUNC(cCreditsScorer_ctor)},
-		{"TextTyping", 0xf4, GAME_FUNC(cTextTypingScorer_ctor)},
-		{"ScraplandMainMenu", 0xc8, GAME_FUNC(cScraplandMainMenuScorer_ctor)},
-		{"ScraplandSubMenu", 0xd8, GAME_FUNC(cScraplandSubMenuScorer_ctor)},
-		{"Gradient", 0xd8, GAME_FUNC(cGradientScorer_ctor)},
+		{"Hint", 0xd0, (void *)cHintScorer_ctor},
+		{"Label", 0xd0, (void *)cLabelScorer_ctor},
+		{"Msg", 0xc8, (void *)cMsgScorer_ctor},
+		{"Timer", 0xf0, (void *)cTimerScorer_ctor},
+		{"Talk", 0x1a80, (void *)cTalkScorer_ctor},
+		{"Chat", 0xbc, (void *)cChatScorer_ctor},
+		{"WindFx", 0x100, (void *)cWindFxScorer_ctor},
+		{"Bar", 0x108, (void *)cBarScorer_ctor},
+		{"Cannon", 0xec, (void *)cCannonScorer_ctor},
+		{"Monitor", 0x354, (void *)cMonitorScorer_ctor},
+		{"Target", 0x148, (void *)cTargetScorer_ctor},
+		{"Waypoint", 0xc4, (void *)cWaypointScorer_ctor},
+		{"Radar", 0x94c, (void *)cRadarScorer_ctor},
+		{"Sprite", 0xc4, (void *)cSpriteScorer_ctor},
+		{"Text", 0xdc, (void *)cTextScorer_ctor},
+		{"NetStats", 0x230, (void *)cNetStatsScorer_ctor},
+		{"Weapon", 0x1c4, (void *)cWeaponScorer_ctor},
+		{"Status", 0x1fc, (void *)cStatusScorer_ctor},
+		{"CopMeter", 0xf0, (void *)cCopMeterScorer_ctor},
+		{"Button", 0x168, (void *)cButtonScorer_ctor},
+		{"SpecialAction", 0x138, (void *)cSpecialActionScorer_ctor},
+		{"HangarShip", 0xf0, (void *)cHangarShipScorer_ctor},
+		{"Circuit", 0xc8, (void *)cCircuitScorer_ctor},
+		{"Tab", 0xf0, (void *)cTabScorer_ctor},
+		{"Slider", 0xf8, (void *)cSliderScorer_ctor},
+		{"Head", 0xc4, (void *)cHeadScorer_ctor},
+		{"Mission", 0xec, (void *)cMissionScorer_ctor},
+		{"Credits", 0x32dc, (void *)cCreditsScorer_ctor},
+		{"TextTyping", 0xf4, (void *)cTextTypingScorer_ctor},
+		{"ScraplandMainMenu", 0xc8, (void *)cScraplandMainMenuScorer_ctor},
+		{"ScraplandSubMenu", 0xd8, (void *)cScraplandSubMenuScorer_ctor},
+		{"Gradient", 0xd8, (void *)cGradientScorer_ctor},
 	};
 	cScorerItem *it = NULL;
 	uint32_t k;
@@ -630,7 +631,7 @@ void Scorer_Init(void) {
 	if (mem) {
 		sc = (cScorer *)(mem + 1);
 		*mem = 4;
-		crt_eh_vector_ctor(sc, sizeof(cScorer), 4, GAME_FUNC(cScorer_ctor), GAME_FUNC(cScorer_dtor));
+		crt_eh_vector_ctor(sc, sizeof(cScorer), 4, (void *)cScorer_ctor, (void *)cScorer_dtor);
 	}
 	g_Scorers = sc;
 	sc[0].player = 0;
@@ -1452,7 +1453,7 @@ void Console_OnInput(int player, const char *text) {
 	cPlayerInput_SetString(&g_PlayerInput[0], EXE_EMPTY);
 	g_ConsoleHistoryPos = 0;
 	if (g_ConsoleOn) {
-		g_PlayerInput[0].onDone = GAME_FUNC(Console_OnInput);
+		g_PlayerInput[0].onDone = (void *)Console_OnInput;
 	}
 }
 
@@ -1492,7 +1493,7 @@ void Scorer_SetConsole(int on) {
 		Input_SelectActionSet(2);
 		memcpy(g_ConsoleSavedInput, &g_PlayerInput[0], sizeof(cPlayerInput));
 		cPlayerInput_SetString(&g_PlayerInput[0], EXE_EMPTY);
-		g_PlayerInput[0].onDone = GAME_FUNC(Console_OnInput);
+		g_PlayerInput[0].onDone = (void *)Console_OnInput;
 		CPsaImage *img = operator_new(sizeof(CPsaImage));
 		g_ConsoleWhite = img ? CPsaImage_ctor(img, "2D/white.tga", 0x24) : NULL;
 		g_ConsoleCheckInput = g_pWorld->checkInput;

@@ -11,6 +11,26 @@
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/world.h"
+#include "scrap/fxcharactions.h"
+#include "scrap/fxvehicle.h"
+#include "scrap/fxweapons.h"
+
+/* defined further down or in another file without a header */
+void *__thiscall cObjElementFXCharacterConversion_ctor(void *self);
+void *__thiscall cObjElementFXCharacterConversor_ctor(void *self);
+void *__thiscall cObjElementFXCharacterDeath_ctor(void *self);
+void *__thiscall cObjElementFXCharacterTeleport_ctor(void *self);
+void *__thiscall cObjElementFXMaintenanceWork_ctor(void *self);
+void *__thiscall cObjElementFXMoneyTransfer_ctor(void *self);
+void *__thiscall cObjElementFXSceneBeatPickus_ctor(void *self);
+void *__thiscall cObjElementFXSceneBillArrives_A_ctor(void *self);
+void *__thiscall cObjElementFXSceneBishops_ctor(void *self);
+void *__thiscall cObjElementFXSceneDecontamination_ctor(void *self);
+void *__thiscall cObjElementFXSceneEnterMatrix_ctor(void *self);
+void *__thiscall cObjElementFXSceneHumanCD_ctor(void *self);
+void *__thiscall cObjElementFXSceneTheEndB_ctor(void *self);
+void *__thiscall cObjElementFXSceneYakuzzi_ctor(void *self);
+void *__thiscall cObjElementFXSputnik_ctor(void *self);
 
 #define COBJELEMENTABSTRACT_VFTABLE GAME_VFTABLE(cObjElementAbstract_vftable)
 #define DEBRIS_STEP 0.05f
@@ -29,69 +49,69 @@ byte cDebris_SetFX(int type, cDebris *d) {
 		uint32_t size;
 		void *ctor;
 	} debrisFX[] = {
-		{1, 0xb8, GAME_FUNC(cObjElementFXParticleSystem_ctor)},
-		{2, 0x1c, GAME_FUNC(cObjElementFXTrail_ctor)},
-		{3, 0x14, GAME_FUNC(cObjElementFXFadeOutTrail_ctor)},
-		{4, 0xc70, GAME_FUNC(cObjElementFXSparks_ctor)},
-		{5, 0x14, GAME_FUNC(cObjElementFXModelFade_ctor)},
-		{6, 0xcc, GAME_FUNC(cObjElementFXItemFade_ctor)},
-		{7, 0x648, GAME_FUNC(cObjElementFXItemTake_ctor)},
-		{8, 0xb8, GAME_FUNC(cObjElementFXParticleSystemDuDv_ctor)},
-		{30, 0xd4, GAME_FUNC(cObjElementFXFiredEntity_ctor)},
-		{31, 0x15c, GAME_FUNC(cObjElementFXHook_ctor)},
-		{32, 0xe0, GAME_FUNC(cObjElementFXSwarmMissile_ctor)},
-		{33, 0x768, GAME_FUNC(cObjElementFXTesla_ctor)},
-		{34, 0x1e8, GAME_FUNC(cObjElementFXATPC_ctor)},
-		{35, 0xd20, GAME_FUNC(cObjElementFXEMI_ctor)},
-		{36, 0x82e4, GAME_FUNC(cObjElementFXVehicleEMI_ctor)},
-		{38, 0x2d0, GAME_FUNC(cObjElementFXVehicleDamage_ctor)},
-		{39, 0x1720, GAME_FUNC(cObjElementFXVehicleSputnik_ctor)},
-		{40, 0xdc, GAME_FUNC(cObjElementFXFiredDebris_ctor)},
-		{41, 0x124, GAME_FUNC(cObjElementFXLaser_ctor)},
-		{42, 0x1f4, GAME_FUNC(cObjElementFXDebrisCloud_ctor)},
-		{43, 0xe4, GAME_FUNC(cObjElementFXInfernoMissile_ctor)},
-		{44, 0x24c8, GAME_FUNC(cObjElementFXInfernoExplosion_ctor)},
-		{45, 0x14, GAME_FUNC(cObjElementFXVehicleDeathTrail_ctor)},
-		{46, 0x14, GAME_FUNC(cObjElementFXDevastatorShoot_ctor)},
-		{47, 0x4c0, GAME_FUNC(cObjElementFXVehicleAccelerator_ctor)},
-		{48, 0xdc, GAME_FUNC(cObjElementFXSmokeDebris_ctor)},
-		{49, 0x1fc, GAME_FUNC(cObjElementFXVehicleFire_ctor)},
-		{50, 0x220, GAME_FUNC(cObjElementFXSonicExplosion_ctor)},
-		{51, 0x14, GAME_FUNC(cObjElementFXModelNoise_ctor)},
-		{60, 0xe0, GAME_FUNC(cObjElementFXSputnik_ctor)},
-		{61, 0xf68, GAME_FUNC(cObjElementFXCharacterDeath_ctor)},
-		{62, 0x298, GAME_FUNC(cObjElementFXCharacterConversor_ctor)},
-		{63, 0x89c, GAME_FUNC(cObjElementFXCharacterConversion_ctor)},
-		{64, 0xd8, GAME_FUNC(cObjElementFXCharacterTeleport_ctor)},
-		{71, 0x6bc, GAME_FUNC(cObjElementFXGearMissile_ctor)},
-		{72, 0xd0, GAME_FUNC(cObjElementFXBankerSteal_ctor)},
-		{73, 0xcc, GAME_FUNC(cObjElementFXPoliceSteal_ctor)},
-		{74, 0x1ac, GAME_FUNC(cObjElementFXFunctionarySpecialAction_ctor)},
-		{75, 0xe0, GAME_FUNC(cObjElementFXMaintenanceWork_ctor)},
-		{76, 0xa54, GAME_FUNC(cObjElementFXPoliceGearConversion_ctor)},
-		{77, 0x918, GAME_FUNC(cObjElementFXDTritusKill_ctor)},
-		{78, 0x1158, GAME_FUNC(cObjElementFXDTritusAttack_ctor)},
-		{79, 0x180, GAME_FUNC(cObjElementFXBishopSellLife_ctor)},
-		{80, 0xfc, GAME_FUNC(cObjElementFXBishopAttack_ctor)},
-		{81, 0xcc, GAME_FUNC(cObjElementFXBertoAttack_ctor)},
-		{82, 0x678, GAME_FUNC(cObjElementFXBertoFlash_ctor)},
-		{83, 0xcc, GAME_FUNC(cObjElementFXMoneyTransfer_ctor)},
-		{84, 0x3ec, GAME_FUNC(cObjElementFXMessengerAttack_ctor)},
-		{85, 0x174, GAME_FUNC(cObjElementFXMessengerTakeDataPack_ctor)},
-		{86, 0x7e0, GAME_FUNC(cObjElementFXSebastianFlash_ctor)},
-		{87, 0x1a8, GAME_FUNC(cObjElementFXBettyAttack_ctor)},
-		{88, 0x918, GAME_FUNC(cObjElementFXBettyKill_ctor)},
-		{89, 0xd4, GAME_FUNC(cObjElementFXBankMasterAttack_ctor)},
-		{90, 0x1ec, GAME_FUNC(cObjElementFXBankMasterSuction_ctor)},
-		{91, 0xd4, GAME_FUNC(cObjElementFXMercenaryDrink_ctor)},
-		{100, 0x11ec, GAME_FUNC(cObjElementFXSceneDecontamination_ctor)},
-		{101, 0x1b8, GAME_FUNC(cObjElementFXSceneBishops_ctor)},
-		{102, 0xec, GAME_FUNC(cObjElementFXSceneBillArrives_A_ctor)},
-		{103, 0xd4, GAME_FUNC(cObjElementFXSceneYakuzzi_ctor)},
-		{104, 0x240, GAME_FUNC(cObjElementFXSceneBeatPickus_ctor)},
-		{105, 0x184, GAME_FUNC(cObjElementFXSceneHumanCD_ctor)},
-		{106, 0x798, GAME_FUNC(cObjElementFXSceneEnterMatrix_ctor)},
-		{107, 0xcc, GAME_FUNC(cObjElementFXSceneTheEndB_ctor)},
+		{1, 0xb8, (void *)cObjElementFXParticleSystem_ctor},
+		{2, 0x1c, (void *)cObjElementFXTrail_ctor},
+		{3, 0x14, (void *)cObjElementFXFadeOutTrail_ctor},
+		{4, 0xc70, (void *)cObjElementFXSparks_ctor},
+		{5, 0x14, (void *)cObjElementFXModelFade_ctor},
+		{6, 0xcc, (void *)cObjElementFXItemFade_ctor},
+		{7, 0x648, (void *)cObjElementFXItemTake_ctor},
+		{8, 0xb8, (void *)cObjElementFXParticleSystemDuDv_ctor},
+		{30, 0xd4, (void *)cObjElementFXFiredEntity_ctor},
+		{31, 0x15c, (void *)cObjElementFXHook_ctor},
+		{32, 0xe0, (void *)cObjElementFXSwarmMissile_ctor},
+		{33, 0x768, (void *)cObjElementFXTesla_ctor},
+		{34, 0x1e8, (void *)cObjElementFXATPC_ctor},
+		{35, 0xd20, (void *)cObjElementFXEMI_ctor},
+		{36, 0x82e4, (void *)cObjElementFXVehicleEMI_ctor},
+		{38, 0x2d0, (void *)cObjElementFXVehicleDamage_ctor},
+		{39, 0x1720, (void *)cObjElementFXVehicleSputnik_ctor},
+		{40, 0xdc, (void *)cObjElementFXFiredDebris_ctor},
+		{41, 0x124, (void *)cObjElementFXLaser_ctor},
+		{42, 0x1f4, (void *)cObjElementFXDebrisCloud_ctor},
+		{43, 0xe4, (void *)cObjElementFXInfernoMissile_ctor},
+		{44, 0x24c8, (void *)cObjElementFXInfernoExplosion_ctor},
+		{45, 0x14, (void *)cObjElementFXVehicleDeathTrail_ctor},
+		{46, 0x14, (void *)cObjElementFXDevastatorShoot_ctor},
+		{47, 0x4c0, (void *)cObjElementFXVehicleAccelerator_ctor},
+		{48, 0xdc, (void *)cObjElementFXSmokeDebris_ctor},
+		{49, 0x1fc, (void *)cObjElementFXVehicleFire_ctor},
+		{50, 0x220, (void *)cObjElementFXSonicExplosion_ctor},
+		{51, 0x14, (void *)cObjElementFXModelNoise_ctor},
+		{60, 0xe0, (void *)cObjElementFXSputnik_ctor},
+		{61, 0xf68, (void *)cObjElementFXCharacterDeath_ctor},
+		{62, 0x298, (void *)cObjElementFXCharacterConversor_ctor},
+		{63, 0x89c, (void *)cObjElementFXCharacterConversion_ctor},
+		{64, 0xd8, (void *)cObjElementFXCharacterTeleport_ctor},
+		{71, 0x6bc, (void *)cObjElementFXGearMissile_ctor},
+		{72, 0xd0, (void *)cObjElementFXBankerSteal_ctor},
+		{73, 0xcc, (void *)cObjElementFXPoliceSteal_ctor},
+		{74, 0x1ac, (void *)cObjElementFXFunctionarySpecialAction_ctor},
+		{75, 0xe0, (void *)cObjElementFXMaintenanceWork_ctor},
+		{76, 0xa54, (void *)cObjElementFXPoliceGearConversion_ctor},
+		{77, 0x918, (void *)cObjElementFXDTritusKill_ctor},
+		{78, 0x1158, (void *)cObjElementFXDTritusAttack_ctor},
+		{79, 0x180, (void *)cObjElementFXBishopSellLife_ctor},
+		{80, 0xfc, (void *)cObjElementFXBishopAttack_ctor},
+		{81, 0xcc, (void *)cObjElementFXBertoAttack_ctor},
+		{82, 0x678, (void *)cObjElementFXBertoFlash_ctor},
+		{83, 0xcc, (void *)cObjElementFXMoneyTransfer_ctor},
+		{84, 0x3ec, (void *)cObjElementFXMessengerAttack_ctor},
+		{85, 0x174, (void *)cObjElementFXMessengerTakeDataPack_ctor},
+		{86, 0x7e0, (void *)cObjElementFXSebastianFlash_ctor},
+		{87, 0x1a8, (void *)cObjElementFXBettyAttack_ctor},
+		{88, 0x918, (void *)cObjElementFXBettyKill_ctor},
+		{89, 0xd4, (void *)cObjElementFXBankMasterAttack_ctor},
+		{90, 0x1ec, (void *)cObjElementFXBankMasterSuction_ctor},
+		{91, 0xd4, (void *)cObjElementFXMercenaryDrink_ctor},
+		{100, 0x11ec, (void *)cObjElementFXSceneDecontamination_ctor},
+		{101, 0x1b8, (void *)cObjElementFXSceneBishops_ctor},
+		{102, 0xec, (void *)cObjElementFXSceneBillArrives_A_ctor},
+		{103, 0xd4, (void *)cObjElementFXSceneYakuzzi_ctor},
+		{104, 0x240, (void *)cObjElementFXSceneBeatPickus_ctor},
+		{105, 0x184, (void *)cObjElementFXSceneHumanCD_ctor},
+		{106, 0x798, (void *)cObjElementFXSceneEnterMatrix_ctor},
+		{107, 0xcc, (void *)cObjElementFXSceneTheEndB_ctor},
 	};
 	unsigned i;
 

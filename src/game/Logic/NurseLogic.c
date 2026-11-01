@@ -10,6 +10,9 @@
 #include "scrap/chartype.h"
 #include "scrap/weapons.h"
 
+/* defined further down or in another file without a header */
+void *Nurses_MakeLogic(cEntity *e);
+
 #define NURSES_MAKELOGIC 0x154440
 #define NURSE_VT(self) ((self)->base.vftable)
 
@@ -20,7 +23,7 @@ void *__fastcall cNurses_ctor(cNurses *self) {
 
 void __fastcall cNurses_Init(cNurses *self) {
 	self->list = cWorld_NewEntityList(g_pWorld, "Nurse");
-	self->list->func = (int (*)(void))GAME_FUNC(Nurses_MakeLogic);
+	self->list->func = (int (*)(void))(void *)Nurses_MakeLogic;
 }
 
 void __fastcall cNurses_Think(cNurses *self) {

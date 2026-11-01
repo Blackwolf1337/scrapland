@@ -108,7 +108,7 @@ void Doors_Slot(cAbstractFile *params, uint32_t flags) {
 		return;
 	}
 	cEntity *door = World_FindEntity(name);
-	cPy_Function_SetNative(g_DoorSphereFunc, (nativefunc_t)GAME_FUNC(Doors_SphereEntity));
+	cPy_Function_SetNative(g_DoorSphereFunc, (nativefunc_t)Doors_SphereEntity);
 	g_DoorBack = 0;
 	g_DoorFront = 0;
 	g_DoorUsrBack = 0;

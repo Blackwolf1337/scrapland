@@ -347,8 +347,8 @@ void Engine_Init(void) {
 	g_TimerQPMult = g_TimerFreqMult;
 	Timer_GetQPFreq(&freq);
 	E3D_LogDebug(g_FileLog, "TimerQPFreq: %d", (int)freq);
-	Engine3D_Create(hInst, hWnd, GAME_FUNC(Engine_OneTimeInit), GAME_FUNC(Engine_FrameMove),
-		GAME_FUNC(Engine_FinalCleanup), 0);
+	Engine3D_Create(hInst, hWnd, (void *)Engine_OneTimeInit, (void *)Engine_FrameMove,
+		(void *)Engine_FinalCleanup, 0);
 	g_Engine->fullscreen = g_FullScreen && !APP_DEDICATED(g_pApp);
 	g_Engine->width = g_VideoWidth;
 	g_Engine->height = g_VideoHeight;
@@ -1079,11 +1079,11 @@ void Model_Info(const char *name, int n) {
 	Con_Verbosef("\n");
 	void *hInst = App_GetHInstance();
 	void *hWnd = App_GetHWnd();
-	exe_CreateDialogParamA(hInst, (const char *)0x99, hWnd, GAME_FUNC(Engine_SceneDlgProc), (intptr_t)e);
+	exe_CreateDialogParamA(hInst, (const char *)0x99, hWnd, (void *)Engine_SceneDlgProc, (intptr_t)e);
 }
 
 void Models_List(void) {
-	UtilScene_Dump((utilPrintf_t)GAME_FUNC(Con_Verbosef));
+	UtilScene_Dump((utilPrintf_t)Con_Verbosef);
 }
 
 /* the original copies its local also when the timer has no value (then uninitialized) */

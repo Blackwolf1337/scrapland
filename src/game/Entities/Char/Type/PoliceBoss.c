@@ -34,7 +34,7 @@ void ChType_FXPoliceBossBrup(cAbstractFile *params) {
 		s->flag = 1;
 		s->d = 980.0f;
 		s->b = 0.75f;
-		s->onHit = (DebrisHit_t)GAME_FUNC(ChType_PoliceBossBrupBounce);
+		s->onHit = (DebrisHit_t)ChType_PoliceBossBrupBounce;
 	}
 	int r = crt_rand();
 	int n = g_PoliceBossBrupDebrisMin + r % (g_PoliceBossBrupDebrisMax - g_PoliceBossBrupDebrisMin);
@@ -160,7 +160,7 @@ void ChType_PoliceBossBrup(cAbstractFile *params) {
 	g_PoliceBossEnt = World_FindEntity(name);
 	CHECK(g_PoliceBossEnt);
 	CHECK(Entity_IsType(g_PoliceBossEnt, TYEN_WALKCHAR));
-	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)GAME_FUNC(ChType_PoliceBossSphereHit));
+	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)ChType_PoliceBossSphereHit);
 	cWorld_SphereCallF(g_pWorld, 0x10, g_PoliceBossEnt->vftable->GetPos(g_PoliceBossEnt, &tmp),
 		g_PoliceBossActionRadius, g_ChTypeSphereFunc, 0);
 }

@@ -212,12 +212,12 @@ void __thiscall CAnimation_Init(CAnimation *self, int numObjects, int nframes, i
 	/* the destructors of the nodes free their tracks unless they are in the block */
 	g_ActAnimBlock = &self->AnimBlock;
 	if (self->AnimNode) {
-		Delete_Objects(self->AnimNode, sizeof(CAnimNode), GAME_FUNC(CAnimNode_dtor));
+		Delete_Objects(self->AnimNode, sizeof(CAnimNode), (void *)CAnimNode_dtor);
 		self->AnimNode = NULL;
 	}
 	self->num_objects = numObjects;
 	if (numObjects) {
-		self->AnimNode = New_Objects(numObjects, sizeof(CAnimNode), GAME_FUNC(CAnimNode_ctor), GAME_FUNC(CAnimNode_dtor));
+		self->AnimNode = New_Objects(numObjects, sizeof(CAnimNode), (void *)CAnimNode_ctor, (void *)CAnimNode_dtor);
 	}
 	g_ActAnimBlock = NULL;
 	if (self->AnimBlock.MemBlock) {
@@ -249,9 +249,9 @@ CAnimNode *__thiscall CAnimNode_Delete(CAnimNode *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
 		if (flags & 1) {
-			Delete_Objects(self, sizeof(CAnimNode), GAME_FUNC(CAnimNode_dtor));
+			Delete_Objects(self, sizeof(CAnimNode), (void *)CAnimNode_dtor);
 		} else {
-			crt_eh_vector_dtor(self, sizeof(CAnimNode), *mem, GAME_FUNC(CAnimNode_dtor));
+			crt_eh_vector_dtor(self, sizeof(CAnimNode), *mem, (void *)CAnimNode_dtor);
 		}
 		return (CAnimNode *)mem;
 	}
@@ -719,7 +719,7 @@ void __fastcall CAnimation_Trim(CAnimation *self) {
 	}
 	self->num_objects = n;
 	CHECK(self->num_objects);
-	CAnimNode *nodes = New_Objects(self->num_objects, sizeof(CAnimNode), GAME_FUNC(CAnimNode_ctor), GAME_FUNC(CAnimNode_dtor));
+	CAnimNode *nodes = New_Objects(self->num_objects, sizeof(CAnimNode), (void *)CAnimNode_ctor, (void *)CAnimNode_dtor);
 	/* an empty temporary node, its destructor inline */
 	g_AnimNodeCount++;
 	for (int i = 0; i < self->num_objects; i++) {
@@ -727,7 +727,7 @@ void __fastcall CAnimation_Trim(CAnimation *self) {
 		memset(&self->AnimNode[i], 0, sizeof(CAnimNode));
 	}
 	if (self->AnimNode) {
-		Delete_Objects(self->AnimNode, sizeof(CAnimNode), GAME_FUNC(CAnimNode_dtor));
+		Delete_Objects(self->AnimNode, sizeof(CAnimNode), (void *)CAnimNode_dtor);
 		self->AnimNode = NULL;
 	}
 	self->AnimNode = nodes;

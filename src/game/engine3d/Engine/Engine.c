@@ -166,7 +166,7 @@ void Engine3D_Shutdown(void) {
 int __thiscall CEngineApp_OneTimeSceneInit(CEngineApp *self) {
 	void *mem;
 
-	g_E3DCmdProc = GAME_FUNC(E3D_Command);
+	g_E3DCmdProc = (void *)E3D_Command;
 	E3D_DebugPrintf("\nprg: '%s'", E3D_GetExePath());
 	if (g_EngineInit && !((byte(*)(void))g_EngineInit)()) {
 		return (int)0x80004005;
@@ -700,7 +700,7 @@ void Engine_LoadVarsIni(const char *name, const char *dir) {
 /* the modal dialog of the lights of the global scene, the application paused meanwhile */
 void __thiscall CEngineApp_LightsDialog(CEngineApp *self, void *hwnd, void *inst) {
 	self->base.vftable->Pause(&self->base, 1);
-	exe_DialogBoxParamA(inst, (const char *)ENGINE_LIGHTSDIALOG, hwnd, GAME_FUNC(Engine_SceneDlgProc),
+	exe_DialogBoxParamA(inst, (const char *)ENGINE_LIGHTSDIALOG, hwnd, (void *)Engine_SceneDlgProc,
 		(intptr_t)self->scene);
 	self->base.vftable->Pause(&self->base, 0);
 }
@@ -1054,7 +1054,7 @@ void E3D_Command(char *cmd) {
 		Scene_LogTree(e, NULL, 0);
 		hwnd = g_Engine->hWnd;
 		exe_CreateDialogParamA((void *)exe_GetWindowLongA(hwnd, GWL_HINSTANCE), (const char *)ENGINE_LIGHTSDIALOG, hwnd,
-			GAME_FUNC(Engine_SceneDlgProc), (intptr_t)e);
+			(void *)Engine_SceneDlgProc, (intptr_t)e);
 		return;
 	}
 	if (!crt_stricmp(cmd, "mem")) {

@@ -42,11 +42,11 @@ static inline void FXA_SetVtbl(void *self, void *vt) {
 }
 
 static inline void FXA_TrailsCtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor), GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, (void *)CGameTrail_ctor, (void *)CGameTrail_dtor);
 }
 
 static inline void FXA_TrailsDtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, (void *)CGameTrail_dtor);
 }
 
 static inline void *FXA_Delete(void *self, uint32_t flags, uint32_t size) {
@@ -335,8 +335,8 @@ void *__thiscall cObjElementFXPoliceGearConversion_ctor(void *self) {
 	CGameParticles_ctor(&s->particles);
 	CGameParticles_ctor(&s->particles2);
 	FXA_TrailsCtor(s->trails, FXGEAR_TRAILS);
-	crt_eh_vector_ctor(s->armor, sizeof(CGameModel), FXGEAR_ARMORS, GAME_FUNC(CGameModel_ctorDefault),
-		GAME_FUNC(CGameModel_Reset));
+	crt_eh_vector_ctor(s->armor, sizeof(CGameModel), FXGEAR_ARMORS, (void *)CGameModel_ctorDefault,
+		(void *)CGameModel_Reset);
 	s->started = 0;
 	s->ent = NULL;
 	s->time = 0.0f;
@@ -495,7 +495,7 @@ void __thiscall cObjElementFXPoliceGearConversion_dtor(void *self) {
 	cObjElementFXPoliceGearConversion *s = self;
 
 	*(void **)s = VT_FXPOLICEGEARCONVERSION;
-	crt_eh_vector_dtor(s->armor, sizeof(CGameModel), FXGEAR_ARMORS, GAME_FUNC(CGameModel_Reset));
+	crt_eh_vector_dtor(s->armor, sizeof(CGameModel), FXGEAR_ARMORS, (void *)CGameModel_Reset);
 	FXA_TrailsDtor(s->trails, FXGEAR_TRAILS);
 	CGameParticles_Release(&s->particles2);
 	CGameParticles_Release(&s->particles);

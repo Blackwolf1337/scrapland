@@ -104,8 +104,8 @@ cEntity *Swarm_NetCreate(const char *name, vec3_t pos, vec3_t dir) {
 	Obj_Vtbl(m)->SetAng(m, &dir);
 	cMissileEntity_SetSwarmSpeed((cMissileEntity *)m, g_SwarmBeesSpeed);
 	cMissileEntity_SetLifeTime((cMissileEntity *)m, g_SwarmLifeTime);
-	cPy_Function_SetNative(&Missile(m)->onBeeDeath, (nativefunc_t)GAME_FUNC(Swarm_OnBeeHitNative));
-	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)GAME_FUNC(Swarm_HitFXNative));
+	cPy_Function_SetNative(&Missile(m)->onBeeDeath, (nativefunc_t)Swarm_OnBeeHitNative);
+	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)Swarm_HitFXNative);
 	cEntity_SetNetResource(m, "Swarm");
 	return m;
 }
@@ -136,9 +136,9 @@ void Swarm_FireNative(cAbstractFile *f) {
 	}
 	Controls_RumbleA(&Veh(v)->controls, 1.0f, 0.3f);
 	Controls_RumbleB(&Veh(v)->controls, 0.5f, 0.5f);
-	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)GAME_FUNC(Swarm_ServerHitNative));
-	cPy_Function_SetNative(&WLife(m)->onDeath, (nativefunc_t)GAME_FUNC(Swarm_OnDeathNative));
-	cPy_Function_SetNative(&WLife(m)->onDamage, (nativefunc_t)GAME_FUNC(Swarm_OnDamageNative));
+	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)Swarm_ServerHitNative);
+	cPy_Function_SetNative(&WLife(m)->onDeath, (nativefunc_t)Swarm_OnDeathNative);
+	cPy_Function_SetNative(&WLife(m)->onDamage, (nativefunc_t)Swarm_OnDamageNative);
 	if (!WLife(m)->god) {
 		WLife(m)->life = g_SwarmNumber1 * g_SwarmArmor;
 	}

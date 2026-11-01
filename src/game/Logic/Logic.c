@@ -12,6 +12,9 @@
 #include "scrap/timer.h"
 #include "scrap/vehicleentity.h"
 
+/* defined further down or in another file without a header */
+byte Logic_SetOriginCallback(cEntity *e);
+
 #define LOGIC_SETORIGINFUNC 0x151ce0
 #define g_NotCleanableByGearDef (GAME_ARRAY_IN(cString, GVar_NotCleanableByGear, 20))
 
@@ -50,7 +53,7 @@ void *__thiscall Logic_ctor(void *logic) {
 	cGenCharGroup_ctor(&self->genChars);
 	cGateKeepers_ctor(&self->gateKeepers);
 	cString_Assign((cString *)&g_NotCleanableByGear, g_NotCleanableByGearDef);
-	g_SetOriginFunc = GAME_FUNC(Logic_SetOriginCallback);
+	g_SetOriginFunc = (void *)Logic_SetOriginCallback;
 	return self;
 }
 

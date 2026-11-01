@@ -51,7 +51,7 @@ static inline void EFX_SetVtbl(void *self, void *vt) {
 }
 
 static inline void EFX_TrailsDtor(CGameTrail *trails, uint32_t n) {
-	crt_eh_vector_dtor(trails, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_dtor(trails, sizeof(CGameTrail), n, (void *)CGameTrail_dtor);
 }
 
 static inline cEmbeddedFX *EFX_Delete(cEmbeddedFX *self, byte flags, uint32_t size) {
@@ -110,7 +110,7 @@ static inline void EFX_TrailStyle(CGameTrail *t, byte segments, byte smooth, int
 /* ---- constructors ---- */
 
 static inline void EFX_TrailsCtor(CGameTrail *trails, uint32_t n) {
-	crt_eh_vector_ctor(trails, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor), GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_ctor(trails, sizeof(CGameTrail), n, (void *)CGameTrail_ctor, (void *)CGameTrail_dtor);
 }
 
 /* the original clears the vtable pointer before it stores the class one */

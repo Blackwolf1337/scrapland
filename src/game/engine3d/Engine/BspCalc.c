@@ -226,7 +226,7 @@ void __fastcall CBsp_CreateBuffers(CBsp *self) {
 		}
 	}
 	crt_qsort(self->lists, (size_t)self->num_lists, sizeof(BspTri *),
-		(int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpZone));
+		(int (*)(const void *, const void *))(void *)BspTri_CmpZone);
 	for (int i = 0; i < self->num_lists; i++) {
 		BspTri *l = self->lists[i];
 		E3D_LogPrint(g_FileLog, "%4d %-40s (%p)  lmap %02d  zona %02d  tri %d", i, l->Mat->Name, (void *)l->Mat,

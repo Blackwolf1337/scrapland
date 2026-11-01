@@ -8,6 +8,9 @@
 #include "scrap/chartype.h"
 #include "scrap/objentity.h"
 
+/* defined further down or in another file without a header */
+cGateKeeperLocalLogic *GateKeepers_MakeLogic(cEntity *e);
+
 cGateKeepers *__fastcall cGateKeepers_ctor(cGateKeepers *self) {
 	self->timer = 0.0f;
 	return self;
@@ -30,7 +33,7 @@ void __fastcall cGateKeepers_Init(cGateKeepers *self) {
 	cEntityListData *list = cWorld_NewEntityList(g_pWorld, "GateKeeper");
 
 	self->list = list;
-	list->func = (int (*)(void))GAME_FUNC(GateKeepers_MakeLogic);
+	list->func = (int (*)(void))(void *)GateKeepers_MakeLogic;
 }
 
 void __thiscall cGateKeepers_Update(cGateKeepers *self, float dt) {

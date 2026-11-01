@@ -14,6 +14,10 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
 
+/* defined further down or in another file without a header */
+void ExtPolice_OnDamage(cAbstractFile *params);
+void ExtPolice_OnDeath(cAbstractFile *params);
+
 #define g_MaxDistReposAI GAME_GLOBAL_IN(float, GVar_MaxDistReposAI, 16)
 
 cExtPolice *__fastcall cExtPolice_ctor(cExtPolice *self) {
@@ -229,8 +233,8 @@ void __fastcall cExtPolice_Think(cExtPolice *self) {
 
 void __fastcall cExtPolice_Init(cExtPolice *self) {
 	self->list = cWorld_NewEntityList(g_pWorld, "OutCop");
-	cPy_Function_SetNative(&self->list->onDamage, (nativefunc_t)GAME_FUNC(ExtPolice_OnDamage));
-	cPy_Function_SetNative(&self->list->onDeath, (nativefunc_t)GAME_FUNC(ExtPolice_OnDeath));
+	cPy_Function_SetNative(&self->list->onDamage, (nativefunc_t)ExtPolice_OnDamage);
+	cPy_Function_SetNative(&self->list->onDeath, (nativefunc_t)ExtPolice_OnDeath);
 }
 
 /* a cop attacks or chases e */

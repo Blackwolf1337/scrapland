@@ -11,6 +11,10 @@
 #include "scrap/itementity.h"
 #include "scrap/vehicleentity.h"
 
+/* defined further down or in another file without a header */
+cLocalLogic *CTFEnemies_MakeLogic(cEntity *e);
+void CTFEnemies_OnDamage(cAbstractFile *params);
+
 cEntity *Logic_AsCar(cEntity *e) {
 	if (e && !e->vftable->IsType(e, TYEN_CAR)) {
 		return NULL;
@@ -189,8 +193,8 @@ cEntityListData *__fastcall cCTFEnemies_Init(cCTFEnemies *self) {
 	cCTFEnemiesData *d = self->d;
 
 	d->list = cWorld_NewEntityList(g_pWorld, "CTFEnemies");
-	cPy_Function_SetNative(&d->list->onDamage, (nativefunc_t)GAME_FUNC(CTFEnemies_OnDamage));
-	d->list->func = (int (*)(void))GAME_FUNC(CTFEnemies_MakeLogic);
+	cPy_Function_SetNative(&d->list->onDamage, (nativefunc_t)CTFEnemies_OnDamage);
+	d->list->func = (int (*)(void))(void *)CTFEnemies_MakeLogic;
 	return d->list;
 }
 

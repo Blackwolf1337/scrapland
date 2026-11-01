@@ -7,6 +7,9 @@
 
 #include "scrap/chartype.h"
 
+/* defined further down or in another file without a header */
+void Mayor_SphereFunc(cAbstractFile *params);
+
 #define MAYOR_VT(self) ((self)->base.base.vftable)
 #define MAYOR_SPHEREFUNC 0x152e60
 
@@ -43,7 +46,7 @@ cEntity *__thiscall cMayorLocalLogic_FindTarget(cMayorLocalLogic *self) {
 	g_MayorTargetDist = 3.4028235e38f;
 	g_MayorTarget = NULL;
 	g_MayorSearchEnt = self->base.base.parent;
-	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)GAME_FUNC(Mayor_SphereFunc));
+	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)Mayor_SphereFunc);
 	float radius = g_MayorBlabliblaRadius;
 	cEntity *m = g_MayorSearchEnt;
 	cWorld_SphereCallF(g_pWorld, 0x10, m->vftable->GetPos(m, &t), radius, g_ChTypeSphereFunc, 1);

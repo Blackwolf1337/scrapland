@@ -4,6 +4,11 @@
 #include <string.h>
 
 #include "scrap/table.h"
+#include "scrap/bsp.h"
+#include "scrap/ground.h"
+#include "scrap/model.h"
+#include "scrap/node3d.h"
+#include "scrap/readm3d.h"
 
 static void Table_New(CTable *t, int num, uint32_t size) {
 	CHECK(!t->p && num > 0);
@@ -52,12 +57,12 @@ void __thiscall Table_Alloc10Z(CTable *t, int num) {
 	void __thiscall Table_New##sz(CTable *t, int num) { \
 		Table_NewObjs(t, num, 0x##sz, ctor, dtor); \
 	}
-TABLE_NEW(8, GAME_FUNC(CLod_ctor), GAME_FUNC(CLod_dtor))
-TABLE_NEW(1C, GAME_FUNC(M3DSkinVert_ctor), GAME_FUNC(M3DSkinVert_dtor))
-TABLE_NEW(24, GAME_FUNC(CCollideQuad_ctor), GAME_FUNC(CCollideQuad_dtor))
-TABLE_NEW(A8, GAME_FUNC(CRenderNode_ctor), GAME_FUNC(CRenderNode_dtor))
-TABLE_NEW(B4, GAME_FUNC(BspZone_ctor), GAME_FUNC(BspZone_dtor))
-TABLE_NEW(FC, GAME_FUNC(CNode3D_ctor), GAME_FUNC(CNode3D_dtor))
+TABLE_NEW(8, (void *)CLod_ctor, (void *)CLod_dtor)
+TABLE_NEW(1C, (void *)M3DSkinVert_ctor, (void *)M3DSkinVert_dtor)
+TABLE_NEW(24, (void *)CCollideQuad_ctor, (void *)CCollideQuad_dtor)
+TABLE_NEW(A8, (void *)CRenderNode_ctor, (void *)CRenderNode_dtor)
+TABLE_NEW(B4, (void *)BspZone_ctor, (void *)BspZone_dtor)
+TABLE_NEW(FC, (void *)CNode3D_ctor, (void *)CNode3D_dtor)
 
 #define TABLE_READ(sz) \
 	void Table_Read##sz(CFileIO *f, CTable *t) { \

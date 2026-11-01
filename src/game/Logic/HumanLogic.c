@@ -36,7 +36,7 @@ void *__thiscall cHumanLocalLogic_ctor(void *mem, cEntity *parent) {
 	self->base.vftable = CHUMANLOCALLOGIC_VFTABLE;
 	cPy_Function_ctor(&self->func);
 	g_HumanEnt = self->base.parent;
-	cPy_Function_SetNative(&self->func, (nativefunc_t)GAME_FUNC(HumanLogic_Escape));
+	cPy_Function_SetNative(&self->func, (nativefunc_t)HumanLogic_Escape);
 	return self;
 }
 

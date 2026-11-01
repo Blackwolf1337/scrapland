@@ -262,11 +262,11 @@ static inline void FXObj_SetVtbl(void *self, void *vt) {
 }
 
 static inline void FXObj_TrailsCtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor), GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, (void *)CGameTrail_ctor, (void *)CGameTrail_dtor);
 }
 
 static inline void FXObj_TrailsDtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, (void *)CGameTrail_dtor);
 }
 
 static inline void *FXObj_Delete(void *self, uint32_t flags, uint32_t size) {

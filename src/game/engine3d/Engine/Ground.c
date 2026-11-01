@@ -171,7 +171,7 @@ void __fastcall CCollideQuad_dtor(CCollideQuad *self) {
 CCollideQuad *__thiscall CCollideQuad_Delete(CCollideQuad *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(*self), *mem, GAME_FUNC(CCollideQuad_dtor));
+		crt_eh_vector_dtor(self, sizeof(*self), *mem, (void *)CCollideQuad_dtor);
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
@@ -188,7 +188,7 @@ CCollideQuad *__thiscall CCollideQuad_Delete(CCollideQuad *self, uint32_t flags)
 void *__thiscall CNode3D_VecDelete(void *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(CNode3D), *mem, GAME_FUNC(CNode3D_dtor));
+		crt_eh_vector_dtor(self, sizeof(CNode3D), *mem, (void *)CNode3D_dtor);
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
@@ -202,10 +202,10 @@ void *__thiscall CNode3D_VecDelete(void *self, uint32_t flags) {
 }
 
 CHeights *__fastcall CHeights_ctor(CHeights *self) {
-	crt_eh_vector_ctor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_ctor),
-		GAME_FUNC(CCollideMesh_dtor));
-	crt_eh_vector_ctor(self->_CollideMesh2, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_ctor),
-		GAME_FUNC(CCollideMesh_dtor));
+	crt_eh_vector_ctor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, (void *)CCollideMesh_ctor,
+		(void *)CCollideMesh_dtor);
+	crt_eh_vector_ctor(self->_CollideMesh2, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, (void *)CCollideMesh_ctor,
+		(void *)CCollideMesh_dtor);
 	CCollideMesh_ctor(&self->CollideMesh1);
 	CCollideMesh_ctor(&self->CollideMesh2);
 	memset(&self->ext, 0, sizeof(self->ext) + sizeof(self->dim));
@@ -224,7 +224,7 @@ CHeights *__fastcall CHeights_ctor(CHeights *self) {
 
 static void Heights_FreeQuads(CHeights *self) {
 	if (self->quads) {
-		Delete_Objects(self->quads, sizeof(CCollideQuad), GAME_FUNC(CCollideQuad_dtor));
+		Delete_Objects(self->quads, sizeof(CCollideQuad), (void *)CCollideQuad_dtor);
 		self->quads = NULL;
 		self->nQuads = 0;
 	}
@@ -248,8 +248,8 @@ void __fastcall CHeights_dtor(CHeights *self) {
 	Heights_FreeQuads(self);
 	CCollideMesh_dtor(&self->CollideMesh2);
 	CCollideMesh_dtor(&self->CollideMesh1);
-	crt_eh_vector_dtor(self->_CollideMesh2, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_dtor));
-	crt_eh_vector_dtor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_dtor));
+	crt_eh_vector_dtor(self->_CollideMesh2, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, (void *)CCollideMesh_dtor);
+	crt_eh_vector_dtor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, (void *)CCollideMesh_dtor);
 }
 
 /* CGround */

@@ -144,7 +144,7 @@ static cParkingZone *Parking_Next(cParkingList *list) {
 
 /* the ship (ParkingShip) or other entity (ParkingOther) in the zone, of the ParkingCheckRadius sphere */
 static void Parking_Look(const cParkingZone *z) {
-	cPy_Function_SetNative(g_LogicSphereFunc, GAME_FUNC(Parking_Native));
+	cPy_Function_SetNative(g_LogicSphereFunc, (void *)Parking_Native);
 	g_ParkingShip = NULL;
 	g_ParkingOther = NULL;
 	cWorld_SphereCallF(g_pWorld, 5, &z->pos, g_ParkingCheckRadius, g_LogicSphereFunc, 1);
@@ -220,10 +220,10 @@ const char *__thiscall Parking_Find(void *parking, int flag, const vec3_t *pos, 
 	list->iter = list->head;
 	cParkingZone *z = list->head ? &list->head->zone : NULL;
 	if ((byte)farest) {
-		cmp = GAME_FUNC(Parking_Farther);
+		cmp = (void *)Parking_Farther;
 		bestD = 0.0f;
 	} else {
-		cmp = GAME_FUNC(Parking_Nearer);
+		cmp = (void *)Parking_Nearer;
 		bestD = FLT_MAX;
 	}
 	while (z) {

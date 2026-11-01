@@ -50,7 +50,7 @@ cShipGroupData *__thiscall cShipGroupData_ctor(cShipGroupData *self, const char 
 	self->listName = list;
 	self->list = NULL;
 	self->timer = 0.0f;
-	cPy_Function_SetNative(&self->onSphere, GAME_FUNC(ShipGroup_SphereNative));
+	cPy_Function_SetNative(&self->onSphere, (void *)ShipGroup_SphereNative);
 	return self;
 }
 
@@ -172,7 +172,7 @@ void __fastcall cShipGroupData_Think(cShipGroupData *self) {
 			float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 			if (d > maxDist) {
 				cAIVehicle_SetState(ai, 1, lair, 3000.0, 1, 1.0, 20.0, 20.0, 1);
-				AIV_OnEnd(ai) = GAME_FUNC(ShipGroup_OnAIEnd);
+				AIV_OnEnd(ai) = (void *)ShipGroup_OnAIEnd;
 			} else if (st != 2 && (st != 7 || (usr && usr->vftable->IsType(usr, TYEN_CAR)))) {
 				if (count < maxAttack) {
 					count++;
@@ -200,8 +200,8 @@ void __fastcall cShipGroup_Init(cShipGroup *self) {
 	cShipGroupData *d = self->d;
 
 	d->list = (cEntityListData *)cWorld_NewEntityList(g_pWorld, d->listName);
-	cPy_Function_SetNative(&d->list->onDeath, GAME_FUNC(ShipGroup_DeathNative));
-	d->list->func = (int (*)(void))GAME_FUNC(ShipGroup_MakeLogic);
+	cPy_Function_SetNative(&d->list->onDeath, (void *)ShipGroup_DeathNative);
+	d->list->func = (int (*)(void))(void *)ShipGroup_MakeLogic;
 }
 
 /* the AI callback of a ship back at its lair: the ship goes */

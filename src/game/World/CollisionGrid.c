@@ -14,6 +14,9 @@
 #include "scrap/render.h"
 #include "scrap/world.h"
 
+/* defined further down or in another file without a header */
+int Stub_Zero(void);
+
 static inline cEntity *Grid_CurEntity(const cCollisionGrid *g) {
 	return g->cur ? g->cur->data : NULL;
 }
@@ -86,7 +89,7 @@ void __thiscall Grid_Free(void *grid) {
 	if (!g->cells) {
 		return;
 	}
-	Delete_Objects(g->cells, sizeof(Nto1Node), GAME_FUNC(Nto1Node_dtor));
+	Delete_Objects(g->cells, sizeof(Nto1Node), (void *)Nto1Node_dtor);
 	operator_delete_array(g->visited);
 	g->stamp = 0;
 	g->min.y = 0.0f;
@@ -120,7 +123,7 @@ void __thiscall Grid_Init(void *grid, const vec3_t *min, const vec3_t *max, cons
 	g->ny = (int)((max->y - min->y) / cell->y) + 1;
 	g->nz = (int)((max->z - min->z) / cell->z) + 1;
 	int count = g->ny * g->nz * g->nx;
-	g->cells = New_Objects(count, sizeof(Nto1Node), GAME_FUNC(GridCell_ctor), GAME_FUNC(Nto1Node_dtor));
+	g->cells = New_Objects(count, sizeof(Nto1Node), (void *)GridCell_ctor, (void *)Nto1Node_dtor);
 	for (int i = 0; i < count; i++) {
 		g->cells[i].target = &g->cells[i];
 	}
@@ -480,7 +483,7 @@ void *__thiscall cEntityList_ctor(void *mem, const char *name) {
 		*n = 0;
 	}
 	self->numElems = n;
-	self->func = (int (*)(void))GAME_FUNC(Stub_Zero);
+	self->func = (int (*)(void))(void *)Stub_Zero;
 	return self;
 }
 

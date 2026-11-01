@@ -399,7 +399,7 @@ int __thiscall CD3DApp_UserSelectNewDevice(CD3DApplication *self) {
 		return E_FAIL;
 	}
 	/* the device dialog (resource 0x90), SelectDeviceProc */
-	if (exe_DialogBoxParamA(exe_GetModuleHandleA(NULL), (const char *)0x90, self->hWnd, GAME_FUNC(D3DApp_SelectDeviceProc),
+	if (exe_DialogBoxParamA(exe_GetModuleHandleA(NULL), (const char *)0x90, self->hWnd, (void *)D3DApp_SelectDeviceProc,
 		(intptr_t)self) != 1) {
 		return 0;
 	}
@@ -518,7 +518,7 @@ int __thiscall CD3DApp_Create(CD3DApplication *self, void *inst) {
 	}
 	if (!self->hWnd) {
 		wc.style = 0;
-		wc.wndProc = GAME_FUNC(D3DApp_WndProc);	/* WndProc */
+		wc.wndProc = (void *)D3DApp_WndProc;	/* WndProc */
 		wc.clsExtra = 0;
 		wc.wndExtra = 0;
 		wc.hInstance = inst;
@@ -676,7 +676,7 @@ int __fastcall CD3DApp_BuildDeviceList(CD3DApplication *self) {
 				fmts[nFmts++] = dm.Format;
 			}
 		}
-		crt_qsort(modes, nModes, sizeof(D3DDisplayMode), GAME_FUNC(D3DApp_SortModes));	/* D3DApp_SortModes */
+		crt_qsort(modes, nModes, sizeof(D3DDisplayMode), (void *)D3DApp_SortModes);	/* D3DApp_SortModes */
 		for (int t = 0; t < 2; t++) {
 			D3DDeviceInfo *dev = &ad->devices[ad->dwNumDevices];
 			dev->DeviceType = types[t];

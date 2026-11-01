@@ -34,19 +34,19 @@ static inline void EFXM_SetVtbl(void *self, void *vt) {
 }
 
 static inline void EFXM_ParticlesCtor(CGameParticles *p, uint32_t n) {
-	crt_eh_vector_ctor(p, sizeof(CGameParticles), n, GAME_FUNC(CGameParticles_ctor), GAME_FUNC(CGameParticles_Release));
+	crt_eh_vector_ctor(p, sizeof(CGameParticles), n, (void *)CGameParticles_ctor, (void *)CGameParticles_Release);
 }
 
 static inline void EFXM_ParticlesDtor(CGameParticles *p, uint32_t n) {
-	crt_eh_vector_dtor(p, sizeof(CGameParticles), n, GAME_FUNC(CGameParticles_Release));
+	crt_eh_vector_dtor(p, sizeof(CGameParticles), n, (void *)CGameParticles_Release);
 }
 
 static inline void EFXM_TrailsCtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor), GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, (void *)CGameTrail_ctor, (void *)CGameTrail_dtor);
 }
 
 static inline void EFXM_TrailsDtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, (void *)CGameTrail_dtor);
 }
 
 static inline cEmbeddedFX *EFXM_Delete(cEmbeddedFX *self, byte flags, uint32_t size) {

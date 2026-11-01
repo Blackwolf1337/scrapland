@@ -8,6 +8,9 @@
 #include "scrap/filepak.h"
 #include "scrap/hashtable.h"
 
+/* defined further down or in another file without a header */
+void DominationEnemies_OnDeath(cAbstractFile *params);
+
 /* the arguments of the AI state GO_TO the leader gets (the constants of the original) */
 static void DominE_GoTo(cAIVehicle *ai, vec3_t pos, double dist) {
 	cAIVehicle_SetState(ai, 1, pos, dist, 1, 1.0, 20.0, 20.0, 0);
@@ -84,7 +87,7 @@ void __thiscall cDominationEnemiesLogic_Init(cDominationEnemiesLogic *self) {
 
 	CHECK(s->owner && "el");
 	s->list = cWorld_NewEntityList(g_pWorld, "DominationEnemies");
-	cPy_Function_SetNative(&s->list->onDeath, (nativefunc_t)GAME_FUNC(DominationEnemies_OnDeath));
+	cPy_Function_SetNative(&s->list->onDeath, (nativefunc_t)DominationEnemies_OnDeath);
 }
 
 /* the deaths of both sides: the zone of the ship is free again, then the callback with the ship and its killer */

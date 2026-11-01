@@ -1343,9 +1343,9 @@ void *__thiscall cObjElementFXEMI_ctor(void *self) {
 
 	FXCM_SetVtbl(s, COBJELEMENTFXEMI_VFTABLE);
 	CGameParticles_ctor(&s->particles);
-	crt_eh_vector_ctor(s->trails, sizeof(CGameTrail), FXEMI_TRAILS, GAME_FUNC(CGameTrail_ctor),
-		GAME_FUNC(CGameTrail_dtor));
-	crt_eh_vector_ctor(s->links, sizeof(Nto1Node), FXEMI_TRAILS, GAME_FUNC(FXCountermeasures_NodeCtor), GAME_FUNC(Nto1Node_dtor));
+	crt_eh_vector_ctor(s->trails, sizeof(CGameTrail), FXEMI_TRAILS, (void *)CGameTrail_ctor,
+		(void *)CGameTrail_dtor);
+	crt_eh_vector_ctor(s->links, sizeof(Nto1Node), FXEMI_TRAILS, (void *)FXCountermeasures_NodeCtor, (void *)Nto1Node_dtor);
 	s->on = 0;
 	s->entity = NULL;
 	s->hideTime = 0.0f;
@@ -1397,8 +1397,8 @@ void __thiscall cObjElementFXEMI_dtor(void *self) {
 	cObjElementFXEMI *s = self;
 
 	*(void **)s = COBJELEMENTFXEMI_VFTABLE;
-	crt_eh_vector_dtor(s->links, sizeof(Nto1Node), FXEMI_TRAILS, GAME_FUNC(Nto1Node_dtor));
-	crt_eh_vector_dtor(s->trails, sizeof(CGameTrail), FXEMI_TRAILS, GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_dtor(s->links, sizeof(Nto1Node), FXEMI_TRAILS, (void *)Nto1Node_dtor);
+	crt_eh_vector_dtor(s->trails, sizeof(CGameTrail), FXEMI_TRAILS, (void *)CGameTrail_dtor);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }

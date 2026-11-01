@@ -16,6 +16,9 @@
 #include "scrap/weapons.h"
 #include "scrap/withlifeentity.h"
 
+/* defined further down or in another file without a header */
+void *GenCharGroup_MakeLogic(cEntity *e);
+
 #define g_MessengerPrepareDistance GAME_GLOBAL_IN(float, GVar_MessengerPrepareDistance, 16)	/* MessengerPrepareDistance */
 #define g_MessengerObjectiveDistance GAME_GLOBAL_IN(float, GVar_MessengerObjectiveDistance, 16)	/* MessengerObjetiveDistance */
 #define MSG_THINK_STEP 0.13f				/* rva 0x3b60e0, the interval of the think */
@@ -205,7 +208,7 @@ void __fastcall cMessengers_Think(void *obj) {
 	cPy_Function *take = &((cItemEntity *)pack)->onTake;
 	if (opened) {
 		if (!cPy_Function_IsValid(take)) {
-			cPy_Function_SetNative(take, (nativefunc_t)GAME_FUNC(ChType_MessengerTakeDataPack));
+			cPy_Function_SetNative(take, (nativefunc_t)ChType_MessengerTakeDataPack);
 		}
 	} else if (cPy_Function_IsValid(take)) {
 		cPy_Function_Clear(take);
@@ -278,7 +281,7 @@ void __fastcall cMessengers_Init(void *obj) {
 	cMessengers *self = obj;
 
 	self->list = cWorld_NewEntityList(g_pWorld, "Messenger");
-	self->list->func = (int (*)(void))GAME_FUNC(GenCharGroup_MakeLogic);
+	self->list->func = (int (*)(void))(void *)GenCharGroup_MakeLogic;
 	g_MessengerDataPackMissionArrow = g_MessengerDataPackMissionArrowDef;
 	g_MessengerTubeState = g_MessengerTubeStateDef;
 	cPy_Function_Clear(g_MessengerDropCallback);

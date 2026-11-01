@@ -154,7 +154,7 @@ byte Net_InitClient(const char *address, int port) {
 	}
 	g_ClientPPS = pps;
 	MsgMan_SetSendDelay((uint32_t)(1000 / pps));
-	MsgMan_SetUserFactory((netuserfactory_t)GAME_FUNC(Net_NewServerManager));
+	MsgMan_SetUserFactory((netuserfactory_t)Net_NewServerManager);
 	g_NetClientData = Mem_Alloc(24000);
 	g_NetClientCtl = Mem_Alloc(24000);
 	cNetClient *c = operator_new(sizeof(cNetClient));

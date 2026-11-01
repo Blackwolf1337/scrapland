@@ -40,7 +40,7 @@ float *Vec2_Normalize(float *out, const float *in) {
 }
 
 cArrowIndicator *__fastcall cArrowIndicator_ctor(cArrowIndicator *self) {
-	crt_eh_vector_ctor(self->opts, sizeof(cString), ARROW_MAX_OPTS, GAME_FUNC(cString_ctor), GAME_FUNC(cString_dtor));
+	crt_eh_vector_ctor(self->opts, sizeof(cString), ARROW_MAX_OPTS, (void *)cString_ctor, (void *)cString_dtor);
 	cPy_Function_ctor(&self->onUse);
 	cPy_Function_ctor(&self->onView);
 	self->parent = NULL;
@@ -93,7 +93,7 @@ void __fastcall cArrowIndicator_dtor(cArrowIndicator *self) {
 	cArrowIndicator_ReleaseMission(self);
 	cPy_Function_dtor(&self->onView);
 	cPy_Function_dtor(&self->onUse);
-	crt_eh_vector_dtor(self->opts, sizeof(cString), ARROW_MAX_OPTS, GAME_FUNC(cString_dtor));
+	crt_eh_vector_dtor(self->opts, sizeof(cString), ARROW_MAX_OPTS, (void *)cString_dtor);
 }
 
 byte __thiscall cArrowIndicator_AddOpt(cArrowIndicator *self, const char *s) {

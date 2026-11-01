@@ -7,6 +7,9 @@
 #include "scrap/filepak.h"
 #include "scrap/hashtable.h"
 
+/* defined further down or in another file without a header */
+void DominationFriends_OnDeath(cAbstractFile *params);
+
 cDominationFriendsLogic *__fastcall cDominationFriendsLogic_ctor(cDominationFriendsLogic *self) {
 	cDominationLogic_ctor(&self->base);
 	self->base.vftable = CDOMINATIONFRIENDSLOGIC_VFTABLE;
@@ -87,7 +90,7 @@ void __thiscall cDominationFriendsLogic_Init(cDominationFriendsLogic *self) {
 
 	CHECK(s->owner && "fl");
 	s->list = cWorld_NewEntityList(g_pWorld, "DominationFriends");
-	cPy_Function_SetNative(&s->list->onDeath, (nativefunc_t)GAME_FUNC(DominationFriends_OnDeath));
+	cPy_Function_SetNative(&s->list->onDeath, (nativefunc_t)DominationFriends_OnDeath);
 }
 
 /* the native of the deaths */

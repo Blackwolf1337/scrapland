@@ -49,7 +49,7 @@ CNodesTraffic *__thiscall CNodesTrafficInDoor_ctor(void *mem) {
 	self->seenHeavyLight.numNodes = 0;
 	self->seenMediumLight.num = 0;
 	self->seenMediumLight.numNodes = 0;
-	Engine_SetCallback((void (*)(void))GAME_FUNC(TrafficInDoor_Frame), 2);
+	Engine_SetCallback((void (*)(void))(void *)TrafficInDoor_Frame, 2);
 	return mem;
 }
 

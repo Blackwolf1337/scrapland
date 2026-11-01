@@ -29,6 +29,179 @@
 #include "scrap/groundportal.h"
 #include "scrap/table.h"
 #include "scrap/misc.h"
+#include "scrap/chartype.h"
+#include "scrap/controls.h"
+#include "scrap/doors.h"
+#include "scrap/embeddedfxchar.h"
+#include "scrap/embeddedfxmisc.h"
+#include "scrap/fxchar.h"
+#include "scrap/logic.h"
+#include "scrap/scorerhud.h"
+#include "scrap/weapons.h"
+#include "scrap/weaps2.h"
+#include "scrap/world.h"
+
+/* the functions the lines name that no header declares */
+void AICtrl_Police2GearEnd(cAbstractFile *params);
+void ATPC_Create(cAbstractFile *params);
+void ATPC_Fire(cAbstractFile *params);
+void ATPC_FX(cAbstractFile *params);
+void ATPC_OnEnd(cAbstractFile *params);
+void ATPC_OnStart(cAbstractFile *params);
+void ATPC_XplosionCall(cAbstractFile *params);
+void ChType_ActionPress(cAbstractFile *params);
+void ChType_BankDirectorActionPress(cAbstractFile *params);
+void ChType_BankDirectorActionRelease(cAbstractFile *params);
+void ChType_BankDirectorEndActionInit(cAbstractFile *params);
+void ChType_BankerAttack(cAbstractFile *params);
+void ChType_BankMasterActionEnd(cAbstractFile *params);
+void ChType_BankMasterActionInit(cAbstractFile *params);
+void ChType_BankMasterAttack(cAbstractFile *params);
+void ChType_BankMasterHitEvent(cAbstractFile *params);
+void ChType_BertoActionEnd(cAbstractFile *params);
+void ChType_BertoActionInit(cAbstractFile *params);
+void ChType_BertoAttack(cAbstractFile *params);
+void ChType_BertoHitEvent(cAbstractFile *params);
+void ChType_BettyActionPress(cAbstractFile *params);
+void ChType_BettyCameraSet(cAbstractFile *params);
+void ChType_BettyEndEvent(cAbstractFile *params);
+void ChType_BettyHitEvent(cAbstractFile *params);
+void ChType_BettyRestoreTime(cAbstractFile *params);
+void ChType_BishopAttack(cAbstractFile *params);
+void ChType_DesktopActionPress(cAbstractFile *params);
+void ChType_DtritusActionPress(cAbstractFile *params);
+void ChType_DtritusEndEvent(cAbstractFile *params);
+void ChType_DtritusHitEvent(cAbstractFile *params);
+void ChType_DtritusRestartEvent(cAbstractFile *params);
+void ChType_EndActionEnd(cAbstractFile *params);
+void ChType_FXBankMasterAttack(cAbstractFile *params);
+void ChType_FXBertoAttack(cAbstractFile *params);
+void ChType_FXBettyAttack(cAbstractFile *params);
+void ChType_FXBishopSellLife(cAbstractFile *params);
+void ChType_FXCrazyGamblerSetHeadModel(cAbstractFile *params);
+void ChType_FXDesktopFallEnd(cAbstractFile *params);
+void ChType_FXDTritusAttack(cAbstractFile *params);
+void ChType_FXMaintenanceWork(cAbstractFile *params);
+void ChType_FXMercenaryDrink(cAbstractFile *params);
+void ChType_FXPoliceBossBrup(cAbstractFile *params);
+void ChType_FXPoliceGearConversion(cAbstractFile *params);
+void ChType_FXPoliceSteal(cAbstractFile *params);
+void ChType_FXRustyHit(cAbstractFile *params);
+void ChType_FXSebastianFlash(cAbstractFile *params);
+void ChType_GearActionPress(cAbstractFile *params);
+void ChType_GearEndAction(cAbstractFile *params);
+void ChType_GearHit(cAbstractFile *params);
+void ChType_GearInitAction(cAbstractFile *params);
+void ChType_GearShoot(cAbstractFile *params);
+void ChType_GearShootLoad(cAbstractFile *params);
+void ChType_ListeningMayor(cAbstractFile *params);
+void ChType_ListeningPolice(cAbstractFile *params);
+void ChType_MayorEndAction(cAbstractFile *params);
+void ChType_MessengerAttack(cAbstractFile *params);
+void ChType_MessengerTakeDataPack(cAbstractFile *params);
+void ChType_NurseActionPress(cAbstractFile *params);
+void ChType_NurseActionRelease(cAbstractFile *params);
+void ChType_NurseBackHitControl(cAbstractFile *params);
+void ChType_NurseDoHammerHit(cAbstractFile *params);
+void ChType_NurseInitHammerLoop(cAbstractFile *params);
+void ChType_NurseTryHammerAgain(cAbstractFile *params);
+void ChType_PoliceActionPress(cAbstractFile *params);
+void ChType_PoliceBossAction(cAbstractFile *params);
+void ChType_PoliceBossBrup(cAbstractFile *params);
+void ChType_PoliceEndActionMoney(cAbstractFile *params);
+void ChType_PoliceRestoreFreeTurn(cAbstractFile *params);
+void ChType_SentinelActionPress(cAbstractFile *params);
+void ChType_SentinelActionRelease(cAbstractFile *params);
+void ChType_SentinelPoint(cAbstractFile *params);
+void Cloud_Fire(cAbstractFile *params);
+void Cloud_OnHit(cAbstractFile *params);
+void Controls_TakeEnerNative(cAbstractFile *f);
+void Controls_TakeLifeNative(cAbstractFile *f);
+void Controls_TakeMissNative(cAbstractFile *f);
+void Controls_TakePartNative(cAbstractFile *f);
+void Devastator_Create(cAbstractFile *params);
+void Devastator_Fire(cAbstractFile *params);
+void Devastator_FX(cAbstractFile *params);
+void Devastator_Press(cAbstractFile *params);
+void Devastator_Release(cAbstractFile *params);
+void Devastator_XplosionCall(cAbstractFile *params);
+void Doors_AcceleratorOnEnter(cAbstractFile *params);
+void Doors_AutoDoorSlot(cAbstractFile *params);
+void Doors_AutoDoorUsrSlot(cAbstractFile *params);
+void Doors_BackDoorSlot(cAbstractFile *params);
+void Doors_ChangeDoorState(cAbstractFile *params);
+void Doors_CloseDoorSlot(cAbstractFile *params);
+void Doors_FrontDoorSlot(cAbstractFile *params);
+void Doors_Usr0AutoDoorSlot(cAbstractFile *params);
+void Elements_Load(cAbstractFile *f);
+void EmbeddedFXChar_AlarmOff(cAbstractFile *f);
+void EmbeddedFXChar_AlarmOn(cAbstractFile *f);
+void EmbeddedFXMisc_BossShieldHit(void);
+void EmbeddedFXMisc_BossShieldMsg(cAbstractFile *f);
+void EmbeddedFXMisc_MeetingPointMsg(cAbstractFile *f);
+void EMI_Fire(cAbstractFile *params);
+void EMI_OnHit(cAbstractFile *params);
+void FX_CharacterBlaBliBla(cAbstractFile *params);
+void FX_CharacterDazed(cAbstractFile *params);
+void FX_CharacterTeleport(cAbstractFile *params);
+void Hook_AimNative(cAbstractFile *f);
+void Hook_OffNative(cAbstractFile *f);
+void Hook_StartNative(cAbstractFile *f);
+void Hook_UpdateNative(cAbstractFile *f);
+void Inferno_AimMode2Native(cAbstractFile *f);
+void Inferno_AimMode3Native(cAbstractFile *f);
+void Inferno_AimOffNative(cAbstractFile *f);
+void Inferno_AimOnNative(cAbstractFile *f);
+void Inferno_ClientFireNet(cAbstractFile *params);
+void Inferno_FireNative(cAbstractFile *f);
+void Inferno_HitNative(cAbstractFile *f);
+void Inferno_HudNative(cAbstractFile *f);
+void Inferno_NetCreateNative(cAbstractFile *f);
+void Inferno_NetSetUpNative(cAbstractFile *f);
+void Inferno_ServerHitNative(cAbstractFile *f);
+void Inferno_SlowNative(cAbstractFile *f);
+void Inferno_SphereHit(cAbstractFile *f);
+void Laser_AimOffNative(cAbstractFile *f);
+void Laser_AimOnNative(cAbstractFile *f);
+void Laser_CreateNative(cAbstractFile *f);
+void Laser_FireNative(cAbstractFile *f);
+void Laser_HudNative(cAbstractFile *f);
+void MemPools_PrintAll(void);
+void Rusty_LoopDone(cAbstractFile *params);
+void Scorer_BoostScorer(cAbstractFile *params);
+void Scorer_MetroUsrHere(cAbstractFile *params);
+void Scorer_SpriteFadeIn(cAbstractFile *params);
+void Scorer_SpriteFadeOut(cAbstractFile *params);
+void Scorer_SpriteFadeOutFinal(cAbstractFile *params);
+void Scorer_SpriteFlash(cAbstractFile *params);
+void Scorer_SpriteGlow(cAbstractFile *params);
+void Sonic_ExplodeNative(cAbstractFile *f);
+void Sonic_FireNative(cAbstractFile *f);
+void Sputnik_LaughDone(cAbstractFile *params);
+void Swarm_AimMode2Native(cAbstractFile *f);
+void Swarm_AimMode3Native(cAbstractFile *f);
+void Swarm_AimOffNative(cAbstractFile *f);
+void Swarm_AimOnNative(cAbstractFile *f);
+void Swarm_FireNative(cAbstractFile *f);
+void Swarm_HitFXNative(cAbstractFile *f);
+void Swarm_HudNative(cAbstractFile *f);
+void Swarm_NetCreateNative(cAbstractFile *f);
+void Swarm_NetSetUpNative(cAbstractFile *f);
+void Swarm_ServerHitNative(cAbstractFile *f);
+void Swarm_ShootNative(cAbstractFile *f);
+void Tesla_AimOffNative(cAbstractFile *f);
+void Tesla_AimOnNative(cAbstractFile *f);
+void Tesla_CreateNative(cAbstractFile *f);
+void Tesla_FireNative(cAbstractFile *f);
+void Tesla_HudNative(cAbstractFile *f);
+void TextEdit_Start(cAbstractFile *params);
+void Vulcan_AimOffNative(cAbstractFile *f);
+void Vulcan_AimOnNative(cAbstractFile *f);
+void Vulcan_CreateNative(cAbstractFile *f);
+void Vulcan_FireNative(cAbstractFile *f);
+void Vulcan_HudNative(cAbstractFile *f);
+void AICtrl_Police2GearEnd(cAbstractFile *params);
+void MemPools_PrintAll(void);
 
 /* the objects of the lines: SI_REF(name) its address, SI_AT(name, off) an address inside it (the value of a cGVar at
  * 16); through the assembler name, so a header macro of the same name does not get in the way */
@@ -87,7 +260,7 @@
 
 #define INIT_NATIVE_FUNC(fn, obj, name, cfunc) \
 	void fn(void) { \
-		cPy_NativeFunc_ctor(SI_OBJ(obj), SI_STR(name), (nativefunc_t)GAME_FUNC(cfunc)); \
+		cPy_NativeFunc_ctor(SI_OBJ(obj), SI_STR(name), (nativefunc_t)cfunc); \
 	}
 
 /* ---- objects with a constructor of the C ---- */

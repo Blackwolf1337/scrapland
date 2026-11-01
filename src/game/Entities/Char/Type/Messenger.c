@@ -78,7 +78,7 @@ void ChType_MessengerAttack(cAbstractFile *params) {
 				Obj_Vtbl(dp)->SetVel(dp, &vel);
 				cModMove_Link(&Obj(dp)->mod, "", "");
 				cPy_Function_SetNative(&((cItemEntity *)dp)->onTake,
-					(nativefunc_t)GAME_FUNC(ChType_MessengerTakeDataPack));
+					(nativefunc_t)ChType_MessengerTakeDataPack);
 			}
 		}
 		ChType_FlashChar(target);

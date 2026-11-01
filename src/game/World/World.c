@@ -210,7 +210,7 @@ void __fastcall cWeapInfo_dtor(cWeapInfo *self) {
 /* the vector deleting destructors */
 cAmmoInfo *__thiscall cAmmoInfo_Delete(cAmmoInfo *self, uint32_t flags) {
 	if (flags & 2) {
-		return Delete_VectorPart(self, flags, sizeof(*self), GAME_FUNC(cAmmoInfo_dtor));
+		return Delete_VectorPart(self, flags, sizeof(*self), (void *)cAmmoInfo_dtor);
 	}
 	cAmmoInfo_dtor(self);
 	if (flags & 1) {
@@ -221,7 +221,7 @@ cAmmoInfo *__thiscall cAmmoInfo_Delete(cAmmoInfo *self, uint32_t flags) {
 
 cWeapInfo *__thiscall cWeapInfo_Delete(cWeapInfo *self, uint32_t flags) {
 	if (flags & 2) {
-		return Delete_VectorPart(self, flags, sizeof(*self), GAME_FUNC(cWeapInfo_dtor));
+		return Delete_VectorPart(self, flags, sizeof(*self), (void *)cWeapInfo_dtor);
 	}
 	cWeapInfo_dtor(self);
 	if (flags & 1) {
@@ -236,7 +236,7 @@ void __thiscall AmmoTable_Init(void *table, int num) {
 
 	CHECK(!t->items && num > 0);
 	t->count = num;
-	t->items = New_Objects(num, sizeof(cAmmoInfo), GAME_FUNC(cAmmoInfo_ctor), GAME_FUNC(cAmmoInfo_dtor));
+	t->items = New_Objects(num, sizeof(cAmmoInfo), (void *)cAmmoInfo_ctor, (void *)cAmmoInfo_dtor);
 	CHECK(t->items);
 }
 
@@ -245,7 +245,7 @@ void __thiscall WeapTable_Init(void *table, int num) {
 
 	CHECK(!t->items && num > 0);
 	t->count = num;
-	t->items = New_Objects(num, sizeof(cWeapInfo), GAME_FUNC(cWeapInfo_ctor), GAME_FUNC(cWeapInfo_dtor));
+	t->items = New_Objects(num, sizeof(cWeapInfo), (void *)cWeapInfo_ctor, (void *)cWeapInfo_dtor);
 	CHECK(t->items);
 }
 
@@ -517,7 +517,7 @@ void __fastcall AmmoTable_Free(void *table) {
 	cAmmoTable *t = table;
 
 	if (t->items) {
-		Delete_Objects(t->items, sizeof(cAmmoInfo), GAME_FUNC(cAmmoInfo_dtor));
+		Delete_Objects(t->items, sizeof(cAmmoInfo), (void *)cAmmoInfo_dtor);
 		t->items = NULL;
 		t->count = 0;
 	}
@@ -527,7 +527,7 @@ void __fastcall WeapTable_Free(void *table) {
 	cWeapTable *t = table;
 
 	if (t->items) {
-		Delete_Objects(t->items, sizeof(cWeapInfo), GAME_FUNC(cWeapInfo_dtor));
+		Delete_Objects(t->items, sizeof(cWeapInfo), (void *)cWeapInfo_dtor);
 		t->items = NULL;
 		t->count = 0;
 	}

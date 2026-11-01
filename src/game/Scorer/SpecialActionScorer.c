@@ -671,7 +671,7 @@ void __thiscall cSpecialActionScorer_DrawGearAim(cSpecialActionScorer *self, int
 	cEntity *prev = g_GearAimTarget;
 	g_GearAimTarget = NULL;
 	g_GearAimBest = 3.40282347e+38f;
-	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)GAME_FUNC(GearAim_SphereFunc));
+	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)GearAim_SphereFunc);
 	cWorld_SphereCallF(g_pWorld, 0x10, user->vftable->GetPos(user, &tmp), g_GearTargetSphereRadius,
 		g_ChTypeSphereFunc, 1);
 	if (!w->control.lock || !w->control.target.target) {
