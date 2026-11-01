@@ -143,7 +143,7 @@ void Inferno_FireNative(cAbstractFile *f) {
 	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)GAME_FUNC(Inferno_ServerHitNative, 0x122780));
 	cPy_Function_SetNative(&WLife(m)->onDeath, (nativefunc_t)GAME_FUNC(Inferno_OnDeathNative, 0x122200));
 	cPy_Function_SetNative(&WLife(m)->onDamage, (nativefunc_t)GAME_FUNC(Inferno_OnDamageNative, 0x1220e0));
-	cMissileEntity_SetFlag585((cMissileEntity *)m, 1);
+	cMissileEntity_SetBeesHit((cMissileEntity *)m, 1);
 	if (!WLife(m)->god) {
 		WLife(m)->life = g_InfernoArmor;
 	}
@@ -388,7 +388,7 @@ void Inferno_NetSetUp(const char *name) {
 	cMissileEntity_SetRadiusGrow((cMissileEntity *)m, 200.0f);
 	cMissileEntity_SetSpeed((cMissileEntity *)m, g_InfernoNormSpeed);
 	cMissileEntity_SetTurnSpeed((cMissileEntity *)m, (float)(((double)g_InfernoTurnSpeed * WEAP_PI) / 180.0));
-	cMissileEntity_SetFlag584((cMissileEntity *)m, 0);
+	cMissileEntity_SetBeesGather((cMissileEntity *)m, 0);
 	cEntity *v = Weap_FindVehicle(Missile(m)->parent);
 	if (v) {
 		float top = g_InfernoUpTopSpeed;

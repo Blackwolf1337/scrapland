@@ -100,7 +100,9 @@ def external_files():
 		for w in read(d).replace('\\\n', ' ').split():
 			if w.endswith(('.h', '.c', '.inc')) and os.path.isabs(w):
 				w = os.path.normpath(w)
-				if not w.startswith((os.path.join(ROOT, 'src') + '/', os.path.join(ROOT, 'include') + '/')):
+				# build/ holds the codecmp worktree, a copy of our own sources
+				if not w.startswith((os.path.join(ROOT, 'src') + '/', os.path.join(ROOT, 'include') + '/',
+						os.path.join(ROOT, 'build') + '/')):
 					files.add(w)
 	if not files:
 		for pat in EXTERNAL_HEADERS:

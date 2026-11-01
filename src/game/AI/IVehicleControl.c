@@ -1608,7 +1608,7 @@ byte __thiscall cAIVehicleControl_GetFlag(cAIVehicleControl *self) {
 	return self->inSight;
 }
 
-byte __thiscall cAIVehicleControl_GetFlag2(cAIVehicleControl *self) {
+byte __thiscall cAIVehicleControl_InSight(cAIVehicleControl *self) {
 	return self->inSight;
 }
 
@@ -1909,7 +1909,7 @@ byte __thiscall cAIVehicleControl_MovePath(cAIVehicleControl *self, const vec3_t
 	return cAIVehicleControl_RebuildPath(self);
 }
 
-void __thiscall cAIVehicleControl_SetFlagB0(cAIVehicleControl *self, byte on) {
+void __thiscall cAIVehicleControl_SetDirect(cAIVehicleControl *self, byte on) {
 	self->direct = on;
 }
 

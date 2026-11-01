@@ -984,7 +984,7 @@ intptr_t __stdcall Engine_SceneDlgProc(void *hwnd, uint32_t msg, uintptr_t wPara
 	TreeView_InsertItemf(tree, &tv, "Dimens: [%s]  %.1f", Vec3_Str(&d, 0, 0), (double)len);
 	TreeView_InsertItemf(tree, &tv, "Root: %s", scn->node);
 	TreeView_InsertItemf(tree, &tv, "MainLOD: %s", scn->mainLOD);
-	CScene_SetNodes54(scn, 0);
+	CScene_SetMarks(scn, 0);
 	for (n = scn->Node3D; n; n = n->next) {
 		tv.hParent = n->parent ? n->parent->mark : TVI_ROOT;
 		tv.hInsertAfter = TVI_LAST;

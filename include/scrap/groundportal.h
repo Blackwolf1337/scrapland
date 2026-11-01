@@ -102,7 +102,7 @@ const char *Sector_GetName(int sector);
 byte Sector_IsExterior(int sector);
 /* -1 is not */
 byte Sector_IsOutside(int sector);
-byte Sector_Get139(int sector);
+byte Sector_IsSky(int sector);
 byte Sector_IsVisible(int sector);
 /* the sector with node among its nodes (main: as its node) */
 CZone *Zone_FindNode(CNode3D *node, byte main);

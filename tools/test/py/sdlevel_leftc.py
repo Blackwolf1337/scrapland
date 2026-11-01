@@ -404,7 +404,7 @@ if lfcfx:
 	check('LFC Moto_Update off', lambda fx=lfcfx: (SDTest.Call('cEmbeddedFXBike_Update', 'tvif', fx, 0.05), lfcfl(fx + 8, 3)))
 	for lfcab, lfcdts in (((0.7, 0.3), (0.01, 0.015, 0.03, 0.05, 0.0, 0.1)), ((1.0, 0.0), (0.03, 0.04)), ((0.0, 1.0),
 			(0.03, 0.025)), ((1.5, 0.5), (0.05,))):
-		SDTest.Call('cEmbeddedFXBike_SetF7d4', 'tviff', lfcfx, lfcab[0], lfcab[1])
+		SDTest.Call('cEmbeddedFXBike_SetThrottle', 'tviff', lfcfx, lfcab[0], lfcab[1])
 		for lfcdt in lfcdts:
 			check('LFC Moto_Update' + fmt((lfcab, lfcdt)), lambda fx=lfcfx, dt=lfcdt: (SDTest.Call('cEmbeddedFXBike_Update', 'tvif',
 				fx, dt), lfcmoto(fx)))

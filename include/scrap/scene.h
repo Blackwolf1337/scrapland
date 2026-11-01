@@ -70,7 +70,7 @@ void __thiscall CScene_SetScale(CScene *self, const vec3_t *scale);
 void __thiscall CScene_Join(CScene *self, byte sel, const char *name);
 /* the alpha of the materials of the vertex buffer meshes, of all nodes except the one named name */
 void __thiscall CScene_SetAlpha(CScene *self, float alpha, const char *name);
-void __thiscall CScene_SetNodes54(CScene *self, int v);
+void __thiscall CScene_SetMarks(CScene *self, int v);
 /* precalc_ilum of the meshes and the floors; scene lights unless noLights, visible skips NODE_HIDDEN */
 void __thiscall CScene_PrecalcIllum(CScene *self, byte noLights, byte visible);
 

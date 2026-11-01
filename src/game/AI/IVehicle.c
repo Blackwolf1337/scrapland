@@ -673,8 +673,8 @@ byte __thiscall cAIVehicle_ControlFlag(cAIVehicle *self) {
 	return cAIVehicleControl_GetFlag(self->control);
 }
 
-byte __thiscall cAIVehicle_ControlFlag2(cAIVehicle *self) {
-	return cAIVehicleControl_GetFlag2(self->control);
+byte __thiscall cAIVehicle_InSight(cAIVehicle *self) {
+	return cAIVehicleControl_InSight(self->control);
 }
 
 /* d from the vehicle to the point within HookRange, farther than r and at most 45 degrees off the nose */
@@ -1962,7 +1962,7 @@ byte __thiscall cAIVehicle_ChangeStateMore(cAIVehicle *self, int state, byte all
 		const vec3_t *p = self->vehicle->vftable->GetPos(self->vehicle, &b);
 		CNodesWorld_NearestPointVis(g_NodesWorld, p, &a);
 		cAIVehicle_SetInternState(self, AIVI_FINISHING_LINE_DIRECT, a, AIV_LOST_SPEED, 0, 20.0, 20.0);
-		cAIVehicleControl_SetFlagB0(self->control, 1);
+		cAIVehicleControl_SetDirect(self->control, 1);
 		cVehicleTraffic_SetOff(AIV_VehTraffic(self->vehicle), 1);
 		return 1;
 	}
@@ -2008,7 +2008,7 @@ change:
 	self->changed = 1;
 	self->vehicle->vftable->SetActive(self->vehicle, 1);
 	self->lifeMark = Veh(self->vehicle)->wl.life;
-	cAIVehicleControl_SetFlagB0(self->control, 0);
+	cAIVehicleControl_SetDirect(self->control, 0);
 	self->prevState = self->state;
 	self->state = state;
 	if (state != AIV_RACE) {

@@ -218,7 +218,7 @@ check('cWeaponManager_LockEntity(NULL)', lambda: (SDTest.Call('cWeaponManager_Lo
 	SDTest.Call('cTargetLock_GetPoint', 'tii', wm)[0]))
 check('cWeaponManager_LockPoint(NULL)', lambda: (SDTest.Call('cWeaponManager_LockPoint', 'tvii', wm, 0), wmb(wm + 0x44)))
 for v in (1, 0x101, 0):
-	check('cWeaponManager_SetFlag46' + fmt((v,)), lambda v=v: (SDTest.Call('cWeaponManager_SetFlag46', 'tvii', wm, v), wmb(wm + 0x46)))
+	check('cWeaponManager_SetTeslaFiring' + fmt((v,)), lambda v=v: (SDTest.Call('cWeaponManager_SetTeslaFiring', 'tvii', wm, v), wmb(wm + 0x46)))
 
 # the weapon sound (the fake owner has none): -1 without fire or ammo
 for fire, a, snd in ((0, 5.0, 3), (1, 5.0, 3), (1, 0.0, 4), (1, 5.0, -1), (1, 5.0, 3)):

@@ -428,7 +428,7 @@ void cAICharControl_GetAvoidA(void);
 void cAICharControl_GetAvoidB(void);
 void cAICharControl_GetAvoidEnt(void);
 void cAICharControl_GetDest(void);
-void cAICharControl_GetE4(void);
+void cAICharControl_GetAvoidFound(void);
 void cAICharControl_GetGoal(void);
 void cAICharControl_GetOrbitSide(void);
 void cAICharControl_GetWalkDir(void);
@@ -2236,7 +2236,7 @@ void (*const cAICharControl_vftable[100])(void) SD_AT(0x3a572c) = {
 	cAICharControl_SetSpeed,	/* 0x50 0x073040 */
 	cAICharControl_RestartSlots,	/* 0x54 0x070b20 */
 	cAICharControl_IsBlocked,	/* 0x58 0x073140 */
-	cAICharControl_GetE4,	/* 0x5c 0x073150 */
+	cAICharControl_GetAvoidFound,	/* 0x5c 0x073150 */
 	cAICharControl_GetAvoidEnt,	/* 0x60 0x070bb0 */
 	cAICharControl_Nop,	/* 0x64 0x072f10 */
 	cAICharControl_AtPathEnd,	/* 0x68 0x071f10 */
@@ -2340,7 +2340,7 @@ void (*const cAICharControl2D_vftable[103])(void) SD_AT(0x3a5acc) = {
 	cAICharControl_SetSpeed,	/* 0x50 0x073040 */
 	cAICharControl_RestartSlots,	/* 0x54 0x070b20 */
 	cAICharControl_IsBlocked,	/* 0x58 0x073140 */
-	cAICharControl_GetE4,	/* 0x5c 0x073150 */
+	cAICharControl_GetAvoidFound,	/* 0x5c 0x073150 */
 	cAICharControl_GetAvoidEnt,	/* 0x60 0x070bb0 */
 	cAICharControl_Nop,	/* 0x64 0x072f10 */
 	cAICharControl_AtPathEnd,	/* 0x68 0x071f10 */
@@ -2447,7 +2447,7 @@ void (*const cAICharControl3D_vftable[101])(void) SD_AT(0x3a5d18) = {
 	cAICharControl_SetSpeed,	/* 0x50 0x073040 */
 	cAICharControl_RestartSlots,	/* 0x54 0x070b20 */
 	cAICharControl_IsBlocked,	/* 0x58 0x073140 */
-	cAICharControl_GetE4,	/* 0x5c 0x073150 */
+	cAICharControl_GetAvoidFound,	/* 0x5c 0x073150 */
 	cAICharControl_GetAvoidEnt,	/* 0x60 0x070bb0 */
 	cAICharControl_Nop,	/* 0x64 0x072f10 */
 	cAICharControl_AtPathEnd,	/* 0x68 0x071f10 */
@@ -2565,7 +2565,7 @@ void (*const cAIControlBankDirector_vftable[103])(void) SD_AT(0x3a6000) = {
 	cAICharControl_SetSpeed,	/* 0x50 0x073040 */
 	cAICharControl_RestartSlots,	/* 0x54 0x070b20 */
 	cAICharControl_IsBlocked,	/* 0x58 0x073140 */
-	cAICharControl_GetE4,	/* 0x5c 0x073150 */
+	cAICharControl_GetAvoidFound,	/* 0x5c 0x073150 */
 	cAICharControl_GetAvoidEnt,	/* 0x60 0x070bb0 */
 	cAICharControl_Nop,	/* 0x64 0x072f10 */
 	cAICharControl_AtPathEnd,	/* 0x68 0x071f10 */
@@ -2672,7 +2672,7 @@ void (*const cAIControlBankMaster_vftable[103])(void) SD_AT(0x3a61a0) = {
 	cAICharControl_SetSpeed,	/* 0x50 0x073040 */
 	cAICharControl_RestartSlots,	/* 0x54 0x070b20 */
 	cAICharControl_IsBlocked,	/* 0x58 0x073140 */
-	cAICharControl_GetE4,	/* 0x5c 0x073150 */
+	cAICharControl_GetAvoidFound,	/* 0x5c 0x073150 */
 	cAICharControl_GetAvoidEnt,	/* 0x60 0x070bb0 */
 	cAICharControl_Nop,	/* 0x64 0x072f10 */
 	cAICharControl_AtPathEnd,	/* 0x68 0x071f10 */
@@ -2779,7 +2779,7 @@ void (*const cAIControlBishop_vftable[103])(void) SD_AT(0x3a63b0) = {
 	cAICharControl_SetSpeed,	/* 0x50 0x073040 */
 	cAICharControl_RestartSlots,	/* 0x54 0x070b20 */
 	cAICharControl_IsBlocked,	/* 0x58 0x073140 */
-	cAICharControl_GetE4,	/* 0x5c 0x073150 */
+	cAICharControl_GetAvoidFound,	/* 0x5c 0x073150 */
 	cAICharControl_GetAvoidEnt,	/* 0x60 0x070bb0 */
 	cAIControlBishop_SetParams,	/* 0x64 0x082e90 */
 	cAICharControl_AtPathEnd,	/* 0x68 0x071f10 */
@@ -2886,7 +2886,7 @@ void (*const cAIControlGear_vftable[103])(void) SD_AT(0x3a65a8) = {
 	cAICharControl_SetSpeed,	/* 0x50 0x073040 */
 	cAICharControl_RestartSlots,	/* 0x54 0x070b20 */
 	cAICharControl_IsBlocked,	/* 0x58 0x073140 */
-	cAICharControl_GetE4,	/* 0x5c 0x073150 */
+	cAICharControl_GetAvoidFound,	/* 0x5c 0x073150 */
 	cAICharControl_GetAvoidEnt,	/* 0x60 0x070bb0 */
 	cAIControlGear_SetParams,	/* 0x64 0x083970 */
 	cAICharControl_AtPathEnd,	/* 0x68 0x071f10 */
@@ -2993,7 +2993,7 @@ void (*const cAIControlMessenger_vftable[101])(void) SD_AT(0x3a67d0) = {
 	cAICharControl_SetSpeed,	/* 0x50 0x073040 */
 	cAICharControl_RestartSlots,	/* 0x54 0x070b20 */
 	cAICharControl_IsBlocked,	/* 0x58 0x073140 */
-	cAICharControl_GetE4,	/* 0x5c 0x073150 */
+	cAICharControl_GetAvoidFound,	/* 0x5c 0x073150 */
 	cAICharControl_GetAvoidEnt,	/* 0x60 0x070bb0 */
 	cAICharControl_Nop,	/* 0x64 0x072f10 */
 	cAICharControl_AtPathEnd,	/* 0x68 0x071f10 */
@@ -3098,7 +3098,7 @@ void (*const cAIControlNurse_vftable[101])(void) SD_AT(0x3a6968) = {
 	cAICharControl_SetSpeed,	/* 0x50 0x073040 */
 	cAICharControl_RestartSlots,	/* 0x54 0x070b20 */
 	cAICharControl_IsBlocked,	/* 0x58 0x073140 */
-	cAICharControl_GetE4,	/* 0x5c 0x073150 */
+	cAICharControl_GetAvoidFound,	/* 0x5c 0x073150 */
 	cAICharControl_GetAvoidEnt,	/* 0x60 0x070bb0 */
 	cAICharControl_Nop,	/* 0x64 0x072f10 */
 	cAICharControl_AtPathEnd,	/* 0x68 0x071f10 */
@@ -3203,7 +3203,7 @@ void (*const cAIControlSentinel_vftable[101])(void) SD_AT(0x3a6b7c) = {
 	cAICharControl_SetSpeed,	/* 0x50 0x073040 */
 	cAICharControl_RestartSlots,	/* 0x54 0x070b20 */
 	cAICharControl_IsBlocked,	/* 0x58 0x073140 */
-	cAICharControl_GetE4,	/* 0x5c 0x073150 */
+	cAICharControl_GetAvoidFound,	/* 0x5c 0x073150 */
 	cAICharControl_GetAvoidEnt,	/* 0x60 0x070bb0 */
 	cAICharControl_Nop,	/* 0x64 0x072f10 */
 	cAICharControl_AtPathEnd,	/* 0x68 0x071f10 */

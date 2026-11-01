@@ -542,19 +542,19 @@ void __thiscall cObjElementFXSceneTheEndB_Update(cObjElementFXSceneTheEndB *self
 	CHECK(efx);
 	/* the engine of the bike by the time of the scene */
 	if (FX_InRange(self->t, 0.0f, 8.0f, &f)) {
-		cEmbeddedFXBike_SetF7d4(efx, f * 0.5f, 0.0f);
+		cEmbeddedFXBike_SetThrottle(efx, f * 0.5f, 0.0f);
 	} else if (FX_InRange(self->t, 8.0f, 11.0f, &f)) {
-		cEmbeddedFXBike_SetF7d4(efx, f * 0.5f + 0.5f, 0.0f);
+		cEmbeddedFXBike_SetThrottle(efx, f * 0.5f + 0.5f, 0.0f);
 	} else if (FX_InRange(self->t, 15.0f, 16.0f, &f)) {
-		cEmbeddedFXBike_SetF7d4(efx, 1.0f - f * 0.8f, 0.0f);
+		cEmbeddedFXBike_SetThrottle(efx, 1.0f - f * 0.8f, 0.0f);
 	} else if (FX_InRange(self->t, 18.0f, 22.0f, &f)) {
-		cEmbeddedFXBike_SetF7d4(efx, f * 0.5f, 0.0f);
+		cEmbeddedFXBike_SetThrottle(efx, f * 0.5f, 0.0f);
 	} else if (FX_InRange(self->t, 22.0f, 23.0f, &f)) {
-		cEmbeddedFXBike_SetF7d4(efx, f * 0.5f + 0.5f, 0.0f);
+		cEmbeddedFXBike_SetThrottle(efx, f * 0.5f + 0.5f, 0.0f);
 	} else if (FX_InRange(self->t, 23.0f, 25.0f, &f)) {
-		cEmbeddedFXBike_SetF7d4(efx, 1.0f, 0.2f - f * 0.2f);
+		cEmbeddedFXBike_SetThrottle(efx, 1.0f, 0.2f - f * 0.2f);
 	} else if (FX_InRange(self->t, 25.0f, 26.0f, &f)) {
-		cEmbeddedFXBike_SetF7d4(efx, 1.0f, 0.0f);
+		cEmbeddedFXBike_SetThrottle(efx, 1.0f, 0.0f);
 	}
 	if (!FX_InRange(self->t, 23.0f, 25.0f, &f)) {
 		CGameLensFlare_SetOn(&self->flare, 0);
@@ -573,8 +573,8 @@ void __thiscall cObjElementFXSceneTheEndB_Update(cObjElementFXSceneTheEndB *self
 		v = 0.5f - (3.0f - (g + g)) * (g * g) * 0.5f;
 	}
 	CGameLensFlare_SetIntensity(&self->flare, v);
-	CGameLensFlare_SetF18(&self->flare, 1.0f);
-	CGameLensFlare_SetI1c(&self->flare, 3);
+	CGameLensFlare_SetScale(&self->flare, 1.0f);
+	CGameLensFlare_SetType(&self->flare, 3);
 	self->tPrev = self->t;
 }
 
@@ -1774,7 +1774,7 @@ void __thiscall cObjElementFXSceneBillArrives_A_Update(cObjElementFXSceneBillArr
 			CGameLensFlare_SetPos(&self->flare, cp);
 			CGameLensFlare_SetOn(&self->flare, 1);
 			CGameLensFlare_SetIntensity(&self->flare, 0.5f - f * 0.5f);
-			CGameLensFlare_SetF18(&self->flare, 1.0f);
+			CGameLensFlare_SetScale(&self->flare, 1.0f);
 		} else {
 			CGameLensFlare_SetOn(&self->flare, 0);
 		}
@@ -2201,8 +2201,8 @@ void __thiscall cObjElementFXSceneEnterMatrix_Update(cObjElementFXSceneEnterMatr
 		v = 0.5f - (3.0f - (g + g)) * (g * g) * 0.5f;
 	}
 	CGameLensFlare_SetIntensity(&self->flare, v);
-	CGameLensFlare_SetF18(&self->flare, 1.0f);
-	CGameLensFlare_SetI1c(&self->flare, 2);
+	CGameLensFlare_SetScale(&self->flare, 1.0f);
+	CGameLensFlare_SetType(&self->flare, 2);
 	self->tPrev = self->t;
 }
 

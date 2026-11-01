@@ -745,7 +745,7 @@ void __thiscall CScene_SetAlpha(CScene *self, float alpha, const char *name) {
 	}
 }
 
-void __thiscall CScene_SetNodes54(CScene *self, int v) {
+void __thiscall CScene_SetMarks(CScene *self, int v) {
 	for (CNode3D *n = self->Node3D; n; n = n->next) {
 		n->mark = v;
 	}

@@ -27,15 +27,15 @@
 /* ScrapEngLensFlares.cpp: the holder of a lens flare (one pointer); the setters write the flare object */
 void __thiscall CGameLensFlare_SetOn(void *self, byte on);			/* rva 0x232f30 */
 void __thiscall CGameLensFlare_SetIntensity(void *self, float v);		/* rva 0x232f80, +0x14 */
-void __thiscall CGameLensFlare_SetF30(void *self, float v);			/* rva 0x232fa0, +0x30 */
+void __thiscall CGameLensFlare_SetTraceInterval(void *self, float v);			/* rva 0x232fa0, +0x30 */
 void __thiscall CGameLensFlare_SetPos(void *self, vec3_t pos);		/* rva 0x232fc0, +0x08 */
-void __thiscall CGameLensFlare_SetF18(void *self, float v);			/* rva 0x232ff0, +0x18 */
-void __thiscall CGameLensFlare_SetI1c(void *self, int v);			/* rva 0x233010, +0x1c */
-void __thiscall CGameLensFlare_SetB2c(void *self, byte v);			/* rva 0x233020, +0x2c */
+void __thiscall CGameLensFlare_SetScale(void *self, float v);			/* rva 0x232ff0, +0x18 */
+void __thiscall CGameLensFlare_SetType(void *self, int v);			/* rva 0x233010, +0x1c */
+void __thiscall CGameLensFlare_SetRelative(void *self, byte v);			/* rva 0x233020, +0x2c */
 float __thiscall CGameLensFlare_GetIntensity(const void *self);		/* rva 0x232f40 */
-float __thiscall CGameLensFlare_GetF30(const void *self);			/* rva 0x232f50 */
-float __thiscall CGameLensFlare_GetF18(const void *self);			/* rva 0x232f60 */
-int __thiscall CGameLensFlare_GetI1c(const void *self);			/* rva 0x232f70 */
+float __thiscall CGameLensFlare_GetTraceInterval(const void *self);			/* rva 0x232f50 */
+float __thiscall CGameLensFlare_GetScale(const void *self);			/* rva 0x232f60 */
+int __thiscall CGameLensFlare_GetType(const void *self);			/* rva 0x232f70 */
 
 /* the lens flare object of the engine glue: CLensFlare of lensflare.h */
 

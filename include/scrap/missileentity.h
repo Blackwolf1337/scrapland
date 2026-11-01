@@ -151,7 +151,7 @@ byte __thiscall cMissileEntity_Hit(cMissileEntity *self, int n, int unused);
 void __thiscall cMissileEntity_OnDeath(cMissileEntity *self);
 void __thiscall cMissileEntity_SetActive(cMissileEntity *self, byte on);
 void __thiscall cMissileEntity_SetAng(cMissileEntity *self, const vec3_t *ang);
-void __thiscall cMissileEntity_SetFlag585(cMissileEntity *self, byte v);
+void __thiscall cMissileEntity_SetBeesHit(cMissileEntity *self, byte v);
 void __thiscall cMissileEntity_SetHiddenSwarm(cMissileEntity *self, byte on);
 void __thiscall cMissileEntity_SetHideMain(cMissileEntity *self, byte on);
 void __thiscall cMissileEntity_SetHitType(cMissileEntity *self, int type);
@@ -166,7 +166,7 @@ void __thiscall cMissileEntity_SetSpeed(cMissileEntity *self, float speed);
 void __thiscall cMissileEntity_SetSwDthTime(cMissileEntity *self, float t);
 /* more bees are added, fewer go back to the debris system */
 void __thiscall cMissileEntity_SetSwarm(cMissileEntity *self, int n);
-void __thiscall cMissileEntity_SetFlag584(cMissileEntity *self, byte v);
+void __thiscall cMissileEntity_SetBeesGather(cMissileEntity *self, byte v);
 void __thiscall cMissileEntity_SetSwarmSpeed(cMissileEntity *self, float speed);
 void __thiscall cMissileEntity_SetTarget(cMissileEntity *self, const char *name);
 void __thiscall cMissileEntity_SetTopRadius(cMissileEntity *self, float r);

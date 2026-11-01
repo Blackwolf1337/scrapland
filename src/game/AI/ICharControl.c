@@ -2019,7 +2019,7 @@ byte __thiscall cAICharControl_IsBlocked(cAICharControl *self) {
 	return self->blocked;
 }
 
-byte __thiscall cAICharControl_GetE4(cAICharControl *self) {
+byte __thiscall cAICharControl_GetAvoidFound(cAICharControl *self) {
 	return self->avoidFound;
 }
 

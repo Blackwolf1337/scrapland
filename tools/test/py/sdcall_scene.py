@@ -77,7 +77,7 @@ for f in (None, 0, 2, 4):
 		check('CScene_FindClass' + fmt((f, c)), lambda fr=fr, c=c: eswho(SDTest.Call('CScene_FindClass', 'tiiii', e, fr, c)[0]))
 for name in ('b', 'root', 'cam', 'zz'):
 	check('CScene_FindNode' + fmt((name,)), lambda name=name: eswho(SDTest.Call('CScene_FindNode', 'tiis', e, name)[0]))
-check('CScene_SetNodes54', lambda: (SDTest.Call('CScene_SetNodes54', 'tvii', e, 77), map(esnget, esnodes)))
+check('CScene_SetMarks', lambda: (SDTest.Call('CScene_SetMarks', 'tvii', e, 77), map(esnget, esnodes)))
 check('CScene_UpdateNodes', lambda: (SDTest.Call('CScene_UpdateNodes', 'tvi', e), map(esnget, esnodes)))
 check('CScene_Msg calc pesos', lambda: SDTest.Call('CScene_Msg', 'tviiiiii', e, 2, 0, 0, 0, 0))
 check('CScene_Msg join none', lambda: (SDTest.Call('CScene_Msg', 'tviiiiii', e, 0, 0, 0, 0, 0), eslist(e)))

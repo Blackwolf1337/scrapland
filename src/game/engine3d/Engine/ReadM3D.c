@@ -1819,7 +1819,7 @@ static void Scene_SortNodes(CScene *scn) {
 	byte change = 0;
 	int k = 1;
 
-	CScene_SetNodes54(scn, 0);
+	CScene_SetMarks(scn, 0);
 	for (CNode3D *n = scn->Node3D; n; n = n->next) {
 		if (n->parent && !n->parent->mark) {
 			change = 1;

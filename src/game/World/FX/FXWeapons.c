@@ -1156,8 +1156,8 @@ void __thiscall cObjElementFXInfernoMissile_Start(cObjElementFXInfernoMissile *s
 	self->fadeStart = -1.0f;
 	self->lastShrink = 0.0f;
 	self->flareOn = 0;
-	CGameLensFlare_SetF30(&self->flare, 0.2f);
-	CGameLensFlare_SetI1c(&self->flare, 2);
+	CGameLensFlare_SetTraceInterval(&self->flare, 0.2f);
+	CGameLensFlare_SetType(&self->flare, 2);
 }
 
 void __thiscall cObjElementFXInfernoMissile_Reset(cObjElementFXInfernoMissile *self, cDebris *debris) {
@@ -1449,7 +1449,7 @@ void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *deb
 	(void)dt;
 	cEntity *e = self->emitter;
 	if (e && (Entity_Removed(e) || !e->active)) {
-		cWeaponManager_SetFlag46(&Veh(e)->weapons, 0);
+		cWeaponManager_SetTeslaFiring(&Veh(e)->weapons, 0);
 		self->emitter = NULL;
 	}
 	if (!self->emitter) {

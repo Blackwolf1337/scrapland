@@ -436,7 +436,7 @@ void __thiscall cWeaponManager_LockPoint(cWeaponManager *self, const vec3_t *p) 
 	self->on = 0;
 }
 
-void __thiscall cWeaponManager_SetFlag46(cWeaponManager *self, byte v) {
+void __thiscall cWeaponManager_SetTeslaFiring(cWeaponManager *self, byte v) {
 	self->teslaFiring = v;
 }
 

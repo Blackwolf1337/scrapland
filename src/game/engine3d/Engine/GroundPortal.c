@@ -173,7 +173,7 @@ byte Sector_IsOutside(int sector) {
 	return Sector_Get((uint32_t)sector)->outside;
 }
 
-byte Sector_Get139(int sector) {
+byte Sector_IsSky(int sector) {
 	return Sector_Get((uint32_t)sector)->sky;
 }
 

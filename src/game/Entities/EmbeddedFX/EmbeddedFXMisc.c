@@ -710,7 +710,7 @@ void __fastcall cEmbeddedFXDataPack_On(cEmbeddedFXDataPack *self) {
 	self->on = 1;
 }
 
-void __thiscall cEmbeddedFXBike_SetF7d4(cEmbeddedFXBike *self, float a, float b) {
+void __thiscall cEmbeddedFXBike_SetThrottle(cEmbeddedFXBike *self, float a, float b) {
 	self->throttle = a;
 	self->on = 1;
 	self->boost = b;

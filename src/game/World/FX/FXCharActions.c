@@ -723,7 +723,7 @@ void __thiscall cObjElementFXBettyAttack_Attach(cObjElementFXBettyAttack *self, 
 	CGameTrail_SetType(&self->trail, 1);
 	CHECK(self->particles.ParticleSystem);
 	self->ring = 0.0f;
-	CGameLensFlare_SetI1c(&self->flare, 2);
+	CGameLensFlare_SetType(&self->flare, 2);
 }
 
 void __thiscall cObjElementFXKill_Attach(cObjElementFXKill *self, cDebris *d) {
@@ -2111,7 +2111,7 @@ void __thiscall cObjElementFXBettyAttack_Update(cObjElementFXBettyAttack *self, 
 		CGameLensFlare_SetPos(&self->flare, self->pos);
 		CGameLensFlare_SetOn(&self->flare, 1);
 		CGameLensFlare_SetIntensity(&self->flare, 0.5f - a * 0.5f);
-		CGameLensFlare_SetF18(&self->flare, 1.0f);
+		CGameLensFlare_SetScale(&self->flare, 1.0f);
 	} else {
 		CGameLensFlare_SetOn(&self->flare, 0);
 	}

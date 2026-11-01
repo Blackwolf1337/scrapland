@@ -386,7 +386,7 @@ for n, s in (('HitType', 'inout'), ('HitType', 'Inside'), ('HitType', 'None'), (
 		(lambda r: (r[0], r[0] and ntstr(r[1])))(SDTest.Call('cMissileEntity_VarS', 'tbispi', ntm, n, 0, 0))))
 for f, sig, a in (('cMissileEntity_SetLifeTime', 'tvif', 2.0), ('cMissileEntity_SetType', 'tvii', 3), ('cMissileEntity_SetCount', 'tvii', 0), ('cMissileEntity_SetNoWorldHit', 'tvii', 1),
 		('cMissileEntity_SetParent', 'tvis', 'SDParent'), ('cMissileEntity_SetRadius', 'tvif', 60.0), ('cMissileEntity_SetRadiusGrow', 'tvif', 8.0), ('cMissileEntity_SetSpeed', 'tvif', 500.0),
-		('cMissileEntity_SetSwDthTime', 'tvif', 1.25), ('cMissileEntity_SetFlag584', 'tvii', 0), ('cMissileEntity_SetFlag585', 'tvii', 1), ('cMissileEntity_SetSwarmSpeed', 'tvif', 1234.5),
+		('cMissileEntity_SetSwDthTime', 'tvif', 1.25), ('cMissileEntity_SetBeesGather', 'tvii', 0), ('cMissileEntity_SetBeesHit', 'tvii', 1), ('cMissileEntity_SetSwarmSpeed', 'tvif', 1234.5),
 		('cMissileEntity_SetTarget', 'tvis', 'SDTarget'), ('cMissileEntity_SetTarget', 'tvii', 0), ('cMissileEntity_SetTopRadius', 'tvif', 900.0), ('cMissileEntity_SetTurnSpeed', 'tvif', 0.75),
 		('cMissileEntity_SetType', 'tvii', 0), ('cMissileEntity_SetHiddenSwarm', 'tvii', 1), ('cMissileEntity_SetHiddenSwarm', 'tvii', 0), ('cMissileEntity_SetHideMain', 'tvii', 1), ('cMissileEntity_SetHideMain', 'tvii', 0)):
 	check('cMissileEntity setter %s' % f + fmt(a), lambda f=f, sig=sig, a=a: (SDTest.Call(f, sig, ntm, a), ntmfields(ntm)))

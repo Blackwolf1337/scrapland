@@ -251,7 +251,7 @@ cAIVehicleParams3 *__thiscall cAIVehicle_GetParams3Init(cAIVehicle *self);
 /* the vehicle closer than 15000 to p */
 byte __thiscall cAIVehicle_IsNear(cAIVehicle *self, const vec3_t *p);
 byte __thiscall cAIVehicle_ControlFlag(cAIVehicle *self);
-byte __thiscall cAIVehicle_ControlFlag2(cAIVehicle *self);
+byte __thiscall cAIVehicle_InSight(cAIVehicle *self);
 /* e within HookRange, not touching and at most 45 degrees off the nose; CanHook also in sight */
 byte __thiscall cAIVehicle_InHookRange(cAIVehicle *self, cEntity *e);
 byte __thiscall cAIVehicle_CanHook(cAIVehicle *self, cEntity *e);
@@ -387,7 +387,7 @@ void __thiscall cAIVehicleControl_Draw(cAIVehicleControl *self);
 cAIVehicleParams2 *__thiscall cAIVehicleControl_GetParams(cAIVehicleControl *self);
 cAIVehicleParams2 *__thiscall cAIVehicleControl_GetParamsInit(cAIVehicleControl *self);
 byte __thiscall cAIVehicleControl_GetFlag(cAIVehicleControl *self);
-byte __thiscall cAIVehicleControl_GetFlag2(cAIVehicleControl *self);
+byte __thiscall cAIVehicleControl_InSight(cAIVehicleControl *self);
 void __thiscall cAIVehicleControl_SetInertia(cAIVehicleControl *self, int on);
 void __thiscall cAIVehicleControl_SetRotStatic(cAIVehicleControl *self, float a, float b);
 /* the last point (0xc4) and the point of the target (0x98, -FLT_MAX each after ClearDest) */
@@ -400,7 +400,7 @@ void __thiscall cAIVehicleControl_Stop(cAIVehicleControl *self);
  * see cAIVehicle_SetInternState); 0 if it was refused */
 byte cAIVehicleControl_SetMove(cAIVehicleControl *self, int mode, ...);
 /* the byte at 0xb0: 1 in LOST_PATH, 0 at every change of state */
-void __thiscall cAIVehicleControl_SetFlagB0(cAIVehicleControl *self, byte on);
+void __thiscall cAIVehicleControl_SetDirect(cAIVehicleControl *self, byte on);
 cAIVehicleShoot *__thiscall cAIVehicleShoot_ctor(void *mem, cEntity *v, cAIVehicle *ai, void *params);
 void __thiscall cAIVehicleShoot_Update(cAIVehicleShoot *self, float dt);
 void __thiscall cAIVehicleShoot_Update2(cAIVehicleShoot *self, float dt);

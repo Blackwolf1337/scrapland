@@ -123,7 +123,7 @@ int __thiscall cWeaponManager_PrevWeap(cWeaponManager *self, uint32_t w);
 float __thiscall cWeaponManager_SetAmmo(cWeaponManager *self, int ammo, float v);
 void __thiscall cWeaponManager_LockEntity(cWeaponManager *self, const char *name);
 void __thiscall cWeaponManager_LockPoint(cWeaponManager *self, const vec3_t *p);
-void __thiscall cWeaponManager_SetFlag46(cWeaponManager *self, byte v);
+void __thiscall cWeaponManager_SetTeslaFiring(cWeaponManager *self, byte v);
 uint32_t __thiscall cWeaponManager_SetSlots(cWeaponManager *self, int w, int mask);
 void __thiscall cWeaponManager_SetWeapList(cWeaponManager *self, const char *list);
 byte __thiscall cWeaponManager_SetSlot(cWeaponManager *self, int w, int slot, byte on);

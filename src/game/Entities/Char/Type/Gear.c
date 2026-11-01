@@ -234,8 +234,8 @@ void ChType_GearShoot(cAbstractFile *params) {
 			WChar(e)->wl.life = 50;
 		}
 		cMissileEntity_SetNoWorldHit(m, 0);
-		cMissileEntity_SetFlag584(m, 0);
-		cMissileEntity_SetFlag585(m, 1);
+		cMissileEntity_SetBeesGather(m, 0);
+		cMissileEntity_SetBeesHit(m, 1);
 		cPrimitive_SetSize(&WChar(e)->wl.prim, 40.0f);
 		cMissileEntity_SetRadius(m, 50.0f);
 		cMissileEntity_SetTopRadius(m, 50.0f);

@@ -151,11 +151,11 @@ if ivcCar and ivcCar2 and ivcGroup and ivcNodesWorld:
 	check('cAIVehicleControl getters', lambda: (SDTest.Call('cAIVehicleControl_GetGoal', 'tiiF', ivcC, (0.0,) * 3)[1],
 		SDTest.Call('cAIVehicleControl_GetDest', 'tiiF', ivcC, (0.0,) * 3)[1], SDTest.Call('cAIVehicleControl_GetParams', 'tii', ivcC)[0] == ivcC + 0x4c,
 		SDTest.Call('cAIVehicleControl_GetParamsInit', 'tii', ivcC)[0] == ivcC + 0x64, SDTest.Call('cAIVehicleControl_GetFlag', 'tbi', ivcC)[0],
-		SDTest.Call('cAIVehicleControl_GetFlag2', 'tbi', ivcC)[0], SDTest.Call('cAIVehicleControl_GetStrafing', 'tbi', ivcC)[0]))
+		SDTest.Call('cAIVehicleControl_InSight', 'tbi', ivcC)[0], SDTest.Call('cAIVehicleControl_GetStrafing', 'tbi', ivcC)[0]))
 	for ivcV in (0, 1):
 		check('cAIVehicleControl_SetInertia(%d)' % ivcV, lambda v=ivcV: (SDTest.Call('cAIVehicleControl_SetInertia', 'tvii', ivcC, v),
 			ivcB(ivcC + 0xb1)))
-		check('cAIVehicleControl_SetFlagB0(%d)' % ivcV, lambda v=ivcV: (SDTest.Call('cAIVehicleControl_SetFlagB0', 'tvii', ivcC, v),
+		check('cAIVehicleControl_SetDirect(%d)' % ivcV, lambda v=ivcV: (SDTest.Call('cAIVehicleControl_SetDirect', 'tvii', ivcC, v),
 			ivcB(ivcC + 0xb0)))
 	check('cAIVehicleControl_SetRotStatic', lambda: (SDTest.Call('cAIVehicleControl_SetRotStatic', 'tviff', ivcC, 0.375, 0.0625),
 		ivcF(ivcC + 0xa4, 2)))
@@ -209,14 +209,14 @@ if ivcCar and ivcCar2 and ivcGroup and ivcNodesWorld:
 		check('cAIVehicleControl_FindPoint', lambda: (SDTest.Call('cAIVehicleControl_FindPoint', 'tbi', ivcC)[0], ivcCF(), ivcPts(),
 			ivcI(ivcC + 0xec)))
 	for ivcV in (0, 1):
-		SDTest.Call('cAIVehicleControl_SetFlagB0', 'tvii', ivcC, ivcV)
+		SDTest.Call('cAIVehicleControl_SetDirect', 'tvii', ivcC, ivcV)
 		ivcSet(ivcC + 0x90, (0.0, 0.0))
 		ivcSet(ivcCar + 0xac, (0.25, -0.5, 0.0))
 		check('cAIVehicleControl_TurnToPoint direct %d' % ivcV, lambda: (SDTest.Call('cAIVehicleControl_TurnToPoint', 'tvi', ivcC),
 			ivcF(ivcC + 0x44, 2), ivcF(ivcC + 0x90, 2), ivcF(ivcC + 0xf0, 2), ivcCtls(), ivcF(ivcCar + 0xac, 3)))
 		check('cAIVehicleControl_TurnToPoint again %d' % ivcV, lambda: (SDTest.Call('cAIVehicleControl_TurnToPoint', 'tvi', ivcC),
 			ivcF(ivcC + 0x90, 2), ivcCtls()))
-	SDTest.Call('cAIVehicleControl_SetFlagB0', 'tvii', ivcC, 0)
+	SDTest.Call('cAIVehicleControl_SetDirect', 'tvii', ivcC, 0)
 	ivcSet(ivcCar + 0xac, (0.0, 0.0, 0.0))
 	check('cAIVehicleControl_StrafeToPoint', lambda: (SDTest.Call('cAIVehicleControl_StrafeToPoint', 'tvi', ivcC), ivcCtls()))
 	check('cAIVehicleControl_StrafeToPoint copy', lambda: (SDTest.Call('cAIVehicleControl_StrafeToPoint@93cf0', 'tvi', ivcC), ivcCtls()))

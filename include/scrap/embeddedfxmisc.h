@@ -297,7 +297,7 @@ void EmbeddedFXMisc_BossShieldMsg(cAbstractFile *f);
 void EmbeddedFXMisc_MeetingPointMsg(cAbstractFile *f);
 void __thiscall cEmbeddedFXMeetingPoint_SetCountDown(cEmbeddedFXMeetingPoint *self, float a, float b);
 vec3_t *__thiscall cEmbeddedFXBike_EnginePos(cEmbeddedFXBike *self, vec3_t *out);
-void __thiscall cEmbeddedFXBike_SetF7d4(cEmbeddedFXBike *self, float a, float b);
+void __thiscall cEmbeddedFXBike_SetThrottle(cEmbeddedFXBike *self, float a, float b);
 void __thiscall cEmbeddedFXDataPack_SetOn(cEmbeddedFXDataPack *self, byte on);
 
 #endif

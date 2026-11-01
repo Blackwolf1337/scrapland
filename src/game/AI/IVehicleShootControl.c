@@ -290,7 +290,7 @@ void __fastcall cAIVehicleShoot_Fire(cAIVehicleShoot *self) {
 		goto done;
 	}
 	self->fireTime = self->dt + self->fireTime;
-	if (!cAIVehicle_ControlFlag2(self->ai) ||
+	if (!cAIVehicle_InSight(self->ai) ||
 		(self->ctl->fire && self->params.cadence > 0 && self->fireTime > g_TimeShootAI)) {
 		self->ctl->fire = 0;
 		return;

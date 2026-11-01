@@ -340,3 +340,25 @@ local	pri	pri	src/game/Sound/SoundDX8.c	CSoundXBox_DebugDraw	the priority of a c
 local	pri	pri	include/scrap/fmod.h	FSOUND_Sample_GetDefaults	the priority of a sample
 local	es	es	src/game/App/WinApp.c	ConsoleWin_SaveOutput	the EDITSTREAM
 prose	sig		the signature of SDTest.Call
+# ---- the function names that named a field offset (cleanup/readable) ----
+name	cMissileEntity_SetFlag584	cMissileEntity_SetBeesGather	the field beesGather
+name	cMissileEntity_SetFlag585	cMissileEntity_SetBeesHit	the field beesHit
+name	cWeaponManager_SetFlag46	cWeaponManager_SetTeslaFiring	the field teslaFiring
+name	Sector_Get139	Sector_IsSky	CZone.sky, "(+sky_sector)"
+name	CScene_SetNodes54	CScene_SetMarks	CNode3D.mark of all nodes
+name	cAIVehicleControl_GetFlag2	cAIVehicleControl_InSight	returns inSight
+name	cAIVehicle_ControlFlag2	cAIVehicle_InSight	inSight of its control
+name	cAIVehicleControl_SetFlagB0	cAIVehicleControl_SetDirect	sets direct
+name	cEmbeddedFXBike_SetF7d4	cEmbeddedFXBike_SetThrottle	throttle and boost
+name	CGameLensFlare_GetF18	CGameLensFlare_GetScale	CLensFlare.scale
+name	CGameLensFlare_SetF18	CGameLensFlare_SetScale	CLensFlare_SetScale
+name	CGameLensFlare_GetF30	CGameLensFlare_GetTraceInterval	CLensFlare.traceInterval
+name	CGameLensFlare_SetF30	CGameLensFlare_SetTraceInterval	CLensFlare_SetTraceInterval
+name	CGameLensFlare_GetI1c	CGameLensFlare_GetType	CLensFlare.type
+name	CGameLensFlare_SetI1c	CGameLensFlare_SetType	CLensFlare_SetType
+name	CGameLensFlare_SetB2c	CGameLensFlare_SetRelative	CLensFlare_SetRelative
+name	cGenCharLocalLogic_SetB58	cGenCharLocalLogic_SetCanAttack	the field canAttack
+name	cGenCharLocalLogic_GetI50	cGenCharLocalLogic_GetDefaultState	the field defaultState
+name	cGenCharLocalLogic_GetS54	cGenCharLocalLogic_GetDefaultTarget	the field defaultTarget
+name	cAICharControl_GetE4	cAICharControl_GetAvoidFound	the field avoidFound
+keep	NUM_IND		the indefinite NaN of the MSVC CRT, "1.#IND" (crtscan.c)

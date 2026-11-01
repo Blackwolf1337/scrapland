@@ -79,7 +79,7 @@ byte __thiscall cGenCharLocalLogic_CanDiscover(cGenCharLocalLogic *self, cEntity
 	return cString_CmpStr(g_UsrDefChar, g_pWorld->alarm.chars) != 0;
 }
 
-void __thiscall cGenCharLocalLogic_SetB58(cGenCharLocalLogic *self, byte v) {
+void __thiscall cGenCharLocalLogic_SetCanAttack(cGenCharLocalLogic *self, byte v) {
 	self->canAttack = v;
 }
 
@@ -88,11 +88,11 @@ void __thiscall cGenCharLocalLogic_OnAlarm(cGenCharLocalLogic *self, cEntity *e)
 	self->base.vftable->SetState(self, self->alarmState, e);
 }
 
-int __thiscall cGenCharLocalLogic_GetI50(cGenCharLocalLogic *self) {
+int __thiscall cGenCharLocalLogic_GetDefaultState(cGenCharLocalLogic *self) {
 	return self->defaultState;
 }
 
-char *__thiscall cGenCharLocalLogic_GetS54(cGenCharLocalLogic *self) {
+char *__thiscall cGenCharLocalLogic_GetDefaultTarget(cGenCharLocalLogic *self) {
 	return self->defaultTarget;
 }
 

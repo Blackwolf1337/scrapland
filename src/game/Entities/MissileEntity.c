@@ -446,7 +446,7 @@ void __thiscall cMissileEntity_SetAng(cMissileEntity *self, const vec3_t *ang) {
 	cObjEntity_SetAng(Missile_Ent(self), &n);
 }
 
-void __thiscall cMissileEntity_SetFlag585(cMissileEntity *self, byte v) {
+void __thiscall cMissileEntity_SetBeesHit(cMissileEntity *self, byte v) {
 	self->beesHit = v;
 }
 
@@ -547,7 +547,7 @@ void __thiscall cMissileEntity_SetSwarm(cMissileEntity *self, int n) {
 	}
 }
 
-void __thiscall cMissileEntity_SetFlag584(cMissileEntity *self, byte v) {
+void __thiscall cMissileEntity_SetBeesGather(cMissileEntity *self, byte v) {
 	self->beesGather = v;
 }
 

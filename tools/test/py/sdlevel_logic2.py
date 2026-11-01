@@ -491,8 +491,8 @@ lg2poke(lg2gc + 4, lg2player)
 lg2node(lg2gc, 8)
 lg2poke(lg2gc + 0x50, 1234)
 lg2cset(lg2gc + 0x54, 'SDLg2S54')
-check('LG2 cGenCharLocalLogic getters', lambda: (SDTest.Call('cGenCharLocalLogic_SetB58', 'tvii', lg2gc, 7)[0], lg2b(lg2gc + 0x58),
-	SDTest.Call('cGenCharLocalLogic_GetI50', 'tii', lg2gc)[0], lg2str(SDTest.Call('cGenCharLocalLogic_GetS54', 'tii', lg2gc)[0])))
+check('LG2 cGenCharLocalLogic getters', lambda: (SDTest.Call('cGenCharLocalLogic_SetCanAttack', 'tvii', lg2gc, 7)[0], lg2b(lg2gc + 0x58),
+	SDTest.Call('cGenCharLocalLogic_GetDefaultState', 'tii', lg2gc)[0], lg2str(SDTest.Call('cGenCharLocalLogic_GetDefaultTarget', 'tii', lg2gc)[0])))
 for lg2v in ((0, 0), (3, 0), (11, 0), (5, 0), (0, 1)):
 	lg2poke(lg2gc + 0x18, lg2v[0])
 	lg2pokeb(lg2gc + 0x29, lg2v[1])

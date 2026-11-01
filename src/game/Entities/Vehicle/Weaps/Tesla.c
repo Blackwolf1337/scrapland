@@ -23,7 +23,7 @@ void Tesla_CreateNative(cAbstractFile *f) {
 	cEntity *v = Weap_Vehicle(name);
 	cTargetLock *wm = &Veh(v)->weapons;
 	byte shooting = wm->teslaFiring;
-	cWeaponManager_SetFlag46(wm, 1);
+	cWeaponManager_SetTeslaFiring(wm, 1);
 	int n = 0;
 	if (Obj_Vtbl(v)->GetModel(v)) {
 		n = cWeaponManager_NumSlots(wm, g_TeslaIDWeap, 1);
@@ -192,7 +192,7 @@ void Tesla_AimOnNative(cAbstractFile *f) {
 	cAbstractFile_ReadString(f, name, 0x80);
 	cEntity *v = Weap_Vehicle(name);
 	Tesla_AimOn(v);
-	cWeaponManager_SetFlag46(&Veh(v)->weapons, 0);
+	cWeaponManager_SetTeslaFiring(&Veh(v)->weapons, 0);
 }
 
 void Tesla_AimOffNative(cAbstractFile *f) {
@@ -202,7 +202,7 @@ void Tesla_AimOffNative(cAbstractFile *f) {
 	cEntity *v = Weap_Vehicle(name);
 	Veh(v)->autoAim.status = 0;
 	Veh(v)->autoAim.deltaAng = 0.0f;
-	cWeaponManager_SetFlag46(&Veh(v)->weapons, 0);
+	cWeaponManager_SetTeslaFiring(&Veh(v)->weapons, 0);
 }
 
 /* the aim help of the Tesla: the cone opens wide (wider with a pad and VehicleCenterPadLock) */

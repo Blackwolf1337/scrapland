@@ -377,7 +377,7 @@ void Swarm_NetSetUp(const char *name) {
 	cMissileEntity_SetRadiusGrow((cMissileEntity *)m, 2000.0f);
 	cMissileEntity_SetSpeed((cMissileEntity *)m, g_SwarmNormSpeed);
 	cMissileEntity_SetTurnSpeed((cMissileEntity *)m, (float)(((double)g_SwarmTurnSpeed * WEAP_PI) / 180.0));
-	cMissileEntity_SetFlag584((cMissileEntity *)m, 0);
+	cMissileEntity_SetBeesGather((cMissileEntity *)m, 0);
 	cEntity *v = Weap_FindVehicle(Missile(m)->parent);
 	if (v) {
 		float top = g_SwarmUpTopSpeed;

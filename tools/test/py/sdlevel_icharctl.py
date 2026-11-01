@@ -118,8 +118,8 @@ if iccw and iccw2:
 			SDTest.Call('cAICharControl_SetHold', 'tvii', C, 0), iccb(C + 0xbc), iccf(iccw + 0x4ec, 6), SDTest.Call('cAICharControl_SetHold', 'tvii', C,
 			1), iccb(C + 0xbc), iccf(iccw + 0x4ec, 6), SDTest.Call('cAICharControl_SetHold', 'tvii', C, 0)))
 		check('ICC %s flags' % iccn, lambda C=iccC: (iccpokeb(C + 0xd4, 1), iccpokeb(C + 0xe4, 1),
-			SDTest.Call('cAICharControl_IsBlocked', 'tbi', C)[0], SDTest.Call('cAICharControl_GetE4', 'tbi', C)[0], iccpokeb(C + 0xd4, 0),
-			iccpokeb(C + 0xe4, 0), SDTest.Call('cAICharControl_IsBlocked', 'tbi', C)[0], SDTest.Call('cAICharControl_GetE4', 'tbi', C)[0],
+			SDTest.Call('cAICharControl_IsBlocked', 'tbi', C)[0], SDTest.Call('cAICharControl_GetAvoidFound', 'tbi', C)[0], iccpokeb(C + 0xd4, 0),
+			iccpokeb(C + 0xe4, 0), SDTest.Call('cAICharControl_IsBlocked', 'tbi', C)[0], SDTest.Call('cAICharControl_GetAvoidFound', 'tbi', C)[0],
 			SDTest.Call('cAICharControl_Nop', 'tvi', C)))
 		# the keep and strafe distances to the other character
 		check('ICC %s KeepDist' % iccn, lambda r=iccr: (SDTest.Call(r[4], 'tfii', r[0], iccw2)[0],

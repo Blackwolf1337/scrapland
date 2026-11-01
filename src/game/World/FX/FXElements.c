@@ -33,11 +33,11 @@ cFXElementsLensFlare *__thiscall cFXElementsLensFlare_ctor(cFXElementsLensFlare 
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSLENSFLARE_VFTABLE;
 	CGameLensFlare_ctor(self->flare);
-	CGameLensFlare_SetI1c(self->flare, 0);
+	CGameLensFlare_SetType(self->flare, 0);
 	CGameLensFlare_SetPos(self->flare, *pos);
 	CGameLensFlare_SetIntensity(self->flare, 0.65f);
-	CGameLensFlare_SetB2c(self->flare, 1);
-	CGameLensFlare_SetF30(self->flare, 0.3f);
+	CGameLensFlare_SetRelative(self->flare, 1);
+	CGameLensFlare_SetTraceInterval(self->flare, 0.3f);
 	CGameLensFlare_SetOn(self->flare, 1);
 	return self;
 }

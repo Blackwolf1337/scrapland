@@ -217,7 +217,7 @@ typedef struct CNode3D {
 	int slot;			/* 0x48 in the node table of the scene (Scene_NodeTable), render nodes first; -1 */
 	int renderNode;			/* 0x4c -1, else Update goes to CRenderNode_UpdateNode */
 	int aniLocked;		/* 0x50 ANIM_* channels whose animation is discarded (~AniMask) */
-	int mark;			/* 0x54 scratch: sort order, tree item of the debug view (CScene_SetNodes54) */
+	int mark;			/* 0x54 scratch: sort order, tree item of the debug view (CScene_SetMarks) */
 	IObject3D *obj58;		/* 0x58 owned, deleted through its vftable[0] */
 	matrix_t m;			/* 0x5c world, the position in m[12..14] */
 	matrix_t mObj;			/* 0x9c the object in the node */

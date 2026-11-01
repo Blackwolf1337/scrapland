@@ -494,7 +494,7 @@ void __thiscall cAICharControl_Stop2(cAICharControl *self);
 /* the control stopped, dest and goal -FLT_MAX */
 void __thiscall cAICharControl_Reset(cAICharControl *self);
 byte __thiscall cAICharControl_IsBlocked(cAICharControl *self);
-byte __thiscall cAICharControl_GetE4(cAICharControl *self);
+byte __thiscall cAICharControl_GetAvoidFound(cAICharControl *self);
 void __thiscall cAICharControl_SetHold(cAICharControl *self, byte on);
 
 /* construction, the frame and the slots of the first part of the file (rva 0x06cba0..0x072340) */

@@ -136,7 +136,7 @@ if ivhCar and ivhCar2 and ivhGroup:
 	check('cAIVehicle_GetStateName', lambda: SDTest.Call('cAIVehicle_GetStateName', 'tvib', ivhAI, 'x')[1])
 	check('cAIVehicle_GetInternStateName', lambda: SDTest.Call('cAIVehicle_GetInternStateName', 'tvib', ivhAI, 'x')[1])
 	check('cAIVehicle_ControlFlag', lambda: (SDTest.Call('cAIVehicle_ControlFlag', 'tbi', ivhAI)[0],
-		SDTest.Call('cAIVehicle_ControlFlag2', 'tbi', ivhAI)[0]))
+		SDTest.Call('cAIVehicle_InSight', 'tbi', ivhAI)[0]))
 
 	# GetState for every state (LOST_PATH by the kept state)
 	ivhSave = ivhInts(ivhAI, (0x19c, 0x1a4, 0x20c, 0x2d8))
