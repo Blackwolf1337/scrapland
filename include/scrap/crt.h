@@ -194,6 +194,5 @@ void crt_Init_thread_footer(int *guard);
 extern int crt_init_epoch;
 #define crt_InitEpoch() crt_init_epoch
 /* __security_cookie of the exe (the C of ScrapC.exe has no stack cookies, nothing reads it since stage 3c2) */
-#define crt_security_cookie GAME_GLOBAL(uint32_t, crt_security_cookie, 0x43cfdc)
 
 #endif

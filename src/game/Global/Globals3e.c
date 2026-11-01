@@ -11,35 +11,5 @@
 
 #undef g_RenderLockRect
 
-const float data_3e185c[3] SD_AT(0x3e185c) = { 0.004638f, 0, 0.1171875f };
-const double data_3e1868 SD_AT(0x3e1868) = 1.25e-06;
-const float data_3e1870[4] SD_AT(0x3e1870) = { 0, 9.716614f, 49.0f };
-const uint32_t data_3e1880[4] SD_AT(0x3e1880) = { 0xffffffff, 0xffffffff, 0xffffffff };
-const uint32_t data_3e1890[16] SD_AT(0x3e1890) = { 1, 0xffffffff, 0, 1, 0, 1, 1, 1, 16, 1, 16, 1, 1, 16, 1, 16 };
-const float data_3e18d0[4] SD_AT(0x3e18d0) = { 0.4f, 0.4f, 0.4f, 0.4f };
-const uint32_t data_3e18e0[4] SD_AT(0x3e18e0) = { 0xffffffff, 0, 1, 0xffffffff };
-const double data_3e19a8 SD_AT(0x3e19a8) = 0.2;
-const uint32_t data_3e26a0[2] SD_AT(0x3e26a0) = { 0x7c5ac472, 0x3ff0000a };
 const int32_t g_RenderLockRect[4] SD_AT(0x3e27a0) = { 0, 0, 4, 4 };
-const float data_3e2a04[4] SD_AT(0x3e2a04) = { 0.22f, 0.38f, 0.42f, 0.48f };
-const float data_3e2b40[4] SD_AT(0x3e2b40) = { 0, 0.46875f, 0, 7.5f };
-const uint32_t data_3e2b50[4] SD_AT(0x3e2b50) = { 0xff00ff00, 0xff00ff00, 0xff00ff00, 0xff00ff00 };
-const float data_3e2d10[2] SD_AT(0x3e2d10) = { 0.049f, 40.743664f };
-const uint32_t data_3e2d18[2] SD_AT(0x3e2d18) = { 0xbf3ae148 };
-const float data_3e2d20[4] SD_AT(0x3e2d20) = { 0.024543693f, 0.024543693f, 0.024543693f, 0.024543693f };
-const double data_3e2f68 SD_AT(0x3e2f68) = 0.0001;
-const float data_3e3570[2] SD_AT(0x3e3570) = { -0.0f, 1.8749999f };
-const uint32_t data_3e3578[2] SD_AT(0x3e3578) = { 0x40000000, 0x3ff00000 };
-const float data_3e44b8[3] SD_AT(0x3e44b8) = { 0, 3.75f, 544.0f };
-const float data_3e4794[2] SD_AT(0x3e4794) = { 89.9f, 91.1f };
-const float data_3e6c24 SD_AT(0x3e6c24) = 0.285f;
-const double data_3e6c28 SD_AT(0x3e6c28) = 0.0017453292780017621;
-const uint32_t data_3e710c SD_AT(0x3e710c) = 12;
-const float data_3e7774 SD_AT(0x3e7774) = -0.0001f;
-const float data_3e7a18 SD_AT(0x3e7a18) = 127.0f;
-const uint32_t data_3e7e84 SD_AT(0x3e7e84) = 513;
-const double data_3e7e88 SD_AT(0x3e7e88) = 0.7071067811865476;
-const float data_3e7e90[2] SD_AT(0x3e7e90) = { 0, -1.75f };
-const double data_3e7e98 SD_AT(0x3e7e98) = -0.7071067811865476;
-const float data_3e7ea0[2] SD_AT(0x3e7ea0) = { 0, -1.875f };
 

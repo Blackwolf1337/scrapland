@@ -971,7 +971,6 @@ SD_SYM(str_PyMethod_cPyEntity_SetModel);
 #undef s_TauntRaces
 
 float g_TrafficSearchDist SD_AT(0x428000) = 200000.0f;
-uint32_t data_428004 SD_AT(0x428004);
 uint32_t ChType_FXDesktopFallEnd_428008[18] SD_AT(0x428008) = {
 	0xff000000, 0x80303030, 0x60304040, 0x60404040, 0x60404040, 0x80404040, 0xbe303030, 0xff000000, 0xff000000,
 	0xff000000, 0x80404040, 0x60606060, 0x60606060, 0x60606060, 0x80606060, 0xbe404040, 0xff000000, 0xff000000,
@@ -992,13 +991,11 @@ uint32_t NURSE_RAMPS_SPARKS[18] SD_AT(0x428150) = {
 	0xff9191ed, 0x808d8df0, 0x8a8af2, 0x8787f5, 0x208282f9, 0x407f7ffc, 0x807b7bff, 0xc07b7bff, 0xff7b7bff,
 };
 uint32_t NURSE_RAMP_GLOW[9] SD_AT(0x428198) = { 0xff565656, 0xb4fff06e, 0x8cefa01e, 0x969a500e, 0xc3604b1e, 0xd2404040, 0xeb202020, 0xff000000, 0xff000000 };
-uint32_t Nurse_HammerFX_4281bc SD_AT(0x4281bc);
 uint32_t RUSTY_RAMPS[18] SD_AT(0x4281c0) = {
 	0x80fff696, 0x20ffb45a, 0x40e68211, 0x80ab5e0d, 0x964c4408, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 	0x80ffebd2, 0x20ffd75a, 0x40e6c811, 0x80ab8c0d, 0x964c3a08, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 };
 uint32_t RUSTY_RAMP_DEBRIS[9] SD_AT(0x428208) = { 0xff808080, 0xa4808080, 0xa4808080, 0xa4808080, 0xa4808080, 0xc0808080, 0xde808080, 0xff000000, 0xff000000 };
-uint32_t ChType_FXRustyHit_42822c SD_AT(0x42822c);
 uint32_t g_RampMercenaryBubbles[18] SD_AT(0x428230) = {
 	0x30a0ff8c, 0x40a0ff8c, 0x4ba0ff8c, 0x5ca0ff8c, 0x80a0ff8c, 0xa4a0ff8c, 0xc4408037, 0xff000000, 0xff000000,
 	0x10c4ff80, 0x20c4ff64, 0x30baff5a, 0x5caaff46, 0x80a0ff32, 0xa496ff26, 0xc4408012, 0xff000000, 0xff000000,
@@ -1086,16 +1083,13 @@ uint32_t g_VulcanRamps[3][9] SD_AT(0x428928) = {
 };
 HashTable g_PackIndex SD_AT(0x428994) = { .numSlots = 457 };
 uint32_t g_HashItemValues SD_AT(0x4289a0);
-uint32_t HashItem_Alloc_4289a4[31] SD_AT(0x4289a4) = { 0, 2059, 3190, 797, 0, 0, 0, 0, 119 };
 HashTable g_LangTable SD_AT(0x428a20) = { .numSlots = 457 };
-uint32_t Fini_LangTable_428a2c SD_AT(0x428a2c);
 HashTable g_SaveVarTable SD_AT(0x428aac) = { .numSlots = 457 };
 uint32_t g_CurActionSet SD_AT(0x428ac0) = 0xffffffff;
 int g_ToDefinePlayer SD_AT(0x428ac4) = -1;
 int g_ToDefineAction SD_AT(0x428ac8) = -1;
 uint32_t g_ToDefineSet SD_AT(0x428acc) = 0xffffffff;
 int g_PadCodes[24] SD_AT(0x428ad0) = { 35, 34, 33, 32, 8, 41, 40, 39, 38, 9, 0, 1, 2, 3, 4, 10, 5, 11, 7, 6, 50, 51, 49, 48 };
-void *cPcPad_SetDefaults_428b30[2] SD_AT(0x428b30) = { (void *)sd_str_3bd050, (void *)sd_str_3bd064 };
 const char *LOGIC_GEARSTATES[5] SD_AT(0x428b38) = { (void *)sd_str_3bd078, (void *)sd_str_3bd084, (void *)sd_str_3bd090, (void *)sd_str_3bd09c, (void *)sd_str_3bd0b0 };
 const char *LOGIC_SENTINELSTATES[7] SD_AT(0x428b4c) = {
 	(void *)sd_str_3bd0bc, (void *)sd_str_3bd0cc, (void *)sd_str_3bd0dc, (void *)sd_str_3bd0ec,
@@ -1157,7 +1151,6 @@ int g_TalkColor[3] SD_AT(0x428d1c) = { 174, 229, 251 };
 uint32_t g_NetWaitTime SD_AT(0x428d28) = 5000;
 uint32_t g_NetCloseTime SD_AT(0x428d2c) = 2000;
 uint32_t g_NetSendDelay SD_AT(0x428d30) = 100;
-uint32_t data_428d34 SD_AT(0x428d34);
 uint64_t g_NetRandMag01[2] SD_AT(0x428d38) = { 0, 0xb5026f5aa96619e9ULL };
 byte g_NetServerFullPkt[5] SD_AT(0x428d48) = { 0, 0, 0, 0, 8 };
 byte g_NetNeedPasswordPkt[5] SD_AT(0x428d50) = { 0, 0, 0, 0, 9 };
@@ -1171,7 +1164,6 @@ PyTypeObject cPyEntity_Type SD_AT(0x428e18) = {
 	.tp_getattr = (void *)sd_PyEntity_GetAttr,
 	.tp_setattr = (void *)sd_PyEntity_SetAttr,
 };
-uint32_t PyEntity_New_428e84 SD_AT(0x428e84);
 PyMethodDef cPyEntity_methods[7] SD_AT(0x428e88) = {
 	{ .ml_name = (void *)sd_str_PyMethod_cPyEntity_Del, .ml_meth = (void *)sd_cPyEntity_Del, .ml_flags = 1 },
 	{
@@ -1206,7 +1198,6 @@ PyTypeObject cPyMenuEntity_Type SD_AT(0x428f78) = {
 	.tp_getattr = (void *)sd_PyMenuEntity_GetAttr,
 	.tp_setattr = (void *)sd_PyMenuEntity_SetAttr,
 };
-uint32_t ScorerItem_PyNew_428fe4 SD_AT(0x428fe4);
 PyMethodDef SAct_methods[10] SD_AT(0x429288) = {
 	{
 		.ml_name = (void *)sd_str_PyMethod_SAct_CreateClass,
@@ -2317,7 +2308,6 @@ PyMethodDef SLogic_methods[13] SD_AT(0x42dd20) = {
 		.ml_doc = (void *)sd_str_PyDoc_SLogic_UpdateTauntEndTime,
 	},
 };
-void *data_42ddf0[4] SD_AT(0x42ddf0) = { (void *)sd_str_3bd430, (void *)sd_str_3bd450, (void *)sd_str_3bd460, (void *)sd_str_3bd470 };
 PyMethodDef SNet_methods[26] SD_AT(0x42e610) = {
 	{
 		.ml_name = (void *)sd_str_PyMethod_SNet_InitServer,

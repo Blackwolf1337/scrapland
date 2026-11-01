@@ -13,102 +13,9 @@
 #undef VK_STANDARD
 #undef g_NetMaxDist2
 
-const float data_3b0044 SD_AT(0x3b0044) = 0.85f;
-const float data_3b0830[12] SD_AT(0x3b0830) = { 1e-06f, 0.0025f, 0.040000003f, 0.3f, 0.7853982f, 0.8f, 0.9999f, 1.0471976f, 1.125f, 0, 0, 1.9375f };
-const double data_3b0860 SD_AT(0x3b0860) = 2.356194490192345;
-const float data_3b0868[10] SD_AT(0x3b0868) = { 0, 2.25f, 0, 2.9375f, 28.0f, 150.0f, 14000.0f, -0.7853982f, -1.0471976f };
-const double data_3b0890 SD_AT(0x3b0890) = -2.356194490192345;
-const uint32_t data_3b0898 SD_AT(0x3b0898) = 0xc61c4000;
-const float data_3b10d8[8] SD_AT(0x3b10d8) = { 0.01f, 0.016f, 0.02f, 0.15f, 0.99f, 1.2f, -2.0f, 1.3249999f };
-const uint32_t data_3b10f8[2] SD_AT(0x3b10f8) = { 0x3fb33333 };
-const double data_3b1100 SD_AT(0x3b1100) = 0.11999999731779099;
-const float data_3b1108[8] SD_AT(0x3b1108) = { 0, 1.525f, 2.0f, 1.545f, -0.0f, 1.6999999f, -0.0f, 1.7624999f };
-const double data_3b1128 SD_AT(0x3b1128) = 0.550000011920929;
-const float data_3b1130[2] SD_AT(0x3b1130) = { 0, 1.775f };
-const double data_3b1138 SD_AT(0x3b1138) = 0.5999999642372131;
-const float data_3b1140[14] SD_AT(0x3b1140) = { -0.0f, 1.8249999f, 2.0f, 1.8375f, -0.0f, 1.8874999f, 2.0f, 1.9f, -2.0f, 1.9124999f, -0.0f, 1.925f, -0.0f, 1.9499999f };
-const double data_3b1178 SD_AT(0x3b1178) = 2.200000047683716;
-const float data_3b1180[4] SD_AT(0x3b1180) = { 0, 2.0625f, -2.0f, 2.0749998f };
-const double data_3b1190 SD_AT(0x3b1190) = 3.6000001430511475;
-const float data_3b1198[2] SD_AT(0x3b1198) = { 0, 2.546875f };
 const double cScraplandMainMenuScorer_Draw_3b11a0 SD_AT(0x3b11a0) = 12.0;
-const float data_3b11a8[2] SD_AT(0x3b11a8) = { 0, 2.6875f };
-const uint32_t data_3b11b0[2] SD_AT(0x3b11b0) = { 0x40333333 };
-const float data_3b11b8[39] SD_AT(0x3b11b8) = {
-	0, 2.84375f, 0, 3.0273438f, 0, 3.046875f, 0, 3.1953125f, 3.2f, 3.4f, 0, 3.5527344f, 0, 3.9199219f, 8.0f, 38.0f,
-	40.0f, 64.0f, 65.0f, 74.0f, 80.0f, 92.0f, 95.0f, 105.0f, 128.0f, 135.0f, 160.0f, 164.0f, 255.0f, 450.0f, 850.0f,
-	1400.0f, -4.0f, -6.0f, -8.0f, -16.0f, -38.0f, -65.0f, -95.0f,
-};
-const uint32_t data_3b1254 SD_AT(0x3b1254) = 0xc3070000;
-const float data_3b1e58[10] SD_AT(0x3b1e58) = { 0.003f, 0.055f, 0.16f, 0.37f, 0.5235988f, 0.56f, 1.15f, 0, 2.0f, 1.16f };
-const double data_3b1e80 SD_AT(0x3b1e80) = 0.05999999865889549;
-const float data_3b1e88[4] SD_AT(0x3b1e88) = { -0.0f, 1.545f, -2.0f, 1.5749999f };
-const double data_3b1e98 SD_AT(0x3b1e98) = 0.29999998211860657;
-const float data_3b1ea0[2] SD_AT(0x3b1ea0) = { 2.0f, 1.78f };
-const uint32_t data_3b1ea8[2] SD_AT(0x3b1ea8) = { 0x3fe66666 };
-const float data_3b1eb0[2] SD_AT(0x3b1eb0) = { -2.0f, 1.8249999f };
-const double data_3b1eb8 SD_AT(0x3b1eb8) = 0.949999988079071;
-const uint32_t data_3b1ec0[2] SD_AT(0x3b1ec0) = { 0x3ff33333 };
-const double data_3b1ec8[3] SD_AT(0x3b1ec8) = { 1.350000023841858, 1.899999976158142, 2.450000047683716 };
-const float data_3b1ee0[10] SD_AT(0x3b1ee0) = { 2.0943952f, 2.3f, -0.0f, 2.396875f, 0, 2.75f, 0, 3.0f, 0, 3.03125f };
 const double cScraplandMainMenuScorer_Init_3b1f08 SD_AT(0x3b1f08) = 45.0;
-const float data_3b1f10[63] SD_AT(0x3b1f10) = {
-	0, 3.1875f, 0, 3.25f, 0, 3.3320312f, 0, 3.5625f, 0, 3.5722656f, 0, 3.5820312f, 0, 3.6113281f, 0, 3.6601562f, 0,
-	4.203125f, 8.5f, 12.0f, 14.0f, 16.0f, 18.0f, 26.0f, 26.5f, 32.0f, 48.0f, 55.0f, 56.0f, 60.0f, 70.0f, 85.0f,
-	120.0f, 191.0f, 192.0f, 210.0f, 220.0f, 232.0f, 239.0f, 250.0f, 280.0f, 300.0f, 360.0f, 600.0f, 900.0f, 1335.0f,
-	2150.0f, 2850.0f, 4000.0f, 6500.0f, -3.0f, -18.0f, -25.0f, -26.5f, -54.0f, -60.0f, -80.0f, -130.0f, -160.0f,
-	-180.0f, -239.0f, -255.0f, -650.0f,
-};
-const float data_3b25a8[18] SD_AT(0x3b25a8) = {
-	2.0f, 1.8808997f, 2.0f, 2.0117993f, 0, 3.171875f, 0, 3.8027344f, 0, 4.0273438f, 0, 5.0371094f, 207.0f, 350.0f,
-	540.0f, 1280.0f, 2280.0f, -40.0f,
-};
-const uint32_t data_3b25f0 SD_AT(0x3b25f0) = 0xc34f0000;
-const float data_3b27b8[2] SD_AT(0x3b27b8) = { 22400.0f, 28000.0f };
-const float data_3b2b04[3] SD_AT(0x3b2b04) = { 3600.0f };
-const uint32_t data_3b2b10[4] SD_AT(0x3b2b10) = { 0, 0, 0, 0x41f00000 };
-const float data_3b2db4[3] SD_AT(0x3b2db4) = { 0.3926991f, 89128.96f, 1.035f };
-const double data_3b2dc0 SD_AT(0x3b2dc0) = 0.05;
-const float data_3b2dc8 SD_AT(0x3b2dc8) = 25000000.0f;
-const uint32_t data_3b3378 SD_AT(0x3b3378) = 0x5f424f44;
-const uint32_t data_3b337c SD_AT(0x3b337c);
-const uint32_t data_3b3380[3] SD_AT(0x3b3380) = { 0x7373694d, 0x5f6e6f69, 0x776f6c47 };
-const uint32_t data_3b338c SD_AT(0x3b338c);
-const float data_3b33a0[5] SD_AT(0x3b33a0) = { 0.125f, 0.66f, 145.0f, 170.0f, 650.0f };
-const float data_3b35a0 SD_AT(0x3b35a0) = -2.0f;
-const float data_3b38ac SD_AT(0x3b38ac) = 0.03125f;
-const double data_3b38b0[4] SD_AT(0x3b38b0) = { 0.10471975511965977, 6.702064327658225, 13.29940890019679, 40.42535554534142 };
-const float data_3b38d0[6] SD_AT(0x3b38d0) = { 0, 3.4960938f, 11996624.0f, 6.121699f, 0, 6.9765625f };
-const double data_3b38e8 SD_AT(0x3b38e8) = 214466.0584850632;
-const float data_3b38f0[2] SD_AT(0x3b38f0) = { 30000.0f, 32640.0f };
-const char data_3b38f8[8] SD_AT(0x3b38f8) = "@T\tK";
-const double data_3b3900 SD_AT(0x3b3900) = -13.29940890019679;
-const float data_3b3908[4] SD_AT(0x3b3908) = { 0, -3.4960938f, 0, -6.9765625f };
-const double data_3b3918 SD_AT(0x3b3918) = -214466.0584850632;
-const float data_3b3920 SD_AT(0x3b3920) = -32640.0f;
-const uint32_t data_3b3cc8[2] SD_AT(0x3b3cc8) = { 0x3f733333 };
-const float data_3b3f64 SD_AT(0x3b3f64) = 1750.0f;
-const float data_3b4588[4] SD_AT(0x3b4588) = { 0.04f, 0.45f, 0.51f, 1.3f };
-const uint32_t data_3b4598[2] SD_AT(0x3b4598) = { 0x20000000, 0x3fd1eb85 };
-const float data_3b45a0[2] SD_AT(0x3b45a0) = { 2.0f, 1.675f };
-const double data_3b45a8 SD_AT(0x3b45a8) = 0.3499999940395355;
-const float data_3b45b0[6] SD_AT(0x3b45b0) = { -2.0f, 1.7249999f, -2.0f, 1.9338495f, 2.34f };
-const double data_3b45c8 SD_AT(0x3b45c8) = 6.283185307179586;
-const float data_3b45d0[30] SD_AT(0x3b45d0) = {
-	3.15f, 3.34f, 0, 3.6699219f, 3.75f, 0, 0, 3.7539062f, 0, 3.7636719f, 0, 3.9345703f, 0, 3.9882812f, 0, 4.232422f,
-	0, 4.28125f, 0, 4.4277344f, 0, 4.5615234f, 0, 4.6347656f, 1500.0f, 0, 0, -2.71875f, -400.0f, -600.0f,
-};
-const uint32_t data_3b5478[2] SD_AT(0x3b5478) = { 0x505f4344, 0x6579616c };
-const float data_3b5480 SD_AT(0x3b5480) = 2.5665625e-09f;
-const uint32_t data_3b5484 SD_AT(0x3b5484);
-const float data_3b5620[4] SD_AT(0x3b5620) = { 0.0125f, 0.1308997f, 0.21428572f, 0.35f };
-const uint32_t data_3b5630[2] SD_AT(0x3b5630) = { 0x3eb6db6e };
-const double data_3b5638 SD_AT(0x3b5638) = 0.001;
-const float data_3b5640[6] SD_AT(0x3b5640) = { 2.0f, 1.5058997f, 1.7f, 0, -107374184.0f, 1.8499999f };
-const double data_3b5658[3] SD_AT(0x3b5658) = { 1.1, 1.600000023841858, 25.132741228718345 };
-const float data_3b5670[8] SD_AT(0x3b5670) = { 0, 4.4765625f, 12.566371f, 2800.0f, 15400.0f, 20000.0f, 42000.0f, 100000000.0f };
 const float g_NetMaxDist2 SD_AT(0x3b5690) = 1.21e+10f;
-const uint32_t data_3b5694 SD_AT(0x3b5694) = 0xc6834000;
 const uint32_t VMEffects_SetupHaze_3b57d8[9] SD_AT(0x3b57d8) = { 0xbf404040, 0x7f808080, 0x7f808080, 0x7f808080, 0xa35c5c5c, 0xbf404040, 0xdf202020, 0xff000000, 0xff000000 };
 const uint32_t VME_Exhaust10_3b57fc[10] SD_AT(0x3b57fc) = {
 	0x320a280f, 0x30191919, 0x2d0f2332, 0x2c0a3264, 0x2a143796, 0x282850fa, 0x283264fa, 0x23466efb, 0x1e5a82fd,
@@ -186,50 +93,7 @@ const uint32_t VME_Exhaust10_3b5acc[10] SD_AT(0x3b5acc) = {
 	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
 	0x14ff9664,
 };
-const float data_3b60cc[7] SD_AT(0x3b60cc) = { 0.0001f, 0.0002f, 0.015f, 0.11f, 0.12f, 0.13f, 0.14f };
-const double data_3b60e8[2] SD_AT(0x3b60e8) = { 0.010000000707805157, 0.014999999664723873 };
-const float data_3b60f8[46] SD_AT(0x3b60f8) = {
-	-2.0f, 1.2399999f, 0, 1.39f, 4.5f, 11.0f, 35.0f, 45.0f, 90.0f, 110.0f, 125.0f, 130.0f, 140.0f, 190.0f, 230.0f,
-	330.0f, 750.0f, 800.0f, 1100.0f, 1125.0f, 1150.0f, 1200.0f, 1250.0f, 1300.0f, 1450.0f, 1550.0f, 1600.0f,
-	1700.0f, 1800.0f, 1980.0f, 2650.0f, 2700.0f, 9500.0f, 15000.0f, -15.0f, -20.0f, -30.0f, -32.0f, -35.0f, -45.0f,
-	-50.0f, -120.0f, -128.0f, -150.0f, -200.0f, -4200.0f,
-};
-const uint32_t data_3b61b0 SD_AT(0x3b61b0) = 0xc5abe000;
-const float data_3b61f4 SD_AT(0x3b61f4) = -0.5f;
-const float data_3b6f00[3] SD_AT(0x3b6f00) = { 0.010471975f, -0.25f, -64.0f };
-const float data_3b76e4[3] SD_AT(0x3b76e4) = { 0.28f, 0.68f, 0.9424778f };
-const uint32_t data_3b76f0 SD_AT(0x3b76f0);
-const float data_3b76f4[7] SD_AT(0x3b76f4) = { 3.6796875f, 0, 3.9492188f, 0, 4.5f, 0, 4.9765625f };
-const float data_3b8700 SD_AT(0x3b8700) = 0.054803338f;
-const uint32_t data_3b8704 SD_AT(0x3b8704) = 0x40e00000;
-const float data_3b8708 SD_AT(0x3b8708) = -63.0f;
-const float data_3b8c48 SD_AT(0x3b8c48) = 1024.0f;
 const double cScraplandMainMenuScorer_Draw_3b9748 SD_AT(0x3b9748) = 0.13999998569488525;
-const float data_3b9cdc SD_AT(0x3b9cdc) = 15.707963f;
-const float data_3ba1d8[2] SD_AT(0x3ba1d8) = { -0.0f, 1.285f };
-const double data_3ba1e0 SD_AT(0x3ba1e0) = 1.6999999284744263;
-const float data_3ba1e8[6] SD_AT(0x3ba1e8) = { 0, 3.7832031f, 0, 4.3789062f, 0, 5.506592f };
-const uint32_t data_3bb97c SD_AT(0x3bb97c) = 0x65766153;
-const uint32_t data_3bb980 SD_AT(0x3bb980);
-const uint32_t data_3bb998 SD_AT(0x3bb998) = 0x7661732e;
-const uint32_t data_3bb99c SD_AT(0x3bb99c);
 const char VK_STANDARD[80] SD_AT(0x3bc0b0) = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz 0123456789.:,;-!\"&/()=?\010\n";
-const uint32_t cVirtualKeyboard_Set_3bc108[4] SD_AT(0x3bc108) = { 0x34333231, 0x38373635, 0xa300839 };
 const char VK_CONSOLE[108] SD_AT(0x3bc120) = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\\#@|$%=':+*~{_}[]<>^\t`ñÑ¿¡ 0123456789.:,;-!\"&/()=?\010\n";
-const uint32_t data_3bc97c SD_AT(0x3bc97c) = 0x65646f43;
-const uint32_t data_3bc980 SD_AT(0x3bc980);
-const char data_3bcb00[8] SD_AT(0x3bcb00) = "Unknow";
-const float data_3bcb24 SD_AT(0x3bcb24) = 0.033333335f;
-const float data_3bccb0[2] SD_AT(0x3bccb0) = { 32767.0f, -32767.0f };
-const double data_3bd568 SD_AT(0x3bd568) = 0.15707963267948966;
-const uint32_t data_3bd570 SD_AT(0x3bd570) = 0xc0a00000;
-const float data_3bdc20[4] SD_AT(0x3bdc20) = { 0, 2.3125f, 0, 2.0f };
-const float data_3be1b0[2] SD_AT(0x3be1b0) = { 0, 4.8789062f };
-const float data_3beb60 SD_AT(0x3beb60) = 1.4142135f;
-const float data_3bf04c[2] SD_AT(0x3bf04c) = { 101.0f, 1000000.0f };
-const float data_3bf71c[5] SD_AT(0x3bf71c) = { 40000.0f, 0, 3.2734375f, 0, 1.875f };
-const float data_3bfaf8[7] SD_AT(0x3bfaf8) = { 0, 2.1875f, 0, 2.28125f, 0, 3.3867188f, 3000.0f };
-const uint32_t data_3bfd20[2] SD_AT(0x3bfd20) = { 0x65766947, 0x3a736559 };
-const uint32_t data_3bfd28 SD_AT(0x3bfd28);
-const uint32_t data_3bfe24 SD_AT(0x3bfe24);
 

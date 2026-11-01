@@ -255,7 +255,6 @@ SD_SYM(str_PyMethod_SWeap_SetSWeap);
 #undef FXV_FIRE_RAMPS
 #undef FXV_FLAME_RAMPS
 #undef FXV_XFIRE_RAMPS
-#undef crt_security_cookie
 #undef g_AnimFpsDefault
 #undef g_AnisotropyCur
 #undef g_BackgroundColor
@@ -500,7 +499,6 @@ uint32_t FXC_TELEPORT_RAMPS[27] SD_AT(0x430340) = {
 	0xff000000, 0xdc000000, 0x80002534, 18129, 23295, 0x800048ff, 0xc0004489, 0xff000000, 0xff000000, 0xffc8c8ff,
 	0x40f0f0ff, 0x20c4c4c4, 0x808080ff, 0xa44040ff, 0xc02020ff, 0xe10000ff, 0xff0000ff, 0xff0000ff,
 };
-uint32_t FXTeleport_Glow_4303ac SD_AT(0x4303ac);
 uint32_t cObjElementFXSputnik_Update_4303b0[9] SD_AT(0x4303b0) = { 0xff2dff4e, 0x1057fe50, 0x1082fd52, 0x10adfb54, 0x20d6fa55, 0x80fdf957, 0xc053511c, 0xff000000, 0xff000000 };
 uint32_t cObjElementFXSputnik_Update_4303d4[9] SD_AT(0x4303d4) = { 0xff47e2e2, 0x403bb9ff, 0x103ea4ff, 0x104296ff, 0x204787ff, 0x804a7eff, 0xc04165db, 0xff000000, 0xff000000 };
 uint32_t cObjElementFXCharacterConversion_Emit_4303f8[18] SD_AT(0x4303f8) = {
@@ -542,10 +540,6 @@ uint32_t FXGEAR_PUFF_RAMPS[27] SD_AT(0x4306d4) = {
 	0xff86edff, 0xff8ddbff, 0x8095c4ff, 0x9dadff, 0xa598ff, 0x40ae7eff, 0x80b765ff, 0xffb765ff, 0xffb765ff,
 	0xffffad2a, 0xc0feee90, 0x80ef6f38, 0x40bc3010, 0x407a1f0a, 0x5c3f1005, 0x800e0401, 0xff000000, 0xff000000,
 };
-uint32_t GM_Puff_430740[18] SD_AT(0x430740) = {
-	0xff9ac9ff, 0x809ba5ff, 0x409bacff, 0x409accff, 0x409aeaff, 0x407cc6cd, 0x80456e72, 0xff000000, 0xff000000,
-	0xfff999, 0xffe37e, 0xffd067, 0xff6c45, 0x40ff9924, 0x80b75800, 0xc47e3d00, 0xff2c1500, 0xff000000,
-};
 uint32_t GM_Puff_430788[9] SD_AT(0x430788) = { 0xff565656, 0xf6f6ff, 0x8282e6, 0x5e5eab, 0x44444c, 0xf0f38, 0x80070728, 0xff020219, 0xff000000 };
 uint32_t cObjElementFXBankerSteal_Update_4307ac[9] SD_AT(0x4307ac) = { 0xff000000, 0x80808080, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0x80808080, 0xff000000, 0xff000000 };
 uint32_t cObjElementFXBettyAttack_Emit_4307d0[18] SD_AT(0x4307d0) = {
@@ -557,7 +551,6 @@ uint32_t FXA_SELLLIFE_RAMPS[27] SD_AT(0x430818) = {
 	0x4080ff80, 0x4b6eff6e, 0x605ae65a, 0x703cab3c, 0x80234b23, 0xa40a380a, 0xc0051e05, 0xff000000, 0xff000000,
 	0x4040ff40, 0x4b32ff32, 0x6028e628, 0x701eab1e, 0x80144b14, 0xa40a380a, 0xc0051e05, 0xff000000, 0xff000000,
 };
-uint32_t FXSellLife_Code_430884 SD_AT(0x430884);
 uint32_t EMI_Emit_430888[28] SD_AT(0x430888) = {
 	0xffb9b9ed, 0xa4b5b5f0, 0x80b2b2f2, 0x60afaff5, 0x80aaaaf9, 0xa4a7a7fc, 0xc0a3a3ff, 0xffa3a3ff, 0xffa3a3ff,
 	0xff7d73ed, 0xa47979f0, 0x807676f2, 0x607373f5, 0x806e6ef9, 0xa46b6bfc, 0xc06767ff, 0xff6767ff, 0xff6767ff,
@@ -698,7 +691,6 @@ uint32_t FXV_FLAME_RAMPS[27] SD_AT(0x431278) = {
 	0xffff94, 0xf3f750, 0xcda736, 0x20a44a18, 0x80871005, 0xc4800000, 0xff000000, 0xff000000, 0xff000000,
 	0x80824c11, 0x40ef6e20, 0x20ff7d32, 0x40b48250, 0x80877732, 0xc45e4022, 0xff000000, 0xff000000,
 };
-uint32_t FXV_DamageDebris_4312e4 SD_AT(0x4312e4);
 uint32_t FXV_DamageDebris_4312e8[46] SD_AT(0x4312e8) = {
 	0xff000000, 0x40141414, 0x40141414, 0x40141414, 0x60141414, 0x800a0a0a, 0xc0050505, 0xff000000, 0xff000000,
 	0xff000000, 0x40191919, 0x40191919, 0x40191919, 0x60191919, 0x800d0d0d, 0xc0060606, 0xff000000, 0xff000000,
@@ -785,7 +777,6 @@ uint32_t FXSWARM_FLASH_RAMPS[18] SD_AT(0x431a2c) = {
 	0x80ffffff, 0x60ffffff, 0x60ffffff, 0x60ffffff, 0x80ffffff, 0xa4ffffff, 0xc0808080, 0xff000000, 0xff000000,
 	0x80ffe1c8, 0x6effe1c8, 0x60ffe1c8, 0x6effe1c8, 0x80ffe1c8, 0x80ffe1c8, 0xc0808080, 0xff000000, 0xff000000,
 };
-uint32_t FXSwarm_BeeDeath_431a74[9] SD_AT(0x431a74) = { 0x80ffc8c8, 0x6effc8c8, 0x60ffc8c8, 0x6effc8c8, 0x80ffc8c8, 0x80ffc8c8, 0xc0808080, 0xff000000, 0xff000000 };
 int g_WinWidth SD_AT(0x431ab0) = 640;
 int g_WinHeight SD_AT(0x431ab4) = 480;
 int g_WideWinWidth SD_AT(0x431ab8) = 640;
@@ -798,7 +789,6 @@ float g_FogDensityIni SD_AT(0x431af4) = 0.5f;
 vec3_t g_GroundScale SD_AT(0x431af8) = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
 float g_ViewerSpeed SD_AT(0x431b04) = 1.0f;
 int g_LoadingScreen SD_AT(0x431b08) = -1;
-uint32_t data_431b0c SD_AT(0x431b0c);
 matrix_t g_DebugIdentity SD_AT(0x431b10) = { .m = { 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f } };
 const char *g_FontsDir SD_AT(0x431b50) = (void *)sd_str_3d3e38;
 float g_CamCompositeFPS SD_AT(0x431b54) = 1.0f;
@@ -816,7 +806,6 @@ char g_ThousandsSep SD_AT(0x431b88) = 46;
 float g_Sprite2DScale[2] SD_AT(0x431b8c) = { 1.0f, 1.0f };
 float g_Sprite2DScaleA[2] SD_AT(0x431b94) = { 0.5f, 0.5f };
 float g_Sprite2DScaleB[2] SD_AT(0x431b9c) = { 1.0f, 1.0f };
-uint32_t data_431ba4 SD_AT(0x431ba4);
 float g_Fps SD_AT(0x431ba8) = 30.0f;
 struct {
 	byte g_UseVB;	/* 0x0 */
@@ -856,13 +845,11 @@ float g_AnimFpsDefault SD_AT(0x431d20) = 25.0f;
 CMatList g_MatList SD_AT(0x431d24) = { .vftable = (void *)sd_CMatList_vftable };
 uint32_t g_BlendTable[6] SD_AT(0x431d34) = { 1, 2, 3, 4, 5, 6 };
 uint32_t g_LogConMask SD_AT(0x431d4c) = 65535;
-uint32_t data_431d50[8] SD_AT(0x431d50) = { 0xe3e2a0e0, 0xe7e6e5e4, 0xebea82e8, 0xefeea1ec, 0xa2f2f1f0, 0xf7f6f5f4, 0xfba3f9f8, 0xfffefdfc };
 uint32_t g_FilterMip SD_AT(0x431d70) = 1;
 uint32_t engineIni_431d74 SD_AT(0x431d74) = 2;
 uint32_t g_AnisotropyCur SD_AT(0x431d78) = 2;
 uint32_t g_FilterMin SD_AT(0x431d7c) = 2;
 uint32_t g_FilterMag SD_AT(0x431d80) = 2;
-uint32_t data_431d84 SD_AT(0x431d84);
 const char *g_PSNames[32] SD_AT(0x431d88) = {
 	(void *)sd_str_3d8e70, (void *)sd_str_3d8e84, (void *)sd_str_3d8e98, (void *)sd_str_3d8eb4,
 	(void *)sd_str_3d8ec8, (void *)sd_str_3d8edc, (void *)sd_str_3d8ef8, (void *)sd_str_3d8f1c,
@@ -1189,7 +1176,6 @@ int g_Graphic2DRot[5][4] SD_AT(0x4325b0) = {
 	{ 1, 3, 0, 2 },
 	{ (uintptr_t)(void *)sd_str_3de080, (uintptr_t)(void *)sd_str_3de088, 131, (uintptr_t)(void *)sd_str_3de0a4 },
 };
-void *CGraphic2D_Draw_432600[2] SD_AT(0x432600) = { (void *)sd_str_3aca10, (void *)sd_str_3de0b0 };
 const char *g_ErrTable[200] SD_AT(0x432618) = {
 	(void *)sd_str_3de0c4, (void *)sd_str_3de0cc, (void *)sd_str_3ca58c, (void *)sd_str_3de0e4,
 	(void *)sd_str_3de0f4, (void *)sd_str_3de110, (void *)sd_str_3de124, (void *)sd_str_3de140,
@@ -1227,7 +1213,6 @@ float g_FlareAttenDistIni SD_AT(0x43299c) = 200.0f;
 float g_FlareAttenDistEnd SD_AT(0x4329a0) = 3000.0f;
 float g_FlareFadeIn SD_AT(0x4329a4) = 8.0f;
 float g_FlareFadeOut SD_AT(0x4329a8) = 8.0f;
-uint32_t Engine_LoadIni_4329ac SD_AT(0x4329ac);
 BlendModeEntry g_BlendModeTable[7] SD_AT(0x4329b0) = {
 	{ .src = 2, .dst = 1 },
 	{ .mode = 1, .src = 2, .dst = 2 },
@@ -1246,7 +1231,6 @@ float g_GammaLastScale SD_AT(0x432a1c) = 1.0f;
 float g_GammaLastRed SD_AT(0x432a20) = 1.0f;
 float g_GammaLastGreen SD_AT(0x432a24) = 1.0f;
 float g_GammaLastBlue SD_AT(0x432a28) = 1.0f;
-uint32_t data_432a2c SD_AT(0x432a2c);
 uint32_t g_BspColors[16] SD_AT(0x432a30) = {
 	0, 128, 32768, 32896, 0x800000, 0x800080, 0x808000, 0xc0c0c0, 0x808080, 255, 65280, 65535, 0xff0000, 0xff00ff,
 	0xffff00, 0xffffff,
@@ -1261,14 +1245,4 @@ struct {
 } group_432a7c SD_AT(0x432a7c) = { .g_M3DOk = 1, .g_BspQ3LMapNoBlend = 1 };
 int g_LexCh SD_AT(0x432a80) = -1;
 float g_IllumSmooth SD_AT(0x432a84) = 0.5f;
-float data_432a98 SD_AT(0x432a98) = 1.0f;
-uint32_t data_432a9c[2] SD_AT(0x432a9c);
-float data_432aa4[13] SD_AT(0x432aa4) = { 0, 0, 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f };
-uint32_t data_432ad8 SD_AT(0x432ad8) = 513;
-float data_432adc[29] SD_AT(0x432adc) = {
-	0, 0.70710677f, 0, 0.70710677f, 0.70710677f, 0, 0, 0.70710677f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f,
-	0.5f, -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f, -0.5f, 0, 0, 0, 1.0f, 1.0f,
-};
-uint32_t crt_security_cookie SD_AT(0x43cfdc) = 0xbb40e64e;
-uint32_t data_43cfe0[2] SD_AT(0x43cfe0) = { 39029, 0xffffffff };
 
