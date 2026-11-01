@@ -8,11 +8,6 @@
 #include "scrap/input.h"
 #include "scrap/scorer.h"
 
-static PyObject *ReturnNone(void) {
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
 /* 0xAARRGGBB from the (r, g, b, a) values of the script */
 static uint32_t PackColor(uint32_t r, uint32_t g, uint32_t b, uint32_t a) {
 	return ((a << 8 | r) << 8 | g) << 8 | b;
@@ -28,7 +23,7 @@ PyObject *SScorer_AddChatMsg(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Scorer_AddChatMsg(text, (r << 8 | g) << 8 | b);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetConsole(on) */
@@ -40,7 +35,7 @@ PyObject *SScorer_SetConsole(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Scorer_SetConsole(on != 0);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetSpeechText(text, time, a, b, c) */
@@ -54,7 +49,7 @@ PyObject *SScorer_SetSpeechText(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Scorer_SetSpeechText(text, (float)time, a, b, c);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetSpeechCallback(func[, arg]) */
@@ -67,7 +62,7 @@ PyObject *SScorer_SetSpeechCallback(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Scorer_SetSpeechCallback(func, arg);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* CancelSpeech() */
@@ -77,7 +72,7 @@ PyObject *SScorer_CancelSpeech(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Scorer_CancelSpeech(0);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetHeadMonitor(a, b, c) */
@@ -90,7 +85,7 @@ PyObject *SScorer_SetHeadMonitor(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Scorer_SetHeadMonitor(a, b, c);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* Fade(player, (r,g,b,a) from, (r,g,b,a) to, time) */
@@ -107,7 +102,7 @@ PyObject *SScorer_Fade(PyObject *self, PyObject *args) {
 	if (sc) {
 		ScorerFade_Start(&sc->fade, PackColor(r1, g1, b1, a1), PackColor(r2, g2, b2, a2), time);
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetCinema(player, on, time) : cinema bars */
@@ -123,7 +118,7 @@ PyObject *SScorer_SetCinema(PyObject *self, PyObject *args) {
 	if (sc) {
 		ScorerCinema_Set(&sc->cinema, on != 0, time);
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetMsgText(text, time) : in the font "Horatio" */
@@ -136,7 +131,7 @@ PyObject *SScorer_SetMsgText(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Scorer_SetMsgText(text, (float)time, "Horatio");
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetLabelText(text, time) */
@@ -149,7 +144,7 @@ PyObject *SScorer_SetLabelText(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Scorer_SetLabelText(text, (float)time);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* Get2DPos((x,y,z)) : screen position of a world point */
@@ -187,7 +182,7 @@ PyObject *SScorer_GetMenuAccept(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	if (!Scorer_Get(player)) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	cInputAction *accept = TABLE_AT(TABLE_AT(g_ActionSets, 0)->actions, 10);
 	return Py_BuildValue("i", accept->value[player] > 0.5f);
@@ -204,7 +199,7 @@ PyObject *SScorer_SetMarkerSprite(PyObject *self, PyObject *args) {
 	}
 	cScorer *sc = Scorer_Get(player);
 	if (!sc) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	cScorer_SetMarkerSprite(sc, sprite && *sprite ? sprite : NULL);
 	return Py_BuildValue("i", 1);
@@ -221,7 +216,7 @@ PyObject *SScorer_Add(PyObject *self, PyObject *args) {
 	}
 	cScorer *sc = Scorer_Get(player);
 	if (!sc) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return Py_BuildValue("i", cScorer_AddItem(sc, name, type, flag != 0) != NULL);
 }
@@ -236,7 +231,7 @@ PyObject *SScorer_Clear(PyObject *self, PyObject *args) {
 	}
 	cScorer *sc = Scorer_Get(player);
 	if (!sc) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	cScorer_Clear(sc);
 	return Py_BuildValue("i", 1);
@@ -258,7 +253,7 @@ PyObject *SScorer_Set(PyObject *self, PyObject *args) {
 		if ((sc = Scorer_Get(player)) && (item = cScorer_FindItem(sc, name))) {
 			return Py_BuildValue("i", item->vftable->Var(item, var, 1, &s, NULL, NULL));
 		}
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	PyErr_Clear();
 	if (!PyArg_ParseTuple(args, "issd", &player, &name, &var, &d)) {
@@ -269,7 +264,7 @@ PyObject *SScorer_Set(PyObject *self, PyObject *args) {
 	if (sc && (item = cScorer_FindItem(sc, name))) {
 		return Py_BuildValue("i", item->vftable->Var(item, var, 1, NULL, &d, &i));
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* Get(player, item, var) : value in its type, None if not found */
@@ -294,7 +289,7 @@ PyObject *SScorer_Get(PyObject *self, PyObject *args) {
 			return Py_BuildValue("i", i);
 		}
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* GetItem(player, item) : the Python object of the item, None if not found */
@@ -310,7 +305,7 @@ PyObject *SScorer_GetItem(PyObject *self, PyObject *args) {
 	if (sc && cScorer_FindItem(sc, name)) {
 		return ScorerItem_PyNew(player, name);
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* New(player, name, type[, flag]) : makes the item and returns its Python object; NULL if that fails */
@@ -339,7 +334,7 @@ PyObject *SScorer_Show(PyObject *self, PyObject *args) {
 	}
 	cScorer *sc = Scorer_Get(player);
 	if (!sc) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	sc->visible = 1;
 	return Py_BuildValue("i", 1);
@@ -355,7 +350,7 @@ PyObject *SScorer_Hide(PyObject *self, PyObject *args) {
 	}
 	cScorer *sc = Scorer_Get(player);
 	if (!sc) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	sc->visible = 0;
 	return Py_BuildValue("i", 1);
@@ -372,7 +367,7 @@ PyObject *SScorer_SetCursor(PyObject *self, PyObject *args) {
 	}
 	cScorer *sc = Scorer_Get(player);
 	if (!sc) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	sc->cursor = cScorer_FindItem(sc, name);
 	return Py_BuildValue("i", 1);
@@ -389,7 +384,7 @@ PyObject *SScorer_SetDefault(PyObject *self, PyObject *args) {
 	}
 	cScorer *sc = Scorer_Get(player);
 	if (!sc) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	cScorer_SetDefault(sc, name);
 	return Py_BuildValue("i", 1);
@@ -407,7 +402,7 @@ PyObject *SScorer_GetDefault(PyObject *self, PyObject *args) {
 	if (sc && sc->defaultItem) {
 		return Py_BuildValue("s", sc->defaultItem);
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* GetActual(playernumber) */
@@ -422,7 +417,7 @@ PyObject *SScorer_GetCurrent(PyObject *self, PyObject *args) {
 	if (sc && sc->current) {
 		return Py_BuildValue("s", sc->current);
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetOnCancel(playernumber, CancelEvent) : returns 1 even without a scorer */
@@ -452,7 +447,7 @@ PyObject *SScorer_SetOnNext(PyObject *self, PyObject *args) {
 	}
 	cScorer *sc = Scorer_Get(player);
 	if (!sc) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	cPy_Function_SetFunc(&sc->onNext, func);
 	return Py_BuildValue("i", 1);
@@ -469,7 +464,7 @@ PyObject *SScorer_SetOnPrev(PyObject *self, PyObject *args) {
 	}
 	cScorer *sc = Scorer_Get(player);
 	if (!sc) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	cPy_Function_SetFunc(&sc->onPrev, func);
 	return Py_BuildValue("i", 1);
@@ -486,7 +481,7 @@ PyObject *SScorer_SetOnSpecialHint(PyObject *self, PyObject *args) {
 	}
 	cScorer *sc = Scorer_Get(player);
 	if (!sc) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	cPy_Function_SetFunc(&sc->onSpecialHint, func);
 	cString_Set(&sc->specialHint, hint);
@@ -507,7 +502,7 @@ PyObject *SScorer_AddModel(PyObject *self, PyObject *args) {
 	if (sc && cScorer_AddModel(sc, name, model, *anim ? anim : NULL, numAnim, radius, c, flag > 0)) {
 		return Py_BuildValue("i", 1);
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetMPFunc(playernumber, func) : always None */
@@ -523,7 +518,7 @@ PyObject *SScorer_SetMPFunc(PyObject *self, PyObject *args) {
 	if (sc) {
 		cPy_Function_SetFunc(&sc->mpFunc, func);
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* PreloadTexture(name[, flag]) */
@@ -536,7 +531,7 @@ PyObject *SScorer_PreloadTexture(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Scorer_PreloadTexture(name, flag > 0);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 SD_PY_MODULE(SScorer, 0x42ec68)

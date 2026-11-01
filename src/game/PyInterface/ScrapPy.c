@@ -34,11 +34,6 @@ PyObject *Scrap_GetMoney(PyObject *self, PyObject *args) {
 
 /* --- batch 2: the small functions of the module (A to L) --- */
 
-static PyObject *ReturnNone(void) {
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
 /* Achievement(n) : NULL for n < 0, else nothing; differs from the original on purpose (no store features): no GOG or
  * Steam achievement is unlocked */
 PyObject *Scrap_Achievement(PyObject *self, PyObject *args) {
@@ -48,7 +43,7 @@ PyObject *Scrap_Achievement(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "i", &n) || n < 0) {
 		return NULL;
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* AddParamf(value) : float parameter for the function of SetCallFunc */
@@ -60,7 +55,7 @@ PyObject *Scrap_AddParamf(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	cPy_Function_AddParamF(g_CallFunc, (float)v);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* AddParami(value) */
@@ -72,7 +67,7 @@ PyObject *Scrap_AddParami(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	cPy_Function_AddParamI(g_CallFunc, v);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* AddParams(value) */
@@ -84,7 +79,7 @@ PyObject *Scrap_AddParams(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	cPy_Function_AddParamS(g_CallFunc, v);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* AddScheduledFunc(time,func,params[,name]) : Ejecuta un codigo en python en un instante de tiempo. */
@@ -98,7 +93,7 @@ PyObject *Scrap_AddScheduledFunc(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Scheduler_Add((cScheduledFuncStack *)g_pWorld->scheduler, (float)time, func, params, name);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* BuildFont(name, size) */
@@ -111,7 +106,7 @@ PyObject *Scrap_BuildFont(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Font_Build(name, size);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* CallElements(name) */
@@ -123,7 +118,7 @@ PyObject *Scrap_CallElements(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Elements_Call(g_pWorld->elements, name);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* ClosePack() : forgets the open pack */
@@ -133,7 +128,7 @@ PyObject *Scrap_ClosePack(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	cString_Set(g_PackName, "");
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* ConsoleError(text) */
@@ -145,7 +140,7 @@ PyObject *Scrap_ConsoleError(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Con_Print(CON_COLOR_ERROR, text, 0);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* ConsoleOut(text) */
@@ -157,7 +152,7 @@ PyObject *Scrap_ConsoleOut(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Con_Print(0xff0000, text, 0);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* CreateElements() */
@@ -167,7 +162,7 @@ PyObject *Scrap_CreateElements(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Elements_Create(g_pWorld->elements);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* CreateEntityList(listName) */
@@ -180,7 +175,7 @@ PyObject *Scrap_CreateEntityList(PyObject *self, PyObject *args) {
 	}
 	cWorld *World = g_pWorld;
 	CHECK(cWorld_NewEntityList(World, listName));
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 static PyObject *NoProfiles(const char *name) {
@@ -243,7 +238,7 @@ PyObject *Scrap_DeleteScheduledFuncs(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Scheduler_Delete((cScheduledFuncStack *)g_pWorld->scheduler, name);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* DelSaveVars(prefix) */
@@ -255,7 +250,7 @@ PyObject *Scrap_DelSaveVars(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	SaveVars_Delete(prefix);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* Des(name) : description of an engine variable; NULL without exception if there is none */
@@ -281,7 +276,7 @@ PyObject *Scrap_DeselectProfile(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Con_Print(CON_COLOR_ERROR, "ERROR : no Xbox console, no Profile.\n", 0);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* EndLoading() */
@@ -291,7 +286,7 @@ PyObject *Scrap_EndLoading(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Loading_End();
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* Execute() : Ejecuta una funcion callback (c++). */
@@ -301,7 +296,7 @@ PyObject *Scrap_Execute(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	cPy_Function_Execute(g_CallFunc, 0);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* Exit() sale del juego. */
@@ -311,7 +306,7 @@ PyObject *Scrap_Exit(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	g_pApp->vftable->Exit(g_pApp);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* ExtractPack(name) */
@@ -364,7 +359,7 @@ PyObject *Scrap_GetFirst(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	if (!cWorld_GetFirstEntity(g_pWorld)) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return PyEntity_New(cWorld_GetFirstEntity(g_pWorld)->name);
 }
@@ -396,7 +391,7 @@ PyObject *Scrap_GetGogID(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* GetLangEntries(name[, n]) : n default 3 */
@@ -435,7 +430,7 @@ PyObject *Scrap_GetLanguage(PyObject *self, PyObject *args) {
 	}
 	const char *lang = Lang_GetLanguage();
 	if (!lang) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return Py_BuildValue("s", lang);
 }
@@ -506,7 +501,7 @@ PyObject *Scrap_GetSteamID(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* GetSteamTicket() : None, as the original without Steam (no store features) */
@@ -515,7 +510,7 @@ PyObject *Scrap_GetSteamTicket(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* GetTime() : Obtiene el tiempo del world en segundos */
@@ -562,7 +557,7 @@ PyObject *Scrap_InitLoading(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Loading_Init();
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* IsSteam() : None, as the original without Steam (no store features) */
@@ -571,7 +566,7 @@ PyObject *Scrap_IsSteam(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* LaunchDashboard(n) : no Xbox, 0 */
@@ -593,7 +588,7 @@ PyObject *Scrap_ListModels(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Models_List();
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* --- batch 3: the small functions of the module (L to Z) --- */
@@ -631,7 +626,7 @@ PyObject *Scrap_ModelInfo(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Model_Info(name, arg);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* MusicPlayer(name[, cmd[, volume]]) : cmd default "play", volume default 0 */
@@ -644,7 +639,7 @@ PyObject *Scrap_MusicPlayer(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Music_Play(name, cmd, (float)volume);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* OpenPack(path) : the pack name becomes "path/" */
@@ -656,7 +651,7 @@ PyObject *Scrap_OpenPack(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	cString_Printf(g_PackName, "%s/", path);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* OpenStore(appid) : NULL for appid < 0, else nothing, as the original without Steam (no store features; with Steam it
@@ -668,7 +663,7 @@ PyObject *Scrap_OpenStore(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "i", &appId) || appId < 0) {
 		return NULL;
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* PreloadAnm(a, b) */
@@ -680,7 +675,7 @@ PyObject *Scrap_PreloadAnm(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Anm_Preload(a, b);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* PreloadLibrary(a, b) */
@@ -692,7 +687,7 @@ PyObject *Scrap_PreloadLibrary(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Pack_PreloadLibrary(a, b);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* Print(text) */
@@ -704,7 +699,7 @@ PyObject *Scrap_Print(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Con_Print(0, text, 0);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* ProcessDVF(name, arg) */
@@ -717,7 +712,7 @@ PyObject *Scrap_ProcessDVF(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	DVF_Process(name, arg);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* PythonCompileAll() */
@@ -727,7 +722,7 @@ PyObject *Scrap_PythonCompileAll(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Python_CompileAll();
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* Round(v) : the larger of (int)v and (int)(v + 0.5), both truncated */
@@ -772,7 +767,7 @@ PyObject *Scrap_ScreenShot(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Screenshot_Take(name);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetAlarm(level) */
@@ -784,7 +779,7 @@ PyObject *Scrap_SetAlarm(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Alarm_Set(&g_pWorld->alarm, level);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetAlarmChar(name) */
@@ -796,7 +791,7 @@ PyObject *Scrap_SetAlarmChar(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Alarm_SetChar(&g_pWorld->alarm, name);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetAlarmGrow(grow) */
@@ -808,7 +803,7 @@ PyObject *Scrap_SetAlarmGrow(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Alarm_SetGrow(&g_pWorld->alarm, grow);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetCallFunc(func) : 1 if the function is valid */
@@ -856,7 +851,7 @@ PyObject *Scrap_SetLockAlarm(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Alarm_SetLock(&g_pWorld->alarm, lock != 0);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetMoney(money) */
@@ -868,7 +863,7 @@ PyObject *Scrap_SetMoney(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	g_pWorld->money = money;
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetSaveVar(name, value) */
@@ -915,7 +910,7 @@ PyObject *Scrap_SetVideoCurrentMode(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Video_SetCurrentMode(mode);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* ShowGVars([filter]) */
@@ -927,7 +922,7 @@ PyObject *Scrap_ShowGVars(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	GVars_Show(filter);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* StartDummySearch(name[, flag]) : flag default 1 */
@@ -940,7 +935,7 @@ PyObject *Scrap_StartDummySearch(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	DummySearch_Start(name, flag != 0);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SwitchMissionArrows(a, b) */
@@ -952,7 +947,7 @@ PyObject *Scrap_SwitchMissionArrows(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	MissionArrows_Switch(a, b);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* UsrEntity(player) : the entity of a local player; NULL without exception for a player above 3 */
@@ -965,7 +960,7 @@ PyObject *Scrap_UsrEntity(PyObject *self, PyObject *args) {
 	}
 	cEntity *e = cWorld_GetUsrEntity(g_pWorld, (int)player);
 	if (!e) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return PyEntity_New(e->name);
 }
@@ -988,7 +983,7 @@ PyObject *Scrap_Verbose(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Con_Print(CON_COLOR_DEBUG, text, 0);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* the callback of the video of Scrap.VideoPlayer, until it ends */
@@ -1026,12 +1021,12 @@ PyObject *Scrap_VideoPlayer(PyObject *self, PyObject *args) {
 	}
 	if (!done || done == Py_None || crt_stricmp(cmd, "play")) {
 		Video_Play(name, cmd, 0.0f);
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	Py_INCREF(done);
 	videoPlayerDone = done;
 	Video_PlayThen(name, VideoPlayer_Done);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* --- batch 4: engine variables, entities, files, random numbers, Steam apps --- */
@@ -1182,7 +1177,7 @@ PyObject *Scrap_GetEntity(PyObject *self, PyObject *args) {
 	if (World_FindEntity(name)) {
 		return PyEntity_New(name);
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* CreateEntity(className, x, y, z, name) : the handle of the new entity, None if it was not made */
@@ -1196,7 +1191,7 @@ PyObject *Scrap_CreateEntity(PyObject *self, PyObject *args) {
 	}
 	cEntity *e = cWorld_CreateEntity(g_pWorld, className, (float)x, (float)y, (float)z, name);
 	if (!e) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return PyEntity_New(e->name);
 }
@@ -1227,7 +1222,7 @@ PyObject *Scrap_RunApp(PyObject *self, PyObject *args) {
 		exe = path;
 	}
 	g_pApp->vftable->RunApp(g_pApp, exe, cmdLine, 0);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* --- batch 5: entity lists, cameras, parking zones, video modes, grid --- */
@@ -1343,7 +1338,7 @@ PyObject *Scrap_Preload3DObject(PyObject *self, PyObject *args) {
 	}
 	vec3_t scale = { (float)sx, (float)sy, (float)sz };
 	Object3D_Preload(name, &scale);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* AddParkingZone(flag, (x,y,z), name) */
@@ -1358,7 +1353,7 @@ PyObject *Scrap_AddParkingZone(PyObject *self, PyObject *args) {
 	}
 	vec3_t pos = { x, y, z };
 	Parking_AddZone(&g_pWorld->logic.parking, flag != 0, &pos, name);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* GetNearestParked / GetFarestParked([flag[, (x,y,z)]]) : (name, (x, y, z)); default position: current camera */
@@ -1409,7 +1404,7 @@ PyObject *Scrap_TestLine(PyObject *self, PyObject *args) {
 	to = hit;
 	cWorld_TestLineEntities(g_pWorld, 0, EntityLists_Get(listName), &from, &to, &hit, &target, 1);
 	if (!target && !levelHit) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return Py_BuildValue("(ddd)s", (double)hit.x, (double)hit.y, (double)hit.z, target ? target->name : "");
 }
@@ -1441,7 +1436,7 @@ PyObject *Scrap_TestSphere(PyObject *self, PyObject *args) {
 	if (levelHit) {
 		return Py_BuildValue("s", "");
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SphereCall(x, y, z, radius, listName, func[, flag]) or ((x,y,z), radius, ...) : func for the entities inside */
@@ -1474,7 +1469,7 @@ PyObject *Scrap_NextDummySearch(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	if (!DummySearch_Next(name, sizeof(name), &pos, ang, &flag)) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return Py_BuildValue("s(ddd)(dd)i", name, (double)pos.x, (double)pos.y, (double)pos.z,
 		(double)ang[0] * DEG_PER_PI / M_PI_D, (double)ang[1] * DEG_PER_PI / M_PI_D, flag != 0);
@@ -1492,7 +1487,7 @@ PyObject *Scrap_SetDebrisSys(PyObject *self, PyObject *args) {
 	}
 	if (n <= 0) {
 		cWorld_DeleteDebrisSys(g_pWorld, name);
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, name);
 	sys->b = (float)b;
@@ -1502,7 +1497,7 @@ PyObject *Scrap_SetDebrisSys(PyObject *self, PyObject *args) {
 	sys->c = (float)c;
 	sys->flag = flag != 0;
 	cDebrisSys_Init(sys, n, e);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* DropDebris(name, speed) : a debris element with the values of SetDebrisValue */
@@ -1521,7 +1516,7 @@ PyObject *Scrap_DropDebris(PyObject *self, PyObject *args) {
 	}
 	deb->life = (float)speed;
 	cDebrisSys_Drop(sys, deb);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetDebrisValue(n, x, y, z) : 0 position, 1 angles (degrees), 2 velocity, 3 angle speed (degrees) */
@@ -1547,7 +1542,7 @@ PyObject *Scrap_SetDebrisValue(PyObject *self, PyObject *args) {
 		Con_Warnf("WARNING SetDebrisValue: %d not found\n", n);
 		break;
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /*
@@ -1591,7 +1586,7 @@ PyObject *Scrap_AddItem(PyObject *self, PyObject *args) {
 		g_pWorld->logic.items.vftable->AddAmmo(&g_pWorld->logic.items, kind, &item);
 		cString_dtor(&item.name);
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 SD_PY_MODULE(Scrap, 0x42c610)

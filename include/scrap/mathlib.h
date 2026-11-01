@@ -13,6 +13,11 @@
 #define M_1_PI_D 0.3183098861837907	/* rva 0x3d9ae0 */
 #define DEG_PER_PI 180.0
 
+/* radians to degrees in double, as the engine computes it (rad * 180 / pi) */
+static inline double Rad2Deg(double rad) {
+	return rad * DEG_PER_PI / M_PI_D;
+}
+
 typedef struct {
 	float x, y, z;
 } vec3_t;

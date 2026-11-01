@@ -35,6 +35,12 @@ void PyPool_Free(void *p);
 		Py_InitModule(#name, GAME_ARRAY(PyMethodDef, name##_methods, rva)); \
 	}
 
+/* None with a new reference, the result of a method that returns nothing */
+static inline PyObject *Py_ReturnNone(void) {
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 /* the engine's flag in its import.c (src/python/import.c) */
 extern int g_PyPackImport;
 

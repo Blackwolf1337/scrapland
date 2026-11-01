@@ -10,10 +10,6 @@ static inline float Deg2RadF(double deg) {
 	return (float)(deg * M_PI_D / DEG_PER_PI);
 }
 
-static inline double Rad2Deg(float rad) {
-	return (double)rad * DEG_PER_PI / M_PI_D;
-}
-
 /* Del() : removes the entity; 1 if it went */
 PyObject *cPyEntity_Del(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {

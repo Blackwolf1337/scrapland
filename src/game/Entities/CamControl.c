@@ -60,7 +60,7 @@ byte __thiscall cCamControl_VarF(cEntity *self, const char *name, double *d, int
 		if ((byte)set) {
 			cam->fov = Cam_Deg2Rad(*d);
 		} else {
-			*d = Cam_Rad2Deg(cam->fov);
+			*d = Rad2Deg(cam->fov);
 		}
 		return 1;
 	}
@@ -195,9 +195,9 @@ byte __thiscall cCamControl_VarV(cEntity *self, const char *name, double *x, dou
 			float fx = cam->rot.x;
 			float fy = cam->rot.y;
 			float fz = cam->rot.z;
-			*x = Cam_Rad2Deg(fx);
-			*y = Cam_Rad2Deg(fy);
-			*z = Cam_Rad2Deg(fz);
+			*x = Rad2Deg(fx);
+			*y = Rad2Deg(fy);
+			*z = Rad2Deg(fz);
 		}
 		return 1;
 	}

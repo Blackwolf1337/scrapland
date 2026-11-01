@@ -1,7 +1,7 @@
 /*
- * The shared stubs: tiny methods of the exe (1 to 3 bytes, mostly empty vtable slots of the EmbeddedFX, CObjBase3D
- * and CTriMesh classes, constructors of empty classes) that have the same body. One C function backs every rva of
- * its body in src/hooks.inc; the hook covers the int3 padding up to the next function. The names are invented.
+ * The shared stubs: tiny methods (mostly empty vtable slots of the EmbeddedFX, CObjBase3D and CTriMesh classes,
+ * constructors of empty classes) that have the same body, so one C function fills every slot that needs it. The
+ * variants with arguments exist only for the callee-pops calling conventions. The names are invented.
  */
 #include "scrap/shared.h"
 

@@ -260,7 +260,7 @@ byte __thiscall cFollowCamEntity_VarF(cEntity *self, const char *name, double *d
 	if ((byte)set) {
 		*deg = Cam_Deg2Rad(*d);
 	} else {
-		*d = Cam_Rad2Deg(*deg);
+		*d = Rad2Deg(*deg);
 	}
 	return 1;
 }

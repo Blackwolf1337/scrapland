@@ -10,11 +10,6 @@
 
 typedef int(__thiscall *varfunc_t)(void *obj, const char *name, int set, char **s, double *d, int *i);
 
-static PyObject *ReturnNone(void) {
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
 /* Set*(varname,value): value as string ("ss") or number ("sd", stored as double and truncated int) */
 static PyObject *SetVar(PyObject *args, varfunc_t var, void *obj, int *parsed) {
 	char *name, *s;
@@ -45,7 +40,7 @@ static PyObject *GetVar(PyObject *args, varfunc_t var, void *obj, const char *na
 	}
 	if (!obj) {
 		Con_Debugf(nameNoObj, name);
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	switch (var(obj, name, 0, &s, &d, &i)) {
 	case ACTVAR_STRING:
@@ -56,7 +51,7 @@ static PyObject *GetVar(PyObject *args, varfunc_t var, void *obj, const char *na
 		return Py_BuildValue("i", i);
 	}
 	Con_Debugf(nameNoVar, name);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* CreateClass(classname) : Crea una clase de objeto animado. A parse error returns None with the error set. */
@@ -65,7 +60,7 @@ PyObject *SAct_CreateClass(PyObject *self, PyObject *args) {
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	CHECK(g_pActClassList);
 	g_pAuxActClass = cActClassList_Create(g_pActClassList, name);
@@ -89,7 +84,7 @@ PyObject *SAct_GetClass(PyObject *self, PyObject *args) {
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	CHECK(g_pActClassList);
 	g_pAuxActClass = cActClassList_Get(g_pActClassList, name);
@@ -126,7 +121,7 @@ PyObject *SAct_CreateAction(PyObject *self, PyObject *args) {
 	}
 	if (!g_pAuxActClass) {
 		Con_Debugf("Caution: SAct.CreateAction(): AuxActClass not defined.\n");
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	g_pAuxAction = cActClass_CreateAction(g_pAuxActClass, name);
 	return Py_BuildValue("i", g_pAuxAction ? 1 : 0);
@@ -142,7 +137,7 @@ PyObject *SAct_GetAction(PyObject *self, PyObject *args) {
 	}
 	if (!g_pAuxActClass) {
 		Con_Debugf("Caution: SAct.GetAction(): AuxActClass not defined.\n");
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	g_pAuxAction = cActClass_GetAction(g_pAuxActClass, name);
 	return Py_BuildValue("i", g_pAuxAction ? 1 : 0);
@@ -164,7 +159,7 @@ PyObject *SAct_SetAct(PyObject *self, PyObject *args) {
 	}
 	PyErr_Clear();
 	Con_Debugf("Caution: SAct.SetAct(): AuxActClass not defined.\n");
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* GetAct(varname) : Obtiene el valor de una variable de la accion de una class objeto animado */

@@ -6,11 +6,6 @@
 #include "scrap/global.h"
 #include "scrap/python.h"
 
-static PyObject *ReturnNone(void) {
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
 /* ShipExplosion(V3D Pos, V3D Vel, float scale, float time, float nflames, bool bcolision) : Explosión de la nave */
 PyObject *SFX_ShipExplosion(PyObject *self, PyObject *args) {
 	vec3_t pos, vel;
@@ -23,7 +18,7 @@ PyObject *SFX_ShipExplosion(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	FX_ShipExplosion(pos, vel, scale, time, numFlames, collision);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* FXCharacterConversor(CharacterName, ConversorName, phase) : Conversor de Personajes */
@@ -42,7 +37,7 @@ PyObject *SFX_CharacterConversor(PyObject *self, PyObject *args) {
 	CHECK(vConversor);
 	CHECK(Entity_IsType(vConversor, TYEN_WITH_LIFE));
 	FX_CharacterConversor(vCharacter, vConversor, phase, 1.7f, 0.2f);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* FXCharacterConversion(AttackerName, AttackedName, time) : Conversión de Personajes */
@@ -61,7 +56,7 @@ PyObject *SFX_CharacterConversion(PyObject *self, PyObject *args) {
 	CHECK(vAttacked);
 	CHECK(Entity_IsType(vAttacked, TYEN_WITH_LIFE));
 	FX_CharacterConversion(vAttacker, vAttacked, time);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* FXBishopSellLife(AttackerName, AttackedName) : Efecto de dar vida (de Attacker [Bishop ó NULL] a Attacked) */
@@ -80,7 +75,7 @@ PyObject *SFX_BishopSellLife(PyObject *self, PyObject *args) {
 	CHECK(vAttacked);
 	CHECK(Entity_IsType(vAttacked, TYEN_WITH_LIFE));
 	FX_BishopSellLife(vAttacker, vAttacked);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* FXMoneyTransfer(EntityFrom, EntityTo, Time) : Transferencia de dinero */
@@ -99,7 +94,7 @@ PyObject *SFX_MoneyTransfer(PyObject *self, PyObject *args) {
 	CHECK(vTo);
 	CHECK(Entity_IsType(vTo, TYEN_WITH_LIFE));
 	FX_MoneyTransfer(vFrom, vTo, time);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* FXEmbeddedSet(EntityName, FXType) : Asigna el controlador de effects embedidos */
@@ -113,7 +108,7 @@ PyObject *SFX_EmbeddedSet(PyObject *self, PyObject *args) {
 	cEntity *vEntity = World_FindEntity(entityName);
 	CHECK(vEntity);
 	vEntity->vftable->SetEmbeddedFX(vEntity, fxType);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 SD_PY_MODULE(SFX, 0x42d060)

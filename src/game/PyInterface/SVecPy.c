@@ -16,10 +16,6 @@ static inline double Deg2Rad(double deg) {
 	return deg * M_PI_D / DEG_PER_PI;
 }
 
-static inline double Rad2Deg(double rad) {
-	return rad * DEG_PER_PI / M_PI_D;
-}
-
 /* v / |v| in float; a zero vector stays as it is (the inline Normalize of the engine's vector class) */
 static vec3_t Vec3_Normalized(vec3_t v) {
 	float len = (float)sqrt((double)(v.x * v.x + v.y * v.y + v.z * v.z));

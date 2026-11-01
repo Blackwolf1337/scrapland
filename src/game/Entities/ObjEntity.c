@@ -60,10 +60,6 @@ static inline float Deg2Rad(double v) {
 	return (float)((v * M_PI_D) / 180.0);
 }
 
-static inline double Rad2Deg(float v) {
-	return ((double)v * 180.0) / M_PI_D;
-}
-
 cEntity *__thiscall cObjEntity_ctor(void *mem, const char *name, float x, float y, float z) {
 	cObjEntity *self = mem;
 

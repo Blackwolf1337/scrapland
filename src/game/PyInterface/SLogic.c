@@ -12,11 +12,6 @@
 /* the four traffic lists GetNearestShip searches (pointer table at rva 0x42ddf0) */
 static const char *const shipLists[] = { "Traffic", "EnemiesTraffic", "FightingTraffic", "NormalTraffic" };
 
-static PyObject *ReturnNone(void) {
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
 /*
  * void SetCharState(entityName, state, entityTargetName) : Pone a una entidad en un estado de logica y un target
  * determinados. Any failure (no such WalkChar, no logic) returns NULL without a Python exception, as the original.
@@ -41,7 +36,7 @@ PyObject *SLogic_SetCharState(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	logic->vftable->SetState(logic, state, target);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* void SendSentinelToWatch(Pos) : Envia a un centinela a inspeccionar una posicion */
@@ -53,7 +48,7 @@ PyObject *SLogic_SendSentinelToWatch(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, &pos);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* void GearAttack(Entity) : Envia a un Gear a atacar a una entidad (NULL if there is none of that name) */
@@ -65,7 +60,7 @@ PyObject *SLogic_GearAttack(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	AICtrl_GearAttack(&g_pWorld->logic.aiCtrl, World_FindEntity(name), 0);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* int IsEnemyActive() : Indica si hay un enemigo activo, mirando la list de enemigos y el tráfico. */
@@ -161,7 +156,7 @@ PyObject *SLogic_SetShipToRegenerate(PyObject *self, PyObject *args) {
 	if (e) {
 		ShipRegen_Set(&g_pWorld->logic.shipRegen, Entity_IsType(e, TYEN_CAR) ? e : NULL, speed, endSpeed);
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* void SetDominationZones(zonesList): Establece la list de las zones de dominación (WithLife entities by name) */
@@ -187,7 +182,7 @@ PyObject *SLogic_SetDominationZones(PyObject *self, PyObject *args) {
 		CHECK(e && e->vftable->IsType(e, TYEN_WITH_LIFE) && "La entidad no es un 'WithLifeEntity'");
 		Domination_AddZone(e);
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* void ChangeZoneState(zoneId, state): Pone el estado de una zona de dominación */
@@ -199,7 +194,7 @@ PyObject *SLogic_ChangeZoneState(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Domination_SetZoneState(zone, state);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* void ChangeBatonState(pos, state): Actualiza el estado del testigo en el modo dominación */
@@ -212,7 +207,7 @@ PyObject *SLogic_ChangeBatonState(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	Domination_SetBatonState(&pos, state);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* void UpdateTauntEndTime(time): Tiempo final del taunt. The original parses no arguments at all. */
@@ -220,7 +215,7 @@ PyObject *SLogic_UpdateTauntEndTime(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
 	Taunts_UpdateEndTime(&g_pWorld->logic);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 SD_PY_MODULE(SLogic, 0x42dd20)

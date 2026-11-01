@@ -12,11 +12,6 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 
-static PyObject *ReturnNone(void) {
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
 /* new T, NULL if the memory is not there (the original wraps the constructor in an EH frame for the delete) */
 #define NEW_OBJ(size, ctor, ...) ({ void *mem_ = operator_new(size); mem_ ? ctor(mem_, ##__VA_ARGS__) : NULL; })
 
@@ -70,7 +65,7 @@ PyObject *SAI_IniAI(PyObject *self, PyObject *args) {
 		g_CharGroup = NEW_OBJ(0x68, cAICharGroup_ctor);
 		CHECK(g_CharGroup);
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* BuildGraph(arg, x, y, z) */
@@ -84,7 +79,7 @@ PyObject *SAI_BuildGraph(PyObject *self, PyObject *args) {
 	}
 	vec3_t pos = { x, y, z };
 	CNodesWorld_Load(g_NodesWorld, arg, "", &pos);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* AnalizeMap(size) : analyses the level with a cube of that size; makes the graph if there is none */
@@ -101,7 +96,7 @@ PyObject *SAI_AnalyzeMap(PyObject *self, PyObject *args) {
 		CHECK(g_NodesWorld);
 	}
 	CNodesWorld_Analyze(g_NodesWorld, &cube);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* AnalizeGraph() : Analiza características grafo. No argument check. */
@@ -109,7 +104,7 @@ PyObject *SAI_AnalyzeGraph(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
 	CNodesWorld_AnalyzeGraph(g_NodesWorld);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* AnalizeGraph2D() : No argument check. */
@@ -117,7 +112,7 @@ PyObject *SAI_AnalyzeGraph2D(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
 	CNodesWorld2D_AnalyzeGraph(g_NodesWorld2D);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* AnalizeTraffic() : traffic graph of the level (indoor or outdoor) */
@@ -129,7 +124,7 @@ PyObject *SAI_AnalyzeTraffic(PyObject *self, PyObject *args) {
 	CNodesTraffic *traffic = g_IsMapOutDoor ? g_NodesTraffic : g_NodesTrafficInDoor;
 	traffic->vftable->Analyze(traffic);
 	g_TrafficState = 3;
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* BuildGraph2D(arg, x, y, z) : indoor levels only */
@@ -144,7 +139,7 @@ PyObject *SAI_BuildGraph2D(PyObject *self, PyObject *args) {
 	}
 	vec3_t pos = { x, y, z };
 	CNodesWorld2D_Load(g_NodesWorld2D, arg, "", &pos);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /*
@@ -185,7 +180,7 @@ PyObject *SetState_Error(const char *entity, const char *state, int err, const c
 	}
 	Con_Bluef("\n**************************************************************************************************"
 		"\n\n");
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 static int CheckAIEntity(cEntity *e, const char *type) {
@@ -571,7 +566,7 @@ static PyObject *(*const charStates[10])(PyObject *, PyObject *) = {
 PyObject *SAI_SetStateVehicle(PyObject *self, PyObject *args) {
 	uint32_t state = (uint32_t)PyInt_AsLong(PyTuple_GetItem(args, 0));
 	if (state > 9) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return vehicleStates[state](self, args);
 }
@@ -579,7 +574,7 @@ PyObject *SAI_SetStateVehicle(PyObject *self, PyObject *args) {
 PyObject *SAI_SetStateChar(PyObject *self, PyObject *args) {
 	uint32_t state = (uint32_t)PyInt_AsLong(PyTuple_GetItem(args, 0));
 	if (state > 9) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return charStates[state](self, args);
 }
@@ -596,7 +591,7 @@ PyObject *SAI_GetStateVehicle(PyObject *self, PyObject *args) {
 			return Py_BuildValue("i", cAIVehicle_GetState(ai));
 		}
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* GetStateChar(name) : state number of the character AI, None without AI */
@@ -611,7 +606,7 @@ PyObject *SAI_GetStateChar(PyObject *self, PyObject *args) {
 			return Py_BuildValue("i", ai->vftable->GetState(ai));
 		}
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /*
@@ -668,7 +663,7 @@ PyObject *SAI_EnableAIChar(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	WChar_Vtbl(e)->EnableAI(e, enable != 0, &arg);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /*
@@ -681,7 +676,7 @@ PyObject *SAI_GetNextRacePoint(PyObject *self, PyObject *args) {
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "(fff)ff", &initial.x, &initial.y, &initial.z, &minDist, &maxDist)) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	int outdoor = g_IsMapOutDoor == 1;
 	byte found;
@@ -694,7 +689,7 @@ PyObject *SAI_GetNextRacePoint(PyObject *self, PyObject *args) {
 	}
 	CHECK(maxDist <= 1e8f && "Se ha superado la distancia máxima sin haber encontrado un punto");
 	if (outdoor && !found) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return Py_BuildValue("fff", (double)out.x, (double)out.y, (double)out.z);
 }
@@ -705,7 +700,7 @@ PyObject *SAI_GetNearestItemLife(PyObject *self, PyObject *args) {
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "s", &name)) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	cEntity *e = World_FindEntity(name);
 	cAIVehicle *ai = e ? e->vftable->GetAI(e) : NULL;
@@ -713,7 +708,7 @@ PyObject *SAI_GetNearestItemLife(PyObject *self, PyObject *args) {
 	if (item) {
 		return Py_BuildValue("s", item->name);
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* GetRandomVisibilityPoint() : a random point of the visibility graph (CRT rand), None if there is none */
@@ -722,7 +717,7 @@ PyObject *SAI_GetRandomVisibilityPoint(PyObject *self, PyObject *args) {
 	(void)args;
 	int n = g_NodesWorld->sup.vftable->NumVisPoints(g_NodesWorld);
 	if (n <= 0) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	vec3_t p;
 	memcpy(&p, g_NodesWorld->sup.vftable->GetVisPoint(g_NodesWorld, crt_rand() % n), sizeof(p));
@@ -736,7 +731,7 @@ PyObject *SAI_GetReposCharPos(PyObject *self, PyObject *args) {
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "(fff)s|s", &pos.x, &pos.y, &pos.z, &name, &targetName)) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	cEntity *target = NULL;
 	if (targetName && *targetName) {
@@ -746,7 +741,7 @@ PyObject *SAI_GetReposCharPos(PyObject *self, PyObject *args) {
 		}
 	}
 	if (!cAICharGroup_GetReposPos(g_CharGroup, &pos, name, &out, target)) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return Py_BuildValue("fff", (double)out.x, (double)out.y, (double)out.z);
 }
@@ -756,7 +751,7 @@ PyObject *SAI_InitVehicleRace(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
 	g_VehicleGroup->vftable->InitRace(g_VehicleGroup);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* AddVehicleRace(name) : adds a vehicle to the race group */
@@ -770,7 +765,7 @@ PyObject *SAI_AddVehicleRace(PyObject *self, PyObject *args) {
 			g_VehicleGroup->vftable->AddVehicle(g_VehicleGroup, e);
 		}
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetRotStaticObj(name, a, b) */
@@ -786,7 +781,7 @@ PyObject *SAI_SetRotStaticObj(PyObject *self, PyObject *args) {
 			cAIVehicle_SetRotStatic(ai, a, b);
 		}
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetInertia(name, on) : on only for the value 1 */
@@ -802,7 +797,7 @@ PyObject *SAI_SetInertia(PyObject *self, PyObject *args) {
 			cAIVehicle_SetInertia(ai, on == 1);
 		}
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* GetOD() : returns the object at rva 0x46797c without a new reference (a folded stub in the original) */

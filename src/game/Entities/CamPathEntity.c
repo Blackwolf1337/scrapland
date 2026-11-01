@@ -116,7 +116,7 @@ byte __thiscall cCamPathEntity_VarF(cEntity *self, const char *name, double *d, 
 		if ((byte)set) {
 			p->points[i].fov = Cam_Deg2Rad(*d);
 		} else {
-			*d = Cam_Rad2Deg(p->points[i].fov);
+			*d = Rad2Deg(p->points[i].fov);
 		}
 		return 1;
 	}
@@ -125,7 +125,7 @@ byte __thiscall cCamPathEntity_VarF(cEntity *self, const char *name, double *d, 
 		if ((byte)set) {
 			p->points[i].quake = Cam_Deg2Rad(*d);
 		} else {
-			*d = Cam_Rad2Deg(p->points[i].quake);
+			*d = Rad2Deg(p->points[i].quake);
 		}
 		return 1;
 	}
@@ -338,9 +338,9 @@ byte __thiscall cCamPathEntity_VarV(cEntity *self, const char *name, double *x, 
 			v->y = fy;
 			v->z = fz;
 		} else {
-			*x = Cam_Rad2Deg(v->x);
-			*y = Cam_Rad2Deg(v->y);
-			*z = Cam_Rad2Deg(v->z);
+			*x = Rad2Deg(v->x);
+			*y = Rad2Deg(v->y);
+			*z = Rad2Deg(v->z);
 		}
 		return 1;
 	}

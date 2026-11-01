@@ -6,11 +6,6 @@
 #include "scrap/net.h"
 #include "scrap/python.h"
 
-static PyObject *ReturnNone(void) {
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
 /* ModifyUsrData(arg) : modifica desde el servidor los datos locales; NULL without a server */
 PyObject *SNet_ModifyUsrData(PyObject *self, PyObject *args) {
 	int arg;
@@ -31,7 +26,7 @@ PyObject *SNet_ServerChangeLevel(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	if (!Net_IsServer()) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return Py_BuildValue("i", Net_ServerChangeLevel(level) != 0);
 }
@@ -45,7 +40,7 @@ PyObject *SNet_AddResource(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	if (!Net_IsServer()) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return Py_BuildValue("i", Net_AddResource(name));
 }

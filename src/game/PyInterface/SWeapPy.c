@@ -8,11 +8,6 @@
 #include "scrap/weaps.h"
 #include "scrap/world.h"
 
-static PyObject *ReturnNone(void) {
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
 /* GetNWeap() : Obtiene el numero de armas en el juego */
 PyObject *SWeap_GetNWeap(PyObject *self, PyObject *args) {
 	(void)self;
@@ -40,7 +35,7 @@ PyObject *SWeap_InitWeap(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	if (num <= 0) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	WeapTable_Init(&g_pWorld->weapons, num);
 	return Py_BuildValue("i", 1);
@@ -69,7 +64,7 @@ PyObject *SWeap_GetFAmmo(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	if (!cAmmoInfo_GetF(TABLE_AT(g_pWorld->ammo, n), var, &value)) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return Py_BuildValue("d", (double)value);
 }
@@ -84,7 +79,7 @@ PyObject *SWeap_GetSAmmo(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	if (!cAmmoInfo_GetS(TABLE_AT(g_pWorld->ammo, n), var, &value)) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return Py_BuildValue("s", value);
 }
@@ -100,7 +95,7 @@ PyObject *SWeap_SetFAmmo(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	if (!cAmmoInfo_SetF(TABLE_AT(g_pWorld->ammo, n), var, (float)value)) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return Py_BuildValue("i", 1);
 }
@@ -138,7 +133,7 @@ PyObject *SWeap_GetFWeap(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	if (!cWeapInfo_GetF(TABLE_AT(g_pWorld->weapons, n), var, &value)) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return Py_BuildValue("d", (double)value);
 }
@@ -153,7 +148,7 @@ PyObject *SWeap_GetSWeap(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	if (!cWeapInfo_GetS(TABLE_AT(g_pWorld->weapons, n), var, &value)) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return Py_BuildValue("s", value);
 }
@@ -169,7 +164,7 @@ PyObject *SWeap_SetFWeap(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	if (!cWeapInfo_SetF(TABLE_AT(g_pWorld->weapons, n), var, (float)value)) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return Py_BuildValue("i", 1);
 }
@@ -184,7 +179,7 @@ PyObject *SWeap_SetSWeap(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	if (!cWeapInfo_SetS(TABLE_AT(g_pWorld->weapons, n), var, value)) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return Py_BuildValue("i", 1);
 }
@@ -196,7 +191,7 @@ PyObject *SWeap_FillPriority(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	cWorld_FillWeapPriority(g_pWorld);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* GetFirstiWeap() : Obtiene el arma primera y por defecto */
@@ -232,7 +227,7 @@ PyObject *SWeap_NetExec(PyObject *self, PyObject *args) {
 	else if (!strcmp(cmd, "SetUpInferno")) {
 		Inferno_NetSetUp(name);
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 SD_PY_MODULE(SWeap, 0x430128)

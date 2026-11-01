@@ -152,10 +152,6 @@ static inline float Cam_Deg2Rad(double v) {
 	return (float)((v * M_PI_D) / 180.0);
 }
 
-static inline double Cam_Rad2Deg(float v) {
-	return ((double)v * 180.0) / M_PI_D;
-}
-
 /* ---- CamControl.c ---- */
 void __fastcall cCamControl_dtor(cEntity *self);
 cEntity *__thiscall cCamControl_Delete(cEntity *self, uint32_t flags);

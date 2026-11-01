@@ -5,11 +5,6 @@
 #include "scrap/python.h"
 #include "scrap/sound.h"
 
-static PyObject *ReturnNone(void) {
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
 /* SetVoiceVolume(voice, volume) */
 PyObject *SSound_SetVoiceVolume(PyObject *self, PyObject *args) {
 	int voice;
@@ -20,7 +15,7 @@ PyObject *SSound_SetVoiceVolume(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	g_pSound->vftable->SetVoiceVolume(g_pSound, voice, (float)volume);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetVoiceString(voice, text) */
@@ -33,7 +28,7 @@ PyObject *SSound_SetVoiceString(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	g_pSound->vftable->SetVoiceString(g_pSound, voice, text);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* DeleteAllSounds() */
@@ -43,7 +38,7 @@ PyObject *SSound_DeleteAllSounds(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	g_pSound->vftable->DeleteAllSounds(g_pSound);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* LoadSound(name) */
@@ -55,7 +50,7 @@ PyObject *SSound_LoadSound(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	g_pSound->vftable->LoadSound(g_pSound, name);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* PlaySound((x,y,z), name, volume[, p1, p2, p3]) : sound at a position; p1, p2 default 0, p3 default 1 */
@@ -79,7 +74,7 @@ PyObject *SSound_PlaySound(PyObject *self, PyObject *args) {
 	cSoundDesc_SetPos(&desc, &pos);
 	desc.volume += Snd_Volume((float)volume);
 	g_pSound->vftable->PlaySound(g_pSound, name, &desc, 0);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* Play(name[, volume[, pan]]) : 2D sound; volume default 1, pan default 0 (-1..1, sent as pan * 10000) */
@@ -93,7 +88,7 @@ PyObject *SSound_Play(PyObject *self, PyObject *args) {
 	}
 	int ipan = (int)(pan * 10000.0);
 	g_pSound->vftable->Play(g_pSound, name, Snd_Volume((float)volume), ipan);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* StopAllSounds() */
@@ -103,7 +98,7 @@ PyObject *SSound_StopAllSounds(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	g_pSound->vftable->StopAllSounds(g_pSound);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /*
@@ -128,7 +123,7 @@ PyObject *SSound_SetPS(PyObject *self, PyObject *args) {
 	ps = SndPS_Get(psName);
 	i = (int)d;
 	if (!ps) {
-		return ReturnNone();
+		return Py_ReturnNone();
 	}
 	return Py_BuildValue("i", cSoundPS_Var(ps, var, 1, NULL, &d, &i));
 }
@@ -154,7 +149,7 @@ PyObject *SSound_GetPS(PyObject *self, PyObject *args) {
 			return Py_BuildValue("i", i);
 		}
 	}
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* CreatePS(psname) : 1 if the set was made */
@@ -190,7 +185,7 @@ PyObject *SSound_SetMusic(PyObject *self, PyObject *args) {
 	}
 	g_pSound->vftable->SetMusicVolume(g_pSound, (float)volume);
 	g_pSound->vftable->SetMusic(g_pSound, name);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* SetMusicVolume(volume) */
@@ -202,7 +197,7 @@ PyObject *SSound_SetMusicVolume(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	g_pSound->vftable->SetMusicVolume(g_pSound, (float)volume);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* OpenVoice(name, voice[, arg]) : arg default 1 */
@@ -215,7 +210,7 @@ PyObject *SSound_OpenVoice(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	g_pSound->vftable->OpenVoice(g_pSound, name, voice, arg);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* PlayVoice(voice[, text]) : plays and sets the subtitle text (default "") */
@@ -229,7 +224,7 @@ PyObject *SSound_PlayVoice(PyObject *self, PyObject *args) {
 	}
 	g_pSound->vftable->PlayVoice(g_pSound, voice);
 	g_pSound->vftable->SetVoiceString(g_pSound, voice, text);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* StopVoice(voice) */
@@ -241,7 +236,7 @@ PyObject *SSound_StopVoice(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	g_pSound->vftable->StopVoice(g_pSound, voice);
-	return ReturnNone();
+	return Py_ReturnNone();
 }
 
 /* VoiceRemain(voice, default) : remaining time of the voice, the default when the voice reports none */
