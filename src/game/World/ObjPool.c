@@ -3,6 +3,7 @@
  * move in 0.05 s steps, or the carrier of an effect cObjElementFX), see include/scrap/scrap.h. The list at 0x0 holds
  * the free debris (cDebrisSys_FreeActive frees it), the one at 0x4 the dropped ones (cDebrisSys_FreeIdle).
  */
+#include "scrap/gvar.h"
 #include "scrap/console.h"
 #include "scrap/fxcountermeasures.h"
 #include "scrap/fxmisc.h"
@@ -36,7 +37,8 @@ void *cObjElementFXSputnik_ctor(void *self);
 #define DEBRIS_STEP 0.05f
 #define DEBRIS_MAXSTEP 0.1f
 
-#define g_OShow GAME_GLOBAL_IN(int, GVar_O_Show, 16)	/* O_Show, the debug text of the pools */
+extern cGVar GVar_O_Show;
+#define g_OShow (GVar_O_Show.value.i)	/* O_Show, the debug text of the pools */
 
 /* the constructor of an effect class (returns the object) */
 typedef cObjElementFX *(*ObjElementFXCtor_t)(void *mem);

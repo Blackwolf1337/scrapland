@@ -5,8 +5,10 @@
 #ifndef SCRAP_PROF_H
 #define SCRAP_PROF_H
 
+#include "scrap/gvar.h"
 #include "scrap/shared.h"
 
-#define g_ProfMode GAME_GLOBAL_IN(int, GVar_R_ShowInfo, 16)
+extern cGVar GVar_R_ShowInfo;
+#define g_ProfMode (GVar_R_ShowInfo.value.i)
 
 #endif

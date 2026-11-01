@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
 #include "scrap/readm3d.h"
@@ -12,9 +13,12 @@
 #include "scrap/model.h"
 #include "scrap/misc.h"
 
-#define g_SortModels GAME_GLOBAL_IN(int, GVar_R_SortModels, 16)	/* R_SortModels */
-#define g_SortShow GAME_GLOBAL_IN(int, GVar_R_SortShow, 16)	/* R_SortShow */
-#define g_SortInvert GAME_GLOBAL_IN(int, GVar_R_SortInvert, 16)	/* R_SortInvert */
+extern cGVar GVar_R_SortModels;
+#define g_SortModels (GVar_R_SortModels.value.i)	/* R_SortModels */
+extern cGVar GVar_R_SortShow;
+#define g_SortShow (GVar_R_SortShow.value.i)	/* R_SortShow */
+extern cGVar GVar_R_SortInvert;
+#define g_SortInvert (GVar_R_SortInvert.value.i)	/* R_SortInvert */
 
 #define SORT_TEXT_X 200.0f
 #define SORT_TEXT_Y 10.0f

@@ -6,6 +6,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/console.h"
 #include "scrap/d3d8.h"
 #include "scrap/fonts.h"
@@ -67,9 +68,12 @@ void Stencil_DebugLine(const vec3_t *a, const vec3_t *b, uint32_t color) {
 
 #define STENCIL_MAX_SEGS 0x2000
 #define STENCIL_MAX_TRIS 0x3000
-#define g_StencilLDir GAME_GLOBAL_IN(float, GVar_R_StencilLDir, 16)	/* R_StencilLDir: the distance of a directional light */
-#define g_StencilFisq GAME_GLOBAL_IN(int, GVar_R_StencilFisq, 16)	/* R_StencilFisq: RSqrt_Estimate instead of sqrt */
-#define g_StencilDraw GAME_GLOBAL_IN(int, GVar_R_StencilDraw, 16)	/* R_StencilDraw */
+extern cGVar GVar_R_StencilLDir;
+#define g_StencilLDir (GVar_R_StencilLDir.value.f)	/* R_StencilLDir: the distance of a directional light */
+extern cGVar GVar_R_StencilFisq;
+#define g_StencilFisq (GVar_R_StencilFisq.value.i)	/* R_StencilFisq: RSqrt_Estimate instead of sqrt */
+extern cGVar GVar_R_StencilDraw;
+#define g_StencilDraw (GVar_R_StencilDraw.value.i)	/* R_StencilDraw */
 
 /* the far end of the volume edge from p (in the space of the mesh): R_StencilLDir along the light of a directional
  * light, else to the range of the light, p itself outside the range or the cone of a spot light, the light position
@@ -501,8 +505,10 @@ void ShadowsStencil_Render(void) {
 }
 
 /* the capture of the volumes of one mesh list */
-#define g_StencilBBox GAME_GLOBAL_IN(int, GVar_R_StencilBBox, 16)	/* R_StencilBBox: the segment to the light tested */
-#define g_StencilViewDisp GAME_GLOBAL_IN(float, GVar_R_StencilViewDisp, 16)	/* R_StencilViewDisp: the volumes moved along the view */
+extern cGVar GVar_R_StencilBBox;
+#define g_StencilBBox (GVar_R_StencilBBox.value.i)	/* R_StencilBBox: the segment to the light tested */
+extern cGVar GVar_R_StencilViewDisp;
+#define g_StencilViewDisp (GVar_R_StencilViewDisp.value.f)	/* R_StencilViewDisp: the volumes moved along the view */
 extern int g_StencilGroupsMax;
 extern byte g_TriFacing[65536];		/* [0x10000] the triangles facing the light */
 #define LIGHT_SPOT 0x1389

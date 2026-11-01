@@ -5,6 +5,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/ai.h"
 #include "scrap/arrowindicator.h"
 #include "scrap/console.h"
@@ -19,29 +20,45 @@
 #include "scrap/world.h"
 
 /* engine variables of the music and the voices (value, default) */
-#define g_isActionMusic GAME_GLOBAL_IN(int, GVar_isActionMusic, 16)
-#define g_isActionMusicDef GAME_GLOBAL_IN(int, GVar_isActionMusic, 20)
-#define g_WarnVoiceVolume GAME_GLOBAL_IN(float, GVar_WarnVoiceVolume, 16)
-#define g_WarnVoiceVolumeDef GAME_GLOBAL_IN(float, GVar_WarnVoiceVolume, 20)
-#define g_isActionIndoor GAME_GLOBAL_IN(int, GVar_isActionIndoor, 16)
-#define g_isActionIndoorDef GAME_GLOBAL_IN(int, GVar_isActionIndoor, 20)
-#define g_MaxPoliceWarnDist GAME_GLOBAL_IN(float, GVar_MaxPoliceWarnDist, 16)
-#define g_MaxPoliceWarnDistDef GAME_GLOBAL_IN(float, GVar_MaxPoliceWarnDist, 20)
-#define g_useDynamicMusic GAME_GLOBAL_IN(int, GVar_useDynamicMusic, 16)
-#define g_useDynamicMusicDef GAME_GLOBAL_IN(int, GVar_useDynamicMusic, 20)
-#define g_ForceNoActionMusic GAME_GLOBAL_IN(int, GVar_ForceNoActionMusic, 16)
-#define g_ForceNoActionMusicDef GAME_GLOBAL_IN(int, GVar_ForceNoActionMusic, 20)
-#define g_ActionMusicTimeFade GAME_GLOBAL_IN(float, GVar_ActionMusicTimeFade, 16)
-#define g_OutActionMusicVolume GAME_GLOBAL_IN(float, GVar_OutActionMusicVolume, 16)
-#define g_OutRelaxMusicVolume GAME_GLOBAL_IN(float, GVar_OutRelaxMusicVolume, 16)
-#define g_iOutActionMusic GAME_GLOBAL_IN(int, GVar_iOutActionMusic, 16)
-#define g_iOutRelaxMusic GAME_GLOBAL_IN(int, GVar_iOutRelaxMusic, 16)
-#define g_OutActionMusic GAME_GLOBAL_IN(const char *, GVar_OutActionMusic, 16)	/* format with the number */
-#define g_OutRelaxMusic GAME_GLOBAL_IN(const char *, GVar_OutRelaxMusic, 16)
-#define g_MusicTimeChange GAME_GLOBAL_IN(float, GVar_MusicTimeChange, 16)
-#define g_NumEnemiesInRadar GAME_GLOBAL_IN(int, GVar_NumEnemiesInRadar, 16)
-#define g_S_VoiceoverVolume GAME_GLOBAL_IN(float, GVar_S_VoiceoverVolume, 16)
-#define g_S_VoiceoverVolumeDef GAME_GLOBAL_IN(float, GVar_S_VoiceoverVolume, 20)
+extern cGVar GVar_isActionMusic;
+#define g_isActionMusic (GVar_isActionMusic.value.i)
+#define g_isActionMusicDef (GVar_isActionMusic.def.i)
+extern cGVar GVar_WarnVoiceVolume;
+#define g_WarnVoiceVolume (GVar_WarnVoiceVolume.value.f)
+#define g_WarnVoiceVolumeDef (GVar_WarnVoiceVolume.def.f)
+extern cGVar GVar_isActionIndoor;
+#define g_isActionIndoor (GVar_isActionIndoor.value.i)
+#define g_isActionIndoorDef (GVar_isActionIndoor.def.i)
+extern cGVar GVar_MaxPoliceWarnDist;
+#define g_MaxPoliceWarnDist (GVar_MaxPoliceWarnDist.value.f)
+#define g_MaxPoliceWarnDistDef (GVar_MaxPoliceWarnDist.def.f)
+extern cGVar GVar_useDynamicMusic;
+#define g_useDynamicMusic (GVar_useDynamicMusic.value.i)
+#define g_useDynamicMusicDef (GVar_useDynamicMusic.def.i)
+extern cGVar GVar_ForceNoActionMusic;
+#define g_ForceNoActionMusic (GVar_ForceNoActionMusic.value.i)
+#define g_ForceNoActionMusicDef (GVar_ForceNoActionMusic.def.i)
+extern cGVar GVar_ActionMusicTimeFade;
+#define g_ActionMusicTimeFade (GVar_ActionMusicTimeFade.value.f)
+extern cGVar GVar_OutActionMusicVolume;
+#define g_OutActionMusicVolume (GVar_OutActionMusicVolume.value.f)
+extern cGVar GVar_OutRelaxMusicVolume;
+#define g_OutRelaxMusicVolume (GVar_OutRelaxMusicVolume.value.f)
+extern cGVar GVar_iOutActionMusic;
+#define g_iOutActionMusic (GVar_iOutActionMusic.value.i)
+extern cGVar GVar_iOutRelaxMusic;
+#define g_iOutRelaxMusic (GVar_iOutRelaxMusic.value.i)
+extern cGVar GVar_OutActionMusic;
+#define g_OutActionMusic (GVar_OutActionMusic.value.s)	/* format with the number */
+extern cGVar GVar_OutRelaxMusic;
+#define g_OutRelaxMusic (GVar_OutRelaxMusic.value.s)
+extern cGVar GVar_MusicTimeChange;
+#define g_MusicTimeChange (GVar_MusicTimeChange.value.f)
+extern cGVar GVar_NumEnemiesInRadar;
+#define g_NumEnemiesInRadar (GVar_NumEnemiesInRadar.value.i)
+extern cGVar GVar_S_VoiceoverVolume;
+#define g_S_VoiceoverVolume (GVar_S_VoiceoverVolume.value.f)
+#define g_S_VoiceoverVolumeDef (GVar_S_VoiceoverVolume.def.f)
 
 /* the state of the music and of the talk voice (voice 2) */
 extern float g_MusicFade;		/* the fade to the other music */
@@ -52,13 +69,17 @@ extern byte g_TalkStop;		/* stop instead of starting it */
 
 #define TALK_VOICE 2
 
-#define g_MinVoiceVolumeChat GAME_GLOBAL_IN(float, GVar_MinVoiceVolumeChat, 16)	/* MinVoiceVolumeChat */
+extern cGVar GVar_MinVoiceVolumeChat;
+#define g_MinVoiceVolumeChat (GVar_MinVoiceVolumeChat.value.f)	/* MinVoiceVolumeChat */
 #define VOICE_END 0.001f		/* rva 0x3a3d58: the talk ends with less left */
 #define VOICE_PAN -0.5f
 #define VOICE_MIN_SPEED 0.8f		/* rva 0x3b0844: no voices in slow motion */
-#define g_VoicePlayDelay GAME_GLOBAL_IN(float, GVar_VoicePlayDelay, 16)	/* VoicePlayDelay */
-#define g_StreamPath GAME_GLOBAL_IN(const char *, GVar_StreamPath, 16)	/* StreamPath "Sounds/Stream/" */
-#define g_VoicePath GAME_GLOBAL_IN(const char *, GVar_VoicePath, 16)	/* VoicePath "Sounds/Voices/" */
+extern cGVar GVar_VoicePlayDelay;
+#define g_VoicePlayDelay (GVar_VoicePlayDelay.value.f)	/* VoicePlayDelay */
+extern cGVar GVar_StreamPath;
+#define g_StreamPath (GVar_StreamPath.value.s)	/* StreamPath "Sounds/Stream/" */
+extern cGVar GVar_VoicePath;
+#define g_VoicePath (GVar_VoicePath.value.s)	/* VoicePath "Sounds/Voices/" */
 extern uint32_t g_VoiceCount;	/* the voices played, picks the variant */
 
 void Sound_UpdateVoice(int voice);

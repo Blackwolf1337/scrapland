@@ -2,6 +2,7 @@
  * FXCountermeasures.cpp of the game: the effects of the hook laser and the countermeasures, see
  * include/scrap/fxcountermeasures.h.
  */
+#include "scrap/gvar.h"
 #include "scrap/crt.h"
 #include "scrap/fxcountermeasures.h"
 #include "scrap/fxmisc.h"
@@ -481,14 +482,22 @@ void cObjElementFXEMI_SetEntity(cObjElementFXEMI *self, cEntity *e) {
 	self->entity = e;
 }
 
-#define g_FXEMIFollowTime GAME_GLOBAL_IN(float, GVar_FXEMIFollowTime, 16)
-#define g_FXEMIRandRadius GAME_GLOBAL_IN(float, GVar_FXEMIRandRadius, 16)
-#define g_FXEMIStepTime GAME_GLOBAL_IN(float, GVar_FXEMIStepTime, 16)
-#define g_EMIThunder1Sound GAME_GLOBAL_IN(const char *, GVar_EMIThunder1Sound, 16)
-#define g_EMIThunder2Sound GAME_GLOBAL_IN(const char *, GVar_EMIThunder2Sound, 16)
-#define g_EMIThunderSoundAttIni GAME_GLOBAL_IN(float, GVar_EMIThunderSoundAttIni, 16)
-#define g_EMIThunderSoundAttEnd GAME_GLOBAL_IN(float, GVar_EMIThunderSoundAttEnd, 16)
-#define g_EMIThunderSoundVol GAME_GLOBAL_IN(float, GVar_EMIThunderSoundVol, 16)
+extern cGVar GVar_FXEMIFollowTime;
+#define g_FXEMIFollowTime (GVar_FXEMIFollowTime.value.f)
+extern cGVar GVar_FXEMIRandRadius;
+#define g_FXEMIRandRadius (GVar_FXEMIRandRadius.value.f)
+extern cGVar GVar_FXEMIStepTime;
+#define g_FXEMIStepTime (GVar_FXEMIStepTime.value.f)
+extern cGVar GVar_EMIThunder1Sound;
+#define g_EMIThunder1Sound (GVar_EMIThunder1Sound.value.s)
+extern cGVar GVar_EMIThunder2Sound;
+#define g_EMIThunder2Sound (GVar_EMIThunder2Sound.value.s)
+extern cGVar GVar_EMIThunderSoundAttIni;
+#define g_EMIThunderSoundAttIni (GVar_EMIThunderSoundAttIni.value.f)
+extern cGVar GVar_EMIThunderSoundAttEnd;
+#define g_EMIThunderSoundAttEnd (GVar_EMIThunderSoundAttEnd.value.f)
+extern cGVar GVar_EMIThunderSoundVol;
+#define g_EMIThunderSoundVol (GVar_EMIThunderSoundVol.value.f)
 #define FXEMI_RAMPS 0x430888		/* 3 color ramps of 9 colors: 0..1 for most, 1..2 for the last glow */
 #define FXEMI_ENTITIES 0x13		/* the entity lists the bolts hit */
 

@@ -10,6 +10,7 @@
 #ifndef SCRAP_CAMCONTROL_H
 #define SCRAP_CAMCONTROL_H
 
+#include "scrap/gvar.h"
 #include "scrap/objentity.h"
 #include "scrap/scrapcamera.h"
 #include "scrap/world.h"
@@ -135,17 +136,28 @@ static inline const cCamControlVtbl *CamCtl_Vtbl(cEntity *e) {
 }
 
 /* engine variables */
-#define g_FreeCameraCollide GAME_GLOBAL_IN(int, GVar_FreeCameraCollide, 16)	/* FreeCameraCollide */
-#define g_FullCameraTest GAME_GLOBAL_IN(int, GVar_FullCameraTest, 16)	/* FullCameraTest */
-#define g_WalkCameraCenter GAME_GLOBAL_IN(float, GVar_WalkCameraCenter, 16)	/* WalkCameraCenter */
-#define g_VehicleCamDist GAME_GLOBAL_IN(float, GVar_VehicleCamDist, 16)
-#define g_VehicleCamDist2 GAME_GLOBAL_IN(float, GVar_VehicleCamDist2, 16)	/* VehicleCamDist2, of player 1 */
-#define g_VehicleCamNear GAME_GLOBAL_IN(float, GVar_VehicleCamNear, 16)
-#define g_VehicleCamFar GAME_GLOBAL_IN(float, GVar_VehicleCamFar, 16)
-#define g_WalkCamNear GAME_GLOBAL_IN(float, GVar_WalkCamNear, 16)
-#define g_WalkCamFar GAME_GLOBAL_IN(float, GVar_WalkCamFar, 16)
-#define g_OutWalkCamNear GAME_GLOBAL_IN(float, GVar_OutWalkCamNear, 16)
-#define g_OutWalkCamFar GAME_GLOBAL_IN(float, GVar_OutWalkCamFar, 16)
+extern cGVar GVar_FreeCameraCollide;
+#define g_FreeCameraCollide (GVar_FreeCameraCollide.value.i)	/* FreeCameraCollide */
+extern cGVar GVar_FullCameraTest;
+#define g_FullCameraTest (GVar_FullCameraTest.value.i)	/* FullCameraTest */
+extern cGVar GVar_WalkCameraCenter;
+#define g_WalkCameraCenter (GVar_WalkCameraCenter.value.f)	/* WalkCameraCenter */
+extern cGVar GVar_VehicleCamDist;
+#define g_VehicleCamDist (GVar_VehicleCamDist.value.f)
+extern cGVar GVar_VehicleCamDist2;
+#define g_VehicleCamDist2 (GVar_VehicleCamDist2.value.f)	/* VehicleCamDist2, of player 1 */
+extern cGVar GVar_VehicleCamNear;
+#define g_VehicleCamNear (GVar_VehicleCamNear.value.f)
+extern cGVar GVar_VehicleCamFar;
+#define g_VehicleCamFar (GVar_VehicleCamFar.value.f)
+extern cGVar GVar_WalkCamNear;
+#define g_WalkCamNear (GVar_WalkCamNear.value.f)
+extern cGVar GVar_WalkCamFar;
+#define g_WalkCamFar (GVar_WalkCamFar.value.f)
+extern cGVar GVar_OutWalkCamNear;
+#define g_OutWalkCamNear (GVar_OutWalkCamNear.value.f)
+extern cGVar GVar_OutWalkCamFar;
+#define g_OutWalkCamFar (GVar_OutWalkCamFar.value.f)
 
 /* the degrees of the script variables */
 static inline float Cam_Deg2Rad(double v) {

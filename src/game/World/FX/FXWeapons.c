@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/fxvehicle.h"
 #include "scrap/fxweapons.h"
 #include "scrap/mathlib.h"
@@ -257,7 +258,8 @@ void *cObjElementFXTesla_Delete(void *self, uint32_t flags) {
 
 /* ---- cObjElementFXATPC ---- */
 
-#define g_ATPCShootSize GAME_GLOBAL_IN(float, GVar_ATPCShootSize, 16)
+extern cGVar GVar_ATPCShootSize;
+#define g_ATPCShootSize (GVar_ATPCShootSize.value.f)
 #define FXATPC_RAMP_CORE 0x4317a0	/* [-16..0], by the time */
 #define FXATPC_RAMP_GLOW 0x431758	/* [2] */
 extern uint32_t FXATPC_GLOW_RAMPS[18];	/* [2 * 9] */
@@ -1430,9 +1432,12 @@ void cObjElementFXSwarmMissile_Reset(cObjElementFXSwarmMissile *self, cDebris *d
 
 /* ---- cObjElementFXTesla ---- */
 
-#define g_TeslaRange GAME_GLOBAL_IN(float, GVar_TeslaRange, 16)
-#define g_FXTeslaStepTime GAME_GLOBAL_IN(float, GVar_FXTeslaStepTime, 16)
-#define g_FXTeslaRandRadius GAME_GLOBAL_IN(float, GVar_FXTeslaRandRadius, 16)
+extern cGVar GVar_TeslaRange;
+#define g_TeslaRange (GVar_TeslaRange.value.f)
+extern cGVar GVar_FXTeslaStepTime;
+#define g_FXTeslaStepTime (GVar_FXTeslaStepTime.value.f)
+extern cGVar GVar_FXTeslaRandRadius;
+#define g_FXTeslaRandRadius (GVar_FXTeslaRandRadius.value.f)
 #define FXTESLA_RAMP_SPARK 0x431930		/* [2] */
 
 /* the end moved back from the target towards the emitter by 0.2..0.5 of r along n */
@@ -1879,8 +1884,10 @@ void cObjElementFXTesla_SetEmitter(cObjElementFXTesla *self, cEntity *e) {
 
 /* ---- the Swarm emitters ---- */
 
-#define g_SwarmBeeExplosionFile GAME_GLOBAL_IN(const char *, GVar_SwarmBeeExplosionFile, 16)
-#define g_SwarmExplosionFile GAME_GLOBAL_IN(const char *, GVar_SwarmExplosionFile, 16)
+extern cGVar GVar_SwarmBeeExplosionFile;
+#define g_SwarmBeeExplosionFile (GVar_SwarmBeeExplosionFile.value.s)
+extern cGVar GVar_SwarmExplosionFile;
+#define g_SwarmExplosionFile (GVar_SwarmExplosionFile.value.s)
 #define FXSWARM_RAMP_BEE 0x431978
 #define FXSWARM_RAMP_FLASH 0x431a2c		/* [2] */
 extern uint32_t FXSWARM_FLASH_RAMPS[18];	/* [2 * 9] */

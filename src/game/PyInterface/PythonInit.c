@@ -1,6 +1,7 @@
 /*
  * Start and end of the interpreter, and modules from the script pack. Original source: PyInterface/PythonInit.cpp.
  */
+#include "scrap/gvar.h"
 #include "scrap/console.h"
 #include "scrap/pyfunction.h"
 #include "scrap/pymempool.h"
@@ -8,8 +9,10 @@
 
 #include <marshal.h>
 
-#define g_IsViewer GAME_GLOBAL_IN(int, GVar_Viewer, 16)		/* model viewer build: Viewer.py instead of Init.py */
-#define g_PythonExecute GAME_GLOBAL_IN(char *, GVar_PythonExecute, 16)	/* engine variable PythonExecute */
+extern cGVar GVar_Viewer;
+#define g_IsViewer (GVar_Viewer.value.i)		/* model viewer build: Viewer.py instead of Init.py */
+extern cGVar GVar_PythonExecute;
+#define g_PythonExecute (GVar_PythonExecute.value.s)	/* engine variable PythonExecute */
 #define g_PyStaticBuffer (&GAME_GLOBAL_IN(cStaticBuffer, cStaticBuffer_PyStaticBuffer, 0))
 
 /* PyRun_SimpleString of the exe, changed by the engine: CR dropped, the code is called "Scrap input" */

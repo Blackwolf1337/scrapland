@@ -10,6 +10,7 @@
 #ifndef SCRAP_SOUND_H
 #define SCRAP_SOUND_H
 
+#include "scrap/gvar.h"
 #include "scrap/game.h"
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
@@ -149,18 +150,30 @@ SD_SIZE(cSoundStrItem, 0x2c);
 extern CSoundSys *g_pSound;
 
 /* engine variables of the sound system */
-#define g_SoundAutoplayVolume GAME_GLOBAL_IN(float, GVar_SoundAutoplayVolume, 16)	/* dB, the volume below which nothing plays */
-#define g_SoundDistAttenuation GAME_GLOBAL_IN(float, GVar_SoundDistAttenuation, 16)
-#define g_SoundDopplerLevel GAME_GLOBAL_IN(float, GVar_SoundDopplerLevel, 16)
-#define g_SoundPanningFactor GAME_GLOBAL_IN(float, GVar_SoundPanningFactor, 16)
-#define g_SoundShowSetMode GAME_GLOBAL_IN(int, GVar_SoundShowSetMode, 16)		/* Compute3D and SetListener print their input */
-#define g_SoundMainVolume GAME_GLOBAL_IN(float, GVar_SoundMainVolume, 16)
-#define g_SoundInit GAME_GLOBAL_IN(int, GVar_SoundInit, 16)
-#define g_SoundSwapChannels GAME_GLOBAL_IN(int, GVar_SoundSwapChannels, 16)
-#define g_S_PitchScale GAME_GLOBAL_IN(float, GVar_S_PitchScale, 16)
-#define g_S_SkipPlay GAME_GLOBAL_IN(int, GVar_S_SkipPlay, 16)
-#define g_S_SkipUpdates GAME_GLOBAL_IN(int, GVar_S_SkipUpdates, 16)
-#define g_isDolby GAME_GLOBAL_IN(int, GVar_isDolby, 16)			/* no pan */
+extern cGVar GVar_SoundAutoplayVolume;
+#define g_SoundAutoplayVolume (GVar_SoundAutoplayVolume.value.f)	/* dB, the volume below which nothing plays */
+extern cGVar GVar_SoundDistAttenuation;
+#define g_SoundDistAttenuation (GVar_SoundDistAttenuation.value.f)
+extern cGVar GVar_SoundDopplerLevel;
+#define g_SoundDopplerLevel (GVar_SoundDopplerLevel.value.f)
+extern cGVar GVar_SoundPanningFactor;
+#define g_SoundPanningFactor (GVar_SoundPanningFactor.value.f)
+extern cGVar GVar_SoundShowSetMode;
+#define g_SoundShowSetMode (GVar_SoundShowSetMode.value.i)		/* Compute3D and SetListener print their input */
+extern cGVar GVar_SoundMainVolume;
+#define g_SoundMainVolume (GVar_SoundMainVolume.value.f)
+extern cGVar GVar_SoundInit;
+#define g_SoundInit (GVar_SoundInit.value.i)
+extern cGVar GVar_SoundSwapChannels;
+#define g_SoundSwapChannels (GVar_SoundSwapChannels.value.i)
+extern cGVar GVar_S_PitchScale;
+#define g_S_PitchScale (GVar_S_PitchScale.value.f)
+extern cGVar GVar_S_SkipPlay;
+#define g_S_SkipPlay (GVar_S_SkipPlay.value.i)
+extern cGVar GVar_S_SkipUpdates;
+#define g_S_SkipUpdates (GVar_S_SkipUpdates.value.i)
+extern cGVar GVar_isDolby;
+#define g_isDolby (GVar_isDolby.value.i)			/* no pan */
 extern float g_SndFreqScale;		/* S_PitchScale over the timer multiplier */
 
 /* volume 0..1 to the engine's volume value */

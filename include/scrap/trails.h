@@ -7,6 +7,7 @@
 #ifndef SCRAP_TRAILS_H
 #define SCRAP_TRAILS_H
 
+#include "scrap/gvar.h"
 #include "scrap/game.h"
 
 #define MAX_TRAILS_TEXTURES 17
@@ -81,7 +82,8 @@ SD_OFFSET(CTrail, orientVec, 0x40);
 
 /* the lists of the active trails and the shared buffers (IDirect3DVertexBuffer8, IDirect3DIndexBuffer8) */
 extern struct CMaterial * g_TrailsMat[17];	/* [MAX_TRAILS_TEXTURES] */
-#define g_TrailsOn GAME_GLOBAL_IN(int, GVar_R_Trails, 16)
+extern cGVar GVar_R_Trails;
+#define g_TrailsOn (GVar_R_Trails.value.i)
 extern void *g_TrailsVB;
 extern void *g_TrailsIB;
 extern int g_TrailsVertex;	/* vertices, primitives and indices in the buffers */

@@ -11,6 +11,7 @@
 #ifndef SCRAP_EMBEDDEDFXVEHICLE_H
 #define SCRAP_EMBEDDEDFXVEHICLE_H
 
+#include "scrap/gvar.h"
 #include "scrap/embeddedfxchar.h"
 #include "scrap/entity.h"
 #include "scrap/scrapparticles.h"
@@ -117,16 +118,26 @@ extern int g_SirenRefs;
 #define g_SirenParticles (GAME_ARRAY(CGameParticles, g_SirenParticles))
 
 /* engine variables */
-#define g_FXVehicleEmbeddedFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleEmbeddedFile, 16)	/* the string of the cString */
-#define g_FXTrafficEmbeddedFile GAME_GLOBAL_IN(const char *, GVar_FXTrafficEmbeddedFile, 16)
-#define g_FXVehicleSirenDistGrow GAME_GLOBAL_IN(float, GVar_FXVehicleSiren_DistGrow, 16)
-#define g_FXVehicleSirenSizeMin GAME_GLOBAL_IN(float, GVar_FXVehicleSiren_SizeMin, 16)
-#define g_FXVehicleSirenSizeMax GAME_GLOBAL_IN(float, GVar_FXVehicleSiren_SizeMax, 16)
-#define g_FXVehicleProbeLightDistGrow GAME_GLOBAL_IN(float, GVar_FXVehicleProbeLight_DistGrow, 16)
-#define g_FXVehicleProbeLightSizeMin GAME_GLOBAL_IN(float, GVar_FXVehicleProbeLight_SizeMin, 16)
-#define g_FXVehicleProbeLightSizeMax GAME_GLOBAL_IN(float, GVar_FXVehicleProbeLight_SizeMax, 16)
-#define g_MinDistReposAI GAME_GLOBAL_IN(float, GVar_MinDistReposAI, 16)
-#define g_MaxDistReposAI GAME_GLOBAL_IN(float, GVar_MaxDistReposAI, 16)
+extern cGVar GVar_FXVehicleEmbeddedFile;
+#define g_FXVehicleEmbeddedFile (GVar_FXVehicleEmbeddedFile.value.s)	/* the string of the cString */
+extern cGVar GVar_FXTrafficEmbeddedFile;
+#define g_FXTrafficEmbeddedFile (GVar_FXTrafficEmbeddedFile.value.s)
+extern cGVar GVar_FXVehicleSiren_DistGrow;
+#define g_FXVehicleSirenDistGrow (GVar_FXVehicleSiren_DistGrow.value.f)
+extern cGVar GVar_FXVehicleSiren_SizeMin;
+#define g_FXVehicleSirenSizeMin (GVar_FXVehicleSiren_SizeMin.value.f)
+extern cGVar GVar_FXVehicleSiren_SizeMax;
+#define g_FXVehicleSirenSizeMax (GVar_FXVehicleSiren_SizeMax.value.f)
+extern cGVar GVar_FXVehicleProbeLight_DistGrow;
+#define g_FXVehicleProbeLightDistGrow (GVar_FXVehicleProbeLight_DistGrow.value.f)
+extern cGVar GVar_FXVehicleProbeLight_SizeMin;
+#define g_FXVehicleProbeLightSizeMin (GVar_FXVehicleProbeLight_SizeMin.value.f)
+extern cGVar GVar_FXVehicleProbeLight_SizeMax;
+#define g_FXVehicleProbeLightSizeMax (GVar_FXVehicleProbeLight_SizeMax.value.f)
+extern cGVar GVar_MinDistReposAI;
+#define g_MinDistReposAI (GVar_MinDistReposAI.value.f)
+extern cGVar GVar_MaxDistReposAI;
+#define g_MaxDistReposAI (GVar_MaxDistReposAI.value.f)
 
 /* World/FX/FXVehicle.cpp: an element drawn with the followed vehicle */
 void FXVehicle_RenderAttached(void *element);

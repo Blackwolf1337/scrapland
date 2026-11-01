@@ -9,6 +9,7 @@
 #ifndef SCRAP_COLLISIONGRID_H
 #define SCRAP_COLLISIONGRID_H
 
+#include "scrap/gvar.h"
 #include "scrap/entity.h"
 #include "scrap/pyfunction.h"
 
@@ -42,9 +43,12 @@ SD_SIZE(cCollisionGrid, 0x9c);
 #define Entity_GridNode(e) (&((cEntity *)(e))->gridNode)	/* target the cell, data the entity */
 
 /* the engine variables (Gvars) */
-#define g_GridUseTopLimit GAME_GLOBAL_IN(int, GVar_GridUseTopLimit, 16)
-#define g_TopLimit GAME_GLOBAL_IN(float, GVar_TopLimit, 16)
-#define g_ShowDummy GAME_GLOBAL_IN(const char *, GVar_ShowDummy, 16)	/* the dummies drawn (a wildcard pattern), "" for none */
+extern cGVar GVar_GridUseTopLimit;
+#define g_GridUseTopLimit (GVar_GridUseTopLimit.value.i)
+extern cGVar GVar_TopLimit;
+#define g_TopLimit (GVar_TopLimit.value.f)
+extern cGVar GVar_ShowDummy;
+#define g_ShowDummy (GVar_ShowDummy.value.s)	/* the dummies drawn (a wildcard pattern), "" for none */
 
 /* the destructor of a cell (Nto1Links.h, rva) for the new[] of the cells */
 #define NTO1NODE_DTOR 0x0eeb90

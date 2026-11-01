@@ -10,6 +10,7 @@
 #ifndef SCRAP_NET_H
 #define SCRAP_NET_H
 
+#include "scrap/gvar.h"
 #include "scrap/scrap.h"
 
 #define NET_GAME_ID 0xceba
@@ -223,38 +224,52 @@ extern int g_NetClientCtlSize;
 /* GameServer */
 extern char g_NetServerHost[256];	/* [0x100] */
 extern char g_NetServerIP[256];	/* [0x100] */
-#define g_NetBrowserCode GAME_GLOBAL_IN(char *, GVar_BrowserCode, 16)	/* BrowserCode (cString) */
+extern cGVar GVar_BrowserCode;
+#define g_NetBrowserCode (GVar_BrowserCode.value.s)	/* BrowserCode (cString) */
 extern uint16_t g_NetServerPort;	/* 0 without a server */
 extern void *g_NetServerData;
 extern int g_NetServerDataSize;
 extern void *g_NetServerCtl;
 extern int g_NetServerCtlSize;
 extern float g_NetHeartbeat;	/* GetTime of the last heartbeat to the master */
-#define g_LogNetData GAME_GLOBAL_IN(int, GVar_LogNetData, 16)		/* LogNetData */
+extern cGVar GVar_LogNetData;
+#define g_LogNetData (GVar_LogNetData.value.i)		/* LogNetData */
 extern byte g_NetClientPings[256];	/* [0x100] the pings the server sends, log2 * 24 */
 /* the engine variables (gvars) of Net/: values and their flags byte (bit 0: scripts may not write) */
-#define g_NetMaxResourcesSend GAME_GLOBAL_IN(int, GVar_NetMaxResourcesSend, 16)
-#define g_NetTimeOut GAME_GLOBAL_IN(int, GVar_NetTimeOut, 16)		/* NetTimeOut, < 0 never */
-#define g_NetMaxPlayersInitSend GAME_GLOBAL_IN(int, GVar_NetMaxPlayersInitSend, 16)
-#define g_ClientPPS GAME_GLOBAL_IN(int, GVar_ClientPPS, 16)
-#define g_HeartbeatTime GAME_GLOBAL_IN(float, GVar_HeartbeatTime, 16)
-#define g_ServerMinSendDelay GAME_GLOBAL_IN(int, GVar_ServerMinSendDelay, 16)
+extern cGVar GVar_NetMaxResourcesSend;
+#define g_NetMaxResourcesSend (GVar_NetMaxResourcesSend.value.i)
+extern cGVar GVar_NetTimeOut;
+#define g_NetTimeOut (GVar_NetTimeOut.value.i)		/* NetTimeOut, < 0 never */
+extern cGVar GVar_NetMaxPlayersInitSend;
+#define g_NetMaxPlayersInitSend (GVar_NetMaxPlayersInitSend.value.i)
+extern cGVar GVar_ClientPPS;
+#define g_ClientPPS (GVar_ClientPPS.value.i)
+extern cGVar GVar_HeartbeatTime;
+#define g_HeartbeatTime (GVar_HeartbeatTime.value.f)
+extern cGVar GVar_ServerMinSendDelay;
+#define g_ServerMinSendDelay (GVar_ServerMinSendDelay.value.i)
 #define g_ClientConnectionStatus (GAME_ARRAY_IN(cString, GVar_ClientConectionStatus, 16))	/* ClientConectionStatus */
-#define g_UseServerPassword GAME_GLOBAL_IN(int, GVar_UseServerPassword, 16)
+extern cGVar GVar_UseServerPassword;
+#define g_UseServerPassword (GVar_UseServerPassword.value.i)
 #define g_MasterServerAddress GAME_GLOBAL_IN(char *, g_GVarMasterServerAddress, 16)
 #define g_MasterServerPortFlags GAME_GLOBAL_IN(byte, g_GVarMasterServerPort, 12)
 #define g_MasterServerPort GAME_GLOBAL_IN(int, g_GVarMasterServerPort, 16)
-#define g_ClientPassword GAME_GLOBAL_IN(char *, GVar_ClientPassword, 16)
-#define g_ClientRemotePassword GAME_GLOBAL_IN(char *, GVar_ClientRemotePassword, 16)
+extern cGVar GVar_ClientPassword;
+#define g_ClientPassword (GVar_ClientPassword.value.s)
+extern cGVar GVar_ClientRemotePassword;
+#define g_ClientRemotePassword (GVar_ClientRemotePassword.value.s)
 #define g_ServerRemotePassword (GAME_ARRAY_IN(cString, GVar_ServerRemotePassword, 16))
-#define g_ForceServerVehicle GAME_GLOBAL_IN(int, GVar_ForceServerVehicle, 16)
+extern cGVar GVar_ForceServerVehicle;
+#define g_ForceServerVehicle (GVar_ForceServerVehicle.value.i)
 #define g_ServerPassword (GAME_ARRAY_IN(cString, GVar_ServerPassword, 16))
-#define g_ServerName GAME_GLOBAL_IN(char *, GVar_ServerName, 16)
+extern cGVar GVar_ServerName;
+#define g_ServerName (GVar_ServerName.value.s)
 #define g_GVarServerType (GAME_ARRAY(cGVar, g_GVarServerType))
 #define g_ServerType GAME_GLOBAL_IN(char *, g_GVarServerType, 16)	/* ServerType (cString) */
 #define g_LastMasterCommandFlags GAME_GLOBAL_IN(byte, GVar_LastMasterCommandSent, 12)
 #define g_LastMasterCommand (GAME_ARRAY_IN(cString, GVar_LastMasterCommandSent, 16))	/* LastMasterCommandSent */
-#define g_ServerDataRateLimit GAME_GLOBAL_IN(int, GVar_ServerDataRateLimit, 16)
+extern cGVar GVar_ServerDataRateLimit;
+#define g_ServerDataRateLimit (GVar_ServerDataRateLimit.value.i)
 /* the script callbacks (cPy_Function in the gvar) and the flags of their gvars */
 #define g_OnClientJoinFlags GAME_GLOBAL_IN(byte, GVar_OnClientJoin, 12)
 #define g_OnClientJoin (GAME_ARRAY_IN(cPy_Function, GVar_OnClientJoin, 16))
@@ -280,16 +295,26 @@ extern byte g_NetClientPings[256];	/* [0x100] the pings the server sends, log2 *
 #define g_ClientCreateFlags GAME_GLOBAL_IN(byte, GVar_ClientCreate, 12)
 #define g_ClientCreate (GAME_ARRAY_IN(cPy_Function, GVar_ClientCreate, 16))
 /* the player config the client sends in its hello (gvar values) */
-#define g_PlayerNameStr GAME_GLOBAL_IN(char *, GVar_PlayerName, 16)
-#define g_PlayerModel GAME_GLOBAL_IN(char *, GVar_PlayerModel, 16)
-#define g_PlayerMaxLife GAME_GLOBAL_IN(int, GVar_PlayerMaxLife, 16)
-#define g_PilotModel GAME_GLOBAL_IN(char *, GVar_PilotModel, 16)
-#define g_Motor0Model GAME_GLOBAL_IN(char *, GVar_Motor0Model, 16)
-#define g_Motor1Model GAME_GLOBAL_IN(char *, GVar_Motor1Model, 16)
-#define g_Motor2Model GAME_GLOBAL_IN(char *, GVar_Motor2Model, 16)
-#define g_Motor3Model GAME_GLOBAL_IN(char *, GVar_Motor3Model, 16)
-#define g_WeaponBayList GAME_GLOBAL_IN(char *, GVar_WeaponBayList, 16)
-#define g_PlayerTeamID GAME_GLOBAL_IN(int, GVar_PlayerTeamID, 16)
+extern cGVar GVar_PlayerName;
+#define g_PlayerNameStr (GVar_PlayerName.value.s)
+extern cGVar GVar_PlayerModel;
+#define g_PlayerModel (GVar_PlayerModel.value.s)
+extern cGVar GVar_PlayerMaxLife;
+#define g_PlayerMaxLife (GVar_PlayerMaxLife.value.i)
+extern cGVar GVar_PilotModel;
+#define g_PilotModel (GVar_PilotModel.value.s)
+extern cGVar GVar_Motor0Model;
+#define g_Motor0Model (GVar_Motor0Model.value.s)
+extern cGVar GVar_Motor1Model;
+#define g_Motor1Model (GVar_Motor1Model.value.s)
+extern cGVar GVar_Motor2Model;
+#define g_Motor2Model (GVar_Motor2Model.value.s)
+extern cGVar GVar_Motor3Model;
+#define g_Motor3Model (GVar_Motor3Model.value.s)
+extern cGVar GVar_WeaponBayList;
+#define g_WeaponBayList (GVar_WeaponBayList.value.s)
+extern cGVar GVar_PlayerTeamID;
+#define g_PlayerTeamID (GVar_PlayerTeamID.value.i)
 
 /* msgman.cpp */
 extern uint32_t g_NetWaitTime;	/* 5000: no answer that long, NETCLIENT_WAITING */
@@ -352,7 +377,8 @@ void *__stdcall Wsock_gethostbyname(const char *name);
 int __stdcall Wsock_WSAStartup(uint16_t version, void *data);
 int __stdcall Wsock_WSACleanup(void);
 
-#define g_Fraglimit GAME_GLOBAL_IN(int, GVar_Fraglimit, 16)
+extern cGVar GVar_Fraglimit;
+#define g_Fraglimit (GVar_Fraglimit.value.i)
 
 /* GameClient (src/game/Net/GameClient.c) */
 byte Net_CloseClient(void);

@@ -3,6 +3,7 @@
  * HUD with the draw handler of each character action (the table at rva 0x428cb8) and the target search of the gear.
  * See include/scrap/scoreritems.h.
  */
+#include "scrap/gvar.h"
 #include "scrap/chartype.h"
 #include "scrap/scoreritems.h"
 #include "scrap/scrapcollision.h"
@@ -181,10 +182,13 @@ extern float g_GearAimCenter[2];	/* [2] where the cross starts, 320 240 */
 extern float g_GearAimOff[2];	/* [2] Pos - Center */
 extern byte g_GearAimLocked;
 extern float g_GearAimLockTime;
-#define g_GearTargetCrossBlinkTime GAME_GLOBAL_IN(float, GVar_GearTargetCrossBlinkTime, 20)
-#define g_GearAimBlink GAME_GLOBAL_IN(float, GVar_GearTargetCrossBlinkTime, 16)
-#define g_GearTargetSphereRadius GAME_GLOBAL_IN(float, GVar_GearTargetSphereRadius, 16)
-#define g_GearStdFar GAME_GLOBAL_IN(float, GVar_GearStdFar, 16)
+extern cGVar GVar_GearTargetCrossBlinkTime;
+#define g_GearTargetCrossBlinkTime (GVar_GearTargetCrossBlinkTime.def.f)
+#define g_GearAimBlink (GVar_GearTargetCrossBlinkTime.value.f)
+extern cGVar GVar_GearTargetSphereRadius;
+#define g_GearTargetSphereRadius (GVar_GearTargetSphereRadius.value.f)
+extern cGVar GVar_GearStdFar;
+#define g_GearStdFar (GVar_GearStdFar.value.f)
 #define GEARAIM_SPHEREFUNC 0x17a380
 #define GEARAIM_LOCK_TIME 0.3f
 #define GEARAIM_SCREEN_X 320.0f

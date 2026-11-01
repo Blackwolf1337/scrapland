@@ -5,6 +5,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/scorerhud.h"
 #include "scrap/vehicleentity.h"
 
@@ -185,7 +186,8 @@ static int Menu_FadeStep(cScorer *sc) {
 
 extern float g_MetroRing;	/* 0..1, the phase of the rings */
 extern float g_FadeOutFinalAcc;
-#define g_FadeOutFinalTime GAME_GLOBAL_IN(float, GVar_FadeOutFinalTime, 16)	/* the time of ScorerSpriteFadeOutFinal */
+extern cGVar GVar_FadeOutFinalTime;
+#define g_FadeOutFinalTime (GVar_FadeOutFinalTime.value.f)	/* the time of ScorerSpriteFadeOutFinal */
 
 /* the four rings name0..name3 (the last letter of the name replaced) growing and fading around the player mark */
 void Scorer_MetroUsrHere(cAbstractFile *params) {

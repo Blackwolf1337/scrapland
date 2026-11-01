@@ -7,6 +7,7 @@
 #ifndef SCRAP_GROUNDPORTAL_H
 #define SCRAP_GROUNDPORTAL_H
 
+#include "scrap/gvar.h"
 #include "scrap/node3d.h"
 
 #define MAX_PORTALS 32
@@ -41,12 +42,18 @@ typedef struct SectorVis {
 
 extern CZone * g_Zones[132];
 #define g_NumZones GAME_GLOBAL_IN(int, g_Zones, 512)
-#define g_SectorCache GAME_GLOBAL_IN(int, GVar_R_PortalPos, 16)	/* the cached sector is used when the position is the same */
-#define g_PortalsOn GAME_GLOBAL_IN(int, GVar_R_UsePortals, 16)	/* 0: everything is seen */
-#define g_PortalTest GAME_GLOBAL_IN(int, GVar_R_PortalExt, 16)	/* the screen rectangle test; 2: drawn */
-#define g_PortalFront GAME_GLOBAL_IN(int, GVar_R_PortalNorm, 16)	/* portals the camera is in front of beyond the near distance are skipped */
-#define g_PortalExterior GAME_GLOBAL_IN(int, GVar_R_PortalEnd, 16)	/* exterior sectors do not look into interior ones */
-#define g_PortalNear GAME_GLOBAL_IN(float, GVar_R_PortalDist, 16)	/* the near distance of the portals, times zNear / 256 * 128 */
+extern cGVar GVar_R_PortalPos;
+#define g_SectorCache (GVar_R_PortalPos.value.i)	/* the cached sector is used when the position is the same */
+extern cGVar GVar_R_UsePortals;
+#define g_PortalsOn (GVar_R_UsePortals.value.i)	/* 0: everything is seen */
+extern cGVar GVar_R_PortalExt;
+#define g_PortalTest (GVar_R_PortalExt.value.i)	/* the screen rectangle test; 2: drawn */
+extern cGVar GVar_R_PortalNorm;
+#define g_PortalFront (GVar_R_PortalNorm.value.i)	/* portals the camera is in front of beyond the near distance are skipped */
+extern cGVar GVar_R_PortalEnd;
+#define g_PortalExterior (GVar_R_PortalEnd.value.i)	/* exterior sectors do not look into interior ones */
+extern cGVar GVar_R_PortalDist;
+#define g_PortalNear (GVar_R_PortalDist.value.f)	/* the near distance of the portals, times zNear / 256 * 128 */
 #define g_PortalUnion GAME_GLOBAL_IN(int, g_Zones, 516)	/* the rectangle of all seen sectors with sky is kept */
 
 /* the sectors seen this frame (zones a pintar) and their screen rectangles */

@@ -8,23 +8,34 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/chartype.h"
 #include "scrap/objentity.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
 
 extern cEntityListData *g_DesktopsList;	/* the list of the desktops, once found */
-#define g_DesktopsListName GAME_GLOBAL_IN(char *, GVar_DesktopsFunctionaryListName, 16)	/* DesktopsFunctionaryListName */
-#define g_FunctionaryAssignWorkDistance GAME_GLOBAL_IN(float, GVar_FunctionaryAssignWorkDistance, 16)
+extern cGVar GVar_DesktopsFunctionaryListName;
+#define g_DesktopsListName (GVar_DesktopsFunctionaryListName.value.s)	/* DesktopsFunctionaryListName */
+extern cGVar GVar_FunctionaryAssignWorkDistance;
+#define g_FunctionaryAssignWorkDistance (GVar_FunctionaryAssignWorkDistance.value.f)
 #define g_OnFunctionaryStartsWorking (GAME_ARRAY_IN(cPy_Function, GVar_OnFunctionaryStartsWorking, 16))
-#define g_FunctionarySpecialActionStatesTransitionTime GAME_GLOBAL_IN(float, GVar_FunctionarySpecialActionStatesTransitionTime, 16)
-#define g_FunctionaryMinTimeToSitDown GAME_GLOBAL_IN(float, GVar_FunctionaryMinTimeToSitDown, 16)
-#define g_FunctionaryMaxTimeToSitDown GAME_GLOBAL_IN(float, GVar_FunctionaryMaxTimeToSitDown, 16)
-#define g_FunctionaryMinTimeToStopWorking GAME_GLOBAL_IN(float, GVar_FunctionaryMintimeToStopWorking, 16)
-#define g_FunctionaryMaxTimeToStopWorking GAME_GLOBAL_IN(float, GVar_FunctionaryMaxtimeToStopWorking, 16)
-#define g_FunctionaryEffectFastSound GAME_GLOBAL_IN(char *, GVar_FunctionaryEffectFastSound, 16)
-#define g_FunctionaryEffectFastSoundVol GAME_GLOBAL_IN(float, GVar_FunctionaryEffectFastSoundVol, 16)
-#define g_CharProcessReduction GAME_GLOBAL_IN(float, GVar_CharProcessReduction, 16)
+extern cGVar GVar_FunctionarySpecialActionStatesTransitionTime;
+#define g_FunctionarySpecialActionStatesTransitionTime (GVar_FunctionarySpecialActionStatesTransitionTime.value.f)
+extern cGVar GVar_FunctionaryMinTimeToSitDown;
+#define g_FunctionaryMinTimeToSitDown (GVar_FunctionaryMinTimeToSitDown.value.f)
+extern cGVar GVar_FunctionaryMaxTimeToSitDown;
+#define g_FunctionaryMaxTimeToSitDown (GVar_FunctionaryMaxTimeToSitDown.value.f)
+extern cGVar GVar_FunctionaryMintimeToStopWorking;
+#define g_FunctionaryMinTimeToStopWorking (GVar_FunctionaryMintimeToStopWorking.value.f)
+extern cGVar GVar_FunctionaryMaxtimeToStopWorking;
+#define g_FunctionaryMaxTimeToStopWorking (GVar_FunctionaryMaxtimeToStopWorking.value.f)
+extern cGVar GVar_FunctionaryEffectFastSound;
+#define g_FunctionaryEffectFastSound (GVar_FunctionaryEffectFastSound.value.s)
+extern cGVar GVar_FunctionaryEffectFastSoundVol;
+#define g_FunctionaryEffectFastSoundVol (GVar_FunctionaryEffectFastSoundVol.value.f)
+extern cGVar GVar_CharProcessReduction;
+#define g_CharProcessReduction (GVar_CharProcessReduction.value.f)
 
 #define Func_Vtbl(self) Functionary_Vtbl(self)
 #define Func_Parent(self) ((self)->base.base.parent)

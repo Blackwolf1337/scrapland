@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/camcontrol.h"
 #include "scrap/controls.h"
 #include "scrap/input.h"
@@ -143,14 +144,22 @@ void Controls_RumbleB(cVehicleControls *self, float strength, float time) {
 /* ---- the items a ship takes (native functions "TakeEner", "TakeLife", "TakeMiss", "TakePart") ---- */
 
 /* the engine variables of the items: the ammo or life they add and the time until they come back */
-#define g_ItemEnerAdds GAME_GLOBAL_IN(int, GVar_ItemEnerAdds, 16)
-#define g_ItemEnerRespawnTime GAME_GLOBAL_IN(float, GVar_ItemEnerRespawnTime, 16)
-#define g_ItemLifeAdds GAME_GLOBAL_IN(int, GVar_ItemLifeAdds, 16)
-#define g_ItemLifeRespawnTime GAME_GLOBAL_IN(float, GVar_ItemLifeRespawnTime, 16)
-#define g_ItemMissAdds GAME_GLOBAL_IN(int, GVar_ItemMissAdds, 16)
-#define g_ItemMissRespawnTime GAME_GLOBAL_IN(float, GVar_ItemMissRespawnTime, 16)
-#define g_ItemPartAdds GAME_GLOBAL_IN(int, GVar_ItemPartAdds, 16)
-#define g_ItemPartRespawnTime GAME_GLOBAL_IN(float, GVar_ItemPartRespawnTime, 16)
+extern cGVar GVar_ItemEnerAdds;
+#define g_ItemEnerAdds (GVar_ItemEnerAdds.value.i)
+extern cGVar GVar_ItemEnerRespawnTime;
+#define g_ItemEnerRespawnTime (GVar_ItemEnerRespawnTime.value.f)
+extern cGVar GVar_ItemLifeAdds;
+#define g_ItemLifeAdds (GVar_ItemLifeAdds.value.i)
+extern cGVar GVar_ItemLifeRespawnTime;
+#define g_ItemLifeRespawnTime (GVar_ItemLifeRespawnTime.value.f)
+extern cGVar GVar_ItemMissAdds;
+#define g_ItemMissAdds (GVar_ItemMissAdds.value.i)
+extern cGVar GVar_ItemMissRespawnTime;
+#define g_ItemMissRespawnTime (GVar_ItemMissRespawnTime.value.f)
+extern cGVar GVar_ItemPartAdds;
+#define g_ItemPartAdds (GVar_ItemPartAdds.value.i)
+extern cGVar GVar_ItemPartRespawnTime;
+#define g_ItemPartRespawnTime (GVar_ItemPartRespawnTime.value.f)
 
 /* the arguments: the item and the ship that took it; the ship or NULL when it is no "Car" */
 static cEntity *Ctl_TakeArgs(cAbstractFile *f, char *item, char *name) {
@@ -478,13 +487,20 @@ byte cVehicleO648_IsStale(void *o) {
 
 /* ---- the controls of a player ship from the input actions ---- */
 
-#define g_VehicleBlockSwitchAdvance GAME_GLOBAL_IN(int, GVar_VehicleBlockSwitchAdvance, 16)
-#define g_VehicleCenterPadBounce GAME_GLOBAL_IN(float, GVar_VehicleCenterPadBounce, 16)
-#define g_VehicleAttackModeMinDist GAME_GLOBAL_IN(float, GVar_VehicleAttackModeMinDist, 16)
-#define g_VehicleAttackModeMaxDist GAME_GLOBAL_IN(float, GVar_VehicleAttackModeMaxDist, 16)
-#define g_TimeWSwitchNo GAME_GLOBAL_IN(float, GVar_TimeWSwitchNo, 16)
-#define g_XtrTimeWSwitchNo GAME_GLOBAL_IN(float, GVar_XtrTimeWSwitchNo, 16)
-#define g_AttackerMarkTime GAME_GLOBAL_IN(float, GVar_AttackerMarkTime, 16)
+extern cGVar GVar_VehicleBlockSwitchAdvance;
+#define g_VehicleBlockSwitchAdvance (GVar_VehicleBlockSwitchAdvance.value.i)
+extern cGVar GVar_VehicleCenterPadBounce;
+#define g_VehicleCenterPadBounce (GVar_VehicleCenterPadBounce.value.f)
+extern cGVar GVar_VehicleAttackModeMinDist;
+#define g_VehicleAttackModeMinDist (GVar_VehicleAttackModeMinDist.value.f)
+extern cGVar GVar_VehicleAttackModeMaxDist;
+#define g_VehicleAttackModeMaxDist (GVar_VehicleAttackModeMaxDist.value.f)
+extern cGVar GVar_TimeWSwitchNo;
+#define g_TimeWSwitchNo (GVar_TimeWSwitchNo.value.f)
+extern cGVar GVar_XtrTimeWSwitchNo;
+#define g_XtrTimeWSwitchNo (GVar_XtrTimeWSwitchNo.value.f)
+extern cGVar GVar_AttackerMarkTime;
+#define g_AttackerMarkTime (GVar_AttackerMarkTime.value.f)
 
 /* the actions of the vehicle action set */
 #define CTL_LOOK_UP 2

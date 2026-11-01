@@ -6,6 +6,7 @@
 #ifndef SCRAP_WORLD_H
 #define SCRAP_WORLD_H
 
+#include "scrap/gvar.h"
 #include "scrap/collisiongrid.h"
 #include "scrap/entity.h"
 #include "scrap/pyfunction.h"
@@ -126,28 +127,44 @@ void cPy_Function_Clear(cPy_Function *self);
 void Str_TrimBlanks(char *s);
 
 /* engine variables (Gvars) */
-#define g_MaxRadObj GAME_GLOBAL_IN(float, GVar_Max_Rad_Obj, 16)		/* Max_Rad_Obj, the margin of the grid queries */
-#define g_GridScaleX GAME_GLOBAL_IN(float, GVar_GridScaleX, 16)
-#define g_GridScaleY GAME_GLOBAL_IN(float, GVar_GridScaleY, 16)
-#define g_GridScaleZ GAME_GLOBAL_IN(float, GVar_GridScaleZ, 16)
-#define g_SplitScreenGame GAME_GLOBAL_IN(int, GVar_SplitScreen, 16)		/* SplitScreen */
-#define g_GameSkill GAME_GLOBAL_IN(int, GVar_GameSkill, 16)
-#define g_GameSkillDef GAME_GLOBAL_IN(int, GVar_GameSkill, 20)
-#define g_VehicleEditingMode GAME_GLOBAL_IN(int, GVar_VehicleEditingMode, 16)
-#define g_MaxChasingShips GAME_GLOBAL_IN(int, GVar_MaxChasingShips, 16)
-#define g_MaxChasingShipsDef GAME_GLOBAL_IN(int, GVar_MaxChasingShips, 20)
-#define g_PitchScale GAME_GLOBAL_IN(float, GVar_S_PitchScale, 16)		/* S_PitchScale */
-#define g_FreeSpaceMagnet GAME_GLOBAL_IN(int, GVar_FreeSpaceMagnet, 16)
-#define g_FreeSpaceMagnetDef GAME_GLOBAL_IN(int, GVar_FreeSpaceMagnet, 20)
-#define g_FXVehicleFloatingFactor GAME_GLOBAL_IN(float, GVar_FXVehicleFloatingFactor, 16)
-#define g_FXVehicleFloatingFactorDef GAME_GLOBAL_IN(float, GVar_FXVehicleFloatingFactor, 20)
-#define g_SceneMotionBlurValue GAME_GLOBAL_IN(float, GVar_R_SceneMotionBlurValue, 16)	/* R_SceneMotionBlurValue */
-#define g_NotShootAI GAME_GLOBAL_IN(int, GVar_NotShootAI, 16)
-#define g_NotShootAIDef GAME_GLOBAL_IN(int, GVar_NotShootAI, 20)
-#define g_RemainTalkTime GAME_GLOBAL_IN(float, GVar_RemainTalkTime, 16)
+extern cGVar GVar_Max_Rad_Obj;
+#define g_MaxRadObj (GVar_Max_Rad_Obj.value.f)		/* Max_Rad_Obj, the margin of the grid queries */
+extern cGVar GVar_GridScaleX;
+#define g_GridScaleX (GVar_GridScaleX.value.f)
+extern cGVar GVar_GridScaleY;
+#define g_GridScaleY (GVar_GridScaleY.value.f)
+extern cGVar GVar_GridScaleZ;
+#define g_GridScaleZ (GVar_GridScaleZ.value.f)
+extern cGVar GVar_SplitScreen;
+#define g_SplitScreenGame (GVar_SplitScreen.value.i)		/* SplitScreen */
+extern cGVar GVar_GameSkill;
+#define g_GameSkill (GVar_GameSkill.value.i)
+#define g_GameSkillDef (GVar_GameSkill.def.i)
+extern cGVar GVar_VehicleEditingMode;
+#define g_VehicleEditingMode (GVar_VehicleEditingMode.value.i)
+extern cGVar GVar_MaxChasingShips;
+#define g_MaxChasingShips (GVar_MaxChasingShips.value.i)
+#define g_MaxChasingShipsDef (GVar_MaxChasingShips.def.i)
+extern cGVar GVar_S_PitchScale;
+#define g_PitchScale (GVar_S_PitchScale.value.f)		/* S_PitchScale */
+extern cGVar GVar_FreeSpaceMagnet;
+#define g_FreeSpaceMagnet (GVar_FreeSpaceMagnet.value.i)
+#define g_FreeSpaceMagnetDef (GVar_FreeSpaceMagnet.def.i)
+extern cGVar GVar_FXVehicleFloatingFactor;
+#define g_FXVehicleFloatingFactor (GVar_FXVehicleFloatingFactor.value.f)
+#define g_FXVehicleFloatingFactorDef (GVar_FXVehicleFloatingFactor.def.f)
+extern cGVar GVar_R_SceneMotionBlurValue;
+#define g_SceneMotionBlurValue (GVar_R_SceneMotionBlurValue.value.f)	/* R_SceneMotionBlurValue */
+extern cGVar GVar_NotShootAI;
+#define g_NotShootAI (GVar_NotShootAI.value.i)
+#define g_NotShootAIDef (GVar_NotShootAI.def.i)
+extern cGVar GVar_RemainTalkTime;
+#define g_RemainTalkTime (GVar_RemainTalkTime.value.f)
 #define g_PriorityWeapon (GAME_ARRAY_IN(cString, GVar_PriorityWeapon, 16))	/* PriorityWeapon, its default at +4 */
-#define g_SplitScreenCamera GAME_GLOBAL_IN(int, GVar_R_SplitScreenCamera, 16)		/* R_SplitScreenCamera */
-#define g_SplitScreenUpdate GAME_GLOBAL_IN(int, GVar_R_SplitScreenUpdate, 16)		/* R_SplitScreenUpdate */
+extern cGVar GVar_R_SplitScreenCamera;
+#define g_SplitScreenCamera (GVar_R_SplitScreenCamera.value.i)		/* R_SplitScreenCamera */
+extern cGVar GVar_R_SplitScreenUpdate;
+#define g_SplitScreenUpdate (GVar_R_SplitScreenUpdate.value.i)		/* R_SplitScreenUpdate */
 extern char g_UniqueName[128];		/* 0x80 bytes, the result of cWorld_UniqueName */
 /* script callbacks (cPy_Function of the GVAR_SCRIPT_FUNCTION variables) */
 #define g_OnSleep (GAME_ARRAY_IN(cPy_Function, GVar_OnSleep, 16))

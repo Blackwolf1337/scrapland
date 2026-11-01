@@ -7,6 +7,7 @@
 #ifndef SCRAP_PARTICLESYSTEM_H
 #define SCRAP_PARTICLESYSTEM_H
 
+#include "scrap/gvar.h"
 #include "scrap/cstring.h"
 #include "scrap/scene.h"
 #include "scrap/meshd3d.h"
@@ -166,15 +167,23 @@ SD_OFFSET(CParticleSystem, params, 0x0c);
 SD_OFFSET(CParticleSystem, Particles, 0x11c);
 
 /* the switches of the particle systems */
-#define g_ParticleSystemOn GAME_GLOBAL_IN(int, GVar_R_Particles, 16)
-#define g_ParticleSystemFlags GAME_GLOBAL_IN(int, GVar_R_ParticleFlags, 16)	/* -1, else the flags of all systems */
-#define g_ParticleSystemDebug GAME_GLOBAL_IN(int, GVar_R_ParticleSector, 16)	/* 1: visibility, 2: drawn, 3: with the name */
-#define g_ParticleSystemCount GAME_GLOBAL_IN(int, GVar_R_ParticlesCount, 16)	/* the particles of all systems */
+extern cGVar GVar_R_Particles;
+#define g_ParticleSystemOn (GVar_R_Particles.value.i)
+extern cGVar GVar_R_ParticleFlags;
+#define g_ParticleSystemFlags (GVar_R_ParticleFlags.value.i)	/* -1, else the flags of all systems */
+extern cGVar GVar_R_ParticleSector;
+#define g_ParticleSystemDebug (GVar_R_ParticleSector.value.i)	/* 1: visibility, 2: drawn, 3: with the name */
+extern cGVar GVar_R_ParticlesCount;
+#define g_ParticleSystemCount (GVar_R_ParticlesCount.value.i)	/* the particles of all systems */
 #define g_ParticleSystemIni (GAME_ARRAY(CIniFile, g_ParticleSystemIni))	/* the particle ini */
-#define g_ParticleSystemPosScale GAME_GLOBAL_IN(float, GVar_R_ParticleVelScale, 16)
-#define g_ParticleSystemSizeScale GAME_GLOBAL_IN(float, GVar_R_ParticleScale, 16)
-#define g_ParticleSystemLifeScale GAME_GLOBAL_IN(float, GVar_R_ParticleLife, 16)
-#define g_ParticleSystemBirthAdd GAME_GLOBAL_IN(int, GVar_R_ParticleRate, 16)
+extern cGVar GVar_R_ParticleVelScale;
+#define g_ParticleSystemPosScale (GVar_R_ParticleVelScale.value.f)
+extern cGVar GVar_R_ParticleScale;
+#define g_ParticleSystemSizeScale (GVar_R_ParticleScale.value.f)
+extern cGVar GVar_R_ParticleLife;
+#define g_ParticleSystemLifeScale (GVar_R_ParticleLife.value.f)
+extern cGVar GVar_R_ParticleRate;
+#define g_ParticleSystemBirthAdd (GVar_R_ParticleRate.value.i)
 
 CParticle *CParticleActive_ctor(CParticle *self);
 CParticleStatic *CParticleStatic_ctor(CParticleStatic *self);

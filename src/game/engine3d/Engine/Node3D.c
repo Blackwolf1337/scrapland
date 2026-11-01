@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/camera.h"
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
@@ -25,24 +26,36 @@
 #define A6000080_ALPHA 0x28
 #define PARTICLESYSTEM_VISIBLE 0x140
 
-#define g_Node3DCount GAME_GLOBAL_IN(int, GVar_R_Node3D_Count, 16)	/* R_Nodo3D_Count */
+extern cGVar GVar_R_Node3D_Count;
+#define g_Node3DCount (GVar_R_Node3D_Count.value.i)	/* R_Nodo3D_Count */
 #define g_RenderOff GAME_GLOBAL_IN(byte, group_4a8ef8, 0)
 #define g_NodesRendered GAME_GLOBAL_IN(int, g_RenderCounts, 16)
 #define g_NodesUpdated GAME_GLOBAL_IN(int, g_RenderCounts, 20)
 /* the pass of the renderer and its filters of the nodes */
 
 /* the engine variables of the nodes (Gvars) */
-#define g_NodeSlerp2 GAME_GLOBAL_IN(int, GVar_R_NodeSlerp2, 16)	/* R_NodeSlerp2 0/1/2 */
-#define g_ShowLocalBox GAME_GLOBAL_IN(int, GVar_R_ShowLocalBox, 16)
-#define g_ShowLBoxMin GAME_GLOBAL_IN(int, GVar_R_ShowLBoxMin, 16)	/* the nodes with an index from .. to (0: no limit) */
-#define g_ShowLBoxMax GAME_GLOBAL_IN(int, GVar_R_ShowLBoxMax, 16)
-#define g_ShowLBoxName GAME_GLOBAL_IN(const char *, GVar_R_ShowLBoxName, 16)	/* a wildcard of the names, "" for all */
-#define g_SkipAnim GAME_GLOBAL_IN(int, GVar_R_SkipAnim, 16)
-#define g_SkipAnimVis GAME_GLOBAL_IN(int, GVar_R_SkipAnimVis, 16)
-#define g_SkipNodeFX GAME_GLOBAL_IN(int, GVar_R_SkipNodeFX, 16)
-#define g_SkipNodes GAME_GLOBAL_IN(int, GVar_R_SkipNodes, 16)
-#define g_SkipTrans2 GAME_GLOBAL_IN(int, GVar_R_SkipTrans2, 16)	/* in the passes 2..9 and 12..19 */
-#define g_SkipTrans GAME_GLOBAL_IN(int, GVar_R_SkipTrans, 16)
+extern cGVar GVar_R_NodeSlerp2;
+#define g_NodeSlerp2 (GVar_R_NodeSlerp2.value.i)	/* R_NodeSlerp2 0/1/2 */
+extern cGVar GVar_R_ShowLocalBox;
+#define g_ShowLocalBox (GVar_R_ShowLocalBox.value.i)
+extern cGVar GVar_R_ShowLBoxMin;
+#define g_ShowLBoxMin (GVar_R_ShowLBoxMin.value.i)	/* the nodes with an index from .. to (0: no limit) */
+extern cGVar GVar_R_ShowLBoxMax;
+#define g_ShowLBoxMax (GVar_R_ShowLBoxMax.value.i)
+extern cGVar GVar_R_ShowLBoxName;
+#define g_ShowLBoxName (GVar_R_ShowLBoxName.value.s)	/* a wildcard of the names, "" for all */
+extern cGVar GVar_R_SkipAnim;
+#define g_SkipAnim (GVar_R_SkipAnim.value.i)
+extern cGVar GVar_R_SkipAnimVis;
+#define g_SkipAnimVis (GVar_R_SkipAnimVis.value.i)
+extern cGVar GVar_R_SkipNodeFX;
+#define g_SkipNodeFX (GVar_R_SkipNodeFX.value.i)
+extern cGVar GVar_R_SkipNodes;
+#define g_SkipNodes (GVar_R_SkipNodes.value.i)
+extern cGVar GVar_R_SkipTrans2;
+#define g_SkipTrans2 (GVar_R_SkipTrans2.value.i)	/* in the passes 2..9 and 12..19 */
+extern cGVar GVar_R_SkipTrans;
+#define g_SkipTrans (GVar_R_SkipTrans.value.i)
 
 /* the check of Nodo3D.cpp that ends the game, with the name of the node */
 #define NODE_FATAL(self, expr) \

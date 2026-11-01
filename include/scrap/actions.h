@@ -8,6 +8,7 @@
 #ifndef SCRAP_ACTIONS_H
 #define SCRAP_ACTIONS_H
 
+#include "scrap/gvar.h"
 #include "scrap/entity.h"
 #include "scrap/filepak.h"
 #include "scrap/game.h"
@@ -343,7 +344,9 @@ void Event_WarningPolice(cAbstractFile *params);
 extern cActClassList *g_pActClassList;
 extern cActClass *g_pAuxActClass;	/* SAct's current class */
 extern cAction *g_pAuxAction;	/* SAct's current action */
-#define g_LogActEvents GAME_GLOBAL_IN(int, GVar_LogActEvents, 16)		/* LogActEvents: the events into the console */
-#define g_DefInterpTime GAME_GLOBAL_IN(float, GVar_DefInterpTime, 16)	/* DefInterpTime of new actions */
+extern cGVar GVar_LogActEvents;
+#define g_LogActEvents (GVar_LogActEvents.value.i)		/* LogActEvents: the events into the console */
+extern cGVar GVar_DefInterpTime;
+#define g_DefInterpTime (GVar_DefInterpTime.value.f)	/* DefInterpTime of new actions */
 
 #endif

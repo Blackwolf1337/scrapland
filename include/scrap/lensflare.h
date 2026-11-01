@@ -7,6 +7,7 @@
 #ifndef SCRAP_LENSFLARE_H
 #define SCRAP_LENSFLARE_H
 
+#include "scrap/gvar.h"
 #include "scrap/material.h"
 #include "scrap/mathlib.h"
 
@@ -45,7 +46,8 @@ typedef struct VertLensFlare {
 SD_SIZE(VertLensFlare, 0x1c);
 
 extern CMaterial *g_LensFlareMat;
-#define g_LensFlares GAME_GLOBAL_IN(int, GVar_R_LensFlare, 16)		/* the engine variable that draws them */
+extern cGVar GVar_R_LensFlare;
+#define g_LensFlares (GVar_R_LensFlare.value.i)		/* the engine variable that draws them */
 extern CLensFlare * g_LensFlareRender[8];	/* MAX_LENSFLARE_RENDER */
 extern int g_nLensFlareRender;
 extern VertLensFlare g_LensFlareVerts[4];	/* 4 */

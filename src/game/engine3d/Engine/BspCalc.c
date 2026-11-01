@@ -5,6 +5,7 @@
 #include <float.h>
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/archio.h"
 #include "scrap/bsp.h"
 #include "scrap/console.h"
@@ -332,7 +333,8 @@ void CBsp_CreateBuffers(CBsp *self) {
 
 /* the direct light of the lights of g_BspLights */
 
-#define g_LightmapLinearAtten GAME_GLOBAL_IN(int, GVar_LightmapLinearAtten, 16)	/* gvar */
+extern cGVar GVar_LightmapLinearAtten;
+#define g_LightmapLinearAtten (GVar_LightmapLinearAtten.value.i)	/* gvar */
 
 /* the segment from c (moved back along the light direction d) to the light at dest blocked by the floor */
 static byte Bsp_Shadow(CGround *ground, const vec3_t *c, const vec3_t *d, const vec3_t *dest, vec3_t *hit, int *cache) {

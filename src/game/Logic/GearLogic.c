@@ -6,22 +6,34 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/chartype.h"
 #include "scrap/objentity.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/weapons.h"
 
-#define g_GearStdFar GAME_GLOBAL_IN(float, GVar_GearStdFar, 16)
-#define g_GearStdFovY GAME_GLOBAL_IN(float, GVar_GearStdFovY, 16)
-#define g_GearStdFovX GAME_GLOBAL_IN(float, GVar_GearStdFovX, 16)
-#define g_GearLostTargetTime GAME_GLOBAL_IN(float, GVar_GearLostTargetTime, 16)
-#define g_GearRelaxSpeed GAME_GLOBAL_IN(float, GVar_GearRelaxSpeed, 16)
-#define g_GearRobberyDetection GAME_GLOBAL_IN(float, GVar_GearRobberyDetection, 16)
-#define g_Gear2PoliceAlways GAME_GLOBAL_IN(int, GVar_Gear2PoliceAlways, 16)
-#define g_GearChaseSpeed GAME_GLOBAL_IN(float, GVar_GearChaseSpeed, 16)
-#define g_GearAttackSpeed GAME_GLOBAL_IN(float, GVar_GearAttackSpeed, 16)
-#define g_GearAttackNPCTime GAME_GLOBAL_IN(float, GVar_GearAttackNPCTime, 16)
-#define g_GearScortSpeed GAME_GLOBAL_IN(float, GVar_GearScortSpeed, 16)
+extern cGVar GVar_GearStdFar;
+#define g_GearStdFar (GVar_GearStdFar.value.f)
+extern cGVar GVar_GearStdFovY;
+#define g_GearStdFovY (GVar_GearStdFovY.value.f)
+extern cGVar GVar_GearStdFovX;
+#define g_GearStdFovX (GVar_GearStdFovX.value.f)
+extern cGVar GVar_GearLostTargetTime;
+#define g_GearLostTargetTime (GVar_GearLostTargetTime.value.f)
+extern cGVar GVar_GearRelaxSpeed;
+#define g_GearRelaxSpeed (GVar_GearRelaxSpeed.value.f)
+extern cGVar GVar_GearRobberyDetection;
+#define g_GearRobberyDetection (GVar_GearRobberyDetection.value.f)
+extern cGVar GVar_Gear2PoliceAlways;
+#define g_Gear2PoliceAlways (GVar_Gear2PoliceAlways.value.i)
+extern cGVar GVar_GearChaseSpeed;
+#define g_GearChaseSpeed (GVar_GearChaseSpeed.value.f)
+extern cGVar GVar_GearAttackSpeed;
+#define g_GearAttackSpeed (GVar_GearAttackSpeed.value.f)
+extern cGVar GVar_GearAttackNPCTime;
+#define g_GearAttackNPCTime (GVar_GearAttackNPCTime.value.f)
+extern cGVar GVar_GearScortSpeed;
+#define g_GearScortSpeed (GVar_GearScortSpeed.value.f)
 
 int Vec3_Differ(const float *a, const float *b);
 

@@ -5,6 +5,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/archio.h"
 #include "scrap/console.h"
 #include "scrap/d3d8.h"
@@ -29,7 +30,8 @@
 
 /* the frame counter of the engine */
 /* entries alive (engine variable R_Tex_Count) */
-#define g_TexCount GAME_GLOBAL_IN(int, GVar_R_Tex_Count, 16)
+extern cGVar GVar_R_Tex_Count;
+#define g_TexCount (GVar_R_Tex_Count.value.i)
 /* statistics: device textures made from raw files, raw files with a device texture, entries used in the frame and
  * their pixels */
 extern int g_TexCreated;
@@ -47,19 +49,32 @@ extern int g_TextOpBPP;
 extern int g_TexMipFadeOn;
 extern int g_TexFixedBPP;
 /* engine variables */
-#define g_SharpenMore GAME_GLOBAL_IN(int, GVar_SharpenMore, 16)
-#define g_MipmapFade GAME_GLOBAL_IN(int, GVar_MipmapFade, 16)
-#define g_MipmapColor GAME_GLOBAL_IN(int, GVar_MipmapColor, 16)
-#define g_CachedTex GAME_GLOBAL_IN(int, GVar_CachedTex, 16)
-#define g_BumpMipmap GAME_GLOBAL_IN(int, GVar_BumpMipmap, 16)
-#define g_DUDVMipmap GAME_GLOBAL_IN(int, GVar_DUDVMipmap, 16)
-#define g_PShaders GAME_GLOBAL_IN(int, GVar_R_PShaders, 16)
-#define g_LoadTextures GAME_GLOBAL_IN(int, GVar_LoadTextures, 16)
-#define g_TexturePool GAME_GLOBAL_IN(int, GVar_TexturePool, 16)
-#define g_BuildDDS GAME_GLOBAL_IN(int, GVar_BuildDDS, 16)
-#define g_TextureLOD GAME_GLOBAL_IN(int, GVar_TextureLOD, 16)
-#define g_BumpDDS GAME_GLOBAL_IN(int, GVar_BumpDDS, 16)
-#define g_SaveDXT5 GAME_GLOBAL_IN(int, GVar_SaveDXT5, 16)
+extern cGVar GVar_SharpenMore;
+#define g_SharpenMore (GVar_SharpenMore.value.i)
+extern cGVar GVar_MipmapFade;
+#define g_MipmapFade (GVar_MipmapFade.value.i)
+extern cGVar GVar_MipmapColor;
+#define g_MipmapColor (GVar_MipmapColor.value.i)
+extern cGVar GVar_CachedTex;
+#define g_CachedTex (GVar_CachedTex.value.i)
+extern cGVar GVar_BumpMipmap;
+#define g_BumpMipmap (GVar_BumpMipmap.value.i)
+extern cGVar GVar_DUDVMipmap;
+#define g_DUDVMipmap (GVar_DUDVMipmap.value.i)
+extern cGVar GVar_R_PShaders;
+#define g_PShaders (GVar_R_PShaders.value.i)
+extern cGVar GVar_LoadTextures;
+#define g_LoadTextures (GVar_LoadTextures.value.i)
+extern cGVar GVar_TexturePool;
+#define g_TexturePool (GVar_TexturePool.value.i)
+extern cGVar GVar_BuildDDS;
+#define g_BuildDDS (GVar_BuildDDS.value.i)
+extern cGVar GVar_TextureLOD;
+#define g_TextureLOD (GVar_TextureLOD.value.i)
+extern cGVar GVar_BumpDDS;
+#define g_BumpDDS (GVar_BumpDDS.value.i)
+extern cGVar GVar_SaveDXT5;
+#define g_SaveDXT5 (GVar_SaveDXT5.value.i)
 
 /* kernel32 of the exe: the names compare in the user's locale */
 typedef int(__stdcall *lstrcmpi_t)(const char *a, const char *b);

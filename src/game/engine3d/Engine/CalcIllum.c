@@ -5,6 +5,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/e3dutil.h"
 #include "scrap/scene.h"
 #include "scrap/vertlist.h"
@@ -14,7 +15,8 @@
 #include "scrap/material.h"
 #include "scrap/utild3d.h"
 
-#define g_ShowPreIllumVtx GAME_GLOBAL_IN(int, GVar_R_ShowPreIllumVtx, 16)	/* R_ShowPreIllumVtx: 1 no light colors, 2 no emissive ones */
+extern cGVar GVar_R_ShowPreIllumVtx;
+#define g_ShowPreIllumVtx (GVar_R_ShowPreIllumVtx.value.i)	/* R_ShowPreIllumVtx: 1 no light colors, 2 no emissive ones */
 
 /* a vertex of VERT_LTEX1N */
 typedef struct VertLTex1N {

@@ -8,6 +8,7 @@
 #ifndef SCRAP_WEAPONS_H
 #define SCRAP_WEAPONS_H
 
+#include "scrap/gvar.h"
 #include "scrap/autoaim.h"
 #include "scrap/camcontrol.h"
 #include "scrap/controls.h"
@@ -51,18 +52,26 @@ void cSndItem_Restart(cSndItem *self);
 /* the crosshair item of the HUD the weapons animate (a cCannonScorer, found by its name) */
 
 /* the engine variables */
-#define g_LaserIDWeap GAME_GLOBAL_IN(int, GVar_LaserIDWeap, 16)
-#define g_ATPCIDWeap GAME_GLOBAL_IN(int, GVar_ATPCIDWeap, 16)
-#define g_DevastatorIDWeap GAME_GLOBAL_IN(int, GVar_DevastatorIDWeap, 16)
-#define g_ATPCIDAmmo GAME_GLOBAL_IN(int, GVar_ATPCIDAmmo, 16)
-#define g_DevastatorIDAmmo GAME_GLOBAL_IN(int, GVar_DevastatorIDAmmo, 16)
-#define g_ATPCDelay GAME_GLOBAL_IN(float, GVar_ATPCDelay, 16)
-#define g_ATPCUpgradeDelay GAME_GLOBAL_IN(float, GVar_ATPCUpgradeDelay, 16)
+extern cGVar GVar_LaserIDWeap;
+#define g_LaserIDWeap (GVar_LaserIDWeap.value.i)
+extern cGVar GVar_ATPCIDWeap;
+#define g_ATPCIDWeap (GVar_ATPCIDWeap.value.i)
+extern cGVar GVar_DevastatorIDWeap;
+#define g_DevastatorIDWeap (GVar_DevastatorIDWeap.value.i)
+extern cGVar GVar_ATPCIDAmmo;
+#define g_ATPCIDAmmo (GVar_ATPCIDAmmo.value.i)
+extern cGVar GVar_DevastatorIDAmmo;
+#define g_DevastatorIDAmmo (GVar_DevastatorIDAmmo.value.i)
+extern cGVar GVar_ATPCDelay;
+#define g_ATPCDelay (GVar_ATPCDelay.value.f)
+extern cGVar GVar_ATPCUpgradeDelay;
+#define g_ATPCUpgradeDelay (GVar_ATPCUpgradeDelay.value.f)
 #define g_HookPlugFunc (GAME_ARRAY_IN(cPy_Function, GVar_HookPlugFunc, 16))
 #define g_RestoreUpgradeFunc (GAME_ARRAY_IN(cPy_Function, GVar_RestoreUpgradeFunc, 16))
 extern char g_WeapListBuf[512];		/* 0x200 bytes, GetWeapList */
 #define g_WeaponNeedOrder (GAME_ARRAY(const int[6], g_WeaponNeedOrder))	/* three orders of six weapons */
-#define g_VehicleCenterPadLock GAME_GLOBAL_IN(float, GVar_VehicleCenterPadLock, 16)
+extern cGVar GVar_VehicleCenterPadLock;
+#define g_VehicleCenterPadLock (GVar_VehicleCenterPadLock.value.f)
 #define g_CannonScorerColorRed GAME_GLOBAL_IN(uint32_t, GVar_CannonScorerColorRed, 16)
 #define g_CannonScorerColorGreen GAME_GLOBAL_IN(uint32_t, GVar_CannonScorerColorGreen, 16)
 #define g_CannonScorerColorBlue GAME_GLOBAL_IN(uint32_t, GVar_CannonScorerColorBlue, 16)
@@ -134,33 +143,59 @@ int cWeaponManager_WeaponNeed(cWeaponManager *self);
 extern char g_ATPCShooter[128];		/* 0x80 bytes, the vehicle of the last shot */
 extern char g_ATPCVictim[128];		/* 0x80 bytes */
 extern float g_ATPCNumSlots;		/* the slots of the last shot */
-#define g_ATPCAmmoCost GAME_GLOBAL_IN(float, GVar_ATPCAmmoCost, 16)
-#define g_ATPCExtraDamage GAME_GLOBAL_IN(int, GVar_ATPCExtraDamage, 16)
-#define g_ATPCExplosionRadius GAME_GLOBAL_IN(float, GVar_ATPCExplosionRadius, 16)
-#define g_ATPCMainDamage GAME_GLOBAL_IN(int, GVar_ATPCMainDamage, 16)
-#define g_ATPCHitForce GAME_GLOBAL_IN(float, GVar_ATPCHitForce, 16)
-#define g_ATPCRange GAME_GLOBAL_IN(float, GVar_ATPCRange, 16)
-#define g_ATPCConvDist GAME_GLOBAL_IN(float, GVar_ATPCConvDist, 16)
-#define g_ATPCCapsuleSoundAttEnd GAME_GLOBAL_IN(float, GVar_ATPCCapsuleSoundAttEnd, 16)
-#define g_ATPCCapsuleSoundAttIni GAME_GLOBAL_IN(float, GVar_ATPCCapsuleSoundAttIni, 16)
-#define g_ATPCCapsuleSound GAME_GLOBAL_IN(const char *, GVar_ATPCCapsuleSound, 16)
-#define g_ATPCCapsuleSoundRadius GAME_GLOBAL_IN(float, GVar_ATPCCapsuleSoundRadius, 16)
-#define g_ATPCTrailTime GAME_GLOBAL_IN(float, GVar_ATPCTrailTime, 16)
-#define g_ATPCCapsuleExtendedSound GAME_GLOBAL_IN(const char *, GVar_ATPCCapsuleExtendedSound, 16)
-#define g_ATPCHitSound GAME_GLOBAL_IN(const char *, GVar_ATPCHitSound, 16)
-#define g_ATPCHitSoundAttEnd GAME_GLOBAL_IN(float, GVar_ATPCHitSoundAttEnd, 16)
-#define g_ATPCHitSoundAttIni GAME_GLOBAL_IN(float, GVar_ATPCHitSoundAttIni, 16)
-#define g_ATPCHitSoundVol GAME_GLOBAL_IN(float, GVar_ATPCHitSoundVol, 16)
-#define g_ATPCCapsuleSoundVol GAME_GLOBAL_IN(float, GVar_ATPCCapsuleSoundVol, 16)
-#define g_ATPCShootFile GAME_GLOBAL_IN(const char *, GVar_ATPCShootFile, 16)
-#define g_ATPCCapsuleExtendedSoundAttIni GAME_GLOBAL_IN(float, GVar_ATPCCapsuleExtendedSoundAttIni, 16)
-#define g_ATPCCapsuleExtendedSoundAttEnd GAME_GLOBAL_IN(float, GVar_ATPCCapsuleExtendedSoundAttEnd, 16)
-#define g_ATPCCapsuleExtendedSoundVol GAME_GLOBAL_IN(float, GVar_ATPCCapsuleExtendedSoundVol, 16)
+extern cGVar GVar_ATPCAmmoCost;
+#define g_ATPCAmmoCost (GVar_ATPCAmmoCost.value.f)
+extern cGVar GVar_ATPCExtraDamage;
+#define g_ATPCExtraDamage (GVar_ATPCExtraDamage.value.i)
+extern cGVar GVar_ATPCExplosionRadius;
+#define g_ATPCExplosionRadius (GVar_ATPCExplosionRadius.value.f)
+extern cGVar GVar_ATPCMainDamage;
+#define g_ATPCMainDamage (GVar_ATPCMainDamage.value.i)
+extern cGVar GVar_ATPCHitForce;
+#define g_ATPCHitForce (GVar_ATPCHitForce.value.f)
+extern cGVar GVar_ATPCRange;
+#define g_ATPCRange (GVar_ATPCRange.value.f)
+extern cGVar GVar_ATPCConvDist;
+#define g_ATPCConvDist (GVar_ATPCConvDist.value.f)
+extern cGVar GVar_ATPCCapsuleSoundAttEnd;
+#define g_ATPCCapsuleSoundAttEnd (GVar_ATPCCapsuleSoundAttEnd.value.f)
+extern cGVar GVar_ATPCCapsuleSoundAttIni;
+#define g_ATPCCapsuleSoundAttIni (GVar_ATPCCapsuleSoundAttIni.value.f)
+extern cGVar GVar_ATPCCapsuleSound;
+#define g_ATPCCapsuleSound (GVar_ATPCCapsuleSound.value.s)
+extern cGVar GVar_ATPCCapsuleSoundRadius;
+#define g_ATPCCapsuleSoundRadius (GVar_ATPCCapsuleSoundRadius.value.f)
+extern cGVar GVar_ATPCTrailTime;
+#define g_ATPCTrailTime (GVar_ATPCTrailTime.value.f)
+extern cGVar GVar_ATPCCapsuleExtendedSound;
+#define g_ATPCCapsuleExtendedSound (GVar_ATPCCapsuleExtendedSound.value.s)
+extern cGVar GVar_ATPCHitSound;
+#define g_ATPCHitSound (GVar_ATPCHitSound.value.s)
+extern cGVar GVar_ATPCHitSoundAttEnd;
+#define g_ATPCHitSoundAttEnd (GVar_ATPCHitSoundAttEnd.value.f)
+extern cGVar GVar_ATPCHitSoundAttIni;
+#define g_ATPCHitSoundAttIni (GVar_ATPCHitSoundAttIni.value.f)
+extern cGVar GVar_ATPCHitSoundVol;
+#define g_ATPCHitSoundVol (GVar_ATPCHitSoundVol.value.f)
+extern cGVar GVar_ATPCCapsuleSoundVol;
+#define g_ATPCCapsuleSoundVol (GVar_ATPCCapsuleSoundVol.value.f)
+extern cGVar GVar_ATPCShootFile;
+#define g_ATPCShootFile (GVar_ATPCShootFile.value.s)
+extern cGVar GVar_ATPCCapsuleExtendedSoundAttIni;
+#define g_ATPCCapsuleExtendedSoundAttIni (GVar_ATPCCapsuleExtendedSoundAttIni.value.f)
+extern cGVar GVar_ATPCCapsuleExtendedSoundAttEnd;
+#define g_ATPCCapsuleExtendedSoundAttEnd (GVar_ATPCCapsuleExtendedSoundAttEnd.value.f)
+extern cGVar GVar_ATPCCapsuleExtendedSoundVol;
+#define g_ATPCCapsuleExtendedSoundVol (GVar_ATPCCapsuleExtendedSoundVol.value.f)
 #define g_CreateCloudFunc (GAME_ARRAY_IN(cPy_Function, GVar_CreateCloudFunc, 16))
-#define g_CloudLifeTime GAME_GLOBAL_IN(float, GVar_CloudLifeTime, 16)
-#define g_CloudAmmoNeed GAME_GLOBAL_IN(int, GVar_CloudAmmoNeed, 16)
-#define g_CloudIDAmmo GAME_GLOBAL_IN(int, GVar_CloudIDAmmo, 16)
-#define g_CloudRechargeTime GAME_GLOBAL_IN(float, GVar_CloudRechargeTime, 16)
+extern cGVar GVar_CloudLifeTime;
+#define g_CloudLifeTime (GVar_CloudLifeTime.value.f)
+extern cGVar GVar_CloudAmmoNeed;
+#define g_CloudAmmoNeed (GVar_CloudAmmoNeed.value.i)
+extern cGVar GVar_CloudIDAmmo;
+#define g_CloudIDAmmo (GVar_CloudIDAmmo.value.i)
+extern cGVar GVar_CloudRechargeTime;
+#define g_CloudRechargeTime (GVar_CloudRechargeTime.value.f)
 #define g_SetUpCloudFunc (GAME_ARRAY_IN(cPy_Function, GVar_SetUpCloudFunc, 16))
 
 /* a sound at pos with its attenuation and volume */
@@ -178,36 +213,61 @@ void Cloud_OnHit(cAbstractFile *params);
 /* Weaps/Devastator.cpp: the Devastator and the EMI */
 extern char g_DevShooter[128];		/* 0x80 bytes */
 extern char g_DevVictim[128];		/* 0x80 bytes */
-#define g_DevastatorRechargeTime GAME_GLOBAL_IN(float, GVar_DevastatorRechargeTime, 16)
-#define g_DevastatorExplosionRadius GAME_GLOBAL_IN(float, GVar_DevastatorExplosionRadius, 16)
-#define g_DevastatorExtraDamage GAME_GLOBAL_IN(float, GVar_DevastatorExtraDamage, 16)
-#define g_DevastatorHitForce GAME_GLOBAL_IN(float, GVar_DevastatorHitForce, 16)
-#define g_DevastatorMinDamage GAME_GLOBAL_IN(float, GVar_DevastatorMinDamage, 16)
-#define g_DevastatorSpreadAngle GAME_GLOBAL_IN(float, GVar_DevastatorSpreadAngle, 16)
-#define g_DevastatorRange GAME_GLOBAL_IN(float, GVar_DevastatorRange, 16)
-#define g_DevastatorDistLimit GAME_GLOBAL_IN(float, GVar_DevastatorDistLimit, 16)
+extern cGVar GVar_DevastatorRechargeTime;
+#define g_DevastatorRechargeTime (GVar_DevastatorRechargeTime.value.f)
+extern cGVar GVar_DevastatorExplosionRadius;
+#define g_DevastatorExplosionRadius (GVar_DevastatorExplosionRadius.value.f)
+extern cGVar GVar_DevastatorExtraDamage;
+#define g_DevastatorExtraDamage (GVar_DevastatorExtraDamage.value.f)
+extern cGVar GVar_DevastatorHitForce;
+#define g_DevastatorHitForce (GVar_DevastatorHitForce.value.f)
+extern cGVar GVar_DevastatorMinDamage;
+#define g_DevastatorMinDamage (GVar_DevastatorMinDamage.value.f)
+extern cGVar GVar_DevastatorSpreadAngle;
+#define g_DevastatorSpreadAngle (GVar_DevastatorSpreadAngle.value.f)
+extern cGVar GVar_DevastatorRange;
+#define g_DevastatorRange (GVar_DevastatorRange.value.f)
+extern cGVar GVar_DevastatorDistLimit;
+#define g_DevastatorDistLimit (GVar_DevastatorDistLimit.value.f)
 #define g_DevCenter (GAME_ARRAY(vec3_t, g_DevCenter))		/* the explosion */
-#define g_DevastatorAmmoCost GAME_GLOBAL_IN(float, GVar_DevastatorAmmoCost, 16)
-#define g_DevastatorBulletFile GAME_GLOBAL_IN(const char *, GVar_DevastatorBulletFile, 16)
-#define g_DevastatorHitFile GAME_GLOBAL_IN(const char *, GVar_DevastatorHitFile, 16)
-#define g_DevastatorShootFile GAME_GLOBAL_IN(const char *, GVar_DevastatorShootFile, 16)
-#define g_DevastatorSparksFile GAME_GLOBAL_IN(const char *, GVar_DevastatorSparksFile, 16)
-#define g_DevastatorBoomSound GAME_GLOBAL_IN(const char *, GVar_DevastatorBoomSound, 16)
-#define g_DevastatorBoomSoundAttEnd GAME_GLOBAL_IN(float, GVar_DevastatorBoomSoundAttEnd, 16)
-#define g_DevastatorBoomSoundAttIni GAME_GLOBAL_IN(float, GVar_DevastatorBoomSoundAttIni, 16)
-#define g_DevastatorBoomSoundVol GAME_GLOBAL_IN(float, GVar_DevastatorBoomSoundVol, 16)
-#define g_FXDevastatorDistance GAME_GLOBAL_IN(float, GVar_FXDevastatorDistance, 16)
-#define g_FXDevastatorRadius GAME_GLOBAL_IN(float, GVar_FXDevastatorRadius, 16)
-#define g_FXDevastatorScale GAME_GLOBAL_IN(float, GVar_FXDevastatorScale, 16)
+extern cGVar GVar_DevastatorAmmoCost;
+#define g_DevastatorAmmoCost (GVar_DevastatorAmmoCost.value.f)
+extern cGVar GVar_DevastatorBulletFile;
+#define g_DevastatorBulletFile (GVar_DevastatorBulletFile.value.s)
+extern cGVar GVar_DevastatorHitFile;
+#define g_DevastatorHitFile (GVar_DevastatorHitFile.value.s)
+extern cGVar GVar_DevastatorShootFile;
+#define g_DevastatorShootFile (GVar_DevastatorShootFile.value.s)
+extern cGVar GVar_DevastatorSparksFile;
+#define g_DevastatorSparksFile (GVar_DevastatorSparksFile.value.s)
+extern cGVar GVar_DevastatorBoomSound;
+#define g_DevastatorBoomSound (GVar_DevastatorBoomSound.value.s)
+extern cGVar GVar_DevastatorBoomSoundAttEnd;
+#define g_DevastatorBoomSoundAttEnd (GVar_DevastatorBoomSoundAttEnd.value.f)
+extern cGVar GVar_DevastatorBoomSoundAttIni;
+#define g_DevastatorBoomSoundAttIni (GVar_DevastatorBoomSoundAttIni.value.f)
+extern cGVar GVar_DevastatorBoomSoundVol;
+#define g_DevastatorBoomSoundVol (GVar_DevastatorBoomSoundVol.value.f)
+extern cGVar GVar_FXDevastatorDistance;
+#define g_FXDevastatorDistance (GVar_FXDevastatorDistance.value.f)
+extern cGVar GVar_FXDevastatorRadius;
+#define g_FXDevastatorRadius (GVar_FXDevastatorRadius.value.f)
+extern cGVar GVar_FXDevastatorScale;
+#define g_FXDevastatorScale (GVar_FXDevastatorScale.value.f)
 #define g_DevXplosionNative GAME_GLOBAL_IN(nativefunc_t, NativeFunc_DevastatorXplosionCall, 4)	/* the function of "!DevastatorXplosionCall" */
 extern uint32_t g_DevColorRamps[36];	/* three color ramps of 9 words */
 #define g_CreateEMIFunc (GAME_ARRAY_IN(cPy_Function, GVar_CreateEMIFunc, 16))
-#define g_EMIRechargeTime GAME_GLOBAL_IN(float, GVar_EMIRechargeTime, 16)
-#define g_EMIAmmoNeed GAME_GLOBAL_IN(int, GVar_EMIAmmoNeed, 16)
-#define g_EMILowRadiusFactor GAME_GLOBAL_IN(float, GVar_EMILowRadiusFactor, 16)
+extern cGVar GVar_EMIRechargeTime;
+#define g_EMIRechargeTime (GVar_EMIRechargeTime.value.f)
+extern cGVar GVar_EMIAmmoNeed;
+#define g_EMIAmmoNeed (GVar_EMIAmmoNeed.value.i)
+extern cGVar GVar_EMILowRadiusFactor;
+#define g_EMILowRadiusFactor (GVar_EMILowRadiusFactor.value.f)
 #define g_SetUpEMIFunc (GAME_ARRAY_IN(cPy_Function, GVar_SetUpEMIFunc, 16))
-#define g_EMILifeTime GAME_GLOBAL_IN(float, GVar_EMILifeTime, 16)
-#define g_EMIIDAmmo GAME_GLOBAL_IN(int, GVar_EMIIDAmmo, 16)
+extern cGVar GVar_EMILifeTime;
+#define g_EMILifeTime (GVar_EMILifeTime.value.f)
+extern cGVar GVar_EMIIDAmmo;
+#define g_EMIIDAmmo (GVar_EMIIDAmmo.value.i)
 /* WeaponManager.cpp before rva 0x11a0f0: the fire stamp delayed by t (to -t when it is beyond t) */
 void cWeaponManager_DelayFire(cWeaponManager *self, float t);
 #define CWEAPONMANAGER_VFTABLE GAME_VFTABLE(cWeaponManager_vftable)

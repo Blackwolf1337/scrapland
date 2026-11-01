@@ -14,6 +14,7 @@
 
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/actions.h"
 #include "scrap/ai.h"
 #include "scrap/aicharcontrol.h"
@@ -171,15 +172,24 @@ static inline void AIChar_DebugState(cAIChar *c, const char *fmt, int state) {
 }
 
 /* the engine variables of the character AI */
-#define g_DistMaxCheckPauseAI GAME_GLOBAL_IN(float, GVar_DistMaxCheckPauseAI, 16)	/* "DistMaxCheckPauseAI" */
-#define g_DistMinCheckPauseAI GAME_GLOBAL_IN(float, GVar_DistMinCheckPauseAI, 16)	/* "DistMinCheckPauseAI" */
-#define g_DistRadPauseCharAI GAME_GLOBAL_IN(float, GVar_DistRadPauseCharAI, 16)		/* "DistRadPauseCharAI" */
-#define g_DistMaxCheckReposAI GAME_GLOBAL_IN(float, GVar_DistMaxCheckReposAI, 16)	/* "DistMaxCheckReposAI" */
-#define g_DistMinCheckReposAI GAME_GLOBAL_IN(float, GVar_DistMinCheckReposAI, 16)	/* "DistMinCheckReposAI" */
-#define g_MinTalkCharAI GAME_GLOBAL_IN(float, GVar_MinTalkCharAI, 16)		/* "MinTalkCharAI": the height difference */
-#define g_MinNumTalksCharAI GAME_GLOBAL_IN(int, GVar_MinNumTalksCharAI, 16)		/* "MinNumTalksCharAI" */
-#define g_MinTimeStoppedCharAI GAME_GLOBAL_IN(float, GVar_MinTimeStoppedCharAI, 16)	/* "MinTimeStoppedCharAI" */
-#define g_MinTimeStopTempCharAI GAME_GLOBAL_IN(float, GVar_MinTimeStopTempCharAI, 16)	/* "MinTimeStopTempCharAI" */
+extern cGVar GVar_DistMaxCheckPauseAI;
+#define g_DistMaxCheckPauseAI (GVar_DistMaxCheckPauseAI.value.f)	/* "DistMaxCheckPauseAI" */
+extern cGVar GVar_DistMinCheckPauseAI;
+#define g_DistMinCheckPauseAI (GVar_DistMinCheckPauseAI.value.f)	/* "DistMinCheckPauseAI" */
+extern cGVar GVar_DistRadPauseCharAI;
+#define g_DistRadPauseCharAI (GVar_DistRadPauseCharAI.value.f)		/* "DistRadPauseCharAI" */
+extern cGVar GVar_DistMaxCheckReposAI;
+#define g_DistMaxCheckReposAI (GVar_DistMaxCheckReposAI.value.f)	/* "DistMaxCheckReposAI" */
+extern cGVar GVar_DistMinCheckReposAI;
+#define g_DistMinCheckReposAI (GVar_DistMinCheckReposAI.value.f)	/* "DistMinCheckReposAI" */
+extern cGVar GVar_MinTalkCharAI;
+#define g_MinTalkCharAI (GVar_MinTalkCharAI.value.f)		/* "MinTalkCharAI": the height difference */
+extern cGVar GVar_MinNumTalksCharAI;
+#define g_MinNumTalksCharAI (GVar_MinNumTalksCharAI.value.i)		/* "MinNumTalksCharAI" */
+extern cGVar GVar_MinTimeStoppedCharAI;
+#define g_MinTimeStoppedCharAI (GVar_MinTimeStoppedCharAI.value.f)	/* "MinTimeStoppedCharAI" */
+extern cGVar GVar_MinTimeStopTempCharAI;
+#define g_MinTimeStopTempCharAI (GVar_MinTimeStopTempCharAI.value.f)	/* "MinTimeStopTempCharAI" */
 
 /* ---- AI/AIChar.cpp (src/game/AI/IChar.c); the constructor is declared in walkcharentity.h, GetControl in
  * aicharcontrol.h ---- */

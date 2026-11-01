@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/actions.h"
 #include "scrap/console.h"
 #include "scrap/logic.h"
@@ -13,8 +14,10 @@
 #define EVENT_STR 0x80
 
 /* the engine variables WarnVoiceVolume and MaxPoliceWarnDist (Sound/PosSound.cpp) */
-#define g_WarnVoiceVolume GAME_GLOBAL_IN(float, GVar_WarnVoiceVolume, 16)
-#define g_MaxPoliceWarnDist GAME_GLOBAL_IN(float, GVar_MaxPoliceWarnDist, 16)
+extern cGVar GVar_WarnVoiceVolume;
+#define g_WarnVoiceVolume (GVar_WarnVoiceVolume.value.f)
+extern cGVar GVar_MaxPoliceWarnDist;
+#define g_MaxPoliceWarnDist (GVar_MaxPoliceWarnDist.value.f)
 
 /* the entity name, the value string and the time of the event */
 static void Event_Read(cAbstractFile *params, char *name, char *str, float *t) {

@@ -2,6 +2,7 @@
  * WeaponScorer.cpp of the game (Menu/): cWeaponScorer, the weapon of the ship of the camera with its ammo, its
  * upgrades and the weapon slots. See include/scrap/scorerhud.h.
  */
+#include "scrap/gvar.h"
 #include "scrap/scorerhud.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
@@ -179,8 +180,10 @@ int cWeaponScorer_Var(cWeaponScorer *self, const char *name, byte set, char **s,
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-#define g_WeaponChangeFadeTime GAME_GLOBAL_IN(float, GVar_WeaponChangeFadeTime, 16)	/* WeaponChangeFadeTime */
-#define g_WeaponChangeShowTime GAME_GLOBAL_IN(float, GVar_WeaponChangeShowTime, 16)	/* WeaponChangeShowTime: the slots after a change */
+extern cGVar GVar_WeaponChangeFadeTime;
+#define g_WeaponChangeFadeTime (GVar_WeaponChangeFadeTime.value.f)	/* WeaponChangeFadeTime */
+extern cGVar GVar_WeaponChangeShowTime;
+#define g_WeaponChangeShowTime (GVar_WeaponChangeShowTime.value.f)	/* WeaponChangeShowTime: the slots after a change */
 /* the slot row of the weapons, shared by all items: per weapon 0 none, 1 with ammo, 2 without; its place in the row */
 extern int g_WeaponSlotState[7];		/* [WEAPONSCORER_WEAPONS] */
 extern int g_WeaponSlotPlace[7];		/* [WEAPONSCORER_WEAPONS] */

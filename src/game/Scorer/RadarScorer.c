@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/scoreritems.h"
 #include "scrap/scrapworld.h"
 #include "scrap/weapons.h"
@@ -434,8 +435,10 @@ void cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntity *cam) {
 
 /* ---- the radar ---- */
 
-#define g_RadarShowAll GAME_GLOBAL_IN(int, GVar_RadarShowAll, 16)		/* RadarShowAll: the neutral vehicles and characters too */
-#define g_IsSecondMission GAME_GLOBAL_IN(int, GVar_IsSecondMission, 16)	/* IsSecondMission */
+extern cGVar GVar_RadarShowAll;
+#define g_RadarShowAll (GVar_RadarShowAll.value.i)		/* RadarShowAll: the neutral vehicles and characters too */
+extern cGVar GVar_IsSecondMission;
+#define g_IsSecondMission (GVar_IsSecondMission.value.i)	/* IsSecondMission */
 
 #define RADAR_PI 3.14159274f
 #define RADAR_TEAM_NEUTRAL 3		/* arrow.tgType */

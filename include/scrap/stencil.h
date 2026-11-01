@@ -9,6 +9,7 @@
 #ifndef SCRAP_STENCIL_H
 #define SCRAP_STENCIL_H
 
+#include "scrap/gvar.h"
 #include "scrap/e3dutil.h"
 #include "scrap/light.h"
 #include "scrap/material.h"
@@ -56,13 +57,17 @@ extern float g_ShadowRange;
 extern float g_ShadowCos;	/* of half the cone angle */
 
 /* engine variables */
-#define g_ShowStencil GAME_GLOBAL_IN(int, GVar_R_ShowStencil, 16)	/* R_ShowStencil, 2: the volumes drawn */
-#define g_StencilMult GAME_GLOBAL_IN(float, GVar_R_StencilMult, 16)	/* R_StencilMult */
+extern cGVar GVar_R_ShowStencil;
+#define g_ShowStencil (GVar_R_ShowStencil.value.i)	/* R_ShowStencil, 2: the volumes drawn */
+extern cGVar GVar_R_StencilMult;
+#define g_StencilMult (GVar_R_StencilMult.value.f)	/* R_StencilMult */
 extern float g_StencilMultFrame;
 #define g_StencilRefWorld GAME_GLOBAL_IN(uint32_t, GVar_R_StencilRefWorld, 16)	/* R_StencilRefWorld */
 #define g_StencilRefModels GAME_GLOBAL_IN(uint32_t, GVar_R_StencilRefModels, 16)	/* R_StencilRefModels */
-#define g_StencilSelf GAME_GLOBAL_IN(int, GVar_R_StencilSelf, 16)	/* R_StencilSelf */
-#define g_StencilTog GAME_GLOBAL_IN(int, GVar_R_StencilTog, 16)	/* R_StencilTog: switched once */
+extern cGVar GVar_R_StencilSelf;
+#define g_StencilSelf (GVar_R_StencilSelf.value.i)	/* R_StencilSelf */
+extern cGVar GVar_R_StencilTog;
+#define g_StencilTog (GVar_R_StencilTog.value.i)	/* R_StencilTog: switched once */
 
 #define g_KeyV GAME_GLOBAL_IN(byte, g_KeyboardKeys, 31)	/* with X held: the shadows switched */
 

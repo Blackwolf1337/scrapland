@@ -10,6 +10,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/chartype.h"
 #include "scrap/filepak.h"
 #include "scrap/aivehicle.h"
@@ -29,17 +30,25 @@
 #define TRAFFIC_DAMAGE_NATIVE 0x15af10
 #define TRAFFIC_DEATH_NATIVE 0x15b160
 #define TRAFFIC_ONAIEND 0x15ae60
-#define g_MaxTrafficEnemy GAME_GLOBAL_IN(int, GVar_MaxTrafficEnemy, 16)
+extern cGVar GVar_MaxTrafficEnemy;
+#define g_MaxTrafficEnemy (GVar_MaxTrafficEnemy.value.i)
 #define g_OnNeedMoreTraffic (GAME_ARRAY_IN(cPy_Function, GVar_OnNeedMoreTraffic, 16))
-#define g_MaxFightingTrafficSize GAME_GLOBAL_IN(float, GVar_MaxFightingTrafficSize, 16)
+extern cGVar GVar_MaxFightingTrafficSize;
+#define g_MaxFightingTrafficSize (GVar_MaxFightingTrafficSize.value.f)
 #define g_OnPlayerHelpedPolice (GAME_ARRAY_IN(cPy_Function, GVar_OnPlayerHelpedPolice, 16))
-#define g_ProbTrafficFighting GAME_GLOBAL_IN(float, GVar_ProbTrafficFighting, 16)
-#define g_TrafficRemovalDist GAME_GLOBAL_IN(float, GVar_TrafficRemovalDist, 16)
-#define g_TrafficDamageTolerance GAME_GLOBAL_IN(int, GVar_TrafficDamageTolerance, 16)
-#define g_MaxTrafficEnemyTime GAME_GLOBAL_IN(float, GVar_MaxTrafficEnemyTime, 16)
-#define g_MinTrafficEnemyTime GAME_GLOBAL_IN(float, GVar_MinTrafficEnemyTime, 16)
+extern cGVar GVar_ProbTrafficFighting;
+#define g_ProbTrafficFighting (GVar_ProbTrafficFighting.value.f)
+extern cGVar GVar_TrafficRemovalDist;
+#define g_TrafficRemovalDist (GVar_TrafficRemovalDist.value.f)
+extern cGVar GVar_TrafficDamageTolerance;
+#define g_TrafficDamageTolerance (GVar_TrafficDamageTolerance.value.i)
+extern cGVar GVar_MaxTrafficEnemyTime;
+#define g_MaxTrafficEnemyTime (GVar_MaxTrafficEnemyTime.value.f)
+extern cGVar GVar_MinTrafficEnemyTime;
+#define g_MinTrafficEnemyTime (GVar_MinTrafficEnemyTime.value.f)
 #define g_OnNeedMoreChasingTraffic (GAME_ARRAY_IN(cPy_Function, GVar_OnNeedMoreChasingTraffic, 16))
-#define g_iTrafficNumber GAME_GLOBAL_IN(int, GVar_iTrafficNumber, 16)
+extern cGVar GVar_iTrafficNumber;
+#define g_iTrafficNumber (GVar_iTrafficNumber.value.i)
 /* the callback of the AI when the move ends (rva 0x15c of the AI) */
 #define AIV_OnEnd(ai) (((cAIVehicle *)(ai))->onArrive)
 

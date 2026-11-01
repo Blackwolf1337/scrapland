@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/dxutil.h"
 #include "scrap/e3dinput.h"
 #include "scrap/scene.h"
@@ -224,12 +225,15 @@ extern int g_RenderCounts[10];	/* [10], 8 counts (g_RenderTris and g_RenderVerts
 extern int g_Dither;		/* [video] Tramas: dithering */
 /* the frame limiter: [video] limitaFPS of m3d.ini and the console variable R_LimitFPS, the larger counts */
 extern float g_LimitFps;
-#define g_RLimitFps GAME_GLOBAL_IN(float, GVar_R_LimitFPS, 16)
+extern cGVar GVar_R_LimitFPS;
+#define g_RLimitFps (GVar_R_LimitFPS.value.f)
 extern uint32_t g_LimitNext;	/* the start of the next frame, timeGetTime * 3 (0: none yet) */
-#define g_RForceFps GAME_GLOBAL_IN(float, GVar_R_ForceFPS, 16)		/* R_ForceFPS: frames of a fixed length (Timer_FixedStep) */
+extern cGVar GVar_R_ForceFPS;
+#define g_RForceFps (GVar_R_ForceFPS.value.f)		/* R_ForceFPS: frames of a fixed length (Timer_FixedStep) */
 extern int g_TimeMult;
 extern int g_TimeScaled;	/* Time_Get() * g_TimeMult / 1000 */
-#define g_AutoShot GAME_GLOBAL_IN(int, GVar_AutoScreenShot, 16)		/* the console variable AutoScreenShot */
+extern cGVar GVar_AutoScreenShot;
+#define g_AutoShot (GVar_AutoScreenShot.value.i)		/* the console variable AutoScreenShot */
 #define g_StencilClear GAME_GLOBAL_IN(uint32_t, GVar_R_StencilRefClear, 16)
 #define g_ResetDev GAME_GLOBAL_IN(byte, group_4a8efc, 2)		/* the device objects made again at the next frame */
 #define g_ResetDevOnly GAME_GLOBAL_IN(byte, group_431bac, 3)	/* 1: without the world, 0: the game callbacks too */
@@ -501,7 +505,8 @@ CWorld *World_GetChecked(void) {
 }
 
 /* the info overlay of R_ShowInfo (Engine_DrawStats, modes 1 to 4) */
-#define g_TexturePool GAME_GLOBAL_IN(int, GVar_TexturePool, 16)
+extern cGVar GVar_TexturePool;
+#define g_TexturePool (GVar_TexturePool.value.i)
 extern int g_TexCreated;
 extern int g_TexCached;
 extern int g_TexUsed;

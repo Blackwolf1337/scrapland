@@ -12,6 +12,7 @@
 #ifndef SCRAP_RENDERTARGET_H
 #define SCRAP_RENDERTARGET_H
 
+#include "scrap/gvar.h"
 #include "scrap/game.h"
 #include "scrap/material.h"
 #include "scrap/mathlib.h"
@@ -35,44 +36,82 @@ enum {
 };
 
 /* the engine variables (Gvar values) */
-#define g_NewsPanelRTarget GAME_GLOBAL_IN(int, GVar_R_NewsPanelRTarget, 16)		/* R_NewsPanelRTarget */
-#define g_NewsPanelSize GAME_GLOBAL_IN(int, GVar_R_NewsPanelSize, 16)		/* R_NewsPanelSize, pow2 */
-#define g_NewsPanelWire GAME_GLOBAL_IN(int, GVar_R_NewsPanelWire, 16)		/* R_NewsPanelWire */
-#define g_SceneRTarget GAME_GLOBAL_IN(int, GVar_R_SceneRTarget, 16)		/* R_SceneRTarget, 3 skips the caps check memory */
-#define g_SceneRTargetSwap GAME_GLOBAL_IN(int, GVar_R_SceneRTargetSwap, 16)		/* R_SceneRTargetSwap */
-#define g_SceneForceLinPow2 GAME_GLOBAL_IN(int, GVar_R_SceneForceLinPow2, 16)		/* R_SceneForceLinPow2 -1/0/1 */
-#define g_SceneForceLinNonPow2 GAME_GLOBAL_IN(int, GVar_R_SceneForceLinNonPow2, 16)	/* R_SceneForceLinNonPow2 -1/0/1 */
-#define g_SceneCheckPixels GAME_GLOBAL_IN(int, GVar_R_SceneCheckPixels, 16)		/* R_SceneCheckPixels */
-#define g_SceneDuDvRTarget GAME_GLOBAL_IN(int, GVar_R_SceneDuDvRTarget, 16)		/* R_SceneDuDvRTarget 0..3 */
-#define g_SceneDuDvFilter GAME_GLOBAL_IN(int, GVar_R_SceneDuDvFilter, 16)		/* R_SceneDuDvFilter */
-#define g_SceneDuDvScale GAME_GLOBAL_IN(float, GVar_R_SceneDuDvScale, 16)		/* R_SceneDuDvScale */
-#define g_SceneDuDvForced GAME_GLOBAL_IN(int, GVar_R_SceneDuDvForced, 16)		/* R_SceneDuDvForced */
-#define g_SceneDuDvCheckPixels GAME_GLOBAL_IN(int, GVar_R_SceneDuDvCheckPixels, 16)	/* R_SceneDuDvCheckPixels */
-#define g_SceneBloomRTarget GAME_GLOBAL_IN(int, GVar_R_SceneBloomRTarget, 16)		/* R_SceneBloomRTarget */
-#define g_SceneBloomBlurPasses GAME_GLOBAL_IN(int, GVar_R_SceneBloomBlurPasses, 16)	/* R_SceneBloomBlurPasses */
-#define g_SceneBloomBlurOffset GAME_GLOBAL_IN(float, GVar_R_SceneBloomBlurOffset, 16)	/* R_SceneBloomBlurOffset, texels */
-#define g_SceneBloomBlurSize GAME_GLOBAL_IN(float, GVar_R_SceneBloomBlurSize, 16)	/* R_SceneBloomBlurSize, of the scene size */
-#define g_SceneMotionBlurRTarget GAME_GLOBAL_IN(int, GVar_R_SceneMotionBlurRTarget, 16)	/* R_SceneMotionBlurRTarget */
-#define g_SceneMotionBlurValue GAME_GLOBAL_IN(float, GVar_R_SceneMotionBlurValue, 16)	/* R_SceneMotionBlurValue */
-#define g_SceneMotionBlurOff GAME_GLOBAL_IN(float, GVar_R_SceneMotionBlurOff, 16)	/* R_SceneMotionBlurOff */
-#define g_SceneMotionBlurOffset GAME_GLOBAL_IN(float, GVar_R_SceneMotionBlurOffset, 16)	/* R_SceneMotionBlurOffset, texels */
-#define g_SceneMotionBlurSize GAME_GLOBAL_IN(float, GVar_R_SceneMotionBlurSize, 16)	/* R_SceneMotionBlurSize, of the scene size */
-#define g_SceneRadialBlurRTarget GAME_GLOBAL_IN(int, GVar_R_SceneRadialBlurRTarget, 16)	/* R_SceneRadialBlurRTarget */
-#define g_SceneRadialBlurValue GAME_GLOBAL_IN(float, GVar_R_SceneRadialBlurValue, 16)	/* R_SceneRadialBlurValue */
-#define g_SceneRadialBlurOffset GAME_GLOBAL_IN(float, GVar_R_SceneRadialBlurOffset, 16)	/* R_SceneRadialBlurOffset */
-#define g_SceneBlurRTarget GAME_GLOBAL_IN(int, GVar_R_SceneBlurRTarget, 16)		/* R_SceneBlurRTarget */
-#define g_SceneBlurValue GAME_GLOBAL_IN(float, GVar_R_SceneBlurValue, 16)		/* R_SceneBlurValue */
-#define g_SceneBlurOffset GAME_GLOBAL_IN(float, GVar_R_SceneBlurOffset, 16)		/* R_SceneBlurOffset, texels */
-#define g_CreditsRTarget GAME_GLOBAL_IN(int, GVar_R_CreditsRTarget, 16)		/* R_CreditsRTarget */
-#define g_CreditsSizeX GAME_GLOBAL_IN(int, GVar_R_CreditsSizeX, 16)		/* R_CreditsSizeX, pow2 */
-#define g_CreditsSizeY GAME_GLOBAL_IN(int, GVar_R_CreditsSizeY, 16)		/* R_CreditsSizeY, pow2 */
-#define g_CreditsX GAME_GLOBAL_IN(int, GVar_R_CreditsX, 16)			/* R_CreditsX, in 640 x 480 */
-#define g_CreditsY GAME_GLOBAL_IN(int, GVar_R_CreditsY, 16)			/* R_CreditsY */
-#define g_CreditsClear GAME_GLOBAL_IN(int, GVar_R_CreditsClear, 16)		/* R_CreditsClear */
-#define g_CreditsPhase GAME_GLOBAL_IN(int, GVar_R_CreditsPhase, 16)		/* R_CreditsPhase 0 horizontal, 1 vertical */
-#define g_CreditsAlpha GAME_GLOBAL_IN(int, GVar_R_CreditsAlpha, 16)		/* R_CreditsAlpha 0..255 */
-#define g_SplitScreenCamera GAME_GLOBAL_IN(int, GVar_R_SplitScreenCamera, 16)		/* R_SplitScreenCamera, the half drawn */
-#define g_SplitScreenUpdate GAME_GLOBAL_IN(int, GVar_R_SplitScreenUpdate, 16)		/* R_SplitScreenUpdate: the halves alternate */
+extern cGVar GVar_R_NewsPanelRTarget;
+#define g_NewsPanelRTarget (GVar_R_NewsPanelRTarget.value.i)		/* R_NewsPanelRTarget */
+extern cGVar GVar_R_NewsPanelSize;
+#define g_NewsPanelSize (GVar_R_NewsPanelSize.value.i)		/* R_NewsPanelSize, pow2 */
+extern cGVar GVar_R_NewsPanelWire;
+#define g_NewsPanelWire (GVar_R_NewsPanelWire.value.i)		/* R_NewsPanelWire */
+extern cGVar GVar_R_SceneRTarget;
+#define g_SceneRTarget (GVar_R_SceneRTarget.value.i)		/* R_SceneRTarget, 3 skips the caps check memory */
+extern cGVar GVar_R_SceneRTargetSwap;
+#define g_SceneRTargetSwap (GVar_R_SceneRTargetSwap.value.i)		/* R_SceneRTargetSwap */
+extern cGVar GVar_R_SceneForceLinPow2;
+#define g_SceneForceLinPow2 (GVar_R_SceneForceLinPow2.value.i)		/* R_SceneForceLinPow2 -1/0/1 */
+extern cGVar GVar_R_SceneForceLinNonPow2;
+#define g_SceneForceLinNonPow2 (GVar_R_SceneForceLinNonPow2.value.i)	/* R_SceneForceLinNonPow2 -1/0/1 */
+extern cGVar GVar_R_SceneCheckPixels;
+#define g_SceneCheckPixels (GVar_R_SceneCheckPixels.value.i)		/* R_SceneCheckPixels */
+extern cGVar GVar_R_SceneDuDvRTarget;
+#define g_SceneDuDvRTarget (GVar_R_SceneDuDvRTarget.value.i)		/* R_SceneDuDvRTarget 0..3 */
+extern cGVar GVar_R_SceneDuDvFilter;
+#define g_SceneDuDvFilter (GVar_R_SceneDuDvFilter.value.i)		/* R_SceneDuDvFilter */
+extern cGVar GVar_R_SceneDuDvScale;
+#define g_SceneDuDvScale (GVar_R_SceneDuDvScale.value.f)		/* R_SceneDuDvScale */
+extern cGVar GVar_R_SceneDuDvForced;
+#define g_SceneDuDvForced (GVar_R_SceneDuDvForced.value.i)		/* R_SceneDuDvForced */
+extern cGVar GVar_R_SceneDuDvCheckPixels;
+#define g_SceneDuDvCheckPixels (GVar_R_SceneDuDvCheckPixels.value.i)	/* R_SceneDuDvCheckPixels */
+extern cGVar GVar_R_SceneBloomRTarget;
+#define g_SceneBloomRTarget (GVar_R_SceneBloomRTarget.value.i)		/* R_SceneBloomRTarget */
+extern cGVar GVar_R_SceneBloomBlurPasses;
+#define g_SceneBloomBlurPasses (GVar_R_SceneBloomBlurPasses.value.i)	/* R_SceneBloomBlurPasses */
+extern cGVar GVar_R_SceneBloomBlurOffset;
+#define g_SceneBloomBlurOffset (GVar_R_SceneBloomBlurOffset.value.f)	/* R_SceneBloomBlurOffset, texels */
+extern cGVar GVar_R_SceneBloomBlurSize;
+#define g_SceneBloomBlurSize (GVar_R_SceneBloomBlurSize.value.f)	/* R_SceneBloomBlurSize, of the scene size */
+extern cGVar GVar_R_SceneMotionBlurRTarget;
+#define g_SceneMotionBlurRTarget (GVar_R_SceneMotionBlurRTarget.value.i)	/* R_SceneMotionBlurRTarget */
+extern cGVar GVar_R_SceneMotionBlurValue;
+#define g_SceneMotionBlurValue (GVar_R_SceneMotionBlurValue.value.f)	/* R_SceneMotionBlurValue */
+extern cGVar GVar_R_SceneMotionBlurOff;
+#define g_SceneMotionBlurOff (GVar_R_SceneMotionBlurOff.value.f)	/* R_SceneMotionBlurOff */
+extern cGVar GVar_R_SceneMotionBlurOffset;
+#define g_SceneMotionBlurOffset (GVar_R_SceneMotionBlurOffset.value.f)	/* R_SceneMotionBlurOffset, texels */
+extern cGVar GVar_R_SceneMotionBlurSize;
+#define g_SceneMotionBlurSize (GVar_R_SceneMotionBlurSize.value.f)	/* R_SceneMotionBlurSize, of the scene size */
+extern cGVar GVar_R_SceneRadialBlurRTarget;
+#define g_SceneRadialBlurRTarget (GVar_R_SceneRadialBlurRTarget.value.i)	/* R_SceneRadialBlurRTarget */
+extern cGVar GVar_R_SceneRadialBlurValue;
+#define g_SceneRadialBlurValue (GVar_R_SceneRadialBlurValue.value.f)	/* R_SceneRadialBlurValue */
+extern cGVar GVar_R_SceneRadialBlurOffset;
+#define g_SceneRadialBlurOffset (GVar_R_SceneRadialBlurOffset.value.f)	/* R_SceneRadialBlurOffset */
+extern cGVar GVar_R_SceneBlurRTarget;
+#define g_SceneBlurRTarget (GVar_R_SceneBlurRTarget.value.i)		/* R_SceneBlurRTarget */
+extern cGVar GVar_R_SceneBlurValue;
+#define g_SceneBlurValue (GVar_R_SceneBlurValue.value.f)		/* R_SceneBlurValue */
+extern cGVar GVar_R_SceneBlurOffset;
+#define g_SceneBlurOffset (GVar_R_SceneBlurOffset.value.f)		/* R_SceneBlurOffset, texels */
+extern cGVar GVar_R_CreditsRTarget;
+#define g_CreditsRTarget (GVar_R_CreditsRTarget.value.i)		/* R_CreditsRTarget */
+extern cGVar GVar_R_CreditsSizeX;
+#define g_CreditsSizeX (GVar_R_CreditsSizeX.value.i)		/* R_CreditsSizeX, pow2 */
+extern cGVar GVar_R_CreditsSizeY;
+#define g_CreditsSizeY (GVar_R_CreditsSizeY.value.i)		/* R_CreditsSizeY, pow2 */
+extern cGVar GVar_R_CreditsX;
+#define g_CreditsX (GVar_R_CreditsX.value.i)			/* R_CreditsX, in 640 x 480 */
+extern cGVar GVar_R_CreditsY;
+#define g_CreditsY (GVar_R_CreditsY.value.i)			/* R_CreditsY */
+extern cGVar GVar_R_CreditsClear;
+#define g_CreditsClear (GVar_R_CreditsClear.value.i)		/* R_CreditsClear */
+extern cGVar GVar_R_CreditsPhase;
+#define g_CreditsPhase (GVar_R_CreditsPhase.value.i)		/* R_CreditsPhase 0 horizontal, 1 vertical */
+extern cGVar GVar_R_CreditsAlpha;
+#define g_CreditsAlpha (GVar_R_CreditsAlpha.value.i)		/* R_CreditsAlpha 0..255 */
+extern cGVar GVar_R_SplitScreenCamera;
+#define g_SplitScreenCamera (GVar_R_SplitScreenCamera.value.i)		/* R_SplitScreenCamera, the half drawn */
+extern cGVar GVar_R_SplitScreenUpdate;
+#define g_SplitScreenUpdate (GVar_R_SplitScreenUpdate.value.i)		/* R_SplitScreenUpdate: the halves alternate */
 /* R_SplitScreen is g_SplitScreen (scrapmodel.h) */
 
 /* the target of RenderTarget_Begin, RTARGET_NONE between Begin and End */

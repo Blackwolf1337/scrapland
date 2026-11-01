@@ -5,6 +5,7 @@
 #ifndef SCRAP_CONSOLE_H
 #define SCRAP_CONSOLE_H
 
+#include "scrap/gvar.h"
 #include "scrap/shared.h"
 
 #define CON_COLOR_ERROR 0x8f
@@ -22,7 +23,8 @@ SD_SIZE(cConLine, 0x84);
 
 extern cConLine g_ConLines[23];	/* CON_LINES */
 extern int g_ConLine;		/* the line written now */
-#define g_DebugLevel GAME_GLOBAL_IN(int, GVar_debug, 16)
+extern cGVar GVar_debug;
+#define g_DebugLevel (GVar_debug.value.i)
 
 /* prints text in a color; flag set: only into the second log */
 void Con_Print(int color, const char *text, int flag);

@@ -8,6 +8,7 @@
 #ifndef SCRAP_FXCHARACTIONS_H
 #define SCRAP_FXCHARACTIONS_H
 
+#include "scrap/gvar.h"
 #include "scrap/fxchar.h"
 #include "scrap/fxmisc.h"
 #include "scrap/timer.h"
@@ -64,16 +65,26 @@ extern int g_FXFunctionaryVertex[14];		/* [14] */
 extern uint32_t g_FXFunctionaryColor[14];		/* [14] */
 
 /* the engine variables (Gvars) */
-#define g_BankerSteal1Sound GAME_GLOBAL_IN(const char *, GVar_BankerSteal1Sound, 16)
-#define g_BankerSteal2Sound GAME_GLOBAL_IN(const char *, GVar_BankerSteal2Sound, 16)
-#define g_BankerSteal3Sound GAME_GLOBAL_IN(const char *, GVar_BankerSteal3Sound, 16)
-#define g_BankerStealSoundVol GAME_GLOBAL_IN(float, GVar_BankerStealSoundVol, 16)
-#define g_BankerStealPosX GAME_GLOBAL_IN(float, GVar_BankerStealPosX, 16)
-#define g_BankerStealPosY GAME_GLOBAL_IN(float, GVar_BankerStealPosY, 16)
-#define g_BankerStealPosZ GAME_GLOBAL_IN(float, GVar_BankerStealPosZ, 16)
-#define g_BankMasterBatonPosX GAME_GLOBAL_IN(float, GVar_BankMasterBatonPosX, 16)
-#define g_BankMasterBatonPosY GAME_GLOBAL_IN(float, GVar_BankMasterBatonPosY, 16)
-#define g_BankMasterBatonPosZ GAME_GLOBAL_IN(float, GVar_BankMasterBatonPosZ, 16)
+extern cGVar GVar_BankerSteal1Sound;
+#define g_BankerSteal1Sound (GVar_BankerSteal1Sound.value.s)
+extern cGVar GVar_BankerSteal2Sound;
+#define g_BankerSteal2Sound (GVar_BankerSteal2Sound.value.s)
+extern cGVar GVar_BankerSteal3Sound;
+#define g_BankerSteal3Sound (GVar_BankerSteal3Sound.value.s)
+extern cGVar GVar_BankerStealSoundVol;
+#define g_BankerStealSoundVol (GVar_BankerStealSoundVol.value.f)
+extern cGVar GVar_BankerStealPosX;
+#define g_BankerStealPosX (GVar_BankerStealPosX.value.f)
+extern cGVar GVar_BankerStealPosY;
+#define g_BankerStealPosY (GVar_BankerStealPosY.value.f)
+extern cGVar GVar_BankerStealPosZ;
+#define g_BankerStealPosZ (GVar_BankerStealPosZ.value.f)
+extern cGVar GVar_BankMasterBatonPosX;
+#define g_BankMasterBatonPosX (GVar_BankMasterBatonPosX.value.f)
+extern cGVar GVar_BankMasterBatonPosY;
+#define g_BankMasterBatonPosY (GVar_BankMasterBatonPosY.value.f)
+extern cGVar GVar_BankMasterBatonPosZ;
+#define g_BankMasterBatonPosZ (GVar_BankMasterBatonPosZ.value.f)
 
 /* the timer of a character (cWalkChar + 0x110) */
 /* a float of the Police character: its center is this much above the feet */

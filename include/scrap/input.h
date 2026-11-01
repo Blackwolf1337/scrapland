@@ -9,6 +9,7 @@
 #ifndef SCRAP_INPUT_H
 #define SCRAP_INPUT_H
 
+#include "scrap/gvar.h"
 #include "scrap/cstring.h"
 #include "scrap/dlist.h"
 #include "scrap/game.h"
@@ -248,13 +249,16 @@ extern int g_ToDefineAction;
 extern uint32_t g_ToDefineSet;
 /* the XInput entries of the pad buttons and half axes in the order of the defaults */
 #define g_PadCodes (GAME_ARRAY(const int, g_PadCodes))	/* [24] */
-#define g_LogRumble GAME_GLOBAL_IN(int, GVar_LogRumble, 16)		/* LogRumble */
-#define g_InactivityTime GAME_GLOBAL_IN(float, GVar_CheckInactivityTime, 16)	/* CheckInactivityTime */
-#define g_InactivityTimeDef GAME_GLOBAL_IN(float, GVar_CheckInactivityTime, 20)
+extern cGVar GVar_LogRumble;
+#define g_LogRumble (GVar_LogRumble.value.i)		/* LogRumble */
+extern cGVar GVar_CheckInactivityTime;
+#define g_InactivityTime (GVar_CheckInactivityTime.value.f)	/* CheckInactivityTime */
+#define g_InactivityTimeDef (GVar_CheckInactivityTime.def.f)
 #define g_InactivityFunc (GAME_ARRAY_IN(cPy_Function, GVar_CheckInactivityFunc, 16))
 #define g_DefineFunc (GAME_ARRAY(cPy_Function, g_DefineFunc))	/* the function of ListenToDefine */
 extern cInputDevList g_InputDevices;
-#define g_PauseInactivity GAME_GLOBAL_IN(int, GVar_PauseInactivityTime, 16)	/* PauseInactivityTime */
+extern cGVar GVar_PauseInactivityTime;
+#define g_PauseInactivity (GVar_PauseInactivityTime.value.i)	/* PauseInactivityTime */
 typedef void (*input_cb_t)(void);
 extern input_cb_t g_OnDefined;
 extern float g_InactivityTimer;
@@ -349,9 +353,11 @@ int32_t Keyboard_Poll(void);
 byte cPcKeyboard_IsReserved(cPcKeyboard *self, int entry);
 
 /* Input/PcMouse.cpp */
-#define g_MouseSensH GAME_GLOBAL_IN(float, GVar_MouseSensitivityH, 16)		/* MouseSensitivityH */
+extern cGVar GVar_MouseSensitivityH;
+#define g_MouseSensH (GVar_MouseSensitivityH.value.f)		/* MouseSensitivityH */
 #define g_MouseSensV GAME_GLOBAL_IN(float, g_KeyNameBuf, 32)		/* MouseSensitivityV */
-#define g_InvertMouse GAME_GLOBAL_IN(int, GVar_InvertMouse, 16)		/* InvertMouse */
+extern cGVar GVar_InvertMouse;
+#define g_InvertMouse (GVar_InvertMouse.value.i)		/* InvertMouse */
 #define g_Mouse (GAME_ARRAY(cPcMouse, g_Mouse))
 extern exe_IDirectInputDevice8 *g_MouseDev;
 /* DIMOUSESTATE */
@@ -360,7 +366,8 @@ typedef struct exe_mouse_state {
 	char buttons[4];		/* 0xc */
 } exe_mouse_state;
 extern exe_mouse_state g_MouseState;
-#define g_IsUsingMouse GAME_GLOBAL_IN(int, GVar_IsUsingMouse, 16)		/* IsUsingMouse */
+extern cGVar GVar_IsUsingMouse;
+#define g_IsUsingMouse (GVar_IsUsingMouse.value.i)		/* IsUsingMouse */
 cPcMouse *cPcMouse_ctor(cPcMouse *self);
 cPcMouse *cPcMouse_Delete(cPcMouse *self, byte flags);
 void Mouse_Acquire(byte on);
@@ -378,21 +385,34 @@ int32_t Mouse_Poll(void);
 int cPcMouse_IsReserved(cAbstractIDevice *self, int entry);
 
 /* Input/PcPad.cpp: XInput pads */
-#define g_MainPcPad GAME_GLOBAL_IN(int, GVar_MainPcPad, 16)		/* MainPcPad: the pad of player 0, -1 all */
-#define g_PadDeadZone GAME_GLOBAL_IN(float, GVar_PCPadDeadZone, 16)	/* PCPadDeadZone */
-#define g_PCPadConnected GAME_GLOBAL_IN(int, GVar_PCPadConnected, 16)	/* PCPadConnected */
+extern cGVar GVar_MainPcPad;
+#define g_MainPcPad (GVar_MainPcPad.value.i)		/* MainPcPad: the pad of player 0, -1 all */
+extern cGVar GVar_PCPadDeadZone;
+#define g_PadDeadZone (GVar_PCPadDeadZone.value.f)	/* PCPadDeadZone */
+extern cGVar GVar_PCPadConnected;
+#define g_PCPadConnected (GVar_PCPadConnected.value.i)	/* PCPadConnected */
 extern cPcPad g_PcPads[4];		/* [4] */
-#define g_PadForeground GAME_GLOBAL_IN(int, GVar_PCPadForeground, 16)	/* PCPadForeground: read only while the window is in front */
+extern cGVar GVar_PCPadForeground;
+#define g_PadForeground (GVar_PCPadForeground.value.i)	/* PCPadForeground: read only while the window is in front */
 extern int g_NumPcPads;
-#define g_WalkCameraCenter GAME_GLOBAL_IN(float, GVar_WalkCameraCenter, 16)	/* WalkCameraCenter */
-#define g_XBCDigitalAsAnalog GAME_GLOBAL_IN(int, GVar_XBCDigitalAsAnalog, 16)
-#define g_XBCameraAutoPad GAME_GLOBAL_IN(int, GVar_XBCameraAutoPad, 16)
-#define g_XBInvertCharYPad GAME_GLOBAL_IN(int, GVar_XBInvertCharYPad, 16)
-#define g_XBInvertLRChar GAME_GLOBAL_IN(int, GVar_XBInvertLRChar, 16)
-#define g_XBInvertLRVehicle GAME_GLOBAL_IN(int, GVar_XBInvertLRVehicle, 16)
-#define g_XBInvertVehicleYPad GAME_GLOBAL_IN(int, GVar_XBInvertVehicleYPad, 16)
-#define g_XBVDigitalAsAnalog GAME_GLOBAL_IN(int, GVar_XBVDigitalAsAnalog, 16)
-#define g_XBVehicleAsFPS GAME_GLOBAL_IN(int, GVar_XBVehicleAsFPS, 16)
+extern cGVar GVar_WalkCameraCenter;
+#define g_WalkCameraCenter (GVar_WalkCameraCenter.value.f)	/* WalkCameraCenter */
+extern cGVar GVar_XBCDigitalAsAnalog;
+#define g_XBCDigitalAsAnalog (GVar_XBCDigitalAsAnalog.value.i)
+extern cGVar GVar_XBCameraAutoPad;
+#define g_XBCameraAutoPad (GVar_XBCameraAutoPad.value.i)
+extern cGVar GVar_XBInvertCharYPad;
+#define g_XBInvertCharYPad (GVar_XBInvertCharYPad.value.i)
+extern cGVar GVar_XBInvertLRChar;
+#define g_XBInvertLRChar (GVar_XBInvertLRChar.value.i)
+extern cGVar GVar_XBInvertLRVehicle;
+#define g_XBInvertLRVehicle (GVar_XBInvertLRVehicle.value.i)
+extern cGVar GVar_XBInvertVehicleYPad;
+#define g_XBInvertVehicleYPad (GVar_XBInvertVehicleYPad.value.i)
+extern cGVar GVar_XBVDigitalAsAnalog;
+#define g_XBVDigitalAsAnalog (GVar_XBVDigitalAsAnalog.value.i)
+extern cGVar GVar_XBVehicleAsFPS;
+#define g_XBVehicleAsFPS (GVar_XBVehicleAsFPS.value.i)
 cPcPad *cPcPad_ctor(cPcPad *self, int index);
 cPcPad *cPcPad_Delete(cPcPad *self, byte flags);
 void Pad_Acquire(byte on);

@@ -6,6 +6,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/aivehicle.h"
 #include "scrap/console.h"
 #include "scrap/fxcountermeasures.h"
@@ -19,18 +20,30 @@
 
 /* the engine variables */
 #define g_ShowVehWeapAI (&GAME_GLOBAL_IN(cString, GVar_ShowVehWeapAI, 16))
-#define g_TimeShootAI GAME_GLOBAL_IN(float, GVar_TimeShootAI, 16)
-#define g_TimeShootCMAI GAME_GLOBAL_IN(float, GVar_TimeShootCMAI, 16)
-#define g_TimeChangeWeapAI GAME_GLOBAL_IN(float, GVar_TimeChangeWeapAI, 16)
-#define g_TimeChangeWeapCMAI GAME_GLOBAL_IN(float, GVar_TimeChangeWeapCMAI, 16)
-#define g_ShortDistShootAI GAME_GLOBAL_IN(float, GVar_ShortDistShootAI, 16)
-#define g_OffsetAngShootAI GAME_GLOBAL_IN(float, GVar_OffsetAngShootAI, 16)
-#define g_MinDistCMAI GAME_GLOBAL_IN(float, GVar_MinDistCMAI, 16)
-#define g_VulcanIDWeap GAME_GLOBAL_IN(int, GVar_VulcanIDWeap, 16)
-#define g_VulcanDistLimit GAME_GLOBAL_IN(float, GVar_VulcanDistLimit, 16)
-#define g_VulcanDistLimitUPG GAME_GLOBAL_IN(float, GVar_VulcanDistLimitUPG, 16)
-#define g_TeslaDistLimit GAME_GLOBAL_IN(float, GVar_TeslaDistLimit, 16)
-#define g_SwarmDistLimit GAME_GLOBAL_IN(float, GVar_SwarmDistLimit, 16)
+extern cGVar GVar_TimeShootAI;
+#define g_TimeShootAI (GVar_TimeShootAI.value.f)
+extern cGVar GVar_TimeShootCMAI;
+#define g_TimeShootCMAI (GVar_TimeShootCMAI.value.f)
+extern cGVar GVar_TimeChangeWeapAI;
+#define g_TimeChangeWeapAI (GVar_TimeChangeWeapAI.value.f)
+extern cGVar GVar_TimeChangeWeapCMAI;
+#define g_TimeChangeWeapCMAI (GVar_TimeChangeWeapCMAI.value.f)
+extern cGVar GVar_ShortDistShootAI;
+#define g_ShortDistShootAI (GVar_ShortDistShootAI.value.f)
+extern cGVar GVar_OffsetAngShootAI;
+#define g_OffsetAngShootAI (GVar_OffsetAngShootAI.value.f)
+extern cGVar GVar_MinDistCMAI;
+#define g_MinDistCMAI (GVar_MinDistCMAI.value.f)
+extern cGVar GVar_VulcanIDWeap;
+#define g_VulcanIDWeap (GVar_VulcanIDWeap.value.i)
+extern cGVar GVar_VulcanDistLimit;
+#define g_VulcanDistLimit (GVar_VulcanDistLimit.value.f)
+extern cGVar GVar_VulcanDistLimitUPG;
+#define g_VulcanDistLimitUPG (GVar_VulcanDistLimitUPG.value.f)
+extern cGVar GVar_TeslaDistLimit;
+#define g_TeslaDistLimit (GVar_TeslaDistLimit.value.f)
+extern cGVar GVar_SwarmDistLimit;
+#define g_SwarmDistLimit (GVar_SwarmDistLimit.value.f)
 
 #define AIVS_AMMO_HOOK 3		/* the ammo kind of the hook */
 

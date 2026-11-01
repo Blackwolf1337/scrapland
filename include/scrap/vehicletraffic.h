@@ -6,6 +6,7 @@
 #ifndef SCRAP_VEHICLETRAFFIC_H
 #define SCRAP_VEHICLETRAFFIC_H
 
+#include "scrap/gvar.h"
 #include "scrap/entity.h"
 #include "scrap/scrapcollision.h"
 
@@ -27,11 +28,16 @@ SD_OFFSET(cVehicleTraffic, off, 0x28);
 SD_SIZE(cVehicleTraffic, 0x2c);
 
 /* the engine variables */
-#define g_UseTrafficCollisionSkip GAME_GLOBAL_IN(int, GVar_UseTrafficCollisionSkip, 16)
-#define g_TrafficSpeed GAME_GLOBAL_IN(float, GVar_TrafficSpeed, 16)
-#define g_HTrafficCapsule GAME_GLOBAL_IN(float, GVar_HTrafficCapsule, 16)
-#define g_NTrafficCapsule GAME_GLOBAL_IN(float, GVar_NTrafficCapsule, 16)
-#define g_MTrafficCapsule GAME_GLOBAL_IN(float, GVar_MTrafficCapsule, 16)
+extern cGVar GVar_UseTrafficCollisionSkip;
+#define g_UseTrafficCollisionSkip (GVar_UseTrafficCollisionSkip.value.i)
+extern cGVar GVar_TrafficSpeed;
+#define g_TrafficSpeed (GVar_TrafficSpeed.value.f)
+extern cGVar GVar_HTrafficCapsule;
+#define g_HTrafficCapsule (GVar_HTrafficCapsule.value.f)
+extern cGVar GVar_NTrafficCapsule;
+#define g_NTrafficCapsule (GVar_NTrafficCapsule.value.f)
+extern cGVar GVar_MTrafficCapsule;
+#define g_MTrafficCapsule (GVar_MTrafficCapsule.value.f)
 
 /* AI of another module: the width of the traffic path of an AI in the traffic states 4 and 9, else 0;
  * the value of the x87 stack, not rounded */

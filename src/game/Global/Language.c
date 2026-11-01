@@ -5,6 +5,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/console.h"
 #include "scrap/hashtable.h"
 #include "scrap/scrap.h"
@@ -23,7 +24,8 @@ SD_SIZE(cLangItem, 0x10);
 
 #define g_LangTable (&GAME_GLOBAL(HashTable, g_LangTable))	/* 457 slots, case-insensitive */
 #define g_LangName (GAME_ARRAY_IN(cString, GVar_SelectedLanguage, 16))		/* the language asked for */
-#define g_LangDefault GAME_GLOBAL_IN(const char *, GVar_SelectedLanguage, 20)	/* the language when that file is missing */
+extern cGVar GVar_SelectedLanguage;
+#define g_LangDefault (GVar_SelectedLanguage.def.s)	/* the language when that file is missing */
 extern char *g_LangBuffer;
 extern char *g_IdLang;		/* the language loaded */
 

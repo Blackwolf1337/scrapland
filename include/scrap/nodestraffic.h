@@ -8,6 +8,7 @@
 #ifndef SCRAP_NODESTRAFFIC_H
 #define SCRAP_NODESTRAFFIC_H
 
+#include "scrap/gvar.h"
 #include "scrap/ai.h"
 #include "scrap/dlist.h"
 
@@ -210,19 +211,30 @@ SD_SIZE(CNodesTraffic, 0x70);
 #define CNODESTRAFFIC_VFTABLE GAME_VFTABLE(CNodesTraffic_vftable)
 
 /* the engine variables */
-#define g_DistGetPVisTrafficAI GAME_GLOBAL_IN(float, GVar_DistGetPVisTrafficAI, 16)	/* the searches end at this distance */
+extern cGVar GVar_DistGetPVisTrafficAI;
+#define g_DistGetPVisTrafficAI (GVar_DistGetPVisTrafficAI.value.f)	/* the searches end at this distance */
 extern float g_TrafficSearchDist;		/* the copy of it the searches use */
-#define g_MinDistNodeTrafficAI GAME_GLOBAL_IN(float, GVar_MinDistNodeTrafficAI, 16)	/* the step of the nodes Load fills in */
-#define g_MaxNumTrackLowDensityAI GAME_GLOBAL_IN(int, GVar_MaxNumTrackLowDensityAI, 16)
-#define g_MaxNumTrackNormalDensityAI GAME_GLOBAL_IN(int, GVar_MaxNumTrackNormalDensityAI, 16)
-#define g_ShowNumTrafficAI GAME_GLOBAL_IN(int, GVar_ShowNumTrafficAI, 16)		/* the track drawn, 0 for none */
-#define g_MaxDistAroundReposAI GAME_GLOBAL_IN(float, GVar_MaxDistAroundReposAI, 16)
+extern cGVar GVar_MinDistNodeTrafficAI;
+#define g_MinDistNodeTrafficAI (GVar_MinDistNodeTrafficAI.value.f)	/* the step of the nodes Load fills in */
+extern cGVar GVar_MaxNumTrackLowDensityAI;
+#define g_MaxNumTrackLowDensityAI (GVar_MaxNumTrackLowDensityAI.value.i)
+extern cGVar GVar_MaxNumTrackNormalDensityAI;
+#define g_MaxNumTrackNormalDensityAI (GVar_MaxNumTrackNormalDensityAI.value.i)
+extern cGVar GVar_ShowNumTrafficAI;
+#define g_ShowNumTrafficAI (GVar_ShowNumTrafficAI.value.i)		/* the track drawn, 0 for none */
+extern cGVar GVar_MaxDistAroundReposAI;
+#define g_MaxDistAroundReposAI (GVar_MaxDistAroundReposAI.value.f)
 /* the default radius of the tracks by type */
-#define g_HTrafficCapsule GAME_GLOBAL_IN(float, GVar_HTrafficCapsule, 16)
-#define g_MTrafficCapsule GAME_GLOBAL_IN(float, GVar_MTrafficCapsule, 16)
-#define g_NTrafficCapsule GAME_GLOBAL_IN(float, GVar_NTrafficCapsule, 16)
-#define g_HNTrafficCapsule GAME_GLOBAL_IN(float, GVar_HNTrafficCapsule, 16)
-#define g_MNTrafficCapsule GAME_GLOBAL_IN(float, GVar_MNTrafficCapsule, 16)
+extern cGVar GVar_HTrafficCapsule;
+#define g_HTrafficCapsule (GVar_HTrafficCapsule.value.f)
+extern cGVar GVar_MTrafficCapsule;
+#define g_MTrafficCapsule (GVar_MTrafficCapsule.value.f)
+extern cGVar GVar_NTrafficCapsule;
+#define g_NTrafficCapsule (GVar_NTrafficCapsule.value.f)
+extern cGVar GVar_HNTrafficCapsule;
+#define g_HNTrafficCapsule (GVar_HNTrafficCapsule.value.f)
+extern cGVar GVar_MNTrafficCapsule;
+#define g_MNTrafficCapsule (GVar_MNTrafficCapsule.value.f)
 
 /* CNodesTraffic_ctor and CNodesTrafficInDoor_ctor: ai.h */
 void CNodesTraffic_dtor(CNodesTraffic *self);

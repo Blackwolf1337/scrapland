@@ -7,6 +7,7 @@
 #ifndef SCRAP_SCORERHUD_H
 #define SCRAP_SCORERHUD_H
 
+#include "scrap/gvar.h"
 #include "scrap/app.h"
 #include "scrap/scoreritems.h"
 #include "scrap/world.h"
@@ -246,8 +247,10 @@ SD_OFFSET(cStatusScorer, numLives, 0x160);
 SD_OFFSET(cStatusScorer, moneyBlink, 0x1b0);
 SD_OFFSET(cStatusScorer, flag, 0x1e8);
 
-#define g_StatusLowLifeSound GAME_GLOBAL_IN(char *, GVar_DangerLifeSound, 16)	/* the sound of the low life */
-#define g_StatusAlarmSound GAME_GLOBAL_IN(char *, GVar_RegenerationSound, 16)	/* the siren of the alarm */
+extern cGVar GVar_DangerLifeSound;
+#define g_StatusLowLifeSound (GVar_DangerLifeSound.value.s)	/* the sound of the low life */
+extern cGVar GVar_RegenerationSound;
+#define g_StatusAlarmSound (GVar_RegenerationSound.value.s)	/* the siren of the alarm */
 
 cStatusScorer *cStatusScorer_ctor(cStatusScorer *self);
 void cStatusScorer_dtor(cStatusScorer *self);
@@ -327,10 +330,14 @@ SD_OFFSET(cTalkScorer, tab, 0x1a64);
 
 /* the talk of Scorer_SetSpeechText */
 extern char g_TalkText[6400];		/* TALK_TEXT_SIZE */
-#define g_TalkWidth GAME_GLOBAL_IN(float, GVar_MaxTalkLineSizePix, 16)		/* the width of the lines */
-#define g_TalkUseTime GAME_GLOBAL_IN(float, GVar_TimeToAbortChatText, 16)	/* the hold time of the use that skips a talk */
-#define g_RemainTalkTime GAME_GLOBAL_IN(float, GVar_RemainTalkTime, 16)	/* RemainTalkTime */
-#define g_TalkTime GAME_GLOBAL_IN(float, GVar_FullTalkTime, 16)		/* the time of the whole talk */
+extern cGVar GVar_MaxTalkLineSizePix;
+#define g_TalkWidth (GVar_MaxTalkLineSizePix.value.f)		/* the width of the lines */
+extern cGVar GVar_TimeToAbortChatText;
+#define g_TalkUseTime (GVar_TimeToAbortChatText.value.f)	/* the hold time of the use that skips a talk */
+extern cGVar GVar_RemainTalkTime;
+#define g_RemainTalkTime (GVar_RemainTalkTime.value.f)	/* RemainTalkTime */
+extern cGVar GVar_FullTalkTime;
+#define g_TalkTime (GVar_FullTalkTime.value.f)		/* the time of the whole talk */
 #define g_TalkCallback (&GAME_GLOBAL(cPy_Function, g_TalkCallback))	/* run at the end of the talk */
 extern int g_TalkNumLines;
 extern char * g_TalkLines[40];	/* TALK_MAX_LINES */
@@ -410,8 +417,10 @@ SD_SIZE(cTextTypingScorer, 0xf4);
 /* the text edit of each player */
 extern cTextScorer * g_TextEditItem[4];	/* [4] */
 extern cScorerItem * g_TextEditCursor[4];	/* [4] the cursor item before the edit */
-#define g_TypingSoundName GAME_GLOBAL_IN(const char *, GVar_TextTypingSound, 16)	/* "keyboard%d" for the key sounds */
-#define g_TypingSoundVol GAME_GLOBAL_IN(float, GVar_TextTypingSoundVol, 16)
+extern cGVar GVar_TextTypingSound;
+#define g_TypingSoundName (GVar_TextTypingSound.value.s)	/* "keyboard%d" for the key sounds */
+extern cGVar GVar_TextTypingSoundVol;
+#define g_TypingSoundVol (GVar_TextTypingSoundVol.value.f)
 #define TEXTEDIT_NATIVE_FUNC 0x184120			/* the OnAccept that starts the edit */
 
 cTextScorer *cTextScorer_ctor(cTextScorer *self);
@@ -451,12 +460,18 @@ typedef struct cTimerScorer {
 SD_SIZE(cTimerScorer, 0xf0);
 
 /* the time engine variables of the types, by type (their flags at -4, GVAR_FLAGS) */
-#define g_TimeToCancel GAME_GLOBAL_IN(float, GVar_TimeToCancelCurrentMission, 16)
-#define g_TimeToFinish GAME_GLOBAL_IN(float, GVar_TimeToFinishCurrentMission, 16)
-#define g_TimeInactive GAME_GLOBAL_IN(float, GVar_TimeInactiveTimer, 16)
-#define g_TimeSpecialUse GAME_GLOBAL_IN(float, GVar_TimeSpecialUseTimer, 16)
-#define g_TimerMode GAME_GLOBAL_IN(int, GVar_CounterType, 16)		/* 0 counts down, 1 up, else stopped */
-#define g_TimerWarning GAME_GLOBAL_IN(float, GVar_TimeWarning, 16)	/* OnTimeWarning below this, -1 after */
+extern cGVar GVar_TimeToCancelCurrentMission;
+#define g_TimeToCancel (GVar_TimeToCancelCurrentMission.value.f)
+extern cGVar GVar_TimeToFinishCurrentMission;
+#define g_TimeToFinish (GVar_TimeToFinishCurrentMission.value.f)
+extern cGVar GVar_TimeInactiveTimer;
+#define g_TimeInactive (GVar_TimeInactiveTimer.value.f)
+extern cGVar GVar_TimeSpecialUseTimer;
+#define g_TimeSpecialUse (GVar_TimeSpecialUseTimer.value.f)
+extern cGVar GVar_CounterType;
+#define g_TimerMode (GVar_CounterType.value.i)		/* 0 counts down, 1 up, else stopped */
+extern cGVar GVar_TimeWarning;
+#define g_TimerWarning (GVar_TimeWarning.value.f)	/* OnTimeWarning below this, -1 after */
 
 cTimerScorer *cTimerScorer_ctor(cTimerScorer *self);
 void cTimerScorer_dtor(cTimerScorer *self);
@@ -572,7 +587,8 @@ typedef struct cWindFxScorer {
 } cWindFxScorer;
 SD_SIZE(cWindFxScorer, 0x100);
 
-#define g_WindFxSound GAME_GLOBAL_IN(char *, GVar_WindFxScorerSound, 16)
+extern cGVar GVar_WindFxScorerSound;
+#define g_WindFxSound (GVar_WindFxScorerSound.value.s)
 
 cWindFxScorer *cWindFxScorer_ctor(cWindFxScorer *self);
 void cWindFxScorer_dtor(cWindFxScorer *self);

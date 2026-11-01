@@ -8,6 +8,7 @@
 #ifndef SCRAP_TEXTURE_H
 #define SCRAP_TEXTURE_H
 
+#include "scrap/gvar.h"
 #include "scrap/bmp.h"
 
 #define TEX_MAX_NAME 0x104
@@ -42,7 +43,8 @@ typedef struct CMultiSprite {
 SD_SIZE(CMultiSprite, 0x10);
 
 #define MST_VER 100
-#define g_BuildMST GAME_GLOBAL_IN(int, GVar_BuildMST, 16)	/* BuildMST: load the .mst files */
+extern cGVar GVar_BuildMST;
+#define g_BuildMST (GVar_BuildMST.value.i)	/* BuildMST: load the .mst files */
 
 typedef struct CTexture {
 	int Refs;			/* 0x000 */

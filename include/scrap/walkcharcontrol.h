@@ -10,6 +10,7 @@
 #ifndef SCRAP_WALKCHARCONTROL_H
 #define SCRAP_WALKCHARCONTROL_H
 
+#include "scrap/gvar.h"
 #include "scrap/entity.h"
 #include "scrap/nto1links.h"
 
@@ -39,11 +40,16 @@ SD_OFFSET(cWalkCharControl, lock, 0x20);
 SD_OFFSET(cWalkCharControl, target, 0x24);
 SD_SIZE(cWalkCharControl, 0x34);
 
-#define g_WalkCameraCenter GAME_GLOBAL_IN(float, GVar_WalkCameraCenter, 16)	/* "WalkCameraCenter" */
-#define g_AlwaysRun GAME_GLOBAL_IN(int, GVar_AlwaysRun, 16)		/* "AlwaysRun" */
-#define g_PadTurnSpeed GAME_GLOBAL_IN(float, GVar_PadTurnSpeed, 16)	/* "PadTurnSpeed" */
-#define g_EnergyBarActive GAME_GLOBAL_IN(int, GVar_EnergyBarActive, 16)	/* "EnergyBarActive" */
-#define g_EnergyRechargeTime GAME_GLOBAL_IN(float, GVar_EnergyRechargeTime, 16)	/* "EnergyRechargeTime" */
+extern cGVar GVar_WalkCameraCenter;
+#define g_WalkCameraCenter (GVar_WalkCameraCenter.value.f)	/* "WalkCameraCenter" */
+extern cGVar GVar_AlwaysRun;
+#define g_AlwaysRun (GVar_AlwaysRun.value.i)		/* "AlwaysRun" */
+extern cGVar GVar_PadTurnSpeed;
+#define g_PadTurnSpeed (GVar_PadTurnSpeed.value.f)	/* "PadTurnSpeed" */
+extern cGVar GVar_EnergyBarActive;
+#define g_EnergyBarActive (GVar_EnergyBarActive.value.i)	/* "EnergyBarActive" */
+extern cGVar GVar_EnergyRechargeTime;
+#define g_EnergyRechargeTime (GVar_EnergyRechargeTime.value.f)	/* "EnergyRechargeTime" */
 
 cWalkCharControl *cWalkCharControl_ctor(cWalkCharControl *self);
 void cWalkCharControl_dtor(cWalkCharControl *self);

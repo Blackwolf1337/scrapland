@@ -9,17 +9,26 @@
 #ifndef SCRAP_FXSCENE_H
 #define SCRAP_FXSCENE_H
 
+#include "scrap/gvar.h"
 #include "scrap/fxmisc.h"
 
 /* the engine variables (Gvars): the debris system files of the scenes */
-#define g_FXSceneBeatingFile GAME_GLOBAL_IN(const char *, GVar_FXSceneBeatPickusFile, 16)
-#define g_FXSceneBillArrivesAFile GAME_GLOBAL_IN(const char *, GVar_FXSceneBillArrives_AFile, 16)
-#define g_FXSceneDecontaminationFile GAME_GLOBAL_IN(const char *, GVar_FXSceneDecontaminationFile, 16)	/* also BillArrives_C */
-#define g_FXSceneBishopsFile GAME_GLOBAL_IN(const char *, GVar_FXSceneBishopsFile, 16)
-#define g_FXSceneEnterMatrixFile GAME_GLOBAL_IN(const char *, GVar_FXSceneEnterMatrixFile, 16)
-#define g_FXSceneHumanCDFile GAME_GLOBAL_IN(const char *, GVar_FXSceneHumanCDFile, 16)
-#define g_FXSceneTheEndBFile GAME_GLOBAL_IN(const char *, GVar_FXSceneTheEndBFile, 16)
-#define g_FXSceneYakuzziFile GAME_GLOBAL_IN(const char *, GVar_FXSceneYakuzziFile, 16)
+extern cGVar GVar_FXSceneBeatPickusFile;
+#define g_FXSceneBeatingFile (GVar_FXSceneBeatPickusFile.value.s)
+extern cGVar GVar_FXSceneBillArrives_AFile;
+#define g_FXSceneBillArrivesAFile (GVar_FXSceneBillArrives_AFile.value.s)
+extern cGVar GVar_FXSceneDecontaminationFile;
+#define g_FXSceneDecontaminationFile (GVar_FXSceneDecontaminationFile.value.s)	/* also BillArrives_C */
+extern cGVar GVar_FXSceneBishopsFile;
+#define g_FXSceneBishopsFile (GVar_FXSceneBishopsFile.value.s)
+extern cGVar GVar_FXSceneEnterMatrixFile;
+#define g_FXSceneEnterMatrixFile (GVar_FXSceneEnterMatrixFile.value.s)
+extern cGVar GVar_FXSceneHumanCDFile;
+#define g_FXSceneHumanCDFile (GVar_FXSceneHumanCDFile.value.s)
+extern cGVar GVar_FXSceneTheEndBFile;
+#define g_FXSceneTheEndBFile (GVar_FXSceneTheEndBFile.value.s)
+extern cGVar GVar_FXSceneYakuzziFile;
+#define g_FXSceneYakuzziFile (GVar_FXSceneYakuzziFile.value.s)
 
 #define FXBISHOPS_TRAILS 12
 #define FXDECON_RAYS 40

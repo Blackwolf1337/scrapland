@@ -10,6 +10,7 @@
 #ifndef SCRAP_FXVEHICLE_H
 #define SCRAP_FXVEHICLE_H
 
+#include "scrap/gvar.h"
 #include "scrap/fxcountermeasures.h"
 #include "scrap/fxmisc.h"
 #include "scrap/fxweapons.h"
@@ -40,8 +41,10 @@
 #define FXVeh_Effects(e) ((void *)&Veh(e)->effects)		/* Entities/Vehicle/VehicleEffects.cpp */
 
 /* the engine variables */
-#define g_StdMaxLife GAME_GLOBAL_IN(int, GVar_StdMaxLife, 16)			/* StdMaxLife */
-#define g_FXSetOnFireLifePercent GAME_GLOBAL_IN(int, GVar_FXSetOnFireLifePercent, 16)	/* FXSetOnFireLifePercent */
+extern cGVar GVar_StdMaxLife;
+#define g_StdMaxLife (GVar_StdMaxLife.value.i)			/* StdMaxLife */
+extern cGVar GVar_FXSetOnFireLifePercent;
+#define g_FXSetOnFireLifePercent (GVar_FXSetOnFireLifePercent.value.i)	/* FXSetOnFireLifePercent */
 
 /* VehicleEffects.cpp: the damage effect of the vehicle stopped (flag +4 and element +8 cleared) */
 void cVehicleEffects_ClearDamage(void *self);

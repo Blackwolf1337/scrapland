@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/console.h"
 #include "scrap/filepak.h"
 #include "scrap/fmod.h"
@@ -381,7 +382,8 @@ int Fmod_Play(void *sample, const cSoundDesc *d, const char *name) {
 	return ch;
 }
 
-#define g_S_Show GAME_GLOBAL_IN(int, GVar_S_Show, 16)		/* S_Show: 1 the channels, 3 the memory */
+extern cGVar GVar_S_Show;
+#define g_S_Show (GVar_S_Show.value.i)		/* S_Show: 1 the channels, 3 the memory */
 
 /* vf31 (DebugDraw): S_Show 3 the memory of FMOD, 1 the software and hardware channels with their state and the
  * sample, volume, pan and frequency of each hardware channel in two columns */

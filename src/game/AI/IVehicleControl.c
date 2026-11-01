@@ -8,6 +8,7 @@
 #include <float.h>
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/aivehicle.h"
 #include "scrap/autoaim.h"
 #include "scrap/console.h"
@@ -22,20 +23,33 @@
 #include "scrap/vehicleentity.h"
 
 /* the engine variables */
-#define g_ShowPathAI GAME_GLOBAL_IN(int, GVar_ShowPathAI, 16)
-#define g_DepthPathRouteOutDoorAI GAME_GLOBAL_IN(int, GVar_DepthPathRouteOutDoorAI, 16)
+extern cGVar GVar_ShowPathAI;
+#define g_ShowPathAI (GVar_ShowPathAI.value.i)
+extern cGVar GVar_DepthPathRouteOutDoorAI;
+#define g_DepthPathRouteOutDoorAI (GVar_DepthPathRouteOutDoorAI.value.i)
 #define g_ShowVehAI (&GAME_GLOBAL_IN(cString, GVar_ShowVehAI, 16))
-#define g_LimVelTurnObjectiveAI GAME_GLOBAL_IN(float, GVar_LimVelTurnObjectiveAI, 16)
-#define g_DistBoostAI GAME_GLOBAL_IN(float, GVar_DistBoostAI, 16)
-#define g_DepthSearchPosGoAI GAME_GLOBAL_IN(int, GVar_DepthSearchPosGoAI, 16)
-#define g_TimeReactTurnAI GAME_GLOBAL_IN(float, GVar_TimeReactTurnAI, 16)
-#define g_DistBrakeObjAI GAME_GLOBAL_IN(float, GVar_DistBrakeObjAI, 16)
-#define g_MinAngleSearchPointAI GAME_GLOBAL_IN(float, GVar_MinAngleSearchPointAI, 16)
-#define g_TimeMaxReachBoostAI GAME_GLOBAL_IN(float, GVar_TimeMaxReachBoostAI, 16)
-#define g_VelTurnAI GAME_GLOBAL_IN(float, GVar_VelTurnAI, 16)
-#define g_DecVelBrakeAI GAME_GLOBAL_IN(float, GVar_DecVelBrakeAI, 16)
-#define g_ShowStopShipAI GAME_GLOBAL_IN(int, GVar_ShowStopShipAI, 16)
-#define g_MinTimeReposAI GAME_GLOBAL_IN(float, GVar_MinTimeReposAI, 16)
+extern cGVar GVar_LimVelTurnObjectiveAI;
+#define g_LimVelTurnObjectiveAI (GVar_LimVelTurnObjectiveAI.value.f)
+extern cGVar GVar_DistBoostAI;
+#define g_DistBoostAI (GVar_DistBoostAI.value.f)
+extern cGVar GVar_DepthSearchPosGoAI;
+#define g_DepthSearchPosGoAI (GVar_DepthSearchPosGoAI.value.i)
+extern cGVar GVar_TimeReactTurnAI;
+#define g_TimeReactTurnAI (GVar_TimeReactTurnAI.value.f)
+extern cGVar GVar_DistBrakeObjAI;
+#define g_DistBrakeObjAI (GVar_DistBrakeObjAI.value.f)
+extern cGVar GVar_MinAngleSearchPointAI;
+#define g_MinAngleSearchPointAI (GVar_MinAngleSearchPointAI.value.f)
+extern cGVar GVar_TimeMaxReachBoostAI;
+#define g_TimeMaxReachBoostAI (GVar_TimeMaxReachBoostAI.value.f)
+extern cGVar GVar_VelTurnAI;
+#define g_VelTurnAI (GVar_VelTurnAI.value.f)
+extern cGVar GVar_DecVelBrakeAI;
+#define g_DecVelBrakeAI (GVar_DecVelBrakeAI.value.f)
+extern cGVar GVar_ShowStopShipAI;
+#define g_ShowStopShipAI (GVar_ShowStopShipAI.value.i)
+extern cGVar GVar_MinTimeReposAI;
+#define g_MinTimeReposAI (GVar_MinTimeReposAI.value.f)
 
 #define AIVC_MAX_FREE 50		/* the free nodes the path keeps */
 #define AIVC_MAX_LEN 10000.0f		/* the corridor tested ahead at most */

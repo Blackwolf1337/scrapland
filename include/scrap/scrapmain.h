@@ -7,6 +7,7 @@
 #ifndef SCRAP_SCRAPMAIN_H
 #define SCRAP_SCRAPMAIN_H
 
+#include "scrap/gvar.h"
 #include "scrap/archio.h"
 #include "scrap/camera.h"
 #include "scrap/dxutil.h"
@@ -96,8 +97,10 @@ extern int g_LoadingScreen;	/* the last random loading screen */
 /* the video to play at the start and after a level ("" when played, unless bit 0 of its flags) */
 #define g_StartVideo (GAME_ARRAY_IN(cString, GVar_PlayVideo, 16))
 #define g_StartVideoFlags GAME_GLOBAL_IN(uint32_t, GVar_PlayVideo, 12)
-#define g_IsDemo GAME_GLOBAL_IN(int, GVar_isDemo, 16)
-#define g_IsXbox GAME_GLOBAL_IN(int, GVar_isXbox, 16)
+extern cGVar GVar_isDemo;
+#define g_IsDemo (GVar_isDemo.value.i)
+extern cGVar GVar_isXbox;
+#define g_IsXbox (GVar_isXbox.value.i)
 #define g_EngineVersion GAME_GLOBAL(int, g_EngineVersion)
 
 /* m3d.ini of the level (Engine_LoadIni) */
@@ -119,24 +122,41 @@ extern float g_FogDensityIni;
 extern int g_GroundTrisPerNode;
 
 /* the engine variables (Gvars) */
-#define g_RenderLightmap GAME_GLOBAL_IN(int, GVar_RenderLightmap, 16)
-#define g_GvCollisionEpsilon GAME_GLOBAL_IN(float, GVar_CollisionEpsilon, 16)	/* CollisionEpsilon */
-#define g_FullScreen GAME_GLOBAL_IN(int, GVar_FullScreen, 16)
-#define g_ComputeMapTextSaving GAME_GLOBAL_IN(int, GVar_ComputeMapTextSaving, 16)
-#define g_ViewerCameraAnim GAME_GLOBAL_IN(int, GVar_ViewerCameraAnim, 16)
-#define g_ShowMapCollision GAME_GLOBAL_IN(int, GVar_ShowMapCollision, 16)
-#define g_ShowMapWireFrame GAME_GLOBAL_IN(int, GVar_ShowMapWireFrame, 16)
-#define g_RenderUseVB GAME_GLOBAL_IN(int, GVar_RenderUseVB, 16)
-#define g_RenderModels GAME_GLOBAL_IN(int, GVar_RenderModels, 16)
+extern cGVar GVar_RenderLightmap;
+#define g_RenderLightmap (GVar_RenderLightmap.value.i)
+extern cGVar GVar_CollisionEpsilon;
+#define g_GvCollisionEpsilon (GVar_CollisionEpsilon.value.f)	/* CollisionEpsilon */
+extern cGVar GVar_FullScreen;
+#define g_FullScreen (GVar_FullScreen.value.i)
+extern cGVar GVar_ComputeMapTextSaving;
+#define g_ComputeMapTextSaving (GVar_ComputeMapTextSaving.value.i)
+extern cGVar GVar_ViewerCameraAnim;
+#define g_ViewerCameraAnim (GVar_ViewerCameraAnim.value.i)
+extern cGVar GVar_ShowMapCollision;
+#define g_ShowMapCollision (GVar_ShowMapCollision.value.i)
+extern cGVar GVar_ShowMapWireFrame;
+#define g_ShowMapWireFrame (GVar_ShowMapWireFrame.value.i)
+extern cGVar GVar_RenderUseVB;
+#define g_RenderUseVB (GVar_RenderUseVB.value.i)
+extern cGVar GVar_RenderModels;
+#define g_RenderModels (GVar_RenderModels.value.i)
 #define g_ModelAmbient GAME_GLOBAL_IN(uint32_t, GVar_ModelAmbient, 16)	/* D3D color, 0: the one of m3d.ini */
-#define g_TimerFreqMult GAME_GLOBAL_IN(int, GVar_TimerFreqMult, 16)
-#define g_VideoWidth GAME_GLOBAL_IN(int, GVar_VideoWidth, 16)
-#define g_VideoHeight GAME_GLOBAL_IN(int, GVar_VideoHeight, 16)
-#define g_VideoBPP GAME_GLOBAL_IN(int, GVar_VideoBPP, 16)
-#define g_VSync GAME_GLOBAL_IN(int, GVar_VSync, 16)
-#define g_ShowSplashScreen GAME_GLOBAL_IN(int, GVar_ShowSplashScreen, 16)
-#define g_ProgressBar GAME_GLOBAL_IN(int, GVar_ProgressBar, 16)
-#define g_StencilShadows GAME_GLOBAL_IN(int, GVar_R_StencilShadows, 16)	/* R_StencilShadows */
+extern cGVar GVar_TimerFreqMult;
+#define g_TimerFreqMult (GVar_TimerFreqMult.value.i)
+extern cGVar GVar_VideoWidth;
+#define g_VideoWidth (GVar_VideoWidth.value.i)
+extern cGVar GVar_VideoHeight;
+#define g_VideoHeight (GVar_VideoHeight.value.i)
+extern cGVar GVar_VideoBPP;
+#define g_VideoBPP (GVar_VideoBPP.value.i)
+extern cGVar GVar_VSync;
+#define g_VSync (GVar_VSync.value.i)
+extern cGVar GVar_ShowSplashScreen;
+#define g_ShowSplashScreen (GVar_ShowSplashScreen.value.i)
+extern cGVar GVar_ProgressBar;
+#define g_ProgressBar (GVar_ProgressBar.value.i)
+extern cGVar GVar_R_StencilShadows;
+#define g_StencilShadows (GVar_R_StencilShadows.value.i)	/* R_StencilShadows */
 #define g_GvEnvMap (GAME_ARRAY(cGVar, g_GvEnvMap))	/* R_EnvMap, R_EnvBump and R_GlowMap as variables */
 #define g_GvEnvBump (GAME_ARRAY(cGVar, g_GvEnvBump))
 #define g_GvGlowMap (GAME_ARRAY(cGVar, g_GvGlowMap))
@@ -150,8 +170,9 @@ extern int g_MaxLightmap;
 extern int g_TimerQPMult;
 extern byte g_MapTextSavingOn;
 #define g_VertexSpecular GAME_GLOBAL_IN(byte, group_4a8efc, 0)
-#define g_RenderFlag6e0 GAME_GLOBAL_IN(int, GVar_R_UseMLOD, 16)	/* taken from 0x4ae6e4 at the start */
-#define g_RenderFlag6e4 GAME_GLOBAL_IN(int, GVar_R_UseMLOD, 20)
+extern cGVar GVar_R_UseMLOD;
+#define g_RenderFlag6e0 (GVar_R_UseMLOD.value.i)	/* taken from 0x4ae6e4 at the start */
+#define g_RenderFlag6e4 (GVar_R_UseMLOD.def.i)
 
 void Engine_Close(void);
 /* the three callbacks of the engine: once after the device, each frame, at the end */

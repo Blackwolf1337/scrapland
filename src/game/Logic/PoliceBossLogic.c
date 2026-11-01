@@ -4,14 +4,17 @@
  * PoliceBossMaxSpecialActionTime it tries it while a character of the second GenChar list is near and the boss can
  * be seen.
  */
+#include "scrap/gvar.h"
 #include "scrap/chartype.h"
 #include "scrap/logic.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
 
 #define CPOLICEBOSSLOCALLOGIC_VFTABLE GAME_VFTABLE(cPoliceBossLocalLogic_vftable)
-#define g_PoliceBossMinSpecialActionTime GAME_GLOBAL_IN(float, GVar_PoliceBossMinSpecialActionTime, 16)
-#define g_PoliceBossMaxSpecialActionTime GAME_GLOBAL_IN(float, GVar_PoliceBossMaxSpecialActionTime, 16)
+extern cGVar GVar_PoliceBossMinSpecialActionTime;
+#define g_PoliceBossMinSpecialActionTime (GVar_PoliceBossMinSpecialActionTime.value.f)
+extern cGVar GVar_PoliceBossMaxSpecialActionTime;
+#define g_PoliceBossMaxSpecialActionTime (GVar_PoliceBossMaxSpecialActionTime.value.f)
 
 cPoliceBossLocalLogic *cPoliceBossLocalLogic_ctor(cPoliceBossLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);

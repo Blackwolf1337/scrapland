@@ -10,6 +10,7 @@
 #ifndef SCRAP_FXCHAR_H
 #define SCRAP_FXCHAR_H
 
+#include "scrap/gvar.h"
 #include "scrap/filesys.h"
 #include "scrap/fxmisc.h"
 
@@ -22,27 +23,48 @@
 #define FXDEATH_POINTS (FXDEATH_TRAILS * FXDEATH_TRAILPOINTS)
 
 /* the engine variables (Gvars) */
-#define g_FXCharacterConversionFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterConversionFile, 16)
-#define g_FXCharacterConversorFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterConversorFile, 16)
-#define g_FXCharacterBlaBliBlaFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterBlaBliBlaFile, 16)
-#define g_FXCharacterDazedFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterDazedFile, 16)
-#define g_FXCharacterDeathFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterDeathFile, 16)
-#define g_FXCharacterTeleportFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterTeleportFile, 16)
-#define g_FXMoneyTransferFile GAME_GLOBAL_IN(const char *, GVar_FXMoneyTransferFile, 16)
-#define g_FXFunctionarySpecialActionFile GAME_GLOBAL_IN(const char *, GVar_FXFunctionarySpecialActionFile, 16)
-#define g_FunctionarySpecialActionTime GAME_GLOBAL_IN(float, GVar_FunctionarySpecialActionTime, 16)
-#define g_FXCharacterDeathMinDist GAME_GLOBAL_IN(float, GVar_FXCharacterDeathMinDist, 16)
-#define g_CharacterDeathSound GAME_GLOBAL_IN(const char *, GVar_CharacterDeathSound, 16)
-#define g_CharacterDeathSoundVol GAME_GLOBAL_IN(float, GVar_CharacterDeathSoundVol, 16)
-#define g_CharacterConversionSound GAME_GLOBAL_IN(const char *, GVar_CharacterConversionSound, 16)
-#define g_CharacterConversionSoundVol GAME_GLOBAL_IN(float, GVar_CharacterConversionSoundVol, 16)
-#define g_CharacterTeleportUpSound GAME_GLOBAL_IN(const char *, GVar_CharacterTeleportUpSound, 16)
-#define g_CharacterTeleportDownSound GAME_GLOBAL_IN(const char *, GVar_CharacterTeleportDownSound, 16)
-#define g_CharacterTeleportSoundVol GAME_GLOBAL_IN(float, GVar_CharacterTeleportSoundVol, 16)
-#define g_MaintenanceWorkSound GAME_GLOBAL_IN(const char *, GVar_MaintenanceWorkSound, 16)
-#define g_MaintenanceWorkSoundVol GAME_GLOBAL_IN(float, GVar_MaintenanceWorkSoundVol, 16)
-#define g_MaintenanceWorkSoundAttIni GAME_GLOBAL_IN(float, GVar_MaintenanceWorkSoundAttIni, 16)
-#define g_MaintenanceWorkSoundAttEnd GAME_GLOBAL_IN(float, GVar_MaintenanceWorkSoundAttEnd, 16)
+extern cGVar GVar_FXCharacterConversionFile;
+#define g_FXCharacterConversionFile (GVar_FXCharacterConversionFile.value.s)
+extern cGVar GVar_FXCharacterConversorFile;
+#define g_FXCharacterConversorFile (GVar_FXCharacterConversorFile.value.s)
+extern cGVar GVar_FXCharacterBlaBliBlaFile;
+#define g_FXCharacterBlaBliBlaFile (GVar_FXCharacterBlaBliBlaFile.value.s)
+extern cGVar GVar_FXCharacterDazedFile;
+#define g_FXCharacterDazedFile (GVar_FXCharacterDazedFile.value.s)
+extern cGVar GVar_FXCharacterDeathFile;
+#define g_FXCharacterDeathFile (GVar_FXCharacterDeathFile.value.s)
+extern cGVar GVar_FXCharacterTeleportFile;
+#define g_FXCharacterTeleportFile (GVar_FXCharacterTeleportFile.value.s)
+extern cGVar GVar_FXMoneyTransferFile;
+#define g_FXMoneyTransferFile (GVar_FXMoneyTransferFile.value.s)
+extern cGVar GVar_FXFunctionarySpecialActionFile;
+#define g_FXFunctionarySpecialActionFile (GVar_FXFunctionarySpecialActionFile.value.s)
+extern cGVar GVar_FunctionarySpecialActionTime;
+#define g_FunctionarySpecialActionTime (GVar_FunctionarySpecialActionTime.value.f)
+extern cGVar GVar_FXCharacterDeathMinDist;
+#define g_FXCharacterDeathMinDist (GVar_FXCharacterDeathMinDist.value.f)
+extern cGVar GVar_CharacterDeathSound;
+#define g_CharacterDeathSound (GVar_CharacterDeathSound.value.s)
+extern cGVar GVar_CharacterDeathSoundVol;
+#define g_CharacterDeathSoundVol (GVar_CharacterDeathSoundVol.value.f)
+extern cGVar GVar_CharacterConversionSound;
+#define g_CharacterConversionSound (GVar_CharacterConversionSound.value.s)
+extern cGVar GVar_CharacterConversionSoundVol;
+#define g_CharacterConversionSoundVol (GVar_CharacterConversionSoundVol.value.f)
+extern cGVar GVar_CharacterTeleportUpSound;
+#define g_CharacterTeleportUpSound (GVar_CharacterTeleportUpSound.value.s)
+extern cGVar GVar_CharacterTeleportDownSound;
+#define g_CharacterTeleportDownSound (GVar_CharacterTeleportDownSound.value.s)
+extern cGVar GVar_CharacterTeleportSoundVol;
+#define g_CharacterTeleportSoundVol (GVar_CharacterTeleportSoundVol.value.f)
+extern cGVar GVar_MaintenanceWorkSound;
+#define g_MaintenanceWorkSound (GVar_MaintenanceWorkSound.value.s)
+extern cGVar GVar_MaintenanceWorkSoundVol;
+#define g_MaintenanceWorkSoundVol (GVar_MaintenanceWorkSoundVol.value.f)
+extern cGVar GVar_MaintenanceWorkSoundAttIni;
+#define g_MaintenanceWorkSoundAttIni (GVar_MaintenanceWorkSoundAttIni.value.f)
+extern cGVar GVar_MaintenanceWorkSoundAttEnd;
+#define g_MaintenanceWorkSoundAttEnd (GVar_MaintenanceWorkSoundAttEnd.value.f)
 
 /* a character in the conversion: its byte at 0x48c is set while the effect runs */
 #define Entity_InConversion(e) (WChar(e)->disableControl)

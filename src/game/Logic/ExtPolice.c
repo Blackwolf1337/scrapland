@@ -7,6 +7,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/chartype.h"
 #include "scrap/objentity.h"
 #include "scrap/scrapcollision.h"
@@ -18,7 +19,8 @@
 void ExtPolice_OnDamage(cAbstractFile *params);
 void ExtPolice_OnDeath(cAbstractFile *params);
 
-#define g_MaxDistReposAI GAME_GLOBAL_IN(float, GVar_MaxDistReposAI, 16)
+extern cGVar GVar_MaxDistReposAI;
+#define g_MaxDistReposAI (GVar_MaxDistReposAI.value.f)
 
 cExtPolice *cExtPolice_ctor(cExtPolice *self) {
 	self->list = NULL;

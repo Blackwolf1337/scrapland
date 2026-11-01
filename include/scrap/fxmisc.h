@@ -10,6 +10,7 @@
 #ifndef SCRAP_FXMISC_H
 #define SCRAP_FXMISC_H
 
+#include "scrap/gvar.h"
 #include "scrap/crt.h"
 #include "scrap/entity.h"
 #include "scrap/scrap.h"
@@ -52,14 +53,22 @@ static inline float FX_Rand(double range, double add) {
 #define Entity_Removed(e) (((cEntity *)(e))->deadNode.target)
 
 /* the engine variables (Gvars): the files of the debris systems of the effects */
-#define g_FXItemBlinkFile GAME_GLOBAL_IN(const char *, GVar_FXItemBlinkFile, 16)
-#define g_FXItemFadeFile GAME_GLOBAL_IN(const char *, GVar_FXItemFadeFile, 16)
-#define g_FXItemTakeFile GAME_GLOBAL_IN(const char *, GVar_FXItemTakeFile, 16)
-#define g_FXCharacterSputnikFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterSputnikFile, 16)
-#define g_FXShipEditBuildFile GAME_GLOBAL_IN(const char *, GVar_FXShipEditBuildFile, 16)
-#define g_FXSmokeDebrisFile GAME_GLOBAL_IN(const char *, GVar_FXSmokeDebrisFile, 16)
-#define g_FXFiredDebrisFile GAME_GLOBAL_IN(const char *, GVar_FXFiredDebrisFile, 16)
-#define g_FXShipExplosionFile GAME_GLOBAL_IN(const char *, GVar_FXShipExplosionFile, 16)
+extern cGVar GVar_FXItemBlinkFile;
+#define g_FXItemBlinkFile (GVar_FXItemBlinkFile.value.s)
+extern cGVar GVar_FXItemFadeFile;
+#define g_FXItemFadeFile (GVar_FXItemFadeFile.value.s)
+extern cGVar GVar_FXItemTakeFile;
+#define g_FXItemTakeFile (GVar_FXItemTakeFile.value.s)
+extern cGVar GVar_FXCharacterSputnikFile;
+#define g_FXCharacterSputnikFile (GVar_FXCharacterSputnikFile.value.s)
+extern cGVar GVar_FXShipEditBuildFile;
+#define g_FXShipEditBuildFile (GVar_FXShipEditBuildFile.value.s)
+extern cGVar GVar_FXSmokeDebrisFile;
+#define g_FXSmokeDebrisFile (GVar_FXSmokeDebrisFile.value.s)
+extern cGVar GVar_FXFiredDebrisFile;
+#define g_FXFiredDebrisFile (GVar_FXFiredDebrisFile.value.s)
+extern cGVar GVar_FXShipExplosionFile;
+#define g_FXShipExplosionFile (GVar_FXShipExplosionFile.value.s)
 
 /* the color ramps (9 colors) of the particles */
 #define FX_RAMP_BLINK 0x430b44

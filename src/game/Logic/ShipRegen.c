@@ -6,6 +6,7 @@
  * speed at LifeToLaunchCallback up to endSpeed at full life), LifeReachedCallback(name, 1 / -1) when it passes
  * LifeToLaunchCallback, and its life shows in the scorer item RegenerationItem.
  */
+#include "scrap/gvar.h"
 #include "scrap/fxvehicle.h"
 #include "scrap/logic.h"
 #include "scrap/scorer.h"
@@ -13,12 +14,18 @@
 #include "scrap/weapons.h"
 #include "scrap/world.h"
 
-#define g_RegenerationStartTime GAME_GLOBAL_IN(float, GVar_RegenerationStartTime, 16)
-#define g_RegenerationTimeRate GAME_GLOBAL_IN(float, GVar_RegenerationTimeRate, 16)
-#define g_RegenerationCharStartTime GAME_GLOBAL_IN(float, GVar_RegenerationCharStartTime, 16)
-#define g_RegenerationCharTimeRate GAME_GLOBAL_IN(float, GVar_RegenerationCharTimeRate, 16)
-#define g_RegenerationItem GAME_GLOBAL_IN(char *, GVar_RegenerationItem, 16)
-#define g_LifeToLaunchCallback GAME_GLOBAL_IN(int, GVar_LifeToLaunchCallback, 16)
+extern cGVar GVar_RegenerationStartTime;
+#define g_RegenerationStartTime (GVar_RegenerationStartTime.value.f)
+extern cGVar GVar_RegenerationTimeRate;
+#define g_RegenerationTimeRate (GVar_RegenerationTimeRate.value.f)
+extern cGVar GVar_RegenerationCharStartTime;
+#define g_RegenerationCharStartTime (GVar_RegenerationCharStartTime.value.f)
+extern cGVar GVar_RegenerationCharTimeRate;
+#define g_RegenerationCharTimeRate (GVar_RegenerationCharTimeRate.value.f)
+extern cGVar GVar_RegenerationItem;
+#define g_RegenerationItem (GVar_RegenerationItem.value.s)
+extern cGVar GVar_LifeToLaunchCallback;
+#define g_LifeToLaunchCallback (GVar_LifeToLaunchCallback.value.i)
 #define g_LifeReachedCallback (GAME_ARRAY_IN(cPy_Function, GVar_LifeReachedCallback, 16))
 
 cShipRegen *ShipRegen_ctor(cShipRegen *self) {

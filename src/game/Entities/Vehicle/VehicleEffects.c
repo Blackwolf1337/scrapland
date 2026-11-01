@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/crt.h"
 #include "scrap/embeddedfxvehicle.h"
 #include "scrap/fxmisc.h"
@@ -834,10 +835,14 @@ extern uint32_t VS_RAMP_FIRE[18];	/* [2 * 9], 2 ramps */
 extern uint32_t VS_RAMP_SMOKE[9];
 extern uint32_t VS_RAMP_ATPC[19];
 
-#define g_FXVulcanFireScale GAME_GLOBAL_IN(float, GVar_FXVulcanFireScale, 16)
-#define g_FXVulcanFireTime GAME_GLOBAL_IN(float, GVar_FXVulcanFireTime, 16)
-#define g_FXDevastatorFireScale GAME_GLOBAL_IN(float, GVar_FXDevastatorFireScale, 16)
-#define g_FXDevastatorFireTime GAME_GLOBAL_IN(float, GVar_FXDevastatorFireTime, 16)
+extern cGVar GVar_FXVulcanFireScale;
+#define g_FXVulcanFireScale (GVar_FXVulcanFireScale.value.f)
+extern cGVar GVar_FXVulcanFireTime;
+#define g_FXVulcanFireTime (GVar_FXVulcanFireTime.value.f)
+extern cGVar GVar_FXDevastatorFireScale;
+#define g_FXDevastatorFireScale (GVar_FXDevastatorFireScale.value.f)
+extern cGVar GVar_FXDevastatorFireTime;
+#define g_FXDevastatorFireTime (GVar_FXDevastatorFireTime.value.f)
 
 #define VS_PI_2 0x1.921fb6p+0f
 #define VS_2PI 0x1.921fb60000000p+2

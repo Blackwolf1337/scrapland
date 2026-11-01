@@ -7,6 +7,7 @@
 #ifndef SCRAP_FLARE_H
 #define SCRAP_FLARE_H
 
+#include "scrap/gvar.h"
 #include "scrap/graphic2d.h"
 #include "scrap/node3d.h"
 
@@ -19,8 +20,10 @@ extern float g_FlareAttenDistEnd;	/* aten_dist_fin */
 extern float g_FlareFadeIn;	/* fundido_ent */
 extern float g_FlareFadeOut;	/* fundido_sal */
 extern int g_FlareShowInfo;		/* ver_info */
-#define g_SkipFlares GAME_GLOBAL_IN(int, GVar_R_SkipFlares, 16)		/* R_SkipFlares */
-#define g_ShowFlaresInfo GAME_GLOBAL_IN(int, GVar_R_ShowFlaresInfo, 16)	/* R_ShowFlaresInfo */
+extern cGVar GVar_R_SkipFlares;
+#define g_SkipFlares (GVar_R_SkipFlares.value.i)		/* R_SkipFlares */
+extern cGVar GVar_R_ShowFlaresInfo;
+#define g_ShowFlaresInfo (GVar_R_ShowFlaresInfo.value.i)	/* R_ShowFlaresInfo */
 extern int g_Overdraw;		/* video sobredib, the overdraw view */
 extern float g_TimeMsF;		/* the time of the engine in ms */
 

@@ -10,6 +10,7 @@
 #ifndef SCRAP_CHARTYPE_H
 #define SCRAP_CHARTYPE_H
 
+#include "scrap/gvar.h"
 #include "scrap/ai.h"
 #include "scrap/camcontrol.h"
 #include "scrap/console.h"
@@ -66,72 +67,138 @@ static inline int ChType_ActPriority(void *ctrl) {
 #define CHTYPE_FLASHHIT 0x0c92f0
 
 /* engine variables (Gvars) */
-#define g_FXBankerStealFile GAME_GLOBAL_IN(char *, GVar_FXBankerStealFile, 16)
-#define g_BankerStealAmount GAME_GLOBAL_IN(int, GVar_BankerStealAmount, 16)
-#define g_FXBankMasterAttackFile GAME_GLOBAL_IN(char *, GVar_FXBankMasterAttackFile, 16)
-#define g_BankMasterVacumDist GAME_GLOBAL_IN(float, GVar_BankMasterVacumDist, 16)
-#define g_BankMasterAmmoCost GAME_GLOBAL_IN(float, GVar_BankMasterAmmoCost, 16)
-#define g_FXBankMasterSuctionFile GAME_GLOBAL_IN(char *, GVar_FXBankMasterSuctionFile, 16)
-#define g_FXBertoFlashFile GAME_GLOBAL_IN(char *, GVar_FXBertoFlashFile, 16)
-#define g_BertoFlashSound GAME_GLOBAL_IN(char *, GVar_BertoFlashSound, 16)
-#define g_BertoFlashDist GAME_GLOBAL_IN(float, GVar_BertoFlashDist, 16)
-#define g_BertoFlashSoundVol GAME_GLOBAL_IN(float, GVar_BertoFlashSoundVol, 16)
-#define g_BertoAmmoCost GAME_GLOBAL_IN(float, GVar_BertoAmmoCost, 16)
-#define g_FXBertoAttackFile GAME_GLOBAL_IN(char *, GVar_FXBertoAttackFile, 16)
-#define g_BettyHitTimeFader GAME_GLOBAL_IN(float, GVar_BettyHitTimeFader, 16)
-#define g_FXBettyAttackFile GAME_GLOBAL_IN(char *, GVar_FXBettyAttackFile, 16)
-#define g_BettyHSpeed GAME_GLOBAL_IN(float, GVar_BettyHSpeed, 16)
-#define g_BettyHitPosY GAME_GLOBAL_IN(float, GVar_BettyHitPosY, 16)
-#define g_BettyHitRadius GAME_GLOBAL_IN(float, GVar_BettyHitRadius, 16)
-#define g_BettyVSpeed GAME_GLOBAL_IN(float, GVar_BettyVSpeed, 16)
-#define g_FXBettyKillFile GAME_GLOBAL_IN(char *, GVar_FXBettyKillFile, 16)
-#define g_BettyHitTopLimit GAME_GLOBAL_IN(float, GVar_BettyHitTopLimit, 16)
-#define g_BettyHitPosX GAME_GLOBAL_IN(float, GVar_BettyHitPosX, 16)
-#define g_BettyHitTimeSpeed GAME_GLOBAL_IN(float, GVar_BettyHitTimeSpeed, 16)
-#define g_BettyHitPosZ GAME_GLOBAL_IN(float, GVar_BettyHitPosZ, 16)
-#define g_BishopHitSound GAME_GLOBAL_IN(char *, GVar_BishopHitSound, 16)
-#define g_BishopAngleVariation GAME_GLOBAL_IN(float, GVar_BishopAngleVariation, 16)
-#define g_BishopHitSoundVol GAME_GLOBAL_IN(float, GVar_BishopHitSoundVol, 16)
-#define g_BishopWeaponDamage GAME_GLOBAL_IN(int, GVar_BishopWeaponDamage, 16)
-#define g_BishopAttackPosZ GAME_GLOBAL_IN(float, GVar_BishopAttackPosZ, 16)
-#define g_DesktopJumpPrice GAME_GLOBAL_IN(int, GVar_DesktopJumpPrice, 16)
-#define g_DesktopJumpSlideTime GAME_GLOBAL_IN(float, GVar_DesktopJumpSlideTime, 16)
-#define g_DesktopJumpSpeed GAME_GLOBAL_IN(float, GVar_DesktopJumpSpeed, 16)
-#define g_FXDesktopFallEndDist GAME_GLOBAL_IN(float, GVar_FXDesktopFallEndDist, 16)
-#define g_FXDesktopFallEndFile GAME_GLOBAL_IN(char *, GVar_FXDesktopFallEndFile, 16)
-#define g_FallSoundVel GAME_GLOBAL_IN(float, GVar_FallSoundVel, 16)		/* FallSoundVel */
-#define g_FXBishopSellLifeFile GAME_GLOBAL_IN(char *, GVar_FXBishopSellLifeFile, 16)
-#define g_FXBishopAttackFile GAME_GLOBAL_IN(char *, GVar_FXBishopAttackFile, 16)
-#define g_BishopAttackPosX GAME_GLOBAL_IN(float, GVar_BishopAttackPosX, 16)
-#define g_BishopAttackPosY GAME_GLOBAL_IN(float, GVar_BishopAttackPosY, 16)
-#define g_BishopAmmoCost GAME_GLOBAL_IN(float, GVar_BishopAmmoCost, 16)
-#define g_BishopAttackRandOff GAME_GLOBAL_IN(float, GVar_BishopAttackRandOff, 16)
-#define g_BishopShootSoundVol GAME_GLOBAL_IN(float, GVar_BishopShootSoundVol, 16)
-#define g_BishopShootSound GAME_GLOBAL_IN(char *, GVar_BishopShootSound, 16)
-#define g_DTritusHitTimeFader GAME_GLOBAL_IN(float, GVar_DTritusHitTimeFader, 16)
-#define g_FXDTritusAttackFile GAME_GLOBAL_IN(char *, GVar_FXDTritusAttackFile, 16)
-#define g_DTritusHitTimeSpeed GAME_GLOBAL_IN(float, GVar_DTritusHitTimeSpeed, 16)
-#define g_FXDTritusKillFile GAME_GLOBAL_IN(char *, GVar_FXDTritusKillFile, 16)
-#define g_GearMissileSoundVol GAME_GLOBAL_IN(float, GVar_GearMissileSoundVol, 16)
-#define g_GearLoadWeaponSound GAME_GLOBAL_IN(char *, GVar_GearLoadWeaponSound, 16)
-#define g_GearShootDamage GAME_GLOBAL_IN(int, GVar_GearShootDamage, 16)
-#define g_GearMissileSound GAME_GLOBAL_IN(char *, GVar_GearMissileSound, 16)
-#define g_GearShootPosX GAME_GLOBAL_IN(float, GVar_GearShootPosX, 16)
-#define g_GearShootDistance GAME_GLOBAL_IN(float, GVar_GearShootDistance, 16)
-#define g_GearLoadWeaponSoundVol GAME_GLOBAL_IN(float, GVar_GearLoadWeaponSoundVol, 16)
-#define g_GearHitSound GAME_GLOBAL_IN(char *, GVar_GearHitSound, 16)
-#define g_GearHitSoundVol GAME_GLOBAL_IN(float, GVar_GearHitSoundVol, 16)
-#define g_GearShootPosZ GAME_GLOBAL_IN(float, GVar_GearShootPosZ, 16)
-#define g_GearShootFailAlarm GAME_GLOBAL_IN(float, GVar_GearShootFailAlarm, 16)
-#define g_GearShootHitAlarm GAME_GLOBAL_IN(float, GVar_GearShootHitAlarm, 16)
-#define g_GearMissileSpeed GAME_GLOBAL_IN(float, GVar_GearMissileSpeed, 16)
-#define g_GearShootSound GAME_GLOBAL_IN(char *, GVar_GearShootSound, 16)
-#define g_GearShootSoundVol GAME_GLOBAL_IN(float, GVar_GearShootSoundVol, 16)
-#define g_GearShootPosY GAME_GLOBAL_IN(float, GVar_GearShootPosY, 16)
-#define g_GearXplodeRadius GAME_GLOBAL_IN(float, GVar_GearXplodeRadius, 16)
-#define g_GearLowWeaponEnergy GAME_GLOBAL_IN(float, GVar_GearLowWeaponEnergy, 16)
-#define g_FXMaintenanceWorkFile GAME_GLOBAL_IN(char *, GVar_FXMaintenanceWorkFile, 16)
-#define g_GearTargetName GAME_GLOBAL_IN(char *, GVar_GearTargetName, 16)	/* GearTargetName: the target of the missile of the player */
+extern cGVar GVar_FXBankerStealFile;
+#define g_FXBankerStealFile (GVar_FXBankerStealFile.value.s)
+extern cGVar GVar_BankerStealAmount;
+#define g_BankerStealAmount (GVar_BankerStealAmount.value.i)
+extern cGVar GVar_FXBankMasterAttackFile;
+#define g_FXBankMasterAttackFile (GVar_FXBankMasterAttackFile.value.s)
+extern cGVar GVar_BankMasterVacumDist;
+#define g_BankMasterVacumDist (GVar_BankMasterVacumDist.value.f)
+extern cGVar GVar_BankMasterAmmoCost;
+#define g_BankMasterAmmoCost (GVar_BankMasterAmmoCost.value.f)
+extern cGVar GVar_FXBankMasterSuctionFile;
+#define g_FXBankMasterSuctionFile (GVar_FXBankMasterSuctionFile.value.s)
+extern cGVar GVar_FXBertoFlashFile;
+#define g_FXBertoFlashFile (GVar_FXBertoFlashFile.value.s)
+extern cGVar GVar_BertoFlashSound;
+#define g_BertoFlashSound (GVar_BertoFlashSound.value.s)
+extern cGVar GVar_BertoFlashDist;
+#define g_BertoFlashDist (GVar_BertoFlashDist.value.f)
+extern cGVar GVar_BertoFlashSoundVol;
+#define g_BertoFlashSoundVol (GVar_BertoFlashSoundVol.value.f)
+extern cGVar GVar_BertoAmmoCost;
+#define g_BertoAmmoCost (GVar_BertoAmmoCost.value.f)
+extern cGVar GVar_FXBertoAttackFile;
+#define g_FXBertoAttackFile (GVar_FXBertoAttackFile.value.s)
+extern cGVar GVar_BettyHitTimeFader;
+#define g_BettyHitTimeFader (GVar_BettyHitTimeFader.value.f)
+extern cGVar GVar_FXBettyAttackFile;
+#define g_FXBettyAttackFile (GVar_FXBettyAttackFile.value.s)
+extern cGVar GVar_BettyHSpeed;
+#define g_BettyHSpeed (GVar_BettyHSpeed.value.f)
+extern cGVar GVar_BettyHitPosY;
+#define g_BettyHitPosY (GVar_BettyHitPosY.value.f)
+extern cGVar GVar_BettyHitRadius;
+#define g_BettyHitRadius (GVar_BettyHitRadius.value.f)
+extern cGVar GVar_BettyVSpeed;
+#define g_BettyVSpeed (GVar_BettyVSpeed.value.f)
+extern cGVar GVar_FXBettyKillFile;
+#define g_FXBettyKillFile (GVar_FXBettyKillFile.value.s)
+extern cGVar GVar_BettyHitTopLimit;
+#define g_BettyHitTopLimit (GVar_BettyHitTopLimit.value.f)
+extern cGVar GVar_BettyHitPosX;
+#define g_BettyHitPosX (GVar_BettyHitPosX.value.f)
+extern cGVar GVar_BettyHitTimeSpeed;
+#define g_BettyHitTimeSpeed (GVar_BettyHitTimeSpeed.value.f)
+extern cGVar GVar_BettyHitPosZ;
+#define g_BettyHitPosZ (GVar_BettyHitPosZ.value.f)
+extern cGVar GVar_BishopHitSound;
+#define g_BishopHitSound (GVar_BishopHitSound.value.s)
+extern cGVar GVar_BishopAngleVariation;
+#define g_BishopAngleVariation (GVar_BishopAngleVariation.value.f)
+extern cGVar GVar_BishopHitSoundVol;
+#define g_BishopHitSoundVol (GVar_BishopHitSoundVol.value.f)
+extern cGVar GVar_BishopWeaponDamage;
+#define g_BishopWeaponDamage (GVar_BishopWeaponDamage.value.i)
+extern cGVar GVar_BishopAttackPosZ;
+#define g_BishopAttackPosZ (GVar_BishopAttackPosZ.value.f)
+extern cGVar GVar_DesktopJumpPrice;
+#define g_DesktopJumpPrice (GVar_DesktopJumpPrice.value.i)
+extern cGVar GVar_DesktopJumpSlideTime;
+#define g_DesktopJumpSlideTime (GVar_DesktopJumpSlideTime.value.f)
+extern cGVar GVar_DesktopJumpSpeed;
+#define g_DesktopJumpSpeed (GVar_DesktopJumpSpeed.value.f)
+extern cGVar GVar_FXDesktopFallEndDist;
+#define g_FXDesktopFallEndDist (GVar_FXDesktopFallEndDist.value.f)
+extern cGVar GVar_FXDesktopFallEndFile;
+#define g_FXDesktopFallEndFile (GVar_FXDesktopFallEndFile.value.s)
+extern cGVar GVar_FallSoundVel;
+#define g_FallSoundVel (GVar_FallSoundVel.value.f)		/* FallSoundVel */
+extern cGVar GVar_FXBishopSellLifeFile;
+#define g_FXBishopSellLifeFile (GVar_FXBishopSellLifeFile.value.s)
+extern cGVar GVar_FXBishopAttackFile;
+#define g_FXBishopAttackFile (GVar_FXBishopAttackFile.value.s)
+extern cGVar GVar_BishopAttackPosX;
+#define g_BishopAttackPosX (GVar_BishopAttackPosX.value.f)
+extern cGVar GVar_BishopAttackPosY;
+#define g_BishopAttackPosY (GVar_BishopAttackPosY.value.f)
+extern cGVar GVar_BishopAmmoCost;
+#define g_BishopAmmoCost (GVar_BishopAmmoCost.value.f)
+extern cGVar GVar_BishopAttackRandOff;
+#define g_BishopAttackRandOff (GVar_BishopAttackRandOff.value.f)
+extern cGVar GVar_BishopShootSoundVol;
+#define g_BishopShootSoundVol (GVar_BishopShootSoundVol.value.f)
+extern cGVar GVar_BishopShootSound;
+#define g_BishopShootSound (GVar_BishopShootSound.value.s)
+extern cGVar GVar_DTritusHitTimeFader;
+#define g_DTritusHitTimeFader (GVar_DTritusHitTimeFader.value.f)
+extern cGVar GVar_FXDTritusAttackFile;
+#define g_FXDTritusAttackFile (GVar_FXDTritusAttackFile.value.s)
+extern cGVar GVar_DTritusHitTimeSpeed;
+#define g_DTritusHitTimeSpeed (GVar_DTritusHitTimeSpeed.value.f)
+extern cGVar GVar_FXDTritusKillFile;
+#define g_FXDTritusKillFile (GVar_FXDTritusKillFile.value.s)
+extern cGVar GVar_GearMissileSoundVol;
+#define g_GearMissileSoundVol (GVar_GearMissileSoundVol.value.f)
+extern cGVar GVar_GearLoadWeaponSound;
+#define g_GearLoadWeaponSound (GVar_GearLoadWeaponSound.value.s)
+extern cGVar GVar_GearShootDamage;
+#define g_GearShootDamage (GVar_GearShootDamage.value.i)
+extern cGVar GVar_GearMissileSound;
+#define g_GearMissileSound (GVar_GearMissileSound.value.s)
+extern cGVar GVar_GearShootPosX;
+#define g_GearShootPosX (GVar_GearShootPosX.value.f)
+extern cGVar GVar_GearShootDistance;
+#define g_GearShootDistance (GVar_GearShootDistance.value.f)
+extern cGVar GVar_GearLoadWeaponSoundVol;
+#define g_GearLoadWeaponSoundVol (GVar_GearLoadWeaponSoundVol.value.f)
+extern cGVar GVar_GearHitSound;
+#define g_GearHitSound (GVar_GearHitSound.value.s)
+extern cGVar GVar_GearHitSoundVol;
+#define g_GearHitSoundVol (GVar_GearHitSoundVol.value.f)
+extern cGVar GVar_GearShootPosZ;
+#define g_GearShootPosZ (GVar_GearShootPosZ.value.f)
+extern cGVar GVar_GearShootFailAlarm;
+#define g_GearShootFailAlarm (GVar_GearShootFailAlarm.value.f)
+extern cGVar GVar_GearShootHitAlarm;
+#define g_GearShootHitAlarm (GVar_GearShootHitAlarm.value.f)
+extern cGVar GVar_GearMissileSpeed;
+#define g_GearMissileSpeed (GVar_GearMissileSpeed.value.f)
+extern cGVar GVar_GearShootSound;
+#define g_GearShootSound (GVar_GearShootSound.value.s)
+extern cGVar GVar_GearShootSoundVol;
+#define g_GearShootSoundVol (GVar_GearShootSoundVol.value.f)
+extern cGVar GVar_GearShootPosY;
+#define g_GearShootPosY (GVar_GearShootPosY.value.f)
+extern cGVar GVar_GearXplodeRadius;
+#define g_GearXplodeRadius (GVar_GearXplodeRadius.value.f)
+extern cGVar GVar_GearLowWeaponEnergy;
+#define g_GearLowWeaponEnergy (GVar_GearLowWeaponEnergy.value.f)
+extern cGVar GVar_FXMaintenanceWorkFile;
+#define g_FXMaintenanceWorkFile (GVar_FXMaintenanceWorkFile.value.s)
+extern cGVar GVar_GearTargetName;
+#define g_GearTargetName (GVar_GearTargetName.value.s)	/* GearTargetName: the target of the missile of the player */
 
 /* the characters of the running actions (the "MeEnt" CHECKs) */
 extern cEntity *g_BankMasterEnt;
@@ -275,50 +342,92 @@ static inline const char *ChType_ClassName(cEntity *e) {
 #define CHTYPE_POLICEBOSSSPHEREHIT 0x0ce820
 
 /* engine variables (Gvars) */
-#define g_MayorBlabliblaRadius GAME_GLOBAL_IN(float, GVar_MayorBlabliblaRadius, 16)
-#define g_MayorListenPercent GAME_GLOBAL_IN(float, GVar_MayorListenPercent, 16)
-#define g_MayorSleepPercent GAME_GLOBAL_IN(float, GVar_MayorSleepPercent, 16)
-#define g_FXMercenaryDrinkFile GAME_GLOBAL_IN(char *, GVar_FXMercenaryDrinkFile, 16)
-#define g_MercenaryDrinkPosX GAME_GLOBAL_IN(float, GVar_MercenaryDrinkPosX, 16)
-#define g_MercenaryDrinkPosY GAME_GLOBAL_IN(float, GVar_MercenaryDrinkPosY, 16)
-#define g_MercenaryDrinkPosZ GAME_GLOBAL_IN(float, GVar_MercenaryDrinkPosZ, 16)
-#define g_FXMessengerAttackFile GAME_GLOBAL_IN(char *, GVar_FXMessengerAttackFile, 16)
-#define g_FXMessengerTakeDataPackFile GAME_GLOBAL_IN(char *, GVar_FXMessengerTakeDataPackFile, 16)
-#define g_MessengerAmmoCost GAME_GLOBAL_IN(float, GVar_MessengerAmmoCost, 16)
-#define g_MessengerAttackPosX GAME_GLOBAL_IN(float, GVar_MessengerAttackPosX, 16)
-#define g_MessengerAttackPosY GAME_GLOBAL_IN(float, GVar_MessengerAttackPosY, 16)
-#define g_MessengerAttackPosZ GAME_GLOBAL_IN(float, GVar_MessengerAttackPosZ, 16)
-#define g_MessengerShootSound GAME_GLOBAL_IN(char *, GVar_MessengerShootSound, 16)
-#define g_MessengerShootSoundVol GAME_GLOBAL_IN(float, GVar_MessengerShootSoundVol, 16)
-#define g_MessengerTakeDataPackSound GAME_GLOBAL_IN(char *, GVar_MessengerTakeDataPackSound, 16)
-#define g_MessengerTakeDataPackSoundVol GAME_GLOBAL_IN(float, GVar_MessengerTakeDataPackSoundVol, 16)
+extern cGVar GVar_MayorBlabliblaRadius;
+#define g_MayorBlabliblaRadius (GVar_MayorBlabliblaRadius.value.f)
+extern cGVar GVar_MayorListenPercent;
+#define g_MayorListenPercent (GVar_MayorListenPercent.value.f)
+extern cGVar GVar_MayorSleepPercent;
+#define g_MayorSleepPercent (GVar_MayorSleepPercent.value.f)
+extern cGVar GVar_FXMercenaryDrinkFile;
+#define g_FXMercenaryDrinkFile (GVar_FXMercenaryDrinkFile.value.s)
+extern cGVar GVar_MercenaryDrinkPosX;
+#define g_MercenaryDrinkPosX (GVar_MercenaryDrinkPosX.value.f)
+extern cGVar GVar_MercenaryDrinkPosY;
+#define g_MercenaryDrinkPosY (GVar_MercenaryDrinkPosY.value.f)
+extern cGVar GVar_MercenaryDrinkPosZ;
+#define g_MercenaryDrinkPosZ (GVar_MercenaryDrinkPosZ.value.f)
+extern cGVar GVar_FXMessengerAttackFile;
+#define g_FXMessengerAttackFile (GVar_FXMessengerAttackFile.value.s)
+extern cGVar GVar_FXMessengerTakeDataPackFile;
+#define g_FXMessengerTakeDataPackFile (GVar_FXMessengerTakeDataPackFile.value.s)
+extern cGVar GVar_MessengerAmmoCost;
+#define g_MessengerAmmoCost (GVar_MessengerAmmoCost.value.f)
+extern cGVar GVar_MessengerAttackPosX;
+#define g_MessengerAttackPosX (GVar_MessengerAttackPosX.value.f)
+extern cGVar GVar_MessengerAttackPosY;
+#define g_MessengerAttackPosY (GVar_MessengerAttackPosY.value.f)
+extern cGVar GVar_MessengerAttackPosZ;
+#define g_MessengerAttackPosZ (GVar_MessengerAttackPosZ.value.f)
+extern cGVar GVar_MessengerShootSound;
+#define g_MessengerShootSound (GVar_MessengerShootSound.value.s)
+extern cGVar GVar_MessengerShootSoundVol;
+#define g_MessengerShootSoundVol (GVar_MessengerShootSoundVol.value.f)
+extern cGVar GVar_MessengerTakeDataPackSound;
+#define g_MessengerTakeDataPackSound (GVar_MessengerTakeDataPackSound.value.s)
+extern cGVar GVar_MessengerTakeDataPackSoundVol;
+#define g_MessengerTakeDataPackSoundVol (GVar_MessengerTakeDataPackSoundVol.value.f)
 #define g_MessengerTakenCallback (GAME_ARRAY_IN(cPy_Function, GVar_MessengerTakenCallback, 16))	/* "MessengerTakenCallback" */
-#define g_MessengerDataPack GAME_GLOBAL_IN(char *, GVar_MessengerDataPack, 16)	/* "MessengerDataPack": the name of the data pack */
-#define g_FXHammerHitFile GAME_GLOBAL_IN(char *, GVar_FXHammerHitFile, 16)
-#define g_NurseAlarmHit GAME_GLOBAL_IN(float, GVar_NurseAlarmHit, 16)
-#define g_NurseDispDist GAME_GLOBAL_IN(float, GVar_NurseDispDist, 16)
-#define g_NurseDispRad GAME_GLOBAL_IN(float, GVar_NurseDispRad, 16)
+extern cGVar GVar_MessengerDataPack;
+#define g_MessengerDataPack (GVar_MessengerDataPack.value.s)	/* "MessengerDataPack": the name of the data pack */
+extern cGVar GVar_FXHammerHitFile;
+#define g_FXHammerHitFile (GVar_FXHammerHitFile.value.s)
+extern cGVar GVar_NurseAlarmHit;
+#define g_NurseAlarmHit (GVar_NurseAlarmHit.value.f)
+extern cGVar GVar_NurseDispDist;
+#define g_NurseDispDist (GVar_NurseDispDist.value.f)
+extern cGVar GVar_NurseDispRad;
+#define g_NurseDispRad (GVar_NurseDispRad.value.f)
 #define g_OnSleep (GAME_ARRAY_IN(cPy_Function, GVar_OnSleep, 16))		/* "OnSleep" */
-#define g_FXPoliceGearConversionFile GAME_GLOBAL_IN(char *, GVar_FXPoliceGearConversionFile, 16)
-#define g_FXPoliceStealFile GAME_GLOBAL_IN(char *, GVar_FXPoliceStealFile, 16)
-#define g_PoliceAlarmStepSTM GAME_GLOBAL_IN(float, GVar_PoliceAlarmStepSTM, 16)
-#define g_PoliceStealAmount GAME_GLOBAL_IN(int, GVar_PoliceStealAmount, 16)
-#define g_PoliceBossActionRadius GAME_GLOBAL_IN(float, GVar_PoliceBossActionRadius, 16)
-#define g_PoliceBossBrupBaseFile GAME_GLOBAL_IN(char *, GVar_PoliceBossBrupBaseFile, 16)
-#define g_PoliceBossBrupBounce1Sound GAME_GLOBAL_IN(char *, GVar_PoliceBossBrupBounce1Sound, 16)
-#define g_PoliceBossBrupBounce2Sound GAME_GLOBAL_IN(char *, GVar_PoliceBossBrupBounce2Sound, 16)
-#define g_PoliceBossBrupBounceSoundVol GAME_GLOBAL_IN(float, GVar_PoliceBossBrupBounceSoundVol, 16)
-#define g_PoliceBossBrupDebrisMax GAME_GLOBAL_IN(int, GVar_PoliceBossBrupDebrisMax, 16)
-#define g_PoliceBossBrupDebrisMin GAME_GLOBAL_IN(int, GVar_PoliceBossBrupDebrisMin, 16)
-#define g_PoliceBossBrupDirRand GAME_GLOBAL_IN(float, GVar_PoliceBossBrupDirRand, 16)
-#define g_PoliceBossBrupPosX GAME_GLOBAL_IN(float, GVar_PoliceBossBrupPosX, 16)
-#define g_PoliceBossBrupPosY GAME_GLOBAL_IN(float, GVar_PoliceBossBrupPosY, 16)
-#define g_PoliceBossBrupPosZ GAME_GLOBAL_IN(float, GVar_PoliceBossBrupPosZ, 16)
-#define g_FXRustyHitFile GAME_GLOBAL_IN(char *, GVar_FXRustyHitFile, 16)
-#define g_RustyHitPosX GAME_GLOBAL_IN(float, GVar_RustyHitPosX, 16)
-#define g_RustyHitPosY GAME_GLOBAL_IN(float, GVar_RustyHitPosY, 16)
-#define g_RustyHitPosZ GAME_GLOBAL_IN(float, GVar_RustyHitPosZ, 16)
-#define g_FXSebastianFlashFile GAME_GLOBAL_IN(char *, GVar_FXSebastianFlashFile, 16)
+extern cGVar GVar_FXPoliceGearConversionFile;
+#define g_FXPoliceGearConversionFile (GVar_FXPoliceGearConversionFile.value.s)
+extern cGVar GVar_FXPoliceStealFile;
+#define g_FXPoliceStealFile (GVar_FXPoliceStealFile.value.s)
+extern cGVar GVar_PoliceAlarmStepSTM;
+#define g_PoliceAlarmStepSTM (GVar_PoliceAlarmStepSTM.value.f)
+extern cGVar GVar_PoliceStealAmount;
+#define g_PoliceStealAmount (GVar_PoliceStealAmount.value.i)
+extern cGVar GVar_PoliceBossActionRadius;
+#define g_PoliceBossActionRadius (GVar_PoliceBossActionRadius.value.f)
+extern cGVar GVar_PoliceBossBrupBaseFile;
+#define g_PoliceBossBrupBaseFile (GVar_PoliceBossBrupBaseFile.value.s)
+extern cGVar GVar_PoliceBossBrupBounce1Sound;
+#define g_PoliceBossBrupBounce1Sound (GVar_PoliceBossBrupBounce1Sound.value.s)
+extern cGVar GVar_PoliceBossBrupBounce2Sound;
+#define g_PoliceBossBrupBounce2Sound (GVar_PoliceBossBrupBounce2Sound.value.s)
+extern cGVar GVar_PoliceBossBrupBounceSoundVol;
+#define g_PoliceBossBrupBounceSoundVol (GVar_PoliceBossBrupBounceSoundVol.value.f)
+extern cGVar GVar_PoliceBossBrupDebrisMax;
+#define g_PoliceBossBrupDebrisMax (GVar_PoliceBossBrupDebrisMax.value.i)
+extern cGVar GVar_PoliceBossBrupDebrisMin;
+#define g_PoliceBossBrupDebrisMin (GVar_PoliceBossBrupDebrisMin.value.i)
+extern cGVar GVar_PoliceBossBrupDirRand;
+#define g_PoliceBossBrupDirRand (GVar_PoliceBossBrupDirRand.value.f)
+extern cGVar GVar_PoliceBossBrupPosX;
+#define g_PoliceBossBrupPosX (GVar_PoliceBossBrupPosX.value.f)
+extern cGVar GVar_PoliceBossBrupPosY;
+#define g_PoliceBossBrupPosY (GVar_PoliceBossBrupPosY.value.f)
+extern cGVar GVar_PoliceBossBrupPosZ;
+#define g_PoliceBossBrupPosZ (GVar_PoliceBossBrupPosZ.value.f)
+extern cGVar GVar_FXRustyHitFile;
+#define g_FXRustyHitFile (GVar_FXRustyHitFile.value.s)
+extern cGVar GVar_RustyHitPosX;
+#define g_RustyHitPosX (GVar_RustyHitPosX.value.f)
+extern cGVar GVar_RustyHitPosY;
+#define g_RustyHitPosY (GVar_RustyHitPosY.value.f)
+extern cGVar GVar_RustyHitPosZ;
+#define g_RustyHitPosZ (GVar_RustyHitPosZ.value.f)
+extern cGVar GVar_FXSebastianFlashFile;
+#define g_FXSebastianFlashFile (GVar_FXSebastianFlashFile.value.s)
 
 /* the characters of the running actions (the "MeEnt" CHECKs), the nurse by name and the character it hits */
 extern cEntity *g_MayorEnt;

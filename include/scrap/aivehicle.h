@@ -12,6 +12,7 @@
 
 #include <stdarg.h>
 
+#include "scrap/gvar.h"
 #include "scrap/ai.h"
 #include "scrap/aivehiclecontrol.h"
 #include "scrap/cstring.h"
@@ -180,12 +181,18 @@ static inline cEntity *AIV_Target(const cAIVehicle *ai) {
 }
 
 /* the engine variables of the vehicle AI */
-#define g_MaxDistReposAI GAME_GLOBAL_IN(float, GVar_MaxDistReposAI, 16)
-#define g_MinDistReposAI GAME_GLOBAL_IN(float, GVar_MinDistReposAI, 16)
-#define g_MaxDistReposNotVisAI GAME_GLOBAL_IN(float, GVar_MaxDistReposNotVisAI, 16)
-#define g_MinDistReposNotVisAI GAME_GLOBAL_IN(float, GVar_MinDistReposNotVisAI, 16)
-#define g_TimeDamageAI GAME_GLOBAL_IN(float, GVar_TimeDamageAI, 16)
-#define g_HookRange GAME_GLOBAL_IN(float, GVar_HookRange, 16)
+extern cGVar GVar_MaxDistReposAI;
+#define g_MaxDistReposAI (GVar_MaxDistReposAI.value.f)
+extern cGVar GVar_MinDistReposAI;
+#define g_MinDistReposAI (GVar_MinDistReposAI.value.f)
+extern cGVar GVar_MaxDistReposNotVisAI;
+#define g_MaxDistReposNotVisAI (GVar_MaxDistReposNotVisAI.value.f)
+extern cGVar GVar_MinDistReposNotVisAI;
+#define g_MinDistReposNotVisAI (GVar_MinDistReposNotVisAI.value.f)
+extern cGVar GVar_TimeDamageAI;
+#define g_TimeDamageAI (GVar_TimeDamageAI.value.f)
+extern cGVar GVar_HookRange;
+#define g_HookRange (GVar_HookRange.value.f)
 #define g_OnObjectiveNullAI (&GAME_GLOBAL_IN(cPy_Function, GVar_OnObjectiveNullAI, 16))
 #define g_OnItemTakenAI (&GAME_GLOBAL_IN(cPy_Function, GVar_OnItemTakenAI, 16))
 

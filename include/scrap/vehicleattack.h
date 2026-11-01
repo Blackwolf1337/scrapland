@@ -7,6 +7,7 @@
 #ifndef SCRAP_VEHICLEATTACK_H
 #define SCRAP_VEHICLEATTACK_H
 
+#include "scrap/gvar.h"
 #include "scrap/entity.h"
 
 typedef struct cVehicleAttack {
@@ -35,7 +36,8 @@ SD_OFFSET(cVehicleAttack, netFlags, 0x5c);
 SD_OFFSET(cVehicleAttack, hitBy, 0x60);
 SD_SIZE(cVehicleAttack, 0x7c);
 
-#define g_VehicleAttackReset GAME_GLOBAL_IN(float, GVar_WeapHitClientResetTime, 16)	/* the time the shots on a target are kept */
+extern cGVar GVar_WeapHitClientResetTime;
+#define g_VehicleAttackReset (GVar_WeapHitClientResetTime.value.f)	/* the time the shots on a target are kept */
 
 cVehicleAttack *cVehicleAttack_ctor(cVehicleAttack *self);
 /* in WithLifeEntity.c */

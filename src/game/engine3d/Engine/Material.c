@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/bmp.h"
 #include "scrap/console.h"
 #include "scrap/d3d8.h"
@@ -24,11 +25,16 @@ typedef void *(*deleteObj_t)(void *self, int flags);
 extern int g_TexDeleteUnused;
 extern int g_AnimCycleDefault;
 /* engine variables DDS_MarkSource, LoadTextures, DDS_CheckMark, MatEmissive, DDS_UseTextures */
-#define g_DDSMarkSource GAME_GLOBAL_IN(int, GVar_DDS_MarkSource, 16)
-#define g_LoadTextures GAME_GLOBAL_IN(int, GVar_LoadTextures, 16)
-#define g_DDSCheckMark GAME_GLOBAL_IN(int, GVar_DDS_CheckMark, 16)
-#define g_MatEmissive GAME_GLOBAL_IN(float, GVar_MatEmissive, 16)
-#define g_DDSUseTextures GAME_GLOBAL_IN(int, GVar_DDS_UseTextures, 16)
+extern cGVar GVar_DDS_MarkSource;
+#define g_DDSMarkSource (GVar_DDS_MarkSource.value.i)
+extern cGVar GVar_LoadTextures;
+#define g_LoadTextures (GVar_LoadTextures.value.i)
+extern cGVar GVar_DDS_CheckMark;
+#define g_DDSCheckMark (GVar_DDS_CheckMark.value.i)
+extern cGVar GVar_MatEmissive;
+#define g_MatEmissive (GVar_MatEmissive.value.f)
+extern cGVar GVar_DDS_UseTextures;
+#define g_DDSUseTextures (GVar_DDS_UseTextures.value.i)
 #define g_TexturePaths (GAME_ARRAY(char[MAX_FILEPATH], g_TexturePaths))
 #define g_TextureExts (GAME_ARRAY(char[MAX_FILEPATH], g_TextureExts))
 extern char g_MatStr[256];

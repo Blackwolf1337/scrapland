@@ -7,6 +7,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/chartype.h"
 #include "scrap/logic.h"
 #include "scrap/objentity.h"
@@ -15,10 +16,13 @@
 
 #define CRUSTYLOCALLOGIC_VFTABLE GAME_VFTABLE(cRustyLocalLogic_vftable)
 extern cEntityListData *g_JunkPointsList;
-#define g_JunkPointsListName GAME_GLOBAL_IN(char *, GVar_JunkPointsListName, 16)	/* cString "JunkPointsListName" */
+extern cGVar GVar_JunkPointsListName;
+#define g_JunkPointsListName (GVar_JunkPointsListName.value.s)	/* cString "JunkPointsListName" */
 extern int g_RustyLoops;			/* the working loops done at this point */
-#define g_NumWorkingLoops GAME_GLOBAL_IN(int, GVar_NumWorkingLoops, 16)
-#define g_PlatformRadiusSqr GAME_GLOBAL_IN(int, GVar_PlatformRadiusSqr, 16)
+extern cGVar GVar_NumWorkingLoops;
+#define g_NumWorkingLoops (GVar_NumWorkingLoops.value.i)
+extern cGVar GVar_PlatformRadiusSqr;
+#define g_PlatformRadiusSqr (GVar_PlatformRadiusSqr.value.i)
 extern int s_RustyLastJunkPoint;		/* -1 at the start */
 
 void *cRustyLocalLogic_ctor(void *mem, cEntity *parent) {

@@ -8,6 +8,7 @@
 #ifndef SCRAP_NODESWORLD2D_H
 #define SCRAP_NODESWORLD2D_H
 
+#include "scrap/gvar.h"
 #include "scrap/nodesworldsup.h"
 
 /* a region of the generation: its points (0x1c bytes) */
@@ -47,11 +48,16 @@ typedef struct cNW2DBody {
 SD_SIZE(cNW2DBody, 0x10);
 
 #define g_NW2DBodies (&GAME_GLOBAL_IN(cNW2DBody, g_NW2DBodies, 0))	/* 3 bodies */
-#define g_NW2DDrawMode GAME_GLOBAL_IN(int, GVar_ShowNodes2DAI, 16)	/* what the debug view of the graph draws */
-#define g_NW2DShowNode GAME_GLOBAL_IN(int, GVar_ShowInfoRegAI, 16)	/* the node the debug view shows, -1 none */
-#define g_NW2DGroundDist GAME_GLOBAL_IN(float, GVar_AltPerpFloorAI, 16)	/* the length of the floor probes */
-#define g_NW2DHeight GAME_GLOBAL_IN(float, GVar_AltMinTestWalkAI, 16)	/* the height of the points over the floor */
-#define g_NW2DDebugSegs GAME_GLOBAL_IN(int, GVar_ShowTestCanGoAI, 16)	/* the path tests keep their segments in the list they get */
+extern cGVar GVar_ShowNodes2DAI;
+#define g_NW2DDrawMode (GVar_ShowNodes2DAI.value.i)	/* what the debug view of the graph draws */
+extern cGVar GVar_ShowInfoRegAI;
+#define g_NW2DShowNode (GVar_ShowInfoRegAI.value.i)	/* the node the debug view shows, -1 none */
+extern cGVar GVar_AltPerpFloorAI;
+#define g_NW2DGroundDist (GVar_AltPerpFloorAI.value.f)	/* the length of the floor probes */
+extern cGVar GVar_AltMinTestWalkAI;
+#define g_NW2DHeight (GVar_AltMinTestWalkAI.value.f)	/* the height of the points over the floor */
+extern cGVar GVar_ShowTestCanGoAI;
+#define g_NW2DDebugSegs (GVar_ShowTestCanGoAI.value.i)	/* the path tests keep their segments in the list they get */
 
 /* ---- Global/DList.h instances ---- */
 

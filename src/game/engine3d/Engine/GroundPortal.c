@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/camera.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
@@ -25,8 +26,10 @@
 #define g_NumEndSectors GAME_GLOBAL_IN(int, g_Zones, 520)
 #define g_NumOutSectors GAME_GLOBAL_IN(int, g_Zones, 524)
 /* the projection and the viewport narrowed to the rectangle of each seen sector */
-#define g_PortalClip GAME_GLOBAL_IN(int, GVar_R_PortalClip, 16)
-#define g_PortalBand GAME_GLOBAL_IN(int, GVar_R_PortalBand, 16)	/* pixels added around it */
+extern cGVar GVar_R_PortalClip;
+#define g_PortalClip (GVar_R_PortalClip.value.i)
+extern cGVar GVar_R_PortalBand;
+#define g_PortalBand (GVar_R_PortalBand.value.i)	/* pixels added around it */
 
 
 CZone *CZone_ctor(CZone *self) {

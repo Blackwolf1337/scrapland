@@ -7,6 +7,7 @@
 #ifndef SCRAP_FXCOUNTERMEASURES_H
 #define SCRAP_FXCOUNTERMEASURES_H
 
+#include "scrap/gvar.h"
 #include "scrap/entity.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapparticles.h"
@@ -189,14 +190,22 @@ char *cTargetLock_GetEntity(cTargetLock *self);
 void *PtrArray_Get(void *self, int i);
 
 /* the engine variables */
-#define g_FXHookFadeTime GAME_GLOBAL_IN(float, GVar_FXHookFadeTime, 16)
-#define g_HookRange GAME_GLOBAL_IN(float, GVar_HookRange, 16)
-#define g_LaserIDAmmo GAME_GLOBAL_IN(int, GVar_LaserIDAmmo, 16)
-#define g_FXHookSize GAME_GLOBAL_IN(float, GVar_FXHookSize, 16)
-#define g_FXHookTensor GAME_GLOBAL_IN(float, GVar_FXHookTensor, 16)
-#define g_LaserHookSparksFile GAME_GLOBAL_IN(const char *, GVar_LaserHookSparksFile, 16)
-#define g_FXSonicRadius GAME_GLOBAL_IN(float, GVar_FXSonicRadius, 16)
-#define g_SceneDuDvRTarget GAME_GLOBAL_IN(int, GVar_R_SceneDuDvRTarget, 16)		/* R_SceneDuDvRTarget */
+extern cGVar GVar_FXHookFadeTime;
+#define g_FXHookFadeTime (GVar_FXHookFadeTime.value.f)
+extern cGVar GVar_HookRange;
+#define g_HookRange (GVar_HookRange.value.f)
+extern cGVar GVar_LaserIDAmmo;
+#define g_LaserIDAmmo (GVar_LaserIDAmmo.value.i)
+extern cGVar GVar_FXHookSize;
+#define g_FXHookSize (GVar_FXHookSize.value.f)
+extern cGVar GVar_FXHookTensor;
+#define g_FXHookTensor (GVar_FXHookTensor.value.f)
+extern cGVar GVar_LaserHookSparksFile;
+#define g_LaserHookSparksFile (GVar_LaserHookSparksFile.value.s)
+extern cGVar GVar_FXSonicRadius;
+#define g_FXSonicRadius (GVar_FXSonicRadius.value.f)
+extern cGVar GVar_R_SceneDuDvRTarget;
+#define g_SceneDuDvRTarget (GVar_R_SceneDuDvRTarget.value.i)		/* R_SceneDuDvRTarget */
 
 /* cWorld: the position of the camera of the current view into out */
 vec3_t *cWorld_GetCamPos(cWorld *self, vec3_t *out);

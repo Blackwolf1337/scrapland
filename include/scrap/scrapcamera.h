@@ -7,6 +7,7 @@
 #ifndef SCRAP_SCRAPCAMERA_H
 #define SCRAP_SCRAPCAMERA_H
 
+#include "scrap/gvar.h"
 #include "scrap/camera.h"
 #include "scrap/model.h"
 #include "scrap/scrapmodel.h"
@@ -28,10 +29,14 @@ SD_OFFSET(CGameCamera, Camera, 0x34);
 SD_SIZE(CGameCamera, 0x3c);
 
 /* the engine variables (Gvars) */
-#define g_CameraDefViewAspect GAME_GLOBAL_IN(float, GVar_CameraDefViewAspect, 16)	/* CameraDefViewAspect */
-#define g_PhysicalAspectRatio GAME_GLOBAL_IN(float, GVar_PhysicalAspectRatio, 16)	/* PhysicalAspectRatio */
-#define g_ShowSceneCamera GAME_GLOBAL_IN(int, GVar_ShowSceneCamera, 16)		/* ShowSceneCamera */
-#define g_CameraScene GAME_GLOBAL_IN(int, GVar_CameraScene, 16)		/* CameraScene */
+extern cGVar GVar_CameraDefViewAspect;
+#define g_CameraDefViewAspect (GVar_CameraDefViewAspect.value.f)	/* CameraDefViewAspect */
+extern cGVar GVar_PhysicalAspectRatio;
+#define g_PhysicalAspectRatio (GVar_PhysicalAspectRatio.value.f)	/* PhysicalAspectRatio */
+extern cGVar GVar_ShowSceneCamera;
+#define g_ShowSceneCamera (GVar_ShowSceneCamera.value.i)		/* ShowSceneCamera */
+extern cGVar GVar_CameraScene;
+#define g_CameraScene (GVar_CameraScene.value.i)		/* CameraScene */
 /* 1: the cameras follow their scene nodes (also CCamera at rva 0x29cba0) */
 extern int g_CameraNodes;
 /* what CamComposite_Find found last, for ShowSceneCamera */

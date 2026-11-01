@@ -7,6 +7,7 @@
 #ifndef SCRAP_RENDER_H
 #define SCRAP_RENDER_H
 
+#include "scrap/gvar.h"
 #include "scrap/cstring.h"
 #include "scrap/d3d8.h"
 #include "scrap/mathlib.h"
@@ -47,10 +48,13 @@ extern uint32_t g_FilterMin;
 extern uint32_t g_FilterMag;
 extern uint32_t g_FilterMip;
 extern uint32_t g_AnisotropyCur;
-#define g_TexFilter GAME_GLOBAL_IN(int, GVar_R_TexFilter, 16)		/* R_TexFilter 0 point, 1 linear, 2 anisotropic */
-#define g_MipFilter GAME_GLOBAL_IN(int, GVar_R_MipFilter, 16)		/* R_MipFilter 0 point, 1 linear */
+extern cGVar GVar_R_TexFilter;
+#define g_TexFilter (GVar_R_TexFilter.value.i)		/* R_TexFilter 0 point, 1 linear, 2 anisotropic */
+extern cGVar GVar_R_MipFilter;
+#define g_MipFilter (GVar_R_MipFilter.value.i)		/* R_MipFilter 0 point, 1 linear */
 #define g_Anisotropy GAME_GLOBAL_IN(uint32_t, GVar_R_Anisotropy, 16)	/* R_Anisotropy */
-#define g_MipmapBias GAME_GLOBAL_IN(float, GVar_R_MipmapBias, 16)		/* R_MipmapBias */
+extern cGVar GVar_R_MipmapBias;
+#define g_MipmapBias (GVar_R_MipmapBias.value.f)		/* R_MipmapBias */
 extern float g_MipmapBias2;
 #define g_MipmapsOn GAME_GLOBAL_IN(byte, group_4ad6f0, 2)
 /* the address modes of the stages as Render_SetMap last set them */
@@ -78,11 +82,15 @@ extern uint32_t g_ShaderCurrent;
 /* RenderLightmapMat, the lightmap material of the draw (counted); with one the shader modes have 0x100 */
 extern CMaterial *g_LightmapMat;
 #define g_UseShaders GAME_GLOBAL_IN(byte, group_43240c, 1)
-#define g_MaterialLog GAME_GLOBAL_IN(int, GVar_R_MaterialLog, 16)		/* R_MaterialLog */
+extern cGVar GVar_R_MaterialLog;
+#define g_MaterialLog (GVar_R_MaterialLog.value.i)		/* R_MaterialLog */
 #define g_DecalZBias GAME_GLOBAL_IN(uint32_t, GVar_R_DecalZBias, 16)	/* R_DecalZBias */
-#define g_AlphaFog GAME_GLOBAL_IN(int, GVar_R_AlphaFog, 16)		/* R_AlphaFog 0, 1 (only add blending), 2 */
-#define g_UseDefMaterial GAME_GLOBAL_IN(int, GVar_R_UseDefMaterial, 16)	/* R_UseDefMaterial 0, 1, 2 */
-#define g_UseDefTexture GAME_GLOBAL_IN(int, GVar_R_UseDefTexture, 16)	/* R_UseDefTexture 0..4 */
+extern cGVar GVar_R_AlphaFog;
+#define g_AlphaFog (GVar_R_AlphaFog.value.i)		/* R_AlphaFog 0, 1 (only add blending), 2 */
+extern cGVar GVar_R_UseDefMaterial;
+#define g_UseDefMaterial (GVar_R_UseDefMaterial.value.i)	/* R_UseDefMaterial 0, 1, 2 */
+extern cGVar GVar_R_UseDefTexture;
+#define g_UseDefTexture (GVar_R_UseDefTexture.value.i)	/* R_UseDefTexture 0..4 */
 /* the default materials RenderIniD3D makes, in this order: white, checkerboard, grey, invisible, bump noise, ground */
 extern CMaterial *g_MatWhite;
 extern CMaterial *g_MatCheckerboard;
@@ -109,31 +117,53 @@ extern int g_UseHWEnvMap;
 extern int g_UseBumpMap;		/* video UsarBumpMap */
 extern int g_UseGlowMap;		/* video UsarGlowMap */
 /* the engine variables of the environment and bump maps (Gvars) */
-#define g_EnvBumpBias GAME_GLOBAL_IN(int, GVar_R_EnvBumpBias, 16)		/* R_EnvBumpBias, DXT1 bump textures */
-#define g_EnvBumpScale GAME_GLOBAL_IN(float, GVar_R_EnvBumpScale, 16)	/* R_EnvBumpScale */
-#define g_EnvMapOffset GAME_GLOBAL_IN(float, GVar_R_EnvMapOffset, 16)	/* R_EnvMapOffset */
-#define g_EnvMapScale GAME_GLOBAL_IN(float, GVar_R_EnvMapScale, 16)	/* R_EnvMapScale */
-#define g_EnvMapViewDep GAME_GLOBAL_IN(int, GVar_R_EnvMapViewDep, 16)	/* R_EnvMapViewDep 0, 1, 2 */
+extern cGVar GVar_R_EnvBumpBias;
+#define g_EnvBumpBias (GVar_R_EnvBumpBias.value.i)		/* R_EnvBumpBias, DXT1 bump textures */
+extern cGVar GVar_R_EnvBumpScale;
+#define g_EnvBumpScale (GVar_R_EnvBumpScale.value.f)	/* R_EnvBumpScale */
+extern cGVar GVar_R_EnvMapOffset;
+#define g_EnvMapOffset (GVar_R_EnvMapOffset.value.f)	/* R_EnvMapOffset */
+extern cGVar GVar_R_EnvMapScale;
+#define g_EnvMapScale (GVar_R_EnvMapScale.value.f)	/* R_EnvMapScale */
+extern cGVar GVar_R_EnvMapViewDep;
+#define g_EnvMapViewDep (GVar_R_EnvMapViewDep.value.i)	/* R_EnvMapViewDep 0, 1, 2 */
 #define g_EnvBump GAME_GLOBAL_IN(int, g_GvEnvBump, 16)		/* R_EnvBump */
 #define g_EnvMap GAME_GLOBAL_IN(int, g_GvEnvMap, 16)		/* R_EnvMap */
-#define g_EnvBlend GAME_GLOBAL_IN(int, GVar_R_EnvBlend, 16)		/* R_EnvBlend */
+extern cGVar GVar_R_EnvBlend;
+#define g_EnvBlend (GVar_R_EnvBlend.value.i)		/* R_EnvBlend */
 /* the engine variables of the Clouds and GlowFlick shader modes (R_CloudR and so on) */
-#define g_CloudR GAME_GLOBAL_IN(float, GVar_R_CloudR, 16)
-#define g_CloudG GAME_GLOBAL_IN(float, GVar_R_CloudG, 16)
-#define g_CloudB GAME_GLOBAL_IN(float, GVar_R_CloudB, 16)
-#define g_CloudA GAME_GLOBAL_IN(float, GVar_R_CloudA, 16)
-#define g_CloudEmi GAME_GLOBAL_IN(float, GVar_R_CloudEmi, 16)
-#define g_CloudVel1x GAME_GLOBAL_IN(float, GVar_R_CloudVel1x, 16)
-#define g_CloudVel1y GAME_GLOBAL_IN(float, GVar_R_CloudVel1y, 16)
-#define g_CloudScale1 GAME_GLOBAL_IN(float, GVar_R_CloudScale1, 16)
-#define g_CloudVel2x GAME_GLOBAL_IN(float, GVar_R_CloudVel2x, 16)
-#define g_CloudVel2y GAME_GLOBAL_IN(float, GVar_R_CloudVel2y, 16)
-#define g_CloudScale2 GAME_GLOBAL_IN(float, GVar_R_CloudScale2, 16)
-#define g_GlowFlickTile GAME_GLOBAL_IN(float, GVar_R_GlowFlickTile, 16)
-#define g_GlowFlickRot GAME_GLOBAL_IN(float, GVar_R_GlowFlickRot, 16)
-#define g_GlowFlickBump GAME_GLOBAL_IN(float, GVar_R_GlowFlickBump, 16)
-#define g_GlowFlickBRot GAME_GLOBAL_IN(float, GVar_R_GlowFlickBRot, 16)
-#define g_GlowFlickMod GAME_GLOBAL_IN(float, GVar_R_GlowFlickMod, 16)
+extern cGVar GVar_R_CloudR;
+#define g_CloudR (GVar_R_CloudR.value.f)
+extern cGVar GVar_R_CloudG;
+#define g_CloudG (GVar_R_CloudG.value.f)
+extern cGVar GVar_R_CloudB;
+#define g_CloudB (GVar_R_CloudB.value.f)
+extern cGVar GVar_R_CloudA;
+#define g_CloudA (GVar_R_CloudA.value.f)
+extern cGVar GVar_R_CloudEmi;
+#define g_CloudEmi (GVar_R_CloudEmi.value.f)
+extern cGVar GVar_R_CloudVel1x;
+#define g_CloudVel1x (GVar_R_CloudVel1x.value.f)
+extern cGVar GVar_R_CloudVel1y;
+#define g_CloudVel1y (GVar_R_CloudVel1y.value.f)
+extern cGVar GVar_R_CloudScale1;
+#define g_CloudScale1 (GVar_R_CloudScale1.value.f)
+extern cGVar GVar_R_CloudVel2x;
+#define g_CloudVel2x (GVar_R_CloudVel2x.value.f)
+extern cGVar GVar_R_CloudVel2y;
+#define g_CloudVel2y (GVar_R_CloudVel2y.value.f)
+extern cGVar GVar_R_CloudScale2;
+#define g_CloudScale2 (GVar_R_CloudScale2.value.f)
+extern cGVar GVar_R_GlowFlickTile;
+#define g_GlowFlickTile (GVar_R_GlowFlickTile.value.f)
+extern cGVar GVar_R_GlowFlickRot;
+#define g_GlowFlickRot (GVar_R_GlowFlickRot.value.f)
+extern cGVar GVar_R_GlowFlickBump;
+#define g_GlowFlickBump (GVar_R_GlowFlickBump.value.f)
+extern cGVar GVar_R_GlowFlickBRot;
+#define g_GlowFlickBRot (GVar_R_GlowFlickBRot.value.f)
+extern cGVar GVar_R_GlowFlickMod;
+#define g_GlowFlickMod (GVar_R_GlowFlickMod.value.f)
 /* the render functions of the shader modes (two tables, the second for the modes with 0x100) */
 #define MAX_SHADER_TAB 32
 typedef void (*shaderRender_t)(void *a, void *b);
@@ -150,7 +180,8 @@ SD_SIZE(ShaderTab, 0x18);
 #define g_ShaderTab2 (GAME_ARRAY(const ShaderTab, g_ShaderTab2))
 /* the pixel shaders: on (the device has them), their handles, the ones switched off (a bit each from 0x200000) */
 #define MAX_PS 9
-#define g_PSOn GAME_GLOBAL_IN(int, GVar_R_PShaders, 16)
+extern cGVar GVar_R_PShaders;
+#define g_PSOn (GVar_R_PShaders.value.i)
 #define PS_POST 21				/* the first of the post effect shaders */
 #define g_PS (g_PSHandles + PS_POST)
 /* the pixel shaders of g_PSNames the shader modes use */
@@ -179,8 +210,10 @@ enum {
 /* all pixel shaders made from their files (the names end with NULL) */
 #define g_PSNames (GAME_ARRAY(const char *const, g_PSNames))
 extern uint32_t g_PSHandles[32];	/* [32], one per slot of g_PSNames */
-#define g_PShaderCount GAME_GLOBAL_IN(int, GVar_R_PShaderCount, 16)	/* R_PShaderCount, the changes of the frame */
-#define g_CullMode GAME_GLOBAL_IN(int, GVar_R_CullMode, 16)	/* R_CullMode, 1 two-sided */
+extern cGVar GVar_R_PShaderCount;
+#define g_PShaderCount (GVar_R_PShaderCount.value.i)	/* R_PShaderCount, the changes of the frame */
+extern cGVar GVar_R_CullMode;
+#define g_CullMode (GVar_R_CullMode.value.i)	/* R_CullMode, 1 two-sided */
 /* the world matrix was given to the device */
 extern int g_WorldSet;
 /* the whole viewport (g_Viewport is the one of the current view) */
@@ -188,7 +221,8 @@ extern uint32_t g_ViewportFull[6];
 #define g_D3DOn GAME_GLOBAL_IN(byte, group_4ad6f0, 1)
 #define g_MatDefault ((void *)GAME_PTR(CMaterial_MatDefault, 0))
 #define g_MatLine ((void *)GAME_PTR(CMaterial_MatLine, 0))	/* the material of the debug lines */
-#define g_ShowSphereVis GAME_GLOBAL_IN(int, GVar_R_ShowSphereVis, 16)	/* R_ShowSphereVis 0, 1, 2 */
+extern cGVar GVar_R_ShowSphereVis;
+#define g_ShowSphereVis (GVar_R_ShowSphereVis.value.i)	/* R_ShowSphereVis 0, 1, 2 */
 extern char g_VersionStr[64];	/* 0x40 */
 extern const CMaterial *g_MatCurrent;
 /* what CNode3D_Render draws: the object classes (low 24 bits of the mask), the nodes whose flags & g_RenderFlagMask
@@ -412,18 +446,30 @@ extern int g_PartNumTri;
 /* the particles drawn in the frame (statistics) */
 #define g_RenderParts GAME_GLOBAL_IN(int, g_RenderCounts, 24)
 /* the engine variables */
-#define g_MaxSparkSize GAME_GLOBAL_IN(float, GVar_R_MaxSparkSize, 16)	/* R_MaxSparkSize */
-#define g_MinSparkDist GAME_GLOBAL_IN(float, GVar_R_MinSparkDist, 16)	/* R_MinSparkDist */
-#define g_ParticlesAlphaDist GAME_GLOBAL_IN(int, GVar_R_ParticlesAlphaDist, 16)	/* R_ParticlesAlphaDist */
-#define g_ParticlesDraw GAME_GLOBAL_IN(int, GVar_R_ParticlesDraw, 16)	/* R_ParticlesDraw */
-#define g_ParticlesLock GAME_GLOBAL_IN(int, GVar_R_ParticlesLock, 16)	/* R_ParticlesLock: 1 always discard, 2 the size too */
-#define g_ParticlesOne GAME_GLOBAL_IN(int, GVar_R_ParticlesOne, 16)		/* R_ParticlesOne */
-#define g_ParticlesZBias GAME_GLOBAL_IN(int, GVar_R_ParticlesZBias, 16)	/* R_ParticlesZBias */
-#define g_ShowEVA GAME_GLOBAL_IN(int, GVar_R_ShowEVA, 16)		/* R_ShowEVA */
-#define g_ShowSkin GAME_GLOBAL_IN(int, GVar_R_ShowSkin, 16)		/* R_ShowSkin */
-#define g_SkinNodeSpace GAME_GLOBAL_IN(int, GVar_R_SkinNodeSpace, 16)	/* R_SkinNodeSpace */
-#define g_UseEVA GAME_GLOBAL_IN(int, GVar_R_UseEVA, 16)		/* R_UseEVA */
-#define g_UseSkin GAME_GLOBAL_IN(int, GVar_R_UseSkin, 16)		/* R_UseSkin */
+extern cGVar GVar_R_MaxSparkSize;
+#define g_MaxSparkSize (GVar_R_MaxSparkSize.value.f)	/* R_MaxSparkSize */
+extern cGVar GVar_R_MinSparkDist;
+#define g_MinSparkDist (GVar_R_MinSparkDist.value.f)	/* R_MinSparkDist */
+extern cGVar GVar_R_ParticlesAlphaDist;
+#define g_ParticlesAlphaDist (GVar_R_ParticlesAlphaDist.value.i)	/* R_ParticlesAlphaDist */
+extern cGVar GVar_R_ParticlesDraw;
+#define g_ParticlesDraw (GVar_R_ParticlesDraw.value.i)	/* R_ParticlesDraw */
+extern cGVar GVar_R_ParticlesLock;
+#define g_ParticlesLock (GVar_R_ParticlesLock.value.i)	/* R_ParticlesLock: 1 always discard, 2 the size too */
+extern cGVar GVar_R_ParticlesOne;
+#define g_ParticlesOne (GVar_R_ParticlesOne.value.i)		/* R_ParticlesOne */
+extern cGVar GVar_R_ParticlesZBias;
+#define g_ParticlesZBias (GVar_R_ParticlesZBias.value.i)	/* R_ParticlesZBias */
+extern cGVar GVar_R_ShowEVA;
+#define g_ShowEVA (GVar_R_ShowEVA.value.i)		/* R_ShowEVA */
+extern cGVar GVar_R_ShowSkin;
+#define g_ShowSkin (GVar_R_ShowSkin.value.i)		/* R_ShowSkin */
+extern cGVar GVar_R_SkinNodeSpace;
+#define g_SkinNodeSpace (GVar_R_SkinNodeSpace.value.i)	/* R_SkinNodeSpace */
+extern cGVar GVar_R_UseEVA;
+#define g_UseEVA (GVar_R_UseEVA.value.i)		/* R_UseEVA */
+extern cGVar GVar_R_UseSkin;
+#define g_UseSkin (GVar_R_UseSkin.value.i)		/* R_UseSkin */
 
 struct CParticle;
 struct Graphic3DVert;
@@ -485,9 +531,12 @@ extern int g_TranspGroup;		/* counted up for each mesh list, 1 after a flush */
 extern CTable g_TabObj;		/* TabObjBase3D: RenderObjEntry */
 extern RenderObjEntry * g_ObjList[1026];
 #define g_UsedObj GAME_GLOBAL_IN(int, g_ObjList, 4096)
-#define g_MeshCache GAME_GLOBAL_IN(int, GVar_R_MeshCache, 16)		/* R_MeshCache, 10 logs the batches */
-#define g_ShowTranspBox GAME_GLOBAL_IN(int, GVar_R_ShowTranspBox, 16)	/* R_ShowTranspBox */
-#define g_TranspZBias GAME_GLOBAL_IN(float, GVar_R_TranspZBias, 16)	/* R_TranspZBias */
+extern cGVar GVar_R_MeshCache;
+#define g_MeshCache (GVar_R_MeshCache.value.i)		/* R_MeshCache, 10 logs the batches */
+extern cGVar GVar_R_ShowTranspBox;
+#define g_ShowTranspBox (GVar_R_ShowTranspBox.value.i)	/* R_ShowTranspBox */
+extern cGVar GVar_R_TranspZBias;
+#define g_TranspZBias (GVar_R_TranspZBias.value.f)	/* R_TranspZBias */
 
 /* the batches drawn; E_FAIL without a device, else 0 */
 int RenderMeshD3D_Flush(void);

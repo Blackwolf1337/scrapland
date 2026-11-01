@@ -9,6 +9,7 @@
 #ifndef SCRAP_ARROWINDICATOR_H
 #define SCRAP_ARROWINDICATOR_H
 
+#include "scrap/gvar.h"
 #include "scrap/cstring.h"
 #include "scrap/entity.h"
 #include "scrap/pyfunction.h"
@@ -74,15 +75,22 @@ SD_SIZE(cArrowIndicator, 0x88);
 /* the globals of ArrowIndicator.cpp */
 extern cArrowModel *g_ArrowPool;
 extern int g_ArrowPoolCount;
-#define g_ArrowMaxDist GAME_GLOBAL_IN(float, GVar_ArrowActiveRadius, 16)	/* of the selection */
-#define g_ArrowNearDist GAME_GLOBAL_IN(float, GVar_ArrowViewRadius, 16)	/* shown nearer */
-#define g_ArrowYMargin GAME_GLOBAL_IN(float, GVar_ArrowActiveHorizontal, 16)	/* the height difference allowed over both radii */
+extern cGVar GVar_ArrowActiveRadius;
+#define g_ArrowMaxDist (GVar_ArrowActiveRadius.value.f)	/* of the selection */
+extern cGVar GVar_ArrowViewRadius;
+#define g_ArrowNearDist (GVar_ArrowViewRadius.value.f)	/* shown nearer */
+extern cGVar GVar_ArrowActiveHorizontal;
+#define g_ArrowYMargin (GVar_ArrowActiveHorizontal.value.f)	/* the height difference allowed over both radii */
 #define g_MissionArrowOn (&GAME_GLOBAL_IN(cString, GVar_ArrowMissionFile, 16))	/* the models of MissionArrows_Switch */
 #define g_MissionArrowOff (&GAME_GLOBAL_IN(cString, GVar_ArrowTargetFile, 16))
-#define g_ArrowUseModel GAME_GLOBAL_IN(char *, GVar_ArrowUseFile, 16)
-#define g_ArrowGlowDist GAME_GLOBAL_IN(float, GVar_FXArrowIndicatorFlash_DistGrow, 16)
-#define g_ArrowGlowMin GAME_GLOBAL_IN(float, GVar_FXArrowIndicatorFlash_SizeMin, 16)
-#define g_ArrowGlowMax GAME_GLOBAL_IN(float, GVar_FXArrowIndicatorFlash_SizeMax, 16)
+extern cGVar GVar_ArrowUseFile;
+#define g_ArrowUseModel (GVar_ArrowUseFile.value.s)
+extern cGVar GVar_FXArrowIndicatorFlash_DistGrow;
+#define g_ArrowGlowDist (GVar_FXArrowIndicatorFlash_DistGrow.value.f)
+extern cGVar GVar_FXArrowIndicatorFlash_SizeMin;
+#define g_ArrowGlowMin (GVar_FXArrowIndicatorFlash_SizeMin.value.f)
+extern cGVar GVar_FXArrowIndicatorFlash_SizeMax;
+#define g_ArrowGlowMax (GVar_FXArrowIndicatorFlash_SizeMax.value.f)
 #define g_ArrowGlowRamps (GAME_ARRAY(uint32_t[9], g_ArrowGlowRamps))
 
 /* in / |in| (in itself for a length 0), returns out */

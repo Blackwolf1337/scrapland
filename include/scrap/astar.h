@@ -5,6 +5,7 @@
 #ifndef SCRAP_ASTAR_H
 #define SCRAP_ASTAR_H
 
+#include "scrap/gvar.h"
 #include "scrap/game.h"
 #include "scrap/nodesworld.h"
 
@@ -170,7 +171,8 @@ SD_OFFSET(CAStar2D, nodes, 0x44);
 SD_OFFSET(CAStar2D, h1, 0x48);
 SD_SIZE(CAStar2D, 0x50);
 
-#define g_AStarDrawMode GAME_GLOBAL_IN(int, GVar_ShowAStarAI, 16)	/* 1 closed, 2 open, 3 both */
+extern cGVar GVar_ShowAStarAI;
+#define g_AStarDrawMode (GVar_ShowAStarAI.value.i)	/* 1 closed, 2 open, 3 both */
 
 /* the table of 1009 slots of the search (Global/HashTable.h with int keys) */
 HashTable *AStarTable_ctor(HashTable *self, int size);

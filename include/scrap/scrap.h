@@ -8,6 +8,7 @@
 #include "scrap/cstring.h"
 #include "scrap/entity.h"
 #include "scrap/filepak.h"
+#include "scrap/gvar.h"
 #include "scrap/mathlib.h"
 #include "scrap/pyentity.h"
 #include "scrap/python.h"
@@ -18,7 +19,8 @@
 /* the function of Scrap.SetCallFunc with its parameters (AddParamX) for Scrap.Execute */
 #define g_CallFunc (GAME_ARRAY(cPy_Function, g_CallFunc))
 #define g_PackName (GAME_ARRAY_IN(cString, GVar_PathInPackFile, 16))	/* string object, the open pack */
-#define g_SuperDealAvaliable GAME_GLOBAL_IN(int, GVar_SuperDealAvaliable, 16)	/* SuperDealAvaliable, all three crazy deals done */
+extern cGVar GVar_SuperDealAvaliable;
+#define g_SuperDealAvaliable (GVar_SuperDealAvaliable.value.i)	/* SuperDealAvaliable, all three crazy deals done */
 
 void Elements_Call(void *elements, const char *name);
 void Elements_Create(void *elements);
@@ -27,43 +29,6 @@ void *cWorld_NewEntityList(cWorld *world, const char *name);
 const char *cWorld_GetCamName(cWorld *world, int i);
 cEntity *cWorld_GetFirstEntity(cWorld *world);
 
-/* engine global variables (gvars, Scrap.Get/Set/Def/Des) */
-enum { GVAR_STRING = 1, GVAR_INT = 2, GVAR_FLOAT = 4, GVAR_FUNCTION = 5, GVAR_SCRIPT_FUNCTION = 6 };
-
-/* the class cGvar, 0x10 bytes: the part before the value (the value and the default are of the typed variables,
- * classes without RTTI) */
-typedef struct cGvar {
-	struct cGVar *next;		/* 0x00 g_GVars */
-	char *name;			/* 0x04 */
-	char *description;		/* 0x08 */
-	byte flags;			/* 0x0c bit 0: scripts may not write it */
-	byte type;			/* 0x0d GVAR_ */
-	byte pad_e[2];
-} cGvar;
-SD_SIZE(cGvar, 0x10);
-
-/*
- * an engine variable (Global/Gvars.cpp). The pointers in g_GVars point 4 bytes into the object: a GVAR_FUNCTION
- * variable has a vtable before it (cGVarListVtbl) that saves and loads its lines of the config file.
- */
-typedef struct cGVar {
-	cGvar base;			/* 0x00 */
-	union {				/* 0x10 current value */
-		char *s;		/* GVAR_STRING: first member of a string object, cString_Set writes it */
-		int i;
-		float f;
-	} value;
-	union {				/* 0x14 default value */
-		char *s;
-		int i;
-		float f;
-	} def;
-} cGVar;
-SD_OFFSET(cGVar, def, 0x14);
-/* GVAR_SCRIPT_FUNCTION keeps a cPy_Function at +0x10 instead of value/def */
-#define GVar_Function(v) ((cPy_Function *)&(v)->value)
-SD_OFFSET(cGvar, type, 0x0d);
-SD_OFFSET(cGVar, value, 0x10);
 cGVar *GVar_Find(const char *name);
 /* the base constructor (src/game/Global/Gvars.c): in front of g_GVars, the derived class sets the type */
 cGVar *cGVar_ctor(cGVar *self, const char *name, byte flags, const char *description);
@@ -181,7 +146,8 @@ SD_SIZE(cDebris, 0x58);
 #define Debris_Mod(d) ((CGameModel *)(d)->Mod)
 
 extern vec3_t g_DebrisDrop[4];	/* [4]: position, angles (rad), velocity, angle speed (rad) */
-#define g_DebrisDefault GAME_GLOBAL_IN(float, GVar_Gravity, 16)
+extern cGVar GVar_Gravity;
+#define g_DebrisDefault (GVar_Gravity.value.f)
 
 cDebrisSys *cWorld_GetDebrisSys(cWorld *world, const char *name);
 byte cWorld_DeleteDebrisSys(cWorld *world, const char *name);

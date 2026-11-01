@@ -9,6 +9,7 @@
 #ifndef SCRAP_BSP_H
 #define SCRAP_BSP_H
 
+#include "scrap/gvar.h"
 #include "scrap/bmpflt.h"
 #include "scrap/vertlist.h"
 #include "scrap/light.h"
@@ -256,20 +257,33 @@ extern BspLight g_BspLights[512];	/* [BSP_MAX_LIGHTS] */
 extern int g_LmapInfo;		/* the .INFO maps */
 extern int g_LmapInfo2;
 extern int g_TxfMode;		/* the TXF loading of an .EMI (2 deletes) */
-#define g_R_ForceLMap GAME_GLOBAL_IN(int, GVar_R_ForceLMap, 16)	/* gvar R_ForceLMap, -1 */
+extern cGVar GVar_R_ForceLMap;
+#define g_R_ForceLMap (GVar_R_ForceLMap.value.i)	/* gvar R_ForceLMap, -1 */
 extern int g_LmapSecond;		/* the secondary maps (stencil pass 2) */
-#define g_RenderMap GAME_GLOBAL_IN(int, GVar_RenderMap, 16)		/* gvar RenderMap */
-#define g_LightmapPackMode GAME_GLOBAL_IN(int, GVar_LightmapPackMode, 16)	/* gvar */
-#define g_LightmapDxtPadding GAME_GLOBAL_IN(int, GVar_LightmapDxtPadding, 16)	/* gvar */
-#define g_LightmapLimitUV GAME_GLOBAL_IN(int, GVar_LightmapLimitUV, 16)	/* gvar */
-#define g_MapDrawBySector GAME_GLOBAL_IN(int, GVar_MapDrawBySector, 16)	/* gvar */
-#define g_MapDrawSector GAME_GLOBAL_IN(int, GVar_MapDrawSector, 16)	/* gvar, -2 all */
-#define g_MapRenderMap GAME_GLOBAL_IN(const char *, GVar_MapRenderMap, 16)	/* gvar, a wildcard of map names */
-#define g_MapRenderMat GAME_GLOBAL_IN(const char *, GVar_MapRenderMat, 16)	/* gvar, a wildcard of material names */
-#define g_MapSortByShader GAME_GLOBAL_IN(int, GVar_MapSortByShader, 16)	/* gvar */
-#define g_RenderSectors GAME_GLOBAL_IN(int, GVar_RenderSectors, 16)	/* gvar */
-#define g_TXF_Helper GAME_GLOBAL_IN(int, GVar_TXF_Helper, 16)		/* gvar */
-#define g_ShowInfoOnSectorError GAME_GLOBAL_IN(int, GVar_ShowInfoOnSectorError, 16)	/* gvar */
+extern cGVar GVar_RenderMap;
+#define g_RenderMap (GVar_RenderMap.value.i)		/* gvar RenderMap */
+extern cGVar GVar_LightmapPackMode;
+#define g_LightmapPackMode (GVar_LightmapPackMode.value.i)	/* gvar */
+extern cGVar GVar_LightmapDxtPadding;
+#define g_LightmapDxtPadding (GVar_LightmapDxtPadding.value.i)	/* gvar */
+extern cGVar GVar_LightmapLimitUV;
+#define g_LightmapLimitUV (GVar_LightmapLimitUV.value.i)	/* gvar */
+extern cGVar GVar_MapDrawBySector;
+#define g_MapDrawBySector (GVar_MapDrawBySector.value.i)	/* gvar */
+extern cGVar GVar_MapDrawSector;
+#define g_MapDrawSector (GVar_MapDrawSector.value.i)	/* gvar, -2 all */
+extern cGVar GVar_MapRenderMap;
+#define g_MapRenderMap (GVar_MapRenderMap.value.s)	/* gvar, a wildcard of map names */
+extern cGVar GVar_MapRenderMat;
+#define g_MapRenderMat (GVar_MapRenderMat.value.s)	/* gvar, a wildcard of material names */
+extern cGVar GVar_MapSortByShader;
+#define g_MapSortByShader (GVar_MapSortByShader.value.i)	/* gvar */
+extern cGVar GVar_RenderSectors;
+#define g_RenderSectors (GVar_RenderSectors.value.i)	/* gvar */
+extern cGVar GVar_TXF_Helper;
+#define g_TXF_Helper (GVar_TXF_Helper.value.i)		/* gvar */
+extern cGVar GVar_ShowInfoOnSectorError;
+#define g_ShowInfoOnSectorError (GVar_ShowInfoOnSectorError.value.i)	/* gvar */
 extern int g_Gamma2x;		/* the gamma2x of the video settings */
 /* the keys that switch the wire frame: F8 (cleared) with X held */
 #define g_KeyF8 GAME_GLOBAL_IN(byte, g_KeyboardKeys, 50)
@@ -307,12 +321,16 @@ extern float g_ShadowMapCoefRad;
 /* the radiosity */
 extern int g_BspAreasTotal[4];	/* the areas of all lists by level */
 extern float g_BspRadMinD2;	/* the smallest squared distance of a form factor */
-#define g_RadSkipBySectors GAME_GLOBAL_IN(int, GVar_RadSkipBySectors, 16)	/* gvar: only the lists of the same sector */
-#define g_RadiosityPortals GAME_GLOBAL_IN(int, GVar_RadiosityPortals, 16)	/* gvar: other sectors only through the portals */
-#define g_RadiosityMinDist GAME_GLOBAL_IN(float, GVar_RadiosityMinDist, 16)	/* gvar: g_BspRadMinD2 in texels */
+extern cGVar GVar_RadSkipBySectors;
+#define g_RadSkipBySectors (GVar_RadSkipBySectors.value.i)	/* gvar: only the lists of the same sector */
+extern cGVar GVar_RadiosityPortals;
+#define g_RadiosityPortals (GVar_RadiosityPortals.value.i)	/* gvar: other sectors only through the portals */
+extern cGVar GVar_RadiosityMinDist;
+#define g_RadiosityMinDist (GVar_RadiosityMinDist.value.f)	/* gvar: g_BspRadMinD2 in texels */
 /* the compiler */
 extern int g_LmapOption58;		/* a switch of the dialog (0x40d): only the nodes with flag 4 */
-#define g_TxfCheckFiles GAME_GLOBAL_IN(int, GVar_TXF_CheckFiles, 16)	/* gvar TXF_CheckFiles: the TXF mode asked for */
+extern cGVar GVar_TXF_CheckFiles;
+#define g_TxfCheckFiles (GVar_TXF_CheckFiles.value.i)	/* gvar TXF_CheckFiles: the TXF mode asked for */
 
 /* engine3d/engine/bmp*.h instanced here */
 void CBmpFlt2_dtor(CBmpFlt2 *self);

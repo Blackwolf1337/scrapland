@@ -6,6 +6,7 @@
 #ifndef SCRAP_SCRAPMODEL_H
 #define SCRAP_SCRAPMODEL_H
 
+#include "scrap/gvar.h"
 #include "scrap/material.h"
 #include "scrap/model.h"
 #include "scrap/ground.h"
@@ -28,16 +29,26 @@ SD_SIZE(CGameModel, 0x1c);
 #define MAT_SINVERTICES 0x4000		/* the meshes of the material give no vertices to the effects */
 
 /* the engine variables (Gvars) */
-#define g_GetModelVertex GAME_GLOBAL_IN(int, GVar_R_GetModelVertex, 16)		/* R_GetModelVertex, else the model position */
-#define g_ForcePreRenderTransform GAME_GLOBAL_IN(int, GVar_R_ForcePreRenderTransform, 16)	/* R_ForcePreRenderTransform */
-#define g_SplitScreen GAME_GLOBAL_IN(int, GVar_R_SplitScreen, 16)		/* R_SplitScreen: every model visible */
-#define g_CoefMLODShips GAME_GLOBAL_IN(float, GVar_R_CoefMLODShips, 16)
-#define g_CoefMLODPilots GAME_GLOBAL_IN(float, GVar_R_CoefMLODPilots, 16)
-#define g_CoefMLODEngines GAME_GLOBAL_IN(float, GVar_R_CoefMLODEngines, 16)
-#define g_CoefMLODTraffic GAME_GLOBAL_IN(float, GVar_R_CoefMLODTraffic, 16)
-#define g_CoefMLODCharacters GAME_GLOBAL_IN(float, GVar_R_CoefMLODCharacters, 16)
-#define g_CoefMLODOutElement GAME_GLOBAL_IN(float, GVar_R_CoefMLODOutElement, 16)
-#define g_CoefMLODMenuElement GAME_GLOBAL_IN(float, GVar_R_CoefMLODMenuElement, 16)
+extern cGVar GVar_R_GetModelVertex;
+#define g_GetModelVertex (GVar_R_GetModelVertex.value.i)		/* R_GetModelVertex, else the model position */
+extern cGVar GVar_R_ForcePreRenderTransform;
+#define g_ForcePreRenderTransform (GVar_R_ForcePreRenderTransform.value.i)	/* R_ForcePreRenderTransform */
+extern cGVar GVar_R_SplitScreen;
+#define g_SplitScreen (GVar_R_SplitScreen.value.i)		/* R_SplitScreen: every model visible */
+extern cGVar GVar_R_CoefMLODShips;
+#define g_CoefMLODShips (GVar_R_CoefMLODShips.value.f)
+extern cGVar GVar_R_CoefMLODPilots;
+#define g_CoefMLODPilots (GVar_R_CoefMLODPilots.value.f)
+extern cGVar GVar_R_CoefMLODEngines;
+#define g_CoefMLODEngines (GVar_R_CoefMLODEngines.value.f)
+extern cGVar GVar_R_CoefMLODTraffic;
+#define g_CoefMLODTraffic (GVar_R_CoefMLODTraffic.value.f)
+extern cGVar GVar_R_CoefMLODCharacters;
+#define g_CoefMLODCharacters (GVar_R_CoefMLODCharacters.value.f)
+extern cGVar GVar_R_CoefMLODOutElement;
+#define g_CoefMLODOutElement (GVar_R_CoefMLODOutElement.value.f)
+extern cGVar GVar_R_CoefMLODMenuElement;
+#define g_CoefMLODMenuElement (GVar_R_CoefMLODMenuElement.value.f)
 
 CGameModel *CGameModel_ctor(CGameModel *self, const char *name);
 /* the default constructor for the arrays: without a model */

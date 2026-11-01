@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/camcontrol.h"
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
@@ -14,15 +15,20 @@
 #include "scrap/weapons.h"
 #include "scrap/withlifeentity.h"
 
-#define g_EnemyMarkScale GAME_GLOBAL_IN(float, GVar_LittlePointingArrowSize, 16)	/* the size of the marks of DrawEnemies, none for 0 */
+extern cGVar GVar_LittlePointingArrowSize;
+#define g_EnemyMarkScale (GVar_LittlePointingArrowSize.value.f)	/* the size of the marks of DrawEnemies, none for 0 */
 #define TS_PULSE_SPEED 4.0f
 #define TS_PULSE_RANGE -254.0
 #define TS_MARK_HEIGHT 380.0f
 #define TS_HALF_SCREEN 240.0f
-#define g_TargetSwitchSound GAME_GLOBAL_IN(const char *, GVar_TargetScorerSwitchSound, 16)	/* TargetScorerSwitchSound */
-#define g_TargetSwitchSoundVol GAME_GLOBAL_IN(float, GVar_TargetScorerSwitchSoundVol, 16)
-#define g_EnemyFireSize GAME_GLOBAL_IN(float, GVar_EnemyFireSize, 16)		/* the scale of the arrow to the attacker */
-#define g_AttackerMarkTime GAME_GLOBAL_IN(float, GVar_AttackerMarkTime, 16)		/* the attacker arrow shows this long after a hit */
+extern cGVar GVar_TargetScorerSwitchSound;
+#define g_TargetSwitchSound (GVar_TargetScorerSwitchSound.value.s)	/* TargetScorerSwitchSound */
+extern cGVar GVar_TargetScorerSwitchSoundVol;
+#define g_TargetSwitchSoundVol (GVar_TargetScorerSwitchSoundVol.value.f)
+extern cGVar GVar_EnemyFireSize;
+#define g_EnemyFireSize (GVar_EnemyFireSize.value.f)		/* the scale of the arrow to the attacker */
+extern cGVar GVar_AttackerMarkTime;
+#define g_AttackerMarkTime (GVar_AttackerMarkTime.value.f)		/* the attacker arrow shows this long after a hit */
 #define TS_RECT_SIZE 380.0f		/* the rectangle per radius and depth */
 #define TS_RECT_MIN 12.0f
 #define TS_ARROW_TARGET 0.6f		/* the arrows on this part of the way to the edge */

@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/ai.h"
 #include "scrap/camcontrol.h"
 #include "scrap/collisiongrid.h"
@@ -25,9 +26,12 @@
 #define OBJ_SLOT_JUMP2 9000000.0f		/* rva 0x3b38f8: a jump of more than 3000 since the slot */
 
 /* the smoothing of the position of a network client: no smoothing nearer than min or farther than max */
-#define g_NetSmoothMin GAME_GLOBAL_IN(float, GVar_ErrorMin, 16)
-#define g_NetSmoothMax GAME_GLOBAL_IN(float, GVar_ErrorMax, 16)
-#define g_NetSmoothFactor GAME_GLOBAL_IN(float, GVar_ErrorFix, 16)
+extern cGVar GVar_ErrorMin;
+#define g_NetSmoothMin (GVar_ErrorMin.value.f)
+extern cGVar GVar_ErrorMax;
+#define g_NetSmoothMax (GVar_ErrorMax.value.f)
+extern cGVar GVar_ErrorFix;
+#define g_NetSmoothFactor (GVar_ErrorFix.value.f)
 /* the origin of the packed positions of the network messages (32 units a step) */
 extern vec3_t g_NetOrigin;
 

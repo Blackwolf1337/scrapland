@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/fxcharactions.h"
@@ -22,10 +23,14 @@
 #define Debris_Next(d) (((cDebris *)(d))->next)
 
 /* the debris systems of the fire effects (SetEmbeddedFX) */
-#define g_MissileFXDumbMotor GAME_GLOBAL_IN(const char *, GVar_FXDumbMotorFile, 16)
-#define g_MissileFXGearMissile GAME_GLOBAL_IN(const char *, GVar_FXGearMissileFile, 16)
-#define g_MissileFXCloud GAME_GLOBAL_IN(const char *, GVar_CloudFile, 16)
-#define g_MissileFXEMI GAME_GLOBAL_IN(const char *, GVar_EMIFile, 16)
+extern cGVar GVar_FXDumbMotorFile;
+#define g_MissileFXDumbMotor (GVar_FXDumbMotorFile.value.s)
+extern cGVar GVar_FXGearMissileFile;
+#define g_MissileFXGearMissile (GVar_FXGearMissileFile.value.s)
+extern cGVar GVar_CloudFile;
+#define g_MissileFXCloud (GVar_CloudFile.value.s)
+extern cGVar GVar_EMIFile;
+#define g_MissileFXEMI (GVar_EMIFile.value.s)
 
 #define MISSILE_ENTLIST 8			/* the entity lists the missiles hit */
 #define MISSILE_NET_NONE 0xffff			/* no parent or target in the network state */

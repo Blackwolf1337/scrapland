@@ -7,6 +7,7 @@
 #ifndef SCRAP_ITEMENTITY_H
 #define SCRAP_ITEMENTITY_H
 
+#include "scrap/gvar.h"
 #include "scrap/objentity.h"
 #include "scrap/pyfunction.h"
 #include "scrap/scrapmodel.h"
@@ -59,8 +60,10 @@ SD_OFFSET(cItemEntity, radius, 0x360);
 SD_OFFSET(cItemEntity, onTake, 0x370);
 SD_SIZE(cItemEntity, CITEMENTITY_SIZE);
 
-#define g_ItemFxDist GAME_GLOBAL_IN(float, GVar_FXItemFadeMaxDist, 16)		/* the fade effects only nearer (60000) */
-#define g_ItemSyncDist GAME_GLOBAL_IN(float, GVar_NetItemDistAct, 16)
+extern cGVar GVar_FXItemFadeMaxDist;
+#define g_ItemFxDist (GVar_FXItemFadeMaxDist.value.f)		/* the fade effects only nearer (60000) */
+extern cGVar GVar_NetItemDistAct;
+#define g_ItemSyncDist (GVar_NetItemDistAct.value.f)
 extern uint32_t g_ItemSyncCount;
 
 void cItemEntity_dtor(cItemEntity *self);

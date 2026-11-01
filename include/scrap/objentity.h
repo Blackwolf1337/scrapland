@@ -9,6 +9,7 @@
 #ifndef SCRAP_OBJENTITY_H
 #define SCRAP_OBJENTITY_H
 
+#include "scrap/gvar.h"
 #include "scrap/modmove.h"
 #include "scrap/pyfunction.h"
 #include "scrap/scrapmodel.h"
@@ -150,8 +151,10 @@ static inline const cObjEntityVtbl *Obj_Vtbl(const cEntity *e) {
 }
 
 /* 1 while a missile updates: cObjEntity_Update then moves the render state on by the velocity of one slot */
-#define g_MissileUpdating GAME_GLOBAL_IN(int, GVar_ActiveExtrapolation, 16)
-#define g_RadarShowTime GAME_GLOBAL_IN(float, GVar_MssnRadarBlinkTime, 16)	/* radarTime after a change of RadarShow */
+extern cGVar GVar_ActiveExtrapolation;
+#define g_MissileUpdating (GVar_ActiveExtrapolation.value.i)
+extern cGVar GVar_MssnRadarBlinkTime;
+#define g_RadarShowTime (GVar_MssnRadarBlinkTime.value.f)	/* radarTime after a change of RadarShow */
 
 /* the cObjEntity functions take a cEntity like the callers of the derived classes */
 void cObjEntity_dtor(cEntity *self);

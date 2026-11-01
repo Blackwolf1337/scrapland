@@ -8,6 +8,7 @@
 #ifndef SCRAP_NODEFX_H
 #define SCRAP_NODEFX_H
 
+#include "scrap/gvar.h"
 #include "scrap/node3d.h"
 
 #define INODEFX_VFTABLE GAME_VFTABLE(INodeFX_vftable)
@@ -59,18 +60,29 @@ SD_OFFSET(CNodeFX_Spring, vel, 0x24);
 SD_SIZE(CNodeFX_Spring, 0x40);
 
 /* the engine variables of the effects */
-#define g_NodeFXSpringDamp1 GAME_GLOBAL_IN(float, GVar_NodeFXSpringDamp1, 16)	/* NodeFXSpringDamp1 */
-#define g_NodeFXSpringDamp2 GAME_GLOBAL_IN(float, GVar_NodeFXSpringDamp2, 16)	/* NodeFXSpringDamp2 */
-#define g_NodeFXSpringDebug GAME_GLOBAL_IN(int, GVar_NodeFXSpringDebug, 16)	/* NodeFXSpringDebug: the variables instead of the members */
+extern cGVar GVar_NodeFXSpringDamp1;
+#define g_NodeFXSpringDamp1 (GVar_NodeFXSpringDamp1.value.f)	/* NodeFXSpringDamp1 */
+extern cGVar GVar_NodeFXSpringDamp2;
+#define g_NodeFXSpringDamp2 (GVar_NodeFXSpringDamp2.value.f)	/* NodeFXSpringDamp2 */
+extern cGVar GVar_NodeFXSpringDebug;
+#define g_NodeFXSpringDebug (GVar_NodeFXSpringDebug.value.i)	/* NodeFXSpringDebug: the variables instead of the members */
 #define g_NodeFXSpringMSec GAME_GLOBAL_IN(uint32_t, GVar_NodeFXSpringMSec, 16)	/* NodeFXSpringMSec, the step */
-#define g_NodeFXSpringMidP GAME_GLOBAL_IN(float, GVar_NodeFXSpringMidP, 16)	/* NodeFXSpringMidP */
-#define g_NodeFXSpringRot GAME_GLOBAL_IN(float, GVar_NodeFXSpringRot, 16)	/* NodeFXSpringRot */
-#define g_NodeFXSpringRotX GAME_GLOBAL_IN(float, GVar_NodeFXSpringRotX, 16)	/* NodeFXSpringRotX, degrees */
-#define g_NodeFXSpringShow GAME_GLOBAL_IN(int, GVar_NodeFXSpringShow, 16)	/* NodeFXSpringShow */
-#define g_NodeFXSpringSprng GAME_GLOBAL_IN(float, GVar_NodeFXSpringSprng, 16)	/* NodeFXSpringSprng */
-#define g_NodeFXWheelRadius GAME_GLOBAL_IN(float, GVar_NodeFXWheelRadius, 16)	/* NodeFXWheelRadius */
-#define g_NodeFXWheelShow GAME_GLOBAL_IN(int, GVar_NodeFXWheelShow, 16)	/* NodeFXWheelShow */
-#define g_NodeFXWheelSlide GAME_GLOBAL_IN(float, GVar_NodeFXWheelSlide, 16)	/* NodeFXWheelSlide */
+extern cGVar GVar_NodeFXSpringMidP;
+#define g_NodeFXSpringMidP (GVar_NodeFXSpringMidP.value.f)	/* NodeFXSpringMidP */
+extern cGVar GVar_NodeFXSpringRot;
+#define g_NodeFXSpringRot (GVar_NodeFXSpringRot.value.f)	/* NodeFXSpringRot */
+extern cGVar GVar_NodeFXSpringRotX;
+#define g_NodeFXSpringRotX (GVar_NodeFXSpringRotX.value.f)	/* NodeFXSpringRotX, degrees */
+extern cGVar GVar_NodeFXSpringShow;
+#define g_NodeFXSpringShow (GVar_NodeFXSpringShow.value.i)	/* NodeFXSpringShow */
+extern cGVar GVar_NodeFXSpringSprng;
+#define g_NodeFXSpringSprng (GVar_NodeFXSpringSprng.value.f)	/* NodeFXSpringSprng */
+extern cGVar GVar_NodeFXWheelRadius;
+#define g_NodeFXWheelRadius (GVar_NodeFXWheelRadius.value.f)	/* NodeFXWheelRadius */
+extern cGVar GVar_NodeFXWheelShow;
+#define g_NodeFXWheelShow (GVar_NodeFXWheelShow.value.i)	/* NodeFXWheelShow */
+extern cGVar GVar_NodeFXWheelSlide;
+#define g_NodeFXWheelSlide (GVar_NodeFXWheelSlide.value.f)	/* NodeFXWheelSlide */
 /* the seconds of the frame */
 extern float g_FrameSec;
 /* the section "NodeEffect" of the user properties */

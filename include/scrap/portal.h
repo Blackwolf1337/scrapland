@@ -5,10 +5,12 @@
 #ifndef SCRAP_PORTAL_H
 #define SCRAP_PORTAL_H
 
+#include "scrap/gvar.h"
 #include "scrap/meshd3d.h"
 
 #define CPORTAL_VFTABLE GAME_VFTABLE(CPortal_vftable)
-#define g_ShowPortals GAME_GLOBAL_IN(int, GVar_R_ShowPortals, 16)	/* gvRenderShowPortals */
+extern cGVar GVar_R_ShowPortals;
+#define g_ShowPortals (GVar_R_ShowPortals.value.i)	/* gvRenderShowPortals */
 
 typedef struct CPortal {
 	void **vftable;			/* 0x00 OBJ3D_VF_* */

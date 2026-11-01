@@ -8,6 +8,7 @@
 #ifndef SCRAP_FILEPAK_H
 #define SCRAP_FILEPAK_H
 
+#include "scrap/gvar.h"
 #include "scrap/dlist.h"
 #include "scrap/filesys.h"
 #include "scrap/pymempool.h"
@@ -96,16 +97,20 @@ typedef DLIST(cStringNode) cStringList;
 extern int g_NumPackFiles;
 #define g_PackFiles (&GAME_GLOBAL_IN(cFile2, g_PackFiles, 0))		/* PACK_MAX_FILES */
 extern HashTable *g_NameTable;	/* of cNameItem, while Python_CompileAll collects */
-#define g_PackExclude GAME_GLOBAL_IN(char *, GVar_BuildPackExclude, 16)	/* ';' separated patterns not to pack */
-#define g_PackInclude GAME_GLOBAL_IN(char *, GVar_BuildPackInclude, 16)	/* ';' separated patterns to pack, all if empty */
+extern cGVar GVar_BuildPackExclude;
+#define g_PackExclude (GVar_BuildPackExclude.value.s)	/* ';' separated patterns not to pack */
+extern cGVar GVar_BuildPackInclude;
+#define g_PackInclude (GVar_BuildPackInclude.value.s)	/* ';' separated patterns to pack, all if empty */
 extern int g_PackLocked;		/* a cFilePack is open (only one at a time) */
 extern void *g_LstFile;		/* the file list being recorded */
 extern uint32_t g_PackNumEntries;
 extern int g_PackDirLen;		/* characters to skip of the walked names */
 extern int g_PackBuildMode;
 extern cPackLocation g_PackFound;	/* result of PackIndex_Find */
-#define g_PackNameStr GAME_GLOBAL_IN(char *, GVar_PathInPackFile, 16)	/* chars of g_PackName, the prefix of the open pack */
-#define g_PackBuildAsk GAME_GLOBAL_IN(int, GVar_BuildPackPrompt, 16)	/* ask before quitting after Pack_Build */
+extern cGVar GVar_PathInPackFile;
+#define g_PackNameStr (GVar_PathInPackFile.value.s)	/* chars of g_PackName, the prefix of the open pack */
+extern cGVar GVar_BuildPackPrompt;
+#define g_PackBuildAsk (GVar_BuildPackPrompt.value.i)	/* ask before quitting after Pack_Build */
 
 cFile2 *cFile2_ctor(cFile2 *self);
 void cFile2_dtor(cFile2 *self);

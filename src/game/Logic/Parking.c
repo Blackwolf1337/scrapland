@@ -9,15 +9,19 @@
 #include <float.h>
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/chartype.h"
 #include "scrap/cstring.h"
 #include "scrap/logic.h"
 #include "scrap/world.h"
 #include "scrap/weapons.h"
 
-#define g_ParkingCheckRadius GAME_GLOBAL_IN(float, GVar_ParkingCheckRadius, 16)
-#define g_ParkingCharCheckDistance GAME_GLOBAL_IN(float, GVar_ParkingCharCheckDistance, 16)
-#define g_ParkingVehicleCheckDistance GAME_GLOBAL_IN(float, GVar_ParkingVehicleCheckDistance, 16)
+extern cGVar GVar_ParkingCheckRadius;
+#define g_ParkingCheckRadius (GVar_ParkingCheckRadius.value.f)
+extern cGVar GVar_ParkingCharCheckDistance;
+#define g_ParkingCharCheckDistance (GVar_ParkingCharCheckDistance.value.f)
+extern cGVar GVar_ParkingVehicleCheckDistance;
+#define g_ParkingVehicleCheckDistance (GVar_ParkingVehicleCheckDistance.value.f)
 #define g_OnParkedOut (GAME_ARRAY_IN(cPy_Function, GVar_OnParkedOut, 16))
 #define g_OnParkingOccupied (GAME_ARRAY_IN(cPy_Function, GVar_OnParkingOccupied, 16))
 /* what the sphere native found: a ship, else the last other entity */

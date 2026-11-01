@@ -5,6 +5,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/filesys.h"
 #include "scrap/fxelements.h"
 #include "scrap/pyfunction.h"
@@ -14,7 +15,8 @@
 #define CMAPELEMENT_VFTABLE GAME_VFTABLE(cMapElement_vftable)
 
 /* ElementModelPath, the folder of the element models (a cString, "Models/Elements/") */
-#define g_ElementModelPath GAME_GLOBAL_IN(char *, GVar_ElementModelPath, 16)
+extern cGVar GVar_ElementModelPath;
+#define g_ElementModelPath (GVar_ElementModelPath.value.s)
 
 /* ---- cMapElement ---- */
 

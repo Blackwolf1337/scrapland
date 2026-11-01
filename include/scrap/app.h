@@ -6,6 +6,7 @@
 #ifndef SCRAP_APP_H
 #define SCRAP_APP_H
 
+#include "scrap/gvar.h"
 #include "scrap/cstring.h"
 #include "scrap/game.h"
 #include "scrap/pyfunction.h"
@@ -15,30 +16,42 @@
 #define g_CWinAppVftable ((const CAppVtbl *)GAME_VFTABLE(CWinApp_vftable))
 
 /* engine variables (Gvars) */
-#define g_LoadMsgIndex GAME_GLOBAL_IN(int, GVar_iLoadMsgString, 16)		/* iLoadMsgString: the next loading tip */
+extern cGVar GVar_iLoadMsgString;
+#define g_LoadMsgIndex (GVar_iLoadMsgString.value.i)		/* iLoadMsgString: the next loading tip */
 #define g_iMap (GAME_ARRAY_IN(cString, GVar_iMap, 16))		/* iMap: the first level */
 #define g_iMapDefault (GAME_ARRAY_IN(cString, GVar_iMap, 20))	/* its default value */
 #define g_ReRunAtExitParams (GAME_ARRAY_IN(cString, GVar_ReRunAtExitParams, 16))	/* RunApp of the game with them at the end */
 #define g_AfterDrawCallback (GAME_ARRAY_IN(cPy_Function, GVar_AfterDrawCallback, 16))
-#define g_DrawNextFrame GAME_GLOBAL_IN(int, GVar_DrawNextFrame, 16)
-#define g_DefaultMaxPlayers GAME_GLOBAL_IN(int, GVar_DefaultMaxPlayersOnServer, 16)	/* DefaultMaxPlayersOnServer */
-#define g_ModFileName GAME_GLOBAL_IN(const char *, GVar_ModFileName, 16)	/* a pack opened after Pack1 */
-#define g_DisableSkipSlot GAME_GLOBAL_IN(int, GVar_DisableSkipSlot, 16)	/* frames longer than 0.1 s are not cut */
-#define g_DisableSkipSlotDefault GAME_GLOBAL_IN(int, GVar_DisableSkipSlot, 20)
-#define g_ForceReload GAME_GLOBAL_IN(int, GVar_ForceReload, 16)		/* reload the floor of the same level */
-#define g_ModPathName GAME_GLOBAL_IN(const char *, GVar_ModPathName, 16)	/* a directory of packs after "mods" */
+extern cGVar GVar_DrawNextFrame;
+#define g_DrawNextFrame (GVar_DrawNextFrame.value.i)
+extern cGVar GVar_DefaultMaxPlayersOnServer;
+#define g_DefaultMaxPlayers (GVar_DefaultMaxPlayersOnServer.value.i)	/* DefaultMaxPlayersOnServer */
+extern cGVar GVar_ModFileName;
+#define g_ModFileName (GVar_ModFileName.value.s)	/* a pack opened after Pack1 */
+extern cGVar GVar_DisableSkipSlot;
+#define g_DisableSkipSlot (GVar_DisableSkipSlot.value.i)	/* frames longer than 0.1 s are not cut */
+#define g_DisableSkipSlotDefault (GVar_DisableSkipSlot.def.i)
+extern cGVar GVar_ForceReload;
+#define g_ForceReload (GVar_ForceReload.value.i)		/* reload the floor of the same level */
+extern cGVar GVar_ModPathName;
+#define g_ModPathName (GVar_ModPathName.value.s)	/* a directory of packs after "mods" */
 #define g_LoadMsgString (GAME_ARRAY_IN(cString, GVar_LoadMsgString, 16))	/* the loading tip */
 #define g_DefaultServerPort GAME_GLOBAL_IN(uint16_t, GVar_DefaultServerPort, 16)
-#define g_InactiveBackgroundApp GAME_GLOBAL_IN(int, GVar_InactiveBackgroundApp, 16)	/* the frames go on without the focus */
+extern cGVar GVar_InactiveBackgroundApp;
+#define g_InactiveBackgroundApp (GVar_InactiveBackgroundApp.value.i)	/* the frames go on without the focus */
 #define g_ServerMapList (GAME_ARRAY_IN(cString, GVar_ServerMapList, 16))
 #define g_PlayerName (GAME_ARRAY_IN(cString, GVar_PlayerName, 16))
-#define g_SoundInit GAME_GLOBAL_IN(int, GVar_SoundInit, 16)
-#define g_LoadTextures GAME_GLOBAL_IN(int, GVar_LoadTextures, 16)
+extern cGVar GVar_SoundInit;
+#define g_SoundInit (GVar_SoundInit.value.i)
+extern cGVar GVar_LoadTextures;
+#define g_LoadTextures (GVar_LoadTextures.value.i)
 #define g_GVarMasterServerAddress (GAME_ARRAY(cGVar, g_GVarMasterServerAddress))
 #define g_GVarMasterServerPort (GAME_ARRAY(cGVar, g_GVarMasterServerPort))
 #define g_LangName (GAME_ARRAY_IN(cString, GVar_SelectedLanguage, 16))		/* the language asked for */
-#define g_LangDefault GAME_GLOBAL_IN(const char *, GVar_SelectedLanguage, 20)	/* the language when that file is missing */
-#define g_LogName GAME_GLOBAL_IN(const char *, GVar_LogFile, 16)
+extern cGVar GVar_SelectedLanguage;
+#define g_LangDefault (GVar_SelectedLanguage.def.s)	/* the language when that file is missing */
+extern cGVar GVar_LogFile;
+#define g_LogName (GVar_LogFile.value.s)
 
 /* App.cpp state */
 extern int *g_AppBlock;		/* 16 bytes of VirtualAlloc, [3] = 0x16 */

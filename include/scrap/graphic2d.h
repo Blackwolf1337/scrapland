@@ -7,6 +7,7 @@
 #ifndef SCRAP_GRAPHIC2D_H
 #define SCRAP_GRAPHIC2D_H
 
+#include "scrap/gvar.h"
 #include "scrap/material.h"
 
 #define MAX_VERT_2D 64
@@ -58,7 +59,8 @@ extern int g_Screen2DW;
 extern int g_Screen2DH;
 extern double g_Screen2DInvW;
 extern double g_Screen2DInvH;
-#define g_SpriteScaleWidth GAME_GLOBAL_IN(float, GVar_SpriteScaleWidth, 16)
+extern cGVar GVar_SpriteScaleWidth;
+#define g_SpriteScaleWidth (GVar_SpriteScaleWidth.value.f)
 extern Vert2D g_Verts2D[64];	/* MAX_VERT_2D, the polygon of the last draw */
 
 CGraphic2D *CGraphic2D_ctorTex(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags);

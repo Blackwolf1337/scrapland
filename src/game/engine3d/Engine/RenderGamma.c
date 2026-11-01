@@ -3,6 +3,7 @@
  * variables VideoGammaRGB (also a black level above 1), VideoScaleRGB and the three channel scales, doubled with
  * gamma2x. The values of the last ramp are kept so it is only set again when one changes.
  */
+#include "scrap/gvar.h"
 #include "scrap/bsp.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
@@ -10,11 +11,16 @@
 #include "scrap/misc.h"
 
 #define GAMMA_RAMP 256
-#define g_VideoGammaRGB GAME_GLOBAL_IN(float, GVar_VideoGammaRGB, 16)
-#define g_VideoScaleRGB GAME_GLOBAL_IN(float, GVar_VideoScaleRGB, 16)
-#define g_VideoScaleRed GAME_GLOBAL_IN(float, GVar_VideoScaleRed, 16)
-#define g_VideoScaleGreen GAME_GLOBAL_IN(float, GVar_VideoScaleGreen, 16)
-#define g_VideoScaleBlue GAME_GLOBAL_IN(float, GVar_VideoScaleBlue, 16)
+extern cGVar GVar_VideoGammaRGB;
+#define g_VideoGammaRGB (GVar_VideoGammaRGB.value.f)
+extern cGVar GVar_VideoScaleRGB;
+#define g_VideoScaleRGB (GVar_VideoScaleRGB.value.f)
+extern cGVar GVar_VideoScaleRed;
+#define g_VideoScaleRed (GVar_VideoScaleRed.value.f)
+extern cGVar GVar_VideoScaleGreen;
+#define g_VideoScaleGreen (GVar_VideoScaleGreen.value.f)
+extern cGVar GVar_VideoScaleBlue;
+#define g_VideoScaleBlue (GVar_VideoScaleBlue.value.f)
 /* the values of the ramp set last */
 extern int g_GammaLast2x;
 extern float g_GammaLastRGB;

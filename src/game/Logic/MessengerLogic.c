@@ -6,6 +6,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/arrowindicator.h"
 #include "scrap/chartype.h"
 #include "scrap/embeddedfxmisc.h"
@@ -19,8 +20,10 @@
 /* defined further down or in another file without a header */
 void *GenCharGroup_MakeLogic(cEntity *e);
 
-#define g_MessengerPrepareDistance GAME_GLOBAL_IN(float, GVar_MessengerPrepareDistance, 16)	/* MessengerPrepareDistance */
-#define g_MessengerObjectiveDistance GAME_GLOBAL_IN(float, GVar_MessengerObjectiveDistance, 16)	/* MessengerObjetiveDistance */
+extern cGVar GVar_MessengerPrepareDistance;
+#define g_MessengerPrepareDistance (GVar_MessengerPrepareDistance.value.f)	/* MessengerPrepareDistance */
+extern cGVar GVar_MessengerObjectiveDistance;
+#define g_MessengerObjectiveDistance (GVar_MessengerObjectiveDistance.value.f)	/* MessengerObjetiveDistance */
 #define MSG_THINK_STEP 0.13f				/* rva 0x3b60e0, the interval of the think */
 #define MSG_EMPTY GAME_STR(str_Empty)	/* "" */
 

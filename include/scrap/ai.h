@@ -8,6 +8,7 @@
 
 #include <stdarg.h>
 
+#include "scrap/gvar.h"
 #include "scrap/entity.h"
 #include "scrap/nodesworld.h"
 #include "scrap/python.h"
@@ -463,7 +464,8 @@ typedef struct cAIVehicleParams3 {
 } cAIVehicleParams3;
 SD_SIZE(cAIVehicleParams3, 0x1c);
 
-#define g_IsMapOutDoor GAME_GLOBAL_IN(int, GVar_IsMapOutDoor, 16)	/* value of the engine variable IsMapOutDoor */
+extern cGVar GVar_IsMapOutDoor;
+#define g_IsMapOutDoor (GVar_IsMapOutDoor.value.i)	/* value of the engine variable IsMapOutDoor */
 extern CNodesWorld *g_NodesWorld;
 extern CNodesWorld2D *g_NodesWorld2D;
 extern CNodesTraffic *g_NodesTrafficInDoor;
@@ -472,7 +474,8 @@ extern void *g_AStar;
 extern void *g_AStar2D;
 extern cAIVehicleGroup *g_VehicleGroup;
 extern cAICharGroup *g_CharGroup;
-#define g_TrafficState GAME_GLOBAL_IN(int, GVar_ShowTrafficAI, 16)	/* 3 after SAI.AnalizeTraffic */
+extern cGVar GVar_ShowTrafficAI;
+#define g_TrafficState (GVar_ShowTrafficAI.value.i)	/* 3 after SAI.AnalizeTraffic */
 
 /* constructors (on the memory from operator_new) */
 CNodesWorld *CNodesWorld_ctor(void *mem);
@@ -511,8 +514,10 @@ void cAIVehicle_SetInertia(cAIVehicle *ai, int on);
 byte cAIVehicle_SetState(cAIVehicle *ai, int state, ...);
 
 /* default values of SAI.SetStateVehicle CHASE (state 7) */
-#define g_AIChaseDefault1 GAME_GLOBAL_IN(float, GVar_MinDistChaseAI, 16)
-#define g_AIChaseDefault2 GAME_GLOBAL_IN(float, GVar_MaxDistChaseAI, 16)
+extern cGVar GVar_MinDistChaseAI;
+#define g_AIChaseDefault1 (GVar_MinDistChaseAI.value.f)
+extern cGVar GVar_MaxDistChaseAI;
+#define g_AIChaseDefault2 (GVar_MaxDistChaseAI.value.f)
 
 /* ---- cAIEntityGroup (AI/AIEntityGroup.cpp, src/game/AI/AIEntityGroup.c): the base of the vehicle and the character
  * groups, up to 20 entities (a race) and the time since an AI of the group took a group state; the next one may take
@@ -548,7 +553,8 @@ SD_OFFSET(cAIEntityGroup, num, 0x54);
 SD_OFFSET(cAIEntityGroup, changeTime, 0x5c);
 SD_SIZE(cAIEntityGroup, CAIENTITYGROUP_SIZE);
 
-#define g_TimeBetwChangeStateAI GAME_GLOBAL_IN(float, GVar_TimeBetwChangeStateAI, 16)	/* "TimeBetwChangeStateAI" */
+extern cGVar GVar_TimeBetwChangeStateAI;
+#define g_TimeBetwChangeStateAI (GVar_TimeBetwChangeStateAI.value.f)	/* "TimeBetwChangeStateAI" */
 
 /* ctor and dtor run on the memory of the subclasses */
 void *cAIEntityGroup_ctor(void *self);
@@ -701,27 +707,41 @@ void cAISentinel_SetDists(cAISentinel *self);
 /* cAIChar_dtor, cAIChar_SetDists (vf56) and cAIChar_ChangeState (vf26): aichar.h; the move controls:
  * aicharcontrol.h */
 
-#define g_MaxHeightChaseCharAI GAME_GLOBAL_IN(float, GVar_MaxHeightChaseCharAI, 16)
-#define g_BankMasterVacumDist GAME_GLOBAL_IN(float, GVar_BankMasterVacumDist, 16)
+extern cGVar GVar_MaxHeightChaseCharAI;
+#define g_MaxHeightChaseCharAI (GVar_MaxHeightChaseCharAI.value.f)
+extern cGVar GVar_BankMasterVacumDist;
+#define g_BankMasterVacumDist (GVar_BankMasterVacumDist.value.f)
 /* the shot of the bishop: the value against a target without an AI, the second one (the default) with one */
-#define g_ShootBishopAI GAME_GLOBAL_IN(int, GVar_ShootBishopAI, 16)
-#define g_ShootBishopAIDef GAME_GLOBAL_IN(int, GVar_ShootBishopAI, 20)
-#define g_OffsetAngShootBishopAI GAME_GLOBAL_IN(float, GVar_OffsetAngShootBishopAI, 16)
-#define g_OffsetAngShootBishopAIDef GAME_GLOBAL_IN(float, GVar_OffsetAngShootBishopAI, 20)
-#define g_TimeShootBishopAI GAME_GLOBAL_IN(float, GVar_TimeShootBishopAI, 16)
-#define g_TimeShootBishopAIDef GAME_GLOBAL_IN(float, GVar_TimeShootBishopAI, 20)
-#define g_DistMaxShootBishopAI GAME_GLOBAL_IN(float, GVar_DistMaxShootBishopAI, 16)
-#define g_DistMaxShootBishopAIDef GAME_GLOBAL_IN(float, GVar_DistMaxShootBishopAI, 20)
+extern cGVar GVar_ShootBishopAI;
+#define g_ShootBishopAI (GVar_ShootBishopAI.value.i)
+#define g_ShootBishopAIDef (GVar_ShootBishopAI.def.i)
+extern cGVar GVar_OffsetAngShootBishopAI;
+#define g_OffsetAngShootBishopAI (GVar_OffsetAngShootBishopAI.value.f)
+#define g_OffsetAngShootBishopAIDef (GVar_OffsetAngShootBishopAI.def.f)
+extern cGVar GVar_TimeShootBishopAI;
+#define g_TimeShootBishopAI (GVar_TimeShootBishopAI.value.f)
+#define g_TimeShootBishopAIDef (GVar_TimeShootBishopAI.def.f)
+extern cGVar GVar_DistMaxShootBishopAI;
+#define g_DistMaxShootBishopAI (GVar_DistMaxShootBishopAI.value.f)
+#define g_DistMaxShootBishopAIDef (GVar_DistMaxShootBishopAI.def.f)
 /* the same pairs of the gear */
-#define g_ShootGearAI GAME_GLOBAL_IN(int, GVar_ShootGearAI, 16)
-#define g_ShootGearAIDef GAME_GLOBAL_IN(int, GVar_ShootGearAI, 20)
-#define g_OffsetAngShootGearAI GAME_GLOBAL_IN(float, GVar_OffsetAngShootGearAI, 16)
-#define g_OffsetAngShootGearAIDef GAME_GLOBAL_IN(float, GVar_OffsetAngShootGearAI, 20)
-#define g_ShootMessengerAI GAME_GLOBAL_IN(int, GVar_ShootMessengerAI, 16)
-#define g_OffsetAngShootMessengerAI GAME_GLOBAL_IN(float, GVar_OffsetAngShootMessengerAI, 16)
-#define g_TimeShootMessengerAI GAME_GLOBAL_IN(float, GVar_TimeShootMessengerAI, 16)
-#define g_DistMaxShootMessengerAI GAME_GLOBAL_IN(float, GVar_DistMaxShootMessengerAI, 16)
-#define g_DistActionNurseAI GAME_GLOBAL_IN(float, GVar_DistActionNurseAI, 16)
-#define g_OffsetMoveNurseAI GAME_GLOBAL_IN(float, GVar_OffsetMoveNurseAI, 16)
+extern cGVar GVar_ShootGearAI;
+#define g_ShootGearAI (GVar_ShootGearAI.value.i)
+#define g_ShootGearAIDef (GVar_ShootGearAI.def.i)
+extern cGVar GVar_OffsetAngShootGearAI;
+#define g_OffsetAngShootGearAI (GVar_OffsetAngShootGearAI.value.f)
+#define g_OffsetAngShootGearAIDef (GVar_OffsetAngShootGearAI.def.f)
+extern cGVar GVar_ShootMessengerAI;
+#define g_ShootMessengerAI (GVar_ShootMessengerAI.value.i)
+extern cGVar GVar_OffsetAngShootMessengerAI;
+#define g_OffsetAngShootMessengerAI (GVar_OffsetAngShootMessengerAI.value.f)
+extern cGVar GVar_TimeShootMessengerAI;
+#define g_TimeShootMessengerAI (GVar_TimeShootMessengerAI.value.f)
+extern cGVar GVar_DistMaxShootMessengerAI;
+#define g_DistMaxShootMessengerAI (GVar_DistMaxShootMessengerAI.value.f)
+extern cGVar GVar_DistActionNurseAI;
+#define g_DistActionNurseAI (GVar_DistActionNurseAI.value.f)
+extern cGVar GVar_OffsetMoveNurseAI;
+#define g_OffsetMoveNurseAI (GVar_OffsetMoveNurseAI.value.f)
 
 #endif

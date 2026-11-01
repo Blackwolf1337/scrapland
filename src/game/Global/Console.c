@@ -8,6 +8,7 @@
 #include <string.h>
 #include <windows.h>
 
+#include "scrap/gvar.h"
 #include "scrap/console.h"
 #include "scrap/game.h"
 #include "scrap/win32.h"
@@ -15,10 +16,12 @@
 extern void *g_LogFile;
 extern void *g_LogAIFile;
 extern int g_ConCol;
-#define g_LogName GAME_GLOBAL_IN(const char *, GVar_LogFile, 16)
+extern cGVar GVar_LogFile;
+#define g_LogName (GVar_LogFile.value.s)
 extern uint32_t g_LastError;
 extern char g_ConBuf[1024];		/* 0x400, the text of the printf functions */
-#define g_LogFlush GAME_GLOBAL_IN(int, GVar_AlwaysFlushLog, 16)		/* flush the logs after every text */
+extern cGVar GVar_AlwaysFlushLog;
+#define g_LogFlush (GVar_AlwaysFlushLog.value.i)		/* flush the logs after every text */
 
 #define CON_COLOR_BLUE 0xff
 #define CON_COLOR_VERBOSE 0x707000

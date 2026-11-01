@@ -2,6 +2,7 @@
  * StatusScorer.cpp of the game (Menu/): cStatusScorer, the life, lives, money and boost of the ship of the camera.
  * See include/scrap/scorerhud.h.
  */
+#include "scrap/gvar.h"
 #include "scrap/crt.h"
 #include "scrap/logic.h"
 #include "scrap/scorerhud.h"
@@ -185,17 +186,28 @@ int cStatusScorer_Var(cStatusScorer *self, const char *name, byte set, char **s,
 }
 
 /* the life engine variables */
-#define g_StdMaxLife GAME_GLOBAL_IN(int, GVar_StdMaxLife, 16)			/* the max life of what is no ship */
-#define g_DangerLifeLevel GAME_GLOBAL_IN(int, GVar_DangerLifeLevel, 16)		/* percent: the life blinks red below it */
-#define g_WarningLifeLevel GAME_GLOBAL_IN(int, GVar_WarningLifeLevel, 16)		/* percent: the low life sound fades in below it */
-#define g_DangerLifeSoundVol GAME_GLOBAL_IN(float, GVar_DangerLifeSoundVol, 16)
-#define g_RegenerationSoundVol GAME_GLOBAL_IN(float, GVar_RegenerationSoundVol, 16)
-#define g_RegenerationSoundPitchMax GAME_GLOBAL_IN(float, GVar_RegenerationSoundPitchMax, 16)
-#define g_RegenerationSoundPitchMin GAME_GLOBAL_IN(float, GVar_RegenerationSoundPitchMin, 16)
-#define g_InitRegenerationSound GAME_GLOBAL_IN(const char *, GVar_InitRegenerationSound, 16)
-#define g_InitRegenerationSoundVol GAME_GLOBAL_IN(float, GVar_InitRegenerationSoundVol, 16)
-#define g_EndRegenerationSound GAME_GLOBAL_IN(const char *, GVar_EndRegenerationSound, 16)
-#define g_EndRegenerationSoundVol GAME_GLOBAL_IN(float, GVar_EndRegenerationSoundVol, 16)
+extern cGVar GVar_StdMaxLife;
+#define g_StdMaxLife (GVar_StdMaxLife.value.i)			/* the max life of what is no ship */
+extern cGVar GVar_DangerLifeLevel;
+#define g_DangerLifeLevel (GVar_DangerLifeLevel.value.i)		/* percent: the life blinks red below it */
+extern cGVar GVar_WarningLifeLevel;
+#define g_WarningLifeLevel (GVar_WarningLifeLevel.value.i)		/* percent: the low life sound fades in below it */
+extern cGVar GVar_DangerLifeSoundVol;
+#define g_DangerLifeSoundVol (GVar_DangerLifeSoundVol.value.f)
+extern cGVar GVar_RegenerationSoundVol;
+#define g_RegenerationSoundVol (GVar_RegenerationSoundVol.value.f)
+extern cGVar GVar_RegenerationSoundPitchMax;
+#define g_RegenerationSoundPitchMax (GVar_RegenerationSoundPitchMax.value.f)
+extern cGVar GVar_RegenerationSoundPitchMin;
+#define g_RegenerationSoundPitchMin (GVar_RegenerationSoundPitchMin.value.f)
+extern cGVar GVar_InitRegenerationSound;
+#define g_InitRegenerationSound (GVar_InitRegenerationSound.value.s)
+extern cGVar GVar_InitRegenerationSoundVol;
+#define g_InitRegenerationSoundVol (GVar_InitRegenerationSoundVol.value.f)
+extern cGVar GVar_EndRegenerationSound;
+#define g_EndRegenerationSound (GVar_EndRegenerationSound.value.s)
+extern cGVar GVar_EndRegenerationSoundVol;
+#define g_EndRegenerationSoundVol (GVar_EndRegenerationSoundVol.value.f)
 
 #define STATUS_SEGMENTS 7		/* the boost segments over the life icon */
 #define STATUS_LOW_COLOR 0xffff2020	/* the texts at 0 */

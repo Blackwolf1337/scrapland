@@ -8,6 +8,7 @@
 #ifndef SCRAP_FXELEMENTS_H
 #define SCRAP_FXELEMENTS_H
 
+#include "scrap/gvar.h"
 #include "scrap/crt.h"
 #include "scrap/scrapparticles.h"
 #include "scrap/scraptrails.h"
@@ -218,7 +219,8 @@ SD_SIZE(cFXElementsMentalControllerMainFX, 0x4278);
 
 /* the main controller of the level, NULL before the Press elements are made */
 extern cFXElementsMentalControllerMainFX *g_MentalMainFX;
-#define g_MentalControllerMaxDist GAME_GLOBAL_IN(float, GVar_FXElementsMentalControllerMaxDist, 16)	/* FXElementsMentalControllerMaxDist */
+extern cGVar GVar_FXElementsMentalControllerMaxDist;
+#define g_MentalControllerMaxDist (GVar_FXElementsMentalControllerMaxDist.value.f)	/* FXElementsMentalControllerMaxDist */
 
 cFXElementsMentalController *cFXElementsMentalController_ctor(cFXElementsMentalController *self,
 	const char *name, const vec3_t *pos, const vec3_t *rot);
@@ -365,12 +367,18 @@ SD_OFFSET(cFXElementsLighting, trails, 0x9ac);
 SD_OFFSET(cFXElementsLighting, numPts, 0xe84);
 SD_SIZE(cFXElementsLighting, 0xe88);
 
-#define g_FireDropMaxDist GAME_GLOBAL_IN(float, GVar_FXElementsFireDropMaxDist, 16)	/* FXElementsFireDropMaxDist */
-#define g_FireDropRateAtt GAME_GLOBAL_IN(float, GVar_FXElementsFireDropRateAtt, 16)	/* FXElementsFireDropRateAtt */
-#define g_FireDropSoundAttIni GAME_GLOBAL_IN(float, GVar_FXElementsFireDropSoundAttIni, 16)	/* FXElementsFireDropSoundAttIni */
-#define g_FireDropSoundAttEnd GAME_GLOBAL_IN(float, GVar_FXElementsFireDropSoundAttEnd, 16)	/* FXElementsFireDropSoundAttEnd */
-#define g_FireDropSoundVol GAME_GLOBAL_IN(float, GVar_FXElementsFireDropSoundVol, 16)	/* FXElementsFireDropSoundVol */
-#define g_FireDropSound GAME_GLOBAL_IN(char *, GVar_FXElementsFireDropSound, 16)	/* FXElementsFireDropSound, a cString */
+extern cGVar GVar_FXElementsFireDropMaxDist;
+#define g_FireDropMaxDist (GVar_FXElementsFireDropMaxDist.value.f)	/* FXElementsFireDropMaxDist */
+extern cGVar GVar_FXElementsFireDropRateAtt;
+#define g_FireDropRateAtt (GVar_FXElementsFireDropRateAtt.value.f)	/* FXElementsFireDropRateAtt */
+extern cGVar GVar_FXElementsFireDropSoundAttIni;
+#define g_FireDropSoundAttIni (GVar_FXElementsFireDropSoundAttIni.value.f)	/* FXElementsFireDropSoundAttIni */
+extern cGVar GVar_FXElementsFireDropSoundAttEnd;
+#define g_FireDropSoundAttEnd (GVar_FXElementsFireDropSoundAttEnd.value.f)	/* FXElementsFireDropSoundAttEnd */
+extern cGVar GVar_FXElementsFireDropSoundVol;
+#define g_FireDropSoundVol (GVar_FXElementsFireDropSoundVol.value.f)	/* FXElementsFireDropSoundVol */
+extern cGVar GVar_FXElementsFireDropSound;
+#define g_FireDropSound (GVar_FXElementsFireDropSound.value.s)	/* FXElementsFireDropSound, a cString */
 
 cFXElementsFireDrop *cFXElementsFireDrop_ctor(cFXElementsFireDrop *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
@@ -455,13 +463,20 @@ SD_OFFSET(cFXElementsABFakeMeteors, curve, 0x577c);
 SD_SIZE(cFXElementsABFakeMeteors, 0x5780);
 
 /* the engine variables FXABFakeLimit* */
-#define g_ABLimitRingRotSpeed GAME_GLOBAL_IN(float, GVar_FXABFakeLimitRingRotSpeed, 16)	/* RingRotSpeed */
-#define g_ABLimitSegmentStep GAME_GLOBAL_IN(float, GVar_FXABFakeLimitSegmentStep, 16)	/* SegmentStep */
-#define g_ABLimitSegmentSize GAME_GLOBAL_IN(float, GVar_FXABFakeLimitSegmentSize, 16)	/* SegmentSize */
-#define g_ABLimitRadius GAME_GLOBAL_IN(float, GVar_FXABFakeLimitRadius, 16)		/* Radius */
-#define g_ABLimitDistLighting GAME_GLOBAL_IN(float, GVar_FXABFakeLimitDistLighting, 16)	/* DistLighting */
-#define g_ABLimitQuakeFactor GAME_GLOBAL_IN(float, GVar_FXABFakeLimitQuakeFactor, 16)	/* QuakeFactor */
-#define g_ABLimitQuakeTime GAME_GLOBAL_IN(float, GVar_FXABFakeLimitQuakeTime, 16)		/* QuakeTime */
+extern cGVar GVar_FXABFakeLimitRingRotSpeed;
+#define g_ABLimitRingRotSpeed (GVar_FXABFakeLimitRingRotSpeed.value.f)	/* RingRotSpeed */
+extern cGVar GVar_FXABFakeLimitSegmentStep;
+#define g_ABLimitSegmentStep (GVar_FXABFakeLimitSegmentStep.value.f)	/* SegmentStep */
+extern cGVar GVar_FXABFakeLimitSegmentSize;
+#define g_ABLimitSegmentSize (GVar_FXABFakeLimitSegmentSize.value.f)	/* SegmentSize */
+extern cGVar GVar_FXABFakeLimitRadius;
+#define g_ABLimitRadius (GVar_FXABFakeLimitRadius.value.f)		/* Radius */
+extern cGVar GVar_FXABFakeLimitDistLighting;
+#define g_ABLimitDistLighting (GVar_FXABFakeLimitDistLighting.value.f)	/* DistLighting */
+extern cGVar GVar_FXABFakeLimitQuakeFactor;
+#define g_ABLimitQuakeFactor (GVar_FXABFakeLimitQuakeFactor.value.f)	/* QuakeFactor */
+extern cGVar GVar_FXABFakeLimitQuakeTime;
+#define g_ABLimitQuakeTime (GVar_FXABFakeLimitQuakeTime.value.f)		/* QuakeTime */
 
 cFXElementsABFakeLimit *cFXElementsABFakeLimit_ctor(cFXElementsABFakeLimit *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);

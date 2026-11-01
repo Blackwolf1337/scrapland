@@ -6,6 +6,7 @@
 #ifndef SCRAP_SCRAPCOLLISION_H
 #define SCRAP_SCRAPCOLLISION_H
 
+#include "scrap/gvar.h"
 #include "scrap/ground.h"
 
 /* the profiler sections */
@@ -32,16 +33,26 @@ typedef struct CCollisionTri {
 SD_SIZE(CCollisionTri, 0x44);
 
 /* the engine variables of the collisions (Gvars) */
-#define g_CollisionSchk GAME_GLOBAL_IN(int, GVar_c_schk, 16)	/* c_schk: a sphere that does not move is a check */
-#define g_CollisionCaps GAME_GLOBAL_IN(int, GVar_c_caps, 16)	/* c_caps: a vertical test is one sweep */
-#define g_CollisionIter GAME_GLOBAL_IN(int, GVar_c_iter, 16)	/* c_iter: from 2 the test steps do not sweep */
-#define g_CollisionHold GAME_GLOBAL_IN(int, GVar_c_hold, 16)	/* c_hold: the tests keep the sphere at its start */
-#define g_CollisionSld2 GAME_GLOBAL_IN(int, GVar_c_sld2, 16)	/* c_sld2: the iterations of a slide 2D step */
-#define g_CollisionSldi GAME_GLOBAL_IN(int, GVar_c_sldi, 16)	/* c_sldi: the iterations of a slide step */
-#define g_CollisionScts GAME_GLOBAL_IN(int, GVar_c_scts, 16)	/* c_scts: the check sweeps (else contact) */
-#define g_CollisionSbox GAME_GLOBAL_IN(int, GVar_c_sbox, 16)	/* c_sbox: the box cache */
-#define g_CollisionSboxShow GAME_GLOBAL_IN(int, GVar_c_sboxshow, 16)	/* c_sboxshow: debug points of the box cache */
-#define g_CollisionSboxMult GAME_GLOBAL_IN(float, GVar_c_sboxmult, 16)	/* c_sboxmult: the box reaches this many moves ahead */
+extern cGVar GVar_c_schk;
+#define g_CollisionSchk (GVar_c_schk.value.i)	/* c_schk: a sphere that does not move is a check */
+extern cGVar GVar_c_caps;
+#define g_CollisionCaps (GVar_c_caps.value.i)	/* c_caps: a vertical test is one sweep */
+extern cGVar GVar_c_iter;
+#define g_CollisionIter (GVar_c_iter.value.i)	/* c_iter: from 2 the test steps do not sweep */
+extern cGVar GVar_c_hold;
+#define g_CollisionHold (GVar_c_hold.value.i)	/* c_hold: the tests keep the sphere at its start */
+extern cGVar GVar_c_sld2;
+#define g_CollisionSld2 (GVar_c_sld2.value.i)	/* c_sld2: the iterations of a slide 2D step */
+extern cGVar GVar_c_sldi;
+#define g_CollisionSldi (GVar_c_sldi.value.i)	/* c_sldi: the iterations of a slide step */
+extern cGVar GVar_c_scts;
+#define g_CollisionScts (GVar_c_scts.value.i)	/* c_scts: the check sweeps (else contact) */
+extern cGVar GVar_c_sbox;
+#define g_CollisionSbox (GVar_c_sbox.value.i)	/* c_sbox: the box cache */
+extern cGVar GVar_c_sboxshow;
+#define g_CollisionSboxShow (GVar_c_sboxshow.value.i)	/* c_sboxshow: debug points of the box cache */
+extern cGVar GVar_c_sboxmult;
+#define g_CollisionSboxMult (GVar_c_sboxmult.value.f)	/* c_sboxmult: the box reaches this many moves ahead */
 extern float g_LastCollisionEpsilon;
 
 /* the collision epsilon divided by 8 for fine queries, with restore back */

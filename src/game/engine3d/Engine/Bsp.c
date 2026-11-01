@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/bsp.h"
 #include "scrap/console.h"
 #include "scrap/d3d8.h"
@@ -2612,7 +2613,8 @@ intptr_t __stdcall Bsp_DlgProc(void *hwnd, uint32_t msg, uintptr_t wparam, intpt
 
 /* the radiosity: the areas and region trees of the lists, the links between regions */
 
-#define g_LightmapDebugTex GAME_GLOBAL_IN(int, GVar_LightmapDebugTex, 16)	/* gvar */
+extern cGVar GVar_LightmapDebugTex;
+#define g_LightmapDebugTex (GVar_LightmapDebugTex.value.i)	/* gvar */
 #define g_BspLinks GAME_GLOBAL(int, g_BspNumLinks)		/* the region links (radiosity code) */
 
 /* exe functions of other files with their prototypes there */
@@ -2812,7 +2814,8 @@ void CBsp_InitAreas(CBsp *self) {
 
 /* the glow of the lists and the shadows of the area lights */
 
-#define g_LightmapGlowMult GAME_GLOBAL_IN(float, GVar_LightmapGlowMult, 16)	/* gvar */
+extern cGVar GVar_LightmapGlowMult;
+#define g_LightmapGlowMult (GVar_LightmapGlowMult.value.f)	/* gvar */
 
 /* the glow map of the material sampled into lightA, squared */
 void BspTri_CalcGlow(BspTri *list) {

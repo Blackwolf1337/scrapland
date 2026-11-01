@@ -5,6 +5,7 @@
 #include <float.h>
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/chartype.h"
 #include "scrap/crt.h"
 #include "scrap/embeddedfxchar.h"
@@ -1163,10 +1164,14 @@ void cEmbeddedFXMaintenance_Update(cEmbeddedFXMaintenance *self, float dt) {
 }
 
 
-#define g_SentinelLaserScanerDist GAME_GLOBAL_IN(float, GVar_SentinelLaserScanerDist, 16)	/* "SentinelLaserScanerDist" */
-#define g_SentinelStdFar GAME_GLOBAL_IN(float, GVar_SentinelStdFar, 16)
-#define g_SentinelStdFovY GAME_GLOBAL_IN(float, GVar_SentinelStdFovY, 16)
-#define g_SentinelStdFovX GAME_GLOBAL_IN(float, GVar_SentinelStdFovX, 16)
+extern cGVar GVar_SentinelLaserScanerDist;
+#define g_SentinelLaserScanerDist (GVar_SentinelLaserScanerDist.value.f)	/* "SentinelLaserScanerDist" */
+extern cGVar GVar_SentinelStdFar;
+#define g_SentinelStdFar (GVar_SentinelStdFar.value.f)
+extern cGVar GVar_SentinelStdFovY;
+#define g_SentinelStdFovY (GVar_SentinelStdFovY.value.f)
+extern cGVar GVar_SentinelStdFovX;
+#define g_SentinelStdFovX (GVar_SentinelStdFovX.value.f)
 
 static void EFX_SentinelClear(cEmbeddedFXSentinel *self) {
 	for (int i = 0; i < self->numLasers; i++) {
@@ -1529,7 +1534,8 @@ void cEmbeddedFXCrazyGambler_Update(cEmbeddedFXCrazyGambler *self, float dt) {
 	}
 }
 
-#define g_MessengerLightingDist GAME_GLOBAL_IN(float, GVar_MessengerLightingDist, 16)	/* "MessengerLightingDist" */
+extern cGVar GVar_MessengerLightingDist;
+#define g_MessengerLightingDist (GVar_MessengerLightingDist.value.f)	/* "MessengerLightingDist" */
 
 /* the flag of vertex v of ray r (v may be -1: the byte before the ray) */
 static inline byte *EFX_MessengerUsed(cEmbeddedFXMessenger *self, int r, int v) {
@@ -1688,7 +1694,8 @@ void cEmbeddedFXMessenger_Update(cEmbeddedFXMessenger *self, float dt) {
 	}
 }
 
-#define g_FXMercenaryDrinkSmokeFile GAME_GLOBAL_IN(const char *, GVar_FXMercenaryDrinkSmokeFile, 16)	/* "FXMercenaryDrinkSmokeFile" */
+extern cGVar GVar_FXMercenaryDrinkSmokeFile;
+#define g_FXMercenaryDrinkSmokeFile (GVar_FXMercenaryDrinkSmokeFile.value.s)	/* "FXMercenaryDrinkSmokeFile" */
 /* the color ramps of the bubbles and of the smoke, two of 9 colors each */
 extern uint32_t g_RampMercenaryBubbles[18];
 extern uint32_t g_RampMercenarySmoke[18];
@@ -1875,8 +1882,10 @@ void cEmbeddedFXMercenary_Update(cEmbeddedFXMercenary *self, float dt) {
 	EFX_MercSmoke(self, model);
 }
 
-#define g_FXRustySparksSound GAME_GLOBAL_IN(const char *, GVar_FXRustySparksSound, 16)	/* "FXRustyChispasSound" */
-#define g_FXRustySparksSoundVol GAME_GLOBAL_IN(float, GVar_FXRustySparksSoundVol, 16)	/* "FXRustyChispasSoundVol" */
+extern cGVar GVar_FXRustySparksSound;
+#define g_FXRustySparksSound (GVar_FXRustySparksSound.value.s)	/* "FXRustyChispasSound" */
+extern cGVar GVar_FXRustySparksSoundVol;
+#define g_FXRustySparksSoundVol (GVar_FXRustySparksSoundVol.value.f)	/* "FXRustyChispasSoundVol" */
 /* the color ramps of the sparks of the pigtail (9 colors each) */
 extern uint32_t g_RampRustySparks[28];
 

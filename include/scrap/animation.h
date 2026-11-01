@@ -9,6 +9,7 @@
 #ifndef SCRAP_ANIMATION_H
 #define SCRAP_ANIMATION_H
 
+#include "scrap/gvar.h"
 #include "scrap/animvert.h"
 #include "scrap/table.h"
 
@@ -74,11 +75,16 @@ SD_SIZE(CAnimStream, 0x8);
 extern CAnimBlock *g_ActAnimBlock;
 /* the engine variables of the animations (the values of their cGVar objects): R_AnimNodo_Count the live CAnimNode
  * objects; OptimizeAnims (0 none, 1 compact the tracks before writing) and the errors that still count as equal */
-#define g_AnimNodeCount GAME_GLOBAL_IN(int, GVar_R_AnimNode_Count, 16)
-#define g_OptimizeAnims GAME_GLOBAL_IN(int, GVar_OptimizeAnims, 16)
-#define g_OptAnimPosErr GAME_GLOBAL_IN(float, GVar_OptAnimPosErr, 16)
-#define g_OptAnimRotErr GAME_GLOBAL_IN(float, GVar_OptAnimRotErr, 16)	/* degrees */
-#define g_OptAnimFovErr GAME_GLOBAL_IN(float, GVar_OptAnimFovErr, 16)	/* degrees */
+extern cGVar GVar_R_AnimNode_Count;
+#define g_AnimNodeCount (GVar_R_AnimNode_Count.value.i)
+extern cGVar GVar_OptimizeAnims;
+#define g_OptimizeAnims (GVar_OptimizeAnims.value.i)
+extern cGVar GVar_OptAnimPosErr;
+#define g_OptAnimPosErr (GVar_OptAnimPosErr.value.f)
+extern cGVar GVar_OptAnimRotErr;
+#define g_OptAnimRotErr (GVar_OptAnimRotErr.value.f)	/* degrees */
+extern cGVar GVar_OptAnimFovErr;
+#define g_OptAnimFovErr (GVar_OptAnimFovErr.value.f)	/* degrees */
 /* the name of the node an animation is loaded for, in the log lines */
 extern char g_AnimNodeName[256];
 /* the memory statistics of the animations */

@@ -4,6 +4,7 @@
  * node of a LOD model through the node of the main model. Also here: the render context of the channels
  * (RenderCtx.h) and the class checks of objeto3d.h.
  */
+#include "scrap/gvar.h"
 #include "scrap/camera.h"
 #include "scrap/e3dutil.h"
 #include "scrap/model.h"
@@ -16,7 +17,8 @@
 #define RNODE_UNIQUE 2
 #define RENDERNODE_ROT_NULL 0
 
-#define g_RenderNodeCount GAME_GLOBAL_IN(int, GVar_R_RenderNode_Count, 16)
+extern cGVar GVar_R_RenderNode_Count;
+#define g_RenderNodeCount (GVar_R_RenderNode_Count.value.i)
 
 void *CParticleSystem_Cast(IObject3D *obj) {
 	CHECK(obj->class == CLASS_OBJ3D_PARTICLESYSTEM);

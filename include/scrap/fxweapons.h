@@ -7,6 +7,7 @@
 #ifndef SCRAP_FXWEAPONS_H
 #define SCRAP_FXWEAPONS_H
 
+#include "scrap/gvar.h"
 #include "scrap/fxcountermeasures.h"
 #include "scrap/fxmisc.h"
 #include "scrap/global.h"
@@ -45,23 +46,40 @@ float cTargetLock_GetAmmo(cTargetLock *self, int ammo);
 byte cTargetLock_HasSlot(cTargetLock *self, int weap, int slot);
 
 /* the engine variables */
-#define g_TeslaIDWeap GAME_GLOBAL_IN(int, GVar_TeslaIDWeap, 16)
-#define g_TeslaIDAmmo GAME_GLOBAL_IN(int, GVar_TeslaIDAmmo, 16)
-#define g_FXTeslaFadeOutTime GAME_GLOBAL_IN(float, GVar_FXTeslaFadeOutTime, 16)
-#define g_FXTeslaFollowTime GAME_GLOBAL_IN(float, GVar_FXTeslaFollowTime, 16)
-#define g_FXLaserBeamSize GAME_GLOBAL_IN(float, GVar_FXLaserBeamSize, 16)
-#define g_FXLaserBeamHeight GAME_GLOBAL_IN(float, GVar_FXLaserBeamHeight, 16)
-#define g_FXInfernoCoreSize GAME_GLOBAL_IN(float, GVar_FXInfernoCoreSize, 16)
-#define g_FXInfernoRayRadius GAME_GLOBAL_IN(float, GVar_FXInfernoRayRadius, 16)
-#define g_FXInfernoExplosionTime GAME_GLOBAL_IN(float, GVar_FXInfernoExplosionTime, 16)
-#define g_FXInfernoExplosionFadeTime GAME_GLOBAL_IN(float, GVar_FXInfernoExplosionFadeTime, 16)
-#define g_FXInfernoRayMinSize GAME_GLOBAL_IN(float, GVar_FXInfernoRayMinSize, 16)
-#define g_FXInfernoRayInitSizeMin GAME_GLOBAL_IN(float, GVar_FXInfernoRayInitSizeMin, 16)
-#define g_FXInfernoRayInitSizeMax GAME_GLOBAL_IN(float, GVar_FXInfernoRayInitSizeMax, 16)
-#define g_FXInfernoRaySpeedMin GAME_GLOBAL_IN(float, GVar_FXInfernoRaySpeedMin, 16)
-#define g_FXInfernoRaySpeedMax GAME_GLOBAL_IN(float, GVar_FXInfernoRaySpeedMax, 16)
-#define g_FXInfernoRayAccMin GAME_GLOBAL_IN(float, GVar_FXInfernoRayAccMin, 16)
-#define g_FXInfernoRayAccMax GAME_GLOBAL_IN(float, GVar_FXInfernoRayAccMax, 16)
+extern cGVar GVar_TeslaIDWeap;
+#define g_TeslaIDWeap (GVar_TeslaIDWeap.value.i)
+extern cGVar GVar_TeslaIDAmmo;
+#define g_TeslaIDAmmo (GVar_TeslaIDAmmo.value.i)
+extern cGVar GVar_FXTeslaFadeOutTime;
+#define g_FXTeslaFadeOutTime (GVar_FXTeslaFadeOutTime.value.f)
+extern cGVar GVar_FXTeslaFollowTime;
+#define g_FXTeslaFollowTime (GVar_FXTeslaFollowTime.value.f)
+extern cGVar GVar_FXLaserBeamSize;
+#define g_FXLaserBeamSize (GVar_FXLaserBeamSize.value.f)
+extern cGVar GVar_FXLaserBeamHeight;
+#define g_FXLaserBeamHeight (GVar_FXLaserBeamHeight.value.f)
+extern cGVar GVar_FXInfernoCoreSize;
+#define g_FXInfernoCoreSize (GVar_FXInfernoCoreSize.value.f)
+extern cGVar GVar_FXInfernoRayRadius;
+#define g_FXInfernoRayRadius (GVar_FXInfernoRayRadius.value.f)
+extern cGVar GVar_FXInfernoExplosionTime;
+#define g_FXInfernoExplosionTime (GVar_FXInfernoExplosionTime.value.f)
+extern cGVar GVar_FXInfernoExplosionFadeTime;
+#define g_FXInfernoExplosionFadeTime (GVar_FXInfernoExplosionFadeTime.value.f)
+extern cGVar GVar_FXInfernoRayMinSize;
+#define g_FXInfernoRayMinSize (GVar_FXInfernoRayMinSize.value.f)
+extern cGVar GVar_FXInfernoRayInitSizeMin;
+#define g_FXInfernoRayInitSizeMin (GVar_FXInfernoRayInitSizeMin.value.f)
+extern cGVar GVar_FXInfernoRayInitSizeMax;
+#define g_FXInfernoRayInitSizeMax (GVar_FXInfernoRayInitSizeMax.value.f)
+extern cGVar GVar_FXInfernoRaySpeedMin;
+#define g_FXInfernoRaySpeedMin (GVar_FXInfernoRaySpeedMin.value.f)
+extern cGVar GVar_FXInfernoRaySpeedMax;
+#define g_FXInfernoRaySpeedMax (GVar_FXInfernoRaySpeedMax.value.f)
+extern cGVar GVar_FXInfernoRayAccMin;
+#define g_FXInfernoRayAccMin (GVar_FXInfernoRayAccMin.value.f)
+extern cGVar GVar_FXInfernoRayAccMax;
+#define g_FXInfernoRayAccMax (GVar_FXInfernoRayAccMax.value.f)
 extern uint32_t g_FXInfernoRamp[10];	/* the colour ramp of the explosion particles */
 
 /* the ATPC shot: the beam from the shooter to the hit, its rings and glow (0x1e8 bytes, constructor rva 0x1f9690) */

@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/bsp.h"
@@ -1951,7 +1952,8 @@ void CGround_CalcIllum(void *ground, CNode3D *node, CScene *scn) {
 }
 
 /* the debug view of the collision meshes (c_show and ShowMapSolid) */
-#define g_ShowMapSolid GAME_GLOBAL_IN(int, GVar_ShowMapSolid, 16)		/* 0 wireframe, 1 solid, 2 solid with fog */
+extern cGVar GVar_ShowMapSolid;
+#define g_ShowMapSolid (GVar_ShowMapSolid.value.i)		/* 0 wireframe, 1 solid, 2 solid with fog */
 extern float g_CollideAddColor[4];	/* added to the shaded colors, rgba */
 extern CollideVert g_CollideVerts[3];	/* the triangle drawn */
 #define g_SectorColors (GAME_ARRAY_IN(const uint32_t, g_BspColors, 4))
@@ -2107,9 +2109,12 @@ void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_CULLMODE, 3);
 }
 
-#define g_ShowMapQuads GAME_GLOBAL_IN(int, GVar_ShowMapQuads, 16)		/* ShowMapQuads: the boxes of the quads, 2..6 by kind */
-#define g_ShowMapQDist GAME_GLOBAL_IN(float, GVar_ShowMapQDist, 16)	/* ShowMapQDist: only the quads this near the camera, 0 all */
-#define g_AnalyzeQuads GAME_GLOBAL_IN(int, GVar_AnalyzeQuads, 16)		/* AnalizeQuads: 1 the quads checked once */
+extern cGVar GVar_ShowMapQuads;
+#define g_ShowMapQuads (GVar_ShowMapQuads.value.i)		/* ShowMapQuads: the boxes of the quads, 2..6 by kind */
+extern cGVar GVar_ShowMapQDist;
+#define g_ShowMapQDist (GVar_ShowMapQDist.value.f)	/* ShowMapQDist: only the quads this near the camera, 0 all */
+extern cGVar GVar_AnalyzeQuads;
+#define g_AnalyzeQuads (GVar_AnalyzeQuads.value.i)		/* AnalizeQuads: 1 the quads checked once */
 /* the material of the debug view, a static of CGround_DrawDebug */
 extern CMaterial g_CollideMat;
 extern int g_CollideMatGuard[2];

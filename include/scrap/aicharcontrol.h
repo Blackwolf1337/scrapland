@@ -13,6 +13,7 @@
 
 #include <stdarg.h>
 
+#include "scrap/gvar.h"
 #include "scrap/ai.h"
 #include "scrap/fxmisc.h"
 #include "scrap/nodesworld.h"
@@ -559,26 +560,45 @@ cAICharControl *cAIChar_GetControl(cAIChar *ai);
 #define CAICHARCONTROL_VFTABLE GAME_VFTABLE(cAICharControl_vftable)
 
 /* the engine variables of the character AI */
-#define g_DepthPathRouteInDoorAI GAME_GLOBAL_IN(int, GVar_DepthPathRouteInDoorAI, 16)	/* "DepthPathRouteInDoorAI" */
-#define g_DistShirkCharAI GAME_GLOBAL_IN(float, GVar_DistShirkCharAI, 16)		/* "DistShirkCharAI" */
-#define g_MarginCollCharAI GAME_GLOBAL_IN(float, GVar_MarginCollCharAI, 16)		/* "MarginCollCharAI" */
-#define g_ShowShirkAI GAME_GLOBAL_IN(int, GVar_ShowShirkAI, 16)			/* "ShowShirkAI" */
-#define g_ShowPathAI GAME_GLOBAL_IN(int, GVar_ShowPathAI, 16)			/* "ShowPathAI" */
-#define g_FactorDistTestColCharAI GAME_GLOBAL_IN(float, GVar_FactorDistTestColCharAI, 16)	/* "FactorDistTestColCharAI" */
-#define g_FactorDistTestColBackCharAI GAME_GLOBAL_IN(float, GVar_FactorDistTestColBackCharAI, 16)	/* "FactorDistTestColBackCharAI" */
-#define g_MarginDetectCollCharAI GAME_GLOBAL_IN(float, GVar_MarginDetectCollCharAI, 16)	/* "MarginDetectCollCharAI" */
-#define g_OffsetAngOrientCharAI GAME_GLOBAL_IN(float, GVar_OffsetAngOrientCharAI, 16)	/* "OffsetAngOrientCharAI" */
-#define g_AngAttackBackCharAI GAME_GLOBAL_IN(float, GVar_AngAttackBackCharAI, 16)	/* "AngAttackBackCharAI" */
-#define g_MinAngleSearchPointCharAI GAME_GLOBAL_IN(float, GVar_MinAngleSearchPointCharAI, 16)	/* "MinAngleSearchPointCharAI" */
-#define g_DistNextPosGoTargetCharAI GAME_GLOBAL_IN(float, GVar_DistNextPosGoTargetCharAI, 16)	/* "DistNextPosGoTargetCharAI" */
-#define g_NumPointsSearchSegmentCharAI GAME_GLOBAL_IN(int, GVar_NumPointsSearchSegmentCharAI, 16)	/* "NumPointsSearchSegmentCharAI" */
-#define g_TimeEventCollCharAI GAME_GLOBAL_IN(float, GVar_TimeEventCollCharAI, 16)	/* "TimeEventCollCharAI" */
-#define g_TimeStopCollCharAI GAME_GLOBAL_IN(float, GVar_TimeStopCollCharAI, 16)		/* "TimeStopCollCharAI" */
-#define g_TimeTestCollCharAI GAME_GLOBAL_IN(float, GVar_TimeTestCollCharAI, 16)		/* "TimeTestCollCharAI" */
-#define g_TimeBetweenEventCollCharAI GAME_GLOBAL_IN(float, GVar_TimeBetweenEventCollCharAI, 16)	/* "TimeBetweenEventCollCharAI" */
-#define g_TimeStrafeLostObjCharAI GAME_GLOBAL_IN(float, GVar_TimeStrafeLostObjCharAI, 16)	/* "TimeStrafeLostObjCharAI" */
+extern cGVar GVar_DepthPathRouteInDoorAI;
+#define g_DepthPathRouteInDoorAI (GVar_DepthPathRouteInDoorAI.value.i)	/* "DepthPathRouteInDoorAI" */
+extern cGVar GVar_DistShirkCharAI;
+#define g_DistShirkCharAI (GVar_DistShirkCharAI.value.f)		/* "DistShirkCharAI" */
+extern cGVar GVar_MarginCollCharAI;
+#define g_MarginCollCharAI (GVar_MarginCollCharAI.value.f)		/* "MarginCollCharAI" */
+extern cGVar GVar_ShowShirkAI;
+#define g_ShowShirkAI (GVar_ShowShirkAI.value.i)			/* "ShowShirkAI" */
+extern cGVar GVar_ShowPathAI;
+#define g_ShowPathAI (GVar_ShowPathAI.value.i)			/* "ShowPathAI" */
+extern cGVar GVar_FactorDistTestColCharAI;
+#define g_FactorDistTestColCharAI (GVar_FactorDistTestColCharAI.value.f)	/* "FactorDistTestColCharAI" */
+extern cGVar GVar_FactorDistTestColBackCharAI;
+#define g_FactorDistTestColBackCharAI (GVar_FactorDistTestColBackCharAI.value.f)	/* "FactorDistTestColBackCharAI" */
+extern cGVar GVar_MarginDetectCollCharAI;
+#define g_MarginDetectCollCharAI (GVar_MarginDetectCollCharAI.value.f)	/* "MarginDetectCollCharAI" */
+extern cGVar GVar_OffsetAngOrientCharAI;
+#define g_OffsetAngOrientCharAI (GVar_OffsetAngOrientCharAI.value.f)	/* "OffsetAngOrientCharAI" */
+extern cGVar GVar_AngAttackBackCharAI;
+#define g_AngAttackBackCharAI (GVar_AngAttackBackCharAI.value.f)	/* "AngAttackBackCharAI" */
+extern cGVar GVar_MinAngleSearchPointCharAI;
+#define g_MinAngleSearchPointCharAI (GVar_MinAngleSearchPointCharAI.value.f)	/* "MinAngleSearchPointCharAI" */
+extern cGVar GVar_DistNextPosGoTargetCharAI;
+#define g_DistNextPosGoTargetCharAI (GVar_DistNextPosGoTargetCharAI.value.f)	/* "DistNextPosGoTargetCharAI" */
+extern cGVar GVar_NumPointsSearchSegmentCharAI;
+#define g_NumPointsSearchSegmentCharAI (GVar_NumPointsSearchSegmentCharAI.value.i)	/* "NumPointsSearchSegmentCharAI" */
+extern cGVar GVar_TimeEventCollCharAI;
+#define g_TimeEventCollCharAI (GVar_TimeEventCollCharAI.value.f)	/* "TimeEventCollCharAI" */
+extern cGVar GVar_TimeStopCollCharAI;
+#define g_TimeStopCollCharAI (GVar_TimeStopCollCharAI.value.f)		/* "TimeStopCollCharAI" */
+extern cGVar GVar_TimeTestCollCharAI;
+#define g_TimeTestCollCharAI (GVar_TimeTestCollCharAI.value.f)		/* "TimeTestCollCharAI" */
+extern cGVar GVar_TimeBetweenEventCollCharAI;
+#define g_TimeBetweenEventCollCharAI (GVar_TimeBetweenEventCollCharAI.value.f)	/* "TimeBetweenEventCollCharAI" */
+extern cGVar GVar_TimeStrafeLostObjCharAI;
+#define g_TimeStrafeLostObjCharAI (GVar_TimeStrafeLostObjCharAI.value.f)	/* "TimeStrafeLostObjCharAI" */
 #define g_ShowCharAI GAME_GLOBAL_IN(cString, GVar_ShowCharAI, 16)		/* "ShowCharAI": the name of the character shown */
-#define g_NameDebugShirkAI GAME_GLOBAL_IN(char *, GVar_NameDebugShirkAI, 16)		/* "NameDebugShirkAI" (a cString) */
+extern cGVar GVar_NameDebugShirkAI;
+#define g_NameDebugShirkAI (GVar_NameDebugShirkAI.value.s)		/* "NameDebugShirkAI" (a cString) */
 
 /* the A* search on CNodesWorld2D (AI/AStar2D.cpp, not in C): the path from pos to dest into path; noPath and
  * reach tell the AI why there is none, res the kind of the path */
@@ -740,18 +760,26 @@ SD_OFFSET(cAIControlSentinel, side, 0x370);
 SD_SIZE(cAIControlSentinel, CAICONTROLSENTINEL_SIZE);
 
 /* the strafe parameters by the target (with an AI or not) */
-#define g_TimeStrafeUnderAttackBishopAI GAME_GLOBAL_IN(float, GVar_TimeStrafeUnderAttackBishopAI, 16)
-#define g_TimeStrafeUnderAttackBishopAIDef GAME_GLOBAL_IN(float, GVar_TimeStrafeUnderAttackBishopAI, 20)
-#define g_AngleStrafeUnderAttackBishopAI GAME_GLOBAL_IN(float, GVar_AngleStrafeUnderAttackBishopAI, 16)
-#define g_AngleStrafeUnderAttackBishopAIDef GAME_GLOBAL_IN(float, GVar_AngleStrafeUnderAttackBishopAI, 20)
-#define g_TimeStrafeUnderAttackGearAI GAME_GLOBAL_IN(float, GVar_TimeStrafeUnderAttackGearAI, 16)
-#define g_TimeStrafeUnderAttackGearAIDef GAME_GLOBAL_IN(float, GVar_TimeStrafeUnderAttackGearAI, 20)
-#define g_AngleStrafeUnderAttackGearAI GAME_GLOBAL_IN(float, GVar_AngleStrafeUnderAttackGearAI, 16)
-#define g_AngleStrafeUnderAttackGearAIDef GAME_GLOBAL_IN(float, GVar_AngleStrafeUnderAttackGearAI, 20)
-#define g_TimeStrafeUnderAttackSentinelAI GAME_GLOBAL_IN(float, GVar_TimeStrafeUnderAttackSentinelAI, 16)
-#define g_AngleStrafeUnderAttackSentinelAI GAME_GLOBAL_IN(float, GVar_AngleStrafeUnderAttackSentinelAI, 16)
-#define g_VelRotDynamicMessengerAI GAME_GLOBAL_IN(float, GVar_VelRotDynamicMessengerAI, 16)
-#define g_LimVelRotDynamicMessengerAI GAME_GLOBAL_IN(float, GVar_LimVelRotDynamicMessengerAI, 16)
+extern cGVar GVar_TimeStrafeUnderAttackBishopAI;
+#define g_TimeStrafeUnderAttackBishopAI (GVar_TimeStrafeUnderAttackBishopAI.value.f)
+#define g_TimeStrafeUnderAttackBishopAIDef (GVar_TimeStrafeUnderAttackBishopAI.def.f)
+extern cGVar GVar_AngleStrafeUnderAttackBishopAI;
+#define g_AngleStrafeUnderAttackBishopAI (GVar_AngleStrafeUnderAttackBishopAI.value.f)
+#define g_AngleStrafeUnderAttackBishopAIDef (GVar_AngleStrafeUnderAttackBishopAI.def.f)
+extern cGVar GVar_TimeStrafeUnderAttackGearAI;
+#define g_TimeStrafeUnderAttackGearAI (GVar_TimeStrafeUnderAttackGearAI.value.f)
+#define g_TimeStrafeUnderAttackGearAIDef (GVar_TimeStrafeUnderAttackGearAI.def.f)
+extern cGVar GVar_AngleStrafeUnderAttackGearAI;
+#define g_AngleStrafeUnderAttackGearAI (GVar_AngleStrafeUnderAttackGearAI.value.f)
+#define g_AngleStrafeUnderAttackGearAIDef (GVar_AngleStrafeUnderAttackGearAI.def.f)
+extern cGVar GVar_TimeStrafeUnderAttackSentinelAI;
+#define g_TimeStrafeUnderAttackSentinelAI (GVar_TimeStrafeUnderAttackSentinelAI.value.f)
+extern cGVar GVar_AngleStrafeUnderAttackSentinelAI;
+#define g_AngleStrafeUnderAttackSentinelAI (GVar_AngleStrafeUnderAttackSentinelAI.value.f)
+extern cGVar GVar_VelRotDynamicMessengerAI;
+#define g_VelRotDynamicMessengerAI (GVar_VelRotDynamicMessengerAI.value.f)
+extern cGVar GVar_LimVelRotDynamicMessengerAI;
+#define g_LimVelRotDynamicMessengerAI (GVar_LimVelRotDynamicMessengerAI.value.f)
 
 cAICharControl *cAIControlBankDirector_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
 cAIControlBankDirector *cAIControlBankDirector_Delete(cAIControlBankDirector *self, byte flags);

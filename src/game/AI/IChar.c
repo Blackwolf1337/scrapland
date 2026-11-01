@@ -8,6 +8,7 @@
 #include <float.h>
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/aichar.h"
 #include "scrap/chartype.h"
 #include "scrap/console.h"
@@ -16,7 +17,8 @@
 #include "scrap/scrap.h"
 #include "scrap/scrapmodel.h"
 
-#define g_AICRadiusInRoute GAME_GLOBAL_IN(float, GVar_RADIUS_OBJECTIVE_IN_ROUTE, 16)	/* RADIUS_OBJECTIVE_IN_ROUTE */
+extern cGVar GVar_RADIUS_OBJECTIVE_IN_ROUTE;
+#define g_AICRadiusInRoute (GVar_RADIUS_OBJECTIVE_IN_ROUTE.value.f)	/* RADIUS_OBJECTIVE_IN_ROUTE */
 #define g_AICRandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 #define AIC_ANG45 ((double)0.785398185f)		/* pi / 4 as a float */
 #define AIC_ANG90 1.5707963267948966			/* pi / 2 */

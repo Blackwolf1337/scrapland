@@ -10,6 +10,7 @@
 #ifndef SCRAP_WEAPS2_H
 #define SCRAP_WEAPS2_H
 
+#include "scrap/gvar.h"
 #include "scrap/console.h"
 #include "scrap/doors.h"
 #include "scrap/fxweapons.h"
@@ -43,133 +44,256 @@
 #define WFIELD(e, type, off) (*(type *)((byte *)(e) + (off)))
 
 /* engine variables (Gvars, the value at +0x10 of the variable object) */
-#define g_SwarmIDWeap GAME_GLOBAL_IN(int, GVar_SwarmIDWeap, 16)
-#define g_InfernoIDWeap GAME_GLOBAL_IN(int, GVar_InfernoIDWeap, 16)
-#define g_InfernoEngineSoundVol GAME_GLOBAL_IN(float, GVar_InfernoEngineSoundVol, 16)
-#define g_InfernoRangeMin GAME_GLOBAL_IN(float, GVar_InfernoRangeMin, 16)
-#define g_InfernoTimeDelay GAME_GLOBAL_IN(float, GVar_InfernoTimeDelay, 16)
-#define g_InfernoAmmoCost GAME_GLOBAL_IN(int, GVar_InfernoAmmoCost, 16)
-#define g_InfernoUpTopSpeed GAME_GLOBAL_IN(float, GVar_InfernoUpTopSpeed, 16)
-#define g_InfernoIDAmmo GAME_GLOBAL_IN(int, GVar_InfernoIDAmmo, 16)
-#define g_InfernoLifeTime GAME_GLOBAL_IN(float, GVar_InfernoLifeTime, 16)
-#define g_InfernoEngineSoundAttIni GAME_GLOBAL_IN(float, GVar_InfernoEngineSoundAttIni, 16)
-#define g_InfernoTurnSpeed GAME_GLOBAL_IN(float, GVar_InfernoTurnSpeed, 16)
-#define g_InfernoMaxDamage GAME_GLOBAL_IN(float, GVar_InfernoMaxDamage, 16)
-#define g_InfernoHitSoundVol GAME_GLOBAL_IN(float, GVar_InfernoHitSoundVol, 16)
-#define g_InfernoHitSoundAttEndRadius GAME_GLOBAL_IN(float, GVar_InfernoHitSoundAttEndRadius, 16)
-#define g_InfernoEngineSoundDoppler GAME_GLOBAL_IN(float, GVar_InfernoEngineSoundDoppler, 16)
-#define g_InfernoBeesSpeed GAME_GLOBAL_IN(float, GVar_InfernoBeesSpeed, 16)
-#define g_InfernoUpgFireFactor GAME_GLOBAL_IN(float, GVar_InfernoUpgFireFactor, 16)
-#define g_InfernoInvUpgExtraDamage GAME_GLOBAL_IN(float, GVar_InfernoInvUpgExtraDamage, 16)
-#define g_InfernoHitForce GAME_GLOBAL_IN(float, GVar_InfernoHitForce, 16)
-#define g_InfernoRangeBay GAME_GLOBAL_IN(float, GVar_InfernoRangeBay, 16)
-#define g_InfernoArmor GAME_GLOBAL_IN(int, GVar_InfernoArmor, 16)
-#define g_InfernoUpgFireTime GAME_GLOBAL_IN(float, GVar_InfernoUpgFireTime, 16)
-#define g_InfernoHitSound GAME_GLOBAL_IN(const char *, GVar_InfernoHitSound, 16)
-#define g_InfernoMinDamage GAME_GLOBAL_IN(float, GVar_InfernoMinDamage, 16)
-#define g_InfernoEngineSound GAME_GLOBAL_IN(const char *, GVar_InfernoEngineSound, 16)
-#define g_InfernoNormSpeed GAME_GLOBAL_IN(float, GVar_InfernoNormSpeed, 16)
+extern cGVar GVar_SwarmIDWeap;
+#define g_SwarmIDWeap (GVar_SwarmIDWeap.value.i)
+extern cGVar GVar_InfernoIDWeap;
+#define g_InfernoIDWeap (GVar_InfernoIDWeap.value.i)
+extern cGVar GVar_InfernoEngineSoundVol;
+#define g_InfernoEngineSoundVol (GVar_InfernoEngineSoundVol.value.f)
+extern cGVar GVar_InfernoRangeMin;
+#define g_InfernoRangeMin (GVar_InfernoRangeMin.value.f)
+extern cGVar GVar_InfernoTimeDelay;
+#define g_InfernoTimeDelay (GVar_InfernoTimeDelay.value.f)
+extern cGVar GVar_InfernoAmmoCost;
+#define g_InfernoAmmoCost (GVar_InfernoAmmoCost.value.i)
+extern cGVar GVar_InfernoUpTopSpeed;
+#define g_InfernoUpTopSpeed (GVar_InfernoUpTopSpeed.value.f)
+extern cGVar GVar_InfernoIDAmmo;
+#define g_InfernoIDAmmo (GVar_InfernoIDAmmo.value.i)
+extern cGVar GVar_InfernoLifeTime;
+#define g_InfernoLifeTime (GVar_InfernoLifeTime.value.f)
+extern cGVar GVar_InfernoEngineSoundAttIni;
+#define g_InfernoEngineSoundAttIni (GVar_InfernoEngineSoundAttIni.value.f)
+extern cGVar GVar_InfernoTurnSpeed;
+#define g_InfernoTurnSpeed (GVar_InfernoTurnSpeed.value.f)
+extern cGVar GVar_InfernoMaxDamage;
+#define g_InfernoMaxDamage (GVar_InfernoMaxDamage.value.f)
+extern cGVar GVar_InfernoHitSoundVol;
+#define g_InfernoHitSoundVol (GVar_InfernoHitSoundVol.value.f)
+extern cGVar GVar_InfernoHitSoundAttEndRadius;
+#define g_InfernoHitSoundAttEndRadius (GVar_InfernoHitSoundAttEndRadius.value.f)
+extern cGVar GVar_InfernoEngineSoundDoppler;
+#define g_InfernoEngineSoundDoppler (GVar_InfernoEngineSoundDoppler.value.f)
+extern cGVar GVar_InfernoBeesSpeed;
+#define g_InfernoBeesSpeed (GVar_InfernoBeesSpeed.value.f)
+extern cGVar GVar_InfernoUpgFireFactor;
+#define g_InfernoUpgFireFactor (GVar_InfernoUpgFireFactor.value.f)
+extern cGVar GVar_InfernoInvUpgExtraDamage;
+#define g_InfernoInvUpgExtraDamage (GVar_InfernoInvUpgExtraDamage.value.f)
+extern cGVar GVar_InfernoHitForce;
+#define g_InfernoHitForce (GVar_InfernoHitForce.value.f)
+extern cGVar GVar_InfernoRangeBay;
+#define g_InfernoRangeBay (GVar_InfernoRangeBay.value.f)
+extern cGVar GVar_InfernoArmor;
+#define g_InfernoArmor (GVar_InfernoArmor.value.i)
+extern cGVar GVar_InfernoUpgFireTime;
+#define g_InfernoUpgFireTime (GVar_InfernoUpgFireTime.value.f)
+extern cGVar GVar_InfernoHitSound;
+#define g_InfernoHitSound (GVar_InfernoHitSound.value.s)
+extern cGVar GVar_InfernoMinDamage;
+#define g_InfernoMinDamage (GVar_InfernoMinDamage.value.f)
+extern cGVar GVar_InfernoEngineSound;
+#define g_InfernoEngineSound (GVar_InfernoEngineSound.value.s)
+extern cGVar GVar_InfernoNormSpeed;
+#define g_InfernoNormSpeed (GVar_InfernoNormSpeed.value.f)
 #define g_InfernoXplosionCall GAME_GLOBAL_IN(nativefunc_t, NativeFunc_InfernoXplosionCall, 4)	/* the function of the native "InfernoXplosionCall" */
-#define g_InfernoMissileFile GAME_GLOBAL_IN(const char *, GVar_InfernoMissileFile, 16)
-#define g_FXInfernoExplosionMaxDist GAME_GLOBAL_IN(float, GVar_FXInfernoExplosionMaxDist, 16)
-#define g_InfernoDistLimit GAME_GLOBAL_IN(float, GVar_InfernoDistLimit, 16)
-#define g_InfernoHitSoundAttIniRadius GAME_GLOBAL_IN(float, GVar_InfernoHitSoundAttIniRadius, 16)
-#define g_InfernoEngineSoundAttEnd GAME_GLOBAL_IN(float, GVar_InfernoEngineSoundAttEnd, 16)
-#define g_InfernoExplosionFile GAME_GLOBAL_IN(const char *, GVar_InfernoExplosionFile, 16)
-#define g_LaserAmmoCost GAME_GLOBAL_IN(float, GVar_LaserAmmoCost, 16)
-#define g_LaserRange GAME_GLOBAL_IN(float, GVar_LaserRange, 16)
-#define g_LaserShootFile GAME_GLOBAL_IN(const char *, GVar_LaserShootFile, 16)
-#define g_LaserHitForce GAME_GLOBAL_IN(float, GVar_LaserHitForce, 16)
-#define g_LaserHitFile GAME_GLOBAL_IN(const char *, GVar_LaserHitFile, 16)
-#define g_HookEMITime GAME_GLOBAL_IN(float, GVar_HookEMITime, 16)
-#define g_LaserTimeDelay GAME_GLOBAL_IN(float, GVar_LaserTimeDelay, 16)
-#define g_LaserRicSoundVol GAME_GLOBAL_IN(float, GVar_LaserRicSoundVol, 16)
-#define g_LaserHookFile GAME_GLOBAL_IN(const char *, GVar_LaserHookFile, 16)
-#define g_LaserDamage GAME_GLOBAL_IN(int, GVar_LaserDamage, 16)
-#define g_HookAccel GAME_GLOBAL_IN(float, GVar_HookAccel, 16)
-#define g_LaserDistLimit GAME_GLOBAL_IN(float, GVar_LaserDistLimit, 16)
-#define g_LaserMinSpeed GAME_GLOBAL_IN(float, GVar_LaserMinSpeed, 16)
-#define g_LaserRicSound GAME_GLOBAL_IN(const char *, GVar_LaserRicSound, 16)
-#define g_SonicRechargeTime GAME_GLOBAL_IN(float, GVar_SonicRechargeTime, 16)
-#define g_SonicArmor GAME_GLOBAL_IN(int, GVar_SonicArmor, 16)
-#define g_FXSonicXpldeFile GAME_GLOBAL_IN(const char *, GVar_FXSonicXpldeFile, 16)
-#define g_SonicLifeTime GAME_GLOBAL_IN(float, GVar_SonicLifeTime, 16)
-#define g_SonicIDAmmo GAME_GLOBAL_IN(int, GVar_SonicIDAmmo, 16)
-#define g_SonicAmmoNeed GAME_GLOBAL_IN(int, GVar_SonicAmmoNeed, 16)
+extern cGVar GVar_InfernoMissileFile;
+#define g_InfernoMissileFile (GVar_InfernoMissileFile.value.s)
+extern cGVar GVar_FXInfernoExplosionMaxDist;
+#define g_FXInfernoExplosionMaxDist (GVar_FXInfernoExplosionMaxDist.value.f)
+extern cGVar GVar_InfernoDistLimit;
+#define g_InfernoDistLimit (GVar_InfernoDistLimit.value.f)
+extern cGVar GVar_InfernoHitSoundAttIniRadius;
+#define g_InfernoHitSoundAttIniRadius (GVar_InfernoHitSoundAttIniRadius.value.f)
+extern cGVar GVar_InfernoEngineSoundAttEnd;
+#define g_InfernoEngineSoundAttEnd (GVar_InfernoEngineSoundAttEnd.value.f)
+extern cGVar GVar_InfernoExplosionFile;
+#define g_InfernoExplosionFile (GVar_InfernoExplosionFile.value.s)
+extern cGVar GVar_LaserAmmoCost;
+#define g_LaserAmmoCost (GVar_LaserAmmoCost.value.f)
+extern cGVar GVar_LaserRange;
+#define g_LaserRange (GVar_LaserRange.value.f)
+extern cGVar GVar_LaserShootFile;
+#define g_LaserShootFile (GVar_LaserShootFile.value.s)
+extern cGVar GVar_LaserHitForce;
+#define g_LaserHitForce (GVar_LaserHitForce.value.f)
+extern cGVar GVar_LaserHitFile;
+#define g_LaserHitFile (GVar_LaserHitFile.value.s)
+extern cGVar GVar_HookEMITime;
+#define g_HookEMITime (GVar_HookEMITime.value.f)
+extern cGVar GVar_LaserTimeDelay;
+#define g_LaserTimeDelay (GVar_LaserTimeDelay.value.f)
+extern cGVar GVar_LaserRicSoundVol;
+#define g_LaserRicSoundVol (GVar_LaserRicSoundVol.value.f)
+extern cGVar GVar_LaserHookFile;
+#define g_LaserHookFile (GVar_LaserHookFile.value.s)
+extern cGVar GVar_LaserDamage;
+#define g_LaserDamage (GVar_LaserDamage.value.i)
+extern cGVar GVar_HookAccel;
+#define g_HookAccel (GVar_HookAccel.value.f)
+extern cGVar GVar_LaserDistLimit;
+#define g_LaserDistLimit (GVar_LaserDistLimit.value.f)
+extern cGVar GVar_LaserMinSpeed;
+#define g_LaserMinSpeed (GVar_LaserMinSpeed.value.f)
+extern cGVar GVar_LaserRicSound;
+#define g_LaserRicSound (GVar_LaserRicSound.value.s)
+extern cGVar GVar_SonicRechargeTime;
+#define g_SonicRechargeTime (GVar_SonicRechargeTime.value.f)
+extern cGVar GVar_SonicArmor;
+#define g_SonicArmor (GVar_SonicArmor.value.i)
+extern cGVar GVar_FXSonicXpldeFile;
+#define g_FXSonicXpldeFile (GVar_FXSonicXpldeFile.value.s)
+extern cGVar GVar_SonicLifeTime;
+#define g_SonicLifeTime (GVar_SonicLifeTime.value.f)
+extern cGVar GVar_SonicIDAmmo;
+#define g_SonicIDAmmo (GVar_SonicIDAmmo.value.i)
+extern cGVar GVar_SonicAmmoNeed;
+#define g_SonicAmmoNeed (GVar_SonicAmmoNeed.value.i)
 #define g_CreateSonicFunc (GAME_ARRAY_IN(cPy_Function, GVar_CreateSonicFunc, 16))
 #define g_SetUpSonicFunc (GAME_ARRAY_IN(cPy_Function, GVar_SetUpSonicFunc, 16))
-#define g_SwarmHitSoundVol GAME_GLOBAL_IN(float, GVar_SwarmHitSoundVol, 16)
-#define g_SwarmMissileFile GAME_GLOBAL_IN(const char *, GVar_SwarmMissileFile, 16)
-#define g_SwarmUpTopSpeed GAME_GLOBAL_IN(float, GVar_SwarmUpTopSpeed, 16)
-#define g_SwarmEngineSoundAttIni GAME_GLOBAL_IN(float, GVar_SwarmEngineSoundAttIni, 16)
-#define g_SwarmBeeSoundAttEnd GAME_GLOBAL_IN(float, GVar_SwarmBeeSoundAttEnd, 16)
-#define g_SwarmDeathTime GAME_GLOBAL_IN(float, GVar_SwarmDeathTime, 16)
-#define g_SwarmBeeRadius GAME_GLOBAL_IN(float, GVar_SwarmBeeRadius, 16)
-#define g_SwarmMinRadius GAME_GLOBAL_IN(float, GVar_SwarmMinRadius, 16)
-#define g_SwarmBeesSpeed GAME_GLOBAL_IN(float, GVar_SwarmBeesSpeed, 16)
-#define g_SwarmHitSound GAME_GLOBAL_IN(const char *, GVar_SwarmHitSound, 16)
-#define g_SwarmHitSoundAttIni GAME_GLOBAL_IN(float, GVar_SwarmHitSoundAttIni, 16)
-#define g_SwarmNormSpeed GAME_GLOBAL_IN(float, GVar_SwarmNormSpeed, 16)
-#define g_SwarmLifeTime GAME_GLOBAL_IN(float, GVar_SwarmLifeTime, 16)
-#define g_SwarmHitForce GAME_GLOBAL_IN(float, GVar_SwarmHitForce, 16)
-#define g_SwarmTurnSpeedUPG GAME_GLOBAL_IN(float, GVar_SwarmTurnSpeedUPG, 16)
-#define g_SwarmFastSpeed GAME_GLOBAL_IN(float, GVar_SwarmFastSpeed, 16)
-#define g_SwarmTurnSpeed GAME_GLOBAL_IN(float, GVar_SwarmTurnSpeed, 16)
-#define g_SwarmArmor GAME_GLOBAL_IN(int, GVar_SwarmArmor, 16)
-#define g_SwarmEngineSound GAME_GLOBAL_IN(const char *, GVar_SwarmEngineSound, 16)
-#define g_SwarmBeeSoundVol GAME_GLOBAL_IN(float, GVar_SwarmBeeSoundVol, 16)
-#define g_SwarmIDAmmo GAME_GLOBAL_IN(int, GVar_SwarmIDAmmo, 16)
-#define g_SwarmEngineSoundVol GAME_GLOBAL_IN(float, GVar_SwarmEngineSoundVol, 16)
-#define g_SwarmTimeDelay GAME_GLOBAL_IN(float, GVar_SwarmTimeDelay, 16)
-#define g_SwarmBeeSoundAttIni GAME_GLOBAL_IN(float, GVar_SwarmBeeSoundAttIni, 16)
-#define g_SwarmHitSoundAttEnd GAME_GLOBAL_IN(float, GVar_SwarmHitSoundAttEnd, 16)
-#define g_SwarmBeeSound GAME_GLOBAL_IN(const char *, GVar_SwarmBeeSound, 16)
-#define g_SwarmNumber1 GAME_GLOBAL_IN(int, GVar_SwarmNumber1, 16)
-#define g_SwarmEngineSoundAttEnd GAME_GLOBAL_IN(float, GVar_SwarmEngineSoundAttEnd, 16)
-#define g_SwarmEngineSoundDoppler GAME_GLOBAL_IN(float, GVar_SwarmEngineSoundDoppler, 16)
-#define g_SwarmAmmoCost1 GAME_GLOBAL_IN(int, GVar_SwarmAmmoCost1, 16)
-#define g_SwarmAmmoCost2 GAME_GLOBAL_IN(int, GVar_SwarmAmmoCost2, 16)
-#define g_SwarmAmmoCost3 GAME_GLOBAL_IN(int, GVar_SwarmAmmoCost3, 16)
-#define g_SwarmAmmoCost4 GAME_GLOBAL_IN(int, GVar_SwarmAmmoCost4, 16)
+extern cGVar GVar_SwarmHitSoundVol;
+#define g_SwarmHitSoundVol (GVar_SwarmHitSoundVol.value.f)
+extern cGVar GVar_SwarmMissileFile;
+#define g_SwarmMissileFile (GVar_SwarmMissileFile.value.s)
+extern cGVar GVar_SwarmUpTopSpeed;
+#define g_SwarmUpTopSpeed (GVar_SwarmUpTopSpeed.value.f)
+extern cGVar GVar_SwarmEngineSoundAttIni;
+#define g_SwarmEngineSoundAttIni (GVar_SwarmEngineSoundAttIni.value.f)
+extern cGVar GVar_SwarmBeeSoundAttEnd;
+#define g_SwarmBeeSoundAttEnd (GVar_SwarmBeeSoundAttEnd.value.f)
+extern cGVar GVar_SwarmDeathTime;
+#define g_SwarmDeathTime (GVar_SwarmDeathTime.value.f)
+extern cGVar GVar_SwarmBeeRadius;
+#define g_SwarmBeeRadius (GVar_SwarmBeeRadius.value.f)
+extern cGVar GVar_SwarmMinRadius;
+#define g_SwarmMinRadius (GVar_SwarmMinRadius.value.f)
+extern cGVar GVar_SwarmBeesSpeed;
+#define g_SwarmBeesSpeed (GVar_SwarmBeesSpeed.value.f)
+extern cGVar GVar_SwarmHitSound;
+#define g_SwarmHitSound (GVar_SwarmHitSound.value.s)
+extern cGVar GVar_SwarmHitSoundAttIni;
+#define g_SwarmHitSoundAttIni (GVar_SwarmHitSoundAttIni.value.f)
+extern cGVar GVar_SwarmNormSpeed;
+#define g_SwarmNormSpeed (GVar_SwarmNormSpeed.value.f)
+extern cGVar GVar_SwarmLifeTime;
+#define g_SwarmLifeTime (GVar_SwarmLifeTime.value.f)
+extern cGVar GVar_SwarmHitForce;
+#define g_SwarmHitForce (GVar_SwarmHitForce.value.f)
+extern cGVar GVar_SwarmTurnSpeedUPG;
+#define g_SwarmTurnSpeedUPG (GVar_SwarmTurnSpeedUPG.value.f)
+extern cGVar GVar_SwarmFastSpeed;
+#define g_SwarmFastSpeed (GVar_SwarmFastSpeed.value.f)
+extern cGVar GVar_SwarmTurnSpeed;
+#define g_SwarmTurnSpeed (GVar_SwarmTurnSpeed.value.f)
+extern cGVar GVar_SwarmArmor;
+#define g_SwarmArmor (GVar_SwarmArmor.value.i)
+extern cGVar GVar_SwarmEngineSound;
+#define g_SwarmEngineSound (GVar_SwarmEngineSound.value.s)
+extern cGVar GVar_SwarmBeeSoundVol;
+#define g_SwarmBeeSoundVol (GVar_SwarmBeeSoundVol.value.f)
+extern cGVar GVar_SwarmIDAmmo;
+#define g_SwarmIDAmmo (GVar_SwarmIDAmmo.value.i)
+extern cGVar GVar_SwarmEngineSoundVol;
+#define g_SwarmEngineSoundVol (GVar_SwarmEngineSoundVol.value.f)
+extern cGVar GVar_SwarmTimeDelay;
+#define g_SwarmTimeDelay (GVar_SwarmTimeDelay.value.f)
+extern cGVar GVar_SwarmBeeSoundAttIni;
+#define g_SwarmBeeSoundAttIni (GVar_SwarmBeeSoundAttIni.value.f)
+extern cGVar GVar_SwarmHitSoundAttEnd;
+#define g_SwarmHitSoundAttEnd (GVar_SwarmHitSoundAttEnd.value.f)
+extern cGVar GVar_SwarmBeeSound;
+#define g_SwarmBeeSound (GVar_SwarmBeeSound.value.s)
+extern cGVar GVar_SwarmNumber1;
+#define g_SwarmNumber1 (GVar_SwarmNumber1.value.i)
+extern cGVar GVar_SwarmEngineSoundAttEnd;
+#define g_SwarmEngineSoundAttEnd (GVar_SwarmEngineSoundAttEnd.value.f)
+extern cGVar GVar_SwarmEngineSoundDoppler;
+#define g_SwarmEngineSoundDoppler (GVar_SwarmEngineSoundDoppler.value.f)
+extern cGVar GVar_SwarmAmmoCost1;
+#define g_SwarmAmmoCost1 (GVar_SwarmAmmoCost1.value.i)
+extern cGVar GVar_SwarmAmmoCost2;
+#define g_SwarmAmmoCost2 (GVar_SwarmAmmoCost2.value.i)
+extern cGVar GVar_SwarmAmmoCost3;
+#define g_SwarmAmmoCost3 (GVar_SwarmAmmoCost3.value.i)
+extern cGVar GVar_SwarmAmmoCost4;
+#define g_SwarmAmmoCost4 (GVar_SwarmAmmoCost4.value.i)
 extern int g_SwarmAmmoCosts[6];	/* [6] SwarmAmmoCost1..4 at the start, then 0 0 */
-#define g_TeslaDownRangeTimePad GAME_GLOBAL_IN(float, GVar_TeslaDownRangeTimePad, 16)
-#define g_TeslaMinAngRangePad GAME_GLOBAL_IN(float, GVar_TeslaMinAngRangePad, 16)
-#define g_TeslaDownRangeTime GAME_GLOBAL_IN(float, GVar_TeslaDownRangeTime, 16)
-#define g_TeslaMinAngRangeUpg GAME_GLOBAL_IN(float, GVar_TeslaMinAngRangeUpg, 16)
-#define g_TeslaMinAngRangeUpgPad GAME_GLOBAL_IN(float, GVar_TeslaMinAngRangeUpgPad, 16)
-#define g_TeslaMinAngRange GAME_GLOBAL_IN(float, GVar_TeslaMinAngRange, 16)
-#define g_TeslaTrackForce GAME_GLOBAL_IN(float, GVar_TeslaTrackForce, 16)
-#define g_TeslaShootFile GAME_GLOBAL_IN(const char *, GVar_TeslaShootFile, 16)
-#define g_TeslaMaxAngRangePad GAME_GLOBAL_IN(float, GVar_TeslaMaxAngRangePad, 16)
-#define g_TeslaUpRangeTime GAME_GLOBAL_IN(float, GVar_TeslaUpRangeTime, 16)
-#define g_TeslaRange GAME_GLOBAL_IN(float, GVar_TeslaRange, 16)
-#define g_TeslaHitForce GAME_GLOBAL_IN(float, GVar_TeslaHitForce, 16)
-#define g_TeslaAmmoCost GAME_GLOBAL_IN(float, GVar_TeslaAmmoCost, 16)
-#define g_TeslaDistLimit GAME_GLOBAL_IN(float, GVar_TeslaDistLimit, 16)
-#define g_TeslaMaxAngRange GAME_GLOBAL_IN(float, GVar_TeslaMaxAngRange, 16)
-#define g_VulcanIDWeap GAME_GLOBAL_IN(int, GVar_VulcanIDWeap, 16)
-#define g_VulcanIDAmmo GAME_GLOBAL_IN(int, GVar_VulcanIDAmmo, 16)
-#define g_FXVulcanHitDistance GAME_GLOBAL_IN(float, GVar_FXVulcanHitDistance, 16)
-#define g_VulcanTimeDelay GAME_GLOBAL_IN(float, GVar_VulcanTimeDelay, 16)
-#define g_VulcanRic2Sound GAME_GLOBAL_IN(const char *, GVar_VulcanRic2Sound, 16)
-#define g_VulcanRicSoundAttIni GAME_GLOBAL_IN(float, GVar_VulcanRicSoundAttIni, 16)
-#define g_VulcanDistLimitUPG GAME_GLOBAL_IN(float, GVar_VulcanDistLimitUPG, 16)
-#define g_VulcanTimeDelayUPG GAME_GLOBAL_IN(float, GVar_VulcanTimeDelayUPG, 16)
-#define g_VulcanHitForce GAME_GLOBAL_IN(float, GVar_VulcanHitForce, 16)
-#define g_VulcanDamageEasy GAME_GLOBAL_IN(int, GVar_VulcanDamageEasy, 16)
-#define g_VulcanDistLimit GAME_GLOBAL_IN(float, GVar_VulcanDistLimit, 16)
-#define g_VulcanHitFile GAME_GLOBAL_IN(const char *, GVar_VulcanHitFile, 16)
-#define g_VulcanRic1Sound GAME_GLOBAL_IN(const char *, GVar_VulcanRic1Sound, 16)
-#define g_VulcanRic0Sound GAME_GLOBAL_IN(const char *, GVar_VulcanRic0Sound, 16)
-#define g_VulcanAmmoCost GAME_GLOBAL_IN(float, GVar_VulcanAmmoCost, 16)
-#define g_VulcanBulletFile GAME_GLOBAL_IN(const char *, GVar_VulcanBulletFile, 16)
-#define g_VulcanDamage GAME_GLOBAL_IN(int, GVar_VulcanDamage, 16)
-#define g_VulcanHitUseNormal GAME_GLOBAL_IN(int, GVar_VulcanHitUseNormal, 16)
-#define g_VulcanRic0SoundVol GAME_GLOBAL_IN(float, GVar_VulcanRic0SoundVol, 16)
-#define g_VulcanRic2SoundVol GAME_GLOBAL_IN(float, GVar_VulcanRic2SoundVol, 16)
-#define g_VulcanRic1SoundVol GAME_GLOBAL_IN(float, GVar_VulcanRic1SoundVol, 16)
-#define g_VulcanRange GAME_GLOBAL_IN(float, GVar_VulcanRange, 16)
-#define g_VulcanRicSoundAttEnd GAME_GLOBAL_IN(float, GVar_VulcanRicSoundAttEnd, 16)
+extern cGVar GVar_TeslaDownRangeTimePad;
+#define g_TeslaDownRangeTimePad (GVar_TeslaDownRangeTimePad.value.f)
+extern cGVar GVar_TeslaMinAngRangePad;
+#define g_TeslaMinAngRangePad (GVar_TeslaMinAngRangePad.value.f)
+extern cGVar GVar_TeslaDownRangeTime;
+#define g_TeslaDownRangeTime (GVar_TeslaDownRangeTime.value.f)
+extern cGVar GVar_TeslaMinAngRangeUpg;
+#define g_TeslaMinAngRangeUpg (GVar_TeslaMinAngRangeUpg.value.f)
+extern cGVar GVar_TeslaMinAngRangeUpgPad;
+#define g_TeslaMinAngRangeUpgPad (GVar_TeslaMinAngRangeUpgPad.value.f)
+extern cGVar GVar_TeslaMinAngRange;
+#define g_TeslaMinAngRange (GVar_TeslaMinAngRange.value.f)
+extern cGVar GVar_TeslaTrackForce;
+#define g_TeslaTrackForce (GVar_TeslaTrackForce.value.f)
+extern cGVar GVar_TeslaShootFile;
+#define g_TeslaShootFile (GVar_TeslaShootFile.value.s)
+extern cGVar GVar_TeslaMaxAngRangePad;
+#define g_TeslaMaxAngRangePad (GVar_TeslaMaxAngRangePad.value.f)
+extern cGVar GVar_TeslaUpRangeTime;
+#define g_TeslaUpRangeTime (GVar_TeslaUpRangeTime.value.f)
+extern cGVar GVar_TeslaRange;
+#define g_TeslaRange (GVar_TeslaRange.value.f)
+extern cGVar GVar_TeslaHitForce;
+#define g_TeslaHitForce (GVar_TeslaHitForce.value.f)
+extern cGVar GVar_TeslaAmmoCost;
+#define g_TeslaAmmoCost (GVar_TeslaAmmoCost.value.f)
+extern cGVar GVar_TeslaDistLimit;
+#define g_TeslaDistLimit (GVar_TeslaDistLimit.value.f)
+extern cGVar GVar_TeslaMaxAngRange;
+#define g_TeslaMaxAngRange (GVar_TeslaMaxAngRange.value.f)
+extern cGVar GVar_VulcanIDWeap;
+#define g_VulcanIDWeap (GVar_VulcanIDWeap.value.i)
+extern cGVar GVar_VulcanIDAmmo;
+#define g_VulcanIDAmmo (GVar_VulcanIDAmmo.value.i)
+extern cGVar GVar_FXVulcanHitDistance;
+#define g_FXVulcanHitDistance (GVar_FXVulcanHitDistance.value.f)
+extern cGVar GVar_VulcanTimeDelay;
+#define g_VulcanTimeDelay (GVar_VulcanTimeDelay.value.f)
+extern cGVar GVar_VulcanRic2Sound;
+#define g_VulcanRic2Sound (GVar_VulcanRic2Sound.value.s)
+extern cGVar GVar_VulcanRicSoundAttIni;
+#define g_VulcanRicSoundAttIni (GVar_VulcanRicSoundAttIni.value.f)
+extern cGVar GVar_VulcanDistLimitUPG;
+#define g_VulcanDistLimitUPG (GVar_VulcanDistLimitUPG.value.f)
+extern cGVar GVar_VulcanTimeDelayUPG;
+#define g_VulcanTimeDelayUPG (GVar_VulcanTimeDelayUPG.value.f)
+extern cGVar GVar_VulcanHitForce;
+#define g_VulcanHitForce (GVar_VulcanHitForce.value.f)
+extern cGVar GVar_VulcanDamageEasy;
+#define g_VulcanDamageEasy (GVar_VulcanDamageEasy.value.i)
+extern cGVar GVar_VulcanDistLimit;
+#define g_VulcanDistLimit (GVar_VulcanDistLimit.value.f)
+extern cGVar GVar_VulcanHitFile;
+#define g_VulcanHitFile (GVar_VulcanHitFile.value.s)
+extern cGVar GVar_VulcanRic1Sound;
+#define g_VulcanRic1Sound (GVar_VulcanRic1Sound.value.s)
+extern cGVar GVar_VulcanRic0Sound;
+#define g_VulcanRic0Sound (GVar_VulcanRic0Sound.value.s)
+extern cGVar GVar_VulcanAmmoCost;
+#define g_VulcanAmmoCost (GVar_VulcanAmmoCost.value.f)
+extern cGVar GVar_VulcanBulletFile;
+#define g_VulcanBulletFile (GVar_VulcanBulletFile.value.s)
+extern cGVar GVar_VulcanDamage;
+#define g_VulcanDamage (GVar_VulcanDamage.value.i)
+extern cGVar GVar_VulcanHitUseNormal;
+#define g_VulcanHitUseNormal (GVar_VulcanHitUseNormal.value.i)
+extern cGVar GVar_VulcanRic0SoundVol;
+#define g_VulcanRic0SoundVol (GVar_VulcanRic0SoundVol.value.f)
+extern cGVar GVar_VulcanRic2SoundVol;
+#define g_VulcanRic2SoundVol (GVar_VulcanRic2SoundVol.value.f)
+extern cGVar GVar_VulcanRic1SoundVol;
+#define g_VulcanRic1SoundVol (GVar_VulcanRic1SoundVol.value.f)
+extern cGVar GVar_VulcanRange;
+#define g_VulcanRange (GVar_VulcanRange.value.f)
+extern cGVar GVar_VulcanRicSoundAttEnd;
+#define g_VulcanRicSoundAttEnd (GVar_VulcanRicSoundAttEnd.value.f)
 
 /* the state of the module */
 extern char g_InfernoHitName[128];	/* 0x80, the entity of the sphere callback */

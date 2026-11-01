@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/ai.h"
 #include "scrap/autoaim.h"
 #include "scrap/camcontrol.h"
@@ -41,22 +42,38 @@ CGameModel *CGameModel_ctorDefault(CGameModel *self) {
 extern const char * g_PilotAnimNames[6];
 
 /* the engine variables */
-#define g_ShipPathFmt GAME_GLOBAL_IN(const char *, GVar_ShipPathFmt, 16)
-#define g_VeCharsPathFmt GAME_GLOBAL_IN(const char *, GVar_VeCharsPathFmt, 16)
-#define g_AmorPieceWeight GAME_GLOBAL_IN(float, GVar_AmorPieceWeight, 16)
-#define g_MotorDownFactor GAME_GLOBAL_IN(float, GVar_MotorDownFactor, 16)
-#define g_VehicleCrashMinTime GAME_GLOBAL_IN(float, GVar_VehicleCrashMinTime, 16)
-#define g_VehicleCrashAccLo GAME_GLOBAL_IN(float, GVar_VehicleCrashAccLo, 16)
-#define g_VehicleCrashAccMed GAME_GLOBAL_IN(float, GVar_VehicleCrashAccMed, 16)
-#define g_VehicleCrashAccHi GAME_GLOBAL_IN(float, GVar_VehicleCrashAccHi, 16)
-#define g_VehicleCrashAccHev GAME_GLOBAL_IN(float, GVar_VehicleCrashAccHev, 16)
-#define g_FxSpeedVariation GAME_GLOBAL_IN(float, GVar_FxSpeedVariation, 16)
-#define g_FxAngVariation GAME_GLOBAL_IN(float, GVar_FxAngVariation, 16)
-#define g_FxVelVariation GAME_GLOBAL_IN(float, GVar_FxVelVariation, 16)
-#define g_FxAccVariation GAME_GLOBAL_IN(float, GVar_FxAccVariation, 16)
-#define g_FxBoostTimeDuration GAME_GLOBAL_IN(float, GVar_FxBoostTimeDuration, 16)
-#define g_VehicleEditingMode GAME_GLOBAL_IN(int, GVar_VehicleEditingMode, 16)
-#define g_NPCSndMotorVolFactor GAME_GLOBAL_IN(float, GVar_NPCSndMotorVolFactor, 16)
+extern cGVar GVar_ShipPathFmt;
+#define g_ShipPathFmt (GVar_ShipPathFmt.value.s)
+extern cGVar GVar_VeCharsPathFmt;
+#define g_VeCharsPathFmt (GVar_VeCharsPathFmt.value.s)
+extern cGVar GVar_AmorPieceWeight;
+#define g_AmorPieceWeight (GVar_AmorPieceWeight.value.f)
+extern cGVar GVar_MotorDownFactor;
+#define g_MotorDownFactor (GVar_MotorDownFactor.value.f)
+extern cGVar GVar_VehicleCrashMinTime;
+#define g_VehicleCrashMinTime (GVar_VehicleCrashMinTime.value.f)
+extern cGVar GVar_VehicleCrashAccLo;
+#define g_VehicleCrashAccLo (GVar_VehicleCrashAccLo.value.f)
+extern cGVar GVar_VehicleCrashAccMed;
+#define g_VehicleCrashAccMed (GVar_VehicleCrashAccMed.value.f)
+extern cGVar GVar_VehicleCrashAccHi;
+#define g_VehicleCrashAccHi (GVar_VehicleCrashAccHi.value.f)
+extern cGVar GVar_VehicleCrashAccHev;
+#define g_VehicleCrashAccHev (GVar_VehicleCrashAccHev.value.f)
+extern cGVar GVar_FxSpeedVariation;
+#define g_FxSpeedVariation (GVar_FxSpeedVariation.value.f)
+extern cGVar GVar_FxAngVariation;
+#define g_FxAngVariation (GVar_FxAngVariation.value.f)
+extern cGVar GVar_FxVelVariation;
+#define g_FxVelVariation (GVar_FxVelVariation.value.f)
+extern cGVar GVar_FxAccVariation;
+#define g_FxAccVariation (GVar_FxAccVariation.value.f)
+extern cGVar GVar_FxBoostTimeDuration;
+#define g_FxBoostTimeDuration (GVar_FxBoostTimeDuration.value.f)
+extern cGVar GVar_VehicleEditingMode;
+#define g_VehicleEditingMode (GVar_VehicleEditingMode.value.i)
+extern cGVar GVar_NPCSndMotorVolFactor;
+#define g_NPCSndMotorVolFactor (GVar_NPCSndMotorVolFactor.value.f)
 
 /* the camera data of a player ship (vehicle + 0xf0) */
 
@@ -1653,12 +1670,18 @@ byte cVehicleEntity_VarV(cVehicleEntity *self, const char *name, double *x, doub
 /* ---- the flight ---- */
 
 /* the magnet that pulls the ships back to the center in the free space */
-#define g_FreeSpaceMagnetCenterX GAME_GLOBAL_IN(float, GVar_FreeSpaceMagnetCenterX, 16)
-#define g_FreeSpaceMagnetCenterY GAME_GLOBAL_IN(float, GVar_FreeSpaceMagnetCenterY, 16)
-#define g_FreeSpaceMagnetCenterZ GAME_GLOBAL_IN(float, GVar_FreeSpaceMagnetCenterZ, 16)
-#define g_FreeSpaceMagnetLoRadius GAME_GLOBAL_IN(float, GVar_FreeSpaceMagnetLoRadius, 16)
-#define g_FreeSpaceMagnetHiRadius GAME_GLOBAL_IN(float, GVar_FreeSpaceMagnetHiRadius, 16)
-#define g_FreeSpaceMagnetAccel GAME_GLOBAL_IN(float, GVar_FreeSpaceMagnetAccel, 16)
+extern cGVar GVar_FreeSpaceMagnetCenterX;
+#define g_FreeSpaceMagnetCenterX (GVar_FreeSpaceMagnetCenterX.value.f)
+extern cGVar GVar_FreeSpaceMagnetCenterY;
+#define g_FreeSpaceMagnetCenterY (GVar_FreeSpaceMagnetCenterY.value.f)
+extern cGVar GVar_FreeSpaceMagnetCenterZ;
+#define g_FreeSpaceMagnetCenterZ (GVar_FreeSpaceMagnetCenterZ.value.f)
+extern cGVar GVar_FreeSpaceMagnetLoRadius;
+#define g_FreeSpaceMagnetLoRadius (GVar_FreeSpaceMagnetLoRadius.value.f)
+extern cGVar GVar_FreeSpaceMagnetHiRadius;
+#define g_FreeSpaceMagnetHiRadius (GVar_FreeSpaceMagnetHiRadius.value.f)
+extern cGVar GVar_FreeSpaceMagnetAccel;
+#define g_FreeSpaceMagnetAccel (GVar_FreeSpaceMagnetAccel.value.f)
 
 #define VEH_PI_F 0x1.921fb6p+1f
 #define VEH_PI_2_F 0x1.921fb6p+0f		/* the limits of the pitch */
@@ -1869,11 +1892,16 @@ void cVehicleEntity_Step(cVehicleEntity *self, float dt) {
 
 /* ---- the model and the camera of a slot (vf24, rva 0x105ea0) ---- */
 
-#define g_HiRacerFov GAME_GLOBAL_IN(float, GVar_HiRacerFov, 16)		/* degrees at top speed */
-#define g_LoRacerFov GAME_GLOBAL_IN(float, GVar_LoRacerFov, 16)
-#define g_MotorTrustRotationX GAME_GLOBAL_IN(float, GVar_MotorTrustRotationX, 16)
-#define g_MotorTrustRotationY GAME_GLOBAL_IN(float, GVar_MotorTrustRotationY, 16)
-#define g_PilotViewDist GAME_GLOBAL_IN(float, GVar_PilotViewDist, 16)	/* the pilot is drawn nearer to the camera */
+extern cGVar GVar_HiRacerFov;
+#define g_HiRacerFov (GVar_HiRacerFov.value.f)		/* degrees at top speed */
+extern cGVar GVar_LoRacerFov;
+#define g_LoRacerFov (GVar_LoRacerFov.value.f)
+extern cGVar GVar_MotorTrustRotationX;
+#define g_MotorTrustRotationX (GVar_MotorTrustRotationX.value.f)
+extern cGVar GVar_MotorTrustRotationY;
+#define g_MotorTrustRotationY (GVar_MotorTrustRotationY.value.f)
+extern cGVar GVar_PilotViewDist;
+#define g_PilotViewDist (GVar_PilotViewDist.value.f)	/* the pilot is drawn nearer to the camera */
 
 #define VEH_CAM_PITCH -0x1.0c1524p-2f			/* -15 degrees */
 #define VEH_FLOAT_PERIOD 25.132741228718345		/* 8 pi */

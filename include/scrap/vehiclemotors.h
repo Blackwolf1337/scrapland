@@ -10,6 +10,7 @@
 #ifndef SCRAP_VEHICLEMOTORS_H
 #define SCRAP_VEHICLEMOTORS_H
 
+#include "scrap/gvar.h"
 #include "scrap/entity.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapparticles.h"
@@ -111,25 +112,44 @@ SD_SIZE(cVehicleMotors, 0xc8);
 extern vec3_t g_HazePos[8];
 
 /* the engine variables */
-#define g_EnginePathFmt GAME_GLOBAL_IN(const char *, GVar_EnginePathFmt, 16)		/* EnginePathFmt */
-#define g_FXEngineTrailOffset GAME_GLOBAL_IN(float, GVar_FXEngineTrailOffset, 16)
-#define g_FXVehicleDeathTrailFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleDeathTrailFile, 16)
-#define g_FXMotorSmokeFile GAME_GLOBAL_IN(const char *, GVar_FXMotorSmokeFile, 16)
-#define g_FXMotorHazeOffset GAME_GLOBAL_IN(float, GVar_FXMotorHazeOffset, 16)
-#define g_FXEngineTrailHideTime GAME_GLOBAL_IN(float, GVar_FXEngineTrailHideTime, 16)
-#define g_FXEngineTrailSize GAME_GLOBAL_IN(float, GVar_FXEngineTrailSize, 16)
-#define g_FXEngineGlowDistFadeMid GAME_GLOBAL_IN(float, GVar_FXEngineGlowDistFadeMid, 16)
-#define g_FXEngineTrailDist GAME_GLOBAL_IN(float, GVar_FXEngineTrailDist, 16)
-#define g_FXEngineGlowSizeAtt GAME_GLOBAL_IN(float, GVar_FXEngineGlowSizeAtt, 16)
-#define g_FXMotorHaze GAME_GLOBAL_IN(int, GVar_FXMotorHaze, 16)
-#define g_FXMotorHazeFile GAME_GLOBAL_IN(const char *, GVar_FXMotorHazeFile, 16)
-#define g_FXEngineGlowDistFadeMult GAME_GLOBAL_IN(float, GVar_FXEngineGlowDistFadeMult, 16)
-#define g_FXEngineGlowDistFadeFrom GAME_GLOBAL_IN(float, GVar_FXEngineGlowDistFadeFrom, 16)
-#define g_FXEngineGlowDistFadeTo GAME_GLOBAL_IN(float, GVar_FXEngineGlowDistFadeTo, 16)
-#define g_FXEngineBirthRate GAME_GLOBAL_IN(int, GVar_FXEngineBirthRate, 16)	/* of the exhaust at thrust 0, 100 at full thrust */
-#define g_FXEngineGlowSize GAME_GLOBAL_IN(float, GVar_FXEngineGlowSize, 16)
-#define g_FXEngineGlowSizeMax GAME_GLOBAL_IN(float, GVar_FXEngineGlowSizeMax, 16)
-#define g_FXEngineTrailDistSpeedFactor GAME_GLOBAL_IN(float, GVar_FXEngineTrailDistSpeedFactor, 16)
+extern cGVar GVar_EnginePathFmt;
+#define g_EnginePathFmt (GVar_EnginePathFmt.value.s)		/* EnginePathFmt */
+extern cGVar GVar_FXEngineTrailOffset;
+#define g_FXEngineTrailOffset (GVar_FXEngineTrailOffset.value.f)
+extern cGVar GVar_FXVehicleDeathTrailFile;
+#define g_FXVehicleDeathTrailFile (GVar_FXVehicleDeathTrailFile.value.s)
+extern cGVar GVar_FXMotorSmokeFile;
+#define g_FXMotorSmokeFile (GVar_FXMotorSmokeFile.value.s)
+extern cGVar GVar_FXMotorHazeOffset;
+#define g_FXMotorHazeOffset (GVar_FXMotorHazeOffset.value.f)
+extern cGVar GVar_FXEngineTrailHideTime;
+#define g_FXEngineTrailHideTime (GVar_FXEngineTrailHideTime.value.f)
+extern cGVar GVar_FXEngineTrailSize;
+#define g_FXEngineTrailSize (GVar_FXEngineTrailSize.value.f)
+extern cGVar GVar_FXEngineGlowDistFadeMid;
+#define g_FXEngineGlowDistFadeMid (GVar_FXEngineGlowDistFadeMid.value.f)
+extern cGVar GVar_FXEngineTrailDist;
+#define g_FXEngineTrailDist (GVar_FXEngineTrailDist.value.f)
+extern cGVar GVar_FXEngineGlowSizeAtt;
+#define g_FXEngineGlowSizeAtt (GVar_FXEngineGlowSizeAtt.value.f)
+extern cGVar GVar_FXMotorHaze;
+#define g_FXMotorHaze (GVar_FXMotorHaze.value.i)
+extern cGVar GVar_FXMotorHazeFile;
+#define g_FXMotorHazeFile (GVar_FXMotorHazeFile.value.s)
+extern cGVar GVar_FXEngineGlowDistFadeMult;
+#define g_FXEngineGlowDistFadeMult (GVar_FXEngineGlowDistFadeMult.value.f)
+extern cGVar GVar_FXEngineGlowDistFadeFrom;
+#define g_FXEngineGlowDistFadeFrom (GVar_FXEngineGlowDistFadeFrom.value.f)
+extern cGVar GVar_FXEngineGlowDistFadeTo;
+#define g_FXEngineGlowDistFadeTo (GVar_FXEngineGlowDistFadeTo.value.f)
+extern cGVar GVar_FXEngineBirthRate;
+#define g_FXEngineBirthRate (GVar_FXEngineBirthRate.value.i)	/* of the exhaust at thrust 0, 100 at full thrust */
+extern cGVar GVar_FXEngineGlowSize;
+#define g_FXEngineGlowSize (GVar_FXEngineGlowSize.value.f)
+extern cGVar GVar_FXEngineGlowSizeMax;
+#define g_FXEngineGlowSizeMax (GVar_FXEngineGlowSizeMax.value.f)
+extern cGVar GVar_FXEngineTrailDistSpeedFactor;
+#define g_FXEngineTrailDistSpeedFactor (GVar_FXEngineTrailDistSpeedFactor.value.f)
 
 /* VehicleEntity.cpp */
 cVehicleMotor *cVehicleMotor_ctor(cVehicleMotor *self);

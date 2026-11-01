@@ -9,6 +9,7 @@
 #ifndef SCRAP_E3DWORLD_H
 #define SCRAP_E3DWORLD_H
 
+#include "scrap/gvar.h"
 #include "scrap/camera.h"
 #include "scrap/model.h"
 #include "scrap/fog.h"
@@ -61,15 +62,24 @@ static inline CGround *World_Ground(void) {
 }
 
 /* the engine variables of the world (Gvars) */
-#define g_RenderWorld GAME_GLOBAL_IN(int, GVar_RenderWorld, 16)
-#define g_RenderSky GAME_GLOBAL_IN(int, GVar_RenderSky, 16)
-#define g_WorldPreIllum GAME_GLOBAL_IN(int, GVar_WorldPreIllum, 16)	/* 0 skip, 1 normal, 2 self illumination */
-#define g_SkyRotation GAME_GLOBAL_IN(float, GVar_SkyRotation, 16)	/* degrees */
-#define g_SkyZBuffer GAME_GLOBAL_IN(int, GVar_SkyZBuffer, 16)
-#define g_SkyPosScale GAME_GLOBAL_IN(float, GVar_SkyPosScale, 16)
-#define g_SkyTubeTest GAME_GLOBAL_IN(float, GVar_SkyTubeTest, 16)	/* the far plane of the sky tube */
-#define g_ShowWorldDummies GAME_GLOBAL_IN(const char *, GVar_ShowWorldDummies, 16)	/* a pattern of the names */
-#define g_SkyInit GAME_GLOBAL_IN(int, GVar_SkyInit, 16)
+extern cGVar GVar_RenderWorld;
+#define g_RenderWorld (GVar_RenderWorld.value.i)
+extern cGVar GVar_RenderSky;
+#define g_RenderSky (GVar_RenderSky.value.i)
+extern cGVar GVar_WorldPreIllum;
+#define g_WorldPreIllum (GVar_WorldPreIllum.value.i)	/* 0 skip, 1 normal, 2 self illumination */
+extern cGVar GVar_SkyRotation;
+#define g_SkyRotation (GVar_SkyRotation.value.f)	/* degrees */
+extern cGVar GVar_SkyZBuffer;
+#define g_SkyZBuffer (GVar_SkyZBuffer.value.i)
+extern cGVar GVar_SkyPosScale;
+#define g_SkyPosScale (GVar_SkyPosScale.value.f)
+extern cGVar GVar_SkyTubeTest;
+#define g_SkyTubeTest (GVar_SkyTubeTest.value.f)	/* the far plane of the sky tube */
+extern cGVar GVar_ShowWorldDummies;
+#define g_ShowWorldDummies (GVar_ShowWorldDummies.value.s)	/* a pattern of the names */
+extern cGVar GVar_SkyInit;
+#define g_SkyInit (GVar_SkyInit.value.i)
 /* [mapa_sombras] of the ini: the shadow maps of bsp.cpp */
 extern int g_ShadowMapUse;
 extern int g_ShadowMapCalculate;

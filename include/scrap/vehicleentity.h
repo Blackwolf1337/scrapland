@@ -7,6 +7,7 @@
 #ifndef SCRAP_VEHICLEENTITY_H
 #define SCRAP_VEHICLEENTITY_H
 
+#include "scrap/gvar.h"
 #include "scrap/autoaim.h"
 #include "scrap/controls.h"
 #include "scrap/fxcountermeasures.h"
@@ -200,8 +201,10 @@ static inline const cVehicleMotorsVtbl *Veh_MotorsVtbl(cVehicleEntity *v) {
 }
 
 /* the engine variables */
-#define g_AtmosphereLimit GAME_GLOBAL_IN(float, GVar_AtmosphereLimit, 16)	/* above it the ships fall back */
-#define g_SpaceLimit GAME_GLOBAL_IN(float, GVar_TopLimit, 16)
+extern cGVar GVar_AtmosphereLimit;
+#define g_AtmosphereLimit (GVar_AtmosphereLimit.value.f)	/* above it the ships fall back */
+extern cGVar GVar_TopLimit;
+#define g_SpaceLimit (GVar_TopLimit.value.f)
 
 /* the parts of other files (not decompiled yet; VehicleMotors, VehicleTraffic and WeaponManager in their headers);
  * the objects inside the vehicle by their offset */
@@ -238,7 +241,8 @@ typedef struct cVehicleTargets {
 } cVehicleTargets;
 SD_SIZE(cVehicleTargets, 0x88);
 
-#define g_TgtRegenerationTime GAME_GLOBAL_IN(float, GVar_TgtRegenerationTime, 16)
+extern cGVar GVar_TgtRegenerationTime;
+#define g_TgtRegenerationTime (GVar_TgtRegenerationTime.value.f)
 
 /* the functions take the o648 bytes of the vehicle */
 void *cVehicleO648_ctor(void *o);

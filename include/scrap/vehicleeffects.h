@@ -11,6 +11,7 @@
 #ifndef SCRAP_VEHICLEEFFECTS_H
 #define SCRAP_VEHICLEEFFECTS_H
 
+#include "scrap/gvar.h"
 #include "scrap/entity.h"
 #include "scrap/scrapparticles.h"
 #include "scrap/scraptrails.h"
@@ -74,19 +75,32 @@ SD_OFFSET(cVehicleEffects, trails, 0x1c);
 SD_SIZE(cVehicleEffects, 0x24);
 
 /* the engine variables of the effects */
-#define g_FXVehicleDamageFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleDamageFile, 16)
-#define g_FXVehicleEMIFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleEMIFile, 16)
-#define g_FXVehicleSputnikFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleSputnikFile, 16)
-#define g_FXVehicleFireFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleFireFile, 16)
-#define g_FXVehicleSpeedTrailDist GAME_GLOBAL_IN(float, GVar_FXVehicleSpeedTrailDist, 16)
-#define g_FXVehicleSpeedTrailFadeOutH GAME_GLOBAL_IN(float, GVar_FXVehicleSpeedTrailFadeOutH, 16)
-#define g_FXVehicleSpeedTrailSize GAME_GLOBAL_IN(float, GVar_FXVehicleSpeedTrailSize, 16)
-#define g_WindFxSmoke GAME_GLOBAL_IN(int, GVar_WindFxSmoke, 16)
-#define g_WindFxSmokeFile GAME_GLOBAL_IN(const char *, GVar_WindFxSmokeFile, 16)
-#define g_WindFXSmokeMaxDist GAME_GLOBAL_IN(float, GVar_WindFXSmokeMaxDist, 16)
-#define g_WindFXSmokeMinVel GAME_GLOBAL_IN(float, GVar_WindFXSmokeMinVel, 16)
-#define g_WindFXSmokeTimeStep GAME_GLOBAL_IN(float, GVar_WindFXSmokeTimeStep, 16)
-#define g_WindFXSmokeSizeDiv GAME_GLOBAL_IN(float, GVar_WindFXSmokeSizeDiv, 16)
+extern cGVar GVar_FXVehicleDamageFile;
+#define g_FXVehicleDamageFile (GVar_FXVehicleDamageFile.value.s)
+extern cGVar GVar_FXVehicleEMIFile;
+#define g_FXVehicleEMIFile (GVar_FXVehicleEMIFile.value.s)
+extern cGVar GVar_FXVehicleSputnikFile;
+#define g_FXVehicleSputnikFile (GVar_FXVehicleSputnikFile.value.s)
+extern cGVar GVar_FXVehicleFireFile;
+#define g_FXVehicleFireFile (GVar_FXVehicleFireFile.value.s)
+extern cGVar GVar_FXVehicleSpeedTrailDist;
+#define g_FXVehicleSpeedTrailDist (GVar_FXVehicleSpeedTrailDist.value.f)
+extern cGVar GVar_FXVehicleSpeedTrailFadeOutH;
+#define g_FXVehicleSpeedTrailFadeOutH (GVar_FXVehicleSpeedTrailFadeOutH.value.f)
+extern cGVar GVar_FXVehicleSpeedTrailSize;
+#define g_FXVehicleSpeedTrailSize (GVar_FXVehicleSpeedTrailSize.value.f)
+extern cGVar GVar_WindFxSmoke;
+#define g_WindFxSmoke (GVar_WindFxSmoke.value.i)
+extern cGVar GVar_WindFxSmokeFile;
+#define g_WindFxSmokeFile (GVar_WindFxSmokeFile.value.s)
+extern cGVar GVar_WindFXSmokeMaxDist;
+#define g_WindFXSmokeMaxDist (GVar_WindFXSmokeMaxDist.value.f)
+extern cGVar GVar_WindFXSmokeMinVel;
+#define g_WindFXSmokeMinVel (GVar_WindFXSmokeMinVel.value.f)
+extern cGVar GVar_WindFXSmokeTimeStep;
+#define g_WindFXSmokeTimeStep (GVar_WindFXSmokeTimeStep.value.f)
+extern cGVar GVar_WindFXSmokeSizeDiv;
+#define g_WindFXSmokeSizeDiv (GVar_WindFXSmokeSizeDiv.value.f)
 extern float g_WindFXSmokeLast;	/* the world time of the last wind smoke */
 
 /* the parts before the range of the file in the exe */

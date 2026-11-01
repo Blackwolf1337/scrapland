@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/cmd.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
@@ -31,7 +32,8 @@
 #include "scrap/video.h"
 #include "scrap/win32.h"
 
-#define g_IsViewer GAME_GLOBAL_IN(int, GVar_Viewer, 16)
+extern cGVar GVar_Viewer;
+#define g_IsViewer (GVar_Viewer.value.i)
 #define D3DFMT_A8R8G8B8 21
 #define D3DFMT_X8R8G8B8 22
 #define D3DFMT_R5G6B5 23
@@ -718,12 +720,18 @@ static float DebugValue(uint32_t i) {
 }
 
 /* the free camera of the viewer (Gvars) */
-#define g_ViewerClipNear GAME_GLOBAL_IN(float, GVar_ViewerClipNear, 16)
-#define g_ViewerClipFar GAME_GLOBAL_IN(float, GVar_ViewerClipFar, 16)
-#define g_ViewerFOV GAME_GLOBAL_IN(float, GVar_ViewerFOV, 16)	/* degrees, 0: the camera keeps its own */
-#define g_ViewerCameraTgt GAME_GLOBAL_IN(int, GVar_ViewerCameraTgt, 16)	/* orbits around the target */
-#define g_ViewerCameraVel GAME_GLOBAL_IN(float, GVar_ViewerCameraVel, 16)
-#define g_ViewerCameraInv GAME_GLOBAL_IN(int, GVar_ViewerCameraInv, 16)	/* the pitch not inverted */
+extern cGVar GVar_ViewerClipNear;
+#define g_ViewerClipNear (GVar_ViewerClipNear.value.f)
+extern cGVar GVar_ViewerClipFar;
+#define g_ViewerClipFar (GVar_ViewerClipFar.value.f)
+extern cGVar GVar_ViewerFOV;
+#define g_ViewerFOV (GVar_ViewerFOV.value.f)	/* degrees, 0: the camera keeps its own */
+extern cGVar GVar_ViewerCameraTgt;
+#define g_ViewerCameraTgt (GVar_ViewerCameraTgt.value.i)	/* orbits around the target */
+extern cGVar GVar_ViewerCameraVel;
+#define g_ViewerCameraVel (GVar_ViewerCameraVel.value.f)
+extern cGVar GVar_ViewerCameraInv;
+#define g_ViewerCameraInv (GVar_ViewerCameraInv.value.i)	/* the pitch not inverted */
 extern float g_ViewerSpeed;	/* doubled and halved by the debug keys */
 #define VIEWER_MIN_DIST 20.0f
 /* the actions of the debug set */

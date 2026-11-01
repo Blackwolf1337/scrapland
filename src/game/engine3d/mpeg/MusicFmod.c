@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
@@ -27,13 +28,20 @@
 #define MUSIC_SHOW_DEBUG 2			/* S_Show */
 
 /* engine variables */
-#define g_MusicMainVolume GAME_GLOBAL_IN(float, GVar_MusicMainVolume, 16)
-#define g_VoiceMainVolume GAME_GLOBAL_IN(float, GVar_VoiceMainVolume, 16)
-#define g_S_Show GAME_GLOBAL_IN(int, GVar_S_Show, 16)
-#define g_S_StreamBufferSize GAME_GLOBAL_IN(int, GVar_S_StreamBufferSize, 16)	/* ms */
-#define g_S_VoiceoverFadein GAME_GLOBAL_IN(float, GVar_S_VoiceoverFadein, 16)
-#define g_S_VoiceoverFadeout GAME_GLOBAL_IN(float, GVar_S_VoiceoverFadeout, 16)
-#define g_S_VoiceoverVolume GAME_GLOBAL_IN(float, GVar_S_VoiceoverVolume, 16)
+extern cGVar GVar_MusicMainVolume;
+#define g_MusicMainVolume (GVar_MusicMainVolume.value.f)
+extern cGVar GVar_VoiceMainVolume;
+#define g_VoiceMainVolume (GVar_VoiceMainVolume.value.f)
+extern cGVar GVar_S_Show;
+#define g_S_Show (GVar_S_Show.value.i)
+extern cGVar GVar_S_StreamBufferSize;
+#define g_S_StreamBufferSize (GVar_S_StreamBufferSize.value.i)	/* ms */
+extern cGVar GVar_S_VoiceoverFadein;
+#define g_S_VoiceoverFadein (GVar_S_VoiceoverFadein.value.f)
+extern cGVar GVar_S_VoiceoverFadeout;
+#define g_S_VoiceoverFadeout (GVar_S_VoiceoverFadeout.value.f)
+extern cGVar GVar_S_VoiceoverVolume;
+#define g_S_VoiceoverVolume (GVar_S_VoiceoverVolume.value.f)
 /* the frame of the engine */
 extern float g_RealFrameSecs;
 extern float g_Fps;

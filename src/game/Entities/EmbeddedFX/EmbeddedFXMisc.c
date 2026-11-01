@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/crt.h"
 #include "scrap/embeddedfxmisc.h"
 #include "scrap/filesys.h"
@@ -20,7 +21,8 @@
 #define CGAMETRAIL_DTOR 0x21de40
 
 /* the switch of the DataPack lasers (a Gvar) */
-#define g_DataPackOn GAME_GLOBAL_IN(int, GVar_MessengerTubeState, 16)
+extern cGVar GVar_MessengerTubeState;
+#define g_DataPackOn (GVar_MessengerTubeState.value.i)
 /* "" of the original, the glow node of a coin name that matches none */
 #define EFXM_EMPTY GAME_STR(str_Empty)
 
@@ -1152,9 +1154,12 @@ void EmbeddedFXMisc_MeetingPointMsg(cAbstractFile *f) {
 /* ---- vf03: Update ---- */
 
 /* the DataPack engine variables */
-#define g_DataPackInterTime GAME_GLOBAL_IN(float, GVar_DataPackInterTime, 16)
-#define g_DataPackLaserLong GAME_GLOBAL_IN(float, GVar_DataPackLaserLong, 16)
-#define g_DataPackLaserSize GAME_GLOBAL_IN(float, GVar_DataPackLaserSize, 16)
+extern cGVar GVar_DataPackInterTime;
+#define g_DataPackInterTime (GVar_DataPackInterTime.value.f)
+extern cGVar GVar_DataPackLaserLong;
+#define g_DataPackLaserLong (GVar_DataPackLaserLong.value.f)
+extern cGVar GVar_DataPackLaserSize;
+#define g_DataPackLaserSize (GVar_DataPackLaserSize.value.f)
 
 /*
  * The model if it is loaded, visible and without a model effect (*visible set), else NULL (*visible cleared, the
@@ -1916,9 +1921,12 @@ void cEmbeddedFXTreasure_Update(cEmbeddedFXTreasure *self, float dt) {
 }
 
 /* the BossShield engine variables */
-#define g_FXBossShieldAspect GAME_GLOBAL_IN(float, GVar_FXBossShieldAspect, 16)
-#define g_FXBossShieldRadius GAME_GLOBAL_IN(float, GVar_FXBossShieldRadius, 16)
-#define g_FXBossShieldScale GAME_GLOBAL_IN(float, GVar_FXBossShieldScale, 16)
+extern cGVar GVar_FXBossShieldAspect;
+#define g_FXBossShieldAspect (GVar_FXBossShieldAspect.value.f)
+extern cGVar GVar_FXBossShieldRadius;
+#define g_FXBossShieldRadius (GVar_FXBossShieldRadius.value.f)
+extern cGVar GVar_FXBossShieldScale;
+#define g_FXBossShieldScale (GVar_FXBossShieldScale.value.f)
 
 /* a random point on the shield */
 static void EFXM_ShieldDir(vec3_t *out) {

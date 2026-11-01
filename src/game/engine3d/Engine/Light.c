@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/fonts.h"
@@ -27,27 +28,47 @@ extern int g_LightsTotal;
 extern uint32_t g_LightIndexD3D;	/* the next light gets index 4 + this */
 
 /* the engine variables of the lights (Gvars) */
-#define g_LightEnaD3D GAME_GLOBAL_IN(int, GVar_R_LightEnaD3D, 16)	/* R_LightEnaD3D: 0 always, 1 on changes, from 2 never */
-#define g_LightAmbient GAME_GLOBAL_IN(float, GVar_R_LightAmbient, 16)
-#define g_LightMult GAME_GLOBAL_IN(float, GVar_R_LightMult, 16)
-#define g_SpotlightClamp GAME_GLOBAL_IN(float, GVar_R_SpotlightClamp, 16)
-#define g_LightDesat GAME_GLOBAL_IN(float, GVar_R_LightDesat, 16)
+extern cGVar GVar_R_LightEnaD3D;
+#define g_LightEnaD3D (GVar_R_LightEnaD3D.value.i)	/* R_LightEnaD3D: 0 always, 1 on changes, from 2 never */
+extern cGVar GVar_R_LightAmbient;
+#define g_LightAmbient (GVar_R_LightAmbient.value.f)
+extern cGVar GVar_R_LightMult;
+#define g_LightMult (GVar_R_LightMult.value.f)
+extern cGVar GVar_R_SpotlightClamp;
+#define g_SpotlightClamp (GVar_R_SpotlightClamp.value.f)
+extern cGVar GVar_R_LightDesat;
+#define g_LightDesat (GVar_R_LightDesat.value.f)
 #define g_MonitorAmbient GAME_GLOBAL_IN(uint32_t, GVar_MonitorAmbient, 16)
-#define g_LightTrace GAME_GLOBAL_IN(int, GVar_R_LightTrace, 16)
-#define g_SpotlightAdjust GAME_GLOBAL_IN(int, GVar_R_SpotlightAdjust, 16)
-#define g_LightAtten GAME_GLOBAL_IN(float, GVar_R_LightAtten, 16)
-#define g_LightGamma GAME_GLOBAL_IN(float, GVar_R_LightGamma, 16)
-#define g_SpotlightMult GAME_GLOBAL_IN(float, GVar_R_SpotlightMult, 16)
-#define g_LightSortI GAME_GLOBAL_IN(float, GVar_R_LightSortI, 16)
-#define g_LightAtten2 GAME_GLOBAL_IN(int, GVar_R_LightAtten2, 16)
-#define g_SpotlightAng GAME_GLOBAL_IN(int, GVar_R_SpotlightAng, 16)
-#define g_SpotlightAtten GAME_GLOBAL_IN(float, GVar_R_SpotlightAtten, 16)
-#define g_LightMult2 GAME_GLOBAL_IN(float, GVar_R_LightMult2, 16)
-#define g_LightTarget GAME_GLOBAL_IN(int, GVar_R_LightTarget, 16)
-#define g_LightDefer GAME_GLOBAL_IN(int, GVar_R_LightDefer, 16)
-#define g_LightSector GAME_GLOBAL_IN(int, GVar_R_LightSector, 16)
-#define g_LightSort GAME_GLOBAL_IN(int, GVar_R_LightSort, 16)
-#define g_LightMultName GAME_GLOBAL_IN(const char *, GVar_R_LightMultName, 16)
+extern cGVar GVar_R_LightTrace;
+#define g_LightTrace (GVar_R_LightTrace.value.i)
+extern cGVar GVar_R_SpotlightAdjust;
+#define g_SpotlightAdjust (GVar_R_SpotlightAdjust.value.i)
+extern cGVar GVar_R_LightAtten;
+#define g_LightAtten (GVar_R_LightAtten.value.f)
+extern cGVar GVar_R_LightGamma;
+#define g_LightGamma (GVar_R_LightGamma.value.f)
+extern cGVar GVar_R_SpotlightMult;
+#define g_SpotlightMult (GVar_R_SpotlightMult.value.f)
+extern cGVar GVar_R_LightSortI;
+#define g_LightSortI (GVar_R_LightSortI.value.f)
+extern cGVar GVar_R_LightAtten2;
+#define g_LightAtten2 (GVar_R_LightAtten2.value.i)
+extern cGVar GVar_R_SpotlightAng;
+#define g_SpotlightAng (GVar_R_SpotlightAng.value.i)
+extern cGVar GVar_R_SpotlightAtten;
+#define g_SpotlightAtten (GVar_R_SpotlightAtten.value.f)
+extern cGVar GVar_R_LightMult2;
+#define g_LightMult2 (GVar_R_LightMult2.value.f)
+extern cGVar GVar_R_LightTarget;
+#define g_LightTarget (GVar_R_LightTarget.value.i)
+extern cGVar GVar_R_LightDefer;
+#define g_LightDefer (GVar_R_LightDefer.value.i)
+extern cGVar GVar_R_LightSector;
+#define g_LightSector (GVar_R_LightSector.value.i)
+extern cGVar GVar_R_LightSort;
+#define g_LightSort (GVar_R_LightSort.value.i)
+extern cGVar GVar_R_LightMultName;
+#define g_LightMultName (GVar_R_LightMultName.value.s)
 
 typedef int(__stdcall *d3dSetLight_t)(void *dev, uint32_t idx, const D3DLight *l);
 typedef int(__stdcall *d3dLightEnable_t)(void *dev, uint32_t idx, int enable);
@@ -343,7 +364,8 @@ void CLight_Reset(CLight *self, int arg) {
 }
 
 /* R_ShowLights and the material of the debug drawing, a static of CLight_Render */
-#define g_ShowLights GAME_GLOBAL_IN(int, GVar_R_ShowLights, 16)
+extern cGVar GVar_R_ShowLights;
+#define g_ShowLights (GVar_R_ShowLights.value.i)
 extern CMaterial g_LightMat;
 #define g_LightMatGuard (GAME_ARRAY(int, g_LightMatGuard))
 

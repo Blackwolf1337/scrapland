@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/fxelements.h"
 #include "scrap/fxmisc.h"
 #include "scrap/mathlib.h"
@@ -256,9 +257,12 @@ byte cFXElementsMentalControllerDamageFX_Init(cFXElementsMentalControllerDamageF
 	return 1;
 }
 
-#define g_DamageFXMaxDist GAME_GLOBAL_IN(float, GVar_FXElementsMentalControllerDamageFXMaxDist, 16)		/* FXElementsMentalControllerDamageFXMaxDist */
-#define g_DamageFXSound GAME_GLOBAL_IN(const char *, GVar_FXElementsMentalControllerDamageSound, 16)	/* FXElementsMentalControllerDamageSound */
-#define g_DamageFXSoundVol GAME_GLOBAL_IN(float, GVar_FXElementsMentalControllerDamageSoundVol, 16)		/* FXElementsMentalControllerDamageSoundVol */
+extern cGVar GVar_FXElementsMentalControllerDamageFXMaxDist;
+#define g_DamageFXMaxDist (GVar_FXElementsMentalControllerDamageFXMaxDist.value.f)		/* FXElementsMentalControllerDamageFXMaxDist */
+extern cGVar GVar_FXElementsMentalControllerDamageSound;
+#define g_DamageFXSound (GVar_FXElementsMentalControllerDamageSound.value.s)	/* FXElementsMentalControllerDamageSound */
+extern cGVar GVar_FXElementsMentalControllerDamageSoundVol;
+#define g_DamageFXSoundVol (GVar_FXElementsMentalControllerDamageSoundVol.value.f)		/* FXElementsMentalControllerDamageSoundVol */
 #define DAMAGEFX_SMOKE_RAMPS 0x4309f8				/* 3 color ramps of 9 colors */
 #define DAMAGEFX_FLASH_RAMPS 0x430a68
 

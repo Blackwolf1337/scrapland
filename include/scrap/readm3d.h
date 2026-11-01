@@ -10,6 +10,7 @@
 #ifndef SCRAP_READM3D_H
 #define SCRAP_READM3D_H
 
+#include "scrap/gvar.h"
 #include "scrap/game.h"
 #include "scrap/material.h"
 #include "scrap/mathlib.h"
@@ -33,11 +34,16 @@ extern CScene *g_SceneLODParent;
 /* the binary caches of the M3D files: .CM3 of the animations, .SM3 of the models, with the version and the
  * times of the M3D and the model (CM3) or the .INI (SM3) */
 #define M3D_CACHE_VER 0x6515f8
-#define g_CM3CheckTime GAME_GLOBAL_IN(int, GVar_CM3_CheckTime, 16)		/* CM3_CheckTime */
-#define g_CM3UseScenes GAME_GLOBAL_IN(int, GVar_CM3_UseScenes, 16)		/* CM3_UseScenes 0, 1, 2 */
-#define g_SM3CheckTime GAME_GLOBAL_IN(int, GVar_SM3_CheckTime, 16)		/* SM3_CheckTime */
-#define g_SM3UseScenes GAME_GLOBAL_IN(int, GVar_SM3_UseScenes, 16)		/* SM3_UseScenes 0, 1, 2 */
-#define g_CM3DeleteM3D GAME_GLOBAL_IN(int, GVar_CM3_DeleteM3D, 16)		/* CM3_DeleteM3D */
+extern cGVar GVar_CM3_CheckTime;
+#define g_CM3CheckTime (GVar_CM3_CheckTime.value.i)		/* CM3_CheckTime */
+extern cGVar GVar_CM3_UseScenes;
+#define g_CM3UseScenes (GVar_CM3_UseScenes.value.i)		/* CM3_UseScenes 0, 1, 2 */
+extern cGVar GVar_SM3_CheckTime;
+#define g_SM3CheckTime (GVar_SM3_CheckTime.value.i)		/* SM3_CheckTime */
+extern cGVar GVar_SM3_UseScenes;
+#define g_SM3UseScenes (GVar_SM3_UseScenes.value.i)		/* SM3_UseScenes 0, 1, 2 */
+extern cGVar GVar_CM3_DeleteM3D;
+#define g_CM3DeleteM3D (GVar_CM3_DeleteM3D.value.i)		/* CM3_DeleteM3D */
 #define g_M3DOk GAME_GLOBAL_IN(byte, group_432a7c, 0)
 #define g_ShowNodesTree GAME_GLOBAL_IN(int, g_ShowNodesTreeVar, 16)		/* ShowNodesTree */
 /* the [Model] switches of the ini of the model being read */
@@ -63,8 +69,10 @@ extern int g_M3DMatSub[512];		/* [M3D_MAX_MAT] -1 for a material */
 extern CMatList *g_M3DLMat;	/* the materials read, until they go to the scene */
 #define M3D_MAX_MAT_SCENE 0x100
 extern char g_M3DTexturePath[260];	/* MAX_FILEPATH, the dir of the file or [Model] TexturePath */
-#define g_SharedTexturesPath GAME_GLOBAL_IN(const char *, GVar_SharedTexuresPath, 16)	/* gvar SharedTexuresPath, for "$name" maps */
-#define g_OptimizeNodes GAME_GLOBAL_IN(int, GVar_OptimizeNodes, 16)	/* gvar: 1 delete unused nodes, 2 collapse to bip nodes, 4 AniMask */
+extern cGVar GVar_SharedTexuresPath;
+#define g_SharedTexturesPath (GVar_SharedTexuresPath.value.s)	/* gvar SharedTexuresPath, for "$name" maps */
+extern cGVar GVar_OptimizeNodes;
+#define g_OptimizeNodes (GVar_OptimizeNodes.value.i)	/* gvar: 1 delete unused nodes, 2 collapse to bip nodes, 4 AniMask */
 #define g_UseWSM GAME_GLOBAL_IN(int, g_UseWSMVar, 16)		/* gvar UseWSM */
 extern int g_UseTextures;		/* video UsarTexturas: without, maps of b8 1 become colors */
 

@@ -5,6 +5,7 @@
 #ifndef SCRAP_MISC_H
 #define SCRAP_MISC_H
 
+#include "scrap/gvar.h"
 #include "scrap/game.h"
 
 /* a log file, opened on the first line */
@@ -27,7 +28,8 @@ enum {
 
 extern uint32_t g_LogFileMask;
 extern uint32_t g_LogConMask;
-#define g_LogLevel GAME_GLOBAL_IN(int, GVar_EngineDebugLevel, 16)	/* 10: the console mask goes back to 0x91 */
+extern cGVar GVar_EngineDebugLevel;
+#define g_LogLevel (GVar_EngineDebugLevel.value.i)	/* 10: the console mask goes back to 0x91 */
 #define LOG_LEVEL_RESET 10
 #define LOG_CON_DEFAULT 0x91
 /* the log of the engine ("FILE OPEN: ...") */

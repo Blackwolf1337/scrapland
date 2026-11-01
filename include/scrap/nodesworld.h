@@ -10,6 +10,7 @@
 #ifndef SCRAP_NODESWORLD_H
 #define SCRAP_NODESWORLD_H
 
+#include "scrap/gvar.h"
 #include "scrap/dlist.h"
 
 typedef struct CNodesWorld CNodesWorld;
@@ -295,11 +296,15 @@ SD_SIZE(CNodesWorld, 0x3f0);
 #define CNODESWORLD_VFTABLE GAME_VFTABLE(CNodesWorld_vftable)
 
 /* the globals of the module */
-#define g_NWDebugSegs GAME_GLOBAL_IN(int, GVar_ShowTestCanGoAI, 16)		/* the path tests keep their segments in the list they get */
+extern cGVar GVar_ShowTestCanGoAI;
+#define g_NWDebugSegs (GVar_ShowTestCanGoAI.value.i)		/* the path tests keep their segments in the list they get */
 extern float g_NWNodeRadius;	/* 751 outdoors, 131 indoors */
-#define g_NWF60 GAME_GLOBAL_IN(float, GVar_RADIUS_OBJECTIVE_IN_ROUTE, 16)
-#define g_NWAnalyzeOn GAME_GLOBAL_IN(int, GVar_ShowAI, 16)
-#define g_NWDrawMode GAME_GLOBAL_IN(int, GVar_ShowNodesAI, 16)		/* what the debug view of the graph draws */
+extern cGVar GVar_RADIUS_OBJECTIVE_IN_ROUTE;
+#define g_NWF60 (GVar_RADIUS_OBJECTIVE_IN_ROUTE.value.f)
+extern cGVar GVar_ShowAI;
+#define g_NWAnalyzeOn (GVar_ShowAI.value.i)
+extern cGVar GVar_ShowNodesAI;
+#define g_NWDrawMode (GVar_ShowNodesAI.value.i)		/* what the debug view of the graph draws */
 
 /* the base class (another source) */
 CNodesWorld *CNodesWorldSup_ctor(CNodesWorld *self);

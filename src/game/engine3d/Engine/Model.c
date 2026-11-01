@@ -5,6 +5,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
 #include "scrap/scene.h"
@@ -27,8 +28,10 @@
 #define MORPH_SPEED_MAX 0.08f
 #define STENCIL_DIST 4000.0f
 
-#define g_AnimPause GAME_GLOBAL_IN(int, GVar_R_SkipAnimInterp, 16)	/* the animations stand still */
-#define g_AnimSpeed GAME_GLOBAL_IN(float, GVar_R_AnimInterpMult, 16)	/* the speed of all animations */
+extern cGVar GVar_R_SkipAnimInterp;
+#define g_AnimPause (GVar_R_SkipAnimInterp.value.i)	/* the animations stand still */
+extern cGVar GVar_R_AnimInterpMult;
+#define g_AnimSpeed (GVar_R_AnimInterpMult.value.f)	/* the speed of all animations */
 #define g_FrameTime GAME_GLOBAL(float, g_FrameMs)	/* the time of the frame */
 
 static CAnimSlot *Model_Slot(CModel *self, uint32_t i) {
@@ -856,21 +859,35 @@ const char *CLight_TypeName(const CLight *l) {
 }
 
 /* the render variables of the models */
-#define g_UseMLOD GAME_GLOBAL_IN(int, GVar_R_UseMLOD, 16)		/* R_UseMLOD */
-#define g_DistMLOD1 GAME_GLOBAL_IN(float, GVar_R_DistMLOD1, 16)		/* R_DistMLOD1, the distance of LOD i is i times it */
+extern cGVar GVar_R_UseMLOD;
+#define g_UseMLOD (GVar_R_UseMLOD.value.i)		/* R_UseMLOD */
+extern cGVar GVar_R_DistMLOD1;
+#define g_DistMLOD1 (GVar_R_DistMLOD1.value.f)		/* R_DistMLOD1, the distance of LOD i is i times it */
 #define g_DrawMLODMask GAME_GLOBAL_IN(uint32_t, GVar_R_DrawMLODMask, 16)	/* R_DrawMLODMask: the LODs drawn as the main model */
-#define g_DrawMLODMin GAME_GLOBAL_IN(int, GVar_R_DrawMLODMin, 16)		/* R_DrawMLODMin */
-#define g_DrawMLODPart GAME_GLOBAL_IN(int, GVar_R_DrawMLODPart, 16)		/* R_DrawMLODPart: the particles of the main model with a LOD */
-#define g_ModelFastIsVis GAME_GLOBAL_IN(int, GVar_R_ModelFastIsVis, 16)	/* R_ModelFastIsVis */
-#define g_ModelPortalVis GAME_GLOBAL_IN(int, GVar_R_ModelPortalVis, 16)	/* R_ModelPortalVis */
-#define g_SphereVisMult GAME_GLOBAL_IN(float, GVar_R_SphereVisMult, 16)	/* R_SphereVisMult */
-#define g_DistMStencil GAME_GLOBAL_IN(float, GVar_R_DistMStencil, 16)	/* R_DistMStencil */
-#define g_SkipUpdateVis GAME_GLOBAL_IN(int, GVar_R_SkipUpdateVis, 16)	/* R_SkipUpdateVis */
-#define g_ShowModelSector GAME_GLOBAL_IN(int, GVar_R_ShowModelSector, 16)	/* R_ShowModelSector */
-#define g_LightLimit GAME_GLOBAL_IN(int, GVar_R_LightLimit, 16)		/* R_LightLimit, -1: no lights chosen */
-#define g_ShowModelLights GAME_GLOBAL_IN(int, GVar_R_ShowModelLights, 16)	/* R_ShowModelLights */
-#define g_ShowModelBox GAME_GLOBAL_IN(int, GVar_R_ShowModelBox, 16)		/* R_ShowModelBox */
-#define g_ShowModelPos GAME_GLOBAL_IN(int, GVar_R_ShowModelPos, 16)		/* R_ShowModelPos */
+extern cGVar GVar_R_DrawMLODMin;
+#define g_DrawMLODMin (GVar_R_DrawMLODMin.value.i)		/* R_DrawMLODMin */
+extern cGVar GVar_R_DrawMLODPart;
+#define g_DrawMLODPart (GVar_R_DrawMLODPart.value.i)		/* R_DrawMLODPart: the particles of the main model with a LOD */
+extern cGVar GVar_R_ModelFastIsVis;
+#define g_ModelFastIsVis (GVar_R_ModelFastIsVis.value.i)	/* R_ModelFastIsVis */
+extern cGVar GVar_R_ModelPortalVis;
+#define g_ModelPortalVis (GVar_R_ModelPortalVis.value.i)	/* R_ModelPortalVis */
+extern cGVar GVar_R_SphereVisMult;
+#define g_SphereVisMult (GVar_R_SphereVisMult.value.f)	/* R_SphereVisMult */
+extern cGVar GVar_R_DistMStencil;
+#define g_DistMStencil (GVar_R_DistMStencil.value.f)	/* R_DistMStencil */
+extern cGVar GVar_R_SkipUpdateVis;
+#define g_SkipUpdateVis (GVar_R_SkipUpdateVis.value.i)	/* R_SkipUpdateVis */
+extern cGVar GVar_R_ShowModelSector;
+#define g_ShowModelSector (GVar_R_ShowModelSector.value.i)	/* R_ShowModelSector */
+extern cGVar GVar_R_LightLimit;
+#define g_LightLimit (GVar_R_LightLimit.value.i)		/* R_LightLimit, -1: no lights chosen */
+extern cGVar GVar_R_ShowModelLights;
+#define g_ShowModelLights (GVar_R_ShowModelLights.value.i)	/* R_ShowModelLights */
+extern cGVar GVar_R_ShowModelBox;
+#define g_ShowModelBox (GVar_R_ShowModelBox.value.i)		/* R_ShowModelBox */
+extern cGVar GVar_R_ShowModelPos;
+#define g_ShowModelPos (GVar_R_ShowModelPos.value.i)		/* R_ShowModelPos */
 
 /* the passes that draw only the models seen in the last frame */
 static int Model_PassKeepsVis(int pass) {

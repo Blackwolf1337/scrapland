@@ -9,6 +9,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/aivehicle.h"
 #include "scrap/chartype.h"
 #include "scrap/hashtable.h"
@@ -24,16 +25,26 @@
 #define SHIPGROUP_ONAIEND 0x157e60
 #define SHIPGROUP_MAX_FOUND 10
 
-#define g_MaxMosquitosDist GAME_GLOBAL_IN(float, GVar_MaxMosquitosDist, 16)
-#define g_MaxMosquitos GAME_GLOBAL_IN(int, GVar_MaxMosquitos, 16)
-#define g_MinPercMosquitosAttackingIntruder GAME_GLOBAL_IN(float, GVar_MinPercMosquitosAttackingIntruder, 16)
-#define g_MosquitosTriggeredShipName GAME_GLOBAL_IN(char *, GVar_MosquitosTriggeredShipName, 16)
-#define g_MaxMadHuntersDist GAME_GLOBAL_IN(float, GVar_MaxMadHuntersDist, 16)
-#define g_MaxMadHunters GAME_GLOBAL_IN(int, GVar_MaxMadHunters, 16)
-#define g_MinPercMadHuntersAttackingIntruder GAME_GLOBAL_IN(float, GVar_MinPercMadHuntersAttackingIntruder, 16)
-#define g_MadHuntersTriggeredShipName GAME_GLOBAL_IN(char *, GVar_MadHuntersTriggeredShipName, 16)
-#define g_OnMosquitoDeathMoney GAME_GLOBAL_IN(int, GVar_OnMosquitoDeathMoney, 16)
-#define g_OnMadHunterDeathMoney GAME_GLOBAL_IN(int, GVar_OnMadHunterDeathMoney, 16)
+extern cGVar GVar_MaxMosquitosDist;
+#define g_MaxMosquitosDist (GVar_MaxMosquitosDist.value.f)
+extern cGVar GVar_MaxMosquitos;
+#define g_MaxMosquitos (GVar_MaxMosquitos.value.i)
+extern cGVar GVar_MinPercMosquitosAttackingIntruder;
+#define g_MinPercMosquitosAttackingIntruder (GVar_MinPercMosquitosAttackingIntruder.value.f)
+extern cGVar GVar_MosquitosTriggeredShipName;
+#define g_MosquitosTriggeredShipName (GVar_MosquitosTriggeredShipName.value.s)
+extern cGVar GVar_MaxMadHuntersDist;
+#define g_MaxMadHuntersDist (GVar_MaxMadHuntersDist.value.f)
+extern cGVar GVar_MaxMadHunters;
+#define g_MaxMadHunters (GVar_MaxMadHunters.value.i)
+extern cGVar GVar_MinPercMadHuntersAttackingIntruder;
+#define g_MinPercMadHuntersAttackingIntruder (GVar_MinPercMadHuntersAttackingIntruder.value.f)
+extern cGVar GVar_MadHuntersTriggeredShipName;
+#define g_MadHuntersTriggeredShipName (GVar_MadHuntersTriggeredShipName.value.s)
+extern cGVar GVar_OnMosquitoDeathMoney;
+#define g_OnMosquitoDeathMoney (GVar_OnMosquitoDeathMoney.value.i)
+extern cGVar GVar_OnMadHunterDeathMoney;
+#define g_OnMadHunterDeathMoney (GVar_OnMadHunterDeathMoney.value.i)
 /* the ships the sphere native found around a lair */
 extern int g_ShipGroupFound;
 extern cEntity * g_ShipGroupShips[10];	/* [SHIPGROUP_MAX_FOUND] */

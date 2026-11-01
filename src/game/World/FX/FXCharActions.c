@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/chartype.h"
 #include "scrap/crt.h"
 #include "scrap/doors.h"
@@ -1170,9 +1171,12 @@ void cObjElementFXGearMissile_Run(void *self, cDebris *d) {
 
 /* ---- cObjElementFXGearMissile_Update ---- */
 
-#define g_GearMissileThunder1Sound GAME_GLOBAL_IN(const char *, GVar_GearMissileThunder1Sound, 16)
-#define g_GearMissileThunder2Sound GAME_GLOBAL_IN(const char *, GVar_GearMissileThunder2Sound, 16)
-#define g_GearMissileThunderSoundVol GAME_GLOBAL_IN(float, GVar_GearMissileThunderSoundVol, 16)
+extern cGVar GVar_GearMissileThunder1Sound;
+#define g_GearMissileThunder1Sound (GVar_GearMissileThunder1Sound.value.s)
+extern cGVar GVar_GearMissileThunder2Sound;
+#define g_GearMissileThunder2Sound (GVar_GearMissileThunder2Sound.value.s)
+extern cGVar GVar_GearMissileThunderSoundVol;
+#define g_GearMissileThunderSoundVol (GVar_GearMissileThunderSoundVol.value.f)
 #define FXGEAR_RAMP_BALL 0x4306b0
 #define FXGEAR_RAMPS 0x4306d4		/* 3 color ramps of 9 colors */
 extern uint32_t FXGEAR_PUFF_RAMPS[27];	/* [3 * 9] */

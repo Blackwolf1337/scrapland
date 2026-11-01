@@ -10,6 +10,7 @@
 #ifndef SCRAP_SCRAPWORLD_H
 #define SCRAP_SCRAPWORLD_H
 
+#include "scrap/gvar.h"
 #include "scrap/e3dworld.h"
 
 /* what the world node info functions give for one dummy or node */
@@ -42,14 +43,17 @@ extern char g_WorldInfoPattern[260];	/* 0x104, "" for all */
 extern int g_ShadowsStencil;	/* [sombras_stencil] use */
 
 /* the splash screens and the loading bar */
-#define g_SplashOn GAME_GLOBAL_IN(int, GVar_ShowSplashScreen, 16)
+extern cGVar GVar_ShowSplashScreen;
+#define g_SplashOn (GVar_ShowSplashScreen.value.i)
 #define g_SplashFade GAME_GLOBAL_IN(uint32_t, GVar_SplashScreenFade, 16)	/* ms */
 extern uint32_t g_SplashTime;	/* timeGetTime at the end of the last one */
 extern char g_SplashLast[260];	/* 0x104, the last one shown */
 #define g_LoadingOn GAME_GLOBAL_IN(byte, group_4a8324, 0)
-#define g_LoadingBar GAME_GLOBAL_IN(int, GVar_ShowProgressBar, 16)
+extern cGVar GVar_ShowProgressBar;
+#define g_LoadingBar (GVar_ShowProgressBar.value.i)
 extern int g_LoadingCount;		/* the steps of Loading_Step(-1) */
-#define g_LoadingTotal GAME_GLOBAL_IN(int, GVar_ProgressBar, 16)
+extern cGVar GVar_ProgressBar;
+#define g_LoadingTotal (GVar_ProgressBar.value.i)
 #define g_LoadingDrawOn GAME_GLOBAL(byte, g_CallbacksOn)
 typedef void (*loadingDraw_t)(void);
 #define g_LoadingDraw GAME_GLOBAL_IN(loadingDraw_t, g_EngCallbacks, 12)	/* draws the loading screen without the bar */

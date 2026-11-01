@@ -8,6 +8,7 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/chartype.h"
 #include "scrap/logic.h"
 #include "scrap/objentity.h"
@@ -17,22 +18,38 @@
 #include "scrap/world.h"
 
 #define CSENTINELLOCALLOGIC_VFTABLE GAME_VFTABLE(cSentinelLocalLogic_vftable)
-#define g_SentinelInspectTime GAME_GLOBAL_IN(float, GVar_SentinelInspectTime, 16)
-#define g_SentinelSuspectTime GAME_GLOBAL_IN(float, GVar_SentinelSuspectTime, 16)
-#define g_SentinelBankerNPCDetect GAME_GLOBAL_IN(float, GVar_SentinelBankerNPCDetect, 16)
-#define g_SentinelGotoSpeed GAME_GLOBAL_IN(float, GVar_SentinelGotoSpeed, 16)
-#define g_SentinelAcuseTime GAME_GLOBAL_IN(float, GVar_SentinelAcuseTime, 16)
-#define g_SentinelGotoTime GAME_GLOBAL_IN(float, GVar_SentinelGotoTime, 16)
-#define g_SentinelAcuseSpeed GAME_GLOBAL_IN(float, GVar_SentinelAcuseSpeed, 16)
-#define g_SentinelSearchSpeed GAME_GLOBAL_IN(float, GVar_SentinelSearchSpeed, 16)
-#define g_SentinelSuspectSpeed GAME_GLOBAL_IN(float, GVar_SentinelSuspectSpeed, 16)
-#define g_SentinelGotoRadius GAME_GLOBAL_IN(float, GVar_SentinelGotoRadius, 16)
-#define g_SentinelStdFar GAME_GLOBAL_IN(float, GVar_SentinelStdFar, 16)
-#define g_SentinelStdFovY GAME_GLOBAL_IN(float, GVar_SentinelStdFovY, 16)
-#define g_SentinelInspectSpeed GAME_GLOBAL_IN(float, GVar_SentinelInspectSpeed, 16)
-#define g_SentinelBankerDetect GAME_GLOBAL_IN(float, GVar_SentinelBankerDetect, 16)
-#define g_SentinelRelaxSpeed GAME_GLOBAL_IN(float, GVar_SentinelRelaxSpeed, 16)
-#define g_SentinelStdFovX GAME_GLOBAL_IN(float, GVar_SentinelStdFovX, 16)
+extern cGVar GVar_SentinelInspectTime;
+#define g_SentinelInspectTime (GVar_SentinelInspectTime.value.f)
+extern cGVar GVar_SentinelSuspectTime;
+#define g_SentinelSuspectTime (GVar_SentinelSuspectTime.value.f)
+extern cGVar GVar_SentinelBankerNPCDetect;
+#define g_SentinelBankerNPCDetect (GVar_SentinelBankerNPCDetect.value.f)
+extern cGVar GVar_SentinelGotoSpeed;
+#define g_SentinelGotoSpeed (GVar_SentinelGotoSpeed.value.f)
+extern cGVar GVar_SentinelAcuseTime;
+#define g_SentinelAcuseTime (GVar_SentinelAcuseTime.value.f)
+extern cGVar GVar_SentinelGotoTime;
+#define g_SentinelGotoTime (GVar_SentinelGotoTime.value.f)
+extern cGVar GVar_SentinelAcuseSpeed;
+#define g_SentinelAcuseSpeed (GVar_SentinelAcuseSpeed.value.f)
+extern cGVar GVar_SentinelSearchSpeed;
+#define g_SentinelSearchSpeed (GVar_SentinelSearchSpeed.value.f)
+extern cGVar GVar_SentinelSuspectSpeed;
+#define g_SentinelSuspectSpeed (GVar_SentinelSuspectSpeed.value.f)
+extern cGVar GVar_SentinelGotoRadius;
+#define g_SentinelGotoRadius (GVar_SentinelGotoRadius.value.f)
+extern cGVar GVar_SentinelStdFar;
+#define g_SentinelStdFar (GVar_SentinelStdFar.value.f)
+extern cGVar GVar_SentinelStdFovY;
+#define g_SentinelStdFovY (GVar_SentinelStdFovY.value.f)
+extern cGVar GVar_SentinelInspectSpeed;
+#define g_SentinelInspectSpeed (GVar_SentinelInspectSpeed.value.f)
+extern cGVar GVar_SentinelBankerDetect;
+#define g_SentinelBankerDetect (GVar_SentinelBankerDetect.value.f)
+extern cGVar GVar_SentinelRelaxSpeed;
+#define g_SentinelRelaxSpeed (GVar_SentinelRelaxSpeed.value.f)
+extern cGVar GVar_SentinelStdFovX;
+#define g_SentinelStdFovX (GVar_SentinelStdFovX.value.f)
 
 #define SENT_VT(self) ((self)->base.vftable)
 

@@ -6,12 +6,14 @@
  */
 #include <string.h>
 
+#include "scrap/gvar.h"
 #include "scrap/chartype.h"
 #include "scrap/fxmisc.h"
 #include "scrap/logic.h"
 
 #define CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE GAME_VFTABLE(cSputnikJunkyardLocalLogic_vftable)
-#define g_SputnikJunyardTimeToPissPlayer GAME_GLOBAL_IN(float, GVar_SputnikJunyardTimeToPissPlayer, 16)
+extern cGVar GVar_SputnikJunyardTimeToPissPlayer;
+#define g_SputnikJunyardTimeToPissPlayer (GVar_SputnikJunyardTimeToPissPlayer.value.f)
 extern cEntity *g_SputnikPisser;	/* the Sputnik that laughs at the player */
 extern float g_SputnikTime;		/* since the camera exists */
 /* the angles of the camera entity */

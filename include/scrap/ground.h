@@ -9,6 +9,7 @@
 #ifndef SCRAP_GROUND_H
 #define SCRAP_GROUND_H
 
+#include "scrap/gvar.h"
 #include "scrap/archio.h"
 #include "scrap/mathlib.h"
 #include "scrap/node3d.h"
@@ -136,7 +137,8 @@ void CGround_DrawDebug(CGround *self);
 vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in);
 
 extern float g_CollisionEpsilon;
-#define g_CollisionBalance GAME_GLOBAL_IN(float, GVar_MapCollisionBalance, 16)
+extern cGVar GVar_MapCollisionBalance;
+#define g_CollisionBalance (GVar_MapCollisionBalance.value.f)
 extern int g_QuadTriCacheID;
 extern uint32_t g_CollisionNComp;
 #define g_CollisionTestsMax GAME_GLOBAL_IN(uint32_t, g_BspCacheStats, 8)

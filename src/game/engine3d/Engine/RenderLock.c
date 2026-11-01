@@ -4,6 +4,7 @@
  * more frames. Mode 1 copies the back buffer, mode 2 a system memory texture (noise with RenderLockNoise), mode 3
  * clears the target.
  */
+#include "scrap/gvar.h"
 #include "scrap/crt.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
@@ -15,9 +16,12 @@
 #define D3DBACKBUFFER_TYPE_MONO 0
 
 /* the engine variables: RenderLock (the mode), RenderLockFrames (1..3) and RenderLockNoise */
-#define g_RenderLock GAME_GLOBAL_IN(int, GVar_R_VideoLockMode, 16)
-#define g_RenderLockFrames GAME_GLOBAL_IN(int, GVar_R_VideoLockBuf, 16)
-#define g_RenderLockNoise GAME_GLOBAL_IN(int, GVar_R_VideoLockShow, 16)
+extern cGVar GVar_R_VideoLockMode;
+#define g_RenderLock (GVar_R_VideoLockMode.value.i)
+extern cGVar GVar_R_VideoLockBuf;
+#define g_RenderLockFrames (GVar_R_VideoLockBuf.value.i)
+extern cGVar GVar_R_VideoLockShow;
+#define g_RenderLockNoise (GVar_R_VideoLockShow.value.i)
 extern void * g_TextLock[7];	/* RENDERLOCK_MAX render targets */
 #define g_TextMem GAME_GLOBAL_IN(void *, g_TextLock, 12)		/* system memory */
 #define g_TextBack GAME_GLOBAL_IN(void *, g_TextLock, 16)		/* in the format of the back buffer */
