@@ -1,6 +1,6 @@
 # scrapland
 
-Recreation of Scrapland Remastered 1.6.1 (GOG build 52159, `Bin/Scrap.exe`) as C. The code is functionally equivalent C, not the original source.
+Recreation of Scrapland Remastered 1.6.1 (GOG build 52159, `Bin/Scrap.exe`) as C. The code is functionally equivalent C, not the original source. It is not bit-exact with the original: the game uses the platform libc and libm.
 
 `ScrapC.exe` is a standalone exe built only from the C code in `src/` and real libraries. It needs the game files (packs, `fmod.dll`) in `game/Bin`, but no code of the original exe.
 
@@ -52,16 +52,18 @@ tools/test/wine.sh ScrapC.exe -fullscreen:0   # hidden (gamescope headless) and 
 
 ## Test
 
-The difftest compares the current ScrapC.exe with a frozen reference ScrapC.exe. The reference is built from the tag `hooked-final` and put into `build-ref/`. The script copies it to `game/Bin/ScrapRef.exe`.
+The difftest compares the current ScrapC.exe with a frozen reference ScrapC.exe. The reference is built from the tag `ref-noexact` and put into `build-ref-noexact/`. The old `build-ref/` (tag `hooked-final`) is only for comparing with the state of the hook era. The script copies it to `game/Bin/ScrapRef.exe`.
 
 ```
-DIFFTEST_REF=build-ref/ScrapC.exe tools/test/difftest.sh
+DIFFTEST_REF=build-ref-noexact/ScrapC.exe tools/test/difftest.sh
 ```
+
+Against the old reference these differences are accepted: the text of NaN, "1d5" is no longer read as a number, `%.0f` rounds half to even, trig of huge arguments, and the float hash.
 
 ## Roadmap
 
-- Plain C without rva macros (branch `plain-c`).
-- Drop the bit-exact emulation of the MSVC CRT and math.
+- Plain C without rva macros (partly done). Done: the code has no rva arguments (the `GAME_*` macros take names only), all game functions are plain cdecl, read-only strings are literals, many globals are plain extern declarations, and the script variables are read as `GVar_X.value.i/.f/.s` (types in `include/scrap/gvar.h`). Open: moving data into its owner files, raw offsets to named fields, typed vtables.
+- Drop the bit-exact emulation of the MSVC CRT and math (done 2026-11-02). The game uses the platform libc and libm. `crt_*` in `include/scrap/crt.h` is a thin wrapper over libc (`src/standalone/crt.c`) until the Linux port. The Direct3D device is created with `D3DCREATE_FPU_PRESERVE` so the x87 libm keeps double precision. The INT_MIN-safe integer division of `src/python/intobject.c` stays because gcc wraps `-(-x/y)`.
 - A Vulkan-only renderer replacing Direct3D 8: videos through FFmpeg, shaders ported to GLSL.
 - A Linux port with SDL3.
 

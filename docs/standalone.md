@@ -1,15 +1,14 @@
 # Standalone build
 
-Since 2026-11-01 the hook DLL, the rva tooling and the generators (`tools/standalone`, `tools/rename`, `hookcheck.py`, `testsyms.py`, the `datacheck` target, `src/hooks.inc`, `src/imports.inc`) are gone, see tag `hooked-final`. ScrapC.exe is the only build target. The difftest compares ScrapC.exe with a frozen reference ScrapC.exe built from that tag (`DIFFTEST_REF=build-ref/ScrapC.exe tools/test/difftest.sh`). The text below is the history of the stages and names those tools as they were.
+Since 2026-11-01 the hook DLL, the rva tooling and the generators (`tools/standalone`, `tools/rename`, `hookcheck.py`, `testsyms.py`, the `datacheck` target, `src/hooks.inc`, `src/imports.inc`) are gone, see tag `hooked-final`. ScrapC.exe is the only build target. The difftest compares ScrapC.exe with a frozen reference ScrapC.exe built from that tag (`DIFFTEST_REF=build-ref/ScrapC.exe tools/test/difftest.sh`). Since 2026-11-02 the exactness code is gone too: the own MSVC math (`crtlibm.c` and friends, `src/core/libm.c`), `ucrtbase_ms.dll` and `tools/test/getucrt.sh`, the own printf, scanf and strtod (`crtfmt.c`, `crtscan.c`, `crtnum.c`), `StdioInline.c`, the x87 helpers and the Python wrappers for float and complex hash and float pow. The game uses the platform libc and libm, and the reference is now the tag `ref-noexact` (`DIFFTEST_REF=build-ref-noexact/ScrapC.exe`). The text below is the history of the stages and names those tools as they were.
 
 Goal: a `scrap.exe` built only from the C code of `src/` and real libraries, with no code of the original Scrap.exe.
 It is reached in stages, each one runs the difftest.
 
 Since stage 3c2 ScrapC.exe is a normal exe with no byte of the original, and neither ScrapC.exe nor its build needs
 Scrap.exe. ScrapC.exe needs only the game files: the packs and fmod.dll of the game's DLLs in game/Bin (it imports
-neither Galaxy.dll nor steam_api.dll since the store code was removed). It runs without ucrtbase_ms.dll with the math
-of its own (`src/standalone/crtlibm.c`), with the differences of stage 2b. The DLL only makes the math exact under
-Wine. The original exe was needed only for the optional check (`datacheck`, stage 3c2) and for the original run of the
+neither Galaxy.dll nor steam_api.dll since the store code was removed). In 2026-11-01 it ran without ucrtbase_ms.dll with the math
+of its own (`src/standalone/crtlibm.c`), with the differences of stage 2b (both gone since 2026-11-02). The original exe was needed only for the optional check (`datacheck`, stage 3c2) and for the original run of the
 difftest. Both are gone, see above.
 
 ## Stage 0: wipe check (hook DLL)
@@ -234,7 +233,7 @@ one set of FILE objects, errno, locale and rand state. What differs from a plain
   (one epoch in C, ScrapC.exe no longer gives the original its TLS block), the vector constructor and destructor
   iterators, the STL error helpers
 
-The math is the MSVC math of `src/standalone/crtlibm.c` (below), the same results as the static UCRT of the original
+(Gone since 2026-11-02, the game uses the platform libm.) The math is the MSVC math of `src/standalone/crtlibm.c` (below), the same results as the static UCRT of the original
 but for the last bit of some functions. Every math entry of `src/standalone/crtmath.c` is a jmp through a slot that
 holds the `own_` function of `crtlibm.c`. `Crt_MathInit` loads `ucrtbase_ms.dll` from the folder of the exe only when
 that file is there and puts its exports in the slots, which is exact in the last bits. `tools/test/getucrt.sh` puts
@@ -242,7 +241,7 @@ that file is there and puts its exports in the slots, which is exact in the last
 never used for the math, and Wine's ucrtbase differs in the last bits. There is no Wine DLL override. Only the math
 comes from that DLL.
 
-The number formatting and parsing are C of our own, they no longer come from the DLL. `src/standalone/crtfmt.c` is the
+(Gone since 2026-11-02, the game uses the platform libc.) The number formatting and parsing are C of our own, they no longer come from the DLL. `src/standalone/crtfmt.c` is the
 printf core (`__stdio_common_vsprintf`, `__stdio_common_vfprintf`) and holds the strerror texts.
 `src/standalone/crtscan.c` is the scanf core (`__stdio_common_vsscanf`), `strtod` and `atof`. `src/standalone/crtnum.c`
 (with `crtnum.h`) does the exact conversions between decimal and binary with a small fixed size big integer, integer
@@ -314,7 +313,7 @@ handler also sets the errno of ScrapC.exe (EDOM for `_DOMAIN`, ERANGE for `_SING
 reads after its math calls. On Windows both are the same DLL. The "Math Error" lines of log.html are the same as the
 original's in all three scenarios but for the sqrt lines of sdcall (below).
 
-`src/standalone/crtlibm.c` is the MSVC math as C of our own. It is always built into ScrapC.exe, its entries are named
+(Gone since 2026-11-02.) `src/standalone/crtlibm.c` is the MSVC math as C of our own. It is always built into ScrapC.exe, its entries are named
 `own_<name>`, and it is the default of the slots. When `ucrtbase_ms.dll` is not in the folder of the exe, `crtmath.c`
 logs "crt: the MSVC math of its own (crtlibm.c)" and keeps it. The own math does not match everywhere (see below).
 Without `ucrtbase_ms.dll` ScrapC.exe runs with the own math, and in the standalone mode of the difftest 9 sdtest checks
