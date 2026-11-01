@@ -132,21 +132,47 @@ static float Call_StdFloat(void *fn, const uint32_t *a, int n) {
 	CALL_THIS(stdf, fn, a, n)
 }
 
-/* the __stdcall functions the tests call (the decorated names _name@n of the exe that the scripts name; the label
- * without the decoration resolves through --enable-stdcall-fixup) */
+/* the __stdcall functions of the exe (its decorated names _name@n; the label without the decoration resolves through
+ * --enable-stdcall-fixup): the callbacks of Windows, COM and FMOD, the import thunks, D3DX and the game functions
+ * still stdcall for the reference */
 #define TEST_STDCALL(name) extern char sds_##name[] __asm__("_" #name);
 #define TEST_STDCALLS \
-	TEST_STDCALL(D3DX_AssembleShader) TEST_STDCALL(D3DX_CheckTextureRequirements) \
-	TEST_STDCALL(D3DX_LoadSurfaceFromSurface) TEST_STDCALL(D3DX_MatrixInverse) TEST_STDCALL(D3DX_MatrixMultiply) \
-	TEST_STDCALL(D3DX_MatrixRotationQuaternion) TEST_STDCALL(D3DX_MatrixRotationX) TEST_STDCALL(D3DX_MatrixRotationY) \
-	TEST_STDCALL(D3DX_MatrixRotationYPR) TEST_STDCALL(D3DX_MatrixRotationZ) TEST_STDCALL(D3DX_MatrixTranspose) \
-	TEST_STDCALL(D3DX_QuaternionRotationYPR) TEST_STDCALL(D3DX_Vec3Normalize) TEST_STDCALL(D3DX_Vec3Transform) \
-	TEST_STDCALL(DbgWin_DlgProc) TEST_STDCALL(Engine_SceneDlgProc) TEST_STDCALL(Friends_IsEnemyTarget) \
-	TEST_STDCALL(Music_FileClose) TEST_STDCALL(Music_FileOpen) TEST_STDCALL(Music_FileRead) TEST_STDCALL(Music_FileSeek) \
-	TEST_STDCALL(Music_FileTell) TEST_STDCALL(Music_True16a) TEST_STDCALL(Music_True16b) \
-	TEST_STDCALL(Nto1Node_UnlinkOpt) TEST_STDCALL(TrafficSectors_Add) TEST_STDCALL(TrafficSectors_SetTracks) \
-	TEST_STDCALL(VMEffects_SetupHaze) TEST_STDCALL(cAIVehicleShoot_WeaponName) TEST_STDCALL(cAIVehicle_InternStateName) \
-	TEST_STDCALL(cAIVehicle_IsGroupState) TEST_STDCALL(cAIVehicle_StateName)
+	TEST_STDCALL(App_ExceptionFilter) TEST_STDCALL(App_WinMain) TEST_STDCALL(App_WndProc) TEST_STDCALL(Bsp_DlgProc) \
+	TEST_STDCALL(Buffer_AddRef) TEST_STDCALL(Buffer_GetBufferPointer) TEST_STDCALL(Buffer_GetBufferSize) \
+	TEST_STDCALL(Buffer_QueryInterface) TEST_STDCALL(Buffer_Release) TEST_STDCALL(cAIVehicle_InternStateName) \
+	TEST_STDCALL(cAIVehicle_IsGroupState) TEST_STDCALL(cAIVehicleShoot_WeaponName) TEST_STDCALL(cAIVehicle_StateName) \
+	TEST_STDCALL(crt_eh_vector_ctor) TEST_STDCALL(crt_eh_vector_dtor) TEST_STDCALL(D3DApp_SelectDeviceProc) \
+	TEST_STDCALL(D3DApp_WndProc) TEST_STDCALL(D3DX_AssembleShader) TEST_STDCALL(D3DX_CheckTextureRequirements) \
+	TEST_STDCALL(D3DX_CreateTextureFromFileInMemoryEx) TEST_STDCALL(D3DX_LoadSurfaceFromSurface) \
+	TEST_STDCALL(D3DX_MatrixInverse) TEST_STDCALL(D3DX_MatrixMultiply) TEST_STDCALL(D3DX_MatrixRotationQuaternion) \
+	TEST_STDCALL(D3DX_MatrixRotationX) TEST_STDCALL(D3DX_MatrixRotationY) TEST_STDCALL(D3DX_MatrixRotationYPR) \
+	TEST_STDCALL(D3DX_MatrixRotationZ) TEST_STDCALL(D3DX_MatrixTranspose) TEST_STDCALL(D3DX_QuaternionRotationYPR) \
+	TEST_STDCALL(D3DX_Vec3Normalize) TEST_STDCALL(D3DX_Vec3Transform) TEST_STDCALL(DbgWin_DlgProc) \
+	TEST_STDCALL(Engine_SceneDlgProc) TEST_STDCALL(Friends_IsEnemyTarget) TEST_STDCALL(FSOUND_Close) \
+	TEST_STDCALL(FSOUND_GetChannelsPlaying) TEST_STDCALL(FSOUND_GetCPUUsage) TEST_STDCALL(FSOUND_GetCurrentSample) \
+	TEST_STDCALL(FSOUND_GetDriverCaps) TEST_STDCALL(FSOUND_GetDriverName) TEST_STDCALL(FSOUND_GetError) \
+	TEST_STDCALL(FSOUND_GetFrequency) TEST_STDCALL(FSOUND_GetLoopMode) TEST_STDCALL(FSOUND_GetMaxChannels) \
+	TEST_STDCALL(FSOUND_GetMemoryStats) TEST_STDCALL(FSOUND_GetMixer) TEST_STDCALL(FSOUND_GetNumDrivers) \
+	TEST_STDCALL(FSOUND_GetNumHWChannels) TEST_STDCALL(FSOUND_GetNumSubChannels) TEST_STDCALL(FSOUND_GetOutput) \
+	TEST_STDCALL(FSOUND_GetPan) TEST_STDCALL(FSOUND_GetPriority) TEST_STDCALL(FSOUND_GetReserved) \
+	TEST_STDCALL(FSOUND_GetSFXMasterVolume) TEST_STDCALL(FSOUND_GetVersion) TEST_STDCALL(FSOUND_GetVolume) \
+	TEST_STDCALL(FSOUND_Init) TEST_STDCALL(FSOUND_IsPlaying) TEST_STDCALL(FSOUND_PlaySoundEx) \
+	TEST_STDCALL(FSOUND_Sample_Free) TEST_STDCALL(FSOUND_Sample_GetDefaults) TEST_STDCALL(FSOUND_Sample_GetMode) \
+	TEST_STDCALL(FSOUND_Sample_GetName) TEST_STDCALL(FSOUND_Sample_Load) TEST_STDCALL(FSOUND_SetDriver) \
+	TEST_STDCALL(FSOUND_SetFrequency) TEST_STDCALL(FSOUND_SetLoopMode) TEST_STDCALL(FSOUND_SetOutput) \
+	TEST_STDCALL(FSOUND_SetPan) TEST_STDCALL(FSOUND_SetPaused) TEST_STDCALL(FSOUND_SetReserved) \
+	TEST_STDCALL(FSOUND_SetVolume) TEST_STDCALL(FSOUND_StopSound) TEST_STDCALL(FSOUND_Stream_Close) \
+	TEST_STDCALL(FSOUND_Stream_GetLengthMs) TEST_STDCALL(FSOUND_Stream_GetOpenState) \
+	TEST_STDCALL(FSOUND_Stream_GetSample) TEST_STDCALL(FSOUND_Stream_GetTime) TEST_STDCALL(FSOUND_Stream_Open) \
+	TEST_STDCALL(FSOUND_Stream_PlayEx) TEST_STDCALL(FSOUND_Stream_SetBufferSize) TEST_STDCALL(Music_FileClose) \
+	TEST_STDCALL(Music_FileOpen) TEST_STDCALL(Music_FileRead) TEST_STDCALL(Music_FileSeek) TEST_STDCALL(Music_FileTell) \
+	TEST_STDCALL(Music_True16a) TEST_STDCALL(Music_True16b) TEST_STDCALL(Nto1Node_UnlinkOpt) \
+	TEST_STDCALL(TrafficSectors_Add) TEST_STDCALL(TrafficSectors_SetTracks) TEST_STDCALL(VMEffects_SetupHaze) \
+	TEST_STDCALL(Wsock_bind) TEST_STDCALL(Wsock_closesocket) TEST_STDCALL(Wsock_gethostbyaddr) \
+	TEST_STDCALL(Wsock_gethostbyname) TEST_STDCALL(Wsock_htonl) TEST_STDCALL(Wsock_htons) \
+	TEST_STDCALL(Wsock_ioctlsocket) TEST_STDCALL(Wsock_ntohs) TEST_STDCALL(Wsock_recvfrom) TEST_STDCALL(Wsock_select) \
+	TEST_STDCALL(Wsock_sendto) TEST_STDCALL(Wsock_setsockopt) TEST_STDCALL(Wsock_socket) TEST_STDCALL(Wsock_WSACleanup) \
+	TEST_STDCALL(Wsock_WSAStartup)
 TEST_STDCALLS
 #undef TEST_STDCALL
 #define TEST_STDCALL(name) sds_##name,

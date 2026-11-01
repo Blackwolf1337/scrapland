@@ -70,7 +70,7 @@ struct d3dxBuffer_s {
 static const GUID iid_IUnknown = { 0x00000000, 0x0000, 0x0000, { 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46 } };
 static const GUID iid_ID3DXBuffer = { 0x932e6a7e, 0xc68e, 0x45dd, { 0xa7, 0xbf, 0x53, 0xd1, 0x9c, 0x86, 0xdb, 0x1f } };
 
-static int __stdcall Buffer_QueryInterface(d3dxBuffer_t *self, const GUID *iid, void **out) {
+int __stdcall Buffer_QueryInterface(d3dxBuffer_t *self, const GUID *iid, void **out) {
 	*out = NULL;
 	if (memcmp(iid, &iid_IUnknown, sizeof(GUID)) && memcmp(iid, &iid_ID3DXBuffer, sizeof(GUID))) {
 		return (int)0x80004002;
@@ -80,11 +80,11 @@ static int __stdcall Buffer_QueryInterface(d3dxBuffer_t *self, const GUID *iid, 
 	return 0;
 }
 
-static ULONG __stdcall Buffer_AddRef(d3dxBuffer_t *self) {
+ULONG __stdcall Buffer_AddRef(d3dxBuffer_t *self) {
 	return ++self->refs;
 }
 
-static ULONG __stdcall Buffer_Release(d3dxBuffer_t *self) {
+ULONG __stdcall Buffer_Release(d3dxBuffer_t *self) {
 	ULONG n = --self->refs;
 	if (!n) {
 		Asm_Free(self->data);
@@ -93,11 +93,11 @@ static ULONG __stdcall Buffer_Release(d3dxBuffer_t *self) {
 	return n;
 }
 
-static void *__stdcall Buffer_GetBufferPointer(d3dxBuffer_t *self) {
+void *__stdcall Buffer_GetBufferPointer(d3dxBuffer_t *self) {
 	return self->data;
 }
 
-static uint32_t __stdcall Buffer_GetBufferSize(d3dxBuffer_t *self) {
+uint32_t __stdcall Buffer_GetBufferSize(d3dxBuffer_t *self) {
 	return self->size;
 }
 
