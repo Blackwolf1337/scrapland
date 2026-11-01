@@ -40,9 +40,6 @@
 #define GAME_GLOBAL_IN(type, owner, off, rva) (*(typeof(type) *)((char *)SD_REF_(sd_##owner, "_" #owner) + (off)))
 #define GAME_ARRAY_IN(type, owner, off, rva) ((typeof(type) *)((char *)SD_REF_(sd_##owner, "_" #owner) + (off)))
 #define GAME_PTR(owner, off, rva) ((void *)((char *)SD_REF_(sd_##owner, "_" #owner) + (off)))
-/* the same for the generated tables that know only the rva (src/game/Global/StaticInit.inc), from
- * src/game/Global/GlobalsAt.h */
-#define GAME_PTR_AT(rva) SD_DATA_##rva
 
 /* a function of the exe (void *): in ScrapC.exe the C function name the hook at rva jumps to (src/hooks.inc,
  * tools/standalone/rvacheck.py checks that name and rva agree; a stdcall or fastcall name gets its decoration from
@@ -66,7 +63,6 @@
 		extern char name[]; \
 		(char *)name; \
 	})
-#define GAME_STR_AT(rva) SD_STR_##rva
 
 /* the data formats of dinput8.lib that the game passes to SetDataFormat (const void *): in ScrapC.exe c_dfDIKeyboard
  * and c_dfDIMouse of mingw's libdinput8, which hold the same objects as the ones the exe linked (docs/standalone.md,
