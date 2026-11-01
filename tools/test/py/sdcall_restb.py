@@ -154,10 +154,6 @@ rsbfree(rsbv)
 # the capture without a surface or a file, the video player on
 # missing files, the GDI line on the window
 check('Debug_Line', lambda: SDTest.Call('Debug_Line', 'viiiiii', 1, 2, 30, 40, 0x123456, 1))
-check('Avi_Frame', lambda: (SDTest.Peek('g_AviFrames', 'i'), SDTest.Call('Avi_Frame', 'bsi', 'sdrsb.avi', 5)[0]))
-check('Avi_Load', lambda: SDTest.Call('Avi_Load', 'bs', 'sdrsb.avi')[0])
-check('Avi_Save', lambda: SDTest.Call('Avi_Save', 'bs', 'sdrsb.avi')[0])
-check('Avi_Write close', lambda: SDTest.Call('Avi_Write', 'viiiii', 0, 0, 0, 0, 0))
 check('Surface_SaveShot NULL', lambda: SDTest.Call('Surface_SaveShot', 'bi', 0)[0])
 check('Surface_ShotCopy NULL', lambda: SDTest.Call('Surface_ShotCopy', 'bi', 0)[0])
 check('Video_PadPressed', lambda: SDTest.Call('Video_PadPressed', 'b')[0])

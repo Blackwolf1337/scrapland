@@ -284,14 +284,6 @@ int __thiscall CD3DApp_Reset(CD3DApplication *self);			/* rva 0x2754b0 */
 int Timer_GetFreq(int64_t *out);				/* rva 0x276cb0 */
 int Timer_GetQPFreq(int64_t *out);				/* rva 0x276d00 */
 /* Video_PlayFile: video.h */
-/* AVI capture of DVF_Process (ScreenCapture.c): Save and Load close the file (Save with a log line), Frame is 0 while
- * frame is past the frames written */
-byte Avi_Save(const char *name);
-byte Avi_Frame(const char *name, int frame);
-byte Avi_Load(const char *name);
-/* a frame of lx * ly RGB bytes into the AVI file name (made on the first frame, the compressor chosen in a
- * dialog); without buf nothing, without name the file closed */
-void Avi_Write(const char *name, int lx, int ly, const void *buf, int bufsize);
 void ShadowsStencil_Set(byte on);				/* rva 0x267460 */
 CPsaImage *__thiscall CPsaImage_ctor(CPsaImage *self, const char *name, int flags);	/* rva 0x22d120 */
 void __fastcall CPsaImage_dtor(CPsaImage *self);			/* rva 0x22d160 */

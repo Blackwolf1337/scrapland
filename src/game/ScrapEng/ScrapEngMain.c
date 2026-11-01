@@ -858,6 +858,7 @@ byte Engine_DebugKeys(void) {
 	return 1;
 }
 
+/* Scrap.ProcessDVF: 1 starts the tiled shot; the AVI recorder of 2, 3 and 4 is gone (2 and 4 still clear the name) */
 void DVF_Process(const char *name, int arg) {
 	if (!name || !*name) {
 		name = "";
@@ -867,17 +868,7 @@ void DVF_Process(const char *name, int arg) {
 		g_TileOn = 1;
 		return;
 	}
-	if (arg == 2) {
-		Avi_Save(g_DVFName);
-		g_DVFName[0] = 0;
-		return;
-	}
-	if (arg == 3) {
-		Avi_Frame(g_DVFName, 0);
-		return;
-	}
-	if (arg == 4) {
-		Avi_Load(g_DVFName);
+	if (arg == 2 || arg == 4) {
 		g_DVFName[0] = 0;
 	}
 }

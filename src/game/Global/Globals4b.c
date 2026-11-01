@@ -20,11 +20,6 @@
 #include "scrap/texture.h"
 
 #undef g_AppPausedCount
-#undef g_AviBih
-#undef g_AviCompressed
-#undef g_AviFile
-#undef g_AviFrames
-#undef g_AviStream
 #undef g_Bsp
 #undef g_BspEyePrev
 #undef g_BspLMaps
@@ -219,11 +214,6 @@ cGVar GVar_MovieFramerate SD_BSS(0x4b2940);
 cGVar GVar_MovieJpegQuality SD_BSS(0x4b2958);
 cGVar GVar_MovieUseMemory SD_BSS(0x4b2970);
 cGVar GVar_MovieCacheSize SD_BSS(0x4b2988);
-int g_AviFrames SD_BSS(0x4b29a0);
-void *g_AviFile SD_BSS(0x4b29a4);
-void *g_AviStream SD_BSS(0x4b29a8);
-void *g_AviCompressed SD_BSS(0x4b29ac);
-AviBih g_AviBih SD_BSS(0x4b29b0);
 char g_ShotPath[260] SD_BSS(0x4b29d8);
 cGVar GVar_PlayVideoFX SD_BSS(0x4b2adc);
 int g_VideoPadHeld SD_BSS(0x4b2af4);

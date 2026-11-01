@@ -1,7 +1,7 @@
 /*
  * The screen capture of the engine3d, original source Engine/CaptPant.cpp: a locked surface into the next free
- * ShotNNNN.pcx, or while the DVF name (g_DVFName) is set as a frame of an AVI file through the Video for Windows
- * functions of the exe's imports (the format chosen in the AVISaveOptions dialog).
+ * ShotNNNN.pcx. The original also wrote the frames into an AVI file (Video for Windows) while the DVF name was set;
+ * that recorder is gone.
  */
 #include <string.h>
 
@@ -14,66 +14,6 @@
 #include "scrap/misc.h"
 #include "scrap/win32.h"
 
-/* avifil32 and msvfw32 through the import table */
-typedef uint32_t(__stdcall *vfwVersion_t)(void);
-typedef void(__stdcall *aviFileInit_t)(void);
-typedef uint32_t(__stdcall *aviRelease_t)(void *obj);
-typedef int(__stdcall *aviFileOpen_t)(void **file, const char *name, uint32_t mode, void *handler);
-typedef int(__stdcall *aviFileCreateStream_t)(void *file, void **stream, void *info);
-typedef int(__stdcall *aviSaveOptions_t)(void *hwnd, uint32_t flags, int n, void **streams, void **opts);
-typedef int(__stdcall *aviSaveOptionsFree_t)(int n, void **opts);
-typedef int(__stdcall *aviMakeCompressedStream_t)(void **out, void *src, void *opts, void *handler);
-typedef int(__stdcall *aviStreamSetFormat_t)(void *stream, int pos, void *fmt, int size);
-typedef int(__stdcall *aviStreamWrite_t)(void *stream, int start, int n, const void *buf, int size, uint32_t flags,
-	int *written, int *bytes);
-typedef int(__stdcall *setrect_t)(exe_rect *r, int left, int top, int right, int bottom);
-#define exe_VideoForWindowsVersion GAME_IMPORT(vfwVersion_t, VideoForWindowsVersion, 0, 0x3a132c)
-#define exe_AVIFileInit GAME_IMPORT(aviFileInit_t, AVIFileInit, 0, 0x3a1030)
-#define exe_AVIFileExit GAME_IMPORT(aviFileInit_t, AVIFileExit, 0, 0x3a102c)
-#define exe_AVIFileRelease GAME_IMPORT(aviRelease_t, AVIFileRelease, 4, 0x3a1028)
-#define exe_AVIFileOpenA GAME_IMPORT(aviFileOpen_t, AVIFileOpenA, 16, 0x3a1040)
-#define exe_AVIFileCreateStreamA GAME_IMPORT(aviFileCreateStream_t, AVIFileCreateStreamA, 12, 0x3a1020)
-#define exe_AVIStreamRelease GAME_IMPORT(aviRelease_t, AVIStreamRelease, 4, 0x3a101c)
-#define exe_AVIStreamSetFormat GAME_IMPORT(aviStreamSetFormat_t, AVIStreamSetFormat, 16, 0x3a1044)
-#define exe_AVIStreamWrite GAME_IMPORT(aviStreamWrite_t, AVIStreamWrite, 32, 0x3a1024)
-#define exe_AVIMakeCompressedStream GAME_IMPORT(aviMakeCompressedStream_t, AVIMakeCompressedStream, 16, 0x3a1034)
-#define exe_AVISaveOptions GAME_IMPORT(aviSaveOptions_t, AVISaveOptions, 20, 0x3a1038)
-#define exe_AVISaveOptionsFree GAME_IMPORT(aviSaveOptionsFree_t, AVISaveOptionsFree, 8, 0x3a103c)
-#define exe_SetRect GAME_IMPORT(setrect_t, SetRect, 20, 0x3a138c)
-
-#define OF_WRITE_CREATE 0x1001
-#define STREAMTYPE_VIDEO 0x73646976	/* "vids" */
-#define AVIIF_KEYFRAME 0x10
-
-/* AVISTREAMINFOA */
-typedef struct AviStreamInfo {
-	uint32_t fccType;
-	uint32_t fccHandler;
-	uint32_t dwFlags;
-	uint32_t dwCaps;
-	uint16_t wPriority;
-	uint16_t wLanguage;
-	uint32_t dwScale;
-	uint32_t dwRate;
-	uint32_t dwStart;
-	uint32_t dwLength;
-	uint32_t dwInitialFrames;
-	uint32_t dwSuggestedBufferSize;
-	uint32_t dwQuality;
-	uint32_t dwSampleSize;
-	exe_rect rcFrame;
-	uint32_t dwEditCount;
-	uint32_t dwFormatChangeCount;
-	char szName[64];
-} AviStreamInfo;
-SD_SIZE(AviStreamInfo, 0x8c);
-
-#define g_AviFrames GAME_GLOBAL(int, g_AviFrames, 0x4b29a0)		/* the frames written, -1 without a file */
-#define g_AviFile GAME_GLOBAL(void *, g_AviFile, 0x4b29a4)
-#define g_AviStream GAME_GLOBAL(void *, g_AviStream, 0x4b29a8)
-#define g_AviCompressed GAME_GLOBAL(void *, g_AviCompressed, 0x4b29ac)
-#define g_AviBih GAME_GLOBAL(AviBih, g_AviBih, 0x4b29b0)
-#define g_AviRate GAME_GLOBAL_IN(uint32_t, GVar_MovieFramerate, 16, 0x4b2950)		/* the frames per second */
 #define g_ShotPath (GAME_ARRAY(char, g_ShotPath, 0x4b29d8))	/* MAX_FILEPATH */
 #define g_ShotNum GAME_GLOBAL(int, g_ShotNum, 0x432948)
 
@@ -93,103 +33,6 @@ typedef int(__stdcall *cpUnlockRect_t)(void *surf);
 typedef int(__stdcall *cpGetDevice_t)(void *surf, void **dev);
 typedef int(__stdcall *cpCreateImageSurface_t)(void *dev, uint32_t w, uint32_t h, int fmt, void **surf);
 typedef int(__stdcall *cpCopyRects_t)(void *dev, void *src, const int *rects, uint32_t n, void *dst, const void *pts);
-
-byte Avi_Load(const char *name) {
-	if (g_AviFrames >= 0) {
-		Avi_Write(name, 0, 0, NULL, 0);
-	}
-	Avi_Write(NULL, 0, 0, NULL, 0);
-	return 1;
-}
-
-byte Avi_Frame(const char *name, int frame) {
-	if (g_AviFrames < frame) {
-		return 0;
-	}
-	Avi_Write(name, 0, 0, NULL, 0);
-	return 1;
-}
-
-byte Avi_Save(const char *name) {
-	if (g_AviFrames >= 0) {
-		Avi_Write(name, 0, 0, NULL, 0);
-	}
-	Avi_Write(NULL, 0, 0, NULL, 0);
-	E3D_LogPrint(g_FileLog, "AVI closed.");
-	return 1;
-}
-
-void Avi_Write(const char *name, int lx, int ly, const void *buf, int bufsize) {
-	if (!name) {
-		if (!g_AviFile) {
-			return;
-		}
-		if (g_AviStream) {
-			exe_AVIStreamRelease(g_AviStream);
-			g_AviStream = NULL;
-		}
-		if (g_AviCompressed) {
-			exe_AVIStreamRelease(g_AviCompressed);
-			g_AviCompressed = NULL;
-		}
-		if (g_AviFile) {
-			exe_AVIFileRelease(g_AviFile);
-			g_AviFile = NULL;
-		}
-		exe_AVIFileExit();
-		return;
-	}
-	if (!buf) {
-		return;
-	}
-	if (!g_AviFile) {
-		AviStreamInfo info;
-		byte optsMem[0x2c];
-		void *opts;
-
-		E3D_LogPrint(g_FileLog, "Creating AVI: %s", name);
-		CHECK((lx % 4) == 0);
-		CHECK((ly % 4) == 0);
-		AviBih *bih = &g_AviBih;
-		memset(bih, 0, sizeof(*bih));
-		bih->biSize = sizeof(*bih);
-		bih->biWidth = lx;
-		bih->biHeight = ly;
-		bih->biPlanesBits = 0x180001;
-		bih->biSizeImage = (uint32_t)((lx * 24 + 0x1f) / 32 * ly * 4);
-		CHECK((exe_VideoForWindowsVersion() >> 16) >= 0x010a);
-		exe_AVIFileInit();
-		CHECK(exe_AVIFileOpenA(&g_AviFile, name, OF_WRITE_CREATE, NULL) == 0);
-		memset(&info, 0, sizeof(info));
-		info.dwRate = g_AviRate;
-		info.dwSuggestedBufferSize = bih->biSizeImage;
-		exe_SetRect(&info.rcFrame, 0, 0, bih->biWidth, bih->biHeight);
-		info.fccType = STREAMTYPE_VIDEO;
-		info.fccHandler = 0;
-		info.dwScale = 1;
-		CHECK(exe_AVIFileCreateStreamA(g_AviFile, &g_AviStream, &info) == 0);
-		opts = optsMem;
-		memset(optsMem, 0, sizeof(optsMem));
-		if (!exe_AVISaveOptions(NULL, 0, 1, &g_AviStream, &opts)) {
-			/* cancelled: the file closed, the capture off */
-			exe_AVISaveOptionsFree(1, &opts);
-			Avi_Load(name);
-			g_DVFName[0] = 0;
-			return;
-		}
-		CHECK(exe_AVIMakeCompressedStream(&g_AviCompressed, g_AviStream, optsMem, NULL) == 0);
-		CHECK(exe_AVISaveOptionsFree(1, &opts) == 0);
-		CHECK(exe_AVIStreamSetFormat(g_AviCompressed, 0, bih, (int)(bih->biSize + bih->biClrUsed * 4)) == 0);
-		g_AviFrames = 0;
-		if (!g_AviFile) {
-			return;
-		}
-	}
-	CHECK(bufsize == lx * ly * 3);
-	CHECK(g_AviBih.biSizeImage == (uint32_t)bufsize);
-	exe_AVIStreamWrite(g_AviCompressed, g_AviFrames, 1, buf, (int)g_AviBih.biSizeImage, AVIIF_KEYFRAME, NULL, NULL);
-	g_AviFrames++;
-}
 
 /* the doubling of the gamma2x setting, 0 stays 0 */
 static byte Shot_Double(byte c) {
@@ -239,7 +82,6 @@ byte Surface_SaveShot(void *surf) {
 		return 0;
 	}
 	Shot_NextName();
-	byte avi = g_DVFName[0] != 0;
 	D3D_METHOD(surf, cpGetDesc_t, D3DSURF_GETDESC)(surf, desc);
 	if (D3D_METHOD(surf, cpLockRect_t, D3DSURF_LOCKRECT)(surf, &lr, NULL, D3DLOCK_READONLY)) {
 		return 0;
@@ -272,8 +114,7 @@ byte Surface_SaveShot(void *surf) {
 	byte *row = operator_new_array((uint32_t)(rowBytes + 4));
 	const Pal16Shift *sh = &g_Pal16Shift;
 	for (int y = 0; y < h; y++) {
-		int sy = avi ? h - 1 - y : y;
-		memcpy(row, lr.pBits + lr.Pitch * sy, (uint32_t)rowBytes);
+		memcpy(row, lr.pBits + lr.Pitch * y, (uint32_t)rowBytes);
 		byte *p = rgb + y * w * 3;
 		const byte *s = row;
 		for (int x = 0; x < w; x++) {
@@ -286,24 +127,15 @@ byte Surface_SaveShot(void *surf) {
 				p[1] = Shot_Double(p[1]);
 				p[2] = Shot_Double(p[2]);
 			}
-			if (avi) {
-				byte t = p[2];
-				p[2] = p[0];
-				p[0] = t;
-			}
 			s += bpp;
 			p += 3;
 		}
 	}
 	D3D_METHOD(surf, cpUnlockRect_t, D3DSURF_UNLOCKRECT)(surf);
-	if (!avi) {
-		void *f = crt_fopen(g_ShotPath, "w+b");
-		if (f) {
-			Pcx_Write24(f, rgb, w, h);
-			crt_fclose(f);
-		}
-	} else {
-		Avi_Write(g_DVFName, w, h, rgb, h * w * 3);
+	void *f = crt_fopen(g_ShotPath, "w+b");
+	if (f) {
+		Pcx_Write24(f, rgb, w, h);
+		crt_fclose(f);
 	}
 	if (row) {
 		operator_delete_sized(row, 1);
