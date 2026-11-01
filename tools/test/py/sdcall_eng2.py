@@ -72,8 +72,9 @@ for m in ((0, 0x7e0, 0x1f), (0x7c00, 0x3e0, 0x1f), (0xf00, 0xf0, 0xf), (0xff0000
 	for c in en2cols:
 		check('Pal16_FromRGB' + fmt(m + c), lambda c=c: apply(SDTest.Call, (sym('Pal16_FromRGB'), 'iiii') + c)[0])
 	for v in (0, 0xffff, 0x1234, 0xf81f, 0x7bef):
+		# the bytes one by one: a color as one int can look like an address to SDTest.Orig
 		check('Pal16_ToRGB' + fmt((m, v)), lambda v=v: (SDTest.Call('Pal16_ToRGB', 'viiii', en2b, en2b + 1, en2b + 2, v),
-			en2i(en2b) & 0xffffff))
+			en2i(en2b) & 0xff, en2i(en2b) >> 8 & 0xff, en2i(en2b) >> 16 & 0xff))
 # the masks of 565 stay for the 16 bit palettes
 for a in ((0, 255, 12, 200, 99), (10, 20, 0, 0, 0), (0, 255, 37, 91, 13), (5, 5, 1, 2, 3), (7, 6, 1, 2, 3),
 		(100, 200, 255, 0, 128)):
