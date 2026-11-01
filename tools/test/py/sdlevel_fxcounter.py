@@ -21,6 +21,14 @@ def fxints(a, n):
 	for i in range(n):
 		r.append(fxi(a + 4 * i))
 	return tuple(r)
+# the same with the words in the range of the exe image and the heap masked: pointers there move with the build
+def fxintsm(a, n):
+	r = []
+	for v in fxints(a, n):
+		if 0x400000 <= v < 0x2000000:
+			v = 'addr'
+		r.append(v)
+	return tuple(r)
 def fxpoke(a, v):
 	SDTest.Poke(a - 0x400000, v)
 # the parameters of a CGameParticles without its padding and pointers
@@ -152,7 +160,7 @@ check('cFXElementsMentalControllerMainFX_ctor', lambda mfx=mfx: (SDTest.Call('cF
 fxsrand(555)
 check('cFXElementsMentalControllerMainFX_Init', lambda mfx=mfx: (SDTest.Call('cFXElementsMentalControllerMainFX_Init', 'tbi', mfx)[0],
 	fxints(mfx + 0x2c, 9), fxi(mfx + 0x3d40) != 0, fxi(mfx + 0x3f10) != 0, fxints(mfx + 0x2ac4, 225),
-	fxints(mfx + 0x3550, 450), fxints(mfx + 0x3f14, 63), fxints(mfx + 0x4180, 60),
+	fxints(mfx + 0x3550, 450), fxints(mfx + 0x3f14, 63), fxintsm(mfx + 0x4180, 60),
 	SDTest.Call('CGameTrail_GetMaxTrails', 'tii', mfx + 0x3c58)[0], SDTest.Call('CGameTrail_GetMaxTrails', 'tii', mfx + 0x3d80 - 4)[0],
 	SDTest.Call('CGameTrail_GetMaxTrails', 'tii', mfx + 0x417c)[0]))
 for ph in (1, 2, 3, 4, 5):
