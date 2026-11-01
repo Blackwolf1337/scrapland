@@ -35,21 +35,12 @@ typedef uint8_t byte;
  * the section name of SD_BSS ends the directive with the flags of gas ("bw") and comments out the ones GCC writes
  * after it.
  */
-#ifdef SD_STANDALONE
-#ifdef SD_DATACHECK
-#define SD_AT(rva) SD_AT_(rva)
-#define SD_AT_(rva) __attribute__((section(".sd." #rva), used, aligned(4)))
-#define SD_BSS(rva) SD_BSS_(rva)
-#define SD_BSS_(rva) __attribute__((section(".sd." #rva ",\"bw\"\n#"), used, aligned(4)))
-#else
 #define SD_AT(rva) __attribute__((used))
 #define SD_BSS(rva) __attribute__((used))
-#endif
 /* the address of a C symbol as the array sd_<name>, whatever its type (the pointers of the generated data);
  * SD_SYM_AS with the assembler name of a stdcall or fastcall function */
 #define SD_SYM(name) extern char sd_##name[] __asm__("_" #name)
 #define SD_SYM_AS(name, label) extern char sd_##name[] __asm__(label)
-#endif
 
 void Com_Printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 

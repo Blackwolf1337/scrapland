@@ -1,7 +1,7 @@
 #!/bin/bash
 # Makes game/ and prefix/ for the tests in a git worktree from the ones of the main checkout, so several worktrees can
 # run tools/test/difftest.sh at the same time. The data that is only read (the .packed files, Video, tmp, ...) is
-# linked; what the game writes or the tests change (Bin with dinput8.dll and scrapdecomp.ini, Scrap.cfg,
+# linked; what the game writes or the tests change (Bin with scrapdecomp.ini, Scrap.cfg,
 # commonappdata, the logs and outputs in game/) is a copy, and so is the Wine prefix. Nothing of the main checkout is
 # changed.
 #

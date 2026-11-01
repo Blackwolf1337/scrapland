@@ -191,21 +191,9 @@ void crt_vdecl_exp2(void);
  * are tested against is at +0x20 of the TLS block of the exe, its index g_TlsIndex */
 void crt_Init_thread_header(int *guard);
 void crt_Init_thread_footer(int *guard);
-#ifdef SD_STANDALONE
 /* ScrapC.exe: the epoch of src/standalone/crtinit.c, a static is made when its guard is above it */
 extern int crt_init_epoch;
 #define crt_InitEpoch() crt_init_epoch
-#else
-#define g_TlsIndex GAME_GLOBAL(uint32_t, g_TlsIndex, 0x4e8dec)
-/* that epoch: a static is made when its guard is above it */
-static inline int crt_InitEpochAt(uint32_t index) {
-	uint8_t **tls;
-
-	__asm__("movl %%fs:0x2c, %0" : "=r"(tls));
-	return *(int *)(tls[index] + 0x20);
-}
-#define crt_InitEpoch() crt_InitEpochAt(g_TlsIndex)
-#endif
 /* __security_cookie of the exe (the C of ScrapC.exe has no stack cookies, nothing reads it since stage 3c2) */
 #define crt_security_cookie GAME_GLOBAL(uint32_t, crt_security_cookie, 0x43cfdc)
 

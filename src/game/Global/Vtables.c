@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 /* only the addresses are needed here, as in src/core/hook.c */
 void CAStar2D_Delete(void);
@@ -7969,4 +7968,3 @@ void (*const CPortal_vftable[7])(void) SD_AT(0x3e46c0) = {
 	CPortal_Read,	/* 0x18 0x2ba410 */
 };
 
-#endif

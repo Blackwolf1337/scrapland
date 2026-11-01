@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 #include "scrap/scoreritems.h"
 #include "scrap/scrap.h"
@@ -130,4 +129,3 @@ cGVar GVar_OnAcceptSound SD_BSS(0x45ffb8);
 cGVar GVar_XboxNoPadMsgPBig SD_BSS(0x45ffd0);
 cGVar GVar_NoiseTime SD_BSS(0x45ffe8);
 
-#endif

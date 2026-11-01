@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 
 #undef g_FxRandScale
@@ -244,4 +243,3 @@ const float data_3afe98[19] SD_AT(0x3afe98) = {
 	4.1835938f, 0, 5.0249023f, 950.0f,
 };
 
-#endif

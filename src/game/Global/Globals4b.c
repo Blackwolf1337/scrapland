@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 #include "scrap/archio.h"
 #include "scrap/bsp.h"
@@ -267,4 +266,3 @@ cGVar GVar_MapRenderMap SD_BSS(0x4b2bfc);
 vec3_t g_BspEyePrev SD_BSS(0x4b2c14);
 BspLight g_BspLights[512] SD_BSS(0x4b2c20);
 
-#endif

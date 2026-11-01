@@ -288,11 +288,7 @@ typedef int(__stdcall *getsavefilename_t)(void *ofn);
  * dinput8.dll is the hook DLL, which an import of the exe would load.
  */
 typedef int32_t(__stdcall *dinput8create_t)(void *hinst, uint32_t version, const void *iid, void **out, void *outer);
-#ifdef SD_STANDALONE
 extern dinput8create_t sd_DirectInput8Create;
 #define exe_DirectInput8Create sd_DirectInput8Create
-#else
-#define exe_DirectInput8Create GAME_DATA(dinput8create_t, 0x3a1064)
-#endif
 
 #endif

@@ -11,11 +11,7 @@
 #include "scrap/game.h"
 #include "scrap/mathlib.h"
 
-#ifdef SD_STANDALONE
 #define LIBM_FN(label, rva) ((void *)label)
-#else
-#define LIBM_FN(label, rva) Game_Ptr(rva)
-#endif
 
 #define LIBM_SSE2_ACOS LIBM_FN(crt_libm_sse2_acos_precise, 0x329f50)
 #define LIBM_SSE2_COS LIBM_FN(crt_libm_sse2_cos_precise, 0x346fe0)

@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 char str_PyDoc_SWeap_SetSWeap[] SD_AT(0x430040) =
 	"SetSWeap(numammo,svar,svalue) : Pone un valor cadena de las municiones";
@@ -22,4 +21,3 @@ char str_431bf0[128] SD_AT(0x431bf0) = "m3d.ini";
 char str_432608[] SD_AT(0x432608) = "Unknown error";
 char str_432a88[16] SD_AT(0x432a88) = "luces.rad";
 
-#endif

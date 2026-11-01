@@ -35,25 +35,7 @@ void PyPool_Free(void *p);
 		Py_InitModule(#name, GAME_ARRAY(PyMethodDef, name##_methods, rva)); \
 	}
 
-#ifdef SD_STANDALONE
 /* the engine's flag in its import.c (src/python/import.c) */
 extern int g_PyPackImport;
-#else
-/* type objects of the exe, for PyList_Check, PyString_Check, ... */
-#define PyList_Type GAME_DATA(PyTypeObject, 0x432ff0)
-#define PyString_Type GAME_DATA(PyTypeObject, 0x432b90)
-#define PyInt_Type GAME_DATA(PyTypeObject, 0x433128)
-#define PyFloat_Type GAME_DATA(PyTypeObject, 0x433288)
-#define PyCode_Type GAME_DATA(PyTypeObject, 0x437150)
-
-#undef Py_None
-#define Py_None (&GAME_DATA(PyObject, 0x435f3c))	/* _Py_NoneStruct */
-
-#undef Py_VerboseFlag
-#define Py_VerboseFlag GAME_DATA(int, 0x4e7af8)
-#define PyImport_Inittab GAME_DATA(struct _inittab *, 0x4334f0)
-/* 0 while Pack_PreloadLibrary imports through the normal path (a flag the engine added to import.c) */
-#define g_PyPackImport GAME_DATA(int, 0x4e79cc)
-#endif
 
 #endif

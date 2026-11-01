@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 #include "scrap/dxutil.h"
 
@@ -823,4 +822,3 @@ const uint32_t data_3f8f20[148] SD_AT(0x3f8f20) = {
 	0xe436eb8e, 0x11ce524f, 0x2000539f, 0x70a70baf,
 };
 
-#endif

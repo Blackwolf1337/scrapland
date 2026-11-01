@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 const char str_3b0010[] SD_AT(0x3b0010) = "wle->IsType(TYEN_WITH_LIFE)";
 const char str_3b002c[] SD_AT(0x3b002c) = "Str";
@@ -2543,4 +2542,3 @@ const char str_3bffdc[] SD_AT(0x3bffdc) = "EditCamera";
 const char str_3bffe8[] SD_AT(0x3bffe8) = "DM_Door_EditShip_00";
 const char str_3bfffc[] SD_AT(0x3bfffc) = "..\\..\\Logic\\MaintenanceLogic.cpp";
 
-#endif

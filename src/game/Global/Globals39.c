@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 #include "scrap/material.h"
 #include "scrap/mathlib.h"
@@ -45,4 +44,3 @@ void *g_StencilVB2 SD_BSS(0x3902b8);
 void *g_StencilVB3 SD_BSS(0x3902bc);
 byte g_TriFacing[65536] SD_BSS(0x3902c0);
 
-#endif

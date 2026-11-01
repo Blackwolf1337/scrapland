@@ -1,17 +1,17 @@
 /*
  * The builtin Python module SDTest for the differential tests (tools/test), on with [general] testmod=1 in
- * scrapdecomp.ini, also when the hooks are off. It calls functions of the exe by RVA, so a test script gets the
- * C version with the hooks on and the original with them off.
+ * scrapdecomp.ini. The difftest runs the same scripts on the current ScrapC.exe and on a reference build
+ * (DIFFTEST_REF) and compares the outputs.
  *
- * The functions and data of the exe go by name (stage 3c0, docs/standalone.md): SDTest.Sym(name) is the rva of a name of
- * src/core/testsyms.inc (tools/test/testsyms.py writes it from the test scripts), and Call, Peek, Poke and ConvU take
- * such a name in place of the rva. In ScrapC.exe the rva of a name is the address of its C function or object minus
- * the load address (stage 3c2). SDTest.Base() is the load address of the exe (Scrap.exe or ScrapC.exe), so
- * SDTest.Base() + rva is the address the pointers of the game hold.
- * SDTest.Orig(v) is v with an address (or rva) of a C object or function of ScrapC.exe turned into the original's,
- * for the outputs (tools/test/py/sdlib.py prints every int through it); in the hook DLL v.
+ * The functions and data go by name: SDTest.Sym(name) is the rva of a name of src/core/testsyms.inc (the address of
+ * its C function or object minus the load address), and Call, Peek, Poke and ConvU take such a name in place of the
+ * rva. SDTest.Base() is the load address of the exe, so SDTest.Base() + rva is the address the pointers of the game
+ * hold. A renamed C function or object needs its new name in testsyms.inc, testaddrs.inc or testfuncs.inc.
+ * SDTest.Orig(v) is v with an address (or rva) of a C object or function turned into the one of the original
+ * Scrap.exe, for the outputs (tools/test/py/sdlib.py prints every int through it), so they do not depend on where
+ * the linker put things.
  * SDTest.PeekSpan(name, off, n) and PokeSpan(name, off, value, n): n bytes after a name in the original's layout
- * (several neighbouring globals at once, separate C objects in ScrapC.exe).
+ * (several neighbouring globals of the original at once, separate C objects here).
  *
  * SDTest.Call(rva, sig, args...): sig is the return type and then one character per argument.
  *   return: v nothing, i int, b byte (al), s char * (None for NULL), f float (st0)
@@ -36,9 +36,6 @@
  * SDTest.HeapOk() is -1 when every heap of the process passes HeapValidate, else the index of the first bad one (to
  * find the test call that breaks a heap).
  */
-/* the rvas of the tests: Game_Ptr adds the load address (in ScrapC.exe to the C address minus it, TestMod_SymRva) */
-#define SD_GAME_RVA
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
@@ -46,6 +43,13 @@
 
 #include "scrap/crt.h"
 #include "scrap/python.h"
+
+/* the load address of the exe (src/core/game.c): the rvas of the tests are C addresses minus it (TestMod_SymRva) */
+extern uintptr_t game_base;
+
+static inline void *Game_Ptr(uint32_t rva) {
+	return (void *)(game_base + rva);
+}
 
 #define MAX_ARGS 16
 #define MAX_THIS_ARGS 11
@@ -131,12 +135,9 @@ static PyObject *SDTest_Result(char kind, uint32_t r) {
 }
 
 /*
- * The table of the names, sorted by name (strcmp order). In the hook DLL an entry holds the rva of the original, so the
- * run with hooks=0 reaches the original and the hooked run the C through the hook at that rva. In ScrapC.exe it holds
- * the address of the C function or object (plus the offset of a view inside the object), taken from its assembler
- * label like GAME_FUNC of game.h does, so no prototype is needed (stage 3c2).
+ * The table of the names, sorted by name (strcmp order). An entry holds the address of the C function or object (plus
+ * the offset of a view inside the object), taken from its assembler label, so no prototype is needed.
  */
-#ifdef SD_STANDALONE
 typedef struct {
 	const char *name;
 	const char *addr;
@@ -172,7 +173,7 @@ static uint32_t TestMod_SymRva(const testsym_t *s) {
 
 /*
  * Every C object with the rva and size of the original (src/core/testaddrs.inc, sorted by rva) and every C function
- * of src/hooks.inc with the rva of the first original it backs: the way from an address of ScrapC.exe to the
+ * of src/core/testfuncs.inc with the rva of the first original it backs: the way from an address of ScrapC.exe to the
  * original's (SDTest.Orig) and from an rva of the original to the C object there (SDTest.PeekSpan, PokeSpan).
  */
 typedef struct {
@@ -184,9 +185,9 @@ typedef struct {
 #define SD_TEST_ADDR(name, rva, size) extern char sda_##name[] __asm__("_" #name);
 #include "testaddrs.inc"
 #undef SD_TEST_ADDR
-#define SD_HOOK(name, rva, size) extern char sda_##name[] __asm__("_" #name);
-#include "hooks.inc"
-#undef SD_HOOK
+#define SD_TEST_FADDR(name, rva) extern char sda_##name[] __asm__("_" #name);
+#include "testfuncs.inc"
+#undef SD_TEST_FADDR
 
 static const testaddr_t testObjs[] = {
 #define SD_TEST_ADDR(name, rva, size) { sda_##name, size, rva },
@@ -195,9 +196,9 @@ static const testaddr_t testObjs[] = {
 };
 
 static const testaddr_t testFuncs[] = {
-#define SD_HOOK(name, rva, size) { sda_##name, 0, rva },
-#include "hooks.inc"
-#undef SD_HOOK
+#define SD_TEST_FADDR(name, rva) { sda_##name, 0, rva },
+#include "testfuncs.inc"
+#undef SD_TEST_FADDR
 };
 
 #define TEST_OBJS ((int)(sizeof(testObjs) / sizeof(testObjs[0])))
@@ -251,7 +252,7 @@ static uint32_t TestMod_OrigRva(uintptr_t a) {
  * SDTest.Orig(v): an address of ScrapC.exe as the original has it, for the outputs of the tests: v as an absolute
  * address (0x400000 + the rva of the original) or as an rva (v plus the load address), else v itself. Neither form is
  * the same in ScrapC.exe since stage 3c2, so a test that prints a pointer to a vtable, a string, a table or a function
- * of the game prints this. In the hook DLL v itself.
+ * of the game prints this.
  */
 static uint32_t TestMod_Orig(uint32_t v) {
 	/* the rva form for data only: small numbers hit the starts of the functions (aligned to 16) too often. It goes
@@ -282,38 +283,6 @@ static byte *TestMod_OrigByte(uint32_t rva) {
 	}
 	return NULL;
 }
-#else
-typedef struct {
-	const char *name;
-	uint32_t rva;
-} testsym_t;
-
-static const testsym_t testSyms[] = {
-#define SD_TEST_FUNC(key, name, rva) { key, rva },
-#define SD_TEST_CRT(key, name, rva) { key, rva },
-#define SD_TEST_OBJ(key, name, rva) { key, rva },
-#define SD_TEST_DATA(key, owner, off, rva) { key, rva },
-#include "testsyms.inc"
-#undef SD_TEST_FUNC
-#undef SD_TEST_CRT
-#undef SD_TEST_OBJ
-#undef SD_TEST_DATA
-};
-
-/* the rva of the original */
-static uint32_t TestMod_SymRva(const testsym_t *s) {
-	return s->rva;
-}
-
-/* the addresses are the original's already */
-static uint32_t TestMod_Orig(uint32_t v) {
-	return v;
-}
-
-static byte *TestMod_OrigByte(uint32_t rva) {
-	return (byte *)Game_Ptr(rva);
-}
-#endif
 
 static PyObject *SDTest_Orig(PyObject *self, PyObject *args) {
 	(void)self;
@@ -545,7 +514,7 @@ static int TestMod_Span(PyObject *name, int off, int n, uint32_t *rva) {
 
 	if (!s || n < 1 || n > 4) {
 		int x;
-		/* a TypeError through the parser, the only error path the Python of the exe gives the hook DLL */
+		/* a TypeError through the parser */
 		PyArg_Parse(PyString_FromString(""), "i;SDTest: a name of src/core/testsyms.inc and 1..4 bytes", &x);
 		return 0;
 	}

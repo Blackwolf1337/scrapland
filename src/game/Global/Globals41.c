@@ -7,9 +7,7 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 
 const uint32_t data_41006c SD_AT(0x41006c);
 
-#endif

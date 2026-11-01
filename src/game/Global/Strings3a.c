@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 const char str_Empty[] SD_AT(0x3a3228) = "";
 const char str_3a322c[] SD_AT(0x3a322c) = "Wed Nov 24 14:55:13 2021";
@@ -1444,4 +1443,3 @@ const char str_NativeFunc_SentinelActionPress[] SD_AT(0x3affbc) = "SentinelActio
 const char str_NativeFunc_SentinelActionRelease[] SD_AT(0x3affd0) = "SentinelActionRelease";
 const char str_3affe8[] SD_AT(0x3affe8) = "..\\..\\Entities\\Char\\WalkCharControl.cpp";
 
-#endif

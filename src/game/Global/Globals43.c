@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 #include "scrap/e3dutil.h"
 #include "scrap/global.h"
@@ -1279,4 +1278,3 @@ uint32_t crt_security_cookie SD_AT(0x43cfdc) = 0xbb40e64e;
 uint32_t data_43cfe0[2] SD_AT(0x43cfe0) = { 39029, 0xffffffff };
 const char *g_AseError SD_AT(0x43d030) = (void *)sd_data_4eb680;
 
-#endif

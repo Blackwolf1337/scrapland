@@ -1,7 +1,7 @@
 #!/bin/bash
 # Proves that a change of names or types leaves the code unchanged: builds the base commit (in a worktree) and the
 # working tree with SD_CODECMP, where CHECK has no expression text and __FILE__, __LINE__ and __TIMESTAMP__ are
-# empty, and compares the sections of ScrapC.exe and dinput8.dll. Exit code 0 when they are identical.
+# empty, and compares the sections of ScrapC.exe. Exit code 0 when they are identical.
 # The base must have SD_CODECMP in include/scrap/global.h (since the cleanup/readable branch).
 #
 # usage: tools/codecmp.sh [base ref, default HEAD]
@@ -16,7 +16,7 @@ build() {
 		cmake -S "$1" -B "$2" -DCMAKE_TOOLCHAIN_FILE="$1/cmake/mingw-i686.cmake" -DCMAKE_C_FLAGS="$flags" \
 			-DCMAKE_C_COMPILER_LAUNCHER=ccache > /dev/null || return 1
 	fi
-	cmake --build "$2" -j"$(nproc)" --target ScrapC dinput8 > "$2.log" 2>&1 || { tail -20 "$2.log"; return 1; }
+	cmake --build "$2" -j"$(nproc)" --target ScrapC > "$2.log" 2>&1 || { tail -20 "$2.log"; return 1; }
 }
 
 rev=$(git -C "$root" rev-parse --verify "$base^{commit}") || exit 1
@@ -29,7 +29,7 @@ build "$out/src" "$out/base" || exit 1
 build "$root" "$out/work" || exit 1
 
 rc=0
-for f in ScrapC.exe dinput8.dll; do
+for f in ScrapC.exe; do
 	for sec in .text .rdata .data .bss; do
 		a=$(i686-w64-mingw32-objcopy -O binary --only-section=$sec "$out/base/$f" /dev/stdout | sha1sum)
 		b=$(i686-w64-mingw32-objcopy -O binary --only-section=$sec "$out/work/$f" /dev/stdout | sha1sum)

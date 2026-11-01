@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
@@ -856,4 +855,3 @@ int g_NumPoints SD_BSS(0x4afecc);
 int g_NumPaintZones SD_BSS(0x4afed0);
 CZone *g_Zones[132] SD_BSS(0x4afed8);
 
-#endif

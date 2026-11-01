@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 
 #undef VK_CONSOLE
@@ -234,4 +233,3 @@ const uint32_t data_3bfd20[2] SD_AT(0x3bfd20) = { 0x65766947, 0x3a736559 };
 const uint32_t data_3bfd28 SD_AT(0x3bfd28);
 const uint32_t data_3bfe24 SD_AT(0x3bfe24);
 
-#endif

@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 #include "scrap/app.h"
 #include "scrap/entity.h"
@@ -621,4 +620,3 @@ void *g_ConFont SD_BSS(0x468010);
 void *g_ConEditProc SD_BSS(0x468014);
 char g_ConHistory[64][CONWIN_LINE] SD_BSS(0x468018);
 
-#endif

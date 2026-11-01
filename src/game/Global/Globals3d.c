@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 #include "scrap/dxutil.h"
 #include "scrap/light.h"
@@ -404,4 +403,3 @@ const uint32_t data_3dea60 SD_AT(0x3dea60) = 0x46443344;
 const uint32_t data_3dea70 SD_AT(0x3dea70) = 0x46443344;
 const float data_3def88[2] SD_AT(0x3def88) = { 4.172325e-08f, 1.9f };
 
-#endif

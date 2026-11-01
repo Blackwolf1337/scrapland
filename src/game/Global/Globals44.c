@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 #include "scrap/actions.h"
 #include "scrap/ai.h"
@@ -1382,4 +1381,3 @@ cGVar GVar_iTrafficNumber SD_BSS(0x44dcfc);
 uint32_t Init_GVar_iTrafficNumber_44dd14 SD_BSS(0x44dd14);
 char g_MsgText[62500] SD_BSS(0x44dd18);
 
-#endif

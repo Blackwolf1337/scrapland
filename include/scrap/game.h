@@ -1,9 +1,6 @@
 /*
- * Access to Scrap.exe: build check, addresses and global data.
- *
- * Addresses are RVAs (Ghidra address - 0x400000). The exe has ASLR (DYNAMIC_BASE), so nothing may use absolute
- * addresses: Game_Ptr adds the load address. Functions of the exe are called through the thunks of
- * src/imports.inc, global data through the GAME_DATA macros below.
+ * The game's globals, functions, strings and imports. The macros below still carry the rva of the original as their
+ * last argument (removed in the plain C cleanup); ScrapC.exe ignores it and uses the C symbol.
  */
 #ifndef SCRAP_GAME_H
 #define SCRAP_GAME_H
@@ -15,31 +12,6 @@
 #include "scrap/nto1links.h"
 #include "scrap/timer.h"
 #include "scrap/worldlogic.h"
-
-#define GAME_TIMESTAMP 0x61b304cc	/* PE link time of Scrap.exe 1.6.1 (2021-12-10 07:42:04 UTC) */
-#define GAME_SIZEOFIMAGE 0x55e000
-
-extern uintptr_t game_base;	/* load address of Scrap.exe, 0 until Game_Init found the right build */
-
-#ifdef SD_STANDALONE
-/*
- * ScrapC.exe computes no address from an rva (docs/standalone.md, stage 3c1b): Game_Ptr is there only for the rva
- * lookup of the test module (SD_GAME_RVA, src/core/testmod.c), and GAME_DATA not at all, so any other use does not
- * compile.
- */
-#ifdef SD_GAME_RVA
-static inline void *Game_Ptr(uint32_t rva) {
-	return (void *)(game_base + rva);
-}
-#endif
-#else
-static inline void *Game_Ptr(uint32_t rva) {
-	return (void *)(game_base + rva);
-}
-
-/* lvalue of a global of the exe */
-#define GAME_DATA(type, rva) (*(type *)Game_Ptr(rva))
-#endif
 
 /*
  * The globals and tables of the exe that are C objects in ScrapC.exe (src/game/Global/Globals*.c, written by
@@ -54,7 +26,6 @@ static inline void *Game_Ptr(uint32_t rva) {
  *	GAME_PTR_AT(rva)			the same from the rva alone (src/game/Global/GlobalsAt.h)
  * The names are pasted, never expanded (they are the names of the defines that use them).
  */
-#ifdef SD_STANDALONE
 #define SD_REF_(id, label) \
 	({ \
 		extern char id[] __asm__(label); \
@@ -72,63 +43,37 @@ static inline void *Game_Ptr(uint32_t rva) {
 /* the same for the generated tables that know only the rva (src/game/Global/StaticInit.inc), from
  * src/game/Global/GlobalsAt.h */
 #define GAME_PTR_AT(rva) SD_DATA_##rva
-#else
-#define GAME_GLOBAL(type, name, rva) (*(typeof(type) *)Game_Ptr(rva))
-#define GAME_ARRAY(type, name, rva) ((typeof(type) *)Game_Ptr(rva))
-#define GAME_GLOBAL_IN(type, owner, off, rva) (*(typeof(type) *)Game_Ptr(rva))
-#define GAME_ARRAY_IN(type, owner, off, rva) ((typeof(type) *)Game_Ptr(rva))
-#define GAME_PTR(owner, off, rva) Game_Ptr(rva)
-#define GAME_PTR_AT(rva) Game_Ptr(rva)
-#endif
 
 /* a function of the exe (void *): in ScrapC.exe the C function name the hook at rva jumps to (src/hooks.inc,
  * tools/standalone/rvacheck.py checks that name and rva agree; a stdcall or fastcall name gets its decoration from
  * --enable-stdcall-fixup), in the hook DLL the exe's own at rva */
-#ifdef SD_STANDALONE
 #define GAME_FUNC(name, rva) SD_REF_(sd_fn_##name, "_" #name)
-#else
-#define GAME_FUNC(name, rva) Game_Ptr(rva)
-#endif
 
 /* a vtable of a game class (void *): in ScrapC.exe the C object of src/game/Global/Vtables.c (at the same rva,
  * tools/standalone/vtables.py checks that name and rva agree), in the hook DLL the exe's own */
-#ifdef SD_STANDALONE
 #define GAME_VFTABLE(name, rva) \
 	({ \
 		extern void (*const name[])(void); \
 		(void *)name; \
 	})
-#else
-#define GAME_VFTABLE(name, rva) Game_Ptr(rva)
-#endif
 
 /* a string of the exe (char *): in ScrapC.exe the C object of src/game/Global/Strings*.c (at the same rva,
  * tools/standalone/strings.py checks that name and rva agree), in the hook DLL the exe's own. GAME_STR_AT(rva) is
  * the same for the generated tables that know only the rva (src/game/Global/StaticInit.inc): ScrapC.exe takes the
  * object from src/game/Global/StringsAt.h */
-#ifdef SD_STANDALONE
 #define GAME_STR(name, rva) \
 	({ \
 		extern char name[]; \
 		(char *)name; \
 	})
 #define GAME_STR_AT(rva) SD_STR_##rva
-#else
-#define GAME_STR(name, rva) ((char *)Game_Ptr(rva))
-#define GAME_STR_AT(rva) ((char *)Game_Ptr(rva))
-#endif
 
 /* the data formats of dinput8.lib that the game passes to SetDataFormat (const void *): in ScrapC.exe c_dfDIKeyboard
  * and c_dfDIMouse of mingw's libdinput8, which hold the same objects as the ones the exe linked (docs/standalone.md,
  * stage 3c1b), in the hook DLL the exe's own */
-#ifdef SD_STANDALONE
 extern const byte c_dfDIKeyboard[], c_dfDIMouse[];
 #define GAME_DF_KEYBOARD ((const void *)c_dfDIKeyboard)
 #define GAME_DF_MOUSE ((const void *)c_dfDIMouse)
-#else
-#define GAME_DF_KEYBOARD ((const void *)Game_Ptr(0x3cfbec))
-#define GAME_DF_MOUSE ((const void *)Game_Ptr(0x3cfdf4))
-#endif
 
 /*
  * A function of a DLL the game imports, as a pointer of type (an lvalue that is read only): in ScrapC.exe the cell of
@@ -139,7 +84,6 @@ extern const byte c_dfDIKeyboard[], c_dfDIMouse[];
  *	GAME_IMPORT_CDECL(type, name, rva)	a __cdecl function, the symbol _name
  * The names are pasted, never expanded. The symbol is quoted for the assembler.
  */
-#ifdef SD_STANDALONE
 #define SD_IMP_(type, id, sym) \
 	(*({ \
 		extern typeof(type) const id __asm__("\"__imp_" sym "\""); \
@@ -147,12 +91,6 @@ extern const byte c_dfDIKeyboard[], c_dfDIMouse[];
 	}))
 #define GAME_IMPORT(type, name, argbytes, rva) SD_IMP_(type, sd_imp_##name, "_" #name "@" #argbytes)
 #define GAME_IMPORT_CDECL(type, name, rva) SD_IMP_(type, sd_imp_##name, "_" #name)
-#else
-#define GAME_IMPORT(type, name, argbytes, rva) (*(typeof(type) const *)Game_Ptr(rva))
-#define GAME_IMPORT_CDECL(type, name, rva) (*(typeof(type) const *)Game_Ptr(rva))
-#endif
-
-int Game_Init(void);
 
 /* weapon and ammo descriptors of the world tables (defined in include/scrap/world.h) */
 typedef struct cWeapInfo cWeapInfo;

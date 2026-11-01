@@ -39,10 +39,8 @@
  * GlobalsAt.h (GAME_PTR_AT), in the hook DLL the exe's own */
 #define SI_OBJ(rva) GAME_PTR_AT(rva)
 #define SI_GVAR(rva) ((cGVar *)SI_OBJ(rva))
-#ifdef SD_STANDALONE
 #include "GlobalsAt.h"
 #include "StringsAt.h"
-#endif
 
 #define SI_STR(rva) GAME_STR_AT(rva)
 #define SI_FLOAT(rva) (*(float *)SI_OBJ(rva))

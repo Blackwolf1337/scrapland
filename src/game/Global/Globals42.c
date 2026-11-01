@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 #include "scrap/global.h"
 #include "scrap/python.h"
@@ -2850,4 +2849,3 @@ PyMethodDef SVec_methods[13] SD_AT(0x42fc80) = {
 	},
 };
 
-#endif

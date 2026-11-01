@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 char str_PyDoc_SAct_CreateClass[] SD_AT(0x428fe8) = "CreateClass(classname) : Crea una clase de objeto animado";
 char str_PyDoc_SAct_DelClass[] SD_AT(0x429024) = "DelClass(classname) : Crea una clase de objeto animado";
@@ -522,4 +521,3 @@ char str_PyDoc_SWeap_GetSWeap[72] SD_AT(0x42ffa8) =
 char str_PyDoc_SWeap_SetFWeap[80] SD_AT(0x42fff0) =
 	"GetFWeap(numWeap,svar,fvalue) : Pone un valor numerico de las municiones";
 
-#endif

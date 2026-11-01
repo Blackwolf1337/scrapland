@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 #include "scrap/animation.h"
 #include "scrap/bmp.h"
@@ -255,4 +254,3 @@ cGVar GVar_R_TranspZBias SD_BSS(0x4dfbc0);
 cGVar GVar_R_ShowTranspBox SD_BSS(0x4dfbd8);
 RenderTranspEntry *g_TranspList[1026] SD_BSS(0x4dfbf0);
 
-#endif

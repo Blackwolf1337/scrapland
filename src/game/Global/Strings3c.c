@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 const char str_3c0020[] SD_AT(0x3c0020) = "platform && \"La plataforma no existe\"";
 const char str_3c0048[24] SD_AT(0x3c0048) = "RepositionPoint";
@@ -2549,4 +2548,3 @@ const char str_3cf960[] SD_AT(0x3cf960) =
 const char str_3cf9b0[] SD_AT(0x3cf9b0) = "This test version will expire Nov.30.2004";
 const char str_3cf9dc[36] SD_AT(0x3cf9dc) = "This test version has expired.";
 
-#endif

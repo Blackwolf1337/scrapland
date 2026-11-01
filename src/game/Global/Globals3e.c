@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 
 #undef g_RenderLockRect
@@ -44,4 +43,3 @@ const float data_3e7e90[2] SD_AT(0x3e7e90) = { 0, -1.75f };
 const double data_3e7e98 SD_AT(0x3e7e98) = -0.7071067811865476;
 const float data_3e7ea0[2] SD_AT(0x3e7ea0) = { 0, -1.875f };
 
-#endif

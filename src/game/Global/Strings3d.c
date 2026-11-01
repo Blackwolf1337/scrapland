@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 const char str_3d20cc[] SD_AT(0x3d20cc) = "RICHED32.DLL";
 const char str_3d20dc[] SD_AT(0x3d20dc) = "RETest";
@@ -2494,4 +2493,3 @@ const char str_3dffe4[] SD_AT(0x3dffe4) = "Info";
 const char str_3dffec[] SD_AT(0x3dffec) = "lmap";
 const char str_3dfff4[] SD_AT(0x3dfff4) = "res_x && res_y";
 
-#endif

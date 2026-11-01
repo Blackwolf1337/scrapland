@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 #include "scrap/dxutil.h"
 
@@ -18,4 +17,3 @@ const D3DGuid data_40d7e0[4] SD_AT(0x40d7e0) = {
 	{ .Data1 = 0x89fad6a5, .Data2 = 589, .Data3 = 18863, .Data4 = { 143, 231, 245, 17, 35, 184, 94, 37 } },
 };
 
-#endif

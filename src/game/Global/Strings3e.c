@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 const char str_3e0004[] SD_AT(0x3e0004) = "**** ind shw dsc\n";
 const char str_3e0018[24] SD_AT(0x3e0018) = "nluces < MAX_LUCES";
@@ -1376,4 +1375,3 @@ const char str_3e7e1c[] SD_AT(0x3e7e1c) = "fread( dest, nbytes, 1, pila->arch ) 
 const char str_3e7e48[] SD_AT(0x3e7e48) = "Engine\\descomp_afin.cpp";
 const char str_3e7e60[] SD_AT(0x3e7e60) = "MatrixInvert( matui, matu ) == S_OK";
 
-#endif

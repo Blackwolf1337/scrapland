@@ -7,7 +7,6 @@
  */
 #include "scrap/shared.h"
 
-#ifdef SD_STANDALONE
 
 #include "scrap/archio.h"
 #include "scrap/bmpflt.h"
@@ -219,4 +218,3 @@ uint32_t data_4ee384[93] SD_AT(0x4ee384) = {
 	10,
 };
 
-#endif
