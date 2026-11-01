@@ -81,8 +81,8 @@ extern int g_RTMode;
 extern void *g_RTBackBuffer;
 extern void *g_RTZBuffer;
 /* the viewports (6 words) of before a NewsPanel or Credits target: the current one and the whole one */
-#define g_RTSavedViewport (GAME_ARRAY(uint32_t, g_RTSavedViewport))
-#define g_RTSavedViewportFull (GAME_ARRAY(uint32_t, g_RTSavedViewportFull))
+extern uint32_t g_RTSavedViewport[6];
+extern uint32_t g_RTSavedViewportFull[6];
 /* the pixel texture coordinates: the device needs them on pow2 textures (the Credits, NewsPanel and bloom sizes)
  * and on the other ones (the scene size) */
 #define g_RTLinPow2 GAME_GLOBAL_IN(byte, group_4a8e1c, 1)
@@ -120,7 +120,7 @@ extern void *g_SceneTargetTexture;
 #define g_SceneFxOn (GAME_ARRAY_IN(byte, group_4a8e40, 0))
 extern int g_SceneFxLast;
 /* the full viewport of before the split screen halved it */
-#define g_SceneViewport (GAME_ARRAY(uint32_t, g_SceneViewport))
+extern uint32_t g_SceneViewport[6];
 /* the target of before the DuDv target became the source (texture, surface) */
 extern void *g_SceneDuDvSavedTexture;
 extern void *g_SceneDuDvSavedSurface;
@@ -130,8 +130,8 @@ extern int g_SceneDuDvCheckedMode;
 /* the tables of the effects: on (byte), render */
 typedef byte (*rtFxOn_t)(void);
 typedef void (*rtFxRender_t)(void);
-#define g_RTFxOn (GAME_ARRAY(rtFxOn_t, g_RTFxOn))
-#define g_RTFxRender (GAME_ARRAY(rtFxRender_t, g_RTFxRender))
+extern rtFxOn_t g_RTFxOn[5];
+extern rtFxRender_t g_RTFxRender[5];
 
 /* DuDv: the deformation target, the frame it was drawn in, the bump target, the materials */
 extern void *g_SceneDuDvTarget;

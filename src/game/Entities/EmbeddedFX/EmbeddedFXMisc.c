@@ -2294,7 +2294,7 @@ void cEmbeddedFXBattery_Update(cEmbeddedFXBattery *self, float dt) {
 /* ---- vf03: the Update of the Moto ---- */
 
 /* the color ramps of the flames and the smoke of the engines (9 colors each) */
-#define g_RampBike (GAME_ARRAY(uint32_t, g_RampBike))
+extern uint32_t g_RampBike[36];
 
 /* the 6 flames along the way of an engine: the distance, the add of the size, the alpha (rand % mod - sub) and the
  * color of the main engine and of the two others */

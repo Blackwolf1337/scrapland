@@ -38,7 +38,7 @@ extern int g_CameraNodes;
 extern int g_CamCompositeIdx;
 extern float g_CamCompositeFrame;
 extern float g_CamCompositeFPS;
-#define g_CamCompositeName (GAME_ARRAY(char, g_CamCompositeName))	/* [0x80] */
+extern char g_CamCompositeName[128];	/* [0x80] */
 
 CGameCamera *CGameCamera_ctor(CGameCamera *self);
 void CGameCamera_dtor(CGameCamera *self);

@@ -62,7 +62,7 @@ byte cTargetLock_HasSlot(cTargetLock *self, int weap, int slot);
 #define g_FXInfernoRaySpeedMax GAME_GLOBAL_IN(float, GVar_FXInfernoRaySpeedMax, 16)
 #define g_FXInfernoRayAccMin GAME_GLOBAL_IN(float, GVar_FXInfernoRayAccMin, 16)
 #define g_FXInfernoRayAccMax GAME_GLOBAL_IN(float, GVar_FXInfernoRayAccMax, 16)
-#define g_FXInfernoRamp (GAME_ARRAY(uint32_t, g_FXInfernoRamp))	/* the colour ramp of the explosion particles */
+extern uint32_t g_FXInfernoRamp[10];	/* the colour ramp of the explosion particles */
 
 /* the ATPC shot: the beam from the shooter to the hit, its rings and glow (0x1e8 bytes, constructor rva 0x1f9690) */
 #define FXATPC_SLOTS 4

@@ -849,7 +849,7 @@ void cObjElementFXMaintenanceWork_Update(cObjElementFXMaintenanceWork *self, cDe
 }
 
 #define FXC_RAMP_TELEPORT 0x430340	/* 3 color ramps of 9 colors */
-#define FXC_TELEPORT_RAMPS (GAME_ARRAY(uint32_t, FXC_TELEPORT_RAMPS))	/* [3 * 9] */
+extern uint32_t FXC_TELEPORT_RAMPS[27];	/* [3 * 9] */
 #define FXC_RAMP_TELEPORT_GLOW 0x430388
 
 static inline uint32_t *FXC_Ramp(uint32_t *ramps, int i) {

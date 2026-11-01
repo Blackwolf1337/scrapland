@@ -59,7 +59,7 @@ extern int g_Screen2DH;
 extern double g_Screen2DInvW;
 extern double g_Screen2DInvH;
 #define g_SpriteScaleWidth GAME_GLOBAL_IN(float, GVar_SpriteScaleWidth, 16)
-#define g_Verts2D (GAME_ARRAY(Vert2D, g_Verts2D))	/* MAX_VERT_2D, the polygon of the last draw */
+extern Vert2D g_Verts2D[64];	/* MAX_VERT_2D, the polygon of the last draw */
 
 CGraphic2D *CGraphic2D_ctorTex(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags);
 CGraphic2D *CGraphic2D_ctor(CGraphic2D *self);

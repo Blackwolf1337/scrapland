@@ -108,7 +108,7 @@ SD_SIZE(cVehicleMotors, 0xc8);
 #define VM_Team(e) ((void *)&WLife(e)->arrow)	/* for cArrowIndicator_GetColor */
 
 /* the emit positions of the Calima particles of all motors (8) */
-#define g_HazePos (GAME_ARRAY(vec3_t, g_HazePos))
+extern vec3_t g_HazePos[8];
 
 /* the engine variables */
 #define g_EnginePathFmt GAME_GLOBAL_IN(const char *, GVar_EnginePathFmt, 16)		/* EnginePathFmt */

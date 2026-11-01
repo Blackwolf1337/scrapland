@@ -7,7 +7,7 @@
 #include "scrap/material.h"
 
 extern char g_ThousandsSep;
-#define g_IntBuf (GAME_ARRAY(char, g_IntBuf))	/* the result of String_FromInt(NULL, n) */
+extern char g_IntBuf[20];	/* the result of String_FromInt(NULL, n) */
 
 /* c at pos, the characters from pos up to len (the terminator at len included) one further */
 void String_InsertChar(char *s, char c, int pos, int len) {

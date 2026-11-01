@@ -38,7 +38,7 @@ extern uint32_t g_AmbientD3D;
 /* the viewport: its size, and all of it (x, y, w, h, minZ, maxZ) */
 #define g_ViewportW GAME_GLOBAL_IN(int, g_Viewport, 8)
 #define g_ViewportH GAME_GLOBAL_IN(int, g_Viewport, 12)
-#define g_Viewport (GAME_ARRAY(uint32_t, g_Viewport))
+extern uint32_t g_Viewport[6];
 /* the planes of the view frustum (normal, d; outside where the distance is positive) */
 #define MAX_PLANES_FRUSTUM 6
 #define g_Frustum (GAME_ARRAY(const plane_t, g_Frustum))
@@ -54,11 +54,11 @@ extern uint32_t g_AnisotropyCur;
 extern float g_MipmapBias2;
 #define g_MipmapsOn GAME_GLOBAL_IN(byte, group_4ad6f0, 2)
 /* the address modes of the stages as Render_SetMap last set them */
-#define g_StageMip (GAME_ARRAY(byte, g_StageMip))	/* the b8 (mipmaps) of the map */
-#define g_StageTile (GAME_ARRAY(byte, g_StageTile))	/* the bc of the map: bit 0 wraps u, bit 1 v */
+extern byte g_StageMip[8];	/* the b8 (mipmaps) of the map */
+extern byte g_StageTile[8];	/* the bc of the map: bit 0 wraps u, bit 1 v */
 /* the texture of each stage and the frame it was set in */
-#define g_StageTex (GAME_ARRAY(void *, g_StageTex))	/* [8] */
-#define g_StageTexFrame (GAME_ARRAY(int, g_StageTexFrame))	/* [8] */
+extern void * g_StageTex[8];	/* [8] */
+extern int g_StageTexFrame[8];	/* [8] */
 #define g_TexChanges GAME_GLOBAL_IN(int, g_RenderCounts, 8)
 #define g_VBIBTriLimit GAME_GLOBAL_IN(uint32_t, GVar_R_VBIBTriLimit, 16)	/* R_VBIBTriLimit */
 /* the projection split into g_Tiles x g_Tiles parts (screenshots larger than the screen), one per frame */
@@ -178,18 +178,18 @@ enum {
 #define g_PSOff GAME_GLOBAL_IN(uint32_t, GVar_R_PSMask, 16)
 /* all pixel shaders made from their files (the names end with NULL) */
 #define g_PSNames (GAME_ARRAY(const char *const, g_PSNames))
-#define g_PSHandles (GAME_ARRAY(uint32_t, g_PSHandles))	/* [32], one per slot of g_PSNames */
+extern uint32_t g_PSHandles[32];	/* [32], one per slot of g_PSNames */
 #define g_PShaderCount GAME_GLOBAL_IN(int, GVar_R_PShaderCount, 16)	/* R_PShaderCount, the changes of the frame */
 #define g_CullMode GAME_GLOBAL_IN(int, GVar_R_CullMode, 16)	/* R_CullMode, 1 two-sided */
 /* the world matrix was given to the device */
 extern int g_WorldSet;
 /* the whole viewport (g_Viewport is the one of the current view) */
-#define g_ViewportFull (GAME_ARRAY(uint32_t, g_ViewportFull))
+extern uint32_t g_ViewportFull[6];
 #define g_D3DOn GAME_GLOBAL_IN(byte, group_4ad6f0, 1)
 #define g_MatDefault ((void *)GAME_PTR(CMaterial_MatDefault, 0))
 #define g_MatLine ((void *)GAME_PTR(CMaterial_MatLine, 0))	/* the material of the debug lines */
 #define g_ShowSphereVis GAME_GLOBAL_IN(int, GVar_R_ShowSphereVis, 16)	/* R_ShowSphereVis 0, 1, 2 */
-#define g_VersionStr (GAME_ARRAY(char, g_VersionStr))	/* 0x40 */
+extern char g_VersionStr[64];	/* 0x40 */
 extern const CMaterial *g_MatCurrent;
 /* what CNode3D_Render draws: the object classes (low 24 bits of the mask), the nodes whose flags & g_RenderFlagMask
  * is not 0 when g_RenderFlagNeg */
@@ -199,8 +199,8 @@ extern byte g_RenderFlagNeg;	/* the last one Render_SetMaterial set */
 /* the D3DADAPTER_IDENTIFIER8 of the device, its texts "driver [description]  version" and the ids, and the device
  * of the last log of them */
 extern D3DAdapterId g_Adapter;
-#define g_DriverStr (GAME_ARRAY(char, g_DriverStr))	/* 0x100 */
-#define g_DeviceStr (GAME_ARRAY(char, g_DeviceStr))	/* 0x100 */
+extern char g_DriverStr[256];	/* 0x100 */
+extern char g_DeviceStr[256];	/* 0x100 */
 #define g_DriverName (GAME_ARRAY_IN(cString, GVar_R_LastDevice, 16))
 extern int g_DeviceLogged;
 /* the identity scaled by 1/2048 */
@@ -476,14 +476,14 @@ typedef struct RenderObjEntry {
 } RenderObjEntry;
 SD_SIZE(RenderObjEntry, 0x4c);
 extern CTable g_TabMesh;		/* TabMallaD3D: RenderMeshEntry */
-#define g_MeshList (GAME_ARRAY(RenderMeshEntry *, g_MeshList))
+extern RenderMeshEntry * g_MeshList[1026];
 #define g_UsedMesh GAME_GLOBAL_IN(int, g_MeshList, 4096)
 extern CTable g_TabTransp;		/* RenderTranspEntry */
-#define g_TranspList (GAME_ARRAY(RenderTranspEntry *, g_TranspList))
+extern RenderTranspEntry * g_TranspList[1026];
 #define g_UsedTransp GAME_GLOBAL_IN(int, g_TranspList, 4096)
 extern int g_TranspGroup;		/* counted up for each mesh list, 1 after a flush */
 extern CTable g_TabObj;		/* TabObjBase3D: RenderObjEntry */
-#define g_ObjList (GAME_ARRAY(RenderObjEntry *, g_ObjList))
+extern RenderObjEntry * g_ObjList[1026];
 #define g_UsedObj GAME_GLOBAL_IN(int, g_ObjList, 4096)
 #define g_MeshCache GAME_GLOBAL_IN(int, GVar_R_MeshCache, 16)		/* R_MeshCache, 10 logs the batches */
 #define g_ShowTranspBox GAME_GLOBAL_IN(int, GVar_R_ShowTranspBox, 16)	/* R_ShowTranspBox */

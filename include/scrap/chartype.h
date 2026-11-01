@@ -139,8 +139,8 @@ extern cEntity *g_BertoEnt;
 extern cEntity *g_BettyEnt;
 extern cEntity *g_DtritusEnt;
 /* the gear natives: the name of the shooting gear (also the one the ball does not hurt), the missile, its point */
-#define g_GearTarget (GAME_ARRAY(char, g_GearTarget))		/* [0x80] */
-#define g_GearSwName (GAME_ARRAY(char, g_GearSwName))		/* [0x80] */
+extern char g_GearTarget[128];		/* [0x80] */
+extern char g_GearSwName[128];		/* [0x80] */
 extern cEntity *g_GearSw;
 extern vec3_t g_GearXplodePos;
 /* Logic_Flash: the point, the most characters to flash (-1 all), the count and the result */
@@ -323,7 +323,7 @@ static inline const char *ChType_ClassName(cEntity *e) {
 /* the characters of the running actions (the "MeEnt" CHECKs), the nurse by name and the character it hits */
 extern cEntity *g_MayorEnt;
 extern cEntity *g_PoliceBossEnt;
-#define g_NurseName (GAME_ARRAY(char, g_NurseName))		/* [0x80] */
+extern char g_NurseName[128];		/* [0x80] */
 extern cEntity *g_NurseTarget;
 
 /* engine side */

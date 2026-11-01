@@ -46,11 +46,11 @@ SD_SIZE(cClex, 0x10);
 
 extern cLexFile *g_Lex;
 extern int g_LexCh;	/* the next character, -1 at the end */
-#define g_LexToken (GAME_ARRAY(char, g_LexToken))	/* MAX_LAST_CLEX */
+extern char g_LexToken[1024];	/* MAX_LAST_CLEX */
 extern int g_LexTokenLen;
 extern int g_LexErrors;
 extern int g_LexWarnings;
-#define g_LexDir (GAME_ARRAY(char, g_LexDir))	/* MAX_FILEPATH, where Lex_Open looks second */
+extern char g_LexDir[260];	/* MAX_FILEPATH, where Lex_Open looks second */
 #define g_LexOut GAME_GLOBAL(lexout_t, g_LexOut)
 extern cClex g_Cl;
 

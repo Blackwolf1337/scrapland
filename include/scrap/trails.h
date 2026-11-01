@@ -80,7 +80,7 @@ SD_OFFSET(CTrail, m_pTrails, 0x28);
 SD_OFFSET(CTrail, orientVec, 0x40);
 
 /* the lists of the active trails and the shared buffers (IDirect3DVertexBuffer8, IDirect3DIndexBuffer8) */
-#define g_TrailsMat (GAME_ARRAY(struct CMaterial *, g_TrailsMat))	/* [MAX_TRAILS_TEXTURES] */
+extern struct CMaterial * g_TrailsMat[17];	/* [MAX_TRAILS_TEXTURES] */
 #define g_TrailsOn GAME_GLOBAL_IN(int, GVar_R_Trails, 16)
 extern void *g_TrailsVB;
 extern void *g_TrailsIB;
@@ -89,7 +89,7 @@ extern int g_TrailsPrims;
 extern int g_TrailsIndex;
 #define g_TrailsRender (GAME_ARRAY(CTrail *[MAX_TRAILS_RENDER], g_TrailsRender))
 extern int g_nTrails;
-#define g_nTrailsRender (GAME_ARRAY(int, g_nTrailsRender))	/* [MAX_TRAILS_TEXTURES] */
+extern int g_nTrailsRender[17];	/* [MAX_TRAILS_TEXTURES] */
 
 CTrail *CTrail_ctor(CTrail *self);
 void CTrail_dtor(CTrail *self);

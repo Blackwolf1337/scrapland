@@ -31,7 +31,7 @@ extern int g_AnimCycleDefault;
 #define g_DDSUseTextures GAME_GLOBAL_IN(int, GVar_DDS_UseTextures, 16)
 #define g_TexturePaths (GAME_ARRAY(char[MAX_FILEPATH], g_TexturePaths))
 #define g_TextureExts (GAME_ARRAY(char[MAX_FILEPATH], g_TextureExts))
-#define g_MatStr (GAME_ARRAY(char, g_MatStr))
+extern char g_MatStr[256];
 #define g_LightmapsHigh GAME_GLOBAL(int, g_ShadowsStencil)
 extern float g_AnimFpsDefault;
 #define g_BlendTable (GAME_ARRAY(const uint32_t, g_BlendTable))

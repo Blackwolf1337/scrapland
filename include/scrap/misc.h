@@ -66,7 +66,7 @@ void Window_GetNormalRect(void *hwnd, int32_t *rect);
 intptr_t __stdcall DbgWin_DlgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 
 /* where the relative paths start: the game directory with a "\\" at the end */
-#define g_E3DDir (GAME_ARRAY(char, g_E3DDir))
+extern char g_E3DDir[264];
 
 /* a file of the packs or below the game directory */
 byte File_Exists(const char *name);

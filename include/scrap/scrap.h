@@ -180,7 +180,7 @@ SD_OFFSET(cDebris, life, 0x4c);
 SD_SIZE(cDebris, 0x58);
 #define Debris_Mod(d) ((CGameModel *)(d)->Mod)
 
-#define g_DebrisDrop (GAME_ARRAY(vec3_t, g_DebrisDrop))	/* [4]: position, angles (rad), velocity, angle speed (rad) */
+extern vec3_t g_DebrisDrop[4];	/* [4]: position, angles (rad), velocity, angle speed (rad) */
 #define g_DebrisDefault GAME_GLOBAL_IN(float, GVar_Gravity, 16)
 
 cDebrisSys *cWorld_GetDebrisSys(cWorld *world, const char *name);

@@ -34,12 +34,12 @@
 #define LASER_COLOR 0x800000
 
 /* the color ramps of the alarm and maintenance particles (9 colors) */
-#define g_RampAlarmA (GAME_ARRAY(uint32_t, g_RampAlarmA))
-#define g_RampAlarmB (GAME_ARRAY(uint32_t, g_RampAlarmB))
-#define g_RampAlarmC (GAME_ARRAY(uint32_t, g_RampAlarmC))
-#define g_RampAlarmD (GAME_ARRAY(uint32_t, g_RampAlarmD))
-#define g_RampMaintenance (GAME_ARRAY(uint32_t, g_RampMaintenance))
-#define g_RampMaintenanceEnd (GAME_ARRAY(uint32_t, g_RampMaintenanceEnd))
+extern uint32_t g_RampAlarmA[9];
+extern uint32_t g_RampAlarmB[9];
+extern uint32_t g_RampAlarmC[27];
+extern uint32_t g_RampAlarmD[9];
+extern uint32_t g_RampMaintenance[9];
+extern uint32_t g_RampMaintenanceEnd[9];
 
 /* rand() & 0x7fff as 0..1 (double) */
 static inline double EFX_Rnd(void) {
@@ -1690,8 +1690,8 @@ void cEmbeddedFXMessenger_Update(cEmbeddedFXMessenger *self, float dt) {
 
 #define g_FXMercenaryDrinkSmokeFile GAME_GLOBAL_IN(const char *, GVar_FXMercenaryDrinkSmokeFile, 16)	/* "FXMercenaryDrinkSmokeFile" */
 /* the color ramps of the bubbles and of the smoke, two of 9 colors each */
-#define g_RampMercenaryBubbles (GAME_ARRAY(uint32_t, g_RampMercenaryBubbles))
-#define g_RampMercenarySmoke (GAME_ARRAY(uint32_t, g_RampMercenarySmoke))
+extern uint32_t g_RampMercenaryBubbles[18];
+extern uint32_t g_RampMercenarySmoke[18];
 
 static inline byte EFX_MercSprite(void) {
 	return (crt_rand() & 1) ? 0x09 : 0x48;
@@ -1878,7 +1878,7 @@ void cEmbeddedFXMercenary_Update(cEmbeddedFXMercenary *self, float dt) {
 #define g_FXRustySparksSound GAME_GLOBAL_IN(const char *, GVar_FXRustySparksSound, 16)	/* "FXRustyChispasSound" */
 #define g_FXRustySparksSoundVol GAME_GLOBAL_IN(float, GVar_FXRustySparksSoundVol, 16)	/* "FXRustyChispasSoundVol" */
 /* the color ramps of the sparks of the pigtail (9 colors each) */
-#define g_RampRustySparks (GAME_ARRAY(uint32_t, g_RampRustySparks))
+extern uint32_t g_RampRustySparks[28];
 
 static inline void EFX_RustyStill(CGameParticles *p) {
 	p->initPosMin.x = 0.0f;

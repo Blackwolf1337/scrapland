@@ -14,7 +14,7 @@
 #include "scrap/misc.h"
 #include "scrap/win32.h"
 
-#define g_ShotPath (GAME_ARRAY(char, g_ShotPath))	/* MAX_FILEPATH */
+extern char g_ShotPath[260];	/* MAX_FILEPATH */
 extern int g_ShotNum;
 
 /* IDirect3DSurface8 and IDirect3DDevice8 */

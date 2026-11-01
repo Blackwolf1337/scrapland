@@ -20,11 +20,11 @@
 
 #define g_M3DBinary GAME_GLOBAL_IN(byte, group_4e1fa4, 0)
 #define g_M3DLabels GAME_GLOBAL_IN(byte, group_4e1fa4, 1)	/* text: lines start with the label; binary: labels stored */
-#define g_M3DString (GAME_ARRAY(char, g_M3DString))	/* M3D_STRING bytes, strings without a destination */
-#define g_M3DName (GAME_ARRAY(char, g_M3DName))	/* the file being read, for messages */
-#define g_M3DDir (GAME_ARRAY(char, g_M3DDir))	/* MAX_FILEPATH, its directory */
-#define g_M3DBaseName (GAME_ARRAY(char, g_M3DBaseName))	/* MAX_FILEPATH, its name without the extension */
-#define g_M3DSceneMax (GAME_ARRAY(char, g_M3DSceneMax))	/* MAX_FILEPATH, "Escena:" (the scene of the editor) */
+extern char g_M3DString[1024];	/* M3D_STRING bytes, strings without a destination */
+extern char g_M3DName[260];	/* the file being read, for messages */
+extern char g_M3DDir[260];	/* MAX_FILEPATH, its directory */
+extern char g_M3DBaseName[260];	/* MAX_FILEPATH, its name without the extension */
+extern char g_M3DSceneMax[260];	/* MAX_FILEPATH, "Escena:" (the scene of the editor) */
 extern CIniFile *g_M3DFileINI;	/* the .ini of the file, until the scene takes it */
 #define g_M3DSceneTables GAME_GLOBAL(M3DTable *, g_M3DSceneTables)	/* 6: the animated ambient and background colors */
 /* the scene of the model while an animation of it (lee_M3D_Estatica) or a LOD model of it is read */
@@ -56,13 +56,13 @@ extern float g_M3DPreScaleV;
 /* the materials of the file: each with its material and sub material index of the file, used by a face */
 #define M3D_MAX_MAT 0x200
 extern int g_M3DNumMat;
-#define g_M3DMat (GAME_ARRAY(CMaterial *, g_M3DMat))	/* [M3D_MAX_MAT] */
-#define g_M3DMatUsado (GAME_ARRAY(byte, g_M3DMatUsado))	/* [M3D_MAX_MAT] */
-#define g_M3DMatId (GAME_ARRAY(int, g_M3DMatId))		/* [M3D_MAX_MAT] */
-#define g_M3DMatSub (GAME_ARRAY(int, g_M3DMatSub))		/* [M3D_MAX_MAT] -1 for a material */
+extern CMaterial * g_M3DMat[512];	/* [M3D_MAX_MAT] */
+extern byte g_M3DMatUsado[512];	/* [M3D_MAX_MAT] */
+extern int g_M3DMatId[512];		/* [M3D_MAX_MAT] */
+extern int g_M3DMatSub[512];		/* [M3D_MAX_MAT] -1 for a material */
 extern CMatList *g_M3DLMat;	/* the materials read, until they go to the scene */
 #define M3D_MAX_MAT_SCENE 0x100
-#define g_M3DTexturePath (GAME_ARRAY(char, g_M3DTexturePath))	/* MAX_FILEPATH, the dir of the file or [Model] TexturePath */
+extern char g_M3DTexturePath[260];	/* MAX_FILEPATH, the dir of the file or [Model] TexturePath */
 #define g_SharedTexturesPath GAME_GLOBAL_IN(const char *, GVar_SharedTexuresPath, 16)	/* gvar SharedTexuresPath, for "$name" maps */
 #define g_OptimizeNodes GAME_GLOBAL_IN(int, GVar_OptimizeNodes, 16)	/* gvar: 1 delete unused nodes, 2 collapse to bip nodes, 4 AniMask */
 #define g_UseWSM GAME_GLOBAL_IN(int, g_UseWSMVar, 16)		/* gvar UseWSM */

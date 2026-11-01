@@ -20,7 +20,7 @@
 /* "no limit" for the range of the device light and the start of the nearest search, a float constant of the exe */
 extern const float LIGHT_RANGE_INF;
 
-#define g_Lights (GAME_ARRAY(CLight *, g_Lights))	/* MAX_LIGHTS, the active lights */
+extern CLight * g_Lights[1024];	/* MAX_LIGHTS, the active lights */
 extern int g_nLights;
 extern int g_LightsD3D;	/* with act_D3D */
 extern int g_LightsTotal;

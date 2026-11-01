@@ -18,11 +18,11 @@
 #define g_RenderLock GAME_GLOBAL_IN(int, GVar_R_VideoLockMode, 16)
 #define g_RenderLockFrames GAME_GLOBAL_IN(int, GVar_R_VideoLockBuf, 16)
 #define g_RenderLockNoise GAME_GLOBAL_IN(int, GVar_R_VideoLockShow, 16)
-#define g_TextLock (GAME_ARRAY(void *, g_TextLock))	/* RENDERLOCK_MAX render targets */
+extern void * g_TextLock[7];	/* RENDERLOCK_MAX render targets */
 #define g_TextMem GAME_GLOBAL_IN(void *, g_TextLock, 12)		/* system memory */
 #define g_TextBack GAME_GLOBAL_IN(void *, g_TextLock, 16)		/* in the format of the back buffer */
 #define g_TextLockIdx GAME_GLOBAL_IN(int, g_TextLock, 20)
-#define g_RenderLockRect (GAME_ARRAY(const int32_t, g_RenderLockRect))	/* 0, 0, 4, 4 */
+extern const int32_t g_RenderLockRect[4];	/* 0, 0, 4, 4 */
 
 /* D3DLOCKED_RECT */
 typedef struct LockedRect {

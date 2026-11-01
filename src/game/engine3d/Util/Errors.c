@@ -10,7 +10,7 @@
 #define ERR_FIRST_FREE 50
 #define ERR_CUSTOM -2	/* Err_Printf: no text of its own (g_ErrCustom) */
 
-#define g_ErrTable (GAME_ARRAY(const char *, g_ErrTable))
+extern const char * g_ErrTable[200];
 #define g_ErrUnknown GAME_STR(str_432608)	/* "Unknown error" */
 #define g_ErrCustom (GAME_ARRAY(const char, g_ErrCustom))
 extern int g_ErrLastCode;

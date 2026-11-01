@@ -1158,7 +1158,7 @@ void cObjElementFXVehicleEMI_Update(cObjElementFXVehicleEMI *self, cDebris *debr
 /* ---- Fire ---- */
 
 #define FXV_RAMP_FIRE 0x431530		/* [3] */
-#define FXV_FIRE_RAMPS (GAME_ARRAY(uint32_t, FXV_FIRE_RAMPS))	/* [3 * 9] */
+extern uint32_t FXV_FIRE_RAMPS[27];	/* [3 * 9] */
 #define FXV_RAMP_FIRE2 0x431554		/* [2] */
 #define FXV_RAMP_FIRESMOKE 0x43159c	/* [2] */
 
@@ -1409,7 +1409,7 @@ void cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, cDebris *de
 #define FXV_RAMP_TRAIL 0x4311e8		/* [2] */
 #define FXV_RAMP_DEBRIS 0x431254
 #define FXV_RAMP_FLAME 0x431278		/* [3] */
-#define FXV_FLAME_RAMPS (GAME_ARRAY(uint32_t, FXV_FLAME_RAMPS))	/* [3 * 9] */
+extern uint32_t FXV_FLAME_RAMPS[27];	/* [3 * 9] */
 #define FXV_RAMP_FLAME2 0x43129c	/* [2] */
 #define FXV_RAMP_DSMOKE 0x4312e8	/* [5] */
 #define FXV_DAMAGE_VERTS 12		/* of the ship, then 6 of a motor */
@@ -1935,7 +1935,7 @@ trail:
 #define FXV_RAMP_XSPARK 0x4313e8
 #define FXV_RAMP_XSMOKE 0x43140c
 #define FXV_RAMP_XFIRE 0x431454		/* [3] */
-#define FXV_XFIRE_RAMPS (GAME_ARRAY(uint32_t, FXV_XFIRE_RAMPS))	/* [3 * 9] */
+extern uint32_t FXV_XFIRE_RAMPS[27];	/* [3 * 9] */
 #define FXV_RAMP_XPUFF 0x431478		/* [2] */
 #define FXV_RAMP_XBALL 0x4314c0		/* [3] */
 #define FXV_PI_2 1.5707964f

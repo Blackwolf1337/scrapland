@@ -444,7 +444,7 @@ SD_SIZE(cCTFFriendsData, 0xc);
 #define g_PercEnemiesAttackPlayerWhenWinning GAME_GLOBAL_IN(float, GVar_PercEnemiesAttackPlayerWhenWinning, 16)
 #define g_PlayerCTFTeamIsWinning GAME_GLOBAL_IN(int, GVar_PlayerCTFTeamIsWinning, 16)
 #define g_PercFriendsAttackLeaderWhenWinning GAME_GLOBAL_IN(float, GVar_PercFriendsAttackLeaderWhenWinning, 16)
-#define g_CTFFlagName (GAME_ARRAY(char, g_CTFFlagName))		/* [0x80] the flag the leader goes for */
+extern char g_CTFFlagName[128];		/* [0x80] the flag the leader goes for */
 
 /* the ship e as a "Car" or NULL */
 cEntity *Logic_AsCar(cEntity *e);
@@ -481,7 +481,7 @@ typedef struct DominZone {
 } DominZone;
 
 extern int g_DominNumZones;
-#define g_DominZones (GAME_ARRAY(DominZone, g_DominZones))		/* [MAX_DOMIN_ZONES] */
+extern DominZone g_DominZones[4];		/* [MAX_DOMIN_ZONES] */
 extern vec3_t g_DominBatonPos;
 extern int g_DominBatonState;
 #define g_DominFightingFreezeCadenceShoot GAME_GLOBAL_IN(int, GVar_DominFightingFreezeCadenceShoot, 16)

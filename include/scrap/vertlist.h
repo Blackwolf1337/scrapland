@@ -64,8 +64,8 @@ extern uint32_t g_hVShader_LTex2_XBox;
 extern uint32_t g_hVShader_LTex2N_XBox;
 
 /* the vertex cache: vertex and age of each entry (-1 empty), the next age, hits and misses */
-#define g_VCacheVert (GAME_ARRAY(int, g_VCacheVert))
-#define g_VCacheAge (GAME_ARRAY(int, g_VCacheAge))
+extern int g_VCacheVert[16];
+extern int g_VCacheAge[20];
 #define g_VCacheCount GAME_GLOBAL_IN(int, g_VCacheAge, 64)
 #define g_VCacheHits GAME_GLOBAL_IN(int, g_VCacheAge, 68)
 #define g_VCacheMisses GAME_GLOBAL_IN(int, g_VCacheAge, 72)

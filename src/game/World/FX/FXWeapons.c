@@ -260,7 +260,7 @@ void *cObjElementFXTesla_Delete(void *self, uint32_t flags) {
 #define g_ATPCShootSize GAME_GLOBAL_IN(float, GVar_ATPCShootSize, 16)
 #define FXATPC_RAMP_CORE 0x4317a0	/* [-16..0], by the time */
 #define FXATPC_RAMP_GLOW 0x431758	/* [2] */
-#define FXATPC_GLOW_RAMPS (GAME_ARRAY(uint32_t, FXATPC_GLOW_RAMPS))	/* [2 * 9] */
+extern uint32_t FXATPC_GLOW_RAMPS[18];	/* [2 * 9] */
 #define FXATPC_RAMP_RING 0x43177c
 
 static inline uint32_t FXW_Gray(int a) {
@@ -1883,7 +1883,7 @@ void cObjElementFXTesla_SetEmitter(cObjElementFXTesla *self, cEntity *e) {
 #define g_SwarmExplosionFile GAME_GLOBAL_IN(const char *, GVar_SwarmExplosionFile, 16)
 #define FXSWARM_RAMP_BEE 0x431978
 #define FXSWARM_RAMP_FLASH 0x431a2c		/* [2] */
-#define FXSWARM_FLASH_RAMPS (GAME_ARRAY(uint32_t, FXSWARM_FLASH_RAMPS))	/* [2 * 9] */
+extern uint32_t FXSWARM_FLASH_RAMPS[18];	/* [2 * 9] */
 #define FXSWARM_RAMP_SMOKE 0x4319c0		/* [3] */
 #define FXSWARM_RAMP_SPARK 0x431a50		/* [2] */
 #define FXSWARM_RAMP_HIT 0x431810		/* [2] */

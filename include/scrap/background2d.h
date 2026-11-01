@@ -51,8 +51,8 @@ void CBackground2D_Render(CBackground2D *self);
 extern byte g_BackgroundPending;
 extern int g_BackgroundFrame;		/* uframe3d, the frame of the last draw */
 extern CGraphic2D *g_BackgroundGraphic;
-#define g_BackgroundCurrent (GAME_ARRAY(char, g_BackgroundCurrent))	/* BACKGROUND2D_NAME */
-#define g_BackgroundNew (GAME_ARRAY(char, g_BackgroundNew))	/* BACKGROUND2D_NAME */
+extern char g_BackgroundCurrent[264];	/* BACKGROUND2D_NAME */
+extern char g_BackgroundNew[264];	/* BACKGROUND2D_NAME */
 extern uint32_t g_BackgroundColor;
 extern uint32_t g_BackgroundColorNew;
 

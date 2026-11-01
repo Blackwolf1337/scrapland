@@ -1410,7 +1410,7 @@ void cObjElementFXSceneBeatPickus_Update(cObjElementFXSceneBeatPickus *self, cDe
 #define FXS_RAMP_BILL_SMOKE 0x430d00	/* [2] */
 #define FXS_RAMP_BILL_CAPSULE 0x430d48	/* [2] */
 #define FXS_RAMP_BILL_JETA 0x430d90	/* [2] */
-#define FXS_BILL_JETA_RAMPS (GAME_ARRAY(uint32_t, FXS_BILL_JETA_RAMPS))	/* [2 * 9] */
+extern uint32_t FXS_BILL_JETA_RAMPS[18];	/* [2 * 9] */
 #define FXS_RAMP_BILL_JETB 0x430db4
 #define FXBILL_JETS 3
 /* the jets of the capsule: the particles of its embedded effect (3 from + 0x8) */

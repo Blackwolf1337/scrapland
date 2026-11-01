@@ -14,8 +14,8 @@ extern uint64_t g_PrintfOptions;
 /* _CRT_INTERNAL_PRINTF_LEGACY_VSPRINTF_NULL_TERMINATION */
 #define PRINTF_LEGACY_NULL_TERMINATION 1
 
-#define g_Utf8Buf (GAME_ARRAY(char, g_Utf8Buf))	/* 0x400 bytes, the result of Str_FromUTF8 */
-#define g_VersionBuf (GAME_ARRAY(char, g_VersionBuf))
+extern char g_Utf8Buf[1024];	/* 0x400 bytes, the result of Str_FromUTF8 */
+extern char g_VersionBuf[256];
 
 char *Str_Copy(char *dst, const char *src, int size) {
 	CHECK(dst && src && size > 0);

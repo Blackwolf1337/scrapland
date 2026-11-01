@@ -14,8 +14,8 @@
 #define GUID_SYSKEYBOARD ((const void *)GAME_PTR(GUID_SYSKEYBOARD, 0))
 #define KB_NAME "Kb"
 /* DIDEVICEOBJECTINSTANCEA of the last label, its tszName at 0x20 */
-#define g_KeyObjInfo (GAME_ARRAY(byte, g_KeyObjInfo))
-#define g_KeyNameBuf (GAME_ARRAY(char, g_KeyNameBuf))	/* 0x28 bytes */
+extern byte g_KeyObjInfo[316];
+extern char g_KeyNameBuf[40];	/* 0x28 bytes */
 
 /* the DIK_ names of the config file (the jump table of the original) */
 static const char *const kb_names[0xee] = {

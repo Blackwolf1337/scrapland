@@ -61,7 +61,7 @@ extern int g_EngineIni84;
 extern int g_EngineIni88;
 extern int g_EngineDef1cf4;
 #define g_EngineMode GAME_GLOBAL_IN(int, g_FilterMip, 0)		/* 1 or 2 */
-#define g_ColorStr (GAME_ARRAY(char, g_ColorStr))	/* 0x40 */
+extern char g_ColorStr[64];	/* 0x40 */
 
 typedef void(__stdcall *initcommoncontrols_t)(void);
 #define exe_InitCommonControls GAME_IMPORT(initcommoncontrols_t, InitCommonControls, 0)
@@ -219,7 +219,7 @@ int CEngineApp_FrameMove(CEngineApp *self) {
 	return 0;
 }
 
-#define g_RenderCounts (GAME_ARRAY(int, g_RenderCounts))	/* [10], 8 counts (g_RenderTris and g_RenderVerts first), the frame clears 10 */
+extern int g_RenderCounts[10];	/* [10], 8 counts (g_RenderTris and g_RenderVerts first), the frame clears 10 */
 #define g_Engine431bae GAME_GLOBAL_IN(byte, group_431bac, 2)
 extern int g_Dither;		/* [video] Tramas: dithering */
 /* the frame limiter: [video] limitaFPS of m3d.ini and the console variable R_LimitFPS, the larger counts */
@@ -934,10 +934,10 @@ intptr_t __stdcall Engine_SceneDlgProc(void *hwnd, uint32_t msg, uintptr_t wPara
 }
 
 /* the frame time graph of R_Profiler 4 (Engine_DrawStats) */
-#define g_FpsText (GAME_ARRAY(char, g_FpsText))	/* 0x40, "frame: fps fps  ms" when the fps jumped */
+extern char g_FpsText[64];	/* 0x40, "frame: fps fps  ms" when the fps jumped */
 extern float g_FpsTextTime;
-#define g_FpsGraph (GAME_ARRAY(float, g_FpsGraph))	/* FPS_GRAPH bars of 2 vertices (x, 0) (x, frame ms) */
-#define g_FpsGraphPeak (GAME_ARRAY(float, g_FpsGraphPeak))	/* the same with the falling peak */
+extern float g_FpsGraph[120];	/* FPS_GRAPH bars of 2 vertices (x, 0) (x, frame ms) */
+extern float g_FpsGraphPeak[122];	/* the same with the falling peak */
 #define g_FpsGraphPos GAME_GLOBAL_IN(int, g_FpsGraphPeak, 480)
 #define g_FpsScaleTime GAME_GLOBAL_IN(float, g_FpsGraphPeak, 484)
 extern float g_FpsScale;	/* the height of the graph: 200 ms per 200 fps */

@@ -176,9 +176,9 @@ extern int g_GearAimMode;		/* 1..3: which targets the search takes */
  * center to it (offset, lock time) and the blink of the cross while the energy is low */
 extern cEntity *g_GearAimTarget;
 extern float g_GearAimBest;	/* the lowest score of the search, FLT_MAX at its start */
-#define g_GearAimPos (GAME_ARRAY(float, g_GearAimPos))	/* [2] */
-#define g_GearAimCenter (GAME_ARRAY(float, g_GearAimCenter))	/* [2] where the cross starts, 320 240 */
-#define g_GearAimOff (GAME_ARRAY(float, g_GearAimOff))	/* [2] Pos - Center */
+extern float g_GearAimPos[2];	/* [2] */
+extern float g_GearAimCenter[2];	/* [2] where the cross starts, 320 240 */
+extern float g_GearAimOff[2];	/* [2] Pos - Center */
 extern byte g_GearAimLocked;
 extern float g_GearAimLockTime;
 #define g_GearTargetCrossBlinkTime GAME_GLOBAL_IN(float, GVar_GearTargetCrossBlinkTime, 20)

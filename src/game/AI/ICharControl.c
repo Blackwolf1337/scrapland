@@ -16,7 +16,7 @@
 #include "scrap/scrapmain.h"
 
 /* the characters near the control (CharsNear, FindAvoid): the sphere test collects them here */
-#define g_AICCNear (GAME_ARRAY(cEntity *, g_AICCNear))	/* 20 */
+extern cEntity * g_AICCNear[20];	/* 20 */
 extern int g_AICCNumNear;
 extern cEntity *g_AICCNearSelf;	/* the character itself, left out */
 #define g_AICCNearFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0))

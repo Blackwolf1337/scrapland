@@ -46,9 +46,9 @@ SD_SIZE(VertLensFlare, 0x1c);
 
 extern CMaterial *g_LensFlareMat;
 #define g_LensFlares GAME_GLOBAL_IN(int, GVar_R_LensFlare, 16)		/* the engine variable that draws them */
-#define g_LensFlareRender (GAME_ARRAY(CLensFlare *, g_LensFlareRender))	/* MAX_LENSFLARE_RENDER */
+extern CLensFlare * g_LensFlareRender[8];	/* MAX_LENSFLARE_RENDER */
 extern int g_nLensFlareRender;
-#define g_LensFlareVerts (GAME_ARRAY(VertLensFlare, g_LensFlareVerts))	/* 4 */
+extern VertLensFlare g_LensFlareVerts[4];	/* 4 */
 
 CLensFlare *CLensFlare_ctor(CLensFlare *self);
 void CLensFlare_dtor(CLensFlare *self);

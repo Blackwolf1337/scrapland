@@ -4,9 +4,9 @@
 #include "scrap/chartype.h"
 #include "scrap/fxelements.h"
 
-#define RUSTY_RAMPS (GAME_ARRAY(uint32_t, RUSTY_RAMPS))		/* [2 * 9], the flash, the smoke */
+extern uint32_t RUSTY_RAMPS[18];		/* [2 * 9], the flash, the smoke */
 #define RUSTY_RAMP_SMOKE (GAME_ARRAY_IN(uint32_t, RUSTY_RAMPS, 36))	/* the second of RUSTY_RAMPS */
-#define RUSTY_RAMP_DEBRIS (GAME_ARRAY(uint32_t, RUSTY_RAMP_DEBRIS))	/* [9] */
+extern uint32_t RUSTY_RAMP_DEBRIS[9];	/* [9] */
 #define RUSTY_TWO_PI 6.2831854820251465
 
 static void Rusty_PosMin(CGameParticles *p, float x, float y, float z) {

@@ -39,7 +39,7 @@ typedef struct SectorVis {
 #define SECTORVIS_VALID 1
 #define SECTORVIS_CACHED 2		/* pos was the same as the last time */
 
-#define g_Zones (GAME_ARRAY(CZone *, g_Zones))
+extern CZone * g_Zones[132];
 #define g_NumZones GAME_GLOBAL_IN(int, g_Zones, 512)
 #define g_SectorCache GAME_GLOBAL_IN(int, GVar_R_PortalPos, 16)	/* the cached sector is used when the position is the same */
 #define g_PortalsOn GAME_GLOBAL_IN(int, GVar_R_UsePortals, 16)	/* 0: everything is seen */
@@ -57,7 +57,7 @@ typedef struct PaintZone {
 	int times;			/* 0x1c how many portals it was seen through */
 } PaintZone;
 SD_SIZE(PaintZone, 0x20);
-#define g_PaintZones (GAME_ARRAY(PaintZone, g_PaintZones))
+extern PaintZone g_PaintZones[128];
 extern int g_NumPaintZones;
 /* the union of the rectangles of the seen sectors with sky */
 #define g_PaintI148 GAME_GLOBAL_IN(int, g_PaintAll, 0)

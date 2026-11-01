@@ -518,7 +518,7 @@ void BspQ3_Render(void) {
 
 /* the static initializer of a vertex array after g_BspQ3VertL that no code reads */
 #define BSPQ3_VERTG 0x40
-#define g_BspQ3VertG (GAME_ARRAY(Graphic3DVert, g_BspQ3VertG))	/* [BSPQ3_VERTG] */
+extern Graphic3DVert g_BspQ3VertG[64];	/* [BSPQ3_VERTG] */
 
 void BspQ3_InitVertG(void) {
 	for (int i = 0; i < BSPQ3_VERTG; i++) {

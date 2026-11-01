@@ -213,7 +213,7 @@ SD_OFFSET(NetServerInfo, map, 0x3b);
 SD_SIZE(NetServerInfo, 0x5c);
 
 /* GameClient */
-#define g_NetClientServer (GAME_ARRAY(char, g_NetClientServer))	/* [0x100] the server address, "" when not connected */
+extern char g_NetClientServer[256];	/* [0x100] the server address, "" when not connected */
 extern uint16_t g_NetClientPort;
 extern cNetClient *g_NetClient;
 extern void *g_NetClientData;	/* the receive buffers, 24000 bytes */
@@ -221,8 +221,8 @@ extern int g_NetClientDataSize;
 extern void *g_NetClientCtl;
 extern int g_NetClientCtlSize;
 /* GameServer */
-#define g_NetServerHost (GAME_ARRAY(char, g_NetServerHost))	/* [0x100] */
-#define g_NetServerIP (GAME_ARRAY(char, g_NetServerIP))	/* [0x100] */
+extern char g_NetServerHost[256];	/* [0x100] */
+extern char g_NetServerIP[256];	/* [0x100] */
 #define g_NetBrowserCode GAME_GLOBAL_IN(char *, GVar_BrowserCode, 16)	/* BrowserCode (cString) */
 extern uint16_t g_NetServerPort;	/* 0 without a server */
 extern void *g_NetServerData;
@@ -231,7 +231,7 @@ extern void *g_NetServerCtl;
 extern int g_NetServerCtlSize;
 extern float g_NetHeartbeat;	/* GetTime of the last heartbeat to the master */
 #define g_LogNetData GAME_GLOBAL_IN(int, GVar_LogNetData, 16)		/* LogNetData */
-#define g_NetClientPings (GAME_ARRAY(byte, g_NetClientPings))	/* [0x100] the pings the server sends, log2 * 24 */
+extern byte g_NetClientPings[256];	/* [0x100] the pings the server sends, log2 * 24 */
 /* the engine variables (gvars) of Net/: values and their flags byte (bit 0: scripts may not write) */
 #define g_NetMaxResourcesSend GAME_GLOBAL_IN(int, GVar_NetMaxResourcesSend, 16)
 #define g_NetTimeOut GAME_GLOBAL_IN(int, GVar_NetTimeOut, 16)		/* NetTimeOut, < 0 never */
@@ -304,7 +304,7 @@ extern vec3_t g_NetOrigin;
 /* NetData.cpp */
 extern int g_NetObjCounter;
 extern int g_NetBotCounter;
-#define g_NetResources (GAME_ARRAY(char *, g_NetResources))	/* [NET_RESOURCES] Mem_Alloc names */
+extern char * g_NetResources[256];	/* [NET_RESOURCES] Mem_Alloc names */
 extern byte g_NetResInit;
 extern int g_NetBrowserPort;
 #define NET_OFFLINE "Offline"

@@ -177,17 +177,17 @@ SD_SIZE(cMsgScorer, 0xc8);
 #define g_MissionScorerName GAME_GLOBAL_IN(char *, GVar_MissionScorerName, 16)	/* MissionScorerName, the item hiding the label */
 extern float g_MissionSolidTime;	/* cMissionScorer SolidTime */
 /* the label (Scorer_SetLabelText) */
-#define g_LabelText (GAME_ARRAY(char, g_LabelText))	/* 0xfa */
+extern char g_LabelText[250];	/* 0xfa */
 extern float g_LabelTime;		/* shown until this world time, always if <= 0 */
 /* the message (Scorer_SetMsgText): the text and its lines */
-#define g_MsgText (GAME_ARRAY(char, g_MsgText))		/* 0xf424 */
+extern char g_MsgText[62500];		/* 0xf424 */
 extern int g_MsgNumLines;
-#define g_MsgLines (GAME_ARRAY(char *, g_MsgLines))		/* MSG_LINES */
+extern char * g_MsgLines[20];		/* MSG_LINES */
 #define MSG_LINES 20	/* the slots up to g_LabelText at 0x45d190 */
 #define g_MsgTime GAME_GLOBAL_IN(float, GVar_TimeToMsg, 16)
 /* the hint text and its two lines */
-#define g_HintLines (GAME_ARRAY(char *, g_HintLines))
-#define g_HintText (GAME_ARRAY(char, g_HintText))		/* 0x500 */
+extern char * g_HintLines[2];
+extern char g_HintText[1280];		/* 0x500 */
 
 cAbstractTextScorer *cAbstractTextScorer_ctor(cAbstractTextScorer *self);
 cCreditsScorer *cCreditsScorer_ctor(cCreditsScorer *self);
@@ -398,7 +398,7 @@ typedef struct cChatMsg {
 } cChatMsg;
 SD_SIZE(cChatMsg, 0x54);
 
-#define g_ChatMsgs (GAME_ARRAY(cChatMsg, g_ChatMsgs))	/* CHAT_MSGS */
+extern cChatMsg g_ChatMsgs[16];	/* CHAT_MSGS */
 extern float g_ChatTime;		/* of the last scroll */
 #define g_ChatScrollTime GAME_GLOBAL_IN(float, GVar_ChatMsgPersistence, 16)	/* an empty line comes in after this */
 
@@ -452,9 +452,9 @@ typedef struct cCircuitFlare {
 } cCircuitFlare;
 SD_SIZE(cCircuitFlare, 0x18);
 
-#define g_CircuitFlares (GAME_ARRAY(cCircuitFlare, g_CircuitFlares))	/* CIRCUIT_FLARES */
+extern cCircuitFlare g_CircuitFlares[4];	/* CIRCUIT_FLARES */
 #define g_CircuitInit GAME_GLOBAL_IN(byte, g_CircuitFlares, 92)
-#define g_CircuitPaths (GAME_ARRAY(cCircuitPath, g_CircuitPaths))	/* CIRCUIT_PATHS */
+extern cCircuitPath g_CircuitPaths[9];	/* CIRCUIT_PATHS */
 
 /* the constructor of a path in the static array: nothing */
 cCircuitPath *cCircuitPath_ctor(cCircuitPath *self);
@@ -606,8 +606,8 @@ SD_SIZE(cMissionScorer, 0xec);
 extern int g_MissionBlinkOn;
 extern float g_MissionBlinkTime;	/* BlinkTime: the icons blink until 0 */
 extern float g_MissionBlinkLast;	/* the blink time of the last toggle */
-#define g_MissionStatus (GAME_ARRAY(int, g_MissionStatus))		/* Status0..2 */
-#define g_MissionStatusTime (GAME_ARRAY(float, g_MissionStatusTime))	/* the scorer time each was set */
+extern int g_MissionStatus[3];		/* Status0..2 */
+extern float g_MissionStatusTime[4];	/* the scorer time each was set */
 #define g_MissionMapName GAME_GLOBAL_IN(const char *, g_MissionStatusTime, 12)	/* the language text of the station */
 #define g_ScorerMarginH GAME_GLOBAL_IN(int, GVar_ScorerMarginH, 16)		/* ScorerMarginH */
 #define g_NextMissionLine1XBox GAME_GLOBAL_IN(float, GVar_NextMissionFirstLineOffsetXBox, 16)	/* NextMissionFirstLineOffsetXBox */
@@ -684,8 +684,8 @@ SD_OFFSET(cMonitorScorer, objWas, 0x2a8);
 SD_OFFSET(cMonitorScorer, weapon, 0x2ac);
 
 /* the head and text of Scorer_SetHeadMonitor */
-#define g_HeadMonitorName (GAME_ARRAY(char, g_HeadMonitorName))	/* 0x80, the scorer model */
-#define g_HeadMonitorText (GAME_ARRAY(char, g_HeadMonitorText))	/* 0x80 */
+extern char g_HeadMonitorName[128];	/* 0x80, the scorer model */
+extern char g_HeadMonitorText[128];	/* 0x80 */
 extern int g_HeadMonitorAnim;	/* the animation, negative: with noise */
 #define g_FirstPhotoMessage GAME_GLOBAL_IN(char *, GVar_FirstPhotoMessage, 16)	/* FirstPhotoMessage */
 
@@ -1051,17 +1051,17 @@ SD_SIZE(cScraplandSubMenuScorer, 0xd8);
 /* the global animation state, set up once by the first constructor (random times) */
 #define g_MainMenuAnimInit GAME_GLOBAL_IN(byte, group_460428, 0)
 #define g_SubMenuAnimInit GAME_GLOBAL_IN(byte, group_460428, 1)
-#define g_MainMenuWait (GAME_ARRAY(float, g_MainMenuWait))		/* [9] */
-#define g_MainMenuTime (GAME_ARRAY(float, g_MainMenuTime))		/* [9] */
-#define g_MainMenuLength (GAME_ARRAY(float, g_MainMenuLength))	/* [9] */
-#define g_MainMenuSparkDir (GAME_ARRAY(byte, g_MainMenuSparkDir))	/* [19] */
-#define g_MainMenuSparkWait (GAME_ARRAY(float, g_MainMenuSparkWait))	/* [19] */
-#define g_MainMenuSparkTime (GAME_ARRAY(float, g_MainMenuSparkTime))	/* [19] */
-#define g_MainMenuSparkLength (GAME_ARRAY(float, g_MainMenuSparkLength))	/* [19] */
-#define g_MainMenuSparkFrame (GAME_ARRAY(int, g_MainMenuSparkFrame))	/* [19] */
+extern float g_MainMenuWait[9];		/* [9] */
+extern float g_MainMenuTime[9];		/* [9] */
+extern float g_MainMenuLength[9];	/* [9] */
+extern byte g_MainMenuSparkDir[19];	/* [19] */
+extern float g_MainMenuSparkWait[19];	/* [19] */
+extern float g_MainMenuSparkTime[19];	/* [19] */
+extern float g_MainMenuSparkLength[19];	/* [19] */
+extern int g_MainMenuSparkFrame[19];	/* [19] */
 extern float g_MainMenuNeonNext;
-#define g_MainMenuNeonGroup (GAME_ARRAY(float, g_MainMenuNeonGroup))	/* [3] */
-#define g_MainMenuNeonWait (GAME_ARRAY(float, g_MainMenuNeonWait))	/* [21] */
+extern float g_MainMenuNeonGroup[3];	/* [3] */
+extern float g_MainMenuNeonWait[21];	/* [21] */
 extern float g_SubMenuWait;
 extern float g_SubMenuRingTime;
 extern float g_SubMenuRingWait;

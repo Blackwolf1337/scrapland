@@ -301,7 +301,7 @@ char *String_Unquote(char *dest, const char *src) {
 }
 
 #define g_RSqrtTable (GAME_ARRAY(const byte, g_RSqrtTable))
-#define g_ExePath (GAME_ARRAY(char, g_ExePath))	/* GetModuleFileName at the start, 0x103 */
+extern char g_ExePath[264];	/* GetModuleFileName at the start, 0x103 */
 
 char *E3D_GetExePath(void) {
 	return g_ExePath;
@@ -393,11 +393,11 @@ extern void *g_DbgWnd;
 extern void *g_DbgList;	/* the list box of the dialog */
 extern void *g_DbgEdit;	/* the command line */
 extern void *g_DbgButton;
-#define g_DbgClient (GAME_ARRAY(int32_t, g_DbgClient))	/* the client rectangle at WM_INITDIALOG */
-#define g_DbgListRect (GAME_ARRAY(int32_t, g_DbgListRect))	/* the normal rectangles of the three controls */
-#define g_DbgEditRect (GAME_ARRAY(int32_t, g_DbgEditRect))
-#define g_DbgButtonRect (GAME_ARRAY(int32_t, g_DbgButtonRect))
-#define g_DbgLine (GAME_ARRAY(char, g_DbgLine))	/* 0x400, the line being written */
+extern int32_t g_DbgClient[4];	/* the client rectangle at WM_INITDIALOG */
+extern int32_t g_DbgListRect[4];	/* the normal rectangles of the three controls */
+extern int32_t g_DbgEditRect[4];
+extern int32_t g_DbgButtonRect[4];
+extern char g_DbgLine[1024];	/* 0x400, the line being written */
 extern int g_DbgLinePos;
 extern int g_DbgLineLen;
 #define g_DbgCharMap (GAME_ARRAY(const char, g_DbgCharMap))	/* the characters from 0xe1 for the console */

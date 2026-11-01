@@ -326,15 +326,15 @@ SD_OFFSET(cTalkScorer, useLines, 0x19bc);
 SD_OFFSET(cTalkScorer, tab, 0x1a64);
 
 /* the talk of Scorer_SetSpeechText */
-#define g_TalkText (GAME_ARRAY(char, g_TalkText))		/* TALK_TEXT_SIZE */
+extern char g_TalkText[6400];		/* TALK_TEXT_SIZE */
 #define g_TalkWidth GAME_GLOBAL_IN(float, GVar_MaxTalkLineSizePix, 16)		/* the width of the lines */
 #define g_TalkUseTime GAME_GLOBAL_IN(float, GVar_TimeToAbortChatText, 16)	/* the hold time of the use that skips a talk */
 #define g_RemainTalkTime GAME_GLOBAL_IN(float, GVar_RemainTalkTime, 16)	/* RemainTalkTime */
 #define g_TalkTime GAME_GLOBAL_IN(float, GVar_FullTalkTime, 16)		/* the time of the whole talk */
 #define g_TalkCallback (&GAME_GLOBAL(cPy_Function, g_TalkCallback))	/* run at the end of the talk */
 extern int g_TalkNumLines;
-#define g_TalkLines (GAME_ARRAY(char *, g_TalkLines))	/* TALK_MAX_LINES */
-#define g_TalkColor (GAME_ARRAY(int, g_TalkColor))		/* r, g, b */
+extern char * g_TalkLines[40];	/* TALK_MAX_LINES */
+extern int g_TalkColor[3];		/* r, g, b */
 
 cTalkScorer *cTalkScorer_ctor(cTalkScorer *self);
 void cTalkScorer_dtor(cTalkScorer *self);
@@ -408,8 +408,8 @@ typedef struct cTextTypingScorer {
 SD_SIZE(cTextTypingScorer, 0xf4);
 
 /* the text edit of each player */
-#define g_TextEditItem (GAME_ARRAY(cTextScorer *, g_TextEditItem))	/* [4] */
-#define g_TextEditCursor (GAME_ARRAY(cScorerItem *, g_TextEditCursor))	/* [4] the cursor item before the edit */
+extern cTextScorer * g_TextEditItem[4];	/* [4] */
+extern cScorerItem * g_TextEditCursor[4];	/* [4] the cursor item before the edit */
 #define g_TypingSoundName GAME_GLOBAL_IN(const char *, GVar_TextTypingSound, 16)	/* "keyboard%d" for the key sounds */
 #define g_TypingSoundVol GAME_GLOBAL_IN(float, GVar_TextTypingSoundVol, 16)
 #define TEXTEDIT_NATIVE_FUNC 0x184120			/* the OnAccept that starts the edit */

@@ -80,7 +80,7 @@ extern CAnimBlock *g_ActAnimBlock;
 #define g_OptAnimRotErr GAME_GLOBAL_IN(float, GVar_OptAnimRotErr, 16)	/* degrees */
 #define g_OptAnimFovErr GAME_GLOBAL_IN(float, GVar_OptAnimFovErr, 16)	/* degrees */
 /* the name of the node an animation is loaded for, in the log lines */
-#define g_AnimNodeName (GAME_ARRAY(char, g_AnimNodeName))
+extern char g_AnimNodeName[256];
 /* the memory statistics of the animations */
 #define g_AnimMemStats (&GAME_GLOBAL(cMemStats, g_AnimMemStats))
 

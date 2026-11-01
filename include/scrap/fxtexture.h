@@ -49,9 +49,9 @@ typedef struct CFXNewsPanel {
 SD_SIZE(CFXNewsPanel, 0x8);
 
 /* the cos of the 256 angles of the lava, made by the first lava */
-#define g_LavaCos (GAME_ARRAY(float, g_LavaCos))
+extern float g_LavaCos[256];
 extern byte g_LavaCosInit;
-#define g_LavaOffset (GAME_ARRAY(int, g_LavaOffset))	/* FXTEX_SIZE, the row offset of each column */
+extern int g_LavaOffset[128];	/* FXTEX_SIZE, the row offset of each column */
 
 void IFXTexture_dtor(IFXTexture *self);
 IFXTexture *IFXTexture_Delete(IFXTexture *self, byte flags);

@@ -15,8 +15,8 @@
 
 #define GUID_SYSMOUSE ((const void *)GAME_PTR(GUID_SYSMOUSE, 0))
 #define MOUSE_NAME "Mouse"
-#define g_MouseLabelBuf (GAME_ARRAY(char, g_MouseLabelBuf))	/* 0x20 bytes */
-#define g_MouseNameBuf (GAME_ARRAY(char, g_MouseNameBuf))	/* 0x20 bytes */
+extern char g_MouseLabelBuf[32];	/* 0x20 bytes */
+extern char g_MouseNameBuf[32];	/* 0x20 bytes */
 
 static const char *const mouse_names[6] = { "Right", "Left", "Down", "Up", "WheelUp", "WheelDown" };
 static const char *const mouse_labels[6] = { "PC_Mouse_Right", "PC_Mouse_Left", "PC_Mouse_Down", "PC_Mouse_Up",

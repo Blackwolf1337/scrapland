@@ -47,7 +47,7 @@ extern float g_MusicVoiceoverTarget;
 extern float g_MusicVoiceoverSpeed;
 extern float g_MusicFadeTarget;
 extern float g_MusicFadeSpeed;
-#define g_MusicName (GAME_ARRAY(char, g_MusicName))		/* 0x104 */
+extern char g_MusicName[260];		/* 0x104 */
 extern void *g_MusicStream;
 extern int g_MusicPaused;
 extern uint32_t g_MusicOpenTime;

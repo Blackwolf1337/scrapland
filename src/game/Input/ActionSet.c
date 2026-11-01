@@ -15,8 +15,8 @@
 #define INPUTACTION_DTOR 0x139430
 #define ACTIONSET_CTOR 0x1392b0
 #define ACTIONSET_DTOR 0x139480
-#define VK_STANDARD (GAME_ARRAY(const char, VK_STANDARD))	/* "ABC...xyz 0123456789.:,;-!\"&/()=?\b\n" */
-#define VK_CONSOLE (GAME_ARRAY(const char, VK_CONSOLE))	/* the same with the console signs */
+extern const char VK_STANDARD[80];	/* "ABC...xyz 0123456789.:,;-!\"&/()=?\b\n" */
+extern const char VK_CONSOLE[108];	/* the same with the console signs */
 
 #define CPYFUNCTION_CTOR 0x192170
 #define CPYFUNCTION_DTOR 0x192200

@@ -11,8 +11,8 @@
 
 /* teclado.cpp */
 #define KEYBOARD_BUF 32
-#define g_KeyboardKeys (GAME_ARRAY(byte, g_KeyboardKeys))		/* 256, 1 while held */
-#define g_KeyboardBuf (GAME_ARRAY(uint16_t, g_KeyboardBuf))	/* KEYBOARD_BUF characters */
+extern byte g_KeyboardKeys[256];		/* 256, 1 while held */
+extern uint16_t g_KeyboardBuf[32];	/* KEYBOARD_BUF characters */
 extern int g_KeyboardBufStart;
 extern int g_KeyboardBufCount;
 /* the time of the engine without the pauses (next to teclado.cpp, its source is not known) */
@@ -41,7 +41,7 @@ extern int g_InputInvX;
 extern int g_InputInvY;
 extern int g_InputInvZ;
 /* the cursor position while CInputWindows holds the mouse */
-#define g_InputCursor (GAME_ARRAY(int32_t, g_InputCursor))	/* [2], the POINT of GetCursorPos */
+extern int32_t g_InputCursor[2];	/* [2], the POINT of GetCursorPos */
 #define INPUT_CURSOR_CENTER 100
 
 /* the vftable of IInput */

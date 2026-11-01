@@ -30,7 +30,7 @@
 #define GROUND_FLT_MAX 3.4028234663852886e+38f
 
 /* the statistics of the queries, cleared with the query number */
-#define g_CollisionStats (GAME_ARRAY(uint32_t, g_CollisionStats))	/* 6 */
+extern uint32_t g_CollisionStats[6];	/* 6 */
 extern uint32_t g_CollisionStats2;
 extern uint32_t g_CollisionCache;
 #define g_CollisionCache2 (GAME_ARRAY_IN(uint32_t, g_BspCacheStats, 0))	/* 2 */
@@ -1952,8 +1952,8 @@ void CGround_CalcIllum(void *ground, CNode3D *node, CScene *scn) {
 
 /* the debug view of the collision meshes (c_show and ShowMapSolid) */
 #define g_ShowMapSolid GAME_GLOBAL_IN(int, GVar_ShowMapSolid, 16)		/* 0 wireframe, 1 solid, 2 solid with fog */
-#define g_CollideAddColor (GAME_ARRAY(float, g_CollideAddColor))	/* added to the shaded colors, rgba */
-#define g_CollideVerts (GAME_ARRAY(CollideVert, g_CollideVerts))	/* the triangle drawn */
+extern float g_CollideAddColor[4];	/* added to the shaded colors, rgba */
+extern CollideVert g_CollideVerts[3];	/* the triangle drawn */
 #define g_SectorColors (GAME_ARRAY_IN(const uint32_t, g_BspColors, 4))
 
 /* the shading of the solid view: (0 < s) ? min(1, s) : 0 the way the original branches (NaN to the minss) */
@@ -2112,7 +2112,7 @@ void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
 #define g_AnalyzeQuads GAME_GLOBAL_IN(int, GVar_AnalyzeQuads, 16)		/* AnalizeQuads: 1 the quads checked once */
 /* the material of the debug view, a static of CGround_DrawDebug */
 extern CMaterial g_CollideMat;
-#define g_CollideMatGuard (GAME_ARRAY(int, g_CollideMatGuard))
+extern int g_CollideMatGuard[2];
 
 /* the atexit destructor of it */
 void Ground_FiniCollideMat(void) {

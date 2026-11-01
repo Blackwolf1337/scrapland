@@ -20,7 +20,7 @@ typedef struct cConLine {
 } cConLine;
 SD_SIZE(cConLine, 0x84);
 
-#define g_ConLines (GAME_ARRAY(cConLine, g_ConLines))	/* CON_LINES */
+extern cConLine g_ConLines[23];	/* CON_LINES */
 extern int g_ConLine;		/* the line written now */
 #define g_DebugLevel GAME_GLOBAL_IN(int, GVar_debug, 16)
 

@@ -15,10 +15,10 @@
 #include "scrap/scrapmodel.h"
 
 /* the state names of the debug texts (pointer tables of the exe) */
-#define LOGIC_GEARSTATES (GAME_ARRAY(const char *, LOGIC_GEARSTATES))
-#define LOGIC_SENTINELSTATES (GAME_ARRAY(const char *, LOGIC_SENTINELSTATES))
-#define LOGIC_NURSESTATES (GAME_ARRAY(const char *, LOGIC_NURSESTATES))
-#define LOGIC_GENCHARSTATES (GAME_ARRAY(const char *, LOGIC_GENCHARSTATES))
+extern const char * LOGIC_GEARSTATES[5];
+extern const char * LOGIC_SENTINELSTATES[7];
+extern const char * LOGIC_NURSESTATES[4];
+extern const char * LOGIC_GENCHARSTATES[11];
 
 cBaseLocalLogic *cBaseLocalLogic_ctor(cBaseLocalLogic *self, cEntity *parent) {
 	vec3_t tmp, ang, out;

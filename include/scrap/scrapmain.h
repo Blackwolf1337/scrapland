@@ -88,8 +88,8 @@ extern void *g_MapTextDataFile;	/* FILE of the exe's CRT */
 extern int g_MapTextSaving;
 extern int g_VideoBufferSize;
 extern byte g_CallbacksOn;
-#define g_ScreenshotName (GAME_ARRAY(char, g_ScreenshotName))	/* 0x100 */
-#define g_DVFName (GAME_ARRAY(char, g_DVFName))		/* 0x100 */
+extern char g_ScreenshotName[256];	/* 0x100 */
+extern char g_DVFName[256];		/* 0x100 */
 #define g_VideoStatus GAME_GLOBAL(int, g_BspSectorSeen)
 extern int g_LoadingScreen;	/* the last random loading screen */
 #define g_M3dIni GAME_STR(str_431bf0)		/* "m3d.ini" */
@@ -101,12 +101,12 @@ extern int g_LoadingScreen;	/* the last random loading screen */
 #define g_EngineVersion GAME_GLOBAL(int, g_EngineVersion)
 
 /* m3d.ini of the level (Engine_LoadIni) */
-#define g_GroundPath (GAME_ARRAY(char, g_GroundPath))	/* [suelo] ruta_m3d, 0x104 */
+extern char g_GroundPath[260];	/* [suelo] ruta_m3d, 0x104 */
 #define g_GroundScale (GAME_ARRAY(vec3_t, g_GroundScale))
 #define g_ModelAmbientIni (GAME_ARRAY(ColorIntens, g_ModelAmbientIni))	/* [suelo] model_ambient */
 extern float g_ClipNear;		/* [camara] forzar_clipNear */
 extern float g_ClipFar;
-#define g_SkyPath (GAME_ARRAY(char, g_SkyPath))	/* [cielo], 0x104 */
+extern char g_SkyPath[260];	/* [cielo], 0x104 */
 extern float g_SkyPosScaleIni;
 extern float g_SkyRotationIni;
 extern int g_FogActiveIni;	/* [niebla] */

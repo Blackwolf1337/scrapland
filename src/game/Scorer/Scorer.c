@@ -1426,7 +1426,7 @@ byte Scorer_Render(void) {
 extern uint32_t g_ConsoleSavedSet;
 #define g_ConsoleSavedInput (GAME_ARRAY(cPlayerInput, g_ConsoleSavedInput))
 extern CPsaImage *g_ConsoleWhite;
-#define g_ConsoleHistory (GAME_ARRAY(char *, g_ConsoleHistory))	/* cStrings: 0 the line typed, 1.. the commands */
+extern char * g_ConsoleHistory[16];	/* cStrings: 0 the line typed, 1.. the commands */
 #define CONSOLE_HISTORY 16
 extern float g_ConsoleTime;		/* the game time of the open or the close */
 extern int g_ConsoleHistoryPos;

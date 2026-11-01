@@ -12,8 +12,8 @@
 #include "scrap/e3dutil.h"
 
 #define PROC_TYPES 16
-#define g_ProcTypes (GAME_ARRAY(cProcType, g_ProcTypes))	/* tipo_si_no, tipo_bucle, tipo_nota, ... */
-#define g_ProcBuf (GAME_ARRAY(char, g_ProcBuf))	/* 0x400, the number of an identifier */
+extern cProcType g_ProcTypes[16];	/* tipo_si_no, tipo_bucle, tipo_nota, ... */
+extern char g_ProcBuf[1024];	/* 0x400, the number of an identifier */
 
 extern procrange_t g_ProcRangeChar;
 extern procrange_t g_ProcRangeByte;

@@ -161,7 +161,7 @@ typedef struct MeshD3DGroup {
 SD_SIZE(MeshD3DGroup, 0x10);
 
 #define MAX_D3D_OBJ 0x200
-#define g_D3DObj (GAME_ARRAY(MeshD3DObj, g_D3DObj))
+extern MeshD3DObj g_D3DObj[512];
 extern int g_NumD3DObj;
 /* the vertices MeshD3D_CompareVertIdx sorts */
 extern MeshD3DVert *g_WeldVert;

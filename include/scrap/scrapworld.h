@@ -28,7 +28,7 @@ extern int g_CountSprite2D;
 extern CNode3D *g_WorldInfoNode;
 extern WorldDummy *g_WorldInfoDummy;	/* DummyInfo */
 extern byte g_WorldInfoWild;
-#define g_WorldInfoPattern (GAME_ARRAY(char, g_WorldInfoPattern))	/* 0x104, "" for all */
+extern char g_WorldInfoPattern[260];	/* 0x104, "" for all */
 
 /* RenderMode */
 #define RENDERMODE_PROFILER 0x10	/* cycles the profiler mode 0..2 */
@@ -45,7 +45,7 @@ extern int g_ShadowsStencil;	/* [sombras_stencil] use */
 #define g_SplashOn GAME_GLOBAL_IN(int, GVar_ShowSplashScreen, 16)
 #define g_SplashFade GAME_GLOBAL_IN(uint32_t, GVar_SplashScreenFade, 16)	/* ms */
 extern uint32_t g_SplashTime;	/* timeGetTime at the end of the last one */
-#define g_SplashLast (GAME_ARRAY(char, g_SplashLast))	/* 0x104, the last one shown */
+extern char g_SplashLast[260];	/* 0x104, the last one shown */
 #define g_LoadingOn GAME_GLOBAL_IN(byte, group_4a8324, 0)
 #define g_LoadingBar GAME_GLOBAL_IN(int, GVar_ShowProgressBar, 16)
 extern int g_LoadingCount;		/* the steps of Loading_Step(-1) */

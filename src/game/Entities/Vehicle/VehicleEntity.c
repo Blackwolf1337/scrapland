@@ -38,7 +38,7 @@ CGameModel *CGameModel_ctorDefault(CGameModel *self) {
 }
 
 /* the names of the pilot animations by index ("Left", "Right", "Go", "Back", "Relax") */
-#define g_PilotAnimNames (GAME_ARRAY(const char *, g_PilotAnimNames))
+extern const char * g_PilotAnimNames[6];
 
 /* the engine variables */
 #define g_ShipPathFmt GAME_GLOBAL_IN(const char *, GVar_ShipPathFmt, 16)

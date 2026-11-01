@@ -143,7 +143,7 @@ static inline void Scene_Unref(CScene **slot) {
 
 extern CModelList *g_ModelList;
 extern CSceneList *g_SceneList;
-#define g_ModelsRender (GAME_ARRAY(CModelList *, g_ModelsRender))
+extern CModelList * g_ModelsRender[1026];
 #define g_NumModelsRender GAME_GLOBAL_IN(int, g_ModelsRender, 4096)
 #define g_MaxModelsRender GAME_GLOBAL_IN(int, g_ModelsRender, 4100)	/* the most there were */
 

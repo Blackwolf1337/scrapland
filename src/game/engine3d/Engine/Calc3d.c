@@ -8,8 +8,8 @@
 #include "scrap/nodefx.h"
 
 #define VEC3_STR 0x40
-#define g_Vec3StrDeg (GAME_ARRAY(char, g_Vec3StrDeg))	/* 4 x VEC3_STR */
-#define g_Vec3Str (GAME_ARRAY(char, g_Vec3Str))
+extern char g_Vec3StrDeg[256];	/* 4 x VEC3_STR */
+extern char g_Vec3Str[256];
 
 /* ---- matriz.h: the D3DX wrappers and the box of the corners ---- */
 

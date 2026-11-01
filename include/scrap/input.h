@@ -82,9 +82,9 @@ SD_OFFSET(cVirtualKeyboard, a, 0x100);
 SD_OFFSET(cVirtualKeyboard, len, 0x108);
 
 extern cActionSetTable g_ActionSets;
-#define g_PlayerInput (GAME_ARRAY(cPlayerInput, g_PlayerInput))	/* [MAX_LOCAL_PLAYERS] */
+extern cPlayerInput g_PlayerInput[4];	/* [MAX_LOCAL_PLAYERS] */
 extern cVirtualKeyboard g_VirtualKeyboard;
-#define g_Pads (GAME_ARRAY(cPad, g_Pads))		/* [MAX_LOCAL_PLAYERS] */
+extern cPad g_Pads[4];		/* [MAX_LOCAL_PLAYERS] */
 extern uint32_t g_CurActionSet;	/* Input_GetActionSet */
 
 /* rva 0x133a30 is cString_EqStr on the name */
@@ -331,7 +331,7 @@ extern exe_IDirectInput8 *g_DInput;
 /* Input/PcKeyboard.cpp */
 extern exe_IDirectInputDevice8 *g_KeyboardDev;
 #define g_Keyboard (GAME_ARRAY(cPcKeyboard, g_Keyboard))
-#define g_KeyState (GAME_ARRAY(char, g_KeyState))		/* [256] DIK_ */
+extern char g_KeyState[256];		/* [256] DIK_ */
 cPcKeyboard *cPcKeyboard_ctor(cPcKeyboard *self);
 cPcKeyboard *cPcKeyboard_Delete(cPcKeyboard *self, byte flags);
 void Keyboard_Acquire(byte on);
@@ -381,7 +381,7 @@ int cPcMouse_IsReserved(cAbstractIDevice *self, int entry);
 #define g_MainPcPad GAME_GLOBAL_IN(int, GVar_MainPcPad, 16)		/* MainPcPad: the pad of player 0, -1 all */
 #define g_PadDeadZone GAME_GLOBAL_IN(float, GVar_PCPadDeadZone, 16)	/* PCPadDeadZone */
 #define g_PCPadConnected GAME_GLOBAL_IN(int, GVar_PCPadConnected, 16)	/* PCPadConnected */
-#define g_PcPads (GAME_ARRAY(cPcPad, g_PcPads))		/* [4] */
+extern cPcPad g_PcPads[4];		/* [4] */
 #define g_PadForeground GAME_GLOBAL_IN(int, GVar_PCPadForeground, 16)	/* PCPadForeground: read only while the window is in front */
 extern int g_NumPcPads;
 #define g_WalkCameraCenter GAME_GLOBAL_IN(float, GVar_WalkCameraCenter, 16)	/* WalkCameraCenter */

@@ -17,7 +17,7 @@ extern void *g_LogAIFile;
 extern int g_ConCol;
 #define g_LogName GAME_GLOBAL_IN(const char *, GVar_LogFile, 16)
 extern uint32_t g_LastError;
-#define g_ConBuf (GAME_ARRAY(char, g_ConBuf))		/* 0x400, the text of the printf functions */
+extern char g_ConBuf[1024];		/* 0x400, the text of the printf functions */
 #define g_LogFlush GAME_GLOBAL_IN(int, GVar_AlwaysFlushLog, 16)		/* flush the logs after every text */
 
 #define CON_COLOR_BLUE 0xff

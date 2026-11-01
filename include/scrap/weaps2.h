@@ -131,7 +131,7 @@
 #define g_SwarmAmmoCost2 GAME_GLOBAL_IN(int, GVar_SwarmAmmoCost2, 16)
 #define g_SwarmAmmoCost3 GAME_GLOBAL_IN(int, GVar_SwarmAmmoCost3, 16)
 #define g_SwarmAmmoCost4 GAME_GLOBAL_IN(int, GVar_SwarmAmmoCost4, 16)
-#define g_SwarmAmmoCosts (GAME_ARRAY(int, g_SwarmAmmoCosts))	/* [6] SwarmAmmoCost1..4 at the start, then 0 0 */
+extern int g_SwarmAmmoCosts[6];	/* [6] SwarmAmmoCost1..4 at the start, then 0 0 */
 #define g_TeslaDownRangeTimePad GAME_GLOBAL_IN(float, GVar_TeslaDownRangeTimePad, 16)
 #define g_TeslaMinAngRangePad GAME_GLOBAL_IN(float, GVar_TeslaMinAngRangePad, 16)
 #define g_TeslaDownRangeTime GAME_GLOBAL_IN(float, GVar_TeslaDownRangeTime, 16)
@@ -172,18 +172,18 @@
 #define g_VulcanRicSoundAttEnd GAME_GLOBAL_IN(float, GVar_VulcanRicSoundAttEnd, 16)
 
 /* the state of the module */
-#define g_InfernoHitName (GAME_ARRAY(char, g_InfernoHitName))	/* 0x80, the entity of the sphere callback */
+extern char g_InfernoHitName[128];	/* 0x80, the entity of the sphere callback */
 extern cEntity *g_InfernoOwner;	/* the ship of the exploding missile, NULL if none */
 extern float g_InfernoRange;
 extern cEntity *g_InfernoMissile;
 #define g_InfernoHudTarget (GAME_ARRAY(char[0x80], g_InfernoHudTarget))	/* per player: the target shown */
-#define g_InfernoHudTime (GAME_ARRAY(float, g_InfernoHudTime))	/* per player */
+extern float g_InfernoHudTime[4];	/* per player */
 extern vec3_t g_InfernoPos;
 extern vec3_t g_SonicHitPos;
 #define g_SwarmHudTarget (GAME_ARRAY(char[0x80], g_SwarmHudTarget))
-#define g_SwarmHudTime (GAME_ARRAY(float, g_SwarmHudTime))
+extern float g_SwarmHudTime[4];
 #define g_InfernoSphereFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0))
-#define g_SwarmSlotData (GAME_ARRAY(int *, g_SwarmSlotData))	/* per slot: a pointer to the int AddBees takes */
+extern int * g_SwarmSlotData[4];	/* per slot: a pointer to the int AddBees takes */
 
 /* the exe functions of other modules */
 void cWithLifeEntity_SetBurner(cEntity *e, cEntity *attacker);

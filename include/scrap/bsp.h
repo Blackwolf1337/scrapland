@@ -252,7 +252,7 @@ extern BspLMap *g_BspLMaps;	/* the pages */
 extern BspTri *g_BspTriTmp;
 extern void *g_pBSP_VB;
 extern int g_BspNumLights;
-#define g_BspLights (GAME_ARRAY(BspLight, g_BspLights))	/* [BSP_MAX_LIGHTS] */
+extern BspLight g_BspLights[512];	/* [BSP_MAX_LIGHTS] */
 extern int g_LmapInfo;		/* the .INFO maps */
 extern int g_LmapInfo2;
 extern int g_TxfMode;		/* the TXF loading of an .EMI (2 deletes) */
@@ -277,7 +277,7 @@ extern int g_Gamma2x;		/* the gamma2x of the video settings */
 extern void *g_StencilRender;	/* the floor drawn again by the stencil shadows */
 extern int g_BspTris;		/* drawn this frame */
 extern int g_BspVerts;
-#define g_TriList (GAME_ARRAY(BspTri *, g_TriList))	/* [BSP_MAX_TRILIST] the lists of a pass to sort */
+extern BspTri * g_TriList[1024];	/* [BSP_MAX_TRILIST] the lists of a pass to sort */
 /* the sector of the eye: found this frame, the sector, the frames without one, the eye of the last frame */
 extern byte g_BspSectorOk;
 extern int g_BspSectorSeen;
@@ -286,7 +286,7 @@ extern vec3_t g_BspEyePrev;
 extern float g_BspLodLevel;
 /* the distances of the level of detail of the areas, plain and for large lists */
 #define g_BspLodDist (GAME_ARRAY(const float, g_BspLodDist))
-#define g_BspLodCount (GAME_ARRAY(int, g_BspLodCount))
+extern int g_BspLodCount[4];
 #define g_BspColors (GAME_ARRAY(const uint32_t, g_BspColors))	/* [16], debug colors */
 /* the globals of m3d.ini ([mapa_sombras], read in ScrapEngMain.c, the same definitions) */
 extern int g_ShadowMapMultitext;
@@ -305,7 +305,7 @@ extern float g_ShadowMapGamma;
 extern int g_ShadowMapBounces;
 extern float g_ShadowMapCoefRad;
 /* the radiosity */
-#define g_BspAreasTotal (GAME_ARRAY(int, g_BspAreasTotal))	/* the areas of all lists by level */
+extern int g_BspAreasTotal[4];	/* the areas of all lists by level */
 extern float g_BspRadMinD2;	/* the smallest squared distance of a form factor */
 #define g_RadSkipBySectors GAME_GLOBAL_IN(int, GVar_RadSkipBySectors, 16)	/* gvar: only the lists of the same sector */
 #define g_RadiosityPortals GAME_GLOBAL_IN(int, GVar_RadiosityPortals, 16)	/* gvar: other sectors only through the portals */

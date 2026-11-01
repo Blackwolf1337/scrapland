@@ -1175,7 +1175,7 @@ void cObjElementFXGearMissile_Run(void *self, cDebris *d) {
 #define g_GearMissileThunderSoundVol GAME_GLOBAL_IN(float, GVar_GearMissileThunderSoundVol, 16)
 #define FXGEAR_RAMP_BALL 0x4306b0
 #define FXGEAR_RAMPS 0x4306d4		/* 3 color ramps of 9 colors */
-#define FXGEAR_PUFF_RAMPS (GAME_ARRAY(uint32_t, FXGEAR_PUFF_RAMPS))	/* [3 * 9] */
+extern uint32_t FXGEAR_PUFF_RAMPS[27];	/* [3 * 9] */
 #define FXGEAR_RAMP_PUFF 0x4306f8
 #define FXGEAR_RAMP_SPARK 0x430788
 #define FXGEAR_ENTITIES 0x11		/* the entity lists the bolts hit */
@@ -3931,7 +3931,7 @@ void cObjElementFXBishopAttack_Update(cObjElementFXBishopAttack *self, cDebris *
 }
 
 #define FXA_RAMP_SELLLIFE 0x430818		/* [3] */
-#define FXA_SELLLIFE_RAMPS (GAME_ARRAY(uint32_t, FXA_SELLLIFE_RAMPS))	/* [3 * 9] */
+extern uint32_t FXA_SELLLIFE_RAMPS[27];	/* [3 * 9] */
 #define FXA_RAMP_SELLLIFE2 0x43083c		/* [2] */
 
 /* the glow of the Bishop: rotation, the ramp and one particle */

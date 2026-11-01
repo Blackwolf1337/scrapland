@@ -60,8 +60,8 @@
 
 /* the vertices of the Functionary model the special action starts from, found once (rva 0x466fc0..) */
 extern byte g_FXFunctionaryInit;
-#define g_FXFunctionaryVertex (GAME_ARRAY(int, g_FXFunctionaryVertex))		/* [14] */
-#define g_FXFunctionaryColor (GAME_ARRAY(uint32_t, g_FXFunctionaryColor))		/* [14] */
+extern int g_FXFunctionaryVertex[14];		/* [14] */
+extern uint32_t g_FXFunctionaryColor[14];		/* [14] */
 
 /* the engine variables (Gvars) */
 #define g_BankerSteal1Sound GAME_GLOBAL_IN(const char *, GVar_BankerSteal1Sound, 16)

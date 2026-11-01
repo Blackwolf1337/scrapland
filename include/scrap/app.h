@@ -54,7 +54,7 @@ extern byte g_XLoadOn;
 /* WinMain.cpp state */
 extern uint32_t g_TimeQPPause;	/* subtracted from the counter of GetTime */
 extern uint32_t g_TimeMsPause;	/* the same for timeGetTime */
-#define g_RegValue (GAME_ARRAY(char, g_RegValue))		/* 0x200, App_RegGetString */
+extern char g_RegValue[512];		/* 0x200, App_RegGetString */
 extern byte g_TimeInit;
 extern int g_TimeUseQP;
 extern int64_t g_TimeQPFreq;

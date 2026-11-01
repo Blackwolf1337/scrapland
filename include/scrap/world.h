@@ -148,7 +148,7 @@ void Str_TrimBlanks(char *s);
 #define g_PriorityWeapon (GAME_ARRAY_IN(cString, GVar_PriorityWeapon, 16))	/* PriorityWeapon, its default at +4 */
 #define g_SplitScreenCamera GAME_GLOBAL_IN(int, GVar_R_SplitScreenCamera, 16)		/* R_SplitScreenCamera */
 #define g_SplitScreenUpdate GAME_GLOBAL_IN(int, GVar_R_SplitScreenUpdate, 16)		/* R_SplitScreenUpdate */
-#define g_UniqueName (GAME_ARRAY(char, g_UniqueName))		/* 0x80 bytes, the result of cWorld_UniqueName */
+extern char g_UniqueName[128];		/* 0x80 bytes, the result of cWorld_UniqueName */
 /* script callbacks (cPy_Function of the GVAR_SCRIPT_FUNCTION variables) */
 #define g_OnSleep (GAME_ARRAY_IN(cPy_Function, GVar_OnSleep, 16))
 #define g_OnLifeItemTaken (GAME_ARRAY_IN(cPy_Function, GVar_OnLifeItemTaken, 16))

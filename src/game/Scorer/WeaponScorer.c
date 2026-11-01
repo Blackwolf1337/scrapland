@@ -182,8 +182,8 @@ int cWeaponScorer_Var(cWeaponScorer *self, const char *name, byte set, char **s,
 #define g_WeaponChangeFadeTime GAME_GLOBAL_IN(float, GVar_WeaponChangeFadeTime, 16)	/* WeaponChangeFadeTime */
 #define g_WeaponChangeShowTime GAME_GLOBAL_IN(float, GVar_WeaponChangeShowTime, 16)	/* WeaponChangeShowTime: the slots after a change */
 /* the slot row of the weapons, shared by all items: per weapon 0 none, 1 with ammo, 2 without; its place in the row */
-#define g_WeaponSlotState (GAME_ARRAY(int, g_WeaponSlotState))		/* [WEAPONSCORER_WEAPONS] */
-#define g_WeaponSlotPlace (GAME_ARRAY(int, g_WeaponSlotPlace))		/* [WEAPONSCORER_WEAPONS] */
+extern int g_WeaponSlotState[7];		/* [WEAPONSCORER_WEAPONS] */
+extern int g_WeaponSlotPlace[7];		/* [WEAPONSCORER_WEAPONS] */
 extern int g_WeaponSlotCount;
 
 #define WEAPON_UAMMO_MAX 200.0f		/* the ammo of an upgrade */

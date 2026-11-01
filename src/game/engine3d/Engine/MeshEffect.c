@@ -23,8 +23,8 @@ extern int g_MeshEffectStencil;
 extern int g_NumScreens;
 extern int g_NumModels;
 #define g_MeshEffectMat (GAME_ARRAY(CMaterial, g_MeshEffectMat))	/* a static object of the file */
-#define g_Screens (GAME_ARRAY(CModel *, g_Screens))
-#define g_Models (GAME_ARRAY(CModel *, g_Models))
+extern CModel * g_Screens[10];
+extern CModel * g_Models[10];
 extern byte g_MeshEffectMatInit;
 
 void MeshEffect_AddScreen(CModel *m) {

@@ -504,7 +504,7 @@ void ShadowsStencil_Render(void) {
 #define g_StencilBBox GAME_GLOBAL_IN(int, GVar_R_StencilBBox, 16)	/* R_StencilBBox: the segment to the light tested */
 #define g_StencilViewDisp GAME_GLOBAL_IN(float, GVar_R_StencilViewDisp, 16)	/* R_StencilViewDisp: the volumes moved along the view */
 extern int g_StencilGroupsMax;
-#define g_TriFacing (GAME_ARRAY(byte, g_TriFacing))		/* [0x10000] the triangles facing the light */
+extern byte g_TriFacing[65536];		/* [0x10000] the triangles facing the light */
 #define LIGHT_SPOT 0x1389
 
 void Stencil_Mesh(struct CVertList *v, const void *tris, uint32_t nTri, struct CMeshD3D *m, struct CRenderNode *r) {

@@ -60,7 +60,7 @@ void cSndItem_Restart(cSndItem *self);
 #define g_ATPCUpgradeDelay GAME_GLOBAL_IN(float, GVar_ATPCUpgradeDelay, 16)
 #define g_HookPlugFunc (GAME_ARRAY_IN(cPy_Function, GVar_HookPlugFunc, 16))
 #define g_RestoreUpgradeFunc (GAME_ARRAY_IN(cPy_Function, GVar_RestoreUpgradeFunc, 16))
-#define g_WeapListBuf (GAME_ARRAY(char, g_WeapListBuf))		/* 0x200 bytes, GetWeapList */
+extern char g_WeapListBuf[512];		/* 0x200 bytes, GetWeapList */
 #define g_WeaponNeedOrder (GAME_ARRAY(const int[6], g_WeaponNeedOrder))	/* three orders of six weapons */
 #define g_VehicleCenterPadLock GAME_GLOBAL_IN(float, GVar_VehicleCenterPadLock, 16)
 #define g_CannonScorerColorRed GAME_GLOBAL_IN(uint32_t, GVar_CannonScorerColorRed, 16)
@@ -131,8 +131,8 @@ void cWeaponManager_PlayStartSnd(cWeaponManager *self);
 int cWeaponManager_WeaponNeed(cWeaponManager *self);
 
 /* Weaps/ATPC.cpp: the shot of the ATPC (a charge per mounted slot), its HUD item and the debris cloud */
-#define g_ATPCShooter (GAME_ARRAY(char, g_ATPCShooter))		/* 0x80 bytes, the vehicle of the last shot */
-#define g_ATPCVictim (GAME_ARRAY(char, g_ATPCVictim))		/* 0x80 bytes */
+extern char g_ATPCShooter[128];		/* 0x80 bytes, the vehicle of the last shot */
+extern char g_ATPCVictim[128];		/* 0x80 bytes */
 extern float g_ATPCNumSlots;		/* the slots of the last shot */
 #define g_ATPCAmmoCost GAME_GLOBAL_IN(float, GVar_ATPCAmmoCost, 16)
 #define g_ATPCExtraDamage GAME_GLOBAL_IN(int, GVar_ATPCExtraDamage, 16)
@@ -176,8 +176,8 @@ void Cloud_Fire(cAbstractFile *params);
 void Cloud_OnHit(cAbstractFile *params);
 
 /* Weaps/Devastator.cpp: the Devastator and the EMI */
-#define g_DevShooter (GAME_ARRAY(char, g_DevShooter))		/* 0x80 bytes */
-#define g_DevVictim (GAME_ARRAY(char, g_DevVictim))		/* 0x80 bytes */
+extern char g_DevShooter[128];		/* 0x80 bytes */
+extern char g_DevVictim[128];		/* 0x80 bytes */
 #define g_DevastatorRechargeTime GAME_GLOBAL_IN(float, GVar_DevastatorRechargeTime, 16)
 #define g_DevastatorExplosionRadius GAME_GLOBAL_IN(float, GVar_DevastatorExplosionRadius, 16)
 #define g_DevastatorExtraDamage GAME_GLOBAL_IN(float, GVar_DevastatorExtraDamage, 16)
@@ -200,7 +200,7 @@ void Cloud_OnHit(cAbstractFile *params);
 #define g_FXDevastatorRadius GAME_GLOBAL_IN(float, GVar_FXDevastatorRadius, 16)
 #define g_FXDevastatorScale GAME_GLOBAL_IN(float, GVar_FXDevastatorScale, 16)
 #define g_DevXplosionNative GAME_GLOBAL_IN(nativefunc_t, NativeFunc_DevastatorXplosionCall, 4)	/* the function of "!DevastatorXplosionCall" */
-#define g_DevColorRamps (GAME_ARRAY(uint32_t, g_DevColorRamps))	/* three color ramps of 9 words */
+extern uint32_t g_DevColorRamps[36];	/* three color ramps of 9 words */
 #define g_CreateEMIFunc (GAME_ARRAY_IN(cPy_Function, GVar_CreateEMIFunc, 16))
 #define g_EMIRechargeTime GAME_GLOBAL_IN(float, GVar_EMIRechargeTime, 16)
 #define g_EMIAmmoNeed GAME_GLOBAL_IN(int, GVar_EMIAmmoNeed, 16)

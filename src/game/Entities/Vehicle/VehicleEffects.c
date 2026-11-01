@@ -518,7 +518,7 @@ void cVehicleEffects_UpdateState(cVehicleEffects *self, float dt) {
 /* ---- the parts before the range of the file: constructors, destructor, Update and the escape tubes ---- */
 
 #define VEFF_TUBE_STEP 0.025f			/* between two emissions */
-#define g_VehicleSmokeRamps (GAME_ARRAY(uint32_t, g_VehicleSmokeRamps))	/* 3 color ramps of 9 colors */
+extern uint32_t g_VehicleSmokeRamps[28];	/* 3 color ramps of 9 colors */
 
 cVehicleEffects *cVehicleEffects_ctor(cVehicleEffects *self) {
 	self->owner = NULL;
@@ -707,7 +707,7 @@ void cVehicleTubes_Update(cVehicleTubes *self, float dt) {
 
 /* ---- the wind smoke ---- */
 
-#define g_WindSmokeRamps (GAME_ARRAY(uint32_t, g_WindSmokeRamps))	/* 2 color ramps of 9 colors */
+extern uint32_t g_WindSmokeRamps[18];	/* 2 color ramps of 9 colors */
 
 /* rand / 32767 * range + add with a float range, as the original */
 static inline float VE_RandAddF(float range, float add) {
@@ -829,10 +829,10 @@ void cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float y, float z)
 /* ---- the shoot effects: the particles of m_FollowSistPart2 of the embedded FX at the weapon ---- */
 
 /* the color ramps of the shots (9 colors each) */
-#define VS_RAMP_FIRE (GAME_ARRAY(uint32_t, VS_RAMP_FIRE))	/* [2 * 9], 2 ramps */
+extern uint32_t VS_RAMP_FIRE[18];	/* [2 * 9], 2 ramps */
 #define VS_RAMP_FIRE2 (GAME_ARRAY_IN(uint32_t, VS_RAMP_FIRE, 36))
-#define VS_RAMP_SMOKE (GAME_ARRAY(uint32_t, VS_RAMP_SMOKE))
-#define VS_RAMP_ATPC (GAME_ARRAY(uint32_t, VS_RAMP_ATPC))
+extern uint32_t VS_RAMP_SMOKE[9];
+extern uint32_t VS_RAMP_ATPC[19];
 
 #define g_FXVulcanFireScale GAME_GLOBAL_IN(float, GVar_FXVulcanFireScale, 16)
 #define g_FXVulcanFireTime GAME_GLOBAL_IN(float, GVar_FXVulcanFireTime, 16)
