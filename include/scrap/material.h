@@ -25,6 +25,7 @@ enum {
 #define CMATERIAL_VFTABLE GAME_VFTABLE(CMaterial_vftable, 0x3d6dbc)
 
 /* params.attrib */
+#define MAT_NOCOLLIDE 0x1		/* "(nc)", "(+no_collide)": the triangles get TRI_ALT_NO_COLLISIONS */
 #define MAT_LOADTEX 0x40		/* textures loaded also with LoadTextures 2 */
 #define MAT_MAPCOLOR 0x80		/* the diffuse color comes from the map (CMaterial_MapToColor) */
 #define MAT_SHADER 0x200		/* the name holds "(+shader: name)" */

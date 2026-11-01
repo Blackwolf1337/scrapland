@@ -285,7 +285,7 @@ CParticle *__thiscall CParticleSystem_GetFree(CParticleSystem *self, byte force)
 			return p;
 		}
 		/* a static particle has no t: the float after it is read, as in the exe */
-		float t = *(float *)((byte *)p + 0x38);
+		float t = ((CParticleActive *)p)->t;
 		if (force && (PARTICLE_TYPE(p) == PARTICLE_STATIC || best <= t)) {
 			best = t;
 			oldest = p;

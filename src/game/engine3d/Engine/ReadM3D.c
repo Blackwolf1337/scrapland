@@ -2386,7 +2386,7 @@ void M3D_ReadMaterial(CMatList *list, int iMat, int iSubmat) {
 	static const struct {
 		const char *s;
 		uint16_t attrib;
-	} flags[12] = { { "(nc)", 0x1 }, { "(+no_collide)", 0x1 }, { "(agua)", 0x2 }, { "(niebla)", 0x4 },
+	} flags[12] = { { "(nc)", MAT_NOCOLLIDE }, { "(+no_collide)", MAT_NOCOLLIDE }, { "(agua)", 0x2 }, { "(niebla)", 0x4 },
 		{ "(+shader:clouds)", 0x4 }, { "(+sort_zbias)", 0x10 }, { "(+transp_before)", 0x10 },
 		{ "(+alpha_test)", 0x20 }, { "(+area_light:", 0x100 }, { "(+shader:", MAT_SHADER }, { "(+zbias)", 0x800 },
 		{ "(+xshadow)", 0x4000 } };

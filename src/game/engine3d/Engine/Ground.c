@@ -1498,8 +1498,8 @@ void __thiscall CGround_AddMesh(CGround *self, CCollideMesh *mesh, CTriMesh *tm,
 			ct->v[k] = (uint16_t)((uint16_t)t->v[k] + (uint16_t)nv);
 		}
 		ct->flags = (uint16_t)t->flags;
-		/* a material without collisions (byte 0x3c bit 0) needs the flag on the triangle */
-		CHECK(!(t->mat && (*((byte *)t->mat + 0x3c) & 1)) || (ct->flags & TRI_ALT_NO_COLLISIONS));
+		/* a material without collisions needs the flag on the triangle */
+		CHECK(!(t->mat && (((CMaterial *)t->mat)->params.attrib & MAT_NOCOLLIDE)) || (ct->flags & TRI_ALT_NO_COLLISIONS));
 		if ((ct->flags & TRI_ALT_INVALID) == TRI_ALT_INVALID) {
 			invalid++;
 		}

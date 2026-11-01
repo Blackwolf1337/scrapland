@@ -8,7 +8,6 @@
 #include "scrap/fxelements.h"
 
 #define PB_SYSTEMS 5		/* the debris systems <PoliceBossBrupBaseFile>A.M3D .. E.M3D */
-#define DebrisSys_OnHit(s) (*(void **)((byte *)(s) + 0x28))	/* called on a bounce (debris, hit) */
 #define PB_Started(el) (*(byte *)((byte *)(el) + 0x10))
 
 /* params: the boss, an event and the life factor of the debris: PoliceBossBrupDebrisMin..Max debris out of the
@@ -35,7 +34,7 @@ void ChType_FXPoliceBossBrup(cAbstractFile *params) {
 		s->flag = 1;
 		s->d = 980.0f;
 		s->b = 0.75f;
-		DebrisSys_OnHit(s) = (void *)GAME_FUNC(ChType_PoliceBossBrupBounce, CHTYPE_POLICEBOSSBRUPBOUNCE);
+		s->onHit = (DebrisHit_t)GAME_FUNC(ChType_PoliceBossBrupBounce, CHTYPE_POLICEBOSSBRUPBOUNCE);
 	}
 	int r = crt_rand();
 	int n = g_PoliceBossBrupDebrisMin + r % (g_PoliceBossBrupDebrisMax - g_PoliceBossBrupDebrisMin);
