@@ -74,7 +74,7 @@ check('SDVheCar', lambda: (vhecarobj is not None, vhecar != 0))
 if vhecar:
 	vhec = vhecar
 	vhefx = vhec + 0x7f0
-	check('cVehicleEntity_GetClassName', lambda c=vhec: SDTest.Call('cVehicleEntity_GetClassName', 'tii', c)[0] - 0x400000)
+	check('cVehicleEntity_GetClassName', lambda c=vhec: SDTest.Call('cVehicleEntity_GetClassName', 'tsi', c)[0])
 	for vhetype in ('Car', 'WithLife', 'Obj', 'Entity', 'car', 'WalkChar', ''):
 		check('cVehicleEntity_IsType' + fmt((vhetype,)), lambda c=vhec, t=vhetype: SDTest.Call('cVehicleEntity_IsType', 'tbis', c, t)[0])
 	check('cVehicleEntity_GetOwnerSlot', lambda c=vhec: SDTest.Call('cVehicleEntity_GetOwnerSlot', 'tii', c)[0])
