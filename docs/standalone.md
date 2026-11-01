@@ -6,7 +6,8 @@ It is reached in stages, each one runs the difftest.
 Since stage 3c2 ScrapC.exe is a normal exe with no byte of the original, and neither ScrapC.exe nor its build needs
 Scrap.exe. ScrapC.exe needs only the game files: the packs and fmod.dll of the game's DLLs in game/Bin (it imports
 neither Galaxy.dll nor steam_api.dll since the store code was removed). It runs without ucrtbase_ms.dll, which only
-gives the exact math under Wine. The original exe is needed only for the optional check (`cmake --build build --target
+gives the exact math under Wine. The build option `SCRAP_OWN_MATH` gives a ScrapC.exe with math of its own and no DLL,
+with the differences of stage 2b. The original exe is needed only for the optional check (`cmake --build build --target
 datacheck`, stage 3c2) and for the original run of the difftest.
 
 ## Stage 0: wipe check (hook DLL)
@@ -309,6 +310,77 @@ Domain and range errors: ucrtbase calls the user matherr and sets errno when it 
 handler also sets the errno of ScrapC.exe (EDOM for `_DOMAIN`, ERANGE for `_SING` and `_OVERFLOW`), which the Python
 reads after its math calls. On Windows both are the same DLL. The "Math Error" lines of log.html are the same as the
 original's in all three scenarios but for the sqrt lines of sdcall (below).
+
+`src/standalone/crtlibm.c` is the MSVC math as C of our own. The CMake option `SCRAP_OWN_MATH` (default OFF,
+`cmake -B build -DSCRAP_OWN_MATH=ON`) builds it into ScrapC.exe. Then no DLL is loaded for the math and `crtmath.c` only
+logs "crt: the MSVC math of its own (crtlibm.c)". The default stays Microsoft's ucrtbase because the own math does not
+match everywhere (see below).
+
+It was written from the C standard, the observed output of ucrtbase 10.0.10586 (black box probes and a differential
+fuzz, no disassembly) and public algorithms (double-double arithmetic). No third-party code is in it. The tables in
+`src/standalone/crtlibmtab.h` are function values rounded to double-double, made by `tools/standalone/libmtab.c` with
+MPFR (`gcc -O2 -o libmtab tools/standalone/libmtab.c -lmpfr -lgmp`). Every entry keeps its convention: the cdecl
+functions, the `_libm_sse2_*_precise` entries (xmm0, xmm1) through a short asm wrapper, `_CIatan2` and `_CIfmod` on the
+x87 stack.
+
+What the probes found, and the file does the same way:
+
+- sqrt is the x87 fsqrt in the precision of the caller's control word, so it gives 24 bit results once Direct3D has set
+  the precision. For a NaN argument the runtime calls matherr with type 0 (the game logs "unknown math error").
+- atan2 and `_CIatan2` are the x87 fpatan of |y| and |x| with 64 bit precision, pi (the 80 bit fldpi value) minus that
+  for a negative x, then the sign of y. `_CIatan2` returns the 80 bit value. fpatan is exact to the CPU, so the result
+  is the original's on the same machine.
+- `_hypot` is big * sqrt(1 + (small/big)^2) on the x87 with 64 bit precision, the square root rounded to a double. Its
+  matherr arguments are x and y divided by the larger one.
+- fmod is fprem, ldexp fscale. These x87 functions round a result below DBL_MIN to 53 bits and then cut it toward zero.
+- The cdecl atan rounds in the caller's precision for |x| below 2^-27 and for |x| from 1/(the low part of pi/2) on
+  (about 1.6e16). The SSE2 entry does not.
+- sin and cos from 90112 on and tan from 12800 on reduce with pi/2 of 66 bits (two pieces of 33 bits, 2.02e-21 below
+  pi/2), so their results there are the function of that reduced argument.
+- Underflow (a result below DBL_MIN) is reported to matherr with errno left alone. sinh, cosh, tanh and the cdecl atan2
+  and fmod change the low word lo of a NaN to (lo & 0xffe00000) + (lo >> 11). The cdecl atan2 and fmod report a domain
+  error for two NaNs of which one is signaling.
+
+All other functions give the correctly rounded result (double-double evaluation, error near 2^-100). Microsoft's are
+within about 0.51 ulp (sinh and cosh 0.79 ulp) and are not always correctly rounded, so there the last bit differs, and
+that cannot be matched without Microsoft's algorithm. Also unmatched: sin, cos and tan from 2^63 on, where the runtime's
+result is no function of the argument that the probes could find (the own code takes the x87 remainder there), and pow
+for some inputs near a rounding midpoint (pow(x, 0.5) with x just below a power of 2, x*x at an exact midpoint), where
+Microsoft rounds up.
+
+The fuzz (outside git, a mingw exe that loads `ucrtbase_ms.dll` under Wine and calls both sides through the same
+conventions at x87 precision 24 and 53 bits, comparing result bits, errno and the matherr call) ran 500000 cases per
+entry and precision on 2026-11-01, 33 million calls in all, plus 500000 per precision for sin, cos and tan below 2^63.
+The match rates in percent, at 24 and at 53 bits:
+
+| Entries | Match rate (24 / 53 bits) |
+| --- | --- |
+| ceil, floor, fabs, frexp, ldexp, modf, sqrt, fmod, `_CIfmod`, `_hypot` | 100 / 100 |
+| atan2 | 99.9994 / 99.9998 |
+| `_CIatan2` (an input next to DBL_MIN) | 99.9996 / 99.9998 |
+| acos | 99.990 / 99.991 |
+| asin | 99.980 / 99.980 |
+| atan | 99.874 / 99.874 |
+| exp | 99.831 / 99.830 |
+| log | 99.995 / 99.996 |
+| log10 | 99.998 / 99.999 |
+| pow | 99.966 / 99.966 |
+| tanh | 99.992 / 99.993 |
+| sinh | 98.53 / 98.51 |
+| cosh | 98.51 / 98.51 |
+| sin, cos, tan below 2^63 | 99.94, 99.95, 99.89 |
+| sin, cos, tan with the fuzz's share of arguments from 2^63 on | about 84.9 |
+
+The SSE2 entries give the same rates within a few cases. In the mismatches of the other functions MPFR shows that the
+own result is the correctly rounded one, except 27 + 42 pow cases (the midpoint cases above). Of those of sin, cos and
+tan below 2^63, about 60 lie from 90112 on, where the runtime's reduced argument has small errors of its own.
+
+The difftests on 2026-11-01 with `SCRAP_OWN_MATH=ON`: the hook DLL run matches (sdtest 9965, sdcall 28986, sdlevel
+19095, 9894 hooks). With `DIFFTEST_STANDALONE=1`, with and without `ucrtbase_ms.dll` in game/Bin, sdtest differs in 9
+checks: math.sin, math.cos and math.tan of 1e22 and of plus and minus 1e300 in `sdpy.py`. The other differences were
+heap addresses in the printed data, not math: in one run sdcall's Array_Read8, in the next run 9 checks of
+`cFXElementsMentalControllerMainFX_Update` in sdlevel (one address in each, all floats equal). The default build had one
+such check too in the same series (Pal16_ToRGB in sdcall), so these depend on the heap layout of the run.
 
 No DLL exports `__ftoui3`, `__dtoui3` and the vector cos, sin and exp of two doubles. They are C of our own in
 `src/standalone/crtvec.c`, written from their documented behavior, with a short asm wrapper each for the register
