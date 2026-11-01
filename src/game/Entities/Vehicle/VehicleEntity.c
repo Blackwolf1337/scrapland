@@ -606,30 +606,30 @@ void __thiscall cVehicleEntity_NetMove(cVehicleEntity *self, float dt) {
 		net->force = 0;
 		Veh_Net(self)->hit = 0;
 		self->netCtrl->bumpSends = 0;
-		self->wl.obj.vel = Veh_Net(self)->vel;
-		self->wl.obj.base.pos = Veh_Net(self)->pos;
-		self->wl.obj.ang.x = Veh_Net(self)->ang.x;
-		self->wl.obj.ang.y = Veh_Net(self)->ang.y;
+		self->wl.obj.vel = Veh_Net(self)->base.vel;
+		self->wl.obj.base.pos = Veh_Net(self)->base.pos;
+		self->wl.obj.ang.x = Veh_Net(self)->base.ang.x;
+		self->wl.obj.ang.y = Veh_Net(self)->base.ang.y;
 		if (self->wl.obj.cam) {
 			((cFollowCamEntity *)self->wl.obj.cam)->slowFrames = 10;
 		}
 	} else if (net->hit) {
 		net->hit = 0;
 		self->netCtrl->bumpSends = 0;
-		self->wl.obj.vel = Veh_Net(self)->vel;
+		self->wl.obj.vel = Veh_Net(self)->base.vel;
 	}
 }
 
 void __thiscall cVehicleEntity_ClientMove(cVehicleEntity *self, float dt) {
 	cNetVController *net = Veh_Net(self);
 
-	if (net->wait == 0.5f) {
-		net->vftable->Move(net, Veh_Ent(self), dt, 1);
+	if (net->base.age == 0.5f) {
+		net->base.vftable->Apply(&net->base, Veh_Ent(self), dt, 1);
 		return;
 	}
 	vec3_t from = self->wl.obj.base.pos;
-	net->vftable->Move(net, Veh_Ent(self), dt, 1);
-	if (!(Veh_Net(self)->flags & 0x40)) {
+	net->base.vftable->Apply(&net->base, Veh_Ent(self), dt, 1);
+	if (!(Veh_Net(self)->base.flags & 0x40)) {
 		self->wl.obj.rotVel.z = 0.0f;
 	}
 	cVehicleEntity_Collide(self, &from, dt);
@@ -640,34 +640,34 @@ void __thiscall cVehicleEntity_ServerMove(cVehicleEntity *self, float dt) {
 	vec3_t start = *pos;
 	cNetVController *net = Veh_Net(self);
 
-	if (net->wait == 0.5f) {
-		if (cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), (void *)1, &net->pos, self->wl.prim.radius, NULL, 1, 0)) {
+	if (net->base.age == 0.5f) {
+		if (cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), (void *)1, &net->base.pos, self->wl.prim.radius, NULL, 1, 0)) {
 			self->netCtrl->force = 2;
 		}
 		cNetVController *nc = self->netCtrl;
 		if (!nc->force) {
 			if (nc->hit) {
-				Veh_Net(self)->flags &= 0xef;
+				Veh_Net(self)->base.flags &= 0xef;
 			}
-			Veh_Net(self)->vftable->Move(Veh_Net(self), Veh_Ent(self), dt, 1);
+			Veh_Net(self)->base.vftable->Apply(&Veh_Net(self)->base, Veh_Ent(self), dt, 1);
 			cAutoAim_Update(&self->autoAim, Veh_Ent(self), dt);
 		} else {
-			Veh_Net(self)->wait = Veh_Net(self)->wait - dt;
+			Veh_Net(self)->base.age = Veh_Net(self)->base.age - dt;
 		}
 	} else {
 		pos->x = pos->x + self->wl.obj.vel.x * dt;
 		pos->y = self->wl.obj.vel.y * dt + pos->y;
 		pos->z = self->wl.obj.vel.z * dt + pos->z;
-		float wait = net->wait;
+		float wait = net->base.age;
 		if (wait > 0.0f) {
-			net->wait = wait - dt;
+			net->base.age = wait - dt;
 		} else if (wait == -10000.0f) {
 			float fr = self->friction;
 			self->wl.obj.vel.x = self->wl.obj.vel.x - self->wl.obj.vel.x * dt * fr;
 			self->wl.obj.vel.y = self->wl.obj.vel.y - self->wl.obj.vel.y * dt * fr;
 			self->wl.obj.vel.z = self->wl.obj.vel.z - self->wl.obj.vel.z * dt * fr;
 		} else {
-			net->wait = -10000.0f;
+			net->base.age = -10000.0f;
 			self->wl.obj.vel.x = 0.0f;
 			self->wl.obj.vel.y = 0.0f;
 			self->wl.obj.vel.z = 0.0f;
@@ -886,7 +886,7 @@ void __fastcall cVehicleEntity_NetDelete(cVehicleEntity *self) {
 
 void __thiscall cVehicleEntity_NetRead(cVehicleEntity *self, void *msg, int unused) {
 	(void)unused;
-	Veh_Net(self)->vftable->Read(Veh_Net(self), msg);
+	Veh_Net(self)->base.vftable->Read(&Veh_Net(self)->base, msg);
 }
 
 void __thiscall cVehicleEntity_NetWrite(cVehicleEntity *self, float dist2, void *msg, int full) {
@@ -905,7 +905,7 @@ void __thiscall cVehicleEntity_NetWrite(cVehicleEntity *self, float dist2, void 
 	memcpy(&bits, &dist2, sizeof(bits));
 	bits = (bits & ~0xffu) | kind;
 	cNetVController *net = self->netCtrl ? self->netCtrl : Veh_Net(self);
-	net->vftable->Write(net, (int)bits, Veh_Ent(self), msg, full);
+	net->base.vftable->Write(&net->base, (int)bits, Veh_Ent(self), msg, full);
 }
 
 void __thiscall cVehicleEntity_SetUsrControl(cVehicleEntity *self, int slot) {
@@ -1313,17 +1313,17 @@ void __thiscall cVehicleEntity_GetCamPoint(cVehicleEntity *self, vec3_t *pos, ve
 		return;
 	}
 	cNetVController *net = Veh_Net(self);
-	ang->x = -net->ang.x;
-	ang->y = net->ang.y + 3.1415927f;
+	ang->x = -net->base.ang.x;
+	ang->y = net->base.ang.y + 3.1415927f;
 	ang->z = 0.0f;
 	v.x = self->wl.obj.camOff.x + 0.0f;
 	v.y = self->wl.obj.camOff.y + Veh_Net(self)->height;
 	v.z = self->wl.obj.camOff.z + 0.0f;
 	vec3_t *rp = Vec3_Rotate(&r, &v, ang);
 	net = Veh_Net(self);
-	pos->x = net->pos.x + rp->x;
-	pos->y = net->pos.y + rp->y;
-	pos->z = net->pos.z + rp->z;
+	pos->x = net->base.pos.x + rp->x;
+	pos->y = net->base.pos.y + rp->y;
+	pos->z = net->base.pos.z + rp->z;
 }
 
 /* ---- the small vtable slots ---- */

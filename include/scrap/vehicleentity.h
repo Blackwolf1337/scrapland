@@ -28,26 +28,9 @@ typedef struct cNetVController cNetVController;
 
 /* the network controller of a vehicle (cNetVController of the RTTI, a cNetController; see cObjNet of
  * include/scrap/itementity.h): at 0xf4 for every vehicle, a second one at 0x4fc for the ships of the players on
- * the server */
-typedef struct cNetVControllerVtbl {
-	void *vf00;
-	void(__thiscall *Read)(cNetVController *self, void *msg);				/* 0x04 */
-	void(__thiscall *Write)(cNetVController *self, int kind, cEntity *e, void *msg, int full);	/* 0x08 */
-	void *vf03;
-	/* the vehicle moved to the received state over dt */
-	void(__thiscall *Move)(cNetVController *self, cEntity *e, float dt, int flag);	/* 0x10 */
-} cNetVControllerVtbl;
-SD_OFFSET(cNetVControllerVtbl, Move, 0x10);
-
+ * the server. base.age is 0.5 until the first state, then counts down; Apply moves the vehicle to the state */
 struct cNetVController {
-	const cNetVControllerVtbl *vftable;	/* 0x00 */
-	float wait;			/* 0x04 0.5 until the first state, then counts down */
-	vec3_t pos;			/* 0x08 */
-	vec3_t ang;			/* 0x14 */
-	vec3_t vel;			/* 0x20 */
-	byte pad_2c[0x38 - 0x2c];
-	byte flags;			/* 0x38 */
-	byte pad_39[0x5c - 0x39];
+	cNetController base;		/* 0x00 */
 	cEntity *vehicle;		/* 0x5c */
 	byte seq;			/* 0x60 low nibble: hit counter, high nibble: force counter; a change sets hit/force on the client */
 	byte pad_61[3];
@@ -58,7 +41,7 @@ struct cNetVController {
 	uint16_t keys;			/* 0x74 the controls of the client */
 	byte pad_76[2];
 };
-SD_OFFSET(cNetVController, flags, 0x38);
+SD_OFFSET(cNetVController, vehicle, 0x5c);
 SD_OFFSET(cNetVController, hit, 0x64);
 SD_OFFSET(cNetVController, keys, 0x74);
 SD_SIZE(cNetVController, CNETVCONTROLLER_SIZE);

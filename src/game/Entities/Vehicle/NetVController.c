@@ -27,7 +27,7 @@ cNetVController *__thiscall cNetVController_ctor(void *mem, cEntity *v) {
 	cNetVController *self = (cNetVController *)cNetController_ctor(mem);
 
 	self->vehicle = v;
-	self->vftable = CNETVCONTROLLER_VFTABLE;
+	self->base.vftable = CNETVCONTROLLER_VFTABLE;
 	self->hit = 0;
 	self->force = 0;
 	self->seq = 0;
@@ -39,16 +39,16 @@ cNetVController *__thiscall cNetVController_ctor(void *mem, cEntity *v) {
 /* vf03: an active vehicle always sends its position */
 byte __thiscall cNetVController_Changed(cNetVController *self, byte flags, cEntity *e) {
 	if (self->vehicle->active) {
-		byte f = cNetController_Changed((cNetController *)self, flags, e) | NETC_POS;
-		self->flags = f;
+		byte f = cNetController_Changed(&self->base, flags, e) | NETC_POS;
+		self->base.flags = f;
 		return f;
 	}
-	return cNetController_Changed((cNetController *)self, flags, e);
+	return cNetController_Changed(&self->base, flags, e);
 }
 
 /* vf00 */
 void __thiscall cNetVController_Reset(cNetVController *self) {
-	cNetController_Reset((cNetController *)self);
+	cNetController_Reset(&self->base);
 }
 
 #define NETV_KEY_ACTIVE 0x08
@@ -206,7 +206,7 @@ void __thiscall cNetVController_Read(cNetVController *self, void *m) {
 	}
 	cWeaponManager_SetUAmmo(&NETV_VEH(self)->weapons, NETV_VEH(self)->weapons.curWeap, (float)upAmmo);
 base:
-	cNetController_Read((cNetController *)self, msg);
+	cNetController_Read(&self->base, msg);
 	if (shot) {
 		if (shotSet) {
 			self->vehicle->vftable->GetPos(self->vehicle, &q);
@@ -226,7 +226,7 @@ base:
 		q = *Grid_ClampPos(g_pWorld->grid, &clamped, &q);
 		cWeaponManager_LockPoint(&NETV_VEH(self)->weapons, &q);
 	}
-	if ((signed char)self->flags < 0) {
+	if ((signed char)self->base.flags < 0) {
 		byte b;
 		NetV_Read(msg, &b, 1);
 		self->force = ((b ^ self->seq) & 0xf0) != 0;
@@ -451,8 +451,8 @@ base:
 		flags &= NETC_FULL | NETC_POS | NETC_VEL | 0x80;
 		self->bumpSends--;
 	}
-	cNetController_Write((cNetController *)self, flags, e, msg, force);
-	if ((signed char)self->flags < 0) {
+	cNetController_Write(&self->base, flags, e, msg, force);
+	if ((signed char)self->base.flags < 0) {
 		int hit = self->hit;
 		if (hit == 2) {
 			self->seq = (byte)((self->seq & 0xf0) | ((self->seq + 1) & 0x0f));
