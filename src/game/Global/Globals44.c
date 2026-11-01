@@ -75,7 +75,6 @@
 #undef g_GearSwName
 #undef g_GearTarget
 #undef g_GearXplodePos
-#undef g_GogReady
 #undef g_HashItemPool
 #undef g_HashItemRefs
 #undef g_HazePos
@@ -158,8 +157,6 @@
 #undef g_SonicHitPos
 #undef g_SputnikPisser
 #undef g_SputnikTime
-#undef g_SteamIdStr
-#undef g_SteamTicket
 #undef g_StrTmp
 #undef g_SwarmAmmoCosts
 #undef g_SwarmHudTarget
@@ -177,7 +174,6 @@
 #undef s_TauntLastTime
 #undef s_TauntTimeGuard
 
-uint32_t Gog_CatchError_44226c SD_AT(0x44226c) = 0x56413f2e;
 cActClassList *g_pActClassList SD_AT(0x444080);
 cActClass *g_pAuxActClass SD_AT(0x444084);
 cAction *g_pAuxAction SD_AT(0x444088);
@@ -1137,8 +1133,6 @@ cMemStats g_MemStats SD_BSS(0x44b628);
 cMemStats *g_MemStatsContext SD_BSS(0x44b640);
 uint32_t Mem_Count_44b644 SD_BSS(0x44b644);
 char g_StrTmp[256] SD_BSS(0x44b648);
-char g_SteamTicket[1024] SD_BSS(0x44b748);
-char g_SteamIdStr[64] SD_BSS(0x44bb48);
 cSaveVar *g_SaveVars SD_BSS(0x44bb88);
 cGVarFunction GVar_OnCrazyDealFinished SD_BSS(0x44bb8c);
 cGVar GVar_LastSaveGameName SD_BSS(0x44bbb0);
@@ -1147,7 +1141,6 @@ int g_SaveVarCount SD_BSS(0x44bbec);
 cStaticBuffer cStaticBuffer_PyStaticBuffer[2] SD_BSS(0x44bbf0);
 char g_Utf8Buf[1024] SD_BSS(0x44bc08);
 char g_VersionBuf[256] SD_BSS(0x44c008);
-byte g_GogReady SD_BSS(0x44c108);
 cGVar GVar_LogRumble SD_BSS(0x44c110);
 cActionSetTable g_ActionSets SD_BSS(0x44c128);
 cPlayerInput g_PlayerInput[4] SD_BSS(0x44c130);

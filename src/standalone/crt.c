@@ -374,10 +374,6 @@ char *crt_ltoa(long v, char *buf, int radix) {
 	return _ltoa(v, buf, radix);
 }
 
-char *crt_ui64toa(uint64_t v, char *buf, int radix) {
-	return _ui64toa(v, buf, radix);
-}
-
 void crt_qsort(void *base, size_t n, size_t size, int (*cmp)(const void *, const void *)) {
 	qsort(base, n, size, cmp);
 }
@@ -480,33 +476,13 @@ void (*crt_signal(int sig, void (*handler)(int)))(int) {
 	abort();
 }
 
-/* ---- error helpers of the compiler and the STL: the original throws or fails fast, nothing catches it ---- */
+/* ---- error helper of the compiler: the original fails fast ---- */
 
 /* __report_rangecheckfailure: __fastfail(FAST_FAIL_RANGE_CHECK_FAILURE) */
 [[noreturn]] void crt_report_rangecheckfailure(void) {
 	__asm__ volatile("int $0x29" : : "c"(8));
 	TerminateProcess(GetCurrentProcess(), STATUS_STACK_BUFFER_OVERRUN);
 	__builtin_unreachable();
-}
-
-[[noreturn]] void crt_invalid_parameter_noinfo_noreturn(void) {
-	_invalid_parameter_noinfo_noreturn();
-}
-
-/* std::_Xlength_error and std::_Xout_of_range: an uncaught std::length_error / std::out_of_range, terminate() */
-[[noreturn]] void crt_Xlength_error(const char *msg) {
-	Com_Printf("crt: std::length_error: %s\n", msg);
-	abort();
-}
-
-[[noreturn]] void crt_Xout_of_range(const char *msg) {
-	Com_Printf("crt: std::out_of_range: %s\n", msg);
-	abort();
-}
-
-[[noreturn]] void crt_Throw_bad_array_new_length(void) {
-	Com_Printf("crt: std::bad_array_new_length\n");
-	abort();
 }
 
 /* ---- math: the classification; the math functions are the ones of Microsoft's ucrtbase (crtmath.c) ---- */

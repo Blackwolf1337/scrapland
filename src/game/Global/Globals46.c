@@ -69,7 +69,6 @@
 #undef g_GearAimMode
 #undef g_GearAimOff
 #undef g_GearAimTarget
-#undef g_IsSteam
 #undef g_MainMenuAnimInit
 #undef g_MainMenuLength
 #undef g_MainMenuNeonGroup
@@ -596,7 +595,6 @@ int g_XLoadIconFrame SD_BSS(0x467b8c);
 float g_XLoadStart SD_BSS(0x467b90);
 float g_XLoadLastStep SD_BSS(0x467b94);
 byte g_XLoadOn SD_BSS(0x467b98);
-byte g_IsSteam SD_BSS(0x467b9c);
 CWinApp *g_pApp SD_BSS(0x467ba0);
 cGVar GVar_InactiveBackgroundApp SD_BSS(0x467ba4);
 uint32_t g_TimeQPPause SD_BSS(0x467bbc);

@@ -1,13 +1,11 @@
-# The GOG sign-in and the videos without blocking waits (WinApp.c, App.c, ScrapEngMain.c, Video.c; execfile'd by
+# The videos without blocking waits (WinApp.c, App.c, ScrapEngMain.c, Video.c; execfile'd by
 # sdcall.py, Python 1.5.2). The video functions now return VIDEO_PENDING while a video plays on from the message
 # loop. In the test prefix the stream of Video/MSE.vds does not open (no XviD decoder: OpenFile fails in both runs),
 # so these calls end at once with the result of the original: the paths found, not found, the "a|b" lists, the start
 # video and Scrap.VideoPlayer. Not called: the stream itself (no video plays here), the init and the level load that
-# wait for a video, the GOG sign-in wait (the start of the test passes it).
+# wait for a video.
 import Scrap
 NWTVIDEO = 'Video/MSE.avi'
-check('nwt GOG signed in', lambda: SDTest.Peek('g_GogReady', 'b'))
-
 check('nwt Video_PlayFile mse', lambda: SDTest.Call('Video_PlayFile', 'isz', NWTVIDEO, None)[0])
 check('nwt Video_PlayFile missing', lambda: SDTest.Call('Video_PlayFile', 'isz', 'Video/SDNoVideo.avi', None)[0])
 check('nwt Video_PlayFile list', lambda: SDTest.Call('Video_PlayFile', 'isz', NWTVIDEO + '|' + NWTVIDEO, None)[0])

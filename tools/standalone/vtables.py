@@ -14,18 +14,14 @@ OUT = 'src/game/Global/Vtables.c'
 # the classes of the libraries in the copy, their vtables stay bytes of the original: the C++ runtime (type_info, the
 # std exceptions, the name nodes of its undecorator), nothing of the C calls them
 LIBRARY = re.compile(r'^\.\?AV(type_info|\w+@std|DNameNode|charNode|pcharNode|pDNameNode|DNameStatusNode|pairNode)@@$')
+# the classes of the original's GOG Galaxy and Steam code (the listeners, the Steam callbacks): the C has none of it
+STORE = re.compile(r'^\.\?AV(\?\$)?CCallback|@(galaxy|gog)@@$')
 
 # the template classes by hand (MSVC encodes the integer arguments: $06 is 7, $07 is 8)
 TEMPLATES = {
 	'.?AV?$cBinaryHeap@PAUElemAStar@@@@': 'cBinaryHeap_ElemAStar',
 	'.?AV?$cGridElements@UInfoTrafficNode@@@@': 'cGridElements_InfoTrafficNode',
 	'.?AV?$cGridElements@PAUInfPointVis@@@@': 'cGridElements_InfPointVis',
-	'.?AV?$CCallbackImpl@$07@@': 'CCallbackImpl_8',
-	'.?AV?$CCallback@VcGetAuthSessionTicketResponseExt@@UGetAuthSessionTicketResponse_t@@$0A@@@':
-		'CCallback_cGetAuthSessionTicketResponseExt',
-	'.?AV?$GalaxyTypeAwareListener@$06@api@galaxy@@': 'galaxy_api_GalaxyTypeAwareListener_7',
-	'.?AV?$SelfRegisteringListener@VIAuthListener@api@galaxy@@$1?ListenerRegistrar@23@YAPAVIListenerRegistrar@23@XZ'
-		'@api@galaxy@@': 'galaxy_api_SelfRegisteringListener_IAuthListener',
 }
 
 
@@ -87,7 +83,7 @@ def main():
 	game = []
 	names = set()
 	for rva, td, slots in find(x):
-		if LIBRARY.match(td):
+		if LIBRARY.match(td) or STORE.search(td):
 			continue
 		name = class_name(td) + '_vftable'
 		if name in names:

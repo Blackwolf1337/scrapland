@@ -373,17 +373,12 @@ SD_IMPORT_CRT(crt_difftime32, 0x345bb1)
 SD_IMPORT_CRT(crt_ctime32, 0x345734)
 
 /* module agent: Rest A, game leftovers below 0x1a8000 (imports below this line) */
-SD_IMPORT_CRT(crt_ui64toa, 0x34d6d5)
 SD_IMPORT_CRT(crt_stdio_common_vsscanf, 0x344793)
 SD_IMPORT_DLL_STDCALL(FSOUND_GetNumHWChannels, 12, 0x3179d8)
 SD_IMPORT_DLL_STDCALL(FSOUND_GetChannelsPlaying, 0, 0x3179de)
 SD_IMPORT_DLL_STDCALL(FSOUND_GetSFXMasterVolume, 0, 0x3179d2)
 SD_IMPORT_DLL_STDCALL(FSOUND_GetPriority, 4, 0x317a50)
 SD_IMPORT_DLL_STDCALL(FSOUND_GetLoopMode, 4, 0x317a5c)
-SD_IMPORT_CRT(crt_Xlength_error, 0x317912)
-SD_IMPORT_CRT(crt_Xout_of_range, 0x317932)
-SD_IMPORT_CRT(crt_invalid_parameter_noinfo_noreturn, 0x34e614)
-SD_IMPORT_CRT(crt_Throw_bad_array_new_length, 0x3178b8)
 
 /* module agent: Rest B, game leftovers from 0x240000 (imports below this line) */
 

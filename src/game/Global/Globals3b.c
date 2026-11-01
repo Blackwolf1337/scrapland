@@ -12,7 +12,6 @@
 
 #undef VK_CONSOLE
 #undef VK_STANDARD
-#undef g_HexDigits
 #undef g_NetMaxDist2
 
 const float data_3b0044 SD_AT(0x3b0044) = 0.85f;
@@ -211,7 +210,6 @@ const float data_3b9cdc SD_AT(0x3b9cdc) = 15.707963f;
 const float data_3ba1d8[2] SD_AT(0x3ba1d8) = { -0.0f, 1.285f };
 const double data_3ba1e0 SD_AT(0x3ba1e0) = 1.6999999284744263;
 const float data_3ba1e8[6] SD_AT(0x3ba1e8) = { 0, 3.7832031f, 0, 4.3789062f, 0, 5.506592f };
-const char g_HexDigits[20] SD_AT(0x3bb788) = "0123456789abcdef";
 const uint32_t data_3bb97c SD_AT(0x3bb97c) = 0x65766153;
 const uint32_t data_3bb980 SD_AT(0x3bb980);
 const uint32_t data_3bb998 SD_AT(0x3bb998) = 0x7661732e;

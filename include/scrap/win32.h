@@ -99,8 +99,6 @@ typedef int(__stdcall *setthreadpriority_t)(void *thread, int priority);
 #define exe_GetLocalTime GAME_IMPORT(getlocaltime_t, GetLocalTime, 4, 0x3a1188)
 #define STD_OUTPUT (-11)
 #define exe_QueryPerformanceFrequency GAME_IMPORT(queryperformancecounter_t, QueryPerformanceFrequency, 4, 0x3a12ac)
-typedef void(__stdcall *rtlunwind_t)(void *frame, void *ip, void *rec, void *ret);
-#define exe_RtlUnwind GAME_IMPORT(rtlunwind_t, RtlUnwind, 16, 0x3a1214)
 
 /* wsock32 (Winsock 1.1 by ordinal) */
 typedef int(__stdcall *wsock_bind_t)(uint32_t s, const void *addr, int len);
@@ -284,11 +282,6 @@ typedef int(__stdcall *getsavefilename_t)(void *ofn);
 #define exe_RegCloseKey GAME_IMPORT(regclosekey_t, RegCloseKey, 4, 0x3a1008)
 #define exe_SHGetFolderPathA GAME_IMPORT(shgetfolderpath_t, SHGetFolderPathA, 20, 0x3a1334)
 #define exe_GetSaveFileNameA GAME_IMPORT(getsavefilename_t, GetSaveFileNameA, 4, 0x3a1054)
-
-/* Galaxy.dll: galaxy::api::Friends() */
-typedef void *(__cdecl *galaxyget_t)(void);
-#define exe_GalaxyFriends \
-	GAME_IMPORT_SYM(galaxyget_t, GalaxyFriends, "?Friends@api@galaxy@@YAPAVIFriends@12@XZ", 0x3a10d0)
 
 /*
  * dinput8: in ScrapC.exe the one of the system folder, which main.c loads at start. ScrapC.exe runs in game/Bin, where

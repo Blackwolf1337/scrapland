@@ -179,9 +179,10 @@ set_source_files_properties(src/standalone/scrap.rc PROPERTIES OBJECT_DEPENDS "$
 add_executable(ScrapC WIN32 src/standalone/main.c src/standalone/crt.c src/standalone/crtinit.c src/standalone/crtxc.c
 	src/standalone/crtmath.c src/standalone/crtvec.c src/standalone/crtnum.c src/standalone/crtfmt.c src/standalone/crtscan.c
 	$<TARGET_OBJECTS:scrapres>)
-# stage 3c1a: the DLLs of the original are imports of ScrapC.exe itself (GAME_IMPORT of include/scrap/game.h). fmod,
-# Galaxy and steam_api (in game/Bin, next to ScrapC.exe) through import libraries made from the .def files of
-# src/standalone, the others through the ones of mingw-w64; dinput8 is no import (main.c loads the system one).
+# stage 3c1a: the DLLs of the original are imports of ScrapC.exe itself (GAME_IMPORT of include/scrap/game.h). fmod
+# (in game/Bin, next to ScrapC.exe) through an import library made from its .def file in src/standalone, the others
+# through the ones of mingw-w64; dinput8 is no import (main.c loads the system one). Galaxy.dll and steam_api.dll of
+# the original are no imports: the C has no GOG or Steam code.
 # ld sorts the import directory by the path of the import library, so the libraries of the game's DLLs are linked as
 # build/implib/<n>-lib<name>.a (dlltool output or a link to the mingw-w64 one), numbered in the order of the
 # original's import directory. kernel32, user32, gdi32, advapi32, shell32, comdlg32 and ole32 are in the default
@@ -191,7 +192,7 @@ set(IMPLIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/implib)
 file(MAKE_DIRECTORY ${IMPLIB_DIR})
 set(IMPLIBS)
 set(n 10)
-foreach(dll xinput9_1_0 winmm wsock32 Galaxy steam_api fmod msvfw32 avifil32 ddraw comctl32 d3d8)
+foreach(dll xinput9_1_0 winmm wsock32 fmod msvfw32 avifil32 ddraw comctl32 d3d8)
 	string(TOLOWER ${dll} lib)
 	set(implib ${IMPLIB_DIR}/${n}-lib${lib}.a)
 	if(EXISTS ${CMAKE_SOURCE_DIR}/src/standalone/${dll}.def)

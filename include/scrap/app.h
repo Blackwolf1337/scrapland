@@ -42,7 +42,6 @@ typedef CWinApp CApp;
 #define g_LangName (GAME_ARRAY_IN(cString, GVar_SelectedLanguage, 16, 0x44b618))		/* the language asked for */
 #define g_LangDefault GAME_GLOBAL_IN(const char *, GVar_SelectedLanguage, 20, 0x44b61c)	/* the language when that file is missing */
 #define g_LogName GAME_GLOBAL_IN(const char *, GVar_LogFile, 16, 0x445a5c)
-#define g_GogReady GAME_GLOBAL(byte, g_GogReady, 0x44c108)		/* set by the GOG sign in listener */
 
 /* App.cpp state */
 #define g_AppBlock GAME_GLOBAL(int *, g_AppBlock, 0x467978)		/* 16 bytes of VirtualAlloc, [3] = 0x16 */
@@ -141,7 +140,6 @@ byte Loading_Draw(void);
 CWinApp *__thiscall CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char *cmdLine, int nCmdShow);
 void __fastcall CWinApp_dtor(CWinApp *self);
 CWinApp *__thiscall CWinApp_Delete(CWinApp *self, byte flags);
-void __fastcall GogListeners_dtor(cGogListeners *self);
 intptr_t __thiscall CWinApp_WndProc(CWinApp *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 int __thiscall CWinApp_ConsoleAdd(CWinApp *self, const char *text, uint32_t color);
 int __thiscall CWinApp_ShowConsole(CWinApp *self, byte show);
@@ -211,12 +209,6 @@ int PyRun_ScrapString(const char *code);
 /* other modules of the exe (src/imports.inc) */
 void ActClassList_Done(void);					/* rva 0x062140 */
 void ActClassList_Init(void);					/* rva 0x0623a0 */
-cGogListeners *__thiscall GogListeners_ctor(cGogListeners *self);	/* rva 0x136f10 */
-const char *Gog_GetLanguage(void);				/* rva 0x137140 */
-void __thiscall Gog_Init(cGogListeners *self);			/* rva 0x137250 */
-void __thiscall Gog_Done(cGogListeners *self);			/* rva 0x137430 */
-void __thiscall Gog_ProcessData(cGogListeners *self);		/* rva 0x137570, galaxy::api::ProcessData */
-void __thiscall PtrVector_Deallocate(void *self, void **p, int n);	/* rva 0x137c30 */
 void InputMaps_Done(void);					/* rva 0x139900 */
 void InputMaps_Init(void);					/* rva 0x139ba0 */
 void InputMaps_Clear(void);					/* rva 0x139cf0 */
@@ -236,10 +228,6 @@ void Menu_DrawBar(void *img, float x, float y, float frac, int mode, float f, fl
 void Sound_ResetVolumes(void);					/* rva 0x1a2060 */
 void Sound_Done(void);						/* rva 0x1a3150 */
 void Sound_Init(void);						/* rva 0x1a3260 */
-void Steam_Done(void);						/* rva 0x1a64d0 */
-const char *Steam_GetLanguage(void);				/* rva 0x1a65f0 */
-byte Steam_Init(int arg);					/* rva 0x1a6620 */
-void Steam_RunCallbacks(void);					/* rva 0x1a66e0 */
 void Font_SetLanguage(const char *lang);			/* rva 0x21b1e0 */
 void *__thiscall CPsaImage_ctorTex(void *self, const char *name, int a, int b);	/* rva 0x22d0c0 */
 void *__thiscall CPsaImage_ctorFlags(void *self, const char *name, int a, int b, int flags);	/* rva 0x22d0f0 */

@@ -50,9 +50,6 @@ void CApp_ResetParams(void);
 void CApp_RunApp(void);
 void CApp_Shutdown(void);
 void CApp_Update(void);
-void CCallbackImpl_GetSize(void);
-void CCallbackImpl_RunCall(void);
-void CCallback_Run(void);
 void CCamera_Delete(void);
 void CCamera_InitD3D(void);
 void CCamera_Read(void);
@@ -298,13 +295,8 @@ void FXMisc_Alive(void);
 void FXMisc_Clear4(void);
 void FXMisc_Clear8(void);
 void FXMisc_Nop(void);
-void GogAuthListener_Delete(void);
-void GogAuthListener_OnAuthLost(void);
-void GogAuthListener_OnAuthSuccess(void);
-void GogSelfRegListener_Delete(void);
 void IFXTexture_Delete(void);
 void IFXTexture_GetTexture(void);
-void IGalaxyListener_Delete(void);
 void IInput_Delete(void);
 void IInput_WndProc(void);
 void INodeFX_Delete(void);
@@ -427,8 +419,8 @@ void cAICharControl_FollowPath(void);
 void cAICharControl_GetAvoidA(void);
 void cAICharControl_GetAvoidB(void);
 void cAICharControl_GetAvoidEnt(void);
-void cAICharControl_GetDest(void);
 void cAICharControl_GetAvoidFound(void);
+void cAICharControl_GetDest(void);
 void cAICharControl_GetGoal(void);
 void cAICharControl_GetOrbitSide(void);
 void cAICharControl_GetWalkDir(void);
@@ -5414,27 +5406,6 @@ void (*const cFilePack_vftable[9])(void) SD_AT(0x3ba890) = {
 	cFilePack_Destroy,	/* 0x20 0x12e6e0 */
 };
 
-/* .?AVCCallbackBase@@ */
-void (*const CCallbackBase_vftable[3])(void) SD_AT(0x3bb4c8) = {
-	crt_purecall,	/* 0x00 0x31951a */
-	crt_purecall,	/* 0x04 0x31951a */
-	crt_purecall,	/* 0x08 0x31951a */
-};
-
-/* .?AV?$CCallbackImpl@$07@@ */
-void (*const CCallbackImpl_8_vftable[3])(void) SD_AT(0x3bb4d8) = {
-	CCallbackImpl_RunCall,	/* 0x00 0x134260 */
-	crt_purecall,	/* 0x04 0x31951a */
-	CCallbackImpl_GetSize,	/* 0x08 0x134270 */
-};
-
-/* .?AV?$CCallback@VcGetAuthSessionTicketResponseExt@@UGetAuthSessionTicketResponse_t@@$0A@@@ */
-void (*const CCallback_cGetAuthSessionTicketResponseExt_vftable[3])(void) SD_AT(0x3bb4e8) = {
-	CCallbackImpl_RunCall,	/* 0x00 0x134260 */
-	CCallback_Run,	/* 0x04 0x134280 */
-	CCallbackImpl_GetSize,	/* 0x08 0x134270 */
-};
-
 /* .?AVcSlotController@@ */
 void (*const cSlotController_vftable[1])(void) SD_AT(0x3bbaac) = {
 	cSlotController_Next,	/* 0x00 0x136160 */
@@ -5443,40 +5414,6 @@ void (*const cSlotController_vftable[1])(void) SD_AT(0x3bbaac) = {
 /* .?AVcRndSlotController@@ */
 void (*const cRndSlotController_vftable[1])(void) SD_AT(0x3bbab4) = {
 	cRndSlotController_Next,	/* 0x00 0x1360f0 */
-};
-
-/* .?AVIGalaxyListener@api@galaxy@@ */
-void (*const galaxy_api_IGalaxyListener_vftable[1])(void) SD_AT(0x3bbc00) = {
-	IGalaxyListener_Delete,	/* 0x00 0x137110 */
-};
-
-/* .?AV?$GalaxyTypeAwareListener@$06@api@galaxy@@ */
-void (*const galaxy_api_GalaxyTypeAwareListener_7_vftable[1])(void) SD_AT(0x3bbc08) = {
-	IGalaxyListener_Delete,	/* 0x00 0x136fb0 */
-};
-
-/* .?AVIAuthListener@api@galaxy@@ */
-void (*const galaxy_api_IAuthListener_vftable[4])(void) SD_AT(0x3bbc10) = {
-	IGalaxyListener_Delete,	/* 0x00 0x1370e0 */
-	crt_purecall,	/* 0x04 0x31951a */
-	crt_purecall,	/* 0x08 0x31951a */
-	crt_purecall,	/* 0x0c 0x31951a */
-};
-
-/* .?AV?$SelfRegisteringListener@VIAuthListener@api@galaxy@@$1?ListenerRegistrar@23@YAPAVIListenerRegistrar@23@XZ@api@galaxy@@ */
-void (*const galaxy_api_SelfRegisteringListener_IAuthListener_vftable[4])(void) SD_AT(0x3bbc24) = {
-	GogSelfRegListener_Delete,	/* 0x00 0x136fe0 */
-	crt_purecall,	/* 0x04 0x31951a */
-	crt_purecall,	/* 0x08 0x31951a */
-	crt_purecall,	/* 0x0c 0x31951a */
-};
-
-/* .?AVAuthListener@GoGScrap@gog@@ */
-void (*const gog_GoGScrap_AuthListener_vftable[4])(void) SD_AT(0x3bbc38) = {
-	GogAuthListener_Delete,	/* 0x00 0x137060 */
-	GogAuthListener_OnAuthLost,	/* 0x04 0x137400 */
-	GogAuthListener_OnAuthSuccess,	/* 0x08 0x1373e0 */
-	Stub_Nop,	/* 0x0c 0x1373f0 */
 };
 
 /* .?AVcFuncGvar@@ */

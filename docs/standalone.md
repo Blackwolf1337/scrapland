@@ -4,10 +4,10 @@ Goal: a `scrap.exe` built only from the C code of `src/` and real libraries, wit
 It is reached in stages, each one runs the difftest.
 
 Since stage 3c2 ScrapC.exe is a normal exe with no byte of the original, and neither ScrapC.exe nor its build needs
-Scrap.exe. ScrapC.exe needs only the game files: the packs and the DLLs of the game in game/Bin (fmod, Galaxy,
-steam_api). It runs without ucrtbase_ms.dll, which only gives the exact math under Wine. The original exe is needed
-only for the optional check (`cmake --build build --target datacheck`, stage 3c2) and for the original run of the
-difftest.
+Scrap.exe. ScrapC.exe needs only the game files: the packs and fmod.dll of the game's DLLs in game/Bin (it imports
+neither Galaxy.dll nor steam_api.dll since the store code was removed). It runs without ucrtbase_ms.dll, which only
+gives the exact math under Wine. The original exe is needed only for the optional check (`cmake --build build --target
+datacheck`, stage 3c2) and for the original run of the difftest.
 
 ## Stage 0: wipe check (hook DLL)
 
@@ -44,7 +44,7 @@ scenarios match.
 before the hooks are written. Since 2026-10-28 `DIFFTEST_WIPE=2 DIFFTEST_STANDALONE=1 tools/test/difftest.sh`
 matches in all three scenarios. The tiny methods share the stubs of `src/game/Global/Stubs.c`, the Winsock thunks
 are C (`src/game/Net/Wsock.c`), the catch blocks of the GOG code are done without C++ exceptions
-(`src/game/Global/Gog.c`).
+(`src/game/Global/Gog.c`, gone since the store code was removed, see below).
 
 What `tools/standalone/uncovered.py` still lists is code that nothing reaches: no call, jump or pointer of the exe
 (code or data) and no rva in the C points to it. These are functions the compiler kept after it inlined every call,
@@ -80,11 +80,9 @@ The three other blocking places run from the message loop now. `Transport_Wait` 
 and the rest of the dedicated server's frame runs from the PeekMessage loop of `App_WinMain` (`CApp_FrameResume`)
 once a packet came or 1 s passed.
 
-The GOG sign-in: `CWinApp_Init` calls `Gog_ProcessData` once. When not signed in yet, it returns 1 and the message
-loop calls `Gog_ProcessData` once per pass (`CWinApp_InitStep`), then runs the rest of the init (`CApp_Init`, the
-player names, the console window). In the test prefix the sign-in takes about 2.7 million passes, so the difftest
-runs this path. Closing the window before the sign-in ends the start like a failed Init (`App_WinMain` returns 0, as
-the original did when Init returned 0). A failed `CApp_Init` run from the loop does the same.
+Until the store code was removed, the start also waited for the GOG sign-in from the message loop. `CWinApp_Init` now
+runs `CApp_Init` directly, and the message loop only waits for its videos (`CWinApp_InitStep`). See "No store code
+(GOG Galaxy, Steam)" below.
 
 The videos: `Video_RenderStream` sets up and starts the stream and returns. `Video_Step` plays it, once per pass of
 the message loop: the sample Update with SSUPDATE_ASYNC and `CompletionStatus` polled without waiting, the Blts
@@ -99,9 +97,9 @@ start video of `Engine_LevelEnd` come the rest of the level load and of the fram
 video of `Video_PlayStart` the start video name is cleared. `Engine_VideoWait` and `Engine_VideoResume` hold this in
 ScrapEngMain.c.
 
-While the app waits (the GOG sign-in, a video, the rest after a video), `App_WinMain` takes only the messages outside
-the keyboard and mouse ranges, so the window can be moved or closed, but the input comes after the wait as in the
-original (it handled no message then). A WM_QUIT during a video is kept until the wait is over, a line entered in the
+While the app waits (a video, the rest after a video), `App_WinMain` takes only the messages outside the keyboard and
+mouse ranges, so the window can be moved or closed, but the input comes after the wait as in the original (it handled
+no message then). A WM_QUIT during a video is kept until the wait is over, a line entered in the
 console window runs after it, and WM_PAINT does not Present over a video.
 
 `Scrap.VideoPlayer` does not block any more either. `Video_Play` calls the new `Video_PlayThen(name, done)`
@@ -916,15 +914,16 @@ were: `#define g_pWorld GAME_DATA(cWorld *, 0x467450)` became `#define g_pWorld 
 `((uint32_t *)Game_Ptr(0x4ad7e0))` became `(GAME_ARRAY(uint32_t, g_Viewport, 0x4ad7e0))`. After the rewrite there are
 834 `GAME_GLOBAL`, 1593 `GAME_GLOBAL_IN`, 293 `GAME_ARRAY`, 87 `GAME_ARRAY_IN` and 18 `GAME_PTR` defines. 187 defines
 stay `GAME_DATA`: the 179 slots of the import address table (main.c fills it), the 9 of the Python of the original in
-the hook DLL branch of python.h and `GOG_IERROR_TYPE` (RTTI). StaticInit.c reads its objects through `SI_OBJ(rva)`,
-which is `GAME_PTR_AT`: GlobalsAt.h defines `SD_DATA_<rva>` for the 1840 rvas of StaticInit.inc. `SD_PY_MODULE`
-registers `<module>_methods`.
+the hook DLL branch of python.h and `GOG_IERROR_TYPE` (RTTI; gone since the store code was removed, see below).
+StaticInit.c reads its objects through `SI_OBJ(rva)`, which is `GAME_PTR_AT`: GlobalsAt.h defines `SD_DATA_<rva>` for
+the 1840 rvas of StaticInit.inc. `SD_PY_MODULE` registers `<module>_methods`.
 
 Around it, the types of ten objects moved from their .c files into headers (the BMP, TGA and TEX headers of Bmp.c into
 bmp.h, `AviBih` into rendertarget.h, `traceCell_t` into ground.h, `procrange_t` and `cProcType` into e3dutil.h,
-`cSaveVar` and `cSteamTicketCallback` into scrap.h). `g_LastError` is a `uint32_t` instead of DWORD, `BlendMode_GetSrc`
-and `GetDst` have one prototype type in scrapmain.h and scrapmaterial.h, and the inline of bsp.h is `Bsp_Vec3Equal` (it
-had the name of the C function `Vec3_Equal` of ICharControl.c). datagen.py accepts pointers with an offset into another
+`cSaveVar` and `cSteamTicketCallback` into scrap.h; the latter is gone since the store code was removed, see below).
+`g_LastError` is a `uint32_t` instead of DWORD, `BlendMode_GetSrc` and `GetDst` have one prototype type in scrapmain.h
+and scrapmaterial.h, and the inline of bsp.h is `Bsp_Vec3Equal` (it had the name of the C function `Vec3_Equal` of
+ICharControl.c). datagen.py accepts pointers with an offset into another
 object and stdcall and fastcall names of C functions. It puts the C objects of `SD_BSS` into uninitialized sections of
 their own (a unit joins the group before it when it starts in its last page, else data with data below MERGE, bss with
 bss). strings.py no longer reads the generated globals as uses (it would see their rvas) and knows the new forms.
@@ -976,7 +975,7 @@ The 176 defines of DLL functions (`exe_MessageBoxA`, `g_GalaxyInit`, `g_SteamAPI
   MessageBoxA, 16, 0x3a142c)`
 - `GAME_IMPORT_CDECL(type, name, rva)`: a cdecl function (steam_api, `wsprintfA`)
 - `GAME_IMPORT_SYM(type, name, sym, rva)`: any other symbol, the C++ names of Galaxy.dll
-  (`"?Init@api@galaxy@@YAXABUInitOptions@12@@Z"`)
+  (`"?Init@api@galaxy@@YAXABUInitOptions@12@@Z"`; gone since the store code was removed, see below)
 
 In ScrapC.exe each one is the cell of its own import address table: an extern with the label `__imp_<symbol>` of the
 import library, declared in the macro (quoted for the assembler, which takes no `?` in a bare name). The call is
@@ -987,10 +986,11 @@ symbol at the link.
 The import libraries: mingw-w64 for kernel32, user32, gdi32, winmm, advapi32, shell32, ole32, comctl32, comdlg32, ddraw,
 d3d8, wsock32, msvfw32, avifil32 and xinput9_1_0. For fmod.dll, Galaxy.dll and steam_api.dll, which mingw-w64 has not,
 `src/standalone/fmod.def`, `Galaxy.def` and `steam_api.def` list the functions the original imports from them, and
-dlltool makes the libraries in build/implib. fmod.dll exports the stdcall names with their underscore
-(`_FSOUND_Init@12`), so its .def lines are `FSOUND_Init@12 == _FSOUND_Init@12`: the C symbol and the import name are the
-same. The original imports wsock32 (15 functions), msvfw32 (`VideoForWindowsVersion`) and comctl32
-(`InitCommonControls`) by ordinal, ScrapC.exe by name, the same functions.
+dlltool makes the libraries in build/implib (the last two are gone since the store code was removed, see below).
+fmod.dll exports the stdcall names with their underscore (`_FSOUND_Init@12`), so its .def lines are
+`FSOUND_Init@12 == _FSOUND_Init@12`: the C symbol and the import name are the same. The original imports wsock32 (15
+functions), msvfw32 (`VideoForWindowsVersion`) and comctl32 (`InitCommonControls`) by ordinal, ScrapC.exe by name, the
+same functions.
 
 The 47 FSOUND functions of `src/imports.inc` pointed at the jump thunks of the exe (0x3179c6..0x317b2e). They are
 `SD_IMPORT_DLL_STDCALL` now: a thunk in the hook DLL as before, nothing in ScrapC.exe, where `_FSOUND_Init@12` is the
@@ -1005,15 +1005,16 @@ What stays as it was:
   `sd_DirectInput8Create`, which is `exe_DirectInput8Create` in ScrapC.exe (win32.h, one define for IDevice.c and
   Input.c).
 - fmod.dll, Galaxy.dll and steam_api.dll are found in game/Bin, the directory of the exe, first in the search order, as
-  for the original.
+  for the original (Galaxy.dll and steam_api.dll are no longer imported, see below).
 - The original has no delay load (its delay import directory is empty), neither has ScrapC.exe.
 - The order of the loads. The loader binds the imports of ScrapC.exe before its start, as it did for the original
   (before this stage `main.c` loaded them in WinMain). ld sorts the import directory by the path of the import library,
   so the libraries of the game's DLLs are linked as `build/implib/<n>-lib<name>.a` (dlltool output or a link to the
   mingw-w64 library), numbered in the order of the original: XINPUT9_1_0, WINMM, WSOCK32, Galaxy, steam_api, fmod,
-  MSVFW32, AVIFIL32, DDRAW, COMCTL32, d3d8. kernel32, user32, gdi32, advapi32, shell32, comdlg32 and ole32 are default
-  libraries of the toolchain and come before them, with the UCRT (a second path of one of them would split its import
-  descriptor). In the original kernel32 .. shell32 came after steam_api, comdlg32 and ole32 last, and dinput8 third.
+  MSVFW32, AVIFIL32, DDRAW, COMCTL32, d3d8 (Galaxy and steam_api are gone since the store code was removed, see
+  below). kernel32, user32, gdi32, advapi32, shell32, comdlg32 and ole32 are default libraries of the toolchain and
+  come before them, with the UCRT (a second path of one of them would split its import descriptor). In the original
+  kernel32 .. shell32 came after steam_api, comdlg32 and ole32 last, and dinput8 third.
 
 The map: the kind `import` is droppable (`datamap.py`), the import rows have no user any more, the 195 bytes of zeros
 between the import names (only `Orig_Imports` read them, in words) are kind `import` too, and the rows of the jump
@@ -1071,7 +1072,8 @@ ScrapC.exe and the exe's in the hook DLL. `TEXT_KEEP` of sdexe.py is gone (no pi
 starts the room with an uninitialized section when the first C object lies behind rva 0x1000.
 
 The IError type descriptor is a C copy in `Gog.c` for both builds: `Msvc_CatchAs` compares the descriptor pointer and
-the decorated name, the descriptors of Galaxy.dll are its own, so only the name counts.
+the decorated name, the descriptors of Galaxy.dll are its own, so only the name counts (the copy is gone since the
+store code was removed, see below).
 
 The rest was read by nobody. `datamap.py --relabel` now also drops the users that are gone (`relabel_3c1b`, idempotent,
 the same result from the map of stage 3b5 or 3c1a):
@@ -1296,3 +1298,70 @@ the names (the only difference is the order of the table of `testmod.c`). `DIFFT
 difftest match with the counts of before: sdtest 9965 checks (116 raise an exception in both), sdcall 29078 (0),
 sdlevel 19095 (89), and 9957 of 9957 hooks installed. `datacheck` passes: 14378 C objects match Scrap.exe 1.6.1 and 23
 resources match.
+
+## No store code (GOG Galaxy, Steam)
+
+Store and account features are not wanted in the game, so all GOG Galaxy and Steam code is gone from the C (2026-11-01).
+Deleted are `src/game/Global/Gog.c` (the Galaxy init and the sign-in listener, the MSVC `std::string` and vector helpers
+it used, the SEH catch of `galaxy::api::IError`, `Gog_GetID`, `Gog_GetLanguage`, `Achievement_Unlock`,
+`Gog_ProcessData`), `src/game/Global/Steam.c` (the steam_api context, the auth ticket, the Steam ID and the do-nothing
+Steam stubs of the GOG build), `src/standalone/Galaxy.def` and `src/standalone/steam_api.def`. That is 63 hooks fewer:
+9894 instead of 9957. The import library loop of CMake has no Galaxy and steam_api any more, so ScrapC.exe imports
+neither Galaxy.dll nor steam_api.dll (checked with `objdump -p`) and needs only fmod.dll of the game's DLLs.
+
+Gone with them: the form `GAME_IMPORT_SYM` of `include/scrap/game.h` (only the C++ names of Galaxy.dll used it),
+`exe_RtlUnwind`, `exe_GalaxyFriends`, `cSteamTicketCallback`, `GOG_IERROR_TYPE` and five CRT entries only the store code
+used (`crt_Xlength_error`, `crt_Xout_of_range`, `crt_invalid_parameter_noinfo_noreturn`,
+`crt_Throw_bad_array_new_length`, `crt_ui64toa`).
+
+The start. `CWinApp_Init` has no Steam or GOG init and no sign-in, so the wait state for the sign-in in the message loop
+is gone. `CWinApp_InitStep` only waits for the videos of `CApp_Init`. Closing the window during that wait now always
+quits after the wait. `CWinApp_Frame` runs no GOG or Steam callbacks. The field of `CWinApp` at 0x84 (the vector of the
+GOG listeners) is `unused_84`, the size stays 0x90.
+
+- The language is the LANGUAGE value of `HKLM\Software\MercurySteam Entertainment\Scrapland` as before, otherwise the
+  default of the engine variable `SelectedLanguage` ("French"), then the fallbacks of `Lang_Set` (`g_LangDefault`,
+  Strings.txt). The original took the GOG language over the registry one. A game without the registry LANGUAGE value
+  starts in French now.
+- The player name stays the one of the config. The original took the GOG or Steam persona name.
+- `App_GetConfigDir` is My Documents\MercurySteam\Scrapland\ without the subfolder of the GOG id.
+
+The Python API keeps every `Scrap.*` name. `GetGogID`, `GetSteamID`, `GetSteamTicket` and `IsSteam` return None,
+`OpenStore` does nothing, `IsApp` returns 1 and `Achievement` does nothing. The argument checks and the error returns
+are as before.
+
+The hook DLL: Scrap.exe keeps its own Galaxy and Steam code, but no C calls it, and the hooked `CWinApp_Init` does not
+sign in either.
+
+The data. `tools/standalone/datamap.py` has a list `GONE_NOSTORE` next to `GONE_3C1B`, applied by `datamap.py
+--relabel`. The data only the store code read gets the kind `library store` without users (droppable like the
+libraries): the vtables of the Galaxy listeners and the Steam callbacks, the interface version strings of steam_api,
+the hex digits of the ticket, the client id and secret of Galaxy, "ACHIEVEMENT_", "Failed to Auth: %s", the texts of
+the STL errors, the steam_api context and the ticket callback object. The name in the type descriptor of
+`galaxy::api::IError` is kind `rtti` now, and the bss rows of the ticket, the Steam ID, `g_GogReady` and `g_IsSteam`
+lost their users.
+
+strings.py, globals.py and vtables.py then wrote 48 C objects fewer: 30 strings, 10 globals and 8 vtables (290 vtables
+with 5060 slots instead of 298 with 5083). vtables.py leaves out the classes of the store code (regex `STORE`).
+initpat.py and xctable.py leave out the initializer of the Steam ticket callback and its atexit destructor (`DROPPED`),
+so `src/standalone/crtxc.inc` has 1789 initializers instead of 1790. All generators are idempotent again.
+
+Three test changes besides the removed checks:
+
+- `tools/test/prefix.sh` sets LANGUAGE=english in the registry of the test prefix (32 bit view). The C takes the
+  language only from there, while Scrap.exe ends with the GOG language, which is english in the test setup. An existing
+  prefix needs `prefix.sh` run once again.
+- `sdlevel_ase.py` calls `Transport_WSAStartup` before `Ase_Initialize`. In Scrap.exe Galaxy.dll had already started
+  Winsock, and ScrapC.exe loads no Galaxy.dll. The game itself starts Winsock in `Transport_Startup` before its server
+  starts the ASE.
+- `sdcall_multisprite.py` marks the packed coordinates of the sprite tables with `plain()`: one of them hit the start
+  of a C object after the layout change.
+
+The checks of the deleted functions left `sdcall_resta.py`, `sdcall_sa1b.py` and `sdcall_nowait.py`.
+
+The results on 2026-11-01. `DIFFTEST_STANDALONE=1 tools/test/difftest.sh` and the hook DLL difftest match in all three
+scenarios: sdtest 9965 checks (116 raise an exception in both), sdcall 28986 (0, it was 29078 before the checks of the
+deleted functions left), sdlevel 19095 (89), and 9894 of 9894 hooks installed. `datacheck` passes: 14330 C objects match
+Scrap.exe 1.6.1 (it was 14378) and 23 resources match. A run of ScrapC.exe with Galaxy.dll and steam_api.dll moved out
+of game/Bin gives the same sdtest and sdlevel outputs as Scrap.exe. In the test prefix the sign-in of the original took
+about 2.7 million passes of the message loop, the C runs no such path now.

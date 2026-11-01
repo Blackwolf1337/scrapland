@@ -37,17 +37,14 @@ static PyObject *ReturnNone(void) {
 	return Py_None;
 }
 
-/* Achievement(n) : unlocks an achievement (also on Steam); NULL for n < 0 */
+/* Achievement(n) : NULL for n < 0, else nothing; differs from the original on purpose (no store features): no GOG or
+ * Steam achievement is unlocked */
 PyObject *Scrap_Achievement(PyObject *self, PyObject *args) {
 	int n;
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "i", &n) || n < 0) {
 		return NULL;
-	}
-	Achievement_Unlock(n);
-	if (g_IsSteam) {
-		Steam_SetAchievement(n, 1);
 	}
 	return ReturnNone();
 }
@@ -391,13 +388,13 @@ PyObject *Scrap_GetFreeBlocks(PyObject *self, PyObject *args) {
 	return Py_BuildValue("i", 50000);
 }
 
-/* GetGogID() */
+/* GetGogID() : None; differs from the original on purpose (no store features), which gave the GalaxyID */
 PyObject *Scrap_GetGogID(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	return Py_BuildValue("s", Gog_GetID());
+	return ReturnNone();
 }
 
 /* GetLangEntries(name[, n]) : n default 3 */
@@ -501,28 +498,22 @@ PyObject *Scrap_GetSaveVar(PyObject *self, PyObject *args) {
 	return Py_BuildValue("s", SaveVar_Get(name));
 }
 
-/* GetSteamID() : None without Steam */
+/* GetSteamID() : None, as the original without Steam (no store features) */
 PyObject *Scrap_GetSteamID(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	if (!g_IsSteam) {
-		return ReturnNone();
-	}
-	return Py_BuildValue("s", Steam_GetID());
+	return ReturnNone();
 }
 
-/* GetSteamTicket() : None without Steam */
+/* GetSteamTicket() : None, as the original without Steam (no store features) */
 PyObject *Scrap_GetSteamTicket(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	if (!g_IsSteam) {
-		return ReturnNone();
-	}
-	return Py_BuildValue("s", Steam_GetTicket());
+	return ReturnNone();
 }
 
 /* GetTime() : Obtiene el tiempo del world en segundos */
@@ -572,16 +563,13 @@ PyObject *Scrap_InitLoading(PyObject *self, PyObject *args) {
 	return ReturnNone();
 }
 
-/* IsSteam() : 1 with Steam, else None */
+/* IsSteam() : None, as the original without Steam (no store features) */
 PyObject *Scrap_IsSteam(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	if (!g_IsSteam) {
-		return ReturnNone();
-	}
-	return Py_BuildValue("i", 1);
+	return ReturnNone();
 }
 
 /* LaunchDashboard(n) : no Xbox, 0 */
@@ -669,20 +657,14 @@ PyObject *Scrap_OpenPack(PyObject *self, PyObject *args) {
 	return ReturnNone();
 }
 
-/* OpenStore(appid) : Steam overlay store page; NULL for appid < 0, nothing without Steam */
+/* OpenStore(appid) : NULL for appid < 0, else nothing, as the original without Steam (no store features; with Steam it
+ * opened the store page in the overlay) */
 PyObject *Scrap_OpenStore(PyObject *self, PyObject *args) {
 	int appId;
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "i", &appId) || appId < 0) {
 		return NULL;
-	}
-	if (g_IsSteam) {
-		/* ISteamFriends::ActivateGameOverlayToStore (vtable 0x7c) of the context the exe keeps */
-		void **ctx = g_SteamInternal_ContextInit(g_SteamFriendsContext);
-		void **friends = ctx[2];
-		typedef void(__thiscall * store_t)(void *, int, int);
-		((store_t)(*(void ***)friends)[0x7c / 4])(friends, appId, 0);
 	}
 	return ReturnNone();
 }
@@ -1217,28 +1199,16 @@ PyObject *Scrap_CreateEntity(PyObject *self, PyObject *args) {
 	return PyEntity_New(e->name);
 }
 
-/* IsApp(appid) : 1 if the Steam app is owned and installed (always 1 without Steam); NULL for appid < 0 */
+/* IsApp(appid) : NULL for appid < 0, else 1, as the original without Steam (no store features; with Steam it asked
+ * whether the app is owned and installed) */
 PyObject *Scrap_IsApp(PyObject *self, PyObject *args) {
 	int appId;
-	int r = 1;
 
 	(void)self;
 	if (!PyArg_ParseTuple(args, "i", &appId) || appId < 0) {
 		return NULL;
 	}
-	if (g_IsSteam) {
-		typedef byte(__thiscall * appfunc_t)(void *, int);
-		/* ISteamApps (context + 0x18): BIsSubscribedApp (vtable 0x18), BIsAppInstalled (vtable 0x4c) */
-		void **apps = ((void ***)g_SteamInternal_ContextInit(g_SteamFriendsContext))[6];
-		if (!((appfunc_t)(*(void ***)apps)[0x18 / 4])(apps, appId)) {
-			r = 0;
-		}
-		else {
-			apps = ((void ***)g_SteamInternal_ContextInit(g_SteamFriendsContext))[6];
-			r = ((appfunc_t)(*(void ***)apps)[0x4c / 4])(apps, appId) ? 1 : 0;
-		}
-	}
-	return Py_BuildValue("i", r);
+	return Py_BuildValue("i", 1);
 }
 
 /* RunApp(exe, cmdLine) : starts a program; "" for the game itself */

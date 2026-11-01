@@ -3,7 +3,8 @@
 # by the CRT from its __xc table, docs/standalone.md stage 2d) and the atexit destructors they register (rva
 # 0x38c720..0x38f097), sorted into patterns. Each function is disassembled (capstone), its instructions are matched
 # against the templates below, and a match gives the parameters: the object, the strings, the values, the
-# constructor and the destructor. The functions that fit no template have C by hand (HAND) or are listed.
+# constructor and the destructor. The functions that fit no template have C by hand (HAND) or are listed. The ones of
+# the original's Steam code (DROPPED) have no C: the game has no store features.
 #
 # Without -w it prints the count per pattern and what fits none (-v: every function with its pattern).
 # -w writes
@@ -313,7 +314,6 @@ DTOR_KINDS = [
 # by hand: rva -> C name (in the file of the class of the object)
 HAND = {
 	0x04b8b0: 'Swarm_InitAmmoCosts',
-	0x04d8c0: 'Steam_InitTicketCallback', 0x38d860: 'Steam_FiniTicketCallback',
 	0x04df30: 'PcPad_InitPads', 0x38da50: 'PcPad_FiniPads',
 	0x051be0: 'ChatScorer_InitMsgs',
 	0x0554d0: 'PyFunction_InitSphereFunc', 0x38e3a0: 'PyFunction_FiniSphereFunc',
@@ -330,6 +330,9 @@ HAND = {
 	0x38dcb0: 'Taunts_FiniCounts', 0x38ed20: 'Light_FiniMat', 0x38edb0: 'Ground_FiniCollideMat', 0x38f010: 'Portal_FiniMat',
 	0x38f040: 'RenderGround_FiniBatchTab', 0x38f070: 'Radiosity_FiniNormals',
 }
+
+# the Steam ticket callback of the original: no C, no hook, no line in StaticInit.inc (no store features)
+DROPPED = {0x04d8c0: 'Steam_InitTicketCallback', 0x38d860: 'Steam_FiniTicketCallback'}
 
 # names for generated functions where the pattern gives none
 NAMES = {
@@ -525,6 +528,10 @@ def write(inits, dtors):
 
 def main():
 	inits, dtors = scan()
+	gaps = coverage(inits, dtors)
+	print('dropped: %d (%s)' % (len(DROPPED), ', '.join(DROPPED.values())))
+	inits = [r for r in inits if r['rva'] not in DROPPED]
+	dtors = dict((f, d) for f, d in dtors.items() if f not in DROPPED)
 	name_all(inits, dtors)
 	for title, funcs in (('initializers', inits), ('destructors', sorted(dtors.values(), key=lambda d: d['rva']))):
 		count = collections.Counter(r['kind'] or ('by hand' if r['rva'] in HAND else None) for r in funcs)
@@ -534,7 +541,6 @@ def main():
 		for r in funcs:
 			if VERBOSE or not r['kind'] and r['rva'] not in HAND:
 				print('    %06x %4d %-24s %s' % (r['rva'], r['size'], r['kind'] or '-', r.get('name')))
-	gaps = coverage(inits, dtors)
 	for a, n in gaps:
 		print('not in a function: %06x %d bytes' % (a, n))
 	miss = [r for r in inits + list(dtors.values()) if not r['kind'] and r['rva'] not in HAND]

@@ -4,13 +4,13 @@
 # static), kind
 #
 # .text    library dinput8             4208 bytes,       0 used
-# .rdata   C object                   20332 bytes,   20332 used
+# .rdata   C object                   20240 bytes,   20240 used
 # .rdata   double                       912 bytes,     152 used
 # .rdata   eh                         63528 bytes,       0 used
 # .rdata   float                       6516 bytes,    1252 used
 # .rdata   guid                       20912 bytes,     192 used
 # .rdata   import                     10058 bytes,       0 used
-# .rdata   int table                   5892 bytes,    2101 used
+# .rdata   int table                   5876 bytes,    2085 used
 # .rdata   library crt               112216 bytes,       0 used
 # .rdata   library crt+d3dx8              8 bytes,       0 used
 # .rdata   library crt+python           136 bytes,       0 used
@@ -18,21 +18,23 @@
 # .rdata   library d3dx8+python           8 bytes,       0 used
 # .rdata   library dinput8               48 bytes,       0 used
 # .rdata   library python             28096 bytes,       0 used
+# .rdata   library store                960 bytes,       0 used
 # .rdata   pointer table                 67 bytes,       3 used
 # .rdata   rtti                       26976 bytes,       0 used
-# .rdata   string                    237278 bytes,  119896 used
+# .rdata   string                    236434 bytes,  119784 used
 # .rdata   unknown                      604 bytes,      32 used
-# .rdata   zero                         991 bytes,     269 used
+# .rdata   zero                         983 bytes,     265 used
 # .data    float                       1104 bytes,    1104 used
 # .data    int table                   9104 bytes,    9096 used
 # .data    library crt                 2428 bytes,       0 used
 # .data    library d3dx8              15464 bytes,       0 used
 # .data    library python             42312 bytes,       0 used
-# .data    pointer table               5515 bytes,    5499 used
-# .data    rtti                       10908 bytes,       0 used
-# .data    string                     24531 bytes,   24531 used
+# .data    library store                132 bytes,       0 used
+# .data    pointer table               5488 bytes,    5472 used
+# .data    rtti                       10932 bytes,       0 used
+# .data    string                     24411 bytes,   24411 used
 # .data    unknown                     2715 bytes,    2715 used
-# .data    zero                        1119 bytes,     827 used
+# .data    zero                        1110 bytes,     818 used
 # .gfids   int table                   1272 bytes,       4 used
 # .tls     library d3dx8                 65 bytes,       0 used
 # _RDATA   library crt                 4832 bytes,       0 used
@@ -3132,14 +3134,11 @@
 3bb3f4	4	.rdata	-	zero
 3bb3f8	cc	.rdata	-	string
 3bb4c4	4	.rdata	-	rtti
-3bb4c8	c	.rdata	CCallbackBase_vftable	C object
+3bb4c8	c	.rdata	-	library store
 3bb4d4	4	.rdata	-	rtti
-3bb4d8	c	.rdata	CCallbackImpl_8_vftable	C object
+3bb4d8	c	.rdata	-	library store
 3bb4e4	4	.rdata	-	rtti
-3bb4e8	c	.rdata	CCallback_cGetAuthSessionTicketResponseExt_vftable	C object
-3bb4f4	294	.rdata	-	string
-3bb788	10	.rdata	Steam_GetTicket	int table
-3bb798	4	.rdata	Steam_GetTicket	zero
+3bb4e8	2b4	.rdata	-	library store
 3bb79c	14	.rdata	Init_GVar_LastSaveGameName	string
 3bb7b0	14	.rdata	Init_GVar_LastSaveGameName, probe HashTable_Slot	string
 3bb7c4	38	.rdata	Init_GVar_OnCrazyDealFinished, Init_GVar_OnTaunt	string
@@ -3168,22 +3167,17 @@
 3bbab4	4	.rdata	cRndSlotController_vftable	C object
 3bbab8	144	.rdata	-	string
 3bbbfc	4	.rdata	-	rtti
-3bbc00	4	.rdata	galaxy_api_IGalaxyListener_vftable	C object
+3bbc00	4	.rdata	-	library store
 3bbc04	4	.rdata	-	rtti
-3bbc08	4	.rdata	galaxy_api_GalaxyTypeAwareListener_7_vftable	C object
+3bbc08	4	.rdata	-	library store
 3bbc0c	4	.rdata	-	rtti
-3bbc10	10	.rdata	galaxy_api_IAuthListener_vftable	C object
+3bbc10	10	.rdata	-	library store
 3bbc20	4	.rdata	-	rtti
-3bbc24	10	.rdata	galaxy_api_SelfRegisteringListener_IAuthListener_vftable	C object
+3bbc24	10	.rdata	-	library store
 3bbc34	4	.rdata	-	rtti
-3bbc38	10	.rdata	gog_GoGScrap_AuthListener_vftable	C object
-3bbc48	14	.rdata	probe galaxy.dll, ptr 428ab8	string
-3bbc5c	4	.rdata	-	zero
-3bbc60	44	.rdata	probe galaxy.dll, ptr 428abc	string
-3bbca4	10	.rdata	-	string
-3bbcb4	4	.rdata	Gog_Init, probe galaxy.dll	string
-3bbcb8	14	.rdata	Gog_CatchError	string
-3bbccc	3c	.rdata	-	string
+3bbc38	7c	.rdata	-	library store
+3bbcb4	4	.rdata	-	string
+3bbcb8	50	.rdata	-	library store
 3bbd08	34	.rdata	Init_GVar_LogRumble	string
 3bbd3c	c	.rdata	Init_GVar_LogRumble, probe HashTable_Slot	string
 3bbd48	154	.rdata	-	string
@@ -6844,20 +6838,13 @@
 428a20	4	.data	Fini_LangTable, Lang_FindId, Lang_Free +4	int table
 428a24	6	.data	Fini_LangTable, Init_LangTable, Lang_FindId +6	zero
 428a2a	6	.data	Fini_LangTable, Lang_FindId, Lang_Free +5	zero
-428a30	60	.data	CWinApp_InitEnd, Scrap_IsApp, Scrap_OpenStore +2	string
-428a90	4	.data	Steam_FiniTicketCallback, Steam_InitTicketCallback, ptr 428a9c	pointer table
-428a94	1	.data	Steam_FiniTicketCallback, Steam_InitTicketCallback, probe Init_LangTable via steam_api.dll +1	zero
-428a95	f	.data	Steam_FiniTicketCallback, Steam_InitTicketCallback, probe Init_LangTable via steam_api.dll +1	pointer table
-428aa4	5	.data	Steam_FiniTicketCallback, Steam_GetTicket, Steam_InitTicketCallback +2	zero
-428aa9	1	.data	Steam_GetTicket, Steam_InitTicketCallback, probe Steam_InitTicketCallback	zero
-428aaa	2	.data	probe Steam_InitTicketCallback	zero
+428a30	7c	.data	-	library store
 428aac	4	.data	CrazyDeals_Count, Fini_SaveVarTable, SaveGame_ReadVars +7	int table
 428ab0	4	.data	Init_SaveVarTable, probe Init_SaveVarTable, probe PtrTable_Find	zero
 428ab4	1	.data	Init_SaveVarTable, SaveVar_New, probe HashTable_Slot +1	zero
 428ab5	1	.data	Init_SaveVarTable, probe HashTable_Slot, probe Init_SaveVarTable	zero
 428ab6	2	.data	probe HashTable_Slot, probe Init_SaveVarTable	zero
-428ab8	4	.data	Gog_Init, probe Gog_Init	pointer table
-428abc	4	.data	probe Gog_Init	pointer table
+428ab8	8	.data	-	library store
 428ac0	4	.data	InputMaps_Init, Input_GetActionSet, Input_SelectActionSet +6	int table
 428ac4	c	.data	Input_AbortListenToDefine, Input_SetToDefine, cAbstractIDevice_SetValue +4	int table
 428ad0	10	.data	cPcPad_SetCharDefaults, cPcPad_SetDefaults, cPcPad_SetVehicleDefaults +1	string
@@ -7519,9 +7506,7 @@
 43d034	8c	.data	-	library d3dx8
 43d0c0	944	.data	-	library crt
 43da04	3bac	.data	-	library d3dx8
-4415b0	cbc	.data	-	rtti
-44226c	18	.data	Gog_CatchError	string
-442284	1d2c	.data	-	rtti
+4415b0	2a00	.data	-	rtti
 443fb0	1c	.data	-	library crt
 443fcc	b4	.data	-	rtti
 444080	4	.data	ActClassList_Done, ActClassList_Init, NetData_ReadUsrDescriptor +6	zero
@@ -9842,10 +9827,8 @@
 44b63c	4	.data	Mem_Count	bss
 44b640	4	.data	CAnimation_Read, Mem_Count, PyPool_Free +2	bss
 44b644	4	.data	Mem_Count	bss
-44b648	fe	.data	cString_Append	bss
-44b746	2	.data	Steam_GetTicket, cString_Append	bss
-44b748	400	.data	Steam_GetTicket	bss
-44bb48	40	.data	Steam_GetID	bss
+44b648	100	.data	cString_Append	bss
+44b748	440	.data	-	bss
 44bb88	4	.data	SaveGame_WriteVars, SaveVars_Delete, cSaveVar_ctor	bss
 44bb8c	10	.data	Init_GVar_OnCrazyDealFinished	bss
 44bb9c	14	.data	Fini_GVar_OnCrazyDealFinished, Init_GVar_OnCrazyDealFinished, SaveVar_Inc	bss
@@ -9858,9 +9841,7 @@
 44bbfc	c	.data	ManServer_SendUsrData, Net_AddResource, Net_SendCtrlString +7	bss
 44bc08	400	.data	Str_FromUTF8	bss
 44c008	100	.data	Version_Get	bss
-44c108	1	.data	Achievement_Unlock, App_WinMain, CWinApp_Init +6	bss
-44c109	3	.data	test sdcall_nowait, test sdcall_resta	bss
-44c10c	4	.data	-	bss
+44c108	8	.data	-	bss
 44c110	10	.data	Init_GVar_LogRumble	bss
 44c120	4	.data	Init_GVar_LogRumble, cPad_Update.part.0	bss
 44c124	4	.data	Init_GVar_LogRumble	bss
@@ -11597,8 +11578,7 @@
 467b84	14	.data	Loading_Draw, Loading_Start, Loading_Stop	bss
 467b98	1	.data	CApp_LoadLevelEnd, CApp_LoadLevelNow, Loading_End +2	bss
 467b99	3	.data	Loading_Stop	bss
-467b9c	1	.data	CWinApp_Frame, CWinApp_Init, CWinApp_InitEnd +7	bss
-467b9d	3	.data	-	bss
+467b9c	4	.data	-	bss
 467ba0	4	.data	ATPC_Fire, ATPC_XplosionCall, Alarm_SetGrow +61	bss
 467ba4	10	.data	Init_GVar_InactiveBackgroundApp	bss
 467bb4	4	.data	CWinApp_WndProc, Init_GVar_InactiveBackgroundApp	bss

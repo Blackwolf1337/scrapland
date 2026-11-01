@@ -12,9 +12,9 @@
 # Zero words after a string that nothing reads are its padding (in .data the rest of a char buffer); a zero word of
 # .rdata the C reads as a string is the empty string.
 #
-# Left out: the strings of the libraries (their rows are kinds library *), and the strings inside other structures,
-# which stage 3b5 does with the globals and tables: of the data that is built in that is only the name of the RTTI
-# type descriptor of galaxy::api::IError (Gog_CatchError).
+# Left out: the strings of the libraries (their rows are kinds library *, also library store: the data of the GOG and
+# Steam code of the original, which the C does not have), and the strings inside other structures, which stage 3b5
+# does with the globals and tables.
 #
 # Each string or packed run becomes one SD_AT object, named after its use: str_GVar_<name>, str_GVarDesc_<name> and
 # str_GVarValue_<name> for the name, the help text and the default (or the script function) of the engine variables

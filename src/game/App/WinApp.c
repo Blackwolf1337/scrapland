@@ -89,7 +89,6 @@ CWinApp *__thiscall CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const 
 
 	CApp_ctor(self, cmdLine);
 	self->vftable = g_CWinAppVftable;
-	GogListeners_ctor(&self->gog);
 	self->hInstance = hInst;
 	self->hPrevInstance = hPrev;
 	self->nCmdShow = nCmdShow;
@@ -104,27 +103,7 @@ CWinApp *__thiscall CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const 
 
 void __fastcall CWinApp_dtor(CWinApp *self) {
 	self->vftable = g_CWinAppVftable;
-	GogListeners_dtor(&self->gog);
 	CApp_dtor(self);
-}
-
-/* also the thunk at rva 0x20c910 */
-void __fastcall GogListeners_dtor(cGogListeners *self) {
-	void **p = self->begin;
-	if (!p) {
-		return;
-	}
-	void **end = self->end;
-	for (; p != end; p++) {
-		void *o = *p;
-		if (o) {
-			(*(void(__thiscall **)(void *, int)) * (void ***)o)(o, 1);
-		}
-	}
-	PtrVector_Deallocate(self, self->begin, (int)(self->cap - self->begin));
-	self->begin = NULL;
-	self->end = NULL;
-	self->cap = NULL;
 }
 
 /* vf03 */
@@ -299,10 +278,6 @@ void __thiscall CWinApp_InitDedicated(CWinApp *self) {
 
 /* vf06 */
 void __thiscall CWinApp_Shutdown(CWinApp *self) {
-	Gog_Done(&self->gog);
-	if (g_IsSteam) {
-		Steam_Done();
-	}
 	CApp_Shutdown(self);
 	ConsoleWin_Close();
 	exe_DestroyWindow(self->hwnd);
@@ -394,64 +369,28 @@ void *App_GetHWnd(void) {
 /* the part of CWinApp_Init that waits, driven by the message loop (CWinApp_InitStep) */
 enum {
 	APPINIT_DONE,
-	APPINIT_GOG,			/* for the GOG sign-in */
 	APPINIT_VIDEOS,			/* for the videos of Engine_Init in CApp_Init */
 };
 static int app_init;
 
-/* the end of the init: the player name of GOG or Steam, the console window */
+/* the end of the init: the console window. Differs from the original on purpose (no store features): the player name
+ * stays the one of the config, the original took the GOG or Steam name */
 static void CWinApp_InitEnd(CWinApp *self) {
-	if (Gog_GetID()) {
-		/* IFriends::GetPersonaName */
-		void *friends = exe_GalaxyFriends();
-		const char *name = ((const char *(__thiscall *)(void *))(*(void ***)friends)[0x14 / 4])(friends);
-		cString_Set(g_PlayerName, Str_FromUTF8(name));
-	}
-	if (g_IsSteam) {
-		/* ISteamFriends::GetPersonaName of the context the exe keeps */
-		void **ctx = g_SteamInternal_ContextInit(g_SteamFriendsContext);
-		void *friends = ctx[2];
-		const char *name = ((const char *(__thiscall *)(void *))(*(void ***)friends)[0])(friends);
-		cString_Set(g_PlayerName, Str_FromUTF8(name));
-	}
 	ConsoleWin_Show((byte)Engine_IsFullScreen() == 0);
 	exe_SetForegroundWindow(self->hwnd);
 	Con_Print(0, "Scrap engine initialized!\n\n", 0);
 }
 
-/* the init after the GOG sign-in: CApp_Init, which may leave its videos to the message loop, then CWinApp_InitEnd;
- * 0 when CApp_Init failed */
-static byte CWinApp_InitRest(CWinApp *self) {
-	if (!CApp_Init(self)) {
-		return 0;
-	}
-	if (Engine_VideoWait()) {
-		app_init = APPINIT_VIDEOS;
-		return 1;
-	}
-	CWinApp_InitEnd(self);
-	return 1;
-}
-
-/* one pass of the message loop while the init waits; 0 when it failed (App_WinMain then returns 0 as after a failed
- * Init) */
-static byte CWinApp_InitStep(CWinApp *self) {
-	if (app_init == APPINIT_GOG) {
-		Gog_ProcessData(&self->gog);
-		if (!g_GogReady) {
-			return 1;
-		}
-		app_init = APPINIT_DONE;
-		return CWinApp_InitRest(self);
-	}
+/* one pass of the message loop while the init waits for the videos of CApp_Init */
+static void CWinApp_InitStep(CWinApp *self) {
 	if (CApp_InitResume(self)) {
 		app_init = APPINIT_DONE;
 		CWinApp_InitEnd(self);
 	}
-	return 1;
 }
 
-/* vf04: the window, the language, the console window, Steam and GOG, then CApp_Init */
+/* vf04: the window, the language, the console window, then CApp_Init, which may leave its videos to the message loop
+ * (CWinApp_InitStep) */
 byte __thiscall CWinApp_Init(CWinApp *self) {
 	App_SetExceptionFilter(1);
 	exe_timeBeginPeriod(1);
@@ -477,34 +416,21 @@ byte __thiscall CWinApp_Init(CWinApp *self) {
 	if (shown) {
 		exe_BringWindowToTop(self->hwnd);
 	}
-	if (self->dedicatedWin) {
-		g_IsSteam = 0;
-	} else if (g_IsSteam) {
-		if (!Steam_Init(0)) {
-			return 0;
-		}
-		cString_Set(g_LangName, Steam_GetLanguage());
-		Font_SetLanguage(*g_LangName);
+	/* differs from the original on purpose (no store features): no Steam or GOG init and no sign-in; the language
+	 * stays the LANGUAGE of the registry or the default of SelectedLanguage, the original took the one of GOG */
+	if (!CApp_Init(self)) {
+		return 0;
 	}
-	Gog_Init(&self->gog);
-	cString_Set(g_LangName, Gog_GetLanguage());
-	Font_SetLanguage(*g_LangName);
-	Gog_ProcessData(&self->gog);
-	/* differs from the original on purpose (no blocking waits): the original called Gog_ProcessData in a loop until
-	 * the sign-in; now the message loop calls it once per pass and then runs the rest (CWinApp_InitStep) */
-	if (!g_GogReady) {
-		app_init = APPINIT_GOG;
+	if (Engine_VideoWait()) {
+		app_init = APPINIT_VIDEOS;
 		return 1;
 	}
-	return CWinApp_InitRest(self);
+	CWinApp_InitEnd(self);
+	return 1;
 }
 
-/* vf05: GOG and Steam callbacks, then CApp_Frame */
+/* vf05: CApp_Frame (the original ran the GOG and Steam callbacks first) */
 byte __thiscall CWinApp_Frame(CWinApp *self) {
-	Gog_ProcessData(&self->gog);
-	if (g_IsSteam) {
-		Steam_RunCallbacks();
-	}
 	/* differs from the original on purpose (no sleeps): no Sleep(250) while the app is in the background; CApp_Frame
 	 * then only takes the time and returns 0, the PeekMessage loop of App_WinMain calls it again */
 	return CApp_Frame(self);
@@ -524,7 +450,8 @@ static void App_StrCat(char *buf, int size, const char *s) {
 	buf[n] = 0;
 }
 
-/* My Documents\MercurySteam\Scrapland\[GOG id\] (made if missing), "" with the dedicated window */
+/* My Documents\MercurySteam\Scrapland\ (made if missing), "" with the dedicated window; differs from the original on
+ * purpose (no store features): no subfolder of the GOG id */
 void App_GetConfigDir(char *buf, int size) {
 	if (g_pApp->vftable->IsDedicatedWin(g_pApp)) {
 		*buf = 0;
@@ -535,12 +462,6 @@ void App_GetConfigDir(char *buf, int size) {
 	crt_mkdir(buf);
 	App_StrCat(buf, size, "\\Scrapland");
 	crt_mkdir(buf);
-	const char *id = Gog_GetID();
-	if (id) {
-		App_StrCat(buf, size, "\\");
-		App_StrCat(buf, size, id);
-		crt_mkdir(buf);
-	}
 	App_StrCat(buf, size, "\\");
 }
 
@@ -627,13 +548,11 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 		if (!App_PeekMessage(&msg, waiting)) {
 			if (waiting) {
 				/* differs from the original on purpose (no blocking waits): one pass of what the original waited
-				 * for: the video, the GOG sign-in, the rest of the init or of the level load after a video */
+				 * for: the video, the rest of the init or of the level load after a video */
 				if (Video_Busy()) {
 					Video_Step();
 				} else if (app_init != APPINIT_DONE) {
-					if (!CWinApp_InitStep(g_pApp)) {
-						return 0;
-					}
+					CWinApp_InitStep(g_pApp);
 				} else {
 					CApp_FrameResume();
 				}
@@ -663,11 +582,7 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 			if (!waiting) {
 				break;
 			}
-			/* closed while it waits: before the GOG sign-in the start ends like a failed Init, else the quit comes
-			 * after the wait */
-			if (app_init == APPINIT_GOG) {
-				return 0;
-			}
+			/* closed while it waits: the quit comes after the wait */
 			quitLater = 1;
 			quitCode = msg.wParam;
 			continue;
@@ -1020,7 +935,7 @@ int ConsoleWin_Show(byte show) {
 /* the edit line into the history (the older lines one down) and to Console_Execute */
 void ConsoleWin_Enter(void) {
 	/* differs from the original on purpose (no blocking waits): the original handled no message while it waited for
-	 * the GOG sign-in or a video, so the line runs after the wait (App_WinMain) */
+	 * a video, so the line runs after the wait (App_WinMain) */
 	if (App_Waiting()) {
 		app_conEnterLater = 1;
 		return;

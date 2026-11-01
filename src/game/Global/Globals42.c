@@ -12,9 +12,7 @@
 #include "scrap/global.h"
 #include "scrap/python.h"
 #include "scrap/scoreritems.h"
-#include "scrap/scrap.h"
 
-SD_SYM(CCallback_cGetAuthSessionTicketResponseExt_vftable);
 SD_SYM(GVar_SwarmNumber1);
 SD_SYM(GVar_SwarmNumber2);
 SD_SYM(GVar_SwarmNumber3);
@@ -308,8 +306,6 @@ SD_SYM(SpecialAction_DrawLowEnergy);
 SD_SYM(SpecialAction_DrawOn);
 SD_SYM(SpecialAction_DrawTarget);
 SD_SYM(SpecialAction_DrawVictim);
-SD_SYM(SteamContext_Setup);
-SD_SYM(SteamTicket_OnResponse);
 SD_SYM(cPyEntity_Del);
 SD_SYM(cPyEntity_DrawWeap);
 SD_SYM(cPyEntity_GetTgAng);
@@ -317,14 +313,11 @@ SD_SYM(cPyEntity_IsType);
 SD_SYM(cPyEntity_SetFX);
 SD_SYM(cPyEntity_SetModel);
 SD_SYM(g_PythonReady);
-SD_SYM(g_SteamTicketCb);
 SD_SYM(str_3a3954);
 SD_SYM(str_3a395c);
 SD_SYM(str_3ad2f4);
 SD_SYM(str_3ae0f4);
 SD_SYM(str_3b53f4);
-SD_SYM(str_3bbc48);
-SD_SYM(str_3bbc60);
 SD_SYM(str_3bd050);
 SD_SYM(str_3bd064);
 SD_SYM(str_3bd078);
@@ -929,8 +922,6 @@ SD_SYM(str_PyMethod_cPyEntity_SetModel);
 #undef g_GearAimPos
 #undef g_GearAimSpreadX
 #undef g_GearAimSpreadY
-#undef g_GogClientID
-#undef g_GogClientSecret
 #undef g_HashItemValues
 #undef g_HeadMonitorAnim
 #undef g_LangTable
@@ -964,8 +955,6 @@ SD_SYM(str_PyMethod_cPyEntity_SetModel);
 #undef g_SpecialActionDraw
 #undef g_SpecialActionFade
 #undef g_SpecialActionState
-#undef g_SteamFriendsContext
-#undef g_SteamTicketCb
 #undef g_SwarmSlotData
 #undef g_TabBackTextWidth
 #undef g_TalkColor
@@ -1101,15 +1090,7 @@ uint32_t g_HashItemValues SD_AT(0x4289a0);
 uint32_t HashItem_Alloc_4289a4[31] SD_AT(0x4289a4) = { 0, 2059, 3190, 797, 0, 0, 0, 0, 119 };
 HashTable g_LangTable SD_AT(0x428a20) = { .numSlots = 457 };
 uint32_t Fini_LangTable_428a2c SD_AT(0x428a2c);
-void *g_SteamFriendsContext[24] SD_AT(0x428a30) = { (void *)sd_SteamContext_Setup };
-cSteamTicketCallback g_SteamTicketCb SD_AT(0x428a90) = {
-	.vftable = (void *)sd_CCallback_cGetAuthSessionTicketResponseExt_vftable,
-	.obj = (void *)sd_g_SteamTicketCb,
-	.func = (void *)sd_SteamTicket_OnResponse,
-};
 HashTable g_SaveVarTable SD_AT(0x428aac) = { .numSlots = 457 };
-const char *g_GogClientID SD_AT(0x428ab8) = (void *)sd_str_3bbc48;
-const char *g_GogClientSecret SD_AT(0x428abc) = (void *)sd_str_3bbc60;
 uint32_t g_CurActionSet SD_AT(0x428ac0) = 0xffffffff;
 int g_ToDefinePlayer SD_AT(0x428ac4) = -1;
 int g_ToDefineAction SD_AT(0x428ac8) = -1;

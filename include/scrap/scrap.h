@@ -1,6 +1,6 @@
 /*
  * Engine functions behind the Scrap script module that have no better home yet: save variables, languages,
- * packs, loading screens, Steam/GOG, the global call builder and the world objects only known by their methods.
+ * packs, loading screens, the global call builder and the world objects only known by their methods.
  */
 #ifndef SCRAP_SCRAP_H
 #define SCRAP_SCRAP_H
@@ -18,7 +18,6 @@
 /* the function of Scrap.SetCallFunc with its parameters (AddParamX) for Scrap.Execute (rva 0x466a04) */
 #define g_CallFunc (GAME_ARRAY(cPy_Function, g_CallFunc, 0x466a04))
 #define g_PackName (GAME_ARRAY_IN(cString, GVar_PathInPackFile, 16, 0x44ab6c))	/* string object, the open pack */
-#define g_IsSteam GAME_GLOBAL(byte, g_IsSteam, 0x467b9c)
 #define g_SuperDealAvaliable GAME_GLOBAL_IN(int, GVar_SuperDealAvaliable, 16, 0x45fe48)	/* SuperDealAvaliable, all three crazy deals done */
 
 void __thiscall Elements_Call(void *elements, const char *name);
@@ -114,12 +113,6 @@ SD_SIZE(cGVarFunction, 0x24);
 
 #define g_GVars GAME_GLOBAL(cGVar *, g_GVars, 0x44b5f8)		/* every variable, newest first */
 #define g_GVarTable GAME_GLOBAL(HashTable *, g_GVarTable, 0x44b5fc)	/* by name after GVars_Init */
-
-void Achievement_Unlock(int n);
-byte Steam_SetAchievement(int n, int on);
-const char *Steam_GetID(void);
-const char *Steam_GetTicket(void);
-const char *Gog_GetID(void);
 
 byte SaveVar_Create(const char *name, const char *value);
 void SaveVars_Delete(const char *prefix);
@@ -246,29 +239,10 @@ void __thiscall CWinApp_LoadLevel(CWinApp *app, const char *level);
 int __thiscall cWorld_SetCam(cWorld *world, int i, const char *name);
 cEntity *__thiscall cWorld_GetUsrEntity(cWorld *world, int player);
 
-/* steam_api: SteamInternal_ContextInit through the import table of the exe, context data at rva 0x428a30 */
-typedef void *(__cdecl *SteamContextInit_t)(void *ctx);
-#define g_SteamInternal_ContextInit GAME_IMPORT_CDECL(SteamContextInit_t, SteamInternal_ContextInit, 0x3a15a4)
-#define g_SteamFriendsContext ((void *)GAME_PTR(g_SteamFriendsContext, 0, 0x428a30))
 void Loading_Init(void);
 void Loading_End(void);
 int Video_GetCurrentMode(void);
 void Models_List(void);
-
-/* CCallback<cGetAuthSessionTicketResponseExt, GetAuthSessionTicketResponse_t> with the object after it */
-typedef struct cSteamTicketCallback {
-	const void *vftable;		/* 0x00 */
-	byte flags;			/* 0x04 */
-	byte pad_05[3];
-	int callback;			/* 0x08 the callback id */
-	void *obj;			/* 0x0c */
-	void(__thiscall *func)(void *obj, void *param);	/* 0x10 */
-	uint32_t ticket;		/* 0x14 HAuthTicket of the request */
-	byte ready;			/* 0x18 the hex is in g_SteamTicket */
-	byte pending;			/* 0x19 */
-	byte pad_1a[2];
-} cSteamTicketCallback;
-SD_OFFSET(cSteamTicketCallback, ticket, 0x14);
 
 typedef struct cSaveVar {
 	char *name;			/* 0x0 cString */

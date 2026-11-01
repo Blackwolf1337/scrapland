@@ -72,6 +72,9 @@ def asequery(s, port, text):
 		return ok, None
 	return ok, a[0], asefields(a[1])
 
+# Winsock started first, as the game does before its server starts the ASE (Transport_Startup). In Scrap.exe the
+# Galaxy.dll had started it already, ScrapC.exe loads no Galaxy.dll
+SDTest.Call('Transport_WSAStartup', 'i')
 aseport = 24444
 aseq = aseport + 123
 check('ase Ase_Check before init', lambda: (SDTest.Call('Ase_Check', 'i')[0], SDTest.Peek('g_AseError', 'p')))

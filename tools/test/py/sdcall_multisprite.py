@@ -8,7 +8,8 @@ def msget(m):
 	r = [msi(m), msi(m + 4), msi(m + 8)]
 	p = msi(m + 0xc)
 	for i in range(msi(m + 8)):
-		r.append((msi(p + 8 * i), msi(p + 8 * i + 4)))
+		# packed coordinates, no addresses (one hit the start of a C object or function of ScrapC.exe)
+		r.append(plain((msi(p + 8 * i), msi(p + 8 * i + 4))))
 	return r
 def msinfo(m, i):
 	out = SDTest.Call('operator_new', 'ii', 16)[0]

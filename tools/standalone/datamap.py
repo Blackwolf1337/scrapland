@@ -13,7 +13,8 @@
 #   datamap.py --relabel [-e Scrap.exe] [-o datamap.txt]
 #       gives the rows of the map that lie in the C++ exception tables the kind eh, the pointers to the RTTI (before
 #       each vtable) the kind rtti and writes it again, the rest as it was (stage 3b5: a run of the scan would see the strings and globals of stages 3b4 and 3b5 as C objects, which
-#       strings.py and globals.py read as the data they make)
+#       strings.py and globals.py read as the data they make); drops the users that are gone (GONE: stage 3c1b, the
+#       GOG and Steam code)
 #
 # What counts as used:
 #   - the rvas in the code of ScrapC.exe (game_base plus an immediate, from GAME_DATA and Game_Ptr) with the width of
@@ -824,9 +825,43 @@ GONE_3C1B = [
 	(0x3cfdf4, 0x3cfe0c, 'library dinput8', None),
 	# the rest of the row of c_dfDIKeyboard: only the margin of its address
 	(0x3cfc04, 0x3cfdf4, None, None),
-	# the type descriptor of galaxy::api::IError: Gog_CatchError has a C copy
+	# the type descriptor of galaxy::api::IError: Gog_CatchError had a C copy (gone since GONE_NOSTORE)
 	(0x442264, 0x44226c, None, ('Gog_CatchError',)),
 ]
+
+# no store features: the C has no GOG Galaxy or Steam code. The data that only that code read is kind library store
+# now, without users, and the C of the game no longer reads the rest. In the form of GONE_3C1B
+GONE_NOSTORE = [
+	# the vtables of the Steam callbacks (the pointers to their RTTI between them stay rtti)
+	(0x3bb4c8, 0x3bb4d4, 'library store', None),
+	(0x3bb4d8, 0x3bb4e4, 'library store', None),
+	(0x3bb4e8, 0x3bb4f4, 'library store', None),
+	# the interface versions of steam_api, the hex digits of the ticket
+	(0x3bb4f4, 0x3bb79c, 'library store', None),
+	# the vtables of the Galaxy listeners
+	(0x3bbc00, 0x3bbc04, 'library store', None),
+	(0x3bbc08, 0x3bbc0c, 'library store', None),
+	(0x3bbc10, 0x3bbc20, 'library store', None),
+	(0x3bbc24, 0x3bbc34, 'library store', None),
+	(0x3bbc38, 0x3bbc48, 'library store', None),
+	# the client id and secret of Galaxy, "ACHIEVEMENT_"
+	(0x3bbc48, 0x3bbcb4, 'library store', None),
+	# "." is game data too
+	(0x3bbcb4, 0x3bbcb8, None, ('Gog_Init', 'probe galaxy.dll')),
+	# "Failed to Auth: %s", the texts of the STL errors
+	(0x3bbcb8, 0x3bbd08, 'library store', None),
+	# the steam_api context, the ticket callback, the pointers to the client id and secret
+	(0x428a30, 0x428aac, 'library store', None),
+	(0x428ab8, 0x428ac0, 'library store', None),
+	# the name in the type descriptor of galaxy::api::IError
+	(0x44226c, 0x442284, 'rtti', None),
+	# the bss of the ticket and the Steam ID, g_GogReady, g_IsSteam
+	(0x44b746, 0x44b748, None, ('Steam_GetTicket',)),
+	(0x44b748, 0x44bb88, None, None),
+	(0x44c108, 0x44c10c, None, None),
+	(0x467b9c, 0x467b9d, None, None),
+]
+GONE = GONE_3C1B + GONE_NOSTORE
 
 
 def split_rows(rows, cuts):
@@ -848,12 +883,12 @@ def users_of_label(lab):
 
 
 def relabel_3c1b(x, rows, to_rtti):
-	"""the users that are gone in stage 3c1b (docs/standalone.md): GONE_3C1B; the margins of the probe (a hot page) and
-	the numbers of the tests and of the tables of the C in the data of the libraries and the RTTI, which nothing of
-	ScrapC.exe reads (their code is gone, the numbers only look like rvas); the pointers to the RTTI before the vtables
-	that rows of other kinds hold; the data of the original's Python that rows of the game's kinds hold. Then the
-	pointers of data that is no longer kept. Returns the rows and the number of users gone"""
-	cuts = {lo for lo, hi, k, u in GONE_3C1B} | {hi for lo, hi, k, u in GONE_3C1B}
+	"""the users that are gone in stage 3c1b (docs/standalone.md) and with the store code: GONE; the margins of the
+	probe (a hot page) and the numbers of the tests and of the tables of the C in the data of the libraries and the
+	RTTI, which nothing of ScrapC.exe reads (their code is gone, the numbers only look like rvas); the pointers to the
+	RTTI before the vtables that rows of other kinds hold; the data of the original's Python that rows of the game's
+	kinds hold. Then the pointers of data that is no longer kept. Returns the rows and the number of users gone"""
+	cuts = {lo for lo, hi, k, u in GONE} | {hi for lo, hi, k, u in GONE}
 	for lo, hi in PY_DATA:
 		cuts |= {lo, hi}
 	cols = set()	# the words that point to the RTTI in rows of these kinds
@@ -874,7 +909,7 @@ def relabel_3c1b(x, rows, to_rtti):
 			r[4] = 'library python'
 		users, more = users_of_label(r[3])
 		keep = users
-		for lo, hi, kind, names in GONE_3C1B:
+		for lo, hi, kind, names in GONE:
 			if lo <= r[0] and r[1] <= hi:
 				keep = [u for u in keep if names is not None and u not in names]
 				if names is None:
@@ -1002,8 +1037,8 @@ def main():
 			else:
 				merged.append(r)
 		write_map(x, merged, out, head)
-		print('datamap.py: %d rows are C++ exception tables now, %d pointers to the RTTI; %d users gone (stage 3c1b)'
-			% (n, m, gone))
+		print('datamap.py: %d rows are C++ exception tables now, %d pointers to the RTTI; %d users gone (stage 3c1b, '
+			'no store code)' % (n, m, gone))
 		return
 	m = Map(x)
 	syms = Symbols(cpath)

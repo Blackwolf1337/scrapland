@@ -3,7 +3,7 @@
 # (docs/standalone.md, stage 3c1b). The CRT of the original calls them from its __xc table (rva 0x3a15bc..0x3a31bc,
 # _initterm); with -w this writes src/standalone/crtxc.inc, one CRT_XC(name, rva) line per entry in the order of the
 # table, name the C function the hook at rva jumps to (src/hooks.inc). The zero entries and the CRT's own (its code
-# from ORIG_CRT_CODE_START) are left out. Without -w it checks that the file is what it would write.
+# from ORIG_CRT_CODE_START) are left out, and so is DROPPED. Without -w it checks that the file is what it would write.
 import os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -11,6 +11,8 @@ from sdexe import BASE, ROOT, SIZEOFIMAGE, TIMESTAMP, Exe, ExeError, c_names, de
 
 XC_A, XC_Z = 0x3a15bc, 0x3a31bc	# the bounds the entry code pushes for _initterm (rva 0x3147f8)
 OUT = os.path.join(ROOT, 'src', 'standalone', 'crtxc.inc')
+# the initializer of the Steam ticket callback of the original: no C (the game has no store features)
+DROPPED = {0x04d8c0}
 
 
 def fail(msg):
@@ -27,7 +29,7 @@ def table(x):
 	for at in range(XC_A, XC_Z, 4):
 		v = x.u32(at)
 		rva = v - BASE
-		if not v or crt[0] <= rva < crt[1]:
+		if not v or crt[0] <= rva < crt[1] or rva in DROPPED:
 			continue
 		if rva not in hooks:
 			fail('the initializer at rva %06x (entry %06x) has no C function' % (rva, at))

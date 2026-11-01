@@ -132,13 +132,12 @@ extern const byte c_dfDIKeyboard[], c_dfDIMouse[];
 
 /*
  * A function of a DLL the game imports, as a pointer of type (an lvalue that is read only): in ScrapC.exe the cell of
- * its own import address table, which the import library names __imp_<symbol> (the mingw-w64 ones, and for fmod,
- * Galaxy and steam_api the ones of the .def files in src/standalone), in the hook DLL the slot of the exe's import
- * address table at rva. So the call goes through an import slot in both, as in the original.
+ * its own import address table, which the import library names __imp_<symbol> (the mingw-w64 ones, and for fmod
+ * the one of src/standalone/fmod.def), in the hook DLL the slot of the exe's import address table at rva. So the call
+ * goes through an import slot in both, as in the original.
  *	GAME_IMPORT(type, name, argbytes, rva)	a __stdcall function, the symbol _name@argbytes
  *	GAME_IMPORT_CDECL(type, name, rva)	a __cdecl function, the symbol _name
- *	GAME_IMPORT_SYM(type, name, sym, rva)	another symbol (the C++ names of Galaxy.dll), name only for the C
- * The names are pasted, never expanded. The symbol is quoted for the assembler, which takes no ? in a bare name.
+ * The names are pasted, never expanded. The symbol is quoted for the assembler.
  */
 #ifdef SD_STANDALONE
 #define SD_IMP_(type, id, sym) \
@@ -148,11 +147,9 @@ extern const byte c_dfDIKeyboard[], c_dfDIMouse[];
 	}))
 #define GAME_IMPORT(type, name, argbytes, rva) SD_IMP_(type, sd_imp_##name, "_" #name "@" #argbytes)
 #define GAME_IMPORT_CDECL(type, name, rva) SD_IMP_(type, sd_imp_##name, "_" #name)
-#define GAME_IMPORT_SYM(type, name, sym, rva) SD_IMP_(type, sd_imp_##name, sym)
 #else
 #define GAME_IMPORT(type, name, argbytes, rva) (*(typeof(type) const *)Game_Ptr(rva))
 #define GAME_IMPORT_CDECL(type, name, rva) (*(typeof(type) const *)Game_Ptr(rva))
-#define GAME_IMPORT_SYM(type, name, sym, rva) (*(typeof(type) const *)Game_Ptr(rva))
 #endif
 
 int Game_Init(void);
@@ -297,13 +294,6 @@ typedef struct exe_wndclass {
 } exe_wndclass;
 SD_SIZE(exe_wndclass, 0x28);
 
-/* the GOG Galaxy listeners of CWinApp: a vector of objects deleted through their slot 0 */
-typedef struct cGogListeners {
-	void **begin;			/* 0x0 */
-	void **end;			/* 0x4 */
-	void **cap;			/* 0x8 */
-} cGogListeners;
-
 #define APPF_CLIENT 1
 #define APPF_SERVER 2
 #define APPF_DEDICATED 4
@@ -336,7 +326,7 @@ struct CWinApp {
 	byte console;			/* 0x80 -console: the console window */
 	byte dedicatedWin;		/* 0x81 -dedicated: small window */
 	byte pad_82[2];
-	cGogListeners gog;		/* 0x84 */
+	byte unused_84[0xc];		/* 0x84 */
 };
 SD_OFFSET(CWinApp, cmdLine, 0x08);
 SD_OFFSET(CWinApp, gameTime, 0x20);
@@ -345,7 +335,7 @@ SD_OFFSET(CWinApp, levelPath, 0x34);
 SD_OFFSET(CWinApp, onLevelLoaded, 0x40);
 SD_OFFSET(CWinApp, wc, 0x54);
 SD_OFFSET(CWinApp, hwnd, 0x7c);
-SD_OFFSET(CWinApp, gog, 0x84);
+SD_OFFSET(CWinApp, unused_84, 0x84);
 SD_SIZE(CWinApp, 0x90);
 
 #define g_pWorld GAME_GLOBAL(cWorld *, g_pWorld, 0x467450)
