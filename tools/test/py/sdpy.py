@@ -206,9 +206,9 @@ if spyString:
 		spyString.whitespace, spyString.index('abcabc', 'c', 3), spyTry(lambda: spyString.index('abc', 'z')),
 		spyString.zfill('3.5', 6), spyString.expandtabs('a\tb', 8)))
 
-# hashes and the order of dicts
+# hashes and the order of dicts (not of a NaN: frexp leaves its exponent unset, so that hash is stack garbage)
 for spyV in (0, 1, -1, -2, 2, spyMax, spyMin, 1000000, 0.5, -0.5, 1.0, -1.0, 1.5, 0.1, 1e10, -1e10, 1e100, 1e-300,
-		5e-324, spyNan, 2L ** 40, -(2L ** 40), 2L ** 100, 0L, -1L, (), (1,), (1, 2), (1, 2, 3), ('a', 1.5, (2,)),
+		5e-324, 2L ** 40, -(2L ** 40), 2L ** 100, 0L, -1L, (), (1,), (1, 2), (1, 2, 3), ('a', 1.5, (2,)),
 		(0.1, -1, 2L), '', 'a', 'b', 'ab', 'ba', 'Scrap', 'Scrapland', 'x' * 100, '\377\376', 1 + 2j, 1.5 + 0j, 0.1 + 0.2j,
 		complex(-7.25, 1e-300), complex(1e10, 0.3), 1.0 / 3.0, -2.0 / 3.0, 1e-5, 123.456, -0.75):
 	check('hash %s' % repr(spyV), lambda v=spyV: hash(v))
