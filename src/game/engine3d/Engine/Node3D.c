@@ -789,7 +789,7 @@ byte __thiscall CNode3D_AnimAlpha(CNode3D *self, byte *out) {
 }
 
 box_t *__thiscall CGround_GetBox(void *self, box_t *out) {
-	*out = *(box_t *)((byte *)self + 0x30);
+	*out = ((CGround *)self)->Ext;
 	return out;
 }
 

@@ -11,7 +11,16 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
 
-#define LP_VT(self) GenChar_Vtbl(self)
+/* the vtable of the little police: the GenChar slots and one of its own */
+typedef struct cLittlePoliceLocalLogicVtbl {
+	cGenCharLocalLogicVtbl base;
+	void(__thiscall *UpdateLook)(void *self);			/* 0x90 vf36 */
+} cLittlePoliceLocalLogicVtbl;
+SD_OFFSET(cLittlePoliceLocalLogicVtbl, UpdateLook, 0x90);
+
+static inline const cLittlePoliceLocalLogicVtbl *LP_VT(const void *l) {
+	return *(const cLittlePoliceLocalLogicVtbl *const *)l;
+}
 #define LP_BASE(self) (&(self)->base.base)
 
 /* the AI of the character still has its target */
@@ -258,7 +267,7 @@ void __thiscall cLittlePoliceLocalLogic_Update(cLittlePoliceLocalLogic *self, fl
 	cBaseLocalLogic *b = LP_BASE(self);
 	vec3_t t1, t2;
 
-	(*(void(__thiscall **)(void *))((byte *)LP_VT(self) + 0x90))(self);
+	LP_VT(self)->UpdateLook(self);
 	cLittlePoliceLocalLogic_UpdateBribe(self);
 	int st = b->state;
 	byte alarm = g_pWorld->alarm.on;
@@ -279,7 +288,7 @@ void __thiscall cLittlePoliceLocalLogic_Update(cLittlePoliceLocalLogic *self, fl
 		}
 	} else if (st == 2 || st == 7 || st == 8) {
 		cBaseLocalLogic_Update(b, dt);
-		LP_VT(self)->UpdateView(self);
+		LP_VT(self)->base.UpdateView(self);
 		cEntity *usr = ChType_Usr0();
 		if (!usr || b->busy) {
 			return;
@@ -546,7 +555,7 @@ byte __thiscall cLittlePoliceLocalLogic_SetState(cLittlePoliceLocalLogic *self, 
 
 	if (state == 8) {
 		if ((byte)cBaseLocalLogic_SetState(b, 8, target)) {
-			LP_VT(self)->UpdateView(self);
+			LP_VT(self)->base.UpdateView(self);
 			cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 			ai->vftable->SetState(ai, 3, target, (double)g_GenCharAlertSpeed);
 		}
@@ -554,7 +563,7 @@ byte __thiscall cLittlePoliceLocalLogic_SetState(cLittlePoliceLocalLogic *self, 
 	}
 	if (state == 7) {
 		if ((byte)cBaseLocalLogic_SetState(b, 7, target)) {
-			LP_VT(self)->UpdateView(self);
+			LP_VT(self)->base.UpdateView(self);
 			cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 			ai->vftable->SetState(ai, 8, target, 1);
 			cGenCharLocalLogic_Discover(&self->base);
