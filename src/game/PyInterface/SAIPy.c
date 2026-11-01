@@ -720,12 +720,12 @@ PyObject *SAI_GetNearestItemLife(PyObject *self, PyObject *args) {
 PyObject *SAI_GetRandomVisibilityPoint(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	int n = g_NodesWorld->vftable->NumVisPoints(g_NodesWorld);
+	int n = g_NodesWorld->sup.vftable->NumVisPoints(g_NodesWorld);
 	if (n <= 0) {
 		return ReturnNone();
 	}
 	vec3_t p;
-	memcpy(&p, g_NodesWorld->vftable->GetVisPoint(g_NodesWorld, crt_rand() % n), sizeof(p));
+	memcpy(&p, g_NodesWorld->sup.vftable->GetVisPoint(g_NodesWorld, crt_rand() % n), sizeof(p));
 	return Py_BuildValue("(fff)", (double)p.x, (double)p.y, (double)p.z);
 }
 

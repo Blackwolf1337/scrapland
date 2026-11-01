@@ -263,7 +263,7 @@ static void Traffic_SearchDir(vec3_t *out, const vec3_t *pos) {
 static void NodesWorld_GetBox(vec3_t *min, vec3_t *max) {
 	typedef void(__thiscall * getBox_t)(CNodesWorld * self, vec3_t * min, vec3_t * max);
 	CNodesWorld *w = g_NodesWorld;
-	((getBox_t)((void *const *)w->vftable)[1])(w, min, max);
+	((getBox_t)((void *const *)w->sup.vftable)[1])(w, min, max);
 }
 
 CNodesTraffic *__thiscall CNodesTraffic_ctor(void *mem) {
@@ -1178,7 +1178,7 @@ void __thiscall CNodesTraffic_Analyze(CNodesTraffic *self) {
 	cTrafficErrorList *errors = &self->errors;
 	TrafficErrors_Clear(errors);
 	NT_Write(f, "SEGMENTOS TRAFICO COLISIONANDO CON ESCENARIO\n\n");
-	g_NodesWorld->vftable->GetBox(g_NodesWorld, &bmin, &bmax);
+	g_NodesWorld->sup.vftable->GetBox(g_NodesWorld, &bmin, &bmax);
 	for (int i = 0; i < self->numTracks; i++) {
 		cTrafficTrack *tr = &self->tracks[i];
 		for (int j = 0; j < tr->numNodes - 1; j++) {

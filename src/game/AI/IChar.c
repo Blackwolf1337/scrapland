@@ -634,7 +634,7 @@ void __thiscall cAIChar_CheckRepos(cAIChar *self) {
 		vec3_t cam = w->camPos[w->curCam];
 		CNodesWorld *nw = self->flying ? g_NodesWorld : (CNodesWorld *)g_NodesWorld2D;
 
-		if (!nw->vftable->InGrid(nw, &cam)) {
+		if (!nw->sup.vftable->InGrid(nw, &cam)) {
 			return;
 		}
 		if (self->vftable->CanRepos(self, self->state) &&

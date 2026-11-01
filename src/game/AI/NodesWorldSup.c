@@ -177,17 +177,17 @@ byte __thiscall NWGrid_Add(cGridElements_InfPointVisPtr *self, const vec3_t *p, 
 /* ---- CNodesWorldSup ---- */
 
 CNodesWorld *__thiscall CNodesWorldSup_ctor(CNodesWorld *self) {
-	self->vftable = CNODESWORLDSUP_VFTABLE;
+	self->sup.vftable = CNODESWORLDSUP_VFTABLE;
 	/* the fields from halfNode to nodeInit, grid to extraPoints and numFiles to i358; the padding, the rest of
 	 * name and fileStart stay as they were */
-	memset(&self->halfNode, 0, offsetof(CNodesWorld, created) - offsetof(CNodesWorld, halfNode));
-	self->created = 0;
-	memset(&self->min, 0, sizeof(self->min) + sizeof(self->max));
-	self->name[0] = 0;
-	self->nodeInitDummy = 1;
-	memset(&self->grid, 0, offsetof(CNodesWorld, fileStart) - offsetof(CNodesWorld, grid));
-	memset(&self->numFiles, 0, offsetof(CNodesWorld, unused_35c) - offsetof(CNodesWorld, numFiles));
-	self->unused_35c = 0;
+	memset(&self->sup.halfNode, 0, offsetof(CNodesWorld, sup.created) - offsetof(CNodesWorld, sup.halfNode));
+	self->sup.created = 0;
+	memset(&self->sup.min, 0, sizeof(self->sup.min) + sizeof(self->sup.max));
+	self->sup.name[0] = 0;
+	self->sup.nodeInitDummy = 1;
+	memset(&self->sup.grid, 0, offsetof(CNodesWorld, sup.fileStart) - offsetof(CNodesWorld, sup.grid));
+	memset(&self->sup.numFiles, 0, offsetof(CNodesWorld, sup.unused_35c) - offsetof(CNodesWorld, sup.numFiles));
+	self->sup.unused_35c = 0;
 	return self;
 }
 
@@ -198,19 +198,19 @@ static void NWSup_FreeVecList(cNWVecList *list, void(__fastcall *clear)(cNWVecLi
 }
 
 void __fastcall CNodesWorldSup_dtor(CNodesWorld *self) {
-	self->vftable = CNODESWORLDSUP_VFTABLE;
-	NWSup_FreeVecList(&self->errOneWay, DListVec3_Clear);
-	NWSup_FreeVecList(&self->errUnlinked, DListVec3_Clear);
-	NWSup_FreeVecList(&self->errCollide, DListVec3_Clear);
+	self->sup.vftable = CNODESWORLDSUP_VFTABLE;
+	NWSup_FreeVecList(&self->sup.errOneWay, DListVec3_Clear);
+	NWSup_FreeVecList(&self->sup.errUnlinked, DListVec3_Clear);
+	NWSup_FreeVecList(&self->sup.errCollide, DListVec3_Clear);
 	for (int i = 4; i >= 0; i--) {
-		NWSup_FreeVecList(&self->lists28c[i], DListVec3_Clear);
+		NWSup_FreeVecList(&self->sup.lists28c[i], DListVec3_Clear);
 	}
-	NWSup_FreeVecList(&self->lists25c[1], NWVecList_Clear);
-	NWSup_FreeVecList(&self->lists25c[0], NWVecList_Clear);
-	NWSup_FreeVecList(&self->extraPoints, DListVec3_Clear);
-	NWIntList_Free(&self->list1d0);
-	NWPointList_Clear(&self->points);
-	NWPointList_FreePool(&self->points);
+	NWSup_FreeVecList(&self->sup.lists25c[1], NWVecList_Clear);
+	NWSup_FreeVecList(&self->sup.lists25c[0], NWVecList_Clear);
+	NWSup_FreeVecList(&self->sup.extraPoints, DListVec3_Clear);
+	NWIntList_Free(&self->sup.list1d0);
+	NWPointList_Clear(&self->sup.points);
+	NWPointList_FreePool(&self->sup.points);
 }
 
 CNodesWorld *__thiscall CNodesWorldSup_Delete(CNodesWorld *self, byte flags) {
@@ -222,8 +222,8 @@ CNodesWorld *__thiscall CNodesWorldSup_Delete(CNodesWorld *self, byte flags) {
 }
 
 void __thiscall CNodesWorldSup_GetBox(CNodesWorld *self, vec3_t *min, vec3_t *max) {
-	*min = self->min;
-	*max = self->max;
+	*min = self->sup.min;
+	*max = self->sup.max;
 }
 
 /* the path of graph file i: <path>.pth, <path>1.pth ..., cut at the 0x100 bytes of the original buffer */
@@ -264,7 +264,7 @@ byte __thiscall CNodesWorldSup_SaveInfPath(CNodesWorld *self, const char *path) 
 	cFilePack f;
 	byte ok;
 
-	if (!self->vftable->SavePath(self)) {
+	if (!self->sup.vftable->SavePath(self)) {
 		return 0;
 	}
 	Con_Printf("Saving Inf. AI...\n");
@@ -274,9 +274,9 @@ byte __thiscall CNodesWorldSup_SaveInfPath(CNodesWorld *self, const char *path) 
 		Con_Bluef("ERROR AI: File Inf. Path AI no abierto.\n");
 		ok = 0;
 	} else {
-		cFilePack_Write(&f, &self->nodeSize, sizeof(self->nodeSize));
-		cFilePack_Write(&f, &self->min, sizeof(self->min));
-		cFilePack_Write(&f, &self->max, sizeof(self->max));
+		cFilePack_Write(&f, &self->sup.nodeSize, sizeof(self->sup.nodeSize));
+		cFilePack_Write(&f, &self->sup.min, sizeof(self->sup.min));
+		cFilePack_Write(&f, &self->sup.max, sizeof(self->sup.max));
 		if (!cFilePack_Close(&f)) {
 			Con_Bluef("ERROR AI: File Inf. Path AI no cerrado.\n");
 			ok = 0;
@@ -293,8 +293,8 @@ byte __thiscall CNodesWorldSup_LoadGraph(CNodesWorld *self, const char *path) {
 	cFilePack f;
 	int n, file, links = 0;
 
-	self->created = 0;
-	self->numNodes = 0;
+	self->sup.created = 0;
+	self->sup.numNodes = 0;
 	/* the number of nodes of all files */
 	for (file = 0;; file++) {
 		NWSup_FilePath(buf, path, file);
@@ -313,7 +313,7 @@ byte __thiscall CNodesWorldSup_LoadGraph(CNodesWorld *self, const char *path) {
 			return 0;
 		}
 		cFilePack_Read(&f, &n, 4);
-		self->numNodes += n;
+		self->sup.numNodes += n;
 		if (!cFilePack_Close(&f)) {
 			Con_Bluef("ERROR AI: File Path AI no cerrado.\n");
 			CHECK(!"CNodesWorldSup_LoadPath_File_Path_Not_Closed");
@@ -322,8 +322,8 @@ byte __thiscall CNodesWorldSup_LoadGraph(CNodesWorld *self, const char *path) {
 		}
 		cFilePack_dtor(&f);
 	}
-	self->nodes = Mem_Alloc(self->numNodes * sizeof(cNWNode));
-	if (!self->nodes) {
+	self->sup.nodes = Mem_Alloc(self->sup.numNodes * sizeof(cNWNode));
+	if (!self->sup.nodes) {
 		Con_Bluef("ERROR: LoadPathAI - Insuficiente memoria Buffer Points Vis.\n");
 		CHECK(!"cNodesWorldSup_LoadPathAI_new_BufferPointVis_Fail");
 	}
@@ -347,30 +347,30 @@ byte __thiscall CNodesWorldSup_LoadGraph(CNodesWorld *self, const char *path) {
 		}
 		cFilePack_Read(&f, &n, 4);
 		for (int k = first; k < n + first; k++) {
-			cFilePack_Read(&f, &self->nodes[k].pos, sizeof(vec3_t));
+			cFilePack_Read(&f, &self->sup.nodes[k].pos, sizeof(vec3_t));
 		}
-		self->fileStart[self->numFiles] = &self->nodes[first];
-		self->numFiles++;
+		self->sup.fileStart[self->sup.numFiles] = &self->sup.nodes[first];
+		self->sup.numFiles++;
 		for (int k = first; k < n + first; k++) {
-			cNWNode *node = &self->nodes[k];
+			cNWNode *node = &self->sup.nodes[k];
 			cFilePack_Read(&f, &node->numLinks, 4);
 			node->links = Mem_Alloc(node->numLinks * 4);
 			if (!node->links) {
 				Con_Bluef("ERROR: LoadPathAI - Insuficiente memoria Buffer Links Points Vis.\n");
 				CHECK(!"cNodesWorldSup_LoadPathAI_new_BufferPointVis_Fail");
 			}
-			for (int j = 0; j < self->nodes[k].numLinks; j++) {
+			for (int j = 0; j < self->sup.nodes[k].numLinks; j++) {
 				vec3_t p;
 				cFilePack_Read(&f, &p, sizeof(p));
-				cNWNode *q = NWSup_FindNode(self->nodes, first, n, &p);
+				cNWNode *q = NWSup_FindNode(self->sup.nodes, first, n, &p);
 				if (q) {
-					self->nodes[k].links[j] = q;
+					self->sup.nodes[k].links[j] = q;
 					continue;
 				}
 				Con_Bluef("ERROR: LoadPathAI - Error b\xfa" "squeda links.\n");
 				CHECK(!"cNodesWorldSup_LoadPathAI_Load_Links_Fail");
 			}
-			links += self->nodes[k].numLinks;
+			links += self->sup.nodes[k].numLinks;
 		}
 		if (!cFilePack_Close(&f)) {
 			Con_Bluef("ERROR AI: File Path AI no cerrado.\n");
@@ -381,34 +381,34 @@ byte __thiscall CNodesWorldSup_LoadGraph(CNodesWorld *self, const char *path) {
 		first += n;
 		cFilePack_dtor(&f);
 	}
-	Con_Printf("\nNUM. POINTS OF VISIBILITY LOADING GRAPH: %d\n", self->numNodes);
+	Con_Printf("\nNUM. POINTS OF VISIBILITY LOADING GRAPH: %d\n", self->sup.numNodes);
 	Con_Printf("NUM. LINKS BETWEEN POINTS VIS. LOADING GRAPH: %d\n", links / 2);
-	Con_Printf("\nMEMORY USED BY GRAPH: NODES: %d LINKS: %d bytes\n", self->numNodes * 0x14, links * 4);
-	Con_Printf("TOTAL MEMORY USED BY GRAPH: %d bytes\n", (links + self->numNodes * 5) * 4);
+	Con_Printf("\nMEMORY USED BY GRAPH: NODES: %d LINKS: %d bytes\n", self->sup.numNodes * 0x14, links * 4);
+	Con_Printf("TOTAL MEMORY USED BY GRAPH: %d bytes\n", (links + self->sup.numNodes * 5) * 4);
 	return 1;
 }
 
 byte __thiscall CNodesWorldSup_Create(CNodesWorld *self) {
-	if (!self->vftable->LoadGraph(self)) {
+	if (!self->sup.vftable->LoadGraph(self)) {
 		return 0;
 	}
-	self->created = 1;
+	self->sup.created = 1;
 	return 1;
 }
 
 int __thiscall CNodesWorldSup_FileOf(CNodesWorld *self, const cNWNode *node) {
 	uintptr_t p = (uintptr_t)node;
-	uintptr_t base = (uintptr_t)self->nodes;
+	uintptr_t base = (uintptr_t)self->sup.nodes;
 
-	if (p < base || p > base + (uintptr_t)(self->numNodes * 5 - 5) * 4) {
+	if (p < base || p > base + (uintptr_t)(self->sup.numNodes * 5 - 5) * 4) {
 		return -1;
 	}
-	if (self->numFiles == 1) {
+	if (self->sup.numFiles == 1) {
 		return 0;
 	}
-	int n = self->numFiles - 1;
+	int n = self->sup.numFiles - 1;
 	for (int i = 0; i < n; i++) {
-		if (p >= (uintptr_t)self->fileStart[i] && p < (uintptr_t)self->fileStart[i + 1]) {
+		if (p >= (uintptr_t)self->sup.fileStart[i] && p < (uintptr_t)self->sup.fileStart[i + 1]) {
 			return i;
 		}
 	}
@@ -419,9 +419,9 @@ int __thiscall CNodesWorldSup_CommonFile(CNodesWorld *self, cNWNode *const *node
 	if (n <= 0) {
 		return -1;
 	}
-	int file = self->vftable->FileOf(self, nodes[0]);
+	int file = self->sup.vftable->FileOf(self, nodes[0]);
 	for (int i = 1; i < n; i++) {
-		if (file != self->vftable->FileOf(self, nodes[i])) {
+		if (file != self->sup.vftable->FileOf(self, nodes[i])) {
 			return -1;
 		}
 	}
@@ -430,16 +430,16 @@ int __thiscall CNodesWorldSup_CommonFile(CNodesWorld *self, cNWNode *const *node
 
 /* the middle of the buffer cell fx fy fz */
 static vec3_t *NWSup_CellPos(const CNodesWorld *self, vec3_t *out, float fx, float fy, float fz) {
-	out->x = ((self->min.x + self->axis[0].x * fx) + self->axis[1].x * fy) + self->axis[2].x * fz + self->halfNode.x;
-	out->y = self->halfNode.y + (((self->min.y + self->axis[0].y * fx) + self->axis[1].y * fy) + self->axis[2].y * fz);
-	out->z = self->halfNode.z + (((self->min.z + self->axis[0].z * fx) + self->axis[1].z * fy) + self->axis[2].z * fz);
+	out->x = ((self->sup.min.x + self->sup.axis[0].x * fx) + self->sup.axis[1].x * fy) + self->sup.axis[2].x * fz + self->sup.halfNode.x;
+	out->y = self->sup.halfNode.y + (((self->sup.min.y + self->sup.axis[0].y * fx) + self->sup.axis[1].y * fy) + self->sup.axis[2].y * fz);
+	out->z = self->sup.halfNode.z + (((self->sup.min.z + self->sup.axis[0].z * fx) + self->sup.axis[1].z * fy) + self->sup.axis[2].z * fz);
 	return out;
 }
 
 vec3_t *__thiscall CNodesWorldSup_SnapPos(CNodesWorld *self, vec3_t *out, const vec3_t *pos) {
-	float fz = (float)(int)((pos->z - self->min.z) / self->nodeSize.z);
-	float fy = (float)(int)((pos->y - self->min.y) / self->nodeSize.y);
-	float fx = (float)(int)((pos->x - self->min.x) / self->nodeSize.x);
+	float fz = (float)(int)((pos->z - self->sup.min.z) / self->sup.nodeSize.z);
+	float fy = (float)(int)((pos->y - self->sup.min.y) / self->sup.nodeSize.y);
+	float fx = (float)(int)((pos->x - self->sup.min.x) / self->sup.nodeSize.x);
 
 	return NWSup_CellPos(self, out, fx, fy, fz);
 }
@@ -461,38 +461,38 @@ void __thiscall CNodesWorldSup_OtherLinks(CNodesWorld *self, const cNWNode *node
 }
 
 byte __thiscall CNodesWorldSup_IsCreated(CNodesWorld *self) {
-	return self->created;
+	return self->sup.created;
 }
 
 vec3_t *__thiscall CNodesWorldSup_LastNodePos(CNodesWorld *self, vec3_t *out) {
-	self->nodeInit = self->nodes[self->numNodes - 1].pos;
-	*out = self->nodeInit;
+	self->sup.nodeInit = self->sup.nodes[self->sup.numNodes - 1].pos;
+	*out = self->sup.nodeInit;
 	return out;
 }
 
 const vec3_t *__thiscall CNodesWorldSup_GetVisPoint(CNodesWorld *self, int i) {
-	CHECK(i >= 0 && i < self->numNodes);
-	return &self->nodes[i].pos;
+	CHECK(i >= 0 && i < self->sup.numNodes);
+	return &self->sup.nodes[i].pos;
 }
 
 int __thiscall CNodesWorldSup_NumVisPoints(CNodesWorld *self) {
-	return self->numNodes;
+	return self->sup.numNodes;
 }
 
 float __thiscall CNodesWorldSup_GetMaxVisDist(CNodesWorld *self) {
-	return self->maxVisDist;
+	return self->sup.maxVisDist;
 }
 
 byte __thiscall CNodesWorldSup_InGrid(CNodesWorld *self, const vec3_t *pos) {
-	return self->grid->vftable->IsInside(self->grid, pos);
+	return self->sup.grid->vftable->IsInside(self->sup.grid, pos);
 }
 
 byte __thiscall CNodesWorldSup_CheckBuffer(CNodesWorld *self) {
 	vec3_t p;
 
-	for (int i = 0; i < self->nx * self->ny * self->nz; i++) {
-		self->vftable->BufferPos(self, &p, i);
-		int k = self->vftable->BufferIndex(self, &p);
+	for (int i = 0; i < self->sup.nx * self->sup.ny * self->sup.nz; i++) {
+		self->sup.vftable->BufferPos(self, &p, i);
+		int k = self->sup.vftable->BufferIndex(self, &p);
 		if (i != k) {
 			Con_FatalErrorf("ERROR CheckGetsBuffer: Indice Preguntado: %d !=  Indice Respuesta: %d\n", i, k);
 			return 0;
@@ -502,7 +502,7 @@ byte __thiscall CNodesWorldSup_CheckBuffer(CNodesWorld *self) {
 }
 
 void __thiscall CNodesWorldSup_BuildGrid(CNodesWorld *self) {
-	vec3_t top = self->max;
+	vec3_t top = self->sup.max;
 
 	if (g_IsMapOutDoor) {
 		char buf[20];
@@ -517,35 +517,35 @@ void __thiscall CNodesWorldSup_BuildGrid(CNodesWorld *self) {
 		}
 		top.y = pos.y + 5000.0f;
 	}
-	int nx = (int)crt_ceil((double)((top.x - self->min.x) / self->gridCell));
-	double ny = crt_ceil((double)((top.y - self->min.y) / self->gridCell));
-	double nz = crt_ceil((double)((top.z - self->min.z) / self->gridCell));
+	int nx = (int)crt_ceil((double)((top.x - self->sup.min.x) / self->sup.gridCell));
+	double ny = crt_ceil((double)((top.y - self->sup.min.y) / self->sup.gridCell));
+	double nz = crt_ceil((double)((top.z - self->sup.min.z) / self->sup.gridCell));
 	cGridElements *grid = operator_new(sizeof(cGridElements));
 	if (grid) {
-		grid = NWGrid_ctor(grid, &top, &self->min, nx, (int)ny, (int)nz);
+		grid = NWGrid_ctor(grid, &top, &self->sup.min, nx, (int)ny, (int)nz);
 	}
-	self->grid = (cNWGrid *)grid;
-	CHECK(self->grid != NULL);
-	for (int i = 0; i < self->numNodes; i++) {
-		cNWNode *node = &self->nodes[i];
-		self->grid->vftable->Add(self->grid, &node->pos, (void *const *)&node);
+	self->sup.grid = (cNWGrid *)grid;
+	CHECK(self->sup.grid != NULL);
+	for (int i = 0; i < self->sup.numNodes; i++) {
+		cNWNode *node = &self->sup.nodes[i];
+		self->sup.grid->vftable->Add(self->sup.grid, &node->pos, (void *const *)&node);
 	}
 }
 
 int __thiscall CNodesWorldSup_BufferIndex(CNodesWorld *self, const vec3_t *pos) {
-	int i = ((int)((pos->x - self->min.x) / self->nodeSize.x) * self->ny + (int)((pos->y - self->min.y) /
-		self->nodeSize.y)) * self->nz + (int)((pos->z - self->min.z) / self->nodeSize.z);
+	int i = ((int)((pos->x - self->sup.min.x) / self->sup.nodeSize.x) * self->sup.ny + (int)((pos->y - self->sup.min.y) /
+		self->sup.nodeSize.y)) * self->sup.nz + (int)((pos->z - self->sup.min.z) / self->sup.nodeSize.z);
 
-	CHECK((i < self->dimBuffer) && (i >= 0));
+	CHECK((i < self->sup.dimBuffer) && (i >= 0));
 	return i;
 }
 
 vec3_t *__thiscall CNodesWorldSup_BufferPos(CNodesWorld *self, vec3_t *out, int index) {
-	CHECK((index < self->dimBuffer) && (index >= 0));
-	int plane = self->ny * self->nz;
+	CHECK((index < self->sup.dimBuffer) && (index >= 0));
+	int plane = self->sup.ny * self->sup.nz;
 	int x = index / plane;
-	int y = (index - plane * x) / self->nz;
-	int z = index - (self->ny * x + y) * self->nz;
+	int y = (index - plane * x) / self->sup.nz;
+	int z = index - (self->sup.ny * x + y) * self->sup.nz;
 
 	return NWSup_CellPos(self, out, (float)x, (float)y, (float)z);
 }
@@ -555,36 +555,36 @@ void __thiscall CNodesWorldSup_GetInfoNodes(CNodesWorld *self) {
 	byte closed = 1;
 
 	Con_Printf("Get Info Nodes...\n");
-	DListVec3_Clear(&self->lists28c[1]);
-	DListVec3_Clear(&self->lists28c[2]);
-	DListVec3_Clear(&self->lists28c[3]);
-	DListVec3_Clear(&self->lists28c[0]);
-	DListVec3_Clear(&self->lists28c[4]);
-	for (int i = 0; i < self->dimBuffer; i++) {
+	DListVec3_Clear(&self->sup.lists28c[1]);
+	DListVec3_Clear(&self->sup.lists28c[2]);
+	DListVec3_Clear(&self->sup.lists28c[3]);
+	DListVec3_Clear(&self->sup.lists28c[0]);
+	DListVec3_Clear(&self->sup.lists28c[4]);
+	for (int i = 0; i < self->sup.dimBuffer; i++) {
 		cNWVecList *l;
-		switch (self->buffer[i].state) {
+		switch (self->sup.buffer[i].state) {
 		case 4:
-			l = &self->lists28c[1];
+			l = &self->sup.lists28c[1];
 			break;
 		case 5:
-			l = &self->lists28c[2];
+			l = &self->sup.lists28c[2];
 			break;
 		case 0:
-			l = &self->lists28c[3];
+			l = &self->sup.lists28c[3];
 			break;
 		case 3:
-			l = &self->lists28c[0];
+			l = &self->sup.lists28c[0];
 			break;
 		case 6:
 			closed = 0;
-			l = &self->lists28c[4];
+			l = &self->sup.lists28c[4];
 			break;
 		default:
 			continue;
 		}
-		DListVec3_Add(l, self->vftable->BufferPos(self, &p, i));
+		DListVec3_Add(l, self->sup.vftable->BufferPos(self, &p, i));
 	}
-	if (closed && self->nodeInitDummy) {
+	if (closed && self->sup.nodeInitDummy) {
 		Con_Warnf("WARNING AI: ESCENARIO PODRIA NO ESTAR CERRADO.\n");
 		CHECK(!"CNodesWorldSup_GetInfNodes_Warning_Esc_Not_Closed");
 	}
@@ -596,7 +596,7 @@ static int NWSup_SameSet(CNodesWorld *self, int index, cNWVis *d, const vec3_t *
 		d->points.iter = d->points.head;
 		return d->points.head->data == p;
 	}
-	cNWVis *a = self->buffer[index].vis;
+	cNWVis *a = self->sup.buffer[index].vis;
 	cNWIntNode *va = a->points.iter = a->points.head;
 	cNWIntNode *vd = d->points.iter = d->points.head;
 	while (vd) {
@@ -621,7 +621,7 @@ static int NWSup_SameSet(CNodesWorld *self, int index, cNWVis *d, const vec3_t *
 }
 
 void __thiscall CNodesWorldSup_AddVis(CNodesWorld *self, const vec3_t *point, int index) {
-	cNWVis *vis = self->buffer[index].vis;
+	cNWVis *vis = self->sup.buffer[index].vis;
 	cNWVis tmp;
 	int count = 1, key = 0;
 
@@ -629,15 +629,15 @@ void __thiscall CNodesWorldSup_AddVis(CNodesWorld *self, const vec3_t *point, in
 		count = vis->points.count + 1;
 		key = vis->hash;
 	}
-	int h = self->vftable->Hash(self, key, (int)(uintptr_t)point);
-	cNWVisList *set = &self->sets[h];
+	int h = self->sup.vftable->Hash(self, key, (int)(uintptr_t)point);
+	cNWVisList *set = &self->sup.sets[h];
 	cNWVisNode *n = set->iter = set->head;
 	while (n) {
 		cNWVis *d = &n->vis;
 		if (count == d->points.count && NWSup_SameSet(self, index, d, point, count)) {
-			self->vftable->ReleaseVis(self, index);
-			self->buffer[index].vis = d;
-			self->buffer[index].vis->refs++;
+			self->sup.vftable->ReleaseVis(self, index);
+			self->sup.buffer[index].vis = d;
+			self->sup.buffer[index].vis->refs++;
 			return;
 		}
 		n = set->iter = set->iter->next;
@@ -646,7 +646,7 @@ void __thiscall CNodesWorldSup_AddVis(CNodesWorld *self, const vec3_t *point, in
 		}
 	}
 	memset(&tmp, 0, sizeof(tmp));
-	vis = self->buffer[index].vis;
+	vis = self->sup.buffer[index].vis;
 	if (!vis) {
 		/* a new set with the point */
 		NWVisList_Add(set, &tmp);
@@ -656,7 +656,7 @@ void __thiscall CNodesWorldSup_AddVis(CNodesWorld *self, const vec3_t *point, in
 		d->hash = h;
 		NWIntList_Append(&d->points, (void *const *)&point);
 		d->node = set->head;
-		self->buffer[index].vis = d;
+		self->sup.buffer[index].vis = d;
 		NWIntList_FreeAt0c(&tmp);
 		return;
 	}
@@ -675,19 +675,19 @@ void __thiscall CNodesWorldSup_AddVis(CNodesWorld *self, const vec3_t *point, in
 		}
 		NWIntList_Append(&vis->points, (void *const *)&point);
 	moved:
-		vis = self->buffer[index].vis;
+		vis = self->sup.buffer[index].vis;
 		cNWVisNode *old = vis->node;
 		NWVisList_Add(set, vis);
-		self->sets[key].iter = old;
-		vis = self->buffer[index].vis;
+		self->sup.sets[key].iter = old;
+		vis = self->sup.buffer[index].vis;
 		vis->points.head = NULL;
 		vis->points.iter = NULL;
 		vis->points.count = 0;
-		NWVisList_RemoveIter(&self->sets[key]);
+		NWVisList_RemoveIter(&self->sup.sets[key]);
 		set->iter = set->head;
-		self->buffer[index].vis = set->head ? &set->head->vis : NULL;
-		self->buffer[index].vis->hash = h;
-		self->buffer[index].vis->node = set->head;
+		self->sup.buffer[index].vis = set->head ? &set->head->vis : NULL;
+		self->sup.buffer[index].vis->hash = h;
+		self->sup.buffer[index].vis->node = set->head;
 		return;
 	}
 	/* shared: a copy with the point */
@@ -697,7 +697,7 @@ void __thiscall CNodesWorldSup_AddVis(CNodesWorld *self, const vec3_t *point, in
 	d->refs = 1;
 	d->hash = h;
 	d->node = set->head;
-	vis = self->buffer[index].vis;
+	vis = self->sup.buffer[index].vis;
 	cNWIntNode *it = vis->points.iter = vis->points.head;
 	byte done = 0;
 	while (it) {
@@ -706,7 +706,7 @@ void __thiscall CNodesWorldSup_AddVis(CNodesWorld *self, const vec3_t *point, in
 			done = 1;
 		}
 		NWIntList_Append(&d->points, &it->data);
-		vis = self->buffer[index].vis;
+		vis = self->sup.buffer[index].vis;
 		it = vis->points.iter = vis->points.iter->next;
 		if (it == vis->points.head) {
 			break;
@@ -715,25 +715,25 @@ void __thiscall CNodesWorldSup_AddVis(CNodesWorld *self, const vec3_t *point, in
 	if (!done) {
 		NWIntList_Append(&d->points, (void *const *)&point);
 	}
-	self->vftable->ReleaseVis(self, index);
-	self->buffer[index].vis = d;
+	self->sup.vftable->ReleaseVis(self, index);
+	self->sup.buffer[index].vis = d;
 	NWIntList_FreeAt0c(&tmp);
 }
 
 int __thiscall CNodesWorldSup_Hash(CNodesWorld *self, int a, int b) {
-	return (int)((uint32_t)a + (uint32_t)b) % self->numSets;
+	return (int)((uint32_t)a + (uint32_t)b) % self->sup.numSets;
 }
 
 void __thiscall CNodesWorldSup_ReleaseVis(CNodesWorld *self, int index) {
-	cNWVis *vis = self->buffer[index].vis;
+	cNWVis *vis = self->sup.buffer[index].vis;
 
 	if (!vis || --vis->refs != 0) {
 		return;
 	}
-	NWIntList_Clear(&self->buffer[index].vis->points);
-	vis = self->buffer[index].vis;
-	self->sets[vis->hash].iter = vis->node;
-	NWVisList_RemoveIter(&self->sets[self->buffer[index].vis->hash]);
+	NWIntList_Clear(&self->sup.buffer[index].vis->points);
+	vis = self->sup.buffer[index].vis;
+	self->sup.sets[vis->hash].iter = vis->node;
+	NWVisList_RemoveIter(&self->sup.sets[self->sup.buffer[index].vis->hash]);
 }
 
 /* v in the list; the iterator kept */
@@ -765,13 +765,13 @@ void NWIntList_AddKeepIter(cNWIntList *l, const void *v) {
 
 void __thiscall CNodesWorldSup_LinkPoints(CNodesWorld *self) {
 	Con_Printf("Linking Points of Visibility...\n");
-	cNWPointNode *saved = self->points.iter;
-	self->numPointLinks = 0;
-	cNWPointNode *pn = self->points.iter = self->points.head;
+	cNWPointNode *saved = self->sup.points.iter;
+	self->sup.numPointLinks = 0;
+	cNWPointNode *pn = self->sup.points.iter = self->sup.points.head;
 	while (pn) {
 		const vec3_t *pos = &pn->pos;
-		int i = self->vftable->BufferIndex(self, pos);
-		cNWVis *vis = self->buffer[i].vis;
+		int i = self->sup.vftable->BufferIndex(self, pos);
+		cNWVis *vis = self->sup.buffer[i].vis;
 		if (!vis) {
 			Con_Bluef("ERROR AI: Existe un Nodo que No es Visible desde ning\xfa" "n punto de visibilidad.\n");
 			CHECK(!"CNodesWorldSup_LinkPointsVis_Node_Not_Visible");
@@ -781,29 +781,29 @@ void __thiscall CNodesWorldSup_LinkPoints(CNodesWorld *self) {
 			while (it) {
 				if (pos != it->data) {
 					NWIntList_AddKeepIter(&pn->links, it->data);
-					self->numPointLinks++;
+					self->sup.numPointLinks++;
 				}
-				vis = self->buffer[i].vis;
+				vis = self->sup.buffer[i].vis;
 				it = vis->points.iter = vis->points.iter->next;
 				if (it == vis->points.head) {
 					break;
 				}
 			}
-			self->buffer[i].vis->points.iter = vsaved;
+			self->sup.buffer[i].vis->points.iter = vsaved;
 		}
-		pn = self->points.iter = self->points.iter->next;
-		if (pn == self->points.head) {
+		pn = self->sup.points.iter = self->sup.points.iter->next;
+		if (pn == self->sup.points.head) {
 			break;
 		}
 	}
-	self->points.iter = saved;
-	self->vftable->LinkBack(self);
-	self->numPointLinks /= 2;
+	self->sup.points.iter = saved;
+	self->sup.vftable->LinkBack(self);
+	self->sup.numPointLinks /= 2;
 }
 
 void __thiscall CNodesWorldSup_LinkBack(CNodesWorld *self) {
-	cNWPointNode *saved = self->points.iter;
-	cNWPointNode *pn = self->points.iter = self->points.head;
+	cNWPointNode *saved = self->sup.points.iter;
+	cNWPointNode *pn = self->sup.points.iter = self->sup.points.head;
 
 	while (pn) {
 		const vec3_t *p = &pn->pos;
@@ -812,9 +812,9 @@ void __thiscall CNodesWorldSup_LinkBack(CNodesWorld *self) {
 		cNWIntNode *it = l->iter = l->head;
 		while (it) {
 			const vec3_t *q = it->data;
-			if (!self->vftable->PointLinked(self, q, p)) {
+			if (!self->sup.vftable->PointLinked(self, q, p)) {
 				NWIntList_AddKeepIter(&NW_POINT(q)->links, p);
-				self->numPointLinks++;
+				self->sup.numPointLinks++;
 			}
 			it = l->iter = l->iter->next;
 			if (it == l->head) {
@@ -822,12 +822,12 @@ void __thiscall CNodesWorldSup_LinkBack(CNodesWorld *self) {
 			}
 		}
 		l->iter = lsaved;
-		pn = self->points.iter = self->points.iter->next;
-		if (pn == self->points.head) {
+		pn = self->sup.points.iter = self->sup.points.iter->next;
+		if (pn == self->sup.points.head) {
 			break;
 		}
 	}
-	self->points.iter = saved;
+	self->sup.points.iter = saved;
 }
 
 byte __thiscall CNodesWorldSup_PointLinked(CNodesWorld *self, const vec3_t *point, const vec3_t *other) {
@@ -836,8 +836,8 @@ byte __thiscall CNodesWorldSup_PointLinked(CNodesWorld *self, const vec3_t *poin
 }
 
 void __thiscall CNodesWorldSup_LinkPoint(CNodesWorld *self, const vec3_t *point) {
-	int i = self->vftable->BufferIndex(self, point);
-	cNWVis *vis = self->buffer[i].vis;
+	int i = self->sup.vftable->BufferIndex(self, point);
+	cNWVis *vis = self->sup.buffer[i].vis;
 
 	if (!vis) {
 		Con_Bluef("ERROR AI: Existe un Nodo que No es Visible desde ning\xfa" "n punto de visibilidad.\n");
@@ -851,19 +851,19 @@ void __thiscall CNodesWorldSup_LinkPoint(CNodesWorld *self, const vec3_t *point)
 		if (point != q) {
 			NWIntList_AddKeepIter(&NW_POINT(point)->links, q);
 			NWIntList_AddKeepIter(&NW_POINT(q)->links, point);
-			self->numPointLinks++;
+			self->sup.numPointLinks++;
 		}
-		vis = self->buffer[i].vis;
+		vis = self->sup.buffer[i].vis;
 		it = vis->points.iter = vis->points.iter->next;
 		if (it == vis->points.head) {
 			break;
 		}
 	}
-	self->buffer[i].vis->points.iter = saved;
+	self->sup.buffer[i].vis->points.iter = saved;
 }
 
 static int NWSup_InSet(CNodesWorld *self, const vec3_t *q, int index) {
-	return self->vftable->VisHas(self, q, index);
+	return self->sup.vftable->VisHas(self, q, index);
 }
 
 byte __thiscall CNodesWorldSup_Unreachable(CNodesWorld *self, const vec3_t *from, const vec3_t *to, int index) {
@@ -886,7 +886,7 @@ byte NWSup_UnreachableBy(CNodesWorld *self, const vec3_t *from, const vec3_t *to
 		const vec3_t *q = it->data;
 		if (q != to && ok(self, q, index)) {
 			NWIntList_Append(&queue, &it->data);
-			self->vftable->FindSorted(self, &seen, q, &at);
+			self->sup.vftable->FindSorted(self, &seen, q, &at);
 			if (at) {
 				seen.iter = at;
 				NWIntList_AddBefore(&seen, &it->data);
@@ -914,7 +914,7 @@ byte NWSup_UnreachableBy(CNodesWorld *self, const vec3_t *from, const vec3_t *to
 		it = l->iter = l->head;
 		while (it) {
 			const vec3_t *q = it->data;
-			if (ok(self, q, index) && !self->vftable->FindSorted(self, &seen, q, &at)) {
+			if (ok(self, q, index) && !self->sup.vftable->FindSorted(self, &seen, q, &at)) {
 				NWIntList_Append(&queue, &it->data);
 				seen.iter = at;
 				NWIntList_AddBefore(&seen, &it->data);
@@ -932,9 +932,9 @@ byte NWSup_UnreachableBy(CNodesWorld *self, const vec3_t *from, const vec3_t *to
 }
 
 int __thiscall CNodesWorldSup_BoxCells(CNodesWorld *self, const cNWBox *box) {
-	int nz = (int)(((self->margin + box->b.z) - box->a.z) / self->nodeSize.z);
-	int ny = (int)(((self->margin + box->b.y) - box->a.y) / self->nodeSize.y);
-	int nx = (int)(((self->margin + box->b.x) - box->a.x) / self->nodeSize.x);
+	int nz = (int)(((self->sup.margin + box->b.z) - box->a.z) / self->sup.nodeSize.z);
+	int ny = (int)(((self->sup.margin + box->b.y) - box->a.y) / self->sup.nodeSize.y);
+	int nx = (int)(((self->sup.margin + box->b.x) - box->a.x) / self->sup.nodeSize.x);
 
 	/* wraps like the imul of the original */
 	return (int)((uint32_t)nz * (uint32_t)ny * (uint32_t)nx);
@@ -1017,7 +1017,7 @@ void __thiscall CNodesWorldSup_InsertPair(CNodesWorld *self, cNWPairList *list, 
 }
 
 byte __thiscall CNodesWorldSup_VisHas(CNodesWorld *self, const vec3_t *point, int index) {
-	cNWVis *vis = self->buffer[index].vis;
+	cNWVis *vis = self->sup.buffer[index].vis;
 
 	if (!vis) {
 		return 0;
@@ -1035,56 +1035,56 @@ byte __thiscall CNodesWorldSup_Linked(CNodesWorld *self, const vec3_t *a, const 
 
 void __thiscall CNodesWorldSup_FreeGraph(CNodesWorld *self) {
 	Con_Printf("Restoring Memory...\n");
-	if (self->buffer) {
-		Mem_Free(self->buffer);
-		self->buffer = NULL;
+	if (self->sup.buffer) {
+		Mem_Free(self->sup.buffer);
+		self->sup.buffer = NULL;
 	}
-	if (self->nodes) {
-		for (int i = 0; i < self->numNodes; i++) {
-			Mem_Free(self->nodes[i].links);
+	if (self->sup.nodes) {
+		for (int i = 0; i < self->sup.numNodes; i++) {
+			Mem_Free(self->sup.nodes[i].links);
 		}
-		Mem_Free(self->nodes);
-		self->nodes = NULL;
+		Mem_Free(self->sup.nodes);
+		self->sup.nodes = NULL;
 	}
-	if (self->tmp1c8) {
-		Mem_Free(self->tmp1c8);
-		self->tmp1c8 = NULL;
-		self->num1cc = 0;
+	if (self->sup.tmp1c8) {
+		Mem_Free(self->sup.tmp1c8);
+		self->sup.tmp1c8 = NULL;
+		self->sup.num1cc = 0;
 	}
-	if (self->sets) {
-		for (int i = 0; i < self->numSets; i++) {
-			NWVisList_Clear(&self->sets[i]);
+	if (self->sup.sets) {
+		for (int i = 0; i < self->sup.numSets; i++) {
+			NWVisList_Clear(&self->sup.sets[i]);
 		}
-		Mem_Free(self->sets);
-		self->sets = NULL;
+		Mem_Free(self->sup.sets);
+		self->sup.sets = NULL;
 	}
-	if (self->grid) {
-		self->grid->vftable->Delete(self->grid, 1);
-		self->grid = NULL;
+	if (self->sup.grid) {
+		self->sup.grid->vftable->Delete(self->sup.grid, 1);
+		self->sup.grid = NULL;
 	}
-	self->vftable->ClearLists(self);
+	self->sup.vftable->ClearLists(self);
 }
 
 void __thiscall CNodesWorldSup_FreeTemp(CNodesWorld *self) {
 	Con_Printf("Restoring Memory Temp...\n");
 	int mem = g_MemStats->bytes;
-	if (self->buffer) {
-		Mem_Free(self->buffer);
-		self->buffer = NULL;
+	if (self->sup.buffer) {
+		Mem_Free(self->sup.buffer);
+		self->sup.buffer = NULL;
 	}
 	Con_Printf("Restoring Memory Buffer Nodes: %d bytes\n", mem - g_MemStats->bytes);
 	Con_Printf("Restoring Memory Set Points Visibility: %d bytes\n", 0);
-	if (self->tmp1c8) {
-		Mem_Free(self->tmp1c8);
-		self->tmp1c8 = NULL;
-		self->num1cc = 0;
+	if (self->sup.tmp1c8) {
+		Mem_Free(self->sup.tmp1c8);
+		self->sup.tmp1c8 = NULL;
+		self->sup.num1cc = 0;
 	}
-	if (self->sets) {
-		for (int i = 0; i < self->numSets; i++) {
-			NWVisList_Clear(&self->sets[i]);
+	if (self->sup.sets) {
+		for (int i = 0; i < self->sup.numSets; i++) {
+			NWVisList_Clear(&self->sup.sets[i]);
 		}
-		Mem_Free(self->sets);
-		self->sets = NULL;
+		Mem_Free(self->sup.sets);
+		self->sup.sets = NULL;
 	}
 	Con_Printf("Memory Restored: %d bytes\n", mem - g_MemStats->bytes);
 }
@@ -1121,25 +1121,25 @@ float NWSup_PairDist(const vec3_t *c, const vec3_t *const *pair, byte flat) {
 }
 
 byte NWSup_Near(const CNodesWorld *self, const vec3_t *c, const vec3_t *const *pair) {
-	return self->pairRange > NWSup_Dist(c, pair[0]) && self->pairRange > NWSup_Dist(c, pair[1]);
+	return self->sup.pairRange > NWSup_Dist(c, pair[0]) && self->sup.pairRange > NWSup_Dist(c, pair[1]);
 }
 
 /* both points in the set of the cell, not reachable from each other over the links of the set */
 static byte NWSup_LinkVis(CNodesWorld *self, const vec3_t *const *pair, int idx) {
 	cNWIntNode *at;
 
-	if (!self->vftable->FindSorted(self, &self->buffer[idx].vis->points, pair[0], &at)) {
+	if (!self->sup.vftable->FindSorted(self, &self->sup.buffer[idx].vis->points, pair[0], &at)) {
 		return 0;
 	}
-	if (!self->vftable->FindSorted(self, &self->buffer[idx].vis->points, pair[1], &at)) {
+	if (!self->sup.vftable->FindSorted(self, &self->sup.buffer[idx].vis->points, pair[1], &at)) {
 		return 0;
 	}
-	return self->vftable->Unreachable(self, pair[0], pair[1], idx);
+	return self->sup.vftable->Unreachable(self, pair[0], pair[1], idx);
 }
 
 void NWSup_LinkFound(CNodesWorld *self, const int *best, int drawMode) {
 	if (drawMode) {
-		NWVecList_Add(&self->lists25c[0], (const vec3_t *)best);
+		NWVecList_Add(&self->sup.lists25c[0], (const vec3_t *)best);
 	}
 }
 
@@ -1147,23 +1147,23 @@ byte NWSup_FindLinkBox(CNodesWorld *self, const vec3_t *const *pair, const cNWBo
 	int best[3];
 	float bestDist = 3.4028234663852886e+38f;
 	byte found = 0;
-	float x0 = box->a.x + self->halfNode.x;
-	float y0 = self->halfNode.y + box->a.y;
-	float z0 = self->halfNode.z + box->a.z;
-	float x1 = (box->b.x - self->halfNode.x) + self->margin;
-	float y1 = (box->b.y - self->halfNode.y) + self->margin;
-	float z1 = (box->b.z - self->halfNode.z) + self->margin;
+	float x0 = box->a.x + self->sup.halfNode.x;
+	float y0 = self->sup.halfNode.y + box->a.y;
+	float z0 = self->sup.halfNode.z + box->a.z;
+	float x1 = (box->b.x - self->sup.halfNode.x) + self->sup.margin;
+	float y1 = (box->b.y - self->sup.halfNode.y) + self->sup.margin;
+	float z1 = (box->b.z - self->sup.halfNode.z) + self->sup.margin;
 
-	for (float x = x0; x1 >= x; x = x + self->axis[0].x) {
-		for (float y = y0; y1 >= y; y = self->axis[1].y + y) {
-			for (float z = z0; z1 >= z; z = self->axis[2].z + z) {
+	for (float x = x0; x1 >= x; x = x + self->sup.axis[0].x) {
+		for (float y = y0; y1 >= y; y = self->sup.axis[1].y + y) {
+			for (float z = z0; z1 >= z; z = self->sup.axis[2].z + z) {
 				vec3_t p = { x, y, z }, c;
-				int idx = self->vftable->BufferIndex(self, &p);
-				int st = self->buffer[idx].state;
+				int idx = self->sup.vftable->BufferIndex(self, &p);
+				int st = self->sup.buffer[idx].state;
 				if (st == 3 || st == 6 || st == 5 || (is2D && st == 0)) {
 					continue;
 				}
-				self->vftable->BufferPos(self, &c, idx);
+				self->sup.vftable->BufferPos(self, &c, idx);
 				if (!NWSup_Near(self, &c, pair) || !NWSup_LinkVis(self, pair, idx)) {
 					continue;
 				}
@@ -1189,20 +1189,20 @@ byte NWSup_FindLinkCell(CNodesWorld *self, const vec3_t *const *pair, int *out, 
 	int best[3];
 	float bestDist = 3.4028234663852886e+38f;
 	byte found = 0;
-	const int *cells = self->tmp1c8;
+	const int *cells = self->sup.tmp1c8;
 
-	for (int k = 0; k < self->num1cc; k++) {
+	for (int k = 0; k < self->sup.num1cc; k++) {
 		vec3_t c, c2;
 		int idx = cells[k];
-		int st = self->buffer[idx].state;
+		int st = self->sup.buffer[idx].state;
 		if (st == 5 || (is2D && st == 0)) {
 			continue;
 		}
-		self->vftable->BufferPos(self, &c, idx);
+		self->sup.vftable->BufferPos(self, &c, idx);
 		if (!NWSup_Near(self, &c, pair) || !NWSup_LinkVis(self, pair, idx)) {
 			continue;
 		}
-		self->vftable->BufferPos(self, &c2, idx);
+		self->sup.vftable->BufferPos(self, &c2, idx);
 		float d = NWSup_PairDist(&c2, pair, is2D);
 		if (bestDist > d) {
 			bestDist = d;
@@ -1222,9 +1222,9 @@ byte NWSup_FindLinkCell(CNodesWorld *self, const vec3_t *const *pair, int *out, 
 /* the neighbour n of the cell center c as the next start when it is better than best */
 static void NWSup_TryInit(CNodesWorld *self, const vec3_t *n, const vec3_t *c, nwInitFree_t isFree,
 	nwInitDist_t dist, float *best, vec3_t *out, byte *found) {
-	int idx = self->vftable->BufferIndex(self, n);
+	int idx = self->sup.vftable->BufferIndex(self, n);
 
-	if (self->buffer[idx].state != 4 || !isFree(self, n, c)) {
+	if (self->sup.buffer[idx].state != 4 || !isFree(self, n, c)) {
 		return;
 	}
 	float d = dist(self, n);
@@ -1240,30 +1240,30 @@ byte NWSup_NextInit(CNodesWorld *self, vec3_t *out, nwInitFree_t isFree, nwInitD
 	float best = 3.4028234663852886e+38f;
 
 	Con_Printf("Selecting Next Node Init...\n");
-	cNWIntNode *it = self->list1d0.iter = self->list1d0.head;
+	cNWIntNode *it = self->sup.list1d0.iter = self->sup.list1d0.head;
 	while (it) {
 		int idx = (int)(intptr_t)it->data;
-		if (self->buffer[idx].state == 5) {
+		if (self->sup.buffer[idx].state == 5) {
 			vec3_t c, n;
-			self->vftable->BufferPos(self, &c, idx);
+			self->sup.vftable->BufferPos(self, &c, idx);
 			for (int k = 0; k < 3; k++) {
-				const vec3_t *ax = &self->axis[k];
+				const vec3_t *ax = &self->sup.axis[k];
 				n.x = ax->x + c.x;
 				n.y = ax->y + c.y;
 				n.z = ax->z + c.z;
-				if ((&self->max.x)[k] >= (&n.x)[k] + (&self->halfNode.x)[k]) {
+				if ((&self->sup.max.x)[k] >= (&n.x)[k] + (&self->sup.halfNode.x)[k]) {
 					NWSup_TryInit(self, &n, &c, isFree, dist, &best, out, &found);
 				}
 				n.x = c.x - ax->x;
 				n.y = c.y - ax->y;
 				n.z = c.z - ax->z;
-				if ((&n.x)[k] - (&self->halfNode.x)[k] >= (&self->min.x)[k]) {
+				if ((&n.x)[k] - (&self->sup.halfNode.x)[k] >= (&self->sup.min.x)[k]) {
 					NWSup_TryInit(self, &n, &c, isFree, dist, &best, out, &found);
 				}
 			}
 		}
-		it = self->list1d0.iter = self->list1d0.iter->next;
-		if (it == self->list1d0.head) {
+		it = self->sup.list1d0.iter = self->sup.list1d0.iter->next;
+		if (it == self->sup.list1d0.head) {
 			break;
 		}
 	}
@@ -1275,9 +1275,9 @@ byte NWSup_NextInit(CNodesWorld *self, vec3_t *out, nwInitFree_t isFree, nwInitD
 /* the neighbour n of the cell c, in the box: a cell still unknown (6) is tested by step */
 static void NWSup_FloodCell(CNodesWorld *self, cNWVecList *queue, const vec3_t *c, const vec3_t *n,
 	nwFloodStep_t step) {
-	int idx = self->vftable->BufferIndex(self, n);
+	int idx = self->sup.vftable->BufferIndex(self, n);
 
-	if (self->buffer[idx].state == 6) {
+	if (self->sup.buffer[idx].state == 6) {
 		step(self, queue, c, n);
 	}
 }
@@ -1287,38 +1287,38 @@ byte NWSup_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, c
 	cNWVecList queue;
 	byte ok;
 
-	self->nx = (int)((max->x - min->x) / self->nodeSize.x);
-	self->ny = (int)((max->y - min->y) / self->nodeSize.y);
-	self->nz = (int)((max->z - min->z) / self->nodeSize.z);
-	self->dimBuffer = self->nz * self->ny * self->nx;
+	self->sup.nx = (int)((max->x - min->x) / self->sup.nodeSize.x);
+	self->sup.ny = (int)((max->y - min->y) / self->sup.nodeSize.y);
+	self->sup.nz = (int)((max->z - min->z) / self->sup.nodeSize.z);
+	self->sup.dimBuffer = self->sup.nz * self->sup.ny * self->sup.nx;
 	if (is3D) {
 		Con_Printf("Region Nodes: PMin: %f %f %f PMax: %f %f %f\n", (double)min->x, (double)min->y, (double)min->z,
 			(double)max->x, (double)max->y, (double)max->z);
 	}
-	Con_Printf("Number of Nodes Map: %d...\n", self->dimBuffer);
-	Con_Printf("Allocating Buffer Nodes Size: %d bytes...\n", self->dimBuffer << 3);
-	self->buffer = Mem_Alloc(self->dimBuffer << 3);
-	if (!self->buffer) {
+	Con_Printf("Number of Nodes Map: %d...\n", self->sup.dimBuffer);
+	Con_Printf("Allocating Buffer Nodes Size: %d bytes...\n", self->sup.dimBuffer << 3);
+	self->sup.buffer = Mem_Alloc(self->sup.dimBuffer << 3);
+	if (!self->sup.buffer) {
 		Con_Bluef("ERROR: IniBuffNodesPointVis - Insuficiente memoria Buffer Nodes\n");
 		CHECK(!"cNodesWorld_IniBuffNodesPointVis_new_BufferNodes_Fail");
 		return 0;
 	}
 	Con_Printf("Allocated Buffer Nodes.\n");
 	Con_Printf("Initializing Buffer Nodes...\n");
-	memset(self->buffer, 0, self->dimBuffer << 3);
-	for (int i = 0; i < self->dimBuffer; i++) {
-		self->buffer[i].state = 6;
-		self->buffer[i].vis = NULL;
+	memset(self->sup.buffer, 0, self->sup.dimBuffer << 3);
+	for (int i = 0; i < self->sup.dimBuffer; i++) {
+		self->sup.buffer[i].state = 6;
+		self->sup.buffer[i].vis = NULL;
 	}
-	int idx = self->vftable->BufferIndex(self, init);
+	int idx = self->sup.vftable->BufferIndex(self, init);
 	memset(&queue, 0, sizeof(queue));
-	self->buffer[idx].state = 0;
+	self->sup.buffer[idx].state = 0;
 	DListVec3_Add(&queue, init);
-	DListVec3_Clear(&self->lists28c[0]);
-	self->num1cc = 0;
-	self->openPos.x = 1.17549435e-38f;
-	self->openPos.y = 1.17549435e-38f;
-	self->openPos.z = 1.17549435e-38f;
+	DListVec3_Clear(&self->sup.lists28c[0]);
+	self->sup.num1cc = 0;
+	self->sup.openPos.x = 1.17549435e-38f;
+	self->sup.openPos.y = 1.17549435e-38f;
+	self->sup.openPos.z = 1.17549435e-38f;
 	if (is3D) {
 		self->open = 0;
 	}
@@ -1330,8 +1330,8 @@ byte NWSup_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, c
 		if (is3D && self->analyzing) {
 			vec3_t hit;
 			CCollisionTri tri;
-			if (Sector_At(p) < 0 && self->errUnlinked.count < 100) {
-				DListVec3_Add(&self->errUnlinked, p);
+			if (Sector_At(p) < 0 && self->sup.errUnlinked.count < 100) {
+				DListVec3_Add(&self->sup.errUnlinked, p);
 			}
 			if (CNodesWorld_TestSurfaceAround(self, p, &hit, &tri)) {
 				if (!self->firstSaved) {
@@ -1343,27 +1343,27 @@ byte NWSup_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, c
 		}
 		c = *p;
 		NWVecList_RemoveHead(&queue);
-		self->num1cc++;
+		self->sup.num1cc++;
 		for (int k = 0; k < 3; k++) {
-			const vec3_t *ax = &self->axis[k];
+			const vec3_t *ax = &self->sup.axis[k];
 			for (int s = 0; s < 2; s++) {
 				int inside;
 				if (!s) {
 					n.x = ax->x + c.x;
 					n.y = ax->y + c.y;
 					n.z = ax->z + c.z;
-					inside = (&max->x)[k] >= (&n.x)[k] + (&self->halfNode.x)[k];
+					inside = (&max->x)[k] >= (&n.x)[k] + (&self->sup.halfNode.x)[k];
 				} else {
 					n.x = c.x - ax->x;
 					n.y = c.y - ax->y;
 					n.z = c.z - ax->z;
-					inside = (&n.x)[k] - (&self->halfNode.x)[k] >= (&min->x)[k];
+					inside = (&n.x)[k] - (&self->sup.halfNode.x)[k] >= (&min->x)[k];
 				}
 				if (inside) {
 					NWSup_FloodCell(self, &queue, &c, &n, step);
-				} else if (is3D && self->nodeInitDummy && (k != 1 || s || !g_IsMapOutDoor)) {
+				} else if (is3D && self->sup.nodeInitDummy && (k != 1 || s || !g_IsMapOutDoor)) {
 					/* the region reaches the side of the box: the level is open there */
-					self->openPos = n;
+					self->sup.openPos = n;
 					self->open = 1;
 					Con_Bluef("ERROR AI: ESCENARIO ABIERTO!.\n");
 					ok = 0;
@@ -1372,32 +1372,32 @@ byte NWSup_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, c
 			}
 		}
 	}
-	self->tmp1c8 = Mem_Alloc(self->num1cc << 2);
-	if (!self->tmp1c8) {
+	self->sup.tmp1c8 = Mem_Alloc(self->sup.num1cc << 2);
+	if (!self->sup.tmp1c8) {
 		Con_Bluef("ERROR: GenPointsVisInterRegNoLinkPVisDistMin - Insuficiente memoria Buffer Ind Nodes\n");
 		CHECK(!"cNodesWorld_GenPointsVisInterRegNoLinkPVisDistMin_new_BufferIndNodes_Fail");
 		ok = 0;
 		goto end;
 	}
-	int *cells = self->tmp1c8;
-	for (int i = 0; i < self->dimBuffer; i++) {
-		int st = self->buffer[i].state;
+	int *cells = self->sup.tmp1c8;
+	for (int i = 0; i < self->sup.dimBuffer; i++) {
+		int st = self->sup.buffer[i].state;
 		if (st != 3 && st != 6) {
 			*cells++ = i;
 		}
 	}
-	self->numSets = self->num1cc / 2 + 1;
-	self->sets = Mem_Alloc(self->numSets * sizeof(cNWVisList));
-	if (!self->sets) {
+	self->sup.numSets = self->sup.num1cc / 2 + 1;
+	self->sup.sets = Mem_Alloc(self->sup.numSets * sizeof(cNWVisList));
+	if (!self->sup.sets) {
 		Con_Bluef("ERROR: GenPointsVisInterRegNoLinkPVisDistMin - Insuficiente memoria Hash Lists Point Vis.\n");
 		CHECK(!"cNodesWorld_GenPointsVisInterRegNoLinkPVisDistMin_new_BufferHash_Fail");
 		ok = 0;
 		goto end;
 	}
-	memset(self->sets, 0, self->numSets * sizeof(cNWVisList));
+	memset(self->sup.sets, 0, self->sup.numSets * sizeof(cNWVisList));
 	Con_Printf("Buffer Nodes Initializated\n");
-	Con_Printf("Num. Nodes Trans.: %ld\n", (long)self->num1cc);
-	Con_Printf("Num. Nodes No Trans.: %ld\n", (long)(self->dimBuffer - self->num1cc));
+	Con_Printf("Num. Nodes Trans.: %ld\n", (long)self->sup.num1cc);
+	Con_Printf("Num. Nodes No Trans.: %ld\n", (long)(self->sup.dimBuffer - self->sup.num1cc));
 	if (is3D) {
 		Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
 	}
@@ -1414,25 +1414,25 @@ end:
  * reach lets it, else it is a border cell (2), the free ones also start cells of later points (list1d0) */
 static void NWSup_RegionCell(CNodesWorld *self, const vec3_t *start, const vec3_t *n, cNWVecList *queue,
 	cNWIntList *cells, nwRegionReach_t reach) {
-	int idx = self->vftable->BufferIndex(self, n);
-	int st = self->buffer[idx].state;
+	int idx = self->sup.vftable->BufferIndex(self, n);
+	int st = self->sup.buffer[idx].state;
 
 	if (st != 5 && st != 0 && st != 4) {
 		return;
 	}
 	if (reach(self, start, n)) {
-		self->buffer[idx].state = 1;
+		self->sup.buffer[idx].state = 1;
 		DListVec3_Add(queue, n);
 		return;
 	}
-	st = self->buffer[idx].state;
+	st = self->sup.buffer[idx].state;
 	if (st == 4) {
 		return;
 	}
 	if (st != 5) {
-		NWIntList_Add(&self->list1d0, (void *const *)&idx);
+		NWIntList_Add(&self->sup.list1d0, (void *const *)&idx);
 	}
-	self->buffer[idx].state = 2;
+	self->sup.buffer[idx].state = 2;
 	NWIntList_Add(cells, (void *const *)&idx);
 }
 
@@ -1446,12 +1446,12 @@ void NWSup_CreateRegion(CNodesWorld *self, const vec3_t *start, nwRegionReach_t 
 	if (is2D && g_NW2DDrawMode) {
 		cNW2DRegion r;
 		memset(&r, 0, sizeof(r));
-		r.id = self->points.count - 1;
+		r.id = self->sup.points.count - 1;
 		NW2DRegionList_Add(&((CNodesWorld2D *)self)->regions, &r);
 		DListVec3_Clear(&r.points);
 		DList_FreePool(&r.points, sizeof(cNWVecNode));
 	}
-	cNWPointNode *pn = self->points.iter = self->points.head;
+	cNWPointNode *pn = self->sup.points.iter = self->sup.points.head;
 	cNWPointNode *P = pn;
 	while (queue.head) {
 		vec3_t c, n;
@@ -1464,28 +1464,28 @@ void NWSup_CreateRegion(CNodesWorld *self, const vec3_t *start, nwRegionReach_t 
 			cNW2DRegionNode *rn = regions->iter = regions->head;
 			NWVecList_Add(&rn->r.points, &c);
 		}
-		int idx = self->vftable->BufferIndex(self, &c);
+		int idx = self->sup.vftable->BufferIndex(self, &c);
 		NWIntList_Add(&cells, (void *const *)&idx);
-		self->buffer[idx].state = 1;
-		self->vftable->AddVis(self, &P->pos, idx);
-		P->boxA.x = Float_MinSS(P->boxA.x, c.x - self->halfNode.x);
-		P->boxA.y = Float_MinSS(P->boxA.y, c.y - self->halfNode.y);
-		P->boxA.z = Float_MinSS(P->boxA.z, c.z - self->halfNode.z);
-		P->boxB.x = Float_MaxSS(P->boxB.x, c.x + self->halfNode.x);
-		P->boxB.y = Float_MaxSS(P->boxB.y, self->halfNode.y + c.y);
-		P->boxB.z = Float_MaxSS(P->boxB.z, self->halfNode.z + c.z);
+		self->sup.buffer[idx].state = 1;
+		self->sup.vftable->AddVis(self, &P->pos, idx);
+		P->boxA.x = Float_MinSS(P->boxA.x, c.x - self->sup.halfNode.x);
+		P->boxA.y = Float_MinSS(P->boxA.y, c.y - self->sup.halfNode.y);
+		P->boxA.z = Float_MinSS(P->boxA.z, c.z - self->sup.halfNode.z);
+		P->boxB.x = Float_MaxSS(P->boxB.x, c.x + self->sup.halfNode.x);
+		P->boxB.y = Float_MaxSS(P->boxB.y, self->sup.halfNode.y + c.y);
+		P->boxB.z = Float_MaxSS(P->boxB.z, self->sup.halfNode.z + c.z);
 		for (int k = 0; k < 3; k++) {
-			const vec3_t *ax = &self->axis[k];
+			const vec3_t *ax = &self->sup.axis[k];
 			n.x = ax->x + c.x;
 			n.y = ax->y + c.y;
 			n.z = ax->z + c.z;
-			if ((&self->max.x)[k] >= (&n.x)[k] + (&self->halfNode.x)[k]) {
+			if ((&self->sup.max.x)[k] >= (&n.x)[k] + (&self->sup.halfNode.x)[k]) {
 				NWSup_RegionCell(self, start, &n, &queue, &cells, reach);
 			}
 			n.x = c.x - ax->x;
 			n.y = c.y - ax->y;
 			n.z = c.z - ax->z;
-			if ((&n.x)[k] - (&self->halfNode.x)[k] >= (&self->min.x)[k]) {
+			if ((&n.x)[k] - (&self->sup.halfNode.x)[k] >= (&self->sup.min.x)[k]) {
 				NWSup_RegionCell(self, start, &n, &queue, &cells, reach);
 			}
 		}
@@ -1494,10 +1494,10 @@ void NWSup_CreateRegion(CNodesWorld *self, const vec3_t *start, nwRegionReach_t 
 	cNWIntNode *it = cells.iter = cells.head;
 	while (it) {
 		int i = (int)(intptr_t)it->data;
-		if (self->buffer[i].state == 1) {
-			self->buffer[i].state = 4;
-		} else if (self->buffer[i].state == 2) {
-			self->buffer[i].state = 5;
+		if (self->sup.buffer[i].state == 1) {
+			self->sup.buffer[i].state = 4;
+		} else if (self->sup.buffer[i].state == 2) {
+			self->sup.buffer[i].state = 5;
 		}
 		it = it->next;
 		if (it == cells.head) {
@@ -1531,7 +1531,7 @@ void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops) {
 	if (!ops->is2D) {
 		Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
 	}
-	NWVecList_Clear(&self->lists25c[0]);
+	NWVecList_Clear(&self->sup.lists25c[0]);
 	crt_time32(&t0);
 	memset(&pairs, 0, sizeof(pairs));
 	ops->getPairs(self, &pairs);
@@ -1553,7 +1553,7 @@ void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops) {
 		box.b.y = Float_MinSS(a->boxB.y, b->boxB.y);
 		box.b.z = Float_MinSS(a->boxB.z, b->boxB.z);
 		byte found;
-		if (self->vftable->BoxCells(self, &box) < self->num1cc) {
+		if (self->sup.vftable->BoxCells(self, &box) < self->sup.num1cc) {
 			found = ops->findBox(self, pp, &box, &idx);
 		} else {
 			found = ops->findCell(self, pp, &idx);
@@ -1571,8 +1571,8 @@ void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops) {
 		cNWPointNode tmp;
 		vec3_t c;
 		memset(&tmp, 0, sizeof(tmp));
-		tmp.pos = *self->vftable->BufferPos(self, &c, idx);
-		NWPointList_Add(&self->points, &tmp.pos);
+		tmp.pos = *self->sup.vftable->BufferPos(self, &c, idx);
+		NWPointList_Add(&self->sup.points, &tmp.pos);
 		made++;
 		Con_Printf("Creating Point of Visibility Inter-Region No Link Num: %d...\n", made);
 		Con_Printf("Point of Visibility: %.2f %.2f %.2f\n", (double)tmp.pos.x, (double)tmp.pos.y, (double)tmp.pos.z);
@@ -1581,16 +1581,16 @@ void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops) {
 		if (!ops->is2D) {
 			Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
 		}
-		cNWPointNode *pn = self->points.iter = self->points.head;
+		cNWPointNode *pn = self->sup.points.iter = self->sup.points.head;
 		const vec3_t *P = pn ? &pn->pos : NULL;
 		ops->createRegion(self, &tmp.pos);
 		if (!ops->is2D) {
-			NWIntList_Clear(&self->list1d0);
+			NWIntList_Clear(&self->sup.list1d0);
 			Con_Printf("Point of Visibility created...\n");
 			Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
-			self->vftable->LinkPoint(self, P);
+			self->sup.vftable->LinkPoint(self, P);
 		} else {
-			self->vftable->LinkPoint(self, P);
+			self->sup.vftable->LinkPoint(self, P);
 			Con_Printf("Point of Visibility created...\n");
 		}
 		first = 0;
@@ -1616,10 +1616,10 @@ byte NWSup_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, co
 	int32_t t0, t1, t2;
 	byte more;
 
-	p = *self->vftable->SnapPos(self, &snap, &p);
-	if (self->halfNode.x + p.x > max->x || min->x > p.x - self->halfNode.x ||
-		self->halfNode.y + p.y > max->y || min->y > p.y - self->halfNode.y ||
-		self->halfNode.z + p.z > max->z || min->z > p.z - self->halfNode.z || !ops->initOk(self, &p)) {
+	p = *self->sup.vftable->SnapPos(self, &snap, &p);
+	if (self->sup.halfNode.x + p.x > max->x || min->x > p.x - self->sup.halfNode.x ||
+		self->sup.halfNode.y + p.y > max->y || min->y > p.y - self->sup.halfNode.y ||
+		self->sup.halfNode.z + p.z > max->z || min->z > p.z - self->sup.halfNode.z || !ops->initOk(self, &p)) {
 		Con_Bluef("ERROR: GenerateRegPointVis - Nodo Inicial Incorrecto: %f %f %f\n", (double)p.x, (double)p.y,
 			(double)p.z);
 		CHECK(!"Incorrect_Initial_Node");
@@ -1627,20 +1627,20 @@ byte NWSup_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, co
 	}
 	crt_time32(&t0);
 	Con_Printf(ops->is2D ? "\nTime Ini Creating Graph 2D: %s\n" : "\nTime Ini Creating Graph: %s\n", crt_ctime32(&t0));
-	self->min = *min;
-	self->max = *max;
+	self->sup.min = *min;
+	self->sup.max = *max;
 	if (!ops->iniBuffer(self, &p, min, max)) {
 		return 0;
 	}
-	NWIntList_Clear(&self->list1d0);
+	NWIntList_Clear(&self->sup.list1d0);
 	do {
 		/* the new point of visibility: links empty, the box FLT_MAX FLT_MAX FLT_MAX -FLT_MAX -FLT_MAX -FLT_MAX */
 		cNWPointNode tmp;
 		memset(&tmp, 0, sizeof(tmp));
 		tmp.pos = p;
 		NWBox_Init((cNWBox *)&tmp.boxA);
-		NWPointList_Add(&self->points, &tmp.pos);
-		Con_Printf("Created Point of Visibility Num: %d\n", self->points.count);
+		NWPointList_Add(&self->sup.points, &tmp.pos);
+		Con_Printf("Created Point of Visibility Num: %d\n", self->sup.points.count);
 		Con_Printf("Point of Visibility: %.2f %.2f %.2f\n", (double)tmp.pos.x, (double)tmp.pos.y, (double)tmp.pos.z);
 		Con_Bluef("%s", NWSUP_EMPTY);
 		Con_Printf("Creating Region...\n");
@@ -1652,8 +1652,8 @@ byte NWSup_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, co
 		Con_Printf(more ? "New Node Init Selected.\n" : "Last Node Init.\n");
 		NWIntList_FreeAt0c(&tmp.pos);
 	} while (more);
-	NWIntList_Clear(&self->list1d0);
-	self->vftable->LinkPoints(self);
+	NWIntList_Clear(&self->sup.list1d0);
+	self->sup.vftable->LinkPoints(self);
 	crt_time32(&t1);
 	NWSup_PrintTime("\nTime Creating Graph Points Vis. Min.: %02ld:%02ld:%02ld\n", t1, t0);
 	ops->interRegion(self);
@@ -1668,7 +1668,7 @@ byte NWSup_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, co
 		Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
 	}
 	if (ops->is2D ? g_NW2DDrawMode : g_NWDrawMode) {
-		self->vftable->GetInfoNodes(self);
+		self->sup.vftable->GetInfoNodes(self);
 	}
 	return 1;
 }
@@ -1690,7 +1690,7 @@ void NWSup_DrawFound(CNodesWorld *self, cNWVecList *list, float r, uint32_t colo
 	while (n) {
 		const int *d = (const int *)&n->v;
 		vec3_t c;
-		self->vftable->BufferPos(self, &c, d[0]);
+		self->sup.vftable->BufferPos(self, &c, d[0]);
 		DebugUtils_DrawSphere(&c, r, color, 2, 2);
 		DebugUtils_DrawLine(&c, (const vec3_t *)(uintptr_t)d[1], color);
 		DebugUtils_DrawLine(&c, (const vec3_t *)(uintptr_t)d[2], color);
@@ -1707,12 +1707,12 @@ void NWSup_DrawCells(CNodesWorld *self, cNWVecList *list, uint32_t color, const 
 	while (n) {
 		const vec3_t *v = &n->v;
 		vec3_t mn, mx;
-		mx.x = v->x + self->halfNode.x;
-		mn.x = v->x - self->halfNode.x;
-		mx.y = self->halfNode.y + v->y;
-		mn.y = v->y - self->halfNode.y;
-		mx.z = self->halfNode.z + v->z;
-		mn.z = v->z - self->halfNode.z;
+		mx.x = v->x + self->sup.halfNode.x;
+		mn.x = v->x - self->sup.halfNode.x;
+		mx.y = self->sup.halfNode.y + v->y;
+		mn.y = v->y - self->sup.halfNode.y;
+		mx.z = self->sup.halfNode.z + v->z;
+		mn.z = v->z - self->sup.halfNode.z;
 		DebugUtils_DrawBox(&mn, &mx, color);
 		n = list->iter = list->iter->next;
 		if (n == list->head) {
@@ -1732,7 +1732,7 @@ static const vec3_t *NWSup_NextPoint(cNWVecList *list) {
 }
 
 void NWSup_DrawErrors(CNodesWorld *self, float r) {
-	cNWVecList *l = &self->errUnlinked;
+	cNWVecList *l = &self->sup.errUnlinked;
 	cNWVecNode *n = l->iter = l->head;
 
 	while (n) {
@@ -1742,7 +1742,7 @@ void NWSup_DrawErrors(CNodesWorld *self, float r) {
 			break;
 		}
 	}
-	l = &self->errOneWay;
+	l = &self->sup.errOneWay;
 	n = l->iter = l->head;
 	while (n) {
 		const vec3_t *a = &n->v;
@@ -1758,7 +1758,7 @@ void NWSup_DrawErrors(CNodesWorld *self, float r) {
 }
 
 void NWSup_DrawCollide(CNodesWorld *self, float r, byte triples) {
-	cNWVecList *l = &self->errCollide;
+	cNWVecList *l = &self->sup.errCollide;
 	cNWVecNode *n = l->iter = l->head;
 
 	while (n) {
@@ -1778,7 +1778,7 @@ void NWSup_DrawCollide(CNodesWorld *self, float r, byte triples) {
 }
 
 void NWSup_DrawExtra(CNodesWorld *self, float r, uint32_t color) {
-	cNWVecList *l = &self->extraPoints;
+	cNWVecList *l = &self->sup.extraPoints;
 	cNWVecNode *n = l->iter = l->head;
 
 	while (n) {

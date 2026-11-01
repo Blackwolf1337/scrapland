@@ -339,7 +339,7 @@ CAStarSup *__fastcall CAStarSup_ctor(CAStarSup *self) {
 	self->start.z = self->goal.z;
 	self->radius = 0.0f;
 	self->numClosed = 0;
-	self->maxDist = g_NodesWorld->pairRange * 1.25f;
+	self->maxDist = g_NodesWorld->sup.pairRange * 1.25f;
 	return self;
 }
 
@@ -660,7 +660,7 @@ static inline CAStar *AStar_Common(CAStar2D *self) {
 /* the lists of the search, one place per point of visibility */
 static void AStar_Alloc(CAStar *self) {
 	CNodesWorld *nw = AS_NODES(self);
-	int n = nw->vftable->NumVisPoints(nw);
+	int n = nw->sup.vftable->NumVisPoints(nw);
 
 	self->base.capList = n + 1;
 	self->base.list = Mem_Alloc((n + 1) * sizeof(ElemAStar));
@@ -670,14 +670,14 @@ static void AStar_Alloc(CAStar *self) {
 	cBinaryHeap *h = operator_new(sizeof(cBinaryHeap));
 	if (h) {
 		nw = AS_NODES(self);
-		h = cBinaryHeap_ctor(h, nw->vftable->NumVisPoints(nw), AStar_ElemLess, AStar_ElemEq, AStar_ElemSetIndex);
+		h = cBinaryHeap_ctor(h, nw->sup.vftable->NumVisPoints(nw), AStar_ElemLess, AStar_ElemEq, AStar_ElemSetIndex);
 	}
 	self->base.open = h;
 	if (!h) {
 		Con_FatalErrorf("ERROR AI: AStar - Error al crear lista Open.\n");
 	}
 	nw = AS_NODES(self);
-	n = nw->vftable->NumVisPoints(nw);
+	n = nw->sup.vftable->NumVisPoints(nw);
 	self->base.capClosed = n + 1;
 	self->base.closed = Mem_Alloc((n + 1) * 4);
 	if (!self->base.closed) {
@@ -758,12 +758,12 @@ void __fastcall CAStar_InitList(CAStar *self) {
 	AStarTable_Clear(self->base.table);
 	self->base.numList = 0;
 	nw = AS_NODES(self);
-	for (int i = 0; i < nw->vftable->NumVisPoints(nw); i++) {
+	for (int i = 0; i < nw->sup.vftable->NumVisPoints(nw); i++) {
 		ElemAStar e;
 		cAStarInfo info;
 		cAStarItem *it;
 
-		e.node = nw->vftable->GetVisPoint(nw, i);
+		e.node = nw->sup.vftable->GetVisPoint(nw, i);
 		e.parent = NULL;
 		e.f = -1.0f;
 		e.g = -1.0f;
@@ -815,14 +815,14 @@ void __thiscall CAStar2D_NearestStart(CAStar2D *self) {
 int __thiscall CAStar_FileOf(CAStar *self, const vec3_t *node) {
 	CNodesWorld *nw = AS_NODES(self);
 
-	return nw->vftable->FileOf(nw, (const cNWNode *)node);
+	return nw->sup.vftable->FileOf(nw, (const cNWNode *)node);
 }
 
 void __thiscall CAStar_OtherLinks(CAStar *self, const vec3_t *node, const vec3_t *pos, const vec3_t **list, int max,
 	int *count) {
 	CNodesWorld *nw = AS_NODES(self);
 
-	nw->vftable->OtherLinks(nw, (const cNWNode *)node, pos, (cNWNode **)list, max, count);
+	nw->sup.vftable->OtherLinks(nw, (const cNWNode *)node, pos, (cNWNode **)list, max, count);
 }
 
 /* the points of visibility of the graph with the radius (and the heights) of the search */
@@ -924,7 +924,7 @@ byte __thiscall CAStar_FindPath(void *astar, cNWVecList *path, const vec3_t *to,
 	CNodesWorld *nw = AS_NODES(self);
 
 	(void)dist;
-	CHECK(nw->vftable->IsCreated(nw));
+	CHECK(nw->sup.vftable->IsCreated(nw));
 	self->base.radius = radius;
 	self->base.start = *to;
 	self->base.goal = *from;
@@ -937,7 +937,7 @@ byte __thiscall CAStar2D_FindPath(void *astar, cNWVecList *path, const vec3_t *d
 	CNodesWorld *nw = AS_NODES(self);
 
 	(void)dist;
-	CHECK(nw->vftable->IsCreated(nw));
+	CHECK(nw->sup.vftable->IsCreated(nw));
 	self->base.radius = r;
 	self->h1 = h1;
 	self->h2 = h2;

@@ -1294,7 +1294,7 @@ byte __thiscall cAIVehicleControl_SetPath(cAIVehicleControl *self, const vec3_t 
 	byte startOk, goalOk;
 
 	CHECK(g_NodesWorld != NULL && g_AStar != NULL);
-	CHECK(g_NodesWorld->vftable->IsCreated(g_NodesWorld));
+	CHECK(g_NodesWorld->sup.vftable->IsCreated(g_NodesWorld));
 	self->dest = *p;
 	VC_Pos(self, &buf);
 	if (!CAStar_FindPath(g_AStar, &self->path, &self->dest, &buf, self->radius, self->dist,
@@ -1344,7 +1344,7 @@ byte __fastcall cAIVehicleControl_RebuildPath(cAIVehicleControl *self) {
 	vec3_t buf;
 
 	CHECK(g_NodesWorld != NULL);
-	CHECK(g_NodesWorld->vftable->IsCreated(g_NodesWorld));
+	CHECK(g_NodesWorld->sup.vftable->IsCreated(g_NodesWorld));
 	VC_Pos(self, &buf);
 	if (!CNodesWorld_BuildPath(g_NodesWorld, &self->path, g_DepthPathRouteOutDoorAI, &self->dir, &buf,
 		self->pathDirect, &self->pathNode, self->radius, self->pathFlat)) {

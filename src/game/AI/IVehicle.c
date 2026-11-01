@@ -273,7 +273,7 @@ void __thiscall cAIVehicle_UpdateGraph(cAIVehicle *self) {
 	do {
 		cWorld *w = g_pWorld;
 		vec3_t cam = w->camPos[w->curCam];
-		if (!g_NodesWorld->vftable->InGrid(g_NodesWorld, &cam)) {
+		if (!g_NodesWorld->sup.vftable->InGrid(g_NodesWorld, &cam)) {
 			return;
 		}
 		switch (self->state) {

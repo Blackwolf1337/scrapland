@@ -359,7 +359,7 @@ byte __thiscall cAICharControl2D_FindPath(cAICharControl2D *self, const vec3_t *
 	byte noPath, reach;
 
 	CHECK((g_NodesWorld2D != NULL) && (g_AStar2D != NULL));
-	CHECK(NW2D_SUP(g_NodesWorld2D)->vftable->IsCreated(NW2D_SUP(g_NodesWorld2D)));
+	CHECK(NW2D_SUP(g_NodesWorld2D)->sup.vftable->IsCreated(NW2D_SUP(g_NodesWorld2D)));
 	self->dest = *p;
 	AICC_Pos(self, &pos);
 	float fr = AICC_FloorRadius(self);
@@ -404,7 +404,7 @@ byte __thiscall cAICharControl2D_FindRoute(cAICharControl2D *self) {
 	vec3_t pos;
 
 	CHECK(g_NodesWorld2D != NULL);
-	CHECK(NW2D_SUP(g_NodesWorld2D)->vftable->IsCreated(NW2D_SUP(g_NodesWorld2D)));
+	CHECK(NW2D_SUP(g_NodesWorld2D)->sup.vftable->IsCreated(NW2D_SUP(g_NodesWorld2D)));
 	AICC_Pos(self, &pos);
 	float fr = AICC_FloorRadius(self);
 	if (!CNodesWorld2D_BuildPath(g_NodesWorld2D, &self->path, g_DepthPathRouteInDoorAI, &self->routePoint, &pos,

@@ -262,49 +262,7 @@ SD_OFFSET(CNodesWorldSup, errCollide, 0x310);
 SD_SIZE(CNodesWorldSup, 0x360);
 
 struct CNodesWorld {
-	const CNodesWorldVtbl *vftable;	/* 0x000 */
-	vec3_t halfNode;		/* 0x004 half of nodeSize */
-	vec3_t axis[3];			/* 0x010 nodeSize along x, y and z */
-	vec3_t nodeSize;		/* 0x034 vectInterNod */
-	float pairRange;		/* 0x040 25000 outdoors, 1500 indoors: a link is tried up to twice it */
-	vec3_t nodeTenth;		/* 0x044 nodeSize / 10 */
-	float margin;			/* 0x050 the smallest component of nodeSize / 100 */
-	float gridCell;			/* 0x054 the cell of the grid of the level, 12500 outdoors, 750 indoors */
-	float linkDist;			/* 0x058 */
-	float startVisDist;		/* 0x05c the search of the visible points a path starts at, 27500 or 1650 */
-	float maxVisDist;		/* 0x060 the searches of points of visibility end at this distance */
-	vec3_t nodeInit;		/* 0x064 PointNodeInit */
-	byte created;			/* 0x070 */
-	byte pad_71[3];
-	vec3_t min;			/* 0x074 the box of the level */
-	vec3_t max;			/* 0x080 */
-	char name[0xff];		/* 0x08c the level, the folder of the graph files */
-	byte nodeInitDummy;		/* 0x18b */
-	cNWGrid *grid;			/* 0x18c the points of visibility by cell */
-	cNWPointList points;		/* 0x190 the points of the generation */
-	cNWNode *nodes;			/* 0x1a8 */
-	int numNodes;			/* 0x1ac */
-	cNWCell *buffer;		/* 0x1b0 the cells of the generation, nx * ny * nz (Mem_Alloc) */
-	int nx, ny, nz;			/* 0x1b4 */
-	int dimBuffer;			/* 0x1c0 */
-	int numPointLinks;		/* 0x1c4 the links of the generated points */
-	void *tmp1c8;			/* 0x1c8 freed with the buffer (Mem_Alloc) */
-	int num1cc;			/* 0x1cc */
-	cNWIntList list1d0;		/* 0x1d0 */
-	cNWVisList *sets;		/* 0x1e8 numSets hash lists of the sets of points (Mem_Alloc) */
-	int numSets;			/* 0x1ec */
-	cNWVecList extraPoints;		/* 0x1f0 */
-	cNWNode *fileStart[20];		/* 0x208 the first node of each graph file */
-	int numFiles;			/* 0x258 */
-	cNWVecList lists25c[2];		/* 0x25c the nodes of the debug view */
-	cNWVecList lists28c[5];		/* 0x28c the buffer cells by state (GetInfoNodes) */
-	vec3_t openPos;			/* 0x304 the cell where the region of the generation left the box */
-	cNWVecList errCollide;		/* 0x310 AnalizeGraph: the links through the level, 3 points each */
-	cNWVecList errUnlinked;		/* 0x328 the nodes without links */
-	cNWVecList errOneWay;		/* 0x340 the links without the link back, 2 points each */
-	int debugHits;			/* 0x358 the nodes the debug test found blocked */
-	byte unused_35c;			/* 0x35c */
-	byte pad_35d[3];
+	CNodesWorldSup sup;		/* 0x000 */
 	/* CNodesWorld */
 	byte analyzing;			/* 0x360 Analyze: Load analyzes the level instead of making the graph */
 	byte pad_361[3];
@@ -319,16 +277,16 @@ struct CNodesWorld {
 	vec3_t hitTo;			/* 0x3cc */
 	cNWTriList tris;		/* 0x3d8 */
 };
-SD_OFFSET(CNodesWorld, maxVisDist, 0x60);
-SD_OFFSET(CNodesWorld, name, 0x8c);
-SD_OFFSET(CNodesWorld, grid, 0x18c);
-SD_OFFSET(CNodesWorld, numNodes, 0x1ac);
-SD_OFFSET(CNodesWorld, buffer, 0x1b0);
-SD_OFFSET(CNodesWorld, sets, 0x1e8);
-SD_OFFSET(CNodesWorld, extraPoints, 0x1f0);
-SD_OFFSET(CNodesWorld, numFiles, 0x258);
-SD_OFFSET(CNodesWorld, openPos, 0x304);
-SD_OFFSET(CNodesWorld, errCollide, 0x310);
+SD_OFFSET(CNodesWorld, sup.maxVisDist, 0x60);
+SD_OFFSET(CNodesWorld, sup.name, 0x8c);
+SD_OFFSET(CNodesWorld, sup.grid, 0x18c);
+SD_OFFSET(CNodesWorld, sup.numNodes, 0x1ac);
+SD_OFFSET(CNodesWorld, sup.buffer, 0x1b0);
+SD_OFFSET(CNodesWorld, sup.sets, 0x1e8);
+SD_OFFSET(CNodesWorld, sup.extraPoints, 0x1f0);
+SD_OFFSET(CNodesWorld, sup.numFiles, 0x258);
+SD_OFFSET(CNodesWorld, sup.openPos, 0x304);
+SD_OFFSET(CNodesWorld, sup.errCollide, 0x310);
 SD_OFFSET(CNodesWorld, analyzing, 0x360);
 SD_OFFSET(CNodesWorld, hitFrom, 0x3c0);
 SD_OFFSET(CNodesWorld, tris, 0x3d8);

@@ -468,7 +468,7 @@ byte __thiscall cAICharControl3D_FindPath(cAICharControl3D *self, const vec3_t *
 	byte noPath, reach;
 
 	CHECK((g_NodesWorld != NULL) && (g_AStar != NULL));
-	CHECK(g_NodesWorld->vftable->IsCreated(g_NodesWorld));
+	CHECK(g_NodesWorld->sup.vftable->IsCreated(g_NodesWorld));
 	self->dest = *p;
 	AICC_Pos(self, &pos);
 	byte ok = CAStar_FindPath(g_AStar, &self->path, &self->dest, &pos, self->radius, self->arriveDist, self->soft,
@@ -511,7 +511,7 @@ byte __thiscall cAICharControl3D_FindRoute(cAICharControl3D *self) {
 	vec3_t pos;
 
 	CHECK(g_NodesWorld != NULL);
-	CHECK(g_NodesWorld->vftable->IsCreated(g_NodesWorld));
+	CHECK(g_NodesWorld->sup.vftable->IsCreated(g_NodesWorld));
 	AICC_Pos(self, &pos);
 	if (!CNodesWorld_BuildPath(g_NodesWorld, &self->path, g_DepthPathRouteInDoorAI, &self->routePoint, &pos,
 			self->routeA, &self->routeNode, self->radius, self->routeB)) {
