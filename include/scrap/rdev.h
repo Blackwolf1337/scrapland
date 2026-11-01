@@ -9,6 +9,9 @@
 
 #include "scrap/shared.h"
 
+/* the IDirect3D8 of the backend in use (Direct3DCreate8), NULL when it cannot start */
+void *Rd_Direct3DCreate8(uint32_t sdk);
+
 /* IUnknown of every object */
 uint32_t Rd_AddRef(void *obj);
 uint32_t Rd_Release(void *obj);

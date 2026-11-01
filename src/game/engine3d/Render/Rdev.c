@@ -9,6 +9,10 @@
 
 const RdBackend *rd = &rd_d3d8;
 
+void *Rd_Direct3DCreate8(uint32_t sdk) {
+	return rd->Direct3DCreate8(sdk);
+}
+
 uint32_t Rd_AddRef(void *obj) {
 	return rd->AddRef(obj);
 }

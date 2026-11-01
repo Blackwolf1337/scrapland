@@ -4,6 +4,13 @@
  */
 #include "rdevbackend.h"
 
+/* the one of d3d8.dll */
+void *__stdcall Direct3DCreate8(uint32_t sdk);
+
+static void *D3D8_Direct3DCreate8(uint32_t sdk) {
+	return Direct3DCreate8(sdk);
+}
+
 static uint32_t D3D8_AddRef(void *obj) {
 	return ((uint32_t(__stdcall *)(void *))(*(void ***)obj)[0x4 / 4])(obj);
 }
@@ -355,6 +362,7 @@ static uint32_t D3D8_XMeshGetNumVertices(void *mesh) {
 
 const RdBackend rd_d3d8 = {
 	.name = "d3d8",
+	.Direct3DCreate8 = D3D8_Direct3DCreate8,
 	.AddRef = D3D8_AddRef,
 	.Release = D3D8_Release,
 	.D3DCheckDepthStencilMatch = D3D8_D3DCheckDepthStencilMatch,

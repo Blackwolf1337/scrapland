@@ -9,6 +9,7 @@
 
 typedef struct RdBackend {
 	const char *name;
+	void *(*Direct3DCreate8)(uint32_t sdk);
 	uint32_t(*AddRef)(void *obj);
 	uint32_t(*Release)(void *obj);
 	int(*D3DCheckDepthStencilMatch)(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t rt,

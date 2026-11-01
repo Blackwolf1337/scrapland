@@ -438,7 +438,6 @@ int CD3DApp_UserSelectNewDevice(CD3DApplication *self) {
 extern uint32_t g_D3DAppFrames;
 extern float g_D3DAppLastTime;
 
-typedef void *(__stdcall *direct3dcreate8_t)(uint32_t version);
 typedef int(__stdcall *adjustwindowrect_t)(exe_rect *r, uint32_t style, int menu);
 typedef void *(__stdcall *loadmenu_t)(void *inst, const char *name);
 typedef int(__stdcall *setrect_t)(exe_rect *r, int left, int top, int right, int bottom);
@@ -447,7 +446,6 @@ typedef void(__stdcall *postquitmessage_t)(int code);
 typedef int(__stdcall *getcursorpos_t)(exe_point *pt);
 typedef int(__stdcall *screentoclient_t)(void *hwnd, exe_point *pt);
 typedef int(__stdcall *enablewindow_t)(void *hwnd, int on);
-#define exe_Direct3DCreate8 GAME_IMPORT(direct3dcreate8_t, Direct3DCreate8, 4)
 #define exe_AdjustWindowRect GAME_IMPORT(adjustwindowrect_t, AdjustWindowRect, 12)
 #define exe_LoadMenuA GAME_IMPORT(loadmenu_t, LoadMenuA, 8)
 #define exe_SetRect GAME_IMPORT(setrect_t, SetRect, 20)
@@ -472,7 +470,7 @@ int CD3DApp_Create(CD3DApplication *self, void *inst) {
 	exe_rect r;
 	int hr;
 
-	self->d3d = exe_Direct3DCreate8(0xdc);	/* D3D_SDK_VERSION */
+	self->d3d = Rd_Direct3DCreate8(0xdc);	/* D3D_SDK_VERSION */
 	if (!self->d3d) {
 		return CD3DApp_DisplayErrorMsg(self, D3DAPPERR_NODIRECT3D, 1);
 	}
