@@ -16,6 +16,9 @@
  *
  * The helpers that no DLL exports (__ftoui3, __dtoui3 and the vector cos, sin and exp of vectorised loops) are C of
  * their own in src/standalone/crtvec.c.
+ *
+ * Built with the CMake option SCRAP_OWN_MATH (SD_OWN_MATH) the entries are the C of src/standalone/crtlibm.c and no
+ * DLL is loaded.
  */
 #include <errno.h>
 #include <math.h>
@@ -25,6 +28,25 @@
 #include "scrap/crt.h"
 #include "scrap/game.h"
 #include "scrap/mathlib.h"
+
+/* _set_errno_from_matherr: _DOMAIN EDOM, _SING and _OVERFLOW ERANGE */
+void Crt_MathErrno(int type) {
+	if (type == 1) {
+		*crt_errno() = EDOM;
+	} else if (type == 2 || type == 3) {
+		*crt_errno() = ERANGE;
+	}
+}
+
+#ifdef SD_OWN_MATH
+
+const char *Crt_MathInit(const char *dir) {
+	(void)dir;
+	Com_Printf("crt: the MSVC math of its own (crtlibm.c)\n");
+	return NULL;
+}
+
+#else
 
 /* label, export */
 #define CRT_MATH_ENTRIES(X) \
@@ -77,27 +99,13 @@ static const struct {
 #undef CRT_EXPORT
 };
 
-/* struct _exception of the runtime */
-typedef struct {
-	int type;
-	char *name;
-	double arg1, arg2, retval;
-} crtMathExc_t;
-
-enum { CRT_DOMAIN = 1, CRT_SING, CRT_OVERFLOW };
-
 /* the loaded ucrtbase keeps an errno of its own (it is not the one this exe links) */
 static int crt_math_apart;
 
 static int Crt_MathErrMs(crtMathExc_t *e) {
 	int r = E3D_MathErr(e);
-	/* _set_errno_from_matherr: _DOMAIN EDOM, _SING and _OVERFLOW ERANGE */
 	if (!r && crt_math_apart) {
-		if (e->type == CRT_DOMAIN) {
-			*crt_errno() = EDOM;
-		} else if (e->type == CRT_SING || e->type == CRT_OVERFLOW) {
-			*crt_errno() = ERANGE;
-		}
+		Crt_MathErrno(e->type);
 	}
 	return r;
 }
@@ -134,3 +142,5 @@ const char *Crt_MathInit(const char *dir) {
 	Com_Printf("crt: the MSVC math from %s%s\n", path, crt_math_apart ? " (its errno is set in this exe too)" : "");
 	return NULL;
 }
+
+#endif

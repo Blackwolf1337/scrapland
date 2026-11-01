@@ -158,9 +158,17 @@ double crt_sinh(double x);
 double crt_sqrt(double x);
 double crt_tan(double x);
 double crt_tanh(double x);
+/* struct _exception of the runtime, the argument of the matherr callback */
+typedef struct {
+	int type;
+	char *name;
+	double arg1, arg2, retval;
+} crtMathExc_t;
+/* ScrapC.exe: errno after a math error that the matherr callback left to the runtime (crtmath.c) */
+void Crt_MathErrno(int type);
 /*
  * ScrapC.exe: the math entries of the runtime with conventions of their own, labels for the inline asm of
- * src/core/libm.c (src/standalone/crtmath.c, crtvec.c): the SSE2 entries
+ * src/core/libm.c (src/standalone/crtmath.c or crtlibm.c, crtvec.c): the SSE2 entries
  * (argument and result in xmm0, the exponent of pow in xmm1), the _CI intrinsics (x87 stack), the conversions of a
  * float or double in xmm0 to edx:eax and the vector functions of two doubles in xmm0
  */
