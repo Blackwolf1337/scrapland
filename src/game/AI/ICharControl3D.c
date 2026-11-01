@@ -881,7 +881,7 @@ byte __thiscall cAICharControl3D_StrafeFwd(cAICharControl3D *self, const vec3_t 
 	cur.y = a.y * dist + pos->y;
 	cur.z = a.z * dist + pos->z;
 	if (g_ShowShirkAI == 1) {
-		DListVec3_Add(&self->unused_330, &cur);
+		DListVec3_Add(&self->debugStrafeInner, &cur);
 	}
 	if (!AICC3D_ArcFree(self, &cur)) {
 		return 0;

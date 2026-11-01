@@ -54,7 +54,7 @@ cAICharControl *__thiscall cAICharControl_ctor(void *mem, cEntity *ent, cAIChar 
 	cSlotController_ctor(AICC_Slot(&self->slotLost), 3.0f);
 	cSlotController_ctor(AICC_Slot(&self->slotWait), 0.2f);
 	memset(&self->debugStrafe, 0, sizeof(self->debugStrafe));
-	memset(&self->unused_330, 0, sizeof(self->unused_330));
+	memset(&self->debugStrafeInner, 0, sizeof(self->debugStrafeInner));
 	memset(&self->debugPath, 0, sizeof(self->debugPath));
 	if (!ent || !ai) {
 		Con_Bluef("ERROR: Inicializaci\xf3n AI Char Control. Entidad = NULL.\n");
@@ -140,7 +140,7 @@ void __fastcall DListSeg_Free(cNWSegList *list) {
 void __fastcall cAICharControl_dtor(cAICharControl *self) {
 	self->vftable = CAICHARCONTROL_VFTABLE;
 	DListSeg_Free(&self->debugPath);
-	NWVecList_Free(&self->unused_330);
+	NWVecList_Free(&self->debugStrafeInner);
 	NWVecList_Free(&self->debugStrafe);
 	NWVecList_Free(&self->path);
 	Nto1Node_Done(&self->link);
@@ -649,7 +649,7 @@ void __thiscall cAICharControl_UpdateAvoid(cAICharControl *self) {
 	toGoal.y = 0.0f;
 	self->side = (toGoal.x * toE.z - toE.x * toGoal.z > 0.0f) ? 1 : 2;
 	DListVec3_Clear(&self->debugStrafe);
-	DListVec3_Clear(&self->unused_330);
+	DListVec3_Clear(&self->debugStrafeInner);
 	float sd = vt->StrafeDist(self, self->link.target);
 	if (vt->TryStrafe(self, self->side, self->link.target, 1, keep, self->avoidChar, sd, 1)) {
 		return;
@@ -700,7 +700,7 @@ byte __thiscall cAICharControl_FindAvoid(cAICharControl *self) {
 		return 0;
 	}
 	DListVec3_Clear(&self->debugStrafe);
-	DListVec3_Clear(&self->unused_330);
+	DListVec3_Clear(&self->debugStrafeInner);
 	int found = 0;
 	for (int i = 0; i < g_AICCNumNear; i++) {
 		cEntity *e = g_AICCNear[i];
@@ -1191,7 +1191,7 @@ static void AICC_DrawPath(cAICharControl *self) {
 	self->path.iter = saved;
 }
 
-/* ShowShirkAI: the points of the strafe tests (debug318 the radius of the character, debug330 smaller) */
+/* ShowShirkAI: the points of the strafe tests (debugStrafe the radius of the character, debugStrafeInner smaller) */
 static void AICC_DrawShirk(cAICharControl *self) {
 	const char *dbg = g_NameDebugShirkAI;
 
@@ -1212,15 +1212,15 @@ static void AICC_DrawShirk(cAICharControl *self) {
 			}
 		}
 	}
-	if (self->unused_330.head) {
-		cNWVecNode *node = self->unused_330.head->prev;
-		self->unused_330.iter = node;
+	if (self->debugStrafeInner.head) {
+		cNWVecNode *node = self->debugStrafeInner.head->prev;
+		self->debugStrafeInner.iter = node;
 		while (node) {
 			float r = WChar(self->ent)->wl.prim.radius - (g_MarginCollCharAI + 5.0f);
 			DebugUtils_DrawSphere(&node->v, r, 0xff00, 20, 20);
-			node = self->unused_330.iter->prev;
-			self->unused_330.iter = node;
-			if (node == self->unused_330.head->prev) {
+			node = self->debugStrafeInner.iter->prev;
+			self->debugStrafeInner.iter = node;
+			if (node == self->debugStrafeInner.head->prev) {
 				break;
 			}
 		}

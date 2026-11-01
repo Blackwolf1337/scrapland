@@ -1021,7 +1021,7 @@ static int AICC2D_ArcFloor(cAICharControl *self, const vec3_t *p, vec3_t *out) {
 		return -1;
 	}
 	if (g_ShowShirkAI == 1) {
-		DListVec3_Add(&self->unused_330, out);
+		DListVec3_Add(&self->debugStrafeInner, out);
 	}
 	float r = WChar(self->ent)->wl.prim.radius + 1.0f - g_MarginCollCharAI;
 	return !cWorld_TestSphereEntities(g_pWorld, self->ent, (void *)0x10, out, r, &hit, 1, 0);

@@ -1323,9 +1323,9 @@ byte __thiscall CNodesWorld2D_FindLinkFree(CNodesWorld2D *self, const vec3_t *co
 	int best[3];
 	float bestDist = 3.4028234663852886e+38f;
 	byte found = 0;
-	const int *cells = w->sup.freeCells;
+	const int *cells = w->sup.reachedCells;
 
-	for (int k = 0; k < w->sup.numFreeCells; k++) {
+	for (int k = 0; k < w->sup.numReachedCells; k++) {
 		vec3_t c, c2;
 		int idx = cells[k];
 		if (w->sup.buffer[idx].state == 5) {

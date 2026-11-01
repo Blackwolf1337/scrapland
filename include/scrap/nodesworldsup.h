@@ -70,7 +70,7 @@ byte __thiscall CNodesWorldSup_CheckBuffer(CNodesWorld *self);
 void __thiscall CNodesWorldSup_BuildGrid(CNodesWorld *self);
 int __thiscall CNodesWorldSup_BufferIndex(CNodesWorld *self, const vec3_t *pos);
 vec3_t *__thiscall CNodesWorldSup_BufferPos(CNodesWorld *self, vec3_t *out, int index);
-/* the positions of the buffer cells into lists28c by state; the warning when no cell is outside (state 6) */
+/* the positions of the buffer cells into cellLists by state; the warning when no cell is outside (state 6) */
 void __thiscall CNodesWorldSup_GetInfoNodes(CNodesWorld *self);
 /* the point added to the set of the cell: an equal set of the hash list is shared, else the set is changed (one
  * user) or copied */
@@ -111,16 +111,16 @@ void NWSup_LinkFound(CNodesWorld *self, const int *best, int drawMode);
 /* the nearest cell of the box (2D: also not state 0) whose set has both points that do not reach each other over
  * its links; out its index */
 byte NWSup_FindLinkBox(CNodesWorld *self, const vec3_t *const *pair, const cNWBox *box, int *out, byte is2D);
-/* the same over the cells of tmp1c8 */
+/* the same over the cells of reachedCells */
 byte NWSup_FindLinkCell(CNodesWorld *self, const vec3_t *const *pair, int *out, byte is2D);
-/* the next start of the generation: the free neighbour cell (state 4) of a cell of list1d0 in state 5 whose point
+/* the next start of the generation: the free neighbour cell (state 4) of a cell of edgeCells in state 5 whose point
  * of visibility is the nearest one, isFree tests the way from the neighbour to the cell */
 typedef int (*nwInitFree_t)(CNodesWorld *self, const vec3_t *n, const vec3_t *c);
 typedef float (*nwInitDist_t)(CNodesWorld *self, const vec3_t *n);
 byte NWSup_NextInit(CNodesWorld *self, vec3_t *out, nwInitFree_t isFree, nwInitDist_t dist);
 /* the buffer of the generation for the box min max (nx ny nz, state 6), the cells reached from the cell of init
  * over the neighbours along the axes into state 0 when step lets them (step also sets the state of the others),
- * then tmp1c8 with the reached cells and the hash lists of the sets; 3D: open (and 0) when the region reaches the
+ * then reachedCells with the reached cells and the hash lists of the sets; 3D: open (and 0) when the region reaches the
  * side of the box with nodeInitDummy (the top only indoors), the analysis of the level */
 typedef void (*nwFloodStep_t)(CNodesWorld *self, cNWVecList *queue, const vec3_t *c, const vec3_t *n);
 byte NWSup_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max, nwFloodStep_t step,

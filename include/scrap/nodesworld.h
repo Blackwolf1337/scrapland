@@ -137,7 +137,7 @@ typedef DLIST(cNWVisNode) cNWVisList;
 
 /* a cell of the generation buffer */
 typedef struct cNWCell {
-	int state;			/* 0x0 0, 3, 4, 5, 6: the lists28c of GetInfoNodes */
+	int state;			/* 0x0 0, 3, 4, 5, 6: the cellLists of GetInfoNodes */
 	cNWVis *vis;			/* 0x4 */
 } cNWCell;
 SD_SIZE(cNWCell, 0x8);
@@ -234,9 +234,9 @@ typedef struct CNodesWorldSup {
 	int nx, ny, nz;			/* 0x1b4 */
 	int dimBuffer;			/* 0x1c0 */
 	int numPointLinks;		/* 0x1c4 the links of the generated points */
-	void *freeCells;		/* 0x1c8 numFreeCells cell indices for FindLinkFree, freed with the buffer (Mem_Alloc) */
-	int numFreeCells;			/* 0x1cc */
-	cNWIntList unused_1d0;		/* 0x1d0 */
+	void *reachedCells;		/* 0x1c8 the indices of the cells the region reached (IniBuffer), FindLinkFree; Mem_Alloc */
+	int numReachedCells;			/* 0x1cc */
+	cNWIntList edgeCells;		/* 0x1d0 the cells the region did not reach, NWSup_NextInit starts next to them */
 	cNWVisList *sets;		/* 0x1e8 numSets hash lists of the sets of points (Mem_Alloc) */
 	int numSets;			/* 0x1ec */
 	cNWVecList extraPoints;		/* 0x1f0 */
@@ -349,7 +349,7 @@ void __thiscall CNodesWorld_GetPairs(CNodesWorld *self, cNWPairList *list);
 void __thiscall CNodesWorld_LinkExtra(CNodesWorld *self);
 /* the distance from pos to the nearest point of the set of its buffer cell, FLT_MAX without one */
 float __thiscall CNodesWorld_NearestVisDist(CNodesWorld *self, const vec3_t *pos);
-/* the cell to link the pair of points through: NWSup_FindLinkBox, NWSup_FindLinkCell; Free: the cells of tmp1c8 whose
+/* the cell to link the pair of points through: NWSup_FindLinkBox, NWSup_FindLinkCell; Free: the cells of reachedCells whose
  * center sees both points free of the level (the distance on the floor plane) */
 byte __thiscall CNodesWorld_FindLinkBox(CNodesWorld *self, const vec3_t *const *pair, const cNWBox *box, int *out);
 byte __thiscall CNodesWorld_FindLinkCell(CNodesWorld *self, const vec3_t *const *pair, int *out);

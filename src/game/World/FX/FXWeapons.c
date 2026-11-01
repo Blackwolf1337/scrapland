@@ -426,7 +426,7 @@ void __thiscall cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debri
 	}
 	self->angle = d * 10.0f + self->angle;
 
-	/* the rings turning the other way (trail1d0 and trail1e0) */
+	/* the rings turning the other way (rings and ringsDuDv) */
 	CGameTrail_Reset(&self->rings);
 	CGameTrail_SetOrient(&self->rings, mid, 1);
 	CGameTrail_SetUVScale(&self->rings, len / 1000.0f, 1.0f);

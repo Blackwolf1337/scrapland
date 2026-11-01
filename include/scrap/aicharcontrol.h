@@ -343,7 +343,7 @@ struct cAICharControl {
 	cNWNode *routeNode;		/* 0x23c the node of the route BuildPath reached */
 	cAICCSeg debugSegs[9];		/* 0x240 the corridor of the last path test */
 	cNWVecList debugStrafe;		/* 0x318 the points of the strafe tests */
-	cNWVecList unused_330;		/* 0x330 */
+	cNWVecList debugStrafeInner;	/* 0x330 the same with a smaller radius */
 	cNWSegList debugPath;		/* 0x348 the segments of the path tests (ShowTestCanGoAI) */
 };
 SD_OFFSET(cAICharControl, ai, 0x44);
