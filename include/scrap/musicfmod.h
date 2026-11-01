@@ -24,8 +24,8 @@ typedef struct cMusicVoice {
 } cMusicVoice;
 SD_SIZE(cMusicVoice, 0x19c);
 
-#define g_FmodState GAME_GLOBAL(int, g_FmodState, 0x4a94dc)		/* > 0 running, < 0 failed */
-#define g_MusicVoices (GAME_ARRAY_IN(cMusicVoice, cMusicVoice_MusicVoices, 0, 0x4a94e0))
+#define g_FmodState GAME_GLOBAL(int, g_FmodState)		/* > 0 running, < 0 failed */
+#define g_MusicVoices (GAME_ARRAY_IN(cMusicVoice, cMusicVoice_MusicVoices, 0))
 
 int Fmod_Init(void);
 cMusicVoice *__fastcall cMusicVoice_ctor(cMusicVoice *self);
@@ -62,13 +62,13 @@ byte Music_Start(void);
 void Music_ApplyVolume(void);
 byte Music_Voiceover(float factor, float speed);
 void Music_DrawStream(float x, float y, void *stream, int channel, byte *playing);
-byte Music_PlayFile(const char *name, const char *dir);	/* rva 0x232240 */
-byte Music_Pause(void);						/* rva 0x232210 */
-byte Music_Stop(void);						/* rva 0x232360 */
-byte Music_SetVolume(float v);					/* rva 0x2324e0 */
-byte Music_SetMainVolume(float v);				/* rva 0x2321c0 */
-byte Music_FadeOut(float a, float vol);				/* rva 0x232480 */
-byte Music_Update(void);					/* rva 0x232600 */
+byte Music_PlayFile(const char *name, const char *dir);
+byte Music_Pause(void);
+byte Music_Stop(void);
+byte Music_SetVolume(float v);
+byte Music_SetMainVolume(float v);
+byte Music_FadeOut(float a, float vol);
+byte Music_Update(void);
 
 /* the FMOD file callbacks (not set by the game) */
 int __stdcall Music_FileClose(void *f);

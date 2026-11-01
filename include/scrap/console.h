@@ -1,6 +1,6 @@
 /*
  * The engine console and log (original source: Global/). Colors are 0xRRGGBB-like values of the engine; the
- * output goes to the console window, log.html and the debug output depending on the debug level (rva 0x445a74).
+ * output goes to the console window, log.html and the debug output depending on the debug level.
  */
 #ifndef SCRAP_CONSOLE_H
 #define SCRAP_CONSOLE_H
@@ -20,29 +20,29 @@ typedef struct cConLine {
 } cConLine;
 SD_SIZE(cConLine, 0x84);
 
-#define g_ConLines (GAME_ARRAY(cConLine, g_ConLines, 0x444e68))	/* CON_LINES */
-#define g_ConLine GAME_GLOBAL(int, g_ConLine, 0x445a44)		/* the line written now */
-#define g_DebugLevel GAME_GLOBAL_IN(int, GVar_debug, 16, 0x445a74)
+#define g_ConLines (GAME_ARRAY(cConLine, g_ConLines))	/* CON_LINES */
+#define g_ConLine GAME_GLOBAL(int, g_ConLine)		/* the line written now */
+#define g_DebugLevel GAME_GLOBAL_IN(int, GVar_debug, 16)
 
-/* prints text in a color; flag set: only into the second log (rva 0xbca50) */
+/* prints text in a color; flag set: only into the second log */
 void Con_Print(int color, const char *text, int flag);
-/* printf in the error color (rva 0xbc580) */
+/* printf in the error color */
 void Con_Errorf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
-/* printf in the warning color (rva 0xbc8b0) */
+/* printf in the warning color */
 void Con_Warnf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
-/* printf into the console lines, while the debug level is not 0 (rva 0xbbef0) */
+/* printf into the console lines, while the debug level is not 0 */
 void Con_Printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
-/* the "Scrap Fatal Error" message box, then the end of the process (rva 0xbbd80) */
+/* the "Scrap Fatal Error" message box, then the end of the process */
 void Con_Fatal(const char *msg);
-/* like Con_Printf in color 0xff, keeps GetLastError for the log, then Con_Fatal ends the game (rva 0xbbba0) */
+/* like Con_Printf in color 0xff, keeps GetLastError for the log, then Con_Fatal ends the game */
 void Con_FatalErrorf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
-/* like Con_Printf in color 0x707000, only above debug level 1 (rva 0xbc240) */
+/* like Con_Printf in color 0x707000, only above debug level 1 */
 void Con_Verbosef(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
-/* like Con_Printf in color 0xff (rva 0xbc0b0) */
+/* like Con_Printf in color 0xff */
 void Con_Bluef(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
-/* printf in color 0xRRGGBB (rva 0xbcbf0) */
+/* printf in color 0xRRGGBB */
 void Con_ColorPrintf(uint32_t color, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
-/* printf in the debug color, only shown above debug level 2 (rva 0xbc710) */
+/* printf in the debug color, only shown above debug level 2 */
 void Con_Debugf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
 #endif

@@ -13,10 +13,10 @@
 #define CLIP_MAX 16
 
 /* the contact points and faces of the response of CGround_CheckBBox (colis->calc_respuesta), counted from 0 */
-#define g_NTortas GAME_GLOBAL(int, g_NTortas, 0x4b11d8)
-#define g_NResponseFaces GAME_GLOBAL(int, g_NResponseFaces, 0x4b11dc)
+#define g_NTortas GAME_GLOBAL(int, g_NTortas)
+#define g_NResponseFaces GAME_GLOBAL(int, g_NResponseFaces)
 #define FACES_TORTAS 64
-#define g_ResponseFaces (GAME_ARRAY(int[3], g_ResponseFaces, 0x4b11e0))	/* [FACES_TORTAS] */
+#define g_ResponseFaces (GAME_ARRAY(int[3], g_ResponseFaces))	/* [FACES_TORTAS] */
 
 /* the box sides a point is outside of: 1 x > max, 2 x < min, 4 and 8 for y, 0x10 and 0x20 for z */
 static byte Box_OutCode(const vec3_t *mn, const vec3_t *mx, const vec3_t *p) {
@@ -409,7 +409,7 @@ byte __thiscall CGround_CheckBBox(CGround *self, CCollisionBBox *collision) {
 	return 0;
 }
 
-/* the static initializer (rva 0x05d940): the faces of the response cleared */
+/* the static initializer: the faces of the response cleared */
 void CheckBBox_InitResponseFaces(void) {
 	for (int i = 0; i < FACES_TORTAS; i++) {
 		g_ResponseFaces[i][0] = 0;

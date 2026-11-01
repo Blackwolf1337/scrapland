@@ -38,7 +38,7 @@ cChatScorer *__thiscall cChatScorer_Delete(cChatScorer *self, byte flags) {
 	return self;
 }
 
-/* the static initializer (rva 0x051be0): the lines empty and white */
+/* the static initializer: the lines empty and white */
 void ChatScorer_InitMsgs(void) {
 	for (int i = 0; i < CHAT_MSGS; i++) {
 		g_ChatMsgs[i].text[0] = 0;

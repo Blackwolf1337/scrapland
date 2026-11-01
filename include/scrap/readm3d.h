@@ -18,55 +18,55 @@
 
 #define M3D_STRING 0x400
 
-#define g_M3DBinary GAME_GLOBAL_IN(byte, group_4e1fa4, 0, 0x4e1fa4)
-#define g_M3DLabels GAME_GLOBAL_IN(byte, group_4e1fa4, 1, 0x4e1fa5)	/* text: lines start with the label; binary: labels stored */
-#define g_M3DString (GAME_ARRAY(char, g_M3DString, 0x4e1fc0))	/* M3D_STRING bytes, strings without a destination */
-#define g_M3DName (GAME_ARRAY(char, g_M3DName, 0x4e23c0))	/* the file being read, for messages */
-#define g_M3DDir (GAME_ARRAY(char, g_M3DDir, 0x4e24c8))	/* MAX_FILEPATH, its directory */
-#define g_M3DBaseName (GAME_ARRAY(char, g_M3DBaseName, 0x4e25d0))	/* MAX_FILEPATH, its name without the extension */
-#define g_M3DSceneMax (GAME_ARRAY(char, g_M3DSceneMax, 0x4e26d8))	/* MAX_FILEPATH, "Escena:" (the scene of the editor) */
-#define g_M3DFileINI GAME_GLOBAL(CIniFile *, g_M3DFileINI, 0x4e26d4)	/* the .ini of the file, until the scene takes it */
-#define g_M3DSceneTables GAME_GLOBAL(M3DTable *, g_M3DSceneTables, 0x4e28e4)	/* 6: the animated ambient and background colors */
+#define g_M3DBinary GAME_GLOBAL_IN(byte, group_4e1fa4, 0)
+#define g_M3DLabels GAME_GLOBAL_IN(byte, group_4e1fa4, 1)	/* text: lines start with the label; binary: labels stored */
+#define g_M3DString (GAME_ARRAY(char, g_M3DString))	/* M3D_STRING bytes, strings without a destination */
+#define g_M3DName (GAME_ARRAY(char, g_M3DName))	/* the file being read, for messages */
+#define g_M3DDir (GAME_ARRAY(char, g_M3DDir))	/* MAX_FILEPATH, its directory */
+#define g_M3DBaseName (GAME_ARRAY(char, g_M3DBaseName))	/* MAX_FILEPATH, its name without the extension */
+#define g_M3DSceneMax (GAME_ARRAY(char, g_M3DSceneMax))	/* MAX_FILEPATH, "Escena:" (the scene of the editor) */
+#define g_M3DFileINI GAME_GLOBAL(CIniFile *, g_M3DFileINI)	/* the .ini of the file, until the scene takes it */
+#define g_M3DSceneTables GAME_GLOBAL(M3DTable *, g_M3DSceneTables)	/* 6: the animated ambient and background colors */
 /* the scene of the model while an animation of it (lee_M3D_Estatica) or a LOD model of it is read */
-#define g_SceneAnimParent GAME_GLOBAL(CScene *, g_SceneAnimParent, 0x4e1ec0)
-#define g_SceneLODParent GAME_GLOBAL(CScene *, g_SceneLODParent, 0x4e1ec4)
+#define g_SceneAnimParent GAME_GLOBAL(CScene *, g_SceneAnimParent)
+#define g_SceneLODParent GAME_GLOBAL(CScene *, g_SceneLODParent)
 /* the binary caches of the M3D files: .CM3 of the animations, .SM3 of the models, with the version and the
  * times of the M3D and the model (CM3) or the .INI (SM3) */
 #define M3D_CACHE_VER 0x6515f8
-#define g_CM3CheckTime GAME_GLOBAL_IN(int, GVar_CM3_CheckTime, 16, 0x4e1f68)		/* CM3_CheckTime */
-#define g_CM3UseScenes GAME_GLOBAL_IN(int, GVar_CM3_UseScenes, 16, 0x4e1f20)		/* CM3_UseScenes 0, 1, 2 */
-#define g_SM3CheckTime GAME_GLOBAL_IN(int, GVar_SM3_CheckTime, 16, 0x4e1f38)		/* SM3_CheckTime */
-#define g_SM3UseScenes GAME_GLOBAL_IN(int, GVar_SM3_UseScenes, 16, 0x4e1f98)		/* SM3_UseScenes 0, 1, 2 */
-#define g_CM3DeleteM3D GAME_GLOBAL_IN(int, GVar_CM3_DeleteM3D, 16, 0x4e1ed8)		/* CM3_DeleteM3D */
-#define g_M3DOk GAME_GLOBAL_IN(byte, group_432a7c, 0, 0x432a7c)
-#define g_ShowNodesTree GAME_GLOBAL_IN(int, g_ShowNodesTreeVar, 16, 0x4e1ef0)		/* ShowNodesTree */
+#define g_CM3CheckTime GAME_GLOBAL_IN(int, GVar_CM3_CheckTime, 16)		/* CM3_CheckTime */
+#define g_CM3UseScenes GAME_GLOBAL_IN(int, GVar_CM3_UseScenes, 16)		/* CM3_UseScenes 0, 1, 2 */
+#define g_SM3CheckTime GAME_GLOBAL_IN(int, GVar_SM3_CheckTime, 16)		/* SM3_CheckTime */
+#define g_SM3UseScenes GAME_GLOBAL_IN(int, GVar_SM3_UseScenes, 16)		/* SM3_UseScenes 0, 1, 2 */
+#define g_CM3DeleteM3D GAME_GLOBAL_IN(int, GVar_CM3_DeleteM3D, 16)		/* CM3_DeleteM3D */
+#define g_M3DOk GAME_GLOBAL_IN(byte, group_432a7c, 0)
+#define g_ShowNodesTree GAME_GLOBAL_IN(int, g_ShowNodesTreeVar, 16)		/* ShowNodesTree */
 /* the [Model] switches of the ini of the model being read */
-#define g_M3DUseOpacity GAME_GLOBAL_IN(byte, group_4e1fa4, 2, 0x4e1fa6)
-#define g_M3DUseEnvmap GAME_GLOBAL_IN(byte, group_4e1fa4, 3, 0x4e1fa7)
-#define g_M3DUseBumpmap GAME_GLOBAL_IN(byte, group_4e1fb4, 0, 0x4e1fb4)
-#define g_M3DUseGlowmap GAME_GLOBAL_IN(byte, group_4e1fb4, 1, 0x4e1fb5)
+#define g_M3DUseOpacity GAME_GLOBAL_IN(byte, group_4e1fa4, 2)
+#define g_M3DUseEnvmap GAME_GLOBAL_IN(byte, group_4e1fa4, 3)
+#define g_M3DUseBumpmap GAME_GLOBAL_IN(byte, group_4e1fb4, 0)
+#define g_M3DUseGlowmap GAME_GLOBAL_IN(byte, group_4e1fb4, 1)
 
 /* the state of the reader while an M3D file is read */
-#define g_M3DVersion GAME_GLOBAL(int, g_M3DVersion, 0x4e1fa0)		/* 5 .. 14 */
-#define g_M3DFirstFrame GAME_GLOBAL(int, g_M3DFirstFrame, 0x4e1fa8)
-#define g_M3DLastFrame GAME_GLOBAL(int, g_M3DLastFrame, 0x4e1fac)
-#define g_M3DFrames GAME_GLOBAL(int, g_M3DFrames, 0x4e1fb0)		/* last - first + 1 */
-#define g_M3DPreScaleU GAME_GLOBAL(float, g_M3DPreScaleU, 0x4e1fb8)	/* [Model] PreScaleU of the ini */
-#define g_M3DPreScaleV GAME_GLOBAL(float, g_M3DPreScaleV, 0x4e1fbc)
+#define g_M3DVersion GAME_GLOBAL(int, g_M3DVersion)		/* 5 .. 14 */
+#define g_M3DFirstFrame GAME_GLOBAL(int, g_M3DFirstFrame)
+#define g_M3DLastFrame GAME_GLOBAL(int, g_M3DLastFrame)
+#define g_M3DFrames GAME_GLOBAL(int, g_M3DFrames)		/* last - first + 1 */
+#define g_M3DPreScaleU GAME_GLOBAL(float, g_M3DPreScaleU)	/* [Model] PreScaleU of the ini */
+#define g_M3DPreScaleV GAME_GLOBAL(float, g_M3DPreScaleV)
 /* the materials of the file: each with its material and sub material index of the file, used by a face */
 #define M3D_MAX_MAT 0x200
-#define g_M3DNumMat GAME_GLOBAL(int, g_M3DNumMat, 0x4e25cc)
-#define g_M3DMat (GAME_ARRAY(CMaterial *, g_M3DMat, 0x4e28e8))	/* [M3D_MAX_MAT] */
-#define g_M3DMatUsado (GAME_ARRAY(byte, g_M3DMatUsado, 0x4e30e8))	/* [M3D_MAX_MAT] */
-#define g_M3DMatId (GAME_ARRAY(int, g_M3DMatId, 0x4e32e8))		/* [M3D_MAX_MAT] */
-#define g_M3DMatSub (GAME_ARRAY(int, g_M3DMatSub, 0x4e3ae8))		/* [M3D_MAX_MAT] -1 for a material */
-#define g_M3DLMat GAME_GLOBAL(CMatList *, g_M3DLMat, 0x4e24c4)	/* the materials read, until they go to the scene */
+#define g_M3DNumMat GAME_GLOBAL(int, g_M3DNumMat)
+#define g_M3DMat (GAME_ARRAY(CMaterial *, g_M3DMat))	/* [M3D_MAX_MAT] */
+#define g_M3DMatUsado (GAME_ARRAY(byte, g_M3DMatUsado))	/* [M3D_MAX_MAT] */
+#define g_M3DMatId (GAME_ARRAY(int, g_M3DMatId))		/* [M3D_MAX_MAT] */
+#define g_M3DMatSub (GAME_ARRAY(int, g_M3DMatSub))		/* [M3D_MAX_MAT] -1 for a material */
+#define g_M3DLMat GAME_GLOBAL(CMatList *, g_M3DLMat)	/* the materials read, until they go to the scene */
 #define M3D_MAX_MAT_SCENE 0x100
-#define g_M3DTexturePath (GAME_ARRAY(char, g_M3DTexturePath, 0x4e27e0))	/* MAX_FILEPATH, the dir of the file or [Model] TexturePath */
-#define g_SharedTexturesPath GAME_GLOBAL_IN(const char *, GVar_SharedTexuresPath, 16, 0x4e1f50)	/* gvar SharedTexuresPath, for "$name" maps */
-#define g_OptimizeNodes GAME_GLOBAL_IN(int, GVar_OptimizeNodes, 16, 0x4e1f08)	/* gvar: 1 delete unused nodes, 2 collapse to bip nodes, 4 AniMask */
-#define g_UseWSM GAME_GLOBAL_IN(int, g_UseWSMVar, 16, 0x4e1f80)		/* gvar UseWSM */
-#define g_UseTextures GAME_GLOBAL(int, g_UseTextures, 0x431bcc)		/* video UsarTexturas: without, maps of b8 1 become colors */
+#define g_M3DTexturePath (GAME_ARRAY(char, g_M3DTexturePath))	/* MAX_FILEPATH, the dir of the file or [Model] TexturePath */
+#define g_SharedTexturesPath GAME_GLOBAL_IN(const char *, GVar_SharedTexuresPath, 16)	/* gvar SharedTexuresPath, for "$name" maps */
+#define g_OptimizeNodes GAME_GLOBAL_IN(int, GVar_OptimizeNodes, 16)	/* gvar: 1 delete unused nodes, 2 collapse to bip nodes, 4 AniMask */
+#define g_UseWSM GAME_GLOBAL_IN(int, g_UseWSMVar, 16)		/* gvar UseWSM */
+#define g_UseTextures GAME_GLOBAL(int, g_UseTextures)		/* video UsarTexturas: without, maps of b8 1 become colors */
 
 /* an animation table of the file: one value a frame (CTable of int or float) */
 typedef struct M3DTable {
@@ -129,7 +129,7 @@ typedef struct M3DNode {
 SD_OFFSET(M3DNode, AnimNode, 0x100);
 SD_OFFSET(M3DNode, track, 0x10c);
 SD_SIZE(M3DNode, 0x2ec);
-#define g_M3DNodes GAME_GLOBAL(M3DNode *, g_M3DNodes, 0x4e27dc)	/* new[] of the objects */
+#define g_M3DNodes GAME_GLOBAL(M3DNode *, g_M3DNodes)	/* new[] of the objects */
 
 /* text: the line must start with the label (or just the next line without labels); binary: the stored label must
  * be name */
@@ -183,7 +183,7 @@ byte Node_ParamInt(const char *name, const char *key, int *out);
 void Node_ClearName(char *name);
 /* map mapid of the material used by the switches of the ini of the model and the video (MAT_SHADER: all) */
 byte M3D_ActiveMap(const CMaterial *mat, int mapid);
-/* the constructors and destructors of the reader data (rva 0x2bba90..0x2bc2a0); M3DTable is freed by Table_Free */
+/* the constructors and destructors of the reader data; M3DTable is freed by Table_Free */
 M3DTable *__fastcall M3DTable_ctor(M3DTable *self);
 char **__fastcall String_ctor(char **self);
 M3DTrack *__fastcall M3DTrack_ctor(M3DTrack *self);

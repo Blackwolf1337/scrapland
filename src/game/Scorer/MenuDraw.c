@@ -183,9 +183,9 @@ static int Menu_FadeStep(cScorer *sc) {
 	return step < 1 ? 1 : step;
 }
 
-#define g_MetroRing GAME_GLOBAL(float, g_MetroRing, 0x462370)	/* 0..1, the phase of the rings */
-#define g_FadeOutFinalAcc GAME_GLOBAL(float, g_FadeOutFinalAcc, 0x462374)
-#define g_FadeOutFinalTime GAME_GLOBAL_IN(float, GVar_FadeOutFinalTime, 16, 0x462398)	/* the time of ScorerSpriteFadeOutFinal */
+#define g_MetroRing GAME_GLOBAL(float, g_MetroRing)	/* 0..1, the phase of the rings */
+#define g_FadeOutFinalAcc GAME_GLOBAL(float, g_FadeOutFinalAcc)
+#define g_FadeOutFinalTime GAME_GLOBAL_IN(float, GVar_FadeOutFinalTime, 16)	/* the time of ScorerSpriteFadeOutFinal */
 
 /* the four rings name0..name3 (the last letter of the name replaced) growing and fading around the player mark */
 void Scorer_MetroUsrHere(cAbstractFile *params) {

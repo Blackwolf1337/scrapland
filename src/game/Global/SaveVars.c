@@ -22,13 +22,13 @@ SD_SIZE(cSaveGameInfo, 0x48);
 #define SAVE_MAGIC "Scrapland savegame"
 #define SAVE_SLOTS 7
 
-#define g_SaveVarTable (&GAME_GLOBAL(HashTable, g_SaveVarTable, 0x428aac))	/* of cPtrItem, 457 slots */
-#define g_SaveVars GAME_GLOBAL(cSaveVar *, g_SaveVars, 0x44bb88)
-#define g_SaveVarCount GAME_GLOBAL(int, g_SaveVarCount, 0x44bbec)
-#define g_SaveDesc (GAME_ARRAY_IN(cString, GVar_LastSaveGameName, 16, 0x44bbc0))	/* the description of the save loaded last */
+#define g_SaveVarTable (&GAME_GLOBAL(HashTable, g_SaveVarTable))	/* of cPtrItem, 457 slots */
+#define g_SaveVars GAME_GLOBAL(cSaveVar *, g_SaveVars)
+#define g_SaveVarCount GAME_GLOBAL(int, g_SaveVarCount)
+#define g_SaveDesc (GAME_ARRAY_IN(cString, GVar_LastSaveGameName, 16))	/* the description of the save loaded last */
 /* called when the number of finished crazy deals changes: one deal, and all three (with g_SuperDealAvaliable) */
-#define g_OnCrazyDeal (GAME_ARRAY_IN(cPy_Function, GVar_OnCrazyDealTarget, 16, 0x44bbd8))
-#define g_OnAllCrazyDeals (GAME_ARRAY_IN(cPy_Function, GVar_OnCrazyDealFinished, 16, 0x44bb9c))
+#define g_OnCrazyDeal (GAME_ARRAY_IN(cPy_Function, GVar_OnCrazyDealTarget, 16))
+#define g_OnAllCrazyDeals (GAME_ARRAY_IN(cPy_Function, GVar_OnCrazyDealFinished, 16))
 
 cSaveVar *__thiscall cSaveVar_ctor(cSaveVar *self, const char *name, const char *value) {
 	cString_ctor(&self->name);

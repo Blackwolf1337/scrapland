@@ -1749,17 +1749,17 @@ void cWorld_Destroy(void);
 void crt_purecall(void);
 
 /* .?AVcActClass@@ */
-void (*const cActClass_vftable[1])(void) SD_AT(0x3a3224) = {
+void (*const cActClass_vftable[1])(void) = {
 	cActClass_Delete,	/* 0x00 0x05fdb0 */
 };
 
 /* .?AVcActClassList@@ */
-void (*const cActClassList_vftable[1])(void) SD_AT(0x3a3734) = {
+void (*const cActClassList_vftable[1])(void) = {
 	cActClassList_Delete,	/* 0x00 0x061cc0 */
 };
 
 /* .?AVcActCtrl@@ */
-void (*const cActCtrl_vftable[5])(void) SD_AT(0x3a38a0) = {
+void (*const cActCtrl_vftable[5])(void) = {
 	cActCtrl_Delete,	/* 0x00 0x062780 */
 	cActCtrl_VarI,	/* 0x04 0x062ca0 */
 	cActCtrl_VarF,	/* 0x08 0x062c30 */
@@ -1768,12 +1768,12 @@ void (*const cActCtrl_vftable[5])(void) SD_AT(0x3a38a0) = {
 };
 
 /* .?AVcActionMove@@ */
-void (*const cActionMove_vftable[1])(void) SD_AT(0x3a3a74) = {
+void (*const cActionMove_vftable[1])(void) = {
 	cAction_Delete,	/* 0x00 0x0640e0 */
 };
 
 /* .?AVcAI@@ */
-void (*const cAI_vftable[14])(void) SD_AT(0x3a3f18) = {
+void (*const cAI_vftable[14])(void) = {
 	cAI_Delete,	/* 0x00 0x065ce0 */
 	cAI_Update,	/* 0x04 0x065d20 */
 	cAI_UpdateOff,	/* 0x08 0x065d70 */
@@ -1791,7 +1791,7 @@ void (*const cAI_vftable[14])(void) SD_AT(0x3a3f18) = {
 };
 
 /* .?AVcAIBankDirector@@ */
-void (*const cAIBankDirector_vftable[99])(void) SD_AT(0x3a40a8) = {
+void (*const cAIBankDirector_vftable[99])(void) = {
 	cAIBankDirector_Delete,	/* 0x00 0x0661f0 */
 	cAIChar_Update,	/* 0x04 0x0696c0 */
 	cAIChar_UpdateOff,	/* 0x08 0x0697a0 */
@@ -1894,7 +1894,7 @@ void (*const cAIBankDirector_vftable[99])(void) SD_AT(0x3a40a8) = {
 };
 
 /* .?AVcAIBankMaster@@ */
-void (*const cAIBankMaster_vftable[99])(void) SD_AT(0x3a42b8) = {
+void (*const cAIBankMaster_vftable[99])(void) = {
 	cAIBankMaster_Delete,	/* 0x00 0x066630 */
 	cAIChar_Update,	/* 0x04 0x0696c0 */
 	cAIChar_UpdateOff,	/* 0x08 0x0697a0 */
@@ -1997,7 +1997,7 @@ void (*const cAIBankMaster_vftable[99])(void) SD_AT(0x3a42b8) = {
 };
 
 /* .?AVcAIBishop@@ */
-void (*const cAIBishop_vftable[99])(void) SD_AT(0x3a452c) = {
+void (*const cAIBishop_vftable[99])(void) = {
 	cAIBishop_Delete,	/* 0x00 0x066aa0 */
 	cAIChar_Update,	/* 0x04 0x0696c0 */
 	cAIChar_UpdateOff,	/* 0x08 0x0697a0 */
@@ -2100,7 +2100,7 @@ void (*const cAIBishop_vftable[99])(void) SD_AT(0x3a452c) = {
 };
 
 /* .?AVcAIChar@@ */
-void (*const cAIChar_vftable[99])(void) SD_AT(0x3a49b4) = {
+void (*const cAIChar_vftable[99])(void) = {
 	cAIChar_Delete,	/* 0x00 0x0673d0 */
 	cAIChar_Update,	/* 0x04 0x0696c0 */
 	cAIChar_UpdateOff,	/* 0x08 0x0697a0 */
@@ -2203,7 +2203,7 @@ void (*const cAIChar_vftable[99])(void) SD_AT(0x3a49b4) = {
 };
 
 /* .?AVcAICharControl@@ */
-void (*const cAICharControl_vftable[100])(void) SD_AT(0x3a572c) = {
+void (*const cAICharControl_vftable[100])(void) = {
 	cAICharControl_Delete,	/* 0x00 0x06d6f0 */
 	cAICharControl_Draw,	/* 0x04 0x070330 */
 	cAICharControl_GetWalkDir,	/* 0x08 0x070ba0 */
@@ -2307,7 +2307,7 @@ void (*const cAICharControl_vftable[100])(void) SD_AT(0x3a572c) = {
 };
 
 /* .?AVcAICharControl2D@@ */
-void (*const cAICharControl2D_vftable[103])(void) SD_AT(0x3a5acc) = {
+void (*const cAICharControl2D_vftable[103])(void) = {
 	cAICharControl2D_Delete,	/* 0x00 0x0731c0 */
 	cAICharControl2D_Draw,	/* 0x04 0x078020 */
 	cAICharControl_GetWalkDir,	/* 0x08 0x070ba0 */
@@ -2414,7 +2414,7 @@ void (*const cAICharControl2D_vftable[103])(void) SD_AT(0x3a5acc) = {
 };
 
 /* .?AVcAICharControl3D@@ */
-void (*const cAICharControl3D_vftable[101])(void) SD_AT(0x3a5d18) = {
+void (*const cAICharControl3D_vftable[101])(void) = {
 	cAICharControl3D_Delete,	/* 0x00 0x079d50 */
 	cAICharControl3D_Draw,	/* 0x04 0x07e620 */
 	cAICharControl_GetWalkDir,	/* 0x08 0x070ba0 */
@@ -2519,7 +2519,7 @@ void (*const cAICharControl3D_vftable[101])(void) SD_AT(0x3a5d18) = {
 };
 
 /* .?AVcAICharGroup@@ */
-void (*const cAICharGroup_vftable[9])(void) SD_AT(0x3a5f24) = {
+void (*const cAICharGroup_vftable[9])(void) = {
 	cAICharGroup_Delete,	/* 0x00 0x080a60 */
 	cAIEntityGroup_Clear,	/* 0x04 0x084750 */
 	cAIEntityGroup_Add,	/* 0x08 0x084690 */
@@ -2532,7 +2532,7 @@ void (*const cAICharGroup_vftable[9])(void) SD_AT(0x3a5f24) = {
 };
 
 /* .?AVcAIControlBankDirector@@ */
-void (*const cAIControlBankDirector_vftable[103])(void) SD_AT(0x3a6000) = {
+void (*const cAIControlBankDirector_vftable[103])(void) = {
 	cAIControlBankDirector_Delete,	/* 0x00 0x081b30 */
 	cAICharControl2D_Draw,	/* 0x04 0x078020 */
 	cAICharControl_GetWalkDir,	/* 0x08 0x070ba0 */
@@ -2639,7 +2639,7 @@ void (*const cAIControlBankDirector_vftable[103])(void) SD_AT(0x3a6000) = {
 };
 
 /* .?AVcAIControlBankMaster@@ */
-void (*const cAIControlBankMaster_vftable[103])(void) SD_AT(0x3a61a0) = {
+void (*const cAIControlBankMaster_vftable[103])(void) = {
 	cAIControlBankMaster_Delete,	/* 0x00 0x081e80 */
 	cAICharControl2D_Draw,	/* 0x04 0x078020 */
 	cAICharControl_GetWalkDir,	/* 0x08 0x070ba0 */
@@ -2746,7 +2746,7 @@ void (*const cAIControlBankMaster_vftable[103])(void) SD_AT(0x3a61a0) = {
 };
 
 /* .?AVcAIControlBishop@@ */
-void (*const cAIControlBishop_vftable[103])(void) SD_AT(0x3a63b0) = {
+void (*const cAIControlBishop_vftable[103])(void) = {
 	cAIControlBishop_Delete,	/* 0x00 0x0826c0 */
 	cAICharControl2D_Draw,	/* 0x04 0x078020 */
 	cAICharControl_GetWalkDir,	/* 0x08 0x070ba0 */
@@ -2853,7 +2853,7 @@ void (*const cAIControlBishop_vftable[103])(void) SD_AT(0x3a63b0) = {
 };
 
 /* .?AVcAIControlGear@@ */
-void (*const cAIControlGear_vftable[103])(void) SD_AT(0x3a65a8) = {
+void (*const cAIControlGear_vftable[103])(void) = {
 	cAIControlGear_Delete,	/* 0x00 0x082f90 */
 	cAICharControl2D_Draw,	/* 0x04 0x078020 */
 	cAICharControl_GetWalkDir,	/* 0x08 0x070ba0 */
@@ -2960,7 +2960,7 @@ void (*const cAIControlGear_vftable[103])(void) SD_AT(0x3a65a8) = {
 };
 
 /* .?AVcAIControlMessenger@@ */
-void (*const cAIControlMessenger_vftable[101])(void) SD_AT(0x3a67d0) = {
+void (*const cAIControlMessenger_vftable[101])(void) = {
 	cAIControlMessenger_Delete,	/* 0x00 0x083ab0 */
 	cAICharControl3D_Draw,	/* 0x04 0x07e620 */
 	cAICharControl_GetWalkDir,	/* 0x08 0x070ba0 */
@@ -3065,7 +3065,7 @@ void (*const cAIControlMessenger_vftable[101])(void) SD_AT(0x3a67d0) = {
 };
 
 /* .?AVcAIControlNurse@@ */
-void (*const cAIControlNurse_vftable[101])(void) SD_AT(0x3a6968) = {
+void (*const cAIControlNurse_vftable[101])(void) = {
 	cAIControlNurse_Delete,	/* 0x00 0x083c50 */
 	cAICharControl3D_Draw,	/* 0x04 0x07e620 */
 	cAICharControl_GetWalkDir,	/* 0x08 0x070ba0 */
@@ -3170,7 +3170,7 @@ void (*const cAIControlNurse_vftable[101])(void) SD_AT(0x3a6968) = {
 };
 
 /* .?AVcAIControlSentinel@@ */
-void (*const cAIControlSentinel_vftable[101])(void) SD_AT(0x3a6b7c) = {
+void (*const cAIControlSentinel_vftable[101])(void) = {
 	cAIControlSentinel_Delete,	/* 0x00 0x083e40 */
 	cAICharControl3D_Draw,	/* 0x04 0x07e620 */
 	cAICharControl_GetWalkDir,	/* 0x08 0x070ba0 */
@@ -3275,7 +3275,7 @@ void (*const cAIControlSentinel_vftable[101])(void) SD_AT(0x3a6b7c) = {
 };
 
 /* .?AVcAIDesktop@@ */
-void (*const cAIDesktop_vftable[99])(void) SD_AT(0x3a6d14) = {
+void (*const cAIDesktop_vftable[99])(void) = {
 	cAIDesktop_Delete,	/* 0x00 0x084350 */
 	cAIChar_Update,	/* 0x04 0x0696c0 */
 	cAIChar_UpdateOff,	/* 0x08 0x0697a0 */
@@ -3378,7 +3378,7 @@ void (*const cAIDesktop_vftable[99])(void) SD_AT(0x3a6d14) = {
 };
 
 /* .?AVcAIEntityGroup@@ */
-void (*const cAIEntityGroup_vftable[9])(void) SD_AT(0x3a6f18) = {
+void (*const cAIEntityGroup_vftable[9])(void) = {
 	cAIEntityGroup_Delete,	/* 0x00 0x084660 */
 	cAIEntityGroup_Clear,	/* 0x04 0x084750 */
 	cAIEntityGroup_Add,	/* 0x08 0x084690 */
@@ -3391,7 +3391,7 @@ void (*const cAIEntityGroup_vftable[9])(void) SD_AT(0x3a6f18) = {
 };
 
 /* .?AVcAIGear@@ */
-void (*const cAIGear_vftable[99])(void) SD_AT(0x3a6fdc) = {
+void (*const cAIGear_vftable[99])(void) = {
 	cAIGear_Delete,	/* 0x00 0x084870 */
 	cAIChar_Update,	/* 0x04 0x0696c0 */
 	cAIChar_UpdateOff,	/* 0x08 0x0697a0 */
@@ -3494,7 +3494,7 @@ void (*const cAIGear_vftable[99])(void) SD_AT(0x3a6fdc) = {
 };
 
 /* .?AVcAIHuman@@ */
-void (*const cAIHuman_vftable[99])(void) SD_AT(0x3a7180) = {
+void (*const cAIHuman_vftable[99])(void) = {
 	cAIHuman_Delete,	/* 0x00 0x084d90 */
 	cAIChar_Update,	/* 0x04 0x0696c0 */
 	cAIChar_UpdateOff,	/* 0x08 0x0697a0 */
@@ -3597,7 +3597,7 @@ void (*const cAIHuman_vftable[99])(void) SD_AT(0x3a7180) = {
 };
 
 /* .?AVcAIMayor@@ */
-void (*const cAIMayor_vftable[99])(void) SD_AT(0x3a7310) = {
+void (*const cAIMayor_vftable[99])(void) = {
 	cAIMayor_Delete,	/* 0x00 0x084e30 */
 	cAIChar_Update,	/* 0x04 0x0696c0 */
 	cAIChar_UpdateOff,	/* 0x08 0x0697a0 */
@@ -3700,7 +3700,7 @@ void (*const cAIMayor_vftable[99])(void) SD_AT(0x3a7310) = {
 };
 
 /* .?AVcAIMessenger@@ */
-void (*const cAIMessenger_vftable[99])(void) SD_AT(0x3a7580) = {
+void (*const cAIMessenger_vftable[99])(void) = {
 	cAIMessenger_Delete,	/* 0x00 0x085050 */
 	cAIChar_Update,	/* 0x04 0x0696c0 */
 	cAIChar_UpdateOff,	/* 0x08 0x0697a0 */
@@ -3803,7 +3803,7 @@ void (*const cAIMessenger_vftable[99])(void) SD_AT(0x3a7580) = {
 };
 
 /* .?AVcAIMove@@ */
-void (*const cAIMove_vftable[25])(void) SD_AT(0x3a7754) = {
+void (*const cAIMove_vftable[25])(void) = {
 	cAIMove_Delete,	/* 0x00 0x085540 */
 	cAIMove_Update,	/* 0x04 0x0856a0 */
 	cAIMove_UpdateOff,	/* 0x08 0x0856d0 */
@@ -3832,7 +3832,7 @@ void (*const cAIMove_vftable[25])(void) SD_AT(0x3a7754) = {
 };
 
 /* .?AVcAINurse@@ */
-void (*const cAINurse_vftable[99])(void) SD_AT(0x3a7864) = {
+void (*const cAINurse_vftable[99])(void) = {
 	cAINurse_Delete,	/* 0x00 0x085c10 */
 	cAIChar_Update,	/* 0x04 0x0696c0 */
 	cAIChar_UpdateOff,	/* 0x08 0x0697a0 */
@@ -3935,7 +3935,7 @@ void (*const cAINurse_vftable[99])(void) SD_AT(0x3a7864) = {
 };
 
 /* .?AVcAIPolice@@ */
-void (*const cAIPolice_vftable[99])(void) SD_AT(0x3a7a14) = {
+void (*const cAIPolice_vftable[99])(void) = {
 	cAIPolice_Delete,	/* 0x00 0x085f60 */
 	cAIChar_Update,	/* 0x04 0x0696c0 */
 	cAIChar_UpdateOff,	/* 0x08 0x0697a0 */
@@ -4038,7 +4038,7 @@ void (*const cAIPolice_vftable[99])(void) SD_AT(0x3a7a14) = {
 };
 
 /* .?AVcAISentinel@@ */
-void (*const cAISentinel_vftable[99])(void) SD_AT(0x3a7ba8) = {
+void (*const cAISentinel_vftable[99])(void) = {
 	cAISentinel_Delete,	/* 0x00 0x0861d0 */
 	cAIChar_Update,	/* 0x04 0x0696c0 */
 	cAIChar_UpdateOff,	/* 0x08 0x0697a0 */
@@ -4141,7 +4141,7 @@ void (*const cAISentinel_vftable[99])(void) SD_AT(0x3a7ba8) = {
 };
 
 /* .?AVcAIVehicle@@ */
-void (*const cAIVehicle_vftable[25])(void) SD_AT(0x3a8448) = {
+void (*const cAIVehicle_vftable[25])(void) = {
 	cAIVehicle_Delete,	/* 0x00 0x0868b0 */
 	cAIVehicle_Update,	/* 0x04 0x08a010 */
 	cAIVehicle_UpdateOff,	/* 0x08 0x08a0e0 */
@@ -4170,12 +4170,12 @@ void (*const cAIVehicle_vftable[25])(void) SD_AT(0x3a8448) = {
 };
 
 /* .?AVcAIVehicleControl@@ */
-void (*const cAIVehicleControl_vftable[1])(void) SD_AT(0x3a9094) = {
+void (*const cAIVehicleControl_vftable[1])(void) = {
 	cAIVehicleControl_Delete,	/* 0x00 0x090440 */
 };
 
 /* .?AVcAIVehicleGroup@@ */
-void (*const cAIVehicleGroup_vftable[9])(void) SD_AT(0x3a9288) = {
+void (*const cAIVehicleGroup_vftable[9])(void) = {
 	cAIVehicleGroup_Delete,	/* 0x00 0x096ca0 */
 	cAIEntityGroup_Clear,	/* 0x04 0x084750 */
 	cAIEntityGroup_Add,	/* 0x08 0x084690 */
@@ -4188,12 +4188,12 @@ void (*const cAIVehicleGroup_vftable[9])(void) SD_AT(0x3a9288) = {
 };
 
 /* .?AVcAIVehicleShootControl@@ */
-void (*const cAIVehicleShootControl_vftable[1])(void) SD_AT(0x3a9504) = {
+void (*const cAIVehicleShootControl_vftable[1])(void) = {
 	cAIVehicleShoot_Delete,	/* 0x00 0x097190 */
 };
 
 /* .?AVCAStar@@ */
-void (*const CAStar_vftable[19])(void) SD_AT(0x3a9774) = {
+void (*const CAStar_vftable[19])(void) = {
 	CAStar_Delete,	/* 0x00 0x099590 */
 	CAStarSup_Draw,	/* 0x04 0x09af10 */
 	CAStarSup_GetTable,	/* 0x08 0x09b100 */
@@ -4216,7 +4216,7 @@ void (*const CAStar_vftable[19])(void) SD_AT(0x3a9774) = {
 };
 
 /* .?AV?$cBinaryHeap@PAUElemAStar@@@@ */
-void (*const cBinaryHeap_ElemAStar_vftable[12])(void) SD_AT(0x3a97c4) = {
+void (*const cBinaryHeap_ElemAStar_vftable[12])(void) = {
 	cBinaryHeap_Delete,	/* 0x00 0x099520 */
 	cBinaryHeap_Clear,	/* 0x04 0x099810 */
 	cBinaryHeap_Push,	/* 0x08 0x0996a0 */
@@ -4232,7 +4232,7 @@ void (*const cBinaryHeap_ElemAStar_vftable[12])(void) SD_AT(0x3a97c4) = {
 };
 
 /* .?AVCAStar2D@@ */
-void (*const CAStar2D_vftable[19])(void) SD_AT(0x3a99c8) = {
+void (*const CAStar2D_vftable[19])(void) = {
 	CAStar2D_Delete,	/* 0x00 0x09a490 */
 	CAStarSup_Draw,	/* 0x04 0x09af10 */
 	CAStarSup_GetTable,	/* 0x08 0x09b100 */
@@ -4255,7 +4255,7 @@ void (*const CAStar2D_vftable[19])(void) SD_AT(0x3a99c8) = {
 };
 
 /* .?AVCAStarSup@@ */
-void (*const CAStarSup_vftable[19])(void) SD_AT(0x3a9a54) = {
+void (*const CAStarSup_vftable[19])(void) = {
 	CAStarSup_Delete,	/* 0x00 0x09ad20 */
 	CAStarSup_Draw,	/* 0x04 0x09af10 */
 	CAStarSup_GetTable,	/* 0x08 0x09b100 */
@@ -4278,7 +4278,7 @@ void (*const CAStarSup_vftable[19])(void) SD_AT(0x3a9a54) = {
 };
 
 /* .?AVCNodesTraffic@@ */
-void (*const CNodesTraffic_vftable[24])(void) SD_AT(0x3a9c40) = {
+void (*const CNodesTraffic_vftable[24])(void) = {
 	CNodesTraffic_Delete,	/* 0x00 0x09bbf0 */
 	CNodesTraffic_AddVehicle,	/* 0x04 0x0a0620 */
 	CNodesTraffic_RemoveVehicle,	/* 0x08 0x09d280 */
@@ -4306,7 +4306,7 @@ void (*const CNodesTraffic_vftable[24])(void) SD_AT(0x3a9c40) = {
 };
 
 /* .?AV?$cGridElements@UInfoTrafficNode@@@@ */
-void (*const cGridElements_InfoTrafficNode_vftable[11])(void) SD_AT(0x3a9ca4) = {
+void (*const cGridElements_InfoTrafficNode_vftable[11])(void) = {
 	cGridElements_Delete,	/* 0x00 0x09bb90 */
 	cGridElements_Add,	/* 0x04 0x0a0540 */
 	cGridElements_GetCellAt,	/* 0x08 0x09d820 */
@@ -4321,7 +4321,7 @@ void (*const cGridElements_InfoTrafficNode_vftable[11])(void) SD_AT(0x3a9ca4) = 
 };
 
 /* .?AVCNodesTrafficInDoor@@ */
-void (*const CNodesTrafficInDoor_vftable[24])(void) SD_AT(0x3aa784) = {
+void (*const CNodesTrafficInDoor_vftable[24])(void) = {
 	CNodesTrafficInDoor_Delete,	/* 0x00 0x0a0bf0 */
 	CNodesTraffic_AddVehicle,	/* 0x04 0x0a0620 */
 	CNodesTraffic_RemoveVehicle,	/* 0x08 0x09d280 */
@@ -4349,7 +4349,7 @@ void (*const CNodesTrafficInDoor_vftable[24])(void) SD_AT(0x3aa784) = {
 };
 
 /* .?AVCNodesWorld@@ */
-void (*const CNodesWorld_vftable[40])(void) SD_AT(0x3aabb8) = {
+void (*const CNodesWorld_vftable[40])(void) = {
 	CNodesWorld_Delete,	/* 0x00 0x0a2430 */
 	CNodesWorldSup_GetBox,	/* 0x04 0x0b93f0 */
 	CNodesWorldSup_LoadGraph,	/* 0x08 0x0badb0 */
@@ -4393,7 +4393,7 @@ void (*const CNodesWorld_vftable[40])(void) SD_AT(0x3aabb8) = {
 };
 
 /* .?AVCNodesWorld2D@@ */
-void (*const CNodesWorld2D_vftable[40])(void) SD_AT(0x3abce8) = {
+void (*const CNodesWorld2D_vftable[40])(void) = {
 	CNodesWorld2D_Delete,	/* 0x00 0x0ada70 */
 	CNodesWorldSup_GetBox,	/* 0x04 0x0b93f0 */
 	CNodesWorldSup_LoadGraph,	/* 0x08 0x0badb0 */
@@ -4437,7 +4437,7 @@ void (*const CNodesWorld2D_vftable[40])(void) SD_AT(0x3abce8) = {
 };
 
 /* .?AVCNodesWorldSup@@ */
-void (*const CNodesWorldSup_vftable[40])(void) SD_AT(0x3ac264) = {
+void (*const CNodesWorldSup_vftable[40])(void) = {
 	CNodesWorldSup_Delete,	/* 0x00 0x0b89f0 */
 	CNodesWorldSup_GetBox,	/* 0x04 0x0b93f0 */
 	CNodesWorldSup_LoadGraph,	/* 0x08 0x0badb0 */
@@ -4481,7 +4481,7 @@ void (*const CNodesWorldSup_vftable[40])(void) SD_AT(0x3ac264) = {
 };
 
 /* .?AV?$cGridElements@PAUInfPointVis@@@@ */
-void (*const cGridElements_InfPointVis_vftable[11])(void) SD_AT(0x3ac354) = {
+void (*const cGridElements_InfPointVis_vftable[11])(void) = {
 	NWGrid_Delete,	/* 0x00 0x0b8990 */
 	NWGrid_Add,	/* 0x04 0x0b9f10 */
 	cGridElements_GetCellAt,	/* 0x08 0x0b9b20 */
@@ -4496,7 +4496,7 @@ void (*const cGridElements_InfPointVis_vftable[11])(void) SD_AT(0x3ac354) = {
 };
 
 /* .?AVcCamControl@@ */
-void (*const cCamControl_vftable[29])(void) SD_AT(0x3acbdc) = {
+void (*const cCamControl_vftable[29])(void) = {
 	cEntity_Update,	/* 0x00 0x0ef9a0 */
 	cEntity_Render,	/* 0x04 0x0ef760 */
 	cEntity_UpdateOff,	/* 0x08 0x0ef370 */
@@ -4529,7 +4529,7 @@ void (*const cCamControl_vftable[29])(void) SD_AT(0x3acbdc) = {
 };
 
 /* .?AVcCamPathEntity@@ */
-void (*const cCamPathEntity_vftable[29])(void) SD_AT(0x3acc9c) = {
+void (*const cCamPathEntity_vftable[29])(void) = {
 	cCamPathEntity_Update,	/* 0x00 0x0be630 */
 	cEntity_Render,	/* 0x04 0x0ef760 */
 	cEntity_UpdateOff,	/* 0x08 0x0ef370 */
@@ -4562,7 +4562,7 @@ void (*const cCamPathEntity_vftable[29])(void) SD_AT(0x3acc9c) = {
 };
 
 /* .?AVcFollowCamEntity@@ */
-void (*const cFollowCamEntity_vftable[31])(void) SD_AT(0x3acfa0) = {
+void (*const cFollowCamEntity_vftable[31])(void) = {
 	cFollowCamEntity_Update,	/* 0x00 0x0c09c0 */
 	cEntity_Render,	/* 0x04 0x0ef760 */
 	cEntity_UpdateOff,	/* 0x08 0x0ef370 */
@@ -4597,7 +4597,7 @@ void (*const cFollowCamEntity_vftable[31])(void) SD_AT(0x3acfa0) = {
 };
 
 /* .?AVcWalkCharEntity@@ */
-void (*const cWalkCharEntity_vftable[69])(void) SD_AT(0x3b03bc) = {
+void (*const cWalkCharEntity_vftable[69])(void) = {
 	cWalkCharEntity_Update,	/* 0x00 0x0d5550 */
 	cEntity_Render,	/* 0x04 0x0ef760 */
 	cWithLifeEntity_UpdateOff,	/* 0x08 0x12bf10 */
@@ -4670,7 +4670,7 @@ void (*const cWalkCharEntity_vftable[69])(void) SD_AT(0x3b03bc) = {
 };
 
 /* .?AVcEmbeddedFX@@ */
-void (*const cEmbeddedFX_vftable[6])(void) SD_AT(0x3b08a0) = {
+void (*const cEmbeddedFX_vftable[6])(void) = {
 	cEmbeddedFX_Delete,	/* 0x00 0x0d6900 */
 	crt_purecall,	/* 0x04 0x31951a */
 	crt_purecall,	/* 0x08 0x31951a */
@@ -4680,7 +4680,7 @@ void (*const cEmbeddedFX_vftable[6])(void) SD_AT(0x3b08a0) = {
 };
 
 /* .?AVcEmbeddedFXSentinel@@ */
-void (*const cEmbeddedFXSentinel_vftable[6])(void) SD_AT(0x3b09e8) = {
+void (*const cEmbeddedFXSentinel_vftable[6])(void) = {
 	cEmbeddedFXSentinel_Delete,	/* 0x00 0x0d7620 */
 	cEmbeddedFXSentinel_Reset,	/* 0x04 0x0d8490 */
 	cEmbeddedFXSentinel_Release,	/* 0x08 0x0d78e0 */
@@ -4690,7 +4690,7 @@ void (*const cEmbeddedFXSentinel_vftable[6])(void) SD_AT(0x3b09e8) = {
 };
 
 /* .?AVcEmbeddedFXGear@@ */
-void (*const cEmbeddedFXGear_vftable[6])(void) SD_AT(0x3b0a04) = {
+void (*const cEmbeddedFXGear_vftable[6])(void) = {
 	cEmbeddedFXGear_Delete,	/* 0x00 0x0d73e0 */
 	cEmbeddedFXPolice_Reset,	/* 0x04 0x0d8290 */
 	cEmbeddedFXGear_Release,	/* 0x08 0x0d77c0 */
@@ -4700,7 +4700,7 @@ void (*const cEmbeddedFXGear_vftable[6])(void) SD_AT(0x3b0a04) = {
 };
 
 /* .?AVcEmbeddedFXPolice@@ */
-void (*const cEmbeddedFXPolice_vftable[6])(void) SD_AT(0x3b0a20) = {
+void (*const cEmbeddedFXPolice_vftable[6])(void) = {
 	cEmbeddedFXPolice_Delete,	/* 0x00 0x0d7540 */
 	cEmbeddedFXPolice_Reset,	/* 0x04 0x0d83a0 */
 	cEmbeddedFXPolice_Release,	/* 0x08 0x0d7880 */
@@ -4710,7 +4710,7 @@ void (*const cEmbeddedFXPolice_vftable[6])(void) SD_AT(0x3b0a20) = {
 };
 
 /* .?AVcEmbeddedFXBankDirector@@ */
-void (*const cEmbeddedFXBankDirector_vftable[6])(void) SD_AT(0x3b0a3c) = {
+void (*const cEmbeddedFXBankDirector_vftable[6])(void) = {
 	cEmbeddedFXBankDirector_Delete,	/* 0x00 0x0d72d0 */
 	Stub_True,	/* 0x04 0x0d81b0 */
 	cEmbeddedFXBankDirector_Release,	/* 0x08 0x0d76f0 */
@@ -4720,7 +4720,7 @@ void (*const cEmbeddedFXBankDirector_vftable[6])(void) SD_AT(0x3b0a3c) = {
 };
 
 /* .?AVcEmbeddedFXBankMaster@@ */
-void (*const cEmbeddedFXBankMaster_vftable[6])(void) SD_AT(0x3b0a58) = {
+void (*const cEmbeddedFXBankMaster_vftable[6])(void) = {
 	cEmbeddedFXBankMaster_Delete,	/* 0x00 0x0d7310 */
 	Stub_True,	/* 0x04 0x0d81c0 */
 	cEmbeddedFXBankMaster_Release,	/* 0x08 0x0d7700 */
@@ -4730,7 +4730,7 @@ void (*const cEmbeddedFXBankMaster_vftable[6])(void) SD_AT(0x3b0a58) = {
 };
 
 /* .?AVcEmbeddedFXCrazyGambler@@ */
-void (*const cEmbeddedFXCrazyGambler_vftable[6])(void) SD_AT(0x3b0a74) = {
+void (*const cEmbeddedFXCrazyGambler_vftable[6])(void) = {
 	cEmbeddedFXCrazyGambler_Delete,	/* 0x00 0x0d7360 */
 	cEmbeddedFXCrazyGambler_Reset,	/* 0x04 0x0d81d0 */
 	cEmbeddedFXCrazyGambler_Release,	/* 0x08 0x0d7730 */
@@ -4740,7 +4740,7 @@ void (*const cEmbeddedFXCrazyGambler_vftable[6])(void) SD_AT(0x3b0a74) = {
 };
 
 /* .?AVcEmbeddedFXRusty@@ */
-void (*const cEmbeddedFXRusty_vftable[6])(void) SD_AT(0x3b0a90) = {
+void (*const cEmbeddedFXRusty_vftable[6])(void) = {
 	cEmbeddedFXRusty_Delete,	/* 0x00 0x0d7580 */
 	cEmbeddedFXRusty_Reset,	/* 0x04 0x0d8420 */
 	cEmbeddedFXRusty_Release,	/* 0x08 0x0d78a0 */
@@ -4750,7 +4750,7 @@ void (*const cEmbeddedFXRusty_vftable[6])(void) SD_AT(0x3b0a90) = {
 };
 
 /* .?AVcEmbeddedFXMessenger@@ */
-void (*const cEmbeddedFXMessenger_vftable[6])(void) SD_AT(0x3b0aac) = {
+void (*const cEmbeddedFXMessenger_vftable[6])(void) = {
 	cEmbeddedFXMessenger_Delete,	/* 0x00 0x0d74c0 */
 	cEmbeddedFXMessenger_Reset,	/* 0x04 0x0d82f0 */
 	cEmbeddedFXMessenger_Release,	/* 0x08 0x0d7830 */
@@ -4760,7 +4760,7 @@ void (*const cEmbeddedFXMessenger_vftable[6])(void) SD_AT(0x3b0aac) = {
 };
 
 /* .?AVcEmbeddedFXMaintenance@@ */
-void (*const cEmbeddedFXMaintenance_vftable[6])(void) SD_AT(0x3b0ac8) = {
+void (*const cEmbeddedFXMaintenance_vftable[6])(void) = {
 	cEmbeddedFXMaintenance_Delete,	/* 0x00 0x0d7430 */
 	Stub_True,	/* 0x04 0x0d82d0 */
 	cEmbeddedFXMaintenance_Release,	/* 0x08 0x0d77f0 */
@@ -4770,7 +4770,7 @@ void (*const cEmbeddedFXMaintenance_vftable[6])(void) SD_AT(0x3b0ac8) = {
 };
 
 /* .?AVcEmbeddedFXMercenary@@ */
-void (*const cEmbeddedFXMercenary_vftable[6])(void) SD_AT(0x3b0ae4) = {
+void (*const cEmbeddedFXMercenary_vftable[6])(void) = {
 	cEmbeddedFXMercenary_Delete,	/* 0x00 0x0d7470 */
 	cEmbeddedFXMercenary_Reset,	/* 0x04 0x0d82e0 */
 	cEmbeddedFXMercenary_Release,	/* 0x08 0x0d7800 */
@@ -4780,7 +4780,7 @@ void (*const cEmbeddedFXMercenary_vftable[6])(void) SD_AT(0x3b0ae4) = {
 };
 
 /* .?AVcEmbeddedFXHeadCrazyGambler@@ */
-void (*const cEmbeddedFXHeadCrazyGambler_vftable[6])(void) SD_AT(0x3b125c) = {
+void (*const cEmbeddedFXHeadCrazyGambler_vftable[6])(void) = {
 	cEmbeddedFXHeadCrazyGambler_Delete,	/* 0x00 0x0df8f0 */
 	Stub_True,	/* 0x04 0x0dfc10 */
 	cEmbeddedFXHeadCrazyGambler_Release,	/* 0x08 0x0dfa90 */
@@ -4790,7 +4790,7 @@ void (*const cEmbeddedFXHeadCrazyGambler_vftable[6])(void) SD_AT(0x3b125c) = {
 };
 
 /* .?AVcEmbeddedFXDataPack@@ */
-void (*const cEmbeddedFXDataPack_vftable[6])(void) SD_AT(0x3b14b8) = {
+void (*const cEmbeddedFXDataPack_vftable[6])(void) = {
 	cEmbeddedFXDataPack_Delete,	/* 0x00 0x0e0bb0 */
 	cEmbeddedFXDataPack_Reset,	/* 0x04 0x0e25f0 */
 	cEmbeddedFXDataPack_Release,	/* 0x08 0x0e1090 */
@@ -4800,7 +4800,7 @@ void (*const cEmbeddedFXDataPack_vftable[6])(void) SD_AT(0x3b14b8) = {
 };
 
 /* .?AVcEmbeddedFXDataCube@@ */
-void (*const cEmbeddedFXDataCube_vftable[6])(void) SD_AT(0x3b14d4) = {
+void (*const cEmbeddedFXDataCube_vftable[6])(void) = {
 	cEmbeddedFXDataCube_Delete,	/* 0x00 0x0e0b60 */
 	Stub_True,	/* 0x04 0x0e25e0 */
 	cEmbeddedFXDataCube_Release,	/* 0x08 0x0e1060 */
@@ -4810,7 +4810,7 @@ void (*const cEmbeddedFXDataCube_vftable[6])(void) SD_AT(0x3b14d4) = {
 };
 
 /* .?AVcEmbeddedFXCapsule@@ */
-void (*const cEmbeddedFXCapsule_vftable[6])(void) SD_AT(0x3b14f0) = {
+void (*const cEmbeddedFXCapsule_vftable[6])(void) = {
 	cEmbeddedFXCapsule_Delete,	/* 0x00 0x0e0a10 */
 	Stub_True,	/* 0x04 0x0e2580 */
 	cEmbeddedFXCapsule_Release,	/* 0x08 0x0e1000 */
@@ -4820,7 +4820,7 @@ void (*const cEmbeddedFXCapsule_vftable[6])(void) SD_AT(0x3b14f0) = {
 };
 
 /* .?AVcEmbeddedFXMatrix@@ */
-void (*const cEmbeddedFXMatrix_vftable[6])(void) SD_AT(0x3b150c) = {
+void (*const cEmbeddedFXMatrix_vftable[6])(void) = {
 	cEmbeddedFXMatrix_Delete,	/* 0x00 0x0e0ce0 */
 	cEmbeddedFXMatrix_Reset,	/* 0x04 0x0e26a0 */
 	cEmbeddedFXMatrix_Release,	/* 0x08 0x0e1110 */
@@ -4830,7 +4830,7 @@ void (*const cEmbeddedFXMatrix_vftable[6])(void) SD_AT(0x3b150c) = {
 };
 
 /* .?AVcEmbeddedFXAmplifier@@ */
-void (*const cEmbeddedFXAmplifier_vftable[6])(void) SD_AT(0x3b1528) = {
+void (*const cEmbeddedFXAmplifier_vftable[6])(void) = {
 	cEmbeddedFXAmplifier_Delete,	/* 0x00 0x0e08c0 */
 	cEmbeddedFXAmplifier_Reset,	/* 0x04 0x0e2460 */
 	cEmbeddedFXCoin_Release,	/* 0x08 0x0e0f80 */
@@ -4840,7 +4840,7 @@ void (*const cEmbeddedFXAmplifier_vftable[6])(void) SD_AT(0x3b1528) = {
 };
 
 /* .?AVcEmbeddedFXMeetingPoint@@ */
-void (*const cEmbeddedFXMeetingPoint_vftable[6])(void) SD_AT(0x3b1544) = {
+void (*const cEmbeddedFXMeetingPoint_vftable[6])(void) = {
 	cEmbeddedFXMeetingPoint_Delete,	/* 0x00 0x0e0d30 */
 	Stub_True,	/* 0x04 0x0e2710 */
 	cEmbeddedFXCoin_Release,	/* 0x08 0x0e1140 */
@@ -4850,7 +4850,7 @@ void (*const cEmbeddedFXMeetingPoint_vftable[6])(void) SD_AT(0x3b1544) = {
 };
 
 /* .?AVcEmbeddedFXExtraLife@@ */
-void (*const cEmbeddedFXExtraLife_vftable[6])(void) SD_AT(0x3b1560) = {
+void (*const cEmbeddedFXExtraLife_vftable[6])(void) = {
 	cEmbeddedFXExtraLife_Delete,	/* 0x00 0x0e0c10 */
 	cEmbeddedFXExtraLife_Reset,	/* 0x04 0x0e2600 */
 	cEmbeddedFXExtraLife_Release,	/* 0x08 0x0e10d0 */
@@ -4860,7 +4860,7 @@ void (*const cEmbeddedFXExtraLife_vftable[6])(void) SD_AT(0x3b1560) = {
 };
 
 /* .?AVcEmbeddedFXBattery@@ */
-void (*const cEmbeddedFXBattery_vftable[6])(void) SD_AT(0x3b157c) = {
+void (*const cEmbeddedFXBattery_vftable[6])(void) = {
 	cEmbeddedFXBattery_Delete,	/* 0x00 0x0e0910 */
 	cEmbeddedFXBattery_Reset,	/* 0x04 0x0e2490 */
 	cEmbeddedFXBattery_Release,	/* 0x08 0x0e0f90 */
@@ -4870,7 +4870,7 @@ void (*const cEmbeddedFXBattery_vftable[6])(void) SD_AT(0x3b157c) = {
 };
 
 /* .?AVcEmbeddedFXTreasure@@ */
-void (*const cEmbeddedFXTreasure_vftable[6])(void) SD_AT(0x3b1598) = {
+void (*const cEmbeddedFXTreasure_vftable[6])(void) = {
 	cEmbeddedFXTreasure_Delete,	/* 0x00 0x0e0e30 */
 	cEmbeddedFXTreasure_Reset,	/* 0x04 0x0e2760 */
 	cEmbeddedFXTreasure_Release,	/* 0x08 0x0e11c0 */
@@ -4880,7 +4880,7 @@ void (*const cEmbeddedFXTreasure_vftable[6])(void) SD_AT(0x3b1598) = {
 };
 
 /* .?AVcEmbeddedFXFlag@@ */
-void (*const cEmbeddedFXFlag_vftable[6])(void) SD_AT(0x3b15b4) = {
+void (*const cEmbeddedFXFlag_vftable[6])(void) = {
 	cEmbeddedFXFlag_Delete,	/* 0x00 0x0e0c60 */
 	Stub_True,	/* 0x04 0x0e2660 */
 	cEmbeddedFXCoin_Release,	/* 0x08 0x0e10f0 */
@@ -4890,7 +4890,7 @@ void (*const cEmbeddedFXFlag_vftable[6])(void) SD_AT(0x3b15b4) = {
 };
 
 /* .?AVcEmbeddedFXDTritusDesktop@@ */
-void (*const cEmbeddedFXDTritusDesktop_vftable[6])(void) SD_AT(0x3b15d0) = {
+void (*const cEmbeddedFXDTritusDesktop_vftable[6])(void) = {
 	cEmbeddedFXDTritusDesktop_Delete,	/* 0x00 0x0e0b10 */
 	cEmbeddedFXDTritusDesktop_Reset,	/* 0x04 0x0e25b0 */
 	cEmbeddedFXDTritusDesktop_Release,	/* 0x08 0x0e1050 */
@@ -4900,7 +4900,7 @@ void (*const cEmbeddedFXDTritusDesktop_vftable[6])(void) SD_AT(0x3b15d0) = {
 };
 
 /* .?AVcEmbeddedFXMoto@@ */
-void (*const cEmbeddedFXBike_vftable[6])(void) SD_AT(0x3b15ec) = {
+void (*const cEmbeddedFXBike_vftable[6])(void) = {
 	cEmbeddedFXBike_Delete,	/* 0x00 0x0e0d80 */
 	cEmbeddedFXBike_Reset,	/* 0x04 0x0e2720 */
 	cEmbeddedFXBike_Release,	/* 0x08 0x0e1150 */
@@ -4910,7 +4910,7 @@ void (*const cEmbeddedFXBike_vftable[6])(void) SD_AT(0x3b15ec) = {
 };
 
 /* .?AVcEmbeddedFXBossShield@@ */
-void (*const cEmbeddedFXBossShield_vftable[6])(void) SD_AT(0x3b1608) = {
+void (*const cEmbeddedFXBossShield_vftable[6])(void) = {
 	cEmbeddedFXBossShield_Delete,	/* 0x00 0x0e0990 */
 	cEmbeddedFXBossShield_Reset,	/* 0x04 0x0e2510 */
 	cEmbeddedFXBossShield_Release,	/* 0x08 0x0e0fd0 */
@@ -4920,7 +4920,7 @@ void (*const cEmbeddedFXBossShield_vftable[6])(void) SD_AT(0x3b1608) = {
 };
 
 /* .?AVcEmbeddedFXConversor@@ */
-void (*const cEmbeddedFXConversor_vftable[6])(void) SD_AT(0x3b1624) = {
+void (*const cEmbeddedFXConversor_vftable[6])(void) = {
 	cEmbeddedFXConversor_Delete,	/* 0x00 0x0e0ad0 */
 	cEmbeddedFXConversor_Reset,	/* 0x04 0x0e25a0 */
 	cEmbeddedFXCoin_Release,	/* 0x08 0x0e1040 */
@@ -4930,7 +4930,7 @@ void (*const cEmbeddedFXConversor_vftable[6])(void) SD_AT(0x3b1624) = {
 };
 
 /* .?AVcEmbeddedFXCoin@@ */
-void (*const cEmbeddedFXCoin_vftable[6])(void) SD_AT(0x3b1640) = {
+void (*const cEmbeddedFXCoin_vftable[6])(void) = {
 	cEmbeddedFXCoin_Delete,	/* 0x00 0x0e0a90 */
 	cEmbeddedFXCoin_Reset,	/* 0x04 0x0e2590 */
 	cEmbeddedFXCoin_Release,	/* 0x08 0x0e1030 */
@@ -4940,7 +4940,7 @@ void (*const cEmbeddedFXCoin_vftable[6])(void) SD_AT(0x3b1640) = {
 };
 
 /* .?AVcEmbeddedFXItem@@ */
-void (*const cEmbeddedFXItem_vftable[6])(void) SD_AT(0x3b165c) = {
+void (*const cEmbeddedFXItem_vftable[6])(void) = {
 	cEmbeddedFXItem_Delete,	/* 0x00 0x0e0ca0 */
 	cEmbeddedFXItem_Reset,	/* 0x04 0x0e2670 */
 	cEmbeddedFXCoin_Release,	/* 0x08 0x0e1100 */
@@ -4950,7 +4950,7 @@ void (*const cEmbeddedFXItem_vftable[6])(void) SD_AT(0x3b165c) = {
 };
 
 /* .?AVcEmbeddedFXVehicleProbe@@ */
-void (*const cEmbeddedFXVehicleProbe_vftable[6])(void) SD_AT(0x3b21fc) = {
+void (*const cEmbeddedFXVehicleProbe_vftable[6])(void) = {
 	cEmbeddedFXVehicleProbe_Delete,	/* 0x00 0x0eb5a0 */
 	cEmbeddedFXVehicleProbe_Init,	/* 0x04 0x0ed960 */
 	cEmbeddedFXVehicleProbe_Done,	/* 0x08 0x0ed6b0 */
@@ -4960,7 +4960,7 @@ void (*const cEmbeddedFXVehicleProbe_vftable[6])(void) SD_AT(0x3b21fc) = {
 };
 
 /* .?AVcEmbeddedFXVehicleVote@@ */
-void (*const cEmbeddedFXVehicleVote_vftable[6])(void) SD_AT(0x3b2218) = {
+void (*const cEmbeddedFXVehicleVote_vftable[6])(void) = {
 	cEmbeddedFXVehicleVote_Delete,	/* 0x00 0x0eb5d0 */
 	cEmbeddedFXVehicleVote_Init,	/* 0x04 0x0ee020 */
 	cEmbeddedFXVehicleVote_Done,	/* 0x08 0x0ed700 */
@@ -4970,7 +4970,7 @@ void (*const cEmbeddedFXVehicleVote_vftable[6])(void) SD_AT(0x3b2218) = {
 };
 
 /* .?AVcEmbeddedFXVehicle@@ */
-void (*const cEmbeddedFXVehicle_vftable[6])(void) SD_AT(0x3b2234) = {
+void (*const cEmbeddedFXVehicle_vftable[6])(void) = {
 	cEmbeddedFXVehicle_Delete,	/* 0x00 0x0eb570 */
 	cEmbeddedFXVehicle_Init,	/* 0x04 0x0ed7f0 */
 	cEmbeddedFXVehicle_Done,	/* 0x08 0x0ed5f0 */
@@ -4980,7 +4980,7 @@ void (*const cEmbeddedFXVehicle_vftable[6])(void) SD_AT(0x3b2234) = {
 };
 
 /* .?AVcEntity@@ */
-void (*const cEntity_vftable[23])(void) SD_AT(0x3b25f8) = {
+void (*const cEntity_vftable[23])(void) = {
 	cEntity_Update,	/* 0x00 0x0ef9a0 */
 	cEntity_Render,	/* 0x04 0x0ef760 */
 	cEntity_UpdateOff,	/* 0x08 0x0ef370 */
@@ -5007,7 +5007,7 @@ void (*const cEntity_vftable[23])(void) SD_AT(0x3b25f8) = {
 };
 
 /* .?AVcItemEntity@@ */
-void (*const cItemEntity_vftable[47])(void) SD_AT(0x3b294c) = {
+void (*const cItemEntity_vftable[47])(void) = {
 	cItemEntity_Update,	/* 0x00 0x0f1c50 */
 	cEntity_Render,	/* 0x04 0x0ef760 */
 	cObjEntity_UpdateOff,	/* 0x08 0x0fb750 */
@@ -5058,7 +5058,7 @@ void (*const cItemEntity_vftable[47])(void) SD_AT(0x3b294c) = {
 };
 
 /* .?AVcMissileEntity@@ */
-void (*const cMissileEntity_vftable[67])(void) SD_AT(0x3b2b24) = {
+void (*const cMissileEntity_vftable[67])(void) = {
 	cMissileEntity_Update,	/* 0x00 0x0f50a0 */
 	cEntity_Render,	/* 0x04 0x0ef760 */
 	cMissileEntity_UpdateOff,	/* 0x08 0x0f32f0 */
@@ -5129,7 +5129,7 @@ void (*const cMissileEntity_vftable[67])(void) SD_AT(0x3b2b24) = {
 };
 
 /* .?AUcNetController@@ */
-void (*const cNetController_vftable[5])(void) SD_AT(0x3b3664) = {
+void (*const cNetController_vftable[5])(void) = {
 	cNetController_Reset,	/* 0x00 0x0fc600 */
 	cNetController_Read,	/* 0x04 0x0fbb20 */
 	cNetController_Write,	/* 0x08 0x0fbef0 */
@@ -5138,7 +5138,7 @@ void (*const cNetController_vftable[5])(void) SD_AT(0x3b3664) = {
 };
 
 /* .?AVcObjEntity@@ */
-void (*const cObjEntity_vftable[47])(void) SD_AT(0x3b367c) = {
+void (*const cObjEntity_vftable[47])(void) = {
 	cObjEntity_Update,	/* 0x00 0x0fca80 */
 	cEntity_Render,	/* 0x04 0x0ef760 */
 	cObjEntity_UpdateOff,	/* 0x08 0x0fb750 */
@@ -5189,7 +5189,7 @@ void (*const cObjEntity_vftable[47])(void) SD_AT(0x3b367c) = {
 };
 
 /* .?AVcVehicleEntity@@ */
-void (*const cVehicleEntity_vftable[66])(void) SD_AT(0x3b52bc) = {
+void (*const cVehicleEntity_vftable[66])(void) = {
 	cVehicleEntity_Update,	/* 0x00 0x10b1a0 */
 	cEntity_Render,	/* 0x04 0x0ef760 */
 	cVehicleEntity_UpdateOff,	/* 0x08 0x1085d0 */
@@ -5259,7 +5259,7 @@ void (*const cVehicleEntity_vftable[66])(void) SD_AT(0x3b52bc) = {
 };
 
 /* .?AVcVehicleMotors@@ */
-void (*const cVehicleMotors_vftable[4])(void) SD_AT(0x3b56f8) = {
+void (*const cVehicleMotors_vftable[4])(void) = {
 	cVehicleMotors_VarI,	/* 0x00 0x10d020 */
 	cVehicleMotors_VarF,	/* 0x04 0x10cc30 */
 	cVehicleMotors_VarS,	/* 0x08 0x10dae0 */
@@ -5267,7 +5267,7 @@ void (*const cVehicleMotors_vftable[4])(void) SD_AT(0x3b56f8) = {
 };
 
 /* .?AUcNetVController@@ */
-void (*const cNetVController_vftable[5])(void) SD_AT(0x3b61b8) = {
+void (*const cNetVController_vftable[5])(void) = {
 	cNetVController_Reset,	/* 0x00 0x119840 */
 	cNetVController_Read,	/* 0x04 0x118720 */
 	cNetVController_Write,	/* 0x08 0x118f20 */
@@ -5276,12 +5276,12 @@ void (*const cNetVController_vftable[5])(void) SD_AT(0x3b61b8) = {
 };
 
 /* .?AVcWeaponManager@@ */
-void (*const cWeaponManager_vftable[1])(void) SD_AT(0x3b664c) = {
+void (*const cWeaponManager_vftable[1])(void) = {
 	cWeaponManager_Delete,	/* 0x00 0x11a010 */
 };
 
 /* .?AVcWithLifeEntity@@ */
-void (*const cWithLifeEntity_vftable[56])(void) SD_AT(0x3ba27c) = {
+void (*const cWithLifeEntity_vftable[56])(void) = {
 	cWithLifeEntity_Update,	/* 0x00 0x12c8d0 */
 	cEntity_Render,	/* 0x04 0x0ef760 */
 	cWithLifeEntity_UpdateOff,	/* 0x08 0x12bf10 */
@@ -5341,7 +5341,7 @@ void (*const cWithLifeEntity_vftable[56])(void) SD_AT(0x3ba27c) = {
 };
 
 /* .?AVcAbstractFile@@ */
-void (*const cAbstractFile_vftable[9])(void) SD_AT(0x3ba488) = {
+void (*const cAbstractFile_vftable[9])(void) = {
 	cAbstractFile_Open,	/* 0x00 0x12d030 */
 	crt_purecall,	/* 0x04 0x31951a */
 	cAbstractFile_Close,	/* 0x08 0x12d000 */
@@ -5354,7 +5354,7 @@ void (*const cAbstractFile_vftable[9])(void) SD_AT(0x3ba488) = {
 };
 
 /* .?AVcFile@@ */
-void (*const cFile_vftable[9])(void) SD_AT(0x3ba51c) = {
+void (*const cFile_vftable[9])(void) = {
 	cFile_Open,	/* 0x00 0x12d3a0 */
 	cFile_Exists,	/* 0x04 0x12d350 */
 	cFile_Close,	/* 0x08 0x12d300 */
@@ -5367,7 +5367,7 @@ void (*const cFile_vftable[9])(void) SD_AT(0x3ba51c) = {
 };
 
 /* .?AVcFileMem@@ */
-void (*const cFileMem_vftable[9])(void) SD_AT(0x3ba6d8) = {
+void (*const cFileMem_vftable[9])(void) = {
 	cFileMem_Open,	/* 0x00 0x12e1b0 */
 	cFileMem_Exists,	/* 0x04 0x12e190 */
 	cFileMem_Close,	/* 0x08 0x12e180 */
@@ -5380,7 +5380,7 @@ void (*const cFileMem_vftable[9])(void) SD_AT(0x3ba6d8) = {
 };
 
 /* .?AVcFile2@@ */
-void (*const cFile2_vftable[9])(void) SD_AT(0x3ba868) = {
+void (*const cFile2_vftable[9])(void) = {
 	cFile2_Open,	/* 0x00 0x12e310 */
 	cFile_Exists,	/* 0x04 0x12d350 */
 	cFile_Close,	/* 0x08 0x12d300 */
@@ -5393,7 +5393,7 @@ void (*const cFile2_vftable[9])(void) SD_AT(0x3ba868) = {
 };
 
 /* .?AVcFilePack@@ */
-void (*const cFilePack_vftable[9])(void) SD_AT(0x3ba890) = {
+void (*const cFilePack_vftable[9])(void) = {
 	cFilePack_Open,	/* 0x00 0x1307f0 */
 	cFilePack_Exists,	/* 0x04 0x12fb30 */
 	cFilePack_Close,	/* 0x08 0x12f940 */
@@ -5406,29 +5406,29 @@ void (*const cFilePack_vftable[9])(void) SD_AT(0x3ba890) = {
 };
 
 /* .?AVcSlotController@@ */
-void (*const cSlotController_vftable[1])(void) SD_AT(0x3bbaac) = {
+void (*const cSlotController_vftable[1])(void) = {
 	cSlotController_Next,	/* 0x00 0x136160 */
 };
 
 /* .?AVcRndSlotController@@ */
-void (*const cRndSlotController_vftable[1])(void) SD_AT(0x3bbab4) = {
+void (*const cRndSlotController_vftable[1])(void) = {
 	cRndSlotController_Next,	/* 0x00 0x1360f0 */
 };
 
 /* .?AVcFuncGvar@@ */
-void (*const cFuncGvar_vftable[2])(void) SD_AT(0x3bc2c8) = {
+void (*const cFuncGvar_vftable[2])(void) = {
 	crt_purecall,	/* 0x00 0x31951a */
 	crt_purecall,	/* 0x04 0x31951a */
 };
 
 /* .?AVcFuncGvarDevices@@ */
-void (*const cFuncGvarDevices_vftable[2])(void) SD_AT(0x3bc2d4) = {
+void (*const cFuncGvarDevices_vftable[2])(void) = {
 	cFuncGvarDevices_Save,	/* 0x00 0x13c090 */
 	cFuncGvarDevices_Load,	/* 0x04 0x13bca0 */
 };
 
 /* .?AVcAbstractIDevice@@ */
-void (*const cAbstractIDevice_vftable[9])(void) SD_AT(0x3bc2e0) = {
+void (*const cAbstractIDevice_vftable[9])(void) = {
 	cAbstractIDevice_Delete,	/* 0x00 0x13aa90 */
 	crt_purecall,	/* 0x04 0x31951a */
 	crt_purecall,	/* 0x08 0x31951a */
@@ -5441,7 +5441,7 @@ void (*const cAbstractIDevice_vftable[9])(void) SD_AT(0x3bc2e0) = {
 };
 
 /* .?AVcPcKeyboard@@ */
-void (*const cPcKeyboard_vftable[9])(void) SD_AT(0x3bc50c) = {
+void (*const cPcKeyboard_vftable[9])(void) = {
 	cPcKeyboard_Delete,	/* 0x00 0x13c7f0 */
 	cPcKeyboard_SetDefaults,	/* 0x04 0x13d2c0 */
 	cPcKeyboard_SetGameDefaults,	/* 0x08 0x13d5e0 */
@@ -5454,7 +5454,7 @@ void (*const cPcKeyboard_vftable[9])(void) SD_AT(0x3bc50c) = {
 };
 
 /* .?AVcPcMouse@@ */
-void (*const cPcMouse_vftable[9])(void) SD_AT(0x3bca20) = {
+void (*const cPcMouse_vftable[9])(void) = {
 	cPcMouse_Delete,	/* 0x00 0x13db50 */
 	cPcMouse_SetDefaults,	/* 0x04 0x13de80 */
 	cPcMouse_SetGameDefaults,	/* 0x08 0x13e210 */
@@ -5467,7 +5467,7 @@ void (*const cPcMouse_vftable[9])(void) SD_AT(0x3bca20) = {
 };
 
 /* .?AVcPcPad@@ */
-void (*const cPcPad_vftable[9])(void) SD_AT(0x3bcba4) = {
+void (*const cPcPad_vftable[9])(void) = {
 	cPcPad_Delete,	/* 0x00 0x13e4a0 */
 	cPcPad_SetDefaults,	/* 0x04 0x13efe0 */
 	cPcPad_SetGameDefaults,	/* 0x08 0x13fa70 */
@@ -5480,7 +5480,7 @@ void (*const cPcPad_vftable[9])(void) SD_AT(0x3bcba4) = {
 };
 
 /* .?AVcBankDirectorLocalLogic@@ */
-void (*const cBankDirectorLocalLogic_vftable[36])(void) SD_AT(0x3bcf2c) = {
+void (*const cBankDirectorLocalLogic_vftable[36])(void) = {
 	cBankDirectorLocalLogic_Delete,	/* 0x00 0x140210 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -5520,7 +5520,7 @@ void (*const cBankDirectorLocalLogic_vftable[36])(void) SD_AT(0x3bcf2c) = {
 };
 
 /* .?AVcBankMasterLocalLogic@@ */
-void (*const cBankMasterLocalLogic_vftable[36])(void) SD_AT(0x3bcfc0) = {
+void (*const cBankMasterLocalLogic_vftable[36])(void) = {
 	cBankMasterLocalLogic_Delete,	/* 0x00 0x140670 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -5560,7 +5560,7 @@ void (*const cBankMasterLocalLogic_vftable[36])(void) SD_AT(0x3bcfc0) = {
 };
 
 /* .?AVcLocalLogic@@ */
-void (*const cLocalLogic_vftable[7])(void) SD_AT(0x3bd340) = {
+void (*const cLocalLogic_vftable[7])(void) = {
 	cLocalLogic_Delete,	/* 0x00 0x140d50 */
 	cLocalLogic_GetName,	/* 0x04 0x141b40 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -5571,7 +5571,7 @@ void (*const cLocalLogic_vftable[7])(void) SD_AT(0x3bd340) = {
 };
 
 /* .?AVcBaseLocalLogic@@ */
-void (*const cBaseLocalLogic_vftable[25])(void) SD_AT(0x3bd360) = {
+void (*const cBaseLocalLogic_vftable[25])(void) = {
 	cBaseLocalLogic_Delete,	/* 0x00 0x140cc0 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -5600,7 +5600,7 @@ void (*const cBaseLocalLogic_vftable[25])(void) SD_AT(0x3bd360) = {
 };
 
 /* .?AVcBertoLocalLogic@@ */
-void (*const cBertoLocalLogic_vftable[45])(void) SD_AT(0x3bd578) = {
+void (*const cBertoLocalLogic_vftable[45])(void) = {
 	cBertoLocalLogic_Delete,	/* 0x00 0x1426d0 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	cFunctionaryLocalLogic_Vf02,	/* 0x08 0x148070 */
@@ -5649,7 +5649,7 @@ void (*const cBertoLocalLogic_vftable[45])(void) SD_AT(0x3bd578) = {
 };
 
 /* .?AVcBettyLocalLogic@@ */
-void (*const cBettyLocalLogic_vftable[42])(void) SD_AT(0x3bd680) = {
+void (*const cBettyLocalLogic_vftable[42])(void) = {
 	cBettyLocalLogic_Delete,	/* 0x00 0x142990 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	cFunctionaryLocalLogic_Vf02,	/* 0x08 0x148070 */
@@ -5695,7 +5695,7 @@ void (*const cBettyLocalLogic_vftable[42])(void) SD_AT(0x3bd680) = {
 };
 
 /* .?AVcBishopLocalLogic@@ */
-void (*const cBishopLocalLogic_vftable[36])(void) SD_AT(0x3bd7e4) = {
+void (*const cBishopLocalLogic_vftable[36])(void) = {
 	cBishopLocalLogic_Delete,	/* 0x00 0x142bd0 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -5735,7 +5735,7 @@ void (*const cBishopLocalLogic_vftable[36])(void) SD_AT(0x3bd7e4) = {
 };
 
 /* .?AVcBossLocalLogic@@ */
-void (*const cBossLocalLogic_vftable[36])(void) SD_AT(0x3bd8f8) = {
+void (*const cBossLocalLogic_vftable[36])(void) = {
 	cBossLocalLogic_Delete,	/* 0x00 0x142fc0 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -5775,7 +5775,7 @@ void (*const cBossLocalLogic_vftable[36])(void) SD_AT(0x3bd8f8) = {
 };
 
 /* .?AVcCrazyDealerLocalLogic@@ */
-void (*const cCrazyDealerLocalLogic_vftable[36])(void) SD_AT(0x3bda0c) = {
+void (*const cCrazyDealerLocalLogic_vftable[36])(void) = {
 	cCrazyDealerLocalLogic_Delete,	/* 0x00 0x143410 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -5815,7 +5815,7 @@ void (*const cCrazyDealerLocalLogic_vftable[36])(void) SD_AT(0x3bda0c) = {
 };
 
 /* .?AVcCTFEnemiesLocalLogic@@ */
-void (*const cCTFEnemiesLocalLogic_vftable[7])(void) SD_AT(0x3bdb54) = {
+void (*const cCTFEnemiesLocalLogic_vftable[7])(void) = {
 	cCTFEnemiesLocalLogic_Delete,	/* 0x00 0x143550 */
 	cLocalLogic_GetName,	/* 0x04 0x141b40 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -5826,7 +5826,7 @@ void (*const cCTFEnemiesLocalLogic_vftable[7])(void) SD_AT(0x3bdb54) = {
 };
 
 /* .?AVcDesktopLocalLogic@@ */
-void (*const cDesktopLocalLogic_vftable[36])(void) SD_AT(0x3bdccc) = {
+void (*const cDesktopLocalLogic_vftable[36])(void) = {
 	cDesktopLocalLogic_Delete,	/* 0x00 0x144a80 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -5866,7 +5866,7 @@ void (*const cDesktopLocalLogic_vftable[36])(void) SD_AT(0x3bdccc) = {
 };
 
 /* .?AVcDominationLogic@@ */
-void (*const cDominationLogic_vftable[5])(void) SD_AT(0x3be14c) = {
+void (*const cDominationLogic_vftable[5])(void) = {
 	cDominationLogic_Delete,	/* 0x00 0x145ac0 */
 	crt_purecall,	/* 0x04 0x31951a */
 	crt_purecall,	/* 0x08 0x31951a */
@@ -5875,7 +5875,7 @@ void (*const cDominationLogic_vftable[5])(void) SD_AT(0x3be14c) = {
 };
 
 /* .?AVcDominationEnemiesLogic@@ */
-void (*const cDominationEnemiesLogic_vftable[5])(void) SD_AT(0x3be164) = {
+void (*const cDominationEnemiesLogic_vftable[5])(void) = {
 	cDominationEnemiesLogic_Delete,	/* 0x00 0x145a30 */
 	cDominationEnemiesLogic_Init,	/* 0x04 0x146070 */
 	cDominationEnemiesLogic_Update,	/* 0x08 0x146210 */
@@ -5884,7 +5884,7 @@ void (*const cDominationEnemiesLogic_vftable[5])(void) SD_AT(0x3be164) = {
 };
 
 /* .?AVcDominationFriendsLogic@@ */
-void (*const cDominationFriendsLogic_vftable[5])(void) SD_AT(0x3be1ec) = {
+void (*const cDominationFriendsLogic_vftable[5])(void) = {
 	cDominationFriendsLogic_Delete,	/* 0x00 0x146390 */
 	cDominationFriendsLogic_Init,	/* 0x04 0x1465e0 */
 	cDominationFriendsLogic_Update,	/* 0x08 0x146780 */
@@ -5893,7 +5893,7 @@ void (*const cDominationFriendsLogic_vftable[5])(void) SD_AT(0x3be1ec) = {
 };
 
 /* .?AVcEnemiesLocalLogic@@ */
-void (*const cEnemiesLocalLogic_vftable[7])(void) SD_AT(0x3be240) = {
+void (*const cEnemiesLocalLogic_vftable[7])(void) = {
 	cEnemiesLocalLogic_Delete,	/* 0x00 0x146810 */
 	cLocalLogic_GetName,	/* 0x04 0x141b40 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -5904,7 +5904,7 @@ void (*const cEnemiesLocalLogic_vftable[7])(void) SD_AT(0x3be240) = {
 };
 
 /* .?AVcFunctionaryLocalLogic@@ */
-void (*const cFunctionaryLocalLogic_vftable[42])(void) SD_AT(0x3be748) = {
+void (*const cFunctionaryLocalLogic_vftable[42])(void) = {
 	cFunctionaryLocalLogic_Delete,	/* 0x00 0x147e80 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	cFunctionaryLocalLogic_Vf02,	/* 0x08 0x148070 */
@@ -5950,7 +5950,7 @@ void (*const cFunctionaryLocalLogic_vftable[42])(void) SD_AT(0x3be748) = {
 };
 
 /* .?AVcGateKeeperLocalLogic@@ */
-void (*const cGateKeeperLocalLogic_vftable[25])(void) SD_AT(0x3bec3c) = {
+void (*const cGateKeeperLocalLogic_vftable[25])(void) = {
 	cGateKeeperLocalLogic_Delete,	/* 0x00 0x149de0 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -5979,7 +5979,7 @@ void (*const cGateKeeperLocalLogic_vftable[25])(void) SD_AT(0x3bec3c) = {
 };
 
 /* .?AVcGearLocalLogic@@ */
-void (*const cGearLocalLogic_vftable[25])(void) SD_AT(0x3beeec) = {
+void (*const cGearLocalLogic_vftable[25])(void) = {
 	cGearLocalLogic_Delete,	/* 0x00 0x14a410 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -6008,7 +6008,7 @@ void (*const cGearLocalLogic_vftable[25])(void) SD_AT(0x3beeec) = {
 };
 
 /* .?AVcGenCharLocalLogic@@ */
-void (*const cGenCharLocalLogic_vftable[36])(void) SD_AT(0x3bf5ec) = {
+void (*const cGenCharLocalLogic_vftable[36])(void) = {
 	cGenCharLocalLogic_Delete,	/* 0x00 0x14c1d0 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -6048,7 +6048,7 @@ void (*const cGenCharLocalLogic_vftable[36])(void) SD_AT(0x3bf5ec) = {
 };
 
 /* .?AVcHumanLocalLogic@@ */
-void (*const cHumanLocalLogic_vftable[25])(void) SD_AT(0x3bf75c) = {
+void (*const cHumanLocalLogic_vftable[25])(void) = {
 	cHumanLocalLogic_Delete,	/* 0x00 0x14d8d0 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -6077,7 +6077,7 @@ void (*const cHumanLocalLogic_vftable[25])(void) SD_AT(0x3bf75c) = {
 };
 
 /* .?AVcHumphreyLocalLogic@@ */
-void (*const cHumphreyLocalLogic_vftable[42])(void) SD_AT(0x3bf7e0) = {
+void (*const cHumphreyLocalLogic_vftable[42])(void) = {
 	cHumphreyLocalLogic_Delete,	/* 0x00 0x14dc20 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	cFunctionaryLocalLogic_Vf02,	/* 0x08 0x148070 */
@@ -6123,7 +6123,7 @@ void (*const cHumphreyLocalLogic_vftable[42])(void) SD_AT(0x3bf7e0) = {
 };
 
 /* .?AVcInfItem@@ */
-void (*const cInfItem_vftable[7])(void) SD_AT(0x3bf8d0) = {
+void (*const cInfItem_vftable[7])(void) = {
 	cInfItem_Delete,	/* 0x00 0x14df00 */
 	cInfItem_AddLife,	/* 0x04 0x14e4f0 */
 	cInfItem_FirstLife,	/* 0x08 0x14e270 */
@@ -6134,7 +6134,7 @@ void (*const cInfItem_vftable[7])(void) SD_AT(0x3bf8d0) = {
 };
 
 /* .?AVcLittlePoliceLocalLogic@@ */
-void (*const cLittlePoliceLocalLogic_vftable[37])(void) SD_AT(0x3bfc50) = {
+void (*const cLittlePoliceLocalLogic_vftable[37])(void) = {
 	cLittlePoliceLocalLogic_Delete,	/* 0x00 0x14fed0 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -6175,12 +6175,12 @@ void (*const cLittlePoliceLocalLogic_vftable[37])(void) SD_AT(0x3bfc50) = {
 };
 
 /* .?AVcLogicControl@@ */
-void (*const cLogicControl_vftable[1])(void) SD_AT(0x3bfe20) = {
+void (*const cLogicControl_vftable[1])(void) = {
 	Logic_Delete,	/* 0x00 0x151b60 */
 };
 
 /* .?AVcMaintenanceLocalLogic@@ */
-void (*const cMaintenanceLocalLogic_vftable[36])(void) SD_AT(0x3bff4c) = {
+void (*const cMaintenanceLocalLogic_vftable[36])(void) = {
 	cMaintenanceLocalLogic_Delete,	/* 0x00 0x152310 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -6220,7 +6220,7 @@ void (*const cMaintenanceLocalLogic_vftable[36])(void) SD_AT(0x3bff4c) = {
 };
 
 /* .?AVcMayorLocalLogic@@ */
-void (*const cMayorLocalLogic_vftable[36])(void) SD_AT(0x3c0074) = {
+void (*const cMayorLocalLogic_vftable[36])(void) = {
 	cMayorLocalLogic_Delete,	/* 0x00 0x152ca0 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -6260,7 +6260,7 @@ void (*const cMayorLocalLogic_vftable[36])(void) SD_AT(0x3c0074) = {
 };
 
 /* .?AVcMercenaryLocalLogic@@ */
-void (*const cMercenaryLocalLogic_vftable[36])(void) SD_AT(0x3c0108) = {
+void (*const cMercenaryLocalLogic_vftable[36])(void) = {
 	cMercenaryLocalLogic_Delete,	/* 0x00 0x153080 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -6300,7 +6300,7 @@ void (*const cMercenaryLocalLogic_vftable[36])(void) SD_AT(0x3c0108) = {
 };
 
 /* .?AVcMessengerLocalLogic@@ */
-void (*const cMessengerLocalLogic_vftable[36])(void) SD_AT(0x3c0440) = {
+void (*const cMessengerLocalLogic_vftable[36])(void) = {
 	cMessengerLocalLogic_Delete,	/* 0x00 0x153d90 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -6340,7 +6340,7 @@ void (*const cMessengerLocalLogic_vftable[36])(void) SD_AT(0x3c0440) = {
 };
 
 /* .?AVcNurseLocalLogic@@ */
-void (*const cNurseLocalLogic_vftable[25])(void) SD_AT(0x3c06d4) = {
+void (*const cNurseLocalLogic_vftable[25])(void) = {
 	cNurseLocalLogic_Delete,	/* 0x00 0x154530 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -6369,7 +6369,7 @@ void (*const cNurseLocalLogic_vftable[25])(void) SD_AT(0x3c06d4) = {
 };
 
 /* .?AVcPoliceBossLocalLogic@@ */
-void (*const cPoliceBossLocalLogic_vftable[36])(void) SD_AT(0x3c0a3c) = {
+void (*const cPoliceBossLocalLogic_vftable[36])(void) = {
 	cPoliceBossLocalLogic_Delete,	/* 0x00 0x156050 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -6409,7 +6409,7 @@ void (*const cPoliceBossLocalLogic_vftable[36])(void) SD_AT(0x3c0a3c) = {
 };
 
 /* .?AVcRustyLocalLogic@@ */
-void (*const cRustyLocalLogic_vftable[36])(void) SD_AT(0x3c0d58) = {
+void (*const cRustyLocalLogic_vftable[36])(void) = {
 	cRustyLocalLogic_Delete,	/* 0x00 0x1567e0 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -6449,7 +6449,7 @@ void (*const cRustyLocalLogic_vftable[36])(void) SD_AT(0x3c0d58) = {
 };
 
 /* .?AVcScrapyardLocalLogic@@ */
-void (*const cScrapyardLocalLogic_vftable[7])(void) SD_AT(0x3c10e4) = {
+void (*const cScrapyardLocalLogic_vftable[7])(void) = {
 	cScrapyardLocalLogic_Delete,	/* 0x00 0x157310 */
 	cLocalLogic_GetName,	/* 0x04 0x141b40 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -6460,7 +6460,7 @@ void (*const cScrapyardLocalLogic_vftable[7])(void) SD_AT(0x3c10e4) = {
 };
 
 /* .?AVcSentinelLocalLogic@@ */
-void (*const cSentinelLocalLogic_vftable[27])(void) SD_AT(0x3c156c) = {
+void (*const cSentinelLocalLogic_vftable[27])(void) = {
 	cSentinelLocalLogic_Delete,	/* 0x00 0x1584f0 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -6491,7 +6491,7 @@ void (*const cSentinelLocalLogic_vftable[27])(void) SD_AT(0x3c156c) = {
 };
 
 /* .?AVcSputnikJunkyardLocalLogic@@ */
-void (*const cSputnikJunkyardLocalLogic_vftable[36])(void) SD_AT(0x3c169c) = {
+void (*const cSputnikJunkyardLocalLogic_vftable[36])(void) = {
 	cSputnikJunkyardLocalLogic_Delete,	/* 0x00 0x1592e0 */
 	cBaseLocalLogic_GetName,	/* 0x04 0x141b30 */
 	Logic_True,	/* 0x08 0x140d80 */
@@ -6531,7 +6531,7 @@ void (*const cSputnikJunkyardLocalLogic_vftable[36])(void) SD_AT(0x3c169c) = {
 };
 
 /* .?AVcAbstractTextScorer@@ */
-void (*const cAbstractTextScorer_vftable[4])(void) SD_AT(0x3c1b4c) = {
+void (*const cAbstractTextScorer_vftable[4])(void) = {
 	crt_purecall,	/* 0x00 0x31951a */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cAbstractTextScorer_Var,	/* 0x08 0x15ee10 */
@@ -6539,7 +6539,7 @@ void (*const cAbstractTextScorer_vftable[4])(void) SD_AT(0x3c1b4c) = {
 };
 
 /* .?AVcMsgScorer@@ */
-void (*const cMsgScorer_vftable[4])(void) SD_AT(0x3c1b60) = {
+void (*const cMsgScorer_vftable[4])(void) = {
 	cMsgScorer_Draw,	/* 0x00 0x1602d0 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cAbstractTextScorer_Var,	/* 0x08 0x15fb70 */
@@ -6547,7 +6547,7 @@ void (*const cMsgScorer_vftable[4])(void) SD_AT(0x3c1b60) = {
 };
 
 /* .?AVcLabelScorer@@ */
-void (*const cLabelScorer_vftable[4])(void) SD_AT(0x3c1b74) = {
+void (*const cLabelScorer_vftable[4])(void) = {
 	cLabelScorer_Draw,	/* 0x00 0x160100 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cHintScorer_Var,	/* 0x08 0x15f820 */
@@ -6555,7 +6555,7 @@ void (*const cLabelScorer_vftable[4])(void) SD_AT(0x3c1b74) = {
 };
 
 /* .?AVcHintScorer@@ */
-void (*const cHintScorer_vftable[4])(void) SD_AT(0x3c1b88) = {
+void (*const cHintScorer_vftable[4])(void) = {
 	cHintScorer_Draw,	/* 0x00 0x15fd90 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cHintScorer_Var,	/* 0x08 0x15f4d0 */
@@ -6563,7 +6563,7 @@ void (*const cHintScorer_vftable[4])(void) SD_AT(0x3c1b88) = {
 };
 
 /* .?AVcCreditsScorer@@ */
-void (*const cCreditsScorer_vftable[4])(void) SD_AT(0x3c1b9c) = {
+void (*const cCreditsScorer_vftable[4])(void) = {
 	cCreditsScorer_Draw,	/* 0x00 0x15fb80 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cCreditsScorer_Var,	/* 0x08 0x15f2d0 */
@@ -6571,7 +6571,7 @@ void (*const cCreditsScorer_vftable[4])(void) SD_AT(0x3c1b9c) = {
 };
 
 /* .?AVcBarScorer@@ */
-void (*const cBarScorer_vftable[5])(void) SD_AT(0x3c1de4) = {
+void (*const cBarScorer_vftable[5])(void) = {
 	cBarScorer_Draw,	/* 0x00 0x160c00 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cBarScorer_Var,	/* 0x08 0x160510 */
@@ -6580,7 +6580,7 @@ void (*const cBarScorer_vftable[5])(void) SD_AT(0x3c1de4) = {
 };
 
 /* .?AVcButtonScorer@@ */
-void (*const cButtonScorer_vftable[5])(void) SD_AT(0x3c1ebc) = {
+void (*const cButtonScorer_vftable[5])(void) = {
 	cButtonScorer_Draw,	/* 0x00 0x1629b0 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cButtonScorer_Var,	/* 0x08 0x1617d0 */
@@ -6589,7 +6589,7 @@ void (*const cButtonScorer_vftable[5])(void) SD_AT(0x3c1ebc) = {
 };
 
 /* .?AVcCannonScorer@@ */
-void (*const cCannonScorer_vftable[5])(void) SD_AT(0x3c2324) = {
+void (*const cCannonScorer_vftable[5])(void) = {
 	cCannonScorer_Draw,	/* 0x00 0x1648e0 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cCannonScorer_Var,	/* 0x08 0x1646d0 */
@@ -6598,7 +6598,7 @@ void (*const cCannonScorer_vftable[5])(void) SD_AT(0x3c2324) = {
 };
 
 /* .?AVcChatScorer@@ */
-void (*const cChatScorer_vftable[4])(void) SD_AT(0x3c2540) = {
+void (*const cChatScorer_vftable[4])(void) = {
 	cChatScorer_Draw,	/* 0x00 0x164d60 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cChatScorer_Var,	/* 0x08 0x164cf0 */
@@ -6606,7 +6606,7 @@ void (*const cChatScorer_vftable[4])(void) SD_AT(0x3c2540) = {
 };
 
 /* .?AVcCircuitScorer@@ */
-void (*const cCircuitScorer_vftable[4])(void) SD_AT(0x3c255c) = {
+void (*const cCircuitScorer_vftable[4])(void) = {
 	cCircuitScorer_Draw,	/* 0x00 0x1658d0 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cCircuitScorer_Var,	/* 0x08 0x165600 */
@@ -6614,7 +6614,7 @@ void (*const cCircuitScorer_vftable[4])(void) SD_AT(0x3c255c) = {
 };
 
 /* .?AVcCopMeterScorer@@ */
-void (*const cCopMeterScorer_vftable[4])(void) SD_AT(0x3c2874) = {
+void (*const cCopMeterScorer_vftable[4])(void) = {
 	cCopMeterScorer_Draw,	/* 0x00 0x166510 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cCopMeterScorer_Var,	/* 0x08 0x165f10 */
@@ -6622,7 +6622,7 @@ void (*const cCopMeterScorer_vftable[4])(void) SD_AT(0x3c2874) = {
 };
 
 /* .?AVcHangarShipScorer@@ */
-void (*const cHangarShipScorer_vftable[5])(void) SD_AT(0x3c28e8) = {
+void (*const cHangarShipScorer_vftable[5])(void) = {
 	cHangarShipScorer_Draw,	/* 0x00 0x167080 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cHangarShipScorer_Var,	/* 0x08 0x166c60 */
@@ -6631,7 +6631,7 @@ void (*const cHangarShipScorer_vftable[5])(void) SD_AT(0x3c28e8) = {
 };
 
 /* .?AVcHeadScorer@@ */
-void (*const cHeadScorer_vftable[6])(void) SD_AT(0x3c2968) = {
+void (*const cHeadScorer_vftable[6])(void) = {
 	cHeadScorer_Draw,	/* 0x00 0x167610 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cHeadScorer_Var,	/* 0x08 0x1674c0 */
@@ -6641,7 +6641,7 @@ void (*const cHeadScorer_vftable[6])(void) SD_AT(0x3c2968) = {
 };
 
 /* .?AVcMissionScorer@@ */
-void (*const cMissionScorer_vftable[5])(void) SD_AT(0x3c2b70) = {
+void (*const cMissionScorer_vftable[5])(void) = {
 	cMissionScorer_Draw,	/* 0x00 0x168420 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cMissionScorer_Var,	/* 0x08 0x167b90 */
@@ -6650,7 +6650,7 @@ void (*const cMissionScorer_vftable[5])(void) SD_AT(0x3c2b70) = {
 };
 
 /* .?AVcMonitorScorer@@ */
-void (*const cMonitorScorer_vftable[6])(void) SD_AT(0x3c2cb4) = {
+void (*const cMonitorScorer_vftable[6])(void) = {
 	cMonitorScorer_Draw,	/* 0x00 0x16b160 */
 	cMonitorScorer_SetParam,	/* 0x04 0x16a3a0 */
 	cMonitorScorer_Var,	/* 0x08 0x16a3d0 */
@@ -6660,7 +6660,7 @@ void (*const cMonitorScorer_vftable[6])(void) SD_AT(0x3c2cb4) = {
 };
 
 /* .?AVcNetStatsScorer@@ */
-void (*const cNetStatsScorer_vftable[4])(void) SD_AT(0x3c2f7c) = {
+void (*const cNetStatsScorer_vftable[4])(void) = {
 	cNetStatsScorer_Draw,	/* 0x00 0x16b670 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cNetStatsScorer_Var,	/* 0x08 0x16b660 */
@@ -6668,7 +6668,7 @@ void (*const cNetStatsScorer_vftable[4])(void) SD_AT(0x3c2f7c) = {
 };
 
 /* .?AVcRadarScorer@@ */
-void (*const cRadarScorer_vftable[4])(void) SD_AT(0x3c33c4) = {
+void (*const cRadarScorer_vftable[4])(void) = {
 	cRadarScorer_Draw,	/* 0x00 0x16efc0 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cRadarScorer_Var,	/* 0x08 0x16e8c0 */
@@ -6676,7 +6676,7 @@ void (*const cRadarScorer_vftable[4])(void) SD_AT(0x3c33c4) = {
 };
 
 /* .?AVcScorerItem@@ */
-void (*const cScorerItem_vftable[4])(void) SD_AT(0x3c3ba0) = {
+void (*const cScorerItem_vftable[4])(void) = {
 	crt_purecall,	/* 0x00 0x31951a */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cScorerItem_Var,	/* 0x08 0x171580 */
@@ -6684,12 +6684,12 @@ void (*const cScorerItem_vftable[4])(void) SD_AT(0x3c3ba0) = {
 };
 
 /* .?AVcScorer@@ */
-void (*const cScorer_vftable[1])(void) SD_AT(0x3c3bb4) = {
+void (*const cScorer_vftable[1])(void) = {
 	cScorer_Delete,	/* 0x00 0x16fa70 */
 };
 
 /* .?AVcScraplandMainMenuScorer@@ */
-void (*const cScraplandMainMenuScorer_vftable[4])(void) SD_AT(0x3c3ff4) = {
+void (*const cScraplandMainMenuScorer_vftable[4])(void) = {
 	cScraplandMainMenuScorer_Draw,	/* 0x00 0x176130 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cScraplandMainMenuScorer_Var,	/* 0x08 0x175d10 */
@@ -6697,7 +6697,7 @@ void (*const cScraplandMainMenuScorer_vftable[4])(void) SD_AT(0x3c3ff4) = {
 };
 
 /* .?AVcScraplandSubMenuScorer@@ */
-void (*const cScraplandSubMenuScorer_vftable[4])(void) SD_AT(0x3c4008) = {
+void (*const cScraplandSubMenuScorer_vftable[4])(void) = {
 	cScraplandSubMenuScorer_Draw,	/* 0x00 0x176d10 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cScraplandSubMenuScorer_Var,	/* 0x08 0x175ec0 */
@@ -6705,7 +6705,7 @@ void (*const cScraplandSubMenuScorer_vftable[4])(void) SD_AT(0x3c4008) = {
 };
 
 /* .?AVcSliderScorer@@ */
-void (*const cSliderScorer_vftable[4])(void) SD_AT(0x3c4140) = {
+void (*const cSliderScorer_vftable[4])(void) = {
 	cSliderScorer_Draw,	/* 0x00 0x177c70 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cSliderScorer_Var,	/* 0x08 0x177670 */
@@ -6713,7 +6713,7 @@ void (*const cSliderScorer_vftable[4])(void) SD_AT(0x3c4140) = {
 };
 
 /* .?AVcSpecialActionScorer@@ */
-void (*const cSpecialActionScorer_vftable[4])(void) SD_AT(0x3c42d4) = {
+void (*const cSpecialActionScorer_vftable[4])(void) = {
 	cSpecialActionScorer_Draw,	/* 0x00 0x17a950 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cSpecialActionScorer_Var,	/* 0x08 0x179060 */
@@ -6721,7 +6721,7 @@ void (*const cSpecialActionScorer_vftable[4])(void) SD_AT(0x3c42d4) = {
 };
 
 /* .?AVcSpriteScorer@@ */
-void (*const cSpriteScorer_vftable[5])(void) SD_AT(0x3c4534) = {
+void (*const cSpriteScorer_vftable[5])(void) = {
 	cSpriteScorer_Draw,	/* 0x00 0x17bdf0 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cSpriteScorer_Var,	/* 0x08 0x17b6e0 */
@@ -6730,7 +6730,7 @@ void (*const cSpriteScorer_vftable[5])(void) SD_AT(0x3c4534) = {
 };
 
 /* .?AVcGradientScorer@@ */
-void (*const cGradientScorer_vftable[5])(void) SD_AT(0x3c454c) = {
+void (*const cGradientScorer_vftable[5])(void) = {
 	cGradientScorer_Draw,	/* 0x00 0x17bd60 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cGradientScorer_Var,	/* 0x08 0x17b500 */
@@ -6739,7 +6739,7 @@ void (*const cGradientScorer_vftable[5])(void) SD_AT(0x3c454c) = {
 };
 
 /* .?AVcStatusScorer@@ */
-void (*const cStatusScorer_vftable[4])(void) SD_AT(0x3c4940) = {
+void (*const cStatusScorer_vftable[4])(void) = {
 	cStatusScorer_Draw,	/* 0x00 0x17d610 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cStatusScorer_Var,	/* 0x08 0x17c1f0 */
@@ -6747,7 +6747,7 @@ void (*const cStatusScorer_vftable[4])(void) SD_AT(0x3c4940) = {
 };
 
 /* .?AVcTabScorer@@ */
-void (*const cTabScorer_vftable[4])(void) SD_AT(0x3c4c50) = {
+void (*const cTabScorer_vftable[4])(void) = {
 	cTabScorer_Draw,	/* 0x00 0x17ed40 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cTabScorer_Var,	/* 0x08 0x17e740 */
@@ -6755,7 +6755,7 @@ void (*const cTabScorer_vftable[4])(void) SD_AT(0x3c4c50) = {
 };
 
 /* .?AVcTalkScorer@@ */
-void (*const cTalkScorer_vftable[6])(void) SD_AT(0x3c4e34) = {
+void (*const cTalkScorer_vftable[6])(void) = {
 	cTalkScorer_Draw,	/* 0x00 0x180c20 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cTalkScorer_Var,	/* 0x08 0x1806e0 */
@@ -6765,7 +6765,7 @@ void (*const cTalkScorer_vftable[6])(void) SD_AT(0x3c4e34) = {
 };
 
 /* .?AVcTargetScorer@@ */
-void (*const cTargetScorer_vftable[4])(void) SD_AT(0x3c4fb8) = {
+void (*const cTargetScorer_vftable[4])(void) = {
 	cTargetScorer_Draw,	/* 0x00 0x1829c0 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cTargetScorer_Var,	/* 0x08 0x1827c0 */
@@ -6773,7 +6773,7 @@ void (*const cTargetScorer_vftable[4])(void) SD_AT(0x3c4fb8) = {
 };
 
 /* .?AVcTextScorer@@ */
-void (*const cTextScorer_vftable[5])(void) SD_AT(0x3c50f8) = {
+void (*const cTextScorer_vftable[5])(void) = {
 	cTextScorer_Draw,	/* 0x00 0x1831e0 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cTextScorer_Var,	/* 0x08 0x182da0 */
@@ -6782,7 +6782,7 @@ void (*const cTextScorer_vftable[5])(void) SD_AT(0x3c50f8) = {
 };
 
 /* .?AVcTextTypingScorer@@ */
-void (*const cTextTypingScorer_vftable[5])(void) SD_AT(0x3c5110) = {
+void (*const cTextTypingScorer_vftable[5])(void) = {
 	cTextTypingScorer_Draw,	/* 0x00 0x183560 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cTextTypingScorer_Var,	/* 0x08 0x183020 */
@@ -6791,7 +6791,7 @@ void (*const cTextTypingScorer_vftable[5])(void) SD_AT(0x3c5110) = {
 };
 
 /* .?AVcTimerScorer@@ */
-void (*const cTimerScorer_vftable[4])(void) SD_AT(0x3c5428) = {
+void (*const cTimerScorer_vftable[4])(void) = {
 	cTimerScorer_Draw,	/* 0x00 0x184560 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cTimerScorer_Var,	/* 0x08 0x1843f0 */
@@ -6799,7 +6799,7 @@ void (*const cTimerScorer_vftable[4])(void) SD_AT(0x3c5428) = {
 };
 
 /* .?AVcWaypointScorer@@ */
-void (*const cWaypointScorer_vftable[4])(void) SD_AT(0x3c5654) = {
+void (*const cWaypointScorer_vftable[4])(void) = {
 	cWaypointScorer_Draw,	/* 0x00 0x185c70 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cWaypointScorer_Var,	/* 0x08 0x185a70 */
@@ -6807,7 +6807,7 @@ void (*const cWaypointScorer_vftable[4])(void) SD_AT(0x3c5654) = {
 };
 
 /* .?AVcWeaponScorer@@ */
-void (*const cWeaponScorer_vftable[4])(void) SD_AT(0x3c5734) = {
+void (*const cWeaponScorer_vftable[4])(void) = {
 	cWeaponScorer_Draw,	/* 0x00 0x188050 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cWeaponScorer_Var,	/* 0x08 0x186910 */
@@ -6815,7 +6815,7 @@ void (*const cWeaponScorer_vftable[4])(void) SD_AT(0x3c5734) = {
 };
 
 /* .?AVcWindFxScorer@@ */
-void (*const cWindFxScorer_vftable[4])(void) SD_AT(0x3c5b7c) = {
+void (*const cWindFxScorer_vftable[4])(void) = {
 	cWindFxScorer_Draw,	/* 0x00 0x188ea0 */
 	cScorerItem_SetParam,	/* 0x04 0x15ee00 */
 	cScorerItem_Var,	/* 0x08 0x188e90 */
@@ -6823,7 +6823,7 @@ void (*const cWindFxScorer_vftable[4])(void) SD_AT(0x3c5b7c) = {
 };
 
 /* .?AVcServerNetManager@@ */
-void (*const cServerNetManager_vftable[5])(void) SD_AT(0x3c5e20) = {
+void (*const cServerNetManager_vftable[5])(void) = {
 	cServerNetManager_Delete,	/* 0x00 0x18b860 */
 	cServerNetManager_OnReceive,	/* 0x04 0x18b8e0 */
 	cServerNetManager_Send,	/* 0x08 0x18c270 */
@@ -6832,7 +6832,7 @@ void (*const cServerNetManager_vftable[5])(void) SD_AT(0x3c5e20) = {
 };
 
 /* .?AVcClientNetManager@@ */
-void (*const cClientNetManager_vftable[4])(void) SD_AT(0x3c5f58) = {
+void (*const cClientNetManager_vftable[4])(void) = {
 	cClientNetManager_Delete,	/* 0x00 0x18c5e0 */
 	cClientNetManager_OnReceive,	/* 0x04 0x18c610 */
 	cClientNetManager_Send,	/* 0x08 0x18cfe0 */
@@ -6840,7 +6840,7 @@ void (*const cClientNetManager_vftable[4])(void) SD_AT(0x3c5f58) = {
 };
 
 /* .?AVcUserNetManager@@ */
-void (*const cUserNetManager_vftable[4])(void) SD_AT(0x3c6100) = {
+void (*const cUserNetManager_vftable[4])(void) = {
 	cUserNetManager_Delete,	/* 0x00 0x18da00 */
 	crt_purecall,	/* 0x04 0x31951a */
 	crt_purecall,	/* 0x08 0x31951a */
@@ -6848,7 +6848,7 @@ void (*const cUserNetManager_vftable[4])(void) SD_AT(0x3c6100) = {
 };
 
 /* .?AVcSndInterface@@ */
-void (*const cSndInterface_vftable[5])(void) SD_AT(0x3c9cfc) = {
+void (*const cSndInterface_vftable[5])(void) = {
 	cSndInterface_Destroy,	/* 0x00 0x1a1fe0 */
 	cSndInterface_IntVar,	/* 0x04 0x1a2740 */
 	cSndInterface_FloatVar,	/* 0x08 0x1a21e0 */
@@ -6857,7 +6857,7 @@ void (*const cSndInterface_vftable[5])(void) SD_AT(0x3c9cfc) = {
 };
 
 /* .?AVCSoundSys@@ */
-void (*const CSoundSys_vftable[41])(void) SD_AT(0x3c9f3c) = {
+void (*const CSoundSys_vftable[41])(void) = {
 	CSoundSys_Destroy,	/* 0x00 0x1a30a0 */
 	CSoundSys_InitFmod,	/* 0x04 0x1a3200 */
 	CSoundSys_Close,	/* 0x08 0x1a3140 */
@@ -6902,7 +6902,7 @@ void (*const CSoundSys_vftable[41])(void) SD_AT(0x3c9f3c) = {
 };
 
 /* .?AVCSoundXBox@@ */
-void (*const CSoundXBox_vftable[41])(void) SD_AT(0x3ca718) = {
+void (*const CSoundXBox_vftable[41])(void) = {
 	CSoundXBox_Destroy,	/* 0x00 0x1a4880 */
 	CSoundXBox_Init,	/* 0x04 0x1a52e0 */
 	CSoundXBox_Close,	/* 0x08 0x1a4ef0 */
@@ -6947,7 +6947,7 @@ void (*const CSoundXBox_vftable[41])(void) SD_AT(0x3ca718) = {
 };
 
 /* .?AVcObjElementAbstract@@ */
-void (*const cObjElementAbstract_vftable[5])(void) SD_AT(0x3cb0e4) = {
+void (*const cObjElementAbstract_vftable[5])(void) = {
 	cObjElementAbstract_Delete,	/* 0x00 0x1a85a0 */
 	crt_purecall,	/* 0x04 0x31951a */
 	crt_purecall,	/* 0x08 0x31951a */
@@ -6956,7 +6956,7 @@ void (*const cObjElementAbstract_vftable[5])(void) SD_AT(0x3cb0e4) = {
 };
 
 /* .?AVcObjElementFXMoneyTransfer@@ */
-void (*const cObjElementFXMoneyTransfer_vftable[5])(void) SD_AT(0x3cb0fc) = {
+void (*const cObjElementFXMoneyTransfer_vftable[5])(void) = {
 	cObjElementFXMoneyTransfer_Delete,	/* 0x00 0x1a8840 */
 	cObjElementFXMoneyTransfer_Update,	/* 0x04 0x1b0f70 */
 	FXMisc_Alive,	/* 0x08 0x1b3d90 */
@@ -6965,7 +6965,7 @@ void (*const cObjElementFXMoneyTransfer_vftable[5])(void) SD_AT(0x3cb0fc) = {
 };
 
 /* .?AVcObjElementFXCharacterTeleport@@ */
-void (*const cObjElementFXCharacterTeleport_vftable[5])(void) SD_AT(0x3cb114) = {
+void (*const cObjElementFXCharacterTeleport_vftable[5])(void) = {
 	cObjElementFXCharacterTeleport_Delete,	/* 0x00 0x1a8780 */
 	cObjElementFXCharacterTeleport_Update,	/* 0x04 0x1adf80 */
 	cObjElementFXCharacterTeleport_Alive,	/* 0x08 0x1b3cb0 */
@@ -6974,7 +6974,7 @@ void (*const cObjElementFXCharacterTeleport_vftable[5])(void) SD_AT(0x3cb114) = 
 };
 
 /* .?AVcObjElementFXCharacterConversor@@ */
-void (*const cObjElementFXCharacterConversor_vftable[5])(void) SD_AT(0x3cb12c) = {
+void (*const cObjElementFXCharacterConversor_vftable[5])(void) = {
 	cObjElementFXCharacterConversor_Delete,	/* 0x00 0x1a8660 */
 	cObjElementFXCharacterConversor_Update,	/* 0x04 0x1a99f0 */
 	cObjElementFXCharacterConversor_Alive,	/* 0x08 0x1b3ba0 */
@@ -6983,7 +6983,7 @@ void (*const cObjElementFXCharacterConversor_vftable[5])(void) SD_AT(0x3cb12c) =
 };
 
 /* .?AVcObjElementFXCharacterDeath@@ */
-void (*const cObjElementFXCharacterDeath_vftable[5])(void) SD_AT(0x3cb144) = {
+void (*const cObjElementFXCharacterDeath_vftable[5])(void) = {
 	cObjElementFXCharacterDeath_Delete,	/* 0x00 0x1a86e0 */
 	cObjElementFXCharacterDeath_Update,	/* 0x04 0x1ac1b0 */
 	FXMisc_Alive,	/* 0x08 0x1b3c90 */
@@ -6992,7 +6992,7 @@ void (*const cObjElementFXCharacterDeath_vftable[5])(void) SD_AT(0x3cb144) = {
 };
 
 /* .?AVcObjElementFXSputnik@@ */
-void (*const cObjElementFXSputnik_vftable[5])(void) SD_AT(0x3cb15c) = {
+void (*const cObjElementFXSputnik_vftable[5])(void) = {
 	cObjElementFXSputnik_Delete,	/* 0x00 0x1a8880 */
 	cObjElementFXSputnik_Update,	/* 0x04 0x1b1370 */
 	cObjElementFXSputnik_Alive,	/* 0x08 0x1b3db0 */
@@ -7001,7 +7001,7 @@ void (*const cObjElementFXSputnik_vftable[5])(void) SD_AT(0x3cb15c) = {
 };
 
 /* .?AVcObjElementFXCharacterConversion@@ */
-void (*const cObjElementFXCharacterConversion_vftable[5])(void) SD_AT(0x3cb174) = {
+void (*const cObjElementFXCharacterConversion_vftable[5])(void) = {
 	cObjElementFXCharacterConversion_Delete,	/* 0x00 0x1a85d0 */
 	cObjElementFXCharacterConversion_Update,	/* 0x04 0x1a88c0 */
 	cObjElementFXCharacterConversion_Alive,	/* 0x08 0x1b3b00 */
@@ -7010,7 +7010,7 @@ void (*const cObjElementFXCharacterConversion_vftable[5])(void) SD_AT(0x3cb174) 
 };
 
 /* .?AVcObjElementFXMaintenanceWork@@ */
-void (*const cObjElementFXMaintenanceWork_vftable[5])(void) SD_AT(0x3cb18c) = {
+void (*const cObjElementFXMaintenanceWork_vftable[5])(void) = {
 	cObjElementFXMaintenanceWork_Delete,	/* 0x00 0x1a87c0 */
 	cObjElementFXMaintenanceWork_Update,	/* 0x04 0x1b02f0 */
 	cObjElementFXMaintenanceWork_Alive,	/* 0x08 0x1b3d40 */
@@ -7019,7 +7019,7 @@ void (*const cObjElementFXMaintenanceWork_vftable[5])(void) SD_AT(0x3cb18c) = {
 };
 
 /* .?AVcObjElementFXGearMissile@@ */
-void (*const cObjElementFXGearMissile_vftable[5])(void) SD_AT(0x3cb5ac) = {
+void (*const cObjElementFXGearMissile_vftable[5])(void) = {
 	cObjElementFXGearMissile_Delete,	/* 0x00 0x1b69b0 */
 	cObjElementFXGearMissile_Update,	/* 0x04 0x1bd740 */
 	FXMisc_Alive,	/* 0x08 0x1c6460 */
@@ -7028,7 +7028,7 @@ void (*const cObjElementFXGearMissile_vftable[5])(void) SD_AT(0x3cb5ac) = {
 };
 
 /* .?AVcObjElementFXBankerSteal@@ */
-void (*const cObjElementFXBankerSteal_vftable[5])(void) SD_AT(0x3cb5c4) = {
+void (*const cObjElementFXBankerSteal_vftable[5])(void) = {
 	cObjElementFXBankerSteal_Delete,	/* 0x00 0x1b65c0 */
 	cObjElementFXBankerSteal_Update,	/* 0x04 0x1b7700 */
 	FXMisc_Alive,	/* 0x08 0x1c6190 */
@@ -7037,7 +7037,7 @@ void (*const cObjElementFXBankerSteal_vftable[5])(void) SD_AT(0x3cb5c4) = {
 };
 
 /* .?AVcObjElementFXPoliceSteal@@ */
-void (*const cObjElementFXPoliceSteal_vftable[5])(void) SD_AT(0x3cb5dc) = {
+void (*const cObjElementFXPoliceSteal_vftable[5])(void) = {
 	cObjElementFXPoliceSteal_Delete,	/* 0x00 0x1b6c30 */
 	cObjElementFXPoliceSteal_Update,	/* 0x04 0x1c3b70 */
 	FXMisc_Alive,	/* 0x08 0x1c6520 */
@@ -7046,7 +7046,7 @@ void (*const cObjElementFXPoliceSteal_vftable[5])(void) SD_AT(0x3cb5dc) = {
 };
 
 /* .?AVcObjElementFXFunctionarySpecialAction@@ */
-void (*const cObjElementFXFunctionarySpecialAction_vftable[5])(void) SD_AT(0x3cb5f4) = {
+void (*const cObjElementFXFunctionarySpecialAction_vftable[5])(void) = {
 	cObjElementFXFunctionarySpecialAction_Delete,	/* 0x00 0x1b6930 */
 	cObjElementFXFunctionarySpecialAction_Update,	/* 0x04 0x1bcf50 */
 	cObjElementFXFunctionarySpecialAction_Alive,	/* 0x08 0x1c6300 */
@@ -7055,7 +7055,7 @@ void (*const cObjElementFXFunctionarySpecialAction_vftable[5])(void) SD_AT(0x3cb
 };
 
 /* .?AVcObjElementFXPoliceGearConversion@@ */
-void (*const cObjElementFXPoliceGearConversion_vftable[5])(void) SD_AT(0x3cb60c) = {
+void (*const cObjElementFXPoliceGearConversion_vftable[5])(void) = {
 	cObjElementFXPoliceGearConversion_Delete,	/* 0x00 0x1b6b90 */
 	cObjElementFXPoliceGearConversion_Update,	/* 0x04 0x1c2170 */
 	cObjElementFXPoliceGearConversion_Alive,	/* 0x08 0x1c64e0 */
@@ -7064,7 +7064,7 @@ void (*const cObjElementFXPoliceGearConversion_vftable[5])(void) SD_AT(0x3cb60c)
 };
 
 /* .?AVcObjElementFXDTritusAttack@@ */
-void (*const cObjElementFXDTritusAttack_vftable[5])(void) SD_AT(0x3cb624) = {
+void (*const cObjElementFXDTritusAttack_vftable[5])(void) = {
 	cObjElementFXDTritusAttack_Delete,	/* 0x00 0x1b6830 */
 	cObjElementFXDTritusAttack_Update,	/* 0x04 0x1bc6d0 */
 	FXMisc_Alive,	/* 0x08 0x1c62c0 */
@@ -7073,7 +7073,7 @@ void (*const cObjElementFXDTritusAttack_vftable[5])(void) SD_AT(0x3cb624) = {
 };
 
 /* .?AVcObjElementFXDTritusKill@@ */
-void (*const cObjElementFXDTritusKill_vftable[5])(void) SD_AT(0x3cb63c) = {
+void (*const cObjElementFXDTritusKill_vftable[5])(void) = {
 	cObjElementFXDTritusKill_Delete,	/* 0x00 0x1b68b0 */
 	cObjElementFXDTritusKill_Update,	/* 0x04 0x1bcb10 */
 	FXMisc_Alive,	/* 0x08 0x1c62e0 */
@@ -7082,7 +7082,7 @@ void (*const cObjElementFXDTritusKill_vftable[5])(void) SD_AT(0x3cb63c) = {
 };
 
 /* .?AVcObjElementFXBishopSellLife@@ */
-void (*const cObjElementFXBishopSellLife_vftable[5])(void) SD_AT(0x3cb654) = {
+void (*const cObjElementFXBishopSellLife_vftable[5])(void) = {
 	cObjElementFXBishopSellLife_Delete,	/* 0x00 0x1b67e0 */
 	cObjElementFXBishopSellLife_Update,	/* 0x04 0x1bb1b0 */
 	FXMisc_Alive,	/* 0x08 0x1c62a0 */
@@ -7091,7 +7091,7 @@ void (*const cObjElementFXBishopSellLife_vftable[5])(void) SD_AT(0x3cb654) = {
 };
 
 /* .?AVcObjElementFXBishopAttack@@ */
-void (*const cObjElementFXBishopAttack_vftable[5])(void) SD_AT(0x3cb66c) = {
+void (*const cObjElementFXBishopAttack_vftable[5])(void) = {
 	cObjElementFXBishopAttack_Delete,	/* 0x00 0x1b6770 */
 	cObjElementFXBishopAttack_Update,	/* 0x04 0x1ba480 */
 	FXMisc_Alive,	/* 0x08 0x1c6280 */
@@ -7100,7 +7100,7 @@ void (*const cObjElementFXBishopAttack_vftable[5])(void) SD_AT(0x3cb66c) = {
 };
 
 /* .?AVcObjElementFXBertoAttack@@ */
-void (*const cObjElementFXBertoAttack_vftable[5])(void) SD_AT(0x3cb684) = {
+void (*const cObjElementFXBertoAttack_vftable[5])(void) = {
 	cObjElementFXBertoAttack_Delete,	/* 0x00 0x1b6600 */
 	cObjElementFXBertoAttack_Update,	/* 0x04 0x1b7e20 */
 	FXCharActions_AliveAction,	/* 0x08 0x1c61b0 */
@@ -7109,7 +7109,7 @@ void (*const cObjElementFXBertoAttack_vftable[5])(void) SD_AT(0x3cb684) = {
 };
 
 /* .?AVcObjElementFXBertoFlash@@ */
-void (*const cObjElementFXBertoFlash_vftable[5])(void) SD_AT(0x3cb69c) = {
+void (*const cObjElementFXBertoFlash_vftable[5])(void) = {
 	cObjElementFXBertoFlash_Delete,	/* 0x00 0x1b6640 */
 	cObjElementFXBertoFlash_Update,	/* 0x04 0x1b8230 */
 	FXMisc_Alive,	/* 0x08 0x1c6220 */
@@ -7118,7 +7118,7 @@ void (*const cObjElementFXBertoFlash_vftable[5])(void) SD_AT(0x3cb69c) = {
 };
 
 /* .?AVcObjElementFXMessengerAttack@@ */
-void (*const cObjElementFXMessengerAttack_vftable[5])(void) SD_AT(0x3cb6b4) = {
+void (*const cObjElementFXMessengerAttack_vftable[5])(void) = {
 	cObjElementFXMessengerAttack_Delete,	/* 0x00 0x1b6a90 */
 	cObjElementFXMessengerAttack_Update,	/* 0x04 0x1c0f40 */
 	FXMisc_Alive,	/* 0x08 0x1c64a0 */
@@ -7127,7 +7127,7 @@ void (*const cObjElementFXMessengerAttack_vftable[5])(void) SD_AT(0x3cb6b4) = {
 };
 
 /* .?AVcObjElementFXMessengerTakeDataPack@@ */
-void (*const cObjElementFXMessengerTakeDataPack_vftable[5])(void) SD_AT(0x3cb6cc) = {
+void (*const cObjElementFXMessengerTakeDataPack_vftable[5])(void) = {
 	cObjElementFXMessengerTakeDataPack_Delete,	/* 0x00 0x1b6b10 */
 	cObjElementFXMessengerTakeDataPack_Update,	/* 0x04 0x1c17d0 */
 	FXMisc_Alive,	/* 0x08 0x1c64c0 */
@@ -7136,7 +7136,7 @@ void (*const cObjElementFXMessengerTakeDataPack_vftable[5])(void) SD_AT(0x3cb6cc
 };
 
 /* .?AVcObjElementFXSebastianFlash@@ */
-void (*const cObjElementFXSebastianFlash_vftable[5])(void) SD_AT(0x3cb6e4) = {
+void (*const cObjElementFXSebastianFlash_vftable[5])(void) = {
 	cObjElementFXSebastianFlash_Delete,	/* 0x00 0x1b6c70 */
 	cObjElementFXSebastianFlash_Update,	/* 0x04 0x1c4030 */
 	FXMisc_Alive,	/* 0x08 0x1c6540 */
@@ -7145,7 +7145,7 @@ void (*const cObjElementFXSebastianFlash_vftable[5])(void) SD_AT(0x3cb6e4) = {
 };
 
 /* .?AVcObjElementFXBettyAttack@@ */
-void (*const cObjElementFXBettyAttack_vftable[5])(void) SD_AT(0x3cb6fc) = {
+void (*const cObjElementFXBettyAttack_vftable[5])(void) = {
 	cObjElementFXBettyAttack_Delete,	/* 0x00 0x1b66c0 */
 	cObjElementFXBettyAttack_Update,	/* 0x04 0x1b87a0 */
 	FXMisc_Alive,	/* 0x08 0x1c6240 */
@@ -7154,7 +7154,7 @@ void (*const cObjElementFXBettyAttack_vftable[5])(void) SD_AT(0x3cb6fc) = {
 };
 
 /* .?AVcObjElementFXBettyKill@@ */
-void (*const cObjElementFXBettyKill_vftable[5])(void) SD_AT(0x3cb714) = {
+void (*const cObjElementFXBettyKill_vftable[5])(void) = {
 	cObjElementFXBettyKill_Delete,	/* 0x00 0x1b66f0 */
 	cObjElementFXBettyKill_Update,	/* 0x04 0x1ba040 */
 	FXMisc_Alive,	/* 0x08 0x1c6260 */
@@ -7163,7 +7163,7 @@ void (*const cObjElementFXBettyKill_vftable[5])(void) SD_AT(0x3cb714) = {
 };
 
 /* .?AVcObjElementFXBankMasterAttack@@ */
-void (*const cObjElementFXBankMasterAttack_vftable[5])(void) SD_AT(0x3cb72c) = {
+void (*const cObjElementFXBankMasterAttack_vftable[5])(void) = {
 	cObjElementFXBankMasterAttack_Delete,	/* 0x00 0x1b6520 */
 	cObjElementFXBankMasterAttack_Update,	/* 0x04 0x1b6cf0 */
 	FXCharActions_AliveAction,	/* 0x08 0x1c6100 */
@@ -7172,7 +7172,7 @@ void (*const cObjElementFXBankMasterAttack_vftable[5])(void) SD_AT(0x3cb72c) = {
 };
 
 /* .?AVcObjElementFXBankMasterSuction@@ */
-void (*const cObjElementFXBankMasterSuction_vftable[5])(void) SD_AT(0x3cb744) = {
+void (*const cObjElementFXBankMasterSuction_vftable[5])(void) = {
 	cObjElementFXBankMasterSuction_Delete,	/* 0x00 0x1b6570 */
 	cObjElementFXBankMasterSuction_Update,	/* 0x04 0x1b70d0 */
 	FXMisc_Alive,	/* 0x08 0x1c6170 */
@@ -7181,7 +7181,7 @@ void (*const cObjElementFXBankMasterSuction_vftable[5])(void) SD_AT(0x3cb744) = 
 };
 
 /* .?AVcObjElementFXMercenaryDrink@@ */
-void (*const cObjElementFXMercenaryDrink_vftable[5])(void) SD_AT(0x3cb75c) = {
+void (*const cObjElementFXMercenaryDrink_vftable[5])(void) = {
 	cObjElementFXMercenaryDrink_Delete,	/* 0x00 0x1b6a50 */
 	cObjElementFXMercenaryDrink_Update,	/* 0x04 0x1c03e0 */
 	FXMisc_Alive,	/* 0x08 0x1c6480 */
@@ -7190,7 +7190,7 @@ void (*const cObjElementFXMercenaryDrink_vftable[5])(void) SD_AT(0x3cb75c) = {
 };
 
 /* .?AVcObjElementFXHook@@ */
-void (*const cObjElementFXHook_vftable[5])(void) SD_AT(0x3cbe14) = {
+void (*const cObjElementFXHook_vftable[5])(void) = {
 	cObjElementFXHook_Delete,	/* 0x00 0x1c9ab0 */
 	cObjElementFXHook_Update,	/* 0x04 0x1cccb0 */
 	cObjElementFXHook_IsAlive,	/* 0x08 0x1cec60 */
@@ -7199,7 +7199,7 @@ void (*const cObjElementFXHook_vftable[5])(void) SD_AT(0x3cbe14) = {
 };
 
 /* .?AVcObjElementFXEMI@@ */
-void (*const cObjElementFXEMI_vftable[5])(void) SD_AT(0x3cbe2c) = {
+void (*const cObjElementFXEMI_vftable[5])(void) = {
 	cObjElementFXEMI_Delete,	/* 0x00 0x1c9a10 */
 	cObjElementFXEMI_Update,	/* 0x04 0x1ca580 */
 	cObjElementFXEMI_IsAlive,	/* 0x08 0x1cec40 */
@@ -7208,7 +7208,7 @@ void (*const cObjElementFXEMI_vftable[5])(void) SD_AT(0x3cbe2c) = {
 };
 
 /* .?AVcObjElementFXSonicExplosion@@ */
-void (*const cObjElementFXSonicExplosion_vftable[5])(void) SD_AT(0x3cbe44) = {
+void (*const cObjElementFXSonicExplosion_vftable[5])(void) = {
 	cObjElementFXSonicExplosion_Delete,	/* 0x00 0x1c9b00 */
 	cObjElementFXSonicExplosion_Update,	/* 0x04 0x1ce230 */
 	cObjElementFXSonicExplosion_IsAlive,	/* 0x08 0x1ced20 */
@@ -7217,7 +7217,7 @@ void (*const cObjElementFXSonicExplosion_vftable[5])(void) SD_AT(0x3cbe44) = {
 };
 
 /* .?AVcObjElementFXDebrisCloud@@ */
-void (*const cObjElementFXDebrisCloud_vftable[5])(void) SD_AT(0x3cbe5c) = {
+void (*const cObjElementFXDebrisCloud_vftable[5])(void) = {
 	cObjElementFXDebrisCloud_Delete,	/* 0x00 0x1c99d0 */
 	cObjElementFXDebrisCloud_Update,	/* 0x04 0x1c9b50 */
 	cObjElementFXDebrisCloud_IsAlive,	/* 0x08 0x1cec20 */
@@ -7226,77 +7226,77 @@ void (*const cObjElementFXDebrisCloud_vftable[5])(void) SD_AT(0x3cbe5c) = {
 };
 
 /* .?AVcFXElementsLighting@@ */
-void (*const cFXElementsLighting_vftable[3])(void) SD_AT(0x3cc0fc) = {
+void (*const cFXElementsLighting_vftable[3])(void) = {
 	cFXElementsLighting_Delete,	/* 0x00 0x1cfbd0 */
 	cFXElementsLighting_Init,	/* 0x04 0x1cfe00 */
 	cFXElementsLighting_Update,	/* 0x08 0x1d1c60 */
 };
 
 /* .?AVcFXElementsFireDrop@@ */
-void (*const cFXElementsFireDrop_vftable[3])(void) SD_AT(0x3cc10c) = {
+void (*const cFXElementsFireDrop_vftable[3])(void) = {
 	cFXElementsFireDrop_Delete,	/* 0x00 0x1cfb10 */
 	cFXElementsFireDrop_Init,	/* 0x04 0x1cfc50 */
 	cFXElementsFireDrop_Update,	/* 0x08 0x1d04b0 */
 };
 
 /* .?AVcFXElementsLensFlare@@ */
-void (*const cFXElementsLensFlare_vftable[3])(void) SD_AT(0x3cc11c) = {
+void (*const cFXElementsLensFlare_vftable[3])(void) = {
 	cFXElementsLensFlare_Delete,	/* 0x00 0x1cfb90 */
 	cFXElementsLensFlare_Init,	/* 0x04 0x1cfdf0 */
 	cFXElementsLensFlare_Update,	/* 0x08 0x1d1c50 */
 };
 
 /* .?AVcFXElementsABFakeMeteors@@ */
-void (*const cFXElementsABFakeMeteors_vftable[3])(void) SD_AT(0x3cc3bc) = {
+void (*const cFXElementsABFakeMeteors_vftable[3])(void) = {
 	cFXElementsABFakeMeteors_Delete,	/* 0x00 0x1d3560 */
 	cFXElementsABFakeMeteors_Init,	/* 0x04 0x1d3980 */
 	cFXElementsABFakeMeteors_Update,	/* 0x08 0x1d51e0 */
 };
 
 /* .?AVcFXElementsABFakeLimit@@ */
-void (*const cFXElementsABFakeLimit_vftable[3])(void) SD_AT(0x3cc3cc) = {
+void (*const cFXElementsABFakeLimit_vftable[3])(void) = {
 	cFXElementsABFakeLimit_Delete,	/* 0x00 0x1d34b0 */
 	cFXElementsABFakeLimit_Init,	/* 0x04 0x1d3650 */
 	cFXElementsABFakeLimit_Update,	/* 0x08 0x1d3e00 */
 };
 
 /* .?AVcFXElementsOrbitBoya@@ */
-void (*const cFXElementsOrbitBuoy_vftable[3])(void) SD_AT(0x3cc574) = {
+void (*const cFXElementsOrbitBuoy_vftable[3])(void) = {
 	cFXElementsOrbitBuoy_Delete,	/* 0x00 0x1d5910 */
 	cFXElementsOrbitBuoy_Init,	/* 0x04 0x1d59e0 */
 	cFXElementsOrbitBuoy_Update,	/* 0x08 0x1d5ee0 */
 };
 
 /* .?AVcFXElementsOrbitBoyaController@@ */
-void (*const cFXElementsOrbitBuoyController_vftable[3])(void) SD_AT(0x3cc584) = {
+void (*const cFXElementsOrbitBuoyController_vftable[3])(void) = {
 	cFXElementsOrbitBuoyController_Delete,	/* 0x00 0x1d5990 */
 	cFXElementsOrbitBuoyController_Init,	/* 0x04 0x1d5aa0 */
 	cFXElementsOrbitBuoyController_Update,	/* 0x08 0x1d5f00 */
 };
 
 /* .?AVcFXElementsMentalController@@ */
-void (*const cFXElementsMentalController_vftable[3])(void) SD_AT(0x3cc7f4) = {
+void (*const cFXElementsMentalController_vftable[3])(void) = {
 	cFXElementsMentalController_Delete,	/* 0x00 0x1d6530 */
 	cFXElementsMentalController_Init,	/* 0x04 0x1d66c0 */
 	cFXElementsMentalController_Update,	/* 0x08 0x1d7c30 */
 };
 
 /* .?AVcFXElementsMentalControllerDamageFX@@ */
-void (*const cFXElementsMentalControllerDamageFX_vftable[3])(void) SD_AT(0x3cc804) = {
+void (*const cFXElementsMentalControllerDamageFX_vftable[3])(void) = {
 	cFXElementsMentalControllerDamageFX_Delete,	/* 0x00 0x1d6560 */
 	cFXElementsMentalControllerDamageFX_Init,	/* 0x04 0x1d6750 */
 	cFXElementsMentalControllerDamageFX_Update,	/* 0x08 0x1d7d20 */
 };
 
 /* .?AVcFXElementsMentalControllerMainFX@@ */
-void (*const cFXElementsMentalControllerMainFX_vftable[3])(void) SD_AT(0x3cc814) = {
+void (*const cFXElementsMentalControllerMainFX_vftable[3])(void) = {
 	cFXElementsMentalControllerMainFX_Delete,	/* 0x00 0x1d65f0 */
 	cFXElementsMentalControllerMainFX_Init,	/* 0x04 0x1d6d90 */
 	cFXElementsMentalControllerMainFX_Update,	/* 0x08 0x1d8960 */
 };
 
 /* .?AVcObjElementFXSistPart@@ */
-void (*const cObjElementFXParticleSystem_vftable[5])(void) SD_AT(0x3cccb4) = {
+void (*const cObjElementFXParticleSystem_vftable[5])(void) = {
 	cObjElementFXParticleSystem_Delete,	/* 0x00 0x1da800 */
 	cObjElementFXParticleSystem_Update,	/* 0x04 0x1db9c0 */
 	FXMisc_Alive,	/* 0x08 0x1dcfe0 */
@@ -7305,7 +7305,7 @@ void (*const cObjElementFXParticleSystem_vftable[5])(void) SD_AT(0x3cccb4) = {
 };
 
 /* .?AVcObjElementFXTrail@@ */
-void (*const cObjElementFXTrail_vftable[5])(void) SD_AT(0x3ccccc) = {
+void (*const cObjElementFXTrail_vftable[5])(void) = {
 	cObjElementFXTrail_Delete,	/* 0x00 0x1da910 */
 	cObjElementFXTrail_Update,	/* 0x04 0x1dbf20 */
 	cObjElementFXTrail_Alive,	/* 0x08 0x1dd040 */
@@ -7314,7 +7314,7 @@ void (*const cObjElementFXTrail_vftable[5])(void) SD_AT(0x3ccccc) = {
 };
 
 /* .?AVcObjElementFXFadeOutTrail@@ */
-void (*const cObjElementFXFadeOutTrail_vftable[5])(void) SD_AT(0x3ccce4) = {
+void (*const cObjElementFXFadeOutTrail_vftable[5])(void) = {
 	cObjElementFXFadeOutTrail_Delete,	/* 0x00 0x1da6d0 */
 	cObjElementFXFadeOutTrail_Update,	/* 0x04 0x1da950 */
 	cObjElementFXFadeOutTrail_Alive,	/* 0x08 0x1dcf00 */
@@ -7323,7 +7323,7 @@ void (*const cObjElementFXFadeOutTrail_vftable[5])(void) SD_AT(0x3ccce4) = {
 };
 
 /* .?AVcObjElementFXItemTake@@ */
-void (*const cObjElementFXItemTake_vftable[5])(void) SD_AT(0x3cccfc) = {
+void (*const cObjElementFXItemTake_vftable[5])(void) = {
 	cObjElementFXItemTake_Delete,	/* 0x00 0x1da750 */
 	cObjElementFXItemTake_Update,	/* 0x04 0x1dabd0 */
 	FXMisc_Alive,	/* 0x08 0x1dcf50 */
@@ -7332,7 +7332,7 @@ void (*const cObjElementFXItemTake_vftable[5])(void) SD_AT(0x3cccfc) = {
 };
 
 /* .?AVcObjElementFXItemFade@@ */
-void (*const cObjElementFXItemFade_vftable[5])(void) SD_AT(0x3ccd14) = {
+void (*const cObjElementFXItemFade_vftable[5])(void) = {
 	cObjElementFXItemFade_Delete,	/* 0x00 0x1da710 */
 	cObjElementFXItemFade_Update,	/* 0x04 0x1da9d0 */
 	FXMisc_Alive,	/* 0x08 0x1dcf30 */
@@ -7341,7 +7341,7 @@ void (*const cObjElementFXItemFade_vftable[5])(void) SD_AT(0x3ccd14) = {
 };
 
 /* .?AVcObjElementFXSparks@@ */
-void (*const cObjElementFXSparks_vftable[5])(void) SD_AT(0x3ccd2c) = {
+void (*const cObjElementFXSparks_vftable[5])(void) = {
 	cObjElementFXSparks_Delete,	/* 0x00 0x1da880 */
 	cObjElementFXSparks_Update,	/* 0x04 0x1dba20 */
 	FXMisc_Alive,	/* 0x08 0x1dd020 */
@@ -7350,7 +7350,7 @@ void (*const cObjElementFXSparks_vftable[5])(void) SD_AT(0x3ccd2c) = {
 };
 
 /* .?AVcObjElementFXModelFade@@ */
-void (*const cObjElementFXModelFade_vftable[5])(void) SD_AT(0x3ccd44) = {
+void (*const cObjElementFXModelFade_vftable[5])(void) = {
 	cObjElementFXModelFade_Delete,	/* 0x00 0x1da7a0 */
 	cObjElementFXModelFade_Update,	/* 0x04 0x1db830 */
 	cObjElementFXModelFade_Alive,	/* 0x08 0x1dcf70 */
@@ -7359,7 +7359,7 @@ void (*const cObjElementFXModelFade_vftable[5])(void) SD_AT(0x3ccd44) = {
 };
 
 /* .?AVcObjElementFXModelNoise@@ */
-void (*const cObjElementFXModelNoise_vftable[5])(void) SD_AT(0x3ccd5c) = {
+void (*const cObjElementFXModelNoise_vftable[5])(void) = {
 	cObjElementFXModelNoise_Delete,	/* 0x00 0x1da7d0 */
 	cObjElementFXModelNoise_Update,	/* 0x04 0x1db900 */
 	cObjElementFXModelNoise_Alive,	/* 0x08 0x1dcfa0 */
@@ -7368,7 +7368,7 @@ void (*const cObjElementFXModelNoise_vftable[5])(void) SD_AT(0x3ccd5c) = {
 };
 
 /* .?AVcObjElementFXSistPartDuDv@@ */
-void (*const cObjElementFXParticleSystemDuDv_vftable[5])(void) SD_AT(0x3ccd74) = {
+void (*const cObjElementFXParticleSystemDuDv_vftable[5])(void) = {
 	cObjElementFXParticleSystemDuDv_Delete,	/* 0x00 0x1da840 */
 	cObjElementFXParticleSystem_Update,	/* 0x04 0x1db9f0 */
 	FXMisc_Alive,	/* 0x08 0x1dd000 */
@@ -7377,7 +7377,7 @@ void (*const cObjElementFXParticleSystemDuDv_vftable[5])(void) SD_AT(0x3ccd74) =
 };
 
 /* .?AVcObjElementFXSceneDecontamination@@ */
-void (*const cObjElementFXSceneDecontamination_vftable[5])(void) SD_AT(0x3cd218) = {
+void (*const cObjElementFXSceneDecontamination_vftable[5])(void) = {
 	cObjElementFXSceneDecontamination_Delete,	/* 0x00 0x1dea90 */
 	cObjElementFXSceneDecontamination_Update,	/* 0x04 0x1e3dc0 */
 	FXMisc_Alive,	/* 0x08 0x1e97a0 */
@@ -7386,7 +7386,7 @@ void (*const cObjElementFXSceneDecontamination_vftable[5])(void) SD_AT(0x3cd218)
 };
 
 /* .?AVcObjElementFXSceneBishops@@ */
-void (*const cObjElementFXSceneBishops_vftable[5])(void) SD_AT(0x3cd230) = {
+void (*const cObjElementFXSceneBishops_vftable[5])(void) = {
 	cObjElementFXSceneBishops_Delete,	/* 0x00 0x1dea00 */
 	cObjElementFXSceneBishops_Update,	/* 0x04 0x1e3050 */
 	FXMisc_Alive,	/* 0x08 0x1e9780 */
@@ -7395,7 +7395,7 @@ void (*const cObjElementFXSceneBishops_vftable[5])(void) SD_AT(0x3cd230) = {
 };
 
 /* .?AVcObjElementFXSceneBillArrives_A@@ */
-void (*const cObjElementFXSceneBillArrives_A_vftable[5])(void) SD_AT(0x3cd248) = {
+void (*const cObjElementFXSceneBillArrives_A_vftable[5])(void) = {
 	cObjElementFXSceneBillArrives_A_Delete,	/* 0x00 0x1de9c0 */
 	cObjElementFXSceneBillArrives_A_Update,	/* 0x04 0x1e0e50 */
 	FXMisc_Alive,	/* 0x08 0x1e9760 */
@@ -7404,7 +7404,7 @@ void (*const cObjElementFXSceneBillArrives_A_vftable[5])(void) SD_AT(0x3cd248) =
 };
 
 /* .?AVcObjElementFXSceneYakuzzi@@ */
-void (*const cObjElementFXSceneYakuzzi_vftable[5])(void) SD_AT(0x3cd260) = {
+void (*const cObjElementFXSceneYakuzzi_vftable[5])(void) = {
 	cObjElementFXSceneYakuzzi_Delete,	/* 0x00 0x1dec50 */
 	cObjElementFXSceneYakuzzi_Update,	/* 0x04 0x1e8280 */
 	FXMisc_Alive,	/* 0x08 0x1e9820 */
@@ -7413,7 +7413,7 @@ void (*const cObjElementFXSceneYakuzzi_vftable[5])(void) SD_AT(0x3cd260) = {
 };
 
 /* .?AVcObjElementFXSceneBeatPickus@@ */
-void (*const cObjElementFXSceneBeatPickus_vftable[5])(void) SD_AT(0x3cd278) = {
+void (*const cObjElementFXSceneBeatPickus_vftable[5])(void) = {
 	cObjElementFXSceneBeatPickus_Delete,	/* 0x00 0x1de970 */
 	cObjElementFXSceneBeatPickus_Update,	/* 0x04 0x1dec90 */
 	FXMisc_Alive,	/* 0x08 0x1e9740 */
@@ -7422,7 +7422,7 @@ void (*const cObjElementFXSceneBeatPickus_vftable[5])(void) SD_AT(0x3cd278) = {
 };
 
 /* .?AVcObjElementFXSceneHumanCD@@ */
-void (*const cObjElementFXSceneHumanCD_vftable[5])(void) SD_AT(0x3cd290) = {
+void (*const cObjElementFXSceneHumanCD_vftable[5])(void) = {
 	cObjElementFXSceneHumanCD_Delete,	/* 0x00 0x1debb0 */
 	cObjElementFXSceneHumanCD_Update,	/* 0x04 0x1e73e0 */
 	FXMisc_Alive,	/* 0x08 0x1e97e0 */
@@ -7431,7 +7431,7 @@ void (*const cObjElementFXSceneHumanCD_vftable[5])(void) SD_AT(0x3cd290) = {
 };
 
 /* .?AVcObjElementFXSceneEnterMatrix@@ */
-void (*const cObjElementFXSceneEnterMatrix_vftable[5])(void) SD_AT(0x3cd2a8) = {
+void (*const cObjElementFXSceneEnterMatrix_vftable[5])(void) = {
 	cObjElementFXSceneEnterMatrix_Delete,	/* 0x00 0x1deb10 */
 	cObjElementFXSceneEnterMatrix_Update,	/* 0x04 0x1e4b90 */
 	FXMisc_Alive,	/* 0x08 0x1e97c0 */
@@ -7440,7 +7440,7 @@ void (*const cObjElementFXSceneEnterMatrix_vftable[5])(void) SD_AT(0x3cd2a8) = {
 };
 
 /* .?AVcObjElementFXSceneTheEndB@@ */
-void (*const cObjElementFXSceneTheEndB_vftable[5])(void) SD_AT(0x3cd2c0) = {
+void (*const cObjElementFXSceneTheEndB_vftable[5])(void) = {
 	cObjElementFXSceneTheEndB_Delete,	/* 0x00 0x1dec00 */
 	cObjElementFXSceneTheEndB_Update,	/* 0x04 0x1e7dc0 */
 	FXMisc_Alive,	/* 0x08 0x1e9800 */
@@ -7449,7 +7449,7 @@ void (*const cObjElementFXSceneTheEndB_vftable[5])(void) SD_AT(0x3cd2c0) = {
 };
 
 /* .?AVcObjElementFXVehicleDamage@@ */
-void (*const cObjElementFXVehicleDamage_vftable[5])(void) SD_AT(0x3cd980) = {
+void (*const cObjElementFXVehicleDamage_vftable[5])(void) = {
 	cObjElementFXVehicleDamage_Delete,	/* 0x00 0x1ea960 */
 	cObjElementFXVehicleDamage_Update,	/* 0x04 0x1ed9c0 */
 	cObjElementFXVehicleDamage_IsAlive,	/* 0x08 0x1f8a90 */
@@ -7458,7 +7458,7 @@ void (*const cObjElementFXVehicleDamage_vftable[5])(void) SD_AT(0x3cd980) = {
 };
 
 /* .?AVcObjElementFXVehicleFire@@ */
-void (*const cObjElementFXVehicleFire_vftable[5])(void) SD_AT(0x3cd998) = {
+void (*const cObjElementFXVehicleFire_vftable[5])(void) = {
 	cObjElementFXVehicleFire_Delete,	/* 0x00 0x1eaa70 */
 	cObjElementFXVehicleFire_Update,	/* 0x04 0x1f1b90 */
 	cObjElementFXVehicleFire_IsAlive,	/* 0x08 0x1f8c00 */
@@ -7467,7 +7467,7 @@ void (*const cObjElementFXVehicleFire_vftable[5])(void) SD_AT(0x3cd998) = {
 };
 
 /* .?AVcObjElementFXFiredEntity@@ */
-void (*const cObjElementFXFiredEntity_vftable[5])(void) SD_AT(0x3cd9b0) = {
+void (*const cObjElementFXFiredEntity_vftable[5])(void) = {
 	cObjElementFXFiredEntity_Delete,	/* 0x00 0x1ea860 */
 	cObjElementFXFiredEntity_Update,	/* 0x04 0x1eb8d0 */
 	cObjElementFXFiredEntity_IsAlive,	/* 0x08 0x1f8a00 */
@@ -7476,7 +7476,7 @@ void (*const cObjElementFXFiredEntity_vftable[5])(void) SD_AT(0x3cd9b0) = {
 };
 
 /* .?AVcObjElementFXVehicleEMI@@ */
-void (*const cObjElementFXVehicleEMI_vftable[5])(void) SD_AT(0x3cd9c8) = {
+void (*const cObjElementFXVehicleEMI_vftable[5])(void) = {
 	cObjElementFXVehicleEMI_Delete,	/* 0x00 0x1ea9f0 */
 	cObjElementFXVehicleEMI_Update,	/* 0x04 0x1f0aa0 */
 	cObjElementFXVehicleEMI_IsAlive,	/* 0x08 0x1f8bb0 */
@@ -7485,7 +7485,7 @@ void (*const cObjElementFXVehicleEMI_vftable[5])(void) SD_AT(0x3cd9c8) = {
 };
 
 /* .?AVcObjElementFXFiredDebris@@ */
-void (*const cObjElementFXFiredDebris_vftable[5])(void) SD_AT(0x3cd9e0) = {
+void (*const cObjElementFXFiredDebris_vftable[5])(void) = {
 	cObjElementFXFiredDebris_Delete,	/* 0x00 0x1ea820 */
 	cObjElementFXFiredDebris_Update,	/* 0x04 0x1eabd0 */
 	FXMisc_Alive,	/* 0x08 0x1f89e0 */
@@ -7494,7 +7494,7 @@ void (*const cObjElementFXFiredDebris_vftable[5])(void) SD_AT(0x3cd9e0) = {
 };
 
 /* .?AVcObjElementFXSmokeDebris@@ */
-void (*const cObjElementFXSmokeDebris_vftable[5])(void) SD_AT(0x3cd9f8) = {
+void (*const cObjElementFXSmokeDebris_vftable[5])(void) = {
 	cObjElementFXSmokeDebris_Delete,	/* 0x00 0x1ea8a0 */
 	cObjElementFXSmokeDebris_Update,	/* 0x04 0x1ec980 */
 	FXMisc_Alive,	/* 0x08 0x1f8a50 */
@@ -7503,7 +7503,7 @@ void (*const cObjElementFXSmokeDebris_vftable[5])(void) SD_AT(0x3cd9f8) = {
 };
 
 /* .?AVcObjElementFXVehicleDeathTrail@@ */
-void (*const cObjElementFXVehicleDeathTrail_vftable[5])(void) SD_AT(0x3cda10) = {
+void (*const cObjElementFXVehicleDeathTrail_vftable[5])(void) = {
 	cObjElementFXVehicleDeathTrail_Delete,	/* 0x00 0x1ea9b0 */
 	cObjElementFXDevastatorShoot_Update,	/* 0x04 0x1f0a10 */
 	cObjElementFXDevastatorShoot_IsAlive,	/* 0x08 0x1f8b80 */
@@ -7512,7 +7512,7 @@ void (*const cObjElementFXVehicleDeathTrail_vftable[5])(void) SD_AT(0x3cda10) = 
 };
 
 /* .?AVcObjElementFXVehicleSputnik@@ */
-void (*const cObjElementFXVehicleSputnik_vftable[5])(void) SD_AT(0x3cda28) = {
+void (*const cObjElementFXVehicleSputnik_vftable[5])(void) = {
 	cObjElementFXVehicleSputnik_Delete,	/* 0x00 0x1eab50 */
 	cObjElementFXVehicleSputnik_Update,	/* 0x04 0x1f3960 */
 	cObjElementFXVehicleSputnik_IsAlive,	/* 0x08 0x1f8c80 */
@@ -7521,7 +7521,7 @@ void (*const cObjElementFXVehicleSputnik_vftable[5])(void) SD_AT(0x3cda28) = {
 };
 
 /* .?AVcObjElementFXVehicleSpawn@@ */
-void (*const cObjElementFXVehicleSpawn_vftable[5])(void) SD_AT(0x3cda40) = {
+void (*const cObjElementFXVehicleSpawn_vftable[5])(void) = {
 	cObjElementFXVehicleSpawn_Delete,	/* 0x00 0x1eaad0 */
 	cObjElementFXVehicleSpawn_Update,	/* 0x04 0x1f3140 */
 	FXMisc_Alive,	/* 0x08 0x1f8c60 */
@@ -7530,7 +7530,7 @@ void (*const cObjElementFXVehicleSpawn_vftable[5])(void) SD_AT(0x3cda40) = {
 };
 
 /* .?AVcObjElementFXVehicleAccelerator@@ */
-void (*const cObjElementFXVehicleAccelerator_vftable[5])(void) SD_AT(0x3cda58) = {
+void (*const cObjElementFXVehicleAccelerator_vftable[5])(void) = {
 	cObjElementFXVehicleAccelerator_Delete,	/* 0x00 0x1ea8e0 */
 	cObjElementFXVehicleAccelerator_Update,	/* 0x04 0x1ed170 */
 	FXMisc_Alive,	/* 0x08 0x1f8a70 */
@@ -7539,7 +7539,7 @@ void (*const cObjElementFXVehicleAccelerator_vftable[5])(void) SD_AT(0x3cda58) =
 };
 
 /* .?AVcObjElementFXSwarmMissile@@ */
-void (*const cObjElementFXSwarmMissile_vftable[5])(void) SD_AT(0x3cdc50) = {
+void (*const cObjElementFXSwarmMissile_vftable[5])(void) = {
 	cObjElementFXSwarmMissile_Delete,	/* 0x00 0x1f9e30 */
 	cObjElementFXSwarmMissile_Update,	/* 0x04 0x1fbdd0 */
 	cObjElementFXSwarmMissile_IsAlive,	/* 0x08 0x201ae0 */
@@ -7548,7 +7548,7 @@ void (*const cObjElementFXSwarmMissile_vftable[5])(void) SD_AT(0x3cdc50) = {
 };
 
 /* .?AVcObjElementFXLaser@@ */
-void (*const cObjElementFXLaser_vftable[5])(void) SD_AT(0x3cdc68) = {
+void (*const cObjElementFXLaser_vftable[5])(void) = {
 	cObjElementFXLaser_Delete,	/* 0x00 0x1f9df0 */
 	cObjElementFXLaser_Update,	/* 0x04 0x1fb9a0 */
 	cObjElementFXLaser_IsAlive,	/* 0x08 0x201ac0 */
@@ -7557,7 +7557,7 @@ void (*const cObjElementFXLaser_vftable[5])(void) SD_AT(0x3cdc68) = {
 };
 
 /* .?AVcObjElementFXDevastatorShoot@@ */
-void (*const cObjElementFXDevastatorShoot_vftable[5])(void) SD_AT(0x3cdc80) = {
+void (*const cObjElementFXDevastatorShoot_vftable[5])(void) = {
 	cObjElementFXDevastatorShoot_Delete,	/* 0x00 0x1f9cd0 */
 	cObjElementFXDevastatorShoot_Update,	/* 0x04 0x1fb0f0 */
 	cObjElementFXDevastatorShoot_IsAlive,	/* 0x08 0x201a00 */
@@ -7566,7 +7566,7 @@ void (*const cObjElementFXDevastatorShoot_vftable[5])(void) SD_AT(0x3cdc80) = {
 };
 
 /* .?AVcObjElementFXTesla@@ */
-void (*const cObjElementFXTesla_vftable[5])(void) SD_AT(0x3cdc98) = {
+void (*const cObjElementFXTesla_vftable[5])(void) = {
 	cObjElementFXTesla_Delete,	/* 0x00 0x1f9e70 */
 	cObjElementFXTesla_Update,	/* 0x04 0x1fc0a0 */
 	cObjElementFXTesla_IsAlive,	/* 0x08 0x201b50 */
@@ -7575,7 +7575,7 @@ void (*const cObjElementFXTesla_vftable[5])(void) SD_AT(0x3cdc98) = {
 };
 
 /* .?AVcObjElementFXATPC@@ */
-void (*const cObjElementFXATPC_vftable[5])(void) SD_AT(0x3cdcb0) = {
+void (*const cObjElementFXATPC_vftable[5])(void) = {
 	cObjElementFXATPC_Delete,	/* 0x00 0x1f9ca0 */
 	cObjElementFXATPC_Update,	/* 0x04 0x1f9f00 */
 	FXMisc_Alive,	/* 0x08 0x2019e0 */
@@ -7584,7 +7584,7 @@ void (*const cObjElementFXATPC_vftable[5])(void) SD_AT(0x3cdcb0) = {
 };
 
 /* .?AVcObjElementFXInfernoMissile@@ */
-void (*const cObjElementFXInfernoMissile_vftable[5])(void) SD_AT(0x3cdcc8) = {
+void (*const cObjElementFXInfernoMissile_vftable[5])(void) = {
 	cObjElementFXInfernoMissile_Delete,	/* 0x00 0x1f9da0 */
 	cObjElementFXInfernoMissile_Update,	/* 0x04 0x1fb690 */
 	cObjElementFXInfernoMissile_IsAlive,	/* 0x08 0x201a50 */
@@ -7593,7 +7593,7 @@ void (*const cObjElementFXInfernoMissile_vftable[5])(void) SD_AT(0x3cdcc8) = {
 };
 
 /* .?AVcObjElementFXInfernoExplosion@@ */
-void (*const cObjElementFXInfernoExplosion_vftable[5])(void) SD_AT(0x3cdce0) = {
+void (*const cObjElementFXInfernoExplosion_vftable[5])(void) = {
 	cObjElementFXInfernoExplosion_Delete,	/* 0x00 0x1f9d10 */
 	cObjElementFXInfernoExplosion_Update,	/* 0x04 0x1fb180 */
 	FXMisc_Alive,	/* 0x08 0x201a30 */
@@ -7602,24 +7602,24 @@ void (*const cObjElementFXInfernoExplosion_vftable[5])(void) SD_AT(0x3cdce0) = {
 };
 
 /* .?AVcMapElement@@ */
-void (*const cMapElement_vftable[3])(void) SD_AT(0x3cde68) = {
+void (*const cMapElement_vftable[3])(void) = {
 	cMapElement_Delete,	/* 0x00 0x202e60 */
 	cMapElement_Init,	/* 0x04 0x203310 */
 	cMapElement_Update,	/* 0x08 0x203520 */
 };
 
 /* .?AVcScheduledFuncStack@@ */
-void (*const cScheduledFuncStack_vftable[1])(void) SD_AT(0x3ce0ec) = {
+void (*const cScheduledFuncStack_vftable[1])(void) = {
 	cScheduledFuncStack_Delete,	/* 0x00 0x205770 */
 };
 
 /* .?AVcWorld@@ */
-void (*const cWorld_vftable[1])(void) SD_AT(0x3cec84) = {
+void (*const cWorld_vftable[1])(void) = {
 	cWorld_Destroy,	/* 0x00 0x207510 */
 };
 
 /* .?AVCApp@@ */
-void (*const CApp_vftable[21])(void) SD_AT(0x3cf190) = {
+void (*const CApp_vftable[21])(void) = {
 	CApp_DoneGame,	/* 0x00 0x20a8d0 */
 	CApp_InitGame,	/* 0x04 0x20b1c0 */
 	CApp_Nop,	/* 0x08 0x20a8c0 */
@@ -7644,7 +7644,7 @@ void (*const CApp_vftable[21])(void) SD_AT(0x3cf190) = {
 };
 
 /* .?AVCWinApp@@ */
-void (*const CWinApp_vftable[21])(void) SD_AT(0x3cf7d4) = {
+void (*const CWinApp_vftable[21])(void) = {
 	CApp_DoneGame,	/* 0x00 0x20a8d0 */
 	CApp_InitGame,	/* 0x04 0x20b1c0 */
 	CApp_Nop,	/* 0x08 0x20a8c0 */
@@ -7669,7 +7669,7 @@ void (*const CWinApp_vftable[21])(void) SD_AT(0x3cf7d4) = {
 };
 
 /* .?AVCEntradaNula@@ */
-void (*const CNullInput_vftable[8])(void) SD_AT(0x3d5934) = {
+void (*const CNullInput_vftable[8])(void) = {
 	CNullInput_Delete,	/* 0x00 0x22d9e0 */
 	CNullInput_Nothing3,	/* 0x04 0x230430 */
 	CNullInput_Nothing,	/* 0x08 0x231170 */
@@ -7681,7 +7681,7 @@ void (*const CNullInput_vftable[8])(void) SD_AT(0x3d5934) = {
 };
 
 /* .?AVCMotorApp@@ */
-void (*const CEngineApp_vftable[14])(void) SD_AT(0x3d59e0) = {
+void (*const CEngineApp_vftable[14])(void) = {
 	CD3DApp_AdjustWindowForChange,	/* 0x00 0x2733e0 */
 	CEngineApp_ConfirmDevice,	/* 0x04 0x22da10 */
 	CEngineApp_OneTimeSceneInit,	/* 0x08 0x22f7f0 */
@@ -7699,17 +7699,17 @@ void (*const CEngineApp_vftable[14])(void) SD_AT(0x3d59e0) = {
 };
 
 /* .?AVCListaMat@@ */
-void (*const CMatList_vftable[1])(void) SD_AT(0x3d6d48) = {
+void (*const CMatList_vftable[1])(void) = {
 	CMatList_DeleteObj,	/* 0x00 0x2336f0 */
 };
 
 /* .?AVCMaterial@@ */
-void (*const CMaterial_vftable[1])(void) SD_AT(0x3d6dbc) = {
+void (*const CMaterial_vftable[1])(void) = {
 	CMaterial_Delete,	/* 0x00 0x234060 */
 };
 
 /* .?AVIObjeto3D@@ */
-void (*const IObject3D_vftable[7])(void) SD_AT(0x3d79dc) = {
+void (*const IObject3D_vftable[7])(void) = {
 	IObject3D_Delete,	/* 0x00 0x23aed0 */
 	crt_purecall,	/* 0x04 0x31951a */
 	crt_purecall,	/* 0x08 0x31951a */
@@ -7720,7 +7720,7 @@ void (*const IObject3D_vftable[7])(void) SD_AT(0x3d79dc) = {
 };
 
 /* .?AVCLuz@@ */
-void (*const CLight_vftable[7])(void) SD_AT(0x3d79fc) = {
+void (*const CLight_vftable[7])(void) = {
 	CLight_Delete,	/* 0x00 0x23aea0 */
 	CLight_Update,	/* 0x04 0x23c370 */
 	CLight_Render,	/* 0x08 0x23bb70 */
@@ -7731,22 +7731,22 @@ void (*const CLight_vftable[7])(void) SD_AT(0x3d79fc) = {
 };
 
 /* .?AVCNodo3D@@ */
-void (*const CNode3D_vftable[1])(void) SD_AT(0x3d7e78) = {
+void (*const CNode3D_vftable[1])(void) = {
 	CNode3D_VecDelete,	/* 0x00 0x258e30 */
 };
 
 /* .?AVCEscena@@ */
-void (*const CScene_vftable[1])(void) SD_AT(0x3d9b24) = {
+void (*const CScene_vftable[1])(void) = {
 	CScene_Delete,	/* 0x00 0x24ead0 */
 };
 
 /* .?AVCModelo@@ */
-void (*const CModel_vftable[1])(void) SD_AT(0x3da6a0) = {
+void (*const CModel_vftable[1])(void) = {
 	CModel_Delete,	/* 0x00 0x253070 */
 };
 
 /* .?AVCSuelo@@ */
-void (*const CGround_vftable[7])(void) SD_AT(0x3db13c) = {
+void (*const CGround_vftable[7])(void) = {
 	CGround_Delete,	/* 0x00 0x258ee0 */
 	CGround_Nop,	/* 0x04 0x25d380 */
 	CGround_Draw,	/* 0x08 0x25c800 */
@@ -7757,7 +7757,7 @@ void (*const CGround_vftable[7])(void) SD_AT(0x3db13c) = {
 };
 
 /* .?AVCMallaTri@@ */
-void (*const CTriMesh_vftable[7])(void) SD_AT(0x3dbcf0) = {
+void (*const CTriMesh_vftable[7])(void) = {
 	CTriMesh_Delete,	/* 0x00 0x2627b0 */
 	Stub_Nop1,	/* 0x04 0x262bf0 */
 	CTriMesh_Draw,	/* 0x08 0x262840 */
@@ -7768,7 +7768,7 @@ void (*const CTriMesh_vftable[7])(void) SD_AT(0x3dbcf0) = {
 };
 
 /* .?AVCD3DApplication@@ */
-void (*const CD3DApplication_vftable[14])(void) SD_AT(0x3dd208) = {
+void (*const CD3DApplication_vftable[14])(void) = {
 	CD3DApp_AdjustWindowForChange,	/* 0x00 0x2733e0 */
 	CD3DApp_ConfirmDevice,	/* 0x04 0x273e10 */
 	CD3DApp_Nop,	/* 0x08 0x2750a0 */
@@ -7786,7 +7786,7 @@ void (*const CD3DApplication_vftable[14])(void) SD_AT(0x3dd208) = {
 };
 
 /* .?AVCObjBase3D@@ */
-void (*const CObjBase3D_vftable[7])(void) SD_AT(0x3ddc1c) = {
+void (*const CObjBase3D_vftable[7])(void) = {
 	CObjBase3D_Delete,	/* 0x00 0x27a120 */
 	Stub_Nop1,	/* 0x04 0x27c8b0 */
 	Stub_Nop2,	/* 0x08 0x27bff0 */
@@ -7797,28 +7797,28 @@ void (*const CObjBase3D_vftable[7])(void) SD_AT(0x3ddc1c) = {
 };
 
 /* .?AVCParticulaBase@@ */
-void (*const CParticleBase_vftable[3])(void) SD_AT(0x3ddc3c) = {
+void (*const CParticleBase_vftable[3])(void) = {
 	crt_purecall,	/* 0x00 0x31951a */
 	crt_purecall,	/* 0x04 0x31951a */
 	crt_purecall,	/* 0x08 0x31951a */
 };
 
 /* .?AVCParticulaStatic@@ */
-void (*const CParticleStatic_vftable[3])(void) SD_AT(0x3ddc4c) = {
+void (*const CParticleStatic_vftable[3])(void) = {
 	CParticleStatic_Type,	/* 0x00 0x27a990 */
 	CParticleStatic_Init,	/* 0x04 0x27aaf0 */
 	Stub_Nop3,	/* 0x08 0x27c8a0 */
 };
 
 /* .?AVCParticulaActive@@ */
-void (*const CParticleActive_vftable[3])(void) SD_AT(0x3ddc5c) = {
+void (*const CParticleActive_vftable[3])(void) = {
 	CParticleActive_Type,	/* 0x00 0x27a980 */
 	CParticleActive_Init,	/* 0x04 0x27a9c0 */
 	CParticleActive_Update,	/* 0x08 0x27c2e0 */
 };
 
 /* .?AVCSistPart@@ */
-void (*const CParticleSystem_vftable[7])(void) SD_AT(0x3ddc6c) = {
+void (*const CParticleSystem_vftable[7])(void) = {
 	CParticleSystem_Delete,	/* 0x00 0x27a190 */
 	CParticleSystem_Update,	/* 0x04 0x27c8c0 */
 	CParticleSystem_Render,	/* 0x08 0x27c000 */
@@ -7829,7 +7829,7 @@ void (*const CParticleSystem_vftable[7])(void) SD_AT(0x3ddc6c) = {
 };
 
 /* .?AVCFlare@@ */
-void (*const CFlare_vftable[7])(void) SD_AT(0x3e1958) = {
+void (*const CFlare_vftable[7])(void) = {
 	CFlare_Delete,	/* 0x00 0x297da0 */
 	Stub_Nop1,	/* 0x04 0x27c8b0 */
 	CFlare_Render,	/* 0x08 0x297e50 */
@@ -7840,7 +7840,7 @@ void (*const CFlare_vftable[7])(void) SD_AT(0x3e1958) = {
 };
 
 /* .?AVCCamara@@ */
-void (*const CCamera_vftable[7])(void) SD_AT(0x3e1c98) = {
+void (*const CCamera_vftable[7])(void) = {
 	CCamera_Delete,	/* 0x00 0x29c300 */
 	CCamera_Update,	/* 0x04 0x29cba0 */
 	CCamera_Render,	/* 0x08 0x29c960 */
@@ -7851,7 +7851,7 @@ void (*const CCamera_vftable[7])(void) SD_AT(0x3e1c98) = {
 };
 
 /* .?AVIEntrada@@ */
-void (*const IInput_vftable[8])(void) SD_AT(0x3e25ec) = {
+void (*const IInput_vftable[8])(void) = {
 	IInput_Delete,	/* 0x00 0x2a3ab0 */
 	crt_purecall,	/* 0x04 0x31951a */
 	crt_purecall,	/* 0x08 0x31951a */
@@ -7863,7 +7863,7 @@ void (*const IInput_vftable[8])(void) SD_AT(0x3e25ec) = {
 };
 
 /* .?AVCEntradaDInput@@ */
-void (*const CInputDInput_vftable[8])(void) SD_AT(0x3e2610) = {
+void (*const CInputDInput_vftable[8])(void) = {
 	CInputDInput_Delete,	/* 0x00 0x2a3a50 */
 	CInputDInput_Init,	/* 0x04 0x2a3cf0 */
 	CInputDInput_Release,	/* 0x08 0x2a3fc0 */
@@ -7875,7 +7875,7 @@ void (*const CInputDInput_vftable[8])(void) SD_AT(0x3e2610) = {
 };
 
 /* .?AVCEntradaWindows@@ */
-void (*const CInputWindows_vftable[8])(void) SD_AT(0x3e2634) = {
+void (*const CInputWindows_vftable[8])(void) = {
 	CInputWindows_Delete,	/* 0x00 0x2a3a80 */
 	CInputWindows_Init,	/* 0x04 0x2a3db0 */
 	CInputWindows_Release,	/* 0x08 0x2a4030 */
@@ -7887,35 +7887,35 @@ void (*const CInputWindows_vftable[8])(void) SD_AT(0x3e2634) = {
 };
 
 /* .?AVIFXTextura@@ */
-void (*const IFXTexture_vftable[3])(void) SD_AT(0x3e2c44) = {
+void (*const IFXTexture_vftable[3])(void) = {
 	IFXTexture_Delete,	/* 0x00 0x2a81a0 */
 	crt_purecall,	/* 0x04 0x31951a */
 	IFXTexture_GetTexture,	/* 0x08 0x2a82e0 */
 };
 
 /* .?AVCFXTexLava@@ */
-void (*const CFXTexLava_vftable[3])(void) SD_AT(0x3e2c54) = {
+void (*const CFXTexLava_vftable[3])(void) = {
 	CFXTexLava_Delete,	/* 0x00 0x2a8140 */
 	CFXTexLava_Update,	/* 0x04 0x2a8380 */
 	IFXTexture_GetTexture,	/* 0x08 0x2a82e0 */
 };
 
 /* .?AVCFXTexScroll@@ */
-void (*const CFXTexScroll_vftable[3])(void) SD_AT(0x3e2c64) = {
+void (*const CFXTexScroll_vftable[3])(void) = {
 	CFXTexScroll_Delete,	/* 0x00 0x2a8170 */
 	CFXTexScroll_Update,	/* 0x04 0x2a8640 */
 	IFXTexture_GetTexture,	/* 0x08 0x2a82e0 */
 };
 
 /* .?AVCFXNewsPanel@@ */
-void (*const CFXNewsPanel_vftable[3])(void) SD_AT(0x3e2c74) = {
+void (*const CFXNewsPanel_vftable[3])(void) = {
 	CFXNewsPanel_Delete,	/* 0x00 0x2a8110 */
 	CFXNewsPanel_Update,	/* 0x04 0x2a8370 */
 	CFXNewsPanel_GetTexture,	/* 0x08 0x2a82d0 */
 };
 
 /* .?AVCMallaD3D@@ */
-void (*const CMeshD3D_vftable[7])(void) SD_AT(0x3e3584) = {
+void (*const CMeshD3D_vftable[7])(void) = {
 	CMeshD3D_Delete,	/* 0x00 0x2afbe0 */
 	CMeshD3D_SetRender,	/* 0x04 0x2b0650 */
 	CMeshD3D_Draw,	/* 0x08 0x2b0330 */
@@ -7926,28 +7926,28 @@ void (*const CMeshD3D_vftable[7])(void) SD_AT(0x3e3584) = {
 };
 
 /* .?AVINodeFX@@ */
-void (*const INodeFX_vftable[3])(void) SD_AT(0x3e3b9c) = {
+void (*const INodeFX_vftable[3])(void) = {
 	INodeFX_Delete,	/* 0x00 0x2b2c90 */
 	INodeFX_Type,	/* 0x04 0x2b2fb0 */
 	crt_purecall,	/* 0x08 0x31951a */
 };
 
 /* .?AVCNodeFX_Wheel@@ */
-void (*const CNodeFX_Wheel_vftable[3])(void) SD_AT(0x3e3bac) = {
+void (*const CNodeFX_Wheel_vftable[3])(void) = {
 	CNodeFX_Wheel_Delete,	/* 0x00 0x2b2c60 */
 	CNodeFX_Wheel_Type,	/* 0x04 0x2b2fa0 */
 	CNodeFX_Wheel_Apply,	/* 0x08 0x2b3c00 */
 };
 
 /* .?AVCNodeFX_Spring@@ */
-void (*const CNodeFX_Spring_vftable[3])(void) SD_AT(0x3e3bbc) = {
+void (*const CNodeFX_Spring_vftable[3])(void) = {
 	CNodeFX_Spring_Delete,	/* 0x00 0x2b2c30 */
 	CNodeFX_Spring_Type,	/* 0x04 0x2b2f90 */
 	CNodeFX_Spring_Apply,	/* 0x08 0x2b2fc0 */
 };
 
 /* .?AVCGrafico3D@@ */
-void (*const CGraphic3D_vftable[7])(void) SD_AT(0x3e45b8) = {
+void (*const CGraphic3D_vftable[7])(void) = {
 	CGraphic3D_Delete,	/* 0x00 0x2b96a0 */
 	FXMisc_Nop,	/* 0x04 0x2b9e40 */
 	CGraphic3D_Render,	/* 0x08 0x2b9c20 */
@@ -7958,7 +7958,7 @@ void (*const CGraphic3D_vftable[7])(void) SD_AT(0x3e45b8) = {
 };
 
 /* .?AVCPortal@@ */
-void (*const CPortal_vftable[7])(void) SD_AT(0x3e46c0) = {
+void (*const CPortal_vftable[7])(void) = {
 	CPortal_Delete,	/* 0x00 0x2ba1e0 */
 	FXMisc_Nop,	/* 0x04 0x2ba7a0 */
 	CPortal_Render,	/* 0x08 0x2ba690 */

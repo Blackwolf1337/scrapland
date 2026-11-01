@@ -132,7 +132,7 @@ SD_OFFSET(CD3DApplication, vsync, 0x2a5c8);
 SD_SIZE(CD3DApplication, 0x2a5dc);
 
 /* g_pD3DApp of d3dapp.cpp: the application of the engine3d (a CMotorApp, g_Engine3D of Engine.c) */
-#define g_Engine GAME_GLOBAL(CD3DApplication *, g_Engine, 0x4b1c04)
+#define g_Engine GAME_GLOBAL(CD3DApplication *, g_Engine)
 
 /* dxutil.cpp */
 /* cch characters with the end (-1: the whole string); the generic strings are ANSI (two copies in the exe) */
@@ -188,7 +188,7 @@ int __thiscall CD3DApp_ForceWindowed(CD3DApplication *self);
 int __thiscall CD3DApp_ToggleFullscreen(CD3DApplication *self);
 /* the device dialog, the environment made again for the choice */
 int __thiscall CD3DApp_UserSelectNewDevice(CD3DApplication *self);
-/* the window messages of the framework (rva 0x274b60) */
+/* the window messages of the framework */
 intptr_t __thiscall CD3DApp_MsgProc(CD3DApplication *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 /* CD3DApp_Cleanup, CD3DApp_ResetDevice and CD3DApp_Reset: scrapmain.h */
 

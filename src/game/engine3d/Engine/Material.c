@@ -21,21 +21,21 @@ int Vec3_Differ(const float *a, const float *b);
 typedef void *(__thiscall *deleteObj_t)(void *self, int flags);
 
 /* set while a material is deleted: the textures without references go too */
-#define g_TexDeleteUnused GAME_GLOBAL(int, g_TexDeleteUnused, 0x4aa318)
-#define g_AnimCycleDefault GAME_GLOBAL(int, g_AnimCycleDefault, 0x4aa31c)
+#define g_TexDeleteUnused GAME_GLOBAL(int, g_TexDeleteUnused)
+#define g_AnimCycleDefault GAME_GLOBAL(int, g_AnimCycleDefault)
 /* engine variables DDS_MarkSource, LoadTextures, DDS_CheckMark, MatEmissive, DDS_UseTextures */
-#define g_DDSMarkSource GAME_GLOBAL_IN(int, GVar_DDS_MarkSource, 16, 0x4aa330)
-#define g_LoadTextures GAME_GLOBAL_IN(int, GVar_LoadTextures, 16, 0x4aa348)
-#define g_DDSCheckMark GAME_GLOBAL_IN(int, GVar_DDS_CheckMark, 16, 0x4aa360)
-#define g_MatEmissive GAME_GLOBAL_IN(float, GVar_MatEmissive, 16, 0x4aa378)
-#define g_DDSUseTextures GAME_GLOBAL_IN(int, GVar_DDS_UseTextures, 16, 0x4aa390)
-#define g_TexturePaths (GAME_ARRAY(char[MAX_FILEPATH], g_TexturePaths, 0x4aa398))
-#define g_TextureExts (GAME_ARRAY(char[MAX_FILEPATH], g_TextureExts, 0x4aadc0))
-#define g_MatStr (GAME_ARRAY(char, g_MatStr, 0x4ab7e8))
-#define g_LightmapsHigh GAME_GLOBAL(int, g_ShadowsStencil, 0x4afdb0)
-#define g_AnimFpsDefault GAME_GLOBAL(float, g_AnimFpsDefault, 0x431d20)
-#define g_BlendTable (GAME_ARRAY(const uint32_t, g_BlendTable, 0x431d34))
-#define g_MaxLightmap GAME_GLOBAL(int, g_MaxLightmap, 0x432970)
+#define g_DDSMarkSource GAME_GLOBAL_IN(int, GVar_DDS_MarkSource, 16)
+#define g_LoadTextures GAME_GLOBAL_IN(int, GVar_LoadTextures, 16)
+#define g_DDSCheckMark GAME_GLOBAL_IN(int, GVar_DDS_CheckMark, 16)
+#define g_MatEmissive GAME_GLOBAL_IN(float, GVar_MatEmissive, 16)
+#define g_DDSUseTextures GAME_GLOBAL_IN(int, GVar_DDS_UseTextures, 16)
+#define g_TexturePaths (GAME_ARRAY(char[MAX_FILEPATH], g_TexturePaths))
+#define g_TextureExts (GAME_ARRAY(char[MAX_FILEPATH], g_TextureExts))
+#define g_MatStr (GAME_ARRAY(char, g_MatStr))
+#define g_LightmapsHigh GAME_GLOBAL(int, g_ShadowsStencil)
+#define g_AnimFpsDefault GAME_GLOBAL(float, g_AnimFpsDefault)
+#define g_BlendTable (GAME_ARRAY(const uint32_t, g_BlendTable))
+#define g_MaxLightmap GAME_GLOBAL(int, g_MaxLightmap)
 
 #define BLEND_MODES 6
 #define MAT_FILE_VERSION 3
@@ -103,7 +103,7 @@ void __fastcall CTextStatic_dtor(CTextStatic *self) {
 CTextStatic *__thiscall CTextStatic_Delete(CTextStatic *self, byte flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(CTextStatic), *mem, GAME_FUNC(CTextStatic_dtor, TEXTSTATIC_DTOR));
+		crt_eh_vector_dtor(self, sizeof(CTextStatic), *mem, GAME_FUNC(CTextStatic_dtor));
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
@@ -170,7 +170,7 @@ void Mat_ConvertBlend(uint32_t *mode, byte toFile, byte legacy) {
 		CHECK(*mode - 1 < BLEND_MODES);
 		/* the original reads the word at 0x431d30 + 4 * mode: g_BlendTable[mode - 1], for 0 (after the CHECK) the last
 		 * word of g_MatList before it, a separate C object since stage 3c2 */
-		*mode = *mode ? g_BlendTable[*mode - 1] : GAME_GLOBAL_IN(uint32_t, g_MatList, 12, 0x431d30);
+		*mode = *mode ? g_BlendTable[*mode - 1] : GAME_GLOBAL_IN(uint32_t, g_MatList, 12);
 		return;
 	}
 	if (toFile) {
@@ -771,7 +771,7 @@ void __thiscall CMap_LoadTexture(CMap *self, void *dev, CMap *alpha, int kind) {
 		}
 		CHECK(!self->TextAni);
 		CHECK(!self->AnimMat);
-		self->TextAni = New_Objects(self->frames, sizeof(CTextStatic), GAME_FUNC(CTextStatic_ctor, TEXTSTATIC_CTOR), GAME_FUNC(CTextStatic_dtor, TEXTSTATIC_DTOR));
+		self->TextAni = New_Objects(self->frames, sizeof(CTextStatic), GAME_FUNC(CTextStatic_ctor), GAME_FUNC(CTextStatic_dtor));
 		if (self->frames > 0) {
 			char *aname = alphaPath ? abuf : NULL;
 			for (i = 0; i < self->frames; i++) {
@@ -1032,7 +1032,7 @@ void __fastcall CMap_Release(CMap *self) {
 	self->animated = 0;
 	self->frames = 0;
 	if (self->TextAni) {
-		Delete_Objects(self->TextAni, sizeof(CTextStatic), GAME_FUNC(CTextStatic_dtor, TEXTSTATIC_DTOR));
+		Delete_Objects(self->TextAni, sizeof(CTextStatic), GAME_FUNC(CTextStatic_dtor));
 		self->TextAni = NULL;
 	}
 	if (self->AnimMat) {

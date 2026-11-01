@@ -30,10 +30,10 @@ typedef struct cMemPool {
 } cMemPool;
 SD_SIZE(cMemPool, 0x14);
 
-#define g_PyPool GAME_GLOBAL(cMemPool *, g_PyPool, 0x4668d0)
-#define g_MemPools GAME_GLOBAL(cMemPool *, g_MemPools, 0x4668e4)
-#define g_PyPoolValues (&GAME_GLOBAL_IN(uint32_t, g_PyPoolValues, 0, 0x428ef8))	/* MEMPOOL_CLASSES block counts */
-#define g_PyMemStats (GAME_ARRAY(cMemStats, g_PyMemStats, 0x4668b8))	/* the context of the interpreter's allocations */
+#define g_PyPool GAME_GLOBAL(cMemPool *, g_PyPool)
+#define g_MemPools GAME_GLOBAL(cMemPool *, g_MemPools)
+#define g_PyPoolValues (&GAME_GLOBAL_IN(uint32_t, g_PyPoolValues, 0))	/* MEMPOOL_CLASSES block counts */
+#define g_PyMemStats (GAME_ARRAY(cMemStats, g_PyMemStats))	/* the context of the interpreter's allocations */
 
 cMemPool *__thiscall cMemPool_ctor(cMemPool *self, const char *name, const uint32_t *values);
 void __fastcall cMemPool_dtor(cMemPool *self);

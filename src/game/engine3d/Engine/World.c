@@ -13,7 +13,7 @@
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
 
-#define DEG2RAD_F 0.0174532924f		/* rva 0x3dcc2c */
+#define DEG2RAD_F 0.0174532924f
 
 /* the start of the own camera: 240 behind the origin, 50 up, looking at it */
 static void World_CameraStart(CWorld *self) {
@@ -396,7 +396,7 @@ void __fastcall CWorld_DrawDummies(CWorld *self) {
 		vec3_t mn = { -50.0f, -50.0f, -50.0f };
 		vec3_t mx = { 50.0f, 50.0f, 50.0f };
 		Debug_DrawBoxM(&m, &mn, &mx, 0xffff00);
-		Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &d->pos, d->ini ? 0xffff : 0xffffff, GAME_STR(str_3bae88, 0x3bae88), d->name);
+		Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &d->pos, d->ini ? 0xffff : 0xffffff, GAME_STR(str_3bae88), d->name);
 		shown++;
 	}
 	Font_PrintfXY(g_FntComic14, 10.0f, 260.0f, "world dummies: %d / %d", shown, total);
@@ -650,10 +650,10 @@ typedef struct DebugPoint {
 } DebugPoint;
 SD_SIZE(DebugPoint, 0x14);
 
-#define g_Points (GAME_GLOBAL(CTable, g_Points, 0x4afec4))	/* DebugPoint[], grown by a quarter */
-#define g_NumPoints GAME_GLOBAL(int, g_NumPoints, 0x4afecc)
-#define g_PointsOn GAME_GLOBAL_IN(byte, group_4a8ef8, 2, 0x4a8efa)	/* set by the first point */
-#define g_MaxPoints GAME_GLOBAL(int, g_MaxPoints, 0x432584)	/* 4000: all cleared at that count, 0 no limit */
+#define g_Points (GAME_GLOBAL(CTable, g_Points))	/* DebugPoint[], grown by a quarter */
+#define g_NumPoints GAME_GLOBAL(int, g_NumPoints)
+#define g_PointsOn GAME_GLOBAL_IN(byte, group_4a8ef8, 2)	/* set by the first point */
+#define g_MaxPoints GAME_GLOBAL(int, g_MaxPoints)	/* 4000: all cleared at that count, 0 no limit */
 
 static DebugPoint *Point(int i) {
 	TABLE_CHECK(g_Points.p, i, g_Points.n);

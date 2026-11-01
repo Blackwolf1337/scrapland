@@ -13,9 +13,9 @@
 
 #define VERTLIST_ID "LFVF"
 #define VERTLIST_VER 1
-#define FLT_MAX_F 3.4028234663852886e+38f	/* rva 0x3a3a38 */
-/* the 15 colors of the strips (rva 0x432a34) */
-#define g_StripColors (GAME_ARRAY_IN(const uint32_t, g_BspColors, 4, 0x432a34))
+#define FLT_MAX_F 3.4028234663852886e+38f
+/* the 15 colors of the strips */
+#define g_StripColors (GAME_ARRAY_IN(const uint32_t, g_BspColors, 4))
 #define STRIP_COLORS 15
 #define TRI_USED 0x8000
 #define TRI_FREE 0xffff

@@ -300,18 +300,18 @@ char *String_Unquote(char *dest, const char *src) {
 	return dest;
 }
 
-#define g_RSqrtTable (GAME_ARRAY(const byte, g_RSqrtTable, 0x4abf88))
-#define g_ExePath (GAME_ARRAY(char, g_ExePath, 0x4abd78))	/* GetModuleFileName at the start, 0x103 */
+#define g_RSqrtTable (GAME_ARRAY(const byte, g_RSqrtTable))
+#define g_ExePath (GAME_ARRAY(char, g_ExePath))	/* GetModuleFileName at the start, 0x103 */
 
 char *E3D_GetExePath(void) {
 	return g_ExePath;
 }
 
-/* the static initializer (rva 0x05b3b0): the path of the exe, g_E3DDir from its directory and "../" */
+/* the static initializer: the path of the exe, g_E3DDir from its directory and "../" */
 void Misc_InitE3DDir(void) {
 	exe_GetModuleFileNameA(NULL, g_ExePath, 0x103);
 	Path_Part(g_E3DDir, g_ExePath, PATH_DRIVE | PATH_DIR);
-	Path_Normalize(g_E3DDir, GAME_STR(str_3baec4, 0x3baec4), -1);	/* "../" */
+	Path_Normalize(g_E3DDir, GAME_STR(str_3baec4), -1);	/* "../" */
 }
 
 /* the bits 15..22 (rounded) of 1 / sqrt of the 128 mantissa steps of the exponents 0x7f (0..63) and 0x7e */
@@ -387,20 +387,20 @@ byte Dlg_GetFloat(void *hwnd, int id, float *out) {
 
 /* ---- the debug consoles: a list box in a dialog and a text console ---- */
 
-#define g_DbgStdOpen GAME_GLOBAL_IN(byte, group_4ab91c, 0, 0x4ab91c)
-#define g_DbgWinOpen GAME_GLOBAL_IN(byte, group_4ab91c, 1, 0x4ab91d)
-#define g_DbgWnd GAME_GLOBAL(void *, g_DbgWnd, 0x4ab920)
-#define g_DbgList GAME_GLOBAL(void *, g_DbgList, 0x4ab924)	/* the list box of the dialog */
-#define g_DbgEdit GAME_GLOBAL(void *, g_DbgEdit, 0x4ab928)	/* the command line */
-#define g_DbgButton GAME_GLOBAL(void *, g_DbgButton, 0x4ab92c)
-#define g_DbgClient (GAME_ARRAY(int32_t, g_DbgClient, 0x4ab930))	/* the client rectangle at WM_INITDIALOG */
-#define g_DbgListRect (GAME_ARRAY(int32_t, g_DbgListRect, 0x4ab940))	/* the normal rectangles of the three controls */
-#define g_DbgEditRect (GAME_ARRAY(int32_t, g_DbgEditRect, 0x4ab950))
-#define g_DbgButtonRect (GAME_ARRAY(int32_t, g_DbgButtonRect, 0x4ab960))
-#define g_DbgLine (GAME_ARRAY(char, g_DbgLine, 0x4ab970))	/* 0x400, the line being written */
-#define g_DbgLinePos GAME_GLOBAL(int, g_DbgLinePos, 0x4abd70)
-#define g_DbgLineLen GAME_GLOBAL(int, g_DbgLineLen, 0x4abd74)
-#define g_DbgCharMap (GAME_ARRAY(const char, g_DbgCharMap, 0x431c70))	/* the characters from 0xe1 for the console */
+#define g_DbgStdOpen GAME_GLOBAL_IN(byte, group_4ab91c, 0)
+#define g_DbgWinOpen GAME_GLOBAL_IN(byte, group_4ab91c, 1)
+#define g_DbgWnd GAME_GLOBAL(void *, g_DbgWnd)
+#define g_DbgList GAME_GLOBAL(void *, g_DbgList)	/* the list box of the dialog */
+#define g_DbgEdit GAME_GLOBAL(void *, g_DbgEdit)	/* the command line */
+#define g_DbgButton GAME_GLOBAL(void *, g_DbgButton)
+#define g_DbgClient (GAME_ARRAY(int32_t, g_DbgClient))	/* the client rectangle at WM_INITDIALOG */
+#define g_DbgListRect (GAME_ARRAY(int32_t, g_DbgListRect))	/* the normal rectangles of the three controls */
+#define g_DbgEditRect (GAME_ARRAY(int32_t, g_DbgEditRect))
+#define g_DbgButtonRect (GAME_ARRAY(int32_t, g_DbgButtonRect))
+#define g_DbgLine (GAME_ARRAY(char, g_DbgLine))	/* 0x400, the line being written */
+#define g_DbgLinePos GAME_GLOBAL(int, g_DbgLinePos)
+#define g_DbgLineLen GAME_GLOBAL(int, g_DbgLineLen)
+#define g_DbgCharMap (GAME_ARRAY(const char, g_DbgCharMap))	/* the characters from 0xe1 for the console */
 #define DBGWIN_DIALOG 0x9a
 #define DBGWIN_PROC 0x2373d0	/* DbgWin_DlgProc */
 #define DBGWIN_LINE 0x400
@@ -539,7 +539,7 @@ void DbgWin_Open(void *hwnd) {
 	}
 	g_DbgWinOpen = 1;
 	g_DbgWnd = exe_CreateDialogParamA((void *)exe_GetWindowLongA(hwnd, GWL_HINSTANCE), (const char *)DBGWIN_DIALOG, hwnd,
-		GAME_FUNC(DbgWin_DlgProc, DBGWIN_PROC), 0);
+		GAME_FUNC(DbgWin_DlgProc), 0);
 }
 
 /* the debug output on with the dialog or the text console of the ini */
@@ -552,7 +552,7 @@ void DbgWin_Init(void *hwnd) {
 	if (g_DbgConWindow && !g_DbgWinOpen && !g_DbgWnd) {
 		g_DbgWinOpen = 1;
 		g_DbgWnd = exe_CreateDialogParamA((void *)exe_GetWindowLongA(hwnd, GWL_HINSTANCE),
-			(const char *)DBGWIN_DIALOG, hwnd, GAME_FUNC(DbgWin_DlgProc, DBGWIN_PROC), 0);
+			(const char *)DBGWIN_DIALOG, hwnd, GAME_FUNC(DbgWin_DlgProc), 0);
 	}
 	if (g_DbgConStd) {
 		DbgStd_Open(hwnd);

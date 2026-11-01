@@ -35,10 +35,10 @@ SD_OFFSET(cVehicleAttack, netFlags, 0x5c);
 SD_OFFSET(cVehicleAttack, hitBy, 0x60);
 SD_SIZE(cVehicleAttack, 0x7c);
 
-#define g_VehicleAttackReset GAME_GLOBAL_IN(float, GVar_WeapHitClientResetTime, 16, 0x4479c0)	/* the time the shots on a target are kept */
+#define g_VehicleAttackReset GAME_GLOBAL_IN(float, GVar_WeapHitClientResetTime, 16)	/* the time the shots on a target are kept */
 
 cVehicleAttack *__fastcall cVehicleAttack_ctor(cVehicleAttack *self);
-/* in WithLifeEntity.c (rva 0x12b8a0) */
+/* in WithLifeEntity.c */
 void __fastcall cVehicleAttack_dtor(cVehicleAttack *self);
 /* drops the target after its reset time */
 void __fastcall cVehicleAttack_Expire(cVehicleAttack *self);

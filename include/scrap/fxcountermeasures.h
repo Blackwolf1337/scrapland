@@ -14,7 +14,7 @@
 
 typedef struct cObjElementFX cObjElementFX;
 
-/* cObjElementAbstract::vftable (rva 0x3cb0e4) and the ones of the effects (thiscall) */
+/* cObjElementAbstract::vftable and the ones of the effects (thiscall) */
 typedef struct cObjElementFXVtbl {
 	cObjElementFX *(__thiscall *Delete)(cObjElementFX *self, byte flags);			/* 0x00 */
 	void(__thiscall *Update)(cObjElementFX *self, cDebris *debris, float dt);		/* 0x04 vf01 */
@@ -31,10 +31,10 @@ struct cObjElementFX {
 /* the base class of the effects, 4 bytes (cObjElement_dtor sets its vtable) */
 typedef cObjElementFX cObjElementAbstract;
 
-#define COBJELEMENTFXHOOK_VFTABLE GAME_VFTABLE(cObjElementFXHook_vftable, 0x3cbe14)
-#define COBJELEMENTFXEMI_VFTABLE GAME_VFTABLE(cObjElementFXEMI_vftable, 0x3cbe2c)
-#define COBJELEMENTFXSONICEXPLOSION_VFTABLE GAME_VFTABLE(cObjElementFXSonicExplosion_vftable, 0x3cbe44)
-#define COBJELEMENTFXDEBRISCLOUD_VFTABLE GAME_VFTABLE(cObjElementFXDebrisCloud_vftable, 0x3cbe5c)
+#define COBJELEMENTFXHOOK_VFTABLE GAME_VFTABLE(cObjElementFXHook_vftable)
+#define COBJELEMENTFXEMI_VFTABLE GAME_VFTABLE(cObjElementFXEMI_vftable)
+#define COBJELEMENTFXSONICEXPLOSION_VFTABLE GAME_VFTABLE(cObjElementFXSonicExplosion_vftable)
+#define COBJELEMENTFXDEBRISCLOUD_VFTABLE GAME_VFTABLE(cObjElementFXDebrisCloud_vftable)
 
 #define FXHOOK_POINTS 10
 #define FXEMI_TRAILS 8
@@ -189,16 +189,16 @@ char *__thiscall cTargetLock_GetEntity(cTargetLock *self);
 void *__thiscall PtrArray_Get(void *self, int i);
 
 /* the engine variables */
-#define g_FXHookFadeTime GAME_GLOBAL_IN(float, GVar_FXHookFadeTime, 16, 0x449d0c)
-#define g_HookRange GAME_GLOBAL_IN(float, GVar_HookRange, 16, 0x449d24)
-#define g_LaserIDAmmo GAME_GLOBAL_IN(int, GVar_LaserIDAmmo, 16, 0x449d64)
-#define g_FXHookSize GAME_GLOBAL_IN(float, GVar_FXHookSize, 16, 0x449dac)
-#define g_FXHookTensor GAME_GLOBAL_IN(float, GVar_FXHookTensor, 16, 0x449e44)
-#define g_LaserHookSparksFile GAME_GLOBAL_IN(const char *, GVar_LaserHookSparksFile, 16, 0x449e2c)
-#define g_FXSonicRadius GAME_GLOBAL_IN(float, GVar_FXSonicRadius, 16, 0x449eac)
-#define g_SceneDuDvRTarget GAME_GLOBAL_IN(int, GVar_R_SceneDuDvRTarget, 16, 0x4a8b34)		/* R_SceneDuDvRTarget */
+#define g_FXHookFadeTime GAME_GLOBAL_IN(float, GVar_FXHookFadeTime, 16)
+#define g_HookRange GAME_GLOBAL_IN(float, GVar_HookRange, 16)
+#define g_LaserIDAmmo GAME_GLOBAL_IN(int, GVar_LaserIDAmmo, 16)
+#define g_FXHookSize GAME_GLOBAL_IN(float, GVar_FXHookSize, 16)
+#define g_FXHookTensor GAME_GLOBAL_IN(float, GVar_FXHookTensor, 16)
+#define g_LaserHookSparksFile GAME_GLOBAL_IN(const char *, GVar_LaserHookSparksFile, 16)
+#define g_FXSonicRadius GAME_GLOBAL_IN(float, GVar_FXSonicRadius, 16)
+#define g_SceneDuDvRTarget GAME_GLOBAL_IN(int, GVar_R_SceneDuDvRTarget, 16)		/* R_SceneDuDvRTarget */
 
-/* cWorld: the position of the camera of the current view into out (rva 0x1ce910) */
+/* cWorld: the position of the camera of the current view into out */
 vec3_t *__thiscall cWorld_GetCamPos(cWorld *self, vec3_t *out);
 
 /* the hook laser: with target a curve from the weapon node over the points pulled to the line, glows at both ends and
@@ -246,7 +246,7 @@ void __thiscall cObjElementFXDebrisCloud_dtor(void *self);
 void __thiscall cObjElementFXEMI_dtor(void *self);
 void __thiscall cObjElementFXHook_dtor(void *self);
 void __thiscall cObjElementFXSonicExplosion_dtor(void *self);
-/* the deleting destructors (rva 0x1c99d0..0x1c9b00) */
+/* the deleting destructors */
 cObjElementFX *__thiscall cObjElementFXDebrisCloud_Delete(cObjElementFX *self, byte flags);
 cObjElementFX *__thiscall cObjElementFXEMI_Delete(cObjElementFX *self, byte flags);
 cObjElementFX *__thiscall cObjElementFXHook_Delete(cObjElementFX *self, byte flags);

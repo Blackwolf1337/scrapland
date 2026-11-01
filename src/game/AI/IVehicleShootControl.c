@@ -18,19 +18,19 @@
 #include "scrap/world.h"
 
 /* the engine variables */
-#define g_ShowVehWeapAI (&GAME_GLOBAL_IN(cString, GVar_ShowVehWeapAI, 16, 0x444c28))
-#define g_TimeShootAI GAME_GLOBAL_IN(float, GVar_TimeShootAI, 16, 0x444be0)
-#define g_TimeShootCMAI GAME_GLOBAL_IN(float, GVar_TimeShootCMAI, 16, 0x444bf8)
-#define g_TimeChangeWeapAI GAME_GLOBAL_IN(float, GVar_TimeChangeWeapAI, 16, 0x444c10)
-#define g_TimeChangeWeapCMAI GAME_GLOBAL_IN(float, GVar_TimeChangeWeapCMAI, 16, 0x444c70)
-#define g_ShortDistShootAI GAME_GLOBAL_IN(float, GVar_ShortDistShootAI, 16, 0x444c40)
-#define g_OffsetAngShootAI GAME_GLOBAL_IN(float, GVar_OffsetAngShootAI, 16, 0x444c58)
-#define g_MinDistCMAI GAME_GLOBAL_IN(float, GVar_MinDistCMAI, 16, 0x444bc8)
-#define g_VulcanIDWeap GAME_GLOBAL_IN(int, GVar_VulcanIDWeap, 16, 0x448818)
-#define g_VulcanDistLimit GAME_GLOBAL_IN(float, GVar_VulcanDistLimit, 16, 0x44a9c8)
-#define g_VulcanDistLimitUPG GAME_GLOBAL_IN(float, GVar_VulcanDistLimitUPG, 16, 0x44a948)
-#define g_TeslaDistLimit GAME_GLOBAL_IN(float, GVar_TeslaDistLimit, 16, 0x44a870)
-#define g_SwarmDistLimit GAME_GLOBAL_IN(float, GVar_SwarmDistLimit, 16, 0x44a1f0)
+#define g_ShowVehWeapAI (&GAME_GLOBAL_IN(cString, GVar_ShowVehWeapAI, 16))
+#define g_TimeShootAI GAME_GLOBAL_IN(float, GVar_TimeShootAI, 16)
+#define g_TimeShootCMAI GAME_GLOBAL_IN(float, GVar_TimeShootCMAI, 16)
+#define g_TimeChangeWeapAI GAME_GLOBAL_IN(float, GVar_TimeChangeWeapAI, 16)
+#define g_TimeChangeWeapCMAI GAME_GLOBAL_IN(float, GVar_TimeChangeWeapCMAI, 16)
+#define g_ShortDistShootAI GAME_GLOBAL_IN(float, GVar_ShortDistShootAI, 16)
+#define g_OffsetAngShootAI GAME_GLOBAL_IN(float, GVar_OffsetAngShootAI, 16)
+#define g_MinDistCMAI GAME_GLOBAL_IN(float, GVar_MinDistCMAI, 16)
+#define g_VulcanIDWeap GAME_GLOBAL_IN(int, GVar_VulcanIDWeap, 16)
+#define g_VulcanDistLimit GAME_GLOBAL_IN(float, GVar_VulcanDistLimit, 16)
+#define g_VulcanDistLimitUPG GAME_GLOBAL_IN(float, GVar_VulcanDistLimitUPG, 16)
+#define g_TeslaDistLimit GAME_GLOBAL_IN(float, GVar_TeslaDistLimit, 16)
+#define g_SwarmDistLimit GAME_GLOBAL_IN(float, GVar_SwarmDistLimit, 16)
 
 #define AIVS_AMMO_HOOK 3		/* the ammo kind of the hook */
 

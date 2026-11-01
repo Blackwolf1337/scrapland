@@ -44,41 +44,41 @@
 #include "scrap/misc.h"
 #include "scrap/win32.h"
 
-#define CMOTORAPP_VFTABLE GAME_VFTABLE(CEngineApp_vftable, 0x3d59e0)
-#define CNULLINPUT_VFTABLE GAME_VFTABLE(CNullInput_vftable, 0x3d5934)
+#define CMOTORAPP_VFTABLE GAME_VFTABLE(CEngineApp_vftable)
+#define CNULLINPUT_VFTABLE GAME_VFTABLE(CNullInput_vftable)
 #define CNULLINPUT_SIZE 0x114
 
-#define g_Engine3D GAME_GLOBAL(CEngineApp *, g_Engine3D, 0x4a9038)
+#define g_Engine3D GAME_GLOBAL(CEngineApp *, g_Engine3D)
 /* the callbacks of Engine3D_Create: once after the device, each frame, at the end */
-#define g_EngineInit GAME_GLOBAL(void *, g_EngineInit, 0x4a8f90)
-#define g_EngineFrame GAME_GLOBAL(void *, g_EngineFrame, 0x4a8f94)
-#define g_EngineRelease GAME_GLOBAL(void *, g_EngineRelease, 0x4a8f98)
-#define g_EngineFrameCount GAME_GLOBAL(int, g_EngineFrameCount, 0x4a8f78)
+#define g_EngineInit GAME_GLOBAL(void *, g_EngineInit)
+#define g_EngineFrame GAME_GLOBAL(void *, g_EngineFrame)
+#define g_EngineRelease GAME_GLOBAL(void *, g_EngineRelease)
+#define g_EngineFrameCount GAME_GLOBAL(int, g_EngineFrameCount)
 /* the values m3d.ini gave (Engine_LoadVarsIni) */
-#define g_EngineIni7c GAME_GLOBAL(int, g_EngineIni7c, 0x4a8f7c)
-#define g_EngineIni80 GAME_GLOBAL(int, g_EngineIni80, 0x4a8f80)
-#define g_EngineIni84 GAME_GLOBAL(int, g_EngineIni84, 0x4a8f84)
-#define g_EngineIni88 GAME_GLOBAL(int, g_EngineIni88, 0x4a8f88)
-#define g_EngineDef1cf4 GAME_GLOBAL(int, g_EngineDef1cf4, 0x431cf4)
-#define g_EngineMode GAME_GLOBAL_IN(int, g_FilterMip, 0, 0x431d70)		/* 1 or 2 */
-#define g_ColorStr (GAME_ARRAY(char, g_ColorStr, 0x4a9050))	/* 0x40 */
+#define g_EngineIni7c GAME_GLOBAL(int, g_EngineIni7c)
+#define g_EngineIni80 GAME_GLOBAL(int, g_EngineIni80)
+#define g_EngineIni84 GAME_GLOBAL(int, g_EngineIni84)
+#define g_EngineIni88 GAME_GLOBAL(int, g_EngineIni88)
+#define g_EngineDef1cf4 GAME_GLOBAL(int, g_EngineDef1cf4)
+#define g_EngineMode GAME_GLOBAL_IN(int, g_FilterMip, 0)		/* 1 or 2 */
+#define g_ColorStr (GAME_ARRAY(char, g_ColorStr))	/* 0x40 */
 
 typedef void(__stdcall *initcommoncontrols_t)(void);
-#define exe_InitCommonControls GAME_IMPORT(initcommoncontrols_t, InitCommonControls, 0, 0x3a104c)
+#define exe_InitCommonControls GAME_IMPORT(initcommoncontrols_t, InitCommonControls, 0)
 
 /* the console command handler of the engine (E3D_Command) */
 #define ENGINE_CMDPROC 0x22eda0
-#define g_Input GAME_GLOBAL(void *, g_Input, 0x4db418)	/* the input of the engine, a CEntradaNula */
+#define g_Input GAME_GLOBAL(void *, g_Input)	/* the input of the engine, a CEntradaNula */
 /* the clock of the engine */
-#define g_FrameDelta GAME_GLOBAL(float, g_FrameMs, 0x4a8ed4)
-#define g_RealFrameSecs GAME_GLOBAL(float, g_RealFrameSecs, 0x4a8ee4)
-#define g_TimeD GAME_GLOBAL(double, g_TimeD, 0x4a8ed8)
-#define g_TimeMsInt GAME_GLOBAL(int, g_TimeMsInt, 0x4a8ee0)
-#define g_GameTimeD GAME_GLOBAL(double, g_GameTimeD, 0x4a8ee8)
-#define g_LastTime GAME_GLOBAL(float, g_LastTime, 0x4a903c)
-#define g_FpsTime GAME_GLOBAL(float, g_FpsTime, 0x4a9040)
-#define g_FpsFrames GAME_GLOBAL(int, g_FpsFrames, 0x4a9044)
-#define g_Fps GAME_GLOBAL(float, g_Fps, 0x431ba8)
+#define g_FrameDelta GAME_GLOBAL(float, g_FrameMs)
+#define g_RealFrameSecs GAME_GLOBAL(float, g_RealFrameSecs)
+#define g_TimeD GAME_GLOBAL(double, g_TimeD)
+#define g_TimeMsInt GAME_GLOBAL(int, g_TimeMsInt)
+#define g_GameTimeD GAME_GLOBAL(double, g_GameTimeD)
+#define g_LastTime GAME_GLOBAL(float, g_LastTime)
+#define g_FpsTime GAME_GLOBAL(float, g_FpsTime)
+#define g_FpsFrames GAME_GLOBAL(int, g_FpsFrames)
+#define g_Fps GAME_GLOBAL(float, g_Fps)
 #define ENGINE_MAXFRAME 0.1f
 
 #define WM_KEYDOWN 0x100
@@ -166,7 +166,7 @@ void Engine3D_Shutdown(void) {
 int __thiscall CEngineApp_OneTimeSceneInit(CEngineApp *self) {
 	void *mem;
 
-	g_E3DCmdProc = GAME_FUNC(E3D_Command, ENGINE_CMDPROC);
+	g_E3DCmdProc = GAME_FUNC(E3D_Command);
 	E3D_DebugPrintf("\nprg: '%s'", E3D_GetExePath());
 	if (g_EngineInit && !((byte(*)(void))g_EngineInit)()) {
 		return (int)0x80004005;
@@ -219,24 +219,24 @@ int __thiscall CEngineApp_FrameMove(CEngineApp *self) {
 	return 0;
 }
 
-#define g_RenderCounts (GAME_ARRAY(int, g_RenderCounts, 0x4a8f00))	/* [10], 8 counts (g_RenderTris and g_RenderVerts first), the frame clears 10 */
-#define g_Engine431bae GAME_GLOBAL_IN(byte, group_431bac, 2, 0x431bae)
-#define g_Dither GAME_GLOBAL(int, g_Dither, 0x431bd4)		/* [video] Tramas: dithering */
+#define g_RenderCounts (GAME_ARRAY(int, g_RenderCounts))	/* [10], 8 counts (g_RenderTris and g_RenderVerts first), the frame clears 10 */
+#define g_Engine431bae GAME_GLOBAL_IN(byte, group_431bac, 2)
+#define g_Dither GAME_GLOBAL(int, g_Dither)		/* [video] Tramas: dithering */
 /* the frame limiter: [video] limitaFPS of m3d.ini and the console variable R_LimitFPS, the larger counts */
-#define g_LimitFps GAME_GLOBAL(float, g_LimitFps, 0x4a8f8c)
-#define g_RLimitFps GAME_GLOBAL_IN(float, GVar_R_LimitFPS, 16, 0x4a8fe8)
-#define g_LimitNext GAME_GLOBAL(uint32_t, g_LimitNext, 0x4a9048)	/* the start of the next frame, timeGetTime * 3 (0: none yet) */
-#define g_RForceFps GAME_GLOBAL_IN(float, GVar_R_ForceFPS, 16, 0x4a8fd0)		/* R_ForceFPS: frames of a fixed length (Timer_FixedStep) */
-#define g_TimeMult GAME_GLOBAL(int, g_TimeMult, 0x431bec)
-#define g_TimeScaled GAME_GLOBAL(int, g_TimeScaled, 0x4a8ecc)	/* Time_Get() * g_TimeMult / 1000 */
-#define g_AutoShot GAME_GLOBAL_IN(int, GVar_AutoScreenShot, 16, 0x4a9030)		/* the console variable AutoScreenShot */
-#define g_StencilClear GAME_GLOBAL_IN(uint32_t, GVar_R_StencilRefClear, 16, 0x390138)
-#define g_ResetDev GAME_GLOBAL_IN(byte, group_4a8efc, 2, 0x4a8efe)		/* the device objects made again at the next frame */
-#define g_ResetDevOnly GAME_GLOBAL_IN(byte, group_431bac, 3, 0x431baf)	/* 1: without the world, 0: the game callbacks too */
+#define g_LimitFps GAME_GLOBAL(float, g_LimitFps)
+#define g_RLimitFps GAME_GLOBAL_IN(float, GVar_R_LimitFPS, 16)
+#define g_LimitNext GAME_GLOBAL(uint32_t, g_LimitNext)	/* the start of the next frame, timeGetTime * 3 (0: none yet) */
+#define g_RForceFps GAME_GLOBAL_IN(float, GVar_R_ForceFPS, 16)		/* R_ForceFPS: frames of a fixed length (Timer_FixedStep) */
+#define g_TimeMult GAME_GLOBAL(int, g_TimeMult)
+#define g_TimeScaled GAME_GLOBAL(int, g_TimeScaled)	/* Time_Get() * g_TimeMult / 1000 */
+#define g_AutoShot GAME_GLOBAL_IN(int, GVar_AutoScreenShot, 16)		/* the console variable AutoScreenShot */
+#define g_StencilClear GAME_GLOBAL_IN(uint32_t, GVar_R_StencilRefClear, 16)
+#define g_ResetDev GAME_GLOBAL_IN(byte, group_4a8efc, 2)		/* the device objects made again at the next frame */
+#define g_ResetDevOnly GAME_GLOBAL_IN(byte, group_431bac, 3)	/* 1: without the world, 0: the game callbacks too */
 /* the callbacks of the game the reset puts in place */
-#define g_EngineInitNext GAME_GLOBAL(void *, g_EngineInitNext, 0x4a8f9c)
-#define g_EngineFrameNext GAME_GLOBAL(void *, g_EngineFrameNext, 0x4a8fa0)
-#define g_EngineReleaseNext GAME_GLOBAL(void *, g_EngineReleaseNext, 0x4a8fa4)
+#define g_EngineInitNext GAME_GLOBAL(void *, g_EngineInitNext)
+#define g_EngineFrameNext GAME_GLOBAL(void *, g_EngineFrameNext)
+#define g_EngineReleaseNext GAME_GLOBAL(void *, g_EngineReleaseNext)
 #define D3DDEV_BEGINSCENE 0x88
 #define D3DDEV_ENDSCENE 0x8c
 #define D3DRS_SHADEMODE 9
@@ -501,11 +501,11 @@ CWorld *World_GetChecked(void) {
 }
 
 /* the info overlay of R_ShowInfo (Engine_DrawStats, modes 1 to 4) */
-#define g_TexturePool GAME_GLOBAL_IN(int, GVar_TexturePool, 16, 0x4b2670)
-#define g_TexCreated GAME_GLOBAL(int, g_TexCreated, 0x4b25f0)
-#define g_TexCached GAME_GLOBAL(int, g_TexCached, 0x4b25f4)
-#define g_TexUsed GAME_GLOBAL(int, g_TexUsed, 0x4b25f8)
-#define g_TexUsedPixels GAME_GLOBAL(int, g_TexUsedPixels, 0x4b25fc)
+#define g_TexturePool GAME_GLOBAL_IN(int, GVar_TexturePool, 16)
+#define g_TexCreated GAME_GLOBAL(int, g_TexCreated)
+#define g_TexCached GAME_GLOBAL(int, g_TexCached)
+#define g_TexUsed GAME_GLOBAL(int, g_TexUsed)
+#define g_TexUsedPixels GAME_GLOBAL(int, g_TexUsedPixels)
 #define D3DDEV_GETAVAILABLETEXTUREMEM 0x10
 typedef uint32_t(__stdcall *d3dGetAvailableTextureMem_t)(void *dev);
 
@@ -615,44 +615,44 @@ void Engine_LoadVarsIni(const char *name, const char *dir) {
 		const char *key;
 		void *var;
 	} engineIni[] = {
-		{ INI_BOOL, "video", "TexPersp", GAME_PTR(engineIni_431bd0, 0, 0x431bd0) },
-		{ INI_BOOL, "video", "Tramas", GAME_PTR(g_Dither, 0, 0x431bd4) },
-		{ INI_BOOL, "video", "Filtrado", GAME_PTR(engineIni_431bc8, 0, 0x431bc8) },
-		{ INI_BOOL, "video", "UsarTexturas", GAME_PTR(g_UseTextures, 0, 0x431bcc) },
-		{ INI_BOOL, "video", "UsarEnvMap", GAME_PTR(g_UseEnvMap, 0, 0x431bd8) },
-		{ INI_BOOL, "video", "UsarHWEnvMap", GAME_PTR(g_UseHWEnvMap, 0, 0x431bdc) },
-		{ INI_BOOL, "video", "UsarBumpMap", GAME_PTR(g_UseBumpMap, 0, 0x431be0) },
-		{ INI_BOOL, "video", "UsarGlowMap", GAME_PTR(g_UseGlowMap, 0, 0x431be4) },
-		{ INI_BOOL, "video", "DiffuseMod4x", GAME_PTR(g_DiffuseMod4x, 0, 0x431be8) },
-		{ INI_BOOL, "video", "Sharpen", GAME_PTR(g_Sharpen, 0, 0x4b25e8) },
-		{ INI_BOOL, "video", "ErrDif", GAME_PTR(g_TexErrDif, 0, 0x4b25ec) },
-		{ INI_LONG, "video", "TextBPP", GAME_PTR(g_TextBPP, 0, 0x432938) },
-		{ INI_LONG, "video", "TextOpBPP", GAME_PTR(g_TextOpBPP, 0, 0x43293c) },
-		{ INI_BOOL, "video", "gamma2x", GAME_PTR(g_Gamma2x, 0, 0x4db878) },
-		{ INI_BOOL, "video", "sobredib", GAME_PTR(g_Overdraw, 0, 0x4a8f2c) },
-		{ INI_BOOL, "video", "tricolis", GAME_PTR(g_ShowCollision, 0, 0x4a8f70) },
-		{ INI_BOOL, "video", "bufferw", GAME_PTR(g_EngineIni7c, 0, 0x4a8f7c) },
-		{ INI_FLOAT, "video", "limitaFPS", GAME_PTR(g_LimitFps, 0, 0x4a8f8c) },
-		{ INI_FLOAT, "video", "despMipmap", GAME_PTR(g_MipmapBias2, 0, 0x4ad73c) },
-		{ INI_BOOL, "video", "LinearMipmap", GAME_PTR(g_EngineIni88, 0, 0x4a8f88) },
-		{ INI_LONG, "video", "MaxAnisoFlt", GAME_PTR(engineIni_431d74, 0, 0x431d74) },
-		{ INI_BOOL, "video", "ConsolaWnd", GAME_PTR(g_DbgConWindow, 0, 0x4ab8f0) },
-		{ INI_BOOL, "video", "ConsolaTxt", GAME_PTR(g_DbgConStd, 0, 0x4ab8f4) },
-		{ INI_BOOL, "video", "IlumSpec", GAME_PTR(g_EngineIni80, 0, 0x4a8f80) },
-		{ INI_LONG, "video", "Stencil", GAME_PTR(g_EngineIni84, 0, 0x4a8f84) },
-		{ INI_LONG, "video", "Depth", GAME_PTR(g_EngineDef1cf4, 0, 0x431cf4) },
-		{ INI_FLOAT, "sombras", "sombras", GAME_PTR(engineIni_431bb0, 0, 0x431bb0) },
-		{ INI_LONG, "sombras", "objeto_ini", GAME_PTR(engineIni_4a8f28, 0, 0x4a8f28) },
-		{ INI_LONG, "sombras", "objeto_fin", GAME_PTR(engineIni_431bb4, 0, 0x431bb4) },
-		{ INI_BOOL, "sombras", "modif_vnorm", GAME_PTR(engineIni_431bb8, 0, 0x431bb8) },
-		{ INI_BOOL, "sombras", "proc_objetos", GAME_PTR(engineIni_431bbc, 0, 0x431bbc) },
-		{ INI_TEXT, "sombras", "nombre_luz", GAME_PTR(engineIni_4a8f30, 0, 0x4a8f30) },
-		{ INI_BOOL, "dinput", "raton_excl", GAME_PTR(g_MouseExcl, 0, 0x431cfc) },
-		{ INI_BOOL, "dinput", "usar_di", GAME_PTR(engineIni_431cf8, 0, 0x431cf8) },
-		{ INI_BOOL, "dinput", "raton_inv_x", GAME_PTR(g_InputInvX, 0, 0x4db41c) },
-		{ INI_BOOL, "dinput", "raton_inv_y", GAME_PTR(g_InputInvY, 0, 0x4db420) },
-		{ INI_BOOL, "dinput", "raton_inv_z", GAME_PTR(g_InputInvZ, 0, 0x4db424) },
-		{ INI_LONG, "suelo", "suelo_caras_cuadr", GAME_PTR(g_GroundTrisPerNode, 0, 0x431bc0) },
+		{ INI_BOOL, "video", "TexPersp", GAME_PTR(engineIni_431bd0, 0) },
+		{ INI_BOOL, "video", "Tramas", GAME_PTR(g_Dither, 0) },
+		{ INI_BOOL, "video", "Filtrado", GAME_PTR(engineIni_431bc8, 0) },
+		{ INI_BOOL, "video", "UsarTexturas", GAME_PTR(g_UseTextures, 0) },
+		{ INI_BOOL, "video", "UsarEnvMap", GAME_PTR(g_UseEnvMap, 0) },
+		{ INI_BOOL, "video", "UsarHWEnvMap", GAME_PTR(g_UseHWEnvMap, 0) },
+		{ INI_BOOL, "video", "UsarBumpMap", GAME_PTR(g_UseBumpMap, 0) },
+		{ INI_BOOL, "video", "UsarGlowMap", GAME_PTR(g_UseGlowMap, 0) },
+		{ INI_BOOL, "video", "DiffuseMod4x", GAME_PTR(g_DiffuseMod4x, 0) },
+		{ INI_BOOL, "video", "Sharpen", GAME_PTR(g_Sharpen, 0) },
+		{ INI_BOOL, "video", "ErrDif", GAME_PTR(g_TexErrDif, 0) },
+		{ INI_LONG, "video", "TextBPP", GAME_PTR(g_TextBPP, 0) },
+		{ INI_LONG, "video", "TextOpBPP", GAME_PTR(g_TextOpBPP, 0) },
+		{ INI_BOOL, "video", "gamma2x", GAME_PTR(g_Gamma2x, 0) },
+		{ INI_BOOL, "video", "sobredib", GAME_PTR(g_Overdraw, 0) },
+		{ INI_BOOL, "video", "tricolis", GAME_PTR(g_ShowCollision, 0) },
+		{ INI_BOOL, "video", "bufferw", GAME_PTR(g_EngineIni7c, 0) },
+		{ INI_FLOAT, "video", "limitaFPS", GAME_PTR(g_LimitFps, 0) },
+		{ INI_FLOAT, "video", "despMipmap", GAME_PTR(g_MipmapBias2, 0) },
+		{ INI_BOOL, "video", "LinearMipmap", GAME_PTR(g_EngineIni88, 0) },
+		{ INI_LONG, "video", "MaxAnisoFlt", GAME_PTR(engineIni_431d74, 0) },
+		{ INI_BOOL, "video", "ConsolaWnd", GAME_PTR(g_DbgConWindow, 0) },
+		{ INI_BOOL, "video", "ConsolaTxt", GAME_PTR(g_DbgConStd, 0) },
+		{ INI_BOOL, "video", "IlumSpec", GAME_PTR(g_EngineIni80, 0) },
+		{ INI_LONG, "video", "Stencil", GAME_PTR(g_EngineIni84, 0) },
+		{ INI_LONG, "video", "Depth", GAME_PTR(g_EngineDef1cf4, 0) },
+		{ INI_FLOAT, "sombras", "sombras", GAME_PTR(engineIni_431bb0, 0) },
+		{ INI_LONG, "sombras", "objeto_ini", GAME_PTR(engineIni_4a8f28, 0) },
+		{ INI_LONG, "sombras", "objeto_fin", GAME_PTR(engineIni_431bb4, 0) },
+		{ INI_BOOL, "sombras", "modif_vnorm", GAME_PTR(engineIni_431bb8, 0) },
+		{ INI_BOOL, "sombras", "proc_objetos", GAME_PTR(engineIni_431bbc, 0) },
+		{ INI_TEXT, "sombras", "nombre_luz", GAME_PTR(engineIni_4a8f30, 0) },
+		{ INI_BOOL, "dinput", "raton_excl", GAME_PTR(g_MouseExcl, 0) },
+		{ INI_BOOL, "dinput", "usar_di", GAME_PTR(engineIni_431cf8, 0) },
+		{ INI_BOOL, "dinput", "raton_inv_x", GAME_PTR(g_InputInvX, 0) },
+		{ INI_BOOL, "dinput", "raton_inv_y", GAME_PTR(g_InputInvY, 0) },
+		{ INI_BOOL, "dinput", "raton_inv_z", GAME_PTR(g_InputInvZ, 0) },
+		{ INI_LONG, "suelo", "suelo_caras_cuadr", GAME_PTR(g_GroundTrisPerNode, 0) },
 	};
 	char path[MAX_FILEPATH];
 	cDataFile *dat;
@@ -700,7 +700,7 @@ void Engine_LoadVarsIni(const char *name, const char *dir) {
 /* the modal dialog of the lights of the global scene, the application paused meanwhile */
 void __thiscall CEngineApp_LightsDialog(CEngineApp *self, void *hwnd, void *inst) {
 	self->base.vftable->Pause(&self->base, 1);
-	exe_DialogBoxParamA(inst, (const char *)ENGINE_LIGHTSDIALOG, hwnd, GAME_FUNC(Engine_SceneDlgProc, ENGINE_LIGHTSPROC),
+	exe_DialogBoxParamA(inst, (const char *)ENGINE_LIGHTSDIALOG, hwnd, GAME_FUNC(Engine_SceneDlgProc),
 		(intptr_t)self->scene);
 	self->base.vftable->Pause(&self->base, 0);
 }
@@ -934,13 +934,13 @@ intptr_t __stdcall Engine_SceneDlgProc(void *hwnd, uint32_t msg, uintptr_t wPara
 }
 
 /* the frame time graph of R_Profiler 4 (Engine_DrawStats) */
-#define g_FpsText (GAME_ARRAY(char, g_FpsText, 0x4a9090))	/* 0x40, "frame: fps fps  ms" when the fps jumped */
-#define g_FpsTextTime GAME_GLOBAL(float, g_FpsTextTime, 0x4a90d0)
-#define g_FpsGraph (GAME_ARRAY(float, g_FpsGraph, 0x4a90d8))	/* FPS_GRAPH bars of 2 vertices (x, 0) (x, frame ms) */
-#define g_FpsGraphPeak (GAME_ARRAY(float, g_FpsGraphPeak, 0x4a92b8))	/* the same with the falling peak */
-#define g_FpsGraphPos GAME_GLOBAL_IN(int, g_FpsGraphPeak, 480, 0x4a9498)
-#define g_FpsScaleTime GAME_GLOBAL_IN(float, g_FpsGraphPeak, 484, 0x4a949c)
-#define g_FpsScale GAME_GLOBAL(float, g_FpsScale, 0x431d00)	/* the height of the graph: 200 ms per 200 fps */
+#define g_FpsText (GAME_ARRAY(char, g_FpsText))	/* 0x40, "frame: fps fps  ms" when the fps jumped */
+#define g_FpsTextTime GAME_GLOBAL(float, g_FpsTextTime)
+#define g_FpsGraph (GAME_ARRAY(float, g_FpsGraph))	/* FPS_GRAPH bars of 2 vertices (x, 0) (x, frame ms) */
+#define g_FpsGraphPeak (GAME_ARRAY(float, g_FpsGraphPeak))	/* the same with the falling peak */
+#define g_FpsGraphPos GAME_GLOBAL_IN(int, g_FpsGraphPeak, 480)
+#define g_FpsScaleTime GAME_GLOBAL_IN(float, g_FpsGraphPeak, 484)
+#define g_FpsScale GAME_GLOBAL(float, g_FpsScale)	/* the height of the graph: 200 ms per 200 fps */
 #define FPS_GRAPH 30
 
 void Engine_DrawFpsGraph(float y) {
@@ -1027,7 +1027,7 @@ void Scene_LogTree(CScene *scn, CNode3D *node, int indent) {
 }
 
 /* the commands of the debug console of the engine (g_E3DCmdProc) */
-#define g_ShowJoins GAME_GLOBAL_IN(byte, group_4ad6f0, 0, 0x4ad6f0)	/* the joints of the meshes drawn */
+#define g_ShowJoins GAME_GLOBAL_IN(byte, group_4ad6f0, 0)	/* the joints of the meshes drawn */
 void E3D_Command(char *cmd) {
 	char *s;
 	CScene *e;
@@ -1054,7 +1054,7 @@ void E3D_Command(char *cmd) {
 		Scene_LogTree(e, NULL, 0);
 		hwnd = g_Engine->hWnd;
 		exe_CreateDialogParamA((void *)exe_GetWindowLongA(hwnd, GWL_HINSTANCE), (const char *)ENGINE_LIGHTSDIALOG, hwnd,
-			GAME_FUNC(Engine_SceneDlgProc, ENGINE_LIGHTSPROC), (intptr_t)e);
+			GAME_FUNC(Engine_SceneDlgProc), (intptr_t)e);
 		return;
 	}
 	if (!crt_stricmp(cmd, "mem")) {
@@ -1095,9 +1095,9 @@ void E3D_Command(char *cmd) {
 #define IDM_SHARPEN 0x9c65
 #define IDM_RELOADMATS 0x9c66
 #define IDM_CAMERA 50000		/* the cameras of the global scene from here */
-#define g_Engine4af7d4 GAME_GLOBAL(byte, g_Engine4af7d4, 0x4af7d4)
-#define g_Sharpen GAME_GLOBAL(int, g_Sharpen, 0x4b25e8)		/* [video] Sharpen of m3d.ini */
-#define g_MouseExcl GAME_GLOBAL(int, g_MouseExcl, 0x431cfc)		/* [dinput] raton_excl */
+#define g_Engine4af7d4 GAME_GLOBAL(byte, g_Engine4af7d4)
+#define g_Sharpen GAME_GLOBAL(int, g_Sharpen)		/* [video] Sharpen of m3d.ini */
+#define g_MouseExcl GAME_GLOBAL(int, g_MouseExcl)		/* [dinput] raton_excl */
 
 static uint32_t Menu_Check(int on) {
 	return on ? MF_CHECKED : 0;

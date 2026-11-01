@@ -10,8 +10,8 @@
 #include "scrap/game.h"
 
 /* the option words of the inline functions (_CRT_INTERNAL_LOCAL_PRINTF_OPTIONS and the scanf ones) */
-#define g_PrintfOptions (GAME_ARRAY_IN(uint64_t, g_PrintfOptions, 0, 0x444210))
-#define g_ScanfOptions (GAME_ARRAY(uint64_t, g_ScanfOptions, 0x4445c0))
+#define g_PrintfOptions (GAME_ARRAY_IN(uint64_t, g_PrintfOptions, 0))
+#define g_ScanfOptions (GAME_ARRAY(uint64_t, g_ScanfOptions))
 
 uint64_t *crt_local_printf_options(void) {
 	return g_PrintfOptions;

@@ -18,7 +18,7 @@
 #include "scrap/vehicletraffic.h"
 #include "scrap/withlifeentity.h"
 
-#define CVEHICLEENTITY_VFTABLE GAME_VFTABLE(cVehicleEntity_vftable, 0x3b52bc)
+#define CVEHICLEENTITY_VFTABLE GAME_VFTABLE(cVehicleEntity_vftable)
 #define CVEHICLEENTITY_SIZE 0x814
 #define CNETVCONTROLLER_SIZE 0x78	/* allocated with this size, freed with 0x5c (the base class) */
 
@@ -200,8 +200,8 @@ static inline const cVehicleMotorsVtbl *Veh_MotorsVtbl(cVehicleEntity *v) {
 }
 
 /* the engine variables */
-#define g_AtmosphereLimit GAME_GLOBAL_IN(float, GVar_AtmosphereLimit, 16, 0x467644)	/* above it the ships fall back */
-#define g_SpaceLimit GAME_GLOBAL_IN(float, GVar_TopLimit, 16, 0x4675d8)
+#define g_AtmosphereLimit GAME_GLOBAL_IN(float, GVar_AtmosphereLimit, 16)	/* above it the ships fall back */
+#define g_SpaceLimit GAME_GLOBAL_IN(float, GVar_TopLimit, 16)
 
 /* the parts of other files (not decompiled yet; VehicleMotors, VehicleTraffic and WeaponManager in their headers);
  * the objects inside the vehicle by their offset */
@@ -238,7 +238,7 @@ typedef struct cVehicleTargets {
 } cVehicleTargets;
 SD_SIZE(cVehicleTargets, 0x88);
 
-#define g_TgtRegenerationTime GAME_GLOBAL_IN(float, GVar_TgtRegenerationTime, 16, 0x447b74)
+#define g_TgtRegenerationTime GAME_GLOBAL_IN(float, GVar_TgtRegenerationTime, 16)
 
 /* the functions take the o648 bytes of the vehicle */
 void *__fastcall cVehicleO648_ctor(void *o);
@@ -269,7 +269,7 @@ void __thiscall cNetVController_Reset(cNetVController *self);
 void __thiscall cNetVController_Read(cNetVController *self, void *msg);
 void __thiscall cNetVController_Write(cNetVController *self, byte flags, cEntity *e, void *msg, byte force);
 
-/* VehicleEntity.c; the constructor (rva 0x105830) is declared in world.h */
+/* VehicleEntity.c; the constructor is declared in world.h */
 void __fastcall cVehicleEntity_dtor(cVehicleEntity *self);
 cVehicleEntity *__thiscall cVehicleEntity_Delete(cVehicleEntity *self, byte flags);
 /* the push of two vehicles that touch: bounced by their masses, pushed apart when they are inside each other */
@@ -289,7 +289,7 @@ void __thiscall cVehicleEntity_CloudTick(cVehicleEntity *self, float dt);
 void __thiscall cVehicleEntity_NoFireTick(cVehicleEntity *self, float dt);
 void __thiscall cVehicleEntity_PushTick(cVehicleEntity *self, float dt);
 void __thiscall cVehicleEntity_SetMass(cVehicleEntity *self, float mass);
-/* the debris cloud on a vehicle for time (rva 0x10a150) */
+/* the debris cloud on a vehicle for time */
 void __thiscall cVehicleEntity_SetCloud(cEntity *self, float time, byte on);
 /* a state flag for the network game */
 void __thiscall cVehicleEntity_SetNetFlag(cEntity *self, byte on);

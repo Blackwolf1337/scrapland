@@ -123,7 +123,7 @@ void __thiscall CGraphic3D_Render(CGraphic3D *self, void *dev, CRenderNode *r) {
 			SectorVis_Draw(&self->vis, &self->pos, vis, 0, self->node->name);
 		}
 		if (g_ShowSprites > 2) {
-			Debug_Text3D(g_FntTerm8, 4.0f, -12.0f, &self->pos, 0x8000, GAME_STR(str_3bae88, 0x3bae88), self->node->name);
+			Debug_Text3D(g_FntTerm8, 4.0f, -12.0f, &self->pos, 0x8000, GAME_STR(str_3bae88), self->node->name);
 		}
 		if (!vis) {
 			return;

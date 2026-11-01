@@ -9,7 +9,7 @@
 #include "scrap/mathlib.h"
 
 /* the weight of the smoothing of the light angle (ILLUM_SOFT) */
-#define g_IllumSmooth GAME_GLOBAL(float, g_IllumSmooth, 0x432a84)
+#define g_IllumSmooth GAME_GLOBAL(float, g_IllumSmooth)
 
 float Illum_Smooth(float v) {
 	float k = g_IllumSmooth;

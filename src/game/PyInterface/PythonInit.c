@@ -8,13 +8,13 @@
 
 #include <marshal.h>
 
-#define g_IsViewer GAME_GLOBAL_IN(int, GVar_Viewer, 16, 0x467b34)		/* model viewer build: Viewer.py instead of Init.py */
-#define g_PythonExecute GAME_GLOBAL_IN(char *, GVar_PythonExecute, 16, 0x4669f8)	/* engine variable PythonExecute */
-#define g_PyStaticBuffer (&GAME_GLOBAL_IN(cStaticBuffer, cStaticBuffer_PyStaticBuffer, 0, 0x44bbf0))
+#define g_IsViewer GAME_GLOBAL_IN(int, GVar_Viewer, 16)		/* model viewer build: Viewer.py instead of Init.py */
+#define g_PythonExecute GAME_GLOBAL_IN(char *, GVar_PythonExecute, 16)	/* engine variable PythonExecute */
+#define g_PyStaticBuffer (&GAME_GLOBAL_IN(cStaticBuffer, cStaticBuffer_PyStaticBuffer, 0))
 
-/* PyRun_SimpleString of the exe, changed by the engine: CR dropped, the code is called "Scrap input" (rva 0x2ec790) */
+/* PyRun_SimpleString of the exe, changed by the engine: CR dropped, the code is called "Scrap input" */
 int PyRun_ScrapString(const char *code);
-/* frees the free lists of the object types after Py_Finalize (rva 0x2ebce0) */
+/* frees the free lists of the object types after Py_Finalize */
 void Py_FiniObjects(void);
 
 void Python_Init(void) {

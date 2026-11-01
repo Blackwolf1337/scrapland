@@ -16,9 +16,9 @@
 #include "scrap/groundportal.h"
 #include "scrap/table.h"
 
-#define CMODEL_VFTABLE GAME_VFTABLE(CModel_vftable, 0x3da6a0)
+#define CMODEL_VFTABLE GAME_VFTABLE(CModel_vftable)
 #define MAX_MODELS_RENDER 1024
-#define g_ModelsOn GAME_GLOBAL(byte, g_ModelsOn, 0x432418)	/* RenderModels: the models are drawn */
+#define g_ModelsOn GAME_GLOBAL(byte, g_ModelsOn)	/* RenderModels: the models are drawn */
 
 /* creation flags of the scenes and models (crear_modelo, crear_escena) */
 enum {
@@ -141,11 +141,11 @@ static inline void Scene_Unref(CScene **slot) {
 	*slot = NULL;
 }
 
-#define g_ModelList GAME_GLOBAL(CModelList *, g_ModelList, 0x4ae778)
-#define g_SceneList GAME_GLOBAL(CSceneList *, g_SceneList, 0x4ae77c)
-#define g_ModelsRender (GAME_ARRAY(CModelList *, g_ModelsRender, 0x4ae7c8))
-#define g_NumModelsRender GAME_GLOBAL_IN(int, g_ModelsRender, 4096, 0x4af7c8)
-#define g_MaxModelsRender GAME_GLOBAL_IN(int, g_ModelsRender, 4100, 0x4af7cc)	/* the most there were */
+#define g_ModelList GAME_GLOBAL(CModelList *, g_ModelList)
+#define g_SceneList GAME_GLOBAL(CSceneList *, g_SceneList)
+#define g_ModelsRender (GAME_ARRAY(CModelList *, g_ModelsRender))
+#define g_NumModelsRender GAME_GLOBAL_IN(int, g_ModelsRender, 4096)
+#define g_MaxModelsRender GAME_GLOBAL_IN(int, g_ModelsRender, 4100)	/* the most there were */
 
 /* Engine/Modelo.cpp (src/game/engine3d/Engine/Model.c) */
 CModel *__fastcall CModel_ctor(CModel *self);
@@ -272,13 +272,13 @@ int ModelList_CompareKey(const void *a, const void *b);	/* qsort, larger sortKey
  * MODEL_EFFECT_LAST), the float in effectParam its parameter. Drawn in the passes 0, 3 and 13 as several draws of the scene
  * with g_MatFX1 or g_MatForced; 6..8 need the pixel shaders. */
 struct CGraphic2D;
-#define g_FXMat (GAME_GLOBAL(CMaterial, g_FXMat, 0x4e1c68))	/* the colors and blends of the effects */
-#define g_FXGraphicNoise1 (GAME_GLOBAL(struct CGraphic2D, g_FXGraphicNoise1, 0x4e1c20))	/* bmp/noise.tga */
-#define g_FXGraphicStatic (GAME_GLOBAL(struct CGraphic2D, g_FXGraphicStatic, 0x4e1d18))	/* bmp/noise_static.alpha.tga, the scan lines */
-#define g_FXGraphicNoise2 (GAME_GLOBAL(struct CGraphic2D, g_FXGraphicNoise2, 0x4e1d60))	/* bmp/noise2.tga */
-#define g_MatElectric GAME_GLOBAL(CMaterial *, g_MatElectric, 0x4e1c64)	/* fx_Electric (+shader:Electric) */
-#define g_MatFire GAME_GLOBAL(CMaterial *, g_MatFire, 0x4e1d5c)		/* fx_Fire (+shader:Fire) */
-#define g_MatNoise GAME_GLOBAL(CMaterial *, g_MatNoise, 0x4e1da4)		/* fx_Noise (+shader:Noise) */
+#define g_FXMat (GAME_GLOBAL(CMaterial, g_FXMat))	/* the colors and blends of the effects */
+#define g_FXGraphicNoise1 (GAME_GLOBAL(struct CGraphic2D, g_FXGraphicNoise1))	/* bmp/noise.tga */
+#define g_FXGraphicStatic (GAME_GLOBAL(struct CGraphic2D, g_FXGraphicStatic))	/* bmp/noise_static.alpha.tga, the scan lines */
+#define g_FXGraphicNoise2 (GAME_GLOBAL(struct CGraphic2D, g_FXGraphicNoise2))	/* bmp/noise2.tga */
+#define g_MatElectric GAME_GLOBAL(CMaterial *, g_MatElectric)	/* fx_Electric (+shader:Electric) */
+#define g_MatFire GAME_GLOBAL(CMaterial *, g_MatFire)		/* fx_Fire (+shader:Fire) */
+#define g_MatNoise GAME_GLOBAL(CMaterial *, g_MatNoise)		/* fx_Noise (+shader:Noise) */
 void __thiscall ModelFX_Render(CModel *self, NodeAnimCtx *ctx);
 /* 1: a TV picture with static, 2 and 3: faded out (2 over a gray pass), 4: 1 in wire frame, 5: green glow, 6:
  * electric, 7: fire, 8: noise */
@@ -296,14 +296,14 @@ void ModelFX_Base(CModel *m, NodeAnimCtx *ctx);
 void ModelFX_InitD3D(void);
 
 /* other modules (src/imports.inc) */
-float World_TimeScale(void);						/* rva 0x20aea0 */
-void __fastcall CRenderNode_dtor(CRenderNode *self);				/* rva 0x23f450 */
+float World_TimeScale(void);
+void __fastcall CRenderNode_dtor(CRenderNode *self);
 #define CNODOR_DTOR 0x23f450
-void __thiscall CRenderNode_SetNode(CRenderNode *self, CNode3D *node);		/* rva 0x23f890 */
+void __thiscall CRenderNode_SetNode(CRenderNode *self, CNode3D *node);
 /* rva 0x23fac0, the matrix identity, the channels cleared; the model and its render nodes at 0xa0 and 0xa4 */
 void __thiscall RenderCtx_Init(NodeAnimCtx *self, CModel *m, const vec3_t *scale);
-void __thiscall RenderCtx_SetChannel(NodeAnimChannel *self, CAnimSlot *slot);	/* rva 0x23fb10 */
+void __thiscall RenderCtx_SetChannel(NodeAnimChannel *self, CAnimSlot *slot);
 /* the play state of an animation group */
-CScene *Scene_Load(const char *name, int arg, const char *name2);	/* rva 0x2c2d60 */
+CScene *Scene_Load(const char *name, int arg, const char *name2);
 
 #endif

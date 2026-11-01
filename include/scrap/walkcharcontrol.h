@@ -39,11 +39,11 @@ SD_OFFSET(cWalkCharControl, lock, 0x20);
 SD_OFFSET(cWalkCharControl, target, 0x24);
 SD_SIZE(cWalkCharControl, 0x34);
 
-#define g_WalkCameraCenter GAME_GLOBAL_IN(float, GVar_WalkCameraCenter, 16, 0x4472b4)	/* "WalkCameraCenter" */
-#define g_AlwaysRun GAME_GLOBAL_IN(int, GVar_AlwaysRun, 16, 0x44723c)		/* "AlwaysRun" */
-#define g_PadTurnSpeed GAME_GLOBAL_IN(float, GVar_PadTurnSpeed, 16, 0x447314)	/* "PadTurnSpeed" */
-#define g_EnergyBarActive GAME_GLOBAL_IN(int, GVar_EnergyBarActive, 16, 0x44726c)	/* "EnergyBarActive" */
-#define g_EnergyRechargeTime GAME_GLOBAL_IN(float, GVar_EnergyRechargeTime, 16, 0x44720c)	/* "EnergyRechargeTime" */
+#define g_WalkCameraCenter GAME_GLOBAL_IN(float, GVar_WalkCameraCenter, 16)	/* "WalkCameraCenter" */
+#define g_AlwaysRun GAME_GLOBAL_IN(int, GVar_AlwaysRun, 16)		/* "AlwaysRun" */
+#define g_PadTurnSpeed GAME_GLOBAL_IN(float, GVar_PadTurnSpeed, 16)	/* "PadTurnSpeed" */
+#define g_EnergyBarActive GAME_GLOBAL_IN(int, GVar_EnergyBarActive, 16)	/* "EnergyBarActive" */
+#define g_EnergyRechargeTime GAME_GLOBAL_IN(float, GVar_EnergyRechargeTime, 16)	/* "EnergyRechargeTime" */
 
 cWalkCharControl *__fastcall cWalkCharControl_ctor(cWalkCharControl *self);
 void __fastcall cWalkCharControl_dtor(cWalkCharControl *self);

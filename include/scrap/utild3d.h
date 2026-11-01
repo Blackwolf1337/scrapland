@@ -11,7 +11,7 @@
 
 #define MAX_DIVY_SPHERE 32
 /* 16 colors of the debug views (g_BspColors of bsp.h, the same table) */
-#define g_DebugColors (GAME_ARRAY_IN(const uint32_t, g_BspColors, 0, 0x432a30))
+#define g_DebugColors (GAME_ARRAY_IN(const uint32_t, g_BspColors, 0))
 
 /* r, g, b, a (0..1, clamped) to 0xAARRGGBB */
 uint32_t Color_FromFloat(const float *c);

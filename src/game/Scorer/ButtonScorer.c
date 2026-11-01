@@ -21,7 +21,7 @@ static const char *const s_HighLightColors[3] = {"HighLightColorRed", "HighLight
 /* also rva 0x1613b0 */
 void __fastcall StrTable_Free(cStrTable *self) {
 	if (self->items) {
-		Delete_Objects(self->items, sizeof(cString), GAME_FUNC(cString_dtor, CSTRING_DTOR));
+		Delete_Objects(self->items, sizeof(cString), GAME_FUNC(cString_dtor));
 		self->items = NULL;
 		self->count = 0;
 	}
@@ -43,7 +43,7 @@ char **__thiscall StrTable_At(cStrTable *self, uint32_t i) {
 void __thiscall StrTable_Init(cStrTable *self, int num) {
 	CHECK(!self->items && num > 0);
 	self->count = num;
-	self->items = New_Objects(num, sizeof(cString), GAME_FUNC(cString_ctor, CSTRING_CTOR), GAME_FUNC(cString_dtor, CSTRING_DTOR));
+	self->items = New_Objects(num, sizeof(cString), GAME_FUNC(cString_ctor), GAME_FUNC(cString_dtor));
 	CHECK(self->items);
 }
 

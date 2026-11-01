@@ -8,31 +8,31 @@
 #include "scrap/shared.h"
 
 
-char str_PyDoc_SAct_CreateClass[] SD_AT(0x428fe8) = "CreateClass(classname) : Crea una clase de objeto animado";
-char str_PyDoc_SAct_DelClass[] SD_AT(0x429024) = "DelClass(classname) : Crea una clase de objeto animado";
-char str_PyDoc_SAct_GetClass[] SD_AT(0x42905c) = "GetClass(classname) : Activa una clase de objeto animado";
-char str_PyDoc_SAct_SetCls[] SD_AT(0x429098) =
+char str_PyDoc_SAct_CreateClass[] = "CreateClass(classname) : Crea una clase de objeto animado";
+char str_PyDoc_SAct_DelClass[] = "DelClass(classname) : Crea una clase de objeto animado";
+char str_PyDoc_SAct_GetClass[] = "GetClass(classname) : Activa una clase de objeto animado";
+char str_PyDoc_SAct_SetCls[] =
 	"SetCls(varname,value) :  Modifica el valor de una variable de una clase objeto animado";
-char str_PyDoc_SAct_GetCls[] SD_AT(0x4290f0) =
+char str_PyDoc_SAct_GetCls[] =
 	"GetCls(varname) :  Obtiene el valor de una variable de una clase objeto animado";
-char str_PyDoc_SAct_CreateAction[] SD_AT(0x429140) = "CreateAction(varname) :  Crea una accion en la clase actual.";
-char str_PyDoc_SAct_GetAction[] SD_AT(0x429180) = "GetAction(varname) :  Obtiene una accion de la clase actual.";
-char str_PyDoc_SAct_SetAct[104] SD_AT(0x4291c0) =
+char str_PyDoc_SAct_CreateAction[] = "CreateAction(varname) :  Crea una accion en la clase actual.";
+char str_PyDoc_SAct_GetAction[] = "GetAction(varname) :  Obtiene una accion de la clase actual.";
+char str_PyDoc_SAct_SetAct[104] =
 	"SetAct(varname,value) :  Modifica el valor de una variable de la accion de una clase objeto animado";
-char str_PyDoc_SAct_GetAct[] SD_AT(0x429228) =
+char str_PyDoc_SAct_GetAct[] =
 	"GetAct(varname) :  Obtiene el valor de una variable de la accion de una clase objeto animado";
-char str_PyDoc_SAI_IniAI[] SD_AT(0x429328) = "IniAI(levelPath) : Inicializa AI para un nivel.";
-char str_PyDoc_SAI_BuildGraph[] SD_AT(0x429358) =
+char str_PyDoc_SAI_IniAI[] = "IniAI(levelPath) : Inicializa AI para un nivel.";
+char str_PyDoc_SAI_BuildGraph[] =
 	"BuildGraph(int numNodesRadius, float sizeNodeX, float sizeNodeY, float sizeNodeZ) : Crea el Grafo as"
 	"ociado al Pathfinding";
-char str_PyDoc_SAI_AnalyzeMap[] SD_AT(0x4293d4) = "AnalizeMap(float sizeNode) : Analiza características mapa.";
-char str_PyDoc_SAI_AnalyzeGraph[] SD_AT(0x429410) = "AnalizeGraph() : Analiza características grafo.";
-char str_PyDoc_SAI_AnalyzeGraph2D[] SD_AT(0x429440) = "AnalizeGraph2D() : Analiza características grafo 2D.";
-char str_PyDoc_SAI_AnalyzeTraffic[56] SD_AT(0x429478) = "AnalizeTraffic() : Analiza características tráfico.";
-char str_PyDoc_SAI_BuildGraph2D[] SD_AT(0x4294b0) =
+char str_PyDoc_SAI_AnalyzeMap[] = "AnalizeMap(float sizeNode) : Analiza características mapa.";
+char str_PyDoc_SAI_AnalyzeGraph[] = "AnalizeGraph() : Analiza características grafo.";
+char str_PyDoc_SAI_AnalyzeGraph2D[] = "AnalizeGraph2D() : Analiza características grafo 2D.";
+char str_PyDoc_SAI_AnalyzeTraffic[56] = "AnalizeTraffic() : Analiza características tráfico.";
+char str_PyDoc_SAI_BuildGraph2D[] =
 	"BuildGraph2D(int numNodesRadius, float sizeNodeX, float sizeNodeY, float sizeNodeZ) : Crea el Grafo "
 	"asociado al Pathfinding 2D";
-char str_PyDoc_SAI_SetStateVehicle[872] SD_AT(0x429530) =
+char str_PyDoc_SAI_SetStateVehicle[872] =
 	"SetStateVehicle(0, string nameAgent) : Estado sin movimiento ni disparo.\n"
 	" SetStateVehicle(1, float posObjX, float posObjY, float posObjZ, radiusObj, string nameAgent) : Esta"
 	"do alcanzar posición.\n"
@@ -45,19 +45,19 @@ char str_PyDoc_SAI_SetStateVehicle[872] SD_AT(0x429530) =
 	" SetStateVehicle(7, string nameObjectiveDin, string nameAgent) : Estado persecución.\n"
 	" SetStateVehicle(8, string nameObjectiveDin, string nameAgent) : Estado lucha manteniendo posición."
 	"\n SetStateVehicle(9, string nameAgent) : Estado tráfico en interiores.\n";
-char str_PyDoc_SAI_GetStateVehicle[] SD_AT(0x429898) =
+char str_PyDoc_SAI_GetStateVehicle[] =
 	"GetStateVehicle(string nameEntity) : Devuelve el estado de la IA del vehículo.\n"
 	" 0 : Estado sin movimiento ni disparo.\n 1 : Estado alcanzar posición.\n"
 	" 2 : Estado persecución enemigo.\n 3 : Estado en ruta.\n 4 : Estado tráfico.\n"
 	" 5 : Estado huída con parada.\n 6 : Estado alcanzar meta en carrera.\n 7 : Estado persecución.\n"
 	" 8 : Estado persecución enemigo con uso de hook.\n"
 	" 9 : Estado sin movimiento ni disparo por estar objetivo en posición inválida.\n";
-char str_PyDoc_SAI_GetStateChar[] SD_AT(0x429a58) =
+char str_PyDoc_SAI_GetStateChar[] =
 	"GetStateChar(string nameEntity) : Devuelve el estado de la IA del personaje.\n";
-char str_PyDoc_SAI_EnableAIVehicle[] SD_AT(0x429aa8) =
+char str_PyDoc_SAI_EnableAIVehicle[] =
 	"EnableAIVehicle(string nameEntity, int enable, int controlStrafe, int controlBrake, int stupidPathfi"
 	"nding) : Habilita la IA del vehículo indicando características asociadas al movimiento).";
-char str_PyDoc_SAI_SetStateChar[] SD_AT(0x429b68) =
+char str_PyDoc_SAI_SetStateChar[] =
 	"SetStateChar(0, string nameAgent) : Estado sin movimiento ni disparo.\n"
 	" SetStateChar(1, string nameAgent, float vel, int withStopTemp) : Estado en ruta.\n"
 	" SetStateChar(2, string nameAgent, string nameObjective, float vel) : Estado en persecución objetivo"
@@ -73,451 +73,451 @@ char str_PyDoc_SAI_SetStateChar[] SD_AT(0x429b68) =
 	"re objetivo dinámico.\n"
 	" SetStateChar(9, string nameAgent, string nameObjective, int goBack) : Orientación sobre objetivo di"
 	"námico con acción.";
-char str_PyDoc_SAI_EnableAIChar[] SD_AT(0x42a028) =
+char str_PyDoc_SAI_EnableAIChar[] =
 	"EnableAIChar(string nameEntity, int enable, int stupidPathfinding) : Habilita la IA del personaje in"
 	"dicando características asociadas al movimiento).";
-char str_PyDoc_SAI_GetNextRacePoint[256] SD_AT(0x42a0c0) =
+char str_PyDoc_SAI_GetNextRacePoint[256] =
 	"(point) GetNextRacePoint(initialPoint, minDist, maxDist) : A partir de un punto inicial 'initialPoin"
 	"t', una distancia mínima 'minDist' y una distancia máxima 'maxDist', devuelve un punto aleatorio a p"
 	"artir del grafo 3D de la IA en el interior actual.";
-char str_PyDoc_SAI_GetNearestItemLife[104] SD_AT(0x42a1c0) =
+char str_PyDoc_SAI_GetNearestItemLife[104] =
 	"(itemName) GetNearestItemLife(vehicleName)) : Devuelve el item de vida más cercano a una nave dada.";
-char str_PyDoc_SAI_GetRandomVisibilityPoint[] SD_AT(0x42a228) =
+char str_PyDoc_SAI_GetRandomVisibilityPoint[] =
 	"(point) GetRandomVisibilityPoint() : Devuelve un punto aleatorio del grafo de puntos de visibilidad.";
-char str_PyDoc_SAI_GetReposCharPos[] SD_AT(0x42a290) =
+char str_PyDoc_SAI_GetReposCharPos[] =
 	"(x,y,z) GetReposCharPos((x,y,z) ,EntityClass,[,EntityName]) : Obtiene un punto de reposicion de pers"
 	"onaje (si entidad, se asigna).\n Retorna (None) si falla";
-char str_PyDoc_SAI_InitVehicleRace[60] SD_AT(0x42a32c) = "InitVehicleRace() : Inicializa carrera de vehículos.";
-char str_PyDoc_SAI_AddVehicleRace[] SD_AT(0x42a368) =
+char str_PyDoc_SAI_InitVehicleRace[60] = "InitVehicleRace() : Inicializa carrera de vehículos.";
+char str_PyDoc_SAI_AddVehicleRace[] =
 	"bool AddVehicleRace(cWithLifeEntity *entidad) : Asigna entidad como perteneciente a carrera.";
-char str_PyDoc_SAI_SetRotStaticObj[] SD_AT(0x42a3c8) =
+char str_PyDoc_SAI_SetRotStaticObj[] =
 	"bool SetRotStaticObj(float maxVelRot, float limIncVelRot) : Asigna rotaciones para movimiento hacia "
 	"objetivo estático.";
-char str_PyDoc_SAI_SetInertia[72] SD_AT(0x42a440) = "void SetInertia(bool inertia) : Indica si la nave tiene inercia.";
-char str_PyDoc_Scrap_EntityListGet[] SD_AT(0x42a5f8) =
+char str_PyDoc_SAI_SetInertia[72] = "void SetInertia(bool inertia) : Indica si la nave tiene inercia.";
+char str_PyDoc_Scrap_EntityListGet[] =
 	"(value)Scrap.EntityListGet(listName, varName) :  Obtiene el valor de una variable de una lista de en"
 	"tidades";
-char str_PyDoc_Scrap_CreateEntityList[] SD_AT(0x42a664) = "CreateEntityList(listName) :  Crea una lista de entidades";
-char str_PyDoc_Scrap_SetCam[] SD_AT(0x42a6a0) = "SetCam(i,name) :  Activa una camara";
-char str_PyDoc_Scrap_GetCam[] SD_AT(0x42a6c4) = "name GetCam(i) :  Obtiene el nombre de una entidad camara";
-char str_PyDoc_Scrap_GetMinCamDist[] SD_AT(0x42a700) =
+char str_PyDoc_Scrap_CreateEntityList[] = "CreateEntityList(listName) :  Crea una lista de entidades";
+char str_PyDoc_Scrap_SetCam[] = "SetCam(i,name) :  Activa una camara";
+char str_PyDoc_Scrap_GetCam[] = "name GetCam(i) :  Obtiene el nombre de una entidad camara";
+char str_PyDoc_Scrap_GetMinCamDist[] =
 	"GetMinCamDist(x,y,z) :  Obtiene la distancia de un punto a la camara";
-char str_PyDoc_Scrap_LoadLevel[] SD_AT(0x42a748) = "LoadLevel(string name) :  Carga un nivel en el siguiente frame";
-char str_PyDoc_Scrap_GetLevelPath[] SD_AT(0x42a788) = "levelpath GetLevelPath() :  Obtiene el path del nivel actual";
-char str_PyDoc_Scrap_GetNewLevelPath[] SD_AT(0x42a7c8) =
+char str_PyDoc_Scrap_LoadLevel[] = "LoadLevel(string name) :  Carga un nivel en el siguiente frame";
+char str_PyDoc_Scrap_GetLevelPath[] = "levelpath GetLevelPath() :  Obtiene el path del nivel actual";
+char str_PyDoc_Scrap_GetNewLevelPath[] =
 	"levelpath GetNewLevelPath() :  Obtiene el path del próximo nivel";
-char str_PyDoc_Scrap_GetFloor[] SD_AT(0x42a80c) = "i GetFloor(y) :  Obtiene el numero de piso en el que esta.";
-char str_PyDoc_Scrap_CreateElements[88] SD_AT(0x42a848) =
+char str_PyDoc_Scrap_GetFloor[] = "i GetFloor(y) :  Obtiene el numero de piso en el que esta.";
+char str_PyDoc_Scrap_CreateElements[88] =
 	"CreateElements() :  Crea una lista de elementos estaticos que pertenecen al mapa.";
-char str_PyDoc_Scrap_CallElements[] SD_AT(0x42a8a0) =
+char str_PyDoc_Scrap_CallElements[] =
 	"CallElements('Function') :  llama una funcion Function(Name,x,y,z,angx,angy)";
-char str_PyDoc_Scrap_SetGrid[] SD_AT(0x42a8f0) = "SetGrid(x,y,z) :  Modifica las dimensiones del grid de colision";
-char str_PyDoc_Scrap_GetNetFlags[] SD_AT(0x42a930) =
+char str_PyDoc_Scrap_SetGrid[] = "SetGrid(x,y,z) :  Modifica las dimensiones del grid de colision";
+char str_PyDoc_Scrap_GetNetFlags[] =
 	"GetNetFlags() :  Obtiene la tupla de flags : client, server, dedicated";
-char str_PyDoc_Scrap_Rand[] SD_AT(0x42a978) = "Rand(min,max) :  Obtiene un numero seudo-aleatorio entre (min,max)";
-char str_PyDoc_Scrap_Round[] SD_AT(0x42a9bc) = "Round(num) : Redondea un numero real al entero más cercano.";
-char str_PyDoc_Scrap_NextDummySearch[] SD_AT(0x42a9f8) =
+char str_PyDoc_Scrap_Rand[] = "Rand(min,max) :  Obtiene un numero seudo-aleatorio entre (min,max)";
+char str_PyDoc_Scrap_Round[] = "Round(num) : Redondea un numero real al entero más cercano.";
+char str_PyDoc_Scrap_NextDummySearch[] =
 	"(s(ddd)(dd)i) NextDummySearch() : Obtiene el proximo dummy, sino None";
-char str_PyDoc_Scrap_StartDummySearch[] SD_AT(0x42aa40) =
+char str_PyDoc_Scrap_StartDummySearch[] =
 	"StartDummySearch(name,usewildcards) : Inicia la busqueda de dummies en el mapa";
-char str_PyDoc_Scrap_ModelInfo[] SD_AT(0x42aa90) =
+char str_PyDoc_Scrap_ModelInfo[] =
 	"ModelInfo(name) : Muestra información sobre la jerarquía de nodos del modelo";
-char str_PyDoc_Scrap_ListModels[] SD_AT(0x42aae0) = "ListModels() : Muestra una lista de modelos y escenas";
-char str_PyDoc_Scrap_BuildFont[] SD_AT(0x42ab18) =
+char str_PyDoc_Scrap_ListModels[] = "ListModels() : Muestra una lista de modelos y escenas";
+char str_PyDoc_Scrap_BuildFont[] =
 	"BuildFont(name,size) : Construye un archivo de fuente de letras a partir de un .TGA dado";
-char str_PyDoc_Scrap_ScreenShot[] SD_AT(0x42ab74) = "ScreenShot(filename) : Screenshot of the current frame";
-char str_PyDoc_Scrap_ProcessDVF[] SD_AT(0x42abac) = "ProcessDVF(filename,command) : send a dvf command";
-char str_PyDoc_Scrap_VideoPlayer[] SD_AT(0x42abe0) = "VideoPlayer(filename[,command]) : play video file";
-char str_PyDoc_Scrap_MusicPlayer[] SD_AT(0x42ac14) = "MusicPlayer(filename[,command,param1]) : play music file";
-char str_PyDoc_Scrap_GetVideoCurrentMode[] SD_AT(0x42ac50) = "GetVideoCurrentMode() : Get Video Current Mode Index";
-char str_PyDoc_Scrap_SetVideoCurrentMode[] SD_AT(0x42ac88) = "SetVideoCurrentMode() : Set Video Current Mode Index";
-char str_PyDoc_Scrap_GetVideoModes[] SD_AT(0x42acc0) = "GetVideoModes(NumMode) : Get Video Mode Info";
-char str_PyDoc_Scrap_SetDebrisSys[] SD_AT(0x42acf0) =
+char str_PyDoc_Scrap_ScreenShot[] = "ScreenShot(filename) : Screenshot of the current frame";
+char str_PyDoc_Scrap_ProcessDVF[] = "ProcessDVF(filename,command) : send a dvf command";
+char str_PyDoc_Scrap_VideoPlayer[] = "VideoPlayer(filename[,command]) : play video file";
+char str_PyDoc_Scrap_MusicPlayer[] = "MusicPlayer(filename[,command,param1]) : play music file";
+char str_PyDoc_Scrap_GetVideoCurrentMode[] = "GetVideoCurrentMode() : Get Video Current Mode Index";
+char str_PyDoc_Scrap_SetVideoCurrentMode[] = "SetVideoCurrentMode() : Set Video Current Mode Index";
+char str_PyDoc_Scrap_GetVideoModes[] = "GetVideoModes(NumMode) : Get Video Mode Info";
+char str_PyDoc_Scrap_SetDebrisSys[] =
 	"SetDebrisSys(name,initialnumber,MaxDist,Friction,Scale,Grav,bounce)  crea/modifica un sistema de deb"
 	"ris";
-char str_PyDoc_Scrap_DropDebris[] SD_AT(0x42ad58) =
+char str_PyDoc_Scrap_DropDebris[] =
 	"DropDebris(name,size) : Lanza un objeto que cae y rebota hasta que desaparece";
-char str_PyDoc_Scrap_SetDebrisValue[96] SD_AT(0x42ada8) =
+char str_PyDoc_Scrap_SetDebrisValue[96] =
 	"SetDebrisValue(id,x,y,z) : id = 0:Posicion, 1:Angulos, 2:Velocidad, 3:Velocidad de rotacion";
-char str_PyDoc_Scrap_TestLine[] SD_AT(0x42ae08) =
+char str_PyDoc_Scrap_TestLine[] =
 	"((x,y,z),s) TestLine((x,y,z),(fz,fy,fz),'strmask') : testea una linea y devuelve el nombre de la ent"
 	"idad y punto de colision  o '' si es el mapa o None";
-char str_PyDoc_Scrap_TestSphere[128] SD_AT(0x42aea0) =
+char str_PyDoc_Scrap_TestSphere[128] =
 	"Scrap.TestSphere(x,y,z,radius,´strmask´) : testea una esfera y devuelve el nombre de la entidad o ''"
 	" si es el mapa o None";
-char str_PyDoc_Scrap_SphereCall[] SD_AT(0x42af20) =
+char str_PyDoc_Scrap_SphereCall[] =
 	"Scrap.SphereCall(x,y,z,radius,´strmask´,´callback´,[IgnoreGeometry=1]) : testea una esfera y llama a"
 	" ´callback´ por cada entidad que colisiona";
-char str_PyDoc_Scrap_SetCallFunc[] SD_AT(0x42afb0) =
+char str_PyDoc_Scrap_SetCallFunc[] =
 	"Scrap.SetCallFunc('!funcname') : Especifica la funcion callback (c++) a llamar. (1 si existe)";
-char str_PyDoc_Scrap_AddParamf[80] SD_AT(0x42b010) =
+char str_PyDoc_Scrap_AddParamf[80] =
 	"Scrap.AddParamf(Float) : Incluye un parametro a una funcion callback (c++).";
-char str_PyDoc_Scrap_AddParami[80] SD_AT(0x42b060) =
+char str_PyDoc_Scrap_AddParami[80] =
 	"Scrap.AddParami(int) : Incluye un parametro a una funcion callback (c++).";
-char str_PyDoc_Scrap_AddParams[] SD_AT(0x42b0b0) =
+char str_PyDoc_Scrap_AddParams[] =
 	"Scrap.AddParams(string) : Incluye un parametro a una funcion callback (c++).";
-char str_PyDoc_Scrap_Execute[] SD_AT(0x42b100) = "Scrap.Execute() : Ejecuta una funcion callback (c++).";
-char str_PyDoc_Scrap_DelSaveVars[] SD_AT(0x42b138) = "Scrap.DelSaveVars(str) : Elimina las <str>* variables";
-char str_PyDoc_Scrap_CreateSaveVar[] SD_AT(0x42b170) =
+char str_PyDoc_Scrap_Execute[] = "Scrap.Execute() : Ejecuta una funcion callback (c++).";
+char str_PyDoc_Scrap_DelSaveVars[] = "Scrap.DelSaveVars(str) : Elimina las <str>* variables";
+char str_PyDoc_Scrap_CreateSaveVar[] =
 	"bool Scrap.CreateSaveVar(Name,DefValue) : Crea una nueva variable (si puede)";
-char str_PyDoc_Scrap_SetSaveVar[] SD_AT(0x42b1c0) =
+char str_PyDoc_Scrap_SetSaveVar[] =
 	"bool Scrap.SetSaveVar(Name,DefValue) : Modifica una variable (si puede)";
-char str_PyDoc_Scrap_GetSaveVar[72] SD_AT(0x42b208) =
+char str_PyDoc_Scrap_GetSaveVar[72] =
 	"value Scrap.GetSaveVar(Name) : obtiene una variable o devuelve none";
-char str_PyDoc_Scrap_SaveGameVars[88] SD_AT(0x42b250) =
+char str_PyDoc_Scrap_SaveGameVars[88] =
 	"Scrap.SaveGameVars(str, str) : Salva un juego en un archivo, con un nombre opcional";
-char str_PyDoc_Scrap_IncSaveVar[] SD_AT(0x42b2a8) =
+char str_PyDoc_Scrap_IncSaveVar[] =
 	"int Scrap.IncSaveVar(str[,value]) : incrementa un contador de estadisticas";
-char str_PyDoc_Scrap_LoadGameVars[60] SD_AT(0x42b2f4) = "Scrap.LoadGameVars(str) : Carga un juego en un archivo";
-char str_PyDoc_Scrap_GetSavedProfilesList[] SD_AT(0x42b330) =
+char str_PyDoc_Scrap_LoadGameVars[60] = "Scrap.LoadGameVars(str) : Carga un juego en un archivo";
+char str_PyDoc_Scrap_GetSavedProfilesList[] =
 	"[(Directorio, nombre)] Scrap.GetSavedProfilesList() : Devuelve una lista de tuplas donde para cada t"
 	"upla el primer elemento indica el directorio del profile y el segundo elemento indica el nombre del "
 	"profile. La lista está ordenada por el criterio de microsoft ";
-char str_PyDoc_Scrap_CreateSaveProfile[] SD_AT(0x42b438) =
+char str_PyDoc_Scrap_CreateSaveProfile[] =
 	"int Scrap.CreateSaveProfile(str) : Crea un Save profile para X-Box y pone como actual.";
-char str_PyDoc_Scrap_DeleteProfile[64] SD_AT(0x42b490) = "int Scrap.DeleteProfile(str) : Borra un profile de X-Box.";
-char str_PyDoc_Scrap_GetFreeBlocks[] SD_AT(0x42b4d0) =
+char str_PyDoc_Scrap_DeleteProfile[64] = "int Scrap.DeleteProfile(str) : Borra un profile de X-Box.";
+char str_PyDoc_Scrap_GetFreeBlocks[] =
 	"int Scrap.GetFreeBlocks() : obtiene los bloques libres en el disco duro.";
-char str_PyDoc_Scrap_DeselectProfile[] SD_AT(0x42b51c) = "Scrap.DeselectProfile() : deselecciona el profile actual.";
-char str_PyDoc_Scrap_LaunchDashboard[] SD_AT(0x42b558) =
+char str_PyDoc_Scrap_DeselectProfile[] = "Scrap.DeselectProfile() : deselecciona el profile actual.";
+char str_PyDoc_Scrap_LaunchDashboard[] =
 	"int Scrap.LaunchDashboard() : sale del juego y ejecuta el dashboard.";
-char str_PyDoc_Scrap_SetSaveProfile[] SD_AT(0x42b5a0) =
+char str_PyDoc_Scrap_SetSaveProfile[] =
 	"int Scrap.SetSaveProfile(path,name) : Carga un profile de jugador.";
-char str_PyDoc_Scrap_DebugInput[68] SD_AT(0x42b5e4) = "string DebugInput() :  Detiene todo para iniciar la depuracion";
-char str_PyDoc_Scrap_GetSaveGamesList[296] SD_AT(0x42b628) =
+char str_PyDoc_Scrap_DebugInput[68] = "string DebugInput() :  Detiene todo para iniciar la depuracion";
+char str_PyDoc_Scrap_GetSaveGamesList[296] =
 	" [(fecha, slot)] Scrap.GetSaveGamesList() : Devuelve una lista de tuplas donde para cada tupla el pr"
 	"imer elemento indica el nombre (fecha) del archivo y el segundo elemento indica el slot del que se l"
 	"eerá la partida. La lista está ordenada por la fecha, de la más reciente a la más antigua.";
-char str_PyDoc_Scrap_Print[] SD_AT(0x42b750) = "Print(string name) :  Muestra un mensaje por la consola siempre";
-char str_PyDoc_Scrap_SaveConfig[64] SD_AT(0x42b790) = "res Scrap.SaveConfig() : Guarda el fichero de configuración";
-char str_PyDoc_Scrap_ConsoleOut[72] SD_AT(0x42b7d0) =
+char str_PyDoc_Scrap_Print[] = "Print(string name) :  Muestra un mensaje por la consola siempre";
+char str_PyDoc_Scrap_SaveConfig[64] = "res Scrap.SaveConfig() : Guarda el fichero de configuración";
+char str_PyDoc_Scrap_ConsoleOut[72] =
 	"ConsoleOut(string name) :  Muestra un mensaje pyton por la consola";
-char str_PyDoc_Scrap_SetLanguage[120] SD_AT(0x42b818) =
+char str_PyDoc_Scrap_SetLanguage[120] =
 	"res Scrap.SetLanguage(Name[,forcetoreload]) : Modifica la lengua actual. false si ya es la lengua la"
 	" selecionada";
-char str_PyDoc_Scrap_ConsoleError[] SD_AT(0x42b890) =
+char str_PyDoc_Scrap_ConsoleError[] =
 	"ConsoleError(string name) :  Muestra un mensaje de error por la consola";
-char str_PyDoc_Scrap_Verbose[] SD_AT(0x42b8d8) =
+char str_PyDoc_Scrap_Verbose[] =
 	"Verbose(string name) :  Muestra un mensaje de parloteo por la consola";
-char str_PyDoc_Scrap_GetLanguage[] SD_AT(0x42b920) =
+char str_PyDoc_Scrap_GetLanguage[] =
 	"lang Scrap.GetLanguage() : Obtiene la lengua actual. None si no fue inicializada.";
-char str_PyDoc_Scrap_Exit[28] SD_AT(0x42b974) = "Exit() sale del juego.";
-char str_PyDoc_Scrap_GetLangStr[] SD_AT(0x42b990) =
+char str_PyDoc_Scrap_Exit[28] = "Exit() sale del juego.";
+char str_PyDoc_Scrap_GetLangStr[] =
 	"str Scrap.GetLangStr(Name) : Obtiene una cadena de lenguaje. '' si no existe.";
-char str_PyDoc_Scrap_FileExist[] SD_AT(0x42b9e0) = "FileExist() check for file existence.";
-char str_PyDoc_Scrap_GetLangEntries[] SD_AT(0x42ba08) =
+char str_PyDoc_Scrap_FileExist[] = "FileExist() check for file existence.";
+char str_PyDoc_Scrap_GetLangEntries[] =
 	"[str] Scrap.GetLangEntries(Name) : Obtiene un subconjunto de entradas de la tabla de lenguaje que em"
 	"piecen por 'Name'.";
-char str_PyDoc_Scrap_Ver[40] SD_AT(0x42ba80) = "Ver() Obtiene la version del juego.";
-char str_PyDoc_Scrap_GetAlarm[] SD_AT(0x42baa8) =
+char str_PyDoc_Scrap_Ver[40] = "Ver() Obtiene la version del juego.";
+char str_PyDoc_Scrap_GetAlarm[] =
 	"(active,dialpos,growcode) Scrap.GetAlarm() : Obtiene informacion de la alarma.";
-char str_PyDoc_Scrap_ExtractPack[64] SD_AT(0x42baf8) = "ExtractPack(string PackPath) :  Extrae un archivo *.packed";
-char str_PyDoc_Scrap_SetAlarm[] SD_AT(0x42bb38) =
+char str_PyDoc_Scrap_ExtractPack[64] = "ExtractPack(string PackPath) :  Extrae un archivo *.packed";
+char str_PyDoc_Scrap_SetAlarm[] =
 	"Scrap.SetAlarm(dialpos) : pone la alarma en una posicion (0 desactiva, 1 activa).";
-char str_PyDoc_Scrap_OpenPack[] SD_AT(0x42bb8c) = "OpenPack(string PackPath) :  Abre un archivo *.packed";
-char str_PyDoc_Scrap_SetAlarmGrow[] SD_AT(0x42bbc4) = "Scrap.SetAlarmGrow(growcode) : -1 baja, 0 se mantiene, 1 sube.";
-char str_PyDoc_Scrap_ClosePack[44] SD_AT(0x42bc04) = "ClosePack() :  Abre un archivo *.packed";
-char str_PyDoc_Scrap_GetAlarmChars[] SD_AT(0x42bc30) =
+char str_PyDoc_Scrap_OpenPack[] = "OpenPack(string PackPath) :  Abre un archivo *.packed";
+char str_PyDoc_Scrap_SetAlarmGrow[] = "Scrap.SetAlarmGrow(growcode) : -1 baja, 0 se mantiene, 1 sube.";
+char str_PyDoc_Scrap_ClosePack[44] = "ClosePack() :  Abre un archivo *.packed";
+char str_PyDoc_Scrap_GetAlarmChars[] =
 	"(Actual, El_que_se_busca) Scrap.GetAlarmChars() : Obtiene los tipos de personaje que se buscan.";
-char str_PyDoc_Scrap_PreloadLibrary[96] SD_AT(0x42bc90) =
+char str_PyDoc_Scrap_PreloadLibrary[96] =
 	"PreloadLibrary(LibraryName,CompiledFile) :  Precarga una libreria de un archivo empaquetado";
-char str_PyDoc_Scrap_SetAlarmChar[] SD_AT(0x42bcf0) =
+char str_PyDoc_Scrap_SetAlarmChar[] =
 	"Scrap.SetAlarmChar(El_que_se_busca) : Modifica el personaje que se busca.";
-char str_PyDoc_Scrap_SetLockAlarm[60] SD_AT(0x42bd3c) = "Scrap.SetLockAlarm(1/0) : Bloquea/desbloquea la alarma";
-char str_PyDoc_Scrap_Preload3DObject[] SD_AT(0x42bd78) =
+char str_PyDoc_Scrap_SetLockAlarm[60] = "Scrap.SetLockAlarm(1/0) : Bloquea/desbloquea la alarma";
+char str_PyDoc_Scrap_Preload3DObject[] =
 	"Preload3DObject(filename,scalex,scaley,scalez) :  Precarga un objeto 3D";
-char str_PyDoc_Scrap_GetLockAlarm[] SD_AT(0x42bdc0) = "Scrap.GetLockAlarm() : verdadero si la alarma esta bloqueada";
-char str_PyDoc_Scrap_PreloadAnm[] SD_AT(0x42be00) = "PreloadAnm(ObjFilename,AnmFilename) :  Precarga una animacion";
-char str_PyDoc_Scrap_GetMoney[] SD_AT(0x42be40) = "money Scrap.GetMoney() : Devuelve el liquido disponible.";
-char str_PyDoc_Scrap_PythonCompileAll[] SD_AT(0x42be7c) =
+char str_PyDoc_Scrap_GetLockAlarm[] = "Scrap.GetLockAlarm() : verdadero si la alarma esta bloqueada";
+char str_PyDoc_Scrap_PreloadAnm[] = "PreloadAnm(ObjFilename,AnmFilename) :  Precarga una animacion";
+char str_PyDoc_Scrap_GetMoney[] = "money Scrap.GetMoney() : Devuelve el liquido disponible.";
+char str_PyDoc_Scrap_PythonCompileAll[] =
 	"PythonCompileAll() :  compila recursivamente los archivos .py";
-char str_PyDoc_Scrap_SetMoney[60] SD_AT(0x42bebc) = "Scrap.SetMoney(money) : Determina el liquido disponible";
-char str_PyDoc_Scrap_ShowGVars[72] SD_AT(0x42bef8) = "ShowGVars() :  Muestra una lista de todas las variables globales";
-char str_PyDoc_Scrap_AddParkingZone[] SD_AT(0x42bf40) =
+char str_PyDoc_Scrap_SetMoney[60] = "Scrap.SetMoney(money) : Determina el liquido disponible";
+char str_PyDoc_Scrap_ShowGVars[72] = "ShowGVars() :  Muestra una lista de todas las variables globales";
+char str_PyDoc_Scrap_AddParkingZone[] =
 	"Scrap.AddParkingZone(occupied,pos,name) : Agrega un sitio de parking.";
-char str_PyDoc_Scrap_GetFarestParked[] SD_AT(0x42bf88) =
+char str_PyDoc_Scrap_GetFarestParked[] =
 	"Entity,Pos =  Scrap.GetFarestParked([isparked[,fromPos]]) : Obtiene la nave aparcada mas lejana.";
-char str_PyDoc_Scrap_Get[] SD_AT(0x42bfec) = "Get('GlobalVar') :  Obtiene el valor de una variable global";
-char str_PyDoc_Scrap_GetNearestParked[104] SD_AT(0x42c028) =
+char str_PyDoc_Scrap_Get[] = "Get('GlobalVar') :  Obtiene el valor de una variable global";
+char str_PyDoc_Scrap_GetNearestParked[104] =
 	"Entity,Pos = Scrap.GetNearestParked([isparked[,fromPos]]) : Obtiene la nave aparcada mas cercana.";
-char str_PyDoc_Scrap_Def[] SD_AT(0x42c090) = "Def('GlobalVar') :  Obtiene el valor por defecto de una variable global";
-char str_PyDoc_Scrap_Des[72] SD_AT(0x42c0d8) = "Des('GlobalVar') :  Obtiene el descriptor de una variable global";
-char str_PyDoc_Scrap_AddItem[] SD_AT(0x42c120) =
+char str_PyDoc_Scrap_Def[] = "Def('GlobalVar') :  Obtiene el valor por defecto de una variable global";
+char str_PyDoc_Scrap_Des[72] = "Des('GlobalVar') :  Obtiene el descriptor de una variable global";
+char str_PyDoc_Scrap_AddItem[] =
 	"Scrap.AddItem(Life, string name, int life) : Add Item Life.\n"
 	" Scrap.AddItem(Ammo, string name, int typeAmmo, int ammo) : Add Item Ammo.";
-char str_PyDoc_Scrap_SwitchMissionArrows[] SD_AT(0x42c1a8) =
+char str_PyDoc_Scrap_SwitchMissionArrows[] =
 	"SwitchMissionArrows(MainMissionFile,TargetMissionFile) : Cambia las flechas de mision primaria y sec"
 	"undaria (Modelos)";
-char str_PyDoc_Scrap_InitLoading[56] SD_AT(0x42c220) = "InitLoading() Inicia la pantalla de carga rapida.";
-char str_PyDoc_Scrap_Set[] SD_AT(0x42c258) = "Set('GlobalVar',val) :  Modifica el valor de una variable global";
-char str_PyDoc_Scrap_EndLoading[] SD_AT(0x42c29c) = "EndLoading() Inicia la pantalla de carga rapida.";
-char str_PyDoc_Scrap_GetTime[] SD_AT(0x42c2d0) = "GetTime() :  Obtiene el tiempo del mundo en segundos";
-char str_PyDoc_Scrap_RunApp[] SD_AT(0x42c308) = "RunApp() Ejecuta un programa externo.";
-char str_PyDoc_Scrap_GetTimeSpeed[] SD_AT(0x42c330) = "GetTimeSpeed() :  Obtiene la velocidad del tiempo del mundo.";
-char str_PyDoc_Scrap_Achievement[] SD_AT(0x42c370) = "Achievement() marca un logro como consegido";
-char str_PyDoc_Scrap_SetTime[] SD_AT(0x42c39c) = "SetTime(Time) :  Cambia el tiempo del mundo en segundos";
-char str_PyDoc_Scrap_OpenStore[] SD_AT(0x42c3d4) = "OpenStore() abre la store en una apicacion";
-char str_PyDoc_Scrap_SetTimeSpeed[] SD_AT(0x42c400) =
+char str_PyDoc_Scrap_InitLoading[56] = "InitLoading() Inicia la pantalla de carga rapida.";
+char str_PyDoc_Scrap_Set[] = "Set('GlobalVar',val) :  Modifica el valor de una variable global";
+char str_PyDoc_Scrap_EndLoading[] = "EndLoading() Inicia la pantalla de carga rapida.";
+char str_PyDoc_Scrap_GetTime[] = "GetTime() :  Obtiene el tiempo del mundo en segundos";
+char str_PyDoc_Scrap_RunApp[] = "RunApp() Ejecuta un programa externo.";
+char str_PyDoc_Scrap_GetTimeSpeed[] = "GetTimeSpeed() :  Obtiene la velocidad del tiempo del mundo.";
+char str_PyDoc_Scrap_Achievement[] = "Achievement() marca un logro como consegido";
+char str_PyDoc_Scrap_SetTime[] = "SetTime(Time) :  Cambia el tiempo del mundo en segundos";
+char str_PyDoc_Scrap_OpenStore[] = "OpenStore() abre la store en una apicacion";
+char str_PyDoc_Scrap_SetTimeSpeed[] =
 	"SetTimeSpeed(TimeSpeed) :  Cambia la velocidad del tiempo del mundo.";
-char str_PyDoc_Scrap_IsApp[] SD_AT(0x42c448) = "IsApp() si tienes una apicacion";
-char str_PyDoc_Scrap_AddScheduledFunc[] SD_AT(0x42c468) =
+char str_PyDoc_Scrap_IsApp[] = "IsApp() si tienes una apicacion";
+char str_PyDoc_Scrap_AddScheduledFunc[] =
 	"AddScheduledFunc(time,func,params[,name]) : Ejecuta un codigo en python en un instante de tiempo.";
-char str_PyDoc_Scrap_GetSteamID[] SD_AT(0x42c4cc) = "GetSteamID() id de steam";
-char str_PyDoc_Scrap_DeleteScheduledFuncs[] SD_AT(0x42c4e8) =
+char str_PyDoc_Scrap_GetSteamID[] = "GetSteamID() id de steam";
+char str_PyDoc_Scrap_DeleteScheduledFuncs[] =
 	"DeleteScheduledFuncs(name) : Borra las scheduled funcs creadas con un nombre dado.";
-char str_PyDoc_Scrap_IsSteam[] SD_AT(0x42c53c) = "IsSteam() Es steam";
-char str_PyDoc_Scrap_GetEntity[] SD_AT(0x42c550) = "GetEntity(string name) :  Retorna una entidad";
-char str_PyDoc_Scrap_GetSteamTicket[] SD_AT(0x42c580) = "GetSteamTicket() ticket de autenticacion de steam";
-char str_PyDoc_Scrap_GetGogID[] SD_AT(0x42c5b4) = "GetGogID() id de gog";
-char str_PyDoc_Scrap_GetFirst[68] SD_AT(0x42c5cc) = "GetFirst() :  Retorna la primera entuidad de la lista o none";
-char str_PyDoc_Scrap_UsrEntity[] SD_AT(0x42cd40) =
+char str_PyDoc_Scrap_IsSteam[] = "IsSteam() Es steam";
+char str_PyDoc_Scrap_GetEntity[] = "GetEntity(string name) :  Retorna una entidad";
+char str_PyDoc_Scrap_GetSteamTicket[] = "GetSteamTicket() ticket de autenticacion de steam";
+char str_PyDoc_Scrap_GetGogID[] = "GetGogID() id de gog";
+char str_PyDoc_Scrap_GetFirst[68] = "GetFirst() :  Retorna la primera entuidad de la lista o none";
+char str_PyDoc_Scrap_UsrEntity[] =
 	"UsrEntity(ictr) :  Retorna una entidad controlada por usario (personaje o nave)";
-char str_PyDoc_Scrap_CreateEntity[] SD_AT(0x42cd90) = "CreateEntity(name,x,y,z,type) :  Crea una una entidad";
-char str_PyDoc_Scrap_EntityListSet[] SD_AT(0x42cdc8) =
+char str_PyDoc_Scrap_CreateEntity[] = "CreateEntity(name,x,y,z,type) :  Crea una una entidad";
+char str_PyDoc_Scrap_EntityListSet[] =
 	"EntityListSet(listName, varName, value) :  Modifica el valor de una variable de una lista de entidad"
 	"es";
-char str_PyDoc_SFX_ShipExplosion[] SD_AT(0x42ce30) =
+char str_PyDoc_SFX_ShipExplosion[] =
 	"ShipExplosion(V3D Pos, V3D Vel, float scale, float time, float nflames, bool bcolision) : Explosión "
 	"de la nave.";
-char str_PyDoc_SFX_CharacterConversor[] SD_AT(0x42cea0) =
+char str_PyDoc_SFX_CharacterConversor[] =
 	"FXCharacterConversor(CharacterName, ConversorName, phase) : Conversor de Personajes.";
-char str_PyDoc_SFX_CharacterConversion[88] SD_AT(0x42cef8) =
+char str_PyDoc_SFX_CharacterConversion[88] =
 	"FXCharacterConversion(AttackerName, AttackedName, time) : Conversión de Personajes.";
-char str_PyDoc_SFX_BishopSellLife[] SD_AT(0x42cf50) =
+char str_PyDoc_SFX_BishopSellLife[] =
 	"FXBishopSellLife(AttackerName, AttackedName) : Efecto de dar vida (de Attacker [Bishop ó NULL] a Att"
 	"acked[Usuario]).";
-char str_PyDoc_SFX_MoneyTransfer[] SD_AT(0x42cfc8) =
+char str_PyDoc_SFX_MoneyTransfer[] =
 	"FXMoneyTransfer(EntityFrom, EntityTo, Time) : Transferencia de dinero";
-char str_PyDoc_SFX_EmbeddedSet[] SD_AT(0x42d010) =
+char str_PyDoc_SFX_EmbeddedSet[] =
 	"FXEmbeddedSet(EntityName, FXType) : Asigna el controlador de efectos embedidos.";
-char str_PyDoc_SInput_SetActionSet[] SD_AT(0x42d0d0) =
+char str_PyDoc_SInput_SetActionSet[] =
 	"SetActionSet(string name) :  Pone el set de acciones requerido...";
-char str_PyDoc_SInput_GetActionSet[68] SD_AT(0x42d114) =
+char str_PyDoc_SInput_GetActionSet[68] =
 	"string GetActionSet() :  Obtiene el set de acciones Actual...";
-char str_PyDoc_SInput_AssingEntry[] SD_AT(0x42d158) =
+char str_PyDoc_SInput_AssingEntry[] =
 	"int AssingEntry(Device,Entry,Player,ActionSet,Action) :  Asigna una entrada... retorna 0 o el Nro de"
 	" parametro erroneo";
-char str_PyDoc_SInput_GetEntry[] SD_AT(0x42d1d0) =
+char str_PyDoc_SInput_GetEntry[] =
 	"(Player,Action) GetEntry(Device,Entry,ActionSet) :  Obtiene una entrada, (0,) si vacia";
-char str_PyDoc_SInput_ListenToDefine[] SD_AT(0x42d228) =
+char str_PyDoc_SInput_ListenToDefine[] =
 	"ListenToDefine(iPlayer,ActionSet,Action,LaFunction) : Espera a que el usuario mueva un control y lo "
 	"redefine";
-char str_PyDoc_SInput_AbortListenToDefine[] SD_AT(0x42d298) = "AbortListenToDefine() : Aborta la redefinicion en curso";
-char str_PyDoc_SInput_GetDefinedEntry[] SD_AT(0x42d2d0) =
+char str_PyDoc_SInput_AbortListenToDefine[] = "AbortListenToDefine() : Aborta la redefinicion en curso";
+char str_PyDoc_SInput_GetDefinedEntry[] =
 	"value GetDefinedEntry(iPlayer,ActionSet,Action,Device) : obtiene una cadena con la primera definicio"
 	"n del control que encuentre";
-char str_PyDoc_SInput_GetDefinedList[] SD_AT(0x42d350) =
+char str_PyDoc_SInput_GetDefinedList[] =
 	"GetDefinedList(iPlayer,ActionSet,Action) : obtiene una cadena con la definicion de controles";
-char str_PyDoc_SInput_ClearDefinedList[] SD_AT(0x42d3b0) =
+char str_PyDoc_SInput_ClearDefinedList[] =
 	"ClearDefinedList(iPlayer,ActionSet,Action) : Elimina todas las entradas de un control.";
-char str_PyDoc_SInput_ResetToDefault[112] SD_AT(0x42d408) =
+char str_PyDoc_SInput_ResetToDefault[112] =
 	"ResetToDefault(iPlayer,ActionSet,Action) : Pone todas las entradas de los controles a valores por de"
 	"fecto.";
-char str_PyDoc_SInput_SetString[] SD_AT(0x42d478) =
+char str_PyDoc_SInput_SetString[] =
 	"SetString(iPlayer,String) : Modifica la cadena de entrada de texto.";
-char str_PyDoc_SInput_GetString[] SD_AT(0x42d4bc) = "GetString(iPlayer) : Obtiene la cadena de entrada de texto.";
-char str_PyDoc_SInput_GetCursorChar[] SD_AT(0x42d4f8) =
+char str_PyDoc_SInput_GetString[] = "GetString(iPlayer) : Obtiene la cadena de entrada de texto.";
+char str_PyDoc_SInput_GetCursorChar[] =
 	"GetCursorChar(iPlayer) : Obtiene el (x,y,caracter) que indican el estado del cursor.";
-char str_PyDoc_SInput_GetVirtualKeyboard[88] SD_AT(0x42d550) =
+char str_PyDoc_SInput_GetVirtualKeyboard[88] =
 	"GetVirtualKeyboard() : Obtiene el (W,H,Board) que son datos del keyboard virtual.";
-char str_PyDoc_SInput_SetVirtualKeyboard[] SD_AT(0x42d5a8) =
+char str_PyDoc_SInput_SetVirtualKeyboard[] =
 	"SetVirtualKeyboard(tipo de teclado) : Cambia el teclado virtual";
-char str_PyDoc_SInput_SetInputFunc[] SD_AT(0x42d5e8) =
+char str_PyDoc_SInput_SetInputFunc[] =
 	"SetInputFunc(iPlayer,modfunc) : agrega la funcion callback de entrada modfunc(iPlayer,string)";
-char str_PyDoc_SInput_Bind[88] SD_AT(0x42d648) =
+char str_PyDoc_SInput_Bind[88] =
 	"Bind(iPlayer,ActionSet,Action) : obtiene una cadena con la definicion de controles";
-char str_PyDoc_SInput_Rumble[72] SD_AT(0x42d6a0) = "Rumble(iPlayer,Left,Right,Time) : Inicializa el rumble de un pad.";
-char str_PyDoc_SInput_ResetToSplit[96] SD_AT(0x42d6e8) =
+char str_PyDoc_SInput_Rumble[72] = "Rumble(iPlayer,Left,Right,Time) : Inicializa el rumble de un pad.";
+char str_PyDoc_SInput_ResetToSplit[96] =
 	"ResetToSplit() : Resetea el sistema de entrada de datos para iniciar el modo split screen.";
-char str_PyDoc_SInput_CheckPadButton[] SD_AT(0x42d748) =
+char str_PyDoc_SInput_CheckPadButton[] =
 	"CheckPadButton() : Chequea el estado de un determinado botón del pad.";
-char str_PyDoc_SLogic_SetCharState[] SD_AT(0x42d8e0) =
+char str_PyDoc_SLogic_SetCharState[] =
 	"void SetCharState(entityName, state, entityTargetName) : Pone a una entidad en un estado de logica y"
 	" un target determinados";
-char str_PyDoc_SLogic_Flash[] SD_AT(0x42d95c) = "void Flash((x,y,z),radius) : Pone una entidad en el suelo";
-char str_PyDoc_SLogic_SendSentinelToWatch[88] SD_AT(0x42d998) =
+char str_PyDoc_SLogic_Flash[] = "void Flash((x,y,z),radius) : Pone una entidad en el suelo";
+char str_PyDoc_SLogic_SendSentinelToWatch[88] =
 	"void SendSentinelToWatch(Pos) : Envia a un centinela a inspeccionar una posicion";
-char str_PyDoc_SLogic_GearAttack[72] SD_AT(0x42d9f0) =
+char str_PyDoc_SLogic_GearAttack[72] =
 	"void GearAttack(Entity) : Envia a un Gear a atacar a una entidad";
-char str_PyDoc_SLogic_IsEnemyActive[] SD_AT(0x42da38) =
+char str_PyDoc_SLogic_IsEnemyActive[] =
 	"int IsEnemyActive() : Indica si hay un enemigo activo, mirando el contenido de la lista de enemigos "
 	"y en el tráfico.";
-char str_PyDoc_SLogic_GetNearestShip[] SD_AT(0x42dab0) =
+char str_PyDoc_SLogic_GetNearestShip[] =
 	"Name GetNearestShip(pos) : Cicla por varias listas y devuelve la nave más cercana a la posición indi"
 	"cada";
-char str_PyDoc_SLogic_SetOnFloor[60] SD_AT(0x42db1c) = "void SetOnFloor(Entity) : Pone una entidad en el suelo";
-char str_PyDoc_SLogic_SetShipToRegenerate[] SD_AT(0x42db58) =
+char str_PyDoc_SLogic_SetOnFloor[60] = "void SetOnFloor(Entity) : Pone una entidad en el suelo";
+char str_PyDoc_SLogic_SetShipToRegenerate[] =
 	"void SetShipToRegenerate(shipName, regSpeed,regEndSpeed): Pone una nave a regenerarse";
-char str_PyDoc_SLogic_SetDominationZones[136] SD_AT(0x42dbb0) =
+char str_PyDoc_SLogic_SetDominationZones[136] =
 	"void SetDominationZones(zonesList): Establece la lista de posiciones de las zonas de dominación en l"
 	"a super apuesta de dominación";
-char str_PyDoc_SLogic_ChangeZoneState[] SD_AT(0x42dc38) =
+char str_PyDoc_SLogic_ChangeZoneState[] =
 	"void ChangeZoneState(zoneId, state): Pone el estado de una zona de dominación";
-char str_PyDoc_SLogic_ChangeBatonState[] SD_AT(0x42dc88) =
+char str_PyDoc_SLogic_ChangeBatonState[] =
 	"void ChangeBatonState(pos, state): Actualiza el estado del testigo en el modo dominación";
-char str_PyDoc_SLogic_UpdateTauntEndTime[60] SD_AT(0x42dce4) = "void UpdateTauntEndTime(time): Tiempo final del taunt";
-char str_PyDoc_SNet_ModifyUsrData[] SD_AT(0x42de00) =
+char str_PyDoc_SLogic_UpdateTauntEndTime[60] = "void UpdateTauntEndTime(time): Tiempo final del taunt";
+char str_PyDoc_SNet_ModifyUsrData[] =
 	"ModifyUsrData(ClientId) : \n modifica desde el servidor los datos locales.";
-char str_PyDoc_SNet_ServerChangeLevel[68] SD_AT(0x42de4c) =
+char str_PyDoc_SNet_ServerChangeLevel[68] =
 	"ServerChangeLevel(resource name) : carga el siguiente nivel.";
-char str_PyDoc_SNet_AddResource[] SD_AT(0x42de90) =
+char str_PyDoc_SNet_AddResource[] =
 	"resourceid AddResource(resource name) : intenta agregar un recurso si este no existe. -1 si el pool "
 	"esta lleno";
-char str_PyDoc_SNet_InitServer[] SD_AT(0x42df00) =
+char str_PyDoc_SNet_InitServer[] =
 	"InitServer(LevelPath,MaxPlayers,ipport) : Intenta inicializar el servidor.";
-char str_PyDoc_SNet_CloseServer[68] SD_AT(0x42df4c) = "CloseServer(LevelPath) : Acaba el servidor y carga un nivel.";
-char str_PyDoc_SNet_IsServer[] SD_AT(0x42df90) =
+char str_PyDoc_SNet_CloseServer[68] = "CloseServer(LevelPath) : Acaba el servidor y carga un nivel.";
+char str_PyDoc_SNet_IsServer[] =
 	"IsServer() : 1 si esta activado el sistema servidor \n"
 	" NOTA: es para depuracion, mejor use Scrap.GetNetFlags()";
-char str_PyDoc_SNet_IsDedicated[] SD_AT(0x42e000) = "IsDedicated() : 1 si ha arrancado en modo servidor dedicado";
-char str_PyDoc_SNet_GetServerData[68] SD_AT(0x42e03c) =
+char str_PyDoc_SNet_IsDedicated[] = "IsDedicated() : 1 si ha arrancado en modo servidor dedicado";
+char str_PyDoc_SNet_GetServerData[68] =
 	"GetServerData() : Obtiene la tupla (Hostname,ipaddress,ipport)";
-char str_PyDoc_SNet_GetBotName[112] SD_AT(0x42e080) =
+char str_PyDoc_SNet_GetBotName[112] =
 	"GetBotName() : Obtiene un nombre valido de entidad jugador manejada por el servidor (bot o jugador l"
 	"ocal)";
-char str_PyDoc_SNet_GetObjName[] SD_AT(0x42e0f0) = "GetObjName() : Obtiene un nombre valido de Objeto cualesquiera.";
-char str_PyDoc_SNet_Kick[] SD_AT(0x42e130) = "Kick(entityname) : saca del servidor a un usuario no deseado.";
-char str_PyDoc_SNet_InitBrowser[] SD_AT(0x42e170) = "InitBrowser(port) : Inicializa el browser de red local.";
-char str_PyDoc_SNet_DoneBrowser[] SD_AT(0x42e1a8) = "DoneBrowser() : Cierra el browser de red local.";
-char str_PyDoc_SNet_GetMyClientShip[56] SD_AT(0x42e1d8) = "GetMyClientShip() : retorna el nombre de su nave.";
-char str_PyDoc_SNet_InitClient[] SD_AT(0x42e210) =
+char str_PyDoc_SNet_GetObjName[] = "GetObjName() : Obtiene un nombre valido de Objeto cualesquiera.";
+char str_PyDoc_SNet_Kick[] = "Kick(entityname) : saca del servidor a un usuario no deseado.";
+char str_PyDoc_SNet_InitBrowser[] = "InitBrowser(port) : Inicializa el browser de red local.";
+char str_PyDoc_SNet_DoneBrowser[] = "DoneBrowser() : Cierra el browser de red local.";
+char str_PyDoc_SNet_GetMyClientShip[56] = "GetMyClientShip() : retorna el nombre de su nave.";
+char str_PyDoc_SNet_InitClient[] =
 	"InitClient(ipAddress,ipport) : Inicia el proceso de coneccion con el servidor.";
-char str_PyDoc_SNet_CloseClient[64] SD_AT(0x42e260) = "CloseClient(LevelPath) : Acaba el cliente y carga un nivel.";
-char str_PyDoc_SNet_IsClient[] SD_AT(0x42e2a0) =
+char str_PyDoc_SNet_CloseClient[64] = "CloseClient(LevelPath) : Acaba el cliente y carga un nivel.";
+char str_PyDoc_SNet_IsClient[] =
 	"IsClient() : 1 si esta activado el sistema cliente \n"
 	"NOTA: Scrap.GetNetFlags() tiene el flag cliente activado \nsi la coneccion se hizo efectiva";
-char str_PyDoc_SNet_GetClientData[] SD_AT(0x42e330) = "GetClientData() : Obtiene la tupla (ipaddress,ipport)";
-char str_PyDoc_SNet_SendUsrString[104] SD_AT(0x42e368) =
+char str_PyDoc_SNet_GetClientData[] = "GetClientData() : Obtiene la tupla (ipaddress,ipport)";
+char str_PyDoc_SNet_SendUsrString[104] =
 	"SendUsrString(id,string) : -1 significa a todo el mundo en modo servidor, para cliente id se ignora";
-char str_PyDoc_SNet_SendChatString[] SD_AT(0x42e3d0) =
+char str_PyDoc_SNet_SendChatString[] =
 	"SendChatString(id,string) : -1 significa a todo el mundo en modo servidor, para cliente id se ignora";
-char str_PyDoc_SNet_SendCtrlString[72] SD_AT(0x42e438) =
+char str_PyDoc_SNet_SendCtrlString[72] =
 	"SendCtrlString(string) : Envia una cadena de control a los usuarios";
-char str_PyDoc_SNet_SendMasterString[] SD_AT(0x42e480) =
+char str_PyDoc_SNet_SendMasterString[] =
 	"SendMasterString(string) : envia una cadena al master. Si retorna cero no hay master.";
-char str_PyDoc_SNet_IsMaster[] SD_AT(0x42e4d8) =
+char str_PyDoc_SNet_IsMaster[] =
 	"IsMaster() : 1 si esta activado el sistema cliente \n"
 	"NOTA: Scrap.GetNetFlags() tiene el flag cliente activado \nsi la coneccion se hizo efectiva";
-char str_PyDoc_SNet_PingInetSvrs[] SD_AT(0x42e568) =
+char str_PyDoc_SNet_PingInetSvrs[] =
 	"PingInetSvrs() : 1 exitoso. revisa el estado de los servidores en internet. Se realiza despues de br"
 	"owse.";
-char str_PyDoc_SNet_GetPing[60] SD_AT(0x42e5d4) = "GetPing(EntityName) : Devuelve el ping de un cliente.";
-char str_PyDoc_SScorer_PreloadTexture[] SD_AT(0x42e7b0) = "PreloadTexture(filename) : Precarga una textura";
-char str_PyDoc_SScorer_AddChatMsg[80] SD_AT(0x42e7e0) =
+char str_PyDoc_SNet_GetPing[60] = "GetPing(EntityName) : Devuelve el ping de un cliente.";
+char str_PyDoc_SScorer_PreloadTexture[] = "PreloadTexture(filename) : Precarga una textura";
+char str_PyDoc_SScorer_AddChatMsg[80] =
 	"AddChatMsg(string,red,gree,blue) : Agrega un mensaje a la lista de chat.";
-char str_PyDoc_SScorer_SetConsole[72] SD_AT(0x42e830) =
+char str_PyDoc_SScorer_SetConsole[72] =
 	"SetConsole(show) : oculta/ muestra la consola de pantalla completa";
-char str_PyDoc_SScorer_SetSpeechText[] SD_AT(0x42e878) =
+char str_PyDoc_SScorer_SetSpeechText[] =
 	"SetSpeechText(text,time,r,g,b) : activa el texto de una conversacion que durará un tiempo espeficico";
-char str_PyDoc_SScorer_SetSpeechCallback[] SD_AT(0x42e8e0) =
+char str_PyDoc_SScorer_SetSpeechCallback[] =
 	"SetSpeechCallback(Callback) : Especifica la funcion callback que será llamada";
-char str_PyDoc_SScorer_CancelSpeech[] SD_AT(0x42e930) = "CancelSpeech(time) : cancela un mensaje remoto";
-char str_PyDoc_SScorer_SetHeadMonitor[] SD_AT(0x42e960) =
+char str_PyDoc_SScorer_CancelSpeech[] = "CancelSpeech(time) : cancela un mensaje remoto";
+char str_PyDoc_SScorer_SetHeadMonitor[] =
 	"SetHeadMonitor(Head,Msg,anm) : Especifica la cabeza que será usada en el monitor y el mensaje.";
-char str_PyDoc_SScorer_Fade[] SD_AT(0x42e9c0) = "Fade(id,(r,g,b,a),(r,g,b,a),time) : Realiza un fade de rgba a rgba.";
-char str_PyDoc_SScorer_SetCinema[] SD_AT(0x42ea04) = "SetCinema(id,status,time) : Activa el modo escena de cine.";
-char str_PyDoc_SScorer_SetMsgText[] SD_AT(0x42ea40) =
+char str_PyDoc_SScorer_Fade[] = "Fade(id,(r,g,b,a),(r,g,b,a),time) : Realiza un fade de rgba a rgba.";
+char str_PyDoc_SScorer_SetCinema[] = "SetCinema(id,status,time) : Activa el modo escena de cine.";
+char str_PyDoc_SScorer_SetMsgText[] =
 	"SetMsgText(text,time) : Muestra un mensaje de sistema y lo desactiva en el tiempo de mundo time";
-char str_PyDoc_SScorer_SetLabelText[104] SD_AT(0x42eaa0) =
+char str_PyDoc_SScorer_SetLabelText[104] =
 	"SetLabelText(text,time) : Muestra un rotulo de sistema y lo desactiva en el tiempo de mundo time";
-char str_PyDoc_SScorer_Get2DPos[] SD_AT(0x42eb08) =
+char str_PyDoc_SScorer_Get2DPos[] =
 	"(x,y) Get2DPos(vector3d) : obtiene en cordenadas de pantalla una posicion del escenario";
-char str_PyDoc_SScorer_GetTextArea[128] SD_AT(0x42eb60) =
+char str_PyDoc_SScorer_GetTextArea[128] =
 	"(width, height) GetTextArea(fontType, text) : obtiene la anchura y la altura de un texto dado el tex"
 	"to y el tipo de fuente";
-char str_PyDoc_SScorer_GetMenuAccept[] SD_AT(0x42ebe0) =
+char str_PyDoc_SScorer_GetMenuAccept[] =
 	"GetMenuAccept(id) : Devuelve el estado de la acción de menu aceptar.";
-char str_PyDoc_SScorer_SetMarkerSprite[] SD_AT(0x42ec28) =
+char str_PyDoc_SScorer_SetMarkerSprite[] =
 	"SetMarkerSprite(id,SpriteName) : pone un sprite como marcador";
-char str_PyDoc_SScorer_Add[] SD_AT(0x42ee88) = "Add(playernumber,itemname,itemtype,AtEnd) : Agrega un item al scorer.";
-char str_PyDoc_SScorer_Clear[] SD_AT(0x42eed0) = "Clear(playernumber) : Limpia el scorer completamente.";
-char str_PyDoc_SScorer_Set[96] SD_AT(0x42ef08) =
+char str_PyDoc_SScorer_Add[] = "Add(playernumber,itemname,itemtype,AtEnd) : Agrega un item al scorer.";
+char str_PyDoc_SScorer_Clear[] = "Clear(playernumber) : Limpia el scorer completamente.";
+char str_PyDoc_SScorer_Set[96] =
 	"Set(playernumber,itemname,varname,value) :  Modifica el valor de una variable de un item";
-char str_PyDoc_SScorer_Get[] SD_AT(0x42ef68) =
+char str_PyDoc_SScorer_Get[] =
 	"Get(playernumber,itemname,varname) :  Obtiene el valor de una variable de un item";
-char str_PyDoc_SScorer_GetItem[] SD_AT(0x42efbc) = "GetItem(playernumber,itemname) :  Obtiene un objeto item";
-char str_PyDoc_SScorer_New[] SD_AT(0x42eff8) =
+char str_PyDoc_SScorer_GetItem[] = "GetItem(playernumber,itemname) :  Obtiene un objeto item";
+char str_PyDoc_SScorer_New[] =
 	"New(playernumber,itemname,itemtype,AtEnd) : Agrega un item al scorer y obtiene la entidad.";
-char str_PyDoc_SScorer_Show[] SD_AT(0x42f054) = "Show(playernumber) : Activa el scorer.";
-char str_PyDoc_SScorer_Hide[] SD_AT(0x42f07c) = "Hide(playernumber) : Desactiva el scorer.";
-char str_PyDoc_SScorer_SetCursor[80] SD_AT(0x42f0a8) =
+char str_PyDoc_SScorer_Show[] = "Show(playernumber) : Activa el scorer.";
+char str_PyDoc_SScorer_Hide[] = "Hide(playernumber) : Desactiva el scorer.";
+char str_PyDoc_SScorer_SetCursor[80] =
 	"SetCursor(playernumber,CursorName) : pone un item del scorer como cursor";
-char str_PyDoc_SScorer_SetDefault[88] SD_AT(0x42f0f8) =
+char str_PyDoc_SScorer_SetDefault[88] =
 	"SetDefault(playernumber,DefaultItemName) : pone un item del scorer 'por defecto'";
-char str_PyDoc_SScorer_GetDefault[] SD_AT(0x42f150) =
+char str_PyDoc_SScorer_GetDefault[] =
 	"DefaultItemName GetDefault(playernumber) Obtiene el nombre del item por defecto";
-char str_PyDoc_SScorer_GetCurrent[64] SD_AT(0x42f1a0) = "ActualItem GetActual(playernumber) Obtiene el item actual";
-char str_PyDoc_SScorer_SetOnCancel[104] SD_AT(0x42f1e0) =
+char str_PyDoc_SScorer_GetCurrent[64] = "ActualItem GetActual(playernumber) Obtiene el item actual";
+char str_PyDoc_SScorer_SetOnCancel[104] =
 	"SetOnCancel(playernumber,CancelEvent) : Define la funcion que se ejecutara en el caso del escape.";
-char str_PyDoc_SScorer_SetOnNext[] SD_AT(0x42f248) =
+char str_PyDoc_SScorer_SetOnNext[] =
 	"SetOnNext(playernumber,CancelEvent) : Define la funcion que se ejecutara en el caso del pagina abajo"
 	".";
-char str_PyDoc_SScorer_SetOnPrev[] SD_AT(0x42f2b0) =
+char str_PyDoc_SScorer_SetOnPrev[] =
 	"SetOnPrev(playernumber,CancelEvent) : Define la funcion que se ejecutara en el caso del pagina abajo"
 	".";
-char str_PyDoc_SScorer_SetOnSpecialHint[] SD_AT(0x42f318) =
+char str_PyDoc_SScorer_SetOnSpecialHint[] =
 	"SetOnSpecialHint(playernumber,SpecialHintTestFunc,SpecialHint) : Define la funcion que decide si se "
 	"muestra un hint especial";
-char str_PyDoc_SScorer_AddModel[] SD_AT(0x42f398) =
+char str_PyDoc_SScorer_AddModel[] =
 	"AddModel(playernumber,Name,ModelFile,numanim,Radius) : Pre carga un modelo para usarse en el scorer.";
-char str_PyDoc_SScorer_SetMPFunc[104] SD_AT(0x42f400) =
+char str_PyDoc_SScorer_SetMPFunc[104] =
 	"SetMPFunc(playernumber,Callback) : Callback(id,showmpscorer) (muestra oculta el scorer multiplayer)";
-char str_PyDoc_SSound_SetVoiceVolume[] SD_AT(0x42f468) = "SetVoiceVolume(channel,volume) : set the volume of a voice.";
-char str_PyDoc_SSound_CreatePS[] SD_AT(0x42f4a4) = "CreatePS(Name) : Crea un nuevo sonido posicional";
-char str_PyDoc_SSound_SetVoiceString[] SD_AT(0x42f4d8) =
+char str_PyDoc_SSound_SetVoiceVolume[] = "SetVoiceVolume(channel,volume) : set the volume of a voice.";
+char str_PyDoc_SSound_CreatePS[] = "CreatePS(Name) : Crea un nuevo sonido posicional";
+char str_PyDoc_SSound_SetVoiceString[] =
 	"SetVoiceString(channel,volume) : set string user data of a voice.";
-char str_PyDoc_SSound_DeleteAllSounds[60] SD_AT(0x42f51c) = "SCRAP_DeleteAllSounds() : elimina todos los sonidos.";
-char str_PyDoc_SSound_LoadSound[] SD_AT(0x42f678) =
+char str_PyDoc_SSound_DeleteAllSounds[60] = "SCRAP_DeleteAllSounds() : elimina todos los sonidos.";
+char str_PyDoc_SSound_LoadSound[] =
 	"LoadSound(soundfile) : carga un sonido desde un archivo empaquetado.";
-char str_PyDoc_SSound_PlaySound[] SD_AT(0x42f6c0) =
+char str_PyDoc_SSound_PlaySound[] =
 	"PlaySound((x,y,z),'soundname',vol[,AttenIni,AttenEnd,Doppler]) : ejecuta un sonido en la posicion da"
 	"da con el volumen deseado.";
-char str_PyDoc_SSound_Play[] SD_AT(0x42f740) =
+char str_PyDoc_SSound_Play[] =
 	"Play('soundname'[,vol,pan]) : ejecuta un sonido con el volumen deseado.";
-char str_PyDoc_SSound_StopAllSounds[] SD_AT(0x42f788) = "SCRAP_StopAllSounds() : para todos los sonidos.";
-char str_PyDoc_SSound_SetPS[] SD_AT(0x42f7b8) =
+char str_PyDoc_SSound_StopAllSounds[] = "SCRAP_StopAllSounds() : para todos los sonidos.";
+char str_PyDoc_SSound_SetPS[] =
 	"SetPS(name,varname,value) :  Modifica el valor de una variable de un sonido posicional";
-char str_PyDoc_SSound_GetPS[] SD_AT(0x42f810) =
+char str_PyDoc_SSound_GetPS[] =
 	"GetPS(name,varname) :  Obtiene el valor de una variable de un sonido posicional";
-char str_PyDoc_SSound_UsePS[] SD_AT(0x42f860) = "UsePS(Name) : Crea un nuevo sonido posicional";
-char str_PyDoc_SSound_SetMusic[] SD_AT(0x42f890) =
+char str_PyDoc_SSound_UsePS[] = "UsePS(Name) : Crea un nuevo sonido posicional";
+char str_PyDoc_SSound_SetMusic[] =
 	"SetMusic('soundname'[,vol]) : set the file of the background music.";
-char str_PyDoc_SSound_SetMusicVolume[] SD_AT(0x42f8d4) =
+char str_PyDoc_SSound_SetMusicVolume[] =
 	"SetMusicVolume(vel) : set the volume of the background music.";
-char str_PyDoc_SSound_OpenVoice[60] SD_AT(0x42f914) = "OpenVoice(name,channel) : Preload a voice on a channel.";
-char str_PyDoc_SSound_PlayVoice[] SD_AT(0x42f950) =
+char str_PyDoc_SSound_OpenVoice[60] = "OpenVoice(name,channel) : Preload a voice on a channel.";
+char str_PyDoc_SSound_PlayVoice[] =
 	"PlayVoice(channel) : play a voice loaded on the specified channel.";
-char str_PyDoc_SSound_StopVoice[] SD_AT(0x42f994) = "StopVoice(channel) : stop a voice on the specified channel.";
-char str_PyDoc_SSound_VoiceRemain[72] SD_AT(0x42f9d0) =
+char str_PyDoc_SSound_StopVoice[] = "StopVoice(channel) : stop a voice on the specified channel.";
+char str_PyDoc_SSound_VoiceRemain[72] =
 	"VoiceRemain(channel,time) : return the remaining time of a voice.";
-char str_PyDoc_SVec_Add[] SD_AT(0x42fa18) = "res Add(v1,v2) : suma dos vectores 3D";
-char str_PyDoc_SVec_Sub[] SD_AT(0x42fa40) = "res Sub(v1,v2) : Resta dos vectores 3D";
-char str_PyDoc_SVec_Mod[] SD_AT(0x42fa68) = "res Mod(v1) : Devuelve el modulo de un vector";
-char str_PyDoc_SVec_ModSqr[] SD_AT(0x42fa98) = "res ModSqr(v1) : Devuelve el modulo (al cuadrado) de un vector";
-char str_PyDoc_SVec_Norm[] SD_AT(0x42fad8) = "res Norm(v1) : Normaliza un vector";
-char str_PyDoc_SVec_Prod[] SD_AT(0x42fafc) = "res Prod(v1,f) : multiplica un vector por un numero";
-char str_PyDoc_SVec_DProd[] SD_AT(0x42fb30) = "res DProd(v1,v2) : Calcula el producto escalar de dos vectores";
-char str_PyDoc_SVec_CProd[] SD_AT(0x42fb70) = "vRes CProd(v1,v2) : Calcula el producto vectorial de dos vectores";
-char str_PyDoc_SVec_Rotate3D[] SD_AT(0x42fbb4) = "res Rotate3D(src,rot) : Rota un vector";
-char str_PyDoc_SVec_GetAngle[] SD_AT(0x42fbdc) = "Ang GetAngle(vec) : Obtiene el ángulo entre dos vectores";
-char str_PyDoc_SVec_GetRotAng[] SD_AT(0x42fc18) = "AngX,AngY GetRotAng(vec) : Obtiene la rotacion de un vector";
-char str_PyDoc_SVec_NormAng[44] SD_AT(0x42fc54) = "rAng NormAng(Ang) : Normaliza un angulo";
-char str_PyDoc_SWeap_GetNWeap[] SD_AT(0x42fd50) = "GetNWeap() : Obtiene el numero de armas en el juego";
-char str_PyDoc_SWeap_GetNAmmo[] SD_AT(0x42fd84) = "GetNAmmo() : Obtiene el numero de municiones en el juego";
-char str_PyDoc_SWeap_InitWeap[] SD_AT(0x42fdc0) = "InitWeap(num) : Inicializa las armas num es el numero de armas";
-char str_PyDoc_SWeap_InitAmmo[56] SD_AT(0x42fe00) = "InitAmmo(num) : Inicializa las municiones del juego";
-char str_PyDoc_SWeap_GetFAmmo[] SD_AT(0x42fe38) =
+char str_PyDoc_SVec_Add[] = "res Add(v1,v2) : suma dos vectores 3D";
+char str_PyDoc_SVec_Sub[] = "res Sub(v1,v2) : Resta dos vectores 3D";
+char str_PyDoc_SVec_Mod[] = "res Mod(v1) : Devuelve el modulo de un vector";
+char str_PyDoc_SVec_ModSqr[] = "res ModSqr(v1) : Devuelve el modulo (al cuadrado) de un vector";
+char str_PyDoc_SVec_Norm[] = "res Norm(v1) : Normaliza un vector";
+char str_PyDoc_SVec_Prod[] = "res Prod(v1,f) : multiplica un vector por un numero";
+char str_PyDoc_SVec_DProd[] = "res DProd(v1,v2) : Calcula el producto escalar de dos vectores";
+char str_PyDoc_SVec_CProd[] = "vRes CProd(v1,v2) : Calcula el producto vectorial de dos vectores";
+char str_PyDoc_SVec_Rotate3D[] = "res Rotate3D(src,rot) : Rota un vector";
+char str_PyDoc_SVec_GetAngle[] = "Ang GetAngle(vec) : Obtiene el ángulo entre dos vectores";
+char str_PyDoc_SVec_GetRotAng[] = "AngX,AngY GetRotAng(vec) : Obtiene la rotacion de un vector";
+char str_PyDoc_SVec_NormAng[44] = "rAng NormAng(Ang) : Normaliza un angulo";
+char str_PyDoc_SWeap_GetNWeap[] = "GetNWeap() : Obtiene el numero de armas en el juego";
+char str_PyDoc_SWeap_GetNAmmo[] = "GetNAmmo() : Obtiene el numero de municiones en el juego";
+char str_PyDoc_SWeap_InitWeap[] = "InitWeap(num) : Inicializa las armas num es el numero de armas";
+char str_PyDoc_SWeap_InitAmmo[56] = "InitAmmo(num) : Inicializa las municiones del juego";
+char str_PyDoc_SWeap_GetFAmmo[] =
 	"GetFAmmo(numammo,svar) : Obtiene un valor numerico de las municiones";
-char str_PyDoc_SWeap_GetSAmmo[72] SD_AT(0x42fe80) =
+char str_PyDoc_SWeap_GetSAmmo[72] =
 	"GetSAmmo(numammo,svar) : Obtiene un valor cadena de las municiones";
-char str_PyDoc_SWeap_SetFAmmo[80] SD_AT(0x42fec8) =
+char str_PyDoc_SWeap_SetFAmmo[80] =
 	"GetFAmmo(numammo,svar,fvalue) : Pone un valor numerico de las municiones";
-char str_PyDoc_SWeap_SetSAmmo[] SD_AT(0x42ff18) =
+char str_PyDoc_SWeap_SetSAmmo[] =
 	"SetSAmmo(numammo,svar,svalue) : Pone un valor cadena de las municiones";
-char str_PyDoc_SWeap_GetFWeap[] SD_AT(0x42ff60) =
+char str_PyDoc_SWeap_GetFWeap[] =
 	"GetFWeap(numWeap,svar) : Obtiene un valor numerico de las municiones";
-char str_PyDoc_SWeap_GetSWeap[72] SD_AT(0x42ffa8) =
+char str_PyDoc_SWeap_GetSWeap[72] =
 	"GetSWeap(numWeap,svar) : Obtiene un valor cadena de las municiones";
-char str_PyDoc_SWeap_SetFWeap[80] SD_AT(0x42fff0) =
+char str_PyDoc_SWeap_SetFWeap[80] =
 	"GetFWeap(numWeap,svar,fvalue) : Pone un valor numerico de las municiones";
 

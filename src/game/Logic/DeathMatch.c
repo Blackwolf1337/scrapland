@@ -62,7 +62,7 @@ void __fastcall cDeathMatch_Think(cDeathMatch *self) {
 
 void __fastcall cDeathMatch_Init(cDeathMatch *self) {
 	self->list = cWorld_NewEntityList(g_pWorld, "DeathMatch");
-	cPy_Function_SetNative(&self->list->onDamage, (nativefunc_t)GAME_FUNC(DeathMatch_OnDamage, 0x1448b0));
+	cPy_Function_SetNative(&self->list->onDamage, (nativefunc_t)GAME_FUNC(DeathMatch_OnDamage));
 }
 
 /* the native of the hits: the ship and its attacker */

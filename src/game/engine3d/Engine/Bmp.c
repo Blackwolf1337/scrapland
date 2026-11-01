@@ -12,7 +12,7 @@
 #define BMP_PIXEL 4
 #define CRT_EEXIST 17
 /* errno for a bad file (also TXF) */
-#define g_ImgBadFormat GAME_GLOBAL(int, g_ErrPcxFormat, 0x3de07c)
+#define g_ImgBadFormat GAME_GLOBAL(int, g_ErrPcxFormat)
 
 #define TEX_MAGIC 0x1a584554
 #define BMP_TYPE 0x4d42
@@ -22,10 +22,10 @@
 #define TGA_RUN 0x80		/* packet header: a run, else raw pixels */
 #define TGA_PACKET_MAX 128
 
-#define g_BmpFileHeader (&GAME_GLOBAL(bmpFileCab_t, g_BmpFileHeader, 0x4dbf08))
-#define g_BmpInfoCab (&GAME_GLOBAL(bmpInfoCab_t, g_BmpInfoCab, 0x4dbf18))
-#define g_TexHeader (&GAME_GLOBAL(texCab_t, g_TexHeader, 0x4dbf40))
-#define g_TgaCab (&GAME_GLOBAL(tgaCab_t, g_TgaCab, 0x4dbf60))
+#define g_BmpFileHeader (&GAME_GLOBAL(bmpFileCab_t, g_BmpFileHeader))
+#define g_BmpInfoCab (&GAME_GLOBAL(bmpInfoCab_t, g_BmpInfoCab))
+#define g_TexHeader (&GAME_GLOBAL(texCab_t, g_TexHeader))
+#define g_TgaCab (&GAME_GLOBAL(tgaCab_t, g_TgaCab))
 
 void *Img_Pixel(const CImage *b, uint32_t x, uint32_t y, int bytes) {
 	CHECK(b->img);

@@ -31,7 +31,7 @@
 #include "scrap/video.h"
 #include "scrap/win32.h"
 
-#define g_IsViewer GAME_GLOBAL_IN(int, GVar_Viewer, 16, 0x467b34)
+#define g_IsViewer GAME_GLOBAL_IN(int, GVar_Viewer, 16)
 #define D3DFMT_A8R8G8B8 21
 #define D3DFMT_X8R8G8B8 22
 #define D3DFMT_R5G6B5 23
@@ -347,8 +347,8 @@ void Engine_Init(void) {
 	g_TimerQPMult = g_TimerFreqMult;
 	Timer_GetQPFreq(&freq);
 	E3D_LogDebug(g_FileLog, "TimerQPFreq: %d", (int)freq);
-	Engine3D_Create(hInst, hWnd, GAME_FUNC(Engine_OneTimeInit, RVA_ENGINE_ONETIMEINIT), GAME_FUNC(Engine_FrameMove, RVA_ENGINE_FRAMEMOVE),
-		GAME_FUNC(Engine_FinalCleanup, RVA_ENGINE_FINALCLEANUP), 0);
+	Engine3D_Create(hInst, hWnd, GAME_FUNC(Engine_OneTimeInit), GAME_FUNC(Engine_FrameMove),
+		GAME_FUNC(Engine_FinalCleanup), 0);
 	g_Engine->fullscreen = g_FullScreen && !APP_DEDICATED(g_pApp);
 	g_Engine->width = g_VideoWidth;
 	g_Engine->height = g_VideoHeight;
@@ -718,13 +718,13 @@ static float DebugValue(uint32_t i) {
 }
 
 /* the free camera of the viewer (Gvars) */
-#define g_ViewerClipNear GAME_GLOBAL_IN(float, GVar_ViewerClipNear, 16, 0x4a87b0)
-#define g_ViewerClipFar GAME_GLOBAL_IN(float, GVar_ViewerClipFar, 16, 0x4a87c8)
-#define g_ViewerFOV GAME_GLOBAL_IN(float, GVar_ViewerFOV, 16, 0x4a8610)	/* degrees, 0: the camera keeps its own */
-#define g_ViewerCameraTgt GAME_GLOBAL_IN(int, GVar_ViewerCameraTgt, 16, 0x4a8660)	/* orbits around the target */
-#define g_ViewerCameraVel GAME_GLOBAL_IN(float, GVar_ViewerCameraVel, 16, 0x4a86f0)
-#define g_ViewerCameraInv GAME_GLOBAL_IN(int, GVar_ViewerCameraInv, 16, 0x4a85b0)	/* the pitch not inverted */
-#define g_ViewerSpeed GAME_GLOBAL(float, g_ViewerSpeed, 0x431b04)	/* doubled and halved by the debug keys */
+#define g_ViewerClipNear GAME_GLOBAL_IN(float, GVar_ViewerClipNear, 16)
+#define g_ViewerClipFar GAME_GLOBAL_IN(float, GVar_ViewerClipFar, 16)
+#define g_ViewerFOV GAME_GLOBAL_IN(float, GVar_ViewerFOV, 16)	/* degrees, 0: the camera keeps its own */
+#define g_ViewerCameraTgt GAME_GLOBAL_IN(int, GVar_ViewerCameraTgt, 16)	/* orbits around the target */
+#define g_ViewerCameraVel GAME_GLOBAL_IN(float, GVar_ViewerCameraVel, 16)
+#define g_ViewerCameraInv GAME_GLOBAL_IN(int, GVar_ViewerCameraInv, 16)	/* the pitch not inverted */
+#define g_ViewerSpeed GAME_GLOBAL(float, g_ViewerSpeed)	/* doubled and halved by the debug keys */
 #define VIEWER_MIN_DIST 20.0f
 /* the actions of the debug set */
 #define DBG_VIEWER_TGT 23
@@ -1079,11 +1079,11 @@ void Model_Info(const char *name, int n) {
 	Con_Verbosef("\n");
 	void *hInst = App_GetHInstance();
 	void *hWnd = App_GetHWnd();
-	exe_CreateDialogParamA(hInst, (const char *)0x99, hWnd, GAME_FUNC(Engine_SceneDlgProc, RVA_MODELDLG_PROC), (intptr_t)e);
+	exe_CreateDialogParamA(hInst, (const char *)0x99, hWnd, GAME_FUNC(Engine_SceneDlgProc), (intptr_t)e);
 }
 
 void Models_List(void) {
-	UtilScene_Dump((utilPrintf_t)GAME_FUNC(Con_Verbosef, RVA_CON_VERBOSEF));
+	UtilScene_Dump((utilPrintf_t)GAME_FUNC(Con_Verbosef));
 }
 
 /* the original copies its local also when the timer has no value (then uninitialized) */
@@ -1175,31 +1175,31 @@ int Ini_GetPath(const char *sect, const char *key, char *dest, int size, const c
 }
 
 /* the globals of m3d.ini without a better home */
-#define g_ShadowMapMultitext GAME_GLOBAL(int, g_ShadowMapMultitext, 0x4b2b00)
-#define g_ShadowMapSoft GAME_GLOBAL(int, g_ShadowMapSoft, 0x4b2b04)
-#define g_ShadowMapWriteTemp GAME_GLOBAL(int, g_ShadowMapWriteTemp, 0x4b2b08)
-#define g_ShadowMapAtten GAME_GLOBAL(float, g_ShadowMapAtten, 0x4b2b0c)
-#define g_ShadowMapScale GAME_GLOBAL(float, g_ShadowMapScale, 0x432950)
-#define g_ShadowMapRes GAME_GLOBAL(float, g_ShadowMapRes, 0x432954)
-#define g_ShadowMapTexX GAME_GLOBAL(int, g_ShadowMapTexX, 0x432958)
-#define g_ShadowMapTexY GAME_GLOBAL(int, g_ShadowMapTexY, 0x43295c)
-#define g_ShadowMapGamma GAME_GLOBAL(float, g_ShadowMapGamma, 0x432960)
-#define g_ShadowMapBrightness GAME_GLOBAL(float, g_ShadowMapBrightness, 0x432964)
-#define g_ShadowMapRadiosity GAME_GLOBAL(int, g_ShadowMapRadiosity, 0x4b2b10)
-#define g_ShadowMapIllumGlobal GAME_GLOBAL(int, g_ShadowMapIllumGlobal, 0x4b2b14)
-#define g_ShadowMapNoLightAmb GAME_GLOBAL(int, g_ShadowMapNoLightAmb, 0x4b2b18)
-#define g_ShadowMapModulate4x GAME_GLOBAL(int, g_ShadowMapModulate4x, 0x4b2b1c)
-#define g_ShadowMapBounces GAME_GLOBAL(int, g_ShadowMapBounces, 0x432968)
-#define g_ShadowMapCoefRad GAME_GLOBAL(float, g_ShadowMapCoefRad, 0x43296c)
-#define g_ShadowMapUseTxf GAME_GLOBAL(int, g_ShadowMapUseTxf, 0x4b2b24)
-#define g_ShadowsDestAlpha GAME_GLOBAL(int, g_ShadowsDestAlpha, 0x4afdb4)
-#define g_FlaresSizeDef GAME_GLOBAL(float, g_FlareSize, 0x432998)
-#define g_FlaresAttenDist GAME_GLOBAL(int, g_FlareAttenDist, 0x4d6d90)
-#define g_FlaresAttenIni GAME_GLOBAL(float, g_FlareAttenDistIni, 0x43299c)
-#define g_FlaresAttenEnd GAME_GLOBAL(float, g_FlareAttenDistEnd, 0x4329a0)
-#define g_FlaresFadeIn GAME_GLOBAL(float, g_FlareFadeIn, 0x4329a4)
-#define g_FlaresFadeOut GAME_GLOBAL(float, g_FlareFadeOut, 0x4329a8)
-#define g_FlaresShowInfo GAME_GLOBAL(int, g_FlareShowInfo, 0x4d6d94)
+#define g_ShadowMapMultitext GAME_GLOBAL(int, g_ShadowMapMultitext)
+#define g_ShadowMapSoft GAME_GLOBAL(int, g_ShadowMapSoft)
+#define g_ShadowMapWriteTemp GAME_GLOBAL(int, g_ShadowMapWriteTemp)
+#define g_ShadowMapAtten GAME_GLOBAL(float, g_ShadowMapAtten)
+#define g_ShadowMapScale GAME_GLOBAL(float, g_ShadowMapScale)
+#define g_ShadowMapRes GAME_GLOBAL(float, g_ShadowMapRes)
+#define g_ShadowMapTexX GAME_GLOBAL(int, g_ShadowMapTexX)
+#define g_ShadowMapTexY GAME_GLOBAL(int, g_ShadowMapTexY)
+#define g_ShadowMapGamma GAME_GLOBAL(float, g_ShadowMapGamma)
+#define g_ShadowMapBrightness GAME_GLOBAL(float, g_ShadowMapBrightness)
+#define g_ShadowMapRadiosity GAME_GLOBAL(int, g_ShadowMapRadiosity)
+#define g_ShadowMapIllumGlobal GAME_GLOBAL(int, g_ShadowMapIllumGlobal)
+#define g_ShadowMapNoLightAmb GAME_GLOBAL(int, g_ShadowMapNoLightAmb)
+#define g_ShadowMapModulate4x GAME_GLOBAL(int, g_ShadowMapModulate4x)
+#define g_ShadowMapBounces GAME_GLOBAL(int, g_ShadowMapBounces)
+#define g_ShadowMapCoefRad GAME_GLOBAL(float, g_ShadowMapCoefRad)
+#define g_ShadowMapUseTxf GAME_GLOBAL(int, g_ShadowMapUseTxf)
+#define g_ShadowsDestAlpha GAME_GLOBAL(int, g_ShadowsDestAlpha)
+#define g_FlaresSizeDef GAME_GLOBAL(float, g_FlareSize)
+#define g_FlaresAttenDist GAME_GLOBAL(int, g_FlareAttenDist)
+#define g_FlaresAttenIni GAME_GLOBAL(float, g_FlareAttenDistIni)
+#define g_FlaresAttenEnd GAME_GLOBAL(float, g_FlareAttenDistEnd)
+#define g_FlaresFadeIn GAME_GLOBAL(float, g_FlareFadeIn)
+#define g_FlaresFadeOut GAME_GLOBAL(float, g_FlareFadeOut)
+#define g_FlaresShowInfo GAME_GLOBAL(int, g_FlareShowInfo)
 
 void Engine_LoadIni(const char *name, const char *dir) {
 	static const char *const paths[4] = { "ruta1", "ruta2", "ruta3", "ruta4" };

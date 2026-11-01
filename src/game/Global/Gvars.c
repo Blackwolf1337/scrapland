@@ -10,7 +10,7 @@
 #include "scrap/scrap.h"
 
 void Str_TrimBlanks(char *s);
-void App_GetConfigDir(char *buf, int size);	/* the directory of Scrap.cfg with its separator (rva 0x20d570) */
+void App_GetConfigDir(char *buf, int size);	/* the directory of Scrap.cfg with its separator */
 
 #define GVAR_READONLY 0x1
 #define GVAR_SAVE 0x2		/* set from the config file or changed: written by Config_Save */

@@ -90,22 +90,22 @@ SD_SIZE(cStringNode, 0xc);
 typedef DLIST(cPackEntryNode) cPackEntryList;
 typedef DLIST(cStringNode) cStringList;
 
-#define g_PackIndex (&GAME_GLOBAL(HashTable, g_PackIndex, 0x428994))	/* of cPackIndexItem, 457 slots */
-#define g_PackEntries (&GAME_GLOBAL(cPackEntryList, g_PackEntries, 0x44ab8c))	/* build list */
-#define g_PackNames (&GAME_GLOBAL(cStringList, g_PackNames, 0x44ab44))	/* packs being recorded */
-#define g_NumPackFiles GAME_GLOBAL(int, g_NumPackFiles, 0x44aba4)
-#define g_PackFiles (&GAME_GLOBAL_IN(cFile2, g_PackFiles, 0, 0x44aba8))		/* PACK_MAX_FILES */
-#define g_NameTable GAME_GLOBAL(HashTable *, g_NameTable, 0x44ab40)	/* of cNameItem, while Python_CompileAll collects */
-#define g_PackExclude GAME_GLOBAL_IN(char *, GVar_BuildPackExclude, 16, 0x44b5b8)	/* ';' separated patterns not to pack */
-#define g_PackInclude GAME_GLOBAL_IN(char *, GVar_BuildPackInclude, 16, 0x44b5d0)	/* ';' separated patterns to pack, all if empty */
-#define g_PackLocked GAME_GLOBAL(int, g_PackLocked, 0x44b5d8)		/* a cFilePack is open (only one at a time) */
-#define g_LstFile GAME_GLOBAL(void *, g_LstFile, 0x44b5dc)		/* the file list being recorded */
-#define g_PackNumEntries GAME_GLOBAL(uint32_t, g_PackNumEntries, 0x44b5e0)
-#define g_PackDirLen GAME_GLOBAL(int, g_PackDirLen, 0x44b5e4)		/* characters to skip of the walked names */
-#define g_PackBuildMode GAME_GLOBAL(int, g_PackBuildMode, 0x44b5e8)
-#define g_PackFound GAME_GLOBAL(cPackLocation, g_PackFound, 0x44b5ec)	/* result of PackIndex_Find */
-#define g_PackNameStr GAME_GLOBAL_IN(char *, GVar_PathInPackFile, 16, 0x44ab6c)	/* chars of g_PackName, the prefix of the open pack */
-#define g_PackBuildAsk GAME_GLOBAL_IN(int, GVar_BuildPackPrompt, 16, 0x44ab84)	/* ask before quitting after Pack_Build */
+#define g_PackIndex (&GAME_GLOBAL(HashTable, g_PackIndex))	/* of cPackIndexItem, 457 slots */
+#define g_PackEntries (&GAME_GLOBAL(cPackEntryList, g_PackEntries))	/* build list */
+#define g_PackNames (&GAME_GLOBAL(cStringList, g_PackNames))	/* packs being recorded */
+#define g_NumPackFiles GAME_GLOBAL(int, g_NumPackFiles)
+#define g_PackFiles (&GAME_GLOBAL_IN(cFile2, g_PackFiles, 0))		/* PACK_MAX_FILES */
+#define g_NameTable GAME_GLOBAL(HashTable *, g_NameTable)	/* of cNameItem, while Python_CompileAll collects */
+#define g_PackExclude GAME_GLOBAL_IN(char *, GVar_BuildPackExclude, 16)	/* ';' separated patterns not to pack */
+#define g_PackInclude GAME_GLOBAL_IN(char *, GVar_BuildPackInclude, 16)	/* ';' separated patterns to pack, all if empty */
+#define g_PackLocked GAME_GLOBAL(int, g_PackLocked)		/* a cFilePack is open (only one at a time) */
+#define g_LstFile GAME_GLOBAL(void *, g_LstFile)		/* the file list being recorded */
+#define g_PackNumEntries GAME_GLOBAL(uint32_t, g_PackNumEntries)
+#define g_PackDirLen GAME_GLOBAL(int, g_PackDirLen)		/* characters to skip of the walked names */
+#define g_PackBuildMode GAME_GLOBAL(int, g_PackBuildMode)
+#define g_PackFound GAME_GLOBAL(cPackLocation, g_PackFound)	/* result of PackIndex_Find */
+#define g_PackNameStr GAME_GLOBAL_IN(char *, GVar_PathInPackFile, 16)	/* chars of g_PackName, the prefix of the open pack */
+#define g_PackBuildAsk GAME_GLOBAL_IN(int, GVar_BuildPackPrompt, 16)	/* ask before quitting after Pack_Build */
 
 cFile2 *__fastcall cFile2_ctor(cFile2 *self);
 void __fastcall cFile2_dtor(cFile2 *self);
@@ -130,7 +130,7 @@ int PackLog_Add(const char *name);
 byte Pack_Open(const char *name, const char *dir, size_t bufSize);
 int Pack_Extract(const char *dir);
 
-#define cFile2_vftable ((const cAbstractFileVtbl *)GAME_VFTABLE(cFile2_vftable, 0x3ba868))
-#define cFilePack_vftable ((const cAbstractFileVtbl *)GAME_VFTABLE(cFilePack_vftable, 0x3ba890))
+#define cFile2_vftable ((const cAbstractFileVtbl *)GAME_VFTABLE(cFile2_vftable))
+#define cFilePack_vftable ((const cAbstractFileVtbl *)GAME_VFTABLE(cFilePack_vftable))
 
 #endif

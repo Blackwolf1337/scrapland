@@ -34,13 +34,13 @@ SD_SIZE(CFont, 0x34);
 #define CFONT_SHADOW 0x20000		/* a black copy at shadow first */
 
 /* the fonts by name (Font_Get) */
-#define g_FontTerminal8 GAME_GLOBAL(CFont *, g_FontTerminal8, 0x4a8908)
-#define g_FontTerminal8Fixed GAME_GLOBAL(CFont *, g_FontTerminal8Fixed, 0x4a890c)
-#define g_FontBigNumbers GAME_GLOBAL(CFont *, g_FontBigNumbers, 0x4a8910)
-#define g_FontScrapBig GAME_GLOBAL(CFont *, g_FontScrapBig, 0x4a8914)
-#define g_FontScrapMedium GAME_GLOBAL(CFont *, g_FontScrapMedium, 0x4a8918)
-#define g_FontHoratio GAME_GLOBAL(CFont *, g_FontHoratio, 0x4a891c)
-#define g_FontHoratioSmall GAME_GLOBAL(CFont *, g_FontHoratioSmall, 0x4a8920)
+#define g_FontTerminal8 GAME_GLOBAL(CFont *, g_FontTerminal8)
+#define g_FontTerminal8Fixed GAME_GLOBAL(CFont *, g_FontTerminal8Fixed)
+#define g_FontBigNumbers GAME_GLOBAL(CFont *, g_FontBigNumbers)
+#define g_FontScrapBig GAME_GLOBAL(CFont *, g_FontScrapBig)
+#define g_FontScrapMedium GAME_GLOBAL(CFont *, g_FontScrapMedium)
+#define g_FontHoratio GAME_GLOBAL(CFont *, g_FontHoratio)
+#define g_FontHoratioSmall GAME_GLOBAL(CFont *, g_FontHoratioSmall)
 
 /* CFont_Load(name, unused, NULL): only a NULL name works */
 CFont *__thiscall CFont_ctor(CFont *self, const char *name, void *unused);

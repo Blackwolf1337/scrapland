@@ -292,14 +292,14 @@ SD_OFFSET(CNodesWorld, hitFrom, 0x3c0);
 SD_OFFSET(CNodesWorld, tris, 0x3d8);
 SD_SIZE(CNodesWorld, 0x3f0);
 
-#define CNODESWORLD_VFTABLE GAME_VFTABLE(CNodesWorld_vftable, 0x3aabb8)
+#define CNODESWORLD_VFTABLE GAME_VFTABLE(CNodesWorld_vftable)
 
 /* the globals of the module */
-#define g_NWDebugSegs GAME_GLOBAL_IN(int, GVar_ShowTestCanGoAI, 16, 0x444e3c)		/* the path tests keep their segments in the list they get */
-#define g_NWNodeRadius GAME_GLOBAL(float, g_NWNodeRadius, 0x444d30)	/* 751 outdoors, 131 indoors */
-#define g_NWF60 GAME_GLOBAL_IN(float, GVar_RADIUS_OBJECTIVE_IN_ROUTE, 16, 0x444d60)
-#define g_NWAnalyzeOn GAME_GLOBAL_IN(int, GVar_ShowAI, 16, 0x44418c)
-#define g_NWDrawMode GAME_GLOBAL_IN(int, GVar_ShowNodesAI, 16, 0x444d48)		/* what the debug view of the graph draws */
+#define g_NWDebugSegs GAME_GLOBAL_IN(int, GVar_ShowTestCanGoAI, 16)		/* the path tests keep their segments in the list they get */
+#define g_NWNodeRadius GAME_GLOBAL(float, g_NWNodeRadius)	/* 751 outdoors, 131 indoors */
+#define g_NWF60 GAME_GLOBAL_IN(float, GVar_RADIUS_OBJECTIVE_IN_ROUTE, 16)
+#define g_NWAnalyzeOn GAME_GLOBAL_IN(int, GVar_ShowAI, 16)
+#define g_NWDrawMode GAME_GLOBAL_IN(int, GVar_ShowNodesAI, 16)		/* what the debug view of the graph draws */
 
 /* the base class (another source) */
 CNodesWorld *__thiscall CNodesWorldSup_ctor(CNodesWorld *self);

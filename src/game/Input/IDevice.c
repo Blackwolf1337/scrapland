@@ -14,9 +14,9 @@
 #include "scrap/win32.h"
 #include "scrap/world.h"
 
-#define EXE_EMPTY GAME_STR(str_Empty, 0x3a3228)		/* "" of the exe */
+#define EXE_EMPTY GAME_STR(str_Empty)		/* "" of the exe */
 #define DEV_NODE_SIZE sizeof(cInputDevNode)
-#define IID_IDIRECTINPUT8A ((const void *)GAME_PTR(IID_IDIRECTINPUT8A, 0, 0x3d116c))
+#define IID_IDIRECTINPUT8A ((const void *)GAME_PTR(IID_IDIRECTINPUT8A, 0))
 
 /* the scorer state the definition of a key switches to (rva 0x1710f0, Scorer/) */
 void Scorer_SetInputState(int state);
@@ -79,7 +79,7 @@ cAbstractIDevice *__thiscall cAbstractIDevice_ctor(cAbstractIDevice *self) {
 cFuncGvarDevices *__thiscall cFuncGvarDevices_ctor(cFuncGvarDevices *self, cAbstractIDevice *dev) {
 	cGVar *v = (cGVar *)&self->base.gvar;
 
-	cGVar_ctor(v, dev->vftable->GetName(dev), 3, GAME_STR(str_3bc4b4, 0x3bc4b4));	/* "User Control definition" */
+	cGVar_ctor(v, dev->vftable->GetName(dev), 3, GAME_STR(str_3bc4b4));	/* "User Control definition" */
 	self->device = dev;
 	v->base.type = GVAR_FUNCTION;
 	self->base.vftable = CFUNCGVARDEVICES_VFTABLE;
@@ -546,7 +546,7 @@ void Input_SetDefineFunc(const char *func) {
 		g_OnDefined = NULL;
 		return;
 	}
-	g_OnDefined = (void (*)(void))GAME_FUNC(Input_OnDefined, 0x13bfa0);	/* Input_OnDefined of the exe */
+	g_OnDefined = (void (*)(void))GAME_FUNC(Input_OnDefined);	/* Input_OnDefined of the exe */
 	cPy_Function_SetFunc(g_DefineFunc, func);
 }
 

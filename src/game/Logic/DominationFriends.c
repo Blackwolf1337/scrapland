@@ -87,7 +87,7 @@ void __thiscall cDominationFriendsLogic_Init(cDominationFriendsLogic *self) {
 
 	CHECK(s->owner && "fl");
 	s->list = cWorld_NewEntityList(g_pWorld, "DominationFriends");
-	cPy_Function_SetNative(&s->list->onDeath, (nativefunc_t)GAME_FUNC(DominationFriends_OnDeath, 0x146630));
+	cPy_Function_SetNative(&s->list->onDeath, (nativefunc_t)GAME_FUNC(DominationFriends_OnDeath));
 }
 
 /* the native of the deaths */

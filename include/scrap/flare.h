@@ -10,19 +10,19 @@
 #include "scrap/graphic2d.h"
 #include "scrap/node3d.h"
 
-#define CFLARE_VFTABLE GAME_VFTABLE(CFlare_vftable, 0x3e1958)
+#define CFLARE_VFTABLE GAME_VFTABLE(CFlare_vftable)
 
-#define g_FlareSize GAME_GLOBAL(float, g_FlareSize, 0x432998)		/* tam_def */
-#define g_FlareAttenDist GAME_GLOBAL(int, g_FlareAttenDist, 0x4d6d90)	/* aten_dist */
-#define g_FlareAttenDistIni GAME_GLOBAL(float, g_FlareAttenDistIni, 0x43299c)	/* aten_dist_ini */
-#define g_FlareAttenDistEnd GAME_GLOBAL(float, g_FlareAttenDistEnd, 0x4329a0)	/* aten_dist_fin */
-#define g_FlareFadeIn GAME_GLOBAL(float, g_FlareFadeIn, 0x4329a4)	/* fundido_ent */
-#define g_FlareFadeOut GAME_GLOBAL(float, g_FlareFadeOut, 0x4329a8)	/* fundido_sal */
-#define g_FlareShowInfo GAME_GLOBAL(int, g_FlareShowInfo, 0x4d6d94)		/* ver_info */
-#define g_SkipFlares GAME_GLOBAL_IN(int, GVar_R_SkipFlares, 16, 0x4d6dc0)		/* R_SkipFlares */
-#define g_ShowFlaresInfo GAME_GLOBAL_IN(int, GVar_R_ShowFlaresInfo, 16, 0x4d6da8)	/* R_ShowFlaresInfo */
-#define g_Overdraw GAME_GLOBAL(int, g_Overdraw, 0x4a8f2c)		/* video sobredib, the overdraw view */
-#define g_TimeMsF GAME_GLOBAL(float, g_TimeMsF, 0x4a8ed0)		/* the time of the engine in ms */
+#define g_FlareSize GAME_GLOBAL(float, g_FlareSize)		/* tam_def */
+#define g_FlareAttenDist GAME_GLOBAL(int, g_FlareAttenDist)	/* aten_dist */
+#define g_FlareAttenDistIni GAME_GLOBAL(float, g_FlareAttenDistIni)	/* aten_dist_ini */
+#define g_FlareAttenDistEnd GAME_GLOBAL(float, g_FlareAttenDistEnd)	/* aten_dist_fin */
+#define g_FlareFadeIn GAME_GLOBAL(float, g_FlareFadeIn)	/* fundido_ent */
+#define g_FlareFadeOut GAME_GLOBAL(float, g_FlareFadeOut)	/* fundido_sal */
+#define g_FlareShowInfo GAME_GLOBAL(int, g_FlareShowInfo)		/* ver_info */
+#define g_SkipFlares GAME_GLOBAL_IN(int, GVar_R_SkipFlares, 16)		/* R_SkipFlares */
+#define g_ShowFlaresInfo GAME_GLOBAL_IN(int, GVar_R_ShowFlaresInfo, 16)	/* R_ShowFlaresInfo */
+#define g_Overdraw GAME_GLOBAL(int, g_Overdraw)		/* video sobredib, the overdraw view */
+#define g_TimeMsF GAME_GLOBAL(float, g_TimeMsF)		/* the time of the engine in ms */
 
 typedef struct CFlare {
 	void **vftable;			/* 0x00 OBJ3D_VF_* */

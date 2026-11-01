@@ -18,7 +18,7 @@
 static byte Text_IsEdit(cTextScorer *self) {
 	cPy_Function *f = &self->base.base.onAccept;
 	void *func = f->flags & PYF_NATIVE ? f->func : NULL;
-	return func == GAME_FUNC(TextEdit_Start, TEXTEDIT_NATIVE_FUNC);
+	return func == GAME_FUNC(TextEdit_Start);
 }
 
 /* the text of the item, a camera variable of the player when it starts with a line break */
@@ -118,7 +118,7 @@ void TextEdit_Start(cAbstractFile *params) {
 	g_TextEditCursor[player] = Scorer_Get(player)->cursor;
 	Scorer_Get(player)->cursor = NULL;
 	/* the exe's function, as the original stores it */
-	g_PlayerInput[player].onDone = (void (*)(int, const char *))GAME_FUNC(TextEdit_Done, 0x182d60);
+	g_PlayerInput[player].onDone = (void (*)(int, const char *))GAME_FUNC(TextEdit_Done);
 	max = g_TextEditItem[player]->maxInput;
 	CHECK(max < 0x80);
 	g_PlayerInput[player].maxLen = max;

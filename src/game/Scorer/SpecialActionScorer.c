@@ -11,7 +11,7 @@
 #include "scrap/weapons.h"
 
 /* the draw handler of each character action: thiscall (item, player) */
-#define g_SpecialActionDraw (GAME_ARRAY(void (__thiscall *)(cSpecialActionScorer *, int), g_SpecialActionDraw, 0x428cb8))
+#define g_SpecialActionDraw (GAME_ARRAY(void (__thiscall *)(cSpecialActionScorer *, int), g_SpecialActionDraw))
 
 static const char *const s_InactiveColors[4] = {"InactiveColorRed", "InactiveColorGreen", "InactiveColorBlue",
 	"InactiveColorAlpha"};
@@ -167,31 +167,31 @@ void __thiscall cSpecialActionScorer_Draw(cSpecialActionScorer *self, int player
 
 /* ---- the draws of the character actions ---- */
 
-#define g_SpecialActionState GAME_GLOBAL(int, g_SpecialActionState, 0x428cf4)	/* the icon state drawn last: 0 off, 1 on, 2 active */
-#define g_SpecialActionFade GAME_GLOBAL(float, g_SpecialActionFade, 0x428cf8)	/* counts down 0.2 s after a state change */
-#define g_GearAimSpreadX GAME_GLOBAL(float, g_GearAimSpreadX, 0x428d10)	/* the aim cone of the gear target search */
-#define g_GearAimSpreadY GAME_GLOBAL(float, g_GearAimSpreadY, 0x428d14)
-#define g_GearAimMode GAME_GLOBAL(int, g_GearAimMode, 0x4606c8)		/* 1..3: which targets the search takes */
+#define g_SpecialActionState GAME_GLOBAL(int, g_SpecialActionState)	/* the icon state drawn last: 0 off, 1 on, 2 active */
+#define g_SpecialActionFade GAME_GLOBAL(float, g_SpecialActionFade)	/* counts down 0.2 s after a state change */
+#define g_GearAimSpreadX GAME_GLOBAL(float, g_GearAimSpreadX)	/* the aim cone of the gear target search */
+#define g_GearAimSpreadY GAME_GLOBAL(float, g_GearAimSpreadY)
+#define g_GearAimMode GAME_GLOBAL(int, g_GearAimMode)		/* 1..3: which targets the search takes */
 /* the state of the gear aim: the target and its score, its screen position, the aim cross that moves from the
  * center to it (offset, lock time) and the blink of the cross while the energy is low */
-#define g_GearAimTarget GAME_GLOBAL(cEntity *, g_GearAimTarget, 0x4606b4)
-#define g_GearAimBest GAME_GLOBAL(float, g_GearAimBest, 0x428cfc)	/* the lowest score of the search, FLT_MAX at its start */
-#define g_GearAimPos (GAME_ARRAY(float, g_GearAimPos, 0x428d00))	/* [2] */
-#define g_GearAimCenter (GAME_ARRAY(float, g_GearAimCenter, 0x428d08))	/* [2] where the cross starts, 320 240 */
-#define g_GearAimOff (GAME_ARRAY(float, g_GearAimOff, 0x4606c0))	/* [2] Pos - Center */
-#define g_GearAimLocked GAME_GLOBAL(byte, g_GearAimLocked, 0x4606b8)
-#define g_GearAimLockTime GAME_GLOBAL(float, g_GearAimLockTime, 0x4606bc)
-#define g_GearTargetCrossBlinkTime GAME_GLOBAL_IN(float, GVar_GearTargetCrossBlinkTime, 20, 0x460698)
-#define g_GearAimBlink GAME_GLOBAL_IN(float, GVar_GearTargetCrossBlinkTime, 16, 0x460694)
-#define g_GearTargetSphereRadius GAME_GLOBAL_IN(float, GVar_GearTargetSphereRadius, 16, 0x4606ac)
-#define g_GearStdFar GAME_GLOBAL_IN(float, GVar_GearStdFar, 16, 0x44d068)
+#define g_GearAimTarget GAME_GLOBAL(cEntity *, g_GearAimTarget)
+#define g_GearAimBest GAME_GLOBAL(float, g_GearAimBest)	/* the lowest score of the search, FLT_MAX at its start */
+#define g_GearAimPos (GAME_ARRAY(float, g_GearAimPos))	/* [2] */
+#define g_GearAimCenter (GAME_ARRAY(float, g_GearAimCenter))	/* [2] where the cross starts, 320 240 */
+#define g_GearAimOff (GAME_ARRAY(float, g_GearAimOff))	/* [2] Pos - Center */
+#define g_GearAimLocked GAME_GLOBAL(byte, g_GearAimLocked)
+#define g_GearAimLockTime GAME_GLOBAL(float, g_GearAimLockTime)
+#define g_GearTargetCrossBlinkTime GAME_GLOBAL_IN(float, GVar_GearTargetCrossBlinkTime, 20)
+#define g_GearAimBlink GAME_GLOBAL_IN(float, GVar_GearTargetCrossBlinkTime, 16)
+#define g_GearTargetSphereRadius GAME_GLOBAL_IN(float, GVar_GearTargetSphereRadius, 16)
+#define g_GearStdFar GAME_GLOBAL_IN(float, GVar_GearStdFar, 16)
 #define GEARAIM_SPHEREFUNC 0x17a380
-#define GEARAIM_LOCK_TIME 0.3f		/* rva 0x3b083c */
+#define GEARAIM_LOCK_TIME 0.3f
 #define GEARAIM_SCREEN_X 320.0f
 #define GEARAIM_SCREEN_Y 240.0f
 #define GEARAIM_SCORE_ALARM -100.0f	/* rva 0x3af490: a gear, a bishop or a radar target in the alarm */
-#define GEARAIM_SCORE_MESSENGER -200.0f	/* rva 0x3b61a8 */
-#define GEARAIM_SCORE_SENTINEL -50.0f	/* rva 0x3b6198 */
+#define GEARAIM_SCORE_MESSENGER -200.0f
+#define GEARAIM_SCORE_SENTINEL -50.0f
 #define SPECIALACTION_FADE 0.2f
 #define TYEN_ACTION "Action"
 #define TYEN_ACTIONINIT "ActionInit"
@@ -671,7 +671,7 @@ void __thiscall cSpecialActionScorer_DrawGearAim(cSpecialActionScorer *self, int
 	cEntity *prev = g_GearAimTarget;
 	g_GearAimTarget = NULL;
 	g_GearAimBest = 3.40282347e+38f;
-	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)GAME_FUNC(GearAim_SphereFunc, GEARAIM_SPHEREFUNC));
+	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)GAME_FUNC(GearAim_SphereFunc));
 	cWorld_SphereCallF(g_pWorld, 0x10, user->vftable->GetPos(user, &tmp), g_GearTargetSphereRadius,
 		g_ChTypeSphereFunc, 1);
 	if (!w->control.lock || !w->control.target.target) {

@@ -22,7 +22,7 @@
 #include "scrap/crt.h"
 #include "scrap/game.h"
 
-/* the matherr of the game, which __scrt_common_main_seh registers with __setusermatherr (rva 0x23aae0) */
+/* the matherr of the game, which __scrt_common_main_seh registers with __setusermatherr */
 int E3D_MathErr(void *exc);
 
 /* ---- atexit and exit ---- */
@@ -100,7 +100,7 @@ void __stdcall crt_eh_vector_dtor(void *p, uint32_t size, uint32_t count, void *
 	}
 }
 
-/* operator delete(void *, size_t) of the runtime: the engine's operator delete (rva 0x1334e0) */
+/* operator delete(void *, size_t) of the runtime: the engine's operator delete */
 void operator_delete_sized(void *p, uint32_t size) {
 	(void)size;
 	operator_delete(p);
@@ -110,7 +110,7 @@ void operator_delete_sized(void *p, uint32_t size) {
 
 /* what the CRT initializers of the __xi table set that the game sees */
 static void Crt_InitState(void) {
-	/* _initialize_default_precision (rva 0x314f21): the x87 rounds to 53 bits */
+	/* _initialize_default_precision: the x87 rounds to 53 bits */
 	_controlfp_s(NULL, _PC_53, _MCW_PC);
 	/* __scrt_initialize_default_local_stdio_options (rva 0x314f44, again at 0x37b3a8): the option words of the
 	 * inline printf and scanf get _CRT_INTERNAL_PRINTF_LEGACY_WIDE_SPECIFIERS and the scanf one */
@@ -131,7 +131,7 @@ static void Crt_InitGlobals(void) {
 	Com_Printf("crt: %d initializers of the game run\n", crt_xc_count);
 }
 
-/* __scrt_get_show_window_mode (rva 0x314d21) */
+/* __scrt_get_show_window_mode */
 static int Crt_ShowMode(void) {
 	STARTUPINFOW si;
 

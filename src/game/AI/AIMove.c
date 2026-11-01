@@ -14,8 +14,8 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/walkcharentity.h"
 
-#define g_AIMoveRandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
-#define AIMOVE_STOP_TIME 10.0f				/* rva 0x3a5d08 */
+#define g_AIMoveRandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
+#define AIMOVE_STOP_TIME 10.0f
 #define AIMOVE_EV_STOPPED 7
 
 static void AIMove_InitTarget(cAIMove *self) {

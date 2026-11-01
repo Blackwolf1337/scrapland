@@ -11,17 +11,17 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/weapons.h"
 
-#define g_GearStdFar GAME_GLOBAL_IN(float, GVar_GearStdFar, 16, 0x44d068)
-#define g_GearStdFovY GAME_GLOBAL_IN(float, GVar_GearStdFovY, 16, 0x44d098)
-#define g_GearStdFovX GAME_GLOBAL_IN(float, GVar_GearStdFovX, 16, 0x44d080)
-#define g_GearLostTargetTime GAME_GLOBAL_IN(float, GVar_GearLostTargetTime, 16, 0x44d038)
-#define g_GearRelaxSpeed GAME_GLOBAL_IN(float, GVar_GearRelaxSpeed, 16, 0x44d0c8)
-#define g_GearRobberyDetection GAME_GLOBAL_IN(float, GVar_GearRobberyDetection, 16, 0x44d0e0)
-#define g_Gear2PoliceAlways GAME_GLOBAL_IN(int, GVar_Gear2PoliceAlways, 16, 0x44d0b0)
-#define g_GearChaseSpeed GAME_GLOBAL_IN(float, GVar_GearChaseSpeed, 16, 0x44d0f8)
-#define g_GearAttackSpeed GAME_GLOBAL_IN(float, GVar_GearAttackSpeed, 16, 0x44d050)
-#define g_GearAttackNPCTime GAME_GLOBAL_IN(float, GVar_GearAttackNPCTime, 16, 0x44d020)
-#define g_GearScortSpeed GAME_GLOBAL_IN(float, GVar_GearScortSpeed, 16, 0x44d110)
+#define g_GearStdFar GAME_GLOBAL_IN(float, GVar_GearStdFar, 16)
+#define g_GearStdFovY GAME_GLOBAL_IN(float, GVar_GearStdFovY, 16)
+#define g_GearStdFovX GAME_GLOBAL_IN(float, GVar_GearStdFovX, 16)
+#define g_GearLostTargetTime GAME_GLOBAL_IN(float, GVar_GearLostTargetTime, 16)
+#define g_GearRelaxSpeed GAME_GLOBAL_IN(float, GVar_GearRelaxSpeed, 16)
+#define g_GearRobberyDetection GAME_GLOBAL_IN(float, GVar_GearRobberyDetection, 16)
+#define g_Gear2PoliceAlways GAME_GLOBAL_IN(int, GVar_Gear2PoliceAlways, 16)
+#define g_GearChaseSpeed GAME_GLOBAL_IN(float, GVar_GearChaseSpeed, 16)
+#define g_GearAttackSpeed GAME_GLOBAL_IN(float, GVar_GearAttackSpeed, 16)
+#define g_GearAttackNPCTime GAME_GLOBAL_IN(float, GVar_GearAttackNPCTime, 16)
+#define g_GearScortSpeed GAME_GLOBAL_IN(float, GVar_GearScortSpeed, 16)
 
 int Vec3_Differ(const float *a, const float *b);
 
@@ -80,7 +80,7 @@ void __fastcall cGearLocalLogic_Relax(cGearLocalLogic *self) {
 void __thiscall cGearLocalLogic_Vf16(cGearLocalLogic *self, int arg) {
 	(void)self;
 	(void)arg;
-	Con_Print(0x8f008f, GAME_STR(str_3befa0, 0x3befa0), 0);
+	Con_Print(0x8f008f, GAME_STR(str_3befa0), 0);
 }
 
 int __thiscall cGearLocalLogic_GetDefaultState(cGearLocalLogic *self) {

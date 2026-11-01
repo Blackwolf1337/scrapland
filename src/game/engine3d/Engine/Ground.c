@@ -21,8 +21,8 @@
 #include "scrap/scrapmain.h"
 #include "scrap/win32.h"
 
-#define CGROUND_VFTABLE GAME_VFTABLE(CGround_vftable, 0x3db13c)
-#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
+#define CGROUND_VFTABLE GAME_VFTABLE(CGround_vftable)
+#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable)
 #define CCOLLIDEMESH_CTOR 0x2586b0
 #define CCOLLIDEMESH_DTOR 0x20eb70
 #define CCOLLIDEQUAD_DTOR 0x258ce0
@@ -30,13 +30,13 @@
 #define GROUND_FLT_MAX 3.4028234663852886e+38f
 
 /* the statistics of the queries, cleared with the query number */
-#define g_CollisionStats (GAME_ARRAY(uint32_t, g_CollisionStats, 0x4af888))	/* 6 */
-#define g_CollisionStats2 GAME_GLOBAL(uint32_t, g_CollisionStats2, 0x4af8a0)
-#define g_CollisionCache GAME_GLOBAL(uint32_t, g_CollisionCache, 0x4af7d0)
-#define g_CollisionCache2 (GAME_ARRAY_IN(uint32_t, g_BspCacheStats, 0, 0x4af7e0))	/* 2 */
+#define g_CollisionStats (GAME_ARRAY(uint32_t, g_CollisionStats))	/* 6 */
+#define g_CollisionStats2 GAME_GLOBAL(uint32_t, g_CollisionStats2)
+#define g_CollisionCache GAME_GLOBAL(uint32_t, g_CollisionCache)
+#define g_CollisionCache2 (GAME_ARRAY_IN(uint32_t, g_BspCacheStats, 0))	/* 2 */
 /* while a .amc file is read: the meshes by their Param (256), while one is written the next Param */
-#define g_LoadMeshList GAME_GLOBAL(CCollideMesh **, g_LoadMeshList, 0x4af8a8)
-#define g_SaveCollideMeshParam GAME_GLOBAL(int, g_SaveCollideMeshParam, 0x4af8a4)
+#define g_LoadMeshList GAME_GLOBAL(CCollideMesh **, g_LoadMeshList)
+#define g_SaveCollideMeshParam GAME_GLOBAL(int, g_SaveCollideMeshParam)
 
 /* the accessor of table.h */
 
@@ -171,7 +171,7 @@ void __fastcall CCollideQuad_dtor(CCollideQuad *self) {
 CCollideQuad *__thiscall CCollideQuad_Delete(CCollideQuad *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(*self), *mem, GAME_FUNC(CCollideQuad_dtor, CCOLLIDEQUAD_DTOR));
+		crt_eh_vector_dtor(self, sizeof(*self), *mem, GAME_FUNC(CCollideQuad_dtor));
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
@@ -188,7 +188,7 @@ CCollideQuad *__thiscall CCollideQuad_Delete(CCollideQuad *self, uint32_t flags)
 void *__thiscall CNode3D_VecDelete(void *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(CNode3D), *mem, GAME_FUNC(CNode3D_dtor, CNODO3D_DTOR));
+		crt_eh_vector_dtor(self, sizeof(CNode3D), *mem, GAME_FUNC(CNode3D_dtor));
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
@@ -202,10 +202,10 @@ void *__thiscall CNode3D_VecDelete(void *self, uint32_t flags) {
 }
 
 CHeights *__fastcall CHeights_ctor(CHeights *self) {
-	crt_eh_vector_ctor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_ctor, CCOLLIDEMESH_CTOR),
-		GAME_FUNC(CCollideMesh_dtor, CCOLLIDEMESH_DTOR));
-	crt_eh_vector_ctor(self->_CollideMesh2, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_ctor, CCOLLIDEMESH_CTOR),
-		GAME_FUNC(CCollideMesh_dtor, CCOLLIDEMESH_DTOR));
+	crt_eh_vector_ctor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_ctor),
+		GAME_FUNC(CCollideMesh_dtor));
+	crt_eh_vector_ctor(self->_CollideMesh2, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_ctor),
+		GAME_FUNC(CCollideMesh_dtor));
 	CCollideMesh_ctor(&self->CollideMesh1);
 	CCollideMesh_ctor(&self->CollideMesh2);
 	memset(&self->ext, 0, sizeof(self->ext) + sizeof(self->dim));
@@ -224,7 +224,7 @@ CHeights *__fastcall CHeights_ctor(CHeights *self) {
 
 static void Heights_FreeQuads(CHeights *self) {
 	if (self->quads) {
-		Delete_Objects(self->quads, sizeof(CCollideQuad), GAME_FUNC(CCollideQuad_dtor, CCOLLIDEQUAD_DTOR));
+		Delete_Objects(self->quads, sizeof(CCollideQuad), GAME_FUNC(CCollideQuad_dtor));
 		self->quads = NULL;
 		self->nQuads = 0;
 	}
@@ -248,8 +248,8 @@ void __fastcall CHeights_dtor(CHeights *self) {
 	Heights_FreeQuads(self);
 	CCollideMesh_dtor(&self->CollideMesh2);
 	CCollideMesh_dtor(&self->CollideMesh1);
-	crt_eh_vector_dtor(self->_CollideMesh2, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_dtor, CCOLLIDEMESH_DTOR));
-	crt_eh_vector_dtor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_dtor, CCOLLIDEMESH_DTOR));
+	crt_eh_vector_dtor(self->_CollideMesh2, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_dtor));
+	crt_eh_vector_dtor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, GAME_FUNC(CCollideMesh_dtor));
 }
 
 /* CGround */
@@ -1734,7 +1734,7 @@ void Ground_DrawDebug(void) {
 #define MAT_B3B 0x3b
 #define MAT_A0 0xa0
 /* the triangles per floor node */
-#define g_GroundTrisPerNode GAME_GLOBAL(int, g_GroundTrisPerNode, 0x431bc0)
+#define g_GroundTrisPerNode GAME_GLOBAL(int, g_GroundTrisPerNode)
 
 #define Ground_Field(p, off, type) (*(type *)((byte *)(p) + (off)))
 
@@ -1951,10 +1951,10 @@ void __thiscall CGround_CalcIllum(void *ground, CNode3D *node, CScene *scn) {
 }
 
 /* the debug view of the collision meshes (c_show and ShowMapSolid) */
-#define g_ShowMapSolid GAME_GLOBAL_IN(int, GVar_ShowMapSolid, 16, 0x4af850)		/* 0 wireframe, 1 solid, 2 solid with fog */
-#define g_CollideAddColor (GAME_ARRAY(float, g_CollideAddColor, 0x432420))	/* added to the shaded colors, rgba */
-#define g_CollideVerts (GAME_ARRAY(CollideVert, g_CollideVerts, 0x4af8b0))	/* the triangle drawn */
-#define g_SectorColors (GAME_ARRAY_IN(const uint32_t, g_BspColors, 4, 0x432a34))
+#define g_ShowMapSolid GAME_GLOBAL_IN(int, GVar_ShowMapSolid, 16)		/* 0 wireframe, 1 solid, 2 solid with fog */
+#define g_CollideAddColor (GAME_ARRAY(float, g_CollideAddColor))	/* added to the shaded colors, rgba */
+#define g_CollideVerts (GAME_ARRAY(CollideVert, g_CollideVerts))	/* the triangle drawn */
+#define g_SectorColors (GAME_ARRAY_IN(const uint32_t, g_BspColors, 4))
 
 /* the shading of the solid view: (0 < s) ? min(1, s) : 0 the way the original branches (NaN to the minss) */
 static float Collide_Clamp01(float s) {
@@ -2107,19 +2107,19 @@ void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_CULLMODE, 3);
 }
 
-#define g_ShowMapQuads GAME_GLOBAL_IN(int, GVar_ShowMapQuads, 16, 0x4af880)		/* ShowMapQuads: the boxes of the quads, 2..6 by kind */
-#define g_ShowMapQDist GAME_GLOBAL_IN(float, GVar_ShowMapQDist, 16, 0x4af820)	/* ShowMapQDist: only the quads this near the camera, 0 all */
-#define g_AnalyzeQuads GAME_GLOBAL_IN(int, GVar_AnalyzeQuads, 16, 0x4af808)		/* AnalizeQuads: 1 the quads checked once */
+#define g_ShowMapQuads GAME_GLOBAL_IN(int, GVar_ShowMapQuads, 16)		/* ShowMapQuads: the boxes of the quads, 2..6 by kind */
+#define g_ShowMapQDist GAME_GLOBAL_IN(float, GVar_ShowMapQDist, 16)	/* ShowMapQDist: only the quads this near the camera, 0 all */
+#define g_AnalyzeQuads GAME_GLOBAL_IN(int, GVar_AnalyzeQuads, 16)		/* AnalizeQuads: 1 the quads checked once */
 /* the material of the debug view, a static of CGround_DrawDebug */
-#define g_CollideMat (GAME_GLOBAL(CMaterial, g_CollideMat, 0x4af8f8))
-#define g_CollideMatGuard (GAME_ARRAY(int, g_CollideMatGuard, 0x4af9a8))
+#define g_CollideMat (GAME_GLOBAL(CMaterial, g_CollideMat))
+#define g_CollideMatGuard (GAME_ARRAY(int, g_CollideMatGuard))
 
-/* the atexit destructor of it (rva 0x38edb0) */
+/* the atexit destructor of it */
 void Ground_FiniCollideMat(void) {
 	CMaterial_dtor(&g_CollideMat);
 }
 
-#define g_QuadColors (GAME_ARRAY_IN(const uint32_t, g_BspColors, 4, 0x432a34))
+#define g_QuadColors (GAME_ARRAY_IN(const uint32_t, g_BspColors, 4))
 
 /* the box of a quad with its cell from x z of the grid */
 static void Ground_QuadBox(const CHeights *alt, const CCollideQuad *q, float x0, float x1, float z0, float z1,

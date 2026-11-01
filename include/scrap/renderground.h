@@ -18,9 +18,9 @@ typedef struct BatchMesh {
 } BatchMesh;
 SD_SIZE(BatchMesh, 0xc);
 
-#define g_BatchTab (GAME_ARRAY(CTable, g_BatchTab, 0x4e42e8))		/* BATCH_MAX BatchMesh, made on the first use */
-#define g_BatchOrder (GAME_ARRAY(BatchMesh *, g_BatchOrder, 0x4e42f0))	/* [BATCH_MAX] */
-#define g_BatchUsed GAME_GLOBAL(uint32_t, g_BatchUsed, 0x4e4af0)
+#define g_BatchTab (GAME_ARRAY(CTable, g_BatchTab))		/* BATCH_MAX BatchMesh, made on the first use */
+#define g_BatchOrder (GAME_ARRAY(BatchMesh *, g_BatchOrder))	/* [BATCH_MAX] */
+#define g_BatchUsed GAME_GLOBAL(uint32_t, g_BatchUsed)
 
 /* the meshes of the list mesh (up to the first without vertices); dev is only passed on */
 void Batch_AddMesh(void *mesh, void *dev);

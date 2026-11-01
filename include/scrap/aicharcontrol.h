@@ -22,8 +22,8 @@
 #include "scrap/walkcharentity.h"
 
 #define CAICHARCONTROL_SIZE 0x360
-#define CAICHARCONTROL2D_VFTABLE GAME_VFTABLE(cAICharControl2D_vftable, 0x3a5acc)
-#define CAICHARCONTROL3D_VFTABLE GAME_VFTABLE(cAICharControl3D_vftable, 0x3a5d18)
+#define CAICHARCONTROL2D_VFTABLE GAME_VFTABLE(cAICharControl2D_vftable)
+#define CAICHARCONTROL3D_VFTABLE GAME_VFTABLE(cAICharControl3D_vftable)
 
 /* the moves of cAICharControl_SetMove (mode at 0x74) */
 enum {
@@ -488,7 +488,7 @@ byte __thiscall cAICharControl_IsBlocked(cAICharControl *self);
 byte __thiscall cAICharControl_GetAvoidFound(cAICharControl *self);
 void __thiscall cAICharControl_SetHold(cAICharControl *self, byte on);
 
-/* construction, the frame and the slots of the first part of the file (rva 0x06cba0..0x072340) */
+/* construction, the frame and the slots of the first part of the file */
 cAICharControl *__thiscall cAICharControl_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg);
 void __fastcall cAICharControl_dtor(cAICharControl *self);
 cAICharControl *__thiscall cAICharControl_Delete(cAICharControl *self, byte flags);
@@ -525,7 +525,7 @@ void __thiscall cAICharControl_WalkFwd(cAICharControl *self);
 byte __thiscall cAICharControl_CheckWait(cAICharControl *self);
 void __thiscall cAICharControl_Orbit(cAICharControl *self);
 byte __thiscall cAICharControl_StartOrbit(cAICharControl *self, float dist);
-void __thiscall cAICharControl_Draw(cAICharControl *self);	/* rva 0x070330 */
+void __thiscall cAICharControl_Draw(cAICharControl *self);
 byte __thiscall cAICharControl_DirectPath(cAICharControl *self, const vec3_t *p);
 void __thiscall cAICharControl_Stop(cAICharControl *self);
 byte __thiscall cAICharControl_Vf89(cAICharControl *self);
@@ -556,29 +556,29 @@ byte __thiscall cAICharControl_Wait(cAICharControl *self, float dt);
 /* the control of the AI of a character (0x19c of cAIChar) */
 cAICharControl *__thiscall cAIChar_GetControl(cAIChar *ai);
 
-#define CAICHARCONTROL_VFTABLE GAME_VFTABLE(cAICharControl_vftable, 0x3a572c)
+#define CAICHARCONTROL_VFTABLE GAME_VFTABLE(cAICharControl_vftable)
 
 /* the engine variables of the character AI */
-#define g_DepthPathRouteInDoorAI GAME_GLOBAL_IN(int, GVar_DepthPathRouteInDoorAI, 16, 0x444300)	/* "DepthPathRouteInDoorAI" */
-#define g_DistShirkCharAI GAME_GLOBAL_IN(float, GVar_DistShirkCharAI, 16, 0x4443d0)		/* "DistShirkCharAI" */
-#define g_MarginCollCharAI GAME_GLOBAL_IN(float, GVar_MarginCollCharAI, 16, 0x444508)		/* "MarginCollCharAI" */
-#define g_ShowShirkAI GAME_GLOBAL_IN(int, GVar_ShowShirkAI, 16, 0x4443e8)			/* "ShowShirkAI" */
-#define g_ShowPathAI GAME_GLOBAL_IN(int, GVar_ShowPathAI, 16, 0x444744)			/* "ShowPathAI" */
-#define g_FactorDistTestColCharAI GAME_GLOBAL_IN(float, GVar_FactorDistTestColCharAI, 16, 0x444478)	/* "FactorDistTestColCharAI" */
-#define g_FactorDistTestColBackCharAI GAME_GLOBAL_IN(float, GVar_FactorDistTestColBackCharAI, 16, 0x4444f0)	/* "FactorDistTestColBackCharAI" */
-#define g_MarginDetectCollCharAI GAME_GLOBAL_IN(float, GVar_MarginDetectCollCharAI, 16, 0x444550)	/* "MarginDetectCollCharAI" */
-#define g_OffsetAngOrientCharAI GAME_GLOBAL_IN(float, GVar_OffsetAngOrientCharAI, 16, 0x444520)	/* "OffsetAngOrientCharAI" */
-#define g_AngAttackBackCharAI GAME_GLOBAL_IN(float, GVar_AngAttackBackCharAI, 16, 0x444288)	/* "AngAttackBackCharAI" */
-#define g_MinAngleSearchPointCharAI GAME_GLOBAL_IN(float, GVar_MinAngleSearchPointCharAI, 16, 0x444418)	/* "MinAngleSearchPointCharAI" */
-#define g_DistNextPosGoTargetCharAI GAME_GLOBAL_IN(float, GVar_DistNextPosGoTargetCharAI, 16, 0x4444d8)	/* "DistNextPosGoTargetCharAI" */
-#define g_NumPointsSearchSegmentCharAI GAME_GLOBAL_IN(int, GVar_NumPointsSearchSegmentCharAI, 16, 0x444448)	/* "NumPointsSearchSegmentCharAI" */
-#define g_TimeEventCollCharAI GAME_GLOBAL_IN(float, GVar_TimeEventCollCharAI, 16, 0x444400)	/* "TimeEventCollCharAI" */
-#define g_TimeStopCollCharAI GAME_GLOBAL_IN(float, GVar_TimeStopCollCharAI, 16, 0x444568)		/* "TimeStopCollCharAI" */
-#define g_TimeTestCollCharAI GAME_GLOBAL_IN(float, GVar_TimeTestCollCharAI, 16, 0x4444a8)		/* "TimeTestCollCharAI" */
-#define g_TimeBetweenEventCollCharAI GAME_GLOBAL_IN(float, GVar_TimeBetweenEventCollCharAI, 16, 0x444580)	/* "TimeBetweenEventCollCharAI" */
-#define g_TimeStrafeLostObjCharAI GAME_GLOBAL_IN(float, GVar_TimeStrafeLostObjCharAI, 16, 0x4445b0)	/* "TimeStrafeLostObjCharAI" */
-#define g_ShowCharAI GAME_GLOBAL_IN(cString, GVar_ShowCharAI, 16, 0x444490)		/* "ShowCharAI": the name of the character shown */
-#define g_NameDebugShirkAI GAME_GLOBAL_IN(char *, GVar_NameDebugShirkAI, 16, 0x444538)		/* "NameDebugShirkAI" (a cString) */
+#define g_DepthPathRouteInDoorAI GAME_GLOBAL_IN(int, GVar_DepthPathRouteInDoorAI, 16)	/* "DepthPathRouteInDoorAI" */
+#define g_DistShirkCharAI GAME_GLOBAL_IN(float, GVar_DistShirkCharAI, 16)		/* "DistShirkCharAI" */
+#define g_MarginCollCharAI GAME_GLOBAL_IN(float, GVar_MarginCollCharAI, 16)		/* "MarginCollCharAI" */
+#define g_ShowShirkAI GAME_GLOBAL_IN(int, GVar_ShowShirkAI, 16)			/* "ShowShirkAI" */
+#define g_ShowPathAI GAME_GLOBAL_IN(int, GVar_ShowPathAI, 16)			/* "ShowPathAI" */
+#define g_FactorDistTestColCharAI GAME_GLOBAL_IN(float, GVar_FactorDistTestColCharAI, 16)	/* "FactorDistTestColCharAI" */
+#define g_FactorDistTestColBackCharAI GAME_GLOBAL_IN(float, GVar_FactorDistTestColBackCharAI, 16)	/* "FactorDistTestColBackCharAI" */
+#define g_MarginDetectCollCharAI GAME_GLOBAL_IN(float, GVar_MarginDetectCollCharAI, 16)	/* "MarginDetectCollCharAI" */
+#define g_OffsetAngOrientCharAI GAME_GLOBAL_IN(float, GVar_OffsetAngOrientCharAI, 16)	/* "OffsetAngOrientCharAI" */
+#define g_AngAttackBackCharAI GAME_GLOBAL_IN(float, GVar_AngAttackBackCharAI, 16)	/* "AngAttackBackCharAI" */
+#define g_MinAngleSearchPointCharAI GAME_GLOBAL_IN(float, GVar_MinAngleSearchPointCharAI, 16)	/* "MinAngleSearchPointCharAI" */
+#define g_DistNextPosGoTargetCharAI GAME_GLOBAL_IN(float, GVar_DistNextPosGoTargetCharAI, 16)	/* "DistNextPosGoTargetCharAI" */
+#define g_NumPointsSearchSegmentCharAI GAME_GLOBAL_IN(int, GVar_NumPointsSearchSegmentCharAI, 16)	/* "NumPointsSearchSegmentCharAI" */
+#define g_TimeEventCollCharAI GAME_GLOBAL_IN(float, GVar_TimeEventCollCharAI, 16)	/* "TimeEventCollCharAI" */
+#define g_TimeStopCollCharAI GAME_GLOBAL_IN(float, GVar_TimeStopCollCharAI, 16)		/* "TimeStopCollCharAI" */
+#define g_TimeTestCollCharAI GAME_GLOBAL_IN(float, GVar_TimeTestCollCharAI, 16)		/* "TimeTestCollCharAI" */
+#define g_TimeBetweenEventCollCharAI GAME_GLOBAL_IN(float, GVar_TimeBetweenEventCollCharAI, 16)	/* "TimeBetweenEventCollCharAI" */
+#define g_TimeStrafeLostObjCharAI GAME_GLOBAL_IN(float, GVar_TimeStrafeLostObjCharAI, 16)	/* "TimeStrafeLostObjCharAI" */
+#define g_ShowCharAI GAME_GLOBAL_IN(cString, GVar_ShowCharAI, 16)		/* "ShowCharAI": the name of the character shown */
+#define g_NameDebugShirkAI GAME_GLOBAL_IN(char *, GVar_NameDebugShirkAI, 16)		/* "NameDebugShirkAI" (a cString) */
 
 /* the A* search on CNodesWorld2D (AI/AStar2D.cpp, not in C): the path from pos to dest into path; noPath and
  * reach tell the AI why there is none, res the kind of the path */
@@ -692,13 +692,13 @@ byte __thiscall cAICharControl3D_TryStrafe(cAICharControl3D *self, int side, cEn
 /* ---- the move controls of the character classes (AI/AIControl<Class>.cpp, src/game/AI/AIControls.c): the 2D
  * control for the bank director, the bank master, the bishop and the gear, the 3D one for the messenger, the nurse and
  * the sentinel, each with some slots of its own ---- */
-#define CAICONTROLBANKDIRECTOR_VFTABLE GAME_VFTABLE(cAIControlBankDirector_vftable, 0x3a6000)
-#define CAICONTROLBANKMASTER_VFTABLE GAME_VFTABLE(cAIControlBankMaster_vftable, 0x3a61a0)
-#define CAICONTROLBISHOP_VFTABLE GAME_VFTABLE(cAIControlBishop_vftable, 0x3a63b0)
-#define CAICONTROLGEAR_VFTABLE GAME_VFTABLE(cAIControlGear_vftable, 0x3a65a8)
-#define CAICONTROLMESSENGER_VFTABLE GAME_VFTABLE(cAIControlMessenger_vftable, 0x3a67d0)
-#define CAICONTROLNURSE_VFTABLE GAME_VFTABLE(cAIControlNurse_vftable, 0x3a6968)
-#define CAICONTROLSENTINEL_VFTABLE GAME_VFTABLE(cAIControlSentinel_vftable, 0x3a6b7c)
+#define CAICONTROLBANKDIRECTOR_VFTABLE GAME_VFTABLE(cAIControlBankDirector_vftable)
+#define CAICONTROLBANKMASTER_VFTABLE GAME_VFTABLE(cAIControlBankMaster_vftable)
+#define CAICONTROLBISHOP_VFTABLE GAME_VFTABLE(cAIControlBishop_vftable)
+#define CAICONTROLGEAR_VFTABLE GAME_VFTABLE(cAIControlGear_vftable)
+#define CAICONTROLMESSENGER_VFTABLE GAME_VFTABLE(cAIControlMessenger_vftable)
+#define CAICONTROLNURSE_VFTABLE GAME_VFTABLE(cAIControlNurse_vftable)
+#define CAICONTROLSENTINEL_VFTABLE GAME_VFTABLE(cAIControlSentinel_vftable)
 #define CAICONTROLSHOOT_SIZE 0x384		/* the bishop and the gear */
 #define CAICONTROLSENTINEL_SIZE 0x37c		/* without strafeTime and strafeAng */
 
@@ -740,18 +740,18 @@ SD_OFFSET(cAIControlSentinel, side, 0x370);
 SD_SIZE(cAIControlSentinel, CAICONTROLSENTINEL_SIZE);
 
 /* the strafe parameters by the target (with an AI or not) */
-#define g_TimeStrafeUnderAttackBishopAI GAME_GLOBAL_IN(float, GVar_TimeStrafeUnderAttackBishopAI, 16, 0x4445d8)
-#define g_TimeStrafeUnderAttackBishopAIDef GAME_GLOBAL_IN(float, GVar_TimeStrafeUnderAttackBishopAI, 20, 0x4445dc)
-#define g_AngleStrafeUnderAttackBishopAI GAME_GLOBAL_IN(float, GVar_AngleStrafeUnderAttackBishopAI, 16, 0x4445f0)
-#define g_AngleStrafeUnderAttackBishopAIDef GAME_GLOBAL_IN(float, GVar_AngleStrafeUnderAttackBishopAI, 20, 0x4445f4)
-#define g_TimeStrafeUnderAttackGearAI GAME_GLOBAL_IN(float, GVar_TimeStrafeUnderAttackGearAI, 16, 0x444608)
-#define g_TimeStrafeUnderAttackGearAIDef GAME_GLOBAL_IN(float, GVar_TimeStrafeUnderAttackGearAI, 20, 0x44460c)
-#define g_AngleStrafeUnderAttackGearAI GAME_GLOBAL_IN(float, GVar_AngleStrafeUnderAttackGearAI, 16, 0x444620)
-#define g_AngleStrafeUnderAttackGearAIDef GAME_GLOBAL_IN(float, GVar_AngleStrafeUnderAttackGearAI, 20, 0x444624)
-#define g_TimeStrafeUnderAttackSentinelAI GAME_GLOBAL_IN(float, GVar_TimeStrafeUnderAttackSentinelAI, 16, 0x444668)
-#define g_AngleStrafeUnderAttackSentinelAI GAME_GLOBAL_IN(float, GVar_AngleStrafeUnderAttackSentinelAI, 16, 0x444680)
-#define g_VelRotDynamicMessengerAI GAME_GLOBAL_IN(float, GVar_VelRotDynamicMessengerAI, 16, 0x444650)
-#define g_LimVelRotDynamicMessengerAI GAME_GLOBAL_IN(float, GVar_LimVelRotDynamicMessengerAI, 16, 0x444638)
+#define g_TimeStrafeUnderAttackBishopAI GAME_GLOBAL_IN(float, GVar_TimeStrafeUnderAttackBishopAI, 16)
+#define g_TimeStrafeUnderAttackBishopAIDef GAME_GLOBAL_IN(float, GVar_TimeStrafeUnderAttackBishopAI, 20)
+#define g_AngleStrafeUnderAttackBishopAI GAME_GLOBAL_IN(float, GVar_AngleStrafeUnderAttackBishopAI, 16)
+#define g_AngleStrafeUnderAttackBishopAIDef GAME_GLOBAL_IN(float, GVar_AngleStrafeUnderAttackBishopAI, 20)
+#define g_TimeStrafeUnderAttackGearAI GAME_GLOBAL_IN(float, GVar_TimeStrafeUnderAttackGearAI, 16)
+#define g_TimeStrafeUnderAttackGearAIDef GAME_GLOBAL_IN(float, GVar_TimeStrafeUnderAttackGearAI, 20)
+#define g_AngleStrafeUnderAttackGearAI GAME_GLOBAL_IN(float, GVar_AngleStrafeUnderAttackGearAI, 16)
+#define g_AngleStrafeUnderAttackGearAIDef GAME_GLOBAL_IN(float, GVar_AngleStrafeUnderAttackGearAI, 20)
+#define g_TimeStrafeUnderAttackSentinelAI GAME_GLOBAL_IN(float, GVar_TimeStrafeUnderAttackSentinelAI, 16)
+#define g_AngleStrafeUnderAttackSentinelAI GAME_GLOBAL_IN(float, GVar_AngleStrafeUnderAttackSentinelAI, 16)
+#define g_VelRotDynamicMessengerAI GAME_GLOBAL_IN(float, GVar_VelRotDynamicMessengerAI, 16)
+#define g_LimVelRotDynamicMessengerAI GAME_GLOBAL_IN(float, GVar_LimVelRotDynamicMessengerAI, 16)
 
 cAICharControl *__thiscall cAIControlBankDirector_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
 cAIControlBankDirector *__thiscall cAIControlBankDirector_Delete(cAIControlBankDirector *self, byte flags);

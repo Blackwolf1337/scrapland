@@ -9,10 +9,10 @@
 #include "scrap/bmp.h"
 #include "scrap/material.h"
 
-#define IFXTEXTURE_VFTABLE GAME_VFTABLE(IFXTexture_vftable, 0x3e2c44)
-#define CFXTEXLAVA_VFTABLE GAME_VFTABLE(CFXTexLava_vftable, 0x3e2c54)
-#define CFXTEXSCROLL_VFTABLE GAME_VFTABLE(CFXTexScroll_vftable, 0x3e2c64)
-#define CFXNEWSPANEL_VFTABLE GAME_VFTABLE(CFXNewsPanel_vftable, 0x3e2c74)
+#define IFXTEXTURE_VFTABLE GAME_VFTABLE(IFXTexture_vftable)
+#define CFXTEXLAVA_VFTABLE GAME_VFTABLE(CFXTexLava_vftable)
+#define CFXTEXSCROLL_VFTABLE GAME_VFTABLE(CFXTexScroll_vftable)
+#define CFXNEWSPANEL_VFTABLE GAME_VFTABLE(CFXNewsPanel_vftable)
 #define FXTEX_SIZE 128
 #define FXTEX_PERIOD 50
 
@@ -49,9 +49,9 @@ typedef struct CFXNewsPanel {
 SD_SIZE(CFXNewsPanel, 0x8);
 
 /* the cos of the 256 angles of the lava, made by the first lava */
-#define g_LavaCos (GAME_ARRAY(float, g_LavaCos, 0x4db900))
-#define g_LavaCosInit GAME_GLOBAL(byte, g_LavaCosInit, 0x4dbd00)
-#define g_LavaOffset (GAME_ARRAY(int, g_LavaOffset, 0x4dbd08))	/* FXTEX_SIZE, the row offset of each column */
+#define g_LavaCos (GAME_ARRAY(float, g_LavaCos))
+#define g_LavaCosInit GAME_GLOBAL(byte, g_LavaCosInit)
+#define g_LavaOffset (GAME_ARRAY(int, g_LavaOffset))	/* FXTEX_SIZE, the row offset of each column */
 
 void __fastcall IFXTexture_dtor(IFXTexture *self);
 IFXTexture *__thiscall IFXTexture_Delete(IFXTexture *self, byte flags);

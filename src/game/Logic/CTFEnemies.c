@@ -189,8 +189,8 @@ cEntityListData *__fastcall cCTFEnemies_Init(cCTFEnemies *self) {
 	cCTFEnemiesData *d = self->d;
 
 	d->list = cWorld_NewEntityList(g_pWorld, "CTFEnemies");
-	cPy_Function_SetNative(&d->list->onDamage, (nativefunc_t)GAME_FUNC(CTFEnemies_OnDamage, 0x143cf0));
-	d->list->func = (int (*)(void))GAME_FUNC(CTFEnemies_MakeLogic, 0x143ff0);
+	cPy_Function_SetNative(&d->list->onDamage, (nativefunc_t)GAME_FUNC(CTFEnemies_OnDamage));
+	d->list->func = (int (*)(void))GAME_FUNC(CTFEnemies_MakeLogic);
 	return d->list;
 }
 

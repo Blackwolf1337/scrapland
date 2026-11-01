@@ -26,8 +26,8 @@ static inline cEntity *PyEntity_Get(PyObject *self) {
 	return ((cPyEntity *)self)->ref->link.target;
 }
 
-#define cPyEntity_Type GAME_GLOBAL(PyTypeObject, cPyEntity_Type, 0x428e18)
-#define cPyEntity_methods (&GAME_GLOBAL_IN(PyMethodDef, cPyEntity_methods, 0, 0x428e88))
+#define cPyEntity_Type GAME_GLOBAL(PyTypeObject, cPyEntity_Type)
+#define cPyEntity_methods (&GAME_GLOBAL_IN(PyMethodDef, cPyEntity_methods, 0))
 
 /* the handle of the entity with that name, NULL without one (no Python error set) */
 PyObject *PyEntity_New(const char *name);

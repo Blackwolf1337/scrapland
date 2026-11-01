@@ -9,13 +9,13 @@
 #include "scrap/scoreritems.h"
 
 /* the strings Var returns (those of the exe) */
-#define STR_LEFT GAME_STR(str_3a3954, 0x3a3954)
-#define STR_RIGHT GAME_STR(str_3a395c, 0x3a395c)
-#define STR_CENTER GAME_STR(str_3c1bf4, 0x3c1bf4)
-#define STR_NONE GAME_STR(str_3b2d30, 0x3b2d30)
-#define STR_OSCILE GAME_STR(str_3c1c04, 0x3c1c04)
-#define STR_SHADOW GAME_STR(str_3c1c0c, 0x3c1c0c)
-#define STR_OUTLINE GAME_STR(str_3c1c14, 0x3c1c14)
+#define STR_LEFT GAME_STR(str_3a3954)
+#define STR_RIGHT GAME_STR(str_3a395c)
+#define STR_CENTER GAME_STR(str_3c1bf4)
+#define STR_NONE GAME_STR(str_3b2d30)
+#define STR_OSCILE GAME_STR(str_3c1c04)
+#define STR_SHADOW GAME_STR(str_3c1c0c)
+#define STR_OUTLINE GAME_STR(str_3c1c14)
 
 static const char *const s_NetStates[] = {"Connecting...", NULL, "Waiting server response", "Server timeout",
 	"Disconnected from server"};
@@ -80,7 +80,7 @@ cMsgScorer *__fastcall cMsgScorer_ctor(cMsgScorer *self) {
 	return self;
 }
 
-/* also the destructor of cMsgScorer (rva 0x15e9c0) */
+/* also the destructor of cMsgScorer */
 void __fastcall cAbstractTextScorer_dtor(cAbstractTextScorer *self) {
 	self->base.vftable = CABSTRACTTEXTSCORER_VFTABLE;
 	cString_dtor(&self->text);
@@ -292,7 +292,7 @@ int __thiscall cCreditsScorer_Var(cCreditsScorer *self, const char *name, byte s
 	return cAbstractTextScorer_Var(&self->base, name, set, s, d, i);
 }
 
-/* also cLabelScorer (rva 0x15f820) */
+/* also cLabelScorer */
 int __thiscall cHintScorer_Var(cHintScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	int r;
 

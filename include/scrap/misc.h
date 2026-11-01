@@ -25,19 +25,19 @@ enum {
 	LOG_ORANGE = 0x80,		/* from log level 3 */
 };
 
-#define g_LogFileMask GAME_GLOBAL(uint32_t, g_LogFileMask, 0x4ab8e8)
-#define g_LogConMask GAME_GLOBAL(uint32_t, g_LogConMask, 0x431d4c)
-#define g_LogLevel GAME_GLOBAL_IN(int, GVar_EngineDebugLevel, 16, 0x4ab90c)	/* 10: the console mask goes back to 0x91 */
+#define g_LogFileMask GAME_GLOBAL(uint32_t, g_LogFileMask)
+#define g_LogConMask GAME_GLOBAL(uint32_t, g_LogConMask)
+#define g_LogLevel GAME_GLOBAL_IN(int, GVar_EngineDebugLevel, 16)	/* 10: the console mask goes back to 0x91 */
 #define LOG_LEVEL_RESET 10
 #define LOG_CON_DEFAULT 0x91
 /* the log of the engine ("FILE OPEN: ...") */
-#define g_FileLog (GAME_ARRAY(cLog, g_FileLog, 0x4ab914))
+#define g_FileLog (GAME_ARRAY(cLog, g_FileLog))
 /* the debug console: on, as a dialog window, as a text console */
-#define g_DbgCon GAME_GLOBAL(int, g_DbgCon, 0x4ab8ec)
-#define g_DbgConWindow GAME_GLOBAL(int, g_DbgConWindow, 0x4ab8f0)
-#define g_DbgConStd GAME_GLOBAL(int, g_DbgConStd, 0x4ab8f4)
+#define g_DbgCon GAME_GLOBAL(int, g_DbgCon)
+#define g_DbgConWindow GAME_GLOBAL(int, g_DbgConWindow)
+#define g_DbgConStd GAME_GLOBAL(int, g_DbgConStd)
 /* the handler of the lines typed into the debug dialog (E3D_Command), cdecl void(char *line) */
-#define g_E3DCmdProc GAME_GLOBAL(void *, g_E3DCmdProc, 0x4ab8f8)
+#define g_E3DCmdProc GAME_GLOBAL(void *, g_E3DCmdProc)
 
 void __fastcall cLog_Open(cLog *self);
 /* text to the console printers of the bits in mask and to the file */
@@ -66,7 +66,7 @@ void Window_GetNormalRect(void *hwnd, int32_t *rect);
 intptr_t __stdcall DbgWin_DlgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 
 /* where the relative paths start: the game directory with a "\\" at the end */
-#define g_E3DDir (GAME_ARRAY(char, g_E3DDir, 0x4abe80))
+#define g_E3DDir (GAME_ARRAY(char, g_E3DDir))
 
 /* a file of the packs or below the game directory */
 byte File_Exists(const char *name);
@@ -91,7 +91,7 @@ float RSqrt_Estimate(float x);
 float RSqrt(float x);
 /* SetWindowTextA of a VBprintf (1 KB): 1 when set */
 int Win_SetTextf(void *hwnd, const char *fmt, ...);
-/* the table of RSqrt_Estimate made (rva 0x238b10) */
+/* the table of RSqrt_Estimate made */
 void RSqrt_InitTable(void);
 /* the path of the exe (GetModuleFileName) */
 char *E3D_GetExePath(void);

@@ -16,7 +16,7 @@
 #include "scrap/misc.h"
 
 /* 1 in the exe: the light map materials keep the blend of CMaterial_Prepare */
-#define g_BspQ3LMapNoBlend GAME_GLOBAL_IN(byte, group_432a7c, 1, 0x432a7d)
+#define g_BspQ3LMapNoBlend GAME_GLOBAL_IN(byte, group_432a7c, 1)
 
 typedef CMeshD3D *(__thiscall *bspQ3MeshD3DDelete_t)(CMeshD3D *self, byte flags);
 typedef int(__thiscall *bspQ3MeshD3DDev_t)(CMeshD3D *self, void *dev);
@@ -516,9 +516,9 @@ void BspQ3_Render(void) {
 	}
 }
 
-/* the static initializer (rva 0x05f770) of a vertex array after g_BspQ3VertL that no code reads */
+/* the static initializer of a vertex array after g_BspQ3VertL that no code reads */
 #define BSPQ3_VERTG 0x40
-#define g_BspQ3VertG (GAME_ARRAY(Graphic3DVert, g_BspQ3VertG, 0x4e54f8))	/* [BSPQ3_VERTG] */
+#define g_BspQ3VertG (GAME_ARRAY(Graphic3DVert, g_BspQ3VertG))	/* [BSPQ3_VERTG] */
 
 void BspQ3_InitVertG(void) {
 	for (int i = 0; i < BSPQ3_VERTG; i++) {

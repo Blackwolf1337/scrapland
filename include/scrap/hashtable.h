@@ -9,9 +9,9 @@
 #include "scrap/game.h"
 #include "scrap/pymempool.h"
 
-#define g_HashItemPool GAME_GLOBAL(cMemPool *, g_HashItemPool, 0x44b600)
-#define g_HashItemRefs GAME_GLOBAL(int, g_HashItemRefs, 0x44b604)
-#define g_HashItemValues (&GAME_GLOBAL(uint32_t, g_HashItemValues, 0x4289a0))
+#define g_HashItemPool GAME_GLOBAL(cMemPool *, g_HashItemPool)
+#define g_HashItemRefs GAME_GLOBAL(int, g_HashItemRefs)
+#define g_HashItemValues (&GAME_GLOBAL(uint32_t, g_HashItemValues))
 
 HashTable *__thiscall HashTable_ctor(HashTable *self, int numSlots, byte caseSensitive);
 /* the slot of key: a 4 bit shift hash folded to 28 bits, case-insensitive unless caseSensitive (global.h) */

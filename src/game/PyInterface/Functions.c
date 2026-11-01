@@ -34,10 +34,10 @@ static void ParamFile_Free(cFileMem *f) {
 
 /*
  * The function of the sphere tests (g_ChTypeSphereFunc, g_DoorSphereFunc and the others at rva 0x46679c): its static
- * initializer (rva 0x0554d0) has the constructor inlined without the fields that are 0 in the data, it only links it
+ * initializer has the constructor inlined without the fields that are 0 in the data, it only links it
  * into the ring. The atexit destructor is rva 0x38e3a0.
  */
-#define g_SphereFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0, 0x46679c))
+#define g_SphereFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0))
 
 void PyFunction_FiniSphereFunc(void) {
 	cPy_Function_dtor(g_SphereFunc);

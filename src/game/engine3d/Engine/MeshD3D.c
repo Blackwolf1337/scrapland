@@ -9,7 +9,7 @@
 #include "scrap/trimesh.h"
 #include "scrap/misc.h"
 
-#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
+#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable)
 
 /* the engine (g_pD3DApp) and its device */
 

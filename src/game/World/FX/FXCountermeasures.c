@@ -14,9 +14,9 @@
 #include "scrap/weapons.h"
 #include "scrap/world.h"
 
-#define g_RandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
-#define FX_PI 3.1415927f				/* rva 0x3a3a30 */
-#define FX_PI_3 1.0471976f				/* rva 0x3b084c */
+#define g_RandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
+#define FX_PI 3.1415927f
+#define FX_PI_3 1.0471976f
 
 /* the model of a debris is its first member */
 #define Debris_Model(d) ((CGameModel *)(d))
@@ -481,19 +481,19 @@ void __thiscall cObjElementFXEMI_SetEntity(cObjElementFXEMI *self, cEntity *e) {
 	self->entity = e;
 }
 
-#define g_FXEMIFollowTime GAME_GLOBAL_IN(float, GVar_FXEMIFollowTime, 16, 0x4492e0)
-#define g_FXEMIRandRadius GAME_GLOBAL_IN(float, GVar_FXEMIRandRadius, 16, 0x449474)
-#define g_FXEMIStepTime GAME_GLOBAL_IN(float, GVar_FXEMIStepTime, 16, 0x449368)
-#define g_EMIThunder1Sound GAME_GLOBAL_IN(const char *, GVar_EMIThunder1Sound, 16, 0x449404)
-#define g_EMIThunder2Sound GAME_GLOBAL_IN(const char *, GVar_EMIThunder2Sound, 16, 0x4493d4)
-#define g_EMIThunderSoundAttIni GAME_GLOBAL_IN(float, GVar_EMIThunderSoundAttIni, 16, 0x449380)
-#define g_EMIThunderSoundAttEnd GAME_GLOBAL_IN(float, GVar_EMIThunderSoundAttEnd, 16, 0x4493ec)
-#define g_EMIThunderSoundVol GAME_GLOBAL_IN(float, GVar_EMIThunderSoundVol, 16, 0x44942c)
+#define g_FXEMIFollowTime GAME_GLOBAL_IN(float, GVar_FXEMIFollowTime, 16)
+#define g_FXEMIRandRadius GAME_GLOBAL_IN(float, GVar_FXEMIRandRadius, 16)
+#define g_FXEMIStepTime GAME_GLOBAL_IN(float, GVar_FXEMIStepTime, 16)
+#define g_EMIThunder1Sound GAME_GLOBAL_IN(const char *, GVar_EMIThunder1Sound, 16)
+#define g_EMIThunder2Sound GAME_GLOBAL_IN(const char *, GVar_EMIThunder2Sound, 16)
+#define g_EMIThunderSoundAttIni GAME_GLOBAL_IN(float, GVar_EMIThunderSoundAttIni, 16)
+#define g_EMIThunderSoundAttEnd GAME_GLOBAL_IN(float, GVar_EMIThunderSoundAttEnd, 16)
+#define g_EMIThunderSoundVol GAME_GLOBAL_IN(float, GVar_EMIThunderSoundVol, 16)
 #define FXEMI_RAMPS 0x430888		/* 3 color ramps of 9 colors: 0..1 for most, 1..2 for the last glow */
 #define FXEMI_ENTITIES 0x13		/* the entity lists the bolts hit */
 
 static uint32_t *EMI_Ramp(int first) {
-	return GAME_ARRAY(uint32_t, EMI_Emit_430888, FXEMI_RAMPS) + (first + (crt_rand() & 1)) * 9;
+	return GAME_ARRAY(uint32_t, EMI_Emit_430888) + (first + (crt_rand() & 1)) * 9;
 }
 
 /* one still particle at pos: the rotation random (rnd) or 0, the life and the sizes random, sizeEnd from lo to hi */
@@ -1139,8 +1139,8 @@ void __thiscall cObjElementFXDebrisCloud_Reset(cObjElementFXDebrisCloud *self, c
 }
 
 #define FXDEBRISCLOUD_RAMPS 0x4308f8		/* 3 color ramps of 9 colors */
-#define FX_PI_4 0.785398185f			/* rva 0x3b0840 */
-#define FX_2PI 6.28318548f			/* rva 0x3a3a34 */
+#define FX_PI_4 0.785398185f
+#define FX_2PI 6.28318548f
 
 /* (3 - 2f) f f */
 static inline float FXCM_Smooth(float f) {
@@ -1187,7 +1187,7 @@ static void FXDebrisCloud_Puff(cObjElementFXDebrisCloud *self, float size, doubl
 	}
 	p->sizeEnd = p->sizeIni * e;
 	CGameParticles_SetColorRampOn(p, 1);
-	CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, FXDebrisCloud_Puff_4308f8, FXDEBRISCLOUD_RAMPS) + (crt_rand() % 3) * 9);
+	CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, FXDebrisCloud_Puff_4308f8) + (crt_rand() % 3) * 9);
 	CGameParticles_Apply(p);
 	CGameParticles_EmitN(p, 1, 0);
 }
@@ -1343,9 +1343,9 @@ void *__thiscall cObjElementFXEMI_ctor(void *self) {
 
 	FXCM_SetVtbl(s, COBJELEMENTFXEMI_VFTABLE);
 	CGameParticles_ctor(&s->particles);
-	crt_eh_vector_ctor(s->trails, sizeof(CGameTrail), FXEMI_TRAILS, GAME_FUNC(CGameTrail_ctor, FXCM_TRAIL_CTOR),
-		GAME_FUNC(CGameTrail_dtor, FXCM_TRAIL_DTOR));
-	crt_eh_vector_ctor(s->links, sizeof(Nto1Node), FXEMI_TRAILS, GAME_FUNC(FXCountermeasures_NodeCtor, FXCM_NODE_CTOR), GAME_FUNC(Nto1Node_dtor, FXCM_NODE_DTOR));
+	crt_eh_vector_ctor(s->trails, sizeof(CGameTrail), FXEMI_TRAILS, GAME_FUNC(CGameTrail_ctor),
+		GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_ctor(s->links, sizeof(Nto1Node), FXEMI_TRAILS, GAME_FUNC(FXCountermeasures_NodeCtor), GAME_FUNC(Nto1Node_dtor));
 	s->on = 0;
 	s->entity = NULL;
 	s->hideTime = 0.0f;
@@ -1397,8 +1397,8 @@ void __thiscall cObjElementFXEMI_dtor(void *self) {
 	cObjElementFXEMI *s = self;
 
 	*(void **)s = COBJELEMENTFXEMI_VFTABLE;
-	crt_eh_vector_dtor(s->links, sizeof(Nto1Node), FXEMI_TRAILS, GAME_FUNC(Nto1Node_dtor, FXCM_NODE_DTOR));
-	crt_eh_vector_dtor(s->trails, sizeof(CGameTrail), FXEMI_TRAILS, GAME_FUNC(CGameTrail_dtor, FXCM_TRAIL_DTOR));
+	crt_eh_vector_dtor(s->links, sizeof(Nto1Node), FXEMI_TRAILS, GAME_FUNC(Nto1Node_dtor));
+	crt_eh_vector_dtor(s->trails, sizeof(CGameTrail), FXEMI_TRAILS, GAME_FUNC(CGameTrail_dtor));
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }

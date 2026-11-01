@@ -40,7 +40,7 @@ void Text_DrawStack(void) {
 	int w, h;
 	Graphic2D_GetScreen(&w, &h);
 	for (int i = 0; m && i < TEXT_STACK_MAX; i++) {
-		Eng_Printf(2, (float)w * 0.5f, y, 3, 0xffffff, GAME_STR(str_3bae88, 0x3bae88), m->text);	/* "%s" */
+		Eng_Printf(2, (float)w * 0.5f, y, 3, 0xffffff, GAME_STR(str_3bae88), m->text);	/* "%s" */
 		m = m->next;
 		y = (float)(int)((float)h * 0.05f) + y;
 	}

@@ -1,6 +1,5 @@
 /*
- * The game's globals, functions, strings and imports. The macros below still carry the rva of the original as their
- * last argument (removed in the plain C cleanup); ScrapC.exe ignores it and uses the C symbol.
+ * The game's globals, functions, strings and imports.
  */
 #ifndef SCRAP_GAME_H
 #define SCRAP_GAME_H
@@ -14,70 +13,60 @@
 #include "scrap/worldlogic.h"
 
 /*
- * The globals and tables of the exe that are C objects in ScrapC.exe (src/game/Global/Globals*.c, written by
- * tools/standalone/globals.py with these defines): in ScrapC.exe the C object name (declared in the macro, so no
- * header lists them), in the hook DLL the exe's own data at rva.
- *	GAME_GLOBAL(type, name, rva)		the object name of type (an lvalue)
- *	GAME_ARRAY(type, name, rva)		the first element of the array name of type (type *)
- *	GAME_GLOBAL_IN(type, owner, off, rva)	a view of type at off in the object owner: a field of a struct, an
+ * The globals and tables of src/game/Global/Globals*.c, declared inside the macro, so no header lists them. Each
+ * define that uses them is named like the object; the names are pasted, never expanded.
+ *	GAME_GLOBAL(type, name)			the object name of type (an lvalue)
+ *	GAME_ARRAY(type, name)			the first element of the array name of type (type *)
+ *	GAME_GLOBAL_IN(type, owner, off)	a view of type at off in the object owner: a field of a struct, an
  *						element of a table, another type at the same place (an lvalue)
- *	GAME_ARRAY_IN(type, owner, off, rva)	the same as a pointer (type *)
- *	GAME_PTR(owner, off, rva)		the address off in the object owner (void *)
- *	GAME_PTR_AT(rva)			the same from the rva alone (src/game/Global/GlobalsAt.h)
- * The names are pasted, never expanded (they are the names of the defines that use them).
+ *	GAME_ARRAY_IN(type, owner, off)		the same as a pointer (type *)
+ *	GAME_PTR(owner, off)			the address off in the object owner (void *)
  */
 #define SD_REF_(id, label) \
 	({ \
 		extern char id[] __asm__(label); \
 		(void *)id; \
 	})
-#define GAME_GLOBAL(type, name, rva) \
+#define GAME_GLOBAL(type, name) \
 	(*({ \
 		extern typeof(type) sd_obj_##name __asm__("_" #name); \
 		&sd_obj_##name; \
 	}))
-#define GAME_ARRAY(type, name, rva) ((typeof(type) *)SD_REF_(sd_##name, "_" #name))
-#define GAME_GLOBAL_IN(type, owner, off, rva) (*(typeof(type) *)((char *)SD_REF_(sd_##owner, "_" #owner) + (off)))
-#define GAME_ARRAY_IN(type, owner, off, rva) ((typeof(type) *)((char *)SD_REF_(sd_##owner, "_" #owner) + (off)))
-#define GAME_PTR(owner, off, rva) ((void *)((char *)SD_REF_(sd_##owner, "_" #owner) + (off)))
+#define GAME_ARRAY(type, name) ((typeof(type) *)SD_REF_(sd_##name, "_" #name))
+#define GAME_GLOBAL_IN(type, owner, off) (*(typeof(type) *)((char *)SD_REF_(sd_##owner, "_" #owner) + (off)))
+#define GAME_ARRAY_IN(type, owner, off) ((typeof(type) *)((char *)SD_REF_(sd_##owner, "_" #owner) + (off)))
+#define GAME_PTR(owner, off) ((void *)((char *)SD_REF_(sd_##owner, "_" #owner) + (off)))
 
-/* a function of the exe (void *): in ScrapC.exe the C function name the hook at rva jumps to (src/hooks.inc,
- * tools/standalone/rvacheck.py checks that name and rva agree; a stdcall or fastcall name gets its decoration from
- * --enable-stdcall-fixup), in the hook DLL the exe's own at rva */
-#define GAME_FUNC(name, rva) SD_REF_(sd_fn_##name, "_" #name)
+/* a C function by its name (void *), without a prototype; a stdcall or fastcall name gets its decoration from
+ * --enable-stdcall-fixup */
+#define GAME_FUNC(name) SD_REF_(sd_fn_##name, "_" #name)
 
-/* a vtable of a game class (void *): in ScrapC.exe the C object of src/game/Global/Vtables.c (at the same rva,
- * tools/standalone/vtables.py checks that name and rva agree), in the hook DLL the exe's own */
-#define GAME_VFTABLE(name, rva) \
+/* a vtable of a game class (void *), the C object of src/game/Global/Vtables.c */
+#define GAME_VFTABLE(name) \
 	({ \
 		extern void (*const name[])(void); \
 		(void *)name; \
 	})
 
-/* a string of the exe (char *): in ScrapC.exe the C object of src/game/Global/Strings*.c (at the same rva,
- * tools/standalone/strings.py checks that name and rva agree), in the hook DLL the exe's own. GAME_STR_AT(rva) is
- * the same for the generated tables that know only the rva (src/game/Global/StaticInit.inc): ScrapC.exe takes the
- * object from src/game/Global/StringsAt.h */
-#define GAME_STR(name, rva) \
+/* a string of src/game/Global/Strings*.c (char *) */
+#define GAME_STR(name) \
 	({ \
 		extern char name[]; \
 		(char *)name; \
 	})
 
-/* the data formats of dinput8.lib that the game passes to SetDataFormat (const void *): in ScrapC.exe c_dfDIKeyboard
- * and c_dfDIMouse of mingw's libdinput8, which hold the same objects as the ones the exe linked (docs/standalone.md,
- * stage 3c1b), in the hook DLL the exe's own */
+/* the data formats of dinput8.lib that the game passes to SetDataFormat (const void *): c_dfDIKeyboard and c_dfDIMouse
+ * of mingw's libdinput8, the same objects as the ones the original linked */
 extern const byte c_dfDIKeyboard[], c_dfDIMouse[];
 #define GAME_DF_KEYBOARD ((const void *)c_dfDIKeyboard)
 #define GAME_DF_MOUSE ((const void *)c_dfDIMouse)
 
 /*
- * A function of a DLL the game imports, as a pointer of type (an lvalue that is read only): in ScrapC.exe the cell of
- * its own import address table, which the import library names __imp_<symbol> (the mingw-w64 ones, and for fmod
- * the one of src/standalone/fmod.def), in the hook DLL the slot of the exe's import address table at rva. So the call
- * goes through an import slot in both, as in the original.
- *	GAME_IMPORT(type, name, argbytes, rva)	a __stdcall function, the symbol _name@argbytes
- *	GAME_IMPORT_CDECL(type, name, rva)	a __cdecl function, the symbol _name
+ * A function of a DLL the game imports, as a pointer of type (an lvalue that is read only): the cell of the import
+ * address table, which the import library names __imp_<symbol> (the mingw-w64 ones, and for fmod the one of
+ * src/standalone/fmod.def), so the call goes through an import slot as in the original.
+ *	GAME_IMPORT(type, name, argbytes)	a __stdcall function, the symbol _name@argbytes
+ *	GAME_IMPORT_CDECL(type, name)		a __cdecl function, the symbol _name
  * The names are pasted, never expanded. The symbol is quoted for the assembler.
  */
 #define SD_IMP_(type, id, sym) \
@@ -85,8 +74,8 @@ extern const byte c_dfDIKeyboard[], c_dfDIMouse[];
 		extern typeof(type) const id __asm__("\"__imp_" sym "\""); \
 		&id; \
 	}))
-#define GAME_IMPORT(type, name, argbytes, rva) SD_IMP_(type, sd_imp_##name, "_" #name "@" #argbytes)
-#define GAME_IMPORT_CDECL(type, name, rva) SD_IMP_(type, sd_imp_##name, "_" #name)
+#define GAME_IMPORT(type, name, argbytes) SD_IMP_(type, sd_imp_##name, "_" #name "@" #argbytes)
+#define GAME_IMPORT_CDECL(type, name) SD_IMP_(type, sd_imp_##name, "_" #name)
 
 /* weapon and ammo descriptors of the world tables (defined in include/scrap/world.h) */
 typedef struct cWeapInfo cWeapInfo;
@@ -110,7 +99,7 @@ typedef struct cAmmoInfo cAmmoInfo;
 		items_ + i_; \
 	})
 
-/* the world: created by cWorld's constructor (rva 0x206db0), owns the game state of the running level */
+/* the world: created by cWorld's constructor, owns the game state of the running level */
 typedef struct cWorld {
 	void *vftable;			/* 0x0000 cWorld::vftable */
 	HashTable entities;		/* 0x0004 every entity by name (cEntity *) */
@@ -182,7 +171,7 @@ int __thiscall cAmmoInfo_SetS(cAmmoInfo *ammo, const char *var, const char *valu
 
 /*
  * the application (App/, include/scrap/app.h): CApp (0x48 bytes, vftable rva 0x3cf190) is the game part, CWinApp
- * (0x90 bytes, vftable rva 0x3cf7d4) adds the Win32 window. Allocated and run by WinMain (rva 0x20d8c0). The slots
+ * (0x90 bytes, vftable rva 0x3cf7d4) adds the Win32 window. Allocated and run by WinMain. The slots
  * are the vf numbers of both classes.
  */
 typedef struct CApp CApp;
@@ -276,8 +265,8 @@ SD_OFFSET(CWinApp, hwnd, 0x7c);
 SD_OFFSET(CWinApp, unused_84, 0x84);
 SD_SIZE(CWinApp, 0x90);
 
-#define g_pWorld GAME_GLOBAL(cWorld *, g_pWorld, 0x467450)
-#define g_pApp GAME_GLOBAL(CApp *, g_pApp, 0x467ba0)
+#define g_pWorld GAME_GLOBAL(cWorld *, g_pWorld)
+#define g_pApp GAME_GLOBAL(CApp *, g_pApp)
 /* the application is always a CWinApp */
 #define g_pWinApp ((CWinApp *)g_pApp)
 

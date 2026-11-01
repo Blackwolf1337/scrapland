@@ -350,10 +350,10 @@ void __fastcall AICtrl_Init(void *ctrl) {
 	cAICtrl *self = ctrl;
 
 	self->sentinels = cWorld_NewEntityList(g_pWorld, "Sentinel");
-	self->sentinels->func = (int (*)(void))GAME_FUNC(AICtrl_MakeSentinelLogic, AICTRL_MAKESENTINEL);
-	cPy_Function_SetNative(&self->sentinels->onDeath, (nativefunc_t)GAME_FUNC(AICtrl_SentinelDeath, AICTRL_SENTINELDEATH));
+	self->sentinels->func = (int (*)(void))GAME_FUNC(AICtrl_MakeSentinelLogic);
+	cPy_Function_SetNative(&self->sentinels->onDeath, (nativefunc_t)GAME_FUNC(AICtrl_SentinelDeath));
 	self->gears = cWorld_NewEntityList(g_pWorld, "Gear");
-	self->gears->func = (int (*)(void))GAME_FUNC(AICtrl_MakeGearLogic, AICTRL_MAKEGEAR);
+	self->gears->func = (int (*)(void))GAME_FUNC(AICtrl_MakeGearLogic);
 }
 
 /* a sentinel to watch pos now */

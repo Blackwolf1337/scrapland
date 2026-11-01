@@ -13,25 +13,25 @@
 #include "scrap/timer.h"
 
 /* the vtables */
-#define VT_FXBANKMASTERATTACK GAME_VFTABLE(cObjElementFXBankMasterAttack_vftable, 0x3cb72c)
-#define VT_FXBANKMASTERSUCTION GAME_VFTABLE(cObjElementFXBankMasterSuction_vftable, 0x3cb744)
-#define VT_FXBANKERSTEAL GAME_VFTABLE(cObjElementFXBankerSteal_vftable, 0x3cb5c4)
-#define VT_FXBERTOATTACK GAME_VFTABLE(cObjElementFXBertoAttack_vftable, 0x3cb684)
-#define VT_FXBERTOFLASH GAME_VFTABLE(cObjElementFXBertoFlash_vftable, 0x3cb69c)
-#define VT_FXBETTYATTACK GAME_VFTABLE(cObjElementFXBettyAttack_vftable, 0x3cb6fc)
-#define VT_FXBETTYKILL GAME_VFTABLE(cObjElementFXBettyKill_vftable, 0x3cb714)
-#define VT_FXBISHOPATTACK GAME_VFTABLE(cObjElementFXBishopAttack_vftable, 0x3cb66c)
-#define VT_FXBISHOPSELLLIFE GAME_VFTABLE(cObjElementFXBishopSellLife_vftable, 0x3cb654)
-#define VT_FXDTRITUSATTACK GAME_VFTABLE(cObjElementFXDTritusAttack_vftable, 0x3cb624)
-#define VT_FXDTRITUSKILL GAME_VFTABLE(cObjElementFXDTritusKill_vftable, 0x3cb63c)
-#define VT_FXFUNCTIONARYSPECIALACTION GAME_VFTABLE(cObjElementFXFunctionarySpecialAction_vftable, 0x3cb5f4)
-#define VT_FXGEARMISSILE GAME_VFTABLE(cObjElementFXGearMissile_vftable, 0x3cb5ac)
-#define VT_FXMERCENARYDRINK GAME_VFTABLE(cObjElementFXMercenaryDrink_vftable, 0x3cb75c)
-#define VT_FXMESSENGERATTACK GAME_VFTABLE(cObjElementFXMessengerAttack_vftable, 0x3cb6b4)
-#define VT_FXMESSENGERTAKEDATAPACK GAME_VFTABLE(cObjElementFXMessengerTakeDataPack_vftable, 0x3cb6cc)
-#define VT_FXPOLICEGEARCONVERSION GAME_VFTABLE(cObjElementFXPoliceGearConversion_vftable, 0x3cb60c)
-#define VT_FXPOLICESTEAL GAME_VFTABLE(cObjElementFXPoliceSteal_vftable, 0x3cb5dc)
-#define VT_FXSEBASTIANFLASH GAME_VFTABLE(cObjElementFXSebastianFlash_vftable, 0x3cb6e4)
+#define VT_FXBANKMASTERATTACK GAME_VFTABLE(cObjElementFXBankMasterAttack_vftable)
+#define VT_FXBANKMASTERSUCTION GAME_VFTABLE(cObjElementFXBankMasterSuction_vftable)
+#define VT_FXBANKERSTEAL GAME_VFTABLE(cObjElementFXBankerSteal_vftable)
+#define VT_FXBERTOATTACK GAME_VFTABLE(cObjElementFXBertoAttack_vftable)
+#define VT_FXBERTOFLASH GAME_VFTABLE(cObjElementFXBertoFlash_vftable)
+#define VT_FXBETTYATTACK GAME_VFTABLE(cObjElementFXBettyAttack_vftable)
+#define VT_FXBETTYKILL GAME_VFTABLE(cObjElementFXBettyKill_vftable)
+#define VT_FXBISHOPATTACK GAME_VFTABLE(cObjElementFXBishopAttack_vftable)
+#define VT_FXBISHOPSELLLIFE GAME_VFTABLE(cObjElementFXBishopSellLife_vftable)
+#define VT_FXDTRITUSATTACK GAME_VFTABLE(cObjElementFXDTritusAttack_vftable)
+#define VT_FXDTRITUSKILL GAME_VFTABLE(cObjElementFXDTritusKill_vftable)
+#define VT_FXFUNCTIONARYSPECIALACTION GAME_VFTABLE(cObjElementFXFunctionarySpecialAction_vftable)
+#define VT_FXGEARMISSILE GAME_VFTABLE(cObjElementFXGearMissile_vftable)
+#define VT_FXMERCENARYDRINK GAME_VFTABLE(cObjElementFXMercenaryDrink_vftable)
+#define VT_FXMESSENGERATTACK GAME_VFTABLE(cObjElementFXMessengerAttack_vftable)
+#define VT_FXMESSENGERTAKEDATAPACK GAME_VFTABLE(cObjElementFXMessengerTakeDataPack_vftable)
+#define VT_FXPOLICEGEARCONVERSION GAME_VFTABLE(cObjElementFXPoliceGearConversion_vftable)
+#define VT_FXPOLICESTEAL GAME_VFTABLE(cObjElementFXPoliceSteal_vftable)
+#define VT_FXSEBASTIANFLASH GAME_VFTABLE(cObjElementFXSebastianFlash_vftable)
 
 #define FXBMSUCTION_POINTS 14
 #define FXBERTOFLASH_POINTS 60
@@ -59,21 +59,21 @@
 #define FXSEBASTIAN_TRAILS 5
 
 /* the vertices of the Functionary model the special action starts from, found once (rva 0x466fc0..) */
-#define g_FXFunctionaryInit GAME_GLOBAL(byte, g_FXFunctionaryInit, 0x466fc0)
-#define g_FXFunctionaryVertex (GAME_ARRAY(int, g_FXFunctionaryVertex, 0x466fc4))		/* [14] */
-#define g_FXFunctionaryColor (GAME_ARRAY(uint32_t, g_FXFunctionaryColor, 0x466ffc))		/* [14] */
+#define g_FXFunctionaryInit GAME_GLOBAL(byte, g_FXFunctionaryInit)
+#define g_FXFunctionaryVertex (GAME_ARRAY(int, g_FXFunctionaryVertex))		/* [14] */
+#define g_FXFunctionaryColor (GAME_ARRAY(uint32_t, g_FXFunctionaryColor))		/* [14] */
 
 /* the engine variables (Gvars) */
-#define g_BankerSteal1Sound GAME_GLOBAL_IN(const char *, GVar_BankerSteal1Sound, 16, 0x446098)
-#define g_BankerSteal2Sound GAME_GLOBAL_IN(const char *, GVar_BankerSteal2Sound, 16, 0x446000)
-#define g_BankerSteal3Sound GAME_GLOBAL_IN(const char *, GVar_BankerSteal3Sound, 16, 0x446030)
-#define g_BankerStealSoundVol GAME_GLOBAL_IN(float, GVar_BankerStealSoundVol, 16, 0x445f98)
-#define g_BankerStealPosX GAME_GLOBAL_IN(float, GVar_BankerStealPosX, 16, 0x445fd8)
-#define g_BankerStealPosY GAME_GLOBAL_IN(float, GVar_BankerStealPosY, 16, 0x446080)
-#define g_BankerStealPosZ GAME_GLOBAL_IN(float, GVar_BankerStealPosZ, 16, 0x445fc0)
-#define g_BankMasterBatonPosX GAME_GLOBAL_IN(float, GVar_BankMasterBatonPosX, 16, 0x446164)
-#define g_BankMasterBatonPosY GAME_GLOBAL_IN(float, GVar_BankMasterBatonPosY, 16, 0x44614c)
-#define g_BankMasterBatonPosZ GAME_GLOBAL_IN(float, GVar_BankMasterBatonPosZ, 16, 0x4460f4)
+#define g_BankerSteal1Sound GAME_GLOBAL_IN(const char *, GVar_BankerSteal1Sound, 16)
+#define g_BankerSteal2Sound GAME_GLOBAL_IN(const char *, GVar_BankerSteal2Sound, 16)
+#define g_BankerSteal3Sound GAME_GLOBAL_IN(const char *, GVar_BankerSteal3Sound, 16)
+#define g_BankerStealSoundVol GAME_GLOBAL_IN(float, GVar_BankerStealSoundVol, 16)
+#define g_BankerStealPosX GAME_GLOBAL_IN(float, GVar_BankerStealPosX, 16)
+#define g_BankerStealPosY GAME_GLOBAL_IN(float, GVar_BankerStealPosY, 16)
+#define g_BankerStealPosZ GAME_GLOBAL_IN(float, GVar_BankerStealPosZ, 16)
+#define g_BankMasterBatonPosX GAME_GLOBAL_IN(float, GVar_BankMasterBatonPosX, 16)
+#define g_BankMasterBatonPosY GAME_GLOBAL_IN(float, GVar_BankMasterBatonPosY, 16)
+#define g_BankMasterBatonPosZ GAME_GLOBAL_IN(float, GVar_BankMasterBatonPosZ, 16)
 
 /* the timer of a character (cWalkChar + 0x110) */
 /* a float of the Police character: its center is this much above the feet */

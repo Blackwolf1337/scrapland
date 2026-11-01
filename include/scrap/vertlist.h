@@ -56,19 +56,19 @@ typedef struct CVertList {
 SD_SIZE(CVertList, 0x14);
 
 /* the vertex shader handles of the XBOX formats */
-#define g_hVShader_Tex1_XBox GAME_GLOBAL(uint32_t, g_hVShader_Tex1_XBox, 0x4ad630)
-#define g_hVShader_Tex1C_XBox GAME_GLOBAL(uint32_t, g_hVShader_Tex1C_XBox, 0x4ad634)
-#define g_hVShader_LTex1_XBox GAME_GLOBAL(uint32_t, g_hVShader_LTex1_XBox, 0x4ad638)
-#define g_hVShader_LTex1N_XBox GAME_GLOBAL(uint32_t, g_hVShader_LTex1N_XBox, 0x4ad63c)
-#define g_hVShader_LTex2_XBox GAME_GLOBAL(uint32_t, g_hVShader_LTex2_XBox, 0x4ad640)
-#define g_hVShader_LTex2N_XBox GAME_GLOBAL(uint32_t, g_hVShader_LTex2N_XBox, 0x4ad644)
+#define g_hVShader_Tex1_XBox GAME_GLOBAL(uint32_t, g_hVShader_Tex1_XBox)
+#define g_hVShader_Tex1C_XBox GAME_GLOBAL(uint32_t, g_hVShader_Tex1C_XBox)
+#define g_hVShader_LTex1_XBox GAME_GLOBAL(uint32_t, g_hVShader_LTex1_XBox)
+#define g_hVShader_LTex1N_XBox GAME_GLOBAL(uint32_t, g_hVShader_LTex1N_XBox)
+#define g_hVShader_LTex2_XBox GAME_GLOBAL(uint32_t, g_hVShader_LTex2_XBox)
+#define g_hVShader_LTex2N_XBox GAME_GLOBAL(uint32_t, g_hVShader_LTex2N_XBox)
 
 /* the vertex cache: vertex and age of each entry (-1 empty), the next age, hits and misses */
-#define g_VCacheVert (GAME_ARRAY(int, g_VCacheVert, 0x4ad648))
-#define g_VCacheAge (GAME_ARRAY(int, g_VCacheAge, 0x4ad688))
-#define g_VCacheCount GAME_GLOBAL_IN(int, g_VCacheAge, 64, 0x4ad6c8)
-#define g_VCacheHits GAME_GLOBAL_IN(int, g_VCacheAge, 68, 0x4ad6cc)
-#define g_VCacheMisses GAME_GLOBAL_IN(int, g_VCacheAge, 72, 0x4ad6d0)
+#define g_VCacheVert (GAME_ARRAY(int, g_VCacheVert))
+#define g_VCacheAge (GAME_ARRAY(int, g_VCacheAge))
+#define g_VCacheCount GAME_GLOBAL_IN(int, g_VCacheAge, 64)
+#define g_VCacheHits GAME_GLOBAL_IN(int, g_VCacheAge, 68)
+#define g_VCacheMisses GAME_GLOBAL_IN(int, g_VCacheAge, 72)
 #define VCACHE_SIZE 16
 
 CVertList *__fastcall CVertList_ctor(CVertList *self);

@@ -19,7 +19,7 @@
 #include "scrap/pyfunction.h"
 #include "scrap/slotcontroller.h"
 
-#define CAIVEHICLE_VFTABLE GAME_VFTABLE(cAIVehicle_vftable, 0x3a8448)
+#define CAIVEHICLE_VFTABLE GAME_VFTABLE(cAIVehicle_vftable)
 #define CAIVEHICLE_SIZE 0x3b0
 #define CAIVEHICLECONTROL_SIZE 0x2b8
 #define CAIVEHICLESHOOT_SIZE 0x184
@@ -180,14 +180,14 @@ static inline cEntity *AIV_Target(const cAIVehicle *ai) {
 }
 
 /* the engine variables of the vehicle AI */
-#define g_MaxDistReposAI GAME_GLOBAL_IN(float, GVar_MaxDistReposAI, 16, 0x444858)
-#define g_MinDistReposAI GAME_GLOBAL_IN(float, GVar_MinDistReposAI, 16, 0x444900)
-#define g_MaxDistReposNotVisAI GAME_GLOBAL_IN(float, GVar_MaxDistReposNotVisAI, 16, 0x44478c)
-#define g_MinDistReposNotVisAI GAME_GLOBAL_IN(float, GVar_MinDistReposNotVisAI, 16, 0x4447a4)
-#define g_TimeDamageAI GAME_GLOBAL_IN(float, GVar_TimeDamageAI, 16, 0x444990)
-#define g_HookRange GAME_GLOBAL_IN(float, GVar_HookRange, 16, 0x449d24)
-#define g_OnObjectiveNullAI (&GAME_GLOBAL_IN(cPy_Function, GVar_OnObjectiveNullAI, 16, 0x4447d4))
-#define g_OnItemTakenAI (&GAME_GLOBAL_IN(cPy_Function, GVar_OnItemTakenAI, 16, 0x4449c0))
+#define g_MaxDistReposAI GAME_GLOBAL_IN(float, GVar_MaxDistReposAI, 16)
+#define g_MinDistReposAI GAME_GLOBAL_IN(float, GVar_MinDistReposAI, 16)
+#define g_MaxDistReposNotVisAI GAME_GLOBAL_IN(float, GVar_MaxDistReposNotVisAI, 16)
+#define g_MinDistReposNotVisAI GAME_GLOBAL_IN(float, GVar_MinDistReposNotVisAI, 16)
+#define g_TimeDamageAI GAME_GLOBAL_IN(float, GVar_TimeDamageAI, 16)
+#define g_HookRange GAME_GLOBAL_IN(float, GVar_HookRange, 16)
+#define g_OnObjectiveNullAI (&GAME_GLOBAL_IN(cPy_Function, GVar_OnObjectiveNullAI, 16))
+#define g_OnItemTakenAI (&GAME_GLOBAL_IN(cPy_Function, GVar_OnItemTakenAI, 16))
 
 /* ---- AI/AIVehicle.cpp (src/game/AI/IVehicle.c); more in ai.h, nodestraffic.h, embeddedfxvehicle.h, weapons.h,
  * vehicletraffic.h and vehicleentity.h (the constructor) ---- */

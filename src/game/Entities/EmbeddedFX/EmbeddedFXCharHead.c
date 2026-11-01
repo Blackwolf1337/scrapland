@@ -7,7 +7,7 @@
 #include "scrap/global.h"
 #include "scrap/timer.h"
 
-#define VT_HEADCRAZYGAMBLER GAME_VFTABLE(cEmbeddedFXHeadCrazyGambler_vftable, 0x3b125c)
+#define VT_HEADCRAZYGAMBLER GAME_VFTABLE(cEmbeddedFXHeadCrazyGambler_vftable)
 #define HEAD_GLOWS 12
 
 cEmbeddedFXHeadCrazyGambler *__fastcall cEmbeddedFXHeadCrazyGambler_ctor(cEmbeddedFXHeadCrazyGambler *self) {

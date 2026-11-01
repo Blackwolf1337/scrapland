@@ -18,8 +18,8 @@
 #include "scrap/world.h"
 
 #define TYEN_OBJECT "Obj"
-#define COBJENTITY_VFTABLE GAME_VFTABLE(cObjEntity_vftable, 0x3b367c)
-#define CNETCONTROLLER_VFTABLE GAME_VFTABLE(cNetController_vftable, 0x3b3664)
+#define COBJENTITY_VFTABLE GAME_VFTABLE(cObjEntity_vftable)
+#define CNETCONTROLLER_VFTABLE GAME_VFTABLE(cNetController_vftable)
 #define COBJENTITY_SIZE 0x228
 
 /* the flags of the network state */
@@ -150,8 +150,8 @@ static inline const cObjEntityVtbl *Obj_Vtbl(const cEntity *e) {
 }
 
 /* 1 while a missile updates: cObjEntity_Update then moves the render state on by the velocity of one slot */
-#define g_MissileUpdating GAME_GLOBAL_IN(int, GVar_ActiveExtrapolation, 16, 0x447a08)
-#define g_RadarShowTime GAME_GLOBAL_IN(float, GVar_MssnRadarBlinkTime, 16, 0x447a20)	/* radarTime after a change of RadarShow */
+#define g_MissileUpdating GAME_GLOBAL_IN(int, GVar_ActiveExtrapolation, 16)
+#define g_RadarShowTime GAME_GLOBAL_IN(float, GVar_MssnRadarBlinkTime, 16)	/* radarTime after a change of RadarShow */
 
 /* the cObjEntity functions take a cEntity like the callers of the derived classes */
 void __fastcall cObjEntity_dtor(cEntity *self);

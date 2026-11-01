@@ -52,14 +52,14 @@ static inline float FX_Rand(double range, double add) {
 #define Entity_Removed(e) (((cEntity *)(e))->deadNode.target)
 
 /* the engine variables (Gvars): the files of the debris systems of the effects */
-#define g_FXItemBlinkFile GAME_GLOBAL_IN(const char *, GVar_FXItemBlinkFile, 16, 0x467240)
-#define g_FXItemFadeFile GAME_GLOBAL_IN(const char *, GVar_FXItemFadeFile, 16, 0x467228)
-#define g_FXItemTakeFile GAME_GLOBAL_IN(const char *, GVar_FXItemTakeFile, 16, 0x467210)
-#define g_FXCharacterSputnikFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterSputnikFile, 16, 0x466e38)
-#define g_FXShipEditBuildFile GAME_GLOBAL_IN(const char *, GVar_FXShipEditBuildFile, 16, 0x467258)
-#define g_FXSmokeDebrisFile GAME_GLOBAL_IN(const char *, GVar_FXSmokeDebrisFile, 16, 0x4673c0)
-#define g_FXFiredDebrisFile GAME_GLOBAL_IN(const char *, GVar_FXFiredDebrisFile, 16, 0x4673a8)
-#define g_FXShipExplosionFile GAME_GLOBAL_IN(const char *, GVar_FXShipExplosionFile, 16, 0x467348)
+#define g_FXItemBlinkFile GAME_GLOBAL_IN(const char *, GVar_FXItemBlinkFile, 16)
+#define g_FXItemFadeFile GAME_GLOBAL_IN(const char *, GVar_FXItemFadeFile, 16)
+#define g_FXItemTakeFile GAME_GLOBAL_IN(const char *, GVar_FXItemTakeFile, 16)
+#define g_FXCharacterSputnikFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterSputnikFile, 16)
+#define g_FXShipEditBuildFile GAME_GLOBAL_IN(const char *, GVar_FXShipEditBuildFile, 16)
+#define g_FXSmokeDebrisFile GAME_GLOBAL_IN(const char *, GVar_FXSmokeDebrisFile, 16)
+#define g_FXFiredDebrisFile GAME_GLOBAL_IN(const char *, GVar_FXFiredDebrisFile, 16)
+#define g_FXShipExplosionFile GAME_GLOBAL_IN(const char *, GVar_FXShipExplosionFile, 16)
 
 /* the color ramps (9 colors) of the particles */
 #define FX_RAMP_BLINK 0x430b44
@@ -197,7 +197,7 @@ SD_OFFSET(cObjElementFXFadeOutTrail, on, 0x11);
 void *__thiscall CGameLensFlare_ctor(void *self);
 void __thiscall CGameLensFlare_dtor(void *self);
 
-/* Math (rva 0x066ad0, 0x072340): the angle between two vectors (radians); in normalized into out */
+/* Math: the angle between two vectors (radians); in normalized into out */
 double Vec3_Angle(const vec3_t *a, const vec3_t *b);
 vec3_t *Vec3_NormalizeTo(vec3_t *out, const vec3_t *in);
 

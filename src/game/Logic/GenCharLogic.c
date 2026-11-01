@@ -109,7 +109,7 @@ void __thiscall cGenCharLocalLogic_ToRelax(cGenCharLocalLogic *self, cAIChar *ai
 	ai->vftable->SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_GenCharRelaxSpeed, 1);
 }
 
-/* ---- part 3 (rva 0x14c4f0) ---- */
+/* ---- part 3 ---- */
 
 #define GENCHAR_VT(self) GenChar_Vtbl(self)
 

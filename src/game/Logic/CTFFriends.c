@@ -101,7 +101,7 @@ void __fastcall cCTFFriends_Init(cCTFFriends *self) {
 	cCTFFriendsData *d = self->d;
 
 	d->list = cWorld_NewEntityList(g_pWorld, "CTFFriends");
-	cPy_Function_SetNative(&d->list->onDamage, (nativefunc_t)GAME_FUNC(CTFFriends_OnDamage, 0x144430));
+	cPy_Function_SetNative(&d->list->onDamage, (nativefunc_t)GAME_FUNC(CTFFriends_OnDamage));
 }
 
 /* the native of the hits: the ship and its attacker */

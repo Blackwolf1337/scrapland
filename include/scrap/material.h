@@ -21,8 +21,8 @@ enum {
 #define MAX_TEXTURE_PATHS 10
 #define MAX_TEXTURE_EXTS 10
 
-#define CMATLIST_VFTABLE GAME_VFTABLE(CMatList_vftable, 0x3d6d48)
-#define CMATERIAL_VFTABLE GAME_VFTABLE(CMaterial_vftable, 0x3d6dbc)
+#define CMATLIST_VFTABLE GAME_VFTABLE(CMatList_vftable)
+#define CMATERIAL_VFTABLE GAME_VFTABLE(CMaterial_vftable)
 
 /* params.attrib */
 #define MAT_NOCOLLIDE 0x1		/* "(nc)", "(+no_collide)": the triangles get TRI_ALT_NO_COLLISIONS */
@@ -151,15 +151,15 @@ struct CMatList {
 SD_SIZE(CMatList, 0x10);
 
 /* the materials of the engine */
-#define g_MatList (GAME_ARRAY(CMatList, g_MatList, 0x431d24))
+#define g_MatList (GAME_ARRAY(CMatList, g_MatList))
 
-/* the constructors and destructors of material.h (rva 0x2336f0..0x233c20) */
+/* the constructors and destructors of material.h */
 CMatList *__thiscall CMatList_DeleteObj(CMatList *self, byte flags);
 void __fastcall CMatList_dtor(CMatList *self);
 /* the string freed if set (the destructor of the string members) */
 void __fastcall String_dtor(char **self);
 CMatId *__fastcall CMatId_ctor(CMatId *self);		/* rva 0x2a79e0, id -1 */
-void __fastcall CMatId_dtor(CMatId *self);		/* rva 0x2a79f0 */
+void __fastcall CMatId_dtor(CMatId *self);
 CMap *__thiscall CMap_ctor(CMap *self);
 void __thiscall CMap_dtor(CMap *self);
 CMaterial *__thiscall CMaterial_ctor(CMaterial *self);

@@ -54,12 +54,12 @@ typedef struct Vert2D {
 SD_SIZE(Vert2D, 0x20);
 
 /* the 2D screen size and its inverses */
-#define g_Screen2DW GAME_GLOBAL(int, g_Screen2DW, 0x432598)
-#define g_Screen2DH GAME_GLOBAL(int, g_Screen2DH, 0x43259c)
-#define g_Screen2DInvW GAME_GLOBAL(double, g_Screen2DInvW, 0x4325a0)
-#define g_Screen2DInvH GAME_GLOBAL(double, g_Screen2DInvH, 0x4325a8)
-#define g_SpriteScaleWidth GAME_GLOBAL_IN(float, GVar_SpriteScaleWidth, 16, 0x4b1d0c)
-#define g_Verts2D (GAME_ARRAY(Vert2D, g_Verts2D, 0x4b1d18))	/* MAX_VERT_2D, the polygon of the last draw */
+#define g_Screen2DW GAME_GLOBAL(int, g_Screen2DW)
+#define g_Screen2DH GAME_GLOBAL(int, g_Screen2DH)
+#define g_Screen2DInvW GAME_GLOBAL(double, g_Screen2DInvW)
+#define g_Screen2DInvH GAME_GLOBAL(double, g_Screen2DInvH)
+#define g_SpriteScaleWidth GAME_GLOBAL_IN(float, GVar_SpriteScaleWidth, 16)
+#define g_Verts2D (GAME_ARRAY(Vert2D, g_Verts2D))	/* MAX_VERT_2D, the polygon of the last draw */
 
 CGraphic2D *__thiscall CGraphic2D_ctorTex(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags);
 CGraphic2D *__fastcall CGraphic2D_ctor(CGraphic2D *self);

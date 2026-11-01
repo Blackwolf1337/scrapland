@@ -16,7 +16,7 @@
 #define RNODE_UNIQUE 2
 #define RENDERNODE_ROT_NULL 0
 
-#define g_RenderNodeCount GAME_GLOBAL_IN(int, GVar_R_RenderNode_Count, 16, 0x4ad628)
+#define g_RenderNodeCount GAME_GLOBAL_IN(int, GVar_R_RenderNode_Count, 16)
 
 void *CParticleSystem_Cast(IObject3D *obj) {
 	CHECK(obj->class == CLASS_OBJ3D_PARTICLESYSTEM);

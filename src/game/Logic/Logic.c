@@ -13,7 +13,7 @@
 #include "scrap/vehicleentity.h"
 
 #define LOGIC_SETORIGINFUNC 0x151ce0
-#define g_NotCleanableByGearDef (GAME_ARRAY_IN(cString, GVar_NotCleanableByGear, 20, 0x44cba4))
+#define g_NotCleanableByGearDef (GAME_ARRAY_IN(cString, GVar_NotCleanableByGear, 20))
 
 /* the x87 code of the original: a float plus a float, rounded by the x87 control word, then to float */
 static inline float Logic_X87Add(float a, float b) {
@@ -50,7 +50,7 @@ void *__thiscall Logic_ctor(void *logic) {
 	cGenCharGroup_ctor(&self->genChars);
 	cGateKeepers_ctor(&self->gateKeepers);
 	cString_Assign((cString *)&g_NotCleanableByGear, g_NotCleanableByGearDef);
-	g_SetOriginFunc = GAME_FUNC(Logic_SetOriginCallback, LOGIC_SETORIGINFUNC);
+	g_SetOriginFunc = GAME_FUNC(Logic_SetOriginCallback);
 	return self;
 }
 

@@ -11,7 +11,7 @@
 #include "scrap/vehiclemotors.h"
 #include "scrap/weaps2.h"
 
-#define VM_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* the "" of the exe */
+#define VM_EMPTY GAME_STR(str_Empty)	/* the "" of the exe */
 
 /* "DC_EngineA_01": the slot of motor (A..D) and side (1, 2) */
 static inline void VM_SlotName(char *buf, int motor, int side) {
@@ -870,8 +870,8 @@ CGameModel *__thiscall cVehicleMotorsEffects_GetModel(cVehicleMotorsEffects *sel
 #define CGAMEMODEL_DTOR 0x20ec10		/* CGameModel_Reset */
 
 cVehicleMotor *__thiscall cVehicleMotor_ctor(cVehicleMotor *self) {
-	crt_eh_vector_ctor(self->model, sizeof(CGameModel), VM_SIDES, GAME_FUNC(CGameModel_ctorDefault, CGAMEMODEL_CTOR_NULL),
-		GAME_FUNC(CGameModel_Reset, CGAMEMODEL_DTOR));
+	crt_eh_vector_ctor(self->model, sizeof(CGameModel), VM_SIDES, GAME_FUNC(CGameModel_ctorDefault),
+		GAME_FUNC(CGameModel_Reset));
 	cVehicleMotorsEffects_ctor(&self->effects);
 	self->name[0] = 0;
 	self->animMOn = 0;
@@ -903,7 +903,7 @@ void *__fastcall cVehicleMotors_ctor(void *motors) {
 void __fastcall cVehicleMotor_dtor(cVehicleMotor *self) {
 	cVehicleMotorsEffects_Stop(&self->effects);
 	cVehicleMotorsEffects_dtor(&self->effects);
-	crt_eh_vector_dtor(self->model, sizeof(CGameModel), VM_SIDES, GAME_FUNC(CGameModel_Reset, CGAMEMODEL_DTOR));
+	crt_eh_vector_dtor(self->model, sizeof(CGameModel), VM_SIDES, GAME_FUNC(CGameModel_Reset));
 }
 
 void __fastcall cVehicleMotors_dtor(void *motors) {

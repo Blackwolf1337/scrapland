@@ -14,7 +14,7 @@
 #include "scrap/material.h"
 #include "scrap/table.h"
 
-#define CMESHD3D_VFTABLE GAME_VFTABLE(CMeshD3D_vftable, 0x3e3584)
+#define CMESHD3D_VFTABLE GAME_VFTABLE(CMeshD3D_vftable)
 
 /* Build flags */
 #define MESHD3D_ONESIDED 0x01		/* no back faces for two sided materials */
@@ -161,12 +161,12 @@ typedef struct MeshD3DGroup {
 SD_SIZE(MeshD3DGroup, 0x10);
 
 #define MAX_D3D_OBJ 0x200
-#define g_D3DObj (GAME_ARRAY(MeshD3DObj, g_D3DObj, 0x4dc128))
-#define g_NumD3DObj GAME_GLOBAL(int, g_NumD3DObj, 0x4de928)
+#define g_D3DObj (GAME_ARRAY(MeshD3DObj, g_D3DObj))
+#define g_NumD3DObj GAME_GLOBAL(int, g_NumD3DObj)
 /* the vertices MeshD3D_CompareVertIdx sorts */
-#define g_WeldVert GAME_GLOBAL(MeshD3DVert *, g_WeldVert, 0x4de92c)
+#define g_WeldVert GAME_GLOBAL(MeshD3DVert *, g_WeldVert)
 /* the triangles of a group, 0x800 */
-#define g_MaxTriGroup GAME_GLOBAL(int, g_MaxTriGroup, 0x432a70)
+#define g_MaxTriGroup GAME_GLOBAL(int, g_MaxTriGroup)
 
 /* the deleting destructor */
 CMeshD3D *__thiscall CMeshD3D_Delete(CMeshD3D *self, byte flags);

@@ -226,7 +226,7 @@ void __fastcall CBsp_CreateBuffers(CBsp *self) {
 		}
 	}
 	crt_qsort(self->lists, (size_t)self->num_lists, sizeof(BspTri *),
-		(int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpZone, 0x28e520));
+		(int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpZone));
 	for (int i = 0; i < self->num_lists; i++) {
 		BspTri *l = self->lists[i];
 		E3D_LogPrint(g_FileLog, "%4d %-40s (%p)  lmap %02d  zona %02d  tri %d", i, l->Mat->Name, (void *)l->Mat,
@@ -332,7 +332,7 @@ void __fastcall CBsp_CreateBuffers(CBsp *self) {
 
 /* the direct light of the lights of g_BspLights */
 
-#define g_LightmapLinearAtten GAME_GLOBAL_IN(int, GVar_LightmapLinearAtten, 16, 0x4d5d20)	/* gvar */
+#define g_LightmapLinearAtten GAME_GLOBAL_IN(int, GVar_LightmapLinearAtten, 16)	/* gvar */
 
 /* the segment from c (moved back along the light direction d) to the light at dest blocked by the floor */
 static byte Bsp_Shadow(CGround *ground, const vec3_t *c, const vec3_t *d, const vec3_t *dest, vec3_t *hit, int *cache) {

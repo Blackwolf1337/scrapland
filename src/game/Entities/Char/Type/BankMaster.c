@@ -138,7 +138,7 @@ void ChType_BankMasterHitEvent(cAbstractFile *params) {
 		cPad_Rumble(&g_Pads[0], 0.0f, 0.5f, 0.35f);
 	}
 	cWalkCharEntity_SetEnergy(g_BankMasterEnt, (1.0f - WChar(g_BankMasterEnt)->energyUsed) - g_BankMasterAmmoCost);
-	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)GAME_FUNC(ChType_BankMasterSuction, CHTYPE_BANKMASTERSUCTION));
+	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)GAME_FUNC(ChType_BankMasterSuction));
 	float radius = g_BankMasterVacumDist;
 	const vec3_t *pos = g_BankMasterEnt->vftable->GetPos(g_BankMasterEnt, &tmp);
 	cWorld_SphereCallF(g_pWorld, 0x10, pos, radius, g_ChTypeSphereFunc, 0);

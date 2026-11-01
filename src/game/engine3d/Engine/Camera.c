@@ -6,8 +6,8 @@
 #include "scrap/camera.h"
 #include "scrap/scrapcamera.h"
 
-#define CCAMERA_VFTABLE GAME_VFTABLE(CCamera_vftable, 0x3e1c98)
-#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
+#define CCAMERA_VFTABLE GAME_VFTABLE(CCamera_vftable)
+#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable)
 /* the limit of the projection, a float constant widened */
 #define CAMERA_EPS ((double)0.01f)
 

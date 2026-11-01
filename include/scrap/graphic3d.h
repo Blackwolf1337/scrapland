@@ -8,8 +8,8 @@
 #include "scrap/meshd3d.h"
 #include "scrap/groundportal.h"
 
-#define CGRAPHIC3D_VFTABLE GAME_VFTABLE(CGraphic3D_vftable, 0x3e45b8)
-#define g_ShowSprites GAME_GLOBAL_IN(int, GVar_R_SpriteSector, 16, 0x4e1dd0)	/* 1: visibility, 2: drawn, 3: with the name */
+#define CGRAPHIC3D_VFTABLE GAME_VFTABLE(CGraphic3D_vftable)
+#define g_ShowSprites GAME_GLOBAL_IN(int, GVar_R_SpriteSector, 16)	/* 1: visibility, 2: drawn, 3: with the name */
 
 typedef struct CGraphic3D {
 	void **vftable;			/* 0x00 OBJ3D_VF_* */

@@ -14,7 +14,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/withlifeentity.h"
 
-#define MISSILE_CLASSNAME GAME_STR(str_3aea4c, 0x3aea4c)	/* "Missile" */
+#define MISSILE_CLASSNAME GAME_STR(str_3aea4c)	/* "Missile" */
 #define MISSILE_RAND_SCALE 3.051850947599719e-05		/* 1 / 32767 */
 
 #define MISSILE_PI_2 0x1.921fb6p+0f				/* pi / 2 as float (0x3fc90fdb) */
@@ -22,10 +22,10 @@
 #define Debris_Next(d) (((cDebris *)(d))->next)
 
 /* the debris systems of the fire effects (SetEmbeddedFX) */
-#define g_MissileFXDumbMotor GAME_GLOBAL_IN(const char *, GVar_FXDumbMotorFile, 16, 0x448478)
-#define g_MissileFXGearMissile GAME_GLOBAL_IN(const char *, GVar_FXGearMissileFile, 16, 0x446a3c)
-#define g_MissileFXCloud GAME_GLOBAL_IN(const char *, GVar_CloudFile, 16, 0x448e74)
-#define g_MissileFXEMI GAME_GLOBAL_IN(const char *, GVar_EMIFile, 16, 0x449310)
+#define g_MissileFXDumbMotor GAME_GLOBAL_IN(const char *, GVar_FXDumbMotorFile, 16)
+#define g_MissileFXGearMissile GAME_GLOBAL_IN(const char *, GVar_FXGearMissileFile, 16)
+#define g_MissileFXCloud GAME_GLOBAL_IN(const char *, GVar_CloudFile, 16)
+#define g_MissileFXEMI GAME_GLOBAL_IN(const char *, GVar_EMIFile, 16)
 
 #define MISSILE_ENTLIST 8			/* the entity lists the missiles hit */
 #define MISSILE_NET_NONE 0xffff			/* no parent or target in the network state */
@@ -642,7 +642,7 @@ byte __thiscall cMissileEntity_VarS(cMissileEntity *self, const char *name, char
 		if ((byte)set) {
 			cPy_Function_SetFunc(&self->onBeeDeath, *s);
 		} else {
-			*s = GAME_STR(str_3b2cf4, 0x3b2cf4);	/* "<OnBeeDeath> function" */
+			*s = GAME_STR(str_3b2cf4);	/* "<OnBeeDeath> function" */
 		}
 		return 1;
 	}
@@ -650,7 +650,7 @@ byte __thiscall cMissileEntity_VarS(cMissileEntity *self, const char *name, char
 		if ((byte)set) {
 			cPy_Function_SetFunc(&self->onHit, *s);
 		} else {
-			*s = GAME_STR(str_3b2d14, 0x3b2d14);	/* "<OnHit> function" */
+			*s = GAME_STR(str_3b2d14);	/* "<OnHit> function" */
 		}
 		return 1;
 	}
@@ -668,8 +668,8 @@ byte __thiscall cMissileEntity_VarS(cMissileEntity *self, const char *name, char
 		if ((uint32_t)self->hitType > 3) {
 			return 0;
 		}
-		char *const hitTypeStr[4] = { GAME_STR(str_3b2d30, 0x3b2d30), GAME_STR(str_3b2d38, 0x3b2d38),
-			GAME_STR(str_3b2d3c, 0x3b2d3c), GAME_STR(str_3b2d44, 0x3b2d44) };
+		char *const hitTypeStr[4] = { GAME_STR(str_3b2d30), GAME_STR(str_3b2d38),
+			GAME_STR(str_3b2d3c), GAME_STR(str_3b2d44) };
 		*s = hitTypeStr[self->hitType];
 		return 1;
 	}
@@ -688,8 +688,8 @@ byte __thiscall cMissileEntity_VarS(cMissileEntity *self, const char *name, char
 		if ((uint32_t)self->type > 3) {
 			return 0;
 		}
-		char *const typeStr[4] = { GAME_STR(str_3b2d4c, 0x3b2d4c), GAME_STR(str_3b2d5c, 0x3b2d5c),
-			GAME_STR(str_3b2d54, 0x3b2d54), GAME_STR(str_3a6ea0, 0x3a6ea0) };
+		char *const typeStr[4] = { GAME_STR(str_3b2d4c), GAME_STR(str_3b2d5c),
+			GAME_STR(str_3b2d54), GAME_STR(str_3a6ea0) };
 		*s = typeStr[self->type];
 		return 1;
 	}

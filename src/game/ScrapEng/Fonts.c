@@ -15,9 +15,9 @@ static const char *const fontNames[7] = {
 /* the global of the font, in the order of fontNames */
 static CFont **Font_Slot(int i) {
 	CFont **slots[7] = {
-		&GAME_GLOBAL(CFont *, g_FontTerminal8, 0x4a8908), &GAME_GLOBAL(CFont *, g_FontTerminal8Fixed, 0x4a890c), &GAME_GLOBAL(CFont *, g_FontBigNumbers, 0x4a8910),
-		&GAME_GLOBAL(CFont *, g_FontScrapBig, 0x4a8914), &GAME_GLOBAL(CFont *, g_FontScrapMedium, 0x4a8918), &GAME_GLOBAL(CFont *, g_FontHoratio, 0x4a891c),
-		&GAME_GLOBAL(CFont *, g_FontHoratioSmall, 0x4a8920),
+		&GAME_GLOBAL(CFont *, g_FontTerminal8), &GAME_GLOBAL(CFont *, g_FontTerminal8Fixed), &GAME_GLOBAL(CFont *, g_FontBigNumbers),
+		&GAME_GLOBAL(CFont *, g_FontScrapBig), &GAME_GLOBAL(CFont *, g_FontScrapMedium), &GAME_GLOBAL(CFont *, g_FontHoratio),
+		&GAME_GLOBAL(CFont *, g_FontHoratioSmall),
 	};
 	return slots[i];
 }

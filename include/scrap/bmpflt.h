@@ -27,8 +27,8 @@ SD_SIZE(TXF_header, 0x20);
 /* the header of each class */
 #define TXF_CAB 0x4e734c
 #define TXF2_CAB 0x4e736c
-#define g_TXFCab (GAME_ARRAY(TXF_header, g_TXFCab, TXF_CAB))
-#define g_TXFCab2 (GAME_ARRAY(TXF_header, g_TXFCab2, TXF2_CAB))
+#define g_TXFCab (GAME_ARRAY(TXF_header, g_TXFCab))
+#define g_TXFCab2 (GAME_ARRAY(TXF_header, g_TXFCab2))
 
 /* TXF_Save: an existing file is only replaced with this flag */
 #define TXF_OVERWRITE 1

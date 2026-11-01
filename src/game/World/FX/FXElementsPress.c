@@ -10,7 +10,7 @@
 #include "scrap/scrap.h"
 #include "scrap/sound.h"
 
-#define g_RandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
+#define g_RandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 #define PRESS_NAME_SKIP 11			/* "DM_Element_" before the name of the element in the dummy */
 #define CGAMETRAIL_CTOR 0x21ddb0
 #define CGAMETRAIL_DTOR 0x21de40
@@ -37,13 +37,13 @@ cFXElementsMentalControllerMainFX *__thiscall cFXElementsMentalControllerMainFX_
 	cFXElementsMentalControllerMainFX *self, const char *name, const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSMENTALCONTROLLERMAINFX_VFTABLE;
-	crt_eh_vector_ctor(self->tubeTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR),
-		GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor(self->tubeTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, GAME_FUNC(CGameTrail_ctor),
+		GAME_FUNC(CGameTrail_dtor));
 	CGameParticles_ctor(&self->dataFluid);
-	crt_eh_vector_ctor(self->glowTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR),
-		GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor(self->glowTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, GAME_FUNC(CGameTrail_ctor),
+		GAME_FUNC(CGameTrail_dtor));
 	CGameParticles_ctor(&self->tubeGlow);
-	crt_eh_vector_ctor(self->topTrails, sizeof(CGameTrail), 2, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR), GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor(self->topTrails, sizeof(CGameTrail), 2, GAME_FUNC(CGameTrail_ctor), GAME_FUNC(CGameTrail_dtor));
 	for (int i = 0; i < FXMENTALCONTROLLERMAINCOUNT; i++) {
 		self->controllers[i] = NULL;
 	}
@@ -69,11 +69,11 @@ void __fastcall cFXElementsMentalControllerDamageFX_dtor(cFXElementsMentalContro
 void __fastcall cFXElementsMentalControllerMainFX_dtor(cFXElementsMentalControllerMainFX *self) {
 	self->base.vftable = CFXELEMENTSMENTALCONTROLLERMAINFX_VFTABLE;
 	CGameParticles_Release(&self->dataFluid);
-	crt_eh_vector_dtor(self->topTrails, sizeof(CGameTrail), 2, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor(self->topTrails, sizeof(CGameTrail), 2, GAME_FUNC(CGameTrail_dtor));
 	CGameParticles_Release(&self->tubeGlow);
-	crt_eh_vector_dtor(self->glowTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor(self->glowTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, GAME_FUNC(CGameTrail_dtor));
 	CGameParticles_Release(&self->dataFluid);
-	crt_eh_vector_dtor(self->tubeTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor(self->tubeTrails, sizeof(CGameTrail), FXMENTALMAINTRAILS, GAME_FUNC(CGameTrail_dtor));
 	cMapElement_dtor(&self->base);
 }
 
@@ -256,9 +256,9 @@ byte __fastcall cFXElementsMentalControllerDamageFX_Init(cFXElementsMentalContro
 	return 1;
 }
 
-#define g_DamageFXMaxDist GAME_GLOBAL_IN(float, GVar_FXElementsMentalControllerDamageFXMaxDist, 16, 0x4671e0)		/* FXElementsMentalControllerDamageFXMaxDist */
-#define g_DamageFXSound GAME_GLOBAL_IN(const char *, GVar_FXElementsMentalControllerDamageSound, 16, 0x4671b0)	/* FXElementsMentalControllerDamageSound */
-#define g_DamageFXSoundVol GAME_GLOBAL_IN(float, GVar_FXElementsMentalControllerDamageSoundVol, 16, 0x4671c8)		/* FXElementsMentalControllerDamageSoundVol */
+#define g_DamageFXMaxDist GAME_GLOBAL_IN(float, GVar_FXElementsMentalControllerDamageFXMaxDist, 16)		/* FXElementsMentalControllerDamageFXMaxDist */
+#define g_DamageFXSound GAME_GLOBAL_IN(const char *, GVar_FXElementsMentalControllerDamageSound, 16)	/* FXElementsMentalControllerDamageSound */
+#define g_DamageFXSoundVol GAME_GLOBAL_IN(float, GVar_FXElementsMentalControllerDamageSoundVol, 16)		/* FXElementsMentalControllerDamageSoundVol */
 #define DAMAGEFX_SMOKE_RAMPS 0x4309f8				/* 3 color ramps of 9 colors */
 #define DAMAGEFX_FLASH_RAMPS 0x430a68
 
@@ -269,7 +269,7 @@ static inline uint32_t *Press_Ramp(uint32_t *ramps, int i) {
 /* one flash glow at the emitter: sizes and life random, scaled by s */
 static void DamageFX_Glow(CGameParticles *p, float s, double iniRange, double iniAdd, double endRange, double endAdd,
 	byte sprite, double lifeRange, double lifeAdd) {
-	CGameParticles_SetColorRamp(p, Press_Ramp(GAME_ARRAY(uint32_t, DamageFX_Glow_430a68, DAMAGEFX_FLASH_RAMPS), 0));
+	CGameParticles_SetColorRamp(p, Press_Ramp(GAME_ARRAY(uint32_t, DamageFX_Glow_430a68), 0));
 	p->sizeIni = FxElem_Rand(iniRange, iniAdd) * s;
 	p->sizeEnd = FxElem_Rand(endRange, endAdd) * s;
 	float lt = FxElem_Rand(lifeRange, lifeAdd);
@@ -312,7 +312,7 @@ void __thiscall cFXElementsMentalControllerDamageFX_Update(cFXElementsMentalCont
 		CGameParticles *sm = &self->smoke;
 		sm->birthRate = 0;
 		CGameParticles_SetColorRampOn(sm, 1);
-		CGameParticles_SetColorRamp(sm, Press_Ramp(GAME_ARRAY(uint32_t, cFXElementsMentalControllerDamageFX_Update_4309f8, DAMAGEFX_SMOKE_RAMPS), crt_rand() % 3));
+		CGameParticles_SetColorRamp(sm, Press_Ramp(GAME_ARRAY(uint32_t, cFXElementsMentalControllerDamageFX_Update_4309f8), crt_rand() % 3));
 		for (int k = 0; k < FXMENTALDAMAGEEMITTERS; k++) {
 			if (self->smokeNode[k] <= -1) {
 				break;
@@ -392,7 +392,7 @@ void __thiscall cFXElementsMentalControllerDamageFX_Update(cFXElementsMentalCont
 		int n = lo2 + crt_rand() % (self->flashSparksMax[k] - lo2);
 		CGameParticles_SetSparksOn(fl, 1);
 		for (; n > 0; n--) {
-			CGameParticles_SetColorRamp(fl, Press_Ramp(GAME_ARRAY(uint32_t, DamageFX_Glow_430a68, DAMAGEFX_FLASH_RAMPS), crt_rand() % 3));
+			CGameParticles_SetColorRamp(fl, Press_Ramp(GAME_ARRAY(uint32_t, DamageFX_Glow_430a68), crt_rand() % 3));
 			float az = FxElem_Rand(3.1415927410125732, -1.5707963705062866);
 			float ay = FxElem_Rand(3.1415927410125732, -1.5707963705062866);
 			ang.x = 0.0f;

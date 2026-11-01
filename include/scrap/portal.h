@@ -7,8 +7,8 @@
 
 #include "scrap/meshd3d.h"
 
-#define CPORTAL_VFTABLE GAME_VFTABLE(CPortal_vftable, 0x3e46c0)
-#define g_ShowPortals GAME_GLOBAL_IN(int, GVar_R_ShowPortals, 16, 0x4e1de8)	/* gvRenderShowPortals */
+#define CPORTAL_VFTABLE GAME_VFTABLE(CPortal_vftable)
+#define g_ShowPortals GAME_GLOBAL_IN(int, GVar_R_ShowPortals, 16)	/* gvRenderShowPortals */
 
 typedef struct CPortal {
 	void **vftable;			/* 0x00 OBJ3D_VF_* */

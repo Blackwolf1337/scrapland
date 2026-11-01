@@ -288,13 +288,13 @@ NodeAnimChannel *__thiscall CNode3D_Channel(CNode3D *self, uint32_t ch);
 quat_t *__thiscall CRotation_GetQuat(CRotation *self, quat_t *out);
 
 /* other modules, called from Nodo3D.cpp (src/imports.inc) */
-void __thiscall CRotation_SetEuler(CRotation *self, const vec3_t *ang);	/* rva 0x212510 */
+void __thiscall CRotation_SetEuler(CRotation *self, const vec3_t *ang);
 void *CParticleSystem_Cast(IObject3D *obj);	/* rva 0x23f310, CHECK of the class */
 /* Engine/NodoR.cpp (src/game/engine3d/Engine/RenderNode.c, the rest in model.h and scrapmodel.h) */
 NodeLook *__fastcall NodeLook_ctor(NodeLook *self);
 CRenderNode *__fastcall CRenderNode_ctor(CRenderNode *self);
 byte __thiscall CNode3D_DebugDraw(CNode3D *self, CRenderNode *r);	/* R_ShowLocalBox; 0: filtered out, not drawn */
-void __thiscall CRenderNode_UpdateNode(CRenderNode *self);	/* rva 0x23f5d0 */
-int __thiscall CRenderNode_ApplyFX(CRenderNode *self, matrix_t *m);	/* rva 0x23f540 */
+void __thiscall CRenderNode_UpdateNode(CRenderNode *self);
+int __thiscall CRenderNode_ApplyFX(CRenderNode *self, matrix_t *m);
 
 #endif

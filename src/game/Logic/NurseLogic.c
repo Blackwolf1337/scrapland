@@ -20,7 +20,7 @@ void *__fastcall cNurses_ctor(cNurses *self) {
 
 void __fastcall cNurses_Init(cNurses *self) {
 	self->list = cWorld_NewEntityList(g_pWorld, "Nurse");
-	self->list->func = (int (*)(void))GAME_FUNC(Nurses_MakeLogic, NURSES_MAKELOGIC);
+	self->list->func = (int (*)(void))GAME_FUNC(Nurses_MakeLogic);
 }
 
 void __fastcall cNurses_Think(cNurses *self) {
@@ -195,7 +195,7 @@ byte __thiscall cNurseLocalLogic_RestartState(cNurseLocalLogic *self) {
 	return NURSE_VT(self)->SetState(self, 0, NULL);
 }
 
-/* ---- part 2 (rva 0x154970) ---- */
+/* ---- part 2 ---- */
 
 /* vf19: the AI of the state: the walk around the origin (relaxed or in alert), the escape from target (2) or the
  * walk to the dazed character (3); always 1 */

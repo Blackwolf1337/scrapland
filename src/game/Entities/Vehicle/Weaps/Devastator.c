@@ -11,7 +11,7 @@
 #include "scrap/weapons.h"
 #include "scrap/weaps2.h"
 
-#define DEV_PI 3.14159274f		/* rva 0x3a3a30 */
+#define DEV_PI 3.14159274f
 
 /* the shot sounds 0xd..0xf of the vehicle loop with the recharge time of one slot */
 void Devastator_Start(cEntity *v) {
@@ -695,7 +695,7 @@ void EMI_OnHit(cAbstractFile *params) {
 	}
 	if (Entity_IsType(e, "Missile") && r >= d) {
 		cMissileEntity_SetType((cMissileEntity *)e, 1);
-		cMissileEntity_SetTarget((cMissileEntity *)e, GAME_STR(str_Empty, 0x3a3228));
+		cMissileEntity_SetTarget((cMissileEntity *)e, GAME_STR(str_Empty));
 	}
 }
 

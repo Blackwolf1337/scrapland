@@ -15,10 +15,10 @@
 #include "scrap/scrapmodel.h"
 
 /* the state names of the debug texts (pointer tables of the exe) */
-#define LOGIC_GEARSTATES (GAME_ARRAY(const char *, LOGIC_GEARSTATES, 0x428b38))
-#define LOGIC_SENTINELSTATES (GAME_ARRAY(const char *, LOGIC_SENTINELSTATES, 0x428b4c))
-#define LOGIC_NURSESTATES (GAME_ARRAY(const char *, LOGIC_NURSESTATES, 0x428b68))
-#define LOGIC_GENCHARSTATES (GAME_ARRAY(const char *, LOGIC_GENCHARSTATES, 0x428b78))
+#define LOGIC_GEARSTATES (GAME_ARRAY(const char *, LOGIC_GEARSTATES))
+#define LOGIC_SENTINELSTATES (GAME_ARRAY(const char *, LOGIC_SENTINELSTATES))
+#define LOGIC_NURSESTATES (GAME_ARRAY(const char *, LOGIC_NURSESTATES))
+#define LOGIC_GENCHARSTATES (GAME_ARRAY(const char *, LOGIC_GENCHARSTATES))
 
 cBaseLocalLogic *__thiscall cBaseLocalLogic_ctor(cBaseLocalLogic *self, cEntity *parent) {
 	vec3_t tmp, ang, out;
@@ -326,7 +326,7 @@ cLocalLogic *Logic_GetLocalLogic(cEntity *e) {
 
 const char *__thiscall cBaseLocalLogic_GetName(cBaseLocalLogic *self) {
 	(void)self;
-	return GAME_STR(str_3bd4a0, 0x3bd4a0);
+	return GAME_STR(str_3bd4a0);
 }
 
 const char *__thiscall cLocalLogic_GetName(cLocalLogic *self) {

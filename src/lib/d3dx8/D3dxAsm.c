@@ -365,7 +365,7 @@ typedef struct {
 	uint16_t token;
 } asmOpcode_t;
 
-/* the opcodes in the order the exe tries them (rva 0x01b2fd) */
+/* the opcodes in the order the exe tries them */
 static const asmOpcode_t asm_common[] = {
 	{ "nop", 0, TK_OP0 }, { "mov", 1, TK_OP2 }, { "add", 2, TK_OP3 }, { "sub", 3, TK_OP3 }, { "mad", 4, TK_OP4 },
 	{ "mul", 5, TK_OP3 }, { "dp3", 8, TK_OP3 }, { "dp4", 9, TK_OP3 }, { "frc", 0x13, TK_OP2 },
@@ -544,7 +544,7 @@ static void Asm_LineDirective(d3dxAsm_t *a, const char *start) {
 	}
 }
 
-/* rva 0x01c1f5 */
+
 static int Asm_Lex(d3dxAsm_t *a) {
 	a->stmtToken = 0;
 	for (;;) {
@@ -844,7 +844,7 @@ static int Asm_ConstPS14(const d3dxAsm_t *a, uint32_t reg) {
 static float Asm_IntFloat(uint32_t v) {
 	long double f = (int32_t)v;
 	if ((int32_t)v < 0) {
-		f += 4294967296.0f;	/* rva 0x40b00c */
+		f += 4294967296.0f;
 	}
 	return (float)f;
 }
@@ -1415,7 +1415,7 @@ static void Asm_Validate(d3dxAsm_t *a, d3dxBuffer_t *code, void **errors) {
 
 static const char asm_name[36] = "D3DX8 Shader Assembler Version 0.91";
 
-/* rva 0x01d500 */
+
 static int Asm_Run(d3dxAsm_t *a, const char *src, uint32_t len, int flags, void **constants, void **code,
 	void **errors) {
 	if (!src || !len) {

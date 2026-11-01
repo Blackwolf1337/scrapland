@@ -42,7 +42,7 @@
 #define SC_KEYMENU 0xf100
 #define SC_MONITORPOWER 0xf170
 
-#define APP_WNDPROC GAME_FUNC(App_WndProc, 0x20d840)
+#define APP_WNDPROC GAME_FUNC(App_WndProc)
 
 CWinApp *__thiscall CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char *cmdLine, int nCmdShow) {
 	char path[0x104];

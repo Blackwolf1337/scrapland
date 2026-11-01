@@ -30,7 +30,7 @@ enum { X, Y, Z, W };
 #define TOL 1.0e-6
 #define SQRTHALF 0.7071067811865475244
 
-/* rva 0x432a98 */
+
 static const HMatrix mat_id = { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 1 } };
 
 static void Mat_Pad(HMatrix a) {
@@ -336,7 +336,7 @@ static float Polar_Decomp(HMatrix m, HMatrix q, HMatrix s) {
 
 /* rva 0x2da2f0: the eigenvalues of the symmetric s (Jacobi), u the eigenvectors in its columns */
 static hQuat_t Spect_Decomp(HMatrix s, HMatrix u) {
-	static const char nxt[] = { Y, Z, X };	/* rva 0x432ad8 */
+	static const char nxt[] = { Y, Z, X };
 	hQuat_t kv;
 	double diag[3], offd[3];
 	double g, h, fabsh, fabsOffDi, t, theta, c, sn, tau, ta, offdq, a, b;
@@ -543,7 +543,7 @@ static hQuat_t Snuggle(hQuat_t q, hQuat_t *k) {
 				hi ^= lo;
 			}
 			if (hi == W) {
-				hi = "\001\002\000"[lo];	/* rva 0x3e7e84 */
+				hi = "\001\002\000"[lo];
 				lo = 3 - hi - lo;
 			}
 			SWAP(ka, hi, lo)

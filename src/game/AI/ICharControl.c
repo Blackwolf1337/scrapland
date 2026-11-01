@@ -16,14 +16,14 @@
 #include "scrap/scrapmain.h"
 
 /* the characters near the control (CharsNear, FindAvoid): the sphere test collects them here */
-#define g_AICCNear (GAME_ARRAY(cEntity *, g_AICCNear, 0x444350))	/* 20 */
-#define g_AICCNumNear GAME_GLOBAL(int, g_AICCNumNear, 0x4443a0)
-#define g_AICCNearSelf GAME_GLOBAL(cEntity *, g_AICCNearSelf, 0x4443a4)	/* the character itself, left out */
-#define g_AICCNearFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0, 0x46679c))
-#define AICC_NEAR_NATIVE ((nativefunc_t)GAME_FUNC(AICC_NearChar, 0x06fbf0))	/* AICC_NearChar (its C version behind the hook) */
+#define g_AICCNear (GAME_ARRAY(cEntity *, g_AICCNear))	/* 20 */
+#define g_AICCNumNear GAME_GLOBAL(int, g_AICCNumNear)
+#define g_AICCNearSelf GAME_GLOBAL(cEntity *, g_AICCNearSelf)	/* the character itself, left out */
+#define g_AICCNearFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0))
+#define AICC_NEAR_NATIVE ((nativefunc_t)GAME_FUNC(AICC_NearChar))	/* AICC_NearChar (its C version behind the hook) */
 #define AICC_MAX_NEAR 20
 
-#define AICC_EXE_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* "" */
+#define AICC_EXE_EMPTY GAME_STR(str_Empty)	/* "" */
 
 /* the unit vector the view of e looks along: (0, 0, -1) turned by its view angles */
 static inline vec3_t *AICC_ViewDir(vec3_t *out, cEntity *e) {
@@ -75,7 +75,7 @@ cAICharControl *__thiscall cAICharControl_ctor(void *mem, cEntity *ent, cAIChar 
 	self->waitTargetPos.x = self->waitTargetPos.y = self->waitTargetPos.z = 0.0f;
 	self->waitPos.x = self->waitPos.y = self->waitPos.z = 0.0f;
 	self->unused_140 = 1;
-	self->path.maxFree = GAME_GLOBAL(int, cAICharControl_ctor_3a9a2c, 0x3a9a2c);
+	self->path.maxFree = GAME_GLOBAL(int, cAICharControl_ctor_3a9a2c);
 	self->stopped = 0;
 	self->orbitSide = 0;
 	self->strafeDir = 0;

@@ -42,9 +42,9 @@ SD_SIZE(cCollisionGrid, 0x9c);
 #define Entity_GridNode(e) (&((cEntity *)(e))->gridNode)	/* target the cell, data the entity */
 
 /* the engine variables (Gvars) */
-#define g_GridUseTopLimit GAME_GLOBAL_IN(int, GVar_GridUseTopLimit, 16, 0x466df0)
-#define g_TopLimit GAME_GLOBAL_IN(float, GVar_TopLimit, 16, 0x4675d8)
-#define g_ShowDummy GAME_GLOBAL_IN(const char *, GVar_ShowDummy, 16, 0x466e08)	/* the dummies drawn (a wildcard pattern), "" for none */
+#define g_GridUseTopLimit GAME_GLOBAL_IN(int, GVar_GridUseTopLimit, 16)
+#define g_TopLimit GAME_GLOBAL_IN(float, GVar_TopLimit, 16)
+#define g_ShowDummy GAME_GLOBAL_IN(const char *, GVar_ShowDummy, 16)	/* the dummies drawn (a wildcard pattern), "" for none */
 
 /* the destructor of a cell (Nto1Links.h, rva) for the new[] of the cells */
 #define NTO1NODE_DTOR 0x0eeb90
@@ -96,7 +96,7 @@ typedef struct cEntityListData {
 	char *name;			/* 0x00 string object */
 	cPy_Function onDeath;		/* 0x04 */
 	cPy_Function onDamage;		/* 0x18 */
-	int (*func)(void);		/* 0x2c returns 0 (rva 0x1a7f10) */
+	int (*func)(void);		/* 0x2c returns 0 */
 	Nto1Node ring;			/* 0x30 head of the entities (data), target the list */
 	int *numElems;			/* 0x40 */
 } cEntityListData;

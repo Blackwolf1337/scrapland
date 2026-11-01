@@ -34,7 +34,7 @@ SD_SIZE(CNodesWorld2D, 0x378);
 /* the CNodesWorldSup part */
 #define NW2D_SUP(self) ((CNodesWorld *)(self))
 
-#define CNODESWORLD2D_VFTABLE GAME_VFTABLE(CNodesWorld2D_vftable, 0x3abce8)
+#define CNODESWORLD2D_VFTABLE GAME_VFTABLE(CNodesWorld2D_vftable)
 
 /* a body that walks the graph: a capsule of radius r - shrink between the heights h1 and h2 above a foot sphere of
  * radius foot */
@@ -46,12 +46,12 @@ typedef struct cNW2DBody {
 } cNW2DBody;
 SD_SIZE(cNW2DBody, 0x10);
 
-#define g_NW2DBodies (&GAME_GLOBAL_IN(cNW2DBody, g_NW2DBodies, 0, 0x444d98))	/* 3 bodies */
-#define g_NW2DDrawMode GAME_GLOBAL_IN(int, GVar_ShowNodes2DAI, 16, 0x444ddc)	/* what the debug view of the graph draws */
-#define g_NW2DShowNode GAME_GLOBAL_IN(int, GVar_ShowInfoRegAI, 16, 0x444e54)	/* the node the debug view shows, -1 none */
-#define g_NW2DGroundDist GAME_GLOBAL_IN(float, GVar_AltPerpFloorAI, 16, 0x444df4)	/* the length of the floor probes */
-#define g_NW2DHeight GAME_GLOBAL_IN(float, GVar_AltMinTestWalkAI, 16, 0x444e24)	/* the height of the points over the floor */
-#define g_NW2DDebugSegs GAME_GLOBAL_IN(int, GVar_ShowTestCanGoAI, 16, 0x444e3c)	/* the path tests keep their segments in the list they get */
+#define g_NW2DBodies (&GAME_GLOBAL_IN(cNW2DBody, g_NW2DBodies, 0))	/* 3 bodies */
+#define g_NW2DDrawMode GAME_GLOBAL_IN(int, GVar_ShowNodes2DAI, 16)	/* what the debug view of the graph draws */
+#define g_NW2DShowNode GAME_GLOBAL_IN(int, GVar_ShowInfoRegAI, 16)	/* the node the debug view shows, -1 none */
+#define g_NW2DGroundDist GAME_GLOBAL_IN(float, GVar_AltPerpFloorAI, 16)	/* the length of the floor probes */
+#define g_NW2DHeight GAME_GLOBAL_IN(float, GVar_AltMinTestWalkAI, 16)	/* the height of the points over the floor */
+#define g_NW2DDebugSegs GAME_GLOBAL_IN(int, GVar_ShowTestCanGoAI, 16)	/* the path tests keep their segments in the list they get */
 
 /* ---- Global/DList.h instances ---- */
 

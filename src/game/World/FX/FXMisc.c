@@ -165,7 +165,7 @@ void FX_ItemBlink(cEntity *e) {
 	float r = CGameModel_Radius(m) * 4.0f;
 	sp->birthRate = 0;
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_PTR(FX_ItemBlink_430b44, 0, FX_RAMP_BLINK));
+	CGameParticles_SetColorRamp(sp, GAME_PTR(FX_ItemBlink_430b44, 0));
 	float life = cTimer_GetSpeed(&g_pWorld->timer) * 0.12f;
 	sp->sizeLife = 0.4f;
 	sp->sizeEnd = r;
@@ -605,7 +605,7 @@ void __thiscall cObjElementFXTrail_Reset(cObjElementFXTrail *self, int arg) {
 	CGameTrail_Clear(&self->trail);
 }
 
-/* the setters of the effects started by name (rva 0x1ddc40..0x1ddce0) */
+/* the setters of the effects started by name */
 void __thiscall FXMisc_SetEntity(void *self, cEntity *e) {
 	*(cEntity **)((byte *)self + 4) = e;
 	CHECK(CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e)));
@@ -639,7 +639,7 @@ static void FX_StillAt(CGameParticles *sp, const vec3_t *pos) {
 static void FX_EmitFade(CGameParticles *sp) {
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, FX_EmitFade_430ad8, FX_RAMP_FADE) + crt_rand() % 3 * 9);
+	CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, FX_EmitFade_430ad8) + crt_rand() % 3 * 9);
 	CGameParticles_EmitN(sp, 1, 1);
 }
 
@@ -901,7 +901,7 @@ void __thiscall cObjElementFXItemTake_Update(cObjElementFXItemTake *self, cDebri
 		sp->spriteEnd = sp->spriteIni;
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXItemTake_Update_430b68, FX_RAMP_TAKE) + crt_rand() % 3 * 9);
+		CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXItemTake_Update_430b68) + crt_rand() % 3 * 9);
 		CGameParticles_EmitDt(sp, 1, 1, FX_RandF((double)0.100000001f, 0.0));
 	}
 }
@@ -1046,11 +1046,11 @@ void __thiscall cObjElementFXSparks_Emit(cObjElementFXSparks *self, int n, float
  */
 
 static inline void FX_TrailsCtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR), GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor), GAME_FUNC(CGameTrail_dtor));
 }
 
 static inline void FX_TrailsDtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor));
 }
 
 /* the start of every constructor: the base class leaves 0, then the vtable of the class */
@@ -1073,13 +1073,13 @@ cObjElementAbstract *__thiscall cObjElementAbstract_Delete(cObjElementAbstract *
 
 /* World/FX character effects */
 
-#define VT_FXCHARACTERCONVERSION GAME_VFTABLE(cObjElementFXCharacterConversion_vftable, 0x3cb174)
-#define VT_FXCHARACTERCONVERSOR GAME_VFTABLE(cObjElementFXCharacterConversor_vftable, 0x3cb12c)
-#define VT_FXCHARACTERDEATH GAME_VFTABLE(cObjElementFXCharacterDeath_vftable, 0x3cb144)
-#define VT_FXCHARACTERTELEPORT GAME_VFTABLE(cObjElementFXCharacterTeleport_vftable, 0x3cb114)
-#define VT_FXMAINTENANCEWORK GAME_VFTABLE(cObjElementFXMaintenanceWork_vftable, 0x3cb18c)
-#define VT_FXMONEYTRANSFER GAME_VFTABLE(cObjElementFXMoneyTransfer_vftable, 0x3cb0fc)
-#define VT_FXSPUTNIK GAME_VFTABLE(cObjElementFXSputnik_vftable, 0x3cb15c)
+#define VT_FXCHARACTERCONVERSION GAME_VFTABLE(cObjElementFXCharacterConversion_vftable)
+#define VT_FXCHARACTERCONVERSOR GAME_VFTABLE(cObjElementFXCharacterConversor_vftable)
+#define VT_FXCHARACTERDEATH GAME_VFTABLE(cObjElementFXCharacterDeath_vftable)
+#define VT_FXCHARACTERTELEPORT GAME_VFTABLE(cObjElementFXCharacterTeleport_vftable)
+#define VT_FXMAINTENANCEWORK GAME_VFTABLE(cObjElementFXMaintenanceWork_vftable)
+#define VT_FXMONEYTRANSFER GAME_VFTABLE(cObjElementFXMoneyTransfer_vftable)
+#define VT_FXSPUTNIK GAME_VFTABLE(cObjElementFXSputnik_vftable)
 
 void *__thiscall cObjElementFXCharacterConversion_ctor(void *self) {
 	cObjElementFXCharacterConversion *s = self;
@@ -1281,14 +1281,14 @@ void *__thiscall cObjElementFXSputnik_Delete(void *self, uint32_t flags) {
 
 /* the FX scenes */
 
-#define VT_FXSCENEBEATPICKUS GAME_VFTABLE(cObjElementFXSceneBeatPickus_vftable, 0x3cd278)
-#define VT_FXSCENEBILLARRIVES_A GAME_VFTABLE(cObjElementFXSceneBillArrives_A_vftable, 0x3cd248)
-#define VT_FXSCENEBISHOPS GAME_VFTABLE(cObjElementFXSceneBishops_vftable, 0x3cd230)
-#define VT_FXSCENEDECONTAMINATION GAME_VFTABLE(cObjElementFXSceneDecontamination_vftable, 0x3cd218)
-#define VT_FXSCENEENTERMATRIX GAME_VFTABLE(cObjElementFXSceneEnterMatrix_vftable, 0x3cd2a8)
-#define VT_FXSCENEHUMANCD GAME_VFTABLE(cObjElementFXSceneHumanCD_vftable, 0x3cd290)
-#define VT_FXSCENETHEENDB GAME_VFTABLE(cObjElementFXSceneTheEndB_vftable, 0x3cd2c0)
-#define VT_FXSCENEYAKUZZI GAME_VFTABLE(cObjElementFXSceneYakuzzi_vftable, 0x3cd260)
+#define VT_FXSCENEBEATPICKUS GAME_VFTABLE(cObjElementFXSceneBeatPickus_vftable)
+#define VT_FXSCENEBILLARRIVES_A GAME_VFTABLE(cObjElementFXSceneBillArrives_A_vftable)
+#define VT_FXSCENEBISHOPS GAME_VFTABLE(cObjElementFXSceneBishops_vftable)
+#define VT_FXSCENEDECONTAMINATION GAME_VFTABLE(cObjElementFXSceneDecontamination_vftable)
+#define VT_FXSCENEENTERMATRIX GAME_VFTABLE(cObjElementFXSceneEnterMatrix_vftable)
+#define VT_FXSCENEHUMANCD GAME_VFTABLE(cObjElementFXSceneHumanCD_vftable)
+#define VT_FXSCENETHEENDB GAME_VFTABLE(cObjElementFXSceneTheEndB_vftable)
+#define VT_FXSCENEYAKUZZI GAME_VFTABLE(cObjElementFXSceneYakuzzi_vftable)
 
 void *__thiscall cObjElementFXSceneBeatPickus_ctor(void *self) {
 	cObjElementFXSceneBeatPickus *s = self;
@@ -1525,17 +1525,17 @@ void *__thiscall cObjElementFXSceneYakuzzi_Delete(void *self, uint32_t flags) {
 	return FX_Delete(self, flags, 0xd4);
 }
 
-/* the elements of this file (rva 0x1da190..0x1da940) */
+/* the elements of this file */
 
-#define VT_FXFADEOUTTRAIL GAME_VFTABLE(cObjElementFXFadeOutTrail_vftable, 0x3ccce4)
-#define VT_FXITEMFADE GAME_VFTABLE(cObjElementFXItemFade_vftable, 0x3ccd14)
-#define VT_FXITEMTAKE GAME_VFTABLE(cObjElementFXItemTake_vftable, 0x3cccfc)
-#define VT_FXMODELFADE GAME_VFTABLE(cObjElementFXModelFade_vftable, 0x3ccd44)
-#define VT_FXMODELNOISE GAME_VFTABLE(cObjElementFXModelNoise_vftable, 0x3ccd5c)
-#define VT_FXPARTICLESYSTEM GAME_VFTABLE(cObjElementFXParticleSystem_vftable, 0x3cccb4)
-#define VT_FXPARTICLESYSTEMDUDV GAME_VFTABLE(cObjElementFXParticleSystemDuDv_vftable, 0x3ccd74)
-#define VT_FXSPARKS GAME_VFTABLE(cObjElementFXSparks_vftable, 0x3ccd2c)
-#define VT_FXTRAIL GAME_VFTABLE(cObjElementFXTrail_vftable, 0x3ccccc)
+#define VT_FXFADEOUTTRAIL GAME_VFTABLE(cObjElementFXFadeOutTrail_vftable)
+#define VT_FXITEMFADE GAME_VFTABLE(cObjElementFXItemFade_vftable)
+#define VT_FXITEMTAKE GAME_VFTABLE(cObjElementFXItemTake_vftable)
+#define VT_FXMODELFADE GAME_VFTABLE(cObjElementFXModelFade_vftable)
+#define VT_FXMODELNOISE GAME_VFTABLE(cObjElementFXModelNoise_vftable)
+#define VT_FXPARTICLESYSTEM GAME_VFTABLE(cObjElementFXParticleSystem_vftable)
+#define VT_FXPARTICLESYSTEMDUDV GAME_VFTABLE(cObjElementFXParticleSystemDuDv_vftable)
+#define VT_FXSPARKS GAME_VFTABLE(cObjElementFXSparks_vftable)
+#define VT_FXTRAIL GAME_VFTABLE(cObjElementFXTrail_vftable)
 
 #define FX_U16(self, off) (*(uint16_t *)((byte *)(self) + (off)))
 

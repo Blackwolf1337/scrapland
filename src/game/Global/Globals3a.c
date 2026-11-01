@@ -15,29 +15,29 @@
 #undef g_NewsRandOfs
 #undef g_SlotEpsilon
 
-const double g_HeadRandOfs SD_AT(0x3a36e0);
-const float Init_GVar_LaserDistLimit_3a3710 SD_AT(0x3a3710) = 3.0f;
-const float g_SlotEpsilon SD_AT(0x3a3d58) = 0.001f;
-const double g_FxRandScale SD_AT(0x3a3d60) = 0.00003051850947599719;
-const float Init_GVar_MaxDistChaseElevatorAI_3a5ac0 SD_AT(0x3a5ac0) = 10000.0f;
-const double g_HeadRandRange SD_AT(0x3a5d00) = 6.2831854820251465;
-const float Init_GVar_LaserDistLimit_3a8e38 SD_AT(0x3a8e38) = 2.0f;
-const int cAICharControl_ctor_3a9a2c SD_AT(0x3a9a2c) = 50;
-const double SubMenu_RandWait_3abbc0 SD_AT(0x3abbc0) = 0.10000000149011612;
-const double cScraplandMainMenuScorer_Draw_3ae218 SD_AT(0x3ae218) = 0.09999999403953552;
-const double cScraplandMainMenuScorer_Draw_3ae228 SD_AT(0x3ae228) = 0.15000000596046448;
-const double SubMenu_RandWait_3ae240 SD_AT(0x3ae240) = 0.30000001192092896;
-const double cScraplandMainMenuScorer_Init_3ae260 SD_AT(0x3ae260) = 30.0;
-const double cScraplandMainMenuScorer_Draw_3ae270 SD_AT(0x3ae270) = 75.0;
-const double cScraplandMainMenuScorer_Init_3ae440 SD_AT(0x3ae440) = 0.25;
-const double cScraplandSubMenuScorer_Draw_3ae448 SD_AT(0x3ae448) = -3.141592653589793;
-const double cScraplandMainMenuScorer_Draw_3aeb38 SD_AT(0x3aeb38) = 0.05000000074505806;
-const double SubMenu_RandRing_3aeb50 SD_AT(0x3aeb50) = 0.1599999964237213;
-const double cScraplandMainMenuScorer_Init_3aeb60 SD_AT(0x3aeb60) = 0.18000000715255737;
-const double SubMenu_RandWait_3aeb68 SD_AT(0x3aeb68) = 0.20000000298023224;
-const double SubMenu_RandWait_3aeb88 SD_AT(0x3aeb88) = 0.800000011920929;
-const double g_NewsRandOfs SD_AT(0x3aeb98) = 3.1415927410125732;
-const double cScraplandMainMenuScorer_Init_3aeba0 SD_AT(0x3aeba0) = 15.0;
-const double cScraplandMainMenuScorer_Draw_3aeba8 SD_AT(0x3aeba8) = 60.0;
-const double cScraplandMainMenuScorer_Draw_3afd68 SD_AT(0x3afd68) = 8.0;
+const double g_HeadRandOfs;
+const float Init_GVar_LaserDistLimit_3a3710 = 3.0f;
+const float g_SlotEpsilon = 0.001f;
+const double g_FxRandScale = 0.00003051850947599719;
+const float Init_GVar_MaxDistChaseElevatorAI_3a5ac0 = 10000.0f;
+const double g_HeadRandRange = 6.2831854820251465;
+const float Init_GVar_LaserDistLimit_3a8e38 = 2.0f;
+const int cAICharControl_ctor_3a9a2c = 50;
+const double SubMenu_RandWait_3abbc0 = 0.10000000149011612;
+const double cScraplandMainMenuScorer_Draw_3ae218 = 0.09999999403953552;
+const double cScraplandMainMenuScorer_Draw_3ae228 = 0.15000000596046448;
+const double SubMenu_RandWait_3ae240 = 0.30000001192092896;
+const double cScraplandMainMenuScorer_Init_3ae260 = 30.0;
+const double cScraplandMainMenuScorer_Draw_3ae270 = 75.0;
+const double cScraplandMainMenuScorer_Init_3ae440 = 0.25;
+const double cScraplandSubMenuScorer_Draw_3ae448 = -3.141592653589793;
+const double cScraplandMainMenuScorer_Draw_3aeb38 = 0.05000000074505806;
+const double SubMenu_RandRing_3aeb50 = 0.1599999964237213;
+const double cScraplandMainMenuScorer_Init_3aeb60 = 0.18000000715255737;
+const double SubMenu_RandWait_3aeb68 = 0.20000000298023224;
+const double SubMenu_RandWait_3aeb88 = 0.800000011920929;
+const double g_NewsRandOfs = 3.1415927410125732;
+const double cScraplandMainMenuScorer_Init_3aeba0 = 15.0;
+const double cScraplandMainMenuScorer_Draw_3aeba8 = 60.0;
+const double cScraplandMainMenuScorer_Draw_3afd68 = 8.0;
 

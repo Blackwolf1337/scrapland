@@ -11,13 +11,13 @@
 #include "scrap/fxmisc.h"
 #include "scrap/global.h"
 
-#define COBJELEMENTFXSWARMMISSILE_VFTABLE GAME_VFTABLE(cObjElementFXSwarmMissile_vftable, 0x3cdc50)
-#define COBJELEMENTFXLASER_VFTABLE GAME_VFTABLE(cObjElementFXLaser_vftable, 0x3cdc68)
-#define COBJELEMENTFXDEVASTATORSHOOT_VFTABLE GAME_VFTABLE(cObjElementFXDevastatorShoot_vftable, 0x3cdc80)
-#define COBJELEMENTFXTESLA_VFTABLE GAME_VFTABLE(cObjElementFXTesla_vftable, 0x3cdc98)
-#define COBJELEMENTFXATPC_VFTABLE GAME_VFTABLE(cObjElementFXATPC_vftable, 0x3cdcb0)
-#define COBJELEMENTFXINFERNOMISSILE_VFTABLE GAME_VFTABLE(cObjElementFXInfernoMissile_vftable, 0x3cdcc8)
-#define COBJELEMENTFXINFERNOEXPLOSION_VFTABLE GAME_VFTABLE(cObjElementFXInfernoExplosion_vftable, 0x3cdce0)
+#define COBJELEMENTFXSWARMMISSILE_VFTABLE GAME_VFTABLE(cObjElementFXSwarmMissile_vftable)
+#define COBJELEMENTFXLASER_VFTABLE GAME_VFTABLE(cObjElementFXLaser_vftable)
+#define COBJELEMENTFXDEVASTATORSHOOT_VFTABLE GAME_VFTABLE(cObjElementFXDevastatorShoot_vftable)
+#define COBJELEMENTFXTESLA_VFTABLE GAME_VFTABLE(cObjElementFXTesla_vftable)
+#define COBJELEMENTFXATPC_VFTABLE GAME_VFTABLE(cObjElementFXATPC_vftable)
+#define COBJELEMENTFXINFERNOMISSILE_VFTABLE GAME_VFTABLE(cObjElementFXInfernoMissile_vftable)
+#define COBJELEMENTFXINFERNOEXPLOSION_VFTABLE GAME_VFTABLE(cObjElementFXInfernoExplosion_vftable)
 
 #define FXINFERNO_RAYS 224
 #define FXINFERNO_TRAILS 15		/* 15 rays per trail */
@@ -25,44 +25,44 @@
 #define FXTESLA_TRAILS 4		/* per slot */
 
 /* ScrapEngLensFlares.cpp: the holder of a lens flare (one pointer); the setters write the flare object */
-void __thiscall CGameLensFlare_SetOn(void *self, byte on);			/* rva 0x232f30 */
+void __thiscall CGameLensFlare_SetOn(void *self, byte on);
 void __thiscall CGameLensFlare_SetIntensity(void *self, float v);		/* rva 0x232f80, +0x14 */
 void __thiscall CGameLensFlare_SetTraceInterval(void *self, float v);			/* rva 0x232fa0, +0x30 */
 void __thiscall CGameLensFlare_SetPos(void *self, vec3_t pos);		/* rva 0x232fc0, +0x08 */
 void __thiscall CGameLensFlare_SetScale(void *self, float v);			/* rva 0x232ff0, +0x18 */
 void __thiscall CGameLensFlare_SetType(void *self, int v);			/* rva 0x233010, +0x1c */
 void __thiscall CGameLensFlare_SetRelative(void *self, byte v);			/* rva 0x233020, +0x2c */
-float __thiscall CGameLensFlare_GetIntensity(const void *self);		/* rva 0x232f40 */
-float __thiscall CGameLensFlare_GetTraceInterval(const void *self);			/* rva 0x232f50 */
-float __thiscall CGameLensFlare_GetScale(const void *self);			/* rva 0x232f60 */
-int __thiscall CGameLensFlare_GetType(const void *self);			/* rva 0x232f70 */
+float __thiscall CGameLensFlare_GetIntensity(const void *self);
+float __thiscall CGameLensFlare_GetTraceInterval(const void *self);
+float __thiscall CGameLensFlare_GetScale(const void *self);
+int __thiscall CGameLensFlare_GetType(const void *self);
 
 /* the lens flare object of the engine glue: CLensFlare of lensflare.h */
 
 /* the weapon block of a ship at 0x5f0 (the one of Entity_TargetLock): the ammo of kind i (0 out of range), whether
- * slot (0..4) of weapon kind w is mounted (rva 0x11a6c0, 0x11a9f0) */
+ * slot (0..4) of weapon kind w is mounted */
 float __thiscall cTargetLock_GetAmmo(cTargetLock *self, int ammo);
 byte __thiscall cTargetLock_HasSlot(cTargetLock *self, int weap, int slot);
 
 /* the engine variables */
-#define g_TeslaIDWeap GAME_GLOBAL_IN(int, GVar_TeslaIDWeap, 16, 0x448884)
-#define g_TeslaIDAmmo GAME_GLOBAL_IN(int, GVar_TeslaIDAmmo, 16, 0x44a828)
-#define g_FXTeslaFadeOutTime GAME_GLOBAL_IN(float, GVar_FXTeslaFadeOutTime, 16, 0x44a6e8)
-#define g_FXTeslaFollowTime GAME_GLOBAL_IN(float, GVar_FXTeslaFollowTime, 16, 0x44a700)
-#define g_FXLaserBeamSize GAME_GLOBAL_IN(float, GVar_FXLaserBeamSize, 16, 0x449c6c)
-#define g_FXLaserBeamHeight GAME_GLOBAL_IN(float, GVar_FXLaserBeamHeight, 16, 0x449e6c)
-#define g_FXInfernoCoreSize GAME_GLOBAL_IN(float, GVar_FXInfernoCoreSize, 16, 0x449850)
-#define g_FXInfernoRayRadius GAME_GLOBAL_IN(float, GVar_FXInfernoRayRadius, 16, 0x449880)
-#define g_FXInfernoExplosionTime GAME_GLOBAL_IN(float, GVar_FXInfernoExplosionTime, 16, 0x449898)
-#define g_FXInfernoExplosionFadeTime GAME_GLOBAL_IN(float, GVar_FXInfernoExplosionFadeTime, 16, 0x449a18)
-#define g_FXInfernoRayMinSize GAME_GLOBAL_IN(float, GVar_FXInfernoRayMinSize, 16, 0x449b60)
-#define g_FXInfernoRayInitSizeMin GAME_GLOBAL_IN(float, GVar_FXInfernoRayInitSizeMin, 16, 0x449a60)
-#define g_FXInfernoRayInitSizeMax GAME_GLOBAL_IN(float, GVar_FXInfernoRayInitSizeMax, 16, 0x4497c0)
-#define g_FXInfernoRaySpeedMin GAME_GLOBAL_IN(float, GVar_FXInfernoRaySpeedMin, 16, 0x449988)
-#define g_FXInfernoRaySpeedMax GAME_GLOBAL_IN(float, GVar_FXInfernoRaySpeedMax, 16, 0x449b90)
-#define g_FXInfernoRayAccMin GAME_GLOBAL_IN(float, GVar_FXInfernoRayAccMin, 16, 0x449900)
-#define g_FXInfernoRayAccMax GAME_GLOBAL_IN(float, GVar_FXInfernoRayAccMax, 16, 0x449b38)
-#define g_FXInfernoRamp (GAME_ARRAY(uint32_t, g_FXInfernoRamp, 0x4317e8))	/* the colour ramp of the explosion particles */
+#define g_TeslaIDWeap GAME_GLOBAL_IN(int, GVar_TeslaIDWeap, 16)
+#define g_TeslaIDAmmo GAME_GLOBAL_IN(int, GVar_TeslaIDAmmo, 16)
+#define g_FXTeslaFadeOutTime GAME_GLOBAL_IN(float, GVar_FXTeslaFadeOutTime, 16)
+#define g_FXTeslaFollowTime GAME_GLOBAL_IN(float, GVar_FXTeslaFollowTime, 16)
+#define g_FXLaserBeamSize GAME_GLOBAL_IN(float, GVar_FXLaserBeamSize, 16)
+#define g_FXLaserBeamHeight GAME_GLOBAL_IN(float, GVar_FXLaserBeamHeight, 16)
+#define g_FXInfernoCoreSize GAME_GLOBAL_IN(float, GVar_FXInfernoCoreSize, 16)
+#define g_FXInfernoRayRadius GAME_GLOBAL_IN(float, GVar_FXInfernoRayRadius, 16)
+#define g_FXInfernoExplosionTime GAME_GLOBAL_IN(float, GVar_FXInfernoExplosionTime, 16)
+#define g_FXInfernoExplosionFadeTime GAME_GLOBAL_IN(float, GVar_FXInfernoExplosionFadeTime, 16)
+#define g_FXInfernoRayMinSize GAME_GLOBAL_IN(float, GVar_FXInfernoRayMinSize, 16)
+#define g_FXInfernoRayInitSizeMin GAME_GLOBAL_IN(float, GVar_FXInfernoRayInitSizeMin, 16)
+#define g_FXInfernoRayInitSizeMax GAME_GLOBAL_IN(float, GVar_FXInfernoRayInitSizeMax, 16)
+#define g_FXInfernoRaySpeedMin GAME_GLOBAL_IN(float, GVar_FXInfernoRaySpeedMin, 16)
+#define g_FXInfernoRaySpeedMax GAME_GLOBAL_IN(float, GVar_FXInfernoRaySpeedMax, 16)
+#define g_FXInfernoRayAccMin GAME_GLOBAL_IN(float, GVar_FXInfernoRayAccMin, 16)
+#define g_FXInfernoRayAccMax GAME_GLOBAL_IN(float, GVar_FXInfernoRayAccMax, 16)
+#define g_FXInfernoRamp (GAME_ARRAY(uint32_t, g_FXInfernoRamp))	/* the colour ramp of the explosion particles */
 
 /* the ATPC shot: the beam from the shooter to the hit, its rings and glow (0x1e8 bytes, constructor rva 0x1f9690) */
 #define FXATPC_SLOTS 4
@@ -262,11 +262,11 @@ static inline void FXObj_SetVtbl(void *self, void *vt) {
 }
 
 static inline void FXObj_TrailsCtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR), GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor), GAME_FUNC(CGameTrail_dtor));
 }
 
 static inline void FXObj_TrailsDtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor));
 }
 
 static inline void *FXObj_Delete(void *self, uint32_t flags, uint32_t size) {

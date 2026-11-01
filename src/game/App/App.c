@@ -21,13 +21,13 @@
 #include "scrap/win32.h"
 #include "scrap/world.h"
 
-#define APP_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* "" of the exe */
-#define APP_RANDSCALE GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1 / 32767 */
+#define APP_EMPTY GAME_STR(str_Empty)	/* "" of the exe */
+#define APP_RANDSCALE GAME_GLOBAL(double, g_FxRandScale)	/* 1 / 32767 */
 
 /* the engine callbacks of the exe (Engine_SetCallback) */
-#define APP_CB_WORLDFRAME ((void (*)(void))GAME_FUNC(Scorer_Render, 0x172e30))
-#define APP_CB_LOADINGXBOX ((void (*)(void))GAME_FUNC(Loading_DrawXbox, 0x20b500))
-#define APP_CB_LOADING ((void (*)(void))GAME_FUNC(Loading_Draw, 0x20bd90))
+#define APP_CB_WORLDFRAME ((void (*)(void))GAME_FUNC(Scorer_Render))
+#define APP_CB_LOADINGXBOX ((void (*)(void))GAME_FUNC(Loading_DrawXbox))
+#define APP_CB_LOADING ((void (*)(void))GAME_FUNC(Loading_Draw))
 
 #define PSAIMAGE_SIZE 0x44
 

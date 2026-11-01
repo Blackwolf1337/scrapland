@@ -48,13 +48,13 @@ void __fastcall CBackground2D_Render(CBackground2D *self);
 
 /* the background sprite: the name set, a new sprite when it changes */
 #define BACKGROUND2D_NAME 0x108
-#define g_BackgroundPending GAME_GLOBAL(byte, g_BackgroundPending, 0x4db490)
-#define g_BackgroundFrame GAME_GLOBAL(int, g_BackgroundFrame, 0x4db494)		/* uframe3d, the frame of the last draw */
-#define g_BackgroundGraphic GAME_GLOBAL(CGraphic2D *, g_BackgroundGraphic, 0x4db498)
-#define g_BackgroundCurrent (GAME_ARRAY(char, g_BackgroundCurrent, 0x4db4a0))	/* BACKGROUND2D_NAME */
-#define g_BackgroundNew (GAME_ARRAY(char, g_BackgroundNew, 0x4db5a8))	/* BACKGROUND2D_NAME */
-#define g_BackgroundColor GAME_GLOBAL(uint32_t, g_BackgroundColor, 0x432a10)
-#define g_BackgroundColorNew GAME_GLOBAL(uint32_t, g_BackgroundColorNew, 0x432a14)
+#define g_BackgroundPending GAME_GLOBAL(byte, g_BackgroundPending)
+#define g_BackgroundFrame GAME_GLOBAL(int, g_BackgroundFrame)		/* uframe3d, the frame of the last draw */
+#define g_BackgroundGraphic GAME_GLOBAL(CGraphic2D *, g_BackgroundGraphic)
+#define g_BackgroundCurrent (GAME_ARRAY(char, g_BackgroundCurrent))	/* BACKGROUND2D_NAME */
+#define g_BackgroundNew (GAME_ARRAY(char, g_BackgroundNew))	/* BACKGROUND2D_NAME */
+#define g_BackgroundColor GAME_GLOBAL(uint32_t, g_BackgroundColor)
+#define g_BackgroundColorNew GAME_GLOBAL(uint32_t, g_BackgroundColorNew)
 
 void Background2D_Reset(void);
 /* the sprite of the new name (once a frame, CHECK) */

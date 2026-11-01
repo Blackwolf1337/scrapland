@@ -20,9 +20,9 @@
 #define CGAMETRAIL_DTOR 0x21de40
 
 /* the switch of the DataPack lasers (a Gvar) */
-#define g_DataPackOn GAME_GLOBAL_IN(int, GVar_MessengerTubeState, 16, 0x44d48c)
+#define g_DataPackOn GAME_GLOBAL_IN(int, GVar_MessengerTubeState, 16)
 /* "" of the original, the glow node of a coin name that matches none */
-#define EFXM_EMPTY GAME_STR(str_Empty, 0x3a3228)
+#define EFXM_EMPTY GAME_STR(str_Empty)
 
 /* rand() & 0x7fff as 0..1 (double) */
 static inline double EFXM_Rnd(void) {
@@ -34,19 +34,19 @@ static inline void EFXM_SetVtbl(void *self, void *vt) {
 }
 
 static inline void EFXM_ParticlesCtor(CGameParticles *p, uint32_t n) {
-	crt_eh_vector_ctor(p, sizeof(CGameParticles), n, GAME_FUNC(CGameParticles_ctor, CGAMEPARTICLES_CTOR), GAME_FUNC(CGameParticles_Release, CGAMEPARTICLES_DTOR));
+	crt_eh_vector_ctor(p, sizeof(CGameParticles), n, GAME_FUNC(CGameParticles_ctor), GAME_FUNC(CGameParticles_Release));
 }
 
 static inline void EFXM_ParticlesDtor(CGameParticles *p, uint32_t n) {
-	crt_eh_vector_dtor(p, sizeof(CGameParticles), n, GAME_FUNC(CGameParticles_Release, CGAMEPARTICLES_DTOR));
+	crt_eh_vector_dtor(p, sizeof(CGameParticles), n, GAME_FUNC(CGameParticles_Release));
 }
 
 static inline void EFXM_TrailsCtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR), GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor), GAME_FUNC(CGameTrail_dtor));
 }
 
 static inline void EFXM_TrailsDtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor));
 }
 
 static inline cEmbeddedFX *EFXM_Delete(cEmbeddedFX *self, byte flags, uint32_t size) {
@@ -1152,9 +1152,9 @@ void EmbeddedFXMisc_MeetingPointMsg(cAbstractFile *f) {
 /* ---- vf03: Update ---- */
 
 /* the DataPack engine variables */
-#define g_DataPackInterTime GAME_GLOBAL_IN(float, GVar_DataPackInterTime, 16, 0x4473ac)
-#define g_DataPackLaserLong GAME_GLOBAL_IN(float, GVar_DataPackLaserLong, 16, 0x4473d4)
-#define g_DataPackLaserSize GAME_GLOBAL_IN(float, GVar_DataPackLaserSize, 16, 0x44742c)
+#define g_DataPackInterTime GAME_GLOBAL_IN(float, GVar_DataPackInterTime, 16)
+#define g_DataPackLaserLong GAME_GLOBAL_IN(float, GVar_DataPackLaserLong, 16)
+#define g_DataPackLaserSize GAME_GLOBAL_IN(float, GVar_DataPackLaserSize, 16)
 
 /*
  * The model if it is loaded, visible and without a model effect (*visible set), else NULL (*visible cleared, the
@@ -1916,9 +1916,9 @@ void __thiscall cEmbeddedFXTreasure_Update(cEmbeddedFXTreasure *self, float dt) 
 }
 
 /* the BossShield engine variables */
-#define g_FXBossShieldAspect GAME_GLOBAL_IN(float, GVar_FXBossShieldAspect, 16, 0x447404)
-#define g_FXBossShieldRadius GAME_GLOBAL_IN(float, GVar_FXBossShieldRadius, 16, 0x447454)
-#define g_FXBossShieldScale GAME_GLOBAL_IN(float, GVar_FXBossShieldScale, 16, 0x4473ec)
+#define g_FXBossShieldAspect GAME_GLOBAL_IN(float, GVar_FXBossShieldAspect, 16)
+#define g_FXBossShieldRadius GAME_GLOBAL_IN(float, GVar_FXBossShieldRadius, 16)
+#define g_FXBossShieldScale GAME_GLOBAL_IN(float, GVar_FXBossShieldScale, 16)
 
 /* a random point on the shield */
 static void EFXM_ShieldDir(vec3_t *out) {
@@ -2109,7 +2109,7 @@ static void EFXM_SparkPos(CGameParticles *p, float s, const vec3_t *c) {
 /* a flash of the sparks: the sizes and the life from the random ranges */
 static void EFXM_SparkFlash(CGameParticles *p, double ini, double iniAdd, double endAdd, byte sprite, double life,
 	double lifeAdd) {
-	CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, EFXM_SparkFlash_428450, RAMP_BATTERY_FLASH));
+	CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, EFXM_SparkFlash_428450));
 	p->sizeIni = (float)(EFXM_Rnd() * ini + iniAdd);
 	p->sizeEnd = (float)(EFXM_Rnd() * 15.0 + endAdd);
 	int r = crt_rand() & 0x7fff;
@@ -2286,7 +2286,7 @@ void __thiscall cEmbeddedFXBattery_Update(cEmbeddedFXBattery *self, float dt) {
 		p->spriteEnd = 0x44;
 		CGameParticles_Apply(p);
 		CGameParticles_SetColorRampOn(p, 1);
-		CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, EFXM_SparkFlash_428474, RAMP_BATTERY_SPARKS) + 9 * (crt_rand() & 1));
+		CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, EFXM_SparkFlash_428474) + 9 * (crt_rand() & 1));
 		CGameParticles_EmitDt(p, 1, 0, (float)(EFXM_Rnd() * 0.10000000149011612 + 0.0));
 	}
 }
@@ -2294,7 +2294,7 @@ void __thiscall cEmbeddedFXBattery_Update(cEmbeddedFXBattery *self, float dt) {
 /* ---- vf03: the Update of the Moto ---- */
 
 /* the color ramps of the flames and the smoke of the engines (9 colors each) */
-#define g_RampBike (GAME_ARRAY(uint32_t, g_RampBike, 0x4284c0))
+#define g_RampBike (GAME_ARRAY(uint32_t, g_RampBike))
 
 /* the 6 flames along the way of an engine: the distance, the add of the size, the alpha (rand % mod - sub) and the
  * color of the main engine and of the two others */

@@ -15,7 +15,7 @@
 #include "scrap/walkcharcontrol.h"
 #include "scrap/withlifeentity.h"
 
-#define CWALKCHARENTITY_VFTABLE GAME_VFTABLE(cWalkCharEntity_vftable, 0x3b03bc)
+#define CWALKCHARENTITY_VFTABLE GAME_VFTABLE(cWalkCharEntity_vftable)
 #define CWALKCHARENTITY_SIZE 0x574
 
 typedef struct cWalkCharEntity {
@@ -120,14 +120,14 @@ static inline const cWalkCharVtbl *WChar_Vtbl(const cEntity *e) {
 }
 
 /* engine variables (Gvars) */
-#define g_CharUsrPushSpeed GAME_GLOBAL_IN(float, GVar_CharUsrPushSpeed, 16, 0x44729c)		/* the push of an AI the player runs into */
-#define g_TimeToAbortSelectChar GAME_GLOBAL_IN(float, GVar_TimeToAbortSelectChar, 16, 0x4472fc)
-#define g_AbortSelectDistance GAME_GLOBAL_IN(float, GVar_AbortSelectDistance, 16, 0x447224)
-#define g_CharProcessReduction GAME_GLOBAL_IN(float, GVar_CharProcessReduction, 16, 0x447254)	/* nearer to a camera the AI slots are faster */
-#define g_SndLoopCharNPCMul GAME_GLOBAL_IN(float, GVar_SndLoopCharNPCMul, 16, 0x447284)
-#define g_CharGrav GAME_GLOBAL_IN(float, GVar_CharGrav, 16, 0x4472cc)
-#define g_ArrowDeactivationRadius GAME_GLOBAL_IN(float, GVar_ArrowDeactivationRadius, 16, 0x447928)
-#define g_ActiveExtrapolation GAME_GLOBAL_IN(int, GVar_ActiveExtrapolation, 16, 0x447a08)		/* the view is extrapolated by its velocity */
+#define g_CharUsrPushSpeed GAME_GLOBAL_IN(float, GVar_CharUsrPushSpeed, 16)		/* the push of an AI the player runs into */
+#define g_TimeToAbortSelectChar GAME_GLOBAL_IN(float, GVar_TimeToAbortSelectChar, 16)
+#define g_AbortSelectDistance GAME_GLOBAL_IN(float, GVar_AbortSelectDistance, 16)
+#define g_CharProcessReduction GAME_GLOBAL_IN(float, GVar_CharProcessReduction, 16)	/* nearer to a camera the AI slots are faster */
+#define g_SndLoopCharNPCMul GAME_GLOBAL_IN(float, GVar_SndLoopCharNPCMul, 16)
+#define g_CharGrav GAME_GLOBAL_IN(float, GVar_CharGrav, 16)
+#define g_ArrowDeactivationRadius GAME_GLOBAL_IN(float, GVar_ArrowDeactivationRadius, 16)
+#define g_ActiveExtrapolation GAME_GLOBAL_IN(int, GVar_ActiveExtrapolation, 16)		/* the view is extrapolated by its velocity */
 
 /* the AI of the character classes (AI/, rva 0x066120..0x086100); operator new of the size, then the constructor */
 void *__thiscall cAISentinel_ctor(void *mem, cEntity *e, int *arg);	/* 0x380 bytes */
@@ -144,7 +144,7 @@ void *__thiscall cAIHuman_ctor(void *mem, cEntity *e, int *arg);		/* 0x380 */
 void *__thiscall cAIChar_ctor(void *mem, cEntity *e, int *arg);		/* 0x380, every other class */
 
 /* engine side */
-void __thiscall cWithLifeEntity_SetEmbeddedFX(cEntity *self, const char *fxType);	/* rva 0x12c7f0 */
+void __thiscall cWithLifeEntity_SetEmbeddedFX(cEntity *self, const char *fxType);
 
 /* WalkCharEntity.c (the functions declared in chartype.h, ai.h and scoreritems.h too) */
 void __fastcall cWalkCharEntity_dtor(cEntity *self);
@@ -213,12 +213,12 @@ void __thiscall cWalkCharEntity_Idle(cEntity *self, float dt);
 void __thiscall cWalkCharEntity_UpdateSelect(cEntity *self, float dt);
 void __thiscall cWalkCharEntity_SetActive(cEntity *self, byte on);
 void __thiscall cWalkCharEntity_SetAng(cEntity *self, const vec3_t *ang);
-/* the weapon energy of a character, 0 or more (rva 0xd4bc0) */
+/* the weapon energy of a character, 0 or more */
 void __thiscall cWalkCharEntity_SetEnergy(cEntity *self, float energy);
 /* the used energy, at most 1 */
 void __thiscall cWalkCharEntity_SetEnergyUsed(cEntity *self, float used);
 void __thiscall cWalkCharEntity_SetEmbeddedFX(cEntity *self, const char *fxType);
-/* the falling state of a character (0x464), with what goes with it (rva 0xd4c60) */
+/* the falling state of a character (0x464), with what goes with it */
 void __thiscall cWalkCharEntity_SetFalling(cEntity *self, byte on);
 /* WithLifeEntity.h vf51 */
 void __thiscall cWithLifeEntity_SetMass(cEntity *self, float mass);
@@ -233,7 +233,7 @@ void __thiscall cWalkCharEntity_ApplyPush(cEntity *self, float dt);
 void __thiscall cWalkCharEntity_SetUsrControl(cEntity *self, int slot);
 void __thiscall cWalkCharEntity_SetVel(cEntity *self, const vec3_t *vel);
 void __thiscall cWalkCharEntity_SetViewAng(cEntity *self, const vec3_t *ang);
-/* the view of a character set to the direction from pos to it (rva 0xd5240) */
+/* the view of a character set to the direction from pos to it */
 void __thiscall cWalkCharEntity_SetViewFrom(cEntity *self, const vec3_t *pos);
 void __thiscall cWalkCharEntity_SetYModelDisp(cEntity *self, float y);
 /* vf61: the walk acceleration of the control, the friction and the speed limit */

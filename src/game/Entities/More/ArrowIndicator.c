@@ -12,8 +12,8 @@
 #include "scrap/withlifeentity.h"
 
 #define ARROW_POOL_MAX 5			/* more free models are deleted */
-#define ARROW_FADE_SPEED 4.0f			/* rva 0x3a5aac */
-#define ARROW_GLOW_TIME 0.66f			/* rva 0x3b33a4 */
+#define ARROW_FADE_SPEED 4.0f
+#define ARROW_GLOW_TIME 0.66f
 #define CSTRING_CTOR 0x133980
 #define CSTRING_DTOR 0x133990
 
@@ -40,7 +40,7 @@ float *Vec2_Normalize(float *out, const float *in) {
 }
 
 cArrowIndicator *__fastcall cArrowIndicator_ctor(cArrowIndicator *self) {
-	crt_eh_vector_ctor(self->opts, sizeof(cString), ARROW_MAX_OPTS, GAME_FUNC(cString_ctor, CSTRING_CTOR), GAME_FUNC(cString_dtor, CSTRING_DTOR));
+	crt_eh_vector_ctor(self->opts, sizeof(cString), ARROW_MAX_OPTS, GAME_FUNC(cString_ctor), GAME_FUNC(cString_dtor));
 	cPy_Function_ctor(&self->onUse);
 	cPy_Function_ctor(&self->onView);
 	self->parent = NULL;
@@ -93,17 +93,17 @@ void __fastcall cArrowIndicator_dtor(cArrowIndicator *self) {
 	cArrowIndicator_ReleaseMission(self);
 	cPy_Function_dtor(&self->onView);
 	cPy_Function_dtor(&self->onUse);
-	crt_eh_vector_dtor(self->opts, sizeof(cString), ARROW_MAX_OPTS, GAME_FUNC(cString_dtor, CSTRING_DTOR));
+	crt_eh_vector_dtor(self->opts, sizeof(cString), ARROW_MAX_OPTS, GAME_FUNC(cString_dtor));
 }
 
 byte __thiscall cArrowIndicator_AddOpt(cArrowIndicator *self, const char *s) {
 	if (!strchr(s, ':')) {
-		Con_Verbosef(GAME_STR(str_3b30c0, 0x3b30c0), s, ':');
+		Con_Verbosef(GAME_STR(str_3b30c0), s, ':');
 		return 0;
 	}
 	int n = self->nOpt;
 	if (n >= ARROW_MAX_OPTS) {
-		Con_Verbosef(GAME_STR(str_3b3118, 0x3b3118), s, ARROW_MAX_OPTS);
+		Con_Verbosef(GAME_STR(str_3b3118), s, ARROW_MAX_OPTS);
 		return 0;
 	}
 	self->nOpt = n + 1;
@@ -721,19 +721,19 @@ byte __thiscall cArrowIndicator_VarS(cArrowIndicator *self, const char *name, ch
 		}
 		switch (self->coneStatus) {
 		case 0:
-			*s = GAME_STR(str_3b2880, 0x3b2880);
+			*s = GAME_STR(str_3b2880);
 			break;
 		case 1:
-			*s = GAME_STR(str_3b326c, 0x3b326c);
+			*s = GAME_STR(str_3b326c);
 			break;
 		case 2:
-			*s = GAME_STR(str_3b3274, 0x3b3274);
+			*s = GAME_STR(str_3b3274);
 			break;
 		case 3:
-			*s = GAME_STR(str_3b327c, 0x3b327c);
+			*s = GAME_STR(str_3b327c);
 			break;
 		default:
-			*s = GAME_STR(str_3b3284, 0x3b3284);
+			*s = GAME_STR(str_3b3284);
 			break;
 		}
 		return 1;
@@ -757,22 +757,22 @@ byte __thiscall cArrowIndicator_VarS(cArrowIndicator *self, const char *name, ch
 		}
 		switch (self->tgType) {
 		case 0:
-			*s = GAME_STR(str_3b32e0, 0x3b32e0);
+			*s = GAME_STR(str_3b32e0);
 			break;
 		case 1:
-			*s = GAME_STR(str_3b32e4, 0x3b32e4);
+			*s = GAME_STR(str_3b32e4);
 			break;
 		case 2:
-			*s = GAME_STR(str_3b32d8, 0x3b32d8);
+			*s = GAME_STR(str_3b32d8);
 			break;
 		case 3:
-			*s = GAME_STR(str_3b32ec, 0x3b32ec);
+			*s = GAME_STR(str_3b32ec);
 			break;
 		case 4:
-			*s = GAME_STR(str_3b32d0, 0x3b32d0);
+			*s = GAME_STR(str_3b32d0);
 			break;
 		default:
-			*s = GAME_STR(str_3b3284, 0x3b3284);
+			*s = GAME_STR(str_3b3284);
 			break;
 		}
 		return 1;

@@ -1,11 +1,11 @@
 /*
  * Python/pythonrun.c with what the engine added to it in Scrap.exe: PyRun_ScrapString, the PyRun_SimpleString of
- * the console and the startup (rva 0x2ec790), and Py_FiniObjects (rva 0x2ebce0). Both use statics of the file.
+ * the console and the startup, and Py_FiniObjects. Both use statics of the file.
  */
 #include "Python/pythonrun.c"
 #include "pyengine.h"
 
-/* rva 0x4e7b08 */
+
 static char scrap_input[0x800];
 
 /*

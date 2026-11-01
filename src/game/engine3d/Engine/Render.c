@@ -1284,7 +1284,7 @@ const char *Render_GetDriver(void) {
 }
 
 static void Render_LogVersion(const char *fmt, uint32_t ver) {
-	char *buf = GAME_ARRAY(char, g_VersionStr, 0x4ae540);
+	char *buf = GAME_ARRAY(char, g_VersionStr);
 	Bprintf(buf, 0x40, "%d.%d", ver >> 8 & 0xff, ver & 0xff);
 	E3D_LogPrint(g_FileLog, fmt, buf);
 }
@@ -1342,7 +1342,7 @@ static void Render_SetMatrices(void) {
 	g_MatBias.m[10] = 1.0f / 2048;
 }
 
-/* the static initializer (rva 0x05bdc0): the shaders on with the hardware environment maps, and the two matrices */
+/* the static initializer: the shaders on with the hardware environment maps, and the two matrices */
 void Render_InitMatrices(void) {
 	if (g_UseHWEnvMap) {
 		g_UseShaders = 1;
@@ -1655,7 +1655,7 @@ int Render_SetMaterial(void *m, int pass) {
 		g_MatFrame = g_FrameCount;
 		g_MatCtx = g_LightmapMat;
 		if (g_MaterialLog) {
-			const char *ctx = g_LightmapMat ? *(const char **)((byte *)g_LightmapMat + 4) : GAME_STR(str_Empty, 0x3a3228);
+			const char *ctx = g_LightmapMat ? *(const char **)((byte *)g_LightmapMat + 4) : GAME_STR(str_Empty);
 			E3D_LogWhite(g_FileLog, "MatLog: %d %d %d [%s] [%s]", g_FrameCount, g_MatChanges,
 				CMaterial_GetId((CMaterial *)mat, NULL), mat->Name, ctx);
 		}

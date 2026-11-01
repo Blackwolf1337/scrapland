@@ -18,14 +18,14 @@
 #define KEY_M 0x32
 #define KEY_CTRL 0x1d
 
-#define g_MeshEffectOn GAME_GLOBAL(int, g_MeshEffectOn, 0x4db6b0)
-#define g_MeshEffectStencil GAME_GLOBAL(int, g_MeshEffectStencil, 0x4db6b4)
-#define g_NumScreens GAME_GLOBAL(int, g_NumScreens, 0x4db6b8)
-#define g_NumModels GAME_GLOBAL(int, g_NumModels, 0x4db6bc)
-#define g_MeshEffectMat (GAME_ARRAY(CMaterial, g_MeshEffectMat, 0x4db6c0))	/* a static object of the file */
-#define g_Screens (GAME_ARRAY(CModel *, g_Screens, 0x4db770))
-#define g_Models (GAME_ARRAY(CModel *, g_Models, 0x4db798))
-#define g_MeshEffectMatInit GAME_GLOBAL(byte, g_MeshEffectMatInit, 0x4db7c0)
+#define g_MeshEffectOn GAME_GLOBAL(int, g_MeshEffectOn)
+#define g_MeshEffectStencil GAME_GLOBAL(int, g_MeshEffectStencil)
+#define g_NumScreens GAME_GLOBAL(int, g_NumScreens)
+#define g_NumModels GAME_GLOBAL(int, g_NumModels)
+#define g_MeshEffectMat (GAME_ARRAY(CMaterial, g_MeshEffectMat))	/* a static object of the file */
+#define g_Screens (GAME_ARRAY(CModel *, g_Screens))
+#define g_Models (GAME_ARRAY(CModel *, g_Models))
+#define g_MeshEffectMatInit GAME_GLOBAL(byte, g_MeshEffectMatInit)
 
 void MeshEffect_AddScreen(CModel *m) {
 	CHECK(g_NumScreens < MAX_SCREENS);

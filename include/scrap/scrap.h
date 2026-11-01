@@ -15,10 +15,10 @@
 #include "scrap/scheduler.h"
 #include "scrap/scorer.h"
 
-/* the function of Scrap.SetCallFunc with its parameters (AddParamX) for Scrap.Execute (rva 0x466a04) */
-#define g_CallFunc (GAME_ARRAY(cPy_Function, g_CallFunc, 0x466a04))
-#define g_PackName (GAME_ARRAY_IN(cString, GVar_PathInPackFile, 16, 0x44ab6c))	/* string object, the open pack */
-#define g_SuperDealAvaliable GAME_GLOBAL_IN(int, GVar_SuperDealAvaliable, 16, 0x45fe48)	/* SuperDealAvaliable, all three crazy deals done */
+/* the function of Scrap.SetCallFunc with its parameters (AddParamX) for Scrap.Execute */
+#define g_CallFunc (GAME_ARRAY(cPy_Function, g_CallFunc))
+#define g_PackName (GAME_ARRAY_IN(cString, GVar_PathInPackFile, 16))	/* string object, the open pack */
+#define g_SuperDealAvaliable GAME_GLOBAL_IN(int, GVar_SuperDealAvaliable, 16)	/* SuperDealAvaliable, all three crazy deals done */
 
 void __thiscall Elements_Call(void *elements, const char *name);
 void __thiscall Elements_Create(void *elements);
@@ -106,8 +106,8 @@ typedef struct cGVarFunction {
 } cGVarFunction;
 SD_SIZE(cGVarFunction, 0x24);
 
-#define g_GVars GAME_GLOBAL(cGVar *, g_GVars, 0x44b5f8)		/* every variable, newest first */
-#define g_GVarTable GAME_GLOBAL(HashTable *, g_GVarTable, 0x44b5fc)	/* by name after GVars_Init */
+#define g_GVars GAME_GLOBAL(cGVar *, g_GVars)		/* every variable, newest first */
+#define g_GVarTable GAME_GLOBAL(HashTable *, g_GVarTable)	/* by name after GVars_Init */
 
 byte SaveVar_Create(const char *name, const char *value);
 void SaveVars_Delete(const char *prefix);
@@ -128,9 +128,9 @@ typedef struct cStaticBuffer {
 	byte lock;			/* 0x8 */
 } cStaticBuffer;
 SD_OFFSET(cStaticBuffer, lock, 0x8);
-/* at least size bytes, locks the buffer (rva 0x18c050) */
+/* at least size bytes, locks the buffer */
 void *__thiscall cStaticBuffer_Get(cStaticBuffer *self, uint32_t size);
-/* the end of the use of the buffer (CHECK lock); inlined in most places (rva 0x190370) */
+/* the end of the use of the buffer (CHECK lock); inlined in most places */
 void __fastcall cStaticBuffer_Unlock(cStaticBuffer *self);
 cStaticBuffer *__fastcall cStaticBuffer_ctor(cStaticBuffer *self);
 void __fastcall cStaticBuffer_dtor(cStaticBuffer *self);
@@ -180,8 +180,8 @@ SD_OFFSET(cDebris, life, 0x4c);
 SD_SIZE(cDebris, 0x58);
 #define Debris_Mod(d) ((CGameModel *)(d)->Mod)
 
-#define g_DebrisDrop (GAME_ARRAY(vec3_t, g_DebrisDrop, 0x467408))	/* [4]: position, angles (rad), velocity, angle speed (rad) */
-#define g_DebrisDefault GAME_GLOBAL_IN(float, GVar_Gravity, 16, 0x4674f4)
+#define g_DebrisDrop (GAME_ARRAY(vec3_t, g_DebrisDrop))	/* [4]: position, angles (rad), velocity, angle speed (rad) */
+#define g_DebrisDefault GAME_GLOBAL_IN(float, GVar_Gravity, 16)
 
 cDebrisSys *__thiscall cWorld_GetDebrisSys(cWorld *world, const char *name);
 byte __thiscall cWorld_DeleteDebrisSys(cWorld *world, const char *name);
@@ -203,7 +203,7 @@ byte DummySearch_Next(char *buf, int size, vec3_t *pos, float *ang, byte *flag);
 void Object3D_Preload(const char *name, const vec3_t *scale);
 cEntity *__thiscall cWorld_CreateEntity(cWorld *world, const char *className, float x, float y, float z,
 	const char *name);
-/* printf into a string object (rva 0x134080) */
+/* printf into a string object */
 /* imports the compiled module file of the open pack as name (src/game/PyInterface/PythonInit.c) */
 void Pack_PreloadLibrary(const char *name, const char *file);
 void Anm_Preload(const char *a, const char *b);

@@ -12,7 +12,7 @@
 #include "scrap/walkcharentity.h"
 
 #define CAIGEAR_SIZE 0x390
-#define GEAR_BLOCK_TIME 7.5f		/* the way to the target is tested again after it (rva 0x3a46d0) */
+#define GEAR_BLOCK_TIME 7.5f		/* the way to the target is tested again after it */
 
 void *__thiscall cAIGear_ctor(void *mem, cEntity *e, int *arg) {
 	cAIGear *self = mem;

@@ -15,9 +15,9 @@ typedef struct TextMsg {
 } TextMsg;
 SD_SIZE(TextMsg, 0x10c);
 
-#define g_TextX GAME_GLOBAL(int, g_TextX, 0x4b1cf0)
-#define g_TextY GAME_GLOBAL(int, g_TextY, 0x4b1cf4)
-#define g_TextStack GAME_GLOBAL(TextMsg *, g_TextStack, 0x4b1cf8)
+#define g_TextX GAME_GLOBAL(int, g_TextX)
+#define g_TextY GAME_GLOBAL(int, g_TextY)
+#define g_TextStack GAME_GLOBAL(TextMsg *, g_TextStack)
 
 void Text_Draw(int x, int y, const char *s);
 /* the first message for its time, then the next ones under it */

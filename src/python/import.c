@@ -9,7 +9,7 @@
 #include "Python.h"
 #include "marshal.h"
 
-/* rva 0x4e79cc */
+
 int g_PyPackImport;
 
 /* the .pyc that write_compiled_module wrote, until its warning is out */

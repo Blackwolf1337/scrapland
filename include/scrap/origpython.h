@@ -1,5 +1,5 @@
 /*
- * Where the Python 1.5.2 of Scrap.exe is (rvas): its code, between the M3D library (rva 0x2d6010) and the MSVC
+ * Where the Python 1.5.2 of Scrap.exe is (rvas): its code, between the M3D library and the MSVC
  * runtime (operator delete at 0x313634), and its data. ScrapC.exe runs the real library of src/python instead
  * (docs/standalone.md, stage 2a); tools/standalone/pymap.py names the symbols in these ranges.
  */

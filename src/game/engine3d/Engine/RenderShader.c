@@ -10,8 +10,8 @@
 #include "scrap/render.h"
 #include "scrap/misc.h"
 
-#define g_GlowMap GAME_GLOBAL_IN(int, g_GvGlowMap, 16, 0x4adab0)		/* R_GlowMap */
-#define g_ShaderModeMask GAME_GLOBAL(uint32_t, g_ShaderModeMask, 0x4db8f8)
+#define g_GlowMap GAME_GLOBAL_IN(int, g_GvGlowMap, 16)		/* R_GlowMap */
+#define g_ShaderModeMask GAME_GLOBAL(uint32_t, g_ShaderModeMask)
 #define SHADER_NAME 0x40
 
 CMatId *__fastcall CMatId_ctor(CMatId *self) {

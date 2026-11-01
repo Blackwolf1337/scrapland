@@ -19,7 +19,7 @@
 #include "scrap/aicharcontrol.h"
 #include "scrap/dlist.h"
 
-#define CAICHAR_VFTABLE GAME_VFTABLE(cAIChar_vftable, 0x3a49b4)
+#define CAICHAR_VFTABLE GAME_VFTABLE(cAIChar_vftable)
 #define CAICHAR_SIZE 0x380
 
 /* the external states (SAI.SetStateChar, the names of cAIChar_StateName) */
@@ -42,7 +42,7 @@ enum {
  * a group state waits until the time reached the limit) with the points of the repositioning out of view, the dummies
  * "DM_NPC_Repos_<zone>_..." of the level by zone. The zone is the name of the action class of a character, a point
  * is taken by linking it to the head at 0x4bc of the character ---- */
-#define CAICHARGROUP_VFTABLE GAME_VFTABLE(cAICharGroup_vftable, 0x3a5f24)
+#define CAICHARGROUP_VFTABLE GAME_VFTABLE(cAICharGroup_vftable)
 #define CAICHARGROUP_SIZE 0x68
 
 /* a point of a zone (0x1c bytes, new[] of the exe with the count before it) */
@@ -119,7 +119,7 @@ cAICGZone *__thiscall cAICharGroup_GetZones(cAICharGroup *self);
 int __thiscall cAICharGroup_NumZones(cAICharGroup *self);
 /* a point for the repositioning of e out of view between minDist and maxDist from the camera into out; with flag 0 a
  * free point beyond maxDist is taken too, with flag 1 only one the graph does not see from the camera (or in front of
- * it beyond minDist). The point e held before is given up (rva 0x80ee0) */
+ * it beyond minDist). The point e held before is given up */
 byte __thiscall cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity *e, float minDist, float maxDist,
 	byte flag);
 /* the lists of the dummies: emptied (the free nodes kept), the free nodes deleted, both (the destructors) */
@@ -171,15 +171,15 @@ static inline void AIChar_DebugState(cAIChar *c, const char *fmt, int state) {
 }
 
 /* the engine variables of the character AI */
-#define g_DistMaxCheckPauseAI GAME_GLOBAL_IN(float, GVar_DistMaxCheckPauseAI, 16, 0x4442b8)	/* "DistMaxCheckPauseAI" */
-#define g_DistMinCheckPauseAI GAME_GLOBAL_IN(float, GVar_DistMinCheckPauseAI, 16, 0x444228)	/* "DistMinCheckPauseAI" */
-#define g_DistRadPauseCharAI GAME_GLOBAL_IN(float, GVar_DistRadPauseCharAI, 16, 0x444240)		/* "DistRadPauseCharAI" */
-#define g_DistMaxCheckReposAI GAME_GLOBAL_IN(float, GVar_DistMaxCheckReposAI, 16, 0x444348)	/* "DistMaxCheckReposAI" */
-#define g_DistMinCheckReposAI GAME_GLOBAL_IN(float, GVar_DistMinCheckReposAI, 16, 0x444330)	/* "DistMinCheckReposAI" */
-#define g_MinTalkCharAI GAME_GLOBAL_IN(float, GVar_MinTalkCharAI, 16, 0x4442a0)		/* "MinTalkCharAI": the height difference */
-#define g_MinNumTalksCharAI GAME_GLOBAL_IN(int, GVar_MinNumTalksCharAI, 16, 0x444258)		/* "MinNumTalksCharAI" */
-#define g_MinTimeStoppedCharAI GAME_GLOBAL_IN(float, GVar_MinTimeStoppedCharAI, 16, 0x444270)	/* "MinTimeStoppedCharAI" */
-#define g_MinTimeStopTempCharAI GAME_GLOBAL_IN(float, GVar_MinTimeStopTempCharAI, 16, 0x444318)	/* "MinTimeStopTempCharAI" */
+#define g_DistMaxCheckPauseAI GAME_GLOBAL_IN(float, GVar_DistMaxCheckPauseAI, 16)	/* "DistMaxCheckPauseAI" */
+#define g_DistMinCheckPauseAI GAME_GLOBAL_IN(float, GVar_DistMinCheckPauseAI, 16)	/* "DistMinCheckPauseAI" */
+#define g_DistRadPauseCharAI GAME_GLOBAL_IN(float, GVar_DistRadPauseCharAI, 16)		/* "DistRadPauseCharAI" */
+#define g_DistMaxCheckReposAI GAME_GLOBAL_IN(float, GVar_DistMaxCheckReposAI, 16)	/* "DistMaxCheckReposAI" */
+#define g_DistMinCheckReposAI GAME_GLOBAL_IN(float, GVar_DistMinCheckReposAI, 16)	/* "DistMinCheckReposAI" */
+#define g_MinTalkCharAI GAME_GLOBAL_IN(float, GVar_MinTalkCharAI, 16)		/* "MinTalkCharAI": the height difference */
+#define g_MinNumTalksCharAI GAME_GLOBAL_IN(int, GVar_MinNumTalksCharAI, 16)		/* "MinNumTalksCharAI" */
+#define g_MinTimeStoppedCharAI GAME_GLOBAL_IN(float, GVar_MinTimeStoppedCharAI, 16)	/* "MinTimeStoppedCharAI" */
+#define g_MinTimeStopTempCharAI GAME_GLOBAL_IN(float, GVar_MinTimeStopTempCharAI, 16)	/* "MinTimeStopTempCharAI" */
 
 /* ---- AI/AIChar.cpp (src/game/AI/IChar.c); the constructor is declared in walkcharentity.h, GetControl in
  * aicharcontrol.h ---- */

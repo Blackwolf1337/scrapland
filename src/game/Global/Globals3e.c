@@ -11,5 +11,5 @@
 
 #undef g_RenderLockRect
 
-const int32_t g_RenderLockRect[4] SD_AT(0x3e27a0) = { 0, 0, 4, 4 };
+const int32_t g_RenderLockRect[4] = { 0, 0, 4, 4 };
 

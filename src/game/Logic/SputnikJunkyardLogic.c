@@ -10,10 +10,10 @@
 #include "scrap/fxmisc.h"
 #include "scrap/logic.h"
 
-#define CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE GAME_VFTABLE(cSputnikJunkyardLocalLogic_vftable, 0x3c169c)
-#define g_SputnikJunyardTimeToPissPlayer GAME_GLOBAL_IN(float, GVar_SputnikJunyardTimeToPissPlayer, 16, 0x44db88)
-#define g_SputnikPisser GAME_GLOBAL(cEntity *, g_SputnikPisser, 0x44db70)	/* the Sputnik that laughs at the player */
-#define g_SputnikTime GAME_GLOBAL(float, g_SputnikTime, 0x44db74)		/* since the camera exists */
+#define CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE GAME_VFTABLE(cSputnikJunkyardLocalLogic_vftable)
+#define g_SputnikJunyardTimeToPissPlayer GAME_GLOBAL_IN(float, GVar_SputnikJunyardTimeToPissPlayer, 16)
+#define g_SputnikPisser GAME_GLOBAL(cEntity *, g_SputnikPisser)	/* the Sputnik that laughs at the player */
+#define g_SputnikTime GAME_GLOBAL(float, g_SputnikTime)		/* since the camera exists */
 /* the angles of the camera entity */
 #define Sputnik_CamAng(cam) ((const vec3_t *)&((cCamControl *)(cam))->cam.rot)
 

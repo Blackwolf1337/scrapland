@@ -103,7 +103,7 @@ intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lPa
 	}
 	return exe_DefWindowProcA(hwnd, msg, wParam, lParam);
 }
-#define g_PrevExceptionFilter GAME_GLOBAL(void *, g_PrevExceptionFilter, 0x4aa310)
+#define g_PrevExceptionFilter GAME_GLOBAL(void *, g_PrevExceptionFilter)
 
 #define EXC_ACCESS_VIOLATION 0xc0000005u
 
@@ -178,7 +178,7 @@ int __stdcall App_ExceptionFilter(void **ep) {
 void App_SetExceptionFilter(byte on) {
 	if (on) {
 		CHECK(!g_PrevExceptionFilter);
-		g_PrevExceptionFilter = exe_SetUnhandledExceptionFilter(GAME_FUNC(App_ExceptionFilter, APP_EXCEPTIONFILTER));
+		g_PrevExceptionFilter = exe_SetUnhandledExceptionFilter(GAME_FUNC(App_ExceptionFilter));
 		return;
 	}
 	exe_SetUnhandledExceptionFilter(g_PrevExceptionFilter);

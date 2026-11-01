@@ -14,16 +14,16 @@
 #include "scrap/fxmisc.h"
 #include "scrap/fxweapons.h"
 
-#define COBJELEMENTFXVEHICLEDAMAGE_VFTABLE GAME_VFTABLE(cObjElementFXVehicleDamage_vftable, 0x3cd980)
-#define COBJELEMENTFXVEHICLEFIRE_VFTABLE GAME_VFTABLE(cObjElementFXVehicleFire_vftable, 0x3cd998)
-#define COBJELEMENTFXFIREDENTITY_VFTABLE GAME_VFTABLE(cObjElementFXFiredEntity_vftable, 0x3cd9b0)
-#define COBJELEMENTFXVEHICLEEMI_VFTABLE GAME_VFTABLE(cObjElementFXVehicleEMI_vftable, 0x3cd9c8)
-#define COBJELEMENTFXFIREDDEBRIS_VFTABLE GAME_VFTABLE(cObjElementFXFiredDebris_vftable, 0x3cd9e0)
-#define COBJELEMENTFXSMOKEDEBRIS_VFTABLE GAME_VFTABLE(cObjElementFXSmokeDebris_vftable, 0x3cd9f8)
-#define COBJELEMENTFXVEHICLEDEATHTRAIL_VFTABLE GAME_VFTABLE(cObjElementFXVehicleDeathTrail_vftable, 0x3cda10)
-#define COBJELEMENTFXVEHICLESPUTNIK_VFTABLE GAME_VFTABLE(cObjElementFXVehicleSputnik_vftable, 0x3cda28)
-#define COBJELEMENTFXVEHICLESPAWN_VFTABLE GAME_VFTABLE(cObjElementFXVehicleSpawn_vftable, 0x3cda40)
-#define COBJELEMENTFXVEHICLEACCELERATOR_VFTABLE GAME_VFTABLE(cObjElementFXVehicleAccelerator_vftable, 0x3cda58)
+#define COBJELEMENTFXVEHICLEDAMAGE_VFTABLE GAME_VFTABLE(cObjElementFXVehicleDamage_vftable)
+#define COBJELEMENTFXVEHICLEFIRE_VFTABLE GAME_VFTABLE(cObjElementFXVehicleFire_vftable)
+#define COBJELEMENTFXFIREDENTITY_VFTABLE GAME_VFTABLE(cObjElementFXFiredEntity_vftable)
+#define COBJELEMENTFXVEHICLEEMI_VFTABLE GAME_VFTABLE(cObjElementFXVehicleEMI_vftable)
+#define COBJELEMENTFXFIREDDEBRIS_VFTABLE GAME_VFTABLE(cObjElementFXFiredDebris_vftable)
+#define COBJELEMENTFXSMOKEDEBRIS_VFTABLE GAME_VFTABLE(cObjElementFXSmokeDebris_vftable)
+#define COBJELEMENTFXVEHICLEDEATHTRAIL_VFTABLE GAME_VFTABLE(cObjElementFXVehicleDeathTrail_vftable)
+#define COBJELEMENTFXVEHICLESPUTNIK_VFTABLE GAME_VFTABLE(cObjElementFXVehicleSputnik_vftable)
+#define COBJELEMENTFXVEHICLESPAWN_VFTABLE GAME_VFTABLE(cObjElementFXVehicleSpawn_vftable)
+#define COBJELEMENTFXVEHICLEACCELERATOR_VFTABLE GAME_VFTABLE(cObjElementFXVehicleAccelerator_vftable)
 
 #define FXV_MOTORS 4
 #define FXV_EXHAUSTS (FXV_MOTORS * 2)
@@ -40,10 +40,10 @@
 #define FXVeh_Effects(e) ((void *)&Veh(e)->effects)		/* Entities/Vehicle/VehicleEffects.cpp */
 
 /* the engine variables */
-#define g_StdMaxLife GAME_GLOBAL_IN(int, GVar_StdMaxLife, 16, 0x44ab34)			/* StdMaxLife */
-#define g_FXSetOnFireLifePercent GAME_GLOBAL_IN(int, GVar_FXSetOnFireLifePercent, 16, 0x447d6c)	/* FXSetOnFireLifePercent */
+#define g_StdMaxLife GAME_GLOBAL_IN(int, GVar_StdMaxLife, 16)			/* StdMaxLife */
+#define g_FXSetOnFireLifePercent GAME_GLOBAL_IN(int, GVar_FXSetOnFireLifePercent, 16)	/* FXSetOnFireLifePercent */
 
-/* VehicleEffects.cpp (rva 0x101d30): the damage effect of the vehicle stopped (flag +4 and element +8 cleared) */
+/* VehicleEffects.cpp: the damage effect of the vehicle stopped (flag +4 and element +8 cleared) */
 void __fastcall cVehicleEffects_ClearDamage(void *self);
 
 /* a motor exhaust of the ship */

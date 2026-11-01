@@ -804,7 +804,7 @@ PyObject *SAI_SetInertia(PyObject *self, PyObject *args) {
 PyObject *SAI_GetOD(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	return GAME_GLOBAL_IN(PyObject *, g_AppPyOne, 0, 0x46797c);
+	return GAME_GLOBAL_IN(PyObject *, g_AppPyOne, 0);
 }
 
 SD_PY_MODULE(SAI, 0x42a488)

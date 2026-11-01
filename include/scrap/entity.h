@@ -96,7 +96,7 @@ SD_OFFSET(cEntity, links, 0x64);
 SD_OFFSET(cEntity, ai, 0x78);
 SD_SIZE(cEntity, 0x7c);
 
-#define CENTITY_VFTABLE GAME_VFTABLE(cEntity_vftable, 0x3b25f8)
+#define CENTITY_VFTABLE GAME_VFTABLE(cEntity_vftable)
 
 /* a vehicle ("Car"): include/scrap/vehicleentity.h */
 typedef struct cVehicleEntity cVehicleEntity;
@@ -119,10 +119,10 @@ cEntityList *__thiscall cWorld_GetList(cWorld *world, const char *name);
 /* first entity of the list or NULL, rva 0x1a7bc0 */
 cEntity *__thiscall cEntityList_GetFirst(cEntityList *list);
 
-/* links node to the entity (rva 0xc9a20); it leaves any ring it was in first */
+/* links node to the entity; it leaves any ring it was in first */
 void __thiscall cEntity_AddLink(cEntity *self, Nto1Node *node);
 
-/* removes the entity; 0 if it cannot (rva 0xef0c0) */
+/* removes the entity; 0 if it cannot */
 byte __thiscall cEntity_Del(cEntity *self);
 
 /* Entities/Entity.cpp; cEntity_ctor, cEntity_Next and EntityDList_dtor are declared in world.h */

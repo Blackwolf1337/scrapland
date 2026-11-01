@@ -18,7 +18,7 @@
 #define VM_MOTORS 4
 #define VM_SIDES 2
 
-#define CVEHICLEMOTORS_VFTABLE GAME_VFTABLE(cVehicleMotors_vftable, 0x3b56f8)
+#define CVEHICLEMOTORS_VFTABLE GAME_VFTABLE(cVehicleMotors_vftable)
 
 typedef struct cVehicleMotor cVehicleMotor;
 typedef struct cVehicleMotors cVehicleMotors;
@@ -108,28 +108,28 @@ SD_SIZE(cVehicleMotors, 0xc8);
 #define VM_Team(e) ((void *)&WLife(e)->arrow)	/* for cArrowIndicator_GetColor */
 
 /* the emit positions of the Calima particles of all motors (8) */
-#define g_HazePos (GAME_ARRAY(vec3_t, g_HazePos, 0x4482b8))
+#define g_HazePos (GAME_ARRAY(vec3_t, g_HazePos))
 
 /* the engine variables */
-#define g_EnginePathFmt GAME_GLOBAL_IN(const char *, GVar_EnginePathFmt, 16, 0x4482b0)		/* EnginePathFmt */
-#define g_FXEngineTrailOffset GAME_GLOBAL_IN(float, GVar_FXEngineTrailOffset, 16, 0x448328)
-#define g_FXVehicleDeathTrailFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleDeathTrailFile, 16, 0x448340)
-#define g_FXMotorSmokeFile GAME_GLOBAL_IN(const char *, GVar_FXMotorSmokeFile, 16, 0x448358)
-#define g_FXMotorHazeOffset GAME_GLOBAL_IN(float, GVar_FXMotorHazeOffset, 16, 0x448370)
-#define g_FXEngineTrailHideTime GAME_GLOBAL_IN(float, GVar_FXEngineTrailHideTime, 16, 0x448388)
-#define g_FXEngineTrailSize GAME_GLOBAL_IN(float, GVar_FXEngineTrailSize, 16, 0x4483a0)
-#define g_FXEngineGlowDistFadeMid GAME_GLOBAL_IN(float, GVar_FXEngineGlowDistFadeMid, 16, 0x4483b8)
-#define g_FXEngineTrailDist GAME_GLOBAL_IN(float, GVar_FXEngineTrailDist, 16, 0x4483d0)
-#define g_FXEngineGlowSizeAtt GAME_GLOBAL_IN(float, GVar_FXEngineGlowSizeAtt, 16, 0x4483e8)
-#define g_FXMotorHaze GAME_GLOBAL_IN(int, GVar_FXMotorHaze, 16, 0x448400)
-#define g_FXMotorHazeFile GAME_GLOBAL_IN(const char *, GVar_FXMotorHazeFile, 16, 0x448418)
-#define g_FXEngineGlowDistFadeMult GAME_GLOBAL_IN(float, GVar_FXEngineGlowDistFadeMult, 16, 0x448430)
-#define g_FXEngineGlowDistFadeFrom GAME_GLOBAL_IN(float, GVar_FXEngineGlowDistFadeFrom, 16, 0x448448)
-#define g_FXEngineGlowDistFadeTo GAME_GLOBAL_IN(float, GVar_FXEngineGlowDistFadeTo, 16, 0x448460)
-#define g_FXEngineBirthRate GAME_GLOBAL_IN(int, GVar_FXEngineBirthRate, 16, 0x448490)	/* of the exhaust at thrust 0, 100 at full thrust */
-#define g_FXEngineGlowSize GAME_GLOBAL_IN(float, GVar_FXEngineGlowSize, 16, 0x4484a8)
-#define g_FXEngineGlowSizeMax GAME_GLOBAL_IN(float, GVar_FXEngineGlowSizeMax, 16, 0x4484c0)
-#define g_FXEngineTrailDistSpeedFactor GAME_GLOBAL_IN(float, GVar_FXEngineTrailDistSpeedFactor, 16, 0x4484d8)
+#define g_EnginePathFmt GAME_GLOBAL_IN(const char *, GVar_EnginePathFmt, 16)		/* EnginePathFmt */
+#define g_FXEngineTrailOffset GAME_GLOBAL_IN(float, GVar_FXEngineTrailOffset, 16)
+#define g_FXVehicleDeathTrailFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleDeathTrailFile, 16)
+#define g_FXMotorSmokeFile GAME_GLOBAL_IN(const char *, GVar_FXMotorSmokeFile, 16)
+#define g_FXMotorHazeOffset GAME_GLOBAL_IN(float, GVar_FXMotorHazeOffset, 16)
+#define g_FXEngineTrailHideTime GAME_GLOBAL_IN(float, GVar_FXEngineTrailHideTime, 16)
+#define g_FXEngineTrailSize GAME_GLOBAL_IN(float, GVar_FXEngineTrailSize, 16)
+#define g_FXEngineGlowDistFadeMid GAME_GLOBAL_IN(float, GVar_FXEngineGlowDistFadeMid, 16)
+#define g_FXEngineTrailDist GAME_GLOBAL_IN(float, GVar_FXEngineTrailDist, 16)
+#define g_FXEngineGlowSizeAtt GAME_GLOBAL_IN(float, GVar_FXEngineGlowSizeAtt, 16)
+#define g_FXMotorHaze GAME_GLOBAL_IN(int, GVar_FXMotorHaze, 16)
+#define g_FXMotorHazeFile GAME_GLOBAL_IN(const char *, GVar_FXMotorHazeFile, 16)
+#define g_FXEngineGlowDistFadeMult GAME_GLOBAL_IN(float, GVar_FXEngineGlowDistFadeMult, 16)
+#define g_FXEngineGlowDistFadeFrom GAME_GLOBAL_IN(float, GVar_FXEngineGlowDistFadeFrom, 16)
+#define g_FXEngineGlowDistFadeTo GAME_GLOBAL_IN(float, GVar_FXEngineGlowDistFadeTo, 16)
+#define g_FXEngineBirthRate GAME_GLOBAL_IN(int, GVar_FXEngineBirthRate, 16)	/* of the exhaust at thrust 0, 100 at full thrust */
+#define g_FXEngineGlowSize GAME_GLOBAL_IN(float, GVar_FXEngineGlowSize, 16)
+#define g_FXEngineGlowSizeMax GAME_GLOBAL_IN(float, GVar_FXEngineGlowSizeMax, 16)
+#define g_FXEngineTrailDistSpeedFactor GAME_GLOBAL_IN(float, GVar_FXEngineTrailDistSpeedFactor, 16)
 
 /* VehicleEntity.cpp */
 cVehicleMotor *__thiscall cVehicleMotor_ctor(cVehicleMotor *self);
@@ -196,7 +196,7 @@ CGameModel *__thiscall cVehicleMotorsEffects_GetModel(cVehicleMotorsEffects *sel
 
 /* VehicleMotorsEffects.cpp */
 void __fastcall cVehicleMotorsEffects_Init(cVehicleMotorsEffects *self);
-/* Rand_FloatRange (rva 0x10e8f0) is declared in weapons.h */
+/* Rand_FloatRange is declared in weapons.h */
 /* the particles of the Calima effect (the hot air under the motors) for n emit positions at pos */
 void __stdcall VMEffects_SetupHaze(float thrust, float speed, vec3_t *pos, int n, CGameParticles *ps);
 void __thiscall cVehicleMotorsEffects_SetType(cVehicleMotorsEffects *self, int type);

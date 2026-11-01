@@ -10,9 +10,9 @@
 
 #include "scrap/node3d.h"
 
-#define INODEFX_VFTABLE GAME_VFTABLE(INodeFX_vftable, 0x3e3b9c)
-#define CNODEFX_WHEEL_VFTABLE GAME_VFTABLE(CNodeFX_Wheel_vftable, 0x3e3bac)
-#define CNODEFX_SPRING_VFTABLE GAME_VFTABLE(CNodeFX_Spring_vftable, 0x3e3bbc)
+#define INODEFX_VFTABLE GAME_VFTABLE(INodeFX_vftable)
+#define CNODEFX_WHEEL_VFTABLE GAME_VFTABLE(CNodeFX_Wheel_vftable)
+#define CNODEFX_SPRING_VFTABLE GAME_VFTABLE(CNodeFX_Spring_vftable)
 
 /* the types vftable[1] returns */
 enum { NODEFX_NONE = 0, NODEFX_WHEEL = 1, NODEFX_SPRING = 2 };
@@ -59,22 +59,22 @@ SD_OFFSET(CNodeFX_Spring, vel, 0x24);
 SD_SIZE(CNodeFX_Spring, 0x40);
 
 /* the engine variables of the effects */
-#define g_NodeFXSpringDamp1 GAME_GLOBAL_IN(float, GVar_NodeFXSpringDamp1, 16, 0x4dea00)	/* NodeFXSpringDamp1 */
-#define g_NodeFXSpringDamp2 GAME_GLOBAL_IN(float, GVar_NodeFXSpringDamp2, 16, 0x4de958)	/* NodeFXSpringDamp2 */
-#define g_NodeFXSpringDebug GAME_GLOBAL_IN(int, GVar_NodeFXSpringDebug, 16, 0x4de9b8)	/* NodeFXSpringDebug: the variables instead of the members */
-#define g_NodeFXSpringMSec GAME_GLOBAL_IN(uint32_t, GVar_NodeFXSpringMSec, 16, 0x4de988)	/* NodeFXSpringMSec, the step */
-#define g_NodeFXSpringMidP GAME_GLOBAL_IN(float, GVar_NodeFXSpringMidP, 16, 0x4de940)	/* NodeFXSpringMidP */
-#define g_NodeFXSpringRot GAME_GLOBAL_IN(float, GVar_NodeFXSpringRot, 16, 0x4dea18)	/* NodeFXSpringRot */
-#define g_NodeFXSpringRotX GAME_GLOBAL_IN(float, GVar_NodeFXSpringRotX, 16, 0x4de9d0)	/* NodeFXSpringRotX, degrees */
-#define g_NodeFXSpringShow GAME_GLOBAL_IN(int, GVar_NodeFXSpringShow, 16, 0x4de9e8)	/* NodeFXSpringShow */
-#define g_NodeFXSpringSprng GAME_GLOBAL_IN(float, GVar_NodeFXSpringSprng, 16, 0x4dea48)	/* NodeFXSpringSprng */
-#define g_NodeFXWheelRadius GAME_GLOBAL_IN(float, GVar_NodeFXWheelRadius, 16, 0x4de9a0)	/* NodeFXWheelRadius */
-#define g_NodeFXWheelShow GAME_GLOBAL_IN(int, GVar_NodeFXWheelShow, 16, 0x4de970)	/* NodeFXWheelShow */
-#define g_NodeFXWheelSlide GAME_GLOBAL_IN(float, GVar_NodeFXWheelSlide, 16, 0x4dea30)	/* NodeFXWheelSlide */
+#define g_NodeFXSpringDamp1 GAME_GLOBAL_IN(float, GVar_NodeFXSpringDamp1, 16)	/* NodeFXSpringDamp1 */
+#define g_NodeFXSpringDamp2 GAME_GLOBAL_IN(float, GVar_NodeFXSpringDamp2, 16)	/* NodeFXSpringDamp2 */
+#define g_NodeFXSpringDebug GAME_GLOBAL_IN(int, GVar_NodeFXSpringDebug, 16)	/* NodeFXSpringDebug: the variables instead of the members */
+#define g_NodeFXSpringMSec GAME_GLOBAL_IN(uint32_t, GVar_NodeFXSpringMSec, 16)	/* NodeFXSpringMSec, the step */
+#define g_NodeFXSpringMidP GAME_GLOBAL_IN(float, GVar_NodeFXSpringMidP, 16)	/* NodeFXSpringMidP */
+#define g_NodeFXSpringRot GAME_GLOBAL_IN(float, GVar_NodeFXSpringRot, 16)	/* NodeFXSpringRot */
+#define g_NodeFXSpringRotX GAME_GLOBAL_IN(float, GVar_NodeFXSpringRotX, 16)	/* NodeFXSpringRotX, degrees */
+#define g_NodeFXSpringShow GAME_GLOBAL_IN(int, GVar_NodeFXSpringShow, 16)	/* NodeFXSpringShow */
+#define g_NodeFXSpringSprng GAME_GLOBAL_IN(float, GVar_NodeFXSpringSprng, 16)	/* NodeFXSpringSprng */
+#define g_NodeFXWheelRadius GAME_GLOBAL_IN(float, GVar_NodeFXWheelRadius, 16)	/* NodeFXWheelRadius */
+#define g_NodeFXWheelShow GAME_GLOBAL_IN(int, GVar_NodeFXWheelShow, 16)	/* NodeFXWheelShow */
+#define g_NodeFXWheelSlide GAME_GLOBAL_IN(float, GVar_NodeFXWheelSlide, 16)	/* NodeFXWheelSlide */
 /* the seconds of the frame */
-#define g_FrameSec GAME_GLOBAL(float, g_FrameSec, 0x4a8ef4)
+#define g_FrameSec GAME_GLOBAL(float, g_FrameSec)
 /* the section "NodeEffect" of the user properties */
-#define g_NodeEffectSect GAME_GLOBAL(const char *, g_NodeEffectSect, 0x432a74)
+#define g_NodeEffectSect GAME_GLOBAL(const char *, g_NodeEffectSect)
 
 /* the effect of type (NULL: "Type" of the NodeEffect section of the node), NULL for an unknown one */
 void *NodeFX_New(const char *type, CNode3D *node);
@@ -105,6 +105,6 @@ void __fastcall CNodeFX_Spring_Reset(CNodeFX_Spring *self);
 
 /* other modules (src/imports.inc) */
 float Ang_Wrap(float a);	/* rva 0x238b80: one turn off when above 2 pi or below -2 pi */
-matrix_t *Matrix_Transpose(matrix_t *out, const matrix_t *m);	/* rva 0x239860 */
+matrix_t *Matrix_Transpose(matrix_t *out, const matrix_t *m);
 
 #endif

@@ -21,26 +21,26 @@
 #undef g_StencilVB3
 #undef g_TriFacing
 
-cGVar GVar_R_StencilRefModels SD_BSS(0x390000);
-cGVar GVar_R_StencilMult SD_BSS(0x390018);
-vec3_t g_ShadowLightPos SD_BSS(0x390030);
-cGVar GVar_R_ShowStencil SD_BSS(0x39003c);
-cGVar GVar_R_StencilFisq SD_BSS(0x390054);
-vec3_t g_ShadowLightDir SD_BSS(0x39006c);
-CMaterial CMaterial_390078 SD_BSS(0x390078);
-cGVar GVar_R_StencilRefClear SD_BSS(0x390128);
-cGVar GVar_R_StencilBBox SD_BSS(0x390140);
-cGVar GVar_R_StencilDraw SD_BSS(0x390158);
-cGVar GVar_R_StencilTog SD_BSS(0x390170);
-cGVar GVar_R_StencilViewDisp SD_BSS(0x390188);
-cGVar GVar_R_StencilSelf SD_BSS(0x3901a0);
-cGVar GVar_R_StencilLDir SD_BSS(0x3901b8);
-CMaterial g_StencilMat SD_BSS(0x3901d0);
-cGVar GVar_R_StencilRefWorld SD_BSS(0x390280);
-cGVar GVar_R_StencilShadows SD_BSS(0x390298);
-void *g_StencilVB SD_BSS(0x3902b0);
-void *g_StencilIB SD_BSS(0x3902b4);
-void *g_StencilVB2 SD_BSS(0x3902b8);
-void *g_StencilVB3 SD_BSS(0x3902bc);
-byte g_TriFacing[65536] SD_BSS(0x3902c0);
+cGVar GVar_R_StencilRefModels;
+cGVar GVar_R_StencilMult;
+vec3_t g_ShadowLightPos;
+cGVar GVar_R_ShowStencil;
+cGVar GVar_R_StencilFisq;
+vec3_t g_ShadowLightDir;
+CMaterial CMaterial_390078;
+cGVar GVar_R_StencilRefClear;
+cGVar GVar_R_StencilBBox;
+cGVar GVar_R_StencilDraw;
+cGVar GVar_R_StencilTog;
+cGVar GVar_R_StencilViewDisp;
+cGVar GVar_R_StencilSelf;
+cGVar GVar_R_StencilLDir;
+CMaterial g_StencilMat;
+cGVar GVar_R_StencilRefWorld;
+cGVar GVar_R_StencilShadows;
+void *g_StencilVB;
+void *g_StencilIB;
+void *g_StencilVB2;
+void *g_StencilVB3;
+byte g_TriFacing[65536];
 

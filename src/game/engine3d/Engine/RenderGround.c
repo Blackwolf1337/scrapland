@@ -81,7 +81,7 @@ int Batch_Compare(const void *a, const void *b) {
 	return !(eb->z > ea->z) ? 1 : -1;
 }
 
-/* the atexit destructor of g_BatchTab (rva 0x38f040) and the static initializer that registers it (rva 0x05f760) */
+/* the atexit destructor of g_BatchTab and the static initializer that registers it */
 void RenderGround_FiniBatchTab(void) {
 	Table_Free(g_BatchTab);
 }

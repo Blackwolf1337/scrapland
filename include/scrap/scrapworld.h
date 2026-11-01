@@ -24,11 +24,11 @@ SD_OFFSET(WorldNodeInfo, m, 0x4c);
 SD_OFFSET(WorldNodeInfo, dummy, 0x8c);
 
 /* the state of the walk */
-#define g_CountSprite2D GAME_GLOBAL(int, g_CountSprite2D, 0x4a81f0)
-#define g_WorldInfoNode GAME_GLOBAL(CNode3D *, g_WorldInfoNode, 0x4a81f4)
-#define g_WorldInfoDummy GAME_GLOBAL(WorldDummy *, g_WorldInfoDummy, 0x4a81f8)	/* DummyInfo */
-#define g_WorldInfoWild GAME_GLOBAL(byte, g_WorldInfoWild, 0x4a81fc)
-#define g_WorldInfoPattern (GAME_ARRAY(char, g_WorldInfoPattern, 0x4a8200))	/* 0x104, "" for all */
+#define g_CountSprite2D GAME_GLOBAL(int, g_CountSprite2D)
+#define g_WorldInfoNode GAME_GLOBAL(CNode3D *, g_WorldInfoNode)
+#define g_WorldInfoDummy GAME_GLOBAL(WorldDummy *, g_WorldInfoDummy)	/* DummyInfo */
+#define g_WorldInfoWild GAME_GLOBAL(byte, g_WorldInfoWild)
+#define g_WorldInfoPattern (GAME_ARRAY(char, g_WorldInfoPattern))	/* 0x104, "" for all */
 
 /* RenderMode */
 #define RENDERMODE_PROFILER 0x10	/* cycles the profiler mode 0..2 */
@@ -37,23 +37,23 @@ SD_OFFSET(WorldNodeInfo, dummy, 0x8c);
 #define RENDERMODE_SPECULAR 0x101	/* toggles the vertex specular */
 #define RENDERMODE_TEXFILTER 0x102	/* cycles point, linear, anisotropic */
 #define RENDERMODE_SHADOWS 0x103	/* toggles the stencil shadows */
-#define g_RenderMode100 GAME_GLOBAL_IN(byte, group_4a8efc, 1, 0x4a8efd)
-#define g_VertexSpecular GAME_GLOBAL_IN(byte, group_4a8efc, 0, 0x4a8efc)
-#define g_ShadowsStencil GAME_GLOBAL(int, g_ShadowsStencil, 0x4afdb0)	/* [sombras_stencil] use */
+#define g_RenderMode100 GAME_GLOBAL_IN(byte, group_4a8efc, 1)
+#define g_VertexSpecular GAME_GLOBAL_IN(byte, group_4a8efc, 0)
+#define g_ShadowsStencil GAME_GLOBAL(int, g_ShadowsStencil)	/* [sombras_stencil] use */
 
 /* the splash screens and the loading bar */
-#define g_SplashOn GAME_GLOBAL_IN(int, GVar_ShowSplashScreen, 16, 0x4a85c8)
-#define g_SplashFade GAME_GLOBAL_IN(uint32_t, GVar_SplashScreenFade, 16, 0x4a8648)	/* ms */
-#define g_SplashTime GAME_GLOBAL(uint32_t, g_SplashTime, 0x4a8904)	/* timeGetTime at the end of the last one */
-#define g_SplashLast (GAME_ARRAY(char, g_SplashLast, 0x4a8800))	/* 0x104, the last one shown */
-#define g_LoadingOn GAME_GLOBAL_IN(byte, group_4a8324, 0, 0x4a8324)
-#define g_LoadingBar GAME_GLOBAL_IN(int, GVar_ShowProgressBar, 16, 0x4a8598)
-#define g_LoadingCount GAME_GLOBAL(int, g_LoadingCount, 0x4a8328)		/* the steps of Loading_Step(-1) */
-#define g_LoadingTotal GAME_GLOBAL_IN(int, GVar_ProgressBar, 16, 0x4a86d8)
-#define g_LoadingDrawOn GAME_GLOBAL(byte, g_CallbacksOn, 0x431ae4)
+#define g_SplashOn GAME_GLOBAL_IN(int, GVar_ShowSplashScreen, 16)
+#define g_SplashFade GAME_GLOBAL_IN(uint32_t, GVar_SplashScreenFade, 16)	/* ms */
+#define g_SplashTime GAME_GLOBAL(uint32_t, g_SplashTime)	/* timeGetTime at the end of the last one */
+#define g_SplashLast (GAME_ARRAY(char, g_SplashLast))	/* 0x104, the last one shown */
+#define g_LoadingOn GAME_GLOBAL_IN(byte, group_4a8324, 0)
+#define g_LoadingBar GAME_GLOBAL_IN(int, GVar_ShowProgressBar, 16)
+#define g_LoadingCount GAME_GLOBAL(int, g_LoadingCount)		/* the steps of Loading_Step(-1) */
+#define g_LoadingTotal GAME_GLOBAL_IN(int, GVar_ProgressBar, 16)
+#define g_LoadingDrawOn GAME_GLOBAL(byte, g_CallbacksOn)
 typedef void (*loadingDraw_t)(void);
-#define g_LoadingDraw GAME_GLOBAL_IN(loadingDraw_t, g_EngCallbacks, 12, 0x4a8320)	/* draws the loading screen without the bar */
-#define g_LoadingDraw2 GAME_GLOBAL_IN(loadingDraw_t, g_EngCallbacks, 8, 0x4a831c)
+#define g_LoadingDraw GAME_GLOBAL_IN(loadingDraw_t, g_EngCallbacks, 12)	/* draws the loading screen without the bar */
+#define g_LoadingDraw2 GAME_GLOBAL_IN(loadingDraw_t, g_EngCallbacks, 8)
 
 /* the world node info */
 void WorldInfo_FromDummy(WorldNodeInfo *info, const WorldDummy *dummy);

@@ -14,8 +14,8 @@
 /* the cNWPointNode of a point pos (the data of the point lists and links) */
 #define NW_POINT(v) ((cNWPointNode *)((byte *)(v) - offsetof(cNWPointNode, pos)))
 
-#define NWGRID_VFTABLE GAME_VFTABLE(cGridElements_InfPointVis_vftable, 0x3ac354)
-#define CNODESWORLDSUP_VFTABLE GAME_VFTABLE(CNodesWorldSup_vftable, 0x3ac264)
+#define NWGRID_VFTABLE GAME_VFTABLE(cGridElements_InfPointVis_vftable)
+#define CNODESWORLDSUP_VFTABLE GAME_VFTABLE(CNodesWorldSup_vftable)
 
 /* ---- Global/DList.h instances ---- */
 

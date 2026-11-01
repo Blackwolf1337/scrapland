@@ -40,14 +40,14 @@ cWindFxScorer *__thiscall cWindFxScorer_Delete(cWindFxScorer *self, byte flags) 
 }
 
 /* the engine variables of the wind (WindFxScorer*) */
-#define g_WindFxFadeFactor GAME_GLOBAL_IN(float, GVar_WindFxScorerFadeFactor, 16, 0x462554)
-#define g_WindFxFwAngle GAME_GLOBAL_IN(float, GVar_WindFxScorerFwAngle, 16, 0x4624c4)	/* degrees, the side tests turned by it */
-#define g_WindFxHorizontal GAME_GLOBAL_IN(float, GVar_WindFxScorerHorizontal, 16, 0x46253c)	/* the length of the side tests at full speed */
-#define g_WindFxVertical GAME_GLOBAL_IN(float, GVar_WindFxScorerVertical, 16, 0x46256c)
-#define g_WindFxShow GAME_GLOBAL_IN(int, GVar_WindFxScorerShow, 16, 0x4624f4)
-#define g_WindFxSoundVol GAME_GLOBAL_IN(float, GVar_WindFxScorerSoundVol, 16, 0x46250c)
-#define g_WindFxSpeedPitch GAME_GLOBAL_IN(float, GVar_WindFxScorerSpeedPitch, 16, 0x4624dc)
-#define g_WindFxSpeedVol GAME_GLOBAL_IN(float, GVar_WindFxScorerSpeedVol, 16, 0x4624ac)
+#define g_WindFxFadeFactor GAME_GLOBAL_IN(float, GVar_WindFxScorerFadeFactor, 16)
+#define g_WindFxFwAngle GAME_GLOBAL_IN(float, GVar_WindFxScorerFwAngle, 16)	/* degrees, the side tests turned by it */
+#define g_WindFxHorizontal GAME_GLOBAL_IN(float, GVar_WindFxScorerHorizontal, 16)	/* the length of the side tests at full speed */
+#define g_WindFxVertical GAME_GLOBAL_IN(float, GVar_WindFxScorerVertical, 16)
+#define g_WindFxShow GAME_GLOBAL_IN(int, GVar_WindFxScorerShow, 16)
+#define g_WindFxSoundVol GAME_GLOBAL_IN(float, GVar_WindFxScorerSoundVol, 16)
+#define g_WindFxSpeedPitch GAME_GLOBAL_IN(float, GVar_WindFxScorerSpeedPitch, 16)
+#define g_WindFxSpeedVol GAME_GLOBAL_IN(float, GVar_WindFxScorerSpeedVol, 16)
 
 #define WINDFX_MAX_SPEED 28000.0f	/* the speed of the ship to 0..1 */
 #define WINDFX_BAR 100.0f		/* the debug bars: the scale of 1 */

@@ -389,7 +389,7 @@ SD_SYM(str_PyMethod_SWeap_SetSWeap);
 #undef g_WinWidth
 #undef g_WorldSet
 
-PyMethodDef SWeap_methods[16] SD_AT(0x430128) = {
+PyMethodDef SWeap_methods[16] = {
 	{
 		.ml_name = (void *)sd_str_PyMethod_SWeap_GetNWeap,
 		.ml_meth = (void *)sd_SWeap_GetNWeap,
@@ -481,109 +481,109 @@ PyMethodDef SWeap_methods[16] SD_AT(0x430128) = {
 		.ml_doc = (void *)sd_str_PyDoc_SWeap_NetExec,
 	},
 };
-float g_MusicFade SD_AT(0x430228) = 0.00001f;
-HashTable g_SndPSTable SD_AT(0x43022c) = { .numSlots = 457 };
-byte g_SndPSEnabled SD_AT(0x430238) = 1;
-float g_SndFreqScale SD_AT(0x43023c) = 1.0f;
-uint32_t cObjElementFXMoneyTransfer_Update_430240[9] SD_AT(0x430240) = { 0xff000000, 0x80808080, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0x80808080, 0xff000000, 0xff000000 };
-uint32_t FX_CharacterDazed_430264[9] SD_AT(0x430264) = { 0xff000000, 0x80808080, 0x40ffffff, 0x20ffffff, 0x20ffffff, 0x40ffffff, 0x80808080, 0xff000000, 0xff000000 };
-uint32_t FXDeath_Glow_430288[36] SD_AT(0x430288) = {
+float g_MusicFade = 0.00001f;
+HashTable g_SndPSTable = { .numSlots = 457 };
+byte g_SndPSEnabled = 1;
+float g_SndFreqScale = 1.0f;
+uint32_t cObjElementFXMoneyTransfer_Update_430240[9] = { 0xff000000, 0x80808080, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0x80808080, 0xff000000, 0xff000000 };
+uint32_t FX_CharacterDazed_430264[9] = { 0xff000000, 0x80808080, 0x40ffffff, 0x20ffffff, 0x20ffffff, 0x40ffffff, 0x80808080, 0xff000000, 0xff000000 };
+uint32_t FXDeath_Glow_430288[36] = {
 	0x8fff078, 0x8f8d25f, 0x10ebaa50, 0x20e17d3c, 0x40be5f28, 0x809c4114, 0xc06e230f, 0xff4c0a05, 0xff000000,
 	0x20ffe66e, 0x30ffbe4b, 0x38e6873c, 0x40ab692d, 0x607d4b23, 0x80563219, 0xc0321914, 0xff1e0a05, 0xff000000,
 	0x40ffdc5a, 0x55f5aa46, 0x60be7337, 0x7697501e, 0x807d3c14, 0xa438190a, 0xc01e0a05, 0xff0a0500, 0xff000000,
 	0x20e6e6ff, 0x40bebeff, 0x608787e6, 0x763f3fab, 0x8026264b, 0xa40d0d38, 0xc0050518, 0xff000000, 0xff000000,
 };
-uint32_t FX_CharacterBlaBliBla_430318[10] SD_AT(0x430318) = { 0xff000000, 0x80808080, 0x40ffffff, 0x20ffffff, 0x20ffffff, 0x40ffffff, 0x80808080, 0xff000000, 0xff000000 };
-uint32_t FXC_TELEPORT_RAMPS[27] SD_AT(0x430340) = {
+uint32_t FX_CharacterBlaBliBla_430318[10] = { 0xff000000, 0x80808080, 0x40ffffff, 0x20ffffff, 0x20ffffff, 0x40ffffff, 0x80808080, 0xff000000, 0xff000000 };
+uint32_t FXC_TELEPORT_RAMPS[27] = {
 	0xff43696d, 0xdc436972, 0x80436976, 0x42687b, 0x42687f, 0x80426885, 0xc0426886, 0xff426886, 0xff426886,
 	0xff000000, 0xdc000000, 0x80002534, 18129, 23295, 0x800048ff, 0xc0004489, 0xff000000, 0xff000000, 0xffc8c8ff,
 	0x40f0f0ff, 0x20c4c4c4, 0x808080ff, 0xa44040ff, 0xc02020ff, 0xe10000ff, 0xff0000ff, 0xff0000ff,
 };
-uint32_t cObjElementFXSputnik_Update_4303b0[9] SD_AT(0x4303b0) = { 0xff2dff4e, 0x1057fe50, 0x1082fd52, 0x10adfb54, 0x20d6fa55, 0x80fdf957, 0xc053511c, 0xff000000, 0xff000000 };
-uint32_t cObjElementFXSputnik_Update_4303d4[9] SD_AT(0x4303d4) = { 0xff47e2e2, 0x403bb9ff, 0x103ea4ff, 0x104296ff, 0x204787ff, 0x804a7eff, 0xc04165db, 0xff000000, 0xff000000 };
-uint32_t cObjElementFXCharacterConversion_Emit_4303f8[18] SD_AT(0x4303f8) = {
+uint32_t cObjElementFXSputnik_Update_4303b0[9] = { 0xff2dff4e, 0x1057fe50, 0x1082fd52, 0x10adfb54, 0x20d6fa55, 0x80fdf957, 0xc053511c, 0xff000000, 0xff000000 };
+uint32_t cObjElementFXSputnik_Update_4303d4[9] = { 0xff47e2e2, 0x403bb9ff, 0x103ea4ff, 0x104296ff, 0x204787ff, 0x804a7eff, 0xc04165db, 0xff000000, 0xff000000 };
+uint32_t cObjElementFXCharacterConversion_Emit_4303f8[18] = {
 	0x85ae6ff, 0x104bbeff, 0x203c87e6, 0x40233fab, 0x8010264b, 0xa4050d38, 0xc0000518, 0xff000000, 0xff000000,
 	0x85ab4ff, 0x104b96ff, 0x203c55e6, 0x40232dab, 0x8010184b, 0xa402053c, 0xc0000012, 0xff000000, 0xff000000,
 };
-uint32_t cObjElementFXCharacterConversion_Emit_430440[9] SD_AT(0x430440) = { 0x40bebeff, 0x108787ff, 0x205555e6, 0x402323ab, 0x8016164b, 0xa4080838, 0xc0040420, 0xff000000, 0xff000000 };
-uint32_t cObjElementFXCharacterConversion_Emit_430464[19] SD_AT(0x430464) = {
+uint32_t cObjElementFXCharacterConversion_Emit_430440[9] = { 0x40bebeff, 0x108787ff, 0x205555e6, 0x402323ab, 0x8016164b, 0xa4080838, 0xc0040420, 0xff000000, 0xff000000 };
+uint32_t cObjElementFXCharacterConversion_Emit_430464[19] = {
 	0x85affe6, 0x104bffbe, 0x203ce687, 0x4023ab3f, 0x80104b26, 0xa4053838, 0xc0001805, 0xff000000, 0xff000000,
 	0x85affb4, 0x104bff96, 0x203ce655, 0x4023ab2d, 0x80104b18, 0xa4023c05, 0xc0001200, 0xff000000, 0xff000000,
 };
-uint32_t FXConversor_Glow_4304b0[28] SD_AT(0x4304b0) = {
+uint32_t FXConversor_Glow_4304b0[28] = {
 	0xff43696d, 0xdc436972, 0x80436976, 0x42687b, 0x42687f, 0x80426885, 0xc0426886, 0xff426886, 0xff426886,
 	0xff000000, 0xdc000000, 0x80002534, 18129, 23295, 0x800048ff, 0xc0004489, 0xff000000, 0xff000000, 0xffc8c8ff,
 	0x40f0f0ff, 0x20c4c4c4, 0x808080ff, 0xa44040ff, 0xc02020ff, 0xe10000ff, 0xff0000ff, 0xff0000ff,
 };
-uint32_t cObjElementFXMaintenanceWork_Update_430520[18] SD_AT(0x430520) = {
+uint32_t cObjElementFXMaintenanceWork_Update_430520[18] = {
 	0x809696ff, 0x10d2d2ff, 0x306e6ee6, 0x603737be, 0x8c191996, 0xa4030378, 0xc000006e, 0xff000032, 0xff000000,
 	0x80d2d2ff, 0x109696ff, 0x306411e1, 0x603232b4, 0x8c1e1e55, 0xa40a0a2d, 0xc0050519, 0xff00000a, 0xff000000,
 };
-uint32_t cObjElementFXMaintenanceWork_Update_430568[28] SD_AT(0x430568) = {
+uint32_t cObjElementFXMaintenanceWork_Update_430568[28] = {
 	0x8ffe65a, 0x10ffbe4b, 0x20e6873c, 0x40ab3f23, 0x804b2610, 0xa4380d05, 0xc01e0500, 0xff0a0000, 0xff000000, 0,
 	0xff000000, 0xbe404040, 0xa0696969, 0xa0696969, 0xa0696969, 0xbe555555, 0xdc303030, 0xff000000, 0xff000000,
 	0xff000000, 0xbe363636, 0xa05f5f5f, 0xa05f5f5f, 0xa05f5f5f, 0xbe4b4b4b, 0xdc262626, 0xff000000, 0xff000000,
 };
-uint32_t cObjElementFXPoliceGearConversion_Start_4305d8[27] SD_AT(0x4305d8) = {
+uint32_t cObjElementFXPoliceGearConversion_Start_4305d8[27] = {
 	0xffff6e46, 0x6eff5a37, 0x80b4462a, 0x8778371e, 0x9632190f, 0xa4140503, 0xc0080201, 0xff000000, 0xff000000,
 	0xffff965a, 0x6eff6e41, 0x80b45032, 0x87783c23, 0x9632190f, 0xa4140503, 0xc0080201, 0xff000000, 0xff000000,
 	0xffa48278, 0x6e91695f, 0x806e5046, 0x875a3c32, 0x96321923, 0xa4140519, 0xc0080205, 0xff000000, 0xff000000,
 };
-uint32_t cObjElementFXPoliceGearConversion_Start_430644[9] SD_AT(0x430644) = { 0xffebebff, 0x20e1e1ff, 0x20d5d5ff, 0x20cacaff, 0x40c0c0ff, 0x60c0c0ff, 0x80c0c0ff, 0xffc0c0ff, 0xffc0c0ff };
-uint32_t FXMercenary_Drop_430668[18] SD_AT(0x430668) = {
+uint32_t cObjElementFXPoliceGearConversion_Start_430644[9] = { 0xffebebff, 0x20e1e1ff, 0x20d5d5ff, 0x20cacaff, 0x40c0c0ff, 0x60c0c0ff, 0x80c0c0ff, 0xffc0c0ff, 0xffc0c0ff };
+uint32_t FXMercenary_Drop_430668[18] = {
 	0x30a0ff8c, 0x40a0ff8c, 0x4ba0ff8c, 0x5ca0ff8c, 0x80a0ff8c, 0xa4a0ff8c, 0xc4408037, 0xff000000, 0xff000000,
 	0x10c4ff80, 0x20c4ff64, 0x30baff5a, 0x5caaff46, 0x80a0ff32, 0xa496ff26, 0xc4408012, 0xff000000, 0xff000000,
 };
-uint32_t cObjElementFXGearMissile_Update_4306b0[9] SD_AT(0x4306b0) = { 0xffb9b9ed, 0x80b5b5f0, 0xb2b2f2, 0xafaff5, 0x20aaaaf9, 0x40a7a7fc, 0x80a3a3ff, 0xc0a3a3ff, 0xffa3a3ff };
-uint32_t FXGEAR_PUFF_RAMPS[27] SD_AT(0x4306d4) = {
+uint32_t cObjElementFXGearMissile_Update_4306b0[9] = { 0xffb9b9ed, 0x80b5b5f0, 0xb2b2f2, 0xafaff5, 0x20aaaaf9, 0x40a7a7fc, 0x80a3a3ff, 0xc0a3a3ff, 0xffa3a3ff };
+uint32_t FXGEAR_PUFF_RAMPS[27] = {
 	0xff5b66ff, 0x966462fe, 0x506d5dfd, 0x7812fc, 0x8551fb, 0x40964af9, 0x809b47f9, 0xc49b47f9, 0xff9b47f9,
 	0xff86edff, 0xff8ddbff, 0x8095c4ff, 0x9dadff, 0xa598ff, 0x40ae7eff, 0x80b765ff, 0xffb765ff, 0xffb765ff,
 	0xffffad2a, 0xc0feee90, 0x80ef6f38, 0x40bc3010, 0x407a1f0a, 0x5c3f1005, 0x800e0401, 0xff000000, 0xff000000,
 };
-uint32_t GM_Puff_430788[9] SD_AT(0x430788) = { 0xff565656, 0xf6f6ff, 0x8282e6, 0x5e5eab, 0x44444c, 0xf0f38, 0x80070728, 0xff020219, 0xff000000 };
-uint32_t cObjElementFXBankerSteal_Update_4307ac[9] SD_AT(0x4307ac) = { 0xff000000, 0x80808080, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0x80808080, 0xff000000, 0xff000000 };
-uint32_t cObjElementFXBettyAttack_Emit_4307d0[18] SD_AT(0x4307d0) = {
+uint32_t GM_Puff_430788[9] = { 0xff565656, 0xf6f6ff, 0x8282e6, 0x5e5eab, 0x44444c, 0xf0f38, 0x80070728, 0xff020219, 0xff000000 };
+uint32_t cObjElementFXBankerSteal_Update_4307ac[9] = { 0xff000000, 0x80808080, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0x80808080, 0xff000000, 0xff000000 };
+uint32_t cObjElementFXBettyAttack_Emit_4307d0[18] = {
 	0x20fff5c3, 0x20ffc36e, 0x20965028, 0x305e220a, 0x60441205, 0xa4190700, 0xde0a0200, 0xff000000, 0xff000000,
 	0x20fff57d, 0x20ffb950, 0x20a0461e, 0x306e1805, 0x604e1202, 0xa4280700, 0xde0a0200, 0xff000000, 0xff000000,
 };
-uint32_t FXA_SELLLIFE_RAMPS[27] SD_AT(0x430818) = {
+uint32_t FXA_SELLLIFE_RAMPS[27] = {
 	0x405aff5a, 0x4b4bff4b, 0x603ce63c, 0x7023ab23, 0x80264b26, 0xa40d380d, 0xc0051e05, 0xff000000, 0xff000000,
 	0x4080ff80, 0x4b6eff6e, 0x605ae65a, 0x703cab3c, 0x80234b23, 0xa40a380a, 0xc0051e05, 0xff000000, 0xff000000,
 	0x4040ff40, 0x4b32ff32, 0x6028e628, 0x701eab1e, 0x80144b14, 0xa40a380a, 0xc0051e05, 0xff000000, 0xff000000,
 };
-uint32_t EMI_Emit_430888[28] SD_AT(0x430888) = {
+uint32_t EMI_Emit_430888[28] = {
 	0xffb9b9ed, 0xa4b5b5f0, 0x80b2b2f2, 0x60afaff5, 0x80aaaaf9, 0xa4a7a7fc, 0xc0a3a3ff, 0xffa3a3ff, 0xffa3a3ff,
 	0xff7d73ed, 0xa47979f0, 0x807676f2, 0x607373f5, 0x806e6ef9, 0xa46b6bfc, 0xc06767ff, 0xff6767ff, 0xff6767ff,
 	0xff47e2e2, 0x803bb9ff, 0x603ea4ff, 0x404296ff, 0x604787ff, 0x804a7eff, 0xc04165db, 0xff000000, 0xff000000,
 };
-uint32_t FXDebrisCloud_Puff_4308f8[28] SD_AT(0x4308f8) = {
+uint32_t FXDebrisCloud_Puff_4308f8[28] = {
 	0xff000000, 0xd0110f0d, 0xb4252321, 0xb4252321, 0xb4252321, 0xb4252321, 0xd0110f0d, 0xff000000, 0xff000000,
 	0xff000000, 0xd7171411, 0xbe302d2a, 0xbe302d2a, 0xbe302d2a, 0xbe302d2a, 0xd7171411, 0xff000000, 0xff000000,
 	0xff000000, 0xe11d1915, 0xc83b3733, 0xc83b3733, 0xc83b3733, 0xc83b3733, 0xe11d1915, 0xff000000, 0xff000000,
 };
-uint32_t g_FireDropRamps[4][9] SD_AT(0x430968) = {
+uint32_t g_FireDropRamps[4][9] = {
 	{ 0xff3b00, 0xff4302, 0xff5203, 0xff5c05, 0x20ff5a09, 0x80c04b04, 0xc4601901, 0xff200800 },
 	{ 0x40fffaf0, 0xffeb80, 0xf3cd50, 0xcd9136, 0x20a44a18, 0x80871005, 0xc4800000, 0xff000000 },
 	{ 0xff000000, 0x80824c0e, 0x40ef641e, 0x20ff732e, 0x40b47848, 0x80876d2e, 0xc45e401a, 0xff000000 },
 	{ 0xff4b20, 0xff3e10, 0xff2d08, 0xff2000, 0x20c01400, 0x80800a00, 0xc4400500, 0xff000000 },
 };
-uint32_t cFXElementsMentalControllerDamageFX_Update_4309f8[28] SD_AT(0x4309f8) = {
+uint32_t cFXElementsMentalControllerDamageFX_Update_4309f8[28] = {
 	0xff000000, 0x94191919, 0x78232323, 0x782d2d2d, 0x782d2d2d, 0x78232323, 0xc4191919, 0xff000000, 0xff000000,
 	0xff000000, 0xa4232323, 0x7d2d2d2d, 0x7d373737, 0x7d373737, 0x7d282828, 0xd2191919, 0xff000000, 0xff000000,
 	0xff000000, 0xc02d2d2d, 0x843c3c3c, 0x84414141, 0x84373737, 0xa42d2d2d, 0xdc1e1e1e, 0xff000000, 0xff000000,
 };
-uint32_t DamageFX_Glow_430a68[28] SD_AT(0x430a68) = {
+uint32_t DamageFX_Glow_430a68[28] = {
 	0x10f0f0ff, 0x20d2d2ff, 0x306e6ee6, 0x405555be, 0x60414196, 0x802d2d78, 0xc019196e, 0xff0a0a32, 0xff000000,
 	0x10d2d2ff, 0x209696ff, 0x306464e1, 0x403232b4, 0x601e1e55, 0x800a0a2d, 0xc0050519, 0xff00000a, 0xff000000,
 	0x10d2d2ff, 0x20b4b4ff, 0x309393e6, 0x405353ab, 0x602d2d4c, 0x80141438, 0xc005051e, 0xff00000a, 0xff000000,
 };
-uint32_t FX_EmitFade_430ad8[27] SD_AT(0x430ad8) = {
+uint32_t FX_EmitFade_430ad8[27] = {
 	0x2043696d, 0x30436972, 0x40436976, 0x5c42687b, 0x8042687f, 0xa4426885, 0xc0426886, 0xff426886, 0xff426886,
 	0x20000000, 0x30000000, 0x40102534, 0x5c2046d1, 0x80205aff, 0xa42048ff, 0xc0104489, 0xff000000, 0xff000000,
 	0x30c8c8ff, 0x40f0f0ff, 0x20c4c4c4, 0x808080ff, 0xa44040ff, 0xc02020ff, 0xe10000ff, 0xff0000ff, 0xff0000ff,
 };
-uint32_t FX_ItemBlink_430b44[9] SD_AT(0x430b44) = { 0x80669eff, 0x84669eff, 0x94669eff, 0xa4669eff, 0xb9669eff, 0xcd669eff, 0xe8669eff, 0xff669eff, 0xff669eff };
-uint32_t cObjElementFXItemTake_Update_430b68[56] SD_AT(0x430b68) = {
+uint32_t FX_ItemBlink_430b44[9] = { 0x80669eff, 0x84669eff, 0x94669eff, 0xa4669eff, 0xb9669eff, 0xcd669eff, 0xe8669eff, 0xff669eff, 0xff669eff };
+uint32_t cObjElementFXItemTake_Update_430b68[56] = {
 	0x2040406d, 0x30404072, 0x40273476, 0x5c23307b, 0x801c2a7f, 0xa4162285, 0xc0101986, 0xff0c1086, 0xff080886,
 	0x20050540, 0x30101080, 0x402020b4, 0x5c3030d1, 0x804040ff, 0xa44040ff, 0xc0202089, 0xff000000, 0xff000000,
 	0x306464ff, 0x405050ff, 0x204242c4, 0x803030ff, 0xa41818ff, 0xc00606ff, 0xe10000ff, 0xff0000ff, 0xff0000ff, 0,
@@ -591,49 +591,49 @@ uint32_t cObjElementFXItemTake_Update_430b68[56] SD_AT(0x430b68) = {
 	0x40ffeb5a, 0x4bffd741, 0x60c0a41e, 0x70805c0f, 0x80402305, 0xa40d0500, 0xc0050000, 0xff000000, 0xff000000,
 	0x20dedeff, 0x4bbebeeb, 0x60a4a4dc, 0x705c5cbe, 0x8040406e, 0xa4202055, 0xc00f0f40, 0xff000000, 0xff000000,
 };
-uint32_t FXS_HumanCDSparks_430c48[18] SD_AT(0x430c48) = {
+uint32_t FXS_HumanCDSparks_430c48[18] = {
 	0x40ffffff, 0x4bffffff, 0x60ffffff, 0x70ffffff, 0x80ffffff, 0xa4ffffff, 0xc0808080, 0xff000000, 0xff000000,
 	0x40fff0e6, 0x4bffc0c0, 0x60ffc0c0, 0x70ffc0c0, 0x80ffc0c0, 0xa4ffc0c0, 0xc0805c40, 0xff000000, 0xff000000,
 };
-uint32_t cObjElementFXSceneBishops_Update_430c90[9] SD_AT(0x430c90) = { 0x405aff5a, 0x4b4bff4b, 0x603ce63c, 0x7023ab23, 0x80264b26, 0xa40d380d, 0xc0051e05, 0xff000000, 0xff000000 };
-uint32_t cObjElementFXSceneBishops_Update_430cb4[19] SD_AT(0x430cb4) = {
+uint32_t cObjElementFXSceneBishops_Update_430c90[9] = { 0x405aff5a, 0x4b4bff4b, 0x603ce63c, 0x7023ab23, 0x80264b26, 0xa40d380d, 0xc0051e05, 0xff000000, 0xff000000 };
+uint32_t cObjElementFXSceneBishops_Update_430cb4[19] = {
 	0x4080ff80, 0x4b6eff6e, 0x605ae65a, 0x703cab3c, 0x80234b23, 0xa40a380a, 0xc0051e05, 0xff000000, 0xff000000,
 	0x4040ff40, 0x4b32ff32, 0x6028e628, 0x701eab1e, 0x80144b14, 0xa40a380a, 0xc0051e05, 0xff000000, 0xff000000,
 };
-uint32_t cObjElementFXSceneBillArrives_A_Update_430d00[18] SD_AT(0x430d00) = {
+uint32_t cObjElementFXSceneBillArrives_A_Update_430d00[18] = {
 	0xff000000, 0xbe404040, 0xa0696969, 0xa0696969, 0xa0696969, 0xbe555555, 0xdc303030, 0xff000000, 0xff000000,
 	0xff000000, 0xbe363636, 0xa05f5f5f, 0xa05f5f5f, 0xa05f5f5f, 0xbe4b4b4b, 0xdc262626, 0xff000000, 0xff000000,
 };
-uint32_t cObjElementFXSceneBillArrives_A_Update_430d48[18] SD_AT(0x430d48) = {
+uint32_t cObjElementFXSceneBillArrives_A_Update_430d48[18] = {
 	0xff000000, 0xeb202020, 0xdc303030, 0xdc303030, 0xdc303030, 0xdc303030, 0xeb262626, 0xff000000, 0xff000000,
 	0xff000000, 0xeb181818, 0xdc202020, 0xdc202020, 0xdc202020, 0xdc202020, 0xeb1a1a1a, 0xff000000, 0xff000000,
 };
-uint32_t FXS_BILL_JETA_RAMPS[18] SD_AT(0x430d90) = {
+uint32_t FXS_BILL_JETA_RAMPS[18] = {
 	0xc0fff03c, 0xa4ffbe28, 0xafde8214, 0xb9c04b0c, 0xbea41e06, 0xdc881905, 0xf5801404, 0xff000000, 0xff000000,
 	0xc0ff5a0a, 0xa4ff3c09, 0xafde3208, 0xb9c02807, 0xbea41e06, 0xdc881905, 0xf5801404, 0xff000000, 0xff000000,
 };
-uint32_t cObjElementFXSceneYakuzzi_Update_430dd8[18] SD_AT(0x430dd8) = {
+uint32_t cObjElementFXSceneYakuzzi_Update_430dd8[18] = {
 	0xff000000, 0xaa3c2c1c, 0x966e503b, 0x966e503b, 0x966e503b, 0xaa6e503b, 0xdc3c2c26, 0xff000000, 0xff000000,
 	0xff000000, 0xbe322b1e, 0xa05c5248, 0xa05c5248, 0xa05c5248, 0xb44b4637, 0xdc221e16, 0xff000000, 0xff000000,
 };
-uint32_t cObjElementFXSceneBeatPickus_Update_430e20[18] SD_AT(0x430e20) = {
+uint32_t cObjElementFXSceneBeatPickus_Update_430e20[18] = {
 	0xff000000, 0xbe404040, 0xa0696969, 0xa0696969, 0xa0696969, 0xbe555555, 0xdc303030, 0xff000000, 0xff000000,
 	0xff000000, 0xbe363636, 0xa05f5f5f, 0xa05f5f5f, 0xa05f5f5f, 0xbe4b4b4b, 0xdc262626, 0xff000000, 0xff000000,
 };
-uint32_t cObjElementFXSceneBeatPickus_Update_430e68[18] SD_AT(0x430e68) = {
+uint32_t cObjElementFXSceneBeatPickus_Update_430e68[18] = {
 	0x80fff696, 0x20ffb45a, 0x40e68211, 0x80ab5e0d, 0x964c4408, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 	0x80ffebd2, 0x20ffd75a, 0x40e6c811, 0x80ab8c0d, 0x964c3a08, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 };
-uint32_t cObjElementFXSceneBeatPickus_Update_430eb0[18] SD_AT(0x430eb0) = {
+uint32_t cObjElementFXSceneBeatPickus_Update_430eb0[18] = {
 	0x80fff696, 0x20ffb45a, 0x40e68211, 0x80ab5e0d, 0x964c4408, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 	0x80ffebd2, 0x20ffd75a, 0x40e6c811, 0x80ab8c0d, 0x964c3a08, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 };
-uint32_t cObjElementFXSceneBeatPickus_Update_430ef8[9] SD_AT(0x430ef8) = { 0x10f5f5ff, 0x20e1e1ff, 0x30b4b4e6, 0x409b9bbe, 0x607d7d96, 0x805f5f78, 0xc055556e, 0xff282832, 0xff000000 };
-uint32_t cObjElementFXSceneBeatPickus_Update_430f1c[19] SD_AT(0x430f1c) = {
+uint32_t cObjElementFXSceneBeatPickus_Update_430ef8[9] = { 0x10f5f5ff, 0x20e1e1ff, 0x30b4b4e6, 0x409b9bbe, 0x607d7d96, 0x805f5f78, 0xc055556e, 0xff282832, 0xff000000 };
+uint32_t cObjElementFXSceneBeatPickus_Update_430f1c[19] = {
 	0x10d2d2ff, 0x209696ff, 0x306464e1, 0x403232b4, 0x601e1e55, 0x800a0a2d, 0xc0050519, 0xff00000a, 0xff000000,
 	0x10d2d2ff, 0x20b4b4ff, 0x309393e6, 0x405353ab, 0x602d2d4c, 0x80141438, 0xc005051e, 0xff00000a, 0xff000000,
 };
-vec3_t cObjElementFXSceneEnterMatrix_Update_430f68[32] SD_AT(0x430f68) = {
+vec3_t cObjElementFXSceneEnterMatrix_Update_430f68[32] = {
 	{ .x = 65697.5f, .y = 22634.8f, .z = -3495.2f },
 	{ .x = 65689.1f, .y = 22790.0f, .z = -17752.5f },
 	{ .x = 68660.5f, .y = 67162.7f, .z = -6468.6f },
@@ -667,70 +667,70 @@ vec3_t cObjElementFXSceneEnterMatrix_Update_430f68[32] SD_AT(0x430f68) = {
 	{ .x = 72655.1f, .y = 73667.0f, .z = -10498.7f },
 	{ .x = 128667.2f, .y = 66183.9f, .z = -34222.8f },
 };
-uint32_t cObjElementFXFiredDebris_Update_4310e8[18] SD_AT(0x4310e8) = {
+uint32_t cObjElementFXFiredDebris_Update_4310e8[18] = {
 	0xff565656, 0xe2fff696, 0xc4e68211, 0xc4ab5e0d, 0xc49c3a08, 0xc46a2617, 0xe640190e, 0xff000000, 0xff000000,
 	0xff565656, 0xaaffec82, 0xa0ef8228, 0xaa9a260f, 0xbb7c1f0c, 0xcc5e170a, 0xe1400f05, 0xff000000, 0xff000000,
 };
-uint32_t cObjElementFXFiredDebris_Update_431130[18] SD_AT(0x431130) = {
+uint32_t cObjElementFXFiredDebris_Update_431130[18] = {
 	0xff000000, 0x5a0f0f0f, 0x40141414, 0x401e1e1e, 0x5a191919, 0x800f0f0f, 0xc0050505, 0xff000000, 0xff000000,
 	0xff000000, 0x5a141414, 0x5a282828, 0x46323232, 0x503c3c3c, 0x802d2d2d, 0xc00f0f0f, 0xff000000, 0xff000000,
 };
-uint32_t cObjElementFXSmokeDebris_Update_431178[9] SD_AT(0x431178) = { 0xffffffff, 0xc4ffc680, 0xc4ffc680, 0xc4dea460, 0xc4c48040, 0xc4804020, 0xe6402010, 0xff000000, 0xff000000 };
-uint32_t cObjElementFXSmokeDebris_Update_43119c[19] SD_AT(0x43119c) = {
+uint32_t cObjElementFXSmokeDebris_Update_431178[9] = { 0xffffffff, 0xc4ffc680, 0xc4ffc680, 0xc4dea460, 0xc4c48040, 0xc4804020, 0xe6402010, 0xff000000, 0xff000000 };
+uint32_t cObjElementFXSmokeDebris_Update_43119c[19] = {
 	0xff000000, 0x80202020, 0x80414141, 0x8a4b4b4b, 0xa4464646, 0xc02d2d2d, 0xe4181818, 0xff000000, 0xff000000,
 	0xff000000, 0x80373737, 0x804b4b4b, 0x80555555, 0xa4505050, 0xc0373737, 0xe4202020, 0xff000000, 0xff000000,
 };
-uint32_t cObjElementFXVehicleDamage_Update_4311e8[27] SD_AT(0x4311e8) = {
+uint32_t cObjElementFXVehicleDamage_Update_4311e8[27] = {
 	0xfffff696, 0xa4fff08c, 0xafe6b411, 0xb9ab720d, 0xc89c4408, 0xd76a2603, 0xe6401400, 0xff000000, 0xff000000,
 	0xffffe65a, 0xa4ffe150, 0xafef8228, 0xb99a440f, 0xc87c1f0c, 0xd75e170a, 0xe1400f05, 0xff000000, 0xff000000,
 	0xffffa032, 0xa4ff7832, 0xafef3c19, 0xb99a230f, 0xc87c0f0a, 0xd75e0a05, 0xe1400502, 0xff000000, 0xff000000,
 };
-uint32_t FXV_DamageDebris_431254[9] SD_AT(0x431254) = { 0x80dcdcff, 0x84d2d2ff, 0x8c8282e6, 0x965e5eab, 0xa444444c, 0xc00f0f38, 0xde050519, 0xff000000, 0xff000000 };
-uint32_t FXV_FLAME_RAMPS[27] SD_AT(0x431278) = {
+uint32_t FXV_DamageDebris_431254[9] = { 0x80dcdcff, 0x84d2d2ff, 0x8c8282e6, 0x965e5eab, 0xa444444c, 0xc00f0f38, 0xde050519, 0xff000000, 0xff000000 };
+uint32_t FXV_FLAME_RAMPS[27] = {
 	0xff3b00, 0xff4300, 0xff5200, 0xff6000, 0x20ff7300, 0x80ff8300, 0xc4804100, 0xff000000, 0xff000000, 0x80ffffff,
 	0xffff94, 0xf3f750, 0xcda736, 0x20a44a18, 0x80871005, 0xc4800000, 0xff000000, 0xff000000, 0xff000000,
 	0x80824c11, 0x40ef6e20, 0x20ff7d32, 0x40b48250, 0x80877732, 0xc45e4022, 0xff000000, 0xff000000,
 };
-uint32_t FXV_DamageDebris_4312e8[46] SD_AT(0x4312e8) = {
+uint32_t FXV_DamageDebris_4312e8[46] = {
 	0xff000000, 0x40141414, 0x40141414, 0x40141414, 0x60141414, 0x800a0a0a, 0xc0050505, 0xff000000, 0xff000000,
 	0xff000000, 0x40191919, 0x40191919, 0x40191919, 0x60191919, 0x800d0d0d, 0xc0060606, 0xff000000, 0xff000000,
 	0xff000000, 0x401e1e1e, 0x401e1e1e, 0x401e1e1e, 0x601e1e1e, 0x800f0f0f, 0xc0070707, 0xff000000, 0xff000000,
 	0xff000000, 0x40232323, 0x40232323, 0x40232323, 0x60232323, 0x80111111, 0xc0080808, 0xff000000, 0xff000000,
 	0xff000000, 0x40282828, 0x40282828, 0x40282828, 0x60282828, 0x80141414, 0xc00a0a0a, 0xff000000, 0xff000000,
 };
-uint32_t FX_ShipExplosion_4313a0[18] SD_AT(0x4313a0) = {
+uint32_t FX_ShipExplosion_4313a0[18] = {
 	0xff000000, 0x80ffffff, 0x40ffffff, 0x40ffffff, 0x40ffffff, 0x80c4c4c4, 0xc4808080, 0xff000000, 0xff000000,
 	0xff000000, 0x80ffe8e8, 0x40ffe8e8, 0x40ffe8e8, 0x40ffe8e8, 0x80c4a0a0, 0xc4806464, 0xff000000, 0xff000000,
 };
-uint32_t FX_ShipExplosion_4313e8[9] SD_AT(0x4313e8) = { 0xff000000, 0xaafeee90, 0x82ef7d38, 0x96bc4110, 0xb97a2a0a, 0xd23f1805, 0xeb0e0801, 0xff000000, 0xff000000 };
-uint32_t FX_ShipExplosion_43140c[18] SD_AT(0x43140c) = {
+uint32_t FX_ShipExplosion_4313e8[9] = { 0xff000000, 0xaafeee90, 0x82ef7d38, 0x96bc4110, 0xb97a2a0a, 0xd23f1805, 0xeb0e0801, 0xff000000, 0xff000000 };
+uint32_t FX_ShipExplosion_43140c[18] = {
 	0xff000000, 0xa4feee90, 0x60efa438, 0x40bc6410, 0x607a500a, 0x803f2805, 0xc40e0801, 0xff000000, 0xff000000,
 	0xff565656, 0xaaffec82, 0xa0ef8228, 0xaa9a260f, 0xbb7c1f0c, 0xcc5e1706, 0xe1320a01, 0xff000000, 0xff000000,
 };
-uint32_t FXV_XFIRE_RAMPS[27] SD_AT(0x431454) = {
+uint32_t FXV_XFIRE_RAMPS[27] = {
 	0xff000000, 0x400f0f0f, 0x30141414, 0x30232323, 0x401e1e1e, 0x80141414, 0xc80f0f0f, 0xff000000, 0xff000000,
 	0xff000000, 0x5a191919, 0x40232323, 0x40323232, 0x5a3c3c3c, 0xa8323232, 0xc8141414, 0xff000000, 0xff000000,
 	0xff000000, 0x5a1e1e1e, 0x402d2d2d, 0x403c3c3c, 0x5a464646, 0xa83c3c3c, 0xc8141414, 0xff000000, 0xff000000,
 };
-uint32_t FX_ShipExplosion_4314c0[28] SD_AT(0x4314c0) = {
+uint32_t FX_ShipExplosion_4314c0[28] = {
 	0xff000000, 0x80ffffff, 0x40ffffff, 0x40ffffff, 0x40ffffff, 0x80c4c4c4, 0xc4808080, 0xff000000, 0xff000000,
 	0xff000000, 0x80ffc0c0, 0x40ffc0c0, 0x40ffc0c0, 0x40ffc0c0, 0x80c48c8c, 0xc4805050, 0xff000000, 0xff000000,
 	0xff000000, 0x80ffe8c0, 0x40ffe8c0, 0x40ffe8c0, 0x40ffe8c0, 0x80c4a58c, 0xc4806450, 0xff000000, 0xff000000,
 };
-uint32_t FXV_FIRE_RAMPS[27] SD_AT(0x431530) = {
+uint32_t FXV_FIRE_RAMPS[27] = {
 	0xff3b00, 0xff4300, 0xff5200, 0xff6000, 0x20ff7300, 0x80ff8300, 0xc4804100, 0xff000000, 0, 0x80ffffff, 0xffff94,
 	0xf3f750, 0xcda736, 0x20a44a18, 0x80871005, 0xc4800000, 0xff000000, 0, 0xff000000, 0x80824c11, 0x40ef6e20,
 	0x20ff7d32, 0x40b48250, 0x80877732, 0xc45e4022, 0xff000000,
 };
-uint32_t cObjElementFXVehicleFire_Update_43159c[19] SD_AT(0x43159c) = {
+uint32_t cObjElementFXVehicleFire_Update_43159c[19] = {
 	0xff3c3c3c, 0xc0333333, 0x802c2c2c, 0x40232323, 0x401a1a1a, 0x80101010, 0xc0070707, 0xff000000, 0xff000000,
 	0xff464646, 0x80373737, 0x60282828, 0x40323232, 0x603c3c3c, 0x802d2d2d, 0xc00f0f0f, 0xff000000, 0xff000000,
 };
-uint32_t cObjElementFXFiredEntity_Update_4315e8[18] SD_AT(0x4315e8) = {
+uint32_t cObjElementFXFiredEntity_Update_4315e8[18] = {
 	0xfffff696, 0xa4fff08c, 0xafe6b411, 0xb9ab720d, 0xc89c4408, 0xd76a2603, 0xe6401400, 0xff000000, 0xff000000,
 	0xffffe65a, 0xa4ffe150, 0xafef8228, 0xb99a440f, 0xc87c1f0c, 0xd75e170a, 0xe1400f05, 0xff000000, 0xff000000,
 };
-uint32_t cObjElementFXFiredEntity_Update_431630[74] SD_AT(0x431630) = {
+uint32_t cObjElementFXFiredEntity_Update_431630[74] = {
 	0xff000000, 0x40141414, 0x40141414, 0x40141414, 0x60141414, 0x800a0a0a, 0xc0050505, 0xff000000, 0xff000000,
 	0xff000000, 0x40191919, 0x40191919, 0x40191919, 0x60191919, 0x800d0d0d, 0xc0060606, 0xff000000, 0xff000000,
 	0xff000000, 0x401e1e1e, 0x401e1e1e, 0x401e1e1e, 0x601e1e1e, 0x800f0f0f, 0xc0070707, 0xff000000, 0xff000000,
@@ -740,117 +740,117 @@ uint32_t cObjElementFXFiredEntity_Update_431630[74] SD_AT(0x431630) = {
 	0xff8080ff, 0xa48080ff, 0x808080ff, 0x808080ff, 0x808080ff, 0xa48080ff, 0xc08080ff, 0xff8080ff, 0xff8080ff,
 	0xff4040ff, 0xa44040ff, 0x804040ff, 0x804040ff, 0x804040ff, 0xa44040ff, 0xc04040ff, 0xff4040ff, 0xff4040ff,
 };
-uint32_t FXATPC_GLOW_RAMPS[18] SD_AT(0x431758) = {
+uint32_t FXATPC_GLOW_RAMPS[18] = {
 	0x80ffdca0, 0xf1be82, 0xdca573, 0xc8965a, 0x20b48748, 0x40c37d32, 0xa4d76428, 0xffe14b23, 0xffff3214,
 	0x20ffc300, 0x10ffa500, 0xff5f00, 0xff4100, 0x20e14b00, 0x40af5a00, 0xa4802800, 0xff400a00, 0xff200300,
 };
-uint32_t cObjElementFXATPC_Update_4317a0[18] SD_AT(0x4317a0) = {
+uint32_t cObjElementFXATPC_Update_4317a0[18] = {
 	0x18c4c4ff, 0x10e1b980, 0x8ffaf40, 0x4ff7d00, 0xff5f00, 0xff4b00, 0xff4100, 0x4eb3c00, 0x8e13700, 0x10c32800,
 	0x20af2300, 0x40911e00, 0x60801900, 0x80801900, 0xa4801900, 0xe0801900, 0xff801900,
 };
-uint32_t g_FXInfernoRamp[10] SD_AT(0x4317e8) = { 0xff565656, 0x80fff05a, 0x80969696, 0x805e5edc, 0xa444444c, 0xc00f0f38, 0xde070728, 0xff020219, 0xff000000 };
-uint32_t FXSwarm_Hit_431810[18] SD_AT(0x431810) = {
+uint32_t g_FXInfernoRamp[10] = { 0xff565656, 0x80fff05a, 0x80969696, 0x805e5edc, 0xa444444c, 0xc00f0f38, 0xde070728, 0xff020219, 0xff000000 };
+uint32_t FXSwarm_Hit_431810[18] = {
 	0xebffad2a, 0xaafeee90, 0x82ef7d38, 0x96bc4110, 0xb97a2a0a, 0xd23f1805, 0xeb0e0801, 0xff000000, 0xff000000,
 	0xeb565656, 0xb4ffc86e, 0x8cef781e, 0x969a3c0e, 0xc37c260a, 0xd25e1c06, 0xeb220501, 0xff000000, 0xff000000,
 };
-uint32_t FXSwarm_Hit_431858[54] SD_AT(0x431858) = {
+uint32_t FXSwarm_Hit_431858[54] = {
 	0xff000000, 0x80202020, 0x80414141, 0x8a4b4b4b, 0xa4464646, 0xc02d2d2d, 0xe4181818, 0xff000000, 0xff000000,
 	0xff000000, 0x80373737, 0x804b4b4b, 0x80555555, 0xa4505050, 0xc0373737, 0xe4202020, 0xff000000, 0xff000000,
 	0x80ffffff, 0x60ffffff, 0x80ffffff, 0x60ffffff, 0x80ffffff, 0x80ffffff, 0xc0808080, 0xff000000, 0xff000000,
 	0x80ffe1c8, 0x6effe1c8, 0x60ffe1c8, 0x6effe1c8, 0x80ffe1c8, 0x80ffe1c8, 0xc0808080, 0xff000000, 0xff000000,
 	0x80ffc8c8, 0x6effc8c8, 0x60ffc8c8, 0x6effc8c8, 0x80ffc8c8, 0x80ffc8c8, 0xc0808080, 0xff000000, 0xff000000,
 };
-uint32_t cObjElementFXTesla_Update_431930[18] SD_AT(0x431930) = {
+uint32_t cObjElementFXTesla_Update_431930[18] = {
 	0xffb9b9ed, 0x80b5b5f0, 0xb2b2f2, 0xafaff5, 0x20aaaaf9, 0x40a7a7fc, 0x80a3a3ff, 0xc0a3a3ff, 0xffa3a3ff,
 	0xff5b5bff, 0x966464fe, 0x506d6dfd, 0x7878fc, 0x8585fb, 0x409696f9, 0x809b9bf9, 0xc49b9bf9, 0xff9b9bf9,
 };
-uint32_t FXSwarm_BeeDeath_431978[18] SD_AT(0x431978) = {
+uint32_t FXSwarm_BeeDeath_431978[18] = {
 	0xffffffff, 0xa4ffffff, 0xa4ffdc78, 0xa4dca528, 0xc4805c14, 0xd260400a, 0xeb403005, 0xff000000, 0xff000000,
 	0xff565656, 0xb4ffc86e, 0x8cef781e, 0x969a3c0e, 0xc37c260a, 0xd25e1c06, 0xeb220501, 0xff000000, 0xff000000,
 };
-uint32_t FXSwarm_BeeDeath_4319c0[27] SD_AT(0x4319c0) = {
+uint32_t FXSwarm_BeeDeath_4319c0[27] = {
 	0xff000000, 0xa01e1e1e, 0x802d2d2d, 0x80373737, 0x802d2d2d, 0x80232323, 0xc0191919, 0xff000000, 0xff000000,
 	0xff000000, 0xa0282828, 0x80373737, 0x80464646, 0x80505050, 0x80414141, 0xc0232323, 0xff000000, 0xff000000,
 	0xff000000, 0xa0323232, 0x80414141, 0x804b4b4b, 0x805f5f5f, 0x804b4b4b, 0xc02d2d2d, 0xff000000, 0xff000000,
 };
-uint32_t FXSWARM_FLASH_RAMPS[18] SD_AT(0x431a2c) = {
+uint32_t FXSWARM_FLASH_RAMPS[18] = {
 	0x80ffffff, 0x60ffffff, 0x60ffffff, 0x60ffffff, 0x80ffffff, 0xa4ffffff, 0xc0808080, 0xff000000, 0xff000000,
 	0x80ffe1c8, 0x6effe1c8, 0x60ffe1c8, 0x6effe1c8, 0x80ffe1c8, 0x80ffe1c8, 0xc0808080, 0xff000000, 0xff000000,
 };
-int g_WinWidth SD_AT(0x431ab0) = 640;
-int g_WinHeight SD_AT(0x431ab4) = 480;
-int g_WideWinWidth SD_AT(0x431ab8) = 640;
-int g_WideWinHeight SD_AT(0x431abc) = 360;
-byte g_CallbacksOn SD_AT(0x431ae4) = 1;
-int g_FogLinear SD_AT(0x431ae8) = 1;
-float g_FogRangeIni SD_AT(0x431aec) = 0.5f;
-float g_FogRangeEnd SD_AT(0x431af0) = 1.0f;
-float g_FogDensityIni SD_AT(0x431af4) = 0.5f;
-vec3_t g_GroundScale SD_AT(0x431af8) = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
-float g_ViewerSpeed SD_AT(0x431b04) = 1.0f;
-int g_LoadingScreen SD_AT(0x431b08) = -1;
-matrix_t g_DebugIdentity SD_AT(0x431b10) = { .m = { 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f } };
-const char *g_FontsDir SD_AT(0x431b50) = (void *)sd_str_3d3e38;
-float g_CamCompositeFPS SD_AT(0x431b54) = 1.0f;
-rtFxOn_t g_RTFxOn[5] SD_AT(0x431b58) = {
+int g_WinWidth = 640;
+int g_WinHeight = 480;
+int g_WideWinWidth = 640;
+int g_WideWinHeight = 360;
+byte g_CallbacksOn = 1;
+int g_FogLinear = 1;
+float g_FogRangeIni = 0.5f;
+float g_FogRangeEnd = 1.0f;
+float g_FogDensityIni = 0.5f;
+vec3_t g_GroundScale = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
+float g_ViewerSpeed = 1.0f;
+int g_LoadingScreen = -1;
+matrix_t g_DebugIdentity = { .m = { 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f } };
+const char *g_FontsDir = (void *)sd_str_3d3e38;
+float g_CamCompositeFPS = 1.0f;
+rtFxOn_t g_RTFxOn[5] = {
 	(void *)sd_DuDv_IsOn, (void *)sd_Bloom_IsOn, (void *)sd_MotionBlur_IsOn, (void *)sd_RadialBlur_IsOn,
 	(void *)sd_Blur_IsOn,
 };
-rtFxRender_t g_RTFxRender[5] SD_AT(0x431b6c) = {
+rtFxRender_t g_RTFxRender[5] = {
 	(void *)sd_DuDv_Render, (void *)sd_Bloom_Render, (void *)sd_MotionBlur_Render, (void *)sd_RadialBlur_Render,
 	(void *)sd_Blur_Render,
 };
-int g_SceneCheckedMode SD_AT(0x431b80) = -1;
-int g_SceneDuDvCheckedMode SD_AT(0x431b84) = -1;
-char g_ThousandsSep SD_AT(0x431b88) = 46;
-float g_Sprite2DScale[2] SD_AT(0x431b8c) = { 1.0f, 1.0f };
-float g_Sprite2DScaleA[2] SD_AT(0x431b94) = { 0.5f, 0.5f };
-float g_Sprite2DScaleB[2] SD_AT(0x431b9c) = { 1.0f, 1.0f };
-float g_Fps SD_AT(0x431ba8) = 30.0f;
+int g_SceneCheckedMode = -1;
+int g_SceneDuDvCheckedMode = -1;
+char g_ThousandsSep = 46;
+float g_Sprite2DScale[2] = { 1.0f, 1.0f };
+float g_Sprite2DScaleA[2] = { 0.5f, 0.5f };
+float g_Sprite2DScaleB[2] = { 1.0f, 1.0f };
+float g_Fps = 30.0f;
 struct {
 	byte g_UseVB;	/* 0x0 */
 	byte g_MeshD3DOn;	/* 0x1 */
 	byte g_Engine431bae;	/* 0x2 */
 	byte g_ResetDevOnly;	/* 0x3 */
-} group_431bac SD_AT(0x431bac) = { .g_UseVB = 1, .g_MeshD3DOn = 1, .g_Engine431bae = 1, .g_ResetDevOnly = 1 };
-float engineIni_431bb0 SD_AT(0x431bb0) = 0.35f;
-uint32_t engineIni_431bb4 SD_AT(0x431bb4) = 0x7fffffff;
-uint32_t engineIni_431bb8 SD_AT(0x431bb8) = 1;
-uint32_t engineIni_431bbc SD_AT(0x431bbc) = 1;
-int g_GroundTrisPerNode SD_AT(0x431bc0) = 80;
-int g_CameraNodes SD_AT(0x431bc4) = 1;
-uint32_t engineIni_431bc8 SD_AT(0x431bc8) = 1;
-int g_UseTextures SD_AT(0x431bcc) = 1;
-uint32_t engineIni_431bd0 SD_AT(0x431bd0) = 1;
-int g_Dither SD_AT(0x431bd4) = 1;
-int g_UseEnvMap SD_AT(0x431bd8) = 1;
-int g_UseHWEnvMap SD_AT(0x431bdc) = 1;
-int g_UseBumpMap SD_AT(0x431be0) = 1;
-int g_UseGlowMap SD_AT(0x431be4) = 1;
-int g_DiffuseMod4x SD_AT(0x431be8) = 1;
-int g_TimeMult SD_AT(0x431bec) = 25;
-char g_DbgCharMap[132] SD_AT(0x431c70);
-int g_EngineDef1cf4 SD_AT(0x431cf4) = 16;
-uint32_t engineIni_431cf8 SD_AT(0x431cf8) = 1;
-int g_MouseExcl SD_AT(0x431cfc) = 1;
-float g_FpsScale SD_AT(0x431d00) = 100.0f;
-float g_MusicVolume SD_AT(0x431d04) = 1.0f;
-float g_MusicVoiceover SD_AT(0x431d08) = 1.0f;
-int g_MusicChannel SD_AT(0x431d0c) = -1;
-float g_MusicVoiceoverTarget SD_AT(0x431d10) = 1.0f;
-float g_MusicVoiceoverSpeed SD_AT(0x431d14) = 1.0f;
-float g_MusicFadeTarget SD_AT(0x431d18) = 1.0f;
-float g_MusicFadeSpeed SD_AT(0x431d1c) = 1.0f;
-float g_AnimFpsDefault SD_AT(0x431d20) = 25.0f;
-CMatList g_MatList SD_AT(0x431d24) = { .vftable = (void *)sd_CMatList_vftable };
-uint32_t g_BlendTable[6] SD_AT(0x431d34) = { 1, 2, 3, 4, 5, 6 };
-uint32_t g_LogConMask SD_AT(0x431d4c) = 65535;
-uint32_t g_FilterMip SD_AT(0x431d70) = 1;
-uint32_t engineIni_431d74 SD_AT(0x431d74) = 2;
-uint32_t g_AnisotropyCur SD_AT(0x431d78) = 2;
-uint32_t g_FilterMin SD_AT(0x431d7c) = 2;
-uint32_t g_FilterMag SD_AT(0x431d80) = 2;
-const char *g_PSNames[32] SD_AT(0x431d88) = {
+} group_431bac = { .g_UseVB = 1, .g_MeshD3DOn = 1, .g_Engine431bae = 1, .g_ResetDevOnly = 1 };
+float engineIni_431bb0 = 0.35f;
+uint32_t engineIni_431bb4 = 0x7fffffff;
+uint32_t engineIni_431bb8 = 1;
+uint32_t engineIni_431bbc = 1;
+int g_GroundTrisPerNode = 80;
+int g_CameraNodes = 1;
+uint32_t engineIni_431bc8 = 1;
+int g_UseTextures = 1;
+uint32_t engineIni_431bd0 = 1;
+int g_Dither = 1;
+int g_UseEnvMap = 1;
+int g_UseHWEnvMap = 1;
+int g_UseBumpMap = 1;
+int g_UseGlowMap = 1;
+int g_DiffuseMod4x = 1;
+int g_TimeMult = 25;
+char g_DbgCharMap[132];
+int g_EngineDef1cf4 = 16;
+uint32_t engineIni_431cf8 = 1;
+int g_MouseExcl = 1;
+float g_FpsScale = 100.0f;
+float g_MusicVolume = 1.0f;
+float g_MusicVoiceover = 1.0f;
+int g_MusicChannel = -1;
+float g_MusicVoiceoverTarget = 1.0f;
+float g_MusicVoiceoverSpeed = 1.0f;
+float g_MusicFadeTarget = 1.0f;
+float g_MusicFadeSpeed = 1.0f;
+float g_AnimFpsDefault = 25.0f;
+CMatList g_MatList = { .vftable = (void *)sd_CMatList_vftable };
+uint32_t g_BlendTable[6] = { 1, 2, 3, 4, 5, 6 };
+uint32_t g_LogConMask = 65535;
+uint32_t g_FilterMip = 1;
+uint32_t engineIni_431d74 = 2;
+uint32_t g_AnisotropyCur = 2;
+uint32_t g_FilterMin = 2;
+uint32_t g_FilterMag = 2;
+const char *g_PSNames[32] = {
 	(void *)sd_str_3d8e70, (void *)sd_str_3d8e84, (void *)sd_str_3d8e98, (void *)sd_str_3d8eb4,
 	(void *)sd_str_3d8ec8, (void *)sd_str_3d8edc, (void *)sd_str_3d8ef8, (void *)sd_str_3d8f1c,
 	(void *)sd_str_3d8f38, (void *)sd_str_3d8f54, (void *)sd_str_3d8f68, (void *)sd_str_3d8f78,
@@ -860,7 +860,7 @@ const char *g_PSNames[32] SD_AT(0x431d88) = {
 	(void *)sd_str_3d9078, (void *)sd_str_3d9090, (void *)sd_str_3d90ac, (void *)sd_str_3d90c0,
 	(void *)sd_str_3d90d4, (void *)sd_str_3d90e8,
 };
-ShaderTab g_ShaderTab[32] SD_AT(0x431e08) = {
+ShaderTab g_ShaderTab[32] = {
 	{ .Name = (void *)sd_str_3d9104, .flags = 257, .fnRender = (void *)sd_Render_PSFixed },
 	{
 		.Index = 1,
@@ -1020,7 +1020,7 @@ ShaderTab g_ShaderTab[32] SD_AT(0x431e08) = {
 	},
 	{ .Index = 25, .Name = (void *)sd_str_3d9220, .flags = 257, .fnRender = (void *)sd_Shader_DiffuseNoLit },
 };
-ShaderTab g_ShaderTab2[32] SD_AT(0x432108) = {
+ShaderTab g_ShaderTab2[32] = {
 	{ .Name = (void *)sd_str_3d9104, .flags = 257, .fnRender = (void *)sd_Shader_DiffuseLightmap },
 	{
 		.Index = 1,
@@ -1126,57 +1126,57 @@ ShaderTab g_ShaderTab2[32] SD_AT(0x432108) = {
 	{ .Index = 24, .Name = (void *)sd_str_3d920c, .flags = 257 },
 	{ .Index = 25, .Name = (void *)sd_str_3d9220, .flags = 257, .fnRender = (void *)sd_Shader_DiffuseNoLit },
 };
-uint32_t g_LightmapOp SD_AT(0x432408) = 4;
+uint32_t g_LightmapOp = 4;
 struct {
 	byte g_UseShaders2;	/* 0x0 */
 	byte g_UseShaders;	/* 0x1 */
 	byte pad_2[2];
-} group_43240c SD_AT(0x43240c) = { .g_UseShaders = 1 };
-int g_WorldSet SD_AT(0x432410) = 1;
-int g_Tiles SD_AT(0x432414) = 4;
-byte g_ModelsOn SD_AT(0x432418) = 1;
-float g_CollisionEpsilon SD_AT(0x43241c) = 0.0001f;
-float g_CollideAddColor[4] SD_AT(0x432420) = { 0, 0, 0, 1.0f };
-procrange_t g_ProcRangeChar SD_AT(0x432430) = { .lo = -128, .hi = 127 };
-procrange_t g_ProcRangeByte SD_AT(0x432438) = { .hi = 255 };
-procrange_t g_ProcRangeShort SD_AT(0x432440) = { .lo = -32768, .hi = 32767 };
-procrange_t g_ProcRangeWord SD_AT(0x432448) = { .hi = 65535 };
-void *data_432450[8] SD_AT(0x432450) = {
+} group_43240c = { .g_UseShaders = 1 };
+int g_WorldSet = 1;
+int g_Tiles = 4;
+byte g_ModelsOn = 1;
+float g_CollisionEpsilon = 0.0001f;
+float g_CollideAddColor[4] = { 0, 0, 0, 1.0f };
+procrange_t g_ProcRangeChar = { .lo = -128, .hi = 127 };
+procrange_t g_ProcRangeByte = { .hi = 255 };
+procrange_t g_ProcRangeShort = { .lo = -32768, .hi = 32767 };
+procrange_t g_ProcRangeWord = { .hi = 65535 };
+void *data_432450[8] = {
 	(void *)sd_str_3dbe94, (void *)sd_str_3dbe9c, (void *)sd_str_3dbea4, (void *)sd_str_3dbeac,
 	(void *)sd_str_3dbeb4, (void *)sd_str_3dbebc, (void *)sd_str_3dbec4,
 };
-void *data_432470[4] SD_AT(0x432470) = { (void *)sd_str_3dbe94, (void *)sd_str_3dbecc, (void *)sd_str_3dbed4 };
-void *data_432480[7] SD_AT(0x432480) = {
+void *data_432470[4] = { (void *)sd_str_3dbe94, (void *)sd_str_3dbecc, (void *)sd_str_3dbed4 };
+void *data_432480[7] = {
 	(void *)sd_str_3dbee0, (void *)sd_str_3dbee4, (void *)sd_str_3dbef0, (void *)sd_str_3dbefc,
 	(void *)sd_str_3dbf00, (void *)sd_str_3dbf0c,
 };
-void *data_43249c[7] SD_AT(0x43249c) = { (void *)sd_str_3dbf18, (void *)sd_str_3dbf20, (void *)sd_str_3dbf28, (void *)sd_str_3dbf30, (void *)sd_str_3dbf3c };
-cProcType g_ProcTypes[16] SD_AT(0x4324b8) = {
+void *data_43249c[7] = { (void *)sd_str_3dbf18, (void *)sd_str_3dbf20, (void *)sd_str_3dbf28, (void *)sd_str_3dbf30, (void *)sd_str_3dbf3c };
+cProcType g_ProcTypes[16] = {
 	{ .name = (void *)sd_str_3dbf48, .data = (void *)sd_data_432450 },
 	{ .name = (void *)sd_str_3dbf54, .data = (void *)sd_data_432470 },
 	{ .name = (void *)sd_str_3dbf60, .convert = (void *)sd_Proc_Note },
 	{ .name = (void *)sd_str_3dbf6c, .data = (void *)sd_data_432480 },
 	{ .name = (void *)sd_str_3dbf80, .data = (void *)sd_data_43249c },
 };
-float g_StencilMultFrame SD_AT(0x432578) = 1.0f;
-int g_ShadowLightType SD_AT(0x43257c) = 5002;
-float g_ShadowRange SD_AT(0x432580) = 1000.0f;
-int g_MaxPoints SD_AT(0x432584) = 4000;
-int g_TimerQPMult SD_AT(0x432588) = 1;
-int g_DXTimerStopped SD_AT(0x43258c) = 1;
-int64_t g_TimerQPFreq SD_AT(0x432590) = -1LL;
-int g_Screen2DW SD_AT(0x432598) = 800;
-int g_Screen2DH SD_AT(0x43259c) = 600;
-double g_Screen2DInvW SD_AT(0x4325a0) = 0.00125;
-double g_Screen2DInvH SD_AT(0x4325a8) = 0.0016666666666666668;
-int g_Graphic2DRot[5][4] SD_AT(0x4325b0) = {
+float g_StencilMultFrame = 1.0f;
+int g_ShadowLightType = 5002;
+float g_ShadowRange = 1000.0f;
+int g_MaxPoints = 4000;
+int g_TimerQPMult = 1;
+int g_DXTimerStopped = 1;
+int64_t g_TimerQPFreq = -1LL;
+int g_Screen2DW = 800;
+int g_Screen2DH = 600;
+double g_Screen2DInvW = 0.00125;
+double g_Screen2DInvH = 0.0016666666666666668;
+int g_Graphic2DRot[5][4] = {
 	{ 0, 1, 2, 3 },
 	{ 2, 0, 3, 1 },
 	{ 3, 2, 1 },
 	{ 1, 3, 0, 2 },
 	{ (uintptr_t)(void *)sd_str_3de080, (uintptr_t)(void *)sd_str_3de088, 131, (uintptr_t)(void *)sd_str_3de0a4 },
 };
-const char *g_ErrTable[200] SD_AT(0x432618) = {
+const char *g_ErrTable[200] = {
 	(void *)sd_str_3de0c4, (void *)sd_str_3de0cc, (void *)sd_str_3ca58c, (void *)sd_str_3de0e4,
 	(void *)sd_str_3de0f4, (void *)sd_str_3de110, (void *)sd_str_3de124, (void *)sd_str_3de140,
 	(void *)sd_str_3de154, (void *)sd_str_3de168, (void *)sd_str_3de17c, (void *)sd_str_3de190,
@@ -1190,30 +1190,30 @@ const char *g_ErrTable[200] SD_AT(0x432618) = {
 	(void *)sd_str_3de38c, (void *)sd_str_3de3a8, (void *)sd_str_3de3bc, (void *)sd_str_3ca704, 0, 0, 0, 0, 0, 0,
 	(void *)sd_str_3de3d4, (void *)sd_str_3de3e8, (void *)sd_str_3de3fc, (void *)sd_str_3de40c,
 };
-int g_TextBPP SD_AT(0x432938) = 16;
-int g_TextOpBPP SD_AT(0x43293c) = 32;
-int g_TexMipFadeOn SD_AT(0x432940) = 1;
-int g_TexFixedBPP SD_AT(0x432944) = 24;
-int g_ShotNum SD_AT(0x432948) = -1;
-int g_ShadowMapDlg SD_AT(0x43294c) = 1;
-float g_ShadowMapScale SD_AT(0x432950) = 1.0f;
-float g_ShadowMapRes SD_AT(0x432954) = 0.5f;
-int g_ShadowMapTexX SD_AT(0x432958) = 256;
-int g_ShadowMapTexY SD_AT(0x43295c) = 256;
-float g_ShadowMapGamma SD_AT(0x432960) = 1.0f;
-float g_ShadowMapBrightness SD_AT(0x432964) = 1.0f;
-int g_ShadowMapBounces SD_AT(0x432968) = 1;
-float g_ShadowMapCoefRad SD_AT(0x43296c) = 0.1f;
-int g_MaxLightmap SD_AT(0x432970) = 2;
-float g_BspLodDist[7] SD_AT(0x432974) = { 20.0f, 5.0f, 40.0f, 10.0f, 80.0f, 20.0f, 1e-45f };
-int g_LmapInfo2 SD_AT(0x432990) = 1;
-int g_BspDebugSel SD_AT(0x432994) = -1;
-float g_FlareSize SD_AT(0x432998) = 200.0f;
-float g_FlareAttenDistIni SD_AT(0x43299c) = 200.0f;
-float g_FlareAttenDistEnd SD_AT(0x4329a0) = 3000.0f;
-float g_FlareFadeIn SD_AT(0x4329a4) = 8.0f;
-float g_FlareFadeOut SD_AT(0x4329a8) = 8.0f;
-BlendModeEntry g_BlendModeTable[7] SD_AT(0x4329b0) = {
+int g_TextBPP = 16;
+int g_TextOpBPP = 32;
+int g_TexMipFadeOn = 1;
+int g_TexFixedBPP = 24;
+int g_ShotNum = -1;
+int g_ShadowMapDlg = 1;
+float g_ShadowMapScale = 1.0f;
+float g_ShadowMapRes = 0.5f;
+int g_ShadowMapTexX = 256;
+int g_ShadowMapTexY = 256;
+float g_ShadowMapGamma = 1.0f;
+float g_ShadowMapBrightness = 1.0f;
+int g_ShadowMapBounces = 1;
+float g_ShadowMapCoefRad = 0.1f;
+int g_MaxLightmap = 2;
+float g_BspLodDist[7] = { 20.0f, 5.0f, 40.0f, 10.0f, 80.0f, 20.0f, 1e-45f };
+int g_LmapInfo2 = 1;
+int g_BspDebugSel = -1;
+float g_FlareSize = 200.0f;
+float g_FlareAttenDistIni = 200.0f;
+float g_FlareAttenDistEnd = 3000.0f;
+float g_FlareFadeIn = 8.0f;
+float g_FlareFadeOut = 8.0f;
+BlendModeEntry g_BlendModeTable[7] = {
 	{ .src = 2, .dst = 1 },
 	{ .mode = 1, .src = 2, .dst = 2 },
 	{ .mode = 2, .src = 5, .dst = 2 },
@@ -1222,27 +1222,27 @@ BlendModeEntry g_BlendModeTable[7] SD_AT(0x4329b0) = {
 	{ .mode = 5, .src = 1, .dst = 3 },
 	{ .mode = 6, .src = 2, .dst = 6 },
 };
-int g_FileErr SD_AT(0x432a04) = -1;
-int32_t g_InputCursor[2] SD_AT(0x432a08) = { 100, 100 };
-uint32_t g_BackgroundColor SD_AT(0x432a10) = 0xffffff;
-uint32_t g_BackgroundColorNew SD_AT(0x432a14) = 0xffffff;
-float g_GammaLastRGB SD_AT(0x432a18) = 1.0f;
-float g_GammaLastScale SD_AT(0x432a1c) = 1.0f;
-float g_GammaLastRed SD_AT(0x432a20) = 1.0f;
-float g_GammaLastGreen SD_AT(0x432a24) = 1.0f;
-float g_GammaLastBlue SD_AT(0x432a28) = 1.0f;
-uint32_t g_BspColors[16] SD_AT(0x432a30) = {
+int g_FileErr = -1;
+int32_t g_InputCursor[2] = { 100, 100 };
+uint32_t g_BackgroundColor = 0xffffff;
+uint32_t g_BackgroundColorNew = 0xffffff;
+float g_GammaLastRGB = 1.0f;
+float g_GammaLastScale = 1.0f;
+float g_GammaLastRed = 1.0f;
+float g_GammaLastGreen = 1.0f;
+float g_GammaLastBlue = 1.0f;
+uint32_t g_BspColors[16] = {
 	0, 128, 32768, 32896, 0x800000, 0x800080, 0x808000, 0xc0c0c0, 0x808080, 255, 65280, 65535, 0xff0000, 0xff00ff,
 	0xffff00, 0xffffff,
 };
-int g_MaxTriGroup SD_AT(0x432a70) = 2048;
-const char *g_NodeEffectSect SD_AT(0x432a74) = (void *)sd_str_3e3bc8;
-int g_TranspGroup SD_AT(0x432a78) = 1;
+int g_MaxTriGroup = 2048;
+const char *g_NodeEffectSect = (void *)sd_str_3e3bc8;
+int g_TranspGroup = 1;
 struct {
 	byte g_M3DOk;	/* 0x0 */
 	byte g_BspQ3LMapNoBlend;	/* 0x1 */
 	byte pad_2[2];
-} group_432a7c SD_AT(0x432a7c) = { .g_M3DOk = 1, .g_BspQ3LMapNoBlend = 1 };
-int g_LexCh SD_AT(0x432a80) = -1;
-float g_IllumSmooth SD_AT(0x432a84) = 0.5f;
+} group_432a7c = { .g_M3DOk = 1, .g_BspQ3LMapNoBlend = 1 };
+int g_LexCh = -1;
+float g_IllumSmooth = 0.5f;
 

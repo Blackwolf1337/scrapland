@@ -22,33 +22,33 @@
 #include "scrap/vehicleentity.h"
 
 /* the engine variables */
-#define g_ShowPathAI GAME_GLOBAL_IN(int, GVar_ShowPathAI, 16, 0x444744)
-#define g_DepthPathRouteOutDoorAI GAME_GLOBAL_IN(int, GVar_DepthPathRouteOutDoorAI, 16, 0x444960)
-#define g_ShowVehAI (&GAME_GLOBAL_IN(cString, GVar_ShowVehAI, 16, 0x444abc))
-#define g_LimVelTurnObjectiveAI GAME_GLOBAL_IN(float, GVar_LimVelTurnObjectiveAI, 16, 0x444aa4)
-#define g_DistBoostAI GAME_GLOBAL_IN(float, GVar_DistBoostAI, 16, 0x444ad4)
-#define g_DepthSearchPosGoAI GAME_GLOBAL_IN(int, GVar_DepthSearchPosGoAI, 16, 0x444aec)
-#define g_TimeReactTurnAI GAME_GLOBAL_IN(float, GVar_TimeReactTurnAI, 16, 0x444b04)
-#define g_DistBrakeObjAI GAME_GLOBAL_IN(float, GVar_DistBrakeObjAI, 16, 0x444b1c)
-#define g_MinAngleSearchPointAI GAME_GLOBAL_IN(float, GVar_MinAngleSearchPointAI, 16, 0x444b34)
-#define g_TimeMaxReachBoostAI GAME_GLOBAL_IN(float, GVar_TimeMaxReachBoostAI, 16, 0x444b4c)
-#define g_VelTurnAI GAME_GLOBAL_IN(float, GVar_VelTurnAI, 16, 0x444b64)
-#define g_DecVelBrakeAI GAME_GLOBAL_IN(float, GVar_DecVelBrakeAI, 16, 0x444b7c)
-#define g_ShowStopShipAI GAME_GLOBAL_IN(int, GVar_ShowStopShipAI, 16, 0x444b98)
-#define g_MinTimeReposAI GAME_GLOBAL_IN(float, GVar_MinTimeReposAI, 16, 0x444bb0)
+#define g_ShowPathAI GAME_GLOBAL_IN(int, GVar_ShowPathAI, 16)
+#define g_DepthPathRouteOutDoorAI GAME_GLOBAL_IN(int, GVar_DepthPathRouteOutDoorAI, 16)
+#define g_ShowVehAI (&GAME_GLOBAL_IN(cString, GVar_ShowVehAI, 16))
+#define g_LimVelTurnObjectiveAI GAME_GLOBAL_IN(float, GVar_LimVelTurnObjectiveAI, 16)
+#define g_DistBoostAI GAME_GLOBAL_IN(float, GVar_DistBoostAI, 16)
+#define g_DepthSearchPosGoAI GAME_GLOBAL_IN(int, GVar_DepthSearchPosGoAI, 16)
+#define g_TimeReactTurnAI GAME_GLOBAL_IN(float, GVar_TimeReactTurnAI, 16)
+#define g_DistBrakeObjAI GAME_GLOBAL_IN(float, GVar_DistBrakeObjAI, 16)
+#define g_MinAngleSearchPointAI GAME_GLOBAL_IN(float, GVar_MinAngleSearchPointAI, 16)
+#define g_TimeMaxReachBoostAI GAME_GLOBAL_IN(float, GVar_TimeMaxReachBoostAI, 16)
+#define g_VelTurnAI GAME_GLOBAL_IN(float, GVar_VelTurnAI, 16)
+#define g_DecVelBrakeAI GAME_GLOBAL_IN(float, GVar_DecVelBrakeAI, 16)
+#define g_ShowStopShipAI GAME_GLOBAL_IN(int, GVar_ShowStopShipAI, 16)
+#define g_MinTimeReposAI GAME_GLOBAL_IN(float, GVar_MinTimeReposAI, 16)
 
-#define AIVC_MAX_FREE 50		/* the free nodes the path keeps (rva 0x3a9a2c) */
-#define AIVC_MAX_LEN 10000.0f		/* the corridor tested ahead at most (rva 0x3a5ac0) */
-#define AIVC_NEAR 1600.0		/* rva 0x3a9200 */
-#define AIVC_SAME 400.0			/* rva 0x3a91f8 */
-#define AIVC_STRAFE_FAR2 400000000.0f	/* rva 0x3a9228 */
-#define AIVC_STRAFE_AHEAD 6.0f		/* rva 0x3a9218 */
-#define AIVC_REL_SPEED 700.0f		/* rva 0x3a9224 */
-#define AIVC_RAND_INV (1.0 / 32767.0)	/* rva 0x3a3d60 */
+#define AIVC_MAX_FREE 50		/* the free nodes the path keeps */
+#define AIVC_MAX_LEN 10000.0f		/* the corridor tested ahead at most */
+#define AIVC_NEAR 1600.0
+#define AIVC_SAME 400.0
+#define AIVC_STRAFE_FAR2 400000000.0f
+#define AIVC_STRAFE_AHEAD 6.0f
+#define AIVC_REL_SPEED 700.0f
+#define AIVC_RAND_INV (1.0 / 32767.0)
 
-#define AIVC_STRAFE_RADIUS 1000.0f	/* the strafe to the point only for smaller vehicles (rva 0x3a5abc) */
-#define AIVC_DRAW_LEN 1000.0f		/* the lines of the nose and the velocity (rva 0x3a5abc) */
-#define AIVC_DRAW_VEL2 10000.0f		/* rva 0x3a5ac0 */
+#define AIVC_STRAFE_RADIUS 1000.0f	/* the strafe to the point only for smaller vehicles */
+#define AIVC_DRAW_LEN 1000.0f		/* the lines of the nose and the velocity */
+#define AIVC_DRAW_VEL2 10000.0f
 
 int Vec3_Differ(const float *a, const float *b);
 

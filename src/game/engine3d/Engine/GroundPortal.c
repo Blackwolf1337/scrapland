@@ -22,11 +22,11 @@
 #define MAX_ZONES 0x80
 
 /* the sector counts by their name tags (the sky ones are g_PortalUnion) */
-#define g_NumEndSectors GAME_GLOBAL_IN(int, g_Zones, 520, 0x4b00e0)
-#define g_NumOutSectors GAME_GLOBAL_IN(int, g_Zones, 524, 0x4b00e4)
+#define g_NumEndSectors GAME_GLOBAL_IN(int, g_Zones, 520)
+#define g_NumOutSectors GAME_GLOBAL_IN(int, g_Zones, 524)
 /* the projection and the viewport narrowed to the rectangle of each seen sector */
-#define g_PortalClip GAME_GLOBAL_IN(int, GVar_R_PortalClip, 16, 0x4b00f8)
-#define g_PortalBand GAME_GLOBAL_IN(int, GVar_R_PortalBand, 16, 0x4b11a8)	/* pixels added around it */
+#define g_PortalClip GAME_GLOBAL_IN(int, GVar_R_PortalClip, 16)
+#define g_PortalBand GAME_GLOBAL_IN(int, GVar_R_PortalBand, 16)	/* pixels added around it */
 
 
 CZone *__fastcall CZone_ctor(CZone *self) {
@@ -71,7 +71,7 @@ void __thiscall SectorVis_Draw(SectorVis *self, const vec3_t *pos, byte visible,
 
 	(void)name;
 	if (!(self->flags & SECTORVIS_VALID)) {
-		Debug_Text3D(g_FntComic14, 0.0f, 0.0f, pos, 0x808080, GAME_STR(str_3dd0ec, 0x3dd0ec));	/* "[-]" */
+		Debug_Text3D(g_FntComic14, 0.0f, 0.0f, pos, 0x808080, GAME_STR(str_3dd0ec));	/* "[-]" */
 		return;
 	}
 	uint32_t color;
@@ -89,8 +89,8 @@ void __thiscall SectorVis_Draw(SectorVis *self, const vec3_t *pos, byte visible,
 	}
 	color = visible ? on : off;
 draw:
-	Debug_Text3D(g_FntComic14, 0.0f, 0.0f, pos, color, GAME_STR(str_3dd0f0, 0x3dd0f0), self->sector,	/* "%d%s" */
-		(self->flags & SECTORVIS_CACHED) ? GAME_STR(str_Empty, 0x3a3228) : GAME_STR(str_3ca94c, 0x3ca94c));	/* "", "*" */
+	Debug_Text3D(g_FntComic14, 0.0f, 0.0f, pos, color, GAME_STR(str_3dd0f0), self->sector,	/* "%d%s" */
+		(self->flags & SECTORVIS_CACHED) ? GAME_STR(str_Empty) : GAME_STR(str_3ca94c));	/* "", "*" */
 }
 
 /* the cached sector is seen (none counts as seen) */
@@ -157,7 +157,7 @@ byte Sector_FindPos(const vec3_t *pos, int *sector, const char *name) {
 
 const char *Sector_GetName(int sector) {
 	if (sector == -1) {
-		return GAME_STR(str_3dd0a4, 0x3dd0a4);	/* "_unasigned_" */
+		return GAME_STR(str_3dd0a4);	/* "_unasigned_" */
 	}
 	return Sector_Get((uint32_t)sector)->node->name;
 }
@@ -497,7 +497,7 @@ void __fastcall PaintZone_dtor(PaintZone *self) {
 	(void)self;
 }
 
-/* the static initializer (rva 0x05d6f0, the constructor inlined) and the atexit destructor (rva 0x38ee30) of
+/* the static initializer (rva 0x05d6f0, the constructor inlined) and the atexit destructor of
  * g_PaintAll */
 void GroundPortal_FiniPaintAll(void) {
 	PaintZone_dtor(g_PaintAll);
@@ -517,12 +517,12 @@ void Portals_DebugDraw(void) {
 	}
 	dev = g_pd3dDevice;
 	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, vp);
-	Text_Printf(300, 0x14, GAME_STR(str_3dcf1c, 0x3dcf1c), g_NumPaintZones);	/* "zonas: %d" */
+	Text_Printf(300, 0x14, GAME_STR(str_3dcf1c), g_NumPaintZones);	/* "zonas: %d" */
 	for (int i = 0; i < g_NumPaintZones; i++) {
 		const PaintZone *zp = &g_PaintZones[i];
 		const box_t *r = &zp->rect;
 		if (g_ShowPortals > 2) {
-			Text_Printf(300, 0x22 + i * 0xe, GAME_STR(str_3dcf28, 0x3dcf28), i, zp->zone, zp->times, (double)r->min.x,
+			Text_Printf(300, 0x22 + i * 0xe, GAME_STR(str_3dcf28), i, zp->zone, zp->times, (double)r->min.x,
 				(double)r->min.y, (double)r->min.z, (double)r->max.x, (double)r->max.y, (double)r->max.z);
 		}
 		int x0 = Portal_Pixel(r->min.x + 1.0f, vp[2], vp[0]) + 1;
@@ -549,7 +549,7 @@ static CZone *Zone_OfNode(const CNode3D *node) {
 }
 
 static const char *Node_NameOrNull(const CNode3D *n) {
-	return n ? n->name : GAME_STR(str_3d5da4, 0x3d5da4);	/* "(null)" */
+	return n ? n->name : GAME_STR(str_3d5da4);	/* "(null)" */
 }
 
 void Sectors_Create(CScene *scn) {
@@ -705,8 +705,8 @@ byte Portals_SetView(const PaintZone *zp) {
 		return 0;
 	}
 	if (g_ShowPortals > 2) {
-		Text_PrintfRel(0, 0xe, GAME_STR(str_3dd008, 0x3dd008), zp->zone, lx, ly);	/* "zona: %d  LX: %d  LY: %d" */
-		Text_PrintfRel(0, 0xe, GAME_STR(str_3dd024, 0x3dd024), x0, y0, x1, y1);	/* "  %d %d  %d %d" */
+		Text_PrintfRel(0, 0xe, GAME_STR(str_3dd008), zp->zone, lx, ly);	/* "zona: %d  LX: %d  LY: %d" */
+		Text_PrintfRel(0, 0xe, GAME_STR(str_3dd024), x0, y0, x1, y1);	/* "  %d %d  %d %d" */
 	}
 	uint32_t vp[6] = { (uint32_t)x0, (uint32_t)y0, (uint32_t)lx, (uint32_t)ly, 0, 0x3f800000 };
 	dev = g_pd3dDevice;

@@ -12,7 +12,7 @@
 #include "scrap/weaps2.h"
 #include "scrap/world.h"
 
-#define g_RandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
+#define g_RandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 #define FX_PI 3.1415927f				/* 0x40490fdb */
 
 /* rand() in [0, 1] times range, plus add (all in double) */
@@ -257,10 +257,10 @@ void *__thiscall cObjElementFXTesla_Delete(void *self, uint32_t flags) {
 
 /* ---- cObjElementFXATPC ---- */
 
-#define g_ATPCShootSize GAME_GLOBAL_IN(float, GVar_ATPCShootSize, 16, 0x448c8c)
+#define g_ATPCShootSize GAME_GLOBAL_IN(float, GVar_ATPCShootSize, 16)
 #define FXATPC_RAMP_CORE 0x4317a0	/* [-16..0], by the time */
 #define FXATPC_RAMP_GLOW 0x431758	/* [2] */
-#define FXATPC_GLOW_RAMPS (GAME_ARRAY(uint32_t, FXATPC_GLOW_RAMPS, FXATPC_RAMP_GLOW))	/* [2 * 9] */
+#define FXATPC_GLOW_RAMPS (GAME_ARRAY(uint32_t, FXATPC_GLOW_RAMPS))	/* [2 * 9] */
 #define FXATPC_RAMP_RING 0x43177c
 
 static inline uint32_t FXW_Gray(int a) {
@@ -385,7 +385,7 @@ void __thiscall cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debri
 	int a = (int)(s1 * 255.0f);
 	CGameTrail_SetTransp(&self->core, (byte)a);
 	float k16 = u * -16.0f;
-	const uint32_t *ramp = GAME_ARRAY(const uint32_t, cObjElementFXATPC_Update_4317a0, FXATPC_RAMP_CORE) - (int)k16;
+	const uint32_t *ramp = GAME_ARRAY(const uint32_t, cObjElementFXATPC_Update_4317a0) - (int)k16;
 	float rs2 = 0.75f;
 	float w = w0 * 0.75f;
 	CGameTrail_Add(&self->core, self->from, w, *ramp);
@@ -579,7 +579,7 @@ void __thiscall cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, con
 			FXW_NoRot(p);
 			CGameParticles_Apply(p);
 			CGameParticles_SetColorRampOn(p, 1);
-			CGameParticles_SetColorRamp(p, GAME_ARRAY_IN(uint32_t, FXATPC_GLOW_RAMPS, 36, FXATPC_RAMP_RING));
+			CGameParticles_SetColorRamp(p, GAME_ARRAY_IN(uint32_t, FXATPC_GLOW_RAMPS, 36));
 			CGameParticles_EmitDt(p, 1, 0, g_ATPCTrailTime * 0.2f / 14.0f * (float)k);
 		}
 	}
@@ -626,7 +626,7 @@ void __thiscall cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, con
 		p->sizeEnd = (self->width + self->width) - (float)__builtin_fabs((double)((float)(k - 2) * 400.0f));
 		CGameParticles_Apply(p);
 		CGameParticles_SetColorRampOn(p, 1);
-		CGameParticles_SetColorRamp(p, GAME_ARRAY_IN(uint32_t, FXATPC_GLOW_RAMPS, 36, FXATPC_RAMP_RING));
+		CGameParticles_SetColorRamp(p, GAME_ARRAY_IN(uint32_t, FXATPC_GLOW_RAMPS, 36));
 		CGameParticles_EmitN(p, 1, 0);
 	}
 
@@ -659,7 +659,7 @@ void __thiscall cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, con
 	p->rotVar = FXW_Rand(0.7853981852531433, 0.0);
 	CGameParticles_Apply(p);
 	CGameParticles_SetColorRampOn(p, 1);
-	CGameParticles_SetColorRamp(p, GAME_ARRAY_IN(uint32_t, FXATPC_GLOW_RAMPS, 36, FXATPC_RAMP_RING));
+	CGameParticles_SetColorRamp(p, GAME_ARRAY_IN(uint32_t, FXATPC_GLOW_RAMPS, 36));
 	CGameParticles_EmitN(p, 1, 0);
 
 	/* the sparks from the hit towards the shooter */
@@ -1430,9 +1430,9 @@ void __thiscall cObjElementFXSwarmMissile_Reset(cObjElementFXSwarmMissile *self,
 
 /* ---- cObjElementFXTesla ---- */
 
-#define g_TeslaRange GAME_GLOBAL_IN(float, GVar_TeslaRange, 16, 0x44a7d0)
-#define g_FXTeslaStepTime GAME_GLOBAL_IN(float, GVar_FXTeslaStepTime, 16, 0x44a760)
-#define g_FXTeslaRandRadius GAME_GLOBAL_IN(float, GVar_FXTeslaRandRadius, 16, 0x44a840)
+#define g_TeslaRange GAME_GLOBAL_IN(float, GVar_TeslaRange, 16)
+#define g_FXTeslaStepTime GAME_GLOBAL_IN(float, GVar_FXTeslaStepTime, 16)
+#define g_FXTeslaRandRadius GAME_GLOBAL_IN(float, GVar_FXTeslaRandRadius, 16)
 #define FXTESLA_RAMP_SPARK 0x431930		/* [2] */
 
 /* the end moved back from the target towards the emitter by 0.2..0.5 of r along n */
@@ -1646,7 +1646,7 @@ void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *deb
 					CGameParticles_Apply(p);
 					CGameParticles_SetColorRampOn(p, 1);
 					CGameParticles_SetColorRamp(p,
-						GAME_ARRAY(uint32_t, cObjElementFXTesla_Update_431930, FXTESLA_RAMP_SPARK) + 9 * (crt_rand() % 2));
+						GAME_ARRAY(uint32_t, cObjElementFXTesla_Update_431930) + 9 * (crt_rand() % 2));
 					CGameParticles_EmitDt(p, 1, 0, FXW_Rand(0.05000000074505806, 0.0));
 					CGameParticles_SetSparksOn(p, 0);
 				}
@@ -1879,11 +1879,11 @@ void __thiscall cObjElementFXTesla_SetEmitter(cObjElementFXTesla *self, cEntity 
 
 /* ---- the Swarm emitters ---- */
 
-#define g_SwarmBeeExplosionFile GAME_GLOBAL_IN(const char *, GVar_SwarmBeeExplosionFile, 16, 0x44a5c0)
-#define g_SwarmExplosionFile GAME_GLOBAL_IN(const char *, GVar_SwarmExplosionFile, 16, 0x44a520)
+#define g_SwarmBeeExplosionFile GAME_GLOBAL_IN(const char *, GVar_SwarmBeeExplosionFile, 16)
+#define g_SwarmExplosionFile GAME_GLOBAL_IN(const char *, GVar_SwarmExplosionFile, 16)
 #define FXSWARM_RAMP_BEE 0x431978
 #define FXSWARM_RAMP_FLASH 0x431a2c		/* [2] */
-#define FXSWARM_FLASH_RAMPS (GAME_ARRAY(uint32_t, FXSWARM_FLASH_RAMPS, FXSWARM_RAMP_FLASH))	/* [2 * 9] */
+#define FXSWARM_FLASH_RAMPS (GAME_ARRAY(uint32_t, FXSWARM_FLASH_RAMPS))	/* [2 * 9] */
 #define FXSWARM_RAMP_SMOKE 0x4319c0		/* [3] */
 #define FXSWARM_RAMP_SPARK 0x431a50		/* [2] */
 #define FXSWARM_RAMP_HIT 0x431810		/* [2] */
@@ -1948,7 +1948,7 @@ void FXSwarm_BeeDeath(float x, float y, float z, float vx, float vy, float vz, f
 	p->rotIni = r;
 	p->rotEnd = r;
 	p->rotVar = FXW_Rand(1.5707963705062866, -0.7853981852531433);
-	CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, FXSwarm_BeeDeath_431978, FXSWARM_RAMP_BEE));
+	CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, FXSwarm_BeeDeath_431978));
 	FXW_SetSprite(p, 0x72);
 	CGameParticles_Apply(p);
 	CGameParticles_EmitN(p, 1, 1);
@@ -2012,7 +2012,7 @@ void FXSwarm_BeeDeath(float x, float y, float z, float vx, float vy, float vz, f
 		p->rotVar = FXW_Rand(1.0471975803375244, -0.5235987901687622);
 		FXW_SetSprite(p, (byte)((crt_rand() & 1) + 0x7b));
 		CGameParticles_Apply(p);
-		CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, FXSwarm_BeeDeath_4319c0, FXSWARM_RAMP_SMOKE) + 9 * (crt_rand() % 3));
+		CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, FXSwarm_BeeDeath_4319c0) + 9 * (crt_rand() % 3));
 		float t = FXW_Rand(0.10000000149011612, 0.0);
 		CGameParticles_EmitDt(p, 1, 1, FXW_Rand(0.25, 0.10000000149011612) * time + t);
 
@@ -2052,7 +2052,7 @@ void FXSwarm_BeeDeath(float x, float y, float z, float vx, float vy, float vz, f
 			break;
 		}
 		CGameParticles_Apply(p);
-		CGameParticles_SetColorRamp(p, GAME_ARRAY_IN(uint32_t, FXSWARM_FLASH_RAMPS, 36, FXSWARM_RAMP_SPARK) + 9 * (crt_rand() & 1));
+		CGameParticles_SetColorRamp(p, GAME_ARRAY_IN(uint32_t, FXSWARM_FLASH_RAMPS, 36) + 9 * (crt_rand() & 1));
 		CGameParticles_EmitDt(p, 1, 1, FXW_Rand(0.10000000149011612, 0.0));
 		a = step + a;
 	} while (6.283185307179586 > (double)a);
@@ -2092,7 +2092,7 @@ static void FXW_HitSparkEmit(CGameParticles *p, float size, double irange, doubl
 	p->rotEnd = r;
 	CGameParticles_Apply(p);
 	CGameParticles_SetColorRampOn(p, 1);
-	CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, FXSwarm_Hit_431858, FXSWARM_RAMP_HITSPARK) + 9 * (crt_rand() & 1));
+	CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, FXSwarm_Hit_431858) + 9 * (crt_rand() & 1));
 	CGameParticles_EmitDt(p, 1, 1, FXW_Rand(trange, tadd));
 }
 
@@ -2222,7 +2222,7 @@ void FXSwarm_Hit(float x, float y, float z, float vx, float vy, float vz, float 
 	p->rotIni = rr;
 	p->rotEnd = rr;
 	p->rotVar = FXW_Rand(1.5707963705062866, -0.7853981852531433);
-	CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, FXSwarm_Hit_431810, FXSWARM_RAMP_HIT) + 9 * (crt_rand() & 1));
+	CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, FXSwarm_Hit_431810) + 9 * (crt_rand() & 1));
 	FXW_SetSprite(p, 5);
 	CGameParticles_Apply(p);
 	CGameParticles_EmitN(p, 1, 1);

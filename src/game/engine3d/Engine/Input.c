@@ -10,12 +10,12 @@
 /* the cursor through the import table of the exe (dinput8 in win32.h) */
 typedef int(__stdcall *cursorpos_t)(int32_t *pt);
 typedef int(__stdcall *setcursorpos_t)(int x, int y);
-#define exe_GetCursorPos GAME_IMPORT(cursorpos_t, GetCursorPos, 4, 0x3a1384)
-#define exe_SetCursorPos GAME_IMPORT(setcursorpos_t, SetCursorPos, 8, 0x3a13b0)
+#define exe_GetCursorPos GAME_IMPORT(cursorpos_t, GetCursorPos, 4)
+#define exe_SetCursorPos GAME_IMPORT(setcursorpos_t, SetCursorPos, 8)
 
-#define IID_IDirectInput8A GAME_PTR(IID_IDIRECTINPUT8A, 0, 0x3d116c)
-#define GUID_SysMouse GAME_PTR(GUID_SYSMOUSE, 0, 0x3d100c)
-#define GUID_SysKeyboard GAME_PTR(GUID_SYSKEYBOARD, 0, 0x3d0ffc)
+#define IID_IDirectInput8A GAME_PTR(IID_IDIRECTINPUT8A, 0)
+#define GUID_SysMouse GAME_PTR(GUID_SYSMOUSE, 0)
+#define GUID_SysKeyboard GAME_PTR(GUID_SYSKEYBOARD, 0)
 #define DIRECTINPUT_VERSION 0x800
 #define DISCL_EXCLUSIVE_FOREGROUND 5
 #define DISCL_NONEXCLUSIVE_FOREGROUND 6

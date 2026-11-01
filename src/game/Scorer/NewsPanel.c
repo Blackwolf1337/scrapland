@@ -11,9 +11,9 @@
 #include "scrap/weapons.h"
 
 #define NEWS_FOV 0.87266463f				/* 50 degrees */
-#define g_NewsRandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
-#define g_NewsRandRange GAME_GLOBAL(double, g_HeadRandRange, 0x3a5d00)	/* 2 pi as a float */
-#define g_NewsRandOfs GAME_GLOBAL(double, g_NewsRandOfs, 0x3aeb98)	/* pi as a float */
+#define g_NewsRandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
+#define g_NewsRandRange GAME_GLOBAL(double, g_HeadRandRange)	/* 2 pi as a float */
+#define g_NewsRandOfs GAME_GLOBAL(double, g_NewsRandOfs)	/* pi as a float */
 /* the three watched entity lists of the world */
 #define World_WatchedList(off) (*(cEntityList **)((byte *)g_pWorld + (off)))
 /* the model of an entity with life (slot 0x98) */

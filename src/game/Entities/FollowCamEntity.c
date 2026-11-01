@@ -11,7 +11,7 @@
 #include "scrap/scrapcollision.h"
 
 #define FCAM_SLOW_DT 0.06666667f		/* rva 0x3ad094: a frame slower than 15 per second */
-#define FCAM_HALF_PI 1.5707964f		/* rva 0x3ad098 */
+#define FCAM_HALF_PI 1.5707964f
 #define FCAM_NEAR_SCALE 1.65f			/* rva 0x3ad09c: the sphere radius of the camera, times clipNear */
 
 static inline cFollowCamEntity *FCam(cEntity *e) {

@@ -12,7 +12,7 @@
 
 #include <string.h>
 
-#define ATPC_PI 3.14159274f		/* rva 0x3a3a30 */
+#define ATPC_PI 3.14159274f
 
 /* the recharge of the next shot (the upgrade 9 is faster) and the start sound of the upgrade */
 void ATPC_SetRecharge(cEntity *v) {

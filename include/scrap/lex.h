@@ -44,15 +44,15 @@ typedef struct cClex {
 } cClex;
 SD_SIZE(cClex, 0x10);
 
-#define g_Lex GAME_GLOBAL(cLexFile *, g_Lex, 0x4e6e20)
-#define g_LexCh GAME_GLOBAL(int, g_LexCh, 0x432a80)	/* the next character, -1 at the end */
-#define g_LexToken (GAME_ARRAY(char, g_LexToken, 0x4e6e28))	/* MAX_LAST_CLEX */
-#define g_LexTokenLen GAME_GLOBAL(int, g_LexTokenLen, 0x4e722c)
-#define g_LexErrors GAME_GLOBAL(int, g_LexErrors, 0x4e6e24)
-#define g_LexWarnings GAME_GLOBAL(int, g_LexWarnings, 0x4e7228)
-#define g_LexDir (GAME_ARRAY(char, g_LexDir, 0x4e7230))	/* MAX_FILEPATH, where Lex_Open looks second */
-#define g_LexOut GAME_GLOBAL(lexout_t, g_LexOut, 0x4e7334)
-#define g_Cl GAME_GLOBAL(cClex, g_Cl, 0x4e7338)
+#define g_Lex GAME_GLOBAL(cLexFile *, g_Lex)
+#define g_LexCh GAME_GLOBAL(int, g_LexCh)	/* the next character, -1 at the end */
+#define g_LexToken (GAME_ARRAY(char, g_LexToken))	/* MAX_LAST_CLEX */
+#define g_LexTokenLen GAME_GLOBAL(int, g_LexTokenLen)
+#define g_LexErrors GAME_GLOBAL(int, g_LexErrors)
+#define g_LexWarnings GAME_GLOBAL(int, g_LexWarnings)
+#define g_LexDir (GAME_ARRAY(char, g_LexDir))	/* MAX_FILEPATH, where Lex_Open looks second */
+#define g_LexOut GAME_GLOBAL(lexout_t, g_LexOut)
+#define g_Cl GAME_GLOBAL(cClex, g_Cl)
 
 typedef void (*lexout_t)(const char *text);
 

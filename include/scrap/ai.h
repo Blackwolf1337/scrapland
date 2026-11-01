@@ -58,7 +58,7 @@ SD_SIZE(cAIVehicleGroup, 0xf4);
 
 /* ---- cAI (AI/AI.cpp, src/game/AI/AI.c): the base of every AI (0x38 bytes), the entity, the time of the frame and
  * of the state, and the slot of the reactions ---- */
-#define CAI_VFTABLE GAME_VFTABLE(cAI_vftable, 0x3a3f18)
+#define CAI_VFTABLE GAME_VFTABLE(cAI_vftable)
 
 typedef struct cAI cAI;
 
@@ -139,7 +139,7 @@ void __thiscall cAI_OnEvent(cAI *self, int ev);
 
 /* ---- cAIMove (AI/AIMove.cpp, src/game/AI/AIMove.c): the base of cAIChar and cAIVehicle (0x90 bytes, a cAI): the
  * target link, the move of the state, the check of an AI that should move but does not ---- */
-#define CAIMOVE_VFTABLE GAME_VFTABLE(cAIMove_vftable, 0x3a7754)
+#define CAIMOVE_VFTABLE GAME_VFTABLE(cAIMove_vftable)
 #define CAIMOVE_SIZE 0x90
 
 typedef struct cAIMove cAIMove;
@@ -463,16 +463,16 @@ typedef struct cAIVehicleParams3 {
 } cAIVehicleParams3;
 SD_SIZE(cAIVehicleParams3, 0x1c);
 
-#define g_IsMapOutDoor GAME_GLOBAL_IN(int, GVar_IsMapOutDoor, 16, 0x4677e8)	/* value of the engine variable IsMapOutDoor */
-#define g_NodesWorld GAME_GLOBAL(CNodesWorld *, g_NodesWorld, 0x444d34)
-#define g_NodesWorld2D GAME_GLOBAL(CNodesWorld2D *, g_NodesWorld2D, 0x444dc8)
-#define g_NodesTrafficInDoor GAME_GLOBAL(CNodesTraffic *, g_NodesTrafficInDoor, 0x444d2c)
-#define g_NodesTraffic GAME_GLOBAL(CNodesTraffic *, g_NodesTraffic, 0x444c98)
-#define g_AStar GAME_GLOBAL(void *, g_AStar, 0x444c78)
-#define g_AStar2D GAME_GLOBAL(void *, g_AStar2D, 0x444c7c)
-#define g_VehicleGroup GAME_GLOBAL(cAIVehicleGroup *, g_VehicleGroup, 0x444b84)
-#define g_CharGroup GAME_GLOBAL(cAICharGroup *, g_CharGroup, 0x4445b8)
-#define g_TrafficState GAME_GLOBAL_IN(int, GVar_ShowTrafficAI, 16, 0x444d0c)	/* 3 after SAI.AnalizeTraffic */
+#define g_IsMapOutDoor GAME_GLOBAL_IN(int, GVar_IsMapOutDoor, 16)	/* value of the engine variable IsMapOutDoor */
+#define g_NodesWorld GAME_GLOBAL(CNodesWorld *, g_NodesWorld)
+#define g_NodesWorld2D GAME_GLOBAL(CNodesWorld2D *, g_NodesWorld2D)
+#define g_NodesTrafficInDoor GAME_GLOBAL(CNodesTraffic *, g_NodesTrafficInDoor)
+#define g_NodesTraffic GAME_GLOBAL(CNodesTraffic *, g_NodesTraffic)
+#define g_AStar GAME_GLOBAL(void *, g_AStar)
+#define g_AStar2D GAME_GLOBAL(void *, g_AStar2D)
+#define g_VehicleGroup GAME_GLOBAL(cAIVehicleGroup *, g_VehicleGroup)
+#define g_CharGroup GAME_GLOBAL(cAICharGroup *, g_CharGroup)
+#define g_TrafficState GAME_GLOBAL_IN(int, GVar_ShowTrafficAI, 16)	/* 3 after SAI.AnalizeTraffic */
 
 /* constructors (thiscall on the memory from operator_new) */
 CNodesWorld *__thiscall CNodesWorld_ctor(void *mem);
@@ -507,17 +507,17 @@ void __thiscall cAIVehicle_SetInertia(cAIVehicle *ai, int on);
 
 
 
-/* the state of the vehicle AI, arguments by state (see SAIPy.c); 0 if it was not taken (rva 0x8dfb0) */
+/* the state of the vehicle AI, arguments by state (see SAIPy.c); 0 if it was not taken */
 byte cAIVehicle_SetState(cAIVehicle *ai, int state, ...);
 
 /* default values of SAI.SetStateVehicle CHASE (state 7) */
-#define g_AIChaseDefault1 GAME_GLOBAL_IN(float, GVar_MinDistChaseAI, 16, 0x444948)
-#define g_AIChaseDefault2 GAME_GLOBAL_IN(float, GVar_MaxDistChaseAI, 16, 0x444828)
+#define g_AIChaseDefault1 GAME_GLOBAL_IN(float, GVar_MinDistChaseAI, 16)
+#define g_AIChaseDefault2 GAME_GLOBAL_IN(float, GVar_MaxDistChaseAI, 16)
 
 /* ---- cAIEntityGroup (AI/AIEntityGroup.cpp, src/game/AI/AIEntityGroup.c): the base of the vehicle and the character
  * groups, up to 20 entities (a race) and the time since an AI of the group took a group state; the next one may take
  * one when the time reached TimeBetwChangeStateAI ---- */
-#define CAIENTITYGROUP_VFTABLE GAME_VFTABLE(cAIEntityGroup_vftable, 0x3a6f18)
+#define CAIENTITYGROUP_VFTABLE GAME_VFTABLE(cAIEntityGroup_vftable)
 #define CAIENTITYGROUP_SIZE 0x60
 #define CAIENTITYGROUP_MAX 20
 
@@ -548,7 +548,7 @@ SD_OFFSET(cAIEntityGroup, num, 0x54);
 SD_OFFSET(cAIEntityGroup, changeTime, 0x5c);
 SD_SIZE(cAIEntityGroup, CAIENTITYGROUP_SIZE);
 
-#define g_TimeBetwChangeStateAI GAME_GLOBAL_IN(float, GVar_TimeBetwChangeStateAI, 16, 0x444698)	/* "TimeBetwChangeStateAI" */
+#define g_TimeBetwChangeStateAI GAME_GLOBAL_IN(float, GVar_TimeBetwChangeStateAI, 16)	/* "TimeBetwChangeStateAI" */
 
 /* ctor and dtor are fastcall on the memory of the subclasses */
 void *__fastcall cAIEntityGroup_ctor(void *self);
@@ -567,17 +567,17 @@ void __thiscall cAIEntityGroup_Update(cAIEntityGroup *self, float dt);
  * with its own slots and its own move control (cAIControl<Class>, aicharcontrol.h). The constructors are declared in
  * walkcharentity.h. Most of them replace the action check (CheckActDist, the action button at the target) and the
  * distances of the states (SetDists); the ones that shoot take their parameters in SetDists2 ---- */
-#define CAIBANKDIRECTOR_VFTABLE GAME_VFTABLE(cAIBankDirector_vftable, 0x3a40a8)
-#define CAIBANKMASTER_VFTABLE GAME_VFTABLE(cAIBankMaster_vftable, 0x3a42b8)
-#define CAIBISHOP_VFTABLE GAME_VFTABLE(cAIBishop_vftable, 0x3a452c)
-#define CAIDESKTOP_VFTABLE GAME_VFTABLE(cAIDesktop_vftable, 0x3a6d14)
-#define CAIGEAR_VFTABLE GAME_VFTABLE(cAIGear_vftable, 0x3a6fdc)
-#define CAIHUMAN_VFTABLE GAME_VFTABLE(cAIHuman_vftable, 0x3a7180)
-#define CAIMAYOR_VFTABLE GAME_VFTABLE(cAIMayor_vftable, 0x3a7310)
-#define CAIMESSENGER_VFTABLE GAME_VFTABLE(cAIMessenger_vftable, 0x3a7580)
-#define CAINURSE_VFTABLE GAME_VFTABLE(cAINurse_vftable, 0x3a7864)
-#define CAIPOLICE_VFTABLE GAME_VFTABLE(cAIPolice_vftable, 0x3a7a14)
-#define CAISENTINEL_VFTABLE GAME_VFTABLE(cAISentinel_vftable, 0x3a7ba8)
+#define CAIBANKDIRECTOR_VFTABLE GAME_VFTABLE(cAIBankDirector_vftable)
+#define CAIBANKMASTER_VFTABLE GAME_VFTABLE(cAIBankMaster_vftable)
+#define CAIBISHOP_VFTABLE GAME_VFTABLE(cAIBishop_vftable)
+#define CAIDESKTOP_VFTABLE GAME_VFTABLE(cAIDesktop_vftable)
+#define CAIGEAR_VFTABLE GAME_VFTABLE(cAIGear_vftable)
+#define CAIHUMAN_VFTABLE GAME_VFTABLE(cAIHuman_vftable)
+#define CAIMAYOR_VFTABLE GAME_VFTABLE(cAIMayor_vftable)
+#define CAIMESSENGER_VFTABLE GAME_VFTABLE(cAIMessenger_vftable)
+#define CAINURSE_VFTABLE GAME_VFTABLE(cAINurse_vftable)
+#define CAIPOLICE_VFTABLE GAME_VFTABLE(cAIPolice_vftable)
+#define CAISENTINEL_VFTABLE GAME_VFTABLE(cAISentinel_vftable)
 
 /* the director and the master (0x384 bytes) */
 typedef struct cAIBank {
@@ -701,27 +701,27 @@ void __thiscall cAISentinel_SetDists(cAISentinel *self);
 /* cAIChar_dtor, cAIChar_SetDists (vf56) and cAIChar_ChangeState (vf26): aichar.h; the move controls:
  * aicharcontrol.h */
 
-#define g_MaxHeightChaseCharAI GAME_GLOBAL_IN(float, GVar_MaxHeightChaseCharAI, 16, 0x4442e8)
-#define g_BankMasterVacumDist GAME_GLOBAL_IN(float, GVar_BankMasterVacumDist, 16, 0x4460dc)
+#define g_MaxHeightChaseCharAI GAME_GLOBAL_IN(float, GVar_MaxHeightChaseCharAI, 16)
+#define g_BankMasterVacumDist GAME_GLOBAL_IN(float, GVar_BankMasterVacumDist, 16)
 /* the shot of the bishop: the value against a target without an AI, the second one (the default) with one */
-#define g_ShootBishopAI GAME_GLOBAL_IN(int, GVar_ShootBishopAI, 16, 0x4441bc)
-#define g_ShootBishopAIDef GAME_GLOBAL_IN(int, GVar_ShootBishopAI, 20, 0x4441c0)
-#define g_OffsetAngShootBishopAI GAME_GLOBAL_IN(float, GVar_OffsetAngShootBishopAI, 16, 0x4441d4)
-#define g_OffsetAngShootBishopAIDef GAME_GLOBAL_IN(float, GVar_OffsetAngShootBishopAI, 20, 0x4441d8)
-#define g_TimeShootBishopAI GAME_GLOBAL_IN(float, GVar_TimeShootBishopAI, 16, 0x444204)
-#define g_TimeShootBishopAIDef GAME_GLOBAL_IN(float, GVar_TimeShootBishopAI, 20, 0x444208)
-#define g_DistMaxShootBishopAI GAME_GLOBAL_IN(float, GVar_DistMaxShootBishopAI, 16, 0x4441ec)
-#define g_DistMaxShootBishopAIDef GAME_GLOBAL_IN(float, GVar_DistMaxShootBishopAI, 20, 0x4441f0)
+#define g_ShootBishopAI GAME_GLOBAL_IN(int, GVar_ShootBishopAI, 16)
+#define g_ShootBishopAIDef GAME_GLOBAL_IN(int, GVar_ShootBishopAI, 20)
+#define g_OffsetAngShootBishopAI GAME_GLOBAL_IN(float, GVar_OffsetAngShootBishopAI, 16)
+#define g_OffsetAngShootBishopAIDef GAME_GLOBAL_IN(float, GVar_OffsetAngShootBishopAI, 20)
+#define g_TimeShootBishopAI GAME_GLOBAL_IN(float, GVar_TimeShootBishopAI, 16)
+#define g_TimeShootBishopAIDef GAME_GLOBAL_IN(float, GVar_TimeShootBishopAI, 20)
+#define g_DistMaxShootBishopAI GAME_GLOBAL_IN(float, GVar_DistMaxShootBishopAI, 16)
+#define g_DistMaxShootBishopAIDef GAME_GLOBAL_IN(float, GVar_DistMaxShootBishopAI, 20)
 /* the same pairs of the gear */
-#define g_ShootGearAI GAME_GLOBAL_IN(int, GVar_ShootGearAI, 16, 0x4446b0)
-#define g_ShootGearAIDef GAME_GLOBAL_IN(int, GVar_ShootGearAI, 20, 0x4446b4)
-#define g_OffsetAngShootGearAI GAME_GLOBAL_IN(float, GVar_OffsetAngShootGearAI, 16, 0x4446c8)
-#define g_OffsetAngShootGearAIDef GAME_GLOBAL_IN(float, GVar_OffsetAngShootGearAI, 20, 0x4446cc)
-#define g_ShootMessengerAI GAME_GLOBAL_IN(int, GVar_ShootMessengerAI, 16, 0x4446f8)
-#define g_OffsetAngShootMessengerAI GAME_GLOBAL_IN(float, GVar_OffsetAngShootMessengerAI, 16, 0x4446e0)
-#define g_TimeShootMessengerAI GAME_GLOBAL_IN(float, GVar_TimeShootMessengerAI, 16, 0x444710)
-#define g_DistMaxShootMessengerAI GAME_GLOBAL_IN(float, GVar_DistMaxShootMessengerAI, 16, 0x444728)
-#define g_DistActionNurseAI GAME_GLOBAL_IN(float, GVar_DistActionNurseAI, 16, 0x44475c)
-#define g_OffsetMoveNurseAI GAME_GLOBAL_IN(float, GVar_OffsetMoveNurseAI, 16, 0x444774)
+#define g_ShootGearAI GAME_GLOBAL_IN(int, GVar_ShootGearAI, 16)
+#define g_ShootGearAIDef GAME_GLOBAL_IN(int, GVar_ShootGearAI, 20)
+#define g_OffsetAngShootGearAI GAME_GLOBAL_IN(float, GVar_OffsetAngShootGearAI, 16)
+#define g_OffsetAngShootGearAIDef GAME_GLOBAL_IN(float, GVar_OffsetAngShootGearAI, 20)
+#define g_ShootMessengerAI GAME_GLOBAL_IN(int, GVar_ShootMessengerAI, 16)
+#define g_OffsetAngShootMessengerAI GAME_GLOBAL_IN(float, GVar_OffsetAngShootMessengerAI, 16)
+#define g_TimeShootMessengerAI GAME_GLOBAL_IN(float, GVar_TimeShootMessengerAI, 16)
+#define g_DistMaxShootMessengerAI GAME_GLOBAL_IN(float, GVar_DistMaxShootMessengerAI, 16)
+#define g_DistActionNurseAI GAME_GLOBAL_IN(float, GVar_DistActionNurseAI, 16)
+#define g_OffsetMoveNurseAI GAME_GLOBAL_IN(float, GVar_OffsetMoveNurseAI, 16)
 
 #endif

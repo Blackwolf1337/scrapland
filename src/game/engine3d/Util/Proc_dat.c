@@ -12,13 +12,13 @@
 #include "scrap/e3dutil.h"
 
 #define PROC_TYPES 16
-#define g_ProcTypes (GAME_ARRAY(cProcType, g_ProcTypes, 0x4324b8))	/* tipo_si_no, tipo_bucle, tipo_nota, ... */
-#define g_ProcBuf (GAME_ARRAY(char, g_ProcBuf, 0x4af9b0))	/* 0x400, the number of an identifier */
+#define g_ProcTypes (GAME_ARRAY(cProcType, g_ProcTypes))	/* tipo_si_no, tipo_bucle, tipo_nota, ... */
+#define g_ProcBuf (GAME_ARRAY(char, g_ProcBuf))	/* 0x400, the number of an identifier */
 
-#define g_ProcRangeChar GAME_GLOBAL(procrange_t, g_ProcRangeChar, 0x432430)
-#define g_ProcRangeByte GAME_GLOBAL(procrange_t, g_ProcRangeByte, 0x432438)
-#define g_ProcRangeShort GAME_GLOBAL(procrange_t, g_ProcRangeShort, 0x432440)
-#define g_ProcRangeWord GAME_GLOBAL(procrange_t, g_ProcRangeWord, 0x432448)
+#define g_ProcRangeChar GAME_GLOBAL(procrange_t, g_ProcRangeChar)
+#define g_ProcRangeByte GAME_GLOBAL(procrange_t, g_ProcRangeByte)
+#define g_ProcRangeShort GAME_GLOBAL(procrange_t, g_ProcRangeShort)
+#define g_ProcRangeWord GAME_GLOBAL(procrange_t, g_ProcRangeWord)
 
 #define IS_BLANK(c) ((c) == '\t' || (c) == ' ')
 

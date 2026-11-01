@@ -42,11 +42,11 @@ static inline void FXA_SetVtbl(void *self, void *vt) {
 }
 
 static inline void FXA_TrailsCtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR), GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor), GAME_FUNC(CGameTrail_dtor));
 }
 
 static inline void FXA_TrailsDtor(CGameTrail *t, uint32_t n) {
-	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor));
 }
 
 static inline void *FXA_Delete(void *self, uint32_t flags, uint32_t size) {
@@ -335,8 +335,8 @@ void *__thiscall cObjElementFXPoliceGearConversion_ctor(void *self) {
 	CGameParticles_ctor(&s->particles);
 	CGameParticles_ctor(&s->particles2);
 	FXA_TrailsCtor(s->trails, FXGEAR_TRAILS);
-	crt_eh_vector_ctor(s->armor, sizeof(CGameModel), FXGEAR_ARMORS, GAME_FUNC(CGameModel_ctorDefault, CGAMEMODEL_CTOR0),
-		GAME_FUNC(CGameModel_Reset, CGAMEMODEL_RESET));
+	crt_eh_vector_ctor(s->armor, sizeof(CGameModel), FXGEAR_ARMORS, GAME_FUNC(CGameModel_ctorDefault),
+		GAME_FUNC(CGameModel_Reset));
 	s->started = 0;
 	s->ent = NULL;
 	s->time = 0.0f;
@@ -495,7 +495,7 @@ void __thiscall cObjElementFXPoliceGearConversion_dtor(void *self) {
 	cObjElementFXPoliceGearConversion *s = self;
 
 	*(void **)s = VT_FXPOLICEGEARCONVERSION;
-	crt_eh_vector_dtor(s->armor, sizeof(CGameModel), FXGEAR_ARMORS, GAME_FUNC(CGameModel_Reset, CGAMEMODEL_RESET));
+	crt_eh_vector_dtor(s->armor, sizeof(CGameModel), FXGEAR_ARMORS, GAME_FUNC(CGameModel_Reset));
 	FXA_TrailsDtor(s->trails, FXGEAR_TRAILS);
 	CGameParticles_Release(&s->particles2);
 	CGameParticles_Release(&s->particles);
@@ -1170,12 +1170,12 @@ void __thiscall cObjElementFXGearMissile_Run(void *self, cDebris *d) {
 
 /* ---- cObjElementFXGearMissile_Update ---- */
 
-#define g_GearMissileThunder1Sound GAME_GLOBAL_IN(const char *, GVar_GearMissileThunder1Sound, 16, 0x4468ec)
-#define g_GearMissileThunder2Sound GAME_GLOBAL_IN(const char *, GVar_GearMissileThunder2Sound, 16, 0x4468d4)
-#define g_GearMissileThunderSoundVol GAME_GLOBAL_IN(float, GVar_GearMissileThunderSoundVol, 16, 0x446a0c)
+#define g_GearMissileThunder1Sound GAME_GLOBAL_IN(const char *, GVar_GearMissileThunder1Sound, 16)
+#define g_GearMissileThunder2Sound GAME_GLOBAL_IN(const char *, GVar_GearMissileThunder2Sound, 16)
+#define g_GearMissileThunderSoundVol GAME_GLOBAL_IN(float, GVar_GearMissileThunderSoundVol, 16)
 #define FXGEAR_RAMP_BALL 0x4306b0
 #define FXGEAR_RAMPS 0x4306d4		/* 3 color ramps of 9 colors */
-#define FXGEAR_PUFF_RAMPS (GAME_ARRAY(uint32_t, FXGEAR_PUFF_RAMPS, FXGEAR_RAMPS))	/* [3 * 9] */
+#define FXGEAR_PUFF_RAMPS (GAME_ARRAY(uint32_t, FXGEAR_PUFF_RAMPS))	/* [3 * 9] */
 #define FXGEAR_RAMP_PUFF 0x4306f8
 #define FXGEAR_RAMP_SPARK 0x430788
 #define FXGEAR_ENTITIES 0x11		/* the entity lists the bolts hit */
@@ -1445,7 +1445,7 @@ static void GM_Puffs(cObjElementFXGearMissile *self, const vec3_t *pos) {
 	p->sizeEnd = FXA_Rand(15.0, 80.0);
 	CGameParticles_Apply(p);
 	CGameParticles_SetColorRampOn(p, 1);
-	CGameParticles_SetColorRamp(p, GAME_PTR(FXGEAR_PUFF_RAMPS, 36, FXGEAR_RAMP_PUFF));
+	CGameParticles_SetColorRamp(p, GAME_PTR(FXGEAR_PUFF_RAMPS, 36));
 	CGameParticles_EmitN(p, 1, 0);
 
 	p->birthRate = 0;
@@ -1510,7 +1510,7 @@ static void GM_Puffs(cObjElementFXGearMissile *self, const vec3_t *pos) {
 		sp->bounce = 1;
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, GAME_PTR(GM_Puff_430788, 0, FXGEAR_RAMP_SPARK));
+		CGameParticles_SetColorRamp(sp, GAME_PTR(GM_Puff_430788, 0));
 		CGameParticles_EmitN(sp, 1, 0);
 	}
 	CGameParticles_SetSparksOn(sp, 0);
@@ -1568,7 +1568,7 @@ static void GM_FadeSparks(cObjElementFXGearMissile *self, cDebris *debris, float
 	self->emitTime = 0.0f;
 	CGameParticles_SetSparksOn(p, 1);
 	CGameParticles_SetColorRampOn(p, 1);
-	CGameParticles_SetColorRamp(p, GAME_PTR(cObjElementFXGearMissile_Update_4306b0, 0, FXGEAR_RAMP_BALL));
+	CGameParticles_SetColorRamp(p, GAME_PTR(cObjElementFXGearMissile_Update_4306b0, 0));
 	for (int it = 0; it < 8; it++) {
 		FX_RandomDir(&d);
 		p->birthRate = 0;
@@ -1853,7 +1853,7 @@ void __thiscall cObjElementFXBettyAttack_Emit(cObjElementFXBettyAttack *self, fl
 	sp->spriteEnd = 5;
 	sp->lifeTime = life;
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXBettyAttack_Emit_4307d0, 0, FXA_RAMP_BETTY));
+	CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXBettyAttack_Emit_4307d0, 0));
 	float a = -3.14159274f;
 	do {
 		float b = -3.14159274f;
@@ -2082,7 +2082,7 @@ void __thiscall cObjElementFXBettyAttack_Update(cObjElementFXBettyAttack *self, 
 			sp->spriteEnd = 0x33;
 			sp->lifeTime = FXA_Rand(0.04999995231628418, 0.85000002384185791);
 			CGameParticles_SetColorRampOn(sp, 1);
-			CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXBettyAttack_Emit_4307d0, FXA_RAMP_BETTY) + (crt_rand() & 1) * 9);
+			CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXBettyAttack_Emit_4307d0) + (crt_rand() & 1) * 9);
 			CGameParticles_Apply(sp);
 			CGameParticles_EmitN(sp, 1, 0);
 		}
@@ -2311,7 +2311,7 @@ void __thiscall cObjElementFXPoliceGearConversion_Update(cObjElementFXPoliceGear
 				sp->rotVar = FXA_Rand(1.0471975803375244, -0.52359879016876221);
 				CGameParticles_Apply(sp);
 				CGameParticles_SetColorRampOn(sp, 1);
-				CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXPoliceGearConversion_Start_4305d8, FXA_RAMP_GEAR) + crt_rand() % 3 * 9);
+				CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXPoliceGearConversion_Start_4305d8) + crt_rand() % 3 * 9);
 				CGameParticles_EmitDt(sp, 1, 1, FXA_Rand(0.019999999552965164, 0.0));
 			}
 		}
@@ -2345,7 +2345,7 @@ void __thiscall cObjElementFXPoliceGearConversion_Update(cObjElementFXPoliceGear
 				sp->spriteEnd = sprite;
 				CGameParticles_Apply(sp);
 				CGameParticles_SetColorRampOn(sp, 1);
-				CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXPoliceGearConversion_Start_4305d8, FXA_RAMP_GEAR) + crt_rand() % 3 * 9);
+				CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXPoliceGearConversion_Start_4305d8) + crt_rand() % 3 * 9);
 				CGameParticles_EmitDt(sp, 1, 0, FXA_Rand(0.10000000894069672, 0.05000000074505806));
 			}
 		}
@@ -2370,7 +2370,7 @@ void __thiscall cObjElementFXPoliceGearConversion_Update(cObjElementFXPoliceGear
 				float rad = 0.0f;
 				for (int j = 0; j < 6; j++) {
 					const vec3_t *vv = &verts[j];
-					CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXPoliceGearConversion_Start_4305d8, FXA_RAMP_GEAR) + (crt_rand() & 1) * 9);
+					CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXPoliceGearConversion_Start_4305d8) + (crt_rand() & 1) * 9);
 					sp->initPosMin = *vv;
 					sp->initPosMax = sp->initPosMin;
 					float kv = FXA_Rand(15.0, 15.0);
@@ -2412,7 +2412,7 @@ void __thiscall cObjElementFXPoliceGearConversion_Update(cObjElementFXPoliceGear
 					float len = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 					rad = (len + rad) * 0.5f;
 				}
-				CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXPoliceGearConversion_Start_430644, 0, FXA_RAMP_GEARPIECE));
+				CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXPoliceGearConversion_Start_430644, 0));
 				FXA_StillAt(sp, c.x, c.y, c.z);
 				sp->sizeIni = FXA_Rand(0.19999998807907104, 0.69999998807907104) * rad;
 				sp->sizeEnd = FXA_Rand(1.5, 7.5) * rad;
@@ -2582,7 +2582,7 @@ void __thiscall cObjElementFXPoliceGearConversion_Start(cObjElementFXPoliceGearC
 		sp->rotVar = rv;
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXPoliceGearConversion_Start_4305d8, FXA_RAMP_GEAR) + crt_rand() % 3 * 9);
+		CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXPoliceGearConversion_Start_4305d8) + crt_rand() % 3 * 9);
 		CGameParticles_EmitDt(sp, 1, 1, FXA_Rand((double)0.02f, 0.0) + 0.6f);
 	}
 	/* the sparks around */
@@ -2619,7 +2619,7 @@ void __thiscall cObjElementFXPoliceGearConversion_Start(cObjElementFXPoliceGearC
 		sp->rotVar = rv;
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXPoliceGearConversion_Start_4305d8, FXA_RAMP_GEAR) + (crt_rand() & 1) * 9);
+		CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXPoliceGearConversion_Start_4305d8) + (crt_rand() & 1) * 9);
 		CGameParticles_EmitDt(sp, 1, 1, FXA_Rand((double)0.01f, (double)0.01f) + 0.6f);
 		a = a + 0.157079637f;
 	} while (6.28318548f > a);
@@ -2939,7 +2939,7 @@ void __thiscall cObjElementFXPoliceSteal_Update(cObjElementFXPoliceSteal *self, 
 	sp->spriteEnd = sprite + 8;
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXBankerSteal_Update_4307ac, 0, FXA_RAMP_POLICESTEAL));
+	CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXBankerSteal_Update_4307ac, 0));
 	CGameParticles_EmitN(sp, 1, 0);
 }
 
@@ -3223,7 +3223,7 @@ void __thiscall cObjElementFXBankerSteal_Update(cObjElementFXBankerSteal *self, 
 	sp->spriteEnd = sprite + 8;
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXBankerSteal_Update_4307ac, 0, FXA_RAMP_POLICESTEAL));
+	CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXBankerSteal_Update_4307ac, 0));
 	CGameParticles_EmitN(sp, 1, 0);
 	self->toggle ^= 1;
 	if (self->toggle) {
@@ -3692,7 +3692,7 @@ static void FXMercenary_Drop(CGameParticles *sp, float life, byte second) {
 	}
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, FXMercenary_Drop_430668, FXA_RAMP_MERCURY) + (crt_rand() & 1) * 9);
+	CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, FXMercenary_Drop_430668) + (crt_rand() & 1) * 9);
 	CGameParticles_EmitDt(sp, 1, 0, FXA_Rand((double)0.05f, 0.0));
 }
 
@@ -3931,7 +3931,7 @@ void __thiscall cObjElementFXBishopAttack_Update(cObjElementFXBishopAttack *self
 }
 
 #define FXA_RAMP_SELLLIFE 0x430818		/* [3] */
-#define FXA_SELLLIFE_RAMPS (GAME_ARRAY(uint32_t, FXA_SELLLIFE_RAMPS, FXA_RAMP_SELLLIFE))	/* [3 * 9] */
+#define FXA_SELLLIFE_RAMPS (GAME_ARRAY(uint32_t, FXA_SELLLIFE_RAMPS))	/* [3 * 9] */
 #define FXA_RAMP_SELLLIFE2 0x43083c		/* [2] */
 
 /* the glow of the Bishop: rotation, the ramp and one particle */
@@ -3942,7 +3942,7 @@ static void FXSellLife_Glow(CGameParticles *sp) {
 	sp->spriteIni = sprite;
 	sp->spriteEnd = sprite;
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_PTR(FXA_SELLLIFE_RAMPS, 0, FXA_RAMP_SELLLIFE));
+	CGameParticles_SetColorRamp(sp, GAME_PTR(FXA_SELLLIFE_RAMPS, 0));
 	CGameParticles_Apply(sp);
 	CGameParticles_EmitN(sp, 1, 0);
 }
@@ -4135,7 +4135,7 @@ void __thiscall cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *
 			glow->spriteEnd = 5;
 			glow->rotVar = rv;
 			CGameParticles_SetColorRampOn(glow, 1);
-			CGameParticles_SetColorRamp(glow, GAME_PTR(FXA_SELLLIFE_RAMPS, 0, FXA_RAMP_SELLLIFE));
+			CGameParticles_SetColorRamp(glow, GAME_PTR(FXA_SELLLIFE_RAMPS, 0));
 			CGameParticles_Apply(glow);
 			CGameParticles_EmitN(glow, 1, 0);
 			code->birthRate = 0;
@@ -4162,7 +4162,7 @@ void __thiscall cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *
 			code->spriteIni = sprite;
 			code->spriteEnd = sprite;
 			CGameParticles_SetColorRampOn(code, 1);
-			CGameParticles_SetColorRamp(code, GAME_ARRAY_IN(uint32_t, FXA_SELLLIFE_RAMPS, 36, FXA_RAMP_SELLLIFE2) + (crt_rand() & 1) * 9);
+			CGameParticles_SetColorRamp(code, GAME_ARRAY_IN(uint32_t, FXA_SELLLIFE_RAMPS, 36) + (crt_rand() & 1) * 9);
 			CGameParticles_Apply(code);
 			CGameParticles_EmitN(code, 1, 0);
 			if (++count > 5) {

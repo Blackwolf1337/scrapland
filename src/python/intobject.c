@@ -42,7 +42,7 @@ static PyObject *Int_DivModTuple(PyIntObject *x, PyIntObject *y) {
 }
 
 /*
- * int_pow (rva 0x2de110) calls the exe's i_divmod (rva 0x2de700, the folded one) for its final modulo, so with an
+ * int_pow calls the exe's i_divmod (rva 0x2de700, the folded one) for its final modulo, so with an
  * INT_MIN product there (pow(-2147483648, 1, 7)) the source's i_divmod gives another result. The loop of the
  * source, with Int_DivMod.
  */

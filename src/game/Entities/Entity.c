@@ -14,8 +14,8 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/world.h"
 
-#define EXE_EMPTY GAME_STR(str_Empty, 0x3a3228)		/* "" of the exe */
-#define ENTITY_CLASSNAME GAME_STR(str_3adf20, 0x3adf20)	/* "Entity" */
+#define EXE_EMPTY GAME_STR(str_Empty)		/* "" of the exe */
+#define ENTITY_CLASSNAME GAME_STR(str_3adf20)	/* "Entity" */
 
 /* the variable methods of the AI (from vtable slot 7) and of the local logic (from slot 3) */
 typedef struct cEntVars {

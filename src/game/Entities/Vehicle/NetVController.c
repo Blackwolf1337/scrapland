@@ -21,7 +21,7 @@
 #include "scrap/scrap.h"
 #include "scrap/world.h"
 
-#define CNETVCONTROLLER_VFTABLE GAME_VFTABLE(cNetVController_vftable, 0x3b61b8)
+#define CNETVCONTROLLER_VFTABLE GAME_VFTABLE(cNetVController_vftable)
 
 cNetVController *__thiscall cNetVController_ctor(void *mem, cEntity *v) {
 	cNetVController *self = (cNetVController *)cNetController_ctor(mem);

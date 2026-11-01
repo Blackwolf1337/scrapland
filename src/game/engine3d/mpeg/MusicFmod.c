@@ -27,35 +27,35 @@
 #define MUSIC_SHOW_DEBUG 2			/* S_Show */
 
 /* engine variables */
-#define g_MusicMainVolume GAME_GLOBAL_IN(float, GVar_MusicMainVolume, 16, 0x466c70)
-#define g_VoiceMainVolume GAME_GLOBAL_IN(float, GVar_VoiceMainVolume, 16, 0x466c10)
-#define g_S_Show GAME_GLOBAL_IN(int, GVar_S_Show, 16, 0x466d90)
-#define g_S_StreamBufferSize GAME_GLOBAL_IN(int, GVar_S_StreamBufferSize, 16, 0x4aa1e8)	/* ms */
-#define g_S_VoiceoverFadein GAME_GLOBAL_IN(float, GVar_S_VoiceoverFadein, 16, 0x4a94bc)
-#define g_S_VoiceoverFadeout GAME_GLOBAL_IN(float, GVar_S_VoiceoverFadeout, 16, 0x4a94d4)
-#define g_S_VoiceoverVolume GAME_GLOBAL_IN(float, GVar_S_VoiceoverVolume, 16, 0x4aa1d0)
+#define g_MusicMainVolume GAME_GLOBAL_IN(float, GVar_MusicMainVolume, 16)
+#define g_VoiceMainVolume GAME_GLOBAL_IN(float, GVar_VoiceMainVolume, 16)
+#define g_S_Show GAME_GLOBAL_IN(int, GVar_S_Show, 16)
+#define g_S_StreamBufferSize GAME_GLOBAL_IN(int, GVar_S_StreamBufferSize, 16)	/* ms */
+#define g_S_VoiceoverFadein GAME_GLOBAL_IN(float, GVar_S_VoiceoverFadein, 16)
+#define g_S_VoiceoverFadeout GAME_GLOBAL_IN(float, GVar_S_VoiceoverFadeout, 16)
+#define g_S_VoiceoverVolume GAME_GLOBAL_IN(float, GVar_S_VoiceoverVolume, 16)
 /* the frame of the engine */
-#define g_RealFrameSecs GAME_GLOBAL(float, g_RealFrameSecs, 0x4a8ee4)
-#define g_Fps GAME_GLOBAL(float, g_Fps, 0x431ba8)
+#define g_RealFrameSecs GAME_GLOBAL(float, g_RealFrameSecs)
+#define g_Fps GAME_GLOBAL(float, g_Fps)
 
 /* the music */
-#define g_MusicCurMainVolume GAME_GLOBAL(float, g_MusicCurMainVolume, 0x4a94a8)	/* approaches MusicMainVolume in 1 / fps steps */
-#define g_MusicVolume GAME_GLOBAL(float, g_MusicVolume, 0x431d04)
-#define g_MusicVoiceover GAME_GLOBAL(float, g_MusicVoiceover, 0x431d08)		/* the voiceover factor */
-#define g_MusicChannel GAME_GLOBAL(int, g_MusicChannel, 0x431d0c)		/* -1 until it plays */
-#define g_MusicVoiceoverTarget GAME_GLOBAL(float, g_MusicVoiceoverTarget, 0x431d10)
-#define g_MusicVoiceoverSpeed GAME_GLOBAL(float, g_MusicVoiceoverSpeed, 0x431d14)
-#define g_MusicFadeTarget GAME_GLOBAL(float, g_MusicFadeTarget, 0x431d18)
-#define g_MusicFadeSpeed GAME_GLOBAL(float, g_MusicFadeSpeed, 0x431d1c)
-#define g_MusicName (GAME_ARRAY(char, g_MusicName, 0x4aa1f0))		/* 0x104 */
-#define g_MusicStream GAME_GLOBAL(void *, g_MusicStream, 0x4aa2f4)
-#define g_MusicPaused GAME_GLOBAL(int, g_MusicPaused, 0x4aa2f8)
-#define g_MusicOpenTime GAME_GLOBAL(uint32_t, g_MusicOpenTime, 0x4aa2fc)
-#define g_MusicWaitTime GAME_GLOBAL(uint32_t, g_MusicWaitTime, 0x4aa300)
+#define g_MusicCurMainVolume GAME_GLOBAL(float, g_MusicCurMainVolume)	/* approaches MusicMainVolume in 1 / fps steps */
+#define g_MusicVolume GAME_GLOBAL(float, g_MusicVolume)
+#define g_MusicVoiceover GAME_GLOBAL(float, g_MusicVoiceover)		/* the voiceover factor */
+#define g_MusicChannel GAME_GLOBAL(int, g_MusicChannel)		/* -1 until it plays */
+#define g_MusicVoiceoverTarget GAME_GLOBAL(float, g_MusicVoiceoverTarget)
+#define g_MusicVoiceoverSpeed GAME_GLOBAL(float, g_MusicVoiceoverSpeed)
+#define g_MusicFadeTarget GAME_GLOBAL(float, g_MusicFadeTarget)
+#define g_MusicFadeSpeed GAME_GLOBAL(float, g_MusicFadeSpeed)
+#define g_MusicName (GAME_ARRAY(char, g_MusicName))		/* 0x104 */
+#define g_MusicStream GAME_GLOBAL(void *, g_MusicStream)
+#define g_MusicPaused GAME_GLOBAL(int, g_MusicPaused)
+#define g_MusicOpenTime GAME_GLOBAL(uint32_t, g_MusicOpenTime)
+#define g_MusicWaitTime GAME_GLOBAL(uint32_t, g_MusicWaitTime)
 /* the voices */
-#define g_NumVoices GAME_GLOBAL(int, g_NumVoices, 0x4aa304)
-#define g_NumVoiceovers GAME_GLOBAL(int, g_NumVoiceovers, 0x4aa308)
-#define g_VoicesPaused GAME_GLOBAL(byte, g_VoicesPaused, 0x4aa30c)
+#define g_NumVoices GAME_GLOBAL(int, g_NumVoices)
+#define g_NumVoiceovers GAME_GLOBAL(int, g_NumVoiceovers)
+#define g_VoicesPaused GAME_GLOBAL(byte, g_VoicesPaused)
 
 /* |now - since| as the original computes it (cdq, xor, sub) */
 static int Time_Since(uint32_t since) {

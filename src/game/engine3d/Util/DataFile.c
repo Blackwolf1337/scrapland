@@ -6,9 +6,9 @@
 #include "scrap/archio.h"
 #include "scrap/e3dutil.h"
 
-#define g_PrintfOptions GAME_GLOBAL(uint64_t, g_PrintfOptions, 0x444210)
+#define g_PrintfOptions GAME_GLOBAL(uint64_t, g_PrintfOptions)
 
-#define g_FileErr GAME_GLOBAL(int, g_FileErr, 0x432a04)	/* the code of "Faltan datos", -1 until the first DataFile_New */
+#define g_FileErr GAME_GLOBAL(int, g_FileErr)	/* the code of "Faltan datos", -1 until the first DataFile_New */
 
 #define IS_BLANK(c) ((c) == '\t' || (c) == ' ')
 

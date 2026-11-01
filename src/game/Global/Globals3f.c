@@ -16,9 +16,9 @@
 #undef MSPID_PrimaryAudio
 #undef MSPID_PrimaryVideo
 
-const D3DGuid MSPID_PrimaryAudio SD_AT(0x3f5ed0) = { .Data1 = 0xa35ff56b, .Data2 = 40922, .Data3 = 4560, .Data4 = { 143, 223, 0, 192, 79, 217, 24, 157 } };
-const D3DGuid MSPID_PrimaryVideo SD_AT(0x3f5ee0) = { .Data1 = 0xa35ff56a, .Data2 = 40922, .Data3 = 4560, .Data4 = { 143, 223, 0, 192, 79, 217, 24, 157 } };
-const D3DGuid IID_IDirectDrawMediaStream SD_AT(0x3f7b30) = { .Data1 = 0xf4104fce, .Data2 = 39536, .Data3 = 4560, .Data4 = { 143, 222, 0, 192, 79, 217, 24, 157 } };
-const D3DGuid CLSID_AMMultiMediaStream SD_AT(0x3f7b80) = { .Data1 = 0x49c47ce5, .Data2 = 39844, .Data3 = 4560, .Data4 = { 130, 18, 0, 192, 79, 195, 44, 69 } };
-const D3DGuid IID_IAMMultiMediaStream SD_AT(0x3f7c00) = { .Data1 = 0xbebe595c, .Data2 = 39535, .Data3 = 4560, .Data4 = { 143, 222, 0, 192, 79, 217, 24, 157 } };
+const D3DGuid MSPID_PrimaryAudio = { .Data1 = 0xa35ff56b, .Data2 = 40922, .Data3 = 4560, .Data4 = { 143, 223, 0, 192, 79, 217, 24, 157 } };
+const D3DGuid MSPID_PrimaryVideo = { .Data1 = 0xa35ff56a, .Data2 = 40922, .Data3 = 4560, .Data4 = { 143, 223, 0, 192, 79, 217, 24, 157 } };
+const D3DGuid IID_IDirectDrawMediaStream = { .Data1 = 0xf4104fce, .Data2 = 39536, .Data3 = 4560, .Data4 = { 143, 222, 0, 192, 79, 217, 24, 157 } };
+const D3DGuid CLSID_AMMultiMediaStream = { .Data1 = 0x49c47ce5, .Data2 = 39844, .Data3 = 4560, .Data4 = { 130, 18, 0, 192, 79, 195, 44, 69 } };
+const D3DGuid IID_IAMMultiMediaStream = { .Data1 = 0xbebe595c, .Data2 = 39535, .Data3 = 4560, .Data4 = { 143, 222, 0, 192, 79, 217, 24, 157 } };
 

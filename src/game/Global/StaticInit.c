@@ -87,7 +87,7 @@
 
 #define INIT_NATIVE_FUNC(fn, obj, name, cfunc) \
 	void fn(void) { \
-		cPy_NativeFunc_ctor(SI_OBJ(obj), SI_STR(name), (nativefunc_t)GAME_FUNC(cfunc, 0)); \
+		cPy_NativeFunc_ctor(SI_OBJ(obj), SI_STR(name), (nativefunc_t)GAME_FUNC(cfunc)); \
 	}
 
 /* ---- objects with a constructor of the C ---- */

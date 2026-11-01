@@ -28,17 +28,17 @@ SD_OFFSET(CGameCamera, Camera, 0x34);
 SD_SIZE(CGameCamera, 0x3c);
 
 /* the engine variables (Gvars) */
-#define g_CameraDefViewAspect GAME_GLOBAL_IN(float, GVar_CameraDefViewAspect, 16, 0x4a8938)	/* CameraDefViewAspect */
-#define g_PhysicalAspectRatio GAME_GLOBAL_IN(float, GVar_PhysicalAspectRatio, 16, 0x4a8968)	/* PhysicalAspectRatio */
-#define g_ShowSceneCamera GAME_GLOBAL_IN(int, GVar_ShowSceneCamera, 16, 0x4a8950)		/* ShowSceneCamera */
-#define g_CameraScene GAME_GLOBAL_IN(int, GVar_CameraScene, 16, 0x4600a0)		/* CameraScene */
+#define g_CameraDefViewAspect GAME_GLOBAL_IN(float, GVar_CameraDefViewAspect, 16)	/* CameraDefViewAspect */
+#define g_PhysicalAspectRatio GAME_GLOBAL_IN(float, GVar_PhysicalAspectRatio, 16)	/* PhysicalAspectRatio */
+#define g_ShowSceneCamera GAME_GLOBAL_IN(int, GVar_ShowSceneCamera, 16)		/* ShowSceneCamera */
+#define g_CameraScene GAME_GLOBAL_IN(int, GVar_CameraScene, 16)		/* CameraScene */
 /* 1: the cameras follow their scene nodes (also CCamera at rva 0x29cba0) */
-#define g_CameraNodes GAME_GLOBAL(int, g_CameraNodes, 0x431bc4)
+#define g_CameraNodes GAME_GLOBAL(int, g_CameraNodes)
 /* what CamComposite_Find found last, for ShowSceneCamera */
-#define g_CamCompositeIdx GAME_GLOBAL(int, g_CamCompositeIdx, 0x4a8970)
-#define g_CamCompositeFrame GAME_GLOBAL(float, g_CamCompositeFrame, 0x4a8974)
-#define g_CamCompositeFPS GAME_GLOBAL(float, g_CamCompositeFPS, 0x431b54)
-#define g_CamCompositeName (GAME_ARRAY(char, g_CamCompositeName, 0x4a8978))	/* [0x80] */
+#define g_CamCompositeIdx GAME_GLOBAL(int, g_CamCompositeIdx)
+#define g_CamCompositeFrame GAME_GLOBAL(float, g_CamCompositeFrame)
+#define g_CamCompositeFPS GAME_GLOBAL(float, g_CamCompositeFPS)
+#define g_CamCompositeName (GAME_ARRAY(char, g_CamCompositeName))	/* [0x80] */
 
 CGameCamera *__fastcall CGameCamera_ctor(CGameCamera *self);
 void __fastcall CGameCamera_dtor(CGameCamera *self);

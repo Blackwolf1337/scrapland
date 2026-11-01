@@ -16,7 +16,7 @@
 #define CGAMETRAIL_DTOR 0x21de40
 
 /* the colour ramps of the fire drops, 9 colours each: 0 and 1 fire, 2 smoke, 3 sparks */
-#define g_FireDropRamps (GAME_ARRAY(uint32_t[9], g_FireDropRamps, 0x430968))
+#define g_FireDropRamps (GAME_ARRAY(uint32_t[9], g_FireDropRamps))
 
 /* ---- construction ---- */
 
@@ -47,8 +47,8 @@ cFXElementsLighting *__thiscall cFXElementsLighting_ctor(cFXElementsLighting *se
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSLIGHTING_VFTABLE;
 	CGameParticles_ctor(&self->glows);
-	crt_eh_vector_ctor(self->trails, sizeof(CGameTrail), FXLIGHTINGBOLTS, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR),
-		GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor(self->trails, sizeof(CGameTrail), FXLIGHTINGBOLTS, GAME_FUNC(CGameTrail_ctor),
+		GAME_FUNC(CGameTrail_dtor));
 	return self;
 }
 
@@ -72,7 +72,7 @@ void __fastcall cFXElementsLighting_dtor(cFXElementsLighting *self) {
 		CGameTrail_Clear(&self->trails[i]);
 	}
 	CGameParticles_Release(&self->glows);
-	crt_eh_vector_dtor(self->trails, sizeof(CGameTrail), FXLIGHTINGBOLTS, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor(self->trails, sizeof(CGameTrail), FXLIGHTINGBOLTS, GAME_FUNC(CGameTrail_dtor));
 	CGameParticles_Release(&self->glows);
 	cMapElement_dtor(&self->base);
 }

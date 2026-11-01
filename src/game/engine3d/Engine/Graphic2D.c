@@ -6,7 +6,7 @@
 #include "scrap/graphic2d.h"
 
 /* the corner of the texture of each corner of the rectangle (u0 v0, u1 v0, u0 v1, u1 v1) by rot */
-#define g_Graphic2DRot (GAME_ARRAY(const int[4], g_Graphic2DRot, 0x4325b0))
+#define g_Graphic2DRot (GAME_ARRAY(const int[4], g_Graphic2DRot))
 
 CGraphic2D *__thiscall CGraphic2D_ctorTex(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags) {
 	CGraphic2D_Init(self);

@@ -16,11 +16,11 @@
 #include "scrap/misc.h"
 #include "scrap/win32.h"
 
-#define CD3DAPPLICATION_VFTABLE GAME_VFTABLE(CD3DApplication_vftable, 0x3dd208)
+#define CD3DAPPLICATION_VFTABLE GAME_VFTABLE(CD3DApplication_vftable)
 #define D3DAPP_TIMER_START 1
 #define D3DAPP_TIMER_STOP 2
 
-#define g_AppPausedCount GAME_GLOBAL(int, g_AppPausedCount, 0x4b1c3c)
+#define g_AppPausedCount GAME_GLOBAL(int, g_AppPausedCount)
 
 
 int D3DApp_SortModes(const D3DDisplayMode *a, const D3DDisplayMode *b) {
@@ -133,7 +133,7 @@ CD3DApplication *__fastcall CD3DApp_ctor(CD3DApplication *self) {
 	self->deviceStats[0] = 0;
 	self->frameStats[0] = 0;
 	self->devId = 0;
-	self->windowTitle = GAME_STR(str_3dd240, 0x3dd240);	/* "Engine3D [DX8]" */
+	self->windowTitle = GAME_STR(str_3dd240);	/* "Engine3D [DX8]" */
 	self->creationWidth = 400;
 	self->creationHeight = 300;
 	self->useDepthBuffer = 0;
@@ -229,7 +229,7 @@ static int D3DApp_DevReset(CD3DApplication *self) {
 	int r = D3D_METHOD(dev, d3dReset_t, 0x38)(dev, &self->presentParams);
 
 	if (r < 0) {
-		E3D_LogBlue(g_FileLog, GAME_STR(str_3dd33c, 0x3dd33c), r);	/* "ERROR: 'pd3dDevice->Reset()' failed: %08X" */
+		E3D_LogBlue(g_FileLog, GAME_STR(str_3dd33c), r);	/* "ERROR: 'pd3dDevice->Reset()' failed: %08X" */
 	}
 	RenderGamma_Begin();
 	return r;
@@ -247,7 +247,7 @@ int __thiscall CD3DApp_Reset(CD3DApplication *self) {
 	self->vftable->DeleteDeviceObjects(self);
 	r = D3DApp_DevReset(self);
 	if (r < 0) {
-		E3D_LogBlue(g_FileLog, GAME_STR(str_3dd30c, 0x3dd30c), r);	/* "ERROR: ResetDevice(): %08X" */
+		E3D_LogBlue(g_FileLog, GAME_STR(str_3dd30c), r);	/* "ERROR: ResetDevice(): %08X" */
 	}
 	CD3DApp_UpdateBackBufferDesc(self);
 	Splash_Reset();
@@ -286,7 +286,7 @@ int __thiscall CD3DApp_Cleanup(CD3DApplication *self) {
 		self->vftable->InvalidateDeviceObjects(self);
 		self->vftable->DeleteDeviceObjects(self);
 		if (COM_RELEASE(self->device)) {
-			E3D_LogBlue(g_FileLog, GAME_STR(str_3dd3dc, 0x3dd3dc));	/* "A D3D object has a non-zero reference count." */
+			E3D_LogBlue(g_FileLog, GAME_STR(str_3dd3dc));	/* "A D3D object has a non-zero reference count." */
 		}
 		COM_RELEASE(self->d3d);
 		self->device = NULL;
@@ -391,7 +391,7 @@ int __thiscall CD3DApp_ToggleFullscreen(CD3DApplication *self) {
 }
 
 typedef void *(__stdcall *getmodulehandle_t)(const char *name);
-#define exe_GetModuleHandleA GAME_IMPORT(getmodulehandle_t, GetModuleHandleA, 4, 0x3a1160)
+#define exe_GetModuleHandleA GAME_IMPORT(getmodulehandle_t, GetModuleHandleA, 4)
 
 int __thiscall CD3DApp_UserSelectNewDevice(CD3DApplication *self) {
 	if (!self->windowed && CD3DApp_ToggleFullscreen(self) < 0) {
@@ -399,7 +399,7 @@ int __thiscall CD3DApp_UserSelectNewDevice(CD3DApplication *self) {
 		return E_FAIL;
 	}
 	/* the device dialog (resource 0x90), SelectDeviceProc */
-	if (exe_DialogBoxParamA(exe_GetModuleHandleA(NULL), (const char *)0x90, self->hWnd, GAME_FUNC(D3DApp_SelectDeviceProc, 0x275960),
+	if (exe_DialogBoxParamA(exe_GetModuleHandleA(NULL), (const char *)0x90, self->hWnd, GAME_FUNC(D3DApp_SelectDeviceProc),
 		(intptr_t)self) != 1) {
 		return 0;
 	}
@@ -440,8 +440,8 @@ int __thiscall CD3DApp_UserSelectNewDevice(CD3DApplication *self) {
 #define D3DCREATE_MIXED_VERTEXPROCESSING 0x80
 #define D3DCREATE_PUREDEVICE 0x10
 
-#define g_D3DAppFrames GAME_GLOBAL(uint32_t, g_D3DAppFrames, 0x4b1c38)
-#define g_D3DAppLastTime GAME_GLOBAL(float, g_D3DAppLastTime, 0x4b1c34)
+#define g_D3DAppFrames GAME_GLOBAL(uint32_t, g_D3DAppFrames)
+#define g_D3DAppLastTime GAME_GLOBAL(float, g_D3DAppLastTime)
 
 typedef void *(__stdcall *direct3dcreate8_t)(uint32_t version);
 typedef int(__stdcall *adjustwindowrect_t)(exe_rect *r, uint32_t style, int menu);
@@ -452,15 +452,15 @@ typedef void(__stdcall *postquitmessage_t)(int code);
 typedef int(__stdcall *getcursorpos_t)(exe_point *pt);
 typedef int(__stdcall *screentoclient_t)(void *hwnd, exe_point *pt);
 typedef int(__stdcall *enablewindow_t)(void *hwnd, int on);
-#define exe_Direct3DCreate8 GAME_IMPORT(direct3dcreate8_t, Direct3DCreate8, 4, 0x3a14c4)
-#define exe_AdjustWindowRect GAME_IMPORT(adjustwindowrect_t, AdjustWindowRect, 12, 0x3a1380)
-#define exe_LoadMenuA GAME_IMPORT(loadmenu_t, LoadMenuA, 8, 0x3a13c4)
-#define exe_SetRect GAME_IMPORT(setrect_t, SetRect, 20, 0x3a138c)
-#define exe_DestroyMenu GAME_IMPORT(destroymenu_t, DestroyMenu, 4, 0x3a137c)
-#define exe_PostQuitMessage GAME_IMPORT(postquitmessage_t, PostQuitMessage, 4, 0x3a1370)
-#define exe_GetCursorPos GAME_IMPORT(getcursorpos_t, GetCursorPos, 4, 0x3a1384)
-#define exe_ScreenToClient GAME_IMPORT(screentoclient_t, ScreenToClient, 8, 0x3a1388)
-#define exe_EnableWindow GAME_IMPORT(enablewindow_t, EnableWindow, 8, 0x3a1374)
+#define exe_Direct3DCreate8 GAME_IMPORT(direct3dcreate8_t, Direct3DCreate8, 4)
+#define exe_AdjustWindowRect GAME_IMPORT(adjustwindowrect_t, AdjustWindowRect, 12)
+#define exe_LoadMenuA GAME_IMPORT(loadmenu_t, LoadMenuA, 8)
+#define exe_SetRect GAME_IMPORT(setrect_t, SetRect, 20)
+#define exe_DestroyMenu GAME_IMPORT(destroymenu_t, DestroyMenu, 4)
+#define exe_PostQuitMessage GAME_IMPORT(postquitmessage_t, PostQuitMessage, 4)
+#define exe_GetCursorPos GAME_IMPORT(getcursorpos_t, GetCursorPos, 4)
+#define exe_ScreenToClient GAME_IMPORT(screentoclient_t, ScreenToClient, 8)
+#define exe_EnableWindow GAME_IMPORT(enablewindow_t, EnableWindow, 8)
 
 /* IDirect3D8 and IDirect3DDevice8 */
 typedef uint32_t(__stdcall *d3dGetAdapterCount_t)(void *d3d);
@@ -518,7 +518,7 @@ int __thiscall CD3DApp_Create(CD3DApplication *self, void *inst) {
 	}
 	if (!self->hWnd) {
 		wc.style = 0;
-		wc.wndProc = GAME_FUNC(D3DApp_WndProc, 0x276460);	/* WndProc */
+		wc.wndProc = GAME_FUNC(D3DApp_WndProc);	/* WndProc */
 		wc.clsExtra = 0;
 		wc.wndExtra = 0;
 		wc.hInstance = inst;
@@ -565,46 +565,46 @@ int __thiscall CD3DApp_DisplayErrorMsg(CD3DApplication *self, int hr, int type) 
 	/* the texts of the exe */
 	switch ((uint32_t)hr) {
 	case D3DAPPERR_NODIRECT3D:
-		s = GAME_STR(str_3dd490, 0x3dd490);
+		s = GAME_STR(str_3dd490);
 		break;
 	case 0x8007000e:		/* E_OUTOFMEMORY */
-		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd84c, 0, 0x3dd84c);
+		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd84c, 0);
 		break;
 	case 0x8876017c:		/* D3DERR_OUTOFVIDEOMEMORY */
-		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd860, 0, 0x3dd860);
+		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd860, 0);
 		break;
 	case D3DAPPERR_NOCOMPATIBLEDEVICES:
-		s = GAME_STR(str_3dd508, 0x3dd508);
+		s = GAME_STR(str_3dd508);
 		break;
 	case D3DAPPERR_NOWINDOWABLEDEVICES:
-		s = GAME_STR(str_3dd538, 0x3dd538);
+		s = GAME_STR(str_3dd538);
 		break;
 	case D3DAPPERR_NOHARDWAREDEVICE:
-		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd5e4, 0, 0x3dd5e4);
+		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd5e4, 0);
 		break;
 	case D3DAPPERR_HALNOTCOMPATIBLE:
-		s = GAME_STR(str_3dd620, 0x3dd620);
+		s = GAME_STR(str_3dd620);
 		break;
 	case D3DAPPERR_NOWINDOWEDHAL:
-		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd688, 0, 0x3dd688);
+		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd688, 0);
 		break;
 	case D3DAPPERR_NODESKTOPHAL:
-		s = GAME_STR(str_3dd6d0, 0x3dd6d0);
+		s = GAME_STR(str_3dd6d0);
 		break;
 	case D3DAPPERR_NOHALTHISMODE:
-		s = GAME_STR(str_3dd740, 0x3dd740);
+		s = GAME_STR(str_3dd740);
 		break;
 	case 0x8200000a:		/* D3DAPPERR_NONZEROREFCOUNT */
-		s = GAME_STR(str_3dd7f0, 0x3dd7f0);
+		s = GAME_STR(str_3dd7f0);
 		break;
 	case 0x8200000b:		/* D3DAPPERR_MEDIANOTFOUND */
-		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd7cc, 0, 0x3dd7cc);
+		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd7cc, 0);
 		break;
 	case D3DAPPERR_RESIZEFAILED:
-		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3d69f8, 0, 0x3d69f8);
+		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3d69f8, 0);
 		break;
 	default:
-		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd87c, 0, 0x3dd87c);	/* "Generic application error." */
+		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd87c, 0);	/* "Generic application error." */
 		break;
 	}
 	Str_Copy(msg, s, sizeof(msg));
@@ -624,7 +624,7 @@ int __thiscall CD3DApp_DisplayErrorMsg(CD3DApplication *self, int hr, int type) 
  * device (with fullscreen) or the first windowed one; the reasons a windowed REF had to be taken shown */
 int __fastcall CD3DApp_BuildDeviceList(CD3DApplication *self) {
 	static const uint32_t types[2] = { D3DDEVTYPE_HAL, D3DDEVTYPE_REF };
-	const char *names[2] = { GAME_STR(str_3dd264, 0x3dd264), GAME_STR(str_3dd268, 0x3dd268) };	/* "HAL", "REF" */
+	const char *names[2] = { GAME_STR(str_3dd264), GAME_STR(str_3dd268) };	/* "HAL", "REF" */
 	D3DDisplayMode modes[100];
 	uint32_t fmts[20], behavior[20], depth[20];
 	int fmtOk[20];
@@ -676,7 +676,7 @@ int __fastcall CD3DApp_BuildDeviceList(CD3DApplication *self) {
 				fmts[nFmts++] = dm.Format;
 			}
 		}
-		crt_qsort(modes, nModes, sizeof(D3DDisplayMode), GAME_FUNC(D3DApp_SortModes, 0x276090));	/* D3DApp_SortModes */
+		crt_qsort(modes, nModes, sizeof(D3DDisplayMode), GAME_FUNC(D3DApp_SortModes));	/* D3DApp_SortModes */
 		for (int t = 0; t < 2; t++) {
 			D3DDeviceInfo *dev = &ad->devices[ad->dwNumDevices];
 			dev->DeviceType = types[t];
@@ -1289,20 +1289,20 @@ failed:
 }
 
 /* the choice of the device dialog: the original values and those selected */
-#define g_SelApp GAME_GLOBAL(CD3DApplication *, g_SelApp, 0x4b1c08)
-#define g_OrigAdapter GAME_GLOBAL(uint32_t, g_OrigAdapter, 0x4b1c0c)
-#define g_SelAdapter GAME_GLOBAL(uint32_t, g_SelAdapter, 0x4b1c10)
-#define g_OrigDevice GAME_GLOBAL(uint32_t, g_OrigDevice, 0x4b1c14)
-#define g_SelDevice GAME_GLOBAL(uint32_t, g_SelDevice, 0x4b1c18)
-#define g_OrigMode GAME_GLOBAL(uint32_t, g_OrigMode, 0x4b1c1c)
-#define g_SelMode GAME_GLOBAL(uint32_t, g_SelMode, 0x4b1c20)
-#define g_OrigWindowed GAME_GLOBAL(int, g_OrigWindowed, 0x4b1c24)
-#define g_SelWindowed GAME_GLOBAL(int, g_SelWindowed, 0x4b1c28)
-#define g_OrigMultiSample GAME_GLOBAL(uint32_t, g_OrigMultiSample, 0x4b1c2c)
-#define g_SelMultiSample GAME_GLOBAL(uint32_t, g_SelMultiSample, 0x4b1c30)
+#define g_SelApp GAME_GLOBAL(CD3DApplication *, g_SelApp)
+#define g_OrigAdapter GAME_GLOBAL(uint32_t, g_OrigAdapter)
+#define g_SelAdapter GAME_GLOBAL(uint32_t, g_SelAdapter)
+#define g_OrigDevice GAME_GLOBAL(uint32_t, g_OrigDevice)
+#define g_SelDevice GAME_GLOBAL(uint32_t, g_SelDevice)
+#define g_OrigMode GAME_GLOBAL(uint32_t, g_OrigMode)
+#define g_SelMode GAME_GLOBAL(uint32_t, g_SelMode)
+#define g_OrigWindowed GAME_GLOBAL(int, g_OrigWindowed)
+#define g_SelWindowed GAME_GLOBAL(int, g_SelWindowed)
+#define g_OrigMultiSample GAME_GLOBAL(uint32_t, g_OrigMultiSample)
+#define g_SelMultiSample GAME_GLOBAL(uint32_t, g_SelMultiSample)
 
 typedef int(__cdecl *wsprintf_t)(char *buf, const char *fmt, ...);
-#define exe_wsprintfA GAME_IMPORT_CDECL(wsprintf_t, wsprintfA, 0x3a1368)
+#define exe_wsprintfA GAME_IMPORT_CDECL(wsprintf_t, wsprintfA)
 
 #define IDC_ADAPTER_COMBO 0x3ea
 #define IDC_DEVICE_COMBO 0x3e8
@@ -1428,7 +1428,7 @@ intptr_t __stdcall D3DApp_SelectDeviceProc(void *dlg, uint32_t msg, uintptr_t w,
 			continue;
 		}
 		if (!t) {
-			Str_Copy(ms, GAME_STR(str_3b32ec, 0x3b32ec), sizeof(ms));	/* "none" */
+			Str_Copy(ms, GAME_STR(str_3b32ec), sizeof(ms));	/* "none" */
 		} else {
 			exe_wsprintfA(ms, "%d samples", t);
 		}

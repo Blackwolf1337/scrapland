@@ -10,7 +10,7 @@
 #include "scrap/walkcharentity.h"
 
 #define CAIBISHOP_SIZE 0x398
-#define BISHOP_BLOCK_TIME 7.5f		/* the way to the target is tested again after it (rva 0x3a46d0) */
+#define BISHOP_BLOCK_TIME 7.5f		/* the way to the target is tested again after it */
 
 void *__thiscall cAIBishop_ctor(void *mem, cEntity *e, int *arg) {
 	cAIBishop *self = mem;

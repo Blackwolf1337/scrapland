@@ -13,13 +13,13 @@
 #include "scrap/render.h"
 
 /* the frames drawn by the engine3d */
-#define g_FrameCount GAME_GLOBAL(int, g_FrameCount, 0x4a8ec8)
+#define g_FrameCount GAME_GLOBAL(int, g_FrameCount)
 /* the time of the last frame (the clock of the engine, also g_FrameDelta of Engine.c) */
-#define g_FrameMs GAME_GLOBAL(float, g_FrameMs, 0x4a8ed4)
+#define g_FrameMs GAME_GLOBAL(float, g_FrameMs)
 /* the time of the engine in ms */
-#define g_TimeMs GAME_GLOBAL(uint32_t, g_TimeMs, 0x4a8ef0)
+#define g_TimeMs GAME_GLOBAL(uint32_t, g_TimeMs)
 /* video var DiffuseMod4x: colors divided by 4 */
-#define g_DiffuseMod4x GAME_GLOBAL(int, g_DiffuseMod4x, 0x431be8)
+#define g_DiffuseMod4x GAME_GLOBAL(int, g_DiffuseMod4x)
 
 #define MAX_FILEPATH 0x104
 
@@ -200,7 +200,7 @@ typedef struct Pal16Shift {
 	byte gShr, gShl;		/* 0x2 */
 	byte bShr, bShl;		/* 0x4 */
 } Pal16Shift;
-#define g_Pal16Shift GAME_GLOBAL(Pal16Shift, g_Pal16Shift, 0x4e6e18)
+#define g_Pal16Shift GAME_GLOBAL(Pal16Shift, g_Pal16Shift)
 #define PAL16_COLORS(pal) ((uint16_t *)(((uintptr_t)(pal) + 0x200) & ~(uintptr_t)0x1ff))
 
 uint32_t Pal16_FromRGB(byte r, byte g, byte b);	/* 16 bits, the upper ones 0 */
@@ -242,7 +242,7 @@ SD_OFFSET(PcxHeader, lx, 0x46);
 SD_SIZE(PcxHeader, 0x80);
 
 /* the error code of a header that is no 8 bit PCX (errno) */
-#define g_ErrPcxFormat GAME_GLOBAL(int, g_ErrPcxFormat, 0x3de07c)
+#define g_ErrPcxFormat GAME_GLOBAL(int, g_ErrPcxFormat)
 
 /* the pixels from src into dest (planes interleaved), the end of the data read */
 const byte *Pcx_Decode(byte *dest, const byte *src, const PcxHeader *hdr);

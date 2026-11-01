@@ -17,7 +17,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
 
-double crt_ceil(double x);				/* rva 0x345010 */
+double crt_ceil(double x);
 
 /* ---- Global/DList.h ---- */
 

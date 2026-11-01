@@ -17,7 +17,7 @@
 #include "scrap/nodesworld.h"
 #include "scrap/scrap.h"
 
-#define AICG_PI2 1.5707963267948966	/* pi / 2 (rva 0x3a5110) */
+#define AICG_PI2 1.5707963267948966	/* pi / 2 */
 #define AICG_POINT_CTOR 0x080770
 #define AICG_POINT_DTOR 0x080850
 
@@ -38,7 +38,7 @@ void __fastcall cAICGPoint_dtor(cAICGPoint *self) {
 void *__thiscall cAICGPoint_Delete(cAICGPoint *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(cAICGPoint), *mem, GAME_FUNC(cAICGPoint_dtor, AICG_POINT_DTOR));
+		crt_eh_vector_dtor(self, sizeof(cAICGPoint), *mem, GAME_FUNC(cAICGPoint_dtor));
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
@@ -135,7 +135,7 @@ void __fastcall cAICharGroup_dtor(cAICharGroup *self) {
 	for (int i = 0; i < self->numZones; i++) {
 		cAICGPoint *p = self->zones[i].points;
 		if (p) {
-			Delete_Objects(p, sizeof(cAICGPoint), GAME_FUNC(cAICGPoint_dtor, AICG_POINT_DTOR));
+			Delete_Objects(p, sizeof(cAICGPoint), GAME_FUNC(cAICGPoint_dtor));
 		}
 	}
 	if (self->zones) {
@@ -242,7 +242,7 @@ void __thiscall cAICharGroup_Init(cAICharGroup *self) {
 		cAICGZone *z = &self->zones[i];
 		Str_Copy(z->name, node->zone.name, sizeof(z->name));
 		z->numPoints = node->zone.points.count;
-		z->points = New_Objects(z->numPoints, sizeof(cAICGPoint), GAME_FUNC(cAICGPoint_ctor, AICG_POINT_CTOR), GAME_FUNC(cAICGPoint_dtor, AICG_POINT_DTOR));
+		z->points = New_Objects(z->numPoints, sizeof(cAICGPoint), GAME_FUNC(cAICGPoint_ctor), GAME_FUNC(cAICGPoint_dtor));
 		if (!z->points) {
 			AICG_NoMemory();
 		}

@@ -14,7 +14,7 @@
 #include "scrap/withlifeentity.h"
 #include "scrap/world.h"
 
-#define CMISSILEENTITY_VFTABLE GAME_VFTABLE(cMissileEntity_vftable, 0x3b2b24)
+#define CMISSILEENTITY_VFTABLE GAME_VFTABLE(cMissileEntity_vftable)
 #define CMISSILEENTITY_SIZE 0x7e8
 
 #define MISSILE_HIT_NONE 0
@@ -100,7 +100,7 @@ static inline const cMissileEntityVtbl *Missile_Vtbl(cMissileEntity *e) {
 SD_SIZE(cMissileEntity, CMISSILEENTITY_SIZE);
 
 /* the WithLife entities the missiles touched, by name (4 of 0x80) */
-#define g_MissileHits (GAME_ARRAY(char[0x80], g_MissileHits, 0x4476b8))
+#define g_MissileHits (GAME_ARRAY(char[0x80], g_MissileHits))
 
 /* the base class (src/game/Entities/WithLifeEntity.c) */
 void __fastcall cWithLifeEntity_dtor(cEntity *self);

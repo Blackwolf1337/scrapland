@@ -12,13 +12,13 @@
 #include "scrap/game.h"
 #include "scrap/win32.h"
 
-#define g_LogFile GAME_GLOBAL(void *, g_LogFile, 0x444e60)
-#define g_LogAIFile GAME_GLOBAL(void *, g_LogAIFile, 0x444e64)
-#define g_ConCol GAME_GLOBAL(int, g_ConCol, 0x445a48)
-#define g_LogName GAME_GLOBAL_IN(const char *, GVar_LogFile, 16, 0x445a5c)
-#define g_LastError GAME_GLOBAL(uint32_t, g_LastError, 0x445a7c)
-#define g_ConBuf (GAME_ARRAY(char, g_ConBuf, 0x445a80))		/* 0x400, the text of the printf functions */
-#define g_LogFlush GAME_GLOBAL_IN(int, GVar_AlwaysFlushLog, 16, 0x445e90)		/* flush the logs after every text */
+#define g_LogFile GAME_GLOBAL(void *, g_LogFile)
+#define g_LogAIFile GAME_GLOBAL(void *, g_LogAIFile)
+#define g_ConCol GAME_GLOBAL(int, g_ConCol)
+#define g_LogName GAME_GLOBAL_IN(const char *, GVar_LogFile, 16)
+#define g_LastError GAME_GLOBAL(uint32_t, g_LastError)
+#define g_ConBuf (GAME_ARRAY(char, g_ConBuf))		/* 0x400, the text of the printf functions */
+#define g_LogFlush GAME_GLOBAL_IN(int, GVar_AlwaysFlushLog, 16)		/* flush the logs after every text */
 
 #define CON_COLOR_BLUE 0xff
 #define CON_COLOR_VERBOSE 0x707000

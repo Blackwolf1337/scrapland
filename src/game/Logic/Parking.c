@@ -15,14 +15,14 @@
 #include "scrap/world.h"
 #include "scrap/weapons.h"
 
-#define g_ParkingCheckRadius GAME_GLOBAL_IN(float, GVar_ParkingCheckRadius, 16, 0x44d6d8)
-#define g_ParkingCharCheckDistance GAME_GLOBAL_IN(float, GVar_ParkingCharCheckDistance, 16, 0x44d738)
-#define g_ParkingVehicleCheckDistance GAME_GLOBAL_IN(float, GVar_ParkingVehicleCheckDistance, 16, 0x44d750)
-#define g_OnParkedOut (GAME_ARRAY_IN(cPy_Function, GVar_OnParkedOut, 16, 0x44d6f0))
-#define g_OnParkingOccupied (GAME_ARRAY_IN(cPy_Function, GVar_OnParkingOccupied, 16, 0x44d714))
+#define g_ParkingCheckRadius GAME_GLOBAL_IN(float, GVar_ParkingCheckRadius, 16)
+#define g_ParkingCharCheckDistance GAME_GLOBAL_IN(float, GVar_ParkingCharCheckDistance, 16)
+#define g_ParkingVehicleCheckDistance GAME_GLOBAL_IN(float, GVar_ParkingVehicleCheckDistance, 16)
+#define g_OnParkedOut (GAME_ARRAY_IN(cPy_Function, GVar_OnParkedOut, 16))
+#define g_OnParkingOccupied (GAME_ARRAY_IN(cPy_Function, GVar_OnParkingOccupied, 16))
 /* what the sphere native found: a ship, else the last other entity */
-#define g_ParkingShip GAME_GLOBAL(cEntity *, g_ParkingShip, 0x44d758)
-#define g_ParkingOther GAME_GLOBAL(cEntity *, g_ParkingOther, 0x44d75c)
+#define g_ParkingShip GAME_GLOBAL(cEntity *, g_ParkingShip)
+#define g_ParkingOther GAME_GLOBAL(cEntity *, g_ParkingOther)
 #define PARKING_NATIVE 0x155ed0
 #define PARKING_FARTHER 0x155e90
 #define PARKING_NEARER 0x155eb0
@@ -144,7 +144,7 @@ static cParkingZone *Parking_Next(cParkingList *list) {
 
 /* the ship (ParkingShip) or other entity (ParkingOther) in the zone, of the ParkingCheckRadius sphere */
 static void Parking_Look(const cParkingZone *z) {
-	cPy_Function_SetNative(g_LogicSphereFunc, GAME_FUNC(Parking_Native, PARKING_NATIVE));
+	cPy_Function_SetNative(g_LogicSphereFunc, GAME_FUNC(Parking_Native));
 	g_ParkingShip = NULL;
 	g_ParkingOther = NULL;
 	cWorld_SphereCallF(g_pWorld, 5, &z->pos, g_ParkingCheckRadius, g_LogicSphereFunc, 1);
@@ -220,10 +220,10 @@ const char *__thiscall Parking_Find(void *parking, int flag, const vec3_t *pos, 
 	list->iter = list->head;
 	cParkingZone *z = list->head ? &list->head->zone : NULL;
 	if ((byte)farest) {
-		cmp = GAME_FUNC(Parking_Farther, PARKING_FARTHER);
+		cmp = GAME_FUNC(Parking_Farther);
 		bestD = 0.0f;
 	} else {
-		cmp = GAME_FUNC(Parking_Nearer, PARKING_NEARER);
+		cmp = GAME_FUNC(Parking_Nearer);
 		bestD = FLT_MAX;
 	}
 	while (z) {

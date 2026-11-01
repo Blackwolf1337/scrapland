@@ -71,18 +71,18 @@ typedef struct CAnimStream {
 SD_SIZE(CAnimStream, 0x8);
 
 /* the block the tracks of the nodes are read into, set while an animation reads or deletes its nodes */
-#define g_ActAnimBlock GAME_GLOBAL(CAnimBlock *, g_ActAnimBlock, 0x4dc090)
+#define g_ActAnimBlock GAME_GLOBAL(CAnimBlock *, g_ActAnimBlock)
 /* the engine variables of the animations (the values of their cGVar objects): R_AnimNodo_Count the live CAnimNode
  * objects; OptimizeAnims (0 none, 1 compact the tracks before writing) and the errors that still count as equal */
-#define g_AnimNodeCount GAME_GLOBAL_IN(int, GVar_R_AnimNode_Count, 16, 0x4dc104)
-#define g_OptimizeAnims GAME_GLOBAL_IN(int, GVar_OptimizeAnims, 16, 0x4dc0d4)
-#define g_OptAnimPosErr GAME_GLOBAL_IN(float, GVar_OptAnimPosErr, 16, 0x4dc0bc)
-#define g_OptAnimRotErr GAME_GLOBAL_IN(float, GVar_OptAnimRotErr, 16, 0x4dc11c)	/* degrees */
-#define g_OptAnimFovErr GAME_GLOBAL_IN(float, GVar_OptAnimFovErr, 16, 0x4dc0ec)	/* degrees */
+#define g_AnimNodeCount GAME_GLOBAL_IN(int, GVar_R_AnimNode_Count, 16)
+#define g_OptimizeAnims GAME_GLOBAL_IN(int, GVar_OptimizeAnims, 16)
+#define g_OptAnimPosErr GAME_GLOBAL_IN(float, GVar_OptAnimPosErr, 16)
+#define g_OptAnimRotErr GAME_GLOBAL_IN(float, GVar_OptAnimRotErr, 16)	/* degrees */
+#define g_OptAnimFovErr GAME_GLOBAL_IN(float, GVar_OptAnimFovErr, 16)	/* degrees */
 /* the name of the node an animation is loaded for, in the log lines */
-#define g_AnimNodeName (GAME_ARRAY(char, g_AnimNodeName, 0x4dbf78))
+#define g_AnimNodeName (GAME_ARRAY(char, g_AnimNodeName))
 /* the memory statistics of the animations */
-#define g_AnimMemStats (&GAME_GLOBAL(cMemStats, g_AnimMemStats, 0x4dc078))
+#define g_AnimMemStats (&GAME_GLOBAL(cMemStats, g_AnimMemStats))
 
 /* a track: Mem_Free unless it is in the active block; CHECK that it is when flags has OPT_INBLOCK */
 void AnimBlock_Free(void *ptr, uint32_t flags);

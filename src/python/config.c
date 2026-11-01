@@ -1,5 +1,5 @@
 /*
- * The built-in modules of the Python library of ScrapC.exe, the table of Scrap.exe (rva 0x428d58) in its order: the
+ * The built-in modules of the Python library of ScrapC.exe, the table of Scrap.exe in its order: the
  * engine modules (src/game/PyInterface), then the standard ones of the 1.5.2 Windows build that the game kept.
  */
 #include "Python.h"

@@ -970,147 +970,147 @@ SD_SYM(str_PyMethod_cPyEntity_SetModel);
 #undef s_TauntRaceCounts
 #undef s_TauntRaces
 
-float g_TrafficSearchDist SD_AT(0x428000) = 200000.0f;
-uint32_t ChType_FXDesktopFallEnd_428008[18] SD_AT(0x428008) = {
+float g_TrafficSearchDist = 200000.0f;
+uint32_t ChType_FXDesktopFallEnd_428008[18] = {
 	0xff000000, 0x80303030, 0x60304040, 0x60404040, 0x60404040, 0x80404040, 0xbe303030, 0xff000000, 0xff000000,
 	0xff000000, 0x80404040, 0x60606060, 0x60606060, 0x60606060, 0x80606060, 0xbe404040, 0xff000000, 0xff000000,
 };
-uint32_t ChType_FXDesktopFallEnd_428050[10] SD_AT(0x428050) = { 0xff565656, 0xb4fff06e, 0x8cefa01e, 0x969a500e, 0xc3604b1e, 0xd2404040, 0xeb202020, 0xff000000, 0xff000000 };
-uint32_t g_RampGearShoot[36] SD_AT(0x428078) = {
+uint32_t ChType_FXDesktopFallEnd_428050[10] = { 0xff565656, 0xb4fff06e, 0x8cefa01e, 0x969a500e, 0xc3604b1e, 0xd2404040, 0xeb202020, 0xff000000, 0xff000000 };
+uint32_t g_RampGearShoot[36] = {
 	0xff86edff, 0xff8ddbff, 0x8095c4ff, 0x9dadff, 0xa598ff, 0x40ae7eff, 0x80b765ff, 0xffb765ff, 0xffb765ff,
 	0xff5b66ff, 0x966462fe, 0x506d5dfd, 0x7812fc, 0x8551fb, 0x40964af9, 0x809b47f9, 0xc49b47f9, 0xff9b47f9,
 	0xffb9b9ed, 0x80b5b5f0, 0xb2b2f2, 0xafaff5, 0x20aaaaf9, 0x40a7a7fc, 0x80a3a3ff, 0xc0a3a3ff, 0xffa3a3ff,
 	0xffffad2a, 0xc0feee90, 0x80ef6f38, 0x40bc3010, 0x407a1f0a, 0x5c3f1005, 0x800e0401, 0xff000000, 0xff000000,
 };
-uint32_t NURSE_RAMPS_STARS[18] SD_AT(0x428108) = {
+uint32_t NURSE_RAMPS_STARS[18] = {
 	0xff000000, 0x5a202020, 0x20303030, 0x20303030, 0x20303030, 0x80303030, 0xbe202020, 0xff000000, 0xff000000,
 	0xff000000, 0x5a404040, 0x20606060, 0x20606060, 0x20606060, 0x80606060, 0xbe404040, 0xff000000, 0xff000000,
 };
-uint32_t NURSE_RAMPS_SPARKS[18] SD_AT(0x428150) = {
+uint32_t NURSE_RAMPS_SPARKS[18] = {
 	0xffb9b9ed, 0x80b5b5f0, 0xb2b2f2, 0xafaff5, 0x20aaaaf9, 0x40a7a7fc, 0x80a3a3ff, 0xc0a3a3ff, 0xffa3a3ff,
 	0xff9191ed, 0x808d8df0, 0x8a8af2, 0x8787f5, 0x208282f9, 0x407f7ffc, 0x807b7bff, 0xc07b7bff, 0xff7b7bff,
 };
-uint32_t NURSE_RAMP_GLOW[9] SD_AT(0x428198) = { 0xff565656, 0xb4fff06e, 0x8cefa01e, 0x969a500e, 0xc3604b1e, 0xd2404040, 0xeb202020, 0xff000000, 0xff000000 };
-uint32_t RUSTY_RAMPS[18] SD_AT(0x4281c0) = {
+uint32_t NURSE_RAMP_GLOW[9] = { 0xff565656, 0xb4fff06e, 0x8cefa01e, 0x969a500e, 0xc3604b1e, 0xd2404040, 0xeb202020, 0xff000000, 0xff000000 };
+uint32_t RUSTY_RAMPS[18] = {
 	0x80fff696, 0x20ffb45a, 0x40e68211, 0x80ab5e0d, 0x964c4408, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 	0x80ffebd2, 0x20ffd75a, 0x40e6c811, 0x80ab8c0d, 0x964c3a08, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 };
-uint32_t RUSTY_RAMP_DEBRIS[9] SD_AT(0x428208) = { 0xff808080, 0xa4808080, 0xa4808080, 0xa4808080, 0xa4808080, 0xc0808080, 0xde808080, 0xff000000, 0xff000000 };
-uint32_t g_RampMercenaryBubbles[18] SD_AT(0x428230) = {
+uint32_t RUSTY_RAMP_DEBRIS[9] = { 0xff808080, 0xa4808080, 0xa4808080, 0xa4808080, 0xa4808080, 0xc0808080, 0xde808080, 0xff000000, 0xff000000 };
+uint32_t g_RampMercenaryBubbles[18] = {
 	0x30a0ff8c, 0x40a0ff8c, 0x4ba0ff8c, 0x5ca0ff8c, 0x80a0ff8c, 0xa4a0ff8c, 0xc4408037, 0xff000000, 0xff000000,
 	0x10c4ff80, 0x20c4ff64, 0x30baff5a, 0x5caaff46, 0x80a0ff32, 0xa496ff26, 0xc4408012, 0xff000000, 0xff000000,
 };
-uint32_t g_RampMercenarySmoke[18] SD_AT(0x428278) = {
+uint32_t g_RampMercenarySmoke[18] = {
 	0xc8a0ff8c, 0xd2a0ff8c, 0xdea0ff8c, 0xe6a0ff8c, 0xeea0ff8c, 0xf5a0ff8c, 0xfa408037, 0xff000000, 0xff000000,
 	0xc8c4ff80, 0xd2c4ff64, 0xdebaff5a, 0xe6aaff46, 0xeea0ff32, 0xf596ff26, 0xfa408012, 0xff000000, 0xff000000,
 };
-uint32_t g_RampRustySparks[28] SD_AT(0x4282c0) = {
+uint32_t g_RampRustySparks[28] = {
 	0x809696ff, 0x20d2d2ff, 0x406e6ee6, 0x803737be, 0x96191996, 0xa4030378, 0xc000006e, 0xff000032, 0xff000000,
 	0x80d2d2ff, 0x209696ff, 0x406411e1, 0x803232b4, 0x961e1e55, 0xa40a0a2d, 0xc0050519, 0xff00000a, 0xff000000,
 	0x80d2d2ff, 0x205a5aff, 0x401111e6, 0x800d0dab, 0x9608084c, 0xa4030338, 0xc000001e, 0xff00000a, 0xff000000,
 };
-uint32_t g_RampAlarmB[9] SD_AT(0x428330) = { 0xff0000ff, 0x400000ff, 0x400000ff, 0x5c0000ff, 0x800000ff, 0xa40000ff, 0xc40000ff, 0xff0000ff, 0xff0000ff };
-uint32_t g_RampAlarmA[9] SD_AT(0x428354) = { 0xff8080ff, 0x408080ff, 0x408080ff, 0x5c8080ff, 0x808080ff, 0xa48080ff, 0xc48080ff, 0xff8080ff, 0xff8080ff };
-uint32_t g_RampAlarmD[9] SD_AT(0x428378) = { 0xffff0000, 0x40ff0000, 0x40ff0000, 0x5cff0000, 0x80ff0000, 0xa4ff0000, 0xc4ff0000, 0xffff0000, 0xffff0000 };
-uint32_t g_RampAlarmC[27] SD_AT(0x42839c) = {
+uint32_t g_RampAlarmB[9] = { 0xff0000ff, 0x400000ff, 0x400000ff, 0x5c0000ff, 0x800000ff, 0xa40000ff, 0xc40000ff, 0xff0000ff, 0xff0000ff };
+uint32_t g_RampAlarmA[9] = { 0xff8080ff, 0x408080ff, 0x408080ff, 0x5c8080ff, 0x808080ff, 0xa48080ff, 0xc48080ff, 0xff8080ff, 0xff8080ff };
+uint32_t g_RampAlarmD[9] = { 0xffff0000, 0x40ff0000, 0x40ff0000, 0x5cff0000, 0x80ff0000, 0xa4ff0000, 0xc4ff0000, 0xffff0000, 0xffff0000 };
+uint32_t g_RampAlarmC[27] = {
 	0xffff8080, 0x40ff8080, 0x40ff8080, 0x5cff8080, 0x80ff8080, 0xa4ff8080, 0xc4ff8080, 0xffff8080, 0xffff8080,
 	0xff0000ff, 0x400000ff, 0x200000ff, 0x400000ff, 0x800000ff, 0xa40000ff, 0xc40000ff, 0xe00000ff, 0xff0000ff,
 	0xffc4c4ff, 0x80c4c4ff, 0x40c4c4ff, 0x60c4c4ff, 0x80c4c4ff, 0xa4c4c4ff, 0xc4c4c4ff, 0xe0c4c4ff, 0xffc4c4ff,
 };
-uint32_t g_RampMaintenanceEnd[9] SD_AT(0x428408) = { 0x30ff8000, 0x40ff8000, 0x4bff8000, 0x5cff8000, 0x80ff8000, 0xa4ff8000, 0xc4ff8000, 0xffff8000, 0xffff8000 };
-uint32_t g_RampMaintenance[9] SD_AT(0x42842c) = { 0x10ffc480, 0x20ffc464, 0x30ffba5a, 0x5cffaa46, 0x80ffa032, 0xa4ff9626, 0xc4ff8c12, 0xffff8700, 0xffff8000 };
-uint32_t EFXM_SparkFlash_428450[9] SD_AT(0x428450) = { 0x10f5f5ff, 0x20e1e1ff, 0x30b4b4e6, 0x409b9bbe, 0x607d7d96, 0x805f5f78, 0xc055556e, 0xff282832, 0xff000000 };
-uint32_t EFXM_SparkFlash_428474[19] SD_AT(0x428474) = {
+uint32_t g_RampMaintenanceEnd[9] = { 0x30ff8000, 0x40ff8000, 0x4bff8000, 0x5cff8000, 0x80ff8000, 0xa4ff8000, 0xc4ff8000, 0xffff8000, 0xffff8000 };
+uint32_t g_RampMaintenance[9] = { 0x10ffc480, 0x20ffc464, 0x30ffba5a, 0x5cffaa46, 0x80ffa032, 0xa4ff9626, 0xc4ff8c12, 0xffff8700, 0xffff8000 };
+uint32_t EFXM_SparkFlash_428450[9] = { 0x10f5f5ff, 0x20e1e1ff, 0x30b4b4e6, 0x409b9bbe, 0x607d7d96, 0x805f5f78, 0xc055556e, 0xff282832, 0xff000000 };
+uint32_t EFXM_SparkFlash_428474[19] = {
 	0x10d2d2ff, 0x209696ff, 0x306464e1, 0x403232b4, 0x601e1e55, 0x800a0a2d, 0xc0050519, 0xff00000a, 0xff000000,
 	0x10d2d2ff, 0x20b4b4ff, 0x309393e6, 0x405353ab, 0x602d2d4c, 0x80141438, 0xc005051e, 0xff00000a, 0xff000000,
 };
-uint32_t g_RampBike[36] SD_AT(0x4284c0) = {
+uint32_t g_RampBike[36] = {
 	0x8054b9eb, 0x2050b9eb, 0x304ab4eb, 0x5240afeb, 0xa42eaaeb, 0xc026a5eb, 0xe120a0eb, 0xff189beb, 0xff1096eb,
 	0xff54cdff, 0x4050cdff, 0x304acdff, 0x4046cdff, 0x8040cdff, 0xc03ccdff, 0xe136cdff, 0xff2ccdff, 0xff22cdff,
 	0x80b954eb, 0x20b950eb, 0x30b44aeb, 0x52af40eb, 0xa4aa2eeb, 0xc0a526eb, 0xe1a020eb, 0xff9b18eb, 0xff9610eb,
 	0xffcd54ff, 0x40cd50ff, 0x30cd4aff, 0x40cd46ff, 0x80cd40ff, 0xc0cd3cff, 0xe1cd36ff, 0xffcd2cff, 0xffcd22ff,
 };
-uint32_t data_428550[9] SD_AT(0x428550) = { 0xff0000ff, 0x200000ff, 0x300000ff, 0x400000ff, 0x5c0000ff, 0x800000ff, 0xc40000ff, 0xff0000ff, 0xff0000ff };
-uint32_t data_428574[9] SD_AT(0x428574) = { 0xff8080ff, 0x208080ff, 0x308080ff, 0x408080ff, 0x5c8080ff, 0x808080ff, 0xc48080ff, 0xff8080ff, 0xff8080ff };
-uint32_t data_428598[9] SD_AT(0x428598) = { 0xffff0000, 0x20ff0000, 0x30ff0000, 0x40ff0000, 0x5cff0000, 0x80ff0000, 0xc4ff0000, 0xffff0000, 0xffff0000 };
-uint32_t data_4285bc[9] SD_AT(0x4285bc) = { 0xffff8080, 0x20ff8080, 0x30ff8080, 0x40ff8080, 0x5cff8080, 0x80ff8080, 0xc4ff8080, 0xffff8080, 0xffff8080 };
-uint32_t cEmbeddedFXVehicleProbe_Update_4285e0[18] SD_AT(0x4285e0) = {
+uint32_t data_428550[9] = { 0xff0000ff, 0x200000ff, 0x300000ff, 0x400000ff, 0x5c0000ff, 0x800000ff, 0xc40000ff, 0xff0000ff, 0xff0000ff };
+uint32_t data_428574[9] = { 0xff8080ff, 0x208080ff, 0x308080ff, 0x408080ff, 0x5c8080ff, 0x808080ff, 0xc48080ff, 0xff8080ff, 0xff8080ff };
+uint32_t data_428598[9] = { 0xffff0000, 0x20ff0000, 0x30ff0000, 0x40ff0000, 0x5cff0000, 0x80ff0000, 0xc4ff0000, 0xffff0000, 0xffff0000 };
+uint32_t data_4285bc[9] = { 0xffff8080, 0x20ff8080, 0x30ff8080, 0x40ff8080, 0x5cff8080, 0x80ff8080, 0xc4ff8080, 0xffff8080, 0xffff8080 };
+uint32_t cEmbeddedFXVehicleProbe_Update_4285e0[18] = {
 	0x4ff4010, 0x10ff300c, 0x20ff2008, 0x40ff1806, 0x5cff1004, 0x80ff0802, 0xc4ff0000, 0xffff0000, 0xffff0000,
 	0x80ff2020, 0x40ff2020, 0x5cff2020, 0x80ff2020, 0xa4ff2020, 0xc4ff2020, 0xe1ff2020, 0xffff2020, 0xffff2020,
 };
-uint32_t g_ArrowGlowRamps[2][9] SD_AT(0x428628) = {
+uint32_t g_ArrowGlowRamps[2][9] = {
 	{ 0x80ffff00, 0x84ffff00, 0x94ffff00, 0xa4ffff00, 0xb9ffff00, 0xcdffff00, 0xe8ffff00, 0xffffff00, 0xffffff00 },
 	{ 0x8000ffff, 0x8400ffff, 0x9400ffff, 0xa400ffff, 0xb900ffff, 0xcd00ffff, 0xe800ffff, 0xff00ffff, 0xff00ffff },
 };
-uint32_t g_VehicleSmokeRamps[28] SD_AT(0x428670) = {
+uint32_t g_VehicleSmokeRamps[28] = {
 	0xff000000, 0xc0232323, 0xa43c3c3c, 0xa44b4b4b, 0xa4373737, 0xc0232323, 0xdc191919, 0xff000000, 0xff000000,
 	0xff000000, 0xc02d2d2d, 0xa44b4b4b, 0xa4565656, 0xa4414141, 0xc02c2c2c, 0xdc1e1e1e, 0xff000000, 0xff000000,
 	0xff000000, 0xc0373737, 0xa4555555, 0xa4606060, 0xa44b4b4b, 0xc0363636, 0xdc232323, 0xff000000, 0xff000000,
 };
-uint32_t VS_RAMP_SMOKE[9] SD_AT(0x4286e0) = { 0x80fff696, 0x8cffdc73, 0xa0e6aa46, 0xb4be6928, 0xc888410f, 0xde5e1405, 0xf51e0602, 0xff000000, 0xff000000 };
-uint32_t VS_RAMP_FIRE[18] SD_AT(0x428704) = {
+uint32_t VS_RAMP_SMOKE[9] = { 0x80fff696, 0x8cffdc73, 0xa0e6aa46, 0xb4be6928, 0xc888410f, 0xde5e1405, 0xf51e0602, 0xff000000, 0xff000000 };
+uint32_t VS_RAMP_FIRE[18] = {
 	0xff191919, 0x80282828, 0x80373737, 0x80414141, 0x803c3c3c, 0x80373737, 0xb4323232, 0xff000000, 0xff000000,
 	0xff1e1e1e, 0x803c3c3c, 0x805a5a5a, 0x80505050, 0x80464646, 0x803c3c3c, 0xb4323232, 0xff000000, 0xff000000,
 };
-uint32_t VS_RAMP_ATPC[19] SD_AT(0x42874c) = {
+uint32_t VS_RAMP_ATPC[19] = {
 	0xffe1e1f5, 0x80ebbeb4, 0xf59b87, 0x10ff7d5f, 0x20ff5f28, 0x60ff5016, 0xa4c42d0a, 0xff000000, 0xff000000,
 	0xffffe655, 0x80ffb437, 0x80ff8719, 0x80ff4b0a, 0x80ff3c02, 0xa4ff2800, 0xdec40a00, 0xff000000, 0xff000000,
 };
-uint32_t g_WindSmokeRamps[18] SD_AT(0x428798) = {
+uint32_t g_WindSmokeRamps[18] = {
 	0xc8404040, 0xb4404040, 0xb9404040, 0xbe404040, 0xd2404040, 0xe6404040, 0xf0404040, 0xff404040, 0xff404040,
 	0xbe5c5c5c, 0xaa5c5c5c, 0xaf5c5c5c, 0xb45c5c5c, 0xcd5c5c5c, 0xe15c5c5c, 0xeb5c5c5c, 0xff5c5c5c, 0xff5c5c5c,
 };
-const char *g_PilotAnimNames[6] SD_AT(0x4287e0) = { (void *)sd_str_3a3954, (void *)sd_str_3a395c, (void *)sd_str_3b53f4, (void *)sd_str_3ae0f4, (void *)sd_str_3ad2f4 };
-uint32_t cVehicleMotorsEffects_Smoke_4287f8[18] SD_AT(0x4287f8) = {
+const char *g_PilotAnimNames[6] = { (void *)sd_str_3a3954, (void *)sd_str_3a395c, (void *)sd_str_3b53f4, (void *)sd_str_3ae0f4, (void *)sd_str_3ad2f4 };
+uint32_t cVehicleMotorsEffects_Smoke_4287f8[18] = {
 	0xff000000, 0x60191919, 0x60232323, 0x602d2d2d, 0x60282828, 0xa41e1e1e, 0xd40f0f0f, 0xff000000, 0xff000000,
 	0xff000000, 0x80232323, 0x60323232, 0x60414141, 0x60373737, 0xa4282828, 0xd4141414, 0xff000000, 0xff000000,
 };
-int g_WeaponNeedOrder[3][6] SD_AT(0x428840) = { { 0, 3, 1, 5, 2, 4 }, { 1, 5, 2, 4, 0, 3 }, { 2, 4, 0, 3, 1, 5 } };
-uint32_t g_DevColorRamps[36] SD_AT(0x428888) = {
+int g_WeaponNeedOrder[3][6] = { { 0, 3, 1, 5, 2, 4 }, { 1, 5, 2, 4, 0, 3 }, { 2, 4, 0, 3, 1, 5 } };
+uint32_t g_DevColorRamps[36] = {
 	0x60ffffff, 0x60ffffff, 0x60ffffff, 0x60ffffff, 0x80ffffff, 0x80ffffff, 0xc0808080, 0xff000000, 0xff000000,
 	0x80ffffc8, 0x80ffffc8, 0x80ffffc8, 0x80ffffc8, 0x80ffffc8, 0x80ffffc8, 0xc080805c, 0xff000000, 0xff000000,
 	0x80ffc0c0, 0x80ffc0c0, 0x80ffc0c0, 0x80ffc0c0, 0x80ffc0c0, 0x80ffc0c0, 0xc0808080, 0xff000000, 0xff000000,
 	0x80ffc080, 0x80ffc080, 0x80ffaf80, 0x80ffa480, 0x80ff9a6a, 0x80ff8c5c, 0xc0807840, 0xff000000, 0xff000000,
 };
-int *g_SwarmSlotData[4] SD_AT(0x428918) = {
+int *g_SwarmSlotData[4] = {
 	(void *)(sd_GVar_SwarmNumber1 + 16), (void *)(sd_GVar_SwarmNumber2 + 16), (void *)(sd_GVar_SwarmNumber3 + 16),
 	(void *)(sd_GVar_SwarmNumber4 + 16),
 };
-uint32_t g_VulcanRamps[3][9] SD_AT(0x428928) = {
+uint32_t g_VulcanRamps[3][9] = {
 	{ 0x80fff696, 0x20ffb45a, 0x40e68211, 0x80ab5e0d, 0x964c4408, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000 },
 	{ 0x80ffebd2, 0x20ffd75a, 0x40e6c811, 0x80ab8c0d, 0x964c3a08, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000 },
 	{ 0xff808080, 0x80808080, 0x5c808080, 0x80808080, 0xa4808080, 0xc0808080, 0xde808080, 0xff000000, 0xff000000 },
 };
-HashTable g_PackIndex SD_AT(0x428994) = { .numSlots = 457 };
-uint32_t g_HashItemValues SD_AT(0x4289a0);
-HashTable g_LangTable SD_AT(0x428a20) = { .numSlots = 457 };
-HashTable g_SaveVarTable SD_AT(0x428aac) = { .numSlots = 457 };
-uint32_t g_CurActionSet SD_AT(0x428ac0) = 0xffffffff;
-int g_ToDefinePlayer SD_AT(0x428ac4) = -1;
-int g_ToDefineAction SD_AT(0x428ac8) = -1;
-uint32_t g_ToDefineSet SD_AT(0x428acc) = 0xffffffff;
-int g_PadCodes[24] SD_AT(0x428ad0) = { 35, 34, 33, 32, 8, 41, 40, 39, 38, 9, 0, 1, 2, 3, 4, 10, 5, 11, 7, 6, 50, 51, 49, 48 };
-const char *LOGIC_GEARSTATES[5] SD_AT(0x428b38) = { (void *)sd_str_3bd078, (void *)sd_str_3bd084, (void *)sd_str_3bd090, (void *)sd_str_3bd09c, (void *)sd_str_3bd0b0 };
-const char *LOGIC_SENTINELSTATES[7] SD_AT(0x428b4c) = {
+HashTable g_PackIndex = { .numSlots = 457 };
+uint32_t g_HashItemValues;
+HashTable g_LangTable = { .numSlots = 457 };
+HashTable g_SaveVarTable = { .numSlots = 457 };
+uint32_t g_CurActionSet = 0xffffffff;
+int g_ToDefinePlayer = -1;
+int g_ToDefineAction = -1;
+uint32_t g_ToDefineSet = 0xffffffff;
+int g_PadCodes[24] = { 35, 34, 33, 32, 8, 41, 40, 39, 38, 9, 0, 1, 2, 3, 4, 10, 5, 11, 7, 6, 50, 51, 49, 48 };
+const char *LOGIC_GEARSTATES[5] = { (void *)sd_str_3bd078, (void *)sd_str_3bd084, (void *)sd_str_3bd090, (void *)sd_str_3bd09c, (void *)sd_str_3bd0b0 };
+const char *LOGIC_SENTINELSTATES[7] = {
 	(void *)sd_str_3bd0bc, (void *)sd_str_3bd0cc, (void *)sd_str_3bd0dc, (void *)sd_str_3bd0ec,
 	(void *)sd_str_3bd100, (void *)sd_str_3bd114, (void *)sd_str_3bd128,
 };
-const char *LOGIC_NURSESTATES[4] SD_AT(0x428b68) = { (void *)sd_str_3bd13c, (void *)sd_str_3bd148, (void *)sd_str_3bd154, (void *)sd_str_3bd164 };
-const char *LOGIC_GENCHARSTATES[11] SD_AT(0x428b78) = {
+const char *LOGIC_NURSESTATES[4] = { (void *)sd_str_3bd13c, (void *)sd_str_3bd148, (void *)sd_str_3bd154, (void *)sd_str_3bd164 };
+const char *LOGIC_GENCHARSTATES[11] = {
 	(void *)sd_str_3bd174, (void *)sd_str_3bd184, (void *)sd_str_3bd194, (void *)sd_str_3bd1a4,
 	(void *)sd_str_3bd1b4, (void *)sd_str_3bd1c4, (void *)sd_str_3bd1d4, (void *)sd_str_3bd1e4,
 	(void *)sd_str_3bd200, (void *)sd_str_3bd21c, (void *)sd_str_3bd238,
 };
-float g_MayorTargetDist SD_AT(0x428ba4) = 3.4028235e+38f;
-HashTable s_TauntRaceCounts SD_AT(0x428ba8) = { .numSlots = 457 };
-char *s_TauntRaces[5] SD_AT(0x428bb4) = { (void *)sd_str_3c082c, (void *)sd_str_3c0830, (void *)sd_str_3c0834, (void *)sd_str_3c0838, (void *)sd_str_Empty };
-int s_TauntPoliceCount SD_AT(0x428bc8) = -1;
-int s_RustyLastJunkPoint SD_AT(0x428bcc) = -1;
-uint32_t g_MissionStatusColors[3] SD_AT(0x428bd0) = { 0xffff20, 0xff4020, 0x2577ff };
-float g_MissionStatusOfs[3][2] SD_AT(0x428bdc) = { { 23.5f, 40.0f }, { 17.0f, 32.5f }, { 31.0f, 32.5f } };
-int g_HeadMonitorAnim SD_AT(0x428bf4) = 1;
-float g_MainMenuLightPos[5][2] SD_AT(0x428bf8) = { { 472.0f, 88.0f }, { 193.0f, 156.0f }, { 290.0f, 94.0f }, { 158.0f, 93.0f }, { 360.0f, 156.0f } };
-float g_MainMenuSparkPos[19][2] SD_AT(0x428c20) = {
+float g_MayorTargetDist = 3.4028235e+38f;
+HashTable s_TauntRaceCounts = { .numSlots = 457 };
+char *s_TauntRaces[5] = { (void *)sd_str_3c082c, (void *)sd_str_3c0830, (void *)sd_str_3c0834, (void *)sd_str_3c0838, (void *)sd_str_Empty };
+int s_TauntPoliceCount = -1;
+int s_RustyLastJunkPoint = -1;
+uint32_t g_MissionStatusColors[3] = { 0xffff20, 0xff4020, 0x2577ff };
+float g_MissionStatusOfs[3][2] = { { 23.5f, 40.0f }, { 17.0f, 32.5f }, { 31.0f, 32.5f } };
+int g_HeadMonitorAnim = 1;
+float g_MainMenuLightPos[5][2] = { { 472.0f, 88.0f }, { 193.0f, 156.0f }, { 290.0f, 94.0f }, { 158.0f, 93.0f }, { 360.0f, 156.0f } };
+float g_MainMenuSparkPos[19][2] = {
 	{ 116.0f, 104.0f },
 	{ 104.0f, 169.0f },
 	{ 169.0f, 106.0f },
@@ -1131,7 +1131,7 @@ float g_MainMenuSparkPos[19][2] SD_AT(0x428c20) = {
 	{ 514.0f, 110.0f },
 	{ 516.0f, 166.0f },
 };
-typeof(void (__thiscall *)(cSpecialActionScorer *, int)) g_SpecialActionDraw[15] SD_AT(0x428cb8) = {
+typeof(void (__thiscall *)(cSpecialActionScorer *, int)) g_SpecialActionDraw[15] = {
 	(void *)sd_SpecialAction_DrawDefault, (void *)sd_SpecialAction_DrawBanker, (void *)sd_SpecialAction_DrawTarget,
 	(void *)sd_SpecialAction_DrawGear, (void *)sd_SpecialAction_DrawVictim, (void *)sd_SpecialAction_DrawOn,
 	(void *)sd_SpecialAction_DrawOn, (void *)sd_SpecialAction_DrawOn, (void *)sd_SpecialAction_DrawLowEnergy,
@@ -1139,22 +1139,22 @@ typeof(void (__thiscall *)(cSpecialActionScorer *, int)) g_SpecialActionDraw[15]
 	(void *)sd_SpecialAction_DrawGear2, (void *)sd_SpecialAction_DrawGear3, (void *)sd_SpecialAction_DrawOn,
 	(void *)sd_SpecialAction_DrawOn,
 };
-int g_SpecialActionState SD_AT(0x428cf4) = 1;
-float g_SpecialActionFade SD_AT(0x428cf8) = 0.2f;
-float g_GearAimBest SD_AT(0x428cfc) = 3.4028235e+38f;
-float g_GearAimPos[2] SD_AT(0x428d00) = { 320.0f, 240.0f };
-float g_GearAimCenter[2] SD_AT(0x428d08) = { 320.0f, 240.0f };
-float g_GearAimSpreadX SD_AT(0x428d10) = 1.5707964f;
-float g_GearAimSpreadY SD_AT(0x428d14) = 1.5707964f;
-float g_TabBackTextWidth SD_AT(0x428d18) = -1.0f;
-int g_TalkColor[3] SD_AT(0x428d1c) = { 174, 229, 251 };
-uint32_t g_NetWaitTime SD_AT(0x428d28) = 5000;
-uint32_t g_NetCloseTime SD_AT(0x428d2c) = 2000;
-uint32_t g_NetSendDelay SD_AT(0x428d30) = 100;
-uint64_t g_NetRandMag01[2] SD_AT(0x428d38) = { 0, 0xb5026f5aa96619e9ULL };
-byte g_NetServerFullPkt[5] SD_AT(0x428d48) = { 0, 0, 0, 0, 8 };
-byte g_NetNeedPasswordPkt[5] SD_AT(0x428d50) = { 0, 0, 0, 0, 9 };
-PyTypeObject cPyEntity_Type SD_AT(0x428e18) = {
+int g_SpecialActionState = 1;
+float g_SpecialActionFade = 0.2f;
+float g_GearAimBest = 3.4028235e+38f;
+float g_GearAimPos[2] = { 320.0f, 240.0f };
+float g_GearAimCenter[2] = { 320.0f, 240.0f };
+float g_GearAimSpreadX = 1.5707964f;
+float g_GearAimSpreadY = 1.5707964f;
+float g_TabBackTextWidth = -1.0f;
+int g_TalkColor[3] = { 174, 229, 251 };
+uint32_t g_NetWaitTime = 5000;
+uint32_t g_NetCloseTime = 2000;
+uint32_t g_NetSendDelay = 100;
+uint64_t g_NetRandMag01[2] = { 0, 0xb5026f5aa96619e9ULL };
+byte g_NetServerFullPkt[5] = { 0, 0, 0, 0, 8 };
+byte g_NetNeedPasswordPkt[5] = { 0, 0, 0, 0, 9 };
+PyTypeObject cPyEntity_Type = {
 	.ob_refcnt = 1,
 	.ob_type = (void *)sd_PyType_Type,
 	.tp_name = (void *)sd_str_3c7284,
@@ -1164,7 +1164,7 @@ PyTypeObject cPyEntity_Type SD_AT(0x428e18) = {
 	.tp_getattr = (void *)sd_PyEntity_GetAttr,
 	.tp_setattr = (void *)sd_PyEntity_SetAttr,
 };
-PyMethodDef cPyEntity_methods[7] SD_AT(0x428e88) = {
+PyMethodDef cPyEntity_methods[7] = {
 	{ .ml_name = (void *)sd_str_PyMethod_cPyEntity_Del, .ml_meth = (void *)sd_cPyEntity_Del, .ml_flags = 1 },
 	{
 		.ml_name = (void *)sd_str_PyMethod_cPyEntity_SetModel,
@@ -1184,11 +1184,11 @@ PyMethodDef cPyEntity_methods[7] SD_AT(0x428e88) = {
 	},
 	{ .ml_name = (void *)sd_str_PyMethod_cPyEntity_IsType, .ml_meth = (void *)sd_cPyEntity_IsType, .ml_flags = 1 },
 };
-uint32_t g_PyPoolValues[32] SD_AT(0x428ef8) = {
+uint32_t g_PyPoolValues[32] = {
 	115, 36, 102, 944, 411, 410, 2643, 2070, 2182, 1877, 1189, 956, 642, 1320, 208, 120, 113, 64, 76, 63, 42, 59,
 	38, 52, 23, 30, 42, 22, 24, 28, 19, 24,
 };
-PyTypeObject cPyMenuEntity_Type SD_AT(0x428f78) = {
+PyTypeObject cPyMenuEntity_Type = {
 	.ob_refcnt = 1,
 	.ob_type = (void *)sd_PyType_Type,
 	.tp_name = (void *)sd_str_3c75a8,
@@ -1198,7 +1198,7 @@ PyTypeObject cPyMenuEntity_Type SD_AT(0x428f78) = {
 	.tp_getattr = (void *)sd_PyMenuEntity_GetAttr,
 	.tp_setattr = (void *)sd_PyMenuEntity_SetAttr,
 };
-PyMethodDef SAct_methods[10] SD_AT(0x429288) = {
+PyMethodDef SAct_methods[10] = {
 	{
 		.ml_name = (void *)sd_str_PyMethod_SAct_CreateClass,
 		.ml_meth = (void *)sd_SAct_CreateClass,
@@ -1254,7 +1254,7 @@ PyMethodDef SAct_methods[10] SD_AT(0x429288) = {
 		.ml_doc = (void *)sd_str_PyDoc_SAct_GetAct,
 	},
 };
-PyMethodDef SAI_methods[23] SD_AT(0x42a488) = {
+PyMethodDef SAI_methods[23] = {
 	{
 		.ml_name = (void *)sd_str_PyMethod_SAI_AnalyzeMap,
 		.ml_meth = (void *)sd_SAI_AnalyzeMap,
@@ -1388,7 +1388,7 @@ PyMethodDef SAI_methods[23] SD_AT(0x42a488) = {
 		.ml_doc = (void *)(sd_g_PythonReady + 1),
 	},
 };
-PyMethodDef Scrap_methods[115] SD_AT(0x42c610) = {
+PyMethodDef Scrap_methods[115] = {
 	{
 		.ml_name = (void *)sd_str_PyMethod_Scrap_Print,
 		.ml_meth = (void *)sd_Scrap_Print,
@@ -2074,7 +2074,7 @@ PyMethodDef Scrap_methods[115] SD_AT(0x42c610) = {
 		.ml_doc = (void *)sd_str_PyDoc_Scrap_GetGogID,
 	},
 };
-PyMethodDef SFX_methods[7] SD_AT(0x42d060) = {
+PyMethodDef SFX_methods[7] = {
 	{
 		.ml_name = (void *)sd_str_PyMethod_SFX_ShipExplosion,
 		.ml_meth = (void *)sd_SFX_ShipExplosion,
@@ -2112,7 +2112,7 @@ PyMethodDef SFX_methods[7] SD_AT(0x42d060) = {
 		.ml_doc = (void *)sd_str_PyDoc_SFX_EmbeddedSet,
 	},
 };
-PyMethodDef SInput_methods[21] SD_AT(0x42d790) = {
+PyMethodDef SInput_methods[21] = {
 	{
 		.ml_name = (void *)sd_str_PyMethod_SInput_SetActionSet,
 		.ml_meth = (void *)sd_SInput_SetActionSet,
@@ -2234,7 +2234,7 @@ PyMethodDef SInput_methods[21] SD_AT(0x42d790) = {
 		.ml_doc = (void *)sd_str_PyDoc_SInput_CheckPadButton,
 	},
 };
-PyMethodDef SLogic_methods[13] SD_AT(0x42dd20) = {
+PyMethodDef SLogic_methods[13] = {
 	{
 		.ml_name = (void *)sd_str_PyMethod_SLogic_SendSentinelToWatch,
 		.ml_meth = (void *)sd_SLogic_SendSentinelToWatch,
@@ -2308,7 +2308,7 @@ PyMethodDef SLogic_methods[13] SD_AT(0x42dd20) = {
 		.ml_doc = (void *)sd_str_PyDoc_SLogic_UpdateTauntEndTime,
 	},
 };
-PyMethodDef SNet_methods[26] SD_AT(0x42e610) = {
+PyMethodDef SNet_methods[26] = {
 	{
 		.ml_name = (void *)sd_str_PyMethod_SNet_InitServer,
 		.ml_meth = (void *)sd_SNet_InitServer,
@@ -2460,7 +2460,7 @@ PyMethodDef SNet_methods[26] SD_AT(0x42e610) = {
 		.ml_doc = (void *)sd_str_PyDoc_SNet_GetPing,
 	},
 };
-PyMethodDef SScorer_methods[34] SD_AT(0x42ec68) = {
+PyMethodDef SScorer_methods[34] = {
 	{
 		.ml_name = (void *)sd_str_PyMethod_SScorer_Add,
 		.ml_meth = (void *)sd_SScorer_Add,
@@ -2660,7 +2660,7 @@ PyMethodDef SScorer_methods[34] SD_AT(0x42ec68) = {
 		.ml_doc = (void *)sd_str_PyDoc_SScorer_New,
 	},
 };
-PyMethodDef SSound_methods[18] SD_AT(0x42f558) = {
+PyMethodDef SSound_methods[18] = {
 	{
 		.ml_name = (void *)sd_str_PyMethod_SSound_LoadSound,
 		.ml_meth = (void *)sd_SSound_LoadSound,
@@ -2764,7 +2764,7 @@ PyMethodDef SSound_methods[18] SD_AT(0x42f558) = {
 		.ml_doc = (void *)sd_str_PyDoc_SSound_DeleteAllSounds,
 	},
 };
-PyMethodDef SVec_methods[13] SD_AT(0x42fc80) = {
+PyMethodDef SVec_methods[13] = {
 	{
 		.ml_name = (void *)sd_str_PyMethod_SScorer_Add,
 		.ml_meth = (void *)sd_SVec_Add,

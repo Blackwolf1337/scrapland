@@ -20,22 +20,22 @@
 #include "scrap/pyfunction.h"
 #include "scrap/withlifeentity.h"
 
-#define LOGIC_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* "" of the exe */
+#define LOGIC_EMPTY GAME_STR(str_Empty)	/* "" of the exe */
 
 /* ---- AlarmStatus.cpp: the cAlarm of include/scrap/alarm.h ---- */
 
 /* engine variables (Gvars) */
-#define g_AlarmCallback (GAME_ARRAY_IN(cPy_Function, GVar_AlarmCallback, 16, 0x44cb1c))	/* AlarmCallback (on) */
-#define g_AlarmFallDelta GAME_GLOBAL_IN(float, GVar_AlarmFallDelta, 16, 0x44caa4)
-#define g_AlarmFallMission GAME_GLOBAL_IN(float, GVar_AlarmFallMission, 16, 0x44cb04)
-#define g_AlarmGrowDelta GAME_GLOBAL_IN(float, GVar_AlarmGrowDelta, 16, 0x44cad4)
-#define g_EasyAlarmFallFactor GAME_GLOBAL_IN(float, GVar_EasyAlarmFallFactor, 16, 0x44caec)
-#define g_GuaranteedChars GAME_GLOBAL_IN(char *, GVar_GuaranteedChars, 16, 0x44cb58)		/* ",type1,type2," */
-#define g_PoliceTauntRace (GAME_ARRAY_IN(cString, GVar_PoliceTauntRace, 16, 0x44cabc))	/* the default at +4 */
-#define g_UsrDefChar (GAME_ARRAY_IN(cString, GVar_UsrDefChar, 16, 0x44cb40))
-#define g_GenCharAttackActive GAME_GLOBAL_IN(int, GVar_GenCharAttackActive, 16, 0x44d1dc)
+#define g_AlarmCallback (GAME_ARRAY_IN(cPy_Function, GVar_AlarmCallback, 16))	/* AlarmCallback (on) */
+#define g_AlarmFallDelta GAME_GLOBAL_IN(float, GVar_AlarmFallDelta, 16)
+#define g_AlarmFallMission GAME_GLOBAL_IN(float, GVar_AlarmFallMission, 16)
+#define g_AlarmGrowDelta GAME_GLOBAL_IN(float, GVar_AlarmGrowDelta, 16)
+#define g_EasyAlarmFallFactor GAME_GLOBAL_IN(float, GVar_EasyAlarmFallFactor, 16)
+#define g_GuaranteedChars GAME_GLOBAL_IN(char *, GVar_GuaranteedChars, 16)		/* ",type1,type2," */
+#define g_PoliceTauntRace (GAME_ARRAY_IN(cString, GVar_PoliceTauntRace, 16))	/* the default at +4 */
+#define g_UsrDefChar (GAME_ARRAY_IN(cString, GVar_UsrDefChar, 16))
+#define g_GenCharAttackActive GAME_GLOBAL_IN(int, GVar_GenCharAttackActive, 16)
 
-/* a taunt of the ship of that name ("" none), kind 1 or 2 (rva 0x155210) */
+/* a taunt of the ship of that name ("" none), kind 1 or 2 */
 void Taunts_Play(const char *ship, const char *race, int kind);
 
 /* ---- the local logic of an entity ---- */
@@ -268,21 +268,21 @@ typedef cLocalLogic cCTFEnemiesLocalLogic;
 typedef cLocalLogic cEnemiesLocalLogic;
 typedef cLocalLogic cScrapyardLocalLogic;
 
-#define CLOCALLOGIC_VFTABLE GAME_VFTABLE(cLocalLogic_vftable, 0x3bd340)
-#define CBASELOCALLOGIC_VFTABLE GAME_VFTABLE(cBaseLocalLogic_vftable, 0x3bd360)
-#define CBANKDIRECTORLOCALLOGIC_VFTABLE GAME_VFTABLE(cBankDirectorLocalLogic_vftable, 0x3bcf2c)
-#define CBANKMASTERLOCALLOGIC_VFTABLE GAME_VFTABLE(cBankMasterLocalLogic_vftable, 0x3bcfc0)
-#define CBERTOLOCALLOGIC_VFTABLE GAME_VFTABLE(cBertoLocalLogic_vftable, 0x3bd578)
-#define CBETTYLOCALLOGIC_VFTABLE GAME_VFTABLE(cBettyLocalLogic_vftable, 0x3bd680)
-#define CBISHOPLOCALLOGIC_VFTABLE GAME_VFTABLE(cBishopLocalLogic_vftable, 0x3bd7e4)
-#define CBOSSLOCALLOGIC_VFTABLE GAME_VFTABLE(cBossLocalLogic_vftable, 0x3bd8f8)
-#define CCRAZYDEALERLOCALLOGIC_VFTABLE GAME_VFTABLE(cCrazyDealerLocalLogic_vftable, 0x3bda0c)
-#define CCTFENEMIESLOCALLOGIC_VFTABLE GAME_VFTABLE(cCTFEnemiesLocalLogic_vftable, 0x3bdb54)
-#define CDESKTOPLOCALLOGIC_VFTABLE GAME_VFTABLE(cDesktopLocalLogic_vftable, 0x3bdccc)
-#define CFUNCTIONARYLOCALLOGIC_VFTABLE GAME_VFTABLE(cFunctionaryLocalLogic_vftable, 0x3be748)
-#define CGATEKEEPERLOCALLOGIC_VFTABLE GAME_VFTABLE(cGateKeeperLocalLogic_vftable, 0x3bec3c)
-#define CGEARLOCALLOGIC_VFTABLE GAME_VFTABLE(cGearLocalLogic_vftable, 0x3beeec)
-#define CGENCHARLOCALLOGIC_VFTABLE GAME_VFTABLE(cGenCharLocalLogic_vftable, 0x3bf5ec)
+#define CLOCALLOGIC_VFTABLE GAME_VFTABLE(cLocalLogic_vftable)
+#define CBASELOCALLOGIC_VFTABLE GAME_VFTABLE(cBaseLocalLogic_vftable)
+#define CBANKDIRECTORLOCALLOGIC_VFTABLE GAME_VFTABLE(cBankDirectorLocalLogic_vftable)
+#define CBANKMASTERLOCALLOGIC_VFTABLE GAME_VFTABLE(cBankMasterLocalLogic_vftable)
+#define CBERTOLOCALLOGIC_VFTABLE GAME_VFTABLE(cBertoLocalLogic_vftable)
+#define CBETTYLOCALLOGIC_VFTABLE GAME_VFTABLE(cBettyLocalLogic_vftable)
+#define CBISHOPLOCALLOGIC_VFTABLE GAME_VFTABLE(cBishopLocalLogic_vftable)
+#define CBOSSLOCALLOGIC_VFTABLE GAME_VFTABLE(cBossLocalLogic_vftable)
+#define CCRAZYDEALERLOCALLOGIC_VFTABLE GAME_VFTABLE(cCrazyDealerLocalLogic_vftable)
+#define CCTFENEMIESLOCALLOGIC_VFTABLE GAME_VFTABLE(cCTFEnemiesLocalLogic_vftable)
+#define CDESKTOPLOCALLOGIC_VFTABLE GAME_VFTABLE(cDesktopLocalLogic_vftable)
+#define CFUNCTIONARYLOCALLOGIC_VFTABLE GAME_VFTABLE(cFunctionaryLocalLogic_vftable)
+#define CGATEKEEPERLOCALLOGIC_VFTABLE GAME_VFTABLE(cGateKeeperLocalLogic_vftable)
+#define CGEARLOCALLOGIC_VFTABLE GAME_VFTABLE(cGearLocalLogic_vftable)
+#define CGENCHARLOCALLOGIC_VFTABLE GAME_VFTABLE(cGenCharLocalLogic_vftable)
 
 
 /* the type name of the action class of a character */
@@ -312,24 +312,24 @@ static inline int Logic_Count(const int *numElems) {
 /* the fields of the characters the logics use (chartype.h has more) */
 
 /* engine variables of the logics */
-#define g_DefActionRadius GAME_GLOBAL_IN(float, GVar_DefActionRadius, 16, 0x44cbb8)
-#define g_GearRageMaxTime GAME_GLOBAL_IN(float, GVar_GearRageMaxTime, 16, 0x44cbd0)
-#define g_LogicAwakeTime GAME_GLOBAL_IN(float, GVar_LogicAwakeTime, 16, 0x44cb88)
-#define g_NotCleanableByGear GAME_GLOBAL_IN(char *, GVar_NotCleanableByGear, 16, 0x44cba0)
-#define g_BankDirectorAgressive GAME_GLOBAL_IN(int, GVar_BankDirectorAgressive, 16, 0x44cb70)
-#define g_BishopAttackOnAlarm GAME_GLOBAL_IN(int, GVar_BishopAttackOnAlarm, 16, 0x44cc00)
-#define g_BossWalkingTime GAME_GLOBAL_IN(float, GVar_BossWalkingTime, 16, 0x44cc18)
-#define g_BossWorkPlace GAME_GLOBAL_IN(char *, GVar_BossWorkPlace, 16, 0x44cc30)
-#define g_BossWorkingTime GAME_GLOBAL_IN(float, GVar_BossWorkingTime, 16, 0x44cc48)
-#define g_BossWasIdle GAME_GLOBAL(byte, g_BossWasIdle, 0x44cc50)		/* the boss was idle while at work */
-#define g_EnergyBarActive GAME_GLOBAL_IN(int, GVar_EnergyBarActive, 16, 0x44726c)
-#define g_SpecialActionActive GAME_GLOBAL_IN(int, GVar_SpecialActionActive, 16, 0x46067c)
-#define g_GenCharRelaxSpeed GAME_GLOBAL_IN(float, GVar_GenCharRelaxSpeed, 16, 0x44d17c)
-#define g_GenCharSpecialActionTime GAME_GLOBAL_IN(float, GVar_GenCharSpecialActionTime, 16, 0x44d254)
-#define g_GenCharMinSpecialActionTime GAME_GLOBAL_IN(float, GVar_GenCharMinSpecialActionTime, 16, 0x44d2fc)
-#define g_GenCharStdFar GAME_GLOBAL_IN(float, GVar_GenCharStdFar, 16, 0x44d2b4)
-#define g_GenCharStdFovX GAME_GLOBAL_IN(float, GVar_GenCharStdFovX, 16, 0x44d20c)
-#define g_GenCharStdFovY GAME_GLOBAL_IN(float, GVar_GenCharStdFovY, 16, 0x44d2cc)
+#define g_DefActionRadius GAME_GLOBAL_IN(float, GVar_DefActionRadius, 16)
+#define g_GearRageMaxTime GAME_GLOBAL_IN(float, GVar_GearRageMaxTime, 16)
+#define g_LogicAwakeTime GAME_GLOBAL_IN(float, GVar_LogicAwakeTime, 16)
+#define g_NotCleanableByGear GAME_GLOBAL_IN(char *, GVar_NotCleanableByGear, 16)
+#define g_BankDirectorAgressive GAME_GLOBAL_IN(int, GVar_BankDirectorAgressive, 16)
+#define g_BishopAttackOnAlarm GAME_GLOBAL_IN(int, GVar_BishopAttackOnAlarm, 16)
+#define g_BossWalkingTime GAME_GLOBAL_IN(float, GVar_BossWalkingTime, 16)
+#define g_BossWorkPlace GAME_GLOBAL_IN(char *, GVar_BossWorkPlace, 16)
+#define g_BossWorkingTime GAME_GLOBAL_IN(float, GVar_BossWorkingTime, 16)
+#define g_BossWasIdle GAME_GLOBAL(byte, g_BossWasIdle)		/* the boss was idle while at work */
+#define g_EnergyBarActive GAME_GLOBAL_IN(int, GVar_EnergyBarActive, 16)
+#define g_SpecialActionActive GAME_GLOBAL_IN(int, GVar_SpecialActionActive, 16)
+#define g_GenCharRelaxSpeed GAME_GLOBAL_IN(float, GVar_GenCharRelaxSpeed, 16)
+#define g_GenCharSpecialActionTime GAME_GLOBAL_IN(float, GVar_GenCharSpecialActionTime, 16)
+#define g_GenCharMinSpecialActionTime GAME_GLOBAL_IN(float, GVar_GenCharMinSpecialActionTime, 16)
+#define g_GenCharStdFar GAME_GLOBAL_IN(float, GVar_GenCharStdFar, 16)
+#define g_GenCharStdFovX GAME_GLOBAL_IN(float, GVar_GenCharStdFovX, 16)
+#define g_GenCharStdFovY GAME_GLOBAL_IN(float, GVar_GenCharStdFovY, 16)
 
 /* the logic of a character or NULL */
 cLocalLogic *Logic_GetLocalLogic(cEntity *e);
@@ -440,11 +440,11 @@ typedef struct cCTFFriendsData {
 SD_SIZE(cCTFFriendsData, 0xc);
 
 
-#define g_LeaderFlag GAME_GLOBAL_IN(char *, GVar_LeaderFlag, 16, 0x44cc64)
-#define g_PercEnemiesAttackPlayerWhenWinning GAME_GLOBAL_IN(float, GVar_PercEnemiesAttackPlayerWhenWinning, 16, 0x44cc94)
-#define g_PlayerCTFTeamIsWinning GAME_GLOBAL_IN(int, GVar_PlayerCTFTeamIsWinning, 16, 0x44cc7c)
-#define g_PercFriendsAttackLeaderWhenWinning GAME_GLOBAL_IN(float, GVar_PercFriendsAttackLeaderWhenWinning, 16, 0x44cd30)
-#define g_CTFFlagName (GAME_ARRAY(char, g_CTFFlagName, 0x44cca0))		/* [0x80] the flag the leader goes for */
+#define g_LeaderFlag GAME_GLOBAL_IN(char *, GVar_LeaderFlag, 16)
+#define g_PercEnemiesAttackPlayerWhenWinning GAME_GLOBAL_IN(float, GVar_PercEnemiesAttackPlayerWhenWinning, 16)
+#define g_PlayerCTFTeamIsWinning GAME_GLOBAL_IN(int, GVar_PlayerCTFTeamIsWinning, 16)
+#define g_PercFriendsAttackLeaderWhenWinning GAME_GLOBAL_IN(float, GVar_PercFriendsAttackLeaderWhenWinning, 16)
+#define g_CTFFlagName (GAME_ARRAY(char, g_CTFFlagName))		/* [0x80] the flag the leader goes for */
 
 /* the ship e as a "Car" or NULL */
 cEntity *Logic_AsCar(cEntity *e);
@@ -480,17 +480,17 @@ typedef struct DominZone {
 	int state;			/* 0x4 0 free, 1 and 2 by a side, 3 and 4 a ship of a side on its way */
 } DominZone;
 
-#define g_DominNumZones GAME_GLOBAL(int, g_DominNumZones, 0x44cd38)
-#define g_DominZones (GAME_ARRAY(DominZone, g_DominZones, 0x44cd3c))		/* [MAX_DOMIN_ZONES] */
-#define g_DominBatonPos GAME_GLOBAL(vec3_t, g_DominBatonPos, 0x44cda4)
-#define g_DominBatonState GAME_GLOBAL(int, g_DominBatonState, 0x44cdb0)
-#define g_DominFightingFreezeCadenceShoot GAME_GLOBAL_IN(int, GVar_DominFightingFreezeCadenceShoot, 16, 0x44cdf4)
-#define g_DominFightingFreezeControlAim GAME_GLOBAL_IN(int, GVar_DominFightingFreezeControlAim, 16, 0x44cdc4)
-#define g_DominMaxRangeDist GAME_GLOBAL_IN(float, GVar_DominMaxRangeDist, 16, 0x44cd84)
-#define g_DominMinRangeDist GAME_GLOBAL_IN(float, GVar_DominMinRangeDist, 16, 0x44ce0c)
-#define g_DominWithinRangeDist GAME_GLOBAL_IN(float, GVar_DominWithinRangeDist, 16, 0x44cddc)
-#define g_MaxDominDistChase GAME_GLOBAL_IN(float, GVar_MaxDominDistChase, 16, 0x44cd6c)
-#define g_MinDominDistChase GAME_GLOBAL_IN(float, GVar_MinDominDistChase, 16, 0x44cd9c)
+#define g_DominNumZones GAME_GLOBAL(int, g_DominNumZones)
+#define g_DominZones (GAME_ARRAY(DominZone, g_DominZones))		/* [MAX_DOMIN_ZONES] */
+#define g_DominBatonPos GAME_GLOBAL(vec3_t, g_DominBatonPos)
+#define g_DominBatonState GAME_GLOBAL(int, g_DominBatonState)
+#define g_DominFightingFreezeCadenceShoot GAME_GLOBAL_IN(int, GVar_DominFightingFreezeCadenceShoot, 16)
+#define g_DominFightingFreezeControlAim GAME_GLOBAL_IN(int, GVar_DominFightingFreezeControlAim, 16)
+#define g_DominMaxRangeDist GAME_GLOBAL_IN(float, GVar_DominMaxRangeDist, 16)
+#define g_DominMinRangeDist GAME_GLOBAL_IN(float, GVar_DominMinRangeDist, 16)
+#define g_DominWithinRangeDist GAME_GLOBAL_IN(float, GVar_DominWithinRangeDist, 16)
+#define g_MaxDominDistChase GAME_GLOBAL_IN(float, GVar_MaxDominDistChase, 16)
+#define g_MinDominDistChase GAME_GLOBAL_IN(float, GVar_MinDominDistChase, 16)
 
 typedef struct cDominationLogicVtbl {
 	cDominationLogic *(__thiscall *Delete)(cDominationLogic *self, byte flags);	/* 0x00 */
@@ -516,13 +516,13 @@ typedef struct cDominationFriendsSide {
 } cDominationFriendsSide;
 SD_SIZE(cDominationFriendsSide, 0xc);
 
-#define CDOMINATIONLOGIC_VFTABLE GAME_VFTABLE(cDominationLogic_vftable, 0x3be14c)
-#define CDOMINATIONENEMIESLOGIC_VFTABLE GAME_VFTABLE(cDominationEnemiesLogic_vftable, 0x3be164)
-#define CDOMINATIONFRIENDSLOGIC_VFTABLE GAME_VFTABLE(cDominationFriendsLogic_vftable, 0x3be1ec)
+#define CDOMINATIONLOGIC_VFTABLE GAME_VFTABLE(cDominationLogic_vftable)
+#define CDOMINATIONENEMIESLOGIC_VFTABLE GAME_VFTABLE(cDominationEnemiesLogic_vftable)
+#define CDOMINATIONFRIENDSLOGIC_VFTABLE GAME_VFTABLE(cDominationFriendsLogic_vftable)
 /* the engine variable LeaderName (the leader ship of the enemies) and the death callbacks of the sides */
-#define g_DominLeaderName GAME_GLOBAL_IN(char *, GVar_LeaderName, 16, 0x44ce48)
-#define g_OnDominEnemyDeath (GAME_ARRAY_IN(cPy_Function, GVar_OnDominEnemyDeath, 16, 0x44ce24))
-#define g_OnDominFriendDeath (GAME_ARRAY_IN(cPy_Function, GVar_OnDominFriendDeath, 16, 0x44ce60))
+#define g_DominLeaderName GAME_GLOBAL_IN(char *, GVar_LeaderName, 16)
+#define g_OnDominEnemyDeath (GAME_ARRAY_IN(cPy_Function, GVar_OnDominEnemyDeath, 16))
+#define g_OnDominFriendDeath (GAME_ARRAY_IN(cPy_Function, GVar_OnDominFriendDeath, 16))
 
 void Domination_AddZone(cEntity *zone);
 void Domination_SetZoneState(int zone, int state);
@@ -553,21 +553,21 @@ cEntity *__thiscall cDominationFriendsLogic_FindShipOfZone(cDominationFriendsLog
 /* the empty destructors of the mode objects and the empty natives of their lists */
 void __fastcall Logic_NopDtor(void *self);
 void Logic_NativeNop(cAbstractFile *params);
-/* a random car of the list (rva 0x154b20), NULL for none */
+/* a random car of the list, NULL for none */
 cEntity *Logic_RandomCar(cEntityListData *list);
 
-#define CENEMIESLOCALLOGIC_VFTABLE GAME_VFTABLE(cEnemiesLocalLogic_vftable, 0x3be240)
+#define CENEMIESLOCALLOGIC_VFTABLE GAME_VFTABLE(cEnemiesLocalLogic_vftable)
 
 cEnemies *__fastcall cEnemies_ctor(cEnemies *self);
 void __thiscall cEnemies_Attack(cEnemies *self, cEntity *usr);
 void __fastcall cEnemies_Think(cEnemies *self);
 void __fastcall cEnemies_Relax(cEnemies *self);
 
-#define g_ExtPoliceChasing GAME_GLOBAL_IN(int, GVar_DoResetOutPolice, 16, 0x44cea8)		/* the cars were sent after the player */
-#define g_PoliceWaveEliminated (GAME_ARRAY_IN(cPy_Function, GVar_PoliceWaveEliminated, 16, 0x44ce84))	/* no police car left */
-#define g_TrafficFightingMaxDist GAME_GLOBAL_IN(float, GVar_TrafficFightingMaxDist, 16, 0x44dc40)
+#define g_ExtPoliceChasing GAME_GLOBAL_IN(int, GVar_DoResetOutPolice, 16)		/* the cars were sent after the player */
+#define g_PoliceWaveEliminated (GAME_ARRAY_IN(cPy_Function, GVar_PoliceWaveEliminated, 16))	/* no police car left */
+#define g_TrafficFightingMaxDist GAME_GLOBAL_IN(float, GVar_TrafficFightingMaxDist, 16)
 
-/* the AI parameters of a police car back to the defaults or random (rva 0x15b2f0, 0x15b3c0) */
+/* the AI parameters of a police car back to the defaults or random */
 void PoliceAI_RestoreParams(cAIVehicle *ai);
 void PoliceAI_RandomParams(cAIVehicle *ai);
 
@@ -589,10 +589,10 @@ typedef struct cGateKeeperLocalLogic {
 } cGateKeeperLocalLogic;
 SD_SIZE(cGateKeeperLocalLogic, 0x4c);
 
-#define g_GateKeeperStdFar GAME_GLOBAL_IN(float, GVar_GateKeeperStdFar, 16, 0x44cfc0)
-#define g_GateKeeperStdFovY GAME_GLOBAL_IN(float, GVar_GateKeeperStdFovY, 16, 0x44cfd8)
-#define g_GateKeeperStdFovX GAME_GLOBAL_IN(float, GVar_GateKeeperStdFovX, 16, 0x44d008)
-#define g_GateKeeperHiddenTime GAME_GLOBAL_IN(float, GVar_GateKeeperHiddenTime, 16, 0x44cff0)
+#define g_GateKeeperStdFar GAME_GLOBAL_IN(float, GVar_GateKeeperStdFar, 16)
+#define g_GateKeeperStdFovY GAME_GLOBAL_IN(float, GVar_GateKeeperStdFovY, 16)
+#define g_GateKeeperStdFovX GAME_GLOBAL_IN(float, GVar_GateKeeperStdFovX, 16)
+#define g_GateKeeperHiddenTime GAME_GLOBAL_IN(float, GVar_GateKeeperHiddenTime, 16)
 
 /* the slot of the logics with one argument that returns 1 */
 byte __thiscall Logic_True1(void *self, int arg);
@@ -618,7 +618,7 @@ SD_SIZE(cGearLocalLogic, 0x5c);
 
 /* the view cone of the arrow of a character (its AI sees in it) */
 
-/* the AI control: level to at least level (rva 0x14fb00), the gear becomes a police (rva 0x14eb50) */
+/* the AI control: level to at least level, the gear becomes a police */
 void __thiscall AICtrl_RaiseLevel(void *aiCtrl, int level);
 byte __thiscall AICtrl_GearToPolice(void *aiCtrl, cEntity *gear);
 
@@ -688,19 +688,19 @@ cBossLocalLogic *__thiscall cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity 
 #define GENCHAR_STAY 6
 #define GENCHAR_GET_IT 10		/* walk to the target */
 
-#define g_GenCharMaxSpecialActionTime GAME_GLOBAL_IN(float, GVar_GenCharMaxSpecialActionTime, 16, 0x44d2e4)
-#define g_GenCharAlertSpeed GAME_GLOBAL_IN(float, GVar_GenCharAlertSpeed, 16, 0x44d194)
-#define g_OnDefStateCallback (GAME_ARRAY_IN(cPy_Function, GVar_OnDefStateCallback, 16, 0x44d128))	/* (name) after RestartState */
-#define g_GenCharAcuseAgainTime GAME_GLOBAL_IN(float, GVar_GenCharAcuseAgainTime, 16, 0x44d14c)
-#define g_GenCharRobberyDetection GAME_GLOBAL_IN(float, GVar_GenCharRobberyDetection, 16, 0x44d164)
-#define g_GenCharAcuseTime GAME_GLOBAL_IN(float, GVar_GenCharAcuseTime, 16, 0x44d1ac)
-#define g_GenCharSpecialChaseSpeed GAME_GLOBAL_IN(float, GVar_GenCharSpecialChaseSpeed, 16, 0x44d1c4)
-#define g_GenCharAttackSpeed GAME_GLOBAL_IN(float, GVar_GenCharAttackSpeed, 16, 0x44d224)
-#define g_GenCharGetAwayTime GAME_GLOBAL_IN(float, GVar_GenCharGetAwayTime, 16, 0x44d23c)
-#define g_GenCharAttackLimit GAME_GLOBAL_IN(float, GVar_GenCharAttackLimit, 16, 0x44d26c)
-#define g_GenCharPoliceRefuse GAME_GLOBAL_IN(float, GVar_GenCharPoliceRefuse, 16, 0x44d284)
-#define g_GenCharEscapeSpeed GAME_GLOBAL_IN(float, GVar_GenCharEscapeSpeed, 16, 0x44d29c)
-/* the type of the player draws the attention of a generic character (rva 0x14c5a0) */
+#define g_GenCharMaxSpecialActionTime GAME_GLOBAL_IN(float, GVar_GenCharMaxSpecialActionTime, 16)
+#define g_GenCharAlertSpeed GAME_GLOBAL_IN(float, GVar_GenCharAlertSpeed, 16)
+#define g_OnDefStateCallback (GAME_ARRAY_IN(cPy_Function, GVar_OnDefStateCallback, 16))	/* (name) after RestartState */
+#define g_GenCharAcuseAgainTime GAME_GLOBAL_IN(float, GVar_GenCharAcuseAgainTime, 16)
+#define g_GenCharRobberyDetection GAME_GLOBAL_IN(float, GVar_GenCharRobberyDetection, 16)
+#define g_GenCharAcuseTime GAME_GLOBAL_IN(float, GVar_GenCharAcuseTime, 16)
+#define g_GenCharSpecialChaseSpeed GAME_GLOBAL_IN(float, GVar_GenCharSpecialChaseSpeed, 16)
+#define g_GenCharAttackSpeed GAME_GLOBAL_IN(float, GVar_GenCharAttackSpeed, 16)
+#define g_GenCharGetAwayTime GAME_GLOBAL_IN(float, GVar_GenCharGetAwayTime, 16)
+#define g_GenCharAttackLimit GAME_GLOBAL_IN(float, GVar_GenCharAttackLimit, 16)
+#define g_GenCharPoliceRefuse GAME_GLOBAL_IN(float, GVar_GenCharPoliceRefuse, 16)
+#define g_GenCharEscapeSpeed GAME_GLOBAL_IN(float, GVar_GenCharEscapeSpeed, 16)
+/* the type of the player draws the attention of a generic character */
 byte Logic_IsSuspectType(const char *type);
 byte __thiscall cGenCharLocalLogic_RestartState(cGenCharLocalLogic *self);
 void __thiscall cGenCharLocalLogic_OnHit(cGenCharLocalLogic *self, cEntity *attacker);
@@ -723,11 +723,11 @@ typedef struct cHumanLocalLogic {
 } cHumanLocalLogic;
 SD_SIZE(cHumanLocalLogic, 0x5c);
 
-#define CHUMANLOCALLOGIC_VFTABLE GAME_VFTABLE(cHumanLocalLogic_vftable, 0x3bf75c)
-#define g_HumanEnt GAME_GLOBAL(cEntity *, g_HumanEnt, 0x44d304)	/* the parent of the last human logic made */
+#define CHUMANLOCALLOGIC_VFTABLE GAME_VFTABLE(cHumanLocalLogic_vftable)
+#define g_HumanEnt GAME_GLOBAL(cEntity *, g_HumanEnt)	/* the parent of the last human logic made */
 
 /* HumphreyLogic.cpp: a cFunctionaryLocalLogic (isDefault: "Humphrey_Default") at the desktop "HumphreyDesktop" */
-#define CHUMPHREYLOCALLOGIC_VFTABLE GAME_VFTABLE(cHumphreyLocalLogic_vftable, 0x3bf7e0)
+#define CHUMPHREYLOCALLOGIC_VFTABLE GAME_VFTABLE(cHumphreyLocalLogic_vftable)
 
 /* InfItem.cpp: the item list of the world (cInfItem of worldlogic.h, g_pWorld->logic.items, 100 bytes), DLists of
  * cItemDesc nodes: the life items and the ammo items of three kinds */
@@ -738,16 +738,16 @@ typedef struct cInfItemNode {
 } cInfItemNode;
 SD_SIZE(cInfItemNode, 0x10);
 
-#define CINFITEM_VFTABLE GAME_VFTABLE(cInfItem_vftable, 0x3bf8d0)
+#define CINFITEM_VFTABLE GAME_VFTABLE(cInfItem_vftable)
 
 cInfItem *__fastcall cInfItem_ctor(cInfItem *self);
 void __fastcall cInfItem_dtor(cInfItem *self);
 
-#define g_CreatePolice (GAME_ARRAY_IN(cPy_Function, GVar_CreatePolice, 16, 0x44d330))	/* (name, x, y, z) */
-#define g_CreateGear (GAME_ARRAY_IN(cPy_Function, GVar_CreateGear, 16, 0x44d37c))	/* (name, x, y, z) */
-#define g_PoliceLogicBelligerant GAME_GLOBAL_IN(int, GVar_PoliceLogicBelligerant, 16, 0x44d354)
-#define g_SentinelNextGotoTime GAME_GLOBAL_IN(float, GVar_SentinelNextGotoTime, 16, 0x44daa8)
-#define g_SentinelAbortyNPCAttDist GAME_GLOBAL_IN(float, GVar_SentinelAbortyNPCAttDist, 16, 0x44db38)
+#define g_CreatePolice (GAME_ARRAY_IN(cPy_Function, GVar_CreatePolice, 16))	/* (name, x, y, z) */
+#define g_CreateGear (GAME_ARRAY_IN(cPy_Function, GVar_CreateGear, 16))	/* (name, x, y, z) */
+#define g_PoliceLogicBelligerant GAME_GLOBAL_IN(int, GVar_PoliceLogicBelligerant, 16)
+#define g_SentinelNextGotoTime GAME_GLOBAL_IN(float, GVar_SentinelNextGotoTime, 16)
+#define g_SentinelAbortyNPCAttDist GAME_GLOBAL_IN(float, GVar_SentinelAbortyNPCAttDist, 16)
 
 void *__fastcall AICtrl_ctor(void *aiCtrl);
 void __fastcall AICtrl_dtor(void *aiCtrl);
@@ -757,9 +757,9 @@ void __thiscall AICtrl_Update(void *aiCtrl, float dt);
 byte __thiscall AICtrl_CanFuse(void *aiCtrl, cEntity *e);
 /* the police becomes a gear (into *gear, may be NULL); 0 if it may not */
 byte __thiscall AICtrl_Fuse(void *aiCtrl, cEntity *police, cEntity **gear);
-/* the sentinel nearest to e goes for it (state 6), only before the alarm (rva 0x14f960) */
+/* the sentinel nearest to e goes for it (state 6), only before the alarm */
 void __thiscall AICtrl_SendSentinelToNPC(void *aiCtrl, cEntity *e);
-/* the gears that chase the player go for e, without one the gear attack on e (rva 0x14fba0) */
+/* the gears that chase the player go for e, without one the gear attack on e */
 void __thiscall AICtrl_GearsChase(void *aiCtrl, cEntity *e);
 
 /* the sentinels (SentinelLogic.cpp, the source after this part, imports) */
@@ -806,14 +806,14 @@ typedef struct cLittlePoliceLocalLogic {
 SD_OFFSET(cLittlePoliceLocalLogic, policeResult, 0x74);
 SD_SIZE(cLittlePoliceLocalLogic, 0x78);
 
-#define CLITTLEPOLICELOCALLOGIC_VFTABLE GAME_VFTABLE(cLittlePoliceLocalLogic_vftable, 0x3bfc50)
-#define g_LittlePoliceStopAcusingMaxDistFromUser GAME_GLOBAL_IN(float, GVar_LittlePoliceStopAcusingMaxDistFromUser, 16, 0x44d3a0)
-#define g_LittlePoliceMaxDistFar GAME_GLOBAL_IN(float, GVar_LittlePoliceMaxDistFar, 16, 0x44d3b8)
-#define g_LittlePoliceAsksForMoney GAME_GLOBAL_IN(int, GVar_LittlePoliceAsksForMoney, 16, 0x44d3d0)
-#define g_LittlePoliceChasingTime GAME_GLOBAL_IN(float, GVar_LittlePoliceChasingTime, 16, 0x44d3e8)
-#define g_MainMissionStopDist GAME_GLOBAL_IN(float, GVar_MainMissionStopDist, 16, 0x44d400)
-#define g_LittlePoliceArrived GAME_GLOBAL(byte, g_LittlePoliceArrived, 0x44d408)	/* GoTo left the AI in state 4 */
-#define g_PoliceStealAmount GAME_GLOBAL_IN(int, GVar_PoliceStealAmount, 16, 0x446ff0)
+#define CLITTLEPOLICELOCALLOGIC_VFTABLE GAME_VFTABLE(cLittlePoliceLocalLogic_vftable)
+#define g_LittlePoliceStopAcusingMaxDistFromUser GAME_GLOBAL_IN(float, GVar_LittlePoliceStopAcusingMaxDistFromUser, 16)
+#define g_LittlePoliceMaxDistFar GAME_GLOBAL_IN(float, GVar_LittlePoliceMaxDistFar, 16)
+#define g_LittlePoliceAsksForMoney GAME_GLOBAL_IN(int, GVar_LittlePoliceAsksForMoney, 16)
+#define g_LittlePoliceChasingTime GAME_GLOBAL_IN(float, GVar_LittlePoliceChasingTime, 16)
+#define g_MainMissionStopDist GAME_GLOBAL_IN(float, GVar_MainMissionStopDist, 16)
+#define g_LittlePoliceArrived GAME_GLOBAL(byte, g_LittlePoliceArrived)	/* GoTo left the AI in state 4 */
+#define g_PoliceStealAmount GAME_GLOBAL_IN(int, GVar_PoliceStealAmount, 16)
 
 /* Parking.cpp: the parking zones of Scrap.AddParkingZone (flag 0: of the ships, 1: of the items), a ring each */
 typedef struct cParkingZone {
@@ -853,12 +853,12 @@ cShipGroupData *__thiscall cShipGroupData_ctor(cShipGroupData *self, const char 
 void __thiscall cShipGroupData_SetLair(cShipGroupData *self, const char *name, const vec3_t *pos);
 void __fastcall cShipGroupData_Think(cShipGroupData *self);
 
-#define CLOGICCONTROL_VFTABLE GAME_VFTABLE(cLogicControl_vftable, 0x3bfe20)
-#define g_RemainTalkTime GAME_GLOBAL_IN(float, GVar_RemainTalkTime, 16, 0x462148)
-#define g_TimeBetweeenTaunts GAME_GLOBAL_IN(float, GVar_TimeBetweeenTaunts, 16, 0x44d648)
-#define g_TimeBetweeenWarnings GAME_GLOBAL_IN(float, GVar_TimeBetweeenWarnings, 16, 0x44d6b4)
+#define CLOGICCONTROL_VFTABLE GAME_VFTABLE(cLogicControl_vftable)
+#define g_RemainTalkTime GAME_GLOBAL_IN(float, GVar_RemainTalkTime, 16)
+#define g_TimeBetweeenTaunts GAME_GLOBAL_IN(float, GVar_TimeBetweeenTaunts, 16)
+#define g_TimeBetweeenWarnings GAME_GLOBAL_IN(float, GVar_TimeBetweeenWarnings, 16)
 /* the callback the world puts a new entity at its origin with (set by Logic_ctor) */
-#define g_SetOriginFunc GAME_GLOBAL(void *, g_SetOriginFunc, 0x444730)
+#define g_SetOriginFunc GAME_GLOBAL(void *, g_SetOriginFunc)
 
 /* MaintenanceLogic.cpp, 0xdc bytes: the maintenance robot of the ship editor walks around the ship on the
  * platform (states 7: wait for the ship, 8: work) */
@@ -872,11 +872,11 @@ typedef struct cMaintenanceLocalLogic {
 SD_OFFSET(cMaintenanceLocalLogic, reposition, 0xc8);
 SD_SIZE(cMaintenanceLocalLogic, 0xdc);
 
-#define CMAINTENANCELOCALLOGIC_VFTABLE GAME_VFTABLE(cMaintenanceLocalLogic_vftable, 0x3bff4c)
-#define g_MaintenanceShip GAME_GLOBAL(cEntity *, g_MaintenanceShip, 0x44d43c)	/* the ship on the platform */
-#define g_MaintenanceFirstShip GAME_GLOBAL(cEntity *, g_MaintenanceFirstShip, 0x44d440)	/* the one the work began with */
-#define g_MaintenanceTimeToNextPos GAME_GLOBAL_IN(float, GVar_MaintenanceTimeToNextPos, 16, 0x44d454)
-#define g_MaintenanceSphereRadiusFactor GAME_GLOBAL_IN(float, GVar_MaintenanceSphereRadiusFactor, 16, 0x44d46c)
+#define CMAINTENANCELOCALLOGIC_VFTABLE GAME_VFTABLE(cMaintenanceLocalLogic_vftable)
+#define g_MaintenanceShip GAME_GLOBAL(cEntity *, g_MaintenanceShip)	/* the ship on the platform */
+#define g_MaintenanceFirstShip GAME_GLOBAL(cEntity *, g_MaintenanceFirstShip)	/* the one the work began with */
+#define g_MaintenanceTimeToNextPos GAME_GLOBAL_IN(float, GVar_MaintenanceTimeToNextPos, 16)
+#define g_MaintenanceSphereRadiusFactor GAME_GLOBAL_IN(float, GVar_MaintenanceSphereRadiusFactor, 16)
 
 /* MayorLogic.cpp, 0xe8 bytes */
 typedef struct cMayorLocalLogic {
@@ -885,14 +885,14 @@ typedef struct cMayorLocalLogic {
 } cMayorLocalLogic;
 SD_SIZE(cMayorLocalLogic, 0xe8);
 
-#define CMAYORLOCALLOGIC_VFTABLE GAME_VFTABLE(cMayorLocalLogic_vftable, 0x3c0074)
-#define g_MayorBlabliblaRadius GAME_GLOBAL_IN(float, GVar_MayorBlabliblaRadius, 16, 0x446c10)
+#define CMAYORLOCALLOGIC_VFTABLE GAME_VFTABLE(cMayorLocalLogic_vftable)
+#define g_MayorBlabliblaRadius GAME_GLOBAL_IN(float, GVar_MayorBlabliblaRadius, 16)
 /* the search of the sphere native: the mayor, the nearest dazed character in its view and the square distance */
-#define g_MayorSearchEnt GAME_GLOBAL(cEntity *, g_MayorSearchEnt, 0x44d478)
-#define g_MayorTarget GAME_GLOBAL(cEntity *, g_MayorTarget, 0x44d474)
-#define g_MayorTargetDist GAME_GLOBAL(float, g_MayorTargetDist, 0x428ba4)
+#define g_MayorSearchEnt GAME_GLOBAL(cEntity *, g_MayorSearchEnt)
+#define g_MayorTarget GAME_GLOBAL(cEntity *, g_MayorTarget)
+#define g_MayorTargetDist GAME_GLOBAL(float, g_MayorTargetDist)
 
-#define CMERCENARYLOCALLOGIC_VFTABLE GAME_VFTABLE(cMercenaryLocalLogic_vftable, 0x3c0108)
+#define CMERCENARYLOCALLOGIC_VFTABLE GAME_VFTABLE(cMercenaryLocalLogic_vftable)
 
 /* MessengerLogic.cpp: the messengers (cMessengers, 0x14 bytes, of cGenCharGroup) */
 typedef struct cMessengers {
@@ -904,15 +904,15 @@ typedef struct cMessengers {
 } cMessengers;
 SD_SIZE(cMessengers, 0x14);
 
-#define CMESSENGERLOCALLOGIC_VFTABLE GAME_VFTABLE(cMessengerLocalLogic_vftable, 0x3c0440)
-#define g_MessengerTubeState GAME_GLOBAL_IN(int, GVar_MessengerTubeState, 16, 0x44d48c)
-#define g_MessengerTubeStateDef GAME_GLOBAL_IN(int, GVar_MessengerTubeState, 20, 0x44d490)
-#define g_MessengerDropPrice GAME_GLOBAL_IN(int, GVar_MessengerDropPrice, 16, 0x44d4e0)
-#define g_MessengerDropPriceDef GAME_GLOBAL_IN(int, GVar_MessengerDropPrice, 20, 0x44d4e4)
-#define g_MessengerDropCallback (GAME_ARRAY_IN(cPy_Function, GVar_MessengerDropCallback, 16, 0x44d4f8))
-#define g_MessengerDataPackMissionArrow GAME_GLOBAL_IN(int, GVar_MessengerDataPackMissionArrow, 16, 0x44d534)
-#define g_MessengerDataPackMissionArrowDef GAME_GLOBAL_IN(int, GVar_MessengerDataPackMissionArrow, 20, 0x44d538)
-#define g_MessengerGotoSpeed GAME_GLOBAL_IN(float, GVar_MessengerGotoSpeed, 16, 0x44d564)
+#define CMESSENGERLOCALLOGIC_VFTABLE GAME_VFTABLE(cMessengerLocalLogic_vftable)
+#define g_MessengerTubeState GAME_GLOBAL_IN(int, GVar_MessengerTubeState, 16)
+#define g_MessengerTubeStateDef GAME_GLOBAL_IN(int, GVar_MessengerTubeState, 20)
+#define g_MessengerDropPrice GAME_GLOBAL_IN(int, GVar_MessengerDropPrice, 16)
+#define g_MessengerDropPriceDef GAME_GLOBAL_IN(int, GVar_MessengerDropPrice, 20)
+#define g_MessengerDropCallback (GAME_ARRAY_IN(cPy_Function, GVar_MessengerDropCallback, 16))
+#define g_MessengerDataPackMissionArrow GAME_GLOBAL_IN(int, GVar_MessengerDataPackMissionArrow, 16)
+#define g_MessengerDataPackMissionArrowDef GAME_GLOBAL_IN(int, GVar_MessengerDataPackMissionArrow, 20)
+#define g_MessengerGotoSpeed GAME_GLOBAL_IN(float, GVar_MessengerGotoSpeed, 16)
 
 /* a random desk of the type of the tube state; count grows to the desks seen */
 cEntity *__fastcall cMessengers_FindDesk(cMessengers *self);
@@ -932,9 +932,9 @@ SD_OFFSET(cStrMoney, money, 0x18);
 /* the digits from the first one not "0", "0" for none */
 const char *__fastcall cStrMoney_GetStr(cStrMoney *self);
 
-#define g_OnMoneyReachCallback (GAME_ARRAY_IN(cPy_Function, GVar_OnMoneyReachCallback, 16, 0x44d57c))
-#define g_OnMoneyReachValue GAME_GLOBAL_IN(int, GVar_OnMoneyReachValue, 16, 0x44d5a0)
-#define g_StrMoneyUpdate GAME_GLOBAL_IN(float, GVar_StrMoneyUpdate, 16, 0x44d5b8)
+#define g_OnMoneyReachCallback (GAME_ARRAY_IN(cPy_Function, GVar_OnMoneyReachCallback, 16))
+#define g_OnMoneyReachValue GAME_GLOBAL_IN(int, GVar_OnMoneyReachValue, 16)
+#define g_StrMoneyUpdate GAME_GLOBAL_IN(float, GVar_StrMoneyUpdate, 16)
 
 /* NurseLogic.cpp: the nurses (cLogicControl.nurses) take the dazed characters away; the logic is 0x4c bytes */
 typedef struct cNurseLocalLogic {
@@ -943,10 +943,10 @@ typedef struct cNurseLocalLogic {
 } cNurseLocalLogic;
 SD_SIZE(cNurseLocalLogic, 0x4c);
 
-#define CNURSELOCALLOGIC_VFTABLE GAME_VFTABLE(cNurseLocalLogic_vftable, 0x3c06d4)
-#define g_NurseBankerDetect GAME_GLOBAL_IN(float, GVar_NurseBankerDetect, 16, 0x44d5d0)
-#define g_NursePoliceRefuse GAME_GLOBAL_IN(float, GVar_NursePoliceRefuse, 16, 0x44d5e8)
-#define g_NurseEscapeTime GAME_GLOBAL_IN(float, GVar_NurseEscapeTime, 16, 0x44d600)
+#define CNURSELOCALLOGIC_VFTABLE GAME_VFTABLE(cNurseLocalLogic_vftable)
+#define g_NurseBankerDetect GAME_GLOBAL_IN(float, GVar_NurseBankerDetect, 16)
+#define g_NursePoliceRefuse GAME_GLOBAL_IN(float, GVar_NursePoliceRefuse, 16)
+#define g_NurseEscapeTime GAME_GLOBAL_IN(float, GVar_NurseEscapeTime, 16)
 
 void *__fastcall cNurses_ctor(cNurses *self);
 void __fastcall cNurses_Init(cNurses *self);
@@ -954,18 +954,18 @@ void __thiscall cNurses_Update(cNurses *self, float dt);
 void *__thiscall cNurseLocalLogic_ctor(void *self, cEntity *parent);
 /* the state of the nurse with its AI */
 byte __thiscall cNurseLocalLogic_SetState(cNurseLocalLogic *self, int state, cEntity *target);
-#define g_NurseRelaxSpeed GAME_GLOBAL_IN(float, GVar_NurseRelaxSpeed, 16, 0x44d630)
-#define g_NurseAlertSpeed GAME_GLOBAL_IN(float, GVar_NurseAlertSpeed, 16, 0x44d618)
+#define g_NurseRelaxSpeed GAME_GLOBAL_IN(float, GVar_NurseRelaxSpeed, 16)
+#define g_NurseAlertSpeed GAME_GLOBAL_IN(float, GVar_NurseAlertSpeed, 16)
 
 /* ---- part 4: the taunts, parking zones, ship regeneration, Rusty, the scrapyards, sentinels, Sputnik and the
  * traffic ---- */
 /* the native function of the sphere tests (cWorld_SphereCallF) of the logics */
-#define g_LogicSphereFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0, 0x46679c))
+#define g_LogicSphereFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0))
 
 /* Taunts (between NurseLogic.cpp and Parking.cpp): OnTaunt(ship, race, kind) */
-#define g_OnTaunt (GAME_ARRAY_IN(cPy_Function, GVar_OnTaunt, 16, 0x44d690))
-#define g_PhoneCabWarningDist GAME_GLOBAL_IN(float, GVar_PhoneCabWarningDist, 16, 0x44d660)
-#define g_TimeBetweeenTaunts2 GAME_GLOBAL_IN(float, GVar_TimeBetweeenTaunts2, 16, 0x44d678)	/* while the boss controls the robots */
+#define g_OnTaunt (GAME_ARRAY_IN(cPy_Function, GVar_OnTaunt, 16))
+#define g_PhoneCabWarningDist GAME_GLOBAL_IN(float, GVar_PhoneCabWarningDist, 16)
+#define g_TimeBetweeenTaunts2 GAME_GLOBAL_IN(float, GVar_TimeBetweeenTaunts2, 16)	/* while the boss controls the robots */
 /* the kind of the police taunt of the ship while the boss controls the robots (3, 4, 6), -1 for none now */
 int Taunts_PoliceKind(cEntity *ship);
 /* the taunt of the pilot of the ship (only kind 8 for ships without LaunchTaunts, and that one every second time) */

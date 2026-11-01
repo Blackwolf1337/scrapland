@@ -2,7 +2,7 @@
  * The D3DX 8.1 math the game calls (D3DX8 is linked statically into Scrap.exe, its code below rva 0x03e800).
  *
  * Each public D3DX function of the exe is a stub "jmp [slot]" into a table at rva 0x43da08, which the first call
- * fills for the CPU (rva 0x017f06): the x87 versions first, then the 3DNow!, SSE2 or SSE versions over some of them,
+ * fills for the CPU: the x87 versions first, then the 3DNow!, SSE2 or SSE versions over some of them,
  * unless the registry value Direct3D\DisableD3DXPSGP is set. These are the versions a CPU with SSE2 and without
  * 3DNow! gets (every CPU the game runs on today): SSE2 for normalize, transform, multiply, inverse and the rotations
  * about x and y, the x87 code for transpose, the rotation about z, yaw pitch roll and the quaternion matrix. The
@@ -459,7 +459,7 @@ quat_t *__stdcall D3DX_QuaternionRotationYPR(quat_t *out, float yaw, float pitch
 
 /* rva 0x0085f1 (x87): the factors 2x and 2y stored as floats, 2z kept on the FPU stack */
 matrix_t *__stdcall D3DX_MatrixRotationQuaternion(matrix_t *out, const quat_t *q) {
-	const long double two = 2.0f;	/* rva 0x3a8e38 */
+	const long double two = 2.0f;
 	float x2 = q->x * two;
 	float y2 = q->y * two;
 	long double z2 = two * q->z;

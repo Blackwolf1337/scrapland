@@ -143,25 +143,25 @@ typedef struct cSoundStrItem {
 } cSoundStrItem;
 SD_SIZE(cSoundStrItem, 0x2c);
 
-#define CSoundSys_vftable ((const CSoundSysVtbl *)GAME_VFTABLE(CSoundSys_vftable, 0x3c9f3c))
-#define CSoundXBox_vftable ((const CSoundSysVtbl *)GAME_VFTABLE(CSoundXBox_vftable, 0x3ca718))
+#define CSoundSys_vftable ((const CSoundSysVtbl *)GAME_VFTABLE(CSoundSys_vftable))
+#define CSoundXBox_vftable ((const CSoundSysVtbl *)GAME_VFTABLE(CSoundXBox_vftable))
 
-#define g_pSound GAME_GLOBAL(CSoundSys *, g_pSound, 0x466bb4)
+#define g_pSound GAME_GLOBAL(CSoundSys *, g_pSound)
 
 /* engine variables of the sound system */
-#define g_SoundAutoplayVolume GAME_GLOBAL_IN(float, GVar_SoundAutoplayVolume, 16, 0x466ca0)	/* dB, the volume below which nothing plays */
-#define g_SoundDistAttenuation GAME_GLOBAL_IN(float, GVar_SoundDistAttenuation, 16, 0x466c88)
-#define g_SoundDopplerLevel GAME_GLOBAL_IN(float, GVar_SoundDopplerLevel, 16, 0x466bc8)
-#define g_SoundPanningFactor GAME_GLOBAL_IN(float, GVar_SoundPanningFactor, 16, 0x466c58)
-#define g_SoundShowSetMode GAME_GLOBAL_IN(int, GVar_SoundShowSetMode, 16, 0x466c40)		/* Compute3D and SetListener print their input */
-#define g_SoundMainVolume GAME_GLOBAL_IN(float, GVar_SoundMainVolume, 16, 0x466be0)
-#define g_SoundInit GAME_GLOBAL_IN(int, GVar_SoundInit, 16, 0x466d78)
-#define g_SoundSwapChannels GAME_GLOBAL_IN(int, GVar_SoundSwapChannels, 16, 0x466d18)
-#define g_S_PitchScale GAME_GLOBAL_IN(float, GVar_S_PitchScale, 16, 0x466d48)
-#define g_S_SkipPlay GAME_GLOBAL_IN(int, GVar_S_SkipPlay, 16, 0x466dc0)
-#define g_S_SkipUpdates GAME_GLOBAL_IN(int, GVar_S_SkipUpdates, 16, 0x466ce8)
-#define g_isDolby GAME_GLOBAL_IN(int, GVar_isDolby, 16, 0x467b1c)			/* no pan */
-#define g_SndFreqScale GAME_GLOBAL(float, g_SndFreqScale, 0x43023c)		/* S_PitchScale over the timer multiplier */
+#define g_SoundAutoplayVolume GAME_GLOBAL_IN(float, GVar_SoundAutoplayVolume, 16)	/* dB, the volume below which nothing plays */
+#define g_SoundDistAttenuation GAME_GLOBAL_IN(float, GVar_SoundDistAttenuation, 16)
+#define g_SoundDopplerLevel GAME_GLOBAL_IN(float, GVar_SoundDopplerLevel, 16)
+#define g_SoundPanningFactor GAME_GLOBAL_IN(float, GVar_SoundPanningFactor, 16)
+#define g_SoundShowSetMode GAME_GLOBAL_IN(int, GVar_SoundShowSetMode, 16)		/* Compute3D and SetListener print their input */
+#define g_SoundMainVolume GAME_GLOBAL_IN(float, GVar_SoundMainVolume, 16)
+#define g_SoundInit GAME_GLOBAL_IN(int, GVar_SoundInit, 16)
+#define g_SoundSwapChannels GAME_GLOBAL_IN(int, GVar_SoundSwapChannels, 16)
+#define g_S_PitchScale GAME_GLOBAL_IN(float, GVar_S_PitchScale, 16)
+#define g_S_SkipPlay GAME_GLOBAL_IN(int, GVar_S_SkipPlay, 16)
+#define g_S_SkipUpdates GAME_GLOBAL_IN(int, GVar_S_SkipUpdates, 16)
+#define g_isDolby GAME_GLOBAL_IN(int, GVar_isDolby, 16)			/* no pan */
+#define g_SndFreqScale GAME_GLOBAL(float, g_SndFreqScale)		/* S_PitchScale over the timer multiplier */
 
 /* volume 0..1 to the engine's volume value */
 int Snd_Volume(float volume);
@@ -217,9 +217,9 @@ typedef struct cSoundPS {
 SD_SIZE(cSoundPS, 0x6c);
 SD_OFFSET(cSoundPS, loop, 0x58);
 
-#define g_SndPSTable (&GAME_GLOBAL(HashTable, g_SndPSTable, 0x43022c))	/* cPtrItem of cSoundPS by name */
-#define g_SndPSEnabled GAME_GLOBAL(byte, g_SndPSEnabled, 0x430238)
-#define g_SndPSList GAME_GLOBAL(cSoundPS *, g_SndPSList, 0x466ba0)
+#define g_SndPSTable (&GAME_GLOBAL(HashTable, g_SndPSTable))	/* cPtrItem of cSoundPS by name */
+#define g_SndPSEnabled GAME_GLOBAL(byte, g_SndPSEnabled)
+#define g_SndPSList GAME_GLOBAL(cSoundPS *, g_SndPSList)
 
 /* the property set of that name or NULL */
 cSoundPS *SndPS_Get(const char *name);
@@ -276,8 +276,8 @@ typedef struct cSndInterface {
 } cSndInterface;
 SD_SIZE(cSndInterface, 0x1c);
 
-#define cSndInterface_vftable ((const void *)GAME_VFTABLE(cSndInterface_vftable, 0x3c9cfc))
-#define g_SndInterfaces GAME_GLOBAL(cSndInterface *, g_SndInterfaces, 0x466bb0)
+#define cSndInterface_vftable ((const void *)GAME_VFTABLE(cSndInterface_vftable))
+#define g_SndInterfaces GAME_GLOBAL(cSndInterface *, g_SndInterfaces)
 
 /* Sound/SndInterface.cpp (src/game/Sound/SndInterface.c) */
 cSndInterface *__thiscall cSndInterface_ctor(cSndInterface *self, int n);

@@ -25,7 +25,7 @@
 #include "scrap/win32.h"
 
 typedef uint32_t(__stdcall *getenvvar_t)(const char *name, char *buf, uint32_t size);
-#define exe_GetEnvironmentVariableA GAME_IMPORT(getenvvar_t, GetEnvironmentVariableA, 12, 0x3a12c0)
+#define exe_GetEnvironmentVariableA GAME_IMPORT(getenvvar_t, GetEnvironmentVariableA, 12)
 
 /* the "uint as double" conversions of the original: the int plus 2^32 for a set top bit */
 static inline float Uint_ToFloat(uint32_t u) {
@@ -323,7 +323,7 @@ void __fastcall BspVB_Unwind(CRenderVB *self) {
 BspZone *__thiscall BspZone_Delete(BspZone *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(BspZone), *mem, GAME_FUNC(BspZone_dtor, BSPZONE_DTOR));
+		crt_eh_vector_dtor(self, sizeof(BspZone), *mem, GAME_FUNC(BspZone_dtor));
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
@@ -338,7 +338,7 @@ BspZone *__thiscall BspZone_Delete(BspZone *self, uint32_t flags) {
 
 void __fastcall Table_FreeB4(CTable *t) {
 	if (t->p) {
-		Delete_Objects(t->p, sizeof(BspZone), GAME_FUNC(BspZone_dtor, BSPZONE_DTOR));
+		Delete_Objects(t->p, sizeof(BspZone), GAME_FUNC(BspZone_dtor));
 		t->p = NULL;
 		t->n = 0;
 	}
@@ -653,7 +653,7 @@ int BspTri_Zone(CNode3D *node) {
 
 const char *BspTri_ZoneName(const BspTri *tri) {
 	if (tri->zone == -1) {
-		return GAME_STR(str_3dd0a4, 0x3dd0a4);	/* "_unasigned_" */
+		return GAME_STR(str_3dd0a4);	/* "_unasigned_" */
 	}
 	return Sector_GetName(tri->zone);
 }
@@ -820,7 +820,7 @@ void __thiscall CBsp_DrawPass(CBsp *self, byte pass) {
 	}
 	TABLE_CHECK(self->zones.p, 0, self->zones.n);
 	n = CBsp_ListZone(((BspZone *)self->zones.p)->tris, -1, pass, n);
-	crt_qsort(g_TriList, (size_t)n, sizeof(BspTri *), (int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpMat, 0x28e4a0));
+	crt_qsort(g_TriList, (size_t)n, sizeof(BspTri *), (int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpMat));
 	for (int i = 0; i < n; i++) {
 		CBsp_DrawTri(self, g_TriList[i], pass);
 	}
@@ -1020,7 +1020,7 @@ void Bsp_Render(void) {
 	if (!g_ShadowMapUse || !g_RenderMap) {
 		return;
 	}
-	g_StencilRender = g_ShadowsStencil ? GAME_FUNC(Bsp_RenderStencil, 0x296d40) : g_StencilRender;
+	g_StencilRender = g_ShadowsStencil ? GAME_FUNC(Bsp_RenderStencil) : g_StencilRender;
 	CBsp_Render(g_Bsp);
 	CModel_UpdateAnims(g_Bsp->model, 0.0f, -1);
 	CModel_Render(g_Bsp->model);
@@ -1532,7 +1532,7 @@ void __fastcall CBsp_GroupMaps(CBsp *self) {
 		self->lists[self->num_lists++] = self->nolmap[self->num_nolmap];
 	}
 	crt_qsort(self->lists, (size_t)self->num_lists, sizeof(BspTri *),
-		(int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpZone, 0x28e520));
+		(int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpZone));
 	for (int i = 0; i < self->num_lists; i++) {
 		BspTri *list = self->lists[i];
 		E3D_DebugPrintf("agrupar mapas:  %d / %d   mem: %d Kb  \r", i + 1, self->num_lists, g_MemStats->bytes / 1024);
@@ -1584,7 +1584,7 @@ void __fastcall CBsp_GroupMaps(CBsp *self) {
 		BspLMap_CreateMat(l2, name2, 2);
 	}
 	crt_qsort(self->lists, (size_t)self->num_lists, sizeof(BspTri *),
-		(int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpZone, 0x28e520));
+		(int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpZone));
 }
 
 
@@ -1594,7 +1594,7 @@ void __fastcall CBsp_CreateZones(CBsp *self) {
 	int n = Sector_Num() + 1;
 
 	crt_qsort(self->lists, (size_t)self->num_lists, sizeof(BspTri *),
-		(int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpZone, 0x28e520));
+		(int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpZone));
 	Table_NewB4(&self->zones, n);
 	CHECK(self->zones.p);
 	memset(self->zones.p, 0, (size_t)self->zones.n * sizeof(BspZone));
@@ -1957,10 +1957,10 @@ int BspTri_CmpZone(const void *pa, const void *pb) {
 
 /* the map compiler: debug output, the TXF cache, the area sums */
 
-#define g_BspDebugCnt GAME_GLOBAL(int, g_BspDebugCnt, 0x4d5d74)
-#define g_BspDebugSel GAME_GLOBAL(int, g_BspDebugSel, 0x432994)		/* the region drawn without links */
+#define g_BspDebugCnt GAME_GLOBAL(int, g_BspDebugCnt)
+#define g_BspDebugSel GAME_GLOBAL(int, g_BspDebugSel)		/* the region drawn without links */
 /* the collision cache counters of suelo.cpp: hit, miss, peak */
-#define g_BspCacheStats (GAME_ARRAY(const int, g_BspCacheStats, 0x4af7e0))	/* [3], the hits, the misses and g_CollisionTestsMax */
+#define g_BspCacheStats (GAME_ARRAY(const int, g_BspCacheStats))	/* [3], the hits, the misses and g_CollisionTestsMax */
 
 void Bsp_MatInfo(CMaterial *m) {
 	uint32_t attrib = m->params.attrib;
@@ -2353,15 +2353,15 @@ void __thiscall Bsp_EndMessage(CBsp *self, int secs) {
 
 /* the map: made from the floor of the world */
 
-#define g_LmapSaveIni GAME_GLOBAL_IN(int, g_BspLodDist, 24, 0x43298c)	/* the settings back into the .ini of the map */
-#define g_ShadowMapDlgCalc ((void *)GAME_FUNC(Bsp_DlgProc, 0x282e60))	/* Bsp_DlgProc */
+#define g_LmapSaveIni GAME_GLOBAL_IN(int, g_BspLodDist, 24)	/* the settings back into the .ini of the map */
+#define g_ShadowMapDlgCalc ((void *)GAME_FUNC(Bsp_DlgProc))	/* Bsp_DlgProc */
 
 typedef int(__stdcall *isdlgbuttonchecked_t)(void *hwnd, int id);
 typedef int(__stdcall *checkdlgbutton_t)(void *hwnd, int id, unsigned check);
 typedef int(__stdcall *enablewindow_t)(void *hwnd, int enable);
-#define exe_IsDlgButtonChecked GAME_IMPORT(isdlgbuttonchecked_t, IsDlgButtonChecked, 8, 0x3a13ac)
-#define exe_CheckDlgButton GAME_IMPORT(checkdlgbutton_t, CheckDlgButton, 12, 0x3a13a8)
-#define exe_EnableWindow GAME_IMPORT(enablewindow_t, EnableWindow, 8, 0x3a1374)
+#define exe_IsDlgButtonChecked GAME_IMPORT(isdlgbuttonchecked_t, IsDlgButtonChecked, 8)
+#define exe_CheckDlgButton GAME_IMPORT(checkdlgbutton_t, CheckDlgButton, 12)
+#define exe_EnableWindow GAME_IMPORT(enablewindow_t, EnableWindow, 8)
 
 /* the obj3D of a node as its class (the inline cast of objeto3D.h, NULL with a failed CHECK) */
 static void *Obj3D_As(CNode3D *n, uint32_t class) {
@@ -2550,18 +2550,18 @@ intptr_t __stdcall Bsp_DlgProc(void *hwnd, uint32_t msg, uintptr_t wparam, intpt
 		int id;
 		int *var;
 	} checks[] = {
-		{ 0x40a, &GAME_GLOBAL(int, g_ShadowMapUse, 0x4b2af8) },
-		{ 0x409, &GAME_GLOBAL(int, g_ShadowMapCalculate, 0x4b2afc) },
-		{ 0x40d, &GAME_GLOBAL(int, g_LmapOption58, 0x4b2b58) },
-		{ 0x40e, &GAME_GLOBAL(int, g_LmapInfo, 0x4b2b5c) },
-		{ 0x411, &GAME_GLOBAL_IN(int, g_BspLodDist, 24, 0x43298c) },
-		{ 0x414, &GAME_GLOBAL(int, g_ShadowMapSoft, 0x4b2b04) },
-		{ 0x417, &GAME_GLOBAL(int, g_ShadowMapRadiosity, 0x4b2b10) },
-		{ 0x41a, &GAME_GLOBAL(int, g_ShadowMapIllumGlobal, 0x4b2b14) },
-		{ 0x418, &GAME_GLOBAL(int, g_ShadowMapNoLightAmb, 0x4b2b18) },
-		{ 0x41b, &GAME_GLOBAL(int, g_ShadowMapModulate4x, 0x4b2b1c) },
-		{ 0x420, &GAME_GLOBAL(int, g_CalcLmap2, 0x4b2b20) },
-		{ 0x419, &GAME_GLOBAL(int, g_ShadowMapUseTxf, 0x4b2b24) },
+		{ 0x40a, &GAME_GLOBAL(int, g_ShadowMapUse) },
+		{ 0x409, &GAME_GLOBAL(int, g_ShadowMapCalculate) },
+		{ 0x40d, &GAME_GLOBAL(int, g_LmapOption58) },
+		{ 0x40e, &GAME_GLOBAL(int, g_LmapInfo) },
+		{ 0x411, &GAME_GLOBAL_IN(int, g_BspLodDist, 24) },
+		{ 0x414, &GAME_GLOBAL(int, g_ShadowMapSoft) },
+		{ 0x417, &GAME_GLOBAL(int, g_ShadowMapRadiosity) },
+		{ 0x41a, &GAME_GLOBAL(int, g_ShadowMapIllumGlobal) },
+		{ 0x418, &GAME_GLOBAL(int, g_ShadowMapNoLightAmb) },
+		{ 0x41b, &GAME_GLOBAL(int, g_ShadowMapModulate4x) },
+		{ 0x420, &GAME_GLOBAL(int, g_CalcLmap2) },
+		{ 0x419, &GAME_GLOBAL(int, g_ShadowMapUseTxf) },
 	};
 	char buf[0x100];
 
@@ -2572,15 +2572,15 @@ intptr_t __stdcall Bsp_DlgProc(void *hwnd, uint32_t msg, uintptr_t wparam, intpt
 	case 0x110:	/* WM_INITDIALOG */
 		Bprintf(buf, sizeof(buf),
 			" brillo = %.2f\n gamma = %.2f\n texturas = %d x %d\n rebotes = %d\n coef. rad = %.2f\n",
-			(double)GAME_GLOBAL(float, g_ShadowMapBrightness, 0x432964), (double)GAME_GLOBAL(float, g_ShadowMapGamma, 0x432960), g_ShadowMapTexX,
-			g_ShadowMapTexY, GAME_GLOBAL(int, g_ShadowMapBounces, 0x432968), (double)GAME_GLOBAL(float, g_ShadowMapCoefRad, 0x43296c));
+			(double)GAME_GLOBAL(float, g_ShadowMapBrightness), (double)GAME_GLOBAL(float, g_ShadowMapGamma), g_ShadowMapTexX,
+			g_ShadowMapTexY, GAME_GLOBAL(int, g_ShadowMapBounces), (double)GAME_GLOBAL(float, g_ShadowMapCoefRad));
 		exe_SetDlgItemTextA(hwnd, 0x40b, buf);
 		for (int i = 0; i < 12; i++) {
 			exe_CheckDlgButton(hwnd, checks[i].id, (unsigned)*checks[i].var);
 		}
 		Dlg_SetFloat(hwnd, 0x410, g_ShadowMapScale, 3);
 		Dlg_SetFloat(hwnd, 0x40f, g_ShadowMapRes, 3);
-		Dlg_SetFloat(hwnd, 0x41e, GAME_GLOBAL(float, g_ShadowMapGamma, 0x432960), 2);
+		Dlg_SetFloat(hwnd, 0x41e, GAME_GLOBAL(float, g_ShadowMapGamma), 2);
 		Bsp_DlgEnable(hwnd);
 		return 1;
 	case 0x111:	/* WM_COMMAND */
@@ -2589,7 +2589,7 @@ intptr_t __stdcall Bsp_DlgProc(void *hwnd, uint32_t msg, uintptr_t wparam, intpt
 				*checks[i].var = exe_IsDlgButtonChecked(hwnd, checks[i].id);
 			}
 			if (Dlg_GetFloat(hwnd, 0x410, &g_ShadowMapScale) && Dlg_GetFloat(hwnd, 0x40f, &g_ShadowMapRes) &&
-				Dlg_GetFloat(hwnd, 0x41e, &GAME_GLOBAL(float, g_ShadowMapGamma, 0x432960)) && (double)g_ShadowMapScale > 0.001 &&
+				Dlg_GetFloat(hwnd, 0x41e, &GAME_GLOBAL(float, g_ShadowMapGamma)) && (double)g_ShadowMapScale > 0.001 &&
 				(double)g_ShadowMapRes > 0.001) {
 				exe_EndDialog(hwnd, 1);
 				return 1;
@@ -2612,11 +2612,11 @@ intptr_t __stdcall Bsp_DlgProc(void *hwnd, uint32_t msg, uintptr_t wparam, intpt
 
 /* the radiosity: the areas and region trees of the lists, the links between regions */
 
-#define g_LightmapDebugTex GAME_GLOBAL_IN(int, GVar_LightmapDebugTex, 16, 0x4d5d38)	/* gvar */
-#define g_BspLinks GAME_GLOBAL(int, g_BspNumLinks, 0x4e73ac)		/* the region links (radiosity code) */
+#define g_LightmapDebugTex GAME_GLOBAL_IN(int, GVar_LightmapDebugTex, 16)	/* gvar */
+#define g_BspLinks GAME_GLOBAL(int, g_BspNumLinks)		/* the region links (radiosity code) */
 
 /* exe functions of other files with their prototypes there */
-double crt_ceil(double x);				/* rva 0x345010 */
+double crt_ceil(double x);
 
 /* brightness and gamma on the light maps, then the vertex colors from them */
 void __fastcall CBsp_AdjustGamma(CBsp *self) {
@@ -2627,11 +2627,11 @@ void __fastcall CBsp_AdjustGamma(CBsp *self) {
 		E3D_DebugPrintf("ajustar gamma:  %d / %d  \r", ++i, n);
 		if (list->light2.img) {
 			CBmpFlt2_Blend(&list->light2, 0, 0, &list->light, 0, 0, list->light2.width, list->light2.height, 0x100, -0x100);
-			CBmpFlt2_Scale(&list->light2, GAME_GLOBAL(float, g_ShadowMapBrightness, 0x432964));
-			CBmpFlt2_Gamma(&list->light2, GAME_GLOBAL(float, g_ShadowMapGamma, 0x432960), 1.0f);
+			CBmpFlt2_Scale(&list->light2, GAME_GLOBAL(float, g_ShadowMapBrightness));
+			CBmpFlt2_Gamma(&list->light2, GAME_GLOBAL(float, g_ShadowMapGamma), 1.0f);
 		}
-		CBmpFlt2_Scale(&list->light, GAME_GLOBAL(float, g_ShadowMapBrightness, 0x432964));
-		CBmpFlt2_Gamma(&list->light, GAME_GLOBAL(float, g_ShadowMapGamma, 0x432960), 1.0f);
+		CBmpFlt2_Scale(&list->light, GAME_GLOBAL(float, g_ShadowMapBrightness));
+		CBmpFlt2_Gamma(&list->light, GAME_GLOBAL(float, g_ShadowMapGamma), 1.0f);
 		if (g_LightmapDebugTex) {
 			Img_Free(&list->light2, 0xc);
 			CBmpFlt2_Resample(&list->light2, &list->light, 0xf);
@@ -2812,7 +2812,7 @@ void __fastcall CBsp_InitAreas(CBsp *self) {
 
 /* the glow of the lists and the shadows of the area lights */
 
-#define g_LightmapGlowMult GAME_GLOBAL_IN(float, GVar_LightmapGlowMult, 16, 0x4d5cc0)	/* gvar */
+#define g_LightmapGlowMult GAME_GLOBAL_IN(float, GVar_LightmapGlowMult, 16)	/* gvar */
 
 /* the glow map of the material sampled into lightA, squared */
 void BspTri_CalcGlow(BspTri *list) {
@@ -2949,19 +2949,19 @@ void __fastcall CBsp_SaveIni(CBsp *self) {
 	CIniFile_ctorLoad(&ini, name, NULL);
 	int n = CIniFile_SetFloat(&ini, s, "escala", g_ShadowMapScale, 3);
 	n += CIniFile_SetFloat(&ini, s, "resolucion", g_ShadowMapRes, 3);
-	n += CIniFile_SetFloat(&ini, s, "gamma", GAME_GLOBAL(float, g_ShadowMapGamma, 0x432960), 2);
-	n += CIniFile_SetFloat(&ini, s, "brillo", GAME_GLOBAL(float, g_ShadowMapBrightness, 0x432964), 2);
-	n += CIniFile_SetBool(&ini, s, "sombras_suaves", GAME_GLOBAL(int, g_ShadowMapSoft, 0x4b2b04));
+	n += CIniFile_SetFloat(&ini, s, "gamma", GAME_GLOBAL(float, g_ShadowMapGamma), 2);
+	n += CIniFile_SetFloat(&ini, s, "brillo", GAME_GLOBAL(float, g_ShadowMapBrightness), 2);
+	n += CIniFile_SetBool(&ini, s, "sombras_suaves", GAME_GLOBAL(int, g_ShadowMapSoft));
 	n += CIniFile_SetInt(&ini, s, "text_tam_x", g_ShadowMapTexX);
 	n += CIniFile_SetInt(&ini, s, "text_tam_y", g_ShadowMapTexY);
 	n += CIniFile_SetBool(&ini, s, "radiosidad", g_ShadowMapRadiosity);
-	n += CIniFile_SetBool(&ini, s, "ilum_global", GAME_GLOBAL(int, g_ShadowMapIllumGlobal, 0x4b2b14));
-	n += CIniFile_SetBool(&ini, s, "no_luz_amb", GAME_GLOBAL(int, g_ShadowMapNoLightAmb, 0x4b2b18));
+	n += CIniFile_SetBool(&ini, s, "ilum_global", GAME_GLOBAL(int, g_ShadowMapIllumGlobal));
+	n += CIniFile_SetBool(&ini, s, "no_luz_amb", GAME_GLOBAL(int, g_ShadowMapNoLightAmb));
 	n += CIniFile_SetBool(&ini, s, "modulate4x", g_ShadowMapModulate4x);
 	n += CIniFile_SetFloat(&ini, s, "modulate_coef", g_ShadowMapModulate4x ? 0.25f : 1.0f, 3);
 	n += CIniFile_SetFloat(&ini, s, "modulate_max", g_ShadowMapModulate4x ? 1.0f : 1.2f, 3);
-	n += CIniFile_SetInt(&ini, s, "rebotes", GAME_GLOBAL(int, g_ShadowMapBounces, 0x432968));
-	n += CIniFile_SetFloat(&ini, s, "coef_rad", GAME_GLOBAL(float, g_ShadowMapCoefRad, 0x43296c), 3);
+	n += CIniFile_SetInt(&ini, s, "rebotes", GAME_GLOBAL(int, g_ShadowMapBounces));
+	n += CIniFile_SetFloat(&ini, s, "coef_rad", GAME_GLOBAL(float, g_ShadowMapCoefRad), 3);
 	n += CIniFile_SetBool(&ini, s, "calc_lmap2", g_CalcLmap2);
 	n += CIniFile_SetBool(&ini, s, "usar_txf", g_ShadowMapUseTxf);
 	if (n) {
@@ -3163,7 +3163,7 @@ void __fastcall CBsp_Prepare(CBsp *self) {
 		}
 	}
 	E3D_LogDebug(g_FileLog, "\nTotal map triangles by material:");
-	crt_qsort(tab.p, (size_t)tab.n, sizeof(BspMatStat), (int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpId, 0x28e650));
+	crt_qsort(tab.p, (size_t)tab.n, sizeof(BspMatStat), (int (*)(const void *, const void *))GAME_FUNC(BspTri_CmpId));
 	int totTri = 0, totVert = 0;
 	for (int i = 0; i < tab.n; i++) {
 		BspMatStat *e = BspMatStat_Get(&tab, i);
@@ -3248,7 +3248,7 @@ void __fastcall CBsp_InitD3D(CBsp *self) {
 	CMaterial_dtor(&mat);
 }
 
-/* the static initializer (rva 0x05e6e0): the trace caches of the lights cleared */
+/* the static initializer: the trace caches of the lights cleared */
 void Bsp_InitLights(void) {
 	for (int i = 0; i < BSP_MAX_LIGHTS; i++) {
 		g_BspLights[i].cache[0] = 0;

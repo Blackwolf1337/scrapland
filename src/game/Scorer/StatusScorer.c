@@ -185,17 +185,17 @@ int __thiscall cStatusScorer_Var(cStatusScorer *self, const char *name, byte set
 }
 
 /* the life engine variables */
-#define g_StdMaxLife GAME_GLOBAL_IN(int, GVar_StdMaxLife, 16, 0x44ab34)			/* the max life of what is no ship */
-#define g_DangerLifeLevel GAME_GLOBAL_IN(int, GVar_DangerLifeLevel, 16, 0x46079c)		/* percent: the life blinks red below it */
-#define g_WarningLifeLevel GAME_GLOBAL_IN(int, GVar_WarningLifeLevel, 16, 0x4607b4)		/* percent: the low life sound fades in below it */
-#define g_DangerLifeSoundVol GAME_GLOBAL_IN(float, GVar_DangerLifeSoundVol, 16, 0x4606f4)
-#define g_RegenerationSoundVol GAME_GLOBAL_IN(float, GVar_RegenerationSoundVol, 16, 0x4606dc)
-#define g_RegenerationSoundPitchMax GAME_GLOBAL_IN(float, GVar_RegenerationSoundPitchMax, 16, 0x46073c)
-#define g_RegenerationSoundPitchMin GAME_GLOBAL_IN(float, GVar_RegenerationSoundPitchMin, 16, 0x4607e4)
-#define g_InitRegenerationSound GAME_GLOBAL_IN(const char *, GVar_InitRegenerationSound, 16, 0x460784)
-#define g_InitRegenerationSoundVol GAME_GLOBAL_IN(float, GVar_InitRegenerationSoundVol, 16, 0x4607cc)
-#define g_EndRegenerationSound GAME_GLOBAL_IN(const char *, GVar_EndRegenerationSound, 16, 0x460754)
-#define g_EndRegenerationSoundVol GAME_GLOBAL_IN(float, GVar_EndRegenerationSoundVol, 16, 0x46070c)
+#define g_StdMaxLife GAME_GLOBAL_IN(int, GVar_StdMaxLife, 16)			/* the max life of what is no ship */
+#define g_DangerLifeLevel GAME_GLOBAL_IN(int, GVar_DangerLifeLevel, 16)		/* percent: the life blinks red below it */
+#define g_WarningLifeLevel GAME_GLOBAL_IN(int, GVar_WarningLifeLevel, 16)		/* percent: the low life sound fades in below it */
+#define g_DangerLifeSoundVol GAME_GLOBAL_IN(float, GVar_DangerLifeSoundVol, 16)
+#define g_RegenerationSoundVol GAME_GLOBAL_IN(float, GVar_RegenerationSoundVol, 16)
+#define g_RegenerationSoundPitchMax GAME_GLOBAL_IN(float, GVar_RegenerationSoundPitchMax, 16)
+#define g_RegenerationSoundPitchMin GAME_GLOBAL_IN(float, GVar_RegenerationSoundPitchMin, 16)
+#define g_InitRegenerationSound GAME_GLOBAL_IN(const char *, GVar_InitRegenerationSound, 16)
+#define g_InitRegenerationSoundVol GAME_GLOBAL_IN(float, GVar_InitRegenerationSoundVol, 16)
+#define g_EndRegenerationSound GAME_GLOBAL_IN(const char *, GVar_EndRegenerationSound, 16)
+#define g_EndRegenerationSoundVol GAME_GLOBAL_IN(float, GVar_EndRegenerationSoundVol, 16)
 
 #define STATUS_SEGMENTS 7		/* the boost segments over the life icon */
 #define STATUS_LOW_COLOR 0xffff2020	/* the texts at 0 */

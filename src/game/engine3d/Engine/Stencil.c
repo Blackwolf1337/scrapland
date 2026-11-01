@@ -67,9 +67,9 @@ void Stencil_DebugLine(const vec3_t *a, const vec3_t *b, uint32_t color) {
 
 #define STENCIL_MAX_SEGS 0x2000
 #define STENCIL_MAX_TRIS 0x3000
-#define g_StencilLDir GAME_GLOBAL_IN(float, GVar_R_StencilLDir, 16, 0x3901c8)	/* R_StencilLDir: the distance of a directional light */
-#define g_StencilFisq GAME_GLOBAL_IN(int, GVar_R_StencilFisq, 16, 0x390064)	/* R_StencilFisq: RSqrt_Estimate instead of sqrt */
-#define g_StencilDraw GAME_GLOBAL_IN(int, GVar_R_StencilDraw, 16, 0x390168)	/* R_StencilDraw */
+#define g_StencilLDir GAME_GLOBAL_IN(float, GVar_R_StencilLDir, 16)	/* R_StencilLDir: the distance of a directional light */
+#define g_StencilFisq GAME_GLOBAL_IN(int, GVar_R_StencilFisq, 16)	/* R_StencilFisq: RSqrt_Estimate instead of sqrt */
+#define g_StencilDraw GAME_GLOBAL_IN(int, GVar_R_StencilDraw, 16)	/* R_StencilDraw */
 
 /* the far end of the volume edge from p (in the space of the mesh): R_StencilLDir along the light of a directional
  * light, else to the range of the light, p itself outside the range or the cone of a spot light, the light position
@@ -240,10 +240,10 @@ void ShadowsStencil_Set(byte on) {
 	byte ok;
 
 	if (!Render_StencilBits()) {
-		Con_Warnf("%s", GAME_STR(str_3dc684, 0x3dc684));	/* "No stencil bits\n" */
+		Con_Warnf("%s", GAME_STR(str_3dc684));	/* "No stencil bits\n" */
 		ok = 0;
 	} else if (Render_StencilBits() < 4) {
-		Con_Warnf("%s", GAME_STR(str_3dc698, 0x3dc698));	/* "Not enought stencil bits\n" */
+		Con_Warnf("%s", GAME_STR(str_3dc698));	/* "Not enought stencil bits\n" */
 		ok = 0;
 	} else {
 		ok = 1;
@@ -335,9 +335,9 @@ void Stencil_Init(void) {
 	byte ok, on;
 
 	if (!Render_StencilBits()) {
-		warn = GAME_STR(str_3dc684, 0x3dc684);	/* "No stencil bits\n" */
+		warn = GAME_STR(str_3dc684);	/* "No stencil bits\n" */
 	} else if (Render_StencilBits() < 4) {
-		warn = GAME_STR(str_3dc698, 0x3dc698);	/* "Not enought stencil bits\n" */
+		warn = GAME_STR(str_3dc698);	/* "Not enought stencil bits\n" */
 	}
 	if (warn) {
 		Con_Warnf("%s", warn);
@@ -501,10 +501,10 @@ void ShadowsStencil_Render(void) {
 }
 
 /* the capture of the volumes of one mesh list */
-#define g_StencilBBox GAME_GLOBAL_IN(int, GVar_R_StencilBBox, 16, 0x390150)	/* R_StencilBBox: the segment to the light tested */
-#define g_StencilViewDisp GAME_GLOBAL_IN(float, GVar_R_StencilViewDisp, 16, 0x390198)	/* R_StencilViewDisp: the volumes moved along the view */
-#define g_StencilGroupsMax GAME_GLOBAL(int, g_StencilGroupsMax, 0x4afde4)
-#define g_TriFacing (GAME_ARRAY(byte, g_TriFacing, 0x3902c0))		/* [0x10000] the triangles facing the light */
+#define g_StencilBBox GAME_GLOBAL_IN(int, GVar_R_StencilBBox, 16)	/* R_StencilBBox: the segment to the light tested */
+#define g_StencilViewDisp GAME_GLOBAL_IN(float, GVar_R_StencilViewDisp, 16)	/* R_StencilViewDisp: the volumes moved along the view */
+#define g_StencilGroupsMax GAME_GLOBAL(int, g_StencilGroupsMax)
+#define g_TriFacing (GAME_ARRAY(byte, g_TriFacing))		/* [0x10000] the triangles facing the light */
 #define LIGHT_SPOT 0x1389
 
 void Stencil_Mesh(struct CVertList *v, const void *tris, uint32_t nTri, struct CMeshD3D *m, struct CRenderNode *r) {

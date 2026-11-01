@@ -18,28 +18,28 @@
 #define CGAMETRAIL_CTOR 0x21ddb0
 #define CGAMETRAIL_DTOR 0x21de40
 
-#define VT_EMBEDDEDFX GAME_VFTABLE(cEmbeddedFX_vftable, 0x3b08a0)
-#define VT_SENTINEL GAME_VFTABLE(cEmbeddedFXSentinel_vftable, 0x3b09e8)
-#define VT_GEAR GAME_VFTABLE(cEmbeddedFXGear_vftable, 0x3b0a04)
-#define VT_POLICE GAME_VFTABLE(cEmbeddedFXPolice_vftable, 0x3b0a20)
-#define VT_BANKDIRECTOR GAME_VFTABLE(cEmbeddedFXBankDirector_vftable, 0x3b0a3c)
-#define VT_BANKMASTER GAME_VFTABLE(cEmbeddedFXBankMaster_vftable, 0x3b0a58)
-#define VT_CRAZYGAMBLER GAME_VFTABLE(cEmbeddedFXCrazyGambler_vftable, 0x3b0a74)
-#define VT_RUSTY GAME_VFTABLE(cEmbeddedFXRusty_vftable, 0x3b0a90)
-#define VT_MESSENGER GAME_VFTABLE(cEmbeddedFXMessenger_vftable, 0x3b0aac)
-#define VT_MAINTENANCE GAME_VFTABLE(cEmbeddedFXMaintenance_vftable, 0x3b0ac8)
-#define VT_MERCENARY GAME_VFTABLE(cEmbeddedFXMercenary_vftable, 0x3b0ae4)
+#define VT_EMBEDDEDFX GAME_VFTABLE(cEmbeddedFX_vftable)
+#define VT_SENTINEL GAME_VFTABLE(cEmbeddedFXSentinel_vftable)
+#define VT_GEAR GAME_VFTABLE(cEmbeddedFXGear_vftable)
+#define VT_POLICE GAME_VFTABLE(cEmbeddedFXPolice_vftable)
+#define VT_BANKDIRECTOR GAME_VFTABLE(cEmbeddedFXBankDirector_vftable)
+#define VT_BANKMASTER GAME_VFTABLE(cEmbeddedFXBankMaster_vftable)
+#define VT_CRAZYGAMBLER GAME_VFTABLE(cEmbeddedFXCrazyGambler_vftable)
+#define VT_RUSTY GAME_VFTABLE(cEmbeddedFXRusty_vftable)
+#define VT_MESSENGER GAME_VFTABLE(cEmbeddedFXMessenger_vftable)
+#define VT_MAINTENANCE GAME_VFTABLE(cEmbeddedFXMaintenance_vftable)
+#define VT_MERCENARY GAME_VFTABLE(cEmbeddedFXMercenary_vftable)
 
 #define TRAIL_COLOR 0xc0c0ff
 #define LASER_COLOR 0x800000
 
 /* the color ramps of the alarm and maintenance particles (9 colors) */
-#define g_RampAlarmA (GAME_ARRAY(uint32_t, g_RampAlarmA, 0x428354))
-#define g_RampAlarmB (GAME_ARRAY(uint32_t, g_RampAlarmB, 0x428330))
-#define g_RampAlarmC (GAME_ARRAY(uint32_t, g_RampAlarmC, 0x42839c))
-#define g_RampAlarmD (GAME_ARRAY(uint32_t, g_RampAlarmD, 0x428378))
-#define g_RampMaintenance (GAME_ARRAY(uint32_t, g_RampMaintenance, 0x42842c))
-#define g_RampMaintenanceEnd (GAME_ARRAY(uint32_t, g_RampMaintenanceEnd, 0x428408))
+#define g_RampAlarmA (GAME_ARRAY(uint32_t, g_RampAlarmA))
+#define g_RampAlarmB (GAME_ARRAY(uint32_t, g_RampAlarmB))
+#define g_RampAlarmC (GAME_ARRAY(uint32_t, g_RampAlarmC))
+#define g_RampAlarmD (GAME_ARRAY(uint32_t, g_RampAlarmD))
+#define g_RampMaintenance (GAME_ARRAY(uint32_t, g_RampMaintenance))
+#define g_RampMaintenanceEnd (GAME_ARRAY(uint32_t, g_RampMaintenanceEnd))
 
 /* rand() & 0x7fff as 0..1 (double) */
 static inline double EFX_Rnd(void) {
@@ -51,7 +51,7 @@ static inline void EFX_SetVtbl(void *self, void *vt) {
 }
 
 static inline void EFX_TrailsDtor(CGameTrail *trails, uint32_t n) {
-	crt_eh_vector_dtor(trails, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor(trails, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor));
 }
 
 static inline cEmbeddedFX *EFX_Delete(cEmbeddedFX *self, byte flags, uint32_t size) {
@@ -110,7 +110,7 @@ static inline void EFX_TrailStyle(CGameTrail *t, byte segments, byte smooth, int
 /* ---- constructors ---- */
 
 static inline void EFX_TrailsCtor(CGameTrail *trails, uint32_t n) {
-	crt_eh_vector_ctor(trails, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR), GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_ctor(trails, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor), GAME_FUNC(CGameTrail_dtor));
 }
 
 /* the original clears the vtable pointer before it stores the class one */
@@ -261,7 +261,7 @@ void __fastcall cEmbeddedFX_dtor(cEmbeddedFX *self) {
 	EFX_SetVtbl(self, VT_EMBEDDEDFX);
 }
 
-/* vf00 of the base class (rva 0xd6900); it frees 4 bytes, the size of the vtable pointer alone */
+/* vf00 of the base class; it frees 4 bytes, the size of the vtable pointer alone */
 cEmbeddedFX *__thiscall cEmbeddedFX_Delete(cEmbeddedFX *self, byte flags) {
 	cEmbeddedFX_dtor(self);
 	return EFX_Delete(self, flags, 4);
@@ -1163,10 +1163,10 @@ void __thiscall cEmbeddedFXMaintenance_Update(cEmbeddedFXMaintenance *self, floa
 }
 
 
-#define g_SentinelLaserScanerDist GAME_GLOBAL_IN(float, GVar_SentinelLaserScanerDist, 16, 0x447344)	/* "SentinelLaserScanerDist" */
-#define g_SentinelStdFar GAME_GLOBAL_IN(float, GVar_SentinelStdFar, 16, 0x44dad8)
-#define g_SentinelStdFovY GAME_GLOBAL_IN(float, GVar_SentinelStdFovY, 16, 0x44daf0)
-#define g_SentinelStdFovX GAME_GLOBAL_IN(float, GVar_SentinelStdFovX, 16, 0x44db68)
+#define g_SentinelLaserScanerDist GAME_GLOBAL_IN(float, GVar_SentinelLaserScanerDist, 16)	/* "SentinelLaserScanerDist" */
+#define g_SentinelStdFar GAME_GLOBAL_IN(float, GVar_SentinelStdFar, 16)
+#define g_SentinelStdFovY GAME_GLOBAL_IN(float, GVar_SentinelStdFovY, 16)
+#define g_SentinelStdFovX GAME_GLOBAL_IN(float, GVar_SentinelStdFovX, 16)
 
 static void EFX_SentinelClear(cEmbeddedFXSentinel *self) {
 	for (int i = 0; i < self->numLasers; i++) {
@@ -1529,7 +1529,7 @@ void __thiscall cEmbeddedFXCrazyGambler_Update(cEmbeddedFXCrazyGambler *self, fl
 	}
 }
 
-#define g_MessengerLightingDist GAME_GLOBAL_IN(float, GVar_MessengerLightingDist, 16, 0x447394)	/* "MessengerLightingDist" */
+#define g_MessengerLightingDist GAME_GLOBAL_IN(float, GVar_MessengerLightingDist, 16)	/* "MessengerLightingDist" */
 
 /* the flag of vertex v of ray r (v may be -1: the byte before the ray) */
 static inline byte *EFX_MessengerUsed(cEmbeddedFXMessenger *self, int r, int v) {
@@ -1688,10 +1688,10 @@ void __thiscall cEmbeddedFXMessenger_Update(cEmbeddedFXMessenger *self, float dt
 	}
 }
 
-#define g_FXMercenaryDrinkSmokeFile GAME_GLOBAL_IN(const char *, GVar_FXMercenaryDrinkSmokeFile, 16, 0x446c28)	/* "FXMercenaryDrinkSmokeFile" */
+#define g_FXMercenaryDrinkSmokeFile GAME_GLOBAL_IN(const char *, GVar_FXMercenaryDrinkSmokeFile, 16)	/* "FXMercenaryDrinkSmokeFile" */
 /* the color ramps of the bubbles and of the smoke, two of 9 colors each */
-#define g_RampMercenaryBubbles (GAME_ARRAY(uint32_t, g_RampMercenaryBubbles, 0x428230))
-#define g_RampMercenarySmoke (GAME_ARRAY(uint32_t, g_RampMercenarySmoke, 0x428278))
+#define g_RampMercenaryBubbles (GAME_ARRAY(uint32_t, g_RampMercenaryBubbles))
+#define g_RampMercenarySmoke (GAME_ARRAY(uint32_t, g_RampMercenarySmoke))
 
 static inline byte EFX_MercSprite(void) {
 	return (crt_rand() & 1) ? 0x09 : 0x48;
@@ -1875,10 +1875,10 @@ void __thiscall cEmbeddedFXMercenary_Update(cEmbeddedFXMercenary *self, float dt
 	EFX_MercSmoke(self, model);
 }
 
-#define g_FXRustySparksSound GAME_GLOBAL_IN(const char *, GVar_FXRustySparksSound, 16, 0x44736c)	/* "FXRustyChispasSound" */
-#define g_FXRustySparksSoundVol GAME_GLOBAL_IN(float, GVar_FXRustySparksSoundVol, 16, 0x44732c)	/* "FXRustyChispasSoundVol" */
+#define g_FXRustySparksSound GAME_GLOBAL_IN(const char *, GVar_FXRustySparksSound, 16)	/* "FXRustyChispasSound" */
+#define g_FXRustySparksSoundVol GAME_GLOBAL_IN(float, GVar_FXRustySparksSoundVol, 16)	/* "FXRustyChispasSoundVol" */
 /* the color ramps of the sparks of the pigtail (9 colors each) */
-#define g_RampRustySparks (GAME_ARRAY(uint32_t, g_RampRustySparks, 0x4282c0))
+#define g_RampRustySparks (GAME_ARRAY(uint32_t, g_RampRustySparks))
 
 static inline void EFX_RustyStill(CGameParticles *p) {
 	p->initPosMin.x = 0.0f;

@@ -14,9 +14,9 @@
 #include "scrap/scrapmain.h"
 #include "scrap/scrapmodel.h"
 
-double crt_ceil(double x);	/* rva 0x345010 */
+double crt_ceil(double x);
 
-#define NWSUP_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* the "" of the exe */
+#define NWSUP_EMPTY GAME_STR(str_Empty)	/* the "" of the exe */
 
 /* ---- Global/DList.h ---- */
 

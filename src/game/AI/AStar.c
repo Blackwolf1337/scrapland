@@ -13,10 +13,10 @@
 #include "scrap/nodesworld2d.h"
 #include "scrap/scrapmain.h"
 
-#define CBINARYHEAP_VFTABLE GAME_VFTABLE(cBinaryHeap_ElemAStar_vftable, 0x3a97c4)
-#define CASTARSUP_VFTABLE GAME_VFTABLE(CAStarSup_vftable, 0x3a9a54)
-#define CASTAR_VFTABLE GAME_VFTABLE(CAStar_vftable, 0x3a9774)
-#define CASTAR2D_VFTABLE GAME_VFTABLE(CAStar2D_vftable, 0x3a99c8)
+#define CBINARYHEAP_VFTABLE GAME_VFTABLE(cBinaryHeap_ElemAStar_vftable)
+#define CASTARSUP_VFTABLE GAME_VFTABLE(CAStarSup_vftable)
+#define CASTAR_VFTABLE GAME_VFTABLE(CAStar_vftable)
+#define CASTAR2D_VFTABLE GAME_VFTABLE(CAStar2D_vftable)
 
 cBinaryHeap *__thiscall cBinaryHeap_ctor(cBinaryHeap *self, int capacity, binHeapLess_t less, binHeapEq_t equals,
 	binHeapIndex_t setIndex) {

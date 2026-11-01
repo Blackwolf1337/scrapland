@@ -7,12 +7,12 @@
  */
 #include "scrap/shared.h"
 
-#define CRT_XC(name, rva) extern void name(void);
+#define CRT_XC(name) extern void name(void);
 #include "crtxc.inc"
 #undef CRT_XC
 
 void (*const crt_xc[])(void) = {
-#define CRT_XC(name, rva) name,
+#define CRT_XC(name) name,
 #include "crtxc.inc"
 #undef CRT_XC
 };

@@ -21,15 +21,15 @@
 #include "scrap/weapons.h"
 
 /* the statics of the police taunts: the count per race, the races, the last race and the time */
-#define s_TauntRaceCounts (GAME_ARRAY(HashTable, s_TauntRaceCounts, 0x428ba8))	/* of cNameItem, 0x1c9 slots, case sensitive */
-#define s_TauntRaces (GAME_ARRAY(char *, s_TauntRaces, 0x428bb4))		/* "SBi", "SBa", "SFu", "SPo" */
-#define s_TauntLastRace GAME_GLOBAL_IN(char *, s_TauntRaces, 16, 0x428bc4)
-#define s_TauntPoliceCount GAME_GLOBAL(int, s_TauntPoliceCount, 0x428bc8)		/* -1 at the start */
-#define s_TauntLastTime GAME_GLOBAL(float, s_TauntLastTime, 0x44d6c0)
-#define s_TauntCountsGuard (&GAME_GLOBAL(int, s_TauntCountsGuard, 0x44d6bc))
-#define s_TauntTimeGuard (&GAME_GLOBAL(int, s_TauntTimeGuard, 0x44d6c4))
+#define s_TauntRaceCounts (GAME_ARRAY(HashTable, s_TauntRaceCounts))	/* of cNameItem, 0x1c9 slots, case sensitive */
+#define s_TauntRaces (GAME_ARRAY(char *, s_TauntRaces))		/* "SBi", "SBa", "SFu", "SPo" */
+#define s_TauntLastRace GAME_GLOBAL_IN(char *, s_TauntRaces, 16)
+#define s_TauntPoliceCount GAME_GLOBAL(int, s_TauntPoliceCount)		/* -1 at the start */
+#define s_TauntLastTime GAME_GLOBAL(float, s_TauntLastTime)
+#define s_TauntCountsGuard (&GAME_GLOBAL(int, s_TauntCountsGuard))
+#define s_TauntTimeGuard (&GAME_GLOBAL(int, s_TauntTimeGuard))
 
-/* the atexit destructor of the count table (rva 0x38dcb0) */
+/* the atexit destructor of the count table */
 void Taunts_FiniCounts(void) {
 	NameTable_Clear(s_TauntRaceCounts);
 }

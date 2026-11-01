@@ -23,17 +23,17 @@ typedef struct cActCtrl cActCtrl;
 /* type of a variable as returned by the Var functions */
 enum { ACTVAR_NONE = 0, ACTVAR_STRING = 1, ACTVAR_DOUBLE = 2, ACTVAR_INT = 3 };
 
-#define ACT_EMPTY GAME_STR(str_Empty, 0x3a3228)		/* "" of the exe */
+#define ACT_EMPTY GAME_STR(str_Empty)		/* "" of the exe */
 
 /* the first slot of the vftables of the classes here: the deleting destructor */
 typedef struct cActVtbl {
 	void *(__thiscall *Delete)(void *self, byte flags);	/* 0x00 */
 } cActVtbl;
 
-#define CACTCLASS_VFTABLE GAME_VFTABLE(cActClass_vftable, 0x3a3224)
-#define CACTCLASSLIST_VFTABLE GAME_VFTABLE(cActClassList_vftable, 0x3a3734)
-#define CACTCTRL_VFTABLE GAME_VFTABLE(cActCtrl_vftable, 0x3a38a0)
-#define CACTIONMOVE_VFTABLE GAME_VFTABLE(cActionMove_vftable, 0x3a3a74)
+#define CACTCLASS_VFTABLE GAME_VFTABLE(cActClass_vftable)
+#define CACTCLASSLIST_VFTABLE GAME_VFTABLE(cActClassList_vftable)
+#define CACTCTRL_VFTABLE GAME_VFTABLE(cActCtrl_vftable)
+#define CACTIONMOVE_VFTABLE GAME_VFTABLE(cActionMove_vftable)
 
 #define ACT_LAYERS 4			/* the layers of a controller, the channels of the model */
 #define ACT_NODEMODS 3			/* the turned nodes of a class ("NodeN_...") */
@@ -281,11 +281,11 @@ byte __thiscall cActCtrl_VarI(cActCtrl *self, const char *name, int *i, byte set
 byte __thiscall cActCtrl_VarF(cActCtrl *self, const char *name, double *d, byte set);
 byte __thiscall cActCtrl_VarS(cActCtrl *self, const char *name, char **s, byte set);
 byte __thiscall cActCtrl_VarV(cActCtrl *self, const char *name, double *x, double *y, double *z, byte set);
-/* the name of the action of layer i, "" when it does not run (rva 0x62c40) */
+/* the name of the action of layer i, "" when it does not run */
 const char *__thiscall cActCtrl_GetActionName(void *ctrl, int i);
 /* the layer i of the actions (16 bytes, the time of its action first) */
 cActLayer *__thiscall cActCtrl_GetLayer(void *ctrl, int i);
-/* the name of the default loop action of the controller, "" without one (rva 0x62c80) */
+/* the name of the default loop action of the controller, "" without one */
 const char *__thiscall cActCtrl_GetDefLoopName(void *ctrl);
 void __fastcall cActCtrl_InitHeads(cActCtrl *self);
 /* the turned nodes of the class by ang (x, y) blended to the NodeModifier of the action of layer 0 */
@@ -295,7 +295,7 @@ byte __thiscall cActCtrl_PlayAction(void *ctrl, void *action, int arg, int set, 
 byte __thiscall cActCtrl_Play(void *ctrl, const char *action, int arg, float speed);
 /* PlayAction unless it runs already in its layer; 0 then or without it */
 byte __thiscall cActCtrl_PlayActionNew(cActCtrl *self, cAction *action, int arg, float speed);
-/* the action, unless it runs already in its layer; 0 then or without it (rva 0x631c0) */
+/* the action, unless it runs already in its layer; 0 then or without it */
 byte __thiscall cActCtrl_PlayNew(void *ctrl, const char *action, int arg, float speed);
 /* the action that runs when nothing else does; a warning if the class has no such action */
 void __thiscall cActCtrl_SetDefLoop(void *ctrl, const char *action, byte force);
@@ -340,10 +340,10 @@ void Event_StopStreamingVoice(cAbstractFile *params);
 void Event_StreamingVoice(cAbstractFile *params);	/* "text:volume[:dist]" */
 void Event_WarningPolice(cAbstractFile *params);
 
-#define g_pActClassList GAME_GLOBAL(cActClassList *, g_pActClassList, 0x444080)
-#define g_pAuxActClass GAME_GLOBAL(cActClass *, g_pAuxActClass, 0x444084)	/* SAct's current class */
-#define g_pAuxAction GAME_GLOBAL(cAction *, g_pAuxAction, 0x444088)	/* SAct's current action */
-#define g_LogActEvents GAME_GLOBAL_IN(int, GVar_LogActEvents, 16, 0x44409c)		/* LogActEvents: the events into the console */
-#define g_DefInterpTime GAME_GLOBAL_IN(float, GVar_DefInterpTime, 16, 0x4440b4)	/* DefInterpTime of new actions */
+#define g_pActClassList GAME_GLOBAL(cActClassList *, g_pActClassList)
+#define g_pAuxActClass GAME_GLOBAL(cActClass *, g_pAuxActClass)	/* SAct's current class */
+#define g_pAuxAction GAME_GLOBAL(cAction *, g_pAuxAction)	/* SAct's current action */
+#define g_LogActEvents GAME_GLOBAL_IN(int, GVar_LogActEvents, 16)		/* LogActEvents: the events into the console */
+#define g_DefInterpTime GAME_GLOBAL_IN(float, GVar_DefInterpTime, 16)	/* DefInterpTime of new actions */
 
 #endif

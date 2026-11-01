@@ -21,7 +21,7 @@
 #include "scrap/sound.h"
 #include "scrap/vehicleattack.h"
 
-#define CWITHLIFEENTITY_VFTABLE GAME_VFTABLE(cWithLifeEntity_vftable, 0x3ba27c)
+#define CWITHLIFEENTITY_VFTABLE GAME_VFTABLE(cWithLifeEntity_vftable)
 #define CWITHLIFEENTITY_SIZE 0x3e8
 
 typedef struct cWithLifeEntity {
@@ -90,7 +90,7 @@ static inline const cWithLifeEntityVtbl *WithLife_Vtbl(const cEntity *e) {
 	return (const cWithLifeEntityVtbl *)e->vftable;
 }
 
-/* the variable slots of cActCtrl::vftable (rva 0x3a38a0) */
+/* the variable slots of cActCtrl::vftable */
 typedef struct cActCtrlVarVtbl {
 	void *(__thiscall *Delete)(cActCtrl *self, byte flags);				/* 0x00 */
 	byte(__thiscall *VarI)(cActCtrl *self, const char *name, int *i, int set);		/* 0x04 */

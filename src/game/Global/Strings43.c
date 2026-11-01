@@ -8,14 +8,14 @@
 #include "scrap/shared.h"
 
 
-char str_PyDoc_SWeap_SetSWeap[] SD_AT(0x430040) =
+char str_PyDoc_SWeap_SetSWeap[] =
 	"SetSWeap(numammo,svar,svalue) : Pone un valor cadena de las municiones";
-char str_PyDoc_SWeap_FillPriority[] SD_AT(0x430088) = "FillPriority() : Inizializa las prioridades de las armas";
-char str_PyDoc_SWeap_GetFirstiWeap[] SD_AT(0x4300c4) = "GetFirstiWeap() : Obtiene el arma primera y por defecto";
-char str_PyDoc_SWeap_NetExec[] SD_AT(0x4300fc) = "NetExec() : Rutinas de red de los misiles";
-char str_431a98[] SD_AT(0x431a98) = "Scrapland";
-char str_431aa4[] SD_AT(0x431aa4) = "ScrapClass";
-char str_431bf0[128] SD_AT(0x431bf0) = "m3d.ini";
-char str_432608[] SD_AT(0x432608) = "Unknown error";
-char str_432a88[16] SD_AT(0x432a88) = "luces.rad";
+char str_PyDoc_SWeap_FillPriority[] = "FillPriority() : Inizializa las prioridades de las armas";
+char str_PyDoc_SWeap_GetFirstiWeap[] = "GetFirstiWeap() : Obtiene el arma primera y por defecto";
+char str_PyDoc_SWeap_NetExec[] = "NetExec() : Rutinas de red de los misiles";
+char str_431a98[] = "Scrapland";
+char str_431aa4[] = "ScrapClass";
+char str_431bf0[128] = "m3d.ini";
+char str_432608[] = "Unknown error";
+char str_432a88[16] = "luces.rad";
 

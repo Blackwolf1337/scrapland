@@ -191,7 +191,7 @@ void Cmd_ReadFile(const char *name) {
 
 	Path_Normalize(path, name, -1);
 	/* the exe's address of Cmd_Out, as the original stores it */
-	Lex_SetOut((lexout_t)GAME_FUNC(Cmd_Out, 0x280af0));
+	Lex_SetOut((lexout_t)GAME_FUNC(Cmd_Out));
 	Lex_SetDir(path);
 	if (crt_access(path, 0) || Lex_Open(path, 0)) {
 		return;

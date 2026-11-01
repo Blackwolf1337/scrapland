@@ -8,14 +8,14 @@
 #include "scrap/e3dutil.h"
 #include "scrap/trimesh.h"
 
-#define CTRIMESH_VFTABLE GAME_VFTABLE(CTriMesh_vftable, 0x3dbcf0)
-#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
+#define CTRIMESH_VFTABLE GAME_VFTABLE(CTriMesh_vftable)
+#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable)
 #define TRIMESH_SKIN 16
 /* the box before the first vertex, rva 0x3a3a38 and 0x3a512c */
 #define TRIMESH_FLT_MAX 3.4028234663852886e+38f
 
 /* draw the meshes through their D3D mesh */
-#define g_MeshD3DOn GAME_GLOBAL_IN(byte, group_431bac, 1, 0x431bad)
+#define g_MeshD3DOn GAME_GLOBAL_IN(byte, group_431bac, 1)
 /* statistics of the frame */
 
 typedef void(__thiscall *meshD3DDelete_t)(CMeshD3D *self, int flags);

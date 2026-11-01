@@ -11,14 +11,14 @@
 
 /* teclado.cpp */
 #define KEYBOARD_BUF 32
-#define g_KeyboardKeys (GAME_ARRAY(byte, g_KeyboardKeys, 0x4db2d0))		/* 256, 1 while held */
-#define g_KeyboardBuf (GAME_ARRAY(uint16_t, g_KeyboardBuf, 0x4db3d0))	/* KEYBOARD_BUF characters */
-#define g_KeyboardBufStart GAME_GLOBAL(int, g_KeyboardBufStart, 0x4db410)
-#define g_KeyboardBufCount GAME_GLOBAL(int, g_KeyboardBufCount, 0x4db414)
+#define g_KeyboardKeys (GAME_ARRAY(byte, g_KeyboardKeys))		/* 256, 1 while held */
+#define g_KeyboardBuf (GAME_ARRAY(uint16_t, g_KeyboardBuf))	/* KEYBOARD_BUF characters */
+#define g_KeyboardBufStart GAME_GLOBAL(int, g_KeyboardBufStart)
+#define g_KeyboardBufCount GAME_GLOBAL(int, g_KeyboardBufCount)
 /* the time of the engine without the pauses (next to teclado.cpp, its source is not known) */
-#define g_TimePaused GAME_GLOBAL(uint32_t, g_TimePaused, 0x4db2c4)	/* the sum of the pauses */
-#define g_TimeResumed GAME_GLOBAL(int, g_TimeResumed, 0x4db2c8)	/* set when a pause ended */
-#define g_TimePause GAME_GLOBAL(uint32_t, g_TimePause, 0x4db2cc)	/* timeGetTime at the start of the pause, 0 without */
+#define g_TimePaused GAME_GLOBAL(uint32_t, g_TimePaused)	/* the sum of the pauses */
+#define g_TimeResumed GAME_GLOBAL(int, g_TimeResumed)	/* set when a pause ended */
+#define g_TimePause GAME_GLOBAL(uint32_t, g_TimePause)	/* timeGetTime at the start of the pause, 0 without */
 
 uint32_t Time_Get(void);
 /* on: the pause starts (once), off: it ends */
@@ -32,16 +32,16 @@ void Keyboard_KeyDown(uint16_t ch, uint32_t lparam);
 void Keyboard_KeyUp(uint32_t wparam, uint32_t lparam);
 
 /* entrada.cpp */
-#define IINPUT_VFTABLE GAME_VFTABLE(IInput_vftable, 0x3e25ec)
-#define CINPUTDINPUT_VFTABLE GAME_VFTABLE(CInputDInput_vftable, 0x3e2610)
-#define CINPUTWINDOWS_VFTABLE GAME_VFTABLE(CInputWindows_vftable, 0x3e2634)
-#define g_InputInit GAME_GLOBAL(byte, g_InputInit, 0x4db428)
+#define IINPUT_VFTABLE GAME_VFTABLE(IInput_vftable)
+#define CINPUTDINPUT_VFTABLE GAME_VFTABLE(CInputDInput_vftable)
+#define CINPUTWINDOWS_VFTABLE GAME_VFTABLE(CInputWindows_vftable)
+#define g_InputInit GAME_GLOBAL(byte, g_InputInit)
 /* the mouse axes inverted */
-#define g_InputInvX GAME_GLOBAL(int, g_InputInvX, 0x4db41c)
-#define g_InputInvY GAME_GLOBAL(int, g_InputInvY, 0x4db420)
-#define g_InputInvZ GAME_GLOBAL(int, g_InputInvZ, 0x4db424)
+#define g_InputInvX GAME_GLOBAL(int, g_InputInvX)
+#define g_InputInvY GAME_GLOBAL(int, g_InputInvY)
+#define g_InputInvZ GAME_GLOBAL(int, g_InputInvZ)
 /* the cursor position while CInputWindows holds the mouse */
-#define g_InputCursor (GAME_ARRAY(int32_t, g_InputCursor, 0x432a08))	/* [2], the POINT of GetCursorPos */
+#define g_InputCursor (GAME_ARRAY(int32_t, g_InputCursor))	/* [2], the POINT of GetCursorPos */
 #define INPUT_CURSOR_CENTER 100
 
 /* the vftable of IInput */

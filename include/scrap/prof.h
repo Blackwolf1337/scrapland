@@ -7,6 +7,6 @@
 
 #include "scrap/shared.h"
 
-#define g_ProfMode GAME_GLOBAL_IN(int, GVar_R_ShowInfo, 16, 0x4a9018)
+#define g_ProfMode GAME_GLOBAL_IN(int, GVar_R_ShowInfo, 16)
 
 #endif

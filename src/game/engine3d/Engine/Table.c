@@ -52,12 +52,12 @@ void __thiscall Table_Alloc10Z(CTable *t, int num) {
 	void __thiscall Table_New##sz(CTable *t, int num) { \
 		Table_NewObjs(t, num, 0x##sz, ctor, dtor); \
 	}
-TABLE_NEW(8, GAME_FUNC(CLod_ctor, 0x252a70), GAME_FUNC(CLod_dtor, 0x252d80))
-TABLE_NEW(1C, GAME_FUNC(M3DSkinVert_ctor, 0x2bbcc0), GAME_FUNC(M3DSkinVert_dtor, 0x2bc160))
-TABLE_NEW(24, GAME_FUNC(CCollideQuad_ctor, 0x258720), GAME_FUNC(CCollideQuad_dtor, 0x258ce0))
-TABLE_NEW(A8, GAME_FUNC(CRenderNode_ctor, 0x23f3d0), GAME_FUNC(CRenderNode_dtor, 0x23f450))
-TABLE_NEW(B4, GAME_FUNC(BspZone_ctor, 0x281c50), GAME_FUNC(BspZone_dtor, 0x2824b0))
-TABLE_NEW(FC, GAME_FUNC(CNode3D_ctor, 0x23cf40), GAME_FUNC(CNode3D_dtor, 0x23d070))
+TABLE_NEW(8, GAME_FUNC(CLod_ctor), GAME_FUNC(CLod_dtor))
+TABLE_NEW(1C, GAME_FUNC(M3DSkinVert_ctor), GAME_FUNC(M3DSkinVert_dtor))
+TABLE_NEW(24, GAME_FUNC(CCollideQuad_ctor), GAME_FUNC(CCollideQuad_dtor))
+TABLE_NEW(A8, GAME_FUNC(CRenderNode_ctor), GAME_FUNC(CRenderNode_dtor))
+TABLE_NEW(B4, GAME_FUNC(BspZone_ctor), GAME_FUNC(BspZone_dtor))
+TABLE_NEW(FC, GAME_FUNC(CNode3D_ctor), GAME_FUNC(CNode3D_dtor))
 
 #define TABLE_READ(sz) \
 	void Table_Read##sz(CFileIO *f, CTable *t) { \

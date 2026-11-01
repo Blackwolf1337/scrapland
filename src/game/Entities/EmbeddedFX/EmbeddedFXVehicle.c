@@ -12,7 +12,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/world.h"
 
-#define g_RandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
+#define g_RandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMEPARTICLES_DTOR 0x21d1c0
 #define CGAMETRAIL_CTOR 0x21ddb0
@@ -484,11 +484,11 @@ void __fastcall cFXVehicleSirens_Update(cFXVehicleSirens *self) {
 	}
 	if (((0.1f > self->lastTime && self->time > 0.1f) || (0.2f > self->lastTime && self->time > 0.2f)) &&
 		Sirens_IsPolice(v)) {
-		Sirens_Flash(self, &self->pos[0], alarm, GAME_ARRAY(uint32_t, data_428574, RAMP_SIREN_A1), GAME_ARRAY(uint32_t, data_428550, RAMP_SIREN_A2));
+		Sirens_Flash(self, &self->pos[0], alarm, GAME_ARRAY(uint32_t, data_428574), GAME_ARRAY(uint32_t, data_428550));
 	}
 	if (((0.6f > self->lastTime && self->time > 0.6f) || (0.7f > self->lastTime && self->time > 0.7f)) &&
 		Sirens_IsPolice(v)) {
-		Sirens_Flash(self, &self->pos[1], alarm, GAME_ARRAY(uint32_t, data_4285bc, RAMP_SIREN_B1), GAME_ARRAY(uint32_t, data_428598, RAMP_SIREN_B2));
+		Sirens_Flash(self, &self->pos[1], alarm, GAME_ARRAY(uint32_t, data_4285bc), GAME_ARRAY(uint32_t, data_428598));
 	}
 	self->lastTime = self->time;
 }
@@ -498,8 +498,8 @@ void __fastcall cFXVehicleSirens_Update(cFXVehicleSirens *self) {
 cEmbeddedFXVehicleProbe *__thiscall cEmbeddedFXVehicleProbe_ctor(cEmbeddedFXVehicleProbe *self,
 	cEmbeddedFXVehicle *fx) {
 	self->vftable = CEMBEDDEDFXVEHICLEPROBE_VFTABLE;
-	crt_eh_vector_ctor(self->lights, sizeof(CGameParticles), PROBE_LIGHTS, GAME_FUNC(CGameParticles_ctor, CGAMEPARTICLES_CTOR),
-		GAME_FUNC(CGameParticles_Release, CGAMEPARTICLES_DTOR));
+	crt_eh_vector_ctor(self->lights, sizeof(CGameParticles), PROBE_LIGHTS, GAME_FUNC(CGameParticles_ctor),
+		GAME_FUNC(CGameParticles_Release));
 	CGameParticles_ctor(&self->trans);
 	CGameTrail_ctor(&self->trail);
 	self->fx = fx;
@@ -522,7 +522,7 @@ void __fastcall cEmbeddedFXVehicleProbe_dtor(cEmbeddedFXVehicleProbe *self) {
 	}
 	CGameTrail_dtor(&self->trail);
 	CGameParticles_Release(&self->trans);
-	crt_eh_vector_dtor(self->lights, sizeof(CGameParticles), PROBE_LIGHTS, GAME_FUNC(CGameParticles_Release, CGAMEPARTICLES_DTOR));
+	crt_eh_vector_dtor(self->lights, sizeof(CGameParticles), PROBE_LIGHTS, GAME_FUNC(CGameParticles_Release));
 	cEmbeddedFX_dtor((cEmbeddedFX *)self);
 }
 
@@ -662,7 +662,7 @@ void __fastcall cEmbeddedFXVehicleProbe_Update(cEmbeddedFXVehicleProbe *self) {
 				p->spriteIni = 2;
 				p->spriteEnd = 2;
 				CGameParticles_SetColorRampOn(p, 1);
-				CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, cEmbeddedFXVehicleProbe_Update_4285e0, RAMP_PROBE_TRANS));
+				CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, cEmbeddedFXVehicleProbe_Update_4285e0));
 				CGameParticles_Apply(p);
 				CGameParticles_EmitDt(p, 1, 0, (float)j / 3.0f);
 			}
@@ -730,9 +730,9 @@ cEmbeddedFXVehicleVote *__thiscall cEmbeddedFXVehicleVote_ctor(cEmbeddedFXVehicl
 	cEmbeddedFXVehicle *fx) {
 	self->vftable = CEMBEDDEDFXVEHICLEVOTE_VFTABLE;
 	CGameParticles_ctor(&self->glow);
-	crt_eh_vector_ctor(self->trails, sizeof(CGameTrail), 2, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR), GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
-	crt_eh_vector_ctor(self->motor, sizeof(CGameParticles), VOTE_MOTORS, GAME_FUNC(CGameParticles_ctor, CGAMEPARTICLES_CTOR),
-		GAME_FUNC(CGameParticles_Release, CGAMEPARTICLES_DTOR));
+	crt_eh_vector_ctor(self->trails, sizeof(CGameTrail), 2, GAME_FUNC(CGameTrail_ctor), GAME_FUNC(CGameTrail_dtor));
+	crt_eh_vector_ctor(self->motor, sizeof(CGameParticles), VOTE_MOTORS, GAME_FUNC(CGameParticles_ctor),
+		GAME_FUNC(CGameParticles_Release));
 	self->fx = fx;
 	CHECK(fx);
 	self->visible = 0;
@@ -742,8 +742,8 @@ cEmbeddedFXVehicleVote *__thiscall cEmbeddedFXVehicleVote_ctor(cEmbeddedFXVehicl
 
 void __fastcall cEmbeddedFXVehicleVote_dtor(cEmbeddedFXVehicleVote *self) {
 	self->vftable = CEMBEDDEDFXVEHICLEVOTE_VFTABLE;
-	crt_eh_vector_dtor(self->motor, sizeof(CGameParticles), VOTE_MOTORS, GAME_FUNC(CGameParticles_Release, CGAMEPARTICLES_DTOR));
-	crt_eh_vector_dtor(self->trails, sizeof(CGameTrail), 2, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+	crt_eh_vector_dtor(self->motor, sizeof(CGameParticles), VOTE_MOTORS, GAME_FUNC(CGameParticles_Release));
+	crt_eh_vector_dtor(self->trails, sizeof(CGameTrail), 2, GAME_FUNC(CGameTrail_dtor));
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor((cEmbeddedFX *)self);
 }

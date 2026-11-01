@@ -4,7 +4,7 @@
  * World/FX/FXVehicle.cpp) when the life is low, the EMI counter runs or the ship burns, the wind smoke under a fast
  * player ship, and keeps two optional parts: the speed trails of the ships (not for the traffic "T..." and the
  * SMosquito) and the escape tubes of the SLifeBoat. src/game/Entities/Vehicle/VehicleEffects.c. The constructor,
- * destructor, Update and the escape tubes (rva 0x100ab0..0x101560) sit before the CHECK range of the file in the exe.
+ * destructor, Update and the escape tubes sit before the CHECK range of the file in the exe.
  * The shoot effects (cVehicleEffects_Shoot, declared in include/scrap/weapons.h) are particles of m_FollowSistPart2
  * of the embedded FX at the weapon node of the slot.
  */
@@ -74,22 +74,22 @@ SD_OFFSET(cVehicleEffects, trails, 0x1c);
 SD_SIZE(cVehicleEffects, 0x24);
 
 /* the engine variables of the effects */
-#define g_FXVehicleDamageFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleDamageFile, 16, 0x447d24)
-#define g_FXVehicleEMIFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleEMIFile, 16, 0x447de4)
-#define g_FXVehicleSputnikFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleSputnikFile, 16, 0x447c94)
-#define g_FXVehicleFireFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleFireFile, 16, 0x447cdc)
-#define g_FXVehicleSpeedTrailDist GAME_GLOBAL_IN(float, GVar_FXVehicleSpeedTrailDist, 16, 0x447c4c)
-#define g_FXVehicleSpeedTrailFadeOutH GAME_GLOBAL_IN(float, GVar_FXVehicleSpeedTrailFadeOutH, 16, 0x447d3c)
-#define g_FXVehicleSpeedTrailSize GAME_GLOBAL_IN(float, GVar_FXVehicleSpeedTrailSize, 16, 0x447d54)
-#define g_WindFxSmoke GAME_GLOBAL_IN(int, GVar_WindFxSmoke, 16, 0x447cc4)
-#define g_WindFxSmokeFile GAME_GLOBAL_IN(const char *, GVar_WindFxSmokeFile, 16, 0x447d0c)
-#define g_WindFXSmokeMaxDist GAME_GLOBAL_IN(float, GVar_WindFXSmokeMaxDist, 16, 0x447dcc)
-#define g_WindFXSmokeMinVel GAME_GLOBAL_IN(float, GVar_WindFXSmokeMinVel, 16, 0x447cf4)
-#define g_WindFXSmokeTimeStep GAME_GLOBAL_IN(float, GVar_WindFXSmokeTimeStep, 16, 0x447cac)
-#define g_WindFXSmokeSizeDiv GAME_GLOBAL_IN(float, GVar_WindFXSmokeSizeDiv, 16, 0x447c7c)
-#define g_WindFXSmokeLast GAME_GLOBAL(float, g_WindFXSmokeLast, 0x447e04)	/* the world time of the last wind smoke */
+#define g_FXVehicleDamageFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleDamageFile, 16)
+#define g_FXVehicleEMIFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleEMIFile, 16)
+#define g_FXVehicleSputnikFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleSputnikFile, 16)
+#define g_FXVehicleFireFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleFireFile, 16)
+#define g_FXVehicleSpeedTrailDist GAME_GLOBAL_IN(float, GVar_FXVehicleSpeedTrailDist, 16)
+#define g_FXVehicleSpeedTrailFadeOutH GAME_GLOBAL_IN(float, GVar_FXVehicleSpeedTrailFadeOutH, 16)
+#define g_FXVehicleSpeedTrailSize GAME_GLOBAL_IN(float, GVar_FXVehicleSpeedTrailSize, 16)
+#define g_WindFxSmoke GAME_GLOBAL_IN(int, GVar_WindFxSmoke, 16)
+#define g_WindFxSmokeFile GAME_GLOBAL_IN(const char *, GVar_WindFxSmokeFile, 16)
+#define g_WindFXSmokeMaxDist GAME_GLOBAL_IN(float, GVar_WindFXSmokeMaxDist, 16)
+#define g_WindFXSmokeMinVel GAME_GLOBAL_IN(float, GVar_WindFXSmokeMinVel, 16)
+#define g_WindFXSmokeTimeStep GAME_GLOBAL_IN(float, GVar_WindFXSmokeTimeStep, 16)
+#define g_WindFXSmokeSizeDiv GAME_GLOBAL_IN(float, GVar_WindFXSmokeSizeDiv, 16)
+#define g_WindFXSmokeLast GAME_GLOBAL(float, g_WindFXSmokeLast)	/* the world time of the last wind smoke */
 
-/* the parts before the range of the file in the exe (rva 0x100ab0..0x100c60) */
+/* the parts before the range of the file in the exe */
 cVehicleEffects *__fastcall cVehicleEffects_ctor(cVehicleEffects *self);
 /* the constructors of the optional parts (Init inlines them) */
 cVehicleTubes *__fastcall cVehicleTubes_ctor(cVehicleTubes *self);

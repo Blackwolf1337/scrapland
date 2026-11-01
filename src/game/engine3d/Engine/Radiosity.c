@@ -55,7 +55,7 @@ CRadiosity *__thiscall CRadiosity_ctor(CRadiosity *self, const char *dir) {
 		E3D_DebugPrintf("\n%s: %s", name, r ? "no encontrado" : "ok");
 	}
 	/* the global file, a string of the exe's data */
-	Path_Copy(name, GAME_STR(str_432a88, 0x432a88), MAX_FILEPATH);
+	Path_Copy(name, GAME_STR(str_432a88), MAX_FILEPATH);
 	int r = CIniFile_Load(&self->ini, name, NULL, 0);
 	E3D_DebugPrintf("\n%s: %s", name, r ? "no encontrado" : "ok");
 	CHashTable *t = operator_new(sizeof(CHashTable));
@@ -332,7 +332,7 @@ vec3_t *Rad_Normals(uint32_t *num) {
 	return t->p;
 }
 
-/* the atexit destructor of g_RadNormals (rva 0x38f070) and the static initializer that registers it (rva 0x05f7e0) */
+/* the atexit destructor of g_RadNormals and the static initializer that registers it */
 void Radiosity_FiniNormals(void) {
 	Table_Free(&g_RadNormals);
 }

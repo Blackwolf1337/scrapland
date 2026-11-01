@@ -107,7 +107,7 @@ void ChType_FXDesktopFallEnd(cAbstractFile *params) {
 		pt->rotEnd = a;
 		CGameParticles_Apply(pt);
 		CGameParticles_SetColorRampOn(pt, 1);
-		CGameParticles_SetColorRamp(pt, GAME_ARRAY(uint32_t, ChType_FXDesktopFallEnd_428050, 0x428050));
+		CGameParticles_SetColorRamp(pt, GAME_ARRAY(uint32_t, ChType_FXDesktopFallEnd_428050));
 		CGameParticles_EmitN(pt, 1, 1);
 	}
 	/* the ring: every 6 degrees a particle thrown out and up */
@@ -150,7 +150,7 @@ void ChType_FXDesktopFallEnd(cAbstractFile *params) {
 		CGameParticles_Apply(pt);
 		CGameParticles_SetColorRampOn(pt, 1);
 		int ramp = crt_rand() % 2;
-		CGameParticles_SetColorRamp(pt, GAME_ARRAY(uint32_t, ChType_FXDesktopFallEnd_428008, 0x428008) + 9 * ramp);
+		CGameParticles_SetColorRamp(pt, GAME_ARRAY(uint32_t, ChType_FXDesktopFallEnd_428008) + 9 * ramp);
 		float dt = FxElem_Rand(0.15000000596046448, 0.0) + 0.0500000007f;
 		CGameParticles_EmitDt(pt, 1, 1, dt);
 		ang = ang + 0.104719758f;

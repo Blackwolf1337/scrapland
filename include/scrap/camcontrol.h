@@ -18,19 +18,19 @@
 #define TYEN_CAMPATH "CamPath"
 #define TYEN_FCAM "FCam"
 
-#define CCAMCONTROL_VFTABLE GAME_VFTABLE(cCamControl_vftable, 0x3acbdc)
-#define CCAMPATHENTITY_VFTABLE GAME_VFTABLE(cCamPathEntity_vftable, 0x3acc9c)
-#define CFOLLOWCAMENTITY_VFTABLE GAME_VFTABLE(cFollowCamEntity_vftable, 0x3acfa0)
+#define CCAMCONTROL_VFTABLE GAME_VFTABLE(cCamControl_vftable)
+#define CCAMPATHENTITY_VFTABLE GAME_VFTABLE(cCamPathEntity_vftable)
+#define CFOLLOWCAMENTITY_VFTABLE GAME_VFTABLE(cFollowCamEntity_vftable)
 #define CCAMCONTROL_SIZE 0x13c
 #define CCAMPATHENTITY_SIZE 0x1758
 #define CFOLLOWCAMENTITY_SIZE 0x244
 
 /* the strings of the exe the camera functions hand out or compare */
-#define CAM_CLASSNAME GAME_STR(str_3acc54, 0x3acc54)	/* "Cam" */
-#define CAMPATH_CLASSNAME GAME_STR(str_3acd10, 0x3acd10)	/* "CamPath" */
-#define FCAM_CLASSNAME GAME_STR(str_3a8de0, 0x3a8de0)	/* "FCam" */
-#define CAM_EXE_EMPTY GAME_STR(str_Empty, 0x3a3228)		/* "" of the exe */
-#define FCAM_ONSWITCH_DESC GAME_STR(str_3ad078, 0x3ad078)		/* "<OnSwtich func>" */
+#define CAM_CLASSNAME GAME_STR(str_3acc54)	/* "Cam" */
+#define CAMPATH_CLASSNAME GAME_STR(str_3acd10)	/* "CamPath" */
+#define FCAM_CLASSNAME GAME_STR(str_3a8de0)	/* "FCam" */
+#define CAM_EXE_EMPTY GAME_STR(str_Empty)		/* "" of the exe */
+#define FCAM_ONSWITCH_DESC GAME_STR(str_3ad078)		/* "<OnSwtich func>" */
 
 typedef struct cCamControl {
 	cEntity base;			/* 0x000 */
@@ -135,17 +135,17 @@ static inline const cCamControlVtbl *CamCtl_Vtbl(cEntity *e) {
 }
 
 /* engine variables */
-#define g_FreeCameraCollide GAME_GLOBAL_IN(int, GVar_FreeCameraCollide, 16, 0x445ef0)	/* FreeCameraCollide */
-#define g_FullCameraTest GAME_GLOBAL_IN(int, GVar_FullCameraTest, 16, 0x445ea8)	/* FullCameraTest */
-#define g_WalkCameraCenter GAME_GLOBAL_IN(float, GVar_WalkCameraCenter, 16, 0x4472b4)	/* WalkCameraCenter */
-#define g_VehicleCamDist GAME_GLOBAL_IN(float, GVar_VehicleCamDist, 16, 0x445f08)
-#define g_VehicleCamDist2 GAME_GLOBAL_IN(float, GVar_VehicleCamDist2, 16, 0x445ed8)	/* VehicleCamDist2, of player 1 */
-#define g_VehicleCamNear GAME_GLOBAL_IN(float, GVar_VehicleCamNear, 16, 0x445f20)
-#define g_VehicleCamFar GAME_GLOBAL_IN(float, GVar_VehicleCamFar, 16, 0x445ec0)
-#define g_WalkCamNear GAME_GLOBAL_IN(float, GVar_WalkCamNear, 16, 0x445f80)
-#define g_WalkCamFar GAME_GLOBAL_IN(float, GVar_WalkCamFar, 16, 0x445f38)
-#define g_OutWalkCamNear GAME_GLOBAL_IN(float, GVar_OutWalkCamNear, 16, 0x445f68)
-#define g_OutWalkCamFar GAME_GLOBAL_IN(float, GVar_OutWalkCamFar, 16, 0x445f50)
+#define g_FreeCameraCollide GAME_GLOBAL_IN(int, GVar_FreeCameraCollide, 16)	/* FreeCameraCollide */
+#define g_FullCameraTest GAME_GLOBAL_IN(int, GVar_FullCameraTest, 16)	/* FullCameraTest */
+#define g_WalkCameraCenter GAME_GLOBAL_IN(float, GVar_WalkCameraCenter, 16)	/* WalkCameraCenter */
+#define g_VehicleCamDist GAME_GLOBAL_IN(float, GVar_VehicleCamDist, 16)
+#define g_VehicleCamDist2 GAME_GLOBAL_IN(float, GVar_VehicleCamDist2, 16)	/* VehicleCamDist2, of player 1 */
+#define g_VehicleCamNear GAME_GLOBAL_IN(float, GVar_VehicleCamNear, 16)
+#define g_VehicleCamFar GAME_GLOBAL_IN(float, GVar_VehicleCamFar, 16)
+#define g_WalkCamNear GAME_GLOBAL_IN(float, GVar_WalkCamNear, 16)
+#define g_WalkCamFar GAME_GLOBAL_IN(float, GVar_WalkCamFar, 16)
+#define g_OutWalkCamNear GAME_GLOBAL_IN(float, GVar_OutWalkCamNear, 16)
+#define g_OutWalkCamFar GAME_GLOBAL_IN(float, GVar_OutWalkCamFar, 16)
 
 /* the degrees of the script variables */
 static inline float Cam_Deg2Rad(double v) {

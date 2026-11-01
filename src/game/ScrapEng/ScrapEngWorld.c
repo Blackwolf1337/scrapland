@@ -42,14 +42,14 @@ enum { SURFDESC_FORMAT = 0, SURFDESC_WIDTH = 6, SURFDESC_HEIGHT = 7, SURFDESC_WO
 
 /* the d3d8 import of the exe (user32 and kernel32 in win32.h) */
 typedef void *(__stdcall *direct3dcreate8_t)(uint32_t sdk);
-#define exe_Direct3DCreate8 GAME_IMPORT(direct3dcreate8_t, Direct3DCreate8, 4, 0x3a14c4)
+#define exe_Direct3DCreate8 GAME_IMPORT(direct3dcreate8_t, Direct3DCreate8, 4)
 
 #define VK_RETURN 0x0d
 #define VK_ESCAPE 0x1b
 #define VK_SPACE 0x20
 
-#define SCREEN_W 640.0f		/* rva 0x3c3274 */
-#define SCREEN_H 480.0f		/* rva 0x3c3270 */
+#define SCREEN_W 640.0f
+#define SCREEN_H 480.0f
 
 /* the world node info */
 

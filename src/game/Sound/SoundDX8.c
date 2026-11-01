@@ -317,17 +317,17 @@ int __thiscall CSoundXBox_StopSound(CSoundXBox *self, int handle) {
 
 const char *Fmod_ErrorString(int err) {
 	const char *const texts[] = {
-		GAME_STR(str_3ca3c8, 0x3ca3c8), GAME_STR(str_3ca3d8, 0x3ca3d8), GAME_STR(str_3ca420, 0x3ca420),
-		GAME_STR(str_3ca474, 0x3ca474), GAME_STR(str_3ca498, 0x3ca498), GAME_STR(str_3ca458, 0x3ca458),
-		GAME_STR(str_3ca4d8, 0x3ca4d8), GAME_STR(str_3ca534, 0x3ca534), GAME_STR(str_3ca564, 0x3ca564),
-		GAME_STR(str_3ca58c, 0x3ca58c), GAME_STR(str_3ca59c, 0x3ca59c), GAME_STR(str_3ca5b0, 0x3ca5b0),
-		GAME_STR(str_3ca5c4, 0x3ca5c4), GAME_STR(str_3ca5d8, 0x3ca5d8), GAME_STR(str_3ca610, 0x3ca610),
-		GAME_STR(str_3ca648, 0x3ca648), GAME_STR(str_3ca68c, 0x3ca68c), GAME_STR(str_3ca6b0, 0x3ca6b0),
-		GAME_STR(str_3ca6d8, 0x3ca6d8),
+		GAME_STR(str_3ca3c8), GAME_STR(str_3ca3d8), GAME_STR(str_3ca420),
+		GAME_STR(str_3ca474), GAME_STR(str_3ca498), GAME_STR(str_3ca458),
+		GAME_STR(str_3ca4d8), GAME_STR(str_3ca534), GAME_STR(str_3ca564),
+		GAME_STR(str_3ca58c), GAME_STR(str_3ca59c), GAME_STR(str_3ca5b0),
+		GAME_STR(str_3ca5c4), GAME_STR(str_3ca5d8), GAME_STR(str_3ca610),
+		GAME_STR(str_3ca648), GAME_STR(str_3ca68c), GAME_STR(str_3ca6b0),
+		GAME_STR(str_3ca6d8),
 	};
 
 	if ((uint32_t)err >= sizeof(texts) / sizeof(texts[0])) {
-		return GAME_STR(str_3ca704, 0x3ca704);	/* "Unknown error" */
+		return GAME_STR(str_3ca704);	/* "Unknown error" */
 	}
 	return texts[err];
 }
@@ -381,7 +381,7 @@ int Fmod_Play(void *sample, const cSoundDesc *d, const char *name) {
 	return ch;
 }
 
-#define g_S_Show GAME_GLOBAL_IN(int, GVar_S_Show, 16, 0x466d90)		/* S_Show: 1 the channels, 3 the memory */
+#define g_S_Show GAME_GLOBAL_IN(int, GVar_S_Show, 16)		/* S_Show: 1 the channels, 3 the memory */
 
 /* vf31 (DebugDraw): S_Show 3 the memory of FMOD, 1 the software and hardware channels with their state and the
  * sample, volume, pan and frequency of each hardware channel in two columns */

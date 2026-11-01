@@ -19,9 +19,9 @@
 #include "scrap/withlifeentity.h"
 #include "scrap/world.h"
 
-#define WL_CLASSNAME GAME_STR(str_3a3890, 0x3a3890)		/* "WithLife" */
-#define WL_NOCTRL_WARN GAME_STR(str_3ba398, 0x3ba398)	/* "WARNING: '%s' action controler doesn't exist.\n" */
-#define WL_MIN_DT 1e-6f						/* rva 0x3b0830 */
+#define WL_CLASSNAME GAME_STR(str_3a3890)		/* "WithLife" */
+#define WL_NOCTRL_WARN GAME_STR(str_3ba398)	/* "WARNING: '%s' action controler doesn't exist.\n" */
+#define WL_MIN_DT 1e-6f
 #define WL_FADE_MIN 0.001f					/* rva 0x3a3d58: no fade for a shorter time */
 #define WL_SND_FIRE 4						/* the fire sound of lifeSounds */
 

@@ -104,8 +104,8 @@ cEntity *Swarm_NetCreate(const char *name, vec3_t pos, vec3_t dir) {
 	Obj_Vtbl(m)->SetAng(m, &dir);
 	cMissileEntity_SetSwarmSpeed((cMissileEntity *)m, g_SwarmBeesSpeed);
 	cMissileEntity_SetLifeTime((cMissileEntity *)m, g_SwarmLifeTime);
-	cPy_Function_SetNative(&Missile(m)->onBeeDeath, (nativefunc_t)GAME_FUNC(Swarm_OnBeeHitNative, 0x125b50));
-	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)GAME_FUNC(Swarm_HitFXNative, 0x126aa0));
+	cPy_Function_SetNative(&Missile(m)->onBeeDeath, (nativefunc_t)GAME_FUNC(Swarm_OnBeeHitNative));
+	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)GAME_FUNC(Swarm_HitFXNative));
 	cEntity_SetNetResource(m, "Swarm");
 	return m;
 }
@@ -136,9 +136,9 @@ void Swarm_FireNative(cAbstractFile *f) {
 	}
 	Controls_RumbleA(&Veh(v)->controls, 1.0f, 0.3f);
 	Controls_RumbleB(&Veh(v)->controls, 0.5f, 0.5f);
-	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)GAME_FUNC(Swarm_ServerHitNative, 0x127430));
-	cPy_Function_SetNative(&WLife(m)->onDeath, (nativefunc_t)GAME_FUNC(Swarm_OnDeathNative, 0x126fc0));
-	cPy_Function_SetNative(&WLife(m)->onDamage, (nativefunc_t)GAME_FUNC(Swarm_OnDamageNative, 0x126e80));
+	cPy_Function_SetNative(&Missile(m)->onHit, (nativefunc_t)GAME_FUNC(Swarm_ServerHitNative));
+	cPy_Function_SetNative(&WLife(m)->onDeath, (nativefunc_t)GAME_FUNC(Swarm_OnDeathNative));
+	cPy_Function_SetNative(&WLife(m)->onDamage, (nativefunc_t)GAME_FUNC(Swarm_OnDamageNative));
 	if (!WLife(m)->god) {
 		WLife(m)->life = g_SwarmNumber1 * g_SwarmArmor;
 	}
@@ -455,7 +455,7 @@ byte Tesla_Shoot(cEntity *v) {
 	return 1;
 }
 
-/* the static initializer (rva 0x04b8b0): the table of the costs from the variables, which are made before it */
+/* the static initializer: the table of the costs from the variables, which are made before it */
 void Swarm_InitAmmoCosts(void) {
 	g_SwarmAmmoCosts[0] = g_SwarmAmmoCost1;
 	g_SwarmAmmoCosts[1] = g_SwarmAmmoCost2;

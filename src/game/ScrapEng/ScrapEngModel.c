@@ -75,10 +75,10 @@ static void CGameModel_LodGroup(CGameModel *self, CIniFile *ini) {
 	const struct {
 		const char *name;
 		const float *coef;
-	} groups[7] = { { "Ships", GAME_ARRAY_IN(float, GVar_R_CoefMLODShips, 16, 0x4a80f4) }, { "Pilots", GAME_ARRAY_IN(float, GVar_R_CoefMLODPilots, 16, 0x4a80dc) },
-		{ "Engines", GAME_ARRAY_IN(float, GVar_R_CoefMLODEngines, 16, 0x4a8064) }, { "Traffic", GAME_ARRAY_IN(float, GVar_R_CoefMLODTraffic, 16, 0x4a804c) },
-		{ "Characters", GAME_ARRAY_IN(float, GVar_R_CoefMLODCharacters, 16, 0x4a80ac) }, { "OutElement", GAME_ARRAY_IN(float, GVar_R_CoefMLODOutElement, 16, 0x4a807c) },
-		{ "MenuElement", GAME_ARRAY_IN(float, GVar_R_CoefMLODMenuElement, 16, 0x4a8094) } };
+	} groups[7] = { { "Ships", GAME_ARRAY_IN(float, GVar_R_CoefMLODShips, 16) }, { "Pilots", GAME_ARRAY_IN(float, GVar_R_CoefMLODPilots, 16) },
+		{ "Engines", GAME_ARRAY_IN(float, GVar_R_CoefMLODEngines, 16) }, { "Traffic", GAME_ARRAY_IN(float, GVar_R_CoefMLODTraffic, 16) },
+		{ "Characters", GAME_ARRAY_IN(float, GVar_R_CoefMLODCharacters, 16) }, { "OutElement", GAME_ARRAY_IN(float, GVar_R_CoefMLODOutElement, 16) },
+		{ "MenuElement", GAME_ARRAY_IN(float, GVar_R_CoefMLODMenuElement, 16) } };
 	char group[260];
 
 	if (!ini || !CIniFile_GetText(ini, "Model", "LOD_Group", group, sizeof(group), NULL)) {

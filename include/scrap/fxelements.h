@@ -14,7 +14,7 @@
 
 typedef struct cMapElement cMapElement;
 
-/* cMapElement::vftable (rva 0x3cde68) and the ones of the elements (thiscall) */
+/* cMapElement::vftable and the ones of the elements (thiscall) */
 typedef struct cMapElementVtbl {
 	cMapElement *(__thiscall *Delete)(cMapElement *self, byte flags);	/* 0x0 */
 	byte(__thiscall *Init)(cMapElement *self);			/* 0x4 vf01 after the creation, 1 */
@@ -50,11 +50,11 @@ cMapElement *__thiscall cMapElement_Delete(cMapElement *self, byte flags);
 byte __thiscall cMapElement_Init(cMapElement *self);
 void __thiscall cMapElement_Update(cMapElement *self, float dt);
 
-#define CFXELEMENTSORBITBUOY_VFTABLE GAME_VFTABLE(cFXElementsOrbitBuoy_vftable, 0x3cc574)
-#define CFXELEMENTSORBITBUOYCONTROLLER_VFTABLE GAME_VFTABLE(cFXElementsOrbitBuoyController_vftable, 0x3cc584)
-#define CFXELEMENTSMENTALCONTROLLER_VFTABLE GAME_VFTABLE(cFXElementsMentalController_vftable, 0x3cc7f4)
-#define CFXELEMENTSMENTALCONTROLLERDAMAGEFX_VFTABLE GAME_VFTABLE(cFXElementsMentalControllerDamageFX_vftable, 0x3cc804)
-#define CFXELEMENTSMENTALCONTROLLERMAINFX_VFTABLE GAME_VFTABLE(cFXElementsMentalControllerMainFX_vftable, 0x3cc814)
+#define CFXELEMENTSORBITBUOY_VFTABLE GAME_VFTABLE(cFXElementsOrbitBuoy_vftable)
+#define CFXELEMENTSORBITBUOYCONTROLLER_VFTABLE GAME_VFTABLE(cFXElementsOrbitBuoyController_vftable)
+#define CFXELEMENTSMENTALCONTROLLER_VFTABLE GAME_VFTABLE(cFXElementsMentalController_vftable)
+#define CFXELEMENTSMENTALCONTROLLERDAMAGEFX_VFTABLE GAME_VFTABLE(cFXElementsMentalControllerDamageFX_vftable)
+#define CFXELEMENTSMENTALCONTROLLERMAINFX_VFTABLE GAME_VFTABLE(cFXElementsMentalControllerMainFX_vftable)
 
 /* ---- FXElementsOrbit.cpp ---- */
 
@@ -217,8 +217,8 @@ SD_OFFSET(cFXElementsMentalControllerMainFX, glowColor, 0x41f8);
 SD_SIZE(cFXElementsMentalControllerMainFX, 0x4278);
 
 /* the main controller of the level, NULL before the Press elements are made */
-#define g_MentalMainFX GAME_GLOBAL(cFXElementsMentalControllerMainFX *, g_MentalMainFX, 0x46719c)
-#define g_MentalControllerMaxDist GAME_GLOBAL_IN(float, GVar_FXElementsMentalControllerMaxDist, 16, 0x4671f8)	/* FXElementsMentalControllerMaxDist */
+#define g_MentalMainFX GAME_GLOBAL(cFXElementsMentalControllerMainFX *, g_MentalMainFX)
+#define g_MentalControllerMaxDist GAME_GLOBAL_IN(float, GVar_FXElementsMentalControllerMaxDist, 16)	/* FXElementsMentalControllerMaxDist */
 
 cFXElementsMentalController *__thiscall cFXElementsMentalController_ctor(cFXElementsMentalController *self,
 	const char *name, const vec3_t *pos, const vec3_t *rot);
@@ -258,16 +258,16 @@ void __thiscall cFXElementsMentalControllerMainFX_Update(cFXElementsMentalContro
 void FXElementsPress_Create(void);
 
 /* rand() of the exe in [0, 1] times range, plus add (all in double), the way the effects pick their values */
-#define g_FxRandScale GAME_GLOBAL(double, g_FxRandScale, 0x3a3d60)	/* 1/32767 */
+#define g_FxRandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 static inline float FxElem_Rand(double range, double add) {
 	return (float)((double)(crt_rand() & 0x7fff) * g_FxRandScale * range + add);
 }
 
 /* ---- FXElements.cpp ---- */
 
-#define CFXELEMENTSLIGHTING_VFTABLE GAME_VFTABLE(cFXElementsLighting_vftable, 0x3cc0fc)
-#define CFXELEMENTSFIREDROP_VFTABLE GAME_VFTABLE(cFXElementsFireDrop_vftable, 0x3cc10c)
-#define CFXELEMENTSLENSFLARE_VFTABLE GAME_VFTABLE(cFXElementsLensFlare_vftable, 0x3cc11c)
+#define CFXELEMENTSLIGHTING_VFTABLE GAME_VFTABLE(cFXElementsLighting_vftable)
+#define CFXELEMENTSFIREDROP_VFTABLE GAME_VFTABLE(cFXElementsFireDrop_vftable)
+#define CFXELEMENTSLENSFLARE_VFTABLE GAME_VFTABLE(cFXElementsLensFlare_vftable)
 
 /* drops of fire from the node DC_Root while the camera is within FXElementsFireDropMaxDist: bursts with pauses,
  * the parameters from the section FXFireDrop of the node (0x118 bytes, constructor rva 0x1cf850) */
@@ -365,12 +365,12 @@ SD_OFFSET(cFXElementsLighting, trails, 0x9ac);
 SD_OFFSET(cFXElementsLighting, numPts, 0xe84);
 SD_SIZE(cFXElementsLighting, 0xe88);
 
-#define g_FireDropMaxDist GAME_GLOBAL_IN(float, GVar_FXElementsFireDropMaxDist, 16, 0x467074)	/* FXElementsFireDropMaxDist */
-#define g_FireDropRateAtt GAME_GLOBAL_IN(float, GVar_FXElementsFireDropRateAtt, 16, 0x4670d4)	/* FXElementsFireDropRateAtt */
-#define g_FireDropSoundAttIni GAME_GLOBAL_IN(float, GVar_FXElementsFireDropSoundAttIni, 16, 0x46708c)	/* FXElementsFireDropSoundAttIni */
-#define g_FireDropSoundAttEnd GAME_GLOBAL_IN(float, GVar_FXElementsFireDropSoundAttEnd, 16, 0x4670bc)	/* FXElementsFireDropSoundAttEnd */
-#define g_FireDropSoundVol GAME_GLOBAL_IN(float, GVar_FXElementsFireDropSoundVol, 16, 0x4670a4)	/* FXElementsFireDropSoundVol */
-#define g_FireDropSound GAME_GLOBAL_IN(char *, GVar_FXElementsFireDropSound, 16, 0x4670ec)	/* FXElementsFireDropSound, a cString */
+#define g_FireDropMaxDist GAME_GLOBAL_IN(float, GVar_FXElementsFireDropMaxDist, 16)	/* FXElementsFireDropMaxDist */
+#define g_FireDropRateAtt GAME_GLOBAL_IN(float, GVar_FXElementsFireDropRateAtt, 16)	/* FXElementsFireDropRateAtt */
+#define g_FireDropSoundAttIni GAME_GLOBAL_IN(float, GVar_FXElementsFireDropSoundAttIni, 16)	/* FXElementsFireDropSoundAttIni */
+#define g_FireDropSoundAttEnd GAME_GLOBAL_IN(float, GVar_FXElementsFireDropSoundAttEnd, 16)	/* FXElementsFireDropSoundAttEnd */
+#define g_FireDropSoundVol GAME_GLOBAL_IN(float, GVar_FXElementsFireDropSoundVol, 16)	/* FXElementsFireDropSoundVol */
+#define g_FireDropSound GAME_GLOBAL_IN(char *, GVar_FXElementsFireDropSound, 16)	/* FXElementsFireDropSound, a cString */
 
 cFXElementsFireDrop *__thiscall cFXElementsFireDrop_ctor(cFXElementsFireDrop *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
@@ -399,8 +399,8 @@ void __thiscall cFXElementsLighting_Update(cFXElementsLighting *self, float dt);
 
 /* ---- FXElementsAB.cpp ---- */
 
-#define CFXELEMENTSABFAKEMETEORS_VFTABLE GAME_VFTABLE(cFXElementsABFakeMeteors_vftable, 0x3cc3bc)
-#define CFXELEMENTSABFAKELIMIT_VFTABLE GAME_VFTABLE(cFXElementsABFakeLimit_vftable, 0x3cc3cc)
+#define CFXELEMENTSABFAKEMETEORS_VFTABLE GAME_VFTABLE(cFXElementsABFakeMeteors_vftable)
+#define CFXELEMENTSABFAKELIMIT_VFTABLE GAME_VFTABLE(cFXElementsABFakeLimit_vftable)
 
 #define FXABBOLTS 10
 #define FXABRINGS 4
@@ -455,13 +455,13 @@ SD_OFFSET(cFXElementsABFakeMeteors, curve, 0x577c);
 SD_SIZE(cFXElementsABFakeMeteors, 0x5780);
 
 /* the engine variables FXABFakeLimit* */
-#define g_ABLimitRingRotSpeed GAME_GLOBAL_IN(float, GVar_FXABFakeLimitRingRotSpeed, 16, 0x46711c)	/* RingRotSpeed */
-#define g_ABLimitSegmentStep GAME_GLOBAL_IN(float, GVar_FXABFakeLimitSegmentStep, 16, 0x467104)	/* SegmentStep */
-#define g_ABLimitSegmentSize GAME_GLOBAL_IN(float, GVar_FXABFakeLimitSegmentSize, 16, 0x467164)	/* SegmentSize */
-#define g_ABLimitRadius GAME_GLOBAL_IN(float, GVar_FXABFakeLimitRadius, 16, 0x467134)		/* Radius */
-#define g_ABLimitDistLighting GAME_GLOBAL_IN(float, GVar_FXABFakeLimitDistLighting, 16, 0x46714c)	/* DistLighting */
-#define g_ABLimitQuakeFactor GAME_GLOBAL_IN(float, GVar_FXABFakeLimitQuakeFactor, 16, 0x46717c)	/* QuakeFactor */
-#define g_ABLimitQuakeTime GAME_GLOBAL_IN(float, GVar_FXABFakeLimitQuakeTime, 16, 0x467194)		/* QuakeTime */
+#define g_ABLimitRingRotSpeed GAME_GLOBAL_IN(float, GVar_FXABFakeLimitRingRotSpeed, 16)	/* RingRotSpeed */
+#define g_ABLimitSegmentStep GAME_GLOBAL_IN(float, GVar_FXABFakeLimitSegmentStep, 16)	/* SegmentStep */
+#define g_ABLimitSegmentSize GAME_GLOBAL_IN(float, GVar_FXABFakeLimitSegmentSize, 16)	/* SegmentSize */
+#define g_ABLimitRadius GAME_GLOBAL_IN(float, GVar_FXABFakeLimitRadius, 16)		/* Radius */
+#define g_ABLimitDistLighting GAME_GLOBAL_IN(float, GVar_FXABFakeLimitDistLighting, 16)	/* DistLighting */
+#define g_ABLimitQuakeFactor GAME_GLOBAL_IN(float, GVar_FXABFakeLimitQuakeFactor, 16)	/* QuakeFactor */
+#define g_ABLimitQuakeTime GAME_GLOBAL_IN(float, GVar_FXABFakeLimitQuakeTime, 16)		/* QuakeTime */
 
 cFXElementsABFakeLimit *__thiscall cFXElementsABFakeLimit_ctor(cFXElementsABFakeLimit *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);

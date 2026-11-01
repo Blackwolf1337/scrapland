@@ -16,9 +16,9 @@
 #include "scrap/scrapparticles.h"
 #include "scrap/scraptrails.h"
 
-#define CEMBEDDEDFXVEHICLE_VFTABLE GAME_VFTABLE(cEmbeddedFXVehicle_vftable, 0x3b2234)
-#define CEMBEDDEDFXVEHICLEPROBE_VFTABLE GAME_VFTABLE(cEmbeddedFXVehicleProbe_vftable, 0x3b21fc)
-#define CEMBEDDEDFXVEHICLEVOTE_VFTABLE GAME_VFTABLE(cEmbeddedFXVehicleVote_vftable, 0x3b2218)
+#define CEMBEDDEDFXVEHICLE_VFTABLE GAME_VFTABLE(cEmbeddedFXVehicle_vftable)
+#define CEMBEDDEDFXVEHICLEPROBE_VFTABLE GAME_VFTABLE(cEmbeddedFXVehicleProbe_vftable)
+#define CEMBEDDEDFXVEHICLEVOTE_VFTABLE GAME_VFTABLE(cEmbeddedFXVehicleVote_vftable)
 
 typedef struct cEmbeddedFXVehicleVtbl {
 	void *(__thiscall *Delete)(void *self, byte flags);	/* 0x00 */
@@ -112,25 +112,25 @@ SD_SIZE(cEmbeddedFXVehicleVote, 0x2e0);
 /* the vehicle fields used here */
 
 /* the shared siren model and particles */
-#define g_SirenModel (GAME_ARRAY(CGameModel, g_SirenModel, 0x447478))
-#define g_SirenRefs GAME_GLOBAL(int, g_SirenRefs, 0x44750c)
-#define g_SirenParticles (GAME_ARRAY(CGameParticles, g_SirenParticles, 0x447510))
+#define g_SirenModel (GAME_ARRAY(CGameModel, g_SirenModel))
+#define g_SirenRefs GAME_GLOBAL(int, g_SirenRefs)
+#define g_SirenParticles (GAME_ARRAY(CGameParticles, g_SirenParticles))
 
 /* engine variables */
-#define g_FXVehicleEmbeddedFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleEmbeddedFile, 16, 0x4474a4)	/* the string of the cString */
-#define g_FXTrafficEmbeddedFile GAME_GLOBAL_IN(const char *, GVar_FXTrafficEmbeddedFile, 16, 0x4474ec)
-#define g_FXVehicleSirenDistGrow GAME_GLOBAL_IN(float, GVar_FXVehicleSiren_DistGrow, 16, 0x447470)
-#define g_FXVehicleSirenSizeMin GAME_GLOBAL_IN(float, GVar_FXVehicleSiren_SizeMin, 16, 0x4474d4)
-#define g_FXVehicleSirenSizeMax GAME_GLOBAL_IN(float, GVar_FXVehicleSiren_SizeMax, 16, 0x4475d0)
-#define g_FXVehicleProbeLightDistGrow GAME_GLOBAL_IN(float, GVar_FXVehicleProbeLight_DistGrow, 16, 0x4475e8)
-#define g_FXVehicleProbeLightSizeMin GAME_GLOBAL_IN(float, GVar_FXVehicleProbeLight_SizeMin, 16, 0x4474bc)
-#define g_FXVehicleProbeLightSizeMax GAME_GLOBAL_IN(float, GVar_FXVehicleProbeLight_SizeMax, 16, 0x447504)
-#define g_MinDistReposAI GAME_GLOBAL_IN(float, GVar_MinDistReposAI, 16, 0x444900)
-#define g_MaxDistReposAI GAME_GLOBAL_IN(float, GVar_MaxDistReposAI, 16, 0x444858)
+#define g_FXVehicleEmbeddedFile GAME_GLOBAL_IN(const char *, GVar_FXVehicleEmbeddedFile, 16)	/* the string of the cString */
+#define g_FXTrafficEmbeddedFile GAME_GLOBAL_IN(const char *, GVar_FXTrafficEmbeddedFile, 16)
+#define g_FXVehicleSirenDistGrow GAME_GLOBAL_IN(float, GVar_FXVehicleSiren_DistGrow, 16)
+#define g_FXVehicleSirenSizeMin GAME_GLOBAL_IN(float, GVar_FXVehicleSiren_SizeMin, 16)
+#define g_FXVehicleSirenSizeMax GAME_GLOBAL_IN(float, GVar_FXVehicleSiren_SizeMax, 16)
+#define g_FXVehicleProbeLightDistGrow GAME_GLOBAL_IN(float, GVar_FXVehicleProbeLight_DistGrow, 16)
+#define g_FXVehicleProbeLightSizeMin GAME_GLOBAL_IN(float, GVar_FXVehicleProbeLight_SizeMin, 16)
+#define g_FXVehicleProbeLightSizeMax GAME_GLOBAL_IN(float, GVar_FXVehicleProbeLight_SizeMax, 16)
+#define g_MinDistReposAI GAME_GLOBAL_IN(float, GVar_MinDistReposAI, 16)
+#define g_MaxDistReposAI GAME_GLOBAL_IN(float, GVar_MaxDistReposAI, 16)
 
-/* World/FX/FXVehicle.cpp (rva 0x1f9050): an element drawn with the followed vehicle */
+/* World/FX/FXVehicle.cpp: an element drawn with the followed vehicle */
 void __fastcall FXVehicle_RenderAttached(void *element);
-/* the near and far distance of the AI of a vehicle (rva 0x8a140) */
+/* the near and far distance of the AI of a vehicle */
 void __thiscall cAIVehicle_GetFadeDists(void *ai, float *nearDist, float *farDist);
 
 cEmbeddedFXVehicle *__fastcall cEmbeddedFXVehicle_ctor(cEmbeddedFXVehicle *self);

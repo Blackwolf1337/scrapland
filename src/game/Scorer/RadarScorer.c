@@ -434,8 +434,8 @@ void __thiscall cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntit
 
 /* ---- the radar ---- */
 
-#define g_RadarShowAll GAME_GLOBAL_IN(int, GVar_RadarShowAll, 16, 0x45fe00)		/* RadarShowAll: the neutral vehicles and characters too */
-#define g_IsSecondMission GAME_GLOBAL_IN(int, GVar_IsSecondMission, 16, 0x4678d8)	/* IsSecondMission */
+#define g_RadarShowAll GAME_GLOBAL_IN(int, GVar_RadarShowAll, 16)		/* RadarShowAll: the neutral vehicles and characters too */
+#define g_IsSecondMission GAME_GLOBAL_IN(int, GVar_IsSecondMission, 16)	/* IsSecondMission */
 
 #define RADAR_PI 3.14159274f
 #define RADAR_TEAM_NEUTRAL 3		/* arrow.tgType */

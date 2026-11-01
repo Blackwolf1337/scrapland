@@ -18,8 +18,8 @@ static inline cAction *WCE_Action0(const cWalkCharEntity *w) {
 	return w->wl.actCtrl->layers[0].action;
 }
 
-/* the turn of the head of the controller towards ang (x, y) in dt (rva 0x62dc0) and the camera of the class
- * (rva 0x616e0) */
+/* the turn of the head of the controller towards ang (x, y) in dt and the camera of the class
+ * */
 void __thiscall cActCtrl_TurnHead(void *ctrl, const float *ang, float dt);
 void __thiscall cActClassCam_Update(void *cam, cEntity *followCam, cEntity *e);
 
@@ -288,18 +288,18 @@ void __fastcall cWalkCharEntity_UnlinkCollide(cEntity *self) {
 
 /* ---- the rest of WalkCharEntity.cpp ---- */
 
-#define WCE_WALKCHAR GAME_STR(str_3a38b4, 0x3a38b4)	/* "WalkChar", the class name */
-#define WCE_RELAX GAME_STR(str_3ad2f4, 0x3ad2f4)		/* "Relax" */
-#define WCE_RELAXALARM GAME_STR(str_3a3248, 0x3a3248)	/* "RelaxAlarm" */
-#define WCE_EMPTY GAME_STR(str_Empty, 0x3a3228)		/* "" */
+#define WCE_WALKCHAR GAME_STR(str_3a38b4)	/* "WalkChar", the class name */
+#define WCE_RELAX GAME_STR(str_3ad2f4)		/* "Relax" */
+#define WCE_RELAXALARM GAME_STR(str_3a3248)	/* "RelaxAlarm" */
+#define WCE_EMPTY GAME_STR(str_Empty)		/* "" */
 
-#define WCE_MIN_DT 9.99999997e-07f		/* rva 0x3b0830 */
+#define WCE_MIN_DT 9.99999997e-07f
 #define WCE_MIN_MOVE2 0.00249999994f		/* rva 0x3b0834: a smaller walk step is undone */
-#define WCE_MIN_INPUT2 0.0400000028f		/* rva 0x3b0838 */
+#define WCE_MIN_INPUT2 0.0400000028f
 #define WCE_MAX_SPEED 14000.0f			/* rva 0x3b0880: faster is an error of the walk */
 #define WCE_KMH 28.0f				/* rva 0x3b0878, 0x3b0870 (double) */
-#define WCE_PITCH_FLY 1.57079637f		/* rva 0x3ad098 */
-#define WCE_PITCH_WALK 1.04719758f		/* rva 0x3b084c */
+#define WCE_PITCH_FLY 1.57079637f
+#define WCE_PITCH_WALK 1.04719758f
 #define WCE_MAX_FALL 10000.0f			/* rva 0x3a5ac0, 0x3b0898 */
 
 /* the WithLife entity hit test of the walk */

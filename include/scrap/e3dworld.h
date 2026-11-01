@@ -43,7 +43,7 @@ SD_OFFSET(CWorld, camera, 0x2c);
 SD_OFFSET(CWorld, dummies, 0xc4);
 SD_SIZE(CWorld, 0xc8);
 
-#define g_World GAME_GLOBAL(CWorld *, g_World, 0x4afde8)
+#define g_World GAME_GLOBAL(CWorld *, g_World)
 
 /* the inline accessors of world.h */
 static inline CWorld *World_Get(void) {
@@ -61,19 +61,19 @@ static inline CGround *World_Ground(void) {
 }
 
 /* the engine variables of the world (Gvars) */
-#define g_RenderWorld GAME_GLOBAL_IN(int, GVar_RenderWorld, 16, 0x4afdfc)
-#define g_RenderSky GAME_GLOBAL_IN(int, GVar_RenderSky, 16, 0x4afe14)
-#define g_WorldPreIllum GAME_GLOBAL_IN(int, GVar_WorldPreIllum, 16, 0x4afe2c)	/* 0 skip, 1 normal, 2 self illumination */
-#define g_SkyRotation GAME_GLOBAL_IN(float, GVar_SkyRotation, 16, 0x4afe44)	/* degrees */
-#define g_SkyZBuffer GAME_GLOBAL_IN(int, GVar_SkyZBuffer, 16, 0x4afe5c)
-#define g_SkyPosScale GAME_GLOBAL_IN(float, GVar_SkyPosScale, 16, 0x4afe74)
-#define g_SkyTubeTest GAME_GLOBAL_IN(float, GVar_SkyTubeTest, 16, 0x4afe8c)	/* the far plane of the sky tube */
-#define g_ShowWorldDummies GAME_GLOBAL_IN(const char *, GVar_ShowWorldDummies, 16, 0x4afea4)	/* a pattern of the names */
-#define g_SkyInit GAME_GLOBAL_IN(int, GVar_SkyInit, 16, 0x4afebc)
+#define g_RenderWorld GAME_GLOBAL_IN(int, GVar_RenderWorld, 16)
+#define g_RenderSky GAME_GLOBAL_IN(int, GVar_RenderSky, 16)
+#define g_WorldPreIllum GAME_GLOBAL_IN(int, GVar_WorldPreIllum, 16)	/* 0 skip, 1 normal, 2 self illumination */
+#define g_SkyRotation GAME_GLOBAL_IN(float, GVar_SkyRotation, 16)	/* degrees */
+#define g_SkyZBuffer GAME_GLOBAL_IN(int, GVar_SkyZBuffer, 16)
+#define g_SkyPosScale GAME_GLOBAL_IN(float, GVar_SkyPosScale, 16)
+#define g_SkyTubeTest GAME_GLOBAL_IN(float, GVar_SkyTubeTest, 16)	/* the far plane of the sky tube */
+#define g_ShowWorldDummies GAME_GLOBAL_IN(const char *, GVar_ShowWorldDummies, 16)	/* a pattern of the names */
+#define g_SkyInit GAME_GLOBAL_IN(int, GVar_SkyInit, 16)
 /* [mapa_sombras] of the ini: the shadow maps of bsp.cpp */
-#define g_ShadowMapUse GAME_GLOBAL(int, g_ShadowMapUse, 0x4b2af8)
-#define g_ShadowMapCalculate GAME_GLOBAL(int, g_ShadowMapCalculate, 0x4b2afc)
-#define g_ShadowMapDlg GAME_GLOBAL(int, g_ShadowMapDlg, 0x43294c)
+#define g_ShadowMapUse GAME_GLOBAL(int, g_ShadowMapUse)
+#define g_ShadowMapCalculate GAME_GLOBAL(int, g_ShadowMapCalculate)
+#define g_ShadowMapDlg GAME_GLOBAL(int, g_ShadowMapDlg)
 
 CWorld *__fastcall CWorld_ctor(CWorld *self);
 void __fastcall CWorld_dtor(CWorld *self);
@@ -126,13 +126,13 @@ void Debug_PointsClear(void);
 int Debug_PointsDraw(void);
 
 /* other modules (src/imports.inc) */
-/* bsp.cpp, the shadow maps (rva 0x290520, 0x286c80, 0x286cb0, 0x291000, 0x296cd0) */
+/* bsp.cpp, the shadow maps */
 void Bsp_Free(void);
 void Bsp_ReleaseD3D(void);
 void Bsp_InitD3D(void);
 void Bsp_Create(void);
 void Bsp_Render(void);
-/* bsp_q3.cpp (rva 0x2c9d50, 0x2c98a0, 0x2c98b0, 0x2c9d80, 0x2c9d90) */
+/* bsp_q3.cpp */
 void BspQ3_Free(void);
 void BspQ3_ReleaseD3D(void);
 void BspQ3_InitD3D(void);

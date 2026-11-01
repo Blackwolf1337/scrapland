@@ -29,41 +29,41 @@
 
 /* the frame counter of the engine */
 /* entries alive (engine variable R_Tex_Count) */
-#define g_TexCount GAME_GLOBAL_IN(int, GVar_R_Tex_Count, 16, 0x4b2700)
+#define g_TexCount GAME_GLOBAL_IN(int, GVar_R_Tex_Count, 16)
 /* statistics: device textures made from raw files, raw files with a device texture, entries used in the frame and
  * their pixels */
-#define g_TexCreated GAME_GLOBAL(int, g_TexCreated, 0x4b25f0)
-#define g_TexCached GAME_GLOBAL(int, g_TexCached, 0x4b25f4)
-#define g_TexUsed GAME_GLOBAL(int, g_TexUsed, 0x4b25f8)
-#define g_TexUsedPixels GAME_GLOBAL(int, g_TexUsedPixels, 0x4b25fc)
-#define g_TexPurgeFrame GAME_GLOBAL(int, g_TexPurgeFrame, 0x4b2738)
+#define g_TexCreated GAME_GLOBAL(int, g_TexCreated)
+#define g_TexCached GAME_GLOBAL(int, g_TexCached)
+#define g_TexUsed GAME_GLOBAL(int, g_TexUsed)
+#define g_TexUsedPixels GAME_GLOBAL(int, g_TexUsedPixels)
+#define g_TexPurgeFrame GAME_GLOBAL(int, g_TexPurgeFrame)
 /* keep the CBmp pixels after the device texture is made */
-#define g_TexKeepBitmaps GAME_GLOBAL(int, g_TexKeepBitmaps, 0x4b260c)
+#define g_TexKeepBitmaps GAME_GLOBAL(int, g_TexKeepBitmaps)
 /* the [video] settings Sharpen, ErrDif, TextBPP, TextOpBPP */
-#define g_TexSharpen GAME_GLOBAL(int, g_Sharpen, 0x4b25e8)
-#define g_TexErrDif GAME_GLOBAL(int, g_TexErrDif, 0x4b25ec)
-#define g_TextBPP GAME_GLOBAL(int, g_TextBPP, 0x432938)
-#define g_TextOpBPP GAME_GLOBAL(int, g_TextOpBPP, 0x43293c)
-#define g_TexMipFadeOn GAME_GLOBAL(int, g_TexMipFadeOn, 0x432940)
-#define g_TexFixedBPP GAME_GLOBAL(int, g_TexFixedBPP, 0x432944)
+#define g_TexSharpen GAME_GLOBAL(int, g_Sharpen)
+#define g_TexErrDif GAME_GLOBAL(int, g_TexErrDif)
+#define g_TextBPP GAME_GLOBAL(int, g_TextBPP)
+#define g_TextOpBPP GAME_GLOBAL(int, g_TextOpBPP)
+#define g_TexMipFadeOn GAME_GLOBAL(int, g_TexMipFadeOn)
+#define g_TexFixedBPP GAME_GLOBAL(int, g_TexFixedBPP)
 /* engine variables */
-#define g_SharpenMore GAME_GLOBAL_IN(int, GVar_SharpenMore, 16, 0x4b2718)
-#define g_MipmapFade GAME_GLOBAL_IN(int, GVar_MipmapFade, 16, 0x4b26e8)
-#define g_MipmapColor GAME_GLOBAL_IN(int, GVar_MipmapColor, 16, 0x4b26d0)
-#define g_CachedTex GAME_GLOBAL_IN(int, GVar_CachedTex, 16, 0x4b2730)
-#define g_BumpMipmap GAME_GLOBAL_IN(int, GVar_BumpMipmap, 16, 0x4b26b8)
-#define g_DUDVMipmap GAME_GLOBAL_IN(int, GVar_DUDVMipmap, 16, 0x4b2624)
-#define g_PShaders GAME_GLOBAL_IN(int, GVar_R_PShaders, 16, 0x4ada50)
-#define g_LoadTextures GAME_GLOBAL_IN(int, GVar_LoadTextures, 16, 0x4aa348)
-#define g_TexturePool GAME_GLOBAL_IN(int, GVar_TexturePool, 16, 0x4b2670)
-#define g_BuildDDS GAME_GLOBAL_IN(int, GVar_BuildDDS, 16, 0x4b2688)
-#define g_TextureLOD GAME_GLOBAL_IN(int, GVar_TextureLOD, 16, 0x4b2658)
-#define g_BumpDDS GAME_GLOBAL_IN(int, GVar_BumpDDS, 16, 0x4b26a0)
-#define g_SaveDXT5 GAME_GLOBAL_IN(int, GVar_SaveDXT5, 16, 0x4b2640)
+#define g_SharpenMore GAME_GLOBAL_IN(int, GVar_SharpenMore, 16)
+#define g_MipmapFade GAME_GLOBAL_IN(int, GVar_MipmapFade, 16)
+#define g_MipmapColor GAME_GLOBAL_IN(int, GVar_MipmapColor, 16)
+#define g_CachedTex GAME_GLOBAL_IN(int, GVar_CachedTex, 16)
+#define g_BumpMipmap GAME_GLOBAL_IN(int, GVar_BumpMipmap, 16)
+#define g_DUDVMipmap GAME_GLOBAL_IN(int, GVar_DUDVMipmap, 16)
+#define g_PShaders GAME_GLOBAL_IN(int, GVar_R_PShaders, 16)
+#define g_LoadTextures GAME_GLOBAL_IN(int, GVar_LoadTextures, 16)
+#define g_TexturePool GAME_GLOBAL_IN(int, GVar_TexturePool, 16)
+#define g_BuildDDS GAME_GLOBAL_IN(int, GVar_BuildDDS, 16)
+#define g_TextureLOD GAME_GLOBAL_IN(int, GVar_TextureLOD, 16)
+#define g_BumpDDS GAME_GLOBAL_IN(int, GVar_BumpDDS, 16)
+#define g_SaveDXT5 GAME_GLOBAL_IN(int, GVar_SaveDXT5, 16)
 
 /* kernel32 of the exe: the names compare in the user's locale */
 typedef int(__stdcall *lstrcmpi_t)(const char *a, const char *b);
-#define exe_lstrcmpiA GAME_IMPORT(lstrcmpi_t, lstrcmpiA, 8, 0x3a12bc)
+#define exe_lstrcmpiA GAME_IMPORT(lstrcmpi_t, lstrcmpiA, 8)
 
 /* the texture and surface methods */
 typedef int(__stdcall *texGetDevice_t)(void *tex, void **dev);
@@ -943,7 +943,7 @@ void Bmp_ToRamp(CBmp *bmp) {
 	ramp.img = New_Array(8, BMP_PIXEL);
 	CBmp_Resample(&avg, bmp, 0xf);
 	CBmp_Resample(&ramp, &avg, 0xf);
-	/* the doubles 0.5 and 1.2 of the exe (rva 0x3a3a18, 0x3def88) */
+	/* the doubles 0.5 and 1.2 of the exe */
 	p = Ramp_Scale(*CBmp_Pixel(&avg, 0, 0), 0.5, 0);
 	for (int i = 0; i < 4; i++) {
 		*CBmp_Pixel(&ramp, i, 0) = p;
@@ -1036,7 +1036,7 @@ const char *D3DFmt_Name(int fmt) {
 	return "(invalid D3DFMT)";
 }
 
-/* the atexit destructor of g_TexList (rva 0x38ee70): the first texture of the list deleted */
+/* the atexit destructor of g_TexList: the first texture of the list deleted */
 void Texture_FiniTexList(void) {
 	CTexture *t = g_TexList;
 

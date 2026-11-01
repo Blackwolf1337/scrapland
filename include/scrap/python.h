@@ -15,7 +15,7 @@
 static_assert(sizeof(PyObject) == 8, "PyObject: ob_refcnt, ob_type");
 static_assert(sizeof(PyTypeObject) == 0x6c, "PyTypeObject of 1.5.2 without COUNT_ALLOCS");
 
-/* the exe has the function form of ceval.c (rva 0x2ee850), the header only the macro */
+/* the exe has the function form of ceval.c, the header only the macro */
 #undef PyEval_CallObject
 PyObject *PyEval_CallObject(PyObject *func, PyObject *args);
 
@@ -32,7 +32,7 @@ void PyPool_Free(void *p);
  * ScrapC.exe the C object <name>_methods (src/game/Global/Globals*.c) */
 #define SD_PY_MODULE(name, rva) \
 	void init##name(void) { \
-		Py_InitModule(#name, GAME_ARRAY(PyMethodDef, name##_methods, rva)); \
+		Py_InitModule(#name, GAME_ARRAY(PyMethodDef, name##_methods)); \
 	}
 
 /* None with a new reference, the result of a method that returns nothing */

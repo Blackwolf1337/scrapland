@@ -1,10 +1,10 @@
 /*
  * Objects/floatobject.c with the two places where the exe computes on the x87 stack (pyx87.h), so with the 24 bit
  * precision that Direct3D sets:
- * - float_hash (rva 0x2df070): frexp returns in st(0) and "fractpart * 2147483648.0" is an fmul there (rva
+ * - float_hash: frexp returns in st(0) and "fractpart * 2147483648.0" is an fmul there (rva
  *   0x2df139). hash(0.1) is 1717888640 in the game, not -1718085018.
- * - float_pow (rva 0x2df4b0): powu returns in st(0) and "1./powu(iv, -intw)" of an integer exponent below 0 is an
- *   fdivrp (rva 0x2df5bf). 10.0 ** -3 is 0.0010000000474974513 in the game.
+ * - float_pow: powu returns in st(0) and "1./powu(iv, -intw)" of an integer exponent below 0 is an
+ *   fdivrp. 10.0 ** -3 is 0.0010000000474974513 in the game.
  * The type and the number methods of float get these at start, the rest stays the source's.
  */
 #include "Objects/floatobject.c"

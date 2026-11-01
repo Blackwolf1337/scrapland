@@ -9,7 +9,7 @@
 #include "scrap/crt.h"
 #include "scrap/shared.h"
 
-/* "FATAL ERROR: Check failed!" report of the engine (rva 0xbcdb0), logs expression, file, date and line */
+/* "FATAL ERROR: Check failed!" report of the engine, logs expression, file, date and line */
 void CheckFailed(const char *expr, const char *file, const char *date, int line);
 
 /* the original macro passes __FILE__ and __TIMESTAMP__ of the .cpp file, ours those of the .c file; SD_CODECMP
@@ -37,8 +37,8 @@ typedef struct cMemStats {
 } cMemStats;
 SD_SIZE(cMemStats, 0x18);
 
-#define g_MemStats (&GAME_GLOBAL(cMemStats, g_MemStats, 0x44b628))
-#define g_MemStatsContext GAME_GLOBAL(cMemStats *, g_MemStatsContext, 0x44b640)
+#define g_MemStats (&GAME_GLOBAL(cMemStats, g_MemStats))
+#define g_MemStatsContext GAME_GLOBAL(cMemStats *, g_MemStatsContext)
 
 /* the engine's operator new and sized delete (rva 0x1334d0, 0x313634; the plain delete is 0x1334e0), with its memory statistics */
 void *operator_new(uint32_t size);
@@ -46,7 +46,7 @@ void operator_delete_sized(void *p, uint32_t size);
 void *operator_new_array(uint32_t size);
 void operator_delete(void *p);
 void operator_delete_array(void *p);
-/* the CRT loops of new[] and delete[] for objects: ctor or dtor (thiscall) on each (rva 0x313a76, 0x313ae4) */
+/* the CRT loops of new[] and delete[] for objects: ctor or dtor (thiscall) on each */
 void __stdcall crt_eh_vector_ctor(void *p, uint32_t size, uint32_t count, void *ctor, void *dtor);
 void __stdcall crt_eh_vector_dtor(void *p, uint32_t size, uint32_t count, void *dtor);
 /* new T[count] of the exe: the count in the 4 bytes before the objects, the constructor (thiscall, GAME_FUNC) on
@@ -71,23 +71,23 @@ static inline uint32_t Hash_Step(uint32_t h, byte c) {
 	}
 	return h;
 }
-/* the engine's malloc with the same statistics (rva 0x1335a0) */
+/* the engine's malloc with the same statistics */
 void *Mem_Alloc(uint32_t size);
-void *Mem_Calloc(uint32_t size);	/* rva 0x133650 */
-void *Mem_Free(void *p);	/* NULL (rva 0x133550) */
-void *Mem_Realloc(void *p, uint32_t size);	/* rva 0x133690 */
+void *Mem_Calloc(uint32_t size);
+void *Mem_Free(void *p);	/* NULL */
+void *Mem_Realloc(void *p, uint32_t size);
 
-/* Global/StrUtils.cpp: copy with CHECK(dst && src && bytes_dst>0), always terminated (rva 0x1365c0) */
+/* Global/StrUtils.cpp: copy with CHECK(dst && src && bytes_dst>0), always terminated */
 char *Str_Copy(char *dst, const char *src, int size);
 /* UTF-8 to the font encoding, in a static buffer of 1 KB (src/game/Global/StrUtils.c) */
 char *Str_FromUTF8(const char *s);
 /* directory, base name and extension of a path, NULL for a part not wanted */
 void Path_Split(const char *path, char *name, char *dir, char *ext);
-/* snprintf that logs "String size error" when it cuts (rva 0x136610) */
+/* snprintf that logs "String size error" when it cuts */
 int Str_Printf(char *dst, int size, const char *fmt, ...);
-/* the same without the log line (rva 0x1365a0) */
+/* the same without the log line */
 int Str_PrintfQuiet(char *dst, int size, const char *fmt, ...);
-int Str_VPrintf(char *dst, int size, const char *fmt, va_list ap);	/* rva 0x136690 */
+int Str_VPrintf(char *dst, int size, const char *fmt, va_list ap);
 
 /* Global/HashTable.h: chained hash of string keys, case-insensitive unless caseSensitive */
 typedef struct HashNode {

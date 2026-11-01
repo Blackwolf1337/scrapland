@@ -12,14 +12,14 @@
 #include "scrap/fxmisc.h"
 
 /* the engine variables (Gvars): the debris system files of the scenes */
-#define g_FXSceneBeatingFile GAME_GLOBAL_IN(const char *, GVar_FXSceneBeatPickusFile, 16, 0x4672e8)
-#define g_FXSceneBillArrivesAFile GAME_GLOBAL_IN(const char *, GVar_FXSceneBillArrives_AFile, 16, 0x4672d0)
-#define g_FXSceneDecontaminationFile GAME_GLOBAL_IN(const char *, GVar_FXSceneDecontaminationFile, 16, 0x4672b8)	/* also BillArrives_C */
-#define g_FXSceneBishopsFile GAME_GLOBAL_IN(const char *, GVar_FXSceneBishopsFile, 16, 0x467318)
-#define g_FXSceneEnterMatrixFile GAME_GLOBAL_IN(const char *, GVar_FXSceneEnterMatrixFile, 16, 0x467288)
-#define g_FXSceneHumanCDFile GAME_GLOBAL_IN(const char *, GVar_FXSceneHumanCDFile, 16, 0x467270)
-#define g_FXSceneTheEndBFile GAME_GLOBAL_IN(const char *, GVar_FXSceneTheEndBFile, 16, 0x467300)
-#define g_FXSceneYakuzziFile GAME_GLOBAL_IN(const char *, GVar_FXSceneYakuzziFile, 16, 0x4672a0)
+#define g_FXSceneBeatingFile GAME_GLOBAL_IN(const char *, GVar_FXSceneBeatPickusFile, 16)
+#define g_FXSceneBillArrivesAFile GAME_GLOBAL_IN(const char *, GVar_FXSceneBillArrives_AFile, 16)
+#define g_FXSceneDecontaminationFile GAME_GLOBAL_IN(const char *, GVar_FXSceneDecontaminationFile, 16)	/* also BillArrives_C */
+#define g_FXSceneBishopsFile GAME_GLOBAL_IN(const char *, GVar_FXSceneBishopsFile, 16)
+#define g_FXSceneEnterMatrixFile GAME_GLOBAL_IN(const char *, GVar_FXSceneEnterMatrixFile, 16)
+#define g_FXSceneHumanCDFile GAME_GLOBAL_IN(const char *, GVar_FXSceneHumanCDFile, 16)
+#define g_FXSceneTheEndBFile GAME_GLOBAL_IN(const char *, GVar_FXSceneTheEndBFile, 16)
+#define g_FXSceneYakuzziFile GAME_GLOBAL_IN(const char *, GVar_FXSceneYakuzziFile, 16)
 
 #define FXBISHOPS_TRAILS 12
 #define FXDECON_RAYS 40
@@ -173,7 +173,7 @@ typedef struct cObjElementFXSceneYakuzzi {
 SD_OFFSET(cObjElementFXSceneYakuzzi, dummy, 0xc4);
 SD_OFFSET(cObjElementFXSceneYakuzzi, started, 0xd0);
 
-/* at the start of the FXVehicle.cpp code (rva 0x1ea000, 0x1ea050): the target entity name and its action of the
+/* at the start of the FXVehicle.cpp code: the target entity name and its action of the
  * rays (31 characters at most), the height */
 void __thiscall cObjElementFXSceneDecontamination_SetNames(cObjElementFXSceneDecontamination *self,
 	const char *target, const char *action);

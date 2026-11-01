@@ -472,7 +472,7 @@ static void FXS_HumanCDSparks(cObjElementFXSceneHumanCD *self, double scaleRange
 		memcpy(&sp->spriteIni, &sprites, 2);
 	}
 	CGameParticles_Apply(sp);
-	CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, FXS_HumanCDSparks_430c48, FXS_RAMP_HUMANCD), crt_rand() & 1));
+	CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, FXS_HumanCDSparks_430c48), crt_rand() & 1));
 	CGameParticles_EmitDt(sp, 1, 1, FxElem_Rand(0.1f, 0.0));
 }
 
@@ -635,7 +635,7 @@ void __thiscall cObjElementFXSceneYakuzzi_Update(cObjElementFXSceneYakuzzi *self
 		sp->spriteEnd = sprite;
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneYakuzzi_Update_430dd8, FXS_RAMP_YAKUZZI), crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneYakuzzi_Update_430dd8), crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.05f, 0.0));
 	}
 	self->tPrev = self->t;
@@ -672,7 +672,7 @@ static void FXS_BishopsEmit(cObjElementFXSceneBishops *self, const vec3_t *v, fl
 	sp->spriteEnd = 5;
 	sp->rotVar = FxElem_Rand(1.5707964f, -0.7853982f);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXSceneBishops_Update_430c90, FXS_RAMP_BISHOPS_GLOW));
+	CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXSceneBishops_Update_430c90));
 	CGameParticles_Apply(sp);
 	CGameParticles_EmitN(sp, 1, 0);
 
@@ -701,7 +701,7 @@ static void FXS_BishopsEmit(cObjElementFXSceneBishops *self, const vec3_t *v, fl
 	sp->spriteIni = sprite;
 	sp->spriteEnd = sprite;
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBishops_Update_430cb4, FXS_RAMP_BISHOPS_CODEC), crt_rand() & 1));
+	CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBishops_Update_430cb4), crt_rand() & 1));
 	CGameParticles_Apply(sp);
 	CGameParticles_EmitN(sp, 1, 0);
 }
@@ -1085,7 +1085,7 @@ static void FXS_BeatDust(cObjElementFXSceneBeatPickus *self) {
 		FXS_Sprites(sp, spr, spr);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBeatPickus_Update_430e20, FXS_RAMP_BEAT_SMOKE), crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBeatPickus_Update_430e20), crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.05f, 0.0));
 	}
 }
@@ -1136,7 +1136,7 @@ static void FXS_BeatDebris(cObjElementFXSceneBeatPickus *self) {
 		FXS_Sprites(sp, spr, spr);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBeatPickus_Update_430e68, FXS_RAMP_BEAT_DUST), crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBeatPickus_Update_430e68), crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.05f, 0.0));
 		i++;
 	} while (i < crt_rand() % 8 + 2);
@@ -1220,7 +1220,7 @@ static void FXS_BeatSparks(cObjElementFXSceneBeatPickus *self) {
 		FXS_Sprites(sp, (byte)((crt_rand() & 1) + 0x41), 0x44);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBeatPickus_Update_430eb0, FXS_RAMP_BEAT_SPARKS), crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBeatPickus_Update_430eb0), crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.1f, 0.0));
 		i++;
 	} while (i < crt_rand() % 6 + 8);
@@ -1256,7 +1256,7 @@ static void FXS_BeatHit(cObjElementFXSceneBeatPickus *self) {
 	FXS_Pos(sp, p.x, p.y, p.z);
 	FXS_Vel(sp, 0.0f, 0.0f, 0.0f);
 	FXS_Acc(sp, 0.0f, 0.0f, 0.0f);
-	CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXSceneBeatPickus_Update_430ef8, FXS_RAMP_BEAT_HIT));
+	CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXSceneBeatPickus_Update_430ef8));
 	sp->sizeIni = FxElem_Rand(10.0f, 10.0f);
 	sp->sizeEnd = FxElem_Rand(15.0f, 95.0f);
 	sp->sizeLife = 0.15f;
@@ -1264,7 +1264,7 @@ static void FXS_BeatHit(cObjElementFXSceneBeatPickus *self) {
 	sp->lifeTime = FxElem_Rand(0.019999996f, 0.18f);
 	CGameParticles_Apply(sp);
 	CGameParticles_EmitN(sp, 1, 1);
-	CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXSceneBeatPickus_Update_430ef8, FXS_RAMP_BEAT_HIT));
+	CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXSceneBeatPickus_Update_430ef8));
 	double rr = FXS_Rnd();
 	sp->sizeIni = (float)(rr + rr + 4.0);
 	sp->sizeEnd = FxElem_Rand(15.0f, 55.0f);
@@ -1299,7 +1299,7 @@ static void FXS_BeatHit(cObjElementFXSceneBeatPickus *self) {
 		FXS_Sprites(sp, (byte)((crt_rand() & 1) + 0x41), 0x44);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBeatPickus_Update_430f1c, FXS_RAMP_BEAT_HITSPARKS), crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBeatPickus_Update_430f1c), crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.1f, 0.0));
 		i++;
 	} while (i < crt_rand() % 6 + 8);
@@ -1343,7 +1343,7 @@ static void FXS_BeatPuffs(cObjElementFXSceneBeatPickus *self) {
 			FXS_Sprites(sp, spr, spr);
 			CGameParticles_Apply(sp);
 			CGameParticles_SetColorRampOn(sp, 1);
-			CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBeatPickus_Update_430e20, FXS_RAMP_BEAT_SMOKE), crt_rand() & 1));
+			CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBeatPickus_Update_430e20), crt_rand() & 1));
 			CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.05f, 0.0));
 		}
 	}
@@ -1410,7 +1410,7 @@ void __thiscall cObjElementFXSceneBeatPickus_Update(cObjElementFXSceneBeatPickus
 #define FXS_RAMP_BILL_SMOKE 0x430d00	/* [2] */
 #define FXS_RAMP_BILL_CAPSULE 0x430d48	/* [2] */
 #define FXS_RAMP_BILL_JETA 0x430d90	/* [2] */
-#define FXS_BILL_JETA_RAMPS (GAME_ARRAY(uint32_t, FXS_BILL_JETA_RAMPS, FXS_RAMP_BILL_JETA))	/* [2 * 9] */
+#define FXS_BILL_JETA_RAMPS (GAME_ARRAY(uint32_t, FXS_BILL_JETA_RAMPS))	/* [2 * 9] */
 #define FXS_RAMP_BILL_JETB 0x430db4
 #define FXBILL_JETS 3
 /* the jets of the capsule: the particles of its embedded effect (3 from + 0x8) */
@@ -1543,7 +1543,7 @@ static void FXS_BillJetsBlast(void *efx) {
 		FXS_Sprites(sp, 0x37, 0x37);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, GAME_ARRAY_IN(uint32_t, FXS_BILL_JETA_RAMPS, 36, FXS_RAMP_BILL_JETB));
+		CGameParticles_SetColorRamp(sp, GAME_ARRAY_IN(uint32_t, FXS_BILL_JETA_RAMPS, 36));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.035f, 0.0));
 	}
 }
@@ -1578,7 +1578,7 @@ static void FXS_BillCapsuleSmoke(cObjElementFXSceneBillArrives_A *self, const ve
 		FXS_Sprites(sp, spr, spr);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBillArrives_A_Update_430d48, FXS_RAMP_BILL_CAPSULE), crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBillArrives_A_Update_430d48), crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.04f, 0.0));
 	}
 }
@@ -1626,7 +1626,7 @@ static void FXS_BillDust(cObjElementFXSceneBillArrives_A *self) {
 		FXS_Sprites(sp, spr, spr);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBillArrives_A_Update_430d00, FXS_RAMP_BILL_SMOKE), crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBillArrives_A_Update_430d00), crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.05f, 0.0));
 		f = f + 0.31415927f;
 	} while (6.2831855f > f);
@@ -1681,7 +1681,7 @@ static void FXS_BillSteam(cObjElementFXSceneBillArrives_A *self, const vec3_t *c
 		FXS_Sprites(sp, spr, spr);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBillArrives_A_Update_430d48, FXS_RAMP_BILL_CAPSULE), crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBillArrives_A_Update_430d48), crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.1f, 0.0));
 		k = k + 2.0f;
 	} while (22.0f > k);
@@ -1719,7 +1719,7 @@ static void FXS_BillPuff(cObjElementFXSceneBillArrives_A *self, const vec3_t *of
 		FXS_Sprites(sp, spr, spr);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBillArrives_A_Update_430d00, FXS_RAMP_BILL_SMOKE), crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(GAME_ARRAY(uint32_t, cObjElementFXSceneBillArrives_A_Update_430d00), crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.1f, 0.0));
 		f = f + 0.62831855f;
 	} while (6.2831855f > f);
@@ -2027,7 +2027,7 @@ static void FXS_MatrixPath(cObjElementFXSceneEnterMatrix *self, int k) {
 	vec3_t *P = self->pts[k];
 	vec3_t N, v, tmp, dir;
 
-	const vec3_t *tab = GAME_ARRAY(const vec3_t, cObjElementFXSceneEnterMatrix_Update_430f68, FXS_MATRIX_PATHS) + self->kind[k] * 4;
+	const vec3_t *tab = GAME_ARRAY(const vec3_t, cObjElementFXSceneEnterMatrix_Update_430f68) + self->kind[k] * 4;
 	float e1x = tab[2].x - tab[0].x, e2x = tab[3].x - tab[1].x;
 	float e1y = tab[2].y - tab[0].y, e1z = tab[2].z - tab[0].z;
 	float e2y = tab[3].y - tab[1].y, e2z = tab[3].z - tab[1].z;

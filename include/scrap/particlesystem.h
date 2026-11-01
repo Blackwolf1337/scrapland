@@ -13,11 +13,11 @@
 #include "scrap/groundportal.h"
 #include "scrap/material.h"
 
-#define CSISTPART_VFTABLE GAME_VFTABLE(CParticleSystem_vftable, 0x3ddc6c)
-#define CPARTICLEACTIVE_VFTABLE GAME_VFTABLE(CParticleActive_vftable, 0x3ddc5c)
-#define CPARTICLESTATIC_VFTABLE GAME_VFTABLE(CParticleStatic_vftable, 0x3ddc4c)
-#define COBJBASE3D_VFTABLE GAME_VFTABLE(CObjBase3D_vftable, 0x3ddc1c)
-#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable, 0x3d79dc)
+#define CSISTPART_VFTABLE GAME_VFTABLE(CParticleSystem_vftable)
+#define CPARTICLEACTIVE_VFTABLE GAME_VFTABLE(CParticleActive_vftable)
+#define CPARTICLESTATIC_VFTABLE GAME_VFTABLE(CParticleStatic_vftable)
+#define COBJBASE3D_VFTABLE GAME_VFTABLE(CObjBase3D_vftable)
+#define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable)
 
 /* Engine/objbase3d.cpp, 0xc bytes: a 3D object on a node */
 typedef struct CObjBase3D {
@@ -166,15 +166,15 @@ SD_OFFSET(CParticleSystem, params, 0x0c);
 SD_OFFSET(CParticleSystem, Particles, 0x11c);
 
 /* the switches of the particle systems */
-#define g_ParticleSystemOn GAME_GLOBAL_IN(int, GVar_R_Particles, 16, 0x4b2528)
-#define g_ParticleSystemFlags GAME_GLOBAL_IN(int, GVar_R_ParticleFlags, 16, 0x4b2570)	/* -1, else the flags of all systems */
-#define g_ParticleSystemDebug GAME_GLOBAL_IN(int, GVar_R_ParticleSector, 16, 0x4b25a0)	/* 1: visibility, 2: drawn, 3: with the name */
-#define g_ParticleSystemCount GAME_GLOBAL_IN(int, GVar_R_ParticlesCount, 16, 0x4b2588)	/* the particles of all systems */
-#define g_ParticleSystemIni (GAME_ARRAY(CIniFile, g_ParticleSystemIni, 0x4b25d8))	/* the particle ini */
-#define g_ParticleSystemPosScale GAME_GLOBAL_IN(float, GVar_R_ParticleVelScale, 16, 0x4b2558)
-#define g_ParticleSystemSizeScale GAME_GLOBAL_IN(float, GVar_R_ParticleScale, 16, 0x4b2540)
-#define g_ParticleSystemLifeScale GAME_GLOBAL_IN(float, GVar_R_ParticleLife, 16, 0x4b25d0)
-#define g_ParticleSystemBirthAdd GAME_GLOBAL_IN(int, GVar_R_ParticleRate, 16, 0x4b25b8)
+#define g_ParticleSystemOn GAME_GLOBAL_IN(int, GVar_R_Particles, 16)
+#define g_ParticleSystemFlags GAME_GLOBAL_IN(int, GVar_R_ParticleFlags, 16)	/* -1, else the flags of all systems */
+#define g_ParticleSystemDebug GAME_GLOBAL_IN(int, GVar_R_ParticleSector, 16)	/* 1: visibility, 2: drawn, 3: with the name */
+#define g_ParticleSystemCount GAME_GLOBAL_IN(int, GVar_R_ParticlesCount, 16)	/* the particles of all systems */
+#define g_ParticleSystemIni (GAME_ARRAY(CIniFile, g_ParticleSystemIni))	/* the particle ini */
+#define g_ParticleSystemPosScale GAME_GLOBAL_IN(float, GVar_R_ParticleVelScale, 16)
+#define g_ParticleSystemSizeScale GAME_GLOBAL_IN(float, GVar_R_ParticleScale, 16)
+#define g_ParticleSystemLifeScale GAME_GLOBAL_IN(float, GVar_R_ParticleLife, 16)
+#define g_ParticleSystemBirthAdd GAME_GLOBAL_IN(int, GVar_R_ParticleRate, 16)
 
 CParticle *__fastcall CParticleActive_ctor(CParticle *self);
 CParticleStatic *__fastcall CParticleStatic_ctor(CParticleStatic *self);

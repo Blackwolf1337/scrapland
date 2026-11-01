@@ -13,7 +13,7 @@
 #define CRT_SH_DENYRW 0x10
 #define CRT_SH_DENYWR 0x20
 /* errno for a bad TXF header */
-#define g_TXFBadFormat GAME_GLOBAL(int, g_ErrPcxFormat, 0x3de07c)
+#define g_TXFBadFormat GAME_GLOBAL(int, g_ErrPcxFormat)
 
 #define RGBA 4
 #define RGB 3

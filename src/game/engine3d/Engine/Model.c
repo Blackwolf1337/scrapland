@@ -20,16 +20,16 @@
 #include "scrap/misc.h"
 
 #define CLOD_DTOR 0x252d80
-#define LIGHT_OMNI_NAME GAME_STR(str_3d598c, 0x3d598c)
-#define LIGHT_SPOT_NAME GAME_STR(str_3d5994, 0x3d5994)
-#define LIGHT_DIR_NAME GAME_STR(str_3d599c, 0x3d599c)
+#define LIGHT_OMNI_NAME GAME_STR(str_3d598c)
+#define LIGHT_SPOT_NAME GAME_STR(str_3d5994)
+#define LIGHT_DIR_NAME GAME_STR(str_3d599c)
 #define MORPH_SPEED_UNIT 0.01f
 #define MORPH_SPEED_MAX 0.08f
 #define STENCIL_DIST 4000.0f
 
-#define g_AnimPause GAME_GLOBAL_IN(int, GVar_R_SkipAnimInterp, 16, 0x4ae638)	/* the animations stand still */
-#define g_AnimSpeed GAME_GLOBAL_IN(float, GVar_R_AnimInterpMult, 16, 0x4ae770)	/* the speed of all animations */
-#define g_FrameTime GAME_GLOBAL(float, g_FrameMs, 0x4a8ed4)	/* the time of the frame */
+#define g_AnimPause GAME_GLOBAL_IN(int, GVar_R_SkipAnimInterp, 16)	/* the animations stand still */
+#define g_AnimSpeed GAME_GLOBAL_IN(float, GVar_R_AnimInterpMult, 16)	/* the speed of all animations */
+#define g_FrameTime GAME_GLOBAL(float, g_FrameMs)	/* the time of the frame */
 
 static CAnimSlot *Model_Slot(CModel *self, uint32_t i) {
 	CHECK(self->slots.p && i < (uint32_t)self->slots.n);
@@ -89,7 +89,7 @@ static void Model_AddMove(CModel *self, const vec3_t *r) {
 
 static void Lods_Delete(CTable *t) {
 	if (t->p) {
-		Delete_Objects(t->p, sizeof(CLod), GAME_FUNC(CLod_dtor, CLOD_DTOR));
+		Delete_Objects(t->p, sizeof(CLod), GAME_FUNC(CLod_dtor));
 		t->p = NULL;
 		t->n = 0;
 	}
@@ -184,7 +184,7 @@ static void *DeleteVecArray(void *self, uint32_t flags, uint32_t size, void *dto
 
 void *__thiscall CLod_DeleteVec(CLod *self, uint32_t flags) {
 	if (flags & 2) {
-		return DeleteVecArray(self, flags, sizeof(CLod), GAME_FUNC(CLod_dtor, CLOD_DTOR));
+		return DeleteVecArray(self, flags, sizeof(CLod), GAME_FUNC(CLod_dtor));
 	}
 	CLod_dtor(self);
 	if (flags & 1) {
@@ -195,7 +195,7 @@ void *__thiscall CLod_DeleteVec(CLod *self, uint32_t flags) {
 
 void *__thiscall CRenderNode_DeleteVec(CRenderNode *self, uint32_t flags) {
 	if (flags & 2) {
-		return DeleteVecArray(self, flags, sizeof(CRenderNode), GAME_FUNC(CRenderNode_dtor, CNODOR_DTOR));
+		return DeleteVecArray(self, flags, sizeof(CRenderNode), GAME_FUNC(CRenderNode_dtor));
 	}
 	CRenderNode_dtor(self);
 	if (flags & 1) {
@@ -629,7 +629,7 @@ void __thiscall CModel_SetScene(CModel *self, CScene *scn) {
 
 	if (tab) {
 		if (tab->p) {
-			Delete_Objects(tab->p, sizeof(CRenderNode), GAME_FUNC(CRenderNode_dtor, CNODOR_DTOR));
+			Delete_Objects(tab->p, sizeof(CRenderNode), GAME_FUNC(CRenderNode_dtor));
 			tab->p = NULL;
 			tab->n = 0;
 		}
@@ -856,21 +856,21 @@ const char *__fastcall CLight_TypeName(const CLight *l) {
 }
 
 /* the render variables of the models */
-#define g_UseMLOD GAME_GLOBAL_IN(int, GVar_R_UseMLOD, 16, 0x4ae6e0)		/* R_UseMLOD */
-#define g_DistMLOD1 GAME_GLOBAL_IN(float, GVar_R_DistMLOD1, 16, 0x4ae608)		/* R_DistMLOD1, the distance of LOD i is i times it */
-#define g_DrawMLODMask GAME_GLOBAL_IN(uint32_t, GVar_R_DrawMLODMask, 16, 0x4ae680)	/* R_DrawMLODMask: the LODs drawn as the main model */
-#define g_DrawMLODMin GAME_GLOBAL_IN(int, GVar_R_DrawMLODMin, 16, 0x4ae6c8)		/* R_DrawMLODMin */
-#define g_DrawMLODPart GAME_GLOBAL_IN(int, GVar_R_DrawMLODPart, 16, 0x4ae5f0)		/* R_DrawMLODPart: the particles of the main model with a LOD */
-#define g_ModelFastIsVis GAME_GLOBAL_IN(int, GVar_R_ModelFastIsVis, 16, 0x4ae620)	/* R_ModelFastIsVis */
-#define g_ModelPortalVis GAME_GLOBAL_IN(int, GVar_R_ModelPortalVis, 16, 0x4ae6b0)	/* R_ModelPortalVis */
-#define g_SphereVisMult GAME_GLOBAL_IN(float, GVar_R_SphereVisMult, 16, 0x4ae698)	/* R_SphereVisMult */
-#define g_DistMStencil GAME_GLOBAL_IN(float, GVar_R_DistMStencil, 16, 0x4ae758)	/* R_DistMStencil */
-#define g_SkipUpdateVis GAME_GLOBAL_IN(int, GVar_R_SkipUpdateVis, 16, 0x4ae740)	/* R_SkipUpdateVis */
-#define g_ShowModelSector GAME_GLOBAL_IN(int, GVar_R_ShowModelSector, 16, 0x4ae728)	/* R_ShowModelSector */
-#define g_LightLimit GAME_GLOBAL_IN(int, GVar_R_LightLimit, 16, 0x4ae710)		/* R_LightLimit, -1: no lights chosen */
-#define g_ShowModelLights GAME_GLOBAL_IN(int, GVar_R_ShowModelLights, 16, 0x4ae6f8)	/* R_ShowModelLights */
-#define g_ShowModelBox GAME_GLOBAL_IN(int, GVar_R_ShowModelBox, 16, 0x4ae668)		/* R_ShowModelBox */
-#define g_ShowModelPos GAME_GLOBAL_IN(int, GVar_R_ShowModelPos, 16, 0x4ae650)		/* R_ShowModelPos */
+#define g_UseMLOD GAME_GLOBAL_IN(int, GVar_R_UseMLOD, 16)		/* R_UseMLOD */
+#define g_DistMLOD1 GAME_GLOBAL_IN(float, GVar_R_DistMLOD1, 16)		/* R_DistMLOD1, the distance of LOD i is i times it */
+#define g_DrawMLODMask GAME_GLOBAL_IN(uint32_t, GVar_R_DrawMLODMask, 16)	/* R_DrawMLODMask: the LODs drawn as the main model */
+#define g_DrawMLODMin GAME_GLOBAL_IN(int, GVar_R_DrawMLODMin, 16)		/* R_DrawMLODMin */
+#define g_DrawMLODPart GAME_GLOBAL_IN(int, GVar_R_DrawMLODPart, 16)		/* R_DrawMLODPart: the particles of the main model with a LOD */
+#define g_ModelFastIsVis GAME_GLOBAL_IN(int, GVar_R_ModelFastIsVis, 16)	/* R_ModelFastIsVis */
+#define g_ModelPortalVis GAME_GLOBAL_IN(int, GVar_R_ModelPortalVis, 16)	/* R_ModelPortalVis */
+#define g_SphereVisMult GAME_GLOBAL_IN(float, GVar_R_SphereVisMult, 16)	/* R_SphereVisMult */
+#define g_DistMStencil GAME_GLOBAL_IN(float, GVar_R_DistMStencil, 16)	/* R_DistMStencil */
+#define g_SkipUpdateVis GAME_GLOBAL_IN(int, GVar_R_SkipUpdateVis, 16)	/* R_SkipUpdateVis */
+#define g_ShowModelSector GAME_GLOBAL_IN(int, GVar_R_ShowModelSector, 16)	/* R_ShowModelSector */
+#define g_LightLimit GAME_GLOBAL_IN(int, GVar_R_LightLimit, 16)		/* R_LightLimit, -1: no lights chosen */
+#define g_ShowModelLights GAME_GLOBAL_IN(int, GVar_R_ShowModelLights, 16)	/* R_ShowModelLights */
+#define g_ShowModelBox GAME_GLOBAL_IN(int, GVar_R_ShowModelBox, 16)		/* R_ShowModelBox */
+#define g_ShowModelPos GAME_GLOBAL_IN(int, GVar_R_ShowModelPos, 16)		/* R_ShowModelPos */
 
 /* the passes that draw only the models seen in the last frame */
 static int Model_PassKeepsVis(int pass) {

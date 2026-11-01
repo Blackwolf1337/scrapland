@@ -13,9 +13,9 @@
 #include "scrap/texture.h"
 
 /* the scale of the images, of SPR2D 0x10000 and of SPR2D 0x20000 (two floats each) */
-#define g_Sprite2DScale (GAME_ARRAY(float, g_Sprite2DScale, 0x431b8c))
-#define g_Sprite2DScaleA (GAME_ARRAY(float, g_Sprite2DScaleA, 0x431b94))
-#define g_Sprite2DScaleB (GAME_ARRAY(float, g_Sprite2DScaleB, 0x431b9c))
+#define g_Sprite2DScale (GAME_ARRAY(float, g_Sprite2DScale))
+#define g_Sprite2DScaleA (GAME_ARRAY(float, g_Sprite2DScaleA))
+#define g_Sprite2DScaleB (GAME_ARRAY(float, g_Sprite2DScaleB))
 
 #define Sprite_Graphic(p) ((CGraphic2D *)(p)->sprite)
 

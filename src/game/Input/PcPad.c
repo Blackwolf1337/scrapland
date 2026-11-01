@@ -16,11 +16,11 @@
 #include "scrap/weapons.h"
 #include "scrap/win32.h"
 
-#define PAD_ERROR GAME_STR(str_3bcc00, 0x3bcc00)	/* "ERROR" */
-#define g_PadLabelBuf (GAME_ARRAY(char, g_PadLabelBuf, 0x44ca74))	/* 0x20 bytes */
+#define PAD_ERROR GAME_STR(str_3bcc00)	/* "ERROR" */
+#define g_PadLabelBuf (GAME_ARRAY(char, g_PadLabelBuf))	/* 0x20 bytes */
 
 typedef uint32_t(__stdcall *xinputgetstate_t)(uint32_t index, exe_xinput_state *state);
-#define exe_XInputGetState GAME_IMPORT(xinputgetstate_t, XInputGetState, 8, 0x3a14bc)
+#define exe_XInputGetState GAME_IMPORT(xinputgetstate_t, XInputGetState, 8)
 
 static const char *const pad_labels[0x34] = {
 	[0x00] = "A", [0x01] = "B", [0x02] = "X", [0x03] = "Y", [0x04] = "BLACK", [0x05] = "WHITE", [0x06] = "BACK",
@@ -55,7 +55,7 @@ cPcPad *__thiscall cPcPad_ctor(cPcPad *self, int index) {
 	return self;
 }
 
-/* the atexit destructor (rva 0x38da50) and the static initializer (rva 0x04df30) of the four pads; the original has
+/* the atexit destructor and the static initializer of the four pads; the original has
  * the constructor inlined */
 void PcPad_FiniPads(void) {
 	crt_eh_vector_dtor(g_PcPads, sizeof(cPcPad), 4, (void *)cAbstractIDevice_dtor);
@@ -224,13 +224,13 @@ void __thiscall cPcPad_SetCharDefaults(cPcPad *self) {
 const char *__thiscall cPcPad_GetName(cPcPad *self) {
 	switch (self->index) {
 	case 0:
-		return GAME_STR(str_3bcbc8, 0x3bcbc8);	/* "Pad1" .. "Pad4", 8 bytes apart */
+		return GAME_STR(str_3bcbc8);	/* "Pad1" .. "Pad4", 8 bytes apart */
 	case 1:
-		return GAME_STR(str_3bcbd0, 0x3bcbd0);
+		return GAME_STR(str_3bcbd0);
 	case 2:
-		return GAME_STR(str_3bcbd8, 0x3bcbd8);
+		return GAME_STR(str_3bcbd8);
 	case 3:
-		return GAME_STR(str_3bcbe0, 0x3bcbe0);
+		return GAME_STR(str_3bcbe0);
 	default:
 		CHECK(0);
 		return PAD_ERROR;

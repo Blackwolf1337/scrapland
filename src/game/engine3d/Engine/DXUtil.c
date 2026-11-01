@@ -87,8 +87,8 @@ void DXUtil_WideToGeneric(char *dst, const uint16_t *src, int cch) {
 }
 
 /* the performance counter of the engine: since g_TimerBase, or the fixed time while one is set */
-#define g_TimerFixed GAME_GLOBAL(int64_t, g_TimerFixed, 0x4b1c80)
-#define g_TimerBase GAME_GLOBAL(int64_t, g_TimerBase, 0x4b1c88)
+#define g_TimerFixed GAME_GLOBAL(int64_t, g_TimerFixed)
+#define g_TimerBase GAME_GLOBAL(int64_t, g_TimerBase)
 
 /* differs from the original on purpose (no busy waits): the original counted the distinct values of timeGetTime
  * during ms, which the 1 ms period of CWinApp_Init (timeBeginPeriod) makes ms; no caller in the exe */
@@ -129,7 +129,7 @@ int Timer_FixedStep(float fps) {
 }
 
 /* the frequency of the performance counter times g_TimerQPMult, taken once (-1 until then), 0 without a counter */
-#define g_TimerQPFreq GAME_GLOBAL(int64_t, g_TimerQPFreq, 0x432590)
+#define g_TimerQPFreq GAME_GLOBAL(int64_t, g_TimerQPFreq)
 
 int Timer_GetQPFreq(int64_t *out) {
 	if (((uint32_t)g_TimerQPFreq & (uint32_t)((uint64_t)g_TimerQPFreq >> 32)) == 0xffffffff) {
@@ -154,16 +154,16 @@ int64_t Timer_MeasureQP(int ms) {
 }
 
 /* the state of DXUtil_Timer: the counter path in ticks, the timeGetTime path in seconds */
-#define g_DXTimerInit GAME_GLOBAL(int, g_DXTimerInit, 0x4b1c40)
-#define g_DXTimerQP GAME_GLOBAL(int, g_DXTimerQP, 0x4b1c44)
-#define g_DXTimerFreq GAME_GLOBAL(int64_t, g_DXTimerFreq, 0x4b1c48)
-#define g_DXTimerStop GAME_GLOBAL(int64_t, g_DXTimerStop, 0x4b1c50)
-#define g_DXTimerLast GAME_GLOBAL(int64_t, g_DXTimerLast, 0x4b1c58)
-#define g_DXTimerBase GAME_GLOBAL(int64_t, g_DXTimerBase, 0x4b1c60)
-#define g_DXTimerLastD GAME_GLOBAL(double, g_DXTimerLastD, 0x4b1c68)
-#define g_DXTimerBaseD GAME_GLOBAL(double, g_DXTimerBaseD, 0x4b1c70)
-#define g_DXTimerStopD GAME_GLOBAL(double, g_DXTimerStopD, 0x4b1c78)
-#define g_DXTimerStopped GAME_GLOBAL(int, g_DXTimerStopped, 0x43258c)
+#define g_DXTimerInit GAME_GLOBAL(int, g_DXTimerInit)
+#define g_DXTimerQP GAME_GLOBAL(int, g_DXTimerQP)
+#define g_DXTimerFreq GAME_GLOBAL(int64_t, g_DXTimerFreq)
+#define g_DXTimerStop GAME_GLOBAL(int64_t, g_DXTimerStop)
+#define g_DXTimerLast GAME_GLOBAL(int64_t, g_DXTimerLast)
+#define g_DXTimerBase GAME_GLOBAL(int64_t, g_DXTimerBase)
+#define g_DXTimerLastD GAME_GLOBAL(double, g_DXTimerLastD)
+#define g_DXTimerBaseD GAME_GLOBAL(double, g_DXTimerBaseD)
+#define g_DXTimerStopD GAME_GLOBAL(double, g_DXTimerStopD)
+#define g_DXTimerStopped GAME_GLOBAL(int, g_DXTimerStopped)
 
 /* the x87 a - b of the original (fsub QWORD) in the precision the game set, stored as a float */
 static float X87_SubToFloat(double a, double b) {

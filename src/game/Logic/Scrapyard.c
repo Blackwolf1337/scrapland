@@ -17,26 +17,26 @@
 #include "scrap/scrap.h"
 #include "scrap/world.h"
 
-#define CSCRAPYARDLOCALLOGIC_VFTABLE GAME_VFTABLE(cScrapyardLocalLogic_vftable, 0x3c10e4)
+#define CSCRAPYARDLOCALLOGIC_VFTABLE GAME_VFTABLE(cScrapyardLocalLogic_vftable)
 #define SHIPGROUP_SPHERE_NATIVE 0x157f10
 #define SHIPGROUP_DEATH_NATIVE 0x158020
 #define SHIPGROUP_MAKELOGIC 0x158400
 #define SHIPGROUP_ONAIEND 0x157e60
 #define SHIPGROUP_MAX_FOUND 10
 
-#define g_MaxMosquitosDist GAME_GLOBAL_IN(float, GVar_MaxMosquitosDist, 16, 0x44d914)
-#define g_MaxMosquitos GAME_GLOBAL_IN(int, GVar_MaxMosquitos, 16, 0x44d974)
-#define g_MinPercMosquitosAttackingIntruder GAME_GLOBAL_IN(float, GVar_MinPercMosquitosAttackingIntruder, 16, 0x44d98c)
-#define g_MosquitosTriggeredShipName GAME_GLOBAL_IN(char *, GVar_MosquitosTriggeredShipName, 16, 0x44d8e4)
-#define g_MaxMadHuntersDist GAME_GLOBAL_IN(float, GVar_MaxMadHuntersDist, 16, 0x44d8fc)
-#define g_MaxMadHunters GAME_GLOBAL_IN(int, GVar_MaxMadHunters, 16, 0x44d95c)
-#define g_MinPercMadHuntersAttackingIntruder GAME_GLOBAL_IN(float, GVar_MinPercMadHuntersAttackingIntruder, 16, 0x44d8cc)
-#define g_MadHuntersTriggeredShipName GAME_GLOBAL_IN(char *, GVar_MadHuntersTriggeredShipName, 16, 0x44d92c)
-#define g_OnMosquitoDeathMoney GAME_GLOBAL_IN(int, GVar_OnMosquitoDeathMoney, 16, 0x44d8b4)
-#define g_OnMadHunterDeathMoney GAME_GLOBAL_IN(int, GVar_OnMadHunterDeathMoney, 16, 0x44d944)
+#define g_MaxMosquitosDist GAME_GLOBAL_IN(float, GVar_MaxMosquitosDist, 16)
+#define g_MaxMosquitos GAME_GLOBAL_IN(int, GVar_MaxMosquitos, 16)
+#define g_MinPercMosquitosAttackingIntruder GAME_GLOBAL_IN(float, GVar_MinPercMosquitosAttackingIntruder, 16)
+#define g_MosquitosTriggeredShipName GAME_GLOBAL_IN(char *, GVar_MosquitosTriggeredShipName, 16)
+#define g_MaxMadHuntersDist GAME_GLOBAL_IN(float, GVar_MaxMadHuntersDist, 16)
+#define g_MaxMadHunters GAME_GLOBAL_IN(int, GVar_MaxMadHunters, 16)
+#define g_MinPercMadHuntersAttackingIntruder GAME_GLOBAL_IN(float, GVar_MinPercMadHuntersAttackingIntruder, 16)
+#define g_MadHuntersTriggeredShipName GAME_GLOBAL_IN(char *, GVar_MadHuntersTriggeredShipName, 16)
+#define g_OnMosquitoDeathMoney GAME_GLOBAL_IN(int, GVar_OnMosquitoDeathMoney, 16)
+#define g_OnMadHunterDeathMoney GAME_GLOBAL_IN(int, GVar_OnMadHunterDeathMoney, 16)
 /* the ships the sphere native found around a lair */
-#define g_ShipGroupFound GAME_GLOBAL(int, g_ShipGroupFound, 0x44d994)
-#define g_ShipGroupShips (GAME_ARRAY(cEntity *, g_ShipGroupShips, 0x44d998))	/* [SHIPGROUP_MAX_FOUND] */
+#define g_ShipGroupFound GAME_GLOBAL(int, g_ShipGroupFound)
+#define g_ShipGroupShips (GAME_ARRAY(cEntity *, g_ShipGroupShips))	/* [SHIPGROUP_MAX_FOUND] */
 /* the callback of the AI when the move ends (rva 0x15c of the AI) */
 #define AIV_OnEnd(ai) (((cAIVehicle *)(ai))->onArrive)
 
@@ -50,7 +50,7 @@ cShipGroupData *__thiscall cShipGroupData_ctor(cShipGroupData *self, const char 
 	self->listName = list;
 	self->list = NULL;
 	self->timer = 0.0f;
-	cPy_Function_SetNative(&self->onSphere, GAME_FUNC(ShipGroup_SphereNative, SHIPGROUP_SPHERE_NATIVE));
+	cPy_Function_SetNative(&self->onSphere, GAME_FUNC(ShipGroup_SphereNative));
 	return self;
 }
 
@@ -172,7 +172,7 @@ void __fastcall cShipGroupData_Think(cShipGroupData *self) {
 			float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 			if (d > maxDist) {
 				cAIVehicle_SetState(ai, 1, lair, 3000.0, 1, 1.0, 20.0, 20.0, 1);
-				AIV_OnEnd(ai) = GAME_FUNC(ShipGroup_OnAIEnd, SHIPGROUP_ONAIEND);
+				AIV_OnEnd(ai) = GAME_FUNC(ShipGroup_OnAIEnd);
 			} else if (st != 2 && (st != 7 || (usr && usr->vftable->IsType(usr, TYEN_CAR)))) {
 				if (count < maxAttack) {
 					count++;
@@ -200,8 +200,8 @@ void __fastcall cShipGroup_Init(cShipGroup *self) {
 	cShipGroupData *d = self->d;
 
 	d->list = (cEntityListData *)cWorld_NewEntityList(g_pWorld, d->listName);
-	cPy_Function_SetNative(&d->list->onDeath, GAME_FUNC(ShipGroup_DeathNative, SHIPGROUP_DEATH_NATIVE));
-	d->list->func = (int (*)(void))GAME_FUNC(ShipGroup_MakeLogic, SHIPGROUP_MAKELOGIC);
+	cPy_Function_SetNative(&d->list->onDeath, GAME_FUNC(ShipGroup_DeathNative));
+	d->list->func = (int (*)(void))GAME_FUNC(ShipGroup_MakeLogic);
 }
 
 /* the AI callback of a ship back at its lair: the ship goes */

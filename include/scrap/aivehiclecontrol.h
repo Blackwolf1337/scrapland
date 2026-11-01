@@ -15,9 +15,9 @@
 #include "scrap/nodesworld.h"
 #include "scrap/slotcontroller.h"
 
-#define CAIVEHICLECONTROL_VFTABLE GAME_VFTABLE(cAIVehicleControl_vftable, 0x3a9094)
-#define CAIVEHICLESHOOT_VFTABLE GAME_VFTABLE(cAIVehicleShootControl_vftable, 0x3a9504)
-#define CAIVEHICLEGROUP_VFTABLE GAME_VFTABLE(cAIVehicleGroup_vftable, 0x3a9288)
+#define CAIVEHICLECONTROL_VFTABLE GAME_VFTABLE(cAIVehicleControl_vftable)
+#define CAIVEHICLESHOOT_VFTABLE GAME_VFTABLE(cAIVehicleShootControl_vftable)
+#define CAIVEHICLEGROUP_VFTABLE GAME_VFTABLE(cAIVehicleGroup_vftable)
 #define CAIVEHICLEGROUP_SIZE 0xf4
 
 /* the one slot of both controllers */
@@ -212,7 +212,7 @@ byte __fastcall cAIVehicleControl_RebuildPath(cAIVehicleControl *self);
 void __fastcall cAIVehicleControl_Smooth(cAIVehicleControl *self);
 byte __fastcall cAIVehicleControl_NodeIsFirst(cAIVehicleControl *self);
 byte __fastcall cAIVehicleControl_NodeIsLast(cAIVehicleControl *self);
-/* the dodge of StrafeDodge runs (rva 0x95d00) */
+/* the dodge of StrafeDodge runs */
 byte __fastcall cAIVehicleControl_GetStrafing(cAIVehicleControl *self);
 byte __fastcall cAIVehicleControl_NodeOnWay(cAIVehicleControl *self);
 /* the moves of Update (dt not used) */

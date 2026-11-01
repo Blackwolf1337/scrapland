@@ -16,9 +16,9 @@
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
 
-#define NW2D_EMPTY GAME_STR(str_Empty, 0x3a3228)	/* the "" of the exe */
+#define NW2D_EMPTY GAME_STR(str_Empty)	/* the "" of the exe */
 
-int crt_chmod(const char *path, int mode);	/* rva 0x345287 */
+int crt_chmod(const char *path, int mode);
 
 /* ---- Global/DList.h ---- */
 

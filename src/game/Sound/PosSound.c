@@ -19,47 +19,47 @@
 #include "scrap/world.h"
 
 /* engine variables of the music and the voices (value, default) */
-#define g_isActionMusic GAME_GLOBAL_IN(int, GVar_isActionMusic, 16, 0x466ab8)
-#define g_isActionMusicDef GAME_GLOBAL_IN(int, GVar_isActionMusic, 20, 0x466abc)
-#define g_WarnVoiceVolume GAME_GLOBAL_IN(float, GVar_WarnVoiceVolume, 16, 0x466b30)
-#define g_WarnVoiceVolumeDef GAME_GLOBAL_IN(float, GVar_WarnVoiceVolume, 20, 0x466b34)
-#define g_isActionIndoor GAME_GLOBAL_IN(int, GVar_isActionIndoor, 16, 0x466b18)
-#define g_isActionIndoorDef GAME_GLOBAL_IN(int, GVar_isActionIndoor, 20, 0x466b1c)
-#define g_MaxPoliceWarnDist GAME_GLOBAL_IN(float, GVar_MaxPoliceWarnDist, 16, 0x466a70)
-#define g_MaxPoliceWarnDistDef GAME_GLOBAL_IN(float, GVar_MaxPoliceWarnDist, 20, 0x466a74)
-#define g_useDynamicMusic GAME_GLOBAL_IN(int, GVar_useDynamicMusic, 16, 0x466ae8)
-#define g_useDynamicMusicDef GAME_GLOBAL_IN(int, GVar_useDynamicMusic, 20, 0x466aec)
-#define g_ForceNoActionMusic GAME_GLOBAL_IN(int, GVar_ForceNoActionMusic, 16, 0x466b48)
-#define g_ForceNoActionMusicDef GAME_GLOBAL_IN(int, GVar_ForceNoActionMusic, 20, 0x466b4c)
-#define g_ActionMusicTimeFade GAME_GLOBAL_IN(float, GVar_ActionMusicTimeFade, 16, 0x466b60)
-#define g_OutActionMusicVolume GAME_GLOBAL_IN(float, GVar_OutActionMusicVolume, 16, 0x466a40)
-#define g_OutRelaxMusicVolume GAME_GLOBAL_IN(float, GVar_OutRelaxMusicVolume, 16, 0x466ad0)
-#define g_iOutActionMusic GAME_GLOBAL_IN(int, GVar_iOutActionMusic, 16, 0x466b00)
-#define g_iOutRelaxMusic GAME_GLOBAL_IN(int, GVar_iOutRelaxMusic, 16, 0x466aa0)
-#define g_OutActionMusic GAME_GLOBAL_IN(const char *, GVar_OutActionMusic, 16, 0x466a88)	/* format with the number */
-#define g_OutRelaxMusic GAME_GLOBAL_IN(const char *, GVar_OutRelaxMusic, 16, 0x466b90)
-#define g_MusicTimeChange GAME_GLOBAL_IN(float, GVar_MusicTimeChange, 16, 0x466a28)
-#define g_NumEnemiesInRadar GAME_GLOBAL_IN(int, GVar_NumEnemiesInRadar, 16, 0x45fe30)
-#define g_S_VoiceoverVolume GAME_GLOBAL_IN(float, GVar_S_VoiceoverVolume, 16, 0x4aa1d0)
-#define g_S_VoiceoverVolumeDef GAME_GLOBAL_IN(float, GVar_S_VoiceoverVolume, 20, 0x4aa1d4)
+#define g_isActionMusic GAME_GLOBAL_IN(int, GVar_isActionMusic, 16)
+#define g_isActionMusicDef GAME_GLOBAL_IN(int, GVar_isActionMusic, 20)
+#define g_WarnVoiceVolume GAME_GLOBAL_IN(float, GVar_WarnVoiceVolume, 16)
+#define g_WarnVoiceVolumeDef GAME_GLOBAL_IN(float, GVar_WarnVoiceVolume, 20)
+#define g_isActionIndoor GAME_GLOBAL_IN(int, GVar_isActionIndoor, 16)
+#define g_isActionIndoorDef GAME_GLOBAL_IN(int, GVar_isActionIndoor, 20)
+#define g_MaxPoliceWarnDist GAME_GLOBAL_IN(float, GVar_MaxPoliceWarnDist, 16)
+#define g_MaxPoliceWarnDistDef GAME_GLOBAL_IN(float, GVar_MaxPoliceWarnDist, 20)
+#define g_useDynamicMusic GAME_GLOBAL_IN(int, GVar_useDynamicMusic, 16)
+#define g_useDynamicMusicDef GAME_GLOBAL_IN(int, GVar_useDynamicMusic, 20)
+#define g_ForceNoActionMusic GAME_GLOBAL_IN(int, GVar_ForceNoActionMusic, 16)
+#define g_ForceNoActionMusicDef GAME_GLOBAL_IN(int, GVar_ForceNoActionMusic, 20)
+#define g_ActionMusicTimeFade GAME_GLOBAL_IN(float, GVar_ActionMusicTimeFade, 16)
+#define g_OutActionMusicVolume GAME_GLOBAL_IN(float, GVar_OutActionMusicVolume, 16)
+#define g_OutRelaxMusicVolume GAME_GLOBAL_IN(float, GVar_OutRelaxMusicVolume, 16)
+#define g_iOutActionMusic GAME_GLOBAL_IN(int, GVar_iOutActionMusic, 16)
+#define g_iOutRelaxMusic GAME_GLOBAL_IN(int, GVar_iOutRelaxMusic, 16)
+#define g_OutActionMusic GAME_GLOBAL_IN(const char *, GVar_OutActionMusic, 16)	/* format with the number */
+#define g_OutRelaxMusic GAME_GLOBAL_IN(const char *, GVar_OutRelaxMusic, 16)
+#define g_MusicTimeChange GAME_GLOBAL_IN(float, GVar_MusicTimeChange, 16)
+#define g_NumEnemiesInRadar GAME_GLOBAL_IN(int, GVar_NumEnemiesInRadar, 16)
+#define g_S_VoiceoverVolume GAME_GLOBAL_IN(float, GVar_S_VoiceoverVolume, 16)
+#define g_S_VoiceoverVolumeDef GAME_GLOBAL_IN(float, GVar_S_VoiceoverVolume, 20)
 
 /* the state of the music and of the talk voice (voice 2) */
-#define g_MusicFade GAME_GLOBAL(float, g_MusicFade, 0x430228)		/* the fade to the other music */
-#define g_MusicWait GAME_GLOBAL(float, g_MusicWait, 0x466b98)		/* no new change before it runs out */
-#define g_MusicAction GAME_GLOBAL(int, g_MusicAction, 0x466b9c)		/* the action music plays */
-#define g_TalkDelay GAME_GLOBAL(float, g_TalkDelay, 0x466ba8)		/* until the talk voice starts */
-#define g_TalkStop GAME_GLOBAL(byte, g_TalkStop, 0x466bac)		/* stop instead of starting it */
+#define g_MusicFade GAME_GLOBAL(float, g_MusicFade)		/* the fade to the other music */
+#define g_MusicWait GAME_GLOBAL(float, g_MusicWait)		/* no new change before it runs out */
+#define g_MusicAction GAME_GLOBAL(int, g_MusicAction)		/* the action music plays */
+#define g_TalkDelay GAME_GLOBAL(float, g_TalkDelay)		/* until the talk voice starts */
+#define g_TalkStop GAME_GLOBAL(byte, g_TalkStop)		/* stop instead of starting it */
 
 #define TALK_VOICE 2
 
-#define g_MinVoiceVolumeChat GAME_GLOBAL_IN(float, GVar_MinVoiceVolumeChat, 16, 0x466b78)	/* MinVoiceVolumeChat */
+#define g_MinVoiceVolumeChat GAME_GLOBAL_IN(float, GVar_MinVoiceVolumeChat, 16)	/* MinVoiceVolumeChat */
 #define VOICE_END 0.001f		/* rva 0x3a3d58: the talk ends with less left */
-#define VOICE_PAN -0.5f			/* rva 0x3b61f4 */
+#define VOICE_PAN -0.5f
 #define VOICE_MIN_SPEED 0.8f		/* rva 0x3b0844: no voices in slow motion */
-#define g_VoicePlayDelay GAME_GLOBAL_IN(float, GVar_VoicePlayDelay, 16, 0x466a58)	/* VoicePlayDelay */
-#define g_StreamPath GAME_GLOBAL_IN(const char *, GVar_StreamPath, 16, 0x466bf8)	/* StreamPath "Sounds/Stream/" */
-#define g_VoicePath GAME_GLOBAL_IN(const char *, GVar_VoicePath, 16, 0x466c28)	/* VoicePath "Sounds/Voices/" */
-#define g_VoiceCount GAME_GLOBAL(uint32_t, g_VoiceCount, 0x466ba4)	/* the voices played, picks the variant */
+#define g_VoicePlayDelay GAME_GLOBAL_IN(float, GVar_VoicePlayDelay, 16)	/* VoicePlayDelay */
+#define g_StreamPath GAME_GLOBAL_IN(const char *, GVar_StreamPath, 16)	/* StreamPath "Sounds/Stream/" */
+#define g_VoicePath GAME_GLOBAL_IN(const char *, GVar_VoicePath, 16)	/* VoicePath "Sounds/Voices/" */
+#define g_VoiceCount GAME_GLOBAL(uint32_t, g_VoiceCount)	/* the voices played, picks the variant */
 
 void Sound_UpdateVoice(int voice);
 

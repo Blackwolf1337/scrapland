@@ -22,27 +22,27 @@
 #define FXDEATH_POINTS (FXDEATH_TRAILS * FXDEATH_TRAILPOINTS)
 
 /* the engine variables (Gvars) */
-#define g_FXCharacterConversionFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterConversionFile, 16, 0x466e78)
-#define g_FXCharacterConversorFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterConversorFile, 16, 0x466e60)
-#define g_FXCharacterBlaBliBlaFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterBlaBliBlaFile, 16, 0x466ec0)
-#define g_FXCharacterDazedFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterDazedFile, 16, 0x466ef0)
-#define g_FXCharacterDeathFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterDeathFile, 16, 0x466f88)
-#define g_FXCharacterTeleportFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterTeleportFile, 16, 0x466fb8)
-#define g_FXMoneyTransferFile GAME_GLOBAL_IN(const char *, GVar_FXMoneyTransferFile, 16, 0x466f28)
-#define g_FXFunctionarySpecialActionFile GAME_GLOBAL_IN(const char *, GVar_FXFunctionarySpecialActionFile, 16, 0x467044)
-#define g_FunctionarySpecialActionTime GAME_GLOBAL_IN(float, GVar_FunctionarySpecialActionTime, 16, 0x44cf30)
-#define g_FXCharacterDeathMinDist GAME_GLOBAL_IN(float, GVar_FXCharacterDeathMinDist, 16, 0x466ea8)
-#define g_CharacterDeathSound GAME_GLOBAL_IN(const char *, GVar_CharacterDeathSound, 16, 0x466e90)
-#define g_CharacterDeathSoundVol GAME_GLOBAL_IN(float, GVar_CharacterDeathSoundVol, 16, 0x466f40)
-#define g_CharacterConversionSound GAME_GLOBAL_IN(const char *, GVar_CharacterConversionSound, 16, 0x466ed8)
-#define g_CharacterConversionSoundVol GAME_GLOBAL_IN(float, GVar_CharacterConversionSoundVol, 16, 0x466fa0)
-#define g_CharacterTeleportUpSound GAME_GLOBAL_IN(const char *, GVar_CharacterTeleportUpSound, 16, 0x466f58)
-#define g_CharacterTeleportDownSound GAME_GLOBAL_IN(const char *, GVar_CharacterTeleportDownSound, 16, 0x466f70)
-#define g_CharacterTeleportSoundVol GAME_GLOBAL_IN(float, GVar_CharacterTeleportSoundVol, 16, 0x466e20)
-#define g_MaintenanceWorkSound GAME_GLOBAL_IN(const char *, GVar_MaintenanceWorkSound, 16, 0x446b4c)
-#define g_MaintenanceWorkSoundVol GAME_GLOBAL_IN(float, GVar_MaintenanceWorkSoundVol, 16, 0x446b34)
-#define g_MaintenanceWorkSoundAttIni GAME_GLOBAL_IN(float, GVar_MaintenanceWorkSoundAttIni, 16, 0x446b74)
-#define g_MaintenanceWorkSoundAttEnd GAME_GLOBAL_IN(float, GVar_MaintenanceWorkSoundAttEnd, 16, 0x446ba4)
+#define g_FXCharacterConversionFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterConversionFile, 16)
+#define g_FXCharacterConversorFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterConversorFile, 16)
+#define g_FXCharacterBlaBliBlaFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterBlaBliBlaFile, 16)
+#define g_FXCharacterDazedFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterDazedFile, 16)
+#define g_FXCharacterDeathFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterDeathFile, 16)
+#define g_FXCharacterTeleportFile GAME_GLOBAL_IN(const char *, GVar_FXCharacterTeleportFile, 16)
+#define g_FXMoneyTransferFile GAME_GLOBAL_IN(const char *, GVar_FXMoneyTransferFile, 16)
+#define g_FXFunctionarySpecialActionFile GAME_GLOBAL_IN(const char *, GVar_FXFunctionarySpecialActionFile, 16)
+#define g_FunctionarySpecialActionTime GAME_GLOBAL_IN(float, GVar_FunctionarySpecialActionTime, 16)
+#define g_FXCharacterDeathMinDist GAME_GLOBAL_IN(float, GVar_FXCharacterDeathMinDist, 16)
+#define g_CharacterDeathSound GAME_GLOBAL_IN(const char *, GVar_CharacterDeathSound, 16)
+#define g_CharacterDeathSoundVol GAME_GLOBAL_IN(float, GVar_CharacterDeathSoundVol, 16)
+#define g_CharacterConversionSound GAME_GLOBAL_IN(const char *, GVar_CharacterConversionSound, 16)
+#define g_CharacterConversionSoundVol GAME_GLOBAL_IN(float, GVar_CharacterConversionSoundVol, 16)
+#define g_CharacterTeleportUpSound GAME_GLOBAL_IN(const char *, GVar_CharacterTeleportUpSound, 16)
+#define g_CharacterTeleportDownSound GAME_GLOBAL_IN(const char *, GVar_CharacterTeleportDownSound, 16)
+#define g_CharacterTeleportSoundVol GAME_GLOBAL_IN(float, GVar_CharacterTeleportSoundVol, 16)
+#define g_MaintenanceWorkSound GAME_GLOBAL_IN(const char *, GVar_MaintenanceWorkSound, 16)
+#define g_MaintenanceWorkSoundVol GAME_GLOBAL_IN(float, GVar_MaintenanceWorkSoundVol, 16)
+#define g_MaintenanceWorkSoundAttIni GAME_GLOBAL_IN(float, GVar_MaintenanceWorkSoundAttIni, 16)
+#define g_MaintenanceWorkSoundAttEnd GAME_GLOBAL_IN(float, GVar_MaintenanceWorkSoundAttEnd, 16)
 
 /* a character in the conversion: its byte at 0x48c is set while the effect runs */
 #define Entity_InConversion(e) (WChar(e)->disableControl)
@@ -186,7 +186,7 @@ SD_OFFSET(cObjElementFXSputnik, duration, 0xc0);
 SD_OFFSET(cObjElementFXSputnik, last, 0xcc);
 SD_SIZE(cObjElementFXSputnik, 0xe0);
 
-/* World/FX/FXCharActions.cpp (rva 0x1c6b30): the start of the Functionary special action on the element of e */
+/* World/FX/FXCharActions.cpp: the start of the Functionary special action on the element of e */
 void __thiscall cObjElementFXFunctionarySpecialAction_Start(void *self, cEntity *e);
 
 /* the element methods; the same code of several classes is one function */

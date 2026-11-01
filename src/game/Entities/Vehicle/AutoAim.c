@@ -15,7 +15,7 @@ static inline float AA_Deg2Rad(double v) {
 	return (float)((v * M_PI_D) / 180.0);
 }
 
-/* the drop of the target, the out of line instance of the Nto1Links.h unlink (rva 0xd4170) */
+/* the drop of the target, the out of line instance of the Nto1Links.h unlink */
 static inline void AA_Unlink(cAutoAim *self) {
 	CHECK(self->target.data);
 	Nto1Node_Unlink(&self->target);
@@ -301,19 +301,19 @@ byte __thiscall cAutoAim_VarS(cAutoAim *self, const char *name, char **s, int se
 	if (!(byte)set) {
 		switch (self->status) {
 		case AUTOAIM_OFF:
-			*s = GAME_STR(str_3b3970, 0x3b3970);
+			*s = GAME_STR(str_3b3970);
 			break;
 		case AUTOAIM_SEARCH:
-			*s = GAME_STR(str_3b3984, 0x3b3984);
+			*s = GAME_STR(str_3b3984);
 			break;
 		case AUTOAIM_SELECT:
-			*s = GAME_STR(str_3b3968, 0x3b3968);
+			*s = GAME_STR(str_3b3968);
 			break;
 		case AUTOAIM_KEEP:
-			*s = GAME_STR(str_3b3974, 0x3b3974);
+			*s = GAME_STR(str_3b3974);
 			break;
 		case AUTOAIM_MAGNET:
-			*s = GAME_STR(str_3b397c, 0x3b397c);
+			*s = GAME_STR(str_3b397c);
 			break;
 		default:
 			break;
