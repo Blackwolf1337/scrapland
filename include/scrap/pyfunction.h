@@ -36,7 +36,7 @@ typedef struct cPy_NativeFunc {
 } cPy_NativeFunc;
 
 /* a static entry, inserted into g_NativeFuncs */
-cPy_NativeFunc *__thiscall cPy_NativeFunc_ctor(cPy_NativeFunc *self, const char *name, nativefunc_t func);
+cPy_NativeFunc *cPy_NativeFunc_ctor(cPy_NativeFunc *self, const char *name, nativefunc_t func);
 
 #define g_PyFunctions GAME_GLOBAL(cPy_Function *, g_PyFunctions)
 /* memory files of C function parameters for reuse; the first dword of the buffer links them */
@@ -44,18 +44,18 @@ cPy_NativeFunc *__thiscall cPy_NativeFunc_ctor(cPy_NativeFunc *self, const char 
 #define g_NativeFuncs GAME_GLOBAL(cPy_NativeFunc *, g_NativeFuncs)
 #define g_PythonReady GAME_GLOBAL(byte, g_PythonReady)
 
-cPy_Function *__thiscall cPy_Function_ctor(cPy_Function *self);
-void __thiscall cPy_Function_dtor(cPy_Function *self);
+cPy_Function *cPy_Function_ctor(cPy_Function *self);
+void cPy_Function_dtor(cPy_Function *self);
 /* 1 if set; also 1 for an empty name (the function is cleared then) and while Python is not running */
-byte __thiscall cPy_Function_SetFunc(cPy_Function *self, const char *name);
-int __thiscall cPy_Function_IsValid(cPy_Function *self);
+byte cPy_Function_SetFunc(cPy_Function *self, const char *name);
+int cPy_Function_IsValid(cPy_Function *self);
 /* binds the C function func (NULL: only cleared); always 1 */
-byte __thiscall cPy_Function_SetNative(cPy_Function *self, nativefunc_t func);
-void __thiscall cPy_Function_AddParamI(cPy_Function *self, int v);
-void __thiscall cPy_Function_AddParamF(cPy_Function *self, float v);
-void __thiscall cPy_Function_AddParamS(cPy_Function *self, const char *v);
+byte cPy_Function_SetNative(cPy_Function *self, nativefunc_t func);
+void cPy_Function_AddParamI(cPy_Function *self, int v);
+void cPy_Function_AddParamF(cPy_Function *self, float v);
+void cPy_Function_AddParamS(cPy_Function *self, const char *v);
 /* calls the function; the int result of a Python function, else 0. clear drops function and parameters first */
-int __thiscall cPy_Function_Execute(cPy_Function *self, byte clear);
+int cPy_Function_Execute(cPy_Function *self, byte clear);
 /* clears every function of the ring and frees the parameter files */
 void cPy_Function_ClearAll(void);
 

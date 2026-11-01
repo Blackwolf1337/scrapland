@@ -34,22 +34,22 @@ typedef struct cScheduledFuncStack {
 SD_SIZE(cScheduledFuncStack, 0x1c);
 #define CSCHEDULEDFUNCSTACK_VFTABLE GAME_VFTABLE(cScheduledFuncStack_vftable)
 
-void __fastcall cScheduledFunc_dtor(cScheduledFunc *self);
-cScheduledFuncStack *__thiscall cScheduledFuncStack_Delete(cScheduledFuncStack *self, byte flags);
-void __thiscall Scheduler_Add(cScheduledFuncStack *self, float time, PyObject *func, PyObject *params, const char *name);
+void cScheduledFunc_dtor(cScheduledFunc *self);
+cScheduledFuncStack *cScheduledFuncStack_Delete(cScheduledFuncStack *self, byte flags);
+void Scheduler_Add(cScheduledFuncStack *self, float time, PyObject *func, PyObject *params, const char *name);
 /* the one named name, unless it is running */
-void __thiscall Scheduler_Delete(cScheduledFuncStack *self, const char *name);
-void __fastcall Scheduler_Clear(cScheduledFuncStack *self);
+void Scheduler_Delete(cScheduledFuncStack *self, const char *name);
+void Scheduler_Clear(cScheduledFuncStack *self);
 /* calls and removes the functions due before now */
-void __thiscall Scheduler_Run(cScheduledFuncStack *self, float now);
-void __thiscall cScheduledFunc_Set(cScheduledFunc *self, float time, PyObject *func, PyObject *params, const char *name);
+void Scheduler_Run(cScheduledFuncStack *self, float now);
+void cScheduledFunc_Set(cScheduledFunc *self, float time, PyObject *func, PyObject *params, const char *name);
 
 /* the DList instance */
-void __thiscall SchedList_Add(cSchedList *list, cScheduledFunc *const *f);
+void SchedList_Add(cSchedList *list, cScheduledFunc *const *f);
 /* in front of the iterator */
-void __thiscall SchedList_Insert(cSchedList *list, cScheduledFunc *const *f);
-void __fastcall SchedList_Clear(cSchedList *list);
-void __fastcall SchedList_RemoveIter(cSchedList *list);
-void __fastcall SchedList_RemoveHead(cSchedList *list);
+void SchedList_Insert(cSchedList *list, cScheduledFunc *const *f);
+void SchedList_Clear(cSchedList *list);
+void SchedList_RemoveIter(cSchedList *list);
+void SchedList_RemoveHead(cSchedList *list);
 
 #endif

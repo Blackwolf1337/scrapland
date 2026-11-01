@@ -53,21 +53,21 @@ SD_SIZE(CFXNewsPanel, 0x8);
 #define g_LavaCosInit GAME_GLOBAL(byte, g_LavaCosInit)
 #define g_LavaOffset (GAME_ARRAY(int, g_LavaOffset))	/* FXTEX_SIZE, the row offset of each column */
 
-void __fastcall IFXTexture_dtor(IFXTexture *self);
-IFXTexture *__thiscall IFXTexture_Delete(IFXTexture *self, byte flags);
-void *__fastcall IFXTexture_GetTexture(IFXTexture *self);
-CFXTexLava *__thiscall CFXTexLava_ctor(CFXTexLava *self, const char *file);
-void __fastcall CFXTexLava_dtor(CFXTexLava *self);
-CFXTexLava *__thiscall CFXTexLava_Delete(CFXTexLava *self, byte flags);
-int __thiscall CFXTexLava_Update(CFXTexLava *self, CMap *map);
-CFXTexScroll *__thiscall CFXTexScroll_ctor(CFXTexScroll *self, const char *file);
-void __fastcall CFXTexScroll_dtor(CFXTexScroll *self);
-CFXTexScroll *__thiscall CFXTexScroll_Delete(CFXTexScroll *self, byte flags);
-int __thiscall CFXTexScroll_Update(CFXTexScroll *self, CMap *map);
-CFXNewsPanel *__fastcall CFXNewsPanel_ctor(CFXNewsPanel *self);
-CFXNewsPanel *__thiscall CFXNewsPanel_Delete(CFXNewsPanel *self, byte flags);
-int __thiscall CFXNewsPanel_Update(CFXNewsPanel *self, CMap *map);
-void *__fastcall CFXNewsPanel_GetTexture(CFXNewsPanel *self);
+void IFXTexture_dtor(IFXTexture *self);
+IFXTexture *IFXTexture_Delete(IFXTexture *self, byte flags);
+void *IFXTexture_GetTexture(IFXTexture *self);
+CFXTexLava *CFXTexLava_ctor(CFXTexLava *self, const char *file);
+void CFXTexLava_dtor(CFXTexLava *self);
+CFXTexLava *CFXTexLava_Delete(CFXTexLava *self, byte flags);
+int CFXTexLava_Update(CFXTexLava *self, CMap *map);
+CFXTexScroll *CFXTexScroll_ctor(CFXTexScroll *self, const char *file);
+void CFXTexScroll_dtor(CFXTexScroll *self);
+CFXTexScroll *CFXTexScroll_Delete(CFXTexScroll *self, byte flags);
+int CFXTexScroll_Update(CFXTexScroll *self, CMap *map);
+CFXNewsPanel *CFXNewsPanel_ctor(CFXNewsPanel *self);
+CFXNewsPanel *CFXNewsPanel_Delete(CFXNewsPanel *self, byte flags);
+int CFXNewsPanel_Update(CFXNewsPanel *self, CMap *map);
+void *CFXNewsPanel_GetTexture(CFXNewsPanel *self);
 /* the effect of kind for the file of map, NULL for an unknown kind */
 void *FXTexture_Create(byte kind, CMap *map);
 /* the kind of the first "(...)" tag of the name that is one, 0 for none */

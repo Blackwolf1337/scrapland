@@ -25,7 +25,7 @@ static double Scene_Seconds(uint32_t t0) {
 	return (double)(uint32_t)(exe_timeGetTime() - t0) / 1000.0;
 }
 
-CScene *__fastcall CScene_ctor(CScene *self) {
+CScene *CScene_ctor(CScene *self) {
 	self->name = NULL;
 	self->Refs = 0;
 	self->vftable = CSCENE_VFTABLE;
@@ -57,7 +57,7 @@ static void Scene_DeleteIni(CIniFile **ini) {
 	}
 }
 
-void __fastcall CScene_dtor(CScene *self) {
+void CScene_dtor(CScene *self) {
 	self->vftable = CSCENE_VFTABLE;
 	E3D_DebugPrintf("\n> Escena::~Escena(): '%s' (%08Xh)", self->name, self);
 	self->anim = NULL;
@@ -99,11 +99,11 @@ void __fastcall CScene_dtor(CScene *self) {
 	}
 }
 
-void __thiscall CScene_Shared(CScene *self) {
+void CScene_Shared(CScene *self) {
 	(void)self;
 }
 
-CScene *__thiscall CScene_Delete(CScene *self, byte flags) {
+CScene *CScene_Delete(CScene *self, byte flags) {
 	CScene_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CScene));
@@ -111,7 +111,7 @@ CScene *__thiscall CScene_Delete(CScene *self, byte flags) {
 	return self;
 }
 
-void __thiscall CScene_Msg(CScene *self, int msg, int a, int b, int c, int d) {
+void CScene_Msg(CScene *self, int msg, int a, int b, int c, int d) {
 	(void)c;
 	(void)d;
 	switch (msg) {
@@ -149,7 +149,7 @@ void __thiscall CScene_Msg(CScene *self, int msg, int a, int b, int c, int d) {
 	}
 }
 
-void __thiscall CScene_ReleaseD3D(CScene *self, void *dev) {
+void CScene_ReleaseD3D(CScene *self, void *dev) {
 	for (CNode3D *n = self->Node3D; n; n = n->next) {
 		if (n->obj3D) {
 			OBJ3D_CALL(n->obj3D, OBJ3D_VF_RELEASED3D, objDev_t, dev);
@@ -157,7 +157,7 @@ void __thiscall CScene_ReleaseD3D(CScene *self, void *dev) {
 	}
 }
 
-void __thiscall CScene_InitD3D(CScene *self, void *dev) {
+void CScene_InitD3D(CScene *self, void *dev) {
 	for (CNode3D *n = self->Node3D; n; n = n->next) {
 		if (n->obj3D) {
 			OBJ3D_CALL(n->obj3D, OBJ3D_VF_INITD3D, objDev_t, dev);
@@ -202,7 +202,7 @@ static IObject3D *Scene_NewObj(CNode3D *node, uint32_t class, byte *set) {
 	return NULL;
 }
 
-void __thiscall CScene_Read(CScene *self, CFileIO *f, byte bAnim) {
+void CScene_Read(CScene *self, CFileIO *f, byte bAnim) {
 	char buf[0x100];
 
 	CHECK(!self->Node3D);
@@ -280,7 +280,7 @@ void __thiscall CScene_Read(CScene *self, CFileIO *f, byte bAnim) {
 	CFileIO_Error(f, "SCN");
 }
 
-void __thiscall CScene_Write(CScene *self, CFileIO *f, byte bAnim) {
+void CScene_Write(CScene *self, CFileIO *f, byte bAnim) {
 	if (bAnim) {
 		CHECK(self->AnimM3D);
 		CHECK(!self->ini);
@@ -343,7 +343,7 @@ static CRenderNode *Scene_RenderNode(CScene *self, uint32_t i) {
 	return (r->node->flags & NODE_NO_RENDERNODE) ? NULL : r;
 }
 
-void __thiscall CScene_Render(CScene *self, NodeAnimCtx *ctx) {
+void CScene_Render(CScene *self, NodeAnimCtx *ctx) {
 	self->anim = ctx;
 	if (!ctx->renderNodes) {
 		for (CNode3D *n = self->Node3D; n; n = n->next) {
@@ -369,7 +369,7 @@ void __thiscall CScene_Render(CScene *self, NodeAnimCtx *ctx) {
 	self->anim = NULL;
 }
 
-void __thiscall CScene_Update(CScene *self, NodeAnimCtx *ctx) {
+void CScene_Update(CScene *self, NodeAnimCtx *ctx) {
 	self->anim = ctx;
 	if (!ctx->renderNodes) {
 		for (CNode3D *n = self->Node3D; n; n = n->next) {
@@ -388,13 +388,13 @@ void __thiscall CScene_Update(CScene *self, NodeAnimCtx *ctx) {
 	self->anim = NULL;
 }
 
-void __fastcall CScene_UpdateNodes(CScene *self) {
+void CScene_UpdateNodes(CScene *self) {
 	for (CNode3D *n = self->Node3D; n; n = n->next) {
 		CNode3D_Update(n, NULL);
 	}
 }
 
-void __thiscall CScene_AddNode(CScene *self, CNode3D *node) {
+void CScene_AddNode(CScene *self, CNode3D *node) {
 	CHECK(node && !node->next && !node->prev && !node->scene);
 	CNode3D *last = self->Node3D;
 	if (!last) {
@@ -410,7 +410,7 @@ void __thiscall CScene_AddNode(CScene *self, CNode3D *node) {
 	node->scene = self;
 }
 
-void __thiscall CScene_RemoveNode(CScene *self, CNode3D *node) {
+void CScene_RemoveNode(CScene *self, CNode3D *node) {
 	CHECK(node && node->scene == self);
 	CHECK((node != self->Node3D) != (node->prev == NULL));
 	if (self->Node3D == node) {
@@ -425,7 +425,7 @@ void __thiscall CScene_RemoveNode(CScene *self, CNode3D *node) {
 	CNode3D_Unlink(node);
 }
 
-void __fastcall CScene_CompactMats(CScene *self) {
+void CScene_CompactMats(CScene *self) {
 	int j = 0;
 
 	for (int i = 0; i < self->mats.n; i++) {
@@ -448,7 +448,7 @@ void __fastcall CScene_CompactMats(CScene *self) {
 	Table_Resize4(&self->mats, j);
 }
 
-void __fastcall CScene_DeleteNodes(CScene *self) {
+void CScene_DeleteNodes(CScene *self) {
 	for (CNode3D *n = self->Node3D; n; n = n->next) {
 		CNode3D_Free(n);
 	}
@@ -459,7 +459,7 @@ void __fastcall CScene_DeleteNodes(CScene *self) {
 	}
 }
 
-CNode3D *__thiscall CScene_NodeObject(CScene *self, int index) {
+CNode3D *CScene_NodeObject(CScene *self, int index) {
 	for (CNode3D *n = self->Node3D; n; n = n->next) {
 		if (n->index == index) {
 			return n;
@@ -468,7 +468,7 @@ CNode3D *__thiscall CScene_NodeObject(CScene *self, int index) {
 	return NULL;
 }
 
-CNode3D *__thiscall CScene_FindClass(CScene *self, CNode3D *from, uint32_t class) {
+CNode3D *CScene_FindClass(CScene *self, CNode3D *from, uint32_t class) {
 	CNode3D *n = from ? from->next : self->Node3D;
 	if (class) {
 		while (n && CNode3D_Class(n) != class) {
@@ -478,12 +478,12 @@ CNode3D *__thiscall CScene_FindClass(CScene *self, CNode3D *from, uint32_t class
 	return n;
 }
 
-CNode3D *__thiscall CScene_FindNode(CScene *self, const char *name) {
+CNode3D *CScene_FindNode(CScene *self, const char *name) {
 	CHECK(self->Node3D);
 	return CNode3D_Find(self->Node3D, name, 1);
 }
 
-void __thiscall CScene_UpdateBox(CScene *self, box_t *out, byte first) {
+void CScene_UpdateBox(CScene *self, box_t *out, byte first) {
 	box_t *box = &self->box;
 
 	box->min = (vec3_t){ 3.4028234663852886e+38f, 3.4028234663852886e+38f, 3.4028234663852886e+38f };
@@ -518,7 +518,7 @@ void __thiscall CScene_UpdateBox(CScene *self, box_t *out, byte first) {
 	Box_Merge(out, box, first);
 }
 
-void __fastcall CScene_CalcWeights(CScene *self) {
+void CScene_CalcWeights(CScene *self) {
 	if (!CScene_CountClass(self, CLASS_OBJ3D_MESHD3D)) {
 		return;
 	}
@@ -536,7 +536,7 @@ void __fastcall CScene_CalcWeights(CScene *self) {
 	}
 }
 
-int __thiscall CScene_CountClass(CScene *self, uint32_t class) {
+int CScene_CountClass(CScene *self, uint32_t class) {
 	int n = 0;
 	for (CNode3D *node = self->Node3D; node; node = node->next) {
 		if (CNode3D_Class(node) == class) {
@@ -546,7 +546,7 @@ int __thiscall CScene_CountClass(CScene *self, uint32_t class) {
 	return n;
 }
 
-int __fastcall CScene_NumNodes(CScene *self) {
+int CScene_NumNodes(CScene *self) {
 	int n = 0;
 	for (CNode3D *node = self->Node3D; node; node = node->next) {
 		n++;
@@ -554,7 +554,7 @@ int __fastcall CScene_NumNodes(CScene *self) {
 	return n;
 }
 
-void __thiscall CScene_ConvertD3D(CScene *self, uint32_t flags) {
+void CScene_ConvertD3D(CScene *self, uint32_t flags) {
 	int n = 0;
 
 	for (CNode3D *node = self->Node3D; node; node = node->next) {
@@ -569,7 +569,7 @@ void __thiscall CScene_ConvertD3D(CScene *self, uint32_t flags) {
 	}
 }
 
-void __fastcall CScene_ToGround(CScene *self) {
+void CScene_ToGround(CScene *self) {
 	E3D_DebugPrintf("\n CEscena::convertir_a_suelo(): %s (%08Xh)", Path_FileName(self->name), self);
 	if (self->fromAmc) {
 		CNode3D *n = self->Node3D;
@@ -590,7 +590,7 @@ void __fastcall CScene_ToGround(CScene *self) {
 	CScene_DeleteEmpty(self, 0, 0, 1);
 }
 
-void __thiscall CScene_DeleteEmpty(CScene *self, uint32_t class, byte bRefs, byte flagged) {
+void CScene_DeleteEmpty(CScene *self, uint32_t class, byte bRefs, byte flagged) {
 	byte deleted;
 
 	CHECK(class == 0);
@@ -625,7 +625,7 @@ void __thiscall CScene_DeleteEmpty(CScene *self, uint32_t class, byte bRefs, byt
 	} while (deleted);
 }
 
-void __thiscall CScene_SetScale(CScene *self, const vec3_t *s) {
+void CScene_SetScale(CScene *self, const vec3_t *s) {
 	if (s->x == 1.0f && s->y == 1.0f && s->z == 1.0f) {
 		return;
 	}
@@ -665,7 +665,7 @@ void __thiscall CScene_SetScale(CScene *self, const vec3_t *s) {
 	}
 }
 
-void __thiscall CScene_Join(CScene *self, byte sel, const char *name) {
+void CScene_Join(CScene *self, byte sel, const char *name) {
 	uint32_t mask = sel ? NODE_JOIN1 : NODE_JOIN2;
 
 	for (CNode3D *dst = self->Node3D; dst; dst = dst->next) {
@@ -718,13 +718,13 @@ void __thiscall CScene_Join(CScene *self, byte sel, const char *name) {
 	CScene_DeleteEmpty(self, 0, 0, 1);
 }
 
-void __thiscall CScene_SetMarks(CScene *self, int v) {
+void CScene_SetMarks(CScene *self, int v) {
 	for (CNode3D *n = self->Node3D; n; n = n->next) {
 		n->mark = v;
 	}
 }
 
-void __thiscall CScene_PrecalcIllum(CScene *self, byte noLights, byte visible) {
+void CScene_PrecalcIllum(CScene *self, byte noLights, byte visible) {
 	E3D_DebugPrintf("\n CEscena::precalc_ilum(): %s (%08Xh)", Path_FileName(self->name), self);
 	uint32_t t0 = exe_timeGetTime();
 	for (CNode3D *n = self->Node3D; n; n = n->next) {

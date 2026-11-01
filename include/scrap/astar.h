@@ -32,18 +32,18 @@ typedef void (*binHeapIndex_t)(void **elem, int index);
 
 typedef struct cBinaryHeap cBinaryHeap;
 typedef struct cBinaryHeapVtbl {
-	cBinaryHeap *(__thiscall *Delete)(cBinaryHeap *self, byte flags);
-	void(__thiscall *Clear)(cBinaryHeap *self);
-	byte(__thiscall *Push)(cBinaryHeap *self, void *const *item);
-	byte(__thiscall *Top)(cBinaryHeap *self, void ***out);
-	byte(__thiscall *Pop)(cBinaryHeap *self);
-	byte(__thiscall *Get)(cBinaryHeap *self, void ***out, int i);
-	byte(__thiscall *Find)(cBinaryHeap *self, const void *item, int *index, void ***out);
-	byte(__thiscall *Set)(cBinaryHeap *self, void *const *item, int i);
-	int(__thiscall *Count)(cBinaryHeap *self);
-	void(__thiscall *Fix)(cBinaryHeap *self, int i);
-	byte(__thiscall *SiftUp)(cBinaryHeap *self, int i);
-	byte(__thiscall *SiftDown)(cBinaryHeap *self, int i);
+	cBinaryHeap *(*Delete)(cBinaryHeap *self, byte flags);
+	void(*Clear)(cBinaryHeap *self);
+	byte(*Push)(cBinaryHeap *self, void *const *item);
+	byte(*Top)(cBinaryHeap *self, void ***out);
+	byte(*Pop)(cBinaryHeap *self);
+	byte(*Get)(cBinaryHeap *self, void ***out, int i);
+	byte(*Find)(cBinaryHeap *self, const void *item, int *index, void ***out);
+	byte(*Set)(cBinaryHeap *self, void *const *item, int i);
+	int(*Count)(cBinaryHeap *self);
+	void(*Fix)(cBinaryHeap *self, int i);
+	byte(*SiftUp)(cBinaryHeap *self, int i);
+	byte(*SiftDown)(cBinaryHeap *self, int i);
 } cBinaryHeapVtbl;
 
 struct cBinaryHeap {
@@ -59,23 +59,23 @@ SD_SIZE(cBinaryHeap, 0x1c);
 /* the only instance */
 typedef cBinaryHeap cBinaryHeap_ElemAStarPtr;
 
-cBinaryHeap *__thiscall cBinaryHeap_ctor(cBinaryHeap *self, int capacity, binHeapLess_t less, binHeapEq_t equals,
+cBinaryHeap *cBinaryHeap_ctor(cBinaryHeap *self, int capacity, binHeapLess_t less, binHeapEq_t equals,
 	binHeapIndex_t setIndex);
-void __fastcall cBinaryHeap_dtor(cBinaryHeap *self);
-cBinaryHeap *__thiscall cBinaryHeap_Delete(cBinaryHeap *self, byte flags);
-void __thiscall cBinaryHeap_Clear(cBinaryHeap *self);
-byte __thiscall cBinaryHeap_Push(cBinaryHeap *self, void *const *item);
-byte __thiscall cBinaryHeap_Top(cBinaryHeap *self, void ***out);
-byte __thiscall cBinaryHeap_Pop(cBinaryHeap *self);
-byte __thiscall cBinaryHeap_Get(cBinaryHeap *self, void ***out, int i);
-byte __thiscall cBinaryHeap_Find(cBinaryHeap *self, const void *item, int *index, void ***out);
-byte __thiscall cBinaryHeap_Set(cBinaryHeap *self, void *const *item, int i);
+void cBinaryHeap_dtor(cBinaryHeap *self);
+cBinaryHeap *cBinaryHeap_Delete(cBinaryHeap *self, byte flags);
+void cBinaryHeap_Clear(cBinaryHeap *self);
+byte cBinaryHeap_Push(cBinaryHeap *self, void *const *item);
+byte cBinaryHeap_Top(cBinaryHeap *self, void ***out);
+byte cBinaryHeap_Pop(cBinaryHeap *self);
+byte cBinaryHeap_Get(cBinaryHeap *self, void ***out, int i);
+byte cBinaryHeap_Find(cBinaryHeap *self, const void *item, int *index, void ***out);
+byte cBinaryHeap_Set(cBinaryHeap *self, void *const *item, int i);
 /* 4 bytes in the exe, too short for the hook jump: only for the C callers */
-int __thiscall cBinaryHeap_Count(cBinaryHeap *self);
-void __thiscall cBinaryHeap_Fix(cBinaryHeap *self, int i);
+int cBinaryHeap_Count(cBinaryHeap *self);
+void cBinaryHeap_Fix(cBinaryHeap *self, int i);
 /* 1 if the element moved */
-byte __thiscall cBinaryHeap_SiftUp(cBinaryHeap *self, int i);
-byte __thiscall cBinaryHeap_SiftDown(cBinaryHeap *self, int i);
+byte cBinaryHeap_SiftUp(cBinaryHeap *self, int i);
+byte cBinaryHeap_SiftDown(cBinaryHeap *self, int i);
 
 byte AStar_ElemLess(void *const *a, void *const *b);
 byte AStar_ElemEq(void *const *a, const void *b);
@@ -90,46 +90,46 @@ typedef struct cAStarItem {
 SD_SIZE(cAStarItem, 0x14);
 
 /* the number hash of HashTable.h: the nibbles from the low end */
-uint32_t __thiscall AStarTable_Slot(HashTable *self, uint32_t key);
-cAStarItem *__thiscall AStarTable_Find(HashTable *self, int key, uint32_t slot);
-cAStarItem *__thiscall AStarTable_Insert(HashTable *self, int key, uint32_t slot, const cAStarInfo *v);
-byte __thiscall AStarTable_Add(HashTable *self, int key, const cAStarInfo *v, byte warn);
-byte __thiscall AStarTable_Get(HashTable *self, int key, cAStarItem **out);
+uint32_t AStarTable_Slot(HashTable *self, uint32_t key);
+cAStarItem *AStarTable_Find(HashTable *self, int key, uint32_t slot);
+cAStarItem *AStarTable_Insert(HashTable *self, int key, uint32_t slot, const cAStarInfo *v);
+byte AStarTable_Add(HashTable *self, int key, const cAStarInfo *v, byte warn);
+byte AStarTable_Get(HashTable *self, int key, cAStarItem **out);
 /* the items freed, the slots kept */
-void __fastcall AStarTable_Clear(HashTable *self);
-void __fastcall AStarTable_dtor(HashTable *self);
+void AStarTable_Clear(HashTable *self);
+void AStarTable_dtor(HashTable *self);
 
 /* ---- the search: CAStarSup with CAStar (CNodesWorld) and CAStar2D (CNodesWorld2D) ---- */
 
 typedef struct CAStarSup CAStarSup;
 typedef struct CAStarVtbl {
-	CAStarSup *(__thiscall *Delete)(CAStarSup *self, byte flags);					/* 0x00 */
+	CAStarSup *(*Delete)(CAStarSup *self, byte flags);					/* 0x00 */
 	/* the spheres of the closed and open nodes (g_AStarDrawMode) and of the ends; color not used */
-	void(__thiscall *Draw)(CAStarSup *self, uint32_t color);					/* 0x04 */
-	HashTable *(__thiscall *GetTable)(CAStarSup *self);					/* 0x08 */
-	byte(__thiscall *TestPath)(CAStarSup *self, const vec3_t *a, const vec3_t *b);		/* 0x0c */
+	void(*Draw)(CAStarSup *self, uint32_t color);					/* 0x04 */
+	HashTable *(*GetTable)(CAStarSup *self);					/* 0x08 */
+	byte(*TestPath)(CAStarSup *self, const vec3_t *a, const vec3_t *b);		/* 0x0c */
 	/* the start moved to the nearest point of visibility */
-	void(__thiscall *NearestStart)(CAStarSup *self);						/* 0x10 */
-	void(__thiscall *PointsVis)(CAStarSup *self, const vec3_t *pos, const vec3_t **list, int max, int *count);	/* 0x14 */
+	void(*NearestStart)(CAStarSup *self);						/* 0x10 */
+	void(*PointsVis)(CAStarSup *self, const vec3_t *pos, const vec3_t **list, int max, int *count);	/* 0x14 */
 	/* the points of visibility of pos in the graph file file: *state 0 the normal search, 1 the segment only, 2
 	 * the nearest of the floor */
-	void(__thiscall *PointsVisFile)(CAStarSup *self, const vec3_t *pos, const vec3_t **list, int max, int *count,
+	void(*PointsVisFile)(CAStarSup *self, const vec3_t *pos, const vec3_t **list, int max, int *count,
 		int *state, int file);								/* 0x18 */
-	void(__thiscall *OtherLinks)(CAStarSup *self, const vec3_t *node, const vec3_t *pos, const vec3_t **list,
+	void(*OtherLinks)(CAStarSup *self, const vec3_t *node, const vec3_t *pos, const vec3_t **list,
 		int max, int *count);								/* 0x1c */
-	byte(__thiscall *Search)(CAStarSup *self, cNWVecList *path, int stupid, byte *ok, byte *found, int *state);	/* 0x20 */
+	byte(*Search)(CAStarSup *self, cNWVecList *path, int stupid, byte *ok, byte *found, int *state);	/* 0x20 */
 	/* the points of elem and its parents in front of path */
-	void(__thiscall *BuildPath)(CAStarSup *self, cNWVecList *path, const ElemAStar *elem);	/* 0x24 */
-	float(__thiscall *Heuristic)(CAStarSup *self, const vec3_t *p);				/* 0x28 */
-	float(__thiscall *Dist)(CAStarSup *self, const vec3_t *a, const vec3_t *b);		/* 0x2c */
-	byte(__thiscall *GetElem)(CAStarSup *self, const vec3_t *node, ElemAStar **out, cAStarItem **info);	/* 0x30 */
-	int(__thiscall *FileOf)(CAStarSup *self, const vec3_t *node);				/* 0x34 */
-	byte(__thiscall *AddElem)(CAStarSup *self, const ElemAStar *e);				/* 0x38 */
-	byte(__thiscall *CloseAdd)(CAStarSup *self, ElemAStar *const *e);				/* 0x3c */
-	byte(__thiscall *CloseRemove)(CAStarSup *self, int i);					/* 0x40 */
-	byte(__thiscall *TableGet)(CAStarSup *self, const vec3_t *node, cAStarItem **out);		/* 0x44 */
+	void(*BuildPath)(CAStarSup *self, cNWVecList *path, const ElemAStar *elem);	/* 0x24 */
+	float(*Heuristic)(CAStarSup *self, const vec3_t *p);				/* 0x28 */
+	float(*Dist)(CAStarSup *self, const vec3_t *a, const vec3_t *b);		/* 0x2c */
+	byte(*GetElem)(CAStarSup *self, const vec3_t *node, ElemAStar **out, cAStarItem **info);	/* 0x30 */
+	int(*FileOf)(CAStarSup *self, const vec3_t *node);				/* 0x34 */
+	byte(*AddElem)(CAStarSup *self, const ElemAStar *e);				/* 0x38 */
+	byte(*CloseAdd)(CAStarSup *self, ElemAStar *const *e);				/* 0x3c */
+	byte(*CloseRemove)(CAStarSup *self, int i);					/* 0x40 */
+	byte(*TableGet)(CAStarSup *self, const vec3_t *node, cAStarItem **out);		/* 0x44 */
 	/* the states of the closed and open nodes to 2, the lists emptied */
-	void(__thiscall *Reset)(CAStarSup *self);							/* 0x48 */
+	void(*Reset)(CAStarSup *self);							/* 0x48 */
 } CAStarVtbl;
 SD_OFFSET(CAStarVtbl, Reset, 0x48);
 
@@ -173,50 +173,50 @@ SD_SIZE(CAStar2D, 0x50);
 #define g_AStarDrawMode GAME_GLOBAL_IN(int, GVar_ShowAStarAI, 16)	/* 1 closed, 2 open, 3 both */
 
 /* the table of 1009 slots of the search (Global/HashTable.h with int keys) */
-HashTable *__thiscall AStarTable_ctor(HashTable *self, int size);
+HashTable *AStarTable_ctor(HashTable *self, int size);
 
 /* CAStarSup, the base class: the table, the ends zeroed, maxDist */
-CAStarSup *__fastcall CAStarSup_ctor(CAStarSup *self);
-void __fastcall CAStarSup_dtor(CAStarSup *self);
-CAStarSup *__thiscall CAStarSup_Delete(CAStarSup *self, byte flags);
-void __thiscall CAStarSup_Draw(CAStarSup *self, uint32_t color);
-HashTable *__thiscall CAStarSup_GetTable(CAStarSup *self);
+CAStarSup *CAStarSup_ctor(CAStarSup *self);
+void CAStarSup_dtor(CAStarSup *self);
+CAStarSup *CAStarSup_Delete(CAStarSup *self, byte flags);
+void CAStarSup_Draw(CAStarSup *self, uint32_t color);
+HashTable *CAStarSup_GetTable(CAStarSup *self);
 /* the A* from start to goal over the points of visibility; path: goal first, the start last. ok 0 when the lists are
  * full or the start has no points, found 0 when the goal has no point or the graph has no way */
-byte __thiscall CAStarSup_Search(CAStarSup *self, cNWVecList *path, int stupid, byte *ok, byte *found, int *state);
-void __thiscall CAStarSup_BuildPath(CAStarSup *self, cNWVecList *path, const ElemAStar *elem);
-float __thiscall CAStarSup_Heuristic(CAStarSup *self, const vec3_t *p);
-float __thiscall CAStarSup_Dist(CAStarSup *self, const vec3_t *a, const vec3_t *b);
-byte __thiscall CAStarSup_GetElem(CAStarSup *self, const vec3_t *node, ElemAStar **out, cAStarItem **info);
-byte __thiscall CAStarSup_AddElem(CAStarSup *self, const ElemAStar *e);
-byte __thiscall CAStarSup_CloseAdd(CAStarSup *self, ElemAStar *const *e);
-byte __thiscall CAStarSup_CloseRemove(CAStarSup *self, int i);
-byte __thiscall CAStarSup_TableGet(CAStarSup *self, const vec3_t *node, cAStarItem **out);
-void __thiscall CAStarSup_Reset(CAStarSup *self);
+byte CAStarSup_Search(CAStarSup *self, cNWVecList *path, int stupid, byte *ok, byte *found, int *state);
+void CAStarSup_BuildPath(CAStarSup *self, cNWVecList *path, const ElemAStar *elem);
+float CAStarSup_Heuristic(CAStarSup *self, const vec3_t *p);
+float CAStarSup_Dist(CAStarSup *self, const vec3_t *a, const vec3_t *b);
+byte CAStarSup_GetElem(CAStarSup *self, const vec3_t *node, ElemAStar **out, cAStarItem **info);
+byte CAStarSup_AddElem(CAStarSup *self, const ElemAStar *e);
+byte CAStarSup_CloseAdd(CAStarSup *self, ElemAStar *const *e);
+byte CAStarSup_CloseRemove(CAStarSup *self, int i);
+byte CAStarSup_TableGet(CAStarSup *self, const vec3_t *node, cAStarItem **out);
+void CAStarSup_Reset(CAStarSup *self);
 
 /* CAStar and CAStar2D: CAStar_ctor and CAStar2D_ctor are in ai.h */
-void __fastcall CAStar_dtor(CAStar *self);
-CAStar *__thiscall CAStar_Delete(CAStar *self, byte flags);
-void __fastcall CAStar2D_dtor(CAStar2D *self);
-CAStar2D *__thiscall CAStar2D_Delete(CAStar2D *self, byte flags);
+void CAStar_dtor(CAStar *self);
+CAStar *CAStar_Delete(CAStar *self, byte flags);
+void CAStar2D_dtor(CAStar2D *self);
+CAStar2D *CAStar2D_Delete(CAStar2D *self, byte flags);
 /* the element and the table item of every point of visibility (both classes) */
-void __fastcall CAStar_InitList(CAStar *self);
+void CAStar_InitList(CAStar *self);
 /* Draw when g_AStarDrawMode is on */
-void __fastcall CAStar_DrawDebug(CAStar *self);
-void __fastcall CAStar2D_DrawDebug(CAStar *self);
-byte __thiscall CAStar_TestPath(CAStar *self, const vec3_t *a, const vec3_t *b);
-byte __thiscall CAStar2D_TestPath(CAStar2D *self, const vec3_t *a, const vec3_t *b);
-void __thiscall CAStar_NearestStart(CAStar *self);
-void __thiscall CAStar2D_NearestStart(CAStar2D *self);
-void __thiscall CAStar_PointsVis(CAStar *self, const vec3_t *pos, const vec3_t **list, int max, int *count);
-void __thiscall CAStar2D_PointsVis(CAStar2D *self, const vec3_t *pos, const vec3_t **list, int max, int *count);
-void __thiscall CAStar_PointsVisFile(CAStar *self, const vec3_t *pos, const vec3_t **list, int max, int *count,
+void CAStar_DrawDebug(CAStar *self);
+void CAStar2D_DrawDebug(CAStar *self);
+byte CAStar_TestPath(CAStar *self, const vec3_t *a, const vec3_t *b);
+byte CAStar2D_TestPath(CAStar2D *self, const vec3_t *a, const vec3_t *b);
+void CAStar_NearestStart(CAStar *self);
+void CAStar2D_NearestStart(CAStar2D *self);
+void CAStar_PointsVis(CAStar *self, const vec3_t *pos, const vec3_t **list, int max, int *count);
+void CAStar2D_PointsVis(CAStar2D *self, const vec3_t *pos, const vec3_t **list, int max, int *count);
+void CAStar_PointsVisFile(CAStar *self, const vec3_t *pos, const vec3_t **list, int max, int *count,
 	int *state, int file);
-void __thiscall CAStar2D_PointsVisFile(CAStar2D *self, const vec3_t *pos, const vec3_t **list, int max, int *count,
+void CAStar2D_PointsVisFile(CAStar2D *self, const vec3_t *pos, const vec3_t **list, int max, int *count,
 	int *state, int file);
 /* the slots that go on to the graph (both classes) */
-int __thiscall CAStar_FileOf(CAStar *self, const vec3_t *node);
-void __thiscall CAStar_OtherLinks(CAStar *self, const vec3_t *node, const vec3_t *pos, const vec3_t **list, int max,
+int CAStar_FileOf(CAStar *self, const vec3_t *node);
+void CAStar_OtherLinks(CAStar *self, const vec3_t *node, const vec3_t *pos, const vec3_t **list, int max,
 	int *count);
 /* CAStar_FindPath and CAStar_GetPointsVis: nodesworld.h; CAStar2D_FindPath and CAStar2D_GetPointsVis:
  * aicharcontrol.h */

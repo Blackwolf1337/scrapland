@@ -40,35 +40,35 @@ typedef struct CCamera {
 } CCamera;
 SD_SIZE(CCamera, 0x78);
 
-CCamera *__fastcall CCamera_ctor(CCamera *self);
-CCamera *__thiscall CCamera_ctorCopy(CCamera *self, const CCamera *other);
-void __fastcall CCamera_dtor(CCamera *self);
-CCamera *__thiscall CCamera_Delete(CCamera *self, byte flags);
+CCamera *CCamera_ctor(CCamera *self);
+CCamera *CCamera_ctorCopy(CCamera *self, const CCamera *other);
+void CCamera_dtor(CCamera *self);
+CCamera *CCamera_Delete(CCamera *self, byte flags);
 /* the members after the copied ones cleared, the nodes forgotten (not released) */
-void __fastcall CCamera_Clear(CCamera *self);
-void __thiscall CCamera_SetNode(CCamera *self, CNodeRef *node);
-void __thiscall CCamera_SetNodeTarget(CCamera *self, CNodeRef *node);
+void CCamera_Clear(CCamera *self);
+void CCamera_SetNode(CCamera *self, CNodeRef *node);
+void CCamera_SetNodeTarget(CCamera *self, CNodeRef *node);
 /* the "CAM" block; ctx holds the node at 0x4 */
-int __thiscall CCamera_Read(CCamera *self, CFileIO *f, void *ctx);
-int __thiscall CCamera_Write(CCamera *self, CFileIO *f, void *ctx);
+int CCamera_Read(CCamera *self, CFileIO *f, void *ctx);
+int CCamera_Write(CCamera *self, CFileIO *f, void *ctx);
 /* dir and up from the angles, viewPos from pos */
-void __fastcall CCamera_UpdateVectors(CCamera *self);
+void CCamera_UpdateVectors(CCamera *self);
 /* the angles that look from pos at target */
-void __fastcall CCamera_LookAtRot(CCamera *self);
+void CCamera_LookAtRot(CCamera *self);
 /* the rotation looking along dir with up (made orthogonal) */
-void __thiscall CCamera_LookAt(CCamera *self, matrix_t *m, const vec3_t *dir, const vec3_t *up);
-void __thiscall CCamera_ViewMatrix(CCamera *self, matrix_t *m);
-matrix_t *__thiscall CCamera_GetView(CCamera *self, matrix_t *m);
+void CCamera_LookAt(CCamera *self, matrix_t *m, const vec3_t *dir, const vec3_t *up);
+void CCamera_ViewMatrix(CCamera *self, matrix_t *m);
+matrix_t *CCamera_GetView(CCamera *self, matrix_t *m);
 /* 0 for a near and far plane too close or a too narrow field of view */
-byte __thiscall CCamera_ProjMatrix(CCamera *self, matrix_t *m);
-matrix_t *__thiscall CCamera_GetProj(CCamera *self, matrix_t *m);
-void __thiscall CCamera_Move(CCamera *self, float d);
+byte CCamera_ProjMatrix(CCamera *self, matrix_t *m);
+matrix_t *CCamera_GetProj(CCamera *self, matrix_t *m);
+void CCamera_Move(CCamera *self, float d);
 /* along the x axis of the angles and the up vector */
-void __thiscall CCamera_Strafe(CCamera *self, float side, float rise);
+void CCamera_Strafe(CCamera *self, float side, float rise);
 /* the IObject3D methods: Update follows the node with CamaraNodos, the others do nothing */
-void __thiscall CCamera_Update(CCamera *self, CRenderNode *r);
-void __thiscall CCamera_Render(CCamera *self, void *arg, CRenderNode *r);
-void __thiscall CCamera_InitD3D(CCamera *self, void *dev);
-void __thiscall CCamera_ReleaseD3D(CCamera *self, void *dev);
+void CCamera_Update(CCamera *self, CRenderNode *r);
+void CCamera_Render(CCamera *self, void *arg, CRenderNode *r);
+void CCamera_InitD3D(CCamera *self, void *dev);
+void CCamera_ReleaseD3D(CCamera *self, void *dev);
 
 #endif

@@ -26,7 +26,7 @@ static void StrNode_Release(cStringList *list, cStringNode *node) {
 	}
 }
 
-cStringNode *__thiscall cStringList_NewNode(cStringList *list) {
+cStringNode *cStringList_NewNode(cStringList *list) {
 	cStringNode *node = list->freeNodes;
 
 	if (node) {
@@ -42,7 +42,7 @@ cStringNode *__thiscall cStringList_NewNode(cStringList *list) {
 	return node;
 }
 
-void __fastcall cStringList_RemoveHead(cStringList *list) {
+void cStringList_RemoveHead(cStringList *list) {
 	cStringNode *p = list->head;
 
 	list->iter = NULL;
@@ -61,13 +61,13 @@ void __fastcall cStringList_RemoveHead(cStringList *list) {
 	list->count--;
 }
 
-void __fastcall cStringList_Clear(cStringList *list) {
+void cStringList_Clear(cStringList *list) {
 	while (list->head) {
 		cStringList_RemoveHead(list);
 	}
 }
 
-void __fastcall cStringList_FreePool(cStringList *list) {
+void cStringList_FreePool(cStringList *list) {
 	cStringNode *p;
 
 	while ((p = list->freeNodes) != NULL) {
@@ -79,7 +79,7 @@ void __fastcall cStringList_FreePool(cStringList *list) {
 }
 
 /* the list destructor: the nodes and the free pool */
-void __fastcall cStringList_dtor(cStringList *list) {
+void cStringList_dtor(cStringList *list) {
 	cStringList_Clear(list);
 	cStringList_FreePool(list);
 }
@@ -88,13 +88,13 @@ void __fastcall cStringList_dtor(cStringList *list) {
 
 #define ACTCLASS_SLOTS 0x1c9
 
-cActNodeMod *__fastcall cActNodeMod_ctor(cActNodeMod *self) {
+cActNodeMod *cActNodeMod_ctor(cActNodeMod *self) {
 	memset(self->ang, 0, sizeof(self->ang));
 	self->node = ACT_NODE_NONE;
 	return self;
 }
 
-cActClass *__thiscall cActClass_ctor(cActClass *self, const char *name) {
+cActClass *cActClass_ctor(cActClass *self, const char *name) {
 	self->vftable = CACTCLASS_VFTABLE;
 	cString_ctor(&self->name);
 	self->actions.numSlots = ACTCLASS_SLOTS;
@@ -162,7 +162,7 @@ cActClass *__thiscall cActClass_ctor(cActClass *self, const char *name) {
 	return self;
 }
 
-void __fastcall cActClass_dtor(cActClass *self) {
+void cActClass_dtor(cActClass *self) {
 	self->vftable = CACTCLASS_VFTABLE;
 	if (self->users) {
 		Con_Bluef("ERROR : The class %s is going to be deleted but the reference counter is %d\n", self->name,
@@ -210,7 +210,7 @@ void __fastcall cActClass_dtor(cActClass *self) {
 	cString_dtor(&self->name);
 }
 
-cActClass *__thiscall cActClass_Delete(cActClass *self, byte flags) {
+cActClass *cActClass_Delete(cActClass *self, byte flags) {
 	cActClass_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -218,7 +218,7 @@ cActClass *__thiscall cActClass_Delete(cActClass *self, byte flags) {
 	return self;
 }
 
-cAction *__thiscall cActClass_CreateAction(cActClass *self, const char *name) {
+cAction *cActClass_CreateAction(cActClass *self, const char *name) {
 	cAction *act = operator_new(sizeof(cAction));
 
 	if (act) {
@@ -246,7 +246,7 @@ cAction *__thiscall cActClass_CreateAction(cActClass *self, const char *name) {
 	return act;
 }
 
-void __thiscall cActClass_AddSoundRes(cActClass *self, const char *file) {
+void cActClass_AddSoundRes(cActClass *self, const char *file) {
 	char name[0x80];
 	cString str;
 
@@ -260,7 +260,7 @@ void __thiscall cActClass_AddSoundRes(cActClass *self, const char *file) {
 	cString_dtor(&str);
 }
 
-void __fastcall cActClass_FreeResources(cActClass *self) {
+void cActClass_FreeResources(cActClass *self) {
 	cStringList *l = &self->sounds;
 
 	cPy_Function_Execute(&self->onFreeResources, 0);
@@ -272,18 +272,18 @@ void __fastcall cActClass_FreeResources(cActClass *self) {
 	CGameModel_Release(&self->model, 1);
 }
 
-cAction *__thiscall cActClass_GetAction(cActClass *cls, const char *name) {
+cAction *cActClass_GetAction(cActClass *cls, const char *name) {
 	return PtrTable_Value(&cls->actions, name);
 }
 
-cAction *__thiscall cActClass_SetDefAction(cActClass *self, const char *name) {
+cAction *cActClass_SetDefAction(cActClass *self, const char *name) {
 	cAction *a = PtrTable_Value(&self->actions, name);
 
 	self->defAction = a;
 	return a;
 }
 
-void __thiscall cActClass_SetModelFile(cActClass *self, const char *file) {
+void cActClass_SetModelFile(cActClass *self, const char *file) {
 	if (self->modelFile) {
 		Con_Warnf("WARNING: '%s' Active class already has assigned '%s' as model.\n '%s' can't be assigned.\n",
 			self->name, self->modelFile, file);
@@ -296,7 +296,7 @@ void __thiscall cActClass_SetModelFile(cActClass *self, const char *file) {
 	memcpy(self->modelFile, file, n);
 }
 
-void __thiscall cActNodeMod_SetNode(int *node, CGameModel *model, const char *name) {
+void cActNodeMod_SetNode(int *node, CGameModel *model, const char *name) {
 	if (strcmp(name, "_Move_The_Model_") == 0) {
 		*node = ACT_NODE_MODEL;
 		return;
@@ -316,7 +316,7 @@ static double Rad_ToDeg(float r) {
 	return (double)r * DEG_PER_PI / M_PI_D;
 }
 
-int __thiscall cActClassCam_Var(cActClassCam *self, const char *name, int set, char **s, double *d, int *i) {
+int cActClassCam_Var(cActClassCam *self, const char *name, int set, char **s, double *d, int *i) {
 	float v;
 
 	(void)s;
@@ -386,7 +386,7 @@ static cActClass *Ent_ActClass(cEntity *e) {
 	return ((cActCtrl *)WithLife_Vtbl(e)->GetActCtrl(e))->cls;
 }
 
-void __thiscall cActClassCam_Update(void *cam, cEntity *followCam, cEntity *e) {
+void cActClassCam_Update(void *cam, cEntity *followCam, cEntity *e) {
 	cActClassCam *c = cam;
 	cFollowCamEntity *fc = (cFollowCamEntity *)followCam;
 	float *fov = &fc->base.cam.fov;
@@ -484,7 +484,7 @@ static int ActVar_Float(void *obj, const cActVarF *t, size_t n, const char *name
 	return 0;
 }
 
-int __thiscall cActClass_Var(cActClass *cls, const char *name, int set, char **s, double *d, int *i) {
+int cActClass_Var(cActClass *cls, const char *name, int set, char **s, double *d, int *i) {
 	byte *base = (byte *)cls;
 	int r = cActClassCam_Var(&cls->cam, name, set, s, d, i);
 

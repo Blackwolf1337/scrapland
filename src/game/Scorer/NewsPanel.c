@@ -19,7 +19,7 @@
 /* the model of an entity with life (slot 0x98) */
 /* its render (slot 0xb8) */
 
-cNewsPanel *__fastcall cNewsPanel_ctor(cNewsPanel *self) {
+cNewsPanel *cNewsPanel_ctor(cNewsPanel *self) {
 	cString_ctor(&self->head);
 	cString_ctor(&self->logo);
 	cString_ctor(&self->back);
@@ -41,7 +41,7 @@ static void News_FreeImage(CPsaImage *img) {
 	}
 }
 
-void __fastcall cNewsPanel_dtor(cNewsPanel *self) {
+void cNewsPanel_dtor(cNewsPanel *self) {
 	if (self->cam) {
 		CGameCamera_dtor(self->cam);
 		operator_delete_sized(self->cam, sizeof(CGameCamera));
@@ -53,7 +53,7 @@ void __fastcall cNewsPanel_dtor(cNewsPanel *self) {
 	cString_dtor(&self->head);
 }
 
-cEntity *__thiscall cNewsPanel_GetWatched(cNewsPanel *self, int list) {
+cEntity *cNewsPanel_GetWatched(cNewsPanel *self, int list) {
 	(void)self;
 	switch (list) {
 	case 0:
@@ -65,7 +65,7 @@ cEntity *__thiscall cNewsPanel_GetWatched(cNewsPanel *self, int list) {
 	}
 }
 
-void __fastcall cNewsPanel_Reset(cNewsPanel *self) {
+void cNewsPanel_Reset(cNewsPanel *self) {
 	g_NewsPanelActive = g_NewsPanelActiveDef;
 	g_NewsPanelShowHead = g_NewsPanelShowHeadDef;
 	self->camPos.x = 0.0f;
@@ -88,7 +88,7 @@ void __fastcall cNewsPanel_Reset(cNewsPanel *self) {
 	cString_Set(&self->back, "");
 }
 
-void __fastcall cNewsPanel_Update(cNewsPanel *self) {
+void cNewsPanel_Update(cNewsPanel *self) {
 	float t = Scorer_Get(0)->time;
 	float dt = t - self->lastTime;
 
@@ -125,7 +125,7 @@ void __fastcall cNewsPanel_Update(cNewsPanel *self) {
 	self->lastTime = t;
 }
 
-void __thiscall cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e) {
+void cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e) {
 	vec3_t tmp;
 
 	if (!e || !e->vftable->IsType(e, TYEN_WITH_LIFE) || !Obj_Vtbl(e)->GetModel(e)) {
@@ -163,7 +163,7 @@ void __thiscall cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e) {
 	Camera_SetCurrent(cur);
 }
 
-void __thiscall cNewsPanel_DrawNews(cNewsPanel *self, float dt) {
+void cNewsPanel_DrawNews(cNewsPanel *self, float dt) {
 	vec3_t tmp;
 	float v;
 

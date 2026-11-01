@@ -18,7 +18,7 @@
 
 /* ---- cMapElement ---- */
 
-cMapElement *__thiscall cMapElement_ctor(cMapElement *self, const char *name, const vec3_t *pos, const vec3_t *rot) {
+cMapElement *cMapElement_ctor(cMapElement *self, const char *name, const vec3_t *pos, const vec3_t *rot) {
 	char buf[128];
 
 	self->vftable = CMAPELEMENT_VFTABLE;
@@ -40,13 +40,13 @@ cMapElement *__thiscall cMapElement_ctor(cMapElement *self, const char *name, co
 	return self;
 }
 
-void __thiscall cMapElement_dtor(cMapElement *self) {
+void cMapElement_dtor(cMapElement *self) {
 	self->vftable = CMAPELEMENT_VFTABLE;
 	cString_dtor(&self->name);
 	CGameModel_Reset(&self->Mod);
 }
 
-cMapElement *__thiscall cMapElement_Delete(cMapElement *self, byte flags) {
+cMapElement *cMapElement_Delete(cMapElement *self, byte flags) {
 	cMapElement_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -54,12 +54,12 @@ cMapElement *__thiscall cMapElement_Delete(cMapElement *self, byte flags) {
 	return self;
 }
 
-byte __thiscall cMapElement_Init(cMapElement *self) {
+byte cMapElement_Init(cMapElement *self) {
 	(void)self;
 	return 1;
 }
 
-void __thiscall cMapElement_Update(cMapElement *self, float dt) {
+void cMapElement_Update(cMapElement *self, float dt) {
 	if (CGameModel_IsVisible(&self->Mod)) {
 		CGameModel_RootMotion(&self->Mod, dt, NULL, NULL);
 	}
@@ -67,12 +67,12 @@ void __thiscall cMapElement_Update(cMapElement *self, float dt) {
 
 /* ---- the list (one pointer, the newest element first) ---- */
 
-void *__thiscall Elements_ctor(void *elements) {
+void *Elements_ctor(void *elements) {
 	*(cMapElement **)elements = NULL;
 	return elements;
 }
 
-void __thiscall Elements_dtor(void *elements) {
+void Elements_dtor(void *elements) {
 	cMapElement **list = elements;
 
 	while (*list) {
@@ -86,7 +86,7 @@ void __thiscall Elements_dtor(void *elements) {
 }
 
 /* the script function name with each element: name, position, the angles x and y in degrees */
-void __thiscall Elements_Call(void *elements, const char *name) {
+void Elements_Call(void *elements, const char *name) {
 	cPy_Function func;
 	cMapElement *e;
 	vec3_t v;
@@ -107,7 +107,7 @@ void __thiscall Elements_Call(void *elements, const char *name) {
 	cPy_Function_dtor(&func);
 }
 
-void __thiscall Elements_Create(void *elements) {
+void Elements_Create(void *elements) {
 	cMapElement **list = elements;
 	char buf[128];
 	char *name = buf + 11;		/* behind "DM_Element_" */
@@ -167,7 +167,7 @@ void __thiscall Elements_Create(void *elements) {
 }
 
 /* the first element with the model of name within maxDist of pos */
-cMapElement *__thiscall Elements_Find(void *elements, const char *name, vec3_t pos, float maxDist) {
+cMapElement *Elements_Find(void *elements, const char *name, vec3_t pos, float maxDist) {
 	cMapElement *e;
 
 	for (e = *(cMapElement **)elements; e; e = e->next) {
@@ -188,7 +188,7 @@ cMapElement *__thiscall Elements_Find(void *elements, const char *name, vec3_t p
 	return NULL;
 }
 
-void __thiscall Elements_Update(void *elements, float dt) {
+void Elements_Update(void *elements, float dt) {
 	cMapElement *e;
 
 	for (e = *(cMapElement **)elements; e; e = e->next) {

@@ -27,51 +27,51 @@
 
 /* ---- Global/DList.h ---- */
 
-void __fastcall NWIntList_Clear(cNWIntList *list) {
+void NWIntList_Clear(cNWIntList *list) {
 	DList_Clear(list, sizeof(cNWIntNode));
 }
 
-void __fastcall NWVecList_Clear(cNWVecList *list) {
+void NWVecList_Clear(cNWVecList *list) {
 	DList_Clear(list, sizeof(cNWVecNode));
 }
 
-void __fastcall NWTriList_Clear(cNWTriList *list) {
+void NWTriList_Clear(cNWTriList *list) {
 	DList_Clear(list, sizeof(cNWTriNode));
 }
 
-void __fastcall NWIntList_Free(cNWIntList *list) {
+void NWIntList_Free(cNWIntList *list) {
 	NWIntList_Clear(list);
 	DList_FreePool(list, sizeof(cNWIntNode));
 }
 
-void __fastcall NWVecList_Free(cNWVecList *list) {
+void NWVecList_Free(cNWVecList *list) {
 	NWVecList_Clear(list);
 	DList_FreePool(list, sizeof(cNWVecNode));
 }
 
-void __fastcall NWIntList_FreeAt0c(void *owner) {
+void NWIntList_FreeAt0c(void *owner) {
 	NWIntList_Free((cNWIntList *)((byte *)owner + 0xc));
 }
 
-void __thiscall NWIntList_Add(cNWIntList *list, void *const *data) {
+void NWIntList_Add(cNWIntList *list, void *const *data) {
 	cNWIntNode *node = DList_NewNode(list, sizeof(*node));
 	node->data = *data;
 	DList_LinkFirst(list, node);
 }
 
-void __thiscall NWVecList_Add(cNWVecList *list, const vec3_t *v) {
+void NWVecList_Add(cNWVecList *list, const vec3_t *v) {
 	cNWVecNode *node = DList_NewNode(list, sizeof(*node));
 	node->v = *v;
 	DList_LinkFirst(list, node);
 }
 
-void __thiscall NWTriList_Add(cNWTriList *list, const float *data) {
+void NWTriList_Add(cNWTriList *list, const float *data) {
 	cNWTriNode *node = DList_NewNode(list, sizeof(*node));
 	memcpy(node->data, data, sizeof(node->data));
 	DList_LinkFirst(list, node);
 }
 
-cNWPointNode *__fastcall NWPointList_NewNode(cNWPointList *list) {
+cNWPointNode *NWPointList_NewNode(cNWPointList *list) {
 	cNWPointNode *node = list->freeNodes;
 
 	if (node) {
@@ -87,14 +87,14 @@ cNWPointNode *__fastcall NWPointList_NewNode(cNWPointList *list) {
 	return node;
 }
 
-void __thiscall NWPointList_Add(cNWPointList *list, const void *data) {
+void NWPointList_Add(cNWPointList *list, const void *data) {
 	list->iter = NULL;
 	cNWPointNode *node = NWPointList_NewNode(list);
 	memcpy(&node->pos, data, sizeof(*node) - offsetof(cNWPointNode, pos));
 	DList_LinkFirst(list, node);
 }
 
-void __thiscall NWIntList_AddBefore(cNWIntList *list, void *const *data) {
+void NWIntList_AddBefore(cNWIntList *list, void *const *data) {
 	cNWIntNode *head = list->head;
 
 	if (list->iter == head) {
@@ -108,7 +108,7 @@ void __thiscall NWIntList_AddBefore(cNWIntList *list, void *const *data) {
 	list->head = head;
 }
 
-void __thiscall NWSegList_Append(cNWSegList *list, const vec3_t *seg) {
+void NWSegList_Append(cNWSegList *list, const vec3_t *seg) {
 	cNWSegNode *node = DList_NewNode(list, sizeof(*node));
 
 	node->a = seg[0];
@@ -127,15 +127,15 @@ void __thiscall NWSegList_Append(cNWSegList *list, const vec3_t *seg) {
 	list->count++;
 }
 
-void __fastcall NWIntList_RemoveHead(cNWIntList *list) {
+void NWIntList_RemoveHead(cNWIntList *list) {
 	DList_RemoveHead(list, sizeof(cNWIntNode));
 }
 
-void __fastcall NWVecList_RemoveHead(cNWVecList *list) {
+void NWVecList_RemoveHead(cNWVecList *list) {
 	DList_RemoveHead(list, sizeof(cNWVecNode));
 }
 
-void __thiscall NWPointList_Release(cNWPointList *list, cNWPointNode *node) {
+void NWPointList_Release(cNWPointList *list, cNWPointNode *node) {
 	if (list->numFree < list->maxFree) {
 		node->next = list->freeNodes;
 		list->numFree++;
@@ -148,7 +148,7 @@ void __thiscall NWPointList_Release(cNWPointList *list, cNWPointNode *node) {
 	}
 }
 
-void __fastcall NWPointList_Clear(cNWPointList *list) {
+void NWPointList_Clear(cNWPointList *list) {
 	while (list->head) {
 		cNWPointNode *p = list->head;
 		list->iter = NULL;
@@ -165,7 +165,7 @@ void __fastcall NWPointList_Clear(cNWPointList *list) {
 	}
 }
 
-void __fastcall NWBox_Init(cNWBox *box) {
+void NWBox_Init(cNWBox *box) {
 	box->a.x = 3.4028234663852886e+38f;
 	box->a.y = 3.4028234663852886e+38f;
 	box->a.z = 3.4028234663852886e+38f;
@@ -176,7 +176,7 @@ void __fastcall NWBox_Init(cNWBox *box) {
 
 /* ---- CNodesWorld ---- */
 
-CNodesWorld *__thiscall CNodesWorld_ctor(void *mem) {
+CNodesWorld *CNodesWorld_ctor(void *mem) {
 	CNodesWorld *self = mem;
 
 	CNodesWorldSup_ctor(self);
@@ -204,7 +204,7 @@ CNodesWorld *__thiscall CNodesWorld_ctor(void *mem) {
 	return self;
 }
 
-void __fastcall CNodesWorld_dtor(CNodesWorld *self) {
+void CNodesWorld_dtor(CNodesWorld *self) {
 	self->sup.vftable = CNODESWORLD_VFTABLE;
 	CNodesWorldSup_FreeGraph(self);
 	NWTriList_Clear(&self->tris);
@@ -212,7 +212,7 @@ void __fastcall CNodesWorld_dtor(CNodesWorld *self) {
 	CNodesWorldSup_dtor(self);
 }
 
-CNodesWorld *__thiscall CNodesWorld_Delete(CNodesWorld *self, byte flags) {
+CNodesWorld *CNodesWorld_Delete(CNodesWorld *self, byte flags) {
 	CNodesWorld_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -232,7 +232,7 @@ void NW_LevelPath(char *path, const CNodesWorld *self, const char *file) {
 	path[n + f] = 0;
 }
 
-byte __thiscall CNodesWorld_LoadGraph(CNodesWorld *self) {
+byte CNodesWorld_LoadGraph(CNodesWorld *self) {
 	char path[0x100];
 
 	Con_Printf("Loading Graph 3D AI...\n");
@@ -240,7 +240,7 @@ byte __thiscall CNodesWorld_LoadGraph(CNodesWorld *self) {
 	return CNodesWorldSup_LoadGraph(self, path) != 0;
 }
 
-byte __thiscall CNodesWorld_SaveInfPath(CNodesWorld *self) {
+byte CNodesWorld_SaveInfPath(CNodesWorld *self) {
 	char path[0x100];
 
 	NW_LevelPath(path, self, "/AI/InfPathAI.pth");
@@ -251,7 +251,7 @@ byte __thiscall CNodesWorld_SaveInfPath(CNodesWorld *self) {
 	return 1;
 }
 
-byte __thiscall CNodesWorld_SavePath(CNodesWorld *self) {
+byte CNodesWorld_SavePath(CNodesWorld *self) {
 	char path[0x100];
 	cFilePack f;
 	byte ok;
@@ -304,7 +304,7 @@ byte __thiscall CNodesWorld_SavePath(CNodesWorld *self) {
 	return ok;
 }
 
-void __thiscall CNodesWorld_ClearLists(CNodesWorld *self) {
+void CNodesWorld_ClearLists(CNodesWorld *self) {
 	DListVec3_Clear(&self->sup.extraPoints);
 	NWPointList_Clear(&self->sup.points);
 	NWVecList_Clear(&self->sup.foundNodes[0]);
@@ -381,7 +381,7 @@ static void NW_Cross(vec3_t *out, const vec3_t *d, const vec3_t *v) {
 	out->z = v->y * d->x - v->x * d->y;
 }
 
-byte __thiscall CNodesWorld_TestPath(CNodesWorld *self, const vec3_t *a, const vec3_t *b, float r, float r2,
+byte CNodesWorld_TestPath(CNodesWorld *self, const vec3_t *a, const vec3_t *b, float r, float r2,
 	cNWSegList *debug, int mode) {
 	vec3_t dir, n, nn, c, m, mm, s, ns, t, nt, dl;
 
@@ -455,7 +455,7 @@ int NW_CornerSide(const vec3_t *b, const vec3_t *u, const vec3_t *v, float r, cN
 	return 1;
 }
 
-byte __thiscall CNodesWorld_TestCorner(CNodesWorld *self, const vec3_t *a, const vec3_t *b, const vec3_t *c, float r,
+byte CNodesWorld_TestCorner(CNodesWorld *self, const vec3_t *a, const vec3_t *b, const vec3_t *c, float r,
 	float r2, byte flat, cNWSegList *debug) {
 	vec3_t d1, d0, n1, n0, nn1, nn0, v, m1, m0, s1, s0, t1, t0;
 
@@ -519,7 +519,7 @@ byte __thiscall CNodesWorld_TestCorner(CNodesWorld *self, const vec3_t *a, const
 	return NW_CornerSide(b, &t1, &t0, r, debug);
 }
 
-byte __thiscall CNodesWorld_TestSurface(CNodesWorld *self, const vec3_t *a, const vec3_t *b, vec3_t *hit,
+byte CNodesWorld_TestSurface(CNodesWorld *self, const vec3_t *a, const vec3_t *b, vec3_t *hit,
 	CCollisionTri *tri) {
 	vec3_t n, v;
 
@@ -551,7 +551,7 @@ byte __thiscall CNodesWorld_TestSurface(CNodesWorld *self, const vec3_t *a, cons
 	return 1;
 }
 
-byte __thiscall CNodesWorld_TestSurfaceAround(CNodesWorld *self, const vec3_t *pos, vec3_t *hit, CCollisionTri *tri) {
+byte CNodesWorld_TestSurfaceAround(CNodesWorld *self, const vec3_t *pos, vec3_t *hit, CCollisionTri *tri) {
 	float fx = (float)__builtin_fabs((double)(self->sup.max.x - self->sup.min.x));
 	float fy = (float)__builtin_fabs((double)(self->sup.max.y - self->sup.min.y));
 	float fz = (float)__builtin_fabs((double)(self->sup.max.z - self->sup.min.z));
@@ -595,7 +595,7 @@ byte __thiscall CNodesWorld_TestSurfaceAround(CNodesWorld *self, const vec3_t *p
 	return CNodesWorld_TestSurface(self, pos, &p, hit, tri) != 0;
 }
 
-void __thiscall CNodesWorld_CollectCell(CNodesWorld *self, const vec3_t *pos, cNWIntList *cell, const vec3_t **list,
+void CNodesWorld_CollectCell(CNodesWorld *self, const vec3_t *pos, cNWIntList *cell, const vec3_t **list,
 	int max, int *count, float radius, float distMin, float distMax, int mode, byte useMax) {
 	if (!cell) {
 		return;
@@ -656,7 +656,7 @@ static int NWRings_Grow(const CNodesWorld *self, int inGrid, float e, float dist
 	return 1;
 }
 
-void __thiscall CNodesWorld_SearchRings(CNodesWorld *self, const vec3_t *pos, const vec3_t **list, int max, int *count,
+void CNodesWorld_SearchRings(CNodesWorld *self, const vec3_t *pos, const vec3_t **list, int max, int *count,
 	float radius, float distMin, float distMax, byte soft, int mode) {
 	int c[3], n[3], st[3], x, y, z;
 	vec3_t cs, dir;
@@ -792,7 +792,7 @@ void __thiscall CNodesWorld_SearchRings(CNodesWorld *self, const vec3_t *pos, co
 #undef NWRINGS_CELL
 }
 
-void __thiscall CNodesWorld_GetPointsVis(CNodesWorld *self, const vec3_t *pos, const vec3_t **list, int max,
+void CNodesWorld_GetPointsVis(CNodesWorld *self, const vec3_t *pos, const vec3_t **list, int max,
 	int *count, float radius, float distMin, float distMax, byte soft, int mode) {
 	vec3_t tmp;
 
@@ -809,7 +809,7 @@ void __thiscall CNodesWorld_GetPointsVis(CNodesWorld *self, const vec3_t *pos, c
 	}
 }
 
-byte __thiscall CNodesWorld_HasPointVis(CNodesWorld *self, const vec3_t *pos, float radius) {
+byte CNodesWorld_HasPointVis(CNodesWorld *self, const vec3_t *pos, float radius) {
 	const vec3_t *point;
 	int count;
 
@@ -823,7 +823,7 @@ void NW_CamPos(float *x, float *y, float *z) {
 	CamCtl_Vtbl(e)->GetCamPos(e, x, y, z);
 }
 
-byte __thiscall CNodesWorld_PointSeen(CNodesWorld *self, const vec3_t *pos) {
+byte CNodesWorld_PointSeen(CNodesWorld *self, const vec3_t *pos) {
 	vec3_t cam;
 
 	(void)self;
@@ -843,7 +843,7 @@ byte __thiscall CNodesWorld_PointSeen(CNodesWorld *self, const vec3_t *pos) {
 	return 1;
 }
 
-byte __thiscall CNodesWorld_GetRacePoint(CNodesWorld *self, vec3_t *out, const vec3_t *initial, float minDist,
+byte CNodesWorld_GetRacePoint(CNodesWorld *self, vec3_t *out, const vec3_t *initial, float minDist,
 	float maxDist, int arg) {
 	const vec3_t *list[7];
 	int count;
@@ -861,7 +861,7 @@ byte __thiscall CNodesWorld_GetRacePoint(CNodesWorld *self, vec3_t *out, const v
 	return 1;
 }
 
-byte __thiscall CNodesWorld_GetRacePointDir(CNodesWorld *self, vec3_t *out, const vec3_t *initial, float minDist,
+byte CNodesWorld_GetRacePointDir(CNodesWorld *self, vec3_t *out, const vec3_t *initial, float minDist,
 	float maxDist, int arg, const vec3_t *dir, float maxAngle) {
 	const vec3_t *list[15];
 	int count;
@@ -900,7 +900,7 @@ static void NW_FlatDir(vec3_t *d) {
 	}
 }
 
-byte __thiscall CNodesWorld_BuildPath(CNodesWorld *self, cNWVecList *path, int depth, const vec3_t *dir,
+byte CNodesWorld_BuildPath(CNodesWorld *self, cNWVecList *path, int depth, const vec3_t *dir,
 	const vec3_t *start, byte direct, cNWNode **node, float radius, byte flat) {
 	cNWNode *cand[7], *list[20], *cur;
 	/* one stack slot of the original: the count of the search, its loop index, then the chosen node */
@@ -1003,7 +1003,7 @@ byte __thiscall CNodesWorld_BuildPath(CNodesWorld *self, cNWVecList *path, int d
 	return 1;
 }
 
-void __thiscall CNodesWorld_NearestPointVis(CNodesWorld *self, const vec3_t *pos, vec3_t *out) {
+void CNodesWorld_NearestPointVis(CNodesWorld *self, const vec3_t *pos, vec3_t *out) {
 	const vec3_t *list[7];
 	int count = 0;
 	vec3_t tmp;
@@ -1059,7 +1059,7 @@ static float NW_RandomPart(float len) {
 	return (float)((double)r * 0x1.0002000400080p-15 * (double)len + 0.0);
 }
 
-void __thiscall CNodesWorld_RandomNearNode(CNodesWorld *self, int node, float maxDist, vec3_t *out) {
+void CNodesWorld_RandomNearNode(CNodesWorld *self, int node, float maxDist, vec3_t *out) {
 	vec3_t dir;
 	float len = NW_RandomLink(self, node, &dir);
 	float t = NW_RandomPart(Float_MinSS(len, maxDist));
@@ -1070,7 +1070,7 @@ void __thiscall CNodesWorld_RandomNearNode(CNodesWorld *self, int node, float ma
 	out->z = p->z + dir.z * t;
 }
 
-void __thiscall CNodesWorld_RandomAheadNode(CNodesWorld *self, int node, const vec3_t *pos, float distMin,
+void CNodesWorld_RandomAheadNode(CNodesWorld *self, int node, const vec3_t *pos, float distMin,
 	float distMax, float maxDist, const vec3_t *dir, float maxAngle, vec3_t *out) {
 	vec3_t d, p, e;
 	float t = NW_RandomPart(NW_RandomLink(self, node, &d));
@@ -1119,7 +1119,7 @@ static void NW_MapTop(vec3_t *top) {
 	}
 }
 
-void __thiscall CNodesWorld_Load(CNodesWorld *self, int arg, const char *name, const vec3_t *pos) {
+void CNodesWorld_Load(CNodesWorld *self, int arg, const char *name, const vec3_t *pos) {
 	box_t box;
 	vec3_t top;
 
@@ -1260,7 +1260,7 @@ end:
 	Con_Bluef("%s", NW_EMPTY);
 }
 
-void __thiscall CNodesWorld_Analyze(CNodesWorld *self, const vec3_t *size) {
+void CNodesWorld_Analyze(CNodesWorld *self, const vec3_t *size) {
 	g_NWAnalyzeOn = 1;
 	g_NWDrawMode = 7;
 	self->analyzing = 1;
@@ -1285,7 +1285,7 @@ void __thiscall CNodesWorld_Analyze(CNodesWorld *self, const vec3_t *size) {
 	Con_Bluef("%s", NW_EMPTY);
 }
 
-void __thiscall CNodesWorld_AnalyzeGraph(CNodesWorld *self) {
+void CNodesWorld_AnalyzeGraph(CNodesWorld *self) {
 	vec3_t hit;
 	byte bad;
 
@@ -1353,7 +1353,7 @@ void __thiscall CNodesWorld_AnalyzeGraph(CNodesWorld *self) {
 
 /* ---- the generation of the graph ---- */
 
-void __thiscall CNodesWorld_AddExtraPoints(CNodesWorld *self) {
+void CNodesWorld_AddExtraPoints(CNodesWorld *self) {
 	char buf[20];
 	vec3_t p;
 	float ang[3];
@@ -1368,7 +1368,7 @@ void __thiscall CNodesWorld_AddExtraPoints(CNodesWorld *self) {
 	}
 }
 
-void __thiscall CNodesWorld_GetPairs(CNodesWorld *self, cNWPairList *list) {
+void CNodesWorld_GetPairs(CNodesWorld *self, cNWPairList *list) {
 	Con_Printf("Getting Pairs Points Visibility No Linked...\n");
 	cNWPointNode *saved = self->sup.points.iter;
 	cNWPointNode *pn = self->sup.points.iter = self->sup.points.head;
@@ -1401,7 +1401,7 @@ void __thiscall CNodesWorld_GetPairs(CNodesWorld *self, cNWPairList *list) {
 	Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
 }
 
-void __thiscall CNodesWorld_LinkExtra(CNodesWorld *self) {
+void CNodesWorld_LinkExtra(CNodesWorld *self) {
 	Con_Printf("Linking Points of Visibility Extra...\n");
 	cNWVecNode *esaved = self->sup.extraPoints.iter;
 	cNWVecNode *en = self->sup.extraPoints.iter = self->sup.extraPoints.head;
@@ -1436,7 +1436,7 @@ void __thiscall CNodesWorld_LinkExtra(CNodesWorld *self) {
 	self->sup.extraPoints.iter = esaved;
 }
 
-float __thiscall CNodesWorld_NearestVisDist(CNodesWorld *self, const vec3_t *pos) {
+float CNodesWorld_NearestVisDist(CNodesWorld *self, const vec3_t *pos) {
 	float best = 3.4028234663852886e+38f;
 	int i = self->sup.vftable->BufferIndex(self, pos);
 	cNWVis *vis = self->sup.buffer[i].vis;
@@ -1461,15 +1461,15 @@ float __thiscall CNodesWorld_NearestVisDist(CNodesWorld *self, const vec3_t *pos
 	return best;
 }
 
-byte __thiscall CNodesWorld_FindLinkBox(CNodesWorld *self, const vec3_t *const *pair, const cNWBox *box, int *out) {
+byte CNodesWorld_FindLinkBox(CNodesWorld *self, const vec3_t *const *pair, const cNWBox *box, int *out) {
 	return NWSup_FindLinkBox(self, pair, box, out, 0);
 }
 
-byte __thiscall CNodesWorld_FindLinkCell(CNodesWorld *self, const vec3_t *const *pair, int *out) {
+byte CNodesWorld_FindLinkCell(CNodesWorld *self, const vec3_t *const *pair, int *out) {
 	return NWSup_FindLinkCell(self, pair, out, 0);
 }
 
-byte __thiscall CNodesWorld_FindLinkFree(CNodesWorld *self, const vec3_t *const *pair, int *out) {
+byte CNodesWorld_FindLinkFree(CNodesWorld *self, const vec3_t *const *pair, int *out) {
 	int best[3];
 	float bestDist = 3.4028234663852886e+38f;
 	byte found = 0;
@@ -1513,11 +1513,11 @@ static float NW_InitDist(CNodesWorld *self, const vec3_t *n) {
 	return CNodesWorld_NearestVisDist(self, n);
 }
 
-byte __thiscall CNodesWorld_NextInit(CNodesWorld *self, vec3_t *out) {
+byte CNodesWorld_NextInit(CNodesWorld *self, vec3_t *out) {
 	return NWSup_NextInit(self, out, NW_InitFree, NW_InitDist);
 }
 
-void __thiscall CNodesWorld_LogTri(CNodesWorld *self, const vec3_t *p, vec3_t *hit, const CCollisionTri *tri) {
+void CNodesWorld_LogTri(CNodesWorld *self, const vec3_t *p, vec3_t *hit, const CCollisionTri *tri) {
 	char buf[200];
 	float data[15];
 
@@ -1583,7 +1583,7 @@ static void NW_FloodStep(CNodesWorld *self, cNWVecList *queue, const vec3_t *c, 
 	}
 }
 
-byte __thiscall CNodesWorld_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max) {
+byte CNodesWorld_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max) {
 	return NWSup_IniBuffer(self, init, min, max, NW_FloodStep, 1);
 }
 
@@ -1592,7 +1592,7 @@ static int NW_RegionReach(CNodesWorld *self, const vec3_t *start, const vec3_t *
 	return !(NWSup_Dist(start, n) >= self->sup.pairRange) && !Engine_TestSphere(start, n, g_NWNodeRadius, NULL, NULL);
 }
 
-void __thiscall CNodesWorld_CreateRegion(CNodesWorld *self, const vec3_t *start) {
+void CNodesWorld_CreateRegion(CNodesWorld *self, const vec3_t *start) {
 	NWSup_CreateRegion(self, start, NW_RegionReach, 0);
 }
 
@@ -1638,15 +1638,15 @@ static void NW_OpLinkExtra(CNodesWorld *self) {
 static const nwGenOps nw_ops = { NW_OpPairs, NW_OpFindBox, NW_OpFindCell, NW_OpRegion, NW_OpInitOk, NW_OpIniBuffer,
 	NW_OpNextInit, NW_OpInterRegion, NW_OpLinkExtra, 0 };
 
-void __fastcall CNodesWorld_InterRegion(CNodesWorld *self) {
+void CNodesWorld_InterRegion(CNodesWorld *self) {
 	NWSup_InterRegion(self, &nw_ops);
 }
 
-byte __thiscall CNodesWorld_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max) {
+byte CNodesWorld_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max) {
 	return NWSup_Generate(self, init, min, max, &nw_ops);
 }
 
-void __fastcall CNodesWorld_Draw(CNodesWorld *self) {
+void CNodesWorld_Draw(CNodesWorld *self) {
 	int mode = g_NWDrawMode;
 	float r;
 
@@ -1750,7 +1750,7 @@ void __fastcall CNodesWorld_Draw(CNodesWorld *self) {
 	}
 }
 
-byte __thiscall CNodesWorld_AnalyzeMap(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max) {
+byte CNodesWorld_AnalyzeMap(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max) {
 	static const char head[] = "PUNTOS TRIANGULOS NORMAL INVERTIDA\n\n";
 	char path[0x100];
 	vec3_t p, snap;
@@ -1794,7 +1794,7 @@ byte __thiscall CNodesWorld_AnalyzeMap(CNodesWorld *self, const vec3_t *init, co
 
 /* not called in the exe: debug tools of the generation */
 
-void __thiscall CNodesWorld_DrawLinkTest(CNodesWorld *self, const vec3_t *a, const vec3_t *b) {
+void CNodesWorld_DrawLinkTest(CNodesWorld *self, const vec3_t *a, const vec3_t *b) {
 	cEntity *cam = World_FindEntity(cWorld_GetCamName(g_pWorld, 0));
 	cEntity *t = cCamEntity_GetTarget(cam);
 	vec3_t neg = { -self->sup.halfNode.x, -self->sup.halfNode.y, -self->sup.halfNode.z };
@@ -1810,7 +1810,7 @@ void __thiscall CNodesWorld_DrawLinkTest(CNodesWorld *self, const vec3_t *a, con
 	DebugUtils_DrawLine(a, b, color);
 }
 
-void __thiscall CNodesWorld_DrawCell(CNodesWorld *self, const vec3_t *p) {
+void CNodesWorld_DrawCell(CNodesWorld *self, const vec3_t *p) {
 	vec3_t neg = { -self->sup.halfNode.x, -self->sup.halfNode.y, -self->sup.halfNode.z }, mn, mx;
 	byte hit = Collision_Box(p, &neg, &self->sup.halfNode);
 
@@ -1831,6 +1831,6 @@ static int NW_LinkFree(CNodesWorld *self, const vec3_t *q, int index) {
 	return !Engine_TestSphere(q, &c, g_NWNodeRadius, NULL, NULL);
 }
 
-byte __thiscall CNodesWorld_UnreachableFree(CNodesWorld *self, const vec3_t *from, const vec3_t *to, int index) {
+byte CNodesWorld_UnreachableFree(CNodesWorld *self, const vec3_t *from, const vec3_t *to, int index) {
 	return NWSup_UnreachableBy(self, from, to, index, NW_LinkFree);
 }

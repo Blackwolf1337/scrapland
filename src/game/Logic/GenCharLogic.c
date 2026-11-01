@@ -11,7 +11,7 @@
 #include "scrap/chartype.h"
 #include "scrap/weapons.h"
 
-cGenCharLocalLogic *__thiscall cGenCharLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent, int noRestart) {
+cGenCharLocalLogic *cGenCharLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent, int noRestart) {
 	cBaseLocalLogic_ctor(&self->base, parent);
 	self->base.vftable = CGENCHARLOCALLOGIC_VFTABLE;
 	self->time = 0.0f;
@@ -32,13 +32,13 @@ cGenCharLocalLogic *__thiscall cGenCharLocalLogic_ctor(cGenCharLocalLogic *self,
 	return self;
 }
 
-void __fastcall cGenCharLocalLogic_dtor(cGenCharLocalLogic *self) {
+void cGenCharLocalLogic_dtor(cGenCharLocalLogic *self) {
 	self->base.vftable = CGENCHARLOCALLOGIC_VFTABLE;
 	cString_dtor(&self->defaultTarget);
 	cBaseLocalLogic_dtor(&self->base);
 }
 
-cGenCharLocalLogic *__thiscall cGenCharLocalLogic_Delete(cGenCharLocalLogic *self, byte flags) {
+cGenCharLocalLogic *cGenCharLocalLogic_Delete(cGenCharLocalLogic *self, byte flags) {
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -47,7 +47,7 @@ cGenCharLocalLogic *__thiscall cGenCharLocalLogic_Delete(cGenCharLocalLogic *sel
 }
 
 /* vf26: no view flag for a player of the own suspect type, else relaxed and no alarm; team 3 */
-void __thiscall cGenCharLocalLogic_UpdateView(cGenCharLocalLogic *self) {
+void cGenCharLocalLogic_UpdateView(cGenCharLocalLogic *self) {
 	cBaseLocalLogic *b = &self->base;
 	cEntity *p = b->parent;
 	const char *type = Logic_TypeName(p);
@@ -67,7 +67,7 @@ void __thiscall cGenCharLocalLogic_UpdateView(cGenCharLocalLogic *self) {
 
 /* e can discover the player: it has the action Discover, Berto and Betty only when the player is not of the type
  * UsrDefChar */
-byte __thiscall cGenCharLocalLogic_CanDiscover(cGenCharLocalLogic *self, cEntity *e) {
+byte cGenCharLocalLogic_CanDiscover(cGenCharLocalLogic *self, cEntity *e) {
 	(void)self;
 	if (!WithLife_Vtbl(e)->GetAction(e, "Discover")) {
 		return 0;
@@ -79,31 +79,31 @@ byte __thiscall cGenCharLocalLogic_CanDiscover(cGenCharLocalLogic *self, cEntity
 	return cString_CmpStr(g_UsrDefChar, g_pWorld->alarm.chars) != 0;
 }
 
-void __thiscall cGenCharLocalLogic_SetCanAttack(cGenCharLocalLogic *self, byte v) {
+void cGenCharLocalLogic_SetCanAttack(cGenCharLocalLogic *self, byte v) {
 	self->canAttack = v;
 }
 
 /* vf16: the state of the alarm against e */
-void __thiscall cGenCharLocalLogic_OnAlarm(cGenCharLocalLogic *self, cEntity *e) {
+void cGenCharLocalLogic_OnAlarm(cGenCharLocalLogic *self, cEntity *e) {
 	self->base.vftable->SetState(self, self->alarmState, e);
 }
 
-int __thiscall cGenCharLocalLogic_GetDefaultState(cGenCharLocalLogic *self) {
+int cGenCharLocalLogic_GetDefaultState(cGenCharLocalLogic *self) {
 	return self->defaultState;
 }
 
-char *__thiscall cGenCharLocalLogic_GetDefaultTarget(cGenCharLocalLogic *self) {
+char *cGenCharLocalLogic_GetDefaultTarget(cGenCharLocalLogic *self) {
 	return self->defaultTarget;
 }
 
 /* vf28 and vf27: the AI walks the zone around the origin, in alert or relaxed */
-void __thiscall cGenCharLocalLogic_ToAlert(cGenCharLocalLogic *self, cAIChar *ai) {
+void cGenCharLocalLogic_ToAlert(cGenCharLocalLogic *self, cAIChar *ai) {
 	cBaseLocalLogic *b = &self->base;
 
 	ai->vftable->SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_GenCharAlertSpeed, 0);
 }
 
-void __thiscall cGenCharLocalLogic_ToRelax(cGenCharLocalLogic *self, cAIChar *ai) {
+void cGenCharLocalLogic_ToRelax(cGenCharLocalLogic *self, cAIChar *ai) {
 	cBaseLocalLogic *b = &self->base;
 
 	ai->vftable->SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_GenCharRelaxSpeed, 1);
@@ -119,7 +119,7 @@ static inline void GenChar_SetDefaultState(cGenCharLocalLogic *self, int ds) {
 }
 
 /* vf03 */
-byte __thiscall cGenCharLocalLogic_VarI(cGenCharLocalLogic *self, const char *name, int *i, byte set) {
+byte cGenCharLocalLogic_VarI(cGenCharLocalLogic *self, const char *name, int *i, byte set) {
 	if (strcmp(name, "DefaultState")) {
 		return cBaseLocalLogic_VarI(&self->base, name, i, set);
 	}
@@ -138,17 +138,17 @@ byte Logic_IsSuspectType(const char *type) {
 	return !strcmp(type, "PoliceBoss") || !strcmp(type, "Betty") || !strcmp(type, "Berto") || !strcmp(type, "Mayor");
 }
 
-void __thiscall Logic_SetState2(cBaseLocalLogic *self, cEntity *e) {
+void Logic_SetState2(cBaseLocalLogic *self, cEntity *e) {
 	self->vftable->SetState(self, GENCHAR_ACCUSE, e);
 }
 
-void __thiscall Logic_Nop2(void *self, int a, int b) {
+void Logic_Nop2(void *self, int a, int b) {
 	(void)self;
 	(void)a;
 	(void)b;
 }
 
-byte __thiscall Logic_True2(void *self, int a, int b) {
+byte Logic_True2(void *self, int a, int b) {
 	(void)self;
 	(void)a;
 	(void)b;
@@ -165,7 +165,7 @@ static inline int GenChar_AISubState(cAIChar *ai) {
 }
 
 /* vf17 */
-void __thiscall cGenCharLocalLogic_Update(cGenCharLocalLogic *self, float dt) {
+void cGenCharLocalLogic_Update(cGenCharLocalLogic *self, float dt) {
 	cBaseLocalLogic *b = &self->base;
 	vec3_t t;
 
@@ -310,7 +310,7 @@ states:
 }
 
 /* vf12: a robbery seen, with the chance GenCharRobberyDetection plus the amount */
-void __thiscall cGenCharLocalLogic_OnRobbery(cGenCharLocalLogic *self, cEntity *e, float amount) {
+void cGenCharLocalLogic_OnRobbery(cGenCharLocalLogic *self, cEntity *e, float amount) {
 	if (amount > 0.0f && Logic_Chance(&self->base, e, g_GenCharRobberyDetection + amount)) {
 		Logic_Vtbl(self)->SetState(self, self->alarmState, e);
 		cGenCharLocalLogic_ResetSpecial(self);
@@ -318,7 +318,7 @@ void __thiscall cGenCharLocalLogic_OnRobbery(cGenCharLocalLogic *self, cEntity *
 }
 
 /* vf10: the state of the alarm against the attacker, no accuse for a while */
-void __thiscall cGenCharLocalLogic_OnHit(cGenCharLocalLogic *self, cEntity *attacker) {
+void cGenCharLocalLogic_OnHit(cGenCharLocalLogic *self, cEntity *attacker) {
 	if (self->base.busy || !GenChar_Rand101()) {
 		return;
 	}
@@ -328,7 +328,7 @@ void __thiscall cGenCharLocalLogic_OnHit(cGenCharLocalLogic *self, cEntity *atta
 }
 
 /* vf11: the same, not while accusing */
-void __thiscall cGenCharLocalLogic_OnSeen(cGenCharLocalLogic *self, cEntity *e) {
+void cGenCharLocalLogic_OnSeen(cGenCharLocalLogic *self, cEntity *e) {
 	if (self->base.state == GENCHAR_ACCUSE || self->base.busy || !GenChar_Rand101()) {
 		return;
 	}
@@ -337,7 +337,7 @@ void __thiscall cGenCharLocalLogic_OnSeen(cGenCharLocalLogic *self, cEntity *e) 
 }
 
 /* vf15: 1 if it refuses the police (GenCharPoliceRefuse in percent), else the state of the alarm against it */
-byte __thiscall cGenCharLocalLogic_GivesMoney(cGenCharLocalLogic *self, cEntity *police) {
+byte cGenCharLocalLogic_GivesMoney(cGenCharLocalLogic *self, cEntity *police) {
 	float refuse = g_GenCharPoliceRefuse;
 
 	if (!self->base.busy && refuse > (float)(Weap_Rand01() * 100.0 + 0.0)) {
@@ -348,20 +348,20 @@ byte __thiscall cGenCharLocalLogic_GivesMoney(cGenCharLocalLogic *self, cEntity 
 }
 
 /* vf35: state 10 ends when the AI arrived */
-void __thiscall cGenCharLocalLogic_UpdateGetIt(cGenCharLocalLogic *self, cAIChar *ai, float dt) {
+void cGenCharLocalLogic_UpdateGetIt(cGenCharLocalLogic *self, cAIChar *ai, float dt) {
 	(void)dt;
 	if (ai->vftable->GetState(ai) != 4) {
 		Logic_Vtbl(self)->RestartState(self);
 	}
 }
 
-void __fastcall cGenCharLocalLogic_ResetSpecial(cGenCharLocalLogic *self) {
+void cGenCharLocalLogic_ResetSpecial(cGenCharLocalLogic *self) {
 	self->specialOn = 0;
 	self->specialTime = 0.0f;
 	self->searchTime = Rand_FloatRange(g_GenCharMinSpecialActionTime, g_GenCharMaxSpecialActionTime);
 }
 
-void __fastcall cGenCharLocalLogic_Discover(cGenCharLocalLogic *self) {
+void cGenCharLocalLogic_Discover(cGenCharLocalLogic *self) {
 	cEntity *p = self->base.parent;
 
 	if (WChar(p)->control.walk == 0.0f && WChar(p)->control.strafe == 0.0f &&
@@ -373,7 +373,7 @@ void __fastcall cGenCharLocalLogic_Discover(cGenCharLocalLogic *self) {
 
 /* vf24: the alert with the alarm (unless IgnoreAlarm), else the default state with its target; OnDefStateCallback
  * (name) when that state was taken */
-byte __thiscall cGenCharLocalLogic_RestartState(cGenCharLocalLogic *self) {
+byte cGenCharLocalLogic_RestartState(cGenCharLocalLogic *self) {
 	cGenCharLocalLogic_ResetSpecial(self);
 	if (g_pWorld->alarm.on && !self->ignoreAlarm) {
 		return Logic_Vtbl(self)->SetState(self, GENCHAR_ALERT, NULL);
@@ -406,7 +406,7 @@ static void GenChar_Dir(vec3_t *dir, const vec3_t *a, const vec3_t *b) {
 }
 
 /* vf34: the AI walks to e, faced from the character to it */
-void __thiscall cGenCharLocalLogic_GoTo(cGenCharLocalLogic *self, cAIChar *ai, cEntity *e) {
+void cGenCharLocalLogic_GoTo(cGenCharLocalLogic *self, cAIChar *ai, cEntity *e) {
 	vec3_t t1, t2, t3, dir;
 	cEntity *p = self->base.parent;
 	const vec3_t *pp = p->vftable->GetPos(p, &t1);
@@ -418,7 +418,7 @@ void __thiscall cGenCharLocalLogic_GoTo(cGenCharLocalLogic *self, cAIChar *ai, c
 }
 
 /* vf19: the AI state of the logic state; always 1 */
-byte __thiscall cGenCharLocalLogic_SetState(cGenCharLocalLogic *self, int state, cEntity *target) {
+byte cGenCharLocalLogic_SetState(cGenCharLocalLogic *self, int state, cEntity *target) {
 	cBaseLocalLogic *b = &self->base;
 	byte ok;
 
@@ -493,16 +493,16 @@ byte __thiscall cGenCharLocalLogic_SetState(cGenCharLocalLogic *self, int state,
 	return 1;
 }
 
-void __thiscall cGenCharLocalLogic_SetDefaultState(cGenCharLocalLogic *self, int ds) {
+void cGenCharLocalLogic_SetDefaultState(cGenCharLocalLogic *self, int ds) {
 	GenChar_SetDefaultState(self, ds);
 }
 
-void __thiscall cGenCharLocalLogic_SetDefaultTarget(cGenCharLocalLogic *self, const char *name) {
+void cGenCharLocalLogic_SetDefaultTarget(cGenCharLocalLogic *self, const char *name) {
 	cString_Set(&self->defaultTarget, name);
 }
 
 /* vf05 */
-byte __thiscall cGenCharLocalLogic_VarS(cGenCharLocalLogic *self, const char *name, char **s, byte set) {
+byte cGenCharLocalLogic_VarS(cGenCharLocalLogic *self, const char *name, char **s, byte set) {
 	if (strcmp(name, "DefaultTarget")) {
 		return cBaseLocalLogic_VarS(&self->base, name, s, set);
 	}
@@ -516,7 +516,7 @@ byte __thiscall cGenCharLocalLogic_VarS(cGenCharLocalLogic *self, const char *na
 
 /* vf25: the special attack of e is allowed (energy bar and special actions on, GenCharAttackActive), e is not
  * idle, near a camera (GenCharAttackLimit), not on the radar and its AI not in sub state 12 */
-byte __thiscall cGenCharLocalLogic_CanAttack(cGenCharLocalLogic *self, cEntity *e) {
+byte cGenCharLocalLogic_CanAttack(cGenCharLocalLogic *self, cEntity *e) {
 	vec3_t t;
 	cBaseLocalLogic *l = (cBaseLocalLogic *)Logic_GetLocalLogic(e);
 

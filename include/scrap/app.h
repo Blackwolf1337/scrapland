@@ -68,71 +68,71 @@
 #define g_ScrapClass GAME_STR(str_431aa4)	/* "ScrapClass" */
 
 /* App.c */
-CApp *__thiscall CApp_ctor(CApp *self, const char *cmdLine);
-void __fastcall CApp_dtor(CApp *self);
-CApp *__thiscall CApp_Delete(CApp *self, byte flags);
-void __thiscall CApp_DoneGame(CApp *self);
-void __thiscall CApp_InitGame(CApp *self, const char *level);
-void __thiscall CApp_Nop(CApp *self);
-byte __thiscall CApp_Init(CApp *self);
+CApp *CApp_ctor(CApp *self, const char *cmdLine);
+void CApp_dtor(CApp *self);
+CApp *CApp_Delete(CApp *self, byte flags);
+void CApp_DoneGame(CApp *self);
+void CApp_InitGame(CApp *self, const char *level);
+void CApp_Nop(CApp *self);
+byte CApp_Init(CApp *self);
 /* the rest of CApp_Init when it returned while the videos of Engine_Init play (Engine_VideoWait); 0 while they
  * still play */
 byte CApp_InitResume(CApp *self);
-byte __thiscall CApp_Frame(CApp *self);
+byte CApp_Frame(CApp *self);
 /* the rest of a frame that waits (the level load after the start video, the dedicated server's packet wait), from
  * the message loop; 0 while none waits */
 int CApp_FrameResume(void);
-void __thiscall CApp_Shutdown(CApp *self);
-void __thiscall CApp_LoadLevelNow(CApp *self, const char *level);
-void __thiscall CApp_Update(CApp *self, float dt);
-void __thiscall CApp_Render(CApp *self);
-byte __thiscall CApp_ParseParam(CApp *self, const char *param, const char *ext);
-void __thiscall CApp_ResetParams(CApp *self);
-double __thiscall CApp_GetGameTime(CApp *self);
-byte __thiscall CApp_RunApp(CApp *self, const char *exe, const char *cmdLine, int arg);
-byte __thiscall CApp_IsDedicatedWin(CApp *self);
-void __fastcall CApp_ParseCmdLine(CApp *self);
+void CApp_Shutdown(CApp *self);
+void CApp_LoadLevelNow(CApp *self, const char *level);
+void CApp_Update(CApp *self, float dt);
+void CApp_Render(CApp *self);
+byte CApp_ParseParam(CApp *self, const char *param, const char *ext);
+void CApp_ResetParams(CApp *self);
+double CApp_GetGameTime(CApp *self);
+byte CApp_RunApp(CApp *self, const char *exe, const char *cmdLine, int arg);
+byte CApp_IsDedicatedWin(CApp *self);
+void CApp_ParseCmdLine(CApp *self);
 void CApp_SFLB_0(CApp *self);
 byte App_CheckBlock(void);
 void Console_Execute(const char *cmd);
 void *App_GetObjData(const char *name);
-void __thiscall CWinApp_LoadLevel(CApp *app, const char *level);
-void __thiscall App_PickLoadingTip(CApp *self, const char *level);
+void CWinApp_LoadLevel(CApp *app, const char *level);
+void App_PickLoadingTip(CApp *self, const char *level);
 void Loading_Init(void);
 void Loading_End(void);
-void __fastcall Loading_Start(void *unused);
+void Loading_Start(void *unused);
 byte Loading_DrawXbox(void);
 byte Loading_Draw(void);
 
 /* WinApp.c */
-CWinApp *__thiscall CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char *cmdLine, int nCmdShow);
-void __fastcall CWinApp_dtor(CWinApp *self);
-CWinApp *__thiscall CWinApp_Delete(CWinApp *self, byte flags);
-intptr_t __thiscall CWinApp_WndProc(CWinApp *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
-int __thiscall CWinApp_ConsoleAdd(CWinApp *self, const char *text, uint32_t color);
-int __thiscall CWinApp_ShowConsole(CWinApp *self, byte show);
-byte __fastcall CWinApp_CreateMainWindow(CWinApp *self);
-void *__fastcall CWinApp_CreateWindow(CWinApp *self);
-const char *__thiscall CWinApp_DebugInput(CWinApp *self, const char *prompt);
-void __thiscall CWinApp_InitDedicated(CWinApp *self);
-void __thiscall CWinApp_Shutdown(CWinApp *self);
-void __thiscall CWinApp_Exit(CWinApp *self);
-void __thiscall CWinApp_ResetParams(CWinApp *self);
-int __thiscall CWinApp_HasArg(CWinApp *self, const char *name);
+CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char *cmdLine, int nCmdShow);
+void CWinApp_dtor(CWinApp *self);
+CWinApp *CWinApp_Delete(CWinApp *self, byte flags);
+intptr_t CWinApp_WndProc(CWinApp *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
+int CWinApp_ConsoleAdd(CWinApp *self, const char *text, uint32_t color);
+int CWinApp_ShowConsole(CWinApp *self, byte show);
+byte CWinApp_CreateMainWindow(CWinApp *self);
+void *CWinApp_CreateWindow(CWinApp *self);
+const char *CWinApp_DebugInput(CWinApp *self, const char *prompt);
+void CWinApp_InitDedicated(CWinApp *self);
+void CWinApp_Shutdown(CWinApp *self);
+void CWinApp_Exit(CWinApp *self);
+void CWinApp_ResetParams(CWinApp *self);
+int CWinApp_HasArg(CWinApp *self, const char *name);
 /* the path of the game into buf */
 void App_GetPath(char *buf, int size);
-const char *__thiscall App_RegGetString(CWinApp *self, const char *name);
+const char *App_RegGetString(CWinApp *self, const char *name);
 void *App_GetHInstance(void);
-double __thiscall CWinApp_GetTime(CWinApp *self);
+double CWinApp_GetTime(CWinApp *self);
 void *App_GetHWnd(void);
-byte __thiscall CWinApp_Init(CWinApp *self);
-byte __thiscall CWinApp_Frame(CWinApp *self);
+byte CWinApp_Init(CWinApp *self);
+byte CWinApp_Frame(CWinApp *self);
 void ConsoleWin_Add(const char *text, uint32_t color);
 void App_GetConfigDir(char *buf, int size);
-byte __thiscall CWinApp_ParseParam(CWinApp *self, const char *param, const char *ext);
-byte __thiscall CWinApp_RunApp(CWinApp *self, const char *exe, const char *cmdLine, int arg);
+byte CWinApp_ParseParam(CWinApp *self, const char *param, const char *ext);
+byte CWinApp_RunApp(CWinApp *self, const char *exe, const char *cmdLine, int arg);
 intptr_t __stdcall App_WndProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
-byte __thiscall CWinApp_IsDedicatedWin(CWinApp *self);
+byte CWinApp_IsDedicatedWin(CWinApp *self);
 int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow);
 
 /* C functions declared only in their files */
@@ -144,7 +144,7 @@ void Pack_OpenDir(const char *dir);
 void GVars_Init(void);
 void GVars_Done(void);
 const char *GVar_Complete(const char *prefix);
-byte __thiscall cGVar_SetFlag(cGVar *self, byte bit, byte on);
+byte cGVar_SetFlag(cGVar *self, byte bit, byte on);
 void Lang_Free(void);
 void Python_Init(void);
 void Python_Close(void);
@@ -170,10 +170,10 @@ void Menu_DrawFrame(void *img, int arg, float x, float y, float w, float h);
 void Menu_DrawBar(void *img, float x, float y, float frac, int mode, float f, float u0, float v0, float u1, float v1,
 	float bu0, float bv0, float bu1, float bv1, uint32_t color, uint32_t black);
 void Font_SetLanguage(const char *lang);
-void *__thiscall CPsaImage_ctorTex(void *self, const char *name, int a, int b);
-void *__thiscall CPsaImage_ctorFlags(void *self, const char *name, int a, int b, int flags);
+void *CPsaImage_ctorTex(void *self, const char *name, int a, int b);
+void *CPsaImage_ctorFlags(void *self, const char *name, int a, int b, int flags);
 /* a polygon of n corners (pos, uv and colors optional, NULL for the image ones); mode 6 */
-void __thiscall CPsaImage_DrawPoly(void *self, const float *pos, const float *uv, const uint32_t *colors, int n,
+void CPsaImage_DrawPoly(void *self, const float *pos, const float *uv, const uint32_t *colors, int n,
 	int mode);
 void D3DApp_OnActivate(void);
 intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);

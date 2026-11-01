@@ -23,23 +23,23 @@ static const char *FileName(cFileBlock *self) {
 }
 
 /* "File access error" with the name of the file; always 0 */
-int __thiscall cFileBlock_Error(cFileBlock *self, const char *msg) {
+int cFileBlock_Error(cFileBlock *self, const char *msg) {
 	Con_FatalErrorf("File access error: CFileBlock: '%s' %s\n", FileName(self), msg ? msg : "");
 	return 0;
 }
 
-cFileBlock *__fastcall cFileBlock_ctor(cFileBlock *self) {
+cFileBlock *cFileBlock_ctor(cFileBlock *self) {
 	self->f = NULL;
 	self->block = NULL;
 	return self;
 }
 
-void __fastcall cFileBlock_dtor(cFileBlock *self) {
+void cFileBlock_dtor(cFileBlock *self) {
 	CHECK(!self->f);
 }
 
 /* the file object for the mode: a pack reader for reading only, else a file on disk */
-void __thiscall cFileBlock_CreateFile(cFileBlock *self, uint32_t mode, byte flags) {
+void cFileBlock_CreateFile(cFileBlock *self, uint32_t mode, byte flags) {
 	if (self->f) {
 		CHECK(!self->f);
 		if (self->f) {
@@ -68,14 +68,14 @@ void __thiscall cFileBlock_CreateFile(cFileBlock *self, uint32_t mode, byte flag
 	self->f = NULL;
 }
 
-void __fastcall cFileBlock_DeleteFile(cFileBlock *self) {
+void cFileBlock_DeleteFile(cFileBlock *self) {
 	if (self->f) {
 		self->f->vftable->Destroy(self->f, 1);
 		self->f = NULL;
 	}
 }
 
-int __thiscall cFileBlock_Open(cFileBlock *self, const char *filename, uint32_t mode, uint32_t flags) {
+int cFileBlock_Open(cFileBlock *self, const char *filename, uint32_t mode, uint32_t flags) {
 	CHECK(!self->block);
 	CHECK(filename);
 	cFileBlock_CreateFile(self, mode, (byte)flags);
@@ -87,7 +87,7 @@ int __thiscall cFileBlock_Open(cFileBlock *self, const char *filename, uint32_t 
 	return 1;
 }
 
-int __fastcall cFileBlock_Close(cFileBlock *self) {
+int cFileBlock_Close(cFileBlock *self) {
 	CHECK(!self->block);
 	if (!self->f) {
 		return 1;
@@ -97,7 +97,7 @@ int __fastcall cFileBlock_Close(cFileBlock *self) {
 	return res;
 }
 
-void __thiscall cFileBlock_PushBlock(cFileBlock *self, const char *id, int pos) {
+void cFileBlock_PushBlock(cFileBlock *self, const char *id, int pos) {
 	cFileBlockNode *node = operator_new(sizeof(*node));
 	node->id = ID_to_DWORD(id);
 	node->pos = pos;
@@ -105,7 +105,7 @@ void __thiscall cFileBlock_PushBlock(cFileBlock *self, const char *id, int pos) 
 	self->block = node;
 }
 
-void __thiscall cFileBlock_PopBlock(cFileBlock *self, const char *id) {
+void cFileBlock_PopBlock(cFileBlock *self, const char *id) {
 	CHECK(self->block);
 	CHECK(self->block->id == ID_to_DWORD(id));
 	cFileBlockNode *prev = self->block->prev;
@@ -113,7 +113,7 @@ void __thiscall cFileBlock_PopBlock(cFileBlock *self, const char *id) {
 	self->block = prev;
 }
 
-int __thiscall cFileBlock_Read(cFileBlock *self, void *mem, int size) {
+int cFileBlock_Read(cFileBlock *self, void *mem, int size) {
 	CHECK(self->f);
 	CHECK(mem);
 	if (size && self->f->vftable->Read(self->f, mem, size) != size) {
@@ -122,7 +122,7 @@ int __thiscall cFileBlock_Read(cFileBlock *self, void *mem, int size) {
 	return 1;
 }
 
-int __thiscall cFileBlock_Write(cFileBlock *self, const void *mem, int size) {
+int cFileBlock_Write(cFileBlock *self, const void *mem, int size) {
 	CHECK(self->f);
 	CHECK(mem);
 	if (size && self->f->vftable->Write(self->f, mem, size) != size) {
@@ -131,31 +131,31 @@ int __thiscall cFileBlock_Write(cFileBlock *self, const void *mem, int size) {
 	return 1;
 }
 
-int __fastcall cFileBlock_ReadInt(cFileBlock *self) {
+int cFileBlock_ReadInt(cFileBlock *self) {
 	int data = -1;
 	CHECK(cFileBlock_Read(self, &data, sizeof(data)));
 	return data;
 }
 
-int __thiscall cFileBlock_WriteInt(cFileBlock *self, int v) {
+int cFileBlock_WriteInt(cFileBlock *self, int v) {
 	return cFileBlock_Write(self, &v, sizeof(v));
 }
 
 /* enters a block: its id must follow, then its size (not kept) */
-int __thiscall cFileBlock_OpenBlockRead(cFileBlock *self, const char *id) {
+int cFileBlock_OpenBlockRead(cFileBlock *self, const char *id) {
 	cFileBlock_PushBlock(self, id, 0);
 	CHECK((uint32_t)cFileBlock_ReadInt(self) == self->block->id);
 	cFileBlock_ReadInt(self);
 	return 1;
 }
 
-int __thiscall cFileBlock_CloseBlockRead(cFileBlock *self, const char *id) {
+int cFileBlock_CloseBlockRead(cFileBlock *self, const char *id) {
 	cFileBlock_PopBlock(self, id);
 	return 1;
 }
 
 /* writes the id and room for the size, filled in by CloseBlockWrite */
-int __thiscall cFileBlock_OpenBlockWrite(cFileBlock *self, const char *id) {
+int cFileBlock_OpenBlockWrite(cFileBlock *self, const char *id) {
 	CHECK(self->f);
 	uint32_t dw = ID_to_DWORD(id);
 	if (!cFileBlock_Write(self, &dw, sizeof(dw))) {
@@ -176,7 +176,7 @@ int __thiscall cFileBlock_OpenBlockWrite(cFileBlock *self, const char *id) {
  * writes the size of the block at its start. The original then seeks to the size field again, not back to the
  * end, so data written after the block replaces what follows the size; kept as it is.
  */
-int __thiscall cFileBlock_CloseBlockWrite(cFileBlock *self, const char *id) {
+int cFileBlock_CloseBlockWrite(cFileBlock *self, const char *id) {
 	CHECK(self->f);
 	CHECK(self->block);
 	int end = self->f->vftable->Tell(self->f);

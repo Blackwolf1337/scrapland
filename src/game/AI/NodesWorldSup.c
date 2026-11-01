@@ -20,7 +20,7 @@ double crt_ceil(double x);
 
 /* ---- Global/DList.h ---- */
 
-void __fastcall NWPointList_FreePool(cNWPointList *list) {
+void NWPointList_FreePool(cNWPointList *list) {
 	while (list->freeNodes) {
 		cNWPointNode *p = list->freeNodes;
 		list->freeNodes = p->next;
@@ -30,7 +30,7 @@ void __fastcall NWPointList_FreePool(cNWPointList *list) {
 	list->numFree = 0;
 }
 
-void __thiscall NWVisList_Add(cNWVisList *list, const cNWVis *vis) {
+void NWVisList_Add(cNWVisList *list, const cNWVis *vis) {
 	cNWVisNode *node;
 
 	if (list->freeNodes) {
@@ -46,7 +46,7 @@ void __thiscall NWVisList_Add(cNWVisList *list, const cNWVis *vis) {
 	DList_LinkFirst(list, node);
 }
 
-void __thiscall NWVisList_Release(cNWVisList *list, cNWVisNode *node) {
+void NWVisList_Release(cNWVisList *list, cNWVisNode *node) {
 	if (list->numFree < list->maxFree) {
 		node->next = list->freeNodes;
 		list->numFree++;
@@ -59,7 +59,7 @@ void __thiscall NWVisList_Release(cNWVisList *list, cNWVisNode *node) {
 	}
 }
 
-void __fastcall NWVisList_RemoveHead(cNWVisList *list) {
+void NWVisList_RemoveHead(cNWVisList *list) {
 	cNWVisNode *p = list->head;
 
 	list->iter = NULL;
@@ -77,7 +77,7 @@ void __fastcall NWVisList_RemoveHead(cNWVisList *list) {
 	list->count--;
 }
 
-void __fastcall NWVisList_RemoveIter(cNWVisList *list) {
+void NWVisList_RemoveIter(cNWVisList *list) {
 	cNWVisNode *cur = list->iter;
 
 	if (!cur) {
@@ -99,13 +99,13 @@ void __fastcall NWVisList_RemoveIter(cNWVisList *list) {
 	list->iter = next;
 }
 
-void __fastcall NWVisList_Clear(cNWVisList *list) {
+void NWVisList_Clear(cNWVisList *list) {
 	while (list->head) {
 		NWVisList_RemoveHead(list);
 	}
 }
 
-void __thiscall NWVecList_AddBefore(cNWVecList *list, const vec3_t *v) {
+void NWVecList_AddBefore(cNWVecList *list, const vec3_t *v) {
 	cNWVecNode *head = list->head;
 
 	if (list->iter == head) {
@@ -119,14 +119,14 @@ void __thiscall NWVecList_AddBefore(cNWVecList *list, const vec3_t *v) {
 	list->head = head;
 }
 
-void __thiscall NWVecList_Append(cNWVecList *list, const vec3_t *v) {
+void NWVecList_Append(cNWVecList *list, const vec3_t *v) {
 	cNWVecNode *node = DList_NewNode(list, sizeof(*node));
 
 	node->v = *v;
 	DList_LinkLast(list, node);
 }
 
-void __thiscall NWIntList_Append(cNWIntList *list, void *const *data) {
+void NWIntList_Append(cNWIntList *list, void *const *data) {
 	cNWIntNode *node = DList_NewNode(list, sizeof(*node));
 
 	node->data = *data;
@@ -135,21 +135,21 @@ void __thiscall NWIntList_Append(cNWIntList *list, void *const *data) {
 
 /* ---- Global/GridElements.h ---- */
 
-cGridElements_InfPointVisPtr *__thiscall NWGrid_ctor(cGridElements_InfPointVisPtr *self, const vec3_t *max,
+cGridElements_InfPointVisPtr *NWGrid_ctor(cGridElements_InfPointVisPtr *self, const vec3_t *max,
 	const vec3_t *min, int nx, int ny, int nz) {
 	return cGridElements_Init(self, NWGRID_VFTABLE, max, min, nx, ny, nz);
 }
 
-void __thiscall NWGrid_Free(cGridElements_InfPointVisPtr *self) {
-	cGridElements_FreeCells(self, (void(__fastcall *)(void *))NWIntList_Clear, sizeof(cNWIntNode));
+void NWGrid_Free(cGridElements_InfPointVisPtr *self) {
+	cGridElements_FreeCells(self, (void(*)(void *))NWIntList_Clear, sizeof(cNWIntNode));
 }
 
-void __fastcall NWGrid_dtor(cGridElements_InfPointVisPtr *self) {
+void NWGrid_dtor(cGridElements_InfPointVisPtr *self) {
 	self->vftable = NWGRID_VFTABLE;
 	NWGrid_Free(self);
 }
 
-cGridElements_InfPointVisPtr *__thiscall NWGrid_Delete(cGridElements_InfPointVisPtr *self, byte flags) {
+cGridElements_InfPointVisPtr *NWGrid_Delete(cGridElements_InfPointVisPtr *self, byte flags) {
 	self->vftable = NWGRID_VFTABLE;
 	NWGrid_Free(self);
 	if (flags & 1) {
@@ -158,7 +158,7 @@ cGridElements_InfPointVisPtr *__thiscall NWGrid_Delete(cGridElements_InfPointVis
 	return self;
 }
 
-byte __thiscall NWGrid_Add(cGridElements_InfPointVisPtr *self, const vec3_t *p, void *const *data) {
+byte NWGrid_Add(cGridElements_InfPointVisPtr *self, const vec3_t *p, void *const *data) {
 	CHECK(!((p->x > self->max.x) || (p->x < self->min.x) || (p->y > self->max.y) || (p->y < self->min.y) ||
 		(p->z > self->max.z) || (p->z < self->min.z)));
 	int i = self->vftable->CellIndex(self, p);
@@ -176,7 +176,7 @@ byte __thiscall NWGrid_Add(cGridElements_InfPointVisPtr *self, const vec3_t *p, 
 
 /* ---- CNodesWorldSup ---- */
 
-CNodesWorld *__thiscall CNodesWorldSup_ctor(CNodesWorld *self) {
+CNodesWorld *CNodesWorldSup_ctor(CNodesWorld *self) {
 	self->sup.vftable = CNODESWORLDSUP_VFTABLE;
 	/* the fields from halfNode to nodeInit, grid to extraPoints and numFiles to i358; the padding, the rest of
 	 * name and fileStart stay as they were */
@@ -192,12 +192,12 @@ CNodesWorld *__thiscall CNodesWorldSup_ctor(CNodesWorld *self) {
 }
 
 /* a list of 0x14 nodes emptied and its free nodes deleted */
-static void NWSup_FreeVecList(cNWVecList *list, void(__fastcall *clear)(cNWVecList *list)) {
+static void NWSup_FreeVecList(cNWVecList *list, void(*clear)(cNWVecList *list)) {
 	clear(list);
 	DList_FreePool(list, sizeof(cNWVecNode));
 }
 
-void __fastcall CNodesWorldSup_dtor(CNodesWorld *self) {
+void CNodesWorldSup_dtor(CNodesWorld *self) {
 	self->sup.vftable = CNODESWORLDSUP_VFTABLE;
 	NWSup_FreeVecList(&self->sup.errOneWay, DListVec3_Clear);
 	NWSup_FreeVecList(&self->sup.errUnlinked, DListVec3_Clear);
@@ -213,7 +213,7 @@ void __fastcall CNodesWorldSup_dtor(CNodesWorld *self) {
 	NWPointList_FreePool(&self->sup.points);
 }
 
-CNodesWorld *__thiscall CNodesWorldSup_Delete(CNodesWorld *self, byte flags) {
+CNodesWorld *CNodesWorldSup_Delete(CNodesWorld *self, byte flags) {
 	CNodesWorldSup_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, 0x360);
@@ -221,7 +221,7 @@ CNodesWorld *__thiscall CNodesWorldSup_Delete(CNodesWorld *self, byte flags) {
 	return self;
 }
 
-void __thiscall CNodesWorldSup_GetBox(CNodesWorld *self, vec3_t *min, vec3_t *max) {
+void CNodesWorldSup_GetBox(CNodesWorld *self, vec3_t *min, vec3_t *max) {
 	*min = self->sup.min;
 	*max = self->sup.max;
 }
@@ -260,7 +260,7 @@ static cNWNode *NWSup_FindNode(cNWNode *nodes, int first, int n, const vec3_t *p
 }
 
 /* the inf file of the graph: the node size and the box of the level, after the path itself is saved */
-byte __thiscall CNodesWorldSup_SaveInfPath(CNodesWorld *self, const char *path) {
+byte CNodesWorldSup_SaveInfPath(CNodesWorld *self, const char *path) {
 	cFilePack f;
 	byte ok;
 
@@ -288,7 +288,7 @@ byte __thiscall CNodesWorldSup_SaveInfPath(CNodesWorld *self, const char *path) 
 	return ok;
 }
 
-byte __thiscall CNodesWorldSup_LoadGraph(CNodesWorld *self, const char *path) {
+byte CNodesWorldSup_LoadGraph(CNodesWorld *self, const char *path) {
 	char buf[0x100];
 	cFilePack f;
 	int n, file, links = 0;
@@ -388,7 +388,7 @@ byte __thiscall CNodesWorldSup_LoadGraph(CNodesWorld *self, const char *path) {
 	return 1;
 }
 
-byte __thiscall CNodesWorldSup_Create(CNodesWorld *self) {
+byte CNodesWorldSup_Create(CNodesWorld *self) {
 	if (!self->sup.vftable->LoadGraph(self)) {
 		return 0;
 	}
@@ -396,7 +396,7 @@ byte __thiscall CNodesWorldSup_Create(CNodesWorld *self) {
 	return 1;
 }
 
-int __thiscall CNodesWorldSup_FileOf(CNodesWorld *self, const cNWNode *node) {
+int CNodesWorldSup_FileOf(CNodesWorld *self, const cNWNode *node) {
 	uintptr_t p = (uintptr_t)node;
 	uintptr_t base = (uintptr_t)self->sup.nodes;
 
@@ -415,7 +415,7 @@ int __thiscall CNodesWorldSup_FileOf(CNodesWorld *self, const cNWNode *node) {
 	return n;
 }
 
-int __thiscall CNodesWorldSup_CommonFile(CNodesWorld *self, cNWNode *const *nodes, int n) {
+int CNodesWorldSup_CommonFile(CNodesWorld *self, cNWNode *const *nodes, int n) {
 	if (n <= 0) {
 		return -1;
 	}
@@ -436,7 +436,7 @@ static vec3_t *NWSup_CellPos(const CNodesWorld *self, vec3_t *out, float fx, flo
 	return out;
 }
 
-vec3_t *__thiscall CNodesWorldSup_SnapPos(CNodesWorld *self, vec3_t *out, const vec3_t *pos) {
+vec3_t *CNodesWorldSup_SnapPos(CNodesWorld *self, vec3_t *out, const vec3_t *pos) {
 	float fz = (float)(int)((pos->z - self->sup.min.z) / self->sup.nodeSize.z);
 	float fy = (float)(int)((pos->y - self->sup.min.y) / self->sup.nodeSize.y);
 	float fx = (float)(int)((pos->x - self->sup.min.x) / self->sup.nodeSize.x);
@@ -444,7 +444,7 @@ vec3_t *__thiscall CNodesWorldSup_SnapPos(CNodesWorld *self, vec3_t *out, const 
 	return NWSup_CellPos(self, out, fx, fy, fz);
 }
 
-void __thiscall CNodesWorldSup_OtherLinks(CNodesWorld *self, const cNWNode *node, const vec3_t *pos, cNWNode **list,
+void CNodesWorldSup_OtherLinks(CNodesWorld *self, const cNWNode *node, const vec3_t *pos, cNWNode **list,
 	int max, int *count) {
 	(void)self;
 	*count = 0;
@@ -460,34 +460,34 @@ void __thiscall CNodesWorldSup_OtherLinks(CNodesWorld *self, const cNWNode *node
 	}
 }
 
-byte __thiscall CNodesWorldSup_IsCreated(CNodesWorld *self) {
+byte CNodesWorldSup_IsCreated(CNodesWorld *self) {
 	return self->sup.created;
 }
 
-vec3_t *__thiscall CNodesWorldSup_LastNodePos(CNodesWorld *self, vec3_t *out) {
+vec3_t *CNodesWorldSup_LastNodePos(CNodesWorld *self, vec3_t *out) {
 	self->sup.nodeInit = self->sup.nodes[self->sup.numNodes - 1].pos;
 	*out = self->sup.nodeInit;
 	return out;
 }
 
-const vec3_t *__thiscall CNodesWorldSup_GetVisPoint(CNodesWorld *self, int i) {
+const vec3_t *CNodesWorldSup_GetVisPoint(CNodesWorld *self, int i) {
 	CHECK(i >= 0 && i < self->sup.numNodes);
 	return &self->sup.nodes[i].pos;
 }
 
-int __thiscall CNodesWorldSup_NumVisPoints(CNodesWorld *self) {
+int CNodesWorldSup_NumVisPoints(CNodesWorld *self) {
 	return self->sup.numNodes;
 }
 
-float __thiscall CNodesWorldSup_GetMaxVisDist(CNodesWorld *self) {
+float CNodesWorldSup_GetMaxVisDist(CNodesWorld *self) {
 	return self->sup.maxVisDist;
 }
 
-byte __thiscall CNodesWorldSup_InGrid(CNodesWorld *self, const vec3_t *pos) {
+byte CNodesWorldSup_InGrid(CNodesWorld *self, const vec3_t *pos) {
 	return self->sup.grid->vftable->IsInside(self->sup.grid, pos);
 }
 
-byte __thiscall CNodesWorldSup_CheckBuffer(CNodesWorld *self) {
+byte CNodesWorldSup_CheckBuffer(CNodesWorld *self) {
 	vec3_t p;
 
 	for (int i = 0; i < self->sup.nx * self->sup.ny * self->sup.nz; i++) {
@@ -501,7 +501,7 @@ byte __thiscall CNodesWorldSup_CheckBuffer(CNodesWorld *self) {
 	return 1;
 }
 
-void __thiscall CNodesWorldSup_BuildGrid(CNodesWorld *self) {
+void CNodesWorldSup_BuildGrid(CNodesWorld *self) {
 	vec3_t top = self->sup.max;
 
 	if (g_IsMapOutDoor) {
@@ -532,7 +532,7 @@ void __thiscall CNodesWorldSup_BuildGrid(CNodesWorld *self) {
 	}
 }
 
-int __thiscall CNodesWorldSup_BufferIndex(CNodesWorld *self, const vec3_t *pos) {
+int CNodesWorldSup_BufferIndex(CNodesWorld *self, const vec3_t *pos) {
 	int i = ((int)((pos->x - self->sup.min.x) / self->sup.nodeSize.x) * self->sup.ny + (int)((pos->y - self->sup.min.y) /
 		self->sup.nodeSize.y)) * self->sup.nz + (int)((pos->z - self->sup.min.z) / self->sup.nodeSize.z);
 
@@ -540,7 +540,7 @@ int __thiscall CNodesWorldSup_BufferIndex(CNodesWorld *self, const vec3_t *pos) 
 	return i;
 }
 
-vec3_t *__thiscall CNodesWorldSup_BufferPos(CNodesWorld *self, vec3_t *out, int index) {
+vec3_t *CNodesWorldSup_BufferPos(CNodesWorld *self, vec3_t *out, int index) {
 	CHECK((index < self->sup.dimBuffer) && (index >= 0));
 	int plane = self->sup.ny * self->sup.nz;
 	int x = index / plane;
@@ -550,7 +550,7 @@ vec3_t *__thiscall CNodesWorldSup_BufferPos(CNodesWorld *self, vec3_t *out, int 
 	return NWSup_CellPos(self, out, (float)x, (float)y, (float)z);
 }
 
-void __thiscall CNodesWorldSup_GetInfoNodes(CNodesWorld *self) {
+void CNodesWorldSup_GetInfoNodes(CNodesWorld *self) {
 	vec3_t p;
 	byte closed = 1;
 
@@ -620,7 +620,7 @@ static int NWSup_SameSet(CNodesWorld *self, int index, cNWVis *d, const vec3_t *
 	return 1;
 }
 
-void __thiscall CNodesWorldSup_AddVis(CNodesWorld *self, const vec3_t *point, int index) {
+void CNodesWorldSup_AddVis(CNodesWorld *self, const vec3_t *point, int index) {
 	cNWVis *vis = self->sup.buffer[index].vis;
 	cNWVis tmp;
 	int count = 1, key = 0;
@@ -720,11 +720,11 @@ void __thiscall CNodesWorldSup_AddVis(CNodesWorld *self, const vec3_t *point, in
 	NWIntList_FreeAt0c(&tmp);
 }
 
-int __thiscall CNodesWorldSup_Hash(CNodesWorld *self, int a, int b) {
+int CNodesWorldSup_Hash(CNodesWorld *self, int a, int b) {
 	return (int)((uint32_t)a + (uint32_t)b) % self->sup.numSets;
 }
 
-void __thiscall CNodesWorldSup_ReleaseVis(CNodesWorld *self, int index) {
+void CNodesWorldSup_ReleaseVis(CNodesWorld *self, int index) {
 	cNWVis *vis = self->sup.buffer[index].vis;
 
 	if (!vis || --vis->refs != 0) {
@@ -763,7 +763,7 @@ void NWIntList_AddKeepIter(cNWIntList *l, const void *v) {
 	l->iter = saved;
 }
 
-void __thiscall CNodesWorldSup_LinkPoints(CNodesWorld *self) {
+void CNodesWorldSup_LinkPoints(CNodesWorld *self) {
 	Con_Printf("Linking Points of Visibility...\n");
 	cNWPointNode *saved = self->sup.points.iter;
 	self->sup.numPointLinks = 0;
@@ -801,7 +801,7 @@ void __thiscall CNodesWorldSup_LinkPoints(CNodesWorld *self) {
 	self->sup.numPointLinks /= 2;
 }
 
-void __thiscall CNodesWorldSup_LinkBack(CNodesWorld *self) {
+void CNodesWorldSup_LinkBack(CNodesWorld *self) {
 	cNWPointNode *saved = self->sup.points.iter;
 	cNWPointNode *pn = self->sup.points.iter = self->sup.points.head;
 
@@ -830,12 +830,12 @@ void __thiscall CNodesWorldSup_LinkBack(CNodesWorld *self) {
 	self->sup.points.iter = saved;
 }
 
-byte __thiscall CNodesWorldSup_PointLinked(CNodesWorld *self, const vec3_t *point, const vec3_t *other) {
+byte CNodesWorldSup_PointLinked(CNodesWorld *self, const vec3_t *point, const vec3_t *other) {
 	(void)self;
 	return NWSup_ListHas(&NW_POINT(point)->links, other);
 }
 
-void __thiscall CNodesWorldSup_LinkPoint(CNodesWorld *self, const vec3_t *point) {
+void CNodesWorldSup_LinkPoint(CNodesWorld *self, const vec3_t *point) {
 	int i = self->sup.vftable->BufferIndex(self, point);
 	cNWVis *vis = self->sup.buffer[i].vis;
 
@@ -866,7 +866,7 @@ static int NWSup_InSet(CNodesWorld *self, const vec3_t *q, int index) {
 	return self->sup.vftable->VisHas(self, q, index);
 }
 
-byte __thiscall CNodesWorldSup_Unreachable(CNodesWorld *self, const vec3_t *from, const vec3_t *to, int index) {
+byte CNodesWorldSup_Unreachable(CNodesWorld *self, const vec3_t *from, const vec3_t *to, int index) {
 	return NWSup_UnreachableBy(self, from, to, index, NWSup_InSet);
 }
 
@@ -931,7 +931,7 @@ byte NWSup_UnreachableBy(CNodesWorld *self, const vec3_t *from, const vec3_t *to
 	return res;
 }
 
-int __thiscall CNodesWorldSup_BoxCells(CNodesWorld *self, const cNWBox *box) {
+int CNodesWorldSup_BoxCells(CNodesWorld *self, const cNWBox *box) {
 	int nz = (int)(((self->sup.margin + box->b.z) - box->a.z) / self->sup.nodeSize.z);
 	int ny = (int)(((self->sup.margin + box->b.y) - box->a.y) / self->sup.nodeSize.y);
 	int nx = (int)(((self->sup.margin + box->b.x) - box->a.x) / self->sup.nodeSize.x);
@@ -940,7 +940,7 @@ int __thiscall CNodesWorldSup_BoxCells(CNodesWorld *self, const cNWBox *box) {
 	return (int)((uint32_t)nz * (uint32_t)ny * (uint32_t)nx);
 }
 
-byte __thiscall CNodesWorldSup_FindSorted(CNodesWorld *self, cNWIntList *list, const void *key, cNWIntNode **at) {
+byte CNodesWorldSup_FindSorted(CNodesWorld *self, cNWIntList *list, const void *key, cNWIntNode **at) {
 	(void)self;
 	if (!list->count) {
 		*at = NULL;
@@ -969,7 +969,7 @@ byte __thiscall CNodesWorldSup_FindSorted(CNodesWorld *self, cNWIntList *list, c
 	return 0;
 }
 
-byte __thiscall CNodesWorldSup_HasPair(CNodesWorld *self, cNWPairList *list, const cNWPair *pair) {
+byte CNodesWorldSup_HasPair(CNodesWorld *self, cNWPairList *list, const cNWPair *pair) {
 	(void)self;
 	cNWPairNode *saved = list->iter;
 	cNWPairNode *head = list->head;
@@ -990,7 +990,7 @@ byte __thiscall CNodesWorldSup_HasPair(CNodesWorld *self, cNWPairList *list, con
 	return 0;
 }
 
-void __thiscall CNodesWorldSup_InsertPair(CNodesWorld *self, cNWPairList *list, const cNWPair *pair) {
+void CNodesWorldSup_InsertPair(CNodesWorld *self, cNWPairList *list, const cNWPair *pair) {
 	(void)self;
 	cNWPairNode *saved = list->iter;
 	cNWPairNode *head = list->head;
@@ -1016,7 +1016,7 @@ void __thiscall CNodesWorldSup_InsertPair(CNodesWorld *self, cNWPairList *list, 
 	list->iter = saved;
 }
 
-byte __thiscall CNodesWorldSup_VisHas(CNodesWorld *self, const vec3_t *point, int index) {
+byte CNodesWorldSup_VisHas(CNodesWorld *self, const vec3_t *point, int index) {
 	cNWVis *vis = self->sup.buffer[index].vis;
 
 	if (!vis) {
@@ -1025,7 +1025,7 @@ byte __thiscall CNodesWorldSup_VisHas(CNodesWorld *self, const vec3_t *point, in
 	return NWSup_ListHas(&vis->points, point);
 }
 
-byte __thiscall CNodesWorldSup_Linked(CNodesWorld *self, const vec3_t *a, const vec3_t *b) {
+byte CNodesWorldSup_Linked(CNodesWorld *self, const vec3_t *a, const vec3_t *b) {
 	(void)self;
 	if (NWSup_ListHas(&NW_POINT(a)->links, b)) {
 		return 1;
@@ -1033,7 +1033,7 @@ byte __thiscall CNodesWorldSup_Linked(CNodesWorld *self, const vec3_t *a, const 
 	return NWSup_ListHas(&NW_POINT(b)->links, a);
 }
 
-void __thiscall CNodesWorldSup_FreeGraph(CNodesWorld *self) {
+void CNodesWorldSup_FreeGraph(CNodesWorld *self) {
 	Con_Printf("Restoring Memory...\n");
 	if (self->sup.buffer) {
 		Mem_Free(self->sup.buffer);
@@ -1065,7 +1065,7 @@ void __thiscall CNodesWorldSup_FreeGraph(CNodesWorld *self) {
 	self->sup.vftable->ClearLists(self);
 }
 
-void __thiscall CNodesWorldSup_FreeTemp(CNodesWorld *self) {
+void CNodesWorldSup_FreeTemp(CNodesWorld *self) {
 	Con_Printf("Restoring Memory Temp...\n");
 	int mem = g_MemStats->bytes;
 	if (self->sup.buffer) {
@@ -1089,7 +1089,7 @@ void __thiscall CNodesWorldSup_FreeTemp(CNodesWorld *self) {
 	Con_Printf("Memory Restored: %d bytes\n", mem - g_MemStats->bytes);
 }
 
-byte __thiscall CNodesWorldSup_InList(CNodesWorld *self, cNWNode *const *list, int n, const cNWNode *node) {
+byte CNodesWorldSup_InList(CNodesWorld *self, cNWNode *const *list, int n, const cNWNode *node) {
 	(void)self;
 	for (int i = 0; i < n; i++) {
 		if (list[i] == node) {

@@ -161,7 +161,7 @@ static void BmpFlt_Blend(CBmpFlt *self, int x, int y, const CBmpFlt *orig, int o
 static const txfKind_t txfRgba = { 1, RGBA };
 static const txfKind_t txfRgb = { 2, RGB };
 
-float *__thiscall CBmpFlt_Pixel(const CBmpFlt *self, uint32_t x, uint32_t y) {
+float *CBmpFlt_Pixel(const CBmpFlt *self, uint32_t x, uint32_t y) {
 	return BmpFlt_Pixel(self, x, y, RGBA);
 }
 
@@ -170,15 +170,15 @@ int TXF_Load(const char *name, CBmpFlt *dest, int flags, void *extra, int nbytes
 	return TXF_LoadKind(&txfRgba, name, dest, extra, nbytes);
 }
 
-void __thiscall CBmpFlt_Fill(CBmpFlt *self, const float *color) {
+void CBmpFlt_Fill(CBmpFlt *self, const float *color) {
 	BmpFlt_Fill(self, color, RGBA);
 }
 
-int __thiscall CBmpFlt_Save(CBmpFlt *self, const char *name, byte flags, const void *extra, int nbytes) {
+int CBmpFlt_Save(CBmpFlt *self, const char *name, byte flags, const void *extra, int nbytes) {
 	return BmpFlt_Save(&txfRgba, self, name, flags, extra, nbytes);
 }
 
-void __thiscall CBmpFlt_Exposure(CBmpFlt *self, float a, float b) {
+void CBmpFlt_Exposure(CBmpFlt *self, float a, float b) {
 	CHECK(self->img);
 	float *p = self->img;
 	for (int n = self->height * self->width; n > 0; n--) {
@@ -193,21 +193,21 @@ void __thiscall CBmpFlt_Exposure(CBmpFlt *self, float a, float b) {
 	}
 }
 
-void __thiscall CBmpFlt_Create(CBmpFlt *self, int width, int height) {
+void CBmpFlt_Create(CBmpFlt *self, int width, int height) {
 	BmpFlt_Create(self, width, height, RGBA);
 }
 
-int __thiscall CBmpFlt_Load(CBmpFlt *self, const char *name, int flags, void *extra, int nbytes) {
+int CBmpFlt_Load(CBmpFlt *self, const char *name, int flags, void *extra, int nbytes) {
 	(void)flags;
 	return BmpFlt_Load(&txfRgba, self, name, extra, nbytes);
 }
 
-void __thiscall CBmpFlt_Blend(CBmpFlt *self, int x, int y, const CBmpFlt *orig, int ox, int oy, int w, int h, int a,
+void CBmpFlt_Blend(CBmpFlt *self, int x, int y, const CBmpFlt *orig, int ox, int oy, int w, int h, int a,
 	int b) {
 	BmpFlt_Blend(self, x, y, orig, ox, oy, w, h, a, b, RGBA);
 }
 
-void __thiscall CBmpFlt_Resample(CBmpFlt *self, const CBmpFlt *orig, uint32_t mask) {
+void CBmpFlt_Resample(CBmpFlt *self, const CBmpFlt *orig, uint32_t mask) {
 	if (Img_ResampleCopy(self, orig, mask, RGBA * sizeof(float))) {
 		return;
 	}
@@ -252,7 +252,7 @@ void __thiscall CBmpFlt_Resample(CBmpFlt *self, const CBmpFlt *orig, uint32_t ma
 	}
 }
 
-float *__thiscall CBmpFlt2_Pixel(const CBmpFlt2 *self, uint32_t x, uint32_t y) {
+float *CBmpFlt2_Pixel(const CBmpFlt2 *self, uint32_t x, uint32_t y) {
 	return BmpFlt_Pixel(self, x, y, RGB);
 }
 
@@ -261,11 +261,11 @@ int TXF2_Load(const char *name, CBmpFlt2 *dest, int flags, void *extra, int nbyt
 	return TXF_LoadKind(&txfRgb, name, dest, extra, nbytes);
 }
 
-void __thiscall CBmpFlt2_Fill(CBmpFlt2 *self, const float *color) {
+void CBmpFlt2_Fill(CBmpFlt2 *self, const float *color) {
 	BmpFlt_Fill(self, color, RGB);
 }
 
-void __thiscall CBmpFlt2_Scale(CBmpFlt2 *self, float k) {
+void CBmpFlt2_Scale(CBmpFlt2 *self, float k) {
 	CHECK(self->img);
 	if (k == 1.0f) {
 		return;
@@ -279,11 +279,11 @@ void __thiscall CBmpFlt2_Scale(CBmpFlt2 *self, float k) {
 	}
 }
 
-int __thiscall CBmpFlt2_Save(CBmpFlt2 *self, const char *name, byte flags, const void *extra, int nbytes) {
+int CBmpFlt2_Save(CBmpFlt2 *self, const char *name, byte flags, const void *extra, int nbytes) {
 	return BmpFlt_Save(&txfRgb, self, name, flags, extra, nbytes);
 }
 
-void __thiscall CBmpFlt2_Exposure(CBmpFlt2 *self, float a, float b) {
+void CBmpFlt2_Exposure(CBmpFlt2 *self, float a, float b) {
 	CHECK(self->img);
 	float *p = self->img;
 	for (int n = self->height * self->width; n > 0; n--) {
@@ -294,7 +294,7 @@ void __thiscall CBmpFlt2_Exposure(CBmpFlt2 *self, float a, float b) {
 	}
 }
 
-void __thiscall CBmpFlt2_Gamma(CBmpFlt2 *self, float g, float b) {
+void CBmpFlt2_Gamma(CBmpFlt2 *self, float g, float b) {
 	CHECK(self->img);
 	if (g == 1.0f) {
 		return;
@@ -314,21 +314,21 @@ void __thiscall CBmpFlt2_Gamma(CBmpFlt2 *self, float g, float b) {
 	}
 }
 
-void __thiscall CBmpFlt2_Create(CBmpFlt2 *self, int width, int height) {
+void CBmpFlt2_Create(CBmpFlt2 *self, int width, int height) {
 	BmpFlt_Create(self, width, height, RGB);
 }
 
-int __thiscall CBmpFlt2_Load(CBmpFlt2 *self, const char *name, int flags, void *extra, int nbytes) {
+int CBmpFlt2_Load(CBmpFlt2 *self, const char *name, int flags, void *extra, int nbytes) {
 	(void)flags;
 	return BmpFlt_Load(&txfRgb, self, name, extra, nbytes);
 }
 
-void __thiscall CBmpFlt2_Blend(CBmpFlt2 *self, int x, int y, const CBmpFlt2 *orig, int ox, int oy, int w, int h,
+void CBmpFlt2_Blend(CBmpFlt2 *self, int x, int y, const CBmpFlt2 *orig, int ox, int oy, int w, int h,
 	int a, int b) {
 	BmpFlt_Blend(self, x, y, orig, ox, oy, w, h, a, b, RGB);
 }
 
-void __thiscall CBmpFlt2_Resample(CBmpFlt2 *self, const CBmpFlt2 *orig, uint32_t mask) {
+void CBmpFlt2_Resample(CBmpFlt2 *self, const CBmpFlt2 *orig, uint32_t mask) {
 	if (!Img_ResampleCopy(self, orig, mask, RGB * sizeof(float))) {
 		CHECK(0);
 	}

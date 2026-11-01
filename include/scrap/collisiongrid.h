@@ -53,38 +53,38 @@ SD_SIZE(cCollisionGrid, 0x9c);
 #define Grid_IsOk(grid) (((const cCollisionGrid *)(grid))->cells != NULL)
 
 /* a cell head: an empty ring (the constructor of new[]) */
-Nto1Node *__thiscall GridCell_ctor(Nto1Node *self);
+Nto1Node *GridCell_ctor(Nto1Node *self);
 
 /* the grid is used as void * (the byte array of cWorld) */
-void *__thiscall Grid_ctor(void *grid);
-void __thiscall Grid_dtor(void *grid);
+void *Grid_ctor(void *grid);
+void Grid_dtor(void *grid);
 /* the cells freed, the box cleared */
-void __thiscall Grid_Free(void *grid);
-void __thiscall Grid_Init(void *grid, const vec3_t *min, const vec3_t *max, const vec3_t *cell);
+void Grid_Free(void *grid);
+void Grid_Init(void *grid, const vec3_t *min, const vec3_t *max, const vec3_t *cell);
 /* the grid made again with the cells of size; the top of the box is TopLimit with GridUseTopLimit */
-void __thiscall Grid_Set(void *grid, const vec3_t *size);
+void Grid_Set(void *grid, const vec3_t *size);
 /* the entity into the cell of its position (none without active) */
-void __thiscall Grid_Add(void *grid, cEntity *e);
+void Grid_Add(void *grid, cEntity *e);
 /* the first entity of cell x y z (outside of the box: the outside list); NULL for an empty cell or one the segment
  * query has seen */
-cEntity *__thiscall Grid_GetCell(void *grid, int x, int y, int z);
-cEntity *__thiscall Grid_GetCellAt(void *grid, const vec3_t *pos);
+cEntity *Grid_GetCell(void *grid, int x, int y, int z);
+cEntity *Grid_GetCellAt(void *grid, const vec3_t *pos);
 /* the next entity of the cell of the query, NULL at its end */
-cEntity *__thiscall Grid_NextInCell(void *grid);
+cEntity *Grid_NextInCell(void *grid);
 /* the next cell of the box query; 1 after the last */
-byte __thiscall Grid_StepCell(void *grid);
+byte Grid_StepCell(void *grid);
 /* the stamp of a new segment query */
-void __thiscall Grid_NewQuery(void *grid);
+void Grid_NewQuery(void *grid);
 /* the entities near the segment, ext the size of the box moved along it */
-cEntity *__thiscall Grid_FirstOnSegment(void *grid, const vec3_t *from, const vec3_t *to, const vec3_t *ext);
-cEntity *__thiscall Grid_NextOnSegment(void *grid);
-cEntity *__thiscall Grid_FirstInBox(void *grid, const vec3_t *min, const vec3_t *max);
-cEntity *__thiscall Grid_NextInBox(void *grid);
-void __thiscall Grid_EndFrame(void *grid);
+cEntity *Grid_FirstOnSegment(void *grid, const vec3_t *from, const vec3_t *to, const vec3_t *ext);
+cEntity *Grid_NextOnSegment(void *grid);
+cEntity *Grid_FirstInBox(void *grid, const vec3_t *min, const vec3_t *max);
+cEntity *Grid_NextInBox(void *grid);
+void Grid_EndFrame(void *grid);
 /* pos with x and z clamped into the box, y not below its bottom; returns out */
-vec3_t *__thiscall Grid_ClampPos(void *grid, vec3_t *out, const vec3_t *pos);
+vec3_t *Grid_ClampPos(void *grid, vec3_t *out, const vec3_t *pos);
 /* the debug draw of the cells, the color by the stamp */
-void __thiscall Grid_Draw(void *grid);
+void Grid_Draw(void *grid);
 
 /* the world dummies of ShowDummy drawn with a line up to the top of the floor box */
 void Dummies_Draw(void);
@@ -107,6 +107,6 @@ SD_SIZE(cEntityListData, 0x44);
 
 /* the entity of the list nearest to pos (the floor levels apart count 20000 each), not exclude; the distance into
  * dist */
-cEntity *__thiscall cEntityList_Nearest(void *list, const vec3_t *pos, cEntity *exclude, float *dist);
+cEntity *cEntityList_Nearest(void *list, const vec3_t *pos, cEntity *exclude, float *dist);
 
 #endif

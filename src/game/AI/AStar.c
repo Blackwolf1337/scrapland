@@ -18,7 +18,7 @@
 #define CASTAR_VFTABLE GAME_VFTABLE(CAStar_vftable)
 #define CASTAR2D_VFTABLE GAME_VFTABLE(CAStar2D_vftable)
 
-cBinaryHeap *__thiscall cBinaryHeap_ctor(cBinaryHeap *self, int capacity, binHeapLess_t less, binHeapEq_t equals,
+cBinaryHeap *cBinaryHeap_ctor(cBinaryHeap *self, int capacity, binHeapLess_t less, binHeapEq_t equals,
 	binHeapIndex_t setIndex) {
 	self->vftable = CBINARYHEAP_VFTABLE;
 	self->count = 0;
@@ -37,12 +37,12 @@ cBinaryHeap *__thiscall cBinaryHeap_ctor(cBinaryHeap *self, int capacity, binHea
 	return self;
 }
 
-void __fastcall cBinaryHeap_dtor(cBinaryHeap *self) {
+void cBinaryHeap_dtor(cBinaryHeap *self) {
 	self->vftable = CBINARYHEAP_VFTABLE;
 	Mem_Free(self->elems);
 }
 
-cBinaryHeap *__thiscall cBinaryHeap_Delete(cBinaryHeap *self, byte flags) {
+cBinaryHeap *cBinaryHeap_Delete(cBinaryHeap *self, byte flags) {
 	cBinaryHeap_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -50,7 +50,7 @@ cBinaryHeap *__thiscall cBinaryHeap_Delete(cBinaryHeap *self, byte flags) {
 	return self;
 }
 
-void __thiscall cBinaryHeap_Clear(cBinaryHeap *self) {
+void cBinaryHeap_Clear(cBinaryHeap *self) {
 	self->count = 0;
 }
 
@@ -60,7 +60,7 @@ static void BinHeap_Moved(cBinaryHeap *self, int i) {
 	}
 }
 
-byte __thiscall cBinaryHeap_Push(cBinaryHeap *self, void *const *item) {
+byte cBinaryHeap_Push(cBinaryHeap *self, void *const *item) {
 	if (self->capacity <= self->count) {
 		return 0;
 	}
@@ -71,7 +71,7 @@ byte __thiscall cBinaryHeap_Push(cBinaryHeap *self, void *const *item) {
 	return 1;
 }
 
-byte __thiscall cBinaryHeap_Top(cBinaryHeap *self, void ***out) {
+byte cBinaryHeap_Top(cBinaryHeap *self, void ***out) {
 	if (self->count < 1) {
 		return 0;
 	}
@@ -79,7 +79,7 @@ byte __thiscall cBinaryHeap_Top(cBinaryHeap *self, void ***out) {
 	return 1;
 }
 
-byte __thiscall cBinaryHeap_Pop(cBinaryHeap *self) {
+byte cBinaryHeap_Pop(cBinaryHeap *self) {
 	if (self->count < 1) {
 		return 0;
 	}
@@ -92,7 +92,7 @@ byte __thiscall cBinaryHeap_Pop(cBinaryHeap *self) {
 	return 1;
 }
 
-byte __thiscall cBinaryHeap_Get(cBinaryHeap *self, void ***out, int i) {
+byte cBinaryHeap_Get(cBinaryHeap *self, void ***out, int i) {
 	if (i <= 0 || i > self->count) {
 		return 0;
 	}
@@ -100,7 +100,7 @@ byte __thiscall cBinaryHeap_Get(cBinaryHeap *self, void ***out, int i) {
 	return 1;
 }
 
-byte __thiscall cBinaryHeap_Find(cBinaryHeap *self, const void *item, int *index, void ***out) {
+byte cBinaryHeap_Find(cBinaryHeap *self, const void *item, int *index, void ***out) {
 	for (int i = 1; i <= self->count; i++) {
 		if (self->equals(&self->elems[i], item)) {
 			*out = &self->elems[i];
@@ -111,7 +111,7 @@ byte __thiscall cBinaryHeap_Find(cBinaryHeap *self, const void *item, int *index
 	return 0;
 }
 
-byte __thiscall cBinaryHeap_Set(cBinaryHeap *self, void *const *item, int i) {
+byte cBinaryHeap_Set(cBinaryHeap *self, void *const *item, int i) {
 	if (i <= 0 || i > self->count) {
 		return 0;
 	}
@@ -121,11 +121,11 @@ byte __thiscall cBinaryHeap_Set(cBinaryHeap *self, void *const *item, int i) {
 	return 1;
 }
 
-int __thiscall cBinaryHeap_Count(cBinaryHeap *self) {
+int cBinaryHeap_Count(cBinaryHeap *self) {
 	return self->count;
 }
 
-void __thiscall cBinaryHeap_Fix(cBinaryHeap *self, int i) {
+void cBinaryHeap_Fix(cBinaryHeap *self, int i) {
 	if (!self->vftable->SiftUp(self, i)) {
 		self->vftable->SiftDown(self, i);
 	}
@@ -140,7 +140,7 @@ static void BinHeap_Swap(cBinaryHeap *self, int a, int b) {
 	BinHeap_Moved(self, b);
 }
 
-byte __thiscall cBinaryHeap_SiftUp(cBinaryHeap *self, int i) {
+byte cBinaryHeap_SiftUp(cBinaryHeap *self, int i) {
 	byte moved = 0;
 
 	while (i > 1) {
@@ -155,7 +155,7 @@ byte __thiscall cBinaryHeap_SiftUp(cBinaryHeap *self, int i) {
 	return moved;
 }
 
-byte __thiscall cBinaryHeap_SiftDown(cBinaryHeap *self, int i) {
+byte cBinaryHeap_SiftDown(cBinaryHeap *self, int i) {
 	byte moved = 0;
 
 	for (;;) {
@@ -197,7 +197,7 @@ void AStar_ElemSetIndex(void **elem, int index) {
 	}
 }
 
-uint32_t __thiscall AStarTable_Slot(HashTable *self, uint32_t key) {
+uint32_t AStarTable_Slot(HashTable *self, uint32_t key) {
 	uint32_t h = 0;
 
 	CHECK(self->numSlots);
@@ -207,7 +207,7 @@ uint32_t __thiscall AStarTable_Slot(HashTable *self, uint32_t key) {
 	return h % self->numSlots;
 }
 
-cAStarItem *__thiscall AStarTable_Find(HashTable *self, int key, uint32_t slot) {
+cAStarItem *AStarTable_Find(HashTable *self, int key, uint32_t slot) {
 	for (cAStarItem *it = (cAStarItem *)self->slots[slot]; it; it = it->next) {
 		if (it->key == key) {
 			return it;
@@ -216,7 +216,7 @@ cAStarItem *__thiscall AStarTable_Find(HashTable *self, int key, uint32_t slot) 
 	return NULL;
 }
 
-cAStarItem *__thiscall AStarTable_Insert(HashTable *self, int key, uint32_t slot, const cAStarInfo *v) {
+cAStarItem *AStarTable_Insert(HashTable *self, int key, uint32_t slot, const cAStarInfo *v) {
 	CHECK(!self->locked);
 	cAStarItem *it = HashItem_Alloc(sizeof(*it));
 	if (it) {
@@ -229,7 +229,7 @@ cAStarItem *__thiscall AStarTable_Insert(HashTable *self, int key, uint32_t slot
 	return it;
 }
 
-byte __thiscall AStarTable_Add(HashTable *self, int key, const cAStarInfo *v, byte warn) {
+byte AStarTable_Add(HashTable *self, int key, const cAStarInfo *v, byte warn) {
 	CHECK(!self->locked);
 	uint32_t slot = AStarTable_Slot(self, key);
 	if (AStarTable_Find(self, key, slot)) {
@@ -242,7 +242,7 @@ byte __thiscall AStarTable_Add(HashTable *self, int key, const cAStarInfo *v, by
 	return 1;
 }
 
-byte __thiscall AStarTable_Get(HashTable *self, int key, cAStarItem **out) {
+byte AStarTable_Get(HashTable *self, int key, cAStarItem **out) {
 	cAStarItem *it = AStarTable_Find(self, key, AStarTable_Slot(self, key));
 
 	if (!it) {
@@ -252,7 +252,7 @@ byte __thiscall AStarTable_Get(HashTable *self, int key, cAStarItem **out) {
 	return 1;
 }
 
-void __fastcall AStarTable_Clear(HashTable *self) {
+void AStarTable_Clear(HashTable *self) {
 	CHECK(!self->locked);
 	if (!self->slots) {
 		return;
@@ -267,7 +267,7 @@ void __fastcall AStarTable_Clear(HashTable *self) {
 	memset(self->slots, 0, self->numSlots * 4);
 }
 
-void __fastcall AStarTable_dtor(HashTable *self) {
+void AStarTable_dtor(HashTable *self) {
 	AStarTable_Clear(self);
 	operator_delete_array(self->slots);
 	self->numSlots = 0;
@@ -288,7 +288,7 @@ static void AStarTable_AddNew(HashTable *t, int key, const cAStarInfo *v) {
 /* the graph: CNodesWorld or CNodesWorld2D, the vtable of CNodesWorldSup */
 #define AS_NODES(self) ((CNodesWorld *)(self)->nodes)
 
-HashTable *__thiscall AStarTable_ctor(HashTable *self, int size) {
+HashTable *AStarTable_ctor(HashTable *self, int size) {
 	CHECK(size > 0);
 	self->numSlots = size;
 	self->slots = New_Array(size, 4);
@@ -297,7 +297,7 @@ HashTable *__thiscall AStarTable_ctor(HashTable *self, int size) {
 	return self;
 }
 
-CAStarSup *__fastcall CAStarSup_ctor(CAStarSup *self) {
+CAStarSup *CAStarSup_ctor(CAStarSup *self) {
 	self->vftable = CASTARSUP_VFTABLE;
 	HashTable *t = operator_new(0xc);
 	if (t) {
@@ -322,7 +322,7 @@ CAStarSup *__fastcall CAStarSup_ctor(CAStarSup *self) {
 	return self;
 }
 
-void __fastcall CAStarSup_dtor(CAStarSup *self) {
+void CAStarSup_dtor(CAStarSup *self) {
 	HashTable *t = self->table;
 
 	self->vftable = CASTARSUP_VFTABLE;
@@ -332,7 +332,7 @@ void __fastcall CAStarSup_dtor(CAStarSup *self) {
 	}
 }
 
-CAStarSup *__thiscall CAStarSup_Delete(CAStarSup *self, byte flags) {
+CAStarSup *CAStarSup_Delete(CAStarSup *self, byte flags) {
 	CAStarSup_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, 0x44);
@@ -340,7 +340,7 @@ CAStarSup *__thiscall CAStarSup_Delete(CAStarSup *self, byte flags) {
 	return self;
 }
 
-void __thiscall CAStarSup_Draw(CAStarSup *self, uint32_t color) {
+void CAStarSup_Draw(CAStarSup *self, uint32_t color) {
 	cBinaryHeap *open = self->open;
 
 	(void)color;
@@ -367,11 +367,11 @@ void __thiscall CAStarSup_Draw(CAStarSup *self, uint32_t color) {
 	DebugUtils_DrawSphere(&self->goal, 50.0f, 0xff0000, 2, 2);
 }
 
-HashTable *__thiscall CAStarSup_GetTable(CAStarSup *self) {
+HashTable *CAStarSup_GetTable(CAStarSup *self) {
 	return self->table;
 }
 
-byte __thiscall CAStarSup_Search(CAStarSup *self, cNWVecList *path, int stupid, byte *ok, byte *found, int *state) {
+byte CAStarSup_Search(CAStarSup *self, cNWVecList *path, int stupid, byte *ok, byte *found, int *state) {
 	const CAStarVtbl *vt = self->vftable;
 	cBinaryHeap *open;
 	const vec3_t *goalPt;
@@ -510,7 +510,7 @@ fail:
 	return 0;
 }
 
-void __thiscall CAStarSup_BuildPath(CAStarSup *self, cNWVecList *path, const ElemAStar *elem) {
+void CAStarSup_BuildPath(CAStarSup *self, cNWVecList *path, const ElemAStar *elem) {
 	(void)self;
 	DListVec3_Add(path, elem->node);
 	for (const ElemAStar *p = elem->parent; p; p = p->parent) {
@@ -521,7 +521,7 @@ void __thiscall CAStarSup_BuildPath(CAStarSup *self, cNWVecList *path, const Ele
 	}
 }
 
-float __thiscall CAStarSup_Heuristic(CAStarSup *self, const vec3_t *p) {
+float CAStarSup_Heuristic(CAStarSup *self, const vec3_t *p) {
 	float dx = self->goal.x - p->x;
 	float dy = self->goal.y - p->y;
 	float dz = self->goal.z - p->z;
@@ -529,7 +529,7 @@ float __thiscall CAStarSup_Heuristic(CAStarSup *self, const vec3_t *p) {
 	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 }
 
-float __thiscall CAStarSup_Dist(CAStarSup *self, const vec3_t *a, const vec3_t *b) {
+float CAStarSup_Dist(CAStarSup *self, const vec3_t *a, const vec3_t *b) {
 	float dx = b->x - a->x;
 	float dy = b->y - a->y;
 	float dz = b->z - a->z;
@@ -538,7 +538,7 @@ float __thiscall CAStarSup_Dist(CAStarSup *self, const vec3_t *a, const vec3_t *
 	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 }
 
-byte __thiscall CAStarSup_GetElem(CAStarSup *self, const vec3_t *node, ElemAStar **out, cAStarItem **info) {
+byte CAStarSup_GetElem(CAStarSup *self, const vec3_t *node, ElemAStar **out, cAStarItem **info) {
 	*out = NULL;
 	byte r = self->vftable->TableGet(self, node, info);
 	if (!r) {
@@ -559,7 +559,7 @@ byte __thiscall CAStarSup_GetElem(CAStarSup *self, const vec3_t *node, ElemAStar
 	return 1;
 }
 
-byte __thiscall CAStarSup_AddElem(CAStarSup *self, const ElemAStar *e) {
+byte CAStarSup_AddElem(CAStarSup *self, const ElemAStar *e) {
 	if (self->numList >= self->capList) {
 		return 0;
 	}
@@ -568,7 +568,7 @@ byte __thiscall CAStarSup_AddElem(CAStarSup *self, const ElemAStar *e) {
 	return 1;
 }
 
-byte __thiscall CAStarSup_CloseAdd(CAStarSup *self, ElemAStar *const *e) {
+byte CAStarSup_CloseAdd(CAStarSup *self, ElemAStar *const *e) {
 	if (self->numClosed >= self->capClosed) {
 		return 0;
 	}
@@ -582,7 +582,7 @@ byte __thiscall CAStarSup_CloseAdd(CAStarSup *self, ElemAStar *const *e) {
 	return 1;
 }
 
-byte __thiscall CAStarSup_CloseRemove(CAStarSup *self, int i) {
+byte CAStarSup_CloseRemove(CAStarSup *self, int i) {
 	if (i >= self->numClosed) {
 		return 0;
 	}
@@ -594,7 +594,7 @@ byte __thiscall CAStarSup_CloseRemove(CAStarSup *self, int i) {
 	return 1;
 }
 
-byte __thiscall CAStarSup_TableGet(CAStarSup *self, const vec3_t *node, cAStarItem **out) {
+byte CAStarSup_TableGet(CAStarSup *self, const vec3_t *node, cAStarItem **out) {
 	HashTable *t = self->table;
 	cAStarItem *it = AStarTable_Find(t, (int)node, AStarTable_Slot(t, (uint32_t)node));
 
@@ -605,7 +605,7 @@ byte __thiscall CAStarSup_TableGet(CAStarSup *self, const vec3_t *node, cAStarIt
 	return 1;
 }
 
-void __thiscall CAStarSup_Reset(CAStarSup *self) {
+void CAStarSup_Reset(CAStarSup *self) {
 	cBinaryHeap *open;
 
 	for (int i = 0; i < self->numClosed; i++) {
@@ -665,7 +665,7 @@ static void AStar_Alloc(CAStar *self) {
 	CAStar_InitList(self);
 }
 
-void *__thiscall CAStar_ctor(void *mem, CNodesWorld *nodes) {
+void *CAStar_ctor(void *mem, CNodesWorld *nodes) {
 	CAStar *self = mem;
 
 	CAStarSup_ctor(&self->base);
@@ -679,7 +679,7 @@ void *__thiscall CAStar_ctor(void *mem, CNodesWorld *nodes) {
 	return self;
 }
 
-void *__thiscall CAStar2D_ctor(void *mem, CNodesWorld2D *nodes) {
+void *CAStar2D_ctor(void *mem, CNodesWorld2D *nodes) {
 	CAStar2D *self = mem;
 
 	CAStarSup_ctor(&self->base);
@@ -707,11 +707,11 @@ static void AStar_Free(CAStarSup *self, void *vftable) {
 	CAStarSup_dtor(self);
 }
 
-void __fastcall CAStar_dtor(CAStar *self) {
+void CAStar_dtor(CAStar *self) {
 	AStar_Free(&self->base, CASTAR_VFTABLE);
 }
 
-CAStar *__thiscall CAStar_Delete(CAStar *self, byte flags) {
+CAStar *CAStar_Delete(CAStar *self, byte flags) {
 	AStar_Free(&self->base, CASTAR_VFTABLE);
 	if (flags & 1) {
 		operator_delete_sized(self, 0x48);
@@ -719,11 +719,11 @@ CAStar *__thiscall CAStar_Delete(CAStar *self, byte flags) {
 	return self;
 }
 
-void __fastcall CAStar2D_dtor(CAStar2D *self) {
+void CAStar2D_dtor(CAStar2D *self) {
 	AStar_Free(&self->base, CASTAR2D_VFTABLE);
 }
 
-CAStar2D *__thiscall CAStar2D_Delete(CAStar2D *self, byte flags) {
+CAStar2D *CAStar2D_Delete(CAStar2D *self, byte flags) {
 	AStar_Free(&self->base, CASTAR2D_VFTABLE);
 	if (flags & 1) {
 		operator_delete_sized(self, 0x50);
@@ -731,7 +731,7 @@ CAStar2D *__thiscall CAStar2D_Delete(CAStar2D *self, byte flags) {
 	return self;
 }
 
-void __fastcall CAStar_InitList(CAStar *self) {
+void CAStar_InitList(CAStar *self) {
 	CNodesWorld *nw;
 
 	AStarTable_Clear(self->base.table);
@@ -758,46 +758,46 @@ void __fastcall CAStar_InitList(CAStar *self) {
 	}
 }
 
-void __fastcall CAStar_DrawDebug(CAStar *self) {
+void CAStar_DrawDebug(CAStar *self) {
 	if (g_AStarDrawMode) {
 		CAStarSup_Draw(&self->base, 0xff);
 	}
 }
 
-void __fastcall CAStar2D_DrawDebug(CAStar *self) {
+void CAStar2D_DrawDebug(CAStar *self) {
 	if (g_AStarDrawMode) {
 		CAStarSup_Draw(&self->base, 0xff00ff);
 	}
 }
 
-byte __thiscall CAStar_TestPath(CAStar *self, const vec3_t *a, const vec3_t *b) {
+byte CAStar_TestPath(CAStar *self, const vec3_t *a, const vec3_t *b) {
 	return CNodesWorld_TestPath(self->nodes, a, b, self->base.radius, self->base.radius, NULL, 0);
 }
 
-byte __thiscall CAStar2D_TestPath(CAStar2D *self, const vec3_t *a, const vec3_t *b) {
+byte CAStar2D_TestPath(CAStar2D *self, const vec3_t *a, const vec3_t *b) {
 	return CNodesWorld2D_TestPath(self->nodes, a, b, self->base.radius, self->base.radius, self->h1, self->h2,
 		NULL);
 }
 
-void __thiscall CAStar_NearestStart(CAStar *self) {
+void CAStar_NearestStart(CAStar *self) {
 	vec3_t p = self->base.start;
 
 	CNodesWorld_NearestPointVis(self->nodes, &p, &self->base.start);
 }
 
-void __thiscall CAStar2D_NearestStart(CAStar2D *self) {
+void CAStar2D_NearestStart(CAStar2D *self) {
 	vec3_t p = self->base.start;
 
 	CNodesWorld2D_NearestPointVis(self->nodes, &p, &self->base.start);
 }
 
-int __thiscall CAStar_FileOf(CAStar *self, const vec3_t *node) {
+int CAStar_FileOf(CAStar *self, const vec3_t *node) {
 	CNodesWorld *nw = AS_NODES(self);
 
 	return nw->sup.vftable->FileOf(nw, (const cNWNode *)node);
 }
 
-void __thiscall CAStar_OtherLinks(CAStar *self, const vec3_t *node, const vec3_t *pos, const vec3_t **list, int max,
+void CAStar_OtherLinks(CAStar *self, const vec3_t *node, const vec3_t *pos, const vec3_t **list, int max,
 	int *count) {
 	CNodesWorld *nw = AS_NODES(self);
 
@@ -818,11 +818,11 @@ static void AStar_Points(CAStar *self, byte flat, const vec3_t *pos, const vec3_
 	}
 }
 
-void __thiscall CAStar_PointsVis(CAStar *self, const vec3_t *pos, const vec3_t **list, int max, int *count) {
+void CAStar_PointsVis(CAStar *self, const vec3_t *pos, const vec3_t **list, int max, int *count) {
 	AStar_Points(self, 0, pos, list, max, count, 0, 0);
 }
 
-void __thiscall CAStar2D_PointsVis(CAStar2D *self, const vec3_t *pos, const vec3_t **list, int max, int *count) {
+void CAStar2D_PointsVis(CAStar2D *self, const vec3_t *pos, const vec3_t **list, int max, int *count) {
 	AStar_Points(AStar_Common(self), 1, pos, list, max, count, 0, 0);
 }
 
@@ -887,17 +887,17 @@ static void AStar_PointsVisFile(CAStar *self, byte flat, const vec3_t *pos, cons
 	}
 }
 
-void __thiscall CAStar_PointsVisFile(CAStar *self, const vec3_t *pos, const vec3_t **list, int max, int *count,
+void CAStar_PointsVisFile(CAStar *self, const vec3_t *pos, const vec3_t **list, int max, int *count,
 	int *state, int file) {
 	AStar_PointsVisFile(self, 0, pos, list, max, count, state, file);
 }
 
-void __thiscall CAStar2D_PointsVisFile(CAStar2D *self, const vec3_t *pos, const vec3_t **list, int max, int *count,
+void CAStar2D_PointsVisFile(CAStar2D *self, const vec3_t *pos, const vec3_t **list, int max, int *count,
 	int *state, int file) {
 	AStar_PointsVisFile(AStar_Common(self), 1, pos, list, max, count, state, file);
 }
 
-byte __thiscall CAStar_FindPath(void *astar, cNWVecList *path, const vec3_t *to, const vec3_t *from, float radius,
+byte CAStar_FindPath(void *astar, cNWVecList *path, const vec3_t *to, const vec3_t *from, float radius,
 	float dist, int stupid, byte *startOk, byte *goalOk, int *state) {
 	CAStar *self = astar;
 	CNodesWorld *nw = AS_NODES(self);
@@ -910,7 +910,7 @@ byte __thiscall CAStar_FindPath(void *astar, cNWVecList *path, const vec3_t *to,
 	return self->base.vftable->Search(&self->base, path, stupid, goalOk, startOk, state);
 }
 
-byte __thiscall CAStar2D_FindPath(void *astar, cNWVecList *path, const vec3_t *dest, const vec3_t *pos, float r,
+byte CAStar2D_FindPath(void *astar, cNWVecList *path, const vec3_t *dest, const vec3_t *pos, float r,
 	float dist, float h1, float h2, int soft, byte *noPath, byte *reach, int *res) {
 	CAStar2D *self = astar;
 	CNodesWorld *nw = AS_NODES(self);
@@ -925,13 +925,13 @@ byte __thiscall CAStar2D_FindPath(void *astar, cNWVecList *path, const vec3_t *d
 	return self->base.vftable->Search(&self->base, path, soft, reach, noPath, res);
 }
 
-void __thiscall CAStar_GetPointsVis(void *astar, const vec3_t *pos, const vec3_t **list, int max, int *count, float r) {
+void CAStar_GetPointsVis(void *astar, const vec3_t *pos, const vec3_t **list, int max, int *count, float r) {
 	CAStar *self = astar;
 
 	CNodesWorld_GetPointsVis(self->nodes, pos, list, max, count, r, 0.0f, self->base.maxDist, 0, 0);
 }
 
-void __thiscall CAStar2D_GetPointsVis(void *astar, const vec3_t *pos, const vec3_t **list, int max, int *count,
+void CAStar2D_GetPointsVis(void *astar, const vec3_t *pos, const vec3_t **list, int max, int *count,
 	float r, float h1, float h2) {
 	CAStar2D *self = astar;
 

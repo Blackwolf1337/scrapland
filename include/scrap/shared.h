@@ -3,7 +3,8 @@
  *
  * Target: i686, MSVC 14 compiled game. Pointers, int and long are 4 bytes. Struct layouts follow MSVC rules
  * (natural alignment, 8 byte default packing); every engine struct states its offsets and checks them with
- * SD_OFFSET. Calling conventions are written on every function that is not __cdecl.
+ * SD_OFFSET. Game functions are __cdecl (methods take self as the first argument); __stdcall is left only on the
+ * callbacks and imports of Windows, COM and FMOD.
  */
 #ifndef SCRAP_SHARED_H
 #define SCRAP_SHARED_H
@@ -20,10 +21,8 @@ typedef uint8_t byte;
 	static_assert(offsetof(type, member) == (off), #type "." #member " is not at " #off)
 #define SD_SIZE(type, size) static_assert(sizeof(type) == (size), "sizeof(" #type ") is not " #size)
 
-/* the address of a C symbol as the array sd_<name>, whatever its type (the pointers of the generated data);
- * SD_SYM_AS with the assembler name of a stdcall or fastcall function */
+/* the address of a C symbol as the array sd_<name>, whatever its type (the pointers of the generated data) */
 #define SD_SYM(name) extern char sd_##name[] __asm__("_" #name)
-#define SD_SYM_AS(name, label) extern char sd_##name[] __asm__(label)
 
 void Com_Printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 

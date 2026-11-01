@@ -8,7 +8,7 @@
 #include "scrap/global.h"
 #include "scrap/python.h"
 
-typedef int(__thiscall *varfunc_t)(void *obj, const char *name, int set, char **s, double *d, int *i);
+typedef int(*varfunc_t)(void *obj, const char *name, int set, char **s, double *d, int *i);
 
 /* Set*(varname,value): value as string ("ss") or number ("sd", stored as double and truncated int) */
 static PyObject *SetVar(PyObject *args, varfunc_t var, void *obj, int *parsed) {

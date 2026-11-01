@@ -155,7 +155,7 @@ static void Target_DrawAttacker(cTargetScorer *self, cEntity *ship) {
 	img->scaleY = 1.0f;
 }
 
-void __thiscall cTargetScorer_DrawTarget(cTargetScorer *self, cEntity *ship) {
+void cTargetScorer_DrawTarget(cTargetScorer *self, cEntity *ship) {
 	cVehicleEntity *v = Veh(ship);
 
 	if (self->target[0] && strcmp(self->target, v->target)) {
@@ -171,7 +171,7 @@ void __thiscall cTargetScorer_DrawTarget(cTargetScorer *self, cEntity *ship) {
 	Target_DrawAttacker(self, ship);
 }
 
-cTargetScorer *__fastcall cTargetScorer_ctor(cTargetScorer *self) {
+cTargetScorer *cTargetScorer_ctor(cTargetScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CTARGETSCORER_VFTABLE;
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
@@ -185,13 +185,13 @@ cTargetScorer *__fastcall cTargetScorer_ctor(cTargetScorer *self) {
 	return self;
 }
 
-void __fastcall cTargetScorer_dtor(cTargetScorer *self) {
+void cTargetScorer_dtor(cTargetScorer *self) {
 	self->base.vftable = CTARGETSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	cScorerItem_dtor(&self->base);
 }
 
-cTargetScorer *__thiscall cTargetScorer_Delete(cTargetScorer *self, byte flags) {
+cTargetScorer *cTargetScorer_Delete(cTargetScorer *self, byte flags) {
 	cTargetScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cTargetScorer));
@@ -199,7 +199,7 @@ cTargetScorer *__thiscall cTargetScorer_Delete(cTargetScorer *self, byte flags) 
 	return self;
 }
 
-int __thiscall cTargetScorer_Var(cTargetScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cTargetScorer_Var(cTargetScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	if (s && !crt_stricmp(name, "Sprite") && set) {
 		self->img = ScorerImg_Replace(self->img, *s, 2, 0x10060);
 		return 1;
@@ -220,7 +220,7 @@ int __thiscall cTargetScorer_Var(cTargetScorer *self, const char *name, byte set
 
 /* a mark over the entities with life in view that are enemies or friends of the ship, pulsing red for the enemies
  * (blue in a network game of team 0), the visibility from the camera tested when testTime ran out */
-void __thiscall cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship) {
+void cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship) {
 	float uv0[2], uv1[2], pos[4][2], uv[4][2], scr[2], depth;
 	vec3_t tmp, cam;
 
@@ -296,7 +296,7 @@ void __thiscall cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship) {
 	}
 }
 
-void __thiscall cTargetScorer_Draw(cTargetScorer *self, int player) {
+void cTargetScorer_Draw(cTargetScorer *self, int player) {
 	cEntity *ship;
 
 	if (!ScorerHud_CamShip(player, &ship)) {

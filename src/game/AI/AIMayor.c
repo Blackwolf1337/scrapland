@@ -8,7 +8,7 @@
 
 #define CAIMAYOR_SIZE 0x380
 
-void *__thiscall cAIMayor_ctor(void *mem, cEntity *e, int *arg) {
+void *cAIMayor_ctor(void *mem, cEntity *e, int *arg) {
 	cAIMayor *self = mem;
 
 	cAIChar_ctor(mem, e, arg);
@@ -16,7 +16,7 @@ void *__thiscall cAIMayor_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAIMayor *__thiscall cAIMayor_Delete(cAIMayor *self, byte flags) {
+cAIMayor *cAIMayor_Delete(cAIMayor *self, byte flags) {
 	self->vftable = CAIMAYOR_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
@@ -25,14 +25,14 @@ cAIMayor *__thiscall cAIMayor_Delete(cAIMayor *self, byte flags) {
 	return self;
 }
 
-void __thiscall cAIMayor_CheckActDist(cAIMayor *self) {
+void cAIMayor_CheckActDist(cAIMayor *self) {
 	float dist = AIChar_TargetDistFlat(self);
 
 	self->ctrl->act = self->vftable->GetDirect2(self) && AIChar_Action0(self->ent)->priority <= 0x65 &&
 		dist > self->actMin && self->actMax > dist;
 }
 
-void __thiscall cAIMayor_SetDists(cAIMayor *self) {
+void cAIMayor_SetDists(cAIMayor *self) {
 	if (self->state == 2) {
 		self->actMin = 0.0f;
 		self->actMax = 1000.0f;

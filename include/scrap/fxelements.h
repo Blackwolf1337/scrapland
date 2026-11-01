@@ -14,11 +14,11 @@
 
 typedef struct cMapElement cMapElement;
 
-/* cMapElement::vftable and the ones of the elements (thiscall) */
+/* cMapElement::vftable and the ones of the elements */
 typedef struct cMapElementVtbl {
-	cMapElement *(__thiscall *Delete)(cMapElement *self, byte flags);	/* 0x0 */
-	byte(__thiscall *Init)(cMapElement *self);			/* 0x4 vf01 after the creation, 1 */
-	void(__thiscall *Update)(cMapElement *self, float dt);		/* 0x8 vf02 every frame */
+	cMapElement *(*Delete)(cMapElement *self, byte flags);	/* 0x0 */
+	byte(*Init)(cMapElement *self);			/* 0x4 vf01 after the creation, 1 */
+	void(*Update)(cMapElement *self, float dt);		/* 0x8 vf02 every frame */
 } cMapElementVtbl;
 SD_SIZE(cMapElementVtbl, 0xc);
 
@@ -43,12 +43,12 @@ static inline void MapElement_Add(cMapElement *e) {
 }
 
 /* rva 0x202ca0: the model of the element name at pos and rot (radians), 0x202e20 the destructor */
-cMapElement *__thiscall cMapElement_ctor(cMapElement *self, const char *name, const vec3_t *pos, const vec3_t *rot);
-void __thiscall cMapElement_dtor(cMapElement *self);
-cMapElement *__thiscall cMapElement_Delete(cMapElement *self, byte flags);
+cMapElement *cMapElement_ctor(cMapElement *self, const char *name, const vec3_t *pos, const vec3_t *rot);
+void cMapElement_dtor(cMapElement *self);
+cMapElement *cMapElement_Delete(cMapElement *self, byte flags);
 /* rva 0x203310 (1), 0x203520 (the animation of the visible model) */
-byte __thiscall cMapElement_Init(cMapElement *self);
-void __thiscall cMapElement_Update(cMapElement *self, float dt);
+byte cMapElement_Init(cMapElement *self);
+void cMapElement_Update(cMapElement *self, float dt);
 
 #define CFXELEMENTSORBITBUOY_VFTABLE GAME_VFTABLE(cFXElementsOrbitBuoy_vftable)
 #define CFXELEMENTSORBITBUOYCONTROLLER_VFTABLE GAME_VFTABLE(cFXElementsOrbitBuoyController_vftable)
@@ -83,27 +83,27 @@ SD_OFFSET(cFXElementsOrbitBuoyController, type, 0xac);
 SD_OFFSET(cFXElementsOrbitBuoyController, fade, 0x12c);
 SD_SIZE(cFXElementsOrbitBuoyController, 0x1ac);
 
-cFXElementsOrbitBuoyController *__thiscall cFXElementsOrbitBuoyController_ctor(cFXElementsOrbitBuoyController *self,
+cFXElementsOrbitBuoyController *cFXElementsOrbitBuoyController_ctor(cFXElementsOrbitBuoyController *self,
 	const char *name, const vec3_t *pos, const vec3_t *rot);
 
-byte __fastcall cFXElementsOrbitBuoy_Init(cFXElementsOrbitBuoy *self);
-void __thiscall cFXElementsOrbitBuoy_Update(cFXElementsOrbitBuoy *self, float dt);
-byte __fastcall cFXElementsOrbitBuoyController_Init(cFXElementsOrbitBuoyController *self);
-void __thiscall cFXElementsOrbitBuoyController_Update(cFXElementsOrbitBuoyController *self, float dt);
-void __thiscall cFXElementsOrbitBuoyController_SetBuoy(cFXElementsOrbitBuoyController *self, int type, int column,
+byte cFXElementsOrbitBuoy_Init(cFXElementsOrbitBuoy *self);
+void cFXElementsOrbitBuoy_Update(cFXElementsOrbitBuoy *self, float dt);
+byte cFXElementsOrbitBuoyController_Init(cFXElementsOrbitBuoyController *self);
+void cFXElementsOrbitBuoyController_Update(cFXElementsOrbitBuoyController *self, float dt);
+void cFXElementsOrbitBuoyController_SetBuoy(cFXElementsOrbitBuoyController *self, int type, int column,
 	int number, cFXElementsOrbitBuoy *buoy);
 /* the controller and the buoys of the dummies DM_Element_OrbitBoya* of the level */
 void FXElementsOrbit_Create(void);
-cFXElementsOrbitBuoy *__thiscall cFXElementsOrbitBuoy_ctor(cFXElementsOrbitBuoy *self, const char *name,
+cFXElementsOrbitBuoy *cFXElementsOrbitBuoy_ctor(cFXElementsOrbitBuoy *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
-void __fastcall cFXElementsOrbitBuoy_dtor(cFXElementsOrbitBuoy *self);
-void __fastcall cFXElementsOrbitBuoyController_dtor(cFXElementsOrbitBuoyController *self);
-cFXElementsOrbitBuoy *__thiscall cFXElementsOrbitBuoy_Delete(cFXElementsOrbitBuoy *self, byte flags);
-cFXElementsOrbitBuoyController *__thiscall cFXElementsOrbitBuoyController_Delete(cFXElementsOrbitBuoyController *self,
+void cFXElementsOrbitBuoy_dtor(cFXElementsOrbitBuoy *self);
+void cFXElementsOrbitBuoyController_dtor(cFXElementsOrbitBuoyController *self);
+cFXElementsOrbitBuoy *cFXElementsOrbitBuoy_Delete(cFXElementsOrbitBuoy *self, byte flags);
+cFXElementsOrbitBuoyController *cFXElementsOrbitBuoyController_Delete(cFXElementsOrbitBuoyController *self,
 	byte flags);
 /* the light released; the controller has nothing to release */
-void __fastcall cFXElementsOrbitBuoy_ReleaseLight(cFXElementsOrbitBuoy *self);
-void __fastcall cFXElementsOrbitBuoyController_Release(cFXElementsOrbitBuoyController *self);
+void cFXElementsOrbitBuoy_ReleaseLight(cFXElementsOrbitBuoy *self);
+void cFXElementsOrbitBuoyController_Release(cFXElementsOrbitBuoyController *self);
 
 /* ---- FXElementsPress.cpp ---- */
 
@@ -220,40 +220,40 @@ SD_SIZE(cFXElementsMentalControllerMainFX, 0x4278);
 #define g_MentalMainFX GAME_GLOBAL(cFXElementsMentalControllerMainFX *, g_MentalMainFX)
 #define g_MentalControllerMaxDist GAME_GLOBAL_IN(float, GVar_FXElementsMentalControllerMaxDist, 16)	/* FXElementsMentalControllerMaxDist */
 
-cFXElementsMentalController *__thiscall cFXElementsMentalController_ctor(cFXElementsMentalController *self,
+cFXElementsMentalController *cFXElementsMentalController_ctor(cFXElementsMentalController *self,
 	const char *name, const vec3_t *pos, const vec3_t *rot);
-cFXElementsMentalControllerDamageFX *__thiscall cFXElementsMentalControllerDamageFX_ctor(
+cFXElementsMentalControllerDamageFX *cFXElementsMentalControllerDamageFX_ctor(
 	cFXElementsMentalControllerDamageFX *self, const char *name, const vec3_t *pos, const vec3_t *rot);
-cFXElementsMentalControllerMainFX *__thiscall cFXElementsMentalControllerMainFX_ctor(
+cFXElementsMentalControllerMainFX *cFXElementsMentalControllerMainFX_ctor(
 	cFXElementsMentalControllerMainFX *self, const char *name, const vec3_t *pos, const vec3_t *rot);
-void __fastcall cFXElementsMentalController_dtor(cFXElementsMentalController *self);
-void __fastcall cFXElementsMentalControllerDamageFX_dtor(cFXElementsMentalControllerDamageFX *self);
-void __fastcall cFXElementsMentalControllerMainFX_dtor(cFXElementsMentalControllerMainFX *self);
-cFXElementsMentalController *__thiscall cFXElementsMentalController_Delete(cFXElementsMentalController *self,
+void cFXElementsMentalController_dtor(cFXElementsMentalController *self);
+void cFXElementsMentalControllerDamageFX_dtor(cFXElementsMentalControllerDamageFX *self);
+void cFXElementsMentalControllerMainFX_dtor(cFXElementsMentalControllerMainFX *self);
+cFXElementsMentalController *cFXElementsMentalController_Delete(cFXElementsMentalController *self,
 	byte flags);
-cFXElementsMentalControllerDamageFX *__thiscall cFXElementsMentalControllerDamageFX_Delete(
+cFXElementsMentalControllerDamageFX *cFXElementsMentalControllerDamageFX_Delete(
 	cFXElementsMentalControllerDamageFX *self, byte flags);
-cFXElementsMentalControllerMainFX *__thiscall cFXElementsMentalControllerMainFX_Delete(
+cFXElementsMentalControllerMainFX *cFXElementsMentalControllerMainFX_Delete(
 	cFXElementsMentalControllerMainFX *self, byte flags);
 /* the particles of the damaged controller and the data fluid released (not referenced by the exe) */
-void __fastcall cFXElementsMentalControllerDamageFX_ReleaseParticles(cFXElementsMentalControllerDamageFX *self);
-void __fastcall cFXElementsMentalControllerMainFX_ReleaseFluid(cFXElementsMentalControllerMainFX *self);
+void cFXElementsMentalControllerDamageFX_ReleaseParticles(cFXElementsMentalControllerDamageFX *self);
+void cFXElementsMentalControllerMainFX_ReleaseFluid(cFXElementsMentalControllerMainFX *self);
 /* every trail cleared, every particle out */
-void __fastcall cFXElementsMentalControllerMainFX_Clear(cFXElementsMentalControllerMainFX *self);
+void cFXElementsMentalControllerMainFX_Clear(cFXElementsMentalControllerMainFX *self);
 
-byte __fastcall cFXElementsMentalController_Init(cFXElementsMentalController *self);
-void __thiscall cFXElementsMentalController_Update(cFXElementsMentalController *self, float dt);
-byte __fastcall cFXElementsMentalControllerDamageFX_Init(cFXElementsMentalControllerDamageFX *self);
+byte cFXElementsMentalController_Init(cFXElementsMentalController *self);
+void cFXElementsMentalController_Update(cFXElementsMentalController *self, float dt);
+byte cFXElementsMentalControllerDamageFX_Init(cFXElementsMentalControllerDamageFX *self);
 /* near the camera: smoke from the emitters (more often the nearer), flashes with sparks and a sound when they sleep
  * out */
-void __thiscall cFXElementsMentalControllerDamageFX_Update(cFXElementsMentalControllerDamageFX *self, float dt);
-byte __fastcall cFXElementsMentalControllerMainFX_Init(cFXElementsMentalControllerMainFX *self);
-void __thiscall cFXElementsMentalControllerMainFX_SetController(cFXElementsMentalControllerMainFX *self, int index,
+void cFXElementsMentalControllerDamageFX_Update(cFXElementsMentalControllerDamageFX *self, float dt);
+byte cFXElementsMentalControllerMainFX_Init(cFXElementsMentalControllerMainFX *self);
+void cFXElementsMentalControllerMainFX_SetController(cFXElementsMentalControllerMainFX *self, int index,
 	cFXElementsMentalController *ctrl);
-void __thiscall cFXElementsMentalControllerMainFX_SetPhase(cFXElementsMentalControllerMainFX *self, int phase);
+void cFXElementsMentalControllerMainFX_SetPhase(cFXElementsMentalControllerMainFX *self, int phase);
 /* vf02: while a controller is seen or the camera is near the top: the drops of data along the tubes (phase < 5), the
  * glow up the tube and the glows over the top (phase 2..4); else the model off and everything cleared */
-void __thiscall cFXElementsMentalControllerMainFX_Update(cFXElementsMentalControllerMainFX *self, float dt);
+void cFXElementsMentalControllerMainFX_Update(cFXElementsMentalControllerMainFX *self, float dt);
 /* the main controller and the controllers of the dummies of the level, by the act of the story (SaveVar GameAct) */
 void FXElementsPress_Create(void);
 
@@ -372,30 +372,30 @@ SD_SIZE(cFXElementsLighting, 0xe88);
 #define g_FireDropSoundVol GAME_GLOBAL_IN(float, GVar_FXElementsFireDropSoundVol, 16)	/* FXElementsFireDropSoundVol */
 #define g_FireDropSound GAME_GLOBAL_IN(char *, GVar_FXElementsFireDropSound, 16)	/* FXElementsFireDropSound, a cString */
 
-cFXElementsFireDrop *__thiscall cFXElementsFireDrop_ctor(cFXElementsFireDrop *self, const char *name,
+cFXElementsFireDrop *cFXElementsFireDrop_ctor(cFXElementsFireDrop *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
 /* the flare at pos: intensity 0.65, 0x30 0.3, on (rva 0x1cf8b0, Elements_Create passes no name) */
-cFXElementsLensFlare *__thiscall cFXElementsLensFlare_ctor(cFXElementsLensFlare *self, const char *name,
+cFXElementsLensFlare *cFXElementsLensFlare_ctor(cFXElementsLensFlare *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
-cFXElementsLighting *__thiscall cFXElementsLighting_ctor(cFXElementsLighting *self, const char *name,
+cFXElementsLighting *cFXElementsLighting_ctor(cFXElementsLighting *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
-void __fastcall cFXElementsFireDrop_dtor(cFXElementsFireDrop *self);
-void __fastcall cFXElementsLensFlare_dtor(cFXElementsLensFlare *self);
-void __fastcall cFXElementsLighting_dtor(cFXElementsLighting *self);
-cFXElementsFireDrop *__thiscall cFXElementsFireDrop_Delete(cFXElementsFireDrop *self, byte flags);
-cFXElementsLensFlare *__thiscall cFXElementsLensFlare_Delete(cFXElementsLensFlare *self, byte flags);
-cFXElementsLighting *__thiscall cFXElementsLighting_Delete(cFXElementsLighting *self, byte flags);
+void cFXElementsFireDrop_dtor(cFXElementsFireDrop *self);
+void cFXElementsLensFlare_dtor(cFXElementsLensFlare *self);
+void cFXElementsLighting_dtor(cFXElementsLighting *self);
+cFXElementsFireDrop *cFXElementsFireDrop_Delete(cFXElementsFireDrop *self, byte flags);
+cFXElementsLensFlare *cFXElementsLensFlare_Delete(cFXElementsLensFlare *self, byte flags);
+cFXElementsLighting *cFXElementsLighting_Delete(cFXElementsLighting *self, byte flags);
 /* the particles (and trails) released; the lens flare has nothing to release */
-void __fastcall cFXElementsFireDrop_Release(cFXElementsFireDrop *self);
-void __fastcall cFXElementsLensFlare_Release(cFXElementsLensFlare *self);
-void __fastcall cFXElementsLighting_Release(cFXElementsLighting *self);
+void cFXElementsFireDrop_Release(cFXElementsFireDrop *self);
+void cFXElementsLensFlare_Release(cFXElementsLensFlare *self);
+void cFXElementsLighting_Release(cFXElementsLighting *self);
 
-byte __fastcall cFXElementsFireDrop_Init(cFXElementsFireDrop *self);
-void __thiscall cFXElementsFireDrop_Update(cFXElementsFireDrop *self, float dt);
-byte __fastcall cFXElementsLensFlare_Init(cFXElementsLensFlare *self);
-void __thiscall cFXElementsLensFlare_Update(cFXElementsLensFlare *self, float dt);
-byte __fastcall cFXElementsLighting_Init(cFXElementsLighting *self);
-void __thiscall cFXElementsLighting_Update(cFXElementsLighting *self, float dt);
+byte cFXElementsFireDrop_Init(cFXElementsFireDrop *self);
+void cFXElementsFireDrop_Update(cFXElementsFireDrop *self, float dt);
+byte cFXElementsLensFlare_Init(cFXElementsLensFlare *self);
+void cFXElementsLensFlare_Update(cFXElementsLensFlare *self, float dt);
+byte cFXElementsLighting_Init(cFXElementsLighting *self);
+void cFXElementsLighting_Update(cFXElementsLighting *self, float dt);
 
 /* ---- FXElementsAB.cpp ---- */
 
@@ -463,21 +463,21 @@ SD_SIZE(cFXElementsABFakeMeteors, 0x5780);
 #define g_ABLimitQuakeFactor GAME_GLOBAL_IN(float, GVar_FXABFakeLimitQuakeFactor, 16)	/* QuakeFactor */
 #define g_ABLimitQuakeTime GAME_GLOBAL_IN(float, GVar_FXABFakeLimitQuakeTime, 16)		/* QuakeTime */
 
-cFXElementsABFakeLimit *__thiscall cFXElementsABFakeLimit_ctor(cFXElementsABFakeLimit *self, const char *name,
+cFXElementsABFakeLimit *cFXElementsABFakeLimit_ctor(cFXElementsABFakeLimit *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
-cFXElementsABFakeMeteors *__thiscall cFXElementsABFakeMeteors_ctor(cFXElementsABFakeMeteors *self, const char *name,
+cFXElementsABFakeMeteors *cFXElementsABFakeMeteors_ctor(cFXElementsABFakeMeteors *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
-void __fastcall cFXElementsABFakeLimit_dtor(cFXElementsABFakeLimit *self);
-void __fastcall cFXElementsABFakeMeteors_dtor(cFXElementsABFakeMeteors *self);
-cFXElementsABFakeLimit *__thiscall cFXElementsABFakeLimit_Delete(cFXElementsABFakeLimit *self, byte flags);
-cFXElementsABFakeMeteors *__thiscall cFXElementsABFakeMeteors_Delete(cFXElementsABFakeMeteors *self, byte flags);
+void cFXElementsABFakeLimit_dtor(cFXElementsABFakeLimit *self);
+void cFXElementsABFakeMeteors_dtor(cFXElementsABFakeMeteors *self);
+cFXElementsABFakeLimit *cFXElementsABFakeLimit_Delete(cFXElementsABFakeLimit *self, byte flags);
+cFXElementsABFakeMeteors *cFXElementsABFakeMeteors_Delete(cFXElementsABFakeMeteors *self, byte flags);
 /* the bolt times cleared, every trail cleared */
-void __fastcall cFXElementsABFakeLimit_Clear(cFXElementsABFakeLimit *self);
+void cFXElementsABFakeLimit_Clear(cFXElementsABFakeLimit *self);
 
-byte __fastcall cFXElementsABFakeLimit_Init(cFXElementsABFakeLimit *self);
-void __thiscall cFXElementsABFakeLimit_Update(cFXElementsABFakeLimit *self, float dt);
-byte __fastcall cFXElementsABFakeMeteors_Init(cFXElementsABFakeMeteors *self);
-void __thiscall cFXElementsABFakeMeteors_Update(cFXElementsABFakeMeteors *self, float dt);
+byte cFXElementsABFakeLimit_Init(cFXElementsABFakeLimit *self);
+void cFXElementsABFakeLimit_Update(cFXElementsABFakeLimit *self, float dt);
+byte cFXElementsABFakeMeteors_Init(cFXElementsABFakeMeteors *self);
+void cFXElementsABFakeMeteors_Update(cFXElementsABFakeMeteors *self, float dt);
 /* the meteors and the limit of the dummies DM_Element_ABFakeMeteors and DM_Element_ABFakeLimit of the level */
 void FXElementsAB_Create(void);
 

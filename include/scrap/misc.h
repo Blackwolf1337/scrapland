@@ -39,9 +39,9 @@ enum {
 /* the handler of the lines typed into the debug dialog (E3D_Command), cdecl void(char *line) */
 #define g_E3DCmdProc GAME_GLOBAL(void *, g_E3DCmdProc)
 
-void __fastcall cLog_Open(cLog *self);
+void cLog_Open(cLog *self);
 /* text to the console printers of the bits in mask and to the file */
-void __thiscall cLog_Write(cLog *self, uint32_t mask, const char *text);
+void cLog_Write(cLog *self, uint32_t mask, const char *text);
 void E3D_LogPrint(cLog *log, const char *fmt, ...);
 void E3D_LogDebug(cLog *log, const char *fmt, ...);
 void E3D_LogDebug2(cLog *log, const char *fmt, ...);
@@ -59,7 +59,7 @@ void DbgWin_AddLine(char *line, int len, int size);
 void DbgWin_Open(void *hwnd);
 /* the debug output of the ini settings (DbgConWindow, DbgConStd) */
 void DbgWin_Init(void *hwnd);
-void __fastcall cLog_dtor(cLog *self);
+void cLog_dtor(cLog *self);
 int Window_MoveRel(void *hwnd, const int32_t *rect, int x, int y, int w, int h);
 void Window_GetNormalRect(void *hwnd, int32_t *rect);
 /* the window procedure of the debug dialog: a list box, a command line and its button, resized with the dialog */

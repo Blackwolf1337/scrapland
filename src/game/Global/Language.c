@@ -27,7 +27,7 @@ SD_SIZE(cLangItem, 0x10);
 #define g_LangBuffer GAME_GLOBAL(char *, g_LangBuffer)
 #define g_IdLang GAME_GLOBAL(char *, g_IdLang)		/* the language loaded */
 
-cLangItem *__thiscall LangTable_Find(HashTable *self, const char *key, uint32_t slot) {
+cLangItem *LangTable_Find(HashTable *self, const char *key, uint32_t slot) {
 	for (cLangItem *it = (cLangItem *)self->slots[slot]; it; it = it->next) {
 		if (HashTable_KeyEq(self, it->key, key)) {
 			return it;
@@ -36,7 +36,7 @@ cLangItem *__thiscall LangTable_Find(HashTable *self, const char *key, uint32_t 
 	return NULL;
 }
 
-cLangItem *__thiscall LangTable_Insert(HashTable *self, const char *key, uint32_t slot, const cLangText *value) {
+cLangItem *LangTable_Insert(HashTable *self, const char *key, uint32_t slot, const cLangText *value) {
 	CHECK(!self->locked);
 	cLangItem *it = HashItem_Alloc(sizeof(*it));
 	if (it) {
@@ -51,7 +51,7 @@ cLangItem *__thiscall LangTable_Insert(HashTable *self, const char *key, uint32_
 }
 
 /* takes the item of key out of its slot, NULL if there is none */
-cLangItem *__thiscall LangTable_Unlink(HashTable *self, const char *key, uint32_t slot) {
+cLangItem *LangTable_Unlink(HashTable *self, const char *key, uint32_t slot) {
 	cLangItem **link = (cLangItem **)&self->slots[slot];
 	CHECK(!self->locked);
 	for (; *link; link = &(*link)->next) {
@@ -65,7 +65,7 @@ cLangItem *__thiscall LangTable_Unlink(HashTable *self, const char *key, uint32_
 	return NULL;
 }
 
-byte __thiscall LangTable_Delete(HashTable *self, const char *key) {
+byte LangTable_Delete(HashTable *self, const char *key) {
 	CHECK(!self->locked);
 	cLangItem *it = LangTable_Unlink(self, key, HashTable_Slot(self, key));
 	if (!it) {
@@ -75,7 +75,7 @@ byte __thiscall LangTable_Delete(HashTable *self, const char *key) {
 	return 1;
 }
 
-void __fastcall LangTable_Clear(HashTable *self) {
+void LangTable_Clear(HashTable *self) {
 	CHECK(!self->locked);
 	if (!self->slots) {
 		return;

@@ -23,7 +23,7 @@
 
 /* ---- the points and the Nto1Links.h copies ---- */
 
-cAICGPoint *__fastcall cAICGPoint_ctor(cAICGPoint *self) {
+cAICGPoint *cAICGPoint_ctor(cAICGPoint *self) {
 	self->link.target = NULL;
 	self->link.data = NULL;
 	self->link.next = &self->link;
@@ -31,11 +31,11 @@ cAICGPoint *__fastcall cAICGPoint_ctor(cAICGPoint *self) {
 	return self;
 }
 
-void __fastcall cAICGPoint_dtor(cAICGPoint *self) {
+void cAICGPoint_dtor(cAICGPoint *self) {
 	Nto1Node_Done(&self->link);
 }
 
-void *__thiscall cAICGPoint_Delete(cAICGPoint *self, uint32_t flags) {
+void *cAICGPoint_Delete(cAICGPoint *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
 		crt_eh_vector_dtor(self, sizeof(cAICGPoint), *mem, (void *)cAICGPoint_dtor);
@@ -60,11 +60,11 @@ void __stdcall Nto1Node_UnlinkOpt(Nto1Node *node) {
 
 /* ---- the lists of the dummies ---- */
 
-void __fastcall cAICGPosList_Clear(cAICGPosList *list) {
+void cAICGPosList_Clear(cAICGPosList *list) {
 	DList_Clear(list, sizeof(cAICGPosNode));
 }
 
-void __fastcall cAICGZoneData_dtor(cAICGZoneData *zone) {
+void cAICGZoneData_dtor(cAICGZoneData *zone) {
 	cAICGPosList_Clear(&zone->points);
 	DList_FreePool(&zone->points, sizeof(cAICGPosNode));
 }
@@ -85,7 +85,7 @@ static void ZoneList_Release(cAICGZoneList *list, cAICGZoneNode *node) {
 	}
 }
 
-void __fastcall cAICGZoneList_Clear(cAICGZoneList *list) {
+void cAICGZoneList_Clear(cAICGZoneList *list) {
 	while (list->head) {
 		cAICGZoneNode *p = list->head;
 		list->iter = NULL;
@@ -102,7 +102,7 @@ void __fastcall cAICGZoneList_Clear(cAICGZoneList *list) {
 	}
 }
 
-void __fastcall cAICGZoneList_FreePool(cAICGZoneList *list) {
+void cAICGZoneList_FreePool(cAICGZoneList *list) {
 	cAICGZoneNode *node;
 
 	while ((node = list->freeNodes) != NULL) {
@@ -112,14 +112,14 @@ void __fastcall cAICGZoneList_FreePool(cAICGZoneList *list) {
 	list->numFree = 0;
 }
 
-void __fastcall cAICGZoneList_dtor(cAICGZoneList *list) {
+void cAICGZoneList_dtor(cAICGZoneList *list) {
 	cAICGZoneList_Clear(list);
 	cAICGZoneList_FreePool(list);
 }
 
 /* ---- the group ---- */
 
-cAICharGroup *__thiscall cAICharGroup_ctor(void *mem) {
+cAICharGroup *cAICharGroup_ctor(void *mem) {
 	cAICharGroup *self = mem;
 
 	cAIEntityGroup_ctor(&self->base);
@@ -130,7 +130,7 @@ cAICharGroup *__thiscall cAICharGroup_ctor(void *mem) {
 	return self;
 }
 
-void __fastcall cAICharGroup_dtor(cAICharGroup *self) {
+void cAICharGroup_dtor(cAICharGroup *self) {
 	self->vftable = CAICHARGROUP_VFTABLE;
 	for (int i = 0; i < self->numZones; i++) {
 		cAICGPoint *p = self->zones[i].points;
@@ -145,7 +145,7 @@ void __fastcall cAICharGroup_dtor(cAICharGroup *self) {
 	cAIEntityGroup_dtor(&self->base);
 }
 
-cAICharGroup *__thiscall cAICharGroup_Delete(cAICharGroup *self, byte flags) {
+cAICharGroup *cAICharGroup_Delete(cAICharGroup *self, byte flags) {
 	cAICharGroup_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAICHARGROUP_SIZE);
@@ -153,11 +153,11 @@ cAICharGroup *__thiscall cAICharGroup_Delete(cAICharGroup *self, byte flags) {
 	return self;
 }
 
-cAICGZone *__thiscall cAICharGroup_GetZones(cAICharGroup *self) {
+cAICGZone *cAICharGroup_GetZones(cAICharGroup *self) {
 	return self->zones;
 }
 
-int __thiscall cAICharGroup_NumZones(cAICharGroup *self) {
+int cAICharGroup_NumZones(cAICharGroup *self) {
 	return self->numZones;
 }
 
@@ -209,7 +209,7 @@ static cAICGZoneData *ZoneList_Add(cAICGZoneList *list, const char *name) {
 	return &node->zone;
 }
 
-void __thiscall cAICharGroup_Init(cAICharGroup *self) {
+void cAICharGroup_Init(cAICharGroup *self) {
 	cAICGZoneList list;
 	char dummy[0x64];
 	char name[100];
@@ -294,7 +294,7 @@ static inline float AICG_DistSq(const vec3_t *cam, const vec3_t *p) {
 	return dy * dy + dx * dx + dz * dz;
 }
 
-byte __thiscall cAICharGroup_GetReposPos(cAICharGroup *self, const vec3_t *pos, const char *name, vec3_t *out,
+byte cAICharGroup_GetReposPos(cAICharGroup *self, const vec3_t *pos, const char *name, vec3_t *out,
 	cEntity *target) {
 	cWorld *w = g_pWorld;
 	vec3_t cam = w->camPos[w->curCam];
@@ -333,7 +333,7 @@ byte __thiscall cAICharGroup_GetReposPos(cAICharGroup *self, const vec3_t *pos, 
 	return 0;
 }
 
-byte __thiscall cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity *e, float minDist, float maxDist,
+byte cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity *e, float minDist, float maxDist,
 	byte flag) {
 	byte good = 0, spare = 0, own = 0, front = 0;
 	int ownZone = 0, ownPoint = 0, spareZone = 0, sparePoint = 0, goodZone = 0, goodPoint = 0;

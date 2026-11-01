@@ -40,27 +40,27 @@ SD_SIZE(CGameCamera, 0x3c);
 #define g_CamCompositeFPS GAME_GLOBAL(float, g_CamCompositeFPS)
 #define g_CamCompositeName (GAME_ARRAY(char, g_CamCompositeName))	/* [0x80] */
 
-CGameCamera *__fastcall CGameCamera_ctor(CGameCamera *self);
-void __fastcall CGameCamera_dtor(CGameCamera *self);
-void __thiscall CGameCamera_Move(CGameCamera *self, float d);
+CGameCamera *CGameCamera_ctor(CGameCamera *self);
+void CGameCamera_dtor(CGameCamera *self);
+void CGameCamera_Move(CGameCamera *self, float d);
 /* the values, not the node; the mode of the camera too */
-void __thiscall CGameCamera_Copy(CGameCamera *self, const CGameCamera *other);
-void __thiscall CGameCamera_FromCamera(CGameCamera *self, const CCamera *c);
-byte __fastcall CGameCamera_IsLookAt(const CGameCamera *self);
-void __thiscall CGameCamera_SetLookAt(CGameCamera *self, byte on);
+void CGameCamera_Copy(CGameCamera *self, const CGameCamera *other);
+void CGameCamera_FromCamera(CGameCamera *self, const CCamera *c);
+byte CGameCamera_IsLookAt(const CGameCamera *self);
+void CGameCamera_SetLookAt(CGameCamera *self, byte on);
 /* the node i of model (-1: D_Cam-Composite, else Camera_01), none without model; 1 */
-byte __thiscall CGameCamera_SetNodeModel(CGameCamera *self, CGameModel *model, int i);
+byte CGameCamera_SetNodeModel(CGameCamera *self, CGameModel *model, int i);
 /* takes over the reference of node */
-void __thiscall CGameCamera_SetNode(CGameCamera *self, CRenderNode *node);
+void CGameCamera_SetNode(CGameCamera *self, CRenderNode *node);
 /* the camera node of the [Cam-Composite] section ini of a node of model, NULL with a log line for none */
 CNode3D *CamComposite_Find(CModel *model, CIniFile *ini);
 /* ShowSceneCamera: the camera and frame of the last CamComposite_Find */
 void CamComposite_DrawDebug(void);
-void __thiscall CGameCamera_Strafe(CGameCamera *self, float side, float rise);
+void CGameCamera_Strafe(CGameCamera *self, float side, float rise);
 /* from the node, then the values into the CCamera; the CCamera */
-CCamera *__fastcall CGameCamera_Update(CGameCamera *self);
+CCamera *CGameCamera_Update(CGameCamera *self);
 /* in turned into the camera space (no projection) */
-vec3_t *__thiscall CGameCamera_ToLocal(const CGameCamera *self, vec3_t *out, const vec3_t *in);
+vec3_t *CGameCamera_ToLocal(const CGameCamera *self, vec3_t *out, const vec3_t *in);
 
 /* rva 0x215c00 (ScrapEngMain.cpp): the camera the world is drawn with */
 

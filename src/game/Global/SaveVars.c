@@ -30,7 +30,7 @@ SD_SIZE(cSaveGameInfo, 0x48);
 #define g_OnCrazyDeal (GAME_ARRAY_IN(cPy_Function, GVar_OnCrazyDealTarget, 16))
 #define g_OnAllCrazyDeals (GAME_ARRAY_IN(cPy_Function, GVar_OnCrazyDealFinished, 16))
 
-cSaveVar *__thiscall cSaveVar_ctor(cSaveVar *self, const char *name, const char *value) {
+cSaveVar *cSaveVar_ctor(cSaveVar *self, const char *name, const char *value) {
 	cString_ctor(&self->name);
 	cString_ctor(&self->value);
 	self->next = g_SaveVars;

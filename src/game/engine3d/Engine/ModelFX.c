@@ -269,7 +269,7 @@ void ModelFX_Noise(CModel *m, NodeAnimCtx *ctx) {
 	ModelFX_Again(m, ctx);
 }
 
-void __thiscall ModelFX_Render(CModel *self, NodeAnimCtx *ctx) {
+void ModelFX_Render(CModel *self, NodeAnimCtx *ctx) {
 	if (!g_PSOn && self->renderEffect >= 6 && self->renderEffect <= 8) {
 		/* the shader effects need the pixel shaders */
 		Scene_Draw(self, ctx);

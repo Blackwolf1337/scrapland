@@ -22,21 +22,21 @@ typedef struct cTimer {
 } cTimer;
 SD_SIZE(cTimer, 0x28);
 
-cTimer *__fastcall cTimer_ctor(cTimer *self);
+cTimer *cTimer_ctor(cTimer *self);
 /* dt: real time since the last step */
-void __thiscall cTimer_Advance(cTimer *self, float dt);
+void cTimer_Advance(cTimer *self, float dt);
 /* 0 while paused */
-float __fastcall cTimer_GetSpeed(cTimer *self);
+float cTimer_GetSpeed(cTimer *self);
 /* the speed a blend goes to */
-float __fastcall cTimer_GetSpeedTo(cTimer *self);
-float __fastcall cTimer_GetDelta(cTimer *self);
-float __thiscall Timer_GetTime(cTimer *self);
-void __thiscall Timer_SetTime(cTimer *self, float t);
-void __thiscall Timer_SetSpeed(cTimer *self, float speed);
-float __fastcall cTimer_GetBlendTime(cTimer *self);
-void __thiscall cTimer_SetBlend(cTimer *self, float time);
-void __thiscall cTimer_SetSpeedTo(cTimer *self, float speed);
+float cTimer_GetSpeedTo(cTimer *self);
+float cTimer_GetDelta(cTimer *self);
+float Timer_GetTime(cTimer *self);
+void Timer_SetTime(cTimer *self, float t);
+void Timer_SetSpeed(cTimer *self, float speed);
+float cTimer_GetBlendTime(cTimer *self);
+void cTimer_SetBlend(cTimer *self, float time);
+void cTimer_SetSpeedTo(cTimer *self, float speed);
 /* the speed (CHECK >= 0) unless paused */
-void __thiscall cTimer_SetSpeedChecked(cTimer *self, float speed);
+void cTimer_SetSpeedChecked(cTimer *self, float speed);
 
 #endif

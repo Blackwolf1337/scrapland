@@ -63,7 +63,7 @@
 
 void Sound_UpdateVoice(int voice);
 
-cSoundPS *__fastcall cSoundPS_ctor(cSoundPS *self) {
+cSoundPS *cSoundPS_ctor(cSoundPS *self) {
 	cSound_Init(&self->sound);
 	cString_ctor(&self->name);
 	self->volume = 1.0f;
@@ -82,12 +82,12 @@ cSoundPS *__fastcall cSoundPS_ctor(cSoundPS *self) {
 	return self;
 }
 
-void __fastcall cSoundPS_dtor(cSoundPS *self) {
+void cSoundPS_dtor(cSoundPS *self) {
 	cString_dtor(&self->name);
 	cSound_Stop(&self->sound);
 }
 
-void __thiscall cSoundPS_Update(cSoundPS *self, float dt) {
+void cSoundPS_Update(cSoundPS *self, float dt) {
 	vec3_t vel;
 
 	if (!self->loop) {
@@ -109,11 +109,11 @@ void __thiscall cSoundPS_Update(cSoundPS *self, float dt) {
 	cSound_Update(&self->sound);
 }
 
-void __thiscall cSoundPS_SetSound(cSoundPS *self, const char *name) {
+void cSoundPS_SetSound(cSoundPS *self, const char *name) {
 	cSound_SetSound(&self->sound, name, 4);
 }
 
-int __thiscall cSoundPS_Var(cSoundPS *ps, const char *name, int set, char **s, double *d, int *i) {
+int cSoundPS_Var(cSoundPS *ps, const char *name, int set, char **s, double *d, int *i) {
 	static const struct {
 		const char *name;
 		uint32_t off;
@@ -221,7 +221,7 @@ void Sound_ResetVolumes(void) {
 }
 
 /* the debug view: the attenuation spheres in a color by the doppler factor and the names */
-void __fastcall cSoundPS_Draw(cSoundPS *self) {
+void cSoundPS_Draw(cSoundPS *self) {
 	int u = (int)(self->sound.desc.param3 * 255.0f);
 	DebugUtils_DrawSphere(&self->pos, self->sound.desc.param1 + 20.0f, (255 - u) << 8 | u << 16 | u, 10, 0);
 	if (self->sound.desc.param2 > 3.0f) {

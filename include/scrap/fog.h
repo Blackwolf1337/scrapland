@@ -36,16 +36,16 @@ SD_SIZE(CFog, 0x24);
 #define g_FogAbsDist GAME_GLOBAL_IN(int, GVar_R_FogAbsDist, 16)
 #define g_FogDensity GAME_GLOBAL_IN(float, GVar_R_FogDensity, 16)	/* forced, 0 none */
 
-CFog *__fastcall CFog_ctor(CFog *self);
+CFog *CFog_ctor(CFog *self);
 /* rva 0x278390, empty */
-void __fastcall CFog_dtor(CFog *self);
+void CFog_dtor(CFog *self);
 /* the fog capabilities of the device */
-void __fastcall CFog_InitD3D(CFog *self);
+void CFog_InitD3D(CFog *self);
 /* the fog render states of the device for the frame */
-void __fastcall CFog_Apply(CFog *self);
+void CFog_Apply(CFog *self);
 /* the own color (ColorIntens as its two words) */
-void __thiscall CFog_SetColor(CFog *self, uint32_t rgba, float intens);
-void __thiscall CFog_SetRange(CFog *self, float start, float end);
+void CFog_SetColor(CFog *self, uint32_t rgba, float intens);
+void CFog_SetRange(CFog *self, float start, float end);
 
 /* other modules (src/imports.inc) */
 /* the D3D color of a color and its intensity (src/game/ScrapEng/ScrapEngWorld.c) */

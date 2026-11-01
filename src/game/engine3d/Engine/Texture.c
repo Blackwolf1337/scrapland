@@ -116,7 +116,7 @@ static const char *Tex_OpacName(const CTexture *t) {
 }
 
 /* bmp.h */
-CBmp *__thiscall CBmp_ctor(CBmp *self, int width, int height) {
+CBmp *CBmp_ctor(CBmp *self, int width, int height) {
 	self->width = width;
 	self->height = height;
 	self->img = NULL;
@@ -124,7 +124,7 @@ CBmp *__thiscall CBmp_ctor(CBmp *self, int width, int height) {
 	return self;
 }
 
-CBmp *__thiscall CBmp_Delete(CBmp *self, byte flags) {
+CBmp *CBmp_Delete(CBmp *self, byte flags) {
 	Img_Free(self, BMP_PIXEL);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CBmp));
@@ -132,7 +132,7 @@ CBmp *__thiscall CBmp_Delete(CBmp *self, byte flags) {
 	return self;
 }
 
-CTexture *__thiscall CTexture_ctor(CTexture *self, const char *name, const char *opac, int kind, uint32_t flags) {
+CTexture *CTexture_ctor(CTexture *self, const char *name, const char *opac, int kind, uint32_t flags) {
 	CMultiSprite_ctor(&self->multi);
 	g_TexCount++;
 	self->Refs = 0;
@@ -175,7 +175,7 @@ CTexture *__thiscall CTexture_ctor(CTexture *self, const char *name, const char 
 	return self;
 }
 
-void __fastcall CTexture_dtor(CTexture *self) {
+void CTexture_dtor(CTexture *self) {
 	g_TexCount--;
 	CHECK(!self->Refs);
 	Tex_ReleaseD3D(self);
@@ -229,7 +229,7 @@ CTexture *Texture_FindPurge(void) {
 	return NULL;
 }
 
-int __thiscall CTexture_UploadLevel(CTexture *self, CBmp *src, int level) {
+int CTexture_UploadLevel(CTexture *self, CBmp *src, int level) {
 	void *dev = NULL;
 	void *surf = NULL;
 	void *dst;
@@ -523,7 +523,7 @@ byte Tex_IsPower2(int n) {
 	return !(n & (n - 1));
 }
 
-int __thiscall CTexture_LoadFile(CTexture *self, byte load) {
+int CTexture_LoadFile(CTexture *self, byte load) {
 	char *name = self->Name;
 	char *ext;
 	byte isBmp, isTga, isTex, isPng, isDdc, isDds;
@@ -636,7 +636,7 @@ static void Tex_LogCreated(CTexture *self, const char *line, const char *formatL
 	}
 }
 
-int __thiscall CTexture_CreateD3D(CTexture *self, void *dev) {
+int CTexture_CreateD3D(CTexture *self, void *dev) {
 	d3dSurfaceDesc_t desc = { 0 };
 	int fmt, bpp, hr;
 
@@ -734,7 +734,7 @@ int __thiscall CTexture_CreateD3D(CTexture *self, void *dev) {
 	return 0;
 }
 
-int __thiscall CTexture_SaveDDS(CTexture *self, CBmp *orig, int level, byte keepExt) {
+int CTexture_SaveDDS(CTexture *self, CBmp *orig, int level, byte keepExt) {
 	char path[MAX_FILEPATH];
 	char tmp[MAX_FILEPATH];
 	char dir[MAX_FILEPATH];

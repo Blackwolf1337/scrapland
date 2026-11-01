@@ -28,12 +28,12 @@
 
 static const vec3_t sp_zero = { 0.0f, 0.0f, 0.0f };
 
-CGameParticles *__fastcall CGameParticles_ctor(CGameParticles *self) {
+CGameParticles *CGameParticles_ctor(CGameParticles *self) {
 	CGameParticles_Init(self);
 	return self;
 }
 
-void __fastcall CGameParticles_Init(CGameParticles *self) {
+void CGameParticles_Init(CGameParticles *self) {
 	self->Node = NULL;
 	self->ParticleSystem = NULL;
 	self->colorIni = 0xffffff;
@@ -63,12 +63,12 @@ void __fastcall CGameParticles_Init(CGameParticles *self) {
 	self->bounce = 0;
 }
 
-void __fastcall CGameParticles_Release(CGameParticles *self) {
+void CGameParticles_Release(CGameParticles *self) {
 	RenderNode_Unref(&self->Node);
 	self->ParticleSystem = NULL;
 }
 
-void __thiscall CGameParticles_Attach(CGameParticles *self, CGameModel *model, uint32_t i) {
+void CGameParticles_Attach(CGameParticles *self, CGameModel *model, uint32_t i) {
 	if (!model) {
 		CheckFailed("Model", __FILE__, __TIMESTAMP__, __LINE__);
 	}
@@ -86,7 +86,7 @@ void __thiscall CGameParticles_Attach(CGameParticles *self, CGameModel *model, u
 	self->ParticleSystem = (CParticleSystem *)obj;
 }
 
-void __fastcall CGameParticles_Apply(CGameParticles *self) {
+void CGameParticles_Apply(CGameParticles *self) {
 	SP_CHECK(self);
 	ParticleSystemParams *p = &self->ParticleSystem->params;
 	p->colorIni = self->colorIni;
@@ -127,7 +127,7 @@ static void CGameParticles_KillParticle(CGameParticles *self, CParticle *p) {
 	}
 }
 
-void __fastcall CGameParticles_KillAll(CGameParticles *self) {
+void CGameParticles_KillAll(CGameParticles *self) {
 	SP_CHECK(self);
 	for (int i = 0; i < self->ParticleSystem->params.nParticles; i++) {
 		CParticle *p = self->ParticleSystem->Particles[i];
@@ -137,7 +137,7 @@ void __fastcall CGameParticles_KillAll(CGameParticles *self) {
 	self->ParticleSystem->numActive = 0;
 }
 
-void __thiscall CGameParticles_Kill(CGameParticles *self, int i) {
+void CGameParticles_Kill(CGameParticles *self, int i) {
 	SP_CHECK(self);
 	SP_CHECK_INDEX(self, i);
 	CParticle *p = self->ParticleSystem->Particles[i];
@@ -145,7 +145,7 @@ void __thiscall CGameParticles_Kill(CGameParticles *self, int i) {
 	CGameParticles_KillParticle(self, p);
 }
 
-void __thiscall CGameParticles_KillRange(CGameParticles *self, int from, int to) {
+void CGameParticles_KillRange(CGameParticles *self, int from, int to) {
 	SP_CHECK(self);
 	if (from < 0 || to < from || to > self->ParticleSystem->params.nParticles) {
 		CheckFailed("index_from>=0 && index_to>=index_from && index_to<=SistPart->GetNParticles()", __FILE__,
@@ -158,7 +158,7 @@ void __thiscall CGameParticles_KillRange(CGameParticles *self, int from, int to)
 	}
 }
 
-void __thiscall CGameParticles_SetParticle(CGameParticles *self, int i, float x, float y, float z, float size,
+void CGameParticles_SetParticle(CGameParticles *self, int i, float x, float y, float z, float size,
 	uint32_t color, int sprite, float rot) {
 	SP_CHECK(self);
 	SP_CHECK_INDEX(self, i);
@@ -186,7 +186,7 @@ void __thiscall CGameParticles_SetParticle(CGameParticles *self, int i, float x,
 	}
 }
 
-byte __thiscall CGameParticles_GetParticle(CGameParticles *self, int i, vec3_t *pos, vec3_t *vel, float *t,
+byte CGameParticles_GetParticle(CGameParticles *self, int i, vec3_t *pos, vec3_t *vel, float *t,
 	uint32_t *color, float *size) {
 	SP_CHECK(self);
 	SP_CHECK_INDEX(self, i);
@@ -212,37 +212,37 @@ byte __thiscall CGameParticles_GetParticle(CGameParticles *self, int i, vec3_t *
 	return p->active;
 }
 
-int __fastcall CGameParticles_NumActive(const CGameParticles *self) {
+int CGameParticles_NumActive(const CGameParticles *self) {
 	return self->ParticleSystem->numActive;
 }
 
-int __fastcall CGameParticles_NumParticles(const CGameParticles *self) {
+int CGameParticles_NumParticles(const CGameParticles *self) {
 	return self->ParticleSystem->params.nParticles;
 }
 
-float __fastcall CGameParticles_GetAlpha(const CGameParticles *self) {
+float CGameParticles_GetAlpha(const CGameParticles *self) {
 	SP_CHECK(self);
 	return self->ParticleSystem->alpha;
 }
 
-void __thiscall CGameParticles_SetAlpha(CGameParticles *self, float alpha) {
+void CGameParticles_SetAlpha(CGameParticles *self, float alpha) {
 	SP_CHECK(self);
 	CParticleSystem_SetAlpha(self->ParticleSystem, alpha);
 }
 
-byte __fastcall CGameParticles_IsEnabled(const CGameParticles *self) {
+byte CGameParticles_IsEnabled(const CGameParticles *self) {
 	return self->ParticleSystem->enabled;
 }
 
-void __thiscall CGameParticles_SetEnabled(CGameParticles *self, byte on) {
+void CGameParticles_SetEnabled(CGameParticles *self, byte on) {
 	self->ParticleSystem->enabled = on;
 }
 
-byte __fastcall CGameParticles_IsVisible(const CGameParticles *self) {
+byte CGameParticles_IsVisible(const CGameParticles *self) {
 	return self->ParticleSystem->visible;
 }
 
-void __thiscall CGameParticles_SetVisible(CGameParticles *self, byte on) {
+void CGameParticles_SetVisible(CGameParticles *self, byte on) {
 	self->ParticleSystem->visible = on;
 }
 
@@ -254,40 +254,40 @@ static void CGameParticles_SetFlag(CParticleSystem *sp, int shift, byte on) {
 	}
 }
 
-void __thiscall CGameParticles_SetColorRampOn(CGameParticles *self, byte on) {
+void CGameParticles_SetColorRampOn(CGameParticles *self, byte on) {
 	SP_CHECK(self);
 	CGameParticles_SetFlag(self->ParticleSystem, 5, on);
 }
 
-void __thiscall CGameParticles_SetSparksOn(CGameParticles *self, byte on) {
+void CGameParticles_SetSparksOn(CGameParticles *self, byte on) {
 	SP_CHECK(self);
 	CGameParticles_SetFlag(self->ParticleSystem, 3, on);
 }
 
-void __thiscall CGameParticles_SetColorRamp(CGameParticles *self, uint32_t *ramp) {
+void CGameParticles_SetColorRamp(CGameParticles *self, uint32_t *ramp) {
 	SP_CHECK(self);
 	CParticleSystem_SetColorRamp(self->ParticleSystem, ramp);
 }
 
-void __thiscall CGameParticles_SetEmitPos(CGameParticles *self, vec3_t *pos, byte n) {
+void CGameParticles_SetEmitPos(CGameParticles *self, vec3_t *pos, byte n) {
 	SP_CHECK(self);
 	CParticleSystem_SetEmitPos(self->ParticleSystem, pos, n);
 }
 
-void __thiscall CGameParticles_EmitN(CGameParticles *self, int n, byte force) {
+void CGameParticles_EmitN(CGameParticles *self, int n, byte force) {
 	CParticleSystem_EmitN(self->ParticleSystem, n, force);
 }
 
-void __thiscall CGameParticles_EmitM(CGameParticles *self, int n, byte force, const matrix_t *m) {
+void CGameParticles_EmitM(CGameParticles *self, int n, byte force, const matrix_t *m) {
 	const matrix_t *d3d = Eng_Identity(m);
 	CParticleSystem_EmitM(self->ParticleSystem, n, force, d3d);
 }
 
-void __thiscall CGameParticles_EmitDt(CGameParticles *self, int n, byte force, float dt) {
+void CGameParticles_EmitDt(CGameParticles *self, int n, byte force, float dt) {
 	CParticleSystem_EmitDt(self->ParticleSystem, n, force, dt);
 }
 
-void __thiscall CGameParticles_Emit(CGameParticles *self, int n, byte force, float dt, const matrix_t *m) {
+void CGameParticles_Emit(CGameParticles *self, int n, byte force, float dt, const matrix_t *m) {
 	const matrix_t *d3d = Eng_Identity(m);
 	CParticleSystem_Emit(self->ParticleSystem, n, force, dt, d3d);
 }

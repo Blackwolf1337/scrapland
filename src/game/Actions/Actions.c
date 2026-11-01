@@ -8,7 +8,7 @@
 #include "scrap/console.h"
 #include "scrap/cstring.h"
 
-cAction *__thiscall cAction_ctor(cAction *self, cActClass *parent, const char *name) {
+cAction *cAction_ctor(cAction *self, cActClass *parent, const char *name) {
 	self->vftable = CACTIONMOVE_VFTABLE;
 	cString_ctor(&self->name);
 	CHECK(parent);
@@ -42,7 +42,7 @@ cAction *__thiscall cAction_ctor(cAction *self, cActClass *parent, const char *n
 	return self;
 }
 
-cActEvent *__thiscall cActEvent_ctor(cActEvent *self, float time, cActEvent *next) {
+cActEvent *cActEvent_ctor(cActEvent *self, float time, cActEvent *next) {
 	cString_ctor(&self->name);
 	cPy_Function_ctor(&self->func);
 	self->time = time;
@@ -52,7 +52,7 @@ cActEvent *__thiscall cActEvent_ctor(cActEvent *self, float time, cActEvent *nex
 	return self;
 }
 
-void __fastcall cAction_dtor(cAction *self) {
+void cAction_dtor(cAction *self) {
 	self->vftable = CACTIONMOVE_VFTABLE;
 	if (self->anmFile) {
 		Mem_Free(self->anmFile);
@@ -70,7 +70,7 @@ void __fastcall cAction_dtor(cAction *self) {
 	cString_dtor(&self->name);
 }
 
-cAction *__thiscall cAction_Delete(cAction *self, byte flags) {
+cAction *cAction_Delete(cAction *self, byte flags) {
 	cAction_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -78,7 +78,7 @@ cAction *__thiscall cAction_Delete(cAction *self, byte flags) {
 	return self;
 }
 
-void __thiscall cAction_AddEvent(cAction *self, float time) {
+void cAction_AddEvent(cAction *self, float time) {
 	cActEvent **link = &self->events;
 
 	while (*link && !((*link)->time >= time)) {
@@ -92,14 +92,14 @@ void __thiscall cAction_AddEvent(cAction *self, float time) {
 	self->lastEvent = ev;
 }
 
-void __thiscall cActEvent_Fire(cActEvent *self, const char *entity) {
+void cActEvent_Fire(cActEvent *self, const char *entity) {
 	cPy_Function_AddParamS(&self->func, entity);
 	cPy_Function_AddParamS(&self->func, self->name);
 	cPy_Function_AddParamF(&self->func, self->time);
 	cPy_Function_Execute(&self->func, 0);
 }
 
-int __thiscall cActEvent_Var(cActEvent *self, const char *name, int set, char **s, double *d, int *i) {
+int cActEvent_Var(cActEvent *self, const char *name, int set, char **s, double *d, int *i) {
 	if (i && !crt_stricmp(name, "Discardable")) {
 		if ((byte)set) {
 			self->discardable = *i != 0;
@@ -133,7 +133,7 @@ int __thiscall cActEvent_Var(cActEvent *self, const char *name, int set, char **
 	return 0;
 }
 
-void __thiscall cAction_SetAnmFile(cAction *self, const char *file) {
+void cAction_SetAnmFile(cAction *self, const char *file) {
 	if (self->anmFile) {
 		Con_Warnf("WARNING: '%s' action already has assigned '%s' as animation.\n '%s' can't be assigned.\n",
 			self->name, self->anmFile, file);
@@ -174,7 +174,7 @@ static int ActionVar_F(cAction *self, int set, double *d, const cActionVarF *v) 
 	return ACTVAR_DOUBLE;
 }
 
-int __thiscall cAction_Var(cAction *act, const char *name, int set, char **s, double *d, int *i) {
+int cAction_Var(cAction *act, const char *name, int set, char **s, double *d, int *i) {
 	static const cActionVarF autoFace[] = {
 		{ "AutoFaceOffsetV", 0x58, 1 }, { "AutoFaceOffsetH", 0x54, 1 }, { "AutoFaceSpeed", 0x50, 1 },
 	};

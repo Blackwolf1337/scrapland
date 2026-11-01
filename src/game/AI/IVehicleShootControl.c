@@ -105,7 +105,7 @@ static inline byte AIVS_TargetActive(cAIVehicleShoot *self) {
 
 /* ---- construction ---- */
 
-cAIVehicleShoot *__thiscall cAIVehicleShoot_ctor(void *mem, cEntity *v, cAIVehicle *ai, void *params) {
+cAIVehicleShoot *cAIVehicleShoot_ctor(void *mem, cEntity *v, cAIVehicle *ai, void *params) {
 	cAIVehicleShoot *self = mem;
 
 	self->vftable = CAIVEHICLESHOOT_VFTABLE;
@@ -139,7 +139,7 @@ cAIVehicleShoot *__thiscall cAIVehicleShoot_ctor(void *mem, cEntity *v, cAIVehic
 	return self;
 }
 
-cAIVehicleShoot *__thiscall cAIVehicleShoot_Delete(cAIVehicleShoot *self, byte flags) {
+cAIVehicleShoot *cAIVehicleShoot_Delete(cAIVehicleShoot *self, byte flags) {
 	self->vftable = CAIVEHICLESHOOT_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, CAIVEHICLESHOOT_SIZE);
@@ -149,7 +149,7 @@ cAIVehicleShoot *__thiscall cAIVehicleShoot_Delete(cAIVehicleShoot *self, byte f
 
 /* ---- the checks of the target ---- */
 
-byte __fastcall cAIVehicleShoot_CheckTarget(cAIVehicleShoot *self) {
+byte cAIVehicleShoot_CheckTarget(cAIVehicleShoot *self) {
 	if (self->mode == 1 && !AIVS_TargetActive(self)) {
 		return AIVS_TargetDied(self, "OBJECTIVE_DIED - cAIVehicleShootControl::CheckIntensiveShoot - Entidad: %s - "
 			"State: %d - StateIntern: %d\n");
@@ -157,7 +157,7 @@ byte __fastcall cAIVehicleShoot_CheckTarget(cAIVehicleShoot *self) {
 	return 1;
 }
 
-byte __fastcall cAIVehicleShoot_CheckTargetCM(cAIVehicleShoot *self) {
+byte cAIVehicleShoot_CheckTargetCM(cAIVehicleShoot *self) {
 	if (self->modeCM == 1) {
 		if (!AIVS_TargetActive(self)) {
 			return AIVS_TargetDied(self, "OBJECTIVE_DIED - cAIVehicleShootControl::CheckIntensiveShootCM - "
@@ -172,7 +172,7 @@ byte __fastcall cAIVehicleShoot_CheckTargetCM(cAIVehicleShoot *self) {
 
 /* ---- the weapon and the countermeasure in use ---- */
 
-void __fastcall cAIVehicleShoot_UpdateWeapon(cAIVehicleShoot *self) {
+void cAIVehicleShoot_UpdateWeapon(cAIVehicleShoot *self) {
 	cSlotController *slot = &self->slotWeap;
 	float t;
 
@@ -195,7 +195,7 @@ void __fastcall cAIVehicleShoot_UpdateWeapon(cAIVehicleShoot *self) {
 	} while (cSlotController_FireReset(slot, &t));
 }
 
-void __fastcall cAIVehicleShoot_UpdateCM(cAIVehicleShoot *self) {
+void cAIVehicleShoot_UpdateCM(cAIVehicleShoot *self) {
 	cSlotController *slot = &self->slotWeap;
 	float t;
 
@@ -235,7 +235,7 @@ static int AIVS_Counter(cAIVehicleShoot *self) {
 
 /* the fire button pulled by the cadence (the counterattack after damage); the slow weapons less often when the
  * target looks away */
-void __fastcall cAIVehicleShoot_PullFire(cAIVehicleShoot *self) {
+void cAIVehicleShoot_PullFire(cAIVehicleShoot *self) {
 	int w = self->weap.weapon;
 	int r;
 
@@ -277,7 +277,7 @@ void __fastcall cAIVehicleShoot_PullFire(cAIVehicleShoot *self) {
 	}
 }
 
-void __fastcall cAIVehicleShoot_Fire(cAIVehicleShoot *self) {
+void cAIVehicleShoot_Fire(cAIVehicleShoot *self) {
 	cSlotController *slot = &self->slotFire;
 	float t;
 
@@ -323,7 +323,7 @@ done:
 }
 
 /* the ammo button for countermeasures at a target near behind the vehicle (or while it strafes) */
-void __fastcall cAIVehicleShoot_FireCM(cAIVehicleShoot *self) {
+void cAIVehicleShoot_FireCM(cAIVehicleShoot *self) {
 	cSlotController *slot = &self->slotFireCM;
 	float t;
 
@@ -372,7 +372,7 @@ far:
 }
 
 /* the hook: the ammo button while there is hook energy, at a locked point or the target within the hook range */
-void __fastcall cAIVehicleShoot_FireHook(cAIVehicleShoot *self) {
+void cAIVehicleShoot_FireHook(cAIVehicleShoot *self) {
 	cSlotController *slot = &self->slotFireCM;
 	float t;
 
@@ -422,7 +422,7 @@ off:
 /* ---- the choice of the weapons ---- */
 
 /* the weapon in use by the distance to the target, when set; 1 if any weapon fits the distance */
-byte __thiscall cAIVehicleShoot_TargetInSight(cAIVehicleShoot *self, int arg) {
+byte cAIVehicleShoot_TargetInSight(cAIVehicleShoot *self, int arg) {
 	int nearW[3], farW[7];
 	int nn = 0, nf = 0;
 	float dist = AIVS_TargetDist(self);
@@ -497,7 +497,7 @@ store:
 }
 
 /* the countermeasure by the use percentages of the parameters among the kinds with ammo */
-void __fastcall cAIVehicleShoot_SelectCM(cAIVehicleShoot *self) {
+void cAIVehicleShoot_SelectCM(cAIVehicleShoot *self) {
 	int c0 = -1, c1 = -1, c2 = -1;
 	int n = 0;
 	cAIVSWeap sel;
@@ -562,7 +562,7 @@ store:
 
 /* ---- the update ---- */
 
-void __thiscall cAIVehicleShoot_Update(cAIVehicleShoot *self, float dt) {
+void cAIVehicleShoot_Update(cAIVehicleShoot *self, float dt) {
 	if (g_NotShootAI == 0) {
 		if (!cAIVehicle_GetChanged(self->ai) &&
 			(!cAIVehicle_Think(self->ai) || !cAIVehicleShoot_CheckTarget(self))) {
@@ -580,7 +580,7 @@ void __thiscall cAIVehicleShoot_Update(cAIVehicleShoot *self, float dt) {
 	self->ctl->fire = 0;
 }
 
-void __thiscall cAIVehicleShoot_Update2(cAIVehicleShoot *self, float dt) {
+void cAIVehicleShoot_Update2(cAIVehicleShoot *self, float dt) {
 	if (g_NotShootAI == 0) {
 		if (!cAIVehicle_GetChanged(self->ai) &&
 			(!cAIVehicle_Think(self->ai) || !cAIVehicleShoot_CheckTargetCM(self))) {
@@ -604,7 +604,7 @@ void __thiscall cAIVehicleShoot_Update2(cAIVehicleShoot *self, float dt) {
 	self->ctl->cm = 0;
 }
 
-void __thiscall cAIVehicleShoot_Draw(cAIVehicleShoot *self) {
+void cAIVehicleShoot_Draw(cAIVehicleShoot *self) {
 	char name[0x14];
 
 	if (cString_EqStr(g_ShowVehWeapAI, self->vehicle->name)) {
@@ -619,7 +619,7 @@ void __thiscall cAIVehicleShoot_Draw(cAIVehicleShoot *self) {
 /* ---- the ammo ---- */
 
 /* the ammo of the weapons that fit the distance */
-float __thiscall cAIVehicleShoot_AmmoAt(cAIVehicleShoot *self, float dist) {
+float cAIVehicleShoot_AmmoAt(cAIVehicleShoot *self, float dist) {
 	float s = 0.0f;
 	byte b;
 
@@ -648,7 +648,7 @@ static inline float AIVS_MaxAmmo(int kind) {
 }
 
 /* the most ammo of the weapons that fit the distance */
-float __thiscall cAIVehicleShoot_MaxAmmoAt(cAIVehicleShoot *self, float dist) {
+float cAIVehicleShoot_MaxAmmoAt(cAIVehicleShoot *self, float dist) {
 	float s = 0.0f;
 
 	if (g_ShortDistShootAI > dist) {
@@ -672,7 +672,7 @@ float __thiscall cAIVehicleShoot_MaxAmmoAt(cAIVehicleShoot *self, float dist) {
 	return AIVS_MaxAmmo(2) + s;
 }
 
-float __fastcall cAIVehicleShoot_MaxAmmo(cAIVehicleShoot *self) {
+float cAIVehicleShoot_MaxAmmo(cAIVehicleShoot *self) {
 	float s = 0.0f;
 
 	if (self->weaps[AIVS_VULCAN].avail || self->weaps[AIVS_DEVASTATOR].avail) {
@@ -687,7 +687,7 @@ float __fastcall cAIVehicleShoot_MaxAmmo(cAIVehicleShoot *self) {
 	return s;
 }
 
-float __fastcall cAIVehicleShoot_TotalAmmo(cAIVehicleShoot *self) {
+float cAIVehicleShoot_TotalAmmo(cAIVehicleShoot *self) {
 	float s = 0.0f;
 
 	if (self->weaps[AIVS_VULCAN].avail || self->weaps[AIVS_DEVASTATOR].avail) {
@@ -703,7 +703,7 @@ float __fastcall cAIVehicleShoot_TotalAmmo(cAIVehicleShoot *self) {
 }
 
 /* the ammo of the kind of weapon w, 0 for the laser and unknown ones */
-float __thiscall cAIVehicleShoot_WeapAmmo(cAIVehicleShoot *self, int w) {
+float cAIVehicleShoot_WeapAmmo(cAIVehicleShoot *self, int w) {
 	float a = 0.0f;
 	int kind = AIVS_AmmoKind(w);
 
@@ -713,21 +713,21 @@ float __thiscall cAIVehicleShoot_WeapAmmo(cAIVehicleShoot *self, int w) {
 	return a;
 }
 
-void __thiscall cAIVehicleShoot_GetInfo(cAIVehicleShoot *self, int *a, int *kind, byte *flag) {
+void cAIVehicleShoot_GetInfo(cAIVehicleShoot *self, int *a, int *kind, byte *flag) {
 	*a = self->mode;
 	*kind = self->modeCM;
 	*flag = self->hook;
 }
 
-cAIVehicleParams3 *__thiscall cAIVehicleShoot_GetParams(cAIVehicleShoot *self) {
+cAIVehicleParams3 *cAIVehicleShoot_GetParams(cAIVehicleShoot *self) {
 	return &self->params;
 }
 
-cAIVehicleParams3 *__thiscall cAIVehicleShoot_GetParamsInit(cAIVehicleShoot *self) {
+cAIVehicleParams3 *cAIVehicleShoot_GetParamsInit(cAIVehicleShoot *self) {
 	return &self->paramsInit;
 }
 
-cAIVSWeap *__fastcall cAIVehicleShoot_GetWeaps(cAIVehicleShoot *self) {
+cAIVSWeap *cAIVehicleShoot_GetWeaps(cAIVehicleShoot *self) {
 	return self->weaps;
 }
 
@@ -752,11 +752,11 @@ void __stdcall cAIVehicleShoot_WeaponName(int w, char *buf) {
 	}
 }
 
-byte __thiscall cAIVehicleShoot_HasHook(cAIVehicleShoot *self) {
+byte cAIVehicleShoot_HasHook(cAIVehicleShoot *self) {
 	return self->weaps[AIVS_LASER].avail;
 }
 
-byte __thiscall cAIVehicleShoot_HasAmmo(cAIVehicleShoot *self, float factor) {
+byte cAIVehicleShoot_HasAmmo(cAIVehicleShoot *self, float factor) {
 	if (self->weaps[AIVS_VULCAN].avail || self->weaps[AIVS_DEVASTATOR].avail) {
 		const cAmmoInfo *info = TABLE_AT(g_pWorld->ammo, 0);
 		if (AIVS_Ammo(self, 0) >= info->max * factor) {
@@ -792,7 +792,7 @@ byte __thiscall cAIVehicleShoot_HasAmmo(cAIVehicleShoot *self, float factor) {
 }
 
 /* the inferno at dist with ammo for a shot */
-byte __thiscall cAIVehicleShoot_InfernoReady(cAIVehicleShoot *self, float dist) {
+byte cAIVehicleShoot_InfernoReady(cAIVehicleShoot *self, float dist) {
 	if (self->weaps[AIVS_INFERNO].avail && g_InfernoDistLimit > dist) {
 		float cost = (float)g_InfernoAmmoCost;
 		if (cAIVehicleShoot_WeapAmmo(self, g_InfernoIDWeap) > cost) {
@@ -802,7 +802,7 @@ byte __thiscall cAIVehicleShoot_InfernoReady(cAIVehicleShoot *self, float dist) 
 	return 0;
 }
 
-byte __thiscall cAIVehicleShoot_UsesAmmo(cAIVehicleShoot *self, int kind, float factor) {
+byte cAIVehicleShoot_UsesAmmo(cAIVehicleShoot *self, int kind, float factor) {
 	if (g_ShortDistShootAI > factor) {
 		if (kind == 0) {
 			return self->weaps[AIVS_VULCAN].avail || self->weaps[AIVS_DEVASTATOR].avail;
@@ -819,7 +819,7 @@ byte __thiscall cAIVehicleShoot_UsesAmmo(cAIVehicleShoot *self, int kind, float 
 }
 
 /* the target within the range of weapon w */
-byte __thiscall cAIVehicleShoot_InRange(cAIVehicleShoot *self, int w) {
+byte cAIVehicleShoot_InRange(cAIVehicleShoot *self, int w) {
 	float dist = AIVS_TargetDist(self);
 
 	if (w == g_VulcanIDWeap) {
@@ -848,7 +848,7 @@ byte __thiscall cAIVehicleShoot_InRange(cAIVehicleShoot *self, int w) {
 
 /* the modes of the fire and the ammo buttons (a: 0 off, 1 fire; b: 0 off, 1 countermeasures, 2 the hook);
  * with hook and no target both off and 0 */
-byte __thiscall cAIVehicleShoot_SetMode(cAIVehicleShoot *self, int a, int b, byte c) {
+byte cAIVehicleShoot_SetMode(cAIVehicleShoot *self, int a, int b, byte c) {
 	byte r = 1;
 
 	if (!self->ai->vftable->GetTargetNode(self->ai)->target && c) {
@@ -883,7 +883,7 @@ byte __thiscall cAIVehicleShoot_SetMode(cAIVehicleShoot *self, int a, int b, byt
 
 /* the table of the weapons from the slots of the vehicle; kind and upgrade of a weapon the vehicle does not have
  * stay those of the one before it, like the locals of the original */
-void __fastcall cAIVehicleShoot_InitWeapons(cAIVehicleShoot *self) {
+void cAIVehicleShoot_InitWeapons(cAIVehicleShoot *self) {
 	cTargetLock *wm = AIVS_Weapons(self);
 	int kind = 0, upgrade = 0;
 
@@ -959,7 +959,7 @@ void __fastcall cAIVehicleShoot_InitWeapons(cAIVehicleShoot *self) {
 	}
 }
 
-void __thiscall cAIVehicleShoot_WeapListChanged(cAIVehicleShoot *self) {
+void cAIVehicleShoot_WeapListChanged(cAIVehicleShoot *self) {
 	cAIVehicleShoot_InitWeapons(self);
 	if (self->target->target) {
 		cAIVehicleShoot_TargetInSight(self, 1);

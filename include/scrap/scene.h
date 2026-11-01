@@ -27,51 +27,51 @@ enum {
 };
 
 
-CScene *__fastcall CScene_ctor(CScene *self);
-void __fastcall CScene_dtor(CScene *self);
-CScene *__thiscall CScene_Delete(CScene *self, byte flags);
-void __thiscall CScene_Msg(CScene *self, int msg, int a, int b, int c, int d);
+CScene *CScene_ctor(CScene *self);
+void CScene_dtor(CScene *self);
+CScene *CScene_Delete(CScene *self, byte flags);
+void CScene_Msg(CScene *self, int msg, int a, int b, int c, int d);
 /* OBJ3D_VF_RELEASED3D and OBJ3D_VF_INITD3D of the objects of all nodes */
-void __thiscall CScene_ReleaseD3D(CScene *self, void *dev);
-void __thiscall CScene_InitD3D(CScene *self, void *dev);
+void CScene_ReleaseD3D(CScene *self, void *dev);
+void CScene_InitD3D(CScene *self, void *dev);
 /* rva 0x24ecb0, empty */
-void __thiscall CScene_Shared(CScene *self);
+void CScene_Shared(CScene *self);
 /* the "SCN" block; bAnim: the animation must be there (read) or is all there is (write) */
-void __thiscall CScene_Read(CScene *self, CFileIO *f, byte bAnim);
-void __thiscall CScene_Write(CScene *self, CFileIO *f, byte bAnim);
+void CScene_Read(CScene *self, CFileIO *f, byte bAnim);
+void CScene_Write(CScene *self, CFileIO *f, byte bAnim);
 /* all nodes (those with the class bits 0xe0 last), or the render nodes of the model of ctx */
-void __thiscall CScene_Render(CScene *self, NodeAnimCtx *ctx);
-void __thiscall CScene_Update(CScene *self, NodeAnimCtx *ctx);
-void __fastcall CScene_UpdateNodes(CScene *self);
+void CScene_Render(CScene *self, NodeAnimCtx *ctx);
+void CScene_Update(CScene *self, NodeAnimCtx *ctx);
+void CScene_UpdateNodes(CScene *self);
 /* node, unlinked, at the end of the list */
-void __thiscall CScene_AddNode(CScene *self, CNode3D *node);
-void __thiscall CScene_RemoveNode(CScene *self, CNode3D *node);
+void CScene_AddNode(CScene *self, CNode3D *node);
+void CScene_RemoveNode(CScene *self, CNode3D *node);
 /* the materials without attrib 4 released, the others moved to the front */
-void __fastcall CScene_CompactMats(CScene *self);
-void __fastcall CScene_DeleteNodes(CScene *self);
-CNode3D *__thiscall CScene_NodeObject(CScene *self, int index);
+void CScene_CompactMats(CScene *self);
+void CScene_DeleteNodes(CScene *self);
+CNode3D *CScene_NodeObject(CScene *self, int index);
 /* the next node after from (the first without) of the class, any with class 0 */
-CNode3D *__thiscall CScene_FindClass(CScene *self, CNode3D *from, uint32_t class);
-CNode3D *__thiscall CScene_FindNode(CScene *self, const char *name);
+CNode3D *CScene_FindClass(CScene *self, CNode3D *from, uint32_t class);
+CNode3D *CScene_FindNode(CScene *self, const char *name);
 /* box from the boxes of the nodes, merged into out (copied if first); an empty scene gets a zero box with first */
-void __thiscall CScene_UpdateBox(CScene *self, box_t *out, byte first);
+void CScene_UpdateBox(CScene *self, box_t *out, byte first);
 /* the skin weights of the vertex buffer meshes (calcular_pesos) */
-void __fastcall CScene_CalcWeights(CScene *self);
-int __thiscall CScene_CountClass(CScene *self, uint32_t class);
-int __fastcall CScene_NumNodes(CScene *self);
+void CScene_CalcWeights(CScene *self);
+int CScene_CountClass(CScene *self, uint32_t class);
+int CScene_NumNodes(CScene *self);
 /* convertir_a_D3D; the static lighting first when the ini says so */
-void __thiscall CScene_ConvertD3D(CScene *self, uint32_t flags);
+void CScene_ConvertD3D(CScene *self, uint32_t flags);
 /* convertir_a_suelo: a floor node made of the meshes, the joined nodes deleted */
-void __fastcall CScene_ToGround(CScene *self);
+void CScene_ToGround(CScene *self);
 /* the nodes of the class (only NODE_DELETE ones with flagged) that nobody else holds deleted, repeated */
-void __thiscall CScene_DeleteEmpty(CScene *self, uint32_t class, byte bRefs, byte flagged);
-void __thiscall CScene_SetScale(CScene *self, const vec3_t *scale);
+void CScene_DeleteEmpty(CScene *self, uint32_t class, byte bRefs, byte flagged);
+void CScene_SetScale(CScene *self, const vec3_t *scale);
 /* the meshes under each NODE_JOIN1 (sel) or NODE_JOIN2 node (with a name containing name) joined into it */
-void __thiscall CScene_Join(CScene *self, byte sel, const char *name);
+void CScene_Join(CScene *self, byte sel, const char *name);
 /* the alpha of the materials of the vertex buffer meshes, of all nodes except the one named name */
-void __thiscall CScene_SetMarks(CScene *self, int v);
+void CScene_SetMarks(CScene *self, int v);
 /* precalc_ilum of the meshes and the floors; scene lights unless noLights, visible skips NODE_HIDDEN */
-void __thiscall CScene_PrecalcIllum(CScene *self, byte noLights, byte visible);
+void CScene_PrecalcIllum(CScene *self, byte noLights, byte visible);
 
 /* other modules (src/imports.inc) */
 /* rva 0x239880, the box of box through m */
@@ -80,8 +80,8 @@ box_t *Box_Transform(box_t *out, const box_t *box, const matrix_t *m);
 /* CAnimation_ctor, CAnimation_dtor: animation.h */
 /* CalcWeights.c, CalcIllum.c and rva 0x261630: per mesh, with the scene lights of esc */
 struct CMeshD3D;
-byte __thiscall CMeshD3D_CalcWeights(struct CMeshD3D *mesh, CNode3D *node);
-void __thiscall CMeshD3D_CalcIllum(struct CMeshD3D *mesh, CNode3D *node, CScene *scn);
-void __thiscall CGround_CalcIllum(void *ground, CNode3D *node, CScene *scn);
+byte CMeshD3D_CalcWeights(struct CMeshD3D *mesh, CNode3D *node);
+void CMeshD3D_CalcIllum(struct CMeshD3D *mesh, CNode3D *node, CScene *scn);
+void CGround_CalcIllum(void *ground, CNode3D *node, CScene *scn);
 
 #endif

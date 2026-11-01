@@ -21,7 +21,7 @@ static inline void AA_Unlink(cAutoAim *self) {
 	Nto1Node_Unlink(&self->target);
 }
 
-cAutoAim *__fastcall cAutoAim_ctor(cAutoAim *self) {
+cAutoAim *cAutoAim_ctor(cAutoAim *self) {
 	Nto1Node_Init(&self->target);
 	self->ax = 0.0f;
 	self->ay = 0.0f;
@@ -44,7 +44,7 @@ cAutoAim *__fastcall cAutoAim_ctor(cAutoAim *self) {
 	return self;
 }
 
-byte __thiscall cAutoAim_VarF(cAutoAim *self, const char *name, double *d, int set) {
+byte cAutoAim_VarF(cAutoAim *self, const char *name, double *d, int set) {
 	float v;
 
 	if (!(byte)set && !strcmp(name, "X")) {
@@ -97,7 +97,7 @@ byte __thiscall cAutoAim_VarF(cAutoAim *self, const char *name, double *d, int s
 	return 1;
 }
 
-void __thiscall cAutoAim_SetSlot(cAutoAim *self, float interval, const float *ang) {
+void cAutoAim_SetSlot(cAutoAim *self, float interval, const float *ang) {
 	self->prevAx = self->ax;
 	self->prevAy = self->ay;
 	self->interval = interval;
@@ -108,7 +108,7 @@ void __thiscall cAutoAim_SetSlot(cAutoAim *self, float interval, const float *an
 	}
 }
 
-vec3_t *__thiscall cAutoAim_GetAimPos(cAutoAim *self, vec3_t *out, cEntity *owner) {
+vec3_t *cAutoAim_GetAimPos(cAutoAim *self, vec3_t *out, cEntity *owner) {
 	vec3_t cp, ca, v, r1, r2, tp, q, e;
 	cEntity *t;
 
@@ -159,7 +159,7 @@ vec3_t *__thiscall cAutoAim_GetAimPos(cAutoAim *self, vec3_t *out, cEntity *owne
 	return out;
 }
 
-void __thiscall cAutoAim_Update(cAutoAim *self, cEntity *owner, float dt) {
+void cAutoAim_Update(cAutoAim *self, cEntity *owner, float dt) {
 	vec3_t cp, ca, pos, d, tmp;
 	float dot, found;
 
@@ -281,16 +281,16 @@ void __thiscall cAutoAim_Update(cAutoAim *self, cEntity *owner, float dt) {
 	self->prevAy = self->ay;
 }
 
-void __thiscall cAutoAim_SetAngle(cAutoAim *self, float ang) {
+void cAutoAim_SetAngle(cAutoAim *self, float ang) {
 	self->ang = ang;
 	self->cosAng = (float)Game_Cos((double)ang);
 }
 
-void __thiscall cAutoAim_SetRange(cAutoAim *self, float range) {
+void cAutoAim_SetRange(cAutoAim *self, float range) {
 	self->distLimit = range;
 }
 
-byte __thiscall cAutoAim_VarS(cAutoAim *self, const char *name, char **s, int set) {
+byte cAutoAim_VarS(cAutoAim *self, const char *name, char **s, int set) {
 	if (!(byte)set && !strcmp(name, "Target")) {
 		*s = (char *)Nto1Node_TargetName(&self->target);
 		return 1;

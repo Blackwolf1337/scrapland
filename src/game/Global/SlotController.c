@@ -23,7 +23,7 @@ static void cSlotController_Start(cSlotController *self, float interval) {
 	self->interval = self->minDiff;
 }
 
-cSlotController *__thiscall cSlotController_ctor(cSlotController *self, float interval) {
+cSlotController *cSlotController_ctor(cSlotController *self, float interval) {
 	self->vftable = cSlotController_vftable;
 	self->minDiff = interval;
 	self->interval = interval;
@@ -31,26 +31,26 @@ cSlotController *__thiscall cSlotController_ctor(cSlotController *self, float in
 	return self;
 }
 
-void __thiscall cSlotController_Next(cSlotController *self) {
+void cSlotController_Next(cSlotController *self) {
 	float t = self->interval;
 	self->interval = self->minDiff;
 	self->time += t;
 }
 
-void __thiscall cRndSlotController_Next(cRndSlotController *self) {
+void cRndSlotController_Next(cRndSlotController *self) {
 	self->base.time += self->base.interval;
 	float lo = self->base.minDiff, hi = self->maxDiff;
 	self->base.interval = (float)(RandRange(hi - lo) + (double)lo);
 }
 
 /* counts dt down; 1 when the slot came */
-int __thiscall cSlotController_Tick(cSlotController *self, float dt) {
+int cSlotController_Tick(cSlotController *self, float dt) {
 	self->time -= dt;
 	return self->time <= 0.0f;
 }
 
 /* a slot that is still more than 1 ms ahead starts now, its interval shortened by the time left */
-void __fastcall cSlotController_Restart(cSlotController *self) {
+void cSlotController_Restart(cSlotController *self) {
 	float t = self->time;
 	if (t > g_SlotEpsilon) {
 		self->time = 0.0f;
@@ -59,7 +59,7 @@ void __fastcall cSlotController_Restart(cSlotController *self) {
 }
 
 /* when the slot came: its interval into *out and on to the next; 1 then */
-byte __thiscall cSlotController_Fire(cSlotController *self, float *out) {
+byte cSlotController_Fire(cSlotController *self, float *out) {
 	if (self->time <= 0.0f) {
 		*out = self->interval;
 		self->vftable->Next(self);
@@ -69,7 +69,7 @@ byte __thiscall cSlotController_Fire(cSlotController *self, float *out) {
 }
 
 /* the same, the time left set to 0 first */
-byte __thiscall cSlotController_FireReset(cSlotController *self, float *out) {
+byte cSlotController_FireReset(cSlotController *self, float *out) {
 	if (self->time <= 0.0f) {
 		*out = self->interval;
 		self->time = 0.0f;

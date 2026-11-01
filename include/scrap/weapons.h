@@ -34,19 +34,19 @@ typedef cTargetLock cWeaponManager;
 
 
 /* the shot effect of the weapon slot */
-void __thiscall cVehicleEffects_Shoot(void *self, int weap, int slot);
+void cVehicleEffects_Shoot(void *self, int weap, int slot);
 /* World/FX/FXWeapons.cpp: the ATPC shot of the vehicle from origin to hit */
-void __thiscall cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, const char *target, vec3_t hit,
+void cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, const char *target, vec3_t hit,
 	vec3_t origin);
 /* a random float between lo and hi */
 float Rand_FloatRange(float lo, float hi);
 
 /* the AI of a vehicle takes the new weapon list */
-void __thiscall cAIVehicle_WeapListChanged(void *ai);
+void cAIVehicle_WeapListChanged(void *ai);
 
 /* Sound/SndInterface.cpp */
-void __thiscall cSndItem_UpdateAt(cSndItem *self, cEntity *e);
-void __fastcall cSndItem_Restart(cSndItem *self);
+void cSndItem_UpdateAt(cSndItem *self, cEntity *e);
+void cSndItem_Restart(cSndItem *self);
 
 /* the crosshair item of the HUD the weapons animate (a cCannonScorer, found by its name) */
 
@@ -99,36 +99,36 @@ static inline uint32_t Weap_CannonColor(void) {
 }
 
 /* WeaponManager.cpp */
-int __thiscall cWeaponManager_HasMinAmmo(cWeaponManager *self, uint32_t w);
-byte __thiscall cWeaponManager_VarF(cWeaponManager *self, const char *name, double *v, byte set);
+int cWeaponManager_HasMinAmmo(cWeaponManager *self, uint32_t w);
+byte cWeaponManager_VarF(cWeaponManager *self, const char *name, double *v, byte set);
 int cWeaponManager_FixWeapon(int w);
-int __thiscall cWeaponManager_NumAmmoSlots(cWeaponManager *self, int ammo);
-int __thiscall cWeaponManager_NumSlots(cWeaponManager *self, int w, byte warn);
-float __thiscall cWeaponManager_GetWeapAmmo(cWeaponManager *self, uint32_t w);
-uint32_t __thiscall cWeaponManager_GetSlots(cWeaponManager *self, int w);
-char *__thiscall cWeaponManager_GetWeapList(cWeaponManager *self);
-int __thiscall cWeaponManager_GetUpgrade(cWeaponManager *self, int w);
-float __thiscall cWeaponManager_GetUAmmo(cWeaponManager *self, int w);
-void __thiscall cWeaponManager_Init(cWeaponManager *self, cEntity *owner);
-byte __thiscall cWeaponManager_VarI(cWeaponManager *self, const char *name, int *v, byte set);
-int __thiscall cWeaponManager_NextWeap(cWeaponManager *self, uint32_t w);
-int __thiscall cWeaponManager_PrevWeap(cWeaponManager *self, uint32_t w);
-float __thiscall cWeaponManager_SetAmmo(cWeaponManager *self, int ammo, float v);
-void __thiscall cWeaponManager_LockEntity(cWeaponManager *self, const char *name);
-void __thiscall cWeaponManager_LockPoint(cWeaponManager *self, const vec3_t *p);
-void __thiscall cWeaponManager_SetTeslaFiring(cWeaponManager *self, byte v);
-uint32_t __thiscall cWeaponManager_SetSlots(cWeaponManager *self, int w, int mask);
-void __thiscall cWeaponManager_SetWeapList(cWeaponManager *self, const char *list);
-byte __thiscall cWeaponManager_SetSlot(cWeaponManager *self, int w, int slot, byte on);
-byte __thiscall cWeaponManager_SetUpgrade(cWeaponManager *self, int w, int upgrade);
-byte __thiscall cWeaponManager_SetUAmmo(cWeaponManager *self, int w, float v);
-void __thiscall cWeaponManager_SetWeapSnd(cWeaponManager *self, int snd);
-void __thiscall cWeaponManager_Update(cWeaponManager *self, float dt);
-void __thiscall cWeaponManager_NextWeapSnd(cWeaponManager *self, int unused);
-byte __thiscall cWeaponManager_VarS(cWeaponManager *self, const char *name, char **v, byte set);
-byte __thiscall cWeaponManager_VarV(cWeaponManager *self, const char *name, double *x, double *y, double *z, byte set);
-void __thiscall cWeaponManager_PlayStartSnd(cWeaponManager *self);
-int __thiscall cWeaponManager_WeaponNeed(cWeaponManager *self);
+int cWeaponManager_NumAmmoSlots(cWeaponManager *self, int ammo);
+int cWeaponManager_NumSlots(cWeaponManager *self, int w, byte warn);
+float cWeaponManager_GetWeapAmmo(cWeaponManager *self, uint32_t w);
+uint32_t cWeaponManager_GetSlots(cWeaponManager *self, int w);
+char *cWeaponManager_GetWeapList(cWeaponManager *self);
+int cWeaponManager_GetUpgrade(cWeaponManager *self, int w);
+float cWeaponManager_GetUAmmo(cWeaponManager *self, int w);
+void cWeaponManager_Init(cWeaponManager *self, cEntity *owner);
+byte cWeaponManager_VarI(cWeaponManager *self, const char *name, int *v, byte set);
+int cWeaponManager_NextWeap(cWeaponManager *self, uint32_t w);
+int cWeaponManager_PrevWeap(cWeaponManager *self, uint32_t w);
+float cWeaponManager_SetAmmo(cWeaponManager *self, int ammo, float v);
+void cWeaponManager_LockEntity(cWeaponManager *self, const char *name);
+void cWeaponManager_LockPoint(cWeaponManager *self, const vec3_t *p);
+void cWeaponManager_SetTeslaFiring(cWeaponManager *self, byte v);
+uint32_t cWeaponManager_SetSlots(cWeaponManager *self, int w, int mask);
+void cWeaponManager_SetWeapList(cWeaponManager *self, const char *list);
+byte cWeaponManager_SetSlot(cWeaponManager *self, int w, int slot, byte on);
+byte cWeaponManager_SetUpgrade(cWeaponManager *self, int w, int upgrade);
+byte cWeaponManager_SetUAmmo(cWeaponManager *self, int w, float v);
+void cWeaponManager_SetWeapSnd(cWeaponManager *self, int snd);
+void cWeaponManager_Update(cWeaponManager *self, float dt);
+void cWeaponManager_NextWeapSnd(cWeaponManager *self, int unused);
+byte cWeaponManager_VarS(cWeaponManager *self, const char *name, char **v, byte set);
+byte cWeaponManager_VarV(cWeaponManager *self, const char *name, double *x, double *y, double *z, byte set);
+void cWeaponManager_PlayStartSnd(cWeaponManager *self);
+int cWeaponManager_WeaponNeed(cWeaponManager *self);
 
 /* Weaps/ATPC.cpp: the shot of the ATPC (a charge per mounted slot), its HUD item and the debris cloud */
 #define g_ATPCShooter (GAME_ARRAY(char, g_ATPCShooter))		/* 0x80 bytes, the vehicle of the last shot */
@@ -209,15 +209,15 @@ void Cloud_OnHit(cAbstractFile *params);
 #define g_EMILifeTime GAME_GLOBAL_IN(float, GVar_EMILifeTime, 16)
 #define g_EMIIDAmmo GAME_GLOBAL_IN(int, GVar_EMIIDAmmo, 16)
 /* WeaponManager.cpp before rva 0x11a0f0: the fire stamp delayed by t (to -t when it is beyond t) */
-void __thiscall cWeaponManager_DelayFire(cWeaponManager *self, float t);
+void cWeaponManager_DelayFire(cWeaponManager *self, float t);
 #define CWEAPONMANAGER_VFTABLE GAME_VFTABLE(cWeaponManager_vftable)
-cWeaponManager *__fastcall cWeaponManager_ctor(cWeaponManager *self);
-void __fastcall cWeaponManager_dtor(cWeaponManager *self);
-cWeaponManager *__thiscall cWeaponManager_Delete(cWeaponManager *self, byte flags);
+cWeaponManager *cWeaponManager_ctor(cWeaponManager *self);
+void cWeaponManager_dtor(cWeaponManager *self);
+cWeaponManager *cWeaponManager_Delete(cWeaponManager *self, byte flags);
 /* the item i of the world weapons table, int3 out of range */
-cWeapInfo *__thiscall WeapTable_At(void *table, uint32_t i);
-void __fastcall cWeaponManager_ClearAmmo(cWeaponManager *self);
-void __fastcall cWeaponManager_ClearWeaps(cWeaponManager *self);
+cWeapInfo *WeapTable_At(void *table, uint32_t i);
+void cWeaponManager_ClearAmmo(cWeaponManager *self);
+void cWeaponManager_ClearWeaps(cWeaponManager *self);
 
 void Devastator_Start(cEntity *v);
 void Devastator_Create(cAbstractFile *params);

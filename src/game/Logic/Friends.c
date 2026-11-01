@@ -8,7 +8,7 @@
 #include "scrap/input.h"
 #include "scrap/world.h"
 
-cFriends *__fastcall cFriends_ctor(cFriends *self) {
+cFriends *cFriends_ctor(cFriends *self) {
 	self->timer = 0.0f;
 	self->list = NULL;
 	return self;
@@ -28,7 +28,7 @@ static byte Friends_IsEnemyCar(cEntity *v, cEntity *t) {
 		WLife(v)->arrow.tgType);
 }
 
-void __thiscall cFriends_Attack(cFriends *self, cEntity *usr) {
+void cFriends_Attack(cFriends *self, cEntity *usr) {
 	Nto1Node *n = Logic_ListFirst(self->list);
 	cEntity *cur = cWorld_GetFirstEntity(g_pWorld);
 
@@ -101,7 +101,7 @@ byte __stdcall Friends_IsEnemyTarget(cEntity *v, cEntity *t) {
 	return t && Friends_IsEnemyCar(v, t);
 }
 
-void __fastcall cFriends_Think(cFriends *self) {
+void cFriends_Think(cFriends *self) {
 	int *num = self->list->numElems;
 
 	if (num && *num == 0) {
@@ -117,13 +117,13 @@ void __fastcall cFriends_Think(cFriends *self) {
 	cFriends_Attack(self, usr);
 }
 
-void __fastcall cFriends_Init(cFriends *self) {
+void cFriends_Init(cFriends *self) {
 	self->list = cWorld_NewEntityList(g_pWorld, "Friends");
 	cPy_Function_SetNative(&self->list->onDamage, (nativefunc_t)Logic_NativeNop);
 	cPy_Function_SetNative(&self->list->onDeath, (nativefunc_t)Logic_NativeNop);
 }
 
-void __thiscall cFriends_Update(cFriends *self, float dt) {
+void cFriends_Update(cFriends *self, float dt) {
 	float t = self->timer + dt;
 
 	self->timer = t;

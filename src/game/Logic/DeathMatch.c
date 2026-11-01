@@ -9,7 +9,7 @@
 /* defined further down or in another file without a header */
 void DeathMatch_OnDamage(cAbstractFile *params);
 
-cDeathMatch *__fastcall cDeathMatch_ctor(cDeathMatch *self) {
+cDeathMatch *cDeathMatch_ctor(cDeathMatch *self) {
 	self->list = NULL;
 	self->timer = 0.0f;
 	return self;
@@ -19,7 +19,7 @@ void cDeathMatch_dtor(void) {
 }
 
 /* a random ship of the list or the player (the count of the list plus one), not exclude */
-cEntity *__thiscall cDeathMatch_PickTarget(cDeathMatch *self, cEntity *exclude) {
+cEntity *cDeathMatch_PickTarget(cDeathMatch *self, cEntity *exclude) {
 	cEntity *usr = ChType_Usr0();
 	Nto1Node *n = Logic_ListFirst(self->list);
 	int num = Logic_Count(((EntityDNode *)n)->numElems);
@@ -41,7 +41,7 @@ cEntity *__thiscall cDeathMatch_PickTarget(cDeathMatch *self, cEntity *exclude) 
 	return e;
 }
 
-void __fastcall cDeathMatch_Think(cDeathMatch *self) {
+void cDeathMatch_Think(cDeathMatch *self) {
 	cEntity *usr = ChType_Usr0();
 
 	for (Nto1Node *n = Logic_ListFirst(self->list); n; n = Logic_ListNext(n)) {
@@ -63,7 +63,7 @@ void __fastcall cDeathMatch_Think(cDeathMatch *self) {
 	}
 }
 
-void __fastcall cDeathMatch_Init(cDeathMatch *self) {
+void cDeathMatch_Init(cDeathMatch *self) {
 	self->list = cWorld_NewEntityList(g_pWorld, "DeathMatch");
 	cPy_Function_SetNative(&self->list->onDamage, (nativefunc_t)DeathMatch_OnDamage);
 }
@@ -95,7 +95,7 @@ void DeathMatch_OnDamage(cAbstractFile *params) {
 	}
 }
 
-void __thiscall cDeathMatch_Update(cDeathMatch *self, float dt) {
+void cDeathMatch_Update(cDeathMatch *self, float dt) {
 	float t = self->timer + dt;
 
 	self->timer = t;

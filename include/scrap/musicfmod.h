@@ -28,8 +28,8 @@ SD_SIZE(cMusicVoice, 0x19c);
 #define g_MusicVoices (GAME_ARRAY_IN(cMusicVoice, cMusicVoice_MusicVoices, 0))
 
 int Fmod_Init(void);
-cMusicVoice *__fastcall cMusicVoice_ctor(cMusicVoice *self);
-void __fastcall cMusicVoice_dtor(cMusicVoice *self);
+cMusicVoice *cMusicVoice_ctor(cMusicVoice *self);
+void cMusicVoice_dtor(cMusicVoice *self);
 int Fmod_Close(void);
 int Fmod_IsInit(void);
 

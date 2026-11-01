@@ -16,17 +16,17 @@ void *Nurses_MakeLogic(cEntity *e);
 #define NURSES_MAKELOGIC 0x154440
 #define NURSE_VT(self) ((self)->base.vftable)
 
-void *__fastcall cNurses_ctor(cNurses *self) {
+void *cNurses_ctor(cNurses *self) {
 	self->timer = 0.0f;
 	return self;
 }
 
-void __fastcall cNurses_Init(cNurses *self) {
+void cNurses_Init(cNurses *self) {
 	self->list = cWorld_NewEntityList(g_pWorld, "Nurse");
 	self->list->func = (int (*)(void))(void *)Nurses_MakeLogic;
 }
 
-void __fastcall cNurses_Think(cNurses *self) {
+void cNurses_Think(cNurses *self) {
 	vec3_t t, t2;
 	Nto1Node *n = Logic_ListFirst(self->list);
 
@@ -59,7 +59,7 @@ void __fastcall cNurses_Think(cNurses *self) {
 	}
 }
 
-void __thiscall cNurses_Update(cNurses *self, float dt) {
+void cNurses_Update(cNurses *self, float dt) {
 	float t = self->timer + dt;
 
 	self->timer = t;
@@ -76,7 +76,7 @@ void *Nurses_MakeLogic(cEntity *e) {
 	return m ? cNurseLocalLogic_ctor(m, e) : NULL;
 }
 
-void *__thiscall cNurseLocalLogic_ctor(void *mem, cEntity *parent) {
+void *cNurseLocalLogic_ctor(void *mem, cEntity *parent) {
 	cNurseLocalLogic *self = mem;
 
 	cBaseLocalLogic_ctor(&self->base, parent);
@@ -86,7 +86,7 @@ void *__thiscall cNurseLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-cNurseLocalLogic *__thiscall cNurseLocalLogic_Delete(cNurseLocalLogic *self, byte flags) {
+cNurseLocalLogic *cNurseLocalLogic_Delete(cNurseLocalLogic *self, byte flags) {
 	NURSE_VT(self) = CNURSELOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
 	if (flags & 1) {
@@ -96,7 +96,7 @@ cNurseLocalLogic *__thiscall cNurseLocalLogic_Delete(cNurseLocalLogic *self, byt
 }
 
 /* back to the relax, the alert with the alarm */
-byte __fastcall cNurseLocalLogic_Relax(cNurseLocalLogic *self) {
+byte cNurseLocalLogic_Relax(cNurseLocalLogic *self) {
 	if (g_pWorld->alarm.on) {
 		return NURSE_VT(self)->SetState(self, 1, NULL);
 	}
@@ -104,7 +104,7 @@ byte __fastcall cNurseLocalLogic_Relax(cNurseLocalLogic *self) {
 }
 
 /* vf17 */
-void __thiscall cNurseLocalLogic_Update(cNurseLocalLogic *self, float dt) {
+void cNurseLocalLogic_Update(cNurseLocalLogic *self, float dt) {
 	cBaseLocalLogic *b = &self->base;
 	cEntity *p = b->parent;
 
@@ -158,7 +158,7 @@ void __thiscall cNurseLocalLogic_Update(cNurseLocalLogic *self, float dt) {
 }
 
 /* vf12: a robbery seen (NurseBankerDetect plus the amount): the escape */
-void __thiscall cNurseLocalLogic_OnRobbery(cNurseLocalLogic *self, cEntity *e, float amount) {
+void cNurseLocalLogic_OnRobbery(cNurseLocalLogic *self, cEntity *e, float amount) {
 	if (amount > 0.0f && self->base.state != 3 && Logic_Chance(&self->base, e, g_NurseBankerDetect + amount)) {
 		NURSE_VT(self)->SetState(self, 2, e);
 	}
@@ -169,21 +169,21 @@ static inline byte Nurse_Rand101(void) {
 }
 
 /* vf10: the escape from the attacker */
-void __thiscall cNurseLocalLogic_OnHit(cNurseLocalLogic *self, cEntity *attacker) {
+void cNurseLocalLogic_OnHit(cNurseLocalLogic *self, cEntity *attacker) {
 	if (!self->base.busy && Nurse_Rand101() && self->base.state != 3) {
 		NURSE_VT(self)->SetState(self, 2, attacker);
 	}
 }
 
 /* vf11: the escape from the player */
-void __thiscall cNurseLocalLogic_OnSeen(cNurseLocalLogic *self, cEntity *e) {
+void cNurseLocalLogic_OnSeen(cNurseLocalLogic *self, cEntity *e) {
 	if (!self->base.busy && Nurse_Rand101() && e == ChType_Usr0() && self->base.state != 3) {
 		NURSE_VT(self)->SetState(self, 2, e);
 	}
 }
 
 /* vf15: 1 if it refuses the police (NursePoliceRefuse in percent), else the escape from it */
-byte __thiscall cNurseLocalLogic_GivesMoney(cNurseLocalLogic *self, cEntity *police) {
+byte cNurseLocalLogic_GivesMoney(cNurseLocalLogic *self, cEntity *police) {
 	float refuse = g_NursePoliceRefuse;
 
 	if (!self->base.busy && refuse > (float)(Weap_Rand01() * 100.0 + 0.0)) {
@@ -194,7 +194,7 @@ byte __thiscall cNurseLocalLogic_GivesMoney(cNurseLocalLogic *self, cEntity *pol
 }
 
 /* vf24 */
-byte __thiscall cNurseLocalLogic_RestartState(cNurseLocalLogic *self) {
+byte cNurseLocalLogic_RestartState(cNurseLocalLogic *self) {
 	return NURSE_VT(self)->SetState(self, 0, NULL);
 }
 
@@ -202,7 +202,7 @@ byte __thiscall cNurseLocalLogic_RestartState(cNurseLocalLogic *self) {
 
 /* vf19: the AI of the state: the walk around the origin (relaxed or in alert), the escape from target (2) or the
  * walk to the dazed character (3); always 1 */
-byte __thiscall cNurseLocalLogic_SetState(cNurseLocalLogic *self, int state, cEntity *target) {
+byte cNurseLocalLogic_SetState(cNurseLocalLogic *self, int state, cEntity *target) {
 	cBaseLocalLogic *b = &self->base;
 	byte ok = (byte)cBaseLocalLogic_SetState(b, state, target);
 	cAIChar *ai = b->parent->vftable->GetAI(b->parent);

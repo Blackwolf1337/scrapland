@@ -85,7 +85,7 @@ typedef void(__stdcall *initcommoncontrols_t)(void);
 #define WM_KEYUP 0x101
 #define WM_COMMAND 0x111
 
-CEngineApp *__fastcall CEngineApp_ctor(CEngineApp *self) {
+CEngineApp *CEngineApp_ctor(CEngineApp *self) {
 	CD3DApp_ctor(&self->base);
 	self->base.vftable = CMOTORAPP_VFTABLE;
 	self->table.p = NULL;
@@ -163,7 +163,7 @@ void Engine3D_Shutdown(void) {
 }
 
 /* OneTimeSceneInit: the init callback of the game, the input, the fonts and trails, the global scene */
-int __thiscall CEngineApp_OneTimeSceneInit(CEngineApp *self) {
+int CEngineApp_OneTimeSceneInit(CEngineApp *self) {
 	void *mem;
 
 	g_E3DCmdProc = (void *)E3D_Command;
@@ -190,7 +190,7 @@ int __thiscall CEngineApp_OneTimeSceneInit(CEngineApp *self) {
 }
 
 /* FrameMove: the clock of the engine (real and game time, fps once a second) */
-int __thiscall CEngineApp_FrameMove(CEngineApp *self) {
+int CEngineApp_FrameMove(CEngineApp *self) {
 	float t = self->base.time, d;
 
 	g_FrameDelta = t - g_LastTime;
@@ -269,7 +269,7 @@ byte Engine_FrameDue(CD3DApplication *self) {
 
 /* a pending reset of the device objects (g_ResetDev): with g_ResetDevOnly 0 also the world through the release
  * and init callbacks of the game; the HRESULT */
-int __fastcall CEngineApp_ResetDevice(CEngineApp *self) {
+int CEngineApp_ResetDevice(CEngineApp *self) {
 	if (!g_ResetDev) {
 		return 0;
 	}
@@ -323,7 +323,7 @@ int __fastcall CEngineApp_ResetDevice(CEngineApp *self) {
 
 /* Render (vtable 0x18): the scene into the target "Scene", the 2D and the frame callback of the game on top, the
  * screenshot of AutoScreenShot, the frame limiter; 1 when the game callback asks to quit or the reset failed */
-int __thiscall CEngineApp_Render(CEngineApp *self) {
+int CEngineApp_Render(CEngineApp *self) {
 	if (!Engine_FrameDue(&self->base)) {
 		return 0;
 	}
@@ -414,8 +414,8 @@ int __thiscall CEngineApp_Render(CEngineApp *self) {
 }
 
 /* DeleteDeviceObjects: the device objects of the input, the textures, materials, shadows, trails and the world */
-int __thiscall CEngineApp_DeleteDeviceObjects(CEngineApp *self) {
-	((void(__thiscall *)(void *))(*(void ***)g_Input)[2])(g_Input);
+int CEngineApp_DeleteDeviceObjects(CEngineApp *self) {
+	((void(*)(void *))(*(void ***)g_Input)[2])(g_Input);
 	Table_Free(&self->table);
 	Texture_ReleaseAllD3D();
 	CMatList_Release(g_MatList);
@@ -429,7 +429,7 @@ int __thiscall CEngineApp_DeleteDeviceObjects(CEngineApp *self) {
 }
 
 /* FinalCleanup: the global scene, the release callback of the game, everything of the engine */
-int __thiscall CEngineApp_FinalCleanup(CEngineApp *self) {
+int CEngineApp_FinalCleanup(CEngineApp *self) {
 	CGraphic2DList *ov;
 
 	Engine_ReleaseScene(self);
@@ -448,7 +448,7 @@ int __thiscall CEngineApp_FinalCleanup(CEngineApp *self) {
 	if (self->obj2a5f4) {
 		void **obj = self->obj2a5f4;
 
-		((void *(__thiscall *)(void *, int))((void **)obj[0])[0])(obj, 1);
+		((void *(*)(void *, int))((void **)obj[0])[0])(obj, 1);
 		self->obj2a5f4 = NULL;
 	}
 	UtilScene_FreeAll();
@@ -460,27 +460,27 @@ int __thiscall CEngineApp_FinalCleanup(CEngineApp *self) {
 	Tex_ClearPaths();
 	Tex_ClearExtensions();
 	if (g_Input) {
-		((void *(__thiscall *)(void *, int))(*(void ***)g_Input)[0])(g_Input, 1);
+		((void *(*)(void *, int))(*(void ***)g_Input)[0])(g_Input, 1);
 		g_Input = NULL;
 	}
 	return 0;
 }
 
 /* ConfirmDevice: no device with the pure behaviour 0x10 */
-int __thiscall CEngineApp_ConfirmDevice(CEngineApp *self, D3DCaps8 *caps, uint32_t behavior, int format) {
+int CEngineApp_ConfirmDevice(CEngineApp *self, D3DCaps8 *caps, uint32_t behavior, int format) {
 	(void)self;
 	(void)caps;
 	(void)format;
 	return (byte)(behavior & 0x10) ? (int)0x80004005 : 0;
 }
 
-int __thiscall CEngineApp_RestoreDeviceObjects(CEngineApp *self) {
+int CEngineApp_RestoreDeviceObjects(CEngineApp *self) {
 	(void)self;
 	g_EngineFrameCount++;
 	return 0;
 }
 
-int __thiscall CD3DApplication_Nothing(CD3DApplication *self) {
+int CD3DApplication_Nothing(CD3DApplication *self) {
 	(void)self;
 	return 0;
 }
@@ -572,7 +572,7 @@ void Engine_DrawStats(void) {
 }
 
 /* EscenaGlobal: the scene of the world (or its first one, or bmp/vacia.m3d), counted while the level runs */
-void __fastcall Engine_ReleaseScene(CEngineApp *self) {
+void Engine_ReleaseScene(CEngineApp *self) {
 	CScene *e;
 
 	CHECK(self->scene);
@@ -580,13 +580,13 @@ void __fastcall Engine_ReleaseScene(CEngineApp *self) {
 		self->scene->Refs--;
 		e = self->scene;
 		if (!e->Refs && e) {
-			((void *(__thiscall *)(CScene *, int))e->vftable[0])(e, 1);
+			((void *(*)(CScene *, int))e->vftable[0])(e, 1);
 		}
 		self->scene = NULL;
 	}
 }
 
-void __fastcall Engine_GetScene(CEngineApp *self) {
+void Engine_GetScene(CEngineApp *self) {
 	CWorld *world;
 
 	CHECK(!self->scene);
@@ -698,7 +698,7 @@ void Engine_LoadVarsIni(const char *name, const char *dir) {
 #define TVM_INSERTITEM 0x1100
 
 /* the modal dialog of the lights of the global scene, the application paused meanwhile */
-void __thiscall CEngineApp_LightsDialog(CEngineApp *self, void *hwnd, void *inst) {
+void CEngineApp_LightsDialog(CEngineApp *self, void *hwnd, void *inst) {
 	self->base.vftable->Pause(&self->base, 1);
 	exe_DialogBoxParamA(inst, (const char *)ENGINE_LIGHTSDIALOG, hwnd, (void *)Engine_SceneDlgProc,
 		(intptr_t)self->scene);
@@ -1104,7 +1104,7 @@ static uint32_t Menu_Check(int on) {
 }
 
 /* the menu items greyed and checked by the state */
-void __fastcall CEngineApp_UpdateMenu(CEngineApp *self) {
+void CEngineApp_UpdateMenu(CEngineApp *self) {
 	void *menu = self->menu;
 
 	if (!menu) {
@@ -1142,7 +1142,7 @@ void __fastcall CEngineApp_UpdateMenu(CEngineApp *self) {
 #define ENGINE_BUILD 0x15f8
 
 /* InitDeviceObjects: the device objects of the engine, the cameras menu, the title, the input on the window */
-int __thiscall CEngineApp_InitDeviceObjects(CEngineApp *self) {
+int CEngineApp_InitDeviceObjects(CEngineApp *self) {
 	typedef int(__stdcall * setrenderstate_t)(void *, uint32_t, uint32_t);
 	void *dev = self->base.device;
 	char title[0x100];
@@ -1201,7 +1201,7 @@ int __thiscall CEngineApp_InitDeviceObjects(CEngineApp *self) {
 	}
 	exe_SetWindowTextA(self->base.hWnd, title);
 	{
-		typedef int(__thiscall * create_t)(void *, void *, void *, int);
+		typedef int(* create_t)(void *, void *, void *, int);
 		void **vt = *(void ***)g_Input;
 		int excl = g_MouseExcl != 0;
 
@@ -1211,14 +1211,14 @@ int __thiscall CEngineApp_InitDeviceObjects(CEngineApp *self) {
 	if (hr < 0) {
 		return hr;
 	}
-	((void(__thiscall *)(void *, int))(*(void ***)g_Input)[5])(g_Input, 1);
+	((void(*)(void *, int))(*(void ***)g_Input)[5])(g_Input, 1);
 	return 0;
 }
 
 /* MsgProc: the input first, the keys, the menu commands of the window, then the one of CD3DApplication */
-intptr_t __thiscall CEngineApp_MsgProc(CEngineApp *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam) {
+intptr_t CEngineApp_MsgProc(CEngineApp *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam) {
 	if (g_Input) {
-		((void(__thiscall *)(void *, void *, uint32_t, uintptr_t, intptr_t))(*(void ***)g_Input)[7])(g_Input, hwnd,
+		((void(*)(void *, void *, uint32_t, uintptr_t, intptr_t))(*(void ***)g_Input)[7])(g_Input, hwnd,
 			msg, wParam, lParam);
 	}
 	if (msg == WM_KEYDOWN) {
@@ -1310,7 +1310,7 @@ intptr_t __thiscall CEngineApp_MsgProc(CEngineApp *self, void *hwnd, uint32_t ms
 
 /* ---- CEntradaNula: every method of the input does nothing ---- */
 
-CNullInput *__thiscall CNullInput_Delete(CNullInput *self, byte flags) {
+CNullInput *CNullInput_Delete(CNullInput *self, byte flags) {
 	self->vftable = CNULLINPUT_VFTABLE;
 	IInput_dtor(self);
 	if (flags & 1) {
@@ -1319,7 +1319,7 @@ CNullInput *__thiscall CNullInput_Delete(CNullInput *self, byte flags) {
 	return self;
 }
 
-int __thiscall CNullInput_Nothing3(CNullInput *self, int a, int b, int c) {
+int CNullInput_Nothing3(CNullInput *self, int a, int b, int c) {
 	(void)self;
 	(void)a;
 	(void)b;
@@ -1327,19 +1327,19 @@ int __thiscall CNullInput_Nothing3(CNullInput *self, int a, int b, int c) {
 	return 0;
 }
 
-int __thiscall CNullInput_Nothing1(CNullInput *self, int a) {
+int CNullInput_Nothing1(CNullInput *self, int a) {
 	(void)self;
 	(void)a;
 	return 0;
 }
 
-int __thiscall CNullInput_Nothing(CNullInput *self) {
+int CNullInput_Nothing(CNullInput *self) {
 	(void)self;
 	return 0;
 }
 
 /* the original leaves eax as it was */
-void __thiscall CNullInput_Nothing4(CNullInput *self, int a, int b, int c, int d) {
+void CNullInput_Nothing4(CNullInput *self, int a, int b, int c, int d) {
 	(void)self;
 	(void)a;
 	(void)b;

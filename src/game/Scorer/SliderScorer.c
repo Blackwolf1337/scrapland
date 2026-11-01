@@ -6,7 +6,7 @@
 
 static const char *const s_SliderColors[4] = {"Red", "Green", "Blue", "Alpha"};
 
-cSliderScorer *__fastcall cSliderScorer_ctor(cSliderScorer *self) {
+cSliderScorer *cSliderScorer_ctor(cSliderScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CSLIDERSCORER_VFTABLE;
 	self->highRes = 0;
@@ -30,7 +30,7 @@ cSliderScorer *__fastcall cSliderScorer_ctor(cSliderScorer *self) {
 	return self;
 }
 
-void __fastcall cSliderScorer_dtor(cSliderScorer *self) {
+void cSliderScorer_dtor(cSliderScorer *self) {
 	self->base.vftable = CSLIDERSCORER_VFTABLE;
 	if (self->img) {
 		ScorerImg_Free(self->img);
@@ -40,7 +40,7 @@ void __fastcall cSliderScorer_dtor(cSliderScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cSliderScorer *__thiscall cSliderScorer_Delete(cSliderScorer *self, byte flags) {
+cSliderScorer *cSliderScorer_Delete(cSliderScorer *self, byte flags) {
 	cSliderScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cSliderScorer));
@@ -48,11 +48,11 @@ cSliderScorer *__thiscall cSliderScorer_Delete(cSliderScorer *self, byte flags) 
 	return self;
 }
 
-void __thiscall cSliderScorer_SetFile(cSliderScorer *self, uint32_t flags, const char *file) {
+void cSliderScorer_SetFile(cSliderScorer *self, uint32_t flags, const char *file) {
 	self->img = ScorerImg_Replace(self->img, file, self->blend, flags);
 }
 
-int __thiscall cSliderScorer_Var(cSliderScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cSliderScorer_Var(cSliderScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	int r;
 
 	if (i) {
@@ -133,7 +133,7 @@ int __thiscall cSliderScorer_Var(cSliderScorer *self, const char *name, byte set
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void __thiscall cSliderScorer_Draw(cSliderScorer *self, int player) {
+void cSliderScorer_Draw(cSliderScorer *self, int player) {
 	float uv0[2], uv1[2], suv0[2], suv1[2];
 	float frac, bw, bh, sw, sh, m;
 	cScorer *sc;

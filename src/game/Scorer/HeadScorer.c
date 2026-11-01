@@ -13,7 +13,7 @@
 #define g_HeadRandOfs GAME_GLOBAL(double, g_HeadRandOfs)	/* 0 */
 #define HEAD_FOV 0.87266463f				/* 50 degrees */
 
-cHeadScorer *__fastcall cHeadScorer_ctor(cHeadScorer *self) {
+cHeadScorer *cHeadScorer_ctor(cHeadScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CHEADSCORER_VFTABLE;
 	CGameCamera *cam = operator_new(sizeof(CGameCamera));
@@ -26,7 +26,7 @@ cHeadScorer *__fastcall cHeadScorer_ctor(cHeadScorer *self) {
 	return self;
 }
 
-void __fastcall cHeadScorer_dtor(cHeadScorer *self) {
+void cHeadScorer_dtor(cHeadScorer *self) {
 	CGameCamera *cam = self->cam;
 	self->base.vftable = CHEADSCORER_VFTABLE;
 	if (cam) {
@@ -37,7 +37,7 @@ void __fastcall cHeadScorer_dtor(cHeadScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cHeadScorer *__thiscall cHeadScorer_Delete(cHeadScorer *self, byte flags) {
+cHeadScorer *cHeadScorer_Delete(cHeadScorer *self, byte flags) {
 	cHeadScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cHeadScorer));
@@ -45,7 +45,7 @@ cHeadScorer *__thiscall cHeadScorer_Delete(cHeadScorer *self, byte flags) {
 	return self;
 }
 
-int __thiscall cHeadScorer_Var(cHeadScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cHeadScorer_Var(cHeadScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	if (set && s && !crt_stricmp(name, "HeadModel")) {
 		HeadScorer_SetModel(self, *s);
 		return 1;
@@ -69,7 +69,7 @@ int __thiscall cHeadScorer_Var(cHeadScorer *self, const char *name, byte set, ch
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void __thiscall cHeadScorer_Draw(cHeadScorer *self, int player) {
+void cHeadScorer_Draw(cHeadScorer *self, int player) {
 	vec3_t tmp;
 
 	if (!self->model) {
@@ -107,7 +107,7 @@ void __thiscall cHeadScorer_Draw(cHeadScorer *self, int player) {
 		CGameModel_RenderNow(&self->model->model, 2);
 		void *extra = self->model->extra;
 		if (extra) {
-			(*(void(__thiscall **)(void *))(*(byte **)extra + 0x10))(extra);
+			(*(void(**)(void *))(*(byte **)extra + 0x10))(extra);
 		}
 		CGameModel_Disable(&self->model->model);
 		Camera_SetCurrent(cur);
@@ -115,7 +115,7 @@ void __thiscall cHeadScorer_Draw(cHeadScorer *self, int player) {
 	Eng_ResetViewRect();
 }
 
-byte __thiscall cHeadScorer_SetModel(cHeadScorer *self, const char *name) {
+byte cHeadScorer_SetModel(cHeadScorer *self, const char *name) {
 	cScorerModel *m = cScorer_FindModel(Scorer_Get(self->base.player), name);
 
 	self->model = m;
@@ -131,7 +131,7 @@ byte __thiscall cHeadScorer_SetModel(cHeadScorer *self, const char *name) {
 	return self->model != NULL;
 }
 
-void __thiscall cHeadScorer_SetAnim(cHeadScorer *self, int anim) {
+void cHeadScorer_SetAnim(cHeadScorer *self, int anim) {
 	cScorerModel *m = self->model;
 
 	if (!m) {

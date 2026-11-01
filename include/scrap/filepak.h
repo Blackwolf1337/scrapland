@@ -57,12 +57,12 @@ typedef struct cNameItem {
 SD_SIZE(cNameItem, 0xc);
 
 /* the cNameItem instance of HashTable.h (FilePak.c, also the assigned zones of Logic/Domination.c) */
-cNameItem *__thiscall NameTable_Find(HashTable *self, const char *key, uint32_t slot);
-byte __thiscall NameTable_Add(HashTable *self, const char *key, const int *v, byte warn);
-cNameItem *__thiscall NameTable_Insert(HashTable *self, const char *key, uint32_t slot, const int *v);
-byte __thiscall NameTable_Set(HashTable *self, const char *key, const int *v);
-byte __thiscall NameTable_Delete(HashTable *self, const char *key);
-void __fastcall NameTable_Clear(HashTable *self);
+cNameItem *NameTable_Find(HashTable *self, const char *key, uint32_t slot);
+byte NameTable_Add(HashTable *self, const char *key, const int *v, byte warn);
+cNameItem *NameTable_Insert(HashTable *self, const char *key, uint32_t slot, const int *v);
+byte NameTable_Set(HashTable *self, const char *key, const int *v);
+byte NameTable_Delete(HashTable *self, const char *key);
+void NameTable_Clear(HashTable *self);
 
 /* an entry of the build list: name, then offset and size in the new pack */
 typedef struct cPackEntry {
@@ -107,18 +107,18 @@ typedef DLIST(cStringNode) cStringList;
 #define g_PackNameStr GAME_GLOBAL_IN(char *, GVar_PathInPackFile, 16)	/* chars of g_PackName, the prefix of the open pack */
 #define g_PackBuildAsk GAME_GLOBAL_IN(int, GVar_BuildPackPrompt, 16)	/* ask before quitting after Pack_Build */
 
-cFile2 *__fastcall cFile2_ctor(cFile2 *self);
-void __fastcall cFile2_dtor(cFile2 *self);
-void __fastcall PackEntries_Clear(cPackEntryList *list);
-void __fastcall PackIndexTable_Clear(HashTable *self);
-cFilePack *__thiscall cFilePack_ctor(cFilePack *self);
-void __thiscall cFilePack_dtor(cFilePack *self);
-int __thiscall cFilePack_Open(cFilePack *self, const char *name, uint32_t mode);
-int __thiscall cFilePack_Exists(cFilePack *self, const char *name);
-int __thiscall cFilePack_Close(cFilePack *self);
-int __thiscall cFilePack_Read(cFilePack *self, void *dst, int size);
-int __thiscall cFilePack_Write(cFilePack *self, const void *src, int size);
-int __thiscall cFilePack_Size(cFilePack *self);
+cFile2 *cFile2_ctor(cFile2 *self);
+void cFile2_dtor(cFile2 *self);
+void PackEntries_Clear(cPackEntryList *list);
+void PackIndexTable_Clear(HashTable *self);
+cFilePack *cFilePack_ctor(cFilePack *self);
+void cFilePack_dtor(cFilePack *self);
+int cFilePack_Open(cFilePack *self, const char *name, uint32_t mode);
+int cFilePack_Exists(cFilePack *self, const char *name);
+int cFilePack_Close(cFilePack *self);
+int cFilePack_Read(cFilePack *self, void *dst, int size);
+int cFilePack_Write(cFilePack *self, const void *src, int size);
+int cFilePack_Size(cFilePack *self);
 
 /* 1 unless the file list is being recorded */
 int PackLog_Closed(void);

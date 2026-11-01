@@ -11,7 +11,7 @@
 
 #define CAIMESSENGER_SIZE 0x390
 
-void *__thiscall cAIMessenger_ctor(void *mem, cEntity *e, int *arg) {
+void *cAIMessenger_ctor(void *mem, cEntity *e, int *arg) {
 	cAIChar *self = mem;
 
 	cAIChar_ctor(mem, e, arg);
@@ -21,7 +21,7 @@ void *__thiscall cAIMessenger_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAIChar *__thiscall cAIMessenger_Delete(cAIChar *self, byte flags) {
+cAIChar *cAIMessenger_Delete(cAIChar *self, byte flags) {
 	self->vftable = CAIMESSENGER_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
@@ -30,7 +30,7 @@ cAIChar *__thiscall cAIMessenger_Delete(cAIChar *self, byte flags) {
 	return self;
 }
 
-void __thiscall cAIMessenger_CheckActDist(cAIMessenger *self) {
+void cAIMessenger_CheckActDist(cAIMessenger *self) {
 	cAIChar *c = &self->base;
 	byte act = 0;
 	vec3_t a, b, d;
@@ -71,7 +71,7 @@ done:
 	c->ctrl->act = act;
 }
 
-void __thiscall cAIMessenger_SetDists(cAIMessenger *self) {
+void cAIMessenger_SetDists(cAIMessenger *self) {
 	cAIChar *c = &self->base;
 
 	if (c->state == 2) {
@@ -85,7 +85,7 @@ void __thiscall cAIMessenger_SetDists(cAIMessenger *self) {
 	c->chaseNear = 129.0f;
 }
 
-void __thiscall cAIMessenger_SetShoot(cAIMessenger *self) {
+void cAIMessenger_SetShoot(cAIMessenger *self) {
 	self->shootFactor = g_ShootMessengerAI;
 	self->shootAng = g_OffsetAngShootMessengerAI;
 	self->shootTime = g_TimeShootMessengerAI;

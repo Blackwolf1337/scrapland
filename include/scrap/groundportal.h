@@ -66,18 +66,18 @@ SD_SIZE(PaintZone, 0x20);
 #define g_PaintAll (GAME_ARRAY(PaintZone, g_PaintAll))	/* the same three as one */
 
 
-CZone *__fastcall CZone_ctor(CZone *self);
-void __fastcall CZone_dtor(CZone *self);
+CZone *CZone_ctor(CZone *self);
+void CZone_dtor(CZone *self);
 /* the sector of the cache drawn at pos for the debug output */
-void __thiscall SectorVis_Draw(SectorVis *self, const vec3_t *pos, byte visible, byte cached, const char *name);
+void SectorVis_Draw(SectorVis *self, const vec3_t *pos, byte visible, byte cached, const char *name);
 /* whether the cached sector is seen; a new position only clears SECTORVIS_CACHED */
-byte __thiscall SectorVis_Check(SectorVis *self, const vec3_t *pos, const char *name);
+byte SectorVis_Check(SectorVis *self, const vec3_t *pos, const char *name);
 /* the sector of pos (looked up again for a new position) is seen */
-byte __thiscall SectorVis_Update(SectorVis *self, const vec3_t *pos, const char *name);
+byte SectorVis_Update(SectorVis *self, const vec3_t *pos, const char *name);
 /* the screen position (-1..1) of p and its w; 0 outside the view (out then the direction to p on the border) */
 byte Portal_Project(const vec3_t *p, float *out, float *w);
 /* the sphere is seen through the screen rectangle of its sector (always without the portal test) */
-byte __thiscall SectorVis_Sphere(SectorVis *self, const vec3_t *pos, const vec3_t *center, float radius,
+byte SectorVis_Sphere(SectorVis *self, const vec3_t *pos, const vec3_t *center, float radius,
 	const char *name);
 /* the sector reached from sector by the segment from a to b through the portals; front: only through portals
  * whose front side a is not on */
@@ -87,8 +87,8 @@ void Zone_Paint(uint32_t zone, const box_t *rect);
 /* the sectors seen from sector (the one of the camera) this frame */
 void Portals_Cull(uint32_t sector);
 /* the elements of g_PaintZones: the rectangle cleared */
-PaintZone *__fastcall PaintZone_ctor(PaintZone *self);
-void __fastcall PaintZone_dtor(PaintZone *self);
+PaintZone *PaintZone_ctor(PaintZone *self);
+void PaintZone_dtor(PaintZone *self);
 /* the debug drawing of the seen sectors (gvRenderShowPortals 2, 3 also their rectangles as text) */
 void Portals_DebugDraw(void);
 /* the sectors (the nodes the portals join) and their portals from the floor scene */
@@ -131,9 +131,9 @@ typedef struct GroundRay {
 } GroundRay;
 SD_SIZE(GroundRay, 0x20);
 /* GETY_INFO_MAXY|GETY_INFO_SECTOR only; with g_RayVertSectors the top of the sector the ray starts in */
-byte __thiscall CGround_RayVert(void *ground, float x, float z, GroundRay *res);
+byte CGround_RayVert(void *ground, float x, float z, GroundRay *res);
 /* the highest triangle point between minY and y with the flags of info; 1 when found */
-byte __thiscall CGround_GetYInfo(void *ground, float x, float z, GroundRay *info);
+byte CGround_GetYInfo(void *ground, float x, float z, GroundRay *info);
 #define g_RayVertSectors GAME_GLOBAL_IN(int, g_FastGetYSectorVar, 16)
 
 #endif

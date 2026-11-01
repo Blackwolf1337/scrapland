@@ -22,7 +22,7 @@
 #define STAT32_SIZE 0x24
 #define STAT32_MTIME 0x1c
 
-void __fastcall cLog_Open(cLog *self) {
+void cLog_Open(cLog *self) {
 	char path[MAX_FILEPATH];
 	char date[LOG_TIME];
 	int32_t t;
@@ -44,7 +44,7 @@ void __fastcall cLog_Open(cLog *self) {
 }
 
 /* the end of the log file: a line end and closed */
-void __fastcall cLog_dtor(cLog *self) {
+void cLog_dtor(cLog *self) {
 	if (self->f) {
 		crt_fprintf(self->f, "\r\n");
 		if (self->f) {
@@ -59,7 +59,7 @@ void Misc_FiniFileLog(void) {
 	cLog_dtor(g_FileLog);
 }
 
-void __thiscall cLog_Write(cLog *self, uint32_t mask, const char *text) {
+void cLog_Write(cLog *self, uint32_t mask, const char *text) {
 	if (g_LogLevel == LOG_LEVEL_RESET) {
 		g_LogConMask = LOG_CON_DEFAULT;
 	}

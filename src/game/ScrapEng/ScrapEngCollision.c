@@ -227,7 +227,7 @@ static byte Collision_Shortcut(const vec3_t *a, const vec3_t *b, float r, vec3_t
 	return 0;
 }
 
-typedef byte(__thiscall *sphereFn_t)(CGround *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out,
+typedef byte(*sphereFn_t)(CGround *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out,
 	vec3_t *hit, vec3_t *n);
 
 /* the slides: steps of half the radius from a to b, each step pushed out of the triangles by fn up to maxIter

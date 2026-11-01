@@ -97,34 +97,34 @@ SD_SIZE(CUnifont, 0x10);
 #define g_FntMatOutlineUniInit GAME_GLOBAL(int, g_FntMatOutlineUniInit)
 #define g_EngineInits GAME_GLOBAL(int, g_EngineInits)	/* the starts of the device objects of the engine */
 
-CFontGrid *__thiscall CFontGrid_ctor(CFontGrid *self, const char *tex, const char *opac, byte first, byte last,
+CFontGrid *CFontGrid_ctor(CFontGrid *self, const char *tex, const char *opac, byte first, byte last,
 	int cellWidth, int cellHeight, float space);
-void __thiscall CFontGrid_Print(CFontGrid *self, float x, float y, const char *s);
-CDigits *__fastcall CDigits_ctor(CDigits *self);
-void __fastcall CDigits_dtor(CDigits *self);
+void CFontGrid_Print(CFontGrid *self, float x, float y, const char *s);
+CDigits *CDigits_ctor(CDigits *self);
+void CDigits_dtor(CDigits *self);
 
 /* the font of tex (opac its opacity map), glyphs first..last. generate: no sprite of its own, the glyphs packed into a
  * new alpha texture instead; unused not read */
-CFont3 *__thiscall CFont3_ctor(CFont3 *self, const char *tex, const char *opac, byte first, byte last, float width,
+CFont3 *CFont3_ctor(CFont3 *self, const char *tex, const char *opac, byte first, byte last, float width,
 	byte generate, uint32_t flags, float unused);
-void __fastcall CFont3_dtor(CFont3 *self);
+void CFont3_dtor(CFont3 *self);
 /* the size of s (dim) and the position of its top left corner for the corner at x, y (pos, by align) */
-void __thiscall CFont3_Measure(const CFont3 *self, float x, float y, uint16_t align, const char *s, float *pos,
+void CFont3_Measure(const CFont3 *self, float x, float y, uint16_t align, const char *s, float *pos,
 	float *dim);
-float __thiscall CFont3_GlyphWidth(const CFont3 *self, const FntGlyph *g);
-float __thiscall CFont3_GlyphHeight(const CFont3 *self, const FntGlyph *g);
+float CFont3_GlyphWidth(const CFont3 *self, const FntGlyph *g);
+float CFont3_GlyphHeight(const CFont3 *self, const FntGlyph *g);
 /* the scale of the glyphs */
-void __thiscall CFont3_SetScale(CFont3 *self, float x, float y);
-uint32_t __thiscall Font_SetColor(CFont3 *self, uint32_t color);	/* returns 2 */
-uint32_t __thiscall Font_SetFlags(CFont3 *self, uint32_t flags);	/* returns 8 */
+void CFont3_SetScale(CFont3 *self, float x, float y);
+uint32_t Font_SetColor(CFont3 *self, uint32_t color);	/* returns 2 */
+uint32_t Font_SetFlags(CFont3 *self, uint32_t flags);	/* returns 8 */
 /* s at x, y (top left) in the color of the sprite; x, y become the end */
-void __thiscall CFont3_Print(CFont3 *self, float x, float y, const char *s);
-void __thiscall CFont3_PrintColor(CFont3 *self, float x, float y, uint32_t color, const char *s);
+void CFont3_Print(CFont3 *self, float x, float y, const char *s);
+void CFont3_PrintColor(CFont3 *self, float x, float y, uint32_t color, const char *s);
 /* flags: the alignment, FNT_WAVE, FNT_OUTLINE */
-void __thiscall CFont3_PrintAlign(CFont3 *self, float x, float y, uint32_t flags, uint32_t color, const char *s);
-void __thiscall CFont3_PrintWave(CFont3 *self, float x, float y, uint32_t color, float wave, const char *s);
+void CFont3_PrintAlign(CFont3 *self, float x, float y, uint32_t flags, uint32_t color, const char *s);
+void CFont3_PrintWave(CFont3 *self, float x, float y, uint32_t color, float wave, const char *s);
 /* a black outline (a pixel to each corner), the text, then a glow fading out to 3 pixels in its color */
-void __thiscall CFont3_PrintOutline(CFont3 *self, float x, float y, uint32_t color, const char *s);
+void CFont3_PrintOutline(CFont3 *self, float x, float y, uint32_t color, const char *s);
 void Font_PrintfXY(CFont3 *font, float x, float y, const char *fmt, ...);
 /* flags FNT_PRINT_* */
 void Font_Printf(CFont3 *font, float x, float y, byte flags, const char *fmt, ...);
@@ -137,13 +137,13 @@ int Bmp_RowBorder(const CBmp *b, int y, uint32_t border);
 void Fonts_Init(void);
 void Fonts_Free(void);
 
-void __fastcall CUnifont_Load(CUnifont *self);
-void __fastcall CUnifont_Free(CUnifont *self);
+void CUnifont_Load(CUnifont *self);
+void CUnifont_Free(CUnifont *self);
 /* the "\1XXXX" at s: 1 and the sprite in *out (0 out of the range), 0 if s is not one */
-byte __thiscall CUnifont_Parse(const CUnifont *self, const char *s, uint16_t *out);
+byte CUnifont_Parse(const CUnifont *self, const char *s, uint16_t *out);
 /* the width of sprite i at the height h, 0 if there is none */
-float __thiscall CUnifont_Width(const CUnifont *self, uint16_t i, float h);
+float CUnifont_Width(const CUnifont *self, uint16_t i, float h);
 /* sprite i of size w by h on the sprite of the font, 0 if there is none */
-byte __thiscall CUnifont_SetSprite(const CUnifont *self, uint16_t i, float w, float h);
+byte CUnifont_SetSprite(const CUnifont *self, uint16_t i, float w, float h);
 
 #endif

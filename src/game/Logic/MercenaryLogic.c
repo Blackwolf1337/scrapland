@@ -6,13 +6,13 @@
 
 #define CMERC_VT(self) ((self)->base.vftable)
 
-cMercenaryLocalLogic *__thiscall cMercenaryLocalLogic_ctor(cMercenaryLocalLogic *self, cEntity *parent) {
+cMercenaryLocalLogic *cMercenaryLocalLogic_ctor(cMercenaryLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
 	CMERC_VT(self) = CMERCENARYLOCALLOGIC_VFTABLE;
 	return self;
 }
 
-cMercenaryLocalLogic *__thiscall cMercenaryLocalLogic_Delete(cMercenaryLocalLogic *self, byte flags) {
+cMercenaryLocalLogic *cMercenaryLocalLogic_Delete(cMercenaryLocalLogic *self, byte flags) {
 	CMERC_VT(self) = CMERCENARYLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {

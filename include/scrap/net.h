@@ -48,12 +48,12 @@ typedef struct cNetClient cNetClient;
 typedef struct cUserNetManager cUserNetManager;
 
 typedef struct cUserNetManagerVtbl {
-	cUserNetManager *(__thiscall *Delete)(cUserNetManager *self, byte flags);			/* 0x00 */
+	cUserNetManager *(*Delete)(cUserNetManager *self, byte flags);			/* 0x00 */
 	/* the unreliable part and the reliable message of a packet */
-	void(__thiscall *OnReceive)(cUserNetManager *self, void *data, int size, void *ctl, int ctlSize);	/* 0x04 */
-	void(__thiscall *Send)(cUserNetManager *self, uint32_t time);				/* 0x08 */
-	void(__thiscall *SetLocalData)(cUserNetManager *self);					/* 0x0c */
-	void(__thiscall *SendHello)(cUserNetManager *self, byte type);				/* 0x10 cServerNetManager */
+	void(*OnReceive)(cUserNetManager *self, void *data, int size, void *ctl, int ctlSize);	/* 0x04 */
+	void(*Send)(cUserNetManager *self, uint32_t time);				/* 0x08 */
+	void(*SetLocalData)(cUserNetManager *self);					/* 0x0c */
+	void(*SendHello)(cUserNetManager *self, byte type);				/* 0x10 cServerNetManager */
 } cUserNetManagerVtbl;
 SD_OFFSET(cUserNetManagerVtbl, SendHello, 0x10);
 
@@ -148,7 +148,7 @@ static inline uint32_t Net_TimeMs(void) {
 }
 
 /* exe functions of other modules */
-void __thiscall cWithLifeEntity_SetUsrName(cEntity *e, const char *name);	/* rva 0x12c7c0, "" clears */
+void cWithLifeEntity_SetUsrName(cEntity *e, const char *name);	/* rva 0x12c7c0, "" clears */
 
 /* the 64 bit Mersenne Twister of the packet nonces with a shuffle table of 256 outputs (0x11cc bytes) */
 #define NETRAND_NN 312
@@ -388,52 +388,52 @@ void Net_HexDump(const void *data, int size);
 void Net_DumpData(const char *title, const void *data, int size);
 
 /* ManClient.cpp (src/game/Net/ManClient.c) */
-cServerNetManager *__thiscall cServerNetManager_ctor(cServerNetManager *self, cNetClient *client, int slot);
-void __fastcall cServerNetManager_dtor(cServerNetManager *self);
-cServerNetManager *__thiscall cServerNetManager_Delete(cServerNetManager *self, byte flags);
-void __thiscall cServerNetManager_OnReceive(cServerNetManager *self, void *data, int size, void *ctl, int ctlSize);
+cServerNetManager *cServerNetManager_ctor(cServerNetManager *self, cNetClient *client, int slot);
+void cServerNetManager_dtor(cServerNetManager *self);
+cServerNetManager *cServerNetManager_Delete(cServerNetManager *self, byte flags);
+void cServerNetManager_OnReceive(cServerNetManager *self, void *data, int size, void *ctl, int ctlSize);
 /* the ping of a client the server reported (2^(b/24)), 0 unknown */
 int Net_GetClientPing(uint32_t slot);
-void __thiscall cServerNetManager_SendHello(cServerNetManager *self, byte type);
-void __thiscall cServerNetManager_Send(cServerNetManager *self, uint32_t time);
-void __thiscall cUserNetManager_Nop(cUserNetManager *self);
+void cServerNetManager_SendHello(cServerNetManager *self, byte type);
+void cServerNetManager_Send(cServerNetManager *self, uint32_t time);
+void cUserNetManager_Nop(cUserNetManager *self);
 
 /* ManServer.cpp (src/game/Net/ManServer.c) */
-cClientNetManager *__thiscall cClientNetManager_ctor(cClientNetManager *self, cNetClient *client, int slot);
-void __fastcall cClientNetManager_dtor(cClientNetManager *self);
-cClientNetManager *__thiscall cClientNetManager_Delete(cClientNetManager *self, byte flags);
-void __thiscall cClientNetManager_OnReceive(cClientNetManager *self, void *data, int size, void *ctl, int ctlSize);
+cClientNetManager *cClientNetManager_ctor(cClientNetManager *self, cNetClient *client, int slot);
+void cClientNetManager_dtor(cClientNetManager *self);
+cClientNetManager *cClientNetManager_Delete(cClientNetManager *self, byte flags);
+void cClientNetManager_OnReceive(cClientNetManager *self, void *data, int size, void *ctl, int ctlSize);
 /* creates the ship "net<slot>", sends the level and the resources */
-void __fastcall cClientNetManager_InitClient(cClientNetManager *self);
+void cClientNetManager_InitClient(cClientNetManager *self);
 /* the descriptor of player slot to every client (toAll) or to all but that one */
 void ManServer_SendUsrData(int slot, byte toAll);
-void __fastcall cClientNetManager_SendResources(cClientNetManager *self);
-void __thiscall cClientNetManager_Send(cClientNetManager *self, uint32_t time);
+void cClientNetManager_SendResources(cClientNetManager *self);
+void cClientNetManager_Send(cClientNetManager *self, uint32_t time);
 /* the descriptors of all players to this client (unless local), then this one's to the others */
-void __thiscall cClientNetManager_SendUsers(cClientNetManager *self, byte local);
-void __fastcall cClientNetManager_SetLocalData(cClientNetManager *self);
+void cClientNetManager_SendUsers(cClientNetManager *self, byte local);
+void cClientNetManager_SetLocalData(cClientNetManager *self);
 
 /* msgman.cpp (src/game/Net/MsgMan.c) */
-cNetClient *__thiscall cNetClient_ctor(cNetClient *self, int slot);
-cUserNetManager *__thiscall cUserNetManager_ctor(cUserNetManager *self, cNetClient *client, int slot);
-void __fastcall cNetClient_dtor(cNetClient *self);
-void __fastcall cUserNetManager_dtor(cUserNetManager *self);
-cUserNetManager *__thiscall cUserNetManager_Delete(cUserNetManager *self, byte flags);
+cNetClient *cNetClient_ctor(cNetClient *self, int slot);
+cUserNetManager *cUserNetManager_ctor(cUserNetManager *self, cNetClient *client, int slot);
+void cNetClient_dtor(cNetClient *self);
+void cUserNetManager_dtor(cUserNetManager *self);
+cUserNetManager *cUserNetManager_Delete(cUserNetManager *self, byte flags);
 /* a reliable message into the queue */
-void __thiscall cNetClient_Push(cNetClient *self, const void *data, uint16_t size);
-int __thiscall cNetClient_UpdateState(cNetClient *self, uint32_t time);
+void cNetClient_Push(cNetClient *self, const void *data, uint16_t size);
+int cNetClient_UpdateState(cNetClient *self, uint32_t time);
 /* an empty packet when nothing went out for g_NetSendDelay; 0 once timed out */
-int __thiscall cNetClient_Flush(cNetClient *self, uint32_t time, int slot);
-void __fastcall cNetClient_RequestFull(cNetClient *self);
-cNetMsgNode *__thiscall cNetClient_NewMsg(cNetClient *self, const void *data, uint16_t size);
-void __thiscall cNetClient_GetSeq(cNetClient *self, int *head, int *in);
-uint32_t __thiscall cNetClient_TimeToSend(cNetClient *self, uint32_t time);
-void __fastcall cNetClient_Goodbye(cNetClient *self);
-int __thiscall cNetClient_ClientRecv(cNetClient *self, uint32_t time, int *slot, void *data, int *dataSize, void *ctl,
+int cNetClient_Flush(cNetClient *self, uint32_t time, int slot);
+void cNetClient_RequestFull(cNetClient *self);
+cNetMsgNode *cNetClient_NewMsg(cNetClient *self, const void *data, uint16_t size);
+void cNetClient_GetSeq(cNetClient *self, int *head, int *in);
+uint32_t cNetClient_TimeToSend(cNetClient *self, uint32_t time);
+void cNetClient_Goodbye(cNetClient *self);
+int cNetClient_ClientRecv(cNetClient *self, uint32_t time, int *slot, void *data, int *dataSize, void *ctl,
 	int *ctlSize);
 /* the packet with size bytes of unreliable data; its length, 0 if not sent */
-uint32_t __thiscall cNetClient_Send(cNetClient *self, uint32_t time, int slot, int size, const void *data);
-int __thiscall cNetClient_Receive(cNetClient *self, uint32_t time, const byte *pkt, int len, void *data, int *dataSize,
+uint32_t cNetClient_Send(cNetClient *self, uint32_t time, int slot, int size, const void *data);
+int cNetClient_Receive(cNetClient *self, uint32_t time, const byte *pkt, int len, void *data, int *dataSize,
 	void *ctl, int *ctlSize);
 void MsgMan_SetCloseTime(uint32_t ms);
 void MsgMan_SetUserFactory(netuserfactory_t f);
@@ -441,13 +441,13 @@ void MsgMan_SetSendDelay(uint32_t ms);
 void MsgMan_SetWaitTime(uint32_t ms);
 
 /* the random numbers (src/game/Net/NetRandom.c) */
-cNetRandom *__fastcall cNetRandom_ctor(cNetRandom *self);
-void __thiscall cNetRandom_InitByArray(cNetRandom *self, const uint64_t *key, uint32_t len);
-void __thiscall cNetRandom_Seed(cNetRandom *self, uint64_t seed);
-uint64_t __fastcall cNetRandom_Next(cNetRandom *self);
-void __fastcall cNetRandom_Fill(cNetRandom *self);
+cNetRandom *cNetRandom_ctor(cNetRandom *self);
+void cNetRandom_InitByArray(cNetRandom *self, const uint64_t *key, uint32_t len);
+void cNetRandom_Seed(cNetRandom *self, uint64_t seed);
+uint64_t cNetRandom_Next(cNetRandom *self);
+void cNetRandom_Fill(cNetRandom *self);
 /* seeded from GetTickCount64 through ChaCha20 */
-cNetRandom *__fastcall cNetRandom_ctorSeeded(cNetRandom *self);
+cNetRandom *cNetRandom_ctorSeeded(cNetRandom *self);
 
 /* NetData.cpp (src/game/Net/NetData.c) */
 int Net_AddResource(const char *name);
@@ -528,7 +528,7 @@ int Transport_PingMaster(void);
 int Transport_SendToClient(const void *data, int size, int slot);
 void Transport_SendToServer(const void *data, int size);
 int Net_SendMasterString(const char *text);
-byte __thiscall cGVar_SetString(cGVar *self, const char *s);
+byte cGVar_SetString(cGVar *self, const char *s);
 int Transport_Wait(int ms);
 uint16_t Transport_Crc16(const byte *data, int size);
 int Net_IsMaster(void);
@@ -537,31 +537,31 @@ int Transport_RecvFrom(uint32_t s, byte *buf, int len, int flags, NetAddr *from,
 int Transport_SendTo(uint32_t s, const void *data, int len, int flags, const NetAddr *to, int tolen);
 
 /* the crypto of the packets (src/game/Net/Crypto.c) */
-cNetBuffer *__thiscall cNetBuffer_ctor(cNetBuffer *self, uint32_t cap);
-void __fastcall cNetBuffer_dtor(cNetBuffer *self);
-byte *__fastcall cNetBuffer_Data(cNetBuffer *self);
-uint32_t __fastcall cNetBuffer_Size(cNetBuffer *self);
-int __thiscall cNetBuffer_Append(cNetBuffer *self, const void *src, uint32_t n);
-int __thiscall cNetBuffer_AppendBuffer(cNetBuffer *self, const cNetBuffer *src);
+cNetBuffer *cNetBuffer_ctor(cNetBuffer *self, uint32_t cap);
+void cNetBuffer_dtor(cNetBuffer *self);
+byte *cNetBuffer_Data(cNetBuffer *self);
+uint32_t cNetBuffer_Size(cNetBuffer *self);
+int cNetBuffer_Append(cNetBuffer *self, const void *src, uint32_t n);
+int cNetBuffer_AppendBuffer(cNetBuffer *self, const cNetBuffer *src);
 /* the bytes and zeros up to the next multiple of 16 of n */
-int __thiscall cNetBuffer_AppendPad16(cNetBuffer *self, const void *src, uint32_t n);
-int __thiscall cNetBuffer_AppendBufferPad16(cNetBuffer *self, const cNetBuffer *src);
-int __thiscall cNetBuffer_WriteU16(cNetBuffer *self, uint16_t v);
-int __thiscall cNetBuffer_WriteU32(cNetBuffer *self, uint32_t v);
-int __thiscall cNetBuffer_WriteU64(cNetBuffer *self, uint64_t v);
-int __thiscall cNetBuffer_WriteU8(cNetBuffer *self, byte v);
-void __thiscall cNetBuffer_Reserve(cNetBuffer *self, uint32_t cap);
-cChaCha *__fastcall cChaCha_ctor(cChaCha *self);
-void __thiscall cChaCha_Init(cChaCha *self, const byte *key, uint32_t counter, const byte *nonce);
-void __thiscall cChaCha_Crypt(cChaCha *self, const byte *key, uint32_t counter, const byte *nonce, const byte *in,
+int cNetBuffer_AppendPad16(cNetBuffer *self, const void *src, uint32_t n);
+int cNetBuffer_AppendBufferPad16(cNetBuffer *self, const cNetBuffer *src);
+int cNetBuffer_WriteU16(cNetBuffer *self, uint16_t v);
+int cNetBuffer_WriteU32(cNetBuffer *self, uint32_t v);
+int cNetBuffer_WriteU64(cNetBuffer *self, uint64_t v);
+int cNetBuffer_WriteU8(cNetBuffer *self, byte v);
+void cNetBuffer_Reserve(cNetBuffer *self, uint32_t cap);
+cChaCha *cChaCha_ctor(cChaCha *self);
+void cChaCha_Init(cChaCha *self, const byte *key, uint32_t counter, const byte *nonce);
+void cChaCha_Crypt(cChaCha *self, const byte *key, uint32_t counter, const byte *nonce, const byte *in,
 	byte *out, uint32_t len);
 /* one block of rounds (20) of the state into out (64 bytes); self is not used */
-void __thiscall cChaCha_Block(cChaCha *self, const uint32_t *state, byte *out, int rounds);
-void __thiscall cChaCha_QuarterRound(cChaCha *self, uint32_t *x, int a, int b, int c, int d);
-uint32_t __thiscall cChaCha_Rotl(cChaCha *self, uint32_t v, int n);
-void __thiscall cChaCha_Store(cChaCha *self, const uint32_t *x, byte *out);
-void __thiscall cChaCha_StoreU32(cChaCha *self, uint32_t v, byte *out);
-uint32_t __thiscall cChaCha_LoadU32(cChaCha *self, const byte *p);
+void cChaCha_Block(cChaCha *self, const uint32_t *state, byte *out, int rounds);
+void cChaCha_QuarterRound(cChaCha *self, uint32_t *x, int a, int b, int c, int d);
+uint32_t cChaCha_Rotl(cChaCha *self, uint32_t v, int n);
+void cChaCha_Store(cChaCha *self, const uint32_t *x, byte *out);
+void cChaCha_StoreU32(cChaCha *self, uint32_t v, byte *out);
+uint32_t cChaCha_LoadU32(cChaCha *self, const byte *p);
 /* Poly1305 (poly1305-donna) of size bytes of msg with key (32 bytes) into mac (16 bytes) */
 void Poly1305_Auth(byte *mac, const byte *msg, uint32_t size, const byte *key);
 

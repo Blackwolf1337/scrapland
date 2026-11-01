@@ -15,11 +15,11 @@ static float Circuit_Rand(double scale, double ofs) {
 	return (float)((double)(crt_rand() & 0x7fff) * g_CircuitRandScale * scale + ofs);
 }
 
-cCircuitPath *__fastcall cCircuitPath_ctor(cCircuitPath *self) {
+cCircuitPath *cCircuitPath_ctor(cCircuitPath *self) {
 	return self;
 }
 
-cCircuitScorer *__fastcall cCircuitScorer_ctor(cCircuitScorer *self) {
+cCircuitScorer *cCircuitScorer_ctor(cCircuitScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CCIRCUITSCORER_VFTABLE;
 	cString_ctor(&self->file);
@@ -48,7 +48,7 @@ static void Circuit_FreeImage(CPsaImage **img) {
 	}
 }
 
-void __fastcall cCircuitScorer_dtor(cCircuitScorer *self) {
+void cCircuitScorer_dtor(cCircuitScorer *self) {
 	self->base.vftable = CCIRCUITSCORER_VFTABLE;
 	Circuit_FreeImage(&self->circuit);
 	Circuit_FreeImage(&self->flare);
@@ -56,7 +56,7 @@ void __fastcall cCircuitScorer_dtor(cCircuitScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cCircuitScorer *__thiscall cCircuitScorer_Delete(cCircuitScorer *self, byte flags) {
+cCircuitScorer *cCircuitScorer_Delete(cCircuitScorer *self, byte flags) {
 	cCircuitScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cCircuitScorer));
@@ -170,11 +170,11 @@ static CPsaImage *Circuit_NewImage(CPsaImage *old, const char *name, int blend, 
 	return img;
 }
 
-void __thiscall cCircuitScorer_SetCircuitFile(cCircuitScorer *self, uint32_t flags, const char *name) {
+void cCircuitScorer_SetCircuitFile(cCircuitScorer *self, uint32_t flags, const char *name) {
 	self->circuit = Circuit_NewImage(self->circuit, name, self->blend, flags | 0x40000);
 }
 
-void __thiscall cCircuitScorer_SetFlareFile(cCircuitScorer *self, uint32_t flags, const char *name) {
+void cCircuitScorer_SetFlareFile(cCircuitScorer *self, uint32_t flags, const char *name) {
 	if (self->flare) {
 		CPsaImage_dtor(self->flare);
 		operator_delete_sized(self->flare, sizeof(CPsaImage));
@@ -187,7 +187,7 @@ void __thiscall cCircuitScorer_SetFlareFile(cCircuitScorer *self, uint32_t flags
 	self->flare = Circuit_NewImage(NULL, name, self->blend, flags | 0x40000);
 }
 
-int __thiscall cCircuitScorer_Var(cCircuitScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cCircuitScorer_Var(cCircuitScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	if (d) {
 		if (!crt_stricmp(name, "ScaleX")) {
 			return ScorerVar_Float(&self->circuit->scaleX, set, d);
@@ -259,7 +259,7 @@ static void Circuit_Respawn(int k) {
 	f->reverse = crt_rand() & 1;
 }
 
-void __thiscall cCircuitScorer_Draw(cCircuitScorer *self, int player) {
+void cCircuitScorer_Draw(cCircuitScorer *self, int player) {
 	(void)player;
 	CPsaImage_Draw(self->circuit, self->base.x, self->base.y);
 	self->lastTime = self->curTime;

@@ -71,88 +71,88 @@ SD_SIZE(CVertList, 0x14);
 #define g_VCacheMisses GAME_GLOBAL_IN(int, g_VCacheAge, 72)
 #define VCACHE_SIZE 16
 
-CVertList *__fastcall CVertList_ctor(CVertList *self);
+CVertList *CVertList_ctor(CVertList *self);
 /* also the destructor (two copies in the exe) */
-void __fastcall CVertList_Free(CVertList *self);
+void CVertList_Free(CVertList *self);
 /* empty, in the format */
-void __thiscall CVertList_SetFormat(CVertList *self, int frmt);
+void CVertList_SetFormat(CVertList *self, int frmt);
 /* n vertices; with pVert set (realloc) 25% more room */
-void __thiscall CVertList_Alloc(CVertList *self, int n, byte realloc);
+void CVertList_Alloc(CVertList *self, int n, byte realloc);
 /* an empty stub, returns 0 */
-byte __thiscall CVertList_Optimize(CVertList *self, void *tris, int nTri);
+byte CVertList_Optimize(CVertList *self, void *tris, int nTri);
 /* the coordinates itex of the reflection map in software: with map->bb 1 the reflected view direction (sphere
  * map), else the normal through world * view; then offset f10 and scale f18 of the map */
 struct CMap;
-void __thiscall CVertList_EnvMapUV(CVertList *self, const matrix_t *world, const matrix_t *view,
+void CVertList_EnvMapUV(CVertList *self, const matrix_t *world, const matrix_t *view,
 	const struct CMap *map, int itex);
 /* the first 4 fields */
-void __thiscall CVertList_Swap(CVertList *self, CVertList *other);
+void CVertList_Swap(CVertList *self, CVertList *other);
 /* the "LFVF" block */
-void __thiscall CVertList_Read(CVertList *self, CFileIO *f);
-void __thiscall CVertList_Write(CVertList *self, CFileIO *f);
+void CVertList_Read(CVertList *self, CFileIO *f);
+void CVertList_Write(CVertList *self, CFileIO *f);
 
 uint32_t VertList_FormatFVF(int frmt);
 int VertList_FormatSize(int frmt);
 const char *VertList_FormatName(int frmt);
-uint32_t __fastcall CVertList_FVF(CVertList *self);
-int __fastcall CVertList_Size(CVertList *self);
-const char *__fastcall CVertList_FormatName(CVertList *self);
+uint32_t CVertList_FVF(CVertList *self);
+int CVertList_Size(CVertList *self);
+const char *CVertList_FormatName(CVertList *self);
 /* a unit vector into 11:11:10 bits (x low) and back */
 uint32_t VertList_PackNormal(const vec3_t *n);
 vec3_t *VertList_UnpackNormal(vec3_t *out, uint32_t packed);
 
 /* field f of vertex i, NULL if the format has none */
-void *__thiscall CVertList_GetField(CVertList *self, int f, uint32_t i);
+void *CVertList_GetField(CVertList *self, int f, uint32_t i);
 /* the field of one vertex of each format */
-void *__thiscall VertTex1_Field(byte *v, int f);
-void *__thiscall VertTex2_Field(byte *v, int f);
-void *__thiscall VertLTex1_Field(byte *v, int f);
-void *__thiscall VertLTex2N_Field(byte *v, int f);
-void *__thiscall VertLTex3_Field(byte *v, int f);
-void *__thiscall VertLTex1N_Field(byte *v, int f);
-void *__thiscall VertTLTex1_Field(byte *v, int f);
-void *__thiscall VertLTex2_Field(byte *v, int f);
-void *__thiscall VertTex1XBox_Field(byte *v, int f);
-void *__thiscall VertTex1CXBox_Field(byte *v, int f);
-void *__thiscall VertLTex1XBox_Field(byte *v, int f);
-void *__thiscall VertLTex1NXBox_Field(byte *v, int f);
-void *__thiscall VertLTex2XBox_Field(byte *v, int f);
-void *__thiscall VertLTex2NXBox_Field(byte *v, int f);
+void *VertTex1_Field(byte *v, int f);
+void *VertTex2_Field(byte *v, int f);
+void *VertLTex1_Field(byte *v, int f);
+void *VertLTex2N_Field(byte *v, int f);
+void *VertLTex3_Field(byte *v, int f);
+void *VertLTex1N_Field(byte *v, int f);
+void *VertTLTex1_Field(byte *v, int f);
+void *VertLTex2_Field(byte *v, int f);
+void *VertTex1XBox_Field(byte *v, int f);
+void *VertTex1CXBox_Field(byte *v, int f);
+void *VertLTex1XBox_Field(byte *v, int f);
+void *VertLTex1NXBox_Field(byte *v, int f);
+void *VertLTex2XBox_Field(byte *v, int f);
+void *VertLTex2NXBox_Field(byte *v, int f);
 
 /* vertex i of the format, with checks */
-byte *__thiscall CVertList_Tex1(CVertList *self, uint32_t i);
-byte *__thiscall CVertList_Tex2(CVertList *self, uint32_t i);
-byte *__thiscall CVertList_LTex1(CVertList *self, uint32_t i);
-byte *__thiscall CVertList_Tex1B1(CVertList *self, uint32_t i);
-byte *__thiscall CVertList_LTex2N(CVertList *self, uint32_t i);
-byte *__thiscall CVertList_LTex3(CVertList *self, uint32_t i);
-byte *__thiscall CVertList_LTex1N(CVertList *self, uint32_t i);
-byte *__thiscall CVertList_TLTex1(CVertList *self, uint32_t i);
-byte *__thiscall CVertList_LTex2(CVertList *self, uint32_t i);
-void __thiscall CVertList_SetTex1(CVertList *self, uint32_t i, const void *v);
-void __thiscall CVertList_SetTex2(CVertList *self, uint32_t i, const void *v);
-void __thiscall CVertList_SetLTex1(CVertList *self, uint32_t i, const void *v);
-void __thiscall CVertList_SetTex1B1(CVertList *self, uint32_t i, const void *v);
+byte *CVertList_Tex1(CVertList *self, uint32_t i);
+byte *CVertList_Tex2(CVertList *self, uint32_t i);
+byte *CVertList_LTex1(CVertList *self, uint32_t i);
+byte *CVertList_Tex1B1(CVertList *self, uint32_t i);
+byte *CVertList_LTex2N(CVertList *self, uint32_t i);
+byte *CVertList_LTex3(CVertList *self, uint32_t i);
+byte *CVertList_LTex1N(CVertList *self, uint32_t i);
+byte *CVertList_TLTex1(CVertList *self, uint32_t i);
+byte *CVertList_LTex2(CVertList *self, uint32_t i);
+void CVertList_SetTex1(CVertList *self, uint32_t i, const void *v);
+void CVertList_SetTex2(CVertList *self, uint32_t i, const void *v);
+void CVertList_SetLTex1(CVertList *self, uint32_t i, const void *v);
+void CVertList_SetTex1B1(CVertList *self, uint32_t i, const void *v);
 /* vertex i of a TEX1, TEX2 or TEX1_B1 list as a TEX1 vertex (0x20 bytes) */
-void *__thiscall CVertList_GetTex1(CVertList *self, void *out, uint32_t i);
+void *CVertList_GetTex1(CVertList *self, void *out, uint32_t i);
 /* the position of vertex i (rva 0x212570, in TriMesh.c) */
-vec3_t *__thiscall CVertList_GetPos(CVertList *self, vec3_t *out, uint32_t i);
+vec3_t *CVertList_GetPos(CVertList *self, vec3_t *out, uint32_t i);
 
 /* the diffuse colors: c & and | or */
-void __thiscall CVertList_SetColor(CVertList *self, uint32_t and, uint32_t or);
+void CVertList_SetColor(CVertList *self, uint32_t and, uint32_t or);
 /* the box of the positions, from the empty box if reset */
-void __thiscall CVertList_GetExtents(CVertList *self, box_t *ext, byte reset);
+void CVertList_GetExtents(CVertList *self, box_t *ext, byte reset);
 /* positions and normals (TEX1, TEX2, TEX1_B1) by m, the normals made unit length if normalize */
-void __thiscall CVertList_Transform(CVertList *self, const matrix_t *m, byte normalize);
+void CVertList_Transform(CVertList *self, const matrix_t *m, byte normalize);
 /* into frmt (TEX1_XBOX, TEX1C_XBOX or POS_XBOX) with the texture coordinates times texScale; warns about
  * positions outside +-32768 * posScale and texture coordinates outside +-32768 / texScale */
-void __thiscall CVertList_Pack(CVertList *self, int frmt, float posScale, float texScale);
+void CVertList_Pack(CVertList *self, int frmt, float posScale, float texScale);
 /* TEX1 to TEX1_XBOX, LTEX1N to TEX1C_XBOX, others to VERT_NULL (fails) */
-void __thiscall CVertList_PackTex1(CVertList *self, float posScale, float texScale);
+void CVertList_PackTex1(CVertList *self, float posScale, float texScale);
 /* into LTEX1_XBOX or LTEX1N_XBOX (with normals), LTEX2(N)_XBOX with a second set of texture coordinates and tex2 */
-void __thiscall CVertList_ToXBox(CVertList *self, float posScale, float texScale, byte tex2);
+void CVertList_ToXBox(CVertList *self, float posScale, float texScale, byte tex2);
 /* LTEX1N_XBOX back to LTEX1N */
-void __thiscall CVertList_FromXBox(CVertList *self, float posScale, float texScale);
+void CVertList_FromXBox(CVertList *self, float posScale, float texScale);
 
 /* out: the vertices of in along triangle strips of the triangles, the strips colored; 1 */
 byte VertList_Strip(CVertList *out, const CVertList *in, const uint16_t *tris, int nTri);

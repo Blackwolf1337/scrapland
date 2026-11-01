@@ -22,14 +22,14 @@ typedef struct CGraphic2DList {
 } CGraphic2DList;
 SD_SIZE(CGraphic2DList, 0x8);
 
-CGraphic2DList *__fastcall CGraphic2DList_ctor(CGraphic2DList *self);
+CGraphic2DList *CGraphic2DList_ctor(CGraphic2DList *self);
 /* the sprites deleted */
-void __fastcall CGraphic2DList_DeleteAll(CGraphic2DList *self);
-void __fastcall CGraphic2DList_Render(CGraphic2DList *self);
-void __thiscall CGraphic2DList_Add(CGraphic2DList *self, CGraphic2D *graphic);
+void CGraphic2DList_DeleteAll(CGraphic2DList *self);
+void CGraphic2DList_Render(CGraphic2DList *self);
+void CGraphic2DList_Add(CGraphic2DList *self, CGraphic2D *graphic);
 /* out of the list (CHECK that it is in it) and deleted */
-void __thiscall CGraphic2DList_Delete(CGraphic2DList *self, CGraphic2D *graphic);
-void __thiscall CGraphic2DList_Remove(CGraphic2DList *self, CGraphic2D *graphic);
+void CGraphic2DList_Delete(CGraphic2DList *self, CGraphic2D *graphic);
+void CGraphic2DList_Remove(CGraphic2DList *self, CGraphic2D *graphic);
 
 #define BACKGROUND2D_PIECE 0x100
 
@@ -40,11 +40,11 @@ typedef struct CBackground2D {
 } CBackground2D;
 SD_SIZE(CBackground2D, 0x18);
 
-CBackground2D *__thiscall CBackground2D_ctorFile(CBackground2D *self, const char *name);
-CBackground2D *__fastcall CBackground2D_ctor(CBackground2D *self);
+CBackground2D *CBackground2D_ctorFile(CBackground2D *self, const char *name);
+CBackground2D *CBackground2D_ctor(CBackground2D *self);
 /* the color and the material "CFondo2D" */
-void __fastcall CBackground2D_Init(CBackground2D *self);
-void __fastcall CBackground2D_Render(CBackground2D *self);
+void CBackground2D_Init(CBackground2D *self);
+void CBackground2D_Render(CBackground2D *self);
 
 /* the background sprite: the name set, a new sprite when it changes */
 #define BACKGROUND2D_NAME 0x108

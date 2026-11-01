@@ -6,7 +6,7 @@
 
 #include "scrap/game.h"
 
-void __thiscall Matrix_Identity(matrix_t *self) {
+void Matrix_Identity(matrix_t *self) {
 	memset(self->m, 0, sizeof(self->m));
 	self->m[0] = 1.0f;
 	self->m[5] = 1.0f;
@@ -14,19 +14,19 @@ void __thiscall Matrix_Identity(matrix_t *self) {
 	self->m[15] = 1.0f;
 }
 
-matrix_t *__thiscall Matrix_Copy(matrix_t *self, const matrix_t *src) {
+matrix_t *Matrix_Copy(matrix_t *self, const matrix_t *src) {
 	*self = *src;
 	return self;
 }
 
-matrix_t *__thiscall Matrix_FromFloats(matrix_t *self, const float *f) {
+matrix_t *Matrix_FromFloats(matrix_t *self, const float *f) {
 	CHECK(f);
 	memcpy(self->m, f, sizeof(self->m));
 	return self;
 }
 
 /* out = self * other */
-matrix_t *__thiscall Matrix_Mul(const matrix_t *self, matrix_t *out, const matrix_t *other) {
+matrix_t *Matrix_Mul(const matrix_t *self, matrix_t *out, const matrix_t *other) {
 	const matrix_t a = *self, b = *other;
 
 	for (int r = 0; r < 4; r++) {
@@ -52,7 +52,7 @@ static float Euler_Z(const matrix_t *self, float h) {
 }
 
 /* the angles of Matrix_Rotate from the rotation part */
-vec3_t *__thiscall Matrix_GetEuler(const matrix_t *self, vec3_t *out) {
+vec3_t *Matrix_GetEuler(const matrix_t *self, vec3_t *out) {
 	float m8 = self->m[8], m9 = self->m[9], m10 = self->m[10];
 	float h = (float)__builtin_sqrt((double)(m10 * m10 + m8 * m8));
 
@@ -96,7 +96,7 @@ vec3_t *Matrix_ToEuler(vec3_t *out, const matrix_t *m) {
 }
 
 /* the rotation angles of the z axis (third row) */
-vec3_t *__thiscall Matrix_GetRotAng(const matrix_t *self, vec3_t *out) {
+vec3_t *Matrix_GetRotAng(const matrix_t *self, vec3_t *out) {
 	vec3_t dir = { self->m[8], self->m[9], self->m[10] };
 
 	Vec3_GetRotAng(out, &dir);
@@ -153,7 +153,7 @@ matrix_t *Matrix_Rotate(matrix_t *m, const vec3_t *ang) {
 }
 
 /* the columns scaled by s */
-const vec3_t *__thiscall Matrix_Scale(matrix_t *self, const vec3_t *s) {
+const vec3_t *Matrix_Scale(matrix_t *self, const vec3_t *s) {
 	for (int r = 0; r < 4; r++) {
 		self->m[r * 4] = s->x * self->m[r * 4];
 		self->m[r * 4 + 1] = s->y * self->m[r * 4 + 1];
@@ -190,7 +190,7 @@ int Matrix_PerspectiveD3D(matrix_t *out, float fov, float aspect, float zNear, f
 	return Matrix_Perspective(out, fov, aspect, zNear, zFar) ? 0 : (int)0x80070057;
 }
 
-void __thiscall Matrix_RotX(matrix_t *self, float ang) {
+void Matrix_RotX(matrix_t *self, float ang) {
 	Matrix_Identity(self);
 	float c = (float)Game_Cos((double)ang);
 	self->m[5] = c;
@@ -200,7 +200,7 @@ void __thiscall Matrix_RotX(matrix_t *self, float ang) {
 	self->m[10] = c;
 }
 
-void __thiscall Matrix_RotY(matrix_t *self, float ang) {
+void Matrix_RotY(matrix_t *self, float ang) {
 	Matrix_Identity(self);
 	float c = (float)Game_Cos((double)ang);
 	self->m[0] = c;
@@ -210,7 +210,7 @@ void __thiscall Matrix_RotY(matrix_t *self, float ang) {
 	self->m[10] = c;
 }
 
-void __thiscall Matrix_RotZ(matrix_t *self, float ang) {
+void Matrix_RotZ(matrix_t *self, float ang) {
 	Matrix_Identity(self);
 	float c = (float)Game_Cos((double)ang);
 	self->m[0] = c;
@@ -221,7 +221,7 @@ void __thiscall Matrix_RotZ(matrix_t *self, float ang) {
 }
 
 /* the rotation by ang (radians) around axis, no translation */
-void __thiscall Matrix_RotAxis(matrix_t *self, const vec3_t *axis, float ang) {
+void Matrix_RotAxis(matrix_t *self, const vec3_t *axis, float ang) {
 	float c = (float)Game_Cos((double)ang);
 	float s = (float)Game_Sin((double)ang);
 	float len = (float)__builtin_sqrt((double)(axis->x * axis->x + axis->y * axis->y + axis->z * axis->z));
@@ -253,7 +253,7 @@ void __thiscall Matrix_RotAxis(matrix_t *self, const vec3_t *axis, float ang) {
 	m[9] = z * y * omc + x * s;
 }
 
-const vec3_t *__thiscall Matrix_Translate(matrix_t *self, const vec3_t *v) {
+const vec3_t *Matrix_Translate(matrix_t *self, const vec3_t *v) {
 	self->m[12] = v->x + self->m[12];
 	self->m[13] = v->y + self->m[13];
 	self->m[14] = v->z + self->m[14];

@@ -45,42 +45,42 @@ SD_OFFSET(CGameParticles, sparkVelScale, 0x9c);
 SD_OFFSET(CGameParticles, Node, 0xa8);
 SD_SIZE(CGameParticles, 0xb0);
 
-CGameParticles *__fastcall CGameParticles_ctor(CGameParticles *self);
+CGameParticles *CGameParticles_ctor(CGameParticles *self);
 /* no node, the default parameters */
-void __fastcall CGameParticles_Init(CGameParticles *self);
+void CGameParticles_Init(CGameParticles *self);
 /* the node released (also the destructor) */
-void __fastcall CGameParticles_Release(CGameParticles *self);
+void CGameParticles_Release(CGameParticles *self);
 /* the particle system of render node i of model */
-void __thiscall CGameParticles_Attach(CGameParticles *self, CGameModel *model, uint32_t i);
+void CGameParticles_Attach(CGameParticles *self, CGameModel *model, uint32_t i);
 /* the parameters into the particle system */
-void __fastcall CGameParticles_Apply(CGameParticles *self);
+void CGameParticles_Apply(CGameParticles *self);
 /* all particles out */
-void __fastcall CGameParticles_KillAll(CGameParticles *self);
-void __thiscall CGameParticles_Kill(CGameParticles *self, int i);
+void CGameParticles_KillAll(CGameParticles *self);
+void CGameParticles_Kill(CGameParticles *self, int i);
 /* the particles from .. to - 1 out */
-void __thiscall CGameParticles_KillRange(CGameParticles *self, int from, int to);
+void CGameParticles_KillRange(CGameParticles *self, int from, int to);
 /* particle i made active at x y z; sprite is the sprite of the multi sprite texture */
-void __thiscall CGameParticles_SetParticle(CGameParticles *self, int i, float x, float y, float z, float size,
+void CGameParticles_SetParticle(CGameParticles *self, int i, float x, float y, float z, float size,
 	uint32_t color, int sprite, float rot);
 /* the members of particle i, NULL for the ones not wanted (vel and t only for active particles); its active flag */
-byte __thiscall CGameParticles_GetParticle(CGameParticles *self, int i, vec3_t *pos, vec3_t *vel, float *t,
+byte CGameParticles_GetParticle(CGameParticles *self, int i, vec3_t *pos, vec3_t *vel, float *t,
 	uint32_t *color, float *size);
-int __fastcall CGameParticles_NumActive(const CGameParticles *self);
-int __fastcall CGameParticles_NumParticles(const CGameParticles *self);
-float __fastcall CGameParticles_GetAlpha(const CGameParticles *self);
-void __thiscall CGameParticles_SetAlpha(CGameParticles *self, float alpha);
-byte __fastcall CGameParticles_IsEnabled(const CGameParticles *self);
-void __thiscall CGameParticles_SetEnabled(CGameParticles *self, byte on);
-byte __fastcall CGameParticles_IsVisible(const CGameParticles *self);
-void __thiscall CGameParticles_SetVisible(CGameParticles *self, byte on);
-void __thiscall CGameParticles_SetColorRampOn(CGameParticles *self, byte on);
-void __thiscall CGameParticles_SetSparksOn(CGameParticles *self, byte on);
-void __thiscall CGameParticles_SetColorRamp(CGameParticles *self, uint32_t *ramp);
-void __thiscall CGameParticles_SetEmitPos(CGameParticles *self, vec3_t *pos, byte n);
-void __thiscall CGameParticles_EmitN(CGameParticles *self, int n, byte force);
-void __thiscall CGameParticles_EmitM(CGameParticles *self, int n, byte force, const matrix_t *m);
-void __thiscall CGameParticles_EmitDt(CGameParticles *self, int n, byte force, float dt);
-void __thiscall CGameParticles_Emit(CGameParticles *self, int n, byte force, float dt, const matrix_t *m);
+int CGameParticles_NumActive(const CGameParticles *self);
+int CGameParticles_NumParticles(const CGameParticles *self);
+float CGameParticles_GetAlpha(const CGameParticles *self);
+void CGameParticles_SetAlpha(CGameParticles *self, float alpha);
+byte CGameParticles_IsEnabled(const CGameParticles *self);
+void CGameParticles_SetEnabled(CGameParticles *self, byte on);
+byte CGameParticles_IsVisible(const CGameParticles *self);
+void CGameParticles_SetVisible(CGameParticles *self, byte on);
+void CGameParticles_SetColorRampOn(CGameParticles *self, byte on);
+void CGameParticles_SetSparksOn(CGameParticles *self, byte on);
+void CGameParticles_SetColorRamp(CGameParticles *self, uint32_t *ramp);
+void CGameParticles_SetEmitPos(CGameParticles *self, vec3_t *pos, byte n);
+void CGameParticles_EmitN(CGameParticles *self, int n, byte force);
+void CGameParticles_EmitM(CGameParticles *self, int n, byte force, const matrix_t *m);
+void CGameParticles_EmitDt(CGameParticles *self, int n, byte force, float dt);
+void CGameParticles_Emit(CGameParticles *self, int n, byte force, float dt, const matrix_t *m);
 
 /* rva 0x216ad0 (ScrapEngMain.cpp): returns m, the matrix of the game as the matrix of the engine */
 

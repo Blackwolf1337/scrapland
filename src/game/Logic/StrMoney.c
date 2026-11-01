@@ -9,7 +9,7 @@
 #include "scrap/logic.h"
 #include "scrap/world.h"
 
-void *__thiscall cStrMoney_ctor(void *obj) {
+void *cStrMoney_ctor(void *obj) {
 	cStrMoney *self = obj;
 
 	self->money = 0;
@@ -22,7 +22,7 @@ void *__thiscall cStrMoney_ctor(void *obj) {
 }
 
 /* the digits from the first one not "0", "0" for none */
-const char *__fastcall cStrMoney_GetStr(cStrMoney *self) {
+const char *cStrMoney_GetStr(cStrMoney *self) {
 	if (!self->len) {
 		return "0";
 	}
@@ -30,7 +30,7 @@ const char *__fastcall cStrMoney_GetStr(cStrMoney *self) {
 }
 
 /* the lowest digit that differs from the money takes its value */
-void __fastcall cStrMoney_UpdateDigits(cStrMoney *self) {
+void cStrMoney_UpdateDigits(cStrMoney *self) {
 	byte first = 1;
 	int v = self->money;
 	char *p = &self->digits[15];
@@ -50,7 +50,7 @@ void __fastcall cStrMoney_UpdateDigits(cStrMoney *self) {
 	}
 }
 
-void __thiscall cStrMoney_Update(void *obj, float dt) {
+void cStrMoney_Update(void *obj, float dt) {
 	cStrMoney *self = obj;
 	int money = self->money;
 	float t = self->timer - dt;

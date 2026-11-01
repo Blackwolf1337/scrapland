@@ -35,21 +35,21 @@ SD_SIZE(cVehicleTraffic, 0x2c);
 
 /* AI of another module: the width of the traffic path of an AI in the traffic states 4 and 9, else 0;
  * the value of the x87 stack, not rounded */
-long double __thiscall cAIVehicle_GetPathWidth(void *ai);
+long double cAIVehicle_GetPathWidth(void *ai);
 
-cVehicleTraffic *__fastcall cVehicleTraffic_ctor(cVehicleTraffic *self);
+cVehicleTraffic *cVehicleTraffic_ctor(cVehicleTraffic *self);
 /* the ship tests its collisions with the entities: not Active, not in a traffic state (4, 9) of its AI, or
  * UseTrafficCollisionSkip 0 */
-byte __fastcall cVehicleTraffic_CollideEntities(cVehicleTraffic *self);
-byte __thiscall cVehicleTraffic_VarF(cVehicleTraffic *self, const char *name, double *v, byte set);
-void __thiscall cVehicleTraffic_SetOff(cVehicleTraffic *self, byte off);
-void __thiscall cVehicleTraffic_SetParent(cVehicleTraffic *self, cEntity *parent);
-byte __thiscall cVehicleTraffic_VarI(cVehicleTraffic *self, const char *name, int *v, byte set);
+byte cVehicleTraffic_CollideEntities(cVehicleTraffic *self);
+byte cVehicleTraffic_VarF(cVehicleTraffic *self, const char *name, double *v, byte set);
+void cVehicleTraffic_SetOff(cVehicleTraffic *self, byte off);
+void cVehicleTraffic_SetParent(cVehicleTraffic *self, cEntity *parent);
+byte cVehicleTraffic_VarI(cVehicleTraffic *self, const char *name, int *v, byte set);
 /* the move from .. to (at most speed of len) kept in the capsule of the lane, else slid; out the end point */
-byte __thiscall cVehicleTraffic_Move(cVehicleTraffic *self, const vec3_t *from, const vec3_t *to, float radius,
+byte cVehicleTraffic_Move(cVehicleTraffic *self, const vec3_t *from, const vec3_t *to, float radius,
 	vec3_t *out, float len, CSphereBox *cache);
-byte __thiscall cVehicleTraffic_VarS(cVehicleTraffic *self, const char *name, char **v, byte set);
-byte __thiscall cVehicleTraffic_VarV(cVehicleTraffic *self, const char *name, double *x, double *y, double *z,
+byte cVehicleTraffic_VarS(cVehicleTraffic *self, const char *name, char **v, byte set);
+byte cVehicleTraffic_VarV(cVehicleTraffic *self, const char *name, double *x, double *y, double *z,
 	byte set);
 
 #endif

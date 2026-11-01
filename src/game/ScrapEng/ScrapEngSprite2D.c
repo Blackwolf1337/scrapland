@@ -23,7 +23,7 @@ static CMultiSprite *Sprite_MultiSprite(const CPsaImage *self) {
 	return Sprite_Graphic(self)->Mat->map[0]->MultiSprite;
 }
 
-void __fastcall CPsaImage_Init(CPsaImage *self) {
+void CPsaImage_Init(CPsaImage *self) {
 	g_CountSprite2D++;
 	self->x = 0.0f;
 	self->y = 0.0f;
@@ -46,30 +46,30 @@ void __fastcall CPsaImage_Init(CPsaImage *self) {
 	self->flip = 0;
 }
 
-void *__thiscall CPsaImage_ctorTex(void *self, const char *name, int a, int b) {
+void *CPsaImage_ctorTex(void *self, const char *name, int a, int b) {
 	CPsaImage_Init(self);
 	CPsaImage_Load(self, name, (const char *)a, 3, (uint32_t)b);
 	return self;
 }
 
-void *__thiscall CPsaImage_ctorFlags(void *self, const char *name, int a, int b, int flags) {
+void *CPsaImage_ctorFlags(void *self, const char *name, int a, int b, int flags) {
 	CPsaImage_Init(self);
 	CPsaImage_Load(self, name, (const char *)a, b, (uint32_t)flags);
 	return self;
 }
 
-CPsaImage *__thiscall CPsaImage_ctor(CPsaImage *self, const char *name, int flags) {
+CPsaImage *CPsaImage_ctor(CPsaImage *self, const char *name, int flags) {
 	CPsaImage_Init(self);
 	CPsaImage_Load(self, name, NULL, 3, (uint32_t)flags);
 	return self;
 }
 
-CPsaImage *__fastcall CPsaImage_ctorEmpty(CPsaImage *self) {
+CPsaImage *CPsaImage_ctorEmpty(CPsaImage *self) {
 	CPsaImage_Init(self);
 	return self;
 }
 
-void __fastcall CPsaImage_dtor(CPsaImage *self) {
+void CPsaImage_dtor(CPsaImage *self) {
 	CGraphic2D *g;
 
 	CHECK(g_CountSprite2D > 0);
@@ -82,7 +82,7 @@ void __fastcall CPsaImage_dtor(CPsaImage *self) {
 	}
 }
 
-int __thiscall CPsaImage_GetNumFrames(CPsaImage *self) {
+int CPsaImage_GetNumFrames(CPsaImage *self) {
 	CMap *map;
 
 	CHECK(self->sprite);
@@ -91,12 +91,12 @@ int __thiscall CPsaImage_GetNumFrames(CPsaImage *self) {
 	return ((CMultiSprite *)map->MultiSprite)->n;
 }
 
-byte __thiscall CPsaImage_GetFrameSize(CPsaImage *self, int frame, int *w, int *h) {
+byte CPsaImage_GetFrameSize(CPsaImage *self, int frame, int *w, int *h) {
 	CHECK(self->sprite);
 	return CMultiSprite_GetSize(Sprite_MultiSprite(self), (uint32_t)frame, (uint32_t *)w, (uint32_t *)h);
 }
 
-byte __thiscall CPsaImage_GetFrameUV(CPsaImage *self, int frame, float *uv0, float *uv1) {
+byte CPsaImage_GetFrameUV(CPsaImage *self, int frame, float *uv0, float *uv1) {
 	CHECK(self->sprite);
 	if (frame == 0) {
 		uv0[0] = self->uv0[0];
@@ -111,13 +111,13 @@ byte __thiscall CPsaImage_GetFrameUV(CPsaImage *self, int frame, float *uv0, flo
 	return 1;
 }
 
-void __thiscall CPsaImage_Draw(CPsaImage *self, float x, float y) {
+void CPsaImage_Draw(CPsaImage *self, float x, float y) {
 	self->x = x;
 	self->y = y;
 	CPsaImage_DrawPoly(self, NULL, NULL, NULL, 0, 0);
 }
 
-void __thiscall CPsaImage_DrawScaled(CPsaImage *self, float x, float y, float scale) {
+void CPsaImage_DrawScaled(CPsaImage *self, float x, float y, float scale) {
 	self->x = x;
 	self->y = y;
 	self->scaleX = scale;
@@ -125,7 +125,7 @@ void __thiscall CPsaImage_DrawScaled(CPsaImage *self, float x, float y, float sc
 	CPsaImage_DrawPoly(self, NULL, NULL, NULL, 0, 0);
 }
 
-void __thiscall CPsaImage_DrawFrame(CPsaImage *self, int frame, float x, float y) {
+void CPsaImage_DrawFrame(CPsaImage *self, int frame, float x, float y) {
 	self->x = x;
 	self->y = y;
 	self->frame = frame;
@@ -133,7 +133,7 @@ void __thiscall CPsaImage_DrawFrame(CPsaImage *self, int frame, float x, float y
 	self->frame = 0;
 }
 
-void __thiscall CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, float y, int mode, int flip) {
+void CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, float y, int mode, int flip) {
 	CHECK(mode >= 0 && mode <= 3);
 	CHECK(flip >= 0 && flip <= 3);
 	self->flip = flip;
@@ -145,7 +145,7 @@ void __thiscall CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, flo
 	self->frame = 0;
 }
 
-void __thiscall CPsaImage_DrawPoly(void *img, const float *pos, const float *uv, const uint32_t *colors, int n,
+void CPsaImage_DrawPoly(void *img, const float *pos, const float *uv, const uint32_t *colors, int n,
 	int mode) {
 	CPsaImage *self = img;
 	CGraphic2D *g;
@@ -205,7 +205,7 @@ void __thiscall CPsaImage_DrawPoly(void *img, const float *pos, const float *uv,
 }
 
 /* the CGraphic2D of the sheet name (opac: the opacity map) with the blend mode and the SPR2D flags */
-void __thiscall CPsaImage_Load(CPsaImage *self, const char *name, const char *opac, int blend, uint32_t flags) {
+void CPsaImage_Load(CPsaImage *self, const char *name, const char *opac, int blend, uint32_t flags) {
 	void *mem;
 	uint32_t gflags, alpha;
 	int src, dst;
@@ -245,6 +245,6 @@ void __thiscall CPsaImage_Load(CPsaImage *self, const char *name, const char *op
 	}
 }
 
-void __thiscall CPsaImage_LoadName(CPsaImage *self, const char *name, uint32_t flags) {
+void CPsaImage_LoadName(CPsaImage *self, const char *name, uint32_t flags) {
 	CPsaImage_Load(self, name, NULL, 3, flags);
 }

@@ -59,7 +59,7 @@ static void Missile_CallHit(cMissileEntity *self, const char *other) {
 	cPy_Function_AddParamS(&self->onHit, other);
 }
 
-cEntity *__thiscall cMissileEntity_ctor(void *mem, const char *name, float x, float y, float z) {
+cEntity *cMissileEntity_ctor(void *mem, const char *name, float x, float y, float z) {
 	cMissileEntity *self = mem;
 
 	cWithLifeEntity_ctor(mem, name, x, y, z);
@@ -105,7 +105,7 @@ cEntity *__thiscall cMissileEntity_ctor(void *mem, const char *name, float x, fl
 	return &self->wl.obj.base;
 }
 
-void __fastcall cMissileEntity_dtor(cMissileEntity *self) {
+void cMissileEntity_dtor(cMissileEntity *self) {
 	int n = self->swarmCount;
 
 	self->wl.obj.base.vftable = CMISSILEENTITY_VFTABLE;
@@ -117,7 +117,7 @@ void __fastcall cMissileEntity_dtor(cMissileEntity *self) {
 	cWithLifeEntity_dtor(Missile_Ent(self));
 }
 
-cMissileEntity *__thiscall cMissileEntity_Delete(cMissileEntity *self, uint32_t flags) {
+cMissileEntity *cMissileEntity_Delete(cMissileEntity *self, uint32_t flags) {
 	cMissileEntity_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CMISSILEENTITY_SIZE);
@@ -125,14 +125,14 @@ cMissileEntity *__thiscall cMissileEntity_Delete(cMissileEntity *self, uint32_t 
 	return self;
 }
 
-void __thiscall cMissileEntity_RotStep(cMissileEntity *self, float dt) {
+void cMissileEntity_RotStep(cMissileEntity *self, float dt) {
 	self->wl.obj.ang.y = self->wl.obj.rotVel.y * dt + self->wl.obj.ang.y;
 	self->wl.obj.ang.z = self->wl.obj.rotVel.z * dt + self->wl.obj.ang.z;
 	self->wl.obj.ang.x = self->wl.obj.ang.x + self->wl.obj.rotVel.x * dt;
 	Missile_Vtbl(self)->UpdateVel(self);
 }
 
-void __thiscall cMissileEntity_Touch(cMissileEntity *self, cEntity *other, const vec3_t *point, const vec3_t *dir) {
+void cMissileEntity_Touch(cMissileEntity *self, cEntity *other, const vec3_t *point, const vec3_t *dir) {
 	(void)point;
 	(void)dir;
 	if (!other) {
@@ -160,7 +160,7 @@ void __thiscall cMissileEntity_Touch(cMissileEntity *self, cEntity *other, const
 	}
 }
 
-void __thiscall cMissileEntity_LifeTick(cMissileEntity *self) {
+void cMissileEntity_LifeTick(cMissileEntity *self) {
 	float t = X87_Sub(self->lifeTime, cTimer_GetDelta(&self->wl.obj.timer));
 
 	self->lifeTime = t;
@@ -176,7 +176,7 @@ void __thiscall cMissileEntity_LifeTick(cMissileEntity *self) {
 	}
 }
 
-void __thiscall cMissileEntity_Wobble(cMissileEntity *self, float k) {
+void cMissileEntity_Wobble(cMissileEntity *self, float k) {
 	k = k * 0x1.921fb6p-2f;	/* pi / 8 */
 	float neg = -k;
 	double range = (double)(k - Float_Keep(neg));
@@ -203,7 +203,7 @@ void __thiscall cMissileEntity_Wobble(cMissileEntity *self, float k) {
 	Missile_Vtbl(self)->UpdateVel(self);
 }
 
-void __thiscall cMissileEntity_Fall(cMissileEntity *self, float dt) {
+void cMissileEntity_Fall(cMissileEntity *self, float dt) {
 	if (self->wl.obj.ang.x > -MISSILE_PI_2) {
 		self->wl.obj.ang.x = self->wl.obj.ang.x - dt;
 	}
@@ -228,7 +228,7 @@ static inline void Missile_VarFloat(float *f, double *d, int set) {
 	}
 }
 
-byte __thiscall cMissileEntity_VarF(cMissileEntity *self, const char *name, double *d, int set) {
+byte cMissileEntity_VarF(cMissileEntity *self, const char *name, double *d, int set) {
 	if (!*name) {
 		return 0;
 	}
@@ -281,19 +281,19 @@ byte __thiscall cMissileEntity_VarF(cMissileEntity *self, const char *name, doub
 	return cWithLifeEntity_VarF(Missile_Ent(self), name, d, set);
 }
 
-int __fastcall cMissileEntity_GetSwarmCount(cMissileEntity *self) {
+int cMissileEntity_GetSwarmCount(cMissileEntity *self) {
 	if (Net_IsNetEntity(Missile_Ent(self))) {
 		return self->netSwarmCount;
 	}
 	return self->swarmCount;
 }
 
-const char *__thiscall cMissileEntity_GetClassName(cMissileEntity *self) {
+const char *cMissileEntity_GetClassName(cMissileEntity *self) {
 	(void)self;
 	return MISSILE_CLASSNAME;
 }
 
-void __thiscall cMissileEntity_UpdateOff(cMissileEntity *self) {
+void cMissileEntity_UpdateOff(cMissileEntity *self) {
 	cObjEntity_UpdateTimer(Missile_Ent(self));
 	Missile_Vtbl(self)->LifeTick(self);
 	cWithLifeEntity_UpdateOff(Missile_Ent(self));
@@ -308,7 +308,7 @@ static inline void Missile_VarFlag(byte *flag, int *i, int set) {
 	}
 }
 
-byte __thiscall cMissileEntity_VarI(cMissileEntity *self, const char *name, int *i, int set) {
+byte cMissileEntity_VarI(cMissileEntity *self, const char *name, int *i, int set) {
 	if (!*name) {
 		return 0;
 	}
@@ -356,14 +356,14 @@ byte __thiscall cMissileEntity_VarI(cMissileEntity *self, const char *name, int 
 	return cWithLifeEntity_VarI(Missile_Ent(self), name, i, set);
 }
 
-byte __thiscall cMissileEntity_IsType(cMissileEntity *self, const char *type) {
+byte cMissileEntity_IsType(cMissileEntity *self, const char *type) {
 	if (!strcmp(type, MISSILE_CLASSNAME)) {
 		return 1;
 	}
 	return cWithLifeEntity_IsType(Missile_Ent(self), type);
 }
 
-byte __thiscall cMissileEntity_Hit(cMissileEntity *self, int n, int unused) {
+byte cMissileEntity_Hit(cMissileEntity *self, int n, int unused) {
 	vec3_t tmp;
 
 	(void)unused;
@@ -422,19 +422,19 @@ byte __thiscall cMissileEntity_Hit(cMissileEntity *self, int n, int unused) {
 	return 1;
 }
 
-void __thiscall cMissileEntity_OnDeath(cMissileEntity *self) {
+void cMissileEntity_OnDeath(cMissileEntity *self) {
 	self->target[0] = 0;
 	cWithLifeEntity_OnDeath(Missile_Ent(self));
 }
 
-void __thiscall cMissileEntity_SetActive(cMissileEntity *self, byte on) {
+void cMissileEntity_SetActive(cMissileEntity *self, byte on) {
 	cWithLifeEntity_SetActive(Missile_Ent(self), on);
 	if (self->hideMain && CGameModel_IsLoaded(&self->wl.obj.model)) {
 		CGameModel_Disable(&self->wl.obj.model);
 	}
 }
 
-void __thiscall cMissileEntity_SetAng(cMissileEntity *self, const vec3_t *ang) {
+void cMissileEntity_SetAng(cMissileEntity *self, const vec3_t *ang) {
 	vec3_t n;
 	float x = NormAng(ang->x);
 	float y = NormAng(ang->y);
@@ -446,11 +446,11 @@ void __thiscall cMissileEntity_SetAng(cMissileEntity *self, const vec3_t *ang) {
 	cObjEntity_SetAng(Missile_Ent(self), &n);
 }
 
-void __thiscall cMissileEntity_SetBeesHit(cMissileEntity *self, byte v) {
+void cMissileEntity_SetBeesHit(cMissileEntity *self, byte v) {
 	self->beesHit = v;
 }
 
-void __thiscall cMissileEntity_SetHiddenSwarm(cMissileEntity *self, byte on) {
+void cMissileEntity_SetHiddenSwarm(cMissileEntity *self, byte on) {
 	if (!self->swarmCount) {
 		self->hiddenSwarm = on;
 		return;
@@ -458,7 +458,7 @@ void __thiscall cMissileEntity_SetHiddenSwarm(cMissileEntity *self, byte on) {
 	Con_Warnf("WARNING: <%s>.HiddenSwarm can't be modified!\n", self->wl.obj.base.name);
 }
 
-void __thiscall cMissileEntity_SetHideMain(cMissileEntity *self, byte on) {
+void cMissileEntity_SetHideMain(cMissileEntity *self, byte on) {
 	self->hideMain = on;
 	if (CGameModel_IsLoaded(&self->wl.obj.model)) {
 		if (!self->hideMain && self->wl.obj.base.active) {
@@ -469,7 +469,7 @@ void __thiscall cMissileEntity_SetHideMain(cMissileEntity *self, byte on) {
 	}
 }
 
-void __thiscall cMissileEntity_SetHitType(cMissileEntity *self, int type) {
+void cMissileEntity_SetHitType(cMissileEntity *self, int type) {
 	if (type == self->hitType) {
 		return;
 	}
@@ -486,44 +486,44 @@ void __thiscall cMissileEntity_SetHitType(cMissileEntity *self, int type) {
 	self->hitType = type;
 }
 
-void __thiscall cMissileEntity_SetLifeTime(cMissileEntity *self, float t) {
+void cMissileEntity_SetLifeTime(cMissileEntity *self, float t) {
 	self->lifeTime = t;
 }
 
-void __thiscall cMissileEntity_SetType(cMissileEntity *self, int type) {
+void cMissileEntity_SetType(cMissileEntity *self, int type) {
 	self->type = type;
 }
 
-void __thiscall cMissileEntity_SetCount(cMissileEntity *self, int n) {
+void cMissileEntity_SetCount(cMissileEntity *self, int n) {
 	self->swarmCount = n;
 }
 
-void __thiscall cMissileEntity_SetNoWorldHit(cMissileEntity *self, byte on) {
+void cMissileEntity_SetNoWorldHit(cMissileEntity *self, byte on) {
 	self->noWorldHit = on;
 }
 
-void __thiscall cMissileEntity_SetParent(cMissileEntity *self, const char *name) {
+void cMissileEntity_SetParent(cMissileEntity *self, const char *name) {
 	Str_Copy(self->parent, name, 0x80);
 }
 
-void __thiscall cMissileEntity_SetRadius(cMissileEntity *self, float r) {
+void cMissileEntity_SetRadius(cMissileEntity *self, float r) {
 	self->radius = r;
 }
 
-void __thiscall cMissileEntity_SetRadiusGrow(cMissileEntity *self, float r) {
+void cMissileEntity_SetRadiusGrow(cMissileEntity *self, float r) {
 	self->radiusGrow = r;
 }
 
-void __thiscall cMissileEntity_SetSpeed(cMissileEntity *self, float speed) {
+void cMissileEntity_SetSpeed(cMissileEntity *self, float speed) {
 	self->speed = speed;
 	Missile_Vtbl(self)->UpdateVel(self);
 }
 
-void __thiscall cMissileEntity_SetSwDthTime(cMissileEntity *self, float t) {
+void cMissileEntity_SetSwDthTime(cMissileEntity *self, float t) {
 	self->swDthTime = t;
 }
 
-void __thiscall cMissileEntity_SetSwarm(cMissileEntity *self, int n) {
+void cMissileEntity_SetSwarm(cMissileEntity *self, int n) {
 	int c = self->swarmCount;
 
 	if (n > c) {
@@ -547,15 +547,15 @@ void __thiscall cMissileEntity_SetSwarm(cMissileEntity *self, int n) {
 	}
 }
 
-void __thiscall cMissileEntity_SetBeesGather(cMissileEntity *self, byte v) {
+void cMissileEntity_SetBeesGather(cMissileEntity *self, byte v) {
 	self->beesGather = v;
 }
 
-void __thiscall cMissileEntity_SetSwarmSpeed(cMissileEntity *self, float speed) {
+void cMissileEntity_SetSwarmSpeed(cMissileEntity *self, float speed) {
 	self->swarmSpeed = speed;
 }
 
-void __thiscall cMissileEntity_SetTarget(cMissileEntity *self, const char *name) {
+void cMissileEntity_SetTarget(cMissileEntity *self, const char *name) {
 	if (!name) {
 		self->target[0] = 0;
 		return;
@@ -563,15 +563,15 @@ void __thiscall cMissileEntity_SetTarget(cMissileEntity *self, const char *name)
 	Str_Copy(self->target, name, 0x80);
 }
 
-void __thiscall cMissileEntity_SetTopRadius(cMissileEntity *self, float r) {
+void cMissileEntity_SetTopRadius(cMissileEntity *self, float r) {
 	self->topRadius = r;
 }
 
-void __thiscall cMissileEntity_SetTurnSpeed(cMissileEntity *self, float speed) {
+void cMissileEntity_SetTurnSpeed(cMissileEntity *self, float speed) {
 	self->turnSpeed = speed;
 }
 
-void __thiscall cMissileEntity_UpdateVel(cMissileEntity *self) {
+void cMissileEntity_UpdateVel(cMissileEntity *self) {
 	float sy, cy, sx, cx;
 
 	X87_SinCos(self->wl.obj.ang.y, &sy, &cy);
@@ -582,7 +582,7 @@ void __thiscall cMissileEntity_UpdateVel(cMissileEntity *self) {
 	self->wl.obj.vel.y = speed * cx;
 }
 
-void __thiscall cMissileEntity_SetVel(cMissileEntity *self, const vec3_t *vel) {
+void cMissileEntity_SetVel(cMissileEntity *self, const vec3_t *vel) {
 	vec3_t neg, rot, ang;
 
 	neg.x = -vel->x;
@@ -595,7 +595,7 @@ void __thiscall cMissileEntity_SetVel(cMissileEntity *self, const vec3_t *vel) {
 	Missile_Vtbl(self)->UpdateVel(self);
 }
 
-void __thiscall cMissileEntity_Update(cMissileEntity *self) {
+void cMissileEntity_Update(cMissileEntity *self) {
 	int saved = g_MissileUpdating;
 
 	g_MissileUpdating = 1;
@@ -613,7 +613,7 @@ void __thiscall cMissileEntity_Update(cMissileEntity *self) {
 }
 
 /* the volume of the first sound by the number of bees (the most seen is kept in its ints[0]) */
-void __thiscall cMissileEntity_ScaleSwarmSound(cMissileEntity *self, int unused) {
+void cMissileEntity_ScaleSwarmSound(cMissileEntity *self, int unused) {
 	(void)unused;
 	cSndItem *snd = PtrArray_Get(&self->wl.obj.snd, 0);
 	if (!snd) {
@@ -631,7 +631,7 @@ void __thiscall cMissileEntity_ScaleSwarmSound(cMissileEntity *self, int unused)
 	}
 }
 
-byte __thiscall cMissileEntity_VarS(cMissileEntity *self, const char *name, char **s, int set) {
+byte cMissileEntity_VarS(cMissileEntity *self, const char *name, char **s, int set) {
 	static const char *const hitTypes[4] = { "None", "Hit", "InOut", "Inside" };
 	static const char *const types[4] = { "Linear", "Dumb", "Cloud", "Fall" };
 
@@ -712,14 +712,14 @@ byte __thiscall cMissileEntity_VarS(cMissileEntity *self, const char *name, char
 	return cWithLifeEntity_VarS(Missile_Ent(self), name, s, set);
 }
 
-byte __thiscall cMissileEntity_VarV(cMissileEntity *self, const char *name, double *x, double *y, double *z, int set) {
+byte cMissileEntity_VarV(cMissileEntity *self, const char *name, double *x, double *y, double *z, int set) {
 	if (!*name) {
 		return 0;
 	}
 	return cWithLifeEntity_VarV(Missile_Ent(self), name, x, y, z, set);
 }
 
-void __thiscall cMissileEntity_SetModel(cMissileEntity *self, const char *file, float sx, float sy, float sz, int flag) {
+void cMissileEntity_SetModel(cMissileEntity *self, const char *file, float sx, float sy, float sz, int flag) {
 	vec3_t scale, root, link, rot, pos, cam;
 
 	(void)flag;
@@ -766,7 +766,7 @@ static cDebris *Missile_FXDebris(cMissileEntity *self, const char *sysName, byte
 	return d;
 }
 
-void __thiscall cMissileEntity_SetEmbeddedFX(cMissileEntity *self, const char *name) {
+void cMissileEntity_SetEmbeddedFX(cMissileEntity *self, const char *name) {
 	if (self->wl.obj.base.deadNode.target) {
 		return;
 	}
@@ -1039,7 +1039,7 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 	return 0;
 }
 
-void __thiscall cMissileEntity_Tick(cMissileEntity *self, float dt) {
+void cMissileEntity_Tick(cMissileEntity *self, float dt) {
 	if (Net_IsNetEntity(Missile_Ent(self))) {
 		Missile_NetTick(self, dt);
 	} else if (Missile_LocalTick(self, dt)) {
@@ -1062,7 +1062,7 @@ static inline uint32_t Missile_NetId(const char *name) {
 	return id == -1 ? MISSILE_NET_NONE : (uint32_t)(uint16_t)id;
 }
 
-void __thiscall cMissileEntity_NetWrite(cMissileEntity *self, float dist2, void *msg, int full) {
+void cMissileEntity_NetWrite(cMissileEntity *self, float dist2, void *msg, int full) {
 	cAbstractFile *f = msg;
 	cNetController *net = WLife(self)->obj.net;
 	byte active = self->wl.obj.base.active;
@@ -1089,7 +1089,7 @@ void __thiscall cMissileEntity_NetWrite(cMissileEntity *self, float dist2, void 
 	f->vftable->Write(f, &v, 1);
 }
 
-void __thiscall cMissileEntity_NetRead(cMissileEntity *self, void *msg, int isNew) {
+void cMissileEntity_NetRead(cMissileEntity *self, void *msg, int isNew) {
 	cAbstractFile *f = msg;
 	uint16_t id = 0;
 	byte b = 0;
@@ -1145,7 +1145,7 @@ static void Missile_BeePush(cMissileEntity *self, cDebris *d, float dt, float sp
 	} while ((double)self->beeTime > 0.05);
 }
 
-void __thiscall cMissileEntity_Swarm(cMissileEntity *self, float dt) {
+void cMissileEntity_Swarm(cMissileEntity *self, float dt) {
 	vec3_t tmp, view, a, n;
 	float r2 = self->radius * self->radius;
 	float sp = self->swarmSpeed + self->speed;
@@ -1210,7 +1210,7 @@ void __thiscall cMissileEntity_Swarm(cMissileEntity *self, float dt) {
 	self->lastPos = *Obj_Vtbl(Missile_Ent(self))->GetViewPos(Missile_Ent(self), &tmp);
 }
 
-void __thiscall cMissileEntity_AddToSwarm(cMissileEntity *self, int n) {
+void cMissileEntity_AddToSwarm(cMissileEntity *self, int n) {
 	if (!self->hiddenSwarm) {
 		cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, self->swarmSys);
 		float ax = NormAng(self->wl.obj.ang.x);
@@ -1260,7 +1260,7 @@ void __thiscall cMissileEntity_AddToSwarm(cMissileEntity *self, int n) {
 	}
 }
 
-void __thiscall cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at) {
+void cMissileEntity_Explode(cMissileEntity *self, const vec3_t *at) {
 	vec3_t neg, rot;
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, self->swarmSys);
 

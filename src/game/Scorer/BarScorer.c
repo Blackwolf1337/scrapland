@@ -8,7 +8,7 @@ static const char *const s_BackColors[4] = {"BackRed", "BackGreen", "BackBlue", 
 static const char *const s_MainColors[4] = {"MainRed", "MainGreen", "MainBlue", "MainAlpha"};
 static const char *const s_BlackColors[4] = {"BlackRed", "BlackGreen", "BlackBlue", "BlackAlpha"};
 
-cBarScorer *__fastcall cBarScorer_ctor(cBarScorer *self) {
+cBarScorer *cBarScorer_ctor(cBarScorer *self) {
 	cSpriteScorer_ctor(&self->base);
 	self->base.base.vftable = CBARSCORER_VFTABLE;
 	self->maxValue = 0.0f;
@@ -32,12 +32,12 @@ cBarScorer *__fastcall cBarScorer_ctor(cBarScorer *self) {
 	return self;
 }
 
-void __fastcall cBarScorer_dtor(cBarScorer *self) {
+void cBarScorer_dtor(cBarScorer *self) {
 	self->base.base.vftable = CBARSCORER_VFTABLE;
 	cSpriteScorer_dtor(&self->base);
 }
 
-cBarScorer *__thiscall cBarScorer_Delete(cBarScorer *self, byte flags) {
+cBarScorer *cBarScorer_Delete(cBarScorer *self, byte flags) {
 	cBarScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cBarScorer));
@@ -45,7 +45,7 @@ cBarScorer *__thiscall cBarScorer_Delete(cBarScorer *self, byte flags) {
 	return self;
 }
 
-int __thiscall cBarScorer_Var(cBarScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cBarScorer_Var(cBarScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	int r;
 
 	if (d) {
@@ -119,7 +119,7 @@ int __thiscall cBarScorer_Var(cBarScorer *self, const char *name, byte set, char
 	return cSpriteScorer_Var(&self->base, name, set, s, d, i);
 }
 
-void __thiscall cBarScorer_Draw(cBarScorer *self, int player) {
+void cBarScorer_Draw(cBarScorer *self, int player) {
 	cSpriteScorer *sp = &self->base;
 	int mode = g_BarAutoUpdate;
 	float frac;

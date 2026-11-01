@@ -33,7 +33,7 @@ static void SceneList_Free(CSceneList *le) {
 	operator_delete_sized(le, sizeof(*le));
 }
 
-CSceneList *__thiscall CSceneList_ctor(CSceneList *self, CScene *scn, const char *name, const char *name2,
+CSceneList *CSceneList_ctor(CSceneList *self, CScene *scn, const char *name, const char *name2,
 	const vec3_t *scale, uint32_t flags, CSceneList **list) {
 	self->name = NULL;
 	self->name2 = NULL;
@@ -54,7 +54,7 @@ CSceneList *__thiscall CSceneList_ctor(CSceneList *self, CScene *scn, const char
 	return self;
 }
 
-CModelList *__thiscall CModelList_ctor(CModelList *self, CModel *m, const char *name, const char *name2,
+CModelList *CModelList_ctor(CModelList *self, CModel *m, const char *name, const char *name2,
 	uint32_t flags, CModelList **list) {
 	self->name = NULL;
 	self->name2 = NULL;
@@ -75,7 +75,7 @@ CModelList *__thiscall CModelList_ctor(CModelList *self, CModel *m, const char *
 	return self;
 }
 
-void __fastcall CModelList_dtor(CModelList *self) {
+void CModelList_dtor(CModelList *self) {
 	CHECK(self->flags & SCENE_AUTOINIT);
 	CHECK(self->model);
 	CModel *m = self->model;
@@ -438,7 +438,7 @@ void Models_Render(void) {
 	}
 }
 
-CSceneList *__thiscall CSceneList_Find(CSceneList *self, const char *name, const char *name2,
+CSceneList *CSceneList_Find(CSceneList *self, const char *name, const char *name2,
 	const vec3_t *scale, uint32_t flags, uint32_t mask) {
 	for (CSceneList *le = self; le; le = le->next) {
 		if ((le->flags & mask) == (flags & mask) && String_EqualNoCase(le->name, name) &&
@@ -450,7 +450,7 @@ CSceneList *__thiscall CSceneList_Find(CSceneList *self, const char *name, const
 	return NULL;
 }
 
-CModelList *__thiscall CModelList_Find(CModelList *self, const char *name, const char *name2, uint32_t flags,
+CModelList *CModelList_Find(CModelList *self, const char *name, const char *name2, uint32_t flags,
 	uint32_t mask) {
 	for (CModelList *lm = self; lm; lm = lm->next) {
 		if ((lm->flags & mask) == (flags & mask) && String_EqualNoCase(lm->name, name) &&

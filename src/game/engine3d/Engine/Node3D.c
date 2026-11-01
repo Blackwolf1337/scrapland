@@ -49,8 +49,8 @@
 	Con_FatalErrorf("\nFATAL ERROR: Check failed!\n\nError: %s\n\nExpression: %s\n\nFile: '%s'\nDate: %s\nLine: %d", \
 		(self)->name, expr, __FILE__, __TIMESTAMP__, __LINE__)
 
-typedef void(__thiscall *objUpdate_t)(IObject3D *self, CRenderNode *r);
-typedef void(__thiscall *objRender_t)(IObject3D *self, void *arg, CRenderNode *r);
+typedef void(*objUpdate_t)(IObject3D *self, CRenderNode *r);
+typedef void(*objRender_t)(IObject3D *self, void *arg, CRenderNode *r);
 
 /* the casts of objeto3d.h: NULL after the failed check */
 /* the track set of an animation of a channel */
@@ -96,7 +96,7 @@ static quat_t Quat_Conj(const quat_t *q) {
 	return (quat_t){ -q->x, -q->y, -q->z, q->w };
 }
 
-CNode3D *__fastcall CNode3D_ctor(CNode3D *self) {
+CNode3D *CNode3D_ctor(CNode3D *self) {
 	self->name = NULL;
 	self->Refs = 0;
 	self->vftable = CNODO3D_VFTABLE;
@@ -122,7 +122,7 @@ CNode3D *__fastcall CNode3D_ctor(CNode3D *self) {
 	return self;
 }
 
-void __fastcall CNode3D_dtor(CNode3D *self) {
+void CNode3D_dtor(CNode3D *self) {
 	self->vftable = CNODO3D_VFTABLE;
 	g_Node3DCount--;
 	CHECK(!self->prev && !self->next);
@@ -133,7 +133,7 @@ void __fastcall CNode3D_dtor(CNode3D *self) {
 	}
 }
 
-CNode3D *__thiscall CNode3D_Delete(CNode3D *self, byte flags) {
+CNode3D *CNode3D_Delete(CNode3D *self, byte flags) {
 	CNode3D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -141,7 +141,7 @@ CNode3D *__thiscall CNode3D_Delete(CNode3D *self, byte flags) {
 	return self;
 }
 
-IObject3D *__thiscall CNode3D_GetObj3D(CNode3D *self, CRenderNode *r) {
+IObject3D *CNode3D_GetObj3D(CNode3D *self, CRenderNode *r) {
 	if (r && r->obj3D) {
 		CHECK(r->obj3D->class == self->obj3D->class);
 		return r->obj3D;
@@ -149,7 +149,7 @@ IObject3D *__thiscall CNode3D_GetObj3D(CNode3D *self, CRenderNode *r) {
 	return self->obj3D;
 }
 
-byte __thiscall CNode3D_GetBBox(CNode3D *self, matrix_t *m, box_t *bbox, byte recalc) {
+byte CNode3D_GetBBox(CNode3D *self, matrix_t *m, box_t *bbox, byte recalc) {
 	IObject3D *o;
 	byte skin = 0;
 	box_t b;
@@ -193,7 +193,7 @@ byte __thiscall CNode3D_GetBBox(CNode3D *self, matrix_t *m, box_t *bbox, byte re
 	return 1;
 }
 
-byte __thiscall CNode3D_AnimChannel(CNode3D *self, NodeAnimChannel *c, vec3_t *pos, quat_t *rot) {
+byte CNode3D_AnimChannel(CNode3D *self, NodeAnimChannel *c, vec3_t *pos, quat_t *rot) {
 	void *track;
 	vec3_t p2;
 	quat_t q2, a, b, t, conj;
@@ -242,7 +242,7 @@ byte __thiscall CNode3D_AnimChannel(CNode3D *self, NodeAnimChannel *c, vec3_t *p
 /* R_ShowLocalBox: the line to the parent and the axes; from 2 the box (blue with a skin, other colors for a render
  * node with its own object), 3 the name and class, 4 the name in the middle of the box, from 5 the kinds of the
  * position and rotation tracks (and the camera track) of the animation, from 6 the name too */
-byte __thiscall CNode3D_DebugDraw(CNode3D *self, CRenderNode *r) {
+byte CNode3D_DebugDraw(CNode3D *self, CRenderNode *r) {
 	static const uint32_t kindColors[5] = { 0xff0000, 0xff, 0xffff00, 0x808080, 0x8000 };
 	NodeAnimChannel *c;
 	vec3_t a, b;
@@ -338,7 +338,7 @@ byte __thiscall CNode3D_DebugDraw(CNode3D *self, CRenderNode *r) {
 	return 1;
 }
 
-void __thiscall CNode3D_Render(CNode3D *self, void *arg, CRenderNode *r) {
+void CNode3D_Render(CNode3D *self, void *arg, CRenderNode *r) {
 	IObject3D *o;
 	uint32_t flags;
 	int pass;
@@ -441,7 +441,7 @@ static void CNode3D_Look(CNode3D *self, CRenderNode *r, NodeLook *l, matrix_t *m
 	}
 }
 
-void __thiscall CNode3D_Update(CNode3D *self, CRenderNode *r) {
+void CNode3D_Update(CNode3D *self, CRenderNode *r) {
 	matrix_t *m = &self->m;
 	const matrix_t *pm = NULL;
 	matrix_t t;
@@ -528,15 +528,15 @@ static IObject3D *Node_FindObj(CNode3D *n, const char *name, uint32_t class) {
 	return NULL;
 }
 
-IObject3D *__thiscall CNode3D_FindCamera(CNode3D *self, const char *name) {
+IObject3D *CNode3D_FindCamera(CNode3D *self, const char *name) {
 	return Node_FindObj(self, name, CLASS_OBJ3D_CAMERA);
 }
 
-IObject3D *__thiscall CNode3D_FindLight(CNode3D *self, const char *name) {
+IObject3D *CNode3D_FindLight(CNode3D *self, const char *name) {
 	return Node_FindObj(self, name, CLASS_OBJ3D_LIGHT);
 }
 
-CNode3D *__thiscall CNode3D_Find(CNode3D *self, const char *name, byte incl) {
+CNode3D *CNode3D_Find(CNode3D *self, const char *name, byte incl) {
 	CNode3D *n;
 
 	if (!name) {
@@ -550,7 +550,7 @@ CNode3D *__thiscall CNode3D_Find(CNode3D *self, const char *name, byte incl) {
 	return NULL;
 }
 
-CNode3D *__thiscall CNode3D_FindPrev(CNode3D *self, const char *name) {
+CNode3D *CNode3D_FindPrev(CNode3D *self, const char *name) {
 	CNode3D *n;
 
 	if (!name) {
@@ -564,7 +564,7 @@ CNode3D *__thiscall CNode3D_FindPrev(CNode3D *self, const char *name) {
 	return NULL;
 }
 
-CNode3D *__thiscall CNode3D_FindWild(CNode3D *self, const char *pattern, byte incl) {
+CNode3D *CNode3D_FindWild(CNode3D *self, const char *pattern, byte incl) {
 	CNode3D *n;
 
 	if (!pattern) {
@@ -578,11 +578,11 @@ CNode3D *__thiscall CNode3D_FindWild(CNode3D *self, const char *pattern, byte in
 	return NULL;
 }
 
-uint32_t __fastcall CNode3D_Class(CNode3D *self) {
+uint32_t CNode3D_Class(CNode3D *self) {
 	return self->obj3D ? self->obj3D->class : 0;
 }
 
-byte __thiscall CNode3D_BuildD3D(CNode3D *self, uint32_t flags) {
+byte CNode3D_BuildD3D(CNode3D *self, uint32_t flags) {
 	void *p, *obj;
 	uint32_t class = CNode3D_Class(self);
 
@@ -608,7 +608,7 @@ static void Node_Link(CNode3D **slot, CNode3D *n) {
 	*slot = n;
 }
 
-void __fastcall CNode3D_Unlink(CNode3D *self) {
+void CNode3D_Unlink(CNode3D *self) {
 	CHECK(!self->scene);
 	CHECK(!self->prev || self->prev->next == self);
 	CHECK(!self->next || self->next->prev == self);
@@ -622,17 +622,17 @@ void __fastcall CNode3D_Unlink(CNode3D *self) {
 	Node_Unref(&self->next);
 }
 
-void __fastcall CNode3D_FreeObj3D(CNode3D *self) {
+void CNode3D_FreeObj3D(CNode3D *self) {
 	self->Refs++;
 	Obj3D_Delete(&self->obj3D);
 	self->Refs--;
 }
 
-void __thiscall CNode3D_SetPrev(CNode3D *self, CNode3D *n) {
+void CNode3D_SetPrev(CNode3D *self, CNode3D *n) {
 	Node_Link(&self->prev, n);
 }
 
-void __thiscall CNode3D_SetObj3D(CNode3D *self, IObject3D *obj) {
+void CNode3D_SetObj3D(CNode3D *self, IObject3D *obj) {
 	CHECK(!self->obj3D);
 	if (obj) {
 		CHECK(obj->class != 0);
@@ -640,7 +640,7 @@ void __thiscall CNode3D_SetObj3D(CNode3D *self, IObject3D *obj) {
 	}
 }
 
-void __thiscall CNode3D_SetParent(CNode3D *self, CNode3D *n) {
+void CNode3D_SetParent(CNode3D *self, CNode3D *n) {
 	if (n) {
 		CHECK(self->scene && n->scene == self->scene);
 		n->Refs++;
@@ -649,15 +649,15 @@ void __thiscall CNode3D_SetParent(CNode3D *self, CNode3D *n) {
 	self->parent = n;
 }
 
-void __thiscall CNode3D_SetParentName(CNode3D *self, const char *name) {
+void CNode3D_SetParentName(CNode3D *self, const char *name) {
 	CNode3D_SetParent(self, CNode3D_FindPrev(self, name));
 }
 
-void __thiscall CNode3D_SetNext(CNode3D *self, CNode3D *n) {
+void CNode3D_SetNext(CNode3D *self, CNode3D *n) {
 	Node_Link(&self->next, n);
 }
 
-void __fastcall CNode3D_Free(CNode3D *self) {
+void CNode3D_Free(CNode3D *self) {
 	CIniFile *ini;
 
 	self->Refs++;
@@ -715,7 +715,7 @@ quat_t *Rot_Combine2(quat_t *out, CRotation *a, CRotation *b) {
 	return out;
 }
 
-void *__thiscall CNode3D_Track(CNode3D *self, uint32_t ch) {
+void *CNode3D_Track(CNode3D *self, uint32_t ch) {
 	NodeAnimChannel *c = CNode3D_ChannelAt(self, ch);
 
 	if (!c || !c->anim || !c->anim->anim[0]) {
@@ -724,7 +724,7 @@ void *__thiscall CNode3D_Track(CNode3D *self, uint32_t ch) {
 	return CAnimation_GetNodeTable(Anim_Set(c->anim->anim[0]), self->index);
 }
 
-void *__thiscall CNode3D_Track2(CNode3D *self, uint32_t ch) {
+void *CNode3D_Track2(CNode3D *self, uint32_t ch) {
 	NodeAnimChannel *c = CNode3D_ChannelAt(self, ch);
 
 	if (!c || !c->anim || !c->anim->anim[1]) {
@@ -733,7 +733,7 @@ void *__thiscall CNode3D_Track2(CNode3D *self, uint32_t ch) {
 	return CAnimation_GetNodeTable(Anim_Set(c->anim->anim[1]), self->index);
 }
 
-byte __thiscall CNode_LightColor(CNode3D *self, vec3_t *color, float *mult) {
+byte CNode_LightColor(CNode3D *self, vec3_t *color, float *mult) {
 	NodeAnimChannel *c = CNode3D_Channel0(self);
 	void *track;
 
@@ -743,13 +743,13 @@ byte __thiscall CNode_LightColor(CNode3D *self, vec3_t *color, float *mult) {
 	return CAnimNode_GetColor(track, color, mult, c->frame, c->t) ? 1 : 0;
 }
 
-CEVA *__thiscall CNode3D_TrackData(CNode3D *self, uint32_t ch) {
+CEVA *CNode3D_TrackData(CNode3D *self, uint32_t ch) {
 	byte *track = CNode3D_Track(self, ch);
 
 	return track ? ((CAnimNode *)track)->EVA : NULL;
 }
 
-byte __thiscall CNode3D_AnimFloat(CNode3D *self, float *out) {
+byte CNode3D_AnimFloat(CNode3D *self, float *out) {
 	NodeAnimChannel *c = CNode3D_Channel0(self);
 	void *track;
 
@@ -759,7 +759,7 @@ byte __thiscall CNode3D_AnimFloat(CNode3D *self, float *out) {
 	return CAnimNode_GetFOV(track, out, c->frame, c->t) ? 1 : 0;
 }
 
-byte __thiscall CNode3D_SampleAnim(CNode3D *self, vec3_t *pos, quat_t *rot) {
+byte CNode3D_SampleAnim(CNode3D *self, vec3_t *pos, quat_t *rot) {
 	NodeAnimChannel *c;
 
 	if (g_SkipAnim) {
@@ -778,7 +778,7 @@ byte __thiscall CNode3D_SampleAnim(CNode3D *self, vec3_t *pos, quat_t *rot) {
 	return 0;
 }
 
-byte __thiscall CNode3D_AnimAlpha(CNode3D *self, byte *out) {
+byte CNode3D_AnimAlpha(CNode3D *self, byte *out) {
 	NodeAnimChannel *c = CNode3D_Channel0(self);
 	void *track;
 
@@ -788,12 +788,12 @@ byte __thiscall CNode3D_AnimAlpha(CNode3D *self, byte *out) {
 	return CAnimNode_GetVisible(track, out, c->frame, c->t) ? 1 : 0;
 }
 
-box_t *__thiscall CGround_GetBox(void *self, box_t *out) {
+box_t *CGround_GetBox(void *self, box_t *out) {
 	*out = ((CGround *)self)->Ext;
 	return out;
 }
 
-NodeAnimChannel *__thiscall CNode3D_Channel(CNode3D *self, uint32_t ch) {
+NodeAnimChannel *CNode3D_Channel(CNode3D *self, uint32_t ch) {
 	NodeAnimChannel *c = CNode3D_ChannelAt(self, ch);
 
 	if (!c || !c->anim || !c->anim->anim[0]) {
@@ -802,7 +802,7 @@ NodeAnimChannel *__thiscall CNode3D_Channel(CNode3D *self, uint32_t ch) {
 	return c;
 }
 
-quat_t *__thiscall CRotation_GetQuat(CRotation *self, quat_t *out) {
+quat_t *CRotation_GetQuat(CRotation *self, quat_t *out) {
 	quat_t qx, qy, qz, t, t2;
 	float s, c;
 

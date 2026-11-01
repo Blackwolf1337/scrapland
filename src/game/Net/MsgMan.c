@@ -34,7 +34,7 @@ static void NetClient_PopHead(cNetClient *self) {
 	Mem_Free(n);
 }
 
-cNetClient *__thiscall cNetClient_ctor(cNetClient *self, int slot) {
+cNetClient *cNetClient_ctor(cNetClient *self, int slot) {
 	netuserfactory_t f = g_NetUserFactory;
 
 	self->head = NULL;
@@ -52,14 +52,14 @@ cNetClient *__thiscall cNetClient_ctor(cNetClient *self, int slot) {
 	return self;
 }
 
-cUserNetManager *__thiscall cUserNetManager_ctor(cUserNetManager *self, cNetClient *client, int slot) {
+cUserNetManager *cUserNetManager_ctor(cUserNetManager *self, cNetClient *client, int slot) {
 	self->client = client;
 	self->slot = slot;
 	self->vftable = g_UserNetManagerVftable;
 	return self;
 }
 
-void __fastcall cNetClient_dtor(cNetClient *self) {
+void cNetClient_dtor(cNetClient *self) {
 	if (self->user) {
 		self->user->vftable->Delete(self->user, 1);
 	}
@@ -68,12 +68,12 @@ void __fastcall cNetClient_dtor(cNetClient *self) {
 	}
 }
 
-void __fastcall cUserNetManager_dtor(cUserNetManager *self) {
+void cUserNetManager_dtor(cUserNetManager *self) {
 	self->vftable = g_UserNetManagerVftable;
 	self->client->user = NULL;
 }
 
-cUserNetManager *__thiscall cUserNetManager_Delete(cUserNetManager *self, byte flags) {
+cUserNetManager *cUserNetManager_Delete(cUserNetManager *self, byte flags) {
 	cUserNetManager_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -81,7 +81,7 @@ cUserNetManager *__thiscall cUserNetManager_Delete(cUserNetManager *self, byte f
 	return self;
 }
 
-cNetMsgNode *__thiscall cNetClient_NewMsg(cNetClient *self, const void *data, uint16_t size) {
+cNetMsgNode *cNetClient_NewMsg(cNetClient *self, const void *data, uint16_t size) {
 	cNetMsgNode *n = Mem_Alloc(sizeof(*n));
 
 	n->size = size + 1;
@@ -93,7 +93,7 @@ cNetMsgNode *__thiscall cNetClient_NewMsg(cNetClient *self, const void *data, ui
 	return n;
 }
 
-void __thiscall cNetClient_Push(cNetClient *self, const void *data, uint16_t size) {
+void cNetClient_Push(cNetClient *self, const void *data, uint16_t size) {
 	cNetMsgNode *n = cNetClient_NewMsg(self, data, size);
 
 	if (!self->head) {
@@ -105,18 +105,18 @@ void __thiscall cNetClient_Push(cNetClient *self, const void *data, uint16_t siz
 	self->tail = n;
 }
 
-int __thiscall cNetClient_UpdateState(cNetClient *self, uint32_t time) {
+int cNetClient_UpdateState(cNetClient *self, uint32_t time) {
 	return NetClient_CheckTime(self, time);
 }
 
-int __thiscall cNetClient_Flush(cNetClient *self, uint32_t time, int slot) {
+int cNetClient_Flush(cNetClient *self, uint32_t time, int slot) {
 	if (time > self->lastSend + g_NetSendDelay) {
 		cNetClient_Send(self, time, slot, 0, NULL);
 	}
 	return self->state != NETCLIENT_TIMEOUT;
 }
 
-void __fastcall cNetClient_RequestFull(cNetClient *self) {
+void cNetClient_RequestFull(cNetClient *self) {
 	CHECK(Transport_GetMode() == NETMODE_CLIENT);
 	/* data[0] is the sequence number, not the message kind: the test of the original */
 	for (cNetMsgNode *n = self->head; n; n = n->next) {
@@ -129,25 +129,25 @@ void __fastcall cNetClient_RequestFull(cNetClient *self) {
 	Con_Print(0x606060, "I need full data brother!\n", 0);
 }
 
-void __thiscall cNetClient_GetSeq(cNetClient *self, int *head, int *in) {
+void cNetClient_GetSeq(cNetClient *self, int *head, int *in) {
 	*head = self->head ? self->head->data[0] : -1;
 	*in = self->seqIn & 0x7f;
 }
 
-uint32_t __thiscall cNetClient_TimeToSend(cNetClient *self, uint32_t time) {
+uint32_t cNetClient_TimeToSend(cNetClient *self, uint32_t time) {
 	uint32_t d = time - self->lastSend;
 
 	return d < g_NetSendDelay ? g_NetSendDelay - d : 0;
 }
 
-void __fastcall cNetClient_Goodbye(cNetClient *self) {
+void cNetClient_Goodbye(cNetClient *self) {
 	Transport_GetMode();
 	byte msg = NETMSG_GOODBYE;
 	self->state = NETCLIENT_DISCONNECTED;
 	cNetClient_Push(self, &msg, 1);
 }
 
-int __thiscall cNetClient_ClientRecv(cNetClient *self, uint32_t time, int *slot, void *data, int *dataSize, void *ctl,
+int cNetClient_ClientRecv(cNetClient *self, uint32_t time, int *slot, void *data, int *dataSize, void *ctl,
 	int *ctlSize) {
 	int len = *ctlSize + (*dataSize + 8);
 	byte *buf = cStaticBuffer_Get(g_PyStaticBuffer, len);
@@ -162,7 +162,7 @@ int __thiscall cNetClient_ClientRecv(cNetClient *self, uint32_t time, int *slot,
 	return 0;
 }
 
-uint32_t __thiscall cNetClient_Send(cNetClient *self, uint32_t time, int slot, int size, const void *data) {
+uint32_t cNetClient_Send(cNetClient *self, uint32_t time, int slot, int size, const void *data) {
 	uint16_t len = (uint16_t)(size + 3);
 	int sent;
 
@@ -205,7 +205,7 @@ uint32_t __thiscall cNetClient_Send(cNetClient *self, uint32_t time, int slot, i
 	return sent ? len : 0;
 }
 
-int __thiscall cNetClient_Receive(cNetClient *self, uint32_t time, const byte *pkt, int len, void *data, int *dataSize,
+int cNetClient_Receive(cNetClient *self, uint32_t time, const byte *pkt, int len, void *data, int *dataSize,
 	void *ctl, int *ctlSize) {
 	/* an answer flips the toggle: the time since it flipped is the ping */
 	if ((Transport_GetMode() == NETMODE_SERVER && (pkt[0] >> 7) == self->toggle) ||

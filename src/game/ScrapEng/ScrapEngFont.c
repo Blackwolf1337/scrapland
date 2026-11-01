@@ -10,7 +10,7 @@
 
 #define CFONT_BUF 1024
 
-CFont *__thiscall CFont_ctor(CFont *self, const char *name, void *unused) {
+CFont *CFont_ctor(CFont *self, const char *name, void *unused) {
 	self->x = 0.0f;
 	self->y = 0.0f;
 	self->incx = 0.0f;
@@ -28,7 +28,7 @@ CFont *__thiscall CFont_ctor(CFont *self, const char *name, void *unused) {
 	return self;
 }
 
-void __fastcall CFont_dtor(CFont *self) {
+void CFont_dtor(CFont *self) {
 	if (self->Font) {
 		CFont3_dtor(self->Font);
 		operator_delete_sized(self->Font, sizeof(CFont3));
@@ -36,11 +36,11 @@ void __fastcall CFont_dtor(CFont *self) {
 	}
 }
 
-void __fastcall CFont_ResetX(CFont *self) {
+void CFont_ResetX(CFont *self) {
 	self->x = 0.0f;
 }
 
-byte __thiscall CFont_Build(CFont *self, const char *name, int size) {
+byte CFont_Build(CFont *self, const char *name, int size) {
 	(void)self;
 	CFont3 *f = operator_new(sizeof(CFont3));
 	if (f) {
@@ -69,7 +69,7 @@ void Font_TextSizeAlign(CFont *font, float *pos, float *dim, float x, float y, b
 	va_end(ap);
 }
 
-void __thiscall CFont_Load(CFont *self, const char *name, void *unused, CIniFile *ini) {
+void CFont_Load(CFont *self, const char *name, void *unused, CIniFile *ini) {
 	char tex[260], opac[260], sec[64];
 	(void)unused;
 
@@ -122,7 +122,7 @@ void __thiscall CFont_Load(CFont *self, const char *name, void *unused, CIniFile
 	self->Font->uniOffset[1] = off[1];
 }
 
-void __thiscall CFont_Print(CFont *self, const char *txt) {
+void CFont_Print(CFont *self, const char *txt) {
 	if (!self->Font) {
 		CheckFailed("Font", __FILE__, __TIMESTAMP__, __LINE__);
 	}
@@ -135,13 +135,13 @@ void __thiscall CFont_Print(CFont *self, const char *txt) {
 	self->y = self->Font->y;
 }
 
-void __thiscall CFont_PrintXY(CFont *self, float x, float y, const char *txt) {
+void CFont_PrintXY(CFont *self, float x, float y, const char *txt) {
 	self->x = x;
 	self->y = y;
 	CFont_Print(self, txt);
 }
 
-void __thiscall CFont_PrintfVA(CFont *self, const char *fmt, va_list ap) {
+void CFont_PrintfVA(CFont *self, const char *fmt, va_list ap) {
 	char buf[CFONT_BUF];
 
 	if (!fmt) {
@@ -169,7 +169,7 @@ void CFont_PrintfXY(CFont *font, float x, float y, const char *fmt, ...) {
 	va_end(ap);
 }
 
-void __thiscall CFont_MeasureV(CFont *self, float *pos, float *dim, float x, float y, byte flags, const char *fmt,
+void CFont_MeasureV(CFont *self, float *pos, float *dim, float x, float y, byte flags, const char *fmt,
 	va_list ap) {
 	char buf[CFONT_BUF];
 
@@ -184,7 +184,7 @@ void __thiscall CFont_MeasureV(CFont *self, float *pos, float *dim, float x, flo
 	CFont3_Measure(self->Font, x, y, (uint16_t)(flags & CFONT_ALIGN ? self->align : 0), buf, pos, dim);
 }
 
-void __thiscall CFont_PrintfV(CFont *self, float x, float y, uint32_t flags, const char *fmt, va_list ap) {
+void CFont_PrintfV(CFont *self, float x, float y, uint32_t flags, const char *fmt, va_list ap) {
 	char buf[CFONT_BUF];
 
 	if (!self->Font) {
@@ -296,7 +296,7 @@ void CFont_Printf3D(CFont *font, const vec3_t *pos, uint32_t flags, const char *
 	va_end(ap);
 }
 
-void __fastcall CFont_ResetEffects(CFont *self) {
+void CFont_ResetEffects(CFont *self) {
 	self->wave = 1.0f;
 	self->shadow[0] = 1.0f;
 	self->shadow[1] = 1.0f;

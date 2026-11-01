@@ -35,10 +35,10 @@ SD_SIZE(cMemPool, 0x14);
 #define g_PyPoolValues (&GAME_GLOBAL_IN(uint32_t, g_PyPoolValues, 0))	/* MEMPOOL_CLASSES block counts */
 #define g_PyMemStats (GAME_ARRAY(cMemStats, g_PyMemStats))	/* the context of the interpreter's allocations */
 
-cMemPool *__thiscall cMemPool_ctor(cMemPool *self, const char *name, const uint32_t *values);
-void __fastcall cMemPool_dtor(cMemPool *self);
-void *__thiscall cMemPool_Alloc(cMemPool *self, uint32_t size);
-void __thiscall cMemPool_Free(cMemPool *self, void *p);
+cMemPool *cMemPool_ctor(cMemPool *self, const char *name, const uint32_t *values);
+void cMemPool_dtor(cMemPool *self);
+void *cMemPool_Alloc(cMemPool *self, uint32_t size);
+void cMemPool_Free(cMemPool *self, void *p);
 
 /* deletes the "Python" pool at the end (after Py_Finalize) */
 void PyPool_Delete(void);

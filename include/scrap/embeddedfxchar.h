@@ -22,12 +22,12 @@
 typedef struct cEmbeddedFX cEmbeddedFX;
 
 typedef struct cEmbeddedFXVtbl {
-	cEmbeddedFX *(__thiscall *Delete)(cEmbeddedFX *self, byte flags);	/* 0x00 */
-	byte(__thiscall *Reset)(cEmbeddedFX *self);				/* 0x04 */
-	void(__thiscall *Release)(cEmbeddedFX *self);				/* 0x08 */
-	void(__thiscall *Update)(cEmbeddedFX *self, float dt);			/* 0x0c */
-	void(__thiscall *Tick)(cEmbeddedFX *self);				/* 0x10 */
-	void(__thiscall *Stop)(cEmbeddedFX *self, byte keep);			/* 0x14 */
+	cEmbeddedFX *(*Delete)(cEmbeddedFX *self, byte flags);	/* 0x00 */
+	byte(*Reset)(cEmbeddedFX *self);				/* 0x04 */
+	void(*Release)(cEmbeddedFX *self);				/* 0x08 */
+	void(*Update)(cEmbeddedFX *self, float dt);			/* 0x0c */
+	void(*Tick)(cEmbeddedFX *self);				/* 0x10 */
+	void(*Stop)(cEmbeddedFX *self, byte keep);			/* 0x14 */
 } cEmbeddedFXVtbl;
 SD_OFFSET(cEmbeddedFXVtbl, Stop, 0x14);
 
@@ -244,35 +244,35 @@ typedef struct cEmbeddedFXHeadCrazyGambler {
 SD_SIZE(cEmbeddedFXHeadCrazyGambler, 0xc4);
 
 /* the constructors and destructors (EmbeddedFXChar.c) */
-void __fastcall cEmbeddedFX_dtor(cEmbeddedFX *self);
-cEmbeddedFX *__thiscall cEmbeddedFX_Delete(cEmbeddedFX *self, byte flags);
-cEmbeddedFX *__fastcall cEmbeddedFXBankDirector_ctor(void *self);
-cEmbeddedFX *__fastcall cEmbeddedFXBankMaster_ctor(void *self);
-cEmbeddedFX *__fastcall cEmbeddedFXCrazyGambler_ctor(void *self);
-cEmbeddedFX *__fastcall cEmbeddedFXGear_ctor(void *self);
-cEmbeddedFX *__fastcall cEmbeddedFXMaintenance_ctor(void *self);
-cEmbeddedFX *__fastcall cEmbeddedFXMercenary_ctor(void *self);
-cEmbeddedFX *__fastcall cEmbeddedFXMessenger_ctor(void *self);
-cEmbeddedFX *__fastcall cEmbeddedFXPolice_ctor(void *self);
-cEmbeddedFXAlarm *__fastcall cEmbeddedFXAlarm_ctor(cEmbeddedFXAlarm *self);
-cEmbeddedFX *__fastcall cEmbeddedFXRusty_ctor(void *self);
-cEmbeddedFX *__fastcall cEmbeddedFXSentinel_ctor(void *self);
-void __fastcall cEmbeddedFXBankDirector_dtor(cEmbeddedFXBankDirector *self);
+void cEmbeddedFX_dtor(cEmbeddedFX *self);
+cEmbeddedFX *cEmbeddedFX_Delete(cEmbeddedFX *self, byte flags);
+cEmbeddedFX *cEmbeddedFXBankDirector_ctor(void *self);
+cEmbeddedFX *cEmbeddedFXBankMaster_ctor(void *self);
+cEmbeddedFX *cEmbeddedFXCrazyGambler_ctor(void *self);
+cEmbeddedFX *cEmbeddedFXGear_ctor(void *self);
+cEmbeddedFX *cEmbeddedFXMaintenance_ctor(void *self);
+cEmbeddedFX *cEmbeddedFXMercenary_ctor(void *self);
+cEmbeddedFX *cEmbeddedFXMessenger_ctor(void *self);
+cEmbeddedFX *cEmbeddedFXPolice_ctor(void *self);
+cEmbeddedFXAlarm *cEmbeddedFXAlarm_ctor(cEmbeddedFXAlarm *self);
+cEmbeddedFX *cEmbeddedFXRusty_ctor(void *self);
+cEmbeddedFX *cEmbeddedFXSentinel_ctor(void *self);
+void cEmbeddedFXBankDirector_dtor(cEmbeddedFXBankDirector *self);
 
 /* EmbeddedFXChar.c */
 void EmbeddedFXChar_Create(cEntity *withLife, const char *model, cEmbeddedFX **fx);
 void EmbeddedFXChar_SetAlarm(const char *name, byte on);
 void EmbeddedFXChar_AlarmOff(cAbstractFile *f);
 void EmbeddedFXChar_AlarmOn(cAbstractFile *f);
-void __fastcall cEmbeddedFXAlarm_dtor(cEmbeddedFXAlarm *self);
-void __fastcall cEmbeddedFXAlarm_Release(cEmbeddedFXAlarm *self);
-byte __fastcall cEmbeddedFXAlarm_Reset(cEmbeddedFXAlarm *self);
-void __thiscall cEmbeddedFXAlarm_SetOn(cEmbeddedFXAlarm *self, byte on);
-void __thiscall cEmbeddedFXAlarm_SetLights(cEmbeddedFXAlarm *self, byte on);
-void __thiscall cEmbeddedFXAlarm_Init(cEmbeddedFXAlarm *self, CGameModel *model);
-void __thiscall cEmbeddedFXAlarm_Update(cEmbeddedFXAlarm *self, float dt);
+void cEmbeddedFXAlarm_dtor(cEmbeddedFXAlarm *self);
+void cEmbeddedFXAlarm_Release(cEmbeddedFXAlarm *self);
+byte cEmbeddedFXAlarm_Reset(cEmbeddedFXAlarm *self);
+void cEmbeddedFXAlarm_SetOn(cEmbeddedFXAlarm *self, byte on);
+void cEmbeddedFXAlarm_SetLights(cEmbeddedFXAlarm *self, byte on);
+void cEmbeddedFXAlarm_Init(cEmbeddedFXAlarm *self, CGameModel *model);
+void cEmbeddedFXAlarm_Update(cEmbeddedFXAlarm *self, float dt);
 /* the hair glow on the node of the head model (Entities/Char/Type/CrazyGambler.cpp moves it to another head) */
-void __thiscall cEmbeddedFXCrazyGambler_SetHead(cEmbeddedFXCrazyGambler *self, CGameModel *model, const char *node);
+void cEmbeddedFXCrazyGambler_SetHead(cEmbeddedFXCrazyGambler *self, CGameModel *model, const char *node);
 
 /* EmbeddedFXCharHead.c: the effect of a head model or NULL */
 cEmbeddedFX *EmbeddedFXCharHead_Create(CGameModel *head);

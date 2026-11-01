@@ -20,7 +20,7 @@ static void cAI_Init(cAI *self) {
 	cSlotController_ctor(&self->slotThink, AI_SLOT_TIME);
 }
 
-cAI *__thiscall cAI_ctor(cAI *self, cEntity *e) {
+cAI *cAI_ctor(cAI *self, cEntity *e) {
 	cAI_Init(self);
 	if (!e) {
 		Con_Bluef("ERROR: Inicializaci\xf3n AI. Entidad = NULL.\n");
@@ -38,16 +38,16 @@ cAI *__thiscall cAI_ctor(cAI *self, cEntity *e) {
 	return self;
 }
 
-cAI *__fastcall cAI_ctorDefault(cAI *self) {
+cAI *cAI_ctorDefault(cAI *self) {
 	cAI_Init(self);
 	return self;
 }
 
-void __fastcall cAI_dtor(cAI *self) {
+void cAI_dtor(cAI *self) {
 	self->vftable = CAI_VFTABLE;
 }
 
-cAI *__thiscall cAI_Delete(cAI *self, byte flags) {
+cAI *cAI_Delete(cAI *self, byte flags) {
 	self->vftable = CAI_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -55,7 +55,7 @@ cAI *__thiscall cAI_Delete(cAI *self, byte flags) {
 	return self;
 }
 
-void __thiscall cAI_Update(cAI *self, float dt) {
+void cAI_Update(cAI *self, float dt) {
 	self->dt = dt;
 	self->stateTime = self->stateTime + dt;
 	if (self->seen == 0) {
@@ -69,7 +69,7 @@ void __thiscall cAI_Update(cAI *self, float dt) {
 	}
 }
 
-void __thiscall cAI_UpdateOff(cAI *self, float dt) {
+void cAI_UpdateOff(cAI *self, float dt) {
 	self->dt = dt;
 	self->changed = 0;
 	self->stateTime = self->stateTime + dt;
@@ -78,15 +78,15 @@ void __thiscall cAI_UpdateOff(cAI *self, float dt) {
 	}
 }
 
-void __thiscall cAI_Draw(cAI *self) {
+void cAI_Draw(cAI *self) {
 	(void)self;
 }
 
-byte __thiscall cAI_GetChanged(cAI *self) {
+byte cAI_GetChanged(cAI *self) {
 	return self->changed;
 }
 
-byte __thiscall cAI_IsVisible(cAI *self) {
+byte cAI_IsVisible(cAI *self) {
 	byte vis = 1;
 	int sector = CGameModel_GetSector(Obj_Vtbl(self->entity)->GetModel(self->entity));
 
@@ -107,7 +107,7 @@ byte __thiscall cAI_IsVisible(cAI *self) {
 	return vis;
 }
 
-byte __thiscall cAI_VarI(cAI *self, const char *name, int *i, byte set) {
+byte cAI_VarI(cAI *self, const char *name, int *i, byte set) {
 	(void)self;
 	(void)name;
 	(void)i;
@@ -115,7 +115,7 @@ byte __thiscall cAI_VarI(cAI *self, const char *name, int *i, byte set) {
 	return 0;
 }
 
-byte __thiscall cAI_VarF(cAI *self, const char *name, double *d, byte set) {
+byte cAI_VarF(cAI *self, const char *name, double *d, byte set) {
 	(void)self;
 	(void)name;
 	(void)d;
@@ -123,7 +123,7 @@ byte __thiscall cAI_VarF(cAI *self, const char *name, double *d, byte set) {
 	return 0;
 }
 
-byte __thiscall cAI_VarS(cAI *self, const char *name, char **s, byte set) {
+byte cAI_VarS(cAI *self, const char *name, char **s, byte set) {
 	(void)self;
 	(void)name;
 	(void)s;
@@ -131,7 +131,7 @@ byte __thiscall cAI_VarS(cAI *self, const char *name, char **s, byte set) {
 	return 0;
 }
 
-byte __thiscall cAI_VarV(cAI *self, const char *name, double *x, double *y, double *z, byte set) {
+byte cAI_VarV(cAI *self, const char *name, double *x, double *y, double *z, byte set) {
 	(void)self;
 	(void)name;
 	(void)x;
@@ -141,12 +141,12 @@ byte __thiscall cAI_VarV(cAI *self, const char *name, double *x, double *y, doub
 	return 0;
 }
 
-void __thiscall cAI_Print(cAI *self, const char *text) {
+void cAI_Print(cAI *self, const char *text) {
 	(void)self;
 	Con_Bluef(text);
 }
 
-void __thiscall cAI_GetEventName(cAI *self, int ev, char *out) {
+void cAI_GetEventName(cAI *self, int ev, char *out) {
 	static const char *const names[] = {
 		"LOST_AGENT", "OBJECTIVE_NOT_FOUND", "OBJECTIVE_REACHED", "OBJECTIVE_DIED", "OBJECTIVE_NEAR",
 		"OBJECTIVE_VIS", "ORIENT_REACHED", "DONT_GO", "PROBLEM_MOV", "NO_PROBLEM", "COLLISION_AGENTS",
@@ -158,7 +158,7 @@ void __thiscall cAI_GetEventName(cAI *self, int ev, char *out) {
 	}
 }
 
-void __thiscall cAI_OnEvent(cAI *self, int ev) {
+void cAI_OnEvent(cAI *self, int ev) {
 	char name[0x100];
 
 	self->vftable->GetEventName(self, ev, name);

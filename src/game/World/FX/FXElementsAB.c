@@ -19,7 +19,7 @@
 
 /* ---- construction ---- */
 
-cFXElementsABFakeLimit *__thiscall cFXElementsABFakeLimit_ctor(cFXElementsABFakeLimit *self, const char *name,
+cFXElementsABFakeLimit *cFXElementsABFakeLimit_ctor(cFXElementsABFakeLimit *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSABFAKELIMIT_VFTABLE;
@@ -32,7 +32,7 @@ cFXElementsABFakeLimit *__thiscall cFXElementsABFakeLimit_ctor(cFXElementsABFake
 	return self;
 }
 
-cFXElementsABFakeMeteors *__thiscall cFXElementsABFakeMeteors_ctor(cFXElementsABFakeMeteors *self, const char *name,
+cFXElementsABFakeMeteors *cFXElementsABFakeMeteors_ctor(cFXElementsABFakeMeteors *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSABFAKEMETEORS_VFTABLE;
@@ -45,7 +45,7 @@ cFXElementsABFakeMeteors *__thiscall cFXElementsABFakeMeteors_ctor(cFXElementsAB
 	return self;
 }
 
-void __fastcall cFXElementsABFakeLimit_Clear(cFXElementsABFakeLimit *self) {
+void cFXElementsABFakeLimit_Clear(cFXElementsABFakeLimit *self) {
 	for (int i = 0; i < FXABBOLTS; i++) {
 		self->boltTime[i] = 0.0f;
 		CGameTrail_Clear(&self->bolts[i]);
@@ -57,7 +57,7 @@ void __fastcall cFXElementsABFakeLimit_Clear(cFXElementsABFakeLimit *self) {
 	}
 }
 
-void __fastcall cFXElementsABFakeLimit_dtor(cFXElementsABFakeLimit *self) {
+void cFXElementsABFakeLimit_dtor(cFXElementsABFakeLimit *self) {
 	self->base.vftable = CFXELEMENTSABFAKELIMIT_VFTABLE;
 	cFXElementsABFakeLimit_Clear(self);
 	crt_eh_vector_dtor(self->rings, sizeof(CGameTrail), FXABRINGS * FXABRINGTRAILS, (void *)CGameTrail_dtor);
@@ -67,14 +67,14 @@ void __fastcall cFXElementsABFakeLimit_dtor(cFXElementsABFakeLimit *self) {
 	cMapElement_dtor(&self->base);
 }
 
-void __fastcall cFXElementsABFakeMeteors_dtor(cFXElementsABFakeMeteors *self) {
+void cFXElementsABFakeMeteors_dtor(cFXElementsABFakeMeteors *self) {
 	self->base.vftable = CFXELEMENTSABFAKEMETEORS_VFTABLE;
 	CGameTrail_dtor(&self->curve);
 	crt_eh_vector_dtor(self->parts, sizeof(CGameParticles), 2, (void *)CGameParticles_Release);
 	cMapElement_dtor(&self->base);
 }
 
-cFXElementsABFakeLimit *__thiscall cFXElementsABFakeLimit_Delete(cFXElementsABFakeLimit *self, byte flags) {
+cFXElementsABFakeLimit *cFXElementsABFakeLimit_Delete(cFXElementsABFakeLimit *self, byte flags) {
 	cFXElementsABFakeLimit_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -82,7 +82,7 @@ cFXElementsABFakeLimit *__thiscall cFXElementsABFakeLimit_Delete(cFXElementsABFa
 	return self;
 }
 
-cFXElementsABFakeMeteors *__thiscall cFXElementsABFakeMeteors_Delete(cFXElementsABFakeMeteors *self, byte flags) {
+cFXElementsABFakeMeteors *cFXElementsABFakeMeteors_Delete(cFXElementsABFakeMeteors *self, byte flags) {
 	cFXElementsABFakeMeteors_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -108,7 +108,7 @@ static void AB_AttachParticles(cMapElement *e, CGameParticles *p1, CGameParticle
 
 /* ---- cFXElementsABFakeMeteors ---- */
 
-byte __fastcall cFXElementsABFakeMeteors_Init(cFXElementsABFakeMeteors *self) {
+byte cFXElementsABFakeMeteors_Init(cFXElementsABFakeMeteors *self) {
 	AB_AttachParticles(&self->base, &self->parts[0], &self->parts[1]);
 	CGameModel_SetSortZ(&self->base.Mod, 500000.0f, 0.0f);
 	return 1;
@@ -120,7 +120,7 @@ static inline float AB_RandSign(void) {
 }
 
 /* every meteor moved along the curve, a new one at the start of its way */
-void __thiscall cFXElementsABFakeMeteors_Update(cFXElementsABFakeMeteors *self, float dt) {
+void cFXElementsABFakeMeteors_Update(cFXElementsABFakeMeteors *self, float dt) {
 	vec3_t pts[3] = {{380000.0f, 25000.0f, 0.0f}, {0.0f, 25000.0f, 0.0f}, {-380000.0f, 25000.0f, 0.0f}};
 	vec3_t coefs[GAMETRAIL_MAX_BEZIER];
 
@@ -187,7 +187,7 @@ void __thiscall cFXElementsABFakeMeteors_Update(cFXElementsABFakeMeteors *self, 
 
 /* ---- cFXElementsABFakeLimit ---- */
 
-byte __fastcall cFXElementsABFakeLimit_Init(cFXElementsABFakeLimit *self) {
+byte cFXElementsABFakeLimit_Init(cFXElementsABFakeLimit *self) {
 	char buf[0x80];
 	vec3_t pos;
 	float ang[2];
@@ -527,7 +527,7 @@ static void Limit_Car(cFXElementsABFakeLimit *self, cEntity *e, float dt) {
 	}
 }
 
-void __thiscall cFXElementsABFakeLimit_Update(cFXElementsABFakeLimit *self, float dt) {
+void cFXElementsABFakeLimit_Update(cFXElementsABFakeLimit *self, float dt) {
 	cMapElement_Update(&self->base, dt);
 	Limit_Rings(self, dt);
 	cWorld *w = g_pWorld;

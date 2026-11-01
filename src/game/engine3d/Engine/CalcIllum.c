@@ -28,7 +28,7 @@ SD_SIZE(VertLTex1N, 0x24);
 /* the colors of CMaterial_CalcColors */
 enum { COL_DIFFUSE = 0, COL_AMBIENT = 4, COL_SPECULAR = 8, COL_EMISSIVE = 12, COL_POWER = 16, COL_TOTAL = 17 };
 
-void __thiscall CMeshD3D_CalcIllum(CMeshD3D *self, CNode3D *node, CScene *scn) {
+void CMeshD3D_CalcIllum(CMeshD3D *self, CNode3D *node, CScene *scn) {
 	if (self->next) {
 		CMeshD3D_CalcIllum(self->next, node, scn);
 	}

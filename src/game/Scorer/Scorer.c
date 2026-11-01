@@ -45,7 +45,7 @@
 
 /* ---- construction ---- */
 
-ScorerCinema *__fastcall ScorerCinema_ctor(ScorerCinema *self) {
+ScorerCinema *ScorerCinema_ctor(ScorerCinema *self) {
 	self->time = 1.0f;
 	self->life = 1.0f;
 	self->on = 0;
@@ -53,7 +53,7 @@ ScorerCinema *__fastcall ScorerCinema_ctor(ScorerCinema *self) {
 	return self;
 }
 
-ScorerFade *__fastcall ScorerFade_ctor(ScorerFade *self) {
+ScorerFade *ScorerFade_ctor(ScorerFade *self) {
 	for (int k = 0; k < 4; k++) {
 		self->from[k] = 0.0f;
 		self->to[k] = 0.0f;
@@ -64,7 +64,7 @@ ScorerFade *__fastcall ScorerFade_ctor(ScorerFade *self) {
 }
 
 /* the noise and motion blur: globals only */
-void *__fastcall ScorerFx_ctor(void *self) {
+void *ScorerFx_ctor(void *self) {
 	g_NoiseFactor = 0;
 	g_NoiseFactorBegin = 0;
 	g_NoiseTime = 0.0f;
@@ -77,7 +77,7 @@ void *__fastcall ScorerFx_ctor(void *self) {
 	return self;
 }
 
-cScorer *__fastcall cScorer_ctor(cScorer *self) {
+cScorer *cScorer_ctor(cScorer *self) {
 	self->vftable = CSCORER_VFTABLE;
 	cString_ctor(&self->hint);
 	cString_ctor(&self->specialHint);
@@ -130,7 +130,7 @@ cScorer *__fastcall cScorer_ctor(cScorer *self) {
 	return self;
 }
 
-cScorerItem *__fastcall cScorerItem_ctor(cScorerItem *self) {
+cScorerItem *cScorerItem_ctor(cScorerItem *self) {
 	self->vftable = CSCORERITEM_VFTABLE;
 	cString_ctor(&self->name);
 	cString_ctor(&self->hint);
@@ -164,7 +164,7 @@ cScorerItem *__fastcall cScorerItem_ctor(cScorerItem *self) {
 	return self;
 }
 
-void __fastcall cScorer_dtor(cScorer *self) {
+void cScorer_dtor(cScorer *self) {
 	self->vftable = CSCORER_VFTABLE;
 	cScorer_Free(self);
 	cPy_Function_dtor(&self->mpFunc);
@@ -178,7 +178,7 @@ void __fastcall cScorer_dtor(cScorer *self) {
 	cString_dtor(&self->hint);
 }
 
-void __fastcall cScorerItem_dtor(cScorerItem *self) {
+void cScorerItem_dtor(cScorerItem *self) {
 	self->vftable = CSCORERITEM_VFTABLE;
 	cPy_Function_dtor(&self->onGainFocus);
 	cPy_Function_dtor(&self->onLooseFocus);
@@ -194,7 +194,7 @@ void __fastcall cScorerItem_dtor(cScorerItem *self) {
 }
 
 /* the vector deleting destructor: flags 2 the array of new[] (its count before it), 1 frees */
-cScorer *__thiscall cScorer_Delete(cScorer *self, byte flags) {
+cScorer *cScorer_Delete(cScorer *self, byte flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
 		crt_eh_vector_dtor(self, sizeof(cScorer), *mem, (void *)cScorer_dtor);
@@ -210,7 +210,7 @@ cScorer *__thiscall cScorer_Delete(cScorer *self, byte flags) {
 	return self;
 }
 
-cScorerItem *__thiscall cScorerItem_Delete(cScorerItem *self, byte flags) {
+cScorerItem *cScorerItem_Delete(cScorerItem *self, byte flags) {
 	cScorerItem_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cScorerItem));
@@ -220,7 +220,7 @@ cScorerItem *__thiscall cScorerItem_Delete(cScorerItem *self, byte flags) {
 
 /* ---- the models ---- */
 
-void *__thiscall cScorer_AddModel(cScorer *scorer, const char *name, const char *model, const char *anim, int numAnim,
+void *cScorer_AddModel(cScorer *scorer, const char *name, const char *model, const char *anim, int numAnim,
 	float radius, float height, byte head) {
 	char file[0x200];
 	const char *base;
@@ -264,7 +264,7 @@ void *__thiscall cScorer_AddModel(cScorer *scorer, const char *name, const char 
 	return &m->model;
 }
 
-cScorerModel *__thiscall cScorer_FindModel(cScorer *scorer, const char *name) {
+cScorerModel *cScorer_FindModel(cScorer *scorer, const char *name) {
 	for (cScorerModel *m = scorer->models; m; m = m->next) {
 		if (!strcmp(m->name, name)) {
 			return m;
@@ -273,7 +273,7 @@ cScorerModel *__thiscall cScorer_FindModel(cScorer *scorer, const char *name) {
 	return NULL;
 }
 
-CGameModel *__thiscall cScorer_FindModelModel(cScorer *scorer, const char *name) {
+CGameModel *cScorer_FindModelModel(cScorer *scorer, const char *name) {
 	for (cScorerModel *m = scorer->models; m; m = m->next) {
 		if (!strcmp(m->name, name)) {
 			return &m->model;
@@ -284,7 +284,7 @@ CGameModel *__thiscall cScorer_FindModelModel(cScorer *scorer, const char *name)
 
 /* ---- the items ---- */
 
-void __thiscall cScorer_Clear(cScorer *scorer) {
+void cScorer_Clear(cScorer *scorer) {
 	scorer->found = NULL;
 	cString_Set(&scorer->defaultItem, NULL);
 	scorer->cursor = NULL;
@@ -302,7 +302,7 @@ void __thiscall cScorer_Clear(cScorer *scorer) {
 }
 
 /* the items and the models deleted */
-void __fastcall cScorer_Free(cScorer *scorer) {
+void cScorer_Free(cScorer *scorer) {
 	cString_Set(&scorer->defaultItem, NULL);
 	scorer->cursor = NULL;
 	cString_Set(&scorer->current, NULL);
@@ -339,7 +339,7 @@ void __fastcall cScorer_Free(cScorer *scorer) {
 	}
 }
 
-cScorerItem *__thiscall cScorer_FindItem(cScorer *scorer, const char *name) {
+cScorerItem *cScorer_FindItem(cScorer *scorer, const char *name) {
 	cScorerItem *it;
 
 	if (scorer->found && cString_EqStr(&scorer->found->name, name)) {
@@ -355,14 +355,14 @@ cScorerItem *__thiscall cScorer_FindItem(cScorer *scorer, const char *name) {
 }
 
 /* SetParam(name, value) of every item */
-void __thiscall cScorer_SetParam(cScorer *scorer, const char *name, const char *value) {
+void cScorer_SetParam(cScorer *scorer, const char *name, const char *value) {
 	for (cScorerItem *it = scorer->items; it; it = it->next) {
 		it->vftable->SetParam(it, name, value);
 	}
 }
 
 /* the items marked DelMe deleted */
-void __thiscall cScorer_RemoveDeleted(cScorer *scorer, int player) {
+void cScorer_RemoveDeleted(cScorer *scorer, int player) {
 	cScorerItem **link = &scorer->items;
 
 	(void)player;
@@ -386,12 +386,12 @@ void __thiscall cScorer_RemoveDeleted(cScorer *scorer, int player) {
 }
 
 /* a new item of the class type, first in the list or last (append) */
-cScorerItem *__thiscall cScorer_AddItem(cScorer *scorer, const char *name, const char *type, byte append) {
+cScorerItem *cScorer_AddItem(cScorer *scorer, const char *name, const char *type, byte append) {
 	/* the item classes of SScorer.Add by type name, in the order the original compares them */
 	const struct {
 		const char *type;
 		uint32_t size;
-		void *ctor;			/* fastcall */
+		void *ctor;
 	} s_ItemTypes[] = {
 		{"Hint", 0xd0, (void *)cHintScorer_ctor},
 		{"Label", 0xd0, (void *)cLabelScorer_ctor},
@@ -443,7 +443,7 @@ cScorerItem *__thiscall cScorer_AddItem(cScorer *scorer, const char *name, const
 	}
 	void *mem = operator_new(s_ItemTypes[k].size);
 	if (mem) {
-		it = ((cScorerItem * (__fastcall *)(void *)) s_ItemTypes[k].ctor)(mem);
+		it = ((cScorerItem * (*)(void *)) s_ItemTypes[k].ctor)(mem);
 	}
 	cString_Set(&it->name, name);
 	it->player = scorer->player;
@@ -465,7 +465,7 @@ cScorerItem *__thiscall cScorer_AddItem(cScorer *scorer, const char *name, const
 	return it;
 }
 
-int __thiscall cScorerItem_Var(cScorerItem *self, const char *name, byte set, char **s, double *d, int *i) {
+int cScorerItem_Var(cScorerItem *self, const char *name, byte set, char **s, double *d, int *i) {
 	static const char *const strNames[4] = {"Left", "Right", "Up", "Down"};
 	static const char *const funcNames[5] = {"OnLooseFocus", "OnGainFocus", "OnAccept", "OnDelete", "OnRender"};
 	static const char *const floatNames[6] = {"X", "Y", "W", "H", "FocusPivotX", "FocusPivotY"};
@@ -541,7 +541,7 @@ static void cScorer_TakeHint(cScorer *scorer, cScorerItem *it) {
 }
 
 /* the cursor moves from the item from to the item to (names, NULL for none) */
-void __thiscall cScorer_SetCursorItem(cScorer *scorer, int player, const char *from, const char *to) {
+void cScorer_SetCursorItem(cScorer *scorer, int player, const char *from, const char *to) {
 	cScorerItem *it;
 
 	scorer->acceptTime = SCORER_NO_ACCEPT;
@@ -574,7 +574,7 @@ void __thiscall cScorer_SetCursorItem(cScorer *scorer, int player, const char *f
 	}
 }
 
-void __thiscall cScorer_SetDefault(cScorer *scorer, const char *name) {
+void cScorer_SetDefault(cScorer *scorer, const char *name) {
 	cString_Set(&scorer->defaultItem, name);
 	if (scorer->defaultItem != scorer->current) {
 		cScorer_SetCursorItem(scorer, scorer->player, scorer->current, scorer->defaultItem);
@@ -693,7 +693,7 @@ void Scorer_Done(void) {
 	}
 	if (sc) {
 		if (((uint32_t *)sc)[-1]) {
-			((cScorer * (__thiscall *)(cScorer *, uint32_t))(*(void **)sc->vftable))(sc, 3);
+			((cScorer * (*)(cScorer *, uint32_t))(*(void **)sc->vftable))(sc, 3);
 		} else {
 			operator_delete_array((uint32_t *)sc - 1);
 		}
@@ -720,7 +720,7 @@ void Scorer_PreloadTexture(const char *name, int flag) {
 	CPsaImage_dtor(&img);
 }
 
-void __thiscall cScorer_SetMarkerSprite(cScorer *scorer, const char *sprite) {
+void cScorer_SetMarkerSprite(cScorer *scorer, const char *sprite) {
 	(void)scorer;
 	if (g_ScorerMarker) {
 		Scorer_FreeImage(g_ScorerMarker);
@@ -825,7 +825,7 @@ uint32_t Scorer_ColorLerp(uint32_t a, uint32_t b, float t) {
 		| (uint32_t)((int)((float)(int)(d & 0xff) * t) + a0);
 }
 
-void __thiscall ScorerFade_Start(ScorerFade *fade, uint32_t from, uint32_t to, float time) {
+void ScorerFade_Start(ScorerFade *fade, uint32_t from, uint32_t to, float time) {
 	fade->from[0] = (float)(int)(from >> 16 & 0xff);
 	fade->from[1] = (float)(int)(from >> 8 & 0xff);
 	fade->from[2] = (float)(int)(from & 0xff);
@@ -838,7 +838,7 @@ void __thiscall ScorerFade_Start(ScorerFade *fade, uint32_t from, uint32_t to, f
 	fade->life = time;
 }
 
-void __thiscall ScorerFade_Draw(ScorerFade *fade, int player, float dt) {
+void ScorerFade_Draw(ScorerFade *fade, int player, float dt) {
 	(void)player;
 	fade->time = fade->time - dt;
 	if (0.0f > fade->time) {
@@ -859,7 +859,7 @@ void __thiscall ScorerFade_Draw(ScorerFade *fade, int player, float dt) {
 	}
 }
 
-void __thiscall ScorerCinema_Set(ScorerCinema *cinema, byte on, float time) {
+void ScorerCinema_Set(ScorerCinema *cinema, byte on, float time) {
 	CHECK(time >= 0);
 	if (time == 0.0f) {
 		cinema->time = 1.0f;
@@ -875,7 +875,7 @@ void __thiscall ScorerCinema_Set(ScorerCinema *cinema, byte on, float time) {
 	}
 }
 
-void __thiscall ScorerCinema_Draw(ScorerCinema *cinema, int player, float dt) {
+void ScorerCinema_Draw(ScorerCinema *cinema, int player, float dt) {
 	float life = cinema->life;
 	float t = cinema->time + dt;
 	float f, h;
@@ -911,7 +911,7 @@ void __thiscall ScorerCinema_Draw(ScorerCinema *cinema, int player, float dt) {
 }
 
 /* the noise over the screen and the motion blur of the scene */
-void __thiscall ScorerFx_Draw(void *fx, int player, float dt) {
+void ScorerFx_Draw(void *fx, int player, float dt) {
 	float f = 1.0f;
 	float v;
 	int n;
@@ -974,7 +974,7 @@ void __thiscall ScorerFx_Draw(void *fx, int player, float dt) {
 
 /* the MPFunc of the scorer with (player, 1) on the press and (player, 0) on the release of the action 23 of the
  * character set */
-void __thiscall cScorer_UpdateMP(cScorer *scorer, float dt) {
+void cScorer_UpdateMP(cScorer *scorer, float dt) {
 	(void)dt;
 	if (Input_GetActionSet() != 1) {
 		return;
@@ -1038,7 +1038,7 @@ static void cScorer_Call(cScorer *scorer, cPy_Function *f, int player) {
 
 /* the cursor item moved by the axes and the item moves by the keys, the accept, delete, cancel, next and prev
  * functions, the cursor blinking */
-void __thiscall cScorer_UpdateCursor(cScorer *scorer, int player) {
+void cScorer_UpdateCursor(cScorer *scorer, int player) {
 	cScorerItem *it;
 	cScorerItem *cur;
 	float dy = (Menu_Action(MENU_DOWN_AXIS)->value[player] - Menu_Action(MENU_UP_AXIS)->value[player])
@@ -1180,7 +1180,7 @@ void __thiscall cScorer_UpdateCursor(cScorer *scorer, int player) {
 }
 
 /* the frame of a scorer: time, screen effects, cursor, the items and the focus marker */
-void __thiscall cScorer_Draw(cScorer *scorer, int player) {
+void cScorer_Draw(cScorer *scorer, int player) {
 	scorer->lastTime = scorer->time;
 	float t = (float)g_pApp->vftable->GetGameTime(g_pApp);
 	scorer->time = t;
@@ -1252,7 +1252,7 @@ void __thiscall cScorer_Draw(cScorer *scorer, int player) {
 }
 
 /* the cloud fade of a camera near the atmosphere limit: a gradient over the screen */
-void __thiscall cScorer_DrawClouds(cScorer *scorer, int player) {
+void cScorer_DrawClouds(cScorer *scorer, int player) {
 	static const float pos[8] = {0.0f, 0.0f, 640.0f, 0.0f, 640.0f, 480.0f, 0.0f, 480.0f};
 	static const float uv[8] = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
 	/* the corners of the cloud plane around the camera; corner k colors vertex k + 1 (mod 4) */
@@ -1309,7 +1309,7 @@ void __thiscall cScorer_DrawClouds(cScorer *scorer, int player) {
 }
 
 /* the Xbox texts of the scorer: Saving..., the pad messages */
-void __thiscall cScorer_DrawNoPadMsg(cScorer *scorer, int index, float y, byte big, int pad) {
+void cScorer_DrawNoPadMsg(cScorer *scorer, int index, float y, byte big, int pad) {
 	CPsaImage *img = g_ScorerWhite;
 	const char *next;
 	float off;
@@ -1341,7 +1341,7 @@ void __thiscall cScorer_DrawNoPadMsg(cScorer *scorer, int index, float y, byte b
 		Lang_GetStr(next));
 }
 
-void __thiscall cScorer_DrawXboxMsgs(cScorer *scorer, int player) {
+void cScorer_DrawXboxMsgs(cScorer *scorer, int player) {
 	char buf[0x80];
 
 	if (g_XboxSavingMsg > 0.0f && !g_IsDemo) {
@@ -1652,7 +1652,7 @@ enum {
 };
 
 /* slot off of the vftable of any object, called without arguments */
-#define DBG_VF(p, off) ((void(__thiscall *)(void *))(*(void *const *const *)(p))[(off) / 4])
+#define DBG_VF(p, off) ((void(*)(void *))(*(void *const *const *)(p))[(off) / 4])
 #define DBG_ITEM_RADIUS(e) (((cItemEntity *)(e))->radius)
 #define DBG_FCAM_POS(e) (&((cFollowCamEntity *)(e))->center)	/* the point a "FCam" follows */
 #define DBG_FCAM_DIST(e) (((cCamControl *)(e))->cam.zNear)

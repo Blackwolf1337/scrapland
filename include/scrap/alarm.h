@@ -25,17 +25,17 @@ SD_OFFSET(cAlarm, lastChars, 0x209);
 SD_OFFSET(cAlarm, locked, 0x40d);
 SD_SIZE(cAlarm, 0x410);
 
-cAlarm *__thiscall Alarm_ctor(cAlarm *self);
-void __fastcall Alarm_Reset(cAlarm *self);
-void __thiscall Alarm_Update(cAlarm *self, float dt);
+cAlarm *Alarm_ctor(cAlarm *self);
+void Alarm_Reset(cAlarm *self);
+void Alarm_Update(cAlarm *self, float dt);
 /* the sign of the grow rate (-1, 0, 1) */
-int __thiscall Alarm_GetValue(cAlarm *self);
-byte __thiscall Alarm_IsLocked(cAlarm *self);
-void __thiscall Alarm_SetOn(cAlarm *self, byte on);
-void __thiscall Alarm_SetGrowRate(cAlarm *self, float grow);
-void __thiscall Alarm_Set(cAlarm *self, float level);
-void __thiscall Alarm_SetChar(cAlarm *self, const char *name);
-void __thiscall Alarm_SetGrow(cAlarm *self, int grow);
-void __thiscall Alarm_SetLock(cAlarm *self, int lock);
+int Alarm_GetValue(cAlarm *self);
+byte Alarm_IsLocked(cAlarm *self);
+void Alarm_SetOn(cAlarm *self, byte on);
+void Alarm_SetGrowRate(cAlarm *self, float grow);
+void Alarm_Set(cAlarm *self, float level);
+void Alarm_SetChar(cAlarm *self, const char *name);
+void Alarm_SetGrow(cAlarm *self, int grow);
+void Alarm_SetLock(cAlarm *self, int lock);
 
 #endif

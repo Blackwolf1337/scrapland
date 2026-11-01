@@ -28,7 +28,7 @@ int ScorerVar_Table(void *item, const ScorerVarDef *defs, int n, const char *nam
 	return 0;
 }
 
-cSpriteScorer *__fastcall cSpriteScorer_ctor(cSpriteScorer *self) {
+cSpriteScorer *cSpriteScorer_ctor(cSpriteScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CSPRITESCORER_VFTABLE;
 	self->numSubSprites = 1;
@@ -50,7 +50,7 @@ cSpriteScorer *__fastcall cSpriteScorer_ctor(cSpriteScorer *self) {
 }
 
 /* also the destructor of cGradientScorer (rva 0x17b2d0, the same code) */
-void __fastcall cSpriteScorer_dtor(cSpriteScorer *self) {
+void cSpriteScorer_dtor(cSpriteScorer *self) {
 	CPsaImage *img = self->img;
 	self->base.vftable = CSPRITESCORER_VFTABLE;
 	if (img) {
@@ -61,7 +61,7 @@ void __fastcall cSpriteScorer_dtor(cSpriteScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cSpriteScorer *__thiscall cSpriteScorer_Delete(cSpriteScorer *self, byte flags) {
+cSpriteScorer *cSpriteScorer_Delete(cSpriteScorer *self, byte flags) {
 	cSpriteScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cSpriteScorer));
@@ -69,11 +69,11 @@ cSpriteScorer *__thiscall cSpriteScorer_Delete(cSpriteScorer *self, byte flags) 
 	return self;
 }
 
-void __thiscall cSpriteScorer_SetFile(cSpriteScorer *self, uint32_t flags, const char *name) {
+void cSpriteScorer_SetFile(cSpriteScorer *self, uint32_t flags, const char *name) {
 	self->img = ScorerImg_Replace(self->img, name, self->blendingMode, (self->discardable ? 0x40000 : 0) | flags);
 }
 
-int __thiscall cSpriteScorer_Var(cSpriteScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cSpriteScorer_Var(cSpriteScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	if (i && !crt_stricmp(name, "FixPosition")) {
 		if (set) {
 			self->fixPosition = (byte)*i;
@@ -189,7 +189,7 @@ int __thiscall cSpriteScorer_Var(cSpriteScorer *self, const char *name, byte set
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void __thiscall cSpriteScorer_Draw(cSpriteScorer *self, int player) {
+void cSpriteScorer_Draw(cSpriteScorer *self, int player) {
 	float x = self->base.x;
 	float y = self->base.y;
 
@@ -209,11 +209,11 @@ void __thiscall cSpriteScorer_Draw(cSpriteScorer *self, int player) {
 	CPsaImage_DrawFrameFlip(self->img, self->spriteIndex, x, y, self->rotate, self->mirror);
 }
 
-void __thiscall cSpriteScorer_SetMultiSprite(cSpriteScorer *self, byte on) {
+void cSpriteScorer_SetMultiSprite(cSpriteScorer *self, byte on) {
 	self->isMultiSprite = on;
 }
 
-cGradientScorer *__fastcall cGradientScorer_ctor(cGradientScorer *self) {
+cGradientScorer *cGradientScorer_ctor(cGradientScorer *self) {
 	cSpriteScorer_ctor(&self->base);
 	self->base.base.vftable = CGRADIENTSCORER_VFTABLE;
 	self->colorSelected = 0;
@@ -224,7 +224,7 @@ cGradientScorer *__fastcall cGradientScorer_ctor(cGradientScorer *self) {
 	return self;
 }
 
-cGradientScorer *__thiscall cGradientScorer_Delete(cGradientScorer *self, byte flags) {
+cGradientScorer *cGradientScorer_Delete(cGradientScorer *self, byte flags) {
 	cSpriteScorer_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cGradientScorer));
@@ -232,7 +232,7 @@ cGradientScorer *__thiscall cGradientScorer_Delete(cGradientScorer *self, byte f
 	return self;
 }
 
-int __thiscall cGradientScorer_Var(cGradientScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cGradientScorer_Var(cGradientScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	static const char *const colors[4] = {"Red", "Green", "Blue", "Alpha"};
 	int r;
 
@@ -253,7 +253,7 @@ int __thiscall cGradientScorer_Var(cGradientScorer *self, const char *name, byte
 	return cSpriteScorer_Var(&self->base, name, set, s, d, i);
 }
 
-void __thiscall cGradientScorer_Draw(cGradientScorer *self, int player) {
+void cGradientScorer_Draw(cGradientScorer *self, int player) {
 	/* the unit square, as positions (scaled by the image) and as texture coordinates */
 	static const float quad[8] = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
 	float pos[8], uv[8];

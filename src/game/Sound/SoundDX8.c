@@ -16,7 +16,7 @@
 
 void Sound_Nop(void);
 
-CSoundXBox *__fastcall CSoundXBox_ctor(CSoundXBox *self) {
+CSoundXBox *CSoundXBox_ctor(CSoundXBox *self) {
 	CSoundSys_ctor(&self->sys);
 	self->sys.vftable = CSoundXBox_vftable;
 	self->sounds.numSlots = SOUND_TABLE_SLOTS;
@@ -29,13 +29,13 @@ CSoundXBox *__fastcall CSoundXBox_ctor(CSoundXBox *self) {
 	return self;
 }
 
-void __fastcall CSoundXBox_dtor(CSoundXBox *self) {
+void CSoundXBox_dtor(CSoundXBox *self) {
 	self->sys.vftable = CSoundXBox_vftable;
 	SoundStrTable_Clear(&self->sounds);
 	CSoundSys_dtor(&self->sys);
 }
 
-CSoundXBox *__thiscall CSoundXBox_Destroy(CSoundXBox *self, byte flags) {
+CSoundXBox *CSoundXBox_Destroy(CSoundXBox *self, byte flags) {
 	CSoundXBox_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CSoundXBox));
@@ -54,7 +54,7 @@ static cSoundStrItem *CSoundXBox_Find(CSoundXBox *self, const char *name) {
 }
 
 /* the table value of name with the parameters of d applied: volumes and pans added, frequencies multiplied */
-byte __thiscall CSoundXBox_GetPlayDesc(CSoundXBox *self, const char *name, const cSoundDesc *d, cSoundTableValue *out) {
+byte CSoundXBox_GetPlayDesc(CSoundXBox *self, const char *name, const cSoundDesc *d, cSoundTableValue *out) {
 	cSoundStrItem *it = CSoundXBox_Find(self, name);
 
 	if (!it) {
@@ -74,7 +74,7 @@ byte __thiscall CSoundXBox_GetPlayDesc(CSoundXBox *self, const char *name, const
 	return 1;
 }
 
-void __fastcall CSoundXBox_Init(CSoundXBox *self) {
+void CSoundXBox_Init(CSoundXBox *self) {
 	if (g_SoundInit) {
 		self->swapPan = g_SoundSwapChannels != 0;
 		CSoundSys_InitFmod(&self->sys);
@@ -82,13 +82,13 @@ void __fastcall CSoundXBox_Init(CSoundXBox *self) {
 	}
 }
 
-void __fastcall CSoundXBox_Close(CSoundXBox *self) {
+void CSoundXBox_Close(CSoundXBox *self) {
 	CSoundSys_Close(&self->sys);
 	self->sys.vftable->DeleteAllSounds(&self->sys);
 }
 
 /* the volume offset follows SoundMainVolume (at a change everything stops), the pitch the timer */
-void __fastcall CSoundXBox_Update(CSoundXBox *self) {
+void CSoundXBox_Update(CSoundXBox *self) {
 	CSoundSys_Nop(&self->sys);
 	int mult = 1;
 	if (g_TimerFreqMult > mult) {
@@ -103,7 +103,7 @@ void __fastcall CSoundXBox_Update(CSoundXBox *self) {
 }
 
 /* name is a file name; loads <name without its extension>.wav once under its sound name */
-void __thiscall CSoundXBox_Load(CSoundXBox *self, const char *name, int unused) {
+void CSoundXBox_Load(CSoundXBox *self, const char *name, int unused) {
 	char sndname[SOUND_NAME_MAX_LEN];
 	char path[0x100 + 5];
 	cSoundTableValue v;
@@ -153,17 +153,17 @@ void __thiscall CSoundXBox_Load(CSoundXBox *self, const char *name, int unused) 
 }
 
 /* vtable slot 0x10, not available here */
-void __thiscall CSoundXBox_LoadSound2(CSoundXBox *self, const char *name) {
+void CSoundXBox_LoadSound2(CSoundXBox *self, const char *name) {
 	(void)self;
 	(void)name;
 	CheckFailed("0", __FILE__, __TIMESTAMP__, __LINE__);
 }
 
-void __thiscall CSoundXBox_LoadSound(CSoundXBox *self, const char *name) {
+void CSoundXBox_LoadSound(CSoundXBox *self, const char *name) {
 	CSoundXBox_Load(self, name, 1);
 }
 
-void __thiscall CSoundXBox_DeleteSound(CSoundXBox *self, const char *name) {
+void CSoundXBox_DeleteSound(CSoundXBox *self, const char *name) {
 	cSoundDesc tmp;
 
 	cSoundDesc_Init(&tmp);
@@ -174,7 +174,7 @@ void __thiscall CSoundXBox_DeleteSound(CSoundXBox *self, const char *name) {
 	}
 }
 
-void __fastcall CSoundXBox_StopAllSounds(CSoundXBox *self) {
+void CSoundXBox_StopAllSounds(CSoundXBox *self) {
 	(void)self;
 	Sound_Nop();
 	int n = FSOUND_GetMaxChannels();
@@ -185,7 +185,7 @@ void __fastcall CSoundXBox_StopAllSounds(CSoundXBox *self) {
 	}
 }
 
-void __fastcall CSoundXBox_DeleteAllSounds(CSoundXBox *self) {
+void CSoundXBox_DeleteAllSounds(CSoundXBox *self) {
 	HashTable *t = &self->sounds;
 
 	self->sys.vftable->StopAllSounds(&self->sys);
@@ -206,7 +206,7 @@ void __fastcall CSoundXBox_DeleteAllSounds(CSoundXBox *self) {
 	}
 }
 
-byte __thiscall CSoundXBox_GetDesc(CSoundXBox *self, const char *name, cSoundDesc *out) {
+byte CSoundXBox_GetDesc(CSoundXBox *self, const char *name, cSoundDesc *out) {
 	cSoundDesc tmp;
 
 	cSoundDesc_Init(&tmp);
@@ -220,7 +220,7 @@ byte __thiscall CSoundXBox_GetDesc(CSoundXBox *self, const char *name, cSoundDes
 }
 
 /* vtable slot 0x28, not available here */
-byte __thiscall CSoundXBox_SetDesc(CSoundXBox *self, const char *name, const cSoundDesc *d) {
+byte CSoundXBox_SetDesc(CSoundXBox *self, const char *name, const cSoundDesc *d) {
 	(void)self;
 	(void)name;
 	(void)d;
@@ -229,7 +229,7 @@ byte __thiscall CSoundXBox_SetDesc(CSoundXBox *self, const char *name, const cSo
 }
 
 /* the channel or 0 */
-int __thiscall CSoundXBox_PlayDesc(CSoundXBox *self, const char *name, const cSoundDesc *d) {
+int CSoundXBox_PlayDesc(CSoundXBox *self, const char *name, const cSoundDesc *d) {
 	cSoundTableValue v;
 
 	if (self->volume <= SOUND_VOL_MIN || d->volume <= SOUND_VOL_MIN) {
@@ -242,7 +242,7 @@ int __thiscall CSoundXBox_PlayDesc(CSoundXBox *self, const char *name, const cSo
 	return Fmod_Play(v.sample, &v.desc, name);
 }
 
-int __thiscall CSoundXBox_PlayVPF(CSoundXBox *self, const char *name, int volume, int pan, float freq) {
+int CSoundXBox_PlayVPF(CSoundXBox *self, const char *name, int volume, int pan, float freq) {
 	cSoundTableValue v;
 	cSoundDesc d;
 
@@ -268,7 +268,7 @@ int __thiscall CSoundXBox_PlayVPF(CSoundXBox *self, const char *name, int volume
 	return Fmod_Play(v.sample, &d, name);
 }
 
-int __thiscall CSoundXBox_PlaySound(CSoundXBox *self, const char *name, const cSoundDesc *d, int *handle) {
+int CSoundXBox_PlaySound(CSoundXBox *self, const char *name, const cSoundDesc *d, int *handle) {
 	int ch = CSoundXBox_PlayDesc(self, name, d);
 
 	if (handle) {
@@ -277,15 +277,15 @@ int __thiscall CSoundXBox_PlaySound(CSoundXBox *self, const char *name, const cS
 	return ch != 0;
 }
 
-int __thiscall CSoundXBox_PlayName(CSoundXBox *self, const char *name) {
+int CSoundXBox_PlayName(CSoundXBox *self, const char *name) {
 	return CSoundXBox_PlayVPF(self, name, 0, 0, 1.0f);
 }
 
-int __thiscall CSoundXBox_Play(CSoundXBox *self, const char *name, int volume, int pan) {
+int CSoundXBox_Play(CSoundXBox *self, const char *name, int volume, int pan) {
 	return CSoundXBox_PlayVPF(self, name, volume, pan, 1.0f);
 }
 
-int __thiscall CSoundXBox_PlayAt(CSoundXBox *self, const char *name, const vec3_t *pos, int volume) {
+int CSoundXBox_PlayAt(CSoundXBox *self, const char *name, const vec3_t *pos, int volume) {
 	cSoundDesc d;
 
 	cSoundDesc_Init(&d);
@@ -294,7 +294,7 @@ int __thiscall CSoundXBox_PlayAt(CSoundXBox *self, const char *name, const vec3_
 	return CSoundXBox_PlayVPF(self, name, d.volume, d.pan, 1.0f);
 }
 
-byte __thiscall CSoundXBox_UpdateSound(CSoundXBox *self, const char *name, const cSoundDesc *d, int handle) {
+byte CSoundXBox_UpdateSound(CSoundXBox *self, const char *name, const cSoundDesc *d, int handle) {
 	cSoundTableValue v;
 
 	if (g_S_SkipUpdates) {
@@ -308,7 +308,7 @@ byte __thiscall CSoundXBox_UpdateSound(CSoundXBox *self, const char *name, const
 }
 
 /* a tail jump to FSOUND_StopSound in the original */
-int __thiscall CSoundXBox_StopSound(CSoundXBox *self, int handle) {
+int CSoundXBox_StopSound(CSoundXBox *self, int handle) {
 	(void)self;
 	return FSOUND_StopSound(handle);
 }
@@ -385,7 +385,7 @@ int Fmod_Play(void *sample, const cSoundDesc *d, const char *name) {
 
 /* vf31 (DebugDraw): S_Show 3 the memory of FMOD, 1 the software and hardware channels with their state and the
  * sample, volume, pan and frequency of each hardware channel in two columns */
-void __thiscall CSoundXBox_DebugDraw(CSoundXBox *self, int xi, int yi) {
+void CSoundXBox_DebugDraw(CSoundXBox *self, int xi, int yi) {
 	int hw2D, hw3D, hwTotal;
 	uint32_t cur, max;
 

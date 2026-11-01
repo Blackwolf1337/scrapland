@@ -19,7 +19,7 @@ static void IniFile_Path(char *path, const char *name, const char *dir) {
 	}
 }
 
-CIniFile *__thiscall CIniFile_ctorLoad(CIniFile *self, const char *name, const char *dir) {
+CIniFile *CIniFile_ctorLoad(CIniFile *self, const char *name, const char *dir) {
 	char path[MAX_FILEPATH];
 
 	self->dat = DataFile_New();
@@ -29,12 +29,12 @@ CIniFile *__thiscall CIniFile_ctorLoad(CIniFile *self, const char *name, const c
 	return self;
 }
 
-CIniFile *__thiscall CIniFile_ctor(CIniFile *self) {
+CIniFile *CIniFile_ctor(CIniFile *self) {
 	self->dat = DataFile_New();
 	return self;
 }
 
-void __thiscall CIniFile_dtor(CIniFile *self) {
+void CIniFile_dtor(CIniFile *self) {
 	DataFile_Free(self->dat);
 }
 
@@ -59,15 +59,15 @@ void IniFile_Write(CFileIO *f, CIniFile *ini) {
 	}
 }
 
-int __thiscall CIniFile_FindKey(CIniFile *self, const char *key, char *value, int size, int from) {
+int CIniFile_FindKey(CIniFile *self, const char *key, char *value, int size, int from) {
 	return DataFile_FindKey(self->dat, key, from, value, size);
 }
 
-int __thiscall CIniFile_FindSection(CIniFile *self, const char *name, int from) {
+int CIniFile_FindSection(CIniFile *self, const char *name, int from) {
 	return DataFile_FindSection(self->dat, name, from);
 }
 
-byte __thiscall CIniFile_GetBool(CIniFile *self, const char *sect, const char *key, byte def) {
+byte CIniFile_GetBool(CIniFile *self, const char *sect, const char *key, byte def) {
 	int v;
 
 	if (Dat_GetBool(self->dat, sect, key, &v) != 0) {
@@ -76,19 +76,19 @@ byte __thiscall CIniFile_GetBool(CIniFile *self, const char *sect, const char *k
 	return v != 0;
 }
 
-float __thiscall CIniFile_GetFloat(CIniFile *self, const char *sect, const char *key, float def) {
+float CIniFile_GetFloat(CIniFile *self, const char *sect, const char *key, float def) {
 	float v;
 
 	return Dat_GetFloat(self->dat, sect, key, &v) != 0 ? def : v;
 }
 
-int __thiscall CIniFile_GetInt(CIniFile *self, const char *sect, const char *key, int def) {
+int CIniFile_GetInt(CIniFile *self, const char *sect, const char *key, int def) {
 	int v;
 
 	return Dat_GetLong(self->dat, sect, key, &v) != 0 ? def : v;
 }
 
-int __thiscall CIniFile_Count(CIniFile *self) {
+int CIniFile_Count(CIniFile *self) {
 	return DataFile_Count(self->dat);
 }
 
@@ -97,7 +97,7 @@ static void IniFile_Invalid(const char *sect, const char *key, const char *text)
 }
 
 /* "R G B A" as 0xAARRGGBB */
-uint32_t __thiscall CIniFile_GetColor(CIniFile *self, const char *sect, const char *key, uint32_t def) {
+uint32_t CIniFile_GetColor(CIniFile *self, const char *sect, const char *key, uint32_t def) {
 	char text[0x100];
 	byte c[4];
 
@@ -111,7 +111,7 @@ uint32_t __thiscall CIniFile_GetColor(CIniFile *self, const char *sect, const ch
 	return (uint32_t)c[3] << 24 | (uint32_t)c[0] << 16 | (uint32_t)c[1] << 8 | c[2];
 }
 
-byte __thiscall CIniFile_GetSectionName(CIniFile *self, int idx, char *dest, int size) {
+byte CIniFile_GetSectionName(CIniFile *self, int idx, char *dest, int size) {
 	if (DataFile_LineType(self->dat, idx) != LINE_SECTION) {
 		return 0;
 	}
@@ -120,7 +120,7 @@ byte __thiscall CIniFile_GetSectionName(CIniFile *self, int idx, char *dest, int
 }
 
 /* dest, or NULL if the key is missing and there is no default */
-char *__thiscall CIniFile_GetText(CIniFile *self, const char *sect, const char *key, char *dest, int size,
+char *CIniFile_GetText(CIniFile *self, const char *sect, const char *key, char *dest, int size,
 	const char *def) {
 	if (Dat_GetText(self->dat, sect, key, dest, size) != 0) {
 		if (!def) {
@@ -131,7 +131,7 @@ char *__thiscall CIniFile_GetText(CIniFile *self, const char *sect, const char *
 	return dest;
 }
 
-float *__thiscall CIniFile_GetVec2(CIniFile *self, float *out, const char *sect, const char *key, const float *def) {
+float *CIniFile_GetVec2(CIniFile *self, float *out, const char *sect, const char *key, const float *def) {
 	char text[0x100];
 	float v[2];
 
@@ -151,7 +151,7 @@ float *__thiscall CIniFile_GetVec2(CIniFile *self, float *out, const char *sect,
 	return out;
 }
 
-vec3_t *__thiscall CIniFile_GetVec3(CIniFile *self, vec3_t *out, const char *sect, const char *key, const vec3_t *def) {
+vec3_t *CIniFile_GetVec3(CIniFile *self, vec3_t *out, const char *sect, const char *key, const vec3_t *def) {
 	char text[0x100];
 	vec3_t v;
 
@@ -168,7 +168,7 @@ vec3_t *__thiscall CIniFile_GetVec3(CIniFile *self, vec3_t *out, const char *sec
 	return out;
 }
 
-void __thiscall CIniFile_ReadBlock(CIniFile *self, CFileIO *f) {
+void CIniFile_ReadBlock(CIniFile *self, CFileIO *f) {
 	char line[INI_LOADSAVE_MAXLINE];
 
 	CHECK(!DataFile_Count(self->dat));
@@ -182,12 +182,12 @@ void __thiscall CIniFile_ReadBlock(CIniFile *self, CFileIO *f) {
 	CFileIO_Error(f, "INI");
 }
 
-void __thiscall CIniFile_Clear(CIniFile *self) {
+void CIniFile_Clear(CIniFile *self) {
 	DataFile_Free(self->dat);
 	self->dat = DataFile_New();
 }
 
-void __thiscall CIniFile_WriteBlock(CIniFile *self, CFileIO *f) {
+void CIniFile_WriteBlock(CIniFile *self, CFileIO *f) {
 	CHECK(DataFile_Count(self->dat));
 	CFileIO_BeginBlockWrite(f, "INI");
 	CFileIO_WriteInt(f, 1);
@@ -202,28 +202,28 @@ void __thiscall CIniFile_WriteBlock(CIniFile *self, CFileIO *f) {
 	CFileIO_EndBlockWrite(f, "INI");
 }
 
-int __thiscall CIniFile_SetYesNo(CIniFile *self, const char *sect, const char *key, byte v) {
+int CIniFile_SetYesNo(CIniFile *self, const char *sect, const char *key, byte v) {
 	return Dat_SetStr(self->dat, sect, key, v ? "YES" : "NO");
 }
 
 /* prec digits after the point */
-int __thiscall CIniFile_SetFloat(CIniFile *self, const char *sect, const char *key, float v, int prec) {
+int CIniFile_SetFloat(CIniFile *self, const char *sect, const char *key, float v, int prec) {
 	char text[0x40];
 
 	Bprintf(text, sizeof(text), "%.*f", prec, (double)v);
 	return Dat_SetStr(self->dat, sect, key, text);
 }
 
-int __thiscall CIniFile_SetInt(CIniFile *self, const char *sect, const char *key, int v) {
+int CIniFile_SetInt(CIniFile *self, const char *sect, const char *key, int v) {
 	return Dat_SetInt(self->dat, sect, key, v);
 }
 
-int __thiscall CIniFile_SetStr(CIniFile *self, const char *sect, const char *key, const char *v) {
+int CIniFile_SetStr(CIniFile *self, const char *sect, const char *key, const char *v) {
 	return Dat_SetStr(self->dat, sect, key, v);
 }
 
 /* the lines of a file after the ones there are; verbose logs a missing file once more */
-int __thiscall CIniFile_Load(CIniFile *self, const char *name, const char *dir, byte verbose) {
+int CIniFile_Load(CIniFile *self, const char *name, const char *dir, byte verbose) {
 	char path[MAX_FILEPATH];
 
 	IniFile_Path(path, name, dir);
@@ -236,24 +236,24 @@ int __thiscall CIniFile_Load(CIniFile *self, const char *name, const char *dir, 
 }
 
 /* idx < 0: at the end */
-void __thiscall CIniFile_AddLine(CIniFile *self, const char *text, int idx) {
+void CIniFile_AddLine(CIniFile *self, const char *text, int idx) {
 	if (idx < 0) {
 		idx = DataFile_Count(self->dat);
 	}
 	DataFile_InsertAt(self->dat, text, idx);
 }
 
-void __thiscall CIniFile_DeleteLine(CIniFile *self, int idx) {
+void CIniFile_DeleteLine(CIniFile *self, int idx) {
 	DataFile_Delete(self->dat, idx);
 }
 
 /* "SI" / "NO" */
-int __thiscall CIniFile_SetBool(CIniFile *self, const char *sect, const char *key, int v) {
+int CIniFile_SetBool(CIniFile *self, const char *sect, const char *key, int v) {
 	return Dat_SetBool(self->dat, sect, key, v);
 }
 
 /* 0 or -1; the third argument is not used */
-int __thiscall CIniFile_Save(CIniFile *self, const char *name, const char *dir, int unused) {
+int CIniFile_Save(CIniFile *self, const char *name, const char *dir, int unused) {
 	char path[MAX_FILEPATH];
 
 	(void)unused;
@@ -267,27 +267,27 @@ int __thiscall CIniFile_Save(CIniFile *self, const char *name, const char *dir, 
 	return r;
 }
 
-int __thiscall CIniFile_ReadBool(CIniFile *self, const char *sect, const char *key, int *out) {
+int CIniFile_ReadBool(CIniFile *self, const char *sect, const char *key, int *out) {
 	return Dat_GetBool(self->dat, sect, key, out);
 }
 
-int __thiscall CIniFile_ReadFloat(CIniFile *self, const char *sect, const char *key, float *out) {
+int CIniFile_ReadFloat(CIniFile *self, const char *sect, const char *key, float *out) {
 	return Dat_GetFloat(self->dat, sect, key, out);
 }
 
-int __thiscall CIniFile_ReadInt(CIniFile *self, const char *sect, const char *key, int *out) {
+int CIniFile_ReadInt(CIniFile *self, const char *sect, const char *key, int *out) {
 	return Dat_GetLong(self->dat, sect, key, out);
 }
 
-int __thiscall CIniFile_ReadText(CIniFile *self, const char *sect, const char *key, char *dest, int size) {
+int CIniFile_ReadText(CIniFile *self, const char *sect, const char *key, char *dest, int size) {
 	return Dat_GetText(self->dat, sect, key, dest, size);
 }
 
-const char *__thiscall CIniFile_LineText(CIniFile *self, int idx) {
+const char *CIniFile_LineText(CIniFile *self, int idx) {
 	cDatLine *lin = DataFile_Line(self->dat, idx);
 	return lin ? lin->text : NULL;
 }
 
-int __thiscall CIniFile_LineType(CIniFile *self, int idx) {
+int CIniFile_LineType(CIniFile *self, int idx) {
 	return DataFile_LineType(self->dat, idx);
 }

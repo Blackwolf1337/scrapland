@@ -31,7 +31,7 @@ static inline CGameModel *VE_Model(cVehicleEntity *v) {
 
 /* the element of a new debris of the effect file with the life, made when the debris has none; noRadius: the
  * system first gets radius 0 */
-static void *VE_Drop(const char *file, float life, byte noRadius, uint32_t size, void *(__thiscall *ctor)(void *)) {
+static void *VE_Drop(const char *file, float life, byte noRadius, uint32_t size, void *(*ctor)(void *)) {
 	cDebrisSys *sys = cWorld_GetDebrisSys(g_pWorld, file);
 	if (noRadius) {
 		sys->radiusSq = 0.0f;
@@ -50,7 +50,7 @@ static void *VE_Drop(const char *file, float life, byte noRadius, uint32_t size,
 
 /* ---- the escape tubes and the speed trails ---- */
 
-void __fastcall cVehicleTubes_Reset(cVehicleTubes *self) {
+void cVehicleTubes_Reset(cVehicleTubes *self) {
 	self->count = 0;
 	for (int i = 0; i < VEFF_TUBES; i++) {
 		if (self->nodes[i] != -1) {
@@ -59,13 +59,13 @@ void __fastcall cVehicleTubes_Reset(cVehicleTubes *self) {
 	}
 }
 
-void __fastcall cVehicleTrails_Clear(cVehicleTrails *self) {
+void cVehicleTrails_Clear(cVehicleTrails *self) {
 	for (int i = 0; i < VEFF_TRAILS; i++) {
 		CGameTrail_Clear(&self->trails[i]);
 	}
 }
 
-void __fastcall cVehicleEffects_Reset(cVehicleEffects *self) {
+void cVehicleEffects_Reset(cVehicleEffects *self) {
 	cVehicleTrails *t = self->trails;
 	if (t) {
 		t->count = 0;
@@ -84,13 +84,13 @@ void __fastcall cVehicleEffects_Reset(cVehicleEffects *self) {
 	self->fireTime = 0.0f;
 }
 
-void __fastcall cVehicleEffects_ClearDamage(void *self) {
+void cVehicleEffects_ClearDamage(void *self) {
 	cVehicleEffects *fx = self;
 	fx->damageOn = 0;
 	fx->damageTime = 0.0f;
 }
 
-void __fastcall cVehicleTubes_Init(cVehicleTubes *self) {
+void cVehicleTubes_Init(cVehicleTubes *self) {
 	char name[256];
 
 	CHECK(self->owner);
@@ -122,7 +122,7 @@ void __fastcall cVehicleTubes_Init(cVehicleTubes *self) {
 	self->time = 0.0f;
 }
 
-void __fastcall cVehicleTrails_Init(cVehicleTrails *self) {
+void cVehicleTrails_Init(cVehicleTrails *self) {
 	char name[256];
 	vec3_t pos;
 
@@ -179,7 +179,7 @@ static inline float VE_RandSub(double range, double sub) {
 	return (float)((double)(crt_rand() & 0x7fff) * VEFF_RAND_SCALE * range - sub);
 }
 
-void __thiscall cVehicleTrails_Update(cVehicleTrails *self, float dt) {
+void cVehicleTrails_Update(cVehicleTrails *self, float dt) {
 	vec3_t c, p, w;
 
 	CHECK(self->owner);
@@ -267,7 +267,7 @@ void __thiscall cVehicleTrails_Update(cVehicleTrails *self, float dt) {
 	self->time = self->time + dt;
 }
 
-void __fastcall cVehicleEffects_Init(cVehicleEffects *self) {
+void cVehicleEffects_Init(cVehicleEffects *self) {
 	CHECK(self->owner);
 	cVehicleEntity *v = self->owner;
 	if (v->typeName[0] == 'T' || !strcmp(v->typeName, "SMosquito")) {
@@ -312,7 +312,7 @@ void __fastcall cVehicleEffects_Init(cVehicleEffects *self) {
 	}
 }
 
-void __thiscall cVehicleEffects_SetActive(cVehicleEffects *self, byte on) {
+void cVehicleEffects_SetActive(cVehicleEffects *self, byte on) {
 	if (!on && self->trails && self->trails->count > 0) {
 		cVehicleTrails_Clear(self->trails);
 	}
@@ -324,7 +324,7 @@ static void VE_CheckOwner(cEntity *e) {
 	CHECK(e->vftable->IsType(e, TYEN_VEHICLE));
 }
 
-void __thiscall cVehicleEffects_SetOwner(cVehicleEffects *self, cEntity *e) {
+void cVehicleEffects_SetOwner(cVehicleEffects *self, cEntity *e) {
 	VE_CheckOwner(e);
 	self->owner = Veh(e);
 	if (self->trails) {
@@ -335,19 +335,19 @@ void __thiscall cVehicleEffects_SetOwner(cVehicleEffects *self, cEntity *e) {
 	}
 }
 
-void __thiscall cVehicleTubes_SetOwner(cVehicleTubes *self, cEntity *e) {
+void cVehicleTubes_SetOwner(cVehicleTubes *self, cEntity *e) {
 	VE_CheckOwner(e);
 	self->owner = Veh(e);
 }
 
-void __thiscall cVehicleTrails_SetOwner(cVehicleTrails *self, cEntity *e) {
+void cVehicleTrails_SetOwner(cVehicleTrails *self, cEntity *e) {
 	VE_CheckOwner(e);
 	self->owner = Veh(e);
 }
 
 /* ---- the debris effects ---- */
 
-void __thiscall cVehicleEffects_Start(cVehicleEffects *self, const char *name) {
+void cVehicleEffects_Start(cVehicleEffects *self, const char *name) {
 	if (!strcmp(name, "VehicleDamage")) {
 		if (!CGameModel_IsLoaded(VE_Model(self->owner))) {
 			return;
@@ -427,7 +427,7 @@ void __thiscall cVehicleEffects_Start(cVehicleEffects *self, const char *name) {
 	}
 }
 
-void __thiscall cVehicleEffects_UpdateState(cVehicleEffects *self, float dt) {
+void cVehicleEffects_UpdateState(cVehicleEffects *self, float dt) {
 	vec3_t v, out, center, from, to, hit;
 
 	CHECK(self->owner);
@@ -520,7 +520,7 @@ void __thiscall cVehicleEffects_UpdateState(cVehicleEffects *self, float dt) {
 #define VEFF_TUBE_STEP 0.025f			/* between two emissions */
 #define g_VehicleSmokeRamps (GAME_ARRAY(uint32_t, g_VehicleSmokeRamps))	/* 3 color ramps of 9 colors */
 
-cVehicleEffects *__fastcall cVehicleEffects_ctor(cVehicleEffects *self) {
+cVehicleEffects *cVehicleEffects_ctor(cVehicleEffects *self) {
 	self->owner = NULL;
 	self->damageOn = 0;
 	self->damageTime = 0.0f;
@@ -533,21 +533,21 @@ cVehicleEffects *__fastcall cVehicleEffects_ctor(cVehicleEffects *self) {
 	return self;
 }
 
-cVehicleTubes *__fastcall cVehicleTubes_ctor(cVehicleTubes *self) {
+cVehicleTubes *cVehicleTubes_ctor(cVehicleTubes *self) {
 	crt_eh_vector_ctor(self->particles, sizeof(CGameParticles), VEFF_TUBES, (void *)CGameParticles_ctor,
 		(void *)CGameParticles_Release);
 	self->owner = NULL;
 	return self;
 }
 
-cVehicleTrails *__fastcall cVehicleTrails_ctor(cVehicleTrails *self) {
+cVehicleTrails *cVehicleTrails_ctor(cVehicleTrails *self) {
 	crt_eh_vector_ctor(self->trails, sizeof(CGameTrail), VEFF_TRAILS, (void *)CGameTrail_ctor,
 		(void *)CGameTrail_dtor);
 	self->owner = NULL;
 	return self;
 }
 
-void __fastcall cVehicleEffects_dtor(cVehicleEffects *self) {
+void cVehicleEffects_dtor(cVehicleEffects *self) {
 	cVehicleTrails *t = self->trails;
 	if (t) {
 		crt_eh_vector_dtor(t->trails, sizeof(CGameTrail), VEFF_TRAILS, (void *)CGameTrail_dtor);
@@ -562,7 +562,7 @@ void __fastcall cVehicleEffects_dtor(cVehicleEffects *self) {
 	}
 }
 
-void __thiscall cVehicleEffects_Update(cVehicleEffects *self, float dt) {
+void cVehicleEffects_Update(cVehicleEffects *self, float dt) {
 	if (self->trails && self->trails->count > 0) {
 		cVehicleTrails_Update(self->trails, dt);
 	}
@@ -666,7 +666,7 @@ static void VE_TubePuff(cVehicleTubes *self, CGameParticles *p, const VE_TubeSmo
 	CGameParticles_EmitN(p, 1, 0);
 }
 
-void __thiscall cVehicleTubes_Update(cVehicleTubes *self, float dt) {
+void cVehicleTubes_Update(cVehicleTubes *self, float dt) {
 	vec3_t pos, rot;
 
 	CHECK(self->owner);
@@ -719,7 +719,7 @@ static inline float VE_RandSign(void) {
 	return (float)((crt_rand() & 1) * 2 - 1);
 }
 
-void __thiscall cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float y, float z) {
+void cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float y, float z) {
 	vec3_t vel, cam, tmp, n, unit, side, ang, dir;
 
 	Obj_Vtbl(VE_Ent(self->owner))->GetVel(VE_Ent(self->owner), &vel);
@@ -1242,7 +1242,7 @@ static void VS_Inferno(cVehicleEffects *self, CGameModel *model, CGameParticles 
 }
 
 /* the prototype of include/scrap/weapons.h takes the effects as void * */
-void __thiscall cVehicleEffects_Shoot(void *effects, int weap, int slot) {
+void cVehicleEffects_Shoot(void *effects, int weap, int slot) {
 	cVehicleEffects *self = effects;
 
 	CHECK(self->owner);

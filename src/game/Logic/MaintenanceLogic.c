@@ -20,7 +20,7 @@ static inline float Maint_X87Add2(float a, float b, float c) {
 	return (float)r;
 }
 
-void *__thiscall cMaintenanceLocalLogic_ctor(void *mem, cEntity *parent) {
+void *cMaintenanceLocalLogic_ctor(void *mem, cEntity *parent) {
 	cMaintenanceLocalLogic *self = mem;
 
 	cGenCharLocalLogic_ctor(&self->base, parent, 1);
@@ -37,7 +37,7 @@ void *__thiscall cMaintenanceLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-cMaintenanceLocalLogic *__thiscall cMaintenanceLocalLogic_Delete(cMaintenanceLocalLogic *self, byte flags) {
+cMaintenanceLocalLogic *cMaintenanceLocalLogic_Delete(cMaintenanceLocalLogic *self, byte flags) {
 	MAINT_VT(self) = CMAINTENANCELOCALLOGIC_VFTABLE;
 	g_MaintenanceShip = NULL;
 	g_MaintenanceFirstShip = NULL;
@@ -50,7 +50,7 @@ cMaintenanceLocalLogic *__thiscall cMaintenanceLocalLogic_Delete(cMaintenanceLoc
 
 /* the corners of the box of half size radius * MaintenanceSphereRadiusFactor around (x, y, z); the lower ones
  * not below the platform (its y, the radius of the robot and 100) */
-void __thiscall cMaintenanceLocalLogic_SetPlatform(cMaintenanceLocalLogic *self, float x, float y, float z,
+void cMaintenanceLocalLogic_SetPlatform(cMaintenanceLocalLogic *self, float x, float y, float z,
 	float radius) {
 	vec3_t t;
 	float r = g_MaintenanceSphereRadiusFactor * radius;
@@ -98,10 +98,10 @@ cEntity *Maintenance_FindShip(void) {
 	return e;
 }
 
-void __fastcall cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self);
+void cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self);
 
 /* vf17: 7 waits for the editor and a ship, 8 works at the corners while it is the same ship */
-void __thiscall cMaintenanceLocalLogic_Update(cMaintenanceLocalLogic *self, float dt) {
+void cMaintenanceLocalLogic_Update(cMaintenanceLocalLogic *self, float dt) {
 	vec3_t t;
 	cBaseLocalLogic *b = MAINT_BASE(self);
 	cEntity *p = b->parent;
@@ -152,7 +152,7 @@ void __thiscall cMaintenanceLocalLogic_Update(cMaintenanceLocalLogic *self, floa
 /* the first time the nearest of the corners 0..6, then a neighbour: the next or the third next of the level, or
  * the same corner of the other level; the AI walks there faced to the ship, RepositionPoint the point of the ship
  * radii from it towards the corner */
-void __fastcall cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self) {
+void cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self) {
 	vec3_t t, sp;
 	cEntity *p = MAINT_BASE(self)->parent;
 	cAIChar *ai = p->vftable->GetAI(p);
@@ -214,7 +214,7 @@ void __fastcall cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self) {
 }
 
 /* vf19: 7 walks relaxed, 8 begins the work at the next corner */
-byte __thiscall cMaintenanceLocalLogic_SetState(cMaintenanceLocalLogic *self, int state, cEntity *target) {
+byte cMaintenanceLocalLogic_SetState(cMaintenanceLocalLogic *self, int state, cEntity *target) {
 	cBaseLocalLogic *b = MAINT_BASE(self);
 
 	if (state == 7) {
@@ -236,7 +236,7 @@ byte __thiscall cMaintenanceLocalLogic_SetState(cMaintenanceLocalLogic *self, in
 }
 
 /* vf06: "RepositionPoint" (read only, y positive) */
-byte __thiscall cMaintenanceLocalLogic_VarV(cMaintenanceLocalLogic *self, const char *name, double *x, double *y,
+byte cMaintenanceLocalLogic_VarV(cMaintenanceLocalLogic *self, const char *name, double *x, double *y,
 	double *z, byte set) {
 	if (!set && !strcmp(name, "RepositionPoint")) {
 		*x = (double)self->reposition.x;

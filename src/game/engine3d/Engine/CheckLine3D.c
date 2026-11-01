@@ -220,15 +220,15 @@ static byte Ground_SegWalk(CGround *self, const vec3_t *a, const vec3_t *b, int 
 	}
 }
 
-byte __thiscall CGround_TestSeg(CGround *self, const vec3_t *a, const vec3_t *b, int flags) {
+byte CGround_TestSeg(CGround *self, const vec3_t *a, const vec3_t *b, int flags) {
 	return Ground_SegWalk(self, a, b, (byte)flags, SEG_TEST, NULL, NULL);
 }
 
-byte __thiscall CGround_TraceSegPos(CGround *self, const vec3_t *a, const vec3_t *b, vec3_t *hit, int flags) {
+byte CGround_TraceSegPos(CGround *self, const vec3_t *a, const vec3_t *b, vec3_t *hit, int flags) {
 	return Ground_SegWalk(self, a, b, (byte)flags, SEG_POS, hit, NULL);
 }
 
-byte __thiscall CGround_TraceSeg(CGround *self, const vec3_t *a, const vec3_t *b, vec3_t *hit, CGroundHit *tri,
+byte CGround_TraceSeg(CGround *self, const vec3_t *a, const vec3_t *b, vec3_t *hit, CGroundHit *tri,
 	int flags) {
 	return Ground_SegWalk(self, a, b, flags, SEG_TRI, hit, tri);
 }
@@ -243,7 +243,7 @@ static int Trace_Crosses(float da, byte useThreshold, float threshold) {
 	return !useThreshold || -threshold > da || da >= 0.0f;
 }
 
-byte __thiscall CGround_Trace(void *ground, const vec3_t *from, const vec3_t *to, void *res, float threshold, void *cache) {
+byte CGround_Trace(void *ground, const vec3_t *from, const vec3_t *to, void *res, float threshold, void *cache) {
 	CGround *self = ground;
 	CGroundHit *c = cache;
 	vec3_t *out = res;

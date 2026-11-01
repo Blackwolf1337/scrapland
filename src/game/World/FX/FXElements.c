@@ -20,7 +20,7 @@
 
 /* ---- construction ---- */
 
-cFXElementsFireDrop *__thiscall cFXElementsFireDrop_ctor(cFXElementsFireDrop *self, const char *name,
+cFXElementsFireDrop *cFXElementsFireDrop_ctor(cFXElementsFireDrop *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSFIREDROP_VFTABLE;
@@ -28,7 +28,7 @@ cFXElementsFireDrop *__thiscall cFXElementsFireDrop_ctor(cFXElementsFireDrop *se
 	return self;
 }
 
-cFXElementsLensFlare *__thiscall cFXElementsLensFlare_ctor(cFXElementsLensFlare *self, const char *name,
+cFXElementsLensFlare *cFXElementsLensFlare_ctor(cFXElementsLensFlare *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSLENSFLARE_VFTABLE;
@@ -42,7 +42,7 @@ cFXElementsLensFlare *__thiscall cFXElementsLensFlare_ctor(cFXElementsLensFlare 
 	return self;
 }
 
-cFXElementsLighting *__thiscall cFXElementsLighting_ctor(cFXElementsLighting *self, const char *name,
+cFXElementsLighting *cFXElementsLighting_ctor(cFXElementsLighting *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSLIGHTING_VFTABLE;
@@ -53,20 +53,20 @@ cFXElementsLighting *__thiscall cFXElementsLighting_ctor(cFXElementsLighting *se
 }
 
 /* the particle members are released twice, by the class and by the member destructor */
-void __fastcall cFXElementsFireDrop_dtor(cFXElementsFireDrop *self) {
+void cFXElementsFireDrop_dtor(cFXElementsFireDrop *self) {
 	self->base.vftable = CFXELEMENTSFIREDROP_VFTABLE;
 	CGameParticles_Release(&self->drops);
 	CGameParticles_Release(&self->drops);
 	cMapElement_dtor(&self->base);
 }
 
-void __fastcall cFXElementsLensFlare_dtor(cFXElementsLensFlare *self) {
+void cFXElementsLensFlare_dtor(cFXElementsLensFlare *self) {
 	self->base.vftable = CFXELEMENTSLENSFLARE_VFTABLE;
 	CGameLensFlare_dtor(self->flare);
 	cMapElement_dtor(&self->base);
 }
 
-void __fastcall cFXElementsLighting_dtor(cFXElementsLighting *self) {
+void cFXElementsLighting_dtor(cFXElementsLighting *self) {
 	self->base.vftable = CFXELEMENTSLIGHTING_VFTABLE;
 	for (int i = 0; i < FXLIGHTINGBOLTS; i++) {
 		CGameTrail_Clear(&self->trails[i]);
@@ -77,7 +77,7 @@ void __fastcall cFXElementsLighting_dtor(cFXElementsLighting *self) {
 	cMapElement_dtor(&self->base);
 }
 
-cFXElementsFireDrop *__thiscall cFXElementsFireDrop_Delete(cFXElementsFireDrop *self, byte flags) {
+cFXElementsFireDrop *cFXElementsFireDrop_Delete(cFXElementsFireDrop *self, byte flags) {
 	cFXElementsFireDrop_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -85,7 +85,7 @@ cFXElementsFireDrop *__thiscall cFXElementsFireDrop_Delete(cFXElementsFireDrop *
 	return self;
 }
 
-cFXElementsLensFlare *__thiscall cFXElementsLensFlare_Delete(cFXElementsLensFlare *self, byte flags) {
+cFXElementsLensFlare *cFXElementsLensFlare_Delete(cFXElementsLensFlare *self, byte flags) {
 	cFXElementsLensFlare_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -93,7 +93,7 @@ cFXElementsLensFlare *__thiscall cFXElementsLensFlare_Delete(cFXElementsLensFlar
 	return self;
 }
 
-cFXElementsLighting *__thiscall cFXElementsLighting_Delete(cFXElementsLighting *self, byte flags) {
+cFXElementsLighting *cFXElementsLighting_Delete(cFXElementsLighting *self, byte flags) {
 	cFXElementsLighting_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -101,15 +101,15 @@ cFXElementsLighting *__thiscall cFXElementsLighting_Delete(cFXElementsLighting *
 	return self;
 }
 
-void __fastcall cFXElementsFireDrop_Release(cFXElementsFireDrop *self) {
+void cFXElementsFireDrop_Release(cFXElementsFireDrop *self) {
 	CGameParticles_Release(&self->drops);
 }
 
-void __fastcall cFXElementsLensFlare_Release(cFXElementsLensFlare *self) {
+void cFXElementsLensFlare_Release(cFXElementsLensFlare *self) {
 	(void)self;
 }
 
-void __fastcall cFXElementsLighting_Release(cFXElementsLighting *self) {
+void cFXElementsLighting_Release(cFXElementsLighting *self) {
 	for (int i = 0; i < FXLIGHTINGBOLTS; i++) {
 		CGameTrail_Clear(&self->trails[i]);
 	}
@@ -118,7 +118,7 @@ void __fastcall cFXElementsLighting_Release(cFXElementsLighting *self) {
 
 /* ---- cFXElementsFireDrop ---- */
 
-byte __fastcall cFXElementsFireDrop_Init(cFXElementsFireDrop *self) {
+byte cFXElementsFireDrop_Init(cFXElementsFireDrop *self) {
 	CGameModel *model = &self->base.Mod;
 	vec3_t tmp;
 
@@ -345,7 +345,7 @@ static void FireDrop_EmitDue(cFXElementsFireDrop *self, float *emitTime, float i
 }
 
 /* near the camera: a burst of drops (more the nearer) with the sound, then a pause */
-void __thiscall cFXElementsFireDrop_Update(cFXElementsFireDrop *self, float dt) {
+void cFXElementsFireDrop_Update(cFXElementsFireDrop *self, float dt) {
 	CGameModel *model = &self->base.Mod;
 	vec3_t tmp;
 
@@ -417,19 +417,19 @@ void __thiscall cFXElementsFireDrop_Update(cFXElementsFireDrop *self, float dt) 
 
 /* ---- cFXElementsLensFlare ---- */
 
-byte __fastcall cFXElementsLensFlare_Init(cFXElementsLensFlare *self) {
+byte cFXElementsLensFlare_Init(cFXElementsLensFlare *self) {
 	(void)self;
 	return 1;
 }
 
-void __thiscall cFXElementsLensFlare_Update(cFXElementsLensFlare *self, float dt) {
+void cFXElementsLensFlare_Update(cFXElementsLensFlare *self, float dt) {
 	(void)self;
 	(void)dt;
 }
 
 /* ---- cFXElementsLighting ---- */
 
-byte __fastcall cFXElementsLighting_Init(cFXElementsLighting *self) {
+byte cFXElementsLighting_Init(cFXElementsLighting *self) {
 	CGameModel *model = &self->base.Mod;
 	char buf[0x100];
 	vec3_t tmp;
@@ -734,7 +734,7 @@ static void Lighting_Draw(cFXElementsLighting *self, int i, float dt, int from, 
 }
 
 /* every bolt with two links or more: drawn while its life lasts, then cleared until its pause is over */
-void __thiscall cFXElementsLighting_Update(cFXElementsLighting *self, float dt) {
+void cFXElementsLighting_Update(cFXElementsLighting *self, float dt) {
 	CGameModel *model = &self->base.Mod;
 
 	cMapElement_Update(&self->base, dt);

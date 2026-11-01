@@ -10,7 +10,7 @@
 typedef struct cSlotController cSlotController;
 
 typedef struct cSlotControllerVtbl {
-	void(__thiscall *Next)(cSlotController *self);	/* 0x0 the next interval */
+	void(*Next)(cSlotController *self);	/* 0x0 the next interval */
 } cSlotControllerVtbl;
 
 struct cSlotController {
@@ -29,14 +29,14 @@ typedef struct cRndSlotController {
 } cRndSlotController;
 SD_SIZE(cRndSlotController, 0x14);
 
-cSlotController *__thiscall cSlotController_ctor(cSlotController *self, float interval);
+cSlotController *cSlotController_ctor(cSlotController *self, float interval);
 /* counts dt down; 1 when the slot came */
-int __thiscall cSlotController_Tick(cSlotController *self, float dt);
+int cSlotController_Tick(cSlotController *self, float dt);
 /* when the slot came: its interval into *out and on to the next; 1 then */
-byte __thiscall cSlotController_Fire(cSlotController *self, float *out);
+byte cSlotController_Fire(cSlotController *self, float *out);
 /* the same, the time left set to 0 first */
-byte __thiscall cSlotController_FireReset(cSlotController *self, float *out);
+byte cSlotController_FireReset(cSlotController *self, float *out);
 /* a slot still more than 1 ms ahead starts now, its interval shortened by the time left */
-void __fastcall cSlotController_Restart(cSlotController *self);
+void cSlotController_Restart(cSlotController *self);
 
 #endif

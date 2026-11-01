@@ -10,18 +10,18 @@
 /* the AI slot the bishop asks */
 typedef struct cLogicBishopAIVtbl {
 	void *vf00_24[37];
-	byte(__thiscall *Vf94)(void *self);	/* 0x94 */
+	byte(*Vf94)(void *self);	/* 0x94 */
 } cLogicBishopAIVtbl;
 SD_OFFSET(cLogicBishopAIVtbl, Vf94, 0x94);
 
-cBishopLocalLogic *__thiscall cBishopLocalLogic_ctor(cBishopLocalLogic *self, cEntity *parent) {
+cBishopLocalLogic *cBishopLocalLogic_ctor(cBishopLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
 	self->base.vftable = CBISHOPLOCALLOGIC_VFTABLE;
 	self->alarmState = 4;
 	return self;
 }
 
-cBishopLocalLogic *__thiscall cBishopLocalLogic_Delete(cBishopLocalLogic *self, byte flags) {
+cBishopLocalLogic *cBishopLocalLogic_Delete(cBishopLocalLogic *self, byte flags) {
 	self->base.vftable = CBISHOPLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -31,7 +31,7 @@ cBishopLocalLogic *__thiscall cBishopLocalLogic_Delete(cBishopLocalLogic *self, 
 }
 
 /* vf31: 0 to keep a character target that is idle when the AI asks */
-byte __thiscall cBishopLocalLogic_LoseTarget(cBishopLocalLogic *self) {
+byte cBishopLocalLogic_LoseTarget(cBishopLocalLogic *self) {
 	cEntity *t = self->base.target.target;
 
 	if (!t || !t->vftable->IsType(t, TYEN_WALKCHAR)) {
@@ -50,7 +50,7 @@ byte __thiscall cBishopLocalLogic_LoseTarget(cBishopLocalLogic *self) {
 }
 
 /* vf07 */
-byte __thiscall cBishopLocalLogic_UpdateBusy(cBishopLocalLogic *self) {
+byte cBishopLocalLogic_UpdateBusy(cBishopLocalLogic *self) {
 	if (!strncmp(cActCtrl_GetActionName(ChType_ActCtrl(self->base.parent), 0), "SellLife", 8)) {
 		self->base.busy = 1;
 		return self->base.busy;
@@ -61,7 +61,7 @@ byte __thiscall cBishopLocalLogic_UpdateBusy(cBishopLocalLogic *self) {
 }
 
 /* vf30: with the special action on (energy bar active, SpecialActionActive 2) */
-cEntity *__thiscall cBishopLocalLogic_FindTarget(cBishopLocalLogic *self) {
+cEntity *cBishopLocalLogic_FindTarget(cBishopLocalLogic *self) {
 	cEntityListData **const lists[] = { &g_pWorld->logic.nurses.list, &g_pWorld->logic.aiCtrl.sentinels, &g_pWorld->logic.aiCtrl.gears };
 
 	if (g_EnergyBarActive != 1 || g_SpecialActionActive != 2) {
@@ -91,7 +91,7 @@ cEntity *__thiscall cBishopLocalLogic_FindTarget(cBishopLocalLogic *self) {
 }
 
 /* vf29 (0x74), the alarm: its alarm state or 2 against target */
-void __thiscall cBishopLocalLogic_OnAlarm(cBishopLocalLogic *self, cEntity *target) {
+void cBishopLocalLogic_OnAlarm(cBishopLocalLogic *self, cEntity *target) {
 	if (g_BishopAttackOnAlarm) {
 		self->base.vftable->SetState(self, self->alarmState, target);
 		return;

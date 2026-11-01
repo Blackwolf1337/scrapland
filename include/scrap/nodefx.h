@@ -81,27 +81,27 @@ void *NodeFX_New(const char *type, CNode3D *node);
 /* a copy of the effect, NULL for an unknown type */
 void *NodeFX_Clone(INodeFX *fx);
 
-void __fastcall INodeFX_ctor(INodeFX *self);
-INodeFX *__thiscall INodeFX_Delete(INodeFX *self, byte flags);
-byte __fastcall INodeFX_Type(INodeFX *self);
+void INodeFX_ctor(INodeFX *self);
+INodeFX *INodeFX_Delete(INodeFX *self, byte flags);
+byte INodeFX_Type(INodeFX *self);
 
 /* type 0 Wheel, 1 Roll: the defaults of the properties */
-CNodeFX_Wheel *__thiscall CNodeFX_Wheel_ctor(CNodeFX_Wheel *self, CNode3D *node, int type);
-CNodeFX_Wheel *__thiscall CNodeFX_Wheel_ctorCopy(CNodeFX_Wheel *self, const CNodeFX_Wheel *src);
+CNodeFX_Wheel *CNodeFX_Wheel_ctor(CNodeFX_Wheel *self, CNode3D *node, int type);
+CNodeFX_Wheel *CNodeFX_Wheel_ctorCopy(CNodeFX_Wheel *self, const CNodeFX_Wheel *src);
 /* not to be used: CHECK(0) */
-CNodeFX_Wheel *__thiscall CNodeFX_Wheel_Delete(CNodeFX_Wheel *self, byte flags);
-byte __fastcall CNodeFX_Wheel_Type(CNodeFX_Wheel *self);
-int __thiscall CNodeFX_Wheel_Apply(CNodeFX_Wheel *self, matrix_t *m, CNode3D *node, CRenderNode *r);
+CNodeFX_Wheel *CNodeFX_Wheel_Delete(CNodeFX_Wheel *self, byte flags);
+byte CNodeFX_Wheel_Type(CNodeFX_Wheel *self);
+int CNodeFX_Wheel_Apply(CNodeFX_Wheel *self, matrix_t *m, CNode3D *node, CRenderNode *r);
 /* ang 0 and a new noiseBase; the quotient of the random number by 20000 */
-int __fastcall CNodeFX_Wheel_Reset(CNodeFX_Wheel *self);
+int CNodeFX_Wheel_Reset(CNodeFX_Wheel *self);
 
 /* type 0 Spring, 1 Cloth, 2 Hair, 3 Bust */
-CNodeFX_Spring *__thiscall CNodeFX_Spring_ctor(CNodeFX_Spring *self, CNode3D *node, int type);
-CNodeFX_Spring *__thiscall CNodeFX_Spring_ctorCopy(CNodeFX_Spring *self, const CNodeFX_Spring *src);
-CNodeFX_Spring *__thiscall CNodeFX_Spring_Delete(CNodeFX_Spring *self, byte flags);
-byte __fastcall CNodeFX_Spring_Type(CNodeFX_Spring *self);
-int __thiscall CNodeFX_Spring_Apply(CNodeFX_Spring *self, matrix_t *m, CNode3D *node, CRenderNode *r);
-void __fastcall CNodeFX_Spring_Reset(CNodeFX_Spring *self);
+CNodeFX_Spring *CNodeFX_Spring_ctor(CNodeFX_Spring *self, CNode3D *node, int type);
+CNodeFX_Spring *CNodeFX_Spring_ctorCopy(CNodeFX_Spring *self, const CNodeFX_Spring *src);
+CNodeFX_Spring *CNodeFX_Spring_Delete(CNodeFX_Spring *self, byte flags);
+byte CNodeFX_Spring_Type(CNodeFX_Spring *self);
+int CNodeFX_Spring_Apply(CNodeFX_Spring *self, matrix_t *m, CNode3D *node, CRenderNode *r);
+void CNodeFX_Spring_Reset(CNodeFX_Spring *self);
 
 /* other modules (src/imports.inc) */
 float Ang_Wrap(float a);	/* rva 0x238b80: one turn off when above 2 pi or below -2 pi */

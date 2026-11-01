@@ -107,56 +107,56 @@ SD_OFFSET(CLight, indexD3D, 0xb4);
 SD_OFFSET(CLight, node, 0xc4);
 SD_SIZE(CLight, 0xcc);
 
-CLight *__fastcall CLight_ctor(CLight *self);
-void __fastcall CLight_dtor(CLight *self);
-CLight *__thiscall CLight_Delete(CLight *self, byte flags);
-void __fastcall IObject3D_dtor(IObject3D *self);
-IObject3D *__thiscall IObject3D_Delete(IObject3D *self, byte flags);
+CLight *CLight_ctor(CLight *self);
+void CLight_dtor(CLight *self);
+CLight *CLight_Delete(CLight *self, byte flags);
+void IObject3D_dtor(IObject3D *self);
+IObject3D *IObject3D_Delete(IObject3D *self, byte flags);
 /* the virtual Read and Write of IObject3D: nothing, 0 */
-byte __thiscall IObject3D_Read(IObject3D *self, CFileIO *f, void *ctx);
-byte __thiscall IObject3D_Write(IObject3D *self, CFileIO *f, void *ctx);
+byte IObject3D_Read(IObject3D *self, CFileIO *f, void *ctx);
+byte IObject3D_Write(IObject3D *self, CFileIO *f, void *ctx);
 /* the lights for an object at pos (sphere center, radius) into out, sorted by weight; the first maxOn are enabled in
  * the device, the others and the rejected ones disabled; the count */
 int Light_Select(const vec3_t *pos, int sector, const vec3_t *center, float radius, CLight **out, int maxOn);
 /* on: three fixed directional lights (0..2) and the ambient of EnableMonitorLights instead of the scene lights; 0 */
 int Light_SetDefault(byte on);
 /* the virtual methods 1, 3 and 4; arg is not used */
-void __thiscall CLight_Update(CLight *self, int arg);
-void __thiscall CLight_Reset(CLight *self, int arg);
-void __thiscall CLight_Hide(CLight *self, int arg);
+void CLight_Update(CLight *self, int arg);
+void CLight_Reset(CLight *self, int arg);
+void CLight_Hide(CLight *self, int arg);
 /* the virtual Render: the debug drawing of the light (R_ShowLights) */
-void __thiscall CLight_Render(CLight *self, void *dev, CRenderNode *r);
+void CLight_Render(CLight *self, void *dev, CRenderNode *r);
 /* a directional light without position into device light idx */
 void Light_SetDirLight(uint32_t idx, const color4_t *color, const vec3_t *dir);
-void __thiscall CLight_EnableD3D(CLight *self, byte enable);
+void CLight_EnableD3D(CLight *self, byte enable);
 /* the "LUZ" block; ctx holds the node at 0x4 */
-byte __thiscall CLight_Read(CLight *self, CFileIO *f, void *ctx);
-byte __thiscall CLight_Write(CLight *self, CFileIO *f, void *ctx);
+byte CLight_Read(CLight *self, CFileIO *f, void *ctx);
+byte CLight_Write(CLight *self, CFileIO *f, void *ctx);
 /* the list of the lights to the debug console */
 void Light_List(void);
 /* all lights of the list enabled in the device as they are set (act_D3D), or disabled */
 void Light_EnableAll(byte enable);
 /* the D3D light with the engine variables (multipliers, attenuation, gamma, desaturation, clamp) applied */
-void __thiscall CLight_AdjustD3D(CLight *self, D3DLight *l);
-void __thiscall CLight_SetNode(CLight *self, CNode3D *node);
-void __thiscall CLight_SetNodeTarget(CLight *self, CNode3D *node);
+void CLight_AdjustD3D(CLight *self, D3DLight *l);
+void CLight_SetNode(CLight *self, CNode3D *node);
+void CLight_SetNodeTarget(CLight *self, CNode3D *node);
 /* into the global list or out of it */
-void __thiscall CLight_SetActive(CLight *self, byte active);
+void CLight_SetActive(CLight *self, byte active);
 /* qsort order of CLight pointers by weight, never 0 */
 int Light_Compare(const void *a, const void *b);
-void __thiscall CLight_FillD3D(CLight *self, D3DLight *l);
+void CLight_FillD3D(CLight *self, D3DLight *l);
 int Light_NumD3D(void);
 int Light_NumActive(void);
 int Light_NumTotal(void);
 /* act_D3D from active (hide: off), the device light set while act_D3D */
-void __thiscall CLight_UpdateD3D(CLight *self, byte hide);
+void CLight_UpdateD3D(CLight *self, byte hide);
 /* a box of zeros (in the range of luz.cpp, used by the scene nodes) */
-box_t *__fastcall Box_Zero(box_t *self);
+box_t *Box_Zero(box_t *self);
 
 /* other modules, called from luz.cpp (src/imports.inc) */
 /* rva 0x2682d0, the light of the shadows (NULL: none); the second argument is 0 here */
 void E3D_SetShadowLight(CLight *l, int arg);
 /* rva 0x26e490, gMundo->obtSuelo(): 1 if the segment from-to hits the ground */
-byte __thiscall CGround_Trace(void *self, const vec3_t *from, const vec3_t *to, void *a, float b, void *c);
+byte CGround_Trace(void *self, const vec3_t *from, const vec3_t *to, void *a, float b, void *c);
 
 #endif

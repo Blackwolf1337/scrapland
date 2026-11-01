@@ -37,6 +37,6 @@ void ChType_FXMaintenanceWork(cAbstractFile *params) {
 	}
 }
 
-byte __fastcall cAIChar_TestFlags(const void *self) {
+byte cAIChar_TestFlags(const void *self) {
 	return ((const byte *)self)[0x28] || ((const byte *)self)[0x2a];
 }

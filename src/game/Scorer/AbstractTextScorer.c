@@ -22,7 +22,7 @@ static const char *const s_NetStates[] = {"Connecting...", NULL, "Waiting server
 
 /* ---- construction ---- */
 
-cAbstractTextScorer *__fastcall cAbstractTextScorer_ctor(cAbstractTextScorer *self) {
+cAbstractTextScorer *cAbstractTextScorer_ctor(cAbstractTextScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CABSTRACTTEXTSCORER_VFTABLE;
 	cString_ctor(&self->fontName);
@@ -36,7 +36,7 @@ cAbstractTextScorer *__fastcall cAbstractTextScorer_ctor(cAbstractTextScorer *se
 	return self;
 }
 
-cCreditsScorer *__fastcall cCreditsScorer_ctor(cCreditsScorer *self) {
+cCreditsScorer *cCreditsScorer_ctor(cCreditsScorer *self) {
 	cAbstractTextScorer_ctor(&self->base);
 	self->base.base.vftable = CCREDITSSCORER_VFTABLE;
 	self->font = Font_Get("ScrapMedium");
@@ -60,15 +60,15 @@ static cHintScorer *TabText_ctor(cHintScorer *self, void *vftable) {
 	return self;
 }
 
-cHintScorer *__fastcall cHintScorer_ctor(cHintScorer *self) {
+cHintScorer *cHintScorer_ctor(cHintScorer *self) {
 	return TabText_ctor(self, CHINTSCORER_VFTABLE);
 }
 
-cLabelScorer *__fastcall cLabelScorer_ctor(cLabelScorer *self) {
+cLabelScorer *cLabelScorer_ctor(cLabelScorer *self) {
 	return TabText_ctor(self, CLABELSCORER_VFTABLE);
 }
 
-cMsgScorer *__fastcall cMsgScorer_ctor(cMsgScorer *self) {
+cMsgScorer *cMsgScorer_ctor(cMsgScorer *self) {
 	float dim[2];
 
 	cAbstractTextScorer_ctor(&self->base);
@@ -81,14 +81,14 @@ cMsgScorer *__fastcall cMsgScorer_ctor(cMsgScorer *self) {
 }
 
 /* also the destructor of cMsgScorer */
-void __fastcall cAbstractTextScorer_dtor(cAbstractTextScorer *self) {
+void cAbstractTextScorer_dtor(cAbstractTextScorer *self) {
 	self->base.vftable = CABSTRACTTEXTSCORER_VFTABLE;
 	cString_dtor(&self->text);
 	cString_dtor(&self->fontName);
 	cScorerItem_dtor(&self->base);
 }
 
-void __fastcall cCreditsScorer_dtor(cCreditsScorer *self) {
+void cCreditsScorer_dtor(cCreditsScorer *self) {
 	g_CreditsAlpha = 0;
 	cAbstractTextScorer_dtor(&self->base);
 }
@@ -103,15 +103,15 @@ static void TabText_dtor(cHintScorer *self, void *vftable) {
 	cAbstractTextScorer_dtor(&self->base);
 }
 
-void __fastcall cHintScorer_dtor(cHintScorer *self) {
+void cHintScorer_dtor(cHintScorer *self) {
 	TabText_dtor(self, CHINTSCORER_VFTABLE);
 }
 
-void __fastcall cLabelScorer_dtor(cLabelScorer *self) {
+void cLabelScorer_dtor(cLabelScorer *self) {
 	TabText_dtor(self, CLABELSCORER_VFTABLE);
 }
 
-cAbstractTextScorer *__thiscall cAbstractTextScorer_Delete(cAbstractTextScorer *self, byte flags) {
+cAbstractTextScorer *cAbstractTextScorer_Delete(cAbstractTextScorer *self, byte flags) {
 	cAbstractTextScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cAbstractTextScorer));
@@ -119,7 +119,7 @@ cAbstractTextScorer *__thiscall cAbstractTextScorer_Delete(cAbstractTextScorer *
 	return self;
 }
 
-cCreditsScorer *__thiscall cCreditsScorer_Delete(cCreditsScorer *self, byte flags) {
+cCreditsScorer *cCreditsScorer_Delete(cCreditsScorer *self, byte flags) {
 	cCreditsScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cCreditsScorer));
@@ -127,7 +127,7 @@ cCreditsScorer *__thiscall cCreditsScorer_Delete(cCreditsScorer *self, byte flag
 	return self;
 }
 
-cHintScorer *__thiscall cHintScorer_Delete(cHintScorer *self, byte flags) {
+cHintScorer *cHintScorer_Delete(cHintScorer *self, byte flags) {
 	cHintScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cHintScorer));
@@ -135,7 +135,7 @@ cHintScorer *__thiscall cHintScorer_Delete(cHintScorer *self, byte flags) {
 	return self;
 }
 
-cLabelScorer *__thiscall cLabelScorer_Delete(cLabelScorer *self, byte flags) {
+cLabelScorer *cLabelScorer_Delete(cLabelScorer *self, byte flags) {
 	cLabelScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cLabelScorer));
@@ -143,7 +143,7 @@ cLabelScorer *__thiscall cLabelScorer_Delete(cLabelScorer *self, byte flags) {
 	return self;
 }
 
-cMsgScorer *__thiscall cMsgScorer_Delete(cMsgScorer *self, byte flags) {
+cMsgScorer *cMsgScorer_Delete(cMsgScorer *self, byte flags) {
 	cAbstractTextScorer_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cMsgScorer));
@@ -152,7 +152,7 @@ cMsgScorer *__thiscall cMsgScorer_Delete(cMsgScorer *self, byte flags) {
 }
 
 /* vf01 of cScorerItem, kept in this file: no parameters */
-void __thiscall cScorerItem_SetParam(cScorerItem *self, const char *name, const char *value) {
+void cScorerItem_SetParam(cScorerItem *self, const char *name, const char *value) {
 	(void)self;
 	(void)name;
 	(void)value;
@@ -163,7 +163,7 @@ void __thiscall cScorerItem_SetParam(cScorerItem *self, const char *name, const 
 static const char *const s_TextColors[4] = {"Red", "Green", "Blue", "Alpha"};
 static const char *const s_TabColors[4] = {"TabRed", "TabGreen", "TabBlue", "TabAlpha"};
 
-int __thiscall cAbstractTextScorer_Var(cAbstractTextScorer *self, const char *name, byte set, char **s, double *d,
+int cAbstractTextScorer_Var(cAbstractTextScorer *self, const char *name, byte set, char **s, double *d,
 	int *i) {
 	int r;
 
@@ -264,7 +264,7 @@ int __thiscall cAbstractTextScorer_Var(cAbstractTextScorer *self, const char *na
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-int __thiscall cCreditsScorer_Var(cCreditsScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cCreditsScorer_Var(cCreditsScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	if (d) {
 		if (!crt_stricmp(name, "Time")) {
 			return ScorerVar_Float(&self->time, set, d);
@@ -293,7 +293,7 @@ int __thiscall cCreditsScorer_Var(cCreditsScorer *self, const char *name, byte s
 }
 
 /* also cLabelScorer */
-int __thiscall cHintScorer_Var(cHintScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cHintScorer_Var(cHintScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	int r;
 
 	if (s && !crt_stricmp(name, "TabSprite") && set) {
@@ -328,7 +328,7 @@ int __thiscall cHintScorer_Var(cHintScorer *self, const char *name, byte set, ch
 
 /* ---- drawing ---- */
 
-void __thiscall cCreditsScorer_DrawLines(cCreditsScorer *self, byte fade, uint32_t color) {
+void cCreditsScorer_DrawLines(cCreditsScorer *self, byte fade, uint32_t color) {
 	byte columns = self->lines[8][0];
 	float sx, sy;
 
@@ -382,7 +382,7 @@ void __thiscall cCreditsScorer_DrawLines(cCreditsScorer *self, byte fade, uint32
 	}
 }
 
-void __thiscall cCreditsScorer_Draw(cCreditsScorer *self, int player) {
+void cCreditsScorer_Draw(cCreditsScorer *self, int player) {
 	cScorer *sc = Scorer_Get(player);
 	float old = self->time;
 	float dt = sc->frameTime;
@@ -437,7 +437,7 @@ void __thiscall cCreditsScorer_Draw(cCreditsScorer *self, int player) {
 	cCreditsScorer_DrawLines(self, 0, self->base.color);
 }
 
-void __thiscall cHintScorer_Draw(cHintScorer *self, int player) {
+void cHintScorer_Draw(cHintScorer *self, int player) {
 	cScorer *sc = Scorer_Get(player);
 	cScorerItem *item = cScorer_FindItem(sc, sc->current);
 
@@ -490,7 +490,7 @@ void __thiscall cHintScorer_Draw(cHintScorer *self, int player) {
 	}
 }
 
-void __thiscall cLabelScorer_Draw(cLabelScorer *self, int player) {
+void cLabelScorer_Draw(cLabelScorer *self, int player) {
 	const char *text;
 
 	if (!g_IsXbox) {
@@ -523,7 +523,7 @@ void __thiscall cLabelScorer_Draw(cLabelScorer *self, int player) {
 		self->base.color, "%s", text);
 }
 
-void __thiscall cMsgScorer_Draw(cMsgScorer *self, int player) {
+void cMsgScorer_Draw(cMsgScorer *self, int player) {
 	(void)player;
 	if (!(0.0f >= g_MsgTime) && !(g_MsgTime > Timer_GetTime(&g_pWorld->timer))) {
 		return;

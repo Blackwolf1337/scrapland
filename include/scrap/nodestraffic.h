@@ -32,17 +32,17 @@ SD_SIZE(cTrafficCell, 0x18);
 
 typedef struct cGridElements cGridElements;
 typedef struct cGridElementsVtbl {
-	cGridElements *(__thiscall *Delete)(cGridElements *self, byte flags);			/* 0x00 */
-	byte(__thiscall *Add)(cGridElements *self, const vec3_t *p, const InfoTrafficNode *info);	/* 0x04 */
-	byte(__thiscall *GetCellAt)(cGridElements *self, const vec3_t *p, cTrafficCell **out);	/* 0x08 */
-	byte(__thiscall *GetCell)(cGridElements *self, const int *x, const int *y, const int *z, cTrafficCell **out);
-	byte(__thiscall *Draw)(cGridElements *self, uint32_t color);				/* 0x10 */
-	byte(__thiscall *CellCoords)(cGridElements *self, const vec3_t *p, int *x, int *y, int *z);	/* 0x14 */
-	void(__thiscall *GetDivs)(cGridElements *self, int *nx, int *ny, int *nz);		/* 0x18 */
-	vec3_t *(__thiscall *GetCellSize)(cGridElements *self, vec3_t *out);			/* 0x1c */
-	byte(__thiscall *IsInside)(cGridElements *self, const vec3_t *p);			/* 0x20 */
-	void(__thiscall *Free)(cGridElements *self);						/* 0x24 */
-	int(__thiscall *CellIndex)(cGridElements *self, const vec3_t *p);			/* 0x28 */
+	cGridElements *(*Delete)(cGridElements *self, byte flags);			/* 0x00 */
+	byte(*Add)(cGridElements *self, const vec3_t *p, const InfoTrafficNode *info);	/* 0x04 */
+	byte(*GetCellAt)(cGridElements *self, const vec3_t *p, cTrafficCell **out);	/* 0x08 */
+	byte(*GetCell)(cGridElements *self, const int *x, const int *y, const int *z, cTrafficCell **out);
+	byte(*Draw)(cGridElements *self, uint32_t color);				/* 0x10 */
+	byte(*CellCoords)(cGridElements *self, const vec3_t *p, int *x, int *y, int *z);	/* 0x14 */
+	void(*GetDivs)(cGridElements *self, int *nx, int *ny, int *nz);		/* 0x18 */
+	vec3_t *(*GetCellSize)(cGridElements *self, vec3_t *out);			/* 0x1c */
+	byte(*IsInside)(cGridElements *self, const vec3_t *p);			/* 0x20 */
+	void(*Free)(cGridElements *self);						/* 0x24 */
+	int(*CellIndex)(cGridElements *self, const vec3_t *p);			/* 0x28 */
 } cGridElementsVtbl;
 SD_OFFSET(cGridElementsVtbl, CellIndex, 0x28);
 
@@ -61,35 +61,35 @@ typedef cGridElements cGridElements_InfoTrafficNode;
 
 #define CGRIDELEMENTS_VFTABLE GAME_VFTABLE(cGridElements_InfoTrafficNode_vftable)
 
-cGridElements *__thiscall cGridElements_ctor(cGridElements *self, const vec3_t *max, const vec3_t *min, int nx,
+cGridElements *cGridElements_ctor(cGridElements *self, const vec3_t *max, const vec3_t *min, int nx,
 	int ny, int nz);
 /* the constructor of all instances, with the vtable (rva) of the instance */
 cGridElements *cGridElements_Init(cGridElements *self, void *vftable, const vec3_t *max, const vec3_t *min, int nx,
 	int ny, int nz);
 /* the cells emptied with clear and freed with their free nodes of nodeSize bytes, then the cell array */
-void cGridElements_FreeCells(cGridElements *self, void(__fastcall *clear)(void *cell), uint32_t nodeSize);
-cGridElements *__thiscall cGridElements_Delete(cGridElements *self, byte flags);
+void cGridElements_FreeCells(cGridElements *self, void(*clear)(void *cell), uint32_t nodeSize);
+cGridElements *cGridElements_Delete(cGridElements *self, byte flags);
 /* the cells freed with their nodes, then the cell array */
-void __thiscall cGridElements_Free(cGridElements *self);
+void cGridElements_Free(cGridElements *self);
 /* the node into the cell of p (a CHECK out of the box); 1 */
-byte __thiscall cGridElements_Add(cGridElements *self, const vec3_t *p, const InfoTrafficNode *info);
-byte __thiscall cGridElements_GetCellAt(cGridElements *self, const vec3_t *p, cTrafficCell **out);
-byte __thiscall cGridElements_GetCell(cGridElements *self, const int *x, const int *y, const int *z,
+byte cGridElements_Add(cGridElements *self, const vec3_t *p, const InfoTrafficNode *info);
+byte cGridElements_GetCellAt(cGridElements *self, const vec3_t *p, cTrafficCell **out);
+byte cGridElements_GetCell(cGridElements *self, const int *x, const int *y, const int *z,
 	cTrafficCell **out);
 /* the lines of the cells; 0 without cells */
-byte __thiscall cGridElements_Draw(cGridElements *self, uint32_t color);
+byte cGridElements_Draw(cGridElements *self, uint32_t color);
 /* the cell of p, each clamped to the last one (a CHECK out of the box); 1 */
-byte __thiscall cGridElements_CellCoords(cGridElements *self, const vec3_t *p, int *x, int *y, int *z);
-void __thiscall cGridElements_GetDivs(cGridElements *self, int *nx, int *ny, int *nz);
-vec3_t *__thiscall cGridElements_GetCellSize(cGridElements *self, vec3_t *out);
-byte __thiscall cGridElements_IsInside(cGridElements *self, const vec3_t *p);
+byte cGridElements_CellCoords(cGridElements *self, const vec3_t *p, int *x, int *y, int *z);
+void cGridElements_GetDivs(cGridElements *self, int *nx, int *ny, int *nz);
+vec3_t *cGridElements_GetCellSize(cGridElements *self, vec3_t *out);
+byte cGridElements_IsInside(cGridElements *self, const vec3_t *p);
 /* the index of the cell of p, no check below 0, at most the last cell */
-int __thiscall cGridElements_CellIndex(cGridElements *self, const vec3_t *p);
+int cGridElements_CellIndex(cGridElements *self, const vec3_t *p);
 
 /* the DList.h instances: the cell (nodes of 0x10 bytes) and the error points of CNodesTraffic (0x18) */
-void __thiscall TrafficCell_Add(cTrafficCell *cell, const InfoTrafficNode *info);
-void __fastcall TrafficCell_Clear(cTrafficCell *cell);
-void __fastcall TrafficErrors_Clear(void *list);
+void TrafficCell_Add(cTrafficCell *cell, const InfoTrafficNode *info);
+void TrafficCell_Clear(cTrafficCell *cell);
+void TrafficErrors_Clear(void *list);
 
 /* ---- CNodesTraffic ---- */
 
@@ -140,38 +140,38 @@ SD_SIZE(cTrafficErrorNode, 0x18);
 
 typedef struct CNodesTraffic CNodesTraffic;
 typedef struct CNodesTrafficVtbl {
-	CNodesTraffic *(__thiscall *Delete)(CNodesTraffic *self, byte flags);		/* 0x00 */
-	void(__thiscall *AddVehicle)(CNodesTraffic *self, int track);			/* 0x04 */
-	void(__thiscall *RemoveVehicle)(CNodesTraffic *self, int track);		/* 0x08 */
-	int(__thiscall *NumTracks)(CNodesTraffic *self);				/* 0x0c */
-	int(__thiscall *NumByType)(CNodesTraffic *self, int type);			/* 0x10 */
-	int(__thiscall *NumNodes)(CNodesTraffic *self, int track);			/* 0x14 */
-	float(__thiscall *GetRadius)(CNodesTraffic *self, int track);			/* 0x18 */
-	void(__thiscall *Init)(CNodesTraffic *self);					/* 0x1c */
-	void(__thiscall *Load)(CNodesTraffic *self, byte fill);				/* 0x20 */
-	byte(__thiscall *RandomNode)(CNodesTraffic *self, vec3_t *out, int type, const vec3_t *pos, float distMin,
+	CNodesTraffic *(*Delete)(CNodesTraffic *self, byte flags);		/* 0x00 */
+	void(*AddVehicle)(CNodesTraffic *self, int track);			/* 0x04 */
+	void(*RemoveVehicle)(CNodesTraffic *self, int track);		/* 0x08 */
+	int(*NumTracks)(CNodesTraffic *self);				/* 0x0c */
+	int(*NumByType)(CNodesTraffic *self, int type);			/* 0x10 */
+	int(*NumNodes)(CNodesTraffic *self, int track);			/* 0x14 */
+	float(*GetRadius)(CNodesTraffic *self, int track);			/* 0x18 */
+	void(*Init)(CNodesTraffic *self);					/* 0x1c */
+	void(*Load)(CNodesTraffic *self, byte fill);				/* 0x20 */
+	byte(*RandomNode)(CNodesTraffic *self, vec3_t *out, int type, const vec3_t *pos, float distMin,
 		float distMax, int unused, const vec3_t *dir, float maxAngle, int *outTrack, int *outNode);	/* 0x24 */
-	byte(__thiscall *GetDirs)(CNodesTraffic *self, vec3_t *prev, vec3_t *next, int track, int node);	/* 0x28 */
-	byte(__thiscall *NextAway)(CNodesTraffic *self, vec3_t *out, int track, int node, int *outTrack,
+	byte(*GetDirs)(CNodesTraffic *self, vec3_t *prev, vec3_t *next, int track, int node);	/* 0x28 */
+	byte(*NextAway)(CNodesTraffic *self, vec3_t *out, int track, int node, int *outTrack,
 		int *outNode);								/* 0x2c */
-	byte(__thiscall *PrevAway)(CNodesTraffic *self, vec3_t *out, int track, int node, int *outTrack,
+	byte(*PrevAway)(CNodesTraffic *self, vec3_t *out, int track, int node, int *outTrack,
 		int *outNode);								/* 0x30 */
-	byte(__thiscall *GetNode)(CNodesTraffic *self, vec3_t *out, int track, int node);	/* 0x34 */
-	cTrafficTrackInfo *(__thiscall *GetInfo)(CNodesTraffic *self, cTrafficTrackInfo *out, int track);	/* 0x38 */
-	void(__thiscall *Draw)(CNodesTraffic *self);					/* 0x3c */
-	void(__thiscall *Analyze)(CNodesTraffic *self);					/* 0x40 */
-	void(__thiscall *DrawTrack)(CNodesTraffic *self, int track);			/* 0x44 */
-	void(__thiscall *BuildGrid)(CNodesTraffic *self);				/* 0x48 */
-	void(__thiscall *FindNodes)(CNodesTraffic *self, const vec3_t *pos, int type, InfoTrafficNode *list, int max,
+	byte(*GetNode)(CNodesTraffic *self, vec3_t *out, int track, int node);	/* 0x34 */
+	cTrafficTrackInfo *(*GetInfo)(CNodesTraffic *self, cTrafficTrackInfo *out, int track);	/* 0x38 */
+	void(*Draw)(CNodesTraffic *self);					/* 0x3c */
+	void(*Analyze)(CNodesTraffic *self);					/* 0x40 */
+	void(*DrawTrack)(CNodesTraffic *self, int track);			/* 0x44 */
+	void(*BuildGrid)(CNodesTraffic *self);				/* 0x48 */
+	void(*FindNodes)(CNodesTraffic *self, const vec3_t *pos, int type, InfoTrafficNode *list, int max,
 		int *count, float radius, float distMin, float distMax, byte soft, byte vis);	/* 0x4c */
-	void(__thiscall *CollectCell)(CNodesTraffic *self, const vec3_t *pos, int type, cTrafficCell *cell,
+	void(*CollectCell)(CNodesTraffic *self, const vec3_t *pos, int type, cTrafficCell *cell,
 		InfoTrafficNode *list, int max, int *count, float radius, float distMin, float distMax, byte vis,
 		byte useMax);								/* 0x50 */
-	void(__thiscall *SearchRings)(CNodesTraffic *self, const vec3_t *pos, int type, InfoTrafficNode *list,
+	void(*SearchRings)(CNodesTraffic *self, const vec3_t *pos, int type, InfoTrafficNode *list,
 		int max, int *count, float radius, float distMin, float distMax, byte soft, byte vis);	/* 0x54 */
-	void(__thiscall *RandomPointNear)(CNodesTraffic *self, int track, int node, float maxDist, vec3_t *out,
+	void(*RandomPointNear)(CNodesTraffic *self, int track, int node, float maxDist, vec3_t *out,
 		int *outTrack, int *outNode);						/* 0x58 */
-	void(__thiscall *RandomPointAhead)(CNodesTraffic *self, int track, int node, const vec3_t *pos,
+	void(*RandomPointAhead)(CNodesTraffic *self, int track, int node, const vec3_t *pos,
 		float distMin, float distMax, int unused, const vec3_t *dir, float maxAngle, vec3_t *out, int *outTrack,
 		int *outNode);								/* 0x5c */
 } CNodesTrafficVtbl;
@@ -225,49 +225,49 @@ SD_SIZE(CNodesTraffic, 0x70);
 #define g_MNTrafficCapsule GAME_GLOBAL_IN(float, GVar_MNTrafficCapsule, 16)
 
 /* CNodesTraffic_ctor and CNodesTrafficInDoor_ctor: ai.h */
-void __fastcall CNodesTraffic_dtor(CNodesTraffic *self);
-CNodesTraffic *__thiscall CNodesTraffic_Delete(CNodesTraffic *self, byte flags);
-void __thiscall CNodesTraffic_AddVehicle(CNodesTraffic *self, int track);
-void __thiscall CNodesTraffic_RemoveVehicle(CNodesTraffic *self, int track);
+void CNodesTraffic_dtor(CNodesTraffic *self);
+CNodesTraffic *CNodesTraffic_Delete(CNodesTraffic *self, byte flags);
+void CNodesTraffic_AddVehicle(CNodesTraffic *self, int track);
+void CNodesTraffic_RemoveVehicle(CNodesTraffic *self, int track);
 /* 4 bytes in the exe with int3 after them */
-int __thiscall CNodesTraffic_NumTracks(CNodesTraffic *self);
-int __thiscall CNodesTraffic_NumByType(CNodesTraffic *self, int type);
-int __thiscall CNodesTraffic_NumNodes(CNodesTraffic *self, int track);
-float __thiscall CNodesTraffic_GetRadius(CNodesTraffic *self, int track);
-void __thiscall CNodesTraffic_Init(CNodesTraffic *self);
+int CNodesTraffic_NumTracks(CNodesTraffic *self);
+int CNodesTraffic_NumByType(CNodesTraffic *self, int type);
+int CNodesTraffic_NumNodes(CNodesTraffic *self, int track);
+float CNodesTraffic_GetRadius(CNodesTraffic *self, int track);
+void CNodesTraffic_Init(CNodesTraffic *self);
 /* the tracks from the dummies; fill puts nodes between two dummies at least MinDistNodeTrafficAI apart */
-void __thiscall CNodesTraffic_Load(CNodesTraffic *self, byte fill);
+void CNodesTraffic_Load(CNodesTraffic *self, byte fill);
 /* a node of the type found around pos (FindNodes) in the cone of maxAngle around dir, from a random start; the
  * node after it into outNode */
-byte __thiscall CNodesTraffic_RandomNode(CNodesTraffic *self, vec3_t *out, int type, const vec3_t *pos, float distMin,
+byte CNodesTraffic_RandomNode(CNodesTraffic *self, vec3_t *out, int type, const vec3_t *pos, float distMin,
 	float distMax, int unused, const vec3_t *dir, float maxAngle, int *outTrack, int *outNode);
 /* the unit directions to the nodes 100 away before and after the node (0 0 0 for none); 0 for a bad node */
-byte __thiscall CNodesTraffic_GetDirs(CNodesTraffic *self, vec3_t *prev, vec3_t *next, int track, int node);
+byte CNodesTraffic_GetDirs(CNodesTraffic *self, vec3_t *prev, vec3_t *next, int track, int node);
 /* the first node after (before) the node that is 100 or more away in one axis; 0 at the end of an open track */
-byte __thiscall CNodesTraffic_NextAway(CNodesTraffic *self, vec3_t *out, int track, int node, int *outTrack,
+byte CNodesTraffic_NextAway(CNodesTraffic *self, vec3_t *out, int track, int node, int *outTrack,
 	int *outNode);
-byte __thiscall CNodesTraffic_PrevAway(CNodesTraffic *self, vec3_t *out, int track, int node, int *outTrack,
+byte CNodesTraffic_PrevAway(CNodesTraffic *self, vec3_t *out, int track, int node, int *outTrack,
 	int *outNode);
-byte __thiscall CNodesTraffic_GetNode(CNodesTraffic *self, vec3_t *out, int track, int node);
-cTrafficTrackInfo *__thiscall CNodesTraffic_GetInfo(CNodesTraffic *self, cTrafficTrackInfo *out, int track);
-void __thiscall CNodesTraffic_Draw(CNodesTraffic *self);
+byte CNodesTraffic_GetNode(CNodesTraffic *self, vec3_t *out, int track, int node);
+cTrafficTrackInfo *CNodesTraffic_GetInfo(CNodesTraffic *self, cTrafficTrackInfo *out, int track);
+void CNodesTraffic_Draw(CNodesTraffic *self);
 /* vtable slot 0x40: the tracks loaded without nodes between the dummies, their points above the graph (outdoors) or
  * in the level into errors and <level>/AI/AnalisisTraffic.txt (writes a file), with the folded tracks; then loaded
  * again with the nodes */
-void __thiscall CNodesTraffic_Analyze(CNodesTraffic *self);
-void __thiscall CNodesTraffic_DrawTrack(CNodesTraffic *self, int track);
-void __thiscall CNodesTraffic_BuildGrid(CNodesTraffic *self);
+void CNodesTraffic_Analyze(CNodesTraffic *self);
+void CNodesTraffic_DrawTrack(CNodesTraffic *self, int track);
+void CNodesTraffic_BuildGrid(CNodesTraffic *self);
 /* the nodes of the type between distMin and distMax from pos: the cell of pos, then the rings around it; soft goes
  * on past distMax until one is found, vis keeps only nodes the visibility graph sees with radius */
-void __thiscall CNodesTraffic_FindNodes(CNodesTraffic *self, const vec3_t *pos, int type, InfoTrafficNode *list,
+void CNodesTraffic_FindNodes(CNodesTraffic *self, const vec3_t *pos, int type, InfoTrafficNode *list,
 	int max, int *count, float radius, float distMin, float distMax, byte soft, byte vis);
-void __thiscall CNodesTraffic_CollectCell(CNodesTraffic *self, const vec3_t *pos, int type, cTrafficCell *cell,
+void CNodesTraffic_CollectCell(CNodesTraffic *self, const vec3_t *pos, int type, cTrafficCell *cell,
 	InfoTrafficNode *list, int max, int *count, float radius, float distMin, float distMax, byte vis, byte useMax);
 /* a random point between the node and the node 100 away after or before it (at most maxDist from the node) */
-void __thiscall CNodesTraffic_RandomPointNear(CNodesTraffic *self, int track, int node, float maxDist, vec3_t *out,
+void CNodesTraffic_RandomPointNear(CNodesTraffic *self, int track, int node, float maxDist, vec3_t *out,
 	int *outTrack, int *outNode);
 /* such a point between distMin and distMax from pos in the cone of maxAngle around dir, else the next node */
-void __thiscall CNodesTraffic_RandomPointAhead(CNodesTraffic *self, int track, int node, const vec3_t *pos,
+void CNodesTraffic_RandomPointAhead(CNodesTraffic *self, int track, int node, const vec3_t *pos,
 	float distMin, float distMax, int unused, const vec3_t *dir, float maxAngle, vec3_t *out, int *outTrack,
 	int *outNode);
 
@@ -325,41 +325,41 @@ SD_SIZE(CNodesTrafficInDoor, 0xfa4);
 #define CNODESTRAFFICINDOOR_VFTABLE GAME_VFTABLE(CNodesTrafficInDoor_vftable)
 #define TRAFFICINDOOR_FRAME 0x0a0c20
 
-void __fastcall CNodesTrafficInDoor_dtor(CNodesTrafficInDoor *self);
-CNodesTrafficInDoor *__thiscall CNodesTrafficInDoor_Delete(CNodesTrafficInDoor *self, byte flags);
+void CNodesTrafficInDoor_dtor(CNodesTrafficInDoor *self);
+CNodesTrafficInDoor *CNodesTrafficInDoor_Delete(CNodesTrafficInDoor *self, byte flags);
 /* the engine callback 2 of the indoor levels: UpdateVehicles of g_NodesTrafficInDoor; 1 */
 byte TrafficInDoor_Frame(void);
 /* the vehicles waiting for a place (state 9) put on tracks of sectors that came into view */
-void __thiscall CNodesTrafficInDoor_UpdateVehicles(CNodesTrafficInDoor *self);
-void __thiscall CNodesTrafficInDoor_Respawn(CNodesTrafficInDoor *self, cAIVehicle **ai, int numAI, int typeA,
+void CNodesTrafficInDoor_UpdateVehicles(CNodesTrafficInDoor *self);
+void CNodesTrafficInDoor_Respawn(CNodesTrafficInDoor *self, cAIVehicle **ai, int numAI, int typeA,
 	cTrafficSector *sectorsA, int numA, int *seenA, int *numSeenA, int *nodesA, byte updateA, int typeB,
 	cTrafficSector *sectorsB, int numB, int *seenB, int *numSeenB, int *nodesB, byte updateB, int typeC,
 	cTrafficSector *sectorsC, int numC, int *seenC, int *numSeenC, int *nodesC, byte updateC);
 /* the node before the first node of the track the camera sees (0 if that is the last one) */
-int __thiscall CNodesTrafficInDoor_HiddenNode(CNodesTrafficInDoor *self, int track);
+int CNodesTrafficInDoor_HiddenNode(CNodesTrafficInDoor *self, int track);
 /* the sector lists of the tracks */
-void __fastcall CNodesTrafficInDoor_InitSectors(CNodesTrafficInDoor *self);
+void CNodesTrafficInDoor_InitSectors(CNodesTrafficInDoor *self);
 void __stdcall TrafficSectors_Add(cTrafficSector *list, int *num, int sector);
-void __thiscall CNodesTrafficInDoor_Init(CNodesTrafficInDoor *self);
+void CNodesTrafficInDoor_Init(CNodesTrafficInDoor *self);
 /* vtable slot 0x48, empty (the slot 0x3c is CNodesTraffic_Draw) */
-void __thiscall CNodesTrafficInDoor_BuildGrid(CNodesTrafficInDoor *self);
+void CNodesTrafficInDoor_BuildGrid(CNodesTrafficInDoor *self);
 void __stdcall TrafficSectors_SetTracks(cTrafficSector *list, int num);
 /* the traffic vehicle into the list of the class of its vehicle */
-void __thiscall CNodesTrafficInDoor_AddVehicle(CNodesTrafficInDoor *self, cAIVehicle *ai);
+void CNodesTrafficInDoor_AddVehicle(CNodesTrafficInDoor *self, cAIVehicle *ai);
 /* a visible sector of the type has the track */
-byte __thiscall CNodesTrafficInDoor_SectorHasTrack(CNodesTrafficInDoor *self, int track, int type);
+byte CNodesTrafficInDoor_SectorHasTrack(CNodesTrafficInDoor *self, int track, int type);
 /* a point near a hidden node of a visible sector for the vehicle of the AI, by the class of the vehicle */
-byte __thiscall CNodesTrafficInDoor_GetRespawnPoint(CNodesTrafficInDoor *self, cAIVehicle *ai, int *outType,
+byte CNodesTrafficInDoor_GetRespawnPoint(CNodesTrafficInDoor *self, cAIVehicle *ai, int *outType,
 	vec3_t *out, int *outTrack, int *outNode);
-byte __thiscall CNodesTrafficInDoor_PickPoint(CNodesTrafficInDoor *self, int *outType, vec3_t *out, int *outTrack,
+byte CNodesTrafficInDoor_PickPoint(CNodesTrafficInDoor *self, int *outType, vec3_t *out, int *outTrack,
 	int *outNode, int typeA, cTrafficSector *sectorsA, int numA, int typeB, cTrafficSector *sectorsB, int numB,
 	int typeC, cTrafficSector *sectorsC, int numC);
 
 /* the exe functions of other modules */
 /* AI/AIVehicle.cpp (include/scrap/aivehicle.h): the vehicle entity of the AI, the internal state of its move (0
  * stopped), the AI put on the track */
-void *__thiscall cAIVehicle_GetVehicle(cAIVehicle *ai);
-int __thiscall cAIVehicle_GetInternState(cAIVehicle *ai);
-byte __thiscall cAIVehicle_PlaceOnTrack(cAIVehicle *ai, int type, const vec3_t *pos, int track, int node);
+void *cAIVehicle_GetVehicle(cAIVehicle *ai);
+int cAIVehicle_GetInternState(cAIVehicle *ai);
+byte cAIVehicle_PlaceOnTrack(cAIVehicle *ai, int type, const vec3_t *pos, int track, int node);
 
 #endif

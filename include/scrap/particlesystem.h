@@ -52,7 +52,7 @@ typedef struct CParticle {
 	float uv1[2];			/* 0x2c */
 } CParticle;
 SD_SIZE(CParticle, 0x34);
-typedef int(__thiscall *partType_t)(CParticle *self);
+typedef int(*partType_t)(CParticle *self);
 #define PARTICLE_TYPE(p) (((partType_t)(p)->vftable[PARTICLE_VF_TYPE])(p))
 /* CParticle is the abstract CParticulaBase (vftable rva 0x3ddc3c, all pure); the static particle adds no members */
 typedef CParticle CParticleBase;
@@ -176,66 +176,66 @@ SD_OFFSET(CParticleSystem, Particles, 0x11c);
 #define g_ParticleSystemLifeScale GAME_GLOBAL_IN(float, GVar_R_ParticleLife, 16)
 #define g_ParticleSystemBirthAdd GAME_GLOBAL_IN(int, GVar_R_ParticleRate, 16)
 
-CParticle *__fastcall CParticleActive_ctor(CParticle *self);
-CParticleStatic *__fastcall CParticleStatic_ctor(CParticleStatic *self);
-int __fastcall CParticleActive_Type(CParticle *self);
-int __fastcall CParticleStatic_Type(CParticleStatic *self);
-void __fastcall CParticleActive_Init(CParticle *self);
-void __fastcall CParticleStatic_Init(CParticleStatic *self);
+CParticle *CParticleActive_ctor(CParticle *self);
+CParticleStatic *CParticleStatic_ctor(CParticleStatic *self);
+int CParticleActive_Type(CParticle *self);
+int CParticleStatic_Type(CParticleStatic *self);
+void CParticleActive_Init(CParticle *self);
+void CParticleStatic_Init(CParticleStatic *self);
 /* dt seconds on; at the end of its life the particle goes out */
-void __thiscall CParticleActive_Update(CParticleActive *self, CParticleSystem *sp, float dt, void *multiSpr);
+void CParticleActive_Update(CParticleActive *self, CParticleSystem *sp, float dt, void *multiSpr);
 
-CParticleSystem *__thiscall CParticleSystem_ctorCopy(CParticleSystem *self, const CParticleSystem *orig);
-CParticleSystem *__thiscall CParticleSystem_ctorParams(CParticleSystem *self, CNode3D *node, const char *type, float scale, float alpha,
+CParticleSystem *CParticleSystem_ctorCopy(CParticleSystem *self, const CParticleSystem *orig);
+CParticleSystem *CParticleSystem_ctorParams(CParticleSystem *self, CNode3D *node, const char *type, float scale, float alpha,
 	const vec3_t *posList, CIniFile *ini);
-void __fastcall CObjBase3D_dtor(CObjBase3D *self);
-void __fastcall ParticleSystemParams_dtor(ParticleSystemParams *self);
-void __fastcall CParticleSystem_dtor(CParticleSystem *self);
-ParticleSystemParams *__thiscall ParticleSystemParams_Assign(ParticleSystemParams *self, const ParticleSystemParams *src);
-CObjBase3D *__thiscall CObjBase3D_Delete(CObjBase3D *self, byte flags);
-CParticleSystem *__thiscall CParticleSystem_Delete(CParticleSystem *self, byte flags);
+void CObjBase3D_dtor(CObjBase3D *self);
+void ParticleSystemParams_dtor(ParticleSystemParams *self);
+void CParticleSystem_dtor(CParticleSystem *self);
+ParticleSystemParams *ParticleSystemParams_Assign(ParticleSystemParams *self, const ParticleSystemParams *src);
+CObjBase3D *CObjBase3D_Delete(CObjBase3D *self, byte flags);
+CParticleSystem *CParticleSystem_Delete(CParticleSystem *self, byte flags);
 /* the node, the type and its parameters (copied, or from ini, or from the particle ini) */
-void __thiscall CParticleSystem_Init(CParticleSystem *self, CNode3D *node, const char *type, const ParticleSystemParams *params,
+void CParticleSystem_Init(CParticleSystem *self, CNode3D *node, const char *type, const ParticleSystemParams *params,
 	CIniFile *ini);
 /* a free particle, made active; with force the oldest one if none is free */
-CParticle *__thiscall CParticleSystem_GetFree(CParticleSystem *self, byte force);
+CParticle *CParticleSystem_GetFree(CParticleSystem *self, byte force);
 /* the system of the [Particles] section of the user properties of node, with the ini of the scene; NULL without a
  * type */
 CParticleSystem *ParticleSystem_FromNode(CNode3D *node, CIniFile *ini);
-void __thiscall CParticleSystem_SetColorRamp(CParticleSystem *self, uint32_t *ramp);
-void __thiscall CParticleSystem_SetEmitPos(CParticleSystem *self, vec3_t *pos, byte n);
-void __thiscall CParticleSystem_GetScale2(CParticleSystem *self, float *out);
-void __thiscall CParticleSystem_GetScale(CParticleSystem *self, vec3_t *out);
+void CParticleSystem_SetColorRamp(CParticleSystem *self, uint32_t *ramp);
+void CParticleSystem_SetEmitPos(CParticleSystem *self, vec3_t *pos, byte n);
+void CParticleSystem_GetScale2(CParticleSystem *self, float *out);
+void CParticleSystem_GetScale(CParticleSystem *self, vec3_t *out);
 /* the box of the particles of a static system; 0 for the others */
-byte __thiscall CParticleSystem_GetBox(CParticleSystem *self, box_t *box);
+byte CParticleSystem_GetBox(CParticleSystem *self, box_t *box);
 /* the parameters from the section of the type in ini */
-void __thiscall CParticleSystem_ReadParams(CParticleSystem *self, CIniFile *ini);
+void CParticleSystem_ReadParams(CParticleSystem *self, CIniFile *ini);
 /* p born with the parameters */
-void __thiscall CParticleSystem_GenParticle(CParticleSystem *self, CParticle *p);
+void CParticleSystem_GenParticle(CParticleSystem *self, CParticle *p);
 /* the vectors of p turned by m and its position moved by m, as the flags say */
-void __thiscall CParticleSystem_PlaceParticle(CParticleSystem *self, CParticle *p, const matrix_t *m);
+void CParticleSystem_PlaceParticle(CParticleSystem *self, CParticle *p, const matrix_t *m);
 /* n particles born at the node matrix m, delay i * dt each; force: see CParticleSystem_GetFree */
-void __thiscall CParticleSystem_Emit(CParticleSystem *self, int n, byte force, float dt, const matrix_t *m);
-void __thiscall CParticleSystem_EmitN(CParticleSystem *self, int n, byte force);
-void __thiscall CParticleSystem_EmitM(CParticleSystem *self, int n, byte force, const matrix_t *m);
-void __thiscall CParticleSystem_EmitDt(CParticleSystem *self, int n, byte force, float dt);
-byte __thiscall CParticleSystem_Read(CParticleSystem *self, CFileIO *f, MeshD3D_FileCtx *ctx);
-byte __thiscall CParticleSystem_Write(CParticleSystem *self, CFileIO *f, MeshD3D_FileCtx *ctx);
-void __fastcall CParticleSystem_CreateMat(CParticleSystem *self);
-void __thiscall CParticleSystem_SetActive(CParticleSystem *self, CParticle *p, byte active);
-void __fastcall CParticleSystem_CreateParticles(CParticleSystem *self);
+void CParticleSystem_Emit(CParticleSystem *self, int n, byte force, float dt, const matrix_t *m);
+void CParticleSystem_EmitN(CParticleSystem *self, int n, byte force);
+void CParticleSystem_EmitM(CParticleSystem *self, int n, byte force, const matrix_t *m);
+void CParticleSystem_EmitDt(CParticleSystem *self, int n, byte force, float dt);
+byte CParticleSystem_Read(CParticleSystem *self, CFileIO *f, MeshD3D_FileCtx *ctx);
+byte CParticleSystem_Write(CParticleSystem *self, CFileIO *f, MeshD3D_FileCtx *ctx);
+void CParticleSystem_CreateMat(CParticleSystem *self);
+void CParticleSystem_SetActive(CParticleSystem *self, CParticle *p, byte active);
+void CParticleSystem_CreateParticles(CParticleSystem *self);
 /* each coordinate a random value between a and b */
 vec3_t *ParticleSystem_RandVec(vec3_t *out, const vec3_t *a, const vec3_t *b);
 /* the particle ini loaded (cleared with no name) */
 void ParticleSystem_LoadIni(const char *name, const char *dir);
-void __thiscall CParticleSystem_Render(CParticleSystem *self, void *dev, CRenderNode *r);
-void __thiscall CParticleSystem_Render2(CParticleSystem *self, void *dev);
-void __thiscall CParticleSystem_SetAlpha(CParticleSystem *self, float alpha);
-void __thiscall CParticleSystem_Update(CParticleSystem *self, CRenderNode *r);
+void CParticleSystem_Render(CParticleSystem *self, void *dev, CRenderNode *r);
+void CParticleSystem_Render2(CParticleSystem *self, void *dev);
+void CParticleSystem_SetAlpha(CParticleSystem *self, float alpha);
+void CParticleSystem_Update(CParticleSystem *self, CRenderNode *r);
 
 /* other modules (src/imports.inc) */
 /* rva 0x2cad70: the node of a 3D object, counted */
-void __thiscall CObjBase3D_SetNode(CObjBase3D *self, CNode3D *node);
+void CObjBase3D_SetNode(CObjBase3D *self, CNode3D *node);
 /* rva 0x26bff0 and 0x26bc30 (SueloPortal.cpp): the visibility of a sphere for the debug output */
 /* src/game/engine3d/Engine/RenderMeshD3D.c (RenderObjBase3D.cpp): the system (or flare) queued with the render node
  * r for the draw sorted by distance after the meshes; HRESULT */

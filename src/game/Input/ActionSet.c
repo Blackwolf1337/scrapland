@@ -22,7 +22,7 @@
 #define CPYFUNCTION_DTOR 0x192200
 
 /* the static constructor of g_ActionSets: the four sets and the names of their actions */
-cActionSetTable *__fastcall ActionSets_ctor(cActionSetTable *sets) {
+cActionSetTable *ActionSets_ctor(cActionSetTable *sets) {
 	cActionSet *s;
 
 	sets->items = NULL;
@@ -130,21 +130,21 @@ cActionSetTable *__fastcall ActionSets_ctor(cActionSetTable *sets) {
 	return sets;
 }
 
-cInputAction *__fastcall cInputAction_ctor(cInputAction *a) {
+cInputAction *cInputAction_ctor(cInputAction *a) {
 	cString_ctor(&a->name);
 	crt_eh_vector_ctor(a->func, sizeof(cPy_Function), MAX_LOCAL_PLAYERS, (void *)cPy_Function_ctor,
 		(void *)cPy_Function_dtor);
 	return a;
 }
 
-cActionSet *__fastcall cActionSet_ctor(cActionSet *s) {
+cActionSet *cActionSet_ctor(cActionSet *s) {
 	cString_ctor(&s->name);
 	s->actions.items = NULL;
 	s->actions.count = 0;
 	return s;
 }
 
-cPlayerInput *__fastcall cPlayerInput_ctor(cPlayerInput *in) {
+cPlayerInput *cPlayerInput_ctor(cPlayerInput *in) {
 	cPy_Function_ctor(&in->func);
 	memset(in->text, 0, 0x80);
 	in->maxLen = 0x80;
@@ -164,7 +164,7 @@ void ActionSet_FiniActionSets(void) {
 }
 
 /* the Global/Table.h Free of the sets */
-void __fastcall ActionSetTable_Free(cActionSetTable *t) {
+void ActionSetTable_Free(cActionSetTable *t) {
 	if (t->items) {
 		Delete_Objects(t->items, sizeof(cActionSet), (void *)cActionSet_dtor);
 		t->items = NULL;
@@ -172,12 +172,12 @@ void __fastcall ActionSetTable_Free(cActionSetTable *t) {
 	}
 }
 
-void __fastcall cInputAction_dtor(cInputAction *a) {
+void cInputAction_dtor(cInputAction *a) {
 	crt_eh_vector_dtor(a->func, sizeof(cPy_Function), MAX_LOCAL_PLAYERS, (void *)cPy_Function_dtor);
 	cString_dtor(&a->name);
 }
 
-void __fastcall cActionSet_dtor(cActionSet *s) {
+void cActionSet_dtor(cActionSet *s) {
 	if (s->actions.items) {
 		Delete_Objects(s->actions.items, sizeof(cInputAction), (void *)cInputAction_dtor);
 		s->actions.items = NULL;
@@ -186,12 +186,12 @@ void __fastcall cActionSet_dtor(cActionSet *s) {
 	cString_dtor(&s->name);
 }
 
-void __fastcall cPlayerInput_dtor(cPlayerInput *in) {
+void cPlayerInput_dtor(cPlayerInput *in) {
 	cPy_Function_dtor(&in->func);
 }
 
 /* the vector deleting destructors: flags 2 is an array with its count before it, 1 frees */
-cInputAction *__thiscall cInputAction_Delete(cInputAction *a, uint32_t flags) {
+cInputAction *cInputAction_Delete(cInputAction *a, uint32_t flags) {
 	if (flags & 2) {
 		return Delete_VectorPart(a, flags, sizeof(cInputAction), (void *)cInputAction_dtor);
 	}
@@ -202,7 +202,7 @@ cInputAction *__thiscall cInputAction_Delete(cInputAction *a, uint32_t flags) {
 	return a;
 }
 
-cActionSet *__thiscall cActionSet_Delete(cActionSet *s, uint32_t flags) {
+cActionSet *cActionSet_Delete(cActionSet *s, uint32_t flags) {
 	if (flags & 2) {
 		return Delete_VectorPart(s, flags, sizeof(cActionSet), (void *)cActionSet_dtor);
 	}
@@ -214,7 +214,7 @@ cActionSet *__thiscall cActionSet_Delete(cActionSet *s, uint32_t flags) {
 }
 
 /* the accept key on the virtual keyboard: the character under the cursor typed, once per press */
-void __thiscall cPlayerInput_PressKey(cPlayerInput *in, int player) {
+void cPlayerInput_PressKey(cPlayerInput *in, int player) {
 	if (in->keyDown) {
 		return;
 	}
@@ -249,7 +249,7 @@ void __thiscall cPlayerInput_PressKey(cPlayerInput *in, int player) {
 }
 
 /* the presses kept over the set change end when the value falls to 0.5 */
-void __thiscall cActionSet_HoldPressed(cActionSet *s) {
+void cActionSet_HoldPressed(cActionSet *s) {
 	for (uint32_t i = 0; (int)i < s->actions.count; i++) {
 		cInputAction *a = TABLE_AT(s->actions, i);
 		for (int p = 0; p < MAX_LOCAL_PLAYERS; p++) {
@@ -267,7 +267,7 @@ uint32_t Input_GetActionSet(void) {
 	return g_CurActionSet;
 }
 
-char __thiscall cPlayerInput_GetCursorChar(cPlayerInput *in) {
+char cPlayerInput_GetCursorChar(cPlayerInput *in) {
 	int i = (int)in->cursorY * g_VirtualKeyboard.a + (int)in->cursorX;
 	if (i > g_VirtualKeyboard.len) {
 		return g_VirtualKeyboard.text[g_VirtualKeyboard.len - 1];
@@ -276,32 +276,32 @@ char __thiscall cPlayerInput_GetCursorChar(cPlayerInput *in) {
 }
 
 /* the Global/Table.h Init of the two instances: new T[num] with the constructors */
-void __thiscall ActionTable_Init(cInputActionTable *t, int num) {
+void ActionTable_Init(cInputActionTable *t, int num) {
 	CHECK(!t->items && num > 0);
 	t->count = num;
 	t->items = New_Objects(num, sizeof(cInputAction), (void *)cInputAction_ctor, (void *)cInputAction_dtor);
 	CHECK(t->items);
 }
 
-void __thiscall ActionSetTable_Init(cActionSetTable *t, int num) {
+void ActionSetTable_Init(cActionSetTable *t, int num) {
 	CHECK(!t->items && num > 0);
 	t->count = num;
 	t->items = New_Objects(num, sizeof(cActionSet), (void *)cActionSet_ctor, (void *)cActionSet_dtor);
 	CHECK(t->items);
 }
 
-void __thiscall cInputAction_Init(cInputAction *a, const char *name, byte latch) {
+void cInputAction_Init(cInputAction *a, const char *name, byte latch) {
 	a->latch = latch;
 	cString_Set(&a->name, name);
 	memset(a->pressed, 0, sizeof(a->pressed));
 }
 
-void __thiscall cActionSet_Init(cActionSet *s, int num, const char *name) {
+void cActionSet_Init(cActionSet *s, int num, const char *name) {
 	cString_Set(&s->name, name);
 	ActionTable_Init(&s->actions, num);
 }
 
-void __thiscall cPad_Init(cPad *pad, int index) {
+void cPad_Init(cPad *pad, int index) {
 	pad->motor[0] = 0.0f;
 	pad->motor[1] = 0.0f;
 	pad->prev[0] = 0.0f;
@@ -330,7 +330,7 @@ void InputMaps_Done(void) {
 }
 
 /* every 0.05 seconds: counts the duration down and passes the motors to the callback while one of them runs */
-void __thiscall cPad_Update(cPad *pad) {
+void cPad_Update(cPad *pad) {
 	double next = (double)(pad->time + 0.05f);
 
 	if (!(g_pApp->vftable->GetGameTime(g_pApp) > next)) {
@@ -368,7 +368,7 @@ void __thiscall cPad_Update(cPad *pad) {
 }
 
 /* the cursor wraps around the grid of the virtual keyboard */
-void __thiscall cPlayerInput_MoveCursor(cPlayerInput *in, float dx, float dy) {
+void cPlayerInput_MoveCursor(cPlayerInput *in, float dx, float dy) {
 	float x = dx + in->cursorX;
 	float y = dy + in->cursorY;
 
@@ -393,7 +393,7 @@ void __thiscall cPlayerInput_MoveCursor(cPlayerInput *in, float dx, float dy) {
 }
 
 /* puts the cursor on the cell of c; 0 if the keyboard has no such character */
-byte __thiscall cPlayerInput_SetCursorChar(cPlayerInput *in, char c) {
+byte cPlayerInput_SetCursorChar(cPlayerInput *in, char c) {
 	char s[2] = { c, 0 };
 	char *p = strstr(g_VirtualKeyboard.text, s);
 
@@ -422,25 +422,25 @@ void Input_UpdateActions(void) {
 	}
 }
 
-void __thiscall cInputAction_Shift(cInputAction *a) {
+void cInputAction_Shift(cInputAction *a) {
 	for (int p = 0; p < MAX_LOCAL_PLAYERS; p++) {
 		a->prev[p] = a->value[p];
 		a->value[p] = 0.0f;
 	}
 }
 
-void __thiscall cActionSet_Shift(cActionSet *s) {
+void cActionSet_Shift(cActionSet *s) {
 	for (uint32_t i = 0; (int)i < s->actions.count; i++) {
 		cInputAction_Shift(TABLE_AT(s->actions, i));
 	}
 }
 
-byte __thiscall cInputAction_Pressed(cInputAction *a, int player) {
+byte cInputAction_Pressed(cInputAction *a, int player) {
 	return 0.5f > a->prev[player] && a->value[player] > 0.5f;
 }
 
 /* the bound functions of the players that pressed the action in this frame */
-void __thiscall cInputAction_Fire(cInputAction *a) {
+void cInputAction_Fire(cInputAction *a) {
 	for (int p = 0; p < MAX_LOCAL_PLAYERS; p++) {
 		if (0.5f > a->prev[p] && a->value[p] > 0.5f) {
 			cPy_Function_AddParamI(&a->func[p], p);
@@ -449,17 +449,17 @@ void __thiscall cInputAction_Fire(cInputAction *a) {
 	}
 }
 
-void __thiscall cActionSet_Fire(cActionSet *s) {
+void cActionSet_Fire(cActionSet *s) {
 	for (uint32_t i = 0; (int)i < s->actions.count; i++) {
 		cInputAction_Fire(TABLE_AT(s->actions, i));
 	}
 }
 
-byte __thiscall cInputAction_Released(cInputAction *a, int player) {
+byte cInputAction_Released(cInputAction *a, int player) {
 	return a->prev[player] > 0.5f && 0.5f > a->value[player];
 }
 
-void __thiscall cPad_Stop(cPad *pad) {
+void cPad_Stop(cPad *pad) {
 	if (pad->onRumble) {
 		pad->onRumble(pad->index, 0.0f, 0.0f);
 	}
@@ -482,20 +482,20 @@ void Input_ResetActions(void) {
 	Input_ResetInactivity();
 }
 
-void __thiscall cInputAction_Clear(cInputAction *a) {
+void cInputAction_Clear(cInputAction *a) {
 	for (int p = 0; p < MAX_LOCAL_PLAYERS; p++) {
 		a->value[p] = 0.0f;
 		a->prev[p] = 0.0f;
 	}
 }
 
-void __thiscall cActionSet_Clear(cActionSet *s) {
+void cActionSet_Clear(cActionSet *s) {
 	for (uint32_t i = 0; (int)i < s->actions.count; i++) {
 		cInputAction_Clear(TABLE_AT(s->actions, i));
 	}
 }
 
-void __thiscall cPlayerInput_Clear(cPlayerInput *in) {
+void cPlayerInput_Clear(cPlayerInput *in) {
 	memset(in->text, 0, 0x80);
 	in->maxLen = 0x80;
 	in->cursorX = 0.0f;
@@ -509,13 +509,13 @@ void Input_ResetStates(void) {
 	}
 }
 
-void __thiscall cInputAction_Keep(cInputAction *a) {
+void cInputAction_Keep(cInputAction *a) {
 	for (int p = 0; p < MAX_LOCAL_PLAYERS; p++) {
 		a->prev[p] = a->value[p];
 	}
 }
 
-void __thiscall cActionSet_Keep(cActionSet *s) {
+void cActionSet_Keep(cActionSet *s) {
 	for (uint32_t i = 0; (int)i < s->actions.count; i++) {
 		cInputAction_Keep(TABLE_AT(s->actions, i));
 	}
@@ -533,7 +533,7 @@ void Input_SelectActionSet(int index) {
 	Input_Update(0.1f);
 }
 
-void __thiscall cInputAction_Latch(cInputAction *a) {
+void cInputAction_Latch(cInputAction *a) {
 	for (int p = 0; p < MAX_LOCAL_PLAYERS; p++) {
 		if (!a->latch) {
 			return;
@@ -542,20 +542,20 @@ void __thiscall cInputAction_Latch(cInputAction *a) {
 	}
 }
 
-void __thiscall cActionSet_Latch(cActionSet *s) {
+void cActionSet_Latch(cActionSet *s) {
 	for (uint32_t i = 0; (int)i < s->actions.count; i++) {
 		cInputAction_Latch(TABLE_AT(s->actions, i));
 	}
 }
 
 /* the constructor of a static keyboard (rva 0x1392e0, from its initializer): the standard grid */
-cVirtualKeyboard *__fastcall cVirtualKeyboard_ctor(cVirtualKeyboard *vk) {
+cVirtualKeyboard *cVirtualKeyboard_ctor(cVirtualKeyboard *vk) {
 	cVirtualKeyboard_Set(vk, "Standard");
 	return vk;
 }
 
 /* "Standard", "Numbers" or "Console"; 0 for another name (the grid stays) */
-byte __thiscall cVirtualKeyboard_Set(cVirtualKeyboard *vk, const char *text) {
+byte cVirtualKeyboard_Set(cVirtualKeyboard *vk, const char *text) {
 	byte ok = 1;
 
 	if (!crt_stricmp(text, "Standard")) {
@@ -577,13 +577,13 @@ byte __thiscall cVirtualKeyboard_Set(cVirtualKeyboard *vk, const char *text) {
 }
 
 /* the function gets player and text when the player ends the line (Input_OnTextDone of the exe) */
-void __thiscall cPlayerInput_SetInputFunc(cPlayerInput *in, const char *func) {
+void cPlayerInput_SetInputFunc(cPlayerInput *in, const char *func) {
 	in->onDone = (void (*)(int, const char *))(void *)Input_OnTextDone;
 	cPy_Function_SetFunc(&in->func, func);
 }
 
 /* the motors in 0..1 (0.05 or less is off), the duration up to 30 seconds */
-void __thiscall cPad_Rumble(cPad *pad, float a, float b, float c) {
+void cPad_Rumble(cPad *pad, float a, float b, float c) {
 	if (0.05f >= a) {
 		a = 0.0f;
 	}
@@ -595,7 +595,7 @@ void __thiscall cPad_Rumble(cPad *pad, float a, float b, float c) {
 	pad->duration = !(0.0f >= c) ? Float_MinSS(30.0f, c) : 0.0f;
 }
 
-void __thiscall cPlayerInput_SetString(cPlayerInput *in, const char *text) {
+void cPlayerInput_SetString(cPlayerInput *in, const char *text) {
 	size_t n = strlen(text);
 
 	CHECK(n <= 0x80);
@@ -620,7 +620,7 @@ void Input_OnTextDone(int player, const char *text) {
 }
 
 /* whether any action of the set is held by any player (the inactivity timer) */
-byte __thiscall cActionSet_AnyActive(cActionSet *s) {
+byte cActionSet_AnyActive(cActionSet *s) {
 	for (uint32_t i = 0; (int)i < s->actions.count; i++) {
 		for (int p = 0; p < MAX_LOCAL_PLAYERS; p++) {
 			if (TABLE_AT(s->actions, i)->value[p] > 0.5f) {

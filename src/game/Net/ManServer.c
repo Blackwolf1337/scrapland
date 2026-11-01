@@ -34,7 +34,7 @@ static void *ClientNet_Begin(int size) {
 	return buf;
 }
 
-cClientNetManager *__thiscall cClientNetManager_ctor(cClientNetManager *self, cNetClient *client, int slot) {
+cClientNetManager *cClientNetManager_ctor(cClientNetManager *self, cNetClient *client, int slot) {
 	cUserNetManager_ctor(&self->base, client, slot);
 	self->base.vftable = g_ClientNetManagerVftable;
 	Con_Print(0x707000, "Creating new client!\n", 0);
@@ -44,7 +44,7 @@ cClientNetManager *__thiscall cClientNetManager_ctor(cClientNetManager *self, cN
 	return self;
 }
 
-void __fastcall cClientNetManager_dtor(cClientNetManager *self) {
+void cClientNetManager_dtor(cClientNetManager *self) {
 	self->base.vftable = g_ClientNetManagerVftable;
 	cEntity *e = World_FindEntity(self->name);
 	cPy_Function_AddParamS(g_OnClientExit, self->name);
@@ -64,7 +64,7 @@ void __fastcall cClientNetManager_dtor(cClientNetManager *self) {
 	cUserNetManager_dtor(&self->base);
 }
 
-cClientNetManager *__thiscall cClientNetManager_Delete(cClientNetManager *self, byte flags) {
+cClientNetManager *cClientNetManager_Delete(cClientNetManager *self, byte flags) {
 	cClientNetManager_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -95,7 +95,7 @@ static void ClientNet_ReadHello(cClientNetManager *self) {
 	cFileMem_Close(g_NetMsg);
 }
 
-void __thiscall cClientNetManager_OnReceive(cClientNetManager *self, void *data, int size, void *ctl, int ctlSize) {
+void cClientNetManager_OnReceive(cClientNetManager *self, void *data, int size, void *ctl, int ctlSize) {
 	char s[0x80];
 	byte kind;
 	cEntity *e = World_FindEntity(self->name);
@@ -176,7 +176,7 @@ void __thiscall cClientNetManager_OnReceive(cClientNetManager *self, void *data,
 	}
 }
 
-void __fastcall cClientNetManager_InitClient(cClientNetManager *self) {
+void cClientNetManager_InitClient(cClientNetManager *self) {
 	self->fullSends = 0;
 	crt_sprintf(self->name, "net%d", self->base.slot);
 	cEntity *e = World_FindEntity(self->name);
@@ -218,7 +218,7 @@ void ManServer_SendUsrData(int slot, byte toAll) {
 }
 
 /* runs of resource names, NetMaxResourcesSend at most and gaps of up to 16 unused numbers in one message */
-void __fastcall cClientNetManager_SendResources(cClientNetManager *self) {
+void cClientNetManager_SendResources(cClientNetManager *self) {
 	void *buf = ClientNet_Begin(24000);
 	int i = 0;
 
@@ -265,7 +265,7 @@ static byte ClientNet_PingByte(cNetClient *c) {
 	return (byte)v;
 }
 
-void __thiscall cClientNetManager_Send(cClientNetManager *self, uint32_t time) {
+void cClientNetManager_Send(cClientNetManager *self, uint32_t time) {
 	byte b[2];
 	uint32_t v;
 	vec3_t tmp;
@@ -385,7 +385,7 @@ void __thiscall cClientNetManager_Send(cClientNetManager *self, uint32_t time) {
 	cStaticBuffer_Unlock(g_NetStaticBuffer);
 }
 
-void __thiscall cClientNetManager_SendUsers(cClientNetManager *self, byte local) {
+void cClientNetManager_SendUsers(cClientNetManager *self, byte local) {
 	void *buf = ClientNet_Begin(24000);
 	cEntity *e = cWorld_GetFirstEntity(g_pWorld);
 
@@ -403,7 +403,7 @@ void __thiscall cClientNetManager_SendUsers(cClientNetManager *self, byte local)
 	ManServer_SendUsrData(self->base.slot, local);
 }
 
-void __fastcall cClientNetManager_SetLocalData(cClientNetManager *self) {
+void cClientNetManager_SetLocalData(cClientNetManager *self) {
 	cEntity *e = World_FindEntity(self->name);
 
 	Con_Printf("SetLocalData()->%s\n", self->name);

@@ -18,8 +18,8 @@
 #define g_MeshD3DOn GAME_GLOBAL_IN(byte, group_431bac, 1)
 /* statistics of the frame */
 
-typedef void(__thiscall *meshD3DDelete_t)(CMeshD3D *self, int flags);
-typedef void(__thiscall *meshD3DDraw_t)(CMeshD3D *self, void *dev, int arg);
+typedef void(*meshD3DDelete_t)(CMeshD3D *self, int flags);
+typedef void(*meshD3DDraw_t)(CMeshD3D *self, void *dev, int arg);
 
 /* the counts as the add functions take them: 0 without the array */
 static int Mesh_NumVert(const CTriMesh *m) {
@@ -34,7 +34,7 @@ static int Mesh_NumTri(const CTriMesh *m) {
 	return m->pTri ? m->nTri : 0;
 }
 
-CMeshTri *__fastcall CMeshTri_ctor(CMeshTri *self) {
+CMeshTri *CMeshTri_ctor(CMeshTri *self) {
 	self->mat = NULL;
 	self->flags = 0;
 	return self;
@@ -74,7 +74,7 @@ static void *Mesh_Free(void *p) {
 	return NULL;
 }
 
-void __fastcall CTriMesh_Init(CTriMesh *self) {
+void CTriMesh_Init(CTriMesh *self) {
 	self->class = CLASS_OBJ3D_TRIMESH;
 	self->nTri = 0;
 	self->nTVert = 0;
@@ -89,26 +89,26 @@ void __fastcall CTriMesh_Init(CTriMesh *self) {
 	self->pSkin = NULL;
 }
 
-CTriMesh *__fastcall CTriMesh_ctor(CTriMesh *self) {
+CTriMesh *CTriMesh_ctor(CTriMesh *self) {
 	self->vftable = CTRIMESH_VFTABLE;
 	memset(&self->box, 0, sizeof(self->box));
 	CTriMesh_Init(self);
 	return self;
 }
 
-CTriMesh *__thiscall CTriMesh_ctorCopy(CTriMesh *self, const CTriMesh *orig) {
+CTriMesh *CTriMesh_ctorCopy(CTriMesh *self, const CTriMesh *orig) {
 	CTriMesh_ctor(self);
 	CTriMesh_Add(self, orig, 0, 0);
 	return self;
 }
 
-CTriMesh *__thiscall CTriMesh_ctorD3D(CTriMesh *self, CMeshD3D *src, byte all) {
+CTriMesh *CTriMesh_ctorD3D(CTriMesh *self, CMeshD3D *src, byte all) {
 	CTriMesh_ctor(self);
 	CTriMesh_AddD3D(self, src, all);
 	return self;
 }
 
-void __fastcall CTriMesh_Clear(CTriMesh *self) {
+void CTriMesh_Clear(CTriMesh *self) {
 	self->pVert = Mesh_Free(self->pVert);
 	self->pTVert = Mesh_Free(self->pTVert);
 	self->pTri = Mesh_Free(self->pTri);
@@ -126,13 +126,13 @@ void __fastcall CTriMesh_Clear(CTriMesh *self) {
 	memset(&self->box, 0, sizeof(self->box));
 }
 
-void __fastcall CTriMesh_dtor(CTriMesh *self) {
+void CTriMesh_dtor(CTriMesh *self) {
 	self->vftable = CTRIMESH_VFTABLE;
 	CTriMesh_Clear(self);
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-CTriMesh *__thiscall CTriMesh_Delete(CTriMesh *self, byte flags) {
+CTriMesh *CTriMesh_Delete(CTriMesh *self, byte flags) {
 	CTriMesh_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -140,20 +140,20 @@ CTriMesh *__thiscall CTriMesh_Delete(CTriMesh *self, byte flags) {
 	return self;
 }
 
-byte __thiscall CTriMesh_NoFile(CTriMesh *self, void *f, void *ctx) {
+byte CTriMesh_NoFile(CTriMesh *self, void *f, void *ctx) {
 	(void)self;
 	(void)f;
 	(void)ctx;
 	return 0;
 }
 
-void __thiscall CTriMesh_SetNumVert(CTriMesh *self, int n, byte realloc) {
+void CTriMesh_SetNumVert(CTriMesh *self, int n, byte realloc) {
 	CHECK(n > 0);
 	CHECK(realloc || !self->pVert);
 	Mesh_Resize((void **)&self->pVert, &self->nVert, &self->maxVert, n, sizeof(vec3_t), 0);
 }
 
-void __thiscall CTriMesh_SetNumTVert(CTriMesh *self, int n, byte realloc) {
+void CTriMesh_SetNumTVert(CTriMesh *self, int n, byte realloc) {
 	CHECK(n >= 0);
 	CHECK(realloc || !self->pTVert);
 	if (!n) {
@@ -163,69 +163,69 @@ void __thiscall CTriMesh_SetNumTVert(CTriMesh *self, int n, byte realloc) {
 	Mesh_Resize((void **)&self->pTVert, &self->nTVert, &self->maxTVert, n, sizeof(uv_t), 0);
 }
 
-void __thiscall CTriMesh_SetNumTri(CTriMesh *self, int n, byte realloc) {
+void CTriMesh_SetNumTri(CTriMesh *self, int n, byte realloc) {
 	CHECK(n > 0);
 	CHECK(realloc || !self->pTri);
 	Mesh_Resize((void **)&self->pTri, &self->nTri, &self->maxTri, n, sizeof(CMeshTri), 1);
 }
 
-int __fastcall CTriMesh_AddVert(CTriMesh *self) {
+int CTriMesh_AddVert(CTriMesh *self) {
 	int n = Mesh_NumVert(self);
 	CTriMesh_SetNumVert(self, n + 1, 1);
 	return n;
 }
 
-int __fastcall CTriMesh_AddTVert(CTriMesh *self) {
+int CTriMesh_AddTVert(CTriMesh *self) {
 	int n = Mesh_NumTVert(self);
 	CTriMesh_SetNumTVert(self, n + 1, 1);
 	return n;
 }
 
-int __fastcall CTriMesh_AddTri(CTriMesh *self) {
+int CTriMesh_AddTri(CTriMesh *self) {
 	int n = Mesh_NumTri(self);
 	CTriMesh_SetNumTri(self, n + 1, 1);
 	return n;
 }
 
-void *__fastcall CTriMesh_AllocSkin(CTriMesh *self) {
+void *CTriMesh_AllocSkin(CTriMesh *self) {
 	CHECK(self->pSkin == NULL);
 	CHECK(self->nVert > 0);
 	self->pSkin = New_Array(self->nVert, TRIMESH_SKIN);
 	return self->pSkin;
 }
 
-void *__thiscall CTriMesh_GetSkin(CTriMesh *self, uint32_t i) {
+void *CTriMesh_GetSkin(CTriMesh *self, uint32_t i) {
 	CHECK(i < (uint32_t)self->nVert);
 	CHECK(self->pSkin);
 	return self->pSkin + i * TRIMESH_SKIN;
 }
 
-void __thiscall CTriMesh_SetVert(CTriMesh *self, uint32_t i, const vec3_t *v) {
+void CTriMesh_SetVert(CTriMesh *self, uint32_t i, const vec3_t *v) {
 	CHECK(i < (uint32_t)self->nVert);
 	CHECK(self->pVert);
 	self->pVert[i] = *v;
 }
 
-vec3_t *__thiscall CTriMesh_GetVert(CTriMesh *self, vec3_t *out, uint32_t i) {
+vec3_t *CTriMesh_GetVert(CTriMesh *self, vec3_t *out, uint32_t i) {
 	CHECK(i < (uint32_t)self->nVert);
 	CHECK(self->pVert);
 	*out = self->pVert[i];
 	return out;
 }
 
-void __thiscall CTriMesh_SetTVert(CTriMesh *self, uint32_t i, const uv_t *uv) {
+void CTriMesh_SetTVert(CTriMesh *self, uint32_t i, const uv_t *uv) {
 	CHECK(i < (uint32_t)self->nTVert);
 	CHECK(self->pTVert);
 	self->pTVert[i] = *uv;
 }
 
-CMeshTri *__thiscall CTriMesh_GetTri(CTriMesh *self, uint32_t i) {
+CMeshTri *CTriMesh_GetTri(CTriMesh *self, uint32_t i) {
 	CHECK(i < (uint32_t)self->nTri);
 	CHECK(self->pTri);
 	return &self->pTri[i];
 }
 
-void __thiscall CTriMesh_SetTriVerts(CTriMesh *self, uint32_t i, int a, int b, int c) {
+void CTriMesh_SetTriVerts(CTriMesh *self, uint32_t i, int a, int b, int c) {
 	CHECK(i < (uint32_t)self->nTri);
 	CHECK(self->pTri);
 	self->pTri[i].v[0] = a;
@@ -233,7 +233,7 @@ void __thiscall CTriMesh_SetTriVerts(CTriMesh *self, uint32_t i, int a, int b, i
 	self->pTri[i].v[2] = c;
 }
 
-void __thiscall CTriMesh_SetTriTVerts(CTriMesh *self, uint32_t i, int a, int b, int c) {
+void CTriMesh_SetTriTVerts(CTriMesh *self, uint32_t i, int a, int b, int c) {
 	CHECK(i < (uint32_t)self->nTri);
 	CHECK(self->pTri);
 	self->pTri[i].tv[0] = a;
@@ -241,13 +241,13 @@ void __thiscall CTriMesh_SetTriTVerts(CTriMesh *self, uint32_t i, int a, int b, 
 	self->pTri[i].tv[2] = c;
 }
 
-void __thiscall CTriMesh_SetTriMat(CTriMesh *self, uint32_t i, void *mat) {
+void CTriMesh_SetTriMat(CTriMesh *self, uint32_t i, void *mat) {
 	CHECK(i < (uint32_t)self->nTri);
 	CHECK(self->pTri);
 	self->pTri[i].mat = mat;
 }
 
-void __thiscall CTriMesh_SetTriNormals(CTriMesh *self, uint32_t i, const vec3_t *a, const vec3_t *b, const vec3_t *c) {
+void CTriMesh_SetTriNormals(CTriMesh *self, uint32_t i, const vec3_t *a, const vec3_t *b, const vec3_t *c) {
 	CHECK(i < (uint32_t)self->nTri);
 	CHECK(self->pTri);
 	self->pTri[i].n[0] = *a;
@@ -255,20 +255,20 @@ void __thiscall CTriMesh_SetTriNormals(CTriMesh *self, uint32_t i, const vec3_t 
 	self->pTri[i].n[2] = *c;
 }
 
-void __thiscall CTriMesh_SetTriFlags(CTriMesh *self, uint32_t i, uint32_t flags) {
+void CTriMesh_SetTriFlags(CTriMesh *self, uint32_t i, uint32_t flags) {
 	CHECK(i < (uint32_t)self->nTri);
 	CHECK(self->pTri);
 	self->pTri[i].flags = flags;
 }
 
-void __thiscall CTriMesh_RemoveTri(CTriMesh *self, uint32_t i) {
+void CTriMesh_RemoveTri(CTriMesh *self, uint32_t i) {
 	CHECK(i < (uint32_t)self->nTri);
 	CHECK(self->pTri);
 	self->pTri[i] = self->pTri[self->nTri - 1];
 	self->nTri--;
 }
 
-void __thiscall CTriMesh_GetTriVert(CTriMesh *self, CMeshVert *out, uint32_t tri, uint32_t vert) {
+void CTriMesh_GetTriVert(CTriMesh *self, CMeshVert *out, uint32_t tri, uint32_t vert) {
 	CHECK(tri < (uint32_t)self->nTri);
 	CHECK(vert < 3);
 	CHECK(self->pTri && self->pVert);
@@ -282,7 +282,7 @@ void __thiscall CTriMesh_GetTriVert(CTriMesh *self, CMeshVert *out, uint32_t tri
 	out->uv = uv;
 }
 
-void __thiscall CTriMesh_AddTriVerts(CTriMesh *self, const CMeshVert *a, const CMeshVert *b, const CMeshVert *c,
+void CTriMesh_AddTriVerts(CTriMesh *self, const CMeshVert *a, const CMeshVert *b, const CMeshVert *c,
 	void *mat, byte tvert, uint32_t flags) {
 	int nv = Mesh_NumVert(self);
 	int ntv = Mesh_NumTVert(self);
@@ -318,7 +318,7 @@ void __thiscall CTriMesh_AddTriVerts(CTriMesh *self, const CMeshVert *a, const C
 	CTriMesh_SetTriFlags(self, nt, flags);
 }
 
-void __fastcall CTriMesh_CreateTVert(CTriMesh *self) {
+void CTriMesh_CreateTVert(CTriMesh *self) {
 	if (!self->pTri || self->pTVert) {
 		return;
 	}
@@ -339,7 +339,7 @@ static const uint16_t *MeshD3D_Tri(const CMeshD3D *m, uint32_t i) {
 	return m->pTri[i];
 }
 
-void __thiscall CTriMesh_AddD3D(CTriMesh *self, CMeshD3D *src, byte all) {
+void CTriMesh_AddD3D(CTriMesh *self, CMeshD3D *src, byte all) {
 	for (; src; src = src->next) {
 		int nv = Mesh_NumVert(self);
 		int ntv = Mesh_NumTVert(self);
@@ -377,7 +377,7 @@ void __thiscall CTriMesh_AddD3D(CTriMesh *self, CMeshD3D *src, byte all) {
 	}
 }
 
-void __thiscall CTriMesh_Add(CTriMesh *self, const CTriMesh *orig, uint32_t mask, byte want) {
+void CTriMesh_Add(CTriMesh *self, const CTriMesh *orig, uint32_t mask, byte want) {
 	int nv = Mesh_NumVert(self);
 	int ntv = Mesh_NumTVert(self);
 	int nt = Mesh_NumTri(self);
@@ -440,7 +440,7 @@ void __thiscall CTriMesh_Add(CTriMesh *self, const CTriMesh *orig, uint32_t mask
 	self->pSkin = skin;
 }
 
-void __thiscall CTriMesh_CalcBox(CTriMesh *self, box_t *out, byte first) {
+void CTriMesh_CalcBox(CTriMesh *self, box_t *out, byte first) {
 	CHECK(self->pVert);
 	box_t *b = &self->box;
 	b->min.x = b->min.y = b->min.z = TRIMESH_FLT_MAX;
@@ -459,7 +459,7 @@ void __thiscall CTriMesh_CalcBox(CTriMesh *self, box_t *out, byte first) {
 	Box_Merge(out, b, first);
 }
 
-void __thiscall CTriMesh_GetBox(CTriMesh *self, box_t *out, byte recalc) {
+void CTriMesh_GetBox(CTriMesh *self, box_t *out, byte recalc) {
 	if (recalc) {
 		CTriMesh_CalcBox(self, out, 1);
 		return;
@@ -479,7 +479,7 @@ void Mesh_Normalize(vec3_t *n) {
 	n->z = z * k;
 }
 
-void __thiscall CTriMesh_Transform(CTriMesh *self, const matrix_t *m) {
+void CTriMesh_Transform(CTriMesh *self, const matrix_t *m) {
 	if (!self->pVert && !self->pTri) {
 		return;
 	}
@@ -498,7 +498,7 @@ void __thiscall CTriMesh_Transform(CTriMesh *self, const matrix_t *m) {
 	}
 }
 
-void __thiscall CTriMesh_Draw(CTriMesh *self, void *dev, int unused) {
+void CTriMesh_Draw(CTriMesh *self, void *dev, int unused) {
 	(void)unused;
 	/* the meshes draw through their D3D mesh, this path is not meant to run */
 	CHECK(0);
@@ -538,7 +538,7 @@ static void *List_Copy(void *out, const byte *v, int off, uint32_t size) {
 	return out;
 }
 
-vec3_t *__thiscall CVertList_GetNormal(CVertList *self, vec3_t *out, uint32_t i) {
+vec3_t *CVertList_GetNormal(CVertList *self, vec3_t *out, uint32_t i) {
 	switch (self->frmt) {
 	case VERT_TEX1:
 		return List_Copy(out, CVertList_Tex1(self, i), 0xc, sizeof(*out));
@@ -558,7 +558,7 @@ vec3_t *__thiscall CVertList_GetNormal(CVertList *self, vec3_t *out, uint32_t i)
 }
 
 /* an inline of ListaVert.h, compiled into ScrapEngCollision.cpp */
-vec3_t *__thiscall CVertList_GetPos(CVertList *self, vec3_t *out, uint32_t i) {
+vec3_t *CVertList_GetPos(CVertList *self, vec3_t *out, uint32_t i) {
 	switch (self->frmt) {
 	case VERT_TEX1:
 		return List_Copy(out, CVertList_Tex1(self, i), 0, sizeof(*out));
@@ -605,7 +605,7 @@ vec3_t *__thiscall CVertList_GetPos(CVertList *self, vec3_t *out, uint32_t i) {
 	}
 }
 
-uv_t *__thiscall CVertList_GetUV(CVertList *self, uv_t *out, uint32_t i) {
+uv_t *CVertList_GetUV(CVertList *self, uv_t *out, uint32_t i) {
 	switch (self->frmt) {
 	case VERT_TEX1:
 		return List_Copy(out, CVertList_Tex1(self, i), 0x18, sizeof(*out));

@@ -7,7 +7,7 @@
 #include "scrap/net.h"
 #include "scrap/scoreritems.h"
 
-cNetStatsScorer *__fastcall cNetStatsScorer_ctor(cNetStatsScorer *self) {
+cNetStatsScorer *cNetStatsScorer_ctor(cNetStatsScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CNETSTATSSCORER_VFTABLE;
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
@@ -16,7 +16,7 @@ cNetStatsScorer *__fastcall cNetStatsScorer_ctor(cNetStatsScorer *self) {
 	return self;
 }
 
-void __fastcall cNetStatsScorer_dtor(cNetStatsScorer *self) {
+void cNetStatsScorer_dtor(cNetStatsScorer *self) {
 	CPsaImage *img = self->img;
 	self->base.vftable = CNETSTATSSCORER_VFTABLE;
 	if (img) {
@@ -26,7 +26,7 @@ void __fastcall cNetStatsScorer_dtor(cNetStatsScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cNetStatsScorer *__thiscall cNetStatsScorer_Delete(cNetStatsScorer *self, byte flags) {
+cNetStatsScorer *cNetStatsScorer_Delete(cNetStatsScorer *self, byte flags) {
 	cNetStatsScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cNetStatsScorer));
@@ -34,11 +34,11 @@ cNetStatsScorer *__thiscall cNetStatsScorer_Delete(cNetStatsScorer *self, byte f
 	return self;
 }
 
-int __thiscall cNetStatsScorer_Var(cNetStatsScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cNetStatsScorer_Var(cNetStatsScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void __thiscall cNetStatsScorer_Draw(cNetStatsScorer *self, int player) {
+void cNetStatsScorer_Draw(cNetStatsScorer *self, int player) {
 	cScorerItem *it = &self->base;
 
 	if ((g_pApp->flags & APPF_CLIENT) && g_ShowClientPing && Net_GetClient()) {

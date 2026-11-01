@@ -35,14 +35,14 @@ static inline float Fx_Rand(double range, double add) {
 	return (float)((double)(crt_rand() & 0x7fff) * g_RandScale * range + add);
 }
 
-vec3_t *__thiscall cWorld_GetCamPos(cWorld *self, vec3_t *out) {
+vec3_t *cWorld_GetCamPos(cWorld *self, vec3_t *out) {
 	*out = self->camPos[self->curCam];
 	return out;
 }
 
 /* ---- cObjElementFXHook ---- */
 
-void __fastcall cObjElementFXHook_StopTrails(cObjElementFXHook *self) {
+void cObjElementFXHook_StopTrails(cObjElementFXHook *self) {
 	if (CGameTrail_IsRender(&self->trail[0])) {
 		CGameParticles_KillAll(&self->particles);
 		CGameTrail_Clear(&self->trail[0]);
@@ -51,7 +51,7 @@ void __fastcall cObjElementFXHook_StopTrails(cObjElementFXHook *self) {
 }
 
 /* the hook from the weapon node of the emitter to the target, the points between on a line */
-void __thiscall cObjElementFXHook_StartTarget(cObjElementFXHook *self, cEntity *emitter, cEntity *target, int slot) {
+void cObjElementFXHook_StartTarget(cObjElementFXHook *self, cEntity *emitter, cEntity *target, int slot) {
 	matrix_t mat;
 	vec3_t rot, r, off;
 	const vec3_t *end;
@@ -167,7 +167,7 @@ static void FXHook_Sparks(cObjElementFXHook *self, const vec3_t *end, vec3_t dir
 		r | g | 0x40000ff, 200.0f, 800.0f, 5.0f, 6.0f, 1);
 }
 
-void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debris, float dt) {
+void cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debris, float dt) {
 	matrix_t mat;
 	vec3_t tmp, rot, r, pt, coefs[FXHOOK_POINTS + 2];
 	CGameModel *model = NULL;
@@ -358,7 +358,7 @@ off:
 }
 
 /* the hook without target: only the line out of the weapon node */
-void __thiscall cObjElementFXHook_StartPoint(cObjElementFXHook *self, cEntity *emitter, int slot) {
+void cObjElementFXHook_StartPoint(cObjElementFXHook *self, cEntity *emitter, int slot) {
 	self->withTarget = 0;
 	self->emitter = emitter;
 	CHECK(self->emitter);
@@ -372,7 +372,7 @@ void __thiscall cObjElementFXHook_StartPoint(cObjElementFXHook *self, cEntity *e
 	}
 }
 
-byte __thiscall cObjElementFXHook_IsAlive(cObjElementFXHook *self, cDebris *debris, cDebrisSys *sys) {
+byte cObjElementFXHook_IsAlive(cObjElementFXHook *self, cDebris *debris, cDebrisSys *sys) {
 	(void)debris;
 	(void)sys;
 	if (self->withTarget) {
@@ -399,7 +399,7 @@ byte __thiscall cObjElementFXHook_IsAlive(cObjElementFXHook *self, cDebris *debr
 	return 0;
 }
 
-void __thiscall cObjElementFXHook_Start(cObjElementFXHook *self, cDebris *debris) {
+void cObjElementFXHook_Start(cObjElementFXHook *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	/* the original keeps the debris pointer as the node when the model has none */
 	int node = (int)(intptr_t)debris;
@@ -416,7 +416,7 @@ void __thiscall cObjElementFXHook_Start(cObjElementFXHook *self, cDebris *debris
 	self->sparkTime = 0.0f;
 }
 
-void __thiscall cObjElementFXHook_Reset(cObjElementFXHook *self, cDebris *debris) {
+void cObjElementFXHook_Reset(cObjElementFXHook *self, cDebris *debris) {
 	(void)debris;
 	CGameParticles_KillAll(&self->particles);
 	CGameTrail_Clear(&self->trail[0]);
@@ -426,14 +426,14 @@ void __thiscall cObjElementFXHook_Reset(cObjElementFXHook *self, cDebris *debris
 
 /* ---- cObjElementFXEMI ---- */
 
-byte __thiscall cObjElementFXEMI_IsAlive(cObjElementFXEMI *self, cDebris *debris, cDebrisSys *sys) {
+byte cObjElementFXEMI_IsAlive(cObjElementFXEMI *self, cDebris *debris, cDebrisSys *sys) {
 	if (!self->entity) {
 		return 0;
 	}
 	return cDebris_Update(debris, sys);
 }
 
-void __thiscall cObjElementFXEMI_Start(cObjElementFXEMI *self, cDebris *debris) {
+void cObjElementFXEMI_Start(cObjElementFXEMI *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	self->node = -1;
 	if (CGameModel_IsLoaded(model)) {
@@ -458,7 +458,7 @@ void __thiscall cObjElementFXEMI_Start(cObjElementFXEMI *self, cDebris *debris) 
 	self->glowTime = 0.0f;
 }
 
-void __thiscall cObjElementFXEMI_Reset(cObjElementFXEMI *self, cDebris *debris) {
+void cObjElementFXEMI_Reset(cObjElementFXEMI *self, cDebris *debris) {
 	(void)debris;
 	self->entity = NULL;
 	self->hideTime = 0.0f;
@@ -477,7 +477,7 @@ void __thiscall cObjElementFXEMI_Reset(cObjElementFXEMI *self, cDebris *debris) 
 	self->glowTime = 0.0f;
 }
 
-void __thiscall cObjElementFXEMI_SetEntity(cObjElementFXEMI *self, cEntity *e) {
+void cObjElementFXEMI_SetEntity(cObjElementFXEMI *self, cEntity *e) {
 	self->entity = e;
 }
 
@@ -844,7 +844,7 @@ static void EMI_Glow(cObjElementFXEMI *self, const vec3_t *pos, float life, floa
 	}
 }
 
-void __thiscall cObjElementFXEMI_Update(cObjElementFXEMI *self, cDebris *debris, float dt) {
+void cObjElementFXEMI_Update(cObjElementFXEMI *self, cDebris *debris, float dt) {
 	CGameModel *model = Debris_Model(debris);
 	vec3_t pos, rot, tmp;
 
@@ -900,7 +900,7 @@ void __thiscall cObjElementFXEMI_Update(cObjElementFXEMI *self, cDebris *debris,
 
 /* ---- cObjElementFXSonicExplosion ---- */
 
-void __thiscall cObjElementFXSonicExplosion_Update(cObjElementFXSonicExplosion *self, cDebris *debris, float dt) {
+void cObjElementFXSonicExplosion_Update(cObjElementFXSonicExplosion *self, cDebris *debris, float dt) {
 	(void)debris;
 	(void)dt;
 	float t = cTimer_GetDelta(&g_pWorld->timer);
@@ -939,13 +939,13 @@ void __thiscall cObjElementFXSonicExplosion_Update(cObjElementFXSonicExplosion *
 	}
 }
 
-byte __thiscall cObjElementFXSonicExplosion_IsAlive(cObjElementFXSonicExplosion *self, cDebris *debris,
+byte cObjElementFXSonicExplosion_IsAlive(cObjElementFXSonicExplosion *self, cDebris *debris,
 	cDebrisSys *sys) {
 	(void)self;
 	return cDebris_Update(debris, sys);
 }
 
-void __thiscall cObjElementFXSonicExplosion_Start(cObjElementFXSonicExplosion *self, cDebris *debris) {
+void cObjElementFXSonicExplosion_Start(cObjElementFXSonicExplosion *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
 	int node = CGameModel_FindRenderNode(model, "Dummy01");
@@ -956,14 +956,14 @@ void __thiscall cObjElementFXSonicExplosion_Start(cObjElementFXSonicExplosion *s
 	CGameParticles_Attach(&self->rings, model, node);
 }
 
-void __thiscall cObjElementFXSonicExplosion_Reset(cObjElementFXSonicExplosion *self, cDebris *debris) {
+void cObjElementFXSonicExplosion_Reset(cObjElementFXSonicExplosion *self, cDebris *debris) {
 	(void)debris;
 	self->time = 0.0f;
 	self->time2 = 0.0f;
 	CGameParticles_KillAll(&self->particles);
 }
 
-void __thiscall cObjElementFXSonicExplosion_Explode(cObjElementFXSonicExplosion *self, float x, float y, float z) {
+void cObjElementFXSonicExplosion_Explode(cObjElementFXSonicExplosion *self, float x, float y, float z) {
 	static const float mult[FXSONIC_RINGS] = { 0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f };
 	static const float fade[FXSONIC_RINGS] = { 0.8f, 0.7f, 0.6f, 0.5f, 0.4f, 0.3f, 0.2f, 0.1f };
 	CGameParticles *p = &self->particles;
@@ -1111,12 +1111,12 @@ static void cObjElementFXDebrisCloud_Shuffle(cObjElementFXDebrisCloud *self) {
 	}
 }
 
-byte __thiscall cObjElementFXDebrisCloud_IsAlive(cObjElementFXDebrisCloud *self, cDebris *debris, cDebrisSys *sys) {
+byte cObjElementFXDebrisCloud_IsAlive(cObjElementFXDebrisCloud *self, cDebris *debris, cDebrisSys *sys) {
 	(void)self;
 	return cDebris_Update(debris, sys);
 }
 
-void __thiscall cObjElementFXDebrisCloud_Start(cObjElementFXDebrisCloud *self, cDebris *debris) {
+void cObjElementFXDebrisCloud_Start(cObjElementFXDebrisCloud *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	self->node = -1;
 	if (CGameModel_IsLoaded(model)) {
@@ -1129,7 +1129,7 @@ void __thiscall cObjElementFXDebrisCloud_Start(cObjElementFXDebrisCloud *self, c
 	cObjElementFXDebrisCloud_Shuffle(self);
 }
 
-void __thiscall cObjElementFXDebrisCloud_Reset(cObjElementFXDebrisCloud *self, cDebris *debris) {
+void cObjElementFXDebrisCloud_Reset(cObjElementFXDebrisCloud *self, cDebris *debris) {
 	(void)debris;
 	self->entity = NULL;
 	self->emitT = 0.0f;
@@ -1192,7 +1192,7 @@ static void FXDebrisCloud_Puff(cObjElementFXDebrisCloud *self, float size, doubl
 	CGameParticles_EmitN(p, 1, 0);
 }
 
-void __thiscall cObjElementFXDebrisCloud_Update(cObjElementFXDebrisCloud *self, cDebris *debris, float dt) {
+void cObjElementFXDebrisCloud_Update(cObjElementFXDebrisCloud *self, cDebris *debris, float dt) {
 	CGameModel *model = Debris_Model(debris);
 	vec3_t pos, rot, up, ang;
 	float f;
@@ -1296,11 +1296,11 @@ void __thiscall cObjElementFXDebrisCloud_Update(cObjElementFXDebrisCloud *self, 
 		1.3999999761581421, 1.15f, 1.2f, 0.04999995231628418, 1.25, 0x33);
 }
 
-void __thiscall cObjElementFXDebrisCloud_SetEntity(cObjElementFXDebrisCloud *self, cEntity *e) {
+void cObjElementFXDebrisCloud_SetEntity(cObjElementFXDebrisCloud *self, cEntity *e) {
 	self->entity = e;
 }
 
-void __thiscall cObjElementFXDebrisCloud_Warm(cObjElementFXDebrisCloud *self, cDebris *debris) {
+void cObjElementFXDebrisCloud_Warm(cObjElementFXDebrisCloud *self, cDebris *debris) {
 	for (int i = 0; i < 4; i++) {
 		self->base.vftable->Update(&self->base, debris, 0.0f);
 	}
@@ -1318,7 +1318,7 @@ static inline void FXCM_SetVtbl(void *self, void *vt) {
 	*(void **)self = vt;
 }
 
-Nto1Node *__thiscall FXCountermeasures_NodeCtor(Nto1Node *self) {
+Nto1Node *FXCountermeasures_NodeCtor(Nto1Node *self) {
 	self->target = NULL;
 	self->data = NULL;
 	self->next = self;
@@ -1326,7 +1326,7 @@ Nto1Node *__thiscall FXCountermeasures_NodeCtor(Nto1Node *self) {
 	return self;
 }
 
-void *__thiscall cObjElementFXDebrisCloud_ctor(void *self) {
+void *cObjElementFXDebrisCloud_ctor(void *self) {
 	cObjElementFXDebrisCloud *s = self;
 
 	FXCM_SetVtbl(s, COBJELEMENTFXDEBRISCLOUD_VFTABLE);
@@ -1338,7 +1338,7 @@ void *__thiscall cObjElementFXDebrisCloud_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXEMI_ctor(void *self) {
+void *cObjElementFXEMI_ctor(void *self) {
 	cObjElementFXEMI *s = self;
 
 	FXCM_SetVtbl(s, COBJELEMENTFXEMI_VFTABLE);
@@ -1358,7 +1358,7 @@ void *__thiscall cObjElementFXEMI_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXHook_ctor(void *self) {
+void *cObjElementFXHook_ctor(void *self) {
 	cObjElementFXHook *s = self;
 
 	FXCM_SetVtbl(s, COBJELEMENTFXHOOK_VFTABLE);
@@ -1373,7 +1373,7 @@ void *__thiscall cObjElementFXHook_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXSonicExplosion_ctor(void *self) {
+void *cObjElementFXSonicExplosion_ctor(void *self) {
 	cObjElementFXSonicExplosion *s = self;
 
 	FXCM_SetVtbl(s, COBJELEMENTFXSONICEXPLOSION_VFTABLE);
@@ -1385,7 +1385,7 @@ void *__thiscall cObjElementFXSonicExplosion_ctor(void *self) {
 	return s;
 }
 
-void __thiscall cObjElementFXDebrisCloud_dtor(void *self) {
+void cObjElementFXDebrisCloud_dtor(void *self) {
 	cObjElementFXDebrisCloud *s = self;
 
 	*(void **)s = COBJELEMENTFXDEBRISCLOUD_VFTABLE;
@@ -1393,7 +1393,7 @@ void __thiscall cObjElementFXDebrisCloud_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXEMI_dtor(void *self) {
+void cObjElementFXEMI_dtor(void *self) {
 	cObjElementFXEMI *s = self;
 
 	*(void **)s = COBJELEMENTFXEMI_VFTABLE;
@@ -1403,7 +1403,7 @@ void __thiscall cObjElementFXEMI_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXHook_dtor(void *self) {
+void cObjElementFXHook_dtor(void *self) {
 	cObjElementFXHook *s = self;
 
 	*(void **)s = COBJELEMENTFXHOOK_VFTABLE;
@@ -1413,7 +1413,7 @@ void __thiscall cObjElementFXHook_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXSonicExplosion_dtor(void *self) {
+void cObjElementFXSonicExplosion_dtor(void *self) {
 	cObjElementFXSonicExplosion *s = self;
 
 	*(void **)s = COBJELEMENTFXSONICEXPLOSION_VFTABLE;
@@ -1430,22 +1430,22 @@ static inline cObjElementFX *FXCM_Delete(void *self, byte flags, uint32_t size) 
 	return self;
 }
 
-cObjElementFX *__thiscall cObjElementFXDebrisCloud_Delete(cObjElementFX *self, byte flags) {
+cObjElementFX *cObjElementFXDebrisCloud_Delete(cObjElementFX *self, byte flags) {
 	cObjElementFXDebrisCloud_dtor(self);
 	return FXCM_Delete(self, flags, sizeof(cObjElementFXDebrisCloud));
 }
 
-cObjElementFX *__thiscall cObjElementFXEMI_Delete(cObjElementFX *self, byte flags) {
+cObjElementFX *cObjElementFXEMI_Delete(cObjElementFX *self, byte flags) {
 	cObjElementFXEMI_dtor(self);
 	return FXCM_Delete(self, flags, sizeof(cObjElementFXEMI));
 }
 
-cObjElementFX *__thiscall cObjElementFXHook_Delete(cObjElementFX *self, byte flags) {
+cObjElementFX *cObjElementFXHook_Delete(cObjElementFX *self, byte flags) {
 	cObjElementFXHook_dtor(self);
 	return FXCM_Delete(self, flags, sizeof(cObjElementFXHook));
 }
 
-cObjElementFX *__thiscall cObjElementFXSonicExplosion_Delete(cObjElementFX *self, byte flags) {
+cObjElementFX *cObjElementFXSonicExplosion_Delete(cObjElementFX *self, byte flags) {
 	cObjElementFXSonicExplosion_dtor(self);
 	return FXCM_Delete(self, flags, sizeof(cObjElementFXSonicExplosion));
 }

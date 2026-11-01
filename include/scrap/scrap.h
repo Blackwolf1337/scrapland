@@ -20,12 +20,12 @@
 #define g_PackName (GAME_ARRAY_IN(cString, GVar_PathInPackFile, 16))	/* string object, the open pack */
 #define g_SuperDealAvaliable GAME_GLOBAL_IN(int, GVar_SuperDealAvaliable, 16)	/* SuperDealAvaliable, all three crazy deals done */
 
-void __thiscall Elements_Call(void *elements, const char *name);
-void __thiscall Elements_Create(void *elements);
+void Elements_Call(void *elements, const char *name);
+void Elements_Create(void *elements);
 
-void *__thiscall cWorld_NewEntityList(cWorld *world, const char *name);
-const char *__thiscall cWorld_GetCamName(cWorld *world, int i);
-cEntity *__thiscall cWorld_GetFirstEntity(cWorld *world);
+void *cWorld_NewEntityList(cWorld *world, const char *name);
+const char *cWorld_GetCamName(cWorld *world, int i);
+cEntity *cWorld_GetFirstEntity(cWorld *world);
 
 /* engine global variables (gvars, Scrap.Get/Set/Def/Des) */
 enum { GVAR_STRING = 1, GVAR_INT = 2, GVAR_FLOAT = 4, GVAR_FUNCTION = 5, GVAR_SCRIPT_FUNCTION = 6 };
@@ -66,7 +66,7 @@ SD_OFFSET(cGvar, type, 0x0d);
 SD_OFFSET(cGVar, value, 0x10);
 cGVar *GVar_Find(const char *name);
 /* the base constructor (src/game/Global/Gvars.c): in front of g_GVars, the derived class sets the type */
-cGVar *__thiscall cGVar_ctor(cGVar *self, const char *name, byte flags, const char *description);
+cGVar *cGVar_ctor(cGVar *self, const char *name, byte flags, const char *description);
 /* an int variable with its default, as the static initializers make it */
 cGVar *GVar_InitInt(cGVar *v, const char *name, byte flags, const char *description, int value);
 cGVar *GVar_InitFloat(cGVar *v, const char *name, byte flags, const char *description, float value);
@@ -79,8 +79,8 @@ cGVar *GVar_InitFunction(cGVar *v, const char *name, byte flags, const char *des
 byte Cfg_ParseLine(char *line, char **value);
 
 typedef struct cGVarListVtbl {
-	void(__thiscall *Save)(void *self, void *f);	/* 0x0 */
-	void(__thiscall *Load)(void *self, void *f);	/* 0x4 */
+	void(*Save)(void *self, void *f);	/* 0x0 */
+	void(*Load)(void *self, void *f);	/* 0x4 */
 } cGVarListVtbl;
 #define GVar_ListObj(v) ((void *)((byte *)(v) - 4))
 #define GVar_ListVtbl(v) (*(const cGVarListVtbl **)GVar_ListObj(v))
@@ -119,7 +119,7 @@ PyObject *Lang_GetEntries(const char *name, int n);
 const char *Lang_GetStr(const char *name);
 const char *Lang_GetLanguage(void);
 /* the string table of the language (src/game/Global/Language.c) */
-void __fastcall LangTable_Clear(HashTable *self);
+void LangTable_Clear(HashTable *self);
 
 /* Global/StaticBuffer.h: a buffer that grows and is locked while in use */
 typedef struct cStaticBuffer {
@@ -129,17 +129,17 @@ typedef struct cStaticBuffer {
 } cStaticBuffer;
 SD_OFFSET(cStaticBuffer, lock, 0x8);
 /* at least size bytes, locks the buffer */
-void *__thiscall cStaticBuffer_Get(cStaticBuffer *self, uint32_t size);
+void *cStaticBuffer_Get(cStaticBuffer *self, uint32_t size);
 /* the end of the use of the buffer (CHECK lock); inlined in most places */
-void __fastcall cStaticBuffer_Unlock(cStaticBuffer *self);
-cStaticBuffer *__fastcall cStaticBuffer_ctor(cStaticBuffer *self);
-void __fastcall cStaticBuffer_dtor(cStaticBuffer *self);
-float __thiscall cWorld_GetMinCamDistSq(cWorld *world, const vec3_t *pos);
-void __thiscall Parking_AddZone(void *parking, int flag, const vec3_t *pos, const char *name);
+void cStaticBuffer_Unlock(cStaticBuffer *self);
+cStaticBuffer *cStaticBuffer_ctor(cStaticBuffer *self);
+void cStaticBuffer_dtor(cStaticBuffer *self);
+float cWorld_GetMinCamDistSq(cWorld *world, const vec3_t *pos);
+void Parking_AddZone(void *parking, int flag, const vec3_t *pos, const char *name);
 /* nearest (farest != 0: farest) parked vehicle from pos; its position into out */
-const char *__thiscall Parking_Find(void *parking, int flag, const vec3_t *pos, vec3_t *out, int farest);
+const char *Parking_Find(void *parking, int flag, const vec3_t *pos, vec3_t *out, int farest);
 /* like cActClass_Var on an entity list: returns 1 string, 2 double, 3 int, 0 */
-int __thiscall cEntityList_Var(void *list, const char *name, int set, char **s, double *d, int *i);
+int cEntityList_Var(void *list, const char *name, int set, char **s, double *d, int *i);
 int Video_GetModes(int i, char *buf);
 
 /* debris systems (named) and the values SetDebrisValue sets for the next DropDebris: World/ObjPool.cpp, a pool of
@@ -183,25 +183,25 @@ SD_SIZE(cDebris, 0x58);
 #define g_DebrisDrop (GAME_ARRAY(vec3_t, g_DebrisDrop))	/* [4]: position, angles (rad), velocity, angle speed (rad) */
 #define g_DebrisDefault GAME_GLOBAL_IN(float, GVar_Gravity, 16)
 
-cDebrisSys *__thiscall cWorld_GetDebrisSys(cWorld *world, const char *name);
-byte __thiscall cWorld_DeleteDebrisSys(cWorld *world, const char *name);
-void __thiscall cDebrisSys_Init(cDebrisSys *sys, int n, int e);
-cDebris *__thiscall cDebrisSys_NewElement(cDebrisSys *sys);
-void __thiscall cDebrisSys_Drop(cDebrisSys *sys, cDebris *debris);
+cDebrisSys *cWorld_GetDebrisSys(cWorld *world, const char *name);
+byte cWorld_DeleteDebrisSys(cWorld *world, const char *name);
+void cDebrisSys_Init(cDebrisSys *sys, int n, int e);
+cDebris *cDebrisSys_NewElement(cDebrisSys *sys);
+void cDebrisSys_Drop(cDebrisSys *sys, cDebris *debris);
 /* rva 0x204ea0: the move of a debris of the system, 0 when it is gone */
-byte __thiscall cDebris_Update(cDebris *self, cDebrisSys *sys);
+byte cDebris_Update(cDebris *self, cDebrisSys *sys);
 
 /* entity list by name for the collision tests */
 void *EntityLists_Get(const char *name);
-byte __thiscall cWorld_TestLineEntities(cWorld *world, int arg, void *list, const vec3_t *from, const vec3_t *to,
+byte cWorld_TestLineEntities(cWorld *world, int arg, void *list, const vec3_t *from, const vec3_t *to,
 	vec3_t *hit, cEntity **target, int flag);
-byte __thiscall cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, void *list, const vec3_t *center,
+byte cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, void *list, const vec3_t *center,
 	float radius, cEntity **target, int a, const vec3_t *prev);
-byte __thiscall cWorld_SphereCall(cWorld *world, void *list, const vec3_t *center, float radius, const char *func,
+byte cWorld_SphereCall(cWorld *world, void *list, const vec3_t *center, float radius, const char *func,
 	int flag);
 byte DummySearch_Next(char *buf, int size, vec3_t *pos, float *ang, byte *flag);
 void Object3D_Preload(const char *name, const vec3_t *scale);
-cEntity *__thiscall cWorld_CreateEntity(cWorld *world, const char *className, float x, float y, float z,
+cEntity *cWorld_CreateEntity(cWorld *world, const char *className, float x, float y, float z,
 	const char *name);
 /* printf into a string object */
 /* imports the compiled module file of the open pack as name (src/game/PyInterface/PythonInit.c) */
@@ -227,8 +227,8 @@ void DummySearch_Start(const char *name, int flag);
 void MissionArrows_Switch(const char *a, const char *b);
 byte Lang_Set(const char *lang, byte force);
 const char *Version_Get(void);
-int __thiscall cWorld_SetCam(cWorld *world, int i, const char *name);
-cEntity *__thiscall cWorld_GetUsrEntity(cWorld *world, int player);
+int cWorld_SetCam(cWorld *world, int i, const char *name);
+cEntity *cWorld_GetUsrEntity(cWorld *world, int player);
 
 int Video_GetCurrentMode(void);
 void Models_List(void);

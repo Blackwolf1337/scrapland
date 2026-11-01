@@ -22,7 +22,7 @@ static void Morph_SetTag(MorphData *d, uint16_t t) {
 	memcpy(d->Tag, &t, sizeof(t));
 }
 
-void __fastcall AnimEvents_Free(CAnimEvent **list) {
+void AnimEvents_Free(CAnimEvent **list) {
 	CAnimEvent *ev = *list;
 	if (ev) {
 		CAnimEvent_dtor(ev);
@@ -31,7 +31,7 @@ void __fastcall AnimEvents_Free(CAnimEvent **list) {
 	}
 }
 
-void __fastcall CAnimGroup_dtor(CAnimGroup *self) {
+void CAnimGroup_dtor(CAnimGroup *self) {
 	CHECK(self->Anim);
 	ObjRef_Release(&self->Anim);
 	if (self->morph) {
@@ -46,12 +46,12 @@ void __fastcall CAnimGroup_dtor(CAnimGroup *self) {
 	}
 }
 
-CAnimGroups *__fastcall CAnimGroups_ctor(CAnimGroups *self) {
+CAnimGroups *CAnimGroups_ctor(CAnimGroups *self) {
 	memset(self, 0, sizeof(*self));
 	return self;
 }
 
-void __fastcall CAnimGroups_Clear(CAnimGroups *self) {
+void CAnimGroups_Clear(CAnimGroups *self) {
 	for (int i = 0; i < MAX_ANIMGROUPS; i++) {
 		CAnimGroup *g = self->g[i];
 		if (g) {
@@ -99,7 +99,7 @@ byte MorphData_Read(CIniFile *ini, const char *sect, int i, MorphData *d, int ta
 	return 1;
 }
 
-int __thiscall CAnimGroups_Add(CAnimGroups *self, CAnimGroup *g) {
+int CAnimGroups_Add(CAnimGroups *self, CAnimGroup *g) {
 	CHECK(g);
 	int i;
 	for (i = 0; i < MAX_ANIMGROUPS; i++) {
@@ -112,14 +112,14 @@ int __thiscall CAnimGroups_Add(CAnimGroups *self, CAnimGroup *g) {
 	return i;
 }
 
-CAnimGroup *__thiscall CAnimGroups_Get(CAnimGroups *self, uint32_t i) {
+CAnimGroup *CAnimGroups_Get(CAnimGroups *self, uint32_t i) {
 	if (i < MAX_ANIMGROUPS) {
 		return self->g[i];
 	}
 	return NULL;
 }
 
-CAnimGroup *__thiscall CAnimGroups_Find(CAnimGroups *self, const char *name, int *idx) {
+CAnimGroup *CAnimGroups_Find(CAnimGroups *self, const char *name, int *idx) {
 	if (!name) {
 		return NULL;
 	}
@@ -135,7 +135,7 @@ CAnimGroup *__thiscall CAnimGroups_Find(CAnimGroups *self, const char *name, int
 	return NULL;
 }
 
-int __fastcall CAnimGroups_Count(CAnimGroups *self) {
+int CAnimGroups_Count(CAnimGroups *self) {
 	int n = 0;
 	for (int i = 0; i < MAX_ANIMGROUPS; i++) {
 		if (self->g[i]) {

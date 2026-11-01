@@ -26,14 +26,14 @@ static inline int WM_IsDigit(char c) {
 	return c >= '0' && c <= '9';
 }
 
-int __thiscall cWeaponManager_HasMinAmmo(cWeaponManager *self, uint32_t w) {
+int cWeaponManager_HasMinAmmo(cWeaponManager *self, uint32_t w) {
 	CHECK(g_pWorld->weapons.count > (int)w);
 	const cWeapInfo *info = TABLE_AT(WEAPS, w);
 	const cWeapInfo *info2 = TABLE_AT(WEAPS, w);
 	return self->ammo[info->ammo] > info2->minAmmo;
 }
 
-byte __thiscall cWeaponManager_VarF(cWeaponManager *self, const char *name, double *v, byte set) {
+byte cWeaponManager_VarF(cWeaponManager *self, const char *name, double *v, byte set) {
 	size_t len = strlen(name);
 	int i;
 
@@ -121,7 +121,7 @@ byte __thiscall cWeaponManager_VarF(cWeaponManager *self, const char *name, doub
 	return 0;
 }
 
-float __thiscall cTargetLock_GetAmmo(cTargetLock *self, int ammo) {
+float cTargetLock_GetAmmo(cTargetLock *self, int ammo) {
 	if (ammo >= g_pWorld->ammo.count) {
 		return 0.0f;
 	}
@@ -137,21 +137,21 @@ int cWeaponManager_FixWeapon(int w) {
 	return w;
 }
 
-char *__thiscall cTargetLock_GetEntity(cTargetLock *self) {
+char *cTargetLock_GetEntity(cTargetLock *self) {
 	if (self->on && self->lock.target) {
 		return ((cEntity *)self->lock.target)->name;
 	}
 	return NULL;
 }
 
-vec3_t *__thiscall cTargetLock_GetPoint(cTargetLock *self) {
+vec3_t *cTargetLock_GetPoint(cTargetLock *self) {
 	if (self->on && !self->lock.target) {
 		return &self->point;
 	}
 	return NULL;
 }
 
-int __thiscall cWeaponManager_NumAmmoSlots(cWeaponManager *self, int ammo) {
+int cWeaponManager_NumAmmoSlots(cWeaponManager *self, int ammo) {
 	if (ammo >= g_pWorld->ammo.count) {
 		return 0;
 	}
@@ -160,7 +160,7 @@ int __thiscall cWeaponManager_NumAmmoSlots(cWeaponManager *self, int ammo) {
 }
 
 /* the mounted slots of weapon w; warn: no slot is an error, for the laser it gets slot 0 */
-int __thiscall cWeaponManager_NumSlots(cWeaponManager *self, int w, byte warn) {
+int cWeaponManager_NumSlots(cWeaponManager *self, int w, byte warn) {
 	int n;
 	if (w < g_pWorld->weapons.count || self->weaps[w].slots != 0) {
 		uint32_t m = self->weaps[w].slots;
@@ -182,12 +182,12 @@ int __thiscall cWeaponManager_NumSlots(cWeaponManager *self, int w, byte warn) {
 	return n;
 }
 
-float __thiscall cWeaponManager_GetWeapAmmo(cWeaponManager *self, uint32_t w) {
+float cWeaponManager_GetWeapAmmo(cWeaponManager *self, uint32_t w) {
 	CHECK(g_pWorld->weapons.count > (int)w);
 	return self->ammo[TABLE_AT(WEAPS, w)->ammo];
 }
 
-uint32_t __thiscall cWeaponManager_GetSlots(cWeaponManager *self, int w) {
+uint32_t cWeaponManager_GetSlots(cWeaponManager *self, int w) {
 	if (w >= g_pWorld->weapons.count) {
 		return 0;
 	}
@@ -195,7 +195,7 @@ uint32_t __thiscall cWeaponManager_GetSlots(cWeaponManager *self, int w) {
 }
 
 /* the slot masks of all weapons as "m0,m1,..." in a static buffer */
-char *__thiscall cWeaponManager_GetWeapList(cWeaponManager *self) {
+char *cWeaponManager_GetWeapList(cWeaponManager *self) {
 	char *buf = g_WeapListBuf;
 	int pos = 0;
 
@@ -218,28 +218,28 @@ char *__thiscall cWeaponManager_GetWeapList(cWeaponManager *self) {
 	return buf;
 }
 
-byte __thiscall cTargetLock_HasSlot(cTargetLock *self, int weap, int slot) {
+byte cTargetLock_HasSlot(cTargetLock *self, int weap, int slot) {
 	if (slot > 4 || weap >= g_pWorld->weapons.count) {
 		return 0;
 	}
 	return (self->weaps[weap].slots & (1u << (slot & 31))) != 0;
 }
 
-int __thiscall cWeaponManager_GetUpgrade(cWeaponManager *self, int w) {
+int cWeaponManager_GetUpgrade(cWeaponManager *self, int w) {
 	if (w < g_pWorld->weapons.count && WM_Usable(self, w)) {
 		return self->weaps[w].upgrade;
 	}
 	return 0;
 }
 
-float __thiscall cWeaponManager_GetUAmmo(cWeaponManager *self, int w) {
+float cWeaponManager_GetUAmmo(cWeaponManager *self, int w) {
 	if (w < g_pWorld->weapons.count && WM_Usable(self, w)) {
 		return self->weaps[w].uammo;
 	}
 	return 0.0f;
 }
 
-void __thiscall cWeaponManager_Init(cWeaponManager *self, cEntity *owner) {
+void cWeaponManager_Init(cWeaponManager *self, cEntity *owner) {
 	CHECK(self->owner == NULL);
 	self->owner = owner;
 	uint32_t nw = g_pWorld->weapons.count * sizeof(cWeaponSlot);
@@ -272,7 +272,7 @@ static inline int WM_Name7(const char *name, size_t len, const char *prefix) {
 	return len == 7 && WM_IsDigit(name[5]) && WM_IsDigit(name[6]) && !memcmp(name, prefix, 5);
 }
 
-byte __thiscall cWeaponManager_VarI(cWeaponManager *self, const char *name, int *v, byte set) {
+byte cWeaponManager_VarI(cWeaponManager *self, const char *name, int *v, byte set) {
 	size_t len = strlen(name);
 	int i;
 
@@ -385,7 +385,7 @@ byte __thiscall cWeaponManager_VarI(cWeaponManager *self, const char *name, int 
 }
 
 /* the next weapon after w in the order of iNext (iPrev) that is mounted and has its minimum ammo, else w */
-int __thiscall cWeaponManager_NextWeap(cWeaponManager *self, uint32_t w) {
+int cWeaponManager_NextWeap(cWeaponManager *self, uint32_t w) {
 	uint32_t i = w;
 	do {
 		i = TABLE_AT(WEAPS, i)->next;
@@ -396,7 +396,7 @@ int __thiscall cWeaponManager_NextWeap(cWeaponManager *self, uint32_t w) {
 	return i;
 }
 
-int __thiscall cWeaponManager_PrevWeap(cWeaponManager *self, uint32_t w) {
+int cWeaponManager_PrevWeap(cWeaponManager *self, uint32_t w) {
 	uint32_t i = w;
 	do {
 		i = TABLE_AT(WEAPS, i)->prev;
@@ -407,7 +407,7 @@ int __thiscall cWeaponManager_PrevWeap(cWeaponManager *self, uint32_t w) {
 	return i;
 }
 
-float __thiscall cWeaponManager_SetAmmo(cWeaponManager *self, int ammo, float v) {
+float cWeaponManager_SetAmmo(cWeaponManager *self, int ammo, float v) {
 	if (ammo >= g_pWorld->ammo.count) {
 		return 0.0f;
 	}
@@ -416,7 +416,7 @@ float __thiscall cWeaponManager_SetAmmo(cWeaponManager *self, int ammo, float v)
 }
 
 /* the lock on the entity of that name (the name may be empty); NULL switches the lock off */
-void __thiscall cWeaponManager_LockEntity(cWeaponManager *self, const char *name) {
+void cWeaponManager_LockEntity(cWeaponManager *self, const char *name) {
 	if (name) {
 		Nto1Node_LinkByName(&self->lock, name);
 		self->on = 1;
@@ -425,7 +425,7 @@ void __thiscall cWeaponManager_LockEntity(cWeaponManager *self, const char *name
 	self->on = 0;
 }
 
-void __thiscall cWeaponManager_LockPoint(cWeaponManager *self, const vec3_t *p) {
+void cWeaponManager_LockPoint(cWeaponManager *self, const vec3_t *p) {
 	if (p) {
 		CHECK(self->lock.data);
 		Nto1Node_Unlink(&self->lock);
@@ -436,12 +436,12 @@ void __thiscall cWeaponManager_LockPoint(cWeaponManager *self, const vec3_t *p) 
 	self->on = 0;
 }
 
-void __thiscall cWeaponManager_SetTeslaFiring(cWeaponManager *self, byte v) {
+void cWeaponManager_SetTeslaFiring(cWeaponManager *self, byte v) {
 	self->teslaFiring = v;
 }
 
 /* the slots of weapon w from the bits of mask, up to the first slot without node; the new slots */
-uint32_t __thiscall cWeaponManager_SetSlots(cWeaponManager *self, int w, int mask) {
+uint32_t cWeaponManager_SetSlots(cWeaponManager *self, int w, int mask) {
 	if (w >= g_pWorld->weapons.count) {
 		return 0;
 	}
@@ -467,7 +467,7 @@ uint32_t __thiscall cWeaponManager_SetSlots(cWeaponManager *self, int w, int mas
 }
 
 /* the slot masks from "m0,m1,..." (the last one also sets the slots one by one); the laser keeps slot 0 */
-void __thiscall cWeaponManager_SetWeapList(cWeaponManager *self, const char *list) {
+void cWeaponManager_SetWeapList(cWeaponManager *self, const char *list) {
 	char buf[64];
 	int i = 0;
 
@@ -503,7 +503,7 @@ void __thiscall cWeaponManager_SetWeapList(cWeaponManager *self, const char *lis
 	cWeaponManager_SetSlots(self, g_LaserIDWeap, 1);
 }
 
-byte __thiscall cWeaponManager_SetSlot(cWeaponManager *self, int w, int slot, byte on) {
+byte cWeaponManager_SetSlot(cWeaponManager *self, int w, int slot, byte on) {
 	if (slot > 4 || w >= g_pWorld->weapons.count) {
 		return 0;
 	}
@@ -520,7 +520,7 @@ byte __thiscall cWeaponManager_SetSlot(cWeaponManager *self, int w, int slot, by
 }
 
 /* 0 always, else an upgrade 1..15 the weapon has */
-byte __thiscall cWeaponManager_SetUpgrade(cWeaponManager *self, int w, int upgrade) {
+byte cWeaponManager_SetUpgrade(cWeaponManager *self, int w, int upgrade) {
 	if (w >= g_pWorld->weapons.count) {
 		return 0;
 	}
@@ -535,7 +535,7 @@ byte __thiscall cWeaponManager_SetUpgrade(cWeaponManager *self, int w, int upgra
 	return 0;
 }
 
-byte __thiscall cWeaponManager_SetUAmmo(cWeaponManager *self, int w, float v) {
+byte cWeaponManager_SetUAmmo(cWeaponManager *self, int w, float v) {
 	if (w >= g_pWorld->weapons.count || !WM_Usable(self, w)) {
 		return 0;
 	}
@@ -550,7 +550,7 @@ byte __thiscall cWeaponManager_SetUAmmo(cWeaponManager *self, int w, float v) {
 }
 
 /* the looping sound snd of the owner while it fires with ammo, else none */
-void __thiscall cWeaponManager_SetWeapSnd(cWeaponManager *self, int snd) {
+void cWeaponManager_SetWeapSnd(cWeaponManager *self, int snd) {
 	cEntity *owner = self->owner;
 	int a = TABLE_AT(WEAPS, self->curWeap)->ammo;
 	if (!(a < g_pWorld->ammo.count && !(0.0f >= self->ammo[a]) && Veh(owner)->controls.fire)) {
@@ -569,7 +569,7 @@ void __thiscall cWeaponManager_SetWeapSnd(cWeaponManager *self, int snd) {
 }
 
 /* the weapon callbacks of the frame: CM and fire press and release, the ammo charge, OnFire, the weapon change */
-void __thiscall cWeaponManager_Update(cWeaponManager *self, float dt) {
+void cWeaponManager_Update(cWeaponManager *self, float dt) {
 	cEntity *owner = self->owner;
 	cVehicleControls *ctl = &Veh(owner)->controls;
 	const char *name;
@@ -705,7 +705,7 @@ hook:
 }
 
 /* a sound sequence: when the weapon sound ran out its time, the next one of its range starts with the rest */
-void __thiscall cWeaponManager_NextWeapSnd(cWeaponManager *self, int unused) {
+void cWeaponManager_NextWeapSnd(cWeaponManager *self, int unused) {
 	(void)unused;
 	cWeaponManager_SetWeapSnd(self, self->weapSnd);
 	cSndItem *it = PtrArray_Get(&Veh(self->owner)->wl.obj.snd, self->weapSnd);
@@ -736,7 +736,7 @@ void __thiscall cWeaponManager_NextWeapSnd(cWeaponManager *self, int unused) {
 	cWeaponManager_SetWeapSnd(self, next);
 }
 
-byte __thiscall cWeaponManager_VarS(cWeaponManager *self, const char *name, char **v, byte set) {
+byte cWeaponManager_VarS(cWeaponManager *self, const char *name, char **v, byte set) {
 	if (strcmp(name, "WeapList")) {
 		return 0;
 	}
@@ -755,7 +755,7 @@ byte __thiscall cWeaponManager_VarS(cWeaponManager *self, const char *name, char
 }
 
 /* "WPosXNN": the position of the render node of slot X (A..D) of weapon NN, read only */
-byte __thiscall cWeaponManager_VarV(cWeaponManager *self, const char *name, double *x, double *y, double *z,
+byte cWeaponManager_VarV(cWeaponManager *self, const char *name, double *x, double *y, double *z,
 	byte set) {
 	size_t len = strlen(name);
 	if (set || len != 7 || !(name[4] >= 'A' && name[4] <= 'D') || !WM_IsDigit(name[5]) || !WM_IsDigit(name[6])
@@ -783,12 +783,12 @@ byte __thiscall cWeaponManager_VarV(cWeaponManager *self, const char *name, doub
 	return 1;
 }
 
-void __thiscall cWeaponManager_PlayStartSnd(cWeaponManager *self) {
+void cWeaponManager_PlayStartSnd(cWeaponManager *self) {
 	Vehicle_StartSnd(self->owner, 0x14);
 }
 
 /* the ammo kind of a mounted weapon below its maximum, in one of three random orders; 0 for none */
-int __thiscall cWeaponManager_WeaponNeed(cWeaponManager *self) {
+int cWeaponManager_WeaponNeed(cWeaponManager *self) {
 	if (g_pWorld->weapons.count <= 6) {
 		return 0;
 	}
@@ -807,7 +807,7 @@ int __thiscall cWeaponManager_WeaponNeed(cWeaponManager *self) {
 
 /* the functions before rva 0x11a0f0 */
 
-cWeaponManager *__fastcall cWeaponManager_ctor(cWeaponManager *self) {
+cWeaponManager *cWeaponManager_ctor(cWeaponManager *self) {
 	self->vftable = CWEAPONMANAGER_VFTABLE;
 	self->lock.target = NULL;
 	self->lock.data = NULL;
@@ -821,7 +821,7 @@ cWeaponManager *__fastcall cWeaponManager_ctor(cWeaponManager *self) {
 	return self;
 }
 
-void __fastcall cWeaponManager_dtor(cWeaponManager *self) {
+void cWeaponManager_dtor(cWeaponManager *self) {
 	self->vftable = CWEAPONMANAGER_VFTABLE;
 	Mem_Free(self->weaps);
 	Mem_Free(self->ammo);
@@ -830,11 +830,11 @@ void __fastcall cWeaponManager_dtor(cWeaponManager *self) {
 }
 
 /* Table<cWeapInfo>::operator[] (the world weapons) */
-cWeapInfo *__thiscall WeapTable_At(void *table, uint32_t i) {
+cWeapInfo *WeapTable_At(void *table, uint32_t i) {
 	return TABLE_AT(*(TABLE(cWeapInfo) *)table, i);
 }
 
-cWeaponManager *__thiscall cWeaponManager_Delete(cWeaponManager *self, byte flags) {
+cWeaponManager *cWeaponManager_Delete(cWeaponManager *self, byte flags) {
 	cWeaponManager_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cWeaponManager));
@@ -842,7 +842,7 @@ cWeaponManager *__thiscall cWeaponManager_Delete(cWeaponManager *self, byte flag
 	return self;
 }
 
-void __thiscall cTargetLock_SetHookDelay(cTargetLock *self, float t) {
+void cTargetLock_SetHookDelay(cTargetLock *self, float t) {
 	if (self->fireStamp > t) {
 		self->cmStamp = -t;
 	} else {
@@ -850,7 +850,7 @@ void __thiscall cTargetLock_SetHookDelay(cTargetLock *self, float t) {
 	}
 }
 
-void __thiscall cWeaponManager_DelayFire(cWeaponManager *self, float t) {
+void cWeaponManager_DelayFire(cWeaponManager *self, float t) {
 	if (self->fireStamp > t) {
 		self->fireStamp = -t;
 	} else {
@@ -858,10 +858,10 @@ void __thiscall cWeaponManager_DelayFire(cWeaponManager *self, float t) {
 	}
 }
 
-void __fastcall cWeaponManager_ClearAmmo(cWeaponManager *self) {
+void cWeaponManager_ClearAmmo(cWeaponManager *self) {
 	memset(self->ammo, 0, g_pWorld->ammo.count * 4);
 }
 
-void __fastcall cWeaponManager_ClearWeaps(cWeaponManager *self) {
+void cWeaponManager_ClearWeaps(cWeaponManager *self) {
 	memset(self->weaps, 0, g_pWorld->weapons.count * sizeof(cWeaponSlot));
 }

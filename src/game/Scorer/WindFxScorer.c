@@ -8,7 +8,7 @@
 #include "scrap/sound.h"
 #include "scrap/vehicleentity.h"
 
-cWindFxScorer *__fastcall cWindFxScorer_ctor(cWindFxScorer *self) {
+cWindFxScorer *cWindFxScorer_ctor(cWindFxScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CWINDFXSCORER_VFTABLE;
 	cSound_Init(&self->sound);
@@ -24,14 +24,14 @@ cWindFxScorer *__fastcall cWindFxScorer_ctor(cWindFxScorer *self) {
 	return self;
 }
 
-void __fastcall cWindFxScorer_dtor(cWindFxScorer *self) {
+void cWindFxScorer_dtor(cWindFxScorer *self) {
 	self->base.vftable = CWINDFXSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	cSound_Stop(&self->sound);
 	cScorerItem_dtor(&self->base);
 }
 
-cWindFxScorer *__thiscall cWindFxScorer_Delete(cWindFxScorer *self, byte flags) {
+cWindFxScorer *cWindFxScorer_Delete(cWindFxScorer *self, byte flags) {
 	cWindFxScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cWindFxScorer));
@@ -86,7 +86,7 @@ static void WindFx_Bar(CPsaImage *img, float sx, float sy, float x, float y) {
 
 /* vf00: the free space around the ship of the camera (four line tests ahead to the sides, up and down) sets the
  * volume, pan and pitch of the wind */
-void __thiscall cWindFxScorer_Draw(cWindFxScorer *self, int player) {
+void cWindFxScorer_Draw(cWindFxScorer *self, int player) {
 	cEntity *ship;
 	vec3_t pos;
 	float to[4];

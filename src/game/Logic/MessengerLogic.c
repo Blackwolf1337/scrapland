@@ -26,15 +26,15 @@ void *GenCharGroup_MakeLogic(cEntity *e);
 
 #define MSG_VT(self) ((self)->base.vftable)
 
-void *__thiscall cMessengers_ctor(void *self) {
+void *cMessengers_ctor(void *self) {
 	return self;
 }
 
-void __fastcall cMessengers_dtor(void *self) {
+void cMessengers_dtor(void *self) {
 	(void)self;
 }
 
-cEntity *__fastcall cMessengers_FindDesk(cMessengers *self) {
+cEntity *cMessengers_FindDesk(cMessengers *self) {
 	const char *type = g_MessengerTubeState ? "BureaucracyDesktopFunctionary" : "DoorDataTMaker";
 	float count = (float)self->count;
 	int k = (int)(float)(Weap_Rand01() * (double)count + 0.0);
@@ -137,7 +137,7 @@ byte Messenger_Deliver(cEntity *m, cEntity *desk, cEntity *pack) {
 /* every 0.13 s: the pack on a desk (the door of the desk closes, after 5 s the pack goes back out, the tube state
  * changes), carried by the player (the messengers follow, the mission arrow on the desk) or by a messenger (to a
  * desk of the tube state), or free (the messengers go for it) */
-void __fastcall cMessengers_Think(void *obj) {
+void cMessengers_Think(void *obj) {
 	cMessengers *self = obj;
 	vec3_t old, p;
 	matrix_t mat;
@@ -277,7 +277,7 @@ update:
 	}
 }
 
-void __fastcall cMessengers_Init(void *obj) {
+void cMessengers_Init(void *obj) {
 	cMessengers *self = obj;
 
 	self->list = cWorld_NewEntityList(g_pWorld, "Messenger");
@@ -292,7 +292,7 @@ void __fastcall cMessengers_Init(void *obj) {
 	self->target = NULL;
 }
 
-void __thiscall cMessengers_SetStateAll(cMessengers *self, int state, cEntity *e) {
+void cMessengers_SetStateAll(cMessengers *self, int state, cEntity *e) {
 	for (Nto1Node *n = Logic_ListFirst(self->list); n; n = Logic_ListNext(n)) {
 		cEntity *m = n->data;
 		cBaseLocalLogic *l = (cBaseLocalLogic *)Logic_GetLocalLogic(m);
@@ -309,7 +309,7 @@ void __thiscall cMessengers_SetStateAll(cMessengers *self, int state, cEntity *e
 	}
 }
 
-cMessengerLocalLogic *__thiscall cMessengerLocalLogic_ctor(cMessengerLocalLogic *self, cEntity *parent) {
+cMessengerLocalLogic *cMessengerLocalLogic_ctor(cMessengerLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
 	MSG_VT(self) = CMESSENGERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_SetState(self, GENCHAR_RELAX, NULL);
@@ -317,7 +317,7 @@ cMessengerLocalLogic *__thiscall cMessengerLocalLogic_ctor(cMessengerLocalLogic 
 	return self;
 }
 
-cMessengerLocalLogic *__thiscall cMessengerLocalLogic_Delete(cMessengerLocalLogic *self, byte flags) {
+cMessengerLocalLogic *cMessengerLocalLogic_Delete(cMessengerLocalLogic *self, byte flags) {
 	MSG_VT(self) = CMESSENGERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -327,13 +327,13 @@ cMessengerLocalLogic *__thiscall cMessengerLocalLogic_Delete(cMessengerLocalLogi
 }
 
 /* vf28 and vf27: the same walk in alert and relaxed */
-void __thiscall cMessengerLocalLogic_ToAlert(cMessengerLocalLogic *self, cAIChar *ai) {
+void cMessengerLocalLogic_ToAlert(cMessengerLocalLogic *self, cAIChar *ai) {
 	(void)self;
 	ai->vftable->SetState(ai, 1, 1.0, 0);
 }
 
 /* vf17: team 3, 0 while it attacks a player */
-void __thiscall cMessengerLocalLogic_Update(cMessengerLocalLogic *self, float dt) {
+void cMessengerLocalLogic_Update(cMessengerLocalLogic *self, float dt) {
 	cGenCharLocalLogic_Update(self, dt);
 	WLife(self->base.parent)->arrow.tgType = 3;
 	if (self->base.state == GENCHAR_ATTACK) {
@@ -346,7 +346,7 @@ void __thiscall cMessengerLocalLogic_Update(cMessengerLocalLogic *self, float dt
 
 /* vf34: to the node DC_DataPack of e when it has one (MessengerGotoSpeed, 0.25 in the easy single game), else the
  * walk of the GenChars */
-void __thiscall cMessengerLocalLogic_GoTo(cMessengerLocalLogic *self, cAIChar *ai, cEntity *e) {
+void cMessengerLocalLogic_GoTo(cMessengerLocalLogic *self, cAIChar *ai, cEntity *e) {
 	vec3_t t1, t2, d, dir;
 	matrix_t m;
 

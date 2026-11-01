@@ -37,7 +37,7 @@ static void NetBuffer_Copy(cNetBuffer *self, const byte *src, uint32_t n) {
 	}
 }
 
-cNetBuffer *__thiscall cNetBuffer_ctor(cNetBuffer *self, uint32_t cap) {
+cNetBuffer *cNetBuffer_ctor(cNetBuffer *self, uint32_t cap) {
 	self->size = 0;
 	self->cap = 0;
 	self->data = NULL;
@@ -45,7 +45,7 @@ cNetBuffer *__thiscall cNetBuffer_ctor(cNetBuffer *self, uint32_t cap) {
 	return self;
 }
 
-void __fastcall cNetBuffer_dtor(cNetBuffer *self) {
+void cNetBuffer_dtor(cNetBuffer *self) {
 	if (self->data) {
 		memset(self->data, 0, self->cap);
 	}
@@ -55,36 +55,36 @@ void __fastcall cNetBuffer_dtor(cNetBuffer *self) {
 	self->cap = 0;
 }
 
-byte *__fastcall cNetBuffer_Data(cNetBuffer *self) {
+byte *cNetBuffer_Data(cNetBuffer *self) {
 	return self->data;
 }
 
-uint32_t __fastcall cNetBuffer_Size(cNetBuffer *self) {
+uint32_t cNetBuffer_Size(cNetBuffer *self) {
 	return self->size;
 }
 
-int __thiscall cNetBuffer_Append(cNetBuffer *self, const void *src, uint32_t n) {
+int cNetBuffer_Append(cNetBuffer *self, const void *src, uint32_t n) {
 	NetBuffer_Copy(self, src, n);
 	return 1;
 }
 
-int __thiscall cNetBuffer_AppendBuffer(cNetBuffer *self, const cNetBuffer *src) {
+int cNetBuffer_AppendBuffer(cNetBuffer *self, const cNetBuffer *src) {
 	NetBuffer_Copy(self, src->data, src->size);
 	return 1;
 }
 
-int __thiscall cNetBuffer_AppendBufferPad16(cNetBuffer *self, const cNetBuffer *src) {
+int cNetBuffer_AppendBufferPad16(cNetBuffer *self, const cNetBuffer *src) {
 	return cNetBuffer_AppendPad16(self, src->data, src->size);
 }
 
-int __thiscall cNetBuffer_WriteU16(cNetBuffer *self, uint16_t v) {
+int cNetBuffer_WriteU16(cNetBuffer *self, uint16_t v) {
 	NetBuffer_Grow(self, 2);
 	self->data[self->size++] = (byte)v;
 	self->data[self->size++] = (byte)(v >> 8);
 	return 1;
 }
 
-int __thiscall cNetBuffer_WriteU32(cNetBuffer *self, uint32_t v) {
+int cNetBuffer_WriteU32(cNetBuffer *self, uint32_t v) {
 	NetBuffer_Grow(self, 4);
 	for (int i = 0; i < 4; i++) {
 		self->data[self->size++] = (byte)(v >> (i * 8));
@@ -92,7 +92,7 @@ int __thiscall cNetBuffer_WriteU32(cNetBuffer *self, uint32_t v) {
 	return 1;
 }
 
-int __thiscall cNetBuffer_WriteU64(cNetBuffer *self, uint64_t v) {
+int cNetBuffer_WriteU64(cNetBuffer *self, uint64_t v) {
 	NetBuffer_Grow(self, 8);
 	for (int i = 0; i < 8; i++) {
 		self->data[self->size++] = (byte)(v >> (i * 8));
@@ -100,13 +100,13 @@ int __thiscall cNetBuffer_WriteU64(cNetBuffer *self, uint64_t v) {
 	return 1;
 }
 
-int __thiscall cNetBuffer_WriteU8(cNetBuffer *self, byte v) {
+int cNetBuffer_WriteU8(cNetBuffer *self, byte v) {
 	NetBuffer_Grow(self, 1);
 	self->data[self->size++] = v;
 	return 1;
 }
 
-int __thiscall cNetBuffer_AppendPad16(cNetBuffer *self, const void *src, uint32_t n) {
+int cNetBuffer_AppendPad16(cNetBuffer *self, const void *src, uint32_t n) {
 	static const byte zero[16];
 
 	NetBuffer_Copy(self, src, n);
@@ -116,7 +116,7 @@ int __thiscall cNetBuffer_AppendPad16(cNetBuffer *self, const void *src, uint32_
 	return 1;
 }
 
-void __thiscall cNetBuffer_Reserve(cNetBuffer *self, uint32_t cap) {
+void cNetBuffer_Reserve(cNetBuffer *self, uint32_t cap) {
 	byte *p = Mem_Alloc(cap);
 
 	if (!p) {
@@ -135,11 +135,11 @@ void __thiscall cNetBuffer_Reserve(cNetBuffer *self, uint32_t cap) {
 	self->cap = cap;
 }
 
-cChaCha *__fastcall cChaCha_ctor(cChaCha *self) {
+cChaCha *cChaCha_ctor(cChaCha *self) {
 	return self;
 }
 
-void __thiscall cChaCha_Init(cChaCha *self, const byte *key, uint32_t counter, const byte *nonce) {
+void cChaCha_Init(cChaCha *self, const byte *key, uint32_t counter, const byte *nonce) {
 	uint32_t *s = self->state;
 
 	s[0] = 0x61707865;
@@ -172,7 +172,7 @@ static inline void ChaCha_QR(uint32_t *x, int a, int b, int c, int d) {
 	x[b] = Rotl32(x[b] ^ x[c], 7);
 }
 
-void __thiscall cChaCha_Block(cChaCha *self, const uint32_t *state, byte *out, int rounds) {
+void cChaCha_Block(cChaCha *self, const uint32_t *state, byte *out, int rounds) {
 	uint32_t x[16];
 	(void)self;
 
@@ -197,7 +197,7 @@ void __thiscall cChaCha_Block(cChaCha *self, const uint32_t *state, byte *out, i
 	}
 }
 
-void __thiscall cChaCha_Crypt(cChaCha *self, const byte *key, uint32_t counter, const byte *nonce, const byte *in,
+void cChaCha_Crypt(cChaCha *self, const byte *key, uint32_t counter, const byte *nonce, const byte *in,
 	byte *out, uint32_t len) {
 	byte ks[0x40];
 
@@ -213,29 +213,29 @@ void __thiscall cChaCha_Crypt(cChaCha *self, const byte *key, uint32_t counter, 
 	}
 }
 
-void __thiscall cChaCha_QuarterRound(cChaCha *self, uint32_t *x, int a, int b, int c, int d) {
+void cChaCha_QuarterRound(cChaCha *self, uint32_t *x, int a, int b, int c, int d) {
 	(void)self;
 	ChaCha_QR(x, a, b, c, d);
 }
 
-uint32_t __thiscall cChaCha_Rotl(cChaCha *self, uint32_t v, int n) {
+uint32_t cChaCha_Rotl(cChaCha *self, uint32_t v, int n) {
 	(void)self;
 	return Rotl32(v, n);
 }
 
-void __thiscall cChaCha_Store(cChaCha *self, const uint32_t *x, byte *out) {
+void cChaCha_Store(cChaCha *self, const uint32_t *x, byte *out) {
 	(void)self;
 	for (int i = 0; i < 16; i++) {
 		StoreLE32(out + i * 4, x[i]);
 	}
 }
 
-void __thiscall cChaCha_StoreU32(cChaCha *self, uint32_t v, byte *out) {
+void cChaCha_StoreU32(cChaCha *self, uint32_t v, byte *out) {
 	(void)self;
 	StoreLE32(out, v);
 }
 
-uint32_t __thiscall cChaCha_LoadU32(cChaCha *self, const byte *p) {
+uint32_t cChaCha_LoadU32(cChaCha *self, const byte *p) {
 	(void)self;
 	return LoadLE32(p);
 }

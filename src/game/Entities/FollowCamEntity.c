@@ -27,7 +27,7 @@ static inline float FCam_Act(int set, int i, int slot) {
 	return TABLE_AT(TABLE_AT(g_ActionSets, set)->actions, i)->value[slot];
 }
 
-cEntity *__thiscall cFollowCamEntity_ctor(void *mem, const char *name, float x, float y, float z) {
+cEntity *cFollowCamEntity_ctor(void *mem, const char *name, float x, float y, float z) {
 	cFollowCamEntity *fc = mem;
 
 	cCamEntity_ctor(mem, name, x, y, z);
@@ -64,7 +64,7 @@ cEntity *__thiscall cFollowCamEntity_ctor(void *mem, const char *name, float x, 
 	return mem;
 }
 
-void __fastcall cFollowCamEntity_dtor(cEntity *self) {
+void cFollowCamEntity_dtor(cEntity *self) {
 	cFollowCamEntity *fc = FCam(self);
 
 	self->vftable = CFOLLOWCAMENTITY_VFTABLE;
@@ -74,7 +74,7 @@ void __fastcall cFollowCamEntity_dtor(cEntity *self) {
 	cCamControl_dtor(self);
 }
 
-cEntity *__thiscall cFollowCamEntity_Delete(cEntity *self, uint32_t flags) {
+cEntity *cFollowCamEntity_Delete(cEntity *self, uint32_t flags) {
 	cFollowCamEntity_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CFOLLOWCAMENTITY_SIZE);
@@ -84,7 +84,7 @@ cEntity *__thiscall cFollowCamEntity_Delete(cEntity *self, uint32_t flags) {
 
 /* the angles turn towards the ones of the target, slower for a far camera; at once for a near one or in slow
  * frames of a fast world */
-void __thiscall cFollowCamEntity_Slot(cEntity *self, float dt) {
+void cFollowCamEntity_Slot(cEntity *self, float dt) {
 	cFollowCamEntity *fc = FCam(self);
 	vec3_t tmp;
 
@@ -117,7 +117,7 @@ void __thiscall cFollowCamEntity_Slot(cEntity *self, float dt) {
 
 /* the camera between two slots: the angles lerped, the position behind the target at the camera distance, nearer
  * where the world or an entity is in the way */
-void __thiscall cFollowCamEntity_Lerp(cEntity *self, float f) {
+void cFollowCamEntity_Lerp(cEntity *self, float f) {
 	cFollowCamEntity *fc = FCam(self);
 	CGameCamera *cam = &fc->base.cam;
 	vec3_t tmp, r, want, hit;
@@ -200,7 +200,7 @@ void __thiscall cFollowCamEntity_Lerp(cEntity *self, float f) {
 	cFollowCamEntity_Quake(self, dt);
 }
 
-byte __thiscall cFollowCamEntity_VarF(cEntity *self, const char *name, double *d, int set) {
+byte cFollowCamEntity_VarF(cEntity *self, const char *name, double *d, int set) {
 	cFollowCamEntity *fc = FCam(self);
 	float *deg = NULL;
 
@@ -265,7 +265,7 @@ byte __thiscall cFollowCamEntity_VarF(cEntity *self, const char *name, double *d
 	return 1;
 }
 
-void __thiscall cCamEntity_SetAng(cEntity *cam, vec3_t ang) {
+void cCamEntity_SetAng(cEntity *cam, vec3_t ang) {
 	cFollowCamEntity *fc = FCam(cam);
 
 	if (fc->freeCam) {
@@ -281,7 +281,7 @@ void __thiscall cCamEntity_SetAng(cEntity *cam, vec3_t ang) {
 	CamCtl_Vtbl(cam)->Lerp(cam, 1.0f);
 }
 
-void __fastcall cFollowCamEntity_FreeMove(cEntity *self) {
+void cFollowCamEntity_FreeMove(cEntity *self) {
 	cCamControl *c = (cCamControl *)self;
 	vec3_t move, r, to, out;
 
@@ -333,25 +333,25 @@ void __fastcall cFollowCamEntity_FreeMove(cEntity *self) {
 	c->cam.pos = out;
 }
 
-cEntity *__fastcall cCamEntity_GetTarget(cEntity *cam) {
+cEntity *cCamEntity_GetTarget(cEntity *cam) {
 	return FCam(cam)->target;
 }
 
-void __thiscall cFollowCamEntity_GetAng2(cEntity *self, float *ang) {
+void cFollowCamEntity_GetAng2(cEntity *self, float *ang) {
 	ang[0] = FCam(self)->ang[0];
 	ang[1] = FCam(self)->ang[1];
 }
 
-const char *__thiscall cFollowCamEntity_GetClassName(cEntity *self) {
+const char *cFollowCamEntity_GetClassName(cEntity *self) {
 	(void)self;
 	return FCAM_CLASSNAME;
 }
 
-void __thiscall cFollowCamEntity_UpdateOff(cEntity *self, float dt) {
+void cFollowCamEntity_UpdateOff(cEntity *self, float dt) {
 	cFollowCamEntity_Quake(self, dt);
 }
 
-byte __thiscall cFollowCamEntity_VarI(cEntity *self, const char *name, int *i, int set) {
+byte cFollowCamEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	if (!*name) {
 		return 0;
 	}
@@ -366,14 +366,14 @@ byte __thiscall cFollowCamEntity_VarI(cEntity *self, const char *name, int *i, i
 	return cCamControl_VarI(self, name, i, set);
 }
 
-int __thiscall cFollowCamEntity_IsType(cEntity *self, const char *type) {
+int cFollowCamEntity_IsType(cEntity *self, const char *type) {
 	if (!strcmp(type, TYEN_FCAM)) {
 		return 1;
 	}
 	return cCamControl_IsType(self, type);
 }
 
-byte __thiscall cFollowCamEntity_SetTargetName(cEntity *self, const char *name) {
+byte cFollowCamEntity_SetTargetName(cEntity *self, const char *name) {
 	byte r = cCamControl_SetTarget(self, name);
 
 	if (!r && FCam(self)->target) {
@@ -382,7 +382,7 @@ byte __thiscall cFollowCamEntity_SetTargetName(cEntity *self, const char *name) 
 	return r;
 }
 
-void __thiscall cFollowCamEntity_Quake(cEntity *self, float dt) {
+void cFollowCamEntity_Quake(cEntity *self, float dt) {
 	cFollowCamEntity *fc = FCam(self);
 	vec3_t *rot = &fc->base.cam.rot;
 
@@ -400,7 +400,7 @@ void __thiscall cFollowCamEntity_Quake(cEntity *self, float dt) {
 	}
 }
 
-void __fastcall cFollowCamEntity_ResetAngles(cEntity *self) {
+void cFollowCamEntity_ResetAngles(cEntity *self) {
 	cFollowCamEntity *fc = FCam(self);
 	vec3_t tmp;
 
@@ -417,7 +417,7 @@ void __fastcall cFollowCamEntity_ResetAngles(cEntity *self) {
 	fc->prevAng[1] = y;
 }
 
-void __thiscall cFollowCamEntity_SetFreeCam(cEntity *self, byte on) {
+void cFollowCamEntity_SetFreeCam(cEntity *self, byte on) {
 	cFollowCamEntity *fc = FCam(self);
 
 	if (!on && fc->mainTarget[0]) {
@@ -448,7 +448,7 @@ static void FCam_SetClip(cFollowCamEntity *fc, byte vehicle) {
 	}
 }
 
-void __thiscall cCamEntity_SetTarget(cEntity *cam, cEntity *target) {
+void cCamEntity_SetTarget(cEntity *cam, cEntity *target) {
 	cFollowCamEntity *fc = FCam(cam);
 	vec3_t tmp;
 
@@ -473,14 +473,14 @@ void __thiscall cCamEntity_SetTarget(cEntity *cam, cEntity *target) {
 	cPy_Function_Execute(&fc->onSwitch, 0);
 }
 
-void __thiscall cFollowCamEntity_SetAng2(cEntity *self, const float *ang) {
+void cFollowCamEntity_SetAng2(cEntity *self, const float *ang) {
 	FCam(self)->ang[0] = ang[0];
 	FCam(self)->ang[1] = ang[1];
 }
 
 /* the free camera: the button of the view picks the next active vehicle of an AI or of the network, or the next
  * active character, as the target; without one it flies */
-void __thiscall cFollowCamEntity_Update(cEntity *self) {
+void cFollowCamEntity_Update(cEntity *self) {
 	cFollowCamEntity *fc = FCam(self);
 	int slot;
 
@@ -510,7 +510,7 @@ void __thiscall cFollowCamEntity_Update(cEntity *self) {
 	}
 }
 
-byte __thiscall cFollowCamEntity_VarS(cEntity *self, const char *name, char **s, int set) {
+byte cFollowCamEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 	cFollowCamEntity *fc = FCam(self);
 
 	if (!*name) {
@@ -544,7 +544,7 @@ byte __thiscall cFollowCamEntity_VarS(cEntity *self, const char *name, char **s,
 	return cCamControl_VarS(self, name, s, set);
 }
 
-byte __thiscall cFollowCamEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set) {
+byte cFollowCamEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set) {
 	if (!*name) {
 		return 0;
 	}

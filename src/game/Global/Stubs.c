@@ -1,7 +1,8 @@
 /*
  * The shared stubs: tiny methods (mostly empty vtable slots of the EmbeddedFX, CObjBase3D and CTriMesh classes,
  * constructors of empty classes) that have the same body, so one C function fills every slot that needs it. The
- * variants with arguments exist only for the callee-pops calling conventions. The names are invented.
+ * variants with arguments came from the callee-pops conventions of the original; the tests still name them. The
+ * names are invented.
  */
 #include "scrap/shared.h"
 
@@ -10,20 +11,20 @@ void Stub_Nop(void) {
 }
 
 /* c2 04 00: ret 4, a method with one argument that does nothing */
-void __thiscall Stub_Nop1(void *self, int a) {
+void Stub_Nop1(void *self, int a) {
 	(void)self;
 	(void)a;
 }
 
 /* c2 08 00: ret 8 */
-void __thiscall Stub_Nop2(void *self, int a, int b) {
+void Stub_Nop2(void *self, int a, int b) {
 	(void)self;
 	(void)a;
 	(void)b;
 }
 
 /* c2 0c 00: ret 0xc */
-void __thiscall Stub_Nop3(void *self, int a, int b, int c) {
+void Stub_Nop3(void *self, int a, int b, int c) {
 	(void)self;
 	(void)a;
 	(void)b;
@@ -41,6 +42,6 @@ int Stub_Zero(void) {
 }
 
 /* 8b c1 c3: mov eax, ecx, the constructor of a class without fields */
-void *__thiscall Stub_ReturnSelf(void *self) {
+void *Stub_ReturnSelf(void *self) {
 	return self;
 }

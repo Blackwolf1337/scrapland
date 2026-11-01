@@ -77,7 +77,7 @@ vec3_t *WorldInfo_GetVec3(vec3_t *out, const char *sect, const char *key, const 
 box_t *World_GetBox(box_t *out);
 box_t *World_GetCollideBox(box_t *out);
 /* the inline of ground.h */
-box_t *__thiscall CGround_GetCollideExt(const CGround *self, box_t *out);
+box_t *CGround_GetCollideExt(const CGround *self, box_t *out);
 byte Sector_Visible(int sector);
 /* returns m (an inline of the matrix header, not optimized away) */
 matrix_t *Matrix_Self(matrix_t *m);

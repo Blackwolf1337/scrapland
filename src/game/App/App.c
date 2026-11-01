@@ -38,7 +38,7 @@ static const vec3_t app_one = { 1.0f, 1.0f, 1.0f };
 static void App_DeleteObj(void **pp) {
 	void *p = *pp;
 	if (p) {
-		(*(void(__thiscall **)(void *, int)) * (void ***)p)(p, 1);
+		(*(void(**)(void *, int)) * (void ***)p)(p, 1);
 		*pp = NULL;
 	}
 }
@@ -53,7 +53,7 @@ static void App_CopyStr(char *dst, const char *src, size_t size) {
 	dst[n] = 0;
 }
 
-CApp *__thiscall CApp_ctor(CApp *self, const char *cmdLine) {
+CApp *CApp_ctor(CApp *self, const char *cmdLine) {
 	self->vftable = g_CAppVftable;
 	cString_ctor(&self->levelPath);
 	cString_ctor(&self->newLevelPath);
@@ -82,7 +82,7 @@ CApp *__thiscall CApp_ctor(CApp *self, const char *cmdLine) {
 	return self;
 }
 
-void __fastcall CApp_dtor(CApp *self) {
+void CApp_dtor(CApp *self) {
 	self->vftable = g_CAppVftable;
 	Net_Done();
 	Mem_Free(self->cmdLine);
@@ -96,7 +96,7 @@ void __fastcall CApp_dtor(CApp *self) {
 }
 
 /* vf03 */
-CApp *__thiscall CApp_Delete(CApp *self, byte flags) {
+CApp *CApp_Delete(CApp *self, byte flags) {
 	CApp_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, 0x48);
@@ -105,12 +105,12 @@ CApp *__thiscall CApp_Delete(CApp *self, byte flags) {
 }
 
 /* vf02, vf08, vf09: empty */
-void __thiscall CApp_Nop(CApp *self) {
+void CApp_Nop(CApp *self) {
 	(void)self;
 }
 
 /* vf00: the world and the subsystems of the level closed */
-void __thiscall CApp_DoneGame(CApp *self) {
+void CApp_DoneGame(CApp *self) {
 	cGVar *port = g_GVarMasterServerPort, *addr = g_GVarMasterServerAddress;
 
 	(void)self;
@@ -208,13 +208,13 @@ byte App_CheckBlock(void) {
 }
 
 /* vf11 (CWinApp vf11 jumps here too) */
-void __thiscall CApp_Render(CApp *self) {
+void CApp_Render(CApp *self) {
 	(void)self;
 	Engine_Render();
 }
 
 /* vf06 */
-void __thiscall CApp_Shutdown(CApp *self) {
+void CApp_Shutdown(CApp *self) {
 	char path[0x80];
 
 	if (Net_IsServer()) {
@@ -258,12 +258,12 @@ void Loading_End(void) {
 }
 
 /* vf13 */
-void __thiscall CApp_ResetParams(CApp *self) {
+void CApp_ResetParams(CApp *self) {
 	self->build = 0;
 }
 
 /* vf15 */
-double __thiscall CApp_GetGameTime(CApp *self) {
+double CApp_GetGameTime(CApp *self) {
 	return self->gameTime;
 }
 
@@ -298,7 +298,7 @@ static byte CApp_InitEnd(CApp *self) {
 }
 
 /* vf04: the debug logs, Scrap.cfg, the command line, the packs, the input, the engine and the first level */
-byte __thiscall CApp_Init(CApp *self) {
+byte CApp_Init(CApp *self) {
 	vec3_t one;
 
 	DebugLog_Init();
@@ -358,7 +358,7 @@ byte CApp_InitResume(CApp *self) {
 }
 
 /* vf01: the level path, the network flags, the world and Python */
-void __thiscall CApp_InitGame(CApp *self, const char *level) {
+void CApp_InitGame(CApp *self, const char *level) {
 	cString_Set(&self->levelPath, level);
 	if (cString_CmpStr(&self->newLevelPath, level)) {
 		cString_Set(&self->newLevelPath, level);
@@ -389,7 +389,7 @@ void Loading_Init(void) {
 }
 
 /* the loading icon of the Xbox loading screen; the original has an unused ecx */
-void __fastcall Loading_Start(void *unused) {
+void Loading_Start(void *unused) {
 	(void)unused;
 	Render_CopyBackBuffer();
 	g_XLoadIcon = NULL;
@@ -442,7 +442,7 @@ static void CApp_LoadLevelEnd(CApp *self, const char *level, double t0, byte rel
 }
 
 /* vf07: closes the level and loads level (only the logic again for the same level without ForceReload) */
-void __thiscall CApp_LoadLevelNow(CApp *self, const char *level) {
+void CApp_LoadLevelNow(CApp *self, const char *level) {
 	double t0 = self->vftable->GetTime(self);
 	Con_Printf("Loading level at '%s'...\n", level);
 	Engine_SetCallback(NULL, 4);
@@ -497,7 +497,7 @@ byte Loading_DrawXbox(void) {
 
 /* the loading tip of the level into g_LoadMsgString: LoadingTips_Ind_n inside, LoadingTips_Out_n outside, their
  * [set.action] replaced by the key of Pad1 */
-void __thiscall App_PickLoadingTip(CApp *self, const char *level) {
+void App_PickLoadingTip(CApp *self, const char *level) {
 	static const char *const indoor[] = { "ABIndoor", "Orbit", "Bank", "Police", "Press", "Temple", "TownHall" };
 	static const char *const mixed[] = { "ShipEdit", "Menu", "Junkyard", "Fake", "GamblinDen" };
 	const char *ind = "LoadingTips_Ind_%d", *out = "LoadingTips_Out_%d";
@@ -643,7 +643,7 @@ static byte CApp_FrameRun(CApp *self) {
 }
 
 /* vf05: one frame; 0 when the time did not go on (or the app waits in the background) */
-byte __thiscall CApp_Frame(CApp *self) {
+byte CApp_Frame(CApp *self) {
 	if (self->loadPending) {
 		self->vftable->LoadLevelNow(self, self->newLevelPath);
 		/* the rest of the frame after the start video, from CApp_FrameResume */
@@ -680,7 +680,7 @@ int CApp_FrameResume(void) {
 	return 1;
 }
 
-void __thiscall CWinApp_LoadLevel(CApp *app, const char *level) {
+void CWinApp_LoadLevel(CApp *app, const char *level) {
 	cString_Set(&app->newLevelPath, level);
 	app->loadPending = 1;
 	g_DrawNextFrame = 0;
@@ -697,7 +697,7 @@ static int App_MaxPlayers(void) {
 }
 
 /* vf12: a -param[:ext] of the command line: an engine variable of the config file, build, dedicated or server */
-byte __thiscall CApp_ParseParam(CApp *self, const char *param, const char *ext) {
+byte CApp_ParseParam(CApp *self, const char *param, const char *ext) {
 	cGVar *v = GVar_Find(param);
 	if (v && (v->base.flags & 6)) {
 		CHECK(ext[0] != 0);
@@ -758,7 +758,7 @@ byte __thiscall CApp_ParseParam(CApp *self, const char *param, const char *ext) 
 }
 
 /* the command line: -param[:ext] items to ParseParam, quotes keep spaces */
-void __fastcall CApp_ParseCmdLine(CApp *self) {
+void CApp_ParseCmdLine(CApp *self) {
 	char param[0x100], ext[0x100];
 	int state = 0;
 	uint32_t np = 0, ne = 0;
@@ -919,7 +919,7 @@ byte Loading_Draw(void) {
 }
 
 /* vf19 */
-byte __thiscall CApp_RunApp(CApp *self, const char *exe, const char *cmdLine, int arg) {
+byte CApp_RunApp(CApp *self, const char *exe, const char *cmdLine, int arg) {
 	(void)self;
 	(void)exe;
 	(void)cmdLine;
@@ -946,13 +946,13 @@ void CApp_SFLB_0(CApp *self) {
 }
 
 /* vf10 */
-void __thiscall CApp_Update(CApp *self, float dt) {
+void CApp_Update(CApp *self, float dt) {
 	(void)self;
 	cWorld_Update(g_pWorld, dt);
 }
 
 /* vf20 */
-byte __thiscall CApp_IsDedicatedWin(CApp *self) {
+byte CApp_IsDedicatedWin(CApp *self) {
 	(void)self;
 	return 0;
 }

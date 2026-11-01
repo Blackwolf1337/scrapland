@@ -6,7 +6,7 @@
 #include "scrap/timer.h"
 
 
-cTimer *__fastcall cTimer_ctor(cTimer *self) {
+cTimer *cTimer_ctor(cTimer *self) {
 	self->time = -1.0f;
 	self->prevTime = 0.0f;
 	self->gameTime = 0.0f;
@@ -36,7 +36,7 @@ static void cTimer_StepBlend(cTimer *self, float dt) {
 }
 
 /* dt: real time since the last step */
-void __thiscall cTimer_Advance(cTimer *self, float dt) {
+void cTimer_Advance(cTimer *self, float dt) {
 	if (self->time == -1.0f) {
 		self->time = 0.0f;
 	}
@@ -49,36 +49,36 @@ void __thiscall cTimer_Advance(cTimer *self, float dt) {
 	}
 }
 
-float __fastcall cTimer_GetSpeedTo(cTimer *self) {
+float cTimer_GetSpeedTo(cTimer *self) {
 	return self->speedTo;
 }
 
-float __fastcall cTimer_GetBlendTime(cTimer *self) {
+float cTimer_GetBlendTime(cTimer *self) {
 	return self->blendTime;
 }
 
-float __fastcall cTimer_GetSpeed(cTimer *self) {
+float cTimer_GetSpeed(cTimer *self) {
 	return self->paused ? 0.0f : self->speed;
 }
 
-float __thiscall Timer_GetTime(cTimer *self) {
+float Timer_GetTime(cTimer *self) {
 	return self->gameTime;
 }
 
-float __fastcall cTimer_GetDelta(cTimer *self) {
+float cTimer_GetDelta(cTimer *self) {
 	return self->delta;
 }
 
-void __thiscall cTimer_SetBlend(cTimer *self, float time) {
+void cTimer_SetBlend(cTimer *self, float time) {
 	self->blendTime = time;
 	self->blendLeft = time;
 }
 
-void __thiscall cTimer_SetSpeedTo(cTimer *self, float speed) {
+void cTimer_SetSpeedTo(cTimer *self, float speed) {
 	self->speedTo = speed;
 }
 
-void __thiscall cTimer_SetSpeedChecked(cTimer *self, float speed) {
+void cTimer_SetSpeedChecked(cTimer *self, float speed) {
 	if (!self->paused) {
 		CHECK(speed >= 0.0f);
 		self->speed = speed;
@@ -86,11 +86,11 @@ void __thiscall cTimer_SetSpeedChecked(cTimer *self, float speed) {
 	}
 }
 
-void __thiscall Timer_SetSpeed(cTimer *self, float speed) {
+void Timer_SetSpeed(cTimer *self, float speed) {
 	self->speed = speed;
 	self->speedFrom = speed;
 }
 
-void __thiscall Timer_SetTime(cTimer *self, float t) {
+void Timer_SetTime(cTimer *self, float t) {
 	self->gameTime = t;
 }

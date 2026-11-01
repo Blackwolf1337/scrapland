@@ -18,26 +18,26 @@ typedef struct CTable {
 SD_SIZE(CTable, 0x8);
 
 /* new elements, not initialized; CHECK(!p && num > 0) */
-void __thiscall Table_Alloc1(CTable *t, int num);
-void __thiscall Table_Alloc2(CTable *t, int num);
-void __thiscall Table_Alloc4(CTable *t, int num);
-void __thiscall Table_Alloc8(CTable *t, int num);
-void __thiscall Table_AllocC(CTable *t, int num);
-void __thiscall Table_Alloc10(CTable *t, int num);
-void __thiscall Table_Alloc14(CTable *t, int num);
-void __thiscall Table_Alloc18(CTable *t, int num);
-void __thiscall Table_Alloc1C(CTable *t, int num);
-void __thiscall Table_Alloc2C(CTable *t, int num);
-void __thiscall Table_Alloc38(CTable *t, int num);
+void Table_Alloc1(CTable *t, int num);
+void Table_Alloc2(CTable *t, int num);
+void Table_Alloc4(CTable *t, int num);
+void Table_Alloc8(CTable *t, int num);
+void Table_AllocC(CTable *t, int num);
+void Table_Alloc10(CTable *t, int num);
+void Table_Alloc14(CTable *t, int num);
+void Table_Alloc18(CTable *t, int num);
+void Table_Alloc1C(CTable *t, int num);
+void Table_Alloc2C(CTable *t, int num);
+void Table_Alloc38(CTable *t, int num);
 /* 16 byte elements whose first 14 bytes are cleared */
-void __thiscall Table_Alloc10Z(CTable *t, int num);
+void Table_Alloc10Z(CTable *t, int num);
 /* objects: new[] with the count before them and the constructor of the exe on each */
-void __thiscall Table_New8(CTable *t, int num);
-void __thiscall Table_New1C(CTable *t, int num);
-void __thiscall Table_New24(CTable *t, int num);
-void __thiscall Table_NewA8(CTable *t, int num);
-void __thiscall Table_NewB4(CTable *t, int num);
-void __thiscall Table_NewFC(CTable *t, int num);
+void Table_New8(CTable *t, int num);
+void Table_New1C(CTable *t, int num);
+void Table_New24(CTable *t, int num);
+void Table_NewA8(CTable *t, int num);
+void Table_NewB4(CTable *t, int num);
+void Table_NewFC(CTable *t, int num);
 /* count and size from f, then the elements; t must be empty */
 void Table_Read2(CFileIO *f, CTable *t);
 void Table_ReadC(CFileIO *f, CTable *t);
@@ -57,17 +57,17 @@ void Array_Write8(CFileIO *f, const void *p, uint32_t n);
 void Array_WriteC(CFileIO *f, const void *p, uint32_t n);
 void Array_Write10(CFileIO *f, const void *p, uint32_t n);
 /* element i, TABLE_CHECK */
-void *__thiscall Table_Get8(CTable *t, uint32_t i);
-void *__thiscall Table_Get50(CTable *t, uint32_t i);
+void *Table_Get8(CTable *t, uint32_t i);
+void *Table_Get50(CTable *t, uint32_t i);
 /* the delete[] of the elements, empty after (three copies in the exe) */
-void __fastcall Table_Free(CTable *t);
+void Table_Free(CTable *t);
 /* n elements, the old ones kept as far as they fit; n < 1 frees */
-void __thiscall Table_Resize2(CTable *t, int n);
-void __thiscall Table_Resize4(CTable *t, int n);
-void __thiscall Table_ResizeC(CTable *t, int n);
-void __thiscall Table_Resize14(CTable *t, int n);
-void __thiscall Table_Resize1C(CTable *t, int n);
-void __thiscall Table_Resize2C(CTable *t, int n);
-void __thiscall Table_Resize38(CTable *t, int n);
+void Table_Resize2(CTable *t, int n);
+void Table_Resize4(CTable *t, int n);
+void Table_ResizeC(CTable *t, int n);
+void Table_Resize14(CTable *t, int n);
+void Table_Resize1C(CTable *t, int n);
+void Table_Resize2C(CTable *t, int n);
+void Table_Resize38(CTable *t, int n);
 
 #endif

@@ -9,7 +9,7 @@
 
 #define CAINURSE_SIZE 0x384
 
-void *__thiscall cAINurse_ctor(void *mem, cEntity *e, int *arg) {
+void *cAINurse_ctor(void *mem, cEntity *e, int *arg) {
 	cAINurse *self = mem;
 	cAIChar *c = &self->base;
 
@@ -21,7 +21,7 @@ void *__thiscall cAINurse_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAIChar *__thiscall cAINurse_Delete(cAIChar *self, byte flags) {
+cAIChar *cAINurse_Delete(cAIChar *self, byte flags) {
 	self->vftable = CAINURSE_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
@@ -30,7 +30,7 @@ cAIChar *__thiscall cAINurse_Delete(cAIChar *self, byte flags) {
 	return self;
 }
 
-void __thiscall cAINurse_CheckActDist(cAINurse *self) {
+void cAINurse_CheckActDist(cAINurse *self) {
 	cAIChar *c = &self->base;
 	float dist = AIChar_TargetDist(c);
 
@@ -44,7 +44,7 @@ void __thiscall cAINurse_CheckActDist(cAINurse *self) {
 	c->ctrl->act = 0;
 }
 
-void __thiscall cAINurse_SetDists(cAINurse *self) {
+void cAINurse_SetDists(cAINurse *self) {
 	cAIChar *c = &self->base;
 
 	if (c->state != 2) {

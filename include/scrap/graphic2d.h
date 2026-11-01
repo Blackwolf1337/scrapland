@@ -61,19 +61,19 @@ SD_SIZE(Vert2D, 0x20);
 #define g_SpriteScaleWidth GAME_GLOBAL_IN(float, GVar_SpriteScaleWidth, 16)
 #define g_Verts2D (GAME_ARRAY(Vert2D, g_Verts2D))	/* MAX_VERT_2D, the polygon of the last draw */
 
-CGraphic2D *__thiscall CGraphic2D_ctorTex(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags);
-CGraphic2D *__fastcall CGraphic2D_ctor(CGraphic2D *self);
-void __fastcall CGraphic2D_dtor(CGraphic2D *self);
-void __fastcall CGraphic2D_Render(CGraphic2D *self);
+CGraphic2D *CGraphic2D_ctorTex(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags);
+CGraphic2D *CGraphic2D_ctor(CGraphic2D *self);
+void CGraphic2D_dtor(CGraphic2D *self);
+void CGraphic2D_Render(CGraphic2D *self);
 /* type 0: the rectangle; else a primitive (4 list, 5 strip, 6 fan) of nVert positions in the space of the
  * rectangle with uv (NULL: from the screen position) and colors (NULL: the color) */
-void __thiscall CGraphic2D_Draw(CGraphic2D *self, const float *pos, const float *uv, const uint32_t *colors,
+void CGraphic2D_Draw(CGraphic2D *self, const float *pos, const float *uv, const uint32_t *colors,
 	uint32_t nVert, int type);
 void Graphic2D_SetScreen(int w, int h);
-void __thiscall CGraphic2D_SetTexture(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags);
-void __thiscall CGraphic2D_CreateMat(CGraphic2D *self, const char *tex, const char *opac, int src, int dst, byte alpha,
+void CGraphic2D_SetTexture(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags);
+void CGraphic2D_CreateMat(CGraphic2D *self, const char *tex, const char *opac, int src, int dst, byte alpha,
 	uint32_t flags);
-void __fastcall CGraphic2D_Init(CGraphic2D *self);
+void CGraphic2D_Init(CGraphic2D *self);
 /* the primitives of nVert vertices (4: triangle list, 5: strip, 6: fan) */
 uint32_t Graphic2D_NumPrims(int type, uint32_t nVert);
 void Graphic2D_GetScreen(int *w, int *h);

@@ -198,7 +198,7 @@ static inline float Bsp_Quantize(float v) {
 	return (float)(int32_t)X87_Fistp((double)v * 1000.0) * 0.001f;
 }
 
-void __fastcall CBsp_CreateBuffers(CBsp *self) {
+void CBsp_CreateBuffers(CBsp *self) {
 	/* the lists of the same material, page and sector joined while they stay below 4096 triangles */
 	for (int i = 0; i < self->num_lists; i++) {
 		BspTri *a = self->lists[i];
@@ -505,7 +505,7 @@ static void BspTri_DirectLight(BspTri *list, CScene *scn, CGround *ground, float
 	}
 }
 
-void __fastcall CBsp_DirectLight(CBsp *self) {
+void CBsp_DirectLight(CBsp *self) {
 	CScene *scn = self->model->scene;
 	CGround *ground = World_Ground();
 	vec3_t dim = ground->Dim;
@@ -553,7 +553,7 @@ void __fastcall CBsp_DirectLight(CBsp *self) {
 
 /* the .EMI file of the map, the counterpart of CBsp_ReadEMI (version 105) */
 
-int __fastcall CBsp_SaveEMI(CBsp *self) {
+int CBsp_SaveEMI(CBsp *self) {
 	char path[0x104], buf[0x104];
 	CHashTable tabMat;
 	CHashTableNode **elems;
@@ -759,7 +759,7 @@ static const float bspMagenta[3] = { 1.0f, 0.0f, 1.0f };
 /* the global light: per bounce, every texel of the lists gathers the light of the areas of all other lists (rad2, the
  * last bounce) in front of it that the floor (and the portals) do not hide; the result into rad, with the TXF cache.
  * At the end the statistics and rad added to the light maps (light) */
-void __fastcall CBsp_RadGlobal(CBsp *self) {
+void CBsp_RadGlobal(CBsp *self) {
 	CGround *ground = World_Ground();
 	float mc[17];
 	vec3_t p, n, e, a, b;
@@ -935,7 +935,7 @@ static void BspRad_ReadColor(const char *buf, byte *c, float *intens) {
  * mats_luces_rad and maps_luces_rad of the ini of the scene) and the lists with a glow map (lglow, scaled by the
  * lglow_mult of the ini) light the texels of all lists in front of them that the floor does not hide; into rad, with
  * the TXF cache. The area lights themselves get twice their color */
-void __fastcall CBsp_RadAreas(CBsp *self) {
+void CBsp_RadAreas(CBsp *self) {
 	CGround *ground = World_Ground();
 	char buf[0x80];
 	float mc[17];
@@ -1406,7 +1406,7 @@ static void Bsp_TakeTriangles(CScene *scn, byte allow) {
 				}
 			}
 		}
-		((void(__thiscall *)(CTriMesh *, int))((void **)mesh->vftable)[0])(mesh, 1);
+		((void(*)(CTriMesh *, int))((void **)mesh->vftable)[0])(mesh, 1);
 		CNode3D_FreeObj3D(n);
 		if (!(n->Refs - (n->prev != NULL) - (n->next != NULL))) {
 			n->flags |= 0x20008;
@@ -1414,7 +1414,7 @@ static void Bsp_TakeTriangles(CScene *scn, byte allow) {
 	}
 }
 
-void __fastcall CBsp_Calculate(CBsp *self) {
+void CBsp_Calculate(CBsp *self) {
 	box_t box, box3;
 	float mc[17], amb[3];
 	CBmp cob;

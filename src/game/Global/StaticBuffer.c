@@ -4,21 +4,21 @@
  */
 #include "scrap/scrap.h"
 
-cStaticBuffer *__fastcall cStaticBuffer_ctor(cStaticBuffer *self) {
+cStaticBuffer *cStaticBuffer_ctor(cStaticBuffer *self) {
 	self->size = 0;
 	self->data = NULL;
 	self->lock = 0;
 	return self;
 }
 
-void __fastcall cStaticBuffer_dtor(cStaticBuffer *self) {
+void cStaticBuffer_dtor(cStaticBuffer *self) {
 	CHECK(!self->lock);
 	Mem_Free(self->data);
 	self->data = NULL;
 	self->size = 0;
 }
 
-void *__thiscall cStaticBuffer_Get(cStaticBuffer *self, uint32_t size) {
+void *cStaticBuffer_Get(cStaticBuffer *self, uint32_t size) {
 	CHECK(!self->lock);
 	if (!self->data) {
 		self->size = size;
@@ -31,7 +31,7 @@ void *__thiscall cStaticBuffer_Get(cStaticBuffer *self, uint32_t size) {
 	return self->data;
 }
 
-void __fastcall cStaticBuffer_Unlock(cStaticBuffer *self) {
+void cStaticBuffer_Unlock(cStaticBuffer *self) {
 	CHECK(self->lock);
 	self->lock = 0;
 }

@@ -47,7 +47,7 @@ typedef int(__stdcall *diGetDeviceState_t)(void *dev, uint32_t size, void *data)
 #define WM_ENTERSIZEMOVE 0x231
 #define WM_EXITSIZEMOVE 0x232
 
-typedef int(__thiscall *inputAcquire_t)(IInput *self, byte on);
+typedef int(*inputAcquire_t)(IInput *self, byte on);
 
 /* the part of the constructors of IInput: one at a time, the state cleared */
 static void IInput_Init(IInput *self) {
@@ -57,12 +57,12 @@ static void IInput_Init(IInput *self) {
 	memset(self->mouse, 0, sizeof(*self) - offsetof(IInput, mouse));
 }
 
-IInput *__fastcall IInput_ctor(IInput *self) {
+IInput *IInput_ctor(IInput *self) {
 	IInput_Init(self);
 	return self;
 }
 
-void __fastcall IInput_dtor(IInput *self) {
+void IInput_dtor(IInput *self) {
 	self->vftable = IINPUT_VFTABLE;
 	g_InputInit = 0;
 }
@@ -75,7 +75,7 @@ static void *Input_Delete(IInput *self, byte flags, uint32_t size) {
 	return self;
 }
 
-IInput *__thiscall IInput_Delete(IInput *self, byte flags) {
+IInput *IInput_Delete(IInput *self, byte flags) {
 	return Input_Delete(self, flags, sizeof(IInput));
 }
 
@@ -83,7 +83,7 @@ static void IInput_AcquireMouse(IInput *self, byte on) {
 	((inputAcquire_t)self->vftable[INPUT_VF_ACQUIREMOUSE])(self, on);
 }
 
-void __thiscall IInput_WndProc(IInput *self, void *hwnd, uint32_t msg, uint32_t wparam, uint32_t lparam) {
+void IInput_WndProc(IInput *self, void *hwnd, uint32_t msg, uint32_t wparam, uint32_t lparam) {
 	(void)lparam;
 	switch (msg) {
 	case WM_ACTIVATE:
@@ -107,7 +107,7 @@ void __thiscall IInput_WndProc(IInput *self, void *hwnd, uint32_t msg, uint32_t 
 
 /* ---- CInputDInput ---- */
 
-CInputDInput *__fastcall CInputDInput_ctor(CInputDInput *self) {
+CInputDInput *CInputDInput_ctor(CInputDInput *self) {
 	IInput_Init(&self->base);
 	self->base.vftable = CINPUTDINPUT_VFTABLE;
 	self->di = NULL;
@@ -116,7 +116,7 @@ CInputDInput *__fastcall CInputDInput_ctor(CInputDInput *self) {
 	return self;
 }
 
-CInputDInput *__thiscall CInputDInput_Delete(CInputDInput *self, byte flags) {
+CInputDInput *CInputDInput_Delete(CInputDInput *self, byte flags) {
 	return Input_Delete(&self->base, flags, sizeof(CInputDInput));
 }
 
@@ -134,7 +134,7 @@ static int Input_CreateDevice(CInputDInput *self, const void *guid, void **dev, 
 	return D3D_METHOD(*dev, diSetCooperativeLevel_t, DIDEV_SETCOOPERATIVELEVEL)(*dev, hwnd, coop);
 }
 
-int __thiscall CInputDInput_Init(CInputDInput *self, void *hwnd, void *hinst, byte exclusive) {
+int CInputDInput_Init(CInputDInput *self, void *hwnd, void *hinst, byte exclusive) {
 	int hr = exe_DirectInput8Create(hinst, DIRECTINPUT_VERSION, IID_IDirectInput8A, &self->di, NULL);
 	if (hr < 0) {
 		return hr;
@@ -158,7 +158,7 @@ static void Input_ReleaseDevice(void **dev) {
 	}
 }
 
-int __fastcall CInputDInput_Release(CInputDInput *self) {
+int CInputDInput_Release(CInputDInput *self) {
 	Input_ReleaseDevice(&self->keyboard);
 	Input_ReleaseDevice(&self->mouse);
 	if (self->di) {
@@ -174,7 +174,7 @@ typedef struct DIMouseState {
 	byte rgbButtons[4];
 } DIMouseState;
 
-int __thiscall CInputDInput_ReadMouse(CInputDInput *self, int32_t *out) {
+int CInputDInput_ReadMouse(CInputDInput *self, int32_t *out) {
 	DIMouseState st;
 	int hr;
 
@@ -208,7 +208,7 @@ int __thiscall CInputDInput_ReadMouse(CInputDInput *self, int32_t *out) {
 	return 0;
 }
 
-int __fastcall CInputDInput_ReadKeys(CInputDInput *self) {
+int CInputDInput_ReadKeys(CInputDInput *self) {
 	if (!self->keyboard) {
 		return 0;
 	}
@@ -240,22 +240,22 @@ static int Input_Acquire(void *dev, byte on) {
 	return 0;
 }
 
-int __thiscall CInputDInput_AcquireMouse(CInputDInput *self, byte on) {
+int CInputDInput_AcquireMouse(CInputDInput *self, byte on) {
 	return Input_Acquire(self->mouse, on);
 }
 
-int __thiscall CInputDInput_AcquireKeys(CInputDInput *self, byte on) {
+int CInputDInput_AcquireKeys(CInputDInput *self, byte on) {
 	return Input_Acquire(self->keyboard, on);
 }
 
-void __thiscall CInputDInput_WndProc(CInputDInput *self, void *hwnd, uint32_t msg, uint32_t wparam,
+void CInputDInput_WndProc(CInputDInput *self, void *hwnd, uint32_t msg, uint32_t wparam,
 	uint32_t lparam) {
 	IInput_WndProc(&self->base, hwnd, msg, wparam, lparam);
 }
 
 /* ---- CInputWindows ---- */
 
-CInputWindows *__fastcall CInputWindows_ctor(CInputWindows *self) {
+CInputWindows *CInputWindows_ctor(CInputWindows *self) {
 	IInput_Init(&self->base);
 	self->base.vftable = CINPUTWINDOWS_VFTABLE;
 	self->acquired = 0;
@@ -263,11 +263,11 @@ CInputWindows *__fastcall CInputWindows_ctor(CInputWindows *self) {
 	return self;
 }
 
-CInputWindows *__thiscall CInputWindows_Delete(CInputWindows *self, byte flags) {
+CInputWindows *CInputWindows_Delete(CInputWindows *self, byte flags) {
 	return Input_Delete(&self->base, flags, sizeof(CInputWindows));
 }
 
-int __thiscall CInputWindows_Init(CInputWindows *self, void *hwnd, void *hinst, byte exclusive) {
+int CInputWindows_Init(CInputWindows *self, void *hwnd, void *hinst, byte exclusive) {
 	(void)self;
 	(void)hwnd;
 	(void)hinst;
@@ -275,13 +275,13 @@ int __thiscall CInputWindows_Init(CInputWindows *self, void *hwnd, void *hinst, 
 	return 0;
 }
 
-int __fastcall CInputWindows_Release(CInputWindows *self) {
+int CInputWindows_Release(CInputWindows *self) {
 	(void)self;
 	return 0;
 }
 
 /* the motion since the last read, the cursor put back to the center */
-int __thiscall CInputWindows_ReadMouse(CInputWindows *self, int32_t *out) {
+int CInputWindows_ReadMouse(CInputWindows *self, int32_t *out) {
 	int32_t pt[2];
 
 	(void)out;
@@ -301,7 +301,7 @@ int __thiscall CInputWindows_ReadMouse(CInputWindows *self, int32_t *out) {
 	return 0;
 }
 
-int __fastcall CInputWindows_ReadKeys(CInputWindows *self) {
+int CInputWindows_ReadKeys(CInputWindows *self) {
 	if (!self->acquired) {
 		return 1;
 	}
@@ -311,7 +311,7 @@ int __fastcall CInputWindows_ReadKeys(CInputWindows *self) {
 	return 0;
 }
 
-int __thiscall CInputWindows_AcquireMouse(CInputWindows *self, byte on) {
+int CInputWindows_AcquireMouse(CInputWindows *self, byte on) {
 	self->acquired = on;
 	if (on) {
 		exe_GetCursorPos(g_InputCursor);
@@ -322,13 +322,13 @@ int __thiscall CInputWindows_AcquireMouse(CInputWindows *self, byte on) {
 	return 0;
 }
 
-int __thiscall CInputWindows_AcquireKeys(CInputWindows *self, byte on) {
+int CInputWindows_AcquireKeys(CInputWindows *self, byte on) {
 	(void)self;
 	(void)on;
 	return 0;
 }
 
-void __thiscall CInputWindows_WndProc(CInputWindows *self, void *hwnd, uint32_t msg, uint32_t wparam,
+void CInputWindows_WndProc(CInputWindows *self, void *hwnd, uint32_t msg, uint32_t wparam,
 	uint32_t lparam) {
 	switch (msg) {
 	case WM_LBUTTONDOWN:

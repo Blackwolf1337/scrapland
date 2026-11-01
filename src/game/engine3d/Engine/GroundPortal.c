@@ -29,7 +29,7 @@
 #define g_PortalBand GAME_GLOBAL_IN(int, GVar_R_PortalBand, 16)	/* pixels added around it */
 
 
-CZone *__fastcall CZone_ctor(CZone *self) {
+CZone *CZone_ctor(CZone *self) {
 	self->rect = (box_t){ { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
 	self->id = -1;
 	self->locked = 0;
@@ -47,7 +47,7 @@ CZone *__fastcall CZone_ctor(CZone *self) {
 	return self;
 }
 
-void __fastcall CZone_dtor(CZone *self) {
+void CZone_dtor(CZone *self) {
 	if (self->node) {
 		ObjRef_Release(&self->node);
 	}
@@ -66,7 +66,7 @@ void __fastcall CZone_dtor(CZone *self) {
 	}
 }
 
-void __thiscall SectorVis_Draw(SectorVis *self, const vec3_t *pos, byte visible, byte cached, const char *name) {
+void SectorVis_Draw(SectorVis *self, const vec3_t *pos, byte visible, byte cached, const char *name) {
 	uint32_t off, on;
 
 	(void)name;
@@ -106,7 +106,7 @@ static byte SectorVis_SamePos(const SectorVis *self, const vec3_t *pos) {
 	return pos->x == self->pos.x && pos->y == self->pos.y && pos->z == self->pos.z && g_SectorCache;
 }
 
-byte __thiscall SectorVis_Check(SectorVis *self, const vec3_t *pos, const char *name) {
+byte SectorVis_Check(SectorVis *self, const vec3_t *pos, const char *name) {
 	if (!(self->flags & SECTORVIS_VALID)) {
 		return SectorVis_Update(self, pos, name);
 	}
@@ -117,7 +117,7 @@ byte __thiscall SectorVis_Check(SectorVis *self, const vec3_t *pos, const char *
 	return 1;
 }
 
-byte __thiscall SectorVis_Update(SectorVis *self, const vec3_t *pos, const char *name) {
+byte SectorVis_Update(SectorVis *self, const vec3_t *pos, const char *name) {
 	if ((self->flags & SECTORVIS_VALID) && SectorVis_SamePos(self, pos)) {
 		return SectorVis_Seen(self);
 	}
@@ -265,7 +265,7 @@ byte Portal_Project(const vec3_t *p, float *out, float *w) {
 	return front;
 }
 
-byte __thiscall SectorVis_Sphere(SectorVis *self, const vec3_t *pos, const vec3_t *center, float radius,
+byte SectorVis_Sphere(SectorVis *self, const vec3_t *pos, const vec3_t *center, float radius,
 	const char *name) {
 	float scr[2], w;
 
@@ -488,12 +488,12 @@ void Portals_Cull(uint32_t sector) {
 	Portals_DebugDraw();
 }
 
-PaintZone *__fastcall PaintZone_ctor(PaintZone *self) {
+PaintZone *PaintZone_ctor(PaintZone *self) {
 	self->rect = (box_t){ { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
 	return self;
 }
 
-void __fastcall PaintZone_dtor(PaintZone *self) {
+void PaintZone_dtor(PaintZone *self) {
 	(void)self;
 }
 

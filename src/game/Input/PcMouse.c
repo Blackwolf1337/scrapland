@@ -35,7 +35,7 @@ static const byte mouse_gameDefaults[][3] = {
 	{ 0x04, 3, 5 }, { 0x00, 3, 17 }, { 0x01, 3, 18 }, { 0x02, 3, 19 }, { 0x08, 3, 21 }, { 0x09, 3, 22 },
 };
 
-cPcMouse *__thiscall cPcMouse_ctor(cPcMouse *self) {
+cPcMouse *cPcMouse_ctor(cPcMouse *self) {
 	cAbstractIDevice_ctor(&self->base);
 	self->base.vftable = CPCMOUSE_VFTABLE;
 	cAbstractIDevice_InitEntries(&self->base, 10);
@@ -50,7 +50,7 @@ cPcMouse *__thiscall cPcMouse_ctor(cPcMouse *self) {
 	return self;
 }
 
-cPcMouse *__thiscall cPcMouse_Delete(cPcMouse *self, byte flags) {
+cPcMouse *cPcMouse_Delete(cPcMouse *self, byte flags) {
 	cAbstractIDevice_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cPcMouse));
@@ -68,7 +68,7 @@ void Mouse_Acquire(byte on) {
 	}
 }
 
-byte __thiscall cPcMouse_SetEntry(cAbstractIDevice *self, int entry, int set, int player, int action, byte check) {
+byte cPcMouse_SetEntry(cAbstractIDevice *self, int entry, int set, int player, int action, byte check) {
 	if (self->vftable->IsReserved(self, entry) && check) {
 		return 0;
 	}
@@ -86,13 +86,13 @@ void Mouse_Close(void) {
 	}
 }
 
-const char *__thiscall cPcMouse_GetName(cAbstractIDevice *self) {
+const char *cPcMouse_GetName(cAbstractIDevice *self) {
 	(void)self;
 	return MOUSE_NAME;
 }
 
 /* "Right" .. "WheelDown", "But1" .. "But4" for the buttons, "Unknow" else */
-const char *__thiscall cPcMouse_GetEntryName(cAbstractIDevice *self, int entry) {
+const char *cPcMouse_GetEntryName(cAbstractIDevice *self, int entry) {
 	(void)self;
 	CHECK(entry >= 0);
 	if ((uint32_t)(entry - 4) <= 5) {
@@ -106,7 +106,7 @@ const char *__thiscall cPcMouse_GetEntryName(cAbstractIDevice *self, int entry) 
 	return g_MouseNameBuf;
 }
 
-const char *__thiscall cPcMouse_GetEntryLabel(cAbstractIDevice *self, int entry) {
+const char *cPcMouse_GetEntryLabel(cAbstractIDevice *self, int entry) {
 	(void)self;
 	CHECK(entry >= 0);
 	if ((uint32_t)(entry - 4) <= 5) {
@@ -141,7 +141,7 @@ int32_t Mouse_Create(void) {
 	return hr;
 }
 
-void __thiscall cPcMouse_SetDefaults(cAbstractIDevice *self) {
+void cPcMouse_SetDefaults(cAbstractIDevice *self) {
 	Device_SetEntries(self, mouse_defaults, sizeof(mouse_defaults) / sizeof(mouse_defaults[0]));
 }
 
@@ -161,7 +161,7 @@ void Mouse_Init(void) {
  * The speed is the movement of the last 1/30 second (every frame in the menu); the sensitivity counts in the
  * character and vehicle sets only. The text cursor of player 0 moves twice per frame, as the original.
  */
-void __thiscall cPcMouse_Update(cPcMouse *self, float dt) {
+void cPcMouse_Update(cPcMouse *self, float dt) {
 	g_MouseState.x = 0;
 	Mouse_Poll();
 	uint32_t set = Input_GetActionSet();
@@ -209,7 +209,7 @@ void __thiscall cPcMouse_Update(cPcMouse *self, float dt) {
 	}
 }
 
-void __thiscall cPcMouse_SetGameDefaults(cAbstractIDevice *self) {
+void cPcMouse_SetGameDefaults(cAbstractIDevice *self) {
 	Device_SetEntries(self, mouse_gameDefaults, sizeof(mouse_gameDefaults) / sizeof(mouse_gameDefaults[0]));
 }
 
@@ -240,7 +240,7 @@ int32_t Mouse_Poll(void) {
 }
 
 /* the axes */
-int __thiscall cPcMouse_IsReserved(cAbstractIDevice *self, int entry) {
+int cPcMouse_IsReserved(cAbstractIDevice *self, int entry) {
 	(void)self;
 	return (uint32_t)(entry - 4) <= 3;
 }

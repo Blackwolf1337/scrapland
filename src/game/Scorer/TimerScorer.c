@@ -5,7 +5,7 @@
 #include "scrap/scorerhud.h"
 #include "scrap/timer.h"
 
-cTimerScorer *__fastcall cTimerScorer_ctor(cTimerScorer *self) {
+cTimerScorer *cTimerScorer_ctor(cTimerScorer *self) {
 	cAbstractTextScorer_ctor(&self->base);
 	self->base.base.vftable = CTIMERSCORER_VFTABLE;
 	self->type = 0;
@@ -14,14 +14,14 @@ cTimerScorer *__fastcall cTimerScorer_ctor(cTimerScorer *self) {
 	return self;
 }
 
-void __fastcall cTimerScorer_dtor(cTimerScorer *self) {
+void cTimerScorer_dtor(cTimerScorer *self) {
 	self->base.base.vftable = CTIMERSCORER_VFTABLE;
 	cPy_Function_dtor(&self->onTimeWarning);
 	cPy_Function_dtor(&self->onTimeExpired);
 	cAbstractTextScorer_dtor(&self->base);
 }
 
-cTimerScorer *__thiscall cTimerScorer_Delete(cTimerScorer *self, byte flags) {
+cTimerScorer *cTimerScorer_Delete(cTimerScorer *self, byte flags) {
 	cTimerScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cTimerScorer));
@@ -29,7 +29,7 @@ cTimerScorer *__thiscall cTimerScorer_Delete(cTimerScorer *self, byte flags) {
 	return self;
 }
 
-int __thiscall cTimerScorer_Var(cTimerScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cTimerScorer_Var(cTimerScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	static const char *const types[TIMER_TYPES] = {"TimeToCancel", "TimeToFinish", "TimeInactive",
 		"TimeSpecialUse"};
 
@@ -56,7 +56,7 @@ int __thiscall cTimerScorer_Var(cTimerScorer *self, const char *name, byte set, 
 	return cAbstractTextScorer_Var(&self->base, name, set, s, d, i);
 }
 
-void __thiscall cTimerScorer_Draw(cTimerScorer *self, int player) {
+void cTimerScorer_Draw(cTimerScorer *self, int player) {
 	cAbstractTextScorer *t = &self->base;
 	float *var = NULL;
 	float time, left;

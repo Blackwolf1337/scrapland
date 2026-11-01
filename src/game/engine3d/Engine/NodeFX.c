@@ -16,11 +16,11 @@ static float Vec3_Dist(const vec3_t *a, const vec3_t *b) {
 	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 }
 
-void __fastcall INodeFX_ctor(INodeFX *self) {
+void INodeFX_ctor(INodeFX *self) {
 	self->vftable = INODEFX_VFTABLE;
 }
 
-INodeFX *__thiscall INodeFX_Delete(INodeFX *self, byte flags) {
+INodeFX *INodeFX_Delete(INodeFX *self, byte flags) {
 	self->vftable = INODEFX_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(INodeFX));
@@ -28,14 +28,14 @@ INodeFX *__thiscall INodeFX_Delete(INodeFX *self, byte flags) {
 	return self;
 }
 
-byte __fastcall INodeFX_Type(INodeFX *self) {
+byte INodeFX_Type(INodeFX *self) {
 	(void)self;
 	return NODEFX_NONE;
 }
 
 /* ---- CNodeFX_Wheel ---- */
 
-CNodeFX_Wheel *__thiscall CNodeFX_Wheel_ctor(CNodeFX_Wheel *self, CNode3D *node, int type) {
+CNodeFX_Wheel *CNodeFX_Wheel_ctor(CNodeFX_Wheel *self, CNode3D *node, int type) {
 	static const vec3_t zero = { 0.0f, 0.0f, 0.0f }, one = { 1.0f, 1.0f, 1.0f };
 	vec3_t tmp;
 
@@ -67,7 +67,7 @@ CNodeFX_Wheel *__thiscall CNodeFX_Wheel_ctor(CNodeFX_Wheel *self, CNode3D *node,
 	return self;
 }
 
-CNodeFX_Wheel *__thiscall CNodeFX_Wheel_ctorCopy(CNodeFX_Wheel *self, const CNodeFX_Wheel *src) {
+CNodeFX_Wheel *CNodeFX_Wheel_ctorCopy(CNodeFX_Wheel *self, const CNodeFX_Wheel *src) {
 	self->vftable = CNODEFX_WHEEL_VFTABLE;
 	self->radius = src->radius;
 	self->rot = src->rot;
@@ -80,7 +80,7 @@ CNodeFX_Wheel *__thiscall CNodeFX_Wheel_ctorCopy(CNodeFX_Wheel *self, const CNod
 	return self;
 }
 
-CNodeFX_Wheel *__thiscall CNodeFX_Wheel_Delete(CNodeFX_Wheel *self, byte flags) {
+CNodeFX_Wheel *CNodeFX_Wheel_Delete(CNodeFX_Wheel *self, byte flags) {
 	self->vftable = INODEFX_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CNodeFX_Wheel));
@@ -88,12 +88,12 @@ CNodeFX_Wheel *__thiscall CNodeFX_Wheel_Delete(CNodeFX_Wheel *self, byte flags) 
 	return self;
 }
 
-byte __fastcall CNodeFX_Wheel_Type(CNodeFX_Wheel *self) {
+byte CNodeFX_Wheel_Type(CNodeFX_Wheel *self) {
 	(void)self;
 	return NODEFX_WHEEL;
 }
 
-int __thiscall CNodeFX_Wheel_Apply(CNodeFX_Wheel *self, matrix_t *m, CNode3D *node, CRenderNode *r) {
+int CNodeFX_Wheel_Apply(CNodeFX_Wheel *self, matrix_t *m, CNode3D *node, CRenderNode *r) {
 	CHECK(r && node && node->parent);
 	if (r->frame == g_FrameCount) {
 		return 0;
@@ -166,7 +166,7 @@ int __thiscall CNodeFX_Wheel_Apply(CNodeFX_Wheel *self, matrix_t *m, CNode3D *no
 	return 0;
 }
 
-int __fastcall CNodeFX_Wheel_Reset(CNodeFX_Wheel *self) {
+int CNodeFX_Wheel_Reset(CNodeFX_Wheel *self) {
 	self->ang = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	int r = crt_rand();
 	self->noiseBase = (uint32_t)(r % 20000) + g_TimeMs;
@@ -184,7 +184,7 @@ static void Spring_Clear(CNodeFX_Spring *self) {
 	self->nextMSec = 0;
 }
 
-CNodeFX_Spring *__thiscall CNodeFX_Spring_ctor(CNodeFX_Spring *self, CNode3D *node, int type) {
+CNodeFX_Spring *CNodeFX_Spring_ctor(CNodeFX_Spring *self, CNode3D *node, int type) {
 	self->vftable = CNODEFX_SPRING_VFTABLE;
 	CHECK(node && node->ini);
 	self->damp2 = 1.0f;
@@ -225,7 +225,7 @@ CNodeFX_Spring *__thiscall CNodeFX_Spring_ctor(CNodeFX_Spring *self, CNode3D *no
 	return self;
 }
 
-CNodeFX_Spring *__thiscall CNodeFX_Spring_ctorCopy(CNodeFX_Spring *self, const CNodeFX_Spring *src) {
+CNodeFX_Spring *CNodeFX_Spring_ctorCopy(CNodeFX_Spring *self, const CNodeFX_Spring *src) {
 	self->vftable = CNODEFX_SPRING_VFTABLE;
 	self->damping = src->damping;
 	self->spring = src->spring;
@@ -235,7 +235,7 @@ CNodeFX_Spring *__thiscall CNodeFX_Spring_ctorCopy(CNodeFX_Spring *self, const C
 	return self;
 }
 
-CNodeFX_Spring *__thiscall CNodeFX_Spring_Delete(CNodeFX_Spring *self, byte flags) {
+CNodeFX_Spring *CNodeFX_Spring_Delete(CNodeFX_Spring *self, byte flags) {
 	self->vftable = INODEFX_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CNodeFX_Spring));
@@ -243,12 +243,12 @@ CNodeFX_Spring *__thiscall CNodeFX_Spring_Delete(CNodeFX_Spring *self, byte flag
 	return self;
 }
 
-byte __fastcall CNodeFX_Spring_Type(CNodeFX_Spring *self) {
+byte CNodeFX_Spring_Type(CNodeFX_Spring *self) {
 	(void)self;
 	return NODEFX_SPRING;
 }
 
-int __thiscall CNodeFX_Spring_Apply(CNodeFX_Spring *self, matrix_t *m, CNode3D *node, CRenderNode *r) {
+int CNodeFX_Spring_Apply(CNodeFX_Spring *self, matrix_t *m, CNode3D *node, CRenderNode *r) {
 	CNode3D *parent = node->parent;
 	float damping, spring, torsion, damp2;
 	vec3_t p;
@@ -349,7 +349,7 @@ int __thiscall CNodeFX_Spring_Apply(CNodeFX_Spring *self, matrix_t *m, CNode3D *
 	return 0;
 }
 
-void __fastcall CNodeFX_Spring_Reset(CNodeFX_Spring *self) {
+void CNodeFX_Spring_Reset(CNodeFX_Spring *self) {
 	Spring_Clear(self);
 }
 
@@ -393,7 +393,7 @@ void *NodeFX_New(const char *type, CNode3D *node) {
 	return NULL;
 }
 
-typedef byte(__thiscall *nodeFXType_t)(INodeFX *self);
+typedef byte(*nodeFXType_t)(INodeFX *self);
 #define NODEFX_TYPE(fx) ((nodeFXType_t)(fx)->vftable[NODEFX_VF_TYPE])(fx)
 
 void *NodeFX_Clone(INodeFX *fx) {

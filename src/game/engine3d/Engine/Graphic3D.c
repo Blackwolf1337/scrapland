@@ -25,7 +25,7 @@ static void Graphic3D_Clear(CGraphic3D *self) {
 	self->node = NULL;
 }
 
-CGraphic3D *__thiscall CGraphic3D_ctorTex(CGraphic3D *self, const char *tex, const vec3_t *pos, const float *size) {
+CGraphic3D *CGraphic3D_ctorTex(CGraphic3D *self, const char *tex, const vec3_t *pos, const float *size) {
 	Graphic3D_Clear(self);
 	CGraphic3D_CreateMat(self, tex, NULL, 5, 2, 0xff);
 	self->pos = *pos;
@@ -34,23 +34,23 @@ CGraphic3D *__thiscall CGraphic3D_ctorTex(CGraphic3D *self, const char *tex, con
 	return self;
 }
 
-CGraphic3D *__thiscall CGraphic3D_ctorTex2(CGraphic3D *self, const char *tex, const char *opac) {
+CGraphic3D *CGraphic3D_ctorTex2(CGraphic3D *self, const char *tex, const char *opac) {
 	Graphic3D_Clear(self);
 	CGraphic3D_SetTexture(self, tex, opac);
 	return self;
 }
 
 /* the constructor of the vertices (nothing to do), the static vertex arrays of the exe call it */
-Graphic3DVert *__fastcall Graphic3DVert_ctor(Graphic3DVert *self) {
+Graphic3DVert *Graphic3DVert_ctor(Graphic3DVert *self) {
 	return self;
 }
 
-CGraphic3D *__fastcall CGraphic3D_ctor(CGraphic3D *self) {
+CGraphic3D *CGraphic3D_ctor(CGraphic3D *self) {
 	Graphic3D_Clear(self);
 	return self;
 }
 
-void __fastcall CGraphic3D_dtor(CGraphic3D *self) {
+void CGraphic3D_dtor(CGraphic3D *self) {
 	self->vftable = CGRAPHIC3D_VFTABLE;
 	ObjRef_Drop(&self->node);
 	self->node = NULL;
@@ -58,7 +58,7 @@ void __fastcall CGraphic3D_dtor(CGraphic3D *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-CGraphic3D *__thiscall CGraphic3D_Delete(CGraphic3D *self, byte flags) {
+CGraphic3D *CGraphic3D_Delete(CGraphic3D *self, byte flags) {
 	CGraphic3D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CGraphic3D));
@@ -66,7 +66,7 @@ CGraphic3D *__thiscall CGraphic3D_Delete(CGraphic3D *self, byte flags) {
 	return self;
 }
 
-byte __thiscall CGraphic3D_Read(CGraphic3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+byte CGraphic3D_Read(CGraphic3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	char tex[0x100], opac[0x100];
 	byte diffuse[4];
 
@@ -84,7 +84,7 @@ byte __thiscall CGraphic3D_Read(CGraphic3D *self, CFileIO *f, MeshD3D_FileCtx *c
 	return 1;
 }
 
-void __fastcall CGraphic3D_Draw(CGraphic3D *self) {
+void CGraphic3D_Draw(CGraphic3D *self) {
 	void *dev = g_Engine->device;
 	CHECK(dev);
 	CHECK(self->Mat);
@@ -110,7 +110,7 @@ void __fastcall CGraphic3D_Draw(CGraphic3D *self) {
 	g_RenderVerts += 4;
 }
 
-void __thiscall CGraphic3D_Render(CGraphic3D *self, void *dev, CRenderNode *r) {
+void CGraphic3D_Render(CGraphic3D *self, void *dev, CRenderNode *r) {
 	(void)dev;
 	CNode3D *n = self->node;
 	if (n) {
@@ -132,7 +132,7 @@ void __thiscall CGraphic3D_Render(CGraphic3D *self, void *dev, CRenderNode *r) {
 	CGraphic3D_Draw(self);
 }
 
-byte __thiscall CGraphic3D_Write(CGraphic3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+byte CGraphic3D_Write(CGraphic3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CHECK(Wild_Match("sprite*", ctx->node->name));
 	CHECK(self->node == ctx->node);
 	CFileIO_BeginBlockWrite(f, "SPR3");
@@ -148,7 +148,7 @@ byte __thiscall CGraphic3D_Write(CGraphic3D *self, CFileIO *f, MeshD3D_FileCtx *
 	return 1;
 }
 
-void __thiscall CGraphic3D_SetNode(CGraphic3D *self, CNode3D *node) {
+void CGraphic3D_SetNode(CGraphic3D *self, CNode3D *node) {
 	if (node) {
 		node->Refs++;
 	}
@@ -156,11 +156,11 @@ void __thiscall CGraphic3D_SetNode(CGraphic3D *self, CNode3D *node) {
 	self->node = node;
 }
 
-void __thiscall CGraphic3D_SetTexture(CGraphic3D *self, const char *tex, const char *opac) {
+void CGraphic3D_SetTexture(CGraphic3D *self, const char *tex, const char *opac) {
 	CGraphic3D_CreateMat(self, tex, opac, 5, opac ? 6 : 2, opac ? 0 : 0xff);
 }
 
-void __thiscall CGraphic3D_CreateMat(CGraphic3D *self, const char *tex, const char *opac, int src, int dst, byte alpha) {
+void CGraphic3D_CreateMat(CGraphic3D *self, const char *tex, const char *opac, int src, int dst, byte alpha) {
 	CMaterial m;
 
 	CMaterial_ctor(&m);
@@ -187,7 +187,7 @@ void __thiscall CGraphic3D_CreateMat(CGraphic3D *self, const char *tex, const ch
 	CMaterial_dtor(&m);
 }
 
-void __fastcall CGraphic3D_Init(CGraphic3D *self) {
+void CGraphic3D_Init(CGraphic3D *self) {
 	self->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->width = 1.0f;
 	self->class = CLASS_OBJ3D_GRAPHIC3D;

@@ -8,7 +8,7 @@
 
 #define CAISENTINEL_SIZE 0x380
 
-void *__thiscall cAISentinel_ctor(void *mem, cEntity *e, int *arg) {
+void *cAISentinel_ctor(void *mem, cEntity *e, int *arg) {
 	cAISentinel *self = mem;
 
 	cAIChar_ctor(mem, e, arg);
@@ -18,7 +18,7 @@ void *__thiscall cAISentinel_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAISentinel *__thiscall cAISentinel_Delete(cAISentinel *self, byte flags) {
+cAISentinel *cAISentinel_Delete(cAISentinel *self, byte flags) {
 	self->vftable = CAISENTINEL_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
@@ -27,14 +27,14 @@ cAISentinel *__thiscall cAISentinel_Delete(cAISentinel *self, byte flags) {
 	return self;
 }
 
-void __thiscall cAISentinel_CheckActDist(cAISentinel *self) {
+void cAISentinel_CheckActDist(cAISentinel *self) {
 	float dist = AIChar_TargetDist(self);
 
 	self->ctrl->act = AIChar_Action0(self->ent)->useFlyDisp && AIChar_Action0(self->ent)->priority <= 0x65 &&
 		dist > self->actMin && self->actMax > dist;
 }
 
-void __thiscall cAISentinel_SetDists(cAISentinel *self) {
+void cAISentinel_SetDists(cAISentinel *self) {
 	float d;
 
 	if (self->state == 2) {

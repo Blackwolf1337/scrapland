@@ -60,22 +60,22 @@ SD_SIZE(D3DAdapterInfo, 0x438c);
 
 typedef struct CD3DApplication CD3DApplication;
 
-/* the virtual methods of CD3DApplication (thiscall, the HRESULT unless noted; the slot tables of Vtables.c) */
+/* the virtual methods of CD3DApplication (the HRESULT unless noted; the slot tables of Vtables.c) */
 typedef struct CD3DApplicationVtbl {
-	int(__thiscall *AdjustWindowForChange)(CD3DApplication *self);	/* 0x00 */
-	int(__thiscall *ConfirmDevice)(CD3DApplication *self, D3DCaps8 *caps, uint32_t behavior, uint32_t fmt);	/* 0x04 */
-	int(__thiscall *OneTimeSceneInit)(CD3DApplication *self);	/* 0x08 */
-	int(__thiscall *InitDeviceObjects)(CD3DApplication *self);	/* 0x0c */
-	int(__thiscall *RestoreDeviceObjects)(CD3DApplication *self);	/* 0x10 */
-	int(__thiscall *FrameMove)(CD3DApplication *self);		/* 0x14 */
-	int(__thiscall *Render)(CD3DApplication *self);			/* 0x18 */
-	int(__thiscall *InvalidateDeviceObjects)(CD3DApplication *self);	/* 0x1c */
-	int(__thiscall *DeleteDeviceObjects)(CD3DApplication *self);	/* 0x20 */
-	int(__thiscall *FinalCleanup)(CD3DApplication *self);		/* 0x24 */
-	int(__thiscall *Create)(CD3DApplication *self, void *hInstance);	/* 0x28 */
-	int(__thiscall *Run)(CD3DApplication *self);			/* 0x2c the wParam of WM_QUIT */
-	intptr_t(__thiscall *MsgProc)(CD3DApplication *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);	/* 0x30 */
-	void(__thiscall *Pause)(CD3DApplication *self, int pause);	/* 0x34 */
+	int(*AdjustWindowForChange)(CD3DApplication *self);	/* 0x00 */
+	int(*ConfirmDevice)(CD3DApplication *self, D3DCaps8 *caps, uint32_t behavior, uint32_t fmt);	/* 0x04 */
+	int(*OneTimeSceneInit)(CD3DApplication *self);	/* 0x08 */
+	int(*InitDeviceObjects)(CD3DApplication *self);	/* 0x0c */
+	int(*RestoreDeviceObjects)(CD3DApplication *self);	/* 0x10 */
+	int(*FrameMove)(CD3DApplication *self);		/* 0x14 */
+	int(*Render)(CD3DApplication *self);			/* 0x18 */
+	int(*InvalidateDeviceObjects)(CD3DApplication *self);	/* 0x1c */
+	int(*DeleteDeviceObjects)(CD3DApplication *self);	/* 0x20 */
+	int(*FinalCleanup)(CD3DApplication *self);		/* 0x24 */
+	int(*Create)(CD3DApplication *self, void *hInstance);	/* 0x28 */
+	int(*Run)(CD3DApplication *self);			/* 0x2c the wParam of WM_QUIT */
+	intptr_t(*MsgProc)(CD3DApplication *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);	/* 0x30 */
+	void(*Pause)(CD3DApplication *self, int pause);	/* 0x34 */
 } CD3DApplicationVtbl;
 
 /* CD3DApplication of d3dapp.cpp, 0x2a5dc bytes: the DX8 SDK members with the device id and the mode of the game */
@@ -172,37 +172,37 @@ intptr_t __stdcall D3DApp_WndProc(void *hwnd, uint32_t msg, uintptr_t w, intptr_
 /* ds is a depth/stencil format the adapter supports with the format fmt (IDirect3D8 d3d) */
 byte D3DApp_DepthFormatOk(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t ds);
 /* the depth/stencil format (D3DFMT_*) of a device for the minimum bits of g_Engine; 0 for none */
-int __thiscall CD3DApp_FindDepthStencilFormat(CD3DApplication *self, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t *out);
+int CD3DApp_FindDepthStencilFormat(CD3DApplication *self, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t *out);
 /* the defaults, g_Engine set (cleared by the destructor) */
-CD3DApplication *__fastcall CD3DApp_ctor(CD3DApplication *self);
-void __fastcall CD3DApp_dtor(CD3DApplication *self);
-int __thiscall CD3DApp_AdjustWindowForChange(CD3DApplication *self);
-void __thiscall CD3DApp_Pause(CD3DApplication *self, int pause);
+CD3DApplication *CD3DApp_ctor(CD3DApplication *self);
+void CD3DApp_dtor(CD3DApplication *self);
+int CD3DApp_AdjustWindowForChange(CD3DApplication *self);
+void CD3DApp_Pause(CD3DApplication *self, int pause);
 /* the back buffer and depth buffer descriptions and the aspect ratio, a new device id */
-void __fastcall CD3DApp_UpdateBackBufferDesc(CD3DApplication *self);
+void CD3DApp_UpdateBackBufferDesc(CD3DApplication *self);
 /* the default virtual methods (seven copies), S_OK */
-int __thiscall CD3DApp_Nop(CD3DApplication *self);
-int __thiscall CD3DApp_ConfirmDevice(CD3DApplication *self, D3DCaps8 *caps, uint32_t behavior, uint32_t fmt);
+int CD3DApp_Nop(CD3DApplication *self);
+int CD3DApp_ConfirmDevice(CD3DApplication *self, D3DCaps8 *caps, uint32_t behavior, uint32_t fmt);
 /* windowed on a device that can, the environment made again */
-int __thiscall CD3DApp_ForceWindowed(CD3DApplication *self);
-int __thiscall CD3DApp_ToggleFullscreen(CD3DApplication *self);
+int CD3DApp_ForceWindowed(CD3DApplication *self);
+int CD3DApp_ToggleFullscreen(CD3DApplication *self);
 /* the device dialog, the environment made again for the choice */
-int __thiscall CD3DApp_UserSelectNewDevice(CD3DApplication *self);
+int CD3DApp_UserSelectNewDevice(CD3DApplication *self);
 /* the window messages of the framework */
-intptr_t __thiscall CD3DApp_MsgProc(CD3DApplication *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
+intptr_t CD3DApp_MsgProc(CD3DApplication *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 /* CD3DApp_Cleanup, CD3DApp_ResetDevice and CD3DApp_Reset: scrapmain.h */
 
 /* the error text of hr reported (type 1: fatal; else also fatal while fullscreen, then as a warning with the
  * note about the REF device), hr */
-int __thiscall CD3DApp_DisplayErrorMsg(CD3DApplication *self, int hr, int type);
+int CD3DApp_DisplayErrorMsg(CD3DApplication *self, int hr, int type);
 /* the device of the current adapter, device and mode created and its objects made; a failed HAL falls back to the
  * REF device */
-int __thiscall CD3DApp_Initialize3DEnvironment(CD3DApplication *self);
+int CD3DApp_Initialize3DEnvironment(CD3DApplication *self);
 /* Direct3D, the device list, the window (if there is none yet) and the environment; the error shown */
-int __thiscall CD3DApp_Create(CD3DApplication *self, void *inst);
-int __fastcall CD3DApp_BuildDeviceList(CD3DApplication *self);
+int CD3DApp_Create(CD3DApplication *self, void *inst);
+int CD3DApp_BuildDeviceList(CD3DApplication *self);
 /* the message loop with the frames, the wParam of WM_QUIT */
-int __thiscall CD3DApp_Run(CD3DApplication *self);
+int CD3DApp_Run(CD3DApplication *self);
 /* the device dialog (DialogBoxParam with the application) */
 intptr_t __stdcall D3DApp_SelectDeviceProc(void *dlg, uint32_t msg, uintptr_t w, intptr_t l);
 

@@ -20,7 +20,7 @@
 #define LOGIC_NURSESTATES (GAME_ARRAY(const char *, LOGIC_NURSESTATES))
 #define LOGIC_GENCHARSTATES (GAME_ARRAY(const char *, LOGIC_GENCHARSTATES))
 
-cBaseLocalLogic *__thiscall cBaseLocalLogic_ctor(cBaseLocalLogic *self, cEntity *parent) {
+cBaseLocalLogic *cBaseLocalLogic_ctor(cBaseLocalLogic *self, cEntity *parent) {
 	vec3_t tmp, ang, out;
 
 	self->parent = parent;
@@ -46,17 +46,17 @@ cBaseLocalLogic *__thiscall cBaseLocalLogic_ctor(cBaseLocalLogic *self, cEntity 
 	return self;
 }
 
-void __fastcall cBaseLocalLogic_dtor(cBaseLocalLogic *self) {
+void cBaseLocalLogic_dtor(cBaseLocalLogic *self) {
 	self->vftable = CBASELOCALLOGIC_VFTABLE;
 	Nto1Node_Done(&self->target);
 	self->vftable = CLOCALLOGIC_VFTABLE;
 }
 
-void __fastcall cLocalLogic_dtor(cLocalLogic *self) {
+void cLocalLogic_dtor(cLocalLogic *self) {
 	self->vftable = CLOCALLOGIC_VFTABLE;
 }
 
-cBaseLocalLogic *__thiscall cBaseLocalLogic_Delete(cBaseLocalLogic *self, byte flags) {
+cBaseLocalLogic *cBaseLocalLogic_Delete(cBaseLocalLogic *self, byte flags) {
 	cBaseLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -64,7 +64,7 @@ cBaseLocalLogic *__thiscall cBaseLocalLogic_Delete(cBaseLocalLogic *self, byte f
 	return self;
 }
 
-cLocalLogic *__thiscall cLocalLogic_Delete(cLocalLogic *self, byte flags) {
+cLocalLogic *cLocalLogic_Delete(cLocalLogic *self, byte flags) {
 	self->vftable = CLOCALLOGIC_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -130,7 +130,7 @@ cEntity *Logic_FindInView(cEntity *viewer, cEntityListData *list, float dist, fl
 }
 
 /* "Lock" while the action of layer 0 is Crazy, Flashed or Dazed (dazed for the last) */
-byte __thiscall cBaseLocalLogic_UpdateBusy(cBaseLocalLogic *self) {
+byte cBaseLocalLogic_UpdateBusy(cBaseLocalLogic *self) {
 	cEntity *p = self->parent;
 
 	self->dazed = 0;
@@ -283,7 +283,7 @@ void Logic_ShowAI(byte visible) {
 }
 
 /* ---- the variables ---- */
-byte __thiscall cBaseLocalLogic_VarF(cBaseLocalLogic *self, const char *name, double *d, byte set) {
+byte cBaseLocalLogic_VarF(cBaseLocalLogic *self, const char *name, double *d, byte set) {
 	if (strcmp(name, "ActionRadius")) {
 		return 0;
 	}
@@ -295,7 +295,7 @@ byte __thiscall cBaseLocalLogic_VarF(cBaseLocalLogic *self, const char *name, do
 	return 1;
 }
 
-byte __thiscall cLocalLogic_VarNone(cLocalLogic *self, const char *name, void *v, byte set) {
+byte cLocalLogic_VarNone(cLocalLogic *self, const char *name, void *v, byte set) {
 	(void)self;
 	(void)name;
 	(void)v;
@@ -303,7 +303,7 @@ byte __thiscall cLocalLogic_VarNone(cLocalLogic *self, const char *name, void *v
 	return 0;
 }
 
-byte __thiscall cLocalLogic_VarVNone(cLocalLogic *self, const char *name, double *x, double *y, double *z, byte set) {
+byte cLocalLogic_VarVNone(cLocalLogic *self, const char *name, double *x, double *y, double *z, byte set) {
 	(void)self;
 	(void)name;
 	(void)x;
@@ -324,18 +324,18 @@ cLocalLogic *Logic_GetLocalLogic(cEntity *e) {
 	return NULL;
 }
 
-const char *__thiscall cBaseLocalLogic_GetName(cBaseLocalLogic *self) {
+const char *cBaseLocalLogic_GetName(cBaseLocalLogic *self) {
 	(void)self;
 	return "BaseLogic";
 }
 
-const char *__thiscall cLocalLogic_GetName(cLocalLogic *self) {
+const char *cLocalLogic_GetName(cLocalLogic *self) {
 	(void)self;
 	return LOGIC_EMPTY;
 }
 
 /* back to the state when idle in AI state 6 */
-void __thiscall cBaseLocalLogic_Refresh(cBaseLocalLogic *self) {
+void cBaseLocalLogic_Refresh(cBaseLocalLogic *self) {
 	cEntity *p = self->parent;
 
 	if (self->idle || self->alwaysLock || self->busy || !p->vftable->IsType(p, TYEN_WALKCHAR)) {
@@ -348,7 +348,7 @@ void __thiscall cBaseLocalLogic_Refresh(cBaseLocalLogic *self) {
 	}
 }
 
-byte __thiscall cBaseLocalLogic_VarI(cBaseLocalLogic *self, const char *name, int *i, byte set) {
+byte cBaseLocalLogic_VarI(cBaseLocalLogic *self, const char *name, int *i, byte set) {
 	if (!set && !strcmp(name, "Lock")) {
 		*i = self->busy != 0;
 		return 1;
@@ -381,7 +381,7 @@ byte __thiscall cBaseLocalLogic_VarI(cBaseLocalLogic *self, const char *name, in
 }
 
 /* the lock, the relax view of an idle character, the rage of the gears and the end of Dazed */
-void __thiscall cBaseLocalLogic_Update(cBaseLocalLogic *self, float dt) {
+void cBaseLocalLogic_Update(cBaseLocalLogic *self, float dt) {
 	byte busy = self->busy;
 	cEntity *p = self->parent;
 
@@ -430,12 +430,12 @@ void __thiscall cBaseLocalLogic_Update(cBaseLocalLogic *self, float dt) {
 	self->dazedTime = 0.0f;
 }
 
-void __thiscall cBaseLocalLogic_OnShot(cBaseLocalLogic *self, cEntity *attacker) {
+void cBaseLocalLogic_OnShot(cBaseLocalLogic *self, cEntity *attacker) {
 	self->vftable->OnHit(self, attacker);
 }
 
 /* the origin and its angles from the position and the angles of e */
-void __thiscall cBaseLocalLogic_SetOriginFrom(cBaseLocalLogic *self, cEntity *e) {
+void cBaseLocalLogic_SetOriginFrom(cBaseLocalLogic *self, cEntity *e) {
 	vec3_t tmp;
 
 	const vec3_t *p = e->vftable->GetPos(e, &tmp);
@@ -445,26 +445,26 @@ void __thiscall cBaseLocalLogic_SetOriginFrom(cBaseLocalLogic *self, cEntity *e)
 }
 
 /* a random true or false (arg unused) */
-int __thiscall cBaseLocalLogic_Vf15(cBaseLocalLogic *self, int arg) {
+int cBaseLocalLogic_Vf15(cBaseLocalLogic *self, int arg) {
 	(void)self;
 	(void)arg;
 	double r = (double)(crt_rand() & 0x7fff) * (1.0 / 32767.0);
 	return (float)(r + r - 1.0) > 0.0f;
 }
 
-void __thiscall cBaseLocalLogic_SetActionRadius(cBaseLocalLogic *self, float radius) {
+void cBaseLocalLogic_SetActionRadius(cBaseLocalLogic *self, float radius) {
 	if (self->actionRadius != radius) {
 		self->actionRadius = radius;
 		self->vftable->Refresh(self);
 	}
 }
 
-void __thiscall cBaseLocalLogic_RestartState(cBaseLocalLogic *self) {
+void cBaseLocalLogic_RestartState(cBaseLocalLogic *self) {
 	self->vftable->SetState(self, self->state, self->target.target);
 }
 
 /* not idle: the state again; idle: the AI of the character in state 0 */
-void __thiscall cBaseLocalLogic_SetIdle(cBaseLocalLogic *self, byte idle) {
+void cBaseLocalLogic_SetIdle(cBaseLocalLogic *self, byte idle) {
 	if (!idle && !self->busy && !self->alwaysLock) {
 		self->vftable->SetState(self, self->state, self->target.target);
 		return;
@@ -478,7 +478,7 @@ void __thiscall cBaseLocalLogic_SetIdle(cBaseLocalLogic *self, byte idle) {
 	self->idle = 1;
 }
 
-void __thiscall cBaseLocalLogic_SetOrigin(cBaseLocalLogic *self, float x, float y, float z) {
+void cBaseLocalLogic_SetOrigin(cBaseLocalLogic *self, float x, float y, float z) {
 	if (self->origin.x != x || self->origin.y != y || self->origin.z != z) {
 		self->origin.x = x;
 		self->origin.y = y;
@@ -487,7 +487,7 @@ void __thiscall cBaseLocalLogic_SetOrigin(cBaseLocalLogic *self, float x, float 
 	}
 }
 
-void __thiscall cBaseLocalLogic_SetOriginAng(cBaseLocalLogic *self, float x, float y, float z) {
+void cBaseLocalLogic_SetOriginAng(cBaseLocalLogic *self, float x, float y, float z) {
 	if (self->originAng.x != x || self->originAng.y != y || self->originAng.z != z) {
 		self->originAng.x = x;
 		self->originAng.y = y;
@@ -497,7 +497,7 @@ void __thiscall cBaseLocalLogic_SetOriginAng(cBaseLocalLogic *self, float x, flo
 }
 
 /* the state and its target; 1 if the character runs it now (not idle), 0 also when nothing changed */
-int __thiscall cBaseLocalLogic_SetState(cBaseLocalLogic *self, int state, cEntity *target) {
+int cBaseLocalLogic_SetState(cBaseLocalLogic *self, int state, cEntity *target) {
 	if (state == self->state && target == self->target.target && !self->idle && !self->alwaysLock) {
 		return 0;
 	}
@@ -512,7 +512,7 @@ int __thiscall cBaseLocalLogic_SetState(cBaseLocalLogic *self, int state, cEntit
 	return !self->idle && !self->alwaysLock;
 }
 
-byte __thiscall cBaseLocalLogic_VarS(cBaseLocalLogic *self, const char *name, char **s, byte set) {
+byte cBaseLocalLogic_VarS(cBaseLocalLogic *self, const char *name, char **s, byte set) {
 	if (strcmp(name, "Target")) {
 		return 0;
 	}
@@ -525,7 +525,7 @@ byte __thiscall cBaseLocalLogic_VarS(cBaseLocalLogic *self, const char *name, ch
 	return 1;
 }
 
-byte __thiscall cBaseLocalLogic_VarV(cBaseLocalLogic *self, const char *name, double *x, double *y, double *z,
+byte cBaseLocalLogic_VarV(cBaseLocalLogic *self, const char *name, double *x, double *y, double *z,
 	byte set) {
 	if (!strcmp(name, "Origin")) {
 		if (set) {
@@ -551,28 +551,28 @@ byte __thiscall cBaseLocalLogic_VarV(cBaseLocalLogic *self, const char *name, do
 }
 
 /* ---- the small slots shared by the logic classes ---- */
-byte __thiscall Logic_True(void *self) {
+byte Logic_True(void *self) {
 	(void)self;
 	return 1;
 }
 
-byte __thiscall Logic_False(void *self) {
+byte Logic_False(void *self) {
 	(void)self;
 	return 0;
 }
 
 /* vf30 of the logics that search no target */
-cEntity *__thiscall Logic_NoTarget(void *self) {
+cEntity *Logic_NoTarget(void *self) {
 	(void)self;
 	return NULL;
 }
 
-void __thiscall Logic_Nop1(void *self, int arg) {
+void Logic_Nop1(void *self, int arg) {
 	(void)self;
 	(void)arg;
 }
 
-byte __thiscall Logic_False1(void *self, int arg) {
+byte Logic_False1(void *self, int arg) {
 	(void)self;
 	(void)arg;
 	return 0;

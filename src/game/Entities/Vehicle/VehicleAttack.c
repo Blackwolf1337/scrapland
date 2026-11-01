@@ -12,7 +12,7 @@
 
 #define VATT_MAX_NETCOUNT 15
 
-cVehicleAttack *__fastcall cVehicleAttack_ctor(cVehicleAttack *self) {
+cVehicleAttack *cVehicleAttack_ctor(cVehicleAttack *self) {
 	Nto1Node_Init(&self->target);
 	Nto1Node_Init(&self->sent);
 	Nto1Node_Init(&self->last);
@@ -39,7 +39,7 @@ cVehicleAttack *__fastcall cVehicleAttack_ctor(cVehicleAttack *self) {
 	return self;
 }
 
-void __fastcall cVehicleAttack_Expire(cVehicleAttack *self) {
+void cVehicleAttack_Expire(cVehicleAttack *self) {
 	float t = Timer_GetTime(&g_pWorld->timer);
 
 	if (t > self->resetTime) {
@@ -51,7 +51,7 @@ void __fastcall cVehicleAttack_Expire(cVehicleAttack *self) {
 	}
 }
 
-const char *__thiscall cHitInfo_GetName(cVehicleAttack *info) {
+const char *cHitInfo_GetName(cVehicleAttack *info) {
 	return Nto1Node_TargetName(&info->target);
 }
 
@@ -74,7 +74,7 @@ static byte VAtt_NetFlags(cVehicleAttack *self) {
 	return 1;
 }
 
-byte __thiscall cVehicleAttack_NetChanged(cVehicleAttack *self, byte *out) {
+byte cVehicleAttack_NetChanged(cVehicleAttack *self, byte *out) {
 	byte changed = VAtt_NetFlags(self);
 
 	if (out) {
@@ -87,11 +87,11 @@ byte __thiscall cVehicleAttack_NetChanged(cVehicleAttack *self, byte *out) {
 	return 1;
 }
 
-vec3_t *__thiscall cVehicleAttack_GetPoint(cVehicleAttack *self) {
+vec3_t *cVehicleAttack_GetPoint(cVehicleAttack *self) {
 	return &self->point;
 }
 
-byte __thiscall cVehicleAttack_VarI(cVehicleAttack *self, const char *name, int *i, int set) {
+byte cVehicleAttack_VarI(cVehicleAttack *self, const char *name, int *i, int set) {
 	(void)self;
 	(void)name;
 	(void)i;
@@ -99,7 +99,7 @@ byte __thiscall cVehicleAttack_VarI(cVehicleAttack *self, const char *name, int 
 	return 0;
 }
 
-void __thiscall cVehicleAttack_HitBy(cVehicleAttack *self, const char *name) {
+void cVehicleAttack_HitBy(cVehicleAttack *self, const char *name) {
 	if (!strcmp(self->owner->name, name)) {
 		CHECK(self->hitBy.data);
 		Nto1Node_Unlink(&self->hitBy);
@@ -121,7 +121,7 @@ static inline void VAtt_Start(cVehicleAttack *self) {
 	}
 }
 
-void __thiscall cVehicleAttack_ShotAt(cVehicleAttack *self, const char *name, int n) {
+void cVehicleAttack_ShotAt(cVehicleAttack *self, const char *name, int n) {
 	vec3_t pos;
 
 	if (!*name) {
@@ -145,7 +145,7 @@ void __thiscall cVehicleAttack_ShotAt(cVehicleAttack *self, const char *name, in
 	VAtt_Start(self);
 }
 
-void __thiscall cVehicleAttack_ShotAtPoint(cVehicleAttack *self, const vec3_t *p, int n) {
+void cVehicleAttack_ShotAtPoint(cVehicleAttack *self, const vec3_t *p, int n) {
 	self->point.x = p->x;
 	self->point.y = p->y;
 	self->point.z = p->z;
@@ -156,7 +156,7 @@ void __thiscall cVehicleAttack_ShotAtPoint(cVehicleAttack *self, const vec3_t *p
 	VAtt_Start(self);
 }
 
-void __thiscall cVehicleAttack_Update(cVehicleAttack *self) {
+void cVehicleAttack_Update(cVehicleAttack *self) {
 	cEntity *owner = self->owner;
 
 	if (self->count <= 0 || !owner->vftable->IsType(owner, TYEN_VEHICLE) || !Veh(self->owner)->isInit) {
@@ -194,7 +194,7 @@ void __thiscall cVehicleAttack_Update(cVehicleAttack *self) {
 	}
 }
 
-byte __thiscall cVehicleAttack_VarS(cVehicleAttack *self, const char *name, char **s, int set) {
+byte cVehicleAttack_VarS(cVehicleAttack *self, const char *name, char **s, int set) {
 	if (strcmp(name, "Target")) {
 		return 0;
 	}
@@ -210,7 +210,7 @@ byte __thiscall cVehicleAttack_VarS(cVehicleAttack *self, const char *name, char
 	return 1;
 }
 
-byte __thiscall cVehicleAttack_VarV(cVehicleAttack *self, const char *name, double *x, double *y, double *z, int set) {
+byte cVehicleAttack_VarV(cVehicleAttack *self, const char *name, double *x, double *y, double *z, int set) {
 	vec3_t p;
 
 	if (strcmp(name, "Pos")) {
@@ -229,7 +229,7 @@ byte __thiscall cVehicleAttack_VarV(cVehicleAttack *self, const char *name, doub
 	return 1;
 }
 
-int __thiscall cVehicleAttack_NetFlags(cVehicleAttack *self, byte flags, byte *changed) {
+int cVehicleAttack_NetFlags(cVehicleAttack *self, byte flags, byte *changed) {
 	*changed = flags != self->netFlags;
 	self->netFlags = flags;
 	if (*changed) {

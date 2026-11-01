@@ -6,7 +6,7 @@
 
 #include "scrap/filesys.h"
 
-cFileMem *__thiscall cFileMem_ctor(cFileMem *self, void *buffer, int maxSize, byte ownsBuffer) {
+cFileMem *cFileMem_ctor(cFileMem *self, void *buffer, int maxSize, byte ownsBuffer) {
 	self->buffer = buffer;
 	self->maxSize = maxSize;
 	self->ownsBuffer = ownsBuffer;
@@ -18,7 +18,7 @@ cFileMem *__thiscall cFileMem_ctor(cFileMem *self, void *buffer, int maxSize, by
 	return self;
 }
 
-void __fastcall cFileMem_dtor(cFileMem *self) {
+void cFileMem_dtor(cFileMem *self) {
 	self->base.vftable = cFileMem_vftable;
 	if (self->ownsBuffer && self->buffer) {
 		Mem_Free(self->buffer);
@@ -26,7 +26,7 @@ void __fastcall cFileMem_dtor(cFileMem *self) {
 	cAbstractFile_dtor(&self->base);
 }
 
-cFileMem *__thiscall cFileMem_Destroy(cFileMem *self, int flags) {
+cFileMem *cFileMem_Destroy(cFileMem *self, int flags) {
 	cFileMem_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -35,7 +35,7 @@ cFileMem *__thiscall cFileMem_Destroy(cFileMem *self, int flags) {
 }
 
 /* a new buffer with size bytes of data in it */
-void __thiscall cFileMem_SetBuffer(cFileMem *self, void *buffer, int maxSize, byte ownsBuffer, int size) {
+void cFileMem_SetBuffer(cFileMem *self, void *buffer, int maxSize, byte ownsBuffer, int size) {
 	self->buffer = buffer;
 	self->size = size;
 	self->maxSize = maxSize;
@@ -44,7 +44,7 @@ void __thiscall cFileMem_SetBuffer(cFileMem *self, void *buffer, int maxSize, by
 }
 
 /* the name is not kept; FILE_MODE_CREATE starts empty, else the whole buffer is data */
-int __thiscall cFileMem_Open(cFileMem *self, const char *name, uint32_t mode) {
+int cFileMem_Open(cFileMem *self, const char *name, uint32_t mode) {
 	(void)name;
 	self->pos = self->buffer;
 	self->size = (mode & FILE_MODE_CREATE) ? 0 : self->maxSize;
@@ -52,25 +52,25 @@ int __thiscall cFileMem_Open(cFileMem *self, const char *name, uint32_t mode) {
 	return 1;
 }
 
-int __thiscall cFileMem_Exists(cFileMem *self, const char *name) {
+int cFileMem_Exists(cFileMem *self, const char *name) {
 	(void)self;
 	(void)name;
 	return 1;
 }
 
-int __thiscall cFileMem_Close(cFileMem *self) {
+int cFileMem_Close(cFileMem *self) {
 	self->pos = NULL;
 	return 1;
 }
 
-int __thiscall cFileMem_Read(cFileMem *self, void *dst, int size) {
+int cFileMem_Read(cFileMem *self, void *dst, int size) {
 	CHECK((int)(self->pos - self->buffer) + size <= self->size);
 	memcpy(dst, self->pos, size);
 	self->pos += size;
 	return size;
 }
 
-int __thiscall cFileMem_Write(cFileMem *self, const void *src, int size) {
+int cFileMem_Write(cFileMem *self, const void *src, int size) {
 	int newpos = (int)(self->pos - self->buffer) + size;
 	CHECK(newpos <= self->maxSize);
 	memcpy(self->pos, src, size);
@@ -81,7 +81,7 @@ int __thiscall cFileMem_Write(cFileMem *self, const void *src, int size) {
 	return size;
 }
 
-int __thiscall cFileMem_Seek(cFileMem *self, int pos) {
+int cFileMem_Seek(cFileMem *self, int pos) {
 	if (self->size <= pos) {
 		return -1;
 	}
@@ -89,10 +89,10 @@ int __thiscall cFileMem_Seek(cFileMem *self, int pos) {
 	return pos;
 }
 
-int __thiscall cFileMem_Tell(cFileMem *self) {
+int cFileMem_Tell(cFileMem *self) {
 	return (int)(self->pos - self->buffer);
 }
 
-int __thiscall cFileMem_Size(cFileMem *self) {
+int cFileMem_Size(cFileMem *self) {
 	return self->size;
 }

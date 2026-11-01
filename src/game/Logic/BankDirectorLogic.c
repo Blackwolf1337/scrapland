@@ -6,14 +6,14 @@
  */
 #include "scrap/chartype.h"
 
-cBankDirectorLocalLogic *__thiscall cBankDirectorLocalLogic_ctor(cBankDirectorLocalLogic *self, cEntity *parent) {
+cBankDirectorLocalLogic *cBankDirectorLocalLogic_ctor(cBankDirectorLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
 	self->base.vftable = CBANKDIRECTORLOCALLOGIC_VFTABLE;
 	self->ignoreAlarm = 1;
 	return self;
 }
 
-cBankDirectorLocalLogic *__thiscall cBankDirectorLocalLogic_Delete(cBankDirectorLocalLogic *self, byte flags) {
+cBankDirectorLocalLogic *cBankDirectorLocalLogic_Delete(cBankDirectorLocalLogic *self, byte flags) {
 	self->base.vftable = CBANKDIRECTORLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -48,7 +48,7 @@ cEntity *Logic_FindInCharLists(cEntity *p) {
 
 /* vf31: 0 while the target has more than 25 of money, the special time has not run out and it is in view (also of
  * the bank master) */
-int __thiscall cBankDirectorLocalLogic_LoseTarget(cBankDirectorLocalLogic *self) {
+int cBankDirectorLocalLogic_LoseTarget(cBankDirectorLocalLogic *self) {
 	vec3_t tmp;
 
 	cEntity *t = self->base.target.target;
@@ -67,7 +67,7 @@ int __thiscall cBankDirectorLocalLogic_LoseTarget(cBankDirectorLocalLogic *self)
 }
 
 /* vf30: the next target when the search time ran out */
-cEntity *__thiscall cBankDirectorLocalLogic_FindTarget(cBankDirectorLocalLogic *self) {
+cEntity *cBankDirectorLocalLogic_FindTarget(cBankDirectorLocalLogic *self) {
 	if (!(0.0f > self->searchTime)) {
 		return NULL;
 	}
@@ -93,7 +93,7 @@ cEntity *__thiscall cBankDirectorLocalLogic_FindTarget(cBankDirectorLocalLogic *
 }
 
 /* vf17 (also of the bank master and the bishop) */
-void __thiscall cBankDirectorLocalLogic_Update(cBankDirectorLocalLogic *self, float dt) {
+void cBankDirectorLocalLogic_Update(cBankDirectorLocalLogic *self, float dt) {
 	if (self->specialOn) {
 		self->specialTime = dt + self->specialTime;
 	}

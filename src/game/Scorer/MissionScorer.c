@@ -10,7 +10,7 @@
 static const char *const s_TabColors[4] = {"TabRed", "TabGreen", "TabBlue", "TabAlpha"};
 static const char *const s_TextColors[3] = {"TextRed", "TextGreen", "TextBlue"};
 
-cMissionScorer *__fastcall cMissionScorer_ctor(cMissionScorer *self) {
+cMissionScorer *cMissionScorer_ctor(cMissionScorer *self) {
 	cSpriteScorer_ctor(&self->base);
 	self->base.base.vftable = CMISSIONSCORER_VFTABLE;
 	cString_ctorStr(&self->forceMap, "");
@@ -23,7 +23,7 @@ cMissionScorer *__fastcall cMissionScorer_ctor(cMissionScorer *self) {
 	return self;
 }
 
-void __fastcall cMissionScorer_dtor(cMissionScorer *self) {
+void cMissionScorer_dtor(cMissionScorer *self) {
 	CPsaImage *img = self->tab;
 	self->base.base.vftable = CMISSIONSCORER_VFTABLE;
 	if (img) {
@@ -34,7 +34,7 @@ void __fastcall cMissionScorer_dtor(cMissionScorer *self) {
 	cSpriteScorer_dtor(&self->base);
 }
 
-cMissionScorer *__thiscall cMissionScorer_Delete(cMissionScorer *self, byte flags) {
+cMissionScorer *cMissionScorer_Delete(cMissionScorer *self, byte flags) {
 	cMissionScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cMissionScorer));
@@ -81,7 +81,7 @@ static int Mission_VarStatus(cMissionScorer *self, int k, byte set, int *i) {
 	return 3;
 }
 
-int __thiscall cMissionScorer_Var(cMissionScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cMissionScorer_Var(cMissionScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	int r;
 
 	if (set && s && !crt_strncmp(name, "ForceMap", 8)) {
@@ -187,7 +187,7 @@ int __thiscall cMissionScorer_Var(cMissionScorer *self, const char *name, byte s
 	return cSpriteScorer_Var(&self->base, name, set, s, d, i);
 }
 
-void __thiscall cMissionScorer_Draw(cMissionScorer *self, int player) {
+void cMissionScorer_Draw(cMissionScorer *self, int player) {
 	cScorerItem *it = &self->base.base;
 	float ft = Scorer_Get(player)->frameTime;
 	float solid;

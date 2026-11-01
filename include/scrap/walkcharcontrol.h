@@ -45,21 +45,21 @@ SD_SIZE(cWalkCharControl, 0x34);
 #define g_EnergyBarActive GAME_GLOBAL_IN(int, GVar_EnergyBarActive, 16)	/* "EnergyBarActive" */
 #define g_EnergyRechargeTime GAME_GLOBAL_IN(float, GVar_EnergyRechargeTime, 16)	/* "EnergyRechargeTime" */
 
-cWalkCharControl *__fastcall cWalkCharControl_ctor(cWalkCharControl *self);
-void __fastcall cWalkCharControl_dtor(cWalkCharControl *self);
+cWalkCharControl *cWalkCharControl_ctor(cWalkCharControl *self);
+void cWalkCharControl_dtor(cWalkCharControl *self);
 /* the values cleared, the control off (on) or on */
-void __thiscall cWalkCharControl_Reset(cWalkCharControl *self, byte on);
+void cWalkCharControl_Reset(cWalkCharControl *self, byte on);
 /* the values cleared, the control on */
-void __fastcall cWalkCharControl_Clear(cWalkCharControl *self);
+void cWalkCharControl_Clear(cWalkCharControl *self);
 /* the center time back to WalkCameraCenter */
-void __fastcall cWalkCharControl_RestartCenter(cWalkCharControl *self);
+void cWalkCharControl_RestartCenter(cWalkCharControl *self);
 /* the buttons of this frame become the ones of the last (the end of the frame of wle; wle and dt unused) */
-void __thiscall cWalkCharControl_Latch(cWalkCharControl *self, cEntity *wle, float dt);
+void cWalkCharControl_Latch(cWalkCharControl *self, cEntity *wle, float dt);
 /* the view turns to e (NULL: to nothing) */
-void __thiscall cWalkCharControl_SetTarget(cWalkCharControl *self, cEntity *e);
+void cWalkCharControl_SetTarget(cWalkCharControl *self, cEntity *e);
 /* the script values by name: set 1 writes *d, 0 reads it; 0 for an unknown name */
-byte __thiscall cWalkCharControl_VarF(cWalkCharControl *self, const char *name, double *d, byte set);
+byte cWalkCharControl_VarF(cWalkCharControl *self, const char *name, double *d, byte set);
 /* the input of the character wle for this frame */
-void __thiscall cWalkCharControl_Update(cWalkCharControl *self, cEntity *wle, float dt);
+void cWalkCharControl_Update(cWalkCharControl *self, cEntity *wle, float dt);
 
 #endif

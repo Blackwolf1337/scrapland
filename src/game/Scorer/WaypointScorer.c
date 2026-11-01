@@ -15,7 +15,7 @@
 /* the waypoint kind of an object (1..3 the color of the mark), 0 for none */
 #define Waypoint_Kind(e) (Obj(e)->radarShow)
 
-cWaypointScorer *__fastcall cWaypointScorer_ctor(cWaypointScorer *self) {
+cWaypointScorer *cWaypointScorer_ctor(cWaypointScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CWAYPOINTSCORER_VFTABLE;
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
@@ -28,13 +28,13 @@ cWaypointScorer *__fastcall cWaypointScorer_ctor(cWaypointScorer *self) {
 	return self;
 }
 
-void __fastcall cWaypointScorer_dtor(cWaypointScorer *self) {
+void cWaypointScorer_dtor(cWaypointScorer *self) {
 	self->base.vftable = CWAYPOINTSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	cScorerItem_dtor(&self->base);
 }
 
-cWaypointScorer *__thiscall cWaypointScorer_Delete(cWaypointScorer *self, byte flags) {
+cWaypointScorer *cWaypointScorer_Delete(cWaypointScorer *self, byte flags) {
 	cWaypointScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cWaypointScorer));
@@ -42,7 +42,7 @@ cWaypointScorer *__thiscall cWaypointScorer_Delete(cWaypointScorer *self, byte f
 	return self;
 }
 
-int __thiscall cWaypointScorer_Var(cWaypointScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cWaypointScorer_Var(cWaypointScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	if (s && !crt_stricmp(name, "Sprite") && set) {
 		self->img = ScorerImg_Replace(self->img, *s, 2, 0x10060);
 		return 1;
@@ -155,7 +155,7 @@ static void Waypoint_DrawArrow(cWaypointScorer *self, const vec3_t *p, byte curr
 	ScorerHud_DrawArrow(img, self->arrowIndex, a, x, y, 0);
 }
 
-void __thiscall cWaypointScorer_DrawTarget(cWaypointScorer *self, cEntity *e, byte current) {
+void cWaypointScorer_DrawTarget(cWaypointScorer *self, cEntity *e, byte current) {
 	float scr[2], depth, cx, cy, cz;
 	vec3_t p;
 
@@ -187,7 +187,7 @@ void __thiscall cWaypointScorer_DrawTarget(cWaypointScorer *self, cEntity *e, by
 	}
 }
 
-void __thiscall cWaypointScorer_Draw(cWaypointScorer *self, int player) {
+void cWaypointScorer_Draw(cWaypointScorer *self, int player) {
 	static const vec3_t zero = {0.0f, 0.0f, 0.0f};
 	const vec3_t *p;
 	const char *key;

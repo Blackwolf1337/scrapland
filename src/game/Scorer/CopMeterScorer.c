@@ -21,7 +21,7 @@ static void CopMeter_FreeImage(CPsaImage *img) {
 	}
 }
 
-cCopMeterScorer *__fastcall cCopMeterScorer_ctor(cCopMeterScorer *self) {
+cCopMeterScorer *cCopMeterScorer_ctor(cCopMeterScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CCOPMETERSCORER_VFTABLE;
 	self->base.x = 320.0f;
@@ -43,7 +43,7 @@ cCopMeterScorer *__fastcall cCopMeterScorer_ctor(cCopMeterScorer *self) {
 	return self;
 }
 
-void __fastcall cCopMeterScorer_dtor(cCopMeterScorer *self) {
+void cCopMeterScorer_dtor(cCopMeterScorer *self) {
 	CPsaImage *img = self->img;
 	self->base.vftable = CCOPMETERSCORER_VFTABLE;
 	CopMeter_FreeImage(img);
@@ -51,7 +51,7 @@ void __fastcall cCopMeterScorer_dtor(cCopMeterScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cCopMeterScorer *__thiscall cCopMeterScorer_Delete(cCopMeterScorer *self, byte flags) {
+cCopMeterScorer *cCopMeterScorer_Delete(cCopMeterScorer *self, byte flags) {
 	cCopMeterScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cCopMeterScorer));
@@ -69,7 +69,7 @@ static int CopMeter_VarPercent(float *v, byte set, double *d) {
 	return 2;
 }
 
-int __thiscall cCopMeterScorer_Var(cCopMeterScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cCopMeterScorer_Var(cCopMeterScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	if (s && !crt_stricmp(name, "Sprite") && set) {
 		CopMeter_FreeImage(self->img);
 		self->img = CopMeter_NewImage(*s, 1);
@@ -126,7 +126,7 @@ static void CopMeter_Flash(cCopMeterScorer *self, float t, int frame, float x) {
 	CPsaImage_DrawFrame(self->flash, frame, x, (self->lightOffY + self->base.y) + 0.0f);
 }
 
-void __thiscall cCopMeterScorer_Draw(cCopMeterScorer *self, int player) {
+void cCopMeterScorer_Draw(cCopMeterScorer *self, int player) {
 	float level = g_pWorld->alarm.value;
 	float v;
 

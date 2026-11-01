@@ -16,21 +16,21 @@
 #include "scrap/fxweapons.h"
 
 /* defined further down or in another file without a header */
-void *__thiscall cObjElementFXCharacterConversion_ctor(void *self);
-void *__thiscall cObjElementFXCharacterConversor_ctor(void *self);
-void *__thiscall cObjElementFXCharacterDeath_ctor(void *self);
-void *__thiscall cObjElementFXCharacterTeleport_ctor(void *self);
-void *__thiscall cObjElementFXMaintenanceWork_ctor(void *self);
-void *__thiscall cObjElementFXMoneyTransfer_ctor(void *self);
-void *__thiscall cObjElementFXSceneBeatPickus_ctor(void *self);
-void *__thiscall cObjElementFXSceneBillArrives_A_ctor(void *self);
-void *__thiscall cObjElementFXSceneBishops_ctor(void *self);
-void *__thiscall cObjElementFXSceneDecontamination_ctor(void *self);
-void *__thiscall cObjElementFXSceneEnterMatrix_ctor(void *self);
-void *__thiscall cObjElementFXSceneHumanCD_ctor(void *self);
-void *__thiscall cObjElementFXSceneTheEndB_ctor(void *self);
-void *__thiscall cObjElementFXSceneYakuzzi_ctor(void *self);
-void *__thiscall cObjElementFXSputnik_ctor(void *self);
+void *cObjElementFXCharacterConversion_ctor(void *self);
+void *cObjElementFXCharacterConversor_ctor(void *self);
+void *cObjElementFXCharacterDeath_ctor(void *self);
+void *cObjElementFXCharacterTeleport_ctor(void *self);
+void *cObjElementFXMaintenanceWork_ctor(void *self);
+void *cObjElementFXMoneyTransfer_ctor(void *self);
+void *cObjElementFXSceneBeatPickus_ctor(void *self);
+void *cObjElementFXSceneBillArrives_A_ctor(void *self);
+void *cObjElementFXSceneBishops_ctor(void *self);
+void *cObjElementFXSceneDecontamination_ctor(void *self);
+void *cObjElementFXSceneEnterMatrix_ctor(void *self);
+void *cObjElementFXSceneHumanCD_ctor(void *self);
+void *cObjElementFXSceneTheEndB_ctor(void *self);
+void *cObjElementFXSceneYakuzzi_ctor(void *self);
+void *cObjElementFXSputnik_ctor(void *self);
 
 #define COBJELEMENTABSTRACT_VFTABLE GAME_VFTABLE(cObjElementAbstract_vftable)
 #define DEBRIS_STEP 0.05f
@@ -38,8 +38,8 @@ void *__thiscall cObjElementFXSputnik_ctor(void *self);
 
 #define g_OShow GAME_GLOBAL_IN(int, GVar_O_Show, 16)	/* O_Show, the debug text of the pools */
 
-/* the constructor of an effect class (thiscall, returns the object) */
-typedef cObjElementFX *(__thiscall *ObjElementFXCtor_t)(void *mem);
+/* the constructor of an effect class (returns the object) */
+typedef cObjElementFX *(*ObjElementFXCtor_t)(void *mem);
 
 /* the effect of type for the debris (the old one deleted) and its Start; 0 without one */
 byte cDebris_SetFX(int type, cDebris *d) {
@@ -139,7 +139,7 @@ byte cDebris_SetFX(int type, cDebris *d) {
 
 /* ---- cDebrisSys ---- */
 
-cDebrisSys *__thiscall cDebrisSys_ctor(void *mem) {
+cDebrisSys *cDebrisSys_ctor(void *mem) {
 	cDebrisSys *sys = mem;
 
 	cString_ctor(&sys->name);
@@ -159,11 +159,11 @@ cDebrisSys *__thiscall cDebrisSys_ctor(void *mem) {
 	return sys;
 }
 
-void __thiscall cObjElement_dtor(void *self) {
+void cObjElement_dtor(void *self) {
 	((cObjElementFX *)self)->vftable = COBJELEMENTABSTRACT_VFTABLE;
 }
 
-void __thiscall cDebrisSys_dtor(cDebrisSys *sys) {
+void cDebrisSys_dtor(cDebrisSys *sys) {
 	cDebrisSys_FreeActive(sys);
 	cDebrisSys_FreeIdle(sys);
 	cString_dtor(&sys->name);
@@ -192,7 +192,7 @@ static void Debris_Move(cDebris *d, float dt) {
 }
 
 /* the model moved by the part dt of the next step (the effect does it with one) */
-void __thiscall cDebris_Step(cDebris *d, float dt) {
+void cDebris_Step(cDebris *d, float dt) {
 	if (d->fx) {
 		d->fx->vftable->Update(d->fx, d, dt);
 		return;
@@ -200,7 +200,7 @@ void __thiscall cDebris_Step(cDebris *d, float dt) {
 	Debris_Move(d, dt);
 }
 
-void __thiscall cDebrisSys_Drop(cDebrisSys *sys, cDebris *d) {
+void cDebrisSys_Drop(cDebrisSys *sys, cDebris *d) {
 	float t;
 
 	if (!d->fx && !(sys->radiusSq > cWorld_GetMinCamDistSq(g_pWorld, &d->drop[0]))) {
@@ -222,7 +222,7 @@ void __thiscall cDebrisSys_Drop(cDebrisSys *sys, cDebris *d) {
 }
 
 /* the list at 0x0 freed */
-void __thiscall cDebrisSys_FreeActive(cDebrisSys *sys) {
+void cDebrisSys_FreeActive(cDebrisSys *sys) {
 	while (sys->idle) {
 		cDebris *d = sys->idle;
 
@@ -233,7 +233,7 @@ void __thiscall cDebrisSys_FreeActive(cDebrisSys *sys) {
 }
 
 /* the list at 0x4 freed */
-void __thiscall cDebrisSys_FreeIdle(cDebrisSys *sys) {
+void cDebrisSys_FreeIdle(cDebrisSys *sys) {
 	while (sys->active) {
 		cDebris *d = sys->active;
 
@@ -242,7 +242,7 @@ void __thiscall cDebrisSys_FreeIdle(cDebrisSys *sys) {
 	}
 }
 
-cDebris *__thiscall cDebrisSys_NewElement(cDebrisSys *sys) {
+cDebris *cDebrisSys_NewElement(cDebrisSys *sys) {
 	cDebris *d;
 	vec3_t scale;
 	void *mem;
@@ -288,7 +288,7 @@ cDebris *__thiscall cDebrisSys_NewElement(cDebrisSys *sys) {
 }
 
 /* the first dropped debris, else a new one */
-cDebris *__thiscall cDebrisSys_GetIdle(cDebrisSys *sys) {
+cDebris *cDebrisSys_GetIdle(cDebrisSys *sys) {
 	if (sys->active) {
 		return sys->active;
 	}
@@ -296,7 +296,7 @@ cDebris *__thiscall cDebrisSys_GetIdle(cDebrisSys *sys) {
 }
 
 /* n debris of the effect type made and put back into the pool (the ones over maxIdle freed) */
-void __thiscall cDebrisSys_Init(cDebrisSys *sys, int n, int type) {
+void cDebrisSys_Init(cDebrisSys *sys, int n, int type) {
 	cDebris *d = NULL;
 
 	sys->fxType = type;
@@ -317,11 +317,11 @@ void __thiscall cDebrisSys_Init(cDebrisSys *sys, int n, int type) {
 	} while (d);
 }
 
-byte __thiscall cDebrisSys_IsIdle(cDebrisSys *sys, cDebris *d) {
+byte cDebrisSys_IsIdle(cDebrisSys *sys, cDebris *d) {
 	return d == sys->active;
 }
 
-void __thiscall cDebris_Move(cDebris *d, float dt) {
+void cDebris_Move(cDebris *d, float dt) {
 	vec3_t v;
 
 	v.x = d->drop[0].x + dt * d->drop[2].x;
@@ -335,7 +335,7 @@ void __thiscall cDebris_Move(cDebris *d, float dt) {
 }
 
 /* one step of 0.05 s: life, gravity, friction and the collision with the floor; 0 when the debris is gone */
-byte __thiscall cDebris_Update(cDebris *d, cDebrisSys *sys) {
+byte cDebris_Update(cDebris *d, cDebrisSys *sys) {
 	vec3_t from, to;
 	vec3_t *pos = &d->drop[0], *vel = &d->drop[2];
 	CCollisionTri tri;
@@ -403,7 +403,7 @@ void Anm_Preload(const char *model, const char *anim) {
 	CGameModel_Reset(&mod);
 }
 
-void __thiscall cDebrisSys_ShowInfo(cDebrisSys *sys, int x, int y, float *line) {
+void cDebrisSys_ShowInfo(cDebrisSys *sys, int x, int y, float *line) {
 	cDebris *d;
 	float fy;
 
@@ -439,7 +439,7 @@ void __thiscall cDebrisSys_ShowInfo(cDebrisSys *sys, int x, int y, float *line) 
 }
 
 /* the step of the debris: by its effect or the own move */
-byte __thiscall cDebris_IsAlive(cDebris *d, cDebrisSys *sys) {
+byte cDebris_IsAlive(cDebris *d, cDebrisSys *sys) {
 	if (d->fx) {
 		return d->fx->vftable->IsAlive(d->fx, d, sys);
 	}
@@ -447,7 +447,7 @@ byte __thiscall cDebris_IsAlive(cDebris *d, cDebrisSys *sys) {
 }
 
 /* the debris back into the pool (or freed over maxIdle) */
-void __thiscall cDebrisSys_Release(cDebrisSys *sys, cDebris *d) {
+void cDebrisSys_Release(cDebrisSys *sys, cDebris *d) {
 	if (sys->idleCount >= sys->maxIdle) {
 		Debris_Free(d);
 		return;
@@ -462,17 +462,17 @@ void __thiscall cDebrisSys_Release(cDebrisSys *sys, cDebris *d) {
 }
 
 /* the free debris freed, at most n kept from now */
-void __thiscall cDebrisSys_SetMaxIdle(cDebrisSys *sys, int n) {
+void cDebrisSys_SetMaxIdle(cDebrisSys *sys, int n) {
 	cDebrisSys_FreeActive(sys);
 	sys->maxIdle = n;
 }
 
-void __thiscall cDebrisSys_SetName(cDebrisSys *sys, const char *name) {
+void cDebrisSys_SetName(cDebrisSys *sys, const char *name) {
 	CHECK(!sys->name);
 	cString_Set(&sys->name, name);
 }
 
-void __thiscall cDebrisSys_Update(cDebrisSys *sys, float dt) {
+void cDebrisSys_Update(cDebrisSys *sys, float dt) {
 	cDebris *d;
 
 	sys->time = dt + sys->time;

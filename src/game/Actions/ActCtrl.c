@@ -26,7 +26,7 @@ static float Layer_End(const cActLayer *l) {
 	return l->action ? l->action->anmTotalTime : -1.0f;
 }
 
-cActCtrl *__thiscall cActCtrl_ctor(cActCtrl *self, cEntity *owner, cActClass *cls) {
+cActCtrl *cActCtrl_ctor(cActCtrl *self, cEntity *owner, cActClass *cls) {
 	self->vftable = CACTCTRL_VFTABLE;
 	for (int k = 0; k < ACT_LAYERS; k++) {
 		self->layers[k].time = 0.0f;
@@ -63,7 +63,7 @@ cActCtrl *__thiscall cActCtrl_ctor(cActCtrl *self, cEntity *owner, cActClass *cl
 	return self;
 }
 
-void __fastcall cActCtrl_dtor(cActCtrl *self) {
+void cActCtrl_dtor(cActCtrl *self) {
 	self->vftable = CACTCTRL_VFTABLE;
 	self->cls->users--;
 	self->owner->vftable->SetModel(self->owner, NULL, 1.0f, 1.0f, 1.0f, 1);
@@ -72,7 +72,7 @@ void __fastcall cActCtrl_dtor(cActCtrl *self) {
 	}
 }
 
-cActCtrl *__thiscall cActCtrl_Delete(cActCtrl *self, byte flags) {
+cActCtrl *cActCtrl_Delete(cActCtrl *self, byte flags) {
 	cActCtrl_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -80,11 +80,11 @@ cActCtrl *__thiscall cActCtrl_Delete(cActCtrl *self, byte flags) {
 	return self;
 }
 
-void __thiscall cActCtrl_AnimCmd(cActCtrl *self, const char *cmd) {
+void cActCtrl_AnimCmd(cActCtrl *self, const char *cmd) {
 	CGameModel_AnimCmd(Ctrl_Model(self), cmd);
 }
 
-void __fastcall cActCtrl_InitModel(cActCtrl *self) {
+void cActCtrl_InitModel(cActCtrl *self) {
 	self->owner->vftable->SetModel(self->owner, self->cls->modelFile, 1.0f, 1.0f, 1.0f, 0);
 	CGameModel *m = Ctrl_Model(self);
 	for (cAction *a = self->cls->first; a; a = a->next) {
@@ -99,7 +99,7 @@ void __fastcall cActCtrl_InitModel(cActCtrl *self) {
 	}
 }
 
-void __thiscall cActCtrl_Update(cActCtrl *self, float dt) {
+void cActCtrl_Update(cActCtrl *self, float dt) {
 	CGameModel *m = Ctrl_Model(self);
 	vec3_t move;
 	int jumps;
@@ -156,7 +156,7 @@ void __thiscall cActCtrl_Update(cActCtrl *self, float dt) {
 	}
 }
 
-void __thiscall cActCtrl_FireEvents(cActCtrl *self, int chan, float t, byte silent) {
+void cActCtrl_FireEvents(cActCtrl *self, int chan, float t, byte silent) {
 	cActLayer *l = &self->layers[chan];
 
 	if (t >= Layer_End(l)) {
@@ -187,7 +187,7 @@ void __thiscall cActCtrl_FireEvents(cActCtrl *self, int chan, float t, byte sile
 	}
 }
 
-byte __thiscall cActCtrl_VarI(cActCtrl *self, const char *name, int *i, byte set) {
+byte cActCtrl_VarI(cActCtrl *self, const char *name, int *i, byte set) {
 	if (set && strcmp(name, "StopSecondary") == 0) {
 		cActCtrl_StopChan(self, *i);
 		return 1;
@@ -195,7 +195,7 @@ byte __thiscall cActCtrl_VarI(cActCtrl *self, const char *name, int *i, byte set
 	return 0;
 }
 
-byte __thiscall cActCtrl_VarF(cActCtrl *self, const char *name, double *d, byte set) {
+byte cActCtrl_VarF(cActCtrl *self, const char *name, double *d, byte set) {
 	(void)self;
 	(void)name;
 	(void)d;
@@ -203,7 +203,7 @@ byte __thiscall cActCtrl_VarF(cActCtrl *self, const char *name, double *d, byte 
 	return 0;
 }
 
-byte __thiscall cActCtrl_VarV(cActCtrl *self, const char *name, double *x, double *y, double *z, byte set) {
+byte cActCtrl_VarV(cActCtrl *self, const char *name, double *x, double *y, double *z, byte set) {
 	(void)self;
 	(void)name;
 	(void)x;
@@ -213,7 +213,7 @@ byte __thiscall cActCtrl_VarV(cActCtrl *self, const char *name, double *x, doubl
 	return 0;
 }
 
-const char *__thiscall cActCtrl_GetActionName(void *ctrl, int i) {
+const char *cActCtrl_GetActionName(void *ctrl, int i) {
 	cActLayer *l = &((cActCtrl *)ctrl)->layers[i];
 
 	if (l->on && l->action) {
@@ -222,17 +222,17 @@ const char *__thiscall cActCtrl_GetActionName(void *ctrl, int i) {
 	return ACT_EMPTY;
 }
 
-cActLayer *__thiscall cActCtrl_GetLayer(void *ctrl, int i) {
+cActLayer *cActCtrl_GetLayer(void *ctrl, int i) {
 	return &((cActCtrl *)ctrl)->layers[i];
 }
 
-const char *__thiscall cActCtrl_GetDefLoopName(void *ctrl) {
+const char *cActCtrl_GetDefLoopName(void *ctrl) {
 	cActCtrl *self = ctrl;
 
 	return self->defLoop ? self->defLoop->name : ACT_EMPTY;
 }
 
-void __fastcall cActCtrl_InitHeads(cActCtrl *self) {
+void cActCtrl_InitHeads(cActCtrl *self) {
 	if (self->heads) {
 		return;
 	}
@@ -250,7 +250,7 @@ void __fastcall cActCtrl_InitHeads(cActCtrl *self) {
 	self->heads = h;
 }
 
-void __thiscall cActHead_Set(cActHead *self, const float *to) {
+void cActHead_Set(cActHead *self, const float *to) {
 	self->from[0] = self->to[0];
 	self->from[1] = self->to[1];
 	self->to[0] = to[0];
@@ -259,14 +259,14 @@ void __thiscall cActHead_Set(cActHead *self, const float *to) {
 	self->cur[1] = self->to[1];
 }
 
-void __thiscall cActHead_Blend(cActHead *self, float t) {
+void cActHead_Blend(cActHead *self, float t) {
 	float r = 1.0f - t;
 
 	self->cur[0] = self->from[0] * r + self->to[0] * t;
 	self->cur[1] = self->from[1] * r + self->to[1] * t;
 }
 
-void __thiscall cActCtrl_TurnHead(void *ctrl, const float *ang, float dt) {
+void cActCtrl_TurnHead(void *ctrl, const float *ang, float dt) {
 	cActCtrl *self = ctrl;
 	cActClass *cls;
 
@@ -330,7 +330,7 @@ void __thiscall cActCtrl_TurnHead(void *ctrl, const float *ang, float dt) {
 	}
 }
 
-byte __thiscall cActCtrl_PlayAction(void *ctrl, void *action, int arg, int set, float speed) {
+byte cActCtrl_PlayAction(void *ctrl, void *action, int arg, int set, float speed) {
 	cActCtrl *self = ctrl;
 	cAction *a = action;
 
@@ -360,20 +360,20 @@ byte __thiscall cActCtrl_PlayAction(void *ctrl, void *action, int arg, int set, 
 	return 1;
 }
 
-byte __thiscall cActCtrl_Play(void *ctrl, const char *action, int arg, float speed) {
+byte cActCtrl_Play(void *ctrl, const char *action, int arg, float speed) {
 	cActCtrl *self = ctrl;
 
 	return cActCtrl_PlayAction(self, cActClass_GetAction(self->cls, action), arg, 1, speed);
 }
 
-byte __thiscall cActCtrl_PlayActionNew(cActCtrl *self, cAction *action, int arg, float speed) {
+byte cActCtrl_PlayActionNew(cActCtrl *self, cAction *action, int arg, float speed) {
 	if (action && self->layers[action->chanel].action != action) {
 		return cActCtrl_PlayAction(self, action, arg, 1, speed);
 	}
 	return 0;
 }
 
-byte __thiscall cActCtrl_PlayNew(void *ctrl, const char *action, int arg, float speed) {
+byte cActCtrl_PlayNew(void *ctrl, const char *action, int arg, float speed) {
 	cActCtrl *self = ctrl;
 	cAction *a = cActClass_GetAction(self->cls, action);
 
@@ -387,7 +387,7 @@ static void DefLoop_Warn(cActCtrl *self, const char *action) {
 	Con_Warnf("WARNING: cActCtrl::SetDefLoop '%s' has no action '%s'\n", self->cls->name, action);
 }
 
-void __thiscall cActCtrl_SetDefLoop(void *ctrl, const char *action, byte force) {
+void cActCtrl_SetDefLoop(void *ctrl, const char *action, byte force) {
 	cActCtrl *self = ctrl;
 	cAction *a = cActClass_GetAction(self->cls, action);
 
@@ -414,7 +414,7 @@ static float Ship_AngZ(cVehicleEntity *v) {
 	return Obj_Vtbl(Veh_Ent(v))->GetViewAng(Veh_Ent(v), &ang)->z;
 }
 
-void __thiscall cActCtrl_UpdateShip(cActCtrl *self, float dt) {
+void cActCtrl_UpdateShip(cActCtrl *self, float dt) {
 	cVehicleEntity *v = (cVehicleEntity *)self->owner;
 	CGameModel *m = Ctrl_Model(self);
 
@@ -478,7 +478,7 @@ void __thiscall cActCtrl_UpdateShip(cActCtrl *self, float dt) {
 	}
 }
 
-void __thiscall cActCtrl_Tick(cActCtrl *self, float dt) {
+void cActCtrl_Tick(cActCtrl *self, float dt) {
 	if (self->cls->dynShip) {
 		cActCtrl_UpdateShip(self, dt);
 	} else {
@@ -486,7 +486,7 @@ void __thiscall cActCtrl_Tick(cActCtrl *self, float dt) {
 	}
 }
 
-void __thiscall cActCtrl_StopChan(cActCtrl *self, int i) {
+void cActCtrl_StopChan(cActCtrl *self, int i) {
 	CHECK(i > 0);
 	cActLayer *l = &self->layers[i];
 	l->on = 0;
@@ -496,7 +496,7 @@ void __thiscall cActCtrl_StopChan(cActCtrl *self, int i) {
 	l->event = NULL;
 }
 
-byte __thiscall cActCtrl_VarS(cActCtrl *self, const char *name, char **s, byte set) {
+byte cActCtrl_VarS(cActCtrl *self, const char *name, char **s, byte set) {
 	cAction *a;
 
 	if (set) {
@@ -550,7 +550,7 @@ byte __thiscall cActCtrl_VarS(cActCtrl *self, const char *name, char **s, byte s
 	return 1;
 }
 
-byte __thiscall cActCtrl_IsActive(void *ctrl, const char *action) {
+byte cActCtrl_IsActive(void *ctrl, const char *action) {
 	cActCtrl *self = ctrl;
 
 	for (int k = 0; k < ACT_LAYERS; k++) {
@@ -562,6 +562,6 @@ byte __thiscall cActCtrl_IsActive(void *ctrl, const char *action) {
 	return 0;
 }
 
-byte __thiscall cActCtrl_IsDefLoop(cActCtrl *self, const char *action) {
+byte cActCtrl_IsDefLoop(cActCtrl *self, const char *action) {
 	return self->defLoop && strcmp(action, self->defLoop->name) == 0;
 }

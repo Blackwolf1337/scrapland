@@ -60,7 +60,7 @@ static inline float Deg2Rad(double v) {
 	return (float)((v * M_PI_D) / 180.0);
 }
 
-cEntity *__thiscall cObjEntity_ctor(void *mem, const char *name, float x, float y, float z) {
+cEntity *cObjEntity_ctor(void *mem, const char *name, float x, float y, float z) {
 	cObjEntity *self = mem;
 
 	cEntity_ctor(mem, name, x, y, z);
@@ -108,7 +108,7 @@ cEntity *__thiscall cObjEntity_ctor(void *mem, const char *name, float x, float 
 	return &self->base;
 }
 
-void __fastcall cObjEntity_ReleaseFX(cEntity *self) {
+void cObjEntity_ReleaseFX(cEntity *self) {
 	cObjEntity *o = Obj(self);
 
 	if (o->fx) {
@@ -120,7 +120,7 @@ void __fastcall cObjEntity_ReleaseFX(cEntity *self) {
 	}
 }
 
-void __fastcall cObjEntity_dtor(cEntity *self) {
+void cObjEntity_dtor(cEntity *self) {
 	cObjEntity *o = Obj(self);
 
 	self->vftable = COBJENTITY_VFTABLE;
@@ -140,7 +140,7 @@ void __fastcall cObjEntity_dtor(cEntity *self) {
 	cEntity_dtor(self);
 }
 
-cEntity *__thiscall cObjEntity_Delete(cEntity *self, uint32_t flags) {
+cEntity *cObjEntity_Delete(cEntity *self, uint32_t flags) {
 	cObjEntity_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, COBJENTITY_SIZE);
@@ -148,7 +148,7 @@ cEntity *__thiscall cObjEntity_Delete(cEntity *self, uint32_t flags) {
 	return self;
 }
 
-void __thiscall cObjEntity_UpdateModel(cEntity *self) {
+void cObjEntity_UpdateModel(cEntity *self) {
 	cObjEntity *o = Obj(self);
 
 	if (CGameModel_IsLoaded(&o->model)) {
@@ -160,7 +160,7 @@ void __thiscall cObjEntity_UpdateModel(cEntity *self) {
 	}
 }
 
-void __thiscall cObjEntity_UpdateTimer(cEntity *self) {
+void cObjEntity_UpdateTimer(cEntity *self) {
 	cObjEntity *o = Obj(self);
 	cTimer *wt = &g_pWorld->timer;
 	float dt;
@@ -177,13 +177,13 @@ void __thiscall cObjEntity_UpdateTimer(cEntity *self) {
 	}
 }
 
-void __fastcall cObjEntity_NewSlot(cEntity *self) {
+void cObjEntity_NewSlot(cEntity *self) {
 	cSlotController *slot = operator_new(CSLOTCONTROLLER_SIZE);
 
 	Obj(self)->slot = slot ? cSlotController_ctor(slot, OBJ_SLOT_INTERVAL) : NULL;
 }
 
-void __thiscall cObjEntity_RadarTick(cEntity *self, float dt) {
+void cObjEntity_RadarTick(cEntity *self, float dt) {
 	cObjEntity *o = Obj(self);
 
 	if (o->radarShown != o->radarShow) {
@@ -193,7 +193,7 @@ void __thiscall cObjEntity_RadarTick(cEntity *self, float dt) {
 	o->radarTime = o->radarTime - dt;
 }
 
-byte __thiscall cObjEntity_VarF(cEntity *self, const char *name, double *d, int set) {
+byte cObjEntity_VarF(cEntity *self, const char *name, double *d, int set) {
 	cObjEntity *o = Obj(self);
 
 	if (!*name) {
@@ -244,53 +244,53 @@ byte __thiscall cObjEntity_VarF(cEntity *self, const char *name, double *d, int 
 	return cEntity_VarF(self, name, d, set);
 }
 
-vec3_t *__thiscall cObjEntity_GetAng(cEntity *self, vec3_t *out) {
+vec3_t *cObjEntity_GetAng(cEntity *self, vec3_t *out) {
 	*out = Obj(self)->ang;
 	return out;
 }
 
-vec3_t *__thiscall cObjEntity_GetRotVel(cEntity *self, vec3_t *out) {
+vec3_t *cObjEntity_GetRotVel(cEntity *self, vec3_t *out) {
 	*out = Obj(self)->rotVel;
 	return out;
 }
 
 /* vf27 and vf30 */
-vec3_t *__thiscall cObjEntity_GetRenderAng(cEntity *self, vec3_t *out) {
+vec3_t *cObjEntity_GetRenderAng(cEntity *self, vec3_t *out) {
 	*out = Obj(self)->renderAng;
 	return out;
 }
 
 /* vf26 and vf29 */
-vec3_t *__thiscall cObjEntity_GetRenderPos(cEntity *self, vec3_t *out) {
+vec3_t *cObjEntity_GetRenderPos(cEntity *self, vec3_t *out) {
 	*out = Obj(self)->renderPos;
 	return out;
 }
 
-vec3_t *__thiscall cObjEntity_GetSndAng(cEntity *self, vec3_t *out) {
+vec3_t *cObjEntity_GetSndAng(cEntity *self, vec3_t *out) {
 	Obj_Vtbl(self)->GetRenderAng(self, out);
 	return out;
 }
 
-CGameModel *__thiscall cObjEntity_GetModel(cEntity *self) {
+CGameModel *cObjEntity_GetModel(cEntity *self) {
 	return &Obj(self)->model;
 }
 
-vec3_t *__thiscall cObjEntity_GetPos(cEntity *self, vec3_t *out) {
+vec3_t *cObjEntity_GetPos(cEntity *self, vec3_t *out) {
 	cEntity_GetPos(self, out);
 	return out;
 }
 
-int __thiscall cObjEntity_GetNodeSlot(cEntity *self) {
+int cObjEntity_GetNodeSlot(cEntity *self) {
 	(void)self;
 	return 0;
 }
 
-vec3_t *__thiscall cObjEntity_GetSndPos(cEntity *self, vec3_t *out) {
+vec3_t *cObjEntity_GetSndPos(cEntity *self, vec3_t *out) {
 	Obj_Vtbl(self)->GetViewPos(self, out);
 	return out;
 }
 
-byte __fastcall cObjEntity_GetCollision(cEntity *self) {
+byte cObjEntity_GetCollision(cEntity *self) {
 	CGameModel *m = &Obj(self)->model;
 
 	if (CGameModel_IsLoaded(m)) {
@@ -299,7 +299,7 @@ byte __fastcall cObjEntity_GetCollision(cEntity *self) {
 	return 0;
 }
 
-void __thiscall cObjEntity_GetTargetAngle(cEntity *self, float *ang, float dist, cEntity **target) {
+void cObjEntity_GetTargetAngle(cEntity *self, float *ang, float dist, cEntity **target) {
 	vec3_t pos, cang, dir, r1, r2, end, hit, d;
 
 	Obj_Vtbl(self)->GetCamera(self, &pos, &cang);
@@ -323,7 +323,7 @@ void __thiscall cObjEntity_GetTargetAngle(cEntity *self, float *ang, float dist,
 	ang[2] = r->z;
 }
 
-void __thiscall cObjEntity_GetCamera(cEntity *self, vec3_t *pos, vec3_t *ang) {
+void cObjEntity_GetCamera(cEntity *self, vec3_t *pos, vec3_t *ang) {
 	cObjEntity *o = Obj(self);
 	cEntity *cam = o->cam;
 	vec3_t rot, off, r, tmp;
@@ -356,22 +356,22 @@ void __thiscall cObjEntity_GetCamera(cEntity *self, vec3_t *pos, vec3_t *ang) {
 	ang->z = 0.0f;
 }
 
-const char *__thiscall cObjEntity_GetClassName(cEntity *self) {
+const char *cObjEntity_GetClassName(cEntity *self) {
 	(void)self;
 	return OBJ_CLASSNAME;
 }
 
-vec3_t *__thiscall cObjEntity_GetVel(cEntity *self, vec3_t *out) {
+vec3_t *cObjEntity_GetVel(cEntity *self, vec3_t *out) {
 	*out = Obj(self)->vel;
 	return out;
 }
 
-float __thiscall cObjEntity_GetRadius(cEntity *self) {
+float cObjEntity_GetRadius(cEntity *self) {
 	(void)self;
 	return 0.0f;
 }
 
-void __thiscall cObjEntity_UpdateOff(cEntity *self) {
+void cObjEntity_UpdateOff(cEntity *self) {
 	cObjEntity *o = Obj(self);
 
 	cObjEntity_UpdateTimer(self);
@@ -390,7 +390,7 @@ void __thiscall cObjEntity_UpdateOff(cEntity *self) {
 	}
 }
 
-byte __thiscall cObjEntity_VarI(cEntity *self, const char *name, int *i, int set) {
+byte cObjEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	cObjEntity *o = Obj(self);
 
 	if (!*name) {
@@ -450,14 +450,14 @@ byte __thiscall cObjEntity_VarI(cEntity *self, const char *name, int *i, int set
 	return cEntity_VarI(self, name, i, set);
 }
 
-int __thiscall cObjEntity_IsType(cEntity *self, const char *type) {
+int cObjEntity_IsType(cEntity *self, const char *type) {
 	if (!strcmp(type, TYEN_OBJECT)) {
 		return 1;
 	}
 	return cEntity_IsType(self, type);
 }
 
-void __thiscall cObjEntity_Tick(cEntity *self, float dt) {
+void cObjEntity_Tick(cEntity *self, float dt) {
 	cObjMove_Tick(&Obj(self)->move, self, dt);
 	cObjEntity_RadarTick(self, dt);
 	if (self->ai) {
@@ -465,7 +465,7 @@ void __thiscall cObjEntity_Tick(cEntity *self, float dt) {
 	}
 }
 
-void __thiscall cObjEntity_Render(cEntity *self) {
+void cObjEntity_Render(cEntity *self) {
 	CGameModel *m = &Obj(self)->model;
 
 	if (CGameModel_IsLoaded(m)) {
@@ -473,7 +473,7 @@ void __thiscall cObjEntity_Render(cEntity *self) {
 	}
 }
 
-void __thiscall cObjEntity_SetActive(cEntity *self, byte on) {
+void cObjEntity_SetActive(cEntity *self, byte on) {
 	cObjEntity *o = Obj(self);
 
 	cEntity_SetActive(self, on);
@@ -491,7 +491,7 @@ void __thiscall cObjEntity_SetActive(cEntity *self, byte on) {
 	}
 }
 
-void __thiscall cObjEntity_SetAng(cEntity *self, const vec3_t *ang) {
+void cObjEntity_SetAng(cEntity *self, const vec3_t *ang) {
 	cObjEntity *o = Obj(self);
 
 	o->ang.x = ang->x;
@@ -505,13 +505,13 @@ void __thiscall cObjEntity_SetAng(cEntity *self, const vec3_t *ang) {
 	}
 }
 
-void __thiscall cObjEntity_SetRotVel(cEntity *self, const vec3_t *v) {
+void cObjEntity_SetRotVel(cEntity *self, const vec3_t *v) {
 	Obj(self)->rotVel.x = v->x;
 	Obj(self)->rotVel.y = v->y;
 	Obj(self)->rotVel.z = v->z;
 }
 
-void __thiscall cObjEntity_SetEmbeddedFX(cEntity *self, const char *fxType) {
+void cObjEntity_SetEmbeddedFX(cEntity *self, const char *fxType) {
 	cObjEntity *o = Obj(self);
 
 	if (!self->deadNode.target) {
@@ -520,7 +520,7 @@ void __thiscall cObjEntity_SetEmbeddedFX(cEntity *self, const char *fxType) {
 	}
 }
 
-void __thiscall cObjEntity_SetModel(cEntity *self, const char *file, float sx, float sy, float sz, int flag) {
+void cObjEntity_SetModel(cEntity *self, const char *file, float sx, float sy, float sz, int flag) {
 	cObjEntity *o = Obj(self);
 	vec3_t scale, cam;
 
@@ -555,7 +555,7 @@ void __thiscall cObjEntity_SetModel(cEntity *self, const char *file, float sx, f
 	}
 }
 
-void __thiscall cEntity_SetNetResource(cEntity *e, const char *name) {
+void cEntity_SetNetResource(cEntity *e, const char *name) {
 	int r = Net_AddResource(name);
 
 	if (r != -1) {
@@ -563,7 +563,7 @@ void __thiscall cEntity_SetNetResource(cEntity *e, const char *name) {
 	}
 }
 
-void __thiscall cObjEntity_SetPos(cEntity *self, const vec3_t *pos) {
+void cObjEntity_SetPos(cEntity *self, const vec3_t *pos) {
 	cObjEntity *o = Obj(self);
 
 	cEntity_SetPos(self, pos);
@@ -572,15 +572,15 @@ void __thiscall cObjEntity_SetPos(cEntity *self, const vec3_t *pos) {
 	Obj_Vtbl(self)->UpdateModel(self);
 }
 
-void __thiscall cObjEntity_SetEffect(cEntity *self, uint32_t fx) {
+void cObjEntity_SetEffect(cEntity *self, uint32_t fx) {
 	CGameModel_SetEffect(&Obj(self)->model, fx);
 }
 
-void __thiscall cObjEntity_SetEffectParam(cEntity *self, int i, float v) {
+void cObjEntity_SetEffectParam(cEntity *self, int i, float v) {
 	CGameModel_SetEffectParam(&Obj(self)->model, i, Float_Bits(v));
 }
 
-void __thiscall cObjEntity_Switch(cEntity *self, byte on) {
+void cObjEntity_Switch(cEntity *self, byte on) {
 	if (CGameModel_IsLoaded(&Obj(self)->model)) {
 		CGameModel_EnableCollision(Obj_Vtbl(self)->GetModel(self), on, 1);
 		return;
@@ -588,7 +588,7 @@ void __thiscall cObjEntity_Switch(cEntity *self, byte on) {
 	Con_Warnf("SetStaticMapCollision(%d) Entity '%s' has no model\n", on != 0, self->name);
 }
 
-void __thiscall cObjEntity_SetVel(cEntity *self, const vec3_t *vel) {
+void cObjEntity_SetVel(cEntity *self, const vec3_t *vel) {
 	cObjEntity *o = Obj(self);
 
 	if (!o->move.active) {
@@ -603,7 +603,7 @@ static inline byte Obj_Extrapolates(const cObjEntity *o) {
 	return g_MissileUpdating && !o->cam;
 }
 
-void __thiscall cObjEntity_Update(cEntity *self) {
+void cObjEntity_Update(cEntity *self) {
 	cObjEntity *o = Obj(self);
 
 	cObjEntity_UpdateTimer(self);
@@ -704,7 +704,7 @@ void __thiscall cObjEntity_Update(cEntity *self) {
 	cEntity_Update(self);
 }
 
-byte __thiscall cObjEntity_VarS(cEntity *self, const char *name, char **s, int set) {
+byte cObjEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 	cObjEntity *o = Obj(self);
 
 	if (!*name) {
@@ -754,7 +754,7 @@ static void Obj_NodePos(const matrix_t *m, double *x, double *y, double *z) {
 	*z = m->m[14];
 }
 
-byte __thiscall cObjEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set) {
+byte cObjEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set) {
 	cObjEntity *o = Obj(self);
 	matrix_t mat;
 	vec3_t v;
@@ -861,7 +861,7 @@ byte __thiscall cObjEntity_VarV(cEntity *self, const char *name, double *x, doub
 
 /* cNetController */
 
-cNetController *__fastcall cNetController_ctor(cNetController *self) {
+cNetController *cNetController_ctor(cNetController *self) {
 	self->vftable = CNETCONTROLLER_VFTABLE;
 	self->age = 0.0f;
 	self->rotVel.x = 0.0f;
@@ -878,7 +878,7 @@ cNetController *__fastcall cNetController_ctor(cNetController *self) {
 	return self;
 }
 
-void __thiscall cNetController_Reset(cNetController *self) {
+void cNetController_Reset(cNetController *self) {
 	memset(self->pending, 1, sizeof(self->pending));
 }
 
@@ -898,7 +898,7 @@ static inline byte Net_Part(cNetController *self, int part, byte small, byte fla
 	return flags;
 }
 
-byte __thiscall cNetController_Changed(cNetController *self, byte flags, cEntity *e) {
+byte cNetController_Changed(cNetController *self, byte flags, cEntity *e) {
 	cObjEntity *o = Obj(e);
 
 	if (flags & NETC_POS) {
@@ -957,7 +957,7 @@ byte __thiscall cNetController_Changed(cNetController *self, byte flags, cEntity
 	return flags;
 }
 
-void __thiscall cNetController_Apply(cNetController *self, cEntity *e, float dt, byte move) {
+void cNetController_Apply(cNetController *self, cEntity *e, float dt, byte move) {
 	cObjEntity *o = Obj(e);
 
 	if (self->age != 0.5f) {
@@ -1137,7 +1137,7 @@ static inline float Net_PosClamp(float v) {
 	return -NET_POS_MAX >= v ? -NET_POS_MAX : Float_MinSS(NET_POS_MAX, v);
 }
 
-void __thiscall cNetController_Write(cNetController *self, byte flags, cEntity *e, void *m, byte force) {
+void cNetController_Write(cNetController *self, byte flags, cEntity *e, void *m, byte force) {
 	cAbstractFile *msg = m;
 	cObjEntity *o = Obj(e);
 	byte f;
@@ -1202,7 +1202,7 @@ void __thiscall cNetController_Write(cNetController *self, byte flags, cEntity *
 	}
 }
 
-void __thiscall cNetController_Read(cNetController *self, void *m) {
+void cNetController_Read(cNetController *self, void *m) {
 	cAbstractFile *msg = m;
 	vec3_t clamped;
 

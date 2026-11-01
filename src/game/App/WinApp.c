@@ -44,7 +44,7 @@
 
 #define APP_WNDPROC (void *)App_WndProc
 
-CWinApp *__thiscall CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char *cmdLine, int nCmdShow) {
+CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char *cmdLine, int nCmdShow) {
 	char path[0x104];
 
 	CApp_ctor(&self->base, cmdLine);
@@ -61,13 +61,13 @@ CWinApp *__thiscall CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const 
 	return self;
 }
 
-void __fastcall CWinApp_dtor(CWinApp *self) {
+void CWinApp_dtor(CWinApp *self) {
 	self->base.vftable = g_CWinAppVftable;
 	CApp_dtor(&self->base);
 }
 
 /* vf03 */
-CWinApp *__thiscall CWinApp_Delete(CWinApp *self, byte flags) {
+CWinApp *CWinApp_Delete(CWinApp *self, byte flags) {
 	CWinApp_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CWinApp));
@@ -76,7 +76,7 @@ CWinApp *__thiscall CWinApp_Delete(CWinApp *self, byte flags) {
 }
 
 /* the window procedure of "ScrapClass" (App_WndProc with g_pApp); the rest goes to the D3D application */
-intptr_t __thiscall CWinApp_WndProc(CWinApp *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam) {
+intptr_t CWinApp_WndProc(CWinApp *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam) {
 	char title[0x40];
 
 	switch (msg) {
@@ -151,19 +151,19 @@ intptr_t __thiscall CWinApp_WndProc(CWinApp *self, void *hwnd, uint32_t msg, uin
 }
 
 /* vf17: the console window is gone */
-int __thiscall CWinApp_ConsoleAdd(CWinApp *self, const char *text, uint32_t color) {
+int CWinApp_ConsoleAdd(CWinApp *self, const char *text, uint32_t color) {
 	(void)self, (void)text, (void)color;
 	return 0;
 }
 
 /* vf16: the console window is gone */
-int __thiscall CWinApp_ShowConsole(CWinApp *self, byte show) {
+int CWinApp_ShowConsole(CWinApp *self, byte show) {
 	(void)self, (void)show;
 	return 0;
 }
 
 /* the class "ScrapClass" and the main window */
-byte __fastcall CWinApp_CreateMainWindow(CWinApp *self) {
+byte CWinApp_CreateMainWindow(CWinApp *self) {
 	self->wc.hCursor = exe_LoadCursorA(NULL, (const char *)0x7f00);
 	self->wc.hIcon = exe_LoadIconA(self->hInstance, (const char *)0x65);
 	self->wc.menuName = NULL;
@@ -182,7 +182,7 @@ byte __fastcall CWinApp_CreateMainWindow(CWinApp *self) {
 }
 
 /* 640 x 480 (-widewindow 640 x 360), -dedicated a 350 x 1 window without the maximize box */
-void *__fastcall CWinApp_CreateWindow(CWinApp *self) {
+void *CWinApp_CreateWindow(CWinApp *self) {
 	exe_rect r;
 	int w, h;
 
@@ -208,20 +208,20 @@ void *__fastcall CWinApp_CreateWindow(CWinApp *self) {
 }
 
 /* vf18: the original asked in a modal dialog of the console window, which is gone: no text (None for Python) */
-const char *__thiscall CWinApp_DebugInput(CWinApp *self, const char *prompt) {
+const char *CWinApp_DebugInput(CWinApp *self, const char *prompt) {
 	(void)self, (void)prompt;
 	return NULL;
 }
 
 /* vf08: no textures and no sound for -dedicated */
-void __thiscall CWinApp_InitDedicated(CWinApp *self) {
+void CWinApp_InitDedicated(CWinApp *self) {
 	(void)self;
 	g_LoadTextures = 0;
 	g_SoundInit = 0;
 }
 
 /* vf06 */
-void __thiscall CWinApp_Shutdown(CWinApp *self) {
+void CWinApp_Shutdown(CWinApp *self) {
 	CApp_Shutdown(&self->base);
 	exe_DestroyWindow(self->hwnd);
 	exe_timeEndPeriod(1);
@@ -229,18 +229,18 @@ void __thiscall CWinApp_Shutdown(CWinApp *self) {
 }
 
 /* vf09 */
-void __thiscall CWinApp_Exit(CWinApp *self) {
+void CWinApp_Exit(CWinApp *self) {
 	exe_PostMessageA(self->hwnd, WM_QUIT, 0, 0);
 }
 
 /* vf13 */
-void __thiscall CWinApp_ResetParams(CWinApp *self) {
+void CWinApp_ResetParams(CWinApp *self) {
 	self->console = 0;
 	CApp_ResetParams(&self->base);
 }
 
 /* "-name" in the command line (case-insensitive), followed by ':', ' ' or the end */
-int __thiscall CWinApp_HasArg(CWinApp *self, const char *name) {
+int CWinApp_HasArg(CWinApp *self, const char *name) {
 	char buf[0x400];
 
 	Str_Copy(buf, self->base.cmdLine, 0x400);
@@ -262,7 +262,7 @@ void App_GetPath(char *buf, int size) {
 }
 
 /* a string value of HKEY_LOCAL_MACHINE\Software\MercurySteam Entertainment\Scrapland, NULL when missing or empty */
-const char *__thiscall App_RegGetString(CWinApp *self, const char *name) {
+const char *App_RegGetString(CWinApp *self, const char *name) {
 	void *key;
 	uint32_t type, size;
 
@@ -285,7 +285,7 @@ void *App_GetHInstance(void) {
 }
 
 /* vf14: seconds since the first call, by the performance counter if there is one, else by timeGetTime */
-double __thiscall CWinApp_GetTime(CWinApp *self) {
+double CWinApp_GetTime(CWinApp *self) {
 	(void)self;
 	if (!g_TimeInit) {
 		g_TimeInit = 1;
@@ -333,7 +333,7 @@ static void CWinApp_InitStep(CWinApp *self) {
 
 /* vf04: the window, the language, then CApp_Init, which may leave its videos to the message loop
  * (CWinApp_InitStep) */
-byte __thiscall CWinApp_Init(CWinApp *self) {
+byte CWinApp_Init(CWinApp *self) {
 	App_SetExceptionFilter(1);
 	exe_timeBeginPeriod(1);
 	if (!CWinApp_CreateMainWindow(self)) {
@@ -367,7 +367,7 @@ byte __thiscall CWinApp_Init(CWinApp *self) {
 }
 
 /* vf05: CApp_Frame (the original ran the GOG and Steam callbacks first) */
-byte __thiscall CWinApp_Frame(CWinApp *self) {
+byte CWinApp_Frame(CWinApp *self) {
 	/* differs from the original on purpose (no sleeps): no Sleep(250) while the app is in the background; CApp_Frame
 	 * then only takes the time and returns 0, the PeekMessage loop of App_WinMain calls it again */
 	return CApp_Frame(&self->base);
@@ -404,7 +404,7 @@ void App_GetConfigDir(char *buf, int size) {
 }
 
 /* vf12: -console, -inifile:name, else CApp_ParseParam */
-byte __thiscall CWinApp_ParseParam(CWinApp *self, const char *param, const char *ext) {
+byte CWinApp_ParseParam(CWinApp *self, const char *param, const char *ext) {
 	if (!crt_stricmp("console", param)) {
 		self->console = 1;
 		return 1;
@@ -417,7 +417,7 @@ byte __thiscall CWinApp_ParseParam(CWinApp *self, const char *param, const char 
 }
 
 /* vf19: starts exe (from the game directory) with the command line, without waiting */
-byte __thiscall CWinApp_RunApp(CWinApp *self, const char *exe, const char *cmdLine, int arg) {
+byte CWinApp_RunApp(CWinApp *self, const char *exe, const char *cmdLine, int arg) {
 	char path[0x104], cmd[0x208], args[0x208];
 
 	(void)self;
@@ -443,7 +443,7 @@ intptr_t __stdcall App_WndProc(void *hwnd, uint32_t msg, uintptr_t wParam, intpt
 }
 
 /* vf20 */
-byte __thiscall CWinApp_IsDedicatedWin(CWinApp *self) {
+byte CWinApp_IsDedicatedWin(CWinApp *self) {
 	return self->dedicatedWin;
 }
 

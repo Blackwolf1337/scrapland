@@ -13,7 +13,7 @@ static inline cObjEntity *ModMove_Obj(cEntity *e) {
 	return (cObjEntity *)e;
 }
 
-cModMove *__fastcall cModMove_ctor(cModMove *self) {
+cModMove *cModMove_ctor(cModMove *self) {
 	self->head.target = NULL;
 	self->head.data = NULL;
 	self->head.next = &self->head;
@@ -33,12 +33,12 @@ cModMove *__fastcall cModMove_ctor(cModMove *self) {
 	return self;
 }
 
-void __fastcall cModMove_dtor(cModMove *self) {
+void cModMove_dtor(cModMove *self) {
 	Nto1Node_Done(&self->link);
 	Nto1Node_Done(&self->head);
 }
 
-byte __thiscall cModMove_VarF(cModMove *self, const char *name, double *d, int set) {
+byte cModMove_VarF(cModMove *self, const char *name, double *d, int set) {
 	if (!strcmp(name, "OffMul")) {
 		if ((byte)set) {
 			self->offMul = (float)*d;
@@ -58,7 +58,7 @@ byte __thiscall cModMove_VarF(cModMove *self, const char *name, double *d, int s
 	return 0;
 }
 
-byte __thiscall cModMove_VarI(cModMove *self, const char *name, int *i, int set) {
+byte cModMove_VarI(cModMove *self, const char *name, int *i, int set) {
 	if (!strcmp(name, "OffModPosAsPos")) {
 		if ((byte)set) {
 			self->offPosAsPos = *i != 0;
@@ -78,7 +78,7 @@ byte __thiscall cModMove_VarI(cModMove *self, const char *name, int *i, int set)
 	return 0;
 }
 
-void __thiscall cModMove_Link(cModMove *self, const char *name, const char *node) {
+void cModMove_Link(cModMove *self, const char *name, const char *node) {
 	if (!*name) {
 		CHECK(self->link.data);
 		Nto1Node_Unlink(&self->link);
@@ -102,7 +102,7 @@ void __thiscall cModMove_Link(cModMove *self, const char *name, const char *node
 	Nto1Node_LinkTo(&ModMove_Obj(link)->mod.head, &self->link);
 }
 
-void __thiscall cModMove_Update(cModMove *self, float dt) {
+void cModMove_Update(cModMove *self, float dt) {
 	cObjEntity *p = ModMove_Obj(self->parent);
 	vec3_t to, a, e;
 	matrix_t mat;
@@ -162,12 +162,12 @@ void __thiscall cModMove_Update(cModMove *self, float dt) {
 		p->renderAng.y = p->ang.y + n->y * m;
 	}
 	if (self->parent->vftable->IsType(self->parent, TYEN_WALKCHAR)) {
-		(*(void(__thiscall **)(cEntity *, const vec3_t *))((const byte *)self->parent->vftable +
+		(*(void(**)(cEntity *, const vec3_t *))((const byte *)self->parent->vftable +
 			MODMOVE_WALKCHAR_SETANG))(self->parent, &p->renderAng);
 	}
 }
 
-void __thiscall cModMove_SetParent(cModMove *self, cEntity *parent) {
+void cModMove_SetParent(cModMove *self, cEntity *parent) {
 	CHECK(self->parent == NULL);
 	self->parent = parent;
 	self->head.target = parent;
@@ -175,7 +175,7 @@ void __thiscall cModMove_SetParent(cModMove *self, cEntity *parent) {
 	self->nodeIndex = -1;
 }
 
-byte __thiscall cModMove_VarS(cModMove *self, const char *name, char **s, int set) {
+byte cModMove_VarS(cModMove *self, const char *name, char **s, int set) {
 	char buf[0x80];
 
 	if (!(byte)set || strcmp(name, "LinkModel")) {
@@ -193,7 +193,7 @@ byte __thiscall cModMove_VarS(cModMove *self, const char *name, char **s, int se
 	return 1;
 }
 
-byte __thiscall cModMove_VarV(cModMove *self, const char *name, double *x, double *y, double *z, int set) {
+byte cModMove_VarV(cModMove *self, const char *name, double *x, double *y, double *z, int set) {
 	if (strcmp(name, "OffModPos")) {
 		return 0;
 	}
@@ -209,7 +209,7 @@ byte __thiscall cModMove_VarV(cModMove *self, const char *name, double *x, doubl
 	return 1;
 }
 
-cObjMove *__fastcall cObjMove_ctor(cObjMove *self) {
+cObjMove *cObjMove_ctor(cObjMove *self) {
 	cPy_Function_ctor(&self->onEnd);
 	memset(self, 0, offsetof(cObjMove, time));
 	self->moveAng.x = 0.0f;
@@ -224,11 +224,11 @@ cObjMove *__fastcall cObjMove_ctor(cObjMove *self) {
 	return self;
 }
 
-void __fastcall cObjMove_dtor(cObjMove *self) {
+void cObjMove_dtor(cObjMove *self) {
 	cPy_Function_dtor(&self->onEnd);
 }
 
-void __thiscall cObjMove_Tick(cObjMove *self, cEntity *e, float dt) {
+void cObjMove_Tick(cObjMove *self, cEntity *e, float dt) {
 	cObjEntity *o = ModMove_Obj(e);
 	vec3_t d, tmp;
 
@@ -314,7 +314,7 @@ void __thiscall cObjMove_Tick(cObjMove *self, cEntity *e, float dt) {
 	}
 }
 
-void __thiscall cObjMove_SetTime(cObjMove *self, float t) {
+void cObjMove_SetTime(cObjMove *self, float t) {
 	byte on = t > 0.0f;
 
 	self->active = on;

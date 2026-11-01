@@ -14,7 +14,7 @@ static inline uint32_t SizeWords(uint32_t size) {
 	return (size >> 2) + ((size & 3) != 0);
 }
 
-cMemBlocks *__thiscall cMemBlocks_ctor(cMemBlocks *self, uint32_t blockSize, uint32_t numBlocks) {
+cMemBlocks *cMemBlocks_ctor(cMemBlocks *self, uint32_t blockSize, uint32_t numBlocks) {
 	self->blockSize = blockSize;
 	self->numBlocks = numBlocks;
 	self->usedBlocks = 0;
@@ -24,19 +24,19 @@ cMemBlocks *__thiscall cMemBlocks_ctor(cMemBlocks *self, uint32_t blockSize, uin
 	return self;
 }
 
-void __thiscall cMemBlocks_SetMemory(cMemBlocks *self, uint32_t *status, byte *data) {
+void cMemBlocks_SetMemory(cMemBlocks *self, uint32_t *status, byte *data) {
 	self->status = status;
 	memset(status, 0, self->numWords * 4);
 	self->data = data;
 }
 
-byte __thiscall cMemBlocks_Owns(cMemBlocks *self, const void *p) {
+byte cMemBlocks_Owns(cMemBlocks *self, const void *p) {
 	return self->usedBlocks && (uintptr_t)self->data <= (uintptr_t)p &&
 		(uintptr_t)p <= (uintptr_t)self->data + (self->numBlocks - 1) * self->blockSize;
 }
 
 /* a free block; with every block in use the memory comes from Mem_Alloc */
-void *__fastcall cMemBlocks_Alloc(cMemBlocks *self) {
+void *cMemBlocks_Alloc(cMemBlocks *self) {
 	if (self->usedBlocks == self->numBlocks) {
 		return Mem_Alloc(self->blockSize);
 	}
@@ -58,7 +58,7 @@ void *__fastcall cMemBlocks_Alloc(cMemBlocks *self) {
 	return NULL;
 }
 
-void __thiscall cMemBlocks_Free(cMemBlocks *self, void *p) {
+void cMemBlocks_Free(cMemBlocks *self, void *p) {
 	if (!cMemBlocks_Owns(self, p)) {
 		Mem_Free(p);
 		return;
@@ -71,7 +71,7 @@ void __thiscall cMemBlocks_Free(cMemBlocks *self, void *p) {
 	self->status[idx / 32] &= ~(1u << (idx % 32));
 }
 
-cMemPool *__thiscall cMemPool_ctor(cMemPool *self, const char *name, const uint32_t *values) {
+cMemPool *cMemPool_ctor(cMemPool *self, const char *name, const uint32_t *values) {
 	self->blocks = Mem_Alloc(MEMPOOL_CLASSES * sizeof(*self->blocks));
 	for (uint32_t i = 0; i < MEMPOOL_CLASSES; i++) {
 		cMemBlocks *b = operator_new(sizeof(*b));
@@ -100,7 +100,7 @@ cMemPool *__thiscall cMemPool_ctor(cMemPool *self, const char *name, const uint3
 }
 
 /* the pool stays in g_MemPools, like in the original */
-void __fastcall cMemPool_dtor(cMemPool *self) {
+void cMemPool_dtor(cMemPool *self) {
 	for (uint32_t i = 0; i < MEMPOOL_CLASSES; i++) {
 		if (self->blocks[i]) {
 			operator_delete_sized(self->blocks[i], sizeof(cMemBlocks));
@@ -125,7 +125,7 @@ static int cMemPool_Find(cMemPool *self, const void *p) {
 	return -1;
 }
 
-void *__thiscall cMemPool_Alloc(cMemPool *self, uint32_t size) {
+void *cMemPool_Alloc(cMemPool *self, uint32_t size) {
 	uint32_t words = SizeWords(size);
 	if (!size || words > MEMPOOL_CLASSES) {
 		return Mem_Alloc(size);
@@ -133,7 +133,7 @@ void *__thiscall cMemPool_Alloc(cMemPool *self, uint32_t size) {
 	return cMemBlocks_Alloc(self->blocks[words - 1]);
 }
 
-void __thiscall cMemPool_Free(cMemPool *self, void *p) {
+void cMemPool_Free(cMemPool *self, void *p) {
 	int i = cMemPool_Find(self, p);
 	if (i < 0) {
 		Mem_Free(p);
@@ -143,7 +143,7 @@ void __thiscall cMemPool_Free(cMemPool *self, void *p) {
 }
 
 /* a pool block moves to the class of the new size (Mem_Alloc if it has none) */
-void *__thiscall cMemPool_Realloc(cMemPool *self, void *p, uint32_t size) {
+void *cMemPool_Realloc(cMemPool *self, void *p, uint32_t size) {
 	int i = cMemPool_Find(self, p);
 	if (i < 0) {
 		return Mem_Realloc(p, size);

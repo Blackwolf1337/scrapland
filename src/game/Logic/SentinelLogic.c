@@ -36,7 +36,7 @@
 
 #define SENT_VT(self) ((self)->base.vftable)
 
-void *__thiscall cSentinelLocalLogic_ctor(void *mem, cEntity *parent) {
+void *cSentinelLocalLogic_ctor(void *mem, cEntity *parent) {
 	cSentinelLocalLogic *self = mem;
 
 	cBaseLocalLogic_ctor(&self->base, parent);
@@ -46,7 +46,7 @@ void *__thiscall cSentinelLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-cSentinelLocalLogic *__thiscall cSentinelLocalLogic_Delete(cSentinelLocalLogic *self, byte flags) {
+cSentinelLocalLogic *cSentinelLocalLogic_Delete(cSentinelLocalLogic *self, byte flags) {
 	SENT_VT(self) = CSENTINELLOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
 	if (flags & 1) {
@@ -56,18 +56,18 @@ cSentinelLocalLogic *__thiscall cSentinelLocalLogic_Delete(cSentinelLocalLogic *
 }
 
 /* vf16: a sentinel never runs from the alarm */
-void __thiscall cSentinelLocalLogic_OnAlarm(cSentinelLocalLogic *self, cEntity *e) {
+void cSentinelLocalLogic_OnAlarm(cSentinelLocalLogic *self, cEntity *e) {
 	(void)self;
 	(void)e;
 	Con_Print(0x8f008f, "El centinela intenta huir de un poli pequeño. Esto no debe pasar", 0);
 }
 
 /* vf25: the player was in view at the last think */
-byte __thiscall cSentinelLocalLogic_Seen(cSentinelLocalLogic *self) {
+byte cSentinelLocalLogic_Seen(cSentinelLocalLogic *self) {
 	return self->seen;
 }
 
-void __thiscall cSentinelLocalLogic_Watch(void *sentinel, const vec3_t *pos) {
+void cSentinelLocalLogic_Watch(void *sentinel, const vec3_t *pos) {
 	cSentinelLocalLogic *self = sentinel;
 	cBaseLocalLogic *b = &self->base;
 	vec3_t tmp;
@@ -91,7 +91,7 @@ void __thiscall cSentinelLocalLogic_Watch(void *sentinel, const vec3_t *pos) {
 }
 
 /* vf26: the view of the player (unless quiet) and the state */
-void __thiscall cSentinelLocalLogic_Think(cSentinelLocalLogic *self, float dt, byte quiet) {
+void cSentinelLocalLogic_Think(cSentinelLocalLogic *self, float dt, byte quiet) {
 	cBaseLocalLogic *b = &self->base;
 	cEntity *p = b->parent;
 	vec3_t tmp;
@@ -142,7 +142,7 @@ void __thiscall cSentinelLocalLogic_Think(cSentinelLocalLogic *self, float dt, b
 
 /* vf12: a robbery seen: the player is accused at SentinelBankerDetect percent (plus the amount), a character goes
  * to state 6 at SentinelBankerNPCDetect */
-void __thiscall cSentinelLocalLogic_OnRobbery(cSentinelLocalLogic *self, cEntity *e, float amount) {
+void cSentinelLocalLogic_OnRobbery(cSentinelLocalLogic *self, cEntity *e, float amount) {
 	if (self->base.busy) {
 		return;
 	}
@@ -159,7 +159,7 @@ void __thiscall cSentinelLocalLogic_OnRobbery(cSentinelLocalLogic *self, cEntity
 }
 
 /* vf13: the player is accused with the alarm, another character goes to state 6 */
-void __thiscall cSentinelLocalLogic_OnAttack(cSentinelLocalLogic *self, cEntity *e) {
+void cSentinelLocalLogic_OnAttack(cSentinelLocalLogic *self, cEntity *e) {
 	if (self->base.busy) {
 		return;
 	}
@@ -172,7 +172,7 @@ void __thiscall cSentinelLocalLogic_OnAttack(cSentinelLocalLogic *self, cEntity 
 }
 
 /* vf10 and vf11: the player is accused with the alarm */
-void __thiscall cSentinelLocalLogic_OnUsr(cSentinelLocalLogic *self, cEntity *e) {
+void cSentinelLocalLogic_OnUsr(cSentinelLocalLogic *self, cEntity *e) {
 	if (self->base.busy) {
 		return;
 	}
@@ -183,7 +183,7 @@ void __thiscall cSentinelLocalLogic_OnUsr(cSentinelLocalLogic *self, cEntity *e)
 }
 
 /* vf15: the police asks for money: accused (the alarm for the player); always 0 */
-byte __thiscall cSentinelLocalLogic_GivesMoney(cSentinelLocalLogic *self, cEntity *e) {
+byte cSentinelLocalLogic_GivesMoney(cSentinelLocalLogic *self, cEntity *e) {
 	if (!self->base.busy) {
 		if (e == ChType_Usr0()) {
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
@@ -208,7 +208,7 @@ static void Sentinel_Relax(cEntity *s) {
 }
 
 /* the view and the look of the character p (the parent) by the state; dt is not used */
-void __thiscall cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *p, float dt) {
+void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *p, float dt) {
 	cBaseLocalLogic *b = &self->base;
 	cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 	cEntity *s = b->parent;
@@ -303,11 +303,11 @@ void __thiscall cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEnti
 }
 
 /* vf24 */
-byte __thiscall cSentinelLocalLogic_RestartState(cSentinelLocalLogic *self) {
+byte cSentinelLocalLogic_RestartState(cSentinelLocalLogic *self) {
 	return SENT_VT(self)->SetState(self, 0, NULL);
 }
 
-void __fastcall cSentinelLocalLogic_Return(void *sentinel) {
+void cSentinelLocalLogic_Return(void *sentinel) {
 	cSentinelLocalLogic *self = sentinel;
 
 	if (self->base.idle || self->base.alwaysLock) {
@@ -321,7 +321,7 @@ void __fastcall cSentinelLocalLogic_Return(void *sentinel) {
 }
 
 /* vf19: the AI of the state; the result of the base */
-byte __thiscall cSentinelLocalLogic_SetState(cSentinelLocalLogic *self, int state, cEntity *target) {
+byte cSentinelLocalLogic_SetState(cSentinelLocalLogic *self, int state, cEntity *target) {
 	cBaseLocalLogic *b = &self->base;
 	vec3_t tmp;
 	cAIChar *ai = b->parent->vftable->GetAI(b->parent);

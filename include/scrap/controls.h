@@ -39,18 +39,18 @@ SD_OFFSET(cVehicleControls, netFire, 0x27);
 SD_OFFSET(cVehicleControls, rumbleA, 0x34);
 SD_SIZE(cVehicleControls, 0x44);
 
-cVehicleControls *__fastcall Controls_ctor(cVehicleControls *self);
+cVehicleControls *Controls_ctor(cVehicleControls *self);
 /* the first weapon of the world, everything else 0 */
-void __fastcall Controls_Reset(cVehicleControls *self);
-byte __thiscall Controls_VarF(cVehicleControls *self, const char *name, double *d, int set);
-int __thiscall Controls_GetWeapon(cVehicleControls *self);
+void Controls_Reset(cVehicleControls *self);
+byte Controls_VarF(cVehicleControls *self, const char *name, double *d, int set);
+int Controls_GetWeapon(cVehicleControls *self);
 /* the buttons and axes from the network state of the vehicle v (its +0xf4, bits at +0x74) */
-void __thiscall Controls_FromNet(cVehicleControls *self, cEntity *v, float dt);
+void Controls_FromNet(cVehicleControls *self, cEntity *v, float dt);
 /* clears both fire buttons and +0x18 when the weapon changes */
-void __thiscall Controls_SetWeapon(cVehicleControls *self, int w);
+void Controls_SetWeapon(cVehicleControls *self, int w);
 /* the two force feedback motors: strength and fade time */
-void __thiscall Controls_RumbleA(cVehicleControls *self, float strength, float time);
-void __thiscall Controls_RumbleB(cVehicleControls *self, float strength, float time);
+void Controls_RumbleA(cVehicleControls *self, float strength, float time);
+void Controls_RumbleB(cVehicleControls *self, float strength, float time);
 
 /* the native functions of the items a ship takes (item name, ship name): the ammo or life of the Item...Adds
  * engine variables, the item hidden for its Item...RespawnTime */

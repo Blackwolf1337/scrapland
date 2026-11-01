@@ -18,9 +18,9 @@
 /* 1 in the exe: the light map materials keep the blend of CMaterial_Prepare */
 #define g_BspQ3LMapNoBlend GAME_GLOBAL_IN(byte, group_432a7c, 1)
 
-typedef CMeshD3D *(__thiscall *bspQ3MeshD3DDelete_t)(CMeshD3D *self, byte flags);
-typedef int(__thiscall *bspQ3MeshD3DDev_t)(CMeshD3D *self, void *dev);
-typedef CTriMesh *(__thiscall *bspQ3TriMeshDelete_t)(CTriMesh *self, byte flags);
+typedef CMeshD3D *(*bspQ3MeshD3DDelete_t)(CMeshD3D *self, byte flags);
+typedef int(*bspQ3MeshD3DDev_t)(CMeshD3D *self, void *dev);
+typedef CTriMesh *(*bspQ3TriMeshDelete_t)(CTriMesh *self, byte flags);
 /* ID3DXBaseMesh */
 typedef int(__stdcall *bspQ3DrawSubset_t)(void *mesh, uint32_t attrib);
 typedef uint32_t(__stdcall *bspQ3GetNum_t)(void *mesh);
@@ -45,13 +45,13 @@ static void *BspQ3_LumpCopy(CBspQ3 *self, int id, int len) {
 	return p;
 }
 
-BspQ3Meshes *__fastcall BspQ3Meshes_ctor(BspQ3Meshes *self) {
+BspQ3Meshes *BspQ3Meshes_ctor(BspQ3Meshes *self) {
 	memset(self->m, 0, sizeof(self->m));
 	self->n = 0;
 	return self;
 }
 
-BspQ3Mesh *__fastcall BspQ3Mesh_ctor(BspQ3Mesh *self) {
+BspQ3Mesh *BspQ3Mesh_ctor(BspQ3Mesh *self) {
 	CVertList_ctor(&self->vert);
 	self->face = NULL;
 	self->nTri = 0;
@@ -62,11 +62,11 @@ BspQ3Mesh *__fastcall BspQ3Mesh_ctor(BspQ3Mesh *self) {
 	return self;
 }
 
-void *__fastcall BspQ3_Identity(void *self) {
+void *BspQ3_Identity(void *self) {
 	return self;
 }
 
-void __fastcall CBspQ3_dtor(CBspQ3 *self) {
+void CBspQ3_dtor(CBspQ3 *self) {
 	self->head = NULL;
 	if (self->lump) {
 		operator_delete_sized(self->lump, 0);
@@ -91,7 +91,7 @@ void __fastcall CBspQ3_dtor(CBspQ3 *self) {
 	}
 }
 
-void __fastcall BspQ3Meshes_Free(BspQ3Meshes *self) {
+void BspQ3Meshes_Free(BspQ3Meshes *self) {
 	for (int i = 0; i < self->n; i++) {
 		BspQ3Mesh *m = self->m[i];
 		if (m) {
@@ -102,7 +102,7 @@ void __fastcall BspQ3Meshes_Free(BspQ3Meshes *self) {
 	}
 }
 
-void __fastcall BspQ3Mesh_dtor(BspQ3Mesh *self) {
+void BspQ3Mesh_dtor(BspQ3Mesh *self) {
 	CHECK(!self->pVertVB);
 	CHECK(!self->pVertIB);
 	if (self->pTri) {
@@ -128,7 +128,7 @@ long double Vec3_DotX87(const float *a, const float *b) {
 	return r;
 }
 
-void __fastcall CBspQ3_ReleaseD3D(CBspQ3 *self) {
+void CBspQ3_ReleaseD3D(CBspQ3 *self) {
 	((bspQ3MeshD3DDev_t)self->MeshD3D->vftable[MESHD3D_VF_INVALIDATE])(self->MeshD3D, g_pd3dDevice);
 	if (self->pMesh) {
 		COM_RELEASE(self->pMesh);
@@ -147,7 +147,7 @@ void __fastcall CBspQ3_ReleaseD3D(CBspQ3 *self) {
 	}
 }
 
-void __fastcall CBspQ3_InitD3D(CBspQ3 *self) {
+void CBspQ3_InitD3D(CBspQ3 *self) {
 	((bspQ3MeshD3DDev_t)self->MeshD3D->vftable[MESHD3D_VF_RESTORE])(self->MeshD3D, g_pd3dDevice);
 	for (int i = 0; i < self->MeshList->n; i++) {
 		BspQ3Mesh *m = self->MeshList->m[i];
@@ -156,7 +156,7 @@ void __fastcall CBspQ3_InitD3D(CBspQ3 *self) {
 	}
 }
 
-void __fastcall CBspQ3_ReadFaces(CBspQ3 *self) {
+void CBspQ3_ReadFaces(CBspQ3 *self) {
 	char dir[MAX_FILEPATH], buf[MAX_FILEPATH];
 	CMaterial tmp;
 
@@ -247,7 +247,7 @@ void __fastcall CBspQ3_ReadFaces(CBspQ3 *self) {
 	}
 }
 
-void __fastcall CBspQ3_ReadLMaps(CBspQ3 *self) {
+void CBspQ3_ReadLMaps(CBspQ3 *self) {
 	char path[MAX_FILEPATH];
 
 	CHECK(self->lump);
@@ -309,7 +309,7 @@ void __fastcall CBspQ3_ReadLMaps(CBspQ3 *self) {
 	}
 }
 
-void __fastcall CBspQ3_ReadShaders(CBspQ3 *self) {
+void CBspQ3_ReadShaders(CBspQ3 *self) {
 	int size = BspQ3_LumpLen(self, BSPQ3_LUMP_SHADERS, sizeof(BspQ3Shader));
 	int n = size / (int)sizeof(BspQ3Shader);
 	self->shaders = BspQ3_LumpCopy(self, BSPQ3_LUMP_SHADERS, size);
@@ -317,7 +317,7 @@ void __fastcall CBspQ3_ReadShaders(CBspQ3 *self) {
 	E3D_DebugPrintf("\nQ3BSP: shaders: %d", n);
 }
 
-void __fastcall CBspQ3_ReadVerts(CBspQ3 *self) {
+void CBspQ3_ReadVerts(CBspQ3 *self) {
 	int size = BspQ3_LumpLen(self, BSPQ3_LUMP_VERTICES, sizeof(BspQ3Vert));
 	int n = size / (int)sizeof(BspQ3Vert);
 	self->verts = BspQ3_LumpCopy(self, BSPQ3_LUMP_VERTICES, size);
@@ -325,7 +325,7 @@ void __fastcall CBspQ3_ReadVerts(CBspQ3 *self) {
 	E3D_DebugPrintf("\nQ3BSP: vertices: %d", n);
 }
 
-int __thiscall CBspQ3_ReadLump(CBspQ3 *self, int id, void **out, int elem) {
+int CBspQ3_ReadLump(CBspQ3 *self, int id, void **out, int elem) {
 	CHECK(self->lump);
 	CHECK(id >= 0 && id < BSPQ3_NUM_LUMPS);
 	int size = self->head->lumps[id].len;
@@ -335,7 +335,7 @@ int __thiscall CBspQ3_ReadLump(CBspQ3 *self, int id, void **out, int elem) {
 	return n;
 }
 
-void __fastcall CBspQ3_Render(CBspQ3 *self) {
+void CBspQ3_Render(CBspQ3 *self) {
 	CHECK(g_pd3dDevice);
 	Render_SetWorldMatrix(g_MatIdentity, 0);
 	CHECK(self->MeshD3D);
@@ -380,7 +380,7 @@ void __fastcall CBspQ3_Render(CBspQ3 *self) {
 	g_RenderVerts += D3D_METHOD(self->pMesh, bspQ3GetNum_t, 0x14)(self->pMesh);
 }
 
-void __thiscall BspQ3Meshes_AddTri(BspQ3Meshes *self, const void *a, const void *b, const void *c, BspQ3Face *face) {
+void BspQ3Meshes_AddTri(BspQ3Meshes *self, const void *a, const void *b, const void *c, BspQ3Face *face) {
 	BspQ3Mesh *m = BspQ3Meshes_Find(self, face);
 	CHECK(m);
 	if (!m->totTri) {
@@ -402,7 +402,7 @@ void __thiscall BspQ3Meshes_AddTri(BspQ3Meshes *self, const void *a, const void 
 	m->nTri++;
 }
 
-BspQ3Mesh *__thiscall BspQ3Meshes_Find(BspQ3Meshes *self, BspQ3Face *face) {
+BspQ3Mesh *BspQ3Meshes_Find(BspQ3Meshes *self, BspQ3Face *face) {
 	CHECK(face);
 	for (int i = 0; i < self->n; i++) {
 		BspQ3Mesh *m = self->m[i];
@@ -413,7 +413,7 @@ BspQ3Mesh *__thiscall BspQ3Meshes_Find(BspQ3Meshes *self, BspQ3Face *face) {
 	return NULL;
 }
 
-void __thiscall BspQ3Meshes_Count(BspQ3Meshes *self, BspQ3Face *face, int ntri) {
+void BspQ3Meshes_Count(BspQ3Meshes *self, BspQ3Face *face, int ntri) {
 	BspQ3Mesh *m = BspQ3Meshes_Find(self, face);
 	if (!m) {
 		CHECK(self->n < BSPQ3_MAX_MESHES);
@@ -426,7 +426,7 @@ void __thiscall BspQ3Meshes_Count(BspQ3Meshes *self, BspQ3Face *face, int ntri) 
 	m->nTri += ntri;
 }
 
-void __fastcall CBspQ3_Build(CBspQ3 *self) {
+void CBspQ3_Build(CBspQ3 *self) {
 	CHECK(!self->MeshD3D);
 	CHECK(!self->MeshList);
 	BspQ3Meshes *lm = operator_new(sizeof(BspQ3Meshes));

@@ -132,92 +132,92 @@ SD_SIZE(cVehicleMotors, 0xc8);
 #define g_FXEngineTrailDistSpeedFactor GAME_GLOBAL_IN(float, GVar_FXEngineTrailDistSpeedFactor, 16)
 
 /* VehicleEntity.cpp */
-cVehicleMotor *__thiscall cVehicleMotor_ctor(cVehicleMotor *self);
-void __fastcall cVehicleMotor_dtor(cVehicleMotor *self);
+cVehicleMotor *cVehicleMotor_ctor(cVehicleMotor *self);
+void cVehicleMotor_dtor(cVehicleMotor *self);
 /* rva 0xf6b20 (Entities/ObjEntity range): the trail color of the team at +0x74 of the team info (0..3, else
  * white) */
 
 /* VehicleMotors.cpp */
-void __fastcall cVehicleMotors_Update(cVehicleMotors *self);
+void cVehicleMotors_Update(cVehicleMotors *self);
 /* the models disabled, the nodes and the animations off, the effects cleared */
-void __fastcall cVehicleMotor_Reset(cVehicleMotor *self);
-void __fastcall cVehicleMotors_Reset(cVehicleMotors *self);
-void __fastcall cVehicleMotors_ClearEffects(cVehicleMotors *self);
-void __fastcall cVehicleMotors_InitEffects(cVehicleMotors *self);
-byte __thiscall cVehicleMotors_VarF(cVehicleMotors *self, const char *name, double *v, byte set);
+void cVehicleMotor_Reset(cVehicleMotor *self);
+void cVehicleMotors_Reset(cVehicleMotors *self);
+void cVehicleMotors_ClearEffects(cVehicleMotors *self);
+void cVehicleMotors_InitEffects(cVehicleMotors *self);
+byte cVehicleMotors_VarF(cVehicleMotors *self, const char *name, double *v, byte set);
 /* the position and the angles (radians) of the node of motor, side, in the ship model */
-byte __thiscall cVehicleMotors_GetExhaust(cVehicleMotors *self, uint32_t motor, uint32_t side, vec3_t *pos,
+byte cVehicleMotors_GetExhaust(cVehicleMotors *self, uint32_t motor, uint32_t side, vec3_t *pos,
 	vec3_t *ang);
 /* the same for the slot DC_Engine<A + motor>_0<1 + side> */
-byte __thiscall cVehicleMotors_GetSlot(cVehicleMotors *self, uint32_t motor, uint32_t side, vec3_t *pos,
+byte cVehicleMotors_GetSlot(cVehicleMotors *self, uint32_t motor, uint32_t side, vec3_t *pos,
 	vec3_t *ang);
 /* the file of motor ("" for none), the number of its nodes into count */
-const char *__thiscall cVehicleMotors_GetMotorName(cVehicleMotors *self, uint32_t motor, int *count);
+const char *cVehicleMotors_GetMotorName(cVehicleMotors *self, uint32_t motor, int *count);
 /* the slots DC_Engine<A + motor>_01, _02 of the ship model (0..2) */
-int __thiscall cVehicleMotors_NumSlots(cVehicleMotors *self, byte motor);
-cEntity *__fastcall cVehicleMotors_GetOwner(cVehicleMotors *self);
-byte __thiscall cVehicleMotors_VarI(cVehicleMotors *self, const char *name, int *v, byte set);
-void __fastcall cVehicleMotor_Render(cVehicleMotor *self);
-void __fastcall cVehicleMotors_Render(cVehicleMotors *self);
-void __thiscall cVehicleMotor_SetEnabled(cVehicleMotor *self, byte on);
-void __thiscall cVehicleMotors_SetEnabled(cVehicleMotors *self, byte on);
-void __thiscall cVehicleMotors_StartAnimF(cVehicleMotors *self, uint32_t motor, const char *anim);
-void __thiscall cVehicleMotors_StartAnimM(cVehicleMotors *self, uint32_t motor, const char *anim);
+int cVehicleMotors_NumSlots(cVehicleMotors *self, byte motor);
+cEntity *cVehicleMotors_GetOwner(cVehicleMotors *self);
+byte cVehicleMotors_VarI(cVehicleMotors *self, const char *name, int *v, byte set);
+void cVehicleMotor_Render(cVehicleMotor *self);
+void cVehicleMotors_Render(cVehicleMotors *self);
+void cVehicleMotor_SetEnabled(cVehicleMotor *self, byte on);
+void cVehicleMotors_SetEnabled(cVehicleMotors *self, byte on);
+void cVehicleMotors_StartAnimF(cVehicleMotors *self, uint32_t motor, const char *anim);
+void cVehicleMotors_StartAnimM(cVehicleMotors *self, uint32_t motor, const char *anim);
 /* the models of file at the nodes of motor kind motor of owner; the number of nodes */
-int __thiscall cVehicleMotor_Load(cVehicleMotor *self, cEntity *owner, byte motor, const char *file,
+int cVehicleMotor_Load(cVehicleMotor *self, cEntity *owner, byte motor, const char *file,
 	const vec3_t *scale);
-int __thiscall cVehicleMotors_SetMotor(cVehicleMotors *self, uint32_t motor, const char *file, float sx, float sy,
+int cVehicleMotors_SetMotor(cVehicleMotors *self, uint32_t motor, const char *file, float sx, float sy,
 	float sz);
 /* the animation anim (EnginePathFmt of the motor file) of channel 0, once */
-void __thiscall cVehicleMotor_StartAnimF(cVehicleMotor *self, const char *anim);
+void cVehicleMotor_StartAnimF(cVehicleMotor *self, const char *anim);
 /* channel 0 at k (-1..1) of its length */
-void __thiscall cVehicleMotor_SetAnimF(cVehicleMotor *self, float k);
+void cVehicleMotor_SetAnimF(cVehicleMotor *self, float k);
 /* the animation of channel 1, looped by cVehicleMotor_UpdateAnimM */
-void __thiscall cVehicleMotor_StartAnimM(cVehicleMotor *self, const char *anim);
-void __thiscall cVehicleMotor_UpdateAnimM(cVehicleMotor *self, float dt);
-void __thiscall cVehicleMotors_SetOwner(cVehicleMotors *self, cEntity *owner);
-void __thiscall cVehicleMotor_SetEffect(cVehicleMotor *self, uint32_t fx);
-void __thiscall cVehicleMotors_SetEffect(cVehicleMotors *self, uint32_t fx);
-void __thiscall cVehicleMotor_SetEffectParam(cVehicleMotor *self, int i, float v);
-void __thiscall cVehicleMotors_SetEffectParam(cVehicleMotors *self, int i, float v);
-byte __thiscall cVehicleMotors_VarS(cVehicleMotors *self, const char *name, char **v, byte set);
-byte __thiscall cVehicleMotors_VarV(cVehicleMotors *self, const char *name, double *x, double *y, double *z,
+void cVehicleMotor_StartAnimM(cVehicleMotor *self, const char *anim);
+void cVehicleMotor_UpdateAnimM(cVehicleMotor *self, float dt);
+void cVehicleMotors_SetOwner(cVehicleMotors *self, cEntity *owner);
+void cVehicleMotor_SetEffect(cVehicleMotor *self, uint32_t fx);
+void cVehicleMotors_SetEffect(cVehicleMotors *self, uint32_t fx);
+void cVehicleMotor_SetEffectParam(cVehicleMotor *self, int i, float v);
+void cVehicleMotors_SetEffectParam(cVehicleMotors *self, int i, float v);
+byte cVehicleMotors_VarS(cVehicleMotors *self, const char *name, char **v, byte set);
+byte cVehicleMotors_VarV(cVehicleMotors *self, const char *name, double *x, double *y, double *z,
 	byte set);
-cVehicleMotorsEffects *__fastcall cVehicleMotorsEffects_ctor(cVehicleMotorsEffects *self);
-void __fastcall cVehicleMotorsEffects_dtor(cVehicleMotorsEffects *self);
-vec3_t *__thiscall Vec3_Assign(vec3_t *self, const vec3_t *v);
+cVehicleMotorsEffects *cVehicleMotorsEffects_ctor(cVehicleMotorsEffects *self);
+void cVehicleMotorsEffects_dtor(cVehicleMotorsEffects *self);
+vec3_t *Vec3_Assign(vec3_t *self, const vec3_t *v);
 /* the particles and trails freed, the nodes and owners cleared */
-void __fastcall cVehicleMotorsEffects_Clear(cVehicleMotorsEffects *self);
+void cVehicleMotorsEffects_Clear(cVehicleMotorsEffects *self);
 /* the particles off; a trail of a dead ship goes on as a death trail debris */
-void __fastcall cVehicleMotorsEffects_Stop(cVehicleMotorsEffects *self);
-void __fastcall cVehicleMotorsEffects_HideTrails(cVehicleMotorsEffects *self);
+void cVehicleMotorsEffects_Stop(cVehicleMotorsEffects *self);
+void cVehicleMotorsEffects_HideTrails(cVehicleMotorsEffects *self);
 /* the model of the nodes of side */
-CGameModel *__thiscall cVehicleMotorsEffects_GetModel(cVehicleMotorsEffects *self, int side);
+CGameModel *cVehicleMotorsEffects_GetModel(cVehicleMotorsEffects *self, int side);
 
 /* VehicleMotorsEffects.cpp */
-void __fastcall cVehicleMotorsEffects_Init(cVehicleMotorsEffects *self);
+void cVehicleMotorsEffects_Init(cVehicleMotorsEffects *self);
 /* Rand_FloatRange is declared in weapons.h */
 /* the particles of the Calima effect (the hot air under the motors) for n emit positions at pos */
 void __stdcall VMEffects_SetupHaze(float thrust, float speed, vec3_t *pos, int n, CGameParticles *ps);
-void __thiscall cVehicleMotorsEffects_SetType(cVehicleMotorsEffects *self, int type);
+void cVehicleMotorsEffects_SetType(cVehicleMotorsEffects *self, int type);
 /* the glow particles of the exhausts in ps from *first on (2 each), *first moved on */
-void __thiscall cVehicleMotorsEffects_Glow(cVehicleMotorsEffects *self, float thrust, float k, float dist,
+void cVehicleMotorsEffects_Glow(cVehicleMotorsEffects *self, float thrust, float k, float dist,
 	int *first, CGameParticles *ps);
-void __thiscall cVehicleMotorsEffects_StopGlow(cVehicleMotorsEffects *self, int *first, CGameParticles *ps);
-void __thiscall cVehicleMotorsEffects_SetColor(cVehicleMotorsEffects *self, uint32_t color);
-void __thiscall cVehicleMotorsEffects_SetOffset(cVehicleMotorsEffects *self, float v);
-void __thiscall cVehicleMotorsEffects_SetScale(cVehicleMotorsEffects *self, float v);
-void __thiscall cVehicleMotorsEffects_Set(cVehicleMotorsEffects *self, cEntity *owner, cVehicleMotors *motors,
+void cVehicleMotorsEffects_StopGlow(cVehicleMotorsEffects *self, int *first, CGameParticles *ps);
+void cVehicleMotorsEffects_SetColor(cVehicleMotorsEffects *self, uint32_t color);
+void cVehicleMotorsEffects_SetOffset(cVehicleMotorsEffects *self, float v);
+void cVehicleMotorsEffects_SetScale(cVehicleMotorsEffects *self, float v);
+void cVehicleMotorsEffects_Set(cVehicleMotorsEffects *self, cEntity *owner, cVehicleMotors *motors,
 	cVehicleMotor *motor);
-void __thiscall cVehicleMotorsEffects_SetVisible(cVehicleMotorsEffects *self, byte on);
+void cVehicleMotorsEffects_SetVisible(cVehicleMotorsEffects *self, byte on);
 /* the exhaust particles of the FxClass type at both sides: thrust * f4bc the thrust, speed the speed factor of
  * the motors (0 hides them), one frame in four while the ship leaves a cloud, fade the alpha */
-void __thiscall cVehicleMotorsEffects_Exhaust(cVehicleMotorsEffects *self, float thrust, float k, float f4bc,
+void cVehicleMotorsEffects_Exhaust(cVehicleMotorsEffects *self, float thrust, float k, float f4bc,
 	float speed, byte cloud, float fade);
 /* the smoke particles at the exhausts while the ship leaves a cloud */
-void __thiscall cVehicleMotorsEffects_Smoke(cVehicleMotorsEffects *self, float dt, CGameParticles *ps);
+void cVehicleMotorsEffects_Smoke(cVehicleMotorsEffects *self, float dt, CGameParticles *ps);
 /* the trails of the exhausts: pos and rot of the ship, vel its local velocity */
-void __thiscall cVehicleMotorsEffects_Trails(cVehicleMotorsEffects *self, float dt, vec3_t pos, vec3_t rot,
+void cVehicleMotorsEffects_Trails(cVehicleMotorsEffects *self, float dt, vec3_t pos, vec3_t rot,
 	vec3_t vel, float thrust, float k, uint32_t color);
 
 #endif

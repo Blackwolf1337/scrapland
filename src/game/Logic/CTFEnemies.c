@@ -22,7 +22,7 @@ cEntity *Logic_AsCar(cEntity *e) {
 	return e;
 }
 
-cCTFEnemies *__fastcall cCTFEnemies_ctor(cCTFEnemies *self) {
+cCTFEnemies *cCTFEnemies_ctor(cCTFEnemies *self) {
 	cCTFEnemiesData *d = operator_new(sizeof(*d));
 
 	if (!d) {
@@ -38,7 +38,7 @@ cCTFEnemies *__fastcall cCTFEnemies_ctor(cCTFEnemies *self) {
 	return self;
 }
 
-void __fastcall cCTFEnemies_dtor(cCTFEnemies *self) {
+void cCTFEnemies_dtor(cCTFEnemies *self) {
 	cCTFEnemiesData *d = self->d;
 
 	if (d) {
@@ -47,7 +47,7 @@ void __fastcall cCTFEnemies_dtor(cCTFEnemies *self) {
 	}
 }
 
-cCTFEnemiesLocalLogic *__thiscall cCTFEnemiesLocalLogic_Delete(cCTFEnemiesLocalLogic *self, byte flags) {
+cCTFEnemiesLocalLogic *cCTFEnemiesLocalLogic_Delete(cCTFEnemiesLocalLogic *self, byte flags) {
 	self->vftable = CCTFENEMIESLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -57,7 +57,7 @@ cCTFEnemiesLocalLogic *__thiscall cCTFEnemiesLocalLogic_Delete(cCTFEnemiesLocalL
 }
 
 /* the ships after the flag: the AI state 6 to the flag of that name */
-void __thiscall cCTFEnemiesData_GoToFlag(cCTFEnemiesData *self, const char *name, cAIVehicle *ai) {
+void cCTFEnemiesData_GoToFlag(cCTFEnemiesData *self, const char *name, cAIVehicle *ai) {
 	vec3_t tmp;
 
 	(void)self;
@@ -72,7 +72,7 @@ void __thiscall cCTFEnemiesData_GoToFlag(cCTFEnemiesData *self, const char *name
 }
 
 /* a random friend ship, or the player (once while no ship attacks it) if attackUsr */
-cEntity *__thiscall cCTFEnemiesData_PickTarget(cCTFEnemiesData *self, cEntity *e, byte attackUsr) {
+cEntity *cCTFEnemiesData_PickTarget(cCTFEnemiesData *self, cEntity *e, byte attackUsr) {
 	(void)e;
 	cEntity *usr = ChType_Usr0();
 	cEntityListData *friends = cCTFFriends_GetList((&g_pWorld->logic.ctfFriends));
@@ -108,7 +108,7 @@ static void CTF_SetFlagName(const char *flag) {
 	g_CTFFlagName[n] = 0;
 }
 
-void __fastcall cCTFEnemiesData_Think(cCTFEnemiesData *self) {
+void cCTFEnemiesData_Think(cCTFEnemiesData *self) {
 	Nto1Node *n = Logic_ListFirst(self->list);
 
 	if (!n) {
@@ -180,16 +180,16 @@ void __fastcall cCTFEnemiesData_Think(cCTFEnemiesData *self) {
 	} while ((n = Logic_ListNext(n)) != NULL);
 }
 
-cEntityListData *__fastcall cCTFEnemies_GetList(cCTFEnemies *self) {
+cEntityListData *cCTFEnemies_GetList(cCTFEnemies *self) {
 	return self->d->list;
 }
 
-char *__fastcall cCTFEnemies_GetLeader(cCTFEnemies *self) {
+char *cCTFEnemies_GetLeader(cCTFEnemies *self) {
 	return self->d->leader;
 }
 
 /* the entity list with the hit callback and the logic of its ships */
-cEntityListData *__fastcall cCTFEnemies_Init(cCTFEnemies *self) {
+cEntityListData *cCTFEnemies_Init(cCTFEnemies *self) {
 	cCTFEnemiesData *d = self->d;
 
 	d->list = cWorld_NewEntityList(g_pWorld, "CTFEnemies");
@@ -199,7 +199,7 @@ cEntityListData *__fastcall cCTFEnemies_Init(cCTFEnemies *self) {
 }
 
 /* "IsLeader": 1 if the ship is the leader; set 1 makes it the leader, 0 of the leader none */
-byte __thiscall cCTFEnemiesLocalLogic_VarI(cCTFEnemiesLocalLogic *self, const char *name, int *i, byte set) {
+byte cCTFEnemiesLocalLogic_VarI(cCTFEnemiesLocalLogic *self, const char *name, int *i, byte set) {
 	if (strcmp(name, "IsLeader")) {
 		return 0;
 	}
@@ -253,15 +253,15 @@ void CTFEnemies_OnDamage(cAbstractFile *params) {
 	cAIVehicle_SetState(ai, AIV_STATE_ATTACK, a);
 }
 
-void __thiscall cCTFEnemies_SetBonus(cCTFEnemies *self, float t) {
+void cCTFEnemies_SetBonus(cCTFEnemies *self, float t) {
 	self->d->bonus = t;
 }
 
-void __thiscall cCTFEnemies_SetLeader(cCTFEnemies *self, const char *name) {
+void cCTFEnemies_SetLeader(cCTFEnemies *self, const char *name) {
 	cString_Set(&self->d->leader, name);
 }
 
-void __thiscall cCTFEnemies_Update(cCTFEnemies *self, float dt) {
+void cCTFEnemies_Update(cCTFEnemies *self, float dt) {
 	cCTFEnemiesData *d = self->d;
 	float b = d->bonus;
 

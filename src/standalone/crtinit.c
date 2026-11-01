@@ -87,7 +87,7 @@ void crt_Init_thread_footer(int *guard) {
 void __stdcall crt_eh_vector_ctor(void *p, uint32_t size, uint32_t count, void *ctor, void *dtor) {
 	(void)dtor;
 	for (; count; count--) {
-		((void(__thiscall *)(void *))ctor)(p);
+		((void(*)(void *))ctor)(p);
 		p = (byte *)p + size;
 	}
 }
@@ -96,7 +96,7 @@ void __stdcall crt_eh_vector_ctor(void *p, uint32_t size, uint32_t count, void *
 void __stdcall crt_eh_vector_dtor(void *p, uint32_t size, uint32_t count, void *dtor) {
 	for (byte *q = (byte *)p + size * count; count; count--) {
 		q -= size;
-		((void(__thiscall *)(void *))dtor)(q);
+		((void(*)(void *))dtor)(q);
 	}
 }
 

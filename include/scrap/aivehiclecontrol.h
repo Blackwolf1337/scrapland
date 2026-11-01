@@ -22,7 +22,7 @@
 
 /* the one slot of both controllers */
 typedef struct cAIObjVtbl {
-	void *(__thiscall *Delete)(void *self, byte flags);	/* 0x00 */
+	void *(*Delete)(void *self, byte flags);	/* 0x00 */
 } cAIObjVtbl;
 
 /* the moves of SetMove (cAIVehicleControl.mode) */
@@ -179,92 +179,92 @@ SD_SIZE(cAIVehicleShoot, 0x184);
 typedef cAIVehicleShoot cAIVehicleShootControl;
 
 /* ---- AI/AIVehicleControl.cpp (src/game/AI/IVehicleControl.c); the rest in aivehicle.h ---- */
-void __fastcall cAIVehicleControl_dtor(cAIVehicleControl *self);
-cAIVehicleControl *__thiscall cAIVehicleControl_Delete(cAIVehicleControl *self, byte flags);
+void cAIVehicleControl_dtor(cAIVehicleControl *self);
+cAIVehicleControl *cAIVehicleControl_Delete(cAIVehicleControl *self, byte flags);
 /* the segment a b and the 8 around it at the radius of the vehicle free (r not used) */
-byte __thiscall cAIVehicleControl_TestCorridor(cAIVehicleControl *self, const vec3_t *a, const vec3_t *b, float r);
+byte cAIVehicleControl_TestCorridor(cAIVehicleControl *self, const vec3_t *a, const vec3_t *b, float r);
 /* the two diagonals at the end of the segment from a along dir (len at most the radius) free */
-byte __thiscall cAIVehicleControl_TestEnd(cAIVehicleControl *self, const vec3_t *a, const vec3_t *dir, float len);
-byte __thiscall cAIVehicleControl_TestEndTo(cAIVehicleControl *self, const vec3_t *a, const vec3_t *b);
-byte __fastcall cAIVehicleControl_CheckTarget(cAIVehicleControl *self);
-byte __fastcall cAIVehicleControl_CheckPathFree(cAIVehicleControl *self);
-byte __fastcall cAIVehicleControl_FindPoint(cAIVehicleControl *self);
-byte __fastcall cAIVehicleControl_FindPointDir(cAIVehicleControl *self);
-byte __fastcall cAIVehicleControl_ChasePath(cAIVehicleControl *self);
-byte __fastcall cAIVehicleControl_ChaseLine(cAIVehicleControl *self);
-void __fastcall cAIVehicleControl_CheckArrive(cAIVehicleControl *self);
-void __fastcall cAIVehicleControl_TurnToTarget(cAIVehicleControl *self);
-void __fastcall cAIVehicleControl_TurnToPoint(cAIVehicleControl *self);
-byte __fastcall cAIVehicleControl_PathStep(cAIVehicleControl *self);
-byte __fastcall cAIVehicleControl_PathStepChase(cAIVehicleControl *self);
-byte __fastcall cAIVehicleControl_PathStepDir(cAIVehicleControl *self);
+byte cAIVehicleControl_TestEnd(cAIVehicleControl *self, const vec3_t *a, const vec3_t *dir, float len);
+byte cAIVehicleControl_TestEndTo(cAIVehicleControl *self, const vec3_t *a, const vec3_t *b);
+byte cAIVehicleControl_CheckTarget(cAIVehicleControl *self);
+byte cAIVehicleControl_CheckPathFree(cAIVehicleControl *self);
+byte cAIVehicleControl_FindPoint(cAIVehicleControl *self);
+byte cAIVehicleControl_FindPointDir(cAIVehicleControl *self);
+byte cAIVehicleControl_ChasePath(cAIVehicleControl *self);
+byte cAIVehicleControl_ChaseLine(cAIVehicleControl *self);
+void cAIVehicleControl_CheckArrive(cAIVehicleControl *self);
+void cAIVehicleControl_TurnToTarget(cAIVehicleControl *self);
+void cAIVehicleControl_TurnToPoint(cAIVehicleControl *self);
+byte cAIVehicleControl_PathStep(cAIVehicleControl *self);
+byte cAIVehicleControl_PathStepChase(cAIVehicleControl *self);
+byte cAIVehicleControl_PathStepDir(cAIVehicleControl *self);
 /* two identical copies in the exe */
-void __fastcall cAIVehicleControl_StrafeToPoint(cAIVehicleControl *self);
-byte __fastcall cAIVehicleControl_StrafeDodge(cAIVehicleControl *self);
-void __fastcall cAIVehicleControl_StrafeChase(cAIVehicleControl *self);
-void __fastcall cAIVehicleControl_StrafeRandom(cAIVehicleControl *self);
-void __fastcall cAIVehicleControl_AccelToTarget(cAIVehicleControl *self);
-void __fastcall cAIVehicleControl_AccelChase(cAIVehicleControl *self);
-void __fastcall cAIVehicleControl_AccelPath(cAIVehicleControl *self);
-byte __thiscall cAIVehicleControl_SetPath(cAIVehicleControl *self, const vec3_t *p);
-byte __thiscall cAIVehicleControl_SetDirectPath(cAIVehicleControl *self, const vec3_t *p);
-byte __fastcall cAIVehicleControl_RebuildPath(cAIVehicleControl *self);
-void __fastcall cAIVehicleControl_Smooth(cAIVehicleControl *self);
-byte __fastcall cAIVehicleControl_NodeIsFirst(cAIVehicleControl *self);
-byte __fastcall cAIVehicleControl_NodeIsLast(cAIVehicleControl *self);
+void cAIVehicleControl_StrafeToPoint(cAIVehicleControl *self);
+byte cAIVehicleControl_StrafeDodge(cAIVehicleControl *self);
+void cAIVehicleControl_StrafeChase(cAIVehicleControl *self);
+void cAIVehicleControl_StrafeRandom(cAIVehicleControl *self);
+void cAIVehicleControl_AccelToTarget(cAIVehicleControl *self);
+void cAIVehicleControl_AccelChase(cAIVehicleControl *self);
+void cAIVehicleControl_AccelPath(cAIVehicleControl *self);
+byte cAIVehicleControl_SetPath(cAIVehicleControl *self, const vec3_t *p);
+byte cAIVehicleControl_SetDirectPath(cAIVehicleControl *self, const vec3_t *p);
+byte cAIVehicleControl_RebuildPath(cAIVehicleControl *self);
+void cAIVehicleControl_Smooth(cAIVehicleControl *self);
+byte cAIVehicleControl_NodeIsFirst(cAIVehicleControl *self);
+byte cAIVehicleControl_NodeIsLast(cAIVehicleControl *self);
 /* the dodge of StrafeDodge runs */
-byte __fastcall cAIVehicleControl_GetStrafing(cAIVehicleControl *self);
-byte __fastcall cAIVehicleControl_NodeOnWay(cAIVehicleControl *self);
+byte cAIVehicleControl_GetStrafing(cAIVehicleControl *self);
+byte cAIVehicleControl_NodeOnWay(cAIVehicleControl *self);
 /* the moves of Update (dt not used) */
-byte __thiscall cAIVehicleControl_UpdateChase(cAIVehicleControl *self, float dt);
-byte __thiscall cAIVehicleControl_UpdateOrient(cAIVehicleControl *self, float dt);
-byte __thiscall cAIVehicleControl_UpdatePoint(cAIVehicleControl *self, float dt);
-byte __thiscall cAIVehicleControl_UpdateDirect(cAIVehicleControl *self, float dt);
-byte __thiscall cAIVehicleControl_UpdatePath(cAIVehicleControl *self, float dt);
-void __fastcall cAIVehicleControl_ResetLife(cAIVehicleControl *self);
-byte __thiscall cAIVehicleControl_SetChase(cAIVehicleControl *self, Nto1Node *node, float chaseMin, float chaseMax,
+byte cAIVehicleControl_UpdateChase(cAIVehicleControl *self, float dt);
+byte cAIVehicleControl_UpdateOrient(cAIVehicleControl *self, float dt);
+byte cAIVehicleControl_UpdatePoint(cAIVehicleControl *self, float dt);
+byte cAIVehicleControl_UpdateDirect(cAIVehicleControl *self, float dt);
+byte cAIVehicleControl_UpdatePath(cAIVehicleControl *self, float dt);
+void cAIVehicleControl_ResetLife(cAIVehicleControl *self);
+byte cAIVehicleControl_SetChase(cAIVehicleControl *self, Nto1Node *node, float chaseMin, float chaseMax,
 	byte boost, float rotA, float rotB);
-void __thiscall cAIVehicleControl_RandomDest(cAIVehicleControl *self, vec3_t *out);
-void __thiscall cAIVehicleControl_RandomNear(cAIVehicleControl *self, vec3_t *p);
-byte __thiscall cAIVehicleControl_SetOrient(cAIVehicleControl *self, Nto1Node *node);
-byte __thiscall cAIVehicleControl_MovePath(cAIVehicleControl *self, const vec3_t *dir, float dist, byte boost,
+void cAIVehicleControl_RandomDest(cAIVehicleControl *self, vec3_t *out);
+void cAIVehicleControl_RandomNear(cAIVehicleControl *self, vec3_t *p);
+byte cAIVehicleControl_SetOrient(cAIVehicleControl *self, Nto1Node *node);
+byte cAIVehicleControl_MovePath(cAIVehicleControl *self, const vec3_t *dir, float dist, byte boost,
 	float accel, byte direct, byte flat, float rotA, float rotB, byte strafe);
-byte __thiscall cAIVehicleControl_MovePoint(cAIVehicleControl *self, const vec3_t *dest, float dist, byte boost,
+byte cAIVehicleControl_MovePoint(cAIVehicleControl *self, const vec3_t *dest, float dist, byte boost,
 	float accel, float rotA, float rotB, byte stopAtGoal, byte strafe);
-byte __thiscall cAIVehicleControl_MoveDirect(cAIVehicleControl *self, const vec3_t *dest, float dist, byte boost,
+byte cAIVehicleControl_MoveDirect(cAIVehicleControl *self, const vec3_t *dest, float dist, byte boost,
 	float accel, float rotA, float rotB);
-void __fastcall cAIVehicleControl_ResetClear(cAIVehicleControl *self);
-void __fastcall cAIVehicleControl_ClearAll(cAIVehicleControl *self);
+void cAIVehicleControl_ResetClear(cAIVehicleControl *self);
+void cAIVehicleControl_ClearAll(cAIVehicleControl *self);
 
 /* ---- cAIVehicleGroup (the same source; cAIVehicleGroup_ctor in ai.h) ---- */
-void __fastcall cAIVehicleGroup_dtor(cAIVehicleGroup *self);
-cAIVehicleGroup *__thiscall cAIVehicleGroup_Delete(cAIVehicleGroup *self, byte flags);
-byte __fastcall cAIVehicleGroup_ReposReady(cAIVehicleGroup *self);
-void __fastcall cAIVehicleGroup_Draw(cAIVehicleGroup *self);
-void __fastcall cAIVehicleGroup_FindElevators(cAIVehicleGroup *self);
-void __fastcall cAIVehicleGroup_ResetRepos(cAIVehicleGroup *self);
+void cAIVehicleGroup_dtor(cAIVehicleGroup *self);
+cAIVehicleGroup *cAIVehicleGroup_Delete(cAIVehicleGroup *self, byte flags);
+byte cAIVehicleGroup_ReposReady(cAIVehicleGroup *self);
+void cAIVehicleGroup_Draw(cAIVehicleGroup *self);
+void cAIVehicleGroup_FindElevators(cAIVehicleGroup *self);
+void cAIVehicleGroup_ResetRepos(cAIVehicleGroup *self);
 /* the base class cAIEntityGroup: ai.h */
 
 /* ---- AI/AIVehicleShootControl.cpp (src/game/AI/IVehicleShootControl.c); the rest in aivehicle.h ---- */
-cAIVehicleShoot *__thiscall cAIVehicleShoot_Delete(cAIVehicleShoot *self, byte flags);
-byte __fastcall cAIVehicleShoot_CheckTarget(cAIVehicleShoot *self);
-byte __fastcall cAIVehicleShoot_CheckTargetCM(cAIVehicleShoot *self);
-void __fastcall cAIVehicleShoot_UpdateWeapon(cAIVehicleShoot *self);
-void __fastcall cAIVehicleShoot_UpdateCM(cAIVehicleShoot *self);
-void __fastcall cAIVehicleShoot_Fire(cAIVehicleShoot *self);
-void __fastcall cAIVehicleShoot_FireCM(cAIVehicleShoot *self);
-void __fastcall cAIVehicleShoot_FireHook(cAIVehicleShoot *self);
-void __fastcall cAIVehicleShoot_PullFire(cAIVehicleShoot *self);
-void __fastcall cAIVehicleShoot_SelectCM(cAIVehicleShoot *self);
-float __thiscall cAIVehicleShoot_AmmoAt(cAIVehicleShoot *self, float dist);
-float __thiscall cAIVehicleShoot_MaxAmmoAt(cAIVehicleShoot *self, float dist);
-float __fastcall cAIVehicleShoot_MaxAmmo(cAIVehicleShoot *self);
-float __fastcall cAIVehicleShoot_TotalAmmo(cAIVehicleShoot *self);
-float __thiscall cAIVehicleShoot_WeapAmmo(cAIVehicleShoot *self, int w);
-cAIVSWeap *__fastcall cAIVehicleShoot_GetWeaps(cAIVehicleShoot *self);
+cAIVehicleShoot *cAIVehicleShoot_Delete(cAIVehicleShoot *self, byte flags);
+byte cAIVehicleShoot_CheckTarget(cAIVehicleShoot *self);
+byte cAIVehicleShoot_CheckTargetCM(cAIVehicleShoot *self);
+void cAIVehicleShoot_UpdateWeapon(cAIVehicleShoot *self);
+void cAIVehicleShoot_UpdateCM(cAIVehicleShoot *self);
+void cAIVehicleShoot_Fire(cAIVehicleShoot *self);
+void cAIVehicleShoot_FireCM(cAIVehicleShoot *self);
+void cAIVehicleShoot_FireHook(cAIVehicleShoot *self);
+void cAIVehicleShoot_PullFire(cAIVehicleShoot *self);
+void cAIVehicleShoot_SelectCM(cAIVehicleShoot *self);
+float cAIVehicleShoot_AmmoAt(cAIVehicleShoot *self, float dist);
+float cAIVehicleShoot_MaxAmmoAt(cAIVehicleShoot *self, float dist);
+float cAIVehicleShoot_MaxAmmo(cAIVehicleShoot *self);
+float cAIVehicleShoot_TotalAmmo(cAIVehicleShoot *self);
+float cAIVehicleShoot_WeapAmmo(cAIVehicleShoot *self, int w);
+cAIVSWeap *cAIVehicleShoot_GetWeaps(cAIVehicleShoot *self);
 void __stdcall cAIVehicleShoot_WeaponName(int w, char *buf);
-byte __thiscall cAIVehicleShoot_InfernoReady(cAIVehicleShoot *self, float dist);
-byte __thiscall cAIVehicleShoot_InRange(cAIVehicleShoot *self, int w);
-void __fastcall cAIVehicleShoot_InitWeapons(cAIVehicleShoot *self);
+byte cAIVehicleShoot_InfernoReady(cAIVehicleShoot *self, float dist);
+byte cAIVehicleShoot_InRange(cAIVehicleShoot *self, int w);
+void cAIVehicleShoot_InitWeapons(cAIVehicleShoot *self);
 
 #endif

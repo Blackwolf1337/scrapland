@@ -8,7 +8,7 @@
 
 #define LF(self) (*(CLensFlare **)(self))
 
-void *__thiscall CGameLensFlare_ctor(void *self) {
+void *CGameLensFlare_ctor(void *self) {
 	void *mem;
 
 	LF(self) = NULL;
@@ -18,7 +18,7 @@ void *__thiscall CGameLensFlare_ctor(void *self) {
 	return self;
 }
 
-void __thiscall CGameLensFlare_dtor(void *self) {
+void CGameLensFlare_dtor(void *self) {
 	CLensFlare *lf = LF(self);
 
 	if (lf) {
@@ -27,46 +27,46 @@ void __thiscall CGameLensFlare_dtor(void *self) {
 	}
 }
 
-void __thiscall CGameLensFlare_SetOn(void *self, byte on) {
+void CGameLensFlare_SetOn(void *self, byte on) {
 	CLensFlare_SetOn(LF(self), on);
 }
 
-float __thiscall CGameLensFlare_GetIntensity(const void *self) {
+float CGameLensFlare_GetIntensity(const void *self) {
 	return LF(self)->intens;
 }
 
-float __thiscall CGameLensFlare_GetTraceInterval(const void *self) {
+float CGameLensFlare_GetTraceInterval(const void *self) {
 	return LF(self)->traceInterval;
 }
 
-float __thiscall CGameLensFlare_GetScale(const void *self) {
+float CGameLensFlare_GetScale(const void *self) {
 	return LF(self)->scale;
 }
 
-int __thiscall CGameLensFlare_GetType(const void *self) {
+int CGameLensFlare_GetType(const void *self) {
 	return LF(self)->type;
 }
 
-void __thiscall CGameLensFlare_SetIntensity(void *self, float v) {
+void CGameLensFlare_SetIntensity(void *self, float v) {
 	CLensFlare_SetIntens(LF(self), v);
 }
 
-void __thiscall CGameLensFlare_SetTraceInterval(void *self, float v) {
+void CGameLensFlare_SetTraceInterval(void *self, float v) {
 	CLensFlare_SetTraceInterval(LF(self), v);
 }
 
-void __thiscall CGameLensFlare_SetPos(void *self, vec3_t pos) {
+void CGameLensFlare_SetPos(void *self, vec3_t pos) {
 	CLensFlare_SetPos(LF(self), pos);
 }
 
-void __thiscall CGameLensFlare_SetScale(void *self, float v) {
+void CGameLensFlare_SetScale(void *self, float v) {
 	CLensFlare_SetScale(LF(self), v);
 }
 
-void __thiscall CGameLensFlare_SetType(void *self, int v) {
+void CGameLensFlare_SetType(void *self, int v) {
 	CLensFlare_SetType(LF(self), v);
 }
 
-void __thiscall CGameLensFlare_SetRelative(void *self, byte v) {
+void CGameLensFlare_SetRelative(void *self, byte v) {
 	CLensFlare_SetRelative(LF(self), v);
 }

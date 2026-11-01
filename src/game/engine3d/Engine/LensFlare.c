@@ -12,7 +12,7 @@
 #include "scrap/render.h"
 #include "scrap/texture.h"
 
-CLensFlare *__fastcall CLensFlare_ctor(CLensFlare *self) {
+CLensFlare *CLensFlare_ctor(CLensFlare *self) {
 	self->hit = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->on = 0;
@@ -30,7 +30,7 @@ CLensFlare *__fastcall CLensFlare_ctor(CLensFlare *self) {
 	return self;
 }
 
-void __fastcall CLensFlare_dtor(CLensFlare *self) {
+void CLensFlare_dtor(CLensFlare *self) {
 	if (self->on) {
 		self->on = 0;
 		LensFlare_Update(self);
@@ -64,7 +64,7 @@ void LensFlare_Update(CLensFlare *lf) {
 	lf->RenderIndex = -1;
 }
 
-void __thiscall CLensFlare_SetOn(CLensFlare *self, byte on) {
+void CLensFlare_SetOn(CLensFlare *self, byte on) {
 	if (self->on == on) {
 		return;
 	}
@@ -228,7 +228,7 @@ static float LF_Float(uint32_t bits) {
 	return f;
 }
 
-void __thiscall CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj) {
+void CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj) {
 	CCamera *cam = World_Get()->cam;
 	matrix_t rel;
 	const matrix_t *m = &view;
@@ -321,7 +321,7 @@ void __thiscall CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj
 	}
 }
 
-void __thiscall CLensFlare_DrawSprite(CLensFlare *self, float dist, uint32_t sprite, float size, float r, float g,
+void CLensFlare_DrawSprite(CLensFlare *self, float dist, uint32_t sprite, float size, float r, float g,
 	float b, float a) {
 	void *dev = g_Engine->device;
 	CCamera *cam = World_Get()->cam;
@@ -347,30 +347,30 @@ void __thiscall CLensFlare_DrawSprite(CLensFlare *self, float dist, uint32_t spr
 	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(*v));
 }
 
-void __thiscall CLensFlare_SetIntens(CLensFlare *self, float v) {
+void CLensFlare_SetIntens(CLensFlare *self, float v) {
 	self->intens = v;
 }
 
-void __thiscall CLensFlare_SetTraceInterval(CLensFlare *self, float v) {
+void CLensFlare_SetTraceInterval(CLensFlare *self, float v) {
 	self->traceInterval = v;
 }
 
-void __thiscall CLensFlare_SetMargin(CLensFlare *self, float v) {
+void CLensFlare_SetMargin(CLensFlare *self, float v) {
 	self->margin = v;
 }
 
-void __thiscall CLensFlare_SetPos(CLensFlare *self, vec3_t pos) {
+void CLensFlare_SetPos(CLensFlare *self, vec3_t pos) {
 	self->pos = pos;
 }
 
-void __thiscall CLensFlare_SetScale(CLensFlare *self, float v) {
+void CLensFlare_SetScale(CLensFlare *self, float v) {
 	self->scale = v;
 }
 
-void __thiscall CLensFlare_SetType(CLensFlare *self, int type) {
+void CLensFlare_SetType(CLensFlare *self, int type) {
 	self->type = type;
 }
 
-void __thiscall CLensFlare_SetRelative(CLensFlare *self, byte relative) {
+void CLensFlare_SetRelative(CLensFlare *self, byte relative) {
 	self->relative = relative;
 }

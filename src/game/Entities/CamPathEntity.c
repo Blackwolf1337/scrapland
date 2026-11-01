@@ -19,7 +19,7 @@ static inline float CamPath_X87Add(float a, float b) {
 	return (float)r;
 }
 
-cCamPathPoint *__fastcall cCamPathPoint_ctor(cCamPathPoint *self) {
+cCamPathPoint *cCamPathPoint_ctor(cCamPathPoint *self) {
 	self->pos.x = 0.0f;
 	self->pos.y = 0.0f;
 	self->pos.z = 0.0f;
@@ -37,7 +37,7 @@ cCamPathPoint *__fastcall cCamPathPoint_ctor(cCamPathPoint *self) {
 	return self;
 }
 
-cEntity *__thiscall cCamPathEntity_ctor(void *mem, const char *name, float x, float y, float z) {
+cEntity *cCamPathEntity_ctor(void *mem, const char *name, float x, float y, float z) {
 	cCamPathEntity *p = mem;
 
 	cCamEntity_ctor(mem, name, x, y, z);
@@ -51,13 +51,13 @@ cEntity *__thiscall cCamPathEntity_ctor(void *mem, const char *name, float x, fl
 	return mem;
 }
 
-void __fastcall cCamPathEntity_dtor(cEntity *self) {
+void cCamPathEntity_dtor(cEntity *self) {
 	self->vftable = CCAMPATHENTITY_VFTABLE;
 	cPy_Function_dtor(&Path(self)->onEnd);
 	cCamControl_dtor(self);
 }
 
-cEntity *__thiscall cCamPathEntity_Delete(cEntity *self, uint32_t flags) {
+cEntity *cCamPathEntity_Delete(cEntity *self, uint32_t flags) {
 	cCamPathEntity_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CCAMPATHENTITY_SIZE);
@@ -65,7 +65,7 @@ cEntity *__thiscall cCamPathEntity_Delete(cEntity *self, uint32_t flags) {
 	return self;
 }
 
-int __thiscall cCamPathEntity_PointIndex(cEntity *self, const char *name, const char *prefix, uint32_t len) {
+int cCamPathEntity_PointIndex(cEntity *self, const char *name, const char *prefix, uint32_t len) {
 	(void)self;
 	if (!strncmp(name, prefix, len)) {
 		const signed char *d = (const signed char *)name + len;
@@ -77,7 +77,7 @@ int __thiscall cCamPathEntity_PointIndex(cEntity *self, const char *name, const 
 	return -1;
 }
 
-byte __thiscall cCamPathEntity_VarF(cEntity *self, const char *name, double *d, int set) {
+byte cCamPathEntity_VarF(cEntity *self, const char *name, double *d, int set) {
 	cCamPathEntity *p = Path(self);
 	int i;
 
@@ -141,12 +141,12 @@ byte __thiscall cCamPathEntity_VarF(cEntity *self, const char *name, double *d, 
 	return cCamControl_VarF(self, name, d, set);
 }
 
-const char *__thiscall cCamPathEntity_GetClassName(cEntity *self) {
+const char *cCamPathEntity_GetClassName(cEntity *self) {
 	(void)self;
 	return CAMPATH_CLASSNAME;
 }
 
-byte __thiscall cCamPathEntity_VarI(cEntity *self, const char *name, int *iv, int set) {
+byte cCamPathEntity_VarI(cEntity *self, const char *name, int *iv, int set) {
 	cCamPathEntity *p = Path(self);
 	int i;
 
@@ -182,7 +182,7 @@ byte __thiscall cCamPathEntity_VarI(cEntity *self, const char *name, int *iv, in
 	return cCamControl_VarI(self, name, iv, set);
 }
 
-void __thiscall cCamPathEntity_Interp(cEntity *self, cCamPathPoint *next, cCamPathPoint *cur, float f) {
+void cCamPathEntity_Interp(cEntity *self, cCamPathPoint *next, cCamPathPoint *cur, float f) {
 	CGameCamera *cam = &((cCamControl *)self)->cam;
 	vec3_t d, r;
 	float s, u;
@@ -231,14 +231,14 @@ void __thiscall cCamPathEntity_Interp(cEntity *self, cCamPathPoint *next, cCamPa
 	cam->rot.z = cam->rot.z + rz;
 }
 
-int __thiscall cCamPathEntity_IsType(cEntity *self, const char *type) {
+int cCamPathEntity_IsType(cEntity *self, const char *type) {
 	if (!strcmp(type, TYEN_CAMPATH)) {
 		return 1;
 	}
 	return cCamControl_IsType(self, type);
 }
 
-void __fastcall cCamPathPoint_Refresh(cCamPathPoint *self) {
+void cCamPathPoint_Refresh(cCamPathPoint *self) {
 	if (!self->cam[0]) {
 		return;
 	}
@@ -255,7 +255,7 @@ void __fastcall cCamPathPoint_Refresh(cCamPathPoint *self) {
 }
 
 /* the time on by the frame; the way it is in, or the last point and OnEnd */
-void __thiscall cCamPathEntity_Update(cEntity *self) {
+void cCamPathEntity_Update(cEntity *self) {
 	cCamPathEntity *p = Path(self);
 	float acc = 0.0f;
 	float t = CamPath_X87Add(cTimer_GetDelta(&g_pWorld->timer), p->time);
@@ -279,7 +279,7 @@ void __thiscall cCamPathEntity_Update(cEntity *self) {
 	cPy_Function_Execute(&p->onEnd, 1);
 }
 
-byte __thiscall cCamPathEntity_VarS(cEntity *self, const char *name, char **s, int set) {
+byte cCamPathEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 	cCamPathEntity *p = Path(self);
 
 	if (!*name) {
@@ -303,7 +303,7 @@ byte __thiscall cCamPathEntity_VarS(cEntity *self, const char *name, char **s, i
 	return cCamControl_VarS(self, name, s, set);
 }
 
-byte __thiscall cCamPathEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set) {
+byte cCamPathEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set) {
 	cCamPathEntity *p = Path(self);
 	int i;
 

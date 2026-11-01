@@ -9,7 +9,7 @@ static inline cCamControl *Cam(cEntity *e) {
 	return (cCamControl *)e;
 }
 
-cEntity *__thiscall cCamEntity_ctor(void *mem, const char *name, float x, float y, float z) {
+cEntity *cCamEntity_ctor(void *mem, const char *name, float x, float y, float z) {
 	cCamControl *c = mem;
 
 	cEntity_ctor(mem, name, x, y, z);
@@ -26,7 +26,7 @@ cEntity *__thiscall cCamEntity_ctor(void *mem, const char *name, float x, float 
 }
 
 /* the view it showed goes back to no camera */
-void __fastcall cCamControl_dtor(cEntity *self) {
+void cCamControl_dtor(cEntity *self) {
 	cCamControl *c = Cam(self);
 
 	self->vftable = CCAMCONTROL_VFTABLE;
@@ -37,7 +37,7 @@ void __fastcall cCamControl_dtor(cEntity *self) {
 	cEntity_dtor(self);
 }
 
-cEntity *__thiscall cCamControl_Delete(cEntity *self, uint32_t flags) {
+cEntity *cCamControl_Delete(cEntity *self, uint32_t flags) {
 	cCamControl_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CCAMCONTROL_SIZE);
@@ -45,12 +45,12 @@ cEntity *__thiscall cCamControl_Delete(cEntity *self, uint32_t flags) {
 	return self;
 }
 
-void __thiscall cCamControl_NopF(cEntity *self, float f) {
+void cCamControl_NopF(cEntity *self, float f) {
 	(void)self;
 	(void)f;
 }
 
-byte __thiscall cCamControl_VarF(cEntity *self, const char *name, double *d, int set) {
+byte cCamControl_VarF(cEntity *self, const char *name, double *d, int set) {
 	CGameCamera *cam = &Cam(self)->cam;
 
 	if (!*name) {
@@ -83,7 +83,7 @@ byte __thiscall cCamControl_VarF(cEntity *self, const char *name, double *d, int
 	return cEntity_VarF(self, name, d, set);
 }
 
-void __thiscall cCamControl_GetCamPos(cEntity *self, float *x, float *y, float *z) {
+void cCamControl_GetCamPos(cEntity *self, float *x, float *y, float *z) {
 	const CGameCamera *cam = &Cam(self)->cam;
 
 	*x = cam->pos.x;
@@ -91,12 +91,12 @@ void __thiscall cCamControl_GetCamPos(cEntity *self, float *x, float *y, float *
 	*z = cam->pos.z;
 }
 
-const char *__thiscall cCamControl_GetClassName(cEntity *self) {
+const char *cCamControl_GetClassName(cEntity *self) {
 	(void)self;
 	return CAM_CLASSNAME;
 }
 
-byte __thiscall cCamControl_VarI(cEntity *self, const char *name, int *i, int set) {
+byte cCamControl_VarI(cEntity *self, const char *name, int *i, int set) {
 	if (!*name) {
 		return 0;
 	}
@@ -107,14 +107,14 @@ byte __thiscall cCamControl_VarI(cEntity *self, const char *name, int *i, int se
 	return cEntity_VarI(self, name, i, set);
 }
 
-int __thiscall cCamControl_IsType(cEntity *self, const char *type) {
+int cCamControl_IsType(cEntity *self, const char *type) {
 	if (!strcmp(type, TYEN_CAM)) {
 		return 1;
 	}
 	return cEntity_IsType(self, type);
 }
 
-byte __thiscall cCamControl_SetTarget(cEntity *self, const char *name) {
+byte cCamControl_SetTarget(cEntity *self, const char *name) {
 	cCamControl *c = Cam(self);
 
 	if (name && *name) {
@@ -131,7 +131,7 @@ byte __thiscall cCamControl_SetTarget(cEntity *self, const char *name) {
 	return 0;
 }
 
-void __thiscall cCamControl_SetCamPos(cEntity *self, float x, float y, float z) {
+void cCamControl_SetCamPos(cEntity *self, float x, float y, float z) {
 	CGameCamera *cam = &Cam(self)->cam;
 
 	cam->pos.x = x;
@@ -139,7 +139,7 @@ void __thiscall cCamControl_SetCamPos(cEntity *self, float x, float y, float z) 
 	cam->pos.z = z;
 }
 
-void __thiscall cCamControl_SetViewPos(cEntity *self, int i, float x, float y, float z) {
+void cCamControl_SetViewPos(cEntity *self, int i, float x, float y, float z) {
 	if (!strcmp(cWorld_GetCamName(g_pWorld, i), self->name)) {
 		g_pWorld->camPos[i].x = x;
 		g_pWorld->camPos[i].y = y;
@@ -147,7 +147,7 @@ void __thiscall cCamControl_SetViewPos(cEntity *self, int i, float x, float y, f
 	}
 }
 
-byte __thiscall cCamControl_VarS(cEntity *self, const char *name, char **s, int set) {
+byte cCamControl_VarS(cEntity *self, const char *name, char **s, int set) {
 	if (!strcmp(name, "EntityLink")) {
 		if ((byte)set) {
 			CamCtl_Vtbl(self)->SetTarget(self, *s);
@@ -159,7 +159,7 @@ byte __thiscall cCamControl_VarS(cEntity *self, const char *name, char **s, int 
 	return cEntity_VarS(self, name, s, set);
 }
 
-byte __thiscall cCamControl_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set) {
+byte cCamControl_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set) {
 	CGameCamera *cam = &Cam(self)->cam;
 
 	if (!*name) {

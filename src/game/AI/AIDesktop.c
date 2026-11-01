@@ -10,7 +10,7 @@
 
 #define CAIDESKTOP_SIZE 0x380
 
-void *__thiscall cAIDesktop_ctor(void *mem, cEntity *e, int *arg) {
+void *cAIDesktop_ctor(void *mem, cEntity *e, int *arg) {
 	cAIDesktop *self = mem;
 
 	cAIChar_ctor(mem, e, arg);
@@ -18,12 +18,12 @@ void *__thiscall cAIDesktop_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-void __fastcall cAIDesktop_dtor(cAIDesktop *self) {
+void cAIDesktop_dtor(cAIDesktop *self) {
 	self->vftable = CAIDESKTOP_VFTABLE;
 	cAIChar_dtor(self);
 }
 
-cAIDesktop *__thiscall cAIDesktop_Delete(cAIDesktop *self, byte flags) {
+cAIDesktop *cAIDesktop_Delete(cAIDesktop *self, byte flags) {
 	self->vftable = CAIDESKTOP_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
@@ -32,7 +32,7 @@ cAIDesktop *__thiscall cAIDesktop_Delete(cAIDesktop *self, byte flags) {
 	return self;
 }
 
-void __thiscall cAIDesktop_UpdateAction0(cAIDesktop *self) {
+void cAIDesktop_UpdateAction0(cAIDesktop *self) {
 	static const char *const busy[] = {"Fall", "ActMoreF", "ActMoreB", "ActUpB", "ActUpF", "ActUpL", "ActUpR"};
 	byte act = 0;
 

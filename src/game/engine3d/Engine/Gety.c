@@ -39,7 +39,7 @@ static byte Gety_QuadInRange(const CCollideQuad *q, float minY, float maxY) {
 	return !(q->minY > maxY) && !(minY > q->maxY);
 }
 
-float __thiscall CGround_GetY(CGround *self, float x, float z, float maxY, byte all) {
+float CGround_GetY(CGround *self, float x, float z, float maxY, byte all) {
 	float best = -GETY_FLT_MAX;
 
 	CGround_NewQuery(self);
@@ -68,7 +68,7 @@ float __thiscall CGround_GetY(CGround *self, float x, float z, float maxY, byte 
 	return best;
 }
 
-byte __thiscall CGround_GetYInfo(void *ground, float x, float z, GroundRay *info) {
+byte CGround_GetYInfo(void *ground, float x, float z, GroundRay *info) {
 	CGround *self = ground;
 	byte hit = 0;
 
@@ -117,7 +117,7 @@ byte __thiscall CGround_GetYInfo(void *ground, float x, float z, GroundRay *info
 	return hit;
 }
 
-byte __thiscall CGround_RayVert(void *ground, float x, float z, GroundRay *info) {
+byte CGround_RayVert(void *ground, float x, float z, GroundRay *info) {
 	CGround *self = ground;
 	byte hit = 0;
 
@@ -205,7 +205,7 @@ byte __thiscall CGround_RayVert(void *ground, float x, float z, GroundRay *info)
 	return hit;
 }
 
-float __thiscall CGround_GetYRange(CGround *self, float x, float z, float maxY, float minY, byte all) {
+float CGround_GetYRange(CGround *self, float x, float z, float maxY, float minY, byte all) {
 	float best = -GETY_FLT_MAX;
 
 	CGround_NewQuery(self);
@@ -237,7 +237,7 @@ float __thiscall CGround_GetYRange(CGround *self, float x, float z, float maxY, 
 	return best;
 }
 
-byte __thiscall CGround_GetYBelow(CGround *self, float x, float z, float maxY, float *out) {
+byte CGround_GetYBelow(CGround *self, float x, float z, float maxY, float *out) {
 	CCollideQuad *q = Gety_Cell(self, x, z);
 
 	if (!q) {

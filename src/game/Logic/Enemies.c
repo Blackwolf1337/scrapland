@@ -13,7 +13,7 @@
 /* defined further down or in another file without a header */
 cLocalLogic *Enemies_MakeLogic(cEntity *e);
 
-cEnemies *__fastcall cEnemies_ctor(cEnemies *self) {
+cEnemies *cEnemies_ctor(cEnemies *self) {
 	self->usr = NULL;
 	self->ignoreFriends = 0;
 	self->attacking = 0;
@@ -23,7 +23,7 @@ cEnemies *__fastcall cEnemies_ctor(cEnemies *self) {
 	return self;
 }
 
-void __fastcall Logic_NopDtor(void *self) {
+void Logic_NopDtor(void *self) {
 	(void)self;
 }
 
@@ -31,12 +31,12 @@ void Logic_NativeNop(cAbstractFile *params) {
 	(void)params;
 }
 
-void __fastcall cEnemiesLocalLogic_dtor(cEnemiesLocalLogic *self) {
+void cEnemiesLocalLogic_dtor(cEnemiesLocalLogic *self) {
 	self->vftable = CENEMIESLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 }
 
-cEnemiesLocalLogic *__thiscall cEnemiesLocalLogic_Delete(cEnemiesLocalLogic *self, byte flags) {
+cEnemiesLocalLogic *cEnemiesLocalLogic_Delete(cEnemiesLocalLogic *self, byte flags) {
 	self->vftable = CENEMIESLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -58,7 +58,7 @@ static void Enemies_AttackFriend(cAIVehicle *ai, cEntityListData *friends) {
 }
 
 /* the targets of the ships: usr (the car of the player, NULL without one) or the friends */
-void __thiscall cEnemies_Attack(cEnemies *self, cEntity *usr) {
+void cEnemies_Attack(cEnemies *self, cEntity *usr) {
 	Nto1Node *n = Logic_ListFirst(self->list);
 	cEntityListData *friends = (cEntityListData *)cWorld_GetList(g_pWorld, "Friends");
 	byte hasFriends = friends && friends->numElems && *friends->numElems > 0;
@@ -112,7 +112,7 @@ keep:;
 }
 
 /* the attack starts once the player has a car; before that the ships may relax once */
-void __fastcall cEnemies_Think(cEnemies *self) {
+void cEnemies_Think(cEnemies *self) {
 	int *num = self->list->numElems;
 
 	if (num && *num == 0) {
@@ -138,7 +138,7 @@ void __fastcall cEnemies_Think(cEnemies *self) {
 	}
 }
 
-void __fastcall cEnemies_Init(cEnemies *self) {
+void cEnemies_Init(cEnemies *self) {
 	self->attacking = 0;
 	self->list = cWorld_NewEntityList(g_pWorld, "Enemies");
 	cPy_Function_SetNative(&self->list->onDamage, (nativefunc_t)Logic_NativeNop);
@@ -147,7 +147,7 @@ void __fastcall cEnemies_Init(cEnemies *self) {
 }
 
 /* "IgnoreFriends", a flag of the world (+0x2174, the field of World_Enemies) for every ship */
-byte __thiscall cEnemiesLocalLogic_VarI(cEnemiesLocalLogic *self, const char *name, int *i, byte set) {
+byte cEnemiesLocalLogic_VarI(cEnemiesLocalLogic *self, const char *name, int *i, byte set) {
 	(void)self;
 	if (strcmp(name, "IgnoreFriends")) {
 		return 0;
@@ -161,7 +161,7 @@ byte __thiscall cEnemiesLocalLogic_VarI(cEnemiesLocalLogic *self, const char *na
 }
 
 /* every ship to the AI state 3 */
-void __fastcall cEnemies_Relax(cEnemies *self) {
+void cEnemies_Relax(cEnemies *self) {
 	for (Nto1Node *n = Logic_ListFirst(self->list); n; n = Logic_ListNext(n)) {
 		cEntity *e = Logic_AsCar(n->data);
 		CHECK(e->vftable->IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
@@ -171,7 +171,7 @@ void __fastcall cEnemies_Relax(cEnemies *self) {
 	}
 }
 
-void __thiscall cEnemies_Update(cEnemies *self, float dt) {
+void cEnemies_Update(cEnemies *self, float dt) {
 	float t = dt + self->timer;
 
 	self->timer = t;

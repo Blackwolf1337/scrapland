@@ -21,7 +21,7 @@ static int Sector_NextTrack(int j, int up, int numT) {
 	return j - 1;
 }
 
-CNodesTraffic *__thiscall CNodesTrafficInDoor_ctor(void *mem) {
+CNodesTraffic *CNodesTrafficInDoor_ctor(void *mem) {
 	CNodesTrafficInDoor *self = mem;
 
 	CNodesTraffic_ctor(mem);
@@ -65,7 +65,7 @@ static void Sectors_Free(cTrafficSectorList *l) {
 	l->list = NULL;
 }
 
-void __fastcall CNodesTrafficInDoor_dtor(CNodesTrafficInDoor *self) {
+void CNodesTrafficInDoor_dtor(CNodesTrafficInDoor *self) {
 	self->base.vftable = CNODESTRAFFICINDOOR_VFTABLE;
 	Sectors_Free(&self->heavy);
 	Sectors_Free(&self->medium);
@@ -76,7 +76,7 @@ void __fastcall CNodesTrafficInDoor_dtor(CNodesTrafficInDoor *self) {
 	CNodesTraffic_dtor(&self->base);
 }
 
-CNodesTrafficInDoor *__thiscall CNodesTrafficInDoor_Delete(CNodesTrafficInDoor *self, byte flags) {
+CNodesTrafficInDoor *CNodesTrafficInDoor_Delete(CNodesTrafficInDoor *self, byte flags) {
 	CNodesTrafficInDoor_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -89,7 +89,7 @@ byte TrafficInDoor_Frame(void) {
 	return 1;
 }
 
-void __thiscall CNodesTrafficInDoor_UpdateVehicles(CNodesTrafficInDoor *self) {
+void CNodesTrafficInDoor_UpdateVehicles(CNodesTrafficInDoor *self) {
 	int numSeen = 0, numNodes = 0;
 
 	CNodesTrafficInDoor_Respawn(self, self->heavyAI, self->numHeavyAI, TRAFFIC_HEAVY, self->heavy.list,
@@ -122,7 +122,7 @@ static void Sectors_UpdateSeen(cTrafficSector *sectors, int num, int *seen, int 
 	}
 }
 
-void __thiscall CNodesTrafficInDoor_Respawn(CNodesTrafficInDoor *self, cAIVehicle **ai, int numAI, int typeA,
+void CNodesTrafficInDoor_Respawn(CNodesTrafficInDoor *self, cAIVehicle **ai, int numAI, int typeA,
 	cTrafficSector *sectorsA, int numA, int *seenA, int *numSeenA, int *nodesA, byte updateA, int typeB,
 	cTrafficSector *sectorsB, int numB, int *seenB, int *numSeenB, int *nodesB, byte updateB, int typeC,
 	cTrafficSector *sectorsC, int numC, int *seenC, int *numSeenC, int *nodesC, byte updateC) {
@@ -194,7 +194,7 @@ void __thiscall CNodesTrafficInDoor_Respawn(CNodesTrafficInDoor *self, cAIVehicl
 	}
 }
 
-int __thiscall CNodesTrafficInDoor_HiddenNode(CNodesTrafficInDoor *self, int track) {
+int CNodesTrafficInDoor_HiddenNode(CNodesTrafficInDoor *self, int track) {
 	int last = 0;
 
 	for (int n = 0; n < self->base.tracks[track].numNodes; n++) {
@@ -251,7 +251,7 @@ static cTrafficSector *Sectors_NewCount(const char *check) {
 	return list;
 }
 
-void __fastcall CNodesTrafficInDoor_InitSectors(CNodesTrafficInDoor *self) {
+void CNodesTrafficInDoor_InitSectors(CNodesTrafficInDoor *self) {
 	CNodesTraffic *b = &self->base;
 	int ns = 0, np = 0;
 
@@ -362,7 +362,7 @@ void __fastcall CNodesTrafficInDoor_InitSectors(CNodesTrafficInDoor *self) {
 	Mem_Free(pairs);
 }
 
-void __thiscall CNodesTrafficInDoor_Init(CNodesTrafficInDoor *self) {
+void CNodesTrafficInDoor_Init(CNodesTrafficInDoor *self) {
 	self->base.vftable->Load(&self->base, 1);
 	if (self->base.numTracks > 0) {
 		CNodesTrafficInDoor_InitSectors(self);
@@ -370,7 +370,7 @@ void __thiscall CNodesTrafficInDoor_Init(CNodesTrafficInDoor *self) {
 }
 
 /* vtable slot 0x48: no grid indoors */
-void __thiscall CNodesTrafficInDoor_BuildGrid(CNodesTrafficInDoor *self) {
+void CNodesTrafficInDoor_BuildGrid(CNodesTrafficInDoor *self) {
 	(void)self;
 }
 
@@ -401,7 +401,7 @@ void __stdcall TrafficSectors_SetTracks(cTrafficSector *list, int num) {
 	}
 }
 
-void __thiscall CNodesTrafficInDoor_AddVehicle(CNodesTrafficInDoor *self, cAIVehicle *ai) {
+void CNodesTrafficInDoor_AddVehicle(CNodesTrafficInDoor *self, cAIVehicle *ai) {
 	switch (Veh(cAIVehicle_GetVehicle(ai))->traffic.type) {
 	case 0:
 		self->lightAI[self->numLightAI++] = ai;
@@ -415,7 +415,7 @@ void __thiscall CNodesTrafficInDoor_AddVehicle(CNodesTrafficInDoor *self, cAIVeh
 	}
 }
 
-byte __thiscall CNodesTrafficInDoor_SectorHasTrack(CNodesTrafficInDoor *self, int track, int type) {
+byte CNodesTrafficInDoor_SectorHasTrack(CNodesTrafficInDoor *self, int track, int type) {
 	cTrafficSector *list;
 	int num;
 
@@ -459,7 +459,7 @@ byte __thiscall CNodesTrafficInDoor_SectorHasTrack(CNodesTrafficInDoor *self, in
 	return 0;
 }
 
-byte __thiscall CNodesTrafficInDoor_GetRespawnPoint(CNodesTrafficInDoor *self, cAIVehicle *ai, int *outType,
+byte CNodesTrafficInDoor_GetRespawnPoint(CNodesTrafficInDoor *self, cAIVehicle *ai, int *outType,
 	vec3_t *out, int *outTrack, int *outNode) {
 	switch (Veh(cAIVehicle_GetVehicle(ai))->traffic.type) {
 	case 0:
@@ -492,7 +492,7 @@ static int Sectors_Visible(const cTrafficSector *sectors, int num, int *index, i
 	return n;
 }
 
-byte __thiscall CNodesTrafficInDoor_PickPoint(CNodesTrafficInDoor *self, int *outType, vec3_t *out, int *outTrack,
+byte CNodesTrafficInDoor_PickPoint(CNodesTrafficInDoor *self, int *outType, vec3_t *out, int *outTrack,
 	int *outNode, int typeA, cTrafficSector *sectorsA, int numA, int typeB, cTrafficSector *sectorsB, int numB,
 	int typeC, cTrafficSector *sectorsC, int numC) {
 	int listA[20], listB[20], listC[20], sumA, sumB, sumC;

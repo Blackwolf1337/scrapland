@@ -39,9 +39,9 @@ SD_SIZE(plane_t, 16);
 enum { FPCLASS_NN = 0x8, FPCLASS_NZ = 0x20, FPCLASS_PZ = 0x40, FPCLASS_PN = 0x100 };
 
 /* Math/MathUtils.cpp (src/game/Math/MathUtils.c) */
-vec3_t *__thiscall Box_GetCorner(const box_t *self, vec3_t *out, int i);
+vec3_t *Box_GetCorner(const box_t *self, vec3_t *out, int i);
 /* the box constructor of two corners (rva 0x2a4830, src/game/engine3d/Engine/RenderLock.c) */
-box_t *__thiscall Box_Set(box_t *self, const vec3_t *min, const vec3_t *max);
+box_t *Box_Set(box_t *self, const vec3_t *min, const vec3_t *max);
 void Box_Merge(box_t *box, const box_t *other, byte first);
 float *Float_Approach(float *v, float target, float step);
 vec3_t *Vec3_Approach(vec3_t *v, const vec3_t *target, float step);
@@ -51,7 +51,7 @@ byte Float_IsValid(float f);
 byte Vec3_IsValid(const vec3_t *v);
 float Dist_PointSegment(const vec3_t *a, const vec3_t *b, const vec3_t *p, vec3_t *out);
 float Dist2_PointSegment(const vec3_t *a, const vec3_t *b, const vec3_t *p, vec3_t *out);
-byte __thiscall Plane_SafeSet(plane_t *self, const vec3_t *v1, const vec3_t *v2, const vec3_t *v3);
+byte Plane_SafeSet(plane_t *self, const vec3_t *v1, const vec3_t *v2, const vec3_t *v3);
 byte Quad_Solve(float a, float b, float c, float *t1, float *t2);
 float Dist_PointTriangle(const vec3_t *p, const vec3_t *v1, const vec3_t *v2, const vec3_t *v3, vec3_t *out);
 long double Dist2_PointTriangle(const vec3_t *p, const vec3_t *v1, const vec3_t *v2, const vec3_t *v3, vec3_t *out);
@@ -82,21 +82,21 @@ typedef struct {
 SD_SIZE(quat_t, 16);
 
 /* Math/Matrix.cpp (src/game/Math/Matrix.c) */
-void __thiscall Matrix_Identity(matrix_t *self);
-matrix_t *__thiscall Matrix_Copy(matrix_t *self, const matrix_t *src);	/* two copies in the exe */
-matrix_t *__thiscall Matrix_FromFloats(matrix_t *self, const float *f);
-matrix_t *__thiscall Matrix_Mul(const matrix_t *self, matrix_t *out, const matrix_t *other);	/* out = self * other */
-vec3_t *__thiscall Matrix_GetEuler(const matrix_t *self, vec3_t *out);
-vec3_t *__thiscall Matrix_GetRotAng(const matrix_t *self, vec3_t *out);
+void Matrix_Identity(matrix_t *self);
+matrix_t *Matrix_Copy(matrix_t *self, const matrix_t *src);	/* two copies in the exe */
+matrix_t *Matrix_FromFloats(matrix_t *self, const float *f);
+matrix_t *Matrix_Mul(const matrix_t *self, matrix_t *out, const matrix_t *other);	/* out = self * other */
+vec3_t *Matrix_GetEuler(const matrix_t *self, vec3_t *out);
+vec3_t *Matrix_GetRotAng(const matrix_t *self, vec3_t *out);
 byte Matrix_InvertAffine(matrix_t *out, const matrix_t *m);
 matrix_t *Matrix_Rotate(matrix_t *m, const vec3_t *ang);	/* m = m * Rz * Rx * Ry */
-const vec3_t *__thiscall Matrix_Scale(matrix_t *self, const vec3_t *s);	/* returns s */
+const vec3_t *Matrix_Scale(matrix_t *self, const vec3_t *s);	/* returns s */
 byte Matrix_Perspective(matrix_t *out, float fov, float aspect, float zNear, float zFar);
-void __thiscall Matrix_RotX(matrix_t *self, float ang);
-void __thiscall Matrix_RotY(matrix_t *self, float ang);
-void __thiscall Matrix_RotZ(matrix_t *self, float ang);
-void __thiscall Matrix_RotAxis(matrix_t *self, const vec3_t *axis, float ang);
-const vec3_t *__thiscall Matrix_Translate(matrix_t *self, const vec3_t *v);	/* returns v */
+void Matrix_RotX(matrix_t *self, float ang);
+void Matrix_RotY(matrix_t *self, float ang);
+void Matrix_RotZ(matrix_t *self, float ang);
+void Matrix_RotAxis(matrix_t *self, const vec3_t *axis, float ang);
+const vec3_t *Matrix_Translate(matrix_t *self, const vec3_t *v);	/* returns v */
 byte Matrix_TransformProject(vec3_t *out, const vec3_t *v, const matrix_t *m);
 /* the math of the engine3d (matriz.h: src/game/engine3d/Engine/Calc3d.c and Math/Matrix.c), D3DX through
  * the stubs of the exe */

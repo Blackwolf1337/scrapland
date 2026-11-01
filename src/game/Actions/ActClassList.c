@@ -7,13 +7,13 @@
 
 #define ACTCLASSLIST_SLOTS 457
 
-cActClassList *__fastcall cActClassList_ctor(cActClassList *self) {
+cActClassList *cActClassList_ctor(cActClassList *self) {
 	self->vftable = CACTCLASSLIST_VFTABLE;
 	HashTable_ctor(&self->classes, ACTCLASSLIST_SLOTS, 1);
 	return self;
 }
 
-void __fastcall cActClassList_dtor(cActClassList *self) {
+void cActClassList_dtor(cActClassList *self) {
 	HashTable *t = &self->classes;
 
 	self->vftable = CACTCLASSLIST_VFTABLE;
@@ -40,7 +40,7 @@ done:
 	PtrTable_Clear(t);
 }
 
-cActClassList *__thiscall cActClassList_Delete(cActClassList *self, byte flags) {
+cActClassList *cActClassList_Delete(cActClassList *self, byte flags) {
 	cActClassList_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -48,7 +48,7 @@ cActClassList *__thiscall cActClassList_Delete(cActClassList *self, byte flags) 
 	return self;
 }
 
-cActClass *__thiscall cActClassList_Create(cActClassList *list, const char *name) {
+cActClass *cActClassList_Create(cActClassList *list, const char *name) {
 	HashTable *t = &list->classes;
 	cActClass *cls = operator_new(sizeof(cActClass));
 
@@ -69,11 +69,11 @@ cActClass *__thiscall cActClassList_Create(cActClassList *list, const char *name
 	return cls;
 }
 
-cActClass *__thiscall cActClassList_Get(cActClassList *list, const char *name) {
+cActClass *cActClassList_Get(cActClassList *list, const char *name) {
 	return PtrTable_Value(&list->classes, name);
 }
 
-byte __thiscall cActClassList_Del(cActClassList *list, const char *name) {
+byte cActClassList_Del(cActClassList *list, const char *name) {
 	HashTable *t = &list->classes;
 	cPtrItem *it = PtrTable_Find(t, name, HashTable_Slot(t, name));
 

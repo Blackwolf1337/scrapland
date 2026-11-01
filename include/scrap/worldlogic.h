@@ -34,13 +34,13 @@ typedef struct cItemDesc {
 typedef struct cInfItem cInfItem;
 typedef struct cInfItemVtbl {
 	void *vf00;
-	void(__thiscall *AddLife)(cInfItem *self, cItemDesc *item);			/* 0x04 */
+	void(*AddLife)(cInfItem *self, cItemDesc *item);			/* 0x04 */
 	/* the walk over the life items: iter is the cursor (one pointer), NULL after the last */
-	cItemDesc *(__thiscall *FirstLife)(cInfItem *self, void **iter);		/* 0x08 */
-	cItemDesc *(__thiscall *NextLife)(cInfItem *self, void **iter);		/* 0x0c */
-	void(__thiscall *AddAmmo)(cInfItem *self, int kind, cItemDesc *item);		/* 0x10 */
-	cItemDesc *(__thiscall *FirstAmmo)(cInfItem *self, int kind, void **iter);	/* 0x14 */
-	cItemDesc *(__thiscall *NextAmmo)(cInfItem *self, int kind, void **iter);	/* 0x18 */
+	cItemDesc *(*FirstLife)(cInfItem *self, void **iter);		/* 0x08 */
+	cItemDesc *(*NextLife)(cInfItem *self, void **iter);		/* 0x0c */
+	void(*AddAmmo)(cInfItem *self, int kind, cItemDesc *item);		/* 0x10 */
+	cItemDesc *(*FirstAmmo)(cInfItem *self, int kind, void **iter);	/* 0x14 */
+	cItemDesc *(*NextAmmo)(cInfItem *self, int kind, void **iter);	/* 0x18 */
 } cInfItemVtbl;
 SD_OFFSET(cInfItemVtbl, AddAmmo, 0x10);
 

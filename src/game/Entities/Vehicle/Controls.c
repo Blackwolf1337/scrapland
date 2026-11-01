@@ -19,14 +19,14 @@
 
 #define CONTROLS_MIN_FADE 0.01f
 
-cVehicleControls *__fastcall Controls_ctor(cVehicleControls *self) {
+cVehicleControls *Controls_ctor(cVehicleControls *self) {
 	Controls_Reset(self);
 	self->firePrev = 0;
 	self->cmPrev = 0;
 	return self;
 }
 
-void __fastcall Controls_Reset(cVehicleControls *self) {
+void Controls_Reset(cVehicleControls *self) {
 	self->weapon = g_pWorld->firstWeapon;
 	self->str = 0.0f;
 	self->acc = 0.0f;
@@ -59,7 +59,7 @@ static inline void Ctl_Var(float *f, double *d, int set) {
 	}
 }
 
-byte __thiscall Controls_VarF(cVehicleControls *self, const char *name, double *d, int set) {
+byte Controls_VarF(cVehicleControls *self, const char *name, double *d, int set) {
 	if (!strcmp(name, "Acc")) {
 		Ctl_Var(&self->acc, d, set);
 		return 1;
@@ -83,11 +83,11 @@ byte __thiscall Controls_VarF(cVehicleControls *self, const char *name, double *
 	return 0;
 }
 
-int __thiscall Controls_GetWeapon(cVehicleControls *self) {
+int Controls_GetWeapon(cVehicleControls *self) {
 	return self->weapon;
 }
 
-void __thiscall Controls_FromNet(cVehicleControls *self, cEntity *v, float dt) {
+void Controls_FromNet(cVehicleControls *self, cEntity *v, float dt) {
 	uint16_t bits = Veh_Net(Veh(v))->keys;
 	byte toggle = (byte)(bits >> 15) & 1;
 
@@ -117,7 +117,7 @@ void __thiscall Controls_FromNet(cVehicleControls *self, cEntity *v, float dt) {
 	}
 }
 
-void __thiscall Controls_SetWeapon(cVehicleControls *self, int w) {
+void Controls_SetWeapon(cVehicleControls *self, int w) {
 	if (self->weapon != w) {
 		self->weapon = w;
 		self->fire = 0;
@@ -126,14 +126,14 @@ void __thiscall Controls_SetWeapon(cVehicleControls *self, int w) {
 	}
 }
 
-void __thiscall Controls_RumbleA(cVehicleControls *self, float strength, float time) {
+void Controls_RumbleA(cVehicleControls *self, float strength, float time) {
 	float t = Float_MaxSS(CONTROLS_MIN_FADE, time);
 
 	self->rumbleA = strength;
 	self->rumbleARate = strength / t;
 }
 
-void __thiscall Controls_RumbleB(cVehicleControls *self, float strength, float time) {
+void Controls_RumbleB(cVehicleControls *self, float strength, float time) {
 	float t = Float_MaxSS(CONTROLS_MIN_FADE, time);
 
 	self->rumbleB = strength;
@@ -248,7 +248,7 @@ static inline void Tgt_Copy(char *dst, const char *src) {
 	} while (src[i++]);
 }
 
-void *__fastcall cVehicleO648_ctor(void *o) {
+void *cVehicleO648_ctor(void *o) {
 	cVehicleTargets *t = o;
 
 	t->target[0] = 0;
@@ -257,17 +257,17 @@ void *__fastcall cVehicleO648_ctor(void *o) {
 	return t;
 }
 
-void __fastcall cVehicleO648_dtor(void *o) {
+void cVehicleO648_dtor(void *o) {
 	if (Tgt(o)->list) {
 		operator_delete_sized(Tgt(o)->list, sizeof(cVehicleTargetList));
 	}
 }
 
-byte __fastcall cVehicleO648_IsBlocked(void *o) {
+byte cVehicleO648_IsBlocked(void *o) {
 	return Tgt_Blocked(Tgt(o));
 }
 
-void __fastcall cVehicleO648_Rebuild(void *o) {
+void cVehicleO648_Rebuild(void *o) {
 	cVehicleTargets *t = o;
 	float dist[VEH_TARGETS];
 	vec3_t a, b;
@@ -335,7 +335,7 @@ void __fastcall cVehicleO648_Rebuild(void *o) {
 	t->target[0] = 0;
 }
 
-void __thiscall cVehicleO648_SetSlot(void *o, int slot) {
+void cVehicleO648_SetSlot(void *o, int slot) {
 	cVehicleTargets *t = o;
 
 	if (slot == -1) {
@@ -360,7 +360,7 @@ void __thiscall cVehicleO648_SetSlot(void *o, int slot) {
 	t->list = l;
 }
 
-void __thiscall cVehicleO648_Cycle(void *o, byte next) {
+void cVehicleO648_Cycle(void *o, byte next) {
 	cVehicleTargets *t = o;
 
 	if (!t->list) {
@@ -397,7 +397,7 @@ void __thiscall cVehicleO648_Cycle(void *o, byte next) {
 	t->list->time = Timer_GetTime(&g_pWorld->timer);
 }
 
-void __fastcall cVehicleO648_PickInView(void *o) {
+void cVehicleO648_PickInView(void *o) {
 	cVehicleTargets *t = o;
 
 	if (!t->list) {
@@ -415,7 +415,7 @@ void __fastcall cVehicleO648_PickInView(void *o) {
 	t->target[0] = 0;
 }
 
-void __thiscall cVehicleO648_Update(void *o, float dt) {
+void cVehicleO648_Update(void *o, float dt) {
 	cVehicleTargets *t = o;
 
 	if (!t->list) {
@@ -440,7 +440,7 @@ void __thiscall cVehicleO648_Update(void *o, float dt) {
 	t->list->wait = t->list->wait - dt;
 }
 
-byte __fastcall cVehicleO648_IsStale(void *o) {
+byte cVehicleO648_IsStale(void *o) {
 	cVehicleTargets *t = o;
 	cVehicleTargetList *l = t->list;
 
@@ -756,7 +756,7 @@ static void Ctl_PadRumble(cVehicleControls *c, cEntity *v, int slot) {
 	cPad_Rumble(&g_Pads[slot], a + h, b + shake, 0.25f);
 }
 
-void __thiscall cVehicleControls_Tick(cVehicleControls *c, cEntity *v, float dt) {
+void cVehicleControls_Tick(cVehicleControls *c, cEntity *v, float dt) {
 	int slot = cVehicleEntity_GetOwnerSlot(v);
 	cActionSet *set = TABLE_AT(g_ActionSets, 1);
 

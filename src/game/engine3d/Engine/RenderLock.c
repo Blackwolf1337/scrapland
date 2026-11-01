@@ -211,7 +211,7 @@ void RenderLock_Frame(void) {
 	}
 }
 
-box_t *__thiscall Box_Set(box_t *self, const vec3_t *min, const vec3_t *max) {
+box_t *Box_Set(box_t *self, const vec3_t *min, const vec3_t *max) {
 	self->min = *min;
 	self->max = *max;
 	return self;

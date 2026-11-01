@@ -319,18 +319,18 @@ vec3_t *FX_RandomDir(vec3_t *out) {
 /* the elements: Update (vf01), Alive (vf02), Attach (vf03), Reset (vf04) and the starts */
 
 /* the Alive of the elements that only step the debris */
-byte __thiscall FXMisc_Alive(void *self, cDebris *d, cDebrisSys *sys) {
+byte FXMisc_Alive(void *self, cDebris *d, cDebrisSys *sys) {
 	(void)self;
 	return cDebris_Update(d, sys);
 }
 
 /* the methods without code (ret 4) */
-void __thiscall FXMisc_Nop(void *self, int arg) {
+void FXMisc_Nop(void *self, int arg) {
 	(void)self;
 	(void)arg;
 }
 
-void __thiscall cObjElementFXItemFade_Update(cObjElementFXItemFade *self, cDebris *d, float dt) {
+void cObjElementFXItemFade_Update(cObjElementFXItemFade *self, cDebris *d, float dt) {
 	CGameModel *m;
 	cEntity *e = self->ent;
 
@@ -373,7 +373,7 @@ void __thiscall cObjElementFXItemFade_Update(cObjElementFXItemFade *self, cDebri
 	CGameModel_SetPos(Debris_Model(d), CGameModel_GetPos(m, &tmp));
 }
 
-void __thiscall cObjElementFXModelFade_Update(cObjElementFXModelFade *self, cDebris *d, float dt) {
+void cObjElementFXModelFade_Update(cObjElementFXModelFade *self, cDebris *d, float dt) {
 	float f;
 
 	if (!d || !CGameModel_IsLoaded(Debris_Model(d))) {
@@ -396,7 +396,7 @@ void __thiscall cObjElementFXModelFade_Update(cObjElementFXModelFade *self, cDeb
 	cDebris_Move(d, dt);
 }
 
-void __thiscall cObjElementFXModelNoise_Update(cObjElementFXModelNoise *self, cDebris *d, float dt) {
+void cObjElementFXModelNoise_Update(cObjElementFXModelNoise *self, cDebris *d, float dt) {
 	cEntity *e = self->ent;
 
 	(void)d;
@@ -416,13 +416,13 @@ void __thiscall cObjElementFXModelNoise_Update(cObjElementFXModelNoise *self, cD
 }
 
 /* ParticleSystem and SistPartDuDv */
-void __thiscall cObjElementFXParticleSystem_Update(cObjElementFXParticleSystem *self, cDebris *d, float dt) {
+void cObjElementFXParticleSystem_Update(cObjElementFXParticleSystem *self, cDebris *d, float dt) {
 	if (self->move) {
 		cDebris_Move(d, dt);
 	}
 }
 
-void __thiscall cObjElementFXTrail_Update(cObjElementFXTrail *self, cDebris *d, float dt) {
+void cObjElementFXTrail_Update(cObjElementFXTrail *self, cDebris *d, float dt) {
 	if (!self->on) {
 		cDebris_Move(d, dt);
 		return;
@@ -448,7 +448,7 @@ void __thiscall cObjElementFXTrail_Update(cObjElementFXTrail *self, cDebris *d, 
 	}
 }
 
-byte __thiscall cObjElementFXFadeOutTrail_Alive(cObjElementFXFadeOutTrail *self, cDebris *d, cDebrisSys *sys) {
+byte cObjElementFXFadeOutTrail_Alive(cObjElementFXFadeOutTrail *self, cDebris *d, cDebrisSys *sys) {
 	(void)d;
 	(void)sys;
 	if (self->running || !(self->t >= self->duration)) {
@@ -460,7 +460,7 @@ byte __thiscall cObjElementFXFadeOutTrail_Alive(cObjElementFXFadeOutTrail *self,
 	return 0;
 }
 
-byte __thiscall cObjElementFXModelFade_Alive(cObjElementFXModelFade *self, cDebris *d, cDebrisSys *sys) {
+byte cObjElementFXModelFade_Alive(cObjElementFXModelFade *self, cDebris *d, cDebrisSys *sys) {
 	(void)self;
 	if (!cDebris_Update(d, sys)) {
 		CGameModel_SetEffect(Debris_Model(d), 0);
@@ -469,7 +469,7 @@ byte __thiscall cObjElementFXModelFade_Alive(cObjElementFXModelFade *self, cDebr
 	return 1;
 }
 
-byte __thiscall cObjElementFXModelNoise_Alive(cObjElementFXModelNoise *self, cDebris *d, cDebrisSys *sys) {
+byte cObjElementFXModelNoise_Alive(cObjElementFXModelNoise *self, cDebris *d, cDebrisSys *sys) {
 	if (!cDebris_Update(d, sys)) {
 		if (self->ent) {
 			Obj_Vtbl(self->ent)->SetEffect(self->ent, 0);
@@ -479,7 +479,7 @@ byte __thiscall cObjElementFXModelNoise_Alive(cObjElementFXModelNoise *self, cDe
 	return 1;
 }
 
-byte __thiscall cObjElementFXTrail_Alive(cObjElementFXTrail *self, cDebris *d, cDebrisSys *sys) {
+byte cObjElementFXTrail_Alive(cObjElementFXTrail *self, cDebris *d, cDebrisSys *sys) {
 	if (!self->on) {
 		return cDebris_Update(d, sys);
 	}
@@ -496,21 +496,21 @@ byte __thiscall cObjElementFXTrail_Alive(cObjElementFXTrail *self, cDebris *d, c
 	return 0;
 }
 
-void __thiscall cObjElementFXItemFade_Attach(cObjElementFXItemFade *self, cDebris *d) {
+void cObjElementFXItemFade_Attach(cObjElementFXItemFade *self, cDebris *d) {
 	FX_AttachDummy(&self->particles, Debris_Model(d));
 }
 
-void __thiscall cObjElementFXItemTake_Attach(cObjElementFXItemTake *self, cDebris *d) {
+void cObjElementFXItemTake_Attach(cObjElementFXItemTake *self, cDebris *d) {
 	FX_AttachDummy(&self->particles, Debris_Model(d));
 }
 
 /* ModelFade (t at 0x4) and ModelNoise (t at 0x8): Attach and Reset */
-void __thiscall FXMisc_Clear4(void *self, int arg) {
+void FXMisc_Clear4(void *self, int arg) {
 	(void)arg;
 	*(float *)((byte *)self + 4) = 0.0f;
 }
 
-void __thiscall FXMisc_Clear8(void *self, int arg) {
+void FXMisc_Clear8(void *self, int arg) {
 	(void)arg;
 	*(float *)((byte *)self + 8) = 0.0f;
 }
@@ -525,11 +525,11 @@ static void FX_ParticleSystemAttach(cObjElementFXParticleSystem *self, cDebris *
 	CHECK(self->particles.ParticleSystem);
 }
 
-void __thiscall cObjElementFXParticleSystem_Attach(cObjElementFXParticleSystem *self, cDebris *d) {
+void cObjElementFXParticleSystem_Attach(cObjElementFXParticleSystem *self, cDebris *d) {
 	FX_ParticleSystemAttach(self, d, "Dummy01");
 }
 
-void __thiscall cObjElementFXParticleSystemDuDv_Attach(cObjElementFXParticleSystemDuDv *self, cDebris *d) {
+void cObjElementFXParticleSystemDuDv_Attach(cObjElementFXParticleSystemDuDv *self, cDebris *d) {
 	FX_ParticleSystemAttach(self, d, "Dummy01 (+dudv_pass)");
 }
 
@@ -544,7 +544,7 @@ static void FXSparks_ResetSlots(cObjElementFXSparks *self) {
 	}
 }
 
-void __thiscall cObjElementFXSparks_Attach(cObjElementFXSparks *self, cDebris *d) {
+void cObjElementFXSparks_Attach(cObjElementFXSparks *self, cDebris *d) {
 	FX_AttachDummy(&self->particles, Debris_Model(d));
 	FXSparks_ResetSlots(self);
 	for (int i = 0; i < FXSPARKS_MAXSPARKS; i++) {
@@ -557,7 +557,7 @@ void __thiscall cObjElementFXSparks_Attach(cObjElementFXSparks *self, cDebris *d
 	}
 }
 
-void __thiscall cObjElementFXFadeOutTrail_Reset(cObjElementFXFadeOutTrail *self, int arg) {
+void cObjElementFXFadeOutTrail_Reset(cObjElementFXFadeOutTrail *self, int arg) {
 	(void)arg;
 	self->t = 0.0f;
 	if (self->on) {
@@ -568,7 +568,7 @@ void __thiscall cObjElementFXFadeOutTrail_Reset(cObjElementFXFadeOutTrail *self,
 }
 
 /* the original also checks the address of the particles member, which is never NULL */
-void __thiscall cObjElementFXItemFade_Reset(cObjElementFXItemFade *self, int arg) {
+void cObjElementFXItemFade_Reset(cObjElementFXItemFade *self, int arg) {
 	(void)arg;
 	self->t = 0.0f;
 	self->mode = 0;
@@ -577,7 +577,7 @@ void __thiscall cObjElementFXItemFade_Reset(cObjElementFXItemFade *self, int arg
 	self->done = 0;
 }
 
-void __thiscall cObjElementFXItemTake_Reset(cObjElementFXItemTake *self, int arg) {
+void cObjElementFXItemTake_Reset(cObjElementFXItemTake *self, int arg) {
 	(void)arg;
 	self->t = 0.0f;
 	self->emitT = 0.0f;
@@ -587,7 +587,7 @@ void __thiscall cObjElementFXItemTake_Reset(cObjElementFXItemTake *self, int arg
 	self->done = 0;
 }
 
-void __thiscall cObjElementFXSparks_Reset(cObjElementFXSparks *self, int arg) {
+void cObjElementFXSparks_Reset(cObjElementFXSparks *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->dt = 0.0f;
@@ -600,26 +600,26 @@ void __thiscall cObjElementFXSparks_Reset(cObjElementFXSparks *self, int arg) {
 	}
 }
 
-void __thiscall cObjElementFXTrail_Reset(cObjElementFXTrail *self, int arg) {
+void cObjElementFXTrail_Reset(cObjElementFXTrail *self, int arg) {
 	(void)arg;
 	CGameTrail_Clear(&self->trail);
 }
 
 /* the setters of the effects started by name */
-void __thiscall FXMisc_SetEntity(void *self, cEntity *e) {
+void FXMisc_SetEntity(void *self, cEntity *e) {
 	*(cEntity **)((byte *)self + 4) = e;
 	CHECK(CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e)));
 }
 
-void __thiscall FXMisc_SetF8(void *self, float v) {
+void FXMisc_SetF8(void *self, float v) {
 	*(float *)((byte *)self + 8) = v;
 }
 
-void __thiscall FXMisc_SetFC(void *self, float v) {
+void FXMisc_SetFC(void *self, float v) {
 	*(float *)((byte *)self + 0xc) = v;
 }
 
-void __thiscall FXMisc_SetI8(void *self, int v) {
+void FXMisc_SetI8(void *self, int v) {
 	*(int *)((byte *)self + 8) = v;
 }
 
@@ -643,7 +643,7 @@ static void FX_EmitFade(CGameParticles *sp) {
 	CGameParticles_EmitN(sp, 1, 1);
 }
 
-void __thiscall cObjElementFXItemFade_Start(cObjElementFXItemFade *self, cEntity *e) {
+void cObjElementFXItemFade_Start(cObjElementFXItemFade *self, cEntity *e) {
 	CGameParticles *sp = &self->particles;
 	vec3_t c;
 
@@ -701,7 +701,7 @@ void __thiscall cObjElementFXItemFade_Start(cObjElementFXItemFade *self, cEntity
 	}
 }
 
-void __thiscall cObjElementFXItemTake_Start(cObjElementFXItemTake *self, cEntity *e) {
+void cObjElementFXItemTake_Start(cObjElementFXItemTake *self, cEntity *e) {
 	vec3_t tmp;
 
 	self->ent = e;
@@ -739,7 +739,7 @@ void __thiscall cObjElementFXItemTake_Start(cObjElementFXItemTake *self, cEntity
 	}
 }
 
-void __thiscall cObjElementFXItemTake_Update(cObjElementFXItemTake *self, cDebris *d, float dt) {
+void cObjElementFXItemTake_Update(cObjElementFXItemTake *self, cDebris *d, float dt) {
 	CGameParticles *sp = &self->particles;
 	vec3_t c1, c2, tmp, coefs[7], pts[7], first;
 	byte found = 0;
@@ -906,7 +906,7 @@ void __thiscall cObjElementFXItemTake_Update(cObjElementFXItemTake *self, cDebri
 	}
 }
 
-void __thiscall cObjElementFXSparks_Update(cObjElementFXSparks *self, cDebris *d, float dt) {
+void cObjElementFXSparks_Update(cObjElementFXSparks *self, cDebris *d, float dt) {
 	(void)d;
 	(void)dt;
 	float delta = cTimer_GetDelta(&g_pWorld->timer);
@@ -988,7 +988,7 @@ void __thiscall cObjElementFXSparks_Update(cObjElementFXSparks *self, cDebris *d
 	}
 }
 
-void __thiscall cObjElementFXSparks_Emit(cObjElementFXSparks *self, int n, float px, float py, float pz, float dx,
+void cObjElementFXSparks_Emit(cObjElementFXSparks *self, int n, float px, float py, float pz, float dx,
 	float dy, float dz, float sx, float sy, float sz, float jx, float jy, float jz, float speedMin, float speedMax,
 	float sizeMin, float sizeMax, float scaleHead, float scaleTail, float lifeMin, float lifeMax, float lmMin,
 	float lmMax, float delayMin, float delayMax, uint32_t color, float noiseMin, float noiseMax, float segMin,
@@ -1066,7 +1066,7 @@ static inline void *FX_Delete(void *self, uint32_t flags, uint32_t size) {
 	return self;
 }
 
-cObjElementAbstract *__thiscall cObjElementAbstract_Delete(cObjElementAbstract *self, uint32_t flags) {
+cObjElementAbstract *cObjElementAbstract_Delete(cObjElementAbstract *self, uint32_t flags) {
 	cObjElement_dtor(self);
 	return FX_Delete(self, flags, sizeof(*self));
 }
@@ -1081,7 +1081,7 @@ cObjElementAbstract *__thiscall cObjElementAbstract_Delete(cObjElementAbstract *
 #define VT_FXMONEYTRANSFER GAME_VFTABLE(cObjElementFXMoneyTransfer_vftable)
 #define VT_FXSPUTNIK GAME_VFTABLE(cObjElementFXSputnik_vftable)
 
-void *__thiscall cObjElementFXCharacterConversion_ctor(void *self) {
+void *cObjElementFXCharacterConversion_ctor(void *self) {
 	cObjElementFXCharacterConversion *s = self;
 
 	FX_SetVtbl(self, VT_FXCHARACTERCONVERSION);
@@ -1096,7 +1096,7 @@ void *__thiscall cObjElementFXCharacterConversion_ctor(void *self) {
 	return self;
 }
 
-void *__thiscall cObjElementFXCharacterConversor_ctor(void *self) {
+void *cObjElementFXCharacterConversor_ctor(void *self) {
 	cObjElementFXCharacterConversor *s = self;
 
 	FX_SetVtbl(self, VT_FXCHARACTERCONVERSOR);
@@ -1111,7 +1111,7 @@ void *__thiscall cObjElementFXCharacterConversor_ctor(void *self) {
 	return self;
 }
 
-void *__thiscall cObjElementFXCharacterDeath_ctor(void *self) {
+void *cObjElementFXCharacterDeath_ctor(void *self) {
 	cObjElementFXCharacterDeath *s = self;
 
 	FX_SetVtbl(self, VT_FXCHARACTERDEATH);
@@ -1124,7 +1124,7 @@ void *__thiscall cObjElementFXCharacterDeath_ctor(void *self) {
 	return self;
 }
 
-void *__thiscall cObjElementFXCharacterTeleport_ctor(void *self) {
+void *cObjElementFXCharacterTeleport_ctor(void *self) {
 	cObjElementFXCharacterTeleport *s = self;
 
 	FX_SetVtbl(self, VT_FXCHARACTERTELEPORT);
@@ -1137,7 +1137,7 @@ void *__thiscall cObjElementFXCharacterTeleport_ctor(void *self) {
 	return self;
 }
 
-void *__thiscall cObjElementFXMaintenanceWork_ctor(void *self) {
+void *cObjElementFXMaintenanceWork_ctor(void *self) {
 	cObjElementFXMaintenanceWork *s = self;
 
 	FX_SetVtbl(self, VT_FXMAINTENANCEWORK);
@@ -1153,7 +1153,7 @@ void *__thiscall cObjElementFXMaintenanceWork_ctor(void *self) {
 	return self;
 }
 
-void *__thiscall cObjElementFXMoneyTransfer_ctor(void *self) {
+void *cObjElementFXMoneyTransfer_ctor(void *self) {
 	cObjElementFXMoneyTransfer *s = self;
 
 	FX_SetVtbl(self, VT_FXMONEYTRANSFER);
@@ -1167,7 +1167,7 @@ void *__thiscall cObjElementFXMoneyTransfer_ctor(void *self) {
 	return self;
 }
 
-void *__thiscall cObjElementFXSputnik_ctor(void *self) {
+void *cObjElementFXSputnik_ctor(void *self) {
 	cObjElementFXSputnik *s = self;
 
 	FX_SetVtbl(self, VT_FXSPUTNIK);
@@ -1181,7 +1181,7 @@ void *__thiscall cObjElementFXSputnik_ctor(void *self) {
 	return self;
 }
 
-void __thiscall cObjElementFXCharacterConversion_dtor(void *self) {
+void cObjElementFXCharacterConversion_dtor(void *self) {
 	cObjElementFXCharacterConversion *s = self;
 
 	*(void **)self = VT_FXCHARACTERCONVERSION;
@@ -1191,7 +1191,7 @@ void __thiscall cObjElementFXCharacterConversion_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __thiscall cObjElementFXCharacterConversor_dtor(void *self) {
+void cObjElementFXCharacterConversor_dtor(void *self) {
 	cObjElementFXCharacterConversor *s = self;
 
 	*(void **)self = VT_FXCHARACTERCONVERSOR;
@@ -1200,7 +1200,7 @@ void __thiscall cObjElementFXCharacterConversor_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __thiscall cObjElementFXCharacterDeath_dtor(void *self) {
+void cObjElementFXCharacterDeath_dtor(void *self) {
 	cObjElementFXCharacterDeath *s = self;
 
 	*(void **)self = VT_FXCHARACTERDEATH;
@@ -1211,7 +1211,7 @@ void __thiscall cObjElementFXCharacterDeath_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __thiscall cObjElementFXCharacterTeleport_dtor(void *self) {
+void cObjElementFXCharacterTeleport_dtor(void *self) {
 	cObjElementFXCharacterTeleport *s = self;
 
 	*(void **)self = VT_FXCHARACTERTELEPORT;
@@ -1219,7 +1219,7 @@ void __thiscall cObjElementFXCharacterTeleport_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __thiscall cObjElementFXMaintenanceWork_dtor(void *self) {
+void cObjElementFXMaintenanceWork_dtor(void *self) {
 	cObjElementFXMaintenanceWork *s = self;
 
 	*(void **)self = VT_FXMAINTENANCEWORK;
@@ -1228,7 +1228,7 @@ void __thiscall cObjElementFXMaintenanceWork_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __thiscall cObjElementFXMoneyTransfer_dtor(void *self) {
+void cObjElementFXMoneyTransfer_dtor(void *self) {
 	cObjElementFXMoneyTransfer *s = self;
 
 	*(void **)self = VT_FXMONEYTRANSFER;
@@ -1236,7 +1236,7 @@ void __thiscall cObjElementFXMoneyTransfer_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __thiscall cObjElementFXSputnik_dtor(void *self) {
+void cObjElementFXSputnik_dtor(void *self) {
 	cObjElementFXSputnik *s = self;
 
 	*(void **)self = VT_FXSPUTNIK;
@@ -1244,37 +1244,37 @@ void __thiscall cObjElementFXSputnik_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void *__thiscall cObjElementFXCharacterConversion_Delete(void *self, uint32_t flags) {
+void *cObjElementFXCharacterConversion_Delete(void *self, uint32_t flags) {
 	cObjElementFXCharacterConversion_dtor(self);
 	return FX_Delete(self, flags, 0x89c);
 }
 
-void *__thiscall cObjElementFXCharacterConversor_Delete(void *self, uint32_t flags) {
+void *cObjElementFXCharacterConversor_Delete(void *self, uint32_t flags) {
 	cObjElementFXCharacterConversor_dtor(self);
 	return FX_Delete(self, flags, 0x298);
 }
 
-void *__thiscall cObjElementFXCharacterDeath_Delete(void *self, uint32_t flags) {
+void *cObjElementFXCharacterDeath_Delete(void *self, uint32_t flags) {
 	cObjElementFXCharacterDeath_dtor(self);
 	return FX_Delete(self, flags, 0xf68);
 }
 
-void *__thiscall cObjElementFXCharacterTeleport_Delete(void *self, uint32_t flags) {
+void *cObjElementFXCharacterTeleport_Delete(void *self, uint32_t flags) {
 	cObjElementFXCharacterTeleport_dtor(self);
 	return FX_Delete(self, flags, 0xd8);
 }
 
-void *__thiscall cObjElementFXMaintenanceWork_Delete(void *self, uint32_t flags) {
+void *cObjElementFXMaintenanceWork_Delete(void *self, uint32_t flags) {
 	cObjElementFXMaintenanceWork_dtor(self);
 	return FX_Delete(self, flags, 0xe0);
 }
 
-void *__thiscall cObjElementFXMoneyTransfer_Delete(void *self, uint32_t flags) {
+void *cObjElementFXMoneyTransfer_Delete(void *self, uint32_t flags) {
 	cObjElementFXMoneyTransfer_dtor(self);
 	return FX_Delete(self, flags, 0xcc);
 }
 
-void *__thiscall cObjElementFXSputnik_Delete(void *self, uint32_t flags) {
+void *cObjElementFXSputnik_Delete(void *self, uint32_t flags) {
 	cObjElementFXSputnik_dtor(self);
 	return FX_Delete(self, flags, 0xe0);
 }
@@ -1290,7 +1290,7 @@ void *__thiscall cObjElementFXSputnik_Delete(void *self, uint32_t flags) {
 #define VT_FXSCENETHEENDB GAME_VFTABLE(cObjElementFXSceneTheEndB_vftable)
 #define VT_FXSCENEYAKUZZI GAME_VFTABLE(cObjElementFXSceneYakuzzi_vftable)
 
-void *__thiscall cObjElementFXSceneBeatPickus_ctor(void *self) {
+void *cObjElementFXSceneBeatPickus_ctor(void *self) {
 	cObjElementFXSceneBeatPickus *s = self;
 
 	FX_SetVtbl(self, VT_FXSCENEBEATPICKUS);
@@ -1308,7 +1308,7 @@ void *__thiscall cObjElementFXSceneBeatPickus_ctor(void *self) {
 	return self;
 }
 
-void *__thiscall cObjElementFXSceneBillArrives_A_ctor(void *self) {
+void *cObjElementFXSceneBillArrives_A_ctor(void *self) {
 	cObjElementFXSceneBillArrives_A *s = self;
 
 	FX_SetVtbl(self, VT_FXSCENEBILLARRIVES_A);
@@ -1324,7 +1324,7 @@ void *__thiscall cObjElementFXSceneBillArrives_A_ctor(void *self) {
 	return self;
 }
 
-void *__thiscall cObjElementFXSceneBishops_ctor(void *self) {
+void *cObjElementFXSceneBishops_ctor(void *self) {
 	cObjElementFXSceneBishops *s = self;
 
 	FX_SetVtbl(self, VT_FXSCENEBISHOPS);
@@ -1341,7 +1341,7 @@ void *__thiscall cObjElementFXSceneBishops_ctor(void *self) {
 	return self;
 }
 
-void *__thiscall cObjElementFXSceneDecontamination_ctor(void *self) {
+void *cObjElementFXSceneDecontamination_ctor(void *self) {
 	cObjElementFXSceneDecontamination *s = self;
 
 	FX_SetVtbl(self, VT_FXSCENEDECONTAMINATION);
@@ -1355,7 +1355,7 @@ void *__thiscall cObjElementFXSceneDecontamination_ctor(void *self) {
 	return self;
 }
 
-void *__thiscall cObjElementFXSceneEnterMatrix_ctor(void *self) {
+void *cObjElementFXSceneEnterMatrix_ctor(void *self) {
 	cObjElementFXSceneEnterMatrix *s = self;
 
 	FX_SetVtbl(self, VT_FXSCENEENTERMATRIX);
@@ -1369,7 +1369,7 @@ void *__thiscall cObjElementFXSceneEnterMatrix_ctor(void *self) {
 	return self;
 }
 
-void *__thiscall cObjElementFXSceneHumanCD_ctor(void *self) {
+void *cObjElementFXSceneHumanCD_ctor(void *self) {
 	cObjElementFXSceneHumanCD *s = self;
 
 	FX_SetVtbl(self, VT_FXSCENEHUMANCD);
@@ -1382,7 +1382,7 @@ void *__thiscall cObjElementFXSceneHumanCD_ctor(void *self) {
 	return self;
 }
 
-void *__thiscall cObjElementFXSceneTheEndB_ctor(void *self) {
+void *cObjElementFXSceneTheEndB_ctor(void *self) {
 	cObjElementFXSceneTheEndB *s = self;
 
 	FX_SetVtbl(self, VT_FXSCENETHEENDB);
@@ -1396,7 +1396,7 @@ void *__thiscall cObjElementFXSceneTheEndB_ctor(void *self) {
 	return self;
 }
 
-void *__thiscall cObjElementFXSceneYakuzzi_ctor(void *self) {
+void *cObjElementFXSceneYakuzzi_ctor(void *self) {
 	cObjElementFXSceneYakuzzi *s = self;
 
 	FX_SetVtbl(self, VT_FXSCENEYAKUZZI);
@@ -1409,7 +1409,7 @@ void *__thiscall cObjElementFXSceneYakuzzi_ctor(void *self) {
 	return self;
 }
 
-void __thiscall cObjElementFXSceneBeatPickus_dtor(void *self) {
+void cObjElementFXSceneBeatPickus_dtor(void *self) {
 	cObjElementFXSceneBeatPickus *s = self;
 
 	*(void **)self = VT_FXSCENEBEATPICKUS;
@@ -1419,7 +1419,7 @@ void __thiscall cObjElementFXSceneBeatPickus_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __thiscall cObjElementFXSceneBillArrives_A_dtor(void *self) {
+void cObjElementFXSceneBillArrives_A_dtor(void *self) {
 	cObjElementFXSceneBillArrives_A *s = self;
 
 	*(void **)self = VT_FXSCENEBILLARRIVES_A;
@@ -1428,7 +1428,7 @@ void __thiscall cObjElementFXSceneBillArrives_A_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __thiscall cObjElementFXSceneBishops_dtor(void *self) {
+void cObjElementFXSceneBishops_dtor(void *self) {
 	cObjElementFXSceneBishops *s = self;
 
 	*(void **)self = VT_FXSCENEBISHOPS;
@@ -1438,7 +1438,7 @@ void __thiscall cObjElementFXSceneBishops_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __thiscall cObjElementFXSceneDecontamination_dtor(void *self) {
+void cObjElementFXSceneDecontamination_dtor(void *self) {
 	cObjElementFXSceneDecontamination *s = self;
 
 	*(void **)self = VT_FXSCENEDECONTAMINATION;
@@ -1448,7 +1448,7 @@ void __thiscall cObjElementFXSceneDecontamination_dtor(void *self) {
 }
 
 /* the particles are released twice, as in the original */
-void __thiscall cObjElementFXSceneEnterMatrix_dtor(void *self) {
+void cObjElementFXSceneEnterMatrix_dtor(void *self) {
 	cObjElementFXSceneEnterMatrix *s = self;
 
 	*(void **)self = VT_FXSCENEENTERMATRIX;
@@ -1459,7 +1459,7 @@ void __thiscall cObjElementFXSceneEnterMatrix_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __thiscall cObjElementFXSceneHumanCD_dtor(void *self) {
+void cObjElementFXSceneHumanCD_dtor(void *self) {
 	cObjElementFXSceneHumanCD *s = self;
 
 	*(void **)self = VT_FXSCENEHUMANCD;
@@ -1468,7 +1468,7 @@ void __thiscall cObjElementFXSceneHumanCD_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __thiscall cObjElementFXSceneTheEndB_dtor(void *self) {
+void cObjElementFXSceneTheEndB_dtor(void *self) {
 	cObjElementFXSceneTheEndB *s = self;
 
 	*(void **)self = VT_FXSCENETHEENDB;
@@ -1477,7 +1477,7 @@ void __thiscall cObjElementFXSceneTheEndB_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __thiscall cObjElementFXSceneYakuzzi_dtor(void *self) {
+void cObjElementFXSceneYakuzzi_dtor(void *self) {
 	cObjElementFXSceneYakuzzi *s = self;
 
 	*(void **)self = VT_FXSCENEYAKUZZI;
@@ -1485,42 +1485,42 @@ void __thiscall cObjElementFXSceneYakuzzi_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void *__thiscall cObjElementFXSceneBeatPickus_Delete(void *self, uint32_t flags) {
+void *cObjElementFXSceneBeatPickus_Delete(void *self, uint32_t flags) {
 	cObjElementFXSceneBeatPickus_dtor(self);
 	return FX_Delete(self, flags, 0x240);
 }
 
-void *__thiscall cObjElementFXSceneBillArrives_A_Delete(void *self, uint32_t flags) {
+void *cObjElementFXSceneBillArrives_A_Delete(void *self, uint32_t flags) {
 	cObjElementFXSceneBillArrives_A_dtor(self);
 	return FX_Delete(self, flags, 0xec);
 }
 
-void *__thiscall cObjElementFXSceneBishops_Delete(void *self, uint32_t flags) {
+void *cObjElementFXSceneBishops_Delete(void *self, uint32_t flags) {
 	cObjElementFXSceneBishops_dtor(self);
 	return FX_Delete(self, flags, 0x1b8);
 }
 
-void *__thiscall cObjElementFXSceneDecontamination_Delete(void *self, uint32_t flags) {
+void *cObjElementFXSceneDecontamination_Delete(void *self, uint32_t flags) {
 	cObjElementFXSceneDecontamination_dtor(self);
 	return FX_Delete(self, flags, 0x11ec);
 }
 
-void *__thiscall cObjElementFXSceneEnterMatrix_Delete(void *self, uint32_t flags) {
+void *cObjElementFXSceneEnterMatrix_Delete(void *self, uint32_t flags) {
 	cObjElementFXSceneEnterMatrix_dtor(self);
 	return FX_Delete(self, flags, 0x798);
 }
 
-void *__thiscall cObjElementFXSceneHumanCD_Delete(void *self, uint32_t flags) {
+void *cObjElementFXSceneHumanCD_Delete(void *self, uint32_t flags) {
 	cObjElementFXSceneHumanCD_dtor(self);
 	return FX_Delete(self, flags, 0x184);
 }
 
-void *__thiscall cObjElementFXSceneTheEndB_Delete(void *self, uint32_t flags) {
+void *cObjElementFXSceneTheEndB_Delete(void *self, uint32_t flags) {
 	cObjElementFXSceneTheEndB_dtor(self);
 	return FX_Delete(self, flags, 0xcc);
 }
 
-void *__thiscall cObjElementFXSceneYakuzzi_Delete(void *self, uint32_t flags) {
+void *cObjElementFXSceneYakuzzi_Delete(void *self, uint32_t flags) {
 	cObjElementFXSceneYakuzzi_dtor(self);
 	return FX_Delete(self, flags, 0xd4);
 }
@@ -1547,7 +1547,7 @@ static inline void FX_TrailDtor(void *self, uint32_t off) {
 	CGameTrail_dtor((CGameTrail *)((byte *)self + off));
 }
 
-void *__fastcall cObjElementFXFadeOutTrail_ctor(void *self) {
+void *cObjElementFXFadeOutTrail_ctor(void *self) {
 	cObjElementFXFadeOutTrail *s = self;
 
 	FX_SetVtbl(self, VT_FXFADEOUTTRAIL);
@@ -1558,7 +1558,7 @@ void *__fastcall cObjElementFXFadeOutTrail_ctor(void *self) {
 	return self;
 }
 
-void *__fastcall cObjElementFXItemFade_ctor(void *self) {
+void *cObjElementFXItemFade_ctor(void *self) {
 	cObjElementFXItemFade *s = self;
 
 	FX_SetVtbl(self, VT_FXITEMFADE);
@@ -1571,7 +1571,7 @@ void *__fastcall cObjElementFXItemFade_ctor(void *self) {
 	return self;
 }
 
-void *__fastcall cObjElementFXItemTake_ctor(void *self) {
+void *cObjElementFXItemTake_ctor(void *self) {
 	cObjElementFXItemTake *s = self;
 
 	FX_SetVtbl(self, VT_FXITEMTAKE);
@@ -1586,7 +1586,7 @@ void *__fastcall cObjElementFXItemTake_ctor(void *self) {
 	return self;
 }
 
-void *__fastcall cObjElementFXModelFade_ctor(void *self) {
+void *cObjElementFXModelFade_ctor(void *self) {
 	cObjElementFXModelFade *s = self;
 
 	FX_SetVtbl(self, VT_FXMODELFADE);
@@ -1597,7 +1597,7 @@ void *__fastcall cObjElementFXModelFade_ctor(void *self) {
 	return self;
 }
 
-void *__fastcall cObjElementFXModelNoise_ctor(void *self) {
+void *cObjElementFXModelNoise_ctor(void *self) {
 	cObjElementFXModelNoise *s = self;
 
 	FX_SetVtbl(self, VT_FXMODELNOISE);
@@ -1607,7 +1607,7 @@ void *__fastcall cObjElementFXModelNoise_ctor(void *self) {
 	return self;
 }
 
-void *__fastcall cObjElementFXParticleSystem_ctor(void *self) {
+void *cObjElementFXParticleSystem_ctor(void *self) {
 	cObjElementFXParticleSystem *s = self;
 
 	FX_SetVtbl(self, VT_FXPARTICLESYSTEM);
@@ -1616,7 +1616,7 @@ void *__fastcall cObjElementFXParticleSystem_ctor(void *self) {
 	return self;
 }
 
-cObjElementFXParticleSystemDuDv *__fastcall cObjElementFXParticleSystemDuDv_ctor(
+cObjElementFXParticleSystemDuDv *cObjElementFXParticleSystemDuDv_ctor(
 	cObjElementFXParticleSystemDuDv *self) {
 	FX_SetVtbl(self, VT_FXPARTICLESYSTEMDUDV);
 	CGameParticles_ctor(&self->particles);
@@ -1624,7 +1624,7 @@ cObjElementFXParticleSystemDuDv *__fastcall cObjElementFXParticleSystemDuDv_ctor
 	return self;
 }
 
-void *__fastcall cObjElementFXSparks_ctor(void *self) {
+void *cObjElementFXSparks_ctor(void *self) {
 	cObjElementFXSparks *s = self;
 
 	FX_SetVtbl(self, VT_FXSPARKS);
@@ -1637,7 +1637,7 @@ void *__fastcall cObjElementFXSparks_ctor(void *self) {
 	return self;
 }
 
-void *__fastcall cObjElementFXTrail_ctor(void *self) {
+void *cObjElementFXTrail_ctor(void *self) {
 	cObjElementFXTrail *s = self;
 
 	FX_SetVtbl(self, VT_FXTRAIL);
@@ -1648,13 +1648,13 @@ void *__fastcall cObjElementFXTrail_ctor(void *self) {
 	return self;
 }
 
-void __fastcall cObjElementFXFadeOutTrail_dtor(void *self) {
+void cObjElementFXFadeOutTrail_dtor(void *self) {
 	*(void **)self = VT_FXFADEOUTTRAIL;
 	FX_TrailDtor(self, 0x4);
 	cObjElement_dtor(self);
 }
 
-void __fastcall cObjElementFXItemFade_dtor(void *self) {
+void cObjElementFXItemFade_dtor(void *self) {
 	cObjElementFXItemFade *s = self;
 
 	*(void **)self = VT_FXITEMFADE;
@@ -1662,7 +1662,7 @@ void __fastcall cObjElementFXItemFade_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __fastcall cObjElementFXItemTake_dtor(void *self) {
+void cObjElementFXItemTake_dtor(void *self) {
 	cObjElementFXItemTake *s = self;
 
 	*(void **)self = VT_FXITEMTAKE;
@@ -1671,7 +1671,7 @@ void __fastcall cObjElementFXItemTake_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __fastcall cObjElementFXParticleSystem_dtor(void *self) {
+void cObjElementFXParticleSystem_dtor(void *self) {
 	cObjElementFXParticleSystem *s = self;
 
 	*(void **)self = VT_FXPARTICLESYSTEM;
@@ -1679,13 +1679,13 @@ void __fastcall cObjElementFXParticleSystem_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __fastcall cObjElementFXParticleSystemDuDv_dtor(cObjElementFXParticleSystemDuDv *self) {
+void cObjElementFXParticleSystemDuDv_dtor(cObjElementFXParticleSystemDuDv *self) {
 	*(void **)self = VT_FXPARTICLESYSTEMDUDV;
 	CGameParticles_Release(&self->particles);
 	cObjElement_dtor(self);
 }
 
-void __fastcall cObjElementFXSparks_dtor(void *self) {
+void cObjElementFXSparks_dtor(void *self) {
 	cObjElementFXSparks *s = self;
 
 	*(void **)self = VT_FXSPARKS;
@@ -1694,70 +1694,70 @@ void __fastcall cObjElementFXSparks_dtor(void *self) {
 	cObjElement_dtor(self);
 }
 
-void __fastcall cObjElementFXTrail_dtor(void *self) {
+void cObjElementFXTrail_dtor(void *self) {
 	*(void **)self = VT_FXTRAIL;
 	FX_TrailDtor(self, 0x4);
 	cObjElement_dtor(self);
 }
 
-void __fastcall cObjElementFXModelFade_dtor(void *self) {
+void cObjElementFXModelFade_dtor(void *self) {
 	*(void **)self = VT_FXMODELFADE;
 	cObjElement_dtor(self);
 }
 
-void __fastcall cObjElementFXModelNoise_dtor(void *self) {
+void cObjElementFXModelNoise_dtor(void *self) {
 	*(void **)self = VT_FXMODELNOISE;
 	cObjElement_dtor(self);
 }
 
-void *__thiscall cObjElementFXFadeOutTrail_Delete(void *self, uint32_t flags) {
+void *cObjElementFXFadeOutTrail_Delete(void *self, uint32_t flags) {
 	cObjElementFXFadeOutTrail_dtor(self);
 	return FX_Delete(self, flags, 0x14);
 }
 
-void *__thiscall cObjElementFXItemFade_Delete(void *self, uint32_t flags) {
+void *cObjElementFXItemFade_Delete(void *self, uint32_t flags) {
 	cObjElementFXItemFade_dtor(self);
 	return FX_Delete(self, flags, 0xcc);
 }
 
-void *__thiscall cObjElementFXItemTake_Delete(void *self, uint32_t flags) {
+void *cObjElementFXItemTake_Delete(void *self, uint32_t flags) {
 	cObjElementFXItemTake_dtor(self);
 	return FX_Delete(self, flags, 0x648);
 }
 
-void *__thiscall cObjElementFXModelFade_Delete(void *self, uint32_t flags) {
+void *cObjElementFXModelFade_Delete(void *self, uint32_t flags) {
 	cObjElementFXModelFade_dtor(self);
 	return FX_Delete(self, flags, 0x14);
 }
 
-void *__thiscall cObjElementFXModelNoise_Delete(void *self, uint32_t flags) {
+void *cObjElementFXModelNoise_Delete(void *self, uint32_t flags) {
 	cObjElementFXModelNoise_dtor(self);
 	return FX_Delete(self, flags, 0x14);
 }
 
-void *__thiscall cObjElementFXParticleSystem_Delete(void *self, uint32_t flags) {
+void *cObjElementFXParticleSystem_Delete(void *self, uint32_t flags) {
 	cObjElementFXParticleSystem_dtor(self);
 	return FX_Delete(self, flags, 0xb8);
 }
 
-cObjElementFXParticleSystemDuDv *__thiscall cObjElementFXParticleSystemDuDv_Delete(
+cObjElementFXParticleSystemDuDv *cObjElementFXParticleSystemDuDv_Delete(
 	cObjElementFXParticleSystemDuDv *self, uint32_t flags) {
 	cObjElementFXParticleSystemDuDv_dtor(self);
 	return FX_Delete(self, flags, 0xb8);
 }
 
-void *__thiscall cObjElementFXSparks_Delete(void *self, uint32_t flags) {
+void *cObjElementFXSparks_Delete(void *self, uint32_t flags) {
 	cObjElementFXSparks_dtor(self);
 	return FX_Delete(self, flags, 0xc70);
 }
 
-void *__thiscall cObjElementFXTrail_Delete(void *self, uint32_t flags) {
+void *cObjElementFXTrail_Delete(void *self, uint32_t flags) {
 	cObjElementFXTrail_dtor(self);
 	return FX_Delete(self, flags, 0x1c);
 }
 
 /* the alpha of the trail goes up with t over the duration while it is not running */
-void __thiscall cObjElementFXFadeOutTrail_Update(cObjElementFXFadeOutTrail *self, cDebris *d, float dt) {
+void cObjElementFXFadeOutTrail_Update(cObjElementFXFadeOutTrail *self, cDebris *d, float dt) {
 	(void)d;
 	(void)dt;
 	float t = self->t + cTimer_GetDelta(&g_pWorld->timer);

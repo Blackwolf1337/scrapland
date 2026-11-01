@@ -67,7 +67,7 @@ static byte FXW_MissileAlive(cDebris *debris, cDebrisSys *sys, const float *time
 
 /* ---- constructors ---- */
 
-void *__thiscall cObjElementFXATPC_ctor(void *self) {
+void *cObjElementFXATPC_ctor(void *self) {
 	cObjElementFXATPC *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXATPC_VFTABLE);
 	CGameParticles_ctor(&s->particles);
@@ -85,7 +85,7 @@ void *__thiscall cObjElementFXATPC_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXDevastatorShoot_ctor(void *self) {
+void *cObjElementFXDevastatorShoot_ctor(void *self) {
 	cObjElementFXDevastatorShoot *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXDEVASTATORSHOOT_VFTABLE);
 	CGameTrail_ctor(&s->trail);
@@ -96,7 +96,7 @@ void *__thiscall cObjElementFXDevastatorShoot_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXInfernoExplosion_ctor(void *self) {
+void *cObjElementFXInfernoExplosion_ctor(void *self) {
 	cObjElementFXInfernoExplosion *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXINFERNOEXPLOSION_VFTABLE);
 	CGameParticles_ctor(&s->particles);
@@ -108,7 +108,7 @@ void *__thiscall cObjElementFXInfernoExplosion_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXInfernoMissile_ctor(void *self) {
+void *cObjElementFXInfernoMissile_ctor(void *self) {
 	cObjElementFXInfernoMissile *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXINFERNOMISSILE_VFTABLE);
 	CGameTrail_ctor(&s->trail);
@@ -118,7 +118,7 @@ void *__thiscall cObjElementFXInfernoMissile_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXLaser_ctor(void *self) {
+void *cObjElementFXLaser_ctor(void *self) {
 	cObjElementFXLaser *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXLASER_VFTABLE);
 	CGameTrail_ctor(&s->trail);
@@ -127,7 +127,7 @@ void *__thiscall cObjElementFXLaser_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXSwarmMissile_ctor(void *self) {
+void *cObjElementFXSwarmMissile_ctor(void *self) {
 	cObjElementFXSwarmMissile *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXSWARMMISSILE_VFTABLE);
 	CGameTrail_ctor(&s->trail);
@@ -136,7 +136,7 @@ void *__thiscall cObjElementFXSwarmMissile_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXTesla_ctor(void *self) {
+void *cObjElementFXTesla_ctor(void *self) {
 	cObjElementFXTesla *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXTESLA_VFTABLE);
 	CGameParticles_ctor(&s->particles);
@@ -156,7 +156,7 @@ void *__thiscall cObjElementFXTesla_ctor(void *self) {
 
 /* ---- destructors ---- */
 
-void __thiscall cObjElementFXATPC_dtor(void *self) {
+void cObjElementFXATPC_dtor(void *self) {
 	cObjElementFXATPC *s = self;
 	*(void **)s = COBJELEMENTFXATPC_VFTABLE;
 	CGameTrail_dtor(&s->ringsDuDv);
@@ -169,14 +169,14 @@ void __thiscall cObjElementFXATPC_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXDevastatorShoot_dtor(void *self) {
+void cObjElementFXDevastatorShoot_dtor(void *self) {
 	cObjElementFXDevastatorShoot *s = self;
 	*(void **)s = COBJELEMENTFXDEVASTATORSHOOT_VFTABLE;
 	CGameTrail_dtor(&s->trail);
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXInfernoExplosion_dtor(void *self) {
+void cObjElementFXInfernoExplosion_dtor(void *self) {
 	cObjElementFXInfernoExplosion *s = self;
 	*(void **)s = COBJELEMENTFXINFERNOEXPLOSION_VFTABLE;
 	FXObj_TrailsDtor(s->trails, FXINFERNO_TRAILS);
@@ -185,7 +185,7 @@ void __thiscall cObjElementFXInfernoExplosion_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXInfernoMissile_dtor(void *self) {
+void cObjElementFXInfernoMissile_dtor(void *self) {
 	cObjElementFXInfernoMissile *s = self;
 	*(void **)s = COBJELEMENTFXINFERNOMISSILE_VFTABLE;
 	CGameLensFlare_dtor(&s->flare);
@@ -194,7 +194,7 @@ void __thiscall cObjElementFXInfernoMissile_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXLaser_dtor(void *self) {
+void cObjElementFXLaser_dtor(void *self) {
 	cObjElementFXLaser *s = self;
 	*(void **)s = COBJELEMENTFXLASER_VFTABLE;
 	CGameParticles_Release(&s->particles);
@@ -202,7 +202,7 @@ void __thiscall cObjElementFXLaser_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXSwarmMissile_dtor(void *self) {
+void cObjElementFXSwarmMissile_dtor(void *self) {
 	cObjElementFXSwarmMissile *s = self;
 	*(void **)s = COBJELEMENTFXSWARMMISSILE_VFTABLE;
 	CGameParticles_Release(&s->particles);
@@ -210,7 +210,7 @@ void __thiscall cObjElementFXSwarmMissile_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXTesla_dtor(void *self) {
+void cObjElementFXTesla_dtor(void *self) {
 	cObjElementFXTesla *s = self;
 	*(void **)s = COBJELEMENTFXTESLA_VFTABLE;
 	FXObj_TrailsDtor(s->trails, FXTESLA_SLOTS * FXTESLA_TRAILS);
@@ -220,37 +220,37 @@ void __thiscall cObjElementFXTesla_dtor(void *self) {
 
 /* ---- deleting destructors (vf00) ---- */
 
-void *__thiscall cObjElementFXATPC_Delete(void *self, uint32_t flags) {
+void *cObjElementFXATPC_Delete(void *self, uint32_t flags) {
 	cObjElementFXATPC_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXATPC));
 }
 
-void *__thiscall cObjElementFXDevastatorShoot_Delete(void *self, uint32_t flags) {
+void *cObjElementFXDevastatorShoot_Delete(void *self, uint32_t flags) {
 	cObjElementFXDevastatorShoot_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXDevastatorShoot));
 }
 
-void *__thiscall cObjElementFXInfernoExplosion_Delete(void *self, uint32_t flags) {
+void *cObjElementFXInfernoExplosion_Delete(void *self, uint32_t flags) {
 	cObjElementFXInfernoExplosion_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXInfernoExplosion));
 }
 
-void *__thiscall cObjElementFXInfernoMissile_Delete(void *self, uint32_t flags) {
+void *cObjElementFXInfernoMissile_Delete(void *self, uint32_t flags) {
 	cObjElementFXInfernoMissile_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXInfernoMissile));
 }
 
-void *__thiscall cObjElementFXLaser_Delete(void *self, uint32_t flags) {
+void *cObjElementFXLaser_Delete(void *self, uint32_t flags) {
 	cObjElementFXLaser_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXLaser));
 }
 
-void *__thiscall cObjElementFXSwarmMissile_Delete(void *self, uint32_t flags) {
+void *cObjElementFXSwarmMissile_Delete(void *self, uint32_t flags) {
 	cObjElementFXSwarmMissile_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXSwarmMissile));
 }
 
-void *__thiscall cObjElementFXTesla_Delete(void *self, uint32_t flags) {
+void *cObjElementFXTesla_Delete(void *self, uint32_t flags) {
 	cObjElementFXTesla_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXTesla));
 }
@@ -287,7 +287,7 @@ static void FXW_RingPoint(vec3_t *out, float a, const vec3_t *ang) {
 
 /* the beam: the line fades in, while the shot lasts the core, the turning rings (endRing,
  * rings and ringsDuDv for the dudv pass) and the glow particles at both ends */
-void __thiscall cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debris, float dt) {
+void cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debris, float dt) {
 	(void)dt;
 	cEntity *e = self->shooter;
 	if (e && (Entity_Removed(e) || !e->active)) {
@@ -527,7 +527,7 @@ static inline void FXW_NoRot(CGameParticles *p) {
 
 /* the shot of the vehicle v from origin to hit: the glow along the weapon slots, along the beam, at the hit and
  * sparks back towards v (target is not used) */
-void __thiscall cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, const char *target, vec3_t hit,
+void cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, const char *target, vec3_t hit,
 	vec3_t origin) {
 	(void)target;
 	CGameParticles *p = &self->particles;
@@ -710,7 +710,7 @@ void __thiscall cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, con
 	CGameParticles_SetSparksOn(p, 0);
 }
 
-void __thiscall cObjElementFXATPC_Start(cObjElementFXATPC *self, cDebris *debris) {
+void cObjElementFXATPC_Start(cObjElementFXATPC *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
 	CGameParticles_Attach(&self->particles, model, FXW_Node(model, "Dummy01"));
@@ -733,7 +733,7 @@ void __thiscall cObjElementFXATPC_Start(cObjElementFXATPC *self, cDebris *debris
 	CGameTrail_SetTexture(&self->ringsDuDv, 0x10);
 }
 
-void __thiscall cObjElementFXATPC_Reset(cObjElementFXATPC *self, cDebris *debris) {
+void cObjElementFXATPC_Reset(cObjElementFXATPC *self, cDebris *debris) {
 	(void)debris;
 	*(uint32_t *)self->slotOn = 0;
 	CGameTrail_Clear(&self->core);
@@ -747,7 +747,7 @@ void __thiscall cObjElementFXATPC_Reset(cObjElementFXATPC *self, cDebris *debris
 
 /* ---- cObjElementFXDevastatorShoot ---- */
 
-void __thiscall cObjElementFXDevastatorShoot_Update(cObjElementFXDevastatorShoot *self, cDebris *debris, float dt) {
+void cObjElementFXDevastatorShoot_Update(cObjElementFXDevastatorShoot *self, cDebris *debris, float dt) {
 	(void)debris;
 	(void)dt;
 	float t = self->time + FXW_Delta();
@@ -771,7 +771,7 @@ void __thiscall cObjElementFXDevastatorShoot_Update(cObjElementFXDevastatorShoot
 	self->first = 0;
 }
 
-byte __thiscall cObjElementFXDevastatorShoot_IsAlive(cObjElementFXDevastatorShoot *self, cDebris *debris,
+byte cObjElementFXDevastatorShoot_IsAlive(cObjElementFXDevastatorShoot *self, cDebris *debris,
 	cDebrisSys *sys) {
 	(void)debris;
 	(void)sys;
@@ -782,7 +782,7 @@ byte __thiscall cObjElementFXDevastatorShoot_IsAlive(cObjElementFXDevastatorShoo
 	return 1;
 }
 
-void __thiscall cObjElementFXDevastatorShoot_Start(cObjElementFXDevastatorShoot *self, cDebris *debris) {
+void cObjElementFXDevastatorShoot_Start(cObjElementFXDevastatorShoot *self, cDebris *debris) {
 	(void)debris;
 	CGameTrail *t = &self->trail;
 	CGameTrail_SetMaxTrails(t, 6);
@@ -792,7 +792,7 @@ void __thiscall cObjElementFXDevastatorShoot_Start(cObjElementFXDevastatorShoot 
 	CGameTrail_SetPremul(t, 1);
 }
 
-void __thiscall cObjElementFXDevastatorShoot_Reset(cObjElementFXDevastatorShoot *self, cDebris *debris) {
+void cObjElementFXDevastatorShoot_Reset(cObjElementFXDevastatorShoot *self, cDebris *debris) {
 	(void)debris;
 	self->time = 0.0f;
 	CGameTrail_Clear(&self->trail);
@@ -803,7 +803,7 @@ void __thiscall cObjElementFXDevastatorShoot_Reset(cObjElementFXDevastatorShoot 
 /* ---- cObjElementFXInfernoExplosion ---- */
 
 
-void __thiscall cObjElementFXInfernoExplosion_Update(cObjElementFXInfernoExplosion *self, cDebris *debris,
+void cObjElementFXInfernoExplosion_Update(cObjElementFXInfernoExplosion *self, cDebris *debris,
 	float dt) {
 	(void)debris;
 	(void)dt;
@@ -899,7 +899,7 @@ void __thiscall cObjElementFXInfernoExplosion_Update(cObjElementFXInfernoExplosi
 	self->stepTime = 0.0f;
 }
 
-void __thiscall cObjElementFXInfernoExplosion_Start(cObjElementFXInfernoExplosion *self, cDebris *debris) {
+void cObjElementFXInfernoExplosion_Start(cObjElementFXInfernoExplosion *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
 	CGameParticles_Attach(&self->particles, model, FXW_Node(model, "Dummy01"));
@@ -912,7 +912,7 @@ void __thiscall cObjElementFXInfernoExplosion_Start(cObjElementFXInfernoExplosio
 	self->numRays = 0;
 }
 
-void __thiscall cObjElementFXInfernoExplosion_Reset(cObjElementFXInfernoExplosion *self, cDebris *debris) {
+void cObjElementFXInfernoExplosion_Reset(cObjElementFXInfernoExplosion *self, cDebris *debris) {
 	(void)debris;
 	self->time = 0.0f;
 	self->stepTime = 0.0f;
@@ -936,7 +936,7 @@ static void FXW_RandDir(vec3_t *out) {
 }
 
 /* the rays (up to the floor within range) and the core particles of an explosion at x y z; bees widens it */
-void __thiscall cObjElementFXInfernoExplosion_Explode(cObjElementFXInfernoExplosion *self, float x, float y, float z,
+void cObjElementFXInfernoExplosion_Explode(cObjElementFXInfernoExplosion *self, float x, float y, float z,
 	float range, int bees, byte flag) {
 	static const vec3_t one = { 1.0f, 1.0f, 1.0f };
 	CGameParticles *p = &self->particles;
@@ -1080,7 +1080,7 @@ void __thiscall cObjElementFXInfernoExplosion_Explode(cObjElementFXInfernoExplos
 
 /* ---- cObjElementFXInfernoMissile ---- */
 
-void __thiscall cObjElementFXInfernoMissile_Update(cObjElementFXInfernoMissile *self, cDebris *debris, float dt) {
+void cObjElementFXInfernoMissile_Update(cObjElementFXInfernoMissile *self, cDebris *debris, float dt) {
 	cDebris_Move(debris, dt);
 	float d = FXW_Delta();
 	float time = self->time + d;
@@ -1126,12 +1126,12 @@ void __thiscall cObjElementFXInfernoMissile_Update(cObjElementFXInfernoMissile *
 	CGameTrail_Add(&self->trail, p, FXW_Rand(10.0, 160.0), 0x80ffdc5a);
 }
 
-byte __thiscall cObjElementFXInfernoMissile_IsAlive(cObjElementFXInfernoMissile *self, cDebris *debris,
+byte cObjElementFXInfernoMissile_IsAlive(cObjElementFXInfernoMissile *self, cDebris *debris,
 	cDebrisSys *sys) {
 	return FXW_MissileAlive(debris, sys, &self->time, &self->fadeStart, &self->lastShrink, &self->fadeTime);
 }
 
-void __thiscall cObjElementFXInfernoMissile_Start(cObjElementFXInfernoMissile *self, cDebris *debris) {
+void cObjElementFXInfernoMissile_Start(cObjElementFXInfernoMissile *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
 	CGameParticles_Attach(&self->particles, model, FXW_Node(model, "Dummy01"));
@@ -1160,7 +1160,7 @@ void __thiscall cObjElementFXInfernoMissile_Start(cObjElementFXInfernoMissile *s
 	CGameLensFlare_SetType(&self->flare, 2);
 }
 
-void __thiscall cObjElementFXInfernoMissile_Reset(cObjElementFXInfernoMissile *self, cDebris *debris) {
+void cObjElementFXInfernoMissile_Reset(cObjElementFXInfernoMissile *self, cDebris *debris) {
 	(void)debris;
 	CGameTrail_Clear(&self->trail);
 	CGameTrail_SetTransp(&self->trail, 0);
@@ -1171,13 +1171,13 @@ void __thiscall cObjElementFXInfernoMissile_Reset(cObjElementFXInfernoMissile *s
 	CGameLensFlare_SetOn(&self->flare, 0);
 }
 
-void __thiscall cObjElementFXInfernoMissile_SetFlare(cObjElementFXInfernoMissile *self, byte on) {
+void cObjElementFXInfernoMissile_SetFlare(cObjElementFXInfernoMissile *self, byte on) {
 	self->flareOn = on;
 }
 
 /* ---- cObjElementFXLaser ---- */
 
-void __thiscall cObjElementFXLaser_Update(cObjElementFXLaser *self, cDebris *debris, float dt) {
+void cObjElementFXLaser_Update(cObjElementFXLaser *self, cDebris *debris, float dt) {
 	(void)dt;
 	CGameModel *model = Debris_Model(debris);
 	vec3_t *pos = &self->pos;
@@ -1258,13 +1258,13 @@ void __thiscall cObjElementFXLaser_Update(cObjElementFXLaser *self, cDebris *deb
 	self->drawn = vis;
 }
 
-byte __thiscall cObjElementFXLaser_IsAlive(cObjElementFXLaser *self, cDebris *debris, cDebrisSys *sys) {
+byte cObjElementFXLaser_IsAlive(cObjElementFXLaser *self, cDebris *debris, cDebrisSys *sys) {
 	(void)debris;
 	(void)sys;
 	return !(self->dist > self->len);
 }
 
-void __thiscall cObjElementFXLaser_Start(cObjElementFXLaser *self, cDebris *debris) {
+void cObjElementFXLaser_Start(cObjElementFXLaser *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	if (CGameModel_IsLoaded(model)) {
 		int node = CGameModel_FindRenderNode(model, "Dummy01");
@@ -1280,7 +1280,7 @@ void __thiscall cObjElementFXLaser_Start(cObjElementFXLaser *self, cDebris *debr
 	self->drawn = 0;
 }
 
-void __thiscall cObjElementFXLaser_Reset(cObjElementFXLaser *self, cDebris *debris) {
+void cObjElementFXLaser_Reset(cObjElementFXLaser *self, cDebris *debris) {
 	(void)debris;
 	CGameTrail_Clear(&self->trail);
 	CGameTrail_SetTransp(&self->trail, 0);
@@ -1289,7 +1289,7 @@ void __thiscall cObjElementFXLaser_Reset(cObjElementFXLaser *self, cDebris *debr
 	self->drawn = 0;
 }
 
-void __thiscall cObjElementFXLaser_Shoot(cObjElementFXLaser *self, float x0, float y0, float z0, float x1, float y1,
+void cObjElementFXLaser_Shoot(cObjElementFXLaser *self, float x0, float y0, float z0, float x1, float y1,
 	float z1, float time) {
 	self->start.x = x0;
 	self->start.y = y0;
@@ -1332,7 +1332,7 @@ void __thiscall cObjElementFXLaser_Shoot(cObjElementFXLaser *self, float x0, flo
 
 /* ---- cObjElementFXSwarmMissile ---- */
 
-void __thiscall cObjElementFXSwarmMissile_Update(cObjElementFXSwarmMissile *self, cDebris *debris, float dt) {
+void cObjElementFXSwarmMissile_Update(cObjElementFXSwarmMissile *self, cDebris *debris, float dt) {
 	cDebris_Move(debris, dt);
 	if (self->node == -1) {
 		return;
@@ -1385,11 +1385,11 @@ void __thiscall cObjElementFXSwarmMissile_Update(cObjElementFXSwarmMissile *self
 	CGameTrail_Add(&self->trail, p, FXW_Rand(10.0, 70.0), color);
 }
 
-byte __thiscall cObjElementFXSwarmMissile_IsAlive(cObjElementFXSwarmMissile *self, cDebris *debris, cDebrisSys *sys) {
+byte cObjElementFXSwarmMissile_IsAlive(cObjElementFXSwarmMissile *self, cDebris *debris, cDebrisSys *sys) {
 	return FXW_MissileAlive(debris, sys, &self->time, &self->fadeStart, &self->lastShrink, &self->fadeTime);
 }
 
-void __thiscall cObjElementFXSwarmMissile_Start(cObjElementFXSwarmMissile *self, cDebris *debris) {
+void cObjElementFXSwarmMissile_Start(cObjElementFXSwarmMissile *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	CGameParticles *p = &self->particles;
 	self->node = -1;
@@ -1419,7 +1419,7 @@ void __thiscall cObjElementFXSwarmMissile_Start(cObjElementFXSwarmMissile *self,
 	self->lastShrink = 0.0f;
 }
 
-void __thiscall cObjElementFXSwarmMissile_Reset(cObjElementFXSwarmMissile *self, cDebris *debris) {
+void cObjElementFXSwarmMissile_Reset(cObjElementFXSwarmMissile *self, cDebris *debris) {
 	(void)debris;
 	CGameTrail_Clear(&self->trail);
 	CGameTrail_SetTransp(&self->trail, 0);
@@ -1445,7 +1445,7 @@ static void FXW_TeslaBack(vec3_t *tpos, const vec3_t *n, float r) {
 
 /* the ray of each mounted slot from its weapon node to the target (or the aim point), drawn as four trails through
  * the points that move to new random offsets every FXTeslaStepTime, the glow at both ends */
-void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *debris, float dt) {
+void cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *debris, float dt) {
 	(void)dt;
 	cEntity *e = self->emitter;
 	if (e && (Entity_Removed(e) || !e->active)) {
@@ -1793,7 +1793,7 @@ void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *deb
 	}
 }
 
-byte __thiscall cObjElementFXTesla_IsAlive(cObjElementFXTesla *self, cDebris *debris, cDebrisSys *sys) {
+byte cObjElementFXTesla_IsAlive(cObjElementFXTesla *self, cDebris *debris, cDebrisSys *sys) {
 	(void)debris;
 	(void)sys;
 	cEntity *e = self->emitter;
@@ -1814,7 +1814,7 @@ byte __thiscall cObjElementFXTesla_IsAlive(cObjElementFXTesla *self, cDebris *de
 	return 1;
 }
 
-void __thiscall cObjElementFXTesla_Start(cObjElementFXTesla *self, cDebris *debris) {
+void cObjElementFXTesla_Start(cObjElementFXTesla *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	/* the original keeps the debris pointer as the node when the model has none */
 	int node = (int)(intptr_t)debris;
@@ -1839,7 +1839,7 @@ void __thiscall cObjElementFXTesla_Start(cObjElementFXTesla *self, cDebris *debr
 	}
 }
 
-void __thiscall cObjElementFXTesla_Reset(cObjElementFXTesla *self, cDebris *debris) {
+void cObjElementFXTesla_Reset(cObjElementFXTesla *self, cDebris *debris) {
 	(void)debris;
 	self->time = 0.0f;
 	self->fadeStart = -1.0f;
@@ -1858,7 +1858,7 @@ void __thiscall cObjElementFXTesla_Reset(cObjElementFXTesla *self, cDebris *debr
 	CGameParticles_KillAll(&self->particles);
 }
 
-void __thiscall cObjElementFXTesla_SetEmitter(cObjElementFXTesla *self, cEntity *e) {
+void cObjElementFXTesla_SetEmitter(cObjElementFXTesla *self, cEntity *e) {
 	self->emitter = e;
 	self->target = NULL;
 	self->name[0] = 0;

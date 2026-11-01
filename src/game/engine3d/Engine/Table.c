@@ -25,7 +25,7 @@ static void Table_NewObjs(CTable *t, int num, uint32_t size, void *ctor, void *d
 }
 
 #define TABLE_ALLOC(sz) \
-	void __thiscall Table_Alloc##sz(CTable *t, int num) { \
+	void Table_Alloc##sz(CTable *t, int num) { \
 		Table_New(t, num, 0x##sz); \
 	}
 TABLE_ALLOC(1)
@@ -40,7 +40,7 @@ TABLE_ALLOC(1C)
 TABLE_ALLOC(2C)
 TABLE_ALLOC(38)
 
-void __thiscall Table_Alloc10Z(CTable *t, int num) {
+void Table_Alloc10Z(CTable *t, int num) {
 	CHECK(!t->p && num > 0);
 	t->n = num;
 	byte *p = New_Array(num, 0x10);
@@ -54,7 +54,7 @@ void __thiscall Table_Alloc10Z(CTable *t, int num) {
 }
 
 #define TABLE_NEW(sz, ctor, dtor) \
-	void __thiscall Table_New##sz(CTable *t, int num) { \
+	void Table_New##sz(CTable *t, int num) { \
 		Table_NewObjs(t, num, 0x##sz, ctor, dtor); \
 	}
 TABLE_NEW(8, (void *)CLod_ctor, (void *)CLod_dtor)
@@ -120,14 +120,14 @@ ARRAY_WRITE(C)
 ARRAY_WRITE(10)
 
 #define TABLE_GET(sz) \
-	void *__thiscall Table_Get##sz(CTable *t, uint32_t i) { \
+	void *Table_Get##sz(CTable *t, uint32_t i) { \
 		TABLE_CHECK(t->p, i, t->n); \
 		return (byte *)t->p + i * 0x##sz; \
 	}
 TABLE_GET(8)
 TABLE_GET(50)
 
-void __fastcall Table_Free(CTable *t) {
+void Table_Free(CTable *t) {
 	if (t->p) {
 		operator_delete_array(t->p);
 		t->p = NULL;
@@ -136,7 +136,7 @@ void __fastcall Table_Free(CTable *t) {
 }
 
 /* the resize of table.h: n elements of size, the old ones kept as far as they fit, n < 1 frees */
-static void Table_Resize(CTable *t, int n, uint32_t size, void(__thiscall *alloc)(CTable *, int)) {
+static void Table_Resize(CTable *t, int n, uint32_t size, void(*alloc)(CTable *, int)) {
 	if (n < 1) {
 		if (t->p) {
 			operator_delete_array(t->p);
@@ -159,30 +159,30 @@ static void Table_Resize(CTable *t, int n, uint32_t size, void(__thiscall *alloc
 	t->n = n;
 }
 
-void __thiscall Table_Resize2(CTable *t, int n) {
+void Table_Resize2(CTable *t, int n) {
 	Table_Resize(t, n, 2, Table_Alloc2);
 }
 
-void __thiscall Table_Resize4(CTable *t, int n) {
+void Table_Resize4(CTable *t, int n) {
 	Table_Resize(t, n, 4, Table_Alloc4);
 }
 
-void __thiscall Table_ResizeC(CTable *t, int n) {
+void Table_ResizeC(CTable *t, int n) {
 	Table_Resize(t, n, 0xc, Table_AllocC);
 }
 
-void __thiscall Table_Resize14(CTable *t, int n) {
+void Table_Resize14(CTable *t, int n) {
 	Table_Resize(t, n, 0x14, Table_Alloc14);
 }
 
-void __thiscall Table_Resize1C(CTable *t, int n) {
+void Table_Resize1C(CTable *t, int n) {
 	Table_Resize(t, n, 0x1c, Table_Alloc1C);
 }
 
-void __thiscall Table_Resize2C(CTable *t, int n) {
+void Table_Resize2C(CTable *t, int n) {
 	Table_Resize(t, n, 0x2c, Table_Alloc2C);
 }
 
-void __thiscall Table_Resize38(CTable *t, int n) {
+void Table_Resize38(CTable *t, int n) {
 	Table_Resize(t, n, 0x38, Table_Alloc38);
 }

@@ -102,55 +102,55 @@ int Input_GetDefinedList(int player, const char *a, const char *b, char *buf, in
 int Input_ClearDefinedList(int player, const char *a, const char *b, int flag);
 void Input_ResetToDefault(void);
 int Input_Bind(int player, const char *a, const char *b, const char *c);
-void __thiscall cPlayerInput_SetString(cPlayerInput *in, const char *text);
-void __thiscall cPlayerInput_SetInputFunc(cPlayerInput *in, const char *func);
-char __thiscall cPlayerInput_GetCursorChar(cPlayerInput *in);
-cVirtualKeyboard *__fastcall cVirtualKeyboard_ctor(cVirtualKeyboard *vk);
-byte __thiscall cVirtualKeyboard_Set(cVirtualKeyboard *vk, const char *text);
-void __thiscall cPad_Rumble(cPad *pad, float a, float b, float c);
+void cPlayerInput_SetString(cPlayerInput *in, const char *text);
+void cPlayerInput_SetInputFunc(cPlayerInput *in, const char *func);
+char cPlayerInput_GetCursorChar(cPlayerInput *in);
+cVirtualKeyboard *cVirtualKeyboard_ctor(cVirtualKeyboard *vk);
+byte cVirtualKeyboard_Set(cVirtualKeyboard *vk, const char *text);
+void cPad_Rumble(cPad *pad, float a, float b, float c);
 
 /* rva 0x13a1b0: whether the action is pressed for the player */
-byte __thiscall cInputAction_Pressed(cInputAction *a, int player);
+byte cInputAction_Pressed(cInputAction *a, int player);
 
 /* ActionSet.cpp (src/game/Input/ActionSet.c); the cInputAction functions also exist as loops over a set */
-void __thiscall ActionTable_Init(cInputActionTable *t, int num);
-void __thiscall ActionSetTable_Init(cActionSetTable *t, int num);
-void __thiscall cInputAction_Init(cInputAction *a, const char *name, byte latch);
-void __thiscall cActionSet_Init(cActionSet *s, int num, const char *name);
-void __thiscall cPad_Init(cPad *pad, int index);
-void __thiscall cPad_Update(cPad *pad);
-void __thiscall cPad_Stop(cPad *pad);
-void __thiscall cPlayerInput_MoveCursor(cPlayerInput *in, float dx, float dy);
-byte __thiscall cPlayerInput_SetCursorChar(cPlayerInput *in, char c);
-void __thiscall cPlayerInput_Clear(cPlayerInput *in);
+void ActionTable_Init(cInputActionTable *t, int num);
+void ActionSetTable_Init(cActionSetTable *t, int num);
+void cInputAction_Init(cInputAction *a, const char *name, byte latch);
+void cActionSet_Init(cActionSet *s, int num, const char *name);
+void cPad_Init(cPad *pad, int index);
+void cPad_Update(cPad *pad);
+void cPad_Stop(cPad *pad);
+void cPlayerInput_MoveCursor(cPlayerInput *in, float dx, float dy);
+byte cPlayerInput_SetCursorChar(cPlayerInput *in, char c);
+void cPlayerInput_Clear(cPlayerInput *in);
 void Input_UpdateActions(void);
 void Input_ClearActions(void);
-void __thiscall cInputAction_Shift(cInputAction *a);
-void __thiscall cInputAction_Fire(cInputAction *a);
-byte __thiscall cInputAction_Released(cInputAction *a, int player);
-void __thiscall cInputAction_Clear(cInputAction *a);
-void __thiscall cInputAction_Keep(cInputAction *a);
-void __thiscall cInputAction_Latch(cInputAction *a);
-void __thiscall cActionSet_Shift(cActionSet *s);
-void __thiscall cActionSet_Fire(cActionSet *s);
-void __thiscall cActionSet_Clear(cActionSet *s);
-void __thiscall cActionSet_Keep(cActionSet *s);
-void __thiscall cActionSet_Latch(cActionSet *s);
-byte __thiscall cActionSet_AnyActive(cActionSet *s);
+void cInputAction_Shift(cInputAction *a);
+void cInputAction_Fire(cInputAction *a);
+byte cInputAction_Released(cInputAction *a, int player);
+void cInputAction_Clear(cInputAction *a);
+void cInputAction_Keep(cInputAction *a);
+void cInputAction_Latch(cInputAction *a);
+void cActionSet_Shift(cActionSet *s);
+void cActionSet_Fire(cActionSet *s);
+void cActionSet_Clear(cActionSet *s);
+void cActionSet_Keep(cActionSet *s);
+void cActionSet_Latch(cActionSet *s);
+byte cActionSet_AnyActive(cActionSet *s);
 void Input_OnTextDone(int player, const char *text);
 
-void __thiscall cPlayerInput_PressKey(cPlayerInput *in, int player);
-void __thiscall cActionSet_HoldPressed(cActionSet *s);
-cActionSetTable *__fastcall ActionSets_ctor(cActionSetTable *sets);
-cInputAction *__fastcall cInputAction_ctor(cInputAction *a);
-cActionSet *__fastcall cActionSet_ctor(cActionSet *s);
-cPlayerInput *__fastcall cPlayerInput_ctor(cPlayerInput *in);
-void __fastcall ActionSetTable_Free(cActionSetTable *t);
-void __fastcall cInputAction_dtor(cInputAction *a);
-void __fastcall cActionSet_dtor(cActionSet *s);
-void __fastcall cPlayerInput_dtor(cPlayerInput *in);
-cInputAction *__thiscall cInputAction_Delete(cInputAction *a, uint32_t flags);
-cActionSet *__thiscall cActionSet_Delete(cActionSet *s, uint32_t flags);
+void cPlayerInput_PressKey(cPlayerInput *in, int player);
+void cActionSet_HoldPressed(cActionSet *s);
+cActionSetTable *ActionSets_ctor(cActionSetTable *sets);
+cInputAction *cInputAction_ctor(cInputAction *a);
+cActionSet *cActionSet_ctor(cActionSet *s);
+cPlayerInput *cPlayerInput_ctor(cPlayerInput *in);
+void ActionSetTable_Free(cActionSetTable *t);
+void cInputAction_dtor(cInputAction *a);
+void cActionSet_dtor(cActionSet *s);
+void cPlayerInput_dtor(cPlayerInput *in);
+cInputAction *cInputAction_Delete(cInputAction *a, uint32_t flags);
+cActionSet *cActionSet_Delete(cActionSet *s, uint32_t flags);
 
 /*
  * Input/IDevice.cpp: the devices. An entry is a key, button or half axis; sets[set] is the binding of it in that
@@ -168,15 +168,15 @@ SD_SIZE(cDevEntry, 0x28);
 
 typedef struct cAbstractIDevice cAbstractIDevice;
 typedef struct cAbstractIDeviceVtbl {
-	cAbstractIDevice *(__thiscall *Delete)(cAbstractIDevice *self, byte flags);	/* 0x00 */
-	void(__thiscall *SetDefaults)(cAbstractIDevice *self);				/* 0x04 menu and debug sets */
-	void(__thiscall *SetGameDefaults)(cAbstractIDevice *self);			/* 0x08 character and vehicle */
-	const char *(__thiscall *GetName)(cAbstractIDevice *self);			/* 0x0c */
-	const char *(__thiscall *GetEntryLabel)(cAbstractIDevice *self, int entry);	/* 0x10 for the menus */
-	const char *(__thiscall *GetEntryName)(cAbstractIDevice *self, int entry);	/* 0x14 Scrap.cfg */
-	void(__thiscall *Update)(cAbstractIDevice *self, float dt);			/* 0x18 */
-	byte(__thiscall *IsReserved)(cAbstractIDevice *self, int entry);		/* 0x1c */
-	byte(__thiscall *SetEntry)(cAbstractIDevice *self, int entry, int set, int player, int action, byte check);	/* 0x20 */
+	cAbstractIDevice *(*Delete)(cAbstractIDevice *self, byte flags);	/* 0x00 */
+	void(*SetDefaults)(cAbstractIDevice *self);				/* 0x04 menu and debug sets */
+	void(*SetGameDefaults)(cAbstractIDevice *self);			/* 0x08 character and vehicle */
+	const char *(*GetName)(cAbstractIDevice *self);			/* 0x0c */
+	const char *(*GetEntryLabel)(cAbstractIDevice *self, int entry);	/* 0x10 for the menus */
+	const char *(*GetEntryName)(cAbstractIDevice *self, int entry);	/* 0x14 Scrap.cfg */
+	void(*Update)(cAbstractIDevice *self, float dt);			/* 0x18 */
+	byte(*IsReserved)(cAbstractIDevice *self, int entry);		/* 0x1c */
+	byte(*SetEntry)(cAbstractIDevice *self, int entry, int set, int player, int action, byte check);	/* 0x20 */
 } cAbstractIDeviceVtbl;
 SD_OFFSET(cAbstractIDeviceVtbl, SetEntry, 0x20);
 
@@ -259,21 +259,21 @@ typedef void (*input_cb_t)(void);
 #define g_OnDefined GAME_GLOBAL(input_cb_t, g_OnDefined)
 #define g_InactivityTimer GAME_GLOBAL(float, g_InactivityTimer)
 
-cAbstractIDevice *__thiscall cAbstractIDevice_ctor(cAbstractIDevice *self);
-cFuncGvarDevices *__thiscall cFuncGvarDevices_ctor(cFuncGvarDevices *self, cAbstractIDevice *dev);
-void __thiscall cAbstractIDevice_dtor(cAbstractIDevice *self);
-cAbstractIDevice *__thiscall cAbstractIDevice_Delete(cAbstractIDevice *self, byte flags);
-byte __thiscall cAbstractIDevice_SetEntry(cAbstractIDevice *self, int entry, int set, int player, int action, byte check);
-byte __thiscall cAbstractIDevice_IsReserved(cAbstractIDevice *self, int entry);
-void __thiscall cAbstractIDevice_ClearEntries(cAbstractIDevice *self);
-void __thiscall cAbstractIDevice_GetEntry(cAbstractIDevice *self, int entry, int set, int *player, int *action);
-void __thiscall cAbstractIDevice_InitEntries(cAbstractIDevice *self, int n);
-void __thiscall cAbstractIDevice_SetValue(cAbstractIDevice *self, int entry, float value);
-void __thiscall cAbstractIDevice_SetAxis(cAbstractIDevice *self, int entry, float value);
-void __thiscall cFuncGvarDevices_Save(cFuncGvarDevices *self, void *f);
-void __thiscall cFuncGvarDevices_Load(cFuncGvarDevices *self, void *f);
-void __thiscall InputDevices_Clear(cInputDevList *list);
-void __thiscall InputDevices_Add(cInputDevList *list, cAbstractIDevice **dev);
+cAbstractIDevice *cAbstractIDevice_ctor(cAbstractIDevice *self);
+cFuncGvarDevices *cFuncGvarDevices_ctor(cFuncGvarDevices *self, cAbstractIDevice *dev);
+void cAbstractIDevice_dtor(cAbstractIDevice *self);
+cAbstractIDevice *cAbstractIDevice_Delete(cAbstractIDevice *self, byte flags);
+byte cAbstractIDevice_SetEntry(cAbstractIDevice *self, int entry, int set, int player, int action, byte check);
+byte cAbstractIDevice_IsReserved(cAbstractIDevice *self, int entry);
+void cAbstractIDevice_ClearEntries(cAbstractIDevice *self);
+void cAbstractIDevice_GetEntry(cAbstractIDevice *self, int entry, int set, int *player, int *action);
+void cAbstractIDevice_InitEntries(cAbstractIDevice *self, int n);
+void cAbstractIDevice_SetValue(cAbstractIDevice *self, int entry, float value);
+void cAbstractIDevice_SetAxis(cAbstractIDevice *self, int entry, float value);
+void cFuncGvarDevices_Save(cFuncGvarDevices *self, void *f);
+void cFuncGvarDevices_Load(cFuncGvarDevices *self, void *f);
+void InputDevices_Clear(cInputDevList *list);
+void InputDevices_Add(cInputDevList *list, cAbstractIDevice **dev);
 void Input_CheckInactivity(float dt);
 int Input_ClearBinding(uint32_t player, int set, int action, byte check);
 const char *Input_FindBinding(uint32_t player, int set, int action, const char *device, byte check);
@@ -332,21 +332,21 @@ struct exe_IDirectInput8 {
 #define g_KeyboardDev GAME_GLOBAL(exe_IDirectInputDevice8 *, g_KeyboardDev)
 #define g_Keyboard (GAME_ARRAY(cPcKeyboard, g_Keyboard))
 #define g_KeyState (GAME_ARRAY(char, g_KeyState))		/* [256] DIK_ */
-cPcKeyboard *__thiscall cPcKeyboard_ctor(cPcKeyboard *self);
-cPcKeyboard *__thiscall cPcKeyboard_Delete(cPcKeyboard *self, byte flags);
+cPcKeyboard *cPcKeyboard_ctor(cPcKeyboard *self);
+cPcKeyboard *cPcKeyboard_Delete(cPcKeyboard *self, byte flags);
 void Keyboard_Acquire(byte on);
-byte __thiscall cPcKeyboard_SetEntry(cPcKeyboard *self, int entry, int set, int player, int action, byte check);
+byte cPcKeyboard_SetEntry(cPcKeyboard *self, int entry, int set, int player, int action, byte check);
 void Keyboard_Close(void);
-const char *__thiscall cPcKeyboard_GetName(cPcKeyboard *self);
-const char *__thiscall cPcKeyboard_GetEntryName(cPcKeyboard *self, int entry);
-const char *__thiscall cPcKeyboard_GetEntryLabel(cPcKeyboard *self, int entry);
+const char *cPcKeyboard_GetName(cPcKeyboard *self);
+const char *cPcKeyboard_GetEntryName(cPcKeyboard *self, int entry);
+const char *cPcKeyboard_GetEntryLabel(cPcKeyboard *self, int entry);
 int32_t Keyboard_Create(void);
-void __thiscall cPcKeyboard_SetDefaults(cPcKeyboard *self);
+void cPcKeyboard_SetDefaults(cPcKeyboard *self);
 void Keyboard_Init(void);
-void __thiscall cPcKeyboard_Update(cPcKeyboard *self, float dt);
-void __thiscall cPcKeyboard_SetGameDefaults(cPcKeyboard *self);
+void cPcKeyboard_Update(cPcKeyboard *self, float dt);
+void cPcKeyboard_SetGameDefaults(cPcKeyboard *self);
 int32_t Keyboard_Poll(void);
-byte __thiscall cPcKeyboard_IsReserved(cPcKeyboard *self, int entry);
+byte cPcKeyboard_IsReserved(cPcKeyboard *self, int entry);
 
 /* Input/PcMouse.cpp */
 #define g_MouseSensH GAME_GLOBAL_IN(float, GVar_MouseSensitivityH, 16)		/* MouseSensitivityH */
@@ -361,21 +361,21 @@ typedef struct exe_mouse_state {
 } exe_mouse_state;
 #define g_MouseState GAME_GLOBAL(exe_mouse_state, g_MouseState)
 #define g_IsUsingMouse GAME_GLOBAL_IN(int, GVar_IsUsingMouse, 16)		/* IsUsingMouse */
-cPcMouse *__thiscall cPcMouse_ctor(cPcMouse *self);
-cPcMouse *__thiscall cPcMouse_Delete(cPcMouse *self, byte flags);
+cPcMouse *cPcMouse_ctor(cPcMouse *self);
+cPcMouse *cPcMouse_Delete(cPcMouse *self, byte flags);
 void Mouse_Acquire(byte on);
-byte __thiscall cPcMouse_SetEntry(cAbstractIDevice *self, int entry, int set, int player, int action, byte check);
+byte cPcMouse_SetEntry(cAbstractIDevice *self, int entry, int set, int player, int action, byte check);
 void Mouse_Close(void);
-const char *__thiscall cPcMouse_GetName(cAbstractIDevice *self);
-const char *__thiscall cPcMouse_GetEntryName(cAbstractIDevice *self, int entry);
-const char *__thiscall cPcMouse_GetEntryLabel(cAbstractIDevice *self, int entry);
+const char *cPcMouse_GetName(cAbstractIDevice *self);
+const char *cPcMouse_GetEntryName(cAbstractIDevice *self, int entry);
+const char *cPcMouse_GetEntryLabel(cAbstractIDevice *self, int entry);
 int32_t Mouse_Create(void);
-void __thiscall cPcMouse_SetDefaults(cAbstractIDevice *self);
+void cPcMouse_SetDefaults(cAbstractIDevice *self);
 void Mouse_Init(void);
-void __thiscall cPcMouse_Update(cPcMouse *self, float dt);
-void __thiscall cPcMouse_SetGameDefaults(cAbstractIDevice *self);
+void cPcMouse_Update(cPcMouse *self, float dt);
+void cPcMouse_SetGameDefaults(cAbstractIDevice *self);
 int32_t Mouse_Poll(void);
-int __thiscall cPcMouse_IsReserved(cAbstractIDevice *self, int entry);
+int cPcMouse_IsReserved(cAbstractIDevice *self, int entry);
 
 /* Input/PcPad.cpp: XInput pads */
 #define g_MainPcPad GAME_GLOBAL_IN(int, GVar_MainPcPad, 16)		/* MainPcPad: the pad of player 0, -1 all */
@@ -393,22 +393,22 @@ int __thiscall cPcMouse_IsReserved(cAbstractIDevice *self, int entry);
 #define g_XBInvertVehicleYPad GAME_GLOBAL_IN(int, GVar_XBInvertVehicleYPad, 16)
 #define g_XBVDigitalAsAnalog GAME_GLOBAL_IN(int, GVar_XBVDigitalAsAnalog, 16)
 #define g_XBVehicleAsFPS GAME_GLOBAL_IN(int, GVar_XBVehicleAsFPS, 16)
-cPcPad *__thiscall cPcPad_ctor(cPcPad *self, int index);
-cPcPad *__thiscall cPcPad_Delete(cPcPad *self, byte flags);
+cPcPad *cPcPad_ctor(cPcPad *self, int index);
+cPcPad *cPcPad_Delete(cPcPad *self, byte flags);
 void Pad_Acquire(byte on);
 void Pad_DeadZone(float *x, float *y, float dz);
-byte __thiscall cPcPad_SetEntry(cPcPad *self, int entry, int set, int player, int action, byte check);
+byte cPcPad_SetEntry(cPcPad *self, int entry, int set, int player, int action, byte check);
 void Pad_Close(void);
-void __thiscall cPcPad_SetVehicleDefaults(cPcPad *self);
-void __thiscall cPcPad_SetCharDefaults(cPcPad *self);
-const char *__thiscall cPcPad_GetName(cPcPad *self);
-const char *__thiscall cPcPad_GetEntryName(cPcPad *self, int entry);
-const char *__thiscall cPcPad_GetEntryLabel(cPcPad *self, int entry);
+void cPcPad_SetVehicleDefaults(cPcPad *self);
+void cPcPad_SetCharDefaults(cPcPad *self);
+const char *cPcPad_GetName(cPcPad *self);
+const char *cPcPad_GetEntryName(cPcPad *self, int entry);
+const char *cPcPad_GetEntryLabel(cPcPad *self, int entry);
 int Pad_Init(void);
-void __thiscall cPcPad_SetDefaults(cPcPad *self);
-void __thiscall cPcPad_Update(cPcPad *self, float dt);
-void __thiscall cPcPad_SetGameDefaults(cPcPad *self);
+void cPcPad_SetDefaults(cPcPad *self);
+void cPcPad_Update(cPcPad *self, float dt);
+void cPcPad_SetGameDefaults(cPcPad *self);
 uint32_t Pad_Poll(int index);
-byte __thiscall cPcPad_IsReserved(cPcPad *self, int entry);
+byte cPcPad_IsReserved(cPcPad *self, int entry);
 
 #endif

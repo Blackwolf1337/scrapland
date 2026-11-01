@@ -19,10 +19,10 @@
 
 /* the variable methods of the AI (from vtable slot 7) and of the local logic (from slot 3) */
 typedef struct cEntVars {
-	byte(__thiscall *VarI)(void *self, const char *name, int *i, int set);
-	byte(__thiscall *VarF)(void *self, const char *name, double *d, int set);
-	byte(__thiscall *VarS)(void *self, const char *name, char **s, int set);
-	byte(__thiscall *VarV)(void *self, const char *name, double *x, double *y, double *z, int set);
+	byte(*VarI)(void *self, const char *name, int *i, int set);
+	byte(*VarF)(void *self, const char *name, double *d, int set);
+	byte(*VarS)(void *self, const char *name, char **s, int set);
+	byte(*VarV)(void *self, const char *name, double *x, double *y, double *z, int set);
 } cEntVars;
 
 static inline const cEntVars *AI_Vars(void *ai) {
@@ -35,7 +35,7 @@ static inline const cEntVars *LLogic_Vars(void *logic) {
 
 /* the deleting destructor in slot 0 */
 static inline void Obj_Delete(void *obj) {
-	(*(void(__thiscall **)(void *, int)) * (void **)obj)(obj, 1);
+	(*(void(**)(void *, int)) * (void **)obj)(obj, 1);
 }
 
 /* the entity of a ring node, NULL at the head */
@@ -46,7 +46,7 @@ static inline cEntity *Node_Entity(const Nto1Node *n) {
 	return NULL;
 }
 
-cEntity *__thiscall cEntity_ctor(void *mem, const char *name, float x, float y, float z) {
+cEntity *cEntity_ctor(void *mem, const char *name, float x, float y, float z) {
 	cEntity *self = mem;
 	void *value;
 
@@ -95,11 +95,11 @@ cEntity *__thiscall cEntity_ctor(void *mem, const char *name, float x, float y, 
 }
 
 /* rva 0xeeb20 and 0xeeb90 (the cells of the grid) */
-void __fastcall Nto1Node_dtor(Nto1Node *node) {
+void Nto1Node_dtor(Nto1Node *node) {
 	Nto1Node_Done(node);
 }
 
-void __thiscall EntityDList_dtor(void *list) {
+void EntityDList_dtor(void *list) {
 	EntityDNode *self = list;
 
 	if (!self->node.data) {
@@ -112,7 +112,7 @@ void __thiscall EntityDList_dtor(void *list) {
 	Nto1Node_Done(&self->node);
 }
 
-void __fastcall cEntity_dtor(cEntity *self) {
+void cEntity_dtor(cEntity *self) {
 	self->vftable = CENTITY_VFTABLE;
 	if (self->lLogic) {
 		Obj_Delete(self->lLogic);
@@ -128,7 +128,7 @@ void __fastcall cEntity_dtor(cEntity *self) {
 	cString_dtor((cString *)&self->name);
 }
 
-cEntity *__thiscall cEntity_Delete(cEntity *self, uint32_t flags) {
+cEntity *cEntity_Delete(cEntity *self, uint32_t flags) {
 	cEntity_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cEntity));
@@ -136,7 +136,7 @@ cEntity *__thiscall cEntity_Delete(cEntity *self, uint32_t flags) {
 	return self;
 }
 
-void __thiscall EntityDList_Add(void *head, EntityDNode *node) {
+void EntityDList_Add(void *head, EntityDNode *node) {
 	EntityDNode *h = head;
 
 	CHECK(node->numElems == NULL);
@@ -146,7 +146,7 @@ void __thiscall EntityDList_Add(void *head, EntityDNode *node) {
 	(*h->numElems)++;
 }
 
-void __fastcall cEntity_CollisionOff(cEntity *self) {
+void cEntity_CollisionOff(cEntity *self) {
 	uint32_t mask = self->mask;
 
 	if (mask) {
@@ -155,7 +155,7 @@ void __fastcall cEntity_CollisionOff(cEntity *self) {
 	}
 }
 
-void __fastcall cEntity_CollisionOn(cEntity *self) {
+void cEntity_CollisionOn(cEntity *self) {
 	if (!self->mask) {
 		self->mask = self->savedMask;
 		self->savedMask = 0;
@@ -171,7 +171,7 @@ void Nto1Node_LinkAs(Nto1Node *node, const Nto1Node *src) {
 	Nto1Node_Unlink(node);
 }
 
-byte __thiscall cEntity_Del(cEntity *self) {
+byte cEntity_Del(cEntity *self) {
 	if (self->deadNode.target) {
 		return 0;
 	}
@@ -179,7 +179,7 @@ byte __thiscall cEntity_Del(cEntity *self) {
 	return 1;
 }
 
-void __thiscall cEntity_AimWeapon(cEntity *self, float ax, float ay, float *dist, vec3_t *out, cEntity **target,
+void cEntity_AimWeapon(cEntity *self, float ax, float ay, float *dist, vec3_t *out, cEntity **target,
 	int flags) {
 	vec3_t ang, dir, rot, end;
 
@@ -203,7 +203,7 @@ void __thiscall cEntity_AimWeapon(cEntity *self, float ax, float ay, float *dist
 	*dist = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 }
 
-byte __thiscall cEntity_VarF(cEntity *self, const char *name, double *d, int set) {
+byte cEntity_VarF(cEntity *self, const char *name, double *d, int set) {
 	if (!crt_strncmp("AI_", name, 3) && self->ai && AI_Vars(self->ai)->VarF(self->ai, name + 3, d, set)) {
 		return 1;
 	}
@@ -214,46 +214,46 @@ byte __thiscall cEntity_VarF(cEntity *self, const char *name, double *d, int set
 	return 0;
 }
 
-void *__thiscall cEntity_GetAI(cEntity *self) {
+void *cEntity_GetAI(cEntity *self) {
 	return self->ai;
 }
 
-char *__fastcall cEntity_GetListName(cEntity *self) {
+char *cEntity_GetListName(cEntity *self) {
 	char **list = self->listNode.node.target;
 
 	return list ? *list : NULL;
 }
 
-cEntity *__fastcall cEntity_NextInList(cEntity *self) {
+cEntity *cEntity_NextInList(cEntity *self) {
 	return Node_Entity(self->listNode.node.next);
 }
 
-cEntity *__fastcall cEntity_Next(cEntity *e) {
+cEntity *cEntity_Next(cEntity *e) {
 	return Node_Entity(e->worldNode.next);
 }
 
-vec3_t *__thiscall cEntity_GetPos(cEntity *self, vec3_t *out) {
+vec3_t *cEntity_GetPos(cEntity *self, vec3_t *out) {
 	*out = self->pos;
 	return out;
 }
 
-void __thiscall cEntity_GetTargetAngle(cEntity *self, float *ang, float dist, cEntity **target) {
+void cEntity_GetTargetAngle(cEntity *self, float *ang, float dist, cEntity **target) {
 	(void)self;
 	(void)ang;
 	(void)dist;
 	*target = NULL;
 }
 
-const char *__thiscall cEntity_GetClassName(cEntity *self) {
+const char *cEntity_GetClassName(cEntity *self) {
 	(void)self;
 	return ENTITY_CLASSNAME;
 }
 
-void __thiscall cEntity_UpdateOff(cEntity *self) {
+void cEntity_UpdateOff(cEntity *self) {
 	(void)self;
 }
 
-byte __thiscall cEntity_VarI(cEntity *self, const char *name, int *i, int set) {
+byte cEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	if (!*name) {
 		return 0;
 	}
@@ -295,12 +295,12 @@ byte __thiscall cEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	return 0;
 }
 
-int __thiscall cEntity_IsType(cEntity *self, const char *type) {
+int cEntity_IsType(cEntity *self, const char *type) {
 	(void)self;
 	return !strcmp(type, "Entity");
 }
 
-byte __thiscall cEntity_SetList(cEntity *self, const char *list) {
+byte cEntity_SetList(cEntity *self, const char *list) {
 	EntityDNode *node = &self->listNode;
 
 	CHECK(node->node.data);
@@ -339,24 +339,24 @@ void Nto1Node_LinkByName(Nto1Node *node, const char *name) {
 	Nto1Node_Unlink(node);
 }
 
-void __thiscall cEntity_Render(cEntity *self, void *arg) {
+void cEntity_Render(cEntity *self, void *arg) {
 	(void)self;
 	(void)arg;
 }
 
-void __thiscall cEntity_SetActive(cEntity *self, byte on) {
+void cEntity_SetActive(cEntity *self, byte on) {
 	self->active = on;
 	if (!on) {
 		Grid_Add(g_pWorld->grid, self);
 	}
 }
 
-void __thiscall cEntity_SetEmbeddedFX(cEntity *self, const char *fxType) {
+void cEntity_SetEmbeddedFX(cEntity *self, const char *fxType) {
 	(void)fxType;
 	Con_Warnf("WARNING %s::SetFX() not implemented!\n", self->vftable->GetClassName(self));
 }
 
-void __thiscall cEntity_SetModel(cEntity *self, const char *file, float sx, float sy, float sz, int flag) {
+void cEntity_SetModel(cEntity *self, const char *file, float sx, float sy, float sz, int flag) {
 	(void)file;
 	(void)sx;
 	(void)sy;
@@ -365,17 +365,17 @@ void __thiscall cEntity_SetModel(cEntity *self, const char *file, float sx, floa
 	Con_Warnf("WARNING %s::SetModel() not implemented!\n", self->vftable->GetClassName(self));
 }
 
-void __thiscall cEntity_SetPos(cEntity *self, const vec3_t *pos) {
+void cEntity_SetPos(cEntity *self, const vec3_t *pos) {
 	self->pos.x = pos->x;
 	self->pos.y = pos->y;
 	self->pos.z = pos->z;
 }
 
-void __thiscall cEntity_Update(cEntity *self) {
+void cEntity_Update(cEntity *self) {
 	(void)self;
 }
 
-byte __thiscall cEntity_VarS(cEntity *self, const char *name, char **s, int set) {
+byte cEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 	if (!*name) {
 		return 0;
 	}
@@ -423,7 +423,7 @@ const char *Nto1Node_TargetName(const Nto1Node *node) {
 	return e ? e->name : EXE_EMPTY;
 }
 
-byte __thiscall cEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set) {
+byte cEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set) {
 	vec3_t v;
 
 	if (!*name) {
@@ -454,14 +454,14 @@ byte __thiscall cEntity_VarV(cEntity *self, const char *name, double *x, double 
 }
 
 /* the inline virtual functions of Entity.h; their code sits in the camera part of the exe (rva 0xbd430..) */
-byte __thiscall cEntity_TestLine(cEntity *self, const vec3_t *from, vec3_t *hit) {
+byte cEntity_TestLine(cEntity *self, const vec3_t *from, vec3_t *hit) {
 	(void)self;
 	(void)from;
 	(void)hit;
 	return 0;
 }
 
-byte __thiscall cEntity_TestSphere(cEntity *self, cEntity *exclude, const vec3_t *center, float radius, int arg) {
+byte cEntity_TestSphere(cEntity *self, cEntity *exclude, const vec3_t *center, float radius, int arg) {
 	(void)self;
 	(void)exclude;
 	(void)center;
@@ -470,18 +470,18 @@ byte __thiscall cEntity_TestSphere(cEntity *self, cEntity *exclude, const vec3_t
 	return 0;
 }
 
-void __thiscall cEntity_Vf11(cEntity *self, int a, int b, int c) {
+void cEntity_Vf11(cEntity *self, int a, int b, int c) {
 	(void)self;
 	(void)a;
 	(void)b;
 	(void)c;
 }
 
-void __thiscall cEntity_Vf20(cEntity *self) {
+void cEntity_Vf20(cEntity *self) {
 	(void)self;
 }
 
-int __thiscall cEntity_Vf21(cEntity *self, int a) {
+int cEntity_Vf21(cEntity *self, int a) {
 	(void)self;
 	(void)a;
 	return 0;

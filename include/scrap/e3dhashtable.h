@@ -22,22 +22,22 @@ typedef struct CHashTable {
 } CHashTable;
 SD_SIZE(CHashTable, 0xc);
 
-CHashTable *__thiscall CHashTable_ctor(CHashTable *self, int num);
-void __fastcall CHashTable_dtor(CHashTable *self);
+CHashTable *CHashTable_ctor(CHashTable *self, int num);
+void CHashTable_dtor(CHashTable *self);
 /* 0, -1 if key is there (with a message if warn) */
-int __thiscall CHashTable_AddInt(CHashTable *self, int key, void *value, int warn);
-int __thiscall CHashTable_Add(CHashTable *self, const char *key, void *value, int warn);
-CHashTableNode *__thiscall CHashTable_Insert(CHashTable *self, const char *key, uint32_t slot, void *value);
+int CHashTable_AddInt(CHashTable *self, int key, void *value, int warn);
+int CHashTable_Add(CHashTable *self, const char *key, void *value, int warn);
+CHashTableNode *CHashTable_Insert(CHashTable *self, const char *key, uint32_t slot, void *value);
 /* 0 and the value in *out (if out), -1 if key is not there */
-int __thiscall CHashTable_GetInt(CHashTable *self, int key, void **out);
-int __thiscall CHashTable_Get(CHashTable *self, const char *key, void **out);
-CHashTableNode *__thiscall CHashTable_Find(CHashTable *self, const char *key, uint32_t slot);
+int CHashTable_GetInt(CHashTable *self, int key, void **out);
+int CHashTable_Get(CHashTable *self, const char *key, void **out);
+CHashTableNode *CHashTable_Find(CHashTable *self, const char *key, uint32_t slot);
 /* the end of a CHashTable_GetList */
-int __thiscall CHashTable_FreeList(CHashTable *self, CHashTableNode ***elems);
+int CHashTable_FreeList(CHashTable *self, CHashTableNode ***elems);
 /* the nodes into out (up to max, else -1) and 0, or with out NULL their number */
-int __thiscall CHashTable_List(CHashTable *self, CHashTableNode **out, int max);
+int CHashTable_List(CHashTable *self, CHashTableNode **out, int max);
 /* all nodes in a new array; locks the table until CHashTable_FreeList */
-int __thiscall CHashTable_GetList(CHashTable *self, CHashTableNode ***elems, int *num);
-uint32_t __thiscall CHashTable_Slot(CHashTable *self, const char *key);
+int CHashTable_GetList(CHashTable *self, CHashTableNode ***elems, int *num);
+uint32_t CHashTable_Slot(CHashTable *self, const char *key);
 
 #endif

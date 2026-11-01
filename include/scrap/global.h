@@ -46,10 +46,10 @@ void operator_delete_sized(void *p, uint32_t size);
 void *operator_new_array(uint32_t size);
 void operator_delete(void *p);
 void operator_delete_array(void *p);
-/* the CRT loops of new[] and delete[] for objects: ctor or dtor (thiscall) on each */
+/* the CRT loops of new[] and delete[] for objects: ctor or dtor on each */
 void __stdcall crt_eh_vector_ctor(void *p, uint32_t size, uint32_t count, void *ctor, void *dtor);
 void __stdcall crt_eh_vector_dtor(void *p, uint32_t size, uint32_t count, void *dtor);
-/* new T[count] of the exe: the count in the 4 bytes before the objects, the constructor (thiscall, GAME_FUNC) on
+/* new T[count] of the exe: the count in the 4 bytes before the objects, the constructor on
  * each; NULL if the allocation fails. Delete_Objects is the delete[] of it. (src/game/Global/Mem.c) */
 void *New_Objects(uint32_t count, uint32_t size, void *ctor, void *dtor);
 void Delete_Objects(void *p, uint32_t size, void *dtor);
@@ -57,7 +57,7 @@ void Delete_Objects(void *p, uint32_t size, void *dtor);
  * returns the block */
 void *Delete_VectorPart(void *p, uint32_t flags, uint32_t size, void *dtor);
 /* the shared stub of the empty constructors (src/game/Global/Stubs.c) */
-void *__thiscall Stub_ReturnSelf(void *self);
+void *Stub_ReturnSelf(void *self);
 /* new[] of count items as the compiler makes it: a size that overflows is -1, which the allocator refuses */
 static inline void *New_Array(uint32_t count, uint32_t size) {
 	uint64_t bytes = (uint64_t)count * size;
@@ -106,8 +106,8 @@ typedef struct HashTable {
 SD_OFFSET(HashTable, caseSensitive, 0x9);
 
 /* the instance functions with a pointer value (src/game/Global/HashTable.c, include/scrap/hashtable.h) */
-uint32_t __thiscall HashTable_Slot(HashTable *self, const char *key);
-struct cPtrItem *__thiscall PtrTable_Find(HashTable *self, const char *key, uint32_t slot);
+uint32_t HashTable_Slot(HashTable *self, const char *key);
+struct cPtrItem *PtrTable_Find(HashTable *self, const char *key, uint32_t slot);
 #define HashTable_Hash(t, key) HashTable_Slot((t), (key))
 #define HashTable_Find(t, key, slot) ((HashNode *)PtrTable_Find((t), (key), (slot)))
 

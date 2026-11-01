@@ -6,13 +6,13 @@
 #include "scrap/scheduler.h"
 #include "scrap/world.h"
 
-void __thiscall SchedList_Add(cSchedList *list, cScheduledFunc *const *f) {
+void SchedList_Add(cSchedList *list, cScheduledFunc *const *f) {
 	cSchedNode *node = DList_NewNode(list, sizeof(*node));
 	node->func = *f;
 	DList_LinkFirst(list, node);
 }
 
-void __thiscall SchedList_Insert(cSchedList *list, cScheduledFunc *const *f) {
+void SchedList_Insert(cSchedList *list, cScheduledFunc *const *f) {
 	cSchedNode *head = list->head;
 
 	if (list->iter == head) {
@@ -26,15 +26,15 @@ void __thiscall SchedList_Insert(cSchedList *list, cScheduledFunc *const *f) {
 	list->head = head;
 }
 
-void __fastcall SchedList_Clear(cSchedList *list) {
+void SchedList_Clear(cSchedList *list) {
 	DList_Clear(list, sizeof(cSchedNode));
 }
 
-void __fastcall SchedList_RemoveIter(cSchedList *list) {
+void SchedList_RemoveIter(cSchedList *list) {
 	DList_RemoveIter(list, sizeof(cSchedNode));
 }
 
-void __fastcall SchedList_RemoveHead(cSchedList *list) {
+void SchedList_RemoveHead(cSchedList *list) {
 	DList_RemoveHead(list, sizeof(cSchedNode));
 }
 
@@ -46,7 +46,7 @@ static void cScheduledFunc_Free(cScheduledFunc *f) {
 	}
 }
 
-void __thiscall cScheduledFunc_Set(cScheduledFunc *self, float time, PyObject *func, PyObject *params, const char *name) {
+void cScheduledFunc_Set(cScheduledFunc *self, float time, PyObject *func, PyObject *params, const char *name) {
 	CHECK(self->func == NULL);
 	CHECK(self->params == NULL);
 	CHECK(func != NULL);
@@ -71,7 +71,7 @@ static void cScheduledFunc_Run(cScheduledFunc *self) {
 	self->active = 1;
 }
 
-void __thiscall Scheduler_Add(cScheduledFuncStack *self, float time, PyObject *func, PyObject *params, const char *name) {
+void Scheduler_Add(cScheduledFuncStack *self, float time, PyObject *func, PyObject *params, const char *name) {
 	cSchedList *list = &self->list;
 
 	list->iter = list->head;
@@ -102,7 +102,7 @@ void __thiscall Scheduler_Add(cScheduledFuncStack *self, float time, PyObject *f
 	}
 }
 
-void __fastcall Scheduler_Clear(cScheduledFuncStack *self) {
+void Scheduler_Clear(cScheduledFuncStack *self) {
 	cSchedList *list = &self->list;
 
 	for (list->iter = list->head; list->iter; list->iter = list->head) {
@@ -111,7 +111,7 @@ void __fastcall Scheduler_Clear(cScheduledFuncStack *self) {
 	}
 }
 
-void __thiscall Scheduler_Delete(cScheduledFuncStack *self, const char *name) {
+void Scheduler_Delete(cScheduledFuncStack *self, const char *name) {
 	cSchedList *list = &self->list;
 
 	list->iter = list->head;
@@ -129,7 +129,7 @@ void __thiscall Scheduler_Delete(cScheduledFuncStack *self, const char *name) {
 	}
 }
 
-void __thiscall Scheduler_Run(cScheduledFuncStack *self, float now) {
+void Scheduler_Run(cScheduledFuncStack *self, float now) {
 	cSchedList *list = &self->list;
 
 	list->iter = list->head;
@@ -146,12 +146,12 @@ void __thiscall Scheduler_Run(cScheduledFuncStack *self, float now) {
 	}
 }
 
-void __fastcall cScheduledFunc_dtor(cScheduledFunc *self) {
+void cScheduledFunc_dtor(cScheduledFunc *self) {
 	Py_XDECREF(self->func);
 	Py_XDECREF(self->params);
 }
 
-void __thiscall cScheduledFuncStack_dtor(void *stack) {
+void cScheduledFuncStack_dtor(void *stack) {
 	cScheduledFuncStack *self = stack;
 
 	self->vftable = CSCHEDULEDFUNCSTACK_VFTABLE;
@@ -160,7 +160,7 @@ void __thiscall cScheduledFuncStack_dtor(void *stack) {
 	DList_FreePool(&self->list, sizeof(cSchedNode));
 }
 
-cScheduledFuncStack *__thiscall cScheduledFuncStack_Delete(cScheduledFuncStack *self, byte flags) {
+cScheduledFuncStack *cScheduledFuncStack_Delete(cScheduledFuncStack *self, byte flags) {
 	cScheduledFuncStack_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));

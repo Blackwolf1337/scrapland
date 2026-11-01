@@ -60,7 +60,7 @@ static inline float *Traffic_Idle(cNameItem *it) {
 	return (float *)&it->value;
 }
 
-cEnemiesTraffic *__fastcall cEnemiesTraffic_ctor(cEnemiesTraffic *self) {
+cEnemiesTraffic *cEnemiesTraffic_ctor(cEnemiesTraffic *self) {
 	self->idle.numSlots = 0x1c9;
 	self->idle.slots = New_Array(0x1c9, 4);
 	memset(self->idle.slots, 0, 0x724);
@@ -77,7 +77,7 @@ cEnemiesTraffic *__fastcall cEnemiesTraffic_ctor(cEnemiesTraffic *self) {
 	return self;
 }
 
-void __fastcall cEnemiesTraffic_dtor(cEnemiesTraffic *self) {
+void cEnemiesTraffic_dtor(cEnemiesTraffic *self) {
 	NameTable_Clear(&self->idle);
 }
 
@@ -91,7 +91,7 @@ byte Traffic_FightChance(cEntity *a, cEntity *b) {
 
 /* the ship of the traffic farthest from the cameras goes, unless it is in view and nearer than
  * TrafficRemovalDist */
-void __fastcall cEnemiesTraffic_RemoveFarthest(cEnemiesTraffic *self) {
+void cEnemiesTraffic_RemoveFarthest(cEnemiesTraffic *self) {
 	vec3_t tmp;
 	float best = 0.0f;
 	cEntity *far = NULL;
@@ -246,7 +246,7 @@ static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEnti
 	return next;
 }
 
-void __fastcall cEnemiesTraffic_Think(cEnemiesTraffic *self) {
+void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 	vec3_t tmp, cp;
 
 	if (self->bossRobots == -1) {
@@ -399,7 +399,7 @@ void __fastcall cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 	self->usr = usr;
 }
 
-void __fastcall cEnemiesTraffic_Init(cEnemiesTraffic *self) {
+void cEnemiesTraffic_Init(cEnemiesTraffic *self) {
 	static const char *const names[4] = { "EnemiesTraffic", "ChasingTraffic", "FightingTraffic", "Traffic" };
 	cEntityListData **lists[4] = { &self->enemies, &self->chasing, &self->fighting, &self->traffic };
 
@@ -509,7 +509,7 @@ void PoliceAI_RandomParams(cAIVehicle *ai) {
 	cAIVehicle_ApplyParams(ai);
 }
 
-void __thiscall cEnemiesTraffic_Update(cEnemiesTraffic *self, float dt) {
+void cEnemiesTraffic_Update(cEnemiesTraffic *self, float dt) {
 	float at = self->attackTime - dt;
 	float t = dt + self->timer;
 

@@ -11,7 +11,7 @@
 /* the limit of the projection, a float constant widened */
 #define CAMERA_EPS ((double)0.01f)
 
-typedef void(__thiscall *nodeDelete_t)(CNodeRef *self, int flags);
+typedef void(*nodeDelete_t)(CNodeRef *self, int flags);
 
 /* the reference to n in *slot, the old one released */
 static void Camera_Link(CNodeRef **slot, CNodeRef *n) {
@@ -34,7 +34,7 @@ static void CCamera_ClearVectors(CCamera *self) {
 	memset(&self->viewPos, 0, sizeof(self->viewPos) + sizeof(self->dir) + sizeof(self->up));
 }
 
-CCamera *__fastcall CCamera_ctor(CCamera *self) {
+CCamera *CCamera_ctor(CCamera *self) {
 	CCamera_ClearVectors(self);
 	memset(&self->rot, 0, sizeof(self->rot) + sizeof(self->pos) + sizeof(self->target));
 	self->vftable = CCAMERA_VFTABLE;
@@ -52,7 +52,7 @@ CCamera *__fastcall CCamera_ctor(CCamera *self) {
 	return self;
 }
 
-CCamera *__thiscall CCamera_ctorCopy(CCamera *self, const CCamera *other) {
+CCamera *CCamera_ctorCopy(CCamera *self, const CCamera *other) {
 	CCamera_ClearVectors(self);
 	self->vftable = CCAMERA_VFTABLE;
 	self->class = CLASS_OBJ3D_CAMERA;
@@ -64,14 +64,14 @@ CCamera *__thiscall CCamera_ctorCopy(CCamera *self, const CCamera *other) {
 	return self;
 }
 
-void __fastcall CCamera_dtor(CCamera *self) {
+void CCamera_dtor(CCamera *self) {
 	self->vftable = CCAMERA_VFTABLE;
 	Camera_Link(&self->node, NULL);
 	Camera_Link(&self->nodeTarget, NULL);
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-CCamera *__thiscall CCamera_Delete(CCamera *self, byte flags) {
+CCamera *CCamera_Delete(CCamera *self, byte flags) {
 	CCamera_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -79,18 +79,18 @@ CCamera *__thiscall CCamera_Delete(CCamera *self, byte flags) {
 	return self;
 }
 
-void __fastcall CCamera_Clear(CCamera *self) {
+void CCamera_Clear(CCamera *self) {
 	CCamera_ClearVectors(self);
 	self->class = CLASS_OBJ3D_CAMERA;
 	self->node = NULL;
 	self->nodeTarget = NULL;
 }
 
-void __thiscall CCamera_SetNode(CCamera *self, CNodeRef *node) {
+void CCamera_SetNode(CCamera *self, CNodeRef *node) {
 	Camera_Link(&self->node, node);
 }
 
-void __thiscall CCamera_SetNodeTarget(CCamera *self, CNodeRef *node) {
+void CCamera_SetNodeTarget(CCamera *self, CNodeRef *node) {
 	Camera_Link(&self->nodeTarget, node);
 }
 
@@ -104,7 +104,7 @@ static const struct {
 	{ offsetof(CCamera, aspectScreen), 4 }, { offsetof(CCamera, mode), 4 },
 };
 
-int __thiscall CCamera_Read(CCamera *self, CFileIO *f, void *ctx) {
+int CCamera_Read(CCamera *self, CFileIO *f, void *ctx) {
 	CCamera_SetNode(self, *(CNodeRef **)((byte *)ctx + 4));
 	CFileIO_BeginBlock(f, "CAM");
 	CHECK(CFileIO_ReadInt(f) == 1);
@@ -115,7 +115,7 @@ int __thiscall CCamera_Read(CCamera *self, CFileIO *f, void *ctx) {
 	return 1;
 }
 
-int __thiscall CCamera_Write(CCamera *self, CFileIO *f, void *ctx) {
+int CCamera_Write(CCamera *self, CFileIO *f, void *ctx) {
 	CHECK(self->node == *(CNodeRef **)((byte *)ctx + 4));
 	CFileIO_BeginBlockWrite(f, "CAM");
 	CFileIO_WriteInt(f, 1);
@@ -127,7 +127,7 @@ int __thiscall CCamera_Write(CCamera *self, CFileIO *f, void *ctx) {
 	return 1;
 }
 
-void __fastcall CCamera_UpdateVectors(CCamera *self) {
+void CCamera_UpdateVectors(CCamera *self) {
 	const vec3_t z = { 0.0f, 0.0f, 1.0f };
 	const vec3_t y = { 0.0f, 1.0f, 0.0f };
 	vec3_t t;
@@ -150,7 +150,7 @@ static vec3_t Camera_Unit(vec3_t v, float len) {
 	return v;
 }
 
-void __thiscall CCamera_LookAt(CCamera *self, matrix_t *m, const vec3_t *dir, const vec3_t *up) {
+void CCamera_LookAt(CCamera *self, matrix_t *m, const vec3_t *dir, const vec3_t *up) {
 	(void)self;
 	vec3_t n = Camera_Unit(*dir, (float)__builtin_sqrt((double)(dir->x * dir->x + dir->y * dir->y + dir->z * dir->z)));
 	float d = n.y * up->y + n.x * up->x + n.z * up->z;
@@ -172,7 +172,7 @@ void __thiscall CCamera_LookAt(CCamera *self, matrix_t *m, const vec3_t *dir, co
 	a[10] = n.z;
 }
 
-void __fastcall CCamera_LookAtRot(CCamera *self) {
+void CCamera_LookAtRot(CCamera *self) {
 	float dy = self->target.y - self->pos.y;
 	float dx = self->target.x - self->pos.x;
 	float dz = self->target.z - self->pos.z;
@@ -181,7 +181,7 @@ void __fastcall CCamera_LookAtRot(CCamera *self) {
 	self->rot.x = (float)Game_Atan2((double)-dy, __builtin_sqrt((double)(dz * dz + dx * dx)));
 }
 
-void __thiscall CCamera_ViewMatrix(CCamera *self, matrix_t *m) {
+void CCamera_ViewMatrix(CCamera *self, matrix_t *m) {
 	if (self->mode == CAMERA_LOOKAT) {
 		CCamera_LookAtRot(self);
 	}
@@ -194,12 +194,12 @@ void __thiscall CCamera_ViewMatrix(CCamera *self, matrix_t *m) {
 	a[14] = -(a[2] * p->x + a[6] * p->y + a[10] * p->z);
 }
 
-matrix_t *__thiscall CCamera_GetView(CCamera *self, matrix_t *m) {
+matrix_t *CCamera_GetView(CCamera *self, matrix_t *m) {
 	CCamera_ViewMatrix(self, m);
 	return m;
 }
 
-byte __thiscall CCamera_ProjMatrix(CCamera *self, matrix_t *m) {
+byte CCamera_ProjMatrix(CCamera *self, matrix_t *m) {
 	float zNear = self->zNear, zFar = self->zFar;
 	float d = zFar - zNear;
 	float s, c;
@@ -223,18 +223,18 @@ byte __thiscall CCamera_ProjMatrix(CCamera *self, matrix_t *m) {
 	return 1;
 }
 
-matrix_t *__thiscall CCamera_GetProj(CCamera *self, matrix_t *m) {
+matrix_t *CCamera_GetProj(CCamera *self, matrix_t *m) {
 	CCamera_ProjMatrix(self, m);
 	return m;
 }
 
-void __thiscall CCamera_Move(CCamera *self, float d) {
+void CCamera_Move(CCamera *self, float d) {
 	self->pos.y = self->dir.y * d + self->pos.y;
 	self->pos.z = self->dir.z * d + self->pos.z;
 	self->pos.x = self->pos.x + self->dir.x * d;
 }
 
-void __thiscall CCamera_Strafe(CCamera *self, float side, float rise) {
+void CCamera_Strafe(CCamera *self, float side, float rise) {
 	const vec3_t x = { 1.0f, 0.0f, 0.0f };
 	vec3_t t;
 
@@ -248,7 +248,7 @@ void __thiscall CCamera_Strafe(CCamera *self, float side, float rise) {
 }
 
 /* OBJ3D_VF_UPDATE: with CamaraNodos the fov and the position from the animated node */
-void __thiscall CCamera_Update(CCamera *self, CRenderNode *r) {
+void CCamera_Update(CCamera *self, CRenderNode *r) {
 	(void)r;
 	if (!g_CameraNodes || !self->node || !CNode3D_Track((CNode3D *)self->node, 0)) {
 		return;
@@ -260,18 +260,18 @@ void __thiscall CCamera_Update(CCamera *self, CRenderNode *r) {
 }
 
 /* OBJ3D_VF_RENDER, OBJ3D_VF_INITD3D and OBJ3D_VF_RELEASED3D do nothing */
-void __thiscall CCamera_Render(CCamera *self, void *arg, CRenderNode *r) {
+void CCamera_Render(CCamera *self, void *arg, CRenderNode *r) {
 	(void)self;
 	(void)arg;
 	(void)r;
 }
 
-void __thiscall CCamera_InitD3D(CCamera *self, void *dev) {
+void CCamera_InitD3D(CCamera *self, void *dev) {
 	(void)self;
 	(void)dev;
 }
 
-void __thiscall CCamera_ReleaseD3D(CCamera *self, void *dev) {
+void CCamera_ReleaseD3D(CCamera *self, void *dev) {
 	(void)self;
 	(void)dev;
 }

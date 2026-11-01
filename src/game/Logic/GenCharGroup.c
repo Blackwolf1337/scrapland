@@ -10,7 +10,7 @@
 /* defined further down or in another file without a header */
 void *GenCharGroup_MakeLogic(cEntity *e);
 
-cGenCharGroup *__fastcall cGenCharGroup_ctor(cGenCharGroup *self) {
+cGenCharGroup *cGenCharGroup_ctor(cGenCharGroup *self) {
 	self->level = -1;
 	self->timer = 0.0f;
 	self->attackers = 0;
@@ -22,7 +22,7 @@ cGenCharGroup *__fastcall cGenCharGroup_ctor(cGenCharGroup *self) {
 	return self;
 }
 
-void __fastcall cGenCharGroup_dtor(cGenCharGroup *self) {
+void cGenCharGroup_dtor(cGenCharGroup *self) {
 	void *m = self->messengers;
 
 	if (m) {
@@ -32,7 +32,7 @@ void __fastcall cGenCharGroup_dtor(cGenCharGroup *self) {
 }
 
 /* one more attacker; 1 while fewer than two attack */
-byte __fastcall cGenCharGroup_TakeAttack(cGenCharGroup *self) {
+byte cGenCharGroup_TakeAttack(cGenCharGroup *self) {
 	int n = self->attackers;
 
 	self->attackers = n + 1;
@@ -46,7 +46,7 @@ static void GenCharGroup_UpdateList(cEntityListData *list) {
 	}
 }
 
-void __fastcall cGenCharGroup_Think(cGenCharGroup *self) {
+void cGenCharGroup_Think(cGenCharGroup *self) {
 	self->level = -1;
 	GenCharGroup_UpdateList(self->genChars);
 	GenCharGroup_UpdateList(self->police);
@@ -54,11 +54,11 @@ void __fastcall cGenCharGroup_Think(cGenCharGroup *self) {
 	cMessengers_Think(self->messengers);
 }
 
-int __fastcall cGenCharGroup_GetLevel(cGenCharGroup *self) {
+int cGenCharGroup_GetLevel(cGenCharGroup *self) {
 	return self->level;
 }
 
-void __fastcall cGenCharGroup_Init(cGenCharGroup *self) {
+void cGenCharGroup_Init(cGenCharGroup *self) {
 	int (*make)(void) = (int (*)(void))(void *)GenCharGroup_MakeLogic;
 	cEntityListData *l = cWorld_NewEntityList(g_pWorld, "Bishop");
 
@@ -73,13 +73,13 @@ void __fastcall cGenCharGroup_Init(cGenCharGroup *self) {
 	cMessengers_Init(self->messengers);
 }
 
-void __thiscall cGenCharGroup_RaiseLevel(cGenCharGroup *self, int level) {
+void cGenCharGroup_RaiseLevel(cGenCharGroup *self, int level) {
 	if (self->level < level) {
 		self->level = level;
 	}
 }
 
-void __thiscall cGenCharGroup_Update(cGenCharGroup *self, float dt) {
+void cGenCharGroup_Update(cGenCharGroup *self, float dt) {
 	float t = self->timer + dt;
 
 	self->attackers = 0;
@@ -90,7 +90,7 @@ void __thiscall cGenCharGroup_Update(cGenCharGroup *self, float dt) {
 	}
 }
 
-typedef void *(__thiscall *GenChar_Ctor)(void *self, cEntity *parent);
+typedef void *(*GenChar_Ctor)(void *self, cEntity *parent);
 
 /* the class of the logic by the type of the character, in the order the original compares (Mercenary as a
  * prefix) */

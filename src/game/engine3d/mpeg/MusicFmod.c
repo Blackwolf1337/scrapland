@@ -80,7 +80,7 @@ static void Music_CloseOpened(void) {
 }
 
 /* the voices of the static array */
-cMusicVoice *__fastcall cMusicVoice_ctor(cMusicVoice *self) {
+cMusicVoice *cMusicVoice_ctor(cMusicVoice *self) {
 	self->name[0] = 0;
 	self->stream = NULL;
 	self->channel = -1;
@@ -89,7 +89,7 @@ cMusicVoice *__fastcall cMusicVoice_ctor(cMusicVoice *self) {
 	return self;
 }
 
-void __fastcall cMusicVoice_dtor(cMusicVoice *self) {
+void cMusicVoice_dtor(cMusicVoice *self) {
 	(void)self;
 }
 

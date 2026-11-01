@@ -11,32 +11,32 @@
 /* defined further down or in another file without a header */
 cGateKeeperLocalLogic *GateKeepers_MakeLogic(cEntity *e);
 
-cGateKeepers *__fastcall cGateKeepers_ctor(cGateKeepers *self) {
+cGateKeepers *cGateKeepers_ctor(cGateKeepers *self) {
 	self->timer = 0.0f;
 	return self;
 }
 
-byte __thiscall Logic_True1(void *self, int arg) {
+byte Logic_True1(void *self, int arg) {
 	(void)self;
 	(void)arg;
 	return 1;
 }
 
-void __fastcall cGateKeepers_Think(cGateKeepers *self) {
+void cGateKeepers_Think(cGateKeepers *self) {
 	for (Nto1Node *n = Logic_ListFirst(self->list); n; n = Logic_ListNext(n)) {
 		cLocalLogic *l = Logic_GetLocalLogic(n->data);
 		l->vftable->Update(l, 1.41421354f);
 	}
 }
 
-void __fastcall cGateKeepers_Init(cGateKeepers *self) {
+void cGateKeepers_Init(cGateKeepers *self) {
 	cEntityListData *list = cWorld_NewEntityList(g_pWorld, "GateKeeper");
 
 	self->list = list;
 	list->func = (int (*)(void))(void *)GateKeepers_MakeLogic;
 }
 
-void __thiscall cGateKeepers_Update(cGateKeepers *self, float dt) {
+void cGateKeepers_Update(cGateKeepers *self, float dt) {
 	float t = self->timer + dt;
 
 	self->timer = t;
@@ -56,7 +56,7 @@ cGateKeeperLocalLogic *GateKeepers_MakeLogic(cEntity *e) {
 	return NULL;
 }
 
-cGateKeeperLocalLogic *__thiscall cGateKeeperLocalLogic_ctor(cGateKeeperLocalLogic *self, cEntity *parent) {
+cGateKeeperLocalLogic *cGateKeeperLocalLogic_ctor(cGateKeeperLocalLogic *self, cEntity *parent) {
 	cBaseLocalLogic_ctor(&self->base, parent);
 	self->base.vftable = CGATEKEEPERLOCALLOGIC_VFTABLE;
 	self->hiddenTime = 0.0f;
@@ -64,12 +64,12 @@ cGateKeeperLocalLogic *__thiscall cGateKeeperLocalLogic_ctor(cGateKeeperLocalLog
 	return self;
 }
 
-void __fastcall cGateKeeperLocalLogic_dtor(cGateKeeperLocalLogic *self) {
+void cGateKeeperLocalLogic_dtor(cGateKeeperLocalLogic *self) {
 	self->base.vftable = CGATEKEEPERLOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
 }
 
-cGateKeeperLocalLogic *__thiscall cGateKeeperLocalLogic_Delete(cGateKeeperLocalLogic *self, byte flags) {
+cGateKeeperLocalLogic *cGateKeeperLocalLogic_Delete(cGateKeeperLocalLogic *self, byte flags) {
 	cGateKeeperLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -78,21 +78,21 @@ cGateKeeperLocalLogic *__thiscall cGateKeeperLocalLogic_Delete(cGateKeeperLocalL
 }
 
 /* the view flag of the character: relaxed and no alarm */
-void __thiscall cGateKeeperLocalLogic_UpdateView(cGateKeeperLocalLogic *self) {
+void cGateKeeperLocalLogic_UpdateView(cGateKeeperLocalLogic *self) {
 	cEntity *p = self->base.parent;
 
 	WChar(p)->wl.arrow.canUse = !self->base.busy && !g_pWorld->alarm.on && self->base.state != 1;
 }
 
 /* vf16 of the gatekeepers and the gears: they never run from the police */
-void __thiscall cGateKeeperLocalLogic_Vf16(cGateKeeperLocalLogic *self, int arg) {
+void cGateKeeperLocalLogic_Vf16(cGateKeeperLocalLogic *self, int arg) {
 	(void)self;
 	(void)arg;
 	Con_Print(0x8f008f, "Ojito de pared intenta huir de un poli pequeño. Esto no debe pasar nunca", 0);
 }
 
 /* vf17 */
-void __thiscall cGateKeeperLocalLogic_Update(cGateKeeperLocalLogic *self, float dt) {
+void cGateKeeperLocalLogic_Update(cGateKeeperLocalLogic *self, float dt) {
 	vec3_t tmp;
 	cBaseLocalLogic *b = &self->base;
 	cEntity *p = b->parent;
@@ -149,7 +149,7 @@ alarm:
 }
 
 /* vf12 (a robbery seen) and vf11: hide unless idle */
-void __thiscall cGateKeeperLocalLogic_OnRobbery(cGateKeeperLocalLogic *self, cEntity *e, float amount) {
+void cGateKeeperLocalLogic_OnRobbery(cGateKeeperLocalLogic *self, cEntity *e, float amount) {
 	(void)e;
 	(void)amount;
 	if (!self->base.idle && !self->base.alwaysLock) {
@@ -158,13 +158,13 @@ void __thiscall cGateKeeperLocalLogic_OnRobbery(cGateKeeperLocalLogic *self, cEn
 }
 
 /* vf10 */
-void __thiscall cGateKeeperLocalLogic_OnHit(cGateKeeperLocalLogic *self, cEntity *attacker) {
+void cGateKeeperLocalLogic_OnHit(cGateKeeperLocalLogic *self, cEntity *attacker) {
 	(void)attacker;
 	self->base.vftable->SetState(self, 1, NULL);
 }
 
 /* vf14: hidden at once when the action Hide runs */
-void __thiscall cGateKeeperLocalLogic_Vf14(cGateKeeperLocalLogic *self, cEntity *e) {
+void cGateKeeperLocalLogic_Vf14(cGateKeeperLocalLogic *self, cEntity *e) {
 	cEntity *p = self->base.parent;
 
 	(void)e;
@@ -174,7 +174,7 @@ void __thiscall cGateKeeperLocalLogic_Vf14(cGateKeeperLocalLogic *self, cEntity 
 	}
 }
 
-void __thiscall cGateKeeperLocalLogic_Vf11(cGateKeeperLocalLogic *self, cEntity *e) {
+void cGateKeeperLocalLogic_Vf11(cGateKeeperLocalLogic *self, cEntity *e) {
 	(void)e;
 	if (!self->base.idle && !self->base.alwaysLock) {
 		self->base.vftable->SetState(self, 1, NULL);
@@ -182,12 +182,12 @@ void __thiscall cGateKeeperLocalLogic_Vf11(cGateKeeperLocalLogic *self, cEntity 
 }
 
 /* vf24: hidden while the alarm is on */
-void __thiscall cGateKeeperLocalLogic_RestartState(cGateKeeperLocalLogic *self) {
+void cGateKeeperLocalLogic_RestartState(cGateKeeperLocalLogic *self) {
 	self->base.vftable->SetState(self, g_pWorld->alarm.on != 0, NULL);
 }
 
 /* vf19: state 1 needs the action Hide */
-byte __thiscall cGateKeeperLocalLogic_SetState(cGateKeeperLocalLogic *self, int state, cEntity *target) {
+byte cGateKeeperLocalLogic_SetState(cGateKeeperLocalLogic *self, int state, cEntity *target) {
 	void *act = NULL;
 	cEntity *p = self->base.parent;
 

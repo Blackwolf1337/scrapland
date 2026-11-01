@@ -187,60 +187,60 @@ SD_OFFSET(cObjElementFXSputnik, last, 0xcc);
 SD_SIZE(cObjElementFXSputnik, 0xe0);
 
 /* World/FX/FXCharActions.cpp: the start of the Functionary special action on the element of e */
-void __thiscall cObjElementFXFunctionarySpecialAction_Start(void *self, cEntity *e);
+void cObjElementFXFunctionarySpecialAction_Start(void *self, cEntity *e);
 
 /* the element methods; the same code of several classes is one function */
-void __thiscall cObjElementFXCharacterConversion_Update(cObjElementFXCharacterConversion *self, cDebris *d, float dt);
-byte __thiscall cObjElementFXCharacterConversion_Alive(cObjElementFXCharacterConversion *self, cDebris *d,
+void cObjElementFXCharacterConversion_Update(cObjElementFXCharacterConversion *self, cDebris *d, float dt);
+byte cObjElementFXCharacterConversion_Alive(cObjElementFXCharacterConversion *self, cDebris *d,
 	cDebrisSys *sys);
-void __thiscall cObjElementFXCharacterConversion_Attach(cObjElementFXCharacterConversion *self, cDebris *d);
-void __thiscall cObjElementFXCharacterConversion_Reset(cObjElementFXCharacterConversion *self, int arg);
-void __thiscall cObjElementFXCharacterConversion_SetAttacker(cObjElementFXCharacterConversion *self, cEntity *e);
-void __thiscall cObjElementFXCharacterConversion_SetAttacked(cObjElementFXCharacterConversion *self, cEntity *e);
+void cObjElementFXCharacterConversion_Attach(cObjElementFXCharacterConversion *self, cDebris *d);
+void cObjElementFXCharacterConversion_Reset(cObjElementFXCharacterConversion *self, int arg);
+void cObjElementFXCharacterConversion_SetAttacker(cObjElementFXCharacterConversion *self, cEntity *e);
+void cObjElementFXCharacterConversion_SetAttacked(cObjElementFXCharacterConversion *self, cEntity *e);
 /* the particles of the start between the two characters */
-void __fastcall cObjElementFXCharacterConversion_Emit(cObjElementFXCharacterConversion *self);
-byte __thiscall cObjElementFXCharacterConversor_Alive(cObjElementFXCharacterConversor *self, cDebris *d,
+void cObjElementFXCharacterConversion_Emit(cObjElementFXCharacterConversion *self);
+byte cObjElementFXCharacterConversor_Alive(cObjElementFXCharacterConversor *self, cDebris *d,
 	cDebrisSys *sys);
 /* the conversor machine: the character fades in or out, light from the nodes of the conversor, lightnings from its
  * walls to the exits, glows over the vertices of the character; at the end of the animation the particles go */
-void __thiscall cObjElementFXCharacterConversor_Update(cObjElementFXCharacterConversor *self, cDebris *d, float dt);
-void __thiscall cObjElementFXCharacterConversor_Attach(cObjElementFXCharacterConversor *self, cDebris *d);
-void __thiscall cObjElementFXCharacterConversor_Reset(cObjElementFXCharacterConversor *self, int arg);
-void __thiscall cObjElementFXCharacterConversor_SetCharacter(cObjElementFXCharacterConversor *self, cEntity *e);
+void cObjElementFXCharacterConversor_Update(cObjElementFXCharacterConversor *self, cDebris *d, float dt);
+void cObjElementFXCharacterConversor_Attach(cObjElementFXCharacterConversor *self, cDebris *d);
+void cObjElementFXCharacterConversor_Reset(cObjElementFXCharacterConversor *self, int arg);
+void cObjElementFXCharacterConversor_SetCharacter(cObjElementFXCharacterConversor *self, cEntity *e);
 /* the conversor and the nodes of its model */
-void __thiscall cObjElementFXCharacterConversor_SetConversor(cObjElementFXCharacterConversor *self, cEntity *e);
+void cObjElementFXCharacterConversor_SetConversor(cObjElementFXCharacterConversor *self, cEntity *e);
 /* the character dies: it slows down and fades, trails and smoke go up from its vertices, flashes and sparks */
-void __thiscall cObjElementFXCharacterDeath_Update(cObjElementFXCharacterDeath *self, cDebris *d, float dt);
-void __thiscall cObjElementFXCharacterDeath_Attach(cObjElementFXCharacterDeath *self, cDebris *d);
-void __thiscall cObjElementFXCharacterDeath_Reset(cObjElementFXCharacterDeath *self, int arg);
-void __thiscall cObjElementFXCharacterDeath_SetEntity(cObjElementFXCharacterDeath *self, cEntity *e);
+void cObjElementFXCharacterDeath_Update(cObjElementFXCharacterDeath *self, cDebris *d, float dt);
+void cObjElementFXCharacterDeath_Attach(cObjElementFXCharacterDeath *self, cDebris *d);
+void cObjElementFXCharacterDeath_Reset(cObjElementFXCharacterDeath *self, int arg);
+void cObjElementFXCharacterDeath_SetEntity(cObjElementFXCharacterDeath *self, cEntity *e);
 /* the light column and the fade of the character, glows over its vertices, sparks and smoke */
-void __thiscall cObjElementFXCharacterTeleport_Update(cObjElementFXCharacterTeleport *self, cDebris *d, float dt);
-byte __thiscall cObjElementFXCharacterTeleport_Alive(cObjElementFXCharacterTeleport *self, cDebris *d,
+void cObjElementFXCharacterTeleport_Update(cObjElementFXCharacterTeleport *self, cDebris *d, float dt);
+byte cObjElementFXCharacterTeleport_Alive(cObjElementFXCharacterTeleport *self, cDebris *d,
 	cDebrisSys *sys);
-void __thiscall cObjElementFXCharacterTeleport_Attach(cObjElementFXCharacterTeleport *self, cDebris *d);
-void __thiscall cObjElementFXCharacterTeleport_Reset(cObjElementFXCharacterTeleport *self, int arg);
-byte __thiscall cObjElementFXMaintenanceWork_Alive(cObjElementFXMaintenanceWork *self, cDebris *d, cDebrisSys *sys);
-void __thiscall cObjElementFXMaintenanceWork_Attach(cObjElementFXMaintenanceWork *self, cDebris *d);
-void __thiscall cObjElementFXMaintenanceWork_Reset(cObjElementFXMaintenanceWork *self, int arg);
-void __thiscall cObjElementFXMaintenanceWork_SetMaintenance(cObjElementFXMaintenanceWork *self, cEntity *e);
-void __thiscall cObjElementFXMaintenanceWork_SetShip(cObjElementFXMaintenanceWork *self, cEntity *e);
+void cObjElementFXCharacterTeleport_Attach(cObjElementFXCharacterTeleport *self, cDebris *d);
+void cObjElementFXCharacterTeleport_Reset(cObjElementFXCharacterTeleport *self, int arg);
+byte cObjElementFXMaintenanceWork_Alive(cObjElementFXMaintenanceWork *self, cDebris *d, cDebrisSys *sys);
+void cObjElementFXMaintenanceWork_Attach(cObjElementFXMaintenanceWork *self, cDebris *d);
+void cObjElementFXMaintenanceWork_Reset(cObjElementFXMaintenanceWork *self, int arg);
+void cObjElementFXMaintenanceWork_SetMaintenance(cObjElementFXMaintenanceWork *self, cEntity *e);
+void cObjElementFXMaintenanceWork_SetShip(cObjElementFXMaintenanceWork *self, cEntity *e);
 /* the laser vertex of the ship and the work sound, at the debris d */
-void __thiscall cObjElementFXMaintenanceWork_Start(cObjElementFXMaintenanceWork *self, cDebris *d);
-void __thiscall cObjElementFXMoneyTransfer_Update(cObjElementFXMoneyTransfer *self, cDebris *d, float dt);
-void __thiscall cObjElementFXMoneyTransfer_Attach(cObjElementFXMoneyTransfer *self, cDebris *d);
-void __thiscall cObjElementFXMoneyTransfer_Reset(cObjElementFXMoneyTransfer *self, int arg);
-void __thiscall cObjElementFXMoneyTransfer_SetEntities(cObjElementFXMoneyTransfer *self, cEntity *from, cEntity *to);
-void __thiscall cObjElementFXSputnik_Update(cObjElementFXSputnik *self, cDebris *d, float dt);
-byte __thiscall cObjElementFXSputnik_Alive(cObjElementFXSputnik *self, cDebris *d, cDebrisSys *sys);
-void __thiscall cObjElementFXSputnik_Attach(cObjElementFXSputnik *self, cDebris *d);
-void __thiscall cObjElementFXSputnik_Reset(cObjElementFXSputnik *self, int arg);
+void cObjElementFXMaintenanceWork_Start(cObjElementFXMaintenanceWork *self, cDebris *d);
+void cObjElementFXMoneyTransfer_Update(cObjElementFXMoneyTransfer *self, cDebris *d, float dt);
+void cObjElementFXMoneyTransfer_Attach(cObjElementFXMoneyTransfer *self, cDebris *d);
+void cObjElementFXMoneyTransfer_Reset(cObjElementFXMoneyTransfer *self, int arg);
+void cObjElementFXMoneyTransfer_SetEntities(cObjElementFXMoneyTransfer *self, cEntity *from, cEntity *to);
+void cObjElementFXSputnik_Update(cObjElementFXSputnik *self, cDebris *d, float dt);
+byte cObjElementFXSputnik_Alive(cObjElementFXSputnik *self, cDebris *d, cDebrisSys *sys);
+void cObjElementFXSputnik_Attach(cObjElementFXSputnik *self, cDebris *d);
+void cObjElementFXSputnik_Reset(cObjElementFXSputnik *self, int arg);
 /* the entity and the node "Bip Spootnick MASTER" of its model */
-void __thiscall FXSputnik_Start(cObjElementFXSputnik *self, cEntity *e);
-void __thiscall FXSputnik_SetA(cObjElementFXSputnik *self, float v);	/* the duration */
-void __thiscall FXSputnik_SetB(cObjElementFXSputnik *self, float v);	/* minMove */
+void FXSputnik_Start(cObjElementFXSputnik *self, cEntity *e);
+void FXSputnik_SetA(cObjElementFXSputnik *self, float v);	/* the duration */
+void FXSputnik_SetB(cObjElementFXSputnik *self, float v);	/* minMove */
 /* dead code: the int at 0x4 */
-void __thiscall FXChar_SetI4(void *self, int v);
+void FXChar_SetI4(void *self, int v);
 
 /* the free functions */
 /* the effects of a character by name: CharacterDeath, CharacterSputnikHello, Bye, Interface and Junkyard,

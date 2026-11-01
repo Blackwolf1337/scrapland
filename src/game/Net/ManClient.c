@@ -10,7 +10,7 @@
 #include "scrap/net.h"
 #include "scrap/objentity.h"
 
-cServerNetManager *__thiscall cServerNetManager_ctor(cServerNetManager *self, cNetClient *client, int slot) {
+cServerNetManager *cServerNetManager_ctor(cServerNetManager *self, cNetClient *client, int slot) {
 	cUserNetManager_ctor(&self->base, client, slot);
 	self->base.vftable = g_ServerNetManagerVftable;
 	Con_Print(0, "Try to server\n", 0);
@@ -19,13 +19,13 @@ cServerNetManager *__thiscall cServerNetManager_ctor(cServerNetManager *self, cN
 	return self;
 }
 
-void __fastcall cServerNetManager_dtor(cServerNetManager *self) {
+void cServerNetManager_dtor(cServerNetManager *self) {
 	self->base.vftable = g_ServerNetManagerVftable;
 	Con_Print(0, "disconected!\n", 0);
 	cUserNetManager_dtor(&self->base);
 }
 
-cServerNetManager *__thiscall cServerNetManager_Delete(cServerNetManager *self, byte flags) {
+cServerNetManager *cServerNetManager_Delete(cServerNetManager *self, byte flags) {
 	cServerNetManager_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -105,7 +105,7 @@ static void ServerNet_ReadEntities(cServerNetManager *self, int size) {
 	}
 }
 
-void __thiscall cServerNetManager_OnReceive(cServerNetManager *self, void *data, int size, void *ctl, int ctlSize) {
+void cServerNetManager_OnReceive(cServerNetManager *self, void *data, int size, void *ctl, int ctlSize) {
 	char s[0x80];
 	byte kind, n;
 
@@ -178,7 +178,7 @@ int Net_GetClientPing(uint32_t slot) {
 	return (int)Game_Pow(2.0, (double)g_NetClientPings[slot] / 24.0);
 }
 
-void __thiscall cServerNetManager_SendHello(cServerNetManager *self, byte type) {
+void cServerNetManager_SendHello(cServerNetManager *self, byte type) {
 	uint32_t v;
 
 	void *buf = cStaticBuffer_Get(g_NetStaticBuffer, 8000);
@@ -207,7 +207,7 @@ void __thiscall cServerNetManager_SendHello(cServerNetManager *self, byte type) 
 	cStaticBuffer_Unlock(g_NetStaticBuffer);
 }
 
-void __thiscall cServerNetManager_Send(cServerNetManager *self, uint32_t time) {
+void cServerNetManager_Send(cServerNetManager *self, uint32_t time) {
 	cEntity *e = World_FindEntity(self->name);
 
 	if (!e) {
@@ -225,6 +225,6 @@ void __thiscall cServerNetManager_Send(cServerNetManager *self, uint32_t time) {
 	cStaticBuffer_Unlock(g_NetStaticBuffer);
 }
 
-void __thiscall cUserNetManager_Nop(cUserNetManager *self) {
+void cUserNetManager_Nop(cUserNetManager *self) {
 	(void)self;
 }

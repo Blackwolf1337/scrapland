@@ -22,9 +22,9 @@
 #define CAM_ASPECT_WIDE 0x1.c71c71c71c71cp+0	/* 16 / 9 */
 #define CAM_ASPECT_4_3 0x1.5555555555555p+0
 
-typedef void(__thiscall *cameraDelete_t)(CCamera *self, int flags);
+typedef void(*cameraDelete_t)(CCamera *self, int flags);
 
-CGameCamera *__fastcall CGameCamera_ctor(CGameCamera *self) {
+CGameCamera *CGameCamera_ctor(CGameCamera *self) {
 	CCamera *c = operator_new(sizeof(CCamera));
 	c = c ? CCamera_ctor(c) : NULL;
 	self->Camera = c;
@@ -39,7 +39,7 @@ CGameCamera *__fastcall CGameCamera_ctor(CGameCamera *self) {
 	return self;
 }
 
-void __fastcall CGameCamera_dtor(CGameCamera *self) {
+void CGameCamera_dtor(CGameCamera *self) {
 	RenderNode_Unref(&self->Node);
 	if (Camera_GetCurrent() == self) {
 		CheckFailed("GetActiveCamera() != this", __FILE__, __TIMESTAMP__, __LINE__);
@@ -51,13 +51,13 @@ void __fastcall CGameCamera_dtor(CGameCamera *self) {
 	}
 }
 
-void __thiscall CGameCamera_Move(CGameCamera *self, float d) {
+void CGameCamera_Move(CGameCamera *self, float d) {
 	CGameCamera_Update(self);
 	CCamera_Move(self->Camera, d);
 	self->pos = self->Camera->pos;
 }
 
-void __thiscall CGameCamera_Copy(CGameCamera *self, const CGameCamera *other) {
+void CGameCamera_Copy(CGameCamera *self, const CGameCamera *other) {
 	if (self->Node) {
 		CheckFailed("!Node", __FILE__, __TIMESTAMP__, __LINE__);
 	}
@@ -65,7 +65,7 @@ void __thiscall CGameCamera_Copy(CGameCamera *self, const CGameCamera *other) {
 	CGameCamera_SetLookAt(self, CGameCamera_IsLookAt(other));
 }
 
-void __thiscall CGameCamera_FromCamera(CGameCamera *self, const CCamera *c) {
+void CGameCamera_FromCamera(CGameCamera *self, const CCamera *c) {
 	self->pos = c->pos;
 	self->rot = c->rot;
 	self->target = c->target;
@@ -73,17 +73,17 @@ void __thiscall CGameCamera_FromCamera(CGameCamera *self, const CCamera *c) {
 	CGameCamera_SetLookAt(self, c->mode == CAMERA_LOOKAT);
 }
 
-byte __fastcall CGameCamera_IsLookAt(const CGameCamera *self) {
+byte CGameCamera_IsLookAt(const CGameCamera *self) {
 	CAM_CHECK(self);
 	return self->Camera->mode == CAMERA_LOOKAT;
 }
 
-void __thiscall CGameCamera_SetLookAt(CGameCamera *self, byte on) {
+void CGameCamera_SetLookAt(CGameCamera *self, byte on) {
 	CAM_CHECK(self);
 	self->Camera->mode = (on == 0) + CAMERA_LOOKAT;
 }
 
-byte __thiscall CGameCamera_SetNodeModel(CGameCamera *self, CGameModel *model, int i) {
+byte CGameCamera_SetNodeModel(CGameCamera *self, CGameModel *model, int i) {
 	RenderNode_Unref(&self->Node);
 	if (model) {
 		if (i == -1) {
@@ -99,7 +99,7 @@ byte __thiscall CGameCamera_SetNodeModel(CGameCamera *self, CGameModel *model, i
 	return 1;
 }
 
-void __thiscall CGameCamera_SetNode(CGameCamera *self, CRenderNode *node) {
+void CGameCamera_SetNode(CGameCamera *self, CRenderNode *node) {
 	RenderNode_Unref(&self->Node);
 	self->Node = node;
 }
@@ -152,7 +152,7 @@ void CamComposite_DrawDebug(void) {
 	CFont_PrintfColorShadow(g_FontScrapBig, 120.0f, 420.0f, 0xff00, "%d:%02d", frame / fps, frame % fps);
 }
 
-void __thiscall CGameCamera_Strafe(CGameCamera *self, float side, float rise) {
+void CGameCamera_Strafe(CGameCamera *self, float side, float rise) {
 	CGameCamera_Update(self);
 	CCamera_Strafe(self->Camera, side, rise);
 	if (self->Camera->mode == CAMERA_LOOKAT) {
@@ -185,7 +185,7 @@ static void CGameCamera_FromNode(CGameCamera *self, CModel *model, CNode3D *node
 	}
 }
 
-CCamera *__fastcall CGameCamera_Update(CGameCamera *self) {
+CCamera *CGameCamera_Update(CGameCamera *self) {
 	CAM_CHECK(self);
 	CRenderNode *node = self->Node;
 	if (node) {
@@ -218,7 +218,7 @@ CCamera *__fastcall CGameCamera_Update(CGameCamera *self) {
 	return self->Camera;
 }
 
-vec3_t *__thiscall CGameCamera_ToLocal(const CGameCamera *self, vec3_t *out, const vec3_t *in) {
+vec3_t *CGameCamera_ToLocal(const CGameCamera *self, vec3_t *out, const vec3_t *in) {
 	vec3_t t;
 
 	out->x = in->x - self->pos.x;

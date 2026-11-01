@@ -44,31 +44,31 @@ typedef struct cLocalLogic cLocalLogic;
 /* the slots of cLocalLogic (0x00 .. 0x18), cBaseLocalLogic (.. 0x60), cGenCharLocalLogic (.. 0x8c) and
  * cFunctionaryLocalLogic (.. 0xb0); the variable slots take the name of a script variable */
 typedef struct cLocalLogicVtbl {
-	void *(__thiscall *Delete)(void *self, byte flags);					/* 0x00 */
-	const char *(__thiscall *GetName)(void *self);					/* 0x04 "BaseLogic" */
-	byte(__thiscall *Vf02)(void *self);							/* 0x08 */
-	byte(__thiscall *VarI)(void *self, const char *name, int *i, byte set);		/* 0x0c */
-	byte(__thiscall *VarF)(void *self, const char *name, double *d, byte set);		/* 0x10 */
-	byte(__thiscall *VarS)(void *self, const char *name, char **s, byte set);		/* 0x14 */
-	byte(__thiscall *VarV)(void *self, const char *name, double *x, double *y, double *z, byte set); /* 0x18 */
-	byte(__thiscall *UpdateBusy)(void *self);						/* 0x1c */
-	void(__thiscall *Refresh)(void *self);						/* 0x20 */
-	byte(__thiscall *Listens)(void *self, cEntity *talker);				/* 0x24 vf09 the mayor */
-	void(__thiscall *OnHit)(void *self, cEntity *attacker);				/* 0x28 */
-	void(__thiscall *OnSeen)(void *self, cEntity *e);					/* 0x2c vf11 */
-	void(__thiscall *OnAttack)(void *self, cEntity *attacker, float value);		/* 0x30 vf12 */
-	void(__thiscall *OnShot)(void *self, cEntity *attacker);				/* 0x34 vf13 */
-	void(__thiscall *OnHammer)(void *self, cEntity *nurse);				/* 0x38 vf14 */
-	byte(__thiscall *GivesMoney)(void *self, cEntity *police);				/* 0x3c vf15 */
-	void(__thiscall *OnAlarm)(void *self, cEntity *e);				/* 0x40 vf16 */
-	void(__thiscall *Update)(void *self, float dt);					/* 0x44 */
-	void(__thiscall *SetOriginFrom)(void *self, cEntity *e);				/* 0x48 */
-	byte(__thiscall *SetState)(void *self, int state, cEntity *target);			/* 0x4c vf19 */
-	void(__thiscall *SetIdle)(void *self, byte idle);					/* 0x50 */
-	void(__thiscall *SetActionRadius)(void *self, float radius);				/* 0x54 */
-	void(__thiscall *SetOrigin)(void *self, float x, float y, float z);			/* 0x58 */
-	void(__thiscall *SetOriginAng)(void *self, float x, float y, float z);		/* 0x5c */
-	byte(__thiscall *RestartState)(void *self);						/* 0x60 */
+	void *(*Delete)(void *self, byte flags);					/* 0x00 */
+	const char *(*GetName)(void *self);					/* 0x04 "BaseLogic" */
+	byte(*Vf02)(void *self);							/* 0x08 */
+	byte(*VarI)(void *self, const char *name, int *i, byte set);		/* 0x0c */
+	byte(*VarF)(void *self, const char *name, double *d, byte set);		/* 0x10 */
+	byte(*VarS)(void *self, const char *name, char **s, byte set);		/* 0x14 */
+	byte(*VarV)(void *self, const char *name, double *x, double *y, double *z, byte set); /* 0x18 */
+	byte(*UpdateBusy)(void *self);						/* 0x1c */
+	void(*Refresh)(void *self);						/* 0x20 */
+	byte(*Listens)(void *self, cEntity *talker);				/* 0x24 vf09 the mayor */
+	void(*OnHit)(void *self, cEntity *attacker);				/* 0x28 */
+	void(*OnSeen)(void *self, cEntity *e);					/* 0x2c vf11 */
+	void(*OnAttack)(void *self, cEntity *attacker, float value);		/* 0x30 vf12 */
+	void(*OnShot)(void *self, cEntity *attacker);				/* 0x34 vf13 */
+	void(*OnHammer)(void *self, cEntity *nurse);				/* 0x38 vf14 */
+	byte(*GivesMoney)(void *self, cEntity *police);				/* 0x3c vf15 */
+	void(*OnAlarm)(void *self, cEntity *e);				/* 0x40 vf16 */
+	void(*Update)(void *self, float dt);					/* 0x44 */
+	void(*SetOriginFrom)(void *self, cEntity *e);				/* 0x48 */
+	byte(*SetState)(void *self, int state, cEntity *target);			/* 0x4c vf19 */
+	void(*SetIdle)(void *self, byte idle);					/* 0x50 */
+	void(*SetActionRadius)(void *self, float radius);				/* 0x54 */
+	void(*SetOrigin)(void *self, float x, float y, float z);			/* 0x58 */
+	void(*SetOriginAng)(void *self, float x, float y, float z);		/* 0x5c */
+	byte(*RestartState)(void *self);						/* 0x60 */
 } cLocalLogicVtbl;
 
 static inline const cLocalLogicVtbl *Logic_Vtbl(const void *l) {
@@ -78,17 +78,17 @@ static inline const cLocalLogicVtbl *Logic_Vtbl(const void *l) {
 /* the slots of the logics of the generic characters (cGenCharLocalLogic and its children) */
 typedef struct cGenCharLocalLogicVtbl {
 	cLocalLogicVtbl base;
-	byte(__thiscall *CanAttack)(void *self, cEntity *e);		/* 0x64 vf25 the special attack against e */
-	void(__thiscall *UpdateView)(void *self);			/* 0x68 vf26 the view flag (+0x381) and the team */
-	void(__thiscall *ToRelax)(void *self, void *ai);			/* 0x6c vf27 the AI to its zone, relaxed */
-	void(__thiscall *ToAlert)(void *self, void *ai);			/* 0x70 vf28 the same in alert */
-	void(__thiscall *Accuse)(void *self, cEntity *e);			/* 0x74 vf29 state 2 against e */
-	cEntity *(__thiscall *FindTarget)(void *self);			/* 0x78 vf30 of the special attack */
-	byte(__thiscall *TargetDone)(void *self);				/* 0x7c vf31 the special attack ends */
-	void(__thiscall *Work)(void *self, float dt);				/* 0x80 vf32 functionaries */
-	void(__thiscall *Vf33)(void *self, byte restart);			/* 0x84 */
-	void(__thiscall *GoTo)(void *self, void *ai, cEntity *e);		/* 0x88 vf34 the AI walks to e */
-	void(__thiscall *UpdateGetIt)(void *self, void *ai, float dt);	/* 0x8c vf35 state 10 */
+	byte(*CanAttack)(void *self, cEntity *e);		/* 0x64 vf25 the special attack against e */
+	void(*UpdateView)(void *self);			/* 0x68 vf26 the view flag (+0x381) and the team */
+	void(*ToRelax)(void *self, void *ai);			/* 0x6c vf27 the AI to its zone, relaxed */
+	void(*ToAlert)(void *self, void *ai);			/* 0x70 vf28 the same in alert */
+	void(*Accuse)(void *self, cEntity *e);			/* 0x74 vf29 state 2 against e */
+	cEntity *(*FindTarget)(void *self);			/* 0x78 vf30 of the special attack */
+	byte(*TargetDone)(void *self);				/* 0x7c vf31 the special attack ends */
+	void(*Work)(void *self, float dt);				/* 0x80 vf32 functionaries */
+	void(*Vf33)(void *self, byte restart);			/* 0x84 */
+	void(*GoTo)(void *self, void *ai, cEntity *e);		/* 0x88 vf34 the AI walks to e */
+	void(*UpdateGetIt)(void *self, void *ai, float dt);	/* 0x8c vf35 state 10 */
 } cGenCharLocalLogicVtbl;
 SD_OFFSET(cGenCharLocalLogicVtbl, CanAttack, 0x64);
 SD_OFFSET(cGenCharLocalLogicVtbl, UpdateView, 0x68);
@@ -101,12 +101,12 @@ static inline const cGenCharLocalLogicVtbl *GenChar_Vtbl(const void *l) {
 /* the functionaries and the desk characters (cFunctionaryLocalLogic, Berto, Betty, Humphrey) */
 typedef struct cFunctionaryLocalLogicVtbl {
 	cGenCharLocalLogicVtbl base;
-	byte(__thiscall *CanTalk)(void *self);				/* 0x90 vf36 */
-	void(__thiscall *StopWork)(void *self, byte restart);			/* 0x94 vf37 */
-	vec3_t *(__thiscall *GetWorkAng)(void *self, vec3_t *out);		/* 0x98 vf38 */
-	byte(__thiscall *FastEscape)(void *self);				/* 0x9c vf39 */
-	void(__thiscall *AssignDesktop)(void *self, float maxDist);				/* 0xa0 vf40 */
-	void(__thiscall *ReleaseDesktop)(void *self);					/* 0xa4 vf41 */
+	byte(*CanTalk)(void *self);				/* 0x90 vf36 */
+	void(*StopWork)(void *self, byte restart);			/* 0x94 vf37 */
+	vec3_t *(*GetWorkAng)(void *self, vec3_t *out);		/* 0x98 vf38 */
+	byte(*FastEscape)(void *self);				/* 0x9c vf39 */
+	void(*AssignDesktop)(void *self, float maxDist);				/* 0xa0 vf40 */
+	void(*ReleaseDesktop)(void *self);					/* 0xa4 vf41 */
 } cFunctionaryLocalLogicVtbl;
 SD_OFFSET(cFunctionaryLocalLogicVtbl, CanTalk, 0x90);
 SD_OFFSET(cFunctionaryLocalLogicVtbl, FastEscape, 0x9c);
@@ -119,8 +119,8 @@ static inline const cFunctionaryLocalLogicVtbl *Functionary_Vtbl(const void *l) 
 /* the sentinels: the accuse when seen (no other sentinel accuses) and the think */
 typedef struct cSentinelLocalLogicVtbl {
 	cLocalLogicVtbl base;
-	byte(__thiscall *Seen)(void *self);					/* 0x64 */
-	void(__thiscall *Think)(void *self, float dt, byte other);		/* 0x68 */
+	byte(*Seen)(void *self);					/* 0x64 */
+	void(*Think)(void *self, float dt, byte other);		/* 0x68 */
 } cSentinelLocalLogicVtbl;
 SD_OFFSET(cSentinelLocalLogicVtbl, Seen, 0x64);
 
@@ -340,33 +340,33 @@ byte Logic_CharOnFloor(cEntity *e);
 /* flash at pos with radius; the last argument is -1 from the script module */
 int Logic_Flash(const vec3_t *pos, float radius, int arg);
 
-void __thiscall Taunts_UpdateEndTime(void *taunts);
-void __thiscall ShipRegen_Set(void *shipRegen, cEntity *ship, float speed, float endSpeed);
-void __thiscall AICtrl_SendSentinelToWatch(void *aiCtrl, const vec3_t *pos);
-void __thiscall AICtrl_GearAttack(void *aiCtrl, cEntity *target, int arg);
+void Taunts_UpdateEndTime(void *taunts);
+void ShipRegen_Set(void *shipRegen, cEntity *ship, float speed, float endSpeed);
+void AICtrl_SendSentinelToWatch(void *aiCtrl, const vec3_t *pos);
+void AICtrl_GearAttack(void *aiCtrl, cEntity *target, int arg);
 /* a character that saw the player goes to accuse it ("Sending %s to acuse the main character"); 1 if one went */
-byte __thiscall AICtrl_SendAccuser(void *aiCtrl, byte check);
+byte AICtrl_SendAccuser(void *aiCtrl, byte check);
 
 /* BaseLogic.cpp */
-cBaseLocalLogic *__thiscall cBaseLocalLogic_ctor(cBaseLocalLogic *self, cEntity *parent);
-void __fastcall cBaseLocalLogic_dtor(cBaseLocalLogic *self);
-void __fastcall cLocalLogic_dtor(cLocalLogic *self);
+cBaseLocalLogic *cBaseLocalLogic_ctor(cBaseLocalLogic *self, cEntity *parent);
+void cBaseLocalLogic_dtor(cBaseLocalLogic *self);
+void cLocalLogic_dtor(cLocalLogic *self);
 /* pos is in the view of viewer (dist, the field of view, a free line from pos to it) */
 byte Logic_InView(cEntity *viewer, const vec3_t *pos, float dist, float fovY, float fovX, byte testLine);
 /* the first character of the list (not viewer) in the view of viewer that filter takes (NULL: all) */
 cEntity *Logic_FindInView(cEntity *viewer, cEntityListData *list, float dist, float fovY, float fovX, byte testLine,
 	byte (*filter)(cEntity *));
-byte __thiscall cBaseLocalLogic_UpdateBusy(cBaseLocalLogic *self);
+byte cBaseLocalLogic_UpdateBusy(cBaseLocalLogic *self);
 /* the VarV of cLocalLogic: no variable */
-byte __thiscall cLocalLogic_VarVNone(cLocalLogic *self, const char *name, double *x, double *y, double *z, byte set);
-int __thiscall cBaseLocalLogic_SetState(cBaseLocalLogic *self, int state, cEntity *target);
-byte __thiscall cBaseLocalLogic_VarF(cBaseLocalLogic *self, const char *name, double *d, byte set);
-byte __thiscall cBaseLocalLogic_VarI(cBaseLocalLogic *self, const char *name, int *i, byte set);
-byte __thiscall cBaseLocalLogic_VarS(cBaseLocalLogic *self, const char *name, char **s, byte set);
-byte __thiscall cBaseLocalLogic_VarV(cBaseLocalLogic *self, const char *name, double *x, double *y, double *z,
+byte cLocalLogic_VarVNone(cLocalLogic *self, const char *name, double *x, double *y, double *z, byte set);
+int cBaseLocalLogic_SetState(cBaseLocalLogic *self, int state, cEntity *target);
+byte cBaseLocalLogic_VarF(cBaseLocalLogic *self, const char *name, double *d, byte set);
+byte cBaseLocalLogic_VarI(cBaseLocalLogic *self, const char *name, int *i, byte set);
+byte cBaseLocalLogic_VarS(cBaseLocalLogic *self, const char *name, char **s, byte set);
+byte cBaseLocalLogic_VarV(cBaseLocalLogic *self, const char *name, double *x, double *y, double *z,
 	byte set);
-void __thiscall cBaseLocalLogic_Update(cBaseLocalLogic *self, float dt);
-void __thiscall cBaseLocalLogic_SetIdle(cBaseLocalLogic *self, byte idle);
+void cBaseLocalLogic_Update(cBaseLocalLogic *self, float dt);
+void cBaseLocalLogic_SetIdle(cBaseLocalLogic *self, byte idle);
 /* the debug texts of ShowAI (a character node of a list with the state names, the ships) */
 void Logic_ShowChar(Nto1Node *node, const char **names);
 void Logic_ShowChars(Nto1Node *node, const char **names, byte visible);
@@ -375,11 +375,11 @@ void Logic_ShowShips(void);
 void Logic_ShowShipList(const char *name, byte visible);
 void Logic_ShowAI(byte visible);
 /* the slots without code shared by the logic classes */
-byte __thiscall Logic_True(void *self);
-byte __thiscall Logic_False(void *self);
-cEntity *__thiscall Logic_NoTarget(void *self);
-void __thiscall Logic_Nop1(void *self, int arg);
-byte __thiscall Logic_False1(void *self, int arg);
+byte Logic_True(void *self);
+byte Logic_False(void *self);
+cEntity *Logic_NoTarget(void *self);
+void Logic_Nop1(void *self, int arg);
+byte Logic_False1(void *self, int arg);
 /* the bank logics: the player in view with money in the world, the first character in view in the lists */
 cEntity *Logic_RichUsrInView(cGenCharLocalLogic *self, cEntity *usr);
 cEntity *Logic_FindInCharLists(cEntity *p);
@@ -389,27 +389,27 @@ void Logic_LinkDesktop(cFunctionaryLocalLogic *self, const char *name);
 byte Logic_Chance(cBaseLocalLogic *l, cEntity *attacker, float chance);
 
 /* GenCharLogic.cpp and FunctionaryLogic.cpp (imports) */
-cGenCharLocalLogic *__thiscall cGenCharLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent, int arg);
-void __fastcall cGenCharLocalLogic_dtor(cGenCharLocalLogic *self);
-void __thiscall cGenCharLocalLogic_Update(cGenCharLocalLogic *self, float dt);
-byte __thiscall cGenCharLocalLogic_SetState(cGenCharLocalLogic *self, int state, cEntity *target);
-cFunctionaryLocalLogic *__thiscall cFunctionaryLocalLogic_ctor(cFunctionaryLocalLogic *self, cEntity *parent);
-void __fastcall cFunctionaryLocalLogic_dtor(cFunctionaryLocalLogic *self);
-void __thiscall cFunctionaryLocalLogic_Update(cFunctionaryLocalLogic *self, float dt);
+cGenCharLocalLogic *cGenCharLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent, int arg);
+void cGenCharLocalLogic_dtor(cGenCharLocalLogic *self);
+void cGenCharLocalLogic_Update(cGenCharLocalLogic *self, float dt);
+byte cGenCharLocalLogic_SetState(cGenCharLocalLogic *self, int state, cEntity *target);
+cFunctionaryLocalLogic *cFunctionaryLocalLogic_ctor(cFunctionaryLocalLogic *self, cEntity *parent);
+void cFunctionaryLocalLogic_dtor(cFunctionaryLocalLogic *self);
+void cFunctionaryLocalLogic_Update(cFunctionaryLocalLogic *self, float dt);
 /* the desktop of the functionary or NULL */
-cEntity *__fastcall cFunctionaryLocalLogic_GetDesktop(cFunctionaryLocalLogic *self);
+cEntity *cFunctionaryLocalLogic_GetDesktop(cFunctionaryLocalLogic *self);
 /* the desktop leaves its work action */
-void __fastcall cFunctionaryLocalLogic_FreeDesktop(cFunctionaryLocalLogic *self);
-void __thiscall cFunctionaryLocalLogic_ReleaseDesktop(cFunctionaryLocalLogic *self);
-void __thiscall cFunctionaryLocalLogic_SetKeepWorking(cFunctionaryLocalLogic *self, byte on);
-void __thiscall cFunctionaryLocalLogic_NormalSpeed(cFunctionaryLocalLogic *self, cEntity *e);
-void __thiscall cFunctionaryLocalLogic_SlowEffect(cFunctionaryLocalLogic *self, cEntity *e);
+void cFunctionaryLocalLogic_FreeDesktop(cFunctionaryLocalLogic *self);
+void cFunctionaryLocalLogic_ReleaseDesktop(cFunctionaryLocalLogic *self);
+void cFunctionaryLocalLogic_SetKeepWorking(cFunctionaryLocalLogic *self, byte on);
+void cFunctionaryLocalLogic_NormalSpeed(cFunctionaryLocalLogic *self, cEntity *e);
+void cFunctionaryLocalLogic_SlowEffect(cFunctionaryLocalLogic *self, cEntity *e);
 void Functionary_FastEffect(cEntity *e);
 void Functionary_WorkRelax(cEntity *e);
 /* GenCharLogic.cpp (imports): the variables, vf12 (a robbery seen) */
-byte __thiscall cGenCharLocalLogic_VarI(cGenCharLocalLogic *self, const char *name, int *i, byte set);
-byte __thiscall cGenCharLocalLogic_VarS(cGenCharLocalLogic *self, const char *name, char **s, byte set);
-void __thiscall cGenCharLocalLogic_OnRobbery(cGenCharLocalLogic *self, cEntity *e, float amount);
+byte cGenCharLocalLogic_VarI(cGenCharLocalLogic *self, const char *name, int *i, byte set);
+byte cGenCharLocalLogic_VarS(cGenCharLocalLogic *self, const char *name, char **s, byte set);
+void cGenCharLocalLogic_OnRobbery(cGenCharLocalLogic *self, cEntity *e, float amount);
 
 /* ---- the multiplayer modes (of cLogicControl) ---- */
 static inline cEntity *Logic_AttackTarget(cAIVehicle *ai) {
@@ -451,26 +451,26 @@ cEntity *Logic_AsCar(cEntity *e);
 /* the "Car" of that name or NULL */
 cEntity *Logic_FindCar(const char *name);
 
-cCTFEnemies *__fastcall cCTFEnemies_ctor(cCTFEnemies *self);
-void __fastcall cCTFEnemies_dtor(cCTFEnemies *self);
-cEntityListData *__fastcall cCTFEnemies_Init(cCTFEnemies *self);
-cEntityListData *__fastcall cCTFEnemies_GetList(cCTFEnemies *self);
-char *__fastcall cCTFEnemies_GetLeader(cCTFEnemies *self);
-void __thiscall cCTFEnemies_SetLeader(cCTFEnemies *self, const char *name);
-void __thiscall cCTFEnemies_SetBonus(cCTFEnemies *self, float t);
-void __thiscall cCTFEnemies_Update(cCTFEnemies *self, float dt);
-void __fastcall cCTFEnemiesData_Think(cCTFEnemiesData *self);
-cCTFFriends *__fastcall cCTFFriends_ctor(cCTFFriends *self);
-void __fastcall cCTFFriends_dtor(cCTFFriends *self);
-void __fastcall cCTFFriends_Init(cCTFFriends *self);
-cEntityListData *__fastcall cCTFFriends_GetList(cCTFFriends *self);
-void __thiscall cCTFFriends_Update(cCTFFriends *self, float dt);
-void __fastcall cCTFFriendsData_Think(cCTFFriendsData *self);
-cDeathMatch *__fastcall cDeathMatch_ctor(cDeathMatch *self);
+cCTFEnemies *cCTFEnemies_ctor(cCTFEnemies *self);
+void cCTFEnemies_dtor(cCTFEnemies *self);
+cEntityListData *cCTFEnemies_Init(cCTFEnemies *self);
+cEntityListData *cCTFEnemies_GetList(cCTFEnemies *self);
+char *cCTFEnemies_GetLeader(cCTFEnemies *self);
+void cCTFEnemies_SetLeader(cCTFEnemies *self, const char *name);
+void cCTFEnemies_SetBonus(cCTFEnemies *self, float t);
+void cCTFEnemies_Update(cCTFEnemies *self, float dt);
+void cCTFEnemiesData_Think(cCTFEnemiesData *self);
+cCTFFriends *cCTFFriends_ctor(cCTFFriends *self);
+void cCTFFriends_dtor(cCTFFriends *self);
+void cCTFFriends_Init(cCTFFriends *self);
+cEntityListData *cCTFFriends_GetList(cCTFFriends *self);
+void cCTFFriends_Update(cCTFFriends *self, float dt);
+void cCTFFriendsData_Think(cCTFFriendsData *self);
+cDeathMatch *cDeathMatch_ctor(cDeathMatch *self);
 void cDeathMatch_dtor(void);
-void __fastcall cDeathMatch_Init(cDeathMatch *self);
-void __thiscall cDeathMatch_Update(cDeathMatch *self, float dt);
-void __fastcall cDeathMatch_Think(cDeathMatch *self);
+void cDeathMatch_Init(cDeathMatch *self);
+void cDeathMatch_Update(cDeathMatch *self, float dt);
+void cDeathMatch_Think(cDeathMatch *self);
 
 /* Domination.cpp: the zones of SLogic.SetDominationZones and the baton */
 #define MAX_DOMIN_ZONES 4
@@ -493,11 +493,11 @@ typedef struct DominZone {
 #define g_MinDominDistChase GAME_GLOBAL_IN(float, GVar_MinDominDistChase, 16)
 
 typedef struct cDominationLogicVtbl {
-	cDominationLogic *(__thiscall *Delete)(cDominationLogic *self, byte flags);	/* 0x00 */
-	void(__thiscall *Init)(cDominationLogic *self);				/* 0x04 makes the list */
-	void(__thiscall *Update)(cDominationLogic *self, float dt);			/* 0x08 */
-	cEntityListData *(__thiscall *GetList)(cDominationLogic *self);		/* 0x0c the list of the side */
-	int(__thiscall *GetTeam)(cDominationLogic *self);				/* 0x10 0 enemies, 1 friends */
+	cDominationLogic *(*Delete)(cDominationLogic *self, byte flags);	/* 0x00 */
+	void(*Init)(cDominationLogic *self);				/* 0x04 makes the list */
+	void(*Update)(cDominationLogic *self, float dt);			/* 0x08 */
+	cEntityListData *(*GetList)(cDominationLogic *self);		/* 0x0c the list of the side */
+	int(*GetTeam)(cDominationLogic *self);				/* 0x10 0 enemies, 1 friends */
 } cDominationLogicVtbl;
 
 /* the data of a side: the enemies (0x10 bytes) keep the zone of their leader, the friends (0xc) only the timer */
@@ -527,41 +527,41 @@ SD_SIZE(cDominationFriendsSide, 0xc);
 void Domination_AddZone(cEntity *zone);
 void Domination_SetZoneState(int zone, int state);
 void Domination_SetBatonState(const vec3_t *pos, int state);
-cEntity *__thiscall cDominationLogic_GetZone(cDominationLogic *self, cAIVehicle *ai);
-cEntity *__thiscall cDominationLogic_FindEnemy(cDominationLogic *self, const vec3_t *pos, cEntity *other,
+cEntity *cDominationLogic_GetZone(cDominationLogic *self, cAIVehicle *ai);
+cEntity *cDominationLogic_FindEnemy(cDominationLogic *self, const vec3_t *pos, cEntity *other,
 	float maxDist);
-void __thiscall cDominationLogic_UpdateShip(cDominationLogic *self, cEntity *v, cEntity *target, cEntity *baton);
-int __thiscall cDominationLogic_NearestZone(cDominationLogic *self, const vec3_t *pos);
+void cDominationLogic_UpdateShip(cDominationLogic *self, cEntity *v, cEntity *target, cEntity *baton);
+int cDominationLogic_NearestZone(cDominationLogic *self, const vec3_t *pos);
 void cDominationLogic_ctor(cDominationLogic *self);
-cDominationEnemiesLogic *__fastcall cDominationEnemiesLogic_ctor(cDominationEnemiesLogic *self);
-void __fastcall cDominationEnemiesLogic_dtor(cDominationEnemiesLogic *self);
-void __fastcall cDominationLogic_dtor(cDominationLogic *self);
+cDominationEnemiesLogic *cDominationEnemiesLogic_ctor(cDominationEnemiesLogic *self);
+void cDominationEnemiesLogic_dtor(cDominationEnemiesLogic *self);
+void cDominationLogic_dtor(cDominationLogic *self);
 /* DominationEnemies.cpp and DominationFriends.cpp */
-cEntity *__thiscall cDominationEnemiesLogic_GetLeader(cDominationEnemiesLogic *self);
-void __fastcall cDominationSide_Think(cDominationSide *self);
-void __fastcall cDominationFriendsSide_Think(cDominationFriendsSide *self);
+cEntity *cDominationEnemiesLogic_GetLeader(cDominationEnemiesLogic *self);
+void cDominationSide_Think(cDominationSide *self);
+void cDominationFriendsSide_Think(cDominationFriendsSide *self);
 /* the zone of the ship of that name taken from the table (a zone on the way of the side is free again) */
-cEntity *__thiscall cDominationEnemiesLogic_ReleaseZone(cDominationLogic *self, const char *name);
-cEntity *__thiscall cDominationFriendsLogic_ReleaseZone(cDominationLogic *self, const char *name);
+cEntity *cDominationEnemiesLogic_ReleaseZone(cDominationLogic *self, const char *name);
+cEntity *cDominationFriendsLogic_ReleaseZone(cDominationLogic *self, const char *name);
 cEntity *Domination_ReleaseZone(cDominationLogic *self, const char *name, int going, int held);
 void Domination_OnDeath(cAbstractFile *params, cDominationLogic *side,
-	cEntity *(__thiscall *release)(cDominationLogic *, const char *), cPy_Function *cb);
+	cEntity *(*release)(cDominationLogic *, const char *), cPy_Function *cb);
 /* the ship of the side that goes to zone, NULL for none */
-cEntity *__thiscall cDominationFriendsLogic_FindShipOfZone(cDominationFriendsLogic *self, cEntity *zone);
+cEntity *cDominationFriendsLogic_FindShipOfZone(cDominationFriendsLogic *self, cEntity *zone);
 
 /* ---- the ships of the outdoor missions (of cLogicControl) ---- */
 /* the empty destructors of the mode objects and the empty natives of their lists */
-void __fastcall Logic_NopDtor(void *self);
+void Logic_NopDtor(void *self);
 void Logic_NativeNop(cAbstractFile *params);
 /* a random car of the list, NULL for none */
 cEntity *Logic_RandomCar(cEntityListData *list);
 
 #define CENEMIESLOCALLOGIC_VFTABLE GAME_VFTABLE(cEnemiesLocalLogic_vftable)
 
-cEnemies *__fastcall cEnemies_ctor(cEnemies *self);
-void __thiscall cEnemies_Attack(cEnemies *self, cEntity *usr);
-void __fastcall cEnemies_Think(cEnemies *self);
-void __fastcall cEnemies_Relax(cEnemies *self);
+cEnemies *cEnemies_ctor(cEnemies *self);
+void cEnemies_Attack(cEnemies *self, cEntity *usr);
+void cEnemies_Think(cEnemies *self);
+void cEnemies_Relax(cEnemies *self);
 
 #define g_ExtPoliceChasing GAME_GLOBAL_IN(int, GVar_DoResetOutPolice, 16)		/* the cars were sent after the player */
 #define g_PoliceWaveEliminated (GAME_ARRAY_IN(cPy_Function, GVar_PoliceWaveEliminated, 16))	/* no police car left */
@@ -571,16 +571,16 @@ void __fastcall cEnemies_Relax(cEnemies *self);
 void PoliceAI_RestoreParams(cAIVehicle *ai);
 void PoliceAI_RandomParams(cAIVehicle *ai);
 
-cExtPolice *__fastcall cExtPolice_ctor(cExtPolice *self);
+cExtPolice *cExtPolice_ctor(cExtPolice *self);
 cEntity *ExtPolice_CallCop(cEntity *e);
 void ExtPolice_CopDamage(const char *name, const char *attacker, byte died);
-void __fastcall cExtPolice_Think(cExtPolice *self);
+void cExtPolice_Think(cExtPolice *self);
 byte ExtPolice_IsChased(cEntity *e);
 
 
-cFriends *__fastcall cFriends_ctor(cFriends *self);
-void __thiscall cFriends_Attack(cFriends *self, cEntity *usr);
-void __fastcall cFriends_Think(cFriends *self);
+cFriends *cFriends_ctor(cFriends *self);
+void cFriends_Attack(cFriends *self, cEntity *usr);
+void cFriends_Think(cFriends *self);
 
 /* the logic of a gatekeeper (0x4c bytes): states 0 relaxed, 1 hidden in its shell */
 typedef struct cGateKeeperLocalLogic {
@@ -595,9 +595,9 @@ SD_SIZE(cGateKeeperLocalLogic, 0x4c);
 #define g_GateKeeperHiddenTime GAME_GLOBAL_IN(float, GVar_GateKeeperHiddenTime, 16)
 
 /* the slot of the logics with one argument that returns 1 */
-byte __thiscall Logic_True1(void *self, int arg);
-cGateKeeperLocalLogic *__thiscall cGateKeeperLocalLogic_ctor(cGateKeeperLocalLogic *self, cEntity *parent);
-byte __thiscall cGateKeeperLocalLogic_SetState(cGateKeeperLocalLogic *self, int state, cEntity *target);
+byte Logic_True1(void *self, int arg);
+cGateKeeperLocalLogic *cGateKeeperLocalLogic_ctor(cGateKeeperLocalLogic *self, cEntity *parent);
+byte cGateKeeperLocalLogic_SetState(cGateKeeperLocalLogic *self, int state, cEntity *target);
 
 /* GearLogic.cpp: the gears (0x5c bytes); states 0 relax (patrol), 1 chase (called), 2 attack, 3 stay in place,
  * 4 escort */
@@ -619,64 +619,64 @@ SD_SIZE(cGearLocalLogic, 0x5c);
 /* the view cone of the arrow of a character (its AI sees in it) */
 
 /* the AI control: level to at least level, the gear becomes a police */
-void __thiscall AICtrl_RaiseLevel(void *aiCtrl, int level);
-byte __thiscall AICtrl_GearToPolice(void *aiCtrl, cEntity *gear);
+void AICtrl_RaiseLevel(void *aiCtrl, int level);
+byte AICtrl_GearToPolice(void *aiCtrl, cEntity *gear);
 
-byte __thiscall cGearLocalLogic_SetState(cGearLocalLogic *self, int state, cEntity *target);
+byte cGearLocalLogic_SetState(cGearLocalLogic *self, int state, cEntity *target);
 
 
-cGenCharGroup *__fastcall cGenCharGroup_ctor(cGenCharGroup *self);
-void __fastcall cGenCharGroup_dtor(cGenCharGroup *self);
-void __fastcall cGenCharGroup_Init(cGenCharGroup *self);
-void __thiscall cGenCharGroup_Update(cGenCharGroup *self, float dt);
-int __fastcall cGenCharGroup_GetLevel(cGenCharGroup *self);
-void __thiscall cGenCharGroup_RaiseLevel(cGenCharGroup *self, int level);
-byte __fastcall cGenCharGroup_TakeAttack(cGenCharGroup *self);
+cGenCharGroup *cGenCharGroup_ctor(cGenCharGroup *self);
+void cGenCharGroup_dtor(cGenCharGroup *self);
+void cGenCharGroup_Init(cGenCharGroup *self);
+void cGenCharGroup_Update(cGenCharGroup *self, float dt);
+int cGenCharGroup_GetLevel(cGenCharGroup *self);
+void cGenCharGroup_RaiseLevel(cGenCharGroup *self, int level);
+byte cGenCharGroup_TakeAttack(cGenCharGroup *self);
 /* the maker of the logics of the GenChar lists (cEntityListData.func, rva 0x14b860) */
 #define GENCHARGROUP_MAKELOGIC 0x14b860
 
 /* the Init and Update of the mode objects of part 2 */
-void __fastcall cExtPolice_Init(cExtPolice *self);
-void __thiscall cExtPolice_Update(cExtPolice *self, float dt);
-void __fastcall cEnemies_Init(cEnemies *self);
-void __thiscall cEnemies_Update(cEnemies *self, float dt);
-void __fastcall cFriends_Init(cFriends *self);
-void __thiscall cFriends_Update(cFriends *self, float dt);
-cGateKeepers *__fastcall cGateKeepers_ctor(cGateKeepers *self);
-void __fastcall cGateKeepers_Init(cGateKeepers *self);
-void __thiscall cGateKeepers_Update(cGateKeepers *self, float dt);
-cDominationFriendsLogic *__fastcall cDominationFriendsLogic_ctor(cDominationFriendsLogic *self);
-void __fastcall cDominationFriendsLogic_dtor(cDominationFriendsLogic *self);
+void cExtPolice_Init(cExtPolice *self);
+void cExtPolice_Update(cExtPolice *self, float dt);
+void cEnemies_Init(cEnemies *self);
+void cEnemies_Update(cEnemies *self, float dt);
+void cFriends_Init(cFriends *self);
+void cFriends_Update(cFriends *self, float dt);
+cGateKeepers *cGateKeepers_ctor(cGateKeepers *self);
+void cGateKeepers_Init(cGateKeepers *self);
+void cGateKeepers_Update(cGateKeepers *self, float dt);
+cDominationFriendsLogic *cDominationFriendsLogic_ctor(cDominationFriendsLogic *self);
+void cDominationFriendsLogic_dtor(cDominationFriendsLogic *self);
 
 /* MessengerLogic.cpp */
-void *__thiscall cMessengers_ctor(void *self);
-void __fastcall cMessengers_dtor(void *self);
-void __fastcall cMessengers_Init(void *self);
-void __fastcall cMessengers_Think(void *self);
+void *cMessengers_ctor(void *self);
+void cMessengers_dtor(void *self);
+void cMessengers_Init(void *self);
+void cMessengers_Think(void *self);
 /* the messenger m with the pack at the desk: 1 while the drop goes on */
 byte Messenger_Deliver(cEntity *m, cEntity *desk, cEntity *pack);
 
 /* the constructors of the logics of the other types (later sources of Logic/, imports) */
-void *__thiscall cLittlePoliceLocalLogic_ctor(void *self, cEntity *parent);
-void *__thiscall cMayorLocalLogic_ctor(void *self, cEntity *parent);
-void *__thiscall cRustyLocalLogic_ctor(void *self, cEntity *parent);
-cSputnikJunkyardLocalLogic *__thiscall cSputnikJunkyardLocalLogic_ctor(cSputnikJunkyardLocalLogic *self,
+void *cLittlePoliceLocalLogic_ctor(void *self, cEntity *parent);
+void *cMayorLocalLogic_ctor(void *self, cEntity *parent);
+void *cRustyLocalLogic_ctor(void *self, cEntity *parent);
+cSputnikJunkyardLocalLogic *cSputnikJunkyardLocalLogic_ctor(cSputnikJunkyardLocalLogic *self,
 	cEntity *parent);
-void *__thiscall cMaintenanceLocalLogic_ctor(void *self, cEntity *parent);
-cPoliceBossLocalLogic *__thiscall cPoliceBossLocalLogic_ctor(cPoliceBossLocalLogic *self, cEntity *parent);
-cMessengerLocalLogic *__thiscall cMessengerLocalLogic_ctor(cMessengerLocalLogic *self, cEntity *parent);
-cMercenaryLocalLogic *__thiscall cMercenaryLocalLogic_ctor(cMercenaryLocalLogic *self, cEntity *parent);
-cHumphreyLocalLogic *__thiscall cHumphreyLocalLogic_ctor(cHumphreyLocalLogic *self, cEntity *parent);
-void *__thiscall cHumanLocalLogic_ctor(void *self, cEntity *parent);
+void *cMaintenanceLocalLogic_ctor(void *self, cEntity *parent);
+cPoliceBossLocalLogic *cPoliceBossLocalLogic_ctor(cPoliceBossLocalLogic *self, cEntity *parent);
+cMessengerLocalLogic *cMessengerLocalLogic_ctor(cMessengerLocalLogic *self, cEntity *parent);
+cMercenaryLocalLogic *cMercenaryLocalLogic_ctor(cMercenaryLocalLogic *self, cEntity *parent);
+cHumphreyLocalLogic *cHumphreyLocalLogic_ctor(cHumphreyLocalLogic *self, cEntity *parent);
+void *cHumanLocalLogic_ctor(void *self, cEntity *parent);
 /* the logics of part 1 */
-cBankDirectorLocalLogic *__thiscall cBankDirectorLocalLogic_ctor(cBankDirectorLocalLogic *self, cEntity *parent);
-cBankMasterLocalLogic *__thiscall cBankMasterLocalLogic_ctor(cBankMasterLocalLogic *self, cEntity *parent);
-cDesktopLocalLogic *__thiscall cDesktopLocalLogic_ctor(cDesktopLocalLogic *self, cEntity *parent);
-cBertoLocalLogic *__thiscall cBertoLocalLogic_ctor(cBertoLocalLogic *self, cEntity *parent);
-cBettyLocalLogic *__thiscall cBettyLocalLogic_ctor(cBettyLocalLogic *self, cEntity *parent);
-cBishopLocalLogic *__thiscall cBishopLocalLogic_ctor(cBishopLocalLogic *self, cEntity *parent);
-cCrazyDealerLocalLogic *__thiscall cCrazyDealerLocalLogic_ctor(cCrazyDealerLocalLogic *self, cEntity *parent);
-cBossLocalLogic *__thiscall cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity *parent);
+cBankDirectorLocalLogic *cBankDirectorLocalLogic_ctor(cBankDirectorLocalLogic *self, cEntity *parent);
+cBankMasterLocalLogic *cBankMasterLocalLogic_ctor(cBankMasterLocalLogic *self, cEntity *parent);
+cDesktopLocalLogic *cDesktopLocalLogic_ctor(cDesktopLocalLogic *self, cEntity *parent);
+cBertoLocalLogic *cBertoLocalLogic_ctor(cBertoLocalLogic *self, cEntity *parent);
+cBettyLocalLogic *cBettyLocalLogic_ctor(cBettyLocalLogic *self, cEntity *parent);
+cBishopLocalLogic *cBishopLocalLogic_ctor(cBishopLocalLogic *self, cEntity *parent);
+cCrazyDealerLocalLogic *cCrazyDealerLocalLogic_ctor(cCrazyDealerLocalLogic *self, cEntity *parent);
+cBossLocalLogic *cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity *parent);
 
 /* GenCharLogic.cpp: the states (GENCHAR_ of the CHECK of DefaultState); 7 and 8 are of the police */
 #define GENCHAR_RELAX 0
@@ -702,19 +702,19 @@ cBossLocalLogic *__thiscall cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity 
 #define g_GenCharEscapeSpeed GAME_GLOBAL_IN(float, GVar_GenCharEscapeSpeed, 16)
 /* the type of the player draws the attention of a generic character */
 byte Logic_IsSuspectType(const char *type);
-byte __thiscall cGenCharLocalLogic_RestartState(cGenCharLocalLogic *self);
-void __thiscall cGenCharLocalLogic_OnHit(cGenCharLocalLogic *self, cEntity *attacker);
-void __thiscall cGenCharLocalLogic_GoTo(cGenCharLocalLogic *self, cAIChar *ai, cEntity *e);
-byte __thiscall cGenCharLocalLogic_CanAttack(cGenCharLocalLogic *self, cEntity *e);
+byte cGenCharLocalLogic_RestartState(cGenCharLocalLogic *self);
+void cGenCharLocalLogic_OnHit(cGenCharLocalLogic *self, cEntity *attacker);
+void cGenCharLocalLogic_GoTo(cGenCharLocalLogic *self, cAIChar *ai, cEntity *e);
+byte cGenCharLocalLogic_CanAttack(cGenCharLocalLogic *self, cEntity *e);
 /* the special action over, the next target search in a random time */
-void __fastcall cGenCharLocalLogic_ResetSpecial(cGenCharLocalLogic *self);
+void cGenCharLocalLogic_ResetSpecial(cGenCharLocalLogic *self);
 /* the action Discover of a character that stands */
-void __fastcall cGenCharLocalLogic_Discover(cGenCharLocalLogic *self);
+void cGenCharLocalLogic_Discover(cGenCharLocalLogic *self);
 /* SetState(2, e): the vf29 of the GenChars and the vf16 of the nurses */
-void __thiscall Logic_SetState2(cBaseLocalLogic *self, cEntity *e);
+void Logic_SetState2(cBaseLocalLogic *self, cEntity *e);
 /* the empty slots with two arguments */
-void __thiscall Logic_Nop2(void *self, int a, int b);
-byte __thiscall Logic_True2(void *self, int a, int b);
+void Logic_Nop2(void *self, int a, int b);
+byte Logic_True2(void *self, int a, int b);
 
 /* HumanLogic.cpp, 0x5c bytes: the characters near the human flee from it */
 typedef struct cHumanLocalLogic {
@@ -740,8 +740,8 @@ SD_SIZE(cInfItemNode, 0x10);
 
 #define CINFITEM_VFTABLE GAME_VFTABLE(cInfItem_vftable)
 
-cInfItem *__fastcall cInfItem_ctor(cInfItem *self);
-void __fastcall cInfItem_dtor(cInfItem *self);
+cInfItem *cInfItem_ctor(cInfItem *self);
+void cInfItem_dtor(cInfItem *self);
 
 #define g_CreatePolice (GAME_ARRAY_IN(cPy_Function, GVar_CreatePolice, 16))	/* (name, x, y, z) */
 #define g_CreateGear (GAME_ARRAY_IN(cPy_Function, GVar_CreateGear, 16))	/* (name, x, y, z) */
@@ -749,18 +749,18 @@ void __fastcall cInfItem_dtor(cInfItem *self);
 #define g_SentinelNextGotoTime GAME_GLOBAL_IN(float, GVar_SentinelNextGotoTime, 16)
 #define g_SentinelAbortyNPCAttDist GAME_GLOBAL_IN(float, GVar_SentinelAbortyNPCAttDist, 16)
 
-void *__fastcall AICtrl_ctor(void *aiCtrl);
-void __fastcall AICtrl_dtor(void *aiCtrl);
-void __fastcall AICtrl_Init(void *aiCtrl);
-void __thiscall AICtrl_Update(void *aiCtrl, float dt);
+void *AICtrl_ctor(void *aiCtrl);
+void AICtrl_dtor(void *aiCtrl);
+void AICtrl_Init(void *aiCtrl);
+void AICtrl_Update(void *aiCtrl, float dt);
 /* the police e may become a gear (the gear "Gear" + the name after "Police" does not exist) */
-byte __thiscall AICtrl_CanFuse(void *aiCtrl, cEntity *e);
+byte AICtrl_CanFuse(void *aiCtrl, cEntity *e);
 /* the police becomes a gear (into *gear, may be NULL); 0 if it may not */
-byte __thiscall AICtrl_Fuse(void *aiCtrl, cEntity *police, cEntity **gear);
+byte AICtrl_Fuse(void *aiCtrl, cEntity *police, cEntity **gear);
 /* the sentinel nearest to e goes for it (state 6), only before the alarm */
-void __thiscall AICtrl_SendSentinelToNPC(void *aiCtrl, cEntity *e);
+void AICtrl_SendSentinelToNPC(void *aiCtrl, cEntity *e);
 /* the gears that chase the player go for e, without one the gear attack on e */
-void __thiscall AICtrl_GearsChase(void *aiCtrl, cEntity *e);
+void AICtrl_GearsChase(void *aiCtrl, cEntity *e);
 
 /* the sentinels (SentinelLogic.cpp, the source after this part, imports) */
 /* the logic of a sentinel, 0x50 bytes */
@@ -772,27 +772,27 @@ typedef struct cSentinelLocalLogic {
 } cSentinelLocalLogic;
 SD_SIZE(cSentinelLocalLogic, 0x50);
 
-void *__thiscall cSentinelLocalLogic_ctor(void *self, cEntity *parent);
+void *cSentinelLocalLogic_ctor(void *self, cEntity *parent);
 /* to the place pos to watch it */
-void __thiscall cSentinelLocalLogic_Watch(void *self, const vec3_t *pos);
+void cSentinelLocalLogic_Watch(void *self, const vec3_t *pos);
 /* back to state 0 (1 with the alarm), unless idle */
-void __fastcall cSentinelLocalLogic_Return(void *self);
-cSentinelLocalLogic *__thiscall cSentinelLocalLogic_Delete(cSentinelLocalLogic *self, byte flags);
-void __thiscall cSentinelLocalLogic_OnAlarm(cSentinelLocalLogic *self, cEntity *e);
-byte __thiscall cSentinelLocalLogic_Seen(cSentinelLocalLogic *self);
-void __thiscall cSentinelLocalLogic_Think(cSentinelLocalLogic *self, float dt, byte quiet);
-void __thiscall cSentinelLocalLogic_OnRobbery(cSentinelLocalLogic *self, cEntity *e, float amount);
-void __thiscall cSentinelLocalLogic_OnAttack(cSentinelLocalLogic *self, cEntity *e);
-void __thiscall cSentinelLocalLogic_OnUsr(cSentinelLocalLogic *self, cEntity *e);
-byte __thiscall cSentinelLocalLogic_GivesMoney(cSentinelLocalLogic *self, cEntity *e);
-void __thiscall cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *p, float dt);
-byte __thiscall cSentinelLocalLogic_RestartState(cSentinelLocalLogic *self);
-byte __thiscall cSentinelLocalLogic_SetState(cSentinelLocalLogic *self, int state, cEntity *target);
+void cSentinelLocalLogic_Return(void *self);
+cSentinelLocalLogic *cSentinelLocalLogic_Delete(cSentinelLocalLogic *self, byte flags);
+void cSentinelLocalLogic_OnAlarm(cSentinelLocalLogic *self, cEntity *e);
+byte cSentinelLocalLogic_Seen(cSentinelLocalLogic *self);
+void cSentinelLocalLogic_Think(cSentinelLocalLogic *self, float dt, byte quiet);
+void cSentinelLocalLogic_OnRobbery(cSentinelLocalLogic *self, cEntity *e, float amount);
+void cSentinelLocalLogic_OnAttack(cSentinelLocalLogic *self, cEntity *e);
+void cSentinelLocalLogic_OnUsr(cSentinelLocalLogic *self, cEntity *e);
+byte cSentinelLocalLogic_GivesMoney(cSentinelLocalLogic *self, cEntity *e);
+void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *p, float dt);
+byte cSentinelLocalLogic_RestartState(cSentinelLocalLogic *self);
+byte cSentinelLocalLogic_SetState(cSentinelLocalLogic *self, int state, cEntity *target);
 /* the voice event of the character of that name (Sound/, rva 0x1a1090) */
 byte Sound_PlayVoice(const char *name, const char *event, int arg, int force);
 /* GearLogic.cpp */
-cGearLocalLogic *__thiscall cGearLocalLogic_ctor(cGearLocalLogic *self, cEntity *parent);
-byte __thiscall cGearLocalLogic_Call(cGearLocalLogic *self, cEntity *e);
+cGearLocalLogic *cGearLocalLogic_ctor(cGearLocalLogic *self, cEntity *parent);
+byte cGearLocalLogic_Call(cGearLocalLogic *self, cEntity *e);
 
 /* LittlePoliceLogic.cpp, 0x78 bytes: the police of the indoor maps (the type "Police") */
 typedef struct cLittlePoliceLocalLogic {
@@ -849,9 +849,9 @@ typedef struct cShipGroupData {
 } cShipGroupData;
 SD_SIZE(cShipGroupData, 0x2c);
 
-cShipGroupData *__thiscall cShipGroupData_ctor(cShipGroupData *self, const char *list);
-void __thiscall cShipGroupData_SetLair(cShipGroupData *self, const char *name, const vec3_t *pos);
-void __fastcall cShipGroupData_Think(cShipGroupData *self);
+cShipGroupData *cShipGroupData_ctor(cShipGroupData *self, const char *list);
+void cShipGroupData_SetLair(cShipGroupData *self, const char *name, const vec3_t *pos);
+void cShipGroupData_Think(cShipGroupData *self);
 
 #define CLOGICCONTROL_VFTABLE GAME_VFTABLE(cLogicControl_vftable)
 #define g_RemainTalkTime GAME_GLOBAL_IN(float, GVar_RemainTalkTime, 16)
@@ -915,9 +915,9 @@ SD_SIZE(cMessengers, 0x14);
 #define g_MessengerGotoSpeed GAME_GLOBAL_IN(float, GVar_MessengerGotoSpeed, 16)
 
 /* a random desk of the type of the tube state; count grows to the desks seen */
-cEntity *__fastcall cMessengers_FindDesk(cMessengers *self);
+cEntity *cMessengers_FindDesk(cMessengers *self);
 /* the state of every messenger but e (and not on the radar), -1: back to its default state */
-void __thiscall cMessengers_SetStateAll(cMessengers *self, int state, cEntity *e);
+void cMessengers_SetStateAll(cMessengers *self, int state, cEntity *e);
 
 /* StrMoney.c (g_pWorld + 0x2078): the money of the world (cWorld.money) as digits, one changes per update */
 typedef struct cStrMoney {
@@ -930,7 +930,7 @@ typedef struct cStrMoney {
 } cStrMoney;
 SD_OFFSET(cStrMoney, money, 0x18);
 /* the digits from the first one not "0", "0" for none */
-const char *__fastcall cStrMoney_GetStr(cStrMoney *self);
+const char *cStrMoney_GetStr(cStrMoney *self);
 
 #define g_OnMoneyReachCallback (GAME_ARRAY_IN(cPy_Function, GVar_OnMoneyReachCallback, 16))
 #define g_OnMoneyReachValue GAME_GLOBAL_IN(int, GVar_OnMoneyReachValue, 16)
@@ -948,12 +948,12 @@ SD_SIZE(cNurseLocalLogic, 0x4c);
 #define g_NursePoliceRefuse GAME_GLOBAL_IN(float, GVar_NursePoliceRefuse, 16)
 #define g_NurseEscapeTime GAME_GLOBAL_IN(float, GVar_NurseEscapeTime, 16)
 
-void *__fastcall cNurses_ctor(cNurses *self);
-void __fastcall cNurses_Init(cNurses *self);
-void __thiscall cNurses_Update(cNurses *self, float dt);
-void *__thiscall cNurseLocalLogic_ctor(void *self, cEntity *parent);
+void *cNurses_ctor(cNurses *self);
+void cNurses_Init(cNurses *self);
+void cNurses_Update(cNurses *self, float dt);
+void *cNurseLocalLogic_ctor(void *self, cEntity *parent);
 /* the state of the nurse with its AI */
-byte __thiscall cNurseLocalLogic_SetState(cNurseLocalLogic *self, int state, cEntity *target);
+byte cNurseLocalLogic_SetState(cNurseLocalLogic *self, int state, cEntity *target);
 #define g_NurseRelaxSpeed GAME_GLOBAL_IN(float, GVar_NurseRelaxSpeed, 16)
 #define g_NurseAlertSpeed GAME_GLOBAL_IN(float, GVar_NurseAlertSpeed, 16)
 
@@ -972,46 +972,46 @@ int Taunts_PoliceKind(cEntity *ship);
 void Taunts_Ship(cEntity *ship, int kind);
 /* the ship that attacks usr in its car taunts it */
 void Taunts_Attacker(cEntity *usr, cEntity *ship);
-cParking *__fastcall Parking_ctor(cParking *self);
-cParkingNode *__fastcall Parking_NewNode(cParkingList *list);
-void __fastcall Parking_ClearList(cParkingList *list);
-void __fastcall Parking_FreePool(cParkingList *list);
-void __fastcall cParkingZone_dtor(cParkingZone *self);
-void __thiscall Parking_ListAdd(cParkingList *list, const cParkingZone *zone);
+cParking *Parking_ctor(cParking *self);
+cParkingNode *Parking_NewNode(cParkingList *list);
+void Parking_ClearList(cParkingList *list);
+void Parking_FreePool(cParkingList *list);
+void cParkingZone_dtor(cParkingZone *self);
+void Parking_ListAdd(cParkingList *list, const cParkingZone *zone);
 /* one zone of each ring checked; 1 when the player is not in a ship */
-int __fastcall Parking_Think(cParking *self);
+int Parking_Think(cParking *self);
 /* the comparisons of Parking_Find (farest: d > best, else d <= best) */
 byte Parking_Farther(float d, float best);
 byte Parking_Nearer(float d, float best);
 void Parking_Native(cAbstractFile *params);
-void __fastcall Parking_dtor(cParking *self);
-void __thiscall Parking_Update(cParking *self, float dt);
-cShipRegen *__fastcall ShipRegen_ctor(cShipRegen *self);
-void __fastcall ShipRegen_dtor(cShipRegen *self);
-void __thiscall ShipRegen_Update(cShipRegen *self, float dt);
+void Parking_dtor(cParking *self);
+void Parking_Update(cParking *self, float dt);
+cShipRegen *ShipRegen_ctor(cShipRegen *self);
+void ShipRegen_dtor(cShipRegen *self);
+void ShipRegen_Update(cShipRegen *self, float dt);
 /* the points of the ship of SetShipToRegenerate (LifeReachedCallback at LifeToLaunchCallback) and its bar */
-void __thiscall ShipRegen_UpdateShip(cShipRegen *self, float dt);
+void ShipRegen_UpdateShip(cShipRegen *self, float dt);
 /* the group of the ships of the list of that name ("Mosquitos", "MadHunters") */
-cShipGroup *__thiscall cShipGroup_ctor(cShipGroup *self, const char *list);
-void __fastcall cShipGroup_dtor(cShipGroup *self);
-void __fastcall cShipGroup_Init(cShipGroup *self);
-void __thiscall cShipGroup_Update(cShipGroup *self, float dt);
-void __thiscall cShipGroup_SetLair(cShipGroup *self, const char *name, const vec3_t *pos);
-byte __thiscall cShipGroup_DeleteLair(cShipGroup *self, const char *name);
-void __thiscall cShipGroup_GetLair(cShipGroup *self, const char *name, vec3_t *out);
-cScrapyardLocalLogic *__thiscall cScrapyardLocalLogic_Delete(cScrapyardLocalLogic *self, byte flags);
-byte __thiscall cScrapyardLocalLogic_VarV(cScrapyardLocalLogic *self, const char *name, double *x, double *y, double *z,
+cShipGroup *cShipGroup_ctor(cShipGroup *self, const char *list);
+void cShipGroup_dtor(cShipGroup *self);
+void cShipGroup_Init(cShipGroup *self);
+void cShipGroup_Update(cShipGroup *self, float dt);
+void cShipGroup_SetLair(cShipGroup *self, const char *name, const vec3_t *pos);
+byte cShipGroup_DeleteLair(cShipGroup *self, const char *name);
+void cShipGroup_GetLair(cShipGroup *self, const char *name, vec3_t *out);
+cScrapyardLocalLogic *cScrapyardLocalLogic_Delete(cScrapyardLocalLogic *self, byte flags);
+byte cScrapyardLocalLogic_VarV(cScrapyardLocalLogic *self, const char *name, double *x, double *y, double *z,
 	byte set);
 cLocalLogic *ShipGroup_MakeLogic(cEntity *e);
 byte ShipGroup_OnAIEnd(cAIVehicle *ai);
 void ShipGroup_SphereNative(cAbstractFile *params);
 void ShipGroup_DeathNative(cAbstractFile *params);
-cEnemiesTraffic *__fastcall cEnemiesTraffic_ctor(cEnemiesTraffic *self);
-void __fastcall cEnemiesTraffic_dtor(cEnemiesTraffic *self);
-void __fastcall cEnemiesTraffic_Init(cEnemiesTraffic *self);
-void __thiscall cEnemiesTraffic_Update(cEnemiesTraffic *self, float dt);
-void __fastcall cEnemiesTraffic_Think(cEnemiesTraffic *self);
-void __fastcall cEnemiesTraffic_RemoveFarthest(cEnemiesTraffic *self);
+cEnemiesTraffic *cEnemiesTraffic_ctor(cEnemiesTraffic *self);
+void cEnemiesTraffic_dtor(cEnemiesTraffic *self);
+void cEnemiesTraffic_Init(cEnemiesTraffic *self);
+void cEnemiesTraffic_Update(cEnemiesTraffic *self, float dt);
+void cEnemiesTraffic_Think(cEnemiesTraffic *self);
+void cEnemiesTraffic_RemoveFarthest(cEnemiesTraffic *self);
 byte Traffic_FightChance(cEntity *a, cEntity *b);
 cEntity *Traffic_FindOther(cEntity *e);
 byte Traffic_OnAIEnd(cAIVehicle *ai);
@@ -1026,26 +1026,26 @@ typedef struct cRustyLocalLogic {
 } cRustyLocalLogic;
 SD_SIZE(cRustyLocalLogic, 0x84);
 
-cRustyLocalLogic *__thiscall cRustyLocalLogic_Delete(cRustyLocalLogic *self, byte flags);
+cRustyLocalLogic *cRustyLocalLogic_Delete(cRustyLocalLogic *self, byte flags);
 void Rusty_LoopDone(cAbstractFile *params);
-byte __thiscall cRustyLocalLogic_VarI(cRustyLocalLogic *self, const char *name, int *i, byte set);
-byte __thiscall cRustyLocalLogic_VarS(cRustyLocalLogic *self, const char *name, char **s, byte set);
-void __thiscall cRustyLocalLogic_Update(cRustyLocalLogic *self, float dt);
-void __fastcall cRustyLocalLogic_NextJunk(cRustyLocalLogic *self);
-byte __thiscall cRustyLocalLogic_SetState(cRustyLocalLogic *self, int state, cEntity *target);
+byte cRustyLocalLogic_VarI(cRustyLocalLogic *self, const char *name, int *i, byte set);
+byte cRustyLocalLogic_VarS(cRustyLocalLogic *self, const char *name, char **s, byte set);
+void cRustyLocalLogic_Update(cRustyLocalLogic *self, float dt);
+void cRustyLocalLogic_NextJunk(cRustyLocalLogic *self);
+byte cRustyLocalLogic_SetState(cRustyLocalLogic *self, int state, cEntity *target);
 
 /* SputnikJunkyardLogic.cpp: a cGenCharLocalLogic, states 7 the walk, 8 the laugh in front of the camera */
-cSputnikJunkyardLocalLogic *__thiscall cSputnikJunkyardLocalLogic_Delete(cSputnikJunkyardLocalLogic *self, byte flags);
+cSputnikJunkyardLocalLogic *cSputnikJunkyardLocalLogic_Delete(cSputnikJunkyardLocalLogic *self, byte flags);
 void Sputnik_LaughDone(cAbstractFile *params);
-void __thiscall cSputnikJunkyardLocalLogic_Update(cSputnikJunkyardLocalLogic *self, float dt);
-byte __thiscall cSputnikJunkyardLocalLogic_SetState(cSputnikJunkyardLocalLogic *self, int state, cEntity *target);
+void cSputnikJunkyardLocalLogic_Update(cSputnikJunkyardLocalLogic *self, float dt);
+byte cSputnikJunkyardLocalLogic_SetState(cSputnikJunkyardLocalLogic *self, int state, cEntity *target);
 
 /* PoliceBossLogic.cpp: a cGenCharLocalLogic */
-cPoliceBossLocalLogic *__thiscall cPoliceBossLocalLogic_Delete(cPoliceBossLocalLogic *self, byte flags);
-cEntity *__thiscall cPoliceBossLocalLogic_FindTarget(cPoliceBossLocalLogic *self);
-void __thiscall cPoliceBossLocalLogic_ToAlert(cPoliceBossLocalLogic *self, cAIChar *ai);
-void __thiscall cPoliceBossLocalLogic_ToRelax(cPoliceBossLocalLogic *self, cAIChar *ai);
-void __thiscall cPoliceBossLocalLogic_Update(cPoliceBossLocalLogic *self, float dt);
+cPoliceBossLocalLogic *cPoliceBossLocalLogic_Delete(cPoliceBossLocalLogic *self, byte flags);
+cEntity *cPoliceBossLocalLogic_FindTarget(cPoliceBossLocalLogic *self);
+void cPoliceBossLocalLogic_ToAlert(cPoliceBossLocalLogic *self, cAIChar *ai);
+void cPoliceBossLocalLogic_ToRelax(cPoliceBossLocalLogic *self, cAIChar *ai);
+void cPoliceBossLocalLogic_Update(cPoliceBossLocalLogic *self, float dt);
 /* every TimeBetweeenTaunts (outdoor maps), dt is not used */
 void Taunts_Think(float dt);
 /* the phone cab warning with the alarm; 1 when the player is near one */

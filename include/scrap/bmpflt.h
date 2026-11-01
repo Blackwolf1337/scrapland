@@ -35,37 +35,37 @@ SD_SIZE(TXF_header, 0x20);
 
 /* 0, -1 with the error in the file log; flags are not used */
 int TXF_Load(const char *name, CBmpFlt *dest, int flags, void *extra, int nbytes);
-void __thiscall CBmpFlt_Fill(CBmpFlt *self, const float *color);
+void CBmpFlt_Fill(CBmpFlt *self, const float *color);
 /* only ".txf" files, else -1 */
-int __thiscall CBmpFlt_Save(CBmpFlt *self, const char *name, byte flags, const void *extra, int nbytes);
-int __thiscall CBmpFlt_Load(CBmpFlt *self, const char *name, int flags, void *extra, int nbytes);
+int CBmpFlt_Save(CBmpFlt *self, const char *name, byte flags, const void *extra, int nbytes);
+int CBmpFlt_Load(CBmpFlt *self, const char *name, int flags, void *extra, int nbytes);
 /* c = b * (1 - exp(-c * a / b)) on all channels */
-void __thiscall CBmpFlt_Exposure(CBmpFlt *self, float a, float b);
+void CBmpFlt_Exposure(CBmpFlt *self, float a, float b);
 /* new pixels, not cleared */
-void __thiscall CBmpFlt_Create(CBmpFlt *self, int width, int height);
+void CBmpFlt_Create(CBmpFlt *self, int width, int height);
 /* orig at (ox, oy) size w x h into (x, y), weights a and b in 1/256: c = orig * a + c * b */
-void __thiscall CBmpFlt_Blend(CBmpFlt *self, int x, int y, const CBmpFlt *orig, int ox, int oy, int w, int h, int a,
+void CBmpFlt_Blend(CBmpFlt *self, int x, int y, const CBmpFlt *orig, int ox, int oy, int w, int h, int a,
 	int b);
 /* orig scaled to the size of self by averaging boxes, only the channels in mask (1 r, 2 g, 4 b, 8 a) */
-void __thiscall CBmpFlt_Resample(CBmpFlt *self, const CBmpFlt *orig, uint32_t mask);
+void CBmpFlt_Resample(CBmpFlt *self, const CBmpFlt *orig, uint32_t mask);
 /* bmpflt.h: the pixel at x, y with CHECKs */
-float *__thiscall CBmpFlt_Pixel(const CBmpFlt *self, uint32_t x, uint32_t y);
+float *CBmpFlt_Pixel(const CBmpFlt *self, uint32_t x, uint32_t y);
 
 /* the same for RGB */
 int TXF2_Load(const char *name, CBmpFlt2 *dest, int flags, void *extra, int nbytes);
-void __thiscall CBmpFlt2_Fill(CBmpFlt2 *self, const float *color);
+void CBmpFlt2_Fill(CBmpFlt2 *self, const float *color);
 /* all channels times k, nothing for 1 */
-void __thiscall CBmpFlt2_Scale(CBmpFlt2 *self, float k);
-int __thiscall CBmpFlt2_Save(CBmpFlt2 *self, const char *name, byte flags, const void *extra, int nbytes);
-void __thiscall CBmpFlt2_Exposure(CBmpFlt2 *self, float a, float b);
+void CBmpFlt2_Scale(CBmpFlt2 *self, float k);
+int CBmpFlt2_Save(CBmpFlt2 *self, const char *name, byte flags, const void *extra, int nbytes);
+void CBmpFlt2_Exposure(CBmpFlt2 *self, float a, float b);
 /* c = b * pow(c / b, 1 / g) with negative channels as 0, nothing for g 1 */
-void __thiscall CBmpFlt2_Gamma(CBmpFlt2 *self, float g, float b);
-void __thiscall CBmpFlt2_Create(CBmpFlt2 *self, int width, int height);
-int __thiscall CBmpFlt2_Load(CBmpFlt2 *self, const char *name, int flags, void *extra, int nbytes);
-void __thiscall CBmpFlt2_Blend(CBmpFlt2 *self, int x, int y, const CBmpFlt2 *orig, int ox, int oy, int w, int h,
+void CBmpFlt2_Gamma(CBmpFlt2 *self, float g, float b);
+void CBmpFlt2_Create(CBmpFlt2 *self, int width, int height);
+int CBmpFlt2_Load(CBmpFlt2 *self, const char *name, int flags, void *extra, int nbytes);
+void CBmpFlt2_Blend(CBmpFlt2 *self, int x, int y, const CBmpFlt2 *orig, int ox, int oy, int w, int h,
 	int a, int b);
 /* only a copy of the same size with mask 0xf, anything else is a failed CHECK */
-void __thiscall CBmpFlt2_Resample(CBmpFlt2 *self, const CBmpFlt2 *orig, uint32_t mask);
-float *__thiscall CBmpFlt2_Pixel(const CBmpFlt2 *self, uint32_t x, uint32_t y);
+void CBmpFlt2_Resample(CBmpFlt2 *self, const CBmpFlt2 *orig, uint32_t mask);
+float *CBmpFlt2_Pixel(const CBmpFlt2 *self, uint32_t x, uint32_t y);
 
 #endif

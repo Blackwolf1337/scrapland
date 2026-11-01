@@ -25,7 +25,7 @@ static inline float Logic_X87Add(float a, float b) {
 	return (float)r;
 }
 
-void *__thiscall Logic_ctor(void *logic) {
+void *Logic_ctor(void *logic) {
 	cLogicControl *self = logic;
 
 	self->vftable = CLOGICCONTROL_VFTABLE;
@@ -57,7 +57,7 @@ void *__thiscall Logic_ctor(void *logic) {
 	return self;
 }
 
-void __thiscall Logic_dtor(void *logic) {
+void Logic_dtor(void *logic) {
 	cLogicControl *self = logic;
 
 	self->vftable = CLOGICCONTROL_VFTABLE;
@@ -81,7 +81,7 @@ void __thiscall Logic_dtor(void *logic) {
 	Parking_dtor(&self->parking);
 }
 
-cLogicControl *__thiscall Logic_Delete(cLogicControl *self, byte flags) {
+cLogicControl *Logic_Delete(cLogicControl *self, byte flags) {
 	Logic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -91,7 +91,7 @@ cLogicControl *__thiscall Logic_Delete(cLogicControl *self, byte flags) {
 
 /* every 0.5 s: the taunts (outdoor maps, TimeBetweeenTaunts), the warnings (the first at once, then after
  * TimeBetweeenWarnings); the talk ends when the player sits in a car */
-void __thiscall Logic_UpdateTaunts(cLogicControl *self, float dt) {
+void Logic_UpdateTaunts(cLogicControl *self, float dt) {
 	float t0 = dt + self->timer;
 	float t1 = dt + self->tauntTime;
 	float t2 = dt + self->warnTime;
@@ -132,7 +132,7 @@ byte Logic_SetOriginCallback(cEntity *e) {
 	return 0;
 }
 
-void __thiscall Logic_Reset(void *logic) {
+void Logic_Reset(void *logic) {
 	cLogicControl *self = logic;
 
 	cExtPolice_Init(&self->extPolice);
@@ -152,7 +152,7 @@ void __thiscall Logic_Reset(void *logic) {
 	cGateKeepers_Init(&self->gateKeepers);
 }
 
-void __thiscall Logic_Update(void *logic, float dt) {
+void Logic_Update(void *logic, float dt) {
 	cLogicControl *self = logic;
 	int level = -1;
 
@@ -186,7 +186,7 @@ void __thiscall Logic_Update(void *logic, float dt) {
 	Logic_UpdateTaunts(self, dt);
 }
 
-void __thiscall Taunts_UpdateEndTime(void *taunts) {
+void Taunts_UpdateEndTime(void *taunts) {
 	cLogicControl *self = taunts;
 
 	self->talkEnd = Logic_X87Add(Timer_GetTime(&g_pWorld->timer), g_RemainTalkTime);

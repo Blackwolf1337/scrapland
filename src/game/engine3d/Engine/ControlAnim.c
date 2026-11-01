@@ -10,7 +10,7 @@
 #define ANIMCTRL_DT_MAX 0.1f		/* the longest automatic time step */
 #define ANIMCTRL_FADE_MIN 0.2f
 
-CAnimCtrl *__fastcall CAnimCtrl_ctor(CAnimCtrl *self) {
+CAnimCtrl *CAnimCtrl_ctor(CAnimCtrl *self) {
 	self->move = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->ofs = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->vel = 25.0f;
@@ -34,21 +34,21 @@ CAnimCtrl *__fastcall CAnimCtrl_ctor(CAnimCtrl *self) {
 	return self;
 }
 
-void __thiscall CAnimCtrl_dtor(CAnimCtrl *self) {
+void CAnimCtrl_dtor(CAnimCtrl *self) {
 	(void)self;
 }
 
-void __fastcall CAnimCtrl_Play(CAnimCtrl *self) {
+void CAnimCtrl_Play(CAnimCtrl *self) {
 	self->state = ANIM_REPR;
 }
 
-void __thiscall CAnimCtrl_SetCallback(CAnimCtrl *self, animCallback_t fn, int a, int b) {
+void CAnimCtrl_SetCallback(CAnimCtrl *self, animCallback_t fn, int a, int b) {
 	self->callback = fn;
 	self->cbA = a;
 	self->cbB = b;
 }
 
-int __thiscall CAnimCtrl_Reset(CAnimCtrl *self, float frame) {
+int CAnimCtrl_Reset(CAnimCtrl *self, float frame) {
 	self->move = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->ofs = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->jumps = 0;
@@ -58,7 +58,7 @@ int __thiscall CAnimCtrl_Reset(CAnimCtrl *self, float frame) {
 	return 1;
 }
 
-void __thiscall CAnimCtrl_SetFrames(CAnimCtrl *self, int firstFrame, int frames) {
+void CAnimCtrl_SetFrames(CAnimCtrl *self, int firstFrame, int frames) {
 	self->firstFrame = firstFrame;
 	self->frames = frames;
 }
@@ -78,7 +78,7 @@ const char *AnimCtrl_StateName(int state) {
 	return NULL;
 }
 
-void __fastcall CAnimCtrl_Start(CAnimCtrl *self) {
+void CAnimCtrl_Start(CAnimCtrl *self) {
 	self->move = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->ofs = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->lastPos = (vec3_t){ 0.0f, 0.0f, 0.0f };
@@ -94,7 +94,7 @@ void __fastcall CAnimCtrl_Start(CAnimCtrl *self) {
 	self->state = ANIM_REPR;
 }
 
-byte __thiscall CAnimCtrl_GetPosRot(CAnimCtrl *self, float frame, vec3_t *pos, quat_t *rot) {
+byte CAnimCtrl_GetPosRot(CAnimCtrl *self, float frame, vec3_t *pos, quat_t *rot) {
 	CHECK(pos && rot);
 	*pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	*rot = (quat_t){ 0.0f, 0.0f, 0.0f, 1.0f };
@@ -105,15 +105,15 @@ byte __thiscall CAnimCtrl_GetPosRot(CAnimCtrl *self, float frame, vec3_t *pos, q
 	return CAnimNode_GetPosRot(self->node, pos, rot, i, frame - (float)i);
 }
 
-void __fastcall CAnimCtrl_Stop(CAnimCtrl *self) {
+void CAnimCtrl_Stop(CAnimCtrl *self) {
 	self->state = ANIM_END;
 }
 
-void __fastcall CAnimCtrl_Pause(CAnimCtrl *self) {
+void CAnimCtrl_Pause(CAnimCtrl *self) {
 	self->state = ANIM_PAUSE;
 }
 
-void __thiscall CAnimCtrl_Fade(CAnimCtrl *self, float t) {
+void CAnimCtrl_Fade(CAnimCtrl *self, float t) {
 	if (self->state == ANIM_FADE_PAUSE) {
 		self->state = ANIM_FADE_PAUSE;
 		self->fade = 1.0f;
@@ -130,7 +130,7 @@ static void AnimCtrl_Jump(float *f1p, float *f2p, float *endp, float *f1, float 
 	*f1 = f;
 }
 
-byte __thiscall CAnimCtrl_Events(CAnimCtrl *self, float *f1p, float *f2p, float *endp) {
+byte CAnimCtrl_Events(CAnimCtrl *self, float *f1p, float *f2p, float *endp) {
 	CHECK(*f2p == *endp);
 	float f2 = *f2p;
 	float f1 = *f1p;
@@ -205,7 +205,7 @@ byte __thiscall CAnimCtrl_Events(CAnimCtrl *self, float *f1p, float *f2p, float 
 	return 1;
 }
 
-byte __thiscall CAnimCtrl_Update(CAnimCtrl *self, const vec3_t *rot, float t) {
+byte CAnimCtrl_Update(CAnimCtrl *self, const vec3_t *rot, float t) {
 	CHECK(self->event);
 	self->move = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->jumps = 0;

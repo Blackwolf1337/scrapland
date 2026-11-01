@@ -3,7 +3,7 @@
  */
 #include "scrap/scraptrails.h"
 
-CGameTrail *__fastcall CGameTrail_ctor(CGameTrail *self) {
+CGameTrail *CGameTrail_ctor(CGameTrail *self) {
 	self->trailsys = NULL;
 	CTrail *t = operator_new(sizeof(CTrail));
 	self->trailsys = t ? CTrail_ctor(t) : NULL;
@@ -13,7 +13,7 @@ CGameTrail *__fastcall CGameTrail_ctor(CGameTrail *self) {
 	return self;
 }
 
-void __fastcall CGameTrail_dtor(CGameTrail *self) {
+void CGameTrail_dtor(CGameTrail *self) {
 	CTrail *t = self->trailsys;
 	if (t) {
 		CTrail_dtor(t);
@@ -21,7 +21,7 @@ void __fastcall CGameTrail_dtor(CGameTrail *self) {
 	}
 }
 
-void __thiscall CGameTrail_Copy(CGameTrail *self, const CGameTrail *from) {
+void CGameTrail_Copy(CGameTrail *self, const CGameTrail *from) {
 	if (!from) {
 		CheckFailed("from", __FILE__, __TIMESTAMP__, __LINE__);
 	}
@@ -31,7 +31,7 @@ void __thiscall CGameTrail_Copy(CGameTrail *self, const CGameTrail *from) {
 	CTrail_Copy(self->trailsys, from->trailsys);
 }
 
-void __thiscall CGameTrail_BezierCoefs(CGameTrail *self, int n, const vec3_t *pts, vec3_t *out) {
+void CGameTrail_BezierCoefs(CGameTrail *self, int n, const vec3_t *pts, vec3_t *out) {
 	int last = n - 1;
 	int c = 0;
 
@@ -52,7 +52,7 @@ void __thiscall CGameTrail_BezierCoefs(CGameTrail *self, int n, const vec3_t *pt
 	}
 }
 
-void __thiscall CGameTrail_BezierPoint(CGameTrail *self, int n, const vec3_t *coefs, vec3_t *out, float t) {
+void CGameTrail_BezierPoint(CGameTrail *self, int n, const vec3_t *coefs, vec3_t *out, float t) {
 	vec3_t tmp[GAMETRAIL_MAX_BEZIER];
 	int last = n - 1;
 	float pw = t;
@@ -76,7 +76,7 @@ void __thiscall CGameTrail_BezierPoint(CGameTrail *self, int n, const vec3_t *co
 	}
 }
 
-void __thiscall CGameTrail_AddBezier(CGameTrail *self, int n, const vec3_t *pts, uint32_t color) {
+void CGameTrail_AddBezier(CGameTrail *self, int n, const vec3_t *pts, uint32_t color) {
 	vec3_t coefs[GAMETRAIL_MAX_BEZIER];
 	vec3_t p;
 
@@ -93,7 +93,7 @@ void __thiscall CGameTrail_AddBezier(CGameTrail *self, int n, const vec3_t *pts,
 	}
 }
 
-void __thiscall CGameTrail_AddLine(CGameTrail *self, vec3_t from, vec3_t to) {
+void CGameTrail_AddLine(CGameTrail *self, vec3_t from, vec3_t to) {
 	float dx = to.x - from.x;
 	float dy = to.y - from.y;
 	float dz = to.z - from.z;
@@ -111,119 +111,119 @@ void __thiscall CGameTrail_AddLine(CGameTrail *self, vec3_t from, vec3_t to) {
 	}
 }
 
-void __fastcall CGameTrail_Clear(CGameTrail *self) {
+void CGameTrail_Clear(CGameTrail *self) {
 	CTrail_Clear(self->trailsys);
 }
 
-void __fastcall CGameTrail_Shrink(CGameTrail *self) {
+void CGameTrail_Shrink(CGameTrail *self) {
 	CTrail_Shrink(self->trailsys);
 }
 
-void __fastcall CGameTrail_Reset(CGameTrail *self) {
+void CGameTrail_Reset(CGameTrail *self) {
 	CTrail_Reset(self->trailsys);
 }
 
-int __fastcall CGameTrail_GetTransp(const CGameTrail *self) {
+int CGameTrail_GetTransp(const CGameTrail *self) {
 	return self->trailsys->transp;
 }
 
-int __fastcall CGameTrail_GetMaxTrails(const CGameTrail *self) {
+int CGameTrail_GetMaxTrails(const CGameTrail *self) {
 	return self->trailsys->m_wMaxTrails;
 }
 
-byte __fastcall CGameTrail_IsRender(const CGameTrail *self) {
+byte CGameTrail_IsRender(const CGameTrail *self) {
 	return self->trailsys->render;
 }
 
-void __thiscall CGameTrail_AddPos(CGameTrail *self, vec3_t pos) {
+void CGameTrail_AddPos(CGameTrail *self, vec3_t pos) {
 	CTrail_AddPos(self->trailsys, pos);
 }
 
-void __thiscall CGameTrail_AddPosColor(CGameTrail *self, vec3_t pos, uint32_t color) {
+void CGameTrail_AddPosColor(CGameTrail *self, vec3_t pos, uint32_t color) {
 	CTrail_AddPosColor(self->trailsys, pos, color);
 }
 
-void __thiscall CGameTrail_Add(CGameTrail *self, vec3_t pos, float width, uint32_t color) {
+void CGameTrail_Add(CGameTrail *self, vec3_t pos, float width, uint32_t color) {
 	CTrail_Add(self->trailsys, pos, width, color);
 }
 
-void __thiscall CGameTrail_SetTransp(CGameTrail *self, byte transp) {
+void CGameTrail_SetTransp(CGameTrail *self, byte transp) {
 	CTrail_SetTransp(self->trailsys, transp);
 }
 
-void __thiscall CGameTrail_SetColor(CGameTrail *self, uint32_t color) {
+void CGameTrail_SetColor(CGameTrail *self, uint32_t color) {
 	CTrail_SetColor(self->trailsys, color);
 }
 
-void __thiscall CGameTrail_SetSmooth(CGameTrail *self, byte on) {
+void CGameTrail_SetSmooth(CGameTrail *self, byte on) {
 	CTrail_SetSmooth(self->trailsys, on);
 }
 
-void __thiscall CGameTrail_SetMaxTrails(CGameTrail *self, byte segments) {
+void CGameTrail_SetMaxTrails(CGameTrail *self, byte segments) {
 	CTrail_SetMaxTrails(self->trailsys, segments);
 }
 
-void __thiscall CGameTrail_SetUV(CGameTrail *self, float u0, float v0) {
+void CGameTrail_SetUV(CGameTrail *self, float u0, float v0) {
 	CTrail_SetUV(self->trailsys, u0, v0);
 }
 
-void __thiscall CGameTrail_SetOrient(CGameTrail *self, vec3_t v, byte mode) {
+void CGameTrail_SetOrient(CGameTrail *self, vec3_t v, byte mode) {
 	CTrail_SetOrient(self->trailsys, v, mode);
 }
 
-void __thiscall CGameTrail_SetType(CGameTrail *self, byte type) {
+void CGameTrail_SetType(CGameTrail *self, byte type) {
 	CTrail_SetType(self->trailsys, type);
 }
 
-void __thiscall CGameTrail_SetSegments(CGameTrail *self, byte segments) {
+void CGameTrail_SetSegments(CGameTrail *self, byte segments) {
 	CTrail_SetSegments(self->trailsys, segments);
 }
 
-void __thiscall CGameTrail_SetPremul(CGameTrail *self, byte on) {
+void CGameTrail_SetPremul(CGameTrail *self, byte on) {
 	CTrail_SetPremul(self->trailsys, on);
 }
 
-void __thiscall CGameTrail_SetWidth(CGameTrail *self, float width) {
+void CGameTrail_SetWidth(CGameTrail *self, float width) {
 	CTrail_SetWidth(self->trailsys, width);
 }
 
-void __thiscall CGameTrail_SetScale(CGameTrail *self, float head, float tail) {
+void CGameTrail_SetScale(CGameTrail *self, float head, float tail) {
 	CTrail_SetScale(self->trailsys, head, tail);
 }
 
-void __thiscall CGameTrail_SetTexture(CGameTrail *self, int texture) {
+void CGameTrail_SetTexture(CGameTrail *self, int texture) {
 	CTrail_SetTexture(self->trailsys, texture);
 }
 
-void __thiscall CGameTrail_SetUVScale(CGameTrail *self, float du, float dv) {
+void CGameTrail_SetUVScale(CGameTrail *self, float du, float dv) {
 	CTrail_SetUVScale(self->trailsys, du, dv);
 }
 
-void __thiscall CGameTrail_SetFade(CGameTrail *self, byte on) {
+void CGameTrail_SetFade(CGameTrail *self, byte on) {
 	CTrail_SetFade(self->trailsys, on);
 }
 
-void __thiscall CGameTrail_SetULen(CGameTrail *self, float uLen, float f50) {
+void CGameTrail_SetULen(CGameTrail *self, float uLen, float f50) {
 	CTrail_SetULen(self->trailsys, uLen, f50);
 }
 
-void __thiscall CGameTrail_SetLast(CGameTrail *self, const vec3_t *pos, const float *width, const uint32_t *color) {
+void CGameTrail_SetLast(CGameTrail *self, const vec3_t *pos, const float *width, const uint32_t *color) {
 	CTrail_SetLast(self->trailsys, pos, width, color);
 }
 
-void __thiscall CGameTrail_SetLastPos(CGameTrail *self, vec3_t pos) {
+void CGameTrail_SetLastPos(CGameTrail *self, vec3_t pos) {
 	CTrail_SetLastPos(self->trailsys, pos);
 }
 
-void __thiscall CGameTrail_SetLastPosColor(CGameTrail *self, vec3_t pos, uint32_t color) {
+void CGameTrail_SetLastPosColor(CGameTrail *self, vec3_t pos, uint32_t color) {
 	CTrail_SetLastPosColor(self->trailsys, pos, color);
 }
 
-void __thiscall CGameTrail_SetPoint(CGameTrail *self, int i, const vec3_t *pos, const float *width,
+void CGameTrail_SetPoint(CGameTrail *self, int i, const vec3_t *pos, const float *width,
 	const uint32_t *color) {
 	CTrail_SetPoint(self->trailsys, i, pos, width, color);
 }
 
-void __thiscall CGameTrail_Move(CGameTrail *self, vec3_t d) {
+void CGameTrail_Move(CGameTrail *self, vec3_t d) {
 	CTrail_Move(self->trailsys, d);
 }

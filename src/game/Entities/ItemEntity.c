@@ -57,7 +57,7 @@ static inline float X87_DivMul(float a, float b, float c) {
 	return r;
 }
 
-cEntity *__thiscall cItemEntity_ctor(void *mem, const char *name, float x, float y, float z) {
+cEntity *cItemEntity_ctor(void *mem, const char *name, float x, float y, float z) {
 	cItemEntity *self = mem;
 
 	cObjEntity_ctor(mem, name, x, y, z);
@@ -89,7 +89,7 @@ cEntity *__thiscall cItemEntity_ctor(void *mem, const char *name, float x, float
 	return &self->base;
 }
 
-void __fastcall cItemEntity_dtor(cItemEntity *self) {
+void cItemEntity_dtor(cItemEntity *self) {
 	self->base.vftable = CITEMENTITY_VFTABLE;
 	cPy_Function_dtor(&self->onReset);
 	cPy_Function_dtor(&self->onTake);
@@ -97,7 +97,7 @@ void __fastcall cItemEntity_dtor(cItemEntity *self) {
 	cObjEntity_dtor(&self->base);
 }
 
-cItemEntity *__thiscall cItemEntity_Delete(cItemEntity *self, uint32_t flags) {
+cItemEntity *cItemEntity_Delete(cItemEntity *self, uint32_t flags) {
 	cItemEntity_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CITEMENTITY_SIZE);
@@ -105,7 +105,7 @@ cItemEntity *__thiscall cItemEntity_Delete(cItemEntity *self, uint32_t flags) {
 	return self;
 }
 
-void __thiscall cItemEntity_Touch(cItemEntity *self, cEntity *other, const vec3_t *point, const vec3_t *dir) {
+void cItemEntity_Touch(cItemEntity *self, cEntity *other, const vec3_t *point, const vec3_t *dir) {
 	cEntity *pl = Item_Usr0();
 
 	(void)point;
@@ -130,7 +130,7 @@ void __thiscall cItemEntity_Touch(cItemEntity *self, cEntity *other, const vec3_
 	cPy_Function_Execute(&self->onTake, 0);
 }
 
-byte __thiscall cItemEntity_VarF(cItemEntity *self, const char *name, double *d, int set) {
+byte cItemEntity_VarF(cItemEntity *self, const char *name, double *d, int set) {
 	if (!*name) {
 		return 0;
 	}
@@ -169,25 +169,25 @@ byte __thiscall cItemEntity_VarF(cItemEntity *self, const char *name, double *d,
 	return cObjEntity_VarF(&self->base, name, d, set);
 }
 
-vec3_t *__thiscall cItemEntity_GetOrigin(cItemEntity *self, vec3_t *out) {
+vec3_t *cItemEntity_GetOrigin(cItemEntity *self, vec3_t *out) {
 	*out = self->origin;
 	return out;
 }
 
-char *__fastcall cItemEntity_GetOwner(cItemEntity *self) {
+char *cItemEntity_GetOwner(cItemEntity *self) {
 	return self->owner;
 }
 
-float __fastcall cItemEntity_GetBackTime(cItemEntity *self) {
+float cItemEntity_GetBackTime(cItemEntity *self) {
 	return self->backTime;
 }
 
-const char *__thiscall cItemEntity_GetClassName(cItemEntity *self) {
+const char *cItemEntity_GetClassName(cItemEntity *self) {
 	(void)self;
 	return ITEM_CLASSNAME;
 }
 
-float __thiscall cItemEntity_GetRadius(cItemEntity *self) {
+float cItemEntity_GetRadius(cItemEntity *self) {
 	return self->radius;
 }
 
@@ -200,7 +200,7 @@ static inline void Item_VarFlag(byte *flag, int *i, int set) {
 	}
 }
 
-byte __thiscall cItemEntity_VarI(cItemEntity *self, const char *name, int *i, int set) {
+byte cItemEntity_VarI(cItemEntity *self, const char *name, int *i, int set) {
 	if (!*name) {
 		return 0;
 	}
@@ -239,14 +239,14 @@ byte __thiscall cItemEntity_VarI(cItemEntity *self, const char *name, int *i, in
 	return cObjEntity_VarI(&self->base, name, i, set);
 }
 
-byte __thiscall cItemEntity_IsType(cItemEntity *self, const char *type) {
+byte cItemEntity_IsType(cItemEntity *self, const char *type) {
 	if (!strcmp(type, ITEM_CLASSNAME)) {
 		return 1;
 	}
 	return cObjEntity_IsType(&self->base, type);
 }
 
-void __thiscall cItemEntity_NetRead(cItemEntity *self, void *msg, int unused) {
+void cItemEntity_NetRead(cItemEntity *self, void *msg, int unused) {
 	(void)unused;
 	self->net->vftable->Read(self->net, msg);
 	if (self->net->flags & 1) {
@@ -256,7 +256,7 @@ void __thiscall cItemEntity_NetRead(cItemEntity *self, void *msg, int unused) {
 	}
 }
 
-void __thiscall cItemEntity_NetWrite(cItemEntity *self, int unused, void *msg, byte full) {
+void cItemEntity_NetWrite(cItemEntity *self, int unused, void *msg, byte full) {
 	(void)unused;
 	byte all = (0.0f >= (float)self->syncTicks) | full;
 	self->net->vftable->Write(self->net, (0.0f >= self->respawn) + 2, Item_Ent(self), msg, all);
@@ -265,7 +265,7 @@ void __thiscall cItemEntity_NetWrite(cItemEntity *self, int unused, void *msg, b
 	}
 }
 
-void __thiscall cItemEntity_Tick(cItemEntity *self, float dt) {
+void cItemEntity_Tick(cItemEntity *self, float dt) {
 	vec3_t to, hit;
 
 	if (Net_IsNetEntity(Item_Ent(self))) {
@@ -346,25 +346,25 @@ void __thiscall cItemEntity_Tick(cItemEntity *self, float dt) {
 	self->noFx = 0;
 }
 
-void __thiscall cItemEntity_SetOrigin(cItemEntity *self, const vec3_t *v) {
+void cItemEntity_SetOrigin(cItemEntity *self, const vec3_t *v) {
 	self->origin.x = v->x;
 	self->origin.y = v->y;
 	self->origin.z = v->z;
 }
 
-void __thiscall cItemEntity_SetOwner(cItemEntity *self, const char *name) {
+void cItemEntity_SetOwner(cItemEntity *self, const char *name) {
 	Str_Copy(self->owner, name, 0x80);
 	if (self->respawn <= 0.0f) {
 		cItemEntity_SetRespawn(self, 1.0f);
 	}
 }
 
-void __thiscall cItemEntity_SetPos(cItemEntity *self, const vec3_t *pos) {
+void cItemEntity_SetPos(cItemEntity *self, const vec3_t *pos) {
 	self->syncTicks = Net_GetSendRate() * 5;
 	cObjEntity_SetPos(Item_Ent(self), pos);
 }
 
-void __thiscall cItemEntity_SetBackTime(cItemEntity *self, float t) {
+void cItemEntity_SetBackTime(cItemEntity *self, float t) {
 	if (t > 0.0f) {
 		self->backTime = t;
 		return;
@@ -375,7 +375,7 @@ void __thiscall cItemEntity_SetBackTime(cItemEntity *self, float t) {
 	self->backTime = 0.0f;
 }
 
-void __thiscall cItemEntity_SetRespawn(cItemEntity *self, float t) {
+void cItemEntity_SetRespawn(cItemEntity *self, float t) {
 	vec3_t tmp;
 
 	if (t > 0.0f) {
@@ -436,7 +436,7 @@ void __thiscall cItemEntity_SetRespawn(cItemEntity *self, float t) {
 	}
 }
 
-void __thiscall cItemEntity_SetTypeMarker(cItemEntity *self, const char *types) {
+void cItemEntity_SetTypeMarker(cItemEntity *self, const char *types) {
 	if (!*types) {
 		self->typeMask = 0xffff;
 		return;
@@ -471,7 +471,7 @@ void __thiscall cItemEntity_SetTypeMarker(cItemEntity *self, const char *types) 
 	}
 }
 
-void __thiscall cItemEntity_Update(cItemEntity *self) {
+void cItemEntity_Update(cItemEntity *self) {
 	vec3_t tmp, ang;
 
 	cObjEntity_Update(Item_Ent(self));
@@ -504,7 +504,7 @@ void __thiscall cItemEntity_Update(cItemEntity *self) {
 	}
 }
 
-byte __thiscall cItemEntity_TestSphere(cItemEntity *self, cEntity *other, const vec3_t *center, float radius,
+byte cItemEntity_TestSphere(cItemEntity *self, cEntity *other, const vec3_t *center, float radius,
 	int arg) {
 	vec3_t tmp, dir, point;
 
@@ -546,7 +546,7 @@ byte __thiscall cItemEntity_TestSphere(cItemEntity *self, cEntity *other, const 
 	return 1;
 }
 
-byte __thiscall cItemEntity_VarS(cItemEntity *self, const char *name, char **s, int set) {
+byte cItemEntity_VarS(cItemEntity *self, const char *name, char **s, int set) {
 	if (!*name) {
 		return 0;
 	}
@@ -583,7 +583,7 @@ byte __thiscall cItemEntity_VarS(cItemEntity *self, const char *name, char **s, 
 	return cObjEntity_VarS(Item_Ent(self), name, s, set);
 }
 
-byte __thiscall cItemEntity_NetNeedsSend(cItemEntity *self, float dist2) {
+byte cItemEntity_NetNeedsSend(cItemEntity *self, float dist2) {
 	if (self->syncTicks > 0) {
 		return 1;
 	}
@@ -598,7 +598,7 @@ byte __thiscall cItemEntity_NetNeedsSend(cItemEntity *self, float dist2) {
 	return 0;
 }
 
-byte __thiscall cItemEntity_VarV(cItemEntity *self, const char *name, double *x, double *y, double *z, int set) {
+byte cItemEntity_VarV(cItemEntity *self, const char *name, double *x, double *y, double *z, int set) {
 	vec3_t v;
 
 	if (!*name) {

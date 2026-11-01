@@ -7,7 +7,7 @@
 #include "scrap/console.h"
 #include "scrap/hashtable.h"
 
-HashTable *__thiscall HashTable_ctor(HashTable *self, int numSlots, byte caseSensitive) {
+HashTable *HashTable_ctor(HashTable *self, int numSlots, byte caseSensitive) {
 	CHECK(numSlots > 0);
 	self->numSlots = numSlots;
 	self->slots = New_Array(numSlots, 4);
@@ -17,7 +17,7 @@ HashTable *__thiscall HashTable_ctor(HashTable *self, int numSlots, byte caseSen
 	return self;
 }
 
-uint32_t __thiscall HashTable_Slot(HashTable *self, const char *key) {
+uint32_t HashTable_Slot(HashTable *self, const char *key) {
 	uint32_t h = 0;
 
 	CHECK(key);
@@ -58,7 +58,7 @@ void HashItem_Free(void *p) {
 	}
 }
 
-cPtrItem *__thiscall PtrTable_Find(HashTable *self, const char *key, uint32_t slot) {
+cPtrItem *PtrTable_Find(HashTable *self, const char *key, uint32_t slot) {
 	for (cPtrItem *it = (cPtrItem *)self->slots[slot]; it; it = it->next) {
 		if (HashTable_KeyEq(self, it->key, key)) {
 			return it;
@@ -67,7 +67,7 @@ cPtrItem *__thiscall PtrTable_Find(HashTable *self, const char *key, uint32_t sl
 	return NULL;
 }
 
-cPtrItem *__thiscall PtrTable_Insert(HashTable *self, const char *key, uint32_t slot, void *const *value) {
+cPtrItem *PtrTable_Insert(HashTable *self, const char *key, uint32_t slot, void *const *value) {
 	CHECK(!self->locked);
 	cPtrItem *it = HashItem_Alloc(sizeof(*it));
 	if (it) {
@@ -81,7 +81,7 @@ cPtrItem *__thiscall PtrTable_Insert(HashTable *self, const char *key, uint32_t 
 	return it;
 }
 
-byte __thiscall PtrTable_Add(HashTable *self, const char *key, void *const *value, byte warn) {
+byte PtrTable_Add(HashTable *self, const char *key, void *const *value, byte warn) {
 	CHECK(!self->locked);
 	uint32_t slot = HashTable_Slot(self, key);
 	if (PtrTable_Find(self, key, slot)) {
@@ -100,7 +100,7 @@ void *PtrTable_Value(HashTable *self, const char *key) {
 }
 
 /* takes the item of key out of its slot, NULL if there is none */
-cPtrItem *__thiscall PtrTable_Unlink(HashTable *self, const char *key, uint32_t slot) {
+cPtrItem *PtrTable_Unlink(HashTable *self, const char *key, uint32_t slot) {
 	cPtrItem **link = (cPtrItem **)&self->slots[slot];
 	CHECK(!self->locked);
 	for (; *link; link = &(*link)->next) {
@@ -114,7 +114,7 @@ cPtrItem *__thiscall PtrTable_Unlink(HashTable *self, const char *key, uint32_t 
 	return NULL;
 }
 
-byte __thiscall PtrTable_Delete(HashTable *self, const char *key) {
+byte PtrTable_Delete(HashTable *self, const char *key) {
 	CHECK(!self->locked);
 	cPtrItem *it = PtrTable_Unlink(self, key, HashTable_Slot(self, key));
 	if (!it) {
@@ -124,7 +124,7 @@ byte __thiscall PtrTable_Delete(HashTable *self, const char *key) {
 	return 1;
 }
 
-void __fastcall PtrTable_Clear(HashTable *self) {
+void PtrTable_Clear(HashTable *self) {
 	CHECK(!self->locked);
 	if (!self->slots) {
 		return;

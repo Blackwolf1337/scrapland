@@ -39,7 +39,7 @@ float *Vec2_Normalize(float *out, const float *in) {
 	return out;
 }
 
-cArrowIndicator *__fastcall cArrowIndicator_ctor(cArrowIndicator *self) {
+cArrowIndicator *cArrowIndicator_ctor(cArrowIndicator *self) {
 	crt_eh_vector_ctor(self->opts, sizeof(cString), ARROW_MAX_OPTS, (void *)cString_ctor, (void *)cString_dtor);
 	cPy_Function_ctor(&self->onUse);
 	cPy_Function_ctor(&self->onView);
@@ -85,7 +85,7 @@ static void Arrow_ToPool(cArrowModel *m) {
 	g_ArrowPoolCount++;
 }
 
-void __fastcall cArrowIndicator_dtor(cArrowIndicator *self) {
+void cArrowIndicator_dtor(cArrowIndicator *self) {
 	if (self->arrow) {
 		Arrow_ToPool(self->arrow);
 	}
@@ -96,7 +96,7 @@ void __fastcall cArrowIndicator_dtor(cArrowIndicator *self) {
 	crt_eh_vector_dtor(self->opts, sizeof(cString), ARROW_MAX_OPTS, (void *)cString_dtor);
 }
 
-byte __thiscall cArrowIndicator_AddOpt(cArrowIndicator *self, const char *s) {
+byte cArrowIndicator_AddOpt(cArrowIndicator *self, const char *s) {
 	if (!strchr(s, ':')) {
 		Con_Verbosef("T.ERROR : '%s' can´t be added at the options list,\n '%c' is not included as separator\n", s, ':');
 		return 0;
@@ -111,7 +111,7 @@ byte __thiscall cArrowIndicator_AddOpt(cArrowIndicator *self, const char *s) {
 	return 1;
 }
 
-void __thiscall cArrowIndicator_Execute(cArrowIndicator *self, cEntity *user) {
+void cArrowIndicator_Execute(cArrowIndicator *self, cEntity *user) {
 	char buf[0x80];
 	cPy_Function *f = self->canUse ? &self->onUse : &self->onView;
 
@@ -217,7 +217,7 @@ void ArrowIndicator_ClearSel(void) {
 	}
 }
 
-void __fastcall cArrowIndicator_ClearOpts(cArrowIndicator *self) {
+void cArrowIndicator_ClearOpts(cArrowIndicator *self) {
 	self->iOpt = 0;
 	self->nOpt = 0;
 	for (int i = 0; i < ARROW_MAX_OPTS; i++) {
@@ -248,7 +248,7 @@ cEntity *ArrowIndicator_FindSel(cEntity *self, float ang) {
 	return sel;
 }
 
-byte __thiscall cArrowIndicator_VarF(cArrowIndicator *self, const char *name, double *d, int set) {
+byte cArrowIndicator_VarF(cArrowIndicator *self, const char *name, double *d, int set) {
 	if (!strcmp(name, "ConeDist")) {
 		if ((byte)set) {
 			self->coneDist = (float)*d;
@@ -284,14 +284,14 @@ cArrowModel *ArrowPool_Get(byte *fresh) {
 	return m;
 }
 
-const char *__thiscall cArrowIndicator_GetOpt(cArrowIndicator *self, int i) {
+const char *cArrowIndicator_GetOpt(cArrowIndicator *self, int i) {
 	if (i >= 0 && i < self->nOpt) {
 		return self->opts[i];
 	}
 	return NULL;
 }
 
-uint32_t __fastcall cArrowIndicator_GetColor(cArrowIndicator *self) {
+uint32_t cArrowIndicator_GetColor(cArrowIndicator *self) {
 	switch (self->tgType) {
 	case 0:
 		return 0xffc4c4;
@@ -315,7 +315,7 @@ static inline void Arrow_VarFlag(byte *flag, int *i, int set) {
 	}
 }
 
-byte __thiscall cArrowIndicator_VarI(cArrowIndicator *self, const char *name, int *i, int set) {
+byte cArrowIndicator_VarI(cArrowIndicator *self, const char *name, int *i, int set) {
 	if (!strcmp(name, "CanPhoto")) {
 		Arrow_VarFlag(&self->canPhoto, i, set);
 		return 1;
@@ -370,13 +370,13 @@ byte __thiscall cArrowIndicator_VarI(cArrowIndicator *self, const char *name, in
 	return 0;
 }
 
-void __fastcall cArrowIndicator_NextOpt(cArrowIndicator *self) {
+void cArrowIndicator_NextOpt(cArrowIndicator *self) {
 	if (self->nOpt > 1) {
 		self->iOpt = (self->iOpt + 1) % self->nOpt;
 	}
 }
 
-void __fastcall cArrowIndicator_PrevOpt(cArrowIndicator *self) {
+void cArrowIndicator_PrevOpt(cArrowIndicator *self) {
 	int n = self->nOpt;
 
 	if (n > 1) {
@@ -384,7 +384,7 @@ void __fastcall cArrowIndicator_PrevOpt(cArrowIndicator *self) {
 	}
 }
 
-void __fastcall cArrowIndicator_ReleaseMission(cArrowIndicator *self) {
+void cArrowIndicator_ReleaseMission(cArrowIndicator *self) {
 	if (self->glow) {
 		if (self->glow->base.ParticleSystem) {
 			CGameParticles_Release(&self->glow->base);
@@ -404,7 +404,7 @@ void __fastcall cArrowIndicator_ReleaseMission(cArrowIndicator *self) {
 	self->mission = NULL;
 }
 
-void __fastcall cArrowIndicator_ReleaseArrow(cArrowIndicator *self) {
+void cArrowIndicator_ReleaseArrow(cArrowIndicator *self) {
 	if (self->arrow) {
 		Arrow_ToPool(self->arrow);
 	}
@@ -416,7 +416,7 @@ static inline const char *Arrow_MissionName(const cArrowIndicator *self) {
 	return self->missionOn ? *g_MissionArrowOn : *g_MissionArrowOff;
 }
 
-void __thiscall cArrowIndicator_SetModels(cArrowIndicator *self, byte on) {
+void cArrowIndicator_SetModels(cArrowIndicator *self, byte on) {
 	if (!on || !(self->alpha > 0.0f)) {
 		cArrowIndicator_ReleaseArrow(self);
 		cArrowIndicator_ReleaseMission(self);
@@ -438,11 +438,11 @@ void __thiscall cArrowIndicator_SetModels(cArrowIndicator *self, byte on) {
 	cArrowIndicator_ReleaseMission(self);
 }
 
-void __thiscall cArrowIndicator_SetShown(cArrowIndicator *self, byte on) {
+void cArrowIndicator_SetShown(cArrowIndicator *self, byte on) {
 	self->shown = on;
 }
 
-void __thiscall cArrowIndicator_LoadMission(cArrowIndicator *self, const char *name) {
+void cArrowIndicator_LoadMission(cArrowIndicator *self, const char *name) {
 	if (self->glow && self->glow->base.ParticleSystem) {
 		CGameParticles_Release(&self->glow->base);
 	}
@@ -463,7 +463,7 @@ void __thiscall cArrowIndicator_LoadMission(cArrowIndicator *self, const char *n
 	cArrowGlow_Attach(self->glow, self->mission, name);
 }
 
-void __thiscall cArrowIndicator_LoadArrow(cArrowIndicator *self, const char *name) {
+void cArrowIndicator_LoadArrow(cArrowIndicator *self, const char *name) {
 	byte fresh;
 
 	if (self->arrow) {
@@ -478,7 +478,7 @@ void __thiscall cArrowIndicator_LoadArrow(cArrowIndicator *self, const char *nam
 	CGameModel_Enable(&m->model);
 }
 
-void __thiscall cArrowIndicator_LoadModel(cArrowIndicator *self, CGameModel *model, const char *name) {
+void cArrowIndicator_LoadModel(cArrowIndicator *self, CGameModel *model, const char *name) {
 	char buf[0x200];
 
 	(void)self;
@@ -490,17 +490,17 @@ void __thiscall cArrowIndicator_LoadModel(cArrowIndicator *self, CGameModel *mod
 	CGameModel_SetAnim(model, a, 0, 0);
 }
 
-void __thiscall cArrowIndicator_SetUseFunc(cArrowIndicator *self, const char *name) {
+void cArrowIndicator_SetUseFunc(cArrowIndicator *self, const char *name) {
 	cPy_Function_SetFunc(&self->onUse, name);
 	Arrow_FuncsChanged(self->parent);
 }
 
-void __thiscall cArrowIndicator_SetViewFunc(cArrowIndicator *self, const char *name) {
+void cArrowIndicator_SetViewFunc(cArrowIndicator *self, const char *name) {
 	cPy_Function_SetFunc(&self->onView, name);
 	Arrow_FuncsChanged(self->parent);
 }
 
-byte __thiscall cArrowIndicator_SetOpt(cArrowIndicator *self, int i, const char *s) {
+byte cArrowIndicator_SetOpt(cArrowIndicator *self, int i, const char *s) {
 	if (i == self->nOpt) {
 		return cArrowIndicator_AddOpt(self, s);
 	}
@@ -511,18 +511,18 @@ byte __thiscall cArrowIndicator_SetOpt(cArrowIndicator *self, int i, const char 
 	return 0;
 }
 
-void __thiscall cArrowIndicator_SetParent(cArrowIndicator *self, cEntity *parent) {
+void cArrowIndicator_SetParent(cArrowIndicator *self, cEntity *parent) {
 	CHECK(self->parent == NULL);
 	self->parent = parent;
 }
 
-void __thiscall cArrowGlow_SetVisible(cArrowGlow *self, byte on) {
+void cArrowGlow_SetVisible(cArrowGlow *self, byte on) {
 	if (self->base.ParticleSystem) {
 		CGameParticles_SetVisible(&self->base, on);
 	}
 }
 
-void __thiscall cArrowGlow_Attach(cArrowGlow *self, CGameModel *model, const char *name) {
+void cArrowGlow_Attach(cArrowGlow *self, CGameModel *model, const char *name) {
 	char node[20];
 	const char *big = "";
 	const char *kind;
@@ -553,7 +553,7 @@ void __thiscall cArrowGlow_Attach(cArrowGlow *self, CGameModel *model, const cha
 	CGameParticles_Attach(&self->base, model, (uint32_t)i);
 }
 
-byte __thiscall cArrowIndicator_SetIOpt(cArrowIndicator *self, int i) {
+byte cArrowIndicator_SetIOpt(cArrowIndicator *self, int i) {
 	if (i >= 0 && i < self->nOpt) {
 		self->iOpt = i;
 		return 1;
@@ -561,7 +561,7 @@ byte __thiscall cArrowIndicator_SetIOpt(cArrowIndicator *self, int i) {
 	return 0;
 }
 
-void __fastcall cArrowIndicator_Update(cArrowIndicator *self) {
+void cArrowIndicator_Update(cArrowIndicator *self) {
 	cObjEntity *p = (cObjEntity *)self->parent;
 	vec3_t off, a, r, rp, pos, rot;
 
@@ -641,7 +641,7 @@ void __fastcall cArrowIndicator_Update(cArrowIndicator *self) {
 	CGameModel_RootMotion(m, st, NULL, NULL);
 }
 
-void __thiscall cArrowGlow_Update(cArrowGlow *self, CGameModel *model) {
+void cArrowGlow_Update(cArrowGlow *self, CGameModel *model) {
 	CGameParticles *pt = &self->base;
 	vec3_t mp;
 
@@ -699,7 +699,7 @@ void __thiscall cArrowGlow_Update(cArrowGlow *self, CGameModel *model) {
 	}
 }
 
-byte __thiscall cArrowIndicator_VarS(cArrowIndicator *self, const char *name, char **s, int set) {
+byte cArrowIndicator_VarS(cArrowIndicator *self, const char *name, char **s, int set) {
 	if ((byte)set && !strcmp(name, "AddArrOpt")) {
 		cArrowIndicator_AddOpt(self, *s);
 		return 1;

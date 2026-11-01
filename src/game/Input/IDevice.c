@@ -68,7 +68,7 @@ static cDevEntry *Dev_Entry(cAbstractIDevice *d, int entry, int set) {
 	return &d->entries[entry];
 }
 
-cAbstractIDevice *__thiscall cAbstractIDevice_ctor(cAbstractIDevice *self) {
+cAbstractIDevice *cAbstractIDevice_ctor(cAbstractIDevice *self) {
 	self->vftable = CABSTRACTIDEVICE_VFTABLE;
 	self->entries = NULL;
 	self->nEntries = 0;
@@ -76,7 +76,7 @@ cAbstractIDevice *__thiscall cAbstractIDevice_ctor(cAbstractIDevice *self) {
 	return self;
 }
 
-cFuncGvarDevices *__thiscall cFuncGvarDevices_ctor(cFuncGvarDevices *self, cAbstractIDevice *dev) {
+cFuncGvarDevices *cFuncGvarDevices_ctor(cFuncGvarDevices *self, cAbstractIDevice *dev) {
 	cGVar *v = (cGVar *)&self->base.gvar;
 
 	cGVar_ctor(v, dev->vftable->GetName(dev), 3, "User Control definition");
@@ -87,7 +87,7 @@ cFuncGvarDevices *__thiscall cFuncGvarDevices_ctor(cFuncGvarDevices *self, cAbst
 }
 
 /* the variable stays in g_GVars, as in the original */
-void __thiscall cAbstractIDevice_dtor(cAbstractIDevice *self) {
+void cAbstractIDevice_dtor(cAbstractIDevice *self) {
 	self->vftable = CABSTRACTIDEVICE_VFTABLE;
 	if (self->entries) {
 		Mem_Free(self->entries);
@@ -97,7 +97,7 @@ void __thiscall cAbstractIDevice_dtor(cAbstractIDevice *self) {
 	}
 }
 
-cAbstractIDevice *__thiscall cAbstractIDevice_Delete(cAbstractIDevice *self, byte flags) {
+cAbstractIDevice *cAbstractIDevice_Delete(cAbstractIDevice *self, byte flags) {
 	cAbstractIDevice_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cAbstractIDevice));
@@ -111,7 +111,7 @@ void Input_AbortListenToDefine(void) {
 	g_ToDefinePlayer = -1;
 }
 
-byte __thiscall cAbstractIDevice_SetEntry(cAbstractIDevice *self, int entry, int set, int player, int action, byte check) {
+byte cAbstractIDevice_SetEntry(cAbstractIDevice *self, int entry, int set, int player, int action, byte check) {
 	(void)check;
 	CHECK(entry < self->nEntries);
 	CHECK(set < NUM_SETS);
@@ -180,7 +180,7 @@ void Input_CheckInactivity(float dt) {
 	}
 }
 
-void __thiscall InputDevices_Clear(cInputDevList *list) {
+void InputDevices_Clear(cInputDevList *list) {
 	DList_Clear(list, DEV_NODE_SIZE);
 }
 
@@ -212,7 +212,7 @@ int Input_ClearDefinedList(int player, const char *a, const char *b, int flag) {
 	return Input_ClearBinding(player, set, act, (byte)flag);
 }
 
-void __thiscall cAbstractIDevice_ClearEntries(cAbstractIDevice *self) {
+void cAbstractIDevice_ClearEntries(cAbstractIDevice *self) {
 	for (int i = 0; i < self->nEntries; i++) {
 		cDevEntry *e = &self->entries[i];
 		for (int s = 0; s < NUM_SETS; s++) {
@@ -293,7 +293,7 @@ int Input_GetDefinedList(int player, const char *a, const char *b, char *buf, in
 	return Input_ListBindings(player, set, act, buf, size, (byte)flag);
 }
 
-void __thiscall cAbstractIDevice_GetEntry(cAbstractIDevice *self, int entry, int set, int *player, int *action) {
+void cAbstractIDevice_GetEntry(cAbstractIDevice *self, int entry, int set, int *player, int *action) {
 	CHECK(entry < self->nEntries);
 	CHECK(set < NUM_SETS);
 	*player = self->entries[entry].sets[set].player;
@@ -335,7 +335,7 @@ int Input_GetEntry(const char *a, const char *b, const char *c, int *index, char
 	return 1;
 }
 
-void __thiscall cAbstractIDevice_InitEntries(cAbstractIDevice *self, int n) {
+void cAbstractIDevice_InitEntries(cAbstractIDevice *self, int n) {
 	self->nEntries = n;
 	self->entries = Mem_Alloc(n * sizeof(cDevEntry));
 	cAbstractIDevice_ClearEntries(self);
@@ -370,7 +370,7 @@ void Input_SetToDefine(int player, int action, uint32_t set) {
 }
 
 /* the lines "set.action.player = entry" of the device up to "name = <end>" */
-void __thiscall cFuncGvarDevices_Load(cFuncGvarDevices *self, void *f) {
+void cFuncGvarDevices_Load(cFuncGvarDevices *self, void *f) {
 	char line[0x200];
 	char *value;
 
@@ -464,7 +464,7 @@ void Input_ResetToDefault(void) {
 	}
 }
 
-void __thiscall cFuncGvarDevices_Save(cFuncGvarDevices *self, void *f) {
+void cFuncGvarDevices_Save(cFuncGvarDevices *self, void *f) {
 	char buf[0x100];
 
 	for (int set = 0; set < NUM_SETS; set++) {
@@ -485,13 +485,13 @@ void __thiscall cFuncGvarDevices_Save(cFuncGvarDevices *self, void *f) {
 }
 
 /* an axis as two entries: entry the positive half, entry + 1 the negative one */
-void __thiscall cAbstractIDevice_SetAxis(cAbstractIDevice *self, int entry, float value) {
+void cAbstractIDevice_SetAxis(cAbstractIDevice *self, int entry, float value) {
 	cAbstractIDevice_SetValue(self, entry, value > 0.0f ? value : 0.0f);
 	cAbstractIDevice_SetValue(self, entry + 1, 0.0f > value ? -value : 0.0f);
 }
 
 /* the new value of an entry: defines the waiting key on a press, else raises the action it is bound to */
-void __thiscall cAbstractIDevice_SetValue(cAbstractIDevice *self, int entry, float value) {
+void cAbstractIDevice_SetValue(cAbstractIDevice *self, int entry, float value) {
 	CHECK(self->nEntries > entry);
 	cDevEntry *e = &self->entries[entry];
 	e->prev = e->value;
@@ -550,7 +550,7 @@ void Input_SetDefineFunc(const char *func) {
 	cPy_Function_SetFunc(g_DefineFunc, func);
 }
 
-byte __thiscall cAbstractIDevice_IsReserved(cAbstractIDevice *self, int entry) {
+byte cAbstractIDevice_IsReserved(cAbstractIDevice *self, int entry) {
 	(void)self;
 	(void)entry;
 	return 0;
@@ -603,7 +603,7 @@ void Input_OpenDevices(void) {
 	}
 }
 
-void __thiscall InputDevices_Add(cInputDevList *list, cAbstractIDevice **dev) {
+void InputDevices_Add(cInputDevList *list, cAbstractIDevice **dev) {
 	cInputDevNode *n = DList_NewNode(list, DEV_NODE_SIZE);
 
 	n->dev = *dev;

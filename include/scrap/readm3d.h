@@ -184,22 +184,22 @@ void Node_ClearName(char *name);
 /* map mapid of the material used by the switches of the ini of the model and the video (MAT_SHADER: all) */
 byte M3D_ActiveMap(const CMaterial *mat, int mapid);
 /* the constructors and destructors of the reader data; M3DTable is freed by Table_Free */
-M3DTable *__fastcall M3DTable_ctor(M3DTable *self);
-char **__fastcall String_ctor(char **self);
-M3DTrack *__fastcall M3DTrack_ctor(M3DTrack *self);
-M3DNode *__fastcall M3DNode_ctor(M3DNode *self);
-M3DSkinVert *__fastcall M3DSkinVert_ctor(M3DSkinVert *self);
-void __fastcall M3DSkinVert_dtor(M3DSkinVert *self);
-void __fastcall M3DTable4_dtor(M3DTable4 *self);
-void __fastcall M3DTrack_dtor(M3DTrack *self);
+M3DTable *M3DTable_ctor(M3DTable *self);
+char **String_ctor(char **self);
+M3DTrack *M3DTrack_ctor(M3DTrack *self);
+M3DNode *M3DNode_ctor(M3DNode *self);
+M3DSkinVert *M3DSkinVert_ctor(M3DSkinVert *self);
+void M3DSkinVert_dtor(M3DSkinVert *self);
+void M3DTable4_dtor(M3DTable4 *self);
+void M3DTrack_dtor(M3DTrack *self);
 /* 6 tables freed, the last first */
-void __fastcall M3DTable6_dtor(M3DTable *self);
+void M3DTable6_dtor(M3DTable *self);
 /* the delete[] of a table of M3DSkinVert */
-void __fastcall M3DSkin_Free(CTable *self);
-void __fastcall M3DNode_dtor(M3DNode *self);
+void M3DSkin_Free(CTable *self);
+void M3DNode_dtor(M3DNode *self);
 /* flags 2: the new[] array with the count before it; 1: freed */
-M3DNode *__thiscall M3DNode_Delete(M3DNode *self, uint32_t flags);
-M3DSkinVert *__thiscall M3DSkinVert_Delete(M3DSkinVert *self, uint32_t flags);
+M3DNode *M3DNode_Delete(M3DNode *self, uint32_t flags);
+M3DSkinVert *M3DSkinVert_Delete(M3DSkinVert *self, uint32_t flags);
 /* the material of the file for its material index and sub material (-1: the material itself); a sub material
  * index past the end wraps around unless it is below the count */
 CMaterial *M3D_FindMat(int iMat, int iSubmat);
@@ -218,20 +218,20 @@ char *M3D_ReadQString(const char *tok, char *dest, int size);
 /* the reader data of the object of node */
 M3DNode *M3D_NodeDat(const CNode3D *node);
 /* frame i of the tables (x, z, y order of the file: the y up result) */
-vec3_t *__thiscall M3DTable4_GetVec(M3DTable4 *self, vec3_t *out, uint32_t i);
-quat_t *__thiscall M3DTable4_GetQuat(M3DTable4 *self, quat_t *out, uint32_t i);
-void __thiscall M3DTable4_SetVec(M3DTable4 *self, uint32_t i, const vec3_t *v);
+vec3_t *M3DTable4_GetVec(M3DTable4 *self, vec3_t *out, uint32_t i);
+quat_t *M3DTable4_GetQuat(M3DTable4 *self, quat_t *out, uint32_t i);
+void M3DTable4_SetVec(M3DTable4 *self, uint32_t i, const vec3_t *v);
 /* the axis and angle of frame i turned into the quaternion (the axis negated) */
-void __thiscall M3DTable4_RotToQuat(M3DTable4 *self, uint32_t i);
+void M3DTable4_RotToQuat(M3DTable4 *self, uint32_t i);
 /* the transform of frame of the first track as a matrix */
-matrix_t *__thiscall M3DNode_FrameMatrix(M3DNode *self, matrix_t *out, uint32_t frame);
+matrix_t *M3DNode_FrameMatrix(M3DNode *self, matrix_t *out, uint32_t frame);
 /* the table "Animacion: nombre" of g_M3DFrames values */
-void __thiscall M3DTable_ReadInt(M3DTable *self, const char *name);
-void __thiscall M3DTable_ReadFloat(M3DTable *self, const char *name);
+void M3DTable_ReadInt(M3DTable *self, const char *name);
+void M3DTable_ReadFloat(M3DTable *self, const char *name);
 /* up to four float tables; inv23 swaps the second and third */
-void __thiscall M3DTable4_Read(M3DTable4 *self, const char *n1, const char *n2, const char *n3, const char *n4,
+void M3DTable4_Read(M3DTable4 *self, const char *n1, const char *n2, const char *n3, const char *n4,
 	byte inv23);
-void __thiscall M3DTrack_Read(M3DTrack *self);
+void M3DTrack_Read(M3DTrack *self);
 /* flag set with on in the name, cleared with off, else taken from the parent */
 void Node_FlagName(CNode3D *node, const char *on, const char *off, uint32_t flag);
 /* the flags of the "(+x)" / "(-x)" names, the slerp and the node effects of the user properties */
@@ -259,7 +259,7 @@ void M3D_ReadMap(CMaterial *mat, int iMat, int iSubmat, int idx, int type);
 void M3D_ReadMaterial(CMatList *list, int iMat, int iSubmat);
 
 /* the matrix of the transform of the object */
-matrix_t *__thiscall M3DNode_CalcMatrix(M3DNode *self);
+matrix_t *M3DNode_CalcMatrix(M3DNode *self);
 /* Read_NextLine in text files (0 for binary ones; the original leaves eax there) */
 int M3D_NextLine(void);
 /* the world matrices: CHECK of no scale, qLook from them, mObj their inverses */
@@ -287,8 +287,8 @@ void Scene_Hierarchy(CScene *scn);
 /* rva 0x2d6c50: the transform of a matrix */
 void Matrix_ToTransform(const matrix_t *m, m3dTransform_t *out);
 /* rva 0x2d6750 and 0x2d65d0: a transform as a matrix (the pivots of the meshes, the frames of the animation) */
-void __thiscall M3DTransform_ToMatrix(m3dTransform_t *self, matrix_t *out);
-matrix_t *__thiscall M3DTransform_ToMatrixAnim(m3dTransform_t *self, matrix_t *out);
+void M3DTransform_ToMatrix(m3dTransform_t *self, matrix_t *out);
+matrix_t *M3DTransform_ToMatrixAnim(m3dTransform_t *self, matrix_t *out);
 /* rva 0x216960 (ScrapEngMain.cpp): the node tree of the scene in the log */
 void Scene_ShowTree(CScene *scn, CNode3D *parent, int indent);
 

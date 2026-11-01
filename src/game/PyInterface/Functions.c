@@ -59,7 +59,7 @@ void PyFunction_InitSphereFunc(void) {
 	crt_atexit(PyFunction_FiniSphereFunc);
 }
 
-cPy_Function *__thiscall cPy_Function_ctor(cPy_Function *self) {
+cPy_Function *cPy_Function_ctor(cPy_Function *self) {
 	cPy_Function *head = g_PyFunctions;
 
 	self->func = NULL;
@@ -79,7 +79,7 @@ cPy_Function *__thiscall cPy_Function_ctor(cPy_Function *self) {
 }
 
 /* creates the parameter file of a C function; 1 if it made one */
-byte __thiscall cPy_Function_NativeParams(cPy_Function *self) {
+byte cPy_Function_NativeParams(cPy_Function *self) {
 	if (!(self->flags & PYF_NATIVE) || self->params) {
 		return 0;
 	}
@@ -91,7 +91,7 @@ byte __thiscall cPy_Function_NativeParams(cPy_Function *self) {
 }
 
 /* creates the parameter list of a Python function */
-void __thiscall cPy_Function_PyParams(cPy_Function *self) {
+void cPy_Function_PyParams(cPy_Function *self) {
 	if ((self->flags & PYF_PYTHON) && !self->params) {
 		self->params = PyList_New(0);
 		CHECK(self->params);
@@ -99,7 +99,7 @@ void __thiscall cPy_Function_PyParams(cPy_Function *self) {
 }
 
 /* drops the parameters: the list, or the file goes back to the free list */
-void __thiscall cPy_Function_ReleaseParams(cPy_Function *self) {
+void cPy_Function_ReleaseParams(cPy_Function *self) {
 	if (self->flags & PYF_PYTHON) {
 		PyObject *list = self->params;
 		if (!list) {
@@ -117,7 +117,7 @@ void __thiscall cPy_Function_ReleaseParams(cPy_Function *self) {
 	self->params = NULL;
 }
 
-void __thiscall cPy_Function_ReleasePyParams(cPy_Function *self) {
+void cPy_Function_ReleasePyParams(cPy_Function *self) {
 	if ((self->flags & PYF_PYTHON) && self->params) {
 		PyObject *list = self->params;
 		Py_DECREF(list);
@@ -126,7 +126,7 @@ void __thiscall cPy_Function_ReleasePyParams(cPy_Function *self) {
 }
 
 /* the function of a Python binding is borrowed, only the parameter list is released */
-void __thiscall cPy_Function_ClearPython(cPy_Function *self) {
+void cPy_Function_ClearPython(cPy_Function *self) {
 	if (self->flags & PYF_PYTHON) {
 		self->func = NULL;
 		cPy_Function_ReleasePyParams(self);
@@ -134,7 +134,7 @@ void __thiscall cPy_Function_ClearPython(cPy_Function *self) {
 	}
 }
 
-void __thiscall cPy_Function_Clear(cPy_Function *self) {
+void cPy_Function_Clear(cPy_Function *self) {
 	if (self->flags & PYF_PYTHON) {
 		cPy_Function_ClearPython(self);
 		return;
@@ -144,7 +144,7 @@ void __thiscall cPy_Function_Clear(cPy_Function *self) {
 	self->func = NULL;
 }
 
-void __thiscall cPy_Function_dtor(cPy_Function *self) {
+void cPy_Function_dtor(cPy_Function *self) {
 	cPy_Function_ReleaseParams(self);
 	cPy_Function_Clear(self);
 	if (!g_pApp) {
@@ -163,7 +163,7 @@ void __thiscall cPy_Function_dtor(cPy_Function *self) {
 }
 
 /* binds a C function; its old parameter file goes to the free list without Close. Always 1. */
-byte __thiscall cPy_Function_SetNative(cPy_Function *self, nativefunc_t func) {
+byte cPy_Function_SetNative(cPy_Function *self, nativefunc_t func) {
 	cPy_Function_Clear(self);
 	if (func) {
 		cFileMem *f = self->params;
@@ -178,7 +178,7 @@ byte __thiscall cPy_Function_SetNative(cPy_Function *self, nativefunc_t func) {
 }
 
 /* binds module.func; only a Python binding is cleared before */
-byte __thiscall cPy_Function_SetPython(cPy_Function *self, const char *module, const char *func) {
+byte cPy_Function_SetPython(cPy_Function *self, const char *module, const char *func) {
 	cPy_Function_ClearPython(self);
 	if (!module || !func) {
 		return 0;
@@ -202,7 +202,7 @@ byte __thiscall cPy_Function_SetPython(cPy_Function *self, const char *module, c
 	return 0;
 }
 
-byte __thiscall cPy_Function_SetFunc(cPy_Function *self, const char *name) {
+byte cPy_Function_SetFunc(cPy_Function *self, const char *name) {
 	char module[0x100];
 
 	cPy_Function_Clear(self);
@@ -237,11 +237,11 @@ byte __thiscall cPy_Function_SetFunc(cPy_Function *self, const char *name) {
 	return cPy_Function_SetPython(self, module, dot + 1);
 }
 
-int __thiscall cPy_Function_IsValid(cPy_Function *self) {
+int cPy_Function_IsValid(cPy_Function *self) {
 	return (self->flags & (PYF_PYTHON | PYF_NATIVE)) != 0;
 }
 
-void __thiscall cPy_Function_AddParamI(cPy_Function *self, int v) {
+void cPy_Function_AddParamI(cPy_Function *self, int v) {
 	if (self->flags & PYF_NATIVE) {
 		cPy_Function_NativeParams(self);
 		cAbstractFile *f = self->params;
@@ -254,7 +254,7 @@ void __thiscall cPy_Function_AddParamI(cPy_Function *self, int v) {
 	}
 }
 
-void __thiscall cPy_Function_AddParamF(cPy_Function *self, float v) {
+void cPy_Function_AddParamF(cPy_Function *self, float v) {
 	if (self->flags & PYF_NATIVE) {
 		cPy_Function_NativeParams(self);
 		cAbstractFile *f = self->params;
@@ -267,7 +267,7 @@ void __thiscall cPy_Function_AddParamF(cPy_Function *self, float v) {
 	}
 }
 
-void __thiscall cPy_Function_AddParamS(cPy_Function *self, const char *v) {
+void cPy_Function_AddParamS(cPy_Function *self, const char *v) {
 	if (!(self->flags & (PYF_PYTHON | PYF_NATIVE))) {
 		return;
 	}
@@ -289,7 +289,7 @@ void __thiscall cPy_Function_AddParamS(cPy_Function *self, const char *v) {
  * With clear a C function gets NULL as its parameter file: the original reads the field again after the clear.
  * A Python function still gets the tuple made before.
  */
-int __thiscall cPy_Function_Execute(cPy_Function *self, byte clear) {
+int cPy_Function_Execute(cPy_Function *self, byte clear) {
 	int result = 0;
 
 	CHECK(!(self->flags & PYF_BLOCKED));
@@ -352,7 +352,7 @@ void cPy_Function_ClearAll(void) {
 }
 
 /* registry of C functions: inserted into the tree on construction (static objects) */
-void __thiscall cPy_NativeFunc_Insert(cPy_NativeFunc *root, cPy_NativeFunc *node) {
+void cPy_NativeFunc_Insert(cPy_NativeFunc *root, cPy_NativeFunc *node) {
 	cPy_NativeFunc **link = &root;
 	do {
 		int res = strcmp(node->name, (*link)->name);
@@ -364,7 +364,7 @@ void __thiscall cPy_NativeFunc_Insert(cPy_NativeFunc *root, cPy_NativeFunc *node
 	*link = node;
 }
 
-cPy_NativeFunc *__thiscall cPy_NativeFunc_ctor(cPy_NativeFunc *self, const char *name, nativefunc_t func) {
+cPy_NativeFunc *cPy_NativeFunc_ctor(cPy_NativeFunc *self, const char *name, nativefunc_t func) {
 	self->name = name;
 	self->func = func;
 	self->greater = NULL;

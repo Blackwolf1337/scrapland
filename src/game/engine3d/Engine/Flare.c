@@ -20,7 +20,7 @@ byte Floats11_Equal(const float *a, const float *b) {
 	return 1;
 }
 
-CFlare *__fastcall CFlare_ctor(CFlare *self) {
+CFlare *CFlare_ctor(CFlare *self) {
 	self->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->node = NULL;
 	self->vftable = CFLARE_VFTABLE;
@@ -46,13 +46,13 @@ static void CFlare_FreeGraphic(CFlare *self) {
 	}
 }
 
-void __fastcall CFlare_dtor(CFlare *self) {
+void CFlare_dtor(CFlare *self) {
 	self->vftable = CFLARE_VFTABLE;
 	CFlare_FreeGraphic(self);
 	CObjBase3D_dtor((CObjBase3D *)self);
 }
 
-CFlare *__thiscall CFlare_Delete(CFlare *self, byte flags) {
+CFlare *CFlare_Delete(CFlare *self, byte flags) {
 	CFlare_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CFlare));
@@ -60,7 +60,7 @@ CFlare *__thiscall CFlare_Delete(CFlare *self, byte flags) {
 	return self;
 }
 
-void __fastcall CFlare_Draw(CFlare *self) {
+void CFlare_Draw(CFlare *self) {
 	self->graphic->color = self->color;
 	self->graphic->scale[0] = self->scale[0];
 	self->graphic->scale[1] = self->scale[1];
@@ -80,7 +80,7 @@ static float CFlare_Fade(const CFlare *self, float dt) {
 	return t - k * dt * 0.2f;
 }
 
-void __thiscall CFlare_Render(CFlare *self, void *dev, CRenderNode *r) {
+void CFlare_Render(CFlare *self, void *dev, CRenderNode *r) {
 	CHECK(self->graphic);
 	CHECK(self->node);
 	if (g_Overdraw || g_SkipFlares) {
@@ -152,7 +152,7 @@ void __thiscall CFlare_Render(CFlare *self, void *dev, CRenderNode *r) {
 	ParticleSystem_Draw((CParticleSystem *)self, r);
 }
 
-void __thiscall CFlare_SetTexture(CFlare *self, const char *tex, const char *opac, int src, int dst, byte alpha) {
+void CFlare_SetTexture(CFlare *self, const char *tex, const char *opac, int src, int dst, byte alpha) {
 	CFlare_FreeGraphic(self);
 	CGraphic2D *g = operator_new(sizeof(CGraphic2D));
 	self->graphic = g ? CGraphic2D_ctor(g) : NULL;
@@ -162,6 +162,6 @@ void __thiscall CFlare_SetTexture(CFlare *self, const char *tex, const char *opa
 	self->graphic->screenSize = 1;
 }
 
-void __thiscall CFlare_SetTextureAdd(CFlare *self, const char *tex, const char *opac) {
+void CFlare_SetTextureAdd(CFlare *self, const char *tex, const char *opac) {
 	CFlare_SetTexture(self, tex, opac, 5, 6, 0xff);
 }

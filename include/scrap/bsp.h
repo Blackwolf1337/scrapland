@@ -315,30 +315,30 @@ SD_SIZE(BspLight, 0x118);
 #define g_TxfCheckFiles GAME_GLOBAL_IN(int, GVar_TXF_CheckFiles, 16)	/* gvar TXF_CheckFiles: the TXF mode asked for */
 
 /* engine3d/engine/bmp*.h instanced here */
-void __fastcall CBmpFlt2_dtor(CBmpFlt2 *self);
-void __fastcall CBmpFlt_dtor(CBmpFlt *self);
-void __thiscall CBmp_Assign(CBmp *self, const CBmp *orig);
-void __thiscall CBmpFlt2_Assign(CBmpFlt2 *self, const CBmpFlt2 *orig);
+void CBmpFlt2_dtor(CBmpFlt2 *self);
+void CBmpFlt_dtor(CBmpFlt *self);
+void CBmp_Assign(CBmp *self, const CBmp *orig);
+void CBmpFlt2_Assign(CBmpFlt2 *self, const CBmpFlt2 *orig);
 /* new pixels filled with color */
-void __thiscall CBmp_CreateFill(CBmp *self, int width, int height, uint32_t color);
-void __thiscall CBmpFlt2_CreateFill(CBmpFlt2 *self, int width, int height, const float *color);
-void __thiscall CBmpFlt_CreateFill(CBmpFlt *self, int width, int height, const float *color);
+void CBmp_CreateFill(CBmp *self, int width, int height, uint32_t color);
+void CBmpFlt2_CreateFill(CBmpFlt2 *self, int width, int height, const float *color);
+void CBmpFlt_CreateFill(CBmpFlt *self, int width, int height, const float *color);
 /* orig turned by 90 degrees (the size swapped) */
-void __thiscall CBmp_Rotate(CBmp *self, const CBmp *orig);
-void __thiscall CBmpFlt2_Rotate(CBmpFlt2 *self, const CBmpFlt2 *orig);
+void CBmp_Rotate(CBmp *self, const CBmp *orig);
+void CBmpFlt2_Rotate(CBmpFlt2 *self, const CBmpFlt2 *orig);
 
 /* the TXF cache */
-BspTxf *__thiscall BspTxf_ctor(BspTxf *self, const char *map, const char *name, int n, int on);
-void __fastcall BspTxf_dtor(BspTxf *self);
-void __thiscall BspTxf_SetName(BspTxf *self, int i);
-void __fastcall BspTxf_Info(BspTxf *self);
-byte __thiscall BspTxf_Check(BspTxf *self, int i, byte def, byte nl);
-void __thiscall BspTxf_Save(BspTxf *self, CBmpFlt2 *bmp);
-void __thiscall BspTxf_Load(BspTxf *self, BspTri **lists, int n, int which);
+BspTxf *BspTxf_ctor(BspTxf *self, const char *map, const char *name, int n, int on);
+void BspTxf_dtor(BspTxf *self);
+void BspTxf_SetName(BspTxf *self, int i);
+void BspTxf_Info(BspTxf *self);
+byte BspTxf_Check(BspTxf *self, int i, byte def, byte nl);
+void BspTxf_Save(BspTxf *self, CBmpFlt2 *bmp);
+void BspTxf_Load(BspTxf *self, BspTri **lists, int n, int which);
 
 /* the lists */
-BspTri *__fastcall BspTri_ctor(BspTri *self);
-void __fastcall BspTri_dtor(BspTri *self);
+BspTri *BspTri_ctor(BspTri *self);
+void BspTri_dtor(BspTri *self);
 void BspTri_CalcCenter(BspTri *tri);
 box_t *BspTri_ListBox(box_t *out, const BspTri *list);
 box_t *BspTri_AddBox(box_t *out, const box_t *in, const BspTri *tri);
@@ -365,8 +365,8 @@ float *Bsp_Hammersley(float *out, uint32_t i, uint32_t n);
 void Bsp_ColorIntens(uint32_t *out, const float *rgb);
 
 /* the light map pages */
-void __fastcall BspLMap_dtor(BspLMap *self);
-void __thiscall BspLMap_Init(BspLMap *self, int width, int height);
+void BspLMap_dtor(BspLMap *self);
+void BspLMap_Init(BspLMap *self, int width, int height);
 CMaterial *BspLMap_GetMat(const BspLMap *self);
 
 /* a free place of w x h in the page (rounded up to the padding, maybe turned); 0 when full */
@@ -377,7 +377,7 @@ void BspLMap_Copy(CBmp *dst, int dx, int dy, const CBmpFlt2 *orig, const CBmp *m
 byte BspLMap_Insert(BspTri *list, BspLMap *lm, int w, int h);
 /* the light maps of the lists (with the ones without) into new pages by material and sector, the pages saved as
  * "<scene>.%04d.LMAP1.tga" (LMAP2 the secondary ones, .INFO the debug colors) and their materials made from them */
-void __fastcall CBsp_GroupMaps(CBsp *self);
+void CBsp_GroupMaps(CBsp *self);
 
 /* the light map computation helpers */
 float *Bsp_DirSphere(float *out, float z, float u);
@@ -386,7 +386,7 @@ void Bsp_TexelBox(const box_t *b, int axis, float scale, int *x0, int *y0, int *
 byte Bsp_SameSize(const box_t *a, int axis, float scale, const box_t *b);
 /* the extents and the size of the light map; notify: a message for too large ones */
 void BspTri_SetExt(BspTri *tri, int x0, int y0, int x1, int y1, byte notify);
-byte __thiscall BspTri_TexelOf(const BspTri *tri, const vec3_t *p, int *x, int *y);
+byte BspTri_TexelOf(const BspTri *tri, const vec3_t *p, int *x, int *y);
 byte BspTri_VertEqual(const BspTri *act, uint32_t nv, const BspTri *tri);
 float *Bsp_SampleTex(float *out, float u, float v, int axis, float scale, const BspTri *tri, const CBmp *tex);
 float *Bsp_SampleTexAA(float *out, int x, int y, int axis, float scale, const BspTri *tri, const CBmp *tex, int n);
@@ -407,62 +407,62 @@ vec3_t *BspTri_Sample(vec3_t *out, int x, int y, int axis, float scale, const Bs
 	float *weight);
 void Bsp_MatInfo(CMaterial *m);
 int BspRegion_Debug(BspRegion *r);
-void __thiscall BspLMap_CreateMat(BspLMap *self, const char *name, byte level);
+void BspLMap_CreateMat(BspLMap *self, const char *name, byte level);
 void BspLMap_Save(char *copy, CBmp *bmp, const char *path, int n, const char *ext);
-void __fastcall CBsp_AreasGlow(CBsp *self);
-void __fastcall CBsp_AreasMax(CBsp *self);
-void __thiscall CBsp_IllumRegions(CBsp *self, int n);
-void __fastcall CBsp_AdjustGamma(CBsp *self);
-int __thiscall BspRegion_Link(CBsp *self, BspRegion *a, BspRegion *b, int link, float threshold);
-void __fastcall CBsp_InitAreas(CBsp *self);
+void CBsp_AreasGlow(CBsp *self);
+void CBsp_AreasMax(CBsp *self);
+void CBsp_IllumRegions(CBsp *self, int n);
+void CBsp_AdjustGamma(CBsp *self);
+int BspRegion_Link(CBsp *self, BspRegion *a, BspRegion *b, int link, float threshold);
+void CBsp_InitAreas(CBsp *self);
 void BspTri_CalcGlow(BspTri *list);
 float Bsp_Occlusion(const vec3_t *p, const vec3_t *n, float r, int samples, const vec3_t *light, CGround *ground);
 void CBmpFlt_FillGaps(CBmpFlt *img, const CBmp *mask);
-void __fastcall CBsp_SaveIni(CBsp *self);
-void __thiscall Bsp_EndMessage(CBsp *self, int secs);
+void CBsp_SaveIni(CBsp *self);
+void Bsp_EndMessage(CBsp *self, int secs);
 
 /* the rest */
-void __fastcall BspNode_dtor(BspNode *self);
-void __fastcall BspName_dtor(BspName *self);
-BspZone *__fastcall BspZone_ctor(BspZone *self);
-void __fastcall BspZone_dtor(BspZone *self);
-BspZone *__thiscall BspZone_Delete(BspZone *self, uint32_t flags);
-void __fastcall BspVB_Unwind(CRenderVB *self);
-void __fastcall Table_FreeB4(CTable *t);
-CRenderVB *__thiscall BspZone_GetVB(BspZone *self, int frmt);
-void __fastcall CBsp_dtor(CBsp *self);
+void BspNode_dtor(BspNode *self);
+void BspName_dtor(BspName *self);
+BspZone *BspZone_ctor(BspZone *self);
+void BspZone_dtor(BspZone *self);
+BspZone *BspZone_Delete(BspZone *self, uint32_t flags);
+void BspVB_Unwind(CRenderVB *self);
+void Table_FreeB4(CTable *t);
+CRenderVB *BspZone_GetVB(BspZone *self, int frmt);
+void CBsp_dtor(CBsp *self);
 void Bsp_MarkNode(CNode3D *node, byte release);
-void __fastcall CBsp_CreateZones(CBsp *self);
-void __fastcall CBsp_ColorSinLmap(CBsp *self);
-void __fastcall CBsp_RemoveLights(CBsp *self);
+void CBsp_CreateZones(CBsp *self);
+void CBsp_ColorSinLmap(CBsp *self);
+void CBsp_RemoveLights(CBsp *self);
 
 /* drawing */
 void __stdcall BspTri_Draw(BspTri *tri);
-void __thiscall CBsp_DrawTri(CBsp *self, BspTri *tri, byte pass);
-void __thiscall CBsp_DrawZone(CBsp *self, int sector, byte pass);
-void __thiscall CBsp_DrawPass(CBsp *self, byte pass);
-void __fastcall CBsp_DrawWire(CBsp *self);
-void __fastcall CBsp_DrawFX(CBsp *self);
-void __fastcall CBsp_Render(CBsp *self);
+void CBsp_DrawTri(CBsp *self, BspTri *tri, byte pass);
+void CBsp_DrawZone(CBsp *self, int sector, byte pass);
+void CBsp_DrawPass(CBsp *self, byte pass);
+void CBsp_DrawWire(CBsp *self);
+void CBsp_DrawFX(CBsp *self);
+void CBsp_Render(CBsp *self);
 void Bsp_PortalInfo(byte info);
-void __fastcall CBsp_ReleaseD3D(CBsp *self);
+void CBsp_ReleaseD3D(CBsp *self);
 /* the gates of mundo.cpp are in world.h; these are called by the renderer */
 void Bsp_RenderStencil(void);
 void Bsp_RenderTransp(void);
 void Bsp_RenderPortals(void);
 
 /* the map made from the floor: read from the .EMI (without calcular) or computed */
-CBsp *__thiscall CBsp_ctor(CBsp *self, const char *name, const vec3_t *scale);
+CBsp *CBsp_ctor(CBsp *self, const char *name, const vec3_t *scale);
 /* the map compiler dialog */
 void Bsp_DlgEnable(void *hwnd);
 intptr_t __stdcall Bsp_DlgProc(void *hwnd, uint32_t msg, uintptr_t wparam, intptr_t lparam);
 
 /* the .EMI file: 0 when read, -1 without the file */
-int __fastcall CBsp_ReadEMI(CBsp *self);
+int CBsp_ReadEMI(CBsp *self);
 /* the triangles by sector and by material into the log, at debug level 3 */
-void __fastcall CBsp_Prepare(CBsp *self);
+void CBsp_Prepare(CBsp *self);
 /* the vertex and index buffers of the sectors and lists, the materials of the debug views */
-void __fastcall CBsp_InitD3D(CBsp *self);
+void CBsp_InitD3D(CBsp *self);
 
 /* the map compiler (BspCalc.c) */
 /* the active lights of the scene into g_BspLights, all of them switched off; the ambient of [mapa_sombras] */
@@ -471,18 +471,18 @@ void Bsp_TakeLights(CScene *scn);
  * weight of its samples) where it is larger, the triangle into the masks; the texel box of each into ext2 */
 void BspTri_Mask(BspTri *list, CBmp *cob);
 /* the lists of the same material, page and sector joined (below 4096 triangles), sorted, their vertex lists */
-void __fastcall CBsp_CreateBuffers(CBsp *self);
+void CBsp_CreateBuffers(CBsp *self);
 /* the light maps light, light2 and rad2 of each list from the lights (shadows by tracing the floor), with the TXF caches */
-void __fastcall CBsp_DirectLight(CBsp *self);
+void CBsp_DirectLight(CBsp *self);
 /* the .EMI file written: 0, -1 on a write error */
-int __fastcall CBsp_SaveEMI(CBsp *self);
+int CBsp_SaveEMI(CBsp *self);
 /* the global light of the radiosity (ilum_global, rebotes bounces) added to the light maps */
-void __fastcall CBsp_RadGlobal(CBsp *self);
+void CBsp_RadGlobal(CBsp *self);
 /* the light of the area lights and glow maps (radiosidad) into rad */
-void __fastcall CBsp_RadAreas(CBsp *self);
+void CBsp_RadAreas(CBsp *self);
 
 /* the light maps computed: the lists of the meshes of the scene, their light, the pages and the .EMI */
-void __fastcall CBsp_Calculate(CBsp *self);
+void CBsp_Calculate(CBsp *self);
 
 /* the float edits of the dialogs (src/game/engine3d/Engine/Misc.c): set returns 1, get 1 for a number */
 byte Dlg_SetFloat(void *hwnd, int id, float v, int prec);
@@ -520,30 +520,30 @@ typedef struct BspLights {
 #define g_Bsp2Eye GAME_GLOBAL(vec3_t, g_Bsp2Eye)
 #define g_Bsp2Color GAME_GLOBAL(int, g_Bsp2Color)
 
-Bsp2Node *__fastcall Bsp2Node_ctor(Bsp2Node *self);
-void __fastcall Bsp2Node_dtor(Bsp2Node *self);
-void __fastcall BspLights_dtor(void *self);
+Bsp2Node *Bsp2Node_ctor(Bsp2Node *self);
+void Bsp2Node_dtor(Bsp2Node *self);
+void BspLights_dtor(void *self);
 /* the segment a b blocked by a shadow triangle: the first hit into out (may be NULL) */
-int __thiscall BspLights_CheckLine(BspLights *self, const vec3_t *a, const vec3_t *b, vec3_t *out);
+int BspLights_CheckLine(BspLights *self, const vec3_t *a, const vec3_t *b, vec3_t *out);
 /* 1 blocked, -1 free */
 int Bsp2_CheckLine(const vec3_t *a, const vec3_t *b, vec3_t *out, Bsp2Node *node);
 /* the leaves as debug triangles, from the far side of the eye */
-void __fastcall BspLights_Render(void *self);
+void BspLights_Render(void *self);
 void Bsp2_Render(Bsp2Node *node);
 /* a triangle of src with the corners v0 v1 v2 into the front (side 1) or the back child, or only counted */
 void Bsp2_AddTri(byte countOnly, Bsp2Node *node, uint32_t *nFront, uint32_t *nBack, int side, const Bsp2Tri *src,
 	const vec3_t *v0, const vec3_t *v1, const vec3_t *v2);
 void Bsp2_Stats(int print);
 /* the axis plane to split the leaf at, 0 for none */
-byte __thiscall Bsp2_ChoosePlane(BspLights *self, Bsp2Node *node, plane_t *dest);
+byte Bsp2_ChoosePlane(BspLights *self, Bsp2Node *node, plane_t *dest);
 /* the leaf below the root a point is in (the root when its child on that side is missing) */
-Bsp2Node *__thiscall BspLights_FindLeaf(BspLights *self, const vec3_t *p);
+Bsp2Node *BspLights_FindLeaf(BspLights *self, const vec3_t *p);
 Bsp2Node *Bsp2_FindLeaf(const vec3_t *p, Bsp2Node *node);
 /* the triangles of the tree */
 int Bsp2_Count(const Bsp2Node *node);
 Bsp2Tri *Bsp2Tri_Copy(Bsp2Tri *dest, const Bsp2Tri *src);
 /* the leaf split until no plane is found, with a debug line a node */
-void __thiscall Bsp2_Build(BspLights *self, Bsp2Node *node, int depth);
+void Bsp2_Build(BspLights *self, Bsp2Node *node, int depth);
 /* the triangles of the leaf by pl into two new children (countOnly: only the counts); crossing ones go to both */
 void Bsp2_Split(byte countOnly, Bsp2Node *node, const plane_t *pl, int *outFront, int *outBack);
 
@@ -575,28 +575,28 @@ SD_SIZE(CRadiosity, 0xc);
 /* the unit normals of bmp\normales.rad, read once */
 #define g_RadNormals GAME_GLOBAL(CTable, g_RadNormals)
 
-BspLink *__thiscall BspLink_ctor(BspLink *self, BspLink *next, BspRegion *region, float ff);
+BspLink *BspLink_ctor(BspLink *self, BspLink *next, BspRegion *region, float ff);
 /* the next links deleted */
-void __fastcall BspLink_dtor(BspLink *self);
-BspLink *__thiscall BspLink_Delete(BspLink *self, byte flags);
-RadAreaLight *__fastcall RadAreaLight_ctor(RadAreaLight *self);
-RadAreaLight *__thiscall RadAreaLight_Delete(RadAreaLight *self, byte flags);
+void BspLink_dtor(BspLink *self);
+BspLink *BspLink_Delete(BspLink *self, byte flags);
+RadAreaLight *RadAreaLight_ctor(RadAreaLight *self);
+RadAreaLight *RadAreaLight_Delete(RadAreaLight *self, byte flags);
 /* the color and the plane of parent */
-BspRegion *__thiscall BspRegion_ctor(BspRegion *self, int x, int y, int lx, int ly, BspRegion *parent);
-void __fastcall BspRegion_dtor(BspRegion *self);
+BspRegion *BspRegion_ctor(BspRegion *self, int x, int y, int lx, int ly, BspRegion *parent);
+void BspRegion_dtor(BspRegion *self);
 /* the .rad files: name.rad and lights.rad of dir (may be NULL), then the global one */
-CRadiosity *__thiscall CRadiosity_ctor(CRadiosity *self, const char *dir);
-void __fastcall CRadiosity_dtor(CRadiosity *self);
+CRadiosity *CRadiosity_ctor(CRadiosity *self, const char *dir);
+void CRadiosity_dtor(CRadiosity *self);
 /* the area light of Mat, read when it is not in the table yet (NULL for none) */
-RadAreaLight *__thiscall CRadiosity_Get(CRadiosity *self, CMaterial *Mat);
-RadAreaLight *__thiscall CRadiosity_Add(CRadiosity *self, CMaterial *Mat);
-RadAreaLight *__thiscall CRadiosity_Find(CRadiosity *self, CMaterial *Mat);
+RadAreaLight *CRadiosity_Get(CRadiosity *self, CMaterial *Mat);
+RadAreaLight *CRadiosity_Add(CRadiosity *self, CMaterial *Mat);
+RadAreaLight *CRadiosity_Find(CRadiosity *self, CMaterial *Mat);
 /* the section of the area light named in the material name into dest (may be NULL): 1 found */
-byte __thiscall CRadiosity_ReadMat(CRadiosity *self, CMaterial *Mat, RadAreaLight *dest);
+byte CRadiosity_ReadMat(CRadiosity *self, CMaterial *Mat, RadAreaLight *dest);
 /* rgbi and intensity of the area light of Mat: 1 found */
-byte __thiscall CRadiosity_GetColor(CRadiosity *self, CMaterial *Mat, void *dest);
+byte CRadiosity_GetColor(CRadiosity *self, CMaterial *Mat, void *dest);
 /* CRadiosity_ReadMat with the warnings of a missing or old definition */
-byte __thiscall CRadiosity_ReadMatWarn(CRadiosity *self, CMaterial *Mat, RadAreaLight *dest);
+byte CRadiosity_ReadMatWarn(CRadiosity *self, CMaterial *Mat, RadAreaLight *dest);
 /* the normals and their count */
 vec3_t *Rad_Normals(uint32_t *num);
 

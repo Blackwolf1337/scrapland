@@ -75,21 +75,21 @@ SD_SIZE(CAnimGroups, 0xb0);
 /* Engine/escena.cpp: the node with that iObjeto */
 
 /* the groups destroyed and their slots cleared */
-CAnimGroups *__fastcall CAnimGroups_ctor(CAnimGroups *self);
-void __fastcall CAnimGroups_Clear(CAnimGroups *self);
-void __fastcall CAnimGroup_dtor(CAnimGroup *self);
+CAnimGroups *CAnimGroups_ctor(CAnimGroups *self);
+void CAnimGroups_Clear(CAnimGroups *self);
+void CAnimGroup_dtor(CAnimGroup *self);
 /* the events of the list deleted */
-void __fastcall AnimEvents_Free(CAnimEvent **list);
+void AnimEvents_Free(CAnimEvent **list);
 /* the step with the 2 character tag, -1 none */
 int MorphData_Find(const MorphData *md, const char *tag);
 /* "<i>_Data" (6 bytes from Target on) and "<i>_Tag" of the section; 0 without the data */
 byte MorphData_Read(CIniFile *ini, const char *sect, int i, MorphData *d, int targets);
 /* into the first free slot, its index */
-int __thiscall CAnimGroups_Add(CAnimGroups *self, CAnimGroup *g);
-CAnimGroup *__thiscall CAnimGroups_Get(CAnimGroups *self, uint32_t i);
+int CAnimGroups_Add(CAnimGroups *self, CAnimGroup *g);
+CAnimGroup *CAnimGroups_Get(CAnimGroups *self, uint32_t i);
 /* by name (no case), its slot into *idx */
-CAnimGroup *__thiscall CAnimGroups_Find(CAnimGroups *self, const char *name, int *idx);
-int __fastcall CAnimGroups_Count(CAnimGroups *self);
+CAnimGroup *CAnimGroups_Find(CAnimGroups *self, const char *name, int *idx);
+int CAnimGroups_Count(CAnimGroups *self);
 /* the animation node of the scene node named node moved to where that node is in scene; without it in anim the
  * animation is marked a morph (vertex) animation */
 byte AnimGroup_AlignNode(CScene *scene, CScene *anim, const char *node);

@@ -80,7 +80,7 @@ static byte D3DApp_TryDepth(CD3DApplication *self, uint32_t adapter, uint32_t ty
 }
 
 /* the depth/stencil format for m_dwMinDepthBits and m_dwMinStencilBits, then the depth alone, then D16 */
-int __thiscall CD3DApp_FindDepthStencilFormat(CD3DApplication *self, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t *out) {
+int CD3DApp_FindDepthStencilFormat(CD3DApplication *self, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t *out) {
 	uint32_t depth = self->minDepthBits, stencil = self->minStencilBits;
 
 	if (depth <= 16 && stencil == 0 && D3DApp_TryDepth(self, adapter, type, fmt, FMT_D16, out)) {
@@ -115,7 +115,7 @@ int __thiscall CD3DApp_FindDepthStencilFormat(CD3DApplication *self, uint32_t ad
 	return D3DApp_TryDepth(self, adapter, type, fmt, FMT_D16, out);
 }
 
-CD3DApplication *__fastcall CD3DApp_ctor(CD3DApplication *self) {
+CD3DApplication *CD3DApp_ctor(CD3DApplication *self) {
 	self->vftable = CD3DAPPLICATION_VFTABLE;
 	g_Engine = self;
 	self->numAdapters = 0;
@@ -148,13 +148,13 @@ CD3DApplication *__fastcall CD3DApp_ctor(CD3DApplication *self) {
 	return self;
 }
 
-void __fastcall CD3DApp_dtor(CD3DApplication *self) {
+void CD3DApp_dtor(CD3DApplication *self) {
 	self->vftable = CD3DAPPLICATION_VFTABLE;
 	g_Engine = NULL;
 }
 
 /* vf00: the window style (and in fullscreen the size of the mode) after a change */
-int __thiscall CD3DApp_AdjustWindowForChange(CD3DApplication *self) {
+int CD3DApp_AdjustWindowForChange(CD3DApplication *self) {
 	if (self->windowed) {
 		exe_SetWindowLongA(self->hWnd, -16, (int32_t)self->windowStyle);
 	} else {
@@ -171,7 +171,7 @@ int __thiscall CD3DApp_AdjustWindowForChange(CD3DApplication *self) {
 }
 
 /* vf13: pause counted over the callers, the timer stopped with the first and started with the last */
-void __thiscall CD3DApp_Pause(CD3DApplication *self, int pause) {
+void CD3DApp_Pause(CD3DApplication *self, int pause) {
 	int n = g_AppPausedCount + (pause ? 1 : -1);
 
 	g_AppPausedCount = n;
@@ -192,7 +192,7 @@ typedef int(__stdcall *d3dGetDepthStencil_t)(void *dev, void **surf);
 typedef int(__stdcall *d3dGetDesc_t)(void *surf, void *desc);
 
 /* the descriptions of the back buffer and the depth buffer, the aspect ratio of the back buffer */
-void __fastcall CD3DApp_UpdateBackBufferDesc(CD3DApplication *self) {
+void CD3DApp_UpdateBackBufferDesc(CD3DApplication *self) {
 	void *surf;
 	void *dev = self->device;
 
@@ -235,11 +235,11 @@ static int D3DApp_DevReset(CD3DApplication *self) {
 	return r;
 }
 
-int __thiscall CD3DApp_ResetDevice(CD3DApplication *self) {
+int CD3DApp_ResetDevice(CD3DApplication *self) {
 	return D3DApp_DevReset(self);
 }
 
-int __thiscall CD3DApp_Reset(CD3DApplication *self) {
+int CD3DApp_Reset(CD3DApplication *self) {
 	int r = self->vftable->InvalidateDeviceObjects(self);
 	if (r < 0) {
 		return r;
@@ -264,13 +264,13 @@ int __thiscall CD3DApp_Reset(CD3DApplication *self) {
 }
 
 /* the default virtual methods: nothing to do, S_OK */
-int __thiscall CD3DApp_Nop(CD3DApplication *self) {
+int CD3DApp_Nop(CD3DApplication *self) {
 	(void)self;
 	return 0;
 }
 
 /* vf01 ConfirmDevice: every device is fine */
-int __thiscall CD3DApp_ConfirmDevice(CD3DApplication *self, D3DCaps8 *caps, uint32_t behavior, uint32_t fmt) {
+int CD3DApp_ConfirmDevice(CD3DApplication *self, D3DCaps8 *caps, uint32_t behavior, uint32_t fmt) {
 	(void)self;
 	(void)caps;
 	(void)behavior;
@@ -279,7 +279,7 @@ int __thiscall CD3DApp_ConfirmDevice(CD3DApplication *self, D3DCaps8 *caps, uint
 }
 
 /* the device released (an error in the log when something still holds it), then FinalCleanup (vtable 0x24) */
-int __thiscall CD3DApp_Cleanup(CD3DApplication *self) {
+int CD3DApp_Cleanup(CD3DApplication *self) {
 	self->active = 0;
 	self->ready = 0;
 	if (self->device) {
@@ -317,7 +317,7 @@ static byte D3DApp_Recreate(CD3DApplication *self, int *err) {
 }
 
 /* windowed on the current device or the first one of all adapters that can, the environment made again */
-int __thiscall CD3DApp_ForceWindowed(CD3DApplication *self) {
+int CD3DApp_ForceWindowed(CD3DApplication *self) {
 	D3DDeviceInfo *dev = D3DApp_CurDevice(self);
 
 	if (!dev->bCanDoWindowed) {
@@ -348,7 +348,7 @@ int __thiscall CD3DApp_ForceWindowed(CD3DApplication *self) {
 	return 0;
 }
 
-int __thiscall CD3DApp_ToggleFullscreen(CD3DApplication *self) {
+int CD3DApp_ToggleFullscreen(CD3DApplication *self) {
 	D3DAdapterInfo *ad = &self->adapters[self->adapter];
 	D3DDeviceInfo *dev = &ad->devices[ad->dwCurrentDevice];
 	D3DModeInfo *mode = &dev->modes[dev->dwCurrentMode];
@@ -393,7 +393,7 @@ int __thiscall CD3DApp_ToggleFullscreen(CD3DApplication *self) {
 typedef void *(__stdcall *getmodulehandle_t)(const char *name);
 #define exe_GetModuleHandleA GAME_IMPORT(getmodulehandle_t, GetModuleHandleA, 4)
 
-int __thiscall CD3DApp_UserSelectNewDevice(CD3DApplication *self) {
+int CD3DApp_UserSelectNewDevice(CD3DApplication *self) {
 	if (!self->windowed && CD3DApp_ToggleFullscreen(self) < 0) {
 		CD3DApp_DisplayErrorMsg(self, 0x8200000c, 1);
 		return E_FAIL;
@@ -503,7 +503,7 @@ static void D3DApp_Cat(char *dst, int size, const char *src) {
 	}
 }
 
-int __thiscall CD3DApp_Create(CD3DApplication *self, void *inst) {
+int CD3DApp_Create(CD3DApplication *self, void *inst) {
 	exe_wndclass wc;
 	exe_rect r;
 	int hr;
@@ -558,7 +558,7 @@ fail:
 	return CD3DApp_DisplayErrorMsg(self, hr, 1);
 }
 
-int __thiscall CD3DApp_DisplayErrorMsg(CD3DApplication *self, int hr, int type) {
+int CD3DApp_DisplayErrorMsg(CD3DApplication *self, int hr, int type) {
 	char msg[0x200];
 	const char *s;
 
@@ -622,7 +622,7 @@ int __thiscall CD3DApp_DisplayErrorMsg(CD3DApplication *self, int hr, int type) 
 
 /* the modes, depth formats and behaviors of the HAL and REF devices of all adapters, then the first fullscreen HAL
  * device (with fullscreen) or the first windowed one; the reasons a windowed REF had to be taken shown */
-int __fastcall CD3DApp_BuildDeviceList(CD3DApplication *self) {
+int CD3DApp_BuildDeviceList(CD3DApplication *self) {
 	static const uint32_t types[2] = { D3DDEVTYPE_HAL, D3DDEVTYPE_REF };
 	const char *names[2] = { "HAL", "REF" };	/* "HAL", "REF" */
 	D3DDisplayMode modes[100];
@@ -851,7 +851,7 @@ int __fastcall CD3DApp_BuildDeviceList(CD3DApplication *self) {
 	return (int)D3DAPPERR_NOWINDOWABLEDEVICES;
 }
 
-int __thiscall CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
+int CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 	D3DAdapterInfo *ad = &self->adapters[self->adapter];
 	D3DDeviceInfo *dev = &ad->devices[ad->dwCurrentDevice];
 	D3DModeInfo *mode = &dev->modes[dev->dwCurrentMode];
@@ -948,7 +948,7 @@ int __thiscall CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 	return hr;
 }
 
-intptr_t __thiscall CD3DApp_MsgProc(CD3DApplication *self, void *hwnd, uint32_t msg, uintptr_t w, intptr_t l) {
+intptr_t CD3DApp_MsgProc(CD3DApplication *self, void *hwnd, uint32_t msg, uintptr_t w, intptr_t l) {
 	switch (msg) {
 	case 0x5:			/* WM_SIZE */
 		self->active = !(w == 4 || w == 1);	/* SIZE_MAXHIDE, SIZE_MINIMIZED */
@@ -1132,7 +1132,7 @@ static void D3DApp_FrameStats(CD3DApplication *self) {
 }
 
 /* a lost device reset when it can be; the scene moved (while the time runs or for a single step) and drawn */
-int __thiscall CD3DApp_Render(CD3DApplication *self) {
+int CD3DApp_Render(CD3DApplication *self) {
 	int hr = 0;
 
 	/* differs from the original on purpose (no sleeps): no frame while the frame limiter holds it back */
@@ -1196,7 +1196,7 @@ int __thiscall CD3DApp_Render(CD3DApplication *self) {
 }
 
 /* the message loop of the framework with the frame of CD3DApp_Render inside; until WM_QUIT */
-int __thiscall CD3DApp_Run(CD3DApplication *self) {
+int CD3DApp_Run(CD3DApplication *self) {
 	exe_msg msg;
 	void *acc = exe_LoadAcceleratorsA(NULL, (const char *)0x71);
 	int hr = 0;

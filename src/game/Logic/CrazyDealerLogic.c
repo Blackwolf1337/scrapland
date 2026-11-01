@@ -4,13 +4,13 @@
  */
 #include "scrap/logic.h"
 
-cCrazyDealerLocalLogic *__thiscall cCrazyDealerLocalLogic_ctor(cCrazyDealerLocalLogic *self, cEntity *parent) {
+cCrazyDealerLocalLogic *cCrazyDealerLocalLogic_ctor(cCrazyDealerLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
 	self->base.vftable = CCRAZYDEALERLOCALLOGIC_VFTABLE;
 	return self;
 }
 
-cCrazyDealerLocalLogic *__thiscall cCrazyDealerLocalLogic_Delete(cCrazyDealerLocalLogic *self, byte flags) {
+cCrazyDealerLocalLogic *cCrazyDealerLocalLogic_Delete(cCrazyDealerLocalLogic *self, byte flags) {
 	self->base.vftable = CCRAZYDEALERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -20,6 +20,6 @@ cCrazyDealerLocalLogic *__thiscall cCrazyDealerLocalLogic_Delete(cCrazyDealerLoc
 }
 
 /* vf17 */
-void __thiscall cCrazyDealerLocalLogic_Update(cCrazyDealerLocalLogic *self, float dt) {
+void cCrazyDealerLocalLogic_Update(cCrazyDealerLocalLogic *self, float dt) {
 	cGenCharLocalLogic_Update(self, dt);
 }

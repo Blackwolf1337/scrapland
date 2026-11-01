@@ -27,7 +27,7 @@ static void FileIO_Delete(cAbstractFile *f) {
 	operator_delete_sized(f, sizeof(cFilePack));
 }
 
-CFileIO *__thiscall CFileIO_ctor(CFileIO *self, const char *name, const char *mode) {
+CFileIO *CFileIO_ctor(CFileIO *self, const char *name, const char *mode) {
 	self->f = NULL;
 	self->error = 0;
 	self->err = 0;
@@ -41,7 +41,7 @@ CFileIO *__thiscall CFileIO_ctor(CFileIO *self, const char *name, const char *mo
 	return self;
 }
 
-void __thiscall CFileIO_dtor(CFileIO *self) {
+void CFileIO_dtor(CFileIO *self) {
 	CHECK(self->error || !self->block);
 	CFileIO_Close(self);
 }
@@ -75,7 +75,7 @@ void *FileIO_ReadAll(const char *name, void **buf, uint32_t *size) {
 	return data;
 }
 
-int __thiscall CFileIO_Finish(CFileIO *self) {
+int CFileIO_Finish(CFileIO *self) {
 	CFileIO_Close(self);
 	return 0;
 }
@@ -86,7 +86,7 @@ void File_RelPath(char *dest, const char *path) {
 }
 
 /* the open blocks are dropped: the block pointer starts with its id, so it passes for the id */
-int __thiscall CFileIO_Close(CFileIO *self) {
+int CFileIO_Close(CFileIO *self) {
 	while (self->block) {
 		CFileIO_PopBlock(self, (const char *)self->block);
 	}
@@ -102,7 +102,7 @@ int __thiscall CFileIO_Close(CFileIO *self) {
 	return 0;
 }
 
-int __thiscall CFileIO_Write(CFileIO *self, const void *buf, int n) {
+int CFileIO_Write(CFileIO *self, const void *buf, int n) {
 	if (self->error) {
 		return -1;
 	}
@@ -112,7 +112,7 @@ int __thiscall CFileIO_Write(CFileIO *self, const void *buf, int n) {
 	return 0;
 }
 
-int __thiscall CFileIO_WriteString(CFileIO *self, const char *s) {
+int CFileIO_WriteString(CFileIO *self, const char *s) {
 	int len = s ? (int)strlen(s) + 1 : 0;
 
 	if (self->error) {
@@ -129,7 +129,7 @@ int __thiscall CFileIO_WriteString(CFileIO *self, const char *s) {
 }
 
 /* the size of the block into its placeholder */
-int __thiscall CFileIO_EndBlockWrite(CFileIO *self, const char *id) {
+int CFileIO_EndBlockWrite(CFileIO *self, const char *id) {
 	if (self->error) {
 		return -1;
 	}
@@ -152,7 +152,7 @@ int __thiscall CFileIO_EndBlockWrite(CFileIO *self, const char *id) {
 	return CFileIO_SetError(self, NULL);
 }
 
-int __thiscall CFileIO_WriteInt(CFileIO *self, int32_t v) {
+int CFileIO_WriteInt(CFileIO *self, int32_t v) {
 	if (self->error) {
 		return -1;
 	}
@@ -160,7 +160,7 @@ int __thiscall CFileIO_WriteInt(CFileIO *self, int32_t v) {
 	return 0;
 }
 
-int __thiscall CFileIO_BeginBlockWrite(CFileIO *self, const char *id) {
+int CFileIO_BeginBlockWrite(CFileIO *self, const char *id) {
 	if (self->error) {
 		return -1;
 	}
@@ -219,7 +219,7 @@ char *FileIO_Gets(char *buf, int size, void *f) {
 	return buf;
 }
 
-int __thiscall CFileIO_Unsupported(CFileIO *self) {
+int CFileIO_Unsupported(CFileIO *self) {
 	if (!self->error) {
 		CHECK(0);
 		self->error = 1;
@@ -309,7 +309,7 @@ int File_StatPack(const char *name, void *st) {
 	return File_StatX(name, st, 1);
 }
 
-byte __thiscall CFileIO_ReadBool(CFileIO *self) {
+byte CFileIO_ReadBool(CFileIO *self) {
 	int v = -1;
 
 	if (!self->error) {
@@ -320,7 +320,7 @@ byte __thiscall CFileIO_ReadBool(CFileIO *self) {
 	return v != 0;
 }
 
-int __thiscall CFileIO_ReadInt(CFileIO *self) {
+int CFileIO_ReadInt(CFileIO *self) {
 	int v = -1;
 
 	if (!self->error) {
@@ -331,7 +331,7 @@ int __thiscall CFileIO_ReadInt(CFileIO *self) {
 	return v;
 }
 
-int __thiscall CFileIO_Read(CFileIO *self, void *buf, int n) {
+int CFileIO_Read(CFileIO *self, void *buf, int n) {
 	if (self->error) {
 		return -1;
 	}
@@ -341,7 +341,7 @@ int __thiscall CFileIO_Read(CFileIO *self, void *buf, int n) {
 	return 0;
 }
 
-int __thiscall CFileIO_ReadStringNull(CFileIO *self, char *buf, uint32_t size, byte *isNull) {
+int CFileIO_ReadStringNull(CFileIO *self, char *buf, uint32_t size, byte *isNull) {
 	uint32_t len;
 
 	*isNull = 1;
@@ -362,18 +362,18 @@ int __thiscall CFileIO_ReadStringNull(CFileIO *self, char *buf, uint32_t size, b
 	return 0;
 }
 
-int __thiscall CFileIO_ReadString(CFileIO *self, char *buf, uint32_t size) {
+int CFileIO_ReadString(CFileIO *self, char *buf, uint32_t size) {
 	byte isNull;
 
 	return CFileIO_ReadStringNull(self, buf, size, &isNull);
 }
 
-int __thiscall CFileIO_Error(CFileIO *self, const char *what) {
+int CFileIO_Error(CFileIO *self, const char *what) {
 	(void)what;
 	return self->error ? -1 : 0;
 }
 
-int __thiscall CFileIO_Read4(CFileIO *self, void *out) {
+int CFileIO_Read4(CFileIO *self, void *out) {
 	if (self->error) {
 		return -1;
 	}
@@ -381,7 +381,7 @@ int __thiscall CFileIO_Read4(CFileIO *self, void *out) {
 	return 0;
 }
 
-int __thiscall CFileIO_BeginBlockSize(CFileIO *self, const char *id, int *size) {
+int CFileIO_BeginBlockSize(CFileIO *self, const char *id, int *size) {
 	if (self->error) {
 		return -1;
 	}
@@ -395,11 +395,11 @@ int __thiscall CFileIO_BeginBlockSize(CFileIO *self, const char *id, int *size) 
 	return 0;
 }
 
-int __thiscall CFileIO_BeginBlock(CFileIO *self, const char *id) {
+int CFileIO_BeginBlock(CFileIO *self, const char *id) {
 	return CFileIO_BeginBlockSize(self, id, NULL);
 }
 
-void __thiscall CFileIO_PushBlock(CFileIO *self, const char *id, int pos) {
+void CFileIO_PushBlock(CFileIO *self, const char *id, int pos) {
 	cBlockFile *b = operator_new(sizeof(*b));
 	b->prev = self->block;
 	b->id = IdToDword(id);
@@ -407,14 +407,14 @@ void __thiscall CFileIO_PushBlock(CFileIO *self, const char *id, int pos) {
 	self->block = b;
 }
 
-int __thiscall CFileIO_SetError(CFileIO *self, const char *what) {
+int CFileIO_SetError(CFileIO *self, const char *what) {
 	(void)what;
 	self->error = 1;
 	self->err = *crt_errno();
 	return -1;
 }
 
-void __thiscall CFileIO_PopBlock(CFileIO *self, const char *id) {
+void CFileIO_PopBlock(CFileIO *self, const char *id) {
 	CHECK(self->block);
 	CHECK(self->block->id == IdToDword(id));
 	cBlockFile *prev = self->block->prev;

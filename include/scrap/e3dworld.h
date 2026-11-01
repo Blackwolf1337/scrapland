@@ -75,45 +75,45 @@ static inline CGround *World_Ground(void) {
 #define g_ShadowMapCalculate GAME_GLOBAL(int, g_ShadowMapCalculate)
 #define g_ShadowMapDlg GAME_GLOBAL(int, g_ShadowMapDlg)
 
-CWorld *__fastcall CWorld_ctor(CWorld *self);
-void __fastcall CWorld_dtor(CWorld *self);
-void __fastcall CWorld_ReleaseD3D(CWorld *self);
-void __fastcall CWorld_InitD3D(CWorld *self);
+CWorld *CWorld_ctor(CWorld *self);
+void CWorld_dtor(CWorld *self);
+void CWorld_ReleaseD3D(CWorld *self);
+void CWorld_InitD3D(CWorld *self);
 /* the sky, the floor, the shadow maps and the world dummies of ShowWorldDummies */
-void __fastcall CWorld_Render(CWorld *self);
-void __fastcall CWorld_DrawDummies(CWorld *self);
+void CWorld_Render(CWorld *self);
+void CWorld_DrawDummies(CWorld *self);
 /* appended; a name that is in the list already is warned about */
-void __thiscall CWorld_AddDummy(CWorld *self, WorldDummy *d);
+void CWorld_AddDummy(CWorld *self, WorldDummy *d);
 /* the sections of the ini next to the floor scene (Pos, Rot in degrees) as dummies; 1 */
-byte __thiscall CWorld_LoadMoreDummies(CWorld *self, const char *ini);
+byte CWorld_LoadMoreDummies(CWorld *self, const char *ini);
 /* 100 follows the camera, 0 does not */
-void __thiscall CWorld_SetSkyPos(CWorld *self, float pct);
-void __thiscall CWorld_SetSkyRot(CWorld *self, float deg);
-void __thiscall CWorld_SetSkyLights(CWorld *self, byte active);
+void CWorld_SetSkyPos(CWorld *self, float pct);
+void CWorld_SetSkyRot(CWorld *self, float deg);
+void CWorld_SetSkyLights(CWorld *self, byte active);
 /* the lights of the floor scene but the ones of the nodes with 0x6000000 */
-void __thiscall CWorld_SetGroundLights(CWorld *self, byte active);
+void CWorld_SetGroundLights(CWorld *self, byte active);
 /* zNear and zFar of the cameras of the floor scene and of the own camera, 0 keeps one */
-void __thiscall CWorld_SetClip(CWorld *self, float zNear, float zFar);
+void CWorld_SetClip(CWorld *self, float zNear, float zFar);
 /* NULL: the own camera, put back to its start */
-void __thiscall CWorld_SetCamera(CWorld *self, CCamera *cam);
-void __thiscall CWorld_LoadSky(CWorld *self, const char *name);
-void __thiscall CWorld_LoadSkyScale(CWorld *self, const char *name, const vec3_t *scale);
-void __thiscall CWorld_LoadGroundScale(CWorld *self, const char *name, const vec3_t *scale);
+void CWorld_SetCamera(CWorld *self, CCamera *cam);
+void CWorld_LoadSky(CWorld *self, const char *name);
+void CWorld_LoadSkyScale(CWorld *self, const char *name, const vec3_t *scale);
+void CWorld_LoadGroundScale(CWorld *self, const char *name, const vec3_t *scale);
 /* the first camera of the floor scene, its vectors updated with update */
-CCamera *__thiscall CWorld_GetCameraGround(CWorld *self, byte update);
-CNode3D *__thiscall CWorld_FindClass(CWorld *self, CNode3D *from, uint32_t class);
-CNode3D *__thiscall CWorld_FindNode(CWorld *self, const char *name);
-CNode3D *__thiscall CWorld_FindNodeWild(CWorld *self, const char *pat);
+CCamera *CWorld_GetCameraGround(CWorld *self, byte update);
+CNode3D *CWorld_FindClass(CWorld *self, CNode3D *from, uint32_t class);
+CNode3D *CWorld_FindNode(CWorld *self, const char *name);
+CNode3D *CWorld_FindNodeWild(CWorld *self, const char *pat);
 
 /* a DM_ node: its name, position, rotation and user properties (taken from the node) */
-WorldDummy *__thiscall WorldDummy_ctorNode(WorldDummy *self, CNode3D *node);
-WorldDummy *__thiscall WorldDummy_ctor(WorldDummy *self, const char *name, const vec3_t *pos, const vec3_t *rot);
-WorldDummy *__fastcall WorldDummy_ctorEmpty(WorldDummy *self);
-void __fastcall WorldDummy_dtor(WorldDummy *self);
-int __fastcall WorldDummy_Count(const WorldDummy *list);
+WorldDummy *WorldDummy_ctorNode(WorldDummy *self, CNode3D *node);
+WorldDummy *WorldDummy_ctor(WorldDummy *self, const char *name, const vec3_t *pos, const vec3_t *rot);
+WorldDummy *WorldDummy_ctorEmpty(WorldDummy *self);
+void WorldDummy_dtor(WorldDummy *self);
+int WorldDummy_Count(const WorldDummy *list);
 void WorldDummy_FreeList(WorldDummy **list);
 /* the dummy named name from self on (from the next one without self) */
-WorldDummy *__thiscall WorldDummy_Find(WorldDummy *self, const char *name, byte self_too, byte case_sens);
+WorldDummy *WorldDummy_Find(WorldDummy *self, const char *name, byte self_too, byte case_sens);
 /* the .dum file of the scene path; 0, -1 when there is none */
 int World_LoadDUM(const char *path, WorldDummy **list);
 int World_SaveDUM(const char *path, const WorldDummy *list);

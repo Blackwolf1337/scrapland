@@ -19,7 +19,7 @@
 #define FXS_RAMP_HUMANCD 0x430c48	/* [2] */
 #define FXS_RAMP_YAKUZZI 0x430dd8	/* [2] */
 
-typedef void(__thiscall *FXSUpdate_t)(void *self, cDebris *d, float dt);
+typedef void(*FXSUpdate_t)(void *self, cDebris *d, float dt);
 
 static inline float FXS_Delta(void) {
 	return cTimer_GetDelta(&g_pWorld->timer);
@@ -212,44 +212,44 @@ void FXScene_Create(cEntity *e, const char *model) {
 
 /* SetEntity */
 
-void __thiscall cObjElementFXSceneBeatPickus_SetEntity(cObjElementFXSceneBeatPickus *self, cEntity *e) {
+void cObjElementFXSceneBeatPickus_SetEntity(cObjElementFXSceneBeatPickus *self, cEntity *e) {
 	FXS_SetEntity(&self->ent, e);
 }
 
-void __thiscall cObjElementFXSceneBillArrives_A_SetEntity(cObjElementFXSceneBillArrives_A *self, cEntity *e) {
+void cObjElementFXSceneBillArrives_A_SetEntity(cObjElementFXSceneBillArrives_A *self, cEntity *e) {
 	FXS_SetEntity(&self->ent, e);
 }
 
-void __thiscall cObjElementFXSceneBishops_SetEntity(cObjElementFXSceneBishops *self, cEntity *e) {
+void cObjElementFXSceneBishops_SetEntity(cObjElementFXSceneBishops *self, cEntity *e) {
 	FXS_SetEntity(&self->ent, e);
 }
 
-void __thiscall cObjElementFXSceneDecontamination_SetEntity(cObjElementFXSceneDecontamination *self, cEntity *e) {
+void cObjElementFXSceneDecontamination_SetEntity(cObjElementFXSceneDecontamination *self, cEntity *e) {
 	FXS_SetEntity(&self->ent, e);
 }
 
-void __thiscall cObjElementFXSceneEnterMatrix_SetEntity(cObjElementFXSceneEnterMatrix *self, cEntity *e) {
+void cObjElementFXSceneEnterMatrix_SetEntity(cObjElementFXSceneEnterMatrix *self, cEntity *e) {
 	FXS_SetEntity(&self->ent, e);
 }
 
-void __thiscall cObjElementFXSceneHumanCD_SetEntity(cObjElementFXSceneHumanCD *self, cEntity *e) {
+void cObjElementFXSceneHumanCD_SetEntity(cObjElementFXSceneHumanCD *self, cEntity *e) {
 	FXS_SetEntity(&self->ent, e);
 	CHECK(g_MentalMainFX);
 	g_MentalMainFX->last = -2;
 	g_MentalMainFX->scale = 1.0f;
 }
 
-void __thiscall cObjElementFXSceneTheEndB_SetEntity(cObjElementFXSceneTheEndB *self, cEntity *e) {
+void cObjElementFXSceneTheEndB_SetEntity(cObjElementFXSceneTheEndB *self, cEntity *e) {
 	FXS_SetEntity(&self->ent, e);
 }
 
-void __thiscall cObjElementFXSceneYakuzzi_SetEntity(cObjElementFXSceneYakuzzi *self, cEntity *e) {
+void cObjElementFXSceneYakuzzi_SetEntity(cObjElementFXSceneYakuzzi *self, cEntity *e) {
 	FXS_SetEntity(&self->ent, e);
 }
 
 /* Attach */
 
-void __thiscall cObjElementFXSceneBeatPickus_Attach(cObjElementFXSceneBeatPickus *self, cDebris *d) {
+void cObjElementFXSceneBeatPickus_Attach(cObjElementFXSceneBeatPickus *self, cDebris *d) {
 	CHECK(CGameModel_IsLoaded(Debris_Model(d)));
 	FXS_AttachNode(&self->sparks, d, "Dummy01");
 	FXS_AttachNode(&self->debris, d, "Dummy02");
@@ -257,14 +257,14 @@ void __thiscall cObjElementFXSceneBeatPickus_Attach(cObjElementFXSceneBeatPickus
 	FXS_DummyPos("DM_Scene_Beating", &self->dummy);
 }
 
-void __thiscall cObjElementFXSceneBillArrives_A_Attach(cObjElementFXSceneBillArrives_A *self, cDebris *d) {
+void cObjElementFXSceneBillArrives_A_Attach(cObjElementFXSceneBillArrives_A *self, cDebris *d) {
 	CHECK(CGameModel_IsLoaded(Debris_Model(d)));
 	FXS_AttachNode(&self->particles, d, "Dummy01");
 	FXS_DummyPos("DM_Effects_BillArrives_A_01", &self->dummy1);
 	FXS_DummyPos("DM_Effects_BillArrives_A_02", &self->dummy2);
 }
 
-void __thiscall cObjElementFXSceneBishops_Attach(cObjElementFXSceneBishops *self, cDebris *d) {
+void cObjElementFXSceneBishops_Attach(cObjElementFXSceneBishops *self, cDebris *d) {
 	CHECK(CGameModel_IsLoaded(Debris_Model(d)));
 	FXS_AttachNode(&self->dataCodec, d, "Dummy01");
 	CHECK(self->dataCodec.ParticleSystem);
@@ -282,7 +282,7 @@ void __thiscall cObjElementFXSceneBishops_Attach(cObjElementFXSceneBishops *self
 	self->master.z = 0.0f;
 }
 
-void __thiscall cObjElementFXSceneDecontamination_Attach(cObjElementFXSceneDecontamination *self, cDebris *d) {
+void cObjElementFXSceneDecontamination_Attach(cObjElementFXSceneDecontamination *self, cDebris *d) {
 	CHECK(CGameModel_IsLoaded(Debris_Model(d)));
 	FXS_AttachNode(&self->particles, d, "Dummy01");
 	for (int i = 0; i < FXDECON_RAYS; i++) {
@@ -299,7 +299,7 @@ void __thiscall cObjElementFXSceneDecontamination_Attach(cObjElementFXSceneDecon
 	}
 }
 
-void __thiscall cObjElementFXSceneEnterMatrix_Attach(cObjElementFXSceneEnterMatrix *self, cDebris *d) {
+void cObjElementFXSceneEnterMatrix_Attach(cObjElementFXSceneEnterMatrix *self, cDebris *d) {
 	CHECK(CGameModel_IsLoaded(Debris_Model(d)));
 	FXS_AttachNode(&self->particles, d, "Dummy01");
 	for (int i = 0; i < FXMATRIX_TRAILS; i++) {
@@ -314,7 +314,7 @@ void __thiscall cObjElementFXSceneEnterMatrix_Attach(cObjElementFXSceneEnterMatr
 	self->lastKind = -1;
 }
 
-void __thiscall cObjElementFXSceneHumanCD_Attach(cObjElementFXSceneHumanCD *self, cDebris *d) {
+void cObjElementFXSceneHumanCD_Attach(cObjElementFXSceneHumanCD *self, cDebris *d) {
 	CHECK(CGameModel_IsLoaded(Debris_Model(d)));
 	FXS_AttachNode(&self->particles, d, "Dummy01");
 	CHECK(CGameModel_IsLoaded(Debris_Model(d)));
@@ -323,12 +323,12 @@ void __thiscall cObjElementFXSceneHumanCD_Attach(cObjElementFXSceneHumanCD *self
 	self->sparkT = 0.0f;
 }
 
-void __thiscall cObjElementFXSceneTheEndB_Attach(cObjElementFXSceneTheEndB *self, cDebris *d) {
+void cObjElementFXSceneTheEndB_Attach(cObjElementFXSceneTheEndB *self, cDebris *d) {
 	CHECK(CGameModel_IsLoaded(Debris_Model(d)));
 	FXS_AttachNode(&self->particles, d, "Dummy01");
 }
 
-void __thiscall cObjElementFXSceneYakuzzi_Attach(cObjElementFXSceneYakuzzi *self, cDebris *d) {
+void cObjElementFXSceneYakuzzi_Attach(cObjElementFXSceneYakuzzi *self, cDebris *d) {
 	CHECK(CGameModel_IsLoaded(Debris_Model(d)));
 	FXS_AttachNode(&self->particles, d, "Dummy01");
 	FXS_DummyPos("DM_Element_TempleYakuzzi_00", &self->dummy);
@@ -336,7 +336,7 @@ void __thiscall cObjElementFXSceneYakuzzi_Attach(cObjElementFXSceneYakuzzi *self
 
 /* Reset */
 
-void __thiscall cObjElementFXSceneBeatPickus_Reset(cObjElementFXSceneBeatPickus *self, int arg) {
+void cObjElementFXSceneBeatPickus_Reset(cObjElementFXSceneBeatPickus *self, int arg) {
 	(void)arg;
 	self->ent = NULL;
 	self->t = 0.0f;
@@ -347,7 +347,7 @@ void __thiscall cObjElementFXSceneBeatPickus_Reset(cObjElementFXSceneBeatPickus 
 	self->hitT = 0.0f;
 }
 
-void __thiscall cObjElementFXSceneBillArrives_A_Reset(cObjElementFXSceneBillArrives_A *self, int arg) {
+void cObjElementFXSceneBillArrives_A_Reset(cObjElementFXSceneBillArrives_A *self, int arg) {
 	(void)arg;
 	self->ent = NULL;
 	self->capsule = NULL;
@@ -357,7 +357,7 @@ void __thiscall cObjElementFXSceneBillArrives_A_Reset(cObjElementFXSceneBillArri
 	self->smokeT = 0.0f;
 }
 
-void __thiscall cObjElementFXSceneBishops_Reset(cObjElementFXSceneBishops *self, int arg) {
+void cObjElementFXSceneBishops_Reset(cObjElementFXSceneBishops *self, int arg) {
 	(void)arg;
 	self->t = 0.0f;
 	self->ent = NULL;
@@ -373,7 +373,7 @@ void __thiscall cObjElementFXSceneBishops_Reset(cObjElementFXSceneBishops *self,
 	self->master.z = 0.0f;
 }
 
-void __thiscall cObjElementFXSceneDecontamination_Reset(cObjElementFXSceneDecontamination *self, int arg) {
+void cObjElementFXSceneDecontamination_Reset(cObjElementFXSceneDecontamination *self, int arg) {
 	(void)arg;
 	self->ent = NULL;
 	self->target = NULL;
@@ -387,7 +387,7 @@ void __thiscall cObjElementFXSceneDecontamination_Reset(cObjElementFXSceneDecont
 	CGameParticles_KillAll(&self->particles);
 }
 
-void __thiscall cObjElementFXSceneEnterMatrix_Reset(cObjElementFXSceneEnterMatrix *self, int arg) {
+void cObjElementFXSceneEnterMatrix_Reset(cObjElementFXSceneEnterMatrix *self, int arg) {
 	(void)arg;
 	self->ent = NULL;
 	self->t = 0.0f;
@@ -399,7 +399,7 @@ void __thiscall cObjElementFXSceneEnterMatrix_Reset(cObjElementFXSceneEnterMatri
 	}
 }
 
-void __thiscall cObjElementFXSceneHumanCD_Reset(cObjElementFXSceneHumanCD *self, int arg) {
+void cObjElementFXSceneHumanCD_Reset(cObjElementFXSceneHumanCD *self, int arg) {
 	(void)arg;
 	self->ent = NULL;
 	self->t = 0.0f;
@@ -408,7 +408,7 @@ void __thiscall cObjElementFXSceneHumanCD_Reset(cObjElementFXSceneHumanCD *self,
 	CGameParticles_KillAll(&self->particles);
 }
 
-void __thiscall cObjElementFXSceneTheEndB_Reset(cObjElementFXSceneTheEndB *self, int arg) {
+void cObjElementFXSceneTheEndB_Reset(cObjElementFXSceneTheEndB *self, int arg) {
 	(void)arg;
 	self->ent = NULL;
 	self->bike = NULL;
@@ -416,7 +416,7 @@ void __thiscall cObjElementFXSceneTheEndB_Reset(cObjElementFXSceneTheEndB *self,
 	self->tPrev = 0.0f;
 }
 
-void __thiscall cObjElementFXSceneYakuzzi_Reset(cObjElementFXSceneYakuzzi *self, int arg) {
+void cObjElementFXSceneYakuzzi_Reset(cObjElementFXSceneYakuzzi *self, int arg) {
 	(void)arg;
 	self->ent = NULL;
 	self->t = 0.0f;
@@ -476,7 +476,7 @@ static void FXS_HumanCDSparks(cObjElementFXSceneHumanCD *self, double scaleRange
 	CGameParticles_EmitDt(sp, 1, 1, FxElem_Rand(0.1f, 0.0));
 }
 
-void __thiscall cObjElementFXSceneHumanCD_Update(cObjElementFXSceneHumanCD *self, cDebris *d, float dt) {
+void cObjElementFXSceneHumanCD_Update(cObjElementFXSceneHumanCD *self, cDebris *d, float dt) {
 	vec3_t pos, rot;
 	float f;
 
@@ -516,7 +516,7 @@ void __thiscall cObjElementFXSceneHumanCD_Update(cObjElementFXSceneHumanCD *self
 	self->tPrev = self->t;
 }
 
-void __thiscall cObjElementFXSceneTheEndB_Update(cObjElementFXSceneTheEndB *self, cDebris *d, float dt) {
+void cObjElementFXSceneTheEndB_Update(cObjElementFXSceneTheEndB *self, cDebris *d, float dt) {
 	vec3_t pos, rot;
 	float f;
 
@@ -578,7 +578,7 @@ void __thiscall cObjElementFXSceneTheEndB_Update(cObjElementFXSceneTheEndB *self
 	self->tPrev = self->t;
 }
 
-void __thiscall cObjElementFXSceneYakuzzi_Update(cObjElementFXSceneYakuzzi *self, cDebris *d, float dt) {
+void cObjElementFXSceneYakuzzi_Update(cObjElementFXSceneYakuzzi *self, cDebris *d, float dt) {
 	CGameParticles *sp = &self->particles;
 	vec3_t pos, rot, dir;
 
@@ -706,7 +706,7 @@ static void FXS_BishopsEmit(cObjElementFXSceneBishops *self, const vec3_t *v, fl
 	CGameParticles_EmitN(sp, 1, 0);
 }
 
-void __thiscall cObjElementFXSceneBishops_Update(cObjElementFXSceneBishops *self, cDebris *d, float dt) {
+void cObjElementFXSceneBishops_Update(cObjElementFXSceneBishops *self, cDebris *d, float dt) {
 	vec3_t pos, rot;
 	vec3_t verts[FXBISHOPS_VERTS];
 	float q, f;
@@ -944,7 +944,7 @@ static void FXS_DeconSpawn(cObjElementFXSceneDecontamination *self, int i, CGame
 	}
 }
 
-void __thiscall cObjElementFXSceneDecontamination_Update(cObjElementFXSceneDecontamination *self, cDebris *d,
+void cObjElementFXSceneDecontamination_Update(cObjElementFXSceneDecontamination *self, cDebris *d,
 	float dt) {
 	vec3_t pos, rot;
 
@@ -1349,7 +1349,7 @@ static void FXS_BeatPuffs(cObjElementFXSceneBeatPickus *self) {
 	}
 }
 
-void __thiscall cObjElementFXSceneBeatPickus_Update(cObjElementFXSceneBeatPickus *self, cDebris *d, float dt) {
+void cObjElementFXSceneBeatPickus_Update(cObjElementFXSceneBeatPickus *self, cDebris *d, float dt) {
 	vec3_t pos, rot;
 	float q;
 
@@ -1725,7 +1725,7 @@ static void FXS_BillPuff(cObjElementFXSceneBillArrives_A *self, const vec3_t *of
 	} while (6.2831855f > f);
 }
 
-void __thiscall cObjElementFXSceneBillArrives_A_Update(cObjElementFXSceneBillArrives_A *self, cDebris *d,
+void cObjElementFXSceneBillArrives_A_Update(cObjElementFXSceneBillArrives_A *self, cDebris *d,
 	float dt) {
 	vec3_t pos, rot, cp;
 	float f;
@@ -2169,7 +2169,7 @@ static void FXS_MatrixRays2(cObjElementFXSceneEnterMatrix *self, float delta) {
 	}
 }
 
-void __thiscall cObjElementFXSceneEnterMatrix_Update(cObjElementFXSceneEnterMatrix *self, cDebris *d, float dt) {
+void cObjElementFXSceneEnterMatrix_Update(cObjElementFXSceneEnterMatrix *self, cDebris *d, float dt) {
 	float f;
 
 	(void)dt;
@@ -2206,12 +2206,12 @@ void __thiscall cObjElementFXSceneEnterMatrix_Update(cObjElementFXSceneEnterMatr
 	self->tPrev = self->t;
 }
 
-void __thiscall cObjElementFXSceneDecontamination_SetNames(cObjElementFXSceneDecontamination *self,
+void cObjElementFXSceneDecontamination_SetNames(cObjElementFXSceneDecontamination *self,
 	const char *target, const char *action) {
 	Str_Copy(self->targetName, target, sizeof(self->targetName));
 	Str_Copy(self->action, action, sizeof(self->action));
 }
 
-void __thiscall cObjElementFXSceneDecontamination_SetFC(cObjElementFXSceneDecontamination *self, float v) {
+void cObjElementFXSceneDecontamination_SetFC(cObjElementFXSceneDecontamination *self, float v) {
 	self->height = v;
 }

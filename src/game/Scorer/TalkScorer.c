@@ -19,7 +19,7 @@ static int Talk_Wrap(char *text, char **lines) {
 	return Str_WrapText(text, lines, g_TalkWidth, TALK_MAX_LINES, "Horatio");
 }
 
-cTalkScorer *__fastcall cTalkScorer_ctor(cTalkScorer *self) {
+cTalkScorer *cTalkScorer_ctor(cTalkScorer *self) {
 	float dim[2];
 
 	cScorerItem_ctor(&self->base);
@@ -59,14 +59,14 @@ cTalkScorer *__fastcall cTalkScorer_ctor(cTalkScorer *self) {
 	return self;
 }
 
-void __fastcall cTalkScorer_dtor(cTalkScorer *self) {
+void cTalkScorer_dtor(cTalkScorer *self) {
 	self->base.vftable = CTALKSCORER_VFTABLE;
 	ScorerImg_Free(self->sprite);
 	ScorerImg_Free(self->tab);
 	cScorerItem_dtor(&self->base);
 }
 
-cTalkScorer *__thiscall cTalkScorer_Delete(cTalkScorer *self, byte flags) {
+cTalkScorer *cTalkScorer_Delete(cTalkScorer *self, byte flags) {
 	cTalkScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cTalkScorer));
@@ -93,7 +93,7 @@ cEntity *__stdcall Talk_GetUseTarget(int player) {
 	return WChar(t)->wl.arrow.canUse ? t : NULL;
 }
 
-int __thiscall cTalkScorer_Var(cTalkScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cTalkScorer_Var(cTalkScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	static const char *const colors[4] = {"TabRed", "TabGreen", "TabBlue", "TabAlpha"};
 	int r;
 
@@ -141,9 +141,9 @@ int __thiscall cTalkScorer_Var(cTalkScorer *self, const char *name, byte set, ch
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-typedef void(__thiscall *TalkDrawFn)(cTalkScorer *self, int player, float *pos);
+typedef void(*TalkDrawFn)(cTalkScorer *self, int player, float *pos);
 
-void __thiscall cTalkScorer_Draw(cTalkScorer *self, int player) {
+void cTalkScorer_Draw(cTalkScorer *self, int player) {
 	const cScorerItemVtbl *vt = self->base.vftable;
 	float pos[2];
 
@@ -153,7 +153,7 @@ void __thiscall cTalkScorer_Draw(cTalkScorer *self, int player) {
 	((TalkDrawFn)vt->vf04)(self, player, pos);
 }
 
-void __thiscall cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos) {
+void cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos) {
 	float dt, scroll, w, lh, x, y, hgt;
 	int n, maxLines;
 
@@ -209,7 +209,7 @@ void __thiscall cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos) 
 	self->useTime = g_TalkUseTime;
 }
 
-void __thiscall cTalkScorer_DrawUse(cTalkScorer *self, int player, float *pos) {
+void cTalkScorer_DrawUse(cTalkScorer *self, int player, float *pos) {
 	cEntity *t = Talk_GetUseTarget(player);
 	cArrowIndicator *arrow;
 	const char *opt, *p;

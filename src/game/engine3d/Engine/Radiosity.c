@@ -22,7 +22,7 @@ static float Rad_Float(uint32_t bits) {
 	return f;
 }
 
-BspLink *__thiscall BspLink_ctor(BspLink *self, BspLink *next, BspRegion *region, float ff) {
+BspLink *BspLink_ctor(BspLink *self, BspLink *next, BspRegion *region, float ff) {
 	g_BspNumLinks++;
 	self->next = next;
 	self->region = region;
@@ -30,7 +30,7 @@ BspLink *__thiscall BspLink_ctor(BspLink *self, BspLink *next, BspRegion *region
 	return self;
 }
 
-RadAreaLight *__fastcall RadAreaLight_ctor(RadAreaLight *self) {
+RadAreaLight *RadAreaLight_ctor(RadAreaLight *self) {
 	self->name = NULL;
 	self->rgbi[0] = self->rgbi[1] = self->rgbi[2] = self->rgbi[3] = 0;
 	self->intensity = 1.0f;
@@ -42,7 +42,7 @@ RadAreaLight *__fastcall RadAreaLight_ctor(RadAreaLight *self) {
 	return self;
 }
 
-CRadiosity *__thiscall CRadiosity_ctor(CRadiosity *self, const char *dir) {
+CRadiosity *CRadiosity_ctor(CRadiosity *self, const char *dir) {
 	char name[MAX_FILEPATH];
 
 	CIniFile_ctor(&self->ini);
@@ -64,7 +64,7 @@ CRadiosity *__thiscall CRadiosity_ctor(CRadiosity *self, const char *dir) {
 	return self;
 }
 
-BspRegion *__thiscall BspRegion_ctor(BspRegion *self, int x, int y, int lx, int ly, BspRegion *parent) {
+BspRegion *BspRegion_ctor(BspRegion *self, int x, int y, int lx, int ly, BspRegion *parent) {
 	self->x = (uint16_t)x;
 	self->y = (uint16_t)y;
 	self->lx = (uint16_t)lx;
@@ -86,7 +86,7 @@ BspRegion *__thiscall BspRegion_ctor(BspRegion *self, int x, int y, int lx, int 
 	return self;
 }
 
-void __fastcall BspLink_dtor(BspLink *self) {
+void BspLink_dtor(BspLink *self) {
 	g_BspNumLinks--;
 	if (self->next) {
 		BspLink *e = self->next;
@@ -97,7 +97,7 @@ void __fastcall BspLink_dtor(BspLink *self) {
 	self->region = NULL;
 }
 
-void __fastcall CRadiosity_dtor(CRadiosity *self) {
+void CRadiosity_dtor(CRadiosity *self) {
 	if (self->table) {
 		CHashTable *t = self->table;
 		CHashTable_dtor(t);
@@ -119,7 +119,7 @@ void __fastcall CRadiosity_dtor(CRadiosity *self) {
 	CIniFile_dtor(&self->ini);
 }
 
-void __fastcall BspRegion_dtor(BspRegion *self) {
+void BspRegion_dtor(BspRegion *self) {
 	if (self->links) {
 		BspLink *e = self->links;
 		BspLink_dtor(e);
@@ -137,7 +137,7 @@ void __fastcall BspRegion_dtor(BspRegion *self) {
 	self->parent = NULL;
 }
 
-BspLink *__thiscall BspLink_Delete(BspLink *self, byte flags) {
+BspLink *BspLink_Delete(BspLink *self, byte flags) {
 	g_BspNumLinks--;
 	if (self->next) {
 		BspLink_Delete(self->next, 1);
@@ -150,7 +150,7 @@ BspLink *__thiscall BspLink_Delete(BspLink *self, byte flags) {
 	return self;
 }
 
-RadAreaLight *__thiscall RadAreaLight_Delete(RadAreaLight *self, byte flags) {
+RadAreaLight *RadAreaLight_Delete(RadAreaLight *self, byte flags) {
 	if (self->next) {
 		RadAreaLight_Delete(self->next, 1);
 		self->next = NULL;
@@ -164,7 +164,7 @@ RadAreaLight *__thiscall RadAreaLight_Delete(RadAreaLight *self, byte flags) {
 	return self;
 }
 
-RadAreaLight *__thiscall CRadiosity_Get(CRadiosity *self, CMaterial *Mat) {
+RadAreaLight *CRadiosity_Get(CRadiosity *self, CMaterial *Mat) {
 	RadAreaLight *l = CRadiosity_Find(self, Mat);
 
 	return l ? l : CRadiosity_Add(self, Mat);
@@ -182,7 +182,7 @@ static byte Rad_Warn(const CMaterial *Mat, byte found) {
 	return found;
 }
 
-RadAreaLight *__thiscall CRadiosity_Add(CRadiosity *self, CMaterial *Mat) {
+RadAreaLight *CRadiosity_Add(CRadiosity *self, CMaterial *Mat) {
 	CHECK(Mat);
 	if (!Rad_Warn(Mat, CRadiosity_ReadMat(self, Mat, NULL))) {
 		return NULL;
@@ -199,7 +199,7 @@ RadAreaLight *__thiscall CRadiosity_Add(CRadiosity *self, CMaterial *Mat) {
 	return l;
 }
 
-RadAreaLight *__thiscall CRadiosity_Find(CRadiosity *self, CMaterial *Mat) {
+RadAreaLight *CRadiosity_Find(CRadiosity *self, CMaterial *Mat) {
 	void *l;
 
 	CHECK(Mat);
@@ -214,7 +214,7 @@ static byte Rad_Byte(byte v) {
 	return (byte)(int)((double)((float)v * (1.0f / 255.0f) * 255.0f) + 0.5);
 }
 
-byte __thiscall CRadiosity_ReadMat(CRadiosity *self, CMaterial *Mat, RadAreaLight *dest) {
+byte CRadiosity_ReadMat(CRadiosity *self, CMaterial *Mat, RadAreaLight *dest) {
 	char name[RAD_NAME], buf[RAD_NAME];
 
 	CHECK(Mat);
@@ -285,7 +285,7 @@ found:
 	return 1;
 }
 
-byte __thiscall CRadiosity_GetColor(CRadiosity *self, CMaterial *Mat, void *dest) {
+byte CRadiosity_GetColor(CRadiosity *self, CMaterial *Mat, void *dest) {
 	CHECK(Mat && dest);
 	RadAreaLight *l = CRadiosity_Find(self, Mat);
 	if (!l) {
@@ -297,7 +297,7 @@ byte __thiscall CRadiosity_GetColor(CRadiosity *self, CMaterial *Mat, void *dest
 	return 1;
 }
 
-byte __thiscall CRadiosity_ReadMatWarn(CRadiosity *self, CMaterial *Mat, RadAreaLight *dest) {
+byte CRadiosity_ReadMatWarn(CRadiosity *self, CMaterial *Mat, RadAreaLight *dest) {
 	return Rad_Warn(Mat, CRadiosity_ReadMat(self, Mat, dest));
 }
 

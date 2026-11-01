@@ -4,13 +4,13 @@
  */
 #include "scrap/logic.h"
 
-cDesktopLocalLogic *__thiscall cDesktopLocalLogic_ctor(cDesktopLocalLogic *self, cEntity *parent) {
+cDesktopLocalLogic *cDesktopLocalLogic_ctor(cDesktopLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
 	self->base.vftable = CDESKTOPLOCALLOGIC_VFTABLE;
 	return self;
 }
 
-cDesktopLocalLogic *__thiscall cDesktopLocalLogic_Delete(cDesktopLocalLogic *self, byte flags) {
+cDesktopLocalLogic *cDesktopLocalLogic_Delete(cDesktopLocalLogic *self, byte flags) {
 	self->base.vftable = CDESKTOPLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {

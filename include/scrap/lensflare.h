@@ -50,11 +50,11 @@ SD_SIZE(VertLensFlare, 0x1c);
 #define g_nLensFlareRender GAME_GLOBAL(int, g_nLensFlareRender)
 #define g_LensFlareVerts (GAME_ARRAY(VertLensFlare, g_LensFlareVerts))	/* 4 */
 
-CLensFlare *__fastcall CLensFlare_ctor(CLensFlare *self);
-void __fastcall CLensFlare_dtor(CLensFlare *self);
+CLensFlare *CLensFlare_ctor(CLensFlare *self);
+void CLensFlare_dtor(CLensFlare *self);
 /* into or out of the render list by on */
 void LensFlare_Update(CLensFlare *lf);
-void __thiscall CLensFlare_SetOn(CLensFlare *self, byte on);
+void CLensFlare_SetOn(CLensFlare *self, byte on);
 void LensFlare_Set(CLensFlare *lf, byte on);
 /* all off, the list empty; 0 */
 int LensFlare_ClearAll(void);
@@ -64,16 +64,16 @@ int LensFlare_Init(void);
 int LensFlare_InitList(void);
 /* the flares of the list with the view and projection of the device, in screen space */
 void LensFlare_RenderAll(void);
-void __thiscall CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj);
+void CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj);
 /* a sprite at dist along the line through the center (0 the point, 1 the center), size and color */
-void __thiscall CLensFlare_DrawSprite(CLensFlare *self, float dist, uint32_t sprite, float size, float r, float g,
+void CLensFlare_DrawSprite(CLensFlare *self, float dist, uint32_t sprite, float size, float r, float g,
 	float b, float a);
-void __thiscall CLensFlare_SetIntens(CLensFlare *self, float v);
-void __thiscall CLensFlare_SetTraceInterval(CLensFlare *self, float v);
-void __thiscall CLensFlare_SetMargin(CLensFlare *self, float v);
-void __thiscall CLensFlare_SetPos(CLensFlare *self, vec3_t pos);
-void __thiscall CLensFlare_SetScale(CLensFlare *self, float v);
-void __thiscall CLensFlare_SetType(CLensFlare *self, int type);
-void __thiscall CLensFlare_SetRelative(CLensFlare *self, byte relative);
+void CLensFlare_SetIntens(CLensFlare *self, float v);
+void CLensFlare_SetTraceInterval(CLensFlare *self, float v);
+void CLensFlare_SetMargin(CLensFlare *self, float v);
+void CLensFlare_SetPos(CLensFlare *self, vec3_t pos);
+void CLensFlare_SetScale(CLensFlare *self, float v);
+void CLensFlare_SetType(CLensFlare *self, int type);
+void CLensFlare_SetRelative(CLensFlare *self, byte relative);
 
 #endif

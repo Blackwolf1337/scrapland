@@ -154,18 +154,18 @@ SD_SIZE(CMatList, 0x10);
 #define g_MatList (GAME_ARRAY(CMatList, g_MatList))
 
 /* the constructors and destructors of material.h */
-CMatList *__thiscall CMatList_DeleteObj(CMatList *self, byte flags);
-void __fastcall CMatList_dtor(CMatList *self);
+CMatList *CMatList_DeleteObj(CMatList *self, byte flags);
+void CMatList_dtor(CMatList *self);
 /* the string freed if set (the destructor of the string members) */
-void __fastcall String_dtor(char **self);
-CMatId *__fastcall CMatId_ctor(CMatId *self);		/* rva 0x2a79e0, id -1 */
-void __fastcall CMatId_dtor(CMatId *self);
-CMap *__thiscall CMap_ctor(CMap *self);
-void __thiscall CMap_dtor(CMap *self);
-CMaterial *__thiscall CMaterial_ctor(CMaterial *self);
+void String_dtor(char **self);
+CMatId *CMatId_ctor(CMatId *self);		/* rva 0x2a79e0, id -1 */
+void CMatId_dtor(CMatId *self);
+CMap *CMap_ctor(CMap *self);
+void CMap_dtor(CMap *self);
+CMaterial *CMaterial_ctor(CMaterial *self);
 /* rva 0x237020: the D3D colors (CMaterial_CalcColors) times k unless k is 1, the alpha of colors from diffuse[3] */
-void __thiscall CMaterial_ScaleColors(CMaterial *self, float k);
-void __thiscall CMaterial_dtor(CMaterial *self);
+void CMaterial_ScaleColors(CMaterial *self, float k);
+void CMaterial_dtor(CMaterial *self);
 /* free the old string, a Mem_Alloc copy of s (NULL stays NULL) */
 /* the animation of an animated texture (Engine/ControlAnimMat.cpp, rva 0x257f10..0x258284), 0x2c bytes */
 typedef struct CAnimMat {
@@ -186,89 +186,89 @@ SD_SIZE(CAnimMat, 0x2c);
 #define ANIMMAT_PAUSE 1
 #define ANIMMAT_FADE_PAUSE 2		/* slowing down */
 #define ANIMMAT_END 3
-CAnimMat *__thiscall CAnimMat_ctor(CAnimMat *self);
+CAnimMat *CAnimMat_ctor(CAnimMat *self);
 /* rva 0x257f10, a copy of fps, frames and cycle of src */
-CAnimMat *__thiscall CAnimMat_ctorCopy(CAnimMat *self, const CAnimMat *src);
-void __thiscall CAnimMat_dtor(CAnimMat *self);
+CAnimMat *CAnimMat_ctorCopy(CAnimMat *self, const CAnimMat *src);
+void CAnimMat_dtor(CAnimMat *self);
 /* from frame 0 at the time of now */
-void __thiscall CAnimMat_Start(CAnimMat *self);
+void CAnimMat_Start(CAnimMat *self);
 /* rva 0x258060: the frame of now (updated once each frame) */
-int __fastcall CAnimMat_GetFrame(CAnimMat *self);
+int CAnimMat_GetFrame(CAnimMat *self);
 /* the step to g_TimeMs */
-void __fastcall CAnimMat_Update(CAnimMat *self);
-void __thiscall CAnimMat_SetFrameF(CAnimMat *self, float frame);
+void CAnimMat_Update(CAnimMat *self);
+void CAnimMat_SetFrameF(CAnimMat *self, float frame);
 /* only while already FUND_PAUSA: the slow down restarted over ms */
-void __thiscall CAnimMat_FadePause(CAnimMat *self, float ms);
+void CAnimMat_FadePause(CAnimMat *self, float ms);
 /* fps and cycle of a, 0 for a NULL a (al only) */
 byte AnimMat_Set(CAnimMat *a, float fps, int cycle);
 /* "REPR", "PAUSA", "FUND_PAUSA", "FIN" (strings of the exe), CHECK and NULL for others */
 const char *AnimMat_ModeName(int mode);
-void __thiscall String_Set(char **self, const char *s);
+void String_Set(char **self, const char *s);
 /* rva 0x2a1970: *self a String_Dup of the printf of fmt, NULL (freed) for fmt NULL */
 void String_Printf(char **self, const char *fmt, ...);
 /* rva 0x2a18a0 and 0x2a1920: the string as a CFileIO string (empty is NULL) */
-void __thiscall String_Read(char **self, CFileIO *f);
-void __thiscall String_Write(char **self, CFileIO *f);
+void String_Read(char **self, CFileIO *f);
+void String_Write(char **self, CFileIO *f);
 
-void __fastcall CObjRef_dtor(CObjRef *self);
-CTextStatic *__fastcall CTextStatic_ctor(CTextStatic *self);
-void __fastcall CTextStatic_dtor(CTextStatic *self);
-CTextStatic *__thiscall CTextStatic_Delete(CTextStatic *self, byte flags);
+void CObjRef_dtor(CObjRef *self);
+CTextStatic *CTextStatic_ctor(CTextStatic *self);
+void CTextStatic_dtor(CTextStatic *self);
+CTextStatic *CTextStatic_Delete(CTextStatic *self, byte flags);
 /* name and parameters, not the textures */
-void __thiscall CMap_Assign(CMap *self, const CMap *orig);
+void CMap_Assign(CMap *self, const CMap *orig);
 byte CMap_Equal(const CMap *a, const CMap *b);
-int __thiscall CMap_Read(CMap *self, CFileIO *f);
-int __thiscall CMap_Write(CMap *self, CFileIO *f);
-byte __fastcall CMap_BuildMultiSprite(CMap *self);
+int CMap_Read(CMap *self, CFileIO *f);
+int CMap_Write(CMap *self, CFileIO *f);
+byte CMap_BuildMultiSprite(CMap *self);
 /* the file of the map: a DDS version, the bmp/ directory, the texture paths, numbered frames; path or NULL */
-char *__thiscall CMap_ResolvePath(CMap *self, byte load, CMap *alpha);
-void __thiscall CMap_LoadTexture(CMap *self, void *dev, CMap *alpha, int flags);
-void __fastcall CMap_Release(CMap *self);
-byte __thiscall CMap_GetSize(CMap *self, int *w, int *h);
-byte __fastcall CMap_HasAlpha(const CMap *self);
-void *__thiscall CMap_GetTexture(CMap *self, byte load);
+char *CMap_ResolvePath(CMap *self, byte load, CMap *alpha);
+void CMap_LoadTexture(CMap *self, void *dev, CMap *alpha, int flags);
+void CMap_Release(CMap *self);
+byte CMap_GetSize(CMap *self, int *w, int *h);
+byte CMap_HasAlpha(const CMap *self);
+void *CMap_GetTexture(CMap *self, byte load);
 struct CImage;
 /* the w x h pixels of bmp at (sx, sy) into the texture at (dx, dy); 0 when not done */
-byte __thiscall CMap_CopyBmp(CMap *self, int dx, int dy, const struct CImage *bmp, int sx, int sy, int w, int h);
-char *__thiscall CMap_FramePath(CMap *self, int frame, char *buf, int size);
+byte CMap_CopyBmp(CMap *self, int dx, int dy, const struct CImage *bmp, int sx, int sy, int w, int h);
+char *CMap_FramePath(CMap *self, int frame, char *buf, int size);
 /* FXTexture_Kind (the kind of FXTexture of a map name): fxtexture.h */
 
-CMaterial *__thiscall CMaterial_Delete(CMaterial *self, byte flags);
+CMaterial *CMaterial_Delete(CMaterial *self, byte flags);
 /* name, parameters and copies of the maps */
-void __thiscall CMaterial_Assign(CMaterial *self, const CMaterial *orig);
-void *__thiscall CMaterial_GetMultiSprite(CMaterial *self, uint32_t mapid);
-int __thiscall CMaterial_Read(CMaterial *self, CFileIO *f);
-int __thiscall CMaterial_Write(CMaterial *self, CFileIO *f);
-int __thiscall CMaterial_GetId(CMaterial *self, CMatId **out);
+void CMaterial_Assign(CMaterial *self, const CMaterial *orig);
+void *CMaterial_GetMultiSprite(CMaterial *self, uint32_t mapid);
+int CMaterial_Read(CMaterial *self, CFileIO *f);
+int CMaterial_Write(CMaterial *self, CFileIO *f);
+int CMaterial_GetId(CMaterial *self, CMatId **out);
 /* 1 when the mode is up to date, else registered again (deferred for an unregistered one) and 0 */
-byte __thiscall CMatId_Check(CMatId *self, CMaterial *mat);
+byte CMatId_Check(CMatId *self, CMaterial *mat);
 /* the mode of the maps and flags of mat, CHECK(id == -1) */
-void __thiscall CMatId_Register(CMatId *self, CMaterial *mat);
-int __fastcall CMaterial_Id(CMaterial *self);
-char *__thiscall CMaterial_GetShaderName(CMaterial *self, char *str, uint32_t nbytes);
-void __thiscall CMaterial_Prepare(CMaterial *self, void *dev);
-CMap *__thiscall CMaterial_SetMap(CMaterial *self, uint32_t mapid, const char *name);
-CMap *__thiscall CMaterial_SetMapCopy(CMaterial *self, uint32_t mapid, const CMap *orig);
+void CMatId_Register(CMatId *self, CMaterial *mat);
+int CMaterial_Id(CMaterial *self);
+char *CMaterial_GetShaderName(CMaterial *self, char *str, uint32_t nbytes);
+void CMaterial_Prepare(CMaterial *self, void *dev);
+CMap *CMaterial_SetMap(CMaterial *self, uint32_t mapid, const char *name);
+CMap *CMaterial_SetMapCopy(CMaterial *self, uint32_t mapid, const CMap *orig);
 /* colors as a D3DMATERIAL9 */
-void __thiscall CMaterial_CalcColors(CMaterial *self, float *out);
-void __fastcall CMaterial_Release(CMaterial *self);
+void CMaterial_CalcColors(CMaterial *self, float *out);
+void CMaterial_Release(CMaterial *self);
 /* the average color of map 0 as the diffuse color, the map deleted */
-void __fastcall CMaterial_MapToColor(CMaterial *self);
-char *__thiscall CMaterial_GetMapName(CMaterial *self, uint32_t mapid);
-byte __thiscall CMaterial_GetMapSize(CMaterial *self, uint32_t mapid, int *w, int *h);
+void CMaterial_MapToColor(CMaterial *self);
+char *CMaterial_GetMapName(CMaterial *self, uint32_t mapid);
+byte CMaterial_GetMapSize(CMaterial *self, uint32_t mapid, int *w, int *h);
 
-void __thiscall CMatList_Add(CMatList *self, CMaterial *mat);
+void CMatList_Add(CMatList *self, CMaterial *mat);
 /* an equal shareable material, also in the sub lists */
-CMaterial *__thiscall CMatList_Find(CMatList *self, const CMaterial *mat);
-void __thiscall CMatList_Prepare(CMatList *self, void *dev);
-int __thiscall CMatList_Count(CMatList *self, byte sub);
-CMaterial *__thiscall CMatList_Extract(CMatList *self, CMaterial *mat, byte sub);
-void __fastcall CMatList_Release(CMatList *self);
-void __fastcall CMatList_DeleteAll(CMatList *self);
-void __thiscall CMatList_Delete(CMatList *self, CMaterial *mat);
+CMaterial *CMatList_Find(CMatList *self, const CMaterial *mat);
+void CMatList_Prepare(CMatList *self, void *dev);
+int CMatList_Count(CMatList *self, byte sub);
+CMaterial *CMatList_Extract(CMatList *self, CMaterial *mat, byte sub);
+void CMatList_Release(CMatList *self);
+void CMatList_DeleteAll(CMatList *self);
+void CMatList_Delete(CMatList *self, CMaterial *mat);
 
 byte Color_Equal(const byte *a, const byte *b);
-byte __thiscall MatParams_Equal(const uint32_t *self, const uint32_t *other);
+byte MatParams_Equal(const uint32_t *self, const uint32_t *other);
 int Vec2_Differ(const float *a, const float *b);
 /* blend modes between the file values and the engine (legacy: the files of version 1) */
 void Mat_ConvertBlend(uint32_t *mode, byte toFile, byte legacy);

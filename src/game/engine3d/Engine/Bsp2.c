@@ -36,7 +36,7 @@ static int Bsp2_Side(float d) {
 	return -BSP2_EPS > d ? -1 : 0;
 }
 
-Bsp2Node *__fastcall Bsp2Node_ctor(Bsp2Node *self) {
+Bsp2Node *Bsp2Node_ctor(Bsp2Node *self) {
 	self->tris.p = NULL;
 	self->tris.n = 0;
 	self->front = NULL;
@@ -44,7 +44,7 @@ Bsp2Node *__fastcall Bsp2Node_ctor(Bsp2Node *self) {
 	return self;
 }
 
-void __fastcall BspLights_dtor(void *self) {
+void BspLights_dtor(void *self) {
 	BspLights *l = self;
 
 	if (l->root) {
@@ -55,7 +55,7 @@ void __fastcall BspLights_dtor(void *self) {
 	}
 }
 
-void __fastcall Bsp2Node_dtor(Bsp2Node *self) {
+void Bsp2Node_dtor(Bsp2Node *self) {
 	if (self->front) {
 		Bsp2Node *n = self->front;
 		Bsp2Node_dtor(n);
@@ -71,7 +71,7 @@ void __fastcall Bsp2Node_dtor(Bsp2Node *self) {
 	Table_Free(&self->tris);
 }
 
-int __thiscall BspLights_CheckLine(BspLights *self, const vec3_t *a, const vec3_t *b, vec3_t *out) {
+int BspLights_CheckLine(BspLights *self, const vec3_t *a, const vec3_t *b, vec3_t *out) {
 	CHECK(++g_Bsp2NComp);
 	return Bsp2_CheckLine(a, b, out, self->root) == 1;
 }
@@ -139,7 +139,7 @@ int Bsp2_CheckLine(const vec3_t *a, const vec3_t *b, vec3_t *out, Bsp2Node *node
 	return -1;
 }
 
-void __fastcall BspLights_Render(void *self) {
+void BspLights_Render(void *self) {
 	BspLights *l = self;
 
 	const vec3_t *eye = Render_GetEyePos();
@@ -182,7 +182,7 @@ void Bsp2_Stats(int print) {
 	}
 }
 
-byte __thiscall Bsp2_ChoosePlane(BspLights *self, Bsp2Node *node, plane_t *dest) {
+byte Bsp2_ChoosePlane(BspLights *self, Bsp2Node *node, plane_t *dest) {
 	(void)self;
 	CHECK(node);
 	CHECK(dest);
@@ -231,7 +231,7 @@ byte __thiscall Bsp2_ChoosePlane(BspLights *self, Bsp2Node *node, plane_t *dest)
 	return 0;
 }
 
-Bsp2Node *__thiscall BspLights_FindLeaf(BspLights *self, const vec3_t *p) {
+Bsp2Node *BspLights_FindLeaf(BspLights *self, const vec3_t *p) {
 	Bsp2Node *root = self->root;
 	Bsp2Node *n = 0.0f > Bsp2_Dist(&root->plane, p) ? root->back : root->front;
 
@@ -267,7 +267,7 @@ Bsp2Tri *Bsp2Tri_Copy(Bsp2Tri *dest, const Bsp2Tri *src) {
 	return dest;
 }
 
-void __thiscall Bsp2_Build(BspLights *self, Bsp2Node *node, int depth) {
+void Bsp2_Build(BspLights *self, Bsp2Node *node, int depth) {
 	plane_t pl;
 
 	for (;;) {

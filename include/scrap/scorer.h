@@ -17,14 +17,14 @@ typedef struct cScorerItemVtbl {
 	union {
 		void *vf00_01[2];
 		struct {
-			void(__thiscall *Draw)(cScorerItem *self, int player);				/* 0x0 */
+			void(*Draw)(cScorerItem *self, int player);				/* 0x0 */
 			/* a "name=value" parameter, nothing in most classes */
-			void(__thiscall *SetParam)(cScorerItem *self, const char *name, const char *value);	/* 0x4 */
+			void(*SetParam)(cScorerItem *self, const char *name, const char *value);	/* 0x4 */
 		};
 	};
 	/* like cActClass_Var: set != 0 writes *s or *d / *i; returns 1 string, 2 double, 3 int, 0 */
-	int(__thiscall *Var)(cScorerItem *self, const char *name, int set, char **s, double *d, int *i);	/* 0x8 */
-	cScorerItem *(__thiscall *Delete)(cScorerItem *self, byte flags);			/* 0xc */
+	int(*Var)(cScorerItem *self, const char *name, int set, char **s, double *d, int *i);	/* 0x8 */
+	cScorerItem *(*Delete)(cScorerItem *self, byte flags);			/* 0xc */
 	/* only in some classes: SetAnim of the heads, the lock text of the cannon, a slot of cSpriteScorer */
 	void *vf04;										/* 0x10 */
 	void *vf05;										/* 0x14 SetModel of the heads */
@@ -60,12 +60,12 @@ SD_OFFSET(cScorerItem, visible, 0x29);
 SD_OFFSET(cScorerItem, onAccept, 0x44);
 SD_OFFSET(cScorerItem, multiPress, 0xa8);
 
-/* the base class (Scorer.cpp): fastcall constructor and destructor */
-cScorerItem *__fastcall cScorerItem_ctor(cScorerItem *self);
-void __fastcall cScorerItem_dtor(cScorerItem *self);
+/* the base class (Scorer.cpp): constructor and destructor */
+cScorerItem *cScorerItem_ctor(cScorerItem *self);
+void cScorerItem_dtor(cScorerItem *self);
 /* Hint, MaxHintLineWidth, Name, DelMe, X, Y, W, H, FocusPivotX/Y, Left, Right, Up, Down, the On* functions,
  * MultiPress, Visible */
-int __thiscall cScorerItem_Var(cScorerItem *self, const char *name, byte set, char **s, double *d, int *i);
+int cScorerItem_Var(cScorerItem *self, const char *name, byte set, char **s, double *d, int *i);
 
 /* the cinema bars (SScorer.SetCinema), 0x10 bytes */
 typedef struct ScorerCinema {
@@ -137,16 +137,16 @@ SD_OFFSET(cScorer, mpFunc, 0xec);
 SD_OFFSET(cScorer, focusSound, 0x100);
 
 cScorer *Scorer_Get(int player);
-cScorerItem *__thiscall cScorer_FindItem(cScorer *scorer, const char *name);
-cScorerItem *__thiscall cScorer_AddItem(cScorer *scorer, const char *name, const char *type, byte flag);
-void __thiscall cScorer_Clear(cScorer *scorer);
-void __thiscall cScorer_SetDefault(cScorer *scorer, const char *name);
-void __thiscall cScorer_SetMarkerSprite(cScorer *scorer, const char *sprite);
+cScorerItem *cScorer_FindItem(cScorer *scorer, const char *name);
+cScorerItem *cScorer_AddItem(cScorer *scorer, const char *name, const char *type, byte flag);
+void cScorer_Clear(cScorer *scorer);
+void cScorer_SetDefault(cScorer *scorer, const char *name);
+void cScorer_SetMarkerSprite(cScorer *scorer, const char *sprite);
 /* the model of the new entry (never NULL) */
-void *__thiscall cScorer_AddModel(cScorer *scorer, const char *name, const char *model, const char *anim, int numAnim,
+void *cScorer_AddModel(cScorer *scorer, const char *name, const char *model, const char *anim, int numAnim,
 	float radius, float height, byte head);
-void __thiscall ScorerFade_Start(ScorerFade *fade, uint32_t from, uint32_t to, float time);
-void __thiscall ScorerCinema_Set(ScorerCinema *cinema, byte on, float time);
+void ScorerFade_Start(ScorerFade *fade, uint32_t from, uint32_t to, float time);
+void ScorerCinema_Set(ScorerCinema *cinema, byte on, float time);
 /* cPyMenuEntity (type object rva 0x428f78): Python handle of a scorer item by player and item name */
 typedef struct cPyMenuEntity {
 	PyObject_HEAD

@@ -40,7 +40,7 @@
 
 /* the accessor of table.h */
 
-typedef void(__thiscall *objCall_t)(void *self, void *arg);
+typedef void(*objCall_t)(void *self, void *arg);
 
 double crt_ceil(double x);
 
@@ -54,7 +54,7 @@ static CCollideQuad *Heights_Quad(CHeights *alt, uint32_t i) {
 	return &alt->quads[i];
 }
 
-CCollideQuad *__thiscall CHeights_GetCell(CHeights *self, uint32_t x, uint32_t z) {
+CCollideQuad *CHeights_GetCell(CHeights *self, uint32_t x, uint32_t z) {
 	return Heights_Cell(self, x, z);
 }
 
@@ -112,7 +112,7 @@ static void Table_DeleteObjs(void **p) {
 	}
 }
 
-void __fastcall Table_FreeObjs(CTable *t) {
+void Table_FreeObjs(CTable *t) {
 	if (t->p) {
 		Table_DeleteObjs(t->p);
 		t->p = NULL;
@@ -123,7 +123,7 @@ void __fastcall Table_FreeObjs(CTable *t) {
 
 /* engine3d/engine/ground.h */
 
-CCollideMesh *__fastcall CCollideMesh_ctor(CCollideMesh *self) {
+CCollideMesh *CCollideMesh_ctor(CCollideMesh *self) {
 	self->Refs = 0;
 	memset(&self->Ext, 0, sizeof(self->Ext));
 	self->nVert = 0;
@@ -137,7 +137,7 @@ CCollideMesh *__fastcall CCollideMesh_ctor(CCollideMesh *self) {
 	return self;
 }
 
-CCollideQuad *__fastcall CCollideQuad_ctor(CCollideQuad *self) {
+CCollideQuad *CCollideQuad_ctor(CCollideQuad *self) {
 	self->pTri = NULL;
 	self->nTri = 0;
 	self->next = NULL;
@@ -153,7 +153,7 @@ static CCollideQuad *CCollideQuad_New(void) {
 	return q ? CCollideQuad_ctor(q) : NULL;
 }
 
-void __fastcall CCollideQuad_dtor(CCollideQuad *self) {
+void CCollideQuad_dtor(CCollideQuad *self) {
 	CCollideQuad *next = self->next;
 	if (next) {
 		CCollideQuad_dtor(next);
@@ -168,7 +168,7 @@ void __fastcall CCollideQuad_dtor(CCollideQuad *self) {
 	Table_Free((CTable *)&self->nTri);
 }
 
-CCollideQuad *__thiscall CCollideQuad_Delete(CCollideQuad *self, uint32_t flags) {
+CCollideQuad *CCollideQuad_Delete(CCollideQuad *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
 		crt_eh_vector_dtor(self, sizeof(*self), *mem, (void *)CCollideQuad_dtor);
@@ -185,7 +185,7 @@ CCollideQuad *__thiscall CCollideQuad_Delete(CCollideQuad *self, uint32_t flags)
 }
 
 /* the vector deleting destructor of the floor nodes (CNode3D, 0xfc bytes) */
-void *__thiscall CNode3D_VecDelete(void *self, uint32_t flags) {
+void *CNode3D_VecDelete(void *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
 		crt_eh_vector_dtor(self, sizeof(CNode3D), *mem, (void *)CNode3D_dtor);
@@ -201,7 +201,7 @@ void *__thiscall CNode3D_VecDelete(void *self, uint32_t flags) {
 	return self;
 }
 
-CHeights *__fastcall CHeights_ctor(CHeights *self) {
+CHeights *CHeights_ctor(CHeights *self) {
 	crt_eh_vector_ctor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, (void *)CCollideMesh_ctor,
 		(void *)CCollideMesh_dtor);
 	crt_eh_vector_ctor(self->_CollideMesh2, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, (void *)CCollideMesh_ctor,
@@ -230,7 +230,7 @@ static void Heights_FreeQuads(CHeights *self) {
 	}
 }
 
-void __fastcall CHeights_dtor(CHeights *self) {
+void CHeights_dtor(CHeights *self) {
 	Heights_FreeQuads(self);
 	if (self->outSector) {
 		CCollideQuad *q = self->outSector;
@@ -254,7 +254,7 @@ void __fastcall CHeights_dtor(CHeights *self) {
 
 /* CGround */
 
-CGround *__fastcall CGround_ctor(CGround *self) {
+CGround *CGround_ctor(CGround *self) {
 	self->class = 0;
 	self->vftable = CGROUND_VFTABLE;
 	memset(self->cache, 0, sizeof(self->cache));
@@ -281,14 +281,14 @@ CGround *__fastcall CGround_ctor(CGround *self) {
 	return self;
 }
 
-void __fastcall CGround_dtor(CGround *self) {
+void CGround_dtor(CGround *self) {
 	self->vftable = CGROUND_VFTABLE;
 	CHeights_dtor(&self->heights);
 	Table_FreeObjs((CTable *)&self->nNodes);
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-CGround *__thiscall CGround_Delete(CGround *self, byte flags) {
+CGround *CGround_Delete(CGround *self, byte flags) {
 	CGround_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -296,7 +296,7 @@ CGround *__thiscall CGround_Delete(CGround *self, byte flags) {
 	return self;
 }
 
-void __thiscall CGround_Nop(CGround *self, void *arg) {
+void CGround_Nop(CGround *self, void *arg) {
 	(void)self;
 	(void)arg;
 }
@@ -308,17 +308,17 @@ static void Ground_NodesCall(CGround *self, void *arg, int slot) {
 	}
 }
 
-void __thiscall CGround_NodesVf3(CGround *self, void *arg) {
+void CGround_NodesVf3(CGround *self, void *arg) {
 	Ground_NodesCall(self, arg, 3);
 }
 
-void __thiscall CGround_NodesVf4(CGround *self, void *arg) {
+void CGround_NodesVf4(CGround *self, void *arg) {
 	Ground_NodesCall(self, arg, 4);
 }
 
 /* the triangles of the collision meshes */
 
-plane_t *__thiscall CCollideMesh_TriPlane(CCollideMesh *self, plane_t *out, uint32_t i) {
+plane_t *CCollideMesh_TriPlane(CCollideMesh *self, plane_t *out, uint32_t i) {
 	CHECK((uint32_t)i < (uint32_t)self->nTri);
 	const CCollideTri *tri = &self->pTri[i];
 	const vec3_t *v0 = &self->pVert[tri->v[0]], *v1 = &self->pVert[tri->v[1]], *v2 = &self->pVert[tri->v[2]];
@@ -334,7 +334,7 @@ plane_t *__thiscall CCollideMesh_TriPlane(CCollideMesh *self, plane_t *out, uint
 	return out;
 }
 
-void __thiscall CCollideMesh_TriWithPlane(CCollideMesh *self, CCollideTri *out, int i) {
+void CCollideMesh_TriWithPlane(CCollideMesh *self, CCollideTri *out, int i) {
 	const CCollideTri *tri = &self->pTri[i];
 	plane_t pl;
 
@@ -345,7 +345,7 @@ void __thiscall CCollideMesh_TriWithPlane(CCollideMesh *self, CCollideTri *out, 
 	out->ncomp = 0;
 }
 
-void __thiscall CCollideMesh_GetTri(CCollideMesh *self, int i, CCollideTri *tri, vec3_t *v0, vec3_t *v1, vec3_t *v2) {
+void CCollideMesh_GetTri(CCollideMesh *self, int i, CCollideTri *tri, vec3_t *v0, vec3_t *v1, vec3_t *v2) {
 	if (tri) {
 		*tri = self->pTri[i];
 	}
@@ -362,7 +362,7 @@ void __thiscall CCollideMesh_GetTri(CCollideMesh *self, int i, CCollideTri *tri,
 
 /* the files */
 
-void __thiscall CCollideMesh_Read(CCollideMesh *self, CFileIO *f) {
+void CCollideMesh_Read(CCollideMesh *self, CFileIO *f) {
 	char name[128];
 
 	CFileIO_BeginBlock(f, "CMSH");
@@ -385,7 +385,7 @@ void __thiscall CCollideMesh_Read(CCollideMesh *self, CFileIO *f) {
 	CFileIO_Error(f, "CMSH");
 }
 
-void __thiscall CCollideMesh_Write(CCollideMesh *self, CFileIO *f) {
+void CCollideMesh_Write(CCollideMesh *self, CFileIO *f) {
 	CHECK(g_SaveCollideMeshParam < 256);
 	self->Param = (byte)g_SaveCollideMeshParam++;
 	CFileIO_BeginBlockWrite(f, "CMSH");
@@ -416,7 +416,7 @@ static void CCollideQuad_SetMesh(CCollideQuad *self, CCollideMesh *mesh) {
 	self->Mesh = mesh;
 }
 
-void __thiscall CCollideQuad_Read(CCollideQuad *self, CFileIO *f) {
+void CCollideQuad_Read(CCollideQuad *self, CFileIO *f) {
 	CFileIO_BeginBlock(f, "QUAD");
 	CHECK(CFileIO_ReadInt(f) == 1);
 	int mesh = CFileIO_ReadInt(f);
@@ -445,7 +445,7 @@ static int32_t Ground_FloatBits(float f) {
 	return i;
 }
 
-void __thiscall CCollideQuad_Write(CCollideQuad *self, CFileIO *f) {
+void CCollideQuad_Write(CCollideQuad *self, CFileIO *f) {
 	CFileIO_BeginBlockWrite(f, "QUAD");
 	CFileIO_WriteInt(f, 1);
 	CFileIO_WriteInt(f, self->Mesh->Param);
@@ -461,7 +461,7 @@ void __thiscall CCollideQuad_Write(CCollideQuad *self, CFileIO *f) {
 	CFileIO_EndBlockWrite(f, "QUAD");
 }
 
-byte __thiscall CGround_Read(CGround *self, CFileIO *f, void *ctx) {
+byte CGround_Read(CGround *self, CFileIO *f, void *ctx) {
 	(void)ctx;
 	CFileIO_BeginBlock(f, "SUEL");
 	CHECK(CFileIO_ReadInt(f) == 1);
@@ -476,7 +476,7 @@ byte __thiscall CGround_Read(CGround *self, CFileIO *f, void *ctx) {
 	return 1;
 }
 
-byte __thiscall CGround_Write(CGround *self, CFileIO *f, void *ctx) {
+byte CGround_Write(CGround *self, CFileIO *f, void *ctx) {
 	(void)ctx;
 	CFileIO_BeginBlockWrite(f, "SUEL");
 	CFileIO_WriteInt(f, 1);
@@ -501,7 +501,7 @@ static void Ground_Close(CFileIO *f) {
 	operator_delete_sized(f, sizeof(*f));
 }
 
-int __thiscall CGround_LoadCollision(CGround *self, const char *name) {
+int CGround_LoadCollision(CGround *self, const char *name) {
 	char amc[MAX_FILEPATH];
 	CCollideMesh *list[256];
 	CHeights *alt = &self->heights;
@@ -560,7 +560,7 @@ int __thiscall CGround_LoadCollision(CGround *self, const char *name) {
 	return -1;
 }
 
-int __thiscall CGround_SaveCollision(CGround *self, const char *name) {
+int CGround_SaveCollision(CGround *self, const char *name) {
 	char amc[MAX_FILEPATH];
 	CHeights *alt = &self->heights;
 
@@ -613,7 +613,7 @@ int __thiscall CGround_SaveCollision(CGround *self, const char *name) {
 
 /* the queries */
 
-void __thiscall CHeights_SetParam(CHeights *self, byte param) {
+void CHeights_SetParam(CHeights *self, byte param) {
 	for (int i = 0; i < self->nQuads; i++) {
 		for (CCollideQuad *q = Heights_Quad(self, i); q; q = q->next) {
 			q->Mesh->Param = param;
@@ -630,7 +630,7 @@ static void Ground_ClearNComp(CCollideMesh *mesh) {
 	}
 }
 
-void __fastcall CGround_NewQuery(CGround *self) {
+void CGround_NewQuery(CGround *self) {
 	CHeights *alt = &self->heights;
 	uint32_t tests = g_CollisionTests;
 
@@ -979,7 +979,7 @@ static int Ground_MarkTri(CCollideTri *tri) {
 	return 1;
 }
 
-byte __thiscall CGround_CollideSphere(CGround *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out, vec3_t *hit,
+byte CGround_CollideSphere(CGround *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out, vec3_t *hit,
 	vec3_t *n) {
 	vec3_t A = *a, C = *b, P, best;
 	groundArea_t ar;
@@ -1044,7 +1044,7 @@ byte __thiscall CGround_CollideSphere(CGround *self, const vec3_t *a, const vec3
 	return 1;
 }
 
-byte __thiscall CGround_SphereContact(CGround *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out,
+byte CGround_SphereContact(CGround *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out,
 	vec3_t *hit, vec3_t *n) {
 	vec3_t C = *b, P, best;
 	groundArea_t ar;
@@ -1103,7 +1103,7 @@ byte __thiscall CGround_SphereContact(CGround *self, const vec3_t *a, const vec3
 	return 1;
 }
 
-byte __thiscall CGround_SweepSphere(CGround *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out, vec3_t *hit,
+byte CGround_SweepSphere(CGround *self, const vec3_t *a, const vec3_t *b, float r, vec3_t *out, vec3_t *hit,
 	vec3_t *n) {
 	vec3_t A = *a, B = *b, P, best;
 	groundArea_t ar;
@@ -1163,21 +1163,21 @@ static const CCollideTri *Quad_Tri(const CCollideQuad *q, int i) {
 	return &q->Mesh->pTri[q->pTri[i]];
 }
 
-float __thiscall CCollideQuad_TriMaxY(CCollideQuad *self, const CCollideTri *tri) {
+float CCollideQuad_TriMaxY(CCollideQuad *self, const CCollideTri *tri) {
 	const vec3_t *v = self->Mesh->pVert;
 	float y0 = v[tri->v[0]].y, y1 = v[tri->v[1]].y, y2 = v[tri->v[2]].y;
 	float m = y0 > y1 ? y0 : y1;
 	return m > y2 ? m : y2;
 }
 
-float __thiscall CCollideQuad_TriMinY(CCollideQuad *self, const CCollideTri *tri) {
+float CCollideQuad_TriMinY(CCollideQuad *self, const CCollideTri *tri) {
 	const vec3_t *v = self->Mesh->pVert;
 	float y0 = v[tri->v[0]].y, y1 = v[tri->v[1]].y, y2 = v[tri->v[2]].y;
 	float m = y0 < y1 ? y0 : y1;
 	return y2 > m ? m : y2;
 }
 
-int __fastcall CCollideQuad_LowestTri(CCollideQuad *self) {
+int CCollideQuad_LowestTri(CCollideQuad *self) {
 	int best = -1;
 	float low = self->maxY;
 
@@ -1195,7 +1195,7 @@ int __fastcall CCollideQuad_LowestTri(CCollideQuad *self) {
 	return best;
 }
 
-void __fastcall CCollideQuad_CalcGap(CCollideQuad *self) {
+void CCollideQuad_CalcGap(CCollideQuad *self) {
 	self->gapBottom = self->minY;
 	self->gapTop = self->maxY;
 	int cur = CCollideQuad_LowestTri(self);
@@ -1271,7 +1271,7 @@ void __fastcall CCollideQuad_CalcGap(CCollideQuad *self) {
 	}
 }
 
-void __thiscall CCollideQuad_CalcExt(CHeights *self, CCollideQuad *q) {
+void CCollideQuad_CalcExt(CHeights *self, CCollideQuad *q) {
 	(void)self;
 	box_t b = { { GROUND_FLT_MAX, GROUND_FLT_MAX, GROUND_FLT_MAX }, { -GROUND_FLT_MAX, -GROUND_FLT_MAX, -GROUND_FLT_MAX } };
 
@@ -1294,7 +1294,7 @@ void __thiscall CCollideQuad_CalcExt(CHeights *self, CCollideQuad *q) {
 	CCollideQuad_CalcGap(q);
 }
 
-void __thiscall CCollideQuad_AddAllTris(CHeights *self, CCollideQuad *q) {
+void CCollideQuad_AddAllTris(CHeights *self, CCollideQuad *q) {
 	(void)self;
 	Table_Alloc2((CTable *)&q->nTri, q->Mesh->nTri);
 	for (int i = 0; i < q->nTri; i++) {
@@ -1304,7 +1304,7 @@ void __thiscall CCollideQuad_AddAllTris(CHeights *self, CCollideQuad *q) {
 	}
 }
 
-CCollideQuad *__thiscall CCollideQuad_Find(CHeights *self, CCollideQuad *quad, uint32_t id, CCollideMesh *mesh) {
+CCollideQuad *CCollideQuad_Find(CHeights *self, CCollideQuad *quad, uint32_t id, CCollideMesh *mesh) {
 	(void)self;
 	CHECK(quad && mesh);
 	if (quad->Mesh == mesh && quad->Mesh->MeshID == id) {
@@ -1327,7 +1327,7 @@ CCollideQuad *__thiscall CCollideQuad_Find(CHeights *self, CCollideQuad *quad, u
 	return quad->next;
 }
 
-void __thiscall CHeights_QuadInit(CHeights *self, int unused, const box_t *box, int numTri) {
+void CHeights_QuadInit(CHeights *self, int unused, const box_t *box, int numTri) {
 	(void)unused;
 	CHECK(!self->CollideMesh1.pTri && !self->CollideMesh1.pVert);
 	CHECK(!self->CollideMesh2.pTri && !self->CollideMesh2.pVert);
@@ -1351,7 +1351,7 @@ void __thiscall CHeights_QuadInit(CHeights *self, int unused, const box_t *box, 
 	Con_Verbosef("QuadInit: %d x %d  (NumTri: %d)  (size: %.2f)\n", self->nx, self->nz, numTri, size);
 }
 
-void __thiscall CHeights_QuadAddMesh(CHeights *self, CCollideMesh *mesh, int initTri) {
+void CHeights_QuadAddMesh(CHeights *self, CCollideMesh *mesh, int initTri) {
 	int included = 0, discarded = 0, maxTri = 0;
 
 	CHECK(!initTri);
@@ -1458,7 +1458,7 @@ static void Ground_NewCacheID(CGround *self) {
 static const char *const groundVertExpr[3] = { "(tri->v[0] + NumVert <= CNDX_MAX)", "(tri->v[1] + NumVert <= CNDX_MAX)",
 	"(tri->v[2] + NumVert <= CNDX_MAX)" };
 
-void __thiscall CGround_AddMesh(CGround *self, CCollideMesh *mesh, CTriMesh *tm, uint32_t *outID, int *outIni) {
+void CGround_AddMesh(CGround *self, CCollideMesh *mesh, CTriMesh *tm, uint32_t *outID, int *outIni) {
 	int degenerate = 0, invalid = 0;
 
 	CHECK(self->heights.nQuads);
@@ -1540,7 +1540,7 @@ void __thiscall CGround_AddMesh(CGround *self, CCollideMesh *mesh, CTriMesh *tm,
 		(g_MemStats->bytes - mem) / 1024, tm->nTri, tm->nVert, mesh->sector - 1, (double)(t1 - t0) / 1000.0);
 }
 
-void __thiscall CGround_RemoveMesh(CGround *self, CCollideMesh *mesh, int a2, int a3) {
+void CGround_RemoveMesh(CGround *self, CCollideMesh *mesh, int a2, int a3) {
 	(void)a2;
 	(void)a3;
 	Ground_NewCacheID(self);
@@ -1560,7 +1560,7 @@ void __thiscall CGround_RemoveMesh(CGround *self, CCollideMesh *mesh, int a2, in
 	}
 }
 
-void __thiscall CGround_SetMeshCollide(CGround *self, CCollideMesh *mesh, byte on, int MeshID, int IniTri) {
+void CGround_SetMeshCollide(CGround *self, CCollideMesh *mesh, byte on, int MeshID, int IniTri) {
 	CHECK(!IniTri);
 	CHECK(MeshID);
 	Ground_NewCacheID(self);
@@ -1573,7 +1573,7 @@ void __thiscall CGround_SetMeshCollide(CGround *self, CCollideMesh *mesh, byte o
 	mesh->flags |= TRI_ALT_NO_COLLISIONS;
 }
 
-void __fastcall CGround_CalcGaps(CGround *self) {
+void CGround_CalcGaps(CGround *self) {
 	for (int i = 0; i < self->heights.nQuads; i++) {
 		for (CCollideQuad *q = Heights_Quad(&self->heights, i); q; q = q->next) {
 			CCollideQuad_CalcGap(q);
@@ -1590,7 +1590,7 @@ static CTriMesh *Ground_ObjMesh(void *obj) {
 	return obj;
 }
 
-void __thiscall CGround_BuildSectorMesh(CGround *self, CCollideMesh *mesh, int mode, uint32_t sector) {
+void CGround_BuildSectorMesh(CGround *self, CCollideMesh *mesh, int mode, uint32_t sector) {
 	CTriMesh *m = operator_new(sizeof(CTriMesh));
 	m = m ? CTriMesh_ctor(m) : NULL;
 	if (mode == 2) {
@@ -1647,7 +1647,7 @@ void __thiscall CGround_BuildSectorMesh(CGround *self, CCollideMesh *mesh, int m
 	((objDelete_t)(*(void ***)m)[0])(m, 1);
 }
 
-void __fastcall CGround_CreateQuadCollision(CGround *self) {
+void CGround_CreateQuadCollision(CGround *self) {
 	CHeights *alt = &self->heights;
 	int empty = 0;
 
@@ -1681,14 +1681,14 @@ void __fastcall CGround_CreateQuadCollision(CGround *self) {
 
 /* the floor nodes and the debug drawing */
 
-void __thiscall CGround_NodesToD3D(CGround *self, int fvf) {
+void CGround_NodesToD3D(CGround *self, int fvf) {
 	for (int i = 0; i < self->nNodes; i++) {
 		TABLE_CHECK(self->nodes, i, self->nNodes);
 		CNode3D_BuildD3D(&self->nodes[i], fvf);
 	}
 }
 
-void __thiscall CGround_Draw(CGround *self, void *dev, int unused) {
+void CGround_Draw(CGround *self, void *dev, int unused) {
 	(void)unused;
 	Render_SetWorldMatrix(g_MatIdentity, 0);
 	for (int i = 0; i < self->nNodes; i++) {
@@ -1804,7 +1804,7 @@ static uint32_t Ground_TriFlags(uint32_t nodeFlags, const void *mat, byte opt) {
 	return fl;
 }
 
-void __thiscall CGround_Build(CGround *self, CScene *scn) {
+void CGround_Build(CGround *self, CScene *scn) {
 	const char *name = scn->name;
 	char nodeName[128];
 
@@ -1919,7 +1919,7 @@ void __thiscall CGround_Build(CGround *self, CScene *scn) {
 	Ground_LogMemory(mem, t0);
 }
 
-void __fastcall CGround_FreeNodes(CGround *self) {
+void CGround_FreeNodes(CGround *self) {
 	Table_FreeObjs((CTable *)&self->nNodes);
 }
 
@@ -1938,7 +1938,7 @@ vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in) {
 }
 
 /* the lighting of the device meshes of the nodes; node and esc go through unchanged */
-void __thiscall CGround_CalcIllum(void *ground, CNode3D *node, CScene *scn) {
+void CGround_CalcIllum(void *ground, CNode3D *node, CScene *scn) {
 	CGround *self = ground;
 
 	for (int i = 0; i < self->nNodes; i++) {
@@ -2246,7 +2246,7 @@ static void Ground_AnalyzeQuads(CGround *self) {
 
 /* the debug view of the collision: the mode of c_show (6, 7 the solid views, 7 with a blinking background), the
  * quads, the analysis, then the meshes of the sectors seen and the meshes added at run time once each */
-void __fastcall CGround_DrawDebug(CGround *self) {
+void CGround_DrawDebug(CGround *self) {
 	int show = g_ShowCollision;
 
 	if (show == 0) {

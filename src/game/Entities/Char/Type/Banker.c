@@ -128,7 +128,7 @@ byte ChType_CanRob(cEntity *thief, cEntity *v) {
 	return 1;
 }
 
-cEntity *__thiscall cWorld_GetUsrEntity(cWorld *world, int player) {
+cEntity *cWorld_GetUsrEntity(cWorld *world, int player) {
 	cEntity *e = world->owners[player];
 
 	if (e) {

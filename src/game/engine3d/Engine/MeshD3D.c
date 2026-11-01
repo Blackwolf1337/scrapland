@@ -34,11 +34,11 @@ typedef struct MeshD3D_Channel {
 	int i4;				/* 0x4 */
 } MeshD3D_Channel;
 
-typedef CMeshD3D *(__thiscall *meshD3DDelete_t)(CMeshD3D *self, byte flags);
-typedef int(__thiscall *meshD3DRestore_t)(CMeshD3D *self, void *dev);
-typedef void(__thiscall *meshD3DInvalidate_t)(CMeshD3D *self, void *dev);
-typedef byte(__thiscall *meshD3DFile_t)(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
-typedef void(__thiscall *nodeDelete_t)(CNode3D *self, int flags);
+typedef CMeshD3D *(*meshD3DDelete_t)(CMeshD3D *self, byte flags);
+typedef int(*meshD3DRestore_t)(CMeshD3D *self, void *dev);
+typedef void(*meshD3DInvalidate_t)(CMeshD3D *self, void *dev);
+typedef byte(*meshD3DFile_t)(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
+typedef void(*nodeDelete_t)(CNode3D *self, int flags);
 typedef uint32_t(__stdcall *comRelease_t)(void *self);
 
 /* IUnknown::Release of a COM object, the pointer cleared */
@@ -58,7 +58,7 @@ static void MeshD3D_DeleteArray(void **p) {
 	}
 }
 
-void __fastcall CMeshD3D_Init(CMeshD3D *self) {
+void CMeshD3D_Init(CMeshD3D *self) {
 	self->center.x = 0.0f;
 	self->center.y = 0.0f;
 	self->class = CLASS_OBJ3D_MESHD3D;
@@ -103,7 +103,7 @@ static void MeshD3D_Construct(CMeshD3D *self) {
 	memset(&self->ext, 0, sizeof(self->ext));
 }
 
-CMeshD3D *__thiscall CMeshD3D_ctorMesh(CMeshD3D *self, CTriMesh *mesh, uint32_t flags, CNode3D *node) {
+CMeshD3D *CMeshD3D_ctorMesh(CMeshD3D *self, CTriMesh *mesh, uint32_t flags, CNode3D *node) {
 	MeshD3D_Construct(self);
 	CHECK(mesh);
 	CMeshD3D_Init(self);
@@ -131,13 +131,13 @@ CMeshD3D *__thiscall CMeshD3D_ctorMesh(CMeshD3D *self, CTriMesh *mesh, uint32_t 
 	return self;
 }
 
-CMeshD3D *__fastcall CMeshD3D_ctor(CMeshD3D *self) {
+CMeshD3D *CMeshD3D_ctor(CMeshD3D *self) {
 	MeshD3D_Construct(self);
 	CMeshD3D_Init(self);
 	return self;
 }
 
-void __fastcall CMeshD3D_dtor(CMeshD3D *self) {
+void CMeshD3D_dtor(CMeshD3D *self) {
 	self->vftable = CMESHD3D_VFTABLE;
 	if (self->pVertVB || self->pVertIB) {
 		CHECK(g_Engine && g_Engine->device);
@@ -162,7 +162,7 @@ void __fastcall CMeshD3D_dtor(CMeshD3D *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-CMeshD3D *__thiscall CMeshD3D_Delete(CMeshD3D *self, byte flags) {
+CMeshD3D *CMeshD3D_Delete(CMeshD3D *self, byte flags) {
 	CMeshD3D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -218,7 +218,7 @@ void MeshD3DObj_Free(MeshD3DObj *obj) {
 	}
 }
 
-void __thiscall CMeshD3D_Invalidate(CMeshD3D *self, void *dev) {
+void CMeshD3D_Invalidate(CMeshD3D *self, void *dev) {
 	if (self->next) {
 		((meshD3DInvalidate_t)self->next->vftable[MESHD3D_VF_INVALIDATE])(self->next, dev);
 	}
@@ -228,7 +228,7 @@ void __thiscall CMeshD3D_Invalidate(CMeshD3D *self, void *dev) {
 	MeshD3D_Release(&self->pc4);
 }
 
-void __thiscall CMeshD3D_GetBox(CMeshD3D *self, box_t *out, byte recalc) {
+void CMeshD3D_GetBox(CMeshD3D *self, box_t *out, byte recalc) {
 	if (recalc) {
 		CMeshD3D_CalcBox(self, out, 1);
 		return;
@@ -236,7 +236,7 @@ void __thiscall CMeshD3D_GetBox(CMeshD3D *self, box_t *out, byte recalc) {
 	*out = self->box;
 }
 
-int __thiscall CMeshD3D_Restore(CMeshD3D *self, void *dev) {
+int CMeshD3D_Restore(CMeshD3D *self, void *dev) {
 	int hr = CMeshD3D_CreateVB(self);
 	if (self->next) {
 		return ((meshD3DRestore_t)self->next->vftable[MESHD3D_VF_RESTORE])(self->next, dev);
@@ -244,7 +244,7 @@ int __thiscall CMeshD3D_Restore(CMeshD3D *self, void *dev) {
 	return hr;
 }
 
-byte __thiscall CMeshD3D_Read(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+byte CMeshD3D_Read(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	char tmp[256];
 	uint32_t n;
 
@@ -301,7 +301,7 @@ byte __thiscall CMeshD3D_Read(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) 
 	return 1;
 }
 
-void __fastcall CMeshD3D_CheckList(CMeshD3D *self) {
+void CMeshD3D_CheckList(CMeshD3D *self) {
 	do {
 		CHECK(self->vert.nVert > 0);
 		CHECK((int)self->nTri > 0);
@@ -309,12 +309,12 @@ void __fastcall CMeshD3D_CheckList(CMeshD3D *self) {
 	} while (self);
 }
 
-int __thiscall CMeshD3D_Draw(CMeshD3D *self, void *dev, void *ctx) {
+int CMeshD3D_Draw(CMeshD3D *self, void *dev, void *ctx) {
 	(void)dev;
 	return MeshD3D_Render(self, ctx);
 }
 
-byte __thiscall CMeshD3D_Write(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+byte CMeshD3D_Write(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CHECK(self->node == ctx->node);
 	CFileIO_BeginBlockWrite(f, "MD3D");
 	CFileIO_WriteInt(f, 1);
@@ -362,7 +362,7 @@ byte __thiscall CMeshD3D_Write(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx)
 	return 1;
 }
 
-void __thiscall CMeshD3D_SetRender(CMeshD3D *self, void *renderNode) {
+void CMeshD3D_SetRender(CMeshD3D *self, void *renderNode) {
 	MeshD3D_RenderNode *r = renderNode;
 	int channel = 3;
 	void *eva = CNode3D_TrackData(self->node, 3);
@@ -397,7 +397,7 @@ int MeshD3D_CompareVert(const void *a, const void *b) {
 	return r < 0 ? -1 : r > 0;
 }
 
-vec3_t *__thiscall CMeshD3D_TriNormal(CMeshD3D *self, vec3_t *out, uint32_t i) {
+vec3_t *CMeshD3D_TriNormal(CMeshD3D *self, vec3_t *out, uint32_t i) {
 	vec3_t a, b, c, n;
 
 	CHECK(i < self->nTri);
@@ -416,7 +416,7 @@ vec3_t *__thiscall CMeshD3D_TriNormal(CMeshD3D *self, vec3_t *out, uint32_t i) {
 	return out;
 }
 
-void __thiscall CMeshD3D_CalcBox(CMeshD3D *self, box_t *out, byte first) {
+void CMeshD3D_CalcBox(CMeshD3D *self, box_t *out, byte first) {
 	CMeshD3D_CalcCenter(self);
 	self->box = self->ext;
 	if (self->next) {
@@ -426,7 +426,7 @@ void __thiscall CMeshD3D_CalcBox(CMeshD3D *self, box_t *out, byte first) {
 	Box_Merge(out, &self->box, first);
 }
 
-void __fastcall CMeshD3D_CalcCenter(CMeshD3D *self) {
+void CMeshD3D_CalcCenter(CMeshD3D *self) {
 	CVertList_GetExtents(&self->vert, &self->ext, 1);
 	self->center.x = (self->ext.min.x + self->ext.max.x) * 0.5f;
 	self->center.y = (self->ext.max.y + self->ext.min.y) * 0.5f;
@@ -490,7 +490,7 @@ int MeshD3D_CompareVertIdx(const void *a, const void *b) {
 	return MeshD3D_CompareVert(&g_WeldVert[*(const int *)a], &g_WeldVert[*(const int *)b]);
 }
 
-void __thiscall CMeshD3D_Build(CMeshD3D *self, CTriMesh *mesh, uint32_t flags) {
+void CMeshD3D_Build(CMeshD3D *self, CTriMesh *mesh, uint32_t flags) {
 	CHECK(mesh);
 	CHECK(self->vert.nVert == 0 && !self->pTri);
 	/* a mesh at 0x30 is used in its place */
@@ -687,7 +687,7 @@ void __thiscall CMeshD3D_Build(CMeshD3D *self, CTriMesh *mesh, uint32_t flags) {
 	}
 }
 
-int __fastcall CMeshD3D_CreateVB(CMeshD3D *self) {
+int CMeshD3D_CreateVB(CMeshD3D *self) {
 	CHECK(self->vert.nVert > 0);
 	CHECK((int)self->nTri > 0);
 	if (!self->vert.nVert || !self->pTri) {
@@ -711,7 +711,7 @@ int __fastcall CMeshD3D_CreateVB(CMeshD3D *self) {
 	return 0;
 }
 
-void __thiscall CMeshD3D_SetNode(CMeshD3D *self, CNode3D *node) {
+void CMeshD3D_SetNode(CMeshD3D *self, CNode3D *node) {
 	for (CMeshD3D *m = self; m; m = m->next) {
 		if (node) {
 			node->Refs++;
@@ -737,7 +737,7 @@ void MeshD3D_TriPlane(const MeshD3DTriTmp *t, vec3_t *center, plane_t *plane) {
 	center->z = (v0.z + v1.z + v2.z) / 3.0f;
 }
 
-void __thiscall CMeshD3D_AllocTri(CMeshD3D *self, int n) {
+void CMeshD3D_AllocTri(CMeshD3D *self, int n) {
 	CHECK(n > 0);
 	CHECK(!self->pTri);
 	self->nTri = n;
@@ -766,7 +766,7 @@ void MeshD3D_FillTri(MeshD3DTriTmp *t, CTriMesh *m, uint32_t i, byte keep) {
 	t->flags = m->pTri[i].flags;
 }
 
-void __thiscall CMeshD3D_SetTri(CMeshD3D *self, uint32_t i, uint16_t a, uint16_t b, uint16_t c) {
+void CMeshD3D_SetTri(CMeshD3D *self, uint32_t i, uint16_t a, uint16_t b, uint16_t c) {
 	CHECK(i < self->nTri);
 	CHECK(self->pTri);
 	self->pTri[i][0] = a;
@@ -781,7 +781,7 @@ int MeshD3D_GroupFits(const MeshD3DGroup *g, const MeshD3DTriTmp *t) {
 	return 0;
 }
 
-int __fastcall CMeshD3D_Check(CMeshD3D *self) {
+int CMeshD3D_Check(CMeshD3D *self) {
 	CHECK(self->vert.nVert > 0);
 	CHECK((int)self->nTri > 0);
 	return 0;

@@ -90,35 +90,35 @@ SD_SIZE(cVehicleEffects, 0x24);
 #define g_WindFXSmokeLast GAME_GLOBAL(float, g_WindFXSmokeLast)	/* the world time of the last wind smoke */
 
 /* the parts before the range of the file in the exe */
-cVehicleEffects *__fastcall cVehicleEffects_ctor(cVehicleEffects *self);
+cVehicleEffects *cVehicleEffects_ctor(cVehicleEffects *self);
 /* the constructors of the optional parts (Init inlines them) */
-cVehicleTubes *__fastcall cVehicleTubes_ctor(cVehicleTubes *self);
-cVehicleTrails *__fastcall cVehicleTrails_ctor(cVehicleTrails *self);
-void __fastcall cVehicleEffects_dtor(cVehicleEffects *self);
+cVehicleTubes *cVehicleTubes_ctor(cVehicleTubes *self);
+cVehicleTrails *cVehicleTrails_ctor(cVehicleTrails *self);
+void cVehicleEffects_dtor(cVehicleEffects *self);
 /* the trails and tubes that found their nodes */
-void __thiscall cVehicleEffects_Update(cVehicleEffects *self, float dt);
+void cVehicleEffects_Update(cVehicleEffects *self, float dt);
 /* the smoke puffs of the escape tubes every 0.025 s, stronger with the sink speed */
-void __thiscall cVehicleTubes_Update(cVehicleTubes *self, float dt);
+void cVehicleTubes_Update(cVehicleTubes *self, float dt);
 
-void __fastcall cVehicleEffects_Reset(cVehicleEffects *self);
-void __fastcall cVehicleTubes_Reset(cVehicleTubes *self);
-void __fastcall cVehicleTrails_Clear(cVehicleTrails *self);
+void cVehicleEffects_Reset(cVehicleEffects *self);
+void cVehicleTubes_Reset(cVehicleTubes *self);
+void cVehicleTrails_Clear(cVehicleTrails *self);
 /* the trails and tubes made or deleted for the model of the owner */
-void __fastcall cVehicleEffects_Init(cVehicleEffects *self);
-void __fastcall cVehicleTubes_Init(cVehicleTubes *self);
-void __fastcall cVehicleTrails_Init(cVehicleTrails *self);
-void __thiscall cVehicleEffects_SetActive(cVehicleEffects *self, byte on);
+void cVehicleEffects_Init(cVehicleEffects *self);
+void cVehicleTubes_Init(cVehicleTubes *self);
+void cVehicleTrails_Init(cVehicleTrails *self);
+void cVehicleEffects_SetActive(cVehicleEffects *self, byte on);
 /* the effect of that name: VehicleDamage, VehicleEMI, VehicleSputnik(Make, Suck), VehicleFire, VehicleSpawn */
-void __thiscall cVehicleEffects_Start(cVehicleEffects *self, const char *name);
-void __thiscall cVehicleEffects_SetOwner(cVehicleEffects *self, cEntity *e);
-void __thiscall cVehicleTubes_SetOwner(cVehicleTubes *self, cEntity *e);
-void __thiscall cVehicleTrails_SetOwner(cVehicleTrails *self, cEntity *e);
+void cVehicleEffects_Start(cVehicleEffects *self, const char *name);
+void cVehicleEffects_SetOwner(cVehicleEffects *self, cEntity *e);
+void cVehicleTubes_SetOwner(cVehicleTubes *self, cEntity *e);
+void cVehicleTrails_SetOwner(cVehicleTrails *self, cEntity *e);
 /* the speed trails of a fast ship that sinks: a point every segment, the last point follows the nodes, faded
  * with the horizontal speed */
-void __thiscall cVehicleTrails_Update(cVehicleTrails *self, float dt);
+void cVehicleTrails_Update(cVehicleTrails *self, float dt);
 /* the smoke the wind of a fast ship blows off the ground at x y z */
-void __thiscall cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float y, float z);
+void cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float y, float z);
 /* the damage, EMI, fire and wind smoke effects started and stopped */
-void __thiscall cVehicleEffects_UpdateState(cVehicleEffects *self, float dt);
+void cVehicleEffects_UpdateState(cVehicleEffects *self, float dt);
 
 #endif

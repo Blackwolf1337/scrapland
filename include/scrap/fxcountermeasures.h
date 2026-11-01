@@ -14,14 +14,14 @@
 
 typedef struct cObjElementFX cObjElementFX;
 
-/* cObjElementAbstract::vftable and the ones of the effects (thiscall) */
+/* cObjElementAbstract::vftable and the ones of the effects */
 typedef struct cObjElementFXVtbl {
-	cObjElementFX *(__thiscall *Delete)(cObjElementFX *self, byte flags);			/* 0x00 */
-	void(__thiscall *Update)(cObjElementFX *self, cDebris *debris, float dt);		/* 0x04 vf01 */
+	cObjElementFX *(*Delete)(cObjElementFX *self, byte flags);			/* 0x00 */
+	void(*Update)(cObjElementFX *self, cDebris *debris, float dt);		/* 0x04 vf01 */
 	/* 0: the debris goes back to the pool */
-	byte(__thiscall *IsAlive)(cObjElementFX *self, cDebris *debris, cDebrisSys *sys);	/* 0x08 vf02 */
-	void(__thiscall *Start)(cObjElementFX *self, cDebris *debris);			/* 0x0c vf03 */
-	void(__thiscall *Reset)(cObjElementFX *self, cDebris *debris);			/* 0x10 vf04 */
+	byte(*IsAlive)(cObjElementFX *self, cDebris *debris, cDebrisSys *sys);	/* 0x08 vf02 */
+	void(*Start)(cObjElementFX *self, cDebris *debris);			/* 0x0c vf03 */
+	void(*Reset)(cObjElementFX *self, cDebris *debris);			/* 0x10 vf04 */
 } cObjElementFXVtbl;
 SD_SIZE(cObjElementFXVtbl, 0x14);
 
@@ -183,10 +183,10 @@ SD_OFFSET(cTargetLock, on, 0x44);
 SD_SIZE(cTargetLock, 0x48);
 
 /* rva 0x11a740, 0x11a720: the point of a lock without entity, the name of the locked entity (NULL when off) */
-vec3_t *__thiscall cTargetLock_GetPoint(cTargetLock *self);
-char *__thiscall cTargetLock_GetEntity(cTargetLock *self);
+vec3_t *cTargetLock_GetPoint(cTargetLock *self);
+char *cTargetLock_GetEntity(cTargetLock *self);
 /* rva 0x1a26e0: item i of an array of pointers (count at +4, items at +8), NULL out of range */
-void *__thiscall PtrArray_Get(void *self, int i);
+void *PtrArray_Get(void *self, int i);
 
 /* the engine variables */
 #define g_FXHookFadeTime GAME_GLOBAL_IN(float, GVar_FXHookFadeTime, 16)
@@ -199,57 +199,57 @@ void *__thiscall PtrArray_Get(void *self, int i);
 #define g_SceneDuDvRTarget GAME_GLOBAL_IN(int, GVar_R_SceneDuDvRTarget, 16)		/* R_SceneDuDvRTarget */
 
 /* cWorld: the position of the camera of the current view into out */
-vec3_t *__thiscall cWorld_GetCamPos(cWorld *self, vec3_t *out);
+vec3_t *cWorld_GetCamPos(cWorld *self, vec3_t *out);
 
 /* the hook laser: with target a curve from the weapon node over the points pulled to the line, glows at both ends and
  * sparks for the player; without target a straight line out of the weapon node */
-void __thiscall cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debris, float dt);
-void __fastcall cObjElementFXHook_StopTrails(cObjElementFXHook *self);
-void __thiscall cObjElementFXHook_StartTarget(cObjElementFXHook *self, cEntity *emitter, cEntity *target, int slot);
-void __thiscall cObjElementFXHook_StartPoint(cObjElementFXHook *self, cEntity *emitter, int slot);
-byte __thiscall cObjElementFXHook_IsAlive(cObjElementFXHook *self, cDebris *debris, cDebrisSys *sys);
-void __thiscall cObjElementFXHook_Start(cObjElementFXHook *self, cDebris *debris);
-void __thiscall cObjElementFXHook_Reset(cObjElementFXHook *self, cDebris *debris);
+void cObjElementFXHook_Update(cObjElementFXHook *self, cDebris *debris, float dt);
+void cObjElementFXHook_StopTrails(cObjElementFXHook *self);
+void cObjElementFXHook_StartTarget(cObjElementFXHook *self, cEntity *emitter, cEntity *target, int slot);
+void cObjElementFXHook_StartPoint(cObjElementFXHook *self, cEntity *emitter, int slot);
+byte cObjElementFXHook_IsAlive(cObjElementFXHook *self, cDebris *debris, cDebrisSys *sys);
+void cObjElementFXHook_Start(cObjElementFXHook *self, cDebris *debris);
+void cObjElementFXHook_Reset(cObjElementFXHook *self, cDebris *debris);
 
 /* the bolts (while the missile is seen), new ones from a life of 0.8 on and the glows at the center */
-void __thiscall cObjElementFXEMI_Update(cObjElementFXEMI *self, cDebris *debris, float dt);
-byte __thiscall cObjElementFXEMI_IsAlive(cObjElementFXEMI *self, cDebris *debris, cDebrisSys *sys);
-void __thiscall cObjElementFXEMI_Start(cObjElementFXEMI *self, cDebris *debris);
-void __thiscall cObjElementFXEMI_Reset(cObjElementFXEMI *self, cDebris *debris);
-void __thiscall cObjElementFXEMI_SetEntity(cObjElementFXEMI *self, cEntity *e);
+void cObjElementFXEMI_Update(cObjElementFXEMI *self, cDebris *debris, float dt);
+byte cObjElementFXEMI_IsAlive(cObjElementFXEMI *self, cDebris *debris, cDebrisSys *sys);
+void cObjElementFXEMI_Start(cObjElementFXEMI *self, cDebris *debris);
+void cObjElementFXEMI_Reset(cObjElementFXEMI *self, cDebris *debris);
+void cObjElementFXEMI_SetEntity(cObjElementFXEMI *self, cEntity *e);
 
-void __thiscall cObjElementFXSonicExplosion_Update(cObjElementFXSonicExplosion *self, cDebris *debris, float dt);
-byte __thiscall cObjElementFXSonicExplosion_IsAlive(cObjElementFXSonicExplosion *self, cDebris *debris,
+void cObjElementFXSonicExplosion_Update(cObjElementFXSonicExplosion *self, cDebris *debris, float dt);
+byte cObjElementFXSonicExplosion_IsAlive(cObjElementFXSonicExplosion *self, cDebris *debris,
 	cDebrisSys *sys);
-void __thiscall cObjElementFXSonicExplosion_Start(cObjElementFXSonicExplosion *self, cDebris *debris);
-void __thiscall cObjElementFXSonicExplosion_Reset(cObjElementFXSonicExplosion *self, cDebris *debris);
+void cObjElementFXSonicExplosion_Start(cObjElementFXSonicExplosion *self, cDebris *debris);
+void cObjElementFXSonicExplosion_Reset(cObjElementFXSonicExplosion *self, cDebris *debris);
 /* the rings and the particles of an explosion at x y z */
-void __thiscall cObjElementFXSonicExplosion_Explode(cObjElementFXSonicExplosion *self, float x, float y, float z);
+void cObjElementFXSonicExplosion_Explode(cObjElementFXSonicExplosion *self, float x, float y, float z);
 
 /* the cloud around the missile (the countermeasure entity): a ring of particles that pulses, puffs of debris */
-void __thiscall cObjElementFXDebrisCloud_Update(cObjElementFXDebrisCloud *self, cDebris *debris, float dt);
-byte __thiscall cObjElementFXDebrisCloud_IsAlive(cObjElementFXDebrisCloud *self, cDebris *debris, cDebrisSys *sys);
-void __thiscall cObjElementFXDebrisCloud_Start(cObjElementFXDebrisCloud *self, cDebris *debris);
-void __thiscall cObjElementFXDebrisCloud_Reset(cObjElementFXDebrisCloud *self, cDebris *debris);
-void __thiscall cObjElementFXDebrisCloud_SetEntity(cObjElementFXDebrisCloud *self, cEntity *e);
+void cObjElementFXDebrisCloud_Update(cObjElementFXDebrisCloud *self, cDebris *debris, float dt);
+byte cObjElementFXDebrisCloud_IsAlive(cObjElementFXDebrisCloud *self, cDebris *debris, cDebrisSys *sys);
+void cObjElementFXDebrisCloud_Start(cObjElementFXDebrisCloud *self, cDebris *debris);
+void cObjElementFXDebrisCloud_Reset(cObjElementFXDebrisCloud *self, cDebris *debris);
+void cObjElementFXDebrisCloud_SetEntity(cObjElementFXDebrisCloud *self, cEntity *e);
 /* four Updates with dt 0 */
-void __thiscall cObjElementFXDebrisCloud_Warm(cObjElementFXDebrisCloud *self, cDebris *debris);
+void cObjElementFXDebrisCloud_Warm(cObjElementFXDebrisCloud *self, cDebris *debris);
 
 /* the constructors and destructors (rva 0x1c9610..0x1c99c4, after World/FX/FXCharActions.cpp); the node of the
  * links of the EMI as array member */
-Nto1Node *__thiscall FXCountermeasures_NodeCtor(Nto1Node *self);
-void *__thiscall cObjElementFXDebrisCloud_ctor(void *self);
-void *__thiscall cObjElementFXEMI_ctor(void *self);
-void *__thiscall cObjElementFXHook_ctor(void *self);
-void *__thiscall cObjElementFXSonicExplosion_ctor(void *self);
-void __thiscall cObjElementFXDebrisCloud_dtor(void *self);
-void __thiscall cObjElementFXEMI_dtor(void *self);
-void __thiscall cObjElementFXHook_dtor(void *self);
-void __thiscall cObjElementFXSonicExplosion_dtor(void *self);
+Nto1Node *FXCountermeasures_NodeCtor(Nto1Node *self);
+void *cObjElementFXDebrisCloud_ctor(void *self);
+void *cObjElementFXEMI_ctor(void *self);
+void *cObjElementFXHook_ctor(void *self);
+void *cObjElementFXSonicExplosion_ctor(void *self);
+void cObjElementFXDebrisCloud_dtor(void *self);
+void cObjElementFXEMI_dtor(void *self);
+void cObjElementFXHook_dtor(void *self);
+void cObjElementFXSonicExplosion_dtor(void *self);
 /* the deleting destructors */
-cObjElementFX *__thiscall cObjElementFXDebrisCloud_Delete(cObjElementFX *self, byte flags);
-cObjElementFX *__thiscall cObjElementFXEMI_Delete(cObjElementFX *self, byte flags);
-cObjElementFX *__thiscall cObjElementFXHook_Delete(cObjElementFX *self, byte flags);
-cObjElementFX *__thiscall cObjElementFXSonicExplosion_Delete(cObjElementFX *self, byte flags);
+cObjElementFX *cObjElementFXDebrisCloud_Delete(cObjElementFX *self, byte flags);
+cObjElementFX *cObjElementFXEMI_Delete(cObjElementFX *self, byte flags);
+cObjElementFX *cObjElementFXHook_Delete(cObjElementFX *self, byte flags);
+cObjElementFX *cObjElementFXSonicExplosion_Delete(cObjElementFX *self, byte flags);
 
 #endif

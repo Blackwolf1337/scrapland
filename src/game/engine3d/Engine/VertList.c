@@ -20,7 +20,7 @@
 #define TRI_USED 0x8000
 #define TRI_FREE 0xffff
 
-CVertList *__fastcall CVertList_ctor(CVertList *self) {
+CVertList *CVertList_ctor(CVertList *self) {
 	self->pVert = NULL;
 	self->totVert = 0;
 	self->frmt = 0;
@@ -29,7 +29,7 @@ CVertList *__fastcall CVertList_ctor(CVertList *self) {
 	return self;
 }
 
-void __fastcall CVertList_Free(CVertList *self) {
+void CVertList_Free(CVertList *self) {
 	if (self->pVert) {
 		Mem_Free(self->pVert);
 		self->pVert = NULL;
@@ -39,7 +39,7 @@ void __fastcall CVertList_Free(CVertList *self) {
 	self->nVert = 0;
 }
 
-void __thiscall CVertList_SetFormat(CVertList *self, int frmt) {
+void CVertList_SetFormat(CVertList *self, int frmt) {
 	CHECK(frmt >= VERT_NULL && frmt < VERT_TOTAL);
 	if (self->pVert) {
 		Mem_Free(self->pVert);
@@ -50,7 +50,7 @@ void __thiscall CVertList_SetFormat(CVertList *self, int frmt) {
 	self->nVert = 0;
 }
 
-void __thiscall CVertList_Alloc(CVertList *self, int n, byte realloc) {
+void CVertList_Alloc(CVertList *self, int n, byte realloc) {
 	CHECK(n > 0);
 	CHECK(realloc || !self->pVert);
 	self->nVert = n;
@@ -61,7 +61,7 @@ void __thiscall CVertList_Alloc(CVertList *self, int n, byte realloc) {
 	self->pVert = Mem_Realloc(self->pVert, self->totVert * VertList_FormatSize(self->frmt));
 }
 
-void __thiscall CVertList_Swap(CVertList *self, CVertList *other) {
+void CVertList_Swap(CVertList *self, CVertList *other) {
 	CVertList t = *other;
 
 	other->pVert = self->pVert;
@@ -74,7 +74,7 @@ void __thiscall CVertList_Swap(CVertList *self, CVertList *other) {
 	self->frmt = t.frmt;
 }
 
-void __thiscall CVertList_Read(CVertList *self, CFileIO *f) {
+void CVertList_Read(CVertList *self, CFileIO *f) {
 	CHECK(CFileIO_BeginBlock(f, VERTLIST_ID) == 0);
 	CHECK(CFileIO_ReadInt(f) == VERTLIST_VER);
 	CVertList_SetFormat(self, CFileIO_ReadInt(f));
@@ -90,7 +90,7 @@ void __thiscall CVertList_Read(CVertList *self, CFileIO *f) {
 	CHECK(!f->error);
 }
 
-void __thiscall CVertList_Write(CVertList *self, CFileIO *f) {
+void CVertList_Write(CVertList *self, CFileIO *f) {
 	CFileIO_BeginBlockWrite(f, VERTLIST_ID);
 	CFileIO_WriteInt(f, VERTLIST_VER);
 	if (self->nVert) {
@@ -211,15 +211,15 @@ const char *VertList_FormatName(int frmt) {
 	return NULL;
 }
 
-uint32_t __fastcall CVertList_FVF(CVertList *self) {
+uint32_t CVertList_FVF(CVertList *self) {
 	return VertList_FormatFVF(self->frmt);
 }
 
-int __fastcall CVertList_Size(CVertList *self) {
+int CVertList_Size(CVertList *self) {
 	return VertList_FormatSize(self->frmt);
 }
 
-const char *__fastcall CVertList_FormatName(CVertList *self) {
+const char *CVertList_FormatName(CVertList *self) {
 	return VertList_FormatName(self->frmt);
 }
 
@@ -248,7 +248,7 @@ vec3_t *VertList_UnpackNormal(vec3_t *out, uint32_t packed) {
 }
 
 /* the field getters of one vertex */
-void *__thiscall VertTex1_Field(byte *v, int f) {
+void *VertTex1_Field(byte *v, int f) {
 	switch (f) {
 	case LVERT_POS:
 		return v;
@@ -260,7 +260,7 @@ void *__thiscall VertTex1_Field(byte *v, int f) {
 	return NULL;
 }
 
-void *__thiscall VertTex2_Field(byte *v, int f) {
+void *VertTex2_Field(byte *v, int f) {
 	switch (f) {
 	case LVERT_POS:
 		return v;
@@ -274,7 +274,7 @@ void *__thiscall VertTex2_Field(byte *v, int f) {
 	return NULL;
 }
 
-void *__thiscall VertLTex1_Field(byte *v, int f) {
+void *VertLTex1_Field(byte *v, int f) {
 	switch (f) {
 	case LVERT_POS:
 		return v;
@@ -288,7 +288,7 @@ void *__thiscall VertLTex1_Field(byte *v, int f) {
 	return NULL;
 }
 
-void *__thiscall VertLTex2N_Field(byte *v, int f) {
+void *VertLTex2N_Field(byte *v, int f) {
 	switch (f) {
 	case LVERT_POS:
 		return v;
@@ -304,7 +304,7 @@ void *__thiscall VertLTex2N_Field(byte *v, int f) {
 	return NULL;
 }
 
-void *__thiscall VertLTex3_Field(byte *v, int f) {
+void *VertLTex3_Field(byte *v, int f) {
 	switch (f) {
 	case LVERT_POS:
 		return v;
@@ -322,7 +322,7 @@ void *__thiscall VertLTex3_Field(byte *v, int f) {
 	return NULL;
 }
 
-void *__thiscall VertLTex1N_Field(byte *v, int f) {
+void *VertLTex1N_Field(byte *v, int f) {
 	switch (f) {
 	case LVERT_POS:
 		return v;
@@ -337,7 +337,7 @@ void *__thiscall VertLTex1N_Field(byte *v, int f) {
 }
 
 /* no LVERT_POS: the transformed position has 4 floats */
-void *__thiscall VertTLTex1_Field(byte *v, int f) {
+void *VertTLTex1_Field(byte *v, int f) {
 	switch (f) {
 	case LVERT_DIFFUSE:
 		return v + 0x10;
@@ -349,7 +349,7 @@ void *__thiscall VertTLTex1_Field(byte *v, int f) {
 	return NULL;
 }
 
-void *__thiscall VertLTex2_Field(byte *v, int f) {
+void *VertLTex2_Field(byte *v, int f) {
 	switch (f) {
 	case LVERT_POS:
 		return v;
@@ -363,7 +363,7 @@ void *__thiscall VertLTex2_Field(byte *v, int f) {
 	return NULL;
 }
 
-void *__thiscall VertTex1XBox_Field(byte *v, int f) {
+void *VertTex1XBox_Field(byte *v, int f) {
 	switch (f) {
 	case LVERT_POS:
 		return v;
@@ -375,7 +375,7 @@ void *__thiscall VertTex1XBox_Field(byte *v, int f) {
 	return NULL;
 }
 
-void *__thiscall VertTex1CXBox_Field(byte *v, int f) {
+void *VertTex1CXBox_Field(byte *v, int f) {
 	switch (f) {
 	case LVERT_POS:
 		return v;
@@ -389,7 +389,7 @@ void *__thiscall VertTex1CXBox_Field(byte *v, int f) {
 	return NULL;
 }
 
-void *__thiscall VertLTex1XBox_Field(byte *v, int f) {
+void *VertLTex1XBox_Field(byte *v, int f) {
 	switch (f) {
 	case LVERT_DIFFUSE:
 		return v + 6;
@@ -401,7 +401,7 @@ void *__thiscall VertLTex1XBox_Field(byte *v, int f) {
 	return NULL;
 }
 
-void *__thiscall VertLTex1NXBox_Field(byte *v, int f) {
+void *VertLTex1NXBox_Field(byte *v, int f) {
 	switch (f) {
 	case LVERT_DIFFUSE:
 		return v + 10;
@@ -415,7 +415,7 @@ void *__thiscall VertLTex1NXBox_Field(byte *v, int f) {
 	return NULL;
 }
 
-void *__thiscall VertLTex2XBox_Field(byte *v, int f) {
+void *VertLTex2XBox_Field(byte *v, int f) {
 	switch (f) {
 	case LVERT_DIFFUSE:
 		return v + 6;
@@ -429,7 +429,7 @@ void *__thiscall VertLTex2XBox_Field(byte *v, int f) {
 	return NULL;
 }
 
-void *__thiscall VertLTex2NXBox_Field(byte *v, int f) {
+void *VertLTex2NXBox_Field(byte *v, int f) {
 	switch (f) {
 	case LVERT_DIFFUSE:
 		return v + 10;
@@ -452,66 +452,66 @@ static byte *VertList_Vert(CVertList *self, uint32_t i, int frmt, int size) {
 	return self->pVert + i * size;
 }
 
-byte __thiscall CVertList_Optimize(CVertList *self, void *tris, int nTri) {
+byte CVertList_Optimize(CVertList *self, void *tris, int nTri) {
 	(void)self;
 	(void)tris;
 	(void)nTri;
 	return 0;
 }
 
-byte *__thiscall CVertList_Tex1(CVertList *self, uint32_t i) {
+byte *CVertList_Tex1(CVertList *self, uint32_t i) {
 	return VertList_Vert(self, i, VERT_TEX1, 0x20);
 }
 
-byte *__thiscall CVertList_Tex2(CVertList *self, uint32_t i) {
+byte *CVertList_Tex2(CVertList *self, uint32_t i) {
 	return VertList_Vert(self, i, VERT_TEX2, 0x28);
 }
 
-byte *__thiscall CVertList_LTex1(CVertList *self, uint32_t i) {
+byte *CVertList_LTex1(CVertList *self, uint32_t i) {
 	return VertList_Vert(self, i, VERT_LTEX1, 0x1c);
 }
 
-byte *__thiscall CVertList_Tex1B1(CVertList *self, uint32_t i) {
+byte *CVertList_Tex1B1(CVertList *self, uint32_t i) {
 	return VertList_Vert(self, i, VERT_TEX1_B1, 0x24);
 }
 
-byte *__thiscall CVertList_LTex2N(CVertList *self, uint32_t i) {
+byte *CVertList_LTex2N(CVertList *self, uint32_t i) {
 	return VertList_Vert(self, i, VERT_LTEX2N, 0x2c);
 }
 
-byte *__thiscall CVertList_LTex3(CVertList *self, uint32_t i) {
+byte *CVertList_LTex3(CVertList *self, uint32_t i) {
 	return VertList_Vert(self, i, VERT_LTEX3, 0x34);
 }
 
-byte *__thiscall CVertList_LTex1N(CVertList *self, uint32_t i) {
+byte *CVertList_LTex1N(CVertList *self, uint32_t i) {
 	return VertList_Vert(self, i, VERT_LTEX1N, 0x24);
 }
 
-byte *__thiscall CVertList_TLTex1(CVertList *self, uint32_t i) {
+byte *CVertList_TLTex1(CVertList *self, uint32_t i) {
 	return VertList_Vert(self, i, VERT_TLTEX1, 0x20);
 }
 
-byte *__thiscall CVertList_LTex2(CVertList *self, uint32_t i) {
+byte *CVertList_LTex2(CVertList *self, uint32_t i) {
 	return VertList_Vert(self, i, VERT_LTEX2, 0x20);
 }
 
-void __thiscall CVertList_SetTex1(CVertList *self, uint32_t i, const void *v) {
+void CVertList_SetTex1(CVertList *self, uint32_t i, const void *v) {
 	memcpy(VertList_Vert(self, i, VERT_TEX1, 0x20), v, 0x20);
 }
 
-void __thiscall CVertList_SetTex2(CVertList *self, uint32_t i, const void *v) {
+void CVertList_SetTex2(CVertList *self, uint32_t i, const void *v) {
 	memcpy(VertList_Vert(self, i, VERT_TEX2, 0x28), v, 0x28);
 }
 
-void __thiscall CVertList_SetLTex1(CVertList *self, uint32_t i, const void *v) {
+void CVertList_SetLTex1(CVertList *self, uint32_t i, const void *v) {
 	memcpy(VertList_Vert(self, i, VERT_LTEX1, 0x1c), v, 0x1c);
 }
 
-void __thiscall CVertList_SetTex1B1(CVertList *self, uint32_t i, const void *v) {
+void CVertList_SetTex1B1(CVertList *self, uint32_t i, const void *v) {
 	memcpy(VertList_Vert(self, i, VERT_TEX1_B1, 0x24), v, 0x24);
 }
 
-void *__thiscall CVertList_GetTex1(CVertList *self, void *out, uint32_t i) {
+void *CVertList_GetTex1(CVertList *self, void *out, uint32_t i) {
 	switch (self->frmt) {
 	case VERT_TEX1:
 		memcpy(out, CVertList_Tex1(self, i), 0x20);
@@ -532,7 +532,7 @@ void *__thiscall CVertList_GetTex1(CVertList *self, void *out, uint32_t i) {
 	return out;
 }
 
-void *__thiscall CVertList_GetField(CVertList *self, int f, uint32_t i) {
+void *CVertList_GetField(CVertList *self, int f, uint32_t i) {
 	switch (self->frmt) {
 	case VERT_TEX1:
 		return VertTex1_Field(CVertList_Tex1(self, i), f);
@@ -572,7 +572,7 @@ void *__thiscall CVertList_GetField(CVertList *self, int f, uint32_t i) {
 	return NULL;
 }
 
-void __thiscall CVertList_SetColor(CVertList *self, uint32_t and, uint32_t or) {
+void CVertList_SetColor(CVertList *self, uint32_t and, uint32_t or) {
 	uint32_t *c = CVertList_GetField(self, LVERT_DIFFUSE, 0);
 	int size = VertList_FormatSize(self->frmt);
 
@@ -609,7 +609,7 @@ static float VertList_BoxHigh(const box_t *b) {
 	return Float_MaxSS(b->max.z, Float_MaxSS(b->max.y, b->max.x));
 }
 
-void __thiscall CVertList_GetExtents(CVertList *self, box_t *ext, byte reset) {
+void CVertList_GetExtents(CVertList *self, box_t *ext, byte reset) {
 	CHECK(self->pVert);
 	CHECK(ext);
 	if (reset) {
@@ -622,7 +622,7 @@ void __thiscall CVertList_GetExtents(CVertList *self, box_t *ext, byte reset) {
 	}
 }
 
-void __thiscall CVertList_Transform(CVertList *self, const matrix_t *m, byte normalize) {
+void CVertList_Transform(CVertList *self, const matrix_t *m, byte normalize) {
 	byte *v = NULL;
 	int nOff = 0;
 
@@ -716,7 +716,7 @@ static void VertList_WarnTex(const box_t *tex, float texScale, const char *fmt) 
 	}
 }
 
-void __thiscall CVertList_Pack(CVertList *self, int frmt, float posScale, float texScale) {
+void CVertList_Pack(CVertList *self, int frmt, float posScale, float texScale) {
 	CVertList tmp;
 	box_t pos, tex;
 
@@ -778,7 +778,7 @@ void __thiscall CVertList_Pack(CVertList *self, int frmt, float posScale, float 
 	VertList_TakeTmp(self, &tmp, n, frmt);
 }
 
-void __thiscall CVertList_PackTex1(CVertList *self, float posScale, float texScale) {
+void CVertList_PackTex1(CVertList *self, float posScale, float texScale) {
 	int frmt = VERT_NULL;
 
 	if (self->frmt == VERT_TEX1) {
@@ -789,7 +789,7 @@ void __thiscall CVertList_PackTex1(CVertList *self, float posScale, float texSca
 	CVertList_Pack(self, frmt, posScale, texScale);
 }
 
-void __thiscall CVertList_ToXBox(CVertList *self, float posScale, float texScale, byte tex2) {
+void CVertList_ToXBox(CVertList *self, float posScale, float texScale, byte tex2) {
 	CVertList tmp;
 	box_t pos, tex, tex1;
 
@@ -870,7 +870,7 @@ void __thiscall CVertList_ToXBox(CVertList *self, float posScale, float texScale
 	VertList_TakeTmp(self, &tmp, n, frmt);
 }
 
-void __thiscall CVertList_FromXBox(CVertList *self, float posScale, float texScale) {
+void CVertList_FromXBox(CVertList *self, float posScale, float texScale) {
 	byte *out = Mem_Alloc(self->nVert * 0x24);
 	const byte *src = self->pVert;
 
@@ -1216,7 +1216,7 @@ byte VertCache_Optimize(uint16_t *tris, int nTri) {
 	return 1;
 }
 
-void __thiscall CVertList_EnvMapUV(CVertList *self, const matrix_t *world, const matrix_t *view,
+void CVertList_EnvMapUV(CVertList *self, const matrix_t *world, const matrix_t *view,
 	const CMap *map, int itex) {
 	matrix_t wv, inv;
 

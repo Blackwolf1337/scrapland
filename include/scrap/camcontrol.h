@@ -117,14 +117,14 @@ SD_SIZE(cFollowCamEntity, CFOLLOWCAMENTITY_SIZE);
 /* the slots of the camera vtables after the 23 of cEntity */
 typedef struct cCamControlVtbl {
 	cEntityVtbl base;
-	void(__thiscall *GetCamPos)(cEntity *self, float *x, float *y, float *z);	/* 0x5c vf23 */
-	void(__thiscall *SetCamPos)(cEntity *self, float x, float y, float z);		/* 0x60 vf24 */
-	void(__thiscall *Lerp)(cEntity *self, float f);				/* 0x64 vf25 between two slots */
-	void(__thiscall *Slot)(cEntity *self, float dt);				/* 0x68 vf26 */
-	byte(__thiscall *SetTarget)(cEntity *self, const char *name);			/* 0x6c vf27 "EntityLink" */
-	void(__thiscall *UpdateOff)(cEntity *self, float dt);				/* 0x70 vf28 */
-	void(__thiscall *GetAng2)(cEntity *self, float *ang);				/* 0x74 vf29 FCam only */
-	void(__thiscall *SetAng2)(cEntity *self, const float *ang);			/* 0x78 vf30 FCam only */
+	void(*GetCamPos)(cEntity *self, float *x, float *y, float *z);	/* 0x5c vf23 */
+	void(*SetCamPos)(cEntity *self, float x, float y, float z);		/* 0x60 vf24 */
+	void(*Lerp)(cEntity *self, float f);				/* 0x64 vf25 between two slots */
+	void(*Slot)(cEntity *self, float dt);				/* 0x68 vf26 */
+	byte(*SetTarget)(cEntity *self, const char *name);			/* 0x6c vf27 "EntityLink" */
+	void(*UpdateOff)(cEntity *self, float dt);				/* 0x70 vf28 */
+	void(*GetAng2)(cEntity *self, float *ang);				/* 0x74 vf29 FCam only */
+	void(*SetAng2)(cEntity *self, const float *ang);			/* 0x78 vf30 FCam only */
 } cCamControlVtbl;
 SD_OFFSET(cCamControlVtbl, GetCamPos, 0x5c);
 SD_OFFSET(cCamControlVtbl, SetTarget, 0x6c);
@@ -153,64 +153,64 @@ static inline float Cam_Deg2Rad(double v) {
 }
 
 /* ---- CamControl.c ---- */
-void __fastcall cCamControl_dtor(cEntity *self);
-cEntity *__thiscall cCamControl_Delete(cEntity *self, uint32_t flags);
-const char *__thiscall cCamControl_GetClassName(cEntity *self);
-int __thiscall cCamControl_IsType(cEntity *self, const char *type);
-byte __thiscall cCamControl_VarI(cEntity *self, const char *name, int *i, int set);
-byte __thiscall cCamControl_VarF(cEntity *self, const char *name, double *d, int set);
-byte __thiscall cCamControl_VarS(cEntity *self, const char *name, char **s, int set);
-byte __thiscall cCamControl_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set);
-void __thiscall cCamControl_GetCamPos(cEntity *self, float *x, float *y, float *z);
-void __thiscall cCamControl_SetCamPos(cEntity *self, float x, float y, float z);
+void cCamControl_dtor(cEntity *self);
+cEntity *cCamControl_Delete(cEntity *self, uint32_t flags);
+const char *cCamControl_GetClassName(cEntity *self);
+int cCamControl_IsType(cEntity *self, const char *type);
+byte cCamControl_VarI(cEntity *self, const char *name, int *i, int set);
+byte cCamControl_VarF(cEntity *self, const char *name, double *d, int set);
+byte cCamControl_VarS(cEntity *self, const char *name, char **s, int set);
+byte cCamControl_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set);
+void cCamControl_GetCamPos(cEntity *self, float *x, float *y, float *z);
+void cCamControl_SetCamPos(cEntity *self, float x, float y, float z);
 /* vf25, vf26 and vf28 do nothing for the plain and the path camera */
-void __thiscall cCamControl_NopF(cEntity *self, float f);
+void cCamControl_NopF(cEntity *self, float f);
 /* the camera node of the "Obj" of that name, 1; else none, 0 */
-byte __thiscall cCamControl_SetTarget(cEntity *self, const char *name);
+byte cCamControl_SetTarget(cEntity *self, const char *name);
 /* the position of view slot i of the world when the camera shows that view */
-void __thiscall cCamControl_SetViewPos(cEntity *self, int i, float x, float y, float z);
+void cCamControl_SetViewPos(cEntity *self, int i, float x, float y, float z);
 
 /* ---- CamPathEntity.c ---- */
-void __fastcall cCamPathEntity_dtor(cEntity *self);
-cEntity *__thiscall cCamPathEntity_Delete(cEntity *self, uint32_t flags);
-cCamPathPoint *__fastcall cCamPathPoint_ctor(cCamPathPoint *self);
-const char *__thiscall cCamPathEntity_GetClassName(cEntity *self);
-int __thiscall cCamPathEntity_IsType(cEntity *self, const char *type);
+void cCamPathEntity_dtor(cEntity *self);
+cEntity *cCamPathEntity_Delete(cEntity *self, uint32_t flags);
+cCamPathPoint *cCamPathPoint_ctor(cCamPathPoint *self);
+const char *cCamPathEntity_GetClassName(cEntity *self);
+int cCamPathEntity_IsType(cEntity *self, const char *type);
 /* the index NN of name = prefix + two digits, -1 for none or over 32 */
-int __thiscall cCamPathEntity_PointIndex(cEntity *self, const char *name, const char *prefix, uint32_t len);
-byte __thiscall cCamPathEntity_VarI(cEntity *self, const char *name, int *i, int set);
-byte __thiscall cCamPathEntity_VarF(cEntity *self, const char *name, double *d, int set);
-byte __thiscall cCamPathEntity_VarS(cEntity *self, const char *name, char **s, int set);
-byte __thiscall cCamPathEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set);
+int cCamPathEntity_PointIndex(cEntity *self, const char *name, const char *prefix, uint32_t len);
+byte cCamPathEntity_VarI(cEntity *self, const char *name, int *i, int set);
+byte cCamPathEntity_VarF(cEntity *self, const char *name, double *d, int set);
+byte cCamPathEntity_VarS(cEntity *self, const char *name, char **s, int set);
+byte cCamPathEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set);
 /* the values of the "Cam" entity the point names */
-void __fastcall cCamPathPoint_Refresh(cCamPathPoint *self);
+void cCamPathPoint_Refresh(cCamPathPoint *self);
 /* the camera at f (0..1) of the way from cur to next, shaken by the quake of the way */
-void __thiscall cCamPathEntity_Interp(cEntity *self, cCamPathPoint *next, cCamPathPoint *cur, float f);
-void __thiscall cCamPathEntity_Update(cEntity *self);
+void cCamPathEntity_Interp(cEntity *self, cCamPathPoint *next, cCamPathPoint *cur, float f);
+void cCamPathEntity_Update(cEntity *self);
 
 /* ---- FollowCamEntity.c ---- */
-void __fastcall cFollowCamEntity_dtor(cEntity *self);
-cEntity *__thiscall cFollowCamEntity_Delete(cEntity *self, uint32_t flags);
-const char *__thiscall cFollowCamEntity_GetClassName(cEntity *self);
-int __thiscall cFollowCamEntity_IsType(cEntity *self, const char *type);
-byte __thiscall cFollowCamEntity_VarI(cEntity *self, const char *name, int *i, int set);
-byte __thiscall cFollowCamEntity_VarF(cEntity *self, const char *name, double *d, int set);
-byte __thiscall cFollowCamEntity_VarS(cEntity *self, const char *name, char **s, int set);
-byte __thiscall cFollowCamEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set);
-void __thiscall cFollowCamEntity_Update(cEntity *self);
-void __thiscall cFollowCamEntity_Lerp(cEntity *self, float f);
-void __thiscall cFollowCamEntity_Slot(cEntity *self, float dt);
-byte __thiscall cFollowCamEntity_SetTargetName(cEntity *self, const char *name);
-void __thiscall cFollowCamEntity_UpdateOff(cEntity *self, float dt);
-void __thiscall cFollowCamEntity_GetAng2(cEntity *self, float *ang);
-void __thiscall cFollowCamEntity_SetAng2(cEntity *self, const float *ang);
+void cFollowCamEntity_dtor(cEntity *self);
+cEntity *cFollowCamEntity_Delete(cEntity *self, uint32_t flags);
+const char *cFollowCamEntity_GetClassName(cEntity *self);
+int cFollowCamEntity_IsType(cEntity *self, const char *type);
+byte cFollowCamEntity_VarI(cEntity *self, const char *name, int *i, int set);
+byte cFollowCamEntity_VarF(cEntity *self, const char *name, double *d, int set);
+byte cFollowCamEntity_VarS(cEntity *self, const char *name, char **s, int set);
+byte cFollowCamEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set);
+void cFollowCamEntity_Update(cEntity *self);
+void cFollowCamEntity_Lerp(cEntity *self, float f);
+void cFollowCamEntity_Slot(cEntity *self, float dt);
+byte cFollowCamEntity_SetTargetName(cEntity *self, const char *name);
+void cFollowCamEntity_UpdateOff(cEntity *self, float dt);
+void cFollowCamEntity_GetAng2(cEntity *self, float *ang);
+void cFollowCamEntity_SetAng2(cEntity *self, const float *ang);
 /* the random shake of the angles while QuakeTime runs */
-void __thiscall cFollowCamEntity_Quake(cEntity *self, float dt);
+void cFollowCamEntity_Quake(cEntity *self, float dt);
 /* the three angle pairs from the target (y plus AddTurn) */
-void __fastcall cFollowCamEntity_ResetAngles(cEntity *self);
+void cFollowCamEntity_ResetAngles(cEntity *self);
 /* on: no target; off: the MainTarget "Obj" again (free when there is none) */
-void __thiscall cFollowCamEntity_SetFreeCam(cEntity *self, byte on);
+void cFollowCamEntity_SetFreeCam(cEntity *self, byte on);
 /* the camera moved by the input actions of its view slot (sets 1 and 3) */
-void __fastcall cFollowCamEntity_FreeMove(cEntity *self);
+void cFollowCamEntity_FreeMove(cEntity *self);
 
 #endif

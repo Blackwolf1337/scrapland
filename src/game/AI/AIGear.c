@@ -14,7 +14,7 @@
 #define CAIGEAR_SIZE 0x390
 #define GEAR_BLOCK_TIME 7.5f		/* the way to the target is tested again after it */
 
-void *__thiscall cAIGear_ctor(void *mem, cEntity *e, int *arg) {
+void *cAIGear_ctor(void *mem, cEntity *e, int *arg) {
 	cAIGear *self = mem;
 	cAIChar *c = &self->base;
 
@@ -27,7 +27,7 @@ void *__thiscall cAIGear_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAIChar *__thiscall cAIGear_Delete(cAIChar *self, byte flags) {
+cAIChar *cAIGear_Delete(cAIChar *self, byte flags) {
 	self->vftable = CAIGEAR_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
@@ -36,7 +36,7 @@ cAIChar *__thiscall cAIGear_Delete(cAIChar *self, byte flags) {
 	return self;
 }
 
-void __thiscall cAIGear_UpdateAction(cAIGear *self) {
+void cAIGear_UpdateAction(cAIGear *self) {
 	cAIChar *c = &self->base;
 
 	if (c->vftable->CanRepos(c, c->state) || !AICC_Vtbl(c->control)->IsBlocked(c->control)) {
@@ -55,7 +55,7 @@ void __thiscall cAIGear_UpdateAction(cAIGear *self) {
 	}
 }
 
-void __thiscall cAIGear_CheckActDist(cAIGear *self) {
+void cAIGear_CheckActDist(cAIGear *self) {
 	cAIChar *c = &self->base;
 	float f = c->standTime;
 	vec3_t a, b, d;
@@ -111,7 +111,7 @@ void __thiscall cAIGear_CheckActDist(cAIGear *self) {
 	c->ctrl->act = 1;
 }
 
-void __thiscall cAIGear_SetDists(cAIGear *self) {
+void cAIGear_SetDists(cAIGear *self) {
 	cAIChar *c = &self->base;
 
 	if (c->state == 2) {
@@ -129,7 +129,7 @@ void __thiscall cAIGear_SetDists(cAIGear *self) {
 	c->chaseNear = 400.0f;
 }
 
-void __thiscall cAIGear_SetShoot(cAIGear *self) {
+void cAIGear_SetShoot(cAIGear *self) {
 	cEntity *t = self->base.base.target.target;
 
 	if (t->vftable->GetAI(t)) {
@@ -142,6 +142,6 @@ void __thiscall cAIGear_SetShoot(cAIGear *self) {
 	self->base.vftable->SetDists(&self->base);
 }
 
-byte __fastcall cAIGear_IsBlocked(cAIGear *self) {
+byte cAIGear_IsBlocked(cAIGear *self) {
 	return self->blocked;
 }

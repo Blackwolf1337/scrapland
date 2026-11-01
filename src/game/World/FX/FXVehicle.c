@@ -61,7 +61,7 @@ static void FXV_Exhausts(cEntity *e, int *num, FXVExhaust *ex) {
 
 /* ---- constructors ---- */
 
-void *__thiscall cObjElementFXFiredDebris_ctor(void *self) {
+void *cObjElementFXFiredDebris_ctor(void *self) {
 	cObjElementFXFiredDebris *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXFIREDDEBRIS_VFTABLE);
 	CGameParticles_ctor(&s->particles);
@@ -69,7 +69,7 @@ void *__thiscall cObjElementFXFiredDebris_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXFiredEntity_ctor(void *self) {
+void *cObjElementFXFiredEntity_ctor(void *self) {
 	cObjElementFXFiredEntity *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXFIREDENTITY_VFTABLE);
 	CGameParticles_ctor(&s->particles);
@@ -78,7 +78,7 @@ void *__thiscall cObjElementFXFiredEntity_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXSmokeDebris_ctor(void *self) {
+void *cObjElementFXSmokeDebris_ctor(void *self) {
 	cObjElementFXSmokeDebris *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXSMOKEDEBRIS_VFTABLE);
 	CGameParticles_ctor(&s->particles);
@@ -86,7 +86,7 @@ void *__thiscall cObjElementFXSmokeDebris_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXVehicleAccelerator_ctor(void *self) {
+void *cObjElementFXVehicleAccelerator_ctor(void *self) {
 	cObjElementFXVehicleAccelerator *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLEACCELERATOR_VFTABLE);
 	CGameParticles_ctor(&s->particles);
@@ -95,7 +95,7 @@ void *__thiscall cObjElementFXVehicleAccelerator_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXVehicleDamage_ctor(void *self) {
+void *cObjElementFXVehicleDamage_ctor(void *self) {
 	cObjElementFXVehicleDamage *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLEDAMAGE_VFTABLE);
 	CGameParticles_ctor(&s->parts3);
@@ -107,7 +107,7 @@ void *__thiscall cObjElementFXVehicleDamage_ctor(void *self) {
 	return s;
 }
 
-cObjElementFXVehicleDeathTrail *__thiscall cObjElementFXVehicleDeathTrail_ctor(cObjElementFXVehicleDeathTrail *self) {
+cObjElementFXVehicleDeathTrail *cObjElementFXVehicleDeathTrail_ctor(cObjElementFXVehicleDeathTrail *self) {
 	cObjElementFXDevastatorShoot *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLEDEATHTRAIL_VFTABLE);
 	CGameTrail_ctor(&s->trail);
@@ -118,7 +118,7 @@ cObjElementFXVehicleDeathTrail *__thiscall cObjElementFXVehicleDeathTrail_ctor(c
 	return s;
 }
 
-void *__thiscall cObjElementFXVehicleEMI_ctor(void *self) {
+void *cObjElementFXVehicleEMI_ctor(void *self) {
 	cObjElementFXVehicleEMI *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLEEMI_VFTABLE);
 	CGameParticles_ctor(&s->particles);
@@ -134,7 +134,7 @@ void *__thiscall cObjElementFXVehicleEMI_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXVehicleFire_ctor(void *self) {
+void *cObjElementFXVehicleFire_ctor(void *self) {
 	cObjElementFXVehicleFire *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLEFIRE_VFTABLE);
 	CGameParticles_ctor(&s->particles);
@@ -144,7 +144,7 @@ void *__thiscall cObjElementFXVehicleFire_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXVehicleSpawn_ctor(void *self) {
+void *cObjElementFXVehicleSpawn_ctor(void *self) {
 	cObjElementFXVehicleSpawn *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLESPAWN_VFTABLE);
 	CGameParticles_ctor(&s->particles);
@@ -156,7 +156,7 @@ void *__thiscall cObjElementFXVehicleSpawn_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXVehicleSputnik_ctor(void *self) {
+void *cObjElementFXVehicleSputnik_ctor(void *self) {
 	cObjElementFXVehicleSputnik *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXVEHICLESPUTNIK_VFTABLE);
 	CGameParticles_ctor(&s->particles);
@@ -172,28 +172,28 @@ void *__thiscall cObjElementFXVehicleSputnik_ctor(void *self) {
 
 /* ---- destructors ---- */
 
-void __thiscall cObjElementFXFiredDebris_dtor(void *self) {
+void cObjElementFXFiredDebris_dtor(void *self) {
 	cObjElementFXFiredDebris *s = self;
 	*(void **)s = COBJELEMENTFXFIREDDEBRIS_VFTABLE;
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXFiredEntity_dtor(void *self) {
+void cObjElementFXFiredEntity_dtor(void *self) {
 	cObjElementFXFiredEntity *s = self;
 	*(void **)s = COBJELEMENTFXFIREDENTITY_VFTABLE;
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXSmokeDebris_dtor(void *self) {
+void cObjElementFXSmokeDebris_dtor(void *self) {
 	cObjElementFXSmokeDebris *s = self;
 	*(void **)s = COBJELEMENTFXSMOKEDEBRIS_VFTABLE;
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXVehicleAccelerator_dtor(void *self) {
+void cObjElementFXVehicleAccelerator_dtor(void *self) {
 	cObjElementFXVehicleAccelerator *s = self;
 	*(void **)s = COBJELEMENTFXVEHICLEACCELERATOR_VFTABLE;
 	FXObj_TrailsDtor(s->trails, FXVACCEL_TRAILS);
@@ -201,7 +201,7 @@ void __thiscall cObjElementFXVehicleAccelerator_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXVehicleDamage_dtor(void *self) {
+void cObjElementFXVehicleDamage_dtor(void *self) {
 	cObjElementFXVehicleDamage *s = self;
 	*(void **)s = COBJELEMENTFXVEHICLEDAMAGE_VFTABLE;
 	CGameParticles_Release(&s->parts1);
@@ -210,14 +210,14 @@ void __thiscall cObjElementFXVehicleDamage_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXVehicleDeathTrail_dtor(cObjElementFXVehicleDeathTrail *self) {
+void cObjElementFXVehicleDeathTrail_dtor(cObjElementFXVehicleDeathTrail *self) {
 	cObjElementFXDevastatorShoot *s = self;
 	*(void **)s = COBJELEMENTFXVEHICLEDEATHTRAIL_VFTABLE;
 	CGameTrail_dtor(&s->trail);
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXVehicleEMI_dtor(void *self) {
+void cObjElementFXVehicleEMI_dtor(void *self) {
 	cObjElementFXVehicleEMI *s = self;
 	*(void **)s = COBJELEMENTFXVEHICLEEMI_VFTABLE;
 	FXObj_TrailsDtor(s->trails, FXVEMI_TRAILS);
@@ -225,7 +225,7 @@ void __thiscall cObjElementFXVehicleEMI_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXVehicleFire_dtor(void *self) {
+void cObjElementFXVehicleFire_dtor(void *self) {
 	cObjElementFXVehicleFire *s = self;
 	*(void **)s = COBJELEMENTFXVEHICLEFIRE_VFTABLE;
 	s->entity = NULL;
@@ -235,7 +235,7 @@ void __thiscall cObjElementFXVehicleFire_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXVehicleSpawn_dtor(void *self) {
+void cObjElementFXVehicleSpawn_dtor(void *self) {
 	cObjElementFXVehicleSpawn *s = self;
 	*(void **)s = COBJELEMENTFXVEHICLESPAWN_VFTABLE;
 	FXObj_TrailsDtor(s->trails, FXVSPAWN_TRAILS);
@@ -243,7 +243,7 @@ void __thiscall cObjElementFXVehicleSpawn_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXVehicleSputnik_dtor(void *self) {
+void cObjElementFXVehicleSputnik_dtor(void *self) {
 	cObjElementFXVehicleSputnik *s = self;
 	*(void **)s = COBJELEMENTFXVEHICLESPUTNIK_VFTABLE;
 	FXObj_TrailsDtor(s->trails, FXVSPUTNIK_TRAILS);
@@ -253,53 +253,53 @@ void __thiscall cObjElementFXVehicleSputnik_dtor(void *self) {
 
 /* ---- deleting destructors (vf00) ---- */
 
-void *__thiscall cObjElementFXFiredDebris_Delete(void *self, uint32_t flags) {
+void *cObjElementFXFiredDebris_Delete(void *self, uint32_t flags) {
 	cObjElementFXFiredDebris_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXFiredDebris));
 }
 
-void *__thiscall cObjElementFXFiredEntity_Delete(void *self, uint32_t flags) {
+void *cObjElementFXFiredEntity_Delete(void *self, uint32_t flags) {
 	cObjElementFXFiredEntity_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXFiredEntity));
 }
 
-void *__thiscall cObjElementFXSmokeDebris_Delete(void *self, uint32_t flags) {
+void *cObjElementFXSmokeDebris_Delete(void *self, uint32_t flags) {
 	cObjElementFXSmokeDebris_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXSmokeDebris));
 }
 
-void *__thiscall cObjElementFXVehicleAccelerator_Delete(void *self, uint32_t flags) {
+void *cObjElementFXVehicleAccelerator_Delete(void *self, uint32_t flags) {
 	cObjElementFXVehicleAccelerator_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleAccelerator));
 }
 
-void *__thiscall cObjElementFXVehicleDamage_Delete(void *self, uint32_t flags) {
+void *cObjElementFXVehicleDamage_Delete(void *self, uint32_t flags) {
 	cObjElementFXVehicleDamage_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleDamage));
 }
 
-cObjElementFXVehicleDeathTrail *__thiscall cObjElementFXVehicleDeathTrail_Delete(cObjElementFXVehicleDeathTrail *self,
+cObjElementFXVehicleDeathTrail *cObjElementFXVehicleDeathTrail_Delete(cObjElementFXVehicleDeathTrail *self,
 	uint32_t flags) {
 	cObjElementFXVehicleDeathTrail_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(*self));
 }
 
-void *__thiscall cObjElementFXVehicleEMI_Delete(void *self, uint32_t flags) {
+void *cObjElementFXVehicleEMI_Delete(void *self, uint32_t flags) {
 	cObjElementFXVehicleEMI_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleEMI));
 }
 
-void *__thiscall cObjElementFXVehicleFire_Delete(void *self, uint32_t flags) {
+void *cObjElementFXVehicleFire_Delete(void *self, uint32_t flags) {
 	cObjElementFXVehicleFire_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleFire));
 }
 
-void *__thiscall cObjElementFXVehicleSpawn_Delete(void *self, uint32_t flags) {
+void *cObjElementFXVehicleSpawn_Delete(void *self, uint32_t flags) {
 	cObjElementFXVehicleSpawn_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleSpawn));
 }
 
-void *__thiscall cObjElementFXVehicleSputnik_Delete(void *self, uint32_t flags) {
+void *cObjElementFXVehicleSputnik_Delete(void *self, uint32_t flags) {
 	cObjElementFXVehicleSputnik_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXVehicleSputnik));
 }
@@ -364,7 +364,7 @@ static void FXV_FireSprites(CGameParticles *p) {
 #define FXV_RAMP_SMOKE 0x43119c		/* [2] */
 #define FXV_RAMP_SMOKE2 0x431178
 
-void __thiscall cObjElementFXFiredDebris_Update(cObjElementFXFiredDebris *self, cDebris *debris, float dt) {
+void cObjElementFXFiredDebris_Update(cObjElementFXFiredDebris *self, cDebris *debris, float dt) {
 	CGameModel *model = Debris_Model(debris);
 	CGameParticles *p = &self->particles;
 	vec3_t pos;
@@ -485,7 +485,7 @@ void __thiscall cObjElementFXFiredDebris_Update(cObjElementFXFiredDebris *self, 
 	}
 }
 
-void __thiscall cObjElementFXSmokeDebris_Update(cObjElementFXSmokeDebris *self, cDebris *debris, float dt) {
+void cObjElementFXSmokeDebris_Update(cObjElementFXSmokeDebris *self, cDebris *debris, float dt) {
 	CGameModel *model = Debris_Model(debris);
 	CGameParticles *p = &self->particles;
 	vec3_t pos;
@@ -572,7 +572,7 @@ static inline void FXV_CheckEntity(cEntity **entity) {
 }
 
 /* the rays grow out of the vertices of the ship while it appears */
-void __thiscall cObjElementFXVehicleSpawn_Update(cObjElementFXVehicleSpawn *self, cDebris *debris, float dt) {
+void cObjElementFXVehicleSpawn_Update(cObjElementFXVehicleSpawn *self, cDebris *debris, float dt) {
 	(void)dt;
 	FXV_CheckEntity(&self->entity);
 	cEntity *e = self->entity;
@@ -686,7 +686,7 @@ static vec3_t *FXV_TurnZ(vec3_t *out, float z, const vec3_t *rot) {
 }
 
 /* the smoke and fire behind a burning entity, one emission per step of the way since the last one */
-void __thiscall cObjElementFXFiredEntity_Update(cObjElementFXFiredEntity *self, cDebris *debris, float dt) {
+void cObjElementFXFiredEntity_Update(cObjElementFXFiredEntity *self, cDebris *debris, float dt) {
 	(void)dt;
 	FXV_CheckEntity(&self->entity);
 	float d = cTimer_GetDelta(&g_pWorld->timer);
@@ -918,7 +918,7 @@ static inline uint16_t *FXV_EMIMark(cObjElementFXVehicleEMI *self, int i, int vi
 }
 
 /* the rays jump from vertex to vertex, each step to the nearest free one more than 16 away from the last point */
-void __thiscall cObjElementFXVehicleEMI_Update(cObjElementFXVehicleEMI *self, cDebris *debris, float dt) {
+void cObjElementFXVehicleEMI_Update(cObjElementFXVehicleEMI *self, cDebris *debris, float dt) {
 	cEntity *e = self->entity;
 	if (e && (Entity_Removed(e) || !e->active)) {
 		Obj_Vtbl(e)->SetEffect(e, 0);
@@ -1169,7 +1169,7 @@ static inline float FXV_FireSize(float s, float r) {
 }
 
 /* the flames along the ship (16 of its vertices and 8 of a motor) and the smoke behind a fast AI ship */
-void __thiscall cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, cDebris *debris, float dt) {
+void cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, cDebris *debris, float dt) {
 	cEntity *e = self->entity;
 	if (e && (Entity_Removed(e) || !e->active)) {
 		Obj_Vtbl(e)->SetEffect(e, 0);
@@ -1856,7 +1856,7 @@ static void FXV_DamageTrail(cObjElementFXVehicleDamage *self, const vec3_t *pos,
 	self->pos = *pos;
 }
 
-void __thiscall cObjElementFXVehicleDamage_Update(cObjElementFXVehicleDamage *self, cDebris *debris, float dt) {
+void cObjElementFXVehicleDamage_Update(cObjElementFXVehicleDamage *self, cDebris *debris, float dt) {
 	CGameModel *dm = Debris_Model(debris);
 	vec3_t pos, rot, c, sn;
 
@@ -2406,7 +2406,7 @@ static inline int FXV_RandMod(int n) {
 
 /* the phase 1 lets the ship appear (FX 8, parameter 1 - c), phase 2 vanish; the rays run from the Sputnik to random
  * points of the ship while 0 < c < 1 */
-void __thiscall cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *self, cDebris *debris, float dt) {
+void cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *self, cDebris *debris, float dt) {
 	(void)dt;
 	cEntity *e = self->entity;
 	if (e && (Entity_Removed(e) || !e->active)) {
@@ -2643,7 +2643,7 @@ void __thiscall cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *
 /* ---- Accelerator ---- */
 
 /* the rays grow from the ship along their curves and fade out */
-void __thiscall cObjElementFXVehicleAccelerator_Update(cObjElementFXVehicleAccelerator *self, cDebris *debris,
+void cObjElementFXVehicleAccelerator_Update(cObjElementFXVehicleAccelerator *self, cDebris *debris,
 	float dt) {
 	FXV_CheckEntity(&self->owner);
 	if (!self->owner || !self->owner->active) {
@@ -2757,7 +2757,7 @@ void __thiscall cObjElementFXVehicleAccelerator_Update(cObjElementFXVehicleAccel
 	}
 }
 
-void __fastcall cObjElementFXVehicleAccelerator_InitRays(cObjElementFXVehicleAccelerator *self) {
+void cObjElementFXVehicleAccelerator_InitRays(cObjElementFXVehicleAccelerator *self) {
 	CHECK(self->owner);
 	CGameModel *model = Obj_Vtbl(self->owner)->GetModel(self->owner);
 	CHECK(model && CGameModel_IsLoaded(model));
@@ -2798,7 +2798,7 @@ void __fastcall cObjElementFXVehicleAccelerator_InitRays(cObjElementFXVehicleAcc
 
 /* ---- IsAlive (vf02) ---- */
 
-byte __thiscall cObjElementFXFiredEntity_IsAlive(cObjElementFXFiredEntity *self, cDebris *debris, cDebrisSys *sys) {
+byte cObjElementFXFiredEntity_IsAlive(cObjElementFXFiredEntity *self, cDebris *debris, cDebrisSys *sys) {
 	byte r = cDebris_Update(debris, sys);
 	if (!r) {
 		return r;
@@ -2813,7 +2813,7 @@ byte __thiscall cObjElementFXFiredEntity_IsAlive(cObjElementFXFiredEntity *self,
 	return 1;
 }
 
-byte __thiscall cObjElementFXVehicleDamage_IsAlive(cObjElementFXVehicleDamage *self, cDebris *debris,
+byte cObjElementFXVehicleDamage_IsAlive(cObjElementFXVehicleDamage *self, cDebris *debris,
 	cDebrisSys *sys) {
 	cEntity *e;
 	if (self->active && (e = self->entity) != NULL && e->active) {
@@ -2847,7 +2847,7 @@ byte __thiscall cObjElementFXVehicleDamage_IsAlive(cObjElementFXVehicleDamage *s
 	return 0;
 }
 
-byte __thiscall cObjElementFXVehicleEMI_IsAlive(cObjElementFXVehicleEMI *self, cDebris *debris, cDebrisSys *sys) {
+byte cObjElementFXVehicleEMI_IsAlive(cObjElementFXVehicleEMI *self, cDebris *debris, cDebrisSys *sys) {
 	if (!self->entity) {
 		return 0;
 	}
@@ -2863,7 +2863,7 @@ byte __thiscall cObjElementFXVehicleEMI_IsAlive(cObjElementFXVehicleEMI *self, c
 	return 0;
 }
 
-byte __thiscall cObjElementFXVehicleFire_IsAlive(cObjElementFXVehicleFire *self, cDebris *debris, cDebrisSys *sys) {
+byte cObjElementFXVehicleFire_IsAlive(cObjElementFXVehicleFire *self, cDebris *debris, cDebrisSys *sys) {
 	cEntity *e = self->entity;
 	if (!e) {
 		return 0;
@@ -2885,7 +2885,7 @@ byte __thiscall cObjElementFXVehicleFire_IsAlive(cObjElementFXVehicleFire *self,
 	return 0;
 }
 
-byte __thiscall cObjElementFXVehicleSputnik_IsAlive(cObjElementFXVehicleSputnik *self, cDebris *debris,
+byte cObjElementFXVehicleSputnik_IsAlive(cObjElementFXVehicleSputnik *self, cDebris *debris,
 	cDebrisSys *sys) {
 	if (!self->entity) {
 		return 0;
@@ -2901,7 +2901,7 @@ byte __thiscall cObjElementFXVehicleSputnik_IsAlive(cObjElementFXVehicleSputnik 
 
 /* ---- Start (vf03) ---- */
 
-void __thiscall cObjElementFXFiredDebris_Start(cObjElementFXFiredDebris *self, cDebris *debris) {
+void cObjElementFXFiredDebris_Start(cObjElementFXFiredDebris *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	int node = CGameModel_FindRenderNode(model, "Dummy01");
 	if (node != -1) {
@@ -2917,14 +2917,14 @@ void __thiscall cObjElementFXFiredDebris_Start(cObjElementFXFiredDebris *self, c
 	self->last.z = 0.0f;
 }
 
-void __thiscall cObjElementFXFiredEntity_Start(cObjElementFXFiredEntity *self, cDebris *debris) {
+void cObjElementFXFiredEntity_Start(cObjElementFXFiredEntity *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	CGameParticles_Attach(&self->particles, model, FXV_Node(model, "Dummy01"));
 	self->time = 0.0f;
 	self->posValid = 0;
 }
 
-void __thiscall cObjElementFXSmokeDebris_Start(cObjElementFXSmokeDebris *self, cDebris *debris) {
+void cObjElementFXSmokeDebris_Start(cObjElementFXSmokeDebris *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	int node = CGameModel_FindRenderNode(model, "Dummy01");
 	if (node != -1) {
@@ -2940,7 +2940,7 @@ void __thiscall cObjElementFXSmokeDebris_Start(cObjElementFXSmokeDebris *self, c
 	self->last.z = 0.0f;
 }
 
-void __thiscall cObjElementFXVehicleAccelerator_Start(cObjElementFXVehicleAccelerator *self, cDebris *debris) {
+void cObjElementFXVehicleAccelerator_Start(cObjElementFXVehicleAccelerator *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
 	CGameParticles_Attach(&self->particles, model, FXV_Node(model, "Dummy01"));
@@ -2957,7 +2957,7 @@ void __thiscall cObjElementFXVehicleAccelerator_Start(cObjElementFXVehicleAccele
 	}
 }
 
-void __thiscall cObjElementFXVehicleDamage_Start(cObjElementFXVehicleDamage *self, cDebris *debris) {
+void cObjElementFXVehicleDamage_Start(cObjElementFXVehicleDamage *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
 	self->model = model;
@@ -2973,12 +2973,12 @@ void __thiscall cObjElementFXVehicleDamage_Start(cObjElementFXVehicleDamage *sel
 	self->level = 0.0f;
 }
 
-void __thiscall cObjElementFXVehicleDeathTrail_Start(cObjElementFXVehicleDeathTrail *self, cDebris *debris) {
+void cObjElementFXVehicleDeathTrail_Start(cObjElementFXVehicleDeathTrail *self, cDebris *debris) {
 	(void)debris;
 	CGameTrail_SetMaxTrails(&self->trail, 0x1e);
 }
 
-void __thiscall cObjElementFXVehicleEMI_Start(cObjElementFXVehicleEMI *self, cDebris *debris) {
+void cObjElementFXVehicleEMI_Start(cObjElementFXVehicleEMI *self, cDebris *debris) {
 	int node = FXV_NodeOrDebris(debris);
 	if (node != -1) {
 		CGameParticles_Attach(&self->particles, Debris_Model(debris), node);
@@ -2996,7 +2996,7 @@ void __thiscall cObjElementFXVehicleEMI_Start(cObjElementFXVehicleEMI *self, cDe
 	}
 }
 
-void __thiscall cObjElementFXVehicleFire_Start(cObjElementFXVehicleFire *self, cDebris *debris) {
+void cObjElementFXVehicleFire_Start(cObjElementFXVehicleFire *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	int node = CGameModel_FindRenderNode(model, "Dummy01");
 	if (node != -1) {
@@ -3012,7 +3012,7 @@ void __thiscall cObjElementFXVehicleFire_Start(cObjElementFXVehicleFire *self, c
 	self->numExhausts = 0;
 }
 
-void __thiscall cObjElementFXVehicleSpawn_Start(cObjElementFXVehicleSpawn *self, cDebris *debris) {
+void cObjElementFXVehicleSpawn_Start(cObjElementFXVehicleSpawn *self, cDebris *debris) {
 	int node = FXV_NodeOrDebris(debris);
 	if (node != -1) {
 		CGameParticles_Attach(&self->particles, Debris_Model(debris), node);
@@ -3026,7 +3026,7 @@ void __thiscall cObjElementFXVehicleSpawn_Start(cObjElementFXVehicleSpawn *self,
 	self->numRays = 0;
 }
 
-void __thiscall cObjElementFXVehicleSputnik_Start(cObjElementFXVehicleSputnik *self, cDebris *debris) {
+void cObjElementFXVehicleSputnik_Start(cObjElementFXVehicleSputnik *self, cDebris *debris) {
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
 	CGameParticles_Attach(&self->particles, model, FXV_Node(model, "Dummy01"));
@@ -3042,7 +3042,7 @@ void __thiscall cObjElementFXVehicleSputnik_Start(cObjElementFXVehicleSputnik *s
 
 /* ---- Reset (vf04) ---- */
 
-void __thiscall cObjElementFXFiredDebris_Reset(cObjElementFXFiredDebris *self, cDebris *debris) {
+void cObjElementFXFiredDebris_Reset(cObjElementFXFiredDebris *self, cDebris *debris) {
 	(void)debris;
 	self->first = 1;
 	self->interval = 0.09f;
@@ -3054,14 +3054,14 @@ void __thiscall cObjElementFXFiredDebris_Reset(cObjElementFXFiredDebris *self, c
 	CGameParticles_KillAll(&self->particles);
 }
 
-void __thiscall cObjElementFXFiredEntity_Reset(cObjElementFXFiredEntity *self, cDebris *debris) {
+void cObjElementFXFiredEntity_Reset(cObjElementFXFiredEntity *self, cDebris *debris) {
 	(void)debris;
 	self->entity = NULL;
 	self->time = 0.0f;
 	self->posValid = 0;
 }
 
-void __thiscall cObjElementFXSmokeDebris_Reset(cObjElementFXSmokeDebris *self, cDebris *debris) {
+void cObjElementFXSmokeDebris_Reset(cObjElementFXSmokeDebris *self, cDebris *debris) {
 	(void)debris;
 	self->first = 1;
 	self->time = 0.0f;
@@ -3071,7 +3071,7 @@ void __thiscall cObjElementFXSmokeDebris_Reset(cObjElementFXSmokeDebris *self, c
 	CGameParticles_KillAll(&self->particles);
 }
 
-void __thiscall cObjElementFXVehicleAccelerator_Reset(cObjElementFXVehicleAccelerator *self, cDebris *debris) {
+void cObjElementFXVehicleAccelerator_Reset(cObjElementFXVehicleAccelerator *self, cDebris *debris) {
 	(void)debris;
 	for (int i = 0; i < FXVACCEL_TRAILS; i++) {
 		self->fade[i] = 0.0f;
@@ -3080,7 +3080,7 @@ void __thiscall cObjElementFXVehicleAccelerator_Reset(cObjElementFXVehicleAccele
 	}
 }
 
-void __thiscall cObjElementFXVehicleDamage_Reset(cObjElementFXVehicleDamage *self, cDebris *debris) {
+void cObjElementFXVehicleDamage_Reset(cObjElementFXVehicleDamage *self, cDebris *debris) {
 	(void)debris;
 	self->entity = NULL;
 	self->numExhausts = 0;
@@ -3092,7 +3092,7 @@ void __thiscall cObjElementFXVehicleDamage_Reset(cObjElementFXVehicleDamage *sel
 	self->level = 0.0f;
 }
 
-void __thiscall cObjElementFXVehicleEMI_Reset(cObjElementFXVehicleEMI *self, cDebris *debris) {
+void cObjElementFXVehicleEMI_Reset(cObjElementFXVehicleEMI *self, cDebris *debris) {
 	(void)debris;
 	self->time = 0.0f;
 	self->stepTime = 0.0f;
@@ -3104,7 +3104,7 @@ void __thiscall cObjElementFXVehicleEMI_Reset(cObjElementFXVehicleEMI *self, cDe
 	CGameParticles_KillAll(&self->particles);
 }
 
-void __thiscall cObjElementFXVehicleFire_Reset(cObjElementFXVehicleFire *self, cDebris *debris) {
+void cObjElementFXVehicleFire_Reset(cObjElementFXVehicleFire *self, cDebris *debris) {
 	(void)debris;
 	self->entity = NULL;
 	self->time = 0.0f;
@@ -3112,7 +3112,7 @@ void __thiscall cObjElementFXVehicleFire_Reset(cObjElementFXVehicleFire *self, c
 	self->numExhausts = 0;
 }
 
-void __thiscall cObjElementFXVehicleSpawn_Reset(cObjElementFXVehicleSpawn *self, cDebris *debris) {
+void cObjElementFXVehicleSpawn_Reset(cObjElementFXVehicleSpawn *self, cDebris *debris) {
 	(void)debris;
 	self->time = 0.0f;
 	self->stepTime = 0.0f;
@@ -3123,7 +3123,7 @@ void __thiscall cObjElementFXVehicleSpawn_Reset(cObjElementFXVehicleSpawn *self,
 	self->numRays = 0;
 }
 
-void __thiscall cObjElementFXVehicleSputnik_Reset(cObjElementFXVehicleSputnik *self, cDebris *debris) {
+void cObjElementFXVehicleSputnik_Reset(cObjElementFXVehicleSputnik *self, cDebris *debris) {
 	(void)debris;
 	self->time = 0.0f;
 	self->time2 = 0.0f;
@@ -3139,7 +3139,7 @@ void __thiscall cObjElementFXVehicleSputnik_Reset(cObjElementFXVehicleSputnik *s
 
 /* ---- the setters ---- */
 
-void __thiscall cObjElementFXFiredEntity_SetEntity(cObjElementFXFiredEntity *self, cEntity *e) {
+void cObjElementFXFiredEntity_SetEntity(cObjElementFXFiredEntity *self, cEntity *e) {
 	vec3_t tmp;
 	self->entity = e;
 	CGameModel *model = FXV_Model(e);
@@ -3147,7 +3147,7 @@ void __thiscall cObjElementFXFiredEntity_SetEntity(cObjElementFXFiredEntity *sel
 	self->radius = CGameModel_Radius(model);
 }
 
-void __thiscall cObjElementFXVehicleDamage_SetEntity(cObjElementFXVehicleDamage *self, cEntity *e) {
+void cObjElementFXVehicleDamage_SetEntity(cObjElementFXVehicleDamage *self, cEntity *e) {
 	vec3_t tmp;
 	self->entity = e;
 	CGameModel *model = FXV_Model(e);
@@ -3155,19 +3155,19 @@ void __thiscall cObjElementFXVehicleDamage_SetEntity(cObjElementFXVehicleDamage 
 	FXV_Exhausts(self->entity, &self->numExhausts, self->exhausts);
 }
 
-void __thiscall cObjElementFXVehicleEMI_SetEntity(cObjElementFXVehicleEMI *self, cEntity *e) {
+void cObjElementFXVehicleEMI_SetEntity(cObjElementFXVehicleEMI *self, cEntity *e) {
 	self->entity = e;
 	FXV_Model(e);
 	FXV_Exhausts(self->entity, &self->numExhausts, self->exhausts);
 }
 
-void __thiscall cObjElementFXVehicleFire_SetEntity(cObjElementFXVehicleFire *self, cEntity *e) {
+void cObjElementFXVehicleFire_SetEntity(cObjElementFXVehicleFire *self, cEntity *e) {
 	self->entity = e;
 	FXV_Model(e);
 	FXV_Exhausts(self->entity, &self->numExhausts, self->exhausts);
 }
 
-void __thiscall cObjElementFXVehicleSputnik_SetEntity(cObjElementFXVehicleSputnik *self, cEntity *e) {
+void cObjElementFXVehicleSputnik_SetEntity(cObjElementFXVehicleSputnik *self, cEntity *e) {
 	vec3_t pos, rot;
 	self->entity = e;
 	CGameModel *model = FXV_Model(e);
@@ -3185,31 +3185,31 @@ void __thiscall cObjElementFXVehicleSputnik_SetEntity(cObjElementFXVehicleSputni
 	}
 }
 
-void __thiscall cObjElementFXVehicleSputnik_SetC0(cObjElementFXVehicleSputnik *self, int v) {
+void cObjElementFXVehicleSputnik_SetC0(cObjElementFXVehicleSputnik *self, int v) {
 	self->phase = v;
 }
 
-void __thiscall cObjElementFXVehicleSputnik_SetC4(cObjElementFXVehicleSputnik *self, float v) {
+void cObjElementFXVehicleSputnik_SetC4(cObjElementFXVehicleSputnik *self, float v) {
 	self->duration = v;
 }
 
-void __thiscall cObjElementFXVehicleSpawn_SetEntity(cObjElementFXVehicleSpawn *self, cEntity *e) {
+void cObjElementFXVehicleSpawn_SetEntity(cObjElementFXVehicleSpawn *self, cEntity *e) {
 	self->entity = e;
 	FXV_Model(e);
 }
 
-void __thiscall cObjElementFXVehicleAccelerator_SetOwner(cObjElementFXVehicleAccelerator *self, cEntity *e) {
+void cObjElementFXVehicleAccelerator_SetOwner(cObjElementFXVehicleAccelerator *self, cEntity *e) {
 	self->owner = e;
 	CHECK(e && Obj_Vtbl(e)->GetModel(e) && CGameModel_IsLoaded(Obj_Vtbl(self->owner)->GetModel(self->owner)));
 }
 
-void __thiscall cObjElementFXVehicleAccelerator_SetAccelerator(cObjElementFXVehicleAccelerator *self, void *a) {
+void cObjElementFXVehicleAccelerator_SetAccelerator(cObjElementFXVehicleAccelerator *self, void *a) {
 	self->accelerator = a;
 	CHECK(a);
 }
 
 /* the damage effect drawn once with the ship it follows: only its smoke and sparks, the fire (parts1) hidden */
-void __fastcall FXVehicle_RenderAttached(void *element) {
+void FXVehicle_RenderAttached(void *element) {
 	if (g_SplitScreenGame) {
 		return;
 	}

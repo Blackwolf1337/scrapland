@@ -37,10 +37,6 @@
 #define GAME_ARRAY_IN(type, owner, off) ((typeof(type) *)((char *)SD_REF_(sd_##owner, "_" #owner) + (off)))
 #define GAME_PTR(owner, off) ((void *)((char *)SD_REF_(sd_##owner, "_" #owner) + (off)))
 
-/* a C function by its name (void *), without a prototype; a stdcall or fastcall name gets its decoration from
- * --enable-stdcall-fixup */
-#define GAME_FUNC(name) SD_REF_(sd_fn_##name, "_" #name)
-
 /* a vtable of a game class (void *), the C object of src/game/Global/Vtables.c */
 #define GAME_VFTABLE(name) \
 	({ \
@@ -156,18 +152,18 @@ SD_OFFSET(cWorld, grid, 0x1bcc);
 SD_OFFSET(cWorld, logic, 0x2094);
 SD_SIZE(cWorld, 0x225c);
 
-/* World/: thiscall methods; Table<T>::Init per element type */
-void __thiscall WeapTable_Init(void *table, int num);
-void __thiscall AmmoTable_Init(void *table, int num);
-void __thiscall cWorld_FillWeapPriority(cWorld *world);
-int __thiscall cWeapInfo_GetF(cWeapInfo *weap, const char *var, float *value);
-int __thiscall cWeapInfo_GetS(cWeapInfo *weap, const char *var, char **value);
-int __thiscall cWeapInfo_SetF(cWeapInfo *weap, const char *var, float value);
-int __thiscall cWeapInfo_SetS(cWeapInfo *weap, const char *var, const char *value);
-int __thiscall cAmmoInfo_GetF(cAmmoInfo *ammo, const char *var, float *value);
-int __thiscall cAmmoInfo_GetS(cAmmoInfo *ammo, const char *var, char **value);
-int __thiscall cAmmoInfo_SetF(cAmmoInfo *ammo, const char *var, float value);
-int __thiscall cAmmoInfo_SetS(cAmmoInfo *ammo, const char *var, const char *value);
+/* World/: methods; Table<T>::Init per element type */
+void WeapTable_Init(void *table, int num);
+void AmmoTable_Init(void *table, int num);
+void cWorld_FillWeapPriority(cWorld *world);
+int cWeapInfo_GetF(cWeapInfo *weap, const char *var, float *value);
+int cWeapInfo_GetS(cWeapInfo *weap, const char *var, char **value);
+int cWeapInfo_SetF(cWeapInfo *weap, const char *var, float value);
+int cWeapInfo_SetS(cWeapInfo *weap, const char *var, const char *value);
+int cAmmoInfo_GetF(cAmmoInfo *ammo, const char *var, float *value);
+int cAmmoInfo_GetS(cAmmoInfo *ammo, const char *var, char **value);
+int cAmmoInfo_SetF(cAmmoInfo *ammo, const char *var, float value);
+int cAmmoInfo_SetS(cAmmoInfo *ammo, const char *var, const char *value);
 
 /*
  * the application (App/, include/scrap/app.h): CApp (0x48 bytes, vftable rva 0x3cf190) is the game part, CWinApp
@@ -176,27 +172,27 @@ int __thiscall cAmmoInfo_SetS(cAmmoInfo *ammo, const char *var, const char *valu
  */
 typedef struct CApp CApp;
 typedef struct CAppVtbl {
-	void(__thiscall *DoneGame)(CApp *self);					/* 0x00 vf00 */
-	void(__thiscall *InitGame)(CApp *self, const char *level);			/* 0x04 vf01 */
-	void(__thiscall *InitDebug)(CApp *self);					/* 0x08 vf02 */
-	CApp *(__thiscall *Delete)(CApp *self, byte flags);			/* 0x0c vf03 */
-	byte(__thiscall *Init)(CApp *self);						/* 0x10 vf04 */
-	byte(__thiscall *Frame)(CApp *self);						/* 0x14 vf05 */
-	void(__thiscall *Shutdown)(CApp *self);					/* 0x18 vf06 */
-	void(__thiscall *LoadLevelNow)(CApp *self, const char *level);		/* 0x1c vf07 */
-	void(__thiscall *InitDedicated)(CApp *self);					/* 0x20 vf08 */
-	void(__thiscall *Exit)(CApp *self);						/* 0x24 vf09 */
-	void(__thiscall *Update)(CApp *self, float dt);				/* 0x28 vf10 */
-	void(__thiscall *Render)(CApp *self);					/* 0x2c vf11 */
-	byte(__thiscall *ParseParam)(CApp *self, const char *param, const char *ext);	/* 0x30 vf12 */
-	void(__thiscall *ResetParams)(CApp *self);					/* 0x34 vf13 */
-	double(__thiscall *GetTime)(CApp *self);					/* 0x38 vf14 */
-	double(__thiscall *GetGameTime)(CApp *self);					/* 0x3c vf15 */
-	void(__thiscall *ShowConsole)(CApp *self, byte show);			/* 0x40 vf16 */
-	void(__thiscall *ConsoleAdd)(CApp *self, const char *text, uint32_t color);	/* 0x44 vf17 */
-	const char *(__thiscall *DebugInput)(CApp *self, const char *text);		/* 0x48 vf18 */
-	byte(__thiscall *RunApp)(CApp *self, const char *exe, const char *cmdLine, int arg);	/* 0x4c vf19 */
-	byte(__thiscall *IsDedicatedWin)(CApp *self);				/* 0x50 vf20 */
+	void(*DoneGame)(CApp *self);					/* 0x00 vf00 */
+	void(*InitGame)(CApp *self, const char *level);			/* 0x04 vf01 */
+	void(*InitDebug)(CApp *self);					/* 0x08 vf02 */
+	CApp *(*Delete)(CApp *self, byte flags);			/* 0x0c vf03 */
+	byte(*Init)(CApp *self);						/* 0x10 vf04 */
+	byte(*Frame)(CApp *self);						/* 0x14 vf05 */
+	void(*Shutdown)(CApp *self);					/* 0x18 vf06 */
+	void(*LoadLevelNow)(CApp *self, const char *level);		/* 0x1c vf07 */
+	void(*InitDedicated)(CApp *self);					/* 0x20 vf08 */
+	void(*Exit)(CApp *self);						/* 0x24 vf09 */
+	void(*Update)(CApp *self, float dt);				/* 0x28 vf10 */
+	void(*Render)(CApp *self);					/* 0x2c vf11 */
+	byte(*ParseParam)(CApp *self, const char *param, const char *ext);	/* 0x30 vf12 */
+	void(*ResetParams)(CApp *self);					/* 0x34 vf13 */
+	double(*GetTime)(CApp *self);					/* 0x38 vf14 */
+	double(*GetGameTime)(CApp *self);					/* 0x3c vf15 */
+	void(*ShowConsole)(CApp *self, byte show);			/* 0x40 vf16 */
+	void(*ConsoleAdd)(CApp *self, const char *text, uint32_t color);	/* 0x44 vf17 */
+	const char *(*DebugInput)(CApp *self, const char *text);		/* 0x48 vf18 */
+	byte(*RunApp)(CApp *self, const char *exe, const char *cmdLine, int arg);	/* 0x4c vf19 */
+	byte(*IsDedicatedWin)(CApp *self);				/* 0x50 vf20 */
 } CAppVtbl;
 SD_OFFSET(CAppVtbl, Exit, 0x24);
 SD_OFFSET(CAppVtbl, DebugInput, 0x48);

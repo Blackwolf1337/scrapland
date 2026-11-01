@@ -40,19 +40,19 @@ static void M3D_StringFree(char **s) {
 	}
 }
 
-M3DTable *__fastcall M3DTable_ctor(M3DTable *self) {
+M3DTable *M3DTable_ctor(M3DTable *self) {
 	self->p = NULL;
 	self->n = 0;
 	self->fixed = 0;
 	return self;
 }
 
-char **__fastcall String_ctor(char **self) {
+char **String_ctor(char **self) {
 	*self = NULL;
 	return self;
 }
 
-M3DTrack *__fastcall M3DTrack_ctor(M3DTrack *self) {
+M3DTrack *M3DTrack_ctor(M3DTrack *self) {
 	crt_eh_vector_ctor(&self->pos, sizeof(M3DTable), 4, (void *)M3DTable_ctor, (void *)Table_Free);
 	self->sgn.p = NULL;
 	self->sgn.n = 0;
@@ -63,7 +63,7 @@ M3DTrack *__fastcall M3DTrack_ctor(M3DTrack *self) {
 	return self;
 }
 
-M3DNode *__fastcall M3DNode_ctor(M3DNode *self) {
+M3DNode *M3DNode_ctor(M3DNode *self) {
 	self->target = NULL;
 	self->side2 = NULL;
 	self->skin.p = NULL;
@@ -78,20 +78,20 @@ M3DNode *__fastcall M3DNode_ctor(M3DNode *self) {
 	return self;
 }
 
-M3DSkinVert *__fastcall M3DSkinVert_ctor(M3DSkinVert *self) {
+M3DSkinVert *M3DSkinVert_ctor(M3DSkinVert *self) {
 	crt_eh_vector_ctor(self->bone, sizeof(char *), SKIN_MAX_BONES, (void *)String_ctor, (void *)String_dtor);
 	return self;
 }
 
-void __fastcall M3DSkinVert_dtor(M3DSkinVert *self) {
+void M3DSkinVert_dtor(M3DSkinVert *self) {
 	crt_eh_vector_dtor(self->bone, sizeof(char *), SKIN_MAX_BONES, (void *)String_dtor);
 }
 
-void __fastcall M3DTable4_dtor(M3DTable4 *self) {
+void M3DTable4_dtor(M3DTable4 *self) {
 	crt_eh_vector_dtor(self->t, sizeof(M3DTable), 4, (void *)Table_Free);
 }
 
-void __fastcall M3DTrack_dtor(M3DTrack *self) {
+void M3DTrack_dtor(M3DTrack *self) {
 	crt_eh_vector_dtor(&self->scale, sizeof(M3DTable), 4, (void *)Table_Free);
 	crt_eh_vector_dtor(&self->rotScale, sizeof(M3DTable), 4, (void *)Table_Free);
 	crt_eh_vector_dtor(&self->rot, sizeof(M3DTable), 4, (void *)Table_Free);
@@ -99,13 +99,13 @@ void __fastcall M3DTrack_dtor(M3DTrack *self) {
 	crt_eh_vector_dtor(&self->pos, sizeof(M3DTable), 4, (void *)Table_Free);
 }
 
-void __fastcall M3DTable6_dtor(M3DTable *self) {
+void M3DTable6_dtor(M3DTable *self) {
 	for (int i = 5; i >= 0; i--) {
 		Table_Free((CTable *)&self[i]);
 	}
 }
 
-void __fastcall M3DSkin_Free(CTable *self) {
+void M3DSkin_Free(CTable *self) {
 	if (self->p) {
 		Delete_Objects(self->p, sizeof(M3DSkinVert), (void *)M3DSkinVert_dtor);
 		self->p = NULL;
@@ -113,7 +113,7 @@ void __fastcall M3DSkin_Free(CTable *self) {
 	}
 }
 
-void __fastcall M3DNode_dtor(M3DNode *self) {
+void M3DNode_dtor(M3DNode *self) {
 	M3DTable6_dtor(self->t2a4);
 	M3DTrack_dtor(&self->track2);
 	M3DTrack_dtor(&self->track);
@@ -123,7 +123,7 @@ void __fastcall M3DNode_dtor(M3DNode *self) {
 }
 
 /* the deleting destructors: flags 2 the array with its count before it, 1 the memory freed */
-M3DNode *__thiscall M3DNode_Delete(M3DNode *self, uint32_t flags) {
+M3DNode *M3DNode_Delete(M3DNode *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
 		crt_eh_vector_dtor(self, sizeof(M3DNode), *mem, (void *)M3DNode_dtor);
@@ -139,7 +139,7 @@ M3DNode *__thiscall M3DNode_Delete(M3DNode *self, uint32_t flags) {
 	return self;
 }
 
-M3DSkinVert *__thiscall M3DSkinVert_Delete(M3DSkinVert *self, uint32_t flags) {
+M3DSkinVert *M3DSkinVert_Delete(M3DSkinVert *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
 		crt_eh_vector_dtor(self, sizeof(M3DSkinVert), *mem, (void *)M3DSkinVert_dtor);
@@ -891,7 +891,7 @@ M3DNode *M3D_NodeDat(const CNode3D *node) {
 	return &g_M3DNodes[node->index];
 }
 
-vec3_t *__thiscall M3DTable4_GetVec(M3DTable4 *self, vec3_t *out, uint32_t i) {
+vec3_t *M3DTable4_GetVec(M3DTable4 *self, vec3_t *out, uint32_t i) {
 	TABLE_CHECK(self->t[2].p, i, self->t[2].n);
 	const float *z = (const float *)self->t[2].p + i;
 	TABLE_CHECK(self->t[1].p, i, self->t[1].n);
@@ -903,7 +903,7 @@ vec3_t *__thiscall M3DTable4_GetVec(M3DTable4 *self, vec3_t *out, uint32_t i) {
 	return out;
 }
 
-quat_t *__thiscall M3DTable4_GetQuat(M3DTable4 *self, quat_t *out, uint32_t i) {
+quat_t *M3DTable4_GetQuat(M3DTable4 *self, quat_t *out, uint32_t i) {
 	TABLE_CHECK(self->t[3].p, i, self->t[3].n);
 	const float *w = (const float *)self->t[3].p + i;
 	TABLE_CHECK(self->t[2].p, i, self->t[2].n);
@@ -918,7 +918,7 @@ quat_t *__thiscall M3DTable4_GetQuat(M3DTable4 *self, quat_t *out, uint32_t i) {
 	return out;
 }
 
-void __thiscall M3DTable4_SetVec(M3DTable4 *self, uint32_t i, const vec3_t *v) {
+void M3DTable4_SetVec(M3DTable4 *self, uint32_t i, const vec3_t *v) {
 	TABLE_CHECK(self->t[0].p, i, self->t[0].n);
 	((float *)self->t[0].p)[i] = v->x;
 	TABLE_CHECK(self->t[1].p, i, self->t[1].n);
@@ -927,7 +927,7 @@ void __thiscall M3DTable4_SetVec(M3DTable4 *self, uint32_t i, const vec3_t *v) {
 	((float *)self->t[2].p)[i] = v->z;
 }
 
-void __thiscall M3DTable4_RotToQuat(M3DTable4 *self, uint32_t i) {
+void M3DTable4_RotToQuat(M3DTable4 *self, uint32_t i) {
 	vec3_t v, axis;
 	quat_t q;
 
@@ -946,7 +946,7 @@ void __thiscall M3DTable4_RotToQuat(M3DTable4 *self, uint32_t i) {
 	((float *)self->t[3].p)[i] = q.w;
 }
 
-matrix_t *__thiscall M3DNode_FrameMatrix(M3DNode *self, matrix_t *out, uint32_t frame) {
+matrix_t *M3DNode_FrameMatrix(M3DNode *self, matrix_t *out, uint32_t frame) {
 	m3dTransform_t mt;
 	vec3_t v;
 	quat_t q;
@@ -1022,15 +1022,15 @@ static void M3DTable_Read(M3DTable *self, const char *name, byte flt) {
 	} while (fr < self->n);
 }
 
-void __thiscall M3DTable_ReadInt(M3DTable *self, const char *name) {
+void M3DTable_ReadInt(M3DTable *self, const char *name) {
 	M3DTable_Read(self, name, 0);
 }
 
-void __thiscall M3DTable_ReadFloat(M3DTable *self, const char *name) {
+void M3DTable_ReadFloat(M3DTable *self, const char *name) {
 	M3DTable_Read(self, name, 1);
 }
 
-void __thiscall M3DTable4_Read(M3DTable4 *self, const char *n1, const char *n2, const char *n3, const char *n4,
+void M3DTable4_Read(M3DTable4 *self, const char *n1, const char *n2, const char *n3, const char *n4,
 	byte inv23) {
 	CHECK(!inv23 || (n2 && n3));
 	if (n1) {
@@ -1047,7 +1047,7 @@ void __thiscall M3DTable4_Read(M3DTable4 *self, const char *n1, const char *n2, 
 	}
 }
 
-void __thiscall M3DTrack_Read(M3DTrack *self) {
+void M3DTrack_Read(M3DTrack *self) {
 	M3DTable_ReadFloat(&self->pos.t[0], "PosX");
 	M3DTable_ReadFloat(&self->pos.t[2], "PosY");
 	M3DTable_ReadFloat(&self->pos.t[1], "PosZ");
@@ -1437,7 +1437,7 @@ static void M3D_CheckNoScale(const m3dTransform_t *da) {
 	CHECK(da->sign == 1.0f);
 }
 
-matrix_t *__thiscall M3DNode_CalcMatrix(M3DNode *self) {
+matrix_t *M3DNode_CalcMatrix(M3DNode *self) {
 	return M3DTransform_ToMatrixAnim(&self->mt, &self->mNode);
 }
 
@@ -3225,7 +3225,7 @@ CScene *Scene_Load(const char *name, int arg, const char *name2) {
 	}
 	if (!bStatic) {
 		if (g_M3DLMat) {
-			((CMatList *(__thiscall *)(CMatList *, byte))g_M3DLMat->vftable[0])(g_M3DLMat, 1);
+			((CMatList *(*)(CMatList *, byte))g_M3DLMat->vftable[0])(g_M3DLMat, 1);
 			g_M3DLMat = NULL;
 		}
 		g_M3DNumMat = 0;

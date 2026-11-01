@@ -23,7 +23,7 @@
 
 #define CNETVCONTROLLER_VFTABLE GAME_VFTABLE(cNetVController_vftable)
 
-cNetVController *__thiscall cNetVController_ctor(void *mem, cEntity *v) {
+cNetVController *cNetVController_ctor(void *mem, cEntity *v) {
 	cNetVController *self = (cNetVController *)cNetController_ctor(mem);
 
 	self->vehicle = v;
@@ -37,7 +37,7 @@ cNetVController *__thiscall cNetVController_ctor(void *mem, cEntity *v) {
 }
 
 /* vf03: an active vehicle always sends its position */
-byte __thiscall cNetVController_Changed(cNetVController *self, byte flags, cEntity *e) {
+byte cNetVController_Changed(cNetVController *self, byte flags, cEntity *e) {
 	if (self->vehicle->active) {
 		byte f = cNetController_Changed(&self->base, flags, e) | NETC_POS;
 		self->base.flags = f;
@@ -47,7 +47,7 @@ byte __thiscall cNetVController_Changed(cNetVController *self, byte flags, cEnti
 }
 
 /* vf00 */
-void __thiscall cNetVController_Reset(cNetVController *self) {
+void cNetVController_Reset(cNetVController *self) {
 	cNetController_Reset(&self->base);
 }
 
@@ -77,7 +77,7 @@ static inline void NetV_Read(cAbstractFile *msg, void *dst, int n) {
 /* vf01: a server reads the controls of the client (weapon, camera height, target); a client the ammo levels, the
  * lock, fire, cloud and EMI, the life, the weapon, the attack, the hits and the upgrades. Then the state of the
  * cNetController, and the hit flags when its flag bit 7 is set */
-void __thiscall cNetVController_Read(cNetVController *self, void *m) {
+void cNetVController_Read(cNetVController *self, void *m) {
 	cAbstractFile *msg = m;
 	char name[0x40];
 	vec3_t q, clamped;
@@ -278,7 +278,7 @@ static void NetV_WriteOffset(cNetVController *self, cAbstractFile *msg, const ve
 /* vf02: the keys from the controls and the state of the vehicle; then the controls of a "net" vehicle (the client
  * side: weapon, camera height, the target of the camera), else the state Read takes on a client; then the state of
  * cNetController and the hit flags, whose counters step while hit and force are 2 */
-void __thiscall cNetVController_Write(cNetVController *self, byte flags, cEntity *e, void *m, byte force) {
+void cNetVController_Write(cNetVController *self, byte flags, cEntity *e, void *m, byte force) {
 	cAbstractFile *msg = m;
 	cVehicleEntity *v = NETV_VEH(self);
 	cVehicleControls *c = &v->controls;

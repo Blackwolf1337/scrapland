@@ -44,43 +44,43 @@ SD_SIZE(CTriMesh, 0x4c);
 
 /* ListaVert.h, instanced in MallaTri.cpp: the normal and the texture coordinates of vertex i; a format without them
  * is a failed CHECK and zeros */
-vec3_t *__thiscall CVertList_GetNormal(CVertList *self, vec3_t *out, uint32_t i);
-uv_t *__thiscall CVertList_GetUV(CVertList *self, uv_t *out, uint32_t i);
+vec3_t *CVertList_GetNormal(CVertList *self, vec3_t *out, uint32_t i);
+uv_t *CVertList_GetUV(CVertList *self, uv_t *out, uint32_t i);
 
 
-CMeshTri *__fastcall CMeshTri_ctor(CMeshTri *self);
+CMeshTri *CMeshTri_ctor(CMeshTri *self);
 
-CTriMesh *__fastcall CTriMesh_ctor(CTriMesh *self);
-CTriMesh *__thiscall CTriMesh_ctorCopy(CTriMesh *self, const CTriMesh *orig);
+CTriMesh *CTriMesh_ctor(CTriMesh *self);
+CTriMesh *CTriMesh_ctorCopy(CTriMesh *self, const CTriMesh *orig);
 /* the meshes of src, with all its list */
-CTriMesh *__thiscall CTriMesh_ctorD3D(CTriMesh *self, CMeshD3D *src, byte all);
-void __fastcall CTriMesh_dtor(CTriMesh *self);
-CTriMesh *__thiscall CTriMesh_Delete(CTriMesh *self, byte flags);
+CTriMesh *CTriMesh_ctorD3D(CTriMesh *self, CMeshD3D *src, byte all);
+void CTriMesh_dtor(CTriMesh *self);
+CTriMesh *CTriMesh_Delete(CTriMesh *self, byte flags);
 /* the members after the vftable cleared, except the box */
-void __fastcall CTriMesh_Init(CTriMesh *self);
+void CTriMesh_Init(CTriMesh *self);
 /* the arrays and the D3D mesh freed, everything 0 */
-void __fastcall CTriMesh_Clear(CTriMesh *self);
+void CTriMesh_Clear(CTriMesh *self);
 /* the Read and Write slots of IObject3D: not supported, 0 */
-byte __thiscall CTriMesh_NoFile(CTriMesh *self, void *f, void *ctx);
+byte CTriMesh_NoFile(CTriMesh *self, void *f, void *ctx);
 /* through the D3D mesh when there is one and g_MeshD3DOn, else each triangle with DrawPrimitiveUP */
-void __thiscall CTriMesh_Draw(CTriMesh *self, void *dev, int unused);
+void CTriMesh_Draw(CTriMesh *self, void *dev, int unused);
 
 /* the counts set; a larger one than allocated doubles the array (realloc: else CHECK there is none yet) */
-void __thiscall CTriMesh_SetNumVert(CTriMesh *self, int n, byte realloc);
+void CTriMesh_SetNumVert(CTriMesh *self, int n, byte realloc);
 /* 0 frees the texture vertices (the count stays) */
-void __thiscall CTriMesh_SetNumTVert(CTriMesh *self, int n, byte realloc);
-void __thiscall CTriMesh_SetNumTri(CTriMesh *self, int n, byte realloc);
+void CTriMesh_SetNumTVert(CTriMesh *self, int n, byte realloc);
+void CTriMesh_SetNumTri(CTriMesh *self, int n, byte realloc);
 /* one more: the index of the new one */
-int __fastcall CTriMesh_AddVert(CTriMesh *self);
-int __fastcall CTriMesh_AddTVert(CTriMesh *self);
-int __fastcall CTriMesh_AddTri(CTriMesh *self);
-void *__fastcall CTriMesh_AllocSkin(CTriMesh *self);
-void *__thiscall CTriMesh_GetSkin(CTriMesh *self, uint32_t i);
+int CTriMesh_AddVert(CTriMesh *self);
+int CTriMesh_AddTVert(CTriMesh *self);
+int CTriMesh_AddTri(CTriMesh *self);
+void *CTriMesh_AllocSkin(CTriMesh *self);
+void *CTriMesh_GetSkin(CTriMesh *self, uint32_t i);
 
-void __thiscall CTriMesh_SetVert(CTriMesh *self, uint32_t i, const vec3_t *v);
-vec3_t *__thiscall CTriMesh_GetVert(CTriMesh *self, vec3_t *out, uint32_t i);
-void __thiscall CTriMesh_SetTVert(CTriMesh *self, uint32_t i, const uv_t *uv);
-CMeshTri *__thiscall CTriMesh_GetTri(CTriMesh *self, uint32_t i);
+void CTriMesh_SetVert(CTriMesh *self, uint32_t i, const vec3_t *v);
+vec3_t *CTriMesh_GetVert(CTriMesh *self, vec3_t *out, uint32_t i);
+void CTriMesh_SetTVert(CTriMesh *self, uint32_t i, const uv_t *uv);
+CMeshTri *CTriMesh_GetTri(CTriMesh *self, uint32_t i);
 /* the object as a CTriMesh, the objeto3d.h CHECK and NULL for another class */
 static inline CTriMesh *Obj3D_TriMesh(IObject3D *o) {
 	if (o->class != CLASS_OBJ3D_TRIMESH) {
@@ -89,33 +89,33 @@ static inline CTriMesh *Obj3D_TriMesh(IObject3D *o) {
 	}
 	return (CTriMesh *)o;
 }
-void __thiscall CTriMesh_SetTriVerts(CTriMesh *self, uint32_t i, int a, int b, int c);
-void __thiscall CTriMesh_SetTriTVerts(CTriMesh *self, uint32_t i, int a, int b, int c);
-void __thiscall CTriMesh_SetTriNormals(CTriMesh *self, uint32_t i, const vec3_t *a, const vec3_t *b, const vec3_t *c);
-void __thiscall CTriMesh_SetTriMat(CTriMesh *self, uint32_t i, void *mat);
-void __thiscall CTriMesh_SetTriFlags(CTriMesh *self, uint32_t i, uint32_t flags);
+void CTriMesh_SetTriVerts(CTriMesh *self, uint32_t i, int a, int b, int c);
+void CTriMesh_SetTriTVerts(CTriMesh *self, uint32_t i, int a, int b, int c);
+void CTriMesh_SetTriNormals(CTriMesh *self, uint32_t i, const vec3_t *a, const vec3_t *b, const vec3_t *c);
+void CTriMesh_SetTriMat(CTriMesh *self, uint32_t i, void *mat);
+void CTriMesh_SetTriFlags(CTriMesh *self, uint32_t i, uint32_t flags);
 /* the last triangle moved to i */
-void __thiscall CTriMesh_RemoveTri(CTriMesh *self, uint32_t i);
+void CTriMesh_RemoveTri(CTriMesh *self, uint32_t i);
 /* corner vert of triangle tri; uv 0 without texture vertices */
-void __thiscall CTriMesh_GetTriVert(CTriMesh *self, CMeshVert *out, uint32_t tri, uint32_t vert);
+void CTriMesh_GetTriVert(CTriMesh *self, CMeshVert *out, uint32_t tri, uint32_t vert);
 /* a triangle of new vertices (and texture vertices if tvert) */
-void __thiscall CTriMesh_AddTriVerts(CTriMesh *self, const CMeshVert *a, const CMeshVert *b, const CMeshVert *c,
+void CTriMesh_AddTriVerts(CTriMesh *self, const CMeshVert *a, const CMeshVert *b, const CMeshVert *c,
 	void *mat, byte tvert, uint32_t flags);
 /* texture vertex 0 at (0, 0) for all triangles, when there are triangles but no texture vertices */
-void __fastcall CTriMesh_CreateTVert(CTriMesh *self);
+void CTriMesh_CreateTVert(CTriMesh *self);
 
 /* the vertices and triangles of src (and of its list if all) added */
-void __thiscall CTriMesh_AddD3D(CTriMesh *self, CMeshD3D *src, byte all);
+void CTriMesh_AddD3D(CTriMesh *self, CMeshD3D *src, byte all);
 /* the triangles of orig with ((flags & mask) == 0) != want added, all its vertices and the skins */
-void __thiscall CTriMesh_Add(CTriMesh *self, const CTriMesh *orig, uint32_t mask, byte want);
+void CTriMesh_Add(CTriMesh *self, const CTriMesh *orig, uint32_t mask, byte want);
 
 /* n made unit length through 1.0 / length in double; a zero length leaves it */
 void Mesh_Normalize(vec3_t *n);
 
 /* box recomputed from the vertices, then merged into out (copied if first) */
-void __thiscall CTriMesh_CalcBox(CTriMesh *self, box_t *out, byte first);
-void __thiscall CTriMesh_GetBox(CTriMesh *self, box_t *out, byte recalc);
+void CTriMesh_CalcBox(CTriMesh *self, box_t *out, byte first);
+void CTriMesh_GetBox(CTriMesh *self, box_t *out, byte recalc);
 /* vertices through m, the normals turned and normalized */
-void __thiscall CTriMesh_Transform(CTriMesh *self, const matrix_t *m);
+void CTriMesh_Transform(CTriMesh *self, const matrix_t *m);
 
 #endif

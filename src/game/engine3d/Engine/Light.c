@@ -67,8 +67,8 @@ static void D3D_SetRenderState(uint32_t state, uint32_t value) {
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, state, value);
 }
 
-typedef void(__thiscall *nodeDelete_t)(CNode3D *self, int flags);
-typedef void(__thiscall *lightUpdate_t)(CLight *self, int arg);
+typedef void(*nodeDelete_t)(CNode3D *self, int flags);
+typedef void(*lightUpdate_t)(CLight *self, int arg);
 
 static void Light_Release(CNode3D **slot) {
 	if (*slot) {
@@ -139,7 +139,7 @@ static float Light_DegToRad(float deg) {
 	return (float)((double)deg * M_PI_D / DEG_PER_PI);
 }
 
-CLight *__fastcall CLight_ctor(CLight *self) {
+CLight *CLight_ctor(CLight *self) {
 	static const byte white[4] = { 0xff, 0xff, 0xff, 0 };
 
 	self->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
@@ -174,7 +174,7 @@ CLight *__fastcall CLight_ctor(CLight *self) {
 	return self;
 }
 
-void __fastcall CLight_dtor(CLight *self) {
+void CLight_dtor(CLight *self) {
 	self->vftable = CLUZ_VFTABLE;
 	Light_Release(&self->node);
 	self->node = NULL;
@@ -191,7 +191,7 @@ void __fastcall CLight_dtor(CLight *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-CLight *__thiscall CLight_Delete(CLight *self, byte flags) {
+CLight *CLight_Delete(CLight *self, byte flags) {
 	CLight_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -199,11 +199,11 @@ CLight *__thiscall CLight_Delete(CLight *self, byte flags) {
 	return self;
 }
 
-void __fastcall IObject3D_dtor(IObject3D *self) {
+void IObject3D_dtor(IObject3D *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-IObject3D *__thiscall IObject3D_Delete(IObject3D *self, byte flags) {
+IObject3D *IObject3D_Delete(IObject3D *self, byte flags) {
 	self->vftable = IOBJECT3D_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -211,14 +211,14 @@ IObject3D *__thiscall IObject3D_Delete(IObject3D *self, byte flags) {
 	return self;
 }
 
-byte __thiscall IObject3D_Read(IObject3D *self, CFileIO *f, void *ctx) {
+byte IObject3D_Read(IObject3D *self, CFileIO *f, void *ctx) {
 	(void)self;
 	(void)f;
 	(void)ctx;
 	return 0;
 }
 
-byte __thiscall IObject3D_Write(IObject3D *self, CFileIO *f, void *ctx) {
+byte IObject3D_Write(IObject3D *self, CFileIO *f, void *ctx) {
 	(void)self;
 	(void)f;
 	(void)ctx;
@@ -330,12 +330,12 @@ int Light_SetDefault(byte on) {
 	return 0;
 }
 
-void __thiscall CLight_Hide(CLight *self, int arg) {
+void CLight_Hide(CLight *self, int arg) {
 	(void)arg;
 	CLight_UpdateD3D(self, 1);
 }
 
-void __thiscall CLight_Reset(CLight *self, int arg) {
+void CLight_Reset(CLight *self, int arg) {
 	(void)arg;
 	CLight_FillD3D(self, &self->d3d);
 	CLight_UpdateD3D(self, 0);
@@ -362,7 +362,7 @@ typedef struct LightVert {
 /* the virtual Render (dev, r not used): a light drawn only with show or R_ShowLights: a corner of the diffuse
  * color sized by the distance to the eye; from 2 the texts, from 3 the range sphere, the axes and the cone of a
  * spot light */
-void __thiscall CLight_Render(CLight *self, void *dev, CRenderNode *r) {
+void CLight_Render(CLight *self, void *dev, CRenderNode *r) {
 	LightVert v[5];
 	matrix_t m;
 	vec3_t p, a, b;
@@ -463,7 +463,7 @@ void Light_SetDirLight(uint32_t idx, const color4_t *color, const vec3_t *dir) {
 	D3D_SetLight(idx, &l);
 }
 
-void __thiscall CLight_EnableD3D(CLight *self, byte enable) {
+void CLight_EnableD3D(CLight *self, byte enable) {
 	Light_EnableD3D(self, enable);
 }
 
@@ -477,7 +477,7 @@ static const struct {
 	{ offsetof(CLight, phi), 4 }, { offsetof(CLight, mult), 4 }, { offsetof(CLight, radCoef), 4 },
 };
 
-byte __thiscall CLight_Read(CLight *self, CFileIO *f, void *ctx) {
+byte CLight_Read(CLight *self, CFileIO *f, void *ctx) {
 	Light_Link(&self->node, *(CNode3D **)((byte *)ctx + 4));
 	CFileIO_BeginBlock(f, "LUZ");
 	CHECK(CFileIO_ReadInt(f) == 1);
@@ -503,7 +503,7 @@ void Light_List(void) {
 	E3D_DebugPrintf("\n  %d luces (%d activas, %d act_d3d)", g_LightsTotal, g_nLights, g_LightsD3D);
 }
 
-byte __thiscall CLight_Write(CLight *self, CFileIO *f, void *ctx) {
+byte CLight_Write(CLight *self, CFileIO *f, void *ctx) {
 	CHECK(self->node == *(CNode3D **)((byte *)ctx + 4));
 	CFileIO_BeginBlockWrite(f, "LUZ");
 	CFileIO_WriteInt(f, 1);
@@ -518,7 +518,7 @@ byte __thiscall CLight_Write(CLight *self, CFileIO *f, void *ctx) {
 	return 1;
 }
 
-void __thiscall CLight_Update(CLight *self, int arg) {
+void CLight_Update(CLight *self, int arg) {
 	(void)arg;
 	if (!self->active) {
 		return;
@@ -580,7 +580,7 @@ void Light_EnableAll(byte enable) {
 	}
 }
 
-void __thiscall CLight_AdjustD3D(CLight *self, D3DLight *l) {
+void CLight_AdjustD3D(CLight *self, D3DLight *l) {
 	byte spot = l->Type == D3DLIGHT_SPOT && g_SpotlightAdjust;
 
 	if (g_LightAtten2 && self->range != 0.0f) {
@@ -637,15 +637,15 @@ void __thiscall CLight_AdjustD3D(CLight *self, D3DLight *l) {
 	l->Ambient = (color4_t){ amb, amb, amb, 1.0f };
 }
 
-void __thiscall CLight_SetNode(CLight *self, CNode3D *node) {
+void CLight_SetNode(CLight *self, CNode3D *node) {
 	Light_Link(&self->node, node);
 }
 
-void __thiscall CLight_SetNodeTarget(CLight *self, CNode3D *node) {
+void CLight_SetNodeTarget(CLight *self, CNode3D *node) {
 	Light_Link(&self->nodeTarget, node);
 }
 
-void __thiscall CLight_SetActive(CLight *self, byte active) {
+void CLight_SetActive(CLight *self, byte active) {
 	if (active) {
 		if (!self->active) {
 			Light_Add(self);
@@ -660,7 +660,7 @@ int Light_Compare(const void *a, const void *b) {
 	return lb->weight > la->weight ? -1 : 1;
 }
 
-void __thiscall CLight_FillD3D(CLight *self, D3DLight *l) {
+void CLight_FillD3D(CLight *self, D3DLight *l) {
 	switch (self->type) {
 	case LIGHT_OMNI:
 		l->Type = D3DLIGHT_POINT;
@@ -701,7 +701,7 @@ int Light_NumTotal(void) {
 	return g_LightsTotal;
 }
 
-void __thiscall CLight_UpdateD3D(CLight *self, byte hide) {
+void CLight_UpdateD3D(CLight *self, byte hide) {
 	if (!g_pd3dDevice) {
 		return;
 	}
@@ -720,7 +720,7 @@ void __thiscall CLight_UpdateD3D(CLight *self, byte hide) {
 	}
 }
 
-box_t *__fastcall Box_Zero(box_t *self) {
+box_t *Box_Zero(box_t *self) {
 	self->min = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->max = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	return self;

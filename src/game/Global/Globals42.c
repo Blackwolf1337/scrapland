@@ -1131,7 +1131,7 @@ float g_MainMenuSparkPos[19][2] = {
 	{ 514.0f, 110.0f },
 	{ 516.0f, 166.0f },
 };
-typeof(void (__thiscall *)(cSpecialActionScorer *, int)) g_SpecialActionDraw[15] = {
+typeof(void (*)(cSpecialActionScorer *, int)) g_SpecialActionDraw[15] = {
 	(void *)sd_SpecialAction_DrawDefault, (void *)sd_SpecialAction_DrawBanker, (void *)sd_SpecialAction_DrawTarget,
 	(void *)sd_SpecialAction_DrawGear, (void *)sd_SpecialAction_DrawVictim, (void *)sd_SpecialAction_DrawOn,
 	(void *)sd_SpecialAction_DrawOn, (void *)sd_SpecialAction_DrawOn, (void *)sd_SpecialAction_DrawLowEnergy,

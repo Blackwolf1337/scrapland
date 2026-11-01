@@ -35,13 +35,13 @@ typedef struct CAnimEvent {
 SD_SIZE(CAnimEvent, 0x14);
 
 /* Engine/EventoAnim.cpp: an event of the time t; ctorAdd puts it into the list */
-CAnimEvent *__thiscall CAnimEvent_ctor(CAnimEvent *self, float t, int id, int arg);
+CAnimEvent *CAnimEvent_ctor(CAnimEvent *self, float t, int id, int arg);
 /* the rest of the chain deleted */
-void __fastcall CAnimEvent_dtor(CAnimEvent *self);
-CAnimEvent *__thiscall CAnimEvent_Delete(CAnimEvent *self, byte flags);
+void CAnimEvent_dtor(CAnimEvent *self);
+CAnimEvent *CAnimEvent_Delete(CAnimEvent *self, byte flags);
 /* into the list sorted by t, then id; CHECK it is in none yet */
-void __thiscall CAnimEvent_Insert(CAnimEvent *self, CAnimEvent **list);
-CAnimEvent *__thiscall AnimEvents_Add(CAnimEvent **list, CAnimEvent *ev);
+void CAnimEvent_Insert(CAnimEvent *self, CAnimEvent **list);
+CAnimEvent *AnimEvents_Add(CAnimEvent **list, CAnimEvent *ev);
 
 /* called at each event before its default handling, which a return of 1 skips */
 typedef byte (*animCallback_t)(int a, int b, CAnimEvent *ev);
@@ -81,27 +81,27 @@ SD_SIZE(CAnimCtrl, 0x84);
 SD_OFFSET(CAnimCtrl, frame, 0x50);
 SD_OFFSET(CAnimCtrl, event, 0x80);
 
-CAnimCtrl *__fastcall CAnimCtrl_ctor(CAnimCtrl *self);
+CAnimCtrl *CAnimCtrl_ctor(CAnimCtrl *self);
 /* rva 0x250f10, empty */
-void __thiscall CAnimCtrl_dtor(CAnimCtrl *self);
-void __fastcall CAnimCtrl_Play(CAnimCtrl *self);
-void __thiscall CAnimCtrl_SetCallback(CAnimCtrl *self, animCallback_t fn, int a, int b);
+void CAnimCtrl_dtor(CAnimCtrl *self);
+void CAnimCtrl_Play(CAnimCtrl *self);
+void CAnimCtrl_SetCallback(CAnimCtrl *self, animCallback_t fn, int a, int b);
 /* stopped at frame, no event; 1 */
-int __thiscall CAnimCtrl_Reset(CAnimCtrl *self, float frame);
-void __thiscall CAnimCtrl_SetFrames(CAnimCtrl *self, int firstFrame, int frames);
+int CAnimCtrl_Reset(CAnimCtrl *self, float frame);
+void CAnimCtrl_SetFrames(CAnimCtrl *self, int firstFrame, int frames);
 const char *AnimCtrl_StateName(int state);
 /* playing from the first frame and the first event */
-void __fastcall CAnimCtrl_Start(CAnimCtrl *self);
+void CAnimCtrl_Start(CAnimCtrl *self);
 /* the root position and rotation at frame (0 and the identity without them) */
-byte __thiscall CAnimCtrl_GetPosRot(CAnimCtrl *self, float frame, vec3_t *pos, quat_t *rot);
-void __fastcall CAnimCtrl_Stop(CAnimCtrl *self);
-void __fastcall CAnimCtrl_Pause(CAnimCtrl *self);
+byte CAnimCtrl_GetPosRot(CAnimCtrl *self, float frame, vec3_t *pos, quat_t *rot);
+void CAnimCtrl_Stop(CAnimCtrl *self);
+void CAnimCtrl_Pause(CAnimCtrl *self);
 /* a fade out over t seconds, only while fading */
-void __thiscall CAnimCtrl_Fade(CAnimCtrl *self, float t);
+void CAnimCtrl_Fade(CAnimCtrl *self, float t);
 /* the events from *f1 up to *f2 (== *fin); 1 while there is more to go to *f2, which may be cut at an event */
-byte __thiscall CAnimCtrl_Events(CAnimCtrl *self, float *f1, float *f2, float *end);
+byte CAnimCtrl_Events(CAnimCtrl *self, float *f1, float *f2, float *end);
 /* t seconds on (t < 0: the time since the last update, at most 0.1), the root motion rotated by rot; 0 when stopped */
-byte __thiscall CAnimCtrl_Update(CAnimCtrl *self, const vec3_t *rot, float t);
+byte CAnimCtrl_Update(CAnimCtrl *self, const vec3_t *rot, float t);
 
 
 #endif

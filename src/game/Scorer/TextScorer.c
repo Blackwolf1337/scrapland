@@ -33,7 +33,7 @@ static void Text_Get(cTextScorer *self, int player, char *buf, int size) {
 	}
 }
 
-cTextScorer *__fastcall cTextScorer_ctor(cTextScorer *self) {
+cTextScorer *cTextScorer_ctor(cTextScorer *self) {
 	cAbstractTextScorer_ctor(&self->base);
 	self->base.base.vftable = CTEXTSCORER_VFTABLE;
 	cString_ctor(&self->editHint);
@@ -47,7 +47,7 @@ cTextScorer *__fastcall cTextScorer_ctor(cTextScorer *self) {
 	return self;
 }
 
-cTextTypingScorer *__fastcall cTextTypingScorer_ctor(cTextTypingScorer *self) {
+cTextTypingScorer *cTextTypingScorer_ctor(cTextTypingScorer *self) {
 	cTextScorer_ctor(&self->base);
 	self->base.base.base.vftable = CTEXTTYPINGSCORER_VFTABLE;
 	self->typingTime = 0.0f;
@@ -61,14 +61,14 @@ cTextTypingScorer *__fastcall cTextTypingScorer_ctor(cTextTypingScorer *self) {
 }
 
 /* also the destructor of cTextTypingScorer (rva 0x182bf0, the same code) */
-void __fastcall cTextScorer_dtor(cTextScorer *self) {
+void cTextScorer_dtor(cTextScorer *self) {
 	self->base.base.vftable = CTEXTSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	cString_dtor(&self->editHint);
 	cAbstractTextScorer_dtor(&self->base);
 }
 
-cTextScorer *__thiscall cTextScorer_Delete(cTextScorer *self, byte flags) {
+cTextScorer *cTextScorer_Delete(cTextScorer *self, byte flags) {
 	cTextScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cTextScorer));
@@ -76,7 +76,7 @@ cTextScorer *__thiscall cTextScorer_Delete(cTextScorer *self, byte flags) {
 	return self;
 }
 
-cTextTypingScorer *__thiscall cTextTypingScorer_Delete(cTextTypingScorer *self, byte flags) {
+cTextTypingScorer *cTextTypingScorer_Delete(cTextTypingScorer *self, byte flags) {
 	cTextScorer_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cTextTypingScorer));
@@ -131,7 +131,7 @@ void TextEdit_Start(cAbstractFile *params) {
 	cString_Assign(&Scorer_Get(player)->hint, &g_TextEditItem[player]->editHint);
 }
 
-int __thiscall cTextScorer_Var(cTextScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cTextScorer_Var(cTextScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	if (s && !crt_stricmp(name, "EditHint")) {
 		if (set) {
 			cString_Set(&self->editHint, *s);
@@ -178,7 +178,7 @@ int __thiscall cTextScorer_Var(cTextScorer *self, const char *name, byte set, ch
 	return cAbstractTextScorer_Var(&self->base, name, set, s, d, i);
 }
 
-int __thiscall cTextTypingScorer_Var(cTextTypingScorer *self, const char *name, byte set, char **s, double *d,
+int cTextTypingScorer_Var(cTextTypingScorer *self, const char *name, byte set, char **s, double *d,
 	int *i) {
 	if (d) {
 		/* the floats return 3 here */
@@ -222,7 +222,7 @@ int __thiscall cTextTypingScorer_Var(cTextTypingScorer *self, const char *name, 
 
 /* vf04: the text being typed with a blinking cursor; with the virtual keyboard active the grid of its keys (the one
  * under the cursor lit), the button hints and the cursor item on the key */
-void __thiscall cTextScorer_DrawKeyboard(cTextScorer *self, int player) {
+void cTextScorer_DrawKeyboard(cTextScorer *self, int player) {
 	cAbstractTextScorer *t = &self->base;
 	cScorerItem *it = &t->base;
 	cPlayerInput *in = &g_PlayerInput[player];
@@ -310,14 +310,14 @@ void __thiscall cTextScorer_DrawKeyboard(cTextScorer *self, int player) {
 	}
 }
 
-void __thiscall cTextScorer_Draw(cTextScorer *self, int player) {
+void cTextScorer_Draw(cTextScorer *self, int player) {
 	cAbstractTextScorer *t = &self->base;
 	char buf[0x200];
 	cScorer *sc;
 
 	if (self->editing) {
 		/* the virtual keyboard (vf04) */
-		((void(__thiscall *)(cTextScorer *, int))t->base.vftable->vf04)(self, player);
+		((void(*)(cTextScorer *, int))t->base.vftable->vf04)(self, player);
 		return;
 	}
 	Text_Get(self, player, buf, sizeof(buf));
@@ -356,7 +356,7 @@ void __thiscall cTextScorer_Draw(cTextScorer *self, int player) {
 	}
 }
 
-void __thiscall cTextTypingScorer_Draw(cTextTypingScorer *self, int player) {
+void cTextTypingScorer_Draw(cTextTypingScorer *self, int player) {
 	cAbstractTextScorer *t = &self->base.base;
 	char buf[0x280];
 	float now, dt, time;

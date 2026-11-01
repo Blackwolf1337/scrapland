@@ -19,7 +19,7 @@
  *           that comes back, p int and D double that are passed by pointer and come back, F a tuple of numbers
  *           passed as an array of floats (up to MAX_FLOATS) that comes back as a tuple
  * The result is a tuple: the return value, then the b, p, D and F arguments in their order. cdecl functions with up to
- * MAX_ARGS arguments of 4 bytes; "t" before sig calls a thiscall method, the first argument is this (up to
+ * MAX_ARGS arguments of 4 bytes; "t" before sig calls a method, the first argument is this (up to
  * MAX_THIS_ARGS more).
  *
  * SDTest.Peek(rva, kind) reads a global of the exe: i int, b byte, d double, s the characters at rva, p the string a
@@ -63,27 +63,27 @@ typedef float (*call_float_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, 
 	uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 
 #define THIS_TYPES(name, ret) \
-	typedef ret(__thiscall *name##0_t)(uint32_t); \
-	typedef ret(__thiscall *name##1_t)(uint32_t, uint32_t); \
-	typedef ret(__thiscall *name##2_t)(uint32_t, uint32_t, uint32_t); \
-	typedef ret(__thiscall *name##3_t)(uint32_t, uint32_t, uint32_t, uint32_t); \
-	typedef ret(__thiscall *name##4_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); \
-	typedef ret(__thiscall *name##5_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); \
-	typedef ret(__thiscall *name##6_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); \
-	typedef ret(__thiscall *name##7_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
+	typedef ret(*name##0_t)(uint32_t); \
+	typedef ret(*name##1_t)(uint32_t, uint32_t); \
+	typedef ret(*name##2_t)(uint32_t, uint32_t, uint32_t); \
+	typedef ret(*name##3_t)(uint32_t, uint32_t, uint32_t, uint32_t); \
+	typedef ret(*name##4_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); \
+	typedef ret(*name##5_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); \
+	typedef ret(*name##6_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); \
+	typedef ret(*name##7_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
 		uint32_t); \
-	typedef ret(__thiscall *name##8_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
+	typedef ret(*name##8_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
 		uint32_t, uint32_t); \
-	typedef ret(__thiscall *name##9_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
+	typedef ret(*name##9_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
 		uint32_t, uint32_t, uint32_t); \
-	typedef ret(__thiscall *name##10_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
+	typedef ret(*name##10_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
 		uint32_t, uint32_t, uint32_t, uint32_t); \
-	typedef ret(__thiscall *name##11_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
+	typedef ret(*name##11_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
 		uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 THIS_TYPES(this, uint32_t)
 THIS_TYPES(thisf, float)
 
-/* the callee pops its arguments, so the call needs the exact count */
+/* a method with the exact count of its arguments */
 #define CALL_THIS(name, fn, a, n) \
 	switch (n) { \
 	case 1: \

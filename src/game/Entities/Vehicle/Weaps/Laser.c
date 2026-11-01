@@ -659,7 +659,7 @@ void Hook_StartSound(cEntity *v) {
 	}
 }
 
-byte __fastcall Vehicle_IsLocalPlayer(cEntity *v) {
+byte Vehicle_IsLocalPlayer(cEntity *v) {
 	return Veh_Player(v) >= 0 && Veh_Player(v) < 4;
 }
 

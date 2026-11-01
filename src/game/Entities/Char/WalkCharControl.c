@@ -56,7 +56,7 @@ static void WCC_ClearValues(cWalkCharControl *self) {
 	self->prevAct = 0;
 }
 
-cWalkCharControl *__fastcall cWalkCharControl_ctor(cWalkCharControl *self) {
+cWalkCharControl *cWalkCharControl_ctor(cWalkCharControl *self) {
 	self->target.target = NULL;
 	self->target.data = NULL;
 	self->target.next = &self->target;
@@ -65,7 +65,7 @@ cWalkCharControl *__fastcall cWalkCharControl_ctor(cWalkCharControl *self) {
 	return self;
 }
 
-void __fastcall cWalkCharControl_Clear(cWalkCharControl *self) {
+void cWalkCharControl_Clear(cWalkCharControl *self) {
 	WCC_ClearValues(self);
 	self->disabled = 0;
 	self->lockStart = 0;
@@ -73,11 +73,11 @@ void __fastcall cWalkCharControl_Clear(cWalkCharControl *self) {
 	self->target.data = self;
 }
 
-void __fastcall cWalkCharControl_dtor(cWalkCharControl *self) {
+void cWalkCharControl_dtor(cWalkCharControl *self) {
 	Nto1Node_Done(&self->target);
 }
 
-void __thiscall cWalkCharControl_SetTarget(cWalkCharControl *self, cEntity *e) {
+void cWalkCharControl_SetTarget(cWalkCharControl *self, cEntity *e) {
 	CHECK(self->target.data);
 	Nto1Node_Unlink(&self->target);
 	if (e) {
@@ -94,7 +94,7 @@ static byte WCC_Var(float *v, double *d, byte set) {
 	return 1;
 }
 
-byte __thiscall cWalkCharControl_VarF(cWalkCharControl *self, const char *name, double *d, byte set) {
+byte cWalkCharControl_VarF(cWalkCharControl *self, const char *name, double *d, byte set) {
 	if (!strcmp(name, "Walk")) {
 		return WCC_Var(&self->walk, d, set);
 	}
@@ -120,11 +120,11 @@ byte __thiscall cWalkCharControl_VarF(cWalkCharControl *self, const char *name, 
 	return 0;
 }
 
-void __fastcall cWalkCharControl_RestartCenter(cWalkCharControl *self) {
+void cWalkCharControl_RestartCenter(cWalkCharControl *self) {
 	self->centerTime = g_WalkCameraCenter;
 }
 
-void __thiscall cWalkCharControl_Reset(cWalkCharControl *self, byte on) {
+void cWalkCharControl_Reset(cWalkCharControl *self, byte on) {
 	WCC_ClearValues(self);
 	self->lockStart = 0;
 	self->lock = 0;
@@ -132,7 +132,7 @@ void __thiscall cWalkCharControl_Reset(cWalkCharControl *self, byte on) {
 	self->disabled = on;
 }
 
-void __thiscall cWalkCharControl_Latch(cWalkCharControl *self, cEntity *wle, float dt) {
+void cWalkCharControl_Latch(cWalkCharControl *self, cEntity *wle, float dt) {
 	(void)wle;
 	(void)dt;
 	self->prevAct = self->act;
@@ -140,7 +140,7 @@ void __thiscall cWalkCharControl_Latch(cWalkCharControl *self, cEntity *wle, flo
 	self->prevAct3 = self->act3;
 }
 
-void __thiscall cWalkCharControl_Update(cWalkCharControl *self, cEntity *wle, float dt) {
+void cWalkCharControl_Update(cWalkCharControl *self, cEntity *wle, float dt) {
 	vec3_t t1, t2, d, a;
 	byte b;
 

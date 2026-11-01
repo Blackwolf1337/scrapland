@@ -8,7 +8,7 @@
 /* the corner of the texture of each corner of the rectangle (u0 v0, u1 v0, u0 v1, u1 v1) by rot */
 #define g_Graphic2DRot (GAME_ARRAY(const int[4], g_Graphic2DRot))
 
-CGraphic2D *__thiscall CGraphic2D_ctorTex(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags) {
+CGraphic2D *CGraphic2D_ctorTex(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags) {
 	CGraphic2D_Init(self);
 	CGraphic2D_CreateMat(self, tex, opac, 5, 6, 0, flags);
 	if (flags & GRAPHIC2D_SCREEN) {
@@ -23,19 +23,19 @@ CGraphic2D *__thiscall CGraphic2D_ctorTex(CGraphic2D *self, const char *tex, con
 	return self;
 }
 
-CGraphic2D *__fastcall CGraphic2D_ctor(CGraphic2D *self) {
+CGraphic2D *CGraphic2D_ctor(CGraphic2D *self) {
 	CGraphic2D_Init(self);
 	return self;
 }
 
-void __fastcall CGraphic2D_dtor(CGraphic2D *self) {
+void CGraphic2D_dtor(CGraphic2D *self) {
 	AnimMat_Free(&self->AnimMat);
 	if (self->own && self->Mat) {
 		CMatList_Delete(g_MatList, self->Mat);
 	}
 }
 
-void __fastcall CGraphic2D_Render(CGraphic2D *self) {
+void CGraphic2D_Render(CGraphic2D *self) {
 	CGraphic2D_Draw(self, NULL, NULL, NULL, 0, 0);
 }
 
@@ -59,7 +59,7 @@ static void Draw_Verts(void *dev, int type, uint32_t nPrim, const Vert2D *v, uin
 	g_RenderVerts += (int)nVert;
 }
 
-void __thiscall CGraphic2D_Draw(CGraphic2D *self, const float *pos, const float *uv, const uint32_t *colors,
+void CGraphic2D_Draw(CGraphic2D *self, const float *pos, const float *uv, const uint32_t *colors,
 	uint32_t nVert, int type) {
 	if (g_RenderOff) {
 		return;
@@ -157,11 +157,11 @@ void Graphic2D_SetScreen(int w, int h) {
 	g_Screen2DInvH = 1.0 / (double)h;
 }
 
-void __thiscall CGraphic2D_SetTexture(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags) {
+void CGraphic2D_SetTexture(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags) {
 	CGraphic2D_CreateMat(self, tex, opac, 5, 6, 0, flags);
 }
 
-void __thiscall CGraphic2D_CreateMat(CGraphic2D *self, const char *tex, const char *opac, int src, int dst, byte alpha,
+void CGraphic2D_CreateMat(CGraphic2D *self, const char *tex, const char *opac, int src, int dst, byte alpha,
 	uint32_t flags) {
 	CMaterial m;
 
@@ -209,7 +209,7 @@ void __thiscall CGraphic2D_CreateMat(CGraphic2D *self, const char *tex, const ch
 	CMaterial_dtor(&m);
 }
 
-void __fastcall CGraphic2D_Init(CGraphic2D *self) {
+void CGraphic2D_Init(CGraphic2D *self) {
 	self->x = 0.0f;
 	self->y = 0.0f;
 	self->alignX = 0.0f;

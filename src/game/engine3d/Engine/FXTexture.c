@@ -28,11 +28,11 @@ static float Float_FromBits(uint32_t bits) {
 #define LAVA_SCROLL 7.0f
 #define LAVA_COS_STEP Float_FromBits(0x3cc90fdb)	/* 2 pi / 256 */
 
-void __fastcall IFXTexture_dtor(IFXTexture *self) {
+void IFXTexture_dtor(IFXTexture *self) {
 	self->vftable = IFXTEXTURE_VFTABLE;
 }
 
-IFXTexture *__thiscall IFXTexture_Delete(IFXTexture *self, byte flags) {
+IFXTexture *IFXTexture_Delete(IFXTexture *self, byte flags) {
 	self->vftable = IFXTEXTURE_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -40,7 +40,7 @@ IFXTexture *__thiscall IFXTexture_Delete(IFXTexture *self, byte flags) {
 	return self;
 }
 
-void *__fastcall IFXTexture_GetTexture(IFXTexture *self) {
+void *IFXTexture_GetTexture(IFXTexture *self) {
 	(void)self;
 	return NULL;
 }
@@ -69,7 +69,7 @@ static void FXTex_FreeBmp(CBmp **bmp) {
 	}
 }
 
-CFXTexLava *__thiscall CFXTexLava_ctor(CFXTexLava *self, const char *file) {
+CFXTexLava *CFXTexLava_ctor(CFXTexLava *self, const char *file) {
 	self->base.vftable = CFXTEXLAVA_VFTABLE;
 	self->lastTime = 0;
 	FXTex_LoadBmps(&self->bmp, &self->orig, file);
@@ -87,14 +87,14 @@ CFXTexLava *__thiscall CFXTexLava_ctor(CFXTexLava *self, const char *file) {
 	return self;
 }
 
-void __fastcall CFXTexLava_dtor(CFXTexLava *self) {
+void CFXTexLava_dtor(CFXTexLava *self) {
 	self->base.vftable = CFXTEXLAVA_VFTABLE;
 	FXTex_FreeBmp(&self->bmp);
 	FXTex_FreeBmp(&self->orig);
 	IFXTexture_dtor(&self->base);
 }
 
-CFXTexLava *__thiscall CFXTexLava_Delete(CFXTexLava *self, byte flags) {
+CFXTexLava *CFXTexLava_Delete(CFXTexLava *self, byte flags) {
 	CFXTexLava_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -121,7 +121,7 @@ static int Lava_Fistp(float f) {
 	return (int)X87_Fistp((double)f);
 }
 
-int __thiscall CFXTexLava_Update(CFXTexLava *self, CMap *map) {
+int CFXTexLava_Update(CFXTexLava *self, CMap *map) {
 	if (!FXTex_Due(&self->lastTime)) {
 		return 0;
 	}
@@ -149,7 +149,7 @@ int __thiscall CFXTexLava_Update(CFXTexLava *self, CMap *map) {
 	return 0;
 }
 
-CFXTexScroll *__thiscall CFXTexScroll_ctor(CFXTexScroll *self, const char *file) {
+CFXTexScroll *CFXTexScroll_ctor(CFXTexScroll *self, const char *file) {
 	self->base.vftable = CFXTEXSCROLL_VFTABLE;
 	self->lastTime = 0;
 	self->offset = 0;
@@ -159,14 +159,14 @@ CFXTexScroll *__thiscall CFXTexScroll_ctor(CFXTexScroll *self, const char *file)
 	return self;
 }
 
-void __fastcall CFXTexScroll_dtor(CFXTexScroll *self) {
+void CFXTexScroll_dtor(CFXTexScroll *self) {
 	self->base.vftable = CFXTEXSCROLL_VFTABLE;
 	FXTex_FreeBmp(&self->bmp);
 	FXTex_FreeBmp(&self->orig);
 	IFXTexture_dtor(&self->base);
 }
 
-CFXTexScroll *__thiscall CFXTexScroll_Delete(CFXTexScroll *self, byte flags) {
+CFXTexScroll *CFXTexScroll_Delete(CFXTexScroll *self, byte flags) {
 	CFXTexScroll_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -174,7 +174,7 @@ CFXTexScroll *__thiscall CFXTexScroll_Delete(CFXTexScroll *self, byte flags) {
 	return self;
 }
 
-int __thiscall CFXTexScroll_Update(CFXTexScroll *self, CMap *map) {
+int CFXTexScroll_Update(CFXTexScroll *self, CMap *map) {
 	if (!FXTex_Due(&self->lastTime)) {
 		return 0;
 	}
@@ -192,13 +192,13 @@ int __thiscall CFXTexScroll_Update(CFXTexScroll *self, CMap *map) {
 	return 0;
 }
 
-CFXNewsPanel *__fastcall CFXNewsPanel_ctor(CFXNewsPanel *self) {
+CFXNewsPanel *CFXNewsPanel_ctor(CFXNewsPanel *self) {
 	self->base.vftable = CFXNEWSPANEL_VFTABLE;
 	self->time = 0;
 	return self;
 }
 
-CFXNewsPanel *__thiscall CFXNewsPanel_Delete(CFXNewsPanel *self, byte flags) {
+CFXNewsPanel *CFXNewsPanel_Delete(CFXNewsPanel *self, byte flags) {
 	IFXTexture_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -206,13 +206,13 @@ CFXNewsPanel *__thiscall CFXNewsPanel_Delete(CFXNewsPanel *self, byte flags) {
 	return self;
 }
 
-int __thiscall CFXNewsPanel_Update(CFXNewsPanel *self, CMap *map) {
+int CFXNewsPanel_Update(CFXNewsPanel *self, CMap *map) {
 	(void)map;
 	self->time = g_TimeMsInt;
 	return 0;
 }
 
-void *__fastcall CFXNewsPanel_GetTexture(CFXNewsPanel *self) {
+void *CFXNewsPanel_GetTexture(CFXNewsPanel *self) {
 	(void)self;
 	return NewsPanel_GetTarget();
 }

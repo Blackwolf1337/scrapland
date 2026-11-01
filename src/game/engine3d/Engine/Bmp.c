@@ -43,7 +43,7 @@ void Img_Free(CImage *b, int bytes) {
 	}
 }
 
-void __fastcall CBmp_dtor(CBmp *self) {
+void CBmp_dtor(CBmp *self) {
 	Img_Free(self, BMP_PIXEL);
 }
 
@@ -115,15 +115,15 @@ uint32_t Color_Lerp(uint32_t a, uint32_t b, float t) {
 	return r;
 }
 
-uint32_t *__thiscall CBmp_Pixel(const CBmp *self, uint32_t x, uint32_t y) {
+uint32_t *CBmp_Pixel(const CBmp *self, uint32_t x, uint32_t y) {
 	return Img_Pixel(self, x, y, BMP_PIXEL);
 }
 
-void __thiscall CBmp_Create(CBmp *self, int width, int height) {
+void CBmp_Create(CBmp *self, int width, int height) {
 	Img_Create(self, width, height, BMP_PIXEL);
 }
 
-void __thiscall CBmp_Fill(CBmp *self, uint32_t color) {
+void CBmp_Fill(CBmp *self, uint32_t color) {
 	CHECK(self->img);
 	uint32_t *p = self->img;
 	for (int n = self->height * self->width; n > 0; n--) {
@@ -131,7 +131,7 @@ void __thiscall CBmp_Fill(CBmp *self, uint32_t color) {
 	}
 }
 
-void __thiscall CBmp_Copy(CBmp *self, int x, int y, const CBmp *orig, int ox, int oy, int w, int h, uint32_t mask) {
+void CBmp_Copy(CBmp *self, int x, int y, const CBmp *orig, int ox, int oy, int w, int h, uint32_t mask) {
 	CHECK(orig);
 	CHECK(orig->img);
 	CHECK(mask);
@@ -154,7 +154,7 @@ void __thiscall CBmp_Copy(CBmp *self, int x, int y, const CBmp *orig, int ox, in
 	}
 }
 
-void __thiscall CBmp_Effect(CBmp *self, int kind) {
+void CBmp_Effect(CBmp *self, int kind) {
 	CHECK(self->img);
 	int w = self->width, h = self->height;
 	if (kind == 1) {
@@ -207,7 +207,7 @@ void __thiscall CBmp_Effect(CBmp *self, int kind) {
 	}
 }
 
-void __thiscall CBmp_Exposure(CBmp *self, float a, float b) {
+void CBmp_Exposure(CBmp *self, float a, float b) {
 	CHECK(self->img);
 	byte *p = self->img;
 	for (int n = self->height * self->width; n > 0; n--, p += 4) {
@@ -218,7 +218,7 @@ void __thiscall CBmp_Exposure(CBmp *self, float a, float b) {
 	}
 }
 
-void __thiscall CBmp_Gamma(CBmp *self, float g, float b) {
+void CBmp_Gamma(CBmp *self, float g, float b) {
 	CHECK(self->img);
 	if (g == 1.0f) {
 		return;
@@ -232,7 +232,7 @@ void __thiscall CBmp_Gamma(CBmp *self, float g, float b) {
 	}
 }
 
-void __thiscall CBmp_MixChannels(CBmp *self, uint32_t in, uint32_t out) {
+void CBmp_MixChannels(CBmp *self, uint32_t in, uint32_t out) {
 	CHECK(in && out);
 	CHECK(self->img);
 	for (int y = 0; y < self->height; y++) {
@@ -264,7 +264,7 @@ static int Bmp_Weight(int a) {
 	return a < -0xfffff ? -0x100000 : a > 0xfffff ? 0x100000 : a;
 }
 
-void __thiscall CBmp_Blend(CBmp *self, int x, int y, const CBmp *orig, int ox, int oy, int w, int h, int a, int b) {
+void CBmp_Blend(CBmp *self, int x, int y, const CBmp *orig, int ox, int oy, int w, int h, int a, int b) {
 	CHECK(orig);
 	CHECK(orig->img);
 	CHECK(self->img);
@@ -290,7 +290,7 @@ static float Bmp_Frac(float t) {
 	return 1.0f < t ? 1.0f : t;
 }
 
-uint32_t *__thiscall CBmp_Sample(const CBmp *self, uint32_t *out, float u, float v) {
+uint32_t *CBmp_Sample(const CBmp *self, uint32_t *out, float u, float v) {
 	CHECK(u >= 0.0f && u <= 1.0f);
 	CHECK(v >= 0.0f && v <= 1.0f);
 	CHECK(self->img);
@@ -341,19 +341,19 @@ static void Bmp_Filter3x3(CBmp *self, const int k[9], int round, int shift) {
 	}
 }
 
-void __fastcall CBmp_Sharpen(CBmp *self) {
+void CBmp_Sharpen(CBmp *self) {
 	static const int k[9] = { -1, -3, -1, -3, 48, -3, -1, -3, -1 };
 
 	Bmp_Filter3x3(self, k, 0x10, 5);
 }
 
-void __fastcall CBmp_Blur(CBmp *self) {
+void CBmp_Blur(CBmp *self) {
 	static const int k[9] = { 1, 2, 1, 2, 4, 2, 1, 2, 1 };
 
 	Bmp_Filter3x3(self, k, 8, 4);
 }
 
-void __thiscall CBmp_Resample(CBmp *self, const CBmp *orig, uint32_t mask) {
+void CBmp_Resample(CBmp *self, const CBmp *orig, uint32_t mask) {
 	if (Img_ResampleCopy(self, orig, mask, BMP_PIXEL)) {
 		return;
 	}
@@ -581,7 +581,7 @@ int TGA_Save(const char *name, const CBmp *orig, uint32_t flags) {
 	return 0;
 }
 
-int __thiscall CBmp_Save(CBmp *self, const char *name, uint32_t flags) {
+int CBmp_Save(CBmp *self, const char *name, uint32_t flags) {
 	CHECK(name);
 	if (Img_IsExt(name, ".tex")) {
 		return TEX_Save(name, self, flags);
@@ -737,7 +737,7 @@ int TGA_Load(const char *name, CBmp *dest, uint32_t flags) {
 	return 0;
 }
 
-int __thiscall CBmp_Load(CBmp *self, const char *name, uint32_t flags) {
+int CBmp_Load(CBmp *self, const char *name, uint32_t flags) {
 	CHECK(name);
 	Img_Free(self, BMP_PIXEL);
 	if (Img_IsExt(name, ".tex")) {

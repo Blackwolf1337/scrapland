@@ -119,14 +119,14 @@ static inline void EFX_CtorVtbl(void *self, void *vt) {
 	EFX_SetVtbl(self, vt);
 }
 
-cEmbeddedFXAlarm *__fastcall cEmbeddedFXAlarm_ctor(cEmbeddedFXAlarm *self) {
+cEmbeddedFXAlarm *cEmbeddedFXAlarm_ctor(cEmbeddedFXAlarm *self) {
 	CGameParticles_ctor(&self->particles);
 	self->dummy = -1;
 	self->level = 0.0f;
 	return self;
 }
 
-cEmbeddedFX *__fastcall cEmbeddedFXBankDirector_ctor(void *p) {
+cEmbeddedFX *cEmbeddedFXBankDirector_ctor(void *p) {
 	cEmbeddedFXBankDirector *self = p;
 	EFX_CtorVtbl(self, VT_BANKDIRECTOR);
 	CGameParticles_ctor(&self->glow);
@@ -136,7 +136,7 @@ cEmbeddedFX *__fastcall cEmbeddedFXBankDirector_ctor(void *p) {
 	return &self->base;
 }
 
-cEmbeddedFX *__fastcall cEmbeddedFXBankMaster_ctor(void *p) {
+cEmbeddedFX *cEmbeddedFXBankMaster_ctor(void *p) {
 	cEmbeddedFXBankMaster *self = p;
 	EFX_CtorVtbl(self, VT_BANKMASTER);
 	CGameParticles_ctor(&self->glow);
@@ -148,7 +148,7 @@ cEmbeddedFX *__fastcall cEmbeddedFXBankMaster_ctor(void *p) {
 	return &self->base;
 }
 
-cEmbeddedFX *__fastcall cEmbeddedFXCrazyGambler_ctor(void *p) {
+cEmbeddedFX *cEmbeddedFXCrazyGambler_ctor(void *p) {
 	cEmbeddedFXCrazyGambler *self = p;
 	EFX_CtorVtbl(self, VT_CRAZYGAMBLER);
 	CGameParticles_ctor(&self->particles);
@@ -164,7 +164,7 @@ cEmbeddedFX *__fastcall cEmbeddedFXCrazyGambler_ctor(void *p) {
 	return &self->base;
 }
 
-cEmbeddedFX *__fastcall cEmbeddedFXGear_ctor(void *p) {
+cEmbeddedFX *cEmbeddedFXGear_ctor(void *p) {
 	cEmbeddedFXGear *self = p;
 	EFX_CtorVtbl(self, VT_GEAR);
 	cEmbeddedFXAlarm_ctor(&self->alarm);
@@ -175,7 +175,7 @@ cEmbeddedFX *__fastcall cEmbeddedFXGear_ctor(void *p) {
 	return &self->base;
 }
 
-cEmbeddedFX *__fastcall cEmbeddedFXMaintenance_ctor(void *p) {
+cEmbeddedFX *cEmbeddedFXMaintenance_ctor(void *p) {
 	cEmbeddedFXMaintenance *self = p;
 	EFX_CtorVtbl(self, VT_MAINTENANCE);
 	CGameParticles_ctor(&self->light);
@@ -185,7 +185,7 @@ cEmbeddedFX *__fastcall cEmbeddedFXMaintenance_ctor(void *p) {
 	return &self->base;
 }
 
-cEmbeddedFX *__fastcall cEmbeddedFXMercenary_ctor(void *p) {
+cEmbeddedFX *cEmbeddedFXMercenary_ctor(void *p) {
 	cEmbeddedFXMercenary *self = p;
 	EFX_CtorVtbl(self, VT_MERCENARY);
 	CGameParticles_ctor(&self->glow);
@@ -200,7 +200,7 @@ cEmbeddedFX *__fastcall cEmbeddedFXMercenary_ctor(void *p) {
 	return &self->base;
 }
 
-cEmbeddedFX *__fastcall cEmbeddedFXMessenger_ctor(void *p) {
+cEmbeddedFX *cEmbeddedFXMessenger_ctor(void *p) {
 	cEmbeddedFXMessenger *self = p;
 	EFX_CtorVtbl(self, VT_MESSENGER);
 	CGameParticles_ctor(&self->glow);
@@ -212,7 +212,7 @@ cEmbeddedFX *__fastcall cEmbeddedFXMessenger_ctor(void *p) {
 	return &self->base;
 }
 
-cEmbeddedFX *__fastcall cEmbeddedFXPolice_ctor(void *p) {
+cEmbeddedFX *cEmbeddedFXPolice_ctor(void *p) {
 	cEmbeddedFXPolice *self = p;
 	EFX_CtorVtbl(self, VT_POLICE);
 	cEmbeddedFXAlarm_ctor(&self->alarm);
@@ -220,7 +220,7 @@ cEmbeddedFX *__fastcall cEmbeddedFXPolice_ctor(void *p) {
 	return &self->base;
 }
 
-cEmbeddedFX *__fastcall cEmbeddedFXRusty_ctor(void *p) {
+cEmbeddedFX *cEmbeddedFXRusty_ctor(void *p) {
 	cEmbeddedFXRusty *self = p;
 	EFX_CtorVtbl(self, VT_RUSTY);
 	CGameParticles_ctor(&self->front);
@@ -237,7 +237,7 @@ cEmbeddedFX *__fastcall cEmbeddedFXRusty_ctor(void *p) {
 	return &self->base;
 }
 
-cEmbeddedFX *__fastcall cEmbeddedFXSentinel_ctor(void *p) {
+cEmbeddedFX *cEmbeddedFXSentinel_ctor(void *p) {
 	cEmbeddedFXSentinel *self = p;
 	EFX_CtorVtbl(self, VT_SENTINEL);
 	CGameParticles_ctor(&self->status);
@@ -257,37 +257,37 @@ cEmbeddedFX *__fastcall cEmbeddedFXSentinel_ctor(void *p) {
 /* ---- destructors ---- */
 
 /* EmbeddedFX.h, in the exe after WalkCharEntity.cpp */
-void __fastcall cEmbeddedFX_dtor(cEmbeddedFX *self) {
+void cEmbeddedFX_dtor(cEmbeddedFX *self) {
 	EFX_SetVtbl(self, VT_EMBEDDEDFX);
 }
 
 /* vf00 of the base class; it frees 4 bytes, the size of the vtable pointer alone */
-cEmbeddedFX *__thiscall cEmbeddedFX_Delete(cEmbeddedFX *self, byte flags) {
+cEmbeddedFX *cEmbeddedFX_Delete(cEmbeddedFX *self, byte flags) {
 	cEmbeddedFX_dtor(self);
 	return EFX_Delete(self, flags, 4);
 }
 
-void __fastcall cEmbeddedFXBankDirector_dtor(cEmbeddedFXBankDirector *self) {
+void cEmbeddedFXBankDirector_dtor(cEmbeddedFXBankDirector *self) {
 	EFX_SetVtbl(self, VT_BANKDIRECTOR);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void __fastcall cEmbeddedFXBankMaster_dtor(cEmbeddedFXBankMaster *self) {
+void cEmbeddedFXBankMaster_dtor(cEmbeddedFXBankMaster *self) {
 	EFX_SetVtbl(self, VT_BANKMASTER);
 	CGameParticles_Release(&self->baton);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void __fastcall cEmbeddedFXCrazyGambler_dtor(cEmbeddedFXCrazyGambler *self) {
+void cEmbeddedFXCrazyGambler_dtor(cEmbeddedFXCrazyGambler *self) {
 	EFX_SetVtbl(self, VT_CRAZYGAMBLER);
 	EFX_TrailsDtor(self->trails, FXGAMBLER_ARCS);
 	CGameParticles_Release(&self->particles);
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void __fastcall cEmbeddedFXGear_dtor(cEmbeddedFXGear *self) {
+void cEmbeddedFXGear_dtor(cEmbeddedFXGear *self) {
 	EFX_SetVtbl(self, VT_GEAR);
 	CGameTrail_dtor(&self->trail);
 	CGameParticles_Release(&self->shoot);
@@ -295,13 +295,13 @@ void __fastcall cEmbeddedFXGear_dtor(cEmbeddedFXGear *self) {
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void __fastcall cEmbeddedFXMaintenance_dtor(cEmbeddedFXMaintenance *self) {
+void cEmbeddedFXMaintenance_dtor(cEmbeddedFXMaintenance *self) {
 	EFX_SetVtbl(self, VT_MAINTENANCE);
 	CGameParticles_Release(&self->light);
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void __fastcall cEmbeddedFXMercenary_dtor(cEmbeddedFXMercenary *self) {
+void cEmbeddedFXMercenary_dtor(cEmbeddedFXMercenary *self) {
 	EFX_SetVtbl(self, VT_MERCENARY);
 	CGameParticles_Release(&self->pipe);
 	CGameParticles_Release(&self->bubbles);
@@ -309,24 +309,24 @@ void __fastcall cEmbeddedFXMercenary_dtor(cEmbeddedFXMercenary *self) {
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void __fastcall cEmbeddedFXMessenger_dtor(cEmbeddedFXMessenger *self) {
+void cEmbeddedFXMessenger_dtor(cEmbeddedFXMessenger *self) {
 	EFX_SetVtbl(self, VT_MESSENGER);
 	EFX_TrailsDtor(self->trails, FXEMBMESSENGER_TRAILS);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void __fastcall cEmbeddedFXPolice_dtor(cEmbeddedFXPolice *self) {
+void cEmbeddedFXPolice_dtor(cEmbeddedFXPolice *self) {
 	EFX_SetVtbl(self, VT_POLICE);
 	CGameParticles_Release(&self->alarm.particles);
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void __fastcall cEmbeddedFXAlarm_dtor(cEmbeddedFXAlarm *self) {
+void cEmbeddedFXAlarm_dtor(cEmbeddedFXAlarm *self) {
 	CGameParticles_Release(&self->particles);
 }
 
-void __fastcall cEmbeddedFXRusty_dtor(cEmbeddedFXRusty *self) {
+void cEmbeddedFXRusty_dtor(cEmbeddedFXRusty *self) {
 	EFX_SetVtbl(self, VT_RUSTY);
 	EFX_TrailsDtor(self->trails, FXRUSTY_TRAILS);
 	CGameParticles_Release(&self->glowLighting);
@@ -336,7 +336,7 @@ void __fastcall cEmbeddedFXRusty_dtor(cEmbeddedFXRusty *self) {
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void __fastcall cEmbeddedFXSentinel_dtor(cEmbeddedFXSentinel *self) {
+void cEmbeddedFXSentinel_dtor(cEmbeddedFXSentinel *self) {
 	EFX_SetVtbl(self, VT_SENTINEL);
 	CGameParticles_Release(&self->alarm.particles);
 	EFX_TrailsDtor(self->edgesB, FXSENTINEL_LASERS);
@@ -349,71 +349,71 @@ void __fastcall cEmbeddedFXSentinel_dtor(cEmbeddedFXSentinel *self) {
 
 /* ---- vf00: deleting destructors ---- */
 
-cEmbeddedFX *__thiscall cEmbeddedFXBankDirector_Delete(cEmbeddedFXBankDirector *self, byte flags) {
+cEmbeddedFX *cEmbeddedFXBankDirector_Delete(cEmbeddedFXBankDirector *self, byte flags) {
 	cEmbeddedFXBankDirector_dtor(self);
 	return EFX_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *__thiscall cEmbeddedFXBankMaster_Delete(cEmbeddedFXBankMaster *self, byte flags) {
+cEmbeddedFX *cEmbeddedFXBankMaster_Delete(cEmbeddedFXBankMaster *self, byte flags) {
 	cEmbeddedFXBankMaster_dtor(self);
 	return EFX_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *__thiscall cEmbeddedFXCrazyGambler_Delete(cEmbeddedFXCrazyGambler *self, byte flags) {
+cEmbeddedFX *cEmbeddedFXCrazyGambler_Delete(cEmbeddedFXCrazyGambler *self, byte flags) {
 	cEmbeddedFXCrazyGambler_dtor(self);
 	return EFX_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *__thiscall cEmbeddedFXGear_Delete(cEmbeddedFXGear *self, byte flags) {
+cEmbeddedFX *cEmbeddedFXGear_Delete(cEmbeddedFXGear *self, byte flags) {
 	cEmbeddedFXGear_dtor(self);
 	return EFX_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *__thiscall cEmbeddedFXMaintenance_Delete(cEmbeddedFXMaintenance *self, byte flags) {
+cEmbeddedFX *cEmbeddedFXMaintenance_Delete(cEmbeddedFXMaintenance *self, byte flags) {
 	cEmbeddedFXMaintenance_dtor(self);
 	return EFX_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *__thiscall cEmbeddedFXMercenary_Delete(cEmbeddedFXMercenary *self, byte flags) {
+cEmbeddedFX *cEmbeddedFXMercenary_Delete(cEmbeddedFXMercenary *self, byte flags) {
 	cEmbeddedFXMercenary_dtor(self);
 	return EFX_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *__thiscall cEmbeddedFXMessenger_Delete(cEmbeddedFXMessenger *self, byte flags) {
+cEmbeddedFX *cEmbeddedFXMessenger_Delete(cEmbeddedFXMessenger *self, byte flags) {
 	cEmbeddedFXMessenger_dtor(self);
 	return EFX_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *__thiscall cEmbeddedFXPolice_Delete(cEmbeddedFXPolice *self, byte flags) {
+cEmbeddedFX *cEmbeddedFXPolice_Delete(cEmbeddedFXPolice *self, byte flags) {
 	cEmbeddedFXPolice_dtor(self);
 	return EFX_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *__thiscall cEmbeddedFXRusty_Delete(cEmbeddedFXRusty *self, byte flags) {
+cEmbeddedFX *cEmbeddedFXRusty_Delete(cEmbeddedFXRusty *self, byte flags) {
 	cEmbeddedFXRusty_dtor(self);
 	return EFX_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *__thiscall cEmbeddedFXSentinel_Delete(cEmbeddedFXSentinel *self, byte flags) {
+cEmbeddedFX *cEmbeddedFXSentinel_Delete(cEmbeddedFXSentinel *self, byte flags) {
 	cEmbeddedFXSentinel_dtor(self);
 	return EFX_Delete(&self->base, flags, sizeof(*self));
 }
 
 /* ---- vf02: Release ---- */
 
-void __fastcall cEmbeddedFXBankDirector_Release(cEmbeddedFXBankDirector *self) {
+void cEmbeddedFXBankDirector_Release(cEmbeddedFXBankDirector *self) {
 	self->dummyGlow = -1;
 	CGameParticles_Release(&self->glow);
 }
 
-void __fastcall cEmbeddedFXBankMaster_Release(cEmbeddedFXBankMaster *self) {
+void cEmbeddedFXBankMaster_Release(cEmbeddedFXBankMaster *self) {
 	self->dummyGlow = -1;
 	CGameParticles_Release(&self->glow);
 	self->dummyBaton = -1;
 	CGameParticles_Release(&self->baton);
 }
 
-void __fastcall cEmbeddedFXCrazyGambler_Release(cEmbeddedFXCrazyGambler *self) {
+void cEmbeddedFXCrazyGambler_Release(cEmbeddedFXCrazyGambler *self) {
 	self->arcT = 0.0f;
 	self->t = 0.0f;
 	for (int i = 0; i < FXGAMBLER_ARCS; i++) {
@@ -427,25 +427,25 @@ void __fastcall cEmbeddedFXCrazyGambler_Release(cEmbeddedFXCrazyGambler *self) {
 	CGameParticles_Release(&self->particles);
 }
 
-void __fastcall cEmbeddedFXGear_Release(cEmbeddedFXGear *self) {
+void cEmbeddedFXGear_Release(cEmbeddedFXGear *self) {
 	self->alarm.dummy = -1;
 	CGameParticles_Release(&self->alarm.particles);
 	self->dummyShoot = -1;
 	CGameParticles_Release(&self->shoot);
 }
 
-void __fastcall cEmbeddedFXMaintenance_Release(cEmbeddedFXMaintenance *self) {
+void cEmbeddedFXMaintenance_Release(cEmbeddedFXMaintenance *self) {
 	CGameParticles_Release(&self->light);
 }
 
-void __fastcall cEmbeddedFXMercenary_Release(cEmbeddedFXMercenary *self) {
+void cEmbeddedFXMercenary_Release(cEmbeddedFXMercenary *self) {
 	self->dummyGlow = -1;
 	CGameParticles_Release(&self->glow);
 	self->dummyBubbles = -1;
 	CGameParticles_Release(&self->bubbles);
 }
 
-void __fastcall cEmbeddedFXMessenger_Release(cEmbeddedFXMessenger *self) {
+void cEmbeddedFXMessenger_Release(cEmbeddedFXMessenger *self) {
 	self->unused_08 = 0;
 	for (int i = 0; i < FXEMBMESSENGER_TRAILS; i++) {
 		self->life[i] = 0.0f;
@@ -454,17 +454,17 @@ void __fastcall cEmbeddedFXMessenger_Release(cEmbeddedFXMessenger *self) {
 	CGameParticles_Release(&self->glow);
 }
 
-void __fastcall cEmbeddedFXPolice_Release(cEmbeddedFXPolice *self) {
+void cEmbeddedFXPolice_Release(cEmbeddedFXPolice *self) {
 	self->alarm.dummy = -1;
 	CGameParticles_Release(&self->alarm.particles);
 }
 
-void __fastcall cEmbeddedFXAlarm_Release(cEmbeddedFXAlarm *self) {
+void cEmbeddedFXAlarm_Release(cEmbeddedFXAlarm *self) {
 	self->dummy = -1;
 	CGameParticles_Release(&self->particles);
 }
 
-void __fastcall cEmbeddedFXRusty_Release(cEmbeddedFXRusty *self) {
+void cEmbeddedFXRusty_Release(cEmbeddedFXRusty *self) {
 	self->dummyFront = -1;
 	CGameParticles_Release(&self->front);
 	self->dummyBack = -1;
@@ -473,7 +473,7 @@ void __fastcall cEmbeddedFXRusty_Release(cEmbeddedFXRusty *self) {
 	CGameParticles_Release(&self->sparks);
 }
 
-void __fastcall cEmbeddedFXSentinel_Release(cEmbeddedFXSentinel *self) {
+void cEmbeddedFXSentinel_Release(cEmbeddedFXSentinel *self) {
 	CGameParticles_Release(&self->laser);
 	CGameParticles_Release(&self->status);
 	for (int i = 0; i < self->numLasers; i++) {
@@ -487,7 +487,7 @@ void __fastcall cEmbeddedFXSentinel_Release(cEmbeddedFXSentinel *self) {
 
 /* ---- the clears of vf05 ---- */
 
-void __fastcall cEmbeddedFXCrazyGambler_Clear(cEmbeddedFXCrazyGambler *self) {
+void cEmbeddedFXCrazyGambler_Clear(cEmbeddedFXCrazyGambler *self) {
 	for (int i = 0; i < FXGAMBLER_ARCS; i++) {
 		self->count[i] = 0;
 		self->tail[i] = 0;
@@ -498,7 +498,7 @@ void __fastcall cEmbeddedFXCrazyGambler_Clear(cEmbeddedFXCrazyGambler *self) {
 	CGameParticles_KillAll(&self->particles);
 }
 
-void __fastcall cEmbeddedFXMessenger_Clear(cEmbeddedFXMessenger *self) {
+void cEmbeddedFXMessenger_Clear(cEmbeddedFXMessenger *self) {
 	for (int i = 0; i < FXEMBMESSENGER_TRAILS; i++) {
 		CGameTrail_Clear(&self->trails[i]);
 	}
@@ -506,14 +506,14 @@ void __fastcall cEmbeddedFXMessenger_Clear(cEmbeddedFXMessenger *self) {
 	memset(self->used, 0, sizeof(self->used));
 }
 
-void __fastcall cEmbeddedFXRusty_Clear(cEmbeddedFXRusty *self) {
+void cEmbeddedFXRusty_Clear(cEmbeddedFXRusty *self) {
 	for (int i = 0; i < FXRUSTY_TRAILS; i++) {
 		CGameTrail_Clear(&self->trails[i]);
 	}
 	CGameParticles_KillAll(&self->sparks);
 }
 
-void __fastcall cEmbeddedFXSentinel_Clear(cEmbeddedFXSentinel *self) {
+void cEmbeddedFXSentinel_Clear(cEmbeddedFXSentinel *self) {
 	for (int i = 0; i < FXSENTINEL_LASERS; i++) {
 		CGameTrail_Clear(&self->beams[i]);
 		CGameTrail_Clear(&self->edgesA[i]);
@@ -525,25 +525,25 @@ void __fastcall cEmbeddedFXSentinel_Clear(cEmbeddedFXSentinel *self) {
 
 /* ---- vf05: Stop ---- */
 
-void __thiscall cEmbeddedFXCrazyGambler_Stop(cEmbeddedFXCrazyGambler *self, byte keep) {
+void cEmbeddedFXCrazyGambler_Stop(cEmbeddedFXCrazyGambler *self, byte keep) {
 	if (!keep) {
 		cEmbeddedFXCrazyGambler_Clear(self);
 	}
 }
 
-void __thiscall cEmbeddedFXMessenger_Stop(cEmbeddedFXMessenger *self, byte keep) {
+void cEmbeddedFXMessenger_Stop(cEmbeddedFXMessenger *self, byte keep) {
 	if (!keep) {
 		cEmbeddedFXMessenger_Clear(self);
 	}
 }
 
-void __thiscall cEmbeddedFXRusty_Stop(cEmbeddedFXRusty *self, byte keep) {
+void cEmbeddedFXRusty_Stop(cEmbeddedFXRusty *self, byte keep) {
 	if (!keep) {
 		cEmbeddedFXRusty_Clear(self);
 	}
 }
 
-void __thiscall cEmbeddedFXSentinel_Stop(cEmbeddedFXSentinel *self, byte keep) {
+void cEmbeddedFXSentinel_Stop(cEmbeddedFXSentinel *self, byte keep) {
 	if (keep) {
 		self->lastState = 0;
 		return;
@@ -553,7 +553,7 @@ void __thiscall cEmbeddedFXSentinel_Stop(cEmbeddedFXSentinel *self, byte keep) {
 
 /* ---- vf01: Reset ---- */
 
-byte __fastcall cEmbeddedFXAlarm_Reset(cEmbeddedFXAlarm *self) {
+byte cEmbeddedFXAlarm_Reset(cEmbeddedFXAlarm *self) {
 	self->on = 0;
 	self->cur = 0;
 	self->level = 0.0f;
@@ -563,7 +563,7 @@ byte __fastcall cEmbeddedFXAlarm_Reset(cEmbeddedFXAlarm *self) {
 	return 1;
 }
 
-byte __fastcall cEmbeddedFXCrazyGambler_Reset(cEmbeddedFXCrazyGambler *self) {
+byte cEmbeddedFXCrazyGambler_Reset(cEmbeddedFXCrazyGambler *self) {
 	for (int i = 0; i < FXGAMBLER_ARCS; i++) {
 		self->life[i] = 0.0f;
 		EFX_TrailStyle(&self->trails[i], 12, 1, 0, 0.6f, 1);
@@ -576,16 +576,16 @@ byte __fastcall cEmbeddedFXCrazyGambler_Reset(cEmbeddedFXCrazyGambler *self) {
 }
 
 /* Gear and Police: the reset of their alarm */
-byte __fastcall cEmbeddedFXPolice_Reset(cEmbeddedFXPolice *self) {
+byte cEmbeddedFXPolice_Reset(cEmbeddedFXPolice *self) {
 	return cEmbeddedFXAlarm_Reset(&self->alarm);
 }
 
-byte __fastcall cEmbeddedFXMercenary_Reset(cEmbeddedFXMercenary *self) {
+byte cEmbeddedFXMercenary_Reset(cEmbeddedFXMercenary *self) {
 	self->t = 0.0f;
 	return 1;
 }
 
-byte __fastcall cEmbeddedFXMessenger_Reset(cEmbeddedFXMessenger *self) {
+byte cEmbeddedFXMessenger_Reset(cEmbeddedFXMessenger *self) {
 	for (int i = 0; i < FXEMBMESSENGER_TRAILS; i++) {
 		self->life[i] = 0.0f;
 		EFX_TrailStyle(&self->trails[i], 8, 0, 3, 1.0f, 0);
@@ -594,7 +594,7 @@ byte __fastcall cEmbeddedFXMessenger_Reset(cEmbeddedFXMessenger *self) {
 	return 1;
 }
 
-byte __fastcall cEmbeddedFXRusty_Reset(cEmbeddedFXRusty *self) {
+byte cEmbeddedFXRusty_Reset(cEmbeddedFXRusty *self) {
 	for (int i = 0; i < FXRUSTY_TRAILS; i++) {
 		self->life[i] = 0.0f;
 		EFX_TrailStyle(&self->trails[i], 10, 1, 3, 1.0f, 0);
@@ -610,7 +610,7 @@ static void EFX_LaserTrail(CGameTrail *t, byte segments, float width, byte fade)
 	CGameTrail_SetFade(t, fade);
 }
 
-byte __fastcall cEmbeddedFXSentinel_Reset(cEmbeddedFXSentinel *self) {
+byte cEmbeddedFXSentinel_Reset(cEmbeddedFXSentinel *self) {
 	self->numLasers = FXSENTINEL_LASERS;
 	for (int i = 0; i < self->numLasers; i++) {
 		EFX_LaserTrail(&self->beams[i], 3, 14.0f, 0);
@@ -638,16 +638,16 @@ byte __fastcall cEmbeddedFXSentinel_Reset(cEmbeddedFXSentinel *self) {
 
 /* ---- the alarm ---- */
 
-void __thiscall cEmbeddedFXAlarm_SetOn(cEmbeddedFXAlarm *self, byte on) {
+void cEmbeddedFXAlarm_SetOn(cEmbeddedFXAlarm *self, byte on) {
 	self->cur = self->on;
 	self->on = on;
 }
 
-void __thiscall cEmbeddedFXAlarm_SetLights(cEmbeddedFXAlarm *self, byte on) {
+void cEmbeddedFXAlarm_SetLights(cEmbeddedFXAlarm *self, byte on) {
 	self->lights = on;
 }
 
-void __thiscall cEmbeddedFXAlarm_Init(cEmbeddedFXAlarm *self, CGameModel *model) {
+void cEmbeddedFXAlarm_Init(cEmbeddedFXAlarm *self, CGameModel *model) {
 	if (!model) {
 		CHECK(model);
 		return;
@@ -663,7 +663,7 @@ void __thiscall cEmbeddedFXAlarm_Init(cEmbeddedFXAlarm *self, CGameModel *model)
 
 /* ---- Init: the effect on the model of the character ---- */
 
-void __thiscall cEmbeddedFXBankDirector_Init(cEmbeddedFXBankDirector *self, cEntity *e) {
+void cEmbeddedFXBankDirector_Init(cEmbeddedFXBankDirector *self, cEntity *e) {
 	CGameModel *model = EFX_Model(&self->base, e);
 
 	self->dummyGlow = -1;
@@ -674,7 +674,7 @@ void __thiscall cEmbeddedFXBankDirector_Init(cEmbeddedFXBankDirector *self, cEnt
 	CHECK(self->glow.ParticleSystem);
 }
 
-void __thiscall cEmbeddedFXBankMaster_Init(cEmbeddedFXBankMaster *self, cEntity *e) {
+void cEmbeddedFXBankMaster_Init(cEmbeddedFXBankMaster *self, cEntity *e) {
 	CGameModel *model = EFX_Model(&self->base, e);
 
 	self->dummyGlow = -1;
@@ -694,7 +694,7 @@ void __thiscall cEmbeddedFXBankMaster_Init(cEmbeddedFXBankMaster *self, cEntity 
 	}
 }
 
-void __thiscall cEmbeddedFXCrazyGambler_SetHead(cEmbeddedFXCrazyGambler *self, CGameModel *model,
+void cEmbeddedFXCrazyGambler_SetHead(cEmbeddedFXCrazyGambler *self, CGameModel *model,
 	const char *node) {
 	CHECK(model && CGameModel_IsLoaded(model));
 	self->model = model;
@@ -705,7 +705,7 @@ void __thiscall cEmbeddedFXCrazyGambler_SetHead(cEmbeddedFXCrazyGambler *self, C
 	self->base.vftable->Update(&self->base, 0.5f);
 }
 
-void __thiscall cEmbeddedFXCrazyGambler_Init(cEmbeddedFXCrazyGambler *self, cEntity *e) {
+void cEmbeddedFXCrazyGambler_Init(cEmbeddedFXCrazyGambler *self, cEntity *e) {
 	CGameModel *model = EFX_Model(&self->base, e);
 
 	self->nodeHand = CGameModel_FindRenderNode(model, "R_Gambler_mano_Izq");
@@ -717,7 +717,7 @@ void __thiscall cEmbeddedFXCrazyGambler_Init(cEmbeddedFXCrazyGambler *self, cEnt
 	cEmbeddedFXCrazyGambler_SetHead(self, model, "R_Gambler_Cabeza-Pelos");
 }
 
-void __thiscall cEmbeddedFXGear_Init(cEmbeddedFXGear *self, cEntity *e) {
+void cEmbeddedFXGear_Init(cEmbeddedFXGear *self, cEntity *e) {
 	CGameModel *model = EFX_Model(&self->base, e);
 
 	EFX_AttachOpt(&self->shoot, &self->dummyShoot, model, "DF_GearShoot");
@@ -725,14 +725,14 @@ void __thiscall cEmbeddedFXGear_Init(cEmbeddedFXGear *self, cEntity *e) {
 	cEmbeddedFXAlarm_Init(&self->alarm, model);
 }
 
-void __thiscall cEmbeddedFXMaintenance_Init(cEmbeddedFXMaintenance *self, cEntity *e) {
+void cEmbeddedFXMaintenance_Init(cEmbeddedFXMaintenance *self, cEntity *e) {
 	CGameModel *model = EFX_Model(&self->base, e);
 
 	CGameParticles_Attach(&self->light, model, CGameModel_FindRenderNode(model, "DF_Light"));
 	CHECK(self->light.ParticleSystem);
 }
 
-void __thiscall cEmbeddedFXMercenary_Init(cEmbeddedFXMercenary *self, cEntity *e) {
+void cEmbeddedFXMercenary_Init(cEmbeddedFXMercenary *self, cEntity *e) {
 	CGameModel *model = EFX_Model(&self->base, e);
 
 	self->isL = crt_stricmp(CGameModel_Name(model), "MercenaryL.M3D") == 0;
@@ -762,7 +762,7 @@ void __thiscall cEmbeddedFXMercenary_Init(cEmbeddedFXMercenary *self, cEntity *e
 	}
 }
 
-void __thiscall cEmbeddedFXMessenger_Init(cEmbeddedFXMessenger *self, cEntity *e) {
+void cEmbeddedFXMessenger_Init(cEmbeddedFXMessenger *self, cEntity *e) {
 	CGameModel *model = EFX_Model(&self->base, e);
 	char name[256];
 
@@ -782,13 +782,13 @@ void __thiscall cEmbeddedFXMessenger_Init(cEmbeddedFXMessenger *self, cEntity *e
 	}
 }
 
-void __thiscall cEmbeddedFXPolice_Init(cEmbeddedFXPolice *self, cEntity *e) {
+void cEmbeddedFXPolice_Init(cEmbeddedFXPolice *self, cEntity *e) {
 	CGameModel *model = EFX_Model(&self->base, e);
 
 	cEmbeddedFXAlarm_Init(&self->alarm, model);
 }
 
-void __thiscall cEmbeddedFXRusty_Init(cEmbeddedFXRusty *self, cEntity *e) {
+void cEmbeddedFXRusty_Init(cEmbeddedFXRusty *self, cEntity *e) {
 	CGameModel *model = EFX_Model(&self->base, e);
 
 	EFX_AttachOpt(&self->sparks, &self->dummySparks, model, "DR_Mecanico_ColetaChispas");
@@ -824,7 +824,7 @@ void __thiscall cEmbeddedFXRusty_Init(cEmbeddedFXRusty *self, cEntity *e) {
 	CHECK(self->dummyLighting[2] > -1);
 }
 
-void __thiscall cEmbeddedFXSentinel_Init(cEmbeddedFXSentinel *self, cEntity *e) {
+void cEmbeddedFXSentinel_Init(cEmbeddedFXSentinel *self, cEntity *e) {
 	self->base.ent = e;
 	self->dummyStatus = -1;
 	CGameParticles_Release(&self->status);
@@ -845,8 +845,8 @@ void __thiscall cEmbeddedFXSentinel_Init(cEmbeddedFXSentinel *self, cEntity *e) 
 
 /* ---- creation ---- */
 
-typedef cEmbeddedFX *(__fastcall *EFX_Ctor)(void *self);
-typedef void(__thiscall *EFX_Init)(cEmbeddedFX *self, cEntity *e);
+typedef cEmbeddedFX *(*EFX_Ctor)(void *self);
+typedef void(*EFX_Init)(cEmbeddedFX *self, cEntity *e);
 
 /* in the order of the tests of the original */
 static const struct {
@@ -970,7 +970,7 @@ static float EFX_FaceCamera(CGameModel *model) {
 	return face * height * face;
 }
 
-void __thiscall cEmbeddedFXBankDirector_Update(cEmbeddedFXBankDirector *self, float dt) {
+void cEmbeddedFXBankDirector_Update(cEmbeddedFXBankDirector *self, float dt) {
 	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
 	CGameParticles *p = &self->glow;
 
@@ -997,7 +997,7 @@ void __thiscall cEmbeddedFXBankDirector_Update(cEmbeddedFXBankDirector *self, fl
 	}
 }
 
-void __thiscall cEmbeddedFXBankMaster_Update(cEmbeddedFXBankMaster *self, float dt) {
+void cEmbeddedFXBankMaster_Update(cEmbeddedFXBankMaster *self, float dt) {
 	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
 	CGameParticles *p = &self->glow;
 
@@ -1068,7 +1068,7 @@ static const uint32_t efx_alarmRGB[12] = { 0x8080ff, 0x1010ff, 0x80, 0xc0, 0xde,
 	0xff8080, 0xff1010, 0x800000, 0xc00000, 0xde0000, 0xc00000 };
 
 /* blinks twice in the period of 0.9 s while on; the level fades to the state */
-void __thiscall cEmbeddedFXAlarm_Update(cEmbeddedFXAlarm *self, float dt) {
+void cEmbeddedFXAlarm_Update(cEmbeddedFXAlarm *self, float dt) {
 	if (self->on) {
 		float t = dt + self->t;
 		self->t = t;
@@ -1107,12 +1107,12 @@ void __thiscall cEmbeddedFXAlarm_Update(cEmbeddedFXAlarm *self, float dt) {
 	}
 }
 
-void __thiscall cEmbeddedFXPolice_Update(cEmbeddedFXPolice *self, float dt) {
+void cEmbeddedFXPolice_Update(cEmbeddedFXPolice *self, float dt) {
 	cEmbeddedFXAlarm_Update(&self->alarm, dt);
 }
 
 /* a light blinks every 1.2 s */
-void __thiscall cEmbeddedFXMaintenance_Update(cEmbeddedFXMaintenance *self, float dt) {
+void cEmbeddedFXMaintenance_Update(cEmbeddedFXMaintenance *self, float dt) {
 	static const struct {
 		float sizeIni, sizeEnd, lifeTime;
 		byte sprite, spin;
@@ -1180,7 +1180,7 @@ static void EFX_SentinelClear(cEmbeddedFXSentinel *self) {
  * The alarm by the alarm of the world (not for a sentinel with a camera), the status light by the cone state and the
  * laser sweep of the scanner while it searches (alert: one laser, danger: four) and the camera is near or it is seen.
  */
-void __thiscall cEmbeddedFXSentinel_Update(cEmbeddedFXSentinel *self, float dt) {
+void cEmbeddedFXSentinel_Update(cEmbeddedFXSentinel *self, float dt) {
 	cEntity *e = self->base.ent;
 	byte on = g_pWorld->alarm.on;
 
@@ -1366,7 +1366,7 @@ static vec3_t EFX_GamblerPoint(const vec3_t *vp, const vec3_t *pos, const vec3_t
  * and 5 s) that crawl every 0.02 s to the next free vertex of the node, drawn as Bezier trails of their last points
  * with two glows at the end. An arc lives 0.6..1.4 s, then starts again at a random vertex.
  */
-void __thiscall cEmbeddedFXCrazyGambler_Update(cEmbeddedFXCrazyGambler *self, float dt) {
+void cEmbeddedFXCrazyGambler_Update(cEmbeddedFXCrazyGambler *self, float dt) {
 	cEntity *e = self->base.ent;
 	CGameModel *model = Obj_Vtbl(e)->GetModel(e);
 	vec3_t pos, rot, last = { 0.0f, 0.0f, 0.0f };
@@ -1613,7 +1613,7 @@ static void EFX_MessengerBolt(cEmbeddedFXMessenger *self, CGameModel *model, int
 
 /* the 12 lightning bolts of the messenger between the vertices of the pairs of its rays, bent Bezier trails that
  * live 0.12..0.3 s, with glows at both ends */
-void __thiscall cEmbeddedFXMessenger_Update(cEmbeddedFXMessenger *self, float dt) {
+void cEmbeddedFXMessenger_Update(cEmbeddedFXMessenger *self, float dt) {
 	cEntity *e = self->base.ent;
 	CGameModel *model = Obj_Vtbl(e)->GetModel(e);
 	vec3_t pts[3], coefs[GAMETRAIL_MAX_BEZIER];
@@ -1830,7 +1830,7 @@ static void EFX_MercSmoke(cEmbeddedFXMercenary *self, CGameModel *model) {
 
 /* every 0.05 s: the 7 glows of the tank flicker, a bubble rises (and one in four from the pipe of MercenaryL), and
  * the cigar smokes unless it drinks, cheers, relaxes or talks */
-void __thiscall cEmbeddedFXMercenary_Update(cEmbeddedFXMercenary *self, float dt) {
+void cEmbeddedFXMercenary_Update(cEmbeddedFXMercenary *self, float dt) {
 	static const struct {
 		float x, y, z;
 		double range, add;
@@ -2000,7 +2000,7 @@ static void EFX_RustyBend(vec3_t *out, const vec3_t *v, const vec3_t *pos, doubl
  * Rusty the mechanic while visible: the sparks of the pigtail every 0.1..0.8 s, and 4 lightning bolts between the
  * first vertices of DF_LightingA, B and C that live 0.17..0.34 s with a pause of 0.1..0.65 s.
  */
-void __thiscall cEmbeddedFXRusty_Update(cEmbeddedFXRusty *self, float dt) {
+void cEmbeddedFXRusty_Update(cEmbeddedFXRusty *self, float dt) {
 	cEntity *e = self->base.ent;
 	CGameModel *model = Obj_Vtbl(e)->GetModel(e);
 	vec3_t pos, pts[5], coefs[GAMETRAIL_MAX_BEZIER];

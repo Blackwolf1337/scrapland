@@ -12,7 +12,7 @@
 #define CAIBISHOP_SIZE 0x398
 #define BISHOP_BLOCK_TIME 7.5f		/* the way to the target is tested again after it */
 
-void *__thiscall cAIBishop_ctor(void *mem, cEntity *e, int *arg) {
+void *cAIBishop_ctor(void *mem, cEntity *e, int *arg) {
 	cAIBishop *self = mem;
 	cAIChar *c = &self->base;
 
@@ -24,7 +24,7 @@ void *__thiscall cAIBishop_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAIChar *__thiscall cAIBishop_Delete(cAIChar *self, byte flags) {
+cAIChar *cAIBishop_Delete(cAIChar *self, byte flags) {
 	self->vftable = CAIBISHOP_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
@@ -60,7 +60,7 @@ static int Ent_Life(cEntity *e) {
 	return WChar(e)->wl.life;
 }
 
-void __thiscall cAIBishop_CheckAttack(cAIBishop *self) {
+void cAIBishop_CheckAttack(cAIBishop *self) {
 	cAIChar *c = &self->base;
 	float f = c->standTime;
 	vec3_t a, b, d;
@@ -123,7 +123,7 @@ void __thiscall cAIBishop_CheckAttack(cAIBishop *self) {
 	c->ctrl->act = 0;
 }
 
-void __thiscall cAIBishop_SetRanges(cAIBishop *self) {
+void cAIBishop_SetRanges(cAIBishop *self) {
 	cAIChar *c = &self->base;
 
 	if (c->state != 2) {
@@ -137,7 +137,7 @@ void __thiscall cAIBishop_SetRanges(cAIBishop *self) {
 	c->actMax = mx;
 }
 
-void __thiscall cAIBishop_SetShoot(cAIBishop *self) {
+void cAIBishop_SetShoot(cAIBishop *self) {
 	cEntity *t = self->base.base.target.target;
 
 	if (t->vftable->GetAI(t)) {

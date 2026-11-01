@@ -11,7 +11,7 @@
 #include "scrap/scrap.h"
 #include "scrap/win32.h"
 
-cStringNode *__thiscall cStringList_NewNode(cStringList *list);
+cStringNode *cStringList_NewNode(cStringList *list);
 
 void Loading_Step(int percent);				/* -1: one step of the loading bar */
 void Console_Execute(const char *cmd);			/* a line of the engine console */
@@ -30,7 +30,7 @@ static void PackName_Normalize(char *s) {
 
 /* cFile2: a pack file on disk with its position */
 
-cFile2 *__fastcall cFile2_ctor(cFile2 *self) {
+cFile2 *cFile2_ctor(cFile2 *self) {
 	self->file.base.name = NULL;
 	self->file.base.mode = 0;
 	self->file.f = NULL;
@@ -39,12 +39,12 @@ cFile2 *__fastcall cFile2_ctor(cFile2 *self) {
 	return self;
 }
 
-void __fastcall cFile2_dtor(cFile2 *self) {
+void cFile2_dtor(cFile2 *self) {
 	self->file.base.vftable = cFile2_vftable;
 	cFile_dtor(&self->file);
 }
 
-cFile2 *__thiscall cFile2_Destroy(cFile2 *self, int flags) {
+cFile2 *cFile2_Destroy(cFile2 *self, int flags) {
 	self->file.base.vftable = cFile2_vftable;
 	cFile_dtor(&self->file);
 	if (flags & 1) {
@@ -53,36 +53,36 @@ cFile2 *__thiscall cFile2_Destroy(cFile2 *self, int flags) {
 	return self;
 }
 
-int __thiscall cFile2_Open(cFile2 *self, const char *name, uint32_t mode) {
+int cFile2_Open(cFile2 *self, const char *name, uint32_t mode) {
 	self->curPos = 0;
 	return cFile_Open(&self->file, name, mode);
 }
 
-int __thiscall cFile2_Read(cFile2 *self, void *dst, int size) {
+int cFile2_Read(cFile2 *self, void *dst, int size) {
 	int n = cFile_Read(&self->file, dst, size);
 	self->curPos += n;
 	return n;
 }
 
-int __thiscall cFile2_Write(cFile2 *self, const void *src, int size) {
+int cFile2_Write(cFile2 *self, const void *src, int size) {
 	int n = cFile_Write(&self->file, src, size);
 	self->curPos += n;
 	return n;
 }
 
-int __thiscall cFile2_Seek(cFile2 *self, int pos) {
+int cFile2_Seek(cFile2 *self, int pos) {
 	self->curPos = cFile_Seek(&self->file, pos);
 	CHECK(self->curPos != -1);
 	return self->curPos;
 }
 
-int __thiscall cFile2_Tell(cFile2 *self) {
+int cFile2_Tell(cFile2 *self) {
 	CHECK(self->curPos == cFile_Tell(&self->file));
 	return self->curPos;
 }
 
 /* reads up to pos when it is close (32 bytes), else seeks */
-void __thiscall cFile2_SkipTo(cFile2 *self, int pos, const char *name) {
+void cFile2_SkipTo(cFile2 *self, int pos, const char *name) {
 	byte skip[0x20];
 	uint32_t d = (uint32_t)(pos - self->curPos);
 
@@ -125,17 +125,17 @@ byte Pack_FileExists(const char *name) {
 
 /* Global/DList.h instances: new nodes go in front of head, the callers step head on to append */
 
-void __thiscall PackEntries_Add(cPackEntryList *list, const cPackEntry *e) {
+void PackEntries_Add(cPackEntryList *list, const cPackEntry *e) {
 	cPackEntryNode *node = DList_NewNode(list, sizeof(*node));
 	node->e = *e;
 	DList_LinkFirst(list, node);
 }
 
-void __fastcall PackEntries_Clear(cPackEntryList *list) {
+void PackEntries_Clear(cPackEntryList *list) {
 	DList_Clear(list, sizeof(cPackEntryNode));
 }
 
-void __thiscall PackNames_Add(cStringList *list, const cString *str) {
+void PackNames_Add(cStringList *list, const cString *str) {
 	list->iter = NULL;
 	cStringNode *node = cStringList_NewNode(list);
 	cString_Assign(&node->str, str);
@@ -211,7 +211,7 @@ byte Pack_IsIncluded(const char *name) {
 
 /* cFilePack */
 
-cFilePack *__thiscall cFilePack_ctor(cFilePack *self) {
+cFilePack *cFilePack_ctor(cFilePack *self) {
 	self->file.base.name = NULL;
 	self->file.base.mode = 0;
 	self->file.f = NULL;
@@ -219,12 +219,12 @@ cFilePack *__thiscall cFilePack_ctor(cFilePack *self) {
 	return self;
 }
 
-void __thiscall cFilePack_dtor(cFilePack *self) {
+void cFilePack_dtor(cFilePack *self) {
 	self->file.base.vftable = cFilePack_vftable;
 	cFile_dtor(&self->file);
 }
 
-cFilePack *__thiscall cFilePack_Destroy(cFilePack *self, int flags) {
+cFilePack *cFilePack_Destroy(cFilePack *self, int flags) {
 	self->file.base.vftable = cFilePack_vftable;
 	cFile_dtor(&self->file);
 	if (flags & 1) {
@@ -237,7 +237,7 @@ cFilePack *__thiscall cFilePack_Destroy(cFilePack *self, int flags) {
  * name is relative to the open pack (g_PackName). A name in the index is read from its pack, else from disk; while
  * a file list is recorded every file is read from disk and listed. Always 1.
  */
-int __thiscall cFilePack_Open(cFilePack *self, const char *name, uint32_t mode) {
+int cFilePack_Open(cFilePack *self, const char *name, uint32_t mode) {
 	char path[0x104];
 
 	CHECK(mode == FILE_MODE_READ || g_LstFile);
@@ -270,7 +270,7 @@ int __thiscall cFilePack_Open(cFilePack *self, const char *name, uint32_t mode) 
 }
 
 /* only one cFilePack is open at a time (g_PackLocked) */
-int __thiscall cFilePack_Close(cFilePack *self) {
+int cFilePack_Close(cFilePack *self) {
 	CHECK(g_PackLocked != 0);
 	g_PackLocked = 0;
 	if (!self->start) {
@@ -279,7 +279,7 @@ int __thiscall cFilePack_Close(cFilePack *self) {
 	return 1;
 }
 
-int __thiscall cFilePack_Exists(cFilePack *self, const char *name) {
+int cFilePack_Exists(cFilePack *self, const char *name) {
 	char path[0x104];
 
 	if (!g_LstFile) {
@@ -293,7 +293,7 @@ int __thiscall cFilePack_Exists(cFilePack *self, const char *name) {
 	return cFile_Exists(&self->file, name);
 }
 
-int __thiscall cFilePack_Read(cFilePack *self, void *dst, int size) {
+int cFilePack_Read(cFilePack *self, void *dst, int size) {
 	if (!self->start) {
 		return cFile_Read(&self->file, dst, size);
 	}
@@ -305,12 +305,12 @@ int __thiscall cFilePack_Read(cFilePack *self, void *dst, int size) {
 	return n;
 }
 
-int __thiscall cFilePack_Write(cFilePack *self, const void *src, int size) {
+int cFilePack_Write(cFilePack *self, const void *src, int size) {
 	CHECK(self->start == 0);
 	return cFile_Write(&self->file, src, size);
 }
 
-int __thiscall cFilePack_Seek(cFilePack *self, int pos) {
+int cFilePack_Seek(cFilePack *self, int pos) {
 	if (!self->start) {
 		return cFile_Seek(&self->file, pos);
 	}
@@ -320,14 +320,14 @@ int __thiscall cFilePack_Seek(cFilePack *self, int pos) {
 	return pf->curPos;
 }
 
-int __thiscall cFilePack_Tell(cFilePack *self) {
+int cFilePack_Tell(cFilePack *self) {
 	if (!self->start) {
 		return cFile_Tell(&self->file);
 	}
 	return g_PackFiles[self->pack].curPos - self->start;
 }
 
-int __thiscall cFilePack_Size(cFilePack *self) {
+int cFilePack_Size(cFilePack *self) {
 	if (!self->start) {
 		return cFile_Size(&self->file);
 	}

@@ -9,20 +9,20 @@
 #include "scrap/render.h"
 #include "scrap/misc.h"
 
-CBackground2D *__thiscall CBackground2D_ctorFile(CBackground2D *self, const char *name) {
+CBackground2D *CBackground2D_ctorFile(CBackground2D *self, const char *name) {
 	self->bmp.img = NULL;
 	CBackground2D_Init(self);
 	CBmp_Load(&self->bmp, name, 0);
 	return self;
 }
 
-CBackground2D *__fastcall CBackground2D_ctor(CBackground2D *self) {
+CBackground2D *CBackground2D_ctor(CBackground2D *self) {
 	self->bmp.img = NULL;
 	CBackground2D_Init(self);
 	return self;
 }
 
-void __fastcall CBackground2D_Init(CBackground2D *self) {
+void CBackground2D_Init(CBackground2D *self) {
 	CMaterial m;
 
 	self->color.rgba = 0xffffff;
@@ -48,7 +48,7 @@ void __fastcall CBackground2D_Init(CBackground2D *self) {
 	CMaterial_dtor(&m);
 }
 
-void __fastcall CBackground2D_Render(CBackground2D *self) {
+void CBackground2D_Render(CBackground2D *self) {
 	void *dev = g_Engine->device;
 	float p[4][2];
 	Vert2D v[4];

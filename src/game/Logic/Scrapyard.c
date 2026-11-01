@@ -40,7 +40,7 @@
 /* the callback of the AI when the move ends (rva 0x15c of the AI) */
 #define AIV_OnEnd(ai) (((cAIVehicle *)(ai))->onArrive)
 
-cShipGroupData *__thiscall cShipGroupData_ctor(cShipGroupData *self, const char *list) {
+cShipGroupData *cShipGroupData_ctor(cShipGroupData *self, const char *list) {
 	cPy_Function_ctor(&self->onSphere);
 	self->lairs.numSlots = 0x1c9;
 	self->lairs.slots = New_Array(0x1c9, 4);
@@ -54,14 +54,14 @@ cShipGroupData *__thiscall cShipGroupData_ctor(cShipGroupData *self, const char 
 	return self;
 }
 
-cShipGroup *__thiscall cShipGroup_ctor(cShipGroup *self, const char *list) {
+cShipGroup *cShipGroup_ctor(cShipGroup *self, const char *list) {
 	cShipGroupData *d = operator_new(sizeof(*d));
 
 	self->d = d ? cShipGroupData_ctor(d, list) : NULL;
 	return self;
 }
 
-void __fastcall cShipGroup_dtor(cShipGroup *self) {
+void cShipGroup_dtor(cShipGroup *self) {
 	cShipGroupData *d = self->d;
 
 	if (d) {
@@ -71,7 +71,7 @@ void __fastcall cShipGroup_dtor(cShipGroup *self) {
 	}
 }
 
-cScrapyardLocalLogic *__thiscall cScrapyardLocalLogic_Delete(cScrapyardLocalLogic *self, byte flags) {
+cScrapyardLocalLogic *cScrapyardLocalLogic_Delete(cScrapyardLocalLogic *self, byte flags) {
 	self->vftable = CSCRAPYARDLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -81,7 +81,7 @@ cScrapyardLocalLogic *__thiscall cScrapyardLocalLogic_Delete(cScrapyardLocalLogi
 }
 
 /* the lair of the ship of that name, added or changed (the inlined Add without the warning) */
-void __thiscall cShipGroupData_SetLair(cShipGroupData *self, const char *name, const vec3_t *pos) {
+void cShipGroupData_SetLair(cShipGroupData *self, const char *name, const vec3_t *pos) {
 	HashTable *t = &self->lairs;
 
 	if (WorldStrTable_Find(t, name, HashTable_Slot(t, name))) {
@@ -95,15 +95,15 @@ void __thiscall cShipGroupData_SetLair(cShipGroupData *self, const char *name, c
 	}
 }
 
-void __thiscall cShipGroup_SetLair(cShipGroup *self, const char *name, const vec3_t *pos) {
+void cShipGroup_SetLair(cShipGroup *self, const char *name, const vec3_t *pos) {
 	cShipGroupData_SetLair(self->d, name, pos);
 }
 
-byte __thiscall cShipGroup_DeleteLair(cShipGroup *self, const char *name) {
+byte cShipGroup_DeleteLair(cShipGroup *self, const char *name) {
 	return WorldStrTable_Delete(&self->d->lairs, name);
 }
 
-void __thiscall cShipGroup_GetLair(cShipGroup *self, const char *name, vec3_t *out) {
+void cShipGroup_GetLair(cShipGroup *self, const char *name, vec3_t *out) {
 	HashTable *t = &self->d->lairs;
 	cWorldStrItem *it = WorldStrTable_Find(t, name, HashTable_Slot(t, name));
 
@@ -120,7 +120,7 @@ static cShipGroup *ShipGroup_Of(cEntity *e) {
 	return &g_pWorld->logic.madHunters;
 }
 
-void __fastcall cShipGroupData_Think(cShipGroupData *self) {
+void cShipGroupData_Think(cShipGroupData *self) {
 	vec3_t tmp;
 	Nto1Node *n = Logic_ListFirst(self->list);
 	float maxDist;
@@ -196,7 +196,7 @@ void __fastcall cShipGroupData_Think(cShipGroupData *self) {
 	} while (n);
 }
 
-void __fastcall cShipGroup_Init(cShipGroup *self) {
+void cShipGroup_Init(cShipGroup *self) {
 	cShipGroupData *d = self->d;
 
 	d->list = (cEntityListData *)cWorld_NewEntityList(g_pWorld, d->listName);
@@ -260,7 +260,7 @@ void ShipGroup_DeathNative(cAbstractFile *params) {
 	WorldStrTable_Delete(&g->d->lairs, e->name);
 }
 
-void __thiscall cShipGroup_Update(cShipGroup *self, float dt) {
+void cShipGroup_Update(cShipGroup *self, float dt) {
 	cShipGroupData *d = self->d;
 	float t = d->timer + dt;
 
@@ -272,7 +272,7 @@ void __thiscall cShipGroup_Update(cShipGroup *self, float dt) {
 }
 
 /* vf06: "LairPos", the lair of the ship */
-byte __thiscall cScrapyardLocalLogic_VarV(cScrapyardLocalLogic *self, const char *name, double *x, double *y, double *z,
+byte cScrapyardLocalLogic_VarV(cScrapyardLocalLogic *self, const char *name, double *x, double *y, double *z,
 	byte set) {
 	if (strcmp(name, "LairPos")) {
 		return cLocalLogic_VarVNone(self, name, x, y, z, set);

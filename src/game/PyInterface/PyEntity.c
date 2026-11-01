@@ -250,7 +250,7 @@ int PyEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
 
 /* Global/Nto1Links.h instances */
 
-void __fastcall Nto1Head_UnlinkAll(Nto1Node *head) {
+void Nto1Head_UnlinkAll(Nto1Node *head) {
 	CHECK(head->data == NULL);
 	for (Nto1Node *node = head->next; node != head; node = head->next) {
 		CHECK(node->data);
@@ -258,7 +258,7 @@ void __fastcall Nto1Head_UnlinkAll(Nto1Node *head) {
 	}
 }
 
-void __thiscall cEntity_AddLink(cEntity *self, Nto1Node *node) {
+void cEntity_AddLink(cEntity *self, Nto1Node *node) {
 	CHECK(node->data);
 	Nto1Node_Unlink(node);
 	node->target = self->links.target;

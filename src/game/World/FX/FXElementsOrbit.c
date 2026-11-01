@@ -11,7 +11,7 @@
 
 /* ---- construction ---- */
 
-cFXElementsOrbitBuoy *__thiscall cFXElementsOrbitBuoy_ctor(cFXElementsOrbitBuoy *self, const char *name,
+cFXElementsOrbitBuoy *cFXElementsOrbitBuoy_ctor(cFXElementsOrbitBuoy *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSORBITBUOY_VFTABLE;
@@ -20,7 +20,7 @@ cFXElementsOrbitBuoy *__thiscall cFXElementsOrbitBuoy_ctor(cFXElementsOrbitBuoy 
 }
 
 /* no buoys yet, the fades of a column 1/8 apart */
-cFXElementsOrbitBuoyController *__thiscall cFXElementsOrbitBuoyController_ctor(cFXElementsOrbitBuoyController *self,
+cFXElementsOrbitBuoyController *cFXElementsOrbitBuoyController_ctor(cFXElementsOrbitBuoyController *self,
 	const char *name, const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSORBITBUOYCONTROLLER_VFTABLE;
@@ -35,19 +35,19 @@ cFXElementsOrbitBuoyController *__thiscall cFXElementsOrbitBuoyController_ctor(c
 }
 
 /* the light is released twice, by the class and by the member destructor */
-void __fastcall cFXElementsOrbitBuoy_dtor(cFXElementsOrbitBuoy *self) {
+void cFXElementsOrbitBuoy_dtor(cFXElementsOrbitBuoy *self) {
 	self->base.vftable = CFXELEMENTSORBITBUOY_VFTABLE;
 	CGameParticles_Release(&self->light);
 	CGameParticles_Release(&self->light);
 	cMapElement_dtor(&self->base);
 }
 
-void __fastcall cFXElementsOrbitBuoyController_dtor(cFXElementsOrbitBuoyController *self) {
+void cFXElementsOrbitBuoyController_dtor(cFXElementsOrbitBuoyController *self) {
 	self->base.vftable = CFXELEMENTSORBITBUOYCONTROLLER_VFTABLE;
 	cMapElement_dtor(&self->base);
 }
 
-cFXElementsOrbitBuoy *__thiscall cFXElementsOrbitBuoy_Delete(cFXElementsOrbitBuoy *self, byte flags) {
+cFXElementsOrbitBuoy *cFXElementsOrbitBuoy_Delete(cFXElementsOrbitBuoy *self, byte flags) {
 	cFXElementsOrbitBuoy_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -55,7 +55,7 @@ cFXElementsOrbitBuoy *__thiscall cFXElementsOrbitBuoy_Delete(cFXElementsOrbitBuo
 	return self;
 }
 
-cFXElementsOrbitBuoyController *__thiscall cFXElementsOrbitBuoyController_Delete(cFXElementsOrbitBuoyController *self,
+cFXElementsOrbitBuoyController *cFXElementsOrbitBuoyController_Delete(cFXElementsOrbitBuoyController *self,
 	byte flags) {
 	cFXElementsOrbitBuoyController_dtor(self);
 	if (flags & 1) {
@@ -64,17 +64,17 @@ cFXElementsOrbitBuoyController *__thiscall cFXElementsOrbitBuoyController_Delete
 	return self;
 }
 
-void __fastcall cFXElementsOrbitBuoy_ReleaseLight(cFXElementsOrbitBuoy *self) {
+void cFXElementsOrbitBuoy_ReleaseLight(cFXElementsOrbitBuoy *self) {
 	CGameParticles_Release(&self->light);
 }
 
-void __fastcall cFXElementsOrbitBuoyController_Release(cFXElementsOrbitBuoyController *self) {
+void cFXElementsOrbitBuoyController_Release(cFXElementsOrbitBuoyController *self) {
 	(void)self;
 }
 
 /* ---- the elements ---- */
 
-byte __fastcall cFXElementsOrbitBuoy_Init(cFXElementsOrbitBuoy *self) {
+byte cFXElementsOrbitBuoy_Init(cFXElementsOrbitBuoy *self) {
 	vec3_t tmp;
 
 	cMapElement_Init(&self->base);
@@ -87,17 +87,17 @@ byte __fastcall cFXElementsOrbitBuoy_Init(cFXElementsOrbitBuoy *self) {
 	return 1;
 }
 
-void __thiscall cFXElementsOrbitBuoy_Update(cFXElementsOrbitBuoy *self, float dt) {
+void cFXElementsOrbitBuoy_Update(cFXElementsOrbitBuoy *self, float dt) {
 	cMapElement_Update(&self->base, dt);
 }
 
-byte __fastcall cFXElementsOrbitBuoyController_Init(cFXElementsOrbitBuoyController *self) {
+byte cFXElementsOrbitBuoyController_Init(cFXElementsOrbitBuoyController *self) {
 	cMapElement_Init(&self->base);
 	return 1;
 }
 
 /* the lights of the buoys sized by the distance to the camera, faded by their turn */
-void __thiscall cFXElementsOrbitBuoyController_Update(cFXElementsOrbitBuoyController *self, float dt) {
+void cFXElementsOrbitBuoyController_Update(cFXElementsOrbitBuoyController *self, float dt) {
 	cMapElement_Update(&self->base, dt);
 	for (int col = 0; col < FXORBITBOYACOLUMNS; col++) {
 		for (int i = 0; i < FXORBITBOYACOLUMNCOUNT; i++) {
@@ -146,7 +146,7 @@ void __thiscall cFXElementsOrbitBuoyController_Update(cFXElementsOrbitBuoyContro
 	}
 }
 
-void __thiscall cFXElementsOrbitBuoyController_SetBuoy(cFXElementsOrbitBuoyController *self, int type, int column,
+void cFXElementsOrbitBuoyController_SetBuoy(cFXElementsOrbitBuoyController *self, int type, int column,
 	int number, cFXElementsOrbitBuoy *buoy) {
 	CHECK(column >= 0 && column < FXORBITBOYACOLUMNS);
 	CHECK(number >= 0 && number < FXORBITBOYACOLUMNCOUNT);

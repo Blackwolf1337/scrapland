@@ -68,12 +68,12 @@ SD_SIZE(CPsaImage, 0x44);
 SD_OFFSET(CPsaImage, color, 0x34);
 
 /* the size in pixels of a frame of the sheet */
-byte __thiscall CPsaImage_GetFrameSize(CPsaImage *self, int frame, int *w, int *h);
+byte CPsaImage_GetFrameSize(CPsaImage *self, int frame, int *w, int *h);
 /* the texture rectangle of a frame (frame 0: uv0/uv1 of the image); 0 for frame 0 */
-byte __thiscall CPsaImage_GetFrameUV(CPsaImage *self, int frame, float *uv0, float *uv1);
-void __thiscall CPsaImage_DrawFrame(CPsaImage *self, int frame, float x, float y);
+byte CPsaImage_GetFrameUV(CPsaImage *self, int frame, float *uv0, float *uv1);
+void CPsaImage_DrawFrame(CPsaImage *self, int frame, float x, float y);
 /* with the mirror modes 0..3 of the sprite (mode) and of the image (flip) */
-void __thiscall CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, float y, int mode, int flip);
+void CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, float y, int mode, int flip);
 
 /* the state of the engine glue */
 #define g_CamCurrent GAME_GLOBAL(CGameCamera *, g_CamCurrent)	/* the camera drawn */
@@ -236,30 +236,30 @@ void DebugUtils_DrawSphereM(const matrix_t *m, const vec3_t *c, float r, uint32_
 /* the CMotorApp made (arg 0) or freed (Engine/Motor.cpp, src/game/engine3d/Engine/Engine.c) */
 void Engine3D_Create(void *hInst, void *hWnd, void *init, void *frame, void *release, int arg);
 void Engine3D_Shutdown(void);
-CEngineApp *__fastcall CEngineApp_ctor(CEngineApp *self);
+CEngineApp *CEngineApp_ctor(CEngineApp *self);
 /* the ini name (in dir, NULL for the game directory) into the variables of the engine */
 void Engine_LoadVarsIni(const char *name, const char *dir);
-void __thiscall CEngineApp_LightsDialog(CEngineApp *self, void *hwnd, void *inst);
+void CEngineApp_LightsDialog(CEngineApp *self, void *hwnd, void *inst);
 intptr_t TreeView_InsertItemf(void *hwnd, void *item, const char *fmt, ...);
 void Scene_LogTree(CScene *scn, CNode3D *node, int indent);
 /* a command of the debug console of the engine: listar, listar lights, arbol <scene>, ver uniones */
 void E3D_Command(char *cmd);
-void __fastcall CEngineApp_UpdateMenu(CEngineApp *self);
-int __thiscall CEngineApp_InitDeviceObjects(CEngineApp *self);
-intptr_t __thiscall CEngineApp_MsgProc(CEngineApp *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
-int __thiscall CEngineApp_ConfirmDevice(CEngineApp *self, D3DCaps8 *caps, uint32_t behavior, int format);
-int __thiscall CEngineApp_RestoreDeviceObjects(CEngineApp *self);
-int __thiscall CEngineApp_OneTimeSceneInit(CEngineApp *self);
-int __thiscall CEngineApp_FrameMove(CEngineApp *self);
+void CEngineApp_UpdateMenu(CEngineApp *self);
+int CEngineApp_InitDeviceObjects(CEngineApp *self);
+intptr_t CEngineApp_MsgProc(CEngineApp *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
+int CEngineApp_ConfirmDevice(CEngineApp *self, D3DCaps8 *caps, uint32_t behavior, int format);
+int CEngineApp_RestoreDeviceObjects(CEngineApp *self);
+int CEngineApp_OneTimeSceneInit(CEngineApp *self);
+int CEngineApp_FrameMove(CEngineApp *self);
 /* Render (vtable 0x18): the frame, 1 to quit; at once 0 while Engine_FrameDue is 0 */
-int __thiscall CEngineApp_Render(CEngineApp *self);
+int CEngineApp_Render(CEngineApp *self);
 /* the reset of the device objects that g_ResetDev asks for, the HRESULT */
-int __fastcall CEngineApp_ResetDevice(CEngineApp *self);
+int CEngineApp_ResetDevice(CEngineApp *self);
 /* 0 while the frame limiter (limitaFPS, R_LimitFPS; none with vsync) holds the next frame back */
 byte Engine_FrameDue(CD3DApplication *self);
-int __thiscall CEngineApp_DeleteDeviceObjects(CEngineApp *self);
-int __thiscall CEngineApp_FinalCleanup(CEngineApp *self);
-int __thiscall CD3DApplication_Nothing(CD3DApplication *self);
+int CEngineApp_DeleteDeviceObjects(CEngineApp *self);
+int CEngineApp_FinalCleanup(CEngineApp *self);
+int CD3DApplication_Nothing(CD3DApplication *self);
 char *Engine_ColorStr(const byte *c);
 const char *Engine_BoolStr(int b);
 CWorld *World_GetChecked(void);
@@ -269,31 +269,31 @@ void Engine_DrawStats(void);
 void Engine_DrawFpsGraph(float y);
 /* the modal dialog of the global scene: its counts and a tree of the nodes, the node selected in the tree */
 intptr_t __stdcall Engine_SceneDlgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
-void __fastcall Engine_ReleaseScene(CEngineApp *self);
-void __fastcall Engine_GetScene(CEngineApp *self);
-CNullInput *__thiscall CNullInput_Delete(CNullInput *self, byte flags);
-int __thiscall CNullInput_Nothing3(CNullInput *self, int a, int b, int c);
-int __thiscall CNullInput_Nothing1(CNullInput *self, int a);
-int __thiscall CNullInput_Nothing(CNullInput *self);
-void __thiscall CNullInput_Nothing4(CNullInput *self, int a, int b, int c, int d);
-int __thiscall CD3DApp_Cleanup(CD3DApplication *self);
-int __thiscall CD3DApp_Render(CD3DApplication *self);
-int __thiscall CD3DApp_ResetDevice(CD3DApplication *self);
-int __thiscall CD3DApp_Reset(CD3DApplication *self);
+void Engine_ReleaseScene(CEngineApp *self);
+void Engine_GetScene(CEngineApp *self);
+CNullInput *CNullInput_Delete(CNullInput *self, byte flags);
+int CNullInput_Nothing3(CNullInput *self, int a, int b, int c);
+int CNullInput_Nothing1(CNullInput *self, int a);
+int CNullInput_Nothing(CNullInput *self);
+void CNullInput_Nothing4(CNullInput *self, int a, int b, int c, int d);
+int CD3DApp_Cleanup(CD3DApplication *self);
+int CD3DApp_Render(CD3DApplication *self);
+int CD3DApp_ResetDevice(CD3DApplication *self);
+int CD3DApp_Reset(CD3DApplication *self);
 int Timer_GetFreq(int64_t *out);
 int Timer_GetQPFreq(int64_t *out);
 /* Video_PlayFile: video.h */
 void ShadowsStencil_Set(byte on);
-CPsaImage *__thiscall CPsaImage_ctor(CPsaImage *self, const char *name, int flags);
-void __fastcall CPsaImage_dtor(CPsaImage *self);
-void __thiscall CPsaImage_Draw(CPsaImage *self, float x, float y);
+CPsaImage *CPsaImage_ctor(CPsaImage *self, const char *name, int flags);
+void CPsaImage_dtor(CPsaImage *self);
+void CPsaImage_Draw(CPsaImage *self, float x, float y);
 /* ScrapEngSprite2D.cpp, the rest (src/game/ScrapEng/ScrapEngSprite2D.c) */
-void __fastcall CPsaImage_Init(CPsaImage *self);
-CPsaImage *__fastcall CPsaImage_ctorEmpty(CPsaImage *self);
-void __thiscall CPsaImage_DrawScaled(CPsaImage *self, float x, float y, float scale);
+void CPsaImage_Init(CPsaImage *self);
+CPsaImage *CPsaImage_ctorEmpty(CPsaImage *self);
+void CPsaImage_DrawScaled(CPsaImage *self, float x, float y, float scale);
 /* the CGraphic2D of the sheet name (opac: the opacity map) with a blend mode (BlendMode_*) and the SPR2D flags */
-void __thiscall CPsaImage_Load(CPsaImage *self, const char *name, const char *opac, int blend, uint32_t flags);
-void __thiscall CPsaImage_LoadName(CPsaImage *self, const char *name, uint32_t flags);
+void CPsaImage_Load(CPsaImage *self, const char *name, const char *opac, int blend, uint32_t flags);
+void CPsaImage_LoadName(CPsaImage *self, const char *name, uint32_t flags);
 /* the camera of ScrapEngCamera.cpp */
 /* the viewer camera moved by the keys of the second action set (rva 0x218080, this file, still the exe's) */
 void ViewerCamera_Move(CGameCamera *cam);

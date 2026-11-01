@@ -19,7 +19,7 @@ static void AnimMat_Init(CAnimMat *self) {
 	self->framef = 0.0f;
 }
 
-CAnimMat *__thiscall CAnimMat_ctorCopy(CAnimMat *self, const CAnimMat *src) {
+CAnimMat *CAnimMat_ctorCopy(CAnimMat *self, const CAnimMat *src) {
 	AnimMat_Init(self);
 	self->fps = src->fps;
 	self->frames = src->frames;
@@ -27,17 +27,17 @@ CAnimMat *__thiscall CAnimMat_ctorCopy(CAnimMat *self, const CAnimMat *src) {
 	return self;
 }
 
-CAnimMat *__thiscall CAnimMat_ctor(CAnimMat *self) {
+CAnimMat *CAnimMat_ctor(CAnimMat *self) {
 	AnimMat_Init(self);
 	return self;
 }
 
-void __thiscall CAnimMat_dtor(CAnimMat *self) {
+void CAnimMat_dtor(CAnimMat *self) {
 	(void)self;
 }
 
 /* rva 0x2580d0, the same without the return */
-void __thiscall CAnimMat_Init(CAnimMat *self) {
+void CAnimMat_Init(CAnimMat *self) {
 	AnimMat_Init(self);
 }
 
@@ -65,7 +65,7 @@ const char *AnimMat_ModeName(int mode) {
 	return NULL;
 }
 
-int __fastcall CAnimMat_GetFrame(CAnimMat *self) {
+int CAnimMat_GetFrame(CAnimMat *self) {
 	if (g_FrameCount != self->lastFrame) {
 		CAnimMat_Update(self);
 		self->lastFrame = g_FrameCount;
@@ -73,16 +73,16 @@ int __fastcall CAnimMat_GetFrame(CAnimMat *self) {
 	return self->frame;
 }
 
-void __thiscall CAnimMat_Play(CAnimMat *self) {
+void CAnimMat_Play(CAnimMat *self) {
 	self->mode = ANIMMAT_REPR;
 }
 
-void __thiscall CAnimMat_SetFrameF(CAnimMat *self, float frame) {
+void CAnimMat_SetFrameF(CAnimMat *self, float frame) {
 	self->framef = frame;
 	self->frame = (int)frame;
 }
 
-void __thiscall CAnimMat_Start(CAnimMat *self) {
+void CAnimMat_Start(CAnimMat *self) {
 	self->lastTime = g_TimeMs;
 	self->dt = 0.0f;
 	self->frame = 0;
@@ -90,15 +90,15 @@ void __thiscall CAnimMat_Start(CAnimMat *self) {
 	self->mode = ANIMMAT_REPR;
 }
 
-void __thiscall CAnimMat_Stop(CAnimMat *self) {
+void CAnimMat_Stop(CAnimMat *self) {
 	self->mode = ANIMMAT_END;
 }
 
-void __thiscall CAnimMat_Pause(CAnimMat *self) {
+void CAnimMat_Pause(CAnimMat *self) {
 	self->mode = ANIMMAT_PAUSE;
 }
 
-void __thiscall CAnimMat_FadePause(CAnimMat *self, float ms) {
+void CAnimMat_FadePause(CAnimMat *self, float ms) {
 	if (self->mode != ANIMMAT_FADE_PAUSE) {
 		return;
 	}
@@ -107,7 +107,7 @@ void __thiscall CAnimMat_FadePause(CAnimMat *self, float ms) {
 	self->fadeRate = (float)(1000.0 / (double)ms);
 }
 
-void __fastcall CAnimMat_Update(CAnimMat *self) {
+void CAnimMat_Update(CAnimMat *self) {
 	int mode = self->mode;
 
 	if (mode == ANIMMAT_END) {

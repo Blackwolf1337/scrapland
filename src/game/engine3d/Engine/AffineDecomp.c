@@ -629,7 +629,7 @@ static void M3DTransform_Scale(const m3dTransform_t *self, matrix_t *mu, matrix_
 }
 
 /* rva 0x2d65d0: the matrix of a transform without its rotation and translation (the frames of an animation) */
-matrix_t *__thiscall M3DTransform_ToMatrixAnim(m3dTransform_t *self, matrix_t *out) {
+matrix_t *M3DTransform_ToMatrixAnim(m3dTransform_t *self, matrix_t *out) {
 	matrix_t mu, mui, ms, mf, t, a, b;
 
 	M3DTransform_Scale(self, &mu, &mui, &ms, &mf);
@@ -640,7 +640,7 @@ matrix_t *__thiscall M3DTransform_ToMatrixAnim(m3dTransform_t *self, matrix_t *o
 }
 
 /* rva 0x2d6750: the whole matrix of a transform (the pivots of the meshes) */
-void __thiscall M3DTransform_ToMatrix(m3dTransform_t *self, matrix_t *out) {
+void M3DTransform_ToMatrix(m3dTransform_t *self, matrix_t *out) {
 	matrix_t mu, mui, ms, mf, mq, mt, t, a, b;
 
 	Quat_ToMatrixD3D(&mq, &self->rot);

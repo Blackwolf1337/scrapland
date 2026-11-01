@@ -10,13 +10,13 @@
 /* frames closer than this to the first one are the same */
 #define ANIMVERT_EPS 1e-4
 
-CEVA *__thiscall CEVA_ctor(CEVA *self) {
+CEVA *CEVA_ctor(CEVA *self) {
 	self->nV = 0;
 	self->AnimV = NULL;
 	return self;
 }
 
-CAnimVert *__fastcall CAnimVert_ctor(CAnimVert *self) {
+CAnimVert *CAnimVert_ctor(CAnimVert *self) {
 	self->nTr = 0;
 	self->Tr = NULL;
 	self->scale = 0.0f;
@@ -24,7 +24,7 @@ CAnimVert *__fastcall CAnimVert_ctor(CAnimVert *self) {
 	return self;
 }
 
-void __fastcall CAnimVert_FreeTr(CAnimVert *self) {
+void CAnimVert_FreeTr(CAnimVert *self) {
 	if (!self->Tr) {
 		return;
 	}
@@ -36,7 +36,7 @@ void __fastcall CAnimVert_FreeTr(CAnimVert *self) {
 	}
 }
 
-void __fastcall CAnimVert_FreeTr2(CAnimVert *self) {
+void CAnimVert_FreeTr2(CAnimVert *self) {
 	if (!self->Tr2) {
 		return;
 	}
@@ -48,12 +48,12 @@ void __fastcall CAnimVert_FreeTr2(CAnimVert *self) {
 	}
 }
 
-void __fastcall CAnimVert_dtor(CAnimVert *self) {
+void CAnimVert_dtor(CAnimVert *self) {
 	CAnimVert_FreeTr(self);
 	CAnimVert_FreeTr2(self);
 }
 
-void *__thiscall CAnimVert_Delete(CAnimVert *self, uint32_t flags) {
+void *CAnimVert_Delete(CAnimVert *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
 		crt_eh_vector_dtor(self, sizeof(*self), *mem, (void *)CAnimVert_dtor);
@@ -69,20 +69,20 @@ void *__thiscall CAnimVert_Delete(CAnimVert *self, uint32_t flags) {
 	return self;
 }
 
-void __thiscall CAnimVert_AllocTr(CAnimVert *self, int frames) {
+void CAnimVert_AllocTr(CAnimVert *self, int frames) {
 	CHECK(!self->Tr);
 	CHECK(frames > 0);
 	self->nTr = frames;
 	self->Tr = New_Array(frames, sizeof(vec3_t));
 }
 
-void __fastcall CAnimVert_AllocTr2(CAnimVert *self) {
+void CAnimVert_AllocTr2(CAnimVert *self) {
 	CHECK(!self->Tr2);
 	CHECK(self->nTr > 0);
 	self->Tr2 = New_Array(self->nTr, 3);
 }
 
-vec3_t *__thiscall CAnimVert_Frame(CAnimVert *self, uint32_t frame) {
+vec3_t *CAnimVert_Frame(CAnimVert *self, uint32_t frame) {
 	CHECK(self->Tr);
 	CHECK(self->nTr > 0);
 	CHECK(frame < self->nTr);
@@ -94,7 +94,7 @@ static float AnimVert_Step(int a, int b, float t, float scale) {
 	return ((float)(b - a) * t + (float)a) * scale;
 }
 
-void __thiscall CAnimVert_GetPos(CAnimVert *self, uint32_t frame, float subframe, vec3_t *pos) {
+void CAnimVert_GetPos(CAnimVert *self, uint32_t frame, float subframe, vec3_t *pos) {
 	CHECK(self->Tr || self->Tr2);
 	CHECK(self->nTr > 0);
 	CHECK(pos);
@@ -127,7 +127,7 @@ void __thiscall CAnimVert_GetPos(CAnimVert *self, uint32_t frame, float subframe
 	*pos = a;
 }
 
-void __thiscall CAnimVert_AddPos(CAnimVert *self, uint32_t frame1, uint32_t frame2, float t, float *pos) {
+void CAnimVert_AddPos(CAnimVert *self, uint32_t frame1, uint32_t frame2, float t, float *pos) {
 	CHECK(self->Tr2);
 	if (frame1 != frame2) {
 		CHECK(frame1 < self->nTr);
@@ -146,7 +146,7 @@ void __thiscall CAnimVert_AddPos(CAnimVert *self, uint32_t frame1, uint32_t fram
 	}
 }
 
-void __thiscall CAnimVert_Scale(CAnimVert *self, float x, float y, float z) {
+void CAnimVert_Scale(CAnimVert *self, float x, float y, float z) {
 	if (self->Tr) {
 		for (uint32_t f = 0; f < self->nTr; f++) {
 			vec3_t *v = CAnimVert_Frame(self, f);
@@ -165,7 +165,7 @@ static float AnimVert_Dist(float a, float b) {
 	return (float)__builtin_fabs((double)(a - b));
 }
 
-void __fastcall CAnimVert_Compress(CAnimVert *self) {
+void CAnimVert_Compress(CAnimVert *self) {
 	float m = 0.0f;
 	vec3_t base = *CAnimVert_Frame(self, 0);
 
@@ -194,7 +194,7 @@ void __fastcall CAnimVert_Compress(CAnimVert *self) {
 	CAnimVert_FreeTr(self);
 }
 
-void __fastcall CAnimVert_Optimize(CAnimVert *self) {
+void CAnimVert_Optimize(CAnimVert *self) {
 	const vec3_t *base = CAnimVert_Frame(self, 0);
 	uint32_t f;
 
@@ -241,7 +241,7 @@ void AnimVert_Write(CFileIO *f, CAnimVert *av) {
 	CFileIO_Write(f, av->Tr2, av->nTr * 3);
 }
 
-void __fastcall CEVA_Free(CEVA *self) {
+void CEVA_Free(CEVA *self) {
 	if (!self->AnimV) {
 		return;
 	}
@@ -253,26 +253,26 @@ void __fastcall CEVA_Free(CEVA *self) {
 	self->nV = 0;
 }
 
-void __thiscall CEVA_Alloc(CEVA *self, int verts) {
+void CEVA_Alloc(CEVA *self, int verts) {
 	CHECK(!self->AnimV);
 	CHECK(verts > 0);
 	self->nV = verts;
 	self->AnimV = New_Objects(verts, sizeof(CAnimVert), (void *)CAnimVert_ctor, (void *)CAnimVert_dtor);
 }
 
-CAnimVert *__thiscall CEVA_Get(CEVA *self, uint32_t i) {
+CAnimVert *CEVA_Get(CEVA *self, uint32_t i) {
 	CHECK(self->AnimV);
 	CHECK(i < self->nV);
 	return &self->AnimV[i];
 }
 
-void __thiscall CEVA_Scale(CEVA *self, float x, float y, float z) {
+void CEVA_Scale(CEVA *self, float x, float y, float z) {
 	for (uint32_t i = 0; i < self->nV; i++) {
 		CAnimVert_Scale(CEVA_Get(self, i), x, y, z);
 	}
 }
 
-int __fastcall CEVA_MemSize(CEVA *self) {
+int CEVA_MemSize(CEVA *self) {
 	int size = sizeof(*self);
 
 	if (!self->AnimV) {
@@ -292,7 +292,7 @@ int __fastcall CEVA_MemSize(CEVA *self) {
 	return size;
 }
 
-int __fastcall CEVA_NumAnimated(CEVA *self) {
+int CEVA_NumAnimated(CEVA *self) {
 	int n = 0;
 
 	if (!self->AnimV) {
@@ -307,7 +307,7 @@ int __fastcall CEVA_NumAnimated(CEVA *self) {
 	return n;
 }
 
-void __fastcall CEVA_Optimize(CEVA *self) {
+void CEVA_Optimize(CEVA *self) {
 	int animated = 0;
 
 	CHECK(self->AnimV);

@@ -91,44 +91,44 @@ SD_OFFSET(CTrail, orientVec, 0x40);
 #define g_nTrails GAME_GLOBAL(int, g_nTrails)
 #define g_nTrailsRender (GAME_ARRAY(int, g_nTrailsRender))	/* [MAX_TRAILS_TEXTURES] */
 
-CTrail *__fastcall CTrail_ctor(CTrail *self);
-void __fastcall CTrail_dtor(CTrail *self);
+CTrail *CTrail_ctor(CTrail *self);
+void CTrail_dtor(CTrail *self);
 /* into or out of gTrailsRender as render says; the last of the list takes the free slot */
 void Trails_UpdateRender(CTrail *t);
 /* no points, out of the render list */
-void __fastcall CTrail_Clear(CTrail *self);
+void CTrail_Clear(CTrail *self);
 /* everything but uLen and f50, the points copied; the sizes must be equal */
-void __thiscall CTrail_Copy(CTrail *self, const CTrail *from);
+void CTrail_Copy(CTrail *self, const CTrail *from);
 /* one point less, out of the render list at none */
-void __fastcall CTrail_Shrink(CTrail *self);
-void __thiscall CTrail_SetActive(CTrail *self, byte on);
+void CTrail_Shrink(CTrail *self);
+void CTrail_SetActive(CTrail *self, byte on);
 /* no points, the render list as it is */
-void __fastcall CTrail_Reset(CTrail *self);
-void __thiscall CTrail_AddPos(CTrail *self, vec3_t pos);
-void __thiscall CTrail_AddPosColor(CTrail *self, vec3_t pos, uint32_t color);
-void __thiscall CTrail_Add(CTrail *self, vec3_t pos, float width, uint32_t color);
+void CTrail_Reset(CTrail *self);
+void CTrail_AddPos(CTrail *self, vec3_t pos);
+void CTrail_AddPosColor(CTrail *self, vec3_t pos, uint32_t color);
+void CTrail_Add(CTrail *self, vec3_t pos, float width, uint32_t color);
 /* the geometry of the trail into the locked buffers, the pointers moved on; S_OK or E_FAIL for an unknown type */
-int __thiscall CTrail_Build(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
-int __thiscall CTrail_BuildRibbon(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
-int __thiscall CTrail_BuildCross(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
-int __thiscall CTrail_BuildQuads(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
-int __thiscall CTrail_BuildFan(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
-void __thiscall CTrail_SetTransp(CTrail *self, byte transp);
-void __thiscall CTrail_SetColor(CTrail *self, uint32_t color);
-void __thiscall CTrail_SetSmooth(CTrail *self, byte on);
+int CTrail_Build(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
+int CTrail_BuildRibbon(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
+int CTrail_BuildCross(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
+int CTrail_BuildQuads(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
+int CTrail_BuildFan(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
+void CTrail_SetTransp(CTrail *self, byte transp);
+void CTrail_SetColor(CTrail *self, uint32_t color);
+void CTrail_SetSmooth(CTrail *self, byte on);
 /* the point array made once; the same size again clears the trail */
-void __thiscall CTrail_SetMaxTrails(CTrail *self, byte segments);
-void __thiscall CTrail_SetUV(CTrail *self, float u0, float v0);
-void __thiscall CTrail_SetOrient(CTrail *self, vec3_t v, byte mode);
-void __thiscall CTrail_SetType(CTrail *self, byte type);
-void __thiscall CTrail_SetSegments(CTrail *self, byte segments);
-void __thiscall CTrail_SetPremul(CTrail *self, byte on);
-void __thiscall CTrail_SetWidth(CTrail *self, float width);
-void __thiscall CTrail_SetScale(CTrail *self, float head, float tail);
-void __thiscall CTrail_SetTexture(CTrail *self, int texture);
-void __thiscall CTrail_SetUVScale(CTrail *self, float du, float dv);
-void __thiscall CTrail_SetFade(CTrail *self, byte on);
-void __thiscall CTrail_SetULen(CTrail *self, float uLen, float f50);
+void CTrail_SetMaxTrails(CTrail *self, byte segments);
+void CTrail_SetUV(CTrail *self, float u0, float v0);
+void CTrail_SetOrient(CTrail *self, vec3_t v, byte mode);
+void CTrail_SetType(CTrail *self, byte type);
+void CTrail_SetSegments(CTrail *self, byte segments);
+void CTrail_SetPremul(CTrail *self, byte on);
+void CTrail_SetWidth(CTrail *self, float width);
+void CTrail_SetScale(CTrail *self, float head, float tail);
+void CTrail_SetTexture(CTrail *self, int texture);
+void CTrail_SetUVScale(CTrail *self, float du, float dv);
+void CTrail_SetFade(CTrail *self, byte on);
+void CTrail_SetULen(CTrail *self, float uLen, float f50);
 void Trail_SetRender(CTrail *t, byte on);
 /* all render lists emptied, their trails cleared; 0 */
 int Trails_ResetAll(void);
@@ -141,12 +141,12 @@ int Trails_InitLists(void);
 /* the trails of one texture, or of all but the last for -1 */
 void Trails_Render(int texture);
 /* the members of the point written last, NULL for the ones to keep, only with points */
-void __thiscall CTrail_SetLast(CTrail *self, const vec3_t *pos, const float *width, const uint32_t *color);
-void __thiscall CTrail_SetLastPos(CTrail *self, vec3_t pos);
-void __thiscall CTrail_SetLastPosColor(CTrail *self, vec3_t pos, uint32_t color);
+void CTrail_SetLast(CTrail *self, const vec3_t *pos, const float *width, const uint32_t *color);
+void CTrail_SetLastPos(CTrail *self, vec3_t pos);
+void CTrail_SetLastPosColor(CTrail *self, vec3_t pos, uint32_t color);
 /* point i counted back from the newest (0) */
-void __thiscall CTrail_SetPoint(CTrail *self, int i, const vec3_t *pos, const float *width, const uint32_t *color);
+void CTrail_SetPoint(CTrail *self, int i, const vec3_t *pos, const float *width, const uint32_t *color);
 /* all m_wMaxTrails points moved by d */
-void __thiscall CTrail_Move(CTrail *self, vec3_t d);
+void CTrail_Move(CTrail *self, vec3_t d);
 
 #endif

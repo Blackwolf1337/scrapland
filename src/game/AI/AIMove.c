@@ -25,7 +25,7 @@ static void AIMove_InitTarget(cAIMove *self) {
 	self->target.prev = &self->target;
 }
 
-cAIMove *__thiscall cAIMove_ctor(cAIMove *self, cEntity *e) {
+cAIMove *cAIMove_ctor(cAIMove *self, cEntity *e) {
 	byte fly;
 
 	cAI_ctor(&self->base, e);
@@ -69,20 +69,20 @@ cAIMove *__thiscall cAIMove_ctor(cAIMove *self, cEntity *e) {
 	return self;
 }
 
-cAIMove *__fastcall cAIMove_ctorDefault(cAIMove *self) {
+cAIMove *cAIMove_ctorDefault(cAIMove *self) {
 	cAI_ctorDefault(&self->base);
 	self->vftable = CAIMOVE_VFTABLE;
 	AIMove_InitTarget(self);
 	return self;
 }
 
-void __fastcall cAIMove_dtor(cAIMove *self) {
+void cAIMove_dtor(cAIMove *self) {
 	self->vftable = CAIMOVE_VFTABLE;
 	Nto1Node_Done(&self->target);
 	cAI_dtor(&self->base);
 }
 
-cAIMove *__thiscall cAIMove_Delete(cAIMove *self, byte flags) {
+cAIMove *cAIMove_Delete(cAIMove *self, byte flags) {
 	cAIMove_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIMOVE_SIZE);
@@ -90,7 +90,7 @@ cAIMove *__thiscall cAIMove_Delete(cAIMove *self, byte flags) {
 	return self;
 }
 
-void __thiscall cAIMove_CheckStopped(cAIMove *self, float dt) {
+void cAIMove_CheckStopped(cAIMove *self, float dt) {
 	vec3_t buf;
 
 	if (self->vftable->IsMoving(self)) {
@@ -111,34 +111,34 @@ void __thiscall cAIMove_CheckStopped(cAIMove *self, float dt) {
 	self->stopTime = 0.0f;
 }
 
-void __thiscall cAIMove_Draw(cAIMove *self) {
+void cAIMove_Draw(cAIMove *self) {
 	cAI_Draw(&self->base);
 }
 
-void __thiscall cAIMove_Update(cAIMove *self, float dt) {
+void cAIMove_Update(cAIMove *self, float dt) {
 	cAI_Update(&self->base, dt);
 	self->vftable->CheckStopped(self, dt);
 }
 
-void __thiscall cAIMove_UpdateOff(cAIMove *self, float dt) {
+void cAIMove_UpdateOff(cAIMove *self, float dt) {
 	cAI_UpdateOff(&self->base, dt);
 }
 
-byte __thiscall cAIMove_VarF(cAIMove *self, const char *name, double *d, byte set) {
+byte cAIMove_VarF(cAIMove *self, const char *name, double *d, byte set) {
 	if (!*name) {
 		return 0;
 	}
 	return cAI_VarF(&self->base, name, d, set);
 }
 
-byte __thiscall cAIMove_VarI(cAIMove *self, const char *name, int *i, byte set) {
+byte cAIMove_VarI(cAIMove *self, const char *name, int *i, byte set) {
 	if (!*name) {
 		return 0;
 	}
 	return cAI_VarI(&self->base, name, i, set);
 }
 
-byte __thiscall cAIMove_VarS(cAIMove *self, const char *name, char **s, byte set) {
+byte cAIMove_VarS(cAIMove *self, const char *name, char **s, byte set) {
 	if (!*name) {
 		return 0;
 	}
@@ -153,44 +153,44 @@ byte __thiscall cAIMove_VarS(cAIMove *self, const char *name, char **s, byte set
 	return cAI_VarS(&self->base, name, s, set);
 }
 
-byte __thiscall cAIMove_VarV(cAIMove *self, const char *name, double *x, double *y, double *z, byte set) {
+byte cAIMove_VarV(cAIMove *self, const char *name, double *x, double *y, double *z, byte set) {
 	if (!*name) {
 		return 0;
 	}
 	return cAI_VarV(&self->base, name, x, y, z, set);
 }
 
-byte __thiscall cAIMove_CanJump(cAIMove *self) {
+byte cAIMove_CanJump(cAIMove *self) {
 	return self->flying;
 }
 
-cEntity *__thiscall cAIMove_GetTargetEnt(cAIMove *self) {
+cEntity *cAIMove_GetTargetEnt(cAIMove *self) {
 	return self->target.target;
 }
 
-Nto1Node *__thiscall cAIMove_GetTarget(cAIMove *self) {
+Nto1Node *cAIMove_GetTarget(cAIMove *self) {
 	return &self->target;
 }
 
-byte __thiscall cAIMove_GetStopped(cAIMove *self) {
+byte cAIMove_GetStopped(cAIMove *self) {
 	return self->stopped;
 }
 
-byte __thiscall cAIMove_GetArrived(cAIMove *self) {
+byte cAIMove_GetArrived(cAIMove *self) {
 	return self->arrived;
 }
 
-byte __thiscall cAIMove_IsPaused(cAIMove *self) {
+byte cAIMove_IsPaused(cAIMove *self) {
 	return self->paused;
 }
 
-byte __thiscall cAIMove_Event(cAIMove *self, int ev) {
+byte cAIMove_Event(cAIMove *self, int ev) {
 	(void)self;
 	(void)ev;
 	return 1;
 }
 
-byte __thiscall cAIMove_CanTarget(cAIMove *self, cEntity *e) {
+byte cAIMove_CanTarget(cAIMove *self, cEntity *e) {
 	(void)self;
 	if (!e) {
 		Con_Warnf("Objetivo din\xe1mico = NULL\n");
@@ -208,7 +208,7 @@ static inline float AIMove_Rand(double span, double lo) {
 	return (float)((double)(crt_rand() & 0x7fff) * g_AIMoveRandScale * span + lo);
 }
 
-vec3_t *__thiscall cAIMove_RandomPoint(cAIMove *self, vec3_t *out, const vec3_t *p, float r) {
+vec3_t *cAIMove_RandomPoint(cAIMove *self, vec3_t *out, const vec3_t *p, float r) {
 	vec3_t q;
 
 	*out = *p;

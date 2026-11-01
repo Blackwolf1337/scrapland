@@ -6,7 +6,7 @@
 
 #define ANIMEVENT_INSERTED 1		/* flags: in a list */
 
-CAnimEvent *__thiscall CAnimEvent_ctor(CAnimEvent *self, float t, int id, int arg) {
+CAnimEvent *CAnimEvent_ctor(CAnimEvent *self, float t, int id, int arg) {
 	self->id = id;
 	self->arg = arg;
 	self->t = t;
@@ -15,7 +15,7 @@ CAnimEvent *__thiscall CAnimEvent_ctor(CAnimEvent *self, float t, int id, int ar
 	return self;
 }
 
-void __fastcall CAnimEvent_dtor(CAnimEvent *self) {
+void CAnimEvent_dtor(CAnimEvent *self) {
 	CAnimEvent *p = self->next;
 	if (p) {
 		CAnimEvent_dtor(p);
@@ -24,7 +24,7 @@ void __fastcall CAnimEvent_dtor(CAnimEvent *self) {
 	}
 }
 
-CAnimEvent *__thiscall CAnimEvent_Delete(CAnimEvent *self, byte flags) {
+CAnimEvent *CAnimEvent_Delete(CAnimEvent *self, byte flags) {
 	if (self->next) {
 		CAnimEvent_Delete(self->next, 1);
 		self->next = NULL;
@@ -35,7 +35,7 @@ CAnimEvent *__thiscall CAnimEvent_Delete(CAnimEvent *self, byte flags) {
 	return self;
 }
 
-void __thiscall CAnimEvent_Insert(CAnimEvent *self, CAnimEvent **list) {
+void CAnimEvent_Insert(CAnimEvent *self, CAnimEvent **list) {
 	CHECK(list);
 	CHECK(!(self->flags & ANIMEVENT_INSERTED));
 	self->flags |= ANIMEVENT_INSERTED;
@@ -50,7 +50,7 @@ void __thiscall CAnimEvent_Insert(CAnimEvent *self, CAnimEvent **list) {
 	*list = self;
 }
 
-CAnimEvent *__thiscall AnimEvents_Add(CAnimEvent **list, CAnimEvent *ev) {
+CAnimEvent *AnimEvents_Add(CAnimEvent **list, CAnimEvent *ev) {
 	CAnimEvent_Insert(ev, list);
 	return ev;
 }

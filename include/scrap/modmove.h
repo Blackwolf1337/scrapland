@@ -53,23 +53,23 @@ SD_OFFSET(cModMove, link, 0x14);
 SD_OFFSET(cModMove, offPos, 0x28);
 SD_SIZE(cModMove, 0x40);
 
-cModMove *__fastcall cModMove_ctor(cModMove *self);
-void __fastcall cModMove_dtor(cModMove *self);
-byte __thiscall cModMove_VarF(cModMove *self, const char *name, double *d, int set);
-byte __thiscall cModMove_VarI(cModMove *self, const char *name, int *i, int set);
-byte __thiscall cModMove_VarS(cModMove *self, const char *name, char **s, int set);
-byte __thiscall cModMove_VarV(cModMove *self, const char *name, double *x, double *y, double *z, int set);
+cModMove *cModMove_ctor(cModMove *self);
+void cModMove_dtor(cModMove *self);
+byte cModMove_VarF(cModMove *self, const char *name, double *d, int set);
+byte cModMove_VarI(cModMove *self, const char *name, int *i, int set);
+byte cModMove_VarS(cModMove *self, const char *name, char **s, int set);
+byte cModMove_VarV(cModMove *self, const char *name, double *x, double *y, double *z, int set);
 /* links to the node of the model of the object of that name; "" unlinks */
-void __thiscall cModMove_Link(cModMove *self, const char *name, const char *node);
+void cModMove_Link(cModMove *self, const char *name, const char *node);
 /* the render position (and angles with UseLinkAng) of the parent */
-void __thiscall cModMove_Update(cModMove *self, float dt);
-void __thiscall cModMove_SetParent(cModMove *self, cEntity *parent);
+void cModMove_Update(cModMove *self, float dt);
+void cModMove_SetParent(cModMove *self, cEntity *parent);
 
-cObjMove *__fastcall cObjMove_ctor(cObjMove *self);
-void __fastcall cObjMove_dtor(cObjMove *self);
+cObjMove *cObjMove_ctor(cObjMove *self);
+void cObjMove_dtor(cObjMove *self);
 /* the position, angles and velocities of e (a cObjEntity) for this tick of the move */
-void __thiscall cObjMove_Tick(cObjMove *self, cEntity *e, float dt);
+void cObjMove_Tick(cObjMove *self, cEntity *e, float dt);
 /* a move of t seconds starts (t > 0) */
-void __thiscall cObjMove_SetTime(cObjMove *self, float t);
+void cObjMove_SetTime(cObjMove *self, float t);
 
 #endif

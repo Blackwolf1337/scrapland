@@ -32,7 +32,7 @@ void Domination_SetZoneState(int zone, int state) {
 }
 
 /* the zone the ship of ai is on its way to; one its side does not go for any more is taken away (the AI to 0) */
-cEntity *__thiscall cDominationLogic_GetZone(cDominationLogic *self, cAIVehicle *ai) {
+cEntity *cDominationLogic_GetZone(cDominationLogic *self, cAIVehicle *ai) {
 	const char *key = ((cEntity *)cAIVehicle_GetVehicle(ai))->name;
 	int going = self->vftable->GetTeam(self) != 1 ? 4 : 3;
 	cNameItem *it = NameTable_Find(&self->assigned, key, HashTable_Slot(&self->assigned, key));
@@ -59,7 +59,7 @@ static float Domin_Dist2(const vec3_t *a, const vec3_t *b) {
 }
 
 /* the nearest ship of the other side within maxDist of pos, other too */
-cEntity *__thiscall cDominationLogic_FindEnemy(cDominationLogic *self, const vec3_t *pos, cEntity *other,
+cEntity *cDominationLogic_FindEnemy(cDominationLogic *self, const vec3_t *pos, cEntity *other,
 	float maxDist) {
 	vec3_t tmp;
 	float max2 = maxDist * maxDist;
@@ -96,7 +96,7 @@ static void Domin_Chase(cAIVehicle *ai, cEntity *zone) {
 
 /* a ship of the side: on the way to its zone, the enemies near it (chase 7, line of fire 8, attack 2); without a
  * zone the baton holder, a zone of the other side or nothing held, the target or state 3 */
-void __thiscall cDominationLogic_UpdateShip(cDominationLogic *self, cEntity *v, cEntity *target, cEntity *baton) {
+void cDominationLogic_UpdateShip(cDominationLogic *self, cEntity *v, cEntity *target, cEntity *baton) {
 	vec3_t t1, t2, t3;
 
 	cAIVehicle *ai = v->vftable->GetAI(v);
@@ -215,7 +215,7 @@ void cDominationLogic_ctor(cDominationLogic *self) {
 	g_DominNumZones = 0;
 }
 
-cDominationEnemiesLogic *__fastcall cDominationEnemiesLogic_ctor(cDominationEnemiesLogic *self) {
+cDominationEnemiesLogic *cDominationEnemiesLogic_ctor(cDominationEnemiesLogic *self) {
 	cDominationLogic_ctor(&self->base);
 	self->base.vftable = CDOMINATIONENEMIESLOGIC_VFTABLE;
 	cDominationSide *s = operator_new(sizeof(*s));
@@ -231,7 +231,7 @@ cDominationEnemiesLogic *__fastcall cDominationEnemiesLogic_ctor(cDominationEnem
 	return self;
 }
 
-void __fastcall cDominationEnemiesLogic_dtor(cDominationEnemiesLogic *self) {
+void cDominationEnemiesLogic_dtor(cDominationEnemiesLogic *self) {
 	self->base.vftable = CDOMINATIONENEMIESLOGIC_VFTABLE;
 	if (self->side) {
 		operator_delete_sized(self->side, sizeof(*self->side));
@@ -239,13 +239,13 @@ void __fastcall cDominationEnemiesLogic_dtor(cDominationEnemiesLogic *self) {
 	cDominationLogic_dtor(&self->base);
 }
 
-void __fastcall cDominationLogic_dtor(cDominationLogic *self) {
+void cDominationLogic_dtor(cDominationLogic *self) {
 	self->vftable = CDOMINATIONLOGIC_VFTABLE;
 	g_DominNumZones = 0;
 	NameTable_Clear(&self->assigned);
 }
 
-cDominationEnemiesLogic *__thiscall cDominationEnemiesLogic_Delete(cDominationEnemiesLogic *self, byte flags) {
+cDominationEnemiesLogic *cDominationEnemiesLogic_Delete(cDominationEnemiesLogic *self, byte flags) {
 	cDominationEnemiesLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -253,7 +253,7 @@ cDominationEnemiesLogic *__thiscall cDominationEnemiesLogic_Delete(cDominationEn
 	return self;
 }
 
-cDominationLogic *__thiscall cDominationLogic_Delete(cDominationLogic *self, byte flags) {
+cDominationLogic *cDominationLogic_Delete(cDominationLogic *self, byte flags) {
 	cDominationLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, 0x10);
@@ -262,7 +262,7 @@ cDominationLogic *__thiscall cDominationLogic_Delete(cDominationLogic *self, byt
 }
 
 /* the zone nearest to pos that is free (state 0), or held by a side (1) when that one is nearer; -1 for none */
-int __thiscall cDominationLogic_NearestZone(cDominationLogic *self, const vec3_t *pos) {
+int cDominationLogic_NearestZone(cDominationLogic *self, const vec3_t *pos) {
 	vec3_t tmp;
 	float bestFree = 3.4028234663852886e+38f, bestHeld = 3.4028234663852886e+38f;
 	int free = -1, held = -1;

@@ -30,7 +30,7 @@
 
 typedef byte (*ParkingCmp)(float d, float best);
 
-cParking *__fastcall Parking_ctor(cParking *self) {
+cParking *Parking_ctor(cParking *self) {
 	memset(&self->ships, 0, sizeof(self->ships));
 	memset(&self->items, 0, sizeof(self->items));
 	self->timer = 0.0f;
@@ -38,7 +38,7 @@ cParking *__fastcall Parking_ctor(cParking *self) {
 }
 
 /* a node of the free list or a new one with its cString */
-cParkingNode *__fastcall Parking_NewNode(cParkingList *list) {
+cParkingNode *Parking_NewNode(cParkingList *list) {
 	cParkingNode *n = list->freeNodes;
 
 	if (n) {
@@ -66,7 +66,7 @@ static void Parking_Release(cParkingList *list, cParkingNode *n) {
 	operator_delete_sized(n, sizeof(*n));
 }
 
-void __fastcall Parking_ClearList(cParkingList *list) {
+void Parking_ClearList(cParkingList *list) {
 	while (list->head) {
 		cParkingNode *p = list->head;
 		list->iter = NULL;
@@ -83,7 +83,7 @@ void __fastcall Parking_ClearList(cParkingList *list) {
 	}
 }
 
-void __fastcall Parking_FreePool(cParkingList *list) {
+void Parking_FreePool(cParkingList *list) {
 	cParkingNode *p = list->freeNodes;
 
 	while (p) {
@@ -95,19 +95,19 @@ void __fastcall Parking_FreePool(cParkingList *list) {
 	list->numFree = 0;
 }
 
-void __fastcall Parking_dtor(cParking *self) {
+void Parking_dtor(cParking *self) {
 	Parking_ClearList(&self->items);
 	Parking_FreePool(&self->items);
 	Parking_ClearList(&self->ships);
 	Parking_FreePool(&self->ships);
 }
 
-void __fastcall cParkingZone_dtor(cParkingZone *self) {
+void cParkingZone_dtor(cParkingZone *self) {
 	cString_dtor(&self->name);
 }
 
 /* a copy of zone in front of head, as the new head */
-void __thiscall Parking_ListAdd(cParkingList *list, const cParkingZone *zone) {
+void Parking_ListAdd(cParkingList *list, const cParkingZone *zone) {
 	list->iter = NULL;
 	cParkingNode *n = Parking_NewNode(list);
 	n->zone.pos = zone->pos;
@@ -115,7 +115,7 @@ void __thiscall Parking_ListAdd(cParkingList *list, const cParkingZone *zone) {
 	DList_LinkFirst(list, n);
 }
 
-void __thiscall Parking_AddZone(void *parking, int flag, const vec3_t *pos, const char *name) {
+void Parking_AddZone(void *parking, int flag, const vec3_t *pos, const char *name) {
 	cParking *self = parking;
 	cParkingZone z;
 
@@ -168,7 +168,7 @@ static inline float Parking_Dist2(const cParkingZone *z, const vec3_t *p) {
 }
 
 /* one zone of each ring; 1 when the player is not in a ship */
-int __fastcall Parking_Think(cParking *self) {
+int Parking_Think(cParking *self) {
 	vec3_t tmp;
 	cEntity *usr = ChType_Usr0();
 	byte inShip = 0;
@@ -209,7 +209,7 @@ int __fastcall Parking_Think(cParking *self) {
 	return inShip ^ 1;
 }
 
-const char *__thiscall Parking_Find(void *parking, int flag, const vec3_t *pos, vec3_t *out, int farest) {
+const char *Parking_Find(void *parking, int flag, const vec3_t *pos, vec3_t *out, int farest) {
 	cParking *self = parking;
 	cParkingList *list = (byte)flag ? &self->items : &self->ships;
 	cParkingNode *saved = list->iter;
@@ -281,7 +281,7 @@ void Parking_Native(cAbstractFile *params) {
 	g_ParkingOther = e;
 }
 
-void __thiscall Parking_Update(cParking *self, float dt) {
+void Parking_Update(cParking *self, float dt) {
 	float t = self->timer - dt;
 
 	self->timer = t;

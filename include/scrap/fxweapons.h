@@ -25,24 +25,24 @@
 #define FXTESLA_TRAILS 4		/* per slot */
 
 /* ScrapEngLensFlares.cpp: the holder of a lens flare (one pointer); the setters write the flare object */
-void __thiscall CGameLensFlare_SetOn(void *self, byte on);
-void __thiscall CGameLensFlare_SetIntensity(void *self, float v);		/* rva 0x232f80, +0x14 */
-void __thiscall CGameLensFlare_SetTraceInterval(void *self, float v);			/* rva 0x232fa0, +0x30 */
-void __thiscall CGameLensFlare_SetPos(void *self, vec3_t pos);		/* rva 0x232fc0, +0x08 */
-void __thiscall CGameLensFlare_SetScale(void *self, float v);			/* rva 0x232ff0, +0x18 */
-void __thiscall CGameLensFlare_SetType(void *self, int v);			/* rva 0x233010, +0x1c */
-void __thiscall CGameLensFlare_SetRelative(void *self, byte v);			/* rva 0x233020, +0x2c */
-float __thiscall CGameLensFlare_GetIntensity(const void *self);
-float __thiscall CGameLensFlare_GetTraceInterval(const void *self);
-float __thiscall CGameLensFlare_GetScale(const void *self);
-int __thiscall CGameLensFlare_GetType(const void *self);
+void CGameLensFlare_SetOn(void *self, byte on);
+void CGameLensFlare_SetIntensity(void *self, float v);		/* rva 0x232f80, +0x14 */
+void CGameLensFlare_SetTraceInterval(void *self, float v);			/* rva 0x232fa0, +0x30 */
+void CGameLensFlare_SetPos(void *self, vec3_t pos);		/* rva 0x232fc0, +0x08 */
+void CGameLensFlare_SetScale(void *self, float v);			/* rva 0x232ff0, +0x18 */
+void CGameLensFlare_SetType(void *self, int v);			/* rva 0x233010, +0x1c */
+void CGameLensFlare_SetRelative(void *self, byte v);			/* rva 0x233020, +0x2c */
+float CGameLensFlare_GetIntensity(const void *self);
+float CGameLensFlare_GetTraceInterval(const void *self);
+float CGameLensFlare_GetScale(const void *self);
+int CGameLensFlare_GetType(const void *self);
 
 /* the lens flare object of the engine glue: CLensFlare of lensflare.h */
 
 /* the weapon block of a ship at 0x5f0 (the one of Entity_TargetLock): the ammo of kind i (0 out of range), whether
  * slot (0..4) of weapon kind w is mounted */
-float __thiscall cTargetLock_GetAmmo(cTargetLock *self, int ammo);
-byte __thiscall cTargetLock_HasSlot(cTargetLock *self, int weap, int slot);
+float cTargetLock_GetAmmo(cTargetLock *self, int ammo);
+byte cTargetLock_HasSlot(cTargetLock *self, int weap, int slot);
 
 /* the engine variables */
 #define g_TeslaIDWeap GAME_GLOBAL_IN(int, GVar_TeslaIDWeap, 16)
@@ -292,67 +292,67 @@ static inline void FX_Normalize(vec3_t *out, float x, float y, float z) {
 }
 
 /* the constructors (rva 0x1f9690..), destructors and deleting destructors (vf00) */
-void *__thiscall cObjElementFXATPC_ctor(void *self);
-void *__thiscall cObjElementFXDevastatorShoot_ctor(void *self);
-void *__thiscall cObjElementFXInfernoExplosion_ctor(void *self);
-void *__thiscall cObjElementFXInfernoMissile_ctor(void *self);
-void *__thiscall cObjElementFXLaser_ctor(void *self);
-void *__thiscall cObjElementFXSwarmMissile_ctor(void *self);
-void *__thiscall cObjElementFXTesla_ctor(void *self);
-void __thiscall cObjElementFXATPC_dtor(void *self);
-void __thiscall cObjElementFXDevastatorShoot_dtor(void *self);
-void __thiscall cObjElementFXInfernoExplosion_dtor(void *self);
-void __thiscall cObjElementFXInfernoMissile_dtor(void *self);
-void __thiscall cObjElementFXLaser_dtor(void *self);
-void __thiscall cObjElementFXSwarmMissile_dtor(void *self);
-void __thiscall cObjElementFXTesla_dtor(void *self);
-void *__thiscall cObjElementFXATPC_Delete(void *self, uint32_t flags);
-void *__thiscall cObjElementFXDevastatorShoot_Delete(void *self, uint32_t flags);
-void *__thiscall cObjElementFXInfernoExplosion_Delete(void *self, uint32_t flags);
-void *__thiscall cObjElementFXInfernoMissile_Delete(void *self, uint32_t flags);
-void *__thiscall cObjElementFXLaser_Delete(void *self, uint32_t flags);
-void *__thiscall cObjElementFXSwarmMissile_Delete(void *self, uint32_t flags);
-void *__thiscall cObjElementFXTesla_Delete(void *self, uint32_t flags);
+void *cObjElementFXATPC_ctor(void *self);
+void *cObjElementFXDevastatorShoot_ctor(void *self);
+void *cObjElementFXInfernoExplosion_ctor(void *self);
+void *cObjElementFXInfernoMissile_ctor(void *self);
+void *cObjElementFXLaser_ctor(void *self);
+void *cObjElementFXSwarmMissile_ctor(void *self);
+void *cObjElementFXTesla_ctor(void *self);
+void cObjElementFXATPC_dtor(void *self);
+void cObjElementFXDevastatorShoot_dtor(void *self);
+void cObjElementFXInfernoExplosion_dtor(void *self);
+void cObjElementFXInfernoMissile_dtor(void *self);
+void cObjElementFXLaser_dtor(void *self);
+void cObjElementFXSwarmMissile_dtor(void *self);
+void cObjElementFXTesla_dtor(void *self);
+void *cObjElementFXATPC_Delete(void *self, uint32_t flags);
+void *cObjElementFXDevastatorShoot_Delete(void *self, uint32_t flags);
+void *cObjElementFXInfernoExplosion_Delete(void *self, uint32_t flags);
+void *cObjElementFXInfernoMissile_Delete(void *self, uint32_t flags);
+void *cObjElementFXLaser_Delete(void *self, uint32_t flags);
+void *cObjElementFXSwarmMissile_Delete(void *self, uint32_t flags);
+void *cObjElementFXTesla_Delete(void *self, uint32_t flags);
 
-void __thiscall cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debris, float dt);
-void __thiscall cObjElementFXATPC_Start(cObjElementFXATPC *self, cDebris *debris);
-void __thiscall cObjElementFXATPC_Reset(cObjElementFXATPC *self, cDebris *debris);
+void cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debris, float dt);
+void cObjElementFXATPC_Start(cObjElementFXATPC *self, cDebris *debris);
+void cObjElementFXATPC_Reset(cObjElementFXATPC *self, cDebris *debris);
 
-void __thiscall cObjElementFXDevastatorShoot_Update(cObjElementFXDevastatorShoot *self, cDebris *debris, float dt);
-byte __thiscall cObjElementFXDevastatorShoot_IsAlive(cObjElementFXDevastatorShoot *self, cDebris *debris,
+void cObjElementFXDevastatorShoot_Update(cObjElementFXDevastatorShoot *self, cDebris *debris, float dt);
+byte cObjElementFXDevastatorShoot_IsAlive(cObjElementFXDevastatorShoot *self, cDebris *debris,
 	cDebrisSys *sys);
-void __thiscall cObjElementFXDevastatorShoot_Start(cObjElementFXDevastatorShoot *self, cDebris *debris);
-void __thiscall cObjElementFXDevastatorShoot_Reset(cObjElementFXDevastatorShoot *self, cDebris *debris);
+void cObjElementFXDevastatorShoot_Start(cObjElementFXDevastatorShoot *self, cDebris *debris);
+void cObjElementFXDevastatorShoot_Reset(cObjElementFXDevastatorShoot *self, cDebris *debris);
 
-void __thiscall cObjElementFXInfernoExplosion_Update(cObjElementFXInfernoExplosion *self, cDebris *debris, float dt);
-void __thiscall cObjElementFXInfernoExplosion_Start(cObjElementFXInfernoExplosion *self, cDebris *debris);
-void __thiscall cObjElementFXInfernoExplosion_Reset(cObjElementFXInfernoExplosion *self, cDebris *debris);
+void cObjElementFXInfernoExplosion_Update(cObjElementFXInfernoExplosion *self, cDebris *debris, float dt);
+void cObjElementFXInfernoExplosion_Start(cObjElementFXInfernoExplosion *self, cDebris *debris);
+void cObjElementFXInfernoExplosion_Reset(cObjElementFXInfernoExplosion *self, cDebris *debris);
 
-void __thiscall cObjElementFXInfernoMissile_Update(cObjElementFXInfernoMissile *self, cDebris *debris, float dt);
-byte __thiscall cObjElementFXInfernoMissile_IsAlive(cObjElementFXInfernoMissile *self, cDebris *debris,
+void cObjElementFXInfernoMissile_Update(cObjElementFXInfernoMissile *self, cDebris *debris, float dt);
+byte cObjElementFXInfernoMissile_IsAlive(cObjElementFXInfernoMissile *self, cDebris *debris,
 	cDebrisSys *sys);
-void __thiscall cObjElementFXInfernoMissile_Start(cObjElementFXInfernoMissile *self, cDebris *debris);
-void __thiscall cObjElementFXInfernoMissile_Reset(cObjElementFXInfernoMissile *self, cDebris *debris);
-void __thiscall cObjElementFXInfernoMissile_SetFlare(cObjElementFXInfernoMissile *self, byte on);
+void cObjElementFXInfernoMissile_Start(cObjElementFXInfernoMissile *self, cDebris *debris);
+void cObjElementFXInfernoMissile_Reset(cObjElementFXInfernoMissile *self, cDebris *debris);
+void cObjElementFXInfernoMissile_SetFlare(cObjElementFXInfernoMissile *self, byte on);
 
-void __thiscall cObjElementFXLaser_Update(cObjElementFXLaser *self, cDebris *debris, float dt);
-byte __thiscall cObjElementFXLaser_IsAlive(cObjElementFXLaser *self, cDebris *debris, cDebrisSys *sys);
-void __thiscall cObjElementFXLaser_Start(cObjElementFXLaser *self, cDebris *debris);
-void __thiscall cObjElementFXLaser_Reset(cObjElementFXLaser *self, cDebris *debris);
+void cObjElementFXLaser_Update(cObjElementFXLaser *self, cDebris *debris, float dt);
+byte cObjElementFXLaser_IsAlive(cObjElementFXLaser *self, cDebris *debris, cDebrisSys *sys);
+void cObjElementFXLaser_Start(cObjElementFXLaser *self, cDebris *debris);
+void cObjElementFXLaser_Reset(cObjElementFXLaser *self, cDebris *debris);
 /* the beam from (x0 y0 z0) to (x1 y1 z1) in time */
-void __thiscall cObjElementFXLaser_Shoot(cObjElementFXLaser *self, float x0, float y0, float z0, float x1, float y1,
+void cObjElementFXLaser_Shoot(cObjElementFXLaser *self, float x0, float y0, float z0, float x1, float y1,
 	float z1, float time);
 
-void __thiscall cObjElementFXSwarmMissile_Update(cObjElementFXSwarmMissile *self, cDebris *debris, float dt);
-byte __thiscall cObjElementFXSwarmMissile_IsAlive(cObjElementFXSwarmMissile *self, cDebris *debris, cDebrisSys *sys);
-void __thiscall cObjElementFXSwarmMissile_Start(cObjElementFXSwarmMissile *self, cDebris *debris);
-void __thiscall cObjElementFXSwarmMissile_Reset(cObjElementFXSwarmMissile *self, cDebris *debris);
+void cObjElementFXSwarmMissile_Update(cObjElementFXSwarmMissile *self, cDebris *debris, float dt);
+byte cObjElementFXSwarmMissile_IsAlive(cObjElementFXSwarmMissile *self, cDebris *debris, cDebrisSys *sys);
+void cObjElementFXSwarmMissile_Start(cObjElementFXSwarmMissile *self, cDebris *debris);
+void cObjElementFXSwarmMissile_Reset(cObjElementFXSwarmMissile *self, cDebris *debris);
 
-void __thiscall cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *debris, float dt);
-byte __thiscall cObjElementFXTesla_IsAlive(cObjElementFXTesla *self, cDebris *debris, cDebrisSys *sys);
-void __thiscall cObjElementFXTesla_Start(cObjElementFXTesla *self, cDebris *debris);
-void __thiscall cObjElementFXTesla_Reset(cObjElementFXTesla *self, cDebris *debris);
+void cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *debris, float dt);
+byte cObjElementFXTesla_IsAlive(cObjElementFXTesla *self, cDebris *debris, cDebrisSys *sys);
+void cObjElementFXTesla_Start(cObjElementFXTesla *self, cDebris *debris);
+void cObjElementFXTesla_Reset(cObjElementFXTesla *self, cDebris *debris);
 /* the ship that shoots and its mounted Tesla slots */
-void __thiscall cObjElementFXTesla_SetEmitter(cObjElementFXTesla *self, cEntity *e);
+void cObjElementFXTesla_SetEmitter(cObjElementFXTesla *self, cEntity *e);
 
 #endif

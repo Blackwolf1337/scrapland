@@ -273,15 +273,15 @@ int Frustum_TestSeg(const vec3_t *a, const vec3_t *b);
 int Frustum_PlaneOutside(const vec3_t *p, uint32_t skip);
 /* for n spheres the first plane each one is outside of (as Frustum_PlaneOutside), 0 seen */
 void Frustum_TestSpheres(const vec3_t *centers, const float *radius, int n, int *out);
-void __fastcall CRenderIB_Reset(CRenderIB *self);
-void __fastcall CRenderVB_Reset(CRenderVB *self);
-void __thiscall CRenderIB_Add(CRenderIB *self, int numtri, const uint16_t *idx);
-void __thiscall CRenderVB_Add(CRenderVB *self, int numvert, const void *verts);
+void CRenderIB_Reset(CRenderIB *self);
+void CRenderVB_Reset(CRenderVB *self);
+void CRenderIB_Add(CRenderIB *self, int numtri, const uint16_t *idx);
+void CRenderVB_Add(CRenderVB *self, int numvert, const void *verts);
 /* the buffer (AddRef) and the used count */
-void *__thiscall CRenderIB_Get(CRenderIB *self, int *used);
-void *__thiscall CRenderVB_Get(CRenderVB *self, int *used);
-void __thiscall CRenderIB_Create(CRenderIB *self, uint32_t numtri);
-void __thiscall CRenderVB_Create(CRenderVB *self, uint32_t numvert, int size, uint32_t fvf);
+void *CRenderIB_Get(CRenderIB *self, int *used);
+void *CRenderVB_Get(CRenderVB *self, int *used);
+void CRenderIB_Create(CRenderIB *self, uint32_t numtri);
+void CRenderVB_Create(CRenderVB *self, uint32_t numvert, int size, uint32_t fvf);
 /* the batches drawn first; rect (x0, y0, x1, y1 in the viewport) NULL for all; D3DCLEAR_ZBUFFER also clears the
  * stencil of a device that has one; whether the device cleared */
 byte Render_Clear(const box_t *rect, uint32_t flags, uint32_t color, float z, uint32_t stencil);

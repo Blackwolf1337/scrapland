@@ -186,13 +186,13 @@
 #define g_SwarmSlotData (GAME_ARRAY(int *, g_SwarmSlotData))	/* per slot: a pointer to the int AddBees takes */
 
 /* the exe functions of other modules */
-void __thiscall cWithLifeEntity_SetBurner(cEntity *e, cEntity *attacker);
-void __thiscall cTargetLock_SetHookDelay(cTargetLock *self, float t);
+void cWithLifeEntity_SetBurner(cEntity *e, cEntity *attacker);
+void cTargetLock_SetHookDelay(cTargetLock *self, float t);
 /* SndInterface.c */
-void __thiscall cSndInterface_Resize(cSndInterface *self, int n);
-void __thiscall cSndInterface_SetSound(cSndInterface *self, int i, const char *name);
+void cSndInterface_Resize(cSndInterface *self, int n);
+void cSndInterface_SetSound(cSndInterface *self, int i, const char *name);
 /* FXWeapons.cpp: the emitters of the explosion and the bee effects */
-void __thiscall cObjElementFXInfernoExplosion_Explode(cObjElementFXInfernoExplosion *self, float x, float y, float z,
+void cObjElementFXInfernoExplosion_Explode(cObjElementFXInfernoExplosion *self, float x, float y, float z,
 	float range, int bees, byte flag);
 void FXSwarm_BeeDeath(float x, float y, float z, float vx, float vy, float vz, float size, float time, int n);
 void FXSwarm_Hit(float x, float y, float z, float vx, float vy, float vz, float size, float time, float dx, float dy,
@@ -378,7 +378,7 @@ void Laser_AimOnNative(cAbstractFile *f);	/* "LaserPress" */
 void Laser_AimOffNative(cAbstractFile *f);	/* "LaserRelease" */
 void Hook_StopSound(cEntity *v);
 void Hook_StartSound(cEntity *v);
-byte __fastcall Vehicle_IsLocalPlayer(cEntity *v);
+byte Vehicle_IsLocalPlayer(cEntity *v);
 void Sonic_FireNative(cAbstractFile *f);	/* "SonicFire" */
 void Sonic_ExplodeNative(cAbstractFile *f);	/* "SonicXplde" */
 

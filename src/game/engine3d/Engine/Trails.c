@@ -14,7 +14,7 @@
 
 #define g_TrailsDrawn GAME_GLOBAL_IN(int, g_RenderCounts, 28)	/* statistics of the frame */
 
-CTrail *__fastcall CTrail_ctor(CTrail *self) {
+CTrail *CTrail_ctor(CTrail *self) {
 	self->u0 = 0.0f;
 	self->v0 = 0.0f;
 	self->du = 1.0f;
@@ -44,7 +44,7 @@ CTrail *__fastcall CTrail_ctor(CTrail *self) {
 	return self;
 }
 
-void __fastcall CTrail_dtor(CTrail *self) {
+void CTrail_dtor(CTrail *self) {
 	if (self->m_pTrails) {
 		operator_delete_sized(self->m_pTrails, sizeof(TrailPoint));
 		self->m_pTrails = NULL;
@@ -89,7 +89,7 @@ void Trails_UpdateRender(CTrail *t) {
 	t->RenderIndex = -1;
 }
 
-void __fastcall CTrail_Reset(CTrail *self) {
+void CTrail_Reset(CTrail *self) {
 	self->last = 0;
 	self->numTrails = 0;
 	self->head = 0;
@@ -98,7 +98,7 @@ void __fastcall CTrail_Reset(CTrail *self) {
 	}
 }
 
-void __fastcall CTrail_Clear(CTrail *self) {
+void CTrail_Clear(CTrail *self) {
 	if (self->render) {
 		self->render = 0;
 		Trails_UpdateRender(self);
@@ -106,7 +106,7 @@ void __fastcall CTrail_Clear(CTrail *self) {
 	CTrail_Reset(self);
 }
 
-void __thiscall CTrail_Copy(CTrail *self, const CTrail *from) {
+void CTrail_Copy(CTrail *self, const CTrail *from) {
 	CTrail_Clear(self);
 	self->texture = from->texture;
 	self->fade = from->fade;
@@ -137,29 +137,29 @@ void __thiscall CTrail_Copy(CTrail *self, const CTrail *from) {
 	}
 }
 
-void __fastcall CTrail_Shrink(CTrail *self) {
+void CTrail_Shrink(CTrail *self) {
 	if (self->numTrails && !--self->numTrails && self->render) {
 		self->render = 0;
 		Trails_UpdateRender(self);
 	}
 }
 
-void __thiscall CTrail_SetActive(CTrail *self, byte on) {
+void CTrail_SetActive(CTrail *self, byte on) {
 	if (self->render != on) {
 		self->render = on;
 		Trails_UpdateRender(self);
 	}
 }
 
-void __thiscall CTrail_AddPos(CTrail *self, vec3_t pos) {
+void CTrail_AddPos(CTrail *self, vec3_t pos) {
 	CTrail_Add(self, pos, self->width, self->color);
 }
 
-void __thiscall CTrail_AddPosColor(CTrail *self, vec3_t pos, uint32_t color) {
+void CTrail_AddPosColor(CTrail *self, vec3_t pos, uint32_t color) {
 	CTrail_Add(self, pos, self->width, color);
 }
 
-void __thiscall CTrail_Add(CTrail *self, vec3_t pos, float width, uint32_t color) {
+void CTrail_Add(CTrail *self, vec3_t pos, float width, uint32_t color) {
 	CHECK(self->m_pTrails);
 	self->last = self->head;
 	self->m_pTrails[self->last].pos = pos;
@@ -179,7 +179,7 @@ void __thiscall CTrail_Add(CTrail *self, vec3_t pos, float width, uint32_t color
 	}
 }
 
-int __thiscall CTrail_Build(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
+int CTrail_Build(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
 	CHECK(self->m_pTrails);
 	switch (self->type) {
 	case TRAIL_RIBBON:
@@ -330,7 +330,7 @@ static void Trail_FadeLevels(const CTrail *t, int cnt, int i, uint32_t *a0, uint
 	}
 }
 
-int __thiscall CTrail_BuildRibbon(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
+int CTrail_BuildRibbon(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
 	if (self->numTrails <= 1 || !self->segments) {
 		return 0;
 	}
@@ -407,7 +407,7 @@ static int Trail_CrossBack(int k) {
 	return k == 1 ? 4 : k == 2 ? 8 : 6;
 }
 
-int __thiscall CTrail_BuildCross(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
+int CTrail_BuildCross(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
 	if (self->numTrails <= 1 || !self->segments) {
 		return 0;
 	}
@@ -477,7 +477,7 @@ int __thiscall CTrail_BuildCross(CTrail *self, TrailVertex **pVertex, uint16_t *
 	return 0;
 }
 
-int __thiscall CTrail_BuildQuads(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
+int CTrail_BuildQuads(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
 	if (self->numTrails <= 1 || !self->segments) {
 		return 0;
 	}
@@ -521,7 +521,7 @@ int __thiscall CTrail_BuildQuads(CTrail *self, TrailVertex **pVertex, uint16_t *
 	return 0;
 }
 
-int __thiscall CTrail_BuildFan(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
+int CTrail_BuildFan(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
 	if (self->numTrails <= 1 || !self->segments) {
 		return 0;
 	}
@@ -562,19 +562,19 @@ int __thiscall CTrail_BuildFan(CTrail *self, TrailVertex **pVertex, uint16_t **p
 	return 0;
 }
 
-void __thiscall CTrail_SetTransp(CTrail *self, byte transp) {
+void CTrail_SetTransp(CTrail *self, byte transp) {
 	self->transp = transp;
 }
 
-void __thiscall CTrail_SetColor(CTrail *self, uint32_t color) {
+void CTrail_SetColor(CTrail *self, uint32_t color) {
 	self->color = color;
 }
 
-void __thiscall CTrail_SetSmooth(CTrail *self, byte on) {
+void CTrail_SetSmooth(CTrail *self, byte on) {
 	self->smooth = on;
 }
 
-void __thiscall CTrail_SetMaxTrails(CTrail *self, byte segments) {
+void CTrail_SetMaxTrails(CTrail *self, byte segments) {
 	if (segments == self->m_wMaxTrails) {
 		self->segments = self->m_wMaxTrails;
 		CTrail_Clear(self);
@@ -587,39 +587,39 @@ void __thiscall CTrail_SetMaxTrails(CTrail *self, byte segments) {
 	self->m_pTrails = New_Array(segments, sizeof(TrailPoint));
 }
 
-void __thiscall CTrail_SetUV(CTrail *self, float u0, float v0) {
+void CTrail_SetUV(CTrail *self, float u0, float v0) {
 	self->u0 = u0;
 	self->v0 = v0;
 }
 
-void __thiscall CTrail_SetOrient(CTrail *self, vec3_t v, byte mode) {
+void CTrail_SetOrient(CTrail *self, vec3_t v, byte mode) {
 	self->orientVec = v;
 	self->orient = mode;
 }
 
-void __thiscall CTrail_SetType(CTrail *self, byte type) {
+void CTrail_SetType(CTrail *self, byte type) {
 	self->type = type;
 }
 
-void __thiscall CTrail_SetSegments(CTrail *self, byte segments) {
+void CTrail_SetSegments(CTrail *self, byte segments) {
 	CHECK(segments <= self->m_wMaxTrails);
 	self->segments = segments;
 }
 
-void __thiscall CTrail_SetPremul(CTrail *self, byte on) {
+void CTrail_SetPremul(CTrail *self, byte on) {
 	self->premul = on;
 }
 
-void __thiscall CTrail_SetWidth(CTrail *self, float width) {
+void CTrail_SetWidth(CTrail *self, float width) {
 	self->width = width;
 }
 
-void __thiscall CTrail_SetScale(CTrail *self, float head, float tail) {
+void CTrail_SetScale(CTrail *self, float head, float tail) {
 	self->scaleHead = head;
 	self->scaleTail = tail;
 }
 
-void __thiscall CTrail_SetTexture(CTrail *self, int texture) {
+void CTrail_SetTexture(CTrail *self, int texture) {
 	if (self->texture == texture) {
 		return;
 	}
@@ -637,16 +637,16 @@ void __thiscall CTrail_SetTexture(CTrail *self, int texture) {
 	}
 }
 
-void __thiscall CTrail_SetUVScale(CTrail *self, float du, float dv) {
+void CTrail_SetUVScale(CTrail *self, float du, float dv) {
 	self->du = du;
 	self->dv = dv;
 }
 
-void __thiscall CTrail_SetFade(CTrail *self, byte on) {
+void CTrail_SetFade(CTrail *self, byte on) {
 	self->fade = on;
 }
 
-void __thiscall CTrail_SetULen(CTrail *self, float uLen, float f50) {
+void CTrail_SetULen(CTrail *self, float uLen, float f50) {
 	self->uLen = uLen;
 	self->unused_50 = f50;
 }
@@ -834,7 +834,7 @@ void Trails_Render(int texture) {
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_CULLMODE, D3DCULL_CCW);
 }
 
-void __thiscall CTrail_SetLast(CTrail *self, const vec3_t *pos, const float *width, const uint32_t *color) {
+void CTrail_SetLast(CTrail *self, const vec3_t *pos, const float *width, const uint32_t *color) {
 	CHECK(self->m_pTrails);
 	if (!self->numTrails) {
 		return;
@@ -850,14 +850,14 @@ void __thiscall CTrail_SetLast(CTrail *self, const vec3_t *pos, const float *wid
 	}
 }
 
-void __thiscall CTrail_SetLastPos(CTrail *self, vec3_t pos) {
+void CTrail_SetLastPos(CTrail *self, vec3_t pos) {
 	CHECK(self->m_pTrails);
 	if (self->numTrails) {
 		self->m_pTrails[self->last].pos = pos;
 	}
 }
 
-void __thiscall CTrail_SetLastPosColor(CTrail *self, vec3_t pos, uint32_t color) {
+void CTrail_SetLastPosColor(CTrail *self, vec3_t pos, uint32_t color) {
 	CHECK(self->m_pTrails);
 	if (self->numTrails) {
 		self->m_pTrails[self->last].pos = pos;
@@ -865,7 +865,7 @@ void __thiscall CTrail_SetLastPosColor(CTrail *self, vec3_t pos, uint32_t color)
 	}
 }
 
-void __thiscall CTrail_SetPoint(CTrail *self, int i, const vec3_t *pos, const float *width, const uint32_t *color) {
+void CTrail_SetPoint(CTrail *self, int i, const vec3_t *pos, const float *width, const uint32_t *color) {
 	CHECK(self->m_pTrails);
 	if (i >= self->numTrails) {
 		return;
@@ -885,7 +885,7 @@ void __thiscall CTrail_SetPoint(CTrail *self, int i, const vec3_t *pos, const fl
 	}
 }
 
-void __thiscall CTrail_Move(CTrail *self, vec3_t d) {
+void CTrail_Move(CTrail *self, vec3_t d) {
 	CHECK(self->m_pTrails);
 	for (int i = 0; i < self->m_wMaxTrails; i++) {
 		vec3_t *p = &self->m_pTrails[i].pos;

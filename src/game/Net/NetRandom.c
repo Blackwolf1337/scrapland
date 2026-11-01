@@ -53,12 +53,12 @@ static uint64_t NetRandom_Shuffle(cNetRandom *self, uint64_t y) {
 	return r;
 }
 
-cNetRandom *__fastcall cNetRandom_ctor(cNetRandom *self) {
+cNetRandom *cNetRandom_ctor(cNetRandom *self) {
 	self->mti = NETRAND_NN + 1;
 	return self;
 }
 
-void __thiscall cNetRandom_InitByArray(cNetRandom *self, const uint64_t *key, uint32_t len) {
+void cNetRandom_InitByArray(cNetRandom *self, const uint64_t *key, uint32_t len) {
 	uint64_t *mt = self->mt;
 	uint32_t i = 1, j = 0, k;
 
@@ -87,7 +87,7 @@ void __thiscall cNetRandom_InitByArray(cNetRandom *self, const uint64_t *key, ui
 	cNetRandom_Fill(self);
 }
 
-void __thiscall cNetRandom_Seed(cNetRandom *self, uint64_t seed) {
+void cNetRandom_Seed(cNetRandom *self, uint64_t seed) {
 	self->mt[0] = seed;
 	for (self->mti = 1; self->mti < NETRAND_NN; self->mti++) {
 		int i = self->mti;
@@ -96,11 +96,11 @@ void __thiscall cNetRandom_Seed(cNetRandom *self, uint64_t seed) {
 	cNetRandom_Fill(self);
 }
 
-uint64_t __fastcall cNetRandom_Next(cNetRandom *self) {
+uint64_t cNetRandom_Next(cNetRandom *self) {
 	return NetRandom_Shuffle(self, NetRandom_Gen(self));
 }
 
-void __fastcall cNetRandom_Fill(cNetRandom *self) {
+void cNetRandom_Fill(cNetRandom *self) {
 	for (int n = 0; n < 0x100; n++) {
 		self->table[n] = NetRandom_Shuffle(self, NetRandom_Gen(self));
 	}
@@ -108,7 +108,7 @@ void __fastcall cNetRandom_Fill(cNetRandom *self) {
 	self->j = 0;
 }
 
-cNetRandom *__fastcall cNetRandom_ctorSeeded(cNetRandom *self) {
+cNetRandom *cNetRandom_ctorSeeded(cNetRandom *self) {
 	uint64_t buf[NETRAND_NN];
 	byte key[32], nonce[12];
 	cChaCha ctx;

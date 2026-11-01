@@ -25,14 +25,14 @@ typedef struct CNodesTraffic CNodesTraffic;	/* include/scrap/nodestraffic.h */
 
 typedef struct cAIVehicleGroupVtbl {
 	void *vf00;
-	void(__thiscall *InitRace)(cAIVehicleGroup *self);			/* 0x4 */
-	void(__thiscall *AddVehicle)(cAIVehicleGroup *self, cEntity *vehicle);	/* 0x8 */
-	cEntity *(__thiscall *GetVehicle)(cAIVehicleGroup *self, int i);	/* 0xc */
-	int(__thiscall *NumVehicles)(cAIVehicleGroup *self);			/* 0x10 */
+	void(*InitRace)(cAIVehicleGroup *self);			/* 0x4 */
+	void(*AddVehicle)(cAIVehicleGroup *self, cEntity *vehicle);	/* 0x8 */
+	cEntity *(*GetVehicle)(cAIVehicleGroup *self, int i);	/* 0xc */
+	int(*NumVehicles)(cAIVehicleGroup *self);			/* 0x10 */
 	/* the time since the last change of state of a vehicle AI reached the limit */
-	byte(__thiscall *CanChange)(cAIVehicleGroup *self);			/* 0x14 */
-	void(__thiscall *ResetChange)(cAIVehicleGroup *self);			/* 0x18 the time to 0 */
-	void(__thiscall *AllowChange)(cAIVehicleGroup *self);			/* 0x1c the time to the limit */
+	byte(*CanChange)(cAIVehicleGroup *self);			/* 0x14 */
+	void(*ResetChange)(cAIVehicleGroup *self);			/* 0x18 the time to 0 */
+	void(*AllowChange)(cAIVehicleGroup *self);			/* 0x1c the time to the limit */
 } cAIVehicleGroupVtbl;
 SD_OFFSET(cAIVehicleGroupVtbl, AllowChange, 0x1c);
 
@@ -64,20 +64,20 @@ typedef struct cAI cAI;
 
 /* the slots of cAI::vftable (Debugf is pure there); variadic methods are __cdecl with self on the stack */
 typedef struct cAIBaseVtbl {
-	cAI *(__thiscall *Delete)(cAI *self, byte flags);					/* 0x00 */
-	void(__thiscall *Update)(cAI *self, float dt);						/* 0x04 */
-	void(__thiscall *UpdateOff)(cAI *self, float dt);					/* 0x08 */
-	void(__thiscall *Draw)(cAI *self);							/* 0x0c */
-	byte(__thiscall *GetChanged)(cAI *self);						/* 0x10 */
-	byte(__thiscall *IsVisible)(cAI *self);							/* 0x14 */
+	cAI *(*Delete)(cAI *self, byte flags);					/* 0x00 */
+	void(*Update)(cAI *self, float dt);						/* 0x04 */
+	void(*UpdateOff)(cAI *self, float dt);					/* 0x08 */
+	void(*Draw)(cAI *self);							/* 0x0c */
+	byte(*GetChanged)(cAI *self);						/* 0x10 */
+	byte(*IsVisible)(cAI *self);							/* 0x14 */
 	void (*Debugf)(cAI *self, const char *fmt, ...);					/* 0x18 text of the AI debug view */
-	byte(__thiscall *VarI)(cAI *self, const char *name, int *i, byte set);			/* 0x1c */
-	byte(__thiscall *VarF)(cAI *self, const char *name, double *d, byte set);		/* 0x20 */
-	byte(__thiscall *VarS)(cAI *self, const char *name, char **s, byte set);		/* 0x24 */
-	byte(__thiscall *VarV)(cAI *self, const char *name, double *x, double *y, double *z, byte set);	/* 0x28 */
-	void(__thiscall *Print)(cAI *self, const char *text);					/* 0x2c */
-	void(__thiscall *GetEventName)(cAI *self, int ev, char *out);				/* 0x30 */
-	void(__thiscall *OnEvent)(cAI *self, int ev);						/* 0x34 */
+	byte(*VarI)(cAI *self, const char *name, int *i, byte set);			/* 0x1c */
+	byte(*VarF)(cAI *self, const char *name, double *d, byte set);		/* 0x20 */
+	byte(*VarS)(cAI *self, const char *name, char **s, byte set);		/* 0x24 */
+	byte(*VarV)(cAI *self, const char *name, double *x, double *y, double *z, byte set);	/* 0x28 */
+	void(*Print)(cAI *self, const char *text);					/* 0x2c */
+	void(*GetEventName)(cAI *self, int ev, char *out);				/* 0x30 */
+	void(*OnEvent)(cAI *self, int ev);						/* 0x34 */
 } cAIBaseVtbl;
 SD_OFFSET(cAIBaseVtbl, Debugf, 0x18);
 SD_OFFSET(cAIBaseVtbl, OnEvent, 0x34);
@@ -117,25 +117,25 @@ static inline void AI_Debugf(void *ai, const char *text) {
 	AI_Vtbl(ai)->Debugf(ai, text);
 }
 
-cAI *__thiscall cAI_ctor(cAI *self, cEntity *e);
-cAI *__fastcall cAI_ctorDefault(cAI *self);
-void __fastcall cAI_dtor(cAI *self);
-cAI *__thiscall cAI_Delete(cAI *self, byte flags);
-void __thiscall cAI_Update(cAI *self, float dt);
-void __thiscall cAI_UpdateOff(cAI *self, float dt);
-void __thiscall cAI_Draw(cAI *self);
-byte __thiscall cAI_GetChanged(cAI *self);
+cAI *cAI_ctor(cAI *self, cEntity *e);
+cAI *cAI_ctorDefault(cAI *self);
+void cAI_dtor(cAI *self);
+cAI *cAI_Delete(cAI *self, byte flags);
+void cAI_Update(cAI *self, float dt);
+void cAI_UpdateOff(cAI *self, float dt);
+void cAI_Draw(cAI *self);
+byte cAI_GetChanged(cAI *self);
 /* the entity is in the sector of the camera of view 0 or seen from it through the portals */
-byte __thiscall cAI_IsVisible(cAI *self);
-byte __thiscall cAI_VarI(cAI *self, const char *name, int *i, byte set);
-byte __thiscall cAI_VarF(cAI *self, const char *name, double *d, byte set);
-byte __thiscall cAI_VarS(cAI *self, const char *name, char **s, byte set);
-byte __thiscall cAI_VarV(cAI *self, const char *name, double *x, double *y, double *z, byte set);
+byte cAI_IsVisible(cAI *self);
+byte cAI_VarI(cAI *self, const char *name, int *i, byte set);
+byte cAI_VarF(cAI *self, const char *name, double *d, byte set);
+byte cAI_VarS(cAI *self, const char *name, char **s, byte set);
+byte cAI_VarV(cAI *self, const char *name, double *x, double *y, double *z, byte set);
 /* text as a format into the console */
-void __thiscall cAI_Print(cAI *self, const char *text);
+void cAI_Print(cAI *self, const char *text);
 /* the name of the AIEV_ event into out, nothing for the others */
-void __thiscall cAI_GetEventName(cAI *self, int ev, char *out);
-void __thiscall cAI_OnEvent(cAI *self, int ev);
+void cAI_GetEventName(cAI *self, int ev, char *out);
+void cAI_OnEvent(cAI *self, int ev);
 
 /* ---- cAIMove (AI/AIMove.cpp, src/game/AI/AIMove.c): the base of cAIChar and cAIVehicle (0x90 bytes, a cAI): the
  * target link, the move of the state, the check of an AI that should move but does not ---- */
@@ -147,20 +147,20 @@ typedef struct cAIMove cAIMove;
 /* cAIMove::vftable (25 slots, IsMoving is pure there) */
 typedef struct cAIMoveVtbl {
 	cAIBaseVtbl base;									/* 0x00 */
-	Nto1Node *(__thiscall *GetTarget)(cAIMove *self);					/* 0x38 the link to the target */
-	byte(__thiscall *CanJump)(cAIMove *self);						/* 0x3c flying */
-	byte(__thiscall *GetStopped)(cAIMove *self);						/* 0x40 */
-	byte(__thiscall *IsPaused)(cAIMove *self);						/* 0x44 */
-	cEntity *(__thiscall *GetTargetEnt)(cAIMove *self);					/* 0x48 */
-	byte(__thiscall *GetArrived)(cAIMove *self);						/* 0x4c */
+	Nto1Node *(*GetTarget)(cAIMove *self);					/* 0x38 the link to the target */
+	byte(*CanJump)(cAIMove *self);						/* 0x3c flying */
+	byte(*GetStopped)(cAIMove *self);						/* 0x40 */
+	byte(*IsPaused)(cAIMove *self);						/* 0x44 */
+	cEntity *(*GetTargetEnt)(cAIMove *self);					/* 0x48 */
+	byte(*GetArrived)(cAIMove *self);						/* 0x4c */
 	/* a random point within r of p the entity can reach (p itself after three tries), out returned */
-	vec3_t *(__thiscall *RandomPoint)(cAIMove *self, vec3_t *out, const vec3_t *p, float r);	/* 0x50 */
+	vec3_t *(*RandomPoint)(cAIMove *self, vec3_t *out, const vec3_t *p, float r);	/* 0x50 */
 	/* moving without a velocity for 10 s: stopped and the event 7 */
-	void(__thiscall *CheckStopped)(cAIMove *self, float dt);				/* 0x54 */
+	void(*CheckStopped)(cAIMove *self, float dt);				/* 0x54 */
 	/* the move tells the AI (arrived, blocked, ..) */
-	byte(__thiscall *Event)(cAIMove *self, int ev);						/* 0x58 */
-	byte(__thiscall *IsMoving)(cAIMove *self);						/* 0x5c */
-	byte(__thiscall *CanTarget)(cAIMove *self, cEntity *e);					/* 0x60 */
+	byte(*Event)(cAIMove *self, int ev);						/* 0x58 */
+	byte(*IsMoving)(cAIMove *self);						/* 0x5c */
+	byte(*CanTarget)(cAIMove *self, cEntity *e);					/* 0x60 */
 } cAIMoveVtbl;
 SD_OFFSET(cAIMoveVtbl, GetTarget, 0x38);
 SD_OFFSET(cAIMoveVtbl, CanTarget, 0x60);
@@ -200,28 +200,28 @@ SD_OFFSET(cAIMove, trafficPlaced, 0x88);
 SD_OFFSET(cAIMove, stopTime, 0x8c);
 SD_SIZE(cAIMove, CAIMOVE_SIZE);
 
-cAIMove *__thiscall cAIMove_ctor(cAIMove *self, cEntity *e);
-cAIMove *__fastcall cAIMove_ctorDefault(cAIMove *self);
-void __fastcall cAIMove_dtor(cAIMove *self);
-cAIMove *__thiscall cAIMove_Delete(cAIMove *self, byte flags);
-void __thiscall cAIMove_Draw(cAIMove *self);
-void __thiscall cAIMove_Update(cAIMove *self, float dt);
-void __thiscall cAIMove_UpdateOff(cAIMove *self, float dt);
-byte __thiscall cAIMove_VarF(cAIMove *self, const char *name, double *d, byte set);
-byte __thiscall cAIMove_VarI(cAIMove *self, const char *name, int *i, byte set);
-byte __thiscall cAIMove_VarS(cAIMove *self, const char *name, char **s, byte set);
-byte __thiscall cAIMove_VarV(cAIMove *self, const char *name, double *x, double *y, double *z, byte set);
-void __thiscall cAIMove_CheckStopped(cAIMove *self, float dt);
-byte __thiscall cAIMove_CanJump(cAIMove *self);
-cEntity *__thiscall cAIMove_GetTargetEnt(cAIMove *self);
-Nto1Node *__thiscall cAIMove_GetTarget(cAIMove *self);
-byte __thiscall cAIMove_GetStopped(cAIMove *self);
-byte __thiscall cAIMove_GetArrived(cAIMove *self);
-byte __thiscall cAIMove_IsPaused(cAIMove *self);
-byte __thiscall cAIMove_Event(cAIMove *self, int ev);
+cAIMove *cAIMove_ctor(cAIMove *self, cEntity *e);
+cAIMove *cAIMove_ctorDefault(cAIMove *self);
+void cAIMove_dtor(cAIMove *self);
+cAIMove *cAIMove_Delete(cAIMove *self, byte flags);
+void cAIMove_Draw(cAIMove *self);
+void cAIMove_Update(cAIMove *self, float dt);
+void cAIMove_UpdateOff(cAIMove *self, float dt);
+byte cAIMove_VarF(cAIMove *self, const char *name, double *d, byte set);
+byte cAIMove_VarI(cAIMove *self, const char *name, int *i, byte set);
+byte cAIMove_VarS(cAIMove *self, const char *name, char **s, byte set);
+byte cAIMove_VarV(cAIMove *self, const char *name, double *x, double *y, double *z, byte set);
+void cAIMove_CheckStopped(cAIMove *self, float dt);
+byte cAIMove_CanJump(cAIMove *self);
+cEntity *cAIMove_GetTargetEnt(cAIMove *self);
+Nto1Node *cAIMove_GetTarget(cAIMove *self);
+byte cAIMove_GetStopped(cAIMove *self);
+byte cAIMove_GetArrived(cAIMove *self);
+byte cAIMove_IsPaused(cAIMove *self);
+byte cAIMove_Event(cAIMove *self, int ev);
 /* e there and active, else a warning */
-byte __thiscall cAIMove_CanTarget(cAIMove *self, cEntity *e);
-vec3_t *__thiscall cAIMove_RandomPoint(cAIMove *self, vec3_t *out, const vec3_t *p, float r);
+byte cAIMove_CanTarget(cAIMove *self, cEntity *e);
+vec3_t *cAIMove_RandomPoint(cAIMove *self, vec3_t *out, const vec3_t *p, float r);
 
 /* ---- the AI of a walking character (AI/AIChar.cpp, src/game/AI/IChar.c; the states and the functions in
  * include/scrap/aichar.h) ---- */
@@ -256,108 +256,108 @@ typedef struct cAICharControl cAICharControl;
 
 /* cAIChar::vftable (99 slots, rva 0x3a49b4); the variadic ones are __cdecl with self on the stack */
 typedef struct cAICharVtbl {
-	cAIChar *(__thiscall *Delete)(cAIChar *self, byte flags);					/* 0x00 */
-	void(__thiscall *Update)(cAIChar *self, float dt);						/* 0x04 */
-	void(__thiscall *UpdateOff)(cAIChar *self, float dt);						/* 0x08 */
-	void(__thiscall *Draw)(cAIChar *self);								/* 0x0c */
-	byte(__thiscall *GetChanged)(cAIChar *self);							/* 0x10 */
-	byte(__thiscall *IsVisible)(cAIChar *self);						/* 0x14 */
+	cAIChar *(*Delete)(cAIChar *self, byte flags);					/* 0x00 */
+	void(*Update)(cAIChar *self, float dt);						/* 0x04 */
+	void(*UpdateOff)(cAIChar *self, float dt);						/* 0x08 */
+	void(*Draw)(cAIChar *self);								/* 0x0c */
+	byte(*GetChanged)(cAIChar *self);							/* 0x10 */
+	byte(*IsVisible)(cAIChar *self);						/* 0x14 */
 	void (*Debugf)(cAIChar *self, const char *fmt, ...);						/* 0x18 */
-	byte(__thiscall *VarI)(cAIChar *self, const char *name, int *i, byte set);			/* 0x1c */
-	byte(__thiscall *VarF)(cAIChar *self, const char *name, double *d, byte set);			/* 0x20 */
-	byte(__thiscall *VarS)(cAIChar *self, const char *name, char **s, byte set);			/* 0x24 */
-	byte(__thiscall *VarV)(cAIChar *self, const char *name, double *x, double *y, double *z, byte set);	/* 0x28 */
+	byte(*VarI)(cAIChar *self, const char *name, int *i, byte set);			/* 0x1c */
+	byte(*VarF)(cAIChar *self, const char *name, double *d, byte set);			/* 0x20 */
+	byte(*VarS)(cAIChar *self, const char *name, char **s, byte set);			/* 0x24 */
+	byte(*VarV)(cAIChar *self, const char *name, double *x, double *y, double *z, byte set);	/* 0x28 */
 	void *vf0b_0c[2];
-	void(__thiscall *OnEvent)(cAIChar *self, int ev);						/* 0x34 the debug text */
-	Nto1Node *(__thiscall *GetTarget)(cAIChar *self);						/* 0x38 the link to the target */
-	byte(__thiscall *CanJump)(cAIChar *self);							/* 0x3c flying */
-	byte(__thiscall *GetStopped)(cAIChar *self);							/* 0x40 */
-	byte(__thiscall *IsPaused)(cAIChar *self);							/* 0x44 */
-	cEntity *(__thiscall *GetTargetEnt)(cAIChar *self);						/* 0x48 */
-	byte(__thiscall *GetArrived)(cAIChar *self);							/* 0x4c */
+	void(*OnEvent)(cAIChar *self, int ev);						/* 0x34 the debug text */
+	Nto1Node *(*GetTarget)(cAIChar *self);						/* 0x38 the link to the target */
+	byte(*CanJump)(cAIChar *self);							/* 0x3c flying */
+	byte(*GetStopped)(cAIChar *self);							/* 0x40 */
+	byte(*IsPaused)(cAIChar *self);							/* 0x44 */
+	cEntity *(*GetTargetEnt)(cAIChar *self);						/* 0x48 */
+	byte(*GetArrived)(cAIChar *self);							/* 0x4c */
 	/* a random point within r of p the character can reach (p itself after three tries), out returned */
-	vec3_t *(__thiscall *RandomPoint)(cAIChar *self, vec3_t *out, const vec3_t *p, float r);	/* 0x50 */
+	vec3_t *(*RandomPoint)(cAIChar *self, vec3_t *out, const vec3_t *p, float r);	/* 0x50 */
 	/* moving without a velocity for 10 s: stopped and the event 7 */
-	void(__thiscall *CheckStopped)(cAIChar *self, float dt);					/* 0x54 */
+	void(*CheckStopped)(cAIChar *self, float dt);					/* 0x54 */
 	/* the move tells the AI (arrived, blocked, ..): the reaction of the state, else EventDefault */
-	byte(__thiscall *Event)(cAIChar *self, int ev);							/* 0x58 */
-	byte(__thiscall *IsMoving)(cAIChar *self);							/* 0x5c */
-	byte(__thiscall *CanTarget)(cAIChar *self, cEntity *e);					/* 0x60 */
-	void(__thiscall *CheckParams)(cAIChar *self, int stupidPathfinding);				/* 0x64 */
-	byte(__thiscall *ChangeState)(cAIChar *self, int state, va_list ap);				/* 0x68 */
+	byte(*Event)(cAIChar *self, int ev);							/* 0x58 */
+	byte(*IsMoving)(cAIChar *self);							/* 0x5c */
+	byte(*CanTarget)(cAIChar *self, cEntity *e);					/* 0x60 */
+	void(*CheckParams)(cAIChar *self, int stupidPathfinding);				/* 0x64 */
+	byte(*ChangeState)(cAIChar *self, int state, va_list ap);				/* 0x68 */
 	/* SAI_CHAR_ state; the arguments depend on the state (see SAIPy.c) */
 	byte (*SetState)(cAIChar *self, int state, ...);						/* 0x6c */
-	byte(__thiscall *RestoreState)(cAIChar *self, const cAICharSaved *s);				/* 0x70 */
-	void(__thiscall *SetInternStateV)(cAIChar *self, int state, va_list ap);			/* 0x74 */
+	byte(*RestoreState)(cAIChar *self, const cAICharSaved *s);				/* 0x70 */
+	void(*SetInternStateV)(cAIChar *self, int state, va_list ap);			/* 0x74 */
 	void (*SetInternState)(cAIChar *self, int state, ...);						/* 0x78 */
-	int(__thiscall *GetState)(cAIChar *self);							/* 0x7c */
-	int(__thiscall *GetInternState)(cAIChar *self);							/* 0x80 */
-	void(__thiscall *StateName)(cAIChar *self, int state, char *buf);				/* 0x84 */
-	void(__thiscall *GetStateName)(cAIChar *self, char *buf);					/* 0x88 */
-	void(__thiscall *InternStateName)(cAIChar *self, int state, char *buf);				/* 0x8c */
-	void(__thiscall *GetInternStateName)(cAIChar *self, char *buf);					/* 0x90 */
-	byte(__thiscall *GetDirect)(cAIChar *self);							/* 0x94 */
-	byte(__thiscall *GetDirect2)(cAIChar *self);							/* 0x98 */
-	cAICharControl *(__thiscall *GetControl)(cAIChar *self);					/* 0x9c */
-	cAICharSaved *(__thiscall *GetLast)(cAIChar *self);						/* 0xa0 */
-	cAICharSaved *(__thiscall *SaveTo)(cAIChar *self, cAICharSaved *s);				/* 0xa4 */
-	byte(__thiscall *SetRepos)(cAIChar *self, byte on, byte now);					/* 0xa8 */
-	byte(__thiscall *GetRepos)(cAIChar *self);							/* 0xac */
-	byte(__thiscall *IsTalking)(cAIChar *self);							/* 0xb0 */
-	cEntity *(__thiscall *GetCollide)(cAIChar *self);						/* 0xb4 */
-	byte(__thiscall *React)(cAIChar *self);								/* 0xb8 */
-	byte(__thiscall *CheckAction)(cAIChar *self);							/* 0xbc */
-	byte(__thiscall *GetChanged2)(cAIChar *self);							/* 0xc0 */
-	byte(__thiscall *CanTalk)(cAIChar *self);							/* 0xc4 */
+	int(*GetState)(cAIChar *self);							/* 0x7c */
+	int(*GetInternState)(cAIChar *self);							/* 0x80 */
+	void(*StateName)(cAIChar *self, int state, char *buf);				/* 0x84 */
+	void(*GetStateName)(cAIChar *self, char *buf);					/* 0x88 */
+	void(*InternStateName)(cAIChar *self, int state, char *buf);				/* 0x8c */
+	void(*GetInternStateName)(cAIChar *self, char *buf);					/* 0x90 */
+	byte(*GetDirect)(cAIChar *self);							/* 0x94 */
+	byte(*GetDirect2)(cAIChar *self);							/* 0x98 */
+	cAICharControl *(*GetControl)(cAIChar *self);					/* 0x9c */
+	cAICharSaved *(*GetLast)(cAIChar *self);						/* 0xa0 */
+	cAICharSaved *(*SaveTo)(cAIChar *self, cAICharSaved *s);				/* 0xa4 */
+	byte(*SetRepos)(cAIChar *self, byte on, byte now);					/* 0xa8 */
+	byte(*GetRepos)(cAIChar *self);							/* 0xac */
+	byte(*IsTalking)(cAIChar *self);							/* 0xb0 */
+	cEntity *(*GetCollide)(cAIChar *self);						/* 0xb4 */
+	byte(*React)(cAIChar *self);								/* 0xb8 */
+	byte(*CheckAction)(cAIChar *self);							/* 0xbc */
+	byte(*GetChanged2)(cAIChar *self);							/* 0xc0 */
+	byte(*CanTalk)(cAIChar *self);							/* 0xc4 */
 	byte (*SetStateIntern)(cAIChar *self, int state, ...);						/* 0xc8 */
-	byte(__thiscall *RestoreStateIntern)(cAIChar *self, const cAICharSaved *s);			/* 0xcc */
-	byte(__thiscall *ChangeStateMore)(cAIChar *self, int state, int allowed, va_list ap);		/* 0xd0 */
-	byte(__thiscall *IsGroupState)(cAIChar *self, int state);					/* 0xd4 */
-	byte(__thiscall *Repos)(cAIChar *self, float minDist, float maxDist, byte flag);		/* 0xd8 */
-	void(__thiscall *AfterRepos)(cAIChar *self);							/* 0xdc */
-	void(__thiscall *SetDists)(cAIChar *self);							/* 0xe0 */
-	void(__thiscall *SetDists2)(cAIChar *self);							/* 0xe4 */
-	void(__thiscall *BeginChange)(cAIChar *self, int state);					/* 0xe8 */
-	void(__thiscall *SetPauseCheck)(cAIChar *self, byte on);					/* 0xec */
-	void(__thiscall *SaveState)(cAIChar *self, cAICharSaved *s);					/* 0xf0 */
-	void(__thiscall *RestoreSaved)(cAIChar *self, const cAICharSaved *s);				/* 0xf4 */
-	void(__thiscall *SetPaused)(cAIChar *self, byte on);						/* 0xf8 */
-	void(__thiscall *UpdateAction1)(cAIChar *self);							/* 0xfc */
-	void(__thiscall *UpdateAction0)(cAIChar *self);							/* 0x100 */
-	void(__thiscall *UpdateAction)(cAIChar *self);							/* 0x104 */
-	void(__thiscall *CheckActDist)(cAIChar *self);							/* 0x108 */
-	void(__thiscall *SetAction)(cAIChar *self, int action);						/* 0x10c */
-	void(__thiscall *UpdateMove)(cAIChar *self, float dt);						/* 0x110 */
-	byte(__thiscall *EventDefault)(cAIChar *self, int ev);						/* 0x114 */
-	byte(__thiscall *EventInRoute)(cAIChar *self, int ev);						/* 0x118 */
-	byte(__thiscall *EventPatrol)(cAIChar *self, int ev);						/* 0x11c */
-	byte(__thiscall *EventGoTo)(cAIChar *self, int ev);						/* 0x120 */
-	byte(__thiscall *EventGetAway)(cAIChar *self, int ev);						/* 0x124 */
-	byte(__thiscall *EventChase)(cAIChar *self, int ev);						/* 0x128 */
-	byte(__thiscall *EventChaseBack)(cAIChar *self, int ev);					/* 0x12c */
-	byte(__thiscall *EventChaseNoAction)(cAIChar *self, int ev);					/* 0x130 */
-	byte(__thiscall *EventLostPath)(cAIChar *self, int ev);						/* 0x134 */
-	void(__thiscall *Resume)(cAIChar *self);							/* 0x138 */
-	void(__thiscall *UpdateThink)(cAIChar *self);							/* 0x13c */
-	void(__thiscall *CheckPause)(cAIChar *self);							/* 0x140 */
-	void(__thiscall *CheckRepos)(cAIChar *self);							/* 0x144 */
-	byte(__thiscall *CanRepos)(cAIChar *self, int state);						/* 0x148 */
-	void(__thiscall *Think)(cAIChar *self);								/* 0x14c */
-	void(__thiscall *ThinkInRoute)(cAIChar *self);							/* 0x150 */
-	void(__thiscall *ThinkGetAway)(cAIChar *self);							/* 0x154 */
-	void(__thiscall *ThinkChase)(cAIChar *self);							/* 0x158 */
-	void(__thiscall *ThinkChaseBack)(cAIChar *self);						/* 0x15c */
-	void(__thiscall *ThinkChaseNoAction)(cAIChar *self);						/* 0x160 */
-	void(__thiscall *ThinkLostPath)(cAIChar *self);							/* 0x164 */
-	void(__thiscall *ThinkLostPathChase)(cAIChar *self);						/* 0x168 */
-	void(__thiscall *ReactLostPath)(cAIChar *self);							/* 0x16c */
-	void(__thiscall *ReactLostPathChase)(cAIChar *self);						/* 0x170 */
-	void(__thiscall *ReactPatrol)(cAIChar *self);							/* 0x174 */
-	void(__thiscall *ReactInRoute)(cAIChar *self);							/* 0x178 */
-	void(__thiscall *ThinkGoTo)(cAIChar *self);							/* 0x17c */
-	void(__thiscall *ThinkPatrol)(cAIChar *self);							/* 0x180 */
-	void(__thiscall *CheckTalk)(cAIChar *self);							/* 0x184 */
-	byte(__thiscall *Facing)(cAIChar *self, cEntity *a, cEntity *b);				/* 0x188 */
+	byte(*RestoreStateIntern)(cAIChar *self, const cAICharSaved *s);			/* 0xcc */
+	byte(*ChangeStateMore)(cAIChar *self, int state, int allowed, va_list ap);		/* 0xd0 */
+	byte(*IsGroupState)(cAIChar *self, int state);					/* 0xd4 */
+	byte(*Repos)(cAIChar *self, float minDist, float maxDist, byte flag);		/* 0xd8 */
+	void(*AfterRepos)(cAIChar *self);							/* 0xdc */
+	void(*SetDists)(cAIChar *self);							/* 0xe0 */
+	void(*SetDists2)(cAIChar *self);							/* 0xe4 */
+	void(*BeginChange)(cAIChar *self, int state);					/* 0xe8 */
+	void(*SetPauseCheck)(cAIChar *self, byte on);					/* 0xec */
+	void(*SaveState)(cAIChar *self, cAICharSaved *s);					/* 0xf0 */
+	void(*RestoreSaved)(cAIChar *self, const cAICharSaved *s);				/* 0xf4 */
+	void(*SetPaused)(cAIChar *self, byte on);						/* 0xf8 */
+	void(*UpdateAction1)(cAIChar *self);							/* 0xfc */
+	void(*UpdateAction0)(cAIChar *self);							/* 0x100 */
+	void(*UpdateAction)(cAIChar *self);							/* 0x104 */
+	void(*CheckActDist)(cAIChar *self);							/* 0x108 */
+	void(*SetAction)(cAIChar *self, int action);						/* 0x10c */
+	void(*UpdateMove)(cAIChar *self, float dt);						/* 0x110 */
+	byte(*EventDefault)(cAIChar *self, int ev);						/* 0x114 */
+	byte(*EventInRoute)(cAIChar *self, int ev);						/* 0x118 */
+	byte(*EventPatrol)(cAIChar *self, int ev);						/* 0x11c */
+	byte(*EventGoTo)(cAIChar *self, int ev);						/* 0x120 */
+	byte(*EventGetAway)(cAIChar *self, int ev);						/* 0x124 */
+	byte(*EventChase)(cAIChar *self, int ev);						/* 0x128 */
+	byte(*EventChaseBack)(cAIChar *self, int ev);					/* 0x12c */
+	byte(*EventChaseNoAction)(cAIChar *self, int ev);					/* 0x130 */
+	byte(*EventLostPath)(cAIChar *self, int ev);						/* 0x134 */
+	void(*Resume)(cAIChar *self);							/* 0x138 */
+	void(*UpdateThink)(cAIChar *self);							/* 0x13c */
+	void(*CheckPause)(cAIChar *self);							/* 0x140 */
+	void(*CheckRepos)(cAIChar *self);							/* 0x144 */
+	byte(*CanRepos)(cAIChar *self, int state);						/* 0x148 */
+	void(*Think)(cAIChar *self);								/* 0x14c */
+	void(*ThinkInRoute)(cAIChar *self);							/* 0x150 */
+	void(*ThinkGetAway)(cAIChar *self);							/* 0x154 */
+	void(*ThinkChase)(cAIChar *self);							/* 0x158 */
+	void(*ThinkChaseBack)(cAIChar *self);						/* 0x15c */
+	void(*ThinkChaseNoAction)(cAIChar *self);						/* 0x160 */
+	void(*ThinkLostPath)(cAIChar *self);							/* 0x164 */
+	void(*ThinkLostPathChase)(cAIChar *self);						/* 0x168 */
+	void(*ReactLostPath)(cAIChar *self);							/* 0x16c */
+	void(*ReactLostPathChase)(cAIChar *self);						/* 0x170 */
+	void(*ReactPatrol)(cAIChar *self);							/* 0x174 */
+	void(*ReactInRoute)(cAIChar *self);							/* 0x178 */
+	void(*ThinkGoTo)(cAIChar *self);							/* 0x17c */
+	void(*ThinkPatrol)(cAIChar *self);							/* 0x180 */
+	void(*CheckTalk)(cAIChar *self);							/* 0x184 */
+	byte(*Facing)(cAIChar *self, cEntity *a, cEntity *b);				/* 0x188 */
 } cAICharVtbl;
 SD_OFFSET(cAICharVtbl, Debugf, 0x18);
 SD_OFFSET(cAICharVtbl, GetTarget, 0x38);
@@ -474,36 +474,36 @@ SD_SIZE(cAIVehicleParams3, 0x1c);
 #define g_CharGroup GAME_GLOBAL(cAICharGroup *, g_CharGroup)
 #define g_TrafficState GAME_GLOBAL_IN(int, GVar_ShowTrafficAI, 16)	/* 3 after SAI.AnalizeTraffic */
 
-/* constructors (thiscall on the memory from operator_new) */
-CNodesWorld *__thiscall CNodesWorld_ctor(void *mem);
-CNodesWorld2D *__thiscall CNodesWorld2D_ctor(void *mem);
-CNodesTraffic *__thiscall CNodesTrafficInDoor_ctor(void *mem);
-CNodesTraffic *__thiscall CNodesTraffic_ctor(void *mem);
-void *__thiscall CAStar_ctor(void *mem, CNodesWorld *nodes);
-void *__thiscall CAStar2D_ctor(void *mem, CNodesWorld2D *nodes);
-cAIVehicleGroup *__thiscall cAIVehicleGroup_ctor(void *mem);
-cAICharGroup *__thiscall cAICharGroup_ctor(void *mem);
+/* constructors (on the memory from operator_new) */
+CNodesWorld *CNodesWorld_ctor(void *mem);
+CNodesWorld2D *CNodesWorld2D_ctor(void *mem);
+CNodesTraffic *CNodesTrafficInDoor_ctor(void *mem);
+CNodesTraffic *CNodesTraffic_ctor(void *mem);
+void *CAStar_ctor(void *mem, CNodesWorld *nodes);
+void *CAStar2D_ctor(void *mem, CNodesWorld2D *nodes);
+cAIVehicleGroup *cAIVehicleGroup_ctor(void *mem);
+cAICharGroup *cAICharGroup_ctor(void *mem);
 
-void __thiscall CNodesWorld_Load(CNodesWorld *nodes, int arg, const char *name, const vec3_t *pos);
-void __thiscall CNodesWorld_Analyze(CNodesWorld *nodes, const vec3_t *size);
-void __thiscall CNodesWorld_AnalyzeGraph(CNodesWorld *nodes);
-byte __thiscall CNodesWorld_GetRacePoint(CNodesWorld *nodes, vec3_t *out, const vec3_t *initial, float minDist,
+void CNodesWorld_Load(CNodesWorld *nodes, int arg, const char *name, const vec3_t *pos);
+void CNodesWorld_Analyze(CNodesWorld *nodes, const vec3_t *size);
+void CNodesWorld_AnalyzeGraph(CNodesWorld *nodes);
+byte CNodesWorld_GetRacePoint(CNodesWorld *nodes, vec3_t *out, const vec3_t *initial, float minDist,
 	float maxDist, int arg);
-void __thiscall CNodesWorld2D_Load(CNodesWorld2D *nodes, int arg, const char *name, const vec3_t *pos);
-void __thiscall CNodesWorld2D_AnalyzeGraph(CNodesWorld2D *nodes);
+void CNodesWorld2D_Load(CNodesWorld2D *nodes, int arg, const char *name, const vec3_t *pos);
+void CNodesWorld2D_AnalyzeGraph(CNodesWorld2D *nodes);
 
-byte __thiscall cAICharGroup_GetReposPos(cAICharGroup *group, const vec3_t *pos, const char *name, vec3_t *out,
+byte cAICharGroup_GetReposPos(cAICharGroup *group, const vec3_t *pos, const char *name, vec3_t *out,
 	cEntity *target);
 
-int __thiscall cAIVehicle_GetState(cAIVehicle *ai);
-void __thiscall cAIVehicle_Setup(cAIVehicle *ai, cAIVehicleParams1 *p1, cAIVehicleParams2 *p2,
+int cAIVehicle_GetState(cAIVehicle *ai);
+void cAIVehicle_Setup(cAIVehicle *ai, cAIVehicleParams1 *p1, cAIVehicleParams2 *p2,
 	cAIVehicleParams3 *p3);
-cAIVehicleParams1 *__thiscall cAIVehicle_GetParams1(cAIVehicle *ai);
-cAIVehicleParams2 *__thiscall cAIVehicle_GetParams2(cAIVehicle *ai);
-cAIVehicleParams3 *__thiscall cAIVehicle_GetParams3(cAIVehicle *ai);
-cEntity *__thiscall cAIVehicle_GetNearestItemLife(cAIVehicle *ai);
-void __thiscall cAIVehicle_SetRotStatic(cAIVehicle *ai, float a, float b);
-void __thiscall cAIVehicle_SetInertia(cAIVehicle *ai, int on);
+cAIVehicleParams1 *cAIVehicle_GetParams1(cAIVehicle *ai);
+cAIVehicleParams2 *cAIVehicle_GetParams2(cAIVehicle *ai);
+cAIVehicleParams3 *cAIVehicle_GetParams3(cAIVehicle *ai);
+cEntity *cAIVehicle_GetNearestItemLife(cAIVehicle *ai);
+void cAIVehicle_SetRotStatic(cAIVehicle *ai, float a, float b);
+void cAIVehicle_SetInertia(cAIVehicle *ai, int on);
 
 
 
@@ -524,15 +524,15 @@ byte cAIVehicle_SetState(cAIVehicle *ai, int state, ...);
 typedef struct cAIEntityGroup cAIEntityGroup;
 
 typedef struct cAIEntityGroupVtbl {
-	cAIEntityGroup *(__thiscall *Delete)(cAIEntityGroup *self, byte flags);	/* 0x00 */
-	void(__thiscall *Clear)(cAIEntityGroup *self);				/* 0x04 no entities */
-	byte(__thiscall *Add)(cAIEntityGroup *self, cEntity *e);			/* 0x08 0 when full */
-	cEntity *(__thiscall *Get)(cAIEntityGroup *self, int i);			/* 0x0c */
-	int(__thiscall *Num)(cAIEntityGroup *self);				/* 0x10 */
-	byte(__thiscall *CanChange)(cAIEntityGroup *self);			/* 0x14 */
-	void(__thiscall *ResetChange)(cAIEntityGroup *self);			/* 0x18 the time to 0 */
-	void(__thiscall *AllowChange)(cAIEntityGroup *self);			/* 0x1c the time to the limit */
-	void(__thiscall *Update)(cAIEntityGroup *self, float dt);		/* 0x20 the time on */
+	cAIEntityGroup *(*Delete)(cAIEntityGroup *self, byte flags);	/* 0x00 */
+	void(*Clear)(cAIEntityGroup *self);				/* 0x04 no entities */
+	byte(*Add)(cAIEntityGroup *self, cEntity *e);			/* 0x08 0 when full */
+	cEntity *(*Get)(cAIEntityGroup *self, int i);			/* 0x0c */
+	int(*Num)(cAIEntityGroup *self);				/* 0x10 */
+	byte(*CanChange)(cAIEntityGroup *self);			/* 0x14 */
+	void(*ResetChange)(cAIEntityGroup *self);			/* 0x18 the time to 0 */
+	void(*AllowChange)(cAIEntityGroup *self);			/* 0x1c the time to the limit */
+	void(*Update)(cAIEntityGroup *self, float dt);		/* 0x20 the time on */
 } cAIEntityGroupVtbl;
 SD_OFFSET(cAIEntityGroupVtbl, Update, 0x20);
 
@@ -550,18 +550,18 @@ SD_SIZE(cAIEntityGroup, CAIENTITYGROUP_SIZE);
 
 #define g_TimeBetwChangeStateAI GAME_GLOBAL_IN(float, GVar_TimeBetwChangeStateAI, 16)	/* "TimeBetwChangeStateAI" */
 
-/* ctor and dtor are fastcall on the memory of the subclasses */
-void *__fastcall cAIEntityGroup_ctor(void *self);
-void __fastcall cAIEntityGroup_dtor(void *self);
-cAIEntityGroup *__thiscall cAIEntityGroup_Delete(cAIEntityGroup *self, byte flags);
-void __thiscall cAIEntityGroup_Clear(cAIEntityGroup *self);
-byte __thiscall cAIEntityGroup_Add(cAIEntityGroup *self, cEntity *e);
-cEntity *__thiscall cAIEntityGroup_Get(cAIEntityGroup *self, int i);
-int __thiscall cAIEntityGroup_Num(cAIEntityGroup *self);
-byte __thiscall cAIEntityGroup_CanChange(cAIEntityGroup *self);
-void __thiscall cAIEntityGroup_ResetChange(cAIEntityGroup *self);
-void __thiscall cAIEntityGroup_AllowChange(cAIEntityGroup *self);
-void __thiscall cAIEntityGroup_Update(cAIEntityGroup *self, float dt);
+/* ctor and dtor run on the memory of the subclasses */
+void *cAIEntityGroup_ctor(void *self);
+void cAIEntityGroup_dtor(void *self);
+cAIEntityGroup *cAIEntityGroup_Delete(cAIEntityGroup *self, byte flags);
+void cAIEntityGroup_Clear(cAIEntityGroup *self);
+byte cAIEntityGroup_Add(cAIEntityGroup *self, cEntity *e);
+cEntity *cAIEntityGroup_Get(cAIEntityGroup *self, int i);
+int cAIEntityGroup_Num(cAIEntityGroup *self);
+byte cAIEntityGroup_CanChange(cAIEntityGroup *self);
+void cAIEntityGroup_ResetChange(cAIEntityGroup *self);
+void cAIEntityGroup_AllowChange(cAIEntityGroup *self);
+void cAIEntityGroup_Update(cAIEntityGroup *self, float dt);
 
 /* ---- the AIs of the character classes (AI/AIBankDirector.cpp .. AISentinel.cpp, src/game/AI/AI<Class>.c): a cAIChar
  * with its own slots and its own move control (cAIControl<Class>, aicharcontrol.h). The constructors are declared in
@@ -638,65 +638,65 @@ typedef struct cAINurse {
 SD_SIZE(cAINurse, 0x384);
 
 /* AIBankDirector.c, AIBankMaster.c */
-cAIBankDirector *__thiscall cAIBankDirector_Delete(cAIBankDirector *self, byte flags);
-cAIBankMaster *__thiscall cAIBankMaster_Delete(cAIBankMaster *self, byte flags);
+cAIBankDirector *cAIBankDirector_Delete(cAIBankDirector *self, byte flags);
+cAIBankMaster *cAIBankMaster_Delete(cAIBankMaster *self, byte flags);
 /* vf66 of the director and the master: the attack when the character got money or the control is idle */
-void __thiscall cAIBank_CheckAttack(cAIBank *self);
+void cAIBank_CheckAttack(cAIBank *self);
 /* vf56 */
-void __thiscall cAIBankDirector_SetRanges(cAIBankDirector *self);
-void __thiscall cAIBankMaster_SetRanges(cAIBankMaster *self);
+void cAIBankDirector_SetRanges(cAIBankDirector *self);
+void cAIBankMaster_SetRanges(cAIBankMaster *self);
 /* vf27 and vf50 of both: the state from outside and from inside (ATTACK, 2, becomes 7 with the money noted) */
 byte cAIBank_SetState(cAIBank *self, int state, ...);
 byte cAIBank_SetStateIntern(cAIBank *self, int state, ...);
 /* AIBishop.c */
-cAIChar *__thiscall cAIBishop_Delete(cAIChar *self, byte flags);
+cAIChar *cAIBishop_Delete(cAIChar *self, byte flags);
 /* vf66: the shot at the target in the cone of the view */
-void __thiscall cAIBishop_CheckAttack(cAIBishop *self);
-void __thiscall cAIBishop_SetRanges(cAIBishop *self);
+void cAIBishop_CheckAttack(cAIBishop *self);
+void cAIBishop_SetRanges(cAIBishop *self);
 /* vf57: the shot parameters for a target with or without an AI, then the ranges */
-void __thiscall cAIBishop_SetShoot(cAIBishop *self);
+void cAIBishop_SetShoot(cAIBishop *self);
 /* AIDesktop.c: the action button while it flees or patrols (the alarm on) without a strafe, but not in a fall or
  * the ActMore and ActUp actions */
-void __fastcall cAIDesktop_dtor(cAIDesktop *self);
-cAIDesktop *__thiscall cAIDesktop_Delete(cAIDesktop *self, byte flags);
-void __thiscall cAIDesktop_UpdateAction0(cAIDesktop *self);
+void cAIDesktop_dtor(cAIDesktop *self);
+cAIDesktop *cAIDesktop_Delete(cAIDesktop *self, byte flags);
+void cAIDesktop_UpdateAction0(cAIDesktop *self);
 /* AIGear.c */
-cAIChar *__thiscall cAIGear_Delete(cAIChar *self, byte flags);
+cAIChar *cAIGear_Delete(cAIChar *self, byte flags);
 /* vf65: blocked by a paused AI it ran into (not the gate keeper, Sebastian): the action button */
-void __thiscall cAIGear_UpdateAction(cAIGear *self);
-void __thiscall cAIGear_CheckActDist(cAIGear *self);
-void __thiscall cAIGear_SetDists(cAIGear *self);
-void __thiscall cAIGear_SetShoot(cAIGear *self);
+void cAIGear_UpdateAction(cAIGear *self);
+void cAIGear_CheckActDist(cAIGear *self);
+void cAIGear_SetDists(cAIGear *self);
+void cAIGear_SetShoot(cAIGear *self);
 /* the way to the target was not free (vf89 of the move control asks it) */
-byte __fastcall cAIGear_IsBlocked(cAIGear *self);
+byte cAIGear_IsBlocked(cAIGear *self);
 /* AIHuman.c */
-cAIHuman *__thiscall cAIHuman_Delete(cAIHuman *self, byte flags);
-void __thiscall cAIHuman_SetDists(cAIHuman *self);
+cAIHuman *cAIHuman_Delete(cAIHuman *self, byte flags);
+void cAIHuman_SetDists(cAIHuman *self);
 /* AIMayor.c */
-cAIMayor *__thiscall cAIMayor_Delete(cAIMayor *self, byte flags);
-void __thiscall cAIMayor_CheckActDist(cAIMayor *self);
-void __thiscall cAIMayor_SetDists(cAIMayor *self);
+cAIMayor *cAIMayor_Delete(cAIMayor *self, byte flags);
+void cAIMayor_CheckActDist(cAIMayor *self);
+void cAIMayor_SetDists(cAIMayor *self);
 /* AIMessenger.c */
-cAIChar *__thiscall cAIMessenger_Delete(cAIChar *self, byte flags);
-void __thiscall cAIMessenger_CheckActDist(cAIMessenger *self);
-void __thiscall cAIMessenger_SetDists(cAIMessenger *self);
-void __thiscall cAIMessenger_SetShoot(cAIMessenger *self);
+cAIChar *cAIMessenger_Delete(cAIChar *self, byte flags);
+void cAIMessenger_CheckActDist(cAIMessenger *self);
+void cAIMessenger_SetDists(cAIMessenger *self);
+void cAIMessenger_SetShoot(cAIMessenger *self);
 /* AINurse.c */
-cAIChar *__thiscall cAINurse_Delete(cAIChar *self, byte flags);
+cAIChar *cAINurse_Delete(cAIChar *self, byte flags);
 /* the action at a dazed target */
-void __thiscall cAINurse_CheckActDist(cAINurse *self);
-void __thiscall cAINurse_SetDists(cAINurse *self);
+void cAINurse_CheckActDist(cAINurse *self);
+void cAINurse_SetDists(cAINurse *self);
 /* vf27 and vf50: the state from outside and from inside, the start of state 2 marked */
 byte cAINurse_SetState(cAINurse *self, int state, ...);
 byte cAINurse_SetStateIntern(cAINurse *self, int state, ...);
 /* AIPolice.c */
-cAIPolice *__thiscall cAIPolice_Delete(cAIPolice *self, byte flags);
-void __thiscall cAIPolice_CheckActDist(cAIPolice *self);
-void __thiscall cAIPolice_SetDists(cAIPolice *self);
+cAIPolice *cAIPolice_Delete(cAIPolice *self, byte flags);
+void cAIPolice_CheckActDist(cAIPolice *self);
+void cAIPolice_SetDists(cAIPolice *self);
 /* AISentinel.c */
-cAISentinel *__thiscall cAISentinel_Delete(cAISentinel *self, byte flags);
-void __thiscall cAISentinel_CheckActDist(cAISentinel *self);
-void __thiscall cAISentinel_SetDists(cAISentinel *self);
+cAISentinel *cAISentinel_Delete(cAISentinel *self, byte flags);
+void cAISentinel_CheckActDist(cAISentinel *self);
+void cAISentinel_SetDists(cAISentinel *self);
 
 /* cAIChar_dtor, cAIChar_SetDists (vf56) and cAIChar_ChangeState (vf26): aichar.h; the move controls:
  * aicharcontrol.h */

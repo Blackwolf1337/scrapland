@@ -112,7 +112,7 @@ static void FXA_RandomDirScaled(vec3_t *out, float r) {
 
 /* ---- constructors ---- */
 
-void *__thiscall cObjElementFXBankMasterAttack_ctor(void *self) {
+void *cObjElementFXBankMasterAttack_ctor(void *self) {
 	cObjElementFXBankMasterAttack *s = self;
 
 	FXA_SetVtbl(s, VT_FXBANKMASTERATTACK);
@@ -126,7 +126,7 @@ void *__thiscall cObjElementFXBankMasterAttack_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXBankMasterSuction_ctor(void *self) {
+void *cObjElementFXBankMasterSuction_ctor(void *self) {
 	cObjElementFXBankMasterSuction *s = self;
 
 	FXA_SetVtbl(s, VT_FXBANKMASTERSUCTION);
@@ -140,7 +140,7 @@ void *__thiscall cObjElementFXBankMasterSuction_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXBankerSteal_ctor(void *self) {
+void *cObjElementFXBankerSteal_ctor(void *self) {
 	cObjElementFXBankerSteal *s = self;
 
 	FXA_SetVtbl(s, VT_FXBANKERSTEAL);
@@ -155,7 +155,7 @@ void *__thiscall cObjElementFXBankerSteal_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXBertoAttack_ctor(void *self) {
+void *cObjElementFXBertoAttack_ctor(void *self) {
 	cObjElementFXBertoAttack *s = self;
 
 	FXA_SetVtbl(s, VT_FXBERTOATTACK);
@@ -167,7 +167,7 @@ void *__thiscall cObjElementFXBertoAttack_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXBertoFlash_ctor(void *self) {
+void *cObjElementFXBertoFlash_ctor(void *self) {
 	cObjElementFXBertoFlash *s = self;
 
 	FXA_SetVtbl(s, VT_FXBERTOFLASH);
@@ -181,7 +181,7 @@ void *__thiscall cObjElementFXBertoFlash_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXBettyAttack_ctor(void *self) {
+void *cObjElementFXBettyAttack_ctor(void *self) {
 	cObjElementFXBettyAttack *s = self;
 
 	FXA_SetVtbl(s, VT_FXBETTYATTACK);
@@ -209,12 +209,12 @@ static void FXKill_Ctor(cObjElementFXKill *s, void *vt) {
 	s->emitTime = 0.0f;
 }
 
-cObjElementFXBettyKill *__thiscall cObjElementFXBettyKill_ctor(cObjElementFXBettyKill *self) {
+cObjElementFXBettyKill *cObjElementFXBettyKill_ctor(cObjElementFXBettyKill *self) {
 	FXKill_Ctor(self, VT_FXBETTYKILL);
 	return self;
 }
 
-void *__thiscall cObjElementFXBishopAttack_ctor(void *self) {
+void *cObjElementFXBishopAttack_ctor(void *self) {
 	cObjElementFXBishopAttack *s = self;
 
 	FXA_SetVtbl(s, VT_FXBISHOPATTACK);
@@ -229,7 +229,7 @@ void *__thiscall cObjElementFXBishopAttack_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXBishopSellLife_ctor(void *self) {
+void *cObjElementFXBishopSellLife_ctor(void *self) {
 	cObjElementFXBishopSellLife *s = self;
 
 	FXA_SetVtbl(s, VT_FXBISHOPSELLLIFE);
@@ -243,7 +243,7 @@ void *__thiscall cObjElementFXBishopSellLife_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXDTritusAttack_ctor(void *self) {
+void *cObjElementFXDTritusAttack_ctor(void *self) {
 	cObjElementFXDTritusAttack *s = self;
 
 	FXA_SetVtbl(s, VT_FXDTRITUSATTACK);
@@ -256,12 +256,12 @@ void *__thiscall cObjElementFXDTritusAttack_ctor(void *self) {
 	return s;
 }
 
-cObjElementFXDTritusKill *__thiscall cObjElementFXDTritusKill_ctor(cObjElementFXDTritusKill *self) {
+cObjElementFXDTritusKill *cObjElementFXDTritusKill_ctor(cObjElementFXDTritusKill *self) {
 	FXKill_Ctor(self, VT_FXDTRITUSKILL);
 	return self;
 }
 
-void *__thiscall cObjElementFXFunctionarySpecialAction_ctor(void *self) {
+void *cObjElementFXFunctionarySpecialAction_ctor(void *self) {
 	cObjElementFXFunctionarySpecialAction *s = self;
 
 	FXA_SetVtbl(s, VT_FXFUNCTIONARYSPECIALACTION);
@@ -274,7 +274,7 @@ void *__thiscall cObjElementFXFunctionarySpecialAction_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXGearMissile_ctor(void *self) {
+void *cObjElementFXGearMissile_ctor(void *self) {
 	cObjElementFXGearMissile *s = self;
 
 	FXA_SetVtbl(s, VT_FXGEARMISSILE);
@@ -291,7 +291,7 @@ void *__thiscall cObjElementFXGearMissile_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXMercenaryDrink_ctor(void *self) {
+void *cObjElementFXMercenaryDrink_ctor(void *self) {
 	cObjElementFXMercenaryDrink *s = self;
 
 	FXA_SetVtbl(s, VT_FXMERCENARYDRINK);
@@ -303,7 +303,7 @@ void *__thiscall cObjElementFXMercenaryDrink_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXMessengerAttack_ctor(void *self) {
+void *cObjElementFXMessengerAttack_ctor(void *self) {
 	cObjElementFXMessengerAttack *s = self;
 
 	FXA_SetVtbl(s, VT_FXMESSENGERATTACK);
@@ -316,7 +316,7 @@ void *__thiscall cObjElementFXMessengerAttack_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXMessengerTakeDataPack_ctor(void *self) {
+void *cObjElementFXMessengerTakeDataPack_ctor(void *self) {
 	cObjElementFXMessengerTakeDataPack *s = self;
 
 	FXA_SetVtbl(s, VT_FXMESSENGERTAKEDATAPACK);
@@ -328,7 +328,7 @@ void *__thiscall cObjElementFXMessengerTakeDataPack_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXPoliceGearConversion_ctor(void *self) {
+void *cObjElementFXPoliceGearConversion_ctor(void *self) {
 	cObjElementFXPoliceGearConversion *s = self;
 
 	FXA_SetVtbl(s, VT_FXPOLICEGEARCONVERSION);
@@ -344,7 +344,7 @@ void *__thiscall cObjElementFXPoliceGearConversion_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXPoliceSteal_ctor(void *self) {
+void *cObjElementFXPoliceSteal_ctor(void *self) {
 	cObjElementFXPoliceSteal *s = self;
 
 	FXA_SetVtbl(s, VT_FXPOLICESTEAL);
@@ -358,7 +358,7 @@ void *__thiscall cObjElementFXPoliceSteal_ctor(void *self) {
 	return s;
 }
 
-void *__thiscall cObjElementFXSebastianFlash_ctor(void *self) {
+void *cObjElementFXSebastianFlash_ctor(void *self) {
 	cObjElementFXSebastianFlash *s = self;
 
 	FXA_SetVtbl(s, VT_FXSEBASTIANFLASH);
@@ -373,7 +373,7 @@ void *__thiscall cObjElementFXSebastianFlash_ctor(void *self) {
 
 /* ---- destructors ---- */
 
-void __thiscall cObjElementFXBankMasterAttack_dtor(void *self) {
+void cObjElementFXBankMasterAttack_dtor(void *self) {
 	cObjElementFXBankMasterAttack *s = self;
 
 	*(void **)s = VT_FXBANKMASTERATTACK;
@@ -383,7 +383,7 @@ void __thiscall cObjElementFXBankMasterAttack_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXBankMasterSuction_dtor(void *self) {
+void cObjElementFXBankMasterSuction_dtor(void *self) {
 	cObjElementFXBankMasterSuction *s = self;
 
 	*(void **)s = VT_FXBANKMASTERSUCTION;
@@ -399,11 +399,11 @@ static void FXA_DtorParts(void *self, void *vt, uint32_t off) {
 	cObjElement_dtor(self);
 }
 
-void __thiscall cObjElementFXBankerSteal_dtor(void *self) {
+void cObjElementFXBankerSteal_dtor(void *self) {
 	FXA_DtorParts(self, VT_FXBANKERSTEAL, 0xc);
 }
 
-void __thiscall cObjElementFXBertoAttack_dtor(void *self) {
+void cObjElementFXBertoAttack_dtor(void *self) {
 	FXA_DtorParts(self, VT_FXBERTOATTACK, 0x8);
 }
 
@@ -415,11 +415,11 @@ static void FXA_DtorTrails(void *self, void *vt, uint32_t poff, uint32_t toff, u
 	cObjElement_dtor(self);
 }
 
-void __thiscall cObjElementFXBertoFlash_dtor(void *self) {
+void cObjElementFXBertoFlash_dtor(void *self) {
 	FXA_DtorTrails(self, VT_FXBERTOFLASH, 0xc, 0x664, FXBERTOFLASH_TRAILS);
 }
 
-void __thiscall cObjElementFXBettyAttack_dtor(void *self) {
+void cObjElementFXBettyAttack_dtor(void *self) {
 	cObjElementFXBettyAttack *s = self;
 
 	*(void **)s = VT_FXBETTYATTACK;
@@ -432,11 +432,11 @@ void __thiscall cObjElementFXBettyAttack_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXBettyKill_dtor(cObjElementFXBettyKill *self) {
+void cObjElementFXBettyKill_dtor(cObjElementFXBettyKill *self) {
 	FXA_DtorTrails(self, VT_FXBETTYKILL, 0x8, 0x8f4, FXKILL_TRAILS);
 }
 
-void __thiscall cObjElementFXBishopAttack_dtor(void *self) {
+void cObjElementFXBishopAttack_dtor(void *self) {
 	cObjElementFXBishopAttack *s = self;
 
 	*(void **)s = VT_FXBISHOPATTACK;
@@ -447,7 +447,7 @@ void __thiscall cObjElementFXBishopAttack_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXBishopSellLife_dtor(void *self) {
+void cObjElementFXBishopSellLife_dtor(void *self) {
 	cObjElementFXBishopSellLife *s = self;
 
 	*(void **)s = VT_FXBISHOPSELLLIFE;
@@ -456,19 +456,19 @@ void __thiscall cObjElementFXBishopSellLife_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXDTritusAttack_dtor(void *self) {
+void cObjElementFXDTritusAttack_dtor(void *self) {
 	FXA_DtorTrails(self, VT_FXDTRITUSATTACK, 0x8, 0x112c, FXDTRITUSATTACK_TRAILS);
 }
 
-void __thiscall cObjElementFXDTritusKill_dtor(cObjElementFXDTritusKill *self) {
+void cObjElementFXDTritusKill_dtor(cObjElementFXDTritusKill *self) {
 	FXA_DtorTrails(self, VT_FXDTRITUSKILL, 0x8, 0x8f4, FXKILL_TRAILS);
 }
 
-void __thiscall cObjElementFXFunctionarySpecialAction_dtor(void *self) {
+void cObjElementFXFunctionarySpecialAction_dtor(void *self) {
 	FXA_DtorTrails(self, VT_FXFUNCTIONARYSPECIALACTION, 0x8, 0xc4, FXFUNCTIONARY_TRAILS);
 }
 
-void __thiscall cObjElementFXGearMissile_dtor(void *self) {
+void cObjElementFXGearMissile_dtor(void *self) {
 	cObjElementFXGearMissile *s = self;
 
 	*(void **)s = VT_FXGEARMISSILE;
@@ -479,19 +479,19 @@ void __thiscall cObjElementFXGearMissile_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXMercenaryDrink_dtor(void *self) {
+void cObjElementFXMercenaryDrink_dtor(void *self) {
 	FXA_DtorParts(self, VT_FXMERCENARYDRINK, 0x8);
 }
 
-void __thiscall cObjElementFXMessengerAttack_dtor(void *self) {
+void cObjElementFXMessengerAttack_dtor(void *self) {
 	FXA_DtorTrails(self, VT_FXMESSENGERATTACK, 0x14, 0xe8, FXMESSENGERATTACK_TRAILS);
 }
 
-void __thiscall cObjElementFXMessengerTakeDataPack_dtor(void *self) {
+void cObjElementFXMessengerTakeDataPack_dtor(void *self) {
 	FXA_DtorTrails(self, VT_FXMESSENGERTAKEDATAPACK, 0x10, 0xc0, FXDATAPACK_TRAILS);
 }
 
-void __thiscall cObjElementFXPoliceGearConversion_dtor(void *self) {
+void cObjElementFXPoliceGearConversion_dtor(void *self) {
 	cObjElementFXPoliceGearConversion *s = self;
 
 	*(void **)s = VT_FXPOLICEGEARCONVERSION;
@@ -502,114 +502,114 @@ void __thiscall cObjElementFXPoliceGearConversion_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void __thiscall cObjElementFXPoliceSteal_dtor(void *self) {
+void cObjElementFXPoliceSteal_dtor(void *self) {
 	FXA_DtorParts(self, VT_FXPOLICESTEAL, 0xc);
 }
 
-void __thiscall cObjElementFXSebastianFlash_dtor(void *self) {
+void cObjElementFXSebastianFlash_dtor(void *self) {
 	FXA_DtorTrails(self, VT_FXSEBASTIANFLASH, 0x8, 0x7c8, FXSEBASTIAN_TRAILS);
 }
 
 /* ---- deleting destructors (vf00) ---- */
 
-void *__thiscall cObjElementFXBankMasterAttack_Delete(void *self, uint32_t flags) {
+void *cObjElementFXBankMasterAttack_Delete(void *self, uint32_t flags) {
 	cObjElementFXBankMasterAttack_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXBankMasterAttack));
 }
 
-void *__thiscall cObjElementFXBankMasterSuction_Delete(void *self, uint32_t flags) {
+void *cObjElementFXBankMasterSuction_Delete(void *self, uint32_t flags) {
 	cObjElementFXBankMasterSuction_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXBankMasterSuction));
 }
 
-void *__thiscall cObjElementFXBankerSteal_Delete(void *self, uint32_t flags) {
+void *cObjElementFXBankerSteal_Delete(void *self, uint32_t flags) {
 	cObjElementFXBankerSteal_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXBankerSteal));
 }
 
-void *__thiscall cObjElementFXBertoAttack_Delete(void *self, uint32_t flags) {
+void *cObjElementFXBertoAttack_Delete(void *self, uint32_t flags) {
 	cObjElementFXBertoAttack_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXBertoAttack));
 }
 
-void *__thiscall cObjElementFXBertoFlash_Delete(void *self, uint32_t flags) {
+void *cObjElementFXBertoFlash_Delete(void *self, uint32_t flags) {
 	cObjElementFXBertoFlash_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXBertoFlash));
 }
 
-void *__thiscall cObjElementFXBettyAttack_Delete(void *self, uint32_t flags) {
+void *cObjElementFXBettyAttack_Delete(void *self, uint32_t flags) {
 	cObjElementFXBettyAttack_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXBettyAttack));
 }
 
-cObjElementFXBettyKill *__thiscall cObjElementFXBettyKill_Delete(cObjElementFXBettyKill *self, uint32_t flags) {
+cObjElementFXBettyKill *cObjElementFXBettyKill_Delete(cObjElementFXBettyKill *self, uint32_t flags) {
 	cObjElementFXBettyKill_dtor(self);
 	return FXA_Delete(self, flags, sizeof(*self));
 }
 
-void *__thiscall cObjElementFXBishopAttack_Delete(void *self, uint32_t flags) {
+void *cObjElementFXBishopAttack_Delete(void *self, uint32_t flags) {
 	cObjElementFXBishopAttack_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXBishopAttack));
 }
 
-void *__thiscall cObjElementFXBishopSellLife_Delete(void *self, uint32_t flags) {
+void *cObjElementFXBishopSellLife_Delete(void *self, uint32_t flags) {
 	cObjElementFXBishopSellLife_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXBishopSellLife));
 }
 
-void *__thiscall cObjElementFXDTritusAttack_Delete(void *self, uint32_t flags) {
+void *cObjElementFXDTritusAttack_Delete(void *self, uint32_t flags) {
 	cObjElementFXDTritusAttack_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXDTritusAttack));
 }
 
-cObjElementFXDTritusKill *__thiscall cObjElementFXDTritusKill_Delete(cObjElementFXDTritusKill *self, uint32_t flags) {
+cObjElementFXDTritusKill *cObjElementFXDTritusKill_Delete(cObjElementFXDTritusKill *self, uint32_t flags) {
 	cObjElementFXDTritusKill_dtor(self);
 	return FXA_Delete(self, flags, sizeof(*self));
 }
 
-void *__thiscall cObjElementFXFunctionarySpecialAction_Delete(void *self, uint32_t flags) {
+void *cObjElementFXFunctionarySpecialAction_Delete(void *self, uint32_t flags) {
 	cObjElementFXFunctionarySpecialAction_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXFunctionarySpecialAction));
 }
 
-void *__thiscall cObjElementFXGearMissile_Delete(void *self, uint32_t flags) {
+void *cObjElementFXGearMissile_Delete(void *self, uint32_t flags) {
 	cObjElementFXGearMissile_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXGearMissile));
 }
 
-void *__thiscall cObjElementFXMercenaryDrink_Delete(void *self, uint32_t flags) {
+void *cObjElementFXMercenaryDrink_Delete(void *self, uint32_t flags) {
 	cObjElementFXMercenaryDrink_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXMercenaryDrink));
 }
 
-void *__thiscall cObjElementFXMessengerAttack_Delete(void *self, uint32_t flags) {
+void *cObjElementFXMessengerAttack_Delete(void *self, uint32_t flags) {
 	cObjElementFXMessengerAttack_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXMessengerAttack));
 }
 
-void *__thiscall cObjElementFXMessengerTakeDataPack_Delete(void *self, uint32_t flags) {
+void *cObjElementFXMessengerTakeDataPack_Delete(void *self, uint32_t flags) {
 	cObjElementFXMessengerTakeDataPack_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXMessengerTakeDataPack));
 }
 
-void *__thiscall cObjElementFXPoliceGearConversion_Delete(void *self, uint32_t flags) {
+void *cObjElementFXPoliceGearConversion_Delete(void *self, uint32_t flags) {
 	cObjElementFXPoliceGearConversion_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXPoliceGearConversion));
 }
 
-void *__thiscall cObjElementFXPoliceSteal_Delete(void *self, uint32_t flags) {
+void *cObjElementFXPoliceSteal_Delete(void *self, uint32_t flags) {
 	cObjElementFXPoliceSteal_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXPoliceSteal));
 }
 
-void *__thiscall cObjElementFXSebastianFlash_Delete(void *self, uint32_t flags) {
+void *cObjElementFXSebastianFlash_Delete(void *self, uint32_t flags) {
 	cObjElementFXSebastianFlash_dtor(self);
 	return FXA_Delete(self, flags, sizeof(cObjElementFXSebastianFlash));
 }
 
 /* ---- Alive (vf02) ---- */
 
-byte __thiscall FXCharActions_AliveAction(void *self, cDebris *d, cDebrisSys *sys) {
+byte FXCharActions_AliveAction(void *self, cDebris *d, cDebrisSys *sys) {
 	cEntity *e = *(cEntity **)((byte *)self + 4);
 
 	if (e && WithLife_Vtbl(e)->GetActCtrl(e)) {
@@ -633,7 +633,7 @@ static void FXA_EffectOff(CGameModel *m) {
 	CGameModel_SetEffectParam(m, 0, 0);
 }
 
-byte __thiscall cObjElementFXFunctionarySpecialAction_Alive(cObjElementFXFunctionarySpecialAction *self, cDebris *d,
+byte cObjElementFXFunctionarySpecialAction_Alive(cObjElementFXFunctionarySpecialAction *self, cDebris *d,
 	cDebrisSys *sys) {
 	CGameModel *m;
 
@@ -660,7 +660,7 @@ byte __thiscall cObjElementFXFunctionarySpecialAction_Alive(cObjElementFXFunctio
 	return 1;
 }
 
-byte __thiscall cObjElementFXPoliceGearConversion_Alive(cObjElementFXPoliceGearConversion *self, cDebris *d,
+byte cObjElementFXPoliceGearConversion_Alive(cObjElementFXPoliceGearConversion *self, cDebris *d,
 	cDebrisSys *sys) {
 	if (cDebris_Update(d, sys)) {
 		return 1;
@@ -673,7 +673,7 @@ byte __thiscall cObjElementFXPoliceGearConversion_Alive(cObjElementFXPoliceGearC
 
 /* ---- Attach (vf03) ---- */
 
-void __thiscall cObjElementFXBankMasterAttack_Attach(cObjElementFXBankMasterAttack *self, cDebris *d) {
+void cObjElementFXBankMasterAttack_Attach(cObjElementFXBankMasterAttack *self, cDebris *d) {
 	FXA_AttachDummy01(&self->particles, d);
 	CHECK(self->particles.ParticleSystem);
 	CGameTrail_SetMaxTrails(&self->trail, 20);
@@ -685,31 +685,31 @@ void __thiscall cObjElementFXBankMasterAttack_Attach(cObjElementFXBankMasterAtta
 	self->t = 0.0f;
 }
 
-void __thiscall cObjElementFXBankMasterSuction_Attach(cObjElementFXBankMasterSuction *self, cDebris *d) {
+void cObjElementFXBankMasterSuction_Attach(cObjElementFXBankMasterSuction *self, cDebris *d) {
 	FXA_AttachDummy01(&self->particles, d);
 	CHECK(self->particles.ParticleSystem);
 	self->lastSound = 0;
 	self->count = 0;
 }
 
-void __thiscall FXCharActions_AttachC(void *self, cDebris *d) {
+void FXCharActions_AttachC(void *self, cDebris *d) {
 	FXA_AttachDummy01((CGameParticles *)((byte *)self + 0xc), d);
 }
 
-void __thiscall FXCharActions_Attach8(void *self, cDebris *d) {
+void FXCharActions_Attach8(void *self, cDebris *d) {
 	CGameParticles *sp = (CGameParticles *)((byte *)self + 8);
 
 	FXA_AttachDummy01(sp, d);
 	CHECK(sp->ParticleSystem);
 }
 
-void __thiscall cObjElementFXBertoFlash_Attach(cObjElementFXBertoFlash *self, cDebris *d) {
+void cObjElementFXBertoFlash_Attach(cObjElementFXBertoFlash *self, cDebris *d) {
 	FXA_AttachDummy01(&self->particles, d);
 	FXA_Trails(self->trails, FXBERTOFLASH_TRAILS, 31, 2, 3);
 	CHECK(self->particles.ParticleSystem);
 }
 
-void __thiscall cObjElementFXBettyAttack_Attach(cObjElementFXBettyAttack *self, cDebris *d) {
+void cObjElementFXBettyAttack_Attach(cObjElementFXBettyAttack *self, cDebris *d) {
 	CGameModel *m = Debris_Model(d);
 
 	FXA_AttachDummy01(&self->particles, d);
@@ -726,7 +726,7 @@ void __thiscall cObjElementFXBettyAttack_Attach(cObjElementFXBettyAttack *self, 
 	CGameLensFlare_SetType(&self->flare, 2);
 }
 
-void __thiscall cObjElementFXKill_Attach(cObjElementFXKill *self, cDebris *d) {
+void cObjElementFXKill_Attach(cObjElementFXKill *self, cDebris *d) {
 	FXA_AttachDummy01(&self->particles, d);
 	FXA_Trails(self->trails, FXKILL_TRAILS, 31, 10, 3);
 	CHECK(self->particles.ParticleSystem);
@@ -744,7 +744,7 @@ static void FXBishop_Trail(CGameTrail *t, byte segments, int texture, const floa
 	CGameTrail_SetPremul(t, 1);
 }
 
-void __thiscall cObjElementFXBishopAttack_Attach(cObjElementFXBishopAttack *self, cDebris *d) {
+void cObjElementFXBishopAttack_Attach(cObjElementFXBishopAttack *self, cDebris *d) {
 	static const float uv0[2] = { 4.0f, 1.0f };
 	static const float uv1[2] = { 16.0f, 0.5f };
 
@@ -756,20 +756,20 @@ void __thiscall cObjElementFXBishopAttack_Attach(cObjElementFXBishopAttack *self
 	FXBishop_Trail(&self->trails[3], 31, 4, NULL);
 }
 
-void __thiscall cObjElementFXBishopSellLife_Attach(cObjElementFXBishopSellLife *self, cDebris *d) {
+void cObjElementFXBishopSellLife_Attach(cObjElementFXBishopSellLife *self, cDebris *d) {
 	FXA_AttachDummy01(&self->glow, d);
 	CHECK(self->glow.ParticleSystem);
 	FXA_AttachNode(&self->dataCodec, Debris_Model(d), "Dummy02");
 	CHECK(self->dataCodec.ParticleSystem);
 }
 
-void __thiscall cObjElementFXDTritusAttack_Attach(cObjElementFXDTritusAttack *self, cDebris *d) {
+void cObjElementFXDTritusAttack_Attach(cObjElementFXDTritusAttack *self, cDebris *d) {
 	FXA_AttachDummy01(&self->particles, d);
 	FXA_Trails(self->trails, FXDTRITUSATTACK_TRAILS, 31, 10, 3);
 	CHECK(self->particles.ParticleSystem);
 }
 
-void __thiscall cObjElementFXFunctionarySpecialAction_Attach(cObjElementFXFunctionarySpecialAction *self, cDebris *d) {
+void cObjElementFXFunctionarySpecialAction_Attach(cObjElementFXFunctionarySpecialAction *self, cDebris *d) {
 	FXA_AttachDummy01(&self->particles, d);
 	for (int i = 0; i < FXFUNCTIONARY_TRAILS; i++) {
 		CGameTrail *t = &self->trails[i];
@@ -782,7 +782,7 @@ void __thiscall cObjElementFXFunctionarySpecialAction_Attach(cObjElementFXFuncti
 	self->alpha = 0.0f;
 }
 
-void __thiscall cObjElementFXGearMissile_Attach(cObjElementFXGearMissile *self, cDebris *d) {
+void cObjElementFXGearMissile_Attach(cObjElementFXGearMissile *self, cDebris *d) {
 	CGameModel *m = Debris_Model(d);
 
 	CHECK(CGameModel_IsLoaded(m));
@@ -826,7 +826,7 @@ static void FXMessenger_Trail(CGameTrail *t, byte segments, byte main) {
 	}
 }
 
-void __thiscall cObjElementFXMessengerAttack_Attach(cObjElementFXMessengerAttack *self, cDebris *d) {
+void cObjElementFXMessengerAttack_Attach(cObjElementFXMessengerAttack *self, cDebris *d) {
 	FXA_AttachDummy01(&self->particles, d);
 	CHECK(self->particles.ParticleSystem);
 	for (int i = 0; i < FXMESSENGERATTACK_TRAILS; i++) {
@@ -834,7 +834,7 @@ void __thiscall cObjElementFXMessengerAttack_Attach(cObjElementFXMessengerAttack
 	}
 }
 
-void __thiscall cObjElementFXMessengerTakeDataPack_Attach(cObjElementFXMessengerTakeDataPack *self, cDebris *d) {
+void cObjElementFXMessengerTakeDataPack_Attach(cObjElementFXMessengerTakeDataPack *self, cDebris *d) {
 	FXA_AttachDummy01(&self->particles, d);
 	CHECK(self->particles.ParticleSystem);
 	for (int i = 0; i < FXDATAPACK_TRAILS; i++) {
@@ -869,7 +869,7 @@ static const FXGearPiece fxa_gearPieces[] = {
 };
 static const int fxa_gearNumPieces[FXGEAR_ARMORS] = { 8, 12, 10 };
 
-void __thiscall cObjElementFXPoliceGearConversion_Attach(cObjElementFXPoliceGearConversion *self, cDebris *d) {
+void cObjElementFXPoliceGearConversion_Attach(cObjElementFXPoliceGearConversion *self, cDebris *d) {
 	char buf[256];
 	int i, k;
 
@@ -908,7 +908,7 @@ void __thiscall cObjElementFXPoliceGearConversion_Attach(cObjElementFXPoliceGear
 	self->smokeT = 0.0f;
 }
 
-void __thiscall cObjElementFXSebastianFlash_Attach(cObjElementFXSebastianFlash *self, cDebris *d) {
+void cObjElementFXSebastianFlash_Attach(cObjElementFXSebastianFlash *self, cDebris *d) {
 	FXA_AttachDummy01(&self->particles, d);
 	FXA_Trails(self->trails, FXSEBASTIAN_TRAILS, 31, 2, 3);
 	CHECK(self->particles.ParticleSystem);
@@ -916,7 +916,7 @@ void __thiscall cObjElementFXSebastianFlash_Attach(cObjElementFXSebastianFlash *
 
 /* ---- Reset (vf04) ---- */
 
-void __thiscall cObjElementFXBankMasterAttack_Reset(cObjElementFXBankMasterAttack *self, int arg) {
+void cObjElementFXBankMasterAttack_Reset(cObjElementFXBankMasterAttack *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -925,7 +925,7 @@ void __thiscall cObjElementFXBankMasterAttack_Reset(cObjElementFXBankMasterAttac
 	self->t = 0.0f;
 }
 
-void __thiscall cObjElementFXBankMasterSuction_Reset(cObjElementFXBankMasterSuction *self, int arg) {
+void cObjElementFXBankMasterSuction_Reset(cObjElementFXBankMasterSuction *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -933,21 +933,21 @@ void __thiscall cObjElementFXBankMasterSuction_Reset(cObjElementFXBankMasterSuct
 	self->lastSound = 0;
 }
 
-void __thiscall cObjElementFXBankerSteal_Reset(cObjElementFXBankerSteal *self, int arg) {
+void cObjElementFXBankerSteal_Reset(cObjElementFXBankerSteal *self, int arg) {
 	(void)arg;
 	self->ent = NULL;
 	self->target = NULL;
 	self->time = 0.0f;
 }
 
-void __thiscall cObjElementFXBertoAttack_Reset(cObjElementFXBertoAttack *self, int arg) {
+void cObjElementFXBertoAttack_Reset(cObjElementFXBertoAttack *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
 	CGameParticles_KillAll(&self->particles);
 }
 
-void __thiscall cObjElementFXBertoFlash_Reset(cObjElementFXBertoFlash *self, int arg) {
+void cObjElementFXBertoFlash_Reset(cObjElementFXBertoFlash *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -955,7 +955,7 @@ void __thiscall cObjElementFXBertoFlash_Reset(cObjElementFXBertoFlash *self, int
 	CGameParticles_KillAll(&self->particles);
 }
 
-void __thiscall cObjElementFXBettyAttack_Reset(cObjElementFXBettyAttack *self, int arg) {
+void cObjElementFXBettyAttack_Reset(cObjElementFXBettyAttack *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->t2 = 0.0f;
@@ -970,7 +970,7 @@ void __thiscall cObjElementFXBettyAttack_Reset(cObjElementFXBettyAttack *self, i
 	self->ring = 0.0f;
 }
 
-void __thiscall cObjElementFXKill_Reset(cObjElementFXKill *self, int arg) {
+void cObjElementFXKill_Reset(cObjElementFXKill *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -978,7 +978,7 @@ void __thiscall cObjElementFXKill_Reset(cObjElementFXKill *self, int arg) {
 	CGameParticles_KillAll(&self->particles);
 }
 
-void __thiscall cObjElementFXBishopAttack_Reset(cObjElementFXBishopAttack *self, int arg) {
+void cObjElementFXBishopAttack_Reset(cObjElementFXBishopAttack *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -986,7 +986,7 @@ void __thiscall cObjElementFXBishopAttack_Reset(cObjElementFXBishopAttack *self,
 	FXA_ClearTrails(self->trails, FXBISHOPATTACK_TRAILS);
 }
 
-void __thiscall cObjElementFXBishopSellLife_Reset(cObjElementFXBishopSellLife *self, int arg) {
+void cObjElementFXBishopSellLife_Reset(cObjElementFXBishopSellLife *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -996,7 +996,7 @@ void __thiscall cObjElementFXBishopSellLife_Reset(cObjElementFXBishopSellLife *s
 	CGameParticles_KillAll(&self->dataCodec);
 }
 
-void __thiscall cObjElementFXDTritusAttack_Reset(cObjElementFXDTritusAttack *self, int arg) {
+void cObjElementFXDTritusAttack_Reset(cObjElementFXDTritusAttack *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -1004,7 +1004,7 @@ void __thiscall cObjElementFXDTritusAttack_Reset(cObjElementFXDTritusAttack *sel
 	CGameParticles_KillAll(&self->particles);
 }
 
-void __thiscall cObjElementFXFunctionarySpecialAction_Reset(cObjElementFXFunctionarySpecialAction *self, int arg) {
+void cObjElementFXFunctionarySpecialAction_Reset(cObjElementFXFunctionarySpecialAction *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -1013,7 +1013,7 @@ void __thiscall cObjElementFXFunctionarySpecialAction_Reset(cObjElementFXFunctio
 	self->alpha = 0.0f;
 }
 
-void __thiscall cObjElementFXGearMissile_Reset(cObjElementFXGearMissile *self, int arg) {
+void cObjElementFXGearMissile_Reset(cObjElementFXGearMissile *self, int arg) {
 	(void)arg;
 	self->entity = NULL;
 	self->emitTime = 0.0f;
@@ -1027,13 +1027,13 @@ void __thiscall cObjElementFXGearMissile_Reset(cObjElementFXGearMissile *self, i
 	CGameParticles_KillAll(&self->particles);
 }
 
-void __thiscall cObjElementFXMercenaryDrink_Reset(cObjElementFXMercenaryDrink *self, int arg) {
+void cObjElementFXMercenaryDrink_Reset(cObjElementFXMercenaryDrink *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
 }
 
-void __thiscall cObjElementFXMessengerAttack_Reset(cObjElementFXMessengerAttack *self, int arg) {
+void cObjElementFXMessengerAttack_Reset(cObjElementFXMessengerAttack *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -1041,14 +1041,14 @@ void __thiscall cObjElementFXMessengerAttack_Reset(cObjElementFXMessengerAttack 
 	FXA_ClearTrails(self->trails, FXMESSENGERATTACK_TRAILS);
 }
 
-void __thiscall cObjElementFXMessengerTakeDataPack_Reset(cObjElementFXMessengerTakeDataPack *self, int arg) {
+void cObjElementFXMessengerTakeDataPack_Reset(cObjElementFXMessengerTakeDataPack *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	CGameParticles_KillAll(&self->particles);
 	FXA_ClearTrails(self->trails, FXDATAPACK_TRAILS);
 }
 
-void __thiscall cObjElementFXPoliceGearConversion_Reset(cObjElementFXPoliceGearConversion *self, int arg) {
+void cObjElementFXPoliceGearConversion_Reset(cObjElementFXPoliceGearConversion *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->lastTime = 0.0f;
@@ -1066,14 +1066,14 @@ void __thiscall cObjElementFXPoliceGearConversion_Reset(cObjElementFXPoliceGearC
 	self->smokeT = 0.0f;
 }
 
-void __thiscall cObjElementFXPoliceSteal_Reset(cObjElementFXPoliceSteal *self, int arg) {
+void cObjElementFXPoliceSteal_Reset(cObjElementFXPoliceSteal *self, int arg) {
 	(void)arg;
 	self->ent = NULL;
 	self->target = NULL;
 	self->emitTime = 0.0f;
 }
 
-void __thiscall cObjElementFXSebastianFlash_Reset(cObjElementFXSebastianFlash *self, int arg) {
+void cObjElementFXSebastianFlash_Reset(cObjElementFXSebastianFlash *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -1083,24 +1083,24 @@ void __thiscall cObjElementFXSebastianFlash_Reset(cObjElementFXSebastianFlash *s
 
 /* ---- the setters and starts ---- */
 
-void __thiscall FXCharActions_SetEntity8(void *self, cEntity *e) {
+void FXCharActions_SetEntity8(void *self, cEntity *e) {
 	*(cEntity **)((byte *)self + 8) = e;
 	FXA_Model(e);
 }
 
-void __thiscall cObjElementFXBankerSteal_SetEntity(cObjElementFXBankerSteal *self, cEntity *e) {
+void cObjElementFXBankerSteal_SetEntity(cObjElementFXBankerSteal *self, cEntity *e) {
 	self->ent = e;
 	self->node = CGameModel_FindRenderNode(FXA_Model(e), "DF_BankerSteal");
 }
 
-void __thiscall cObjElementFXBishopSellLife_SetAttacked(cObjElementFXBishopSellLife *self, cEntity *e) {
+void cObjElementFXBishopSellLife_SetAttacked(cObjElementFXBishopSellLife *self, cEntity *e) {
 	self->attacked = e;
 	if (e) {
 		FXA_Model(e);
 	}
 }
 
-void __thiscall cObjElementFXBishopSellLife_SetAttacker(cObjElementFXBishopSellLife *self, cEntity *e) {
+void cObjElementFXBishopSellLife_SetAttacker(cObjElementFXBishopSellLife *self, cEntity *e) {
 	self->attacker = e;
 	if (!e) {
 		return;
@@ -1112,55 +1112,55 @@ void __thiscall cObjElementFXBishopSellLife_SetAttacker(cObjElementFXBishopSellL
 	CHECK(self->nodeHand[1] > -1);
 }
 
-void __thiscall cObjElementFXMessengerTakeDataPack_SetItem(cObjElementFXMessengerTakeDataPack *self, cEntity *e) {
+void cObjElementFXMessengerTakeDataPack_SetItem(cObjElementFXMessengerTakeDataPack *self, cEntity *e) {
 	self->item = e;
 	CHECK(e);
 	CHECK(self->item->vftable->IsType(self->item, "Obj"));
 }
 
-void __thiscall cObjElementFXMessengerTakeDataPack_SetOwner(cObjElementFXMessengerTakeDataPack *self, cEntity *e) {
+void cObjElementFXMessengerTakeDataPack_SetOwner(cObjElementFXMessengerTakeDataPack *self, cEntity *e) {
 	self->owner = e;
 	CHECK(e);
 	CHECK(self->owner->vftable->IsType(self->owner, TYEN_WALKCHAR));
 }
 
-void __thiscall cObjElementFXMercenaryDrink_SetC0(cObjElementFXMercenaryDrink *self, float a, float b, float c) {
+void cObjElementFXMercenaryDrink_SetC0(cObjElementFXMercenaryDrink *self, float a, float b, float c) {
 	self->offset.x = a;
 	self->offset.y = b;
 	self->offset.z = c;
 }
 
-void __thiscall cObjElementFXMercenaryDrink_Start(cObjElementFXMercenaryDrink *self, cEntity *e) {
+void cObjElementFXMercenaryDrink_Start(cObjElementFXMercenaryDrink *self, cEntity *e) {
 	self->ent = e;
 	self->nodeJar = CGameModel_FindRenderNode(FXA_Model(e), "OB_JarraMercurio_MercA");
 }
 
-void __thiscall cObjElementFXBankMasterAttack_Start(cObjElementFXBankMasterAttack *self, cEntity *e) {
+void cObjElementFXBankMasterAttack_Start(cObjElementFXBankMasterAttack *self, cEntity *e) {
 	self->ent = e;
 	self->nodeBaton = CGameModel_FindRenderNode(FXA_Model(e), "DF_Batton");
 	CHECK(self->nodeBaton >= 0);
 }
 
-void __thiscall cObjElementFXBertoAttack_Start(cObjElementFXBertoAttack *self, cEntity *e) {
+void cObjElementFXBertoAttack_Start(cObjElementFXBertoAttack *self, cEntity *e) {
 	self->ent = e;
 	self->nodeGlass = CGameModel_FindRenderNode(FXA_Model(e), "R_Berto_TroncoInf-cristal");
 	CHECK(self->nodeGlass > -1);
 }
 
-void __thiscall cObjElementFXKill_SetAngles(cObjElementFXKill *self, float x, float y, float z) {
+void cObjElementFXKill_SetAngles(cObjElementFXKill *self, float x, float y, float z) {
 	self->angles.x = x;
 	self->angles.y = y;
 	self->angles.z = z;
 }
 
-void __thiscall cObjElementFXBishopAttack_SetLine(cObjElementFXBishopAttack *self, float fx, float fy, float fz,
+void cObjElementFXBishopAttack_SetLine(cObjElementFXBishopAttack *self, float fx, float fy, float fz,
 	float tx, float ty, float tz) {
 	self->from = (vec3_t){ fx, fy, fz };
 	self->to = (vec3_t){ tx, ty, tz };
 	self->dir = FXA_Dir(&self->from, &self->to);
 }
 
-void __thiscall cObjElementFXGearMissile_Run(void *self, cDebris *d) {
+void cObjElementFXGearMissile_Run(void *self, cDebris *d) {
 	cObjElementFX *fx = self;
 
 	for (int i = 0; i < 8; i++) {
@@ -1605,7 +1605,7 @@ static void GM_FadeSparks(cObjElementFXGearMissile *self, cDebris *debris, float
 	CGameParticles_SetSparksOn(p, 0);
 }
 
-void __thiscall cObjElementFXGearMissile_Update(cObjElementFXGearMissile *self, cDebris *debris, float dt) {
+void cObjElementFXGearMissile_Update(cObjElementFXGearMissile *self, cDebris *debris, float dt) {
 	CGameModel *model = Debris_Model(debris);
 	CGameParticles *p = &self->particles;
 	vec3_t pos, rot, a, b, tmp;
@@ -1706,7 +1706,7 @@ void __thiscall cObjElementFXGearMissile_Update(cObjElementFXGearMissile *self, 
 	}
 }
 
-void __fastcall cObjElementFXBankMasterSuction_RandomPoints(cObjElementFXBankMasterSuction *self) {
+void cObjElementFXBankMasterSuction_RandomPoints(cObjElementFXBankMasterSuction *self) {
 	vec3_t a, b;
 
 	self->ent->vftable->GetPos(self->ent, &a);
@@ -1718,7 +1718,7 @@ void __fastcall cObjElementFXBankMasterSuction_RandomPoints(cObjElementFXBankMas
 	}
 }
 
-void __fastcall cObjElementFXBertoFlash_RandomPoints(cObjElementFXBertoFlash *self) {
+void cObjElementFXBertoFlash_RandomPoints(cObjElementFXBertoFlash *self) {
 	for (int i = 0; i < FXBERTOFLASH_POINTS; i++) {
 		FXA_RandomDirScaled(&self->dir[i], FXA_Rand(4.0, 10.0));
 		float lo = Obj_Vtbl(self->target)->GetRadius(self->target) * 0.65f;
@@ -1727,7 +1727,7 @@ void __fastcall cObjElementFXBertoFlash_RandomPoints(cObjElementFXBertoFlash *se
 	}
 }
 
-void __fastcall cObjElementFXSebastianFlash_RandomPoints(cObjElementFXSebastianFlash *self) {
+void cObjElementFXSebastianFlash_RandomPoints(cObjElementFXSebastianFlash *self) {
 	for (int i = 0; i < FXSEBASTIAN_POINTS; i++) {
 		FXA_RandomDirScaled(&self->dir[i], FXA_Rand(3.0, 0.0));
 		FXA_RandomDirScaled(&self->dir2[i], FXA_Rand(65.0, 15.0));
@@ -1741,7 +1741,7 @@ static void FXA_InvRotSC(const vec3_t *rot, vec3_t *c, vec3_t *s) {
 	X87_SinCos(-rot->z, &s->z, &c->z);
 }
 
-void __thiscall cObjElementFXKill_Start(cObjElementFXKill *self, cEntity *e) {
+void cObjElementFXKill_Start(cObjElementFXKill *self, cEntity *e) {
 	vec3_t center, rot, c, s, tmp, rel;
 	vec3_t pts[FXKILL_POINTS];
 
@@ -1763,7 +1763,7 @@ void __thiscall cObjElementFXKill_Start(cObjElementFXKill *self, cEntity *e) {
 	}
 }
 
-void __thiscall cObjElementFXDTritusAttack_Start(cObjElementFXDTritusAttack *self, cEntity *e) {
+void cObjElementFXDTritusAttack_Start(cObjElementFXDTritusAttack *self, cEntity *e) {
 	vec3_t center, rot, c, s, tmp, rel;
 	vec3_t pts[FXDTRITUSATTACK_POINTS];
 
@@ -1787,7 +1787,7 @@ void __thiscall cObjElementFXDTritusAttack_Start(cObjElementFXDTritusAttack *sel
 	}
 }
 
-void __thiscall cObjElementFXFunctionarySpecialAction_Start(void *self, cEntity *e) {
+void cObjElementFXFunctionarySpecialAction_Start(void *self, cEntity *e) {
 	cObjElementFXFunctionarySpecialAction *s = self;
 	vec3_t v, rot, out, pos;
 
@@ -1834,7 +1834,7 @@ static void FXA_Jitter(vec3_t *p, float r) {
 	p->z = p->z + d->z * r;
 }
 
-void __thiscall cObjElementFXBettyAttack_Emit(cObjElementFXBettyAttack *self, float x, float y, float z) {
+void cObjElementFXBettyAttack_Emit(cObjElementFXBettyAttack *self, float x, float y, float z) {
 	CGameParticles *sp = &self->particles;
 	vec3_t v, ang, out;
 
@@ -1895,7 +1895,7 @@ static float FXBetty_Yaw(const vec3_t *from, const vec3_t *to) {
 	return Vec3_GetRotAng(&ang, &n)->y;
 }
 
-void __thiscall cObjElementFXBettyAttack_Update(cObjElementFXBettyAttack *self, cDebris *d, float dt) {
+void cObjElementFXBettyAttack_Update(cObjElementFXBettyAttack *self, cDebris *d, float dt) {
 	vec3_t p, rot, o, dir, ang, v;
 	float a;
 
@@ -2148,7 +2148,7 @@ static void FXA_Brake(CGameParticles *sp, float k) {
 	sp->initAccMax = sp->initAccMin;
 }
 
-void __thiscall cObjElementFXPoliceGearConversion_Update(cObjElementFXPoliceGearConversion *self, cDebris *d,
+void cObjElementFXPoliceGearConversion_Update(cObjElementFXPoliceGearConversion *self, cDebris *d,
 	float dt) {
 	vec3_t p, rot, v, dir, o, ang, tmp, verts[6];
 	float a;
@@ -2430,7 +2430,7 @@ void __thiscall cObjElementFXPoliceGearConversion_Update(cObjElementFXPoliceGear
 	}
 	self->lastTime = self->time;
 }
-void __fastcall cObjElementFXMessengerTakeDataPack_Start(cObjElementFXMessengerTakeDataPack *self) {
+void cObjElementFXMessengerTakeDataPack_Start(cObjElementFXMessengerTakeDataPack *self) {
 	vec3_t ang, t1, t2, o1, o2, p0, d;
 
 	CHECK(CGameModel_IsLoaded(Obj_Vtbl(self->owner)->GetModel(self->owner)));
@@ -2467,7 +2467,7 @@ void __fastcall cObjElementFXMessengerTakeDataPack_Start(cObjElementFXMessengerT
 	}
 }
 
-void __thiscall cObjElementFXMessengerAttack_SetLine(cObjElementFXMessengerAttack *self, float fx, float fy, float fz,
+void cObjElementFXMessengerAttack_SetLine(cObjElementFXMessengerAttack *self, float fx, float fy, float fz,
 	float tx, float ty, float tz) {
 	vec3_t coefs[FXMESSENGER_POINTS];
 	vec3_t p, q, d;
@@ -2526,7 +2526,7 @@ void __thiscall cObjElementFXMessengerAttack_SetLine(cObjElementFXMessengerAttac
 	}
 }
 
-void __thiscall cObjElementFXPoliceGearConversion_Start(cObjElementFXPoliceGearConversion *self, cEntity *e) {
+void cObjElementFXPoliceGearConversion_Start(cObjElementFXPoliceGearConversion *self, cEntity *e) {
 	CGameParticles *sp = &self->particles;
 	vec3_t t, v, ang, out, base;
 	int i;
@@ -2737,17 +2737,17 @@ static void FXKill_Update(cObjElementFXKill *self, cDebris *d, float sortBias, f
 	FXBeams_Draw(&b, self->time, dt, &pos, &rot);
 }
 
-void __thiscall cObjElementFXBettyKill_Update(cObjElementFXBettyKill *self, cDebris *d, float dt) {
+void cObjElementFXBettyKill_Update(cObjElementFXBettyKill *self, cDebris *d, float dt) {
 	(void)dt;
 	FXKill_Update(self, d, -88.0f, 0.28f, 0x40f54019, 0xffe1190a, 0xf54019);
 }
 
-void __thiscall cObjElementFXDTritusKill_Update(cObjElementFXDTritusKill *self, cDebris *d, float dt) {
+void cObjElementFXDTritusKill_Update(cObjElementFXDTritusKill *self, cDebris *d, float dt) {
 	(void)dt;
 	FXKill_Update(self, d, -77.0f, 0.02f, 0x401940f5, 0xff0a19e1, 0x1940f5);
 }
 
-void __thiscall cObjElementFXBankMasterAttack_Update(cObjElementFXBankMasterAttack *self, cDebris *d, float dt) {
+void cObjElementFXBankMasterAttack_Update(cObjElementFXBankMasterAttack *self, cDebris *d, float dt) {
 	vec3_t pos, rot, base, v, ang, o1, o2, p;
 	matrix_t mtx;
 
@@ -2807,7 +2807,7 @@ void __thiscall cObjElementFXBankMasterAttack_Update(cObjElementFXBankMasterAtta
 	CGameTrail_Add(&self->trail, base, 1.0f, color);
 }
 
-void __thiscall cObjElementFXBertoAttack_Update(cObjElementFXBertoAttack *self, cDebris *d, float dt) {
+void cObjElementFXBertoAttack_Update(cObjElementFXBertoAttack *self, cDebris *d, float dt) {
 	vec3_t pos, rot, avg;
 	vec3_t pts[32];
 	float f;
@@ -2850,7 +2850,7 @@ void __thiscall cObjElementFXBertoAttack_Update(cObjElementFXBertoAttack *self, 
 	CGameParticles_SetParticle(sp, 33, avg.x, avg.y, avg.z, FXA_Rand(50.0, 150.0), color, 2, 0.0f);
 }
 
-void __thiscall cObjElementFXDTritusAttack_Update(cObjElementFXDTritusAttack *self, cDebris *d, float dt) {
+void cObjElementFXDTritusAttack_Update(cObjElementFXDTritusAttack *self, cDebris *d, float dt) {
 	vec3_t pos, rot;
 
 	(void)dt;
@@ -2876,7 +2876,7 @@ void __thiscall cObjElementFXDTritusAttack_Update(cObjElementFXDTritusAttack *se
 
 #define FXA_RAMP_POLICESTEAL 0x4307ac
 
-void __thiscall cObjElementFXPoliceSteal_Update(cObjElementFXPoliceSteal *self, cDebris *d, float dt) {
+void cObjElementFXPoliceSteal_Update(cObjElementFXPoliceSteal *self, cDebris *d, float dt) {
 	vec3_t tmp, a, b, v, ang, dir;
 
 	(void)dt;
@@ -2943,7 +2943,7 @@ void __thiscall cObjElementFXPoliceSteal_Update(cObjElementFXPoliceSteal *self, 
 	CGameParticles_EmitN(sp, 1, 0);
 }
 
-void __thiscall cObjElementFXSebastianFlash_Update(cObjElementFXSebastianFlash *self, cDebris *d, float dt) {
+void cObjElementFXSebastianFlash_Update(cObjElementFXSebastianFlash *self, cDebris *d, float dt) {
 	vec3_t pos, rot, tmp, D, p1, p2, e, base;
 	float f;
 	int alpha;
@@ -3026,7 +3026,7 @@ void __thiscall cObjElementFXSebastianFlash_Update(cObjElementFXSebastianFlash *
 	CGameParticles_SetParticle(sp, 1, base.x, base.y, base.z, FXA_Rand(50.0, 100.0), color, 2, 0.0f);
 }
 
-void __thiscall cObjElementFXBertoFlash_Update(cObjElementFXBertoFlash *self, cDebris *d, float dt) {
+void cObjElementFXBertoFlash_Update(cObjElementFXBertoFlash *self, cDebris *d, float dt) {
 	vec3_t pos, rot, tmp, tmp2, D, p1, p2, e, base;
 	float f, v;
 
@@ -3132,7 +3132,7 @@ static int FXA_StealSound(int last, CGameModel *m, const vec3_t *at) {
 	return s;
 }
 
-void __thiscall cObjElementFXBankerSteal_Update(cObjElementFXBankerSteal *self, cDebris *d, float dt) {
+void cObjElementFXBankerSteal_Update(cObjElementFXBankerSteal *self, cDebris *d, float dt) {
 	vec3_t tmp, a, b, off, src, tp, v, ang, dir;
 	matrix_t mtx;
 
@@ -3231,7 +3231,7 @@ void __thiscall cObjElementFXBankerSteal_Update(cObjElementFXBankerSteal *self, 
 	}
 }
 
-void __thiscall cObjElementFXBankMasterSuction_Update(cObjElementFXBankMasterSuction *self, cDebris *d, float dt) {
+void cObjElementFXBankMasterSuction_Update(cObjElementFXBankMasterSuction *self, cDebris *d, float dt) {
 	vec3_t pos, rot, off, o, a, t, in, p, b;
 	vec3_t pts[4], coefs[4];
 
@@ -3327,7 +3327,7 @@ static inline uint32_t FXA_Bits(float f) {
 	return u;
 }
 
-void __thiscall cObjElementFXFunctionarySpecialAction_Update(cObjElementFXFunctionarySpecialAction *self, cDebris *d,
+void cObjElementFXFunctionarySpecialAction_Update(cObjElementFXFunctionarySpecialAction *self, cDebris *d,
 	float dt) {
 	vec3_t pos, rot;
 	vec3_t pts[FXFUNCTIONARY_TRAILS];
@@ -3446,7 +3446,7 @@ static inline int FXA_Min255(int v) {
 	return v > 0xff ? 0xff : v;
 }
 
-void __thiscall cObjElementFXMessengerAttack_Update(cObjElementFXMessengerAttack *self, cDebris *d, float dt) {
+void cObjElementFXMessengerAttack_Update(cObjElementFXMessengerAttack *self, cDebris *d, float dt) {
 	vec3_t pos, rot, q, tmp;
 	vec3_t coefs[FXMESSENGER_POINTS];
 	float f, a;
@@ -3555,7 +3555,7 @@ void __thiscall cObjElementFXMessengerAttack_Update(cObjElementFXMessengerAttack
 	}
 }
 
-void __thiscall cObjElementFXMessengerTakeDataPack_Update(cObjElementFXMessengerTakeDataPack *self, cDebris *d,
+void cObjElementFXMessengerTakeDataPack_Update(cObjElementFXMessengerTakeDataPack *self, cDebris *d,
 	float dt) {
 	vec3_t pos, rot, ang, t1, t2, o1, o2, q, tmp;
 	vec3_t coefs[FXDATAPACK_POINTS];
@@ -3696,7 +3696,7 @@ static void FXMercenary_Drop(CGameParticles *sp, float life, byte second) {
 	CGameParticles_EmitDt(sp, 1, 0, FXA_Rand((double)0.05f, 0.0));
 }
 
-void __thiscall cObjElementFXMercenaryDrink_Update(cObjElementFXMercenaryDrink *self, cDebris *d, float dt) {
+void cObjElementFXMercenaryDrink_Update(cObjElementFXMercenaryDrink *self, cDebris *d, float dt) {
 	vec3_t pos, rot, o, o2, dir, mouth, v, e, tmp;
 	vec3_t pts[2];
 	int idx[2] = { 1, 2 };
@@ -3861,7 +3861,7 @@ static void FXBishop_Flashes(CGameParticles *sp, int first, const vec3_t *end, c
 	}
 }
 
-void __thiscall cObjElementFXBishopAttack_Update(cObjElementFXBishopAttack *self, cDebris *d, float dt) {
+void cObjElementFXBishopAttack_Update(cObjElementFXBishopAttack *self, cDebris *d, float dt) {
 	vec3_t pos, rot, tmp;
 	float f, a;
 	static const float fromSizes[3] = { 100.0f, 240.0f, 300.0f };
@@ -3967,7 +3967,7 @@ static inline void FXA_Still(CGameParticles *sp) {
 	sp->initAccMax = sp->initAccMin;
 }
 
-void __thiscall cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *self, cDebris *d, float dt) {
+void cObjElementFXBishopSellLife_Update(cObjElementFXBishopSellLife *self, cDebris *d, float dt) {
 	vec3_t hand[2], pts4[4], tmp, mid, cam, v, n, off, pos;
 	vec3_t pts[256];
 	float f;

@@ -11,7 +11,7 @@
 
 static const char *const s_GridColors[4] = {"GridColorRed", "GridColorGreen", "GridColorBlue", "GridColorAlpha"};
 
-cHangarShipScorer *__fastcall cHangarShipScorer_ctor(cHangarShipScorer *self) {
+cHangarShipScorer *cHangarShipScorer_ctor(cHangarShipScorer *self) {
 	cSpriteScorer_ctor(&self->base);
 	self->base.base.vftable = CHANGARSHIPSCORER_VFTABLE;
 	self->grid = NULL;
@@ -26,7 +26,7 @@ cHangarShipScorer *__fastcall cHangarShipScorer_ctor(cHangarShipScorer *self) {
 	return self;
 }
 
-void __fastcall cHangarShipScorer_dtor(cHangarShipScorer *self) {
+void cHangarShipScorer_dtor(cHangarShipScorer *self) {
 	CGameCamera *cam = self->cam;
 	self->base.base.vftable = CHANGARSHIPSCORER_VFTABLE;
 	if (cam) {
@@ -41,7 +41,7 @@ void __fastcall cHangarShipScorer_dtor(cHangarShipScorer *self) {
 	cSpriteScorer_dtor(&self->base);
 }
 
-cHangarShipScorer *__thiscall cHangarShipScorer_Delete(cHangarShipScorer *self, byte flags) {
+cHangarShipScorer *cHangarShipScorer_Delete(cHangarShipScorer *self, byte flags) {
 	cHangarShipScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cHangarShipScorer));
@@ -49,7 +49,7 @@ cHangarShipScorer *__thiscall cHangarShipScorer_Delete(cHangarShipScorer *self, 
 	return self;
 }
 
-int __thiscall cHangarShipScorer_Var(cHangarShipScorer *self, const char *name, byte set, char **s, double *d,
+int cHangarShipScorer_Var(cHangarShipScorer *self, const char *name, byte set, char **s, double *d,
 	int *i) {
 	int r;
 
@@ -93,7 +93,7 @@ int __thiscall cHangarShipScorer_Var(cHangarShipScorer *self, const char *name, 
 	return cSpriteScorer_Var(&self->base, name, set, s, d, i);
 }
 
-void __thiscall cHangarShipScorer_Draw(cHangarShipScorer *self, int player) {
+void cHangarShipScorer_Draw(cHangarShipScorer *self, int player) {
 	cScorerItem *it = &self->base.base;
 	vec3_t tmp, ang;
 

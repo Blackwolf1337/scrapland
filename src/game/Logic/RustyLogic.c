@@ -21,7 +21,7 @@
 #define g_PlatformRadiusSqr GAME_GLOBAL_IN(int, GVar_PlatformRadiusSqr, 16)
 #define s_RustyLastJunkPoint GAME_GLOBAL(int, s_RustyLastJunkPoint)		/* -1 at the start */
 
-void *__thiscall cRustyLocalLogic_ctor(void *mem, cEntity *parent) {
+void *cRustyLocalLogic_ctor(void *mem, cEntity *parent) {
 	cRustyLocalLogic *self = mem;
 
 	cGenCharLocalLogic_ctor(&self->base, parent, 1);
@@ -33,7 +33,7 @@ void *__thiscall cRustyLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-cRustyLocalLogic *__thiscall cRustyLocalLogic_Delete(cRustyLocalLogic *self, byte flags) {
+cRustyLocalLogic *cRustyLocalLogic_Delete(cRustyLocalLogic *self, byte flags) {
 	self->base.base.vftable = CRUSTYLOCALLOGIC_VFTABLE;
 	g_JunkPointsList = NULL;
 	cGenCharLocalLogic_dtor(&self->base);
@@ -57,11 +57,11 @@ void Rusty_LoopDone(cAbstractFile *params) {
 }
 
 /* vf03 and vf05 */
-byte __thiscall cRustyLocalLogic_VarI(cRustyLocalLogic *self, const char *name, int *i, byte set) {
+byte cRustyLocalLogic_VarI(cRustyLocalLogic *self, const char *name, int *i, byte set) {
 	return cBaseLocalLogic_VarI(&self->base.base, name, i, set);
 }
 
-byte __thiscall cRustyLocalLogic_VarS(cRustyLocalLogic *self, const char *name, char **s, byte set) {
+byte cRustyLocalLogic_VarS(cRustyLocalLogic *self, const char *name, char **s, byte set) {
 	return cBaseLocalLogic_VarS(&self->base.base, name, s, set);
 }
 
@@ -93,7 +93,7 @@ static void Rusty_GoToJunk(cRustyLocalLogic *self, cAIChar *ai, double speed) {
 }
 
 /* vf17 */
-void __thiscall cRustyLocalLogic_Update(cRustyLocalLogic *self, float dt) {
+void cRustyLocalLogic_Update(cRustyLocalLogic *self, float dt) {
 	cBaseLocalLogic *b = &self->base.base;
 	int st = b->state;
 	cEntity *p = b->parent;
@@ -167,7 +167,7 @@ void __thiscall cRustyLocalLogic_Update(cRustyLocalLogic *self, float dt) {
 }
 
 /* a random junk point other than the last one */
-void __fastcall cRustyLocalLogic_NextJunk(cRustyLocalLogic *self) {
+void cRustyLocalLogic_NextJunk(cRustyLocalLogic *self) {
 	int i;
 
 	do {
@@ -188,7 +188,7 @@ void __fastcall cRustyLocalLogic_NextJunk(cRustyLocalLogic *self) {
 }
 
 /* vf19: 7 the walk to the junk point, 9 pissed; the others of the GenChar logic */
-byte __thiscall cRustyLocalLogic_SetState(cRustyLocalLogic *self, int state, cEntity *target) {
+byte cRustyLocalLogic_SetState(cRustyLocalLogic *self, int state, cEntity *target) {
 	if (state == 7) {
 		if ((byte)cBaseLocalLogic_SetState(&self->base.base, 7, target)) {
 			cEntity *p = self->base.base.parent;

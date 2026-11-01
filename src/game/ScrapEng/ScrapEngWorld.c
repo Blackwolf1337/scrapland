@@ -219,7 +219,7 @@ byte WorldInfo_NextNode(WorldNodeInfo *info) {
 	return 1;
 }
 
-box_t *__thiscall CGround_GetCollideExt(const CGround *self, box_t *out) {
+box_t *CGround_GetCollideExt(const CGround *self, box_t *out) {
 	*out = self->CollideExt;
 	return out;
 }

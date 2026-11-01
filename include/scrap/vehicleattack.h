@@ -37,27 +37,27 @@ SD_SIZE(cVehicleAttack, 0x7c);
 
 #define g_VehicleAttackReset GAME_GLOBAL_IN(float, GVar_WeapHitClientResetTime, 16)	/* the time the shots on a target are kept */
 
-cVehicleAttack *__fastcall cVehicleAttack_ctor(cVehicleAttack *self);
+cVehicleAttack *cVehicleAttack_ctor(cVehicleAttack *self);
 /* in WithLifeEntity.c */
-void __fastcall cVehicleAttack_dtor(cVehicleAttack *self);
+void cVehicleAttack_dtor(cVehicleAttack *self);
 /* drops the target after its reset time */
-void __fastcall cVehicleAttack_Expire(cVehicleAttack *self);
+void cVehicleAttack_Expire(cVehicleAttack *self);
 /* the entity of the hit info, "" for none */
-const char *__thiscall cHitInfo_GetName(cVehicleAttack *info);
+const char *cHitInfo_GetName(cVehicleAttack *info);
 /* the network flags when there are new shots or a new target (1), into *out (may be NULL) */
-byte __thiscall cVehicleAttack_NetChanged(cVehicleAttack *self, byte *out);
-vec3_t *__thiscall cVehicleAttack_GetPoint(cVehicleAttack *self);
-byte __thiscall cVehicleAttack_VarI(cVehicleAttack *self, const char *name, int *i, int set);
+byte cVehicleAttack_NetChanged(cVehicleAttack *self, byte *out);
+vec3_t *cVehicleAttack_GetPoint(cVehicleAttack *self);
+byte cVehicleAttack_VarI(cVehicleAttack *self, const char *name, int *i, int set);
 /* the attacker of the owner by name */
-void __thiscall cVehicleAttack_HitBy(cVehicleAttack *self, const char *name);
+void cVehicleAttack_HitBy(cVehicleAttack *self, const char *name);
 /* the shots: on the entity of that name or a point, n more */
-void __thiscall cVehicleAttack_ShotAt(cVehicleAttack *self, const char *name, int n);
-void __thiscall cVehicleAttack_ShotAtPoint(cVehicleAttack *self, const vec3_t *p, int n);
+void cVehicleAttack_ShotAt(cVehicleAttack *self, const char *name, int n);
+void cVehicleAttack_ShotAtPoint(cVehicleAttack *self, const vec3_t *p, int n);
 /* every frame after the weapons */
-void __thiscall cVehicleAttack_Update(cVehicleAttack *self);
-byte __thiscall cVehicleAttack_VarS(cVehicleAttack *self, const char *name, char **s, int set);
-byte __thiscall cVehicleAttack_VarV(cVehicleAttack *self, const char *name, double *x, double *y, double *z, int set);
+void cVehicleAttack_Update(cVehicleAttack *self);
+byte cVehicleAttack_VarS(cVehicleAttack *self, const char *name, char **s, int set);
+byte cVehicleAttack_VarV(cVehicleAttack *self, const char *name, double *x, double *y, double *z, int set);
 /* the network flags of a message: *changed if they differ, the count from the low 4 bits; the target bit */
-int __thiscall cVehicleAttack_NetFlags(cVehicleAttack *self, byte flags, byte *changed);
+int cVehicleAttack_NetFlags(cVehicleAttack *self, byte flags, byte *changed);
 
 #endif

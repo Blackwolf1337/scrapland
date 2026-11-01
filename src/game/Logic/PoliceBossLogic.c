@@ -13,13 +13,13 @@
 #define g_PoliceBossMinSpecialActionTime GAME_GLOBAL_IN(float, GVar_PoliceBossMinSpecialActionTime, 16)
 #define g_PoliceBossMaxSpecialActionTime GAME_GLOBAL_IN(float, GVar_PoliceBossMaxSpecialActionTime, 16)
 
-cPoliceBossLocalLogic *__thiscall cPoliceBossLocalLogic_ctor(cPoliceBossLocalLogic *self, cEntity *parent) {
+cPoliceBossLocalLogic *cPoliceBossLocalLogic_ctor(cPoliceBossLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
 	self->base.vftable = CPOLICEBOSSLOCALLOGIC_VFTABLE;
 	return self;
 }
 
-cPoliceBossLocalLogic *__thiscall cPoliceBossLocalLogic_Delete(cPoliceBossLocalLogic *self, byte flags) {
+cPoliceBossLocalLogic *cPoliceBossLocalLogic_Delete(cPoliceBossLocalLogic *self, byte flags) {
 	self->base.vftable = CPOLICEBOSSLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -29,7 +29,7 @@ cPoliceBossLocalLogic *__thiscall cPoliceBossLocalLogic_Delete(cPoliceBossLocalL
 }
 
 /* vf30: no target; when the search time is over the special action of the boss, near a character it can see */
-cEntity *__thiscall cPoliceBossLocalLogic_FindTarget(cPoliceBossLocalLogic *self) {
+cEntity *cPoliceBossLocalLogic_FindTarget(cPoliceBossLocalLogic *self) {
 	vec3_t tmp;
 
 	if (!(0.0f > self->searchTime)) {
@@ -52,17 +52,17 @@ cEntity *__thiscall cPoliceBossLocalLogic_FindTarget(cPoliceBossLocalLogic *self
 }
 
 /* vf28 and vf27: the AI walks in alert or relaxed */
-void __thiscall cPoliceBossLocalLogic_ToAlert(cPoliceBossLocalLogic *self, cAIChar *ai) {
+void cPoliceBossLocalLogic_ToAlert(cPoliceBossLocalLogic *self, cAIChar *ai) {
 	(void)self;
 	ai->vftable->SetState(ai, 1, (double)g_GenCharAlertSpeed, 0);
 }
 
-void __thiscall cPoliceBossLocalLogic_ToRelax(cPoliceBossLocalLogic *self, cAIChar *ai) {
+void cPoliceBossLocalLogic_ToRelax(cPoliceBossLocalLogic *self, cAIChar *ai) {
 	(void)self;
 	ai->vftable->SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
 }
 
 /* vf17 */
-void __thiscall cPoliceBossLocalLogic_Update(cPoliceBossLocalLogic *self, float dt) {
+void cPoliceBossLocalLogic_Update(cPoliceBossLocalLogic *self, float dt) {
 	cGenCharLocalLogic_Update(self, dt);
 }

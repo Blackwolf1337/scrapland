@@ -10,7 +10,7 @@
 #include "scrap/scrapworld.h"
 #include "scrap/world.h"
 
-MapFloors *__thiscall Floor_ctor(MapFloors *self) {
+MapFloors *Floor_ctor(MapFloors *self) {
 	WorldNodeInfo info;
 	char buf[0x100];
 	int i;
@@ -69,12 +69,12 @@ MapFloors *__thiscall Floor_ctor(MapFloors *self) {
 	return self;
 }
 
-void __thiscall Floor_dtor(MapFloors *self) {
+void Floor_dtor(MapFloors *self) {
 	(void)self;
 }
 
 /* the distance from a to b with 200000 more for each floor between them */
-float __thiscall Floor_Dist(MapFloors *self, vec3_t a, vec3_t b) {
+float Floor_Dist(MapFloors *self, vec3_t a, vec3_t b) {
 	float dy = a.y - b.y, dx = a.x - b.x, dz = a.z - b.z;
 	float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 	int n = Floor_Get(self, b.y) - Floor_Get(self, a.y);
@@ -83,7 +83,7 @@ float __thiscall Floor_Dist(MapFloors *self, vec3_t a, vec3_t b) {
 }
 
 /* the floor at the height y: the first one above it, 1.. */
-int __thiscall Floor_Get(const MapFloors *self, float y) {
+int Floor_Get(const MapFloors *self, float y) {
 	int i;
 
 	for (i = 1; i < self->count; i++) {
@@ -110,11 +110,11 @@ static int MapLevel_Nearest(const vec3_t *links, int n, const vec3_t *p) {
 	return found;
 }
 
-int __thiscall MapLevel_NearestDown(const MapLevel *self, const vec3_t *p) {
+int MapLevel_NearestDown(const MapLevel *self, const vec3_t *p) {
 	return MapLevel_Nearest(self->down, self->nDown, p);
 }
 
-int __thiscall MapLevel_NearestUp(const MapLevel *self, const vec3_t *p) {
+int MapLevel_NearestUp(const MapLevel *self, const vec3_t *p) {
 	return MapLevel_Nearest(self->up, self->nUp, p);
 }
 

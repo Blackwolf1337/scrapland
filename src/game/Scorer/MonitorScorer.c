@@ -39,7 +39,7 @@ static CPsaImage *Monitor_WhiteImage(uint32_t flags) {
 	return img ? CPsaImage_ctor(img, "2D/white.tga", flags) : NULL;
 }
 
-cMonitorScorer *__fastcall cMonitorScorer_ctor(cMonitorScorer *self) {
+cMonitorScorer *cMonitorScorer_ctor(cMonitorScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CMONITORSCORER_VFTABLE;
 	self->panel = Monitor_WhiteImage(0x10000);
@@ -75,7 +75,7 @@ cMonitorScorer *__fastcall cMonitorScorer_ctor(cMonitorScorer *self) {
 	return self;
 }
 
-void __fastcall cMonitorScorer_dtor(cMonitorScorer *self) {
+void cMonitorScorer_dtor(cMonitorScorer *self) {
 	CPsaImage *img = self->panel;
 	self->base.vftable = CMONITORSCORER_VFTABLE;
 	Monitor_FreeImage(img);
@@ -93,7 +93,7 @@ void __fastcall cMonitorScorer_dtor(cMonitorScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cMonitorScorer *__thiscall cMonitorScorer_Delete(cMonitorScorer *self, byte flags) {
+cMonitorScorer *cMonitorScorer_Delete(cMonitorScorer *self, byte flags) {
 	cMonitorScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cMonitorScorer));
@@ -101,7 +101,7 @@ cMonitorScorer *__thiscall cMonitorScorer_Delete(cMonitorScorer *self, byte flag
 	return self;
 }
 
-void __thiscall cMonitorScorer_SetParam(cMonitorScorer *self, const char *name, const char *value) {
+void cMonitorScorer_SetParam(cMonitorScorer *self, const char *name, const char *value) {
 	if (!crt_stricmp(name, "TargetView")) {
 		self->targetView = *value == '1';
 	}
@@ -114,7 +114,7 @@ static int Monitor_VarSprite(CPsaImage **img, const char *name, int blend, uint3
 	return 1;
 }
 
-int __thiscall cMonitorScorer_Var(cMonitorScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cMonitorScorer_Var(cMonitorScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	if (s && !crt_stricmp(name, "PanelSprite") && set) {
 		return Monitor_VarSprite(&self->panel, *s, -1, 0x10040, 0xffffffff);
 	}
@@ -385,7 +385,7 @@ static void Monitor_DrawHead(cMonitorScorer *self, float frameTime) {
 	CGameModel_RenderNow(&self->model->model, 2);
 	void *extra = self->model->extra;
 	if (extra) {
-		(*(void(__thiscall **)(void *))(*(byte **)extra + 0x10))(extra);
+		(*(void(**)(void *))(*(byte **)extra + 0x10))(extra);
 	}
 	CGameModel_Disable(&self->model->model);
 	Camera_SetCurrent(cur);
@@ -692,7 +692,7 @@ static void Monitor_DrawObjective(cMonitorScorer *self, cEntity *e, float time, 
 	self->objective->scaleY = 1.0f;
 }
 
-void __thiscall cMonitorScorer_DrawMonitor(cMonitorScorer *self, int player, cEntity *target) {
+void cMonitorScorer_DrawMonitor(cMonitorScorer *self, int player, cEntity *target) {
 	float frameTime = Scorer_Get(player)->frameTime;
 	uint32_t textColor = 0xaeffae;
 	float time = Scorer_Get(player)->time;
@@ -756,7 +756,7 @@ void __thiscall cMonitorScorer_DrawMonitor(cMonitorScorer *self, int player, cEn
 	}
 }
 
-void __thiscall cMonitorScorer_Draw(cMonitorScorer *self, int player) {
+void cMonitorScorer_Draw(cMonitorScorer *self, int player) {
 	if (!(byte)Talk_IsShown() || !g_HeadMonitorName[0]) {
 		self->model = NULL;
 		if (g_HeadMonitorName[0]) {
@@ -793,7 +793,7 @@ void __thiscall cMonitorScorer_Draw(cMonitorScorer *self, int player) {
 	}
 }
 
-byte __thiscall cMonitorScorer_SetModel(cMonitorScorer *self, const char *name) {
+byte cMonitorScorer_SetModel(cMonitorScorer *self, const char *name) {
 	cScorerModel *m = cScorer_FindModel(Scorer_Get(self->base.player), name);
 
 	self->model = m;
@@ -814,7 +814,7 @@ byte __thiscall cMonitorScorer_SetModel(cMonitorScorer *self, const char *name) 
 	return self->model != NULL;
 }
 
-void __thiscall cMonitorScorer_SetAnim(cMonitorScorer *self, int anim) {
+void cMonitorScorer_SetAnim(cMonitorScorer *self, int anim) {
 	cScorerModel *m = self->model;
 
 	if (!m) {

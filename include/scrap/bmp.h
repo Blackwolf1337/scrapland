@@ -35,33 +35,33 @@ int Img_ResampleCopy(CImage *self, const CImage *orig, uint32_t mask, int bytes)
 /* 0xAARRGGBB colors: a + (b - a) * t in steps of 1/256 */
 uint32_t Color_Lerp(uint32_t a, uint32_t b, float t);
 
-uint32_t *__thiscall CBmp_Pixel(const CBmp *self, uint32_t x, uint32_t y);
-void __thiscall CBmp_Create(CBmp *self, int width, int height);
+uint32_t *CBmp_Pixel(const CBmp *self, uint32_t x, uint32_t y);
+void CBmp_Create(CBmp *self, int width, int height);
 /* the constructor with a size (new pixels) and the deleting destructor, copies in Engine/Textura.cpp */
-CBmp *__thiscall CBmp_ctor(CBmp *self, int width, int height);
-CBmp *__thiscall CBmp_Delete(CBmp *self, byte flags);
+CBmp *CBmp_ctor(CBmp *self, int width, int height);
+CBmp *CBmp_Delete(CBmp *self, byte flags);
 /* the size 0, the pixels freed (also CBackground2D, Engine/fondo2d.cpp) */
-void __fastcall CBmp_dtor(CBmp *self);
-void __thiscall CBmp_Fill(CBmp *self, uint32_t color);
+void CBmp_dtor(CBmp *self);
+void CBmp_Fill(CBmp *self, uint32_t color);
 /* orig at (ox, oy) size w x h into (x, y), only the channels in mask (1 r, 2 g, 4 b, 8 a) */
-void __thiscall CBmp_Copy(CBmp *self, int x, int y, const CBmp *orig, int ox, int oy, int w, int h, uint32_t mask);
+void CBmp_Copy(CBmp *self, int x, int y, const CBmp *orig, int ox, int oy, int w, int h, uint32_t mask);
 /* 1 a horizontal 5 pixel blur of RGB, 2 a fire step (random bottom row, rising average), 3 RGB times 3/4 */
-void __thiscall CBmp_Effect(CBmp *self, int kind);
+void CBmp_Effect(CBmp *self, int kind);
 /* c = b * (1 - exp(-c * a / b)) on all channels, rounded */
-void __thiscall CBmp_Exposure(CBmp *self, float a, float b);
+void CBmp_Exposure(CBmp *self, float a, float b);
 /* c = b * pow(c / b, 1 / g), rounded, nothing for g 1 */
-void __thiscall CBmp_Gamma(CBmp *self, float g, float b);
+void CBmp_Gamma(CBmp *self, float g, float b);
 /* the average of the channels in in goes to the channels in out */
-void __thiscall CBmp_MixChannels(CBmp *self, uint32_t in, uint32_t out);
+void CBmp_MixChannels(CBmp *self, uint32_t in, uint32_t out);
 /* c = (orig * a + c * b) / 256, the weights limited to +-2^20 */
-void __thiscall CBmp_Blend(CBmp *self, int x, int y, const CBmp *orig, int ox, int oy, int w, int h, int a, int b);
+void CBmp_Blend(CBmp *self, int x, int y, const CBmp *orig, int ox, int oy, int w, int h, int a, int b);
 /* bilinear at u, v in 0..1 */
-uint32_t *__thiscall CBmp_Sample(const CBmp *self, uint32_t *out, float u, float v);
+uint32_t *CBmp_Sample(const CBmp *self, uint32_t *out, float u, float v);
 /* 3x3 filters of the inner pixels */
-void __fastcall CBmp_Sharpen(CBmp *self);
-void __fastcall CBmp_Blur(CBmp *self);
+void CBmp_Sharpen(CBmp *self);
+void CBmp_Blur(CBmp *self);
 /* orig scaled to the size of self: a copy, halved by 2x2 averages, or by averaging boxes; only the channels in mask */
-void __thiscall CBmp_Resample(CBmp *self, const CBmp *orig, uint32_t mask);
+void CBmp_Resample(CBmp *self, const CBmp *orig, uint32_t mask);
 
 /* the image files: 0, -1 with errno and, for a bad file, a line in the file log. Loading reads through the packs,
  * saving writes a file below the game directory. BMP: 8 (palette), 24 or 32 bits, saved with 24; TEX: the pixels as
@@ -76,8 +76,8 @@ int BMP_Save(const char *name, const CBmp *orig, uint32_t flags);
 int TEX_Save(const char *name, const CBmp *orig, uint32_t flags);
 int TGA_Save(const char *name, const CBmp *orig, uint32_t flags);
 /* by the extension: .tex, .tga, else BMP */
-int __thiscall CBmp_Load(CBmp *self, const char *name, uint32_t flags);
-int __thiscall CBmp_Save(CBmp *self, const char *name, uint32_t flags);
+int CBmp_Load(CBmp *self, const char *name, uint32_t flags);
+int CBmp_Save(CBmp *self, const char *name, uint32_t flags);
 
 /* packed by #pragma pack, which Ghidra's C parser knows too (docs/ghidra.md) */
 #pragma pack(push, 1)

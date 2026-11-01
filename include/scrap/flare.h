@@ -44,15 +44,15 @@ SD_SIZE(CFlare, 0x3c);
 
 /* rva 0x297bd0, not called: 1 if the 11 floats of a and b are equal */
 byte Floats11_Equal(const float *a, const float *b);
-CFlare *__fastcall CFlare_ctor(CFlare *self);
-void __fastcall CFlare_dtor(CFlare *self);
-CFlare *__thiscall CFlare_Delete(CFlare *self, byte flags);
+CFlare *CFlare_ctor(CFlare *self);
+void CFlare_dtor(CFlare *self);
+CFlare *CFlare_Delete(CFlare *self, byte flags);
 /* the sprite with the color and the size (the deferred draw of CFlare_Render) */
-void __fastcall CFlare_Draw(CFlare *self);
-void __thiscall CFlare_Render(CFlare *self, void *dev, CRenderNode *r);
+void CFlare_Draw(CFlare *self);
+void CFlare_Render(CFlare *self, void *dev, CRenderNode *r);
 /* a new sprite of the texture, centered, size from scale */
-void __thiscall CFlare_SetTexture(CFlare *self, const char *tex, const char *opac, int src, int dst, byte alpha);
+void CFlare_SetTexture(CFlare *self, const char *tex, const char *opac, int src, int dst, byte alpha);
 /* additive (5, 6, 255) */
-void __thiscall CFlare_SetTextureAdd(CFlare *self, const char *tex, const char *opac);
+void CFlare_SetTextureAdd(CFlare *self, const char *tex, const char *opac);
 
 #endif

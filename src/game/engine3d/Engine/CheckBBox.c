@@ -285,7 +285,7 @@ static int BBox_SkipQuad(const CCollideQuad *q, float loY, float hiY) {
 	return q->minY > hiY || loY > q->maxY || (q->gapTop > hiY && loY > q->gapBottom);
 }
 
-byte __thiscall CGround_CollideOBB(CGround *self, const matrix_t *m, const vec3_t *half, vec3_t *outPos, vec3_t *outN) {
+byte CGround_CollideOBB(CGround *self, const matrix_t *m, const vec3_t *half, vec3_t *outPos, vec3_t *outN) {
 	CHeights *alt = &self->heights;
 	vec3_t pos = { m->m[12], m->m[13], m->m[14] };
 	float r = (float)__builtin_sqrt((double)(half->x * half->x + half->y * half->y + half->z * half->z));
@@ -362,7 +362,7 @@ byte __thiscall CGround_CollideOBB(CGround *self, const matrix_t *m, const vec3_
 
 /* with colis->calc_respuesta (a fatal CHECK) the original also collects the contact points and faces of the box
  * into a response; that code can not run and is left out */
-byte __thiscall CGround_CheckBBox(CGround *self, CCollisionBBox *collision) {
+byte CGround_CheckBBox(CGround *self, CCollisionBBox *collision) {
 	CHeights *alt = &self->heights;
 
 	CHECK(collision);

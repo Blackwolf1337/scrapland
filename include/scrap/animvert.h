@@ -23,39 +23,39 @@ typedef struct CEVA {
 } CEVA;
 SD_SIZE(CEVA, 0x8);
 
-CAnimVert *__fastcall CAnimVert_ctor(CAnimVert *self);
-CEVA *__thiscall CEVA_ctor(CEVA *self);
-void __fastcall CAnimVert_dtor(CAnimVert *self);
+CAnimVert *CAnimVert_ctor(CAnimVert *self);
+CEVA *CEVA_ctor(CEVA *self);
+void CAnimVert_dtor(CAnimVert *self);
 /* the scalar and vector deleting destructor: flags 1 delete, 2 an array */
-void *__thiscall CAnimVert_Delete(CAnimVert *self, uint32_t flags);
-void __fastcall CAnimVert_FreeTr(CAnimVert *self);
-void __fastcall CAnimVert_FreeTr2(CAnimVert *self);
-void __thiscall CAnimVert_AllocTr(CAnimVert *self, int frames);
-void __fastcall CAnimVert_AllocTr2(CAnimVert *self);
-vec3_t *__thiscall CAnimVert_Frame(CAnimVert *self, uint32_t frame);
+void *CAnimVert_Delete(CAnimVert *self, uint32_t flags);
+void CAnimVert_FreeTr(CAnimVert *self);
+void CAnimVert_FreeTr2(CAnimVert *self);
+void CAnimVert_AllocTr(CAnimVert *self, int frames);
+void CAnimVert_AllocTr2(CAnimVert *self);
+vec3_t *CAnimVert_Frame(CAnimVert *self, uint32_t frame);
 /* the position between frame and the next one: replaced from Tr, added from Tr2 */
-void __thiscall CAnimVert_GetPos(CAnimVert *self, uint32_t frame, float subframe, vec3_t *pos);
+void CAnimVert_GetPos(CAnimVert *self, uint32_t frame, float subframe, vec3_t *pos);
 /* compressed: the position between two frames added to pos */
-void __thiscall CAnimVert_AddPos(CAnimVert *self, uint32_t frame1, uint32_t frame2, float t, float *pos);
-void __thiscall CAnimVert_Scale(CAnimVert *self, float x, float y, float z);
+void CAnimVert_AddPos(CAnimVert *self, uint32_t frame1, uint32_t frame2, float t, float *pos);
+void CAnimVert_Scale(CAnimVert *self, float x, float y, float z);
 /* Tr to Tr2 */
-void __fastcall CAnimVert_Compress(CAnimVert *self);
+void CAnimVert_Compress(CAnimVert *self);
 /* no animation if all frames are like the first one, else compressed */
-void __fastcall CAnimVert_Optimize(CAnimVert *self);
+void CAnimVert_Optimize(CAnimVert *self);
 /* compressed from the file into *pAV (a flag first) */
 void AnimVert_Read(CFileIO *f, CAnimVert **pAV);
 void AnimVert_Write(CFileIO *f, CAnimVert *av);
 
-void __fastcall CEVA_Free(CEVA *self);
-void __thiscall CEVA_Alloc(CEVA *self, int verts);
-CAnimVert *__thiscall CEVA_Get(CEVA *self, uint32_t i);
-void __thiscall CEVA_Scale(CEVA *self, float x, float y, float z);
+void CEVA_Free(CEVA *self);
+void CEVA_Alloc(CEVA *self, int verts);
+CAnimVert *CEVA_Get(CEVA *self, uint32_t i);
+void CEVA_Scale(CEVA *self, float x, float y, float z);
 /* the bytes of the set */
-int __fastcall CEVA_MemSize(CEVA *self);
+int CEVA_MemSize(CEVA *self);
 /* the vertices with an animation */
-int __fastcall CEVA_NumAnimated(CEVA *self);
+int CEVA_NumAnimated(CEVA *self);
 /* each vertex optimized; the set is emptied when none is animated */
-void __fastcall CEVA_Optimize(CEVA *self);
+void CEVA_Optimize(CEVA *self);
 /* the "EVA" block into a new set if flag */
 void EVA_Read(CFileIO *f, int flag, CEVA **pEVA);
 void EVA_Write(CFileIO *f, int flag, CEVA *eva);

@@ -20,7 +20,7 @@ void ExtPolice_OnDeath(cAbstractFile *params);
 
 #define g_MaxDistReposAI GAME_GLOBAL_IN(float, GVar_MaxDistReposAI, 16)
 
-cExtPolice *__fastcall cExtPolice_ctor(cExtPolice *self) {
+cExtPolice *cExtPolice_ctor(cExtPolice *self) {
 	self->list = NULL;
 	g_ExtPoliceChasing = 0;
 	self->alarm = 0;
@@ -130,7 +130,7 @@ static void ExtPolice_Taunt(cExtPolice *self) {
 	}
 }
 
-void __fastcall cExtPolice_Think(cExtPolice *self) {
+void cExtPolice_Think(cExtPolice *self) {
 	vec3_t tmp;
 	Nto1Node *n = Logic_ListFirst(self->list);
 	byte alarm = g_pWorld->alarm.on;
@@ -231,7 +231,7 @@ void __fastcall cExtPolice_Think(cExtPolice *self) {
 	}
 }
 
-void __fastcall cExtPolice_Init(cExtPolice *self) {
+void cExtPolice_Init(cExtPolice *self) {
 	self->list = cWorld_NewEntityList(g_pWorld, "OutCop");
 	cPy_Function_SetNative(&self->list->onDamage, (nativefunc_t)ExtPolice_OnDamage);
 	cPy_Function_SetNative(&self->list->onDeath, (nativefunc_t)ExtPolice_OnDeath);
@@ -274,7 +274,7 @@ void ExtPolice_OnDeath(cAbstractFile *params) {
 	ExtPolice_ReadCopDamage(params, 1);
 }
 
-void __thiscall cExtPolice_Update(cExtPolice *self, float dt) {
+void cExtPolice_Update(cExtPolice *self, float dt) {
 	if (!g_IsMapOutDoor) {
 		return;
 	}

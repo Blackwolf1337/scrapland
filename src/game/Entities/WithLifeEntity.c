@@ -33,7 +33,7 @@ static inline int WL_FloatBits(float f) {
 	return i;
 }
 
-cEntity *__thiscall cWithLifeEntity_ctor(void *mem, const char *name, float x, float y, float z) {
+cEntity *cWithLifeEntity_ctor(void *mem, const char *name, float x, float y, float z) {
 	cWithLifeEntity *self = mem;
 	cEntity *e = &self->obj.base;
 
@@ -73,7 +73,7 @@ cEntity *__thiscall cWithLifeEntity_ctor(void *mem, const char *name, float x, f
 	return e;
 }
 
-void __fastcall cWithLifeEntity_dtor(cEntity *self) {
+void cWithLifeEntity_dtor(cEntity *self) {
 	cWithLifeEntity *w = WLife(self);
 
 	self->vftable = CWITHLIFEENTITY_VFTABLE;
@@ -94,14 +94,14 @@ void __fastcall cWithLifeEntity_dtor(cEntity *self) {
 }
 
 /* VehicleAttack.h, inlined into WithLifeEntity.cpp */
-void __fastcall cVehicleAttack_dtor(cVehicleAttack *self) {
+void cVehicleAttack_dtor(cVehicleAttack *self) {
 	Nto1Node_Done(&self->hitBy);
 	Nto1Node_Done(&self->last);
 	Nto1Node_Done(&self->sent);
 	Nto1Node_Done(&self->target);
 }
 
-cEntity *__thiscall cWithLifeEntity_Delete(cEntity *self, uint32_t flags) {
+cEntity *cWithLifeEntity_Delete(cEntity *self, uint32_t flags) {
 	cWithLifeEntity_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CWITHLIFEENTITY_SIZE);
@@ -109,14 +109,14 @@ cEntity *__thiscall cWithLifeEntity_Delete(cEntity *self, uint32_t flags) {
 	return self;
 }
 
-void __thiscall cWithLifeEntity_SetSndTime(cEntity *self, float t, int i) {
+void cWithLifeEntity_SetSndTime(cEntity *self, float t, int i) {
 	cSndItem *s = PtrArray_Get(&WLife(self)->lifeSounds, i);
 	if (s) {
 		s->time = -t;
 	}
 }
 
-void __thiscall cWithLifeEntity_Burn(cEntity *self, float dt) {
+void cWithLifeEntity_Burn(cEntity *self, float dt) {
 	cWithLifeEntity *w = WLife(self);
 
 	if (!(w->fireRemain > 0.0f) || !(w->fireDelay > 0.0f) || !(w->fireAtt > -1.0f)) {
@@ -146,7 +146,7 @@ void __thiscall cWithLifeEntity_Burn(cEntity *self, float dt) {
 	w->life = life;
 }
 
-byte __thiscall cWithLifeEntity_VarF(cEntity *self, const char *name, double *d, int set) {
+byte cWithLifeEntity_VarF(cEntity *self, const char *name, double *d, int set) {
 	cWithLifeEntity *w = WLife(self);
 
 	if (!*name) {
@@ -200,7 +200,7 @@ byte __thiscall cWithLifeEntity_VarF(cEntity *self, const char *name, double *d,
 	return cObjEntity_VarF(self, name, d, set);
 }
 
-cAction *__thiscall cWithLifeEntity_GetAction(cEntity *self, const char *name) {
+cAction *cWithLifeEntity_GetAction(cEntity *self, const char *name) {
 	cActCtrl *c = WithLife_Vtbl(self)->GetActCtrl(self);
 	if (c && c->cls) {
 		return cActClass_GetAction(c->cls, name);
@@ -208,7 +208,7 @@ cAction *__thiscall cWithLifeEntity_GetAction(cEntity *self, const char *name) {
 	return NULL;
 }
 
-int __thiscall cWithLifeEntity_GetNodeSlot(cEntity *self) {
+int cWithLifeEntity_GetNodeSlot(cEntity *self) {
 	cActCtrl *c = WLife(self)->actCtrl;
 	if (!c) {
 		return cObjEntity_GetNodeSlot(self);
@@ -216,11 +216,11 @@ int __thiscall cWithLifeEntity_GetNodeSlot(cEntity *self) {
 	return c->cls->pretransformChan;
 }
 
-cEntity *__thiscall cWithLifeEntity_GetBurner(cEntity *self) {
+cEntity *cWithLifeEntity_GetBurner(cEntity *self) {
 	return WLife(self)->burner.target;
 }
 
-vec3_t *__thiscall cWithLifeEntity_GetSndPos(cEntity *self, vec3_t *out) {
+vec3_t *cWithLifeEntity_GetSndPos(cEntity *self, vec3_t *out) {
 	cActCtrl *c = WLife(self)->actCtrl;
 
 	if (c) {
@@ -239,16 +239,16 @@ vec3_t *__thiscall cWithLifeEntity_GetSndPos(cEntity *self, vec3_t *out) {
 	return out;
 }
 
-const char *__thiscall cWithLifeEntity_GetClassName(cEntity *self) {
+const char *cWithLifeEntity_GetClassName(cEntity *self) {
 	(void)self;
 	return WL_CLASSNAME;
 }
 
-float __thiscall cWithLifeEntity_GetRadius(cEntity *self) {
+float cWithLifeEntity_GetRadius(cEntity *self) {
 	return WLife(self)->prim.radius;
 }
 
-void __thiscall cWithLifeEntity_UpdateOff(cEntity *self) {
+void cWithLifeEntity_UpdateOff(cEntity *self) {
 	cWithLifeEntity *w = WLife(self);
 
 	cObjEntity_UpdateTimer(self);
@@ -266,7 +266,7 @@ void __thiscall cWithLifeEntity_UpdateOff(cEntity *self) {
 	cObjEntity_UpdateOff(self);
 }
 
-byte __thiscall cWithLifeEntity_VarI(cEntity *self, const char *name, int *i, int set) {
+byte cWithLifeEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	cWithLifeEntity *w = WLife(self);
 
 	if (!*name) {
@@ -320,14 +320,14 @@ byte __thiscall cWithLifeEntity_VarI(cEntity *self, const char *name, int *i, in
 	return cObjEntity_VarI(self, name, i, set);
 }
 
-int __thiscall cWithLifeEntity_IsType(cEntity *self, const char *type) {
+int cWithLifeEntity_IsType(cEntity *self, const char *type) {
 	if (!strcmp(type, WL_CLASSNAME)) {
 		return 1;
 	}
 	return cObjEntity_IsType(self, type);
 }
 
-void __thiscall cWithLifeEntity_CheckLife(cEntity *self) {
+void cWithLifeEntity_CheckLife(cEntity *self) {
 	cWithLifeEntity *w = WLife(self);
 
 	if (w->prevLife > 0 && w->prevLife > w->life) {
@@ -346,7 +346,7 @@ void __thiscall cWithLifeEntity_CheckLife(cEntity *self) {
 	w->prevLife = w->life;
 }
 
-void __thiscall cWithLifeEntity_FadeSounds(cEntity *self, float dt) {
+void cWithLifeEntity_FadeSounds(cEntity *self, float dt) {
 	cWithLifeEntity *w = WLife(self);
 
 	for (int i = 0; i < w->lifeSounds.nsnd; i++) {
@@ -381,7 +381,7 @@ void __thiscall cWithLifeEntity_FadeSounds(cEntity *self, float dt) {
 	}
 }
 
-void __thiscall cWithLifeEntity_Tick(cEntity *self, float dt) {
+void cWithLifeEntity_Tick(cEntity *self, float dt) {
 	WithLife_Vtbl(self)->CheckLife(self);
 	cWithLifeEntity_Burn(self, dt);
 	cWithLifeEntity_FadeSounds(self, dt);
@@ -411,16 +411,16 @@ static void WL_RunFunc(cEntity *self, cPy_Function *own, size_t listOff, const i
 	}
 }
 
-void __thiscall cWithLifeEntity_OnDamage(cEntity *self, int damage) {
+void cWithLifeEntity_OnDamage(cEntity *self, int damage) {
 	WL_RunFunc(self, &WLife(self)->onDamage, offsetof(cEntityListData, onDamage), &damage);
 }
 
-void __thiscall cWithLifeEntity_OnDeath(cEntity *self) {
+void cWithLifeEntity_OnDeath(cEntity *self) {
 	WL_RunFunc(self, &WLife(self)->onDeath, offsetof(cEntityListData, onDeath), NULL);
 }
 
 /* the arrow model is drawn again on top, without its glow */
-void __thiscall cWithLifeEntity_RenderNow(cEntity *self) {
+void cWithLifeEntity_RenderNow(cEntity *self) {
 	cWithLifeEntity *w = WLife(self);
 
 	cObjEntity_Render(self);
@@ -438,7 +438,7 @@ void __thiscall cWithLifeEntity_RenderNow(cEntity *self) {
 	}
 }
 
-void __thiscall cWithLifeEntity_SetActCtrl(cEntity *self, const char *cls) {
+void cWithLifeEntity_SetActCtrl(cEntity *self, const char *cls) {
 	cWithLifeEntity *w = WLife(self);
 	byte created = 0;
 
@@ -467,7 +467,7 @@ void __thiscall cWithLifeEntity_SetActCtrl(cEntity *self, const char *cls) {
 	}
 }
 
-void __thiscall cWithLifeEntity_SetActive(cEntity *self, byte on) {
+void cWithLifeEntity_SetActive(cEntity *self, byte on) {
 	cWithLifeEntity *w = WLife(self);
 	byte was = self->active;
 
@@ -478,12 +478,12 @@ void __thiscall cWithLifeEntity_SetActive(cEntity *self, byte on) {
 	}
 }
 
-void __thiscall cWithLifeEntity_SetUsrName(cEntity *e, const char *name) {
+void cWithLifeEntity_SetUsrName(cEntity *e, const char *name) {
 	cString_Set(&WLife(e)->usrName, name == ACT_EMPTY ? NULL : name);
 }
 
 /* not for an entity that is gone (in the dead list) */
-void __thiscall cWithLifeEntity_SetEmbeddedFX(cEntity *self, const char *fxType) {
+void cWithLifeEntity_SetEmbeddedFX(cEntity *self, const char *fxType) {
 	if (self->deadNode.target) {
 		return;
 	}
@@ -492,13 +492,13 @@ void __thiscall cWithLifeEntity_SetEmbeddedFX(cEntity *self, const char *fxType)
 	cObjEntity_SetEmbeddedFX(self, fxType);
 }
 
-void __thiscall cWithLifeEntity_SetPos(cEntity *self, const vec3_t *pos) {
+void cWithLifeEntity_SetPos(cEntity *self, const vec3_t *pos) {
 	cObjEntity_SetPos(self, pos);
 	Grid_Add(g_pWorld->grid, self);
 }
 
 /* the burner node (CHECK line 0x4e of Nto1Links.h) linked to the attacker */
-void __thiscall cWithLifeEntity_SetBurner(cEntity *e, cEntity *attacker) {
+void cWithLifeEntity_SetBurner(cEntity *e, cEntity *attacker) {
 	Nto1Node *node = &WLife(e)->burner;
 
 	CHECK(node->data);
@@ -506,7 +506,7 @@ void __thiscall cWithLifeEntity_SetBurner(cEntity *e, cEntity *attacker) {
 	Nto1Node_LinkTo(&attacker->links, node);
 }
 
-void __thiscall cWithLifeEntity_Update(cEntity *self) {
+void cWithLifeEntity_Update(cEntity *self) {
 	cWithLifeEntity *w = WLife(self);
 
 	cObjEntity_UpdateTimer(self);
@@ -523,7 +523,7 @@ void __thiscall cWithLifeEntity_Update(cEntity *self) {
 	cArrowIndicator_Update(&w->arrow);
 }
 
-byte __thiscall cWithLifeEntity_VarS(cEntity *self, const char *name, char **s, int set) {
+byte cWithLifeEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 	cWithLifeEntity *w = WLife(self);
 
 	if (!*name) {
@@ -592,7 +592,7 @@ byte __thiscall cWithLifeEntity_VarS(cEntity *self, const char *name, char **s, 
 	return cObjEntity_VarS(self, name, s, set);
 }
 
-byte __thiscall cWithLifeEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set) {
+byte cWithLifeEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set) {
 	cWithLifeEntity *w = WLife(self);
 
 	if (!*name) {
@@ -625,11 +625,11 @@ byte __thiscall cWithLifeEntity_VarV(cEntity *self, const char *name, double *x,
 	return cObjEntity_VarV(self, name, x, y, z, set);
 }
 
-byte __thiscall cWithLifeEntity_IsEMIed(cEntity *self) {
+byte cWithLifeEntity_IsEMIed(cEntity *self) {
 	(void)self;
 	return 0;
 }
 
-void __thiscall cWithLifeEntity_Vf48(cEntity *self) {
+void cWithLifeEntity_Vf48(cEntity *self) {
 	(void)self;
 }

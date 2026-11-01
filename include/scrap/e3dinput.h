@@ -83,32 +83,32 @@ typedef struct CInputWindows {
 } CInputWindows;
 SD_SIZE(CInputWindows, 0x11c);
 
-IInput *__fastcall IInput_ctor(IInput *self);
-void __fastcall IInput_dtor(IInput *self);
-IInput *__thiscall IInput_Delete(IInput *self, byte flags);
+IInput *IInput_ctor(IInput *self);
+void IInput_dtor(IInput *self);
+IInput *IInput_Delete(IInput *self, byte flags);
 /* WM_ACTIVATE, the menu loops and the size moves acquire or release the mouse */
-void __thiscall IInput_WndProc(IInput *self, void *hwnd, uint32_t msg, uint32_t wparam, uint32_t lparam);
+void IInput_WndProc(IInput *self, void *hwnd, uint32_t msg, uint32_t wparam, uint32_t lparam);
 
-CInputDInput *__fastcall CInputDInput_ctor(CInputDInput *self);
-CInputDInput *__thiscall CInputDInput_Delete(CInputDInput *self, byte flags);
-int __thiscall CInputDInput_Init(CInputDInput *self, void *hwnd, void *hinst, byte exclusive);
-int __fastcall CInputDInput_Release(CInputDInput *self);
-int __thiscall CInputDInput_ReadMouse(CInputDInput *self, int32_t *out);
-int __fastcall CInputDInput_ReadKeys(CInputDInput *self);
-int __thiscall CInputDInput_AcquireMouse(CInputDInput *self, byte on);
-int __thiscall CInputDInput_AcquireKeys(CInputDInput *self, byte on);
-void __thiscall CInputDInput_WndProc(CInputDInput *self, void *hwnd, uint32_t msg, uint32_t wparam,
+CInputDInput *CInputDInput_ctor(CInputDInput *self);
+CInputDInput *CInputDInput_Delete(CInputDInput *self, byte flags);
+int CInputDInput_Init(CInputDInput *self, void *hwnd, void *hinst, byte exclusive);
+int CInputDInput_Release(CInputDInput *self);
+int CInputDInput_ReadMouse(CInputDInput *self, int32_t *out);
+int CInputDInput_ReadKeys(CInputDInput *self);
+int CInputDInput_AcquireMouse(CInputDInput *self, byte on);
+int CInputDInput_AcquireKeys(CInputDInput *self, byte on);
+void CInputDInput_WndProc(CInputDInput *self, void *hwnd, uint32_t msg, uint32_t wparam,
 	uint32_t lparam);
 
-CInputWindows *__fastcall CInputWindows_ctor(CInputWindows *self);
-CInputWindows *__thiscall CInputWindows_Delete(CInputWindows *self, byte flags);
-int __thiscall CInputWindows_Init(CInputWindows *self, void *hwnd, void *hinst, byte exclusive);
-int __fastcall CInputWindows_Release(CInputWindows *self);
-int __thiscall CInputWindows_ReadMouse(CInputWindows *self, int32_t *out);
-int __fastcall CInputWindows_ReadKeys(CInputWindows *self);
-int __thiscall CInputWindows_AcquireMouse(CInputWindows *self, byte on);
-int __thiscall CInputWindows_AcquireKeys(CInputWindows *self, byte on);
-void __thiscall CInputWindows_WndProc(CInputWindows *self, void *hwnd, uint32_t msg, uint32_t wparam,
+CInputWindows *CInputWindows_ctor(CInputWindows *self);
+CInputWindows *CInputWindows_Delete(CInputWindows *self, byte flags);
+int CInputWindows_Init(CInputWindows *self, void *hwnd, void *hinst, byte exclusive);
+int CInputWindows_Release(CInputWindows *self);
+int CInputWindows_ReadMouse(CInputWindows *self, int32_t *out);
+int CInputWindows_ReadKeys(CInputWindows *self);
+int CInputWindows_AcquireMouse(CInputWindows *self, byte on);
+int CInputWindows_AcquireKeys(CInputWindows *self, byte on);
+void CInputWindows_WndProc(CInputWindows *self, void *hwnd, uint32_t msg, uint32_t wparam,
 	uint32_t lparam);
 
 #endif

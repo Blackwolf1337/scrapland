@@ -35,35 +35,35 @@ static inline float Uint_ToFloat(uint32_t u) {
 
 /* engine3d/engine/bmp.h, bmpflt.h, bmpflt2.h */
 
-void __fastcall CBmpFlt2_dtor(CBmpFlt2 *self) {
+void CBmpFlt2_dtor(CBmpFlt2 *self) {
 	Img_Free(self, 0xc);
 }
 
-void __fastcall CBmpFlt_dtor(CBmpFlt *self) {
+void CBmpFlt_dtor(CBmpFlt *self) {
 	Img_Free(self, 0x10);
 }
 
-void __thiscall CBmp_Assign(CBmp *self, const CBmp *orig) {
+void CBmp_Assign(CBmp *self, const CBmp *orig) {
 	Img_Free(self, 4);
 	CBmp_Resample(self, orig, 0xf);
 }
 
-void __thiscall CBmpFlt2_Assign(CBmpFlt2 *self, const CBmpFlt2 *orig) {
+void CBmpFlt2_Assign(CBmpFlt2 *self, const CBmpFlt2 *orig) {
 	Img_Free(self, 0xc);
 	CBmpFlt2_Resample(self, orig, 0xf);
 }
 
-void __thiscall CBmp_CreateFill(CBmp *self, int width, int height, uint32_t color) {
+void CBmp_CreateFill(CBmp *self, int width, int height, uint32_t color) {
 	Img_Create(self, width, height, 4);
 	CBmp_Fill(self, color);
 }
 
-void __thiscall CBmpFlt2_CreateFill(CBmpFlt2 *self, int width, int height, const float *color) {
+void CBmpFlt2_CreateFill(CBmpFlt2 *self, int width, int height, const float *color) {
 	Img_Create(self, width, height, 0xc);
 	CBmpFlt2_Fill(self, color);
 }
 
-void __thiscall CBmpFlt_CreateFill(CBmpFlt *self, int width, int height, const float *color) {
+void CBmpFlt_CreateFill(CBmpFlt *self, int width, int height, const float *color) {
 	Img_Create(self, width, height, 0x10);
 	CBmpFlt_Fill(self, color);
 }
@@ -82,12 +82,12 @@ static void Img_Rotate(CImage *self, const CImage *orig, int bytes) {
 	}
 }
 
-void __thiscall CBmp_Rotate(CBmp *self, const CBmp *orig) {
+void CBmp_Rotate(CBmp *self, const CBmp *orig) {
 	CHECK(orig);
 	Img_Rotate(self, orig, 4);
 }
 
-void __thiscall CBmpFlt2_Rotate(CBmpFlt2 *self, const CBmpFlt2 *orig) {
+void CBmpFlt2_Rotate(CBmpFlt2 *self, const CBmpFlt2 *orig) {
 	CHECK(orig);
 	Img_Rotate(self, orig, 0xc);
 }
@@ -95,7 +95,7 @@ void __thiscall CBmpFlt2_Rotate(CBmpFlt2 *self, const CBmpFlt2 *orig) {
 
 /* the TXF cache */
 
-BspTxf *__thiscall BspTxf_ctor(BspTxf *self, const char *map, const char *name, int n, int on) {
+BspTxf *BspTxf_ctor(BspTxf *self, const char *map, const char *name, int n, int on) {
 	self->on = on && (g_ShadowMapUseTxf || g_TxfMode);
 	self->base[0] = 0;
 	self->name[0] = 0;
@@ -118,15 +118,15 @@ BspTxf *__thiscall BspTxf_ctor(BspTxf *self, const char *map, const char *name, 
 	return self;
 }
 
-void __fastcall BspTxf_dtor(BspTxf *self) {
+void BspTxf_dtor(BspTxf *self) {
 	CHECK(!self->FileTXF);
 }
 
-void __thiscall BspTxf_SetName(BspTxf *self, int i) {
+void BspTxf_SetName(BspTxf *self, int i) {
 	Bprintf(self->name, sizeof(self->name), "%s.%05d.TXF", self->base, i + 1);
 }
 
-void __fastcall BspTxf_Info(BspTxf *self) {
+void BspTxf_Info(BspTxf *self) {
 	int secs = (int)((double)(exe_timeGetTime() - self->start) / 1000.0);
 	int m = secs / 60 % 60;
 	int s = secs % 60;
@@ -149,7 +149,7 @@ void __fastcall BspTxf_Info(BspTxf *self) {
 
 /* the lists */
 
-BspTri *__fastcall BspTri_ctor(BspTri *self) {
+BspTri *BspTri_ctor(BspTri *self) {
 	self->flags = 0;
 	self->light.img = NULL;
 	self->light2.img = NULL;
@@ -187,7 +187,7 @@ BspTri *__fastcall BspTri_ctor(BspTri *self) {
 	return self;
 }
 
-void __fastcall BspTri_dtor(BspTri *self) {
+void BspTri_dtor(BspTri *self) {
 	if (self->next) {
 		BspTri *next = self->next;
 		BspTri_dtor(next);
@@ -230,7 +230,7 @@ void __fastcall BspTri_dtor(BspTri *self) {
 	Img_Free(&self->light, 0xc);
 }
 
-void __fastcall BspName_dtor(BspName *self) {
+void BspName_dtor(BspName *self) {
 	if (self->next) {
 		BspName *next = self->next;
 		BspName_dtor(next);
@@ -242,7 +242,7 @@ void __fastcall BspName_dtor(BspName *self) {
 	}
 }
 
-void __fastcall BspNode_dtor(BspNode *self) {
+void BspNode_dtor(BspNode *self) {
 	if (self->next) {
 		BspNode *next = self->next;
 		BspNode_dtor(next);
@@ -257,7 +257,7 @@ void __fastcall BspNode_dtor(BspNode *self) {
 	CVertList_Free(&self->lv);
 }
 
-void __fastcall BspLMap_dtor(BspLMap *self) {
+void BspLMap_dtor(BspLMap *self) {
 	if (self->next) {
 		BspLMap *next = self->next;
 		BspLMap_dtor(next);
@@ -274,7 +274,7 @@ void __fastcall BspLMap_dtor(BspLMap *self) {
 	Img_Free(&self->bmp, 4);
 }
 
-void __thiscall BspLMap_Init(BspLMap *self, int width, int height) {
+void BspLMap_Init(BspLMap *self, int width, int height) {
 	self->minX = width + 1;
 	self->minY = height + 1;
 	CBmp_CreateFill(&self->bmp, width, height, 0xffff0000);
@@ -295,7 +295,7 @@ CMaterial *BspLMap_GetMat(const BspLMap *self) {
 	return self->Mat;
 }
 
-BspZone *__fastcall BspZone_ctor(BspZone *self) {
+BspZone *BspZone_ctor(BspZone *self) {
 	for (int i = 0; i < 8; i++) {
 		self->vb[i].pVertVB = NULL;
 		CRenderVB_Reset(&self->vb[i]);
@@ -306,7 +306,7 @@ BspZone *__fastcall BspZone_ctor(BspZone *self) {
 	return self;
 }
 
-void __fastcall BspZone_dtor(BspZone *self) {
+void BspZone_dtor(BspZone *self) {
 	CRenderIB_Reset(&self->ib);
 	for (int i = 7; i >= 0; i--) {
 		CRenderVB_Reset(&self->vb[i]);
@@ -314,13 +314,13 @@ void __fastcall BspZone_dtor(BspZone *self) {
 }
 
 /* the unwind funclets of the BspZone constructor: one CRenderVB member */
-void __fastcall BspVB_Unwind(CRenderVB *self) {
+void BspVB_Unwind(CRenderVB *self) {
 	CRenderVB_Reset(self);
 }
 
 #define BSPZONE_DTOR 0x2824b0
 
-BspZone *__thiscall BspZone_Delete(BspZone *self, uint32_t flags) {
+BspZone *BspZone_Delete(BspZone *self, uint32_t flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
 		crt_eh_vector_dtor(self, sizeof(BspZone), *mem, (void *)BspZone_dtor);
@@ -336,7 +336,7 @@ BspZone *__thiscall BspZone_Delete(BspZone *self, uint32_t flags) {
 	return self;
 }
 
-void __fastcall Table_FreeB4(CTable *t) {
+void Table_FreeB4(CTable *t) {
 	if (t->p) {
 		Delete_Objects(t->p, sizeof(BspZone), (void *)BspZone_dtor);
 		t->p = NULL;
@@ -344,7 +344,7 @@ void __fastcall Table_FreeB4(CTable *t) {
 	}
 }
 
-CRenderVB *__thiscall BspZone_GetVB(BspZone *self, int frmt) {
+CRenderVB *BspZone_GetVB(BspZone *self, int frmt) {
 	switch (frmt) {
 	case VERT_LTEX1:
 		return &self->vb[0];
@@ -359,7 +359,7 @@ CRenderVB *__thiscall BspZone_GetVB(BspZone *self, int frmt) {
 	return NULL;
 }
 
-void __fastcall CBsp_dtor(CBsp *self) {
+void CBsp_dtor(CBsp *self) {
 	if (self->lights) {
 		void *lights = self->lights;
 		BspLights_dtor(lights);
@@ -710,7 +710,7 @@ static inline int Bsp_LmapMode(void) {
 	return !g_Gamma2x && g_ShadowMapModulate4x ? 4 : 1;
 }
 
-void __thiscall CBsp_DrawTri(CBsp *self, BspTri *tri, byte pass) {
+void CBsp_DrawTri(CBsp *self, BspTri *tri, byte pass) {
 	CMaterial *mat = tri->Mat;
 
 	if (Bsp_MatPass(mat) != pass) {
@@ -763,7 +763,7 @@ static BspZone *CBsp_Zone(CBsp *self, int sector) {
 	return &((BspZone *)self->zones.p)[i];
 }
 
-void __thiscall CBsp_DrawZone(CBsp *self, int sector, byte pass) {
+void CBsp_DrawZone(CBsp *self, int sector, byte pass) {
 	BspTri *tri = CBsp_Zone(self, sector)->tris;
 
 	if (g_MapDrawSector >= -1 && g_MapDrawSector != sector) {
@@ -787,7 +787,7 @@ static int CBsp_ListZone(BspTri *tri, int sector, byte pass, int n) {
 	return n;
 }
 
-void __thiscall CBsp_DrawPass(CBsp *self, byte pass) {
+void CBsp_DrawPass(CBsp *self, byte pass) {
 	byte perSector = g_MapDrawBySector != 0;
 
 	Render_SetWorldMatrix(g_MatIdentity, 0);
@@ -826,7 +826,7 @@ void __thiscall CBsp_DrawPass(CBsp *self, byte pass) {
 	}
 }
 
-void __fastcall CBsp_DrawWire(CBsp *self) {
+void CBsp_DrawWire(CBsp *self) {
 	if (g_KeyF8 && g_KeyX) {
 		g_KeyF8 = 0;
 		g_WireFrame = (g_WireFrame + 1) % 3;
@@ -856,7 +856,7 @@ void __fastcall CBsp_DrawWire(CBsp *self) {
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_FILLMODE, 3);
 }
 
-void __fastcall CBsp_DrawFX(CBsp *self) {
+void CBsp_DrawFX(CBsp *self) {
 	if (g_RenderOff) {
 		return;
 	}
@@ -869,7 +869,7 @@ void __fastcall CBsp_DrawFX(CBsp *self) {
 	g_BspVerts = 0;
 }
 
-void __fastcall CBsp_Render(CBsp *self) {
+void CBsp_Render(CBsp *self) {
 	if (g_RenderOff) {
 		return;
 	}
@@ -929,7 +929,7 @@ void Bsp_PortalInfo(byte info) {
 	Portals_Cull((uint32_t)s);
 }
 
-void __fastcall CBsp_ReleaseD3D(CBsp *self) {
+void CBsp_ReleaseD3D(CBsp *self) {
 	for (int i = 0; i < self->num_lists; i++) {
 		if (self->lists[i]->pVertVB) {
 			COM_RELEASE(self->lists[i]->pVertVB);
@@ -1137,7 +1137,7 @@ void BspTri_SetExt(BspTri *tri, int x0, int y0, int x1, int y1, byte notify) {
 }
 
 /* the texel of the light map at p */
-byte __thiscall BspTri_TexelOf(const BspTri *tri, const vec3_t *p, int *x, int *y) {
+byte BspTri_TexelOf(const BspTri *tri, const vec3_t *p, int *x, int *y) {
 	float uv[2];
 
 	BspTri_Interp(tri, p, NULL, uv, 1);
@@ -1512,7 +1512,7 @@ byte BspLMap_Insert(BspTri *list, BspLMap *lm, int w, int h) {
 }
 
 
-void __fastcall CBsp_GroupMaps(CBsp *self) {
+void CBsp_GroupMaps(CBsp *self) {
 	char name1[0x104], name2[0x104];
 	CScene *scn = self->model->scene;
 
@@ -1590,7 +1590,7 @@ void __fastcall CBsp_GroupMaps(CBsp *self) {
 
 /* the lists of the map */
 
-void __fastcall CBsp_CreateZones(CBsp *self) {
+void CBsp_CreateZones(CBsp *self) {
 	int n = Sector_Num() + 1;
 
 	crt_qsort(self->lists, (size_t)self->num_lists, sizeof(BspTri *),
@@ -1617,7 +1617,7 @@ void __fastcall CBsp_CreateZones(CBsp *self) {
 }
 
 /* the transparent lists without a diffuse map take the color of the material and no light map */
-void __fastcall CBsp_ColorSinLmap(CBsp *self) {
+void CBsp_ColorSinLmap(CBsp *self) {
 	for (int i = 0; i < self->num_lists; i++) {
 		BspTri *list = self->lists[i];
 		const CMaterial *m = list->Mat;
@@ -1639,7 +1639,7 @@ void __fastcall CBsp_ColorSinLmap(CBsp *self) {
 }
 
 /* the lists of the area lights out of the map */
-void __fastcall CBsp_RemoveLights(CBsp *self) {
+void CBsp_RemoveLights(CBsp *self) {
 	int i = 0;
 
 	while (i < self->num_lists) {
@@ -2002,7 +2002,7 @@ int BspRegion_Debug(BspRegion *r) {
 }
 
 /* the material of a page from its file (level: the light map level of the map) */
-void __thiscall BspLMap_CreateMat(BspLMap *self, const char *name, byte level) {
+void BspLMap_CreateMat(BspLMap *self, const char *name, byte level) {
 	CMaterial m;
 
 	CMaterial_ctor(&m);
@@ -2034,7 +2034,7 @@ void BspLMap_Save(char *copy, CBmp *bmp, const char *path, int n, const char *ex
 }
 
 /* the glow of the texel of each area (rad2) and the coarser levels of the areas */
-void __fastcall CBsp_AreasGlow(CBsp *self) {
+void CBsp_AreasGlow(CBsp *self) {
 	for (int i = 0; i < self->num_lists; i++) {
 		BspTri *list = self->lists[i];
 		for (BspTri *t = list; t; t = t->next) {
@@ -2054,7 +2054,7 @@ void __fastcall CBsp_AreasGlow(CBsp *self) {
 }
 
 /* the sum and the largest channel of the glow at the areas, by triangle and by list */
-void __fastcall CBsp_AreasMax(CBsp *self) {
+void CBsp_AreasMax(CBsp *self) {
 	for (int i = 0; i < self->num_lists; i++) {
 		BspTri *list = self->lists[i];
 		list->listGlowSum[0] = 0.0f;
@@ -2092,7 +2092,7 @@ void __fastcall CBsp_AreasMax(CBsp *self) {
 }
 
 /* n passes of the light through the region links: gathered into the trees, then into the light maps */
-void __thiscall CBsp_IllumRegions(CBsp *self, int n) {
+void CBsp_IllumRegions(CBsp *self, int n) {
 	float out[4];
 
 	for (int pass = 1; pass <= n; pass++) {
@@ -2202,7 +2202,7 @@ vec3_t *BspTri_Sample(vec3_t *out, int x, int y, int axis, float scale, const Bs
 
 /* the TXF of list i (nl: a line feed after the messages): 1 when it is to be computed here, 0 when it exists or
  * another computer computes it (locked), def without the cache. ESC with SHIFT asks to cancel the compilation */
-byte __thiscall BspTxf_Check(BspTxf *self, int i, byte def, byte nl) {
+byte BspTxf_Check(BspTxf *self, int i, byte def, byte nl) {
 	char buf[0x104];
 	const char *lf = nl ? "\n" : "";
 
@@ -2235,7 +2235,7 @@ byte __thiscall BspTxf_Check(BspTxf *self, int i, byte def, byte nl) {
 }
 
 /* the computed map into the TXF; a failed write is computed again (up to 100 in all) */
-void __thiscall BspTxf_Save(BspTxf *self, CBmpFlt2 *bmp) {
+void BspTxf_Save(BspTxf *self, CBmpFlt2 *bmp) {
 	if (!self->on) {
 		return;
 	}
@@ -2257,7 +2257,7 @@ void __thiscall BspTxf_Save(BspTxf *self, CBmpFlt2 *bmp) {
 
 /* the light maps (which 1 light, 2 light2, 3 rad, 4 rad2) of n lists from the TXF cache; a missing one makes the map
  * be computed again (rebuild), a bad one is magenta */
-void __thiscall BspTxf_Load(BspTxf *self, BspTri **lists, int n, int which) {
+void BspTxf_Load(BspTxf *self, BspTri **lists, int n, int which) {
 	static const float magenta[3] = { 1.0f, 0.0f, 1.0f };
 
 	if (!self->on) {
@@ -2333,7 +2333,7 @@ void __thiscall BspTxf_Load(BspTxf *self, BspTri **lists, int n, int which) {
 }
 
 /* the end of the compilation: the time and the collision cache counters; yes exits the game */
-void __thiscall Bsp_EndMessage(CBsp *self, int secs) {
+void Bsp_EndMessage(CBsp *self, int secs) {
 	char buf[0x400];
 
 	Bprintf(buf, sizeof(buf),
@@ -2374,7 +2374,7 @@ static void *Obj3D_As(CNode3D *n, uint32_t class) {
 	return o;
 }
 
-CBsp *__thiscall CBsp_ctor(CBsp *self, const char *name, const vec3_t *scale) {
+CBsp *CBsp_ctor(CBsp *self, const char *name, const vec3_t *scale) {
 	char buf[0x104];
 
 	self->name = NULL;
@@ -2619,7 +2619,7 @@ intptr_t __stdcall Bsp_DlgProc(void *hwnd, uint32_t msg, uintptr_t wparam, intpt
 double crt_ceil(double x);
 
 /* brightness and gamma on the light maps, then the vertex colors from them */
-void __fastcall CBsp_AdjustGamma(CBsp *self) {
+void CBsp_AdjustGamma(CBsp *self) {
 	int n = self->num_lists;
 
 	for (int i = 0; i < n; n = self->num_lists) {
@@ -2670,7 +2670,7 @@ static inline byte BspRegion_Children(const BspRegion *r) {
 
 /* the light between the regions a and b with the form factors over threshold: linked when the floor does not block
  * them, else the larger one split into its children; 1 when linked */
-int __thiscall BspRegion_Link(CBsp *self, BspRegion *a, BspRegion *b, int link, float threshold) {
+int BspRegion_Link(CBsp *self, BspRegion *a, BspRegion *b, int link, float threshold) {
 	if (!a || !b) {
 		return 0;
 	}
@@ -2729,7 +2729,7 @@ int __thiscall BspRegion_Link(CBsp *self, BspRegion *a, BspRegion *b, int link, 
 }
 
 /* the sample points of the texels of each triangle of the lists and their levels of detail */
-void __fastcall CBsp_InitAreas(CBsp *self) {
+void CBsp_InitAreas(CBsp *self) {
 	CTable tmp;
 
 	E3D_DebugPrintf("rad_inic_areas()\n");
@@ -2937,7 +2937,7 @@ void CBmpFlt_FillGaps(CBmpFlt *img, const CBmp *mask) {
 
 
 /* the light map settings back into "<map>.ini" when one changed (a backup of the old file first) */
-void __fastcall CBsp_SaveIni(CBsp *self) {
+void CBsp_SaveIni(CBsp *self) {
 	char name[0x104];
 	CIniFile ini;
 	const char *s = "mapa_sombras";
@@ -2976,7 +2976,7 @@ void __fastcall CBsp_SaveIni(CBsp *self) {
 
 /* the .EMI file of the map: the materials, the light map pages and the lists */
 
-int __fastcall CBsp_ReadEMI(CBsp *self) {
+int CBsp_ReadEMI(CBsp *self) {
 	char path[0x104], dir[0x104], texPath[0x104], buf[0x104];
 	char sector[0x80];
 	CHashTable tabMat, tabLMap;
@@ -3117,7 +3117,7 @@ static BspMatStat *BspMatStat_Get(CTable *t, int i) {
 	return &((BspMatStat *)t->p)[i];
 }
 
-void __fastcall CBsp_Prepare(CBsp *self) {
+void CBsp_Prepare(CBsp *self) {
 	CTable tab = { 0, NULL };
 
 	if (g_DebugLevel < 3) {
@@ -3180,7 +3180,7 @@ void __fastcall CBsp_Prepare(CBsp *self) {
 	}
 }
 
-void __fastcall CBsp_InitD3D(CBsp *self) {
+void CBsp_InitD3D(CBsp *self) {
 	/* the vertex size and FVF of the buffers of a sector (BspZone_GetVB: the first four) */
 	static const struct {
 		int size;

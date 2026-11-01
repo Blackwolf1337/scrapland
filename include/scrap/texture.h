@@ -81,29 +81,29 @@ SD_OFFSET(CTexture, multi, 0x248);
 
 #define g_TexList GAME_GLOBAL(CTexture *, g_TexList)
 
-CMultiSprite *__fastcall CMultiSprite_ctor(CMultiSprite *self);
-void __fastcall CMultiSprite_dtor(CMultiSprite *self);
+CMultiSprite *CMultiSprite_ctor(CMultiSprite *self);
+void CMultiSprite_dtor(CMultiSprite *self);
 /* the table from the .mst of the texture name (when not older), else built and saved; 0 if it could not be saved */
-byte __thiscall CMultiSprite_Build(CMultiSprite *self, const char *name);
+byte CMultiSprite_Build(CMultiSprite *self, const char *name);
 /* the table from the &U&D&N.index.bmp of the texture name */
-byte __thiscall CMultiSprite_BuildTable(CMultiSprite *self, const char *name);
+byte CMultiSprite_BuildTable(CMultiSprite *self, const char *name);
 /* the size of sprite i in pixels, the texture's for 0 or without sprites (then 0) */
-byte __thiscall CMultiSprite_GetSize(const CMultiSprite *self, uint32_t i, uint32_t *cx, uint32_t *cy);
+byte CMultiSprite_GetSize(const CMultiSprite *self, uint32_t i, uint32_t *cx, uint32_t *cy);
 /* the texture coordinates of sprite i, 0..1 for 0 or without sprites (then 0) */
-byte __thiscall CMultiSprite_GetUV(const CMultiSprite *self, uint32_t i, float *texMin, float *texMax);
-byte __thiscall CMultiSprite_Load(CMultiSprite *self, const char *name);
-byte __thiscall CMultiSprite_Save(const CMultiSprite *self, const char *name);
+byte CMultiSprite_GetUV(const CMultiSprite *self, uint32_t i, float *texMin, float *texMax);
+byte CMultiSprite_Load(CMultiSprite *self, const char *name);
+byte CMultiSprite_Save(const CMultiSprite *self, const char *name);
 
-CTexture *__thiscall CTexture_ctor(CTexture *self, const char *name, const char *opac, int kind, uint32_t flags);
-void __fastcall CTexture_dtor(CTexture *self);
+CTexture *CTexture_ctor(CTexture *self, const char *name, const char *opac, int kind, uint32_t flags);
+void CTexture_dtor(CTexture *self);
 /* the file: its kind from the name, a CBmp (pixels only with load) or the raw file */
-int __thiscall CTexture_LoadFile(CTexture *self, byte load);
+int CTexture_LoadFile(CTexture *self, byte load);
 /* the device texture, its old one released */
-int __thiscall CTexture_CreateD3D(CTexture *self, void *dev);
+int CTexture_CreateD3D(CTexture *self, void *dev);
 /* src scaled into mipmap level and the levels below */
-int __thiscall CTexture_UploadLevel(CTexture *self, CBmp *src, int level);
+int CTexture_UploadLevel(CTexture *self, CBmp *src, int level);
 /* the developer tool: orig as a DDS file next to the texture, through bmp/nvdxt.exe and bmp/stitch.exe */
-int __thiscall CTexture_SaveDDS(CTexture *self, CBmp *orig, int level, byte keepExt);
+int CTexture_SaveDDS(CTexture *self, CBmp *orig, int level, byte keepExt);
 
 /* the entry of name with opacity map opac (NULL or "" for none) */
 CTexture *Texture_Lookup(const char *name, const char *opac);

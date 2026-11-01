@@ -6,7 +6,7 @@
 
 #include "scrap/scoreritems.h"
 
-cChatScorer *__fastcall cChatScorer_ctor(cChatScorer *self) {
+cChatScorer *cChatScorer_ctor(cChatScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CCHATSCORER_VFTABLE;
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
@@ -20,7 +20,7 @@ cChatScorer *__fastcall cChatScorer_ctor(cChatScorer *self) {
 	return self;
 }
 
-void __fastcall cChatScorer_dtor(cChatScorer *self) {
+void cChatScorer_dtor(cChatScorer *self) {
 	CPsaImage *img = self->img;
 	self->base.vftable = CCHATSCORER_VFTABLE;
 	if (img) {
@@ -30,7 +30,7 @@ void __fastcall cChatScorer_dtor(cChatScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cChatScorer *__thiscall cChatScorer_Delete(cChatScorer *self, byte flags) {
+cChatScorer *cChatScorer_Delete(cChatScorer *self, byte flags) {
 	cChatScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cChatScorer));
@@ -58,14 +58,14 @@ void Scorer_AddChatMsg(const char *text, uint32_t rgb) {
 	g_ChatMsgs[CHAT_MSGS - 1].color = rgb;
 }
 
-int __thiscall cChatScorer_Var(cChatScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cChatScorer_Var(cChatScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	if (i && !crt_stricmp(name, "NumMsg")) {
 		return ScorerVar_Int(&self->numMsg, set, i);
 	}
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void __thiscall cChatScorer_Draw(cChatScorer *self, int player) {
+void cChatScorer_Draw(cChatScorer *self, int player) {
 	(void)player;
 	float dt = Timer_GetTime(&g_pWorld->timer) - g_ChatTime;
 	if (dt > g_ChatScrollTime) {

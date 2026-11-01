@@ -19,7 +19,7 @@
 #define D3DPRASTERCAPS_FOGTABLE 0x100
 #define D3DPRASTERCAPS_WFOG 0x100000
 
-CFog *__fastcall CFog_ctor(CFog *self) {
+CFog *CFog_ctor(CFog *self) {
 	self->active = 0;
 	self->start = 0.5f;
 	self->end = 1.0f;
@@ -33,11 +33,11 @@ CFog *__fastcall CFog_ctor(CFog *self) {
 	return self;
 }
 
-void __fastcall CFog_dtor(CFog *self) {
+void CFog_dtor(CFog *self) {
 	(void)self;
 }
 
-void __fastcall CFog_InitD3D(CFog *self) {
+void CFog_InitD3D(CFog *self) {
 	CHECK(g_Engine->device);
 	uint32_t caps = g_Engine->caps.RasterCaps;
 	self->capsTable = (caps & D3DPRASTERCAPS_FOGTABLE) != 0;
@@ -56,7 +56,7 @@ static uint32_t Float_Bits(float f) {
 	return u;
 }
 
-void __fastcall CFog_Apply(CFog *self) {
+void CFog_Apply(CFog *self) {
 	void *dev = g_Engine->device;
 	CHECK(dev);
 	if (!g_FogEnable) {
@@ -119,13 +119,13 @@ void __fastcall CFog_Apply(CFog *self) {
 	g_FogActive = 1;
 }
 
-void __thiscall CFog_SetColor(CFog *self, uint32_t rgba, float intens) {
+void CFog_SetColor(CFog *self, uint32_t rgba, float intens) {
 	self->color.rgba = rgba;
 	self->color.intens = intens;
 	self->font = FOG_COLOR_OWN;
 }
 
-void __thiscall CFog_SetRange(CFog *self, float start, float end) {
+void CFog_SetRange(CFog *self, float start, float end) {
 	self->start = start;
 	self->end = end;
 }

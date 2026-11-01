@@ -241,7 +241,7 @@ void ChType_FlashHit(cAbstractFile *params);
 /* Maintenance.c */
 void ChType_FXMaintenanceWork(cAbstractFile *params);
 /* an inline of the local logic of a character: it is paused (+0x28) or +0x2a is set */
-byte __fastcall cAIChar_TestFlags(const void *self);
+byte cAIChar_TestFlags(const void *self);
 
 /* the shared steps of the natives (Banker.c) */
 /* the parameters: the name, an event name and a float (unused) */
@@ -328,7 +328,7 @@ static inline const char *ChType_ClassName(cEntity *e) {
 
 /* engine side */
 /* the name of the listener into the mayor logic (NULL clears it, rva 0x153010) */
-void __thiscall cMayorLocalLogic_SetListener(cLocalLogic *self, cEntity *e);
+void cMayorLocalLogic_SetListener(cLocalLogic *self, cEntity *e);
 
 /* Mayor.c */
 void ChType_ListeningMayor(cAbstractFile *params);

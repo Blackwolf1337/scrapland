@@ -30,12 +30,12 @@ typedef struct MapFloors {
 } MapFloors;
 SD_SIZE(MapFloors, 0x18c4);
 
-MapFloors *__thiscall Floor_ctor(MapFloors *self);
-void __thiscall Floor_dtor(MapFloors *self);
+MapFloors *Floor_ctor(MapFloors *self);
+void Floor_dtor(MapFloors *self);
 /* the distance from a to b with 200000 more for each floor between them */
-float __thiscall Floor_Dist(MapFloors *self, vec3_t a, vec3_t b);
+float Floor_Dist(MapFloors *self, vec3_t a, vec3_t b);
 /* the floor at the height y: the first one above it, 1.. */
-int __thiscall Floor_Get(const MapFloors *self, float y);
-int __thiscall MapLevel_NearestDown(const MapLevel *self, const vec3_t *p);
+int Floor_Get(const MapFloors *self, float y);
+int MapLevel_NearestDown(const MapLevel *self, const vec3_t *p);
 
 #endif

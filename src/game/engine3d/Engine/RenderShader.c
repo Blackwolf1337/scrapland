@@ -14,17 +14,17 @@
 #define g_ShaderModeMask GAME_GLOBAL(uint32_t, g_ShaderModeMask)
 #define SHADER_NAME 0x40
 
-CMatId *__fastcall CMatId_ctor(CMatId *self) {
+CMatId *CMatId_ctor(CMatId *self) {
 	self->id = -1;
 	self->gen = 0;
 	return self;
 }
 
-void __fastcall CMatId_dtor(CMatId *self) {
+void CMatId_dtor(CMatId *self) {
 	(void)self;
 }
 
-byte __thiscall CMatId_Check(CMatId *self, CMaterial *mat) {
+byte CMatId_Check(CMatId *self, CMaterial *mat) {
 	if (self->id == -1) {
 		CHECK(!mat->map[MAP_DIFFUSE]);
 		E3D_LogWhite(g_FileLog, "GetShaderMode: Deferred update: %s", mat->Name);
@@ -49,7 +49,7 @@ int Shader_Find(const char *name) {
 	return 0;
 }
 
-void __thiscall CMatId_Register(CMatId *self, CMaterial *mat) {
+void CMatId_Register(CMatId *self, CMaterial *mat) {
 	char buf[SHADER_NAME];
 	const char *name;
 

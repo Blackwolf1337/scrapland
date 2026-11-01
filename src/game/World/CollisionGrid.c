@@ -33,7 +33,7 @@ static inline int Grid_Index(const cCollisionGrid *g, int x, int y, int z) {
 	return (g->ny * z + y) * g->nx + x;
 }
 
-Nto1Node *__thiscall GridCell_ctor(Nto1Node *self) {
+Nto1Node *GridCell_ctor(Nto1Node *self) {
 	self->target = NULL;
 	self->data = NULL;
 	self->next = self;
@@ -41,7 +41,7 @@ Nto1Node *__thiscall GridCell_ctor(Nto1Node *self) {
 	return self;
 }
 
-void *__thiscall Grid_ctor(void *grid) {
+void *Grid_ctor(void *grid) {
 	cCollisionGrid *g = grid;
 
 	g->min.y = 0.0f;
@@ -83,7 +83,7 @@ void *__thiscall Grid_ctor(void *grid) {
 	return g;
 }
 
-void __thiscall Grid_Free(void *grid) {
+void Grid_Free(void *grid) {
 	cCollisionGrid *g = grid;
 
 	if (!g->cells) {
@@ -105,14 +105,14 @@ void __thiscall Grid_Free(void *grid) {
 	g->visited = NULL;
 }
 
-void __thiscall Grid_dtor(void *grid) {
+void Grid_dtor(void *grid) {
 	cCollisionGrid *g = grid;
 
 	Grid_Free(g);
 	Nto1Node_Done(&g->outside);
 }
 
-void __thiscall Grid_Init(void *grid, const vec3_t *min, const vec3_t *max, const vec3_t *cell) {
+void Grid_Init(void *grid, const vec3_t *min, const vec3_t *max, const vec3_t *cell) {
 	cCollisionGrid *g = grid;
 
 	Grid_Free(g);
@@ -133,7 +133,7 @@ void __thiscall Grid_Init(void *grid, const vec3_t *min, const vec3_t *max, cons
 	g->outside.target = &g->outside;
 }
 
-void __thiscall Grid_Set(void *grid, const vec3_t *size) {
+void Grid_Set(void *grid, const vec3_t *size) {
 	cCollisionGrid *g = grid;
 	vec3_t min = g->min, max = g->max;
 
@@ -143,7 +143,7 @@ void __thiscall Grid_Set(void *grid, const vec3_t *size) {
 	Grid_Init(g, &min, &max, size);
 }
 
-cEntity *__thiscall Grid_GetCell(void *grid, int x, int y, int z) {
+cEntity *Grid_GetCell(void *grid, int x, int y, int z) {
 	cCollisionGrid *g = grid;
 	Nto1Node *n;
 
@@ -166,7 +166,7 @@ cEntity *__thiscall Grid_GetCell(void *grid, int x, int y, int z) {
 	return Grid_CurEntity(g);
 }
 
-cEntity *__thiscall Grid_GetCellAt(void *grid, const vec3_t *pos) {
+cEntity *Grid_GetCellAt(void *grid, const vec3_t *pos) {
 	cCollisionGrid *g = grid;
 
 	CHECK(g->cells);
@@ -174,7 +174,7 @@ cEntity *__thiscall Grid_GetCellAt(void *grid, const vec3_t *pos) {
 		(int)((pos->z - g->min.z) / g->cell.z));
 }
 
-void __thiscall Grid_EndFrame(void *grid) {
+void Grid_EndFrame(void *grid) {
 	((cCollisionGrid *)grid)->cur = NULL;
 }
 
@@ -194,11 +194,11 @@ static inline int Grid_Advance(cCollisionGrid *g) {
 	return g->pos[2] > g->end[2];
 }
 
-byte __thiscall Grid_StepCell(void *grid) {
+byte Grid_StepCell(void *grid) {
 	return (byte)Grid_Advance(grid);
 }
 
-cEntity *__thiscall Grid_FirstInBox(void *grid, const vec3_t *min, const vec3_t *max) {
+cEntity *Grid_FirstInBox(void *grid, const vec3_t *min, const vec3_t *max) {
 	cCollisionGrid *g = grid;
 
 	g->pos[0] = g->start[0] = (int)((min->x - g->min.x) / g->cell.x);
@@ -212,7 +212,7 @@ cEntity *__thiscall Grid_FirstInBox(void *grid, const vec3_t *min, const vec3_t 
 	return Grid_CurEntity(g);
 }
 
-cEntity *__thiscall Grid_NextInBox(void *grid) {
+cEntity *Grid_NextInBox(void *grid) {
 	cCollisionGrid *g = grid;
 
 	if (g->cur) {
@@ -229,7 +229,7 @@ cEntity *__thiscall Grid_NextInBox(void *grid) {
 	return Grid_CurEntity(g);
 }
 
-cEntity *__thiscall Grid_NextInCell(void *grid) {
+cEntity *Grid_NextInCell(void *grid) {
 	cCollisionGrid *g = grid;
 
 	if (!g->cur) {
@@ -252,11 +252,11 @@ static inline void Grid_Stamp(cCollisionGrid *g) {
 	}
 }
 
-void __thiscall Grid_NewQuery(void *grid) {
+void Grid_NewQuery(void *grid) {
 	Grid_Stamp(grid);
 }
 
-cEntity *__thiscall Grid_NextOnSegment(void *grid) {
+cEntity *Grid_NextOnSegment(void *grid) {
 	cCollisionGrid *g = grid;
 	cEntity *e = Grid_NextInBox(g);
 
@@ -275,7 +275,7 @@ cEntity *__thiscall Grid_NextOnSegment(void *grid) {
 	return Grid_CurEntity(g);
 }
 
-cEntity *__thiscall Grid_FirstOnSegment(void *grid, const vec3_t *from, const vec3_t *to, const vec3_t *ext) {
+cEntity *Grid_FirstOnSegment(void *grid, const vec3_t *from, const vec3_t *to, const vec3_t *ext) {
 	cCollisionGrid *g = grid;
 	float dy = (to->y - from->y) / g->cell.y;
 	float dx = (to->x - from->x) / g->cell.x;
@@ -299,7 +299,7 @@ cEntity *__thiscall Grid_FirstOnSegment(void *grid, const vec3_t *from, const ve
 	return Grid_CurEntity(g);
 }
 
-void __thiscall Grid_Add(void *grid, cEntity *e) {
+void Grid_Add(void *grid, cEntity *e) {
 	cCollisionGrid *g = grid;
 	Nto1Node *node = Entity_GridNode(e);
 	Nto1Node *old = node->target;
@@ -336,7 +336,7 @@ void __thiscall Grid_Add(void *grid, cEntity *e) {
 	}
 }
 
-vec3_t *__thiscall Grid_ClampPos(void *grid, vec3_t *out, const vec3_t *pos) {
+vec3_t *Grid_ClampPos(void *grid, vec3_t *out, const vec3_t *pos) {
 	const cCollisionGrid *g = grid;
 
 	out->x = g->min.x >= pos->x ? g->min.x : Float_MinSS(g->max.x, pos->x);
@@ -345,7 +345,7 @@ vec3_t *__thiscall Grid_ClampPos(void *grid, vec3_t *out, const vec3_t *pos) {
 	return out;
 }
 
-void __thiscall Grid_Draw(void *grid) {
+void Grid_Draw(void *grid) {
 	const cCollisionGrid *g = grid;
 	const float m = 0.05f;
 
@@ -464,7 +464,7 @@ void *EntityLists_Get(const char *name) {
 
 /* the entity lists */
 
-void *__thiscall cEntityList_ctor(void *mem, const char *name) {
+void *cEntityList_ctor(void *mem, const char *name) {
 	cEntityListData *self = mem;
 
 	cString_ctor(&self->name);
@@ -487,7 +487,7 @@ void *__thiscall cEntityList_ctor(void *mem, const char *name) {
 	return self;
 }
 
-cEntity *__thiscall cEntityList_GetFirst(cEntityList *list) {
+cEntity *cEntityList_GetFirst(cEntityList *list) {
 	Nto1Node *n = ((cEntityListData *)list)->ring.next;
 
 	if (n->data && n) {
@@ -496,7 +496,7 @@ cEntity *__thiscall cEntityList_GetFirst(cEntityList *list) {
 	return NULL;
 }
 
-cEntity *__thiscall cEntityList_Nearest(void *list, const vec3_t *pos, cEntity *exclude, float *dist) {
+cEntity *cEntityList_Nearest(void *list, const vec3_t *pos, cEntity *exclude, float *dist) {
 	cEntityListData *self = list;
 	cEntity *best = NULL;
 	float level = (float)Floor_Get(&g_pWorld->floor, pos->y);
@@ -527,7 +527,7 @@ cEntity *__thiscall cEntityList_Nearest(void *list, const vec3_t *pos, cEntity *
 	return best;
 }
 
-int __thiscall cEntityList_Var(void *list, const char *name, int set, char **s, double *d, int *i) {
+int cEntityList_Var(void *list, const char *name, int set, char **s, double *d, int *i) {
 	cEntityListData *self = list;
 
 	(void)d;

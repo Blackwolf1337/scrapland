@@ -24,7 +24,7 @@
 		} \
 	} while (0)
 
-void __fastcall CCollideMesh_dtor(CCollideMesh *self) {
+void CCollideMesh_dtor(CCollideMesh *self) {
 	if (self->pTri) {
 		operator_delete_array(self->pTri);
 		self->pTri = NULL;
@@ -40,13 +40,13 @@ void __fastcall CCollideMesh_dtor(CCollideMesh *self) {
 	}
 }
 
-void __thiscall CAnimMat_SetFrame(CAnimMat *self, int frame) {
+void CAnimMat_SetFrame(CAnimMat *self, int frame) {
 	int *p = (int *)self;
 	p[4] = frame;
 	((float *)p)[5] = (float)frame;
 }
 
-CGameModel *__thiscall CGameModel_ctor(CGameModel *self, const char *name) {
+CGameModel *CGameModel_ctor(CGameModel *self, const char *name) {
 	static const vec3_t one = { 1.0f, 1.0f, 1.0f };
 	self->Model = NULL;
 	self->CollideMesh = NULL;
@@ -56,17 +56,17 @@ CGameModel *__thiscall CGameModel_ctor(CGameModel *self, const char *name) {
 	return self;
 }
 
-void __fastcall CGameModel_Reset(CGameModel *self) {
+void CGameModel_Reset(CGameModel *self) {
 	static const vec3_t one = { 1.0f, 1.0f, 1.0f };
 	CGameModel_Load(self, NULL, NULL, &one);
 }
 
-void __thiscall CGameModel_LoadName(CGameModel *self, const char *name) {
+void CGameModel_LoadName(CGameModel *self, const char *name) {
 	static const vec3_t one = { 1.0f, 1.0f, 1.0f };
 	CGameModel_Load(self, name, NULL, &one);
 }
 
-void __thiscall CGameModel_LoadScaled(CGameModel *self, const char *name, const vec3_t *scale) {
+void CGameModel_LoadScaled(CGameModel *self, const char *name, const vec3_t *scale) {
 	CGameModel_Load(self, name, NULL, scale);
 }
 
@@ -97,7 +97,7 @@ static void CGameModel_LodGroup(CGameModel *self, CIniFile *ini) {
 	E3D_LogBlue(g_FileLog, "LOD group not found: %s [Model: %s]", group, self->Model->name);
 }
 
-void __thiscall CGameModel_Load(CGameModel *self, const char *name, const char *name2, const vec3_t *scale) {
+void CGameModel_Load(CGameModel *self, const char *name, const char *name2, const vec3_t *scale) {
 	char alt[262], fmt[260], path[260];
 	CModel *lods[10];
 
@@ -162,7 +162,7 @@ void __thiscall CGameModel_Load(CGameModel *self, const char *name, const char *
 	}
 }
 
-void __thiscall CGameModel_Release(CGameModel *self, byte free) {
+void CGameModel_Release(CGameModel *self, byte free) {
 	CGameModel_FreeCollision(self);
 	if (free) {
 		World_Get();
@@ -185,36 +185,36 @@ void __thiscall CGameModel_Release(CGameModel *self, byte free) {
 	}
 }
 
-byte __fastcall CGameModel_IsLoaded(const CGameModel *self) {
+byte CGameModel_IsLoaded(const CGameModel *self) {
 	return self->Model != NULL;
 }
 
-const char *__fastcall CGameModel_Name(const CGameModel *self) {
+const char *CGameModel_Name(const CGameModel *self) {
 	GM_CHECK(self);
 	return self->Model->name;
 }
 
-const char *__fastcall CGameModel_SceneName(const CGameModel *self) {
+const char *CGameModel_SceneName(const CGameModel *self) {
 	GM_CHECK(self);
 	return self->Model->scene->name;
 }
 
-void __fastcall CGameModel_Enable(CGameModel *self) {
+void CGameModel_Enable(CGameModel *self) {
 	GM_CHECK(self);
 	CModel_Enable(self->Model);
 }
 
-void __fastcall CGameModel_Disable(CGameModel *self) {
+void CGameModel_Disable(CGameModel *self) {
 	GM_CHECK(self);
 	CModel_Disable(self->Model);
 }
 
-byte __fastcall CGameModel_IsEnabled(const CGameModel *self) {
+byte CGameModel_IsEnabled(const CGameModel *self) {
 	GM_CHECK(self);
 	return self->Model->enable;
 }
 
-byte __fastcall CGameModel_IsVisible(const CGameModel *self) {
+byte CGameModel_IsVisible(const CGameModel *self) {
 	GM_CHECK(self);
 	if (g_SplitScreen) {
 		return 1;
@@ -222,12 +222,12 @@ byte __fastcall CGameModel_IsVisible(const CGameModel *self) {
 	return self->Model->visible & 1;
 }
 
-int __fastcall CGameModel_GetSector(CGameModel *self) {
+int CGameModel_GetSector(CGameModel *self) {
 	GM_CHECK(self);
 	return CModel_GetSector(self->Model);
 }
 
-float __fastcall CGameModel_Radius(const CGameModel *self) {
+float CGameModel_Radius(const CGameModel *self) {
 	if (!self->Model || !self->Model->scene) {
 		CheckFailed("Model && Model->obtEscena()", __FILE__, __TIMESTAMP__, __LINE__);
 	}
@@ -236,34 +236,34 @@ float __fastcall CGameModel_Radius(const CGameModel *self) {
 	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) * 0.5f;
 }
 
-vec3_t *__thiscall CGameModel_GetPos(const CGameModel *self, vec3_t *out) {
+vec3_t *CGameModel_GetPos(const CGameModel *self, vec3_t *out) {
 	GM_CHECK(self);
 	*out = self->Model->pos;
 	return out;
 }
 
-void __thiscall CGameModel_SetPos(CGameModel *self, const vec3_t *v) {
+void CGameModel_SetPos(CGameModel *self, const vec3_t *v) {
 	GM_CHECK(self);
 	self->Model->pos = *v;
 }
 
-vec3_t *__thiscall CGameModel_GetRot(const CGameModel *self, vec3_t *out) {
+vec3_t *CGameModel_GetRot(const CGameModel *self, vec3_t *out) {
 	GM_CHECK(self);
 	*out = self->Model->rot;
 	return out;
 }
 
-void __thiscall CGameModel_SetRot(CGameModel *self, const vec3_t *v) {
+void CGameModel_SetRot(CGameModel *self, const vec3_t *v) {
 	GM_CHECK(self);
 	self->Model->rot = *v;
 }
 
-void __thiscall CGameModel_SetRot2(CGameModel *self, const vec3_t *v) {
+void CGameModel_SetRot2(CGameModel *self, const vec3_t *v) {
 	GM_CHECK(self);
 	self->Model->rot2 = *v;
 }
 
-void __thiscall CGameModel_MoveForward(CGameModel *self, float d) {
+void CGameModel_MoveForward(CGameModel *self, float d) {
 	vec3_t a, b;
 
 	GM_CHECK(self);
@@ -276,7 +276,7 @@ void __thiscall CGameModel_MoveForward(CGameModel *self, float d) {
 	m->pos.z = r->z + m->pos.z;
 }
 
-void __thiscall CGameModel_SetPivot(CGameModel *self, const vec3_t *v, byte rel, byte recalcBB) {
+void CGameModel_SetPivot(CGameModel *self, const vec3_t *v, byte rel, byte recalcBB) {
 	GM_CHECK(self);
 	if (recalcBB) {
 		CheckFailed("!RecalcBB", __FILE__, __TIMESTAMP__, __LINE__);
@@ -284,18 +284,18 @@ void __thiscall CGameModel_SetPivot(CGameModel *self, const vec3_t *v, byte rel,
 	CModel_SetPivot(self->Model, v, rel, recalcBB);
 }
 
-void __thiscall CGameModel_SetPivotNode(CGameModel *self, const char *name) {
+void CGameModel_SetPivotNode(CGameModel *self, const char *name) {
 	GM_CHECK(self);
 	CModel_SetPivotNode(self->Model, name);
 }
 
-void __thiscall CGameModel_SetSortZ(CGameModel *self, float bias, float mult) {
+void CGameModel_SetSortZ(CGameModel *self, float bias, float mult) {
 	GM_CHECK(self);
 	self->Model->sortZBias = bias;
 	self->Model->sortZMult = mult;
 }
 
-uint32_t __thiscall CGameModel_GetEffect(const CGameModel *self, uint32_t *out) {
+uint32_t CGameModel_GetEffect(const CGameModel *self, uint32_t *out) {
 	GM_CHECK(self);
 	uint32_t fx = (uint32_t)self->Model->renderEffect;
 	if (fx > MODEL_EFFECT_LAST) {
@@ -307,7 +307,7 @@ uint32_t __thiscall CGameModel_GetEffect(const CGameModel *self, uint32_t *out) 
 	return fx;
 }
 
-void __thiscall CGameModel_SetEffect(CGameModel *self, uint32_t fx) {
+void CGameModel_SetEffect(CGameModel *self, uint32_t fx) {
 	GM_CHECK(self);
 	if (fx > MODEL_EFFECT_LAST) {
 		CheckFailed("(dword)RenderEffect <= MODEL_EFFECT_LAST", __FILE__, __TIMESTAMP__, __LINE__);
@@ -317,7 +317,7 @@ void __thiscall CGameModel_SetEffect(CGameModel *self, uint32_t fx) {
 	}
 }
 
-void __thiscall CGameModel_GetEffectParam(const CGameModel *self, int i, uint32_t *out) {
+void CGameModel_GetEffectParam(const CGameModel *self, int i, uint32_t *out) {
 	if (!self->Model || !out) {
 		CheckFailed("Model && Value", __FILE__, __TIMESTAMP__, __LINE__);
 	}
@@ -327,7 +327,7 @@ void __thiscall CGameModel_GetEffectParam(const CGameModel *self, int i, uint32_
 	*out = (uint32_t)(&self->Model->effectParam)[i];
 }
 
-void __thiscall CGameModel_SetEffectParam(CGameModel *self, int i, uint32_t v) {
+void CGameModel_SetEffectParam(CGameModel *self, int i, uint32_t v) {
 	GM_CHECK(self);
 	if (i) {
 		CheckFailed("(dword)Param < MAX_RENDERFX_PARAM", __FILE__, __TIMESTAMP__, __LINE__);
@@ -337,7 +337,7 @@ void __thiscall CGameModel_SetEffectParam(CGameModel *self, int i, uint32_t v) {
 
 /* the render state an immediate draw clears */
 
-void __thiscall CGameModel_RenderNow(CGameModel *self, byte flags) {
+void CGameModel_RenderNow(CGameModel *self, byte flags) {
 	GM_CHECK(self);
 	if (!Render_GetViewportW()) {
 		CheckFailed("obt_ancho_render()", __FILE__, __TIMESTAMP__, __LINE__);
@@ -379,7 +379,7 @@ void __thiscall CGameModel_RenderNow(CGameModel *self, byte flags) {
 	g_RenderPass = pass;
 }
 
-int __thiscall CGameModel_AddAnim(CGameModel *self, const char *name) {
+int CGameModel_AddAnim(CGameModel *self, const char *name) {
 	GM_CHECK(self);
 	Create_Animation(self->Model, name, 3);
 	int i = CAnimGroups_Count(&self->Model->anims) - 1;
@@ -390,12 +390,12 @@ int __thiscall CGameModel_AddAnim(CGameModel *self, const char *name) {
 	return i;
 }
 
-int __thiscall CGameModel_FindAnim(CGameModel *self, const char *name) {
+int CGameModel_FindAnim(CGameModel *self, const char *name) {
 	GM_CHECK(self);
 	return CModel_FindAnim(self->Model, name);
 }
 
-const char *__thiscall CGameModel_AnimName(CGameModel *self, int i) {
+const char *CGameModel_AnimName(CGameModel *self, int i) {
 	GM_CHECK(self);
 	return CModel_GetAnimName(self->Model, i);
 }
@@ -409,7 +409,7 @@ static CAnimGroup *CGameModel_Link(CGameModel *self, int i) {
 	return g;
 }
 
-byte __thiscall CGameModel_AnimInfo(CGameModel *self, int i, float *dur, float *fps) {
+byte CGameModel_AnimInfo(CGameModel *self, int i, float *dur, float *fps) {
 	GM_CHECK(self);
 	CAnimGroup *g = CModel_GetAnim(self->Model, i);
 	if (!g) {
@@ -425,19 +425,19 @@ byte __thiscall CGameModel_AnimInfo(CGameModel *self, int i, float *dur, float *
 	return 1;
 }
 
-byte __thiscall CGameModel_SetAnimVel(CGameModel *self, int i, float vel) {
+byte CGameModel_SetAnimVel(CGameModel *self, int i, float vel) {
 	GM_CHECK(self);
 	CGameModel_Link(self, i)->ctrl.vel = vel;
 	return 1;
 }
 
-byte __thiscall CGameModel_SetAnimFactor(CGameModel *self, int i, float factor) {
+byte CGameModel_SetAnimFactor(CGameModel *self, int i, float factor) {
 	GM_CHECK(self);
 	CGameModel_Link(self, i)->ctrl.factor = factor;
 	return 1;
 }
 
-byte __thiscall CGameModel_SetAnimSpeed(CGameModel *self, int i, float speed) {
+byte CGameModel_SetAnimSpeed(CGameModel *self, int i, float speed) {
 	GM_CHECK(self);
 	CAnimGroup *g = CGameModel_Link(self, i);
 	if (0.01f > speed) {
@@ -447,13 +447,13 @@ byte __thiscall CGameModel_SetAnimSpeed(CGameModel *self, int i, float speed) {
 	return 1;
 }
 
-byte __thiscall CGameModel_SetAnimLoop(CGameModel *self, int i, byte loop) {
+byte CGameModel_SetAnimLoop(CGameModel *self, int i, byte loop) {
 	GM_CHECK(self);
 	CGameModel_Link(self, i)->ctrl.loop = !loop;
 	return 1;
 }
 
-void __thiscall CGameModel_AnimCmd(CGameModel *self, const char *cmd) {
+void CGameModel_AnimCmd(CGameModel *self, const char *cmd) {
 	char tag[32];
 	int slot;
 
@@ -468,7 +468,7 @@ void __thiscall CGameModel_AnimCmd(CGameModel *self, const char *cmd) {
 	E3D_LogBlue(g_FileLog, "Invalid anim command: %s", cmd);
 }
 
-byte __thiscall CGameModel_AnimTime(CGameModel *self, int i, float frame, float *time) {
+byte CGameModel_AnimTime(CGameModel *self, int i, float frame, float *time) {
 	if (!self->Model || !time) {
 		CheckFailed("Model && Time", __FILE__, __TIMESTAMP__, __LINE__);
 	}
@@ -497,32 +497,32 @@ byte __thiscall CGameModel_AnimTime(CGameModel *self, int i, float frame, float 
 	return 1;
 }
 
-void __thiscall CGameModel_SetAnim(CGameModel *self, int i, uint32_t chan, int unused) {
+void CGameModel_SetAnim(CGameModel *self, int i, uint32_t chan, int unused) {
 	GM_CHECK(self);
 	(void)unused;
 	CModel_SetAnim(self->Model, i, chan);
 	self->Model->animate = 0;
 }
 
-void __fastcall CGameModel_StopAnims(CGameModel *self) {
+void CGameModel_StopAnims(CGameModel *self) {
 	GM_CHECK(self);
 	for (uint32_t i = 0; i < 4; i++) {
 		CModel_SetAnim(self->Model, 0, i);
 	}
 }
 
-void __thiscall CGameModel_StopAnim(CGameModel *self, uint32_t chan) {
+void CGameModel_StopAnim(CGameModel *self, uint32_t chan) {
 	GM_CHECK(self);
 	CModel_SetAnim(self->Model, -1, chan);
 }
 
-CAnimGroup *__thiscall CGameModel_ChanAnim(CGameModel *self, uint32_t chan) {
+CAnimGroup *CGameModel_ChanAnim(CGameModel *self, uint32_t chan) {
 	GM_CHECK(self);
 	TABLE_CHECK(self->Model->slots.p, chan, self->Model->slots.n);
 	return ((CAnimSlot *)self->Model->slots.p)[chan].anim;
 }
 
-byte __thiscall CGameModel_ChanEnd(CGameModel *self, uint32_t chan) {
+byte CGameModel_ChanEnd(CGameModel *self, uint32_t chan) {
 	CAnimGroup *g = CGameModel_ChanAnim(self, chan);
 	if (!g) {
 		CheckFailed("link", __FILE__, __TIMESTAMP__, __LINE__);
@@ -530,7 +530,7 @@ byte __thiscall CGameModel_ChanEnd(CGameModel *self, uint32_t chan) {
 	return g->ctrl.state == 3;
 }
 
-byte __thiscall CGameModel_ChanInfo(CGameModel *self, uint32_t chan, int *mode, int *anim) {
+byte CGameModel_ChanInfo(CGameModel *self, uint32_t chan, int *mode, int *anim) {
 	CAnimGroup *g = CGameModel_ChanAnim(self, chan);
 	if (!g) {
 		CheckFailed("link", __FILE__, __TIMESTAMP__, __LINE__);
@@ -545,7 +545,7 @@ byte __thiscall CGameModel_ChanInfo(CGameModel *self, uint32_t chan, int *mode, 
 	return 1;
 }
 
-byte __thiscall CGameModel_ChanTime(CGameModel *self, uint32_t chan, float *t) {
+byte CGameModel_ChanTime(CGameModel *self, uint32_t chan, float *t) {
 	CAnimGroup *g = CGameModel_ChanAnim(self, chan);
 	if (!g) {
 		CheckFailed("link", __FILE__, __TIMESTAMP__, __LINE__);
@@ -559,7 +559,7 @@ byte __thiscall CGameModel_ChanTime(CGameModel *self, uint32_t chan, float *t) {
 	return 1;
 }
 
-void __thiscall CGameModel_RootMotion(CGameModel *self, float t, vec3_t *move, int *jumps) {
+void CGameModel_RootMotion(CGameModel *self, float t, vec3_t *move, int *jumps) {
 	byte first = 0;
 
 	GM_CHECK(self);
@@ -594,7 +594,7 @@ void __thiscall CGameModel_RootMotion(CGameModel *self, float t, vec3_t *move, i
 	}
 }
 
-byte __thiscall CGameModel_AnimDelta(CGameModel *self, uint32_t chan, float t, vec3_t *move) {
+byte CGameModel_AnimDelta(CGameModel *self, uint32_t chan, float t, vec3_t *move) {
 	vec3_t p0, p1, a;
 	quat_t q0, q1;
 
@@ -632,14 +632,14 @@ byte __thiscall CGameModel_AnimDelta(CGameModel *self, uint32_t chan, float t, v
 	return 1;
 }
 
-int __thiscall CGameModel_FindRenderNode(CGameModel *self, const char *name) {
+int CGameModel_FindRenderNode(CGameModel *self, const char *name) {
 	uint32_t i;
 
 	GM_CHECK(self);
 	return CModel_FindRenderNode(self->Model, name, &i, 0, 1) ? (int)i : -1;
 }
 
-int __thiscall CGameModel_FindRenderNodeWild(CGameModel *self, const char *name) {
+int CGameModel_FindRenderNodeWild(CGameModel *self, const char *name) {
 	uint32_t i;
 
 	GM_CHECK(self);
@@ -653,7 +653,7 @@ static CRenderNode *CGameModel_RenderNode(const CGameModel *self, uint32_t i) {
 	return (CRenderNode *)t->p + i;
 }
 
-CRenderNode *__thiscall CGameModel_RenderNodeRef(CGameModel *self, uint32_t i) {
+CRenderNode *CGameModel_RenderNodeRef(CGameModel *self, uint32_t i) {
 	GM_CHECK(self);
 	CRenderNode *r = CGameModel_RenderNode(self, i);
 	if (!r) {
@@ -666,7 +666,7 @@ CRenderNode *__thiscall CGameModel_RenderNodeRef(CGameModel *self, uint32_t i) {
 	return r;
 }
 
-vec3_t *__thiscall CGameModel_NodePos(CGameModel *self, vec3_t *out, uint32_t i, byte animated) {
+vec3_t *CGameModel_NodePos(CGameModel *self, vec3_t *out, uint32_t i, byte animated) {
 	GM_CHECK(self);
 	if (animated) {
 		CheckFailed("bAnimated == false", __FILE__, __TIMESTAMP__, __LINE__);
@@ -675,7 +675,7 @@ vec3_t *__thiscall CGameModel_NodePos(CGameModel *self, vec3_t *out, uint32_t i,
 	return out;
 }
 
-matrix_t *__thiscall CGameModel_NodeMatrix(CGameModel *self, matrix_t *out, uint32_t i, byte anim, byte *visible,
+matrix_t *CGameModel_NodeMatrix(CGameModel *self, matrix_t *out, uint32_t i, byte anim, byte *visible,
 	uint32_t slot) {
 	matrix_t m;
 
@@ -684,7 +684,7 @@ matrix_t *__thiscall CGameModel_NodeMatrix(CGameModel *self, matrix_t *out, uint
 	return out;
 }
 
-byte __thiscall CGameModel_NodeLook(CGameModel *self, uint32_t i, int mode, const vec3_t *v) {
+byte CGameModel_NodeLook(CGameModel *self, uint32_t i, int mode, const vec3_t *v) {
 	GM_CHECK(self);
 	CRenderNode *r = CGameModel_RenderNode(self, i);
 	switch (mode) {
@@ -724,20 +724,20 @@ static CIniFile *CGameModel_NodeIni(const CGameModel *self, uint32_t i) {
 	return CGameModel_RenderNode(self, i)->node->ini;
 }
 
-float __thiscall CGameModel_NodeIniFloat(CGameModel *self, uint32_t i, const char *sect, const char *key, float def) {
+float CGameModel_NodeIniFloat(CGameModel *self, uint32_t i, const char *sect, const char *key, float def) {
 	return CIniFile_GetFloat(CGameModel_NodeIni(self, i), sect, key, def);
 }
 
-int __thiscall CGameModel_NodeIniInt(CGameModel *self, uint32_t i, const char *sect, const char *key, int def) {
+int CGameModel_NodeIniInt(CGameModel *self, uint32_t i, const char *sect, const char *key, int def) {
 	return CIniFile_GetInt(CGameModel_NodeIni(self, i), sect, key, def);
 }
 
-uint32_t __thiscall CGameModel_NodeIniColor(CGameModel *self, uint32_t i, const char *sect, const char *key,
+uint32_t CGameModel_NodeIniColor(CGameModel *self, uint32_t i, const char *sect, const char *key,
 	uint32_t def) {
 	return CIniFile_GetColor(CGameModel_NodeIni(self, i), sect, key, def);
 }
 
-vec3_t *__thiscall CGameModel_NodeIniVec3(CGameModel *self, vec3_t *out, uint32_t i, const char *sect, const char *key,
+vec3_t *CGameModel_NodeIniVec3(CGameModel *self, vec3_t *out, uint32_t i, const char *sect, const char *key,
 	const vec3_t *def) {
 	CIniFile_GetVec3(CGameModel_NodeIni(self, i), out, sect, key, def);
 	return out;
@@ -753,7 +753,7 @@ static CMeshD3D *Node_MeshD3D(CNode3D *n) {
 	return (CMeshD3D *)o;
 }
 
-byte __thiscall CGameModel_SetTexFrame(CGameModel *self, const char *name, int frame) {
+byte CGameModel_SetTexFrame(CGameModel *self, const char *name, int frame) {
 	for (CNode3D *n = self->Model->scene->Node3D; n; n = n->next) {
 		if (CNode3D_Class(n) != CLASS_OBJ3D_MESHD3D) {
 			continue;
@@ -804,7 +804,7 @@ static const matrix_t *RenderNode_MatrixMesh(const CRenderNode *r, const CMeshD3
 	return m->pSkin ? &r->mObj : &r->m;
 }
 
-int __thiscall CGameModel_VertexCounts(CGameModel *self, int *out, int max) {
+int CGameModel_VertexCounts(CGameModel *self, int *out, int max) {
 	int n = self->Model->renderNodes->n;
 	if (!out) {
 		return n;
@@ -852,7 +852,7 @@ static void CGameModel_CheckVertArgs(const CGameModel *self, const void *pos, co
 	}
 }
 
-void __thiscall CGameModel_RandomVertices(CGameModel *self, vec3_t *pos, void *normal, void *area, int count,
+void CGameModel_RandomVertices(CGameModel *self, vec3_t *pos, void *normal, void *area, int count,
 	uint32_t node) {
 	byte valid[MAX_VALID];
 	int nValid = 0;
@@ -912,7 +912,7 @@ void __thiscall CGameModel_RandomVertices(CGameModel *self, vec3_t *pos, void *n
 	}
 }
 
-void __thiscall CGameModel_Vertices(CGameModel *self, vec3_t *pos, void *normal, void *area, int count, int first,
+void CGameModel_Vertices(CGameModel *self, vec3_t *pos, void *normal, void *area, int count, int first,
 	int *index, uint32_t node, int *indices) {
 	byte valid[MAX_VALID];
 	int base[MAX_VALID + 1];
@@ -1011,7 +1011,7 @@ void __thiscall CGameModel_Vertices(CGameModel *self, vec3_t *pos, void *normal,
 	}
 }
 
-void __thiscall CGameModel_ClosestVertex(CGameModel *self, float x, float y, float z, vec3_t *pos, int *index,
+void CGameModel_ClosestVertex(CGameModel *self, float x, float y, float z, vec3_t *pos, int *index,
 	uint32_t node) {
 	GM_CHECK(self);
 	if (!pos) {
@@ -1075,7 +1075,7 @@ void __thiscall CGameModel_ClosestVertex(CGameModel *self, float x, float y, flo
 	}
 }
 
-void __fastcall CGameModel_FreeCollision(CGameModel *self) {
+void CGameModel_FreeCollision(CGameModel *self) {
 	if (self->CollideMesh) {
 		GM_CHECK(self);
 		E3D_LogWhite(g_FileLog, "~CollisionMesh: %s (ID: %d)", self->Model->name, self->CollisionMeshID);
@@ -1091,7 +1091,7 @@ void __fastcall CGameModel_FreeCollision(CGameModel *self) {
 	self->collide = 0;
 }
 
-void __thiscall CGameModel_EnableCollision(CGameModel *self, byte on, byte create) {
+void CGameModel_EnableCollision(CGameModel *self, byte on, byte create) {
 	if (self->CollisionMeshID == -1) {
 		return;
 	}
@@ -1114,7 +1114,7 @@ void __thiscall CGameModel_EnableCollision(CGameModel *self, byte on, byte creat
 	}
 }
 
-byte __thiscall CGameModel_CreateCollision(CGameModel *self, byte all) {
+byte CGameModel_CreateCollision(CGameModel *self, byte all) {
 	matrix_t mw;
 	byte ok;
 
@@ -1188,11 +1188,11 @@ byte __thiscall CGameModel_CreateCollision(CGameModel *self, byte all) {
 	return ok;
 }
 
-byte __fastcall CGameModel_CollideOn(const CGameModel *self) {
+byte CGameModel_CollideOn(const CGameModel *self) {
 	return self->CollideMesh && self->collide;
 }
 
-void __thiscall CRotation_SetEuler(CRotation *self, const vec3_t *ang) {
+void CRotation_SetEuler(CRotation *self, const vec3_t *ang) {
 	self->ang = *ang;
 	self->flags |= ROT_DIRTY;
 	if (ang->x == 0.0f && ang->y == 0.0f && ang->z == 0.0f) {

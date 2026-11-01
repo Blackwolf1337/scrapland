@@ -68,7 +68,7 @@ static const byte kb_gameDefaults[][3] = {
 	{ 0x20, 3, 9 }, { 0x2a, 3, 15 }, { 0x52, 3, 16 }, { 0x10, 3, 22 }, { 0x12, 3, 21 }, { 0x39, 3, 19 },
 };
 
-cPcKeyboard *__thiscall cPcKeyboard_ctor(cPcKeyboard *self) {
+cPcKeyboard *cPcKeyboard_ctor(cPcKeyboard *self) {
 	cAbstractIDevice_ctor(self);
 	self->vftable = CPCKEYBOARD_VFTABLE;
 	cAbstractIDevice_InitEntries(self, 0x100);
@@ -78,7 +78,7 @@ cPcKeyboard *__thiscall cPcKeyboard_ctor(cPcKeyboard *self) {
 	return self;
 }
 
-cPcKeyboard *__thiscall cPcKeyboard_Delete(cPcKeyboard *self, byte flags) {
+cPcKeyboard *cPcKeyboard_Delete(cPcKeyboard *self, byte flags) {
 	cAbstractIDevice_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -97,7 +97,7 @@ void Keyboard_Acquire(byte on) {
 }
 
 /* ESCAPE, GRAVE and F1 keep their bindings; check spares the reserved keys too */
-byte __thiscall cPcKeyboard_SetEntry(cPcKeyboard *self, int entry, int set, int player, int action, byte check) {
+byte cPcKeyboard_SetEntry(cPcKeyboard *self, int entry, int set, int player, int action, byte check) {
 	if (entry == 0x01 || entry == 0x29 || entry == 0x3b) {
 		return 0;
 	}
@@ -130,13 +130,13 @@ void Keyboard_Close(void) {
 	}
 }
 
-const char *__thiscall cPcKeyboard_GetName(cPcKeyboard *self) {
+const char *cPcKeyboard_GetName(cPcKeyboard *self) {
 	(void)self;
 	return KB_NAME;
 }
 
 /* the DIK_ name; another code is its hex digits and "Code" */
-const char *__thiscall cPcKeyboard_GetEntryName(cPcKeyboard *self, int entry) {
+const char *cPcKeyboard_GetEntryName(cPcKeyboard *self, int entry) {
 	(void)self;
 	if ((uint32_t)(entry - 1) < 0xed && kb_names[entry]) {
 		return kb_names[entry];
@@ -146,7 +146,7 @@ const char *__thiscall cPcKeyboard_GetEntryName(cPcKeyboard *self, int entry) {
 }
 
 /* the name DirectInput gives the key (keyboard layout and language) */
-const char *__thiscall cPcKeyboard_GetEntryLabel(cPcKeyboard *self, int entry) {
+const char *cPcKeyboard_GetEntryLabel(cPcKeyboard *self, int entry) {
 	exe_IDirectInputDevice8 *d = g_KeyboardDev;
 
 	(void)self;
@@ -176,7 +176,7 @@ int32_t Keyboard_Create(void) {
 	return hr;
 }
 
-void __thiscall cPcKeyboard_SetDefaults(cPcKeyboard *self) {
+void cPcKeyboard_SetDefaults(cPcKeyboard *self) {
 	Device_SetEntries(self, kb_defaults, sizeof(kb_defaults) / sizeof(kb_defaults[0]));
 }
 
@@ -192,7 +192,7 @@ void Keyboard_Init(void) {
 	InputDevices_Add(&g_InputDevices, &d);
 }
 
-void __thiscall cPcKeyboard_Update(cPcKeyboard *self, float dt) {
+void cPcKeyboard_Update(cPcKeyboard *self, float dt) {
 	(void)dt;
 	Keyboard_Poll();
 	for (int i = 0; i < 0x100; i++) {
@@ -200,7 +200,7 @@ void __thiscall cPcKeyboard_Update(cPcKeyboard *self, float dt) {
 	}
 }
 
-void __thiscall cPcKeyboard_SetGameDefaults(cPcKeyboard *self) {
+void cPcKeyboard_SetGameDefaults(cPcKeyboard *self) {
 	Device_SetEntries(self, kb_gameDefaults, sizeof(kb_gameDefaults) / sizeof(kb_gameDefaults[0]));
 }
 
@@ -233,7 +233,7 @@ int32_t Keyboard_Poll(void) {
 }
 
 /* ESCAPE, GRAVE, F1 and APPS */
-byte __thiscall cPcKeyboard_IsReserved(cPcKeyboard *self, int entry) {
+byte cPcKeyboard_IsReserved(cPcKeyboard *self, int entry) {
 	(void)self;
 	return entry == 0x01 || entry == 0x29 || entry == 0x3b || entry == 0xdd;
 }

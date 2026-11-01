@@ -10,7 +10,7 @@
 #define VT_HEADCRAZYGAMBLER GAME_VFTABLE(cEmbeddedFXHeadCrazyGambler_vftable)
 #define HEAD_GLOWS 12
 
-cEmbeddedFXHeadCrazyGambler *__fastcall cEmbeddedFXHeadCrazyGambler_ctor(cEmbeddedFXHeadCrazyGambler *self) {
+cEmbeddedFXHeadCrazyGambler *cEmbeddedFXHeadCrazyGambler_ctor(cEmbeddedFXHeadCrazyGambler *self) {
 	self->vftable = NULL;
 	self->vftable = VT_HEADCRAZYGAMBLER;
 	CGameParticles_ctor(&self->particles);
@@ -21,13 +21,13 @@ cEmbeddedFXHeadCrazyGambler *__fastcall cEmbeddedFXHeadCrazyGambler_ctor(cEmbedd
 	return self;
 }
 
-void __fastcall cEmbeddedFXHeadCrazyGambler_dtor(cEmbeddedFXHeadCrazyGambler *self) {
+void cEmbeddedFXHeadCrazyGambler_dtor(cEmbeddedFXHeadCrazyGambler *self) {
 	self->vftable = VT_HEADCRAZYGAMBLER;
 	CGameParticles_Release(&self->particles);
 	cEmbeddedFX_dtor((cEmbeddedFX *)self);
 }
 
-cEmbeddedFXHeadCrazyGambler *__thiscall cEmbeddedFXHeadCrazyGambler_Delete(cEmbeddedFXHeadCrazyGambler *self,
+cEmbeddedFXHeadCrazyGambler *cEmbeddedFXHeadCrazyGambler_Delete(cEmbeddedFXHeadCrazyGambler *self,
 	byte flags) {
 	cEmbeddedFXHeadCrazyGambler_dtor(self);
 	if (flags & 1) {
@@ -37,7 +37,7 @@ cEmbeddedFXHeadCrazyGambler *__thiscall cEmbeddedFXHeadCrazyGambler_Delete(cEmbe
 }
 
 /* every 0.02 s two glows on 12 vertices of the hair node */
-void __fastcall cEmbeddedFXHeadCrazyGambler_Tick(cEmbeddedFXHeadCrazyGambler *self) {
+void cEmbeddedFXHeadCrazyGambler_Tick(cEmbeddedFXHeadCrazyGambler *self) {
 	CGameModel *model = self->owner;
 	vec3_t pos[HEAD_GLOWS];
 	int index[HEAD_GLOWS];
@@ -60,16 +60,16 @@ void __fastcall cEmbeddedFXHeadCrazyGambler_Tick(cEmbeddedFXHeadCrazyGambler *se
 	}
 }
 
-void __fastcall cEmbeddedFXHeadCrazyGambler_Release(cEmbeddedFXHeadCrazyGambler *self) {
+void cEmbeddedFXHeadCrazyGambler_Release(cEmbeddedFXHeadCrazyGambler *self) {
 	CGameParticles_Release(&self->particles);
 }
 
-void __fastcall cEmbeddedFXHeadCrazyGambler_Clear(cEmbeddedFXHeadCrazyGambler *self) {
+void cEmbeddedFXHeadCrazyGambler_Clear(cEmbeddedFXHeadCrazyGambler *self) {
 	CGameParticles_KillAll(&self->particles);
 }
 
 /* the particles on the render node glow of the owner model */
-void __thiscall cEmbeddedFXHeadCrazyGambler_Init(cEmbeddedFXHeadCrazyGambler *self, CGameModel *owner,
+void cEmbeddedFXHeadCrazyGambler_Init(cEmbeddedFXHeadCrazyGambler *self, CGameModel *owner,
 	const char *glow) {
 	self->owner = owner;
 	CHECK(CGameModel_IsLoaded(owner));

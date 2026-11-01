@@ -36,13 +36,13 @@ static void Rotation_Init(CRotation *r) {
 }
 
 /* both rotations zero, the type left */
-NodeLook *__fastcall NodeLook_ctor(NodeLook *self) {
+NodeLook *NodeLook_ctor(NodeLook *self) {
 	Rotation_Init(&self->r1);
 	Rotation_Init(&self->r2);
 	return self;
 }
 
-CRenderNode *__fastcall CRenderNode_ctor(CRenderNode *self) {
+CRenderNode *CRenderNode_ctor(CRenderNode *self) {
 	*(int *)self->pad_0 = 0;
 	g_RenderNodeCount++;
 	self->flags = 0;
@@ -62,18 +62,18 @@ CRenderNode *__fastcall CRenderNode_ctor(CRenderNode *self) {
 	return self;
 }
 
-void __fastcall CRenderNode_dtor(CRenderNode *self) {
+void CRenderNode_dtor(CRenderNode *self) {
 	g_RenderNodeCount--;
 	if (self->look) {
 		operator_delete_sized(self->look, sizeof(NodeLook));
 		self->look = NULL;
 	}
 	if (self->obj3D2) {
-		((void *(__thiscall *)(IObject3D *, int))self->obj3D2->vftable[0])(self->obj3D2, 1);
+		((void *(*)(IObject3D *, int))self->obj3D2->vftable[0])(self->obj3D2, 1);
 		self->obj3D2 = NULL;
 	}
 	if (self->obj3D) {
-		((void *(__thiscall *)(IObject3D *, int))self->obj3D->vftable[0])(self->obj3D, 1);
+		((void *(*)(IObject3D *, int))self->obj3D->vftable[0])(self->obj3D, 1);
 		self->obj3D = NULL;
 	}
 	CHECK(self->node->Refs > 1);
@@ -85,21 +85,21 @@ void __fastcall CRenderNode_dtor(CRenderNode *self) {
 }
 
 /* the node effect on the world matrix m; -1 without one, 0 for a LOD model */
-int __thiscall CRenderNode_ApplyFX(CRenderNode *self, matrix_t *m) {
+int CRenderNode_ApplyFX(CRenderNode *self, matrix_t *m) {
 	CHECK(self->flags & RNODE_UNIQUE);
 	if (((CModel *)self->owner)->mainLOD) {
 		CHECK(!self->obj3D2);
 		return 0;
 	}
 	if (self->obj3D2) {
-		return ((int(__thiscall *)(IObject3D *, matrix_t *, CNode3D *, CRenderNode *))self->obj3D2->vftable[NODEFX_VF_APPLY])(
+		return ((int(*)(IObject3D *, matrix_t *, CNode3D *, CRenderNode *))self->obj3D2->vftable[NODEFX_VF_APPLY])(
 			self->obj3D2, m, self->node, self);
 	}
 	return -1;
 }
 
 /* a render node of a LOD model: the node of the main model updated at the place of this node, the matrices taken */
-void __thiscall CRenderNode_UpdateNode(CRenderNode *self) {
+void CRenderNode_UpdateNode(CRenderNode *self) {
 	uint32_t i;
 	CTable *tab;
 	CRenderNode *main;
@@ -135,7 +135,7 @@ void __thiscall CRenderNode_UpdateNode(CRenderNode *self) {
 }
 
 /* the look type (NODOR_ROT_*) of the node, its look made when missing */
-void __thiscall CRenderNode_SetLook(CRenderNode *self, int type) {
+void CRenderNode_SetLook(CRenderNode *self, int type) {
 	CHECK(self->flags & RNODE_UNIQUE);
 	if (!self->look) {
 		void *mem;
@@ -152,7 +152,7 @@ void __thiscall CRenderNode_SetLook(CRenderNode *self, int type) {
 }
 
 /* the node of the render node (a reference) and the own copies of its camera, particles and node effect */
-void __thiscall CRenderNode_SetNode(CRenderNode *self, CNode3D *node) {
+void CRenderNode_SetNode(CRenderNode *self, CNode3D *node) {
 	uint32_t class;
 	void *mem;
 
@@ -192,7 +192,7 @@ void __thiscall CRenderNode_SetNode(CRenderNode *self, CNode3D *node) {
 
 /* ---- RenderCtx.h ---- */
 
-void __thiscall RenderCtx_Init(NodeAnimCtx *self, CModel *m, const vec3_t *scale) {
+void RenderCtx_Init(NodeAnimCtx *self, CModel *m, const vec3_t *scale) {
 	(void)scale;
 	Matrix_LoadIdentity(&self->m);
 	self->model = m;
@@ -206,7 +206,7 @@ void __thiscall RenderCtx_Init(NodeAnimCtx *self, CModel *m, const vec3_t *scale
 /* the frame of an animation group (its control) */
 #define AnimGroup_Frame(g) ((g)->ctrl.frame)
 
-void __thiscall RenderCtx_SetChannel(NodeAnimChannel *self, CAnimSlot *slot) {
+void RenderCtx_SetChannel(NodeAnimChannel *self, CAnimSlot *slot) {
 	float f1, f2, b;
 
 	self->anim = (NodeAnimPair *)slot;

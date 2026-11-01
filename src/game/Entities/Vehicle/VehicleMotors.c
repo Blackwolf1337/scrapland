@@ -158,7 +158,7 @@ static void VM_Haze(cVehicleMotors *self, VMUpdate *u) {
 	}
 }
 
-void __fastcall cVehicleMotors_Update(cVehicleMotors *self) {
+void cVehicleMotors_Update(cVehicleMotors *self) {
 	VMUpdate u;
 	cEntity *owner = self->owner;
 	int i, j;
@@ -272,7 +272,7 @@ void __fastcall cVehicleMotors_Update(cVehicleMotors *self) {
 	self->lastVisible = u.visible;
 }
 
-void __fastcall cVehicleMotor_Reset(cVehicleMotor *self) {
+void cVehicleMotor_Reset(cVehicleMotor *self) {
 	int i;
 
 	self->name[0] = 0;
@@ -287,7 +287,7 @@ void __fastcall cVehicleMotor_Reset(cVehicleMotor *self) {
 	cVehicleMotorsEffects_Clear(&self->effects);
 }
 
-void __fastcall cVehicleMotors_Reset(cVehicleMotors *self) {
+void cVehicleMotors_Reset(cVehicleMotors *self) {
 	int i;
 
 	self->stopped = 0;
@@ -300,17 +300,17 @@ void __fastcall cVehicleMotors_Reset(cVehicleMotors *self) {
 	}
 }
 
-void __fastcall cVehicleMotors_ClearEffects(cVehicleMotors *self) {
+void cVehicleMotors_ClearEffects(cVehicleMotors *self) {
 	cVehicleMotorsEffects_Clear(&self->effects);
 }
 
-void __fastcall cVehicleMotors_InitEffects(cVehicleMotors *self) {
+void cVehicleMotors_InitEffects(cVehicleMotors *self) {
 	cVehicleMotorsEffects_Set(&self->effects, self->owner, self, NULL);
 	cVehicleMotorsEffects_Init(&self->effects);
 }
 
 /* ShipMotorScale and ShipMotorOffset, compared without the terminator like the original */
-byte __thiscall cVehicleMotors_VarF(cVehicleMotors *self, const char *name, double *v, byte set) {
+byte cVehicleMotors_VarF(cVehicleMotors *self, const char *name, double *v, byte set) {
 	if (!memcmp(name, "ShipMotorScale", 14)) {
 		if (set) {
 			cVehicleMotorsEffects_SetScale(&self->effects, (float)*v);
@@ -330,7 +330,7 @@ byte __thiscall cVehicleMotors_VarF(cVehicleMotors *self, const char *name, doub
 	return 0;
 }
 
-byte __thiscall cVehicleMotors_GetExhaust(cVehicleMotors *self, uint32_t motor, uint32_t side, vec3_t *pos,
+byte cVehicleMotors_GetExhaust(cVehicleMotors *self, uint32_t motor, uint32_t side, vec3_t *pos,
 	vec3_t *ang) {
 	if (motor > 3 || side > 1 || !self->motor[motor] || self->motor[motor]->node[side] == -1) {
 		return 0;
@@ -338,7 +338,7 @@ byte __thiscall cVehicleMotors_GetExhaust(cVehicleMotors *self, uint32_t motor, 
 	return VM_NodeInfo(self, self->motor[motor]->node[side], pos, ang);
 }
 
-byte __thiscall cVehicleMotors_GetSlot(cVehicleMotors *self, uint32_t motor, uint32_t side, vec3_t *pos,
+byte cVehicleMotors_GetSlot(cVehicleMotors *self, uint32_t motor, uint32_t side, vec3_t *pos,
 	vec3_t *ang) {
 	char name[16];
 
@@ -353,7 +353,7 @@ byte __thiscall cVehicleMotors_GetSlot(cVehicleMotors *self, uint32_t motor, uin
 	return VM_NodeInfo(self, i, pos, ang);
 }
 
-const char *__thiscall cVehicleMotors_GetMotorName(cVehicleMotors *self, uint32_t motor, int *count) {
+const char *cVehicleMotors_GetMotorName(cVehicleMotors *self, uint32_t motor, int *count) {
 	if (motor > 3) {
 		if (count) {
 			*count = 0;
@@ -367,7 +367,7 @@ const char *__thiscall cVehicleMotors_GetMotorName(cVehicleMotors *self, uint32_
 	return n > 0 ? self->motor[motor]->name : VM_EMPTY;
 }
 
-int __thiscall cVehicleMotors_NumSlots(cVehicleMotors *self, byte motor) {
+int cVehicleMotors_NumSlots(cVehicleMotors *self, byte motor) {
 	char name[16];
 	int i;
 
@@ -380,12 +380,12 @@ int __thiscall cVehicleMotors_NumSlots(cVehicleMotors *self, byte motor) {
 	return VM_SIDES;
 }
 
-cEntity *__fastcall cVehicleMotors_GetOwner(cVehicleMotors *self) {
+cEntity *cVehicleMotors_GetOwner(cVehicleMotors *self) {
 	return self->owner;
 }
 
 /* get: NEng0..3 (the node count), nEng0..3 (the slot count); set: EngFxClass0..3, FxClass, ShipMotorColorR/G/B */
-byte __thiscall cVehicleMotors_VarI(cVehicleMotors *self, const char *name, int *v, byte set) {
+byte cVehicleMotors_VarI(cVehicleMotors *self, const char *name, int *v, byte set) {
 	size_t len = strlen(name);
 	uint32_t c;
 
@@ -435,7 +435,7 @@ byte __thiscall cVehicleMotors_VarI(cVehicleMotors *self, const char *name, int 
 	return 1;
 }
 
-void __fastcall cVehicleMotor_Render(cVehicleMotor *self) {
+void cVehicleMotor_Render(cVehicleMotor *self) {
 	int i;
 
 	for (i = 0; i < VM_SIDES; i++) {
@@ -445,7 +445,7 @@ void __fastcall cVehicleMotor_Render(cVehicleMotor *self) {
 	}
 }
 
-void __fastcall cVehicleMotors_Render(cVehicleMotors *self) {
+void cVehicleMotors_Render(cVehicleMotors *self) {
 	int i;
 
 	for (i = 0; i < VM_MOTORS; i++) {
@@ -455,7 +455,7 @@ void __fastcall cVehicleMotors_Render(cVehicleMotors *self) {
 	}
 }
 
-void __thiscall cVehicleMotor_SetEnabled(cVehicleMotor *self, byte on) {
+void cVehicleMotor_SetEnabled(cVehicleMotor *self, byte on) {
 	int i;
 
 	for (i = 0; i < VM_SIDES; i++) {
@@ -472,7 +472,7 @@ void __thiscall cVehicleMotor_SetEnabled(cVehicleMotor *self, byte on) {
 	}
 }
 
-void __thiscall cVehicleMotors_SetEnabled(cVehicleMotors *self, byte on) {
+void cVehicleMotors_SetEnabled(cVehicleMotors *self, byte on) {
 	int i;
 
 	if (!on) {
@@ -488,19 +488,19 @@ void __thiscall cVehicleMotors_SetEnabled(cVehicleMotors *self, byte on) {
 	}
 }
 
-void __thiscall cVehicleMotors_StartAnimF(cVehicleMotors *self, uint32_t motor, const char *anim) {
+void cVehicleMotors_StartAnimF(cVehicleMotors *self, uint32_t motor, const char *anim) {
 	if (motor < VM_MOTORS && self->motor[motor]) {
 		cVehicleMotor_StartAnimF(self->motor[motor], anim);
 	}
 }
 
-void __thiscall cVehicleMotors_StartAnimM(cVehicleMotors *self, uint32_t motor, const char *anim) {
+void cVehicleMotors_StartAnimM(cVehicleMotors *self, uint32_t motor, const char *anim) {
 	if (motor < VM_MOTORS && self->motor[motor]) {
 		cVehicleMotor_StartAnimM(self->motor[motor], anim);
 	}
 }
 
-int __thiscall cVehicleMotor_Load(cVehicleMotor *self, cEntity *owner, byte motor, const char *file,
+int cVehicleMotor_Load(cVehicleMotor *self, cEntity *owner, byte motor, const char *file,
 	const vec3_t *scale) {
 	char path[0x200], name[16];
 	vec3_t v;
@@ -534,7 +534,7 @@ int __thiscall cVehicleMotor_Load(cVehicleMotor *self, cEntity *owner, byte moto
 	return i;
 }
 
-int __thiscall cVehicleMotors_SetMotor(cVehicleMotors *self, uint32_t motor, const char *file, float sx, float sy,
+int cVehicleMotors_SetMotor(cVehicleMotors *self, uint32_t motor, const char *file, float sx, float sy,
 	float sz) {
 	if (motor > 3) {
 		return 0;
@@ -564,14 +564,14 @@ static void VM_StartAnim(cVehicleMotor *self, const char *anim, uint32_t chan, f
 	}
 }
 
-void __thiscall cVehicleMotor_StartAnimF(cVehicleMotor *self, const char *anim) {
+void cVehicleMotor_StartAnimF(cVehicleMotor *self, const char *anim) {
 	if (!self->animFOn) {
 		self->animFOn = 1;
 		VM_StartAnim(self, anim, 0, &self->durF);
 	}
 }
 
-void __thiscall cVehicleMotor_SetAnimF(cVehicleMotor *self, float k) {
+void cVehicleMotor_SetAnimF(cVehicleMotor *self, float k) {
 	int i;
 
 	if (!self->animFOn) {
@@ -585,14 +585,14 @@ void __thiscall cVehicleMotor_SetAnimF(cVehicleMotor *self, float k) {
 	}
 }
 
-void __thiscall cVehicleMotor_StartAnimM(cVehicleMotor *self, const char *anim) {
+void cVehicleMotor_StartAnimM(cVehicleMotor *self, const char *anim) {
 	if (!self->animMOn) {
 		self->animMOn = 1;
 		VM_StartAnim(self, anim, 1, &self->durM);
 	}
 }
 
-void __thiscall cVehicleMotor_UpdateAnimM(cVehicleMotor *self, float dt) {
+void cVehicleMotor_UpdateAnimM(cVehicleMotor *self, float dt) {
 	int i;
 
 	if (!self->animMOn) {
@@ -606,12 +606,12 @@ void __thiscall cVehicleMotor_UpdateAnimM(cVehicleMotor *self, float dt) {
 	}
 }
 
-void __thiscall cVehicleMotors_SetOwner(cVehicleMotors *self, cEntity *owner) {
+void cVehicleMotors_SetOwner(cVehicleMotors *self, cEntity *owner) {
 	CHECK(self->owner == NULL);
 	self->owner = owner;
 }
 
-void __thiscall cVehicleMotor_SetEffect(cVehicleMotor *self, uint32_t fx) {
+void cVehicleMotor_SetEffect(cVehicleMotor *self, uint32_t fx) {
 	int i;
 
 	for (i = 0; i < VM_SIDES; i++) {
@@ -621,7 +621,7 @@ void __thiscall cVehicleMotor_SetEffect(cVehicleMotor *self, uint32_t fx) {
 	}
 }
 
-void __thiscall cVehicleMotors_SetEffect(cVehicleMotors *self, uint32_t fx) {
+void cVehicleMotors_SetEffect(cVehicleMotors *self, uint32_t fx) {
 	int i;
 
 	for (i = 0; i < VM_MOTORS; i++) {
@@ -631,7 +631,7 @@ void __thiscall cVehicleMotors_SetEffect(cVehicleMotors *self, uint32_t fx) {
 	}
 }
 
-void __thiscall cVehicleMotor_SetEffectParam(cVehicleMotor *self, int i, float v) {
+void cVehicleMotor_SetEffectParam(cVehicleMotor *self, int i, float v) {
 	uint32_t bits;
 	int j;
 
@@ -643,7 +643,7 @@ void __thiscall cVehicleMotor_SetEffectParam(cVehicleMotor *self, int i, float v
 	}
 }
 
-void __thiscall cVehicleMotors_SetEffectParam(cVehicleMotors *self, int i, float v) {
+void cVehicleMotors_SetEffectParam(cVehicleMotors *self, int i, float v) {
 	int j;
 
 	for (j = 0; j < VM_MOTORS; j++) {
@@ -654,7 +654,7 @@ void __thiscall cVehicleMotors_SetEffectParam(cVehicleMotors *self, int i, float
 }
 
 /* MEng0..3: the file of the motor (set: loaded at scale 1); set only: EngAnmM0..3, EngAnmF0..3 */
-byte __thiscall cVehicleMotors_VarS(cVehicleMotors *self, const char *name, char **v, byte set) {
+byte cVehicleMotors_VarS(cVehicleMotors *self, const char *name, char **v, byte set) {
 	size_t len = strlen(name);
 
 	if (len == 5 && VM_Digit(name[4]) && !memcmp(name, "MEng", 4)) {
@@ -683,7 +683,7 @@ static inline int VM_Side(char c) {
 }
 
 /* get only: PEng0A (position), AEng0A (angles in degrees) of the exhausts, PEngSlot0A of the slots */
-byte __thiscall cVehicleMotors_VarV(cVehicleMotors *self, const char *name, double *x, double *y, double *z,
+byte cVehicleMotors_VarV(cVehicleMotors *self, const char *name, double *x, double *y, double *z,
 	byte set) {
 	size_t len = strlen(name);
 	vec3_t pos, ang;
@@ -722,7 +722,7 @@ byte __thiscall cVehicleMotors_VarV(cVehicleMotors *self, const char *name, doub
 	return r;
 }
 
-cVehicleMotorsEffects *__fastcall cVehicleMotorsEffects_ctor(cVehicleMotorsEffects *self) {
+cVehicleMotorsEffects *cVehicleMotorsEffects_ctor(cVehicleMotorsEffects *self) {
 	self->owner = NULL;
 	self->motors = NULL;
 	self->motor = NULL;
@@ -747,11 +747,11 @@ cVehicleMotorsEffects *__fastcall cVehicleMotorsEffects_ctor(cVehicleMotorsEffec
 	return self;
 }
 
-void __fastcall cVehicleMotorsEffects_dtor(cVehicleMotorsEffects *self) {
+void cVehicleMotorsEffects_dtor(cVehicleMotorsEffects *self) {
 	cVehicleMotorsEffects_Clear(self);
 }
 
-vec3_t *__thiscall Vec3_Assign(vec3_t *self, const vec3_t *v) {
+vec3_t *Vec3_Assign(vec3_t *self, const vec3_t *v) {
 	self->x = v->x;
 	self->y = v->y;
 	self->z = v->z;
@@ -771,7 +771,7 @@ static void VM_FreeParticles(CGameParticles **slot) {
 	}
 }
 
-void __fastcall cVehicleMotorsEffects_Clear(cVehicleMotorsEffects *self) {
+void cVehicleMotorsEffects_Clear(cVehicleMotorsEffects *self) {
 	int i;
 
 	self->owner = NULL;
@@ -804,7 +804,7 @@ static void VM_StopParticles(CGameParticles *ps) {
 	}
 }
 
-void __fastcall cVehicleMotorsEffects_Stop(cVehicleMotorsEffects *self) {
+void cVehicleMotorsEffects_Stop(cVehicleMotorsEffects *self) {
 	int i;
 
 	for (i = 0; i < VM_SIDES; i++) {
@@ -839,7 +839,7 @@ void __fastcall cVehicleMotorsEffects_Stop(cVehicleMotorsEffects *self) {
 	self->trailsOn = 0;
 }
 
-void __fastcall cVehicleMotorsEffects_HideTrails(cVehicleMotorsEffects *self) {
+void cVehicleMotorsEffects_HideTrails(cVehicleMotorsEffects *self) {
 	int i;
 
 	if (!self->trailsOn) {
@@ -853,7 +853,7 @@ void __fastcall cVehicleMotorsEffects_HideTrails(cVehicleMotorsEffects *self) {
 	self->trailsOn = 0;
 }
 
-CGameModel *__thiscall cVehicleMotorsEffects_GetModel(cVehicleMotorsEffects *self, int side) {
+CGameModel *cVehicleMotorsEffects_GetModel(cVehicleMotorsEffects *self, int side) {
 	if (self->motors) {
 		cEntity *e = cVehicleMotors_GetOwner(self->motors);
 		return Obj_Vtbl(e)->GetModel(e);
@@ -866,10 +866,9 @@ CGameModel *__thiscall cVehicleMotorsEffects_GetModel(cVehicleMotorsEffects *sel
 
 /* ---- the constructors and destructors (rva 0x10bb90..0x10bdc0, after VehicleEntity.cpp) ---- */
 
-#define CGAMEMODEL_CTOR_NULL 0x105e60		/* thiscall CGameModel_ctor(self, NULL) */
 #define CGAMEMODEL_DTOR 0x20ec10		/* CGameModel_Reset */
 
-cVehicleMotor *__thiscall cVehicleMotor_ctor(cVehicleMotor *self) {
+cVehicleMotor *cVehicleMotor_ctor(cVehicleMotor *self) {
 	crt_eh_vector_ctor(self->model, sizeof(CGameModel), VM_SIDES, (void *)CGameModel_ctorDefault,
 		(void *)CGameModel_Reset);
 	cVehicleMotorsEffects_ctor(&self->effects);
@@ -884,7 +883,7 @@ cVehicleMotor *__thiscall cVehicleMotor_ctor(cVehicleMotor *self) {
 	return self;
 }
 
-void *__fastcall cVehicleMotors_ctor(void *motors) {
+void *cVehicleMotors_ctor(void *motors) {
 	cVehicleMotors *self = motors;
 
 	self->vftable = CVEHICLEMOTORS_VFTABLE;
@@ -900,13 +899,13 @@ void *__fastcall cVehicleMotors_ctor(void *motors) {
 	return self;
 }
 
-void __fastcall cVehicleMotor_dtor(cVehicleMotor *self) {
+void cVehicleMotor_dtor(cVehicleMotor *self) {
 	cVehicleMotorsEffects_Stop(&self->effects);
 	cVehicleMotorsEffects_dtor(&self->effects);
 	crt_eh_vector_dtor(self->model, sizeof(CGameModel), VM_SIDES, (void *)CGameModel_Reset);
 }
 
-void __fastcall cVehicleMotors_dtor(void *motors) {
+void cVehicleMotors_dtor(void *motors) {
 	cVehicleMotors *self = motors;
 
 	self->vftable = CVEHICLEMOTORS_VFTABLE;

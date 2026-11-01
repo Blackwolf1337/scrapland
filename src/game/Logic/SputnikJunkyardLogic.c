@@ -26,7 +26,7 @@ static void Sputnik_Walk(cGenCharLocalLogic *self) {
 	ai->vftable->SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
 }
 
-cSputnikJunkyardLocalLogic *__thiscall cSputnikJunkyardLocalLogic_ctor(cSputnikJunkyardLocalLogic *self,
+cSputnikJunkyardLocalLogic *cSputnikJunkyardLocalLogic_ctor(cSputnikJunkyardLocalLogic *self,
 	cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 1);
 	SPUTNIK_VT(self) = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
@@ -37,7 +37,7 @@ cSputnikJunkyardLocalLogic *__thiscall cSputnikJunkyardLocalLogic_ctor(cSputnikJ
 	return self;
 }
 
-cSputnikJunkyardLocalLogic *__thiscall cSputnikJunkyardLocalLogic_Delete(cSputnikJunkyardLocalLogic *self, byte flags) {
+cSputnikJunkyardLocalLogic *cSputnikJunkyardLocalLogic_Delete(cSputnikJunkyardLocalLogic *self, byte flags) {
 	SPUTNIK_VT(self) = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
 	g_SputnikPisser = NULL;
 	cGenCharLocalLogic_dtor(self);
@@ -59,7 +59,7 @@ void Sputnik_LaughDone(cAbstractFile *params) {
 }
 
 /* vf17 */
-void __thiscall cSputnikJunkyardLocalLogic_Update(cSputnikJunkyardLocalLogic *self, float dt) {
+void cSputnikJunkyardLocalLogic_Update(cSputnikJunkyardLocalLogic *self, float dt) {
 	cEntity *p = self->base.parent;
 
 	p->vftable->GetAI(p);
@@ -95,7 +95,7 @@ void __thiscall cSputnikJunkyardLocalLogic_Update(cSputnikJunkyardLocalLogic *se
 }
 
 /* vf19: 7 the walk, 8 to the point 200 in front of the camera, facing it; always 1 */
-byte __thiscall cSputnikJunkyardLocalLogic_SetState(cSputnikJunkyardLocalLogic *self, int state, cEntity *target) {
+byte cSputnikJunkyardLocalLogic_SetState(cSputnikJunkyardLocalLogic *self, int state, cEntity *target) {
 	if (state == 7) {
 		if ((byte)cBaseLocalLogic_SetState(&self->base, 7, target)) {
 			Sputnik_Walk(self);

@@ -16,7 +16,7 @@ static void DominE_GoTo(cAIVehicle *ai, vec3_t pos, double dist) {
 	cAIVehicle_SetState(ai, 1, pos, dist, 1, 1.0, 20.0, 20.0, 0);
 }
 
-void __fastcall cDominationSide_Think(cDominationSide *self) {
+void cDominationSide_Think(cDominationSide *self) {
 	vec3_t tmp;
 
 	if (!Logic_ListFirst(self->list)) {
@@ -65,24 +65,24 @@ void __fastcall cDominationSide_Think(cDominationSide *self) {
 }
 
 /* vf03 */
-cEntityListData *__thiscall cDominationEnemiesLogic_GetList(cDominationEnemiesLogic *self) {
+cEntityListData *cDominationEnemiesLogic_GetList(cDominationEnemiesLogic *self) {
 	return self->side->list;
 }
 
 /* the leader ship of the enemies (LeaderName) or NULL */
-cEntity *__thiscall cDominationEnemiesLogic_GetLeader(cDominationEnemiesLogic *self) {
+cEntity *cDominationEnemiesLogic_GetLeader(cDominationEnemiesLogic *self) {
 	(void)self;
 	return Logic_AsCar(World_FindEntity(g_DominLeaderName));
 }
 
 /* vf04 */
-int __thiscall cDominationEnemiesLogic_GetTeam(cDominationEnemiesLogic *self) {
+int cDominationEnemiesLogic_GetTeam(cDominationEnemiesLogic *self) {
 	(void)self;
 	return 0;
 }
 
 /* vf01 */
-void __thiscall cDominationEnemiesLogic_Init(cDominationEnemiesLogic *self) {
+void cDominationEnemiesLogic_Init(cDominationEnemiesLogic *self) {
 	cDominationSide *s = self->side;
 
 	CHECK(s->owner && "el");
@@ -92,7 +92,7 @@ void __thiscall cDominationEnemiesLogic_Init(cDominationEnemiesLogic *self) {
 
 /* the deaths of both sides: the zone of the ship is free again, then the callback with the ship and its killer */
 void Domination_OnDeath(cAbstractFile *params, cDominationLogic *side,
-	cEntity *(__thiscall *release)(cDominationLogic *, const char *), cPy_Function *cb) {
+	cEntity *(*release)(cDominationLogic *, const char *), cPy_Function *cb) {
 	char name[0x80], killer[0x80];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -131,12 +131,12 @@ cEntity *Domination_ReleaseZone(cDominationLogic *self, const char *name, int go
 	return zone;
 }
 
-cEntity *__thiscall cDominationEnemiesLogic_ReleaseZone(cDominationLogic *self, const char *name) {
+cEntity *cDominationEnemiesLogic_ReleaseZone(cDominationLogic *self, const char *name) {
 	return Domination_ReleaseZone(self, name, 4, 2);
 }
 
 /* vf02 */
-void __thiscall cDominationEnemiesLogic_Update(cDominationEnemiesLogic *self, float dt) {
+void cDominationEnemiesLogic_Update(cDominationEnemiesLogic *self, float dt) {
 	cDominationSide *s = self->side;
 	float t = s->timer + dt;
 

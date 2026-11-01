@@ -56,7 +56,7 @@ char *String_FromInt(char *buf, int n) {
 }
 
 /* the string members of the engine classes (CCadena of the headers): a Mem_Alloc copy, NULL for none */
-void __thiscall String_Set(char **self, const char *s) {
+void String_Set(char **self, const char *s) {
 	if (*self) {
 		*self = Mem_Free(*self);
 	}
@@ -65,7 +65,7 @@ void __thiscall String_Set(char **self, const char *s) {
 	}
 }
 
-void __thiscall String_Read(char **self, CFileIO *f) {
+void String_Read(char **self, CFileIO *f) {
 	char buf[0x100];
 	byte isNull;
 
@@ -73,7 +73,7 @@ void __thiscall String_Read(char **self, CFileIO *f) {
 	String_Set(self, isNull ? NULL : buf);
 }
 
-void __thiscall String_Write(char **self, CFileIO *f) {
+void String_Write(char **self, CFileIO *f) {
 	CFileIO_WriteString(f, *self);
 }
 

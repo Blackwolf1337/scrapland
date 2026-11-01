@@ -29,7 +29,7 @@ void HumanLogic_Escape(cAbstractFile *params) {
 	ai->vftable->SetState(ai, 5, g_HumanEnt, (double)g_GenCharEscapeSpeed);
 }
 
-void *__thiscall cHumanLocalLogic_ctor(void *mem, cEntity *parent) {
+void *cHumanLocalLogic_ctor(void *mem, cEntity *parent) {
 	cHumanLocalLogic *self = mem;
 
 	cBaseLocalLogic_ctor(&self->base, parent);
@@ -40,13 +40,13 @@ void *__thiscall cHumanLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-void __fastcall cHumanLocalLogic_dtor(cHumanLocalLogic *self) {
+void cHumanLocalLogic_dtor(cHumanLocalLogic *self) {
 	self->base.vftable = CHUMANLOCALLOGIC_VFTABLE;
 	cPy_Function_dtor(&self->func);
 	cBaseLocalLogic_dtor(&self->base);
 }
 
-cHumanLocalLogic *__thiscall cHumanLocalLogic_Delete(cHumanLocalLogic *self, byte flags) {
+cHumanLocalLogic *cHumanLocalLogic_Delete(cHumanLocalLogic *self, byte flags) {
 	cHumanLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));

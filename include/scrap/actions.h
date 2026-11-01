@@ -27,7 +27,7 @@ enum { ACTVAR_NONE = 0, ACTVAR_STRING = 1, ACTVAR_DOUBLE = 2, ACTVAR_INT = 3 };
 
 /* the first slot of the vftables of the classes here: the deleting destructor */
 typedef struct cActVtbl {
-	void *(__thiscall *Delete)(void *self, byte flags);	/* 0x00 */
+	void *(*Delete)(void *self, byte flags);	/* 0x00 */
 } cActVtbl;
 
 #define CACTCLASS_VFTABLE GAME_VFTABLE(cActClass_vftable)
@@ -221,109 +221,109 @@ SD_OFFSET(cActCtrl, rootSum, 0x5c);
 SD_SIZE(cActCtrl, 0x7c);
 
 /* Actions/ActClass.cpp (src/game/Actions/ActClass.c) */
-cActClass *__thiscall cActClass_ctor(cActClass *self, const char *name);
-void __fastcall cActClass_dtor(cActClass *self);
-cActClass *__thiscall cActClass_Delete(cActClass *self, byte flags);
-cActNodeMod *__fastcall cActNodeMod_ctor(cActNodeMod *self);
-cAction *__thiscall cActClass_CreateAction(cActClass *cls, const char *name);
-cAction *__thiscall cActClass_GetAction(cActClass *cls, const char *name);
+cActClass *cActClass_ctor(cActClass *self, const char *name);
+void cActClass_dtor(cActClass *self);
+cActClass *cActClass_Delete(cActClass *self, byte flags);
+cActNodeMod *cActNodeMod_ctor(cActNodeMod *self);
+cAction *cActClass_CreateAction(cActClass *cls, const char *name);
+cAction *cActClass_GetAction(cActClass *cls, const char *name);
 /* set != 0: writes the string *s, or the number *d / *i when s is NULL; set == 0: reads into all three.
    Returns the ACTVAR_ type (0 if not found). */
-int __thiscall cActClass_Var(cActClass *cls, const char *name, int set, char **s, double *d, int *i);
+int cActClass_Var(cActClass *cls, const char *name, int set, char **s, double *d, int *i);
 /* the sound of the file loaded and its name kept for FreeResources */
-void __thiscall cActClass_AddSoundRes(cActClass *self, const char *file);
+void cActClass_AddSoundRes(cActClass *self, const char *file);
 /* OnFreeResources called, the sounds and the model released */
-void __fastcall cActClass_FreeResources(cActClass *self);
+void cActClass_FreeResources(cActClass *self);
 /* the camera variables of the class (only d is used) */
-int __thiscall cActClassCam_Var(cActClassCam *self, const char *name, int set, char **s, double *d, int *i);
+int cActClassCam_Var(cActClassCam *self, const char *name, int set, char **s, double *d, int *i);
 /* the camera of the class into the follow camera of e, the FOV zoom of the class "Functionary" with it */
-void __thiscall cActClassCam_Update(void *cam, cEntity *followCam, cEntity *e);
+void cActClassCam_Update(void *cam, cEntity *followCam, cEntity *e);
 /* NULL when there is no action of that name */
-cAction *__thiscall cActClass_SetDefAction(cActClass *self, const char *name);
+cAction *cActClass_SetDefAction(cActClass *self, const char *name);
 /* a warning if the class has a model already */
-void __thiscall cActClass_SetModelFile(cActClass *self, const char *file);
+void cActClass_SetModelFile(cActClass *self, const char *file);
 /* "_Move_The_Model_" or a render node of the model; a message if it has no such node */
-void __thiscall cActNodeMod_SetNode(int *node, CGameModel *model, const char *name);
+void cActNodeMod_SetNode(int *node, CGameModel *model, const char *name);
 
 /* the instance of Global/DList.h with a cString (cStringList of filepak.h) */
-cStringNode *__thiscall cStringList_NewNode(cStringList *list);
-void __fastcall cStringList_Clear(cStringList *list);
-void __fastcall cStringList_FreePool(cStringList *list);
-void __fastcall cStringList_RemoveHead(cStringList *list);
-void __fastcall cStringList_dtor(cStringList *list);
+cStringNode *cStringList_NewNode(cStringList *list);
+void cStringList_Clear(cStringList *list);
+void cStringList_FreePool(cStringList *list);
+void cStringList_RemoveHead(cStringList *list);
+void cStringList_dtor(cStringList *list);
 
 /* Actions/ActClassList.cpp (src/game/Actions/ActClassList.c) */
-cActClassList *__fastcall cActClassList_ctor(cActClassList *self);
-void __fastcall cActClassList_dtor(cActClassList *self);
-cActClassList *__thiscall cActClassList_Delete(cActClassList *self, byte flags);
-cActClass *__thiscall cActClassList_Create(cActClassList *list, const char *name);
-cActClass *__thiscall cActClassList_Get(cActClassList *list, const char *name);
+cActClassList *cActClassList_ctor(cActClassList *self);
+void cActClassList_dtor(cActClassList *self);
+cActClassList *cActClassList_Delete(cActClassList *self, byte flags);
+cActClass *cActClassList_Create(cActClassList *list, const char *name);
+cActClass *cActClassList_Get(cActClassList *list, const char *name);
 /* 0 if there is no such class or a controller uses it */
-byte __thiscall cActClassList_Del(cActClassList *list, const char *name);
+byte cActClassList_Del(cActClassList *list, const char *name);
 void ActClassList_Done(void);
 void ActClassList_Init(void);
 
 /* Actions/ActCtrl.cpp (src/game/Actions/ActCtrl.c). The functions the entities call take a void * like their
  * callers declared them first. */
-cActCtrl *__thiscall cActCtrl_ctor(cActCtrl *self, cEntity *owner, cActClass *cls);
-void __fastcall cActCtrl_dtor(cActCtrl *self);
-cActCtrl *__thiscall cActCtrl_Delete(cActCtrl *self, byte flags);
+cActCtrl *cActCtrl_ctor(cActCtrl *self, cEntity *owner, cActClass *cls);
+void cActCtrl_dtor(cActCtrl *self);
+cActCtrl *cActCtrl_Delete(cActCtrl *self, byte flags);
 /* the model command (CGameModel_AnimCmd) on the model of the owner */
-void __thiscall cActCtrl_AnimCmd(cActCtrl *self, const char *cmd);
+void cActCtrl_AnimCmd(cActCtrl *self, const char *cmd);
 /* the model of the class on the owner with the animations of the actions */
-void __fastcall cActCtrl_InitModel(cActCtrl *self);
+void cActCtrl_InitModel(cActCtrl *self);
 /* the layers dt on: speeds, events, the end of the actions, the root motion of layer 0 */
-void __thiscall cActCtrl_Update(cActCtrl *self, float dt);
+void cActCtrl_Update(cActCtrl *self, float dt);
 /* the events of the layer chan up to t (FLT_MAX from the end of the action on); silent skips the discardable ones
  * and logs with Con_Verbosef */
-void __thiscall cActCtrl_FireEvents(cActCtrl *self, int chan, float t, byte silent);
-byte __thiscall cActCtrl_VarI(cActCtrl *self, const char *name, int *i, byte set);
-byte __thiscall cActCtrl_VarF(cActCtrl *self, const char *name, double *d, byte set);
-byte __thiscall cActCtrl_VarS(cActCtrl *self, const char *name, char **s, byte set);
-byte __thiscall cActCtrl_VarV(cActCtrl *self, const char *name, double *x, double *y, double *z, byte set);
+void cActCtrl_FireEvents(cActCtrl *self, int chan, float t, byte silent);
+byte cActCtrl_VarI(cActCtrl *self, const char *name, int *i, byte set);
+byte cActCtrl_VarF(cActCtrl *self, const char *name, double *d, byte set);
+byte cActCtrl_VarS(cActCtrl *self, const char *name, char **s, byte set);
+byte cActCtrl_VarV(cActCtrl *self, const char *name, double *x, double *y, double *z, byte set);
 /* the name of the action of layer i, "" when it does not run */
-const char *__thiscall cActCtrl_GetActionName(void *ctrl, int i);
+const char *cActCtrl_GetActionName(void *ctrl, int i);
 /* the layer i of the actions (16 bytes, the time of its action first) */
-cActLayer *__thiscall cActCtrl_GetLayer(void *ctrl, int i);
+cActLayer *cActCtrl_GetLayer(void *ctrl, int i);
 /* the name of the default loop action of the controller, "" without one */
-const char *__thiscall cActCtrl_GetDefLoopName(void *ctrl);
-void __fastcall cActCtrl_InitHeads(cActCtrl *self);
+const char *cActCtrl_GetDefLoopName(void *ctrl);
+void cActCtrl_InitHeads(cActCtrl *self);
 /* the turned nodes of the class by ang (x, y) blended to the NodeModifier of the action of layer 0 */
-void __thiscall cActCtrl_TurnHead(void *ctrl, const float *ang, float dt);
+void cActCtrl_TurnHead(void *ctrl, const float *ang, float dt);
 /* the action of the controller (not when it runs already in its layer and one of priority runs); 0 if not */
-byte __thiscall cActCtrl_PlayAction(void *ctrl, void *action, int arg, int set, float speed);
-byte __thiscall cActCtrl_Play(void *ctrl, const char *action, int arg, float speed);
+byte cActCtrl_PlayAction(void *ctrl, void *action, int arg, int set, float speed);
+byte cActCtrl_Play(void *ctrl, const char *action, int arg, float speed);
 /* PlayAction unless it runs already in its layer; 0 then or without it */
-byte __thiscall cActCtrl_PlayActionNew(cActCtrl *self, cAction *action, int arg, float speed);
+byte cActCtrl_PlayActionNew(cActCtrl *self, cAction *action, int arg, float speed);
 /* the action, unless it runs already in its layer; 0 then or without it */
-byte __thiscall cActCtrl_PlayNew(void *ctrl, const char *action, int arg, float speed);
+byte cActCtrl_PlayNew(void *ctrl, const char *action, int arg, float speed);
 /* the action that runs when nothing else does; a warning if the class has no such action */
-void __thiscall cActCtrl_SetDefLoop(void *ctrl, const char *action, byte force);
+void cActCtrl_SetDefLoop(void *ctrl, const char *action, byte force);
 /* the update of the slot: the ship parts with DinaShip, else cActCtrl_Update */
-void __thiscall cActCtrl_Tick(cActCtrl *self, float dt);
+void cActCtrl_Tick(cActCtrl *self, float dt);
 /* layer i (> 0) stopped */
-void __thiscall cActCtrl_StopChan(cActCtrl *self, int i);
-byte __thiscall cActCtrl_IsActive(void *ctrl, const char *action);
-byte __thiscall cActCtrl_IsDefLoop(cActCtrl *self, const char *action);
+void cActCtrl_StopChan(cActCtrl *self, int i);
+byte cActCtrl_IsActive(void *ctrl, const char *action);
+byte cActCtrl_IsDefLoop(cActCtrl *self, const char *action);
 /* the target of the blend set (the old one becomes the start) */
-void __thiscall cActHead_Set(cActHead *self, const float *to);
-void __thiscall cActHead_Blend(cActHead *self, float t);
+void cActHead_Set(cActHead *self, const float *to);
+void cActHead_Blend(cActHead *self, float t);
 /* the update of DinaShip classes: the parts of the ship (Motor, Rudder, Flaps, ...) by its state */
-void __thiscall cActCtrl_UpdateShip(cActCtrl *self, float dt);
+void cActCtrl_UpdateShip(cActCtrl *self, float dt);
 
 /* Actions/Actions.cpp (src/game/Actions/Actions.c) */
-cAction *__thiscall cAction_ctor(cAction *self, cActClass *parent, const char *name);
-void __fastcall cAction_dtor(cAction *self);
-cAction *__thiscall cAction_Delete(cAction *self, byte flags);
-cActEvent *__thiscall cActEvent_ctor(cActEvent *self, float time, cActEvent *next);
+cAction *cAction_ctor(cAction *self, cActClass *parent, const char *name);
+void cAction_dtor(cAction *self);
+cAction *cAction_Delete(cAction *self, byte flags);
+cActEvent *cActEvent_ctor(cActEvent *self, float time, cActEvent *next);
 /* a new event at time (after the ones before it), as the lastEvent */
-void __thiscall cAction_AddEvent(cAction *self, float time);
-void __thiscall cActEvent_Fire(cActEvent *self, const char *entity);
-int __thiscall cAction_Var(cAction *act, const char *name, int set, char **s, double *d, int *i);
+void cAction_AddEvent(cAction *self, float time);
+void cActEvent_Fire(cActEvent *self, const char *entity);
+int cAction_Var(cAction *act, const char *name, int set, char **s, double *d, int *i);
 /* the variables after "Event": of the last event */
-int __thiscall cActEvent_Var(cActEvent *self, const char *name, int set, char **s, double *d, int *i);
+int cActEvent_Var(cActEvent *self, const char *name, int set, char **s, double *d, int *i);
 /* the animation of the file added to the model of the class; a warning if the action has one */
-void __thiscall cAction_SetAnmFile(cAction *self, const char *file);
+void cAction_SetAnmFile(cAction *self, const char *file);
 
 /* Actions/Events/CharEvents.cpp and SoundEvents.cpp (src/game/Actions/Events/): the C functions ("!name") the
  * events call, named like the registry; the parameters (entity name, value string, time) come in a memory file */

@@ -14,7 +14,7 @@
 
 #define MAX_SPRITES 256
 
-CMultiSprite *__fastcall CMultiSprite_ctor(CMultiSprite *self) {
+CMultiSprite *CMultiSprite_ctor(CMultiSprite *self) {
 	self->p = NULL;
 	self->n = 0;
 	self->width = 0;
@@ -22,7 +22,7 @@ CMultiSprite *__fastcall CMultiSprite_ctor(CMultiSprite *self) {
 	return self;
 }
 
-void __fastcall CMultiSprite_dtor(CMultiSprite *self) {
+void CMultiSprite_dtor(CMultiSprite *self) {
 	if (self->p) {
 		operator_delete_array(self->p);
 		self->p = NULL;
@@ -30,7 +30,7 @@ void __fastcall CMultiSprite_dtor(CMultiSprite *self) {
 	}
 }
 
-byte __thiscall CMultiSprite_Build(CMultiSprite *self, const char *name) {
+byte CMultiSprite_Build(CMultiSprite *self, const char *name) {
 	char mst[260];
 
 	CHECK(!self->n);
@@ -55,7 +55,7 @@ static byte Index_Alpha(const CBmp *b, uint32_t x, uint32_t y) {
 	return ((const byte *)Img_Pixel(b, x, y, 4))[3];
 }
 
-byte __thiscall CMultiSprite_BuildTable(CMultiSprite *self, const char *name) {
+byte CMultiSprite_BuildTable(CMultiSprite *self, const char *name) {
 	CBmp bmp = { 0, 0, NULL }, pal = { 0, 0, NULL };
 	MSprite info[MAX_SPRITES];
 	char path[260];
@@ -121,7 +121,7 @@ done:
 	return ok;
 }
 
-byte __thiscall CMultiSprite_GetSize(const CMultiSprite *self, uint32_t i, uint32_t *cx, uint32_t *cy) {
+byte CMultiSprite_GetSize(const CMultiSprite *self, uint32_t i, uint32_t *cx, uint32_t *cy) {
 	CHECK(cx && cy);
 	if (!i || !self->n) {
 		*cx = (uint32_t)self->width;
@@ -134,7 +134,7 @@ byte __thiscall CMultiSprite_GetSize(const CMultiSprite *self, uint32_t i, uint3
 	return 1;
 }
 
-byte __thiscall CMultiSprite_GetUV(const CMultiSprite *self, uint32_t i, float *texMin, float *texMax) {
+byte CMultiSprite_GetUV(const CMultiSprite *self, uint32_t i, float *texMin, float *texMax) {
 	CHECK(texMin && texMax);
 	if (!i || !self->n) {
 		texMin[0] = 0.0f;
@@ -152,7 +152,7 @@ byte __thiscall CMultiSprite_GetUV(const CMultiSprite *self, uint32_t i, float *
 	return 1;
 }
 
-byte __thiscall CMultiSprite_Load(CMultiSprite *self, const char *name) {
+byte CMultiSprite_Load(CMultiSprite *self, const char *name) {
 	cFileBlock f;
 	byte ok = 0;
 
@@ -172,7 +172,7 @@ byte __thiscall CMultiSprite_Load(CMultiSprite *self, const char *name) {
 	return ok;
 }
 
-byte __thiscall CMultiSprite_Save(const CMultiSprite *self, const char *name) {
+byte CMultiSprite_Save(const CMultiSprite *self, const char *name) {
 	cFileBlock f;
 
 	cFileBlock_ctor(&f);

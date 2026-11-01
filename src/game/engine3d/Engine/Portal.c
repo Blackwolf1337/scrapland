@@ -10,7 +10,7 @@
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
 
-CPortal *__fastcall CPortal_ctor(CPortal *self) {
+CPortal *CPortal_ctor(CPortal *self) {
 	self->node = NULL;
 	self->vftable = CPORTAL_VFTABLE;
 	self->class = CLASS_OBJ3D_PORTAL;
@@ -24,7 +24,7 @@ CPortal *__fastcall CPortal_ctor(CPortal *self) {
 	return self;
 }
 
-void __fastcall CPortal_dtor(CPortal *self) {
+void CPortal_dtor(CPortal *self) {
 	self->vftable = CPORTAL_VFTABLE;
 	for (int i = 0; i < 2; i++) {
 		ObjRef_Drop(&self->zones[i]);
@@ -33,7 +33,7 @@ void __fastcall CPortal_dtor(CPortal *self) {
 	CObjBase3D_dtor((CObjBase3D *)self);
 }
 
-CPortal *__thiscall CPortal_Delete(CPortal *self, byte flags) {
+CPortal *CPortal_Delete(CPortal *self, byte flags) {
 	CPortal_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CPortal));
@@ -41,7 +41,7 @@ CPortal *__thiscall CPortal_Delete(CPortal *self, byte flags) {
 	return self;
 }
 
-void __fastcall CPortal_LinkZones(CPortal *self) {
+void CPortal_LinkZones(CPortal *self) {
 	if (self->zones[0] || self->zones[1]) {
 		return;
 	}
@@ -59,7 +59,7 @@ void __fastcall CPortal_LinkZones(CPortal *self) {
 	}
 }
 
-byte __thiscall CPortal_Read(CPortal *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+byte CPortal_Read(CPortal *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CObjBase3D_SetNode((CObjBase3D *)self, ctx->node);
 	CFileIO_BeginBlock(f, "PORT");
 	CHECK(CFileIO_ReadInt(f) == 1);
@@ -72,7 +72,7 @@ byte __thiscall CPortal_Read(CPortal *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	return 1;
 }
 
-byte __thiscall CPortal_Write(CPortal *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
+byte CPortal_Write(CPortal *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CHECK(self->node == ctx->node);
 	CFileIO_BeginBlockWrite(f, "PORT");
 	CFileIO_WriteInt(f, 1);
@@ -84,7 +84,7 @@ byte __thiscall CPortal_Write(CPortal *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	return 1;
 }
 
-void __thiscall CPortal_Render(CPortal *self, void *dev, CRenderNode *r) {
+void CPortal_Render(CPortal *self, void *dev, CRenderNode *r) {
 	(void)dev;
 	CHECK(!r);
 	CHECK(self->node);
@@ -102,7 +102,7 @@ void Portal_FiniMat(void) {
 	CMaterial_dtor(&g_PortalMat);
 }
 
-void __thiscall CPortal_DrawDebug(CPortal *self, uint32_t color) {
+void CPortal_DrawDebug(CPortal *self, uint32_t color) {
 	CHECK(g_ShowPortals);
 	float hw = self->width * 0.5f, hh = self->height * 0.5f;
 	if (*g_PortalMatGuard > crt_InitEpoch()) {
@@ -133,13 +133,13 @@ static byte Portal_Inside(const CPortal *self, const vec3_t *p) {
 	return Ground_PointInTri(p, &c[0], &c[1], &c[2]) || Ground_PointInTri(p, &c[0], &c[2], &c[3]);
 }
 
-float __thiscall CPortal_PlaneDist(CPortal *self, const vec3_t *p) {
+float CPortal_PlaneDist(CPortal *self, const vec3_t *p) {
 	CPortal_UpdateCache(self, &self->node->m);
 	const plane_t *pl = &self->cache_plane;
 	return pl->n.y * p->y + pl->n.x * p->x + pl->n.z * p->z + pl->d;
 }
 
-float __thiscall CPortal_Dist(CPortal *self, const vec3_t *p) {
+float CPortal_Dist(CPortal *self, const vec3_t *p) {
 	CHECK(self->node);
 	CPortal_UpdateCache(self, &self->node->m);
 	const plane_t *pl = &self->cache_plane;
@@ -157,7 +157,7 @@ float __thiscall CPortal_Dist(CPortal *self, const vec3_t *p) {
 	return (float)__builtin_sqrt((double)m);
 }
 
-byte __thiscall CPortal_SegCross(CPortal *self, const vec3_t *a, const vec3_t *b, vec3_t *out) {
+byte CPortal_SegCross(CPortal *self, const vec3_t *a, const vec3_t *b, vec3_t *out) {
 	CHECK(self->node);
 	CPortal_UpdateCache(self, &self->node->m);
 	const plane_t *pl = &self->cache_plane;
@@ -177,7 +177,7 @@ byte __thiscall CPortal_SegCross(CPortal *self, const vec3_t *a, const vec3_t *b
 	return 1;
 }
 
-void __thiscall CPortal_SetZone(CPortal *self, uint32_t i, CNode3D *zone) {
+void CPortal_SetZone(CPortal *self, uint32_t i, CNode3D *zone) {
 	CNode3D **slot = &self->zones[i & 1];
 	if (zone) {
 		zone->Refs++;
@@ -186,7 +186,7 @@ void __thiscall CPortal_SetZone(CPortal *self, uint32_t i, CNode3D *zone) {
 	*slot = zone;
 }
 
-void __thiscall CPortal_UpdateCache(CPortal *self, const matrix_t *unused) {
+void CPortal_UpdateCache(CPortal *self, const matrix_t *unused) {
 	(void)unused;
 	if (self->calculated) {
 		return;
@@ -246,7 +246,7 @@ static void Portal_Extend(box_t *b, float x, float y, float z, float w) {
 	b->max.z = Float_MaxSS(b->max.z, z);
 }
 
-byte __thiscall CPortal_ClipRect(CPortal *self, box_t *rect) {
+byte CPortal_ClipRect(CPortal *self, box_t *rect) {
 	vec3_t c[4], p[4];
 	float w[4];
 	byte back[4];

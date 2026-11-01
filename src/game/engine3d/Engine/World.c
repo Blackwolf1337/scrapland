@@ -21,7 +21,7 @@ static void World_CameraStart(CWorld *self) {
 	self->cam->target = (vec3_t){ 0.0f, 0.0f, 0.0f };
 }
 
-CWorld *__fastcall CWorld_ctor(CWorld *self) {
+CWorld *CWorld_ctor(CWorld *self) {
 	CFog_ctor(&self->fog);
 	CCamera_ctor(&self->camera);
 	self->cam = &self->camera;
@@ -41,7 +41,7 @@ CWorld *__fastcall CWorld_ctor(CWorld *self) {
 	return self;
 }
 
-void __fastcall CWorld_dtor(CWorld *self) {
+void CWorld_dtor(CWorld *self) {
 	BspQ3_Free();
 	Bsp_Free();
 	Sectors_FreeAll();
@@ -79,7 +79,7 @@ static void Dummy_CheckName(const WorldDummy *d, const char *warn) {
 	}
 }
 
-WorldDummy *__thiscall WorldDummy_ctorNode(WorldDummy *self, CNode3D *node) {
+WorldDummy *WorldDummy_ctorNode(WorldDummy *self, CNode3D *node) {
 	vec3_t rot;
 
 	Dummy_Zero(self);
@@ -96,7 +96,7 @@ WorldDummy *__thiscall WorldDummy_ctorNode(WorldDummy *self, CNode3D *node) {
 	return self;
 }
 
-WorldDummy *__thiscall WorldDummy_ctor(WorldDummy *self, const char *name, const vec3_t *pos, const vec3_t *rot) {
+WorldDummy *WorldDummy_ctor(WorldDummy *self, const char *name, const vec3_t *pos, const vec3_t *rot) {
 	Dummy_Zero(self);
 	String_Set(&self->name, name);
 	self->pos = *pos;
@@ -105,17 +105,17 @@ WorldDummy *__thiscall WorldDummy_ctor(WorldDummy *self, const char *name, const
 	return self;
 }
 
-WorldDummy *__fastcall WorldDummy_ctorEmpty(WorldDummy *self) {
+WorldDummy *WorldDummy_ctorEmpty(WorldDummy *self) {
 	Dummy_Zero(self);
 	return self;
 }
 
-void __fastcall WorldDummy_dtor(WorldDummy *self) {
+void WorldDummy_dtor(WorldDummy *self) {
 	CHECK(self->next == NULL);
 	Dummy_Free(self);
 }
 
-int __fastcall WorldDummy_Count(const WorldDummy *list) {
+int WorldDummy_Count(const WorldDummy *list) {
 	int n = 0;
 	for (; list; list = list->next) {
 		n++;
@@ -133,7 +133,7 @@ void WorldDummy_FreeList(WorldDummy **list) {
 	}
 }
 
-WorldDummy *__thiscall WorldDummy_Find(WorldDummy *self, const char *name, byte self_too, byte case_sens) {
+WorldDummy *WorldDummy_Find(WorldDummy *self, const char *name, byte self_too, byte case_sens) {
 	if (!name) {
 		return NULL;
 	}
@@ -145,7 +145,7 @@ WorldDummy *__thiscall WorldDummy_Find(WorldDummy *self, const char *name, byte 
 	return NULL;
 }
 
-void __thiscall CWorld_AddDummy(CWorld *self, WorldDummy *d) {
+void CWorld_AddDummy(CWorld *self, WorldDummy *d) {
 	CHECK(!d->next);
 	if (self->dummies && d->name) {
 		for (WorldDummy *e = self->dummies; e; e = e->next) {
@@ -162,7 +162,7 @@ void __thiscall CWorld_AddDummy(CWorld *self, WorldDummy *d) {
 	*slot = d;
 }
 
-void __fastcall CWorld_ReleaseD3D(CWorld *self) {
+void CWorld_ReleaseD3D(CWorld *self) {
 	if (!(g_pApp->flags >> 2 & 1)) {
 		CHECK(self->ini_D3D);
 		CHECK(g_Engine->device);
@@ -180,7 +180,7 @@ void __fastcall CWorld_ReleaseD3D(CWorld *self) {
 	Bsp_ReleaseD3D();
 }
 
-void __fastcall CWorld_InitD3D(CWorld *self) {
+void CWorld_InitD3D(CWorld *self) {
 	CHECK(!self->ini_D3D);
 	self->ini_D3D = 1;
 	void *dev = g_Engine->device;
@@ -259,7 +259,7 @@ int World_SaveDUM(const char *path, const WorldDummy *list) {
 	return 0;
 }
 
-byte __thiscall CWorld_LoadMoreDummies(CWorld *self, const char *ini) {
+byte CWorld_LoadMoreDummies(CWorld *self, const char *ini) {
 	char name[MAX_FILEPATH];
 	char sect[0x80];
 	CIniFile f;
@@ -357,7 +357,7 @@ static void World_RenderSky(CWorld *self, void *dev) {
 	g_RenderPass = pass;
 }
 
-void __fastcall CWorld_Render(CWorld *self) {
+void CWorld_Render(CWorld *self) {
 	CHECK(self->ini_D3D);
 	void *dev = g_Engine->device;
 	CHECK(dev);
@@ -378,7 +378,7 @@ void __fastcall CWorld_Render(CWorld *self) {
 	CWorld_DrawDummies(self);
 }
 
-void __fastcall CWorld_DrawDummies(CWorld *self) {
+void CWorld_DrawDummies(CWorld *self) {
 	if (!*g_ShowWorldDummies) {
 		return;
 	}
@@ -402,11 +402,11 @@ void __fastcall CWorld_DrawDummies(CWorld *self) {
 	Font_PrintfXY(g_FntComic14, 10.0f, 260.0f, "world dummies: %d / %d", shown, total);
 }
 
-void __thiscall CWorld_SetSkyPos(CWorld *self, float pct) {
+void CWorld_SetSkyPos(CWorld *self, float pct) {
 	self->skyPos = 1.0f - pct / 100.0f;
 }
 
-void __thiscall CWorld_SetSkyRot(CWorld *self, float deg) {
+void CWorld_SetSkyRot(CWorld *self, float deg) {
 	self->skyRot = (float)((double)deg * M_PI_D / DEG_PER_PI);
 }
 
@@ -422,15 +422,15 @@ static void World_SetLights(CScene *scn, uint32_t skip, byte active) {
 	}
 }
 
-void __thiscall CWorld_SetSkyLights(CWorld *self, byte active) {
+void CWorld_SetSkyLights(CWorld *self, byte active) {
 	World_SetLights(self->SkyScale, 0, active);
 }
 
-void __thiscall CWorld_SetGroundLights(CWorld *self, byte active) {
+void CWorld_SetGroundLights(CWorld *self, byte active) {
 	World_SetLights(self->GroundScale, 0x6000000, active);
 }
 
-void __thiscall CWorld_SetClip(CWorld *self, float zNear, float zFar) {
+void CWorld_SetClip(CWorld *self, float zNear, float zFar) {
 	if (self->GroundScale) {
 		int a, b;
 		memcpy(&a, &zNear, sizeof(a));
@@ -445,7 +445,7 @@ void __thiscall CWorld_SetClip(CWorld *self, float zNear, float zFar) {
 	}
 }
 
-void __thiscall CWorld_SetCamera(CWorld *self, CCamera *cam) {
+void CWorld_SetCamera(CWorld *self, CCamera *cam) {
 	self->cam = cam;
 	if (!cam) {
 		self->cam = &self->camera;
@@ -457,7 +457,7 @@ void __thiscall CWorld_SetCamera(CWorld *self, CCamera *cam) {
 	CCamera_UpdateVectors(self->cam);
 }
 
-void __thiscall CWorld_LoadSky(CWorld *self, const char *name) {
+void CWorld_LoadSky(CWorld *self, const char *name) {
 	vec3_t scale = { 1.0f, 1.0f, 1.0f };
 	CWorld_LoadSkyScale(self, name, &scale);
 }
@@ -466,7 +466,7 @@ static void World_AnimEvents(CModel *m) {
 	CModel_AddAnimEvents(m, CModel_GetAnimName(m, 0), -1.0f, -1.0f);
 }
 
-void __thiscall CWorld_LoadSkyScale(CWorld *self, const char *name, const vec3_t *scale) {
+void CWorld_LoadSkyScale(CWorld *self, const char *name, const vec3_t *scale) {
 	CHECK(!self->ini_D3D);
 	CHECK(!self->Sky);
 	if (!g_SkyInit || !name || !*name) {
@@ -572,7 +572,7 @@ static void World_LightsMult(CWorld *self) {
 	}
 }
 
-void __thiscall CWorld_LoadGroundScale(CWorld *self, const char *name, const vec3_t *scale) {
+void CWorld_LoadGroundScale(CWorld *self, const char *name, const vec3_t *scale) {
 	CHECK(!self->ini_D3D);
 	CHECK(!self->Ground);
 	if (!name || !*name) {
@@ -619,7 +619,7 @@ void __thiscall CWorld_LoadGroundScale(CWorld *self, const char *name, const vec
 	World_LightsMult(self);
 }
 
-CCamera *__thiscall CWorld_GetCameraGround(CWorld *self, byte update) {
+CCamera *CWorld_GetCameraGround(CWorld *self, byte update) {
 	CCamera *cam = (CCamera *)CNode3D_FindCamera(self->GroundScale->Node3D, NULL);
 	if (cam && update) {
 		if (cam->mode == CAMERA_LOOKAT) {
@@ -630,15 +630,15 @@ CCamera *__thiscall CWorld_GetCameraGround(CWorld *self, byte update) {
 	return cam;
 }
 
-CNode3D *__thiscall CWorld_FindClass(CWorld *self, CNode3D *from, uint32_t class) {
+CNode3D *CWorld_FindClass(CWorld *self, CNode3D *from, uint32_t class) {
 	return self->GroundScale ? CScene_FindClass(self->GroundScale, from, class) : NULL;
 }
 
-CNode3D *__thiscall CWorld_FindNode(CWorld *self, const char *name) {
+CNode3D *CWorld_FindNode(CWorld *self, const char *name) {
 	return self->Ground ? CModel_FindNode(self->Ground, name) : NULL;
 }
 
-CNode3D *__thiscall CWorld_FindNodeWild(CWorld *self, const char *pat) {
+CNode3D *CWorld_FindNodeWild(CWorld *self, const char *pat) {
 	return self->Ground ? CModel_FindNodeWild(self->Ground, pat) : NULL;
 }
 

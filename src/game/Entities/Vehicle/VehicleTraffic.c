@@ -21,7 +21,7 @@ static inline float VT_X87Add(long double a, float b) {
 	return (float)r;
 }
 
-cVehicleTraffic *__fastcall cVehicleTraffic_ctor(cVehicleTraffic *self) {
+cVehicleTraffic *cVehicleTraffic_ctor(cVehicleTraffic *self) {
 	self->begin.y = 0.0f;
 	self->begin.z = 0.0f;
 	self->begin.x = 0.0f;
@@ -37,7 +37,7 @@ cVehicleTraffic *__fastcall cVehicleTraffic_ctor(cVehicleTraffic *self) {
 	return self;
 }
 
-byte __fastcall cVehicleTraffic_CollideEntities(cVehicleTraffic *self) {
+byte cVehicleTraffic_CollideEntities(cVehicleTraffic *self) {
 	if (!self->active) {
 		return 1;
 	}
@@ -48,7 +48,7 @@ byte __fastcall cVehicleTraffic_CollideEntities(cVehicleTraffic *self) {
 	return g_UseTrafficCollisionSkip == 0;
 }
 
-byte __thiscall cVehicleTraffic_VarF(cVehicleTraffic *self, const char *name, double *v, byte set) {
+byte cVehicleTraffic_VarF(cVehicleTraffic *self, const char *name, double *v, byte set) {
 	if (strcmp(name, "Speed")) {
 		return 0;
 	}
@@ -60,16 +60,16 @@ byte __thiscall cVehicleTraffic_VarF(cVehicleTraffic *self, const char *name, do
 	return 1;
 }
 
-void __thiscall cVehicleTraffic_SetOff(cVehicleTraffic *self, byte off) {
+void cVehicleTraffic_SetOff(cVehicleTraffic *self, byte off) {
 	self->off = off;
 }
 
-void __thiscall cVehicleTraffic_SetParent(cVehicleTraffic *self, cEntity *parent) {
+void cVehicleTraffic_SetParent(cVehicleTraffic *self, cEntity *parent) {
 	CHECK(self->parent == NULL);
 	self->parent = parent;
 }
 
-byte __thiscall cVehicleTraffic_VarI(cVehicleTraffic *self, const char *name, int *v, byte set) {
+byte cVehicleTraffic_VarI(cVehicleTraffic *self, const char *name, int *v, byte set) {
 	if (strcmp(name, "Active")) {
 		return 0;
 	}
@@ -81,7 +81,7 @@ byte __thiscall cVehicleTraffic_VarI(cVehicleTraffic *self, const char *name, in
 	return 1;
 }
 
-byte __thiscall cVehicleTraffic_Move(cVehicleTraffic *self, const vec3_t *from, const vec3_t *to, float radius,
+byte cVehicleTraffic_Move(cVehicleTraffic *self, const vec3_t *from, const vec3_t *to, float radius,
 	vec3_t *out, float len, CSphereBox *cache) {
 	byte cut = 0;
 
@@ -133,7 +133,7 @@ byte __thiscall cVehicleTraffic_Move(cVehicleTraffic *self, const vec3_t *from, 
 	return cut;
 }
 
-byte __thiscall cVehicleTraffic_VarS(cVehicleTraffic *self, const char *name, char **v, byte set) {
+byte cVehicleTraffic_VarS(cVehicleTraffic *self, const char *name, char **v, byte set) {
 	if (strcmp(name, "Type")) {
 		return 0;
 	}
@@ -180,7 +180,7 @@ static byte VT_Vec(vec3_t *p, double *x, double *y, double *z, byte set) {
 	return 1;
 }
 
-byte __thiscall cVehicleTraffic_VarV(cVehicleTraffic *self, const char *name, double *x, double *y, double *z,
+byte cVehicleTraffic_VarV(cVehicleTraffic *self, const char *name, double *x, double *y, double *z,
 	byte set) {
 	if (!strcmp(name, "Begin")) {
 		return VT_Vec(&self->begin, x, y, z, set);

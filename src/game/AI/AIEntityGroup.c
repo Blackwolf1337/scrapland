@@ -5,7 +5,7 @@
  */
 #include "scrap/ai.h"
 
-void *__fastcall cAIEntityGroup_ctor(void *self) {
+void *cAIEntityGroup_ctor(void *self) {
 	cAIEntityGroup *g = self;
 
 	g->vftable = CAIENTITYGROUP_VFTABLE;
@@ -15,11 +15,11 @@ void *__fastcall cAIEntityGroup_ctor(void *self) {
 	return g;
 }
 
-void __fastcall cAIEntityGroup_dtor(void *self) {
+void cAIEntityGroup_dtor(void *self) {
 	((cAIEntityGroup *)self)->vftable = CAIENTITYGROUP_VFTABLE;
 }
 
-cAIEntityGroup *__thiscall cAIEntityGroup_Delete(cAIEntityGroup *self, byte flags) {
+cAIEntityGroup *cAIEntityGroup_Delete(cAIEntityGroup *self, byte flags) {
 	self->vftable = CAIENTITYGROUP_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, CAIENTITYGROUP_SIZE);
@@ -27,11 +27,11 @@ cAIEntityGroup *__thiscall cAIEntityGroup_Delete(cAIEntityGroup *self, byte flag
 	return self;
 }
 
-void __thiscall cAIEntityGroup_Clear(cAIEntityGroup *self) {
+void cAIEntityGroup_Clear(cAIEntityGroup *self) {
 	self->num = 0;
 }
 
-byte __thiscall cAIEntityGroup_Add(cAIEntityGroup *self, cEntity *enemy) {
+byte cAIEntityGroup_Add(cAIEntityGroup *self, cEntity *enemy) {
 	CHECK(enemy != NULL);
 	if (self->num == CAIENTITYGROUP_MAX) {
 		return 0;
@@ -41,27 +41,27 @@ byte __thiscall cAIEntityGroup_Add(cAIEntityGroup *self, cEntity *enemy) {
 	return 1;
 }
 
-cEntity *__thiscall cAIEntityGroup_Get(cAIEntityGroup *self, int numEnt) {
+cEntity *cAIEntityGroup_Get(cAIEntityGroup *self, int numEnt) {
 	CHECK(numEnt < self->num);
 	return self->ents[numEnt];
 }
 
-int __thiscall cAIEntityGroup_Num(cAIEntityGroup *self) {
+int cAIEntityGroup_Num(cAIEntityGroup *self) {
 	return self->num;
 }
 
-byte __thiscall cAIEntityGroup_CanChange(cAIEntityGroup *self) {
+byte cAIEntityGroup_CanChange(cAIEntityGroup *self) {
 	return !(g_TimeBetwChangeStateAI > self->changeTime);
 }
 
-void __thiscall cAIEntityGroup_ResetChange(cAIEntityGroup *self) {
+void cAIEntityGroup_ResetChange(cAIEntityGroup *self) {
 	self->changeTime = 0.0f;
 }
 
-void __thiscall cAIEntityGroup_AllowChange(cAIEntityGroup *self) {
+void cAIEntityGroup_AllowChange(cAIEntityGroup *self) {
 	self->changeTime = g_TimeBetwChangeStateAI;
 }
 
-void __thiscall cAIEntityGroup_Update(cAIEntityGroup *self, float dt) {
+void cAIEntityGroup_Update(cAIEntityGroup *self, float dt) {
 	self->changeTime = dt + self->changeTime;
 }

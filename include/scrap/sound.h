@@ -56,51 +56,51 @@ typedef struct CSoundSys CSoundSys;
 
 /* the interface (CSoundSys at rva 0x3c9f3c, slots 0x10..0x40 pure, CSoundXBox at 0x3ca718) */
 typedef struct CSoundSysVtbl {
-	CSoundSys *(__thiscall *Destroy)(CSoundSys *self, byte flags);			/* 0x00 */
-	int(__thiscall *Init)(CSoundSys *self);						/* 0x04 */
-	void(__thiscall *Close)(CSoundSys *self);					/* 0x08 */
-	void(__thiscall *Update)(CSoundSys *self);					/* 0x0c */
-	void(__thiscall *LoadSound2)(CSoundSys *self, const char *name);		/* 0x10 CHECK(0) */
-	void(__thiscall *LoadSound)(CSoundSys *self, const char *name);		/* 0x14 */
-	void(__thiscall *DeleteSound)(CSoundSys *self, const char *name);		/* 0x18 */
-	void(__thiscall *StopAllSounds)(CSoundSys *self);				/* 0x1c */
-	void(__thiscall *DeleteAllSounds)(CSoundSys *self);				/* 0x20 */
-	byte(__thiscall *GetDesc)(CSoundSys *self, const char *name, cSoundDesc *out);	/* 0x24 */
-	byte(__thiscall *SetDesc)(CSoundSys *self, const char *name, const cSoundDesc *d);	/* 0x28 CHECK(0) */
-	int(__thiscall *PlaySound)(CSoundSys *self, const char *name, const cSoundDesc *d, int *handle);	/* 0x2c */
-	int(__thiscall *PlayName)(CSoundSys *self, const char *name);			/* 0x30 */
-	int(__thiscall *Play)(CSoundSys *self, const char *name, int volume, int pan);	/* 0x34 */
-	int(__thiscall *PlayAt)(CSoundSys *self, const char *name, const vec3_t *pos, int volume);	/* 0x38 */
-	byte(__thiscall *UpdateSound)(CSoundSys *self, const char *name, const cSoundDesc *d, int handle);	/* 0x3c */
-	int(__thiscall *StopSound)(CSoundSys *self, int handle);			/* 0x40 */
-	void(__thiscall *SetVolume)(CSoundSys *self, const char *name, int volume);	/* 0x44 */
-	void(__thiscall *SetPan)(CSoundSys *self, const char *name, int pan);		/* 0x48 */
-	void(__thiscall *SetFreq)(CSoundSys *self, const char *name, float freq);	/* 0x4c */
-	void(__thiscall *SetLoop)(CSoundSys *self, const char *name, byte loop);	/* 0x50 */
-	void(__thiscall *SetPrio)(CSoundSys *self, const char *name, byte prio);	/* 0x54 */
-	void(__thiscall *ResetListeners)(CSoundSys *self);				/* 0x58 */
-	void(__thiscall *SetListener)(CSoundSys *self, int id, const vec3_t *pos, const vec3_t *ang,
+	CSoundSys *(*Destroy)(CSoundSys *self, byte flags);			/* 0x00 */
+	int(*Init)(CSoundSys *self);						/* 0x04 */
+	void(*Close)(CSoundSys *self);					/* 0x08 */
+	void(*Update)(CSoundSys *self);					/* 0x0c */
+	void(*LoadSound2)(CSoundSys *self, const char *name);		/* 0x10 CHECK(0) */
+	void(*LoadSound)(CSoundSys *self, const char *name);		/* 0x14 */
+	void(*DeleteSound)(CSoundSys *self, const char *name);		/* 0x18 */
+	void(*StopAllSounds)(CSoundSys *self);				/* 0x1c */
+	void(*DeleteAllSounds)(CSoundSys *self);				/* 0x20 */
+	byte(*GetDesc)(CSoundSys *self, const char *name, cSoundDesc *out);	/* 0x24 */
+	byte(*SetDesc)(CSoundSys *self, const char *name, const cSoundDesc *d);	/* 0x28 CHECK(0) */
+	int(*PlaySound)(CSoundSys *self, const char *name, const cSoundDesc *d, int *handle);	/* 0x2c */
+	int(*PlayName)(CSoundSys *self, const char *name);			/* 0x30 */
+	int(*Play)(CSoundSys *self, const char *name, int volume, int pan);	/* 0x34 */
+	int(*PlayAt)(CSoundSys *self, const char *name, const vec3_t *pos, int volume);	/* 0x38 */
+	byte(*UpdateSound)(CSoundSys *self, const char *name, const cSoundDesc *d, int handle);	/* 0x3c */
+	int(*StopSound)(CSoundSys *self, int handle);			/* 0x40 */
+	void(*SetVolume)(CSoundSys *self, const char *name, int volume);	/* 0x44 */
+	void(*SetPan)(CSoundSys *self, const char *name, int pan);		/* 0x48 */
+	void(*SetFreq)(CSoundSys *self, const char *name, float freq);	/* 0x4c */
+	void(*SetLoop)(CSoundSys *self, const char *name, byte loop);	/* 0x50 */
+	void(*SetPrio)(CSoundSys *self, const char *name, byte prio);	/* 0x54 */
+	void(*ResetListeners)(CSoundSys *self);				/* 0x58 */
+	void(*SetListener)(CSoundSys *self, int id, const vec3_t *pos, const vec3_t *ang,
 		const vec3_t *vel);							/* 0x5c */
 	/* volume, pan and (doppler set) frequency of a sound at pos moving with vel for the nearest listener */
-	void(__thiscall *Compute3D)(CSoundSys *self, cSoundDesc *d, const vec3_t *pos, const vec3_t *vel,
+	void(*Compute3D)(CSoundSys *self, cSoundDesc *d, const vec3_t *pos, const vec3_t *vel,
 		byte doppler);								/* 0x60 */
-	void(__thiscall *SetMusic)(CSoundSys *self, const char *name);			/* 0x64 */
-	void(__thiscall *vf1a)(CSoundSys *self);					/* 0x68 */
-	void(__thiscall *StopMusic)(CSoundSys *self);					/* 0x6c */
-	void(__thiscall *vf1c)(CSoundSys *self);					/* 0x70 */
-	void(__thiscall *SetMusicVolume)(CSoundSys *self, float volume);		/* 0x74 */
+	void(*SetMusic)(CSoundSys *self, const char *name);			/* 0x64 */
+	void(*vf1a)(CSoundSys *self);					/* 0x68 */
+	void(*StopMusic)(CSoundSys *self);					/* 0x6c */
+	void(*vf1c)(CSoundSys *self);					/* 0x70 */
+	void(*SetMusicVolume)(CSoundSys *self, float volume);		/* 0x74 */
 	/* the sound name of a file name: without directory and extension */
-	void(__thiscall *GetSoundName)(CSoundSys *self, const char *file, char *out, int size);	/* 0x78 */
-	void(__thiscall *DebugDraw)(CSoundSys *self, int x, int y);			/* 0x7c */
-	int(__thiscall *OpenVoice)(CSoundSys *self, const char *name, int voice, int arg);	/* 0x80 */
-	int(__thiscall *PlayVoice)(CSoundSys *self, int voice);				/* 0x84 */
-	int(__thiscall *StopVoice)(CSoundSys *self, int voice);				/* 0x88 */
-	byte(__thiscall *VoiceRemain)(CSoundSys *self, int voice, float *remain);	/* 0x8c */
-	int(__thiscall *SetVoiceVolume)(CSoundSys *self, int voice, float volume);	/* 0x90 */
-	int(__thiscall *SetVoiceParam)(CSoundSys *self, int voice, float v);		/* 0x94 */
-	int(__thiscall *SetVoiceString)(CSoundSys *self, int voice, const char *text);	/* 0x98 */
-	int(__thiscall *GetVoiceString)(CSoundSys *self, int voice, char *buf, int size);	/* 0x9c */
-	int(__thiscall *VoiceUnused)(CSoundSys *self, int voice);			/* 0xa0 CHECK(0) */
+	void(*GetSoundName)(CSoundSys *self, const char *file, char *out, int size);	/* 0x78 */
+	void(*DebugDraw)(CSoundSys *self, int x, int y);			/* 0x7c */
+	int(*OpenVoice)(CSoundSys *self, const char *name, int voice, int arg);	/* 0x80 */
+	int(*PlayVoice)(CSoundSys *self, int voice);				/* 0x84 */
+	int(*StopVoice)(CSoundSys *self, int voice);				/* 0x88 */
+	byte(*VoiceRemain)(CSoundSys *self, int voice, float *remain);	/* 0x8c */
+	int(*SetVoiceVolume)(CSoundSys *self, int voice, float volume);	/* 0x90 */
+	int(*SetVoiceParam)(CSoundSys *self, int voice, float v);		/* 0x94 */
+	int(*SetVoiceString)(CSoundSys *self, int voice, const char *text);	/* 0x98 */
+	int(*GetVoiceString)(CSoundSys *self, int voice, char *buf, int size);	/* 0x9c */
+	int(*VoiceUnused)(CSoundSys *self, int voice);			/* 0xa0 CHECK(0) */
 } CSoundSysVtbl;
 SD_OFFSET(CSoundSysVtbl, LoadSound, 0x14);
 SD_OFFSET(CSoundSysVtbl, PlaySound, 0x2c);
@@ -165,36 +165,36 @@ SD_SIZE(cSoundStrItem, 0x2c);
 
 /* volume 0..1 to the engine's volume value */
 int Snd_Volume(float volume);
-void __thiscall cSoundDesc_Init(cSoundDesc *desc);
-void __thiscall cSoundDesc_Copy(cSoundDesc *desc, const cSoundDesc *src);
-void __thiscall cSoundDesc_Set(cSoundDesc *desc, int volume, int pan, float freq, byte loop, byte prio);
+void cSoundDesc_Init(cSoundDesc *desc);
+void cSoundDesc_Copy(cSoundDesc *desc, const cSoundDesc *src);
+void cSoundDesc_Set(cSoundDesc *desc, int volume, int pan, float freq, byte loop, byte prio);
 /* the volume and pan of a sound at pos (without doppler) */
-void __thiscall cSoundDesc_SetPos(cSoundDesc *desc, const vec3_t *pos);
+void cSoundDesc_SetPos(cSoundDesc *desc, const vec3_t *pos);
 
 /* Sound/Sound.cpp (src/game/Sound/Sound.c) */
 void Sound_Init(void);
 void Sound_Done(void);
-cSound *__thiscall cSound_ctor(cSound *self, const char *name, uint32_t flags);
-cSound *__fastcall cSound_Init(cSound *self);
+cSound *cSound_ctor(cSound *self, const char *name, uint32_t flags);
+cSound *cSound_Init(cSound *self);
 /* stops it (also the destructor) */
-void __fastcall cSound_Stop(cSound *self);
+void cSound_Stop(cSound *self);
 /* sets the name: flags 1 or 2 load the file (the name is the sound name of it), else name is a sound name */
-void __thiscall cSound_SetSound(cSound *self, const char *name, uint32_t flags);
-const char *__fastcall cSound_GetName(cSound *self);
+void cSound_SetSound(cSound *self, const char *name, uint32_t flags);
+const char *cSound_GetName(cSound *self);
 /* restarts it; the result of PlaySound */
-byte __fastcall cSound_Play(cSound *self);
+byte cSound_Play(cSound *self);
 /* keeps it playing or starts it again when it got loud enough, stops it when quiet; 1 while it plays */
-byte __fastcall cSound_Update(cSound *self);
-void __thiscall cSound_SetPitch(cSound *self, float semitones);
+byte cSound_Update(cSound *self);
+void cSound_SetPitch(cSound *self, float semitones);
 /* the 3D volume and pan with doppler */
-void __thiscall cSound_SetPosVel(cSound *self, const vec3_t *pos, const vec3_t *vel);
+void cSound_SetPosVel(cSound *self, const vec3_t *pos, const vec3_t *vel);
 
-CSoundSys *__fastcall CSoundSys_ctor(CSoundSys *self);
-void __fastcall CSoundSys_dtor(CSoundSys *self);
-int __fastcall CSoundSys_InitFmod(CSoundSys *self);
-void __fastcall CSoundSys_Close(CSoundSys *self);
-void __fastcall CSoundSys_Nop(CSoundSys *self);
-void __fastcall CSoundSys_CallVf1c(CSoundSys *self);
+CSoundSys *CSoundSys_ctor(CSoundSys *self);
+void CSoundSys_dtor(CSoundSys *self);
+int CSoundSys_InitFmod(CSoundSys *self);
+void CSoundSys_Close(CSoundSys *self);
+void CSoundSys_Nop(CSoundSys *self);
+void CSoundSys_CallVf1c(CSoundSys *self);
 void Sound_Nop(void);
 
 /*
@@ -231,12 +231,12 @@ void SndPS_StopAll(void);
 /* the engine variables back to their defaults, all property sets deleted */
 void Sound_ResetVolumes(void);
 /* like cActClass_Var: set != 0 writes *s or *d / *i, else reads all; returns 1 string, 2 double, 3 int, 0 */
-int __thiscall cSoundPS_Var(cSoundPS *ps, const char *name, int set, char **s, double *d, int *i);
-cSoundPS *__fastcall cSoundPS_ctor(cSoundPS *self);
-void __fastcall cSoundPS_dtor(cSoundPS *self);
+int cSoundPS_Var(cSoundPS *ps, const char *name, int set, char **s, double *d, int *i);
+cSoundPS *cSoundPS_ctor(cSoundPS *self);
+void cSoundPS_dtor(cSoundPS *self);
 /* CShow 3: the spheres of the positional sounds */
 void SndPS_DrawAll(void);
-void __thiscall cSoundPS_Update(cSoundPS *self, float dt);
+void cSoundPS_Update(cSoundPS *self, float dt);
 /* the music, the property sets and the voices of a frame */
 void Sound_Update(float dt);
 void Sound_UpdateMusic(float dt);
@@ -280,24 +280,24 @@ SD_SIZE(cSndInterface, 0x1c);
 #define g_SndInterfaces GAME_GLOBAL(cSndInterface *, g_SndInterfaces)
 
 /* Sound/SndInterface.cpp (src/game/Sound/SndInterface.c) */
-cSndInterface *__thiscall cSndInterface_ctor(cSndInterface *self, int n);
-void __fastcall cSndInterface_dtor(cSndInterface *self);
+cSndInterface *cSndInterface_ctor(cSndInterface *self, int n);
+void cSndInterface_dtor(cSndInterface *self);
 /* the looping sounds stop */
-void __thiscall cSndInterface_StopAll(cSndInterface *self, int unused);
-void __thiscall cSndInterface_Tick(cSndInterface *self, float dt);
+void cSndInterface_StopAll(cSndInterface *self, int unused);
+void cSndInterface_Tick(cSndInterface *self, float dt);
 /* the three characters of the id ("sdd") */
-void __thiscall cSndInterface_SetId(cSndInterface *self, const char *id);
+void cSndInterface_SetId(cSndInterface *self, const char *id);
 /* 0 stops it, else it starts when it does not play */
-void __thiscall cSndItem_SetVolume(cSndItem *self, cEntity *e, float volume);
-byte __thiscall cSndItem_Play(cSndItem *self, cEntity *e);
+void cSndItem_SetVolume(cSndItem *self, cEntity *e, float volume);
+byte cSndItem_Play(cSndItem *self, cEntity *e);
 
 /* the variable methods of the sounds (cSndInterface::vftable from slot 1) */
 typedef struct cSndInterfaceVtbl {
 	void *vf00;
-	byte(__thiscall *VarI)(cSndInterface *self, const char *name, int *i, int set);
-	byte(__thiscall *VarF)(cSndInterface *self, const char *name, double *d, int set);
-	byte(__thiscall *VarS)(cSndInterface *self, const char *name, char **s, int set);
-	byte(__thiscall *VarV)(cSndInterface *self, const char *name, double *x, double *y, double *z, int set);
+	byte(*VarI)(cSndInterface *self, const char *name, int *i, int set);
+	byte(*VarF)(cSndInterface *self, const char *name, double *d, int set);
+	byte(*VarS)(cSndInterface *self, const char *name, char **s, int set);
+	byte(*VarV)(cSndInterface *self, const char *name, double *x, double *y, double *z, int set);
 } cSndInterfaceVtbl;
 
 static inline const cSndInterfaceVtbl *Snd_Vtbl(cSndInterface *snd) {
@@ -316,11 +316,11 @@ byte Fmod_SetChannel(int channel, const cSoundDesc *d);
 int Fmod_Play(void *sample, const cSoundDesc *d, const char *name);
 
 /* the instance of Global/HashTable.h in src/game/Global/HashTables.c */
-cSoundStrItem *__thiscall SoundStrTable_Find(HashTable *self, const char *key, uint32_t slot);
-cSoundStrItem *__thiscall SoundStrTable_Insert(HashTable *self, const char *key, uint32_t slot,
+cSoundStrItem *SoundStrTable_Find(HashTable *self, const char *key, uint32_t slot);
+cSoundStrItem *SoundStrTable_Insert(HashTable *self, const char *key, uint32_t slot,
 	const cSoundTableValue *v);
-byte __thiscall SoundStrTable_Delete(HashTable *self, const char *key);
-void __fastcall SoundStrTable_Clear(HashTable *self);
+byte SoundStrTable_Delete(HashTable *self, const char *key);
+void SoundStrTable_Clear(HashTable *self);
 
 /* Sound/Wav.cpp (src/game/Sound/Wav.c): the format of a .wav file */
 typedef struct cWavInfo {

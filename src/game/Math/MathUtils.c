@@ -19,7 +19,7 @@ static float Vec3_Dist2To(const vec3_t *p, float x, float y, float z) {
 }
 
 /* i: bit 0 max x, bit 1 max y, bit 2 max z */
-vec3_t *__thiscall Box_GetCorner(const box_t *self, vec3_t *out, int i) {
+vec3_t *Box_GetCorner(const box_t *self, vec3_t *out, int i) {
 	if ((unsigned)i > 7) {
 		out->z = 0.0f;
 		out->y = 0.0f;
@@ -199,7 +199,7 @@ float Dist2_PointSegment(const vec3_t *a, const vec3_t *b, const vec3_t *p, vec3
 }
 
 /* the plane through v1 v2 v3; 0 for a degenerate triangle, the normal is then zero */
-byte __thiscall Plane_SafeSet(plane_t *self, const vec3_t *v1, const vec3_t *v2, const vec3_t *v3) {
+byte Plane_SafeSet(plane_t *self, const vec3_t *v1, const vec3_t *v2, const vec3_t *v3) {
 	float ax = v3->x - v1->x, ay = v3->y - v1->y, az = v3->z - v1->z;
 	float bx = v2->x - v1->x, by = v2->y - v1->y, bz = v2->z - v1->z;
 	float nx = by * az - bz * ay;

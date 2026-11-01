@@ -10,8 +10,8 @@
 #include "scrap/timer.h"
 #include "scrap/weapons.h"
 
-/* the draw handler of each character action: thiscall (item, player) */
-#define g_SpecialActionDraw (GAME_ARRAY(void (__thiscall *)(cSpecialActionScorer *, int), g_SpecialActionDraw))
+/* the draw handler of each character action: (item, player) */
+#define g_SpecialActionDraw (GAME_ARRAY(void (*)(cSpecialActionScorer *, int), g_SpecialActionDraw))
 
 static const char *const s_InactiveColors[4] = {"InactiveColorRed", "InactiveColorGreen", "InactiveColorBlue",
 	"InactiveColorAlpha"};
@@ -20,7 +20,7 @@ static const char *const s_ActiveColors[4] = {"ActiveColorRed", "ActiveColorGree
 static const char *const s_GlowColors[4] = {"GlowColorRed", "GlowColorGreen", "GlowColorBlue", "GlowColorAlpha"};
 static const char *const s_TextColors[4] = {"TextColorRed", "TextColorGreen", "TextColorBlue", "TextColorAlpha"};
 
-cSpecialActionScorer *__fastcall cSpecialActionScorer_ctor(cSpecialActionScorer *self) {
+cSpecialActionScorer *cSpecialActionScorer_ctor(cSpecialActionScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CSPECIALACTIONSCORER_VFTABLE;
 	self->charAction = 0;
@@ -38,7 +38,7 @@ cSpecialActionScorer *__fastcall cSpecialActionScorer_ctor(cSpecialActionScorer 
 	return self;
 }
 
-void __fastcall cSpecialActionScorer_dtor(cSpecialActionScorer *self) {
+void cSpecialActionScorer_dtor(cSpecialActionScorer *self) {
 	self->base.vftable = CSPECIALACTIONSCORER_VFTABLE;
 	ScorerImg_Free(self->sprite);
 	ScorerImg_Free(self->cannon);
@@ -49,7 +49,7 @@ void __fastcall cSpecialActionScorer_dtor(cSpecialActionScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cSpecialActionScorer *__thiscall cSpecialActionScorer_Delete(cSpecialActionScorer *self, byte flags) {
+cSpecialActionScorer *cSpecialActionScorer_Delete(cSpecialActionScorer *self, byte flags) {
 	cSpecialActionScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cSpecialActionScorer));
@@ -76,7 +76,7 @@ static int SpecialAction_VarOff(const char *name, const char *x, const char *y, 
 	return 0;
 }
 
-int __thiscall cSpecialActionScorer_Var(cSpecialActionScorer *self, const char *name, byte set, char **s, double *d,
+int cSpecialActionScorer_Var(cSpecialActionScorer *self, const char *name, byte set, char **s, double *d,
 	int *i) {
 	int r;
 
@@ -156,7 +156,7 @@ int __thiscall cSpecialActionScorer_Var(cSpecialActionScorer *self, const char *
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void __thiscall cSpecialActionScorer_Draw(cSpecialActionScorer *self, int player) {
+void cSpecialActionScorer_Draw(cSpecialActionScorer *self, int player) {
 	if (!g_SpecialActionActive) {
 		return;
 	}
@@ -212,7 +212,7 @@ static byte SpecialAction_IsActive(cEntity *e, const char *action) {
 
 /* the icon of the action in state (0 off, 1 on, 2 active), its color faded over 0.2 s after a change, and the
  * blinking glow while active */
-void __thiscall cSpecialActionScorer_DrawIcon(cSpecialActionScorer *self, int player, int state) {
+void cSpecialActionScorer_DrawIcon(cSpecialActionScorer *self, int player, int state) {
 	float t, f, g, a;
 	int which = 0;
 	uint32_t color;
@@ -273,7 +273,7 @@ void __thiscall cSpecialActionScorer_DrawIcon(cSpecialActionScorer *self, int pl
 }
 
 /* the energy bar and the batteries of the character (EnergyBarActive), blinking while SpecialActionActive is 1 */
-void __fastcall cSpecialActionScorer_DrawEnergy(cSpecialActionScorer *self) {
+void cSpecialActionScorer_DrawEnergy(cSpecialActionScorer *self) {
 	float t = Scorer_Get(self->base.player)->time;
 	float uv0[2], uv1[2];
 	cEntity *e;
@@ -319,7 +319,7 @@ void __fastcall cSpecialActionScorer_DrawEnergy(cSpecialActionScorer *self) {
 }
 
 /* the cross hair of the gear aim in the middle of the screen */
-void __thiscall cSpecialActionScorer_DrawCrossHair(cSpecialActionScorer *self, int player) {
+void cSpecialActionScorer_DrawCrossHair(cSpecialActionScorer *self, int player) {
 	static const float pos[8] = {-0.25f, -0.25f, 0.25f, -0.25f, 0.25f, 0.25f, -0.25f, 0.25f};
 	float uv0[2], uv1[2], uv[8], pv[8];
 	CPsaImage *img;
@@ -353,7 +353,7 @@ void __thiscall cSpecialActionScorer_DrawCrossHair(cSpecialActionScorer *self, i
 /* the handlers of the table at rva 0x428cb8 by character action */
 
 /* 0: the weapon energy above 0.9 */
-void __thiscall SpecialAction_DrawDefault(cSpecialActionScorer *self, int player) {
+void SpecialAction_DrawDefault(cSpecialActionScorer *self, int player) {
 	cEntity *e = SpecialAction_User();
 	int state;
 
@@ -370,7 +370,7 @@ void __thiscall SpecialAction_DrawDefault(cSpecialActionScorer *self, int player
 }
 
 /* 1: the victim of the banker and its money */
-void __thiscall SpecialAction_DrawBanker(cSpecialActionScorer *self, int player) {
+void SpecialAction_DrawBanker(cSpecialActionScorer *self, int player) {
 	char buf[8];
 	cEntity *e, *v;
 
@@ -394,7 +394,7 @@ void __thiscall SpecialAction_DrawBanker(cSpecialActionScorer *self, int player)
 }
 
 /* 2: a target in reach or the action running */
-void __thiscall SpecialAction_DrawTarget(cSpecialActionScorer *self, int player) {
+void SpecialAction_DrawTarget(cSpecialActionScorer *self, int player) {
 	cEntity *e = SpecialAction_User();
 	cEntity *target;
 	byte flag;
@@ -414,21 +414,21 @@ void __thiscall SpecialAction_DrawTarget(cSpecialActionScorer *self, int player)
 }
 
 /* 3, 11, 12: the gear aim with its cone and mode */
-void __thiscall SpecialAction_DrawGear(cSpecialActionScorer *self, int player) {
+void SpecialAction_DrawGear(cSpecialActionScorer *self, int player) {
 	g_GearAimSpreadX = 1.5707964f;
 	g_GearAimSpreadY = 1.5707964f;
 	g_GearAimMode = 1;
 	cSpecialActionScorer_DrawGearAim(self, player);
 }
 
-void __thiscall SpecialAction_DrawGear2(cSpecialActionScorer *self, int player) {
+void SpecialAction_DrawGear2(cSpecialActionScorer *self, int player) {
 	g_GearAimSpreadX = 0.5235988f;
 	g_GearAimSpreadY = 0.5235988f;
 	g_GearAimMode = 2;
 	cSpecialActionScorer_DrawGearAim(self, player);
 }
 
-void __thiscall SpecialAction_DrawGear3(cSpecialActionScorer *self, int player) {
+void SpecialAction_DrawGear3(cSpecialActionScorer *self, int player) {
 	g_GearAimSpreadX = 0.5235988f;
 	g_GearAimSpreadY = 0.5235988f;
 	g_GearAimMode = 3;
@@ -436,7 +436,7 @@ void __thiscall SpecialAction_DrawGear3(cSpecialActionScorer *self, int player) 
 }
 
 /* 4: the victim of a walking character */
-void __thiscall SpecialAction_DrawVictim(cSpecialActionScorer *self, int player) {
+void SpecialAction_DrawVictim(cSpecialActionScorer *self, int player) {
 	cEntity *e = SpecialAction_User();
 	int state;
 
@@ -454,13 +454,13 @@ void __thiscall SpecialAction_DrawVictim(cSpecialActionScorer *self, int player)
 }
 
 /* 5, 6, 7, 13, 14: always on */
-void __thiscall SpecialAction_DrawOn(cSpecialActionScorer *self, int player) {
+void SpecialAction_DrawOn(cSpecialActionScorer *self, int player) {
 	cSpecialActionScorer_DrawEnergy(self);
 	cSpecialActionScorer_DrawIcon(self, player, 1);
 }
 
 /* 8: the weapon energy above GearLowWeaponEnergy, active through the three action steps */
-void __thiscall SpecialAction_DrawLowEnergy(cSpecialActionScorer *self, int player) {
+void SpecialAction_DrawLowEnergy(cSpecialActionScorer *self, int player) {
 	cEntity *e = SpecialAction_User();
 	int state;
 
@@ -480,7 +480,7 @@ void __thiscall SpecialAction_DrawLowEnergy(cSpecialActionScorer *self, int play
 }
 
 /* 9: the functionary, active while its timer at 0x4b4 runs */
-void __thiscall SpecialAction_DrawFunctionary(cSpecialActionScorer *self, int player) {
+void SpecialAction_DrawFunctionary(cSpecialActionScorer *self, int player) {
 	cEntity *e = SpecialAction_User();
 	int state;
 
@@ -497,7 +497,7 @@ void __thiscall SpecialAction_DrawFunctionary(cSpecialActionScorer *self, int pl
 }
 
 /* 10: on above 0.9 */
-void __thiscall SpecialAction_DrawEnergyOnly(cSpecialActionScorer *self, int player) {
+void SpecialAction_DrawEnergyOnly(cSpecialActionScorer *self, int player) {
 	cEntity *e = SpecialAction_User();
 
 	if (!e) {
@@ -508,7 +508,7 @@ void __thiscall SpecialAction_DrawEnergyOnly(cSpecialActionScorer *self, int pla
 }
 
 /* the three blades of the cannon aim at pos (screen), size the sprite size, turned by ang */
-void __thiscall cSpecialActionScorer_DrawCannon(cSpecialActionScorer *self, int player, const float *pos,
+void cSpecialActionScorer_DrawCannon(cSpecialActionScorer *self, int player, const float *pos,
 	const float *size, float ang, uint32_t color) {
 	static const float corners[8] = {-0.5f, -0.375f, 0.5f, -0.375f, 0.5f, 0.375f, -0.5f, 0.375f};
 	float uv0[2], uv1[2], uv[8], p[8], c[2], off[2], r[2];
@@ -649,7 +649,7 @@ score:;
 /* the special action of the gear: the target search around the player in a sphere, the aim cross that moves from the
  * last place to the target in 0.3 s (and grows on the way) and locks on it, red and blinking while the energy is low;
  * a locked view keeps its target */
-void __thiscall cSpecialActionScorer_DrawGearAim(cSpecialActionScorer *self, int player) {
+void cSpecialActionScorer_DrawGearAim(cSpecialActionScorer *self, int player) {
 	vec3_t tmp;
 	float pos[2], size[2];
 

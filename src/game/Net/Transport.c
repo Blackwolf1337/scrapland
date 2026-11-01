@@ -495,7 +495,7 @@ int Net_SendMasterString(const char *text) {
 	return 1;
 }
 
-byte __thiscall cGVar_SetString(cGVar *self, const char *s) {
+byte cGVar_SetString(cGVar *self, const char *s) {
 	if (self->base.flags & 1) {
 		return 0;
 	}

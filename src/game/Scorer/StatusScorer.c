@@ -19,7 +19,7 @@ static CPsaImage *Status_NewWhite(void) {
 	return img;
 }
 
-cStatusScorer *__fastcall cStatusScorer_ctor(cStatusScorer *self) {
+cStatusScorer *cStatusScorer_ctor(cStatusScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CSTATUSSCORER_VFTABLE;
 	cSound_Init(&self->lowLife);
@@ -55,7 +55,7 @@ cStatusScorer *__fastcall cStatusScorer_ctor(cStatusScorer *self) {
 	return self;
 }
 
-void __fastcall cStatusScorer_dtor(cStatusScorer *self) {
+void cStatusScorer_dtor(cStatusScorer *self) {
 	self->base.vftable = CSTATUSSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	ScorerImg_Free(self->glow);
@@ -65,7 +65,7 @@ void __fastcall cStatusScorer_dtor(cStatusScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cStatusScorer *__thiscall cStatusScorer_Delete(cStatusScorer *self, byte flags) {
+cStatusScorer *cStatusScorer_Delete(cStatusScorer *self, byte flags) {
 	cStatusScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cStatusScorer));
@@ -137,7 +137,7 @@ static const ScorerVarDef s_StatusVars6[] = {
 
 #define STATUS_TABLE(t) ScorerVar_Table(self, (t), sizeof(t) / sizeof((t)[0]), name, set, d, i)
 
-int __thiscall cStatusScorer_Var(cStatusScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cStatusScorer_Var(cStatusScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	int r;
 
 	if (s && !crt_stricmp(name, "Sprite") && set) {
@@ -346,7 +346,7 @@ static void Status_DrawBoostIcon(cStatusScorer *self) {
 
 /* vf00: the life of the target of the camera (blinking when in danger), the boost segments, the money and lives,
  * the team flag, the hull of a ship; the low life warning and the regeneration siren */
-void __thiscall cStatusScorer_Draw(cStatusScorer *self, int player) {
+void cStatusScorer_Draw(cStatusScorer *self, int player) {
 	cEntity *e;
 
 	float time = Scorer_Get(player)->time;

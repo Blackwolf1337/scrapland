@@ -53,7 +53,7 @@ static inline cEntity *AICtrl_Model(cEntity *e) {
 	return (cEntity *)Obj_Vtbl(e)->GetModel(e);
 }
 
-void *__fastcall AICtrl_ctor(void *ctrl) {
+void *AICtrl_ctor(void *ctrl) {
 	cAICtrl *self = ctrl;
 
 	self->watch.target = NULL;
@@ -82,13 +82,13 @@ void *__fastcall AICtrl_ctor(void *ctrl) {
 	return self;
 }
 
-void __fastcall AICtrl_dtor(void *ctrl) {
+void AICtrl_dtor(void *ctrl) {
 	Nto1Node_Done(&((cAICtrl *)ctrl)->watch);
 }
 
 /* two visible police of the second GenChar list fuse into gears that fight each other, else two free visible
  * gears fight */
-void __fastcall AICtrl_Belligerant(void *ctrl) {
+void AICtrl_Belligerant(void *ctrl) {
 	cAICtrl *self = ctrl;
 	cEntity *first = NULL, *second = NULL;
 	Nto1Node *n;
@@ -142,7 +142,7 @@ void __fastcall AICtrl_Belligerant(void *ctrl) {
 	}
 }
 
-byte __thiscall AICtrl_CanFuse(void *ctrl, cEntity *e) {
+byte AICtrl_CanFuse(void *ctrl, cEntity *e) {
 	char name[0x80];
 	vec3_t t, c;
 	cEntity *hit;
@@ -175,7 +175,7 @@ byte __thiscall AICtrl_CanFuse(void *ctrl, cEntity *e) {
 }
 
 /* the gear may become a police again: no police of its number */
-byte __thiscall AICtrl_CanBePolice(void *ctrl, cEntity *e) {
+byte AICtrl_CanBePolice(void *ctrl, cEntity *e) {
 	char name[0x80];
 
 	(void)ctrl;
@@ -188,7 +188,7 @@ byte __thiscall AICtrl_CanBePolice(void *ctrl, cEntity *e) {
 }
 
 /* the script CreatePolice (name, position) makes the police, the gear goes */
-byte __thiscall AICtrl_GearToPolice(void *ctrl, cEntity *gear) {
+byte AICtrl_GearToPolice(void *ctrl, cEntity *gear) {
 	char name[0x80];
 	vec3_t t;
 
@@ -206,12 +206,12 @@ byte __thiscall AICtrl_GearToPolice(void *ctrl, cEntity *gear) {
 	return 1;
 }
 
-void __fastcall AICtrl_UpdateSentinels(void *ctrl);
-void __fastcall AICtrl_UpdateGears(void *ctrl);
+void AICtrl_UpdateSentinels(void *ctrl);
+void AICtrl_UpdateGears(void *ctrl);
 
 /* the alarm state, the voices of the gear nearest to the player ("Chase" at random with the alarm, "Abort" after
  * it), the sentinels and the gears */
-void __fastcall AICtrl_Think(void *ctrl) {
+void AICtrl_Think(void *ctrl) {
 	cAICtrl *self = ctrl;
 	vec3_t t;
 
@@ -252,7 +252,7 @@ void __fastcall AICtrl_Think(void *ctrl) {
 	self->lastUsr = self->usr;
 }
 
-byte __thiscall AICtrl_Fuse(void *ctrl, cEntity *police, cEntity **out) {
+byte AICtrl_Fuse(void *ctrl, cEntity *police, cEntity **out) {
 	char name[0x80];
 	vec3_t t;
 	cObjEntity *o = (cObjEntity *)police;
@@ -294,7 +294,7 @@ byte __thiscall AICtrl_Fuse(void *ctrl, cEntity *police, cEntity **out) {
 
 /* the nearest gear with a free line attacks the visible target (not with seen 1 behind a wall); a nearer police
  * fuses into a gear instead; the bishops of the third list attack a player near them (BishopAttackOnAlarm) */
-void __thiscall AICtrl_GearAttack(void *ctrl, cEntity *target, int seen) {
+void AICtrl_GearAttack(void *ctrl, cEntity *target, int seen) {
 	cAICtrl *self = ctrl;
 	vec3_t t1, t2, t3;
 	float d1, d2, d;
@@ -334,7 +334,7 @@ bishops:
 }
 
 /* the gears update with 0.5 s, then the ones in state 1 or 2 are counted */
-void __fastcall AICtrl_UpdateGears(void *ctrl) {
+void AICtrl_UpdateGears(void *ctrl) {
 	cAICtrl *self = ctrl;
 	Nto1Node *n;
 
@@ -351,7 +351,7 @@ void __fastcall AICtrl_UpdateGears(void *ctrl) {
 	}
 }
 
-void __fastcall AICtrl_Init(void *ctrl) {
+void AICtrl_Init(void *ctrl) {
 	cAICtrl *self = ctrl;
 
 	self->sentinels = cWorld_NewEntityList(g_pWorld, "Sentinel");
@@ -362,7 +362,7 @@ void __fastcall AICtrl_Init(void *ctrl) {
 }
 
 /* a sentinel to watch pos now */
-void __thiscall AICtrl_WatchNow(void *ctrl, const vec3_t *pos) {
+void AICtrl_WatchNow(void *ctrl, const vec3_t *pos) {
 	((cAICtrl *)ctrl)->watchTime = 0.0f;
 	AICtrl_SendSentinelToWatch(ctrl, pos);
 }
@@ -393,7 +393,7 @@ void AICtrl_Police2GearEnd(cAbstractFile *params) {
 
 /* the watching sentinel, else the one nearest to pos, goes to watch it (not while it accuses or attacks);
  * SentinelNextGotoTime before the next */
-void __thiscall AICtrl_SendSentinelToWatch(void *ctrl, const vec3_t *pos) {
+void AICtrl_SendSentinelToWatch(void *ctrl, const vec3_t *pos) {
 	cAICtrl *self = ctrl;
 
 	if (!(0.0f >= self->watchTime)) {
@@ -413,7 +413,7 @@ void __thiscall AICtrl_SendSentinelToWatch(void *ctrl, const vec3_t *pos) {
 
 /* the sentinels update with 0.5 s; the watch link goes to the one in state 5, the first that accuses sends the
  * others back */
-void __fastcall AICtrl_UpdateSentinels(void *ctrl) {
+void AICtrl_UpdateSentinels(void *ctrl) {
 	cAICtrl *self = ctrl;
 	cBaseLocalLogic *found = NULL;
 	Nto1Node *n;
@@ -467,7 +467,7 @@ void __fastcall AICtrl_UpdateSentinels(void *ctrl) {
 }
 
 /* with the alarm the sentinel nearest to the player accuses it (check: with a free line only) */
-byte __thiscall AICtrl_SendAccuser(void *ctrl, byte check) {
+byte AICtrl_SendAccuser(void *ctrl, byte check) {
 	cAICtrl *self = ctrl;
 	vec3_t t, t2, t3;
 
@@ -498,7 +498,7 @@ byte __thiscall AICtrl_SendAccuser(void *ctrl, byte check) {
 	return 1;
 }
 
-void __thiscall AICtrl_SendSentinelToNPC(void *ctrl, cEntity *e) {
+void AICtrl_SendSentinelToNPC(void *ctrl, cEntity *e) {
 	cAICtrl *self = ctrl;
 	vec3_t t, t2, t3;
 
@@ -528,7 +528,7 @@ void __thiscall AICtrl_SendSentinelToNPC(void *ctrl, cEntity *e) {
 	}
 }
 
-void __thiscall AICtrl_RaiseLevel(void *ctrl, int level) {
+void AICtrl_RaiseLevel(void *ctrl, int level) {
 	cAICtrl *self = ctrl;
 
 	if (self->level < level) {
@@ -537,7 +537,7 @@ void __thiscall AICtrl_RaiseLevel(void *ctrl, int level) {
 }
 
 /* every 0.5 s the think; without the alarm the fights (PoliceLogicBelligerant percent) */
-void __thiscall AICtrl_Update(void *ctrl, float dt) {
+void AICtrl_Update(void *ctrl, float dt) {
 	cAICtrl *self = ctrl;
 	float t = dt + self->timer;
 
@@ -555,7 +555,7 @@ void __thiscall AICtrl_Update(void *ctrl, float dt) {
 	}
 }
 
-void __thiscall AICtrl_GearsChase(void *ctrl, cEntity *e) {
+void AICtrl_GearsChase(void *ctrl, cEntity *e) {
 	cAICtrl *self = ctrl;
 	byte found = 0;
 

@@ -40,16 +40,16 @@ SD_OFFSET(cAutoAim, target, 0x14);
 SD_OFFSET(cAutoAim, status, 0x48);
 SD_SIZE(cAutoAim, 0x50);
 
-cAutoAim *__fastcall cAutoAim_ctor(cAutoAim *self);
-byte __thiscall cAutoAim_VarF(cAutoAim *self, const char *name, double *d, int set);
+cAutoAim *cAutoAim_ctor(cAutoAim *self);
+byte cAutoAim_VarF(cAutoAim *self, const char *name, double *d, int set);
 /* a slot of interval with the angles ang (NULL keeps them) */
-void __thiscall cAutoAim_SetSlot(cAutoAim *self, float interval, const float *ang);
+void cAutoAim_SetSlot(cAutoAim *self, float interval, const float *ang);
 /* the aim point of owner between the slots; returns out */
-vec3_t *__thiscall cAutoAim_GetAimPos(cAutoAim *self, vec3_t *out, cEntity *owner);
+vec3_t *cAutoAim_GetAimPos(cAutoAim *self, vec3_t *out, cEntity *owner);
 /* the slot of the vehicle owner: dt its interval */
-void __thiscall cAutoAim_Update(cAutoAim *self, cEntity *owner, float dt);
-void __thiscall cAutoAim_SetAngle(cAutoAim *self, float ang);
-void __thiscall cAutoAim_SetRange(cAutoAim *self, float range);
-byte __thiscall cAutoAim_VarS(cAutoAim *self, const char *name, char **s, int set);
+void cAutoAim_Update(cAutoAim *self, cEntity *owner, float dt);
+void cAutoAim_SetAngle(cAutoAim *self, float ang);
+void cAutoAim_SetRange(cAutoAim *self, float range);
+byte cAutoAim_VarS(cAutoAim *self, const char *name, char **s, int set);
 
 #endif

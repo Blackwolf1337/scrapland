@@ -42,138 +42,138 @@ typedef struct cAICharControl cAICharControl;
 /* the slots of cAICharControl::vftable (100); the 2D control adds three, the 3D control one. The handlers of the
  * modes (UpdateGoTo ..) take the time of the frame */
 typedef struct cAICharControlVtbl {
-	cAICharControl *(__thiscall *Delete)(cAICharControl *self, byte flags);			/* 0x00 */
-	void(__thiscall *Draw)(cAICharControl *self);						/* 0x04 */
-	int(__thiscall *GetWalkDir)(cAICharControl *self);					/* 0x08 */
-	int(__thiscall *Busy)(cAICharControl *self);						/* 0x0c the strafe side */
-	int(__thiscall *GetOrbitSide)(cAICharControl *self);					/* 0x10 */
+	cAICharControl *(*Delete)(cAICharControl *self, byte flags);			/* 0x00 */
+	void(*Draw)(cAICharControl *self);						/* 0x04 */
+	int(*GetWalkDir)(cAICharControl *self);					/* 0x08 */
+	int(*Busy)(cAICharControl *self);						/* 0x0c the strafe side */
+	int(*GetOrbitSide)(cAICharControl *self);					/* 0x10 */
 	/* the frame: the checks of the AI, then the handler of the mode; 0 when the target is gone */
-	byte(__thiscall *Update)(cAICharControl *self, float dt);				/* 0x14 */
+	byte(*Update)(cAICharControl *self, float dt);				/* 0x14 */
 	byte (*SetMove)(cAICharControl *self, int mode, ...);					/* 0x18 */
-	void(__thiscall *Reset)(cAICharControl *self);						/* 0x1c */
-	void(__thiscall *SetHold)(cAICharControl *self, byte on);				/* 0x20 */
+	void(*Reset)(cAICharControl *self);						/* 0x1c */
+	void(*SetHold)(cAICharControl *self, byte on);				/* 0x20 */
 	/* the turn, walk, strafe and jump values of the control 0 */
-	void(__thiscall *Stop)(cAICharControl *self);						/* 0x24 */
-	byte(__thiscall *IsDirect)(cAICharControl *self);					/* 0x28 */
-	byte(__thiscall *IsDirect2)(cAICharControl *self);					/* 0x2c */
-	void(__thiscall *GetGoal)(cAICharControl *self, vec3_t *out);				/* 0x30 */
-	void(__thiscall *GetDest)(cAICharControl *self, vec3_t *out);				/* 0x34 */
+	void(*Stop)(cAICharControl *self);						/* 0x24 */
+	byte(*IsDirect)(cAICharControl *self);					/* 0x28 */
+	byte(*IsDirect2)(cAICharControl *self);					/* 0x2c */
+	void(*GetGoal)(cAICharControl *self, vec3_t *out);				/* 0x30 */
+	void(*GetDest)(cAICharControl *self, vec3_t *out);				/* 0x34 */
 	/* the corridor of the body from a to b free (the radius r) */
-	byte(__thiscall *TestPath)(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);	/* 0x38 */
-	byte(__thiscall *TestLine)(cAICharControl *self, const vec3_t *a, const vec3_t *b);		/* 0x3c */
-	byte(__thiscall *TestSides)(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);	/* 0x40 */
-	void(__thiscall *GetAvoidA)(cAICharControl *self, vec3_t *out);				/* 0x44 */
-	void(__thiscall *GetAvoidB)(cAICharControl *self, vec3_t *out);				/* 0x48 */
-	void(__thiscall *ClearAvoid)(cAICharControl *self);					/* 0x4c */
-	void(__thiscall *SetSpeed)(cAICharControl *self, float speed);				/* 0x50 */
-	void(__thiscall *RestartSlots)(cAICharControl *self);					/* 0x54 */
-	byte(__thiscall *IsBlocked)(cAICharControl *self);					/* 0x58 */
-	byte(__thiscall *GetE4)(cAICharControl *self);						/* 0x5c */
-	void *(__thiscall *GetAvoidEnt)(cAICharControl *self);					/* 0x60 */
-	void(__thiscall *Nop)(cAICharControl *self);						/* 0x64 */
+	byte(*TestPath)(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);	/* 0x38 */
+	byte(*TestLine)(cAICharControl *self, const vec3_t *a, const vec3_t *b);		/* 0x3c */
+	byte(*TestSides)(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);	/* 0x40 */
+	void(*GetAvoidA)(cAICharControl *self, vec3_t *out);				/* 0x44 */
+	void(*GetAvoidB)(cAICharControl *self, vec3_t *out);				/* 0x48 */
+	void(*ClearAvoid)(cAICharControl *self);					/* 0x4c */
+	void(*SetSpeed)(cAICharControl *self, float speed);				/* 0x50 */
+	void(*RestartSlots)(cAICharControl *self);					/* 0x54 */
+	byte(*IsBlocked)(cAICharControl *self);					/* 0x58 */
+	byte(*GetE4)(cAICharControl *self);						/* 0x5c */
+	void *(*GetAvoidEnt)(cAICharControl *self);					/* 0x60 */
+	void(*Nop)(cAICharControl *self);						/* 0x64 */
 	/* the point walked to is the last one before the end (none: no point) */
-	byte(__thiscall *AtPathEnd)(cAICharControl *self);					/* 0x68 */
-	byte(__thiscall *GoalAtStart)(cAICharControl *self);					/* 0x6c */
+	byte(*AtPathEnd)(cAICharControl *self);					/* 0x68 */
+	byte(*GoalAtStart)(cAICharControl *self);					/* 0x6c */
 	/* the target of a follow or away move gone: the event 3, 0 */
-	byte(__thiscall *CheckTarget)(cAICharControl *self);					/* 0x70 */
-	void(__thiscall *SetTurnSpeed)(cAICharControl *self, float speed);			/* 0x74 */
+	byte(*CheckTarget)(cAICharControl *self);					/* 0x70 */
+	void(*SetTurnSpeed)(cAICharControl *self, float speed);			/* 0x74 */
 	/* the strafe around a character at pos (the two sides of TryStrafe) */
-	byte(__thiscall *StrafeBack)(cAICharControl *self, const vec3_t *pos, const vec3_t *away, const vec3_t *dir,
+	byte(*StrafeBack)(cAICharControl *self, const vec3_t *pos, const vec3_t *away, const vec3_t *dir,
 		float dist, byte left, byte flag);						/* 0x78 */
-	byte(__thiscall *StrafeFwd)(cAICharControl *self, const vec3_t *pos, const vec3_t *away, const vec3_t *dir,
+	byte(*StrafeFwd)(cAICharControl *self, const vec3_t *pos, const vec3_t *away, const vec3_t *dir,
 		float dist, byte left, byte flag);						/* 0x7c */
-	byte(__thiscall *TryStrafe)(cAICharControl *self, int side, cEntity *e, byte a, float b, byte c, float d,
+	byte(*TryStrafe)(cAICharControl *self, int side, cEntity *e, byte a, float b, byte c, float d,
 		byte e2);									/* 0x80 */
-	byte(__thiscall *Facing)(cAICharControl *self, cEntity *e, vec3_t *toE, vec3_t *toGoal);	/* 0x84 */
-	byte(__thiscall *InWay)(cAICharControl *self, vec3_t dest, cEntity *e);			/* 0x88 */
-	byte(__thiscall *Near)(cAICharControl *self, cEntity *e);				/* 0x8c */
-	float(__thiscall *KeepDist)(cAICharControl *self, cEntity *e);				/* 0x90 */
-	float(__thiscall *StrafeDist)(cAICharControl *self, cEntity *e);				/* 0x94 */
-	byte(__thiscall *OnFloor)(cAICharControl *self, const vec3_t *p);			/* 0x98 */
-	byte(__thiscall *GoalAhead)(cAICharControl *self);					/* 0x9c */
-	byte(__thiscall *TestPathEnd)(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);	/* 0xa0 */
-	float(__thiscall *Dist)(cAICharControl *self, const vec3_t *a, const vec3_t *b);		/* 0xa4 */
-	float(__thiscall *DistSq)(cAICharControl *self, const vec3_t *a, const vec3_t *b);		/* 0xa8 */
-	void(__thiscall *Away)(cAICharControl *self, Nto1Node *target, byte flag);		/* 0xac */
-	byte(__thiscall *UpdateAway)(cAICharControl *self, float dt);				/* 0xb0 */
+	byte(*Facing)(cAICharControl *self, cEntity *e, vec3_t *toE, vec3_t *toGoal);	/* 0x84 */
+	byte(*InWay)(cAICharControl *self, vec3_t dest, cEntity *e);			/* 0x88 */
+	byte(*Near)(cAICharControl *self, cEntity *e);				/* 0x8c */
+	float(*KeepDist)(cAICharControl *self, cEntity *e);				/* 0x90 */
+	float(*StrafeDist)(cAICharControl *self, cEntity *e);				/* 0x94 */
+	byte(*OnFloor)(cAICharControl *self, const vec3_t *p);			/* 0x98 */
+	byte(*GoalAhead)(cAICharControl *self);					/* 0x9c */
+	byte(*TestPathEnd)(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);	/* 0xa0 */
+	float(*Dist)(cAICharControl *self, const vec3_t *a, const vec3_t *b);		/* 0xa4 */
+	float(*DistSq)(cAICharControl *self, const vec3_t *a, const vec3_t *b);		/* 0xa8 */
+	void(*Away)(cAICharControl *self, Nto1Node *target, byte flag);		/* 0xac */
+	byte(*UpdateAway)(cAICharControl *self, float dt);				/* 0xb0 */
 	/* the view near the way to the target: the event 6 */
-	void(__thiscall *AwayCheck)(cAICharControl *self);					/* 0xb4 */
+	void(*AwayCheck)(cAICharControl *self);					/* 0xb4 */
 	/* the walk back from the target while it comes near, none while another character sees it */
-	void(__thiscall *AwayWalk)(cAICharControl *self);					/* 0xb8 */
+	void(*AwayWalk)(cAICharControl *self);					/* 0xb8 */
 	/* e within ang of the back (the front) of the view, on the floor */
-	byte(__thiscall *Behind)(cAICharControl *self, cEntity *e, float ang);			/* 0xbc */
-	byte(__thiscall *InFront)(cAICharControl *self, cEntity *e, float ang);			/* 0xc0 */
-	byte(__thiscall *Route)(cAICharControl *self, const vec3_t *p, float dist, float speed, byte a, byte b);	/* 0xc4 */
-	void(__thiscall *SetDir)(cAICharControl *self, const vec3_t *dir);			/* 0xc8 */
-	byte(__thiscall *UpdateDir)(cAICharControl *self, float dt);				/* 0xcc */
+	byte(*Behind)(cAICharControl *self, cEntity *e, float ang);			/* 0xbc */
+	byte(*InFront)(cAICharControl *self, cEntity *e, float ang);			/* 0xc0 */
+	byte(*Route)(cAICharControl *self, const vec3_t *p, float dist, float speed, byte a, byte b);	/* 0xc4 */
+	void(*SetDir)(cAICharControl *self, const vec3_t *dir);			/* 0xc8 */
+	byte(*UpdateDir)(cAICharControl *self, float dt);				/* 0xcc */
 	/* the view near dir: the event 6 */
-	void(__thiscall *DirCheck)(cAICharControl *self);					/* 0xd0 */
+	void(*DirCheck)(cAICharControl *self);					/* 0xd0 */
 	/* the view turned to the goal (turnGain, turnStep) */
-	void(__thiscall *DirTurn)(cAICharControl *self);					/* 0xd4 */
-	void(__thiscall *CheckArrived)(cAICharControl *self);					/* 0xd8 */
+	void(*DirTurn)(cAICharControl *self);					/* 0xd4 */
+	void(*CheckArrived)(cAICharControl *self);					/* 0xd8 */
 	/* 0 (and the control stopped) when the next segment of the path is cut near the character */
-	byte(__thiscall *CanMove)(cAICharControl *self);					/* 0xdc */
-	byte(__thiscall *GoTo)(cAICharControl *self, const vec3_t *p, float dist, float speed);	/* 0xe0 */
-	byte(__thiscall *GoToDirect)(cAICharControl *self, const vec3_t *p, float dist, float speed);	/* 0xe4 */
-	byte(__thiscall *FindPath)(cAICharControl *self, const vec3_t *p);			/* 0xe8 */
+	byte(*CanMove)(cAICharControl *self);					/* 0xdc */
+	byte(*GoTo)(cAICharControl *self, const vec3_t *p, float dist, float speed);	/* 0xe0 */
+	byte(*GoToDirect)(cAICharControl *self, const vec3_t *p, float dist, float speed);	/* 0xe4 */
+	byte(*FindPath)(cAICharControl *self, const vec3_t *p);			/* 0xe8 */
 	/* the path is the line to p */
-	byte(__thiscall *DirectPath)(cAICharControl *self, const vec3_t *p);			/* 0xec */
+	byte(*DirectPath)(cAICharControl *self, const vec3_t *p);			/* 0xec */
 	/* p moved a random step while the way stays free */
-	void(__thiscall *StepGoal)(cAICharControl *self, vec3_t *p);				/* 0xf0 */
-	byte(__thiscall *UpdateGoTo)(cAICharControl *self, float dt);				/* 0xf4 */
-	byte(__thiscall *UpdateRoute)(cAICharControl *self, float dt);				/* 0xf8 */
-	byte(__thiscall *UpdateGoToDirect)(cAICharControl *self, float dt);			/* 0xfc */
+	void(*StepGoal)(cAICharControl *self, vec3_t *p);				/* 0xf0 */
+	byte(*UpdateGoTo)(cAICharControl *self, float dt);				/* 0xf4 */
+	byte(*UpdateRoute)(cAICharControl *self, float dt);				/* 0xf8 */
+	byte(*UpdateGoToDirect)(cAICharControl *self, float dt);			/* 0xfc */
 	/* the goal on the first of NumPointsSearchSegmentCharAI points from a to b the body reaches */
-	byte(__thiscall *GoalOnLine)(cAICharControl *self, const vec3_t *a, const vec3_t *b);	/* 0x100 */
+	byte(*GoalOnLine)(cAICharControl *self, const vec3_t *a, const vec3_t *b);	/* 0x100 */
 	/* near the goal (or with the goal lost) the goal on to the next point of the path, or between */
-	void(__thiscall *NextGoal)(cAICharControl *self);					/* 0x104 */
+	void(*NextGoal)(cAICharControl *self);					/* 0x104 */
 	/* the goal on to the last point of the path the body reaches, or between it and the next */
-	void(__thiscall *NextGoalPath)(cAICharControl *self);					/* 0x108 */
+	void(*NextGoalPath)(cAICharControl *self);					/* 0x108 */
 	/* the goal on along the path while the way is cut; the path searched again when no point is free */
-	byte(__thiscall *UpdatePath)(cAICharControl *self);					/* 0x10c */
+	byte(*UpdatePath)(cAICharControl *self);					/* 0x10c */
 	/* at the end of a path that does not reach dest: the line to dest (stuck, pathRes 2), 0 then */
-	byte(__thiscall *CheckPathEnd)(cAICharControl *self);					/* 0x110 */
-	byte(__thiscall *UpdateRoutePath)(cAICharControl *self);				/* 0x114 */
-	void(__thiscall *Turn)(cAICharControl *self);						/* 0x118 */
+	byte(*CheckPathEnd)(cAICharControl *self);					/* 0x110 */
+	byte(*UpdateRoutePath)(cAICharControl *self);				/* 0x114 */
+	void(*Turn)(cAICharControl *self);						/* 0x118 */
 	/* the strafe around the characters in the way (slotStrafe) */
-	void(__thiscall *Strafe)(cAICharControl *self);						/* 0x11c */
+	void(*Strafe)(cAICharControl *self);						/* 0x11c */
 	/* the characters near: link to the first one in the way that can be passed */
-	byte(__thiscall *FindAvoid)(cAICharControl *self);					/* 0x120 */
-	byte(__thiscall *Avoid)(cAICharControl *self, cEntity *e, byte *found);			/* 0x124 */
+	byte(*FindAvoid)(cAICharControl *self);					/* 0x120 */
+	byte(*Avoid)(cAICharControl *self, cEntity *e, byte *found);			/* 0x124 */
 	/* the strafe around the linked character (or the one the character ran into) */
-	void(__thiscall *UpdateAvoid)(cAICharControl *self);					/* 0x128 */
+	void(*UpdateAvoid)(cAICharControl *self);					/* 0x128 */
 	/* walking characters within MarginDetectCollCharAI */
-	byte(__thiscall *CharsNear)(cAICharControl *self);					/* 0x12c */
-	byte(__thiscall *SideBlocked)(cAICharControl *self, int side);				/* 0x130 */
+	byte(*CharsNear)(cAICharControl *self);					/* 0x12c */
+	byte(*SideBlocked)(cAICharControl *self, int side);				/* 0x130 */
 	/* the unit vector to the side (out returned) */
-	vec3_t *(__thiscall *SideDir)(cAICharControl *self, vec3_t *out, int side);		/* 0x134 */
-	void(__thiscall *WalkFwd)(cAICharControl *self);					/* 0x138 */
-	byte(__thiscall *CheckGoTo)(cAICharControl *self);					/* 0x13c */
-	byte(__thiscall *CheckRoute)(cAICharControl *self);					/* 0x140 */
-	byte(__thiscall *CheckFollow)(cAICharControl *self);					/* 0x144 */
-	byte(__thiscall *FindRoute)(cAICharControl *self);					/* 0x148 */
+	vec3_t *(*SideDir)(cAICharControl *self, vec3_t *out, int side);		/* 0x134 */
+	void(*WalkFwd)(cAICharControl *self);					/* 0x138 */
+	byte(*CheckGoTo)(cAICharControl *self);					/* 0x13c */
+	byte(*CheckRoute)(cAICharControl *self);					/* 0x140 */
+	byte(*CheckFollow)(cAICharControl *self);					/* 0x144 */
+	byte(*FindRoute)(cAICharControl *self);					/* 0x148 */
 	/* the view turned to the target (or along avoidDir) */
-	void(__thiscall *TurnFollow)(cAICharControl *self);					/* 0x14c */
-	byte(__thiscall *Follow)(cAICharControl *self, Nto1Node *target, float near, float far, float speed);	/* 0x150 */
-	byte(__thiscall *UpdateFollowMode)(cAICharControl *self, float dt);			/* 0x154 */
+	void(*TurnFollow)(cAICharControl *self);					/* 0x14c */
+	byte(*Follow)(cAICharControl *self, Nto1Node *target, float near, float far, float speed);	/* 0x150 */
+	byte(*UpdateFollowMode)(cAICharControl *self, float dt);			/* 0x154 */
 	/* the strafe of CheckWait instead of the walk; 0 when there is none */
-	byte(__thiscall *Wait)(cAICharControl *self, float dt);					/* 0x158 */
+	byte(*Wait)(cAICharControl *self, float dt);					/* 0x158 */
 	/* the strafe while the target goes out of sight (waitTime up to TimeStrafeLostObjCharAI) */
-	byte(__thiscall *CheckWait)(cAICharControl *self);					/* 0x15c */
-	void(__thiscall *StrafeWalk)(cAICharControl *self);					/* 0x160 */
-	byte(__thiscall *Vf89)(cAICharControl *self);						/* 0x164 0 */
-	void(__thiscall *Strafe2)(cAICharControl *self);					/* 0x168 */
-	void(__thiscall *Walk)(cAICharControl *self);						/* 0x16c */
-	void(__thiscall *Walk2)(cAICharControl *self);						/* 0x170 */
-	byte(__thiscall *UpdateFollow)(cAICharControl *self);					/* 0x174 */
-	byte(__thiscall *UpdateFollowB)(cAICharControl *self);					/* 0x178 */
-	byte(__thiscall *FollowPath)(cAICharControl *self, Nto1Node *target, float near, float far, float speed);	/* 0x17c */
-	byte(__thiscall *UpdateFollowPath)(cAICharControl *self, float dt);			/* 0x180 */
+	byte(*CheckWait)(cAICharControl *self);					/* 0x15c */
+	void(*StrafeWalk)(cAICharControl *self);					/* 0x160 */
+	byte(*Vf89)(cAICharControl *self);						/* 0x164 0 */
+	void(*Strafe2)(cAICharControl *self);					/* 0x168 */
+	void(*Walk)(cAICharControl *self);						/* 0x16c */
+	void(*Walk2)(cAICharControl *self);						/* 0x170 */
+	byte(*UpdateFollow)(cAICharControl *self);					/* 0x174 */
+	byte(*UpdateFollowB)(cAICharControl *self);					/* 0x178 */
+	byte(*FollowPath)(cAICharControl *self, Nto1Node *target, float near, float far, float speed);	/* 0x17c */
+	byte(*UpdateFollowPath)(cAICharControl *self, float dt);			/* 0x180 */
 	/* the strafe around the target while it looks at the character (orbitSide) */
-	void(__thiscall *Orbit)(cAICharControl *self);						/* 0x184 */
+	void(*Orbit)(cAICharControl *self);						/* 0x184 */
 	/* the side of the orbit at dist from the target */
-	byte(__thiscall *StartOrbit)(cAICharControl *self, float dist);				/* 0x188 */
-	void(__thiscall *Stop2)(cAICharControl *self);						/* 0x18c */
+	byte(*StartOrbit)(cAICharControl *self, float dist);				/* 0x188 */
+	void(*Stop2)(cAICharControl *self);						/* 0x18c */
 } cAICharControlVtbl;
 SD_OFFSET(cAICharControlVtbl, Update, 0x14);
 SD_OFFSET(cAICharControlVtbl, SetMove, 0x18);
@@ -219,9 +219,9 @@ SD_SIZE(cAICharControlVtbl, 100 * 4);
 /* the slots the 2D and the 3D control add */
 typedef struct cAICharControl2DVtbl {
 	cAICharControlVtbl base;
-	byte(__thiscall *FloorAhead)(cAICharControl *self, const vec3_t *p);			/* 0x190 */
-	byte(__thiscall *FloorAt)(cAICharControl *self, const vec3_t *p, vec3_t *out);		/* 0x194 */
-	byte(__thiscall *TestStep)(cAICharControl *self, const vec3_t *a, const vec3_t *b, const vec3_t *c, float r);	/* 0x198 */
+	byte(*FloorAhead)(cAICharControl *self, const vec3_t *p);			/* 0x190 */
+	byte(*FloorAt)(cAICharControl *self, const vec3_t *p, vec3_t *out);		/* 0x194 */
+	byte(*TestStep)(cAICharControl *self, const vec3_t *a, const vec3_t *b, const vec3_t *c, float r);	/* 0x198 */
 } cAICharControl2DVtbl;
 SD_SIZE(cAICharControl2DVtbl, 103 * 4);
 
@@ -464,97 +464,97 @@ static inline int AICC_Seg(vec3_t *p, vec3_t *q, const vec3_t *a, const vec3_t *
 }
 
 /* ---- the base part, AI/AICharControl.cpp (src/game/AI/ICharControl.c) ---- */
-void __thiscall cAICharControl_ClearAvoid(cAICharControl *self);
+void cAICharControl_ClearAvoid(cAICharControl *self);
 /* the strafe around e (a character in the way): 1 when the control strafes, *found 1 when e is in the way */
-byte __thiscall cAICharControl_Avoid(cAICharControl *self, cEntity *e, byte *found);
-byte __thiscall cAICharControl_FollowPath(cAICharControl *self, Nto1Node *target, float near, float far, float speed);
-byte __thiscall cAICharControl_Follow(cAICharControl *self, Nto1Node *target, float near, float far, float speed);
+byte cAICharControl_Avoid(cAICharControl *self, cEntity *e, byte *found);
+byte cAICharControl_FollowPath(cAICharControl *self, Nto1Node *target, float near, float far, float speed);
+byte cAICharControl_Follow(cAICharControl *self, Nto1Node *target, float near, float far, float speed);
 /* the move (AICC_, the arguments by mode, floats as double); 0 if it was refused */
 byte cAICharControl_SetMove(cAICharControl *self, int mode, ...);
-void __thiscall cAICharControl_Away(cAICharControl *self, Nto1Node *target, byte flag);
+void cAICharControl_Away(cAICharControl *self, Nto1Node *target, byte flag);
 /* the result of FindRoute */
-byte __thiscall cAICharControl_Route(cAICharControl *self, const vec3_t *p, float dist, float speed, byte a, byte b);
+byte cAICharControl_Route(cAICharControl *self, const vec3_t *p, float dist, float speed, byte a, byte b);
 /* the goal 10000 ahead along dir */
-void __thiscall cAICharControl_SetDir(cAICharControl *self, const vec3_t *dir);
-void __thiscall cAICharControl_Nop(cAICharControl *self);
-byte __thiscall cAICharControl_GoTo(cAICharControl *self, const vec3_t *p, float dist, float speed);
-byte __thiscall cAICharControl_GoToDirect(cAICharControl *self, const vec3_t *p, float dist, float speed);
-void __thiscall cAICharControl_SetSpeed(cAICharControl *self, float speed);
-void __thiscall cAICharControl_SetTurnSpeed(cAICharControl *self, float speed);
-void __thiscall cAICharControl_Stop2(cAICharControl *self);
+void cAICharControl_SetDir(cAICharControl *self, const vec3_t *dir);
+void cAICharControl_Nop(cAICharControl *self);
+byte cAICharControl_GoTo(cAICharControl *self, const vec3_t *p, float dist, float speed);
+byte cAICharControl_GoToDirect(cAICharControl *self, const vec3_t *p, float dist, float speed);
+void cAICharControl_SetSpeed(cAICharControl *self, float speed);
+void cAICharControl_SetTurnSpeed(cAICharControl *self, float speed);
+void cAICharControl_Stop2(cAICharControl *self);
 /* the control stopped, dest and goal -FLT_MAX */
-void __thiscall cAICharControl_Reset(cAICharControl *self);
-byte __thiscall cAICharControl_IsBlocked(cAICharControl *self);
-byte __thiscall cAICharControl_GetAvoidFound(cAICharControl *self);
-void __thiscall cAICharControl_SetHold(cAICharControl *self, byte on);
+void cAICharControl_Reset(cAICharControl *self);
+byte cAICharControl_IsBlocked(cAICharControl *self);
+byte cAICharControl_GetAvoidFound(cAICharControl *self);
+void cAICharControl_SetHold(cAICharControl *self, byte on);
 
 /* construction, the frame and the slots of the first part of the file */
-cAICharControl *__thiscall cAICharControl_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg);
-void __fastcall cAICharControl_dtor(cAICharControl *self);
-cAICharControl *__thiscall cAICharControl_Delete(cAICharControl *self, byte flags);
+cAICharControl *cAICharControl_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg);
+void cAICharControl_dtor(cAICharControl *self);
+cAICharControl *cAICharControl_Delete(cAICharControl *self, byte flags);
 /* the segment list (0x20 byte nodes) emptied, and with its free nodes deleted */
-void __fastcall DListSeg_Clear(cNWSegList *list);
-void __fastcall DListSeg_Free(cNWSegList *list);
+void DListSeg_Clear(cNWSegList *list);
+void DListSeg_Free(cNWSegList *list);
 /* the components equal (cdecl, al) */
 byte Vec3_Equal(const vec3_t *a, const vec3_t *b);
-byte __thiscall cAICharControl_CheckTarget(cAICharControl *self);
-byte __thiscall cAICharControl_CheckPathEnd(cAICharControl *self);
-byte __thiscall cAICharControl_UpdatePath(cAICharControl *self);
-byte __thiscall cAICharControl_UpdateRoutePath(cAICharControl *self);
-byte __thiscall cAICharControl_UpdateFollowB(cAICharControl *self);
+byte cAICharControl_CheckTarget(cAICharControl *self);
+byte cAICharControl_CheckPathEnd(cAICharControl *self);
+byte cAICharControl_UpdatePath(cAICharControl *self);
+byte cAICharControl_UpdateRoutePath(cAICharControl *self);
+byte cAICharControl_UpdateFollowB(cAICharControl *self);
 /* the native of the sphere test of CharsNear and FindAvoid (cdecl) */
 void AICC_NearChar(cAbstractFile *params);
-byte __thiscall cAICharControl_CharsNear(cAICharControl *self);
-void __thiscall cAICharControl_AwayCheck(cAICharControl *self);
-void __thiscall cAICharControl_DirCheck(cAICharControl *self);
-byte __thiscall cAICharControl_CanMove(cAICharControl *self);
-byte __thiscall cAICharControl_Update(cAICharControl *self, float dt);
-void __thiscall cAICharControl_TurnFollow(cAICharControl *self);
-byte __thiscall cAICharControl_CheckRoute(cAICharControl *self);
-void __thiscall cAICharControl_DirTurn(cAICharControl *self);
-byte __thiscall cAICharControl_CheckGoTo(cAICharControl *self);
-byte __thiscall cAICharControl_CheckFollow(cAICharControl *self);
-void __thiscall cAICharControl_UpdateAvoid(cAICharControl *self);
-void __thiscall cAICharControl_Strafe2(cAICharControl *self);
-void __thiscall cAICharControl_StrafeWalk(cAICharControl *self);
-byte __thiscall cAICharControl_FindAvoid(cAICharControl *self);
-void __thiscall cAICharControl_Strafe(cAICharControl *self);
-void __thiscall cAICharControl_Walk2(cAICharControl *self);
-void __thiscall cAICharControl_AwayWalk(cAICharControl *self);
-void __thiscall cAICharControl_WalkFwd(cAICharControl *self);
-byte __thiscall cAICharControl_CheckWait(cAICharControl *self);
-void __thiscall cAICharControl_Orbit(cAICharControl *self);
-byte __thiscall cAICharControl_StartOrbit(cAICharControl *self, float dist);
-void __thiscall cAICharControl_Draw(cAICharControl *self);
-byte __thiscall cAICharControl_DirectPath(cAICharControl *self, const vec3_t *p);
-void __thiscall cAICharControl_Stop(cAICharControl *self);
-byte __thiscall cAICharControl_Vf89(cAICharControl *self);
-void __thiscall cAICharControl_RestartSlots(cAICharControl *self);
-int __thiscall cAICharControl_GetWalkDir(cAICharControl *self);
-void *__thiscall cAICharControl_GetAvoidEnt(cAICharControl *self);
-void __thiscall cAICharControl_NextGoal(cAICharControl *self);
-void __thiscall cAICharControl_NextGoalPath(cAICharControl *self);
-void __thiscall cAICharControl_GetGoal(cAICharControl *self, vec3_t *out);
-void __thiscall cAICharControl_GetDest(cAICharControl *self, vec3_t *out);
-byte __thiscall cAICharControl_GoalOnLine(cAICharControl *self, const vec3_t *a, const vec3_t *b);
-void __thiscall cAICharControl_GetAvoidB(cAICharControl *self, vec3_t *out);
-void __thiscall cAICharControl_GetAvoidA(cAICharControl *self, vec3_t *out);
-int __thiscall cAICharControl_Busy(cAICharControl *self);
-int __thiscall cAICharControl_GetOrbitSide(cAICharControl *self);
-vec3_t *__thiscall cAICharControl_SideDir(cAICharControl *self, vec3_t *out, int side);
-byte __thiscall cAICharControl_GoalAtStart(cAICharControl *self);
-byte __thiscall cAICharControl_AtPathEnd(cAICharControl *self);
-byte __thiscall cAICharControl_IsDirect(cAICharControl *self);
-byte __thiscall cAICharControl_UpdateFollowPath(cAICharControl *self, float dt);
-byte __thiscall cAICharControl_UpdateFollowMode(cAICharControl *self, float dt);
-byte __thiscall cAICharControl_UpdateAway(cAICharControl *self, float dt);
-byte __thiscall cAICharControl_UpdateRoute(cAICharControl *self, float dt);
-byte __thiscall cAICharControl_UpdateDir(cAICharControl *self, float dt);
-byte __thiscall cAICharControl_UpdateGoTo(cAICharControl *self, float dt);
-byte __thiscall cAICharControl_UpdateGoToDirect(cAICharControl *self, float dt);
-byte __thiscall cAICharControl_Wait(cAICharControl *self, float dt);
+byte cAICharControl_CharsNear(cAICharControl *self);
+void cAICharControl_AwayCheck(cAICharControl *self);
+void cAICharControl_DirCheck(cAICharControl *self);
+byte cAICharControl_CanMove(cAICharControl *self);
+byte cAICharControl_Update(cAICharControl *self, float dt);
+void cAICharControl_TurnFollow(cAICharControl *self);
+byte cAICharControl_CheckRoute(cAICharControl *self);
+void cAICharControl_DirTurn(cAICharControl *self);
+byte cAICharControl_CheckGoTo(cAICharControl *self);
+byte cAICharControl_CheckFollow(cAICharControl *self);
+void cAICharControl_UpdateAvoid(cAICharControl *self);
+void cAICharControl_Strafe2(cAICharControl *self);
+void cAICharControl_StrafeWalk(cAICharControl *self);
+byte cAICharControl_FindAvoid(cAICharControl *self);
+void cAICharControl_Strafe(cAICharControl *self);
+void cAICharControl_Walk2(cAICharControl *self);
+void cAICharControl_AwayWalk(cAICharControl *self);
+void cAICharControl_WalkFwd(cAICharControl *self);
+byte cAICharControl_CheckWait(cAICharControl *self);
+void cAICharControl_Orbit(cAICharControl *self);
+byte cAICharControl_StartOrbit(cAICharControl *self, float dist);
+void cAICharControl_Draw(cAICharControl *self);
+byte cAICharControl_DirectPath(cAICharControl *self, const vec3_t *p);
+void cAICharControl_Stop(cAICharControl *self);
+byte cAICharControl_Vf89(cAICharControl *self);
+void cAICharControl_RestartSlots(cAICharControl *self);
+int cAICharControl_GetWalkDir(cAICharControl *self);
+void *cAICharControl_GetAvoidEnt(cAICharControl *self);
+void cAICharControl_NextGoal(cAICharControl *self);
+void cAICharControl_NextGoalPath(cAICharControl *self);
+void cAICharControl_GetGoal(cAICharControl *self, vec3_t *out);
+void cAICharControl_GetDest(cAICharControl *self, vec3_t *out);
+byte cAICharControl_GoalOnLine(cAICharControl *self, const vec3_t *a, const vec3_t *b);
+void cAICharControl_GetAvoidB(cAICharControl *self, vec3_t *out);
+void cAICharControl_GetAvoidA(cAICharControl *self, vec3_t *out);
+int cAICharControl_Busy(cAICharControl *self);
+int cAICharControl_GetOrbitSide(cAICharControl *self);
+vec3_t *cAICharControl_SideDir(cAICharControl *self, vec3_t *out, int side);
+byte cAICharControl_GoalAtStart(cAICharControl *self);
+byte cAICharControl_AtPathEnd(cAICharControl *self);
+byte cAICharControl_IsDirect(cAICharControl *self);
+byte cAICharControl_UpdateFollowPath(cAICharControl *self, float dt);
+byte cAICharControl_UpdateFollowMode(cAICharControl *self, float dt);
+byte cAICharControl_UpdateAway(cAICharControl *self, float dt);
+byte cAICharControl_UpdateRoute(cAICharControl *self, float dt);
+byte cAICharControl_UpdateDir(cAICharControl *self, float dt);
+byte cAICharControl_UpdateGoTo(cAICharControl *self, float dt);
+byte cAICharControl_UpdateGoToDirect(cAICharControl *self, float dt);
+byte cAICharControl_Wait(cAICharControl *self, float dt);
 /* the control of the AI of a character (0x19c of cAIChar) */
-cAICharControl *__thiscall cAIChar_GetControl(cAIChar *ai);
+cAICharControl *cAIChar_GetControl(cAIChar *ai);
 
 #define CAICHARCONTROL_VFTABLE GAME_VFTABLE(cAICharControl_vftable)
 
@@ -582,111 +582,111 @@ cAICharControl *__thiscall cAIChar_GetControl(cAIChar *ai);
 
 /* the A* search on CNodesWorld2D (AI/AStar2D.cpp, not in C): the path from pos to dest into path; noPath and
  * reach tell the AI why there is none, res the kind of the path */
-byte __thiscall CAStar2D_FindPath(void *astar, cNWVecList *path, const vec3_t *dest, const vec3_t *pos, float r,
+byte CAStar2D_FindPath(void *astar, cNWVecList *path, const vec3_t *dest, const vec3_t *pos, float r,
 	float dist, float h1, float h2, int soft, byte *noPath, byte *reach, int *res);
 /* the points of visibility the body sees from pos (CNodesWorld2D_GetPointsVis) */
-void __thiscall CAStar2D_GetPointsVis(void *astar, const vec3_t *pos, const vec3_t **list, int max, int *count,
+void CAStar2D_GetPointsVis(void *astar, const vec3_t *pos, const vec3_t **list, int max, int *count,
 	float r, float h1, float h2);
 
 /* ---- AI/AICharControl2D.cpp (src/game/AI/ICharControl2D.c) ---- */
-cAICharControl *__thiscall cAICharControl2D_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg);
-void __fastcall cAICharControl2D_dtor(cAICharControl2D *self);
-cAICharControl2D *__thiscall cAICharControl2D_Delete(cAICharControl2D *self, byte flags);
-void __thiscall cAICharControl2D_Draw(cAICharControl2D *self);
+cAICharControl *cAICharControl2D_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg);
+void cAICharControl2D_dtor(cAICharControl2D *self);
+cAICharControl2D *cAICharControl2D_Delete(cAICharControl2D *self, byte flags);
+void cAICharControl2D_Draw(cAICharControl2D *self);
 /* toE and toGoal the ways on the floor to hitEnt and to the goal (back: from the goal); 1 below 90 degrees */
-byte __thiscall cAICharControl2D_Facing(cAICharControl2D *self, cEntity *hitEnt, vec3_t *toE, vec3_t *toGoal);
-byte __thiscall cAICharControl2D_TestLine(cAICharControl2D *self, const vec3_t *a, const vec3_t *b);
+byte cAICharControl2D_Facing(cAICharControl2D *self, cEntity *hitEnt, vec3_t *toE, vec3_t *toGoal);
+byte cAICharControl2D_TestLine(cAICharControl2D *self, const vec3_t *a, const vec3_t *b);
 /* the way of twice the radius to the side not free */
-byte __thiscall cAICharControl2D_SideBlocked(cAICharControl2D *self, int side);
+byte cAICharControl2D_SideBlocked(cAICharControl2D *self, int side);
 /* the follow of the target: straight while the way is free, else along the path; 0 when no path is found */
-byte __thiscall cAICharControl2D_UpdateFollow(cAICharControl2D *self);
+byte cAICharControl2D_UpdateFollow(cAICharControl2D *self);
 /* at the end of the path: the event 2 (arrived), 4 (near), else 5 */
-void __thiscall cAICharControl2D_CheckArrived(cAICharControl2D *self);
+void cAICharControl2D_CheckArrived(cAICharControl2D *self);
 /* the turn of the control to the goal (or along avoidDir) */
-void __thiscall cAICharControl2D_Turn(cAICharControl2D *self);
-void __thiscall cAICharControl2D_Walk(cAICharControl2D *self);
-byte __thiscall cAICharControl2D_FindPath(cAICharControl2D *self, const vec3_t *p);
-byte __thiscall cAICharControl2D_FindRoute(cAICharControl2D *self);
-float __thiscall cAICharControl2D_Dist(cAICharControl2D *self, const vec3_t *a, const vec3_t *b);
-float __thiscall cAICharControl2D_DistSq(cAICharControl2D *self, const vec3_t *a, const vec3_t *b);
+void cAICharControl2D_Turn(cAICharControl2D *self);
+void cAICharControl2D_Walk(cAICharControl2D *self);
+byte cAICharControl2D_FindPath(cAICharControl2D *self, const vec3_t *p);
+byte cAICharControl2D_FindRoute(cAICharControl2D *self);
+float cAICharControl2D_Dist(cAICharControl2D *self, const vec3_t *a, const vec3_t *b);
+float cAICharControl2D_DistSq(cAICharControl2D *self, const vec3_t *a, const vec3_t *b);
 /* the distance to keep from hitEnt (the radii and DistShirkCharAI) */
-float __thiscall cAICharControl2D_KeepDist(cAICharControl2D *self, cEntity *hitEnt);
+float cAICharControl2D_KeepDist(cAICharControl2D *self, cEntity *hitEnt);
 /* the distance on the floor to hitEnt plus MarginCollCharAI */
-float __thiscall cAICharControl2D_StrafeDist(cAICharControl2D *self, cEntity *hitEnt);
-byte __thiscall cAICharControl2D_InFront(cAICharControl2D *self, cEntity *e, float ang);
-byte __thiscall cAICharControl2D_Behind(cAICharControl2D *self, cEntity *e, float ang);
+float cAICharControl2D_StrafeDist(cAICharControl2D *self, cEntity *hitEnt);
+byte cAICharControl2D_InFront(cAICharControl2D *self, cEntity *e, float ang);
+byte cAICharControl2D_Behind(cAICharControl2D *self, cEntity *e, float ang);
 /* the angle at dest between the character and the point of the path below pi / 8 */
-byte __thiscall cAICharControl2D_GoalAhead(cAICharControl2D *self);
+byte cAICharControl2D_GoalAhead(cAICharControl2D *self);
 /* a point of visibility of the graph seen from p */
-byte __thiscall cAICharControl2D_OnFloor(cAICharControl2D *self, const vec3_t *p);
+byte cAICharControl2D_OnFloor(cAICharControl2D *self, const vec3_t *p);
 /* e further than the distance to keep plus 1 */
-byte __thiscall cAICharControl2D_Near(cAICharControl2D *self, cEntity *e);
+byte cAICharControl2D_Near(cAICharControl2D *self, cEntity *e);
 /* dest within the distance to keep from hitEnt */
-byte __thiscall cAICharControl2D_InWay(cAICharControl2D *self, vec3_t dest, cEntity *hitEnt);
+byte cAICharControl2D_InWay(cAICharControl2D *self, vec3_t dest, cEntity *hitEnt);
 /* the corridor of the body from the floor below a to the floor below b free: the line between them raised, and 7
  * lines of the length FactorDistTestColCharAI * radius around it (to the sides, up, the diagonals), then
  * FloorAhead(b); the corridor into debugSegs. To dest the test of TestPathEnd */
-byte __thiscall cAICharControl2D_TestPath(cAICharControl2D *self, const vec3_t *a, const vec3_t *b, float r);
+byte cAICharControl2D_TestPath(cAICharControl2D *self, const vec3_t *a, const vec3_t *b, float r);
 /* TestPath with the 7 lines aimed at b, the step of a forward walk (TestStep with r), then FloorAhead(b) */
-byte __thiscall cAICharControl2D_TestPathEnd(cAICharControl2D *self, const vec3_t *a, const vec3_t *b, float r);
+byte cAICharControl2D_TestPathEnd(cAICharControl2D *self, const vec3_t *a, const vec3_t *b, float r);
 /* the 7 lines around a along the way from b to c (at most the radius plus 5 long); r not used */
-byte __thiscall cAICharControl2D_TestStep(cAICharControl2D *self, const vec3_t *a, const vec3_t *b, const vec3_t *c,
+byte cAICharControl2D_TestStep(cAICharControl2D *self, const vec3_t *a, const vec3_t *b, const vec3_t *c,
 	float r);
 /* the corridor of the walk back from a to b: 5 lines of the length FactorDistTestColBackCharAI * radius around
  * the line between the floors, back along it (not down); r not used */
-byte __thiscall cAICharControl2D_TestSides(cAICharControl2D *self, const vec3_t *a, const vec3_t *b, float r);
-byte __thiscall cAICharControl2D_FloorAhead(cAICharControl2D *self, const vec3_t *p);
+byte cAICharControl2D_TestSides(cAICharControl2D *self, const vec3_t *a, const vec3_t *b, float r);
+byte cAICharControl2D_FloorAhead(cAICharControl2D *self, const vec3_t *p);
 /* the floor below p raised by the floor distance of the character into out; 0 (out = p) without one */
-byte __thiscall cAICharControl2D_FloorAt(cAICharControl2D *self, const vec3_t *p, vec3_t *out);
-void __thiscall cAICharControl2D_StepGoal(cAICharControl2D *self, vec3_t *p);
-byte __thiscall cAICharControl2D_TryStrafe(cAICharControl2D *self, int side, cEntity *hitEnt, byte back, float keep,
+byte cAICharControl2D_FloorAt(cAICharControl2D *self, const vec3_t *p, vec3_t *out);
+void cAICharControl2D_StepGoal(cAICharControl2D *self, vec3_t *p);
+byte cAICharControl2D_TryStrafe(cAICharControl2D *self, int side, cEntity *hitEnt, byte back, float keep,
 	byte fwd, float sd, byte e2);
-byte __thiscall cAICharControl2D_StrafeBack(cAICharControl2D *self, const vec3_t *pos, const vec3_t *away,
+byte cAICharControl2D_StrafeBack(cAICharControl2D *self, const vec3_t *pos, const vec3_t *away,
 	const vec3_t *dir, float dist, byte left, byte flag);
-byte __thiscall cAICharControl2D_StrafeFwd(cAICharControl2D *self, const vec3_t *pos, const vec3_t *away,
+byte cAICharControl2D_StrafeFwd(cAICharControl2D *self, const vec3_t *pos, const vec3_t *away,
 	const vec3_t *dir, float dist, byte left, byte flag);
 
 /* CAStar_FindPath and CAStar_GetPointsVis (the same arguments on CNodesWorld): nodesworld.h */
 
 /* ---- AI/AICharControl3D.cpp (src/game/AI/ICharControl3D.c): the slots as in 2D, in all three axes ---- */
-cAICharControl *__thiscall cAICharControl3D_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg);
-void __fastcall cAICharControl3D_dtor(cAICharControl3D *self);
-cAICharControl3D *__thiscall cAICharControl3D_Delete(cAICharControl3D *self, byte flags);
-void __thiscall cAICharControl3D_Draw(cAICharControl3D *self);
-byte __thiscall cAICharControl3D_Facing(cAICharControl3D *self, cEntity *hitEnt, vec3_t *toE, vec3_t *toGoal);
+cAICharControl *cAICharControl3D_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg);
+void cAICharControl3D_dtor(cAICharControl3D *self);
+cAICharControl3D *cAICharControl3D_Delete(cAICharControl3D *self, byte flags);
+void cAICharControl3D_Draw(cAICharControl3D *self);
+byte cAICharControl3D_Facing(cAICharControl3D *self, cEntity *hitEnt, vec3_t *toE, vec3_t *toGoal);
 /* the segment free of the level */
-byte __thiscall cAICharControl3D_TestLine(cAICharControl3D *self, const vec3_t *a, const vec3_t *b);
+byte cAICharControl3D_TestLine(cAICharControl3D *self, const vec3_t *a, const vec3_t *b);
 /* the segment a b free and 8 lines around it from a: along it (at most FactorDistTestColCharAI * radius long),
  * aimed at b (TestPathEnd); the lines back from a (at most the radius plus 5) for TestSides. The corridor into
  * debugSegs. TestPath to dest is TestPathEnd */
-byte __thiscall cAICharControl3D_TestPath(cAICharControl3D *self, const vec3_t *a, const vec3_t *b, float r);
-byte __thiscall cAICharControl3D_TestPathEnd(cAICharControl3D *self, const vec3_t *a, const vec3_t *b, float r);
-byte __thiscall cAICharControl3D_TestSides(cAICharControl3D *self, const vec3_t *a, const vec3_t *b, float r);
+byte cAICharControl3D_TestPath(cAICharControl3D *self, const vec3_t *a, const vec3_t *b, float r);
+byte cAICharControl3D_TestPathEnd(cAICharControl3D *self, const vec3_t *a, const vec3_t *b, float r);
+byte cAICharControl3D_TestSides(cAICharControl3D *self, const vec3_t *a, const vec3_t *b, float r);
 /* slot 100 of the 3D control: the 8 lines around a along the way to b (at most the radius plus 5); r not used */
-byte __thiscall cAICharControl3D_TestStep(cAICharControl3D *self, const vec3_t *a, const vec3_t *b, float r);
+byte cAICharControl3D_TestStep(cAICharControl3D *self, const vec3_t *a, const vec3_t *b, float r);
 /* the way of 1.5 radius to the side (3 up, 4 down) not free */
-byte __thiscall cAICharControl3D_SideBlocked(cAICharControl3D *self, int side);
-byte __thiscall cAICharControl3D_UpdateFollow(cAICharControl3D *self);
-void __thiscall cAICharControl3D_CheckArrived(cAICharControl3D *self);
-void __thiscall cAICharControl3D_Turn(cAICharControl3D *self);
+byte cAICharControl3D_SideBlocked(cAICharControl3D *self, int side);
+byte cAICharControl3D_UpdateFollow(cAICharControl3D *self);
+void cAICharControl3D_CheckArrived(cAICharControl3D *self);
+void cAICharControl3D_Turn(cAICharControl3D *self);
 /* walkDir from the distance to the target alone */
-void __thiscall cAICharControl3D_Walk(cAICharControl3D *self);
-byte __thiscall cAICharControl3D_FindPath(cAICharControl3D *self, const vec3_t *p);
-byte __thiscall cAICharControl3D_FindRoute(cAICharControl3D *self);
-float __thiscall cAICharControl3D_Dist(cAICharControl3D *self, const vec3_t *a, const vec3_t *b);
-float __thiscall cAICharControl3D_DistSq(cAICharControl3D *self, const vec3_t *a, const vec3_t *b);
+void cAICharControl3D_Walk(cAICharControl3D *self);
+byte cAICharControl3D_FindPath(cAICharControl3D *self, const vec3_t *p);
+byte cAICharControl3D_FindRoute(cAICharControl3D *self);
+float cAICharControl3D_Dist(cAICharControl3D *self, const vec3_t *a, const vec3_t *b);
+float cAICharControl3D_DistSq(cAICharControl3D *self, const vec3_t *a, const vec3_t *b);
 /* the 2D distance to keep, at most the distance to hitEnt plus 10 */
-float __thiscall cAICharControl3D_KeepDist(cAICharControl3D *self, cEntity *hitEnt);
+float cAICharControl3D_KeepDist(cAICharControl3D *self, cEntity *hitEnt);
 /* the two radii plus MarginCollCharAI */
-float __thiscall cAICharControl3D_StrafeDist(cAICharControl3D *self, cEntity *hitEnt);
-byte __thiscall cAICharControl3D_InFront(cAICharControl3D *self, cEntity *e, float ang);
-byte __thiscall cAICharControl3D_Behind(cAICharControl3D *self, cEntity *e, float ang);
-byte __thiscall cAICharControl3D_GoalAhead(cAICharControl3D *self);
-byte __thiscall cAICharControl3D_OnFloor(cAICharControl3D *self, const vec3_t *p);
-byte __thiscall cAICharControl3D_Near(cAICharControl3D *self, cEntity *e);
-byte __thiscall cAICharControl3D_InWay(cAICharControl3D *self, vec3_t dest, cEntity *hitEnt);
-void __thiscall cAICharControl3D_StepGoal(cAICharControl3D *self, vec3_t *p);
-byte __thiscall cAICharControl3D_TryStrafe(cAICharControl3D *self, int side, cEntity *hitEnt, byte back, float keep,
+float cAICharControl3D_StrafeDist(cAICharControl3D *self, cEntity *hitEnt);
+byte cAICharControl3D_InFront(cAICharControl3D *self, cEntity *e, float ang);
+byte cAICharControl3D_Behind(cAICharControl3D *self, cEntity *e, float ang);
+byte cAICharControl3D_GoalAhead(cAICharControl3D *self);
+byte cAICharControl3D_OnFloor(cAICharControl3D *self, const vec3_t *p);
+byte cAICharControl3D_Near(cAICharControl3D *self, cEntity *e);
+byte cAICharControl3D_InWay(cAICharControl3D *self, vec3_t dest, cEntity *hitEnt);
+void cAICharControl3D_StepGoal(cAICharControl3D *self, vec3_t *p);
+byte cAICharControl3D_TryStrafe(cAICharControl3D *self, int side, cEntity *hitEnt, byte back, float keep,
 	byte fwd, float sd, byte e2);
 
 /* ---- the move controls of the character classes (AI/AIControl<Class>.cpp, src/game/AI/AIControls.c): the 2D
@@ -753,55 +753,55 @@ SD_SIZE(cAIControlSentinel, CAICONTROLSENTINEL_SIZE);
 #define g_VelRotDynamicMessengerAI GAME_GLOBAL_IN(float, GVar_VelRotDynamicMessengerAI, 16)
 #define g_LimVelRotDynamicMessengerAI GAME_GLOBAL_IN(float, GVar_LimVelRotDynamicMessengerAI, 16)
 
-cAICharControl *__thiscall cAIControlBankDirector_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-cAIControlBankDirector *__thiscall cAIControlBankDirector_Delete(cAIControlBankDirector *self, byte flags);
+cAICharControl *cAIControlBankDirector_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
+cAIControlBankDirector *cAIControlBankDirector_Delete(cAIControlBankDirector *self, byte flags);
 /* the Walk of the bank director and the master: forward beyond farDist, back within nearDist when the way back is
  * free */
-void __thiscall cAIControlBank_Walk(cAICharControl *self);
-cAICharControl *__thiscall cAIControlBankMaster_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-cAIControlBankMaster *__thiscall cAIControlBankMaster_Delete(cAIControlBankMaster *self, byte flags);
+void cAIControlBank_Walk(cAICharControl *self);
+cAICharControl *cAIControlBankMaster_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
+cAIControlBankMaster *cAIControlBankMaster_Delete(cAIControlBankMaster *self, byte flags);
 /* the Orbit of the control, but not while the action button is down or its ActionEnd plays */
-void __thiscall cAIControlBankMaster_Orbit(cAIControlBankMaster *self);
-cAICharControl *__thiscall cAIControlBishop_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-cAICharControl *__thiscall cAIControlBishop_Delete(cAICharControl *self, byte flags);
+void cAIControlBankMaster_Orbit(cAIControlBankMaster *self);
+cAICharControl *cAIControlBishop_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
+cAICharControl *cAIControlBishop_Delete(cAICharControl *self, byte flags);
 /* CheckWait, but not while the target plays its ActionEnd */
-byte __thiscall cAIControlBishop_CheckWait(cAICharControl *self);
-void __thiscall cAIControlBishop_Strafe2(cAIControlBishop *self);
-void __thiscall cAIControlBishop_Strafe(cAIControlBishop *self);
+byte cAIControlBishop_CheckWait(cAICharControl *self);
+void cAIControlBishop_Strafe2(cAIControlBishop *self);
+void cAIControlBishop_Strafe(cAIControlBishop *self);
 /* the 2D Walk without a strafe of its own (the gear too) */
-void __thiscall cAIControlShoot_Walk(cAIControlShoot *self);
+void cAIControlShoot_Walk(cAIControlShoot *self);
 /* Nop of the control: the strafe parameters by the target */
-void __thiscall cAIControlBishop_SetParams(cAIControlBishop *self);
-cAICharControl *__thiscall cAIControlGear_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-cAICharControl *__thiscall cAIControlGear_Delete(cAICharControl *self, byte flags);
+void cAIControlBishop_SetParams(cAIControlBishop *self);
+cAICharControl *cAIControlGear_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
+cAICharControl *cAIControlGear_Delete(cAICharControl *self, byte flags);
 /* CheckWait, but not while the target plays its ActionInit or ActionEnd */
-byte __thiscall cAIControlGear_CheckWait(cAICharControl *self);
+byte cAIControlGear_CheckWait(cAICharControl *self);
 /* the turns stop during the PostFusion action of the gear */
-void __thiscall cAIControlGear_TurnFollow(cAICharControl *self);
-void __thiscall cAIControlGear_Turn(cAICharControl *self);
-void __thiscall cAIControlGear_DirTurn(cAICharControl *self);
-void __thiscall cAIControlGear_Strafe2(cAIControlGear *self);
-void __thiscall cAIControlGear_Strafe(cAIControlGear *self);
+void cAIControlGear_TurnFollow(cAICharControl *self);
+void cAIControlGear_Turn(cAICharControl *self);
+void cAIControlGear_DirTurn(cAICharControl *self);
+void cAIControlGear_Strafe2(cAIControlGear *self);
+void cAIControlGear_Strafe(cAIControlGear *self);
 /* vf89: the AI of the gear saw the way to the target blocked */
-byte __thiscall cAIControlGear_Vf89(cAICharControl *self);
-void __thiscall cAIControlGear_SetParams(cAIControlGear *self);
-void __thiscall cAIControlGear_SetTurnSpeed(cAICharControl *self, float speed);
-cAICharControl *__thiscall cAIControlMessenger_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-cAIControlMessenger *__thiscall cAIControlMessenger_Delete(cAIControlMessenger *self, byte flags);
-byte __thiscall cAIControlMessenger_UpdateFollowMode(cAIControlMessenger *self, float dt);
-void __thiscall cAIControlMessenger_SetTurnSpeed(cAIControlMessenger *self, float speed);
-cAICharControl *__thiscall cAIControlNurse_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-cAIControlNurse *__thiscall cAIControlNurse_Delete(cAIControlNurse *self, byte flags);
+byte cAIControlGear_Vf89(cAICharControl *self);
+void cAIControlGear_SetParams(cAIControlGear *self);
+void cAIControlGear_SetTurnSpeed(cAICharControl *self, float speed);
+cAICharControl *cAIControlMessenger_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
+cAIControlMessenger *cAIControlMessenger_Delete(cAIControlMessenger *self, byte flags);
+byte cAIControlMessenger_UpdateFollowMode(cAIControlMessenger *self, float dt);
+void cAIControlMessenger_SetTurnSpeed(cAIControlMessenger *self, float speed);
+cAICharControl *cAIControlNurse_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
+cAIControlNurse *cAIControlNurse_Delete(cAIControlNurse *self, byte flags);
 /* forward beyond farDist only (3D) */
-void __thiscall cAIControlNurse_Walk(cAIControlNurse *self);
-cAICharControl *__thiscall cAIControlSentinel_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-cAICharControl *__thiscall cAIControlSentinel_Delete(cAICharControl *self, byte flags);
-void __thiscall cAIControlSentinel_Strafe2(cAIControlShoot *self);
-void __thiscall cAIControlSentinel_Strafe(cAIControlShoot *self);
+void cAIControlNurse_Walk(cAIControlNurse *self);
+cAICharControl *cAIControlSentinel_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
+cAICharControl *cAIControlSentinel_Delete(cAICharControl *self, byte flags);
+void cAIControlSentinel_Strafe2(cAIControlShoot *self);
+void cAIControlSentinel_Strafe(cAIControlShoot *self);
 /* the 3D Walk without a strafe of its own */
-void __thiscall cAIControlSentinel_Walk(cAIControlShoot *self);
+void cAIControlSentinel_Walk(cAIControlShoot *self);
 
-typedef cAICharControl *(__thiscall *cAICharControlCtor_t)(void *mem, cEntity *e, cAIChar *ai, int *arg);
+typedef cAICharControl *(*cAICharControlCtor_t)(void *mem, cEntity *e, cAIChar *ai, int *arg);
 
 /* the constructors of the cAIChar subclasses: the move control of cAIChar deleted, one of the class in its place */
 static inline void cAIChar_NewControl(cAIChar *self, uint32_t size, cAICharControlCtor_t ctor, cEntity *e, int *arg) {

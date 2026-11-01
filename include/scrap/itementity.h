@@ -63,33 +63,33 @@ SD_SIZE(cItemEntity, CITEMENTITY_SIZE);
 #define g_ItemSyncDist GAME_GLOBAL_IN(float, GVar_NetItemDistAct, 16)
 #define g_ItemSyncCount GAME_GLOBAL(uint32_t, g_ItemSyncCount)
 
-void __fastcall cItemEntity_dtor(cItemEntity *self);
-cItemEntity *__thiscall cItemEntity_Delete(cItemEntity *self, uint32_t flags);
-void __thiscall cItemEntity_Touch(cItemEntity *self, cEntity *other, const vec3_t *point, const vec3_t *dir);
-byte __thiscall cItemEntity_VarF(cItemEntity *self, const char *name, double *d, int set);
-vec3_t *__thiscall cItemEntity_GetOrigin(cItemEntity *self, vec3_t *out);
-char *__fastcall cItemEntity_GetOwner(cItemEntity *self);
-float __fastcall cItemEntity_GetBackTime(cItemEntity *self);
-const char *__thiscall cItemEntity_GetClassName(cItemEntity *self);
-float __thiscall cItemEntity_GetRadius(cItemEntity *self);
-byte __thiscall cItemEntity_VarI(cItemEntity *self, const char *name, int *i, int set);
-byte __thiscall cItemEntity_IsType(cItemEntity *self, const char *type);
-void __thiscall cItemEntity_NetRead(cItemEntity *self, void *msg, int unused);
-void __thiscall cItemEntity_NetWrite(cItemEntity *self, int unused, void *msg, byte full);
-void __thiscall cItemEntity_Tick(cItemEntity *self, float dt);
-void __thiscall cItemEntity_SetOrigin(cItemEntity *self, const vec3_t *v);
-void __thiscall cItemEntity_SetOwner(cItemEntity *self, const char *name);
-void __thiscall cItemEntity_SetPos(cItemEntity *self, const vec3_t *pos);
-void __thiscall cItemEntity_SetBackTime(cItemEntity *self, float t);
+void cItemEntity_dtor(cItemEntity *self);
+cItemEntity *cItemEntity_Delete(cItemEntity *self, uint32_t flags);
+void cItemEntity_Touch(cItemEntity *self, cEntity *other, const vec3_t *point, const vec3_t *dir);
+byte cItemEntity_VarF(cItemEntity *self, const char *name, double *d, int set);
+vec3_t *cItemEntity_GetOrigin(cItemEntity *self, vec3_t *out);
+char *cItemEntity_GetOwner(cItemEntity *self);
+float cItemEntity_GetBackTime(cItemEntity *self);
+const char *cItemEntity_GetClassName(cItemEntity *self);
+float cItemEntity_GetRadius(cItemEntity *self);
+byte cItemEntity_VarI(cItemEntity *self, const char *name, int *i, int set);
+byte cItemEntity_IsType(cItemEntity *self, const char *type);
+void cItemEntity_NetRead(cItemEntity *self, void *msg, int unused);
+void cItemEntity_NetWrite(cItemEntity *self, int unused, void *msg, byte full);
+void cItemEntity_Tick(cItemEntity *self, float dt);
+void cItemEntity_SetOrigin(cItemEntity *self, const vec3_t *v);
+void cItemEntity_SetOwner(cItemEntity *self, const char *name);
+void cItemEntity_SetPos(cItemEntity *self, const vec3_t *pos);
+void cItemEntity_SetBackTime(cItemEntity *self, float t);
 /* t > 0: taken, hidden for t (fade out, take sound); else back (fade in) */
-void __thiscall cItemEntity_SetRespawn(cItemEntity *self, float t);
+void cItemEntity_SetRespawn(cItemEntity *self, float t);
 /* the teams of the letters R, B, G, N, K (either case); "" all */
-void __thiscall cItemEntity_SetTypeMarker(cItemEntity *self, const char *types);
-void __thiscall cItemEntity_Update(cItemEntity *self);
-byte __thiscall cItemEntity_TestSphere(cItemEntity *self, cEntity *other, const vec3_t *center, float radius,
+void cItemEntity_SetTypeMarker(cItemEntity *self, const char *types);
+void cItemEntity_Update(cItemEntity *self);
+byte cItemEntity_TestSphere(cItemEntity *self, cEntity *other, const vec3_t *center, float radius,
 	int arg);
-byte __thiscall cItemEntity_VarS(cItemEntity *self, const char *name, char **s, int set);
-byte __thiscall cItemEntity_NetNeedsSend(cItemEntity *self, float dist2);
-byte __thiscall cItemEntity_VarV(cItemEntity *self, const char *name, double *x, double *y, double *z, int set);
+byte cItemEntity_VarS(cItemEntity *self, const char *name, char **s, int set);
+byte cItemEntity_NetNeedsSend(cItemEntity *self, float dist2);
+byte cItemEntity_VarV(cItemEntity *self, const char *name, double *x, double *y, double *z, int set);
 
 #endif

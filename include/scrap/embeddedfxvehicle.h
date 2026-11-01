@@ -21,12 +21,12 @@
 #define CEMBEDDEDFXVEHICLEVOTE_VFTABLE GAME_VFTABLE(cEmbeddedFXVehicleVote_vftable)
 
 typedef struct cEmbeddedFXVehicleVtbl {
-	void *(__thiscall *Delete)(void *self, byte flags);	/* 0x00 */
-	byte(__fastcall *Init)(void *self);			/* 0x04 */
-	void(__fastcall *Done)(void *self);			/* 0x08 */
-	void(__thiscall *Configure)(void *self, int unused);	/* 0x0c */
-	void(__fastcall *Update)(void *self);			/* 0x10 */
-	void(__thiscall *SetActive)(void *self, byte on);	/* 0x14 */
+	void *(*Delete)(void *self, byte flags);	/* 0x00 */
+	byte(*Init)(void *self);			/* 0x04 */
+	void(*Done)(void *self);			/* 0x08 */
+	void(*Configure)(void *self, int unused);	/* 0x0c */
+	void(*Update)(void *self);			/* 0x10 */
+	void(*SetActive)(void *self, byte on);	/* 0x14 */
 } cEmbeddedFXVehicleVtbl;
 
 /* Probe or Vote: the vtable first, the cEmbeddedFXVehicle after it */
@@ -129,54 +129,54 @@ SD_SIZE(cEmbeddedFXVehicleVote, 0x2e0);
 #define g_MaxDistReposAI GAME_GLOBAL_IN(float, GVar_MaxDistReposAI, 16)
 
 /* World/FX/FXVehicle.cpp: an element drawn with the followed vehicle */
-void __fastcall FXVehicle_RenderAttached(void *element);
+void FXVehicle_RenderAttached(void *element);
 /* the near and far distance of the AI of a vehicle */
-void __thiscall cAIVehicle_GetFadeDists(void *ai, float *nearDist, float *farDist);
+void cAIVehicle_GetFadeDists(void *ai, float *nearDist, float *farDist);
 
-cEmbeddedFXVehicle *__fastcall cEmbeddedFXVehicle_ctor(cEmbeddedFXVehicle *self);
-void __fastcall cEmbeddedFXVehicle_dtor(cEmbeddedFXVehicle *self);
-cEmbeddedFXVehicle *__thiscall cEmbeddedFXVehicle_Delete(cEmbeddedFXVehicle *self, byte flags);
-byte __fastcall cEmbeddedFXVehicle_Init(cEmbeddedFXVehicle *self);
-void __fastcall cEmbeddedFXVehicle_Done(cEmbeddedFXVehicle *self);
-void __thiscall cEmbeddedFXVehicle_Configure(cEmbeddedFXVehicle *self, int unused);
-void __fastcall cEmbeddedFXVehicle_Update(cEmbeddedFXVehicle *self);
-void __thiscall cEmbeddedFXVehicle_SetActive(cEmbeddedFXVehicle *self, byte on);
-void __fastcall cEmbeddedFXVehicle_Hide(cEmbeddedFXVehicle *self);
-void __fastcall cEmbeddedFXVehicle_Render(cEmbeddedFXVehicle *self);
-void __thiscall cEmbeddedFXVehicle_SetAttached(cEmbeddedFXVehicle *self, void *element);
+cEmbeddedFXVehicle *cEmbeddedFXVehicle_ctor(cEmbeddedFXVehicle *self);
+void cEmbeddedFXVehicle_dtor(cEmbeddedFXVehicle *self);
+cEmbeddedFXVehicle *cEmbeddedFXVehicle_Delete(cEmbeddedFXVehicle *self, byte flags);
+byte cEmbeddedFXVehicle_Init(cEmbeddedFXVehicle *self);
+void cEmbeddedFXVehicle_Done(cEmbeddedFXVehicle *self);
+void cEmbeddedFXVehicle_Configure(cEmbeddedFXVehicle *self, int unused);
+void cEmbeddedFXVehicle_Update(cEmbeddedFXVehicle *self);
+void cEmbeddedFXVehicle_SetActive(cEmbeddedFXVehicle *self, byte on);
+void cEmbeddedFXVehicle_Hide(cEmbeddedFXVehicle *self);
+void cEmbeddedFXVehicle_Render(cEmbeddedFXVehicle *self);
+void cEmbeddedFXVehicle_SetAttached(cEmbeddedFXVehicle *self, void *element);
 /* the model, sirens and Probe / Vote of the vehicle */
-void __thiscall cEmbeddedFXVehicle_SetOwner(cEmbeddedFXVehicle *self, cEntity *owner);
-void __thiscall cEmbeddedFXVehicle_SetTraffic(cEmbeddedFXVehicle *self, byte on);
-void __fastcall cEmbeddedFXVehicle_StartFade(cEmbeddedFXVehicle *self);
-void __thiscall cEmbeddedFXVehicle_SetAIRange(cEmbeddedFXVehicle *self, byte on);
+void cEmbeddedFXVehicle_SetOwner(cEmbeddedFXVehicle *self, cEntity *owner);
+void cEmbeddedFXVehicle_SetTraffic(cEmbeddedFXVehicle *self, byte on);
+void cEmbeddedFXVehicle_StartFade(cEmbeddedFXVehicle *self);
+void cEmbeddedFXVehicle_SetAIRange(cEmbeddedFXVehicle *self, byte on);
 
-cFXVehicleSirens *__thiscall cFXVehicleSirens_ctor(cFXVehicleSirens *self, cEmbeddedFXVehicle *owner);
+cFXVehicleSirens *cFXVehicleSirens_ctor(cFXVehicleSirens *self, cEmbeddedFXVehicle *owner);
 /* the shared model and particles released with the last one (self is not used) */
-void __fastcall cFXVehicleSirens_dtor(cFXVehicleSirens *self);
-byte __fastcall cFXVehicleSirens_Init(cFXVehicleSirens *self);
-void __fastcall cFXVehicleSirens_Update(cFXVehicleSirens *self);
+void cFXVehicleSirens_dtor(cFXVehicleSirens *self);
+byte cFXVehicleSirens_Init(cFXVehicleSirens *self);
+void cFXVehicleSirens_Update(cFXVehicleSirens *self);
 
-cEmbeddedFXVehicleProbe *__thiscall cEmbeddedFXVehicleProbe_ctor(cEmbeddedFXVehicleProbe *self,
+cEmbeddedFXVehicleProbe *cEmbeddedFXVehicleProbe_ctor(cEmbeddedFXVehicleProbe *self,
 	cEmbeddedFXVehicle *fx);
-void __fastcall cEmbeddedFXVehicleProbe_dtor(cEmbeddedFXVehicleProbe *self);
-cEmbeddedFXVehicleProbe *__thiscall cEmbeddedFXVehicleProbe_Delete(cEmbeddedFXVehicleProbe *self, byte flags);
-byte __fastcall cEmbeddedFXVehicleProbe_Init(cEmbeddedFXVehicleProbe *self);
-void __fastcall cEmbeddedFXVehicleProbe_Done(cEmbeddedFXVehicleProbe *self);
-void __thiscall cEmbeddedFXVehicleProbe_Configure(cEmbeddedFXVehicleProbe *self, int unused);
-void __fastcall cEmbeddedFXVehicleProbe_Update(cEmbeddedFXVehicleProbe *self);
-void __thiscall cEmbeddedFXVehicleProbe_SetActive(cEmbeddedFXVehicleProbe *self, byte on);
-void __fastcall cEmbeddedFXVehicleProbe_ClearTrail(cEmbeddedFXVehicleProbe *self);
+void cEmbeddedFXVehicleProbe_dtor(cEmbeddedFXVehicleProbe *self);
+cEmbeddedFXVehicleProbe *cEmbeddedFXVehicleProbe_Delete(cEmbeddedFXVehicleProbe *self, byte flags);
+byte cEmbeddedFXVehicleProbe_Init(cEmbeddedFXVehicleProbe *self);
+void cEmbeddedFXVehicleProbe_Done(cEmbeddedFXVehicleProbe *self);
+void cEmbeddedFXVehicleProbe_Configure(cEmbeddedFXVehicleProbe *self, int unused);
+void cEmbeddedFXVehicleProbe_Update(cEmbeddedFXVehicleProbe *self);
+void cEmbeddedFXVehicleProbe_SetActive(cEmbeddedFXVehicleProbe *self, byte on);
+void cEmbeddedFXVehicleProbe_ClearTrail(cEmbeddedFXVehicleProbe *self);
 
-cEmbeddedFXVehicleVote *__thiscall cEmbeddedFXVehicleVote_ctor(cEmbeddedFXVehicleVote *self,
+cEmbeddedFXVehicleVote *cEmbeddedFXVehicleVote_ctor(cEmbeddedFXVehicleVote *self,
 	cEmbeddedFXVehicle *fx);
-void __fastcall cEmbeddedFXVehicleVote_dtor(cEmbeddedFXVehicleVote *self);
-cEmbeddedFXVehicleVote *__thiscall cEmbeddedFXVehicleVote_Delete(cEmbeddedFXVehicleVote *self, byte flags);
-byte __fastcall cEmbeddedFXVehicleVote_Init(cEmbeddedFXVehicleVote *self);
-void __fastcall cEmbeddedFXVehicleVote_Done(cEmbeddedFXVehicleVote *self);
-void __thiscall cEmbeddedFXVehicleVote_Configure(cEmbeddedFXVehicleVote *self, int unused);
-void __fastcall cEmbeddedFXVehicleVote_Update(cEmbeddedFXVehicleVote *self);
-void __thiscall cEmbeddedFXVehicleVote_SetActive(cEmbeddedFXVehicleVote *self, byte on);
-void __fastcall cEmbeddedFXVehicleVote_ClearTrails(cEmbeddedFXVehicleVote *self);
-void __thiscall cEmbeddedFXVehicleVote_SetType(cEmbeddedFXVehicleVote *self, int type);
+void cEmbeddedFXVehicleVote_dtor(cEmbeddedFXVehicleVote *self);
+cEmbeddedFXVehicleVote *cEmbeddedFXVehicleVote_Delete(cEmbeddedFXVehicleVote *self, byte flags);
+byte cEmbeddedFXVehicleVote_Init(cEmbeddedFXVehicleVote *self);
+void cEmbeddedFXVehicleVote_Done(cEmbeddedFXVehicleVote *self);
+void cEmbeddedFXVehicleVote_Configure(cEmbeddedFXVehicleVote *self, int unused);
+void cEmbeddedFXVehicleVote_Update(cEmbeddedFXVehicleVote *self);
+void cEmbeddedFXVehicleVote_SetActive(cEmbeddedFXVehicleVote *self, byte on);
+void cEmbeddedFXVehicleVote_ClearTrails(cEmbeddedFXVehicleVote *self);
+void cEmbeddedFXVehicleVote_SetType(cEmbeddedFXVehicleVote *self, int type);
 
 #endif

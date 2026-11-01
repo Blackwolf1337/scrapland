@@ -34,13 +34,13 @@ static void StrFree(cString *self) {
 	}
 }
 
-cString *__thiscall cString_ctor(cString *self) {
+cString *cString_ctor(cString *self) {
 	*self = NULL;
 	return self;
 }
 
 /* a followed by b; the lengths only size the buffer, both strings are copied whole */
-cString *__thiscall cString_ctorConcat(cString *self, const char *a, int alen, const char *b, int blen) {
+cString *cString_ctorConcat(cString *self, const char *a, int alen, const char *b, int blen) {
 	*self = alen + blen ? StrAlloc(alen + blen) : NULL;
 	if (a) {
 		memcpy(*self, a, strlen(a) + 1);
@@ -51,7 +51,7 @@ cString *__thiscall cString_ctorConcat(cString *self, const char *a, int alen, c
 	return self;
 }
 
-void __thiscall cString_SetN(cString *self, const char *s, int n) {
+void cString_SetN(cString *self, const char *s, int n) {
 	StrFree(self);
 	if (n || s) {
 		*self = StrAlloc(n);
@@ -62,21 +62,21 @@ void __thiscall cString_SetN(cString *self, const char *s, int n) {
 	}
 }
 
-cString *__thiscall cString_ctorStr(cString *self, const char *s) {
+cString *cString_ctorStr(cString *self, const char *s) {
 	*self = NULL;
 	cString_SetN(self, s, StrLen(s));
 	return self;
 }
 
-void __thiscall cString_dtor(cString *self) {
+void cString_dtor(cString *self) {
 	StrFree(self);
 }
 
-void __thiscall cString_Set(cString *self, const char *s) {
+void cString_Set(cString *self, const char *s) {
 	cString_SetN(self, s, StrLen(s));
 }
 
-void __thiscall cString_Assign(cString *self, const cString *src) {
+void cString_Assign(cString *self, const cString *src) {
 	cString_SetN(self, *src, StrLen(*src));
 }
 
@@ -95,7 +95,7 @@ void cString_Printf(cString *self, const char *fmt, ...) {
 }
 
 /* n characters of s at the end; a string of more than 255 characters goes through a concatenated copy */
-void __thiscall cString_Append(cString *self, const char *s, int n) {
+void cString_Append(cString *self, const char *s, int n) {
 	if (n <= 0) {
 		return;
 	}
@@ -120,7 +120,7 @@ void __thiscall cString_Append(cString *self, const char *s, int n) {
 	(*self)[len + n] = 0;
 }
 
-cString *__thiscall cString_AppendStr(cString *self, const char *s) {
+cString *cString_AppendStr(cString *self, const char *s) {
 	cString_Append(self, s, StrLen(s));
 	return self;
 }
@@ -174,22 +174,22 @@ static int StrICmp(const char *a, const char *b) {
 	return crt_stricmp(a, b);
 }
 
-int __thiscall cString_Cmp(const cString *self, const cString *other) {
+int cString_Cmp(const cString *self, const cString *other) {
 	return StrCmp(*self, *other);
 }
 
-int __thiscall cString_CmpStr(const cString *self, const char *other) {
+int cString_CmpStr(const cString *self, const char *other) {
 	return StrCmp(*self, other);
 }
 
-int __thiscall cString_ICmp(const cString *self, const cString *other) {
+int cString_ICmp(const cString *self, const cString *other) {
 	return StrICmp(*self, *other);
 }
 
-int __thiscall cString_ICmpStr(const cString *self, const char *other) {
+int cString_ICmpStr(const cString *self, const char *other) {
 	return StrICmp(*self, other);
 }
 
-int __fastcall cString_Length(const cString *self) {
+int cString_Length(const cString *self) {
 	return *self ? (int)strlen(*self) : 0;
 }

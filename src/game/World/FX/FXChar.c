@@ -71,19 +71,19 @@ static inline vec3_t FXC_CamPos(void) {
 
 /* ---- the setters ---- */
 
-void __thiscall cObjElementFXMoneyTransfer_SetEntities(cObjElementFXMoneyTransfer *self, cEntity *from, cEntity *to) {
+void cObjElementFXMoneyTransfer_SetEntities(cObjElementFXMoneyTransfer *self, cEntity *from, cEntity *to) {
 	self->from = from;
 	CHECK(from->vftable->IsType(from, TYEN_WITH_LIFE));
 	self->to = to;
 	CHECK(to->vftable->IsType(to, TYEN_WITH_LIFE));
 }
 
-void __thiscall cObjElementFXCharacterDeath_SetEntity(cObjElementFXCharacterDeath *self, cEntity *e) {
+void cObjElementFXCharacterDeath_SetEntity(cObjElementFXCharacterDeath *self, cEntity *e) {
 	self->ent = e;
 	FXC_Model(e);
 }
 
-void __thiscall FXSputnik_Start(cObjElementFXSputnik *self, cEntity *e) {
+void FXSputnik_Start(cObjElementFXSputnik *self, cEntity *e) {
 	vec3_t pos, rot;
 
 	self->ent = e;
@@ -94,14 +94,14 @@ void __thiscall FXSputnik_Start(cObjElementFXSputnik *self, cEntity *e) {
 	self->node = CGameModel_FindRenderNode(m, "Bip Spootnick MASTER");
 }
 
-void __thiscall cObjElementFXCharacterConversion_SetAttacked(cObjElementFXCharacterConversion *self, cEntity *e) {
+void cObjElementFXCharacterConversion_SetAttacked(cObjElementFXCharacterConversion *self, cEntity *e) {
 	self->attacked = e;
 	if (e) {
 		FXC_Model(e);
 	}
 }
 
-void __thiscall cObjElementFXCharacterConversion_SetAttacker(cObjElementFXCharacterConversion *self, cEntity *e) {
+void cObjElementFXCharacterConversion_SetAttacker(cObjElementFXCharacterConversion *self, cEntity *e) {
 	self->attacker = e;
 	if (e) {
 		FXC_Model(e);
@@ -109,7 +109,7 @@ void __thiscall cObjElementFXCharacterConversion_SetAttacker(cObjElementFXCharac
 	}
 }
 
-void __thiscall cObjElementFXCharacterConversor_SetCharacter(cObjElementFXCharacterConversor *self, cEntity *e) {
+void cObjElementFXCharacterConversor_SetCharacter(cObjElementFXCharacterConversor *self, cEntity *e) {
 	self->character = e;
 	if (!e) {
 		return;
@@ -125,7 +125,7 @@ void __thiscall cObjElementFXCharacterConversor_SetCharacter(cObjElementFXCharac
 	}
 }
 
-void __thiscall cObjElementFXCharacterConversor_SetConversor(cObjElementFXCharacterConversor *self, cEntity *e) {
+void cObjElementFXCharacterConversor_SetConversor(cObjElementFXCharacterConversor *self, cEntity *e) {
 	char buf[256];
 
 	self->conversor = e;
@@ -145,27 +145,27 @@ void __thiscall cObjElementFXCharacterConversor_SetConversor(cObjElementFXCharac
 	}
 }
 
-void __thiscall FXChar_SetI4(void *self, int v) {
+void FXChar_SetI4(void *self, int v) {
 	*(int *)((byte *)self + 4) = v;
 }
 
-void __thiscall cObjElementFXMaintenanceWork_SetMaintenance(cObjElementFXMaintenanceWork *self, cEntity *e) {
+void cObjElementFXMaintenanceWork_SetMaintenance(cObjElementFXMaintenanceWork *self, cEntity *e) {
 	self->maintenance = e;
 	CGameModel *m = FXC_Model(e);
 	self->nodeLaser = CGameModel_FindRenderNode(m, "DF_Laser");
 	CHECK(self->nodeLaser > -1);
 }
 
-void __thiscall cObjElementFXMaintenanceWork_SetShip(cObjElementFXMaintenanceWork *self, cEntity *e) {
+void cObjElementFXMaintenanceWork_SetShip(cObjElementFXMaintenanceWork *self, cEntity *e) {
 	self->ship = e;
 	FXC_Model(e);
 }
 
-void __thiscall FXSputnik_SetB(cObjElementFXSputnik *self, float v) {
+void FXSputnik_SetB(cObjElementFXSputnik *self, float v) {
 	self->minMove = v;
 }
 
-void __thiscall FXSputnik_SetA(cObjElementFXSputnik *self, float v) {
+void FXSputnik_SetA(cObjElementFXSputnik *self, float v) {
 	self->duration = v;
 }
 
@@ -192,7 +192,7 @@ static void FXConversion_RandomPoints(cObjElementFXCharacterConversion *self) {
 	self->unused_178 = 0.0f;
 }
 
-void __thiscall cObjElementFXCharacterConversion_Attach(cObjElementFXCharacterConversion *self, cDebris *d) {
+void cObjElementFXCharacterConversion_Attach(cObjElementFXCharacterConversion *self, cDebris *d) {
 	CGameModel *m = Debris_Model(d);
 	uint32_t i = CGameModel_IsLoaded(m) ? (uint32_t)CGameModel_FindRenderNode(m, "Dummy01") : (uint32_t)(uintptr_t)m;
 
@@ -214,7 +214,7 @@ void __thiscall cObjElementFXCharacterConversion_Attach(cObjElementFXCharacterCo
 	FXConversion_RandomPoints(self);
 }
 
-void __thiscall cObjElementFXCharacterConversion_Reset(cObjElementFXCharacterConversion *self, int arg) {
+void cObjElementFXCharacterConversion_Reset(cObjElementFXCharacterConversion *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->emitT = 0.0f;
@@ -226,7 +226,7 @@ void __thiscall cObjElementFXCharacterConversion_Reset(cObjElementFXCharacterCon
 	FXConversion_RandomPoints(self);
 }
 
-void __thiscall cObjElementFXCharacterConversor_Attach(cObjElementFXCharacterConversor *self, cDebris *d) {
+void cObjElementFXCharacterConversor_Attach(cObjElementFXCharacterConversor *self, cDebris *d) {
 	FX_AttachDummy(&self->particles, Debris_Model(d));
 	self->numTrails = FXCONVERSOR_TRAILS;
 	for (int i = 0; i < self->numTrails; i++) {
@@ -243,7 +243,7 @@ void __thiscall cObjElementFXCharacterConversor_Attach(cObjElementFXCharacterCon
 	self->numPoints = 5;
 }
 
-void __thiscall cObjElementFXCharacterConversor_Reset(cObjElementFXCharacterConversor *self, int arg) {
+void cObjElementFXCharacterConversor_Reset(cObjElementFXCharacterConversor *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->emitT = 0.0f;
@@ -278,7 +278,7 @@ static void FXDeath_ResetTrails(cObjElementFXCharacterDeath *self, byte attach) 
 	}
 }
 
-void __thiscall cObjElementFXCharacterDeath_Attach(cObjElementFXCharacterDeath *self, cDebris *d) {
+void cObjElementFXCharacterDeath_Attach(cObjElementFXCharacterDeath *self, cDebris *d) {
 	CGameModel *m = Debris_Model(d);
 
 	CHECK(CGameModel_IsLoaded(m));
@@ -288,23 +288,23 @@ void __thiscall cObjElementFXCharacterDeath_Attach(cObjElementFXCharacterDeath *
 	FXDeath_ResetTrails(self, 1);
 }
 
-void __thiscall cObjElementFXCharacterDeath_Reset(cObjElementFXCharacterDeath *self, int arg) {
+void cObjElementFXCharacterDeath_Reset(cObjElementFXCharacterDeath *self, int arg) {
 	(void)arg;
 	FXDeath_ResetTrails(self, 0);
 }
 
-void __thiscall cObjElementFXCharacterTeleport_Attach(cObjElementFXCharacterTeleport *self, cDebris *d) {
+void cObjElementFXCharacterTeleport_Attach(cObjElementFXCharacterTeleport *self, cDebris *d) {
 	FX_AttachDummy(&self->particles, Debris_Model(d));
 }
 
-void __thiscall cObjElementFXCharacterTeleport_Reset(cObjElementFXCharacterTeleport *self, int arg) {
+void cObjElementFXCharacterTeleport_Reset(cObjElementFXCharacterTeleport *self, int arg) {
 	(void)arg;
 	self->t = 0.0f;
 	self->emitT = 0.0f;
 	self->mode = 0;
 }
 
-void __thiscall cObjElementFXMaintenanceWork_Attach(cObjElementFXMaintenanceWork *self, cDebris *d) {
+void cObjElementFXMaintenanceWork_Attach(cObjElementFXMaintenanceWork *self, cDebris *d) {
 	CGameModel *m = Debris_Model(d);
 
 	CHECK(CGameModel_IsLoaded(m));
@@ -318,7 +318,7 @@ void __thiscall cObjElementFXMaintenanceWork_Attach(cObjElementFXMaintenanceWork
 	self->sound = 0;
 }
 
-void __thiscall cObjElementFXMaintenanceWork_Reset(cObjElementFXMaintenanceWork *self, int arg) {
+void cObjElementFXMaintenanceWork_Reset(cObjElementFXMaintenanceWork *self, int arg) {
 	(void)arg;
 	self->time = 0.0f;
 	self->emitTime = 0.0f;
@@ -329,26 +329,26 @@ void __thiscall cObjElementFXMaintenanceWork_Reset(cObjElementFXMaintenanceWork 
 	self->sound = 0;
 }
 
-void __thiscall cObjElementFXMoneyTransfer_Attach(cObjElementFXMoneyTransfer *self, cDebris *d) {
+void cObjElementFXMoneyTransfer_Attach(cObjElementFXMoneyTransfer *self, cDebris *d) {
 	CGameModel *m = Debris_Model(d);
 
 	CHECK(CGameModel_IsLoaded(m));
 	CGameParticles_Attach(&self->particles, m, FXC_Node(m, "Dummy01"));
 }
 
-void __thiscall cObjElementFXMoneyTransfer_Reset(cObjElementFXMoneyTransfer *self, int arg) {
+void cObjElementFXMoneyTransfer_Reset(cObjElementFXMoneyTransfer *self, int arg) {
 	(void)arg;
 	self->from = NULL;
 	self->to = NULL;
 	self->emitT = 0.0f;
 }
 
-void __thiscall cObjElementFXSputnik_Attach(cObjElementFXSputnik *self, cDebris *d) {
+void cObjElementFXSputnik_Attach(cObjElementFXSputnik *self, cDebris *d) {
 	FX_AttachDummy(&self->particles, Debris_Model(d));
 	self->moveT = 0.0f;
 }
 
-void __thiscall cObjElementFXSputnik_Reset(cObjElementFXSputnik *self, int arg) {
+void cObjElementFXSputnik_Reset(cObjElementFXSputnik *self, int arg) {
 	(void)arg;
 	self->t = 0.0f;
 	self->emitT = 0.0f;
@@ -359,7 +359,7 @@ void __thiscall cObjElementFXSputnik_Reset(cObjElementFXSputnik *self, int arg) 
 
 /* ---- Alive (vf02) ---- */
 
-byte __thiscall cObjElementFXCharacterConversion_Alive(cObjElementFXCharacterConversion *self, cDebris *d,
+byte cObjElementFXCharacterConversion_Alive(cObjElementFXCharacterConversion *self, cDebris *d,
 	cDebrisSys *sys) {
 	if (cDebris_Update(d, sys)) {
 		return 1;
@@ -375,7 +375,7 @@ byte __thiscall cObjElementFXCharacterConversion_Alive(cObjElementFXCharacterCon
 	return 0;
 }
 
-byte __thiscall cObjElementFXCharacterConversor_Alive(cObjElementFXCharacterConversor *self, cDebris *d,
+byte cObjElementFXCharacterConversor_Alive(cObjElementFXCharacterConversor *self, cDebris *d,
 	cDebrisSys *sys) {
 	if (cDebris_Update(d, sys)) {
 		return 1;
@@ -398,7 +398,7 @@ byte __thiscall cObjElementFXCharacterConversor_Alive(cObjElementFXCharacterConv
 	return 0;
 }
 
-byte __thiscall cObjElementFXCharacterTeleport_Alive(cObjElementFXCharacterTeleport *self, cDebris *d,
+byte cObjElementFXCharacterTeleport_Alive(cObjElementFXCharacterTeleport *self, cDebris *d,
 	cDebrisSys *sys) {
 	if (cDebris_Update(d, sys)) {
 		return 1;
@@ -409,7 +409,7 @@ byte __thiscall cObjElementFXCharacterTeleport_Alive(cObjElementFXCharacterTelep
 	return 0;
 }
 
-byte __thiscall cObjElementFXMaintenanceWork_Alive(cObjElementFXMaintenanceWork *self, cDebris *d, cDebrisSys *sys) {
+byte cObjElementFXMaintenanceWork_Alive(cObjElementFXMaintenanceWork *self, cDebris *d, cDebrisSys *sys) {
 	if (cDebris_Update(d, sys)) {
 		return 1;
 	}
@@ -421,7 +421,7 @@ byte __thiscall cObjElementFXMaintenanceWork_Alive(cObjElementFXMaintenanceWork 
 	return 0;
 }
 
-byte __thiscall cObjElementFXSputnik_Alive(cObjElementFXSputnik *self, cDebris *d, cDebrisSys *sys) {
+byte cObjElementFXSputnik_Alive(cObjElementFXSputnik *self, cDebris *d, cDebrisSys *sys) {
 	if (self->duration == 0.0f) {
 		d->life = 1.0f;
 	}
@@ -430,7 +430,7 @@ byte __thiscall cObjElementFXSputnik_Alive(cObjElementFXSputnik *self, cDebris *
 
 /* ---- Update (vf01) ---- */
 
-void __thiscall cObjElementFXMoneyTransfer_Update(cObjElementFXMoneyTransfer *self, cDebris *d, float dt) {
+void cObjElementFXMoneyTransfer_Update(cObjElementFXMoneyTransfer *self, cDebris *d, float dt) {
 	vec3_t a, b, mid, dir;
 
 	(void)dt;
@@ -525,7 +525,7 @@ static void FXConversion_Spark(CGameParticles *sp, const vec3_t *v, double range
 #define FXCONVERSION_SPARK_T 0.005000000353902578f
 #define FXCONVERSION_SPARK_VERTS 12
 
-void __thiscall cObjElementFXCharacterConversion_Update(cObjElementFXCharacterConversion *self, cDebris *d, float dt) {
+void cObjElementFXCharacterConversion_Update(cObjElementFXCharacterConversion *self, cDebris *d, float dt) {
 	vec3_t tmp, tmp2, pa, pb, D, nOut, verts[FXCONVERSION_SPARK_VERTS];
 	float fr;
 
@@ -705,7 +705,7 @@ static void FXC_SetStill(CGameParticles *sp, const vec3_t *p) {
 	sp->initAccMax = sp->initAccMin;
 }
 
-void __thiscall cObjElementFXMaintenanceWork_Update(cObjElementFXMaintenanceWork *self, cDebris *d, float dt) {
+void cObjElementFXMaintenanceWork_Update(cObjElementFXMaintenanceWork *self, cDebris *d, float dt) {
 	vec3_t laserPos, c, diff, n, dir, rot;
 
 	self->maintenance = FXC_Keep(self->maintenance);
@@ -962,7 +962,7 @@ static void FXTeleport_Smoke(CGameParticles *sp, float life) {
 #define FXTELEPORT_VERTS 0x60
 #define FXTELEPORT_GLOWS 0x18
 
-void __thiscall cObjElementFXCharacterTeleport_Update(cObjElementFXCharacterTeleport *self, cDebris *d, float dt) {
+void cObjElementFXCharacterTeleport_Update(cObjElementFXCharacterTeleport *self, cDebris *d, float dt) {
 	vec3_t c, p, diff, n, verts[FXTELEPORT_VERTS];
 	uint32_t bits;
 
@@ -1226,7 +1226,7 @@ static void FXDeath_Glow(CGameParticles *sp, const vec3_t *v, float r, double in
 	CGameParticles_EmitN(sp, 1, 0);
 }
 
-void __thiscall cObjElementFXCharacterDeath_Update(cObjElementFXCharacterDeath *self, cDebris *d, float dt) {
+void cObjElementFXCharacterDeath_Update(cObjElementFXCharacterDeath *self, cDebris *d, float dt) {
 	vec3_t p, dir, verts[FXDEATH_VERTS];
 	float a;
 	uint32_t bits;
@@ -1538,7 +1538,7 @@ static void FXConversor_Exit(CGameModel *mc, int node, const vec3_t *rot, vec3_t
 	Vec3_Rotate(dir, Vec3_Rotate(&o1, &up, rot), &eu);
 }
 
-void __thiscall cObjElementFXCharacterConversor_Update(cObjElementFXCharacterConversor *self, cDebris *d, float dt) {
+void cObjElementFXCharacterConversor_Update(cObjElementFXCharacterConversor *self, cDebris *d, float dt) {
 	vec3_t c, cc, rot, eu, o1, o2, p, pt, dir, verts[FXCONVERSOR_VERTS], coefs[FXCONVERSOR_POINTS];
 	matrix_t mat;
 	uint32_t bits;
@@ -1868,7 +1868,7 @@ static void FXSputnik_SetAcc(CGameParticles *sp) {
 	sp->initAccMax = sp->initAccMin;
 }
 
-void __thiscall cObjElementFXSputnik_Update(cObjElementFXSputnik *self, cDebris *d, float dt) {
+void cObjElementFXSputnik_Update(cObjElementFXSputnik *self, cDebris *d, float dt) {
 	vec3_t pos, rot, dir;
 	matrix_t mat;
 
@@ -2013,7 +2013,7 @@ static void FXC_EmitRamp(CGameParticles *sp, uint32_t *ramp, float dt) {
 
 #define FXC_EMIT_VERTS 128
 
-void __fastcall cObjElementFXCharacterConversion_Emit(cObjElementFXCharacterConversion *self) {
+void cObjElementFXCharacterConversion_Emit(cObjElementFXCharacterConversion *self) {
 	vec3_t verts[FXC_EMIT_VERTS], pa, pb;
 
 	CGameModel *ma = Obj_Vtbl(self->attacker)->GetModel(self->attacker);
@@ -2105,7 +2105,7 @@ void __fastcall cObjElementFXCharacterConversion_Emit(cObjElementFXCharacterConv
 	}
 }
 
-void __thiscall cObjElementFXMaintenanceWork_Start(cObjElementFXMaintenanceWork *self, cDebris *d) {
+void cObjElementFXMaintenanceWork_Start(cObjElementFXMaintenanceWork *self, cDebris *d) {
 	vec3_t laser, pos;
 	cSoundDesc desc;
 

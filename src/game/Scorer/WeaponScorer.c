@@ -15,7 +15,7 @@ static CPsaImage *Weapon_NewWhite(byte color) {
 	return img;
 }
 
-cWeaponScorer *__fastcall cWeaponScorer_ctor(cWeaponScorer *self) {
+cWeaponScorer *cWeaponScorer_ctor(cWeaponScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CWEAPONSCORER_VFTABLE;
 	self->base.x = 320.0f;
@@ -37,7 +37,7 @@ cWeaponScorer *__fastcall cWeaponScorer_ctor(cWeaponScorer *self) {
 	return self;
 }
 
-void __fastcall cWeaponScorer_dtor(cWeaponScorer *self) {
+void cWeaponScorer_dtor(cWeaponScorer *self) {
 	self->base.vftable = CWEAPONSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	ScorerImg_Free(self->img3D);
@@ -45,7 +45,7 @@ void __fastcall cWeaponScorer_dtor(cWeaponScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cWeaponScorer *__thiscall cWeaponScorer_Delete(cWeaponScorer *self, byte flags) {
+cWeaponScorer *cWeaponScorer_Delete(cWeaponScorer *self, byte flags) {
 	cWeaponScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cWeaponScorer));
@@ -112,7 +112,7 @@ static int Weapon_IconVar(int *icons, int ac, byte set, int *i) {
 	return ScorerVar_Int(icons + ac, set, i);
 }
 
-int __thiscall cWeaponScorer_Var(cWeaponScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cWeaponScorer_Var(cWeaponScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	static const char *const tabColors[4] = {"TabRed", "TabGreen", "TabBlue", "TabAlpha"};
 	int r;
 
@@ -314,7 +314,7 @@ static void Weapon_DrawSlots(cWeaponScorer *self, cWeaponManager *wm, int player
 
 /* vf00: the weapon of the ship of the camera with its upgrade bar, its ammo, the slots mounted, the row of the
  * weapons after a change and the fade between the old and the new weapon icon */
-void __thiscall cWeaponScorer_Draw(cWeaponScorer *self, int player) {
+void cWeaponScorer_Draw(cWeaponScorer *self, int player) {
 	float uv0[2], uv1[2], sv0[2], sv1[2];
 	cEntity *ship;
 

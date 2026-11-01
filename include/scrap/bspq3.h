@@ -171,30 +171,30 @@ SD_SIZE(CBspQ3, 0x6c);
 #define g_KeyL GAME_GLOBAL_IN(byte, g_KeyboardKeys, 22)
 
 /* the map loaded: shaders, vertices, faces, light maps, then the meshes */
-void __fastcall CBspQ3_dtor(CBspQ3 *self);
-BspQ3Meshes *__fastcall BspQ3Meshes_ctor(BspQ3Meshes *self);
-void __fastcall BspQ3Meshes_Free(BspQ3Meshes *self);
-BspQ3Mesh *__fastcall BspQ3Mesh_ctor(BspQ3Mesh *self);
-void __fastcall BspQ3Mesh_dtor(BspQ3Mesh *self);
+void CBspQ3_dtor(CBspQ3 *self);
+BspQ3Meshes *BspQ3Meshes_ctor(BspQ3Meshes *self);
+void BspQ3Meshes_Free(BspQ3Meshes *self);
+BspQ3Mesh *BspQ3Mesh_ctor(BspQ3Mesh *self);
+void BspQ3Mesh_dtor(BspQ3Mesh *self);
 /* the mesh of the material and light map of face, NULL */
-BspQ3Mesh *__thiscall BspQ3Meshes_Find(BspQ3Meshes *self, BspQ3Face *face);
+BspQ3Mesh *BspQ3Meshes_Find(BspQ3Meshes *self, BspQ3Face *face);
 /* ntri more triangles for the mesh of face, a new mesh for a new pair */
-void __thiscall BspQ3Meshes_Count(BspQ3Meshes *self, BspQ3Face *face, int ntri);
+void BspQ3Meshes_Count(BspQ3Meshes *self, BspQ3Face *face, int ntri);
 /* a triangle of the corners (0x28 bytes each) into the mesh of face; the first one allocates the counted ones */
-void __thiscall BspQ3Meshes_AddTri(BspQ3Meshes *self, const void *a, const void *b, const void *c, BspQ3Face *face);
+void BspQ3Meshes_AddTri(BspQ3Meshes *self, const void *a, const void *b, const void *c, BspQ3Face *face);
 /* the x87 dot product (returned in st0, not rounded) */
 long double Vec3_DotX87(const float *a, const float *b);
 /* lump id copied into a new[] *out: the count of elements */
-int __thiscall CBspQ3_ReadLump(CBspQ3 *self, int id, void **out, int elem);
-void __fastcall CBspQ3_ReadShaders(CBspQ3 *self);
-void __fastcall CBspQ3_ReadVerts(CBspQ3 *self);
-void __fastcall CBspQ3_ReadFaces(CBspQ3 *self);
-void __fastcall CBspQ3_ReadLMaps(CBspQ3 *self);
-void __fastcall CBspQ3_Build(CBspQ3 *self);
-void __fastcall CBspQ3_InitD3D(CBspQ3 *self);
-void __fastcall CBspQ3_ReleaseD3D(CBspQ3 *self);
-void __fastcall CBspQ3_Render(CBspQ3 *self);
-/* rva 0x2c8770, an uncalled thiscall that returns this */
-void *__fastcall BspQ3_Identity(void *self);
+int CBspQ3_ReadLump(CBspQ3 *self, int id, void **out, int elem);
+void CBspQ3_ReadShaders(CBspQ3 *self);
+void CBspQ3_ReadVerts(CBspQ3 *self);
+void CBspQ3_ReadFaces(CBspQ3 *self);
+void CBspQ3_ReadLMaps(CBspQ3 *self);
+void CBspQ3_Build(CBspQ3 *self);
+void CBspQ3_InitD3D(CBspQ3 *self);
+void CBspQ3_ReleaseD3D(CBspQ3 *self);
+void CBspQ3_Render(CBspQ3 *self);
+/* never called, returns this */
+void *BspQ3_Identity(void *self);
 
 #endif

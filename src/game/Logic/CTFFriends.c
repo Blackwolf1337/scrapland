@@ -14,7 +14,7 @@ cEntity *Logic_FindCar(const char *name) {
 	return Logic_AsCar(World_FindEntity(name));
 }
 
-cCTFFriends *__fastcall cCTFFriends_ctor(cCTFFriends *self) {
+cCTFFriends *cCTFFriends_ctor(cCTFFriends *self) {
 	cCTFFriendsData *d = operator_new(sizeof(*d));
 
 	if (!d) {
@@ -27,18 +27,18 @@ cCTFFriends *__fastcall cCTFFriends_ctor(cCTFFriends *self) {
 	return self;
 }
 
-void __fastcall cCTFFriends_dtor(cCTFFriends *self) {
+void cCTFFriends_dtor(cCTFFriends *self) {
 	if (self->d) {
 		operator_delete_sized(self->d, sizeof(*self->d));
 	}
 }
 
-cEntityListData *__fastcall cCTFFriends_GetList(cCTFFriends *self) {
+cEntityListData *cCTFFriends_GetList(cCTFFriends *self) {
 	return self->d->list;
 }
 
 /* a random enemy ship, or the enemy leader (once while no ship attacks it) if attackLeader */
-cEntity *__thiscall cCTFFriendsData_PickTarget(cCTFFriendsData *self, cEntity *e, byte attackLeader) {
+cEntity *cCTFFriendsData_PickTarget(cCTFFriendsData *self, cEntity *e, byte attackLeader) {
 	(void)e;
 	cEntityListData *enemies = cCTFEnemies_GetList((&g_pWorld->logic.ctfEnemies));
 	Nto1Node *n = Logic_ListFirst(enemies);
@@ -60,7 +60,7 @@ cEntity *__thiscall cCTFFriendsData_PickTarget(cCTFFriendsData *self, cEntity *e
 	return NULL;
 }
 
-void __fastcall cCTFFriendsData_Think(cCTFFriendsData *self) {
+void cCTFFriendsData_Think(cCTFFriendsData *self) {
 	Nto1Node *n = Logic_ListFirst(self->list);
 
 	if (!n) {
@@ -100,7 +100,7 @@ void __fastcall cCTFFriendsData_Think(cCTFFriendsData *self) {
 	} while ((n = Logic_ListNext(n)) != NULL);
 }
 
-void __fastcall cCTFFriends_Init(cCTFFriends *self) {
+void cCTFFriends_Init(cCTFFriends *self) {
 	cCTFFriendsData *d = self->d;
 
 	d->list = cWorld_NewEntityList(g_pWorld, "CTFFriends");
@@ -139,7 +139,7 @@ void CTFFriends_OnDamage(cAbstractFile *params) {
 	cAIVehicle_SetState(ai, AIV_STATE_ATTACK, a);
 }
 
-void __thiscall cCTFFriends_Update(cCTFFriends *self, float dt) {
+void cCTFFriends_Update(cCTFFriends *self, float dt) {
 	cCTFFriendsData *d = self->d;
 	float t = d->timer + dt;
 

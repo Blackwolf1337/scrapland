@@ -169,39 +169,39 @@ SD_SIZE(MeshD3DGroup, 0x10);
 #define g_MaxTriGroup GAME_GLOBAL(int, g_MaxTriGroup)
 
 /* the deleting destructor */
-CMeshD3D *__thiscall CMeshD3D_Delete(CMeshD3D *self, byte flags);
-CMeshD3D *__fastcall CMeshD3D_ctor(CMeshD3D *self);
+CMeshD3D *CMeshD3D_Delete(CMeshD3D *self, byte flags);
+CMeshD3D *CMeshD3D_ctor(CMeshD3D *self);
 /* made from mesh (MALLAD3D_* flags), the object of node when there is one */
-CMeshD3D *__thiscall CMeshD3D_ctorMesh(CMeshD3D *self, CTriMesh *mesh, uint32_t flags, CNode3D *node);
-void __fastcall CMeshD3D_dtor(CMeshD3D *self);
+CMeshD3D *CMeshD3D_ctorMesh(CMeshD3D *self, CTriMesh *mesh, uint32_t flags, CNode3D *node);
+void CMeshD3D_dtor(CMeshD3D *self);
 /* the members after the vftable cleared, except vert, box and ext */
-void __fastcall CMeshD3D_Init(CMeshD3D *self);
-void __thiscall CMeshD3D_Build(CMeshD3D *self, CTriMesh *mesh, uint32_t flags);
+void CMeshD3D_Init(CMeshD3D *self);
+void CMeshD3D_Build(CMeshD3D *self, CTriMesh *mesh, uint32_t flags);
 
 /* the slots of the vftable */
-void __thiscall CMeshD3D_SetRender(CMeshD3D *self, void *renderNode);
-int __thiscall CMeshD3D_Draw(CMeshD3D *self, void *dev, void *ctx);
-int __thiscall CMeshD3D_Restore(CMeshD3D *self, void *dev);
-void __thiscall CMeshD3D_Invalidate(CMeshD3D *self, void *dev);
-byte __thiscall CMeshD3D_Write(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
-byte __thiscall CMeshD3D_Read(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
+void CMeshD3D_SetRender(CMeshD3D *self, void *renderNode);
+int CMeshD3D_Draw(CMeshD3D *self, void *dev, void *ctx);
+int CMeshD3D_Restore(CMeshD3D *self, void *dev);
+void CMeshD3D_Invalidate(CMeshD3D *self, void *dev);
+byte CMeshD3D_Write(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
+byte CMeshD3D_Read(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
 
 /* the buffers of this mesh, 0 or E_FAIL without vertices or triangles */
-int __fastcall CMeshD3D_CreateVB(CMeshD3D *self);
+int CMeshD3D_CreateVB(CMeshD3D *self);
 /* the node of all meshes of the list, referenced */
-void __thiscall CMeshD3D_SetNode(CMeshD3D *self, CNode3D *node);
-void __thiscall CMeshD3D_AllocTri(CMeshD3D *self, int n);
-void __thiscall CMeshD3D_SetTri(CMeshD3D *self, uint32_t i, uint16_t a, uint16_t b, uint16_t c);
+void CMeshD3D_SetNode(CMeshD3D *self, CNode3D *node);
+void CMeshD3D_AllocTri(CMeshD3D *self, int n);
+void CMeshD3D_SetTri(CMeshD3D *self, uint32_t i, uint16_t a, uint16_t b, uint16_t c);
 /* the unit normal of triangle i (unnormalized when its length is 0) */
-vec3_t *__thiscall CMeshD3D_TriNormal(CMeshD3D *self, vec3_t *out, uint32_t i);
+vec3_t *CMeshD3D_TriNormal(CMeshD3D *self, vec3_t *out, uint32_t i);
 /* ext and center */
-void __fastcall CMeshD3D_CalcCenter(CMeshD3D *self);
+void CMeshD3D_CalcCenter(CMeshD3D *self);
 /* ext, center and box (of the list), merged into out (copied if first) */
-void __thiscall CMeshD3D_CalcBox(CMeshD3D *self, box_t *out, byte first);
-void __thiscall CMeshD3D_GetBox(CMeshD3D *self, box_t *out, byte recalc);
+void CMeshD3D_CalcBox(CMeshD3D *self, box_t *out, byte first);
+void CMeshD3D_GetBox(CMeshD3D *self, box_t *out, byte recalc);
 /* CHECKs of vertices and triangles, of the list and of this mesh (0) */
-void __fastcall CMeshD3D_CheckList(CMeshD3D *self);
-int __fastcall CMeshD3D_Check(CMeshD3D *self);
+void CMeshD3D_CheckList(CMeshD3D *self);
+int CMeshD3D_Check(CMeshD3D *self);
 
 /* the temporary objects */
 int MeshD3D_NewObj(void);
@@ -233,6 +233,6 @@ int MeshD3D_Render(CMeshD3D *self, void *ctx);
 byte Plane_Calc(plane_t *plane, const vec3_t *v1, const vec3_t *v2, const vec3_t *v3);
 /* Illum_VertList (the light of a CLight on the vertices of a list, Engine/RenderCalcIlum.cpp): light.h */
 /* Engine/CalcSegmentos.cpp: the segments of the list from pPos */
-void __thiscall CMeshD3D_CalcSegments(CMeshD3D *self, byte all);
+void CMeshD3D_CalcSegments(CMeshD3D *self, byte all);
 
 #endif

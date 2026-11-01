@@ -95,7 +95,7 @@ static void Lods_Delete(CTable *t) {
 	}
 }
 
-CModel *__fastcall CModel_ctor(CModel *self) {
+CModel *CModel_ctor(CModel *self) {
 	self->vftable = CMODEL_VFTABLE;
 	self->name = NULL;
 	self->slots.p = NULL;
@@ -143,21 +143,21 @@ CModel *__fastcall CModel_ctor(CModel *self) {
 	return self;
 }
 
-void __fastcall Table_DeleteLods(CTable *t) {
+void Table_DeleteLods(CTable *t) {
 	Lods_Delete(t);
 }
 
-CLod *__fastcall CLod_ctor(CLod *self) {
+CLod *CLod_ctor(CLod *self) {
 	self->model = NULL;
 	self->unused_04 = 0;
 	return self;
 }
 
-void __fastcall CLod_dtor(CLod *self) {
+void CLod_dtor(CLod *self) {
 	CHECK(!self->model);
 }
 
-void __fastcall CModel_dtor(CModel *self) {
+void CModel_dtor(CModel *self) {
 	self->vftable = CMODEL_VFTABLE;
 	for (uint32_t i = 0; (int)i < self->lods.n; i++) {
 		Model_Destroy(&Model_Lod(self, i)->model, 0);
@@ -182,7 +182,7 @@ static void *DeleteVecArray(void *self, uint32_t flags, uint32_t size, void *dto
 	return mem;
 }
 
-void *__thiscall CLod_DeleteVec(CLod *self, uint32_t flags) {
+void *CLod_DeleteVec(CLod *self, uint32_t flags) {
 	if (flags & 2) {
 		return DeleteVecArray(self, flags, sizeof(CLod), (void *)CLod_dtor);
 	}
@@ -193,7 +193,7 @@ void *__thiscall CLod_DeleteVec(CLod *self, uint32_t flags) {
 	return self;
 }
 
-void *__thiscall CRenderNode_DeleteVec(CRenderNode *self, uint32_t flags) {
+void *CRenderNode_DeleteVec(CRenderNode *self, uint32_t flags) {
 	if (flags & 2) {
 		return DeleteVecArray(self, flags, sizeof(CRenderNode), (void *)CRenderNode_dtor);
 	}
@@ -204,7 +204,7 @@ void *__thiscall CRenderNode_DeleteVec(CRenderNode *self, uint32_t flags) {
 	return self;
 }
 
-CModel *__thiscall CModel_Delete(CModel *self, byte flags) {
+CModel *CModel_Delete(CModel *self, byte flags) {
 	CModel_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -212,22 +212,22 @@ CModel *__thiscall CModel_Delete(CModel *self, byte flags) {
 	return self;
 }
 
-void __fastcall CModel_Disable(CModel *self) {
+void CModel_Disable(CModel *self) {
 	Model_SetEnable(self, 0);
 }
 
-void __fastcall CModel_Enable(CModel *self) {
+void CModel_Enable(CModel *self) {
 	Model_SetEnable(self, 1);
 }
 
-void __thiscall CModel_ReleaseD3D(CModel *self, void *dev, byte scene) {
+void CModel_ReleaseD3D(CModel *self, void *dev, byte scene) {
 	CHECK(self->scene);
 	if (scene) {
 		CScene_ReleaseD3D(self->scene, dev);
 	}
 }
 
-CAnimSlot *__thiscall CModel_GetSlot(CModel *self, uint32_t i) {
+CAnimSlot *CModel_GetSlot(CModel *self, uint32_t i) {
 	return Model_Slot(self, i);
 }
 
@@ -238,14 +238,14 @@ double CAnim_GetSpeed(CAnimGroup *a) {
 	return 0.0;
 }
 
-void __thiscall CModel_InitD3D(CModel *self, void *dev, byte scene) {
+void CModel_InitD3D(CModel *self, void *dev, byte scene) {
 	CHECK(self->scene);
 	if (scene) {
 		CScene_InitD3D(self->scene, dev);
 	}
 }
 
-void __thiscall CModel_SetupRender(CModel *self, NodeAnimCtx *ctx) {
+void CModel_SetupRender(CModel *self, NodeAnimCtx *ctx) {
 	vec3_t one;
 
 	Vec3_One(&one);
@@ -265,7 +265,7 @@ void __thiscall CModel_SetupRender(CModel *self, NodeAnimCtx *ctx) {
 	Vec3_Zero(&self->animOfs);
 }
 
-matrix_t *__thiscall CModel_GetNodeMatrix(CModel *self, matrix_t *m, uint32_t inodo, byte anim, uint32_t slot,
+matrix_t *CModel_GetNodeMatrix(CModel *self, matrix_t *m, uint32_t inodo, byte anim, uint32_t slot,
 	byte *visible, float *fov) {
 	CNode3D *node = Model_RenderNode(self->renderNodes, inodo)->node;
 	vec3_t pos = node->pos;
@@ -299,11 +299,11 @@ matrix_t *__thiscall CModel_GetNodeMatrix(CModel *self, matrix_t *m, uint32_t in
 	return m;
 }
 
-void __thiscall CModel_SetNumLods(CModel *self, int n) {
+void CModel_SetNumLods(CModel *self, int n) {
 	Table_New8(&self->lods, n);
 }
 
-void __thiscall CModel_SetLod(CModel *self, uint32_t i, CModel *model) {
+void CModel_SetLod(CModel *self, uint32_t i, CModel *model) {
 	CHECK(model);
 	Model_Lod(self, i)->model = model;
 	Model_Lod(self, i)->unused_04 = 0;
@@ -318,7 +318,7 @@ void __thiscall CModel_SetLod(CModel *self, uint32_t i, CModel *model) {
 	model->mainLOD = self;
 }
 
-byte __thiscall CModel_SetMorphSubset(CModel *self, uint32_t slot, const char *tag) {
+byte CModel_SetMorphSubset(CModel *self, uint32_t slot, const char *tag) {
 	CAnimGroup *a = Model_Slot(self, slot)->anim;
 
 	CHECK(a && a->morph && a->Anim->AnimM3D->flag);
@@ -335,12 +335,12 @@ byte __thiscall CModel_SetMorphSubset(CModel *self, uint32_t slot, const char *t
 	return 1;
 }
 
-int __fastcall CModel_GetSector(CModel *self) {
+int CModel_GetSector(CModel *self) {
 	SectorVis_Update(&self->sector, &self->pos, self->name);
 	return self->sector.sector;
 }
 
-CAnimGroup *__thiscall CModel_AddAnim(CModel *self, CScene *anim, const char *name) {
+CAnimGroup *CModel_AddAnim(CModel *self, CScene *anim, const char *name) {
 	CAnimGroup *a = AnimGroup_New(self->scene, anim, name);
 
 	if (CAnimGroups_Find(&self->anims, a->name, NULL)) {
@@ -350,7 +350,7 @@ CAnimGroup *__thiscall CModel_AddAnim(CModel *self, CScene *anim, const char *na
 	return a;
 }
 
-byte __thiscall CModel_AddAnimEvents(CModel *self, const char *name, float start, float end) {
+byte CModel_AddAnimEvents(CModel *self, const char *name, float start, float end) {
 	CAnimGroup *a = CAnimGroups_Find(&self->anims, name, NULL);
 	CAnimEvent *ev, *first;
 
@@ -376,7 +376,7 @@ byte __thiscall CModel_AddAnimEvents(CModel *self, const char *name, float start
 	return 1;
 }
 
-void __thiscall CModel_AnimPlay(CModel *self, uint32_t slot) {
+void CModel_AnimPlay(CModel *self, uint32_t slot) {
 	CAnimGroup *a = Model_Slot(self, slot)->anim;
 
 	if (a) {
@@ -384,7 +384,7 @@ void __thiscall CModel_AnimPlay(CModel *self, uint32_t slot) {
 	}
 }
 
-int __thiscall CModel_AnimState(CModel *self, uint32_t slot) {
+int CModel_AnimState(CModel *self, uint32_t slot) {
 	CAnimGroup *a = Model_Slot(self, slot)->anim;
 
 	if (a) {
@@ -393,7 +393,7 @@ int __thiscall CModel_AnimState(CModel *self, uint32_t slot) {
 	return ANIM_END;
 }
 
-void __thiscall CModel_AnimStop(CModel *self, uint32_t slot) {
+void CModel_AnimStop(CModel *self, uint32_t slot) {
 	CAnimGroup *a = Model_Slot(self, slot)->anim;
 
 	if (a) {
@@ -401,7 +401,7 @@ void __thiscall CModel_AnimStop(CModel *self, uint32_t slot) {
 	}
 }
 
-void __thiscall CModel_AnimPause(CModel *self, uint32_t slot) {
+void CModel_AnimPause(CModel *self, uint32_t slot) {
 	CAnimGroup *a = Model_Slot(self, slot)->anim;
 
 	if (a) {
@@ -409,7 +409,7 @@ void __thiscall CModel_AnimPause(CModel *self, uint32_t slot) {
 	}
 }
 
-void __thiscall CModel_AnimFade(CModel *self, float t, uint32_t slot) {
+void CModel_AnimFade(CModel *self, float t, uint32_t slot) {
 	CAnimGroup *a = Model_Slot(self, slot)->anim;
 
 	if (a) {
@@ -417,13 +417,13 @@ void __thiscall CModel_AnimFade(CModel *self, float t, uint32_t slot) {
 	}
 }
 
-void __thiscall CModel_MoveForward(CModel *self, float d) {
+void CModel_MoveForward(CModel *self, float d) {
 	vec3_t v = { 0.0f, 0.0f, -d }, t;
 
 	Model_AddMove(self, Vec3_Rotate(&t, &v, &self->rot));
 }
 
-void __thiscall CModel_UpdateAnims(CModel *self, float dt, int iAnim) {
+void CModel_UpdateAnims(CModel *self, float dt, int iAnim) {
 	(void)dt;
 	CHECK(iAnim == -1);
 	for (uint32_t i = 0; (int)i < MAX_ANIM_CHANNEL; i++) {
@@ -489,21 +489,21 @@ void __thiscall CModel_UpdateAnims(CModel *self, float dt, int iAnim) {
 	}
 }
 
-CNode3D *__thiscall CModel_FindClass(CModel *self, CNode3D *from, uint32_t class) {
+CNode3D *CModel_FindClass(CModel *self, CNode3D *from, uint32_t class) {
 	if (self->scene) {
 		return CScene_FindClass(self->scene, from, class);
 	}
 	return NULL;
 }
 
-CNode3D *__thiscall CModel_FindNode(CModel *self, const char *name) {
+CNode3D *CModel_FindNode(CModel *self, const char *name) {
 	if (self->scene && self->scene->Node3D) {
 		return CNode3D_Find(self->scene->Node3D, name, 1);
 	}
 	return NULL;
 }
 
-CRenderNode *__thiscall CModel_FindRenderNode(CModel *self, const char *name, uint32_t *idx, byte wild, byte nocase) {
+CRenderNode *CModel_FindRenderNode(CModel *self, const char *name, uint32_t *idx, byte wild, byte nocase) {
 	char tmp[1024], tmp2[1024];
 
 	CHECK(self->renderNodes);
@@ -543,14 +543,14 @@ CRenderNode *__thiscall CModel_FindRenderNode(CModel *self, const char *name, ui
 	return NULL;
 }
 
-CNode3D *__thiscall CModel_FindNodeWild(CModel *self, const char *pat) {
+CNode3D *CModel_FindNodeWild(CModel *self, const char *pat) {
 	if (self->scene && self->scene->Node3D) {
 		return CNode3D_FindWild(self->scene->Node3D, pat, 1);
 	}
 	return NULL;
 }
 
-void __thiscall CModel_AnimOffset(CModel *self, NodeAnimCtx *ctx) {
+void CModel_AnimOffset(CModel *self, NodeAnimCtx *ctx) {
 	CHECK(ctx);
 	Vec3_Zero(&self->animOfs);
 	if (ctx->chan[0].anim && ctx->chan[0].anim->anim[0]) {
@@ -568,12 +568,12 @@ void __thiscall CModel_AnimOffset(CModel *self, NodeAnimCtx *ctx) {
 	}
 }
 
-void __thiscall CModel_GetMatrix(CModel *self, matrix_t *m) {
+void CModel_GetMatrix(CModel *self, matrix_t *m) {
 	Matrix_LoadIdentity(m);
 	Model_Transform(self, m);
 }
 
-void __thiscall CModel_SetAnim(CModel *self, int idx, uint32_t slot) {
+void CModel_SetAnim(CModel *self, int idx, uint32_t slot) {
 	CAnimGroup *a = CAnimGroups_Get(&self->anims, idx);
 
 	if (a == Model_Slot(self, slot)->anim) {
@@ -606,7 +606,7 @@ void __thiscall CModel_SetAnim(CModel *self, int idx, uint32_t slot) {
 	}
 }
 
-void __thiscall CModel_SetAnimName(CModel *self, const char *name, uint32_t slot) {
+void CModel_SetAnimName(CModel *self, const char *name, uint32_t slot) {
 	CHECK(0);
 	CAnimGroup *cur = Model_Slot(self, slot)->anim;
 	if (cur && name && !crt_stricmp(cur->Anim->AnimM3D->name, name)) {
@@ -624,7 +624,7 @@ void __thiscall CModel_SetAnimName(CModel *self, const char *name, uint32_t slot
 	}
 }
 
-void __thiscall CModel_SetScene(CModel *self, CScene *scn) {
+void CModel_SetScene(CModel *self, CScene *scn) {
 	CTable *tab = self->renderNodes;
 
 	if (tab) {
@@ -701,13 +701,13 @@ void __thiscall CModel_SetScene(CModel *self, CScene *scn) {
 	}
 }
 
-void __thiscall CModel_SetCallback(CModel *self, modelCallback_t fn, void *arg, void *arg2) {
+void CModel_SetCallback(CModel *self, modelCallback_t fn, void *arg, void *arg2) {
 	self->callback = fn;
 	self->cbArg = arg;
 	self->cbArg2 = arg2;
 }
 
-void __thiscall CModel_SetPivot(CModel *self, const vec3_t *v, byte rel, byte update) {
+void CModel_SetPivot(CModel *self, const vec3_t *v, byte rel, byte update) {
 	if (rel) {
 		CHECK(self->scene);
 		if (update) {
@@ -727,7 +727,7 @@ void __thiscall CModel_SetPivot(CModel *self, const vec3_t *v, byte rel, byte up
 	self->pivot.z = -v->z;
 }
 
-byte __thiscall CModel_SetPivotNode(CModel *self, const char *name) {
+byte CModel_SetPivotNode(CModel *self, const char *name) {
 	if (self->scene && self->scene->Node3D) {
 		CNode3D *n = CNode3D_Find(self->scene->Node3D, name, 1);
 
@@ -741,7 +741,7 @@ byte __thiscall CModel_SetPivotNode(CModel *self, const char *name) {
 	return 0;
 }
 
-void __thiscall CModel_SetSlotAnim(CModel *self, uint32_t slot, CAnimGroup *a) {
+void CModel_SetSlotAnim(CModel *self, uint32_t slot, CAnimGroup *a) {
 	CAnimSlot *s = Model_Slot(self, slot);
 
 	s->anim = a;
@@ -763,7 +763,7 @@ static int Model_AddRenderNodes(CModel *self, int k, uint32_t pass) {
 	return k;
 }
 
-void __thiscall CModel_BuildRenderNodes(CModel *self, int unused) {
+void CModel_BuildRenderNodes(CModel *self, int unused) {
 	(void)unused;
 	CHECK(self->scene);
 	for (CNode3D *n = self->scene->Node3D; n; n = n->next) {
@@ -799,7 +799,7 @@ void Model_Check(CModel *m) {
 	CHECK(m);
 }
 
-CAnimation *__thiscall CModel_GetSlotAnimM3D(CModel *self, uint32_t slot) {
+CAnimation *CModel_GetSlotAnimM3D(CModel *self, uint32_t slot) {
 	CAnimGroup *a = Model_Slot(self, slot)->anim;
 
 	if (a) {
@@ -808,18 +808,18 @@ CAnimation *__thiscall CModel_GetSlotAnimM3D(CModel *self, uint32_t slot) {
 	return NULL;
 }
 
-CAnimGroup *__thiscall CModel_GetAnim(CModel *self, int i) {
+CAnimGroup *CModel_GetAnim(CModel *self, int i) {
 	return CAnimGroups_Get(&self->anims, i);
 }
 
-int __thiscall CModel_FindAnim(CModel *self, const char *name) {
+int CModel_FindAnim(CModel *self, const char *name) {
 	int idx = -1;
 
 	CAnimGroups_Find(&self->anims, name, &idx);
 	return idx;
 }
 
-const char *__thiscall CModel_GetAnimName(CModel *self, int i) {
+const char *CModel_GetAnimName(CModel *self, int i) {
 	CAnimGroup *a = CAnimGroups_Get(&self->anims, i);
 
 	if (a) {
@@ -828,11 +828,11 @@ const char *__thiscall CModel_GetAnimName(CModel *self, int i) {
 	return NULL;
 }
 
-CAnimGroup *__thiscall CModel_GetSlotAnim(CModel *self, uint32_t slot) {
+CAnimGroup *CModel_GetSlotAnim(CModel *self, uint32_t slot) {
 	return Model_Slot(self, slot)->anim;
 }
 
-float __thiscall CModel_GetSlotFrame(CModel *self, uint32_t slot) {
+float CModel_GetSlotFrame(CModel *self, uint32_t slot) {
 	CAnimGroup *a = Model_Slot(self, slot)->anim;
 
 	if (a) {
@@ -841,7 +841,7 @@ float __thiscall CModel_GetSlotFrame(CModel *self, uint32_t slot) {
 	return 0.0f;
 }
 
-const char *__fastcall CLight_TypeName(const CLight *l) {
+const char *CLight_TypeName(const CLight *l) {
 	switch (l->type) {
 	case LIGHT_OMNI:
 		return LIGHT_OMNI_NAME;
@@ -900,7 +900,7 @@ static float Model_Sphere(CModel *self, const matrix_t *m, vec3_t *c) {
 	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) * 0.5f;
 }
 
-byte __thiscall CModel_Visibility(CModel *self, const matrix_t *m) {
+byte CModel_Visibility(CModel *self, const matrix_t *m) {
 	int pass = g_RenderPass;
 	vec3_t c;
 
@@ -936,7 +936,7 @@ hidden:
 	return 0;
 }
 
-byte __fastcall CModel_UpdateLOD(CModel *self) {
+byte CModel_UpdateLOD(CModel *self) {
 	int i;
 	CLod *l = NULL;
 
@@ -1051,7 +1051,7 @@ static void Model_ShowSlots(CModel *self) {
 	}
 }
 
-void __fastcall CModel_Render(CModel *self) {
+void CModel_Render(CModel *self) {
 	NodeAnimCtx ctx;
 	CLight *lights[MAX_LIGHTS_OBJ];
 	vec3_t c;

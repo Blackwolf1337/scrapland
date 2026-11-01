@@ -30,7 +30,7 @@ static uint16_t *MeshD3D_Tri(CMeshD3D *m, uint32_t i) {
 	return m->pTri[i];
 }
 
-void __thiscall CMeshD3D_CalcSegments(CMeshD3D *self, byte all) {
+void CMeshD3D_CalcSegments(CMeshD3D *self, byte all) {
 	CHECK(self->vertOrig);
 	CHECK(!self->segs);
 	CHECK(!self->pSeg);

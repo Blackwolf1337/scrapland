@@ -175,54 +175,54 @@ SD_OFFSET(cObjElementFXSceneYakuzzi, started, 0xd0);
 
 /* at the start of the FXVehicle.cpp code: the target entity name and its action of the
  * rays (31 characters at most), the height */
-void __thiscall cObjElementFXSceneDecontamination_SetNames(cObjElementFXSceneDecontamination *self,
+void cObjElementFXSceneDecontamination_SetNames(cObjElementFXSceneDecontamination *self,
 	const char *target, const char *action);
-void __thiscall cObjElementFXSceneDecontamination_SetFC(cObjElementFXSceneDecontamination *self, float v);
+void cObjElementFXSceneDecontamination_SetFC(cObjElementFXSceneDecontamination *self, float v);
 
 /* the scene effect of the model of e (none for other models) */
 void FXScene_Create(cEntity *e, const char *model);
 
 /* the entity the element follows: an entity with life with a model (CHECKs) */
-void __thiscall cObjElementFXSceneBeatPickus_SetEntity(cObjElementFXSceneBeatPickus *self, cEntity *e);
-void __thiscall cObjElementFXSceneBillArrives_A_SetEntity(cObjElementFXSceneBillArrives_A *self, cEntity *e);
-void __thiscall cObjElementFXSceneBishops_SetEntity(cObjElementFXSceneBishops *self, cEntity *e);
-void __thiscall cObjElementFXSceneDecontamination_SetEntity(cObjElementFXSceneDecontamination *self, cEntity *e);
-void __thiscall cObjElementFXSceneEnterMatrix_SetEntity(cObjElementFXSceneEnterMatrix *self, cEntity *e);
+void cObjElementFXSceneBeatPickus_SetEntity(cObjElementFXSceneBeatPickus *self, cEntity *e);
+void cObjElementFXSceneBillArrives_A_SetEntity(cObjElementFXSceneBillArrives_A *self, cEntity *e);
+void cObjElementFXSceneBishops_SetEntity(cObjElementFXSceneBishops *self, cEntity *e);
+void cObjElementFXSceneDecontamination_SetEntity(cObjElementFXSceneDecontamination *self, cEntity *e);
+void cObjElementFXSceneEnterMatrix_SetEntity(cObjElementFXSceneEnterMatrix *self, cEntity *e);
 /* also the main mental controller effect to its start (scale 1, no last controller) */
-void __thiscall cObjElementFXSceneHumanCD_SetEntity(cObjElementFXSceneHumanCD *self, cEntity *e);
-void __thiscall cObjElementFXSceneTheEndB_SetEntity(cObjElementFXSceneTheEndB *self, cEntity *e);
-void __thiscall cObjElementFXSceneYakuzzi_SetEntity(cObjElementFXSceneYakuzzi *self, cEntity *e);
+void cObjElementFXSceneHumanCD_SetEntity(cObjElementFXSceneHumanCD *self, cEntity *e);
+void cObjElementFXSceneTheEndB_SetEntity(cObjElementFXSceneTheEndB *self, cEntity *e);
+void cObjElementFXSceneYakuzzi_SetEntity(cObjElementFXSceneYakuzzi *self, cEntity *e);
 
 /* Attach (vf03): the particles to the dummies of the debris model, the positions of the scene dummies */
-void __thiscall cObjElementFXSceneBeatPickus_Attach(cObjElementFXSceneBeatPickus *self, cDebris *d);
-void __thiscall cObjElementFXSceneBillArrives_A_Attach(cObjElementFXSceneBillArrives_A *self, cDebris *d);
-void __thiscall cObjElementFXSceneBishops_Attach(cObjElementFXSceneBishops *self, cDebris *d);
-void __thiscall cObjElementFXSceneDecontamination_Attach(cObjElementFXSceneDecontamination *self, cDebris *d);
-void __thiscall cObjElementFXSceneEnterMatrix_Attach(cObjElementFXSceneEnterMatrix *self, cDebris *d);
-void __thiscall cObjElementFXSceneHumanCD_Attach(cObjElementFXSceneHumanCD *self, cDebris *d);
-void __thiscall cObjElementFXSceneTheEndB_Attach(cObjElementFXSceneTheEndB *self, cDebris *d);
-void __thiscall cObjElementFXSceneYakuzzi_Attach(cObjElementFXSceneYakuzzi *self, cDebris *d);
+void cObjElementFXSceneBeatPickus_Attach(cObjElementFXSceneBeatPickus *self, cDebris *d);
+void cObjElementFXSceneBillArrives_A_Attach(cObjElementFXSceneBillArrives_A *self, cDebris *d);
+void cObjElementFXSceneBishops_Attach(cObjElementFXSceneBishops *self, cDebris *d);
+void cObjElementFXSceneDecontamination_Attach(cObjElementFXSceneDecontamination *self, cDebris *d);
+void cObjElementFXSceneEnterMatrix_Attach(cObjElementFXSceneEnterMatrix *self, cDebris *d);
+void cObjElementFXSceneHumanCD_Attach(cObjElementFXSceneHumanCD *self, cDebris *d);
+void cObjElementFXSceneTheEndB_Attach(cObjElementFXSceneTheEndB *self, cDebris *d);
+void cObjElementFXSceneYakuzzi_Attach(cObjElementFXSceneYakuzzi *self, cDebris *d);
 
 /* Reset (vf04) */
-void __thiscall cObjElementFXSceneBeatPickus_Reset(cObjElementFXSceneBeatPickus *self, int arg);
-void __thiscall cObjElementFXSceneBillArrives_A_Reset(cObjElementFXSceneBillArrives_A *self, int arg);
-void __thiscall cObjElementFXSceneBishops_Reset(cObjElementFXSceneBishops *self, int arg);
-void __thiscall cObjElementFXSceneDecontamination_Reset(cObjElementFXSceneDecontamination *self, int arg);
-void __thiscall cObjElementFXSceneEnterMatrix_Reset(cObjElementFXSceneEnterMatrix *self, int arg);
-void __thiscall cObjElementFXSceneHumanCD_Reset(cObjElementFXSceneHumanCD *self, int arg);
-void __thiscall cObjElementFXSceneTheEndB_Reset(cObjElementFXSceneTheEndB *self, int arg);
-void __thiscall cObjElementFXSceneYakuzzi_Reset(cObjElementFXSceneYakuzzi *self, int arg);
+void cObjElementFXSceneBeatPickus_Reset(cObjElementFXSceneBeatPickus *self, int arg);
+void cObjElementFXSceneBillArrives_A_Reset(cObjElementFXSceneBillArrives_A *self, int arg);
+void cObjElementFXSceneBishops_Reset(cObjElementFXSceneBishops *self, int arg);
+void cObjElementFXSceneDecontamination_Reset(cObjElementFXSceneDecontamination *self, int arg);
+void cObjElementFXSceneEnterMatrix_Reset(cObjElementFXSceneEnterMatrix *self, int arg);
+void cObjElementFXSceneHumanCD_Reset(cObjElementFXSceneHumanCD *self, int arg);
+void cObjElementFXSceneTheEndB_Reset(cObjElementFXSceneTheEndB *self, int arg);
+void cObjElementFXSceneYakuzzi_Reset(cObjElementFXSceneYakuzzi *self, int arg);
 
 /* Update (vf01): the life of the debris to 0 once the entity is gone */
-void __thiscall cObjElementFXSceneBeatPickus_Update(cObjElementFXSceneBeatPickus *self, cDebris *d, float dt);
-void __thiscall cObjElementFXSceneBillArrives_A_Update(cObjElementFXSceneBillArrives_A *self, cDebris *d,
+void cObjElementFXSceneBeatPickus_Update(cObjElementFXSceneBeatPickus *self, cDebris *d, float dt);
+void cObjElementFXSceneBillArrives_A_Update(cObjElementFXSceneBillArrives_A *self, cDebris *d,
 	float dt);
-void __thiscall cObjElementFXSceneBishops_Update(cObjElementFXSceneBishops *self, cDebris *d, float dt);
-void __thiscall cObjElementFXSceneDecontamination_Update(cObjElementFXSceneDecontamination *self, cDebris *d,
+void cObjElementFXSceneBishops_Update(cObjElementFXSceneBishops *self, cDebris *d, float dt);
+void cObjElementFXSceneDecontamination_Update(cObjElementFXSceneDecontamination *self, cDebris *d,
 	float dt);
-void __thiscall cObjElementFXSceneEnterMatrix_Update(cObjElementFXSceneEnterMatrix *self, cDebris *d, float dt);
-void __thiscall cObjElementFXSceneHumanCD_Update(cObjElementFXSceneHumanCD *self, cDebris *d, float dt);
-void __thiscall cObjElementFXSceneTheEndB_Update(cObjElementFXSceneTheEndB *self, cDebris *d, float dt);
-void __thiscall cObjElementFXSceneYakuzzi_Update(cObjElementFXSceneYakuzzi *self, cDebris *d, float dt);
+void cObjElementFXSceneEnterMatrix_Update(cObjElementFXSceneEnterMatrix *self, cDebris *d, float dt);
+void cObjElementFXSceneHumanCD_Update(cObjElementFXSceneHumanCD *self, cDebris *d, float dt);
+void cObjElementFXSceneTheEndB_Update(cObjElementFXSceneTheEndB *self, cDebris *d, float dt);
+void cObjElementFXSceneYakuzzi_Update(cObjElementFXSceneYakuzzi *self, cDebris *d, float dt);
 
 #endif

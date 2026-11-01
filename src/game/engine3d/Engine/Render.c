@@ -609,13 +609,13 @@ void Frustum_TestSpheres(const vec3_t *centers, const float *radius, int n, int 
 	}
 }
 
-void __fastcall CRenderIB_Reset(CRenderIB *self) {
+void CRenderIB_Reset(CRenderIB *self) {
 	CHECK(!self->pVertIB);
 	self->Total = 0;
 	self->Used = 0;
 }
 
-void __fastcall CRenderVB_Reset(CRenderVB *self) {
+void CRenderVB_Reset(CRenderVB *self) {
 	CHECK(!self->pVertVB);
 	self->FVF = 0;
 	self->Size = 0;
@@ -631,7 +631,7 @@ static void Buf_Write(void *buf, uint32_t off, const void *src, uint32_t n) {
 	D3D_METHOD(buf, d3dUnlock_t, D3DBUF_UNLOCK)(buf);
 }
 
-void __thiscall CRenderIB_Add(CRenderIB *self, int numtri, const uint16_t *idx) {
+void CRenderIB_Add(CRenderIB *self, int numtri, const uint16_t *idx) {
 	CHECK(self->pVertIB);
 	CHECK(numtri > 0);
 	CHECK(self->Used + numtri <= self->Total);
@@ -639,7 +639,7 @@ void __thiscall CRenderIB_Add(CRenderIB *self, int numtri, const uint16_t *idx) 
 	self->Used += numtri;
 }
 
-void __thiscall CRenderVB_Add(CRenderVB *self, int numvert, const void *verts) {
+void CRenderVB_Add(CRenderVB *self, int numvert, const void *verts) {
 	CHECK(self->pVertVB);
 	CHECK(numvert > 0);
 	CHECK(self->Used + numvert <= self->Total);
@@ -654,15 +654,15 @@ static void *Buf_Get(void *const *buf, const int *used, int *out) {
 	return *buf;
 }
 
-void *__thiscall CRenderIB_Get(CRenderIB *self, int *used) {
+void *CRenderIB_Get(CRenderIB *self, int *used) {
 	return Buf_Get(&self->pVertIB, &self->Used, used);
 }
 
-void *__thiscall CRenderVB_Get(CRenderVB *self, int *used) {
+void *CRenderVB_Get(CRenderVB *self, int *used) {
 	return Buf_Get(&self->pVertVB, &self->Used, used);
 }
 
-void __thiscall CRenderIB_Create(CRenderIB *self, uint32_t numtri) {
+void CRenderIB_Create(CRenderIB *self, uint32_t numtri) {
 	CHECK(!self->pVertIB);
 	CHECK(numtri < 64000);
 	self->Total = (int)numtri;
@@ -674,7 +674,7 @@ void __thiscall CRenderIB_Create(CRenderIB *self, uint32_t numtri) {
 	}
 }
 
-void __thiscall CRenderVB_Create(CRenderVB *self, uint32_t numvert, int size, uint32_t fvf) {
+void CRenderVB_Create(CRenderVB *self, uint32_t numvert, int size, uint32_t fvf) {
 	CHECK(!self->pVertVB);
 	CHECK(numvert < 64000);
 	self->Total = (int)numvert;
@@ -1802,8 +1802,8 @@ void Render_SetLightmapMat(CMaterial *mat, int mode) {
 	}
 }
 
-typedef void(__thiscall *fxTexUpdate_t)(void *fx, CMap *map);
-typedef void *(__thiscall *fxTexGet_t)(void *fx);
+typedef void(*fxTexUpdate_t)(void *fx, CMap *map);
+typedef void *(*fxTexGet_t)(void *fx);
 
 int Render_SetMap(uint32_t stage, CMap *map) {
 	CHECK(g_pd3dDevice);

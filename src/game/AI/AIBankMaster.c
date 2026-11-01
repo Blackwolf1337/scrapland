@@ -8,7 +8,7 @@
 
 #define CAIBANK_SIZE 0x384
 
-void *__thiscall cAIBankMaster_ctor(void *mem, cEntity *e, int *arg) {
+void *cAIBankMaster_ctor(void *mem, cEntity *e, int *arg) {
 	cAIBankMaster *self = mem;
 
 	cAIChar_ctor(mem, e, arg);
@@ -17,7 +17,7 @@ void *__thiscall cAIBankMaster_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAIBankMaster *__thiscall cAIBankMaster_Delete(cAIBankMaster *self, byte flags) {
+cAIBankMaster *cAIBankMaster_Delete(cAIBankMaster *self, byte flags) {
 	self->base.vftable = CAIBANKMASTER_VFTABLE;
 	cAIChar_dtor(&self->base);
 	if (flags & 1) {
@@ -26,7 +26,7 @@ cAIBankMaster *__thiscall cAIBankMaster_Delete(cAIBankMaster *self, byte flags) 
 	return self;
 }
 
-void __thiscall cAIBankMaster_SetRanges(cAIBankMaster *self) {
+void cAIBankMaster_SetRanges(cAIBankMaster *self) {
 	cAIChar *c = &self->base;
 
 	if (c->state == 3) {

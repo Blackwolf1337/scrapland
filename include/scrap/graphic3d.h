@@ -33,22 +33,22 @@ typedef struct Graphic3DVert {
 } Graphic3DVert;
 SD_SIZE(Graphic3DVert, 0x1c);
 
-CGraphic3D *__thiscall CGraphic3D_ctorTex(CGraphic3D *self, const char *tex, const vec3_t *pos, const float *size);
+CGraphic3D *CGraphic3D_ctorTex(CGraphic3D *self, const char *tex, const vec3_t *pos, const float *size);
 /* with the texture and its opacity map (CGraphic3D_SetTexture) */
-CGraphic3D *__thiscall CGraphic3D_ctorTex2(CGraphic3D *self, const char *tex, const char *opac);
-Graphic3DVert *__fastcall Graphic3DVert_ctor(Graphic3DVert *self);
-CGraphic3D *__fastcall CGraphic3D_ctor(CGraphic3D *self);
-void __fastcall CGraphic3D_dtor(CGraphic3D *self);
-CGraphic3D *__thiscall CGraphic3D_Delete(CGraphic3D *self, byte flags);
-byte __thiscall CGraphic3D_Read(CGraphic3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
-void __fastcall CGraphic3D_Draw(CGraphic3D *self);
-void __thiscall CGraphic3D_Render(CGraphic3D *self, void *dev, CRenderNode *r);
-byte __thiscall CGraphic3D_Write(CGraphic3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
-void __thiscall CGraphic3D_SetNode(CGraphic3D *self, CNode3D *node);
+CGraphic3D *CGraphic3D_ctorTex2(CGraphic3D *self, const char *tex, const char *opac);
+Graphic3DVert *Graphic3DVert_ctor(Graphic3DVert *self);
+CGraphic3D *CGraphic3D_ctor(CGraphic3D *self);
+void CGraphic3D_dtor(CGraphic3D *self);
+CGraphic3D *CGraphic3D_Delete(CGraphic3D *self, byte flags);
+byte CGraphic3D_Read(CGraphic3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
+void CGraphic3D_Draw(CGraphic3D *self);
+void CGraphic3D_Render(CGraphic3D *self, void *dev, CRenderNode *r);
+byte CGraphic3D_Write(CGraphic3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
+void CGraphic3D_SetNode(CGraphic3D *self, CNode3D *node);
 /* the texture with its opacity map (additive alpha without one) */
-void __thiscall CGraphic3D_SetTexture(CGraphic3D *self, const char *tex, const char *opac);
+void CGraphic3D_SetTexture(CGraphic3D *self, const char *tex, const char *opac);
 /* the material of the textures, shared through g_MatList; alpha: the diffuse alpha, 0 is not transparent */
-void __thiscall CGraphic3D_CreateMat(CGraphic3D *self, const char *tex, const char *opac, int src, int dst, byte alpha);
-void __fastcall CGraphic3D_Init(CGraphic3D *self);
+void CGraphic3D_CreateMat(CGraphic3D *self, const char *tex, const char *opac, int src, int dst, byte alpha);
+void CGraphic3D_Init(CGraphic3D *self);
 
 #endif

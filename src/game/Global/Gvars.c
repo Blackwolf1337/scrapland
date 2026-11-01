@@ -16,7 +16,7 @@ void App_GetConfigDir(char *buf, int size);	/* the directory of Scrap.cfg with i
 #define GVAR_SAVE 0x2		/* set from the config file or changed: written by Config_Save */
 
 /* the base constructor: puts the variable in front of g_GVars; the derived class sets the type */
-cGVar *__thiscall cGVar_ctor(cGVar *self, const char *name, byte flags, const char *description) {
+cGVar *cGVar_ctor(cGVar *self, const char *name, byte flags, const char *description) {
 	self->base.next = g_GVars;
 	self->base.name = (char *)name;
 	self->base.flags = flags;
@@ -68,7 +68,7 @@ cGVar *GVar_InitFunction(cGVar *v, const char *name, byte flags, const char *des
 }
 
 /* sets or clears a flag bit; a read only variable takes only GVAR_READONLY */
-byte __thiscall cGVar_SetFlag(cGVar *self, byte bit, byte on) {
+byte cGVar_SetFlag(cGVar *self, byte bit, byte on) {
 	if (bit != GVAR_READONLY && (self->base.flags & GVAR_READONLY)) {
 		return 0;
 	}

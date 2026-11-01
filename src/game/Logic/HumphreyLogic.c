@@ -8,14 +8,14 @@
 
 #define Humphrey_Vtbl(self) Functionary_Vtbl(self)
 
-cHumphreyLocalLogic *__thiscall cHumphreyLocalLogic_ctor(cHumphreyLocalLogic *self, cEntity *parent) {
+cHumphreyLocalLogic *cHumphreyLocalLogic_ctor(cHumphreyLocalLogic *self, cEntity *parent) {
 	cFunctionaryLocalLogic_ctor(&self->base, parent);
 	self->base.base.base.vftable = CHUMPHREYLOCALLOGIC_VFTABLE;
 	self->isDefault = !strcmp(parent->name, "Humphrey_Default");
 	return self;
 }
 
-cHumphreyLocalLogic *__thiscall cHumphreyLocalLogic_Delete(cHumphreyLocalLogic *self, byte flags) {
+cHumphreyLocalLogic *cHumphreyLocalLogic_Delete(cHumphreyLocalLogic *self, byte flags) {
 	self->base.base.base.vftable = CHUMPHREYLOCALLOGIC_VFTABLE;
 	cFunctionaryLocalLogic_dtor(&self->base);
 	if (flags & 1) {
@@ -25,7 +25,7 @@ cHumphreyLocalLogic *__thiscall cHumphreyLocalLogic_Delete(cHumphreyLocalLogic *
 }
 
 /* vf40 */
-void __thiscall cHumphreyLocalLogic_AssignDesktop(cHumphreyLocalLogic *self, float maxDist) {
+void cHumphreyLocalLogic_AssignDesktop(cHumphreyLocalLogic *self, float maxDist) {
 	(void)maxDist;
 	if (cFunctionaryLocalLogic_GetDesktop(&self->base)) {
 		return;
@@ -37,7 +37,7 @@ void __thiscall cHumphreyLocalLogic_AssignDesktop(cHumphreyLocalLogic *self, flo
 }
 
 /* vf41 */
-void __thiscall cHumphreyLocalLogic_ReleaseDesktop(cHumphreyLocalLogic *self) {
+void cHumphreyLocalLogic_ReleaseDesktop(cHumphreyLocalLogic *self) {
 	if (!cFunctionaryLocalLogic_GetDesktop(&self->base)) {
 		return;
 	}
@@ -47,7 +47,7 @@ void __thiscall cHumphreyLocalLogic_ReleaseDesktop(cHumphreyLocalLogic *self) {
 }
 
 /* vf17: the default Humphrey takes its desktop once */
-void __thiscall cHumphreyLocalLogic_Update(cHumphreyLocalLogic *self, float dt) {
+void cHumphreyLocalLogic_Update(cHumphreyLocalLogic *self, float dt) {
 	if (self->isDefault && !cFunctionaryLocalLogic_GetDesktop(&self->base)) {
 		Humphrey_Vtbl(self)->AssignDesktop(self, 0.0f);
 		self->isDefault = 0;
@@ -56,7 +56,7 @@ void __thiscall cHumphreyLocalLogic_Update(cHumphreyLocalLogic *self, float dt) 
 }
 
 /* vf38: the angles of the desktop */
-vec3_t *__thiscall cHumphreyLocalLogic_GetWorkAng(cHumphreyLocalLogic *self, vec3_t *out) {
+vec3_t *cHumphreyLocalLogic_GetWorkAng(cHumphreyLocalLogic *self, vec3_t *out) {
 	CHECK(cFunctionaryLocalLogic_GetDesktop(&self->base));
 	cEntity *d = cFunctionaryLocalLogic_GetDesktop(&self->base);
 	Obj_Vtbl(d)->GetAng(d, out);

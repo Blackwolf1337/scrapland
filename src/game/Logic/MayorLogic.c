@@ -13,7 +13,7 @@ void Mayor_SphereFunc(cAbstractFile *params);
 #define MAYOR_VT(self) ((self)->base.base.vftable)
 #define MAYOR_SPHEREFUNC 0x152e60
 
-void *__thiscall cMayorLocalLogic_ctor(void *mem, cEntity *parent) {
+void *cMayorLocalLogic_ctor(void *mem, cEntity *parent) {
 	cMayorLocalLogic *self = mem;
 
 	cGenCharLocalLogic_ctor(&self->base, parent, 0);
@@ -22,7 +22,7 @@ void *__thiscall cMayorLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-cMayorLocalLogic *__thiscall cMayorLocalLogic_Delete(cMayorLocalLogic *self, byte flags) {
+cMayorLocalLogic *cMayorLocalLogic_Delete(cMayorLocalLogic *self, byte flags) {
 	MAYOR_VT(self) = CMAYORLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(&self->base);
 	if (flags & 1) {
@@ -32,12 +32,12 @@ cMayorLocalLogic *__thiscall cMayorLocalLogic_Delete(cMayorLocalLogic *self, byt
 }
 
 /* vf31: the special action is over after GenCharSpecialActionTime */
-byte __thiscall cMayorLocalLogic_TargetDone(cMayorLocalLogic *self) {
+byte cMayorLocalLogic_TargetDone(cMayorLocalLogic *self) {
 	return self->base.specialTime > g_GenCharSpecialActionTime;
 }
 
 /* vf30: at the search time the nearest dazed character in view in the sphere of MayorBlabliblaRadius */
-cEntity *__thiscall cMayorLocalLogic_FindTarget(cMayorLocalLogic *self) {
+cEntity *cMayorLocalLogic_FindTarget(cMayorLocalLogic *self) {
 	vec3_t t;
 
 	if (!(0.0f > self->base.searchTime)) {
@@ -54,18 +54,18 @@ cEntity *__thiscall cMayorLocalLogic_FindTarget(cMayorLocalLogic *self) {
 }
 
 /* vf28 and vf27: the AI walks in alert or relaxed */
-void __thiscall cMayorLocalLogic_ToAlert(cMayorLocalLogic *self, cAIChar *ai) {
+void cMayorLocalLogic_ToAlert(cMayorLocalLogic *self, cAIChar *ai) {
 	(void)self;
 	ai->vftable->SetState(ai, 1, (double)g_GenCharAlertSpeed, 0);
 }
 
-void __thiscall cMayorLocalLogic_ToRelax(cMayorLocalLogic *self, cAIChar *ai) {
+void cMayorLocalLogic_ToRelax(cMayorLocalLogic *self, cAIChar *ai) {
 	(void)self;
 	ai->vftable->SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
 }
 
 /* vf17: during the special action the AI listens to the listener once */
-void __thiscall cMayorLocalLogic_Update(cMayorLocalLogic *self, float dt) {
+void cMayorLocalLogic_Update(cMayorLocalLogic *self, float dt) {
 	if (self->base.specialOn) {
 		self->base.specialTime = dt + self->base.specialTime;
 		if (self->listener[0]) {
@@ -111,7 +111,7 @@ void Mayor_SphereFunc(cAbstractFile *params) {
 	}
 }
 
-void __thiscall cMayorLocalLogic_SetListener(cLocalLogic *l, cEntity *e) {
+void cMayorLocalLogic_SetListener(cLocalLogic *l, cEntity *e) {
 	cMayorLocalLogic *self = (cMayorLocalLogic *)l;
 
 	if (e) {

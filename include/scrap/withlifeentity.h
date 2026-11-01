@@ -65,16 +65,16 @@ SD_SIZE(cWithLifeEntity, CWITHLIFEENTITY_SIZE);
 /* cWithLifeEntity::vftable continues the one of cObjEntity; characters, vehicles and missiles continue it */
 typedef struct cWithLifeEntityVtbl {
 	cObjEntityVtbl base;
-	void(__thiscall *CheckLife)(cEntity *self);						/* 0xbc vf47 */
+	void(*CheckLife)(cEntity *self);						/* 0xbc vf47 */
 	/* nothing; a character unlinks its listener (the arrow calls it after a new use or view function) */
-	void(__thiscall *UnlinkListen)(cEntity *self);						/* 0xc0 vf48 */
-	void(__thiscall *OnDeath)(cEntity *self);						/* 0xc4 vf49 */
-	void(__thiscall *OnDamage)(cEntity *self, int damage);				/* 0xc8 vf50 */
-	void(__thiscall *SetMass)(cEntity *self, float mass);					/* 0xcc vf51 */
-	cAction *(__thiscall *GetAction)(cEntity *self, const char *name);			/* 0xd0 vf52 */
-	cActCtrl *(__thiscall *GetActCtrl)(cEntity *self);					/* 0xd4 vf53 */
-	void(__thiscall *SetActCtrl)(cEntity *self, const char *cls);				/* 0xd8 vf54 */
-	byte(__thiscall *IsEMIed)(cEntity *self);						/* 0xdc vf55 */
+	void(*UnlinkListen)(cEntity *self);						/* 0xc0 vf48 */
+	void(*OnDeath)(cEntity *self);						/* 0xc4 vf49 */
+	void(*OnDamage)(cEntity *self, int damage);				/* 0xc8 vf50 */
+	void(*SetMass)(cEntity *self, float mass);					/* 0xcc vf51 */
+	cAction *(*GetAction)(cEntity *self, const char *name);			/* 0xd0 vf52 */
+	cActCtrl *(*GetActCtrl)(cEntity *self);					/* 0xd4 vf53 */
+	void(*SetActCtrl)(cEntity *self, const char *cls);				/* 0xd8 vf54 */
+	byte(*IsEMIed)(cEntity *self);						/* 0xdc vf55 */
 } cWithLifeEntityVtbl;
 SD_OFFSET(cWithLifeEntityVtbl, CheckLife, 0xbc);
 SD_OFFSET(cWithLifeEntityVtbl, SetMass, 0xcc);
@@ -92,11 +92,11 @@ static inline const cWithLifeEntityVtbl *WithLife_Vtbl(const cEntity *e) {
 
 /* the variable slots of cActCtrl::vftable */
 typedef struct cActCtrlVarVtbl {
-	void *(__thiscall *Delete)(cActCtrl *self, byte flags);				/* 0x00 */
-	byte(__thiscall *VarI)(cActCtrl *self, const char *name, int *i, int set);		/* 0x04 */
-	byte(__thiscall *VarF)(cActCtrl *self, const char *name, double *d, int set);		/* 0x08 */
-	byte(__thiscall *VarS)(cActCtrl *self, const char *name, char **s, int set);		/* 0x0c */
-	byte(__thiscall *VarV)(cActCtrl *self, const char *name, double *x, double *y, double *z, int set); /* 0x10 */
+	void *(*Delete)(cActCtrl *self, byte flags);				/* 0x00 */
+	byte(*VarI)(cActCtrl *self, const char *name, int *i, int set);		/* 0x04 */
+	byte(*VarF)(cActCtrl *self, const char *name, double *d, int set);		/* 0x08 */
+	byte(*VarS)(cActCtrl *self, const char *name, char **s, int set);		/* 0x0c */
+	byte(*VarV)(cActCtrl *self, const char *name, double *x, double *y, double *z, int set); /* 0x10 */
 } cActCtrlVarVtbl;
 
 static inline const cActCtrlVarVtbl *ActCtrl_Vtbl(const cActCtrl *c) {
@@ -104,31 +104,31 @@ static inline const cActCtrlVarVtbl *ActCtrl_Vtbl(const cActCtrl *c) {
 }
 
 /* the deleting destructor (1000 bytes) */
-cEntity *__thiscall cWithLifeEntity_Delete(cEntity *self, uint32_t flags);
-const char *__thiscall cWithLifeEntity_GetClassName(cEntity *self);
-void __thiscall cWithLifeEntity_SetPos(cEntity *self, const vec3_t *pos);
+cEntity *cWithLifeEntity_Delete(cEntity *self, uint32_t flags);
+const char *cWithLifeEntity_GetClassName(cEntity *self);
+void cWithLifeEntity_SetPos(cEntity *self, const vec3_t *pos);
 /* vf25: the PretransformChan of the action class */
-int __thiscall cWithLifeEntity_GetNodeSlot(cEntity *self);
+int cWithLifeEntity_GetNodeSlot(cEntity *self);
 /* vf31: the position of the sounds, moved by the SoundDisp of the action class */
-vec3_t *__thiscall cWithLifeEntity_GetSndPos(cEntity *self, vec3_t *out);
-float __thiscall cWithLifeEntity_GetRadius(cEntity *self);
+vec3_t *cWithLifeEntity_GetSndPos(cEntity *self, vec3_t *out);
+float cWithLifeEntity_GetRadius(cEntity *self);
 /* vf47 (every slot): OnGeneralDamage and OnDamage when the life went down, OnDeath at 0 */
-void __thiscall cWithLifeEntity_CheckLife(cEntity *self);
+void cWithLifeEntity_CheckLife(cEntity *self);
 /* vf50: the OnDamage functions of the entity and of its entity list */
-void __thiscall cWithLifeEntity_OnDamage(cEntity *self, int damage);
+void cWithLifeEntity_OnDamage(cEntity *self, int damage);
 /* vf52: the action of that name of the class, NULL without one */
-cAction *__thiscall cWithLifeEntity_GetAction(cEntity *self, const char *name);
+cAction *cWithLifeEntity_GetAction(cEntity *self, const char *name);
 /* vf54: the action controller of that class (NULL or "": none); the OnCreate of the class runs for a new one */
-void __thiscall cWithLifeEntity_SetActCtrl(cEntity *self, const char *cls);
+void cWithLifeEntity_SetActCtrl(cEntity *self, const char *cls);
 /* vf55: 0 */
-byte __thiscall cWithLifeEntity_IsEMIed(cEntity *self);
+byte cWithLifeEntity_IsEMIed(cEntity *self);
 /* vf48: nothing (the characters unlink their listeners here) */
-void __thiscall cWithLifeEntity_Vf48(cEntity *self);
+void cWithLifeEntity_Vf48(cEntity *self);
 /* the fire of the Napalm over dt: the fire sound, the hits of the burner and the life it takes (not on clients) */
-void __thiscall cWithLifeEntity_Burn(cEntity *self, float dt);
+void cWithLifeEntity_Burn(cEntity *self, float dt);
 /* the life sounds fade in and out by their times */
-void __thiscall cWithLifeEntity_FadeSounds(cEntity *self, float dt);
+void cWithLifeEntity_FadeSounds(cEntity *self, float dt);
 /* the entity that set it on fire (an unused inline of WithLifeEntity.h) */
-cEntity *__thiscall cWithLifeEntity_GetBurner(cEntity *self);
+cEntity *cWithLifeEntity_GetBurner(cEntity *self);
 
 #endif

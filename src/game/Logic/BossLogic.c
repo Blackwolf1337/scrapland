@@ -10,11 +10,11 @@
 /* the AI slot the boss asks */
 typedef struct cLogicBossAIVtbl {
 	void *vf00_12[19];
-	byte(__thiscall *Arrived)(void *self);	/* 0x4c */
+	byte(*Arrived)(void *self);	/* 0x4c */
 } cLogicBossAIVtbl;
 SD_OFFSET(cLogicBossAIVtbl, Arrived, 0x4c);
 
-cBossLocalLogic *__thiscall cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity *parent) {
+cBossLocalLogic *cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity *parent) {
 	char name[0x80];
 	byte flag;
 
@@ -27,7 +27,7 @@ cBossLocalLogic *__thiscall cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity 
 	return self;
 }
 
-cBossLocalLogic *__thiscall cBossLocalLogic_Delete(cBossLocalLogic *self, byte flags) {
+cBossLocalLogic *cBossLocalLogic_Delete(cBossLocalLogic *self, byte flags) {
 	self->base.base.vftable = CBOSSLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(&self->base);
 	if (flags & 1) {
@@ -37,7 +37,7 @@ cBossLocalLogic *__thiscall cBossLocalLogic_Delete(cBossLocalLogic *self, byte f
 }
 
 /* vf33 (0x84): at work, the end of the work */
-void __thiscall cBossLocalLogic_Vf33(cBossLocalLogic *self, byte on) {
+void cBossLocalLogic_Vf33(cBossLocalLogic *self, byte on) {
 	if (self->base.base.state != 8 || !on) {
 		return;
 	}
@@ -49,7 +49,7 @@ void __thiscall cBossLocalLogic_Vf33(cBossLocalLogic *self, byte on) {
 }
 
 /* vf17 */
-void __thiscall cBossLocalLogic_Update(cBossLocalLogic *self, float dt) {
+void cBossLocalLogic_Update(cBossLocalLogic *self, float dt) {
 	cGenCharLocalLogic_Update(&self->base, dt);
 	int st = self->base.base.state;
 	if (st == 0 || st == 6) {
@@ -105,7 +105,7 @@ void __thiscall cBossLocalLogic_Update(cBossLocalLogic *self, float dt) {
 }
 
 /* vf19: 7 the way to the work place (AI state 4 with the place and the direction of its angle), 8 the work */
-int __thiscall cBossLocalLogic_SetState(cBossLocalLogic *self, int state, cEntity *target) {
+int cBossLocalLogic_SetState(cBossLocalLogic *self, int state, cEntity *target) {
 	vec3_t out;
 
 	if (state == 7) {

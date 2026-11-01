@@ -21,7 +21,7 @@
 #define g_LifeToLaunchCallback GAME_GLOBAL_IN(int, GVar_LifeToLaunchCallback, 16)
 #define g_LifeReachedCallback (GAME_ARRAY_IN(cPy_Function, GVar_LifeReachedCallback, 16))
 
-cShipRegen *__fastcall ShipRegen_ctor(cShipRegen *self) {
+cShipRegen *ShipRegen_ctor(cShipRegen *self) {
 	self->unused_00 = 0;
 	self->ship = NULL;
 	self->time = g_RegenerationTimeRate;
@@ -30,7 +30,7 @@ cShipRegen *__fastcall ShipRegen_ctor(cShipRegen *self) {
 	return self;
 }
 
-void __fastcall ShipRegen_dtor(cShipRegen *self) {
+void ShipRegen_dtor(cShipRegen *self) {
 	if (self->ship) {
 		operator_delete_sized(self->ship, sizeof(*self->ship));
 	}
@@ -42,7 +42,7 @@ static void ShipRegen_Callback(cEntity *e, int dir) {
 	cPy_Function_Execute(g_LifeReachedCallback, 0);
 }
 
-void __thiscall ShipRegen_UpdateShip(cShipRegen *self, float dt) {
+void ShipRegen_UpdateShip(cShipRegen *self, float dt) {
 	cShipRegenShip *s = self->ship;
 
 	if (!s->name[0]) {
@@ -95,7 +95,7 @@ void __thiscall ShipRegen_UpdateShip(cShipRegen *self, float dt) {
 	}
 }
 
-void __thiscall ShipRegen_Set(void *shipRegen, cEntity *ship, float speed, float endSpeed) {
+void ShipRegen_Set(void *shipRegen, cEntity *ship, float speed, float endSpeed) {
 	cShipRegen *self = shipRegen;
 
 	if (!ship || !ship->vftable->IsType(ship, TYEN_WITH_LIFE) || WLife(ship)->life <= 0) {
@@ -117,7 +117,7 @@ void __thiscall ShipRegen_Set(void *shipRegen, cEntity *ship, float speed, float
 	self->ship->life = WLife(ship)->life;
 }
 
-void __thiscall ShipRegen_Update(cShipRegen *self, float dt) {
+void ShipRegen_Update(cShipRegen *self, float dt) {
 	if (g_pApp->flags || g_SplitScreenGame) {
 		return;
 	}

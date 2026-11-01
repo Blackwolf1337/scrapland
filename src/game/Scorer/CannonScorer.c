@@ -9,7 +9,7 @@
 
 /* the lock of the target of a ship: on, and the time of the lock (0 while searching) */
 
-cCannonScorer *__fastcall cCannonScorer_ctor(cCannonScorer *self) {
+cCannonScorer *cCannonScorer_ctor(cCannonScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CCANNONSCORER_VFTABLE;
 	self->numWeapons = g_pWorld->weapons.count;
@@ -27,7 +27,7 @@ cCannonScorer *__fastcall cCannonScorer_ctor(cCannonScorer *self) {
 	return self;
 }
 
-void __fastcall cCannonScorer_dtor(cCannonScorer *self) {
+void cCannonScorer_dtor(cCannonScorer *self) {
 	CPsaImage *img = self->img;
 	self->base.vftable = CCANNONSCORER_VFTABLE;
 	if (img) {
@@ -37,7 +37,7 @@ void __fastcall cCannonScorer_dtor(cCannonScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cCannonScorer *__thiscall cCannonScorer_Delete(cCannonScorer *self, byte flags) {
+cCannonScorer *cCannonScorer_Delete(cCannonScorer *self, byte flags) {
 	cCannonScorer_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cCannonScorer));
@@ -60,7 +60,7 @@ static void Cannon_FrameQuad(CPsaImage *img, int frame, float *uv) {
 	uv[7] = uv1[1];
 }
 
-void __thiscall cCannonScorer_DrawAim(cCannonScorer *self, int weapon, const float *pos, const float *scale,
+void cCannonScorer_DrawAim(cCannonScorer *self, int weapon, const float *pos, const float *scale,
 	const float *unused, float angle, uint32_t color) {
 	static const float corners[4][2] = {{-0.5f, -0.375f}, {0.5f, -0.375f}, {0.5f, 0.375f}, {-0.5f, 0.375f}};
 	float uv0[2], uv1[2], quad[4][2], uv[8], ofs[2], tmp[2];
@@ -105,7 +105,7 @@ void __thiscall cCannonScorer_DrawAim(cCannonScorer *self, int weapon, const flo
 	}
 }
 
-void __thiscall cCannonScorer_DrawShipAim(cCannonScorer *self, int player, cEntity *ship) {
+void cCannonScorer_DrawShipAim(cCannonScorer *self, int player, cEntity *ship) {
 	vec3_t aim;
 	float screen[2];
 	byte shown;
@@ -138,7 +138,7 @@ void __thiscall cCannonScorer_DrawShipAim(cCannonScorer *self, int player, cEnti
 	self->shown = shown;
 }
 
-void __thiscall cCannonScorer_DrawCenter(cCannonScorer *self, int player, cEntity *ship) {
+void cCannonScorer_DrawCenter(cCannonScorer *self, int player, cEntity *ship) {
 	static const float corners[8] = {-0.25f, -0.25f, 0.25f, -0.25f, 0.25f, 0.25f, -0.25f, 0.25f};
 	float uv[8], y;
 
@@ -162,7 +162,7 @@ void __thiscall cCannonScorer_DrawCenter(cCannonScorer *self, int player, cEntit
 	img->x = 320.0f;
 	img->y = y;
 	CPsaImage_DrawPoly(self->img, corners, uv, 0, 4, 6);
-	((void(__thiscall *)(cCannonScorer *, int, const float *))self->base.vftable->vf04)(self, player,
+	((void(*)(cCannonScorer *, int, const float *))self->base.vftable->vf04)(self, player,
 		&self->img->x);
 	if (WLife(ship)->life * 100 / Veh(ship)->maxLife < g_WarningLifeLevel) {
 		cScorer *sc = Scorer_Get(player);
@@ -172,7 +172,7 @@ void __thiscall cCannonScorer_DrawCenter(cCannonScorer *self, int player, cEntit
 	}
 }
 
-int __thiscall cCannonScorer_Var(cCannonScorer *self, const char *name, byte set, char **s, double *d, int *i) {
+int cCannonScorer_Var(cCannonScorer *self, const char *name, byte set, char **s, double *d, int *i) {
 	if (s && !crt_stricmp(name, "Sprite") && set) {
 		if (self->img) {
 			CPsaImage_dtor(self->img);
@@ -198,7 +198,7 @@ int __thiscall cCannonScorer_Var(cCannonScorer *self, const char *name, byte set
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void __thiscall cCannonScorer_Draw(cCannonScorer *self, int player) {
+void cCannonScorer_Draw(cCannonScorer *self, int player) {
 	const char *camName = cWorld_GetCamName(g_pWorld, player);
 	cEntity *ship = NULL;
 
@@ -225,7 +225,7 @@ void __thiscall cCannonScorer_Draw(cCannonScorer *self, int player) {
 	}
 }
 
-void __thiscall cCannonScorer_DrawLock(cCannonScorer *self, int player, const float *pos) {
+void cCannonScorer_DrawLock(cCannonScorer *self, int player, const float *pos) {
 	cEntity *e = g_pWorld->owners[player];
 	const char *text;
 	uint32_t color;

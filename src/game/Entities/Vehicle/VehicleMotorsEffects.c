@@ -46,7 +46,7 @@ static vec3_t VME_NodeOffset(CGameModel *model, int ref, int node) {
 	return r;
 }
 
-void __fastcall cVehicleMotorsEffects_Init(cVehicleMotorsEffects *self) {
+void cVehicleMotorsEffects_Init(cVehicleMotorsEffects *self) {
 	char buf[256];
 	int i, n;
 
@@ -206,7 +206,7 @@ void __stdcall VMEffects_SetupHaze(float thrust, float speed, vec3_t *pos, int n
 	CGameParticles_Apply(ps);
 }
 
-void __thiscall cVehicleMotorsEffects_SetType(cVehicleMotorsEffects *self, int type) {
+void cVehicleMotorsEffects_SetType(cVehicleMotorsEffects *self, int type) {
 	uint32_t c;
 
 	self->type = type;
@@ -268,7 +268,7 @@ void __thiscall cVehicleMotorsEffects_SetType(cVehicleMotorsEffects *self, int t
 	cVehicleMotorsEffects_SetColor(self, c);
 }
 
-void __thiscall cVehicleMotorsEffects_Glow(cVehicleMotorsEffects *self, float thrust, float k, float dist,
+void cVehicleMotorsEffects_Glow(cVehicleMotorsEffects *self, float thrust, float k, float dist,
 	int *first, CGameParticles *ps) {
 	float fade, size;
 	int i, j;
@@ -325,7 +325,7 @@ void __thiscall cVehicleMotorsEffects_Glow(cVehicleMotorsEffects *self, float th
 	}
 }
 
-void __thiscall cVehicleMotorsEffects_StopGlow(cVehicleMotorsEffects *self, int *first, CGameParticles *ps) {
+void cVehicleMotorsEffects_StopGlow(cVehicleMotorsEffects *self, int *first, CGameParticles *ps) {
 	if (!self->glowOn || !self->type) {
 		return;
 	}
@@ -342,7 +342,7 @@ void __thiscall cVehicleMotorsEffects_StopGlow(cVehicleMotorsEffects *self, int 
 }
 
 /* color2: each channel c * c / 255 */
-void __thiscall cVehicleMotorsEffects_SetColor(cVehicleMotorsEffects *self, uint32_t color) {
+void cVehicleMotorsEffects_SetColor(cVehicleMotorsEffects *self, uint32_t color) {
 	self->color = color;
 	float r = (float)(int)(color >> 16 & 0xff) / 255.0f;
 	float g = (float)(int)(color >> 8 & 0xff) / 255.0f;
@@ -351,22 +351,22 @@ void __thiscall cVehicleMotorsEffects_SetColor(cVehicleMotorsEffects *self, uint
 		(uint32_t)(int)(b * b * 255.0f);
 }
 
-void __thiscall cVehicleMotorsEffects_SetOffset(cVehicleMotorsEffects *self, float v) {
+void cVehicleMotorsEffects_SetOffset(cVehicleMotorsEffects *self, float v) {
 	self->offset = v;
 }
 
-void __thiscall cVehicleMotorsEffects_SetScale(cVehicleMotorsEffects *self, float v) {
+void cVehicleMotorsEffects_SetScale(cVehicleMotorsEffects *self, float v) {
 	self->scale = v;
 }
 
-void __thiscall cVehicleMotorsEffects_Set(cVehicleMotorsEffects *self, cEntity *owner, cVehicleMotors *motors,
+void cVehicleMotorsEffects_Set(cVehicleMotorsEffects *self, cEntity *owner, cVehicleMotors *motors,
 	cVehicleMotor *motor) {
 	self->owner = owner;
 	self->motors = motors;
 	self->motor = motor;
 }
 
-void __thiscall cVehicleMotorsEffects_SetVisible(cVehicleMotorsEffects *self, byte on) {
+void cVehicleMotorsEffects_SetVisible(cVehicleMotorsEffects *self, byte on) {
 	int i, j;
 
 	if (self->visible == on) {
@@ -391,7 +391,7 @@ void __thiscall cVehicleMotorsEffects_SetVisible(cVehicleMotorsEffects *self, by
 	self->visible = on;
 }
 
-void __thiscall cVehicleMotorsEffects_Smoke(cVehicleMotorsEffects *self, float dt, CGameParticles *ps) {
+void cVehicleMotorsEffects_Smoke(cVehicleMotorsEffects *self, float dt, CGameParticles *ps) {
 	vec3_t v, rot, up, dir, r, mp, rd;
 	int j;
 
@@ -491,7 +491,7 @@ static vec3_t VME_TrailPoint(cVehicleMotorsEffects *self, int j, float zoff, con
 	return p;
 }
 
-void __thiscall cVehicleMotorsEffects_Trails(cVehicleMotorsEffects *self, float dt, vec3_t pos, vec3_t rot,
+void cVehicleMotorsEffects_Trails(cVehicleMotorsEffects *self, float dt, vec3_t pos, vec3_t rot,
 	vec3_t vel, float thrust, float k, uint32_t color) {
 	float d;
 	int j;
@@ -1711,7 +1711,7 @@ static void VME_Exhaust60(const VMExhaust *x) {
 	VME_FlarePair(ps, x->model, n - 6, k, 0.0f, 1.0f, 0.0f, 30.0f, 1000.0f, 0xe6963c);
 }
 
-void __thiscall cVehicleMotorsEffects_Exhaust(cVehicleMotorsEffects *self, float thrust, float k, float f4bc,
+void cVehicleMotorsEffects_Exhaust(cVehicleMotorsEffects *self, float thrust, float k, float f4bc,
 	float speed, byte cloud, float fade) {
 	VMExhaust x;
 	int i;
