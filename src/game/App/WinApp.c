@@ -397,10 +397,11 @@ byte __thiscall CWinApp_Init(CWinApp *self) {
 	if (!CWinApp_CreateMainWindow(self)) {
 		CheckFailed("CreateMainWindow()", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	if (App_RegGetString(self, "LANGUAGE")) {
-		cString_Set(g_LangName, App_RegGetString(self, "LANGUAGE"));
-		Font_SetLanguage(*g_LangName);
-	}
+	/* differs from the original on purpose: without the registry LANGUAGE it is english (the original took the one of
+	 * GOG later, english in a normal install), not the "French" default of SelectedLanguage */
+	const char *lang = App_RegGetString(self, "LANGUAGE");
+	cString_Set(g_LangName, lang ? lang : "english");
+	Font_SetLanguage(*g_LangName);
 	void *menu = exe_GetSystemMenu(self->hwnd, 0);
 	exe_AppendMenuA(menu, 0x800, 0, "");
 	exe_AppendMenuA(menu, 0, ID_SWITCHCONSOLE, "S&witch console");
@@ -416,8 +417,7 @@ byte __thiscall CWinApp_Init(CWinApp *self) {
 	if (shown) {
 		exe_BringWindowToTop(self->hwnd);
 	}
-	/* differs from the original on purpose (no store features): no Steam or GOG init and no sign-in; the language
-	 * stays the LANGUAGE of the registry or the default of SelectedLanguage, the original took the one of GOG */
+	/* differs from the original on purpose (no store features): no Steam or GOG init and no sign-in */
 	if (!CApp_Init(self)) {
 		return 0;
 	}

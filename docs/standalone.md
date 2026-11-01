@@ -1319,10 +1319,10 @@ is gone. `CWinApp_InitStep` only waits for the videos of `CApp_Init`. Closing th
 quits after the wait. `CWinApp_Frame` runs no GOG or Steam callbacks. The field of `CWinApp` at 0x84 (the vector of the
 GOG listeners) is `unused_84`, the size stays 0x90.
 
-- The language is the LANGUAGE value of `HKLM\Software\MercurySteam Entertainment\Scrapland` as before, otherwise the
-  default of the engine variable `SelectedLanguage` ("French"), then the fallbacks of `Lang_Set` (`g_LangDefault`,
-  Strings.txt). The original took the GOG language over the registry one. A game without the registry LANGUAGE value
-  starts in French now.
+- The language is the LANGUAGE value of `HKLM\Software\MercurySteam Entertainment\Scrapland` as before, otherwise
+  english, then the fallbacks of `Lang_Set` (`g_LangDefault`, Strings.txt). The original took the GOG language over the
+  registry one, english in a normal install. The default of the engine variable `SelectedLanguage` ("French") is not
+  used any more.
 - The player name stays the one of the config. The original took the GOG or Steam persona name.
 - `App_GetConfigDir` is My Documents\MercurySteam\Scrapland\ without the subfolder of the GOG id.
 
@@ -1346,11 +1346,8 @@ with 5060 slots instead of 298 with 5083). vtables.py leaves out the classes of 
 initpat.py and xctable.py leave out the initializer of the Steam ticket callback and its atexit destructor (`DROPPED`),
 so `src/standalone/crtxc.inc` has 1789 initializers instead of 1790. All generators are idempotent again.
 
-Three test changes besides the removed checks:
+Two test changes besides the removed checks:
 
-- `tools/test/prefix.sh` sets LANGUAGE=english in the registry of the test prefix (32 bit view). The C takes the
-  language only from there, while Scrap.exe ends with the GOG language, which is english in the test setup. An existing
-  prefix needs `prefix.sh` run once again.
 - `sdlevel_ase.py` calls `Transport_WSAStartup` before `Ase_Initialize`. In Scrap.exe Galaxy.dll had already started
   Winsock, and ScrapC.exe loads no Galaxy.dll. The game itself starts Winsock in `Transport_Startup` before its server
   starts the ASE.
