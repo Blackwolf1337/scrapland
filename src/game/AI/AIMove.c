@@ -1,14 +1,12 @@
 /*
  * AI/AIMove.cpp of the game: cAIMove, the base of the character and the vehicle AIs (a cAI). It holds the link to the
- * target entity, the move of the state (the first 0x90 bytes of cAIChar, include/scrap/ai.h, the same in
- * cAIVehicle) and stops an AI that should move but stands still for 10 seconds (the event 7). The prototypes are in
- * include/scrap/aivehicle.h.
+ * target entity and the move of the state, and stops an AI that should move but stands still for 10 seconds (the
+ * event 7). See include/scrap/ai.h.
  */
 #include <string.h>
 
 #include "scrap/actions.h"
 #include "scrap/ai.h"
-#include "scrap/aivehicle.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/nodesworld2d.h"
@@ -20,27 +18,22 @@
 #define AIMOVE_STOP_TIME 10.0f				/* rva 0x3a5d08 */
 #define AIMOVE_EV_STOPPED 7
 
-static inline cAIChar *AIMove(void *self) {
-	return self;
-}
-
-static void AIMove_InitTarget(cAIChar *self) {
+static void AIMove_InitTarget(cAIMove *self) {
 	self->target.target = NULL;
 	self->target.data = NULL;
 	self->target.next = &self->target;
 	self->target.prev = &self->target;
 }
 
-void *__thiscall cAIMove_ctor(void *mem, cEntity *e) {
-	cAIChar *self = mem;
+cAIMove *__thiscall cAIMove_ctor(cAIMove *self, cEntity *e) {
 	byte fly;
 
-	cAI_ctor(mem, e);
+	cAI_ctor(&self->base, e);
 	self->vftable = CAIMOVE_VFTABLE;
 	AIMove_InitTarget(self);
 	self->target.data = self;
 	self->flying = 0;
-	cEntity *o = self->owner;
+	cEntity *o = self->base.entity;
 	if (o->vftable->IsType(o, "WalkChar")) {
 		fly = ((cActCtrl *)WithLife_Vtbl(o)->GetActCtrl(o))->cls->canFly;
 	} else {
@@ -55,7 +48,7 @@ void *__thiscall cAIMove_ctor(void *mem, cEntity *e) {
 	self->arrived = 0;
 	self->repos = 0;
 	self->reposing = 0;
-	self->unused_88 = 0;
+	self->trafficPlaced = 0;
 	self->dest.y = 0.0f;
 	self->dest.z = 0.0f;
 	self->dest.x = 0.0f;
@@ -76,24 +69,20 @@ void *__thiscall cAIMove_ctor(void *mem, cEntity *e) {
 	return self;
 }
 
-void *__fastcall cAIMove_ctorDefault(void *mem) {
-	cAIChar *self = mem;
-
-	cAI_ctorDefault(mem);
+cAIMove *__fastcall cAIMove_ctorDefault(cAIMove *self) {
+	cAI_ctorDefault(&self->base);
 	self->vftable = CAIMOVE_VFTABLE;
 	AIMove_InitTarget(self);
 	return self;
 }
 
-void __fastcall cAIMove_dtor(void *mem) {
-	cAIChar *self = mem;
-
+void __fastcall cAIMove_dtor(cAIMove *self) {
 	self->vftable = CAIMOVE_VFTABLE;
 	Nto1Node_Done(&self->target);
-	cAI_dtor(mem);
+	cAI_dtor(&self->base);
 }
 
-void *__thiscall cAIMove_Delete(void *self, byte flags) {
+cAIMove *__thiscall cAIMove_Delete(cAIMove *self, byte flags) {
 	cAIMove_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIMOVE_SIZE);
@@ -101,12 +90,11 @@ void *__thiscall cAIMove_Delete(void *self, byte flags) {
 	return self;
 }
 
-void __thiscall cAIMove_CheckStopped(void *mem, float dt) {
-	cAIChar *self = mem;
+void __thiscall cAIMove_CheckStopped(cAIMove *self, float dt) {
 	vec3_t buf;
 
 	if (self->vftable->IsMoving(self)) {
-		const vec3_t *v = Obj_Vtbl(self->owner)->GetVel(self->owner, &buf);
+		const vec3_t *v = Obj_Vtbl(self->base.entity)->GetVel(self->base.entity, &buf);
 		if (v->x * v->x + v->y * v->y + v->z * v->z == 0.0f) {
 			float t = dt + self->stopTime;
 			self->stopTime = t;
@@ -123,34 +111,34 @@ void __thiscall cAIMove_CheckStopped(void *mem, float dt) {
 	self->stopTime = 0.0f;
 }
 
-void __thiscall cAIMove_Draw(void *self) {
-	cAI_Draw(self);
+void __thiscall cAIMove_Draw(cAIMove *self) {
+	cAI_Draw(&self->base);
 }
 
-void __thiscall cAIMove_Update(void *self, float dt) {
-	cAI_Update(self, dt);
-	AIMove(self)->vftable->CheckStopped(self, dt);
+void __thiscall cAIMove_Update(cAIMove *self, float dt) {
+	cAI_Update(&self->base, dt);
+	self->vftable->CheckStopped(self, dt);
 }
 
-void __thiscall cAIMove_UpdateOff(void *self, float dt) {
-	cAI_UpdateOff(self, dt);
+void __thiscall cAIMove_UpdateOff(cAIMove *self, float dt) {
+	cAI_UpdateOff(&self->base, dt);
 }
 
-byte __thiscall cAIMove_VarF(void *self, const char *name, double *d, byte set) {
+byte __thiscall cAIMove_VarF(cAIMove *self, const char *name, double *d, byte set) {
 	if (!*name) {
 		return 0;
 	}
-	return cAI_VarF(self, name, d, set);
+	return cAI_VarF(&self->base, name, d, set);
 }
 
-byte __thiscall cAIMove_VarI(void *self, const char *name, int *i, byte set) {
+byte __thiscall cAIMove_VarI(cAIMove *self, const char *name, int *i, byte set) {
 	if (!*name) {
 		return 0;
 	}
-	return cAI_VarI(self, name, i, set);
+	return cAI_VarI(&self->base, name, i, set);
 }
 
-byte __thiscall cAIMove_VarS(void *self, const char *name, char **s, byte set) {
+byte __thiscall cAIMove_VarS(cAIMove *self, const char *name, char **s, byte set) {
 	if (!*name) {
 		return 0;
 	}
@@ -158,51 +146,51 @@ byte __thiscall cAIMove_VarS(void *self, const char *name, char **s, byte set) {
 		if (set) {
 			return 0;
 		}
-		cEntity *t = AIMove(self)->target.target;
+		cEntity *t = self->target.target;
 		*s = t ? t->name : ACT_EMPTY;
 		return 1;
 	}
-	return cAI_VarS(self, name, s, set);
+	return cAI_VarS(&self->base, name, s, set);
 }
 
-byte __thiscall cAIMove_VarV(void *self, const char *name, double *x, double *y, double *z, byte set) {
+byte __thiscall cAIMove_VarV(cAIMove *self, const char *name, double *x, double *y, double *z, byte set) {
 	if (!*name) {
 		return 0;
 	}
-	return cAI_VarV(self, name, x, y, z, set);
+	return cAI_VarV(&self->base, name, x, y, z, set);
 }
 
-byte __thiscall cAIMove_CanJump(void *self) {
-	return AIMove(self)->flying;
+byte __thiscall cAIMove_CanJump(cAIMove *self) {
+	return self->flying;
 }
 
-cEntity *__thiscall cAIMove_GetTargetEnt(void *self) {
-	return AIMove(self)->target.target;
+cEntity *__thiscall cAIMove_GetTargetEnt(cAIMove *self) {
+	return self->target.target;
 }
 
-Nto1Node *__thiscall cAIMove_GetTarget(void *self) {
-	return &AIMove(self)->target;
+Nto1Node *__thiscall cAIMove_GetTarget(cAIMove *self) {
+	return &self->target;
 }
 
-byte __thiscall cAIMove_GetStopped(void *self) {
-	return AIMove(self)->stopped;
+byte __thiscall cAIMove_GetStopped(cAIMove *self) {
+	return self->stopped;
 }
 
-byte __thiscall cAIMove_GetArrived(void *self) {
-	return AIMove(self)->arrived;
+byte __thiscall cAIMove_GetArrived(cAIMove *self) {
+	return self->arrived;
 }
 
-byte __thiscall cAIMove_IsPaused(void *self) {
-	return AIMove(self)->paused;
+byte __thiscall cAIMove_IsPaused(cAIMove *self) {
+	return self->paused;
 }
 
-byte __thiscall cAIMove_Event(void *self, int ev) {
+byte __thiscall cAIMove_Event(cAIMove *self, int ev) {
 	(void)self;
 	(void)ev;
 	return 1;
 }
 
-byte __thiscall cAIMove_CanTarget(void *self, cEntity *e) {
+byte __thiscall cAIMove_CanTarget(cAIMove *self, cEntity *e) {
 	(void)self;
 	if (!e) {
 		Con_Warnf("Objetivo din\xe1mico = NULL\n");
@@ -220,8 +208,7 @@ static inline float AIMove_Rand(double span, double lo) {
 	return (float)((double)(crt_rand() & 0x7fff) * g_AIMoveRandScale * span + lo);
 }
 
-vec3_t *__thiscall cAIMove_RandomPoint(void *mem, vec3_t *out, const vec3_t *p, float r) {
-	cAIChar *self = mem;
+vec3_t *__thiscall cAIMove_RandomPoint(cAIMove *self, vec3_t *out, const vec3_t *p, float r) {
 	vec3_t q;
 
 	*out = *p;
@@ -236,9 +223,9 @@ vec3_t *__thiscall cAIMove_RandomPoint(void *mem, vec3_t *out, const vec3_t *p, 
 			q.x = p->x + ox;
 			q.y = p->y + oy;
 			q.z = p->z + 0.0f;
-			cEntity *o = self->owner;
+			cEntity *o = self->base.entity;
 			cActCtrl *ac = WithLife_Vtbl(o)->GetActCtrl(o);
-			o = self->owner;
+			o = self->base.entity;
 			float h = WChar(o)->floorDist;
 			float h2 = ac->cls->sRadius;
 			float r1 = Obj_Vtbl(o)->GetRadius(o);
@@ -251,7 +238,7 @@ vec3_t *__thiscall cAIMove_RandomPoint(void *mem, vec3_t *out, const vec3_t *p, 
 			q.x = p->x + ox;
 			q.y = p->y + oy;
 			q.z = p->z + oz;
-			cEntity *o = self->owner;
+			cEntity *o = self->base.entity;
 			ok = !Engine_TestSphere(p, &q, Obj_Vtbl(o)->GetRadius(o), NULL, NULL);
 		}
 		if (ok) {

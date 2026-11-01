@@ -43,7 +43,7 @@ void __thiscall cAISentinel_SetDists(cAISentinel *self) {
 	float d;
 
 	if (self->state == 2) {
-		d = WChar(self->ent)->wl.prim.radius * 1.25f + WChar(self->target.target)->wl.prim.radius;
+		d = WChar(self->ent)->wl.prim.radius * 1.25f + WChar(self->base.target.target)->wl.prim.radius;
 		self->actMin = 0.0f;
 		self->actMax = 2500.0f;
 		self->chaseFar = 750.0f;
@@ -54,7 +54,7 @@ void __thiscall cAISentinel_SetDists(cAISentinel *self) {
 		cAIChar_SetDists(self);
 		return;
 	}
-	d = WChar(self->ent)->wl.prim.radius * 1.25f + WChar(self->target.target)->wl.prim.radius;
+	d = WChar(self->ent)->wl.prim.radius * 1.25f + WChar(self->base.target.target)->wl.prim.radius;
 	self->chaseFar = 750.0f;
 	self->chaseNear = d;
 }

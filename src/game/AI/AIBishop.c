@@ -72,10 +72,10 @@ void __thiscall cAIBishop_CheckAttack(cAIBishop *self) {
 
 	self->blocked = 0;
 	if (1.0f > f) {
-		self->targetLife = Ent_Life(c->target.target);
-	} else if (f > BISHOP_BLOCK_TIME && self->targetLife <= Ent_Life(c->target.target)) {
+		self->targetLife = Ent_Life(c->base.target.target);
+	} else if (f > BISHOP_BLOCK_TIME && self->targetLife <= Ent_Life(c->base.target.target)) {
 		/* hit since the last check: is the way to the target free */
-		cEntity *tgt = c->target.target;
+		cEntity *tgt = c->base.target.target;
 		cAICharControl *ctl = c->control;
 		cEntity *own = c->ent;
 		float r = Obj_Vtbl(own)->GetRadius(own);
@@ -89,7 +89,7 @@ void __thiscall cAIBishop_CheckAttack(cAIBishop *self) {
 		self->blocked = 0;
 		c->standTime = 0.0f;
 	}
-	cEntity *tgt = c->target.target;
+	cEntity *tgt = c->base.target.target;
 	const vec3_t *op = c->ent->vftable->GetPos(c->ent, &a);
 	const vec3_t *tp = tgt->vftable->GetPos(tgt, &b);
 	d.y = tp->y - op->y;
@@ -103,7 +103,7 @@ void __thiscall cAIBishop_CheckAttack(cAIBishop *self) {
 		return;
 	}
 	/* the half angle of the target at its distance, the angle of the view (down z) to it */
-	cEntity *t = c->target.target;
+	cEntity *t = c->base.target.target;
 	float tr = Obj_Vtbl(t)->GetRadius(t);
 	double half = Game_Atan2((double)tr, (double)dist);
 	vec3_t fwd = { 0.0f, 0.0f, -1.0f };
@@ -143,7 +143,7 @@ void __thiscall cAIBishop_SetRanges(cAIBishop *self) {
 }
 
 void __thiscall cAIBishop_SetShoot(cAIBishop *self) {
-	cEntity *t = self->base.target.target;
+	cEntity *t = self->base.base.target.target;
 
 	if (t->vftable->GetAI(t)) {
 		self->shootFactor = g_ShootBishopAIDef;

@@ -45,14 +45,14 @@ void __thiscall cAIBank_CheckAttack(cAIBank *self) {
 	} else {
 		go = self->money > WChar(c->ent)->money;
 	}
-	cEntity *tgt = c->target.target;
+	cEntity *tgt = c->base.target.target;
 	const vec3_t *op = c->ent->vftable->GetPos(c->ent, &a);
 	const vec3_t *tp = tgt->vftable->GetPos(tgt, &b);
 	float dx = tp->x - op->x;
 	float dz = tp->z - op->z;
 	float dist = (float)__builtin_sqrt((double)(dx * dx + 0.0f + dz * dz));
 	if (go && AICC_Vtbl(c->control)->IsDirect2(c->control)) {
-		tgt = c->target.target;
+		tgt = c->base.target.target;
 		tp = tgt->vftable->GetPos(tgt, &b);
 		op = c->ent->vftable->GetPos(c->ent, &a);
 		if ((double)g_MaxHeightChaseCharAI > __builtin_fabs((double)(tp->y - op->y)) &&

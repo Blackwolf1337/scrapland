@@ -141,7 +141,7 @@ static inline int AIChar_ActionIs(cEntity *e, const char *name) {
  * (x, + 0, z) or in space (y, x, z) */
 static inline float AIChar_TargetDistFlat(cAIChar *c) {
 	vec3_t a, b;
-	cEntity *t = c->target.target;
+	cEntity *t = c->base.target.target;
 	const vec3_t *op = c->ent->vftable->GetPos(c->ent, &a);
 	const vec3_t *tp = t->vftable->GetPos(t, &b);
 	float dx = tp->x - op->x;
@@ -152,7 +152,7 @@ static inline float AIChar_TargetDistFlat(cAIChar *c) {
 
 static inline float AIChar_TargetDist(cAIChar *c) {
 	vec3_t a, b;
-	cEntity *t = c->target.target;
+	cEntity *t = c->base.target.target;
 	const vec3_t *op = c->ent->vftable->GetPos(c->ent, &a);
 	const vec3_t *tp = t->vftable->GetPos(t, &b);
 	float dy = tp->y - op->y;

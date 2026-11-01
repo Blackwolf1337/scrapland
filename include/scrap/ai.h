@@ -11,6 +11,7 @@
 #include "scrap/entity.h"
 #include "scrap/nodesworld.h"
 #include "scrap/python.h"
+#include "scrap/slotcontroller.h"
 
 typedef struct CNodesWorld CNodesWorld;		/* RTTI CNodesWorld: visibility graph of the level */
 typedef struct CNodesWorld2D CNodesWorld2D;
@@ -55,26 +56,172 @@ SD_OFFSET(cAIVehicleGroup, numStoppedRoute, 0x70);
 SD_OFFSET(cAIVehicleGroup, numElevators, 0xec);
 SD_SIZE(cAIVehicleGroup, 0xf4);
 
-/* the first slots of every AI (cAI::vftable of cAIVehicle, cAIChar); variadic methods are __cdecl with self on
- * the stack */
-typedef struct cAIVtbl {
-	void *(__thiscall *Delete)(void *self, byte flags);	/* 0x00 */
-	void(__thiscall *Update)(void *self, float dt);	/* 0x04 */
-	void(__thiscall *UpdateOff)(void *self, float dt);	/* 0x08 */
-	void(__thiscall *Draw)(void *self);			/* 0x0c */
-	byte(__thiscall *GetChanged)(void *self);		/* 0x10 */
-	byte(__thiscall *IsVisible)(void *self);		/* 0x14 */
-	void (*Debugf)(void *self, const char *fmt, ...);	/* 0x18 text of the AI debug view */
-} cAIVtbl;
-SD_OFFSET(cAIVtbl, Debugf, 0x18);
+/* ---- cAI (AI/AI.cpp, src/game/AI/AI.c): the base of every AI (0x38 bytes), the entity, the time of the frame and
+ * of the state, and the slot of the reactions ---- */
+#define CAI_VFTABLE GAME_VFTABLE(cAI_vftable, 0x3a3f18)
 
-static inline const cAIVtbl *AI_Vtbl(void *ai) {
-	return *(const cAIVtbl **)ai;
+typedef struct cAI cAI;
+
+/* the slots of cAI::vftable (Debugf is pure there); variadic methods are __cdecl with self on the stack */
+typedef struct cAIBaseVtbl {
+	cAI *(__thiscall *Delete)(cAI *self, byte flags);					/* 0x00 */
+	void(__thiscall *Update)(cAI *self, float dt);						/* 0x04 */
+	void(__thiscall *UpdateOff)(cAI *self, float dt);					/* 0x08 */
+	void(__thiscall *Draw)(cAI *self);							/* 0x0c */
+	byte(__thiscall *GetChanged)(cAI *self);						/* 0x10 */
+	byte(__thiscall *IsVisible)(cAI *self);							/* 0x14 */
+	void (*Debugf)(cAI *self, const char *fmt, ...);					/* 0x18 text of the AI debug view */
+	byte(__thiscall *VarI)(cAI *self, const char *name, int *i, byte set);			/* 0x1c */
+	byte(__thiscall *VarF)(cAI *self, const char *name, double *d, byte set);		/* 0x20 */
+	byte(__thiscall *VarS)(cAI *self, const char *name, char **s, byte set);		/* 0x24 */
+	byte(__thiscall *VarV)(cAI *self, const char *name, double *x, double *y, double *z, byte set);	/* 0x28 */
+	void(__thiscall *Print)(cAI *self, const char *text);					/* 0x2c */
+	void(__thiscall *GetEventName)(cAI *self, int ev, char *out);				/* 0x30 */
+	void(__thiscall *OnEvent)(cAI *self, int ev);						/* 0x34 */
+} cAIBaseVtbl;
+SD_OFFSET(cAIBaseVtbl, Debugf, 0x18);
+SD_OFFSET(cAIBaseVtbl, OnEvent, 0x34);
+
+/* the events of the AI (GetEventName) */
+enum {
+	AIEV_LOST_AGENT, AIEV_OBJECTIVE_NOT_FOUND, AIEV_OBJECTIVE_REACHED, AIEV_OBJECTIVE_DIED, AIEV_OBJECTIVE_NEAR,
+	AIEV_OBJECTIVE_VIS, AIEV_ORIENT_REACHED, AIEV_DONT_GO, AIEV_PROBLEM_MOVE, AIEV_NO_PROBLEM, AIEV_COLLISION_AGENTS
+};
+
+struct cAI {
+	const cAIBaseVtbl *vftable;	/* 0x00 */
+	byte started;			/* 0x04 set by the first update */
+	byte pad_5[3];
+	cEntity *entity;		/* 0x08 */
+	float dt;			/* 0x0c the time of the last update */
+	cSlotController slotThink;	/* 0x10 0.5 s, the reactions (UpdateThink of cAIChar and cAIVehicle) */
+	byte changing;			/* 0x20 a change of state runs */
+	byte pad_21[3];
+	int relaxCount;			/* 0x24 the relax actions a character played in its internal state */
+	byte changed;			/* 0x28 GetChanged: the state changed in this frame, cleared by every update */
+	byte pad_29[3];
+	float stateTime;		/* 0x2c the time in the state */
+	float waitTime;			/* 0x30 counts while seen is 0 */
+	int seen;			/* 0x34 0 out of view, 1 seen, 2 not seen yet */
+};
+SD_OFFSET(cAI, slotThink, 0x10);
+SD_OFFSET(cAI, changed, 0x28);
+SD_SIZE(cAI, 0x38);
+
+/* the AI of an entity (cEntity::ai, GetAI) */
+static inline const cAIBaseVtbl *AI_Vtbl(void *ai) {
+	return ((cAI *)ai)->vftable;
 }
 
 static inline void AI_Debugf(void *ai, const char *text) {
 	AI_Vtbl(ai)->Debugf(ai, text);
 }
+
+cAI *__thiscall cAI_ctor(cAI *self, cEntity *e);
+cAI *__fastcall cAI_ctorDefault(cAI *self);
+void __fastcall cAI_dtor(cAI *self);
+cAI *__thiscall cAI_Delete(cAI *self, byte flags);
+void __thiscall cAI_Update(cAI *self, float dt);
+void __thiscall cAI_UpdateOff(cAI *self, float dt);
+void __thiscall cAI_Draw(cAI *self);
+byte __thiscall cAI_GetChanged(cAI *self);
+/* the entity is in the sector of the camera of view 0 or seen from it through the portals */
+byte __thiscall cAI_IsVisible(cAI *self);
+byte __thiscall cAI_VarI(cAI *self, const char *name, int *i, byte set);
+byte __thiscall cAI_VarF(cAI *self, const char *name, double *d, byte set);
+byte __thiscall cAI_VarS(cAI *self, const char *name, char **s, byte set);
+byte __thiscall cAI_VarV(cAI *self, const char *name, double *x, double *y, double *z, byte set);
+/* text as a format into the console */
+void __thiscall cAI_Print(cAI *self, const char *text);
+/* the name of the AIEV_ event into out, nothing for the others */
+void __thiscall cAI_GetEventName(cAI *self, int ev, char *out);
+void __thiscall cAI_OnEvent(cAI *self, int ev);
+
+/* ---- cAIMove (AI/AIMove.cpp, src/game/AI/AIMove.c): the base of cAIChar and cAIVehicle (0x90 bytes, a cAI): the
+ * target link, the move of the state, the check of an AI that should move but does not ---- */
+#define CAIMOVE_VFTABLE GAME_VFTABLE(cAIMove_vftable, 0x3a7754)
+#define CAIMOVE_SIZE 0x90
+
+typedef struct cAIMove cAIMove;
+
+/* cAIMove::vftable (25 slots, IsMoving is pure there) */
+typedef struct cAIMoveVtbl {
+	cAIBaseVtbl base;									/* 0x00 */
+	Nto1Node *(__thiscall *GetTarget)(cAIMove *self);					/* 0x38 the link to the target */
+	byte(__thiscall *CanJump)(cAIMove *self);						/* 0x3c flying */
+	byte(__thiscall *GetStopped)(cAIMove *self);						/* 0x40 */
+	byte(__thiscall *IsPaused)(cAIMove *self);						/* 0x44 */
+	cEntity *(__thiscall *GetTargetEnt)(cAIMove *self);					/* 0x48 */
+	byte(__thiscall *GetArrived)(cAIMove *self);						/* 0x4c */
+	/* a random point within r of p the entity can reach (p itself after three tries), out returned */
+	vec3_t *(__thiscall *RandomPoint)(cAIMove *self, vec3_t *out, const vec3_t *p, float r);	/* 0x50 */
+	/* moving without a velocity for 10 s: stopped and the event 7 */
+	void(__thiscall *CheckStopped)(cAIMove *self, float dt);				/* 0x54 */
+	/* the move tells the AI (arrived, blocked, ..) */
+	byte(__thiscall *Event)(cAIMove *self, int ev);						/* 0x58 */
+	byte(__thiscall *IsMoving)(cAIMove *self);						/* 0x5c */
+	byte(__thiscall *CanTarget)(cAIMove *self, cEntity *e);					/* 0x60 */
+} cAIMoveVtbl;
+SD_OFFSET(cAIMoveVtbl, GetTarget, 0x38);
+SD_OFFSET(cAIMoveVtbl, CanTarget, 0x60);
+
+struct cAIMove {
+	union {
+		cAI base;			/* 0x00 */
+		const cAIMoveVtbl *vftable;
+	};
+	Nto1Node target;		/* 0x38 the target entity at 0x40, data the AI */
+	byte flying;			/* 0x48 the 3D control (CanFly, a Car) */
+	byte pad_49[3];
+	vec3_t dest;			/* 0x4c */
+	float dist;			/* 0x58 the goal is reached that near (every move of a vehicle) */
+	int moveMode;			/* 0x5c AICC_, the mode of cAIVehicleControl_SetMove for a vehicle */
+	float speed;			/* 0x60 a character only */
+	vec3_t dir;			/* 0x64 the direction of the orient and path moves */
+	vec3_t center;			/* 0x70 PATROL_ZONE */
+	float radius;			/* 0x7c PATROL_ZONE */
+	byte pathA;			/* 0x80 the flags of the path move (cAICharControl routeA, routeB) */
+	byte pathB;			/* 0x81 a vehicle: the path move stays flat */
+	byte stopped;			/* 0x82 CheckStopped: no velocity for 10 s */
+	byte inPath;			/* 0x83 FOLLOW_THE_PATH set it */
+	byte paused;			/* 0x84 far from the camera: no update */
+	byte arrived;			/* 0x85 GO_TO reached the end */
+	byte repos;			/* 0x86 "Repos" */
+	byte reposing;			/* 0x87 inside Repos */
+	byte trafficPlaced;		/* 0x88 a vehicle in TRAFFIC with a kind of track: placed, repositioned like a
+					 * visible one */
+	byte pad_89[3];
+	float stopTime;			/* 0x8c the time without a velocity */
+};
+SD_OFFSET(cAIMove, target, 0x38);
+SD_OFFSET(cAIMove, dest, 0x4c);
+SD_OFFSET(cAIMove, center, 0x70);
+SD_OFFSET(cAIMove, trafficPlaced, 0x88);
+SD_OFFSET(cAIMove, stopTime, 0x8c);
+SD_SIZE(cAIMove, CAIMOVE_SIZE);
+
+cAIMove *__thiscall cAIMove_ctor(cAIMove *self, cEntity *e);
+cAIMove *__fastcall cAIMove_ctorDefault(cAIMove *self);
+void __fastcall cAIMove_dtor(cAIMove *self);
+cAIMove *__thiscall cAIMove_Delete(cAIMove *self, byte flags);
+void __thiscall cAIMove_Draw(cAIMove *self);
+void __thiscall cAIMove_Update(cAIMove *self, float dt);
+void __thiscall cAIMove_UpdateOff(cAIMove *self, float dt);
+byte __thiscall cAIMove_VarF(cAIMove *self, const char *name, double *d, byte set);
+byte __thiscall cAIMove_VarI(cAIMove *self, const char *name, int *i, byte set);
+byte __thiscall cAIMove_VarS(cAIMove *self, const char *name, char **s, byte set);
+byte __thiscall cAIMove_VarV(cAIMove *self, const char *name, double *x, double *y, double *z, byte set);
+void __thiscall cAIMove_CheckStopped(cAIMove *self, float dt);
+byte __thiscall cAIMove_CanJump(cAIMove *self);
+cEntity *__thiscall cAIMove_GetTargetEnt(cAIMove *self);
+Nto1Node *__thiscall cAIMove_GetTarget(cAIMove *self);
+byte __thiscall cAIMove_GetStopped(cAIMove *self);
+byte __thiscall cAIMove_GetArrived(cAIMove *self);
+byte __thiscall cAIMove_IsPaused(cAIMove *self);
+byte __thiscall cAIMove_Event(cAIMove *self, int ev);
+/* e there and active, else a warning */
+byte __thiscall cAIMove_CanTarget(cAIMove *self, cEntity *e);
+vec3_t *__thiscall cAIMove_RandomPoint(cAIMove *self, vec3_t *out, const vec3_t *p, float r);
 
 /* ---- the AI of a walking character (AI/AIChar.cpp, src/game/AI/IChar.c; the states and the functions in
  * include/scrap/aichar.h) ---- */
@@ -123,7 +270,7 @@ typedef struct cAICharVtbl {
 	void *vf0b_0c[2];
 	void(__thiscall *OnEvent)(cAIChar *self, int ev);						/* 0x34 the debug text */
 	Nto1Node *(__thiscall *GetTarget)(cAIChar *self);						/* 0x38 the link to the target */
-	byte(__thiscall *CanJump)(cAIChar *self);							/* 0x3c byte 0x48 of the AI */
+	byte(__thiscall *CanJump)(cAIChar *self);							/* 0x3c flying */
 	byte(__thiscall *GetStopped)(cAIChar *self);							/* 0x40 */
 	byte(__thiscall *IsPaused)(cAIChar *self);							/* 0x44 */
 	cEntity *(__thiscall *GetTargetEnt)(cAIChar *self);						/* 0x48 */
@@ -228,43 +375,12 @@ SD_OFFSET(cAICharVtbl, Think, 0x14c);
 SD_OFFSET(cAICharVtbl, Facing, 0x188);
 SD_SIZE(cAICharVtbl, 99 * 4);
 
-/* 0x380 bytes; the first 0x90 are cAIMove (AI/AIMove.cpp) with its base cAI */
+/* 0x380 bytes */
 struct cAIChar {
-	const cAICharVtbl *vftable;	/* 0x000 */
-	byte pad_4[4];
-	cEntity *owner;			/* 0x008 of cAI */
-	float dt;			/* 0x00c the time of the frame */
-	byte slotThink[0x10];		/* 0x010 the think slot of cAI (a cSlotController) */
-	byte changing;			/* 0x020 a change of state runs */
-	byte pad_21[3];
-	int relaxCount;			/* 0x024 the relax actions played in the internal state */
-	byte changed;			/* 0x028 the internal state changed in this frame */
-	byte pad_29;
-	byte unused_2a;			/* 0x02a */
-	byte pad_2b;
-	float stateTime;		/* 0x02c */
-	byte pad_30[8];
-	Nto1Node target;		/* 0x038 the target entity at 0x40, data the AI */
-	byte flying;			/* 0x048 the 3D control (CanFly) */
-	byte pad_49[3];
-	vec3_t dest;			/* 0x04c */
-	float dist;			/* 0x058 the goal is reached that near */
-	int moveMode;			/* 0x05c AICC_ */
-	float speed;			/* 0x060 */
-	vec3_t dir;			/* 0x064 the direction of the orient and path moves */
-	vec3_t center;			/* 0x070 PATROL_ZONE */
-	float radius;			/* 0x07c PATROL_ZONE */
-	byte pathA;			/* 0x080 */
-	byte pathB;			/* 0x081 */
-	byte stopped;			/* 0x082 CheckStopped: no velocity for 10 s */
-	byte inPath;			/* 0x083 FOLLOW_THE_PATH set it */
-	byte paused;			/* 0x084 far from the camera: no update */
-	byte arrived;			/* 0x085 GO_TO reached the end */
-	byte repos;			/* 0x086 "Repos" */
-	byte reposing;			/* 0x087 inside Repos */
-	byte unused_88;			/* 0x088 */
-	byte pad_89[3];
-	float stopTime;			/* 0x08c the time without a velocity */
+	union {
+		cAIMove base;			/* 0x000 */
+		const cAICharVtbl *vftable;
+	};
 	cAICharSaved pending;		/* 0x090 state AIC_STATE_NONE for none */
 	byte slotAction[0x10];		/* 0x158 0.2 s, the distance check of the action */
 	byte slotPause[0x10];		/* 0x168 1 s */
@@ -300,9 +416,6 @@ struct cAIChar {
 	byte pad_371[3];
 	vec3_t lostPoint;		/* 0x374 -FLT_MAX for none */
 };
-SD_OFFSET(cAIChar, slotThink, 0x10);
-SD_OFFSET(cAIChar, target, 0x38);
-SD_OFFSET(cAIChar, center, 0x70);
 SD_OFFSET(cAIChar, pending, 0x90);
 SD_OFFSET(cAIChar, slotAction, 0x158);
 SD_OFFSET(cAIChar, ent, 0x198);
@@ -406,114 +519,6 @@ byte cAIVehicle_SetState(cAIVehicle *ai, int state, ...);
 /* default values of SAI.SetStateVehicle CHASE (state 7) */
 #define g_AIChaseDefault1 GAME_GLOBAL_IN(float, GVar_MinDistChaseAI, 16, 0x444948)
 #define g_AIChaseDefault2 GAME_GLOBAL_IN(float, GVar_MaxDistChaseAI, 16, 0x444828)
-
-/* ---- cAI (AI/AI.cpp, src/game/AI/AI.c): the base of every AI (0x38 bytes), the entity, the time of the frame and
- * of the state, and the slot of the reactions ---- */
-#define CAI_VFTABLE GAME_VFTABLE(cAI_vftable, 0x3a3f18)
-
-typedef struct cAI cAI;
-
-/* the slots of cAI::vftable (Debugf is pure there) */
-typedef struct cAIBaseVtbl {
-	cAI *(__thiscall *Delete)(cAI *self, byte flags);					/* 0x00 */
-	void(__thiscall *Update)(cAI *self, float dt);						/* 0x04 */
-	void(__thiscall *UpdateOff)(cAI *self, float dt);					/* 0x08 */
-	void(__thiscall *Draw)(cAI *self);							/* 0x0c */
-	byte(__thiscall *GetChanged)(cAI *self);						/* 0x10 */
-	byte(__thiscall *IsVisible)(cAI *self);							/* 0x14 */
-	void (*Debugf)(cAI *self, const char *fmt, ...);					/* 0x18 */
-	byte(__thiscall *VarI)(cAI *self, const char *name, int *i, byte set);			/* 0x1c */
-	byte(__thiscall *VarF)(cAI *self, const char *name, double *d, byte set);		/* 0x20 */
-	byte(__thiscall *VarS)(cAI *self, const char *name, char **s, byte set);		/* 0x24 */
-	byte(__thiscall *VarV)(cAI *self, const char *name, double *x, double *y, double *z, byte set);	/* 0x28 */
-	void(__thiscall *Print)(cAI *self, const char *text);					/* 0x2c */
-	void(__thiscall *GetEventName)(cAI *self, int ev, char *out);				/* 0x30 */
-	void(__thiscall *OnEvent)(cAI *self, int ev);						/* 0x34 */
-} cAIBaseVtbl;
-SD_OFFSET(cAIBaseVtbl, Debugf, 0x18);
-SD_OFFSET(cAIBaseVtbl, OnEvent, 0x34);
-
-/* the events of the AI (GetEventName) */
-enum {
-	AIEV_LOST_AGENT, AIEV_OBJECTIVE_NOT_FOUND, AIEV_OBJECTIVE_REACHED, AIEV_OBJECTIVE_DIED, AIEV_OBJECTIVE_NEAR,
-	AIEV_OBJECTIVE_VIS, AIEV_ORIENT_REACHED, AIEV_DONT_GO, AIEV_PROBLEM_MOVE, AIEV_NO_PROBLEM, AIEV_COLLISION_AGENTS
-};
-
-struct cAI {
-	const cAIBaseVtbl *vftable;	/* 0x00 */
-	byte started;			/* 0x04 set by the first update */
-	byte pad_5[3];
-	cEntity *entity;		/* 0x08 */
-	float dt;			/* 0x0c the time of the last update */
-	byte slot[0x10];		/* 0x10 cSlotController of 0.5 s (slotcontroller.h) */
-	byte changing;			/* 0x20 */
-	byte pad_21[3];
-	int relaxCount;			/* 0x24 the relax actions a character played in its internal state */
-	byte changed;			/* 0x28 GetChanged, cleared by every update */
-	byte pad_29[3];
-	float stateTime;		/* 0x2c the time in the state */
-	float waitTime;			/* 0x30 counts while seen is 0 */
-	int seen;			/* 0x34 0 out of view, 1 seen, 2 not seen yet */
-};
-SD_OFFSET(cAI, changed, 0x28);
-SD_SIZE(cAI, 0x38);
-
-cAI *__thiscall cAI_ctor(cAI *self, cEntity *e);
-cAI *__fastcall cAI_ctorDefault(cAI *self);
-void __fastcall cAI_dtor(cAI *self);
-cAI *__thiscall cAI_Delete(cAI *self, byte flags);
-void __thiscall cAI_Update(cAI *self, float dt);
-void __thiscall cAI_UpdateOff(cAI *self, float dt);
-void __thiscall cAI_Draw(cAI *self);
-byte __thiscall cAI_GetChanged(cAI *self);
-/* the entity is in the sector of the camera of view 0 or seen from it through the portals */
-byte __thiscall cAI_IsVisible(cAI *self);
-byte __thiscall cAI_VarI(cAI *self, const char *name, int *i, byte set);
-byte __thiscall cAI_VarF(cAI *self, const char *name, double *d, byte set);
-byte __thiscall cAI_VarS(cAI *self, const char *name, char **s, byte set);
-byte __thiscall cAI_VarV(cAI *self, const char *name, double *x, double *y, double *z, byte set);
-/* text as a format into the console */
-void __thiscall cAI_Print(cAI *self, const char *text);
-/* the name of the AIEV_ event into out, nothing for the others */
-void __thiscall cAI_GetEventName(cAI *self, int ev, char *out);
-void __thiscall cAI_OnEvent(cAI *self, int ev);
-
-/* ---- cAIMove (AI/AIMove.cpp, src/game/AI/AIMove.c): the base of cAIChar and cAIVehicle (the first 0x90 bytes of
- * cAIChar: the target link, the move of the state, the check of a character that does not move); the prototypes in
- * aivehicle.h ---- */
-#define CAIMOVE_VFTABLE GAME_VFTABLE(cAIMove_vftable, 0x3a7754)
-#define CAIMOVE_SIZE 0x90
-
-/* the members of cAIChar at the same offsets; the functions take the cAIChar or the cAIVehicle as void * */
-typedef struct cAIMove {
-	cAI base;			/* 0x00 */
-	Nto1Node target;		/* 0x38 the target entity at 0x40, data the AI */
-	byte flying;			/* 0x48 the 3D control (CanFly, a Car) */
-	byte pad_49[3];
-	vec3_t dest;			/* 0x4c */
-	float dist;			/* 0x58 the goal is reached that near */
-	int moveMode;			/* 0x5c AICC_ */
-	float speed;			/* 0x60 */
-	vec3_t dir;			/* 0x64 the direction of the orient and path moves */
-	vec3_t center;			/* 0x70 PATROL_ZONE */
-	float radius;			/* 0x7c PATROL_ZONE */
-	byte pathA;			/* 0x80 */
-	byte pathB;			/* 0x81 */
-	byte stopped;			/* 0x82 CheckStopped: no velocity for 10 s */
-	byte inPath;			/* 0x83 */
-	byte paused;			/* 0x84 far from the camera: no update */
-	byte arrived;			/* 0x85 GO_TO reached the end */
-	byte repos;			/* 0x86 "Repos" */
-	byte reposing;			/* 0x87 */
-	byte unused_88;			/* 0x88 */
-	byte pad_89[3];
-	float stopTime;			/* 0x8c the time without a velocity */
-} cAIMove;
-SD_OFFSET(cAIMove, target, 0x38);
-SD_OFFSET(cAIMove, dest, 0x4c);
-SD_OFFSET(cAIMove, center, 0x70);
-SD_OFFSET(cAIMove, stopTime, 0x8c);
-SD_SIZE(cAIMove, CAIMOVE_SIZE);
 
 /* ---- cAIEntityGroup (AI/AIEntityGroup.cpp, src/game/AI/AIEntityGroup.c): the base of the vehicle and the character
  * groups, up to 20 entities (a race) and the time since an AI of the group took a group state; the next one may take

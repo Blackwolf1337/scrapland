@@ -47,10 +47,10 @@ typedef struct cAIVehicleSaved {
 	int state;			/* 0x00 */
 	int internState;		/* 0x04 */
 	vec3_t dest;			/* 0x08 */
-	float speed;			/* 0x14 */
+	float dist;			/* 0x14 */
 	byte boost;			/* 0x18 */
 	char target[0x9c - 0x19];	/* 0x19 the name of the target entity, "" for none */
-	vec3_t dest2;			/* 0x9c */
+	vec3_t dir;			/* 0x9c */
 	float awayDist;			/* 0xa8 */
 	byte changing;			/* 0xac */
 	byte pad_ad[3];
@@ -65,7 +65,7 @@ typedef struct cAIVehicleSaved {
 	float rotB;			/* 0xc8 */
 } cAIVehicleSaved;
 SD_OFFSET(cAIVehicleSaved, target, 0x19);
-SD_OFFSET(cAIVehicleSaved, dest2, 0x9c);
+SD_OFFSET(cAIVehicleSaved, dir, 0x9c);
 SD_SIZE(cAIVehicleSaved, 0xcc);
 
 typedef struct cAIVehicleVtbl {
@@ -94,31 +94,10 @@ SD_OFFSET(cAIVehicleVtbl, Event, 0x58);
 SD_OFFSET(cAIVehicleVtbl, CanTarget, 0x60);
 
 struct cAIVehicle {
-	const cAIVehicleVtbl *vftable;	/* 0x000 */
-	byte pad_4[0xc - 0x4];
-	float dt;			/* 0x00c the time of the frame */
-	cAIVSlot slotThink;		/* 0x010 of cAIMove: the reactions */
-	byte changing;			/* 0x020 a change of state runs */
-	byte pad_21[0x28 - 0x21];
-	byte changed;			/* 0x028 the state changed in this frame */
-	byte pad_29[0x2c - 0x29];
-	float stateTime;		/* 0x02c */
-	float waitTime;			/* 0x030 of cAI: the time out of view */
-	int seen;			/* 0x034 of cAI: 0 out of view, 1 seen, 2 not seen yet */
-	Nto1Node target;		/* 0x038 the target entity at 0x40 */
-	byte pad_48[0x4c - 0x48];
-	vec3_t dest;			/* 0x04c */
-	float speed;			/* 0x058 */
-	int moveMode;			/* 0x05c */
-	byte pad_60[0x64 - 0x60];
-	vec3_t dest2;			/* 0x064 */
-	byte pad_70[0x81 - 0x70];
-	byte flat;			/* 0x081 the path move stays flat */
-	byte pad_82[0x86 - 0x82];
-	byte repos;			/* 0x086 "Repos" */
-	byte pad_87;
-	byte trafficPlaced;		/* 0x088 TRAFFIC with a kind of track: placed, repositioned like a visible one */
-	byte pad_89[0x90 - 0x89];
+	union {
+		cAIMove base;			/* 0x000 */
+		const cAIVehicleVtbl *vftable;
+	};
 	cAIVehicleSaved pending;	/* 0x090 state AIV_STATE_NONE for none */
 	byte(*onArrive)(cAIVehicle *self);	/* 0x15c GO_TO arrived: 1 if it took care of it */
 	cAIVSlot slotAttack;		/* 0x160 */
@@ -182,9 +161,6 @@ struct cAIVehicle {
 	byte pad_3ab;
 	int ammoSearch;			/* 0x3ac the nearest ammo first (0) or the farthest (1), 3 none */
 };
-SD_OFFSET(cAIVehicle, slotThink, 0x10);
-SD_OFFSET(cAIVehicle, target, 0x38);
-SD_OFFSET(cAIVehicle, repos, 0x86);
 SD_OFFSET(cAIVehicle, pending, 0x90);
 SD_OFFSET(cAIVehicle, onArrive, 0x15c);
 SD_OFFSET(cAIVehicle, vehicle, 0x190);
@@ -200,7 +176,7 @@ SD_OFFSET(cAIVehicle, unused_3a8, 0x3a8);
 SD_SIZE(cAIVehicle, CAIVEHICLE_SIZE);
 
 static inline cEntity *AIV_Target(const cAIVehicle *ai) {
-	return ai->target.target;
+	return ai->base.target.target;
 }
 
 /* the engine variables of the vehicle AI */
@@ -325,11 +301,11 @@ void __thiscall cAIVehicle_GraphTrafficInDoor(cAIVehicle *self);
 void __thiscall cAIVehicle_ThinkRace(cAIVehicle *self);
 /* the internal state (AIVI_) and its move; the arguments by state, floats as double, bytes as int:
  * STOPPED, ORIENT_SHOOTING: none
- * FINISHING_LINE: vec3_t dest, speed, boost, a, b, accel, stopAtGoal
- * FINISHING_LINE_WITH_SHOOT_CM, _LIFE, _AMMO: vec3_t dest, speed (WITH_SHOOT_CM also boost)
- * FINISHING_LINE_DIRECT: vec3_t dest, speed, boost, rotA, rotB
+ * FINISHING_LINE: vec3_t dest, dist, boost, a, b, accel, stopAtGoal
+ * FINISHING_LINE_WITH_SHOOT_CM, _LIFE, _AMMO: vec3_t dest, dist (WITH_SHOOT_CM also boost)
+ * FINISHING_LINE_DIRECT: vec3_t dest, dist, boost, rotA, rotB
  * CHASE_SHOOTING: chaseMin, chaseMax; CHASE_NOT_SHOOTING: chaseMin, rotB
- * FOLLOW_THE_PATH: vec3_t dir, speed, boost, flat, repos, a, b; FOLLOW_THE_PATH_WITH_SHOOT_CM: vec3_t dir, speed,
+ * FOLLOW_THE_PATH: vec3_t dir, dist, boost, flat, repos, a, b; FOLLOW_THE_PATH_WITH_SHOOT_CM: vec3_t dir, dist,
  * boost, flat */
 void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...);
 /* the external state from SetState: 0 if the arguments did not fit */
@@ -352,31 +328,6 @@ vec3_t *__thiscall cAIVehicle_TrackPointRandom(cAIVehicle *self, vec3_t *out, co
  * minNotVis and maxNotVis, around the point); track and node set; 0 for none */
 byte __thiscall cAIVehicle_ReposTraffic(cAIVehicle *self, vec3_t *out, float minVis, float maxVis, float minNotVis,
 	float maxNotVis, float around);
-
-/* ---- cAIMove (AI/AIMove.cpp), the base class ---- */
-void *__thiscall cAIMove_ctor(void *self, cEntity *e);
-void __fastcall cAIMove_dtor(void *self);
-void __thiscall cAIMove_Draw(void *self);
-void __thiscall cAIMove_Update(void *self, float dt);
-void __thiscall cAIMove_UpdateOff(void *self, float dt);
-byte __thiscall cAIMove_VarF(void *self, const char *name, double *d, byte set);
-byte __thiscall cAIMove_VarI(void *self, const char *name, int *i, byte set);
-byte __thiscall cAIMove_VarS(void *self, const char *name, char **s, byte set);
-byte __thiscall cAIMove_VarV(void *self, const char *name, double *x, double *y, double *z, byte set);
-/* the rest of AI/AIMove.cpp (src/game/AI/AIMove.c; the slots of cAIChar, include/scrap/ai.h) */
-void *__fastcall cAIMove_ctorDefault(void *self);
-void *__thiscall cAIMove_Delete(void *self, byte flags);
-void __thiscall cAIMove_CheckStopped(void *self, float dt);
-byte __thiscall cAIMove_CanJump(void *self);
-cEntity *__thiscall cAIMove_GetTargetEnt(void *self);
-Nto1Node *__thiscall cAIMove_GetTarget(void *self);
-byte __thiscall cAIMove_GetStopped(void *self);
-byte __thiscall cAIMove_GetArrived(void *self);
-byte __thiscall cAIMove_IsPaused(void *self);
-byte __thiscall cAIMove_Event(void *self, int ev);
-/* e there and active, else a warning */
-byte __thiscall cAIMove_CanTarget(void *self, cEntity *e);
-vec3_t *__thiscall cAIMove_RandomPoint(void *self, vec3_t *out, const vec3_t *p, float r);
 
 /* ---- cAIVehicleControl and cAIVehicleShoot (src/game/AI/IVehicleControl.c, IVehicleShootControl.c; the rest of
  * them in aivehiclecontrol.h) ---- */

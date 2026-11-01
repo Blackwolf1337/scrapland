@@ -40,7 +40,7 @@ void __thiscall cAIMessenger_CheckActDist(cAIMessenger *self) {
 	byte act = 0;
 	vec3_t a, b, d;
 
-	cEntity *tgt = c->target.target;
+	cEntity *tgt = c->base.target.target;
 	const vec3_t *op = c->ent->vftable->GetPos(c->ent, &a);
 	const vec3_t *tp = tgt->vftable->GetPos(tgt, &b);
 	d.x = tp->x - op->x;
@@ -52,7 +52,7 @@ void __thiscall cAIMessenger_CheckActDist(cAIMessenger *self) {
 		goto done;
 	}
 	/* the half angle of the target at its distance, the angle of the view (down z) to it */
-	cEntity *t = c->target.target;
+	cEntity *t = c->base.target.target;
 	float tr = Obj_Vtbl(t)->GetRadius(t);
 	double half = Game_Atan2((double)tr, (double)dist);
 	vec3_t fwd = { 0.0f, 0.0f, -1.0f };

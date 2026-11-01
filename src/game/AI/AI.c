@@ -17,7 +17,7 @@
 
 static void cAI_Init(cAI *self) {
 	self->vftable = CAI_VFTABLE;
-	cSlotController_ctor((cSlotController *)self->slot, AI_SLOT_TIME);
+	cSlotController_ctor(&self->slotThink, AI_SLOT_TIME);
 }
 
 cAI *__thiscall cAI_ctor(cAI *self, cEntity *e) {
