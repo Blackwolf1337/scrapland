@@ -439,6 +439,7 @@ int CD3DApp_UserSelectNewDevice(CD3DApplication *self) {
 #define D3DCREATE_HARDWARE_VERTEXPROCESSING 0x40
 #define D3DCREATE_MIXED_VERTEXPROCESSING 0x80
 #define D3DCREATE_PUREDEVICE 0x10
+#define D3DCREATE_FPU_PRESERVE 0x2
 
 extern uint32_t g_D3DAppFrames;
 extern float g_D3DAppLastTime;
@@ -879,8 +880,10 @@ int CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 		pp->FullScreen_PresentationInterval = self->vsync ? 0 : D3DPRESENT_INTERVAL_IMMEDIATE;
 	}
 	void *d3d = self->d3d;
+	/* differs from the original on purpose: the x87 keeps its double precision (the libm runs on the x87; without
+	 * FPU_PRESERVE Direct3D sets it to 24 bits and sin, cos ... lose most of their digits) */
 	hr = D3D_METHOD(d3d, d3dCreateDevice_t, D3D8_CREATEDEVICE)(d3d, self->adapter, dev->DeviceType,
-		self->hWndFocus, mode->dwBehavior, pp, &self->device);
+		self->hWndFocus, mode->dwBehavior | D3DCREATE_FPU_PRESERVE, pp, &self->device);
 	if (hr >= 0) {
 		if (self->windowed) {
 			exe_rect *r = &self->windowBounds;

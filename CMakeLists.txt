@@ -51,6 +51,7 @@ add_library(python152 STATIC
 	src/python/dictobject.c
 	src/python/getpathp.c
 	src/python/import.c
+	src/python/intobject.c
 	src/python/listobject.c
 	src/python/pythonrun.c
 	src/python/stringobject.c
@@ -71,7 +72,6 @@ add_library(python152 STATIC
 	${PY152}/Objects/floatobject.c
 	${PY152}/Objects/frameobject.c
 	${PY152}/Objects/funcobject.c
-	${PY152}/Objects/intobject.c
 	${PY152}/Objects/longobject.c
 	${PY152}/Objects/methodobject.c
 	${PY152}/Objects/moduleobject.c
