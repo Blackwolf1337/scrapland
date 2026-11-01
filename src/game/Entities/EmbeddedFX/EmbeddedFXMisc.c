@@ -12,6 +12,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/scorer.h"
 #include "scrap/timer.h"
+#include "scrap/withlifeentity.h"
 
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMEPARTICLES_DTOR 0x21d1c0
@@ -1423,7 +1424,7 @@ void __thiscall cEmbeddedFXDTritusDesktop_Update(cEmbeddedFXDTritusDesktop *self
 	self->t = dt + self->t;
 	cEntity *e = self->base.ent;
 	byte on = 0;
-	if (e && e->vftable->IsType(e, TYEN_WITH_LIFE) && *((byte *)self->base.ent + 0x383)) {
+	if (e && e->vftable->IsType(e, TYEN_WITH_LIFE) && WLife(self->base.ent)->arrow.canMission) {
 		on = (byte)((int)(self->t * 3.0f) & 1);
 	}
 	CGameParticles_SetVisible(&self->glow, on);

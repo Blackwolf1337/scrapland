@@ -221,14 +221,14 @@ void FX_ItemFade(cEntity *e, int mode, float scale, cEntity *target) {
 			take->target = target;
 		}
 	}
-	/* in split screen the scorer of the view whose camera is the owner of the target (at 0xf0) */
+	/* in split screen the scorer of the view whose camera is the camera of the target */
 	int player = 0;
-	if (g_SplitScreenGame && *(cEntity **)((byte *)target + 0xf0)) {
+	if (g_SplitScreenGame && Obj(target)->cam) {
 		for (player = 0;; player++) {
 			if (player >= 4) {
 				return;
 			}
-			const char *a = (*(cEntity **)((byte *)target + 0xf0))->name;
+			const char *a = Obj(target)->cam->name;
 			if (FX_NameEq(a, cWorld_GetCamName(g_pWorld, player))) {
 				break;
 			}
