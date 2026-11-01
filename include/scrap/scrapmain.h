@@ -34,7 +34,7 @@ SD_SIZE(D3DModeInfo, 0x14);
 
 typedef struct D3DDeviceInfo {
 	uint32_t DeviceType;		/* 0x00 1 HAL, 2 REF */
-	uint32_t d3dCaps[0x35];		/* 0x04 D3DCAPS8: Caps2 at word 3, DevCaps at word 7 */
+	D3DCaps8 d3dCaps;		/* 0x04 */
 	const char *strDesc;		/* 0xd8 "HAL", "REF" (strings of the exe) */
 	int bCanDoWindowed;		/* 0xdc */
 	int dwNumModes;			/* 0xe0 */
@@ -80,7 +80,7 @@ typedef struct CD3DApplication {
 	void *hWndFocus;			/* 0x2a3d0 */
 	void *d3d;				/* 0x2a3d4 IDirect3D8 */
 	void *device;				/* 0x2a3d8 IDirect3DDevice8 */
-	uint32_t caps[0x35];			/* 0x2a3dc D3DCAPS8 */
+	D3DCaps8 caps;				/* 0x2a3dc */
 	uint32_t backBufferDesc[8];		/* 0x2a4b0 D3DSURFACE_DESC */
 	uint32_t depthBufferDesc[8];		/* 0x2a4d0 D3DSURFACE_DESC */
 	uint32_t createFlags;			/* 0x2a4f0 the behavior of CreateDevice */

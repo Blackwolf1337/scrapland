@@ -32,7 +32,7 @@ typedef int(__stdcall *d3dCopyRects_t)(void *dev, void *src, const void *rects, 
 	const void *points);
 typedef int(__stdcall *d3dGetDesc_t)(void *surf, uint32_t *desc);
 typedef int(__stdcall *d3dGetAdapterIdentifier_t)(void *d3d, uint32_t adapter, uint32_t flags, D3DAdapterId *id);
-typedef int(__stdcall *d3dGetDeviceCaps_t)(void *d3d, uint32_t adapter, int type, uint32_t *caps);
+typedef int(__stdcall *d3dGetDeviceCaps_t)(void *d3d, uint32_t adapter, int type, D3DCaps8 *caps);
 #define D3DDEVTYPE_HAL 1
 #define D3D_SDK_VERSION 0xdc
 
@@ -298,7 +298,7 @@ static void Str_Append(char *dst, int size, const char *src) {
 }
 
 void Video_CheckCaps(void) {
-	uint32_t caps[D3DCAPS_WORDS];
+	D3DCaps8 caps;
 	D3DAdapterId id;
 	char text[0x400];
 
@@ -306,8 +306,8 @@ void Video_CheckCaps(void) {
 	if (!d3d) {
 		return;
 	}
-	int hr = D3D_METHOD(d3d, d3dGetDeviceCaps_t, D3D_GETDEVICECAPS)(d3d, 0, D3DDEVTYPE_HAL, caps);
-	byte ok = hr >= 0 && caps[D3DCAPS_PIXELSHADERVERSION] >= D3DPS_VERSION(1, 1);
+	int hr = D3D_METHOD(d3d, d3dGetDeviceCaps_t, D3D_GETDEVICECAPS)(d3d, 0, D3DDEVTYPE_HAL, &caps);
+	byte ok = hr >= 0 && caps.PixelShaderVersion >= D3DPS_VERSION(1, 1);
 	id.Description[0] = 0;
 	D3D_METHOD(d3d, d3dGetAdapterIdentifier_t, D3D_GETADAPTERIDENTIFIER)(d3d, 0, 0, &id);
 	if (!ok) {

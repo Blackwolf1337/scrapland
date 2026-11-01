@@ -8,14 +8,6 @@
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 
-typedef struct D3DDisplayMode {
-	uint32_t Width;			/* 0x0 */
-	uint32_t Height;		/* 0x4 */
-	uint32_t RefreshRate;		/* 0x8 */
-	uint32_t Format;		/* 0xc */
-} D3DDisplayMode;
-SD_SIZE(D3DDisplayMode, 0x10);
-
 typedef struct D3DGuid {
 	uint32_t Data1;
 	uint16_t Data2;

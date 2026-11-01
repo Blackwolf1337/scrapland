@@ -719,7 +719,7 @@ int __fastcall CD3DApp_BuildDeviceList(byte *self) {
 			D3DDeviceInfo *dev = &ad->devices[ad->dwNumDevices];
 			dev->DeviceType = types[t];
 			d3d = ENGINE_D3D(self);
-			D3D_METHOD(d3d, d3dGetDeviceCaps_t, D3D8_GETDEVICECAPS)(d3d, a, types[t], dev->d3dCaps);
+			D3D_METHOD(d3d, d3dGetDeviceCaps_t, D3D8_GETDEVICECAPS)(d3d, a, types[t], &dev->d3dCaps);
 			dev->dwNumModes = 0;
 			dev->dwCurrentMode = 0;
 			dev->bCanDoWindowed = 0;
@@ -736,7 +736,7 @@ int __fastcall CD3DApp_BuildDeviceList(byte *self) {
 				}
 				if (dev->DeviceType == D3DDEVTYPE_HAL) {
 					halExists = 1;
-					if (dev->d3dCaps[3] & D3DCAPS2_CANRENDERWINDOWED) {
+					if (dev->d3dCaps.Caps2 & D3DCAPS2_CANRENDERWINDOWED) {
 						halWindowed = 1;
 						if (f == 0) {
 							halDesktop = 1;
@@ -744,21 +744,21 @@ int __fastcall CD3DApp_BuildDeviceList(byte *self) {
 					}
 				}
 				d3dappConfirm_t confirm = (d3dappConfirm_t)(*(void ***)self)[D3DAPP_VT_CONFIRMDEVICE / 4];
-				if (dev->d3dCaps[7] & D3DDEVCAPS_HWTRANSFORMANDLIGHT) {
-					if (dev->d3dCaps[7] & D3DDEVCAPS_PUREDEVICE) {
+				if (dev->d3dCaps.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT) {
+					if (dev->d3dCaps.DevCaps & D3DDEVCAPS_PUREDEVICE) {
 						behavior[f] = D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_PUREDEVICE;
-						if (confirm(self, dev->d3dCaps, behavior[f], fmt) >= 0) {
+						if (confirm(self, &dev->d3dCaps, behavior[f], fmt) >= 0) {
 							fmtOk[f] = 1;
 						}
 					}
 					if (!fmtOk[f]) {
 						behavior[f] = D3DCREATE_HARDWARE_VERTEXPROCESSING;
-						if (confirm(self, dev->d3dCaps, behavior[f], fmt) >= 0) {
+						if (confirm(self, &dev->d3dCaps, behavior[f], fmt) >= 0) {
 							fmtOk[f] = 1;
 						}
 						if (!fmtOk[f]) {
 							behavior[f] = D3DCREATE_MIXED_VERTEXPROCESSING;
-							if (confirm(self, dev->d3dCaps, behavior[f], fmt) >= 0) {
+							if (confirm(self, &dev->d3dCaps, behavior[f], fmt) >= 0) {
 								fmtOk[f] = 1;
 							}
 						}
@@ -766,7 +766,7 @@ int __fastcall CD3DApp_BuildDeviceList(byte *self) {
 				}
 				if (!fmtOk[f]) {
 					behavior[f] = D3DCREATE_SOFTWARE_VERTEXPROCESSING;
-					if (confirm(self, dev->d3dCaps, behavior[f], fmt) >= 0) {
+					if (confirm(self, &dev->d3dCaps, behavior[f], fmt) >= 0) {
 						fmtOk[f] = 1;
 					}
 					if (!fmtOk[f]) {
@@ -831,7 +831,7 @@ int __fastcall CD3DApp_BuildDeviceList(byte *self) {
 					break;
 				}
 			}
-			if (fmtOk[0] && (dev->d3dCaps[3] & D3DCAPS2_CANRENDERWINDOWED)) {
+			if (fmtOk[0] && (dev->d3dCaps.Caps2 & D3DCAPS2_CANRENDERWINDOWED)) {
 				dev->bCanDoWindowed = 1;
 				dev->bWindowed = 1;
 			}

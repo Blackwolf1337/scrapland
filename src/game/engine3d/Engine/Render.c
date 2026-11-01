@@ -1289,20 +1289,20 @@ static void Render_LogVersion(const char *fmt, uint32_t ver) {
 	E3D_LogPrint(g_FileLog, fmt, buf);
 }
 
-static void Render_LogDevice(const uint32_t *caps, const uint32_t *mode, const uint32_t *zbuf) {
+static void Render_LogDevice(const D3DCaps8 *caps, const uint32_t *mode, const uint32_t *zbuf) {
 	E3D_LogPrint(g_FileLog, "%s", ENGINE_DEVNAME(g_Engine));
 	E3D_LogPrint(g_FileLog, "Driver: %s  WHQL: %d", g_DriverStr, g_Adapter.WHQLLevel);
 	E3D_LogPrint(g_FileLog, "%s", g_DeviceStr);
 	E3D_LogPrint(g_FileLog, "Mode: %dx%d %s", mode[6], mode[7], D3DFmt_Name((int)mode[0]));
 	E3D_LogPrint(g_FileLog, "ZBuf: %dx%d %s", zbuf[6], zbuf[7], D3DFmt_Name((int)zbuf[0]));
-	E3D_LogPrint(g_FileLog, "MaxTexture: %dx%d", caps[D3DCAPS_MAXTEXTUREWIDTH], caps[D3DCAPS_MAXTEXTUREHEIGHT]);
-	E3D_LogPrint(g_FileLog, "MaxAnisotropy: %d", caps[D3DCAPS_MAXANISOTROPY]);
-	E3D_LogPrint(g_FileLog, "MaxTextureBlendStages: %d", caps[D3DCAPS_MAXTEXTUREBLENDSTAGES]);
-	E3D_LogPrint(g_FileLog, "MaxSimultaneousTextures: %d", caps[D3DCAPS_MAXSIMULTANEOUSTEXTURES]);
-	E3D_LogPrint(g_FileLog, "MaxActiveLights: %d", caps[D3DCAPS_MAXACTIVELIGHTS]);
-	E3D_LogPrint(g_FileLog, "MaxStreams: %d", caps[D3DCAPS_MAXSTREAMS]);
-	Render_LogVersion("VertexShaderVersion: %s", caps[D3DCAPS_VERTEXSHADERVERSION]);
-	Render_LogVersion("PixelShaderVersion: %s", caps[D3DCAPS_PIXELSHADERVERSION]);
+	E3D_LogPrint(g_FileLog, "MaxTexture: %dx%d", caps->MaxTextureWidth, caps->MaxTextureHeight);
+	E3D_LogPrint(g_FileLog, "MaxAnisotropy: %d", caps->MaxAnisotropy);
+	E3D_LogPrint(g_FileLog, "MaxTextureBlendStages: %d", caps->MaxTextureBlendStages);
+	E3D_LogPrint(g_FileLog, "MaxSimultaneousTextures: %d", caps->MaxSimultaneousTextures);
+	E3D_LogPrint(g_FileLog, "MaxActiveLights: %d", caps->MaxActiveLights);
+	E3D_LogPrint(g_FileLog, "MaxStreams: %d", caps->MaxStreams);
+	Render_LogVersion("VertexShaderVersion: %s", caps->VertexShaderVersion);
+	Render_LogVersion("PixelShaderVersion: %s", caps->PixelShaderVersion);
 }
 
 static void Render_LoadPS(int i) {
@@ -1361,7 +1361,8 @@ void Render_IniD3D(void) {
 		{ "Material_RGB_BumpNoise", "bmp/rgb_noise.bump.tga" },
 		{ "Material_RGB_Ground", "bmp/rgb_ground.tga" },
 	};
-	uint32_t caps[D3DCAPS_WORDS], mode[8], zbuf[8];
+	D3DCaps8 caps;
+	uint32_t mode[8], zbuf[8];
 
 	E3D_DebugPrintf("\n> RenderIniD3D()");
 	if (!g_Engine || !g_EngineDev) {
@@ -1370,7 +1371,7 @@ void Render_IniD3D(void) {
 	byte *motor = g_Engine;
 	void *dev = ENGINE_DEV(motor);
 	g_pd3dDevice = dev;
-	memcpy(caps, ENGINE_CAPS(motor), sizeof(caps));
+	memcpy(&caps, ENGINE_CAPS(motor), sizeof(caps));
 	((CMaterial *)g_MatLine)->params.lighting = 0;
 	((CMaterial *)g_MatDefault)->params.lighting = 0;
 	memcpy(&g_Adapter, ENGINE_ADAPTERS(motor) + ENGINE_ADAPTER(motor) * 0x438c, sizeof(g_Adapter));
@@ -1383,13 +1384,13 @@ void Render_IniD3D(void) {
 	memcpy(zbuf, ENGINE_ZBUF(motor), sizeof(zbuf));
 	if (g_DeviceLogged != ENGINE_DEVID(motor)) {
 		g_DeviceLogged = ENGINE_DEVID(motor);
-		Render_LogDevice(caps, mode, zbuf);
+		Render_LogDevice(&caps, mode, zbuf);
 	}
 	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, g_ViewportFull);
 	g_UseShaders2 = 0;
 	g_UseShaders = 1;
 	Render_SetMatrices();
-	uint32_t tc = caps[D3DCAPS_TEXTURECAPS];
+	uint32_t tc = caps.TextureCaps;
 	g_MipmapsOn = (tc & D3DPTEXTURECAPS_MIPMAP) != 0;
 	g_TexRepeat = (tc & D3DPTEXTURECAPS_TEXREPEATNOTSCALEDBYSIZE) != 0;
 	g_TexNoPow2 = (tc & D3DPTEXTURECAPS_NONPOW2CONDITIONAL) != 0;
@@ -1409,7 +1410,7 @@ void Render_IniD3D(void) {
 		Render_TSS(i, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
 		Render_TSS(i, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
 	}
-	if (caps[D3DCAPS_PIXELSHADERVERSION] < D3DPS_VERSION(1, 1)) {
+	if (caps.PixelShaderVersion < D3DPS_VERSION(1, 1)) {
 		E3D_LogBlue(g_FileLog, "The graphics device does not support Pixel Shader 1.1");
 		g_PSOn = 0;
 		g_EnvBump = 0;
