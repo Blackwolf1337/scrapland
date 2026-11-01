@@ -351,11 +351,11 @@ void CNodesTrafficInDoor_Respawn(CNodesTrafficInDoor *self, cAIVehicle **ai, int
 int CNodesTrafficInDoor_HiddenNode(CNodesTrafficInDoor *self, int track);
 /* the sector lists of the tracks */
 void CNodesTrafficInDoor_InitSectors(CNodesTrafficInDoor *self);
-void __stdcall TrafficSectors_Add(cTrafficSector *list, int *num, int sector);
+void TrafficSectors_Add(cTrafficSector *list, int *num, int sector);
 void CNodesTrafficInDoor_Init(CNodesTrafficInDoor *self);
 /* vtable slot 0x48, empty (the slot 0x3c is CNodesTraffic_Draw) */
 void CNodesTrafficInDoor_BuildGrid(CNodesTrafficInDoor *self);
-void __stdcall TrafficSectors_SetTracks(cTrafficSector *list, int num);
+void TrafficSectors_SetTracks(cTrafficSector *list, int num);
 /* the traffic vehicle into the list of the class of its vehicle */
 void CNodesTrafficInDoor_AddVehicle(CNodesTrafficInDoor *self, cAIVehicle *ai);
 /* a visible sector of the type has the track */

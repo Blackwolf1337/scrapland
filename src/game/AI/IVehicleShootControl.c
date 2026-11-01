@@ -745,7 +745,7 @@ cAIVSWeap *cAIVehicleShoot_GetWeaps(cAIVehicleShoot *self) {
 }
 
 /* the name of the weapon for the debug text; the bytes of the original string copies */
-void __stdcall cAIVehicleShoot_WeaponName(int w, char *buf) {
+void cAIVehicleShoot_WeaponName(int w, char *buf) {
 	if (w == g_VulcanIDWeap) {
 		memcpy(buf, "VULCAN", 7);
 	} else if (w == g_DevastatorIDWeap) {

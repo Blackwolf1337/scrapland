@@ -440,7 +440,7 @@ if vmocar:
 		for vmothr, vmosp, vmon in ((0.1, 0.0, 1), (0.9, 0.5, 2), (-1.0, 2.0, 3)):
 			vmosrand(97)
 			check('VMEffects_SetupHaze' + fmt((vmothr, vmosp, vmon)), lambda t=vmothr, s=vmosp, n=vmon:
-				(SDTest.Call('VMEffects_SetupHaze', 'tviffFii', 0, t, s, (10.0, 20.0, 30.0, -5.0, 0.0, 5.0, 1.0, 2.0, 3.0)[:3 * n],
+				(SDTest.Call('VMEffects_SetupHaze', 'vffFii', t, s, (10.0, 20.0, 30.0, -5.0, 0.0, 5.0, 1.0, 2.0, 3.0)[:3 * n],
 				n, vmops), vmopart(vmops)))
 	# the update: a fixed frame time and the values of the embedded effects set by hand
 	if vmofx and vmops:

@@ -193,7 +193,7 @@ def ntrInDoor(t, nt, tracks):
 	l = ntrCalloc(20 * 0x18)
 	cnt = ntrCalloc(4)
 	for sec in (5, 7, 5, 9, 7, 5, 11):
-		check('TrafficSectors_Add(%d)' % sec, lambda l=l, cnt=cnt, sec=sec: (SDTest.Call('TrafficSectors_Add', 'tviiii', 0, l, cnt,
+		check('TrafficSectors_Add(%d)' % sec, lambda l=l, cnt=cnt, sec=sec: (SDTest.Call('TrafficSectors_Add', 'viii', l, cnt,
 			sec), ntrI(cnt)))
 	ntrFree(cnt)
 	check('TrafficSectors_Add sectors', lambda l=l: map(lambda i, l=l: (ntrI(l + 0x18 * i), ntrI(l + 0x18 * i + 8)),
@@ -210,7 +210,7 @@ def ntrInDoor(t, nt, tracks):
 	ntrPoke(l + 8, 5)
 	ntrPoke(l + 0x18 + 4, nodes + 8 * 5)
 	ntrPoke(l + 0x18 + 8, 1)
-	check('TrafficSectors_SetTracks', lambda l=l: (SDTest.Call('TrafficSectors_SetTracks', 'tviii', 0, l, 2), ntrSectors(l, 2)))
+	check('TrafficSectors_SetTracks', lambda l=l: (SDTest.Call('TrafficSectors_SetTracks', 'vii', l, 2), ntrSectors(l, 2)))
 	ntrFree(ntrI(l + 0xc))
 	ntrFree(ntrI(l + 0x18 + 0xc))
 	ntrFree(nodes)

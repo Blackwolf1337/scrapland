@@ -58,10 +58,10 @@ for ivhPl in ivhPlanes:
 			'iFFFF', (0.0, 0.0, 0.0), s[0], s[1], p)[0:2])
 # stdcall: called as thiscall with a dummy this
 for ivhS in range(-1, 19):
-	check('cAIVehicle_StateName(%d)' % ivhS, lambda s=ivhS: SDTest.Call('cAIVehicle_StateName', 'tviib', 0, s, 'keep')[1])
-	check('cAIVehicle_IsGroupState(%d)' % ivhS, lambda s=ivhS: SDTest.Call('cAIVehicle_IsGroupState', 'tbii', 0, s)[0])
+	check('cAIVehicle_StateName(%d)' % ivhS, lambda s=ivhS: SDTest.Call('cAIVehicle_StateName', 'vib', s, 'keep')[1])
+	check('cAIVehicle_IsGroupState(%d)' % ivhS, lambda s=ivhS: SDTest.Call('cAIVehicle_IsGroupState', 'bi', s)[0])
 for ivhS in range(-1, 13):
-	check('cAIVehicle_InternStateName(%d)' % ivhS, lambda s=ivhS: SDTest.Call('cAIVehicle_InternStateName', 'tviib', 0, s, 'keep')[1])
+	check('cAIVehicle_InternStateName(%d)' % ivhS, lambda s=ivhS: SDTest.Call('cAIVehicle_InternStateName', 'vib', s, 'keep')[1])
 
 # ---- an AI of our own ----
 ivhGroup = SDTest.Peek('g_VehicleGroup', 'i')

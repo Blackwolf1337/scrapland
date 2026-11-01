@@ -170,7 +170,7 @@ float Rand_FloatRange(float lo, float hi) {
 	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * (double)d + (double)lo);
 }
 
-void __stdcall VMEffects_SetupHaze(float thrust, float speed, vec3_t *pos, int n, CGameParticles *ps) {
+void VMEffects_SetupHaze(float thrust, float speed, vec3_t *pos, int n, CGameParticles *ps) {
 	float t = Float_MaxSS(0.3f, thrust);
 
 	ps->birthRate = (int)(t * 26.0f) * n;

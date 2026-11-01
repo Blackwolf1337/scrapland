@@ -218,7 +218,7 @@ CGameModel *cVehicleMotorsEffects_GetModel(cVehicleMotorsEffects *self, int side
 void cVehicleMotorsEffects_Init(cVehicleMotorsEffects *self);
 /* Rand_FloatRange is declared in weapons.h */
 /* the particles of the Calima effect (the hot air under the motors) for n emit positions at pos */
-void __stdcall VMEffects_SetupHaze(float thrust, float speed, vec3_t *pos, int n, CGameParticles *ps);
+void VMEffects_SetupHaze(float thrust, float speed, vec3_t *pos, int n, CGameParticles *ps);
 void cVehicleMotorsEffects_SetType(cVehicleMotorsEffects *self, int type);
 /* the glow particles of the exhausts in ps from *first on (2 each), *first moved on */
 void cVehicleMotorsEffects_Glow(cVehicleMotorsEffects *self, float thrust, float k, float dist,

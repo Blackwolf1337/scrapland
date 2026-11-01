@@ -97,7 +97,7 @@ void cFriends_Attack(cFriends *self, cEntity *usr) {
 }
 
 /* t is an active enemy car of v (no caller in the exe) */
-byte __stdcall Friends_IsEnemyTarget(cEntity *v, cEntity *t) {
+byte Friends_IsEnemyTarget(cEntity *v, cEntity *t) {
 	return t && Friends_IsEnemyCar(v, t);
 }
 

@@ -223,9 +223,9 @@ int cAIVehicle_GetPrevState(cAIVehicle *self);
 /* FIGHTING when asked with GET_AWAY, else the state of the AI */
 int cAIVehicle_GetStateFor(cAIVehicle *self, int state);
 /* the name of the state into buf; buf unchanged for a state out of the range */
-void __stdcall cAIVehicle_InternStateName(int state, char *buf);
+void cAIVehicle_InternStateName(int state, char *buf);
 void cAIVehicle_GetInternStateName(cAIVehicle *self, char *buf);
-void __stdcall cAIVehicle_StateName(int state, char *buf);
+void cAIVehicle_StateName(int state, char *buf);
 /* the names of the state and its sub state for the debug texts (0x100 bytes) */
 void cAIVehicle_GetStateName(cAIVehicle *self, char *buf);
 cAIVehicleParams1 *cAIVehicle_GetParamsInit(cAIVehicle *self);
@@ -241,7 +241,7 @@ byte cAIVehicle_InHookRange(cAIVehicle *self, cEntity *e);
 byte cAIVehicle_CanHook(cAIVehicle *self, cEntity *e);
 byte cAIVehicle_InHookRangePos(cAIVehicle *self, const vec3_t *p);
 /* a change to the state asks the vehicle group (not FREEZE*, LOST_PATH*, TRAFFIC*) */
-byte __stdcall cAIVehicle_IsGroupState(int state);
+byte cAIVehicle_IsGroupState(int state);
 void cAIVehicle_CheckParams1(cAIVehicle *self, const cAIVehicleParams1 *p);
 void cAIVehicle_CheckParams2(cAIVehicle *self, const cAIVehicleParams2 *p);
 void cAIVehicle_CheckParams3(cAIVehicle *self, const cAIVehicleParams3 *p);

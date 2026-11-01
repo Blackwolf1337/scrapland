@@ -108,8 +108,8 @@ agrPoke(agrPt + 0xc, agrPt)
 def agrRing(a=0):
 	return (agrI(agrHd) == agrPt, agrI(agrHd + 4) == agrPt, agrI(agrPt) == agrHd, agrI(agrPt + 8), agrI(agrHd) == agrHd,
 		agrI(agrPt) == agrPt)
-check('AGR UnlinkOpt', lambda: (SDTest.Call('Nto1Node_UnlinkOpt', 'tvii', 0, 0), SDTest.Call('Nto1Head_Link', 'tvii', agrHd, agrPt),
-	agrRing(), SDTest.Call('Nto1Node_UnlinkOpt', 'tvii', 0, agrPt), agrRing()))
+check('AGR UnlinkOpt', lambda: (SDTest.Call('Nto1Node_UnlinkOpt', 'vi', 0), SDTest.Call('Nto1Head_Link', 'tvii', agrHd, agrPt),
+	agrRing(), SDTest.Call('Nto1Node_UnlinkOpt', 'vi', agrPt), agrRing()))
 check('AGR point dtor', lambda: (SDTest.Call('Nto1Head_Link', 'tvii', agrHd, agrPt), agrRing(), SDTest.Call('cAICGPoint_dtor', 'tvi',
 	agrPt), agrRing(), SDTest.Call('cAICGPoint_Delete', 'tiii', agrPt, 0)[0] == agrPt, agrRing()))
 agrPoke(agrPt + 0xc, 0)
@@ -309,7 +309,7 @@ if agrOk:
 			agrW2), agrGet('SDAgrOther', agrW2), agrGet('SDAgrZone', 0), agrGet('SDAgrNo', agrW2)))
 		for agrPp in agrPts:
 			if agrI(agrPp + 8):
-				SDTest.Call('Nto1Node_UnlinkOpt', 'tvii', 0, agrPp)
+				SDTest.Call('Nto1Node_UnlinkOpt', 'vi', agrPp)
 		check('AGR repos released', lambda: (agrHeld(), agrI(agrW + 0x4bc) == agrW + 0x4bc))
 		for agrK in (0, 1):
 			SDTest.Call('cAICGPoint_Delete', 'tiii', agrI(agrZs + 0x88 * agrK + 0x80), 3)

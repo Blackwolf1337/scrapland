@@ -262,7 +262,7 @@ float cAIVehicleShoot_MaxAmmo(cAIVehicleShoot *self);
 float cAIVehicleShoot_TotalAmmo(cAIVehicleShoot *self);
 float cAIVehicleShoot_WeapAmmo(cAIVehicleShoot *self, int w);
 cAIVSWeap *cAIVehicleShoot_GetWeaps(cAIVehicleShoot *self);
-void __stdcall cAIVehicleShoot_WeaponName(int w, char *buf);
+void cAIVehicleShoot_WeaponName(int w, char *buf);
 byte cAIVehicleShoot_InfernoReady(cAIVehicleShoot *self, float dist);
 byte cAIVehicleShoot_InRange(cAIVehicleShoot *self, int w);
 void cAIVehicleShoot_InitWeapons(cAIVehicleShoot *self);

@@ -51,7 +51,7 @@ void *cAICGPoint_Delete(cAICGPoint *self, uint32_t flags) {
 	return self;
 }
 
-void __stdcall Nto1Node_UnlinkOpt(Nto1Node *node) {
+void Nto1Node_UnlinkOpt(Nto1Node *node) {
 	if (node) {
 		CHECK(node->data);
 		Nto1Node_Unlink(node);

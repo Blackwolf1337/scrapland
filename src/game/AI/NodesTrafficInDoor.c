@@ -206,7 +206,7 @@ int CNodesTrafficInDoor_HiddenNode(CNodesTrafficInDoor *self, int track) {
 	return last < self->base.tracks[track].numNodes - 1 ? last : 0;
 }
 
-void __stdcall TrafficSectors_Add(cTrafficSector *list, int *num, int sector) {
+void TrafficSectors_Add(cTrafficSector *list, int *num, int sector) {
 	for (int i = 0; i < *num; i++) {
 		if (list[i].sector == sector) {
 			list[i].numNodes++;
@@ -374,7 +374,7 @@ void CNodesTrafficInDoor_BuildGrid(CNodesTrafficInDoor *self) {
 	(void)self;
 }
 
-void __stdcall TrafficSectors_SetTracks(cTrafficSector *list, int num) {
+void TrafficSectors_SetTracks(cTrafficSector *list, int num) {
 	int tracks[100];
 
 	for (int i = 0; i < num; i++) {

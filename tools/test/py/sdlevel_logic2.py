@@ -232,8 +232,8 @@ check('LG2 cFriends_Think', lambda: SDTest.Call('cFriends_Think', 'tvi', lg2fr)[
 check('LG2 cFriends_Attack', lambda: (SDTest.Call('cFriends_Attack', 'tvii', lg2fr, 0)[0], SDTest.Call('cFriends_Attack', 'tvii', lg2fr,
 	lg2player)[0]))
 lg2free(lg2fr)
-check('LG2 Friends_IsEnemyTarget', lambda: (SDTest.Call('Friends_IsEnemyTarget', 'tbiii', 0, lg2player, lg2player)[0],
-	SDTest.Call('Friends_IsEnemyTarget', 'tbiii', 0, lg2player, 0)[0]))
+check('LG2 Friends_IsEnemyTarget', lambda: (SDTest.Call('Friends_IsEnemyTarget', 'bii', lg2player, lg2player)[0],
+	SDTest.Call('Friends_IsEnemyTarget', 'bii', lg2player, 0)[0]))
 
 # ---- the fields of the player the logics write ----
 def lg2psave():

@@ -550,7 +550,7 @@ static const char *const s_StateNames[] = {
 };
 
 /* buf unchanged for an unknown state */
-void __stdcall cAIVehicle_InternStateName(int state, char *buf) {
+void cAIVehicle_InternStateName(int state, char *buf) {
 	if ((uint32_t)state < sizeof(s_InternStateNames) / sizeof(s_InternStateNames[0])) {
 		memcpy(buf, s_InternStateNames[state], strlen(s_InternStateNames[state]) + 1);
 	}
@@ -560,7 +560,7 @@ void cAIVehicle_GetInternStateName(cAIVehicle *self, char *buf) {
 	cAIVehicle_InternStateName(self->internState, buf);
 }
 
-void __stdcall cAIVehicle_StateName(int state, char *buf) {
+void cAIVehicle_StateName(int state, char *buf) {
 	if ((uint32_t)state < sizeof(s_StateNames) / sizeof(s_StateNames[0])) {
 		memcpy(buf, s_StateNames[state], strlen(s_StateNames[state]) + 1);
 	}
@@ -735,7 +735,7 @@ byte cAIVehicle_InHookRangePos(cAIVehicle *self, const vec3_t *p) {
 	return AIV_HookAngle(self, &d, d.y * d.y + d.x * d.x + d.z * d.z, Veh(self->vehicle)->wl.prim.radius);
 }
 
-byte __stdcall cAIVehicle_IsGroupState(int state) {
+byte cAIVehicle_IsGroupState(int state) {
 	return !AIV_FreeState(state);
 }
 

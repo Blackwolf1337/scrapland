@@ -111,7 +111,7 @@ void cAICGPoint_dtor(cAICGPoint *self);
 /* the deleting destructor of a point or (flags 2) of the new[] array it starts */
 void *cAICGPoint_Delete(cAICGPoint *self, uint32_t flags);
 /* the out of line Nto1Node_Unlink with the CHECK of Node for a node that may be NULL (stdcall) */
-void __stdcall Nto1Node_UnlinkOpt(Nto1Node *node);
+void Nto1Node_UnlinkOpt(Nto1Node *node);
 void cAICharGroup_dtor(cAICharGroup *self);
 cAICharGroup *cAICharGroup_Delete(cAICharGroup *self, byte flags);
 /* the zones and their points from the dummies of the level */

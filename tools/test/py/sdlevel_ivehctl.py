@@ -339,7 +339,7 @@ if ivcCar and ivcCar2 and ivcGroup and ivcNodesWorld:
 		ivcIds = ivcIds + (SDTest.Peek(ivcA, 'i'),)
 	check('weapon ids', lambda: ivcIds)
 	for ivcW in ivcIds + (-1, 99):
-		check('cAIVehicleShoot_WeaponName(%d)' % ivcW, lambda w=ivcW: SDTest.Call('cAIVehicleShoot_WeaponName', 'tviib', 0, w, '')[1])
+		check('cAIVehicleShoot_WeaponName(%d)' % ivcW, lambda w=ivcW: SDTest.Call('cAIVehicleShoot_WeaponName', 'vib', w, '')[1])
 	# the weapons of the car for the test: slots, the upgraded vulcan, ammo of every kind
 	ivcWm = ivcCar + 0x5f0
 	ivcWs = ivcI(ivcWm + 0x18)
