@@ -382,10 +382,10 @@ struct cAIChar {
 		const cAICharVtbl *vftable;
 	};
 	cAICharSaved pending;		/* 0x090 state AIC_STATE_NONE for none */
-	byte slotAction[0x10];		/* 0x158 0.2 s, the distance check of the action */
-	byte slotPause[0x10];		/* 0x168 1 s */
-	byte slotRepos[0x10];		/* 0x178 1 s */
-	byte slotLost[0x10];		/* 0x188 0.2 s, LOST_PATH looks for the graph */
+	cSlotController slotAction;		/* 0x158 0.2 s, the distance check of the action */
+	cSlotController slotPause;		/* 0x168 1 s */
+	cSlotController slotRepos;		/* 0x178 1 s */
+	cSlotController slotLost;		/* 0x188 0.2 s, LOST_PATH looks for the graph */
 	cEntity *ent;			/* 0x198 the character (cWalkCharEntity) */
 	cAICharControl *control;	/* 0x19c the move control (2D or 3D) */
 	int state;			/* 0x1a0 AIC_ */

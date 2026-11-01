@@ -28,10 +28,6 @@ static inline cEntity *AIC_Target(const cAIChar *self) {
 	return self->base.target.target;
 }
 
-static inline cSlotController *AIC_Slot(byte *raw) {
-	return (cSlotController *)raw;
-}
-
 static inline const vec3_t *AIC_Pos(cEntity *e, vec3_t *buf) {
 	return e->vftable->GetPos(e, buf);
 }
@@ -138,10 +134,10 @@ void *__thiscall cAIChar_ctor(void *mem, cEntity *e, int *arg) {
 
 	cAIMove_ctor(&self->base, e);
 	self->vftable = CAICHAR_VFTABLE;
-	cSlotController_ctor(AIC_Slot(self->slotAction), 0.2f);
-	cSlotController_ctor(AIC_Slot(self->slotPause), 1.0f);
-	cSlotController_ctor(AIC_Slot(self->slotRepos), 1.0f);
-	cSlotController_ctor(AIC_Slot(self->slotLost), 0.2f);
+	cSlotController_ctor(&self->slotAction, 0.2f);
+	cSlotController_ctor(&self->slotPause, 1.0f);
+	cSlotController_ctor(&self->slotRepos, 1.0f);
+	cSlotController_ctor(&self->slotLost, 0.2f);
 	if (!e) {
 		Con_Bluef("ERROR: Inicializaci\xf3n AI Char. Entidad = NULL.\n");
 		CheckFailed("cAIChar_Fail_Entity_NULL", __FILE__, __TIMESTAMP__, __LINE__);
@@ -522,7 +518,7 @@ void __thiscall cAIChar_UpdateThink(cAIChar *self) {
 }
 
 void __thiscall cAIChar_UpdateAction1(cAIChar *self) {
-	cSlotController *s = AIC_Slot(self->slotAction);
+	cSlotController *s = &self->slotAction;
 	cWalkCharEntity *t = WChar(AIC_Target(self));
 	float tm;
 
@@ -610,7 +606,7 @@ static byte AIC_PauseWanted(cAIChar *self) {
 }
 
 void __thiscall cAIChar_CheckPause(cAIChar *self) {
-	cSlotController *s = AIC_Slot(self->slotPause);
+	cSlotController *s = &self->slotPause;
 	float t;
 
 	if (!self->pauseCheck || !cSlotController_Tick(s, self->base.base.dt)) {
@@ -622,7 +618,7 @@ void __thiscall cAIChar_CheckPause(cAIChar *self) {
 }
 
 void __thiscall cAIChar_CheckRepos(cAIChar *self) {
-	cSlotController *s = AIC_Slot(self->slotRepos);
+	cSlotController *s = &self->slotRepos;
 	float t;
 
 	if (!self->base.repos || !cSlotController_Tick(s, self->base.base.dt)) {
@@ -810,7 +806,7 @@ void __thiscall cAIChar_ReactInRoute(cAIChar *self) {
 }
 
 void __thiscall cAIChar_ReactLostPath(cAIChar *self) {
-	cSlotController *s = AIC_Slot(self->slotLost);
+	cSlotController *s = &self->slotLost;
 	float t;
 
 	if (!cSlotController_Tick(s, self->base.base.dt)) {

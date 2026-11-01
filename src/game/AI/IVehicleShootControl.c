@@ -109,9 +109,9 @@ cAIVehicleShoot *__thiscall cAIVehicleShoot_ctor(void *mem, cEntity *v, cAIVehic
 	cAIVehicleShoot *self = mem;
 
 	self->vftable = CAIVEHICLESHOOT_VFTABLE;
-	cSlotController_ctor(AIV_Slot(&self->slotFire), 0.2f);
-	cSlotController_ctor(AIV_Slot(&self->slotFireCM), 0.2f);
-	cSlotController_ctor(AIV_Slot(&self->slotWeap), 0.5f);
+	cSlotController_ctor(&self->slotFire, 0.2f);
+	cSlotController_ctor(&self->slotFireCM, 0.2f);
+	cSlotController_ctor(&self->slotWeap, 0.5f);
 	if (!v || !ai) {
 		Con_Bluef("ERROR: Inicializaci\xf3n AI Vehicle Shoot Control. Entidad = NULL.\n");
 		CheckFailed("cAIVehicleShootControl_Fail_Entity_NULL", __FILE__, __TIMESTAMP__, __LINE__);
@@ -177,7 +177,7 @@ byte __fastcall cAIVehicleShoot_CheckTargetCM(cAIVehicleShoot *self) {
 /* ---- the weapon and the countermeasure in use ---- */
 
 void __fastcall cAIVehicleShoot_UpdateWeapon(cAIVehicleShoot *self) {
-	cSlotController *slot = AIV_Slot(&self->slotWeap);
+	cSlotController *slot = &self->slotWeap;
 	float t;
 
 	self->weapTime = self->dt + self->weapTime;
@@ -200,7 +200,7 @@ void __fastcall cAIVehicleShoot_UpdateWeapon(cAIVehicleShoot *self) {
 }
 
 void __fastcall cAIVehicleShoot_UpdateCM(cAIVehicleShoot *self) {
-	cSlotController *slot = AIV_Slot(&self->slotWeap);
+	cSlotController *slot = &self->slotWeap;
 	float t;
 
 	self->weapTimeCM = self->dt + self->weapTimeCM;
@@ -282,7 +282,7 @@ void __fastcall cAIVehicleShoot_PullFire(cAIVehicleShoot *self) {
 }
 
 void __fastcall cAIVehicleShoot_Fire(cAIVehicleShoot *self) {
-	cSlotController *slot = AIV_Slot(&self->slotFire);
+	cSlotController *slot = &self->slotFire;
 	float t;
 
 	if (self->weap.weapon == -1) {
@@ -328,7 +328,7 @@ done:
 
 /* the ammo button for countermeasures at a target near behind the vehicle (or while it strafes) */
 void __fastcall cAIVehicleShoot_FireCM(cAIVehicleShoot *self) {
-	cSlotController *slot = AIV_Slot(&self->slotFireCM);
+	cSlotController *slot = &self->slotFireCM;
 	float t;
 
 	if (self->cm.weapon == -1) {
@@ -377,7 +377,7 @@ far:
 
 /* the hook: the ammo button while there is hook energy, at a locked point or the target within the hook range */
 void __fastcall cAIVehicleShoot_FireHook(cAIVehicleShoot *self) {
-	cSlotController *slot = AIV_Slot(&self->slotFireCM);
+	cSlotController *slot = &self->slotFireCM;
 	float t;
 
 	if (!(byte)cSlotController_Tick(slot, self->dt) || !cSlotController_FireReset(slot, &t)) {

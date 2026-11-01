@@ -93,7 +93,7 @@ static cAICharControl *ACtl_ShootInit(cAICharControl *self, void *vftable) {
 	cAIControlShoot *s = (cAIControlShoot *)self;
 
 	self->vftable = vftable;
-	cSlotController_ctor(AICC_Slot(&s->slotSide), 0.2f);
+	cSlotController_ctor(&s->slotSide, 0.2f);
 	s->side = 0;
 	s->time = 0.0f;
 	s->other = 1;
@@ -134,7 +134,7 @@ void __thiscall cAIControlBank_Walk(cAICharControl *self) {
 	float tx = AICC_EntPos(te, &b1)->x;
 	const vec3_t *t = AICC_EntPos(te, &b2);
 	float d = ACtl_FlatDist(tx - px, t->z - pz);
-	cSlotController *slot = AICC_Slot(&self->slotWalk);
+	cSlotController *slot = &self->slotWalk;
 	switch (self->walkDir) {
 	case 0:
 		if (d > self->farDist) {
@@ -247,7 +247,7 @@ void __thiscall cAIControlBankMaster_Orbit(cAIControlBankMaster *self) {
 		self->orbitDir.z = -tv->z;
 		self->orbitDir.y = 0.0f;
 	}
-	cSlotController *slot = AICC_Slot(&self->slotOrbit);
+	cSlotController *slot = &self->slotOrbit;
 	if (cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &f)) {
 		do {
 			if (vt->SideBlocked(self, self->orbitSide)) {
@@ -324,7 +324,7 @@ reset:
 	self->time = self->strafeTime;
 slot:
 	if (self->side != 0) {
-		cSlotController *s = AICC_Slot(&self->slotSide);
+		cSlotController *s = &self->slotSide;
 		if (cSlotController_Tick(s, c->dt) && cSlotController_FireReset(s, &f)) {
 			do {
 				if (AICC_Vtbl(c)->SideBlocked(c, self->side)) {
@@ -707,7 +707,7 @@ hit:
 	int side = self->side;
 	c->lifeMark = WChar(c->ent)->wl.life;
 	if (side != 0) {
-		cSlotController *s = AICC_Slot(&self->slotSide);
+		cSlotController *s = &self->slotSide;
 		if (cSlotController_Tick(s, c->dt) && cSlotController_FireReset(s, &f)) {
 			do {
 				if (AICC_Vtbl(c)->SideBlocked(c, self->side)) {

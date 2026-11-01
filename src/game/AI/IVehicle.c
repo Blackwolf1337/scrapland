@@ -57,9 +57,9 @@ void *__thiscall cAIVehicle_ctor(void *mem, cEntity *v, void *p1, void *p2, void
 
 	cAIMove_ctor(&self->base, v);
 	self->vftable = CAIVEHICLE_VFTABLE;
-	cSlotController_ctor(AIV_Slot(&self->slotAttack), 0.2f);
-	cSlotController_ctor(AIV_Slot(&self->slotGraph), 0.5f);
-	cSlotController_ctor(AIV_Slot(&self->slotItems), 0.2f);
+	cSlotController_ctor(&self->slotAttack, 0.2f);
+	cSlotController_ctor(&self->slotGraph, 0.5f);
+	cSlotController_ctor(&self->slotItems, 0.2f);
 	cString_ctor(&self->itemLife.name);
 	cString_ctor(&self->itemAmmo.name);
 	cString_ctor(&self->itemAmmoK[0].name);
@@ -264,7 +264,7 @@ void __thiscall cAIVehicle_CheckItems(cAIVehicle *self) {
 
 /* the graph slot: the repositioning near the camera while it is in the graph */
 void __thiscall cAIVehicle_UpdateGraph(cAIVehicle *self) {
-	cSlotController *slot = AIV_Slot(&self->slotGraph);
+	cSlotController *slot = &self->slotGraph;
 	float t;
 
 	if (!cSlotController_Tick(slot, self->base.base.dt) || !cSlotController_FireReset(slot, &t)) {
@@ -2664,7 +2664,7 @@ void __thiscall cAIVehicle_ReactLostPath(cAIVehicle *self) {
 }
 
 void __thiscall cAIVehicle_ThinkLostPath(cAIVehicle *self) {
-	cSlotController *slot = AIV_Slot(&self->slotAttack);
+	cSlotController *slot = &self->slotAttack;
 	float t;
 
 	if (!cSlotController_Tick(slot, self->base.base.dt) || !cSlotController_FireReset(slot, &t)) {
@@ -2741,7 +2741,7 @@ static byte AIV_HookStep(cAIVehicle *self, byte release, int a, int b) {
 
 /* the hook slot of a state: the target checked first (not for GO_TO), FACTOR_HOOK_MAP > 0 */
 static byte AIV_HookSlot(cAIVehicle *self, byte target, float *t) {
-	cSlotController *slot = AIV_Slot(&self->slotItems);
+	cSlotController *slot = &self->slotItems;
 
 	if (target && !cAIVehicle_CheckTarget(self)) {
 		return 0;
@@ -2772,7 +2772,7 @@ void __thiscall cAIVehicle_ThinkChase(cAIVehicle *self) {
 				return;
 			}
 		}
-	} while (cSlotController_FireReset(AIV_Slot(&self->slotItems), &t));
+	} while (cSlotController_FireReset(&self->slotItems, &t));
 }
 
 void __thiscall cAIVehicle_ThinkFighting(cAIVehicle *self) {
@@ -2793,7 +2793,7 @@ void __thiscall cAIVehicle_ThinkFighting(cAIVehicle *self) {
 				return;
 			}
 		}
-	} while (cSlotController_FireReset(AIV_Slot(&self->slotItems), &t));
+	} while (cSlotController_FireReset(&self->slotItems, &t));
 }
 
 void __thiscall cAIVehicle_ThinkGetAway(cAIVehicle *self) {
@@ -2806,7 +2806,7 @@ void __thiscall cAIVehicle_ThinkGetAway(cAIVehicle *self) {
 		if (AIV_HookStep(self, AIV_NearDest(self), 0, 1)) {
 			return;
 		}
-	} while (cSlotController_FireReset(AIV_Slot(&self->slotItems), &t));
+	} while (cSlotController_FireReset(&self->slotItems, &t));
 }
 
 void __thiscall cAIVehicle_ThinkGetAwayStop(cAIVehicle *self) {
@@ -2822,7 +2822,7 @@ void __thiscall cAIVehicle_ThinkGetAwayStop(cAIVehicle *self) {
 				return;
 			}
 		}
-	} while (cSlotController_FireReset(AIV_Slot(&self->slotItems), &t));
+	} while (cSlotController_FireReset(&self->slotItems, &t));
 }
 
 void __thiscall cAIVehicle_ThinkGoTo(cAIVehicle *self) {
@@ -2835,14 +2835,14 @@ void __thiscall cAIVehicle_ThinkGoTo(cAIVehicle *self) {
 		if (AIV_HookStep(self, AIV_NearDest(self), 0, 0)) {
 			return;
 		}
-	} while (cSlotController_FireReset(AIV_Slot(&self->slotItems), &t));
+	} while (cSlotController_FireReset(&self->slotItems, &t));
 }
 
 /* RACE: on to the finishing line (FINISHING_LINE) after a chase of 15 s, near the goal or when the target is out of
  * hook range; without a target the hook on the way and at random (CONTROL_HOOK_RACE) a chase of a vehicle of the
  * group it can hook */
 void __thiscall cAIVehicle_ThinkRace(cAIVehicle *self) {
-	cSlotController *slot = AIV_Slot(&self->slotItems);
+	cSlotController *slot = &self->slotItems;
 	int a, kind;
 	byte flag;
 	float t;

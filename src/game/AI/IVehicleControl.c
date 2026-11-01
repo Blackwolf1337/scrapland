@@ -137,15 +137,15 @@ cAIVehicleControl *__thiscall cAIVehicleControl_ctor(void *mem, cEntity *v, cAIV
 	cAIVehicleControl *self = mem;
 
 	self->vftable = CAIVEHICLECONTROL_VFTABLE;
-	cSlotController_ctor(AIV_Slot(&self->slotStrafe), 0.2f);
-	cSlotController_ctor(AIV_Slot(&self->slotArrive), 0.2f);
-	cSlotController_ctor(AIV_Slot(&self->slotPath), 0.2f);
+	cSlotController_ctor(&self->slotStrafe, 0.2f);
+	cSlotController_ctor(&self->slotArrive, 0.2f);
+	cSlotController_ctor(&self->slotPath, 0.2f);
 	memset(&self->path, 0, sizeof(self->path));
-	cSlotController_ctor(AIV_Slot(&self->slotChase), 0.2f);
-	cSlotController_ctor(AIV_Slot(&self->slotChaseSee), 0.33333334f);
-	cSlotController_ctor(AIV_Slot(&self->slotChasePath), 5.0f);
-	cSlotController_ctor(AIV_Slot(&self->slotChaseNear), 0.2f);
-	cSlotController_ctor(AIV_Slot(&self->slotRepath), 3.0f);
+	cSlotController_ctor(&self->slotChase, 0.2f);
+	cSlotController_ctor(&self->slotChaseSee, 0.33333334f);
+	cSlotController_ctor(&self->slotChasePath, 5.0f);
+	cSlotController_ctor(&self->slotChaseNear, 0.2f);
+	cSlotController_ctor(&self->slotRepath, 3.0f);
 	if (!v || !ai) {
 		Con_Bluef("ERROR: Inicializaci\xf3n AI Vehicle Control. Entidad = NULL.\n");
 		CheckFailed("cAIVehicleControl_Fail_Entity_NULL", __FILE__, __TIMESTAMP__, __LINE__);
@@ -589,7 +589,7 @@ byte __fastcall cAIVehicleControl_ChasePath(cAIVehicleControl *self) {
 
 	VC_TargetPos(self, &tp);
 	if (self->inSight) {
-		cSlotController *slot = AIV_Slot(&self->slotChase);
+		cSlotController *slot = &self->slotChase;
 		if (!(byte)cSlotController_Tick(slot, self->dt) || !cSlotController_FireReset(slot, &t)) {
 			return 1;
 		}
@@ -601,14 +601,14 @@ byte __fastcall cAIVehicleControl_ChasePath(cAIVehicleControl *self) {
 				if (!cAIVehicleControl_SetPath(self, &tp)) {
 					return 0;
 				}
-				cSlotController_Restart(AIV_Slot(&self->slotChaseNear));
-				cSlotController_Restart(AIV_Slot(&self->slotChaseSee));
-				cSlotController_Restart(AIV_Slot(&self->slotPath));
+				cSlotController_Restart(&self->slotChaseNear);
+				cSlotController_Restart(&self->slotChaseSee);
+				cSlotController_Restart(&self->slotPath);
 			}
 		} while (cSlotController_FireReset(slot, &t));
 		return 1;
 	}
-	cSlotController *slot = AIV_Slot(&self->slotChaseNear);
+	cSlotController *slot = &self->slotChaseNear;
 	if ((byte)cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &t)) {
 		do {
 			const vec3_t *p = VC_Pos(self, &buf);
@@ -619,25 +619,25 @@ byte __fastcall cAIVehicleControl_ChasePath(cAIVehicleControl *self) {
 			}
 		} while (cSlotController_FireReset(slot, &t));
 	}
-	slot = AIV_Slot(&self->slotChaseSee);
+	slot = &self->slotChaseSee;
 	if ((byte)cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &t)) {
 		do {
 			if (VC_SeesTarget(self, &tp)) {
 				self->inSight = 1;
 				cAIVehicleControl_SetDirectPath(self, &tp);
-				cSlotController_Restart(AIV_Slot(&self->slotChase));
+				cSlotController_Restart(&self->slotChase);
 				return 1;
 			}
 		} while (cSlotController_FireReset(slot, &t));
 	}
-	slot = AIV_Slot(&self->slotChasePath);
+	slot = &self->slotChasePath;
 	if ((byte)cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &t)) {
 		do {
 			if (!cAIVehicleControl_SetPath(self, &tp)) {
 				return 0;
 			}
-			cSlotController_Restart(AIV_Slot(&self->slotPath));
-			cSlotController_Restart(AIV_Slot(&self->slotChaseNear));
+			cSlotController_Restart(&self->slotPath);
+			cSlotController_Restart(&self->slotChaseNear);
 		} while (cSlotController_FireReset(slot, &t));
 	}
 	return 1;
@@ -650,12 +650,12 @@ byte __fastcall cAIVehicleControl_ChaseLine(cAIVehicleControl *self) {
 
 	VC_TargetPos(self, &tp);
 	if (self->inSight) {
-		cSlotController *slot = AIV_Slot(&self->slotChase);
+		cSlotController *slot = &self->slotChase;
 		if ((byte)cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &t)) {
 			do {
 				if (Engine_TestLine(VC_Pos(self, &buf), &tp, NULL, NULL)) {
 					self->inSight = 0;
-					cSlotController_Restart(AIV_Slot(&self->slotChaseSee));
+					cSlotController_Restart(&self->slotChaseSee);
 				} else {
 					cAIVehicleControl_SetDirectPath(self, &tp);
 				}
@@ -663,13 +663,13 @@ byte __fastcall cAIVehicleControl_ChaseLine(cAIVehicleControl *self) {
 		}
 		return 1;
 	}
-	cSlotController *slot = AIV_Slot(&self->slotChaseSee);
+	cSlotController *slot = &self->slotChaseSee;
 	if ((byte)cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &t)) {
 		do {
 			if (!Engine_TestLine(VC_Pos(self, &buf), &tp, NULL, NULL)) {
 				self->inSight = 1;
 				cAIVehicleControl_SetDirectPath(self, &tp);
-				cSlotController_Restart(AIV_Slot(&self->slotChase));
+				cSlotController_Restart(&self->slotChase);
 			}
 		} while (cSlotController_FireReset(slot, &t));
 	}
@@ -679,7 +679,7 @@ byte __fastcall cAIVehicleControl_ChaseLine(cAIVehicleControl *self) {
 /* at the goal: the event 2 (arrived) within dist, 4 within four times dist, else 5 (or when the AI does not take
  * it) */
 void __fastcall cAIVehicleControl_CheckArrive(cAIVehicleControl *self) {
-	cSlotController *slot = AIV_Slot(&self->slotArrive);
+	cSlotController *slot = &self->slotArrive;
 	vec3_t buf;
 	float t;
 	int ev;
@@ -804,7 +804,7 @@ static void VC_StepDone(cAIVehicleControl *self) {
 
 /* the path slot: the point of the path; while lost a new path to the goal every 3 s */
 byte __fastcall cAIVehicleControl_PathStep(cAIVehicleControl *self) {
-	cSlotController *slot = AIV_Slot(&self->slotPath);
+	cSlotController *slot = &self->slotPath;
 	float t;
 
 	if ((byte)cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &t)) {
@@ -818,7 +818,7 @@ byte __fastcall cAIVehicleControl_PathStep(cAIVehicleControl *self) {
 		} while (cSlotController_FireReset(slot, &t));
 	}
 	if (self->lost) {
-		slot = AIV_Slot(&self->slotRepath);
+		slot = &self->slotRepath;
 		if ((byte)cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &t)) {
 			do {
 				if (!cAIVehicleControl_SetPath(self, &self->dest)) {
@@ -838,7 +838,7 @@ byte __fastcall cAIVehicleControl_PathStep(cAIVehicleControl *self) {
 
 /* PathStep of the chase: the new paths lead to the target */
 byte __fastcall cAIVehicleControl_PathStepChase(cAIVehicleControl *self) {
-	cSlotController *slot = AIV_Slot(&self->slotPath);
+	cSlotController *slot = &self->slotPath;
 	vec3_t buf;
 	float t;
 
@@ -853,7 +853,7 @@ byte __fastcall cAIVehicleControl_PathStepChase(cAIVehicleControl *self) {
 		} while (cSlotController_FireReset(slot, &t));
 	}
 	if (self->lost) {
-		slot = AIV_Slot(&self->slotRepath);
+		slot = &self->slotRepath;
 		if ((byte)cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &t)) {
 			do {
 				if (!cAIVehicleControl_SetPath(self, VC_TargetPos(self, &buf))) {
@@ -872,7 +872,7 @@ byte __fastcall cAIVehicleControl_PathStepChase(cAIVehicleControl *self) {
 }
 
 byte __fastcall cAIVehicleControl_PathStepDir(cAIVehicleControl *self) {
-	cSlotController *slot = AIV_Slot(&self->slotPath);
+	cSlotController *slot = &self->slotPath;
 	float t;
 
 	if ((byte)cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &t)) {
@@ -935,7 +935,7 @@ static byte VC_AheadBlocked(cAIVehicleControl *self) {
 /* the dodge while the vehicle loses life (and now and then at random): sideways for a random time; 0 while it
  * does not dodge */
 byte __fastcall cAIVehicleControl_StrafeDodge(cAIVehicleControl *self) {
-	cSlotController *slot = AIV_Slot(&self->slotStrafe);
+	cSlotController *slot = &self->slotStrafe;
 	vec3_t b;
 	float t;
 
@@ -1002,7 +1002,7 @@ byte __fastcall cAIVehicleControl_StrafeDodge(cAIVehicleControl *self) {
 
 /* the strafe of the chase between chaseMin / 2 and chaseMax: random sideways speeds of MAX_VEL_STRAFE */
 void __fastcall cAIVehicleControl_StrafeChase(cAIVehicleControl *self) {
-	cSlotController *slot = AIV_Slot(&self->slotStrafe);
+	cSlotController *slot = &self->slotStrafe;
 	vec3_t a, b;
 	float t;
 
@@ -1054,7 +1054,7 @@ write:
 
 /* the strafe while lost: small random sideways speeds */
 void __fastcall cAIVehicleControl_StrafeRandom(cAIVehicleControl *self) {
-	cSlotController *slot = AIV_Slot(&self->slotStrafe);
+	cSlotController *slot = &self->slotStrafe;
 	float t;
 
 	self->strafeTime = self->dt + self->strafeTime;
@@ -1764,7 +1764,7 @@ byte cAIVehicleControl_SetMove(cAIVehicleControl *self, int mode, ...) {
 	self->lost = 0;
 	self->strafeOn = 0;
 	self->stopAtGoal = 0;
-	cSlotController_Restart(AIV_Slot(&self->slotArrive));
+	cSlotController_Restart(&self->slotArrive);
 	switch (self->mode) {
 	case AIVC_STOP:
 		VC_LifeMark(self);

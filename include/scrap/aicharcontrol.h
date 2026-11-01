@@ -232,15 +232,6 @@ static inline const cAICharCtlOwnerVtbl *AICC_OwnerVtbl(cAIChar *ai) {
 	return ai->vftable;
 }
 
-/* a cSlotController inside the control (0x10 bytes) */
-typedef struct cAICCSlot {
-	byte raw[CSLOTCONTROLLER_SIZE];
-} cAICCSlot;
-
-static inline cSlotController *AICC_Slot(cAICCSlot *s) {
-	return (cSlotController *)s->raw;
-}
-
 /* a segment of the debug view */
 typedef struct cAICCSeg {
 	vec3_t a, b;
@@ -248,10 +239,10 @@ typedef struct cAICCSeg {
 
 struct cAICharControl {
 	const cAICharControlVtbl *vftable;	/* 0x000 */
-	cAICCSlot slotWalk;	/* 0x004 the distance checks of Walk and AwayWalk (0.2 s) */
-	cAICCSlot slotSee2;	/* 0x014 AwayWalk: the other characters that see it (0.2 s) */
-	cAICCSlot slotStrafe;	/* 0x024 the strafe around the characters in the way (0.133 s) */
-	cAICCSlot slotStop;	/* 0x034 CanMove (0.2 s) */
+	cSlotController slotWalk;	/* 0x004 the distance checks of Walk and AwayWalk (0.2 s) */
+	cSlotController slotSee2;	/* 0x014 AwayWalk: the other characters that see it (0.2 s) */
+	cSlotController slotStrafe;	/* 0x024 the strafe around the characters in the way (0.133 s) */
+	cSlotController slotStop;	/* 0x034 CanMove (0.2 s) */
 	cAIChar *ai;			/* 0x044 the AI of the character */
 	cEntity *ent;			/* 0x048 the character (cWalkCharEntity) */
 	cWalkCharControl *ctrl;		/* 0x04c the control of the character the AI steers */
@@ -295,7 +286,7 @@ struct cAICharControl {
 	float collTestTime;		/* 0x0f0 */
 	float speed;			/* 0x0f4 the walk value */
 	int lifeMark;			/* 0x0f8 the life of the character */
-	cAICCSlot slotPath;	/* 0x0fc the path is searched again (0.133 s) */
+	cSlotController slotPath;	/* 0x0fc the path is searched again (0.133 s) */
 	vec3_t goal;			/* 0x10c the next point of the path */
 	cNWVecList path;		/* 0x118 */
 	vec3_t *pathPoint;		/* 0x130 the point of the path walked to */
@@ -305,13 +296,13 @@ struct cAICharControl {
 	byte unused_140;			/* 0x140 */
 	byte goalLost;			/* 0x141 the goal was not reachable at the last UpdatePath */
 	byte pad_142[2];
-	cAICCSlot slotDirect;	/* 0x144 the direct follow checks the way (0.2 s) */
-	cAICCSlot slotSee;	/* 0x154 the path follow looks for the direct way (0.2 s) */
-	cAICCSlot slotRepath;	/* 0x164 the path to the target searched again (5 s) */
-	cAICCSlot slotNear;	/* 0x174 the end of the path near: searched again (0.2 s) */
-	cAICCSlot slotOrbit;	/* 0x184 the side of the orbit blocked (0.2 s) */
-	cAICCSlot slotLost;	/* 0x194 the path searched again while stuck (3 s) */
-	cAICCSlot slotWait;	/* 0x1a4 CheckWait (0.2 s) */
+	cSlotController slotDirect;	/* 0x144 the direct follow checks the way (0.2 s) */
+	cSlotController slotSee;	/* 0x154 the path follow looks for the direct way (0.2 s) */
+	cSlotController slotRepath;	/* 0x164 the path to the target searched again (5 s) */
+	cSlotController slotNear;	/* 0x174 the end of the path near: searched again (0.2 s) */
+	cSlotController slotOrbit;	/* 0x184 the side of the orbit blocked (0.2 s) */
+	cSlotController slotLost;	/* 0x194 the path searched again while stuck (3 s) */
+	cSlotController slotWait;	/* 0x1a4 CheckWait (0.2 s) */
 	Nto1Node *target;		/* 0x1b4 the link to the entity to follow (objDin) */
 	cEntity *targetEnt;		/* 0x1b8 its entity when the move started */
 	float farDist;			/* 0x1bc */
@@ -715,7 +706,7 @@ byte __thiscall cAICharControl3D_TryStrafe(cAICharControl3D *self, int side, cEn
  * when they were hit */
 typedef struct cAIControlShoot {
 	cAICharControl base;		/* 0x000 */
-	cAICCSlot slotSide;		/* 0x360 the side of the strafe blocked (0.2 s) */
+	cSlotController slotSide;		/* 0x360 the side of the strafe blocked (0.2 s) */
 	int side;			/* 0x370 the strafe: 0 none, 1, 2 */
 	float time;			/* 0x374 since the last strafe started */
 	byte other;			/* 0x378 the side was blocked: the other side next */
@@ -739,7 +730,7 @@ typedef cAICharControl3D cAIControlNurse;
  * its functions work on the cAIControlShoot they share with the bishop and the gear */
 typedef struct cAIControlSentinel {
 	cAICharControl3D base;		/* 0x000 */
-	cAICCSlot slotSide;		/* 0x360 the side of the strafe blocked (0.2 s) */
+	cSlotController slotSide;		/* 0x360 the side of the strafe blocked (0.2 s) */
 	int side;			/* 0x370 the strafe: 0 none, 1, 2 */
 	float time;			/* 0x374 since the last strafe started */
 	byte other;			/* 0x378 the side was blocked: the other side next */

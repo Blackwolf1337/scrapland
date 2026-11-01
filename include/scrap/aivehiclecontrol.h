@@ -20,15 +20,6 @@
 #define CAIVEHICLEGROUP_VFTABLE GAME_VFTABLE(cAIVehicleGroup_vftable, 0x3a9288)
 #define CAIVEHICLEGROUP_SIZE 0xf4
 
-/* a cSlotController inside the AI objects (0x10 bytes, AIV_Slot) */
-typedef struct cAIVSlot {
-	byte raw[CSLOTCONTROLLER_SIZE];
-} cAIVSlot;
-
-static inline cSlotController *AIV_Slot(cAIVSlot *s) {
-	return (cSlotController *)s->raw;
-}
-
 /* the one slot of both controllers */
 typedef struct cAIObjVtbl {
 	void *(__thiscall *Delete)(void *self, byte flags);	/* 0x00 */
@@ -43,8 +34,8 @@ typedef struct cAIVehicleControl {
 	const cAIObjVtbl *vftable;	/* 0x000 */
 	byte boost;			/* 0x004 the boost of the vehicle on */
 	byte pad_5[3];
-	cAIVSlot slotStrafe;		/* 0x008 0.2 s */
-	cAIVSlot slotArrive;		/* 0x018 0.2 s */
+	cSlotController slotStrafe;	/* 0x008 0.2 s */
+	cSlotController slotArrive;	/* 0x018 0.2 s */
 	cAIVehicle *ai;			/* 0x028 */
 	cEntity *vehicle;		/* 0x02c */
 	cVehicleControls *ctl;		/* 0x030 the controls of the vehicle (+0x414) */
@@ -68,7 +59,7 @@ typedef struct cAIVehicleControl {
 	byte direct;			/* 0x0b0 the angles set directly (LOST_PATH) */
 	byte inertia;			/* 0x0b1 */
 	byte pad_b2[2];
-	cAIVSlot slotPath;		/* 0x0b4 0.2 s */
+	cSlotController slotPath;	/* 0x0b4 0.2 s */
 	vec3_t point;			/* 0x0c4 the point steered to */
 	cNWVecList path;		/* 0x0d0 */
 	vec3_t *node;			/* 0x0e8 the path node steered to */
@@ -83,11 +74,11 @@ typedef struct cAIVehicleControl {
 	float brake;			/* 0x104 */
 	byte stopAtGoal;		/* 0x108 */
 	byte pad_109[3];
-	cAIVSlot slotChase;		/* 0x10c 0.2 s while the target is seen */
-	cAIVSlot slotChaseSee;		/* 0x11c 1/3 s */
-	cAIVSlot slotChasePath;		/* 0x12c 5 s */
-	cAIVSlot slotChaseNear;		/* 0x13c 0.2 s */
-	cAIVSlot slotRepath;		/* 0x14c 3 s while lost */
+	cSlotController slotChase;	/* 0x10c 0.2 s while the target is seen */
+	cSlotController slotChaseSee;	/* 0x11c 1/3 s */
+	cSlotController slotChasePath;	/* 0x12c 5 s */
+	cSlotController slotChaseNear;	/* 0x13c 0.2 s */
+	cSlotController slotRepath;	/* 0x14c 3 s while lost */
 	Nto1Node *target;		/* 0x15c the target node of the AI (its target at +8) */
 	float chaseMax;			/* 0x160 */
 	float chaseMin;			/* 0x164 */
@@ -153,9 +144,9 @@ typedef struct cAIVehicleShoot {
 	int cadenceMul;			/* 0x004 1 */
 	int cadenceMulCM;		/* 0x008 2 */
 	cAIVehicle *ai;			/* 0x00c */
-	cAIVSlot slotFire;		/* 0x010 0.2 s */
-	cAIVSlot slotFireCM;		/* 0x020 0.2 s */
-	cAIVSlot slotWeap;		/* 0x030 0.5 s */
+	cSlotController slotFire;	/* 0x010 0.2 s */
+	cSlotController slotFireCM;	/* 0x020 0.2 s */
+	cSlotController slotWeap;	/* 0x030 0.5 s */
 	float dt;			/* 0x040 */
 	cEntity *vehicle;		/* 0x044 */
 	cVehicleControls *ctl;		/* 0x048 */

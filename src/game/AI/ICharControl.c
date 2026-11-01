@@ -39,20 +39,20 @@ cAICharControl *__thiscall cAICharControl_ctor(void *mem, cEntity *ent, cAIChar 
 	cAICharControl *self = mem;
 
 	self->vftable = CAICHARCONTROL_VFTABLE;
-	cSlotController_ctor(AICC_Slot(&self->slotWalk), 0.2f);
-	cSlotController_ctor(AICC_Slot(&self->slotSee2), 0.2f);
-	cSlotController_ctor(AICC_Slot(&self->slotStrafe), 0.13333334f);
-	cSlotController_ctor(AICC_Slot(&self->slotStop), 0.2f);
+	cSlotController_ctor(&self->slotWalk, 0.2f);
+	cSlotController_ctor(&self->slotSee2, 0.2f);
+	cSlotController_ctor(&self->slotStrafe, 0.13333334f);
+	cSlotController_ctor(&self->slotStop, 0.2f);
 	Nto1Node_Init(&self->link);
-	cSlotController_ctor(AICC_Slot(&self->slotPath), 0.13333334f);
+	cSlotController_ctor(&self->slotPath, 0.13333334f);
 	memset(&self->path, 0, sizeof(self->path));
-	cSlotController_ctor(AICC_Slot(&self->slotDirect), 0.2f);
-	cSlotController_ctor(AICC_Slot(&self->slotSee), 0.2f);
-	cSlotController_ctor(AICC_Slot(&self->slotRepath), 5.0f);
-	cSlotController_ctor(AICC_Slot(&self->slotNear), 0.2f);
-	cSlotController_ctor(AICC_Slot(&self->slotOrbit), 0.2f);
-	cSlotController_ctor(AICC_Slot(&self->slotLost), 3.0f);
-	cSlotController_ctor(AICC_Slot(&self->slotWait), 0.2f);
+	cSlotController_ctor(&self->slotDirect, 0.2f);
+	cSlotController_ctor(&self->slotSee, 0.2f);
+	cSlotController_ctor(&self->slotRepath, 5.0f);
+	cSlotController_ctor(&self->slotNear, 0.2f);
+	cSlotController_ctor(&self->slotOrbit, 0.2f);
+	cSlotController_ctor(&self->slotLost, 3.0f);
+	cSlotController_ctor(&self->slotWait, 0.2f);
 	memset(&self->debugStrafe, 0, sizeof(self->debugStrafe));
 	memset(&self->debugStrafeInner, 0, sizeof(self->debugStrafeInner));
 	memset(&self->debugPath, 0, sizeof(self->debugPath));
@@ -337,7 +337,7 @@ void __thiscall cAICharControl_DirCheck(cAICharControl *self) {
 }
 
 byte __thiscall cAICharControl_CanMove(cAICharControl *self) {
-	cSlotController *slot = AICC_Slot(&self->slotStop);
+	cSlotController *slot = &self->slotStop;
 	vec3_t buf, hit;
 	float f;
 
@@ -473,7 +473,7 @@ static inline int AICC_GoalIsDest(const cAICharControl *self) {
 }
 
 byte __thiscall cAICharControl_CheckRoute(cAICharControl *self) {
-	cSlotController *slot = AICC_Slot(&self->slotPath);
+	cSlotController *slot = &self->slotPath;
 	float f;
 
 	if (cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &f)) {
@@ -521,7 +521,7 @@ static int AICC_CheckStep(cAICharControl *self) {
 /* the checks of the path (slotPath); when the way was lost the path to to (NULL: the target) searched again
  * every 3 s */
 static byte AICC_CheckPath(cAICharControl *self, int toTarget) {
-	cSlotController *slot = AICC_Slot(&self->slotPath);
+	cSlotController *slot = &self->slotPath;
 	vec3_t buf;
 	float f;
 
@@ -532,7 +532,7 @@ static byte AICC_CheckPath(cAICharControl *self, int toTarget) {
 			}
 		} while (cSlotController_FireReset(slot, &f));
 	}
-	slot = AICC_Slot(&self->slotLost);
+	slot = &self->slotLost;
 	if (self->stuck && cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &f)) {
 		do {
 			const vec3_t *to = &self->dest;
@@ -730,7 +730,7 @@ byte __thiscall cAICharControl_FindAvoid(cAICharControl *self) {
 
 void __thiscall cAICharControl_Strafe(cAICharControl *self) {
 	const cAICharControlVtbl *vt = AICC_Vtbl(self);
-	cSlotController *slot = AICC_Slot(&self->slotStrafe);
+	cSlotController *slot = &self->slotStrafe;
 	float dt = self->dt;
 	float f;
 
@@ -793,7 +793,7 @@ void __thiscall cAICharControl_Walk2(cAICharControl *self) {
 
 /* walkDir between 0 (stand) and 2 (back away) by the distance to the target and the way back */
 static void AICC_AwayWalkDir(cAICharControl *self, float dist) {
-	cSlotController *slot = AICC_Slot(&self->slotWalk);
+	cSlotController *slot = &self->slotWalk;
 	vec3_t b1, b2;
 	float f;
 
@@ -831,7 +831,7 @@ static void AICC_AwayWalkDir(cAICharControl *self, float dist) {
 }
 
 void __thiscall cAICharControl_AwayWalk(cAICharControl *self) {
-	cSlotController *slot = AICC_Slot(&self->slotSee2);
+	cSlotController *slot = &self->slotSee2;
 	vec3_t b1, b2;
 	float f;
 
@@ -968,7 +968,7 @@ byte __thiscall cAICharControl_CheckWait(cAICharControl *self) {
 				goto lost;
 			}
 		}
-		cSlotController *slot = AICC_Slot(&self->slotWait);
+		cSlotController *slot = &self->slotWait;
 		if (self->waitTime > 0.0f && cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &f)) {
 			do {
 				cEntity *t = AICC_TargetEnt(self);
@@ -1049,7 +1049,7 @@ void __thiscall cAICharControl_Orbit(cAICharControl *self) {
 		self->orbitDir.z = -tv->z;
 		self->orbitDir.y = 0.0f;
 	}
-	cSlotController *slot = AICC_Slot(&self->slotOrbit);
+	cSlotController *slot = &self->slotOrbit;
 	if (cSlotController_Tick(slot, self->dt) && cSlotController_FireReset(slot, &f)) {
 		do {
 			if (vt->SideBlocked(self, self->orbitSide)) {
@@ -1302,17 +1302,17 @@ byte __thiscall cAICharControl_Vf89(cAICharControl *self) {
 }
 
 void __thiscall cAICharControl_RestartSlots(cAICharControl *self) {
-	cSlotController_Restart(AICC_Slot(&self->slotWalk));
-	cSlotController_Restart(AICC_Slot(&self->slotStrafe));
-	cSlotController_Restart(AICC_Slot(&self->slotWait));
-	cSlotController_Restart(AICC_Slot(&self->slotPath));
-	cSlotController_Restart(AICC_Slot(&self->slotStop));
-	cSlotController_Restart(AICC_Slot(&self->slotLost));
-	cSlotController_Restart(AICC_Slot(&self->slotDirect));
-	cSlotController_Restart(AICC_Slot(&self->slotSee));
-	cSlotController_Restart(AICC_Slot(&self->slotRepath));
-	cSlotController_Restart(AICC_Slot(&self->slotNear));
-	cSlotController_Restart(AICC_Slot(&self->slotOrbit));
+	cSlotController_Restart(&self->slotWalk);
+	cSlotController_Restart(&self->slotStrafe);
+	cSlotController_Restart(&self->slotWait);
+	cSlotController_Restart(&self->slotPath);
+	cSlotController_Restart(&self->slotStop);
+	cSlotController_Restart(&self->slotLost);
+	cSlotController_Restart(&self->slotDirect);
+	cSlotController_Restart(&self->slotSee);
+	cSlotController_Restart(&self->slotRepath);
+	cSlotController_Restart(&self->slotNear);
+	cSlotController_Restart(&self->slotOrbit);
 }
 
 int __thiscall cAICharControl_GetWalkDir(cAICharControl *self) {

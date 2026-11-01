@@ -100,9 +100,9 @@ struct cAIVehicle {
 	};
 	cAIVehicleSaved pending;	/* 0x090 state AIV_STATE_NONE for none */
 	byte(*onArrive)(cAIVehicle *self);	/* 0x15c GO_TO arrived: 1 if it took care of it */
-	cAIVSlot slotAttack;		/* 0x160 */
-	cAIVSlot slotGraph;		/* 0x170 the repositioning */
-	cAIVSlot slotItems;		/* 0x180 */
+	cSlotController slotAttack;	/* 0x160 */
+	cSlotController slotGraph;	/* 0x170 the repositioning */
+	cSlotController slotItems;	/* 0x180 */
 	cEntity *vehicle;		/* 0x190 */
 	cAIVehicleControl *control;	/* 0x194 */
 	cAIVehicleShoot *shoot;		/* 0x198 */

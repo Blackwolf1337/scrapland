@@ -282,8 +282,8 @@ byte __thiscall cAICharControl3D_UpdateFollow(cAICharControl3D *self) {
 
 	AICC_EntPos(te, &T);
 	if (self->direct) {
-		if (!cSlotController_Tick(AICC_Slot(&self->slotDirect), self->dt) ||
-				!cSlotController_FireReset(AICC_Slot(&self->slotDirect), &f)) {
+		if (!cSlotController_Tick(&self->slotDirect, self->dt) ||
+				!cSlotController_FireReset(&self->slotDirect, &f)) {
 			return 1;
 		}
 		do {
@@ -310,14 +310,14 @@ byte __thiscall cAICharControl3D_UpdateFollow(cAICharControl3D *self) {
 			if (!vt->FindPath(self, &T)) {
 				return 0;
 			}
-			cSlotController_Restart(AICC_Slot(&self->slotNear));
-			cSlotController_Restart(AICC_Slot(&self->slotSee));
-			cSlotController_Restart(AICC_Slot(&self->slotPath));
-		} while (cSlotController_FireReset(AICC_Slot(&self->slotDirect), &f));
+			cSlotController_Restart(&self->slotNear);
+			cSlotController_Restart(&self->slotSee);
+			cSlotController_Restart(&self->slotPath);
+		} while (cSlotController_FireReset(&self->slotDirect, &f));
 		return 1;
 	}
-	if (cSlotController_Tick(AICC_Slot(&self->slotNear), self->dt) &&
-			cSlotController_FireReset(AICC_Slot(&self->slotNear), &f)) {
+	if (cSlotController_Tick(&self->slotNear, self->dt) &&
+			cSlotController_FireReset(&self->slotNear, &f)) {
 		do {
 			float k = 200.0f;
 			const vec3_t *p = AICC_Pos(self, &buf);
@@ -327,12 +327,12 @@ byte __thiscall cAICharControl3D_UpdateFollow(cAICharControl3D *self) {
 				if (!vt->FindPath(self, &T)) {
 					return 0;
 				}
-				cSlotController_Restart(AICC_Slot(&self->slotPath));
+				cSlotController_Restart(&self->slotPath);
 			}
-		} while (cSlotController_FireReset(AICC_Slot(&self->slotNear), &f));
+		} while (cSlotController_FireReset(&self->slotNear, &f));
 	}
-	if (cSlotController_Tick(AICC_Slot(&self->slotSee), self->dt) &&
-			cSlotController_FireReset(AICC_Slot(&self->slotSee), &f)) {
+	if (cSlotController_Tick(&self->slotSee, self->dt) &&
+			cSlotController_FireReset(&self->slotSee, &f)) {
 		do {
 			float d = AICC3D_DistTo(self, &T);
 			if (d > self->farDist) {
@@ -345,18 +345,18 @@ byte __thiscall cAICharControl3D_UpdateFollow(cAICharControl3D *self) {
 			}
 			self->direct = 1;
 			vt->DirectPath(self, &T);
-			cSlotController_Restart(AICC_Slot(&self->slotDirect));
-		} while (cSlotController_FireReset(AICC_Slot(&self->slotSee), &f));
+			cSlotController_Restart(&self->slotDirect);
+		} while (cSlotController_FireReset(&self->slotSee, &f));
 	}
-	if (cSlotController_Tick(AICC_Slot(&self->slotRepath), self->dt) &&
-			cSlotController_FireReset(AICC_Slot(&self->slotRepath), &f)) {
+	if (cSlotController_Tick(&self->slotRepath, self->dt) &&
+			cSlotController_FireReset(&self->slotRepath, &f)) {
 		do {
 			if (!vt->FindPath(self, &T)) {
 				return 0;
 			}
-			cSlotController_Restart(AICC_Slot(&self->slotPath));
-			cSlotController_Restart(AICC_Slot(&self->slotNear));
-		} while (cSlotController_FireReset(AICC_Slot(&self->slotRepath), &f));
+			cSlotController_Restart(&self->slotPath);
+			cSlotController_Restart(&self->slotNear);
+		} while (cSlotController_FireReset(&self->slotRepath, &f));
 	}
 	return 1;
 }
