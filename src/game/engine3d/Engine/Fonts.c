@@ -818,10 +818,6 @@ void __fastcall CUnifont_Free(CUnifont *self) {
 	self->last = 0;
 }
 
-void Unifont_Exit(void) {
-	CUnifont_Free(&g_Unifont);
-}
-
 byte __thiscall CUnifont_Parse(const CUnifont *self, const char *s, uint16_t *out) {
 	*out = 0;
 	if (!self->first || !s || s[0] != 1) {

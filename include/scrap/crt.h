@@ -102,7 +102,6 @@ int crt_stdio_common_vsscanf(uint64_t options, const char *buf, size_t count, co
 /* the inline parts of the CRT headers in the exe (src/game/Global/StdioInline.c) */
 uint64_t *crt_local_printf_options(void);
 uint64_t *crt_local_scanf_options(void);
-void __stdcall crt_vector_ctor(void *p, uint32_t size, uint32_t count, void(__thiscall *ctor)(void *self));
 size_t crt_strcspn(const char *s, const char *set);
 int crt_fpclass(double x);
 double crt_floor(double x);

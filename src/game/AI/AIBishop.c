@@ -24,11 +24,6 @@ void *__thiscall cAIBishop_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-void __fastcall cAIBishop_dtor(cAIChar *self) {
-	self->vftable = CAIBISHOP_VFTABLE;
-	cAIChar_dtor(self);
-}
-
 cAIChar *__thiscall cAIBishop_Delete(cAIChar *self, byte flags) {
 	self->vftable = CAIBISHOP_VFTABLE;
 	cAIChar_dtor(self);

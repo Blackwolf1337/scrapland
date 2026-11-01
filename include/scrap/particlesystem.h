@@ -178,7 +178,6 @@ SD_OFFSET(CParticleSystem, Particles, 0x11c);
 
 CParticle *__fastcall CParticleActive_ctor(CParticle *self);
 CParticleStatic *__fastcall CParticleStatic_ctor(CParticleStatic *self);
-void __fastcall CParticleActive_dtor(CParticle *self);
 int __fastcall CParticleActive_Type(CParticle *self);
 int __fastcall CParticleStatic_Type(CParticleStatic *self);
 void __fastcall CParticleActive_Init(CParticle *self);
@@ -189,7 +188,6 @@ void __thiscall CParticleActive_Update(CParticleActive *self, CParticleSystem *s
 CParticleSystem *__thiscall CParticleSystem_ctorCopy(CParticleSystem *self, const CParticleSystem *orig);
 CParticleSystem *__thiscall CParticleSystem_ctorParams(CParticleSystem *self, CNode3D *node, const char *type, float scale, float alpha,
 	const vec3_t *posList, CIniFile *ini);
-CParticleSystem *__fastcall CParticleSystem_ctor(CParticleSystem *self);
 void __fastcall CObjBase3D_dtor(CObjBase3D *self);
 void __fastcall ParticleSystemParams_dtor(ParticleSystemParams *self);
 void __fastcall CParticleSystem_dtor(CParticleSystem *self);

@@ -40,7 +40,6 @@ enum {
 #define g_E3DCmdProc GAME_GLOBAL(void *, g_E3DCmdProc, 0x4ab8f8)
 
 void __fastcall cLog_Open(cLog *self);
-void __fastcall cLog_Close(cLog *self);
 /* text to the console printers of the bits in mask and to the file */
 void __thiscall cLog_Write(cLog *self, uint32_t mask, const char *text);
 void E3D_LogPrint(cLog *log, const char *fmt, ...);

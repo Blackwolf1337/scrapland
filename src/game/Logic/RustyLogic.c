@@ -33,12 +33,6 @@ void *__thiscall cRustyLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-void __fastcall cRustyLocalLogic_dtor(cRustyLocalLogic *self) {
-	self->base.base.vftable = CRUSTYLOCALLOGIC_VFTABLE;
-	g_JunkPointsList = NULL;
-	cGenCharLocalLogic_dtor(&self->base);
-}
-
 cRustyLocalLogic *__thiscall cRustyLocalLogic_Delete(cRustyLocalLogic *self, byte flags) {
 	self->base.base.vftable = CRUSTYLOCALLOGIC_VFTABLE;
 	g_JunkPointsList = NULL;

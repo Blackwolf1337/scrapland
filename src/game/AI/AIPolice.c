@@ -16,11 +16,6 @@ void *__thiscall cAIPolice_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-void __fastcall cAIPolice_dtor(cAIPolice *self) {
-	self->vftable = CAIPOLICE_VFTABLE;
-	cAIChar_dtor(self);
-}
-
 cAIPolice *__thiscall cAIPolice_Delete(cAIPolice *self, byte flags) {
 	self->vftable = CAIPOLICE_VFTABLE;
 	cAIChar_dtor(self);

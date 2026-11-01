@@ -66,11 +66,3 @@ int crt_fprintf(void *file, const char *fmt, ...) {
 	va_end(ap);
 	return r;
 }
-
-/* `vector constructor iterator': the constructor (thiscall) on count objects of size bytes */
-void __stdcall crt_vector_ctor(void *p, uint32_t size, uint32_t count, void(__thiscall *ctor)(void *self)) {
-	for (; count; count--) {
-		ctor(p);
-		p = (char *)p + size;
-	}
-}

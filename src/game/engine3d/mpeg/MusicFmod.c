@@ -435,15 +435,6 @@ byte Voices_DrawDebugDefault(void) {
 
 /* the music */
 
-int Music_GetOpenState(void) {
-	int st = FSOUND_Stream_GetOpenState(g_MusicStream);
-
-	if (st == 0 && Time_Since(g_MusicOpenTime) < 1000) {
-		st = FSOUND_STREAM_OPENING;
-	}
-	return st;
-}
-
 byte Music_Ready(void) {
 	int st;
 

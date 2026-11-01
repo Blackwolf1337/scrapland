@@ -47,22 +47,6 @@ void __thiscall StrTable_Init(cStrTable *self, int num) {
 	CHECK(self->items);
 }
 
-cString *__thiscall cString_DeleteVec(cString *self, uint32_t flags) {
-	if (flags & 2) {
-		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(cString), *mem, GAME_FUNC(cString_dtor, CSTRING_DTOR));
-		if (flags & 1) {
-			operator_delete_array(mem);
-		}
-		return (cString *)mem;
-	}
-	cString_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cString));
-	}
-	return self;
-}
-
 /* ---- construction ---- */
 
 cButtonScorer *__fastcall cButtonScorer_ctor(cButtonScorer *self) {

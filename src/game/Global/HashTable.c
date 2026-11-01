@@ -94,15 +94,6 @@ byte __thiscall PtrTable_Add(HashTable *self, const char *key, void *const *valu
 	return 1;
 }
 
-byte __thiscall PtrTable_Get(HashTable *self, const char *key, void **out) {
-	cPtrItem *it = PtrTable_Find(self, key, HashTable_Slot(self, key));
-	if (!it) {
-		return 0;
-	}
-	*out = it->value;
-	return 1;
-}
-
 void *PtrTable_Value(HashTable *self, const char *key) {
 	cPtrItem *it = PtrTable_Find(self, key, HashTable_Slot(self, key));
 	return it ? it->value : NULL;
@@ -148,8 +139,4 @@ void __fastcall PtrTable_Clear(HashTable *self) {
 	operator_delete_array(self->slots);
 	self->numSlots = 0;
 	self->slots = NULL;
-}
-
-void __fastcall PtrTable_dtor(HashTable *self) {
-	PtrTable_Clear(self);
 }

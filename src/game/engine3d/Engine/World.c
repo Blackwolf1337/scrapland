@@ -115,10 +115,6 @@ void __fastcall WorldDummy_dtor(WorldDummy *self) {
 	Dummy_Free(self);
 }
 
-void __fastcall WorldDummy_Clear(WorldDummy *self) {
-	Dummy_Zero(self);
-}
-
 int __fastcall WorldDummy_Count(const WorldDummy *list) {
 	int n = 0;
 	for (; list; list = list->next) {
@@ -295,26 +291,6 @@ byte __thiscall CWorld_LoadMoreDummies(CWorld *self, const char *ini) {
 	Con_Verbosef("Additional World Dummies: %d\n", added);
 	CIniFile_dtor(&f);
 	return 1;
-}
-
-byte __thiscall CWorld_SaveMoreDummies(CWorld *self, const char *ini) {
-	char name[MAX_FILEPATH];
-	CIniFile f;
-
-	Path_Merge(name, ini, self->GroundScale->name);
-	CIniFile_ctorLoad(&f, name, NULL);
-	int changed = 0;
-	if (self->dummies) {
-		for (WorldDummy *d = self->dummies; d; d = d->next) {
-			changed += CIniFile_SetStr(&f, d->name, "Pos", Vec3_Str(&d->pos, 0, 6));
-			changed += CIniFile_SetStr(&f, d->name, "Rot", Vec3_StrDeg(&d->rot, 0, 2));
-		}
-		if (changed && CIniFile_Save(&f, name, NULL, 0)) {
-			Err_Report(*crt_errno(), 0, "\n'%s'", name);
-		}
-	}
-	CIniFile_dtor(&f);
-	return changed != 0;
 }
 
 static void D3D_SetRenderState(void *dev, uint32_t state, uint32_t value) {
@@ -524,11 +500,6 @@ void __thiscall CWorld_LoadSkyScale(CWorld *self, const char *name, const vec3_t
 	if (!self->SkyScale->fromAmc) {
 		SM3_Save(name, self->SkyScale);
 	}
-}
-
-void __thiscall CWorld_LoadGround(CWorld *self, const char *name) {
-	vec3_t scale = { 1.0f, 1.0f, 1.0f };
-	CWorld_LoadGroundScale(self, name, &scale);
 }
 
 /* the references to a node beyond the ones of its neighbours in the list */

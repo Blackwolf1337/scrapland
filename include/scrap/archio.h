@@ -46,10 +46,8 @@ int FileIO_Getc(void *f);	/* 0..255 */
 char *FileIO_Gets(char *buf, int size, void *f);	/* keeps the '\n' */
 int __thiscall CFileIO_Unsupported(CFileIO *self);
 int FileIO_Read(void *buf, int size, int count, void *f);	/* count */
-int FileIO_Seek(void *f, int off, int origin);	/* only SEEK_SET, 0 or -1 */
 int FileIO_Size(void *f);
 int FileIO_Tell(void *f);
-int FileIO_Write(const void *buf, int size, int count, void *f);
 int File_AccessPack(const char *name, int mode);	/* the packs while they are in use */
 uint32_t IdToDword(const char *id);	/* up to 4 characters, the first in the low byte */
 int File_Stat(const char *name, void *st);

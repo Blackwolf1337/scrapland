@@ -1223,12 +1223,6 @@ void __fastcall cVehicleEntity_StartFade(cVehicleEntity *self) {
 	}
 }
 
-void __thiscall cVehicleEntity_SetAIRange(cVehicleEntity *self, byte on) {
-	if (Veh_FX(self)) {
-		cEmbeddedFXVehicle_SetAIRange(Veh_FX(self), on);
-	}
-}
-
 void __thiscall cVehicleEntity_SetFX(cVehicleEntity *self, int fx) {
 	cObjEntity_SetEffect(Veh_Ent(self), fx);
 	if (CGameModel_IsLoaded(&self->pilot)) {

@@ -168,7 +168,6 @@ CAnimSlot *__thiscall CModel_GetSlot(CModel *self, uint32_t i);
 double CAnim_GetSpeed(CAnimGroup *a);
 /* the channels of the context from the slots, the world matrix into ctx->m; animOfs cleared */
 void __thiscall CModel_SetupRender(CModel *self, NodeAnimCtx *ctx);
-CRenderNode *__thiscall CModel_GetRenderNode(CModel *self, CNode3D *node);	/* CHECK(0): not used */
 /* the world matrix of render node inodo into m, with the animation of the slot when anim (and its visibility and
  * fov when asked for) */
 matrix_t *__thiscall CModel_GetNodeMatrix(CModel *self, matrix_t *m, uint32_t inodo, byte anim, uint32_t slot,
@@ -267,7 +266,6 @@ void MeshEffect_AddModel(CModel *m);
 void MeshEffect_Render(void);
 CModel *Create_ModelLOD(const char *name, const char *name2, const vec3_t *scale, CModel *main, uint32_t flags);
 CModel *Create_Model2(const char *name, const char *name2, uint32_t flags);
-CModel *Create_Model4(const char *name, const char *name2, float threshold, uint32_t flags);
 int ModelList_CompareKey(const void *a, const void *b);	/* qsort, larger sortKey first */
 
 /* Engine/ModelFX.cpp (src/game/engine3d/Engine/ModelFX.c): the render effects of a model, renderEffect the effect (1..8,
@@ -294,7 +292,6 @@ void ModelFX_Fire(CModel *m, NodeAnimCtx *ctx);
 void ModelFX_Noise(CModel *m, NodeAnimCtx *ctx);
 /* the gray pass of 2 and 8, and a variant of 1 no effect uses */
 void ModelFX_Base(CModel *m, NodeAnimCtx *ctx);
-void ModelFX_Static2(CModel *m, NodeAnimCtx *ctx);
 /* the overlays and the shader materials */
 void ModelFX_InitD3D(void);
 

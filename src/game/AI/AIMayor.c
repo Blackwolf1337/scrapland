@@ -16,11 +16,6 @@ void *__thiscall cAIMayor_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-void __fastcall cAIMayor_dtor(cAIMayor *self) {
-	self->vftable = CAIMAYOR_VFTABLE;
-	cAIChar_dtor(self);
-}
-
 cAIMayor *__thiscall cAIMayor_Delete(cAIMayor *self, byte flags) {
 	self->vftable = CAIMAYOR_VFTABLE;
 	cAIChar_dtor(self);

@@ -139,8 +139,6 @@ void Fonts_Free(void);
 
 void __fastcall CUnifont_Load(CUnifont *self);
 void __fastcall CUnifont_Free(CUnifont *self);
-/* the atexit destructor of g_Unifont */
-void Unifont_Exit(void);
 /* the "\1XXXX" at s: 1 and the sprite in *out (0 out of the range), 0 if s is not one */
 byte __thiscall CUnifont_Parse(const CUnifont *self, const char *s, uint16_t *out);
 /* the width of sprite i at the height h, 0 if there is none */

@@ -43,7 +43,6 @@ void __fastcall Scheduler_Clear(cScheduledFuncStack *self);
 /* calls and removes the functions due before now */
 void __thiscall Scheduler_Run(cScheduledFuncStack *self, float now);
 void __thiscall cScheduledFunc_Set(cScheduledFunc *self, float time, PyObject *func, PyObject *params, const char *name);
-void __fastcall cScheduledFunc_Call(cScheduledFunc *self);
 
 /* the DList instance */
 void __thiscall SchedList_Add(cSchedList *list, cScheduledFunc *const *f);

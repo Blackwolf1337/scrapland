@@ -19,11 +19,6 @@ cPoliceBossLocalLogic *__thiscall cPoliceBossLocalLogic_ctor(cPoliceBossLocalLog
 	return self;
 }
 
-void __fastcall cPoliceBossLocalLogic_dtor(cPoliceBossLocalLogic *self) {
-	self->base.vftable = CPOLICEBOSSLOCALLOGIC_VFTABLE;
-	cGenCharLocalLogic_dtor(self);
-}
-
 cPoliceBossLocalLogic *__thiscall cPoliceBossLocalLogic_Delete(cPoliceBossLocalLogic *self, byte flags) {
 	self->base.vftable = CPOLICEBOSSLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);

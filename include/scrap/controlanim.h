@@ -35,9 +35,7 @@ typedef struct CAnimEvent {
 SD_SIZE(CAnimEvent, 0x14);
 
 /* Engine/EventoAnim.cpp: an event of the time t; ctorAdd puts it into the list */
-CAnimEvent *__thiscall CAnimEvent_ctor2(CAnimEvent *self, float t, int id);
 CAnimEvent *__thiscall CAnimEvent_ctor(CAnimEvent *self, float t, int id, int arg);
-CAnimEvent *__thiscall CAnimEvent_ctorAdd(CAnimEvent *self, float t, int id, int arg, CAnimEvent **list);
 /* the rest of the chain deleted */
 void __fastcall CAnimEvent_dtor(CAnimEvent *self);
 CAnimEvent *__thiscall CAnimEvent_Delete(CAnimEvent *self, byte flags);

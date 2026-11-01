@@ -35,7 +35,6 @@ SD_SIZE(TXF_header, 0x20);
 
 /* 0, -1 with the error in the file log; flags are not used */
 int TXF_Load(const char *name, CBmpFlt *dest, int flags, void *extra, int nbytes);
-int TXF_Save(const char *name, const CBmpFlt *orig, byte flags, const void *extra, int nbytes);
 void __thiscall CBmpFlt_Fill(CBmpFlt *self, const float *color);
 /* only ".txf" files, else -1 */
 int __thiscall CBmpFlt_Save(CBmpFlt *self, const char *name, byte flags, const void *extra, int nbytes);
@@ -54,7 +53,6 @@ float *__thiscall CBmpFlt_Pixel(const CBmpFlt *self, uint32_t x, uint32_t y);
 
 /* the same for RGB */
 int TXF2_Load(const char *name, CBmpFlt2 *dest, int flags, void *extra, int nbytes);
-int TXF2_Save(const char *name, const CBmpFlt2 *orig, byte flags, const void *extra, int nbytes);
 void __thiscall CBmpFlt2_Fill(CBmpFlt2 *self, const float *color);
 /* all channels times k, nothing for 1 */
 void __thiscall CBmpFlt2_Scale(CBmpFlt2 *self, float k);

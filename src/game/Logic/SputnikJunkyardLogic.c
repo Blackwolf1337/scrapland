@@ -37,12 +37,6 @@ cSputnikJunkyardLocalLogic *__thiscall cSputnikJunkyardLocalLogic_ctor(cSputnikJ
 	return self;
 }
 
-void __fastcall cSputnikJunkyardLocalLogic_dtor(cSputnikJunkyardLocalLogic *self) {
-	SPUTNIK_VT(self) = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
-	g_SputnikPisser = NULL;
-	cGenCharLocalLogic_dtor(self);
-}
-
 cSputnikJunkyardLocalLogic *__thiscall cSputnikJunkyardLocalLogic_Delete(cSputnikJunkyardLocalLogic *self, byte flags) {
 	SPUTNIK_VT(self) = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
 	g_SputnikPisser = NULL;

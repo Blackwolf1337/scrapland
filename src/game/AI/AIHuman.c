@@ -17,11 +17,6 @@ void *__thiscall cAIHuman_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-void __fastcall cAIHuman_dtor(cAIHuman *self) {
-	self->vftable = CAIHUMAN_VFTABLE;
-	cAIChar_dtor(self);
-}
-
 cAIHuman *__thiscall cAIHuman_Delete(cAIHuman *self, byte flags) {
 	self->vftable = CAIHUMAN_VFTABLE;
 	cAIChar_dtor(self);

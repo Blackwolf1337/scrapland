@@ -162,19 +162,11 @@ const char *Sector_GetName(int sector) {
 	return Sector_Get((uint32_t)sector)->node->name;
 }
 
-byte Sector_IsExterior(int sector) {
-	return Sector_Get((uint32_t)sector)->exterior;
-}
-
 byte Sector_IsOutside(int sector) {
 	if (sector == -1) {
 		return 0;
 	}
 	return Sector_Get((uint32_t)sector)->outside;
-}
-
-byte Sector_IsSky(int sector) {
-	return Sector_Get((uint32_t)sector)->sky;
 }
 
 byte Sector_IsVisible(int sector) {
@@ -224,11 +216,6 @@ CZone *Sector_Get(uint32_t sector) {
 
 int Sector_Num(void) {
 	return g_NumZones;
-}
-
-int Sector_OfZoneNode(CNode3D *node) {
-	CZone *z = Zone_FindNode(node, 0);
-	return z ? z->id : -1;
 }
 
 void Sectors_FreeAll(void) {

@@ -19,13 +19,6 @@ matrix_t *__thiscall Matrix_Copy(matrix_t *self, const matrix_t *src) {
 	return self;
 }
 
-matrix_t *__thiscall Matrix_Set(matrix_t *self, float m0, float m1, float m2, float m3, float m4, float m5, float m6,
-	float m7, float m8, float m9, float m10, float m11, float m12, float m13, float m14, float m15) {
-	const float m[16] = { m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15 };
-	memcpy(self->m, m, sizeof(m));
-	return self;
-}
-
 matrix_t *__thiscall Matrix_FromFloats(matrix_t *self, const float *f) {
 	CHECK(f);
 	memcpy(self->m, f, sizeof(self->m));

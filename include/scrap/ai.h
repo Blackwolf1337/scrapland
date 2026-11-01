@@ -638,9 +638,7 @@ typedef struct cAINurse {
 SD_SIZE(cAINurse, 0x384);
 
 /* AIBankDirector.c, AIBankMaster.c */
-void __fastcall cAIBankDirector_dtor(cAIBankDirector *self);
 cAIBankDirector *__thiscall cAIBankDirector_Delete(cAIBankDirector *self, byte flags);
-void __fastcall cAIBankMaster_dtor(cAIBankMaster *self);
 cAIBankMaster *__thiscall cAIBankMaster_Delete(cAIBankMaster *self, byte flags);
 /* vf66 of the director and the master: the attack when the character got money or the control is idle */
 void __thiscall cAIBank_CheckAttack(cAIBank *self);
@@ -651,7 +649,6 @@ void __thiscall cAIBankMaster_SetRanges(cAIBankMaster *self);
 byte cAIBank_SetState(cAIBank *self, int state, ...);
 byte cAIBank_SetStateIntern(cAIBank *self, int state, ...);
 /* AIBishop.c */
-void __fastcall cAIBishop_dtor(cAIChar *self);
 cAIChar *__thiscall cAIBishop_Delete(cAIChar *self, byte flags);
 /* vf66: the shot at the target in the cone of the view */
 void __thiscall cAIBishop_CheckAttack(cAIBishop *self);
@@ -664,7 +661,6 @@ void __fastcall cAIDesktop_dtor(cAIDesktop *self);
 cAIDesktop *__thiscall cAIDesktop_Delete(cAIDesktop *self, byte flags);
 void __thiscall cAIDesktop_UpdateAction0(cAIDesktop *self);
 /* AIGear.c */
-void __fastcall cAIGear_dtor(cAIChar *self);
 cAIChar *__thiscall cAIGear_Delete(cAIChar *self, byte flags);
 /* vf65: blocked by a paused AI it ran into (not the gate keeper, Sebastian): the action button */
 void __thiscall cAIGear_UpdateAction(cAIGear *self);
@@ -674,22 +670,18 @@ void __thiscall cAIGear_SetShoot(cAIGear *self);
 /* the way to the target was not free (vf89 of the move control asks it) */
 byte __fastcall cAIGear_IsBlocked(cAIGear *self);
 /* AIHuman.c */
-void __fastcall cAIHuman_dtor(cAIHuman *self);
 cAIHuman *__thiscall cAIHuman_Delete(cAIHuman *self, byte flags);
 void __thiscall cAIHuman_SetDists(cAIHuman *self);
 /* AIMayor.c */
-void __fastcall cAIMayor_dtor(cAIMayor *self);
 cAIMayor *__thiscall cAIMayor_Delete(cAIMayor *self, byte flags);
 void __thiscall cAIMayor_CheckActDist(cAIMayor *self);
 void __thiscall cAIMayor_SetDists(cAIMayor *self);
 /* AIMessenger.c */
-void __fastcall cAIMessenger_dtor(cAIChar *self);
 cAIChar *__thiscall cAIMessenger_Delete(cAIChar *self, byte flags);
 void __thiscall cAIMessenger_CheckActDist(cAIMessenger *self);
 void __thiscall cAIMessenger_SetDists(cAIMessenger *self);
 void __thiscall cAIMessenger_SetShoot(cAIMessenger *self);
 /* AINurse.c */
-void __fastcall cAINurse_dtor(cAIChar *self);
 cAIChar *__thiscall cAINurse_Delete(cAIChar *self, byte flags);
 /* the action at a dazed target */
 void __thiscall cAINurse_CheckActDist(cAINurse *self);
@@ -698,12 +690,10 @@ void __thiscall cAINurse_SetDists(cAINurse *self);
 byte cAINurse_SetState(cAINurse *self, int state, ...);
 byte cAINurse_SetStateIntern(cAINurse *self, int state, ...);
 /* AIPolice.c */
-void __fastcall cAIPolice_dtor(cAIPolice *self);
 cAIPolice *__thiscall cAIPolice_Delete(cAIPolice *self, byte flags);
 void __thiscall cAIPolice_CheckActDist(cAIPolice *self);
 void __thiscall cAIPolice_SetDists(cAIPolice *self);
 /* AISentinel.c */
-void __fastcall cAISentinel_dtor(cAISentinel *self);
 cAISentinel *__thiscall cAISentinel_Delete(cAISentinel *self, byte flags);
 void __thiscall cAISentinel_CheckActDist(cAISentinel *self);
 void __thiscall cAISentinel_SetDists(cAISentinel *self);

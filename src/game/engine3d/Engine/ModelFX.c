@@ -142,25 +142,6 @@ void ModelFX_Static(CModel *m, NodeAnimCtx *ctx) {
 	ModelFX_Overlay(&g_FXGraphicNoise2);
 }
 
-/* not used: ModelFX_Static in orange over a gray pass */
-void ModelFX_Static2(CModel *m, NodeAnimCtx *ctx) {
-	ModelFX_Jump(m, ctx);
-	ModelFX_Forced(m, ctx, 4);
-	Render_ClearForced();
-	FXMat_Colors(0x808080, 0xff5040, 0);
-	g_MatFX1 = &g_FXMat;
-	FXMat_Set(6, 2, 1, 4, 1);
-	g_FXMat.params.diffuse[3] = (byte)Rand_Flicker(4);
-	uint32_t e = FX_Gray();
-	memcpy(g_FXMat.params.emissive, &e, 4);
-	CMaterial_ScaleColors(&g_FXMat, 1.0f);
-	Scene_Draw(m, ctx);
-	Render_Clear(NULL, D3DCLEAR_ZBUFFER, 0, 0.0f, 0);
-	ModelFX_Forced(m, ctx, 8);
-	Render_ClearForced();
-	ModelFX_Overlay(&g_FXGraphicNoise1);
-}
-
 void ModelFX_Base(CModel *m, NodeAnimCtx *ctx) {
 	ModelFX_Forced(m, ctx, 4);
 }

@@ -18,11 +18,6 @@ void *__thiscall cAIBankDirector_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-void __fastcall cAIBankDirector_dtor(cAIBankDirector *self) {
-	self->base.vftable = CAIBANKDIRECTOR_VFTABLE;
-	cAIChar_dtor(&self->base);
-}
-
 cAIBankDirector *__thiscall cAIBankDirector_Delete(cAIBankDirector *self, byte flags) {
 	self->base.vftable = CAIBANKDIRECTOR_VFTABLE;
 	cAIChar_dtor(&self->base);

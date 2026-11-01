@@ -59,13 +59,6 @@ void Misc_FiniFileLog(void) {
 	cLog_dtor(g_FileLog);
 }
 
-void __fastcall cLog_Close(cLog *self) {
-	if (self->f) {
-		crt_fclose(self->f);
-		self->f = NULL;
-	}
-}
-
 void __thiscall cLog_Write(cLog *self, uint32_t mask, const char *text) {
 	if (g_LogLevel == LOG_LEVEL_RESET) {
 		g_LogConMask = LOG_CON_DEFAULT;

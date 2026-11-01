@@ -585,13 +585,6 @@ void Input_CloseDevices(void) {
 	InputDevices_Clear(&g_InputDevices);
 }
 
-int32_t DInput_Create(void) {
-	if (g_DInput) {
-		return 0;
-	}
-	return exe_DirectInput8Create(App_GetHInstance(), 0x800, IID_IDIRECTINPUT8A, (void **)&g_DInput, NULL);
-}
-
 void Input_OpenDevices(void) {
 	if (g_pApp->flags & APPF_DEDICATED) {
 		g_DInput = NULL;

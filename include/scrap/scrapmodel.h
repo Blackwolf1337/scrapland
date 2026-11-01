@@ -90,7 +90,6 @@ void __thiscall CGameModel_AnimCmd(CGameModel *self, const char *cmd);
 /* the time of frame of animation i (scaled from animBaseFPS); 0 out of its frames */
 byte __thiscall CGameModel_AnimTime(CGameModel *self, int i, float frame, float *time);
 void __thiscall CGameModel_SetAnim(CGameModel *self, int i, uint32_t chan, int unused);
-void __thiscall CGameModel_SetAnimName(CGameModel *self, const char *name, uint32_t chan, int unused);
 void __fastcall CGameModel_StopAnims(CGameModel *self);
 void __thiscall CGameModel_StopAnim(CGameModel *self, uint32_t chan);
 CAnimGroup *__thiscall CGameModel_ChanAnim(CGameModel *self, uint32_t chan);

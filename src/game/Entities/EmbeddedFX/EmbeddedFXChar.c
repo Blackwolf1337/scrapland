@@ -647,11 +647,6 @@ void __thiscall cEmbeddedFXAlarm_SetLights(cEmbeddedFXAlarm *self, byte on) {
 	self->lights = on;
 }
 
-/* Gear and Police: the alarm switched */
-void __thiscall cEmbeddedFXPolice_SetAlarm(cEmbeddedFXPolice *self, byte on) {
-	cEmbeddedFXAlarm_SetOn(&self->alarm, on);
-}
-
 void __thiscall cEmbeddedFXAlarm_Init(cEmbeddedFXAlarm *self, CGameModel *model) {
 	if (!model) {
 		CHECK(model);

@@ -89,7 +89,6 @@ byte __fastcall INodeFX_Type(INodeFX *self);
 CNodeFX_Wheel *__thiscall CNodeFX_Wheel_ctor(CNodeFX_Wheel *self, CNode3D *node, int type);
 CNodeFX_Wheel *__thiscall CNodeFX_Wheel_ctorCopy(CNodeFX_Wheel *self, const CNodeFX_Wheel *src);
 /* not to be used: CHECK(0) */
-CNodeFX_Wheel *__fastcall CNodeFX_Wheel_ctor0(CNodeFX_Wheel *self);
 CNodeFX_Wheel *__thiscall CNodeFX_Wheel_Delete(CNodeFX_Wheel *self, byte flags);
 byte __fastcall CNodeFX_Wheel_Type(CNodeFX_Wheel *self);
 int __thiscall CNodeFX_Wheel_Apply(CNodeFX_Wheel *self, matrix_t *m, CNode3D *node, CRenderNode *r);
@@ -99,7 +98,6 @@ int __fastcall CNodeFX_Wheel_Reset(CNodeFX_Wheel *self);
 /* type 0 Spring, 1 Cloth, 2 Hair, 3 Bust */
 CNodeFX_Spring *__thiscall CNodeFX_Spring_ctor(CNodeFX_Spring *self, CNode3D *node, int type);
 CNodeFX_Spring *__thiscall CNodeFX_Spring_ctorCopy(CNodeFX_Spring *self, const CNodeFX_Spring *src);
-CNodeFX_Spring *__fastcall CNodeFX_Spring_ctor0(CNodeFX_Spring *self);
 CNodeFX_Spring *__thiscall CNodeFX_Spring_Delete(CNodeFX_Spring *self, byte flags);
 byte __fastcall CNodeFX_Spring_Type(CNodeFX_Spring *self);
 int __thiscall CNodeFX_Spring_Apply(CNodeFX_Spring *self, matrix_t *m, CNode3D *node, CRenderNode *r);

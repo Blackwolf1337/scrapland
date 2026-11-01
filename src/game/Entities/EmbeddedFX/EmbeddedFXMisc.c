@@ -593,34 +593,10 @@ void __fastcall cEmbeddedFXTreasure_Release(cEmbeddedFXTreasure *self) {
 
 /* ---- the trails cleared (vf05 with keep 0) ---- */
 
-void __fastcall cEmbeddedFXAmplifier_Clear(cEmbeddedFXAmplifier *self) {
-	CGameTrail_Clear(&self->trail);
-}
-
 void __fastcall cEmbeddedFXBattery_Clear(cEmbeddedFXBattery *self) {
 	for (int i = 0; i < FXBATTERY_TRAILS; i++) {
 		CGameTrail_Clear(&self->trails[i]);
 	}
-}
-
-void __fastcall cEmbeddedFXDTritusDesktop_Clear(cEmbeddedFXDTritusDesktop *self) {
-	CGameTrail_Clear(&self->trail);
-}
-
-void __fastcall cEmbeddedFXDataPack_Clear(cEmbeddedFXDataPack *self) {
-	CGameTrail_Clear(&self->trail);
-}
-
-void __fastcall cEmbeddedFXExtraLife_Clear(cEmbeddedFXExtraLife *self) {
-	CGameTrail_Clear(&self->trail);
-}
-
-void __fastcall cEmbeddedFXMatrix_Clear(cEmbeddedFXMatrix *self) {
-	CGameTrail_Clear(&self->trail);
-}
-
-void __fastcall cEmbeddedFXTreasure_Clear(cEmbeddedFXTreasure *self) {
-	CGameTrail_Clear(&self->trail);
 }
 
 /* ---- vf05: Stop ---- */

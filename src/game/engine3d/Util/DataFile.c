@@ -236,14 +236,6 @@ void DataFile_Delete(cDataFile *dat, int idx) {
 	Mem_Free(lin);
 }
 
-void DataFile_Error(int code, int fatal, cDataFile *dat, int idx) {
-	if (idx < 1) {
-		idx = dat->curIdx;
-	}
-	cDatLine *lin = DataFile_Line(dat, idx);
-	Err_Report(code, fatal, " (l\xednea %d):\n%s", idx, lin->text);
-}
-
 int DataFile_Write(cDataFile *dat, void *f) {
 	DataFile_Check(dat);
 	int last = dat->count - 1;

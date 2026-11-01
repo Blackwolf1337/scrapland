@@ -32,14 +32,6 @@ cSlotController *__thiscall cSlotController_ctor(cSlotController *self, float in
 	return self;
 }
 
-cRndSlotController *__thiscall cRndSlotController_ctor(cRndSlotController *self, float minDiff, float maxDiff) {
-	cSlotController_ctor(&self->base, minDiff);
-	self->base.vftable = cRndSlotController_vftable;
-	self->maxDiff = maxDiff;
-	CHECK(!(maxDiff < self->base.minDiff));
-	return self;
-}
-
 void __thiscall cSlotController_Next(cSlotController *self) {
 	float t = self->interval;
 	self->interval = self->minDiff;
@@ -86,8 +78,4 @@ byte __thiscall cSlotController_FireReset(cSlotController *self, float *out) {
 		return 1;
 	}
 	return 0;
-}
-
-void __thiscall cSlotController_CopyTime(cSlotController *self, const cSlotController *other) {
-	self->time = other->time;
 }

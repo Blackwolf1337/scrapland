@@ -175,15 +175,6 @@ void Con_ColorPrintf(uint32_t color, const char *fmt, ...) {
 	va_end(ap);
 }
 
-/* printf into logAI.html only */
-void DebugLog_AIPrintf(const char *fmt, ...) {
-	va_list ap;
-	va_start(ap, fmt);
-	Str_VPrintf(g_ConBuf, 0x400, fmt, ap);
-	va_end(ap);
-	DebugLog_Write(g_ConBuf, CON_COLOR_AI, g_LogAIFile);
-}
-
 /* in blue, keeps GetLastError for the log */
 void Con_FatalErrorf(const char *fmt, ...) {
 	char buf[0x400];

@@ -35,20 +35,6 @@ static void cTimer_StepBlend(cTimer *self, float dt) {
 	}
 }
 
-/* t: the real time now */
-void __thiscall cTimer_Update(cTimer *self, float t) {
-	if (self->time == -1.0f) {
-		self->time = t;
-	}
-	self->prevTime = self->time;
-	self->time = t;
-	self->delta = (t - self->prevTime) * self->speed;
-	if (!self->paused) {
-		self->gameTime += self->delta;
-		cTimer_StepBlend(self, self->delta);
-	}
-}
-
 /* dt: real time since the last step */
 void __thiscall cTimer_Advance(cTimer *self, float dt) {
 	if (self->time == -1.0f) {
@@ -61,11 +47,6 @@ void __thiscall cTimer_Advance(cTimer *self, float dt) {
 		self->gameTime = self->delta + self->gameTime;
 		cTimer_StepBlend(self, self->delta);
 	}
-}
-
-/* only the blend, by dt */
-void __thiscall cTimer_Blend(cTimer *self, float dt) {
-	cTimer_StepBlend(self, dt);
 }
 
 float __fastcall cTimer_GetSpeedTo(cTimer *self) {

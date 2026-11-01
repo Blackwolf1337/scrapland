@@ -177,7 +177,6 @@ int Engine_GetOption(int opt);
 int Engine_SetOption(int opt, int value);
 int Engine_ToggleOption(int opt);
 void Engine_SetCallback(void (*fn)(void), int which);
-byte Engine_Unsupported(void);
 char *Engine_SetIniName(const char *name);
 void Engine_SetGround(const char *dir, const char *name, const vec3_t *scale);
 /* m3d.ini: [suelo], [camara], [cielo], [niebla], [mapa_sombras], [sombras_stencil], [flares], [texturas] */
@@ -294,7 +293,6 @@ CPsaImage *__fastcall CPsaImage_ctorEmpty(CPsaImage *self);
 void __thiscall CPsaImage_DrawScaled(CPsaImage *self, float x, float y, float scale);
 /* the CGraphic2D of the sheet name (opac: the opacity map) with a blend mode (BlendMode_*) and the SPR2D flags */
 void __thiscall CPsaImage_Load(CPsaImage *self, const char *name, const char *opac, int blend, uint32_t flags);
-void __thiscall CPsaImage_LoadOpac(CPsaImage *self, const char *name, const char *opac, uint32_t flags);
 void __thiscall CPsaImage_LoadName(CPsaImage *self, const char *name, uint32_t flags);
 /* the camera of ScrapEngCamera.cpp (rva 0x21c6c0, 0x21c7c0, 0x21c980, 0x21ce80, 0x21ccf0) */
 /* the viewer camera moved by the keys of the second action set (rva 0x218080, this file, still the exe's) */

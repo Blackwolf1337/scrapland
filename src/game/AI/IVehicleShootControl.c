@@ -139,10 +139,6 @@ cAIVehicleShoot *__thiscall cAIVehicleShoot_ctor(void *mem, cEntity *v, cAIVehic
 	return self;
 }
 
-void __fastcall cAIVehicleShoot_dtor(cAIVehicleShoot *self) {
-	self->vftable = CAIVEHICLESHOOT_VFTABLE;
-}
-
 cAIVehicleShoot *__thiscall cAIVehicleShoot_Delete(cAIVehicleShoot *self, byte flags) {
 	self->vftable = CAIVEHICLESHOOT_VFTABLE;
 	if (flags & 1) {

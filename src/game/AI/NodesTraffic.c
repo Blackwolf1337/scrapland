@@ -94,11 +94,6 @@ void __thiscall cGridElements_Free(cGridElements *self) {
 	cGridElements_FreeCells(self, (void(__fastcall *)(void *))TrafficCell_Clear, sizeof(cTrafficCellNode));
 }
 
-void __fastcall cGridElements_dtor(cGridElements *self) {
-	self->vftable = CGRIDELEMENTS_VFTABLE;
-	cGridElements_Free(self);
-}
-
 cGridElements *__thiscall cGridElements_Delete(cGridElements *self, byte flags) {
 	self->vftable = CGRIDELEMENTS_VFTABLE;
 	cGridElements_Free(self);

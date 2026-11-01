@@ -93,8 +93,6 @@ byte __thiscall CApp_RunApp(CApp *self, const char *exe, const char *cmdLine, in
 byte __thiscall CApp_IsDedicatedWin(CApp *self);
 void __fastcall CApp_ParseCmdLine(CApp *self);
 void CApp_SFLB_0(CApp *self);
-void CApp_SFLB_1(CApp *self);
-void CApp_SFINIT0(void);
 byte App_CheckBlock(void);
 void Console_Execute(const char *cmd);
 void *App_GetObjData(const char *name);

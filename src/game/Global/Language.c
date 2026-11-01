@@ -50,28 +50,6 @@ cLangItem *__thiscall LangTable_Insert(HashTable *self, const char *key, uint32_
 	return it;
 }
 
-byte __thiscall LangTable_Add(HashTable *self, const char *key, const cLangText *value, byte warn) {
-	CHECK(!self->locked);
-	uint32_t slot = HashTable_Slot(self, key);
-	if (LangTable_Find(self, key, slot)) {
-		if (warn) {
-			Con_Warnf("CHashTable3: Symbol already defined: '%s'\n", key);
-		}
-		return 0;
-	}
-	LangTable_Insert(self, key, slot, value);
-	return 1;
-}
-
-byte __thiscall LangTable_Get(HashTable *self, const char *key, cLangText *out) {
-	cLangItem *it = LangTable_Find(self, key, HashTable_Slot(self, key));
-	if (!it) {
-		return 0;
-	}
-	*out = it->value;
-	return 1;
-}
-
 /* takes the item of key out of its slot, NULL if there is none */
 cLangItem *__thiscall LangTable_Unlink(HashTable *self, const char *key, uint32_t slot) {
 	cLangItem **link = (cLangItem **)&self->slots[slot];
@@ -114,10 +92,6 @@ void __fastcall LangTable_Clear(HashTable *self) {
 	self->slots = NULL;
 }
 
-void __fastcall LangTable_dtor(HashTable *self) {
-	LangTable_Clear(self);
-}
-
 void Lang_Free(void) {
 	HashTable *t = g_LangTable;
 
@@ -155,21 +129,6 @@ const char *Lang_GetStr(const char *id) {
 
 const char *Lang_GetLanguage(void) {
 	return g_IdLang;
-}
-
-/* the id of the first line (in file order) with that text, NULL if none */
-const char *Lang_FindId(const char *text) {
-	const char *id = g_LangBuffer;
-	for (;;) {
-		cLangItem *it = LangTable_Find(g_LangTable, id, HashTable_Slot(g_LangTable, id));
-		if (!it) {
-			return NULL;
-		}
-		if (!strcmp(it->value.text, text)) {
-			return id;
-		}
-		id = it->value.nextId;
-	}
 }
 
 /*

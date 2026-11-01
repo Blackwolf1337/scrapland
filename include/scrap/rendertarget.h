@@ -180,7 +180,6 @@ void RenderTarget_MakeDuDvMatFilter(void);
 void RenderTarget_MakeDuDvMatRTarget(void);
 void RenderTarget_MakeMotionBlurMatAdd(void);
 void RenderTarget_MakeMotionBlurMatTarget(void);
-void RenderTarget_MakeRadialBlurMat(void);
 void RenderTarget_MakeSceneMatCopy(void);
 
 /* Credits: the target on (the 2D screen of its size), off with the text drawn to the screen */

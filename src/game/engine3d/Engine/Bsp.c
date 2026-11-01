@@ -2728,68 +2728,6 @@ int __thiscall BspRegion_Link(CBsp *self, BspRegion *a, BspRegion *b, int link, 
 	return 1;
 }
 
-/* the region trees of the lists (the area lights emit their color) and two rounds of links and light */
-void __fastcall CBsp_InitRegions(CBsp *self) {
-	E3D_DebugPrintf("rad_inic_regiones()\n");
-	for (int i = 0; i < self->num_lists; i++) {
-		BspTri *list = self->lists[i];
-		if (!list) {
-			continue;
-		}
-		double l2 = Game_Log(2.0);
-		for (BspTri *t = list; t; t = t->next) {
-			BspRegion *r = operator_new(sizeof(BspRegion));
-			if (r) {
-				r = BspRegion_ctor(r, 0, 0, 0, 0, NULL);
-			}
-			t->region = r;
-			if (list->radlight_ok) {
-				const byte *c = (const byte *)&list->radColor;
-				float s = list->radInt * 0.003921568859368563f;
-				for (int k = 0; k < 4; k++) {
-					r->color[k] = (float)(int)c[k] * s * 80.0f;
-				}
-			}
-			r->x = 0;
-			r->y = 0;
-			r->lx = (uint16_t)list->mask.width;
-			r->ly = (uint16_t)list->mask.height;
-			r->area = t->area;
-			r->center = t->center;
-			r->plane = t->plane;
-			int e = (int)crt_ceil(Game_Log((double)r->lx) / l2);
-			r->lx = (uint16_t)(1u << (e & 31));
-			e = (int)crt_ceil(Game_Log((double)r->ly) / l2);
-			r->ly = (uint16_t)(1u << (e & 31));
-			BspRegion_Split(r, &t->areas[0]);
-			if (!r->interior && t->region) {
-				BspRegion *old = t->region;
-				BspRegion_dtor(old);
-				operator_delete_sized(old, sizeof(BspRegion));
-				t->region = NULL;
-			}
-		}
-	}
-	for (int pass = 2; pass; pass--) {
-		E3D_DebugPrintf("enlazar_regiones:\n");
-		for (int i = 0; i < self->num_lists;) {
-			BspTri *list = self->lists[i];
-			E3D_DebugPrintf("region: %d / %d   ", ++i, self->num_lists);
-			for (BspTri *ta = list; ta; ta = ta->next) {
-				for (int j = i; j < self->num_lists; j++) {
-					for (BspTri *tb = self->lists[j]; tb; tb = tb->next) {
-						BspRegion_Link(self, ta->region, tb->region, 0, 0.001f);
-					}
-				}
-			}
-			E3D_DebugPrintf("Kb: %-5d   enlaces: %d   \r", g_MemStats->bytes / 1024, g_BspLinks);
-		}
-		E3D_DebugPrintf("\n");
-		CBsp_IllumRegions(self, 1);
-	}
-	E3D_DebugPrintf("\n");
-}
-
 /* the sample points of the texels of each triangle of the lists and their levels of detail */
 void __fastcall CBsp_InitAreas(CBsp *self) {
 	CTable tmp;

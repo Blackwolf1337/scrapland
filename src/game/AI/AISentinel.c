@@ -18,11 +18,6 @@ void *__thiscall cAISentinel_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-void __fastcall cAISentinel_dtor(cAISentinel *self) {
-	self->vftable = CAISENTINEL_VFTABLE;
-	cAIChar_dtor(self);
-}
-
 cAISentinel *__thiscall cAISentinel_Delete(cAISentinel *self, byte flags) {
 	self->vftable = CAISENTINEL_VFTABLE;
 	cAIChar_dtor(self);

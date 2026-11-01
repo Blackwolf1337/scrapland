@@ -110,11 +110,6 @@ cAICharControl *__thiscall cAIControlBankDirector_ctor(void *mem, cEntity *e, cA
 	return self;
 }
 
-void __fastcall cAIControlBankDirector_dtor(cAIControlBankDirector *self) {
-	self->vftable = CAICONTROLBANKDIRECTOR_VFTABLE;
-	cAICharControl2D_dtor(self);
-}
-
 cAIControlBankDirector *__thiscall cAIControlBankDirector_Delete(cAIControlBankDirector *self, byte flags) {
 	self->vftable = CAICONTROLBANKDIRECTOR_VFTABLE;
 	cAICharControl2D_dtor(self);
@@ -181,11 +176,6 @@ cAICharControl *__thiscall cAIControlBankMaster_ctor(void *mem, cEntity *e, cAIC
 	cAICharControl2D_ctor(mem, e, ai, arg);
 	self->vftable = CAICONTROLBANKMASTER_VFTABLE;
 	return self;
-}
-
-void __fastcall cAIControlBankMaster_dtor(cAIControlBankMaster *self) {
-	self->vftable = CAICONTROLBANKMASTER_VFTABLE;
-	cAICharControl2D_dtor(self);
 }
 
 cAIControlBankMaster *__thiscall cAIControlBankMaster_Delete(cAIControlBankMaster *self, byte flags) {
@@ -369,11 +359,6 @@ cAICharControl *__thiscall cAIControlBishop_ctor(void *mem, cEntity *e, cAIChar 
 	return ACtl_ShootInit(mem, CAICONTROLBISHOP_VFTABLE);
 }
 
-void __fastcall cAIControlBishop_dtor(cAICharControl *self) {
-	self->vftable = CAICONTROLBISHOP_VFTABLE;
-	cAICharControl2D_dtor(self);
-}
-
 cAICharControl *__thiscall cAIControlBishop_Delete(cAICharControl *self, byte flags) {
 	self->vftable = CAICONTROLBISHOP_VFTABLE;
 	cAICharControl2D_dtor(self);
@@ -422,11 +407,6 @@ void __thiscall cAIControlBishop_SetParams(cAIControlBishop *self) {
 cAICharControl *__thiscall cAIControlGear_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg) {
 	cAICharControl2D_ctor(mem, e, ai, arg);
 	return ACtl_ShootInit(mem, CAICONTROLGEAR_VFTABLE);
-}
-
-void __fastcall cAIControlGear_dtor(cAICharControl *self) {
-	self->vftable = CAICONTROLGEAR_VFTABLE;
-	cAICharControl2D_dtor(self);
 }
 
 cAICharControl *__thiscall cAIControlGear_Delete(cAICharControl *self, byte flags) {
@@ -532,11 +512,6 @@ cAICharControl *__thiscall cAIControlMessenger_ctor(void *mem, cEntity *e, cAICh
 	return self;
 }
 
-void __fastcall cAIControlMessenger_dtor(cAIControlMessenger *self) {
-	self->vftable = CAICONTROLMESSENGER_VFTABLE;
-	cAICharControl3D_dtor(self);
-}
-
 cAIControlMessenger *__thiscall cAIControlMessenger_Delete(cAIControlMessenger *self, byte flags) {
 	self->vftable = CAICONTROLMESSENGER_VFTABLE;
 	cAICharControl3D_dtor(self);
@@ -602,11 +577,6 @@ cAICharControl *__thiscall cAIControlNurse_ctor(void *mem, cEntity *e, cAIChar *
 	return self;
 }
 
-void __fastcall cAIControlNurse_dtor(cAIControlNurse *self) {
-	self->vftable = CAICONTROLNURSE_VFTABLE;
-	cAICharControl3D_dtor(self);
-}
-
 cAIControlNurse *__thiscall cAIControlNurse_Delete(cAIControlNurse *self, byte flags) {
 	self->vftable = CAICONTROLNURSE_VFTABLE;
 	cAICharControl3D_dtor(self);
@@ -640,11 +610,6 @@ void __thiscall cAIControlNurse_Walk(cAIControlNurse *self) {
 cAICharControl *__thiscall cAIControlSentinel_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg) {
 	cAICharControl3D_ctor(mem, e, ai, arg);
 	return ACtl_ShootInit(mem, CAICONTROLSENTINEL_VFTABLE);
-}
-
-void __fastcall cAIControlSentinel_dtor(cAICharControl *self) {
-	self->vftable = CAICONTROLSENTINEL_VFTABLE;
-	cAICharControl3D_dtor(self);
 }
 
 cAICharControl *__thiscall cAIControlSentinel_Delete(cAICharControl *self, byte flags) {

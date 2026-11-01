@@ -131,6 +131,5 @@ byte __thiscall cArrowIndicator_SetIOpt(cArrowIndicator *self, int i);
 void __fastcall cArrowIndicator_Update(cArrowIndicator *self);
 void __thiscall cArrowGlow_Update(cArrowGlow *self, CGameModel *model);
 byte __thiscall cArrowIndicator_VarS(cArrowIndicator *self, const char *name, char **s, int set);
-void __fastcall cArrowIndicator_Reload(cArrowIndicator *self);
 
 #endif

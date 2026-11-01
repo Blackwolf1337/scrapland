@@ -200,7 +200,6 @@ byte __thiscall cAIVehicle_Think(cAIVehicle *self);
 void __thiscall cAIVehicle_ThinkHook(cAIVehicle *self);
 void __thiscall cAIVehicle_CheckItems(cAIVehicle *self);
 void __thiscall cAIVehicle_UpdateGraph(cAIVehicle *self);
-void __thiscall cAIVehicle_ReposIfFar(cAIVehicle *self);
 void __thiscall cAIVehicle_UpdateRoute(cAIVehicle *self);
 void __thiscall cAIVehicle_UpdateThink(cAIVehicle *self);
 byte __thiscall cAIVehicle_CheckTarget(cAIVehicle *self);
@@ -252,7 +251,6 @@ byte __thiscall cAIVehicle_EventInRoute(cAIVehicle *self, int ev);
 byte __thiscall cAIVehicle_EventLostPath(cAIVehicle *self, int ev);
 byte __thiscall cAIVehicle_EventTraffic(cAIVehicle *self, int ev);
 byte __thiscall cAIVehicle_EventTrafficInDoor(cAIVehicle *self, int ev);
-byte __thiscall cAIVehicle_PlaceOnTrackStart(cAIVehicle *self, int track);
 void __thiscall cAIVehicle_SaveState(cAIVehicle *self, cAIVehicleSaved *s);
 /* the point where the segment a b crosses the plane: 1, out set; 0 if both ends are on one side */
 int SegmentPlane_Hit(vec3_t *out, const vec3_t *a, const vec3_t *b, const plane_t *pl);

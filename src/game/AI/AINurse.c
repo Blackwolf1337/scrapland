@@ -21,11 +21,6 @@ void *__thiscall cAINurse_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-void __fastcall cAINurse_dtor(cAIChar *self) {
-	self->vftable = CAINURSE_VFTABLE;
-	cAIChar_dtor(self);
-}
-
 cAIChar *__thiscall cAINurse_Delete(cAIChar *self, byte flags) {
 	self->vftable = CAINURSE_VFTABLE;
 	cAIChar_dtor(self);

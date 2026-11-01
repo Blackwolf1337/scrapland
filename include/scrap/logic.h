@@ -777,7 +777,6 @@ void *__thiscall cSentinelLocalLogic_ctor(void *self, cEntity *parent);
 void __thiscall cSentinelLocalLogic_Watch(void *self, const vec3_t *pos);
 /* back to state 0 (1 with the alarm), unless idle */
 void __fastcall cSentinelLocalLogic_Return(void *self);
-void __fastcall cSentinelLocalLogic_dtor(cSentinelLocalLogic *self);
 cSentinelLocalLogic *__thiscall cSentinelLocalLogic_Delete(cSentinelLocalLogic *self, byte flags);
 void __thiscall cSentinelLocalLogic_OnAlarm(cSentinelLocalLogic *self, cEntity *e);
 byte __thiscall cSentinelLocalLogic_Seen(cSentinelLocalLogic *self);
@@ -1027,7 +1026,6 @@ typedef struct cRustyLocalLogic {
 } cRustyLocalLogic;
 SD_SIZE(cRustyLocalLogic, 0x84);
 
-void __fastcall cRustyLocalLogic_dtor(cRustyLocalLogic *self);
 cRustyLocalLogic *__thiscall cRustyLocalLogic_Delete(cRustyLocalLogic *self, byte flags);
 void Rusty_LoopDone(cAbstractFile *params);
 byte __thiscall cRustyLocalLogic_VarI(cRustyLocalLogic *self, const char *name, int *i, byte set);
@@ -1037,14 +1035,12 @@ void __fastcall cRustyLocalLogic_NextJunk(cRustyLocalLogic *self);
 byte __thiscall cRustyLocalLogic_SetState(cRustyLocalLogic *self, int state, cEntity *target);
 
 /* SputnikJunkyardLogic.cpp: a cGenCharLocalLogic, states 7 the walk, 8 the laugh in front of the camera */
-void __fastcall cSputnikJunkyardLocalLogic_dtor(cSputnikJunkyardLocalLogic *self);
 cSputnikJunkyardLocalLogic *__thiscall cSputnikJunkyardLocalLogic_Delete(cSputnikJunkyardLocalLogic *self, byte flags);
 void Sputnik_LaughDone(cAbstractFile *params);
 void __thiscall cSputnikJunkyardLocalLogic_Update(cSputnikJunkyardLocalLogic *self, float dt);
 byte __thiscall cSputnikJunkyardLocalLogic_SetState(cSputnikJunkyardLocalLogic *self, int state, cEntity *target);
 
 /* PoliceBossLogic.cpp: a cGenCharLocalLogic */
-void __fastcall cPoliceBossLocalLogic_dtor(cPoliceBossLocalLogic *self);
 cPoliceBossLocalLogic *__thiscall cPoliceBossLocalLogic_Delete(cPoliceBossLocalLogic *self, byte flags);
 cEntity *__thiscall cPoliceBossLocalLogic_FindTarget(cPoliceBossLocalLogic *self);
 void __thiscall cPoliceBossLocalLogic_ToAlert(cPoliceBossLocalLogic *self, cAIChar *ai);

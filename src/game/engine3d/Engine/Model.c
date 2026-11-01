@@ -265,11 +265,6 @@ void __thiscall CModel_SetupRender(CModel *self, NodeAnimCtx *ctx) {
 	Vec3_Zero(&self->animOfs);
 }
 
-CRenderNode *__thiscall CModel_GetRenderNode(CModel *self, CNode3D *node) {
-	CHECK(0);
-	return Model_RenderNode(self->renderNodes, node->slot);
-}
-
 matrix_t *__thiscall CModel_GetNodeMatrix(CModel *self, matrix_t *m, uint32_t inodo, byte anim, uint32_t slot,
 	byte *visible, float *fov) {
 	CNode3D *node = Model_RenderNode(self->renderNodes, inodo)->node;

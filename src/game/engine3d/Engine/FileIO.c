@@ -235,14 +235,6 @@ int FileIO_Read(void *buf, int size, int count, void *f) {
 	return count;
 }
 
-int FileIO_Seek(void *f, int off, int origin) {
-	cAbstractFile *file = f;
-
-	CHECK(!PackLog_Closed());
-	CHECK(origin == 0);
-	return file->vftable->Seek(file, off) >= 0 ? 0 : -1;
-}
-
 int FileIO_Size(void *f) {
 	cAbstractFile *file = f;
 	return file->vftable->Size(file);
@@ -251,13 +243,6 @@ int FileIO_Size(void *f) {
 int FileIO_Tell(void *f) {
 	cAbstractFile *file = f;
 	return file->vftable->Tell(file);
-}
-
-int FileIO_Write(const void *buf, int size, int count, void *f) {
-	cAbstractFile *file = f;
-
-	CHECK(file->vftable->Write(file, buf, size * count) == size * count);
-	return count;
 }
 
 int File_AccessPack(const char *name, int mode) {

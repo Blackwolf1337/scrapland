@@ -27,11 +27,6 @@ void *__thiscall cAIGear_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-void __fastcall cAIGear_dtor(cAIChar *self) {
-	self->vftable = CAIGEAR_VFTABLE;
-	cAIChar_dtor(self);
-}
-
 cAIChar *__thiscall cAIGear_Delete(cAIChar *self, byte flags) {
 	self->vftable = CAIGEAR_VFTABLE;
 	cAIChar_dtor(self);

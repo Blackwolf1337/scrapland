@@ -274,12 +274,6 @@ void __fastcall AStarTable_dtor(HashTable *self) {
 	self->slots = NULL;
 }
 
-/* the table of the search object (its virtual 2) */
-static HashTable *AStar_Table(void) {
-	void **vt = *(void ***)g_AStar;
-	return ((HashTable * (__thiscall *)(void *)) vt[2])(g_AStar);
-}
-
 /* the item of key added unless it is there (the inline Add of the callers, without the warning) */
 static void AStarTable_AddNew(HashTable *t, int key, const cAStarInfo *v) {
 	CHECK(!t->locked);
@@ -287,21 +281,6 @@ static void AStarTable_AddNew(HashTable *t, int key, const cAStarInfo *v) {
 	if (!AStarTable_Find(t, key, slot)) {
 		AStarTable_Insert(t, key, slot, v);
 	}
-}
-
-void AStar_AddInfo(int key, const cAStarInfo *v) {
-	AStarTable_AddNew(AStar_Table(), key, v);
-}
-
-byte AStar_GetInfo(int key, cAStarItem **out) {
-	HashTable *t = AStar_Table();
-	cAStarItem *it = AStarTable_Find(t, key, AStarTable_Slot(t, key));
-
-	if (!it) {
-		return 0;
-	}
-	*out = it;
-	return 1;
 }
 
 /* ---- the search ---- */

@@ -171,7 +171,6 @@ SD_SIZE(CBspQ3, 0x6c);
 #define g_KeyL GAME_GLOBAL_IN(byte, g_KeyboardKeys, 22, 0x4db2e6)
 
 /* the map loaded: shaders, vertices, faces, light maps, then the meshes */
-CBspQ3 *__thiscall CBspQ3_ctor(CBspQ3 *self, const char *name);
 void __fastcall CBspQ3_dtor(CBspQ3 *self);
 BspQ3Meshes *__fastcall BspQ3Meshes_ctor(BspQ3Meshes *self);
 void __fastcall BspQ3Meshes_Free(BspQ3Meshes *self);

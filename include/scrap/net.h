@@ -519,7 +519,6 @@ int Transport_InitBrowser(const char *address, uint16_t port);
 int Transport_InitClient(const char *address, uint16_t port);
 int Transport_InitServer(int maxClients, uint16_t port);
 int Transport_Startup(void);
-int Transport_WSAStartup(void);
 int Net_PingInetSvrs(void);
 int Transport_MasterPacket(const byte *buf, int len);
 int Transport_SendNeedPassword(int slot);

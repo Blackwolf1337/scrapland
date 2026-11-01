@@ -45,36 +45,6 @@ static void *BspQ3_LumpCopy(CBspQ3 *self, int id, int len) {
 	return p;
 }
 
-CBspQ3 *__thiscall CBspQ3_ctor(CBspQ3 *self, const char *name) {
-	self->name = NULL;
-	memset(self, 0, sizeof(*self));
-	self->MeshD3D = NULL;
-	self->pMesh = NULL;
-	self->MeshList = NULL;
-	String_Set(&self->name, name);
-	void *f = crt_fopen(name, "rb");
-	if (!f) {
-		Err_Report(*crt_errno(), 1, " (%s)", name);
-	}
-	uint32_t size = (uint32_t)crt_filelength(crt_fileno(f));
-	self->lump = operator_new_array(size);
-	CHECK(crt_fread(self->lump, size, 1, f) == 1);
-	crt_fclose(f);
-	self->head = (BspQ3Header *)self->lump;
-	CHECK(self->head->id == BSPQ3_ID);
-	CHECK(self->head->ver == BSPQ3_VER || self->head->ver == BSPQ3_VER_RCW);
-	CBspQ3_ReadShaders(self);
-	CBspQ3_ReadVerts(self);
-	CBspQ3_ReadFaces(self);
-	CBspQ3_ReadLMaps(self);
-	if (self->lump) {
-		operator_delete_sized(self->lump, 0);
-		self->lump = NULL;
-	}
-	CBspQ3_Build(self);
-	return self;
-}
-
 BspQ3Meshes *__fastcall BspQ3Meshes_ctor(BspQ3Meshes *self) {
 	memset(self->m, 0, sizeof(self->m));
 	self->n = 0;

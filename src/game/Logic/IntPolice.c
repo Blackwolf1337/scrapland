@@ -386,23 +386,6 @@ void AICtrl_Police2GearEnd(cAbstractFile *params) {
 	cEntity_Del(poli);
 }
 
-/* the character to its alert (1) or relax (0) walk */
-void __thiscall AICtrl_ToAlert(void *ctrl, cEntity *e) {
-	(void)ctrl;
-	cAIChar *ai = e->vftable->GetAI(e);
-	ai->vftable->SetState(ai, 1, 1.0);
-	cLocalLogic *l = e->lLogic;
-	l->vftable->SetState(l, 1, NULL);
-}
-
-void __thiscall AICtrl_ToRelax(void *ctrl, cEntity *e) {
-	(void)ctrl;
-	cAIChar *ai = e->vftable->GetAI(e);
-	ai->vftable->SetState(ai, 1, 0.5);
-	cLocalLogic *l = e->lLogic;
-	l->vftable->SetState(l, 0, NULL);
-}
-
 /* the watching sentinel, else the one nearest to pos, goes to watch it (not while it accuses or attacks);
  * SentinelNextGotoTime before the next */
 void __thiscall AICtrl_SendSentinelToWatch(void *ctrl, const vec3_t *pos) {

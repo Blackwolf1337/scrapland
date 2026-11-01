@@ -6,31 +6,12 @@
 
 #define ANIMEVENT_INSERTED 1		/* flags: in a list */
 
-CAnimEvent *__thiscall CAnimEvent_ctor2(CAnimEvent *self, float t, int id) {
-	self->id = id;
-	self->t = t;
-	self->arg = 0;
-	self->next = NULL;
-	self->flags = 0;
-	return self;
-}
-
 CAnimEvent *__thiscall CAnimEvent_ctor(CAnimEvent *self, float t, int id, int arg) {
 	self->id = id;
 	self->arg = arg;
 	self->t = t;
 	self->next = NULL;
 	self->flags = 0;
-	return self;
-}
-
-CAnimEvent *__thiscall CAnimEvent_ctorAdd(CAnimEvent *self, float t, int id, int arg, CAnimEvent **list) {
-	self->id = id;
-	self->t = t;
-	self->arg = arg;
-	self->next = NULL;
-	self->flags = 0;
-	CAnimEvent_Insert(self, list);
 	return self;
 }
 

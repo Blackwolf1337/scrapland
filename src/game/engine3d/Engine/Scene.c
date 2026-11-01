@@ -718,33 +718,6 @@ void __thiscall CScene_Join(CScene *self, byte sel, const char *name) {
 	CScene_DeleteEmpty(self, 0, 0, 1);
 }
 
-void __thiscall CScene_SetAlpha(CScene *self, float alpha, const char *name) {
-	int v = (int)((double)alpha * 255.0);
-	byte a = v < 1 ? 0 : v >= 0xff ? 0xff : (byte)v;
-
-	for (CNode3D *n = self->Node3D; n; n = n->next) {
-		if (CNode3D_Class(n) != CLASS_OBJ3D_MESHD3D) {
-			continue;
-		}
-		if (name && !strcmp(n->name, name)) {
-			continue;
-		}
-		CMeshD3D *m = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_MESHD3D);
-		if (!m) {
-			continue;
-		}
-		do {
-			CHECK(m->mat);
-			m->mat->params.diffuse[3] = (byte)~a;
-			m->mat->params.transp = a != 0;
-			m->mat->params.srcBlend = 5;
-			m->mat->params.dstBlend = 6;
-			CMaterial_Prepare(m->mat, NULL);
-			m = m->next;
-		} while (m);
-	}
-}
-
 void __thiscall CScene_SetMarks(CScene *self, int v) {
 	for (CNode3D *n = self->Node3D; n; n = n->next) {
 		n->mark = v;

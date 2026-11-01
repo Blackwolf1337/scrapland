@@ -52,7 +52,6 @@ void Voices_DrawDebug(int x, int y);
 byte Voices_DrawDebugDefault(void);
 
 /* the music */
-int Music_GetOpenState(void);			/* -2 also the first second after it opened */
 byte Music_Ready(void);				/* started now if FMOD has opened it, closed if it failed */
 byte Music_UpdateVolumes(void);
 void Music_DrawDebug(int x, int y);

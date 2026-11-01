@@ -754,18 +754,15 @@ SD_SIZE(cAIControlSentinel, CAICONTROLSENTINEL_SIZE);
 #define g_LimVelRotDynamicMessengerAI GAME_GLOBAL_IN(float, GVar_LimVelRotDynamicMessengerAI, 16, 0x444638)
 
 cAICharControl *__thiscall cAIControlBankDirector_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-void __fastcall cAIControlBankDirector_dtor(cAIControlBankDirector *self);
 cAIControlBankDirector *__thiscall cAIControlBankDirector_Delete(cAIControlBankDirector *self, byte flags);
 /* the Walk of the bank director and the master: forward beyond farDist, back within nearDist when the way back is
  * free */
 void __thiscall cAIControlBank_Walk(cAICharControl *self);
 cAICharControl *__thiscall cAIControlBankMaster_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-void __fastcall cAIControlBankMaster_dtor(cAIControlBankMaster *self);
 cAIControlBankMaster *__thiscall cAIControlBankMaster_Delete(cAIControlBankMaster *self, byte flags);
 /* the Orbit of the control, but not while the action button is down or its ActionEnd plays */
 void __thiscall cAIControlBankMaster_Orbit(cAIControlBankMaster *self);
 cAICharControl *__thiscall cAIControlBishop_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-void __fastcall cAIControlBishop_dtor(cAICharControl *self);
 cAICharControl *__thiscall cAIControlBishop_Delete(cAICharControl *self, byte flags);
 /* CheckWait, but not while the target plays its ActionEnd */
 byte __thiscall cAIControlBishop_CheckWait(cAICharControl *self);
@@ -776,7 +773,6 @@ void __thiscall cAIControlShoot_Walk(cAIControlShoot *self);
 /* Nop of the control: the strafe parameters by the target */
 void __thiscall cAIControlBishop_SetParams(cAIControlBishop *self);
 cAICharControl *__thiscall cAIControlGear_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-void __fastcall cAIControlGear_dtor(cAICharControl *self);
 cAICharControl *__thiscall cAIControlGear_Delete(cAICharControl *self, byte flags);
 /* CheckWait, but not while the target plays its ActionInit or ActionEnd */
 byte __thiscall cAIControlGear_CheckWait(cAICharControl *self);
@@ -791,17 +787,14 @@ byte __thiscall cAIControlGear_Vf89(cAICharControl *self);
 void __thiscall cAIControlGear_SetParams(cAIControlGear *self);
 void __thiscall cAIControlGear_SetTurnSpeed(cAICharControl *self, float speed);
 cAICharControl *__thiscall cAIControlMessenger_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-void __fastcall cAIControlMessenger_dtor(cAIControlMessenger *self);
 cAIControlMessenger *__thiscall cAIControlMessenger_Delete(cAIControlMessenger *self, byte flags);
 byte __thiscall cAIControlMessenger_UpdateFollowMode(cAIControlMessenger *self, float dt);
 void __thiscall cAIControlMessenger_SetTurnSpeed(cAIControlMessenger *self, float speed);
 cAICharControl *__thiscall cAIControlNurse_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-void __fastcall cAIControlNurse_dtor(cAIControlNurse *self);
 cAIControlNurse *__thiscall cAIControlNurse_Delete(cAIControlNurse *self, byte flags);
 /* forward beyond farDist only (3D) */
 void __thiscall cAIControlNurse_Walk(cAIControlNurse *self);
 cAICharControl *__thiscall cAIControlSentinel_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-void __fastcall cAIControlSentinel_dtor(cAICharControl *self);
 cAICharControl *__thiscall cAIControlSentinel_Delete(cAICharControl *self, byte flags);
 void __thiscall cAIControlSentinel_Strafe2(cAIControlShoot *self);
 void __thiscall cAIControlSentinel_Strafe(cAIControlShoot *self);

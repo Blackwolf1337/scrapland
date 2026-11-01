@@ -42,10 +42,6 @@ CParticleStatic *__fastcall CParticleStatic_ctor(CParticleStatic *self) {
 	return self;
 }
 
-void __fastcall CParticleActive_dtor(CParticle *self) {
-	self->vftable = CPARTICLEACTIVE_VFTABLE;
-}
-
 int __fastcall CParticleActive_Type(CParticle *self) {
 	(void)self;
 	return PARTICLE_ACTIVE;
@@ -141,14 +137,6 @@ CParticleSystem *__thiscall CParticleSystem_ctorParams(CParticleSystem *self, CN
 		self->posList = New_Array((uint32_t)self->params.nParticles, sizeof(vec3_t));
 		memcpy(self->posList, posList, (uint32_t)self->params.nParticles * sizeof(vec3_t));
 	}
-	CParticleSystem_CreateMat(self);
-	CParticleSystem_CreateParticles(self);
-	return self;
-}
-
-CParticleSystem *__fastcall CParticleSystem_ctor(CParticleSystem *self) {
-	ParticleSystem_Clear(self);
-	CParticleSystem_Init(self, NULL, NULL, NULL, NULL);
 	CParticleSystem_CreateMat(self);
 	CParticleSystem_CreateParticles(self);
 	return self;

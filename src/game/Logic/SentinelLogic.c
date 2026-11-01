@@ -46,11 +46,6 @@ void *__thiscall cSentinelLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-void __fastcall cSentinelLocalLogic_dtor(cSentinelLocalLogic *self) {
-	SENT_VT(self) = CSENTINELLOCALLOGIC_VFTABLE;
-	cBaseLocalLogic_dtor(&self->base);
-}
-
 cSentinelLocalLogic *__thiscall cSentinelLocalLogic_Delete(cSentinelLocalLogic *self, byte flags) {
 	SENT_VT(self) = CSENTINELLOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);

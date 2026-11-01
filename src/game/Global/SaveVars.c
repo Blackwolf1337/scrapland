@@ -182,24 +182,6 @@ int SaveVar_Inc(const char *name, int n) {
 	return value;
 }
 
-/* a check sum of the bytes with their position */
-int SaveGame_Checksum(const byte *buf, uint32_t len) {
-	uint32_t i = 0;
-	int a = 0, b = 0, c = 0;
-
-	if (len > 1) {
-		do {
-			a += buf[i] ^ (i & 0xff);
-			b += ((i + 1) & 0xff) ^ buf[i + 1];
-			i += 2;
-		} while (i < len - 1);
-	}
-	if (i < len) {
-		c = buf[i] ^ (i & 0xff);
-	}
-	return b + a + c;
-}
-
 /* the description of a save game into desc (64 bytes, like strncpy) */
 byte SaveGame_ReadDesc(const char *path, char *desc) {
 	char buf[0x200];

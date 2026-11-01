@@ -285,7 +285,6 @@ void Input_ResetInactivity(void);
 void Input_SetDefineCallback(void (*f)(void));
 void Input_SetDefineFunc(const char *func);
 void DInput_Release(void);
-int32_t DInput_Create(void);
 void Device_SetEntries(cAbstractIDevice *d, const byte (*t)[3], int n);
 
 /* DirectInput 8 through the vtables, as the exe */

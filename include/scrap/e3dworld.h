@@ -86,8 +86,6 @@ void __fastcall CWorld_DrawDummies(CWorld *self);
 void __thiscall CWorld_AddDummy(CWorld *self, WorldDummy *d);
 /* the sections of the ini next to the floor scene (Pos, Rot in degrees) as dummies; 1 */
 byte __thiscall CWorld_LoadMoreDummies(CWorld *self, const char *ini);
-/* Pos and Rot of the dummies into the ini next to the floor scene, saved if one changed; whether one did */
-byte __thiscall CWorld_SaveMoreDummies(CWorld *self, const char *ini);
 /* 100 follows the camera, 0 does not */
 void __thiscall CWorld_SetSkyPos(CWorld *self, float pct);
 void __thiscall CWorld_SetSkyRot(CWorld *self, float deg);
@@ -100,7 +98,6 @@ void __thiscall CWorld_SetClip(CWorld *self, float zNear, float zFar);
 void __thiscall CWorld_SetCamera(CWorld *self, CCamera *cam);
 void __thiscall CWorld_LoadSky(CWorld *self, const char *name);
 void __thiscall CWorld_LoadSkyScale(CWorld *self, const char *name, const vec3_t *scale);
-void __thiscall CWorld_LoadGround(CWorld *self, const char *name);
 void __thiscall CWorld_LoadGroundScale(CWorld *self, const char *name, const vec3_t *scale);
 /* the first camera of the floor scene, its vectors updated with update */
 CCamera *__thiscall CWorld_GetCameraGround(CWorld *self, byte update);
@@ -113,7 +110,6 @@ WorldDummy *__thiscall WorldDummy_ctorNode(WorldDummy *self, CNode3D *node);
 WorldDummy *__thiscall WorldDummy_ctor(WorldDummy *self, const char *name, const vec3_t *pos, const vec3_t *rot);
 WorldDummy *__fastcall WorldDummy_ctorEmpty(WorldDummy *self);
 void __fastcall WorldDummy_dtor(WorldDummy *self);
-void __fastcall WorldDummy_Clear(WorldDummy *self);
 int __fastcall WorldDummy_Count(const WorldDummy *list);
 void WorldDummy_FreeList(WorldDummy **list);
 /* the dummy named name from self on (from the next one without self) */

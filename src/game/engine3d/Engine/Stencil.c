@@ -330,11 +330,6 @@ void Stencil_Free(void) {
 	}
 }
 
-void Stencil_GetLightPos(vec3_t *out) {
-	CheckFailed("0", __FILE__, __TIMESTAMP__, __LINE__);
-	*out = g_ShadowLightPos;
-}
-
 void Stencil_Init(void) {
 	const char *warn = NULL;
 	byte ok, on;

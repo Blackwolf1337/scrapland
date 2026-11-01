@@ -21,11 +21,6 @@ void *__thiscall cAIMessenger_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-void __fastcall cAIMessenger_dtor(cAIChar *self) {
-	self->vftable = CAIMESSENGER_VFTABLE;
-	cAIChar_dtor(self);
-}
-
 cAIChar *__thiscall cAIMessenger_Delete(cAIChar *self, byte flags) {
 	self->vftable = CAIMESSENGER_VFTABLE;
 	cAIChar_dtor(self);

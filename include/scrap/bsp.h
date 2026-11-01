@@ -414,7 +414,6 @@ void __fastcall CBsp_AreasMax(CBsp *self);
 void __thiscall CBsp_IllumRegions(CBsp *self, int n);
 void __fastcall CBsp_AdjustGamma(CBsp *self);
 int __thiscall BspRegion_Link(CBsp *self, BspRegion *a, BspRegion *b, int link, float threshold);
-void __fastcall CBsp_InitRegions(CBsp *self);
 void __fastcall CBsp_InitAreas(CBsp *self);
 void BspTri_CalcGlow(BspTri *list);
 float Bsp_Occlusion(const vec3_t *p, const vec3_t *n, float r, int samples, const vec3_t *light, CGround *ground);

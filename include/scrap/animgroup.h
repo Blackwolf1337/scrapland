@@ -76,7 +76,6 @@ SD_SIZE(CAnimGroups, 0xb0);
 
 /* the groups destroyed and their slots cleared */
 CAnimGroups *__fastcall CAnimGroups_ctor(CAnimGroups *self);
-CAnimGroup *__fastcall CAnimGroup_ctor(CAnimGroup *self);
 void __fastcall CAnimGroups_Clear(CAnimGroups *self);
 void __fastcall CAnimGroup_dtor(CAnimGroup *self);
 /* the events of the list deleted */

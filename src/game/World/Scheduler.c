@@ -71,10 +71,6 @@ static void cScheduledFunc_Run(cScheduledFunc *self) {
 	self->active = 1;
 }
 
-void __fastcall cScheduledFunc_Call(cScheduledFunc *self) {
-	cScheduledFunc_Run(self);
-}
-
 void __thiscall Scheduler_Add(cScheduledFuncStack *self, float time, PyObject *func, PyObject *params, const char *name) {
 	cSchedList *list = &self->list;
 

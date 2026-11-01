@@ -68,7 +68,6 @@ cGridElements *cGridElements_Init(cGridElements *self, void *vftable, const vec3
 	int ny, int nz);
 /* the cells emptied with clear and freed with their free nodes of nodeSize bytes, then the cell array */
 void cGridElements_FreeCells(cGridElements *self, void(__fastcall *clear)(void *cell), uint32_t nodeSize);
-void __fastcall cGridElements_dtor(cGridElements *self);
 cGridElements *__thiscall cGridElements_Delete(cGridElements *self, byte flags);
 /* the cells freed with their nodes, then the cell array */
 void __thiscall cGridElements_Free(cGridElements *self);

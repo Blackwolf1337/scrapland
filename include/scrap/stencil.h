@@ -73,8 +73,6 @@ void Stencil_DebugLine(const vec3_t *a, const vec3_t *b, uint32_t color);
 /* the frame is captured (on), the multiplier of the frame taken */
 void ShadowsStencil_Capture(byte on);
 void Stencil_Free(void);
-/* a CHECK, then the light position */
-void Stencil_GetLightPos(vec3_t *out);
 /* the switch from R_StencilShadows and the stencil bits, the buffers when there are stencil bits */
 void Stencil_Init(void);
 /* the frame pass of the shadows */

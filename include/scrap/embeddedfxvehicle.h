@@ -155,7 +155,6 @@ cFXVehicleSirens *__thiscall cFXVehicleSirens_ctor(cFXVehicleSirens *self, cEmbe
 void __fastcall cFXVehicleSirens_dtor(cFXVehicleSirens *self);
 byte __fastcall cFXVehicleSirens_Init(cFXVehicleSirens *self);
 void __fastcall cFXVehicleSirens_Update(cFXVehicleSirens *self);
-void cFXVehicleSirens_RenderModel(void);
 
 cEmbeddedFXVehicleProbe *__thiscall cEmbeddedFXVehicleProbe_ctor(cEmbeddedFXVehicleProbe *self,
 	cEmbeddedFXVehicle *fx);

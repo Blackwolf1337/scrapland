@@ -330,7 +330,6 @@ void __thiscall cVehicleEntity_SetModel(cVehicleEntity *self, const char *file, 
 	byte inDir);
 void __thiscall cVehicleEntity_SetEmbeddedFX(cVehicleEntity *self, const char *fxType);
 void __fastcall cVehicleEntity_StartFade(cVehicleEntity *self);
-void __thiscall cVehicleEntity_SetAIRange(cVehicleEntity *self, byte on);
 void __thiscall cVehicleEntity_SetFX(cVehicleEntity *self, int fx);
 void __thiscall cVehicleEntity_SetFXParam(cVehicleEntity *self, int i, float v);
 void __thiscall cVehicleEntity_SetActive(cVehicleEntity *self, byte on);

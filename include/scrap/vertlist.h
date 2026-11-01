@@ -85,9 +85,6 @@ byte __thiscall CVertList_Optimize(CVertList *self, void *tris, int nTri);
 struct CMap;
 void __thiscall CVertList_EnvMapUV(CVertList *self, const matrix_t *world, const matrix_t *view,
 	const struct CMap *map, int itex);
-/* VERT_TEX1 and VERT_TEX2 (second set): u from the angle between the normal through world and light 0 of the
- * device, v 0.5 (a ramp texture); nothing while light 0 is off */
-void __thiscall CVertList_LightRampUV(CVertList *self, const matrix_t *world);
 /* the first 4 fields */
 void __thiscall CVertList_Swap(CVertList *self, CVertList *other);
 /* the "LFVF" block */

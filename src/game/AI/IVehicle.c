@@ -334,12 +334,6 @@ byte __thiscall cAIVehicle_NeedRepos(cAIVehicle *self) {
 	return 1;
 }
 
-void __thiscall cAIVehicle_ReposIfFar(cAIVehicle *self) {
-	if (cAIVehicle_NeedRepos(self)) {
-		cAIVehicle_Repos(self);
-	}
-}
-
 /* IN_ROUTE with Repos: the AI is put near the camera again; stopped if that fails */
 void __thiscall cAIVehicle_UpdateRoute(cAIVehicle *self) {
 	if (!self->base.repos) {
@@ -1125,15 +1119,6 @@ byte __thiscall cAIVehicle_PlaceOnTrack(cAIVehicle *ai, int type, const vec3_t *
 	AIV_StartTrack(self, 1, &np);
 	self->base.base.seen = 2;
 	return 1;
-}
-
-/* on the track at its first node, on the way to the second */
-byte __thiscall cAIVehicle_PlaceOnTrackStart(cAIVehicle *self, int track) {
-	vec3_t p;
-	CNodesTraffic *t = AIV_Indoor();
-
-	t->vftable->GetNode(t, &p, track, 0);
-	return cAIVehicle_PlaceOnTrack(self, self->trackType, &p, track, 1);
 }
 
 /* the state kept for after an event */

@@ -54,8 +54,6 @@ SD_SIZE(cCollisionGrid, 0x9c);
 
 /* a cell head: an empty ring (the constructor of new[]) */
 Nto1Node *__thiscall GridCell_ctor(Nto1Node *self);
-/* the vector deleting destructor of the cells: flags 2 the array, 1 frees it */
-void *__thiscall GridCell_VecDelDtor(Nto1Node *self, uint32_t flags);
 
 /* the grid is used as void * (the byte array of cWorld) */
 void *__thiscall Grid_ctor(void *grid);

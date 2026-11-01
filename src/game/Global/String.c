@@ -39,12 +39,6 @@ cString *__thiscall cString_ctor(cString *self) {
 	return self;
 }
 
-/* room for n characters (none for 0) */
-cString *__thiscall cString_ctorReserve(cString *self, int n) {
-	*self = n ? StrAlloc(n) : NULL;
-	return self;
-}
-
 /* a followed by b; the lengths only size the buffer, both strings are copied whole */
 cString *__thiscall cString_ctorConcat(cString *self, const char *a, int alen, const char *b, int blen) {
 	*self = alen + blen ? StrAlloc(alen + blen) : NULL;
@@ -71,12 +65,6 @@ void __thiscall cString_SetN(cString *self, const char *s, int n) {
 cString *__thiscall cString_ctorStr(cString *self, const char *s) {
 	*self = NULL;
 	cString_SetN(self, s, StrLen(s));
-	return self;
-}
-
-cString *__thiscall cString_ctorCopy(cString *self, const cString *src) {
-	*self = NULL;
-	cString_SetN(self, *src, StrLen(*src));
 	return self;
 }
 
@@ -137,66 +125,6 @@ cString *__thiscall cString_AppendStr(cString *self, const char *s) {
 	return self;
 }
 
-cString *__thiscall cString_AppendC(cString *self, const cString *s) {
-	cString_Append(self, *s, StrLen(*s));
-	return self;
-}
-
-cString *__thiscall cString_AppendChar(cString *self, char c) {
-	char s[2] = { c, 0 };
-	cString_Append(self, s, 1);
-	return self;
-}
-
-/* operator+ of cString and char *, the result in *out */
-cString *cString_Add(cString *out, const cString *a, const cString *b) {
-	return cString_ctorConcat(out, *a, StrLen(*a), *b, StrLen(*b));
-}
-
-cString *cString_AddStr(cString *out, const cString *a, const char *b) {
-	return cString_ctorConcat(out, *a, StrLen(*a), b, StrLen(b));
-}
-
-cString *cString_StrAdd(cString *out, const char *a, const cString *b) {
-	return cString_ctorConcat(out, a, StrLen(a), *b, StrLen(*b));
-}
-
-/* the first sub in the string and its position counted from 1 */
-char *__thiscall cString_Find(const cString *self, const char *sub, int *pos) {
-	if (!*self || !sub) {
-		return NULL;
-	}
-	char *p = strstr(*self, sub);
-	*pos = (int)(p - *self) + 1;
-	return p;
-}
-
-/* the first (Left) or last (Right) n characters into *out, through the exe's strncat like the original */
-static cString *StrPart(const cString *self, cString *out, int n, int right) {
-	int len = StrLen(*self);
-	*out = NULL;
-	if (n < 0) {
-		n = 0;
-	} else {
-		if (len < n) {
-			n = len;
-		}
-		if (n) {
-			*out = StrAlloc(n);
-		}
-	}
-	crt_strncat(*out, right ? *self - n + len : *self, n);
-	return out;
-}
-
-cString *__thiscall cString_Left(const cString *self, cString *out, int n) {
-	return StrPart(self, out, n, 0);
-}
-
-cString *__thiscall cString_Right(const cString *self, cString *out, int n) {
-	return StrPart(self, out, n, 1);
-}
-
 static byte StrIEq(const char *a, const char *b) {
 	if (a == b) {
 		return 1;
@@ -213,10 +141,6 @@ byte cString_Eq(const cString *a, const cString *b) {
 
 byte cString_EqStr(const cString *a, const char *b) {
 	return StrIEq(*a, b);
-}
-
-byte cString_StrEq(const char *a, const cString *b) {
-	return StrIEq(a, *b);
 }
 
 static int StrCmp(const char *a, const char *b) {

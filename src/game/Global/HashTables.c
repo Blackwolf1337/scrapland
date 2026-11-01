@@ -11,14 +11,3 @@
 
 HASHTABLE_STR(WorldStrTable, cWorldStrItem)
 HASHTABLE_STR(SoundStrTable, cSoundStrItem)
-
-/* Get with "Sound not found" in the log when warn is set */
-byte __thiscall SoundStrTable_GetWarn(HashTable *self, const char *key, cSoundTableValue *out, byte warn) {
-	if (SoundStrTable_Get(self, key, out)) {
-		return 1;
-	}
-	if (warn) {
-		Con_Warnf("Sound not found: %s\n", key);
-	}
-	return 0;
-}

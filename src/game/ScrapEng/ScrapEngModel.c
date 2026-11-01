@@ -504,13 +504,6 @@ void __thiscall CGameModel_SetAnim(CGameModel *self, int i, uint32_t chan, int u
 	self->Model->animate = 0;
 }
 
-void __thiscall CGameModel_SetAnimName(CGameModel *self, const char *name, uint32_t chan, int unused) {
-	GM_CHECK(self);
-	(void)unused;
-	CModel_SetAnimName(self->Model, name, chan);
-	self->Model->animate = 0;
-}
-
 void __fastcall CGameModel_StopAnims(CGameModel *self) {
 	GM_CHECK(self);
 	for (uint32_t i = 0; i < 4; i++) {

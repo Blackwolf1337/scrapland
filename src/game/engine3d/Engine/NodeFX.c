@@ -80,12 +80,6 @@ CNodeFX_Wheel *__thiscall CNodeFX_Wheel_ctorCopy(CNodeFX_Wheel *self, const CNod
 	return self;
 }
 
-CNodeFX_Wheel *__fastcall CNodeFX_Wheel_ctor0(CNodeFX_Wheel *self) {
-	self->vftable = CNODEFX_WHEEL_VFTABLE;
-	CHECK(0);
-	return self;
-}
-
 CNodeFX_Wheel *__thiscall CNodeFX_Wheel_Delete(CNodeFX_Wheel *self, byte flags) {
 	self->vftable = INODEFX_VFTABLE;
 	if (flags & 1) {
@@ -238,12 +232,6 @@ CNodeFX_Spring *__thiscall CNodeFX_Spring_ctorCopy(CNodeFX_Spring *self, const C
 	self->torsion = src->torsion;
 	self->damp2 = src->damp2;
 	Spring_Clear(self);
-	return self;
-}
-
-CNodeFX_Spring *__fastcall CNodeFX_Spring_ctor0(CNodeFX_Spring *self) {
-	self->vftable = CNODEFX_SPRING_VFTABLE;
-	CHECK(0);
 	return self;
 }
 

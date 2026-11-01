@@ -169,10 +169,6 @@ static void cMemPool_PrintValues(cMemPool *self) {
 	Con_Printf("//////////////////////////////////////\n\n\n\n\n");
 }
 
-void __fastcall cMemPool_Print(cMemPool *self) {
-	cMemPool_PrintValues(self);
-}
-
 void MemPools_PrintAll(void) {
 	for (cMemPool *p = g_MemPools; p; p = p->next) {
 		cMemPool_PrintValues(p);

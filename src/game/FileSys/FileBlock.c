@@ -87,13 +87,6 @@ int __thiscall cFileBlock_Open(cFileBlock *self, const char *filename, uint32_t 
 	return 1;
 }
 
-cFileBlock *__thiscall cFileBlock_ctorOpen(cFileBlock *self, const char *filename, uint32_t mode) {
-	self->f = NULL;
-	self->block = NULL;
-	cFileBlock_Open(self, filename, mode, 0);
-	return self;
-}
-
 int __fastcall cFileBlock_Close(cFileBlock *self) {
 	CHECK(!self->block);
 	if (!self->f) {
@@ -136,10 +129,6 @@ int __thiscall cFileBlock_Write(cFileBlock *self, const void *mem, int size) {
 		return cFileBlock_Error(self, "");
 	}
 	return 1;
-}
-
-int __thiscall cFileBlock_Read4(cFileBlock *self, void *dst) {
-	return cFileBlock_Read(self, dst, 4);
 }
 
 int __fastcall cFileBlock_ReadInt(cFileBlock *self) {
@@ -198,37 +187,6 @@ int __thiscall cFileBlock_CloseBlockWrite(cFileBlock *self, const char *id) {
 			cFileBlock_PopBlock(self, id);
 			return 1;
 		}
-	}
-	return cFileBlock_Error(self, "");
-}
-
-/* a string written with WriteString (size with the terminator) into str of nbytes */
-int __thiscall cFileBlock_ReadString(cFileBlock *self, char *str, uint32_t nbytes) {
-	uint32_t size;
-
-	CHECK(str && (int)nbytes > 0);
-	if (cFileBlock_Read(self, &size, sizeof(size))) {
-		if (!size) {
-			*str = 0;
-			return 1;
-		}
-		CHECK(size <= nbytes);
-		if (cFileBlock_Read(self, str, size)) {
-			CHECK(str[size - 1] == 0);
-			return 1;
-		}
-	}
-	return cFileBlock_Error(self, "");
-}
-
-int __thiscall cFileBlock_WriteString(cFileBlock *self, const char *str) {
-	int len = 0;
-	CHECK(str);
-	if (str) {
-		len = (int)strlen(str) + 1;
-	}
-	if (cFileBlock_Write(self, &len, sizeof(len)) && cFileBlock_Write(self, str, len)) {
-		return 1;
 	}
 	return cFileBlock_Error(self, "");
 }

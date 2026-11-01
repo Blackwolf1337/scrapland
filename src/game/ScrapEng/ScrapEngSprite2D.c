@@ -245,11 +245,6 @@ void __thiscall CPsaImage_Load(CPsaImage *self, const char *name, const char *op
 	}
 }
 
-/* the plain loads of the sheet name, blend mode 3 */
-void __thiscall CPsaImage_LoadOpac(CPsaImage *self, const char *name, const char *opac, uint32_t flags) {
-	CPsaImage_Load(self, name, opac, 3, flags);
-}
-
 void __thiscall CPsaImage_LoadName(CPsaImage *self, const char *name, uint32_t flags) {
 	CPsaImage_Load(self, name, NULL, 3, flags);
 }

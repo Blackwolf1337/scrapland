@@ -78,8 +78,6 @@ void Debug_Line(int x0, int y0, int x1, int y1, uint32_t color, int width);
 const char *Err_Unregister(int code);
 const char *Err_Str(int code);
 int Err_Register(const char *text);	/* the new code or -1 */
-void Err_Code(int code, int fatal);
-[[noreturn]] void Err_Exit(const char *text);	/* to stderr, then exit(-1) */
 void Err_Printf(int fatal, const char *fmt, ...);
 void Err_Report(int code, int fatal, const char *fmt, ...);
 void Err_VReport(int code, int fatal, const char *fmt, va_list ap);
@@ -159,7 +157,6 @@ int DataFile_FindKey(cDataFile *dat, const char *key, int from, char *value, int
 void DataFile_SectionName(char *dest, const char *header, int size);
 void DataFile_Classify(cDataFile *dat, int idx);
 void DataFile_Delete(cDataFile *dat, int idx);
-void DataFile_Error(int code, int fatal, cDataFile *dat, int idx);	/* Err_Report with the line */
 int DataFile_Write(cDataFile *dat, void *f);	/* FILE of the exe's CRT; 0 or -1 */
 void DataFile_Free(cDataFile *dat);
 cDataFile *DataFile_New(void);
@@ -212,8 +209,6 @@ void Pal16_ToRGB(byte *r, byte *g, byte *b, uint16_t c);
 int Pal_Nearest(const byte *pal, int first, int last, int r, int g, int b);
 /* the 768 bytes of a 6 bit palette file into 256 colors */
 void Pal_Load(const char *name, byte *dest);
-/* the same as a new 16 bit palette; CHECK(dest && !*dest) */
-void Pal16_Load(const char *name, void **dest);
 /* num colors of src from i2 to dst at i1; CHECK(num > 0 && i1 > 0 && i2 > 0) */
 void Pal_Copy(byte *dst, int i1, const byte *src, int i2, int num);
 void *Pal_ToPal16(const byte *pal, int num);
@@ -251,16 +246,8 @@ SD_SIZE(PcxHeader, 0x80);
 
 /* the pixels from src into dest (planes interleaved), the end of the data read */
 const byte *Pcx_Decode(byte *dest, const byte *src, const PcxHeader *hdr);
-/* the same from a FILE of the exe's CRT: 0, -1 at the end of the file */
-int Pcx_DecodeFile(byte *dest, void *f, const PcxHeader *hdr);
 /* a 24 bit image (3 bytes a pixel) to f as 3 planes: 0, -1 when a write fails */
 int Pcx_Write24(void *f, const byte *mem, int lx, int ly);
-/* an 8 bit image with the palette after it (pal 768 6 bit bytes, or 256 colors of 4 bytes with pal4): 0 or -1 */
-int Pcx_Write8(void *f, const byte *mem, int lx, int ly, const byte *pal, int pal4);
-/* 0, -1 with errno */
-int Pcx_ReadHeader(void *f, PcxHeader *hdr);
-/* the palette after the image (12, then num colors of 3 bytes) into 4 byte colors; 0 also without one, -1 */
-int Pcx_ReadPal(byte *dest, void *f, int num);
 /* 0 for an 8 bit PCX (lx and ly set), else -1 with errno g_ErrPcxFormat */
 int Pcx_CheckHeader(PcxHeader *hdr);
 

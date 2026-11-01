@@ -246,7 +246,6 @@ void __fastcall cAIVehicleGroup_ResetRepos(cAIVehicleGroup *self);
 /* the base class cAIEntityGroup: ai.h */
 
 /* ---- AI/AIVehicleShootControl.cpp (src/game/AI/IVehicleShootControl.c); the rest in aivehicle.h ---- */
-void __fastcall cAIVehicleShoot_dtor(cAIVehicleShoot *self);
 cAIVehicleShoot *__thiscall cAIVehicleShoot_Delete(cAIVehicleShoot *self, byte flags);
 byte __fastcall cAIVehicleShoot_CheckTarget(cAIVehicleShoot *self);
 byte __fastcall cAIVehicleShoot_CheckTargetCM(cAIVehicleShoot *self);

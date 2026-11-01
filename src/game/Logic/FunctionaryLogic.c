@@ -448,11 +448,6 @@ void Functionary_FastEffect(cEntity *e) {
 	g_pSound->vftable->PlayAt(g_pSound, snd, pos, vol);
 }
 
-void __thiscall cFunctionaryLocalLogic_FastEffect(cFunctionaryLocalLogic *self, cEntity *e) {
-	(void)self;
-	Functionary_FastEffect(e);
-}
-
 /* the slow part: half the speed */
 void __thiscall cFunctionaryLocalLogic_SlowEffect(cFunctionaryLocalLogic *self, cEntity *e) {
 	(void)self;

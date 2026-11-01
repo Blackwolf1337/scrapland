@@ -84,8 +84,6 @@ SD_SIZE(quat_t, 16);
 /* Math/Matrix.cpp (src/game/Math/Matrix.c) */
 void __thiscall Matrix_Identity(matrix_t *self);
 matrix_t *__thiscall Matrix_Copy(matrix_t *self, const matrix_t *src);	/* two copies in the exe */
-matrix_t *__thiscall Matrix_Set(matrix_t *self, float m0, float m1, float m2, float m3, float m4, float m5, float m6,
-	float m7, float m8, float m9, float m10, float m11, float m12, float m13, float m14, float m15);
 matrix_t *__thiscall Matrix_FromFloats(matrix_t *self, const float *f);
 matrix_t *__thiscall Matrix_Mul(const matrix_t *self, matrix_t *out, const matrix_t *other);	/* out = self * other */
 vec3_t *__thiscall Matrix_GetEuler(const matrix_t *self, vec3_t *out);

@@ -170,10 +170,6 @@ int TXF_Load(const char *name, CBmpFlt *dest, int flags, void *extra, int nbytes
 	return TXF_LoadKind(&txfRgba, name, dest, extra, nbytes);
 }
 
-int TXF_Save(const char *name, const CBmpFlt *orig, byte flags, const void *extra, int nbytes) {
-	return TXF_SaveKind(&txfRgba, name, orig, flags, extra, nbytes);
-}
-
 void __thiscall CBmpFlt_Fill(CBmpFlt *self, const float *color) {
 	BmpFlt_Fill(self, color, RGBA);
 }
@@ -263,10 +259,6 @@ float *__thiscall CBmpFlt2_Pixel(const CBmpFlt2 *self, uint32_t x, uint32_t y) {
 int TXF2_Load(const char *name, CBmpFlt2 *dest, int flags, void *extra, int nbytes) {
 	(void)flags;
 	return TXF_LoadKind(&txfRgb, name, dest, extra, nbytes);
-}
-
-int TXF2_Save(const char *name, const CBmpFlt2 *orig, byte flags, const void *extra, int nbytes) {
-	return TXF_SaveKind(&txfRgb, name, orig, flags, extra, nbytes);
 }
 
 void __thiscall CBmpFlt2_Fill(CBmpFlt2 *self, const float *color) {

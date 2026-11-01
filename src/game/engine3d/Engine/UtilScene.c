@@ -615,12 +615,6 @@ CModel *Create_Model2(const char *name, const char *name2, uint32_t flags) {
 	return Create_Model(name, name2, &one, -1.0f, flags);
 }
 
-CModel *Create_Model4(const char *name, const char *name2, float threshold, uint32_t flags) {
-	vec3_t one = { 1.0f, 1.0f, 1.0f };
-
-	return Create_Model(name, name2, &one, threshold, flags);
-}
-
 int ModelList_CompareKey(const void *a, const void *b) {
 	const CModelList *la = *(CModelList *const *)a;
 	const CModelList *lb = *(CModelList *const *)b;

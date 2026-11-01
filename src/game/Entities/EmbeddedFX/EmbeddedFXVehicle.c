@@ -493,12 +493,6 @@ void __fastcall cFXVehicleSirens_Update(cFXVehicleSirens *self) {
 	self->lastTime = self->time;
 }
 
-void cFXVehicleSirens_RenderModel(void) {
-	if (CGameModel_IsLoaded(g_SirenModel)) {
-		CGameModel_RenderNow(g_SirenModel, 0);
-	}
-}
-
 /* ---- cEmbeddedFXVehicleProbe ---- */
 
 cEmbeddedFXVehicleProbe *__thiscall cEmbeddedFXVehicleProbe_ctor(cEmbeddedFXVehicleProbe *self,

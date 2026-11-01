@@ -38,23 +38,6 @@ Nto1Node *__thiscall GridCell_ctor(Nto1Node *self) {
 	return self;
 }
 
-void *__thiscall GridCell_VecDelDtor(Nto1Node *self, uint32_t flags) {
-	if (flags & 2) {
-		uint32_t *mem = (uint32_t *)self - 1;
-
-		crt_eh_vector_dtor(self, sizeof(Nto1Node), *mem, GAME_FUNC(Nto1Node_dtor, NTO1NODE_DTOR));
-		if (flags & 1) {
-			operator_delete_array(mem);
-		}
-		return mem;
-	}
-	Nto1Node_Done(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(Nto1Node));
-	}
-	return self;
-}
-
 void *__thiscall Grid_ctor(void *grid) {
 	cCollisionGrid *g = grid;
 

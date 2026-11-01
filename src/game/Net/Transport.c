@@ -308,12 +308,6 @@ int Transport_Startup(void) {
 	return Wsock_setsockopt(g_NetSocket, NET_SOL_SOCKET, NET_SO_BROADCAST, &bcast, 4) != -1;
 }
 
-int Transport_WSAStartup(void) {
-	byte wsa[400];
-
-	return Wsock_WSAStartup(0x101, wsa);
-}
-
 int Net_PingInetSvrs(void) {
 	if (!g_NetMasterOn || g_NetMode != NETMODE_BROWSER) {
 		return 0;

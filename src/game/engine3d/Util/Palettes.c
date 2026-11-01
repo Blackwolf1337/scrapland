@@ -71,14 +71,6 @@ void Pal_Load(const char *name, byte *dest) {
 	}
 }
 
-void Pal16_Load(const char *name, void **dest) {
-	byte pal[0x400];
-
-	CHECK(dest && !*dest);
-	Pal_Load(name, pal);
-	*dest = Pal_ToPal16(pal, 0x100);
-}
-
 void Pal_Copy(byte *dst, int i1, const byte *src, int i2, int num) {
 	CHECK(dst && src);
 	CHECK(num > 0 && i2 > 0 && i1 > 0);

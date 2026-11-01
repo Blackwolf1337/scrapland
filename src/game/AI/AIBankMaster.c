@@ -17,11 +17,6 @@ void *__thiscall cAIBankMaster_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-void __fastcall cAIBankMaster_dtor(cAIBankMaster *self) {
-	self->base.vftable = CAIBANKMASTER_VFTABLE;
-	cAIChar_dtor(&self->base);
-}
-
 cAIBankMaster *__thiscall cAIBankMaster_Delete(cAIBankMaster *self, byte flags) {
 	self->base.vftable = CAIBANKMASTER_VFTABLE;
 	cAIChar_dtor(&self->base);

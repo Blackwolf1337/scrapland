@@ -79,10 +79,6 @@ void *Mem_Calloc(uint32_t size) {
 	return p;
 }
 
-uint32_t Mem_Size(void *p) {
-	return p ? (uint32_t)crt_msize(p) : 0;
-}
-
 void *Mem_Realloc(void *p, uint32_t size) {
 	if (p) {
 		Mem_Count(1, (int)crt_msize(p));

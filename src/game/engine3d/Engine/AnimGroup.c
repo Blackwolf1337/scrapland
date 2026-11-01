@@ -51,15 +51,6 @@ CAnimGroups *__fastcall CAnimGroups_ctor(CAnimGroups *self) {
 	return self;
 }
 
-CAnimGroup *__fastcall CAnimGroup_ctor(CAnimGroup *self) {
-	self->name = NULL;
-	self->events = NULL;
-	CAnimCtrl_ctor(&self->ctrl);
-	self->Anim = NULL;
-	self->morph = NULL;
-	return self;
-}
-
 void __fastcall CAnimGroups_Clear(CAnimGroups *self) {
 	for (int i = 0; i < MAX_ANIMGROUPS; i++) {
 		CAnimGroup *g = self->g[i];

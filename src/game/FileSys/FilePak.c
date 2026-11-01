@@ -372,10 +372,6 @@ byte Pack_GetFileInfo(const char *name, char *packName, int *offset, int *size) 
 	return 1;
 }
 
-void Pack_FullName(char *buf, int size, const char *name) {
-	Str_Printf(buf, size, "%s%s", g_PackNameStr, name);
-}
-
 /*
  * mounts name.packed and adds its files to the index (later packs win); 1 if it did. Without the pack and without other packs
  * a file list is recorded instead: dir/filelist.2Bpack (name\filelist.2Bpack without dir), appended when the pack
@@ -596,10 +592,6 @@ int Pack_Extract(const char *dir) {
 
 /* building a pack: the files of filelist.2Bpack, then by mode files found below the directory */
 
-void Pack_NormalizeName(char *name) {
-	PackName_Normalize(name);
-}
-
 /*
  * a file of the walk for Pack_Build. Mode 2 adds everything (2D/ also as .dds), 3 Python files, 2D/Loading/,
  * Sounds/Stream/ and Music/, 4 Sounds/Voices/; other modes everything but .dds. Saves, models, ini, scc, html and
@@ -787,20 +779,6 @@ void Pack_Build(const char *dir, const char *outName, int mode) {
 		crt_exit(-1);
 	}
 	cFile_dtor(&in);
-}
-
-/* the directory of a file list (.../filelist.2Bpack) as a pack, mode 2 */
-void Pack_BuildFromList(const char *list) {
-	char dir[0x100];
-
-	size_t n = strlen(list) - (sizeof(PACK_LIST) - 1) - 1;
-	/* the original copies first and checks after */
-	if (n >= sizeof(dir)) {
-		crt_report_rangecheckfailure();
-	}
-	memcpy(dir, list, n);
-	dir[n] = 0;
-	Pack_Build(dir, NULL, 2);
 }
 
 /* the duplicate check of Pack_CheckDuplicates: base names without extension */

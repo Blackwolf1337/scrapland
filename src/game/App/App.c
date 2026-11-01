@@ -927,12 +927,6 @@ byte __thiscall CApp_RunApp(CApp *self, const char *exe, const char *cmdLine, in
 	return 0;
 }
 
-/* the VirtualAlloc block of the constructor (static initializer) */
-void CApp_SFINIT0(void) {
-	g_AppBlock = exe_VirtualAlloc(NULL, 0x10, 0x1000, 4);
-	g_AppBlock[3] = 0x16;
-}
-
 static void App_NewWorld(void) {
 	cWorld *w = operator_new(0x225c);
 	g_pWorld = w ? cWorld_ctor(w) : NULL;
@@ -948,12 +942,6 @@ void CApp_SFLB_0(CApp *self) {
 	App_NewWorld();
 	Scorer_Init();
 	Con_Print(0, "Scorer initialized.\n", 0);
-}
-
-/* no callers: the world alone */
-void CApp_SFLB_1(CApp *self) {
-	(void)self;
-	App_NewWorld();
 }
 
 /* vf10 */

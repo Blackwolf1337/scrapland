@@ -87,15 +87,6 @@ int Err_Register(const char *text) {
 	return -1;
 }
 
-void Err_Code(int code, int fatal) {
-	Err_Report(code, fatal, ".");
-}
-
-void Err_Exit(const char *text) {
-	crt_fprintf(crt_iob_func(2), "\r\nError cr\xa1tico: %s.", text);
-	crt_exit(-1);
-}
-
 void Err_Printf(int fatal, const char *fmt, ...) {
 	va_list ap;
 

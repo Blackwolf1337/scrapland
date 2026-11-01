@@ -410,8 +410,6 @@ byte __thiscall CNodesWorld_TestPath(CNodesWorld *self, const vec3_t *a, const v
  * flat: the other side of the pairs); self not used */
 byte __thiscall CNodesWorld_TestCorner(CNodesWorld *self, const vec3_t *a, const vec3_t *b, const vec3_t *c, float r,
 	float r2, byte flat, cNWSegList *debug);
-/* the node of the generation buffer seen from the point */
-byte __thiscall CNodesWorld_BufferPosSeen(CNodesWorld *self, const vec3_t *from, int index);
 /* the analysis of a segment of the level: 1 when it is free (hit = b, the hit of tri FLT_MAX; outdoors 0 straight
  * up) or it hits a solid triangle facing it (hitFrom and hitTo kept unless b3b0) */
 byte __thiscall CNodesWorld_TestSurface(CNodesWorld *self, const vec3_t *a, const vec3_t *b, vec3_t *hit,

@@ -1015,11 +1015,6 @@ int Engine_SetOption(int opt, int value) {
 	return RenderMode(opt, value, 1);
 }
 
-byte Engine_Unsupported(void) {
-	CheckFailed("0", __FILE__, __TIMESTAMP__, __LINE__);
-	return 0;
-}
-
 int Eng_RenderTargetBegin(const char *name) {
 	return RenderTarget_Begin(name);
 }

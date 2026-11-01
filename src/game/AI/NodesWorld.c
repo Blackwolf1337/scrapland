@@ -519,12 +519,6 @@ byte __thiscall CNodesWorld_TestCorner(CNodesWorld *self, const vec3_t *a, const
 	return NW_CornerSide(b, &t1, &t0, r, debug);
 }
 
-byte __thiscall CNodesWorld_BufferPosSeen(CNodesWorld *self, const vec3_t *from, int index) {
-	vec3_t p;
-
-	return Engine_TestLine(from, self->sup.vftable->BufferPos(self, &p, index), NULL, NULL) == 0;
-}
-
 byte __thiscall CNodesWorld_TestSurface(CNodesWorld *self, const vec3_t *a, const vec3_t *b, vec3_t *hit,
 	CCollisionTri *tri) {
 	vec3_t n, v;

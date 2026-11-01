@@ -1275,42 +1275,6 @@ void __thiscall CVertList_EnvMapUV(CVertList *self, const matrix_t *world, const
 	}
 }
 
-static void VertList_RampUV(CVertList *self, int stride, int off, const matrix_t *r) {
-	float a = r->m[2], b = r->m[6], c = r->m[10];
-
-	for (int i = 0; i < self->nVert; i++) {
-		float *v = (float *)(self->pVert + i * stride);
-		v[off / 4 + 1] = 0.5f;
-		v[off / 4] = ((v[4] * b + v[3] * a + v[5] * c) * 0.95f + 1.0f) * 0.5f;
-	}
-}
-
-void __thiscall CVertList_LightRampUV(CVertList *self, const matrix_t *world) {
-	matrix_t rx, ry, rot, r;
-	D3DLight light;
-	int on;
-
-	CHECK(self->pVert);
-	on = 0;
-	void *dev = g_Engine->device;
-	if (D3D_METHOD(dev, d3dGetLightEnable_t, D3DDEV_GETLIGHTENABLE)(dev, 0, &on) || !on) {
-		return;
-	}
-	dev = g_Engine->device;
-	D3D_METHOD(dev, d3dGetLight_t, D3DDEV_GETLIGHT)(dev, 0, &light);
-	const vec3_t *d = &light.Direction;
-	double len = __builtin_sqrt((double)(d->z * d->z + d->x * d->x));
-	Matrix_RotationX(&rx, -(float)Game_Atan2((double)d->y, len));
-	Matrix_RotationY(&ry, Game_Atan2F((double)d->x, (double)d->z));
-	rot = *Matrix_MulD3D(&r, &ry, &rx);
-	Matrix_MulTo(&r, world, &rot);
-	if (self->frmt == VERT_TEX1) {
-		VertList_RampUV(self, 0x20, 0x18, &r);
-	} else if (self->frmt == VERT_TEX2) {
-		VertList_RampUV(self, 0x28, 0x20, &r);
-	}
-}
-
 /* the D3D resources of the vertex lists: nothing to make or free (the buffers belong to the meshes) */
 void VertList_ReleaseD3D(void) {
 }

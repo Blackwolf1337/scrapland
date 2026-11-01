@@ -99,10 +99,8 @@ byte Portals_SetView(const PaintZone *zp);
 /* the sector under pos into *sector; whether it is seen (always without portals); name is not used */
 byte Sector_FindPos(const vec3_t *pos, int *sector, const char *name);
 const char *Sector_GetName(int sector);
-byte Sector_IsExterior(int sector);
 /* -1 is not */
 byte Sector_IsOutside(int sector);
-byte Sector_IsSky(int sector);
 byte Sector_IsVisible(int sector);
 /* the sector with node among its nodes (main: as its node) */
 CZone *Zone_FindNode(CNode3D *node, byte main);
@@ -112,7 +110,6 @@ int Sector_Find(const char *name);
 CZone *Sector_Get(uint32_t sector);
 int Sector_Num(void);
 /* the sector with node among its nodes, -1 */
-int Sector_OfZoneNode(CNode3D *node);
 void Sectors_FreeAll(void);
 
 /* the query of Engine/gety.cpp (src/game/engine3d/Engine/Gety.c): the highest floor point below y at x, z */

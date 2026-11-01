@@ -98,9 +98,6 @@ byte __thiscall AStarTable_Get(HashTable *self, int key, cAStarItem **out);
 /* the items freed, the slots kept */
 void __fastcall AStarTable_Clear(HashTable *self);
 void __fastcall AStarTable_dtor(HashTable *self);
-/* the same on the table of g_AStar */
-void AStar_AddInfo(int key, const cAStarInfo *v);
-byte AStar_GetInfo(int key, cAStarItem **out);
 
 /* ---- the search: CAStarSup with CAStar (CNodesWorld) and CAStar2D (CNodesWorld2D) ---- */
 

@@ -402,11 +402,6 @@ void RenderTarget_MakeMotionBlurMatTarget(void) {
 		RT_WHITE, RT_ATTRIB, 0, 2, 1, 0, 0);
 }
 
-void RenderTarget_MakeRadialBlurMat(void) {
-	g_RadialBlurMat = RT_MakeMat(g_RadialBlurMat, "Material_RadialBlurTarget (+shader:RadialBlurTarget)",
-		"bmp/radialmask.bmp", RT_ATTRIB, 0, 2, 1, 0, 0);
-}
-
 void RenderTarget_MakeSceneMatCopy(void) {
 	g_SceneMatCopy = RT_MakeMat(g_SceneMatCopy, "Material_SceneCopy", RT_WHITE, MAT_LOADTEX, 0, 2, 1, 0, 1);
 }

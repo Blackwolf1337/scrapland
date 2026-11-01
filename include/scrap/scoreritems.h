@@ -322,8 +322,6 @@ void __fastcall StrTable_Free(cStrTable *self);
 void __fastcall ByteTable_Free(cByteTable *self);
 char **__thiscall StrTable_At(cStrTable *self, uint32_t i);
 void __thiscall StrTable_Init(cStrTable *self, int num);
-/* the vector deleting destructor of cString: flags 2 an array of new[], 1 delete */
-cString *__thiscall cString_DeleteVec(cString *self, uint32_t flags);
 
 cButtonScorer *__fastcall cButtonScorer_ctor(cButtonScorer *self);
 void __fastcall cButtonScorer_dtor(cButtonScorer *self);

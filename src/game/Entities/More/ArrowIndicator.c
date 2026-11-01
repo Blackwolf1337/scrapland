@@ -809,12 +809,6 @@ byte __thiscall cArrowIndicator_VarS(cArrowIndicator *self, const char *name, ch
 	return 0;
 }
 
-void __fastcall cArrowIndicator_Reload(cArrowIndicator *self) {
-	if (self->mission && CGameModel_IsLoaded(self->mission)) {
-		cArrowIndicator_LoadMission(self, Arrow_MissionName(self));
-	}
-}
-
 void MissionArrows_Switch(const char *on, const char *off) {
 	cEntity *e = cWorld_GetFirstEntity(g_pWorld);
 
