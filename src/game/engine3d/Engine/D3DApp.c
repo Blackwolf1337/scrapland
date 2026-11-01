@@ -440,8 +440,6 @@ int __thiscall CD3DApp_UserSelectNewDevice(CD3DApplication *self) {
 #define D3DCREATE_MIXED_VERTEXPROCESSING 0x80
 #define D3DCREATE_PUREDEVICE 0x10
 
-#define D3DAPP_STATS 90
-
 #define g_D3DAppFrames GAME_GLOBAL(uint32_t, g_D3DAppFrames, 0x4b1c38)
 #define g_D3DAppLastTime GAME_GLOBAL(float, g_D3DAppLastTime, 0x4b1c34)
 
@@ -894,26 +892,26 @@ int __thiscall CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 		self->createFlags = mode->dwBehavior;
 		char *stats = self->deviceStats;
 		if (dev->DeviceType == D3DDEVTYPE_REF) {
-			Str_Copy(stats, "REF", D3DAPP_STATS);
+			Str_Copy(stats, "REF", sizeof(self->deviceStats));
 		} else if (dev->DeviceType == D3DDEVTYPE_HAL) {
-			Str_Copy(stats, "HAL", D3DAPP_STATS);
+			Str_Copy(stats, "HAL", sizeof(self->deviceStats));
 		} else if (dev->DeviceType == D3DDEVTYPE_SW) {
-			Str_Copy(stats, "SW", D3DAPP_STATS);
+			Str_Copy(stats, "SW", sizeof(self->deviceStats));
 		}
 		uint32_t b = mode->dwBehavior;
 		int hal = dev->DeviceType == D3DDEVTYPE_HAL;
 		if ((b & 0x50) == 0x50) {
-			D3DApp_Cat(stats, D3DAPP_STATS, hal ? " (pure hw vp)" : " (simulated pure hw vp)");
+			D3DApp_Cat(stats, sizeof(self->deviceStats), hal ? " (pure hw vp)" : " (simulated pure hw vp)");
 		} else if (b & D3DCREATE_HARDWARE_VERTEXPROCESSING) {
-			D3DApp_Cat(stats, D3DAPP_STATS, hal ? " (hw vp)" : " (simulated hw vp)");
+			D3DApp_Cat(stats, sizeof(self->deviceStats), hal ? " (hw vp)" : " (simulated hw vp)");
 		} else if (b & D3DCREATE_MIXED_VERTEXPROCESSING) {
-			D3DApp_Cat(stats, D3DAPP_STATS, hal ? " (mixed vp)" : " (simulated mixed vp)");
+			D3DApp_Cat(stats, sizeof(self->deviceStats), hal ? " (mixed vp)" : " (simulated mixed vp)");
 		} else if (b & D3DCREATE_SOFTWARE_VERTEXPROCESSING) {
-			D3DApp_Cat(stats, D3DAPP_STATS, " (sw vp)");
+			D3DApp_Cat(stats, sizeof(self->deviceStats), " (sw vp)");
 		}
 		if (dev->DeviceType == D3DDEVTYPE_HAL) {
-			D3DApp_Cat(stats, D3DAPP_STATS, ": ");
-			D3DApp_Cat(stats, D3DAPP_STATS, ad->id.Description);
+			D3DApp_Cat(stats, sizeof(self->deviceStats), ": ");
+			D3DApp_Cat(stats, sizeof(self->deviceStats), ad->id.Description);
 		}
 		CD3DApp_UpdateBackBufferDesc(self);
 		hr = self->vftable->InitDeviceObjects(self);
@@ -1098,7 +1096,9 @@ static void D3DApp_FrameStats(CD3DApplication *self) {
 	D3DDisplayMode mode;
 	void *d3d = self->d3d;
 	D3D_METHOD(d3d, d3dGetAdapterDisplayMode_t, D3D8_GETADAPTERDISPLAYMODE)(d3d, self->adapter, &mode);
-	Bprintf(self->frameStats, D3DAPP_STATS, "%.02f fps (%dx%dx%d)", (double)self->fps,
+	/* differs from the original on purpose: bounded by the 42 bytes of frameStats, the original used 90 and could
+	 * write over devId */
+	Bprintf(self->frameStats, sizeof(self->frameStats), "%.02f fps (%dx%dx%d)", (double)self->fps,
 		self->backBufferDesc.Width, self->backBufferDesc.Height, mode.Format == D3DFMT_X8R8G8B8 ? 32 : 16);
 	if (!self->useDepthBuffer) {
 		return;
@@ -1128,7 +1128,7 @@ static void D3DApp_FrameStats(CD3DApplication *self) {
 	default:
 		return;
 	}
-	D3DApp_Cat(self->frameStats, D3DAPP_STATS, s);
+	D3DApp_Cat(self->frameStats, sizeof(self->frameStats), s);
 }
 
 /* a lost device reset when it can be; the scene moved (while the time runs or for a single step) and drawn */
