@@ -136,7 +136,7 @@ void __thiscall cWalkCharEntity_ActionTick(cEntity *self, float dt) {
 		}
 	}
 	if (!w->control.act3) {
-		if (!w->control.act && w->control.act2 && !w->control.prevAct2 && cWalkCharEntity_CanActOnVictim(self, 0)) {
+		if (!w->control.act && w->control.act2 && !w->control.prevAct2 && cWalkCharEntity_CanPossess(self, 0)) {
 			cPy_Function_AddParamS(&WCE_Class(w)->possessionPress, self->name);
 			cActClass *cls = WCE_Class(w);
 			cPy_Function_AddParamS(&cls->possessionPress, Nto1Node_TargetName(&w->victim));
@@ -260,7 +260,7 @@ void __thiscall cWalkCharEntity_UpdateViewLock(cEntity *self, float dt) {
 	Float_Approach(&w->viewLockF, target, dt + dt);
 }
 
-byte __thiscall cWalkCharEntity_CanActOnVictim(cEntity *self, byte checkClass) {
+byte __thiscall cWalkCharEntity_CanPossess(cEntity *self, byte checkClass) {
 	cWalkCharEntity *w = WChar(self);
 
 	if (!(0.0f >= w->energyUsed)) {
@@ -282,7 +282,7 @@ byte __thiscall cWalkCharEntity_CanActOnVictim(cEntity *self, byte checkClass) {
 	return 1;
 }
 
-void __fastcall cWalkCharEntity_Unlink3e8(cEntity *self) {
+void __fastcall cWalkCharEntity_UnlinkCollide(cEntity *self) {
 	Nto1Node_UnlinkChecked(&WChar(self)->collide);
 }
 
@@ -1556,7 +1556,7 @@ byte __thiscall cWalkCharEntity_VarS(cEntity *self, const char *name, char **s, 
 			return 1;
 		}
 		if (!**s) {
-			cWalkCharEntity_Unlink3e8(self);
+			cWalkCharEntity_UnlinkCollide(self);
 			return 1;
 		}
 		return 0;

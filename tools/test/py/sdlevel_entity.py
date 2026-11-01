@@ -405,7 +405,7 @@ check('cMissileEntity_Fall z < 0', lambda: (SDTest.Call('cMissileEntity_Fall', '
 SDTest.Call('crt_srand', 'vi', 7)
 for k in (1.0, 0.5, 4.0, -2.0):
 	check('cMissileEntity_Wobble(%s)' % fmt(k), lambda k=k: (SDTest.Call('cMissileEntity_Wobble', 'tvif', ntm, k), ntmfields(ntm)))
-check('cMissileEntity_ScaleWeapon', lambda: (SDTest.Call('cMissileEntity_ScaleWeapon', 'tvii', ntm, 0), ntmfields(ntm)))
+check('cMissileEntity_ScaleSwarmSound', lambda: (SDTest.Call('cMissileEntity_ScaleSwarmSound', 'tvii', ntm, 0), ntmfields(ntm)))
 # the touch list of the missiles (a global): the player goes in, the plain entity nt1 does not
 ntmhits = map(lambda i: ntstr(symva('g_MissileHits') + 0x80 * i), range(4))
 check('missile hits before', lambda: ntmhits)

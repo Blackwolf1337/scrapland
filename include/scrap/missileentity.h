@@ -81,7 +81,7 @@ typedef struct cMissileEntityVtbl {
 	void(__thiscall *RotStep)(cMissileEntity *self, float dt);			/* 0xe4 Cloud */
 	void(__thiscall *Fall)(cMissileEntity *self, float dt);			/* 0xe8 */
 	void(__thiscall *Swarm)(cMissileEntity *self, float dt);			/* 0xec vf59 */
-	void(__thiscall *ScaleWeapon)(cMissileEntity *self, float unused);		/* 0xf0 */
+	void(__thiscall *ScaleSwarmSound)(cMissileEntity *self, float unused);		/* 0xf0 */
 	void(__thiscall *LifeTick)(cMissileEntity *self);				/* 0xf4 */
 	void(__thiscall *UpdateVel)(cMissileEntity *self);				/* 0xf8 */
 	/* n bees less; with none left the missile hits. The second argument is not used, Tick passes its dt */
@@ -176,7 +176,7 @@ void __thiscall cMissileEntity_UpdateVel(cMissileEntity *self);
 void __thiscall cMissileEntity_SetVel(cMissileEntity *self, const vec3_t *vel);
 void __thiscall cMissileEntity_Update(cMissileEntity *self);
 /* the volume of the first sound scaled with the bees */
-void __thiscall cMissileEntity_ScaleWeapon(cMissileEntity *self, int unused);
+void __thiscall cMissileEntity_ScaleSwarmSound(cMissileEntity *self, int unused);
 byte __thiscall cMissileEntity_VarS(cMissileEntity *self, const char *name, char **s, int set);
 byte __thiscall cMissileEntity_VarV(cMissileEntity *self, const char *name, double *x, double *y, double *z, int set);
 

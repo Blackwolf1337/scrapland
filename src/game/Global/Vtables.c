@@ -1180,7 +1180,7 @@ void cMissileEntity_NetRead(void);
 void cMissileEntity_NetWrite(void);
 void cMissileEntity_OnDeath(void);
 void cMissileEntity_RotStep(void);
-void cMissileEntity_ScaleWeapon(void);
+void cMissileEntity_ScaleSwarmSound(void);
 void cMissileEntity_SetActive(void);
 void cMissileEntity_SetAng(void);
 void cMissileEntity_SetEmbeddedFX(void);
@@ -5128,7 +5128,7 @@ void (*const cMissileEntity_vftable[67])(void) SD_AT(0x3b2b24) = {
 	cMissileEntity_RotStep,	/* 0xe4 0x0f2aa0 */
 	cMissileEntity_Fall,	/* 0xe8 0x0f2df0 */
 	cMissileEntity_Swarm,	/* 0xec 0x0f59b0 */
-	cMissileEntity_ScaleWeapon,	/* 0xf0 0x0f5130 */
+	cMissileEntity_ScaleSwarmSound,	/* 0xf0 0x0f5130 */
 	cMissileEntity_LifeTick,	/* 0xf4 0x0f2bb0 */
 	cMissileEntity_UpdateVel,	/* 0xf8 0x0f4f20 */
 	cMissileEntity_Hit,	/* 0xfc 0x0f36f0 */

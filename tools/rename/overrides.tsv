@@ -362,3 +362,7 @@ name	cGenCharLocalLogic_GetI50	cGenCharLocalLogic_GetDefaultState	the field defa
 name	cGenCharLocalLogic_GetS54	cGenCharLocalLogic_GetDefaultTarget	the field defaultTarget
 name	cAICharControl_GetE4	cAICharControl_GetAvoidFound	the field avoidFound
 keep	NUM_IND		the indefinite NaN of the MSVC CRT, "1.#IND" (crtscan.c)
+name	cWalkCharEntity_CanActOnVictim	cWalkCharEntity_CanPossess	the victim is a WalkChar whose class canBePossessed
+name	cMissileEntity_ScaleWeapon	cMissileEntity_ScaleSwarmSound	the volume of the first sound by the number of bees
+name	ScaleWeapon	ScaleSwarmSound	the vtable slot of cMissileEntity_ScaleSwarmSound
+name	cWalkCharEntity_Unlink3e8	cWalkCharEntity_UnlinkCollide	unlinks the collide node (0x3e8)

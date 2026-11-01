@@ -3730,7 +3730,7 @@ SD_HOOK(cMissileEntity_SetTurnSpeed, 0x0f4f00, 20)
 SD_HOOK(cMissileEntity_UpdateVel, 0x0f4f20, 161)
 SD_HOOK(cMissileEntity_SetVel, 0x0f4fd0, 202)
 SD_HOOK(cMissileEntity_Update, 0x0f50a0, 136)
-SD_HOOK(cMissileEntity_ScaleWeapon, 0x0f5130, 125)
+SD_HOOK(cMissileEntity_ScaleSwarmSound, 0x0f5130, 125)
 SD_HOOK(cMissileEntity_VarS, 0x0f51b0, 1143)
 SD_HOOK(cMissileEntity_VarV, 0x0f5f20, 26)
 
@@ -5249,8 +5249,8 @@ SD_HOOK(cWalkCharEntity_Delete, 0x0d1490, 38)
 SD_HOOK(cWalkCharEntity_ActionTick, 0x0d14c0, 692)
 SD_HOOK(cWalkCharEntity_UpdateModel, 0x0d1780, 342)
 SD_HOOK(cWalkCharEntity_UpdateViewLock, 0x0d18e0, 169)
-SD_HOOK(cWalkCharEntity_CanActOnVictim, 0x0d1990, 115)
-SD_HOOK(cWalkCharEntity_Unlink3e8, 0x0d1a10, 70)
+SD_HOOK(cWalkCharEntity_CanPossess, 0x0d1990, 115)
+SD_HOOK(cWalkCharEntity_UnlinkCollide, 0x0d1a10, 70)
 
 /* module agent: Logic part 1 (AlarmStatus..Domination) (hooks below this line) */
 /* src/game/Logic/AlarmStatus.c */

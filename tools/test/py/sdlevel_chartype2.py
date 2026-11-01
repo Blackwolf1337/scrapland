@@ -191,13 +191,13 @@ if ct2w:
 	for ct2v in ((1, 0.25), (0, 0.25), (0, 0.5), (1, 0.1)):
 		check('CT2 cWalkCharEntity_UpdateViewLock%s' % fmt(ct2v), lambda v=ct2v: (ct2pokeb(ct2w + 0x4d4, v[0]),
 			SDTest.Call('cWalkCharEntity_UpdateViewLock', 'tvif', ct2w, v[1]), ct2bytes(ct2w, (0x4d4, 0x465)), ct2fl(ct2w + 0x4d8, 1)))
-	check('CT2 cWalkCharEntity_CanActOnVictim', lambda: (SDTest.Call('cWalkCharEntity_CanActOnVictim', 'tbii', ct2w, 0)[0],
-		SDTest.Call('cWalkCharEntity_CanActOnVictim', 'tbii', ct2w, 1)[0]))
+	check('CT2 cWalkCharEntity_CanPossess', lambda: (SDTest.Call('cWalkCharEntity_CanPossess', 'tbii', ct2w, 0)[0],
+		SDTest.Call('cWalkCharEntity_CanPossess', 'tbii', ct2w, 1)[0]))
 	ct2poke(ct2w + 0x234, ct2ctrl)
 	ct2poke(ct2w + 0x53c, ct2player)
 	for ct2v in (0.0, 0.5, -0.5):
-		check('CT2 cWalkCharEntity_CanActOnVictim %s' % fmt(ct2v), lambda v=ct2v: (ct2set(ct2w + 0x498, (v,)),
-			SDTest.Call('cWalkCharEntity_CanActOnVictim', 'tbii', ct2w, 0)[0], SDTest.Call('cWalkCharEntity_CanActOnVictim', 'tbii', ct2w, 1)[0]))
+		check('CT2 cWalkCharEntity_CanPossess %s' % fmt(ct2v), lambda v=ct2v: (ct2set(ct2w + 0x498, (v,)),
+			SDTest.Call('cWalkCharEntity_CanPossess', 'tbii', ct2w, 0)[0], SDTest.Call('cWalkCharEntity_CanPossess', 'tbii', ct2w, 1)[0]))
 	ct2poke(ct2w + 0x53c, 0)
 	for ct2v in ((1, 0.25), (0, 0.25)):
 		check('CT2 cWalkCharEntity_UpdateViewLock ctrl%s' % fmt(ct2v), lambda v=ct2v: (ct2pokeb(ct2w + 0x4d4, v[0]),
@@ -214,7 +214,7 @@ if ct2w:
 		ct2w, 1.0), ct2fl(ct2w + 0x498, 1)))
 	check('CT2 control SetTarget(player)', lambda: (SDTest.Call('cWalkCharControl_SetTarget', 'tvii', ct2w + 0x4ec, ct2player),
 		ct2i(ct2w + 0x518) == ct2player, SDTest.Call('cWalkCharControl_SetTarget', 'tvii', ct2w + 0x4ec, 0), ct2i(ct2w + 0x518)))
-	check('CT2 cWalkCharEntity_Unlink3e8', lambda: (SDTest.Call('cWalkCharEntity_Unlink3e8', 'tvi', ct2w), ct2i(ct2w + 0x3e8) == ct2w + 0x3e8,
+	check('CT2 cWalkCharEntity_UnlinkCollide', lambda: (SDTest.Call('cWalkCharEntity_UnlinkCollide', 'tvi', ct2w), ct2i(ct2w + 0x3e8) == ct2w + 0x3e8,
 		ct2i(ct2w + 0x3f0)))
 	check('CT2 WalkChar delete', lambda: ct2delete(ct2w))
 

@@ -728,7 +728,7 @@ void __thiscall cMonitorScorer_DrawMonitor(cMonitorScorer *self, int player, cEn
 		self->text[0] = 0;
 	}
 	if (isWalk && self->canPossessIndex > 0 && e && Entity_IsType(e, TYEN_WALKCHAR)) {
-		byte can = cWalkCharEntity_CanActOnVictim(target, 1);
+		byte can = cWalkCharEntity_CanPossess(target, 1);
 		int k = (int)(time * 1024.0f) % 512;
 		float f = (float)k * 0.001953125f;
 		float a;

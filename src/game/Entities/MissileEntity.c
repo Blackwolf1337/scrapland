@@ -613,7 +613,7 @@ void __thiscall cMissileEntity_Update(cMissileEntity *self) {
 }
 
 /* the volume of the first sound by the number of bees (the most seen is kept in its ints[0]) */
-void __thiscall cMissileEntity_ScaleWeapon(cMissileEntity *self, int unused) {
+void __thiscall cMissileEntity_ScaleSwarmSound(cMissileEntity *self, int unused) {
 	(void)unused;
 	cSndItem *snd = PtrArray_Get(&self->wl.obj.snd, 0);
 	if (!snd) {
@@ -1051,7 +1051,7 @@ void __thiscall cMissileEntity_Tick(cMissileEntity *self, float dt) {
 		self->radius = self->topRadius;
 		self->radiusGrow = 0.0f;
 	}
-	Missile_Vtbl(self)->ScaleWeapon(self, dt);
+	Missile_Vtbl(self)->ScaleSwarmSound(self, dt);
 	cWithLifeEntity_Tick(Missile_Ent(self), dt);
 }
 

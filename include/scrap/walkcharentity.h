@@ -160,9 +160,9 @@ void __thiscall cWalkCharEntity_UpdateModel(cEntity *self);
 void __thiscall cWalkCharEntity_UpdateViewLock(cEntity *self, float dt);
 /* the energy is full and the victim a WalkChar and no action of priority runs; with checkClass its class must
  * allow it */
-byte __thiscall cWalkCharEntity_CanActOnVictim(cEntity *self, byte checkClass);
+byte __thiscall cWalkCharEntity_CanPossess(cEntity *self, byte checkClass);
 /* the link node at 0x3e8 unlinked */
-void __fastcall cWalkCharEntity_Unlink3e8(cEntity *self);
+void __fastcall cWalkCharEntity_UnlinkCollide(cEntity *self);
 
 /* vf11: e (with life) pushes the character out of its collision sphere, in x and z unless it falls or flies */
 void __thiscall cWalkCharEntity_Touch(cEntity *self, cEntity *e, const vec3_t *point, const vec3_t *normal);
