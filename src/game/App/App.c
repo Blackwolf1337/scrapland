@@ -113,10 +113,10 @@ void __thiscall CApp_DoneGame(CApp *self) {
 	(void)self;
 	InputMaps_Clear();
 	Net_DoneBrowser();
-	if (!(port->flags & 1)) {
+	if (!(port->base.flags & 1)) {
 		port->value.i = port->def.i;
 	}
-	if (!(addr->flags & 1)) {
+	if (!(addr->base.flags & 1)) {
 		cString_Set(&addr->value.s, addr->def.s);
 	}
 	cWorld_Clear(g_pWorld);
@@ -677,7 +677,7 @@ int CApp_FrameResume(void) {
 	return 1;
 }
 
-void __thiscall CWinApp_LoadLevel(CWinApp *app, const char *level) {
+void __thiscall CWinApp_LoadLevel(CApp *app, const char *level) {
 	cString_Set(&app->newLevelPath, level);
 	app->loadPending = 1;
 	g_DrawNextFrame = 0;
@@ -696,20 +696,20 @@ static int App_MaxPlayers(void) {
 /* vf12: a -param[:ext] of the command line: an engine variable of the config file, build, dedicated or server */
 byte __thiscall CApp_ParseParam(CApp *self, const char *param, const char *ext) {
 	cGVar *v = GVar_Find(param);
-	if (v && (v->flags & 6)) {
+	if (v && (v->base.flags & 6)) {
 		CHECK(ext[0] != 0);
-		byte ro = v->flags & 1;
+		byte ro = v->base.flags & 1;
 		cGVar_SetFlag(v, 1, 0);
-		switch (v->type) {
+		switch (v->base.type) {
 		case 1:
-			if (v->flags & 1) {
+			if (v->base.flags & 1) {
 				return 0;
 			}
 			cString_Set(&v->value.s, ext);
 			return 1;
 		case 2: {
 			int i = crt_atoi(ext);
-			if (v->flags & 1) {
+			if (v->base.flags & 1) {
 				return 0;
 			}
 			v->value.i = i;
@@ -717,7 +717,7 @@ byte __thiscall CApp_ParseParam(CApp *self, const char *param, const char *ext) 
 		}
 		case 4: {
 			float f = (float)crt_atof(ext);
-			if (v->flags & 1) {
+			if (v->base.flags & 1) {
 				return 0;
 			}
 			v->value.f = f;

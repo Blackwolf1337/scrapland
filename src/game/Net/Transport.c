@@ -502,7 +502,7 @@ int Net_SendMasterString(const char *text) {
 }
 
 byte __thiscall cGVar_SetString(cGVar *self, const char *s) {
-	if (self->flags & 1) {
+	if (self->base.flags & 1) {
 		return 0;
 	}
 	cString_Set(&self->value.s, s);

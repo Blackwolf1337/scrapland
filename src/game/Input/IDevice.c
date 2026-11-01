@@ -81,7 +81,7 @@ cFuncGvarDevices *__thiscall cFuncGvarDevices_ctor(cFuncGvarDevices *self, cAbst
 
 	cGVar_ctor(v, dev->vftable->GetName(dev), 3, GAME_STR(str_3bc4b4, 0x3bc4b4));	/* "User Control definition" */
 	self->device = dev;
-	v->type = GVAR_FUNCTION;
+	v->base.type = GVAR_FUNCTION;
 	self->base.vftable = CFUNCGVARDEVICES_VFTABLE;
 	return self;
 }

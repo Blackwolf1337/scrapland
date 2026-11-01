@@ -269,7 +269,7 @@ PyObject *Scrap_Des(PyObject *self, PyObject *args) {
 		Con_Errorf("ERROR: '%s' global variable not defined\n", name);
 		return NULL;
 	}
-	return Py_BuildValue("s", v->description);
+	return Py_BuildValue("s", v->base.description);
 }
 
 /* DeselectProfile() : not on PC */
@@ -1046,7 +1046,7 @@ static PyObject *GVarValue(PyObject *args, int def, int checkLine) {
 		Con_Errorf("ERROR: '%s' global variable not defined\n", name);
 		return NULL;
 	}
-	switch (v->type) {
+	switch (v->base.type) {
 	case GVAR_STRING:
 		return Py_BuildValue("s", def ? v->def.s : v->value.s);
 	case GVAR_INT:
@@ -1088,18 +1088,18 @@ PyObject *Scrap_Set(PyObject *self, PyObject *args) {
 		if (!(v = GVar_Find(name))) {
 			goto notdefined;
 		}
-		if (v->type == GVAR_STRING) {
-			if (v->flags & 1) {
+		if (v->base.type == GVAR_STRING) {
+			if (v->base.flags & 1) {
 				goto readonly;
 			}
 			cString_Set(&v->value.s, s);
 			return Py_BuildValue("i", 1);
 		}
-		if (v->type != GVAR_SCRIPT_FUNCTION) {
+		if (v->base.type != GVAR_SCRIPT_FUNCTION) {
 			Con_Errorf("ERROR: '%s' global variable must be string\n", name);
 			return NULL;
 		}
-		if (v->flags & 1) {
+		if (v->base.flags & 1) {
 			goto readonly;
 		}
 		cPy_Function_SetFunc(GVar_Function(v), s);
@@ -1112,18 +1112,18 @@ PyObject *Scrap_Set(PyObject *self, PyObject *args) {
 	if (!(v = GVar_Find(name))) {
 		goto notdefined;
 	}
-	if (v->type == GVAR_INT) {
-		if (v->flags & 1) {
+	if (v->base.type == GVAR_INT) {
+		if (v->base.flags & 1) {
 			goto readonly;
 		}
 		v->value.i = (int)d;
 		return Py_BuildValue("i", 1);
 	}
-	if (v->type != GVAR_FLOAT) {
+	if (v->base.type != GVAR_FLOAT) {
 		Con_Errorf("ERROR: '%s' global variable must be integer or float\n", name);
 		return NULL;
 	}
-	if (v->flags & 1) {
+	if (v->base.flags & 1) {
 		goto readonly;
 	}
 	v->value.f = (float)d;

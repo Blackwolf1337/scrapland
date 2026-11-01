@@ -17,12 +17,12 @@ void App_GetConfigDir(char *buf, int size);	/* the directory of Scrap.cfg with i
 
 /* the base constructor: puts the variable in front of g_GVars; the derived class sets the type */
 cGVar *__thiscall cGVar_ctor(cGVar *self, const char *name, byte flags, const char *description) {
-	self->next = g_GVars;
-	self->name = (char *)name;
-	self->flags = flags;
-	self->description = (char *)description;
+	self->base.next = g_GVars;
+	self->base.name = (char *)name;
+	self->base.flags = flags;
+	self->base.description = (char *)description;
 	g_GVars = self;
-	self->type = 0;
+	self->base.type = 0;
 	return self;
 }
 
@@ -30,7 +30,7 @@ cGVar *GVar_InitInt(cGVar *v, const char *name, byte flags, const char *descript
 	cGVar_ctor(v, name, flags, description);
 	v->value.i = value;
 	v->def.i = value;
-	v->type = GVAR_INT;
+	v->base.type = GVAR_INT;
 	return v;
 }
 
@@ -39,7 +39,7 @@ cGVar *GVar_InitFloat(cGVar *v, const char *name, byte flags, const char *descri
 	cGVar_ctor(v, name, flags, description);
 	v->value.f = value;
 	v->def.f = value;
-	v->type = GVAR_FLOAT;
+	v->base.type = GVAR_FLOAT;
 	return v;
 }
 
@@ -49,7 +49,7 @@ cGVar *GVar_InitString(cGVar *v, const char *name, byte flags, const char *descr
 	cString_ctor(&v->def.s);
 	cString_Set(&v->value.s, value);
 	cString_Set(&v->def.s, value);
-	v->type = GVAR_STRING;
+	v->base.type = GVAR_STRING;
 	return v;
 }
 
@@ -63,19 +63,19 @@ cGVar *GVar_InitFunction(cGVar *v, const char *name, byte flags, const char *des
 	cGVar_ctor(v, name, flags, description);
 	cPy_Function_ctor(GVar_Function(v));
 	cPy_Function_SetFunc(GVar_Function(v), func);
-	v->type = GVAR_SCRIPT_FUNCTION;
+	v->base.type = GVAR_SCRIPT_FUNCTION;
 	return v;
 }
 
 /* sets or clears a flag bit; a read only variable takes only GVAR_READONLY */
 byte __thiscall cGVar_SetFlag(cGVar *self, byte bit, byte on) {
-	if (bit != GVAR_READONLY && (self->flags & GVAR_READONLY)) {
+	if (bit != GVAR_READONLY && (self->base.flags & GVAR_READONLY)) {
 		return 0;
 	}
 	if (on) {
-		self->flags |= bit;
+		self->base.flags |= bit;
 	} else {
-		self->flags &= ~bit;
+		self->base.flags &= ~bit;
 	}
 	return 1;
 }
@@ -91,14 +91,14 @@ void GVars_Init(void) {
 		t->caseSensitive = 0;
 	}
 	g_GVarTable = t;
-	for (cGVar *v = g_GVars; v; v = v->next) {
+	for (cGVar *v = g_GVars; v; v = v->base.next) {
 		CHECK(!g_GVarTable->locked);
-		uint32_t slot = HashTable_Slot(g_GVarTable, v->name);
-		if (!PtrTable_Find(g_GVarTable, v->name, slot)) {
-			PtrTable_Insert(g_GVarTable, v->name, slot, (void *const *)&v);
+		uint32_t slot = HashTable_Slot(g_GVarTable, v->base.name);
+		if (!PtrTable_Find(g_GVarTable, v->base.name, slot)) {
+			PtrTable_Insert(g_GVarTable, v->base.name, slot, (void *const *)&v);
 		} else {
-			Con_Warnf("CHashTable3: Symbol already defined: '%s'\n", v->name);
-			Con_FatalErrorf("InitGVars: variable already defined: %s", v->name);
+			Con_Warnf("CHashTable3: Symbol already defined: '%s'\n", v->base.name);
+			Con_FatalErrorf("InitGVars: variable already defined: %s", v->base.name);
 		}
 	}
 }
@@ -124,8 +124,8 @@ cGVar *GVar_Find(const char *name) {
 		return PtrTable_Value(g_GVarTable, name);
 	}
 	g_GVarTable = NULL;
-	for (cGVar *v = g_GVars; v; v = v->next) {
-		if (!crt_stricmp(v->name, name)) {
+	for (cGVar *v = g_GVars; v; v = v->base.next) {
+		if (!crt_stricmp(v->base.name, name)) {
 			return v;
 		}
 	}
@@ -137,13 +137,13 @@ const char *GVar_Complete(const char *prefix) {
 	cGVar *found = NULL;
 	int n = 0;
 
-	for (cGVar *v = g_GVars; v; v = v->next) {
-		if (!crt_strnicmp(v->name, prefix, strlen(prefix))) {
+	for (cGVar *v = g_GVars; v; v = v->base.next) {
+		if (!crt_strnicmp(v->base.name, prefix, strlen(prefix))) {
 			n++;
 			found = v;
 		}
 	}
-	return n == 1 ? found->name : NULL;
+	return n == 1 ? found->base.name : NULL;
 }
 
 /* "name = value # comment": cuts the comment, splits at '=' and trims both; 0 without '=' */
@@ -196,31 +196,31 @@ void Config_Load(const char *name) {
 			Con_Warnf("Warning : '%s' variable <%s> not found!\n", "Scrap.cfg", line);
 			continue;
 		}
-		switch (v->type) {
+		switch (v->base.type) {
 		case GVAR_STRING:
-			if (!(v->flags & GVAR_READONLY)) {
-				v->flags |= GVAR_SAVE;
+			if (!(v->base.flags & GVAR_READONLY)) {
+				v->base.flags |= GVAR_SAVE;
 			}
-			if (!(v->flags & GVAR_READONLY)) {
+			if (!(v->base.flags & GVAR_READONLY)) {
 				cString_Set(&v->value.s, value);
 			}
 			break;
 		case GVAR_INT: {
-			if (!(v->flags & GVAR_READONLY)) {
-				v->flags |= GVAR_SAVE;
+			if (!(v->base.flags & GVAR_READONLY)) {
+				v->base.flags |= GVAR_SAVE;
 			}
 			int i = crt_atoi(value);
-			if (!(v->flags & GVAR_READONLY)) {
+			if (!(v->base.flags & GVAR_READONLY)) {
 				v->value.i = i;
 			}
 			break;
 		}
 		case GVAR_FLOAT: {
-			if (!(v->flags & GVAR_READONLY)) {
-				v->flags |= GVAR_SAVE;
+			if (!(v->base.flags & GVAR_READONLY)) {
+				v->base.flags |= GVAR_SAVE;
 			}
 			float x = (float)crt_atof(value);
-			if (!(v->flags & GVAR_READONLY)) {
+			if (!(v->base.flags & GVAR_READONLY)) {
 				v->value.f = x;
 			}
 			break;
@@ -249,22 +249,22 @@ void Config_Save(void) {
 		return;
 	}
 	crt_fputs("## Begin\n\n", f);
-	for (cGVar *v = g_GVars; v; v = v->next) {
-		if (!(v->flags & GVAR_SAVE)) {
+	for (cGVar *v = g_GVars; v; v = v->base.next) {
+		if (!(v->base.flags & GVAR_SAVE)) {
 			continue;
 		}
-		switch (v->type) {
+		switch (v->base.type) {
 		case GVAR_STRING:
-			crt_fprintf(f, "%-30s = %-32s    ### %s\n", v->name, v->value.s, v->description);
+			crt_fprintf(f, "%-30s = %-32s    ### %s\n", v->base.name, v->value.s, v->base.description);
 			break;
 		case GVAR_INT:
-			crt_fprintf(f, "%-30s = %-32i    ### %s\n", v->name, v->value.i, v->description);
+			crt_fprintf(f, "%-30s = %-32i    ### %s\n", v->base.name, v->value.i, v->base.description);
 			break;
 		case GVAR_FLOAT:
-			crt_fprintf(f, "%-30s = %-32f    ### %s\n", v->name, (double)v->value.f, v->description);
+			crt_fprintf(f, "%-30s = %-32f    ### %s\n", v->base.name, (double)v->value.f, v->base.description);
 			break;
 		case GVAR_FUNCTION:
-			crt_fprintf(f, "\n\n%-30s = <begin> # %s\n", v->name, v->description);
+			crt_fprintf(f, "\n\n%-30s = <begin> # %s\n", v->base.name, v->base.description);
 			GVar_ListVtbl(v)->Save(GVar_ListObj(v), f);
 			break;
 		default:
@@ -281,25 +281,25 @@ void GVars_Show(const char *filter) {
 	int n = 0;
 
 	Con_Print(0, "\n", 0);
-	for (cGVar *v = g_GVars; v; v = v->next) {
-		if (filter && crt_strnicmp(v->name, filter, strlen(filter))) {
+	for (cGVar *v = g_GVars; v; v = v->base.next) {
+		if (filter && crt_strnicmp(v->base.name, filter, strlen(filter))) {
 			continue;
 		}
-		switch (v->type) {
+		switch (v->base.type) {
 		case GVAR_STRING:
-			Con_Printf("%-30s = %-32s    ### %s\n", v->name, v->value.s, v->description);
+			Con_Printf("%-30s = %-32s    ### %s\n", v->base.name, v->value.s, v->base.description);
 			break;
 		case GVAR_INT:
-			Con_Printf("%-30s = %-32i    ### %s\n", v->name, v->value.i, v->description);
+			Con_Printf("%-30s = %-32i    ### %s\n", v->base.name, v->value.i, v->base.description);
 			break;
 		case GVAR_FLOAT:
-			Con_Printf("%-30s = %-32f    ### %s\n", v->name, (double)v->value.f, v->description);
+			Con_Printf("%-30s = %-32f    ### %s\n", v->base.name, (double)v->value.f, v->base.description);
 			break;
 		case GVAR_FUNCTION:
-			Con_Printf("\n\n%-30s = <List of defines>                   ### %s\n", v->name, v->description);
+			Con_Printf("\n\n%-30s = <List of defines>                   ### %s\n", v->base.name, v->base.description);
 			break;
 		case GVAR_SCRIPT_FUNCTION:
-			Con_Printf("\n\n%-30s = <Callback function>                 ### %s\n", v->name, v->description);
+			Con_Printf("\n\n%-30s = <Callback function>                 ### %s\n", v->base.name, v->base.description);
 			break;
 		default:
 			Con_Print(0, "??????????????????????????????????\n", 0);

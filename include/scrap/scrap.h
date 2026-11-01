@@ -30,17 +30,24 @@ cEntity *__thiscall cWorld_GetFirstEntity(cWorld *world);
 /* engine global variables (gvars, Scrap.Get/Set/Def/Des) */
 enum { GVAR_STRING = 1, GVAR_INT = 2, GVAR_FLOAT = 4, GVAR_FUNCTION = 5, GVAR_SCRIPT_FUNCTION = 6 };
 
-/*
- * an engine variable (Global/Gvars.cpp). The pointers in g_GVars point 4 bytes into the object: a GVAR_FUNCTION
- * variable has a vtable before it (cGVarListVtbl) that saves and loads its lines of the config file.
- */
-typedef struct cGVar {
+/* the class cGvar, 0x10 bytes: the part before the value (the value and the default are of the typed variables,
+ * classes without RTTI) */
+typedef struct cGvar {
 	struct cGVar *next;		/* 0x00 g_GVars */
 	char *name;			/* 0x04 */
 	char *description;		/* 0x08 */
 	byte flags;			/* 0x0c bit 0: scripts may not write it */
 	byte type;			/* 0x0d GVAR_ */
 	byte pad_e[2];
+} cGvar;
+SD_SIZE(cGvar, 0x10);
+
+/*
+ * an engine variable (Global/Gvars.cpp). The pointers in g_GVars point 4 bytes into the object: a GVAR_FUNCTION
+ * variable has a vtable before it (cGVarListVtbl) that saves and loads its lines of the config file.
+ */
+typedef struct cGVar {
+	cGvar base;			/* 0x00 */
 	union {				/* 0x10 current value */
 		char *s;		/* GVAR_STRING: first member of a string object, cString_Set writes it */
 		int i;
@@ -55,7 +62,7 @@ typedef struct cGVar {
 SD_OFFSET(cGVar, def, 0x14);
 /* GVAR_SCRIPT_FUNCTION keeps a cPy_Function at +0x10 instead of value/def */
 #define GVar_Function(v) ((cPy_Function *)&(v)->value)
-SD_OFFSET(cGVar, type, 0x0d);
+SD_OFFSET(cGvar, type, 0x0d);
 SD_OFFSET(cGVar, value, 0x10);
 cGVar *GVar_Find(const char *name);
 /* the base constructor (src/game/Global/Gvars.c): in front of g_GVars, the derived class sets the type */
@@ -77,18 +84,6 @@ typedef struct cGVarListVtbl {
 } cGVarListVtbl;
 #define GVar_ListObj(v) ((void *)((byte *)(v) - 4))
 #define GVar_ListVtbl(v) (*(const cGVarListVtbl **)GVar_ListObj(v))
-
-/* the class cGvar, 0x10 bytes: the part of cGVar before the value (the value and the default are of the typed
- * variables, classes without RTTI) */
-typedef struct cGvar {
-	struct cGVar *next;		/* 0x00 */
-	char *name;			/* 0x04 */
-	char *description;		/* 0x08 */
-	byte flags;			/* 0x0c */
-	byte type;			/* 0x0d GVAR_FUNCTION */
-	byte pad_e[2];
-} cGvar;
-SD_SIZE(cGvar, 0x10);
 
 /* cFuncGvar, 0x14 bytes: the abstract base of the GVAR_FUNCTION variables (cFuncGvar::vftable rva 0x3bc2c8, Save and
  * Load pure) */
@@ -235,7 +230,7 @@ void DummySearch_Start(const char *name, int flag);
 void MissionArrows_Switch(const char *a, const char *b);
 byte Lang_Set(const char *lang, byte force);
 const char *Version_Get(void);
-void __thiscall CWinApp_LoadLevel(CWinApp *app, const char *level);
+void __thiscall CWinApp_LoadLevel(CApp *app, const char *level);
 int __thiscall cWorld_SetCam(cWorld *world, int i, const char *name);
 cEntity *__thiscall cWorld_GetUsrEntity(cWorld *world, int player);
 

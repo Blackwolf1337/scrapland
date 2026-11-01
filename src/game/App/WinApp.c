@@ -87,8 +87,8 @@
 CWinApp *__thiscall CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char *cmdLine, int nCmdShow) {
 	char path[0x104];
 
-	CApp_ctor(self, cmdLine);
-	self->vftable = g_CWinAppVftable;
+	CApp_ctor(&self->base, cmdLine);
+	self->base.vftable = g_CWinAppVftable;
 	self->hInstance = hInst;
 	self->hPrevInstance = hPrev;
 	self->nCmdShow = nCmdShow;
@@ -102,8 +102,8 @@ CWinApp *__thiscall CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const 
 }
 
 void __fastcall CWinApp_dtor(CWinApp *self) {
-	self->vftable = g_CWinAppVftable;
-	CApp_dtor(self);
+	self->base.vftable = g_CWinAppVftable;
+	CApp_dtor(&self->base);
 }
 
 /* vf03 */
@@ -162,14 +162,14 @@ intptr_t __thiscall CWinApp_WndProc(CWinApp *self, void *hwnd, uint32_t msg, uin
 			exe_SendMessageA(hwnd, WM_CLOSE, 0, 0);
 			return 0;
 		case 0x9ca6:
-			ConsoleWin_Focus(g_pApp->hwnd);
+			ConsoleWin_Focus(g_pWinApp->hwnd);
 			break;
 		}
 		break;
 	case WM_SYSCOMMAND:
 		switch (wParam) {
 		case ID_SWITCHCONSOLE:
-			if (!ConsoleWin_Open(self->hwnd, (byte)(self->flags >> 2 & 1))) {
+			if (!ConsoleWin_Open(self->hwnd, (byte)(self->base.flags >> 2 & 1))) {
 				ConsoleWin_Close();
 			}
 			break;
@@ -278,7 +278,7 @@ void __thiscall CWinApp_InitDedicated(CWinApp *self) {
 
 /* vf06 */
 void __thiscall CWinApp_Shutdown(CWinApp *self) {
-	CApp_Shutdown(self);
+	CApp_Shutdown(&self->base);
 	ConsoleWin_Close();
 	exe_DestroyWindow(self->hwnd);
 	exe_timeEndPeriod(1);
@@ -293,14 +293,14 @@ void __thiscall CWinApp_Exit(CWinApp *self) {
 /* vf13 */
 void __thiscall CWinApp_ResetParams(CWinApp *self) {
 	self->console = 0;
-	CApp_ResetParams(self);
+	CApp_ResetParams(&self->base);
 }
 
 /* "-name" in the command line (case-insensitive), followed by ':', ' ' or the end */
 int __thiscall CWinApp_HasArg(CWinApp *self, const char *name) {
 	char buf[0x400];
 
-	Str_Copy(buf, self->cmdLine, 0x400);
+	Str_Copy(buf, self->base.cmdLine, 0x400);
 	crt_strlwr(buf);
 	const char *p = strstr(buf, name);
 	if (!p) {
@@ -338,7 +338,7 @@ const char *__thiscall App_RegGetString(CWinApp *self, const char *name) {
 }
 
 void *App_GetHInstance(void) {
-	return g_pApp->hInstance;
+	return g_pWinApp->hInstance;
 }
 
 /* vf14: seconds since the first call, by the performance counter if there is one, else by timeGetTime */
@@ -363,7 +363,7 @@ double __thiscall CWinApp_GetTime(CWinApp *self) {
 }
 
 void *App_GetHWnd(void) {
-	return g_pApp->hwnd;
+	return g_pWinApp->hwnd;
 }
 
 /* the part of CWinApp_Init that waits, driven by the message loop (CWinApp_InitStep) */
@@ -383,7 +383,7 @@ static void CWinApp_InitEnd(CWinApp *self) {
 
 /* one pass of the message loop while the init waits for the videos of CApp_Init */
 static void CWinApp_InitStep(CWinApp *self) {
-	if (CApp_InitResume(self)) {
+	if (CApp_InitResume(&self->base)) {
 		app_init = APPINIT_DONE;
 		CWinApp_InitEnd(self);
 	}
@@ -418,7 +418,7 @@ byte __thiscall CWinApp_Init(CWinApp *self) {
 		exe_BringWindowToTop(self->hwnd);
 	}
 	/* differs from the original on purpose (no store features): no Steam or GOG init and no sign-in */
-	if (!CApp_Init(self)) {
+	if (!CApp_Init(&self->base)) {
 		return 0;
 	}
 	if (Engine_VideoWait()) {
@@ -433,7 +433,7 @@ byte __thiscall CWinApp_Init(CWinApp *self) {
 byte __thiscall CWinApp_Frame(CWinApp *self) {
 	/* differs from the original on purpose (no sleeps): no Sleep(250) while the app is in the background; CApp_Frame
 	 * then only takes the time and returns 0, the PeekMessage loop of App_WinMain calls it again */
-	return CApp_Frame(self);
+	return CApp_Frame(&self->base);
 }
 
 void ConsoleWin_Add(const char *text, uint32_t color) {
@@ -475,7 +475,7 @@ byte __thiscall CWinApp_ParseParam(CWinApp *self, const char *param, const char 
 		Engine_SetIniName(ext);
 		return 1;
 	}
-	return CApp_ParseParam(self, param, ext);
+	return CApp_ParseParam(&self->base, param, ext);
 }
 
 /* vf19: starts exe (from the game directory) with the command line, without waiting */
@@ -499,7 +499,7 @@ byte __thiscall CWinApp_RunApp(CWinApp *self, const char *exe, const char *cmdLi
 
 intptr_t __stdcall App_WndProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam) {
 	if (g_pApp) {
-		return CWinApp_WndProc(g_pApp, hwnd, msg, wParam, lParam);
+		return CWinApp_WndProc(g_pWinApp, hwnd, msg, wParam, lParam);
 	}
 	return exe_DefWindowProcA(hwnd, msg, wParam, lParam);
 }
@@ -539,7 +539,7 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 
 	void *acc = exe_LoadAcceleratorsA(NULL, (const char *)0xc8);
 	CWinApp *app = operator_new(sizeof(CWinApp));
-	g_pApp = app ? CWinApp_ctor(app, hInst, hPrev, cmdLine, nCmdShow) : NULL;
+	g_pApp = app ? &CWinApp_ctor(app, hInst, hPrev, cmdLine, nCmdShow)->base : NULL;
 	if (!g_pApp->vftable->Init(g_pApp)) {
 		return 0;
 	}
@@ -552,7 +552,7 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 				if (Video_Busy()) {
 					Video_Step();
 				} else if (app_init != APPINIT_DONE) {
-					CWinApp_InitStep(g_pApp);
+					CWinApp_InitStep(g_pWinApp);
 				} else {
 					CApp_FrameResume();
 				}
@@ -587,7 +587,7 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 			quitCode = msg.wParam;
 			continue;
 		}
-		if (!exe_TranslateAcceleratorA(g_pApp->hwnd, acc, &msg)) {
+		if (!exe_TranslateAcceleratorA(g_pWinApp->hwnd, acc, &msg)) {
 			exe_TranslateMessage(&msg);
 			exe_DispatchMessageA(&msg);
 		}

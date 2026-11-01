@@ -251,33 +251,33 @@ int __thiscall cAmmoInfo_SetS(cAmmoInfo *ammo, const char *var, const char *valu
  * (0x90 bytes, vftable rva 0x3cf7d4) adds the Win32 window. Allocated and run by WinMain (rva 0x20d8c0). The slots
  * are the vf numbers of both classes.
  */
-typedef struct CWinApp CWinApp;
-typedef struct CWinAppVtbl {
-	void(__thiscall *DoneGame)(CWinApp *self);					/* 0x00 vf00 */
-	void(__thiscall *InitGame)(CWinApp *self, const char *level);			/* 0x04 vf01 */
-	void(__thiscall *InitDebug)(CWinApp *self);					/* 0x08 vf02 */
-	CWinApp *(__thiscall *Delete)(CWinApp *self, byte flags);			/* 0x0c vf03 */
-	byte(__thiscall *Init)(CWinApp *self);						/* 0x10 vf04 */
-	byte(__thiscall *Frame)(CWinApp *self);						/* 0x14 vf05 */
-	void(__thiscall *Shutdown)(CWinApp *self);					/* 0x18 vf06 */
-	void(__thiscall *LoadLevelNow)(CWinApp *self, const char *level);		/* 0x1c vf07 */
-	void(__thiscall *InitDedicated)(CWinApp *self);					/* 0x20 vf08 */
-	void(__thiscall *Exit)(CWinApp *self);						/* 0x24 vf09 */
-	void(__thiscall *Update)(CWinApp *self, float dt);				/* 0x28 vf10 */
-	void(__thiscall *Render)(CWinApp *self);					/* 0x2c vf11 */
-	byte(__thiscall *ParseParam)(CWinApp *self, const char *param, const char *ext);	/* 0x30 vf12 */
-	void(__thiscall *ResetParams)(CWinApp *self);					/* 0x34 vf13 */
-	double(__thiscall *GetTime)(CWinApp *self);					/* 0x38 vf14 */
-	double(__thiscall *GetGameTime)(CWinApp *self);					/* 0x3c vf15 */
-	void(__thiscall *ShowConsole)(CWinApp *self, byte show);			/* 0x40 vf16 */
-	void(__thiscall *ConsoleAdd)(CWinApp *self, const char *text, uint32_t color);	/* 0x44 vf17 */
-	const char *(__thiscall *DebugInput)(CWinApp *self, const char *text);		/* 0x48 vf18 */
-	byte(__thiscall *RunApp)(CWinApp *self, const char *exe, const char *cmdLine, int arg);	/* 0x4c vf19 */
-	byte(__thiscall *IsDedicatedWin)(CWinApp *self);				/* 0x50 vf20 */
-} CWinAppVtbl;
-SD_OFFSET(CWinAppVtbl, Exit, 0x24);
-SD_OFFSET(CWinAppVtbl, DebugInput, 0x48);
-SD_OFFSET(CWinAppVtbl, IsDedicatedWin, 0x50);
+typedef struct CApp CApp;
+typedef struct CAppVtbl {
+	void(__thiscall *DoneGame)(CApp *self);					/* 0x00 vf00 */
+	void(__thiscall *InitGame)(CApp *self, const char *level);			/* 0x04 vf01 */
+	void(__thiscall *InitDebug)(CApp *self);					/* 0x08 vf02 */
+	CApp *(__thiscall *Delete)(CApp *self, byte flags);			/* 0x0c vf03 */
+	byte(__thiscall *Init)(CApp *self);						/* 0x10 vf04 */
+	byte(__thiscall *Frame)(CApp *self);						/* 0x14 vf05 */
+	void(__thiscall *Shutdown)(CApp *self);					/* 0x18 vf06 */
+	void(__thiscall *LoadLevelNow)(CApp *self, const char *level);		/* 0x1c vf07 */
+	void(__thiscall *InitDedicated)(CApp *self);					/* 0x20 vf08 */
+	void(__thiscall *Exit)(CApp *self);						/* 0x24 vf09 */
+	void(__thiscall *Update)(CApp *self, float dt);				/* 0x28 vf10 */
+	void(__thiscall *Render)(CApp *self);					/* 0x2c vf11 */
+	byte(__thiscall *ParseParam)(CApp *self, const char *param, const char *ext);	/* 0x30 vf12 */
+	void(__thiscall *ResetParams)(CApp *self);					/* 0x34 vf13 */
+	double(__thiscall *GetTime)(CApp *self);					/* 0x38 vf14 */
+	double(__thiscall *GetGameTime)(CApp *self);					/* 0x3c vf15 */
+	void(__thiscall *ShowConsole)(CApp *self, byte show);			/* 0x40 vf16 */
+	void(__thiscall *ConsoleAdd)(CApp *self, const char *text, uint32_t color);	/* 0x44 vf17 */
+	const char *(__thiscall *DebugInput)(CApp *self, const char *text);		/* 0x48 vf18 */
+	byte(__thiscall *RunApp)(CApp *self, const char *exe, const char *cmdLine, int arg);	/* 0x4c vf19 */
+	byte(__thiscall *IsDedicatedWin)(CApp *self);				/* 0x50 vf20 */
+} CAppVtbl;
+SD_OFFSET(CAppVtbl, Exit, 0x24);
+SD_OFFSET(CAppVtbl, DebugInput, 0x48);
+SD_OFFSET(CAppVtbl, IsDedicatedWin, 0x50);
 
 /* WNDCLASSA */
 typedef struct exe_wndclass {
@@ -298,8 +298,8 @@ SD_SIZE(exe_wndclass, 0x28);
 #define APPF_SERVER 2
 #define APPF_DEDICATED 4
 
-struct CWinApp {
-	const CWinAppVtbl *vftable;	/* 0x00 */
+struct CApp {
+	const CAppVtbl *vftable;	/* 0x00 */
 	byte pad_04[4];
 	char *cmdLine;			/* 0x08 copy (Mem_Alloc) */
 	byte pad_0c[4];
@@ -317,7 +317,16 @@ struct CWinApp {
 	byte pad_3d[3];
 	void (*onLevelLoaded)(void);	/* 0x40 called once after LoadLevelNow */
 	byte pad_44[4];
-	/* CWinApp */
+};
+SD_OFFSET(CApp, cmdLine, 0x08);
+SD_OFFSET(CApp, gameTime, 0x20);
+SD_OFFSET(CApp, flags, 0x30);
+SD_OFFSET(CApp, levelPath, 0x34);
+SD_OFFSET(CApp, onLevelLoaded, 0x40);
+SD_SIZE(CApp, 0x48);
+
+typedef struct CWinApp {
+	CApp base;			/* 0x00 */
 	void *hInstance;		/* 0x48 */
 	void *hPrevInstance;		/* 0x4c */
 	int nCmdShow;			/* 0x50 */
@@ -327,18 +336,15 @@ struct CWinApp {
 	byte dedicatedWin;		/* 0x81 -dedicated: small window */
 	byte pad_82[2];
 	byte unused_84[0xc];		/* 0x84 */
-};
-SD_OFFSET(CWinApp, cmdLine, 0x08);
-SD_OFFSET(CWinApp, gameTime, 0x20);
-SD_OFFSET(CWinApp, flags, 0x30);
-SD_OFFSET(CWinApp, levelPath, 0x34);
-SD_OFFSET(CWinApp, onLevelLoaded, 0x40);
+} CWinApp;
 SD_OFFSET(CWinApp, wc, 0x54);
 SD_OFFSET(CWinApp, hwnd, 0x7c);
 SD_OFFSET(CWinApp, unused_84, 0x84);
 SD_SIZE(CWinApp, 0x90);
 
 #define g_pWorld GAME_GLOBAL(cWorld *, g_pWorld, 0x467450)
-#define g_pApp GAME_GLOBAL(CWinApp *, g_pApp, 0x467ba0)
+#define g_pApp GAME_GLOBAL(CApp *, g_pApp, 0x467ba0)
+/* the application is always a CWinApp */
+#define g_pWinApp ((CWinApp *)g_pApp)
 
 #endif

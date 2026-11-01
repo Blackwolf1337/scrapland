@@ -11,11 +11,8 @@
 #include "scrap/pyfunction.h"
 #include "scrap/scrap.h"
 
-/* the CApp part of a CWinApp (0x48 bytes) */
-typedef CWinApp CApp;
-
-#define g_CAppVftable ((const CWinAppVtbl *)GAME_VFTABLE(CApp_vftable, 0x3cf190))
-#define g_CWinAppVftable ((const CWinAppVtbl *)GAME_VFTABLE(CWinApp_vftable, 0x3cf7d4))
+#define g_CAppVftable ((const CAppVtbl *)GAME_VFTABLE(CApp_vftable, 0x3cf190))
+#define g_CWinAppVftable ((const CAppVtbl *)GAME_VFTABLE(CWinApp_vftable, 0x3cf7d4))
 
 /* engine variables (Gvars) */
 #define g_LoadMsgIndex GAME_GLOBAL_IN(int, GVar_iLoadMsgString, 16, 0x4679c0)		/* iLoadMsgString: the next loading tip */
@@ -128,7 +125,7 @@ byte App_CheckBlock(void);
 void Console_Execute(const char *cmd);
 void *App_GetObjData(const char *name);
 float World_TimeScale(void);
-void __thiscall CWinApp_LoadLevel(CWinApp *app, const char *level);
+void __thiscall CWinApp_LoadLevel(CApp *app, const char *level);
 void __thiscall App_PickLoadingTip(CApp *self, const char *level);
 void Loading_Init(void);
 void Loading_End(void);

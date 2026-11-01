@@ -999,7 +999,7 @@ void Camera_SetCurrent(CGameCamera *cam) {
 
 void GVar_SetIntVerbose(cGVar *v, int value) {
 	v->value.i = value;
-	Con_Verbosef("%s = %d\n", v->name, value);
+	Con_Verbosef("%s = %d\n", v->base.name, value);
 }
 
 char *Engine_SetIniName(const char *name) {
