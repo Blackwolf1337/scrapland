@@ -1,5 +1,7 @@
 # English names (stage 4)
 
+The tools named here (`tools/rename`, `tools/standalone`, `testsyms.py`, `rvacheck.py`, `hookcheck.py`, the `datacheck` target) and `src/hooks.inc` are gone since 2026-11-01, see tag `hooked-final`.
+
 Stage 4 translated the Spanish names of the original to English. Everything was done by the tool in `tools/rename`, so
 the run can be repeated, and it was checked against the objects of the build before the rename.
 

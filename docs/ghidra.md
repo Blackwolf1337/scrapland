@@ -53,7 +53,7 @@ ImportHeaders runs the steps of Ghidra's `CParserUtils.parseHeaderFiles`, with t
 
 ### Python 1.5.2
 
-`third_party/python-1.5.2/` holds the `Include/` directory of Python 1.5.2 (plus `PC/config.h` saved as `Include/config_pc.h`, not used for parsing) and `COPYRIGHT` (Stichting Mathematisch Centrum license, which allows redistribution with the notice). It gives the exact struct layouts, now for Ghidra and later for the hook DLL.
+`third_party/python-1.5.2/` holds the `Include/` directory of Python 1.5.2 (plus `PC/config.h` saved as `Include/config_pc.h`, not used for parsing) and `COPYRIGHT` (Stichting Mathematisch Centrum license, which allows redistribution with the notice). It gives the exact struct layouts, for Ghidra and for the C code (the hook DLL that once used it is gone since 2026-11-01, see tag `hooked-final`).
 
 `tools/ghidra/include/` has stand-in headers for the Ghidra parse: `stdio.h` with only `typedef struct _iobuf FILE`, `stdarg.h` with `va_list`, `stdint.h` and `stddef.h` with the i686 MSVC sizes (long 4 bytes), and empty `string.h`, `errno.h`, `stdlib.h`. `third_party/python-1.5.2/config/config.h` sets prototypes on, int/long/pointer 4 bytes, `DL_IMPORT`/`DL_EXPORT`.
 
@@ -182,4 +182,4 @@ Its notes (`notes/src/Classes.md`, `World.md`, `Variables.md`, `Python_Modules.m
 ## Next steps
 
 - Name engine functions from log and assert strings (e.g. `"cPy_Function::SetFunc: ..."`).
-- Phase 3 continues in docs/hookdll.md.
+- The hook DLL work of phase 3 is history: `docs/hookdll.md` is gone since 2026-11-01, see tag `hooked-final`.

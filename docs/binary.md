@@ -92,6 +92,8 @@ Python 1.5.2 is statically linked (version string 1.5.2, "[MSC 32 bit (Intel)]",
 
 ## Hook DLL plan
 
+This section is history. The hook DLL and the proxy are gone since 2026-11-01, see tag `hooked-final`. ScrapC.exe is the only build target.
+
 ### Proxy
 
 The proxy is `dinput8.dll`. Scrap.exe imports only DirectInput8Create from it. It is not a KnownDLL, so a copy in `game/Bin` is loaded first. Under Wine it needs `WINEDLLOVERRIDES=dinput8=n,b`.

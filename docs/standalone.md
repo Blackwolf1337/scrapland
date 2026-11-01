@@ -1,5 +1,7 @@
 # Standalone build
 
+Since 2026-11-01 the hook DLL, the rva tooling and the generators (`tools/standalone`, `tools/rename`, `hookcheck.py`, `testsyms.py`, the `datacheck` target, `src/hooks.inc`, `src/imports.inc`) are gone, see tag `hooked-final`. ScrapC.exe is the only build target. The difftest compares ScrapC.exe with a frozen reference ScrapC.exe built from that tag (`DIFFTEST_REF=build-ref/ScrapC.exe tools/test/difftest.sh`). The text below is the history of the stages and names those tools as they were.
+
 Goal: a `scrap.exe` built only from the C code of `src/` and real libraries, with no code of the original Scrap.exe.
 It is reached in stages, each one runs the difftest.
 
@@ -7,8 +9,8 @@ Since stage 3c2 ScrapC.exe is a normal exe with no byte of the original, and nei
 Scrap.exe. ScrapC.exe needs only the game files: the packs and fmod.dll of the game's DLLs in game/Bin (it imports
 neither Galaxy.dll nor steam_api.dll since the store code was removed). It runs without ucrtbase_ms.dll with the math
 of its own (`src/standalone/crtlibm.c`), with the differences of stage 2b. The DLL only makes the math exact under
-Wine. The original exe is needed only for the optional check (`cmake --build build --target datacheck`, stage 3c2) and
-for the original run of the difftest.
+Wine. The original exe was needed only for the optional check (`datacheck`, stage 3c2) and for the original run of the
+difftest. Both are gone, see above.
 
 ## Stage 0: wipe check (hook DLL)
 
@@ -1075,7 +1077,7 @@ the CRT.
 
 What stays as it was:
 
-- dinput8 is no import. ScrapC.exe runs in game/Bin, where dinput8.dll is the hook DLL. `Orig_DInput8` of `main.c`
+- dinput8 is no import. ScrapC.exe runs in game/Bin, where dinput8.dll was the hook DLL (gone since 2026-11-01, see tag hooked-final). `Orig_DInput8` of `main.c`
   loads the one of the system folder at the start of WinMain, before anything of the game runs, and sets
   `sd_DirectInput8Create`, which is `exe_DirectInput8Create` in ScrapC.exe (win32.h, one define for IDevice.c and
   Input.c).
