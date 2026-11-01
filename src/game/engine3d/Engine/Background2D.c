@@ -42,14 +42,14 @@ void __fastcall CBackground2D_Init(CBackground2D *self) {
 		CMaterial *p = operator_new(sizeof(CMaterial));
 		self->Mat = p ? CMaterial_ctor(p) : NULL;
 		CMaterial_Assign(self->Mat, &m);
-		CMaterial_Prepare(self->Mat, ENGINE_DEV(g_Engine));
+		CMaterial_Prepare(self->Mat, g_Engine->device);
 		CMatList_Add(g_MatList, self->Mat);
 	}
 	CMaterial_dtor(&m);
 }
 
 void __fastcall CBackground2D_Render(CBackground2D *self) {
-	void *dev = ENGINE_DEV(g_Engine);
+	void *dev = g_Engine->device;
 	float p[4][2];
 	Vert2D v[4];
 

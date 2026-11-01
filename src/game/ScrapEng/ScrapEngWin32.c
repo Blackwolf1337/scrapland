@@ -14,11 +14,6 @@
 
 #define APP_EXCEPTIONFILTER 0x233410
 
-/* the state of g_Engine the window procedure reads */
-#define ENGINE_SHOWCURSOR(m) (*(int *)((m) + 0x2a5c4))
-#define ENGINE_WINDOWRECT(m) ((exe_rect *)((m) + 0x2a4f8))
-#define ENGINE_CLIENTRECT(m) ((exe_rect *)((m) + 0x2a508))
-#define ENGINE_VT_PAUSE 0x34
 #define DEV_VT_SHOWCURSOR 0x30
 #define DEV_VT_PRESENT 0x3c
 
@@ -42,19 +37,19 @@
 #define IDM_PROFMODE 0x9ca9
 #define IDM_PROFMODE2 0x9caa
 
-static void Engine_Pause(byte *m, int on) {
-	((void(__thiscall *)(byte *, int))(*(void ***)m)[ENGINE_VT_PAUSE / 4])(m, on);
+static void Engine_Pause(CD3DApplication *m, int on) {
+	m->vftable->Pause(m, on);
 }
 
 intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam) {
-	byte *m = g_Engine;
+	CD3DApplication *m = g_Engine;
 
 	switch (msg) {
 	case WM_SETCURSOR:
-		if (m && ENGINE_ACTIVE(m) && ENGINE_READY(m) && !ENGINE_WINDOWED(m)) {
+		if (m && m->active && m->ready && !m->windowed) {
 			exe_SetCursor(NULL);
-			if (ENGINE_SHOWCURSOR(g_Engine)) {
-				void *dev = ENGINE_DEV(g_Engine);
+			if (g_Engine->showCursorWhenFullscreen) {
+				void *dev = g_Engine->device;
 
 				((int(__stdcall *)(void *, int))(*(void ***)dev)[DEV_VT_SHOWCURSOR / 4])(dev, 1);
 			}
@@ -64,8 +59,8 @@ intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lPa
 	case WM_PAINT:
 		/* differs from the original on purpose (no blocking waits): no Present over a video, which plays from the
 		 * message loop now (the original handled no message while it played) */
-		if (m && ENGINE_DEV(m) && !ENGINE_READY(m) && ENGINE_WINDOWED(m) && !Video_Busy()) {
-			void *dev = ENGINE_DEV(m);
+		if (m && m->device && !m->ready && m->windowed && !Video_Busy()) {
+			void *dev = m->device;
 
 			((int(__stdcall *)(void *, void *, void *, void *, void *))(*(void ***)dev)[DEV_VT_PRESENT / 4])(dev,
 				NULL, NULL, NULL, NULL);
@@ -75,7 +70,7 @@ intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lPa
 	case WM_COMMAND:
 		switch ((uint16_t)wParam) {
 		case IDM_CHANGEDEVICE:
-			if (g_Engine && ENGINE_ACTIVE(g_Engine) && ENGINE_READY(g_Engine)) {
+			if (g_Engine && g_Engine->active && g_Engine->ready) {
 				Engine_Pause(g_Engine, 1);
 				if (CD3DApp_UserSelectNewDevice(g_Engine) >= 0) {
 					Engine_Pause(g_Engine, 0);
@@ -85,8 +80,8 @@ intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lPa
 		case IDM_TOGGLEFULLSCREEN: {
 			void *fg = exe_GetForegroundWindow();
 
-			if (fg == App_GetHWnd() && ENGINE_ACTIVE(g_Engine) && ENGINE_READY(g_Engine)) {
-				ConsoleWin_Show(ENGINE_WINDOWED(g_Engine) == 0);
+			if (fg == App_GetHWnd() && g_Engine->active && g_Engine->ready) {
+				ConsoleWin_Show(g_Engine->windowed == 0);
 				if (CD3DApp_ToggleFullscreen(g_Engine) < 0) {
 					Con_FatalErrorf("Could not reset the Direct3D device.");
 				}
@@ -129,8 +124,8 @@ intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lPa
 		break;
 	case WM_EXITSIZEMOVE:
 		if (m) {
-			exe_GetWindowRect(hwnd, ENGINE_WINDOWRECT(m));
-			exe_GetClientRect(hwnd, ENGINE_CLIENTRECT(g_Engine));
+			exe_GetWindowRect(hwnd, &m->windowBounds);
+			exe_GetClientRect(hwnd, &g_Engine->windowClient);
 			return exe_DefWindowProcA(hwnd, msg, wParam, lParam);
 		}
 		break;

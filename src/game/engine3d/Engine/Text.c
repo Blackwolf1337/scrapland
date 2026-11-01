@@ -13,12 +13,12 @@
 #define TEXT_STACK_MAX 5
 
 void Text_Draw(int x, int y, const char *s) {
-	void *dc = exe_GetDC(ENGINE_HWND(g_Engine));
+	void *dc = exe_GetDC(g_Engine->hWnd);
 	if (dc) {
 		exe_SetTextColor(dc, 0xffff);
 		exe_SetBkMode(dc, 1);
 		exe_ExtTextOutA(dc, x, y, 0, NULL, s, (unsigned)exe_lstrlenA(s), NULL);
-		exe_ReleaseDC(ENGINE_HWND(g_Engine), dc);
+		exe_ReleaseDC(g_Engine->hWnd, dc);
 	}
 }
 

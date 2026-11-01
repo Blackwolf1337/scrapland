@@ -710,12 +710,12 @@ static const struct {
 };
 
 int Trails_Init(void) {
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 	if (D3D_METHOD(dev, d3dCreateVB_t, D3DDEV_CREATEVB)(dev, MAX_TRAILS_VB * sizeof(TrailVertex),
 		D3DUSAGE_WRITEONLY_DYNAMIC, TRAILS_FVF, 0, &g_TrailsVB) < 0) {
 		return E_FAIL;
 	}
-	dev = g_EngineDev;
+	dev = g_Engine->device;
 	if (D3D_METHOD(dev, d3dCreateIB_t, D3DDEV_CREATEIB)(dev, MAX_TRAILS_IB * sizeof(uint16_t),
 		D3DUSAGE_WRITEONLY_DYNAMIC, D3DFMT_INDEX16, 0, &g_TrailsIB) < 0) {
 		return E_FAIL;
@@ -731,7 +731,7 @@ int Trails_Init(void) {
 		mat.params.zWrite = 0;
 		mat.params.zFunc = 2;
 		mat.map[0]->filter = trailsMats[i].dudv;
-		CMaterial_Prepare(&mat, g_EngineDev);
+		CMaterial_Prepare(&mat, g_Engine->device);
 		g_TrailsMat[i] = Mat_New(&mat, 0);
 	}
 	CMaterial_dtor(&mat);
@@ -769,7 +769,7 @@ void Trails_Render(int texture) {
 	if (!g_TrailsOn || g_nTrails <= 0) {
 		return;
 	}
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 	Render_SetWorldMatrix(g_MatIdentity, 0);
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_CULLMODE, D3DCULL_NONE);
 	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, TRAILS_FVF);

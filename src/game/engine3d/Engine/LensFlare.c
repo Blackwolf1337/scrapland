@@ -108,7 +108,7 @@ int LensFlare_Init(void) {
 	m.params.zWrite = 0;
 	m.params.zFunc = 2;
 	m.map[MAP_DIFFUSE]->filter = 0;
-	CMaterial_Prepare(&m, ENGINE_DEV(g_Engine));
+	CMaterial_Prepare(&m, g_Engine->device);
 	g_LensFlareMat = Mat_New(&m, 1);
 	CMaterial_GetMultiSprite(g_LensFlareMat, 0);
 	CMaterial_dtor(&m);
@@ -122,7 +122,7 @@ int LensFlare_InitList(void) {
 }
 
 void LensFlare_RenderAll(void) {
-	void *dev = ENGINE_DEV(g_Engine);
+	void *dev = g_Engine->device;
 	matrix_t view, proj;
 
 	if (!g_LensFlares || g_nLensFlareRender <= 0) {
@@ -323,7 +323,7 @@ void __thiscall CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj
 
 void __thiscall CLensFlare_DrawSprite(CLensFlare *self, float dist, uint32_t sprite, float size, float r, float g,
 	float b, float a) {
-	void *dev = ENGINE_DEV(g_Engine);
+	void *dev = g_Engine->device;
 	CCamera *cam = World_Get()->cam;
 	float texMin[2], texMax[2];
 

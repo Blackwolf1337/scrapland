@@ -78,14 +78,14 @@ byte __thiscall CGraphic3D_Read(CGraphic3D *self, CFileIO *f, MeshD3D_FileCtx *c
 	CFileIO_ReadString(f, tex, sizeof(tex));
 	CFileIO_ReadString(f, opac, sizeof(opac));
 	CFileIO_Read(f, diffuse, 4);
-	CHECK(!g_EngineDev);
+	CHECK(!g_Engine->device);
 	CGraphic3D_CreateMat(self, tex[0] ? tex : NULL, opac[0] ? opac : NULL, 5, 2, diffuse[3]);
 	CFileIO_Error(f, "SPR3");
 	return 1;
 }
 
 void __fastcall CGraphic3D_Draw(CGraphic3D *self) {
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 	CHECK(dev);
 	CHECK(self->Mat);
 	Render_SetMaterialAnim(self->Mat, self->AnimMat);
@@ -181,7 +181,7 @@ void __thiscall CGraphic3D_CreateMat(CGraphic3D *self, const char *tex, const ch
 	if (!self->Mat) {
 		self->Mat = Mat_AddCopy(&m);
 	}
-	CMaterial_Prepare(self->Mat, g_EngineDev);
+	CMaterial_Prepare(self->Mat, g_Engine->device);
 	AnimMat_Free(&self->AnimMat);
 	AnimMat_FromMap(&self->AnimMat, self->Mat->map[0]);
 	CMaterial_dtor(&m);

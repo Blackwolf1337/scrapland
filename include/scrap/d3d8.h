@@ -293,6 +293,27 @@ typedef struct D3DDisplayMode {
 } D3DDisplayMode;
 SD_SIZE(D3DDisplayMode, 0x10);
 
+/* D3DPRESENT_PARAMETERS */
+typedef struct D3DPresentParams {
+	uint32_t BackBufferWidth;		/* 0x00 */
+	uint32_t BackBufferHeight;		/* 0x04 */
+	uint32_t BackBufferFormat;		/* 0x08 */
+	uint32_t BackBufferCount;		/* 0x0c */
+	uint32_t MultiSampleType;		/* 0x10 */
+	uint32_t SwapEffect;			/* 0x14 */
+	void *hDeviceWindow;			/* 0x18 */
+	int Windowed;				/* 0x1c */
+	int EnableAutoDepthStencil;		/* 0x20 */
+	uint32_t AutoDepthStencilFormat;	/* 0x24 */
+	uint32_t Flags;				/* 0x28 */
+	uint32_t FullScreen_RefreshRateInHz;	/* 0x2c */
+	uint32_t FullScreen_PresentationInterval;	/* 0x30 */
+} D3DPresentParams;
+SD_SIZE(D3DPresentParams, 0x34);
+#define D3DSWAPEFFECT_DISCARD 1
+#define D3DSWAPEFFECT_COPY_VSYNC 4
+#define D3DPRESENT_INTERVAL_IMMEDIATE 0x80000000
+
 #define D3DPTEXTURECAPS_POW2 0x2
 #define D3DPTEXTURECAPS_TEXREPEATNOTSCALEDBYSIZE 0x40
 #define D3DPTEXTURECAPS_NONPOW2CONDITIONAL 0x100

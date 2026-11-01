@@ -140,8 +140,8 @@ CMeshD3D *__fastcall CMeshD3D_ctor(CMeshD3D *self) {
 void __fastcall CMeshD3D_dtor(CMeshD3D *self) {
 	self->vftable = CMESHD3D_VFTABLE;
 	if (self->pVertVB || self->pVertIB) {
-		CHECK(g_Engine && ENGINE_DEV(g_Engine));
-		CMeshD3D_Invalidate(self, ENGINE_DEV(g_Engine));
+		CHECK(g_Engine && g_Engine->device);
+		CMeshD3D_Invalidate(self, g_Engine->device);
 	}
 	if (self->skinRef) {
 		self->pSkin = NULL;

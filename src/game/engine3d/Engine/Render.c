@@ -1197,7 +1197,7 @@ void Render_DrawTexRect(const box_t *rect, uint32_t cLeft, uint32_t cRight, void
 		return;
 	}
 	void *saved = g_pd3dDevice;
-	g_pd3dDevice = g_EngineDev;
+	g_pd3dDevice = g_Engine->device;
 	Render_ResetState();
 	Render_SetTexture(0, tex);
 	Render_TSS(0, D3DTSS_ADDRESSU, D3DTADDRESS_CLAMP);
@@ -1236,7 +1236,7 @@ void Render_EndD3D(void) {
 	E3D_DebugPrintf("\n> RenderFinD3D()");
 	g_D3DOn = 0;
 	CHECK(!g_ViewportW);
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 	if (dev) {
 		for (uint32_t i = 0; i < 8; i++) {
 			D3D_METHOD(dev, d3dSetTexture_t, D3DDEV_SETTEXTURE)(dev, i, NULL);
@@ -1289,12 +1289,12 @@ static void Render_LogVersion(const char *fmt, uint32_t ver) {
 	E3D_LogPrint(g_FileLog, fmt, buf);
 }
 
-static void Render_LogDevice(const D3DCaps8 *caps, const uint32_t *mode, const uint32_t *zbuf) {
-	E3D_LogPrint(g_FileLog, "%s", ENGINE_DEVNAME(g_Engine));
+static void Render_LogDevice(const D3DCaps8 *caps, const d3dSurfaceDesc_t *mode, const d3dSurfaceDesc_t *zbuf) {
+	E3D_LogPrint(g_FileLog, "%s", g_Engine->deviceStats);
 	E3D_LogPrint(g_FileLog, "Driver: %s  WHQL: %d", g_DriverStr, g_Adapter.WHQLLevel);
 	E3D_LogPrint(g_FileLog, "%s", g_DeviceStr);
-	E3D_LogPrint(g_FileLog, "Mode: %dx%d %s", mode[6], mode[7], D3DFmt_Name((int)mode[0]));
-	E3D_LogPrint(g_FileLog, "ZBuf: %dx%d %s", zbuf[6], zbuf[7], D3DFmt_Name((int)zbuf[0]));
+	E3D_LogPrint(g_FileLog, "Mode: %dx%d %s", mode->Width, mode->Height, D3DFmt_Name(mode->Format));
+	E3D_LogPrint(g_FileLog, "ZBuf: %dx%d %s", zbuf->Width, zbuf->Height, D3DFmt_Name(zbuf->Format));
 	E3D_LogPrint(g_FileLog, "MaxTexture: %dx%d", caps->MaxTextureWidth, caps->MaxTextureHeight);
 	E3D_LogPrint(g_FileLog, "MaxAnisotropy: %d", caps->MaxAnisotropy);
 	E3D_LogPrint(g_FileLog, "MaxTextureBlendStages: %d", caps->MaxTextureBlendStages);
@@ -1362,29 +1362,29 @@ void Render_IniD3D(void) {
 		{ "Material_RGB_Ground", "bmp/rgb_ground.tga" },
 	};
 	D3DCaps8 caps;
-	uint32_t mode[8], zbuf[8];
+	d3dSurfaceDesc_t mode, zbuf;
 
 	E3D_DebugPrintf("\n> RenderIniD3D()");
-	if (!g_Engine || !g_EngineDev) {
+	if (!g_Engine || !g_Engine->device) {
 		CheckFailed("g_pD3DApp && g_pD3DApp->m_pd3dDevice", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	byte *motor = g_Engine;
-	void *dev = ENGINE_DEV(motor);
+	CD3DApplication *motor = g_Engine;
+	void *dev = motor->device;
 	g_pd3dDevice = dev;
-	memcpy(&caps, ENGINE_CAPS(motor), sizeof(caps));
+	memcpy(&caps, &motor->caps, sizeof(caps));
 	((CMaterial *)g_MatLine)->params.lighting = 0;
 	((CMaterial *)g_MatDefault)->params.lighting = 0;
-	memcpy(&g_Adapter, ENGINE_ADAPTERS(motor) + ENGINE_ADAPTER(motor) * 0x438c, sizeof(g_Adapter));
+	memcpy(&g_Adapter, &motor->adapters[motor->adapter].id, sizeof(g_Adapter));
 	const uint16_t *ver = g_Adapter.DriverVersion;
 	Bprintf(g_DriverStr, 0x100, "%s [%s]  %d.%02d.%02d.%04d", g_Adapter.Description, g_Adapter.Driver, ver[3],
 		ver[2], ver[1], ver[0]);
 	Bprintf(g_DeviceStr, 0x100, "VendorId: %04X   DeviceId: %04X   SubSysId: %04X   Revision: %d",
 		g_Adapter.VendorId, g_Adapter.DeviceId, g_Adapter.SubSysId, g_Adapter.Revision);
-	memcpy(mode, ENGINE_MODE(motor), sizeof(mode));
-	memcpy(zbuf, ENGINE_ZBUF(motor), sizeof(zbuf));
-	if (g_DeviceLogged != ENGINE_DEVID(motor)) {
-		g_DeviceLogged = ENGINE_DEVID(motor);
-		Render_LogDevice(&caps, mode, zbuf);
+	memcpy(&mode, &motor->backBufferDesc, sizeof(mode));
+	memcpy(&zbuf, &motor->depthBufferDesc, sizeof(zbuf));
+	if (g_DeviceLogged != motor->devId) {
+		g_DeviceLogged = motor->devId;
+		Render_LogDevice(&caps, &mode, &zbuf);
 	}
 	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, g_ViewportFull);
 	g_UseShaders2 = 0;
@@ -1455,7 +1455,7 @@ void Render_IniD3D(void) {
 }
 
 void Render_BeginFrame(void) {
-	g_pd3dDevice = g_EngineDev;
+	g_pd3dDevice = g_Engine->device;
 	CHECK(g_pd3dDevice);
 	g_RenderI1F4 = 0;
 	RenderGamma_Begin();
@@ -1471,7 +1471,7 @@ void Render_BeginFrame(void) {
 }
 
 int Render_DrawListIdx(const CVertList *v, const uint16_t *idx, int ntri, byte stats) {
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 	if (!dev) {
 		return E_FAIL;
 	}
@@ -1536,8 +1536,8 @@ void Render_ResetState(void) {
 	g_FilterMag = filter;
 	g_FilterMip = 2 - (uint32_t)(g_MipFilter != 1);
 	uint32_t aniso = g_Anisotropy;
-	if (ENGINE_MAXANISOTROPY(g_Engine) < aniso) {
-		aniso = ENGINE_MAXANISOTROPY(g_Engine);
+	if (g_Engine->caps.MaxAnisotropy < aniso) {
+		aniso = g_Engine->caps.MaxAnisotropy;
 	}
 	g_AnisotropyCur = aniso;
 	for (uint32_t i = 0; i < 8; i++) {
@@ -1644,7 +1644,7 @@ int Render_SetMaterial(void *m, int pass) {
 	if (g_UseDefMaterial && !(mat->params.attrib & 0x840)) {
 		mat = g_UseDefMaterial == 1 ? g_MatWhite : g_MatInvis;
 	}
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 	if (!dev) {
 		return E_FAIL;
 	}
@@ -1893,7 +1893,7 @@ int Render_DrawMeshD3D(const CMeshD3D *m) {
 }
 
 int Render_DrawVBIB(void *vb, void *ib, const CVertList *v, uint32_t ntri) {
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 	if (!dev) {
 		return E_FAIL;
 	}
@@ -1985,7 +1985,7 @@ int Render_CreateIB(void **ib, const void *tris, int nTri, byte dynamic) {
 	CHECK(tris);
 	CHECK(nTri > 0);
 	uint32_t n = (uint32_t)nTri * 6;
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 	if (D3D_METHOD(dev, d3dCreateIB_t, D3DDEV_CREATEIB)(dev, n, D3DUSAGE_WRITEONLY, D3DFMT_INDEX16,
 		dynamic ? D3DPOOL_SYSTEMMEM : D3DPOOL_DEFAULT, ib) < 0) {
 		return E_FAIL;
@@ -1998,7 +1998,7 @@ int Render_CreateVB(void **vb, CVertList *vert, byte dynamic) {
 	CHECK(vert);
 	CHECK(vert->nVert > 0);
 	int n = vert->nVert;
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 	uint32_t fvf = CVertList_FVF(vert);
 	if (D3D_METHOD(dev, d3dCreateVB_t, D3DDEV_CREATEVB)(dev, (uint32_t)(CVertList_Size(vert) * n), D3DUSAGE_WRITEONLY,
 		fvf, dynamic ? D3DPOOL_SYSTEMMEM : D3DPOOL_DEFAULT, vb) < 0) {
@@ -2097,7 +2097,7 @@ int Render_GetViewportW(void) {
 }
 
 int Render_StencilBits(void) {
-	switch (ENGINE_ZFORMAT(g_Engine)) {
+	switch (g_Engine->depthBufferDesc.Format) {
 	case D3DFMT_D15S1:
 		return 1;
 	case D3DFMT_D24S8:
@@ -2110,7 +2110,7 @@ int Render_StencilBits(void) {
 }
 
 int Render_Line(const vec3_t *a, const vec3_t *b, uint32_t color) {
-	if (!g_EngineDev) {
+	if (!g_Engine->device) {
 		return E_FAIL;
 	}
 	if (g_DiffuseMod4x) {
@@ -2202,7 +2202,7 @@ int Render_MeshD3D(CMeshD3D *m, CRenderNode *r) {
 	if (g_RenderOnlyB38 && m->mat && !m->mat->params.twoSided) {
 		return 0;
 	}
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 	if (!dev) {
 		return E_FAIL;
 	}

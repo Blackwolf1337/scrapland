@@ -262,7 +262,7 @@ void __fastcall CBspQ3_ReadFaces(CBspQ3 *self) {
 			mat = operator_new(sizeof(CMaterial));
 			mat = mat ? CMaterial_ctor(mat) : NULL;
 			CMaterial_Assign(mat, &tmp);
-			CMaterial_Prepare(mat, g_EngineDev);
+			CMaterial_Prepare(mat, g_Engine->device);
 			CMatList_Add(g_MatList, mat);
 		}
 		self->faces[i].mat = mat;
@@ -322,7 +322,7 @@ void __fastcall CBspQ3_ReadLMaps(CBspQ3 *self) {
 		mat->params.lighting = 0;
 		mat->map[MAP_DIFFUSE]->lightmap = 1;
 		mat->params.zWrite = 0;
-		CMaterial_Prepare(mat, g_EngineDev);
+		CMaterial_Prepare(mat, g_Engine->device);
 		CMatList_Add(g_MatList, mat);
 		if (!g_BspQ3LMapNoBlend) {
 			mat->params.srcBlend = 9;

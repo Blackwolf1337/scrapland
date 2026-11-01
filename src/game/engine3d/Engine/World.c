@@ -169,10 +169,10 @@ void __thiscall CWorld_AddDummy(CWorld *self, WorldDummy *d) {
 void __fastcall CWorld_ReleaseD3D(CWorld *self) {
 	if (!(g_pApp->flags >> 2 & 1)) {
 		CHECK(self->ini_D3D);
-		CHECK(g_EngineDev);
+		CHECK(g_Engine->device);
 	}
 	self->ini_D3D = 0;
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 	OBJ3D_CALL((IObject3D *)self->cam, OBJ3D_VF_RELEASED3D, objDev_t, dev);
 	if (self->Sky) {
 		CModel_ReleaseD3D(self->Sky, dev, 1);
@@ -187,7 +187,7 @@ void __fastcall CWorld_ReleaseD3D(CWorld *self) {
 void __fastcall CWorld_InitD3D(CWorld *self) {
 	CHECK(!self->ini_D3D);
 	self->ini_D3D = 1;
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 	CHECK(dev);
 	OBJ3D_CALL((IObject3D *)self->cam, OBJ3D_VF_INITD3D, objDev_t, dev);
 	if (self->Sky) {
@@ -383,7 +383,7 @@ static void World_RenderSky(CWorld *self, void *dev) {
 
 void __fastcall CWorld_Render(CWorld *self) {
 	CHECK(self->ini_D3D);
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 	CHECK(dev);
 	g_FogActive = 0;
 	if (g_ModelsOn) {

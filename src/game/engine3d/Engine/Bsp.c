@@ -960,7 +960,7 @@ void __fastcall CBsp_ReleaseD3D(CBsp *self) {
 			z->ib.pVertIB = NULL;
 		}
 	}
-	CModel_ReleaseD3D(self->model, ENGINE_DEV(g_Engine), 1);
+	CModel_ReleaseD3D(self->model, g_Engine->device, 1);
 }
 
 
@@ -2449,7 +2449,7 @@ void Bsp_Create(void) {
 		return;
 	}
 	if (g_ShadowMapDlg) {
-		void *hwnd = ENGINE_HWND(g_Engine);
+		void *hwnd = g_Engine->hWnd;
 		void *inst = (void *)exe_GetWindowLongA(hwnd, -6);
 		if (!exe_DialogBoxParamA(inst, (const char *)0xa2, hwnd, g_ShadowMapDlgCalc, 0)) {
 			g_ShadowMapUse = 0;
@@ -3306,7 +3306,7 @@ void __fastcall CBsp_InitD3D(CBsp *self) {
 	mat.params.lighting = 0;
 	mat.params.attrib = 0x800;
 	self->matWire = Mat_New(&mat, 1);
-	CModel_InitD3D(self->model, ENGINE_DEV(g_Engine), 1);
+	CModel_InitD3D(self->model, g_Engine->device, 1);
 	CMaterial_dtor(&mat);
 }
 

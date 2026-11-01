@@ -1454,7 +1454,7 @@ void __fastcall CBsp_Calculate(CBsp *self) {
 	CHECK(!World_Get()->GroundScale->fromAmc);
 	CHECK(!scn->fromAmc);
 	Err_Printf(0, "USE_NO_COLLIDE_TRIS not defined, (+no_collide) objects will not cast shadows");
-	Win_SetTextf(ENGINE_HWND(g_Engine), "Compiling Map [%s] - Version %d", self->name, g_EngineVersion);
+	Win_SetTextf(g_Engine->hWnd, "Compiling Map [%s] - Version %d", self->name, g_EngineVersion);
 	exe_SetConsoleTitleA(self->name);
 	if (g_TXF_Helper) {
 		CHECK(g_ShadowMapUseTxf);

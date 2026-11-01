@@ -21,7 +21,7 @@ static void Dbg_Rect(int x, int y, int w, int h, uint32_t color, rectbrush_t dra
 	if (!g_Engine) {
 		return;
 	}
-	void *dc = exe_GetDC(ENGINE_HWND(g_Engine));
+	void *dc = exe_GetDC(g_Engine->hWnd);
 	if (!dc) {
 		return;
 	}
@@ -31,7 +31,7 @@ static void Dbg_Rect(int x, int y, int w, int h, uint32_t color, rectbrush_t dra
 		draw(dc, &r, brush);
 		exe_DeleteObject(brush);
 	}
-	exe_ReleaseDC(ENGINE_HWND(g_Engine), dc);
+	exe_ReleaseDC(g_Engine->hWnd, dc);
 }
 
 void Dbg_FrameRect(int x, int y, int w, int h, uint32_t color) {
@@ -46,7 +46,7 @@ void Debug_Line(int x0, int y0, int x1, int y1, uint32_t color, int width) {
 	if (!g_Engine) {
 		return;
 	}
-	void *dc = exe_GetDC(ENGINE_HWND(g_Engine));
+	void *dc = exe_GetDC(g_Engine->hWnd);
 	if (!dc) {
 		return;
 	}
@@ -58,7 +58,7 @@ void Debug_Line(int x0, int y0, int x1, int y1, uint32_t color, int width) {
 		exe_SelectObject(dc, old);
 		exe_DeleteObject(pen);
 	}
-	exe_ReleaseDC(ENGINE_HWND(g_Engine), dc);
+	exe_ReleaseDC(g_Engine->hWnd, dc);
 }
 
 const char *Err_Unregister(int code) {

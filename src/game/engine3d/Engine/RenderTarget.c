@@ -630,10 +630,10 @@ void NewsPanel_Init(void) {
 	}
 	/* the formats of the display mode and of the depth buffer of the application */
 	uint32_t size = (uint32_t)g_NewsPanelSize;
-	uint32_t zfmt = ENGINE_ZFORMAT(g_Engine);
+	uint32_t zfmt = g_Engine->depthBufferDesc.Format;
 	void *dev = RT_Dev();
 	D3D_METHOD(dev, rtCreateTexture_t, D3DDEV_CREATETEXTURE)(dev, size, size, 1, D3DUSAGE_RENDERTARGET,
-		(int)ENGINE_MODE(g_Engine)[0], D3DPOOL_DEFAULT, &g_NewsPanelTarget);
+		g_Engine->backBufferDesc.Format, D3DPOOL_DEFAULT, &g_NewsPanelTarget);
 	dev = RT_Dev();
 	D3D_METHOD(dev, rtCreateDepthStencil_t, D3DDEV_CREATEDEPTHSTENCILSURFACE)(dev, size, size, (int)zfmt, 0,
 		&g_NewsPanelZ);
@@ -1725,7 +1725,7 @@ static byte RT_CapsLoad(const char *name, void **tex) {
 	uint32_t size;
 
 	FileIO_ReadAll(name, &data, &size);
-	byte ok = D3DX_CreateTextureFromFileInMemoryEx(ENGINE_DEV(g_Engine), data, size, 0, 0, 1, 0, D3DFMT_A8R8G8B8,
+	byte ok = D3DX_CreateTextureFromFileInMemoryEx(g_Engine->device, data, size, 0, 0, 1, 0, D3DFMT_A8R8G8B8,
 		D3DPOOL_MANAGED, 1, 1, 0, NULL, NULL, tex) >= 0;
 	Ptr_Delete(&data);
 	return ok;

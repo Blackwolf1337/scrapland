@@ -293,13 +293,13 @@ int Video_RenderStream(void *dd, void *primary, void *ms, byte *played) {
 	if (!Engine_IsFullScreen()) {
 		exe_point pt = { 0, 0 };
 		if (primary) {
-			exe_ClientToScreen(ENGINE_HWND(g_Engine), &pt);
+			exe_ClientToScreen(g_Engine->hWnd, &pt);
 		}
-		const int *cr = (const int *)(g_Engine + 0x2a508);
-		dst.left = cr[0] + pt.x;
-		dst.top = cr[1] + pt.y;
-		dst.right = cr[2] + pt.x;
-		dst.bottom = cr[3] + pt.y;
+		const exe_rect *cr = &g_Engine->windowClient;
+		dst.left = cr->left + pt.x;
+		dst.top = cr->top + pt.y;
+		dst.right = cr->right + pt.x;
+		dst.bottom = cr->bottom + pt.y;
 	}
 	int h = dst.bottom - dst.top;
 	int w = dst.right - dst.left;
@@ -427,7 +427,7 @@ static void Video_StreamStep(void) {
 		}
 	}
 	if (!video.primary) {
-		Video_BltToWindow(ENGINE_HWND(g_Engine), &video.dst, video.surf, &video.src);
+		Video_BltToWindow(g_Engine->hWnd, &video.dst, video.surf, &video.src);
 	} else {
 		if (!video.secDone) {
 			hr = COM_CALL(video.sec, ddsBlt_t, DDS_BLT)(video.sec, &video.src, video.surf, &video.src,
@@ -529,7 +529,7 @@ int Video_PlayPath(const char *name, const char *dir, byte warn) {
 		E3D_LogBlue(g_FileLog, "ERROR: Could not open DirectDraw - check it is installed");
 		dd = NULL;
 	} else {
-		int hr = COM_CALL(dd, ddSetCoop_t, DD_SETCOOPERATIVELEVEL)(dd, ENGINE_HWND(g_Engine), DDSCL_NORMAL);
+		int hr = COM_CALL(dd, ddSetCoop_t, DD_SETCOOPERATIVELEVEL)(dd, g_Engine->hWnd, DDSCL_NORMAL);
 		if (hr < 0) {
 			E3D_LogBlue(g_FileLog, "ERROR: SetCooperativeLevel(): 0x%08X", hr);
 		} else if (Video_OpenStream(path, dd, &ms) >= 0) {

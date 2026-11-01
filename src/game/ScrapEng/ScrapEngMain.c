@@ -64,7 +64,7 @@ enum {
 
 static D3DAdapterInfo *Engine_AdapterInfo(void) {
 	CHECK(g_Engine);
-	D3DAdapterInfo *ai = ENGINE_ADAPTERINFO(g_Engine);
+	D3DAdapterInfo *ai = &g_Engine->adapters[g_Engine->adapter];
 	CHECK(ai);
 	return ai;
 }
@@ -348,18 +348,18 @@ void Engine_Init(void) {
 	E3D_LogDebug(g_FileLog, "TimerQPFreq: %d", (int)freq);
 	Engine3D_Create(hInst, hWnd, GAME_FUNC(Engine_OneTimeInit, RVA_ENGINE_ONETIMEINIT), GAME_FUNC(Engine_FrameMove, RVA_ENGINE_FRAMEMOVE),
 		GAME_FUNC(Engine_FinalCleanup, RVA_ENGINE_FINALCLEANUP), 0);
-	ENGINE_FULLSCREEN(g_Engine) = g_FullScreen && !APP_DEDICATED(g_pApp);
-	ENGINE_WIDTH(g_Engine) = g_VideoWidth;
-	ENGINE_HEIGHT(g_Engine) = g_VideoHeight;
-	ENGINE_BPP(g_Engine) = g_VideoBPP;
+	g_Engine->fullscreen = g_FullScreen && !APP_DEDICATED(g_pApp);
+	g_Engine->width = g_VideoWidth;
+	g_Engine->height = g_VideoHeight;
+	g_Engine->bpp = g_VideoBPP;
 	g_MapTextSavingOn = g_ComputeMapTextSaving == 1;
-	byte *m = g_Engine;
+	CD3DApplication *m = g_Engine;
 	if (!APP_DEDICATED(g_pApp)) {
-		if (((int(__thiscall *)(byte *, void *))(*(void ***)m)[ENGINE_VT_CREATE / 4])(m, hInst) < 0) {
+		if (m->vftable->Create(m, hInst) < 0) {
 			Err_Printf(1, "Engine3D initialization error");
 		}
 	} else {
-		ENGINE_CALL(m, ENGINE_VT_RESTORE);
+		m->vftable->OneTimeSceneInit(m);
 	}
 	/* differs from the original on purpose (no blocking waits): a video plays on from the message loop, the steps after
 	 * it run from Engine_VideoResume */
@@ -371,9 +371,9 @@ void Engine_Init(void) {
 
 /* al from the window flag with the rest of eax from g_Engine, like the original's sete */
 int Engine_IsFullScreen(void) {
-	byte *m = g_Engine;
+	CD3DApplication *m = g_Engine;
 	if (m) {
-		return (int)(((uintptr_t)m & ~(uintptr_t)0xff) | (ENGINE_WINDOWED(m) == 0));
+		return (int)(((uintptr_t)m & ~(uintptr_t)0xff) | (m->windowed == 0));
 	}
 	if (g_FullScreen && !APP_DEDICATED(g_pApp)) {
 		return 1;
@@ -383,10 +383,10 @@ int Engine_IsFullScreen(void) {
 
 void Engine_LevelEnd(void) {
 	CHECK(g_Engine);
-	if (ENGINE_CALL(g_Engine, ENGINE_VT_INVALIDATE) < 0) {
+	if (g_Engine->vftable->DeleteDeviceObjects(g_Engine) < 0) {
 		Err_Printf(1, "ERROR: LevelEndEngine3D()");
 	}
-	if (ENGINE_CALL(g_Engine, ENGINE_VT_DELETE) < 0) {
+	if (g_Engine->vftable->FinalCleanup(g_Engine) < 0) {
 		Err_Printf(1, "ERROR: LevelEndEngine3D()");
 	}
 	Splash_Show("2D/Loading/00Black.dds", 0, 0, 0);
@@ -426,14 +426,14 @@ void Engine_LevelInit(void) {
 	g_DrawProgressBar = 1;
 	g_ProgressBarCount = 0;
 	Loading_Step(0);
-	void *dev = ENGINE_DEV(g_Engine);
-	ENGINE_DEV(g_Engine) = NULL;
-	if (ENGINE_CALL(g_Engine, ENGINE_VT_RESTORE) < 0) {
+	void *dev = g_Engine->device;
+	g_Engine->device = NULL;
+	if (g_Engine->vftable->OneTimeSceneInit(g_Engine) < 0) {
 		Err_Printf(1, "ERROR: LevelInitEngine3D()");
 	}
-	ENGINE_DEV(g_Engine) = dev;
+	g_Engine->device = dev;
 	if (!APP_DEDICATED(g_pApp)) {
-		if (ENGINE_CALL(g_Engine, ENGINE_VT_RESTORE2) < 0) {
+		if (g_Engine->vftable->InitDeviceObjects(g_Engine) < 0) {
 			Err_Printf(1, "ERROR: LevelInitEngine3D()");
 		}
 	}
@@ -887,14 +887,14 @@ void Loading_Fade(void) {
 
 void Engine_ResetAll(void) {
 	Con_Printf("ResetEngine3D_All\n");
-	CHECK(ENGINE_DEV(g_Engine));
+	CHECK(g_Engine->device);
 	Splash_Show("2D/Loading/00Reset.dds", 1, 500, 0);
-	byte *m = g_Engine;
-	ENGINE_VSYNC(m) = g_VSync;
-	if (ENGINE_WINDOWED(m)) {
-		ENGINE_PP(m)[12] = 0;	/* FullScreen_PresentationInterval */
+	CD3DApplication *m = g_Engine;
+	m->vsync = g_VSync;
+	if (m->windowed) {
+		m->presentParams.FullScreen_PresentationInterval = 0;
 	} else {
-		ENGINE_PP(m)[12] = ENGINE_VSYNC(m) ? 0 : 0x80000000;	/* D3DPRESENT_INTERVAL_IMMEDIATE */
+		m->presentParams.FullScreen_PresentationInterval = m->vsync ? 0 : D3DPRESENT_INTERVAL_IMMEDIATE;
 	}
 	if (CD3DApp_Reset(g_Engine) < 0) {
 		E3D_LogBlue(g_FileLog, "ERROR: ResetEngine3D_All()");
@@ -903,10 +903,10 @@ void Engine_ResetAll(void) {
 
 void Engine_ResetTextures(void) {
 	Con_Printf("ResetEngine3D_Textures\n");
-	CHECK(ENGINE_DEV(g_Engine));
+	CHECK(g_Engine->device);
 	Texture_ReleaseAllD3D();
 	CMatList_Release(g_MatList);
-	CMatList_Prepare(g_MatList, ENGINE_DEV(g_Engine));
+	CMatList_Prepare(g_MatList, g_Engine->device);
 }
 
 int Eng_RenderTargetEnd(void) {
@@ -1055,11 +1055,11 @@ void Video_SetCurrentMode(int mode) {
 	g_VideoHeight = (int)mi->Height;
 	g_VideoBPP = Format_Bpp((int)mi->Format);
 	dev->dwCurrentMode = mode;
-	uint32_t *pp = ENGINE_PP(g_Engine);
-	pp[9] = mi->DepthStencilFormat;		/* AutoDepthStencilFormat */
-	pp[0] = mi->Width;
-	pp[1] = mi->Height;
-	pp[2] = mi->Format;
+	D3DPresentParams *pp = &g_Engine->presentParams;
+	pp->AutoDepthStencilFormat = mi->DepthStencilFormat;
+	pp->BackBufferWidth = mi->Width;
+	pp->BackBufferHeight = mi->Height;
+	pp->BackBufferFormat = mi->Format;
 	g_ResetPending = 1;
 }
 
