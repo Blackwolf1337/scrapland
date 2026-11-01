@@ -342,9 +342,9 @@ struct cAICharControl {
 	vec3_t routePoint;		/* 0x230 */
 	cNWNode *routeNode;		/* 0x23c the node of the route BuildPath reached */
 	cAICCSeg debugSegs[9];		/* 0x240 the corridor of the last path test */
-	cNWVecList debug318;		/* 0x318 the points of the strafe tests */
-	cNWVecList debug330;		/* 0x330 */
-	cNWSegList debug348;		/* 0x348 the segments of the path tests (ShowTestCanGoAI) */
+	cNWVecList debugStrafe;		/* 0x318 the points of the strafe tests */
+	cNWVecList unused_330;		/* 0x330 */
+	cNWSegList debugPath;		/* 0x348 the segments of the path tests (ShowTestCanGoAI) */
 };
 SD_OFFSET(cAICharControl, ai, 0x44);
 SD_OFFSET(cAICharControl, dest, 0x68);
@@ -374,8 +374,8 @@ SD_OFFSET(cAICharControl, dir, 0x220);
 SD_OFFSET(cAICharControl, seen, 0x22d);
 SD_OFFSET(cAICharControl, routePoint, 0x230);
 SD_OFFSET(cAICharControl, debugSegs, 0x240);
-SD_OFFSET(cAICharControl, debug318, 0x318);
-SD_OFFSET(cAICharControl, debug348, 0x348);
+SD_OFFSET(cAICharControl, debugStrafe, 0x318);
+SD_OFFSET(cAICharControl, debugPath, 0x348);
 SD_SIZE(cAICharControl, CAICHARCONTROL_SIZE);
 /* the 2D and the 3D control add only vtable slots (both 0x360 bytes, the constructor of cAIChar) */
 typedef cAICharControl cAICharControl2D;

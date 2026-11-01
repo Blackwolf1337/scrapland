@@ -207,10 +207,10 @@ void __thiscall CNodesWorld2D_ClearLists(CNodesWorld2D *self) {
 
 	DListVec3_Clear(&w->sup.extraPoints);
 	NWPointList_Clear(&w->sup.points);
-	NWVecList_Clear(&w->sup.lists25c[0]);
-	NWVecList_Clear(&w->sup.lists25c[1]);
+	NWVecList_Clear(&w->sup.foundNodes[0]);
+	NWVecList_Clear(&w->sup.foundNodes[1]);
 	for (int i = 0; i < 5; i++) {
-		DListVec3_Clear(&w->sup.lists28c[i]);
+		DListVec3_Clear(&w->sup.cellLists[i]);
 	}
 	if (!g_NW2DDrawMode) {
 		return;
@@ -1323,9 +1323,9 @@ byte __thiscall CNodesWorld2D_FindLinkFree(CNodesWorld2D *self, const vec3_t *co
 	int best[3];
 	float bestDist = 3.4028234663852886e+38f;
 	byte found = 0;
-	const int *cells = w->sup.tmp1c8;
+	const int *cells = w->sup.freeCells;
 
-	for (int k = 0; k < w->sup.num1cc; k++) {
+	for (int k = 0; k < w->sup.numFreeCells; k++) {
 		vec3_t c, c2;
 		int idx = cells[k];
 		if (w->sup.buffer[idx].state == 5) {
@@ -1468,27 +1468,27 @@ void __fastcall CNodesWorld2D_Draw(CNodesWorld2D *self) {
 				DebugUtils_DrawLine(&w->sup.nodes[i].pos, &low, 0xff00);
 			}
 		}
-		NWSup_DrawFound(w, &w->sup.lists25c[0], 25.0f, 0xff00);
-		NWSup_DrawFound(w, &w->sup.lists25c[1], 25.0f, 0xff);
+		NWSup_DrawFound(w, &w->sup.foundNodes[0], 25.0f, 0xff00);
+		NWSup_DrawFound(w, &w->sup.foundNodes[1], 25.0f, 0xff);
 		NWSup_DrawExtra(w, 25.0f, 0xffff00);
 		if (g_NW2DDrawMode == 8 && w->sup.grid) {
 			w->sup.grid->vftable->Draw(w->sup.grid, 0xff00);
 		}
 		break;
 	case 2:
-		NWSup_DrawCells(w, &w->sup.lists28c[1], 0xffffff, "ListNodesVis: %d\n");
+		NWSup_DrawCells(w, &w->sup.cellLists[1], 0xffffff, "ListNodesVis: %d\n");
 		break;
 	case 3:
-		NWSup_DrawCells(w, &w->sup.lists28c[2], 0xff, "ListNodesNotVis: %d\n");
+		NWSup_DrawCells(w, &w->sup.cellLists[2], 0xff, "ListNodesNotVis: %d\n");
 		break;
 	case 4:
-		NWSup_DrawCells(w, &w->sup.lists28c[0], 0xff0000, "ListNodesMap: %d\n");
+		NWSup_DrawCells(w, &w->sup.cellLists[0], 0xff0000, "ListNodesMap: %d\n");
 		break;
 	case 5:
-		NWSup_DrawCells(w, &w->sup.lists28c[3], 0xff00, "ListNodesFree: %d\n");
+		NWSup_DrawCells(w, &w->sup.cellLists[3], 0xff00, "ListNodesFree: %d\n");
 		break;
 	case 6:
-		NWSup_DrawCells(w, &w->sup.lists28c[4], 0, "ListNodesOutMap: %d\n");
+		NWSup_DrawCells(w, &w->sup.cellLists[4], 0, "ListNodesOutMap: %d\n");
 		break;
 	case 9:
 	case 10: {

@@ -975,7 +975,7 @@ void __thiscall cObjElementFXSonicExplosion_Explode(cObjElementFXSonicExplosion 
 	for (int i = 0; i < FXSONIC_RINGS; i++) {
 		self->ringSize[i] = g_FXSonicRadius * mult[i] * 0.075f;
 		self->ringVel[i] = g_FXSonicRadius * mult[i] * 0.4f;
-		self->ring1dc[i] = 0.0f;
+		self->unused_1dc[i] = 0.0f;
 		self->ringAcc[i] = -g_FXSonicRadius;
 		self->ringFade[i] = fade[i];
 	}

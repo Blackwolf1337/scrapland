@@ -949,14 +949,14 @@ static int AICC2D_ArcStep(cAICharControl *self, const vec3_t *s, const vec3_t *a
 	float fd = WChar(me)->floorDist;
 	float r2 = Obj_Vtbl(me)->GetRadius(me);
 	float r = Obj_Vtbl(me)->GetRadius(me);
-	if (!CNodesWorld2D_TestCorner(g_NodesWorld2D, s, a, b, r, r2, fd, fr, left, &self->debug348)) {
+	if (!CNodesWorld2D_TestCorner(g_NodesWorld2D, s, a, b, r, r2, fd, fr, left, &self->debugPath)) {
 		return 0;
 	}
 	fr = AICC_FloorRadius(self);
 	fd = WChar(me)->floorDist;
 	r2 = Obj_Vtbl(me)->GetRadius(me);
 	r = Obj_Vtbl(me)->GetRadius(me);
-	return CNodesWorld2D_TestPath(g_NodesWorld2D, a, b, r, r2, fd, fr, &self->debug348) != 0;
+	return CNodesWorld2D_TestPath(g_NodesWorld2D, a, b, r, r2, fd, fr, &self->debugPath) != 0;
 }
 
 /* the walk around pos on the circle of radius dist from the way away to the way dir (the other way round without
@@ -966,7 +966,7 @@ byte __thiscall cAICharControl2D_StrafeBack(cAICharControl2D *self, const vec3_t
 	cEntity *me = self->ent;
 	vec3_t a, d, prev, cur, S, buf;
 
-	DListSeg_Clear(&self->debug348);
+	DListSeg_Clear(&self->debugPath);
 	a = AICC2D_FlatNorm(away->x, away->z);
 	d = AICC2D_FlatNorm(dir->x, dir->z);
 	float sign = left ? 1.0f : -1.0f;
@@ -979,14 +979,14 @@ byte __thiscall cAICharControl2D_StrafeBack(cAICharControl2D *self, const vec3_t
 	prev.y = pos->y + a.y * dist;
 	prev.z = pos->z + a.z * dist;
 	if (g_ShowShirkAI == 1) {
-		DListVec3_Add(&self->debug318, AICC_Pos(self, &buf));
-		DListVec3_Add(&self->debug318, &prev);
+		DListVec3_Add(&self->debugStrafe, AICC_Pos(self, &buf));
+		DListVec3_Add(&self->debugStrafe, &prev);
 	}
 	float fr = AICC_FloorRadius(self);
 	float fd = WChar(me)->floorDist;
 	float r2 = Obj_Vtbl(me)->GetRadius(me);
 	float r = Obj_Vtbl(me)->GetRadius(me);
-	if (!CNodesWorld2D_TestPath(g_NodesWorld2D, AICC_Pos(self, &buf), &prev, r, r2, fd, fr, &self->debug348)) {
+	if (!CNodesWorld2D_TestPath(g_NodesWorld2D, AICC_Pos(self, &buf), &prev, r, r2, fd, fr, &self->debugPath)) {
 		return 0;
 	}
 	AICC_Pos(self, &S);
@@ -994,7 +994,7 @@ byte __thiscall cAICharControl2D_StrafeBack(cAICharControl2D *self, const vec3_t
 	while (ang > (double)t) {
 		AICC2D_ArcPoint(&cur, pos, &a, t * sign, dist);
 		if (g_ShowShirkAI == 1) {
-			DListVec3_Add(&self->debug318, &cur);
+			DListVec3_Add(&self->debugStrafe, &cur);
 		}
 		if (!AICC2D_ArcStep(self, &S, &prev, &cur, left)) {
 			return 0;
@@ -1005,7 +1005,7 @@ byte __thiscall cAICharControl2D_StrafeBack(cAICharControl2D *self, const vec3_t
 	}
 	AICC2D_ArcPoint(&cur, pos, &a, (float)ang * sign, dist);
 	if (g_ShowShirkAI == 1) {
-		DListVec3_Add(&self->debug318, &cur);
+		DListVec3_Add(&self->debugStrafe, &cur);
 	}
 	if (!AICC2D_ArcStep(self, &S, &prev, &cur, left)) {
 		return 0;
@@ -1021,7 +1021,7 @@ static int AICC2D_ArcFloor(cAICharControl *self, const vec3_t *p, vec3_t *out) {
 		return -1;
 	}
 	if (g_ShowShirkAI == 1) {
-		DListVec3_Add(&self->debug330, out);
+		DListVec3_Add(&self->unused_330, out);
 	}
 	float r = WChar(self->ent)->wl.prim.radius + 1.0f - g_MarginCollCharAI;
 	return !cWorld_TestSphereEntities(g_pWorld, self->ent, (void *)0x10, out, r, &hit, 1, 0);

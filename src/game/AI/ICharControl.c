@@ -53,9 +53,9 @@ cAICharControl *__thiscall cAICharControl_ctor(void *mem, cEntity *ent, cAIChar 
 	cSlotController_ctor(AICC_Slot(&self->slotOrbit), 0.2f);
 	cSlotController_ctor(AICC_Slot(&self->slotLost), 3.0f);
 	cSlotController_ctor(AICC_Slot(&self->slotWait), 0.2f);
-	memset(&self->debug318, 0, sizeof(self->debug318));
-	memset(&self->debug330, 0, sizeof(self->debug330));
-	memset(&self->debug348, 0, sizeof(self->debug348));
+	memset(&self->debugStrafe, 0, sizeof(self->debugStrafe));
+	memset(&self->unused_330, 0, sizeof(self->unused_330));
+	memset(&self->debugPath, 0, sizeof(self->debugPath));
 	if (!ent || !ai) {
 		Con_Bluef("ERROR: Inicializaci\xf3n AI Char Control. Entidad = NULL.\n");
 		CheckFailed("cAICharControl_Fail_Entity_NULL", __FILE__, __TIMESTAMP__, __LINE__);
@@ -139,9 +139,9 @@ void __fastcall DListSeg_Free(cNWSegList *list) {
 
 void __fastcall cAICharControl_dtor(cAICharControl *self) {
 	self->vftable = CAICHARCONTROL_VFTABLE;
-	DListSeg_Free(&self->debug348);
-	NWVecList_Free(&self->debug330);
-	NWVecList_Free(&self->debug318);
+	DListSeg_Free(&self->debugPath);
+	NWVecList_Free(&self->unused_330);
+	NWVecList_Free(&self->debugStrafe);
 	NWVecList_Free(&self->path);
 	Nto1Node_Done(&self->link);
 }
@@ -648,8 +648,8 @@ void __thiscall cAICharControl_UpdateAvoid(cAICharControl *self) {
 	toE.y = 0.0f;
 	toGoal.y = 0.0f;
 	self->side = (toGoal.x * toE.z - toE.x * toGoal.z > 0.0f) ? 1 : 2;
-	DListVec3_Clear(&self->debug318);
-	DListVec3_Clear(&self->debug330);
+	DListVec3_Clear(&self->debugStrafe);
+	DListVec3_Clear(&self->unused_330);
 	float sd = vt->StrafeDist(self, self->link.target);
 	if (vt->TryStrafe(self, self->side, self->link.target, 1, keep, self->avoidChar, sd, 1)) {
 		return;
@@ -699,8 +699,8 @@ byte __thiscall cAICharControl_FindAvoid(cAICharControl *self) {
 	if (g_AICCNumNear <= 1) {
 		return 0;
 	}
-	DListVec3_Clear(&self->debug318);
-	DListVec3_Clear(&self->debug330);
+	DListVec3_Clear(&self->debugStrafe);
+	DListVec3_Clear(&self->unused_330);
 	int found = 0;
 	for (int i = 0; i < g_AICCNumNear; i++) {
 		cEntity *e = g_AICCNear[i];
@@ -1108,7 +1108,7 @@ byte __thiscall cAICharControl_StartOrbit(cAICharControl *self, float dist) {
 		sgn = 1.0f;
 		left = 0;
 	}
-	DListVec3_Clear(&self->debug318);
+	DListVec3_Clear(&self->debugStrafe);
 	rot.x = 0.0f;
 	rot.y = g_AngAttackBackCharAI * sgn;
 	rot.z = 0.0f;
@@ -1198,29 +1198,29 @@ static void AICC_DrawShirk(cAICharControl *self) {
 	if (strcmp(dbg, self->ent->name) && strcmp(dbg, AICC_EXE_EMPTY)) {
 		return;
 	}
-	if (self->debug318.head) {
-		cNWVecNode *node = self->debug318.head->prev;
-		self->debug318.iter = node;
+	if (self->debugStrafe.head) {
+		cNWVecNode *node = self->debugStrafe.head->prev;
+		self->debugStrafe.iter = node;
 		for (int i = 0; node; i++) {
 			uint32_t color = i == 0 ? 0xffffff : 0xff;
 			float r = Obj_Vtbl(self->ent)->GetRadius(self->ent);
 			DebugUtils_DrawSphere(&node->v, r, color, 20, 20);
-			node = self->debug318.iter->prev;
-			self->debug318.iter = node;
-			if (node == self->debug318.head->prev) {
+			node = self->debugStrafe.iter->prev;
+			self->debugStrafe.iter = node;
+			if (node == self->debugStrafe.head->prev) {
 				break;
 			}
 		}
 	}
-	if (self->debug330.head) {
-		cNWVecNode *node = self->debug330.head->prev;
-		self->debug330.iter = node;
+	if (self->unused_330.head) {
+		cNWVecNode *node = self->unused_330.head->prev;
+		self->unused_330.iter = node;
 		while (node) {
 			float r = WChar(self->ent)->wl.prim.radius - (g_MarginCollCharAI + 5.0f);
 			DebugUtils_DrawSphere(&node->v, r, 0xff00, 20, 20);
-			node = self->debug330.iter->prev;
-			self->debug330.iter = node;
-			if (node == self->debug330.head->prev) {
+			node = self->unused_330.iter->prev;
+			self->unused_330.iter = node;
+			if (node == self->unused_330.head->prev) {
 				break;
 			}
 		}
@@ -1248,13 +1248,13 @@ void __thiscall cAICharControl_Draw(cAICharControl *self) {
 		CFont_PrintfColor(g_FontTerminal8, 10.0f, 130.0f, 0xffff00, "Control Walk: %.2f", (double)self->ctrl->walk);
 	}
 	if (g_NWDebugSegs) {
-		cNWSegNode *node = self->debug348.head;
-		self->debug348.iter = node;
+		cNWSegNode *node = self->debugPath.head;
+		self->debugPath.iter = node;
 		while (node) {
 			DebugUtils_DrawLine(&node->a, &node->b, 0xff0000);
-			node = self->debug348.iter->next;
-			self->debug348.iter = node;
-			if (node == self->debug348.head) {
+			node = self->debugPath.iter->next;
+			self->debugPath.iter = node;
+			if (node == self->debugPath.head) {
 				break;
 			}
 		}

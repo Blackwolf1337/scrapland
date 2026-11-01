@@ -251,9 +251,9 @@ void __thiscall cObjElementFXSceneYakuzzi_SetEntity(cObjElementFXSceneYakuzzi *s
 
 void __thiscall cObjElementFXSceneBeatPickus_Attach(cObjElementFXSceneBeatPickus *self, cDebris *d) {
 	CHECK(CGameModel_IsLoaded(Debris_Model(d)));
-	FXS_AttachNode(&self->parts184, d, "Dummy01");
-	FXS_AttachNode(&self->partsD0, d, "Dummy02");
-	FXS_AttachNode(&self->parts1c, d, "Dummy03");
+	FXS_AttachNode(&self->sparks, d, "Dummy01");
+	FXS_AttachNode(&self->debris, d, "Dummy02");
+	FXS_AttachNode(&self->dust, d, "Dummy03");
 	FXS_DummyPos("DM_Scene_Beating", &self->dummy);
 }
 
@@ -316,7 +316,7 @@ void __thiscall cObjElementFXSceneEnterMatrix_Attach(cObjElementFXSceneEnterMatr
 
 void __thiscall cObjElementFXSceneHumanCD_Attach(cObjElementFXSceneHumanCD *self, cDebris *d) {
 	CHECK(CGameModel_IsLoaded(Debris_Model(d)));
-	FXS_AttachNode(&self->parts10, d, "Dummy01");
+	FXS_AttachNode(&self->particles, d, "Dummy01");
 	CHECK(CGameModel_IsLoaded(Debris_Model(d)));
 	FXS_AttachNode(&self->sparks, d, "Dummy03");
 	FXS_DummyPos("DM_Element_MentalControllerMainFX", &self->dummy);
@@ -405,7 +405,7 @@ void __thiscall cObjElementFXSceneHumanCD_Reset(cObjElementFXSceneHumanCD *self,
 	self->t = 0.0f;
 	self->tPrev = 0.0f;
 	self->sparkT = 0.0f;
-	CGameParticles_KillAll(&self->parts10);
+	CGameParticles_KillAll(&self->particles);
 }
 
 void __thiscall cObjElementFXSceneTheEndB_Reset(cObjElementFXSceneTheEndB *self, int arg) {
@@ -1046,7 +1046,7 @@ static inline void FXS_Sprites(CGameParticles *sp, byte ini, byte end) {
 
 /* the dust under Pickus, 10 particles */
 static void FXS_BeatDust(cObjElementFXSceneBeatPickus *self) {
-	CGameParticles *sp = &self->parts1c;
+	CGameParticles *sp = &self->dust;
 	vec3_t dir;
 
 	sp->birthRate = 0;
@@ -1092,7 +1092,7 @@ static void FXS_BeatDust(cObjElementFXSceneBeatPickus *self) {
 
 /* the debris flying off, 2 to 9 particles */
 static void FXS_BeatDebris(cObjElementFXSceneBeatPickus *self) {
-	CGameParticles *sp = &self->partsD0;
+	CGameParticles *sp = &self->debris;
 	vec3_t dir;
 
 	sp->birthRate = 0;
@@ -1180,7 +1180,7 @@ static const vec3_t *FXS_BeatTurn(vec3_t *out, const vec3_t *dir, double range, 
 
 /* the sparks of a blow, 8 to 13 particles from a point near the dummy */
 static void FXS_BeatSparks(cObjElementFXSceneBeatPickus *self) {
-	CGameParticles *sp = &self->parts184;
+	CGameParticles *sp = &self->sparks;
 	vec3_t dir, rdir, p, tmp;
 
 	sp->birthRate = 0;
@@ -1228,7 +1228,7 @@ static void FXS_BeatSparks(cObjElementFXSceneBeatPickus *self) {
 
 /* a hit: two flashes and 8 to 13 sparks falling down */
 static void FXS_BeatHit(cObjElementFXSceneBeatPickus *self) {
-	CGameParticles *sp = &self->partsD0;
+	CGameParticles *sp = &self->debris;
 	vec3_t dir, rdir, ang, tmp, p;
 
 	self->hitT = FxElem_Rand(0.59999996f, 0.3f);
@@ -1307,7 +1307,7 @@ static void FXS_BeatHit(cObjElementFXSceneBeatPickus *self) {
 
 /* the puffs of smoke at four points around Pickus, two each */
 static void FXS_BeatPuffs(cObjElementFXSceneBeatPickus *self) {
-	CGameParticles *sp = &self->parts1c;
+	CGameParticles *sp = &self->dust;
 	vec3_t dir;
 
 	sp->birthRate = 0;

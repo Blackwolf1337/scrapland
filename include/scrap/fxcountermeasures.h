@@ -114,7 +114,7 @@ typedef struct cObjElementFXSonicExplosion {
 	float ringVel[FXSONIC_RINGS];	/* 0x17c */
 	float ringAcc[FXSONIC_RINGS];	/* 0x19c */
 	float ringSize[FXSONIC_RINGS];	/* 0x1bc */
-	float ring1dc[FXSONIC_RINGS];	/* 0x1dc */
+	float unused_1dc[FXSONIC_RINGS];	/* 0x1dc */
 	float ringFade[FXSONIC_RINGS];	/* 0x1fc 1: gone */
 	byte on;			/* 0x21c set by the mine that drops it */
 	byte pad_21d[3];

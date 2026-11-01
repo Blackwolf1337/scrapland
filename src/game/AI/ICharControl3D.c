@@ -781,7 +781,7 @@ static byte AICC3D_ArcCorner(cAICharControl *self, const vec3_t *s, const vec3_t
 
 	float r2 = Obj_Vtbl(me)->GetRadius(me);
 	float r = Obj_Vtbl(me)->GetRadius(me);
-	return CNodesWorld_TestCorner(g_NodesWorld, s, a, b, r, r2, left, &self->debug348);
+	return CNodesWorld_TestCorner(g_NodesWorld, s, a, b, r, r2, left, &self->debugPath);
 }
 
 static byte AICC3D_ArcPath(cAICharControl *self, const vec3_t *a, const vec3_t *b) {
@@ -789,7 +789,7 @@ static byte AICC3D_ArcPath(cAICharControl *self, const vec3_t *a, const vec3_t *
 
 	float r2 = Obj_Vtbl(me)->GetRadius(me);
 	float r = Obj_Vtbl(me)->GetRadius(me);
-	return CNodesWorld_TestPath(g_NodesWorld, a, b, r, r2, &self->debug348, 0);
+	return CNodesWorld_TestPath(g_NodesWorld, a, b, r, r2, &self->debugPath, 0);
 }
 
 /* the walk around pos on the circle of radius dist from the way away to the way dir (the other way round without
@@ -801,7 +801,7 @@ byte __thiscall cAICharControl3D_StrafeBack(cAICharControl3D *self, const vec3_t
 	vec3_t buf, S, prev, cur;
 	matrix_t m;
 
-	DListSeg_Clear(&self->debug348);
+	DListSeg_Clear(&self->debugPath);
 	vec3_t a = AICC3D_Unit(*away);
 	vec3_t d = AICC3D_Unit(*dir);
 	float sign = left ? 1.0f : -1.0f;
@@ -814,12 +814,12 @@ byte __thiscall cAICharControl3D_StrafeBack(cAICharControl3D *self, const vec3_t
 	prev.y = a.y * dist + pos->y;
 	prev.z = a.z * dist + pos->z;
 	if (g_ShowShirkAI == 1) {
-		DListVec3_Add(&self->debug318, AICC_Pos(self, &buf));
-		DListVec3_Add(&self->debug318, &prev);
+		DListVec3_Add(&self->debugStrafe, AICC_Pos(self, &buf));
+		DListVec3_Add(&self->debugStrafe, &prev);
 	}
 	float r2 = Obj_Vtbl(me)->GetRadius(me);
 	float r = Obj_Vtbl(me)->GetRadius(me);
-	if (!CNodesWorld_TestPath(g_NodesWorld, AICC_Pos(self, &buf), &prev, r, r2, &self->debug348, 0)) {
+	if (!CNodesWorld_TestPath(g_NodesWorld, AICC_Pos(self, &buf), &prev, r, r2, &self->debugPath, 0)) {
 		return 0;
 	}
 	AICC_Pos(self, &S);
@@ -832,7 +832,7 @@ byte __thiscall cAICharControl3D_StrafeBack(cAICharControl3D *self, const vec3_t
 			return 0;
 		}
 		if (g_ShowShirkAI == 1) {
-			DListVec3_Add(&self->debug318, &cur);
+			DListVec3_Add(&self->debugStrafe, &cur);
 		}
 		if (!AICC3D_ArcCorner(self, &S, &prev, &cur, left) || !AICC3D_ArcPath(self, &prev, &cur)) {
 			return 0;
@@ -846,7 +846,7 @@ byte __thiscall cAICharControl3D_StrafeBack(cAICharControl3D *self, const vec3_t
 		return 0;
 	}
 	if (g_ShowShirkAI == 1) {
-		DListVec3_Add(&self->debug318, &cur);
+		DListVec3_Add(&self->debugStrafe, &cur);
 	}
 	/* both tests run */
 	res = AICC3D_ArcCorner(self, &S, &prev, &cur, left) ? res : 0;
@@ -881,7 +881,7 @@ byte __thiscall cAICharControl3D_StrafeFwd(cAICharControl3D *self, const vec3_t 
 	cur.y = a.y * dist + pos->y;
 	cur.z = a.z * dist + pos->z;
 	if (g_ShowShirkAI == 1) {
-		DListVec3_Add(&self->debug330, &cur);
+		DListVec3_Add(&self->unused_330, &cur);
 	}
 	if (!AICC3D_ArcFree(self, &cur)) {
 		return 0;
@@ -894,7 +894,7 @@ byte __thiscall cAICharControl3D_StrafeFwd(cAICharControl3D *self, const vec3_t 
 			return 0;
 		}
 		if (g_ShowShirkAI == 1) {
-			DListVec3_Add(&self->debug318, &cur);
+			DListVec3_Add(&self->debugStrafe, &cur);
 		}
 		if (!AICC3D_ArcFree(self, &cur)) {
 			return 0;
@@ -906,7 +906,7 @@ byte __thiscall cAICharControl3D_StrafeFwd(cAICharControl3D *self, const vec3_t 
 		return 0;
 	}
 	if (g_ShowShirkAI == 1) {
-		DListVec3_Add(&self->debug318, &cur);
+		DListVec3_Add(&self->debugStrafe, &cur);
 	}
 	return AICC3D_ArcFree(self, &cur);
 }

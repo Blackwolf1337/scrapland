@@ -72,11 +72,11 @@ void *__thiscall cObjElementFXATPC_ctor(void *self) {
 	FXObj_SetVtbl(s, COBJELEMENTFXATPC_VFTABLE);
 	CGameParticles_ctor(&s->particles);
 	CGameParticles_ctor(&s->particles2);
-	CGameTrail_ctor(&s->trail1c4);
-	CGameTrail_ctor(&s->trail1c8);
-	CGameTrail_ctor(&s->trail1d0);
-	CGameTrail_ctor(&s->trail1d8);
-	CGameTrail_ctor(&s->trail1e0);
+	CGameTrail_ctor(&s->core);
+	CGameTrail_ctor(&s->line);
+	CGameTrail_ctor(&s->rings);
+	CGameTrail_ctor(&s->endRing);
+	CGameTrail_ctor(&s->ringsDuDv);
 	s->on = 0;
 	s->shooter = NULL;
 	*(uint32_t *)s->slotOn = 0;
@@ -159,11 +159,11 @@ void *__thiscall cObjElementFXTesla_ctor(void *self) {
 void __thiscall cObjElementFXATPC_dtor(void *self) {
 	cObjElementFXATPC *s = self;
 	*(void **)s = COBJELEMENTFXATPC_VFTABLE;
-	CGameTrail_dtor(&s->trail1e0);
-	CGameTrail_dtor(&s->trail1d8);
-	CGameTrail_dtor(&s->trail1d0);
-	CGameTrail_dtor(&s->trail1c8);
-	CGameTrail_dtor(&s->trail1c4);
+	CGameTrail_dtor(&s->ringsDuDv);
+	CGameTrail_dtor(&s->endRing);
+	CGameTrail_dtor(&s->rings);
+	CGameTrail_dtor(&s->line);
+	CGameTrail_dtor(&s->core);
 	CGameParticles_Release(&s->particles2);
 	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(s);
@@ -285,8 +285,8 @@ static void FXW_RingPoint(vec3_t *out, float a, const vec3_t *ang) {
 	Vec3_Rotate(out, Vec3_Rotate(&o, &up, &rv), ang);
 }
 
-/* the beam: the line of trail1c8 fades in, while the shot lasts the core (trail1c4), the turning rings (trail1d8,
- * trail1d0 and trail1e0 for the dudv pass) and the glow particles at both ends */
+/* the beam: the line fades in, while the shot lasts the core, the turning rings (endRing,
+ * rings and ringsDuDv for the dudv pass) and the glow particles at both ends */
 void __thiscall cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debris, float dt) {
 	(void)dt;
 	cEntity *e = self->shooter;
@@ -330,8 +330,8 @@ void __thiscall cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debri
 
 	/* the line, one point per 1500 */
 	int n = (int)(len / 1500.0f);
-	if (n >= CGameTrail_GetMaxTrails(&self->trail1c8)) {
-		n = CGameTrail_GetMaxTrails(&self->trail1c8) - 1;
+	if (n >= CGameTrail_GetMaxTrails(&self->line)) {
+		n = CGameTrail_GetMaxTrails(&self->line) - 1;
 	}
 	if (n > 3) {
 		float inv = 1.0f / (float)(n - 1);
@@ -339,8 +339,8 @@ void __thiscall cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debri
 		float sx = (self->to.x - self->from.x) * inv;
 		float sy = (self->to.y - self->from.y) * inv;
 		float sz = (self->to.z - self->from.z) * inv;
-		CGameTrail_SetTransp(&self->trail1c8, (byte)a);
-		CGameTrail_Reset(&self->trail1c8);
+		CGameTrail_SetTransp(&self->line, (byte)a);
+		CGameTrail_Reset(&self->line);
 		float w = fade * 800.0f + 400.0f;
 		float fn = (float)n;
 		for (int i = 0; i < n; i++) {
@@ -357,17 +357,17 @@ void __thiscall cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debri
 			} else if (i == 2 || i == n - 3) {
 				color = 0x80808080;
 			}
-			CGameTrail_Add(&self->trail1c8, pt, w, color);
+			CGameTrail_Add(&self->line, pt, w, color);
 		}
 	}
 
 	if (self->time > g_ATPCTrailTime) {
-		if (CGameTrail_IsRender(&self->trail1c4)) {
-			CGameTrail_Clear(&self->trail1c4);
-			CGameTrail_Clear(&self->trail1d8);
-			CGameTrail_Clear(&self->trail1d0);
+		if (CGameTrail_IsRender(&self->core)) {
+			CGameTrail_Clear(&self->core);
+			CGameTrail_Clear(&self->endRing);
+			CGameTrail_Clear(&self->rings);
 			if (g_SceneDuDvRTarget) {
-				CGameTrail_Clear(&self->trail1e0);
+				CGameTrail_Clear(&self->ringsDuDv);
 			}
 			CHECK(p->ParticleSystem);
 			int np = CGameParticles_NumParticles(p);
@@ -381,44 +381,44 @@ void __thiscall cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debri
 	float w0 = (float)Game_Sin((double)Float_MaxSS(s1, 0.2f)) * self->width;
 
 	/* the core */
-	CGameTrail_Reset(&self->trail1c4);
+	CGameTrail_Reset(&self->core);
 	int a = (int)(s1 * 255.0f);
-	CGameTrail_SetTransp(&self->trail1c4, (byte)a);
+	CGameTrail_SetTransp(&self->core, (byte)a);
 	float k16 = u * -16.0f;
 	const uint32_t *ramp = GAME_ARRAY(const uint32_t, cObjElementFXATPC_Update_4317a0, FXATPC_RAMP_CORE) - (int)k16;
 	float rs2 = 0.75f;
 	float w = w0 * 0.75f;
-	CGameTrail_Add(&self->trail1c4, self->from, w, *ramp);
-	CGameTrail_Add(&self->trail1c4, self->to, w, *ramp);
+	CGameTrail_Add(&self->core, self->from, w, *ramp);
+	CGameTrail_Add(&self->core, self->to, w, *ramp);
 	w = w0 * 1.5f;
-	CGameTrail_Add(&self->trail1c4, self->from, w, *ramp);
-	CGameTrail_Add(&self->trail1c4, self->to, w, *ramp);
+	CGameTrail_Add(&self->core, self->from, w, *ramp);
+	CGameTrail_Add(&self->core, self->to, w, *ramp);
 
-	/* the ring at the ends (trail1d8), oriented at the middle of the beam */
+	/* the ring at the ends, oriented at the middle of the beam */
 	mid.x = self->from.x + (self->to.x - self->from.x) * 0.5f;
 	mid.y = self->from.y + (self->to.y - self->from.y) * 0.5f;
 	mid.z = self->from.z + (self->to.z - self->from.z) * 0.5f;
-	CGameTrail_Reset(&self->trail1d8);
-	CGameTrail_SetOrient(&self->trail1d8, mid, 1);
-	CGameTrail_SetUVScale(&self->trail1d8, len / 4000.0f, 0.0625f);
+	CGameTrail_Reset(&self->endRing);
+	CGameTrail_SetOrient(&self->endRing, mid, 1);
+	CGameTrail_SetUVScale(&self->endRing, len / 4000.0f, 0.0625f);
 	float k = u * 16.0f;
-	CGameTrail_SetUV(&self->trail1d8, k, (float)(int)k * 0.0625f);
-	CGameTrail_SetTransp(&self->trail1d8, (byte)a);
+	CGameTrail_SetUV(&self->endRing, k, (float)(int)k * 0.0625f);
+	CGameTrail_SetTransp(&self->endRing, (byte)a);
 	float r = (up == 10 ? 0.25f : 0.15f) * w0;
-	float step = (float)(6.283185307179586 / (double)self->n1d4);
+	float step = (float)(6.283185307179586 / (double)self->endRingPoints);
 	float an = 0.0f;
-	for (int i = 0; i < self->n1d4; i++) {
+	for (int i = 0; i < self->endRingPoints; i++) {
 		vec3_t o, pt;
 		FXW_RingPoint(&o, self->angle + an, &ang);
 		pt.x = o.x * r + self->from.x;
 		pt.y = self->from.y + o.y * r;
 		pt.z = self->from.z + o.z * r;
 		float rw = step * r * 6.0f;
-		CGameTrail_Add(&self->trail1d8, pt, rw, (uint32_t)(int)(u * 255.0f) << 24 | 0xffffff);
+		CGameTrail_Add(&self->endRing, pt, rw, (uint32_t)(int)(u * 255.0f) << 24 | 0xffffff);
 		pt.x = o.x * r + self->to.x;
 		pt.y = self->to.y + o.y * r;
 		pt.z = self->to.z + o.z * r;
-		CGameTrail_Add(&self->trail1d8, pt, rw, (uint32_t)(int)((1.0f - u) * 255.0f) << 24 | 0xffffff);
+		CGameTrail_Add(&self->endRing, pt, rw, (uint32_t)(int)((1.0f - u) * 255.0f) << 24 | 0xffffff);
 		an = an + step;
 		if (!(6.2831855f > an)) {
 			break;
@@ -427,43 +427,43 @@ void __thiscall cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debri
 	self->angle = d * 10.0f + self->angle;
 
 	/* the rings turning the other way (trail1d0 and trail1e0) */
-	CGameTrail_Reset(&self->trail1d0);
-	CGameTrail_SetOrient(&self->trail1d0, mid, 1);
-	CGameTrail_SetUVScale(&self->trail1d0, len / 1000.0f, 1.0f);
-	CGameTrail_SetUV(&self->trail1d0, u * -32.0f, 1.0f);
-	CGameTrail_SetTransp(&self->trail1d0, (byte)a);
+	CGameTrail_Reset(&self->rings);
+	CGameTrail_SetOrient(&self->rings, mid, 1);
+	CGameTrail_SetUVScale(&self->rings, len / 1000.0f, 1.0f);
+	CGameTrail_SetUV(&self->rings, u * -32.0f, 1.0f);
+	CGameTrail_SetTransp(&self->rings, (byte)a);
 	if (g_SceneDuDvRTarget) {
-		CGameTrail_Reset(&self->trail1e0);
-		CGameTrail_SetOrient(&self->trail1e0, mid, 1);
-		CGameTrail_SetUVScale(&self->trail1e0, len / 2000.0f, 1.0f);
-		CGameTrail_SetUV(&self->trail1e0, k16, 1.0f);
+		CGameTrail_Reset(&self->ringsDuDv);
+		CGameTrail_SetOrient(&self->ringsDuDv, mid, 1);
+		CGameTrail_SetUVScale(&self->ringsDuDv, len / 2000.0f, 1.0f);
+		CGameTrail_SetUV(&self->ringsDuDv, k16, 1.0f);
 	}
 	float r2 = self->width * s1 * (up == 10 ? 0.75f : 0.5f);
-	double stepd = 6.283185307179586 / (double)self->n1cc;
+	double stepd = 6.283185307179586 / (double)self->ringPoints;
 	an = 0.0f;
-	for (int i = 0; i < self->n1cc; i++) {
+	for (int i = 0; i < self->ringPoints; i++) {
 		vec3_t o, pt;
 		FXW_RingPoint(&o, an - self->angle, &ang);
 		pt.y = self->from.y + o.y * r2;
 		pt.z = self->from.z + o.z * r2;
 		pt.x = o.x * r2 + self->from.x;
 		float rw = (float)stepd * r2 * 1.0225f;
-		CGameTrail_Add(&self->trail1d0, pt, rw, *ramp);
+		CGameTrail_Add(&self->rings, pt, rw, *ramp);
 		pt.y = self->to.y + o.y * r2;
 		pt.z = self->to.z + o.z * r2;
 		pt.x = o.x * r2 + self->to.x;
-		CGameTrail_Add(&self->trail1d0, pt, rw, *ramp);
+		CGameTrail_Add(&self->rings, pt, rw, *ramp);
 		if (g_SceneDuDvRTarget) {
 			uint32_t gray = FXW_Gray(0x5c - (int)(s1 * 92.0f));
 			pt.y = self->from.y + o.y * r2 * 3.0f;
 			pt.z = self->from.z + o.z * r2 * 3.0f;
 			pt.x = o.x * r2 * 3.0f + self->from.x;
 			rw = r2 * 3.0f * (float)stepd * 1.0225f;
-			CGameTrail_Add(&self->trail1e0, pt, rw, gray);
+			CGameTrail_Add(&self->ringsDuDv, pt, rw, gray);
 			pt.y = self->to.y + o.y * r2 * 3.0f;
 			pt.z = self->to.z + o.z * r2 * 3.0f;
 			pt.x = o.x * r2 * 3.0f + self->to.x;
-			CGameTrail_Add(&self->trail1e0, pt, rw, gray);
+			CGameTrail_Add(&self->ringsDuDv, pt, rw, gray);
 		}
 		an = an + (float)stepd;
 		if (!(6.2831855f > an)) {
@@ -714,33 +714,33 @@ void __thiscall cObjElementFXATPC_Start(cObjElementFXATPC *self, cDebris *debris
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
 	CGameParticles_Attach(&self->particles, model, FXW_Node(model, "Dummy01"));
-	CGameTrail_SetMaxTrails(&self->trail1c4, 5);
-	CGameTrail_SetType(&self->trail1c4, 3);
-	CGameTrail_SetTexture(&self->trail1c4, 0);
-	CGameTrail_SetMaxTrails(&self->trail1c8, 0x10);
-	CGameTrail_SetType(&self->trail1c8, 0);
-	CGameTrail_SetTexture(&self->trail1c8, 1);
-	self->n1d4 = 8;
-	CGameTrail_SetMaxTrails(&self->trail1d8, 0x11);
-	CGameTrail_SetType(&self->trail1d8, 3);
-	CGameTrail_SetTexture(&self->trail1d8, 6);
-	self->n1cc = 0xc;
-	CGameTrail_SetMaxTrails(&self->trail1d0, 0x19);
-	CGameTrail_SetType(&self->trail1d0, 3);
-	CGameTrail_SetTexture(&self->trail1d0, 7);
-	CGameTrail_SetMaxTrails(&self->trail1e0, (byte)(self->n1cc * 2 + 1));
-	CGameTrail_SetType(&self->trail1e0, 3);
-	CGameTrail_SetTexture(&self->trail1e0, 0x10);
+	CGameTrail_SetMaxTrails(&self->core, 5);
+	CGameTrail_SetType(&self->core, 3);
+	CGameTrail_SetTexture(&self->core, 0);
+	CGameTrail_SetMaxTrails(&self->line, 0x10);
+	CGameTrail_SetType(&self->line, 0);
+	CGameTrail_SetTexture(&self->line, 1);
+	self->endRingPoints = 8;
+	CGameTrail_SetMaxTrails(&self->endRing, 0x11);
+	CGameTrail_SetType(&self->endRing, 3);
+	CGameTrail_SetTexture(&self->endRing, 6);
+	self->ringPoints = 0xc;
+	CGameTrail_SetMaxTrails(&self->rings, 0x19);
+	CGameTrail_SetType(&self->rings, 3);
+	CGameTrail_SetTexture(&self->rings, 7);
+	CGameTrail_SetMaxTrails(&self->ringsDuDv, (byte)(self->ringPoints * 2 + 1));
+	CGameTrail_SetType(&self->ringsDuDv, 3);
+	CGameTrail_SetTexture(&self->ringsDuDv, 0x10);
 }
 
 void __thiscall cObjElementFXATPC_Reset(cObjElementFXATPC *self, cDebris *debris) {
 	(void)debris;
 	*(uint32_t *)self->slotOn = 0;
-	CGameTrail_Clear(&self->trail1c4);
-	CGameTrail_Clear(&self->trail1d8);
-	CGameTrail_Clear(&self->trail1d0);
-	CGameTrail_Clear(&self->trail1c8);
-	CGameTrail_Clear(&self->trail1e0);
+	CGameTrail_Clear(&self->core);
+	CGameTrail_Clear(&self->endRing);
+	CGameTrail_Clear(&self->rings);
+	CGameTrail_Clear(&self->line);
+	CGameTrail_Clear(&self->ringsDuDv);
 	self->time = 0.0f;
 	self->angle = 0.0f;
 }

@@ -79,14 +79,14 @@ typedef struct cObjElementFXATPC {
 	byte slotOn[FXATPC_SLOTS];	/* 0x18c */
 	vec3_t slotPos[FXATPC_SLOTS];	/* 0x190 the weapon nodes of the slots */
 	float width;			/* 0x1c0 by the slots and ATPCShootSize */
-	CGameTrail trail1c4;		/* 0x1c4 the core */
-	CGameTrail trail1c8;		/* 0x1c8 the line */
-	int n1cc;			/* 0x1cc 12 the points of the rings of trail1d0 */
-	CGameTrail trail1d0;		/* 0x1d0 */
-	int n1d4;			/* 0x1d4 8 the points of the ring of trail1d8 */
-	CGameTrail trail1d8;		/* 0x1d8 */
+	CGameTrail core;		/* 0x1c4 */
+	CGameTrail line;		/* 0x1c8 */
+	int ringPoints;			/* 0x1cc 12, the points of each ring */
+	CGameTrail rings;		/* 0x1d0 */
+	int endRingPoints;			/* 0x1d4 8 */
+	CGameTrail endRing;		/* 0x1d8 */
 	float angle;			/* 0x1dc of the rings */
-	CGameTrail trail1e0;		/* 0x1e0 2 * n1cc + 1 points, the dudv pass */
+	CGameTrail ringsDuDv;		/* 0x1e0 2 * ringPoints + 1 points, the dudv pass */
 	byte on;			/* 0x1e4 */
 	byte pad_1e5[3];
 } cObjElementFXATPC;
@@ -95,7 +95,7 @@ SD_OFFSET(cObjElementFXATPC, particles2, 0xd0);
 SD_OFFSET(cObjElementFXATPC, time, 0x180);
 SD_OFFSET(cObjElementFXATPC, slotPos, 0x190);
 SD_OFFSET(cObjElementFXATPC, width, 0x1c0);
-SD_OFFSET(cObjElementFXATPC, trail1c4, 0x1c4);
+SD_OFFSET(cObjElementFXATPC, core, 0x1c4);
 SD_OFFSET(cObjElementFXATPC, angle, 0x1dc);
 SD_OFFSET(cObjElementFXATPC, on, 0x1e4);
 SD_SIZE(cObjElementFXATPC, 0x1e8);

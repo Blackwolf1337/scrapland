@@ -32,16 +32,16 @@ typedef struct cObjElementFXSceneBeatPickus {
 	float tPrev;			/* 0x008 */
 	cEntity *ent;			/* 0x00c */
 	vec3_t dummy;			/* 0x010 DM_Scene_Beating */
-	CGameParticles parts1c;		/* 0x01c Dummy03: dust and smoke puffs */
+	CGameParticles dust;		/* 0x01c Dummy03: dust and smoke puffs */
 	float dustT;			/* 0x0cc */
-	CGameParticles partsD0;		/* 0x0d0 Dummy02: debris and the hits */
+	CGameParticles debris;		/* 0x0d0 Dummy02: debris and the hits */
 	float debrisT;			/* 0x180 */
-	CGameParticles parts184;	/* 0x184 Dummy01: sparks */
+	CGameParticles sparks;	/* 0x184 Dummy01: sparks */
 	float sparkT;			/* 0x234 */
 	float hitT;			/* 0x238 until the next hit */
 	byte started;			/* 0x23c */
 } cObjElementFXSceneBeatPickus;
-SD_OFFSET(cObjElementFXSceneBeatPickus, parts184, 0x184);
+SD_OFFSET(cObjElementFXSceneBeatPickus, sparks, 0x184);
 SD_OFFSET(cObjElementFXSceneBeatPickus, started, 0x23c);
 
 typedef struct cObjElementFXSceneBillArrives_A {
@@ -138,7 +138,7 @@ typedef struct cObjElementFXSceneHumanCD {
 	float t;			/* 0x004 */
 	float tPrev;			/* 0x008 */
 	cEntity *ent;			/* 0x00c */
-	CGameParticles parts10;		/* 0x010 Dummy01 */
+	CGameParticles particles;		/* 0x010 Dummy01 */
 	CGameParticles sparks;		/* 0x0c0 Dummy03 */
 	vec3_t dummy;			/* 0x170 DM_Element_MentalControllerMainFX */
 	float sparkT;			/* 0x17c */

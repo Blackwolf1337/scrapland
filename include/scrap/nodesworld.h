@@ -234,16 +234,16 @@ typedef struct CNodesWorldSup {
 	int nx, ny, nz;			/* 0x1b4 */
 	int dimBuffer;			/* 0x1c0 */
 	int numPointLinks;		/* 0x1c4 the links of the generated points */
-	void *tmp1c8;			/* 0x1c8 freed with the buffer (Mem_Alloc) */
-	int num1cc;			/* 0x1cc */
-	cNWIntList list1d0;		/* 0x1d0 */
+	void *freeCells;		/* 0x1c8 numFreeCells cell indices for FindLinkFree, freed with the buffer (Mem_Alloc) */
+	int numFreeCells;			/* 0x1cc */
+	cNWIntList unused_1d0;		/* 0x1d0 */
 	cNWVisList *sets;		/* 0x1e8 numSets hash lists of the sets of points (Mem_Alloc) */
 	int numSets;			/* 0x1ec */
 	cNWVecList extraPoints;		/* 0x1f0 */
 	cNWNode *fileStart[20];		/* 0x208 the first node of each graph file */
 	int numFiles;			/* 0x258 */
-	cNWVecList lists25c[2];		/* 0x25c the nodes of the debug view */
-	cNWVecList lists28c[5];		/* 0x28c the buffer cells by state (GetInfoNodes) */
+	cNWVecList foundNodes[2];		/* 0x25c the nodes of the debug view */
+	cNWVecList cellLists[5];		/* 0x28c the buffer cells by state (GetInfoNodes) */
 	vec3_t openPos;			/* 0x304 the cell where the region of the generation left the box */
 	cNWVecList errCollide;		/* 0x310 AnalizeGraph: the links through the level, 3 points each */
 	cNWVecList errUnlinked;		/* 0x328 the nodes without links */

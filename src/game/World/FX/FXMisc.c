@@ -1294,9 +1294,9 @@ void *__thiscall cObjElementFXSceneBeatPickus_ctor(void *self) {
 	cObjElementFXSceneBeatPickus *s = self;
 
 	FX_SetVtbl(self, VT_FXSCENEBEATPICKUS);
-	CGameParticles_ctor(&s->parts1c);
-	CGameParticles_ctor(&s->partsD0);
-	CGameParticles_ctor(&s->parts184);
+	CGameParticles_ctor(&s->dust);
+	CGameParticles_ctor(&s->debris);
+	CGameParticles_ctor(&s->sparks);
 	s->started = 0;
 	s->ent = NULL;
 	s->t = 0.0f;
@@ -1373,7 +1373,7 @@ void *__thiscall cObjElementFXSceneHumanCD_ctor(void *self) {
 	cObjElementFXSceneHumanCD *s = self;
 
 	FX_SetVtbl(self, VT_FXSCENEHUMANCD);
-	CGameParticles_ctor(&s->parts10);
+	CGameParticles_ctor(&s->particles);
 	CGameParticles_ctor(&s->sparks);
 	s->started = 0;
 	s->ent = NULL;
@@ -1413,9 +1413,9 @@ void __thiscall cObjElementFXSceneBeatPickus_dtor(void *self) {
 	cObjElementFXSceneBeatPickus *s = self;
 
 	*(void **)self = VT_FXSCENEBEATPICKUS;
-	CGameParticles_Release(&s->parts184);
-	CGameParticles_Release(&s->partsD0);
-	CGameParticles_Release(&s->parts1c);
+	CGameParticles_Release(&s->sparks);
+	CGameParticles_Release(&s->debris);
+	CGameParticles_Release(&s->dust);
 	cObjElement_dtor(self);
 }
 
@@ -1464,7 +1464,7 @@ void __thiscall cObjElementFXSceneHumanCD_dtor(void *self) {
 
 	*(void **)self = VT_FXSCENEHUMANCD;
 	CGameParticles_Release(&s->sparks);
-	CGameParticles_Release(&s->parts10);
+	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(self);
 }
 

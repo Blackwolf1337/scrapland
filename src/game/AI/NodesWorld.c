@@ -307,10 +307,10 @@ byte __thiscall CNodesWorld_SavePath(CNodesWorld *self) {
 void __thiscall CNodesWorld_ClearLists(CNodesWorld *self) {
 	DListVec3_Clear(&self->sup.extraPoints);
 	NWPointList_Clear(&self->sup.points);
-	NWVecList_Clear(&self->sup.lists25c[0]);
-	NWVecList_Clear(&self->sup.lists25c[1]);
+	NWVecList_Clear(&self->sup.foundNodes[0]);
+	NWVecList_Clear(&self->sup.foundNodes[1]);
 	for (int i = 0; i < 5; i++) {
-		DListVec3_Clear(&self->sup.lists28c[i]);
+		DListVec3_Clear(&self->sup.cellLists[i]);
 	}
 }
 
@@ -1479,9 +1479,9 @@ byte __thiscall CNodesWorld_FindLinkFree(CNodesWorld *self, const vec3_t *const 
 	int best[3];
 	float bestDist = 3.4028234663852886e+38f;
 	byte found = 0;
-	const int *cells = self->sup.tmp1c8;
+	const int *cells = self->sup.freeCells;
 
-	for (int k = 0; k < self->sup.num1cc; k++) {
+	for (int k = 0; k < self->sup.numFreeCells; k++) {
 		vec3_t c, c2;
 		int idx = cells[k];
 		if (self->sup.buffer[idx].state == 5) {
@@ -1672,27 +1672,27 @@ void __fastcall CNodesWorld_Draw(CNodesWorld *self) {
 				DebugUtils_DrawLine(&self->sup.nodes[i].pos, &self->sup.nodes[i].links[k]->pos, 0xff0000);
 			}
 		}
-		NWSup_DrawFound(self, &self->sup.lists25c[0], 50.0f, 0xff00);
-		NWSup_DrawFound(self, &self->sup.lists25c[1], 50.0f, 0xff);
+		NWSup_DrawFound(self, &self->sup.foundNodes[0], 50.0f, 0xff00);
+		NWSup_DrawFound(self, &self->sup.foundNodes[1], 50.0f, 0xff);
 		NWSup_DrawExtra(self, 50.0f, 0xff);
 		if (mode == 11 && self->sup.grid) {
 			self->sup.grid->vftable->Draw(self->sup.grid, 0xff00);
 		}
 		break;
 	case 2:
-		NWSup_DrawCells(self, &self->sup.lists28c[1], 0xffffff, "ListNodesVis: %d\n");
+		NWSup_DrawCells(self, &self->sup.cellLists[1], 0xffffff, "ListNodesVis: %d\n");
 		break;
 	case 3:
-		NWSup_DrawCells(self, &self->sup.lists28c[2], 0xff, "ListNodesNotVis: %d\n");
+		NWSup_DrawCells(self, &self->sup.cellLists[2], 0xff, "ListNodesNotVis: %d\n");
 		break;
 	case 4:
-		NWSup_DrawCells(self, &self->sup.lists28c[0], 0xff0000, "ListNodesMap: %d\n");
+		NWSup_DrawCells(self, &self->sup.cellLists[0], 0xff0000, "ListNodesMap: %d\n");
 		break;
 	case 5:
-		NWSup_DrawCells(self, &self->sup.lists28c[3], 0xff0000, "ListNodesFree: %d\n");
+		NWSup_DrawCells(self, &self->sup.cellLists[3], 0xff0000, "ListNodesFree: %d\n");
 		break;
 	case 6:
-		NWSup_DrawCells(self, &self->sup.lists28c[4], 0, "ListNodesOutMap: %d\n");
+		NWSup_DrawCells(self, &self->sup.cellLists[4], 0, "ListNodesOutMap: %d\n");
 		break;
 	case 7: {
 		/* the analysis: the open cell, the triangles with their point, hit and middle, the cells outside the
