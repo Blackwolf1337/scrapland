@@ -41,14 +41,6 @@ if nslHooked:
 else:
 	check('nsl Timer_MeasureQP', lambda: (1, 0, 0))
 
-# Tsc_CpuFreq: recalc starts the measurement and gives the frequency of the counter until 200 ms have passed
-nslcpu = SDTest.Peek('g_CpuFreq', 'i')
-if nslHooked:
-	check('nsl Tsc_CpuFreq', lambda: (SDTest.Call('Tsc_CpuFreq', 'fi', 1)[0] == float(nslqpf),
-		SDTest.Call('Tsc_CpuFreq', 'fi', 0)[0] == float(nslqpf)))
-else:
-	check('nsl Tsc_CpuFreq', lambda: (1, 1))
-SDTest.Poke('g_CpuFreq', nslcpu)
 
 # Video_WaitKeysUp: no key is held, the original returns at once and the hold of the C ends at once
 check('nsl Video_WaitKeysUp', lambda: (SDTest.Call('Video_WaitKeysUp', 'vi', 1000)[0], SDTest.Call('Video_WaitKeysUp', 'vi', 0)[0]))

@@ -76,7 +76,6 @@ def cveps():
 	return (cvfl(symva('g_CollisionEpsilon'), 1)[0], cvfl(symva('g_LastCollisionEpsilon'), 1)[0])
 check('CollisionEpsilon_Set', lambda: (cveps(), SDTest.Call('CollisionEpsilon_Set', 'vi', 0), cveps(), SDTest.Call('CollisionEpsilon_Set', 'vi',
 	1), cveps()))
-check('ProfScope_End', lambda: (SDTest.Peek('g_ProfMode', 'i'), SDTest.Call('ProfScope_End', 'tvi', cvz(4))))
 
 # the segment-sphere math
 for a, b in (((0.0, 0.0, 0.0), (10.0, 0.0, 0.0)), ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0)), ((-5.0, 1.0, 2.0), (5.0, 1.0, 2.0)),

@@ -200,7 +200,6 @@
 #undef g_PointsOn
 #undef g_PrevExceptionFilter
 #undef g_ProcBuf
-#undef g_ProfResetTime
 #undef g_QuadTriCacheID
 #undef g_RSqrtTable
 #undef g_RTBackBuffer
@@ -567,7 +566,6 @@ float g_FpsTextTime SD_BSS(0x4a90d0);
 uint32_t Engine_DrawFpsGraph_4a90d4 SD_BSS(0x4a90d4);
 float g_FpsGraph[120] SD_BSS(0x4a90d8);
 float g_FpsGraphPeak[122] SD_BSS(0x4a92b8);
-float g_ProfResetTime SD_BSS(0x4a94a0);
 float g_MusicCurMainVolume SD_BSS(0x4a94a8);
 cGVar GVar_S_VoiceoverFadein SD_BSS(0x4a94ac);
 cGVar GVar_S_VoiceoverFadeout SD_BSS(0x4a94c4);

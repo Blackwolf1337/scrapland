@@ -782,7 +782,6 @@ void __fastcall CBsp_RadGlobal(CBsp *self) {
 			}
 			CBsp_AreasGlow(self);
 			CBsp_AreasMax(self);
-			g_ProfTicks[13] -= __builtin_ia32_rdtsc();
 			BspTxf_ctor(&txf, self->name, "rad", bounce, 1);
 			int nAreas = 0;
 			while (txf.rebuild) {
@@ -841,7 +840,6 @@ void __fastcall CBsp_RadGlobal(CBsp *self) {
 										if (-lod > dist || !BspTri_RadFront(S, &n, dn, lod * 0.02f)) {
 											continue;
 										}
-										g_ProfTicks[14] -= __builtin_ia32_rdtsc();
 										CTable *sel = BspTri_GetAreas(S, BspTri_RadFar(S, &e, dist), 1);
 										sumAreas += S->areas[0].n;
 										sumSel += sel->n;
@@ -864,28 +862,23 @@ void __fastcall CBsp_RadGlobal(CBsp *self) {
 											}
 											nComp++;
 											/* the segment from near the texel to just off the area */
-											g_ProfTicks[11] -= __builtin_ia32_rdtsc();
 											BspRad_Segment(&a, &b, &r, &e, &ar->pos);
 											if (g_RadiosityPortals && lzona != zone && zone >= 0 && lzona >= 0 &&
 												Sector_Traverse(zone, &b, &a, 0) != lzona) {
-												g_ProfTicks[11] += __builtin_ia32_rdtsc();
 												nShadow++;
 												nSector++;
 												continue;
 											}
 											if (BspRad_Hidden(ground, &a, &b)) {
-												g_ProfTicks[11] += __builtin_ia32_rdtsc();
 												nShadow++;
 												continue;
 											}
-											g_ProfTicks[11] += __builtin_ia32_rdtsc();
 											const float *px = CBmpFlt2_Pixel(&L->rad2, ar->x, ar->y);
 											float f = ar->weight * cc / r.den * g_ShadowMapCoefRad;
 											sr = mc[0] * px[0] * f + sr;
 											sg = mc[1] * px[1] * f + sg;
 											sb = mc[2] * px[2] * f + sb;
 										}
-										g_ProfTicks[14] += __builtin_ia32_rdtsc();
 									}
 								}
 								float *dst = CBmpFlt2_Pixel(&list->rad, tx, ty);
@@ -899,19 +892,12 @@ void __fastcall CBsp_RadGlobal(CBsp *self) {
 				}
 				BspTxf_Load(&txf, self->lists, self->num_lists, 3);
 			}
-			g_ProfTicks[13] += __builtin_ia32_rdtsc();
 			BspTxf_dtor(&txf);
 		}
 	}
-	g_ProfTicks[10] += __builtin_ia32_rdtsc();
 	E3D_DebugPrintf("\ntotal areas: %d %d %d %d", g_BspAreasTotal[0], g_BspAreasTotal[1], g_BspAreasTotal[2],
 		g_BspAreasTotal[3]);
 	E3D_DebugPrintf("\nmemoria usada: %-5d Kb", g_MemStats->bytes / 1024);
-	E3D_DebugPrintf("\nradiosidad, tsc(10): %.2f  (local+global)", (double)(uint64_t)Prof_Reset(10) / 450000.0);
-	E3D_DebugPrintf("\nradiosidad, tsc(11): %.2f  (sombras global)", (double)(uint64_t)Prof_Reset(11) / 450000.0);
-	E3D_DebugPrintf("\nradiosidad, tsc(12): %.2f  (buscar_CTriLMap)", (double)(uint64_t)Prof_Reset(12) / 450000.0);
-	E3D_DebugPrintf("\nradiosidad, tsc(13): %.2f  (global)", (double)(uint64_t)Prof_Reset(13) / 450000.0);
-	E3D_DebugPrintf("\nradiosidad, tsc(14): %.2f  (global)", (double)(uint64_t)Prof_Reset(14) / 450000.0);
 	double pot = (double)(uint64_t)sumAreas;
 	E3D_DebugPrintf("\npotenciales: %.1f  descartados: %d %d %d %d %d %d", pot, 0, nNoArea, nBehind, nNo, nShadow,
 		nSector);
@@ -1070,7 +1056,6 @@ void __fastcall CBsp_RadAreas(CBsp *self) {
 	CBsp_InitAreas(self);
 	E3D_DebugPrintf("area lights: %d  glow lights: %d\n", nArea, nGlow);
 	Con_Verbosef("area lights: %d  glow lights: %d\n", nArea, nGlow);
-	g_ProfTicks[10] -= __builtin_ia32_rdtsc();
 	if (nArea || nGlow) {
 		BspTxf_ctor(&txf, self->name, "loc", 0, 1);
 		int nPot = 0;

@@ -161,17 +161,15 @@ for emcgk in range(28):
 check('emc Engine_DrawFpsGraph ring', lambda: (emcgraph(), emcrf(sym('g_FpsGraph') + 0x400000, 8), emcrf(sym('g_FpsGraphPeak') + 0x400000, 8)))
 
 # ---- Engine_DrawStats (rva 0x2308c0): the counters it clears, the clock set here ----
-emcst = (sym('g_ProfMode'), sym('g_ProfResetTime'), sym('g_ProfNoReset'), sym('g_BspCacheStats'), sym('g_CollisionCacheMiss'), sym('g_CollisionTestsMax'), sym('g_CollisionTestsTotal'), sym('g_TexCached'), sym('g_TexUsed'), sym('g_TexUsedPixels'))
+emcst = (sym('g_ProfMode'), sym('g_BspCacheStats'), sym('g_CollisionCacheMiss'), sym('g_CollisionTestsMax'), sym('g_CollisionTestsTotal'), sym('g_TexCached'), sym('g_TexUsed'), sym('g_TexUsedPixels'))
 emcsts = emcsave(emcst)
 def emcstats():
-	return (emcgf(sym('g_ProfResetTime')), emcints(sym('g_BspCacheStats') + 0x400000, 3) + emcints(sym('g_CollisionTests') + 0x400000, 1) +
+	return (emcints(sym('g_BspCacheStats') + 0x400000, 3) + emcints(sym('g_CollisionTests') + 0x400000, 1) +
 		emcints(sym('g_CollisionTestsTotal') + 0x400000, 1), emcints(sym('g_TexCached') + 0x400000, 1) + emcints(sym('g_TexUsed') + 0x400000, 1) +
 		emcints(sym('g_TexUsedPixels') + 0x400000, 1))
-for emcm in ((1, 0, 1), (3, 0, 1), (4, 0, 1), (4, 0, 0), (5, 0, 1), (5, 1, 1), (5, 1, 0), (6, 0, 1), (0, 0, 1)):
+for emcm in ((1, 0, 1), (3, 0, 1), (4, 0, 1), (4, 0, 0), (6, 0, 1), (0, 0, 1)):
 	SDTest.Poke('g_ProfMode', emcm[0])
-	SDTest.Poke('g_ProfNoReset', emcm[1])
 	emcsf(sym('g_TimeMsF'), 20000.0 + 900.0 * emcm[2])
-	emcsf(sym('g_ProfResetTime'), 19000.0)
 	emcsf(sym('g_FrameMs'), 0.025)
 	emcsf(sym('g_Fps'), 40.0)
 	SDTest.Poke('g_BspCacheStats', 11)

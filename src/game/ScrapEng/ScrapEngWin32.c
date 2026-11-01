@@ -1,12 +1,12 @@
 /*
  * ScrapEngWin32.cpp of the game: the window procedure of the engine (the menu commands of the D3D window, the
  * cursor, the paint while paused, the power messages) and the unhandled exceptions: the filter shows the exception,
- * its address and the fault as a fatal error (Con_FatalErrorf).
+ * its address and the fault as a fatal error (Con_FatalErrorf). Of the menu commands only the device, full screen
+ * and tiled shot are left; the debug toggles and profiler modes of the original are gone.
  */
 #include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/dxutil.h"
-#include "scrap/prof.h"
 #include "scrap/scrapmain.h"
 #include "scrap/e3dutil.h"
 #include "scrap/video.h"
@@ -28,14 +28,7 @@
 /* the commands of the menu of the D3D window */
 #define IDM_CHANGEDEVICE 0x9c42
 #define IDM_TOGGLEFULLSCREEN 0x9c43
-#define IDM_SPECULAR 0x9c54
-#define IDM_RENDERMODE100 0x9c56
-#define IDM_PROFILER 0x9ca4
 #define IDM_TILE 0x9ca5
-#define IDM_TEXFILTER 0x9ca7
-#define IDM_SHADOWS 0x9ca8
-#define IDM_PROFMODE 0x9ca9
-#define IDM_PROFMODE2 0x9caa
 
 static void Engine_Pause(CD3DApplication *m, int on) {
 	m->vftable->Pause(m, on);
@@ -87,29 +80,8 @@ intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lPa
 			}
 			return 0;
 		}
-		case IDM_PROFILER:
-			Engine_ToggleOption(0x10);
-			return 0;
 		case IDM_TILE:
 			Engine_ToggleOption(0x20);
-			return 0;
-		case IDM_RENDERMODE100:
-			Engine_ToggleOption(0x100);
-			return 0;
-		case IDM_SPECULAR:
-			Engine_ToggleOption(0x101);
-			return 0;
-		case IDM_TEXFILTER:
-			Engine_ToggleOption(0x102);
-			return 0;
-		case IDM_SHADOWS:
-			Engine_ToggleOption(0x103);
-			return 0;
-		case IDM_PROFMODE:
-			g_ProfMode = (g_ProfMode + 1) % 6;
-			return 0;
-		case IDM_PROFMODE2:
-			g_ProfMode = (g_ProfMode + 1) % 2;
 			return 0;
 		}
 		break;

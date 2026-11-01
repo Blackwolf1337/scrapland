@@ -9,14 +9,6 @@
 #include "scrap/ground.h"
 
 /* the profiler sections */
-#define PROF_SLIDE 0x10
-#define PROF_SLIDE2D 0x11
-#define PROF_TESTSPHERE 0x12
-#define PROF_TESTLINE 0x13
-#define PROF_BOX 0x14
-#define PROF_SEGSPHERE 0x15
-#define PROF_CHECK 0x16
-#define PROF_SECTOR 0x17
 
 /* the box cache of a moving sphere: with a valid box (bit 1, of this collision cache id) the queries inside it are
  * free; a sphere that left it waits 20 queries before the box is built again */

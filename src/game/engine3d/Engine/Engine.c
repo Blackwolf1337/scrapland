@@ -500,46 +500,20 @@ CWorld *World_GetChecked(void) {
 	return World_Get();
 }
 
-/* the statistics of R_Profiler */
-#define g_ProfResetTime GAME_GLOBAL(float, g_ProfResetTime, 0x4a94a0)
-#define g_ProfNoReset GAME_GLOBAL_IN(int, GVar_ShowTSCMode, 16, 0x4a8fb8)	/* 0: the counters taken every frame, else once a second */
-#define g_CollisionCacheHit GAME_GLOBAL_IN(uint32_t, g_BspCacheStats, 0, 0x4af7e0)
-#define g_CollisionCacheMiss GAME_GLOBAL_IN(uint32_t, g_BspCacheStats, 4, 0x4af7e4)
+/* the info overlay of R_ShowInfo (Engine_DrawStats, modes 1 to 4) */
 #define g_TexturePool GAME_GLOBAL_IN(int, GVar_TexturePool, 16, 0x4b2670)
 #define g_TexCreated GAME_GLOBAL(int, g_TexCreated, 0x4b25f0)
 #define g_TexCached GAME_GLOBAL(int, g_TexCached, 0x4b25f4)
 #define g_TexUsed GAME_GLOBAL(int, g_TexUsed, 0x4b25f8)
 #define g_TexUsedPixels GAME_GLOBAL(int, g_TexUsedPixels, 0x4b25fc)
-#define PROF_FRAME3D 31
 #define D3DDEV_GETAVAILABLETEXTUREMEM 0x10
 typedef uint32_t(__stdcall *d3dGetAvailableTextureMem_t)(void *dev);
-
-/* the sections of the profiler page (mode 5) */
-static const struct {
-	int section;
-	float y;
-	const char *fmt;
-} g_ProfLines[] = {
-	{ 0x1f, 128.0f, "frame3d_31: %.2f %.2f %d" },
-	{ 0x10, 144.0f, "SphSli3D_16: %.2f %.2f %d" },
-	{ 0x11, 160.0f, "SphSli2D_17: %.2f %.2f %d" },
-	{ 0x12, 176.0f, "SphTest_18: %.2f %.2f %d" },
-	{ 0x13, 192.0f, "LineTest_19: %.2f %.2f %d" },
-	{ 0x14, 208.0f, "BoxTest_20: %.2f %.2f %d" },
-	{ 0x15, 224.0f, "LineSphe_21: %.2f %.2f %d" },
-	{ 0x16, 240.0f, "SphCheck_22: %.2f %.2f %d" },
-	{ 0x17, 256.0f, "LinePort_23: %.2f %.2f %d" },
-	{ 0x1e, 272.0f, "TestVis__30: %.2f %.2f %d" },
-	{ 0x1d, 288.0f, "EnLightR_29: %.2f %.2f %d" },
-};
 
 void Engine_DrawStats(void) {
 	CCamera *cam;
 	uint32_t ms[16];		/* MEMORYSTATUSEX */
 	uint64_t used;
-	float tm, mx;
-	int i, cnt, d3d, act, tot, mode;
-	byte now, reset;
+	int d3d, act, tot, mode;
 
 	mode = g_ProfMode;
 	if (mode == 1) {
@@ -585,30 +559,6 @@ void Engine_DrawStats(void) {
 		Engine_DrawFpsGraph(160.0f);
 		Font_PrintfXY(g_FntComic14, 10.0f, 32.0f, "%.2f MTri/s  %.2f MVert/s",
 			(double)((float)g_RenderCounts[0] * g_Fps) / 1000000.0, (double)((float)g_RenderCounts[1] * g_Fps) / 1000000.0);
-		mode = g_ProfMode;
-	}
-	if (mode == 5) {
-		now = g_TimeMsF - g_ProfResetTime > 1000.0f;
-		reset = g_ProfNoReset ? now : 1;
-		if (now) {
-			g_ProfResetTime = g_TimeMsF;
-		}
-		/* the time of this page is left out of the frame section */
-		g_ProfTicks[PROF_FRAME3D] += __builtin_ia32_rdtsc();
-		Font_PrintfXY(g_FntComic14, 10.0f, 112.0f, "CPU Mhz: %.2f", X87_Div((double)Tsc_CpuFreq(0), 1000000.0));
-		for (i = 0; i < (int)(sizeof(g_ProfLines) / sizeof(g_ProfLines[0])); i++) {
-			cnt = Prof_GetCount(g_ProfLines[i].section, reset);
-			mx = Prof_GetMaxTime(g_ProfLines[i].section, now);
-			tm = Prof_GetTime(g_ProfLines[i].section, reset);
-			Font_PrintfXY(g_FntComic14, 10.0f, g_ProfLines[i].y, g_ProfLines[i].fmt, (double)tm, (double)mx, cnt);
-		}
-		Font_PrintfXY(g_FntTerm8, 10.0f, 310.0f, "ncomp: %-5d  hit: %-5d  miss: %-5d  peak: %-5d  total: %-5d",
-			g_CollisionNComp, g_CollisionCacheHit, g_CollisionCacheMiss, g_CollisionTestsMax, g_CollisionTestsTotal);
-		g_CollisionTestsTotal = 0;
-		g_CollisionTestsMax = 0;
-		g_CollisionCacheMiss = 0;
-		g_CollisionCacheHit = 0;
-		g_ProfTicks[PROF_FRAME3D] -= __builtin_ia32_rdtsc();
 		mode = g_ProfMode;
 	}
 	Text_Printf(10, mode == 2 ? 4 : 20, NULL);

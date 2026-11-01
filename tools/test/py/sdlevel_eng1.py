@@ -223,45 +223,6 @@ for en1rot in ((1.0, 0.0), (0.70710677, 0.70710677), (0.8, -0.6)):
 				check('en1 Box_PointDepth' + fmt((en1m, en1h, en1q)), lambda m=en1m, h=en1h, q=en1q:
 					SDTest.Call('Box_PointDepth', 'fFFF', m, h, q)[0])
 
-# Util/tsc.cpp: the profiler sums of section 31 and the clock poked to a fixed value (the measured one differs)
-def en1prof():
-	return (en1i(symva('g_ProfTicks') + 8 * 31), en1i(symva('g_ProfTicks') + 0x4 + 8 * 31), en1i(symva('g_ProfAvg') + 8 * 31), en1i(symva('g_ProfAvg') + 0x4 + 8 * 31),
-		en1i(symva('g_ProfMax') + 8 * 31), en1i(symva('g_ProfMax') + 0x4 + 8 * 31), SDTest.Peek(sym('g_ProfFrames') + 31, 'b'), en1i(symva('g_ProfCounts') + 4 * 31),
-		en1i(symva('g_ProfLastCounts') + 4 * 31))
-en1profa = (symva('g_ProfTicks') + 8 * 31, symva('g_ProfTicks') + 0x4 + 8 * 31, symva('g_ProfAvg') + 8 * 31, symva('g_ProfAvg') + 0x4 + 8 * 31, symva('g_ProfMax') + 8 * 31,
-	symva('g_ProfMax') + 0x4 + 8 * 31, symva('g_ProfCounts') + 4 * 31, symva('g_ProfLastCounts') + 4 * 31)
-en1profs = map(en1i, en1profa)
-en1fr = en1i(symva('g_ProfFrames') + 28)
-en1freq = en1i(symva('g_CpuFreq'))
-def en1profset(v):
-	for i in range(len(en1profa)):
-		en1poke(en1profa[i], v[i])
-en1poke(symva('g_CpuFreq'), 0x44fa0000)
-en1poke(symva('g_ProfFrames') + 28, en1fr & 0xffffff)
-en1profset((0, 0, 0, 0, 0, 0, 0, 0))
-check('en1 Tsc_CpuFreq', lambda: SDTest.Call('Tsc_CpuFreq', 'fi', 0)[0])
-check('en1 Prof_Count', lambda: (SDTest.Call('Prof_Count', 'iii', 31, 5)[0], SDTest.Call('Prof_Count', 'iii', 31, -2)[0], en1prof()))
-check('en1 Prof_GetCount', lambda: (SDTest.Call('Prof_GetCount', 'iii', 31, 0)[0], SDTest.Call('Prof_GetCount', 'iii', 31, 1)[0],
-	SDTest.Call('Prof_GetCount', 'iii', 31, 0)[0], en1prof()))
-for en1v in ((1000, 0, 0, 0, 0, 0, 0, 0), (123456, 2, 7, 0, 99, 3, 0, 0), (-5000, -1, 0, 0, 10, 0, 0, 0),
-	(77, 0, 5, 5, -1, 0x7fffffff, 0, 0), (0x40000000, 0, 0, 0, 0x40000000, 0, 0, 0)):
-	en1profset(en1v)
-	check('en1 Prof_Avg' + fmt(en1v), lambda: (SDTest.Call('Prof_Avg', 'iii', 31, 3)[0], en1prof(),
-		SDTest.Call('Prof_Avg', 'iii', 31, 3)[0], SDTest.Call('Prof_Avg', 'iii', 31, 3)[0], en1prof()))
-	en1profset(en1v)
-	check('en1 Prof_Avg32' + fmt(en1v), lambda: (SDTest.Call('Prof_Avg32', 'ii', 31)[0], en1prof()))
-	en1profset(en1v)
-	check('en1 Prof_Reset' + fmt(en1v), lambda: (SDTest.Call('Prof_Reset', 'ii', 31)[0], en1prof()))
-	en1profset(en1v)
-	check('en1 Prof_GetTime' + fmt(en1v), lambda: (SDTest.Call('Prof_GetTime', 'fii', 31, 0)[0], SDTest.Call('Prof_GetTime', 'fii',
-		31, 1)[0], en1prof()))
-	en1profset(en1v)
-	check('en1 Prof_GetMaxTime' + fmt(en1v), lambda: (SDTest.Call('Prof_GetMaxTime', 'fii', 31, 0)[0], SDTest.Call('Prof_GetMaxTime', 'fii',
-		31, 1)[0], en1prof()))
-en1profset(en1profs)
-en1poke(symva('g_ProfFrames') + 28, en1fr)
-en1poke(symva('g_CpuFreq'), en1freq)
-
 # Engine/SueloPortal.cpp: the rectangle constructor, the viewport of a seen sector and the debug drawing, through the
 # D3D log (the projection and the viewport set back by Portals_SetView(NULL))
 en1zp = en1z(0x20)

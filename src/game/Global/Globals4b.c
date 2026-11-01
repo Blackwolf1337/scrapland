@@ -33,7 +33,6 @@
 #undef g_BspTris
 #undef g_BspVerts
 #undef g_CalcLmap2
-#undef g_CpuFreq
 #undef g_D3DAppFrames
 #undef g_D3DAppLastTime
 #undef g_DVFName
@@ -67,12 +66,6 @@
 #undef g_PaintAll
 #undef g_PaintZones
 #undef g_ParticleSystemIni
-#undef g_ProfAvg
-#undef g_ProfCounts
-#undef g_ProfFrames
-#undef g_ProfLastCounts
-#undef g_ProfMax
-#undef g_ProfTicks
 #undef g_ResponseFaces
 #undef g_ScreenshotName
 #undef g_SelAdapter
@@ -128,13 +121,6 @@ int g_NTortas SD_BSS(0x4b11d8);
 int g_NResponseFaces SD_BSS(0x4b11dc);
 int g_ResponseFaces[64][3] SD_BSS(0x4b11e0);
 uint32_t CheckBBox_InitResponseFaces_4b14e0[192] SD_BSS(0x4b14e0);
-uint64_t g_ProfTicks[32] SD_BSS(0x4b17e0);
-int64_t g_ProfAvg[32] SD_BSS(0x4b18e0);
-int64_t g_ProfMax[32] SD_BSS(0x4b19e0);
-byte g_ProfFrames[32] SD_BSS(0x4b1ae0);
-int g_ProfCounts[32] SD_BSS(0x4b1b00);
-int g_ProfLastCounts[32] SD_BSS(0x4b1b80);
-float g_CpuFreq SD_BSS(0x4b1c00);
 struct CD3DApplication *g_Engine SD_BSS(0x4b1c04);
 struct CD3DApplication *g_SelApp SD_BSS(0x4b1c08);
 uint32_t g_OrigAdapter SD_BSS(0x4b1c0c);

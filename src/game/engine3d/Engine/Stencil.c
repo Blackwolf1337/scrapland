@@ -391,20 +391,6 @@ void Stencil_Init(void) {
 	D3D_METHOD(dev, d3dCreateVB_t, D3DDEV_CREATEVB)(dev, 0x6c000, 0x208, 2, 0, &g_StencilVB3);
 }
 
-/* the x87 division of the original (fdivr QWORD) in the precision the game set, stored as a double */
-static double X87_DivToDouble(double num, float den) {
-	long double r;
-
-	__asm__("fdivrl %2" : "=t"(r) : "0"((long double)den), "m"(num));
-	return (double)r;
-}
-
-/* the ticks of a profiler section averaged over 20 frames, in seconds */
-static double Stencil_TscTime(int section) {
-	double t = Int64_ToDouble(Prof_Avg(section, 0x14));
-	return X87_DivToDouble(t, Tsc_CpuFreq(0));
-}
-
 /* the scene drawn: unlit where the stencil is set, then lit where it is not, the floor through g_StencilRender */
 static void Stencil_DrawScene(void) {
 	if (g_StencilRender) {
@@ -513,12 +499,6 @@ void ShadowsStencil_Render(void) {
 		Font_PrintfXY(g_FntComic14, 10.0f, 140.0f, "segs: %d", g_StencilSegs);
 		Font_PrintfXY(g_FntComic14, 10.0f, 160.0f, "inv: %d", g_StencilInv);
 	}
-	if (g_ShowStencil) {
-		double t5 = Stencil_TscTime(5);
-		double t6 = Stencil_TscTime(6);
-		Font_PrintfXY(g_FntTerm8, 10.0f, 180.0f, "tsc(5): %f ms  %f%%", t5 * 1000.0, t5 / (double)g_FrameMs * 100.0);
-		Font_PrintfXY(g_FntTerm8, 10.0f, 190.0f, "tsc(6): %f ms  %f%%", t6 * 1000.0, t6 / (double)g_FrameMs * 100.0);
-	}
 	g_StencilSegs = 0;
 	g_StencilInv = 0;
 	g_StencilGroups = 0;
@@ -530,18 +510,7 @@ void ShadowsStencil_Render(void) {
 #define g_StencilViewDisp GAME_GLOBAL_IN(float, GVar_R_StencilViewDisp, 16, 0x390198)	/* R_StencilViewDisp: the volumes moved along the view */
 #define g_StencilGroupsMax GAME_GLOBAL(int, g_StencilGroupsMax, 0x4afde4)
 #define g_TriFacing (GAME_ARRAY(byte, g_TriFacing, 0x3902c0))		/* [0x10000] the triangles facing the light */
-#define PROF_STENCIL 5
-#define PROF_STENCIL_FACING 6
 #define LIGHT_SPOT 0x1389
-
-/* the profiler ticks of the volumes, without the mode check of Prof_Begin */
-static void Stencil_TicksSub(int section) {
-	g_ProfTicks[section] -= __builtin_ia32_rdtsc();
-}
-
-static void Stencil_TicksAdd(int section) {
-	g_ProfTicks[section] += __builtin_ia32_rdtsc();
-}
 
 void Stencil_Mesh(struct CVertList *v, const void *tris, uint32_t nTri, struct CMeshD3D *m, struct CRenderNode *r) {
 	(void)v;
@@ -617,8 +586,6 @@ void Stencil_Mesh(struct CVertList *v, const void *tris, uint32_t nTri, struct C
 	CHECK(D3DX_MatrixInverse(&inv, NULL, &world));
 	Vec3_TransformH(&lpos, &g_ShadowLightPos, &inv);
 	Vec3_TransformDir0(&ldir, &g_ShadowLightDir, &inv);
-	Stencil_TicksSub(PROF_STENCIL);
-	Stencil_TicksSub(PROF_STENCIL_FACING);
 	for (int i = 0; i < nTriSeg; i++) {
 		const TriMeshPlane *p = &planes[i];
 		float s = p->n.x * lpos.x + p->n.y * lpos.y + lpos.z * p->n.z + p->d;
@@ -626,7 +593,6 @@ void Stencil_Mesh(struct CVertList *v, const void *tris, uint32_t nTri, struct C
 		memcpy(&bits, &s, sizeof(bits));
 		g_TriFacing[i] = ~(byte)(bits >> 31) & 1;
 	}
-	Stencil_TicksAdd(PROF_STENCIL_FACING);
 	int segs0 = g_StencilSegs;
 	int tris0 = g_StencilInv;
 	vec3_t *segs = g_StencilSegments;
@@ -688,7 +654,6 @@ void Stencil_Mesh(struct CVertList *v, const void *tris, uint32_t nTri, struct C
 		CHECK(t == nTriSeg);
 	}
 done:
-	Stencil_TicksAdd(PROF_STENCIL);
 	CHECK(g_StencilGroups < STENCIL_MAX_GROUPS);
 	if (g_StencilSegs == segs0) {
 		return;

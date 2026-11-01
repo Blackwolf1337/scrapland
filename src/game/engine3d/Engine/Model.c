@@ -876,7 +876,6 @@ const char *__fastcall CLight_TypeName(const CLight *l) {
 #define g_ShowModelLights GAME_GLOBAL_IN(int, GVar_R_ShowModelLights, 16, 0x4ae6f8)	/* R_ShowModelLights */
 #define g_ShowModelBox GAME_GLOBAL_IN(int, GVar_R_ShowModelBox, 16, 0x4ae668)		/* R_ShowModelBox */
 #define g_ShowModelPos GAME_GLOBAL_IN(int, GVar_R_ShowModelPos, 16, 0x4ae650)		/* R_ShowModelPos */
-#define PROF_MODELVIS 0x1e
 
 /* the passes that draw only the models seen in the last frame */
 static int Model_PassKeepsVis(int pass) {
@@ -908,7 +907,6 @@ static float Model_Sphere(CModel *self, const matrix_t *m, vec3_t *c) {
 
 byte __thiscall CModel_Visibility(CModel *self, const matrix_t *m) {
 	int pass = g_RenderPass;
-	int sec = PROF_MODELVIS;
 	vec3_t c;
 
 	if (Model_PassKeepsVis(pass)) {
@@ -917,7 +915,6 @@ byte __thiscall CModel_Visibility(CModel *self, const matrix_t *m) {
 	if (self->alwaysVisible) {
 		return 3;
 	}
-	Prof_Begin(PROF_MODELVIS);
 	if (g_ModelFastIsVis == 2 && !SectorVis_Check(&self->sector, &self->pos, self->name)) {
 		goto hidden;
 	}
@@ -939,10 +936,8 @@ byte __thiscall CModel_Visibility(CModel *self, const matrix_t *m) {
 			goto hidden;
 		}
 	}
-	ProfScope_End(&sec);
 	return r;
 hidden:
-	ProfScope_End(&sec);
 	return 0;
 }
 

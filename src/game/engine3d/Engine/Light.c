@@ -19,7 +19,6 @@
 #define LIGHT_INV255 (1.0f / 255.0f)
 /* "no limit" for the range of the device light and the start of the nearest search, a float constant of the exe */
 #define LIGHT_RANGE_INF GAME_GLOBAL(const float, LIGHT_RANGE_INF, 0x3d7be0)
-#define PROF_LIGHTS 0x1d		/* the profiler section of Light_Select */
 
 #define g_Lights (GAME_ARRAY(CLight *, g_Lights, 0x4ac438))	/* MAX_LIGHTS, the active lights */
 #define g_nLights GAME_GLOBAL(int, g_nLights, 0x4ac434)
@@ -228,7 +227,6 @@ byte __thiscall IObject3D_Write(IObject3D *self, CFileIO *f, void *ctx) {
 
 int Light_Select(const vec3_t *pos, int sector, const vec3_t *center, float radius, CLight **out, int maxOn) {
 	CHECK(g_pd3dDevice);
-	Prof_Begin(PROF_LIGHTS);
 	CHECK(radius > 0.0f);
 	int n = 0;
 	CLight *dirShadow = NULL, *shadow = NULL;
@@ -293,7 +291,6 @@ int Light_Select(const vec3_t *pos, int sector, const vec3_t *center, float radi
 		CHECK(l->active);
 		Light_EnableD3D(l, i < maxOn);
 	}
-	Prof_End(PROF_LIGHTS);
 	return n;
 }
 

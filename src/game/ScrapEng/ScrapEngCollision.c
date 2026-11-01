@@ -5,13 +5,8 @@
 
 #include "scrap/console.h"
 #include "scrap/e3dworld.h"
-#include "scrap/prof.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/groundportal.h"
-
-void __fastcall ProfScope_End(const int *section) {
-	Prof_End(*section);
-}
 
 void CollisionEpsilon_Set(byte restore) {
 	if (restore) {
@@ -38,7 +33,6 @@ void CollisionEpsilon_Set(byte restore) {
 byte Collision_SegSphere(const vec3_t *a, const vec3_t *b, float cx, float cy, float cz, float r, vec3_t *out) {
 	byte res = 0;
 
-	Prof_Begin(PROF_SEGSPHERE);
 	if (a->x == b->x && a->y == b->y && a->z == b->z) {
 		if (out) {
 			*out = *b;
@@ -79,7 +73,6 @@ byte Collision_SegSphere(const vec3_t *a, const vec3_t *b, float cx, float cy, f
 	}
 	res = 1;
 done:
-	Prof_End(PROF_SEGSPHERE);
 	return res;
 }
 
@@ -153,7 +146,6 @@ byte Collision_SphereBox(const vec3_t *a, const vec3_t *b, float r, CSphereBox *
 byte Collision_Box(const vec3_t *pos, const vec3_t *min, const vec3_t *max) {
 	CCollisionBBox collision;
 
-	Prof_Begin(PROF_BOX);
 	CGround *ground = World_Get()->ObjGround;
 	CHECK(ground);
 	memset(&collision, 0, sizeof(collision));
@@ -163,7 +155,6 @@ byte Collision_Box(const vec3_t *pos, const vec3_t *min, const vec3_t *max) {
 	collision.min = *min;
 	collision.max = *max;
 	byte res = CGround_CheckBBox(ground, &collision);
-	Prof_End(PROF_BOX);
 	return res;
 }
 
@@ -171,12 +162,10 @@ byte Engine_TestLine(const vec3_t *from, const vec3_t *to, vec3_t *hit, CCollisi
 	vec3_t pos = *to;
 	byte res;
 
-	Prof_Begin(PROF_TESTLINE);
 	CGround *ground = World_Get()->ObjGround;
 	CHECK(ground);
 	if (!hit && !tri) {
 		res = CGround_TestSeg(ground, from, to, 0);
-		Prof_End(PROF_TESTLINE);
 		return res;
 	}
 	if (tri) {
@@ -198,7 +187,6 @@ byte Engine_TestLine(const vec3_t *from, const vec3_t *to, vec3_t *hit, CCollisi
 	if (hit) {
 		*hit = pos;
 	}
-	Prof_End(PROF_TESTLINE);
 	return res;
 }
 
@@ -206,22 +194,18 @@ int Collision_Sector(int sector, const vec3_t *a, const vec3_t *b, byte front) {
 	if (sector < 0) {
 		CheckFailed("Sector >= 0", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	Prof_Begin(PROF_SECTOR);
 	int res = Sector_Traverse(sector, a, b, front);
-	Prof_End(PROF_SECTOR);
 	return res;
 }
 
 byte Collision_Check(const vec3_t *pos, float r) {
 	byte res;
 
-	Prof_Begin(PROF_CHECK);
 	if (g_CollisionScts) {
 		res = CGround_SweepSphere(World_Ground(), pos, pos, r, NULL, NULL, NULL);
 	} else {
 		res = CGround_SphereContact(World_Ground(), pos, pos, r, NULL, NULL, NULL);
 	}
-	Prof_End(PROF_CHECK);
 	return res;
 }
 
@@ -248,13 +232,12 @@ typedef byte(__thiscall *sphereFn_t)(CGround *self, const vec3_t *a, const vec3_
 
 /* the slides: steps of half the radius from a to b, each step pushed out of the triangles by fn up to maxIter
  * times; after the first push the last step ends at b */
-static byte Collision_SlideSteps(const vec3_t *a, const vec3_t *b, float r, vec3_t *out, int section, int maxIter,
-	sphereFn_t fn, const char *name) {
+static byte Collision_SlideSteps(const vec3_t *a, const vec3_t *b, float r, vec3_t *out, int maxIter, sphereFn_t fn,
+	const char *name) {
 	vec3_t d = { b->x - a->x, b->y - a->y, b->z - a->z };
 	byte moved = 0;
 	int n = 0;
 
-	Prof_Begin(section);
 	CGround *ground = World_Ground();
 	vec3_t cur = *b, prev;
 	if (ground) {
@@ -299,7 +282,6 @@ static byte Collision_SlideSteps(const vec3_t *a, const vec3_t *b, float r, vec3
 		*out = cur;
 	}
 done:
-	Prof_End(section);
 	return moved;
 }
 
@@ -309,7 +291,7 @@ byte Collision_Slide2D(const vec3_t *a, const vec3_t *b, float r, vec3_t *out, C
 	if (Collision_Shortcut(a, b, r, out, cache, 0, &res)) {
 		return res;
 	}
-	return Collision_SlideSteps(a, b, r, out, PROF_SLIDE2D, g_CollisionSld2, CGround_CollideSphere,
+	return Collision_SlideSteps(a, b, r, out, g_CollisionSld2, CGround_CollideSphere,
 		"WorldSphereCollisionSlide2D");
 }
 
@@ -319,7 +301,7 @@ byte Collision_Slide(const vec3_t *a, const vec3_t *b, float r, vec3_t *out, CSp
 	if (Collision_Shortcut(a, b, r, out, cache, 1, &res)) {
 		return res;
 	}
-	return Collision_SlideSteps(a, b, r, out, PROF_SLIDE, g_CollisionSldi, CGround_SphereContact,
+	return Collision_SlideSteps(a, b, r, out, g_CollisionSldi, CGround_SphereContact,
 		"WorldSphereCollisionSlide");
 }
 
@@ -332,7 +314,6 @@ byte Engine_TestSphere(const vec3_t *a, const vec3_t *b, float r, vec3_t *out, C
 	if (Collision_Shortcut(a, b, r, out, cache, 1, &res)) {
 		return res;
 	}
-	Prof_Begin(PROF_TESTSPHERE);
 	CGround *ground = World_Ground();
 	vec3_t cur = end;
 	if (g_CollisionCaps && a->x == b->x && a->z == b->z) {
@@ -386,6 +367,5 @@ byte Engine_TestSphere(const vec3_t *a, const vec3_t *b, float r, vec3_t *out, C
 		*out = cur;
 	}
 done:
-	Prof_End(PROF_TESTSPHERE);
 	return res;
 }
