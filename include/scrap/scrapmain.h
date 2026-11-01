@@ -76,22 +76,22 @@ void CPsaImage_DrawFrame(CPsaImage *self, int frame, float x, float y);
 void CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, float y, int mode, int flip);
 
 /* the state of the engine glue */
-#define g_CamCurrent GAME_GLOBAL(CGameCamera *, g_CamCurrent)	/* the camera drawn */
-#define g_ViewerCamera GAME_GLOBAL(CGameCamera *, g_ViewerCamera)	/* gViewerCamera, made with the engine */
-#define g_Watermark GAME_GLOBAL(CPsaImage *, g_Watermark)
+extern CGameCamera *g_CamCurrent;	/* the camera drawn */
+extern CGameCamera *g_ViewerCamera;	/* gViewerCamera, made with the engine */
+extern CPsaImage *g_Watermark;
 /* the callbacks of Engine_SetCallback (1..4): before each frame, after the frame setup, two more */
 #define g_EngCallbacks (GAME_ARRAY(void (*)(void), g_EngCallbacks))	/* [4], 2 and 3 are g_LoadingDraw2 and g_LoadingDraw */
 #define g_DrawProgressBar GAME_GLOBAL_IN(byte, group_4a8324, 0)
 #define g_ResetPending GAME_GLOBAL_IN(byte, group_4a8324, 1)	/* Video_SetCurrentMode: reset the device at the next frame */
 #define g_ProgressBarCount GAME_GLOBAL(int, g_LoadingCount)
-#define g_MapTextDataFile GAME_GLOBAL(void *, g_MapTextDataFile)	/* FILE of the exe's CRT */
-#define g_MapTextSaving GAME_GLOBAL(int, g_MapTextSaving)
-#define g_VideoBufferSize GAME_GLOBAL(int, g_VideoBufferSize)
-#define g_CallbacksOn GAME_GLOBAL(byte, g_CallbacksOn)
+extern void *g_MapTextDataFile;	/* FILE of the exe's CRT */
+extern int g_MapTextSaving;
+extern int g_VideoBufferSize;
+extern byte g_CallbacksOn;
 #define g_ScreenshotName (GAME_ARRAY(char, g_ScreenshotName))	/* 0x100 */
 #define g_DVFName (GAME_ARRAY(char, g_DVFName))		/* 0x100 */
 #define g_VideoStatus GAME_GLOBAL(int, g_BspSectorSeen)
-#define g_LoadingScreen GAME_GLOBAL(int, g_LoadingScreen)	/* the last random loading screen */
+extern int g_LoadingScreen;	/* the last random loading screen */
 #define g_M3dIni GAME_STR(str_431bf0)		/* "m3d.ini" */
 /* the video to play at the start and after a level ("" when played, unless bit 0 of its flags) */
 #define g_StartVideo (GAME_ARRAY_IN(cString, GVar_PlayVideo, 16))
@@ -104,19 +104,19 @@ void CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, float y, int m
 #define g_GroundPath (GAME_ARRAY(char, g_GroundPath))	/* [suelo] ruta_m3d, 0x104 */
 #define g_GroundScale (GAME_ARRAY(vec3_t, g_GroundScale))
 #define g_ModelAmbientIni (GAME_ARRAY(ColorIntens, g_ModelAmbientIni))	/* [suelo] model_ambient */
-#define g_ClipNear GAME_GLOBAL(float, g_ClipNear)		/* [camara] forzar_clipNear */
-#define g_ClipFar GAME_GLOBAL(float, g_ClipFar)
+extern float g_ClipNear;		/* [camara] forzar_clipNear */
+extern float g_ClipFar;
 #define g_SkyPath (GAME_ARRAY(char, g_SkyPath))	/* [cielo], 0x104 */
-#define g_SkyPosScaleIni GAME_GLOBAL(float, g_SkyPosScaleIni)
-#define g_SkyRotationIni GAME_GLOBAL(float, g_SkyRotationIni)
-#define g_FogActiveIni GAME_GLOBAL(int, g_FogActiveIni)	/* [niebla] */
-#define g_FogTableMode GAME_GLOBAL(int, g_FogTableMode)
-#define g_FogLinear GAME_GLOBAL(int, g_FogLinear)
-#define g_FogRangeIni GAME_GLOBAL(float, g_FogRangeIni)
-#define g_FogRangeEnd GAME_GLOBAL(float, g_FogRangeEnd)
-#define g_FogDensityIni GAME_GLOBAL(float, g_FogDensityIni)
+extern float g_SkyPosScaleIni;
+extern float g_SkyRotationIni;
+extern int g_FogActiveIni;	/* [niebla] */
+extern int g_FogTableMode;
+extern int g_FogLinear;
+extern float g_FogRangeIni;
+extern float g_FogRangeEnd;
+extern float g_FogDensityIni;
 #define g_FogColorIni (GAME_ARRAY(ColorIntens, g_FogColorIni))
-#define g_GroundTrisPerNode GAME_GLOBAL(int, g_GroundTrisPerNode)
+extern int g_GroundTrisPerNode;
 
 /* the engine variables (Gvars) */
 #define g_RenderLightmap GAME_GLOBAL_IN(int, GVar_RenderLightmap, 16)
@@ -141,14 +141,14 @@ void CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, float y, int m
 #define g_GvEnvBump (GAME_ARRAY(cGVar, g_GvEnvBump))
 #define g_GvGlowMap (GAME_ARRAY(cGVar, g_GvGlowMap))
 /* what the frame setup takes from the variables */
-#define g_ShowCollision GAME_GLOBAL(int, g_ShowCollision)
-#define g_WireFrame GAME_GLOBAL(int, g_WireFrame)
-#define g_LightmapMode2 GAME_GLOBAL(int, g_LightmapMode2)
-#define g_LightmapOff GAME_GLOBAL(int, g_LightmapOff)
-#define g_CalcLmap2 GAME_GLOBAL(int, g_CalcLmap2)		/* [mapa_sombras] calc_lmap2 */
-#define g_MaxLightmap GAME_GLOBAL(int, g_MaxLightmap)
-#define g_TimerQPMult GAME_GLOBAL(int, g_TimerQPMult)
-#define g_MapTextSavingOn GAME_GLOBAL(byte, g_MapTextSavingOn)
+extern int g_ShowCollision;
+extern int g_WireFrame;
+extern int g_LightmapMode2;
+extern int g_LightmapOff;
+extern int g_CalcLmap2;		/* [mapa_sombras] calc_lmap2 */
+extern int g_MaxLightmap;
+extern int g_TimerQPMult;
+extern byte g_MapTextSavingOn;
 #define g_VertexSpecular GAME_GLOBAL_IN(byte, group_4a8efc, 0)
 #define g_RenderFlag6e0 GAME_GLOBAL_IN(int, GVar_R_UseMLOD, 16)	/* taken from 0x4ae6e4 at the start */
 #define g_RenderFlag6e4 GAME_GLOBAL_IN(int, GVar_R_UseMLOD, 20)

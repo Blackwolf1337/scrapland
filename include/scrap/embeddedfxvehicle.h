@@ -113,7 +113,7 @@ SD_SIZE(cEmbeddedFXVehicleVote, 0x2e0);
 
 /* the shared siren model and particles */
 #define g_SirenModel (GAME_ARRAY(CGameModel, g_SirenModel))
-#define g_SirenRefs GAME_GLOBAL(int, g_SirenRefs)
+extern int g_SirenRefs;
 #define g_SirenParticles (GAME_ARRAY(CGameParticles, g_SirenParticles))
 
 /* engine variables */

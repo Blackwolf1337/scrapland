@@ -24,8 +24,8 @@
 #define s_TauntRaceCounts (GAME_ARRAY(HashTable, s_TauntRaceCounts))	/* of cNameItem, 0x1c9 slots, case sensitive */
 #define s_TauntRaces (GAME_ARRAY(char *, s_TauntRaces))		/* "SBi", "SBa", "SFu", "SPo" */
 #define s_TauntLastRace GAME_GLOBAL_IN(char *, s_TauntRaces, 16)
-#define s_TauntPoliceCount GAME_GLOBAL(int, s_TauntPoliceCount)		/* -1 at the start */
-#define s_TauntLastTime GAME_GLOBAL(float, s_TauntLastTime)
+extern int s_TauntPoliceCount;		/* -1 at the start */
+extern float s_TauntLastTime;
 #define s_TauntCountsGuard (&GAME_GLOBAL(int, s_TauntCountsGuard))
 #define s_TauntTimeGuard (&GAME_GLOBAL(int, s_TauntTimeGuard))
 

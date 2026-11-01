@@ -42,7 +42,7 @@ SD_SIZE(CCollisionTri, 0x44);
 #define g_CollisionSbox GAME_GLOBAL_IN(int, GVar_c_sbox, 16)	/* c_sbox: the box cache */
 #define g_CollisionSboxShow GAME_GLOBAL_IN(int, GVar_c_sboxshow, 16)	/* c_sboxshow: debug points of the box cache */
 #define g_CollisionSboxMult GAME_GLOBAL_IN(float, GVar_c_sboxmult, 16)	/* c_sboxmult: the box reaches this many moves ahead */
-#define g_LastCollisionEpsilon GAME_GLOBAL(float, g_LastCollisionEpsilon)
+extern float g_LastCollisionEpsilon;
 
 /* the collision epsilon divided by 8 for fine queries, with restore back */
 void CollisionEpsilon_Set(byte restore);

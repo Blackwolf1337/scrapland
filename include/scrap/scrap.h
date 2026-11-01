@@ -106,8 +106,8 @@ typedef struct cGVarFunction {
 } cGVarFunction;
 SD_SIZE(cGVarFunction, 0x24);
 
-#define g_GVars GAME_GLOBAL(cGVar *, g_GVars)		/* every variable, newest first */
-#define g_GVarTable GAME_GLOBAL(HashTable *, g_GVarTable)	/* by name after GVars_Init */
+extern cGVar *g_GVars;		/* every variable, newest first */
+extern HashTable *g_GVarTable;	/* by name after GVars_Init */
 
 byte SaveVar_Create(const char *name, const char *value);
 void SaveVars_Delete(const char *prefix);

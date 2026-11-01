@@ -134,20 +134,20 @@ static inline int ChType_ActPriority(void *ctrl) {
 #define g_GearTargetName GAME_GLOBAL_IN(char *, GVar_GearTargetName, 16)	/* GearTargetName: the target of the missile of the player */
 
 /* the characters of the running actions (the "MeEnt" CHECKs) */
-#define g_BankMasterEnt GAME_GLOBAL(cEntity *, g_BankMasterEnt)
-#define g_BertoEnt GAME_GLOBAL(cEntity *, g_BertoEnt)
-#define g_BettyEnt GAME_GLOBAL(cEntity *, g_BettyEnt)
-#define g_DtritusEnt GAME_GLOBAL(cEntity *, g_DtritusEnt)
+extern cEntity *g_BankMasterEnt;
+extern cEntity *g_BertoEnt;
+extern cEntity *g_BettyEnt;
+extern cEntity *g_DtritusEnt;
 /* the gear natives: the name of the shooting gear (also the one the ball does not hurt), the missile, its point */
 #define g_GearTarget (GAME_ARRAY(char, g_GearTarget))		/* [0x80] */
 #define g_GearSwName (GAME_ARRAY(char, g_GearSwName))		/* [0x80] */
-#define g_GearSw GAME_GLOBAL(cEntity *, g_GearSw)
-#define g_GearXplodePos GAME_GLOBAL(vec3_t, g_GearXplodePos)
+extern cEntity *g_GearSw;
+extern vec3_t g_GearXplodePos;
 /* Logic_Flash: the point, the most characters to flash (-1 all), the count and the result */
-#define g_FlashPos GAME_GLOBAL(vec3_t, g_FlashPos)
-#define g_FlashResult GAME_GLOBAL(int, g_FlashResult)
-#define g_FlashMax GAME_GLOBAL(int, g_FlashMax)
-#define g_FlashCount GAME_GLOBAL(int, g_FlashCount)
+extern vec3_t g_FlashPos;
+extern int g_FlashResult;
+extern int g_FlashMax;
+extern int g_FlashCount;
 #define FLASH_ANGLE 1.5707963705062866
 
 /* engine side */
@@ -321,10 +321,10 @@ static inline const char *ChType_ClassName(cEntity *e) {
 #define g_FXSebastianFlashFile GAME_GLOBAL_IN(char *, GVar_FXSebastianFlashFile, 16)
 
 /* the characters of the running actions (the "MeEnt" CHECKs), the nurse by name and the character it hits */
-#define g_MayorEnt GAME_GLOBAL(cEntity *, g_MayorEnt)
-#define g_PoliceBossEnt GAME_GLOBAL(cEntity *, g_PoliceBossEnt)
+extern cEntity *g_MayorEnt;
+extern cEntity *g_PoliceBossEnt;
 #define g_NurseName (GAME_ARRAY(char, g_NurseName))		/* [0x80] */
-#define g_NurseTarget GAME_GLOBAL(cEntity *, g_NurseTarget)
+extern cEntity *g_NurseTarget;
 
 /* engine side */
 /* the name of the listener into the mayor logic (NULL clears it, rva 0x153010) */

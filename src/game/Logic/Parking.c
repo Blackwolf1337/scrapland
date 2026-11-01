@@ -21,8 +21,8 @@
 #define g_OnParkedOut (GAME_ARRAY_IN(cPy_Function, GVar_OnParkedOut, 16))
 #define g_OnParkingOccupied (GAME_ARRAY_IN(cPy_Function, GVar_OnParkingOccupied, 16))
 /* what the sphere native found: a ship, else the last other entity */
-#define g_ParkingShip GAME_GLOBAL(cEntity *, g_ParkingShip)
-#define g_ParkingOther GAME_GLOBAL(cEntity *, g_ParkingOther)
+extern cEntity *g_ParkingShip;
+extern cEntity *g_ParkingOther;
 #define PARKING_NATIVE 0x155ed0
 #define PARKING_FARTHER 0x155e90
 #define PARKING_NEARER 0x155eb0

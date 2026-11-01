@@ -650,10 +650,10 @@ typedef struct DebugPoint {
 } DebugPoint;
 SD_SIZE(DebugPoint, 0x14);
 
-#define g_Points (GAME_GLOBAL(CTable, g_Points))	/* DebugPoint[], grown by a quarter */
-#define g_NumPoints GAME_GLOBAL(int, g_NumPoints)
+extern CTable g_Points;	/* DebugPoint[], grown by a quarter */
+extern int g_NumPoints;
 #define g_PointsOn GAME_GLOBAL_IN(byte, group_4a8ef8, 2)	/* set by the first point */
-#define g_MaxPoints GAME_GLOBAL(int, g_MaxPoints)	/* 4000: all cleared at that count, 0 no limit */
+extern int g_MaxPoints;	/* 4000: all cleared at that count, 0 no limit */
 
 static DebugPoint *Point(int i) {
 	TABLE_CHECK(g_Points.p, i, g_Points.n);

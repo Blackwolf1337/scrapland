@@ -6,7 +6,7 @@
 #include "scrap/e3dutil.h"
 #include "scrap/material.h"
 
-#define g_ThousandsSep GAME_GLOBAL(char, g_ThousandsSep)
+extern char g_ThousandsSep;
 #define g_IntBuf (GAME_ARRAY(char, g_IntBuf))	/* the result of String_FromInt(NULL, n) */
 
 /* c at pos, the characters from pos up to len (the terminator at len included) one further */

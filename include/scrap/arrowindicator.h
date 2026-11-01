@@ -72,8 +72,8 @@ SD_SIZE(cArrowIndicator, 0x88);
 /* the arrow and the collision sphere of an entity with life */
 
 /* the globals of ArrowIndicator.cpp */
-#define g_ArrowPool GAME_GLOBAL(cArrowModel *, g_ArrowPool)
-#define g_ArrowPoolCount GAME_GLOBAL(int, g_ArrowPoolCount)
+extern cArrowModel *g_ArrowPool;
+extern int g_ArrowPoolCount;
 #define g_ArrowMaxDist GAME_GLOBAL_IN(float, GVar_ArrowActiveRadius, 16)	/* of the selection */
 #define g_ArrowNearDist GAME_GLOBAL_IN(float, GVar_ArrowViewRadius, 16)	/* shown nearer */
 #define g_ArrowYMargin GAME_GLOBAL_IN(float, GVar_ArrowActiveHorizontal, 16)	/* the height difference allowed over both radii */

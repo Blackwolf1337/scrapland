@@ -724,7 +724,7 @@ static float DebugValue(uint32_t i) {
 #define g_ViewerCameraTgt GAME_GLOBAL_IN(int, GVar_ViewerCameraTgt, 16)	/* orbits around the target */
 #define g_ViewerCameraVel GAME_GLOBAL_IN(float, GVar_ViewerCameraVel, 16)
 #define g_ViewerCameraInv GAME_GLOBAL_IN(int, GVar_ViewerCameraInv, 16)	/* the pitch not inverted */
-#define g_ViewerSpeed GAME_GLOBAL(float, g_ViewerSpeed)	/* doubled and halved by the debug keys */
+extern float g_ViewerSpeed;	/* doubled and halved by the debug keys */
 #define VIEWER_MIN_DIST 20.0f
 /* the actions of the debug set */
 #define DBG_VIEWER_TGT 23
@@ -1175,24 +1175,24 @@ int Ini_GetPath(const char *sect, const char *key, char *dest, int size, const c
 }
 
 /* the globals of m3d.ini without a better home */
-#define g_ShadowMapMultitext GAME_GLOBAL(int, g_ShadowMapMultitext)
-#define g_ShadowMapSoft GAME_GLOBAL(int, g_ShadowMapSoft)
-#define g_ShadowMapWriteTemp GAME_GLOBAL(int, g_ShadowMapWriteTemp)
-#define g_ShadowMapAtten GAME_GLOBAL(float, g_ShadowMapAtten)
-#define g_ShadowMapScale GAME_GLOBAL(float, g_ShadowMapScale)
-#define g_ShadowMapRes GAME_GLOBAL(float, g_ShadowMapRes)
-#define g_ShadowMapTexX GAME_GLOBAL(int, g_ShadowMapTexX)
-#define g_ShadowMapTexY GAME_GLOBAL(int, g_ShadowMapTexY)
-#define g_ShadowMapGamma GAME_GLOBAL(float, g_ShadowMapGamma)
-#define g_ShadowMapBrightness GAME_GLOBAL(float, g_ShadowMapBrightness)
-#define g_ShadowMapRadiosity GAME_GLOBAL(int, g_ShadowMapRadiosity)
-#define g_ShadowMapIllumGlobal GAME_GLOBAL(int, g_ShadowMapIllumGlobal)
-#define g_ShadowMapNoLightAmb GAME_GLOBAL(int, g_ShadowMapNoLightAmb)
-#define g_ShadowMapModulate4x GAME_GLOBAL(int, g_ShadowMapModulate4x)
-#define g_ShadowMapBounces GAME_GLOBAL(int, g_ShadowMapBounces)
-#define g_ShadowMapCoefRad GAME_GLOBAL(float, g_ShadowMapCoefRad)
-#define g_ShadowMapUseTxf GAME_GLOBAL(int, g_ShadowMapUseTxf)
-#define g_ShadowsDestAlpha GAME_GLOBAL(int, g_ShadowsDestAlpha)
+extern int g_ShadowMapMultitext;
+extern int g_ShadowMapSoft;
+extern int g_ShadowMapWriteTemp;
+extern float g_ShadowMapAtten;
+extern float g_ShadowMapScale;
+extern float g_ShadowMapRes;
+extern int g_ShadowMapTexX;
+extern int g_ShadowMapTexY;
+extern float g_ShadowMapGamma;
+extern float g_ShadowMapBrightness;
+extern int g_ShadowMapRadiosity;
+extern int g_ShadowMapIllumGlobal;
+extern int g_ShadowMapNoLightAmb;
+extern int g_ShadowMapModulate4x;
+extern int g_ShadowMapBounces;
+extern float g_ShadowMapCoefRad;
+extern int g_ShadowMapUseTxf;
+extern int g_ShadowsDestAlpha;
 #define g_FlaresSizeDef GAME_GLOBAL(float, g_FlareSize)
 #define g_FlaresAttenDist GAME_GLOBAL(int, g_FlareAttenDist)
 #define g_FlaresAttenIni GAME_GLOBAL(float, g_FlareAttenDistIni)

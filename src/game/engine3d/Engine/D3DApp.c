@@ -20,7 +20,7 @@
 #define D3DAPP_TIMER_START 1
 #define D3DAPP_TIMER_STOP 2
 
-#define g_AppPausedCount GAME_GLOBAL(int, g_AppPausedCount)
+extern int g_AppPausedCount;
 
 
 int D3DApp_SortModes(const D3DDisplayMode *a, const D3DDisplayMode *b) {
@@ -440,8 +440,8 @@ int CD3DApp_UserSelectNewDevice(CD3DApplication *self) {
 #define D3DCREATE_MIXED_VERTEXPROCESSING 0x80
 #define D3DCREATE_PUREDEVICE 0x10
 
-#define g_D3DAppFrames GAME_GLOBAL(uint32_t, g_D3DAppFrames)
-#define g_D3DAppLastTime GAME_GLOBAL(float, g_D3DAppLastTime)
+extern uint32_t g_D3DAppFrames;
+extern float g_D3DAppLastTime;
 
 typedef void *(__stdcall *direct3dcreate8_t)(uint32_t version);
 typedef int(__stdcall *adjustwindowrect_t)(exe_rect *r, uint32_t style, int menu);
@@ -1290,16 +1290,16 @@ failed:
 
 /* the choice of the device dialog: the original values and those selected */
 #define g_SelApp GAME_GLOBAL(CD3DApplication *, g_SelApp)
-#define g_OrigAdapter GAME_GLOBAL(uint32_t, g_OrigAdapter)
-#define g_SelAdapter GAME_GLOBAL(uint32_t, g_SelAdapter)
-#define g_OrigDevice GAME_GLOBAL(uint32_t, g_OrigDevice)
-#define g_SelDevice GAME_GLOBAL(uint32_t, g_SelDevice)
-#define g_OrigMode GAME_GLOBAL(uint32_t, g_OrigMode)
-#define g_SelMode GAME_GLOBAL(uint32_t, g_SelMode)
-#define g_OrigWindowed GAME_GLOBAL(int, g_OrigWindowed)
-#define g_SelWindowed GAME_GLOBAL(int, g_SelWindowed)
-#define g_OrigMultiSample GAME_GLOBAL(uint32_t, g_OrigMultiSample)
-#define g_SelMultiSample GAME_GLOBAL(uint32_t, g_SelMultiSample)
+extern uint32_t g_OrigAdapter;
+extern uint32_t g_SelAdapter;
+extern uint32_t g_OrigDevice;
+extern uint32_t g_SelDevice;
+extern uint32_t g_OrigMode;
+extern uint32_t g_SelMode;
+extern int g_OrigWindowed;
+extern int g_SelWindowed;
+extern uint32_t g_OrigMultiSample;
+extern uint32_t g_SelMultiSample;
 
 typedef int(__cdecl *wsprintf_t)(char *buf, const char *fmt, ...);
 #define exe_wsprintfA GAME_IMPORT_CDECL(wsprintf_t, wsprintfA)

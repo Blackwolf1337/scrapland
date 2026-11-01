@@ -321,7 +321,7 @@ static inline int Logic_Count(const int *numElems) {
 #define g_BossWalkingTime GAME_GLOBAL_IN(float, GVar_BossWalkingTime, 16)
 #define g_BossWorkPlace GAME_GLOBAL_IN(char *, GVar_BossWorkPlace, 16)
 #define g_BossWorkingTime GAME_GLOBAL_IN(float, GVar_BossWorkingTime, 16)
-#define g_BossWasIdle GAME_GLOBAL(byte, g_BossWasIdle)		/* the boss was idle while at work */
+extern byte g_BossWasIdle;		/* the boss was idle while at work */
 #define g_EnergyBarActive GAME_GLOBAL_IN(int, GVar_EnergyBarActive, 16)
 #define g_SpecialActionActive GAME_GLOBAL_IN(int, GVar_SpecialActionActive, 16)
 #define g_GenCharRelaxSpeed GAME_GLOBAL_IN(float, GVar_GenCharRelaxSpeed, 16)
@@ -480,10 +480,10 @@ typedef struct DominZone {
 	int state;			/* 0x4 0 free, 1 and 2 by a side, 3 and 4 a ship of a side on its way */
 } DominZone;
 
-#define g_DominNumZones GAME_GLOBAL(int, g_DominNumZones)
+extern int g_DominNumZones;
 #define g_DominZones (GAME_ARRAY(DominZone, g_DominZones))		/* [MAX_DOMIN_ZONES] */
-#define g_DominBatonPos GAME_GLOBAL(vec3_t, g_DominBatonPos)
-#define g_DominBatonState GAME_GLOBAL(int, g_DominBatonState)
+extern vec3_t g_DominBatonPos;
+extern int g_DominBatonState;
 #define g_DominFightingFreezeCadenceShoot GAME_GLOBAL_IN(int, GVar_DominFightingFreezeCadenceShoot, 16)
 #define g_DominFightingFreezeControlAim GAME_GLOBAL_IN(int, GVar_DominFightingFreezeControlAim, 16)
 #define g_DominMaxRangeDist GAME_GLOBAL_IN(float, GVar_DominMaxRangeDist, 16)
@@ -724,7 +724,7 @@ typedef struct cHumanLocalLogic {
 SD_SIZE(cHumanLocalLogic, 0x5c);
 
 #define CHUMANLOCALLOGIC_VFTABLE GAME_VFTABLE(cHumanLocalLogic_vftable)
-#define g_HumanEnt GAME_GLOBAL(cEntity *, g_HumanEnt)	/* the parent of the last human logic made */
+extern cEntity *g_HumanEnt;	/* the parent of the last human logic made */
 
 /* HumphreyLogic.cpp: a cFunctionaryLocalLogic (isDefault: "Humphrey_Default") at the desktop "HumphreyDesktop" */
 #define CHUMPHREYLOCALLOGIC_VFTABLE GAME_VFTABLE(cHumphreyLocalLogic_vftable)
@@ -812,7 +812,7 @@ SD_SIZE(cLittlePoliceLocalLogic, 0x78);
 #define g_LittlePoliceAsksForMoney GAME_GLOBAL_IN(int, GVar_LittlePoliceAsksForMoney, 16)
 #define g_LittlePoliceChasingTime GAME_GLOBAL_IN(float, GVar_LittlePoliceChasingTime, 16)
 #define g_MainMissionStopDist GAME_GLOBAL_IN(float, GVar_MainMissionStopDist, 16)
-#define g_LittlePoliceArrived GAME_GLOBAL(byte, g_LittlePoliceArrived)	/* GoTo left the AI in state 4 */
+extern byte g_LittlePoliceArrived;	/* GoTo left the AI in state 4 */
 #define g_PoliceStealAmount GAME_GLOBAL_IN(int, GVar_PoliceStealAmount, 16)
 
 /* Parking.cpp: the parking zones of Scrap.AddParkingZone (flag 0: of the ships, 1: of the items), a ring each */
@@ -858,7 +858,7 @@ void cShipGroupData_Think(cShipGroupData *self);
 #define g_TimeBetweeenTaunts GAME_GLOBAL_IN(float, GVar_TimeBetweeenTaunts, 16)
 #define g_TimeBetweeenWarnings GAME_GLOBAL_IN(float, GVar_TimeBetweeenWarnings, 16)
 /* the callback the world puts a new entity at its origin with (set by Logic_ctor) */
-#define g_SetOriginFunc GAME_GLOBAL(void *, g_SetOriginFunc)
+extern void *g_SetOriginFunc;
 
 /* MaintenanceLogic.cpp, 0xdc bytes: the maintenance robot of the ship editor walks around the ship on the
  * platform (states 7: wait for the ship, 8: work) */
@@ -873,8 +873,8 @@ SD_OFFSET(cMaintenanceLocalLogic, reposition, 0xc8);
 SD_SIZE(cMaintenanceLocalLogic, 0xdc);
 
 #define CMAINTENANCELOCALLOGIC_VFTABLE GAME_VFTABLE(cMaintenanceLocalLogic_vftable)
-#define g_MaintenanceShip GAME_GLOBAL(cEntity *, g_MaintenanceShip)	/* the ship on the platform */
-#define g_MaintenanceFirstShip GAME_GLOBAL(cEntity *, g_MaintenanceFirstShip)	/* the one the work began with */
+extern cEntity *g_MaintenanceShip;	/* the ship on the platform */
+extern cEntity *g_MaintenanceFirstShip;	/* the one the work began with */
 #define g_MaintenanceTimeToNextPos GAME_GLOBAL_IN(float, GVar_MaintenanceTimeToNextPos, 16)
 #define g_MaintenanceSphereRadiusFactor GAME_GLOBAL_IN(float, GVar_MaintenanceSphereRadiusFactor, 16)
 
@@ -888,9 +888,9 @@ SD_SIZE(cMayorLocalLogic, 0xe8);
 #define CMAYORLOCALLOGIC_VFTABLE GAME_VFTABLE(cMayorLocalLogic_vftable)
 #define g_MayorBlabliblaRadius GAME_GLOBAL_IN(float, GVar_MayorBlabliblaRadius, 16)
 /* the search of the sphere native: the mayor, the nearest dazed character in its view and the square distance */
-#define g_MayorSearchEnt GAME_GLOBAL(cEntity *, g_MayorSearchEnt)
-#define g_MayorTarget GAME_GLOBAL(cEntity *, g_MayorTarget)
-#define g_MayorTargetDist GAME_GLOBAL(float, g_MayorTargetDist)
+extern cEntity *g_MayorSearchEnt;
+extern cEntity *g_MayorTarget;
+extern float g_MayorTargetDist;
 
 #define CMERCENARYLOCALLOGIC_VFTABLE GAME_VFTABLE(cMercenaryLocalLogic_vftable)
 

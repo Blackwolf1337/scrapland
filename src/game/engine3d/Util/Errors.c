@@ -13,8 +13,8 @@
 #define g_ErrTable (GAME_ARRAY(const char *, g_ErrTable))
 #define g_ErrUnknown GAME_STR(str_432608)	/* "Unknown error" */
 #define g_ErrCustom (GAME_ARRAY(const char, g_ErrCustom))
-#define g_ErrLastCode GAME_GLOBAL(int, g_ErrLastCode)
-#define g_ErrLastFatal GAME_GLOBAL(int, g_ErrLastFatal)
+extern int g_ErrLastCode;
+extern int g_ErrLastFatal;
 
 /* color 0xRRGGBB, the GDI wants 0xBBGGRR */
 static void Dbg_Rect(int x, int y, int w, int h, uint32_t color, rectbrush_t draw) {

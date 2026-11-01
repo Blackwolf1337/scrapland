@@ -61,7 +61,7 @@ SD_SIZE(cItemEntity, CITEMENTITY_SIZE);
 
 #define g_ItemFxDist GAME_GLOBAL_IN(float, GVar_FXItemFadeMaxDist, 16)		/* the fade effects only nearer (60000) */
 #define g_ItemSyncDist GAME_GLOBAL_IN(float, GVar_NetItemDistAct, 16)
-#define g_ItemSyncCount GAME_GLOBAL(uint32_t, g_ItemSyncCount)
+extern uint32_t g_ItemSyncCount;
 
 void cItemEntity_dtor(cItemEntity *self);
 cItemEntity *cItemEntity_Delete(cItemEntity *self, uint32_t flags);

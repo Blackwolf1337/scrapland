@@ -44,10 +44,10 @@ typedef struct VertLensFlare {
 } VertLensFlare;
 SD_SIZE(VertLensFlare, 0x1c);
 
-#define g_LensFlareMat GAME_GLOBAL(CMaterial *, g_LensFlareMat)
+extern CMaterial *g_LensFlareMat;
 #define g_LensFlares GAME_GLOBAL_IN(int, GVar_R_LensFlare, 16)		/* the engine variable that draws them */
 #define g_LensFlareRender (GAME_ARRAY(CLensFlare *, g_LensFlareRender))	/* MAX_LENSFLARE_RENDER */
-#define g_nLensFlareRender GAME_GLOBAL(int, g_nLensFlareRender)
+extern int g_nLensFlareRender;
 #define g_LensFlareVerts (GAME_ARRAY(VertLensFlare, g_LensFlareVerts))	/* 4 */
 
 CLensFlare *CLensFlare_ctor(CLensFlare *self);

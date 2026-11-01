@@ -12,8 +12,8 @@
 
 #define CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE GAME_VFTABLE(cSputnikJunkyardLocalLogic_vftable)
 #define g_SputnikJunyardTimeToPissPlayer GAME_GLOBAL_IN(float, GVar_SputnikJunyardTimeToPissPlayer, 16)
-#define g_SputnikPisser GAME_GLOBAL(cEntity *, g_SputnikPisser)	/* the Sputnik that laughs at the player */
-#define g_SputnikTime GAME_GLOBAL(float, g_SputnikTime)		/* since the camera exists */
+extern cEntity *g_SputnikPisser;	/* the Sputnik that laughs at the player */
+extern float g_SputnikTime;		/* since the camera exists */
 /* the angles of the camera entity */
 #define Sputnik_CamAng(cam) ((const vec3_t *)&((cCamControl *)(cam))->cam.rot)
 

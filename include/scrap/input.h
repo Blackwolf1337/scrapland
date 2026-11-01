@@ -81,11 +81,11 @@ typedef struct cVirtualKeyboard {
 SD_OFFSET(cVirtualKeyboard, a, 0x100);
 SD_OFFSET(cVirtualKeyboard, len, 0x108);
 
-#define g_ActionSets GAME_GLOBAL(cActionSetTable, g_ActionSets)
+extern cActionSetTable g_ActionSets;
 #define g_PlayerInput (GAME_ARRAY(cPlayerInput, g_PlayerInput))	/* [MAX_LOCAL_PLAYERS] */
-#define g_VirtualKeyboard GAME_GLOBAL(cVirtualKeyboard, g_VirtualKeyboard)
+extern cVirtualKeyboard g_VirtualKeyboard;
 #define g_Pads (GAME_ARRAY(cPad, g_Pads))		/* [MAX_LOCAL_PLAYERS] */
-#define g_CurActionSet GAME_GLOBAL(uint32_t, g_CurActionSet)	/* Input_GetActionSet */
+extern uint32_t g_CurActionSet;	/* Input_GetActionSet */
 
 /* rva 0x133a30 is cString_EqStr on the name */
 static inline byte ActionSet_IsNamed(cActionSet *set, const char *name) {
@@ -243,9 +243,9 @@ typedef DLIST(cInputDevNode) cInputDevList;
 #define CPCPAD_VFTABLE GAME_VFTABLE(cPcPad_vftable)
 
 /* the player, action and set waiting for the next key (SInput.ListenToDefine), -1 for none */
-#define g_ToDefinePlayer GAME_GLOBAL(int, g_ToDefinePlayer)
-#define g_ToDefineAction GAME_GLOBAL(int, g_ToDefineAction)
-#define g_ToDefineSet GAME_GLOBAL(uint32_t, g_ToDefineSet)
+extern int g_ToDefinePlayer;
+extern int g_ToDefineAction;
+extern uint32_t g_ToDefineSet;
 /* the XInput entries of the pad buttons and half axes in the order of the defaults */
 #define g_PadCodes (GAME_ARRAY(const int, g_PadCodes))	/* [24] */
 #define g_LogRumble GAME_GLOBAL_IN(int, GVar_LogRumble, 16)		/* LogRumble */
@@ -253,11 +253,11 @@ typedef DLIST(cInputDevNode) cInputDevList;
 #define g_InactivityTimeDef GAME_GLOBAL_IN(float, GVar_CheckInactivityTime, 20)
 #define g_InactivityFunc (GAME_ARRAY_IN(cPy_Function, GVar_CheckInactivityFunc, 16))
 #define g_DefineFunc (GAME_ARRAY(cPy_Function, g_DefineFunc))	/* the function of ListenToDefine */
-#define g_InputDevices GAME_GLOBAL(cInputDevList, g_InputDevices)
+extern cInputDevList g_InputDevices;
 #define g_PauseInactivity GAME_GLOBAL_IN(int, GVar_PauseInactivityTime, 16)	/* PauseInactivityTime */
 typedef void (*input_cb_t)(void);
-#define g_OnDefined GAME_GLOBAL(input_cb_t, g_OnDefined)
-#define g_InactivityTimer GAME_GLOBAL(float, g_InactivityTimer)
+extern input_cb_t g_OnDefined;
+extern float g_InactivityTimer;
 
 cAbstractIDevice *cAbstractIDevice_ctor(cAbstractIDevice *self);
 cFuncGvarDevices *cFuncGvarDevices_ctor(cFuncGvarDevices *self, cAbstractIDevice *dev);
@@ -326,10 +326,10 @@ struct exe_IDirectInput8 {
 #define DIERR_INPUTLOST ((int32_t)0x8007001e)
 #define DIERR_NOTACQUIRED ((int32_t)0x8007000c)
 
-#define g_DInput GAME_GLOBAL(exe_IDirectInput8 *, g_DInput)
+extern exe_IDirectInput8 *g_DInput;
 
 /* Input/PcKeyboard.cpp */
-#define g_KeyboardDev GAME_GLOBAL(exe_IDirectInputDevice8 *, g_KeyboardDev)
+extern exe_IDirectInputDevice8 *g_KeyboardDev;
 #define g_Keyboard (GAME_ARRAY(cPcKeyboard, g_Keyboard))
 #define g_KeyState (GAME_ARRAY(char, g_KeyState))		/* [256] DIK_ */
 cPcKeyboard *cPcKeyboard_ctor(cPcKeyboard *self);
@@ -353,13 +353,13 @@ byte cPcKeyboard_IsReserved(cPcKeyboard *self, int entry);
 #define g_MouseSensV GAME_GLOBAL_IN(float, g_KeyNameBuf, 32)		/* MouseSensitivityV */
 #define g_InvertMouse GAME_GLOBAL_IN(int, GVar_InvertMouse, 16)		/* InvertMouse */
 #define g_Mouse (GAME_ARRAY(cPcMouse, g_Mouse))
-#define g_MouseDev GAME_GLOBAL(exe_IDirectInputDevice8 *, g_MouseDev)
+extern exe_IDirectInputDevice8 *g_MouseDev;
 /* DIMOUSESTATE */
 typedef struct exe_mouse_state {
 	int32_t x, y, z;		/* 0x0 */
 	char buttons[4];		/* 0xc */
 } exe_mouse_state;
-#define g_MouseState GAME_GLOBAL(exe_mouse_state, g_MouseState)
+extern exe_mouse_state g_MouseState;
 #define g_IsUsingMouse GAME_GLOBAL_IN(int, GVar_IsUsingMouse, 16)		/* IsUsingMouse */
 cPcMouse *cPcMouse_ctor(cPcMouse *self);
 cPcMouse *cPcMouse_Delete(cPcMouse *self, byte flags);
@@ -383,7 +383,7 @@ int cPcMouse_IsReserved(cAbstractIDevice *self, int entry);
 #define g_PCPadConnected GAME_GLOBAL_IN(int, GVar_PCPadConnected, 16)	/* PCPadConnected */
 #define g_PcPads (GAME_ARRAY(cPcPad, g_PcPads))		/* [4] */
 #define g_PadForeground GAME_GLOBAL_IN(int, GVar_PCPadForeground, 16)	/* PCPadForeground: read only while the window is in front */
-#define g_NumPcPads GAME_GLOBAL(int, g_NumPcPads)
+extern int g_NumPcPads;
 #define g_WalkCameraCenter GAME_GLOBAL_IN(float, GVar_WalkCameraCenter, 16)	/* WalkCameraCenter */
 #define g_XBCDigitalAsAnalog GAME_GLOBAL_IN(int, GVar_XBCDigitalAsAnalog, 16)
 #define g_XBCameraAutoPad GAME_GLOBAL_IN(int, GVar_XBCameraAutoPad, 16)

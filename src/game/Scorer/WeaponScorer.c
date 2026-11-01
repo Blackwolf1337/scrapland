@@ -184,7 +184,7 @@ int cWeaponScorer_Var(cWeaponScorer *self, const char *name, byte set, char **s,
 /* the slot row of the weapons, shared by all items: per weapon 0 none, 1 with ammo, 2 without; its place in the row */
 #define g_WeaponSlotState (GAME_ARRAY(int, g_WeaponSlotState))		/* [WEAPONSCORER_WEAPONS] */
 #define g_WeaponSlotPlace (GAME_ARRAY(int, g_WeaponSlotPlace))		/* [WEAPONSCORER_WEAPONS] */
-#define g_WeaponSlotCount GAME_GLOBAL(int, g_WeaponSlotCount)
+extern int g_WeaponSlotCount;
 
 #define WEAPON_UAMMO_MAX 200.0f		/* the ammo of an upgrade */
 #define WEAPON_AMMO_CHARGED 3		/* the ammo kind with a bar of its charge instead of a number */

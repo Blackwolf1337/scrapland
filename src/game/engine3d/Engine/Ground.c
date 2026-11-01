@@ -31,12 +31,12 @@
 
 /* the statistics of the queries, cleared with the query number */
 #define g_CollisionStats (GAME_ARRAY(uint32_t, g_CollisionStats))	/* 6 */
-#define g_CollisionStats2 GAME_GLOBAL(uint32_t, g_CollisionStats2)
-#define g_CollisionCache GAME_GLOBAL(uint32_t, g_CollisionCache)
+extern uint32_t g_CollisionStats2;
+extern uint32_t g_CollisionCache;
 #define g_CollisionCache2 (GAME_ARRAY_IN(uint32_t, g_BspCacheStats, 0))	/* 2 */
 /* while a .amc file is read: the meshes by their Param (256), while one is written the next Param */
-#define g_LoadMeshList GAME_GLOBAL(CCollideMesh **, g_LoadMeshList)
-#define g_SaveCollideMeshParam GAME_GLOBAL(int, g_SaveCollideMeshParam)
+extern CCollideMesh ** g_LoadMeshList;
+extern int g_SaveCollideMeshParam;
 
 /* the accessor of table.h */
 
@@ -1734,7 +1734,7 @@ void Ground_DrawDebug(void) {
 #define MAT_B3B 0x3b
 #define MAT_A0 0xa0
 /* the triangles per floor node */
-#define g_GroundTrisPerNode GAME_GLOBAL(int, g_GroundTrisPerNode)
+extern int g_GroundTrisPerNode;
 
 #define Ground_Field(p, off, type) (*(type *)((byte *)(p) + (off)))
 
@@ -2111,7 +2111,7 @@ void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
 #define g_ShowMapQDist GAME_GLOBAL_IN(float, GVar_ShowMapQDist, 16)	/* ShowMapQDist: only the quads this near the camera, 0 all */
 #define g_AnalyzeQuads GAME_GLOBAL_IN(int, GVar_AnalyzeQuads, 16)		/* AnalizeQuads: 1 the quads checked once */
 /* the material of the debug view, a static of CGround_DrawDebug */
-#define g_CollideMat (GAME_GLOBAL(CMaterial, g_CollideMat))
+extern CMaterial g_CollideMat;
 #define g_CollideMatGuard (GAME_ARRAY(int, g_CollideMatGuard))
 
 /* the atexit destructor of it */

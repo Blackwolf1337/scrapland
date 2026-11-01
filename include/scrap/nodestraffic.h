@@ -211,7 +211,7 @@ SD_SIZE(CNodesTraffic, 0x70);
 
 /* the engine variables */
 #define g_DistGetPVisTrafficAI GAME_GLOBAL_IN(float, GVar_DistGetPVisTrafficAI, 16)	/* the searches end at this distance */
-#define g_TrafficSearchDist GAME_GLOBAL(float, g_TrafficSearchDist)		/* the copy of it the searches use */
+extern float g_TrafficSearchDist;		/* the copy of it the searches use */
 #define g_MinDistNodeTrafficAI GAME_GLOBAL_IN(float, GVar_MinDistNodeTrafficAI, 16)	/* the step of the nodes Load fills in */
 #define g_MaxNumTrackLowDensityAI GAME_GLOBAL_IN(int, GVar_MaxNumTrackLowDensityAI, 16)
 #define g_MaxNumTrackNormalDensityAI GAME_GLOBAL_IN(int, GVar_MaxNumTrackNormalDensityAI, 16)

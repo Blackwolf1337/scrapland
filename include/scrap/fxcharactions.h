@@ -59,7 +59,7 @@
 #define FXSEBASTIAN_TRAILS 5
 
 /* the vertices of the Functionary model the special action starts from, found once (rva 0x466fc0..) */
-#define g_FXFunctionaryInit GAME_GLOBAL(byte, g_FXFunctionaryInit)
+extern byte g_FXFunctionaryInit;
 #define g_FXFunctionaryVertex (GAME_ARRAY(int, g_FXFunctionaryVertex))		/* [14] */
 #define g_FXFunctionaryColor (GAME_ARRAY(uint32_t, g_FXFunctionaryColor))		/* [14] */
 

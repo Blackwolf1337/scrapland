@@ -13,7 +13,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
 
-#define g_DesktopsList GAME_GLOBAL(cEntityListData *, g_DesktopsList)	/* the list of the desktops, once found */
+extern cEntityListData *g_DesktopsList;	/* the list of the desktops, once found */
 #define g_DesktopsListName GAME_GLOBAL_IN(char *, GVar_DesktopsFunctionaryListName, 16)	/* DesktopsFunctionaryListName */
 #define g_FunctionaryAssignWorkDistance GAME_GLOBAL_IN(float, GVar_FunctionaryAssignWorkDistance, 16)
 #define g_OnFunctionaryStartsWorking (GAME_ARRAY_IN(cPy_Function, GVar_OnFunctionaryStartsWorking, 16))

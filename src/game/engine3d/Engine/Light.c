@@ -18,13 +18,13 @@
 #define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable)
 #define LIGHT_INV255 (1.0f / 255.0f)
 /* "no limit" for the range of the device light and the start of the nearest search, a float constant of the exe */
-#define LIGHT_RANGE_INF GAME_GLOBAL(const float, LIGHT_RANGE_INF)
+extern const float LIGHT_RANGE_INF;
 
 #define g_Lights (GAME_ARRAY(CLight *, g_Lights))	/* MAX_LIGHTS, the active lights */
-#define g_nLights GAME_GLOBAL(int, g_nLights)
-#define g_LightsD3D GAME_GLOBAL(int, g_LightsD3D)	/* with act_D3D */
-#define g_LightsTotal GAME_GLOBAL(int, g_LightsTotal)
-#define g_LightIndexD3D GAME_GLOBAL(uint32_t, g_LightIndexD3D)	/* the next light gets index 4 + this */
+extern int g_nLights;
+extern int g_LightsD3D;	/* with act_D3D */
+extern int g_LightsTotal;
+extern uint32_t g_LightIndexD3D;	/* the next light gets index 4 + this */
 
 /* the engine variables of the lights (Gvars) */
 #define g_LightEnaD3D GAME_GLOBAL_IN(int, GVar_R_LightEnaD3D, 16)	/* R_LightEnaD3D: 0 always, 1 on changes, from 2 never */
@@ -344,7 +344,7 @@ void CLight_Reset(CLight *self, int arg) {
 
 /* R_ShowLights and the material of the debug drawing, a static of CLight_Render */
 #define g_ShowLights GAME_GLOBAL_IN(int, GVar_R_ShowLights, 16)
-#define g_LightMat (GAME_GLOBAL(CMaterial, g_LightMat))
+extern CMaterial g_LightMat;
 #define g_LightMatGuard (GAME_ARRAY(int, g_LightMatGuard))
 
 /* the atexit destructor of it */

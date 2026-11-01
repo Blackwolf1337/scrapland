@@ -21,8 +21,8 @@ int Vec3_Differ(const float *a, const float *b);
 typedef void *(*deleteObj_t)(void *self, int flags);
 
 /* set while a material is deleted: the textures without references go too */
-#define g_TexDeleteUnused GAME_GLOBAL(int, g_TexDeleteUnused)
-#define g_AnimCycleDefault GAME_GLOBAL(int, g_AnimCycleDefault)
+extern int g_TexDeleteUnused;
+extern int g_AnimCycleDefault;
 /* engine variables DDS_MarkSource, LoadTextures, DDS_CheckMark, MatEmissive, DDS_UseTextures */
 #define g_DDSMarkSource GAME_GLOBAL_IN(int, GVar_DDS_MarkSource, 16)
 #define g_LoadTextures GAME_GLOBAL_IN(int, GVar_LoadTextures, 16)
@@ -33,9 +33,9 @@ typedef void *(*deleteObj_t)(void *self, int flags);
 #define g_TextureExts (GAME_ARRAY(char[MAX_FILEPATH], g_TextureExts))
 #define g_MatStr (GAME_ARRAY(char, g_MatStr))
 #define g_LightmapsHigh GAME_GLOBAL(int, g_ShadowsStencil)
-#define g_AnimFpsDefault GAME_GLOBAL(float, g_AnimFpsDefault)
+extern float g_AnimFpsDefault;
 #define g_BlendTable (GAME_ARRAY(const uint32_t, g_BlendTable))
-#define g_MaxLightmap GAME_GLOBAL(int, g_MaxLightmap)
+extern int g_MaxLightmap;
 
 #define BLEND_MODES 6
 #define MAT_FILE_VERSION 3

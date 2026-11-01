@@ -464,14 +464,14 @@ typedef struct cAIVehicleParams3 {
 SD_SIZE(cAIVehicleParams3, 0x1c);
 
 #define g_IsMapOutDoor GAME_GLOBAL_IN(int, GVar_IsMapOutDoor, 16)	/* value of the engine variable IsMapOutDoor */
-#define g_NodesWorld GAME_GLOBAL(CNodesWorld *, g_NodesWorld)
-#define g_NodesWorld2D GAME_GLOBAL(CNodesWorld2D *, g_NodesWorld2D)
-#define g_NodesTrafficInDoor GAME_GLOBAL(CNodesTraffic *, g_NodesTrafficInDoor)
-#define g_NodesTraffic GAME_GLOBAL(CNodesTraffic *, g_NodesTraffic)
-#define g_AStar GAME_GLOBAL(void *, g_AStar)
-#define g_AStar2D GAME_GLOBAL(void *, g_AStar2D)
-#define g_VehicleGroup GAME_GLOBAL(cAIVehicleGroup *, g_VehicleGroup)
-#define g_CharGroup GAME_GLOBAL(cAICharGroup *, g_CharGroup)
+extern CNodesWorld *g_NodesWorld;
+extern CNodesWorld2D *g_NodesWorld2D;
+extern CNodesTraffic *g_NodesTrafficInDoor;
+extern CNodesTraffic *g_NodesTraffic;
+extern void *g_AStar;
+extern void *g_AStar2D;
+extern cAIVehicleGroup *g_VehicleGroup;
+extern cAICharGroup *g_CharGroup;
 #define g_TrafficState GAME_GLOBAL_IN(int, GVar_ShowTrafficAI, 16)	/* 3 after SAI.AnalizeTraffic */
 
 /* constructors (on the memory from operator_new) */

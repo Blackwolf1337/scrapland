@@ -87,7 +87,7 @@ SD_SIZE(cVehicleEffects, 0x24);
 #define g_WindFXSmokeMinVel GAME_GLOBAL_IN(float, GVar_WindFXSmokeMinVel, 16)
 #define g_WindFXSmokeTimeStep GAME_GLOBAL_IN(float, GVar_WindFXSmokeTimeStep, 16)
 #define g_WindFXSmokeSizeDiv GAME_GLOBAL_IN(float, GVar_WindFXSmokeSizeDiv, 16)
-#define g_WindFXSmokeLast GAME_GLOBAL(float, g_WindFXSmokeLast)	/* the world time of the last wind smoke */
+extern float g_WindFXSmokeLast;	/* the world time of the last wind smoke */
 
 /* the parts before the range of the file in the exe */
 cVehicleEffects *cVehicleEffects_ctor(cVehicleEffects *self);

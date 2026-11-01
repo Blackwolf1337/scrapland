@@ -58,7 +58,7 @@ typedef struct PaintZone {
 } PaintZone;
 SD_SIZE(PaintZone, 0x20);
 #define g_PaintZones (GAME_ARRAY(PaintZone, g_PaintZones))
-#define g_NumPaintZones GAME_GLOBAL(int, g_NumPaintZones)
+extern int g_NumPaintZones;
 /* the union of the rectangles of the seen sectors with sky */
 #define g_PaintI148 GAME_GLOBAL_IN(int, g_PaintAll, 0)
 #define g_PaintRect (GAME_GLOBAL_IN(box_t, g_PaintAll, 4))

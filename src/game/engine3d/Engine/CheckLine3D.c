@@ -8,7 +8,7 @@
 
 #define TRACE_FLT_MAX 3.4028234663852886e+38f
 
-#define g_TraceCell GAME_GLOBAL(traceCell_t, g_TraceCell)
+extern traceCell_t g_TraceCell;
 
 byte Heights_CellStep(CHeights *alt, int *x, int *z, const vec3_t *a, const vec3_t *b, float *t) {
 	float x1 = (float)(*x + 1) * alt->sizeX + alt->ext.min.x;

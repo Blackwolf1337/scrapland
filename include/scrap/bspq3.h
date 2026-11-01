@@ -162,7 +162,7 @@ SD_OFFSET(CBspQ3, verts, 0x40);
 SD_OFFSET(CBspQ3, MeshD3D, 0x60);
 SD_SIZE(CBspQ3, 0x6c);
 
-#define g_BspQ3 GAME_GLOBAL(CBspQ3 *, g_BspQ3)
+extern CBspQ3 *g_BspQ3;
 /* the corners of the face being cut into triangles: for the CTriMesh and for the vertex lists */
 #define g_BspQ3Vert (GAME_ARRAY(CMeshVert, g_BspQ3Vert))	/* [BSPQ3_MAX_VERT] */
 #define g_BspQ3VertL (GAME_ARRAY(byte, g_BspQ3VertL))	/* [BSPQ3_MAX_VERT] of 0x28 bytes */

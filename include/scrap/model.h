@@ -18,7 +18,7 @@
 
 #define CMODEL_VFTABLE GAME_VFTABLE(CModel_vftable)
 #define MAX_MODELS_RENDER 1024
-#define g_ModelsOn GAME_GLOBAL(byte, g_ModelsOn)	/* RenderModels: the models are drawn */
+extern byte g_ModelsOn;	/* RenderModels: the models are drawn */
 
 /* creation flags of the scenes and models (crear_modelo, crear_escena) */
 enum {
@@ -141,8 +141,8 @@ static inline void Scene_Unref(CScene **slot) {
 	*slot = NULL;
 }
 
-#define g_ModelList GAME_GLOBAL(CModelList *, g_ModelList)
-#define g_SceneList GAME_GLOBAL(CSceneList *, g_SceneList)
+extern CModelList *g_ModelList;
+extern CSceneList *g_SceneList;
 #define g_ModelsRender (GAME_ARRAY(CModelList *, g_ModelsRender))
 #define g_NumModelsRender GAME_GLOBAL_IN(int, g_ModelsRender, 4096)
 #define g_MaxModelsRender GAME_GLOBAL_IN(int, g_ModelsRender, 4100)	/* the most there were */
@@ -272,13 +272,13 @@ int ModelList_CompareKey(const void *a, const void *b);	/* qsort, larger sortKey
  * MODEL_EFFECT_LAST), the float in effectParam its parameter. Drawn in the passes 0, 3 and 13 as several draws of the scene
  * with g_MatFX1 or g_MatForced; 6..8 need the pixel shaders. */
 struct CGraphic2D;
-#define g_FXMat (GAME_GLOBAL(CMaterial, g_FXMat))	/* the colors and blends of the effects */
-#define g_FXGraphicNoise1 (GAME_GLOBAL(struct CGraphic2D, g_FXGraphicNoise1))	/* bmp/noise.tga */
-#define g_FXGraphicStatic (GAME_GLOBAL(struct CGraphic2D, g_FXGraphicStatic))	/* bmp/noise_static.alpha.tga, the scan lines */
-#define g_FXGraphicNoise2 (GAME_GLOBAL(struct CGraphic2D, g_FXGraphicNoise2))	/* bmp/noise2.tga */
-#define g_MatElectric GAME_GLOBAL(CMaterial *, g_MatElectric)	/* fx_Electric (+shader:Electric) */
-#define g_MatFire GAME_GLOBAL(CMaterial *, g_MatFire)		/* fx_Fire (+shader:Fire) */
-#define g_MatNoise GAME_GLOBAL(CMaterial *, g_MatNoise)		/* fx_Noise (+shader:Noise) */
+extern CMaterial g_FXMat;	/* the colors and blends of the effects */
+extern struct CGraphic2D g_FXGraphicNoise1;	/* bmp/noise.tga */
+extern struct CGraphic2D g_FXGraphicStatic;	/* bmp/noise_static.alpha.tga, the scan lines */
+extern struct CGraphic2D g_FXGraphicNoise2;	/* bmp/noise2.tga */
+extern CMaterial *g_MatElectric;	/* fx_Electric (+shader:Electric) */
+extern CMaterial *g_MatFire;		/* fx_Fire (+shader:Fire) */
+extern CMaterial *g_MatNoise;		/* fx_Noise (+shader:Noise) */
 void ModelFX_Render(CModel *self, NodeAnimCtx *ctx);
 /* 1: a TV picture with static, 2 and 3: faded out (2 over a gray pass), 4: 1 in wire frame, 5: green glow, 6:
  * electric, 7: fire, 8: noise */

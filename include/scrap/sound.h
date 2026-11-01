@@ -146,7 +146,7 @@ SD_SIZE(cSoundStrItem, 0x2c);
 #define CSoundSys_vftable ((const CSoundSysVtbl *)GAME_VFTABLE(CSoundSys_vftable))
 #define CSoundXBox_vftable ((const CSoundSysVtbl *)GAME_VFTABLE(CSoundXBox_vftable))
 
-#define g_pSound GAME_GLOBAL(CSoundSys *, g_pSound)
+extern CSoundSys *g_pSound;
 
 /* engine variables of the sound system */
 #define g_SoundAutoplayVolume GAME_GLOBAL_IN(float, GVar_SoundAutoplayVolume, 16)	/* dB, the volume below which nothing plays */
@@ -161,7 +161,7 @@ SD_SIZE(cSoundStrItem, 0x2c);
 #define g_S_SkipPlay GAME_GLOBAL_IN(int, GVar_S_SkipPlay, 16)
 #define g_S_SkipUpdates GAME_GLOBAL_IN(int, GVar_S_SkipUpdates, 16)
 #define g_isDolby GAME_GLOBAL_IN(int, GVar_isDolby, 16)			/* no pan */
-#define g_SndFreqScale GAME_GLOBAL(float, g_SndFreqScale)		/* S_PitchScale over the timer multiplier */
+extern float g_SndFreqScale;		/* S_PitchScale over the timer multiplier */
 
 /* volume 0..1 to the engine's volume value */
 int Snd_Volume(float volume);
@@ -218,8 +218,8 @@ SD_SIZE(cSoundPS, 0x6c);
 SD_OFFSET(cSoundPS, loop, 0x58);
 
 #define g_SndPSTable (&GAME_GLOBAL(HashTable, g_SndPSTable))	/* cPtrItem of cSoundPS by name */
-#define g_SndPSEnabled GAME_GLOBAL(byte, g_SndPSEnabled)
-#define g_SndPSList GAME_GLOBAL(cSoundPS *, g_SndPSList)
+extern byte g_SndPSEnabled;
+extern cSoundPS *g_SndPSList;
 
 /* the property set of that name or NULL */
 cSoundPS *SndPS_Get(const char *name);
@@ -277,7 +277,7 @@ typedef struct cSndInterface {
 SD_SIZE(cSndInterface, 0x1c);
 
 #define cSndInterface_vftable ((const void *)GAME_VFTABLE(cSndInterface_vftable))
-#define g_SndInterfaces GAME_GLOBAL(cSndInterface *, g_SndInterfaces)
+extern cSndInterface *g_SndInterfaces;
 
 /* Sound/SndInterface.cpp (src/game/Sound/SndInterface.c) */
 cSndInterface *cSndInterface_ctor(cSndInterface *self, int n);

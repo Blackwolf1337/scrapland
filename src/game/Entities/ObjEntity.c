@@ -29,7 +29,7 @@
 #define g_NetSmoothMax GAME_GLOBAL_IN(float, GVar_ErrorMax, 16)
 #define g_NetSmoothFactor GAME_GLOBAL_IN(float, GVar_ErrorFix, 16)
 /* the origin of the packed positions of the network messages (32 units a step) */
-#define g_NetOrigin GAME_GLOBAL(vec3_t, g_NetOrigin)
+extern vec3_t g_NetOrigin;
 
 #define NET_POS_STEP 32.0f
 #define NET_ANG_SHORT 10185.916357881302	/* rva 0x3b38d8, 32000 / pi */

@@ -18,14 +18,14 @@
 #define KEY_M 0x32
 #define KEY_CTRL 0x1d
 
-#define g_MeshEffectOn GAME_GLOBAL(int, g_MeshEffectOn)
-#define g_MeshEffectStencil GAME_GLOBAL(int, g_MeshEffectStencil)
-#define g_NumScreens GAME_GLOBAL(int, g_NumScreens)
-#define g_NumModels GAME_GLOBAL(int, g_NumModels)
+extern int g_MeshEffectOn;
+extern int g_MeshEffectStencil;
+extern int g_NumScreens;
+extern int g_NumModels;
 #define g_MeshEffectMat (GAME_ARRAY(CMaterial, g_MeshEffectMat))	/* a static object of the file */
 #define g_Screens (GAME_ARRAY(CModel *, g_Screens))
 #define g_Models (GAME_ARRAY(CModel *, g_Models))
-#define g_MeshEffectMatInit GAME_GLOBAL(byte, g_MeshEffectMatInit)
+extern byte g_MeshEffectMatInit;
 
 void MeshEffect_AddScreen(CModel *m) {
 	CHECK(g_NumScreens < MAX_SCREENS);

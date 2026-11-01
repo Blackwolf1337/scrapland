@@ -41,29 +41,29 @@
 #define g_LogName GAME_GLOBAL_IN(const char *, GVar_LogFile, 16)
 
 /* App.cpp state */
-#define g_AppBlock GAME_GLOBAL(int *, g_AppBlock)		/* 16 bytes of VirtualAlloc, [3] = 0x16 */
-#define g_AppPyOne GAME_GLOBAL(void *, g_AppPyOne)		/* Py_BuildValue("i", 1) of each level */
+extern int *g_AppBlock;		/* 16 bytes of VirtualAlloc, [3] = 0x16 */
+extern void *g_AppPyOne;		/* Py_BuildValue("i", 1) of each level */
 /* the Xbox loading screen (Loading_Init, isXbox) */
-#define g_XLoadIcon GAME_GLOBAL(void *, g_XLoadIcon)	/* CPsaImage (0x44 bytes) */
-#define g_XLoadFrames GAME_GLOBAL(int, g_XLoadFrames)
-#define g_XLoadIconFrame GAME_GLOBAL(int, g_XLoadIconFrame)
-#define g_XLoadStart GAME_GLOBAL(float, g_XLoadStart)
-#define g_XLoadLastStep GAME_GLOBAL(float, g_XLoadLastStep)
-#define g_XLoadOn GAME_GLOBAL(byte, g_XLoadOn)
+extern void *g_XLoadIcon;	/* CPsaImage (0x44 bytes) */
+extern int g_XLoadFrames;
+extern int g_XLoadIconFrame;
+extern float g_XLoadStart;
+extern float g_XLoadLastStep;
+extern byte g_XLoadOn;
 
 /* WinMain.cpp state */
-#define g_TimeQPPause GAME_GLOBAL(uint32_t, g_TimeQPPause)	/* subtracted from the counter of GetTime */
-#define g_TimeMsPause GAME_GLOBAL(uint32_t, g_TimeMsPause)	/* the same for timeGetTime */
+extern uint32_t g_TimeQPPause;	/* subtracted from the counter of GetTime */
+extern uint32_t g_TimeMsPause;	/* the same for timeGetTime */
 #define g_RegValue (GAME_ARRAY(char, g_RegValue))		/* 0x200, App_RegGetString */
-#define g_TimeInit GAME_GLOBAL(byte, g_TimeInit)
-#define g_TimeUseQP GAME_GLOBAL(int, g_TimeUseQP)
-#define g_TimeQPFreq GAME_GLOBAL(int64_t, g_TimeQPFreq)
-#define g_TimeQPStart GAME_GLOBAL(int64_t, g_TimeQPStart)
-#define g_TimeMsStart GAME_GLOBAL(uint32_t, g_TimeMsStart)
-#define g_WinWidth GAME_GLOBAL(int, g_WinWidth)
-#define g_WinHeight GAME_GLOBAL(int, g_WinHeight)
-#define g_WideWinWidth GAME_GLOBAL(int, g_WideWinWidth)
-#define g_WideWinHeight GAME_GLOBAL(int, g_WideWinHeight)
+extern byte g_TimeInit;
+extern int g_TimeUseQP;
+extern int64_t g_TimeQPFreq;
+extern int64_t g_TimeQPStart;
+extern uint32_t g_TimeMsStart;
+extern int g_WinWidth;
+extern int g_WinHeight;
+extern int g_WideWinWidth;
+extern int g_WideWinHeight;
 #define g_ScrapTitle GAME_STR(str_431a98)	/* "Scrapland" */
 #define g_ScrapClass GAME_STR(str_431aa4)	/* "ScrapClass" */
 

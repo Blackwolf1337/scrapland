@@ -32,20 +32,20 @@
 #define g_TexCount GAME_GLOBAL_IN(int, GVar_R_Tex_Count, 16)
 /* statistics: device textures made from raw files, raw files with a device texture, entries used in the frame and
  * their pixels */
-#define g_TexCreated GAME_GLOBAL(int, g_TexCreated)
-#define g_TexCached GAME_GLOBAL(int, g_TexCached)
-#define g_TexUsed GAME_GLOBAL(int, g_TexUsed)
-#define g_TexUsedPixels GAME_GLOBAL(int, g_TexUsedPixels)
-#define g_TexPurgeFrame GAME_GLOBAL(int, g_TexPurgeFrame)
+extern int g_TexCreated;
+extern int g_TexCached;
+extern int g_TexUsed;
+extern int g_TexUsedPixels;
+extern int g_TexPurgeFrame;
 /* keep the CBmp pixels after the device texture is made */
-#define g_TexKeepBitmaps GAME_GLOBAL(int, g_TexKeepBitmaps)
+extern int g_TexKeepBitmaps;
 /* the [video] settings Sharpen, ErrDif, TextBPP, TextOpBPP */
 #define g_TexSharpen GAME_GLOBAL(int, g_Sharpen)
-#define g_TexErrDif GAME_GLOBAL(int, g_TexErrDif)
-#define g_TextBPP GAME_GLOBAL(int, g_TextBPP)
-#define g_TextOpBPP GAME_GLOBAL(int, g_TextOpBPP)
-#define g_TexMipFadeOn GAME_GLOBAL(int, g_TexMipFadeOn)
-#define g_TexFixedBPP GAME_GLOBAL(int, g_TexFixedBPP)
+extern int g_TexErrDif;
+extern int g_TextBPP;
+extern int g_TextOpBPP;
+extern int g_TexMipFadeOn;
+extern int g_TexFixedBPP;
 /* engine variables */
 #define g_SharpenMore GAME_GLOBAL_IN(int, GVar_SharpenMore, 16)
 #define g_MipmapFade GAME_GLOBAL_IN(int, GVar_MipmapFade, 16)

@@ -50,16 +50,16 @@
 
 #define g_Engine3D GAME_GLOBAL(CEngineApp *, g_Engine3D)
 /* the callbacks of Engine3D_Create: once after the device, each frame, at the end */
-#define g_EngineInit GAME_GLOBAL(void *, g_EngineInit)
-#define g_EngineFrame GAME_GLOBAL(void *, g_EngineFrame)
-#define g_EngineRelease GAME_GLOBAL(void *, g_EngineRelease)
-#define g_EngineFrameCount GAME_GLOBAL(int, g_EngineFrameCount)
+extern void *g_EngineInit;
+extern void *g_EngineFrame;
+extern void *g_EngineRelease;
+extern int g_EngineFrameCount;
 /* the values m3d.ini gave (Engine_LoadVarsIni) */
-#define g_EngineIni7c GAME_GLOBAL(int, g_EngineIni7c)
-#define g_EngineIni80 GAME_GLOBAL(int, g_EngineIni80)
-#define g_EngineIni84 GAME_GLOBAL(int, g_EngineIni84)
-#define g_EngineIni88 GAME_GLOBAL(int, g_EngineIni88)
-#define g_EngineDef1cf4 GAME_GLOBAL(int, g_EngineDef1cf4)
+extern int g_EngineIni7c;
+extern int g_EngineIni80;
+extern int g_EngineIni84;
+extern int g_EngineIni88;
+extern int g_EngineDef1cf4;
 #define g_EngineMode GAME_GLOBAL_IN(int, g_FilterMip, 0)		/* 1 or 2 */
 #define g_ColorStr (GAME_ARRAY(char, g_ColorStr))	/* 0x40 */
 
@@ -68,17 +68,17 @@ typedef void(__stdcall *initcommoncontrols_t)(void);
 
 /* the console command handler of the engine (E3D_Command) */
 #define ENGINE_CMDPROC 0x22eda0
-#define g_Input GAME_GLOBAL(void *, g_Input)	/* the input of the engine, a CEntradaNula */
+extern void *g_Input;	/* the input of the engine, a CEntradaNula */
 /* the clock of the engine */
 #define g_FrameDelta GAME_GLOBAL(float, g_FrameMs)
-#define g_RealFrameSecs GAME_GLOBAL(float, g_RealFrameSecs)
-#define g_TimeD GAME_GLOBAL(double, g_TimeD)
-#define g_TimeMsInt GAME_GLOBAL(int, g_TimeMsInt)
-#define g_GameTimeD GAME_GLOBAL(double, g_GameTimeD)
-#define g_LastTime GAME_GLOBAL(float, g_LastTime)
-#define g_FpsTime GAME_GLOBAL(float, g_FpsTime)
-#define g_FpsFrames GAME_GLOBAL(int, g_FpsFrames)
-#define g_Fps GAME_GLOBAL(float, g_Fps)
+extern float g_RealFrameSecs;
+extern double g_TimeD;
+extern int g_TimeMsInt;
+extern double g_GameTimeD;
+extern float g_LastTime;
+extern float g_FpsTime;
+extern int g_FpsFrames;
+extern float g_Fps;
 #define ENGINE_MAXFRAME 0.1f
 
 #define WM_KEYDOWN 0x100
@@ -221,22 +221,22 @@ int CEngineApp_FrameMove(CEngineApp *self) {
 
 #define g_RenderCounts (GAME_ARRAY(int, g_RenderCounts))	/* [10], 8 counts (g_RenderTris and g_RenderVerts first), the frame clears 10 */
 #define g_Engine431bae GAME_GLOBAL_IN(byte, group_431bac, 2)
-#define g_Dither GAME_GLOBAL(int, g_Dither)		/* [video] Tramas: dithering */
+extern int g_Dither;		/* [video] Tramas: dithering */
 /* the frame limiter: [video] limitaFPS of m3d.ini and the console variable R_LimitFPS, the larger counts */
-#define g_LimitFps GAME_GLOBAL(float, g_LimitFps)
+extern float g_LimitFps;
 #define g_RLimitFps GAME_GLOBAL_IN(float, GVar_R_LimitFPS, 16)
-#define g_LimitNext GAME_GLOBAL(uint32_t, g_LimitNext)	/* the start of the next frame, timeGetTime * 3 (0: none yet) */
+extern uint32_t g_LimitNext;	/* the start of the next frame, timeGetTime * 3 (0: none yet) */
 #define g_RForceFps GAME_GLOBAL_IN(float, GVar_R_ForceFPS, 16)		/* R_ForceFPS: frames of a fixed length (Timer_FixedStep) */
-#define g_TimeMult GAME_GLOBAL(int, g_TimeMult)
-#define g_TimeScaled GAME_GLOBAL(int, g_TimeScaled)	/* Time_Get() * g_TimeMult / 1000 */
+extern int g_TimeMult;
+extern int g_TimeScaled;	/* Time_Get() * g_TimeMult / 1000 */
 #define g_AutoShot GAME_GLOBAL_IN(int, GVar_AutoScreenShot, 16)		/* the console variable AutoScreenShot */
 #define g_StencilClear GAME_GLOBAL_IN(uint32_t, GVar_R_StencilRefClear, 16)
 #define g_ResetDev GAME_GLOBAL_IN(byte, group_4a8efc, 2)		/* the device objects made again at the next frame */
 #define g_ResetDevOnly GAME_GLOBAL_IN(byte, group_431bac, 3)	/* 1: without the world, 0: the game callbacks too */
 /* the callbacks of the game the reset puts in place */
-#define g_EngineInitNext GAME_GLOBAL(void *, g_EngineInitNext)
-#define g_EngineFrameNext GAME_GLOBAL(void *, g_EngineFrameNext)
-#define g_EngineReleaseNext GAME_GLOBAL(void *, g_EngineReleaseNext)
+extern void *g_EngineInitNext;
+extern void *g_EngineFrameNext;
+extern void *g_EngineReleaseNext;
 #define D3DDEV_BEGINSCENE 0x88
 #define D3DDEV_ENDSCENE 0x8c
 #define D3DRS_SHADEMODE 9
@@ -502,10 +502,10 @@ CWorld *World_GetChecked(void) {
 
 /* the info overlay of R_ShowInfo (Engine_DrawStats, modes 1 to 4) */
 #define g_TexturePool GAME_GLOBAL_IN(int, GVar_TexturePool, 16)
-#define g_TexCreated GAME_GLOBAL(int, g_TexCreated)
-#define g_TexCached GAME_GLOBAL(int, g_TexCached)
-#define g_TexUsed GAME_GLOBAL(int, g_TexUsed)
-#define g_TexUsedPixels GAME_GLOBAL(int, g_TexUsedPixels)
+extern int g_TexCreated;
+extern int g_TexCached;
+extern int g_TexUsed;
+extern int g_TexUsedPixels;
 #define D3DDEV_GETAVAILABLETEXTUREMEM 0x10
 typedef uint32_t(__stdcall *d3dGetAvailableTextureMem_t)(void *dev);
 
@@ -935,12 +935,12 @@ intptr_t __stdcall Engine_SceneDlgProc(void *hwnd, uint32_t msg, uintptr_t wPara
 
 /* the frame time graph of R_Profiler 4 (Engine_DrawStats) */
 #define g_FpsText (GAME_ARRAY(char, g_FpsText))	/* 0x40, "frame: fps fps  ms" when the fps jumped */
-#define g_FpsTextTime GAME_GLOBAL(float, g_FpsTextTime)
+extern float g_FpsTextTime;
 #define g_FpsGraph (GAME_ARRAY(float, g_FpsGraph))	/* FPS_GRAPH bars of 2 vertices (x, 0) (x, frame ms) */
 #define g_FpsGraphPeak (GAME_ARRAY(float, g_FpsGraphPeak))	/* the same with the falling peak */
 #define g_FpsGraphPos GAME_GLOBAL_IN(int, g_FpsGraphPeak, 480)
 #define g_FpsScaleTime GAME_GLOBAL_IN(float, g_FpsGraphPeak, 484)
-#define g_FpsScale GAME_GLOBAL(float, g_FpsScale)	/* the height of the graph: 200 ms per 200 fps */
+extern float g_FpsScale;	/* the height of the graph: 200 ms per 200 fps */
 #define FPS_GRAPH 30
 
 void Engine_DrawFpsGraph(float y) {
@@ -1095,9 +1095,9 @@ void E3D_Command(char *cmd) {
 #define IDM_SHARPEN 0x9c65
 #define IDM_RELOADMATS 0x9c66
 #define IDM_CAMERA 50000		/* the cameras of the global scene from here */
-#define g_Engine4af7d4 GAME_GLOBAL(byte, g_Engine4af7d4)
-#define g_Sharpen GAME_GLOBAL(int, g_Sharpen)		/* [video] Sharpen of m3d.ini */
-#define g_MouseExcl GAME_GLOBAL(int, g_MouseExcl)		/* [dinput] raton_excl */
+extern byte g_Engine4af7d4;
+extern int g_Sharpen;		/* [video] Sharpen of m3d.ini */
+extern int g_MouseExcl;		/* [dinput] raton_excl */
 
 static uint32_t Menu_Check(int on) {
 	return on ? MF_CHECKED : 0;

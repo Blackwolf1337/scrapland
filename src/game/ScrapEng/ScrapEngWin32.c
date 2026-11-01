@@ -103,7 +103,7 @@ intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lPa
 	}
 	return exe_DefWindowProcA(hwnd, msg, wParam, lParam);
 }
-#define g_PrevExceptionFilter GAME_GLOBAL(void *, g_PrevExceptionFilter)
+extern void *g_PrevExceptionFilter;
 
 #define EXC_ACCESS_VIOLATION 0xc0000005u
 

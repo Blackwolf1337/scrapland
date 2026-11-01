@@ -135,14 +135,14 @@ void CGround_DrawDebug(CGround *self);
 /* rva 0x261580: in / |in| into out (the length through double, 1 / len rounded to float), a copy for length 0 */
 vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in);
 
-#define g_CollisionEpsilon GAME_GLOBAL(float, g_CollisionEpsilon)
+extern float g_CollisionEpsilon;
 #define g_CollisionBalance GAME_GLOBAL_IN(float, GVar_MapCollisionBalance, 16)
-#define g_QuadTriCacheID GAME_GLOBAL(int, g_QuadTriCacheID)
-#define g_CollisionNComp GAME_GLOBAL(uint32_t, g_CollisionNComp)
+extern int g_QuadTriCacheID;
+extern uint32_t g_CollisionNComp;
 #define g_CollisionTestsMax GAME_GLOBAL_IN(uint32_t, g_BspCacheStats, 8)
-#define g_CollisionTests GAME_GLOBAL(uint32_t, g_CollisionTests)
-#define g_CollisionTestsTotal GAME_GLOBAL(uint32_t, g_CollisionTestsTotal)
-#define g_CollisionQuadCount GAME_GLOBAL(int, g_CollisionQuadCount)
+extern uint32_t g_CollisionTests;
+extern uint32_t g_CollisionTestsTotal;
+extern int g_CollisionQuadCount;
 
 /* the triangle not tested yet in this query: marked as tested (counted in g_CollisionTests) */
 static inline int CCollideTri_Mark(CCollideTri *tri) {

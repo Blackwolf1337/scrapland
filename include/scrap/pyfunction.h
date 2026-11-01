@@ -38,11 +38,11 @@ typedef struct cPy_NativeFunc {
 /* a static entry, inserted into g_NativeFuncs */
 cPy_NativeFunc *cPy_NativeFunc_ctor(cPy_NativeFunc *self, const char *name, nativefunc_t func);
 
-#define g_PyFunctions GAME_GLOBAL(cPy_Function *, g_PyFunctions)
+extern cPy_Function *g_PyFunctions;
 /* memory files of C function parameters for reuse; the first dword of the buffer links them */
-#define g_FreeParamFiles GAME_GLOBAL(cFileMem *, g_FreeParamFiles)
-#define g_NativeFuncs GAME_GLOBAL(cPy_NativeFunc *, g_NativeFuncs)
-#define g_PythonReady GAME_GLOBAL(byte, g_PythonReady)
+extern cFileMem *g_FreeParamFiles;
+extern cPy_NativeFunc *g_NativeFuncs;
+extern byte g_PythonReady;
 
 cPy_Function *cPy_Function_ctor(cPy_Function *self);
 void cPy_Function_dtor(cPy_Function *self);

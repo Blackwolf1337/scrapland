@@ -10,7 +10,7 @@
 #include "scrap/rendertarget.h"
 #include "scrap/misc.h"
 
-#define g_TimeMsInt GAME_GLOBAL(int, g_TimeMsInt)	/* the engine time in ms as an int */
+extern int g_TimeMsInt;	/* the engine time in ms as an int */
 #define FXTEX_MASK (FXTEX_SIZE - 1)
 
 static float Float_FromBits(uint32_t bits) {

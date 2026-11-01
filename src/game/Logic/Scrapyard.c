@@ -35,7 +35,7 @@
 #define g_OnMosquitoDeathMoney GAME_GLOBAL_IN(int, GVar_OnMosquitoDeathMoney, 16)
 #define g_OnMadHunterDeathMoney GAME_GLOBAL_IN(int, GVar_OnMadHunterDeathMoney, 16)
 /* the ships the sphere native found around a lair */
-#define g_ShipGroupFound GAME_GLOBAL(int, g_ShipGroupFound)
+extern int g_ShipGroupFound;
 #define g_ShipGroupShips (GAME_ARRAY(cEntity *, g_ShipGroupShips))	/* [SHIPGROUP_MAX_FOUND] */
 /* the callback of the AI when the move ends (rva 0x15c of the AI) */
 #define AIV_OnEnd(ai) (((cAIVehicle *)(ai))->onArrive)

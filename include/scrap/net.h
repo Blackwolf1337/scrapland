@@ -214,22 +214,22 @@ SD_SIZE(NetServerInfo, 0x5c);
 
 /* GameClient */
 #define g_NetClientServer (GAME_ARRAY(char, g_NetClientServer))	/* [0x100] the server address, "" when not connected */
-#define g_NetClientPort GAME_GLOBAL(uint16_t, g_NetClientPort)
-#define g_NetClient GAME_GLOBAL(cNetClient *, g_NetClient)
-#define g_NetClientData GAME_GLOBAL(void *, g_NetClientData)	/* the receive buffers, 24000 bytes */
-#define g_NetClientDataSize GAME_GLOBAL(int, g_NetClientDataSize)
-#define g_NetClientCtl GAME_GLOBAL(void *, g_NetClientCtl)
-#define g_NetClientCtlSize GAME_GLOBAL(int, g_NetClientCtlSize)
+extern uint16_t g_NetClientPort;
+extern cNetClient *g_NetClient;
+extern void *g_NetClientData;	/* the receive buffers, 24000 bytes */
+extern int g_NetClientDataSize;
+extern void *g_NetClientCtl;
+extern int g_NetClientCtlSize;
 /* GameServer */
 #define g_NetServerHost (GAME_ARRAY(char, g_NetServerHost))	/* [0x100] */
 #define g_NetServerIP (GAME_ARRAY(char, g_NetServerIP))	/* [0x100] */
 #define g_NetBrowserCode GAME_GLOBAL_IN(char *, GVar_BrowserCode, 16)	/* BrowserCode (cString) */
-#define g_NetServerPort GAME_GLOBAL(uint16_t, g_NetServerPort)	/* 0 without a server */
-#define g_NetServerData GAME_GLOBAL(void *, g_NetServerData)
-#define g_NetServerDataSize GAME_GLOBAL(int, g_NetServerDataSize)
-#define g_NetServerCtl GAME_GLOBAL(void *, g_NetServerCtl)
-#define g_NetServerCtlSize GAME_GLOBAL(int, g_NetServerCtlSize)
-#define g_NetHeartbeat GAME_GLOBAL(float, g_NetHeartbeat)	/* GetTime of the last heartbeat to the master */
+extern uint16_t g_NetServerPort;	/* 0 without a server */
+extern void *g_NetServerData;
+extern int g_NetServerDataSize;
+extern void *g_NetServerCtl;
+extern int g_NetServerCtlSize;
+extern float g_NetHeartbeat;	/* GetTime of the last heartbeat to the master */
 #define g_LogNetData GAME_GLOBAL_IN(int, GVar_LogNetData, 16)		/* LogNetData */
 #define g_NetClientPings (GAME_ARRAY(byte, g_NetClientPings))	/* [0x100] the pings the server sends, log2 * 24 */
 /* the engine variables (gvars) of Net/: values and their flags byte (bit 0: scripts may not write) */
@@ -292,45 +292,45 @@ SD_SIZE(NetServerInfo, 0x5c);
 #define g_PlayerTeamID GAME_GLOBAL_IN(int, GVar_PlayerTeamID, 16)
 
 /* msgman.cpp */
-#define g_NetWaitTime GAME_GLOBAL(uint32_t, g_NetWaitTime)	/* 5000: no answer that long, NETCLIENT_WAITING */
-#define g_NetCloseTime GAME_GLOBAL(uint32_t, g_NetCloseTime)	/* 2000: after the goodbye */
-#define g_NetSendDelay GAME_GLOBAL(uint32_t, g_NetSendDelay)	/* 100 */
-#define g_NetUserFactory GAME_GLOBAL(netuserfactory_t, g_NetUserFactory)
+extern uint32_t g_NetWaitTime;	/* 5000: no answer that long, NETCLIENT_WAITING */
+extern uint32_t g_NetCloseTime;	/* 2000: after the goodbye */
+extern uint32_t g_NetSendDelay;	/* 100 */
+extern netuserfactory_t g_NetUserFactory;
 #define g_NetMsg (&GAME_GLOBAL(cFileMem, g_NetMsg))	/* the memory file messages are built and read in */
 #define g_NetStaticBuffer (&GAME_GLOBAL_IN(cStaticBuffer, cStaticBuffer_PyStaticBuffer, 12))
 #define g_PyStaticBuffer (&GAME_GLOBAL_IN(cStaticBuffer, cStaticBuffer_PyStaticBuffer, 0))
-#define g_NetOrigin GAME_GLOBAL(vec3_t, g_NetOrigin)
+extern vec3_t g_NetOrigin;
 #define g_NetMaxDist2 GAME_GLOBAL(float, g_NetMaxDist2)	/* the distance (squared) of the near entities */
 /* NetData.cpp */
-#define g_NetObjCounter GAME_GLOBAL(int, g_NetObjCounter)
-#define g_NetBotCounter GAME_GLOBAL(int, g_NetBotCounter)
+extern int g_NetObjCounter;
+extern int g_NetBotCounter;
 #define g_NetResources (GAME_ARRAY(char *, g_NetResources))	/* [NET_RESOURCES] Mem_Alloc names */
-#define g_NetResInit GAME_GLOBAL(byte, g_NetResInit)
-#define g_NetBrowserPort GAME_GLOBAL(int, g_NetBrowserPort)
+extern byte g_NetResInit;
+extern int g_NetBrowserPort;
 #define NET_OFFLINE "Offline"
 /* the server side client table */
-#define g_NetClients GAME_GLOBAL(cNetClient **, g_NetClients)	/* [Transport_GetMaxClients()] */
-#define g_NetNextSend GAME_GLOBAL(uint32_t, g_NetNextSend)
+extern cNetClient ** g_NetClients;	/* [Transport_GetMaxClients()] */
+extern uint32_t g_NetNextSend;
 typedef void (*netmastercmd_t)(const char *cmd);
-#define g_MasterCommandCallback GAME_GLOBAL(netmastercmd_t, g_MasterCommandCallback)
+extern netmastercmd_t g_MasterCommandCallback;
 /* the counters for the stats (same names as include/scrap/scoreritems.h) */
-#define g_NetStatSent GAME_GLOBAL(int, g_NetStatSent)
-#define g_NetStatSentSlot GAME_GLOBAL(int, g_NetStatSentSlot)
-#define g_NetStatRecv GAME_GLOBAL(int, g_NetStatRecv)
-#define g_NetStatRecvSlot GAME_GLOBAL(int, g_NetStatRecvSlot)
+extern int g_NetStatSent;
+extern int g_NetStatSentSlot;
+extern int g_NetStatRecv;
+extern int g_NetStatRecvSlot;
 /* transport.cpp */
-#define g_NetSocket GAME_GLOBAL(uint32_t, g_NetSocket)
+extern uint32_t g_NetSocket;
 #define g_NetRandom (&GAME_GLOBAL(cNetRandom, g_NetRandom))
 #define g_NetLocalAddr (&GAME_GLOBAL(NetAddr, g_NetLocalAddr))
 #define g_NetServerAddr (&GAME_GLOBAL(NetAddr, g_NetServerAddr))
-#define g_NetMode GAME_GLOBAL(int, g_NetMode)		/* NETMODE_ */
-#define g_NetMasterOn GAME_GLOBAL(int, g_NetMasterOn)
-#define g_NetMaxClients GAME_GLOBAL(int, g_NetMaxClients)
-#define g_NetNumClients GAME_GLOBAL(int, g_NetNumClients)
-#define g_NetClientAddrs GAME_GLOBAL(NetAddr *, g_NetClientAddrs)	/* [g_NetMaxClients], family 0: free */
-#define g_NetHost GAME_GLOBAL(void *, g_NetHost)		/* hostent of the last Transport_Resolve */
-#define g_NetPingServers GAME_GLOBAL(NetPingServer *, g_NetPingServers)
-#define g_NetBrowseStart GAME_GLOBAL(uint32_t, g_NetBrowseStart)
+extern int g_NetMode;		/* NETMODE_ */
+extern int g_NetMasterOn;
+extern int g_NetMaxClients;
+extern int g_NetNumClients;
+extern NetAddr *g_NetClientAddrs;	/* [g_NetMaxClients], family 0: free */
+extern void *g_NetHost;		/* hostent of the last Transport_Resolve */
+extern NetPingServer *g_NetPingServers;
+extern uint32_t g_NetBrowseStart;
 #define g_NetMasterAddr (&GAME_GLOBAL(NetAddr, g_NetMasterAddr))
 #define g_NetServerFullPkt (GAME_ARRAY(const byte, g_NetServerFullPkt))	/* 5 bytes: 0, 0, 0, 0, 8 */
 #define g_NetNeedPasswordPkt (GAME_ARRAY(const byte, g_NetNeedPasswordPkt))	/* 5 bytes: 0, 0, 0, 0, 9 */

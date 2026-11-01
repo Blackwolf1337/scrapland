@@ -34,31 +34,31 @@ typedef struct StencilBlock {
 } StencilBlock;
 SD_SIZE(StencilBlock, 0x80);
 
-#define g_StencilBlock GAME_GLOBAL(StencilBlock *, g_StencilBlock)	/* new[] of STENCIL_MAX_GROUPS */
-#define g_StencilGroups GAME_GLOBAL(int, g_StencilGroups)
-#define g_StencilSegments GAME_GLOBAL(vec3_t *, g_StencilSegments)	/* new[] 0x30000: two points a segment */
-#define g_StencilSegs GAME_GLOBAL(int, g_StencilSegs)
-#define g_StencilTriInv GAME_GLOBAL(vec3_t *, g_StencilTriInv)	/* new[] 0x6c000: three points a triangle */
-#define g_StencilInv GAME_GLOBAL(int, g_StencilInv)
-#define g_StencilCapture GAME_GLOBAL(int, g_StencilCapture)	/* bSombrasStencilCapturar */
-#define g_StencilVB GAME_GLOBAL(void *, g_StencilVB)	/* pVB_Stencil */
-#define g_StencilIB GAME_GLOBAL(void *, g_StencilIB)	/* pIB_Stencil, quads of 4 vertices */
-#define g_StencilVB2 GAME_GLOBAL(void *, g_StencilVB2)
-#define g_StencilVB3 GAME_GLOBAL(void *, g_StencilVB3)
+extern StencilBlock *g_StencilBlock;	/* new[] of STENCIL_MAX_GROUPS */
+extern int g_StencilGroups;
+extern vec3_t *g_StencilSegments;	/* new[] 0x30000: two points a segment */
+extern int g_StencilSegs;
+extern vec3_t *g_StencilTriInv;	/* new[] 0x6c000: three points a triangle */
+extern int g_StencilInv;
+extern int g_StencilCapture;	/* bSombrasStencilCapturar */
+extern void *g_StencilVB;	/* pVB_Stencil */
+extern void *g_StencilIB;	/* pIB_Stencil, quads of 4 vertices */
+extern void *g_StencilVB2;
+extern void *g_StencilVB3;
 #define g_StencilMat (GAME_ARRAY(CMaterial, g_StencilMat))	/* the material of the volumes */
 
 /* the light of the shadows (E3D_SetShadowLight) */
-#define g_ShadowLight GAME_GLOBAL(CLight *, g_ShadowLight)
-#define g_ShadowLightType GAME_GLOBAL(int, g_ShadowLightType)
-#define g_ShadowLightPos GAME_GLOBAL(vec3_t, g_ShadowLightPos)	/* far away against the direction of a directional one */
-#define g_ShadowLightDir GAME_GLOBAL(vec3_t, g_ShadowLightDir)
-#define g_ShadowRange GAME_GLOBAL(float, g_ShadowRange)
-#define g_ShadowCos GAME_GLOBAL(float, g_ShadowCos)	/* of half the cone angle */
+extern CLight *g_ShadowLight;
+extern int g_ShadowLightType;
+extern vec3_t g_ShadowLightPos;	/* far away against the direction of a directional one */
+extern vec3_t g_ShadowLightDir;
+extern float g_ShadowRange;
+extern float g_ShadowCos;	/* of half the cone angle */
 
 /* engine variables */
 #define g_ShowStencil GAME_GLOBAL_IN(int, GVar_R_ShowStencil, 16)	/* R_ShowStencil, 2: the volumes drawn */
 #define g_StencilMult GAME_GLOBAL_IN(float, GVar_R_StencilMult, 16)	/* R_StencilMult */
-#define g_StencilMultFrame GAME_GLOBAL(float, g_StencilMultFrame)
+extern float g_StencilMultFrame;
 #define g_StencilRefWorld GAME_GLOBAL_IN(uint32_t, GVar_R_StencilRefWorld, 16)	/* R_StencilRefWorld */
 #define g_StencilRefModels GAME_GLOBAL_IN(uint32_t, GVar_R_StencilRefModels, 16)	/* R_StencilRefModels */
 #define g_StencilSelf GAME_GLOBAL_IN(int, GVar_R_StencilSelf, 16)	/* R_StencilSelf */

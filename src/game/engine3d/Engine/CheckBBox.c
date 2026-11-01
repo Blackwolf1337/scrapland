@@ -13,8 +13,8 @@
 #define CLIP_MAX 16
 
 /* the contact points and faces of the response of CGround_CheckBBox (colis->calc_respuesta), counted from 0 */
-#define g_NTortas GAME_GLOBAL(int, g_NTortas)
-#define g_NResponseFaces GAME_GLOBAL(int, g_NResponseFaces)
+extern int g_NTortas;
+extern int g_NResponseFaces;
 #define FACES_TORTAS 64
 #define g_ResponseFaces (GAME_ARRAY(int[3], g_ResponseFaces))	/* [FACES_TORTAS] */
 

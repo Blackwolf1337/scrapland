@@ -71,7 +71,7 @@ typedef struct CAnimStream {
 SD_SIZE(CAnimStream, 0x8);
 
 /* the block the tracks of the nodes are read into, set while an animation reads or deletes its nodes */
-#define g_ActAnimBlock GAME_GLOBAL(CAnimBlock *, g_ActAnimBlock)
+extern CAnimBlock *g_ActAnimBlock;
 /* the engine variables of the animations (the values of their cGVar objects): R_AnimNodo_Count the live CAnimNode
  * objects; OptimizeAnims (0 none, 1 compact the tracks before writing) and the errors that still count as equal */
 #define g_AnimNodeCount GAME_GLOBAL_IN(int, GVar_R_AnimNode_Count, 16)

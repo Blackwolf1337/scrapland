@@ -50,7 +50,7 @@ SD_SIZE(CFXNewsPanel, 0x8);
 
 /* the cos of the 256 angles of the lava, made by the first lava */
 #define g_LavaCos (GAME_ARRAY(float, g_LavaCos))
-#define g_LavaCosInit GAME_GLOBAL(byte, g_LavaCosInit)
+extern byte g_LavaCosInit;
 #define g_LavaOffset (GAME_ARRAY(int, g_LavaOffset))	/* FXTEX_SIZE, the row offset of each column */
 
 void IFXTexture_dtor(IFXTexture *self);

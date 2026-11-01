@@ -76,10 +76,10 @@ enum {
 /* R_SplitScreen is g_SplitScreen (scrapmodel.h) */
 
 /* the target of RenderTarget_Begin, RTARGET_NONE between Begin and End */
-#define g_RTMode GAME_GLOBAL(int, g_RTMode)
+extern int g_RTMode;
 /* the back buffer and depth buffer of the device while a target is on (referenced) */
-#define g_RTBackBuffer GAME_GLOBAL(void *, g_RTBackBuffer)
-#define g_RTZBuffer GAME_GLOBAL(void *, g_RTZBuffer)
+extern void *g_RTBackBuffer;
+extern void *g_RTZBuffer;
 /* the viewports (6 words) of before a NewsPanel or Credits target: the current one and the whole one */
 #define g_RTSavedViewport (GAME_ARRAY(uint32_t, g_RTSavedViewport))
 #define g_RTSavedViewportFull (GAME_ARRAY(uint32_t, g_RTSavedViewportFull))
@@ -89,44 +89,44 @@ enum {
 #define g_RTLinNonPow2 GAME_GLOBAL_IN(byte, group_4a8e1c, 0)
 
 /* NewsPanel: the texture and its depth buffer */
-#define g_NewsPanelTarget GAME_GLOBAL(void *, g_NewsPanelTarget)
-#define g_NewsPanelZ GAME_GLOBAL(void *, g_NewsPanelZ)
+extern void *g_NewsPanelTarget;
+extern void *g_NewsPanelZ;
 
 /* Credits: the texture, its materials, the 2D screen size of before Begin, the last blur time */
-#define g_CreditsTarget GAME_GLOBAL(void *, g_CreditsTarget)
-#define g_CreditsMat GAME_GLOBAL(CMaterial *, g_CreditsMat)
-#define g_CreditsMatBlur GAME_GLOBAL(CMaterial *, g_CreditsMatBlur)
-#define g_CreditsSavedW GAME_GLOBAL(int, g_CreditsSavedW)
-#define g_CreditsSavedH GAME_GLOBAL(int, g_CreditsSavedH)
-#define g_CreditsBlurTime GAME_GLOBAL(uint32_t, g_CreditsBlurTime)
+extern void *g_CreditsTarget;
+extern CMaterial *g_CreditsMat;
+extern CMaterial *g_CreditsMatBlur;
+extern int g_CreditsSavedW;
+extern int g_CreditsSavedH;
+extern uint32_t g_CreditsBlurTime;
 
 /* Scene: on, the size of the textures, the textures (the third one in split screen), the copy material */
 #define g_SceneOn GAME_GLOBAL_IN(byte, group_4a8e1c, 3)
-#define g_SceneW GAME_GLOBAL(float, g_SceneW)
-#define g_SceneH GAME_GLOBAL(float, g_SceneH)
-#define g_SceneRT1 GAME_GLOBAL(void *, g_SceneRT1)
-#define g_SceneRT2 GAME_GLOBAL(void *, g_SceneRT2)
-#define g_SceneRT3 GAME_GLOBAL(void *, g_SceneRT3)
-#define g_SceneMatCopy GAME_GLOBAL(CMaterial *, g_SceneMatCopy)
+extern float g_SceneW;
+extern float g_SceneH;
+extern void *g_SceneRT1;
+extern void *g_SceneRT2;
+extern void *g_SceneRT3;
+extern CMaterial *g_SceneMatCopy;
 /* the source the next effect reads (the scene is drawn into it) and the target it draws into (textures and their
  * surface 0, referenced); they swap after each effect */
-#define g_SceneSourceSurface GAME_GLOBAL(void *, g_SceneSourceSurface)
-#define g_SceneTargetSurface GAME_GLOBAL(void *, g_SceneTargetSurface)
-#define g_SceneSourceTexture GAME_GLOBAL(void *, g_SceneSourceTexture)
-#define g_SceneTargetTexture GAME_GLOBAL(void *, g_SceneTargetTexture)
+extern void *g_SceneSourceSurface;
+extern void *g_SceneTargetSurface;
+extern void *g_SceneSourceTexture;
+extern void *g_SceneTargetTexture;
 /* the next swap is skipped (the DuDv effect kept its target) */
 #define g_SceneNoSwap GAME_GLOBAL_IN(byte, group_4a8e1c, 2)
 /* the effects on in this frame and the last one of them, -1 none */
 #define g_SceneFxOn (GAME_ARRAY_IN(byte, group_4a8e40, 0))
-#define g_SceneFxLast GAME_GLOBAL(int, g_SceneFxLast)
+extern int g_SceneFxLast;
 /* the full viewport of before the split screen halved it */
 #define g_SceneViewport (GAME_ARRAY(uint32_t, g_SceneViewport))
 /* the target of before the DuDv target became the source (texture, surface) */
-#define g_SceneDuDvSavedTexture GAME_GLOBAL(void *, g_SceneDuDvSavedTexture)
-#define g_SceneDuDvSavedSurface GAME_GLOBAL(void *, g_SceneDuDvSavedSurface)
+extern void *g_SceneDuDvSavedTexture;
+extern void *g_SceneDuDvSavedSurface;
 /* the R_SceneRTarget and R_SceneDuDvRTarget the caps were checked for, -1 never */
-#define g_SceneCheckedMode GAME_GLOBAL(int, g_SceneCheckedMode)
-#define g_SceneDuDvCheckedMode GAME_GLOBAL(int, g_SceneDuDvCheckedMode)
+extern int g_SceneCheckedMode;
+extern int g_SceneDuDvCheckedMode;
 /* the tables of the effects: on (byte), render */
 typedef byte (*rtFxOn_t)(void);
 typedef void (*rtFxRender_t)(void);
@@ -134,36 +134,36 @@ typedef void (*rtFxRender_t)(void);
 #define g_RTFxRender (GAME_ARRAY(rtFxRender_t, g_RTFxRender))
 
 /* DuDv: the deformation target, the frame it was drawn in, the bump target, the materials */
-#define g_SceneDuDvTarget GAME_GLOBAL(void *, g_SceneDuDvTarget)
-#define g_SceneDuDvFrame GAME_GLOBAL(int, g_SceneDuDvFrame)
-#define g_SceneDuDvBumpTarget GAME_GLOBAL(void *, g_SceneDuDvBumpTarget)
-#define g_SceneDuDvMatRTarget GAME_GLOBAL(CMaterial *, g_SceneDuDvMatRTarget)
-#define g_SceneDuDvMatFilter GAME_GLOBAL(CMaterial *, g_SceneDuDvMatFilter)
-#define g_SceneDuDvMatCopy GAME_GLOBAL(CMaterial *, g_SceneDuDvMatCopy)
-#define g_SceneDuDvMatDebug GAME_GLOBAL(CMaterial *, g_SceneDuDvMatDebug)
+extern void *g_SceneDuDvTarget;
+extern int g_SceneDuDvFrame;
+extern void *g_SceneDuDvBumpTarget;
+extern CMaterial *g_SceneDuDvMatRTarget;
+extern CMaterial *g_SceneDuDvMatFilter;
+extern CMaterial *g_SceneDuDvMatCopy;
+extern CMaterial *g_SceneDuDvMatDebug;
 
 /* Bloom: the size of its targets, the two targets, the materials */
-#define g_BloomW GAME_GLOBAL(float, g_BloomW)
-#define g_BloomH GAME_GLOBAL(float, g_BloomH)
-#define g_BloomTarget1 GAME_GLOBAL(void *, g_BloomTarget1)
-#define g_BloomTarget2 GAME_GLOBAL(void *, g_BloomTarget2)
-#define g_BloomMatShow GAME_GLOBAL(CMaterial *, g_BloomMatShow)
-#define g_BloomMatTarget GAME_GLOBAL(CMaterial *, g_BloomMatTarget)
-#define g_BloomMatFilter GAME_GLOBAL(CMaterial *, g_BloomMatFilter)
-#define g_BloomMatBlur GAME_GLOBAL(CMaterial *, g_BloomMatBlur)
+extern float g_BloomW;
+extern float g_BloomH;
+extern void *g_BloomTarget1;
+extern void *g_BloomTarget2;
+extern CMaterial *g_BloomMatShow;
+extern CMaterial *g_BloomMatTarget;
+extern CMaterial *g_BloomMatFilter;
+extern CMaterial *g_BloomMatBlur;
 
 /* Motion blur: the size, the target, the materials, the first frame (the target is not filled yet) */
-#define g_MotionBlurW GAME_GLOBAL(float, g_MotionBlurW)
-#define g_MotionBlurH GAME_GLOBAL(float, g_MotionBlurH)
-#define g_MotionBlurTarget GAME_GLOBAL(void *, g_MotionBlurTarget)
-#define g_MotionBlurMatTarget GAME_GLOBAL(CMaterial *, g_MotionBlurMatTarget)
-#define g_MotionBlurMatAdd GAME_GLOBAL(CMaterial *, g_MotionBlurMatAdd)
+extern float g_MotionBlurW;
+extern float g_MotionBlurH;
+extern void *g_MotionBlurTarget;
+extern CMaterial *g_MotionBlurMatTarget;
+extern CMaterial *g_MotionBlurMatAdd;
 #define g_MotionBlurFilled GAME_GLOBAL_IN(byte, group_4a8e40, 5)
 
 /* Blur and radial blur: the materials */
-#define g_BlurMatTarget GAME_GLOBAL(CMaterial *, g_BlurMatTarget)
-#define g_BlurMatCopy GAME_GLOBAL(CMaterial *, g_BlurMatCopy)
-#define g_RadialBlurMat GAME_GLOBAL(CMaterial *, g_RadialBlurMat)
+extern CMaterial *g_BlurMatTarget;
+extern CMaterial *g_BlurMatCopy;
+extern CMaterial *g_RadialBlurMat;
 
 /* the materials of the effects, each made once (CHECK that it is not made) */
 void RenderTarget_MakeCreditsMatBlur(void);

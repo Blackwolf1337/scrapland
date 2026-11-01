@@ -23,8 +23,8 @@ SD_SIZE(cSaveGameInfo, 0x48);
 #define SAVE_SLOTS 7
 
 #define g_SaveVarTable (&GAME_GLOBAL(HashTable, g_SaveVarTable))	/* of cPtrItem, 457 slots */
-#define g_SaveVars GAME_GLOBAL(cSaveVar *, g_SaveVars)
-#define g_SaveVarCount GAME_GLOBAL(int, g_SaveVarCount)
+extern cSaveVar *g_SaveVars;
+extern int g_SaveVarCount;
 #define g_SaveDesc (GAME_ARRAY_IN(cString, GVar_LastSaveGameName, 16))	/* the description of the save loaded last */
 /* called when the number of finished crazy deals changes: one deal, and all three (with g_SuperDealAvaliable) */
 #define g_OnCrazyDeal (GAME_ARRAY_IN(cPy_Function, GVar_OnCrazyDealTarget, 16))

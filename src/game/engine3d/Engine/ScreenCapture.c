@@ -15,7 +15,7 @@
 #include "scrap/win32.h"
 
 #define g_ShotPath (GAME_ARRAY(char, g_ShotPath))	/* MAX_FILEPATH */
-#define g_ShotNum GAME_GLOBAL(int, g_ShotNum)
+extern int g_ShotNum;
 
 /* IDirect3DSurface8 and IDirect3DDevice8 */
 #define D3DSURF_GETDEVICE 0xc

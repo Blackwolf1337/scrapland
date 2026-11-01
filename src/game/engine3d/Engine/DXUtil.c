@@ -87,8 +87,8 @@ void DXUtil_WideToGeneric(char *dst, const uint16_t *src, int cch) {
 }
 
 /* the performance counter of the engine: since g_TimerBase, or the fixed time while one is set */
-#define g_TimerFixed GAME_GLOBAL(int64_t, g_TimerFixed)
-#define g_TimerBase GAME_GLOBAL(int64_t, g_TimerBase)
+extern int64_t g_TimerFixed;
+extern int64_t g_TimerBase;
 
 /* differs from the original on purpose (no busy waits): the original counted the distinct values of timeGetTime
  * during ms, which the 1 ms period of CWinApp_Init (timeBeginPeriod) makes ms; no caller in the exe */
@@ -129,7 +129,7 @@ int Timer_FixedStep(float fps) {
 }
 
 /* the frequency of the performance counter times g_TimerQPMult, taken once (-1 until then), 0 without a counter */
-#define g_TimerQPFreq GAME_GLOBAL(int64_t, g_TimerQPFreq)
+extern int64_t g_TimerQPFreq;
 
 int Timer_GetQPFreq(int64_t *out) {
 	if (((uint32_t)g_TimerQPFreq & (uint32_t)((uint64_t)g_TimerQPFreq >> 32)) == 0xffffffff) {
@@ -154,16 +154,16 @@ int64_t Timer_MeasureQP(int ms) {
 }
 
 /* the state of DXUtil_Timer: the counter path in ticks, the timeGetTime path in seconds */
-#define g_DXTimerInit GAME_GLOBAL(int, g_DXTimerInit)
-#define g_DXTimerQP GAME_GLOBAL(int, g_DXTimerQP)
-#define g_DXTimerFreq GAME_GLOBAL(int64_t, g_DXTimerFreq)
-#define g_DXTimerStop GAME_GLOBAL(int64_t, g_DXTimerStop)
-#define g_DXTimerLast GAME_GLOBAL(int64_t, g_DXTimerLast)
-#define g_DXTimerBase GAME_GLOBAL(int64_t, g_DXTimerBase)
-#define g_DXTimerLastD GAME_GLOBAL(double, g_DXTimerLastD)
-#define g_DXTimerBaseD GAME_GLOBAL(double, g_DXTimerBaseD)
-#define g_DXTimerStopD GAME_GLOBAL(double, g_DXTimerStopD)
-#define g_DXTimerStopped GAME_GLOBAL(int, g_DXTimerStopped)
+extern int g_DXTimerInit;
+extern int g_DXTimerQP;
+extern int64_t g_DXTimerFreq;
+extern int64_t g_DXTimerStop;
+extern int64_t g_DXTimerLast;
+extern int64_t g_DXTimerBase;
+extern double g_DXTimerLastD;
+extern double g_DXTimerBaseD;
+extern double g_DXTimerStopD;
+extern int g_DXTimerStopped;
 
 /* the x87 a - b of the original (fsub QWORD) in the precision the game set, stored as a float */
 static float X87_SubToFloat(double a, double b) {

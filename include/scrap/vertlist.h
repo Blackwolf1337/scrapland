@@ -56,12 +56,12 @@ typedef struct CVertList {
 SD_SIZE(CVertList, 0x14);
 
 /* the vertex shader handles of the XBOX formats */
-#define g_hVShader_Tex1_XBox GAME_GLOBAL(uint32_t, g_hVShader_Tex1_XBox)
-#define g_hVShader_Tex1C_XBox GAME_GLOBAL(uint32_t, g_hVShader_Tex1C_XBox)
-#define g_hVShader_LTex1_XBox GAME_GLOBAL(uint32_t, g_hVShader_LTex1_XBox)
-#define g_hVShader_LTex1N_XBox GAME_GLOBAL(uint32_t, g_hVShader_LTex1N_XBox)
-#define g_hVShader_LTex2_XBox GAME_GLOBAL(uint32_t, g_hVShader_LTex2_XBox)
-#define g_hVShader_LTex2N_XBox GAME_GLOBAL(uint32_t, g_hVShader_LTex2N_XBox)
+extern uint32_t g_hVShader_Tex1_XBox;
+extern uint32_t g_hVShader_Tex1C_XBox;
+extern uint32_t g_hVShader_LTex1_XBox;
+extern uint32_t g_hVShader_LTex1N_XBox;
+extern uint32_t g_hVShader_LTex2_XBox;
+extern uint32_t g_hVShader_LTex2N_XBox;
 
 /* the vertex cache: vertex and age of each entry (-1 empty), the next age, hits and misses */
 #define g_VCacheVert (GAME_ARRAY(int, g_VCacheVert))

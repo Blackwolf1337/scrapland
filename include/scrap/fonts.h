@@ -85,17 +85,17 @@ typedef struct CUnifont {
 } CUnifont;
 SD_SIZE(CUnifont, 0x10);
 
-#define g_Unifont (GAME_GLOBAL(CUnifont, g_Unifont))
-#define g_FontsDir GAME_GLOBAL(const char *, g_FontsDir)	/* "2d/fonts-drm/" */
-#define g_FntComic14 GAME_GLOBAL(CFont3 *, g_FntComic14)
-#define g_FntTerm8 GAME_GLOBAL(CFont3 *, g_FntTerm8)
+extern CUnifont g_Unifont;
+extern const char *g_FontsDir;	/* "2d/fonts-drm/" */
+extern CFont3 *g_FntComic14;
+extern CFont3 *g_FntTerm8;
 /* the materials of the outline of CFont3_PrintOutline (the font and the unicode font), made again after each start
  * of the device (g_EngineInits) or for another texture */
-#define g_FntMatOutline GAME_GLOBAL(CMaterial *, g_FntMatOutline)
-#define g_FntMatOutlineInit GAME_GLOBAL(int, g_FntMatOutlineInit)
-#define g_FntMatOutlineUni GAME_GLOBAL(CMaterial *, g_FntMatOutlineUni)
-#define g_FntMatOutlineUniInit GAME_GLOBAL(int, g_FntMatOutlineUniInit)
-#define g_EngineInits GAME_GLOBAL(int, g_EngineInits)	/* the starts of the device objects of the engine */
+extern CMaterial *g_FntMatOutline;
+extern int g_FntMatOutlineInit;
+extern CMaterial *g_FntMatOutlineUni;
+extern int g_FntMatOutlineUniInit;
+extern int g_EngineInits;	/* the starts of the device objects of the engine */
 
 CFontGrid *CFontGrid_ctor(CFontGrid *self, const char *tex, const char *opac, byte first, byte last,
 	int cellWidth, int cellHeight, float space);

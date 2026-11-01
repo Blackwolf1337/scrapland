@@ -173,13 +173,13 @@
 
 /* the state of the module */
 #define g_InfernoHitName (GAME_ARRAY(char, g_InfernoHitName))	/* 0x80, the entity of the sphere callback */
-#define g_InfernoOwner GAME_GLOBAL(cEntity *, g_InfernoOwner)	/* the ship of the exploding missile, NULL if none */
-#define g_InfernoRange GAME_GLOBAL(float, g_InfernoRange)
-#define g_InfernoMissile GAME_GLOBAL(cEntity *, g_InfernoMissile)
+extern cEntity *g_InfernoOwner;	/* the ship of the exploding missile, NULL if none */
+extern float g_InfernoRange;
+extern cEntity *g_InfernoMissile;
 #define g_InfernoHudTarget (GAME_ARRAY(char[0x80], g_InfernoHudTarget))	/* per player: the target shown */
 #define g_InfernoHudTime (GAME_ARRAY(float, g_InfernoHudTime))	/* per player */
-#define g_InfernoPos GAME_GLOBAL(vec3_t, g_InfernoPos)
-#define g_SonicHitPos GAME_GLOBAL(vec3_t, g_SonicHitPos)
+extern vec3_t g_InfernoPos;
+extern vec3_t g_SonicHitPos;
 #define g_SwarmHudTarget (GAME_ARRAY(char[0x80], g_SwarmHudTarget))
 #define g_SwarmHudTime (GAME_ARRAY(float, g_SwarmHudTime))
 #define g_InfernoSphereFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0))

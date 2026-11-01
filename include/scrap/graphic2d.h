@@ -54,10 +54,10 @@ typedef struct Vert2D {
 SD_SIZE(Vert2D, 0x20);
 
 /* the 2D screen size and its inverses */
-#define g_Screen2DW GAME_GLOBAL(int, g_Screen2DW)
-#define g_Screen2DH GAME_GLOBAL(int, g_Screen2DH)
-#define g_Screen2DInvW GAME_GLOBAL(double, g_Screen2DInvW)
-#define g_Screen2DInvH GAME_GLOBAL(double, g_Screen2DInvH)
+extern int g_Screen2DW;
+extern int g_Screen2DH;
+extern double g_Screen2DInvW;
+extern double g_Screen2DInvH;
 #define g_SpriteScaleWidth GAME_GLOBAL_IN(float, GVar_SpriteScaleWidth, 16)
 #define g_Verts2D (GAME_ARRAY(Vert2D, g_Verts2D))	/* MAX_VERT_2D, the polygon of the last draw */
 

@@ -44,11 +44,11 @@
 #define g_S_VoiceoverVolumeDef GAME_GLOBAL_IN(float, GVar_S_VoiceoverVolume, 20)
 
 /* the state of the music and of the talk voice (voice 2) */
-#define g_MusicFade GAME_GLOBAL(float, g_MusicFade)		/* the fade to the other music */
-#define g_MusicWait GAME_GLOBAL(float, g_MusicWait)		/* no new change before it runs out */
-#define g_MusicAction GAME_GLOBAL(int, g_MusicAction)		/* the action music plays */
-#define g_TalkDelay GAME_GLOBAL(float, g_TalkDelay)		/* until the talk voice starts */
-#define g_TalkStop GAME_GLOBAL(byte, g_TalkStop)		/* stop instead of starting it */
+extern float g_MusicFade;		/* the fade to the other music */
+extern float g_MusicWait;		/* no new change before it runs out */
+extern int g_MusicAction;		/* the action music plays */
+extern float g_TalkDelay;		/* until the talk voice starts */
+extern byte g_TalkStop;		/* stop instead of starting it */
 
 #define TALK_VOICE 2
 
@@ -59,7 +59,7 @@
 #define g_VoicePlayDelay GAME_GLOBAL_IN(float, GVar_VoicePlayDelay, 16)	/* VoicePlayDelay */
 #define g_StreamPath GAME_GLOBAL_IN(const char *, GVar_StreamPath, 16)	/* StreamPath "Sounds/Stream/" */
 #define g_VoicePath GAME_GLOBAL_IN(const char *, GVar_VoicePath, 16)	/* VoicePath "Sounds/Voices/" */
-#define g_VoiceCount GAME_GLOBAL(uint32_t, g_VoiceCount)	/* the voices played, picks the variant */
+extern uint32_t g_VoiceCount;	/* the voices played, picks the variant */
 
 void Sound_UpdateVoice(int voice);
 

@@ -72,9 +72,9 @@ SD_SIZE(CNodeFX_Spring, 0x40);
 #define g_NodeFXWheelShow GAME_GLOBAL_IN(int, GVar_NodeFXWheelShow, 16)	/* NodeFXWheelShow */
 #define g_NodeFXWheelSlide GAME_GLOBAL_IN(float, GVar_NodeFXWheelSlide, 16)	/* NodeFXWheelSlide */
 /* the seconds of the frame */
-#define g_FrameSec GAME_GLOBAL(float, g_FrameSec)
+extern float g_FrameSec;
 /* the section "NodeEffect" of the user properties */
-#define g_NodeEffectSect GAME_GLOBAL(const char *, g_NodeEffectSect)
+extern const char *g_NodeEffectSect;
 
 /* the effect of type (NULL: "Type" of the NodeEffect section of the node), NULL for an unknown one */
 void *NodeFX_New(const char *type, CNode3D *node);

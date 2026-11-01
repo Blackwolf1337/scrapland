@@ -14,12 +14,12 @@
 #include "scrap/weapons.h"
 
 #define CRUSTYLOCALLOGIC_VFTABLE GAME_VFTABLE(cRustyLocalLogic_vftable)
-#define g_JunkPointsList GAME_GLOBAL(cEntityListData *, g_JunkPointsList)
+extern cEntityListData *g_JunkPointsList;
 #define g_JunkPointsListName GAME_GLOBAL_IN(char *, GVar_JunkPointsListName, 16)	/* cString "JunkPointsListName" */
-#define g_RustyLoops GAME_GLOBAL(int, g_RustyLoops)			/* the working loops done at this point */
+extern int g_RustyLoops;			/* the working loops done at this point */
 #define g_NumWorkingLoops GAME_GLOBAL_IN(int, GVar_NumWorkingLoops, 16)
 #define g_PlatformRadiusSqr GAME_GLOBAL_IN(int, GVar_PlatformRadiusSqr, 16)
-#define s_RustyLastJunkPoint GAME_GLOBAL(int, s_RustyLastJunkPoint)		/* -1 at the start */
+extern int s_RustyLastJunkPoint;		/* -1 at the start */
 
 void *cRustyLocalLogic_ctor(void *mem, cEntity *parent) {
 	cRustyLocalLogic *self = mem;

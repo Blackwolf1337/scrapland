@@ -133,7 +133,7 @@ int cWeaponManager_WeaponNeed(cWeaponManager *self);
 /* Weaps/ATPC.cpp: the shot of the ATPC (a charge per mounted slot), its HUD item and the debris cloud */
 #define g_ATPCShooter (GAME_ARRAY(char, g_ATPCShooter))		/* 0x80 bytes, the vehicle of the last shot */
 #define g_ATPCVictim (GAME_ARRAY(char, g_ATPCVictim))		/* 0x80 bytes */
-#define g_ATPCNumSlots GAME_GLOBAL(float, g_ATPCNumSlots)		/* the slots of the last shot */
+extern float g_ATPCNumSlots;		/* the slots of the last shot */
 #define g_ATPCAmmoCost GAME_GLOBAL_IN(float, GVar_ATPCAmmoCost, 16)
 #define g_ATPCExtraDamage GAME_GLOBAL_IN(int, GVar_ATPCExtraDamage, 16)
 #define g_ATPCExplosionRadius GAME_GLOBAL_IN(float, GVar_ATPCExplosionRadius, 16)

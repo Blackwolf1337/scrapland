@@ -217,7 +217,7 @@ SD_OFFSET(cFXElementsMentalControllerMainFX, glowColor, 0x41f8);
 SD_SIZE(cFXElementsMentalControllerMainFX, 0x4278);
 
 /* the main controller of the level, NULL before the Press elements are made */
-#define g_MentalMainFX GAME_GLOBAL(cFXElementsMentalControllerMainFX *, g_MentalMainFX)
+extern cFXElementsMentalControllerMainFX *g_MentalMainFX;
 #define g_MentalControllerMaxDist GAME_GLOBAL_IN(float, GVar_FXElementsMentalControllerMaxDist, 16)	/* FXElementsMentalControllerMaxDist */
 
 cFXElementsMentalController *cFXElementsMentalController_ctor(cFXElementsMentalController *self,

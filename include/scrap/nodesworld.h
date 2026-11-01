@@ -296,7 +296,7 @@ SD_SIZE(CNodesWorld, 0x3f0);
 
 /* the globals of the module */
 #define g_NWDebugSegs GAME_GLOBAL_IN(int, GVar_ShowTestCanGoAI, 16)		/* the path tests keep their segments in the list they get */
-#define g_NWNodeRadius GAME_GLOBAL(float, g_NWNodeRadius)	/* 751 outdoors, 131 indoors */
+extern float g_NWNodeRadius;	/* 751 outdoors, 131 indoors */
 #define g_NWF60 GAME_GLOBAL_IN(float, GVar_RADIUS_OBJECTIVE_IN_ROUTE, 16)
 #define g_NWAnalyzeOn GAME_GLOBAL_IN(int, GVar_ShowAI, 16)
 #define g_NWDrawMode GAME_GLOBAL_IN(int, GVar_ShowNodesAI, 16)		/* what the debug view of the graph draws */

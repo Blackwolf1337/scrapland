@@ -16,12 +16,12 @@
 #define g_VideoScaleGreen GAME_GLOBAL_IN(float, GVar_VideoScaleGreen, 16)
 #define g_VideoScaleBlue GAME_GLOBAL_IN(float, GVar_VideoScaleBlue, 16)
 /* the values of the ramp set last */
-#define g_GammaLast2x GAME_GLOBAL(int, g_GammaLast2x)
-#define g_GammaLastRGB GAME_GLOBAL(float, g_GammaLastRGB)
-#define g_GammaLastScale GAME_GLOBAL(float, g_GammaLastScale)
-#define g_GammaLastRed GAME_GLOBAL(float, g_GammaLastRed)
-#define g_GammaLastGreen GAME_GLOBAL(float, g_GammaLastGreen)
-#define g_GammaLastBlue GAME_GLOBAL(float, g_GammaLastBlue)
+extern int g_GammaLast2x;
+extern float g_GammaLastRGB;
+extern float g_GammaLastScale;
+extern float g_GammaLastRed;
+extern float g_GammaLastGreen;
+extern float g_GammaLastBlue;
 
 /* one channel through the curve, limited to 0..65535 */
 static uint16_t Gamma_Channel(uint16_t w, float expo, float mult, float scale) {

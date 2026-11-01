@@ -10,7 +10,7 @@
 #include "scrap/scorer.h"
 
 /* __local_stdio_printf_options of the UCRT in the exe */
-#define g_PrintfOptions GAME_GLOBAL(uint64_t, g_PrintfOptions)
+extern uint64_t g_PrintfOptions;
 /* _CRT_INTERNAL_PRINTF_LEGACY_VSPRINTF_NULL_TERMINATION */
 #define PRINTF_LEGACY_NULL_TERMINATION 1
 

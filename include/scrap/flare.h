@@ -12,17 +12,17 @@
 
 #define CFLARE_VFTABLE GAME_VFTABLE(CFlare_vftable)
 
-#define g_FlareSize GAME_GLOBAL(float, g_FlareSize)		/* tam_def */
-#define g_FlareAttenDist GAME_GLOBAL(int, g_FlareAttenDist)	/* aten_dist */
-#define g_FlareAttenDistIni GAME_GLOBAL(float, g_FlareAttenDistIni)	/* aten_dist_ini */
-#define g_FlareAttenDistEnd GAME_GLOBAL(float, g_FlareAttenDistEnd)	/* aten_dist_fin */
-#define g_FlareFadeIn GAME_GLOBAL(float, g_FlareFadeIn)	/* fundido_ent */
-#define g_FlareFadeOut GAME_GLOBAL(float, g_FlareFadeOut)	/* fundido_sal */
-#define g_FlareShowInfo GAME_GLOBAL(int, g_FlareShowInfo)		/* ver_info */
+extern float g_FlareSize;		/* tam_def */
+extern int g_FlareAttenDist;	/* aten_dist */
+extern float g_FlareAttenDistIni;	/* aten_dist_ini */
+extern float g_FlareAttenDistEnd;	/* aten_dist_fin */
+extern float g_FlareFadeIn;	/* fundido_ent */
+extern float g_FlareFadeOut;	/* fundido_sal */
+extern int g_FlareShowInfo;		/* ver_info */
 #define g_SkipFlares GAME_GLOBAL_IN(int, GVar_R_SkipFlares, 16)		/* R_SkipFlares */
 #define g_ShowFlaresInfo GAME_GLOBAL_IN(int, GVar_R_ShowFlaresInfo, 16)	/* R_ShowFlaresInfo */
-#define g_Overdraw GAME_GLOBAL(int, g_Overdraw)		/* video sobredib, the overdraw view */
-#define g_TimeMsF GAME_GLOBAL(float, g_TimeMsF)		/* the time of the engine in ms */
+extern int g_Overdraw;		/* video sobredib, the overdraw view */
+extern float g_TimeMsF;		/* the time of the engine in ms */
 
 typedef struct CFlare {
 	void **vftable;			/* 0x00 OBJ3D_VF_* */

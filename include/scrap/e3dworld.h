@@ -43,7 +43,7 @@ SD_OFFSET(CWorld, camera, 0x2c);
 SD_OFFSET(CWorld, dummies, 0xc4);
 SD_SIZE(CWorld, 0xc8);
 
-#define g_World GAME_GLOBAL(CWorld *, g_World)
+extern CWorld *g_World;
 
 /* the inline accessors of world.h */
 static inline CWorld *World_Get(void) {
@@ -71,9 +71,9 @@ static inline CGround *World_Ground(void) {
 #define g_ShowWorldDummies GAME_GLOBAL_IN(const char *, GVar_ShowWorldDummies, 16)	/* a pattern of the names */
 #define g_SkyInit GAME_GLOBAL_IN(int, GVar_SkyInit, 16)
 /* [mapa_sombras] of the ini: the shadow maps of bsp.cpp */
-#define g_ShadowMapUse GAME_GLOBAL(int, g_ShadowMapUse)
-#define g_ShadowMapCalculate GAME_GLOBAL(int, g_ShadowMapCalculate)
-#define g_ShadowMapDlg GAME_GLOBAL(int, g_ShadowMapDlg)
+extern int g_ShadowMapUse;
+extern int g_ShadowMapCalculate;
+extern int g_ShadowMapDlg;
 
 CWorld *CWorld_ctor(CWorld *self);
 void CWorld_dtor(CWorld *self);

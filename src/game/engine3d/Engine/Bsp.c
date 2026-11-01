@@ -1957,8 +1957,8 @@ int BspTri_CmpZone(const void *pa, const void *pb) {
 
 /* the map compiler: debug output, the TXF cache, the area sums */
 
-#define g_BspDebugCnt GAME_GLOBAL(int, g_BspDebugCnt)
-#define g_BspDebugSel GAME_GLOBAL(int, g_BspDebugSel)		/* the region drawn without links */
+extern int g_BspDebugCnt;
+extern int g_BspDebugSel;		/* the region drawn without links */
 /* the collision cache counters of suelo.cpp: hit, miss, peak */
 #define g_BspCacheStats (GAME_ARRAY(const int, g_BspCacheStats))	/* [3], the hits, the misses and g_CollisionTestsMax */
 

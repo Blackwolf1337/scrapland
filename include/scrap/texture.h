@@ -79,7 +79,7 @@ SD_OFFSET(CTexture, tex, 0x228);
 SD_OFFSET(CTexture, mipmap, 0x23c);
 SD_OFFSET(CTexture, multi, 0x248);
 
-#define g_TexList GAME_GLOBAL(CTexture *, g_TexList)
+extern CTexture *g_TexList;
 
 CMultiSprite *CMultiSprite_ctor(CMultiSprite *self);
 void CMultiSprite_dtor(CMultiSprite *self);

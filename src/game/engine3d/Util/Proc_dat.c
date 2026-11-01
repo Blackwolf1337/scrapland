@@ -15,10 +15,10 @@
 #define g_ProcTypes (GAME_ARRAY(cProcType, g_ProcTypes))	/* tipo_si_no, tipo_bucle, tipo_nota, ... */
 #define g_ProcBuf (GAME_ARRAY(char, g_ProcBuf))	/* 0x400, the number of an identifier */
 
-#define g_ProcRangeChar GAME_GLOBAL(procrange_t, g_ProcRangeChar)
-#define g_ProcRangeByte GAME_GLOBAL(procrange_t, g_ProcRangeByte)
-#define g_ProcRangeShort GAME_GLOBAL(procrange_t, g_ProcRangeShort)
-#define g_ProcRangeWord GAME_GLOBAL(procrange_t, g_ProcRangeWord)
+extern procrange_t g_ProcRangeChar;
+extern procrange_t g_ProcRangeByte;
+extern procrange_t g_ProcRangeShort;
+extern procrange_t g_ProcRangeWord;
 
 #define IS_BLANK(c) ((c) == '\t' || (c) == ' ')
 

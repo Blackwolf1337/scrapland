@@ -1423,13 +1423,13 @@ byte Scorer_Render(void) {
 #define g_ConsoleClosing GAME_GLOBAL_IN(byte, group_4601fc, 2)
 #define g_ConsoleBusy GAME_GLOBAL_IN(byte, group_4601fc, 3)
 #define g_ConsoleSavedKeyboard (GAME_ARRAY(cVirtualKeyboard, g_ConsoleSavedKeyboard))
-#define g_ConsoleSavedSet GAME_GLOBAL(uint32_t, g_ConsoleSavedSet)
+extern uint32_t g_ConsoleSavedSet;
 #define g_ConsoleSavedInput (GAME_ARRAY(cPlayerInput, g_ConsoleSavedInput))
-#define g_ConsoleWhite GAME_GLOBAL(CPsaImage *, g_ConsoleWhite)
+extern CPsaImage *g_ConsoleWhite;
 #define g_ConsoleHistory (GAME_ARRAY(char *, g_ConsoleHistory))	/* cStrings: 0 the line typed, 1.. the commands */
 #define CONSOLE_HISTORY 16
-#define g_ConsoleTime GAME_GLOBAL(float, g_ConsoleTime)		/* the game time of the open or the close */
-#define g_ConsoleHistoryPos GAME_GLOBAL(int, g_ConsoleHistoryPos)
+extern float g_ConsoleTime;		/* the game time of the open or the close */
+extern int g_ConsoleHistoryPos;
 #define CONSOLE_KEYBOARD_SIZE 0x10c
 #define CONSOLE_ONINPUT 0x1741b0			/* Console_OnInput as the exe stores it */
 

@@ -24,8 +24,8 @@ SD_SIZE(cLangItem, 0x10);
 #define g_LangTable (&GAME_GLOBAL(HashTable, g_LangTable))	/* 457 slots, case-insensitive */
 #define g_LangName (GAME_ARRAY_IN(cString, GVar_SelectedLanguage, 16))		/* the language asked for */
 #define g_LangDefault GAME_GLOBAL_IN(const char *, GVar_SelectedLanguage, 20)	/* the language when that file is missing */
-#define g_LangBuffer GAME_GLOBAL(char *, g_LangBuffer)
-#define g_IdLang GAME_GLOBAL(char *, g_IdLang)		/* the language loaded */
+extern char *g_LangBuffer;
+extern char *g_IdLang;		/* the language loaded */
 
 cLangItem *LangTable_Find(HashTable *self, const char *key, uint32_t slot) {
 	for (cLangItem *it = (cLangItem *)self->slots[slot]; it; it = it->next) {

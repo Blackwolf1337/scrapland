@@ -44,15 +44,15 @@ typedef struct cClex {
 } cClex;
 SD_SIZE(cClex, 0x10);
 
-#define g_Lex GAME_GLOBAL(cLexFile *, g_Lex)
-#define g_LexCh GAME_GLOBAL(int, g_LexCh)	/* the next character, -1 at the end */
+extern cLexFile *g_Lex;
+extern int g_LexCh;	/* the next character, -1 at the end */
 #define g_LexToken (GAME_ARRAY(char, g_LexToken))	/* MAX_LAST_CLEX */
-#define g_LexTokenLen GAME_GLOBAL(int, g_LexTokenLen)
-#define g_LexErrors GAME_GLOBAL(int, g_LexErrors)
-#define g_LexWarnings GAME_GLOBAL(int, g_LexWarnings)
+extern int g_LexTokenLen;
+extern int g_LexErrors;
+extern int g_LexWarnings;
 #define g_LexDir (GAME_ARRAY(char, g_LexDir))	/* MAX_FILEPATH, where Lex_Open looks second */
 #define g_LexOut GAME_GLOBAL(lexout_t, g_LexOut)
-#define g_Cl GAME_GLOBAL(cClex, g_Cl)
+extern cClex g_Cl;
 
 typedef void (*lexout_t)(const char *text);
 

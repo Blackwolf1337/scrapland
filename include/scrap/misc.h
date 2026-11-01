@@ -25,19 +25,19 @@ enum {
 	LOG_ORANGE = 0x80,		/* from log level 3 */
 };
 
-#define g_LogFileMask GAME_GLOBAL(uint32_t, g_LogFileMask)
-#define g_LogConMask GAME_GLOBAL(uint32_t, g_LogConMask)
+extern uint32_t g_LogFileMask;
+extern uint32_t g_LogConMask;
 #define g_LogLevel GAME_GLOBAL_IN(int, GVar_EngineDebugLevel, 16)	/* 10: the console mask goes back to 0x91 */
 #define LOG_LEVEL_RESET 10
 #define LOG_CON_DEFAULT 0x91
 /* the log of the engine ("FILE OPEN: ...") */
 #define g_FileLog (GAME_ARRAY(cLog, g_FileLog))
 /* the debug console: on, as a dialog window, as a text console */
-#define g_DbgCon GAME_GLOBAL(int, g_DbgCon)
-#define g_DbgConWindow GAME_GLOBAL(int, g_DbgConWindow)
-#define g_DbgConStd GAME_GLOBAL(int, g_DbgConStd)
+extern int g_DbgCon;
+extern int g_DbgConWindow;
+extern int g_DbgConStd;
 /* the handler of the lines typed into the debug dialog (E3D_Command), cdecl void(char *line) */
-#define g_E3DCmdProc GAME_GLOBAL(void *, g_E3DCmdProc)
+extern void *g_E3DCmdProc;
 
 void cLog_Open(cLog *self);
 /* text to the console printers of the bits in mask and to the file */

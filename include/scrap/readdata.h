@@ -20,8 +20,8 @@ typedef struct cReadStack {
 } cReadStack;
 SD_SIZE(cReadStack, 0x514);
 
-#define g_ReadString GAME_GLOBAL(char *, g_ReadString)
-#define g_ReadStack GAME_GLOBAL(cReadStack *, g_ReadStack)
+extern char *g_ReadString;
+extern cReadStack *g_ReadStack;
 
 /* dir (may be NULL) and name, binary "rb" else "rt" */
 void Read_Open(const char *dir, const char *name, int binary);

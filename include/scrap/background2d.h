@@ -48,13 +48,13 @@ void CBackground2D_Render(CBackground2D *self);
 
 /* the background sprite: the name set, a new sprite when it changes */
 #define BACKGROUND2D_NAME 0x108
-#define g_BackgroundPending GAME_GLOBAL(byte, g_BackgroundPending)
-#define g_BackgroundFrame GAME_GLOBAL(int, g_BackgroundFrame)		/* uframe3d, the frame of the last draw */
-#define g_BackgroundGraphic GAME_GLOBAL(CGraphic2D *, g_BackgroundGraphic)
+extern byte g_BackgroundPending;
+extern int g_BackgroundFrame;		/* uframe3d, the frame of the last draw */
+extern CGraphic2D *g_BackgroundGraphic;
 #define g_BackgroundCurrent (GAME_ARRAY(char, g_BackgroundCurrent))	/* BACKGROUND2D_NAME */
 #define g_BackgroundNew (GAME_ARRAY(char, g_BackgroundNew))	/* BACKGROUND2D_NAME */
-#define g_BackgroundColor GAME_GLOBAL(uint32_t, g_BackgroundColor)
-#define g_BackgroundColorNew GAME_GLOBAL(uint32_t, g_BackgroundColorNew)
+extern uint32_t g_BackgroundColor;
+extern uint32_t g_BackgroundColorNew;
 
 void Background2D_Reset(void);
 /* the sprite of the new name (once a frame, CHECK) */

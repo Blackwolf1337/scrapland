@@ -33,11 +33,11 @@ SD_SIZE(CGameCamera, 0x3c);
 #define g_ShowSceneCamera GAME_GLOBAL_IN(int, GVar_ShowSceneCamera, 16)		/* ShowSceneCamera */
 #define g_CameraScene GAME_GLOBAL_IN(int, GVar_CameraScene, 16)		/* CameraScene */
 /* 1: the cameras follow their scene nodes (also CCamera at rva 0x29cba0) */
-#define g_CameraNodes GAME_GLOBAL(int, g_CameraNodes)
+extern int g_CameraNodes;
 /* what CamComposite_Find found last, for ShowSceneCamera */
-#define g_CamCompositeIdx GAME_GLOBAL(int, g_CamCompositeIdx)
-#define g_CamCompositeFrame GAME_GLOBAL(float, g_CamCompositeFrame)
-#define g_CamCompositeFPS GAME_GLOBAL(float, g_CamCompositeFPS)
+extern int g_CamCompositeIdx;
+extern float g_CamCompositeFrame;
+extern float g_CamCompositeFPS;
 #define g_CamCompositeName (GAME_ARRAY(char, g_CamCompositeName))	/* [0x80] */
 
 CGameCamera *CGameCamera_ctor(CGameCamera *self);

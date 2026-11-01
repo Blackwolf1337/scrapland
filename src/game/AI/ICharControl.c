@@ -17,8 +17,8 @@
 
 /* the characters near the control (CharsNear, FindAvoid): the sphere test collects them here */
 #define g_AICCNear (GAME_ARRAY(cEntity *, g_AICCNear))	/* 20 */
-#define g_AICCNumNear GAME_GLOBAL(int, g_AICCNumNear)
-#define g_AICCNearSelf GAME_GLOBAL(cEntity *, g_AICCNearSelf)	/* the character itself, left out */
+extern int g_AICCNumNear;
+extern cEntity *g_AICCNearSelf;	/* the character itself, left out */
 #define g_AICCNearFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0))
 #define AICC_NEAR_NATIVE ((nativefunc_t)AICC_NearChar)	/* AICC_NearChar (its C version behind the hook) */
 #define AICC_MAX_NEAR 20

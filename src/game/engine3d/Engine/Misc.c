@@ -389,17 +389,17 @@ byte Dlg_GetFloat(void *hwnd, int id, float *out) {
 
 #define g_DbgStdOpen GAME_GLOBAL_IN(byte, group_4ab91c, 0)
 #define g_DbgWinOpen GAME_GLOBAL_IN(byte, group_4ab91c, 1)
-#define g_DbgWnd GAME_GLOBAL(void *, g_DbgWnd)
-#define g_DbgList GAME_GLOBAL(void *, g_DbgList)	/* the list box of the dialog */
-#define g_DbgEdit GAME_GLOBAL(void *, g_DbgEdit)	/* the command line */
-#define g_DbgButton GAME_GLOBAL(void *, g_DbgButton)
+extern void *g_DbgWnd;
+extern void *g_DbgList;	/* the list box of the dialog */
+extern void *g_DbgEdit;	/* the command line */
+extern void *g_DbgButton;
 #define g_DbgClient (GAME_ARRAY(int32_t, g_DbgClient))	/* the client rectangle at WM_INITDIALOG */
 #define g_DbgListRect (GAME_ARRAY(int32_t, g_DbgListRect))	/* the normal rectangles of the three controls */
 #define g_DbgEditRect (GAME_ARRAY(int32_t, g_DbgEditRect))
 #define g_DbgButtonRect (GAME_ARRAY(int32_t, g_DbgButtonRect))
 #define g_DbgLine (GAME_ARRAY(char, g_DbgLine))	/* 0x400, the line being written */
-#define g_DbgLinePos GAME_GLOBAL(int, g_DbgLinePos)
-#define g_DbgLineLen GAME_GLOBAL(int, g_DbgLineLen)
+extern int g_DbgLinePos;
+extern int g_DbgLineLen;
 #define g_DbgCharMap (GAME_ARRAY(const char, g_DbgCharMap))	/* the characters from 0xe1 for the console */
 #define DBGWIN_DIALOG 0x9a
 #define DBGWIN_PROC 0x2373d0	/* DbgWin_DlgProc */

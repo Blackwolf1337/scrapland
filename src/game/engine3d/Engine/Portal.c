@@ -94,7 +94,7 @@ void CPortal_Render(CPortal *self, void *dev, CRenderNode *r) {
 }
 
 /* the material of the debug drawing, a static of CPortal_DrawDebug */
-#define g_PortalMat (GAME_GLOBAL(CMaterial, g_PortalMat))
+extern CMaterial g_PortalMat;
 #define g_PortalMatGuard (GAME_ARRAY(int, g_PortalMatGuard))
 
 /* the atexit destructor of it */

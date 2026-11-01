@@ -24,8 +24,8 @@
 #define g_DoorBack GAME_GLOBAL_IN(byte, group_447600, 1)
 #define g_DoorUsrFront GAME_GLOBAL_IN(byte, group_447600, 2)	/* player 0 in front */
 #define g_DoorUsrBack GAME_GLOBAL_IN(byte, group_447600, 3)
-#define g_DoorAngY GAME_GLOBAL(float, g_DoorAngY)		/* the y angle of the door */
-#define g_DoorPos GAME_GLOBAL(vec3_t, g_DoorPos)
+extern float g_DoorAngY;		/* the y angle of the door */
+extern vec3_t g_DoorPos;
 #define g_DoorSphereFunc (&GAME_GLOBAL(cPy_Function, g_ChTypeSphereFunc))	/* Doors_SphereEntity for the sphere test */
 #define DOORS_SPHEREENTITY 0x0f0570
 

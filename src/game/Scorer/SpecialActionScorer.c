@@ -167,20 +167,20 @@ void cSpecialActionScorer_Draw(cSpecialActionScorer *self, int player) {
 
 /* ---- the draws of the character actions ---- */
 
-#define g_SpecialActionState GAME_GLOBAL(int, g_SpecialActionState)	/* the icon state drawn last: 0 off, 1 on, 2 active */
-#define g_SpecialActionFade GAME_GLOBAL(float, g_SpecialActionFade)	/* counts down 0.2 s after a state change */
-#define g_GearAimSpreadX GAME_GLOBAL(float, g_GearAimSpreadX)	/* the aim cone of the gear target search */
-#define g_GearAimSpreadY GAME_GLOBAL(float, g_GearAimSpreadY)
-#define g_GearAimMode GAME_GLOBAL(int, g_GearAimMode)		/* 1..3: which targets the search takes */
+extern int g_SpecialActionState;	/* the icon state drawn last: 0 off, 1 on, 2 active */
+extern float g_SpecialActionFade;	/* counts down 0.2 s after a state change */
+extern float g_GearAimSpreadX;	/* the aim cone of the gear target search */
+extern float g_GearAimSpreadY;
+extern int g_GearAimMode;		/* 1..3: which targets the search takes */
 /* the state of the gear aim: the target and its score, its screen position, the aim cross that moves from the
  * center to it (offset, lock time) and the blink of the cross while the energy is low */
-#define g_GearAimTarget GAME_GLOBAL(cEntity *, g_GearAimTarget)
-#define g_GearAimBest GAME_GLOBAL(float, g_GearAimBest)	/* the lowest score of the search, FLT_MAX at its start */
+extern cEntity *g_GearAimTarget;
+extern float g_GearAimBest;	/* the lowest score of the search, FLT_MAX at its start */
 #define g_GearAimPos (GAME_ARRAY(float, g_GearAimPos))	/* [2] */
 #define g_GearAimCenter (GAME_ARRAY(float, g_GearAimCenter))	/* [2] where the cross starts, 320 240 */
 #define g_GearAimOff (GAME_ARRAY(float, g_GearAimOff))	/* [2] Pos - Center */
-#define g_GearAimLocked GAME_GLOBAL(byte, g_GearAimLocked)
-#define g_GearAimLockTime GAME_GLOBAL(float, g_GearAimLockTime)
+extern byte g_GearAimLocked;
+extern float g_GearAimLockTime;
 #define g_GearTargetCrossBlinkTime GAME_GLOBAL_IN(float, GVar_GearTargetCrossBlinkTime, 20)
 #define g_GearAimBlink GAME_GLOBAL_IN(float, GVar_GearTargetCrossBlinkTime, 16)
 #define g_GearTargetSphereRadius GAME_GLOBAL_IN(float, GVar_GearTargetSphereRadius, 16)

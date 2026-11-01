@@ -24,10 +24,10 @@ SD_OFFSET(WorldNodeInfo, m, 0x4c);
 SD_OFFSET(WorldNodeInfo, dummy, 0x8c);
 
 /* the state of the walk */
-#define g_CountSprite2D GAME_GLOBAL(int, g_CountSprite2D)
-#define g_WorldInfoNode GAME_GLOBAL(CNode3D *, g_WorldInfoNode)
-#define g_WorldInfoDummy GAME_GLOBAL(WorldDummy *, g_WorldInfoDummy)	/* DummyInfo */
-#define g_WorldInfoWild GAME_GLOBAL(byte, g_WorldInfoWild)
+extern int g_CountSprite2D;
+extern CNode3D *g_WorldInfoNode;
+extern WorldDummy *g_WorldInfoDummy;	/* DummyInfo */
+extern byte g_WorldInfoWild;
 #define g_WorldInfoPattern (GAME_ARRAY(char, g_WorldInfoPattern))	/* 0x104, "" for all */
 
 /* RenderMode */
@@ -39,16 +39,16 @@ SD_OFFSET(WorldNodeInfo, dummy, 0x8c);
 #define RENDERMODE_SHADOWS 0x103	/* toggles the stencil shadows */
 #define g_RenderMode100 GAME_GLOBAL_IN(byte, group_4a8efc, 1)
 #define g_VertexSpecular GAME_GLOBAL_IN(byte, group_4a8efc, 0)
-#define g_ShadowsStencil GAME_GLOBAL(int, g_ShadowsStencil)	/* [sombras_stencil] use */
+extern int g_ShadowsStencil;	/* [sombras_stencil] use */
 
 /* the splash screens and the loading bar */
 #define g_SplashOn GAME_GLOBAL_IN(int, GVar_ShowSplashScreen, 16)
 #define g_SplashFade GAME_GLOBAL_IN(uint32_t, GVar_SplashScreenFade, 16)	/* ms */
-#define g_SplashTime GAME_GLOBAL(uint32_t, g_SplashTime)	/* timeGetTime at the end of the last one */
+extern uint32_t g_SplashTime;	/* timeGetTime at the end of the last one */
 #define g_SplashLast (GAME_ARRAY(char, g_SplashLast))	/* 0x104, the last one shown */
 #define g_LoadingOn GAME_GLOBAL_IN(byte, group_4a8324, 0)
 #define g_LoadingBar GAME_GLOBAL_IN(int, GVar_ShowProgressBar, 16)
-#define g_LoadingCount GAME_GLOBAL(int, g_LoadingCount)		/* the steps of Loading_Step(-1) */
+extern int g_LoadingCount;		/* the steps of Loading_Step(-1) */
 #define g_LoadingTotal GAME_GLOBAL_IN(int, GVar_ProgressBar, 16)
 #define g_LoadingDrawOn GAME_GLOBAL(byte, g_CallbacksOn)
 typedef void (*loadingDraw_t)(void);

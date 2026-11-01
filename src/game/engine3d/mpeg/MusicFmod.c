@@ -35,27 +35,27 @@
 #define g_S_VoiceoverFadeout GAME_GLOBAL_IN(float, GVar_S_VoiceoverFadeout, 16)
 #define g_S_VoiceoverVolume GAME_GLOBAL_IN(float, GVar_S_VoiceoverVolume, 16)
 /* the frame of the engine */
-#define g_RealFrameSecs GAME_GLOBAL(float, g_RealFrameSecs)
-#define g_Fps GAME_GLOBAL(float, g_Fps)
+extern float g_RealFrameSecs;
+extern float g_Fps;
 
 /* the music */
-#define g_MusicCurMainVolume GAME_GLOBAL(float, g_MusicCurMainVolume)	/* approaches MusicMainVolume in 1 / fps steps */
-#define g_MusicVolume GAME_GLOBAL(float, g_MusicVolume)
-#define g_MusicVoiceover GAME_GLOBAL(float, g_MusicVoiceover)		/* the voiceover factor */
-#define g_MusicChannel GAME_GLOBAL(int, g_MusicChannel)		/* -1 until it plays */
-#define g_MusicVoiceoverTarget GAME_GLOBAL(float, g_MusicVoiceoverTarget)
-#define g_MusicVoiceoverSpeed GAME_GLOBAL(float, g_MusicVoiceoverSpeed)
-#define g_MusicFadeTarget GAME_GLOBAL(float, g_MusicFadeTarget)
-#define g_MusicFadeSpeed GAME_GLOBAL(float, g_MusicFadeSpeed)
+extern float g_MusicCurMainVolume;	/* approaches MusicMainVolume in 1 / fps steps */
+extern float g_MusicVolume;
+extern float g_MusicVoiceover;		/* the voiceover factor */
+extern int g_MusicChannel;		/* -1 until it plays */
+extern float g_MusicVoiceoverTarget;
+extern float g_MusicVoiceoverSpeed;
+extern float g_MusicFadeTarget;
+extern float g_MusicFadeSpeed;
 #define g_MusicName (GAME_ARRAY(char, g_MusicName))		/* 0x104 */
-#define g_MusicStream GAME_GLOBAL(void *, g_MusicStream)
-#define g_MusicPaused GAME_GLOBAL(int, g_MusicPaused)
-#define g_MusicOpenTime GAME_GLOBAL(uint32_t, g_MusicOpenTime)
-#define g_MusicWaitTime GAME_GLOBAL(uint32_t, g_MusicWaitTime)
+extern void *g_MusicStream;
+extern int g_MusicPaused;
+extern uint32_t g_MusicOpenTime;
+extern uint32_t g_MusicWaitTime;
 /* the voices */
-#define g_NumVoices GAME_GLOBAL(int, g_NumVoices)
-#define g_NumVoiceovers GAME_GLOBAL(int, g_NumVoiceovers)
-#define g_VoicesPaused GAME_GLOBAL(byte, g_VoicesPaused)
+extern int g_NumVoices;
+extern int g_NumVoiceovers;
+extern byte g_VoicesPaused;
 
 /* |now - since| as the original computes it (cdq, xor, sub) */
 static int Time_Since(uint32_t since) {

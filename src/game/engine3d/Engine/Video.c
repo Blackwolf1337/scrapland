@@ -99,7 +99,7 @@ typedef struct VideoDDSD {
 } VideoDDSD;
 SD_SIZE(VideoDDSD, 0x6c);
 
-#define g_VideoPadHeld GAME_GLOBAL(int, g_VideoPadHeld)
+extern int g_VideoPadHeld;
 #define g_VideoMirror GAME_GLOBAL_IN(uint32_t, GVar_PlayVideoFX, 16)	/* 1: up-down, 2: left-right */
 
 byte Video_PadPressed(void) {

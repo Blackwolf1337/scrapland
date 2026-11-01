@@ -279,7 +279,7 @@ typedef struct cTabScorer {
 } cTabScorer;
 SD_SIZE(cTabScorer, 0xf0);
 
-#define g_TabBackTextWidth GAME_GLOBAL(float, g_TabBackTextWidth)	/* the width of the back text, once */
+extern float g_TabBackTextWidth;	/* the width of the back text, once */
 
 cTabScorer *cTabScorer_ctor(cTabScorer *self);
 void cTabScorer_dtor(cTabScorer *self);
@@ -332,7 +332,7 @@ SD_OFFSET(cTalkScorer, tab, 0x1a64);
 #define g_RemainTalkTime GAME_GLOBAL_IN(float, GVar_RemainTalkTime, 16)	/* RemainTalkTime */
 #define g_TalkTime GAME_GLOBAL_IN(float, GVar_FullTalkTime, 16)		/* the time of the whole talk */
 #define g_TalkCallback (&GAME_GLOBAL(cPy_Function, g_TalkCallback))	/* run at the end of the talk */
-#define g_TalkNumLines GAME_GLOBAL(int, g_TalkNumLines)
+extern int g_TalkNumLines;
 #define g_TalkLines (GAME_ARRAY(char *, g_TalkLines))	/* TALK_MAX_LINES */
 #define g_TalkColor (GAME_ARRAY(int, g_TalkColor))		/* r, g, b */
 

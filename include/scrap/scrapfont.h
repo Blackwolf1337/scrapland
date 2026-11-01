@@ -34,13 +34,13 @@ SD_SIZE(CFont, 0x34);
 #define CFONT_SHADOW 0x20000		/* a black copy at shadow first */
 
 /* the fonts by name (Font_Get) */
-#define g_FontTerminal8 GAME_GLOBAL(CFont *, g_FontTerminal8)
-#define g_FontTerminal8Fixed GAME_GLOBAL(CFont *, g_FontTerminal8Fixed)
-#define g_FontBigNumbers GAME_GLOBAL(CFont *, g_FontBigNumbers)
-#define g_FontScrapBig GAME_GLOBAL(CFont *, g_FontScrapBig)
-#define g_FontScrapMedium GAME_GLOBAL(CFont *, g_FontScrapMedium)
-#define g_FontHoratio GAME_GLOBAL(CFont *, g_FontHoratio)
-#define g_FontHoratioSmall GAME_GLOBAL(CFont *, g_FontHoratioSmall)
+extern CFont *g_FontTerminal8;
+extern CFont *g_FontTerminal8Fixed;
+extern CFont *g_FontBigNumbers;
+extern CFont *g_FontScrapBig;
+extern CFont *g_FontScrapMedium;
+extern CFont *g_FontHoratio;
+extern CFont *g_FontHoratioSmall;
 
 /* CFont_Load(name, unused, NULL): only a NULL name works */
 CFont *CFont_ctor(CFont *self, const char *name, void *unused);
