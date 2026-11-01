@@ -9,10 +9,4 @@
 
 
 const char str_3e3bc8[] = "NodeEffect";
-const char str_3e47c4[] = "Use ObjTMAfterWSM (0/1)";
-const char str_3e47dc[12] = "UseWSM";
-const char str_3e4840[] = "Show nodes tree at model M3D loading time (0/1)";
-const char str_3e4870[] = "ShowNodesTree";
-const char str_3e6ee4[] = "Fast GetYSector (0/1)";
-const char str_3e6efc[] = "FastGetYSector";
 

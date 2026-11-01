@@ -8,56 +8,8 @@
 #include "scrap/shared.h"
 
 
-const char str_3b2880[] = "off";
-const char str_3b2cf4[] = "<OnBeeDeath> function";
-const char str_3b2d14[] = "<OnHit> function";
-const char str_3b2d30[] = "None";
-const char str_3b2d38[] = "Hit";
-const char str_3b2d3c[] = "InOut";
-const char str_3b2d44[] = "Inside";
-const char str_3b2d4c[] = "Linear";
-const char str_3b2d54[] = "Cloud";
-const char str_3b2d5c[] = "Dumb";
-const char str_3b30c0[] =
-	"T.ERROR : '%s' can´t be added at the options list,\n '%c' is not included as separator\n";
-const char str_3b3118[] =
-	"T.ERROR : '%s' can´t be added at the options list,\n '%i' is the maximun number of options!\n";
-const char str_3b326c[] = "relax";
-const char str_3b3274[] = "alert";
-const char str_3b327c[] = "danger";
-const char str_3b3284[] = "<unknow>";
-const char str_3b32d0[] = "killer";
-const char str_3b32d8[] = "green";
-const char str_3b32e0[] = "red";
-const char str_3b32e4[] = "blue";
-const char str_3b32ec[] = "none";
-const char str_3b3814[] = "<ObjMove.OnEnd> function";
-const char str_3b384c[] = "<OnObjSlot> function";
-const char str_3b3968[] = "Select";
-const char str_3b3970[] = "Off";
-const char str_3b3974[] = "Keep";
-const char str_3b397c[] = "Magnet";
-const char str_3b3984[] = "Search";
 const char str_3b53f4[] = "Go";
-const char str_3b63f0[] = "Heavy";
-const char str_3b63f8[] = "Medium";
-const char str_3b6400[] = "Light";
-const char str_3b6408[] = "[Error]";
-const char str_3ba398[] = "WARNING: '%s' action controler doesn´t exist.\n";
-const char str_3ba568[] = "0";
-const char str_3bae88[] = "%s";
-const char str_3baec4[] = "../";
 const char str_3bbe9c[] = "Fire";
-const char str_3bc4b4[] = "User Control definition";
-const char str_3bc588[] = "Kb";
-const char str_3bc7ec[] = "STOP";
-const char str_3bc898[] = "PAUSE";
-const char str_3bca74[] = "Mouse";
-const char str_3bcbc8[] = "Pad1";
-const char str_3bcbd0[] = "Pad2";
-const char str_3bcbd8[] = "Pad3";
-const char str_3bcbe0[] = "Pad4";
-const char str_3bcc00[] = "ERROR";
 const char str_3bd078[] = "GEAR_RELAX";
 const char str_3bd084[] = "GEAR_CHASE";
 const char str_3bd090[] = "GEAR_ATTACK";
@@ -85,8 +37,5 @@ const char str_3bd1e4[] = "GENCHAR_SPECIAL_BEHAVIOUR_1";
 const char str_3bd200[] = "GENCHAR_SPECIAL_BEHAVIOUR_2";
 const char str_3bd21c[] = "GENCHAR_SPECIAL_BEHAVIOUR_3";
 const char str_3bd238[] = "GENCHAR_GET_IT";
-const char str_3bd4a0[] = "BaseLogic";
 const char str_PyMethod_SScorer_Hide[] = "Hide";
-const char str_3becb0[] = "Ojito de pared intenta huir de un poli pequeño. Esto no debe pasar nunca";
-const char str_3befa0[72] = "El Gear intenta huir de un poli pequeño. Esto no debe pasar nunca";
 

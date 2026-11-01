@@ -9,21 +9,8 @@
 
 
 const char str_Empty[] = "";
-const char str_3a3248[] = "RelaxAlarm";
-const char str_3a3890[] = "WithLife";
-const char str_3a38b4[] = "WalkChar";
 const char str_3a3954[] = "Left";
 const char str_3a395c[] = "Right";
-const char str_3a6ea0[] = "Fall";
-const char str_3a77b8[] = "Car";
-const char str_3a8de0[] = "FCam";
-const char str_3acc50[] = "Obj";
-const char str_3acc54[] = "Cam";
-const char str_3acd10[] = "CamPath";
-const char str_3ad078[] = "<OnSwtich func>";
 const char str_3ad2f4[] = "Relax";
-const char str_3adf20[] = "Entity";
 const char str_3ae0f4[] = "Back";
-const char str_3aea4c[] = "Missile";
-const char str_3af3f8[] = "item";
 

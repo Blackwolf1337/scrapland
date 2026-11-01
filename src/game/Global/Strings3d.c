@@ -9,10 +9,6 @@
 
 
 const char str_3d3e38[] = "2d/fonts-drm/";
-const char str_3d598c[] = "omni";
-const char str_3d5994[] = "foco";
-const char str_3d599c[] = "direc";
-const char str_3d5da4[] = "(null)";
 const char str_3d8e70[] = "bmp/lightmap.psh";
 const char str_3d8e84[] = "bmp/specular.psh";
 const char str_3d8e98[] = "bmp/GlowmapMaskEnvBump.psh";
@@ -67,12 +63,6 @@ const char str_3d91f4[] = "DUDVFilter";
 const char str_3d9200[] = "DUDVTarget";
 const char str_3d920c[] = "RadialBlurTarget";
 const char str_3d9220[] = "DiffuseNoLit";
-const char str_3d9f28[] = "PLAY";
-const char str_3d9f30[] = "FADEOUT";
-const char str_3daf58[] = "REPR";
-const char str_3daf60[] = "PAUSA";
-const char str_3daf68[] = "FUND_PAUSA";
-const char str_3daf74[] = "FIN";
 const char str_3dbe94[] = "NO 0";
 const char str_3dbe9c[] = "OFF 0";
 const char str_3dbea4[] = "FALSE 0";
@@ -98,38 +88,6 @@ const char str_3dbf54[] = "tipo_bucle";
 const char str_3dbf60[] = "tipo_nota";
 const char str_3dbf6c[] = "tipo_sample_signo";
 const char str_3dbf80[] = "tipo_sample_mnst";
-const char str_3dc684[] = "No stencil bits\n";
-const char str_3dc698[] = "Not enought stencil bits\n";
-const char str_3dcf1c[] = "zonas: %d";
-const char str_3dcf28[] = "  %d: %d %d   %.3f %.3f %.3f   %.3f %.3f %.3f";
-const char str_3dd008[] = "zona: %d  LX: %d  LY: %d";
-const char str_3dd024[] = "  %d %d  %d %d";
-const char str_3dd0a4[] = "_unasigned_";
-const char str_3dd0ec[] = "[-]";
-const char str_3dd0f0[] = "%d%s";
-const char str_3dd240[] = "Engine3D [DX8]";
-const char str_3dd264[] = "HAL";
-const char str_3dd268[] = "REF";
-const char str_3dd30c[] = "ERROR: ResetDevice(): %08X";
-const char str_3dd33c[] = "ERROR: 'pd3dDevice->Reset()' failed: %08X";
-const char str_3dd3dc[52] = "A D3D object has a non-zero reference count.";
-const char str_3dd490[] =
-	"Could not initialize Direct3D. You may\nwant to check that DirectX 8.1 or better\n"
-	"is correctly installed on your system.\n";
-const char str_3dd508[] = "Could not find any compatible Direct3D\ndevices.";
-const char str_3dd538[] =
-	"This program cannot run in a desktop\nwindow with the current display settings.\n"
-	"Please change your desktop settings to a\n16- or 32-bit display mode and re-run this\nprogram.";
-const char str_3dd620[104] =
-	"This program requires functionality that is\nnot available on your Direct3D hardware\naccelerator.";
-const char str_3dd6d0[112] =
-	"Your Direct3D hardware accelerator cannot\nrender into a window with the current\n"
-	"desktop display settings.\n";
-const char str_3dd740[] =
-	"This program requires functionality that is\nnot available on your Direct3D hardware\n"
-	"accelerator with the current desktop display\nsettings.\n";
-const char str_3dd7f0[] =
-	"A D3D object has a non-zero reference\ncount (meaning things were not properly\ncleaned up).";
 const char str_3de080[] = "VERS";
 const char str_3de088[] = "gestor de mensajes de error";
 const char str_3de0a4[] = "Mar 08 1999";
