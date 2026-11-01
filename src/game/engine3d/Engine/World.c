@@ -396,7 +396,7 @@ void __fastcall CWorld_DrawDummies(CWorld *self) {
 		vec3_t mn = { -50.0f, -50.0f, -50.0f };
 		vec3_t mx = { 50.0f, 50.0f, 50.0f };
 		Debug_DrawBoxM(&m, &mn, &mx, 0xffff00);
-		Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &d->pos, d->ini ? 0xffff : 0xffffff, GAME_STR(str_3bae88), d->name);
+		Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &d->pos, d->ini ? 0xffff : 0xffffff, "%s", d->name);
 		shown++;
 	}
 	Font_PrintfXY(g_FntComic14, 10.0f, 260.0f, "world dummies: %d / %d", shown, total);

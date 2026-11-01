@@ -3328,10 +3328,10 @@ CScene *Scene_Load(const char *name, int arg, const char *name2) {
 
 void ReadM3D_InitShowNodesTree(void) {
 	/* "ShowNodesTree", "Show nodes tree at model M3D loading time (0/1)" */
-	GVar_InitInt(g_ShowNodesTreeVar, GAME_STR(str_3e4870), 0, GAME_STR(str_3e4840), 0);
+	GVar_InitInt(g_ShowNodesTreeVar, "ShowNodesTree", 0, "Show nodes tree at model M3D loading time (0/1)", 0);
 }
 
 void ReadM3D_InitUseWSM(void) {
 	/* "UseWSM", "Use ObjTMAfterWSM (0/1)" */
-	GVar_InitInt(g_UseWSMVar, GAME_STR(str_3e47dc), 0, GAME_STR(str_3e47c4), 0);
+	GVar_InitInt(g_UseWSMVar, "UseWSM", 0, "Use ObjTMAfterWSM (0/1)", 0);
 }

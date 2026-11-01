@@ -12,7 +12,7 @@
 #include "scrap/video.h"
 
 #define GUID_SYSKEYBOARD ((const void *)GAME_PTR(GUID_SYSKEYBOARD, 0))
-#define KB_NAME GAME_STR(str_3bc588)	/* "Kb" */
+#define KB_NAME "Kb"
 /* DIDEVICEOBJECTINSTANCEA of the last label, its tszName at 0x20 */
 #define g_KeyObjInfo (GAME_ARRAY(byte, g_KeyObjInfo))
 #define g_KeyNameBuf (GAME_ARRAY(char, g_KeyNameBuf))	/* 0x28 bytes */

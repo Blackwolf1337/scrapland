@@ -53,13 +53,13 @@ byte AnimMat_Set(CAnimMat *a, float fps, int cycle) {
 const char *AnimMat_ModeName(int mode) {
 	switch (mode) {
 	case ANIMMAT_REPR:
-		return GAME_STR(str_3daf58);
+		return "REPR";
 	case ANIMMAT_PAUSE:
-		return GAME_STR(str_3daf60);
+		return "PAUSA";
 	case ANIMMAT_FADE_PAUSE:
-		return GAME_STR(str_3daf68);
+		return "FUND_PAUSA";
 	case ANIMMAT_END:
-		return GAME_STR(str_3daf74);
+		return "FIN";
 	}
 	CHECK(0);
 	return NULL;

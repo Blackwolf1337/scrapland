@@ -14,7 +14,7 @@
 #include "scrap/weapons.h"
 
 #define GUID_SYSMOUSE ((const void *)GAME_PTR(GUID_SYSMOUSE, 0))
-#define MOUSE_NAME GAME_STR(str_3bca74)	/* "Mouse" */
+#define MOUSE_NAME "Mouse"
 #define g_MouseLabelBuf (GAME_ARRAY(char, g_MouseLabelBuf))	/* 0x20 bytes */
 #define g_MouseNameBuf (GAME_ARRAY(char, g_MouseNameBuf))	/* 0x20 bytes */
 

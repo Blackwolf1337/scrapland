@@ -288,9 +288,9 @@ void __fastcall cWalkCharEntity_UnlinkCollide(cEntity *self) {
 
 /* ---- the rest of WalkCharEntity.cpp ---- */
 
-#define WCE_WALKCHAR GAME_STR(str_3a38b4)	/* "WalkChar", the class name */
-#define WCE_RELAX GAME_STR(str_3ad2f4)		/* "Relax" */
-#define WCE_RELAXALARM GAME_STR(str_3a3248)	/* "RelaxAlarm" */
+#define WCE_WALKCHAR "WalkChar"	/* "WalkChar", the class name */
+#define WCE_RELAX "Relax"
+#define WCE_RELAXALARM "RelaxAlarm"
 #define WCE_EMPTY GAME_STR(str_Empty)		/* "" */
 
 #define WCE_MIN_DT 9.99999997e-07f

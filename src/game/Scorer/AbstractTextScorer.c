@@ -9,13 +9,13 @@
 #include "scrap/scoreritems.h"
 
 /* the strings Var returns (those of the exe) */
-#define STR_LEFT GAME_STR(str_3a3954)
-#define STR_RIGHT GAME_STR(str_3a395c)
-#define STR_CENTER GAME_STR(str_3c1bf4)
-#define STR_NONE GAME_STR(str_3b2d30)
-#define STR_OSCILE GAME_STR(str_3c1c04)
-#define STR_SHADOW GAME_STR(str_3c1c0c)
-#define STR_OUTLINE GAME_STR(str_3c1c14)
+#define STR_LEFT "Left"
+#define STR_RIGHT "Right"
+#define STR_CENTER "Center"
+#define STR_NONE "None"
+#define STR_OSCILE "Oscile"
+#define STR_SHADOW "Shadow"
+#define STR_OUTLINE "Outline"
 
 static const char *const s_NetStates[] = {"Connecting...", NULL, "Waiting server response", "Server timeout",
 	"Disconnected from server"};

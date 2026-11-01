@@ -22,7 +22,7 @@
 #include "scrap/world.h"
 #include "scrap/scoreritems.h"
 
-#define APP_EMPTY GAME_STR(str_Empty)	/* "" of the exe */
+#define APP_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
 #define APP_RANDSCALE GAME_GLOBAL(double, g_FxRandScale)	/* 1 / 32767 */
 
 /* the engine callbacks of the exe (Engine_SetCallback) */

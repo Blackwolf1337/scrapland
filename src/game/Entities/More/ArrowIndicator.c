@@ -98,12 +98,12 @@ void __fastcall cArrowIndicator_dtor(cArrowIndicator *self) {
 
 byte __thiscall cArrowIndicator_AddOpt(cArrowIndicator *self, const char *s) {
 	if (!strchr(s, ':')) {
-		Con_Verbosef(GAME_STR(str_3b30c0), s, ':');
+		Con_Verbosef("T.ERROR : '%s' can´t be added at the options list,\n '%c' is not included as separator\n", s, ':');
 		return 0;
 	}
 	int n = self->nOpt;
 	if (n >= ARROW_MAX_OPTS) {
-		Con_Verbosef(GAME_STR(str_3b3118), s, ARROW_MAX_OPTS);
+		Con_Verbosef("T.ERROR : '%s' can´t be added at the options list,\n '%i' is the maximun number of options!\n", s, ARROW_MAX_OPTS);
 		return 0;
 	}
 	self->nOpt = n + 1;
@@ -721,19 +721,19 @@ byte __thiscall cArrowIndicator_VarS(cArrowIndicator *self, const char *name, ch
 		}
 		switch (self->coneStatus) {
 		case 0:
-			*s = GAME_STR(str_3b2880);
+			*s = "off";
 			break;
 		case 1:
-			*s = GAME_STR(str_3b326c);
+			*s = "relax";
 			break;
 		case 2:
-			*s = GAME_STR(str_3b3274);
+			*s = "alert";
 			break;
 		case 3:
-			*s = GAME_STR(str_3b327c);
+			*s = "danger";
 			break;
 		default:
-			*s = GAME_STR(str_3b3284);
+			*s = "<unknow>";
 			break;
 		}
 		return 1;
@@ -757,22 +757,22 @@ byte __thiscall cArrowIndicator_VarS(cArrowIndicator *self, const char *name, ch
 		}
 		switch (self->tgType) {
 		case 0:
-			*s = GAME_STR(str_3b32e0);
+			*s = "red";
 			break;
 		case 1:
-			*s = GAME_STR(str_3b32e4);
+			*s = "blue";
 			break;
 		case 2:
-			*s = GAME_STR(str_3b32d8);
+			*s = "green";
 			break;
 		case 3:
-			*s = GAME_STR(str_3b32ec);
+			*s = "none";
 			break;
 		case 4:
-			*s = GAME_STR(str_3b32d0);
+			*s = "killer";
 			break;
 		default:
-			*s = GAME_STR(str_3b3284);
+			*s = "<unknow>";
 			break;
 		}
 		return 1;

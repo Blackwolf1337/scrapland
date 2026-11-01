@@ -14,7 +14,7 @@
 #include "scrap/win32.h"
 #include "scrap/world.h"
 
-#define EXE_EMPTY GAME_STR(str_Empty)		/* "" of the exe */
+#define EXE_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
 #define DEV_NODE_SIZE sizeof(cInputDevNode)
 #define IID_IDIRECTINPUT8A ((const void *)GAME_PTR(IID_IDIRECTINPUT8A, 0))
 
@@ -79,7 +79,7 @@ cAbstractIDevice *__thiscall cAbstractIDevice_ctor(cAbstractIDevice *self) {
 cFuncGvarDevices *__thiscall cFuncGvarDevices_ctor(cFuncGvarDevices *self, cAbstractIDevice *dev) {
 	cGVar *v = (cGVar *)&self->base.gvar;
 
-	cGVar_ctor(v, dev->vftable->GetName(dev), 3, GAME_STR(str_3bc4b4));	/* "User Control definition" */
+	cGVar_ctor(v, dev->vftable->GetName(dev), 3, "User Control definition");
 	self->device = dev;
 	v->base.type = GVAR_FUNCTION;
 	self->base.vftable = CFUNCGVARDEVICES_VFTABLE;

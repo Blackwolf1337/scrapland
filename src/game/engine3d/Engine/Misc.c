@@ -311,7 +311,7 @@ char *E3D_GetExePath(void) {
 void Misc_InitE3DDir(void) {
 	exe_GetModuleFileNameA(NULL, g_ExePath, 0x103);
 	Path_Part(g_E3DDir, g_ExePath, PATH_DRIVE | PATH_DIR);
-	Path_Normalize(g_E3DDir, GAME_STR(str_3baec4), -1);	/* "../" */
+	Path_Normalize(g_E3DDir, "../", -1);	/* "../" */
 }
 
 /* the bits 15..22 (rounded) of 1 / sqrt of the 128 mantissa steps of the exponents 0x7f (0..63) and 0x7e */

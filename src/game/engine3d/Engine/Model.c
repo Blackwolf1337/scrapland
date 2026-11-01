@@ -20,9 +20,9 @@
 #include "scrap/misc.h"
 
 #define CLOD_DTOR 0x252d80
-#define LIGHT_OMNI_NAME GAME_STR(str_3d598c)
-#define LIGHT_SPOT_NAME GAME_STR(str_3d5994)
-#define LIGHT_DIR_NAME GAME_STR(str_3d599c)
+#define LIGHT_OMNI_NAME "omni"
+#define LIGHT_SPOT_NAME "foco"
+#define LIGHT_DIR_NAME "direc"
 #define MORPH_SPEED_UNIT 0.01f
 #define MORPH_SPEED_MAX 0.08f
 #define STENCIL_DIST 4000.0f

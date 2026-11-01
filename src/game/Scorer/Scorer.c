@@ -40,7 +40,7 @@
 
 #define CSCORER_VFTABLE GAME_VFTABLE(cScorer_vftable)
 #define CSCORERITEM_VFTABLE GAME_VFTABLE(cScorerItem_vftable)
-#define EXE_EMPTY GAME_STR(str_Empty)		/* "" of the exe */
+#define EXE_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
 #define SCORER_NO_ACCEPT -10.0f			/* cScorer.acceptTime off */
 
 /* ---- construction ---- */

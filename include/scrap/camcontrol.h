@@ -26,11 +26,11 @@
 #define CFOLLOWCAMENTITY_SIZE 0x244
 
 /* the strings of the exe the camera functions hand out or compare */
-#define CAM_CLASSNAME GAME_STR(str_3acc54)	/* "Cam" */
-#define CAMPATH_CLASSNAME GAME_STR(str_3acd10)	/* "CamPath" */
-#define FCAM_CLASSNAME GAME_STR(str_3a8de0)	/* "FCam" */
-#define CAM_EXE_EMPTY GAME_STR(str_Empty)		/* "" of the exe */
-#define FCAM_ONSWITCH_DESC GAME_STR(str_3ad078)		/* "<OnSwtich func>" */
+#define CAM_CLASSNAME "Cam"
+#define CAMPATH_CLASSNAME "CamPath"
+#define FCAM_CLASSNAME "FCam"
+#define CAM_EXE_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
+#define FCAM_ONSWITCH_DESC "<OnSwtich func>"
 
 typedef struct cCamControl {
 	cEntity base;			/* 0x000 */

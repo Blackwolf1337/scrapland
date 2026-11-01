@@ -12,7 +12,7 @@
 #include "scrap/sound.h"
 #include "scrap/withlifeentity.h"
 
-#define ITEM_CLASSNAME GAME_STR(str_3af3f8)	/* "item" */
+#define ITEM_CLASSNAME "item"
 
 /* the entity callback of the sphere test: other touched self at point */
 

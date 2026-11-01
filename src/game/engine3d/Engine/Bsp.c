@@ -653,7 +653,7 @@ int BspTri_Zone(CNode3D *node) {
 
 const char *BspTri_ZoneName(const BspTri *tri) {
 	if (tri->zone == -1) {
-		return GAME_STR(str_3dd0a4);	/* "_unasigned_" */
+		return "_unasigned_";
 	}
 	return Sector_GetName(tri->zone);
 }

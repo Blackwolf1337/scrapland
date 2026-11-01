@@ -133,7 +133,7 @@ CD3DApplication *__fastcall CD3DApp_ctor(CD3DApplication *self) {
 	self->deviceStats[0] = 0;
 	self->frameStats[0] = 0;
 	self->devId = 0;
-	self->windowTitle = GAME_STR(str_3dd240);	/* "Engine3D [DX8]" */
+	self->windowTitle = "Engine3D [DX8]";
 	self->creationWidth = 400;
 	self->creationHeight = 300;
 	self->useDepthBuffer = 0;
@@ -229,7 +229,7 @@ static int D3DApp_DevReset(CD3DApplication *self) {
 	int r = D3D_METHOD(dev, d3dReset_t, 0x38)(dev, &self->presentParams);
 
 	if (r < 0) {
-		E3D_LogBlue(g_FileLog, GAME_STR(str_3dd33c), r);	/* "ERROR: 'pd3dDevice->Reset()' failed: %08X" */
+		E3D_LogBlue(g_FileLog, "ERROR: 'pd3dDevice->Reset()' failed: %08X", r);	/* "ERROR: 'pd3dDevice->Reset()' failed: %08X" */
 	}
 	RenderGamma_Begin();
 	return r;
@@ -247,7 +247,7 @@ int __thiscall CD3DApp_Reset(CD3DApplication *self) {
 	self->vftable->DeleteDeviceObjects(self);
 	r = D3DApp_DevReset(self);
 	if (r < 0) {
-		E3D_LogBlue(g_FileLog, GAME_STR(str_3dd30c), r);	/* "ERROR: ResetDevice(): %08X" */
+		E3D_LogBlue(g_FileLog, "ERROR: ResetDevice(): %08X", r);	/* "ERROR: ResetDevice(): %08X" */
 	}
 	CD3DApp_UpdateBackBufferDesc(self);
 	Splash_Reset();
@@ -286,7 +286,7 @@ int __thiscall CD3DApp_Cleanup(CD3DApplication *self) {
 		self->vftable->InvalidateDeviceObjects(self);
 		self->vftable->DeleteDeviceObjects(self);
 		if (COM_RELEASE(self->device)) {
-			E3D_LogBlue(g_FileLog, GAME_STR(str_3dd3dc));	/* "A D3D object has a non-zero reference count." */
+			E3D_LogBlue(g_FileLog, "A D3D object has a non-zero reference count.");
 		}
 		COM_RELEASE(self->d3d);
 		self->device = NULL;
@@ -565,7 +565,7 @@ int __thiscall CD3DApp_DisplayErrorMsg(CD3DApplication *self, int hr, int type) 
 	/* the texts of the exe */
 	switch ((uint32_t)hr) {
 	case D3DAPPERR_NODIRECT3D:
-		s = GAME_STR(str_3dd490);
+		s = "Could not initialize Direct3D. You may\nwant to check that DirectX 8.1 or better\nis correctly installed on your system.\n";
 		break;
 	case 0x8007000e:		/* E_OUTOFMEMORY */
 		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd84c, 0);
@@ -574,28 +574,28 @@ int __thiscall CD3DApp_DisplayErrorMsg(CD3DApplication *self, int hr, int type) 
 		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd860, 0);
 		break;
 	case D3DAPPERR_NOCOMPATIBLEDEVICES:
-		s = GAME_STR(str_3dd508);
+		s = "Could not find any compatible Direct3D\ndevices.";
 		break;
 	case D3DAPPERR_NOWINDOWABLEDEVICES:
-		s = GAME_STR(str_3dd538);
+		s = "This program cannot run in a desktop\nwindow with the current display settings.\nPlease change your desktop settings to a\n16- or 32-bit display mode and re-run this\nprogram.";
 		break;
 	case D3DAPPERR_NOHARDWAREDEVICE:
 		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd5e4, 0);
 		break;
 	case D3DAPPERR_HALNOTCOMPATIBLE:
-		s = GAME_STR(str_3dd620);
+		s = "This program requires functionality that is\nnot available on your Direct3D hardware\naccelerator.";
 		break;
 	case D3DAPPERR_NOWINDOWEDHAL:
 		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd688, 0);
 		break;
 	case D3DAPPERR_NODESKTOPHAL:
-		s = GAME_STR(str_3dd6d0);
+		s = "Your Direct3D hardware accelerator cannot\nrender into a window with the current\ndesktop display settings.\n";
 		break;
 	case D3DAPPERR_NOHALTHISMODE:
-		s = GAME_STR(str_3dd740);
+		s = "This program requires functionality that is\nnot available on your Direct3D hardware\naccelerator with the current desktop display\nsettings.\n";
 		break;
 	case 0x8200000a:		/* D3DAPPERR_NONZEROREFCOUNT */
-		s = GAME_STR(str_3dd7f0);
+		s = "A D3D object has a non-zero reference\ncount (meaning things were not properly\ncleaned up).";
 		break;
 	case 0x8200000b:		/* D3DAPPERR_MEDIANOTFOUND */
 		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd7cc, 0);
@@ -624,7 +624,7 @@ int __thiscall CD3DApp_DisplayErrorMsg(CD3DApplication *self, int hr, int type) 
  * device (with fullscreen) or the first windowed one; the reasons a windowed REF had to be taken shown */
 int __fastcall CD3DApp_BuildDeviceList(CD3DApplication *self) {
 	static const uint32_t types[2] = { D3DDEVTYPE_HAL, D3DDEVTYPE_REF };
-	const char *names[2] = { GAME_STR(str_3dd264), GAME_STR(str_3dd268) };	/* "HAL", "REF" */
+	const char *names[2] = { "HAL", "REF" };	/* "HAL", "REF" */
 	D3DDisplayMode modes[100];
 	uint32_t fmts[20], behavior[20], depth[20];
 	int fmtOk[20];
@@ -1428,7 +1428,7 @@ intptr_t __stdcall D3DApp_SelectDeviceProc(void *dlg, uint32_t msg, uintptr_t w,
 			continue;
 		}
 		if (!t) {
-			Str_Copy(ms, GAME_STR(str_3b32ec), sizeof(ms));	/* "none" */
+			Str_Copy(ms, "none", sizeof(ms));	/* "none" */
 		} else {
 			exe_wsprintfA(ms, "%d samples", t);
 		}

@@ -14,7 +14,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/withlifeentity.h"
 
-#define MISSILE_CLASSNAME GAME_STR(str_3aea4c)	/* "Missile" */
+#define MISSILE_CLASSNAME "Missile"
 #define MISSILE_RAND_SCALE 3.051850947599719e-05		/* 1 / 32767 */
 
 #define MISSILE_PI_2 0x1.921fb6p+0f				/* pi / 2 as float (0x3fc90fdb) */
@@ -642,7 +642,7 @@ byte __thiscall cMissileEntity_VarS(cMissileEntity *self, const char *name, char
 		if ((byte)set) {
 			cPy_Function_SetFunc(&self->onBeeDeath, *s);
 		} else {
-			*s = GAME_STR(str_3b2cf4);	/* "<OnBeeDeath> function" */
+			*s = "<OnBeeDeath> function";
 		}
 		return 1;
 	}
@@ -650,7 +650,7 @@ byte __thiscall cMissileEntity_VarS(cMissileEntity *self, const char *name, char
 		if ((byte)set) {
 			cPy_Function_SetFunc(&self->onHit, *s);
 		} else {
-			*s = GAME_STR(str_3b2d14);	/* "<OnHit> function" */
+			*s = "<OnHit> function";
 		}
 		return 1;
 	}
@@ -668,8 +668,8 @@ byte __thiscall cMissileEntity_VarS(cMissileEntity *self, const char *name, char
 		if ((uint32_t)self->hitType > 3) {
 			return 0;
 		}
-		char *const hitTypeStr[4] = { GAME_STR(str_3b2d30), GAME_STR(str_3b2d38),
-			GAME_STR(str_3b2d3c), GAME_STR(str_3b2d44) };
+		char *const hitTypeStr[4] = { "None", "Hit",
+			"InOut", "Inside" };
 		*s = hitTypeStr[self->hitType];
 		return 1;
 	}
@@ -688,8 +688,8 @@ byte __thiscall cMissileEntity_VarS(cMissileEntity *self, const char *name, char
 		if ((uint32_t)self->type > 3) {
 			return 0;
 		}
-		char *const typeStr[4] = { GAME_STR(str_3b2d4c), GAME_STR(str_3b2d5c),
-			GAME_STR(str_3b2d54), GAME_STR(str_3a6ea0) };
+		char *const typeStr[4] = { "Linear", "Dumb",
+			"Cloud", "Fall" };
 		*s = typeStr[self->type];
 		return 1;
 	}

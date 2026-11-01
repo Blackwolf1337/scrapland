@@ -240,10 +240,10 @@ void ShadowsStencil_Set(byte on) {
 	byte ok;
 
 	if (!Render_StencilBits()) {
-		Con_Warnf("%s", GAME_STR(str_3dc684));	/* "No stencil bits\n" */
+		Con_Warnf("%s", "No stencil bits\n");
 		ok = 0;
 	} else if (Render_StencilBits() < 4) {
-		Con_Warnf("%s", GAME_STR(str_3dc698));	/* "Not enought stencil bits\n" */
+		Con_Warnf("%s", "Not enought stencil bits\n");
 		ok = 0;
 	} else {
 		ok = 1;
@@ -335,9 +335,9 @@ void Stencil_Init(void) {
 	byte ok, on;
 
 	if (!Render_StencilBits()) {
-		warn = GAME_STR(str_3dc684);	/* "No stencil bits\n" */
+		warn = "No stencil bits\n";
 	} else if (Render_StencilBits() < 4) {
-		warn = GAME_STR(str_3dc698);	/* "Not enought stencil bits\n" */
+		warn = "Not enought stencil bits\n";
 	}
 	if (warn) {
 		Con_Warnf("%s", warn);

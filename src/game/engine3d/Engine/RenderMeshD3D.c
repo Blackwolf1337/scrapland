@@ -80,7 +80,7 @@ int RenderMeshD3D_Flush(void) {
 			RenderMeshEntry *e = g_MeshList[i];
 			if (g_MeshCache == 10) {
 				if (last == -1) {
-					E3D_LogVerbose(g_FileLog, GAME_STR(str_3bae88), e->mesh->node->scene->name);
+					E3D_LogVerbose(g_FileLog, "%s", e->mesh->node->scene->name);
 				}
 				CMeshD3D *m = e->mesh;
 				E3D_LogDebug(g_FileLog, " %s  [%d (%d)] skin:%d [%s]", m->node->name, e->list, last, m->pSkin != NULL,

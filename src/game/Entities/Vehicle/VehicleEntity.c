@@ -22,7 +22,7 @@
 #include "scrap/weaps2.h"
 #include "scrap/world.h"
 
-#define VEH_CLASSNAME GAME_STR(str_3a77b8)	/* "Car" */
+#define VEH_CLASSNAME "Car"
 #define VEH_EMPTY GAME_STR(str_Empty)		/* "" */
 #define CGAMEMODEL_CTOR 0x105e60	/* CGameModel_ctor(self, NULL) */
 #define CGAMEMODEL_DTOR 0x20ec10

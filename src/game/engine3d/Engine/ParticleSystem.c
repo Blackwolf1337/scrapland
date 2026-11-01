@@ -773,7 +773,7 @@ void __thiscall CParticleSystem_Render(CParticleSystem *self, void *dev, CRender
 			SectorVis_Draw(&self->vis, &pos, vis, 0, self->node->name);
 		}
 		if (g_ParticleSystemDebug > 2) {
-			Debug_Text3D(g_FntTerm8, 4.0f, -12.0f, &pos, 0x8000, GAME_STR(str_3bae88), self->type);
+			Debug_Text3D(g_FntTerm8, 4.0f, -12.0f, &pos, 0x8000, "%s", self->type);
 		}
 	}
 	if (self->inView) {

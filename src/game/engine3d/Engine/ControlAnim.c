@@ -66,13 +66,13 @@ void __thiscall CAnimCtrl_SetFrames(CAnimCtrl *self, int firstFrame, int frames)
 const char *AnimCtrl_StateName(int state) {
 	switch (state) {
 	case ANIM_REPR:
-		return GAME_STR(str_3d9f28);	/* "PLAY" */
+		return "PLAY";
 	case ANIM_PAUSE:
-		return GAME_STR(str_3bc898);	/* "PAUSE" */
+		return "PAUSE";
 	case ANIM_FADE_PAUSE:
-		return GAME_STR(str_3d9f30);	/* "FADEOUT" */
+		return "FADEOUT";
 	case ANIM_END:
-		return GAME_STR(str_3bc7ec);	/* "STOP" */
+		return "STOP";
 	}
 	CHECK(0);
 	return NULL;

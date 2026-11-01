@@ -8,10 +8,10 @@
 #include "scrap/vehicletraffic.h"
 
 /* the type names of the exe */
-#define VT_HEAVY GAME_STR(str_3b63f0)
-#define VT_MEDIUM GAME_STR(str_3b63f8)
-#define VT_LIGHT GAME_STR(str_3b6400)
-#define VT_ERROR GAME_STR(str_3b6408)
+#define VT_HEAVY "Heavy"
+#define VT_MEDIUM "Medium"
+#define VT_LIGHT "Light"
+#define VT_ERROR "[Error]"
 
 /* the x87 addition of the original: st0 plus a float, rounded to float */
 static inline float VT_X87Add(long double a, float b) {

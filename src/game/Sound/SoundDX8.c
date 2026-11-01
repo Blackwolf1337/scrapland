@@ -317,17 +317,17 @@ int __thiscall CSoundXBox_StopSound(CSoundXBox *self, int handle) {
 
 const char *Fmod_ErrorString(int err) {
 	const char *const texts[] = {
-		GAME_STR(str_3ca3c8), GAME_STR(str_3ca3d8), GAME_STR(str_3ca420),
-		GAME_STR(str_3ca474), GAME_STR(str_3ca498), GAME_STR(str_3ca458),
-		GAME_STR(str_3ca4d8), GAME_STR(str_3ca534), GAME_STR(str_3ca564),
-		GAME_STR(str_3ca58c), GAME_STR(str_3ca59c), GAME_STR(str_3ca5b0),
-		GAME_STR(str_3ca5c4), GAME_STR(str_3ca5d8), GAME_STR(str_3ca610),
-		GAME_STR(str_3ca648), GAME_STR(str_3ca68c), GAME_STR(str_3ca6b0),
-		GAME_STR(str_3ca6d8),
+		"No errors", "Cannot call this command after FSOUND_Init.  Call FSOUND_Close first.", "This command failed because FSOUND_Init was not called",
+		"Error initializing output device.", "The output device is already in use and cannot be reused.", "Playing the sound failed.",
+		"Soundcard does not support the features needed for this soundsystem (16bit stereo output)", "Error setting cooperative level for hardware.", "Error creating hardware sound buffer.",
+		"File not found", "Unknown file format", "Error loading file",
+		"Not enough memory ", "The version number of this file format is not supported", "An invalid parameter was passed to this function",
+		"Tried to use an EAX command on a non EAX enabled channel or output.", "Failed to allocate a new channel", "Recording not supported on this device",
+		"Required Mediaplayer codec is not installed",
 	};
 
 	if ((uint32_t)err >= sizeof(texts) / sizeof(texts[0])) {
-		return GAME_STR(str_3ca704);	/* "Unknown error" */
+		return "Unknown error";
 	}
 	return texts[err];
 }

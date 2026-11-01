@@ -20,7 +20,7 @@
 #include "scrap/pyfunction.h"
 #include "scrap/withlifeentity.h"
 
-#define LOGIC_EMPTY GAME_STR(str_Empty)	/* "" of the exe */
+#define LOGIC_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
 
 /* ---- AlarmStatus.cpp: the cAlarm of include/scrap/alarm.h ---- */
 

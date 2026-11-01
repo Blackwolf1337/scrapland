@@ -301,19 +301,19 @@ byte __thiscall cAutoAim_VarS(cAutoAim *self, const char *name, char **s, int se
 	if (!(byte)set) {
 		switch (self->status) {
 		case AUTOAIM_OFF:
-			*s = GAME_STR(str_3b3970);
+			*s = "Off";
 			break;
 		case AUTOAIM_SEARCH:
-			*s = GAME_STR(str_3b3984);
+			*s = "Search";
 			break;
 		case AUTOAIM_SELECT:
-			*s = GAME_STR(str_3b3968);
+			*s = "Select";
 			break;
 		case AUTOAIM_KEEP:
-			*s = GAME_STR(str_3b3974);
+			*s = "Keep";
 			break;
 		case AUTOAIM_MAGNET:
-			*s = GAME_STR(str_3b397c);
+			*s = "Magnet";
 			break;
 		default:
 			break;
