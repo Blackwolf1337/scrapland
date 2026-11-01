@@ -534,7 +534,7 @@ void Laser_HudNative(cAbstractFile *f) {
 	f->vftable->Read(f, &player, 4);
 	cAbstractFile_ReadString(f, itemName, 0x80);
 	cEntity *v = Weap_Vehicle(name);
-	cScorerItem *item = cScorer_FindItem(Scorer_Get(player), itemName);
+	cCannonScorer *item = (cCannonScorer *)cScorer_FindItem(Scorer_Get(player), itemName);
 	if (!item) {
 		return;
 	}
@@ -552,15 +552,15 @@ void Laser_HudNative(cAbstractFile *f) {
 		if (b < 0) {
 			b = 0;
 		}
-		Cannon_Color(item) = (((uint32_t)g | (g_CannonScorerColorRed | 0xffffbf00u) << 8) << 8) | (uint32_t)b;
+		item->color = (((uint32_t)g | (g_CannonScorerColorRed | 0xffffbf00u) << 8) << 8) | (uint32_t)b;
 	} else {
 		int k = (int)(time * 1024.0f) % 512 - 255;
 		uint32_t a = (uint32_t)(k < 0 ? -k : k);
-		Cannon_Color(item) = ((((g_CannonScorerColorRed | 0xffffbf00u) << 8) | a) << 8) | a;
+		item->color = ((((g_CannonScorerColorRed | 0xffffbf00u) << 8) | a) << 8) | a;
 	}
-	Cannon_SizeX(item) = 20.0f;
-	Cannon_SizeY(item) = 20.0f;
-	Cannon_Angle(item) = 0.0f;
+	item->size[0] = 20.0f;
+	item->size[1] = 20.0f;
+	item->angle = 0.0f;
 }
 
 static void Laser_AimOn(cEntity *v) {

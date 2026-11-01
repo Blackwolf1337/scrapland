@@ -440,20 +440,20 @@ void Vulcan_HudNative(cAbstractFile *f) {
 	f->vftable->Read(f, &player, 4);
 	cAbstractFile_ReadString(f, itemName, 0x80);
 	cEntity *v = Weap_Vehicle(name);
-	cScorerItem *item = cScorer_FindItem(Scorer_Get(player), itemName);
+	cCannonScorer *item = (cCannonScorer *)cScorer_FindItem(Scorer_Get(player), itemName);
 	if (!item) {
 		return;
 	}
 	float delta = Scorer_Get(player)->frameTime;
 	if (Veh(v)->controls.fire &&
 		cWeaponManager_GetUpgrade(&Veh(v)->weapons, g_VulcanIDWeap) == VULCAN_UPG_WIDE) {
-		Cannon_Angle(item) = Cannon_Angle(item) + Scorer_Get(player)->frameTime * 0x1.921fb6p+1f;
+		item->angle = item->angle + Scorer_Get(player)->frameTime * 0x1.921fb6p+1f;
 	} else {
 		Weap_HudSpinDown(item, delta * 0x1.921fb6p+3f);
 	}
-	Cannon_SizeX(item) = 20.0f;
-	Cannon_SizeY(item) = 20.0f;
-	Cannon_Color(item) = Weap_CannonColor();
+	item->size[0] = 20.0f;
+	item->size[1] = 20.0f;
+	item->color = Weap_CannonColor();
 }
 
 /* ship name: the shot (not on clients) hurts what it aims at */

@@ -68,7 +68,7 @@ void Tesla_HudNative(cAbstractFile *f) {
 	f->vftable->Read(f, &player, 4);
 	cAbstractFile_ReadString(f, itemName, 0x80);
 	cEntity *v = Weap_Vehicle(name);
-	cScorerItem *item = cScorer_FindItem(Scorer_Get(player), itemName);
+	cCannonScorer *item = (cCannonScorer *)cScorer_FindItem(Scorer_Get(player), itemName);
 	if (!item) {
 		return;
 	}
@@ -82,19 +82,19 @@ void Tesla_HudNative(cAbstractFile *f) {
 		k = Float_MaxSS(0.25f, k);
 	}
 	float size = k * 4.0f + 20.0f;
-	Cannon_SizeX(item) = size;
-	Cannon_SizeY(item) = size;
+	item->size[0] = size;
+	item->size[1] = size;
 	int b = (int)g_CannonScorerColorBlue - (int)(k * -255.0f);
 	uint32_t a = 0xffffffbfu - (uint32_t)(int)(k * -64.0f);
 	if (b > 0xff) {
 		b = 0xff;
 	}
-	Cannon_Color(item) = (((a << 8 | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8) | (uint32_t)b;
+	item->color = (((a << 8 | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8) | (uint32_t)b;
 	float delta = Scorer_Get(player)->frameTime;
 	if (k == 0.0f) {
 		Weap_HudSpinDown(item, delta * 0x1.921fb6p+3f);
 	} else {
-		Cannon_Angle(item) = Cannon_Angle(item) - k * 0x1.f6a7a2p+3f * delta;
+		item->angle = item->angle - k * 0x1.f6a7a2p+3f * delta;
 	}
 }
 

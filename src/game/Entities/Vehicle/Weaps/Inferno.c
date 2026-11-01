@@ -63,7 +63,7 @@ void Weap_UpdateHud(cAbstractFile *f, char (*targets)[0x80], float *times, int l
 	f->vftable->Read(f, &player, 4);
 	cAbstractFile_ReadString(f, itemName, 0x80);
 	cEntity *v = Weap_Vehicle(name);
-	cScorerItem *item = cScorer_FindItem(Scorer_Get(player), itemName);
+	cCannonScorer *item = (cCannonScorer *)cScorer_FindItem(Scorer_Get(player), itemName);
 	if (!item) {
 		return;
 	}
@@ -82,35 +82,35 @@ void Weap_UpdateHud(cAbstractFile *f, char (*targets)[0x80], float *times, int l
 			}
 			float x = (float)__builtin_fabs((double)(times[player] * 4.0f + 1.0f));
 			uint32_t a = (uint32_t)(-1 - (int)(x * 64.0f));
-			Cannon_Color(item) = ((((a << 8) | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8) |
+			item->color = ((((a << 8) | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8) |
 				g_CannonScorerColorBlue;
 			if (level == levelRot) {
-				Cannon_SizeX(item) = 20.0f;
-				Cannon_SizeY(item) = 20.0f;
-				Cannon_Angle(item) = (1.0f - x) * 3.14159274f * 0.25f;
+				item->size[0] = 20.0f;
+				item->size[1] = 20.0f;
+				item->angle = (1.0f - x) * 3.14159274f * 0.25f;
 			} else {
 				float s = (1.0f - x) * 7.0f + 20.0f;
-				Cannon_SizeX(item) = s;
-				Cannon_SizeY(item) = s;
-				Cannon_Angle(item) = 0.0f;
+				item->size[0] = s;
+				item->size[1] = s;
+				item->angle = 0.0f;
 			}
 			return;
 		}
-		Cannon_SizeX(item) = 20.0f;
-		Cannon_SizeY(item) = 20.0f;
-		Cannon_Color(item) = (((g_CannonScorerColorRed | 0xffffbf00u) << 8 | g_CannonScorerColorGreen) << 8) |
+		item->size[0] = 20.0f;
+		item->size[1] = 20.0f;
+		item->color = (((g_CannonScorerColorRed | 0xffffbf00u) << 8 | g_CannonScorerColorGreen) << 8) |
 			g_CannonScorerColorBlue;
-		Cannon_Angle(item) = 0.0f;
+		item->angle = 0.0f;
 		return;
 	}
 	t = t - dt * 3.0f;
 	times[player] = t;
-	Cannon_Angle(item) = t * 1.57079637f;
+	item->angle = t * 1.57079637f;
 	float s = times[player] * 50.0f + 20.0f;
-	Cannon_SizeX(item) = s;
-	Cannon_SizeY(item) = s;
+	item->size[0] = s;
+	item->size[1] = s;
 	uint32_t a = (uint32_t)(-64 - (int)(times[player] * 192.0f));
-	Cannon_Color(item) = ((((a << 8) | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8) |
+	item->color = ((((a << 8) | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8) |
 		g_CannonScorerColorBlue;
 }
 

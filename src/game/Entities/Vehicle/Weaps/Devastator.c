@@ -381,24 +381,24 @@ void Devastator_FX(cAbstractFile *params) {
 	params->vftable->Read(params, &player, 4);
 	cAbstractFile_ReadString(params, itemName, 0x80);
 	cEntity *v = Weap_GetVehicle(name);
-	cScorerItem *item = cScorer_FindItem(Scorer_Get(player), itemName);
+	cCannonScorer *item = (cCannonScorer *)cScorer_FindItem(Scorer_Get(player), itemName);
 	if (!item) {
 		return;
 	}
 	float dt = Scorer_Get(player)->frameTime;
 	int up = cWeaponManager_GetUpgrade(&Veh(v)->weapons, g_DevastatorIDWeap);
 	if (Veh(v)->controls.fire && up == 8) {
-		Cannon_Angle(item) = dt * DEV_PI + Cannon_Angle(item);
+		item->angle = dt * DEV_PI + item->angle;
 	} else {
 		float s = dt * DEV_PI;
-		float a = NormAng(Cannon_Angle(item));
-		Cannon_Angle(item) = a;
+		float a = NormAng(item->angle);
+		item->angle = a;
 		if (0.0f > a + s) {
-			Cannon_Angle(item) = a + s;
+			item->angle = a + s;
 		} else if (a - s > 0.0f) {
-			Cannon_Angle(item) = a - s;
+			item->angle = a - s;
 		} else {
-			Cannon_Angle(item) = 0.0f;
+			item->angle = 0.0f;
 		}
 	}
 	if (Veh(v)->controls.fire && up == 7) {
@@ -406,16 +406,16 @@ void Devastator_FX(cAbstractFile *params) {
 		int k = (int)((double)time * 1024.0);
 		int m = k % 0x1fe - 0xff;
 		int ab = m < 0 ? -m : m;
-		Cannon_Color(item) = (((uint32_t)(ab / 4 - 0x41) << 8 | g_CannonScorerColorRed) << 8
+		item->color = (((uint32_t)(ab / 4 - 0x41) << 8 | g_CannonScorerColorRed) << 8
 			| g_CannonScorerColorGreen) << 8 | g_CannonScorerColorBlue;
 		float size = (float)ab * 0.03125f + 20.0f;
-		Cannon_SizeX(item) = size;
-		Cannon_SizeY(item) = size;
+		item->size[0] = size;
+		item->size[1] = size;
 		return;
 	}
-	Cannon_SizeX(item) = 20.0f;
-	Cannon_SizeY(item) = 20.0f;
-	Cannon_Color(item) = Weap_CannonColor();
+	item->size[0] = 20.0f;
+	item->size[1] = 20.0f;
+	item->color = Weap_CannonColor();
 }
 
 /* "!DevastatorFire" (vehicle): a shot spread at random around the aim, one life of the entity hit */

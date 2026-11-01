@@ -223,7 +223,7 @@ void ATPC_FX(cAbstractFile *params) {
 	params->vftable->Read(params, &player, 4);
 	cAbstractFile_ReadString(params, itemName, 0x80);
 	cEntity *v = Weap_GetVehicle(name);
-	cScorerItem *item = cScorer_FindItem(Scorer_Get(player), itemName);
+	cCannonScorer *item = (cCannonScorer *)cScorer_FindItem(Scorer_Get(player), itemName);
 	if (!item) {
 		return;
 	}
@@ -236,11 +236,11 @@ void ATPC_FX(cAbstractFile *params) {
 	}
 	if (-0.25f > stamp) {
 		float t = (stamp + 0.25f) / (0.25f - delay);
-		Cannon_Color(item) = Weap_CannonColor();
+		item->color = Weap_CannonColor();
 		float size = 30.0f - t * 10.0f;
-		Cannon_SizeX(item) = size;
-		Cannon_SizeY(item) = size;
-		Cannon_Angle(item) = t * ATPC_PI;
+		item->size[0] = size;
+		item->size[1] = size;
+		item->angle = t * ATPC_PI;
 		return;
 	}
 	if (0.0f > stamp) {
@@ -252,15 +252,15 @@ void ATPC_FX(cAbstractFile *params) {
 			blue = 0xff;
 		}
 		c = ((c << 8 | g_CannonScorerColorRed) << 8 | g_CannonScorerColorGreen) << 8 | (uint32_t)blue;
-		Cannon_Color(item) = c;
-		Cannon_SizeX(item) = size;
-		Cannon_SizeY(item) = size;
+		item->color = c;
+		item->size[0] = size;
+		item->size[1] = size;
 	} else {
-		Cannon_Color(item) = Weap_CannonColor();
-		Cannon_SizeX(item) = 20.0f;
-		Cannon_SizeY(item) = 20.0f;
+		item->color = Weap_CannonColor();
+		item->size[0] = 20.0f;
+		item->size[1] = 20.0f;
 	}
-	Cannon_Angle(item) = 0.0f;
+	item->angle = 0.0f;
 }
 
 /* "!ATPCFire" (vehicle): the ammo of the shot, the aim and the line of the hit */

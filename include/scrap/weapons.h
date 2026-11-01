@@ -52,10 +52,6 @@ byte __thiscall cSndItem_Play(cSndItem *self, cEntity *e);
 void __fastcall cSndItem_Restart(cSndItem *self);
 
 /* the crosshair item of the HUD the weapons animate (a cCannonScorer, found by its name) */
-#define Cannon_Angle(i) (((cCannonScorer *)(i))->angle)
-#define Cannon_SizeX(i) (((cCannonScorer *)(i))->size[0])
-#define Cannon_SizeY(i) (((cCannonScorer *)(i))->size[1])
-#define Cannon_Color(i) (((cCannonScorer *)(i))->color)
 
 /* the engine variables */
 #define g_LaserIDWeap GAME_GLOBAL_IN(int, GVar_LaserIDWeap, 16, 0x4487d0)
