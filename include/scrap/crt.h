@@ -1,8 +1,8 @@
 /*
- * The C runtime of Scrap.exe (statically linked UCRT), called through src/imports.inc. Used where the C code has
- * to share state with the exe (FILE objects, errno, locale, the current drive) or must behave like it bit for bit;
- * plain string work uses the CRT of the DLL. In ScrapC.exe these are src/standalone/crt.c and crtinit.c, the
- * inexact math Microsoft's ucrtbase (crtmath.c).
+ * The C runtime functions the game code calls as crt_* (the names of the original's static CRT). They are thin
+ * wrappers of the platform's libc in src/standalone/crt.c; crtinit.c has the compiler support (the startup, atexit,
+ * the vector constructor iterators, the thread-safe statics). The wrappers go when the Linux port picks its
+ * portable layer.
  */
 #ifndef SCRAP_CRT_H
 #define SCRAP_CRT_H

@@ -1,16 +1,8 @@
 /*
- * The C runtime of include/scrap/crt.h in ScrapC.exe (stage 2b of docs/standalone.md): the SD_IMPORT_CRT functions
- * of src/imports.inc. The original links the static MSVC 14 CRT, which is UCRT based; this exe links the UCRT DLL
- * through mingw, so most functions are the same code there and only pass through. One allocator (the UCRT heap,
- * which the original's static CRT also took from GetProcessHeap) and one set of FILE objects, errno and locale serve
- * the C and the Python library. The entries of the original's CRT that only the code of the original reached
- * (_alloca_probe, _EH_prolog, _setjmp3 ...) went with the room in stage 3c2.
- *
- * Only the exact math functions come from this UCRT; the others are Microsoft's ucrtbase (src/standalone/crtmath.c),
- * Wine's libm differs in the last bits. The printf and scanf cores, strtod, atof and strerror are C of their own
- * (src/standalone/crtfmt.c and crtscan.c) that gives what the original's static UCRT gives; Wine's format and read
- * denormals, NaNs and some exponents otherwise and has other error texts. The compiler support (the vector
- * constructor and destructor iterators, the thread-safe statics, atexit and the startup) is src/standalone/crtinit.c.
+ * The C runtime of include/scrap/crt.h: thin wrappers of the platform's libc (mingw-w64 with the UCRT). One allocator
+ * and one set of FILE objects, errno and locale serve the C and the Python library. The compiler support (the
+ * vector constructor and destructor iterators, the thread-safe statics, atexit and the startup) is
+ * src/standalone/crtinit.c.
  */
 #include <direct.h>
 #include <errno.h>
@@ -489,7 +481,7 @@ void (*crt_signal(int sig, void (*handler)(int)))(int) {
 	__builtin_unreachable();
 }
 
-/* ---- math: the classification; the math functions are the ones of Microsoft's ucrtbase (crtmath.c) ---- */
+/* ---- math: the classification ---- */
 
 int crt_fpclass(double x) {
 	return _fpclass(x);
