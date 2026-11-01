@@ -21,3 +21,4 @@ __pycache__/
 # agent worktrees of Claude Code
 /.claude/
 /build-ref/
+/build-ref-noexact/
