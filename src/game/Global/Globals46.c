@@ -29,20 +29,6 @@
 #undef g_AppPyOne
 #undef g_CallFunc
 #undef g_ChTypeSphereFunc
-#undef g_ConBtnBang
-#undef g_ConBtnGo
-#undef g_ConBtnMinus
-#undef g_ConBtnPlus
-#undef g_ConEdit
-#undef g_ConEditProc
-#undef g_ConExec
-#undef g_ConFont
-#undef g_ConHistory
-#undef g_ConHwnd
-#undef g_ConInput
-#undef g_ConInst
-#undef g_ConParent
-#undef g_ConRich
 #undef g_ConsoleBusy
 #undef g_ConsoleCheckInput
 #undef g_ConsoleClosing
@@ -605,18 +591,4 @@ int64_t g_TimeQPFreq SD_BSS(0x467dd0);
 int64_t g_TimeQPStart SD_BSS(0x467dd8);
 uint32_t g_TimeMsStart SD_BSS(0x467de0);
 uint32_t CWinApp_GetTime_467de4 SD_BSS(0x467de4);
-char g_ConInput[512] SD_BSS(0x467de8);
-conexec_t g_ConExec SD_BSS(0x467fe8);
-void *g_ConInst SD_BSS(0x467fec);
-void *g_ConHwnd SD_BSS(0x467ff0);
-void *g_ConParent SD_BSS(0x467ff4);
-void *g_ConRich SD_BSS(0x467ff8);
-void *g_ConEdit SD_BSS(0x467ffc);
-void *g_ConBtnPlus SD_BSS(0x468000);
-void *g_ConBtnMinus SD_BSS(0x468004);
-void *g_ConBtnBang SD_BSS(0x468008);
-void *g_ConBtnGo SD_BSS(0x46800c);
-void *g_ConFont SD_BSS(0x468010);
-void *g_ConEditProc SD_BSS(0x468014);
-char g_ConHistory[64][CONWIN_LINE] SD_BSS(0x468018);
 

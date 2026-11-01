@@ -81,7 +81,6 @@ intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lPa
 			void *fg = exe_GetForegroundWindow();
 
 			if (fg == App_GetHWnd() && g_Engine->active && g_Engine->ready) {
-				ConsoleWin_Show(g_Engine->windowed == 0);
 				if (CD3DApp_ToggleFullscreen(g_Engine) < 0) {
 					Con_FatalErrorf("Could not reset the Direct3D device.");
 				}

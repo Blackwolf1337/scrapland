@@ -29,13 +29,6 @@ for p in (('sdtest_none', '1'), ('SDTEST_NONE', '')):
 	check('CWinApp_ParseParam' + fmt(p), lambda p=p: SDTest.Call('CWinApp_ParseParam', 'tbiss', app, p[0], p[1])[0])
 if SDTest.Peek('g_pWorld', 'i'):
 	check('App_GetObjData', lambda: SDTest.Call('App_GetObjData', 'is', 'SDTestNone')[0] != 0)
-# the console window is closed: no window, nothing printed, 0
-check('ConsoleWin state', lambda: (SDTest.Peek('g_ConOpen', 'i'), SDTest.Peek('g_ConHwnd', 'i') == 0))
-if SDTest.Peek('g_ConOpen', 'i') == 0 and SDTest.Peek('g_ConHwnd', 'i') == 0:
-	check('ConsoleWin_GetHwnd', lambda: SDTest.Call('ConsoleWin_GetHwnd', 'i')[0])
-	check('ConsoleWin_Print', lambda: SDTest.Call('ConsoleWin_Print', 'isi', 'sdtest\n', 0xff)[0])
-	check('ConsoleWin_Show', lambda: SDTest.Call('ConsoleWin_Show', 'ii', 1)[0])
-	check('ConsoleWin_Close', lambda: SDTest.Call('ConsoleWin_Close', 'i')[0])
 # the console commands on iLoadMsgString (rva 0x4679c0, the next loading tip), saved and restored
 msg = SDTest.Peek('g_LoadMsgIndex', 'i')
 for cmd in (':iLoadMsgString 7', ':iLoadMsgString', '?iLoadMsg', ':iLoadMsgString  "12" ',

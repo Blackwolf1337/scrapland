@@ -58,9 +58,6 @@
 #undef g_CollisionTests
 #undef g_CollisionTestsTotal
 #undef g_ColorStr
-#undef g_ConHistPos
-#undef g_ConOpen
-#undef g_ConRichLib
 #undef g_CountSprite2D
 #undef g_CreditsBlurTime
 #undef g_CreditsMat
@@ -319,9 +316,6 @@
 #undef g_nLights
 #undef g_pd3dDevice
 
-int g_ConHistPos SD_BSS(0x4a8018);
-int g_ConOpen SD_BSS(0x4a801c);
-void *g_ConRichLib SD_BSS(0x4a8020);
 cGVar GVar_R_ForcePreRenderTransform SD_BSS(0x4a8024);
 cGVar GVar_R_CoefMLODTraffic SD_BSS(0x4a803c);
 cGVar GVar_R_CoefMLODEngines SD_BSS(0x4a8054);

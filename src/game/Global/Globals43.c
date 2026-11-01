@@ -271,8 +271,6 @@ SD_SYM(str_PyMethod_SWeap_SetSWeap);
 #undef g_CameraNodes
 #undef g_CollideAddColor
 #undef g_CollisionEpsilon
-#undef g_ConDlgPrompt
-#undef g_ConInputH
 #undef g_DXTimerStopped
 #undef g_DbgCharMap
 #undef g_DebugIdentity
@@ -792,8 +790,6 @@ int g_WinWidth SD_AT(0x431ab0) = 640;
 int g_WinHeight SD_AT(0x431ab4) = 480;
 int g_WideWinWidth SD_AT(0x431ab8) = 640;
 int g_WideWinHeight SD_AT(0x431abc) = 360;
-const char *g_ConDlgPrompt SD_AT(0x431ac0) = (void *)sd_str_Empty;
-int g_ConInputH SD_AT(0x431ae0) = 20;
 byte g_CallbacksOn SD_AT(0x431ae4) = 1;
 int g_FogLinear SD_AT(0x431ae8) = 1;
 float g_FogRangeIni SD_AT(0x431aec) = 0.5f;

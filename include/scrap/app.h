@@ -67,32 +67,6 @@
 #define g_ScrapTitle GAME_STR(str_431a98, 0x431a98)	/* "Scrapland" */
 #define g_ScrapClass GAME_STR(str_431aa4, 0x431aa4)	/* "ScrapClass" */
 
-/* the console window (RichEdit output, edit line, four buttons, 64 lines of history) */
-#define CONWIN_HISTORY 64
-#define CONWIN_LINE 0x1000
-#define g_ConInput (GAME_ARRAY(char, g_ConInput, 0x467de8))		/* 0x200, the text of the input dialog */
-typedef void (*conexec_t)(const char *cmd);
-#define g_ConExec GAME_GLOBAL(conexec_t, g_ConExec, 0x467fe8)	/* Console_Execute */
-#define g_ConInst GAME_GLOBAL(void *, g_ConInst, 0x467fec)
-#define g_ConHwnd GAME_GLOBAL(void *, g_ConHwnd, 0x467ff0)
-#define g_ConParent GAME_GLOBAL(void *, g_ConParent, 0x467ff4)
-#define g_ConRich GAME_GLOBAL(void *, g_ConRich, 0x467ff8)
-#define g_ConEdit GAME_GLOBAL(void *, g_ConEdit, 0x467ffc)
-#define g_ConBtnPlus GAME_GLOBAL(void *, g_ConBtnPlus, 0x468000)
-#define g_ConBtnMinus GAME_GLOBAL(void *, g_ConBtnMinus, 0x468004)
-#define g_ConBtnBang GAME_GLOBAL(void *, g_ConBtnBang, 0x468008)
-#define g_ConBtnGo GAME_GLOBAL(void *, g_ConBtnGo, 0x46800c)
-#define g_ConFont GAME_GLOBAL(void *, g_ConFont, 0x468010)
-#define g_ConEditProc GAME_GLOBAL(void *, g_ConEditProc, 0x468014)	/* the window procedure of the edit before the subclass */
-#define g_ConHistory (GAME_ARRAY(char[CONWIN_LINE], g_ConHistory, 0x468018))	/* [0] the last entered line */
-#define g_ConHistPos GAME_GLOBAL(int, g_ConHistPos, 0x4a8018)
-#define g_ConOpen GAME_GLOBAL(int, g_ConOpen, 0x4a801c)
-#define g_ConRichLib GAME_GLOBAL(void *, g_ConRichLib, 0x4a8020)
-#define g_ConDlgPrompt GAME_GLOBAL(const char *, g_ConDlgPrompt, 0x431ac0)
-#define g_ConTitle GAME_STR(str_431ac4, 0x431ac4)		/* "Console" */
-#define g_ConClass GAME_STR(str_431acc, 0x431acc)		/* "ScrapConsoleClass" */
-#define g_ConInputH GAME_GLOBAL(int, g_ConInputH, 0x431ae0)		/* 20, or 200 for the big input */
-
 /* App.c */
 CApp *__thiscall CApp_ctor(CApp *self, const char *cmdLine);
 void __fastcall CApp_dtor(CApp *self);
@@ -163,29 +137,6 @@ intptr_t __stdcall App_WndProc(void *hwnd, uint32_t msg, uintptr_t wParam, intpt
 byte __thiscall CWinApp_IsDedicatedWin(CWinApp *self);
 int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow);
 
-/* the console window */
-int ConsoleWin_Toggle(byte open, void *parent, byte bottom);
-void ConsoleWin_Layout(void);
-int ConsoleWin_Close(void);
-const char *ConsoleWin_Input(const char *prompt);
-int ConsoleWin_Print(const char *text, uint32_t color);
-void ConsoleWin_ToggleSize(void);
-void ConsoleWin_Focus(void *hwnd);
-intptr_t __stdcall ConsoleWin_DlgProc(void *hdlg, uint32_t msg, uintptr_t wParam, intptr_t lParam);
-intptr_t __stdcall ConsoleWin_EditProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
-void *ConsoleWin_GetHwnd(void);
-int ConsoleWin_Open(void *parent, byte bottom);
-int ConsoleWin_Create(void *inst, int x, int y, int nCmdShow, void *parent);
-int ConsoleWin_RegisterClass(void *inst);
-void ConsoleWin_HistoryNewer(void);
-void ConsoleWin_HistoryOlder(void);
-uint32_t __stdcall ConsoleWin_StreamOut(void *file, const void *buf, int32_t n, int32_t *written);
-int ConsoleWin_SaveOutput(void);
-int ConsoleWin_Show(byte show);
-void ConsoleWin_Enter(void);
-void ConsoleWin_ToggleInput(void);
-intptr_t __stdcall ConsoleWin_WndProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
-
 /* C functions declared only in their files */
 void DebugLog_Init(void);
 void DebugLog_CloseAll(void);
@@ -232,6 +183,5 @@ intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lPa
 void App_SetExceptionFilter(byte on);
 int __stdcall App_ExceptionFilter(void **ep);
 /* the expiry of the test version of 2004 (not called) */
-void App_CheckExpiry(void);
 
 #endif
