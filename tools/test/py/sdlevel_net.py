@@ -348,9 +348,6 @@ check('Net client state', lambda: (SDTest.Call('Net_IsServer', 'b')[0], SDTest.C
 check('Net closes', lambda: (SDTest.Call('Net_ClientReady', 'b')[0], SDTest.Call('Net_CloseClient', 'b')[0], SDTest.Call('Net_CloseClientMsg',
 	'bs', 'Levels/Menu')[0], SDTest.Call('Net_CloseServer', 'bs', 'Levels/Menu')[0], SDTest.Call('Net_ServerChangeLevel', 'bs', 'x')[0],
 	SDTest.Call('Net_ModifyUsrData', 'bi', 0)[0]))
-if SDTest.Peek('g_AseInit', 'i') == 0:
-	check('Net ASE off', lambda: (SDTest.Call('Net_AseCheck', 'v'), SDTest.Call('Net_AseInit', 'vi', 1234),
-		SDTest.Call('Net_AseShutdown', 'v')))
 check('Net_HexDump', lambda: (SDTest.Call('Net_HexDump', 'vii', netin, 40), SDTest.Call('Net_HexDump', 'vii', netin, 16),
 	SDTest.Call('Net_HexDump', 'vii', netin, 0), SDTest.Call('Net_DumpData', 'vsii', 'title', netin, 21)))
 netfuncs = (sym('g_ClientAddRes'), sym('g_ClientDelRes'), sym('g_ClientCreate'), sym('g_ClientSetPlayer'), sym('g_OnUsrString'), sym('g_OnChatString'), sym('g_OnClientJoin'), sym('g_OnClientExit'), sym('g_OnNetBrowseCallback'))

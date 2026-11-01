@@ -1,8 +1,8 @@
 /*
  * Net/GameServer.cpp of the game: the server (start, close, change of level, kick), its frame (heartbeat to the
  * master, the receive loop, the sends to the clients in turn, the clients that timed out), the hex dumps of the net
- * debug output and the answers to the All-Seeing Eye queries (its SDK is linked into the exe at rva 0x2070..; the
- * functions in front of GameClient by their place). See include/scrap/net.h.
+ * debug output. The answers to the All-Seeing Eye queries of the original are gone (its master servers are down).
+ * See include/scrap/net.h.
  */
 #include <string.h>
 
@@ -13,94 +13,6 @@
 #include "scrap/python.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/withlifeentity.h"
-
-static const char *Net_TeamName(int team) {
-	switch (team) {
-	case 0:
-		return "Red";
-	case 1:
-		return "Blue";
-	case 2:
-		return "Green";
-	default:
-		return "None";
-	}
-}
-
-/* the player "net<n>" for the ASE player list */
-void Net_AsePlayer(int n) {
-	char name[0x20], score[0x20], ping[0x20];
-
-	crt_sprintf(name, "net%d", n);
-	cEntity *e = World_FindEntity(name);
-	if (!e || !e->vftable->IsType(e, TYEN_CAR)) {
-		return;
-	}
-	const char *team = Net_TeamName(WLife(e)->arrow.tgType);
-	Str_PrintfQuiet(ping, sizeof(ping), "%d", Net_GetPing(name));
-	score[0] = 0;
-	PyObject *o = PyImport_AddModule("Ffa");
-	if (o && (o = PyModule_GetDict(o)) && (o = PyDict_GetItemString(o, "Scorer")) &&
-		(o = PyDict_GetItemString(o, name))) {
-		Str_PrintfQuiet(score, sizeof(score), "%d", (int)((PyIntObject *)o)->ob_ival);
-	}
-	Ase_AddPlayer(WLife(e)->usrName ? WLife(e)->usrName : "", team, Veh(e)->typeName, score, ping, 0);
-}
-
-void Net_AseShutdown(void) {
-	if (g_AseInit) {
-		Ase_Shutdown();
-	}
-}
-
-static void Net_AseError(void) {
-	Con_Print(0xff, g_AseError, 0);
-	Con_Print(0xff, "\n", 0);
-}
-
-void Net_AseInit(int port) {
-	if (g_AseInit && !Ase_Initialize(port, 1, 0)) {
-		Net_AseError();
-	}
-}
-
-void Net_AseCheck(void) {
-	if (g_AseInit && !Ase_Check()) {
-		Net_AseError();
-	}
-}
-
-/* ASEQuery_wantplayers: the own ship of a playing server, then the clients */
-void Net_AsePlayers(void) {
-	if (!(g_pApp->flags & APPF_DEDICATED)) {
-		Net_AsePlayer(0x100);
-	}
-	for (int i = 0; i < Transport_GetMaxClients(); i++) {
-		Net_AsePlayer(i);
-	}
-}
-
-/* ASEQuery_wantrules */
-void Net_AseRules(void) {
-	char s[12];
-
-	crt_ltoa(g_Fraglimit, s, 10);
-	Ase_AddRule("fraglimit", s);
-	Ase_AddRule("dedicated", (g_pApp->flags & APPF_DEDICATED) ? "1" : "0");
-	Ase_AddRule("ForceServerVehicle", g_ForceServerVehicle ? "1" : "0");
-}
-
-/* ASEQuery_wantstatus */
-void Net_AseStatus(void) {
-	char ver[12];
-
-	Str_PrintfQuiet(ver, 10, "%d.%d", 1, 1);
-	const char *type = g_ServerType, *map = g_pApp->levelPath + 7, *name = g_ServerName;
-	int self = !((g_pApp->flags >> 2) & 1);
-	int max = Transport_GetMaxClients() + self;
-	int num = Net_GetSendRate() + self;
-	Ase_ServerStatus(name, type, map, ver, g_UseServerPassword != 0, num, max);
-}
 
 /* the script callbacks of the server gvars back to none (unless scripts may not write them) */
 void Net_ServerResetFuncs(void) {
@@ -127,7 +39,6 @@ byte Net_CloseServer(const char *msg) {
 	if (!on) {
 		return on;
 	}
-	Net_AseShutdown();
 	Net_Done();
 	Con_Print(0, "Closing server...\n", 0);
 	NetServer_Goodbye();
@@ -217,7 +128,6 @@ byte Net_InitServer(const char *name, int a, int b, int c) {
 		Transport_SetMaster(g_MasterServerAddress, (uint16_t)g_MasterServerPort);
 	}
 	g_NetHeartbeat = 0.0f;
-	Net_AseInit(g_NetServerPort);
 	SaveVars_Delete("");
 	return 1;
 }
@@ -264,7 +174,6 @@ void Net_ServerFrameHead(void) {
 			Net_SendMasterString(s);
 		}
 	}
-	Net_AseCheck();
 }
 
 /* the rest after the wait: receive, send to the clients in turn, drop the ones that timed out */

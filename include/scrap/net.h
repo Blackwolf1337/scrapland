@@ -352,18 +352,7 @@ void *__stdcall Wsock_gethostbyname(const char *name);
 int __stdcall Wsock_WSAStartup(uint16_t version, void *data);
 int __stdcall Wsock_WSACleanup(void);
 
-/* the All-Seeing Eye server (cdecl; src/lib/ase/Ase.c, hooks on the SDK linked into the exe at rva 0x002070) */
-#define g_AseInit GAME_GLOBAL_IN(int, GVar_ASEPublic, 16, 0x462584)
-#define g_AseError GAME_GLOBAL(const char *, g_AseError, 0x43d030)	/* the text of the last error */
 #define g_Fraglimit GAME_GLOBAL_IN(int, GVar_Fraglimit, 16, 0x4676a4)
-void Ase_Shutdown(void);
-int Ase_Initialize(int port, int internet, const char *address);
-void Ase_ServerStatus(const char *name, const char *type, const char *map, const char *version, int password,
-	int numPlayers, int maxPlayers);
-void Ase_AddRule(const char *key, const char *value);
-void Ase_AddPlayer(const char *name, const char *team, const char *skin, const char *score, const char *ping,
-	const char *time);
-int Ase_Check(void);
 
 /* GameClient (src/game/Net/GameClient.c) */
 byte Net_CloseClient(void);
@@ -381,13 +370,6 @@ byte Net_IsClient(void);
 byte Net_ClientReady(void);
 
 /* GameServer.cpp (src/game/Net/GameServer.c) */
-void Net_AsePlayer(int n);
-void Net_AseShutdown(void);
-void Net_AseInit(int port);
-void Net_AseCheck(void);
-void Net_AsePlayers(void);
-void Net_AseRules(void);
-void Net_AseStatus(void);
 void Net_ServerResetFuncs(void);
 byte Net_CloseServer(const char *msg);
 cUserNetManager *Net_NewClientManager(cNetClient *client, int slot);
