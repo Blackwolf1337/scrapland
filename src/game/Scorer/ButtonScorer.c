@@ -368,10 +368,10 @@ int cButtonScorer_Var(cButtonScorer *self, const char *name, byte set, char **s,
 			int n = cButtonScorer_SetText(self, *s);
 			float cells = (self->textWidth - 20.0f) / 10.0f;
 			self->hasText = 1;
-			int cw = (int)crt_ceil((double)cells);
+			int cw = (int)ceil((double)cells);
 			self->width = cw + 1;
 			float rows = ((float)(double)(uint32_t)n * self->textHeight - 20.0f) / 10.0f;
-			int ch = (int)crt_ceil((double)rows);
+			int ch = (int)ceil((double)rows);
 			float lh = self->textHeight;
 			self->height = ch;
 			self->boxH = (ch + 2) * 10;

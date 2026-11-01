@@ -17,7 +17,6 @@
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
 
-double crt_ceil(double x);
 
 /* ---- Global/DList.h ---- */
 
@@ -482,7 +481,7 @@ void CNodesTraffic_Load(CNodesTraffic *self, byte fill) {
 			if (fill && self->tracks[t].numNodes > 1) {
 				float dx = pos.x - prev.x, dy = pos.y - prev.y, dz = pos.z - prev.z;
 				float len = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
-				self->tracks[t].numNodes += (int)crt_floor((double)(len / g_MinDistNodeTrafficAI));
+				self->tracks[t].numNodes += (int)floor((double)(len / g_MinDistNodeTrafficAI));
 			}
 			prev = pos;
 			k++;
@@ -531,7 +530,7 @@ void CNodesTraffic_Load(CNodesTraffic *self, byte fill) {
 				float dx = pos.x - last->x, dy = pos.y - last->y, dz = pos.z - last->z;
 				vec3_t dir;
 				float len = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
-				int n = (int)crt_floor((double)(len / g_MinDistNodeTrafficAI));
+				int n = (int)floor((double)(len / g_MinDistNodeTrafficAI));
 				if (len == 0.0f) {
 					dir.x = dx;
 					dir.y = dy;
@@ -813,9 +812,9 @@ void CNodesTraffic_BuildGrid(CNodesTraffic *self) {
 		}
 		self->max.y = pos.y + 5000.0f;
 	}
-	double nx = crt_ceil((double)((self->max.x - self->min.x) / self->cellSize));
-	double ny = crt_ceil((double)((self->max.y - self->min.y) / self->cellSize));
-	double nz = crt_ceil((double)((self->max.z - self->min.z) / self->cellSize));
+	double nx = ceil((double)((self->max.x - self->min.x) / self->cellSize));
+	double ny = ceil((double)((self->max.y - self->min.y) / self->cellSize));
+	double nz = ceil((double)((self->max.z - self->min.z) / self->cellSize));
 	if (self->grid) {
 		self->grid->vftable->Delete(self->grid, 1);
 	}

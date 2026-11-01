@@ -549,14 +549,6 @@ static inline void Ctl_NewWeapon(cVehicleControls *c, int w) {
 	c->fireWait = 0.0f;
 }
 
-/* the x87 (lim - now) / div of the original */
-static inline float Ctl_X87SubDiv(float now, float lim, float div) {
-	float r;
-
-	__asm__("fsubrs %2\n\tfdivs %3" : "=t"(r) : "0"(now), "m"(lim), "m"(div));
-	return r;
-}
-
 static inline float Ctl_Rumble01(float v) {
 	return 0.0f >= v ? 0.0f : Float_MinSS(1.0f, v);
 }
@@ -756,7 +748,7 @@ static void Ctl_EmptyWeapon(cVehicleControls *c, cWeaponManager *wm, float dt) {
 static void Ctl_PadRumble(cVehicleControls *c, cEntity *v, int slot) {
 	cVehicleEntity *veh = Veh(v);
 	float lim = WLife(v)->attack.hitTime + g_AttackerMarkTime;
-	float hit = Ctl_X87SubDiv(Timer_GetTime(&veh->wl.obj.timer), lim, g_AttackerMarkTime);
+	float hit = (float)((lim - (Timer_GetTime(&veh->wl.obj.timer))) / g_AttackerMarkTime);
 	cFollowCamEntity *cam = (cFollowCamEntity *)veh->wl.obj.cam;
 
 	if (cam->quakeTime > 0.025f) {

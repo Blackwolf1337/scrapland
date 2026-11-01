@@ -148,10 +148,10 @@ byte Sph_InCone(const vec3_t *center, float radius, const vec3_t *apex, const ve
 	d = Vec3_Div(d, (float)__builtin_sqrt((double)(d.y * d.y + d.x * d.x + d.z * d.z)));
 	float c = d.y * n.y + d.x * n.x + d.z * n.z;
 	c = -1.0f >= c ? -1.0f : 1.0f < c ? 1.0f : c;
-	float ang = (float)Game_Acos((double)c);
+	float ang = (float)acos((double)c);
 	float s = radius / dist;
 	CHECK(__builtin_fabs((double)s) <= 1.0);
-	float half = (float)Game_Asin((double)s);
+	float half = (float)asin((double)s);
 	return (double)half + (double)angle * 0.5 >= (double)ang;
 }
 
@@ -174,7 +174,7 @@ char *Vec3_Str(const vec3_t *v, uint32_t slot, int prec) {
 int E3D_MathErr(void *exc) {
 	static const char *const msgs[] = { "argument domain error", "argument singularity", "overflow range error",
 		"underflow range error", "total loss of precision", "partial loss of precision" };
-	const crtMathExc_t *e = exc;
+	const struct _exception *e = exc;	/* the matherr record of the Windows runtime */
 
 	if (!e) {
 		return 0;

@@ -65,14 +65,14 @@ int Illum_VertList(color4_t *dest, CVertList *lv, CMaterial *Mat, CLight *Light)
 		}
 		if (type == LIGHT_SPOT) {
 			float c = d.x * dir.x + d.y * dir.y + d.z * dir.z;
-			float cosTheta = (float)Game_Cos((double)l.Theta * 0.5);
-			float cosPhi = (float)Game_Cos((double)l.Phi * 0.5);
+			float cosTheta = (float)cos((double)l.Theta * 0.5);
+			float cosPhi = (float)cos((double)l.Phi * 0.5);
 			if (cosPhi > c) {
 				continue;
 			}
 			if (cosTheta > c) {
 				float s = (c - cosPhi) / (cosTheta - cosPhi);
-				att = (float)Game_Pow((double)s, (double)l.Falloff) * att;
+				att = (float)pow((double)s, (double)l.Falloff) * att;
 			}
 		}
 		float dot = -(n.x * d.x + n.y * d.y + n.z * d.z);
@@ -124,15 +124,15 @@ int Illum_Light(color4_t *dest, const vec3_t *pos, const vec3_t *n, const float 
 	}
 	if (l->Type == D3DLIGHT_SPOT) {
 		float c = d.x * l->Direction.x + d.y * l->Direction.y + d.z * l->Direction.z;
-		float cosTheta = (float)Game_Cos((double)l->Theta * 0.5);
-		float cosPhi = (float)Game_Cos((double)l->Phi * 0.5);
+		float cosTheta = (float)cos((double)l->Theta * 0.5);
+		float cosPhi = (float)cos((double)l->Phi * 0.5);
 		if (cosPhi > c) {
 			return 1;
 		}
 		if (cosTheta > c) {
 			float s = (c - cosPhi) / (cosTheta - cosPhi);
 			if (l->Falloff != 1.0f) {
-				s = (float)Game_Pow((double)s, (double)l->Falloff);
+				s = (float)pow((double)s, (double)l->Falloff);
 			}
 			if (flags & ILLUM_SOFT) {
 				s = s * s * (3.0f - (s + s));

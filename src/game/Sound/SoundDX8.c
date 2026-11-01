@@ -346,7 +346,7 @@ byte Fmod_SetChannel(int channel, const cSoundDesc *d) {
 	if (f != 1.0f) {
 		freq = (int)((double)((float)deffreq * f) + 0.5);
 	}
-	float v = (float)Game_Pow(2.0, (double)d->volume * 0.6 / 600.0);
+	float v = (float)pow(2.0, (double)d->volume * 0.6 / 600.0);
 	float vol = 0.0f >= v ? 0.0f : Float_MinSS(1.0f, v);
 	FSOUND_SetVolume(channel, (int)(vol * 255.0f));
 	int pan = d->pan / 20 + 128;

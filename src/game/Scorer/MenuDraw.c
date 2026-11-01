@@ -369,7 +369,7 @@ void Scorer_BoostScorer(cAbstractFile *params) {
 	cVehicleEntity *v = (cVehicleEntity *)ship;
 	if (v->boost == 0.0f) {
 		if (v->cloudOn) {
-			double t = X87_Mul(g_pApp->vftable->GetGameTime(g_pApp), 4.0);
+			double t = ((g_pApp->vftable->GetGameTime(g_pApp)) * 4.0);
 			status = (int)t & 1 ? 0x40 : 0x80;
 		} else {
 			status = 0xff;

@@ -175,7 +175,7 @@ int Net_GetClientPing(uint32_t slot) {
 	if (slot > 0xff || !g_NetClientPings[slot]) {
 		return 0;
 	}
-	return (int)Game_Pow(2.0, (double)g_NetClientPings[slot] / 24.0);
+	return (int)pow(2.0, (double)g_NetClientPings[slot] / 24.0);
 }
 
 void cServerNetManager_SendHello(cServerNetManager *self, byte type) {

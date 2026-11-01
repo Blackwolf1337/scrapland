@@ -177,8 +177,8 @@ void CCamera_LookAtRot(CCamera *self) {
 	float dx = self->target.x - self->pos.x;
 	float dz = self->target.z - self->pos.z;
 	self->rot.z = 0.0f;
-	self->rot.y = (float)Game_Atan2((double)dx, (double)dz);
-	self->rot.x = (float)Game_Atan2((double)-dy, __builtin_sqrt((double)(dz * dz + dx * dx)));
+	self->rot.y = (float)atan2((double)dx, (double)dz);
+	self->rot.x = (float)atan2((double)-dy, __builtin_sqrt((double)(dz * dz + dx * dx)));
 }
 
 void CCamera_ViewMatrix(CCamera *self, matrix_t *m) {
@@ -207,7 +207,7 @@ byte CCamera_ProjMatrix(CCamera *self, matrix_t *m) {
 	if (CAMERA_EPS > __builtin_fabs((double)d)) {
 		return 0;
 	}
-	X87_SinCos(self->fov * 0.5f, &s, &c);
+	Float_SinCos(self->fov * 0.5f, &s, &c);
 	if (CAMERA_EPS > __builtin_fabs((double)s)) {
 		return 0;
 	}

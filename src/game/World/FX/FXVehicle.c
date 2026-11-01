@@ -1111,9 +1111,9 @@ void cObjElementFXVehicleEMI_Update(cObjElementFXVehicleEMI *self, cDebris *debr
 			int vids[FXVEMI_POINTS];
 			CGameModel_Vertices(model, verts, NULL, NULL, FXVEMI_POINTS, -1, vids, 0xffffffffu, NULL);
 			float bestDist = 3.4028235e38f;
-			X87_SinCos(-rot.x, &sn.x, &c.x);
-			X87_SinCos(-rot.y, &sn.y, &c.y);
-			X87_SinCos(-rot.z, &sn.z, &c.z);
+			Float_SinCos(-rot.x, &sn.x, &c.x);
+			Float_SinCos(-rot.y, &sn.y, &c.y);
+			Float_SinCos(-rot.z, &sn.z, &c.z);
 			for (int m = 0; m < FXVEMI_POINTS; m++) {
 				int vi = vids[m];
 				if (vi > self->numVerts || (*FXV_EMIMark(self, i, vi) & (1 << (vi & 0xf)))) {
@@ -1234,9 +1234,9 @@ void cObjElementFXVehicleFire_Update(cObjElementFXVehicleFire *self, cDebris *de
 		CGameModel_Vertices(mm, &verts[16], NULL, NULL, 8, -1, NULL, 0xffffffffu, NULL);
 	}
 	vec3_t c, sn;
-	X87_SinCos(-rot.x, &sn.x, &c.x);
-	X87_SinCos(-rot.y, &sn.y, &c.y);
-	X87_SinCos(-rot.z, &sn.z, &c.z);
+	Float_SinCos(-rot.x, &sn.x, &c.x);
+	Float_SinCos(-rot.y, &sn.y, &c.y);
+	Float_SinCos(-rot.z, &sn.z, &c.z);
 	p->birthRate = 0;
 	CGameParticles_SetColorRampOn(p, 1);
 
@@ -1898,9 +1898,9 @@ void cObjElementFXVehicleDamage_Update(cObjElementFXVehicleDamage *self, cDebris
 	if (followed && Veh(self->entity)->wl.life > 0) {
 		cEmbeddedFXVehicle_SetAttached(efx, self);
 	}
-	X87_SinCos(-rot.x, &sn.x, &c.x);
-	X87_SinCos(-rot.y, &sn.y, &c.y);
-	X87_SinCos(-rot.z, &sn.z, &c.z);
+	Float_SinCos(-rot.x, &sn.x, &c.x);
+	Float_SinCos(-rot.y, &sn.y, &c.y);
+	Float_SinCos(-rot.z, &sn.z, &c.z);
 
 	/* the smoke and sparks drawn once with the followed ship (FXVehicle_RenderAttached) */
 	byte vis;

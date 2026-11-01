@@ -93,8 +93,7 @@ static float Waypoint_SplitY(int player, float y) {
 
 /* the four corners of the rectangle around a waypoint in sight, each a turned copy of the corner frame */
 static void Waypoint_DrawRect(cWaypointScorer *self, cEntity *e, const float *scr, float depth) {
-	float d = X87_MulMulF(((const cObjEntityVtbl *)e->vftable)->GetRadius(e),
-		g_SplitScreenGame ? WAYPOINT_RECT_SIZE * 0.5f : WAYPOINT_RECT_SIZE, depth);
+	float d = (float)((((const cObjEntityVtbl *)e->vftable)->GetRadius(e)) * (g_SplitScreenGame ? WAYPOINT_RECT_SIZE * 0.5f : WAYPOINT_RECT_SIZE) * depth);
 	if (WAYPOINT_RECT_MIN > d) {
 		d = WAYPOINT_RECT_MIN;
 	}
@@ -117,7 +116,7 @@ static void Waypoint_DrawDot(cWaypointScorer *self, cEntity *e, cEntity *cam, co
 		return;
 	}
 	float now = Timer_GetTime(&g_pWorld->timer);
-	float whole = (float)crt_floor((double)Timer_GetTime(&g_pWorld->timer));
+	float whole = (float)floor((double)Timer_GetTime(&g_pWorld->timer));
 	int a = (int)((now - whole - 0.5f) * WAYPOINT_DOT_ALPHA);
 	CPsaImage *img = self->img;
 	img->color = (img->color & 0xffffff) | (uint32_t)((a < 0 ? -a : a) + 0x20) << 24;

@@ -73,7 +73,7 @@ void Devastator_Create(cAbstractFile *params) {
 	if (!num) {
 		return;
 	}
-	float q0 = Weap_X87Div(cTargetLock_GetAmmo(wm, g_DevastatorIDAmmo), g_DevastatorAmmoCost);
+	float q0 = (float)((cTargetLock_GetAmmo(wm, g_DevastatorIDAmmo)) / g_DevastatorAmmoCost);
 	int k = (int)((float)shot + q0) % num;
 	/* the k-th mounted slot fires (the original keeps stack garbage as the origin without one) */
 	origin = (vec3_t){ 0.0f, 0.0f, 0.0f };
@@ -475,14 +475,14 @@ void Devastator_Fire(cAbstractFile *params) {
 	}
 	cVehicleAttack_ShotAtPoint(&WLife(v)->attack, &hit, 1);
 ammo:;
-	float rest = Weap_X87Sub(cTargetLock_GetAmmo(wm, g_DevastatorIDAmmo), g_DevastatorAmmoCost);
+	float rest = (float)((cTargetLock_GetAmmo(wm, g_DevastatorIDAmmo)) - g_DevastatorAmmoCost);
 	cWeaponManager_SetAmmo(wm, g_DevastatorIDAmmo, Float_MaxSS(0.0f, rest));
 	/* the upgrades 7 and 8 use up their own ammo, at 0 the script restores the weapon */
 	int up = cWeaponManager_GetUpgrade(wm, g_DevastatorIDWeap);
 	if ((uint32_t)(up - 7) > 1) {
 		return;
 	}
-	float u = Weap_X87Sub(cWeaponManager_GetUAmmo(wm, g_DevastatorIDWeap), 2.0f);
+	float u = (float)((cWeaponManager_GetUAmmo(wm, g_DevastatorIDWeap)) - 2.0f);
 	if (0.0f >= u) {
 		cWeaponManager_SetUpgrade(wm, g_DevastatorIDWeap, 0);
 		u = 0.0f;

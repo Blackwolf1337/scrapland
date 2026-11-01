@@ -1687,7 +1687,7 @@ void cWalkCharEntity_WalkAnim(cEntity *self, float dt) {
 	if (ctrl->layers[0].action->slideAsFly == 4) {
 		w->displAng = 0.0f;
 	} else {
-		float a = (float)Game_Atan2((double)w->control.walk, (double)w->control.strafe);
+		float a = (float)atan2((double)w->control.walk, (double)w->control.strafe);
 		w->displAng = NormAng(WCE_PITCH_FLY - a);
 	}
 	if (stopping) {

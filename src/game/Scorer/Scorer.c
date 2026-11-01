@@ -965,7 +965,7 @@ void ScorerFx_Draw(void *fx, int player, float dt) {
 	g_SceneMotionBlurValue = v;
 	if (v > 0.0f && g_MotionBlurOffVar > 0.0f && cTimer_GetSpeed(&g_pWorld->timer) > 0.0f) {
 		cScorer *sc = Scorer_Get(player);
-		double c = Game_Cos((double)(sc->time + sc->time));
+		double c = cos((double)(sc->time + sc->time));
 		g_SceneMotionBlurOff = (float)(c * (double)(g_MotionBlurOffVar * v));
 		return;
 	}
@@ -1327,7 +1327,7 @@ void cScorer_DrawNoPadMsg(cScorer *scorer, int index, float y, byte big, int pad
 	img->scaleY = 80.0f;
 	img->color = 0x80000000;
 	CPsaImage_Draw(img, 0.0f, y);
-	off = (float)__builtin_fabs(1.0 - Game_Fmod((double)scorer->time, 2.0)) * 10.0f;
+	off = (float)__builtin_fabs(1.0 - fmod((double)scorer->time, 2.0)) * 10.0f;
 	if (g_SplitScreenGame) {
 		CFont_PrintfAlignColor(g_FontHoratio, off + 320.0f, y + 26.0f, TEXTSCORER_CENTER, 0xffffff,
 			Lang_GetStr("XBox_NoPad_MP_Msg_1"), pad);
@@ -1633,7 +1633,7 @@ byte Scorer_DrawConsole(void) {
 		CFont_PrintfColor(g_FontTerminal8, CONSOLE_MARGIN - sx * 5.0f,
 			(float)(i - 11) * h / 5.0f + CONSOLE_MARGIN + (float)y, Console_LineColor(l->color), "%s", l->text);
 	}
-	int ms = (int)X87_Mul(g_pApp->vftable->GetGameTime(g_pApp), 1024.0);
+	int ms = (int)((g_pApp->vftable->GetGameTime(g_pApp)) * 1024.0);
 	int blink = ms % CONSOLE_BLINK - 255;
 	CFont_PrintfXY(g_FontTerminal8, off + CONSOLE_MARGIN, CONSOLE_INPUT_Y, (blink < 0 ? -blink : blink) > 128 ? "%s"
 		: "%s_", g_PlayerInput[0].text);

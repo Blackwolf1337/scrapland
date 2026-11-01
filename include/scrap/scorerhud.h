@@ -161,7 +161,7 @@ static inline void ScorerHud_DrawArrow(CPsaImage *img, int frame, float a, float
 static inline double ScorerHud_ScreenAtan2(float sx, float sy) {
 	double dx = ((double)sx - 320.0) * 240.0 / 320.0;
 	double dy = (double)sy - 240.0;
-	return Game_Atan2(dx, dy);
+	return atan2(dx, dy);
 }
 
 /* the angle of an arrow frame pointing up from the middle of the screen towards the screen point sx, sy */

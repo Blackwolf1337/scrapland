@@ -5,14 +5,6 @@
  */
 #include "scrap/game.h"
 
-/* x87: dist * dist in the precision the FPU is set to, like the original's fmul st, st */
-static long double X87_Square(float x) {
-	long double r;
-
-	__asm__("fmul %%st(0), %%st(0)" : "=t"(r) : "0"((long double)x));
-	return r;
-}
-
 static float Vec3_Dist2To(const vec3_t *p, float x, float y, float z) {
 	float dx = p->x - x, dy = p->y - y, dz = p->z - z;
 	return dy * dy + dx * dx + dz * dz;
@@ -262,7 +254,7 @@ long double Dist2_PointTriangle(const vec3_t *p, const vec3_t *v1, const vec3_t 
 		if (out) {
 			*out = q;
 		}
-		return X87_Square(dist);
+		return ((double)dist * dist);
 	}
 	d[0] = Dist2_PointSegment(v1, v2, p, &c[0]);
 	d[1] = Dist2_PointSegment(v2, v3, p, &c[1]);
@@ -291,8 +283,8 @@ vec3_t *Vec3_Reflect(const vec3_t *n, const vec3_t *v, vec3_t *out) {
 /* the angles (x, y, z = 0) that turn the z axis into dir */
 vec3_t *Vec3_GetRotAng(vec3_t *out, const vec3_t *dir) {
 	out->z = 0.0f;
-	out->y = (float)Game_Atan2((double)dir->x, (double)dir->z);
-	out->x = (float)Game_Atan2((double)-dir->y, __builtin_sqrt((double)(dir->z * dir->z + dir->x * dir->x)));
+	out->y = (float)atan2((double)dir->x, (double)dir->z);
+	out->x = (float)atan2((double)-dir->y, __builtin_sqrt((double)(dir->z * dir->z + dir->x * dir->x)));
 	return out;
 }
 
@@ -312,9 +304,9 @@ vec3_t *Vec3_RotateSC(vec3_t *out, const vec3_t *in, const vec3_t *c, const vec3
 vec3_t *Vec3_RotateInv(vec3_t *out, const vec3_t *in, const vec3_t *rot) {
 	float s0, c0, s1, c1, s2, c2;
 
-	X87_SinCos(-rot->x, &s0, &c0);
-	X87_SinCos(-rot->y, &s1, &c1);
-	X87_SinCos(-rot->z, &s2, &c2);
+	Float_SinCos(-rot->x, &s0, &c0);
+	Float_SinCos(-rot->y, &s1, &c1);
+	Float_SinCos(-rot->z, &s2, &c2);
 	float t1 = c1 * in->z - s1 * in->x;
 	float t2 = s1 * in->z + c1 * in->x;
 	float t3 = c0 * in->y - s0 * t1;
@@ -337,7 +329,7 @@ vec3_t *Vec3_NormAng(vec3_t *out, const vec3_t *in) {
 
 /* ang folded into (-pi, pi] */
 float NormAng(float ang) {
-	ang = ang - (float)(crt_floor((double)ang / M_2PI_D) * M_2PI_D);
+	ang = ang - (float)(floor((double)ang / M_2PI_D) * M_2PI_D);
 	if ((double)ang > M_PI_D) {
 		ang = ang - M_2PI_F;
 	}
@@ -347,7 +339,7 @@ float NormAng(float ang) {
 float *Vec2_Rotate(float *out, const float *in, float ang) {
 	float s, c;
 
-	X87_SinCos(ang, &s, &c);
+	Float_SinCos(ang, &s, &c);
 	out[0] = in[0] * c - in[1] * s;
 	out[1] = in[1] * c + in[0] * s;
 	return out;
@@ -357,9 +349,9 @@ float *Vec2_Rotate(float *out, const float *in, float ang) {
 vec3_t *Vec3_Rotate(vec3_t *out, const vec3_t *in, const vec3_t *rot) {
 	float s0, c0, s1, c1, s2, c2;
 
-	X87_SinCos(rot->x, &s0, &c0);
-	X87_SinCos(rot->y, &s1, &c1);
-	X87_SinCos(rot->z, &s2, &c2);
+	Float_SinCos(rot->x, &s0, &c0);
+	Float_SinCos(rot->y, &s1, &c1);
+	Float_SinCos(rot->z, &s2, &c2);
 	float a = c2 * in->y + s2 * in->x;
 	float b = c2 * in->x - s2 * in->y;
 	float d = c0 * in->z + s0 * a;
@@ -440,8 +432,8 @@ float *Matrix3_RotFromTo(const vec3_t *from, const vec3_t *to, float *m) {
 vec3_t *Vec3_RotateXY(vec3_t *out, const vec3_t *in, float ax, float ay) {
 	float s0, c0, s1, c1;
 
-	X87_SinCos(ax, &s0, &c0);
-	X87_SinCos(ay, &s1, &c1);
+	Float_SinCos(ax, &s0, &c0);
+	Float_SinCos(ay, &s1, &c1);
 	float a = c0 * in->z + s0 * in->y;
 	out->y = c0 * in->y - s0 * in->z;
 	out->z = c1 * a - s1 * in->x;

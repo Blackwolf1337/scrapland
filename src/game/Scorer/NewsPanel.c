@@ -99,7 +99,7 @@ void cNewsPanel_Update(cNewsPanel *self) {
 			self->closedDrawn = 0;
 		}
 		self->engineInits = g_EngineInits;
-		int v = Scorer_Abs(0xff - (int)(Game_FtoUI(t * 1024.0f) % 0x1ff));
+		int v = Scorer_Abs(0xff - (int)(Float_ToU32(t * 1024.0f) % 0x1ff));
 		if (Eng_RenderTargetBegin("NewsPanel")) {
 			if (!g_pWorld->alarm.on) {
 				cNewsPanel_DrawNews(self, dt);
@@ -145,9 +145,9 @@ void cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e) {
 	if (d > r + r) {
 		/* a new point around the entity */
 		double a = (double)(float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * g_NewsRandRange - g_NewsRandOfs);
-		float cx = (float)Game_Cos(a) * r;
+		float cx = (float)cos(a) * r;
 		float cy = r * 0.5f;
-		float sz = (float)Game_Sin(a) * r;
+		float sz = (float)sin(a) * r;
 		cam = self->cam;
 		self->camPos.x = cam->target.x + cx;
 		self->camPos.y = cam->target.y + cy;

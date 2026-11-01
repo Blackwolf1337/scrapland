@@ -82,9 +82,9 @@ void cHeadScorer_Draw(cHeadScorer *self, int player) {
 	if (cur) {
 		CGameCamera_Copy(self->cam, cur);
 		CGameCamera_SetLookAt(self->cam, 1);
-		float sx = (float)Game_Sin((double)self->time) * 10.0f;
+		float sx = (float)sin((double)self->time) * 10.0f;
 		cScorerModel *m = self->model;
-		float sy = (float)Game_Cos((double)(self->time * 0.5f)) * 10.0f + m->height;
+		float sy = (float)cos((double)(self->time * 0.5f)) * 10.0f + m->height;
 		float sz = m->radius * -5.5f;
 		const vec3_t *p = CGameModel_GetPos(&m->model, &tmp);
 		float py = p->y;

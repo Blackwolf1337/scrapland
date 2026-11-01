@@ -391,8 +391,8 @@ void CFont3_Print(CFont3 *self, float x, float y, const char *s) {
 		return;
 	}
 	if (self->round) {
-		x = (float)crt_floor((double)x + 0.5);
-		y = (float)crt_floor((double)y + 0.5);
+		x = (float)floor((double)x + 0.5);
+		y = (float)floor((double)y + 0.5);
 	}
 	uint32_t color = self->graphic->color;
 	for (const byte *c = (const byte *)s; *c; c++) {

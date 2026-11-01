@@ -451,7 +451,7 @@ int cVehicleEntity_CanFire(cVehicleEntity *self) {
 void cVehicleEntity_UpdateHistory(cVehicleEntity *self) {
 	vec3_t acc, jerk;
 
-	float dt = Weap_X87Sub(Timer_GetTime(&self->wl.obj.timer), self->histTime);
+	float dt = (float)((Timer_GetTime(&self->wl.obj.timer)) - self->histTime);
 	if (0.001 >= (double)dt) {
 		return;
 	}
@@ -465,7 +465,7 @@ void cVehicleEntity_UpdateHistory(cVehicleEntity *self) {
 	jerk.z = self->histAcc.z + acc.z;
 	float accLen = (float)__builtin_sqrt((double)(acc.y * acc.y + acc.x * acc.x + acc.z * acc.z));
 	float jerkLen = (float)__builtin_sqrt((double)(jerk.y * jerk.y + jerk.x * jerk.x + jerk.z * jerk.z));
-	float since = Weap_X87Sub(Timer_GetTime(&self->wl.obj.timer), self->hitTime);
+	float since = (float)((Timer_GetTime(&self->wl.obj.timer)) - self->hitTime);
 	if (g_VehicleCrashMinTime > since && self->histAccLen > g_VehicleCrashAccLo) {
 		Veh_Vtbl(self)->Crash(self, &jerk, jerkLen);
 		self->histAcc.x = 0.0f;
@@ -1116,7 +1116,7 @@ void cVehicleEntity_UpdatePilot(cVehicleEntity *self, int slot, float dt) {
 	int *relax = Veh_PilotAnim(self, slot, 4);
 	if (*relax != -1) {
 		float len = *Veh_PilotAnimLen(self, slot, 4);
-		float loops = Weap_X87Div(Timer_GetTime(&self->wl.obj.timer), len);
+		float loops = (float)((Timer_GetTime(&self->wl.obj.timer)) / len);
 		/* the relax animation plays in 5 of every 10 loops (the jump table of the original) */
 		switch ((int)loops % 10) {
 		case 0:
@@ -1124,7 +1124,7 @@ void cVehicleEntity_UpdatePilot(cVehicleEntity *self, int slot, float dt) {
 		case 4:
 		case 7:
 		case 9:
-			t = (float)Game_Fmod((double)Timer_GetTime(&self->wl.obj.timer), (double)len);
+			t = (float)fmod((double)Timer_GetTime(&self->wl.obj.timer), (double)len);
 			CGameModel_SetAnim(m, *relax, 0, 0);
 			CGameModel_AnimDelta(m, 0, t, NULL);
 			return;
@@ -1372,7 +1372,7 @@ float Vehicle_TurnCurve(float x) {
 		return (float)__builtin_sqrt((double)x - 0.75) + 0.5f;
 	}
 	float s = -(float)__builtin_sqrt((double)-x - 0.75);
-	return Weap_X87Sub(s, 0.5f);
+	return (float)(s - 0.5f);
 }
 
 /* ---- the script variables ---- */
@@ -1748,8 +1748,8 @@ static void Veh_StepFly(cVehicleEntity *self, float dt, float ax, float ay) {
 	/* the side push of the turn */
 	float k = self->turnSpeedX * dt;
 	double a = (double)self->wl.obj.ang.y + 1.5707963267948966;
-	self->wl.obj.vel.x = (float)Game_Sin(a) * k + self->wl.obj.vel.x;
-	self->wl.obj.vel.z = (float)Game_Cos(a) * k + self->wl.obj.vel.z;
+	self->wl.obj.vel.x = (float)sin(a) * k + self->wl.obj.vel.x;
+	self->wl.obj.vel.z = (float)cos(a) * k + self->wl.obj.vel.z;
 	float fx = self->wl.obj.vel.x * dt;
 	float fy = self->wl.obj.vel.y * dt;
 	float fz = self->wl.obj.vel.z * dt;
@@ -1878,7 +1878,7 @@ void cVehicleEntity_Step(cVehicleEntity *self, float dt) {
 		self->wl.obj.ang.x = -VEH_PI_2_F;
 	}
 	float s2 = sx + sx;
-	float roll = (float)Game_Atan((double)(s2 - self->controls.str)) * 0.5f;
+	float roll = (float)atan((double)(s2 - self->controls.str)) * 0.5f;
 	self->roll = roll;
 	float az = self->wl.obj.ang.z;
 	float rz = (roll - az) * 4.0f;
@@ -1935,15 +1935,15 @@ static void Veh_UpdateFloating(cVehicleEntity *self, float t, vec3_t *rot, vec3_
 	float k = Float_MaxSS(0.5f, 1.0f - self->speed / VEH_BOOST_SPEED);
 	float amp = (g_VehicleEditingMode ? 0x1.99999ap-3f : g_FXVehicleFloatingFactor) * k;
 
-	pos->x = (float)(Game_Sin((double)t * 0.9) * 10.0) * amp + pos->x;
-	pos->y = (float)(Game_Sin((double)t) * 10.0) * amp + pos->y;
-	pos->z = (float)(Game_Sin((double)t * 1.1) * 10.0) * amp + pos->z;
-	float rz = (float)(Game_Sin((double)(t + t)) / VEH_FLOAT_PERIOD) * amp + rot->z;
-	float rx = (float)(Game_Sin((double)(t * 0x1.b33334p+0f)) / VEH_FLOAT_PERIOD) * amp + rot->x;
-	rot->y = (float)(Game_Sin((double)(t * 0x1.266666p+1f)) / VEH_FLOAT_PERIOD) * amp + rot->y;
-	rot->x = (float)Game_Atan((double)(self->localAcc.z / VEH_BOOST_SPEED)) * g_MotorTrustRotationY *
+	pos->x = (float)(sin((double)t * 0.9) * 10.0) * amp + pos->x;
+	pos->y = (float)(sin((double)t) * 10.0) * amp + pos->y;
+	pos->z = (float)(sin((double)t * 1.1) * 10.0) * amp + pos->z;
+	float rz = (float)(sin((double)(t + t)) / VEH_FLOAT_PERIOD) * amp + rot->z;
+	float rx = (float)(sin((double)(t * 0x1.b33334p+0f)) / VEH_FLOAT_PERIOD) * amp + rot->x;
+	rot->y = (float)(sin((double)(t * 0x1.266666p+1f)) / VEH_FLOAT_PERIOD) * amp + rot->y;
+	rot->x = (float)atan((double)(self->localAcc.z / VEH_BOOST_SPEED)) * g_MotorTrustRotationY *
 		self->vertBalance + rx;
-	rot->z = (float)Game_Atan((double)(self->localAcc.x / -VEH_BOOST_SPEED)) * g_MotorTrustRotationX *
+	rot->z = (float)atan((double)(self->localAcc.x / -VEH_BOOST_SPEED)) * g_MotorTrustRotationX *
 		self->vertBalance + rz;
 }
 
@@ -2010,10 +2010,10 @@ void cVehicleEntity_UpdateModel(cVehicleEntity *self) {
 	/* the wobble above the atmosphere */
 	h = Float_MinSS(1.0f, h);
 	if (h > 0.0f) {
-		double s = Game_Sin((double)(t * 0x1.333334p-1f)) * (double)h;
+		double s = sin((double)(t * 0x1.333334p-1f)) * (double)h;
 		rot.x = (float)(s + s) + rot.x;
-		rot.y = (float)(Game_Sin((double)(t * 0.5f)) * (double)h * 1.600000023841858) + rot.y;
-		rot.z = (float)(Game_Sin((double)(t * 0x1.666666p-1f)) * (double)h * 1.100000023841858) + rot.z;
+		rot.y = (float)(sin((double)(t * 0.5f)) * (double)h * 1.600000023841858) + rot.y;
+		rot.z = (float)(sin((double)(t * 0x1.666666p-1f)) * (double)h * 1.100000023841858) + rot.z;
 	}
 	if (self->wl.obj.cam && self->slot != -1) {
 		Veh_UpdateCamera(self);

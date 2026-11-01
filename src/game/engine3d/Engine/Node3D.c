@@ -826,11 +826,11 @@ quat_t *CRotation_GetQuat(CRotation *self, quat_t *out) {
 		} else if (!self->mode) {
 			Quat_FromEuler(&self->q, -self->ang.x, -self->ang.y, -self->ang.z);
 		} else {
-			X87_SinCos(-self->ang.y * 0.5f, &s, &c);
+			Float_SinCos(-self->ang.y * 0.5f, &s, &c);
 			qy = (quat_t){ s * 0.0f, s, s * 0.0f, c };
-			X87_SinCos(-self->ang.z * 0.5f, &s, &c);
+			Float_SinCos(-self->ang.z * 0.5f, &s, &c);
 			qz = (quat_t){ s * 0.0f, s * 0.0f, s, c };
-			X87_SinCos(-self->ang.x * 0.5f, &s, &c);
+			Float_SinCos(-self->ang.x * 0.5f, &s, &c);
 			qx = (quat_t){ s, s * 0.0f, s * 0.0f, c };
 			self->q = *Quat_Mul(&t2, Quat_Mul(&t, &qx, &qz), &qy);
 		}

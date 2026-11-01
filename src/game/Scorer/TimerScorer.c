@@ -91,8 +91,8 @@ void cTimerScorer_Draw(cTimerScorer *self, int player) {
 	}
 	/* no text for the inactive time */
 	if (self->type != 2) {
-		uint32_t min = Game_FtoUI(left / 60.0f);
-		uint32_t sec = Game_FtoUI(left - (float)(double)min * 60.0f);
+		uint32_t min = Float_ToU32(left / 60.0f);
+		uint32_t sec = Float_ToU32(left - (float)(double)min * 60.0f);
 		CFont_PrintfAlignColorShadow(t->font, t->base.x, t->base.y, 4, t->color, "%.2d:%.2d", min, sec);
 	}
 	if (!(GVAR_FLAGS(*var) & 1)) {

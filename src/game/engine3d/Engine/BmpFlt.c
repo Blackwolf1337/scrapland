@@ -185,7 +185,8 @@ void CBmpFlt_Exposure(CBmpFlt *self, float a, float b) {
 		for (int i = 0; i < RGBA; i += 2) {
 			double in[2] = { -(a * p[i] / b), -(a * p[i + 1] / b) };
 			double out[2];
-			Game_ExpPd(in, out);
+			out[0] = exp(in[0]);
+			out[1] = exp(in[1]);
 			p[i] = (1.0f - (float)out[0]) * b;
 			p[i + 1] = (1.0f - (float)out[1]) * b;
 		}
@@ -288,7 +289,7 @@ void CBmpFlt2_Exposure(CBmpFlt2 *self, float a, float b) {
 	float *p = self->img;
 	for (int n = self->height * self->width; n > 0; n--) {
 		for (int i = 0; i < RGB; i++) {
-			p[i] = (1.0f - (float)Game_Exp((double)-(p[i] * a / b))) * b;
+			p[i] = (1.0f - (float)exp((double)-(p[i] * a / b))) * b;
 		}
 		p += RGB;
 	}
@@ -308,7 +309,7 @@ void CBmpFlt2_Gamma(CBmpFlt2 *self, float g, float b) {
 			}
 		}
 		for (int i = 0; i < RGB; i++) {
-			p[i] = (float)Game_Pow((double)(p[i] / b), (double)inv) * b;
+			p[i] = (float)pow((double)(p[i] / b), (double)inv) * b;
 		}
 		p += RGB;
 	}

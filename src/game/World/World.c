@@ -78,8 +78,8 @@ static void World_SphereBox(const vec3_t *c, float radius, vec3_t *lo, vec3_t *h
 float Vec3_DotViewDir(const vec3_t *v, float ax, float ay) {
 	float sx, cx, sy, cy;
 
-	X87_SinCos(-ax, &sx, &cx);
-	X87_SinCos(ay + PI_F, &sy, &cy);
+	Float_SinCos(-ax, &sx, &cx);
+	Float_SinCos(ay + PI_F, &sy, &cy);
 	return (cy * v->z + sy * v->x) * cx - sx * v->y;
 }
 
@@ -122,8 +122,8 @@ cEntity *Entity_FindInView(cEntity *self, float range, float *outDot, float *out
 					float inv = 1.0f / dist;
 					float sx, cx, sy, cy;
 					float nx = dx * inv, ny = dy * inv, nz = dz * inv;
-					X87_SinCos(-ang.x, &sx, &cx);
-					X87_SinCos(ang.y + PI_F, &sy, &cy);
+					Float_SinCos(-ang.x, &sx, &cx);
+					Float_SinCos(ang.y + PI_F, &sy, &cy);
 					float dot = (nz * cy + nx * sy) * cx - ny * sx;
 					if (dot > minDot && !Engine_TestLine(&pos, &tp, &tp, NULL)) {
 						minDot = dot;

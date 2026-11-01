@@ -13,10 +13,10 @@ static int Color_Clamp(int v) {
 }
 
 uint32_t Color_FromFloat(const float *c) {
-	int r = (int)X87_Fistp((double)(c[0] * 255.0f));
-	int g = (int)X87_Fistp((double)(c[1] * 255.0f));
-	int b = (int)X87_Fistp((double)(c[2] * 255.0f));
-	int a = (int)X87_Fistp((double)(c[3] * 255.0f));
+	int r = (int)llrint((double)(c[0] * 255.0f));
+	int g = (int)llrint((double)(c[1] * 255.0f));
+	int b = (int)llrint((double)(c[2] * 255.0f));
+	int a = (int)llrint((double)(c[3] * 255.0f));
 	return (uint32_t)Color_Clamp(a) << 24 | (uint32_t)Color_Clamp(r) << 16 | (uint32_t)Color_Clamp(g) << 8
 		| (uint32_t)Color_Clamp(b);
 }
@@ -49,8 +49,8 @@ void Debug_DrawBox(const vec3_t *mn, const vec3_t *mx, uint32_t color) {
 
 void Debug_DrawConeM(const matrix_t *m, float len, float ang) {
 	double h = (double)ang * 0.5;
-	float r = (float)Game_Sin(h) * len;
-	float d = -((float)Game_Cos(h) * len);
+	float r = (float)sin(h) * len;
+	float d = -((float)cos(h) * len);
 	const vec3_t o = { 0.0f, 0.0f, 0.0f };
 	const vec3_t ends[4] = { { -r, d, 0.0f }, { r, d, 0.0f }, { 0.0f, d, r }, { 0.0f, d, -r } };
 	for (int i = 0; i < 4; i++) {
@@ -59,10 +59,10 @@ void Debug_DrawConeM(const matrix_t *m, float len, float ang) {
 	}
 	for (int i = 0; i < 32;) {
 		double a = (double)(float)((double)i * M_PI_D * 0.0625);
-		vec3_t p = { (float)Game_Cos(a) * r, d, (float)Game_Sin(a) * r };
+		vec3_t p = { (float)cos(a) * r, d, (float)sin(a) * r };
 		i += 2;
 		a = (double)(float)((double)i * M_PI_D * 0.0625);
-		vec3_t q = { (float)Game_Cos(a) * r, d, (float)Game_Sin(a) * r };
+		vec3_t q = { (float)cos(a) * r, d, (float)sin(a) * r };
 		Render_SetWorldMatrix(m, 0);
 		Render_Line(&p, &q, 0x808080);
 	}
@@ -117,8 +117,10 @@ void Debug_SphereLines(const matrix_t *m, const vec3_t *c, float r, uint32_t col
 			do {
 				double a[2] = { (double)((float)i * k), (double)((float)(i + 1) * k) };
 				double s[2], co[2];
-				Game_SinPd(a, s);
-				Game_CosPd(a, co);
+				s[0] = sin(a[0]);
+				s[1] = sin(a[1]);
+				co[0] = cos(a[0]);
+				co[1] = cos(a[1]);
 				for (int j = 0; j < 2; j++) {
 					pts[i + j] = (vec3_t){ (float)s[j] * r + c->x, (float)co[j] * r + c->y, c->z };
 				}
@@ -127,8 +129,8 @@ void Debug_SphereLines(const matrix_t *m, const vec3_t *c, float r, uint32_t col
 		}
 		for (; i <= nEquator; i++) {
 			double a = (double)((float)i * k);
-			pts[i].x = (float)Game_Sin(a) * r + c->x;
-			pts[i].y = (float)Game_Cos(a) * r + c->y;
+			pts[i].x = (float)sin(a) * r + c->x;
+			pts[i].y = (float)cos(a) * r + c->y;
 			pts[i].z = c->z;
 		}
 	}
@@ -136,13 +138,13 @@ void Debug_SphereLines(const matrix_t *m, const vec3_t *c, float r, uint32_t col
 	float kv = (float)(M_2PI_D / (double)divV);
 	for (int j = 1; j <= divV; j++) {
 		float sv, cv;
-		X87_SinCos((float)j * kv, &sv, &cv);
+		Float_SinCos((float)j * kv, &sv, &cv);
 		int i = 1;
 		if (nEquator > 1) {
 			float kh = (float)(M_PI_D / (double)nEquator);
 			for (; i < nEquator; i++) {
 				float s, co;
-				X87_SinCos((float)i * kh, &s, &co);
+				Float_SinCos((float)i * kh, &s, &co);
 				float sr = s * r;
 				float cr = co * r;
 				vec3_t p = { sr * cv + c->x, c->y + cr, c->z - sr * sv };

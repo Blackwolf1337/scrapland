@@ -1299,8 +1299,8 @@ void cEmbeddedFXSentinel_Update(cEmbeddedFXSentinel *self, float dt) {
 			ph->x = 1.5707964f;
 			ph->y = step + ph->y;
 		}
-		float ax = (float)Game_Cos((double)ph->x) * g_SentinelStdFovX * 0.25f;
-		float ay = (float)Game_Cos((double)ph->y) * g_SentinelStdFovY * 0.25f;
+		float ax = (float)cos((double)ph->x) * g_SentinelStdFovX * 0.25f;
+		float ay = (float)cos((double)ph->y) * g_SentinelStdFovY * 0.25f;
 		vec3_t rot = { ax + 0.0f, ay + 0.0f, 0.0f };
 		const vec3_t fwd = { 0.0f, 0.0f, -1.0f };
 		vec3_t v, dir, to, hit;

@@ -288,9 +288,9 @@ void ATPC_Fire(cAbstractFile *params) {
 			g_ATPCNumSlots = g_ATPCNumSlots + 1.0f;
 		}
 	}
-	float rest = Weap_X87Sub(cTargetLock_GetAmmo(wm, g_ATPCIDAmmo), g_ATPCAmmoCost * g_ATPCNumSlots);
+	float rest = (float)((cTargetLock_GetAmmo(wm, g_ATPCIDAmmo)) - (g_ATPCAmmoCost * g_ATPCNumSlots));
 	if (0.0f > rest) {
-		g_ATPCNumSlots = Weap_X87Div(cTargetLock_GetAmmo(wm, g_ATPCIDAmmo), g_ATPCAmmoCost);
+		g_ATPCNumSlots = (float)((cTargetLock_GetAmmo(wm, g_ATPCIDAmmo)) / g_ATPCAmmoCost);
 		rest = 0.0f;
 	}
 	cWeaponManager_SetAmmo(wm, g_ATPCIDAmmo, rest);
@@ -342,7 +342,7 @@ upgrade:;
 	if ((uint32_t)(up - 9) > 1) {
 		return;
 	}
-	float u = Weap_X87Sub(cWeaponManager_GetUAmmo(wm, g_ATPCIDWeap), g_ATPCNumSlots * 10.0f);
+	float u = (float)((cWeaponManager_GetUAmmo(wm, g_ATPCIDWeap)) - (g_ATPCNumSlots * 10.0f));
 	if (0.0f >= u) {
 		cWeaponManager_SetUpgrade(wm, g_ATPCIDWeap, 0);
 		cPy_Function_AddParamI(g_RestoreUpgradeFunc, up);

@@ -72,7 +72,7 @@ void cCTFFriendsData_Think(cCTFFriendsData *self) {
 		usr->vftable->IsType(usr, TYEN_CAR);
 	}
 	cEntity *leader = Logic_FindCar(cCTFEnemies_GetLeader((&g_pWorld->logic.ctfEnemies)));
-	double maxAttack = crt_ceil((double)((float)Logic_Count(self->list->numElems) *
+	double maxAttack = ceil((double)((float)Logic_Count(self->list->numElems) *
 		g_PercFriendsAttackLeaderWhenWinning));
 	self->numAttack = 0;
 	do {

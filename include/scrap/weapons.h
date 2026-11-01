@@ -84,18 +84,6 @@ static inline cEntity *Weap_GetVehicle(const char *name) {
 	return v;
 }
 
-/* the x87 code of the original: a float minus (divided by) a float, rounded by the x87 control word, then to float */
-static inline float Weap_X87Sub(float a, float b) {
-	long double r;
-	__asm__("fsubs %2" : "=t"(r) : "0"((long double)a), "m"(b));
-	return (float)r;
-}
-static inline float Weap_X87Div(float a, float b) {
-	long double r;
-	__asm__("fdivs %2" : "=t"(r) : "0"((long double)a), "m"(b));
-	return (float)r;
-}
-
 /* rand() in [0, 1] (double) */
 static inline double Weap_Rand01(void) {
 	return (double)(crt_rand() & 0x7fff) * RAND_SCALE;

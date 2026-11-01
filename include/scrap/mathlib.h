@@ -4,6 +4,8 @@
 #ifndef SCRAP_MATHLIB_H
 #define SCRAP_MATHLIB_H
 
+#include <math.h>
+
 #include "scrap/shared.h"
 
 #define M_PI_D 3.141592653589793	/* the double constants the engine uses */
@@ -131,25 +133,16 @@ quat_t *Quat_FromEuler(quat_t *out, float x, float y, float z);	/* radians */
 float Quat_DotAbs(const quat_t *a, const quat_t *b);
 matrix_t *Quat_ToMatrixD3D(matrix_t *out, const quat_t *q);
 
-/* acos, cos, sin and atan2 of the exe's runtime, so results match the original to the last bit (src/core/libm.c) */
-double Game_Acos(double x);
-double Game_Cos(double x);
-double Game_Sin(double x);
-double Game_Atan(double x);
-double Game_Atan2(double y, double x);	/* _CIatan2 */
-float Game_Atan2F(double y, double x);	/* _CIatan2 stored as a float (fstp DWORD) */
-double Game_Fmod(double x, double y);	/* _CIfmod */
-double Game_Asin(double x);
-double Game_Exp(double x);
-double Game_Log(double x);
-double Game_Pow(double x, double y);
-int64_t X87_Fistp(double x);	/* round to nearest */
-uint32_t Game_FtoUI(float x);	/* (uint32_t)x of the MSVC runtime (__ftoui3, rva 0x314310) */
-uint32_t Game_DtoUI(double x);	/* (uint32_t)x of a double (__dtoui3, rva 0x3144f1) */
-void X87_SinCos(float a, float *s, float *c);	/* fsincos, both rounded to float */
-void Game_ExpPd(const double in[2], double out[2]);	/* the vectorised exp of loops, two at once */
-void Game_SinPd(const double in[2], double out[2]);
-void Game_CosPd(const double in[2], double out[2]);
+/* a float or double to an unsigned int, truncated; a negative value wraps like the original's conversion */
+static inline uint32_t Float_ToU32(double x) {
+	return (uint32_t)(int64_t)x;
+}
+
+/* the sine and cosine of a, both as floats */
+static inline void Float_SinCos(float a, float *s, float *c) {
+	*s = (float)sin(a);
+	*c = (float)cos(a);
+}
 
 
 /* Engine/calculo3d.cpp (src/game/engine3d/Engine/Calc3d.c) */
@@ -175,31 +168,6 @@ static inline float Float_MinSS(float a, float b) {
 
 static inline float Float_MaxSS(float a, float b) {
 	return a > b ? a : b;
-}
-
-/* the x87 a * b * c of the original (a on the stack from a call, fmul DWORD twice), rounded by the control word,
- * then to float */
-static inline float X87_MulMulF(long double a, float b, float c) {
-	long double r;
-
-	__asm__("fmuls %2\n\tfmuls %3" : "=t"(r) : "0"(a), "m"(b), "m"(c));
-	return (float)r;
-}
-
-/* the x87 a * b of the original (fmul QWORD), in the precision the game set, stored as a double */
-static inline double X87_Mul(double a, double b) {
-	double r;
-
-	__asm__("fmull %1" : "=t"(r) : "m"(b), "0"(a));
-	return r;
-}
-
-/* the x87 a / b of the original (fdiv QWORD), in the precision the game set, stored as a double */
-static inline double X87_Div(double a, double b) {
-	double r;
-
-	__asm__("fdivl %1" : "=t"(r) : "m"(b), "0"(a));
-	return r;
 }
 
 /* v / |v| as the engine3d normalizes inline: the length of (y y + x x) + z z through double, the factor 1 / len

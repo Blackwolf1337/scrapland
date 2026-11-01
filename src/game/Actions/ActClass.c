@@ -427,7 +427,7 @@ void cActClassCam_Update(void *cam, cEntity *followCam, cEntity *e) {
 				*fov = mx;
 				return;
 			}
-			float p = (float)Game_Pow(1.0 - (double)(t / total), 6.0);
+			float p = (float)pow(1.0 - (double)(t / total), 6.0);
 			*fov = (1.0f - p) * c->fovRange + c->minFov;
 			return;
 		}

@@ -98,7 +98,7 @@ void cAIGear_CheckActDist(cAIGear *self) {
 	/* the half angle of the target at its distance, the angle of the view (down z) to it */
 	cEntity *t = c->base.target.target;
 	float tr = Obj_Vtbl(t)->GetRadius(t);
-	double half = Game_Atan2((double)tr, (double)dist);
+	double half = atan2((double)tr, (double)dist);
 	vec3_t fwd = { 0.0f, 0.0f, -1.0f };
 	vec3_t view = WChar(c->ent)->view;
 	vec3_t dir;

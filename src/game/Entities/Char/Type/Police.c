@@ -165,7 +165,7 @@ void ChType_PoliceActionPress(cAbstractFile *params) {
 	cObjMove *move = &Obj(v)->move;
 	const vec3_t *tp = victim->vftable->GetPos(victim, &t1);
 	const vec3_t *vp = v->vftable->GetPos(v, &t2);
-	float at = Game_Atan2F((double)(vp->x - tp->x), (double)(vp->z - tp->z));
+	float at = (float)atan2((double)(vp->x - tp->x), (double)(vp->z - tp->z));
 	move->moveAng.x = 0.0f;
 	move->moveAng.y = at;
 	move->moveAng.z = 0.0f;

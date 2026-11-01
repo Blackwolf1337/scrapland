@@ -116,7 +116,7 @@ static void Target_DrawMark(cTargetScorer *self, cEntity *ship, cEntity *e) {
 	img->scaleX = 1.0f;
 	img->scaleY = 1.0f;
 	if (on) {
-		float d = X87_MulMulF(vt->GetRadius(e), TS_RECT_SIZE, depth);
+		float d = (float)((vt->GetRadius(e)) * TS_RECT_SIZE * depth);
 		if (TS_RECT_MIN > d) {
 			d = TS_RECT_MIN;
 		}
@@ -134,7 +134,7 @@ static void Target_DrawAttacker(cTargetScorer *self, cEntity *ship) {
 	cWithLifeEntity *sw = (cWithLifeEntity *)ship;
 
 	float t = sw->attack.hitTime + g_AttackerMarkTime;
-	float r = Weap_X87Sub(t, Timer_GetTime(&sw->obj.timer));
+	float r = (float)(t - (Timer_GetTime(&sw->obj.timer)));
 	float f = (r + r) / g_AttackerMarkTime;
 	if (!(f > 0.0f) || !(0.0f >= Veh(ship)->wl.fireRemain)) {
 		return;
@@ -253,7 +253,7 @@ void cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship) {
 	uv[3][1] = uv1[1];
 	self->img->scaleX = g_EnemyMarkScale;
 	self->img->scaleY = g_EnemyMarkScale;
-	double v = Game_Fmod((double)Timer_GetTime(&g_pWorld->timer) * (double)TS_PULSE_SPEED, 1.0);
+	double v = fmod((double)Timer_GetTime(&g_pWorld->timer) * (double)TS_PULSE_SPEED, 1.0);
 	int c = -0x80 - (int)(v * TS_PULSE_RANGE);
 	c = c < 0 ? -c : c;
 	uint32_t enemyColor, friendColor;
@@ -294,7 +294,7 @@ void cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship) {
 		if (!w->arrow.visible) {
 			continue;
 		}
-		float h = X87_MulMulF(vt->GetRadius(e), TS_MARK_HEIGHT, depth);
+		float h = (float)((vt->GetRadius(e)) * TS_MARK_HEIGHT * depth);
 		self->img->color = enemy ? enemyColor : friendColor;
 		self->img->x = scr[0];
 		self->img->y = scr[1] - h;

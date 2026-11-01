@@ -48,7 +48,7 @@ static float Euler_Z(const matrix_t *self, float h) {
 	float y = inv * h * self->m[1] - (m2 * b - m0 * a) * (inv * m9);
 	float x = m0 * b + m2 * a;
 
-	return Game_Atan2F((double)y, (double)x);
+	return (float)atan2((double)y, (double)x);
 }
 
 /* the angles of Matrix_Rotate from the rotation part */
@@ -57,14 +57,14 @@ vec3_t *Matrix_GetEuler(const matrix_t *self, vec3_t *out) {
 	float h = (float)__builtin_sqrt((double)(m10 * m10 + m8 * m8));
 
 	out->z = 0.0f;
-	out->y = (float)Game_Atan2((double)m8, (double)m10);
-	out->x = (float)Game_Atan2((double)-m9, (double)h);
+	out->y = (float)atan2((double)m8, (double)m10);
+	out->x = (float)atan2((double)-m9, (double)h);
 	if (1e-4f > __builtin_fabs((double)h)) {
 		/* looking straight up or down: z from the first row turned back by the other angles */
 		vec3_t v = { self->m[0], self->m[1], self->m[2] };
 		vec3_t r;
 		Vec3_RotateInv(&r, &v, out);
-		out->z = (float)Game_Atan2((double)r.y, (double)r.x);
+		out->z = (float)atan2((double)r.y, (double)r.x);
 		return out;
 	}
 	out->z = Euler_Z(self, h);
@@ -78,17 +78,17 @@ vec3_t *Matrix_ToEuler(vec3_t *out, const matrix_t *m) {
 	float x, y;
 
 	out->z = 0.0f;
-	y = Game_Atan2F((double)m8, (double)m10);
+	y = (float)atan2((double)m8, (double)m10);
 	out->y = y;
-	x = Game_Atan2F((double)-m9, (double)h);
+	x = (float)atan2((double)-m9, (double)h);
 	out->x = x;
 	if (1e-4f > __builtin_fabs((double)h)) {
 		float m0 = m->m[0], m1 = m->m[1], m2 = m->m[2];
 		float s0, c0, s1, c1;
 
-		X87_SinCos(-x, &s0, &c0);
-		X87_SinCos(-y, &s1, &c1);
-		out->z = Game_Atan2F((double)(m1 * c0 - s0 * (m2 * c1 - s1 * m0)), (double)(m2 * s1 + m0 * c1));
+		Float_SinCos(-x, &s0, &c0);
+		Float_SinCos(-y, &s1, &c1);
+		out->z = (float)atan2((double)(m1 * c0 - s0 * (m2 * c1 - s1 * m0)), (double)(m2 * s1 + m0 * c1));
 		return out;
 	}
 	out->z = Euler_Z(m, h);
@@ -170,7 +170,7 @@ byte Matrix_Perspective(matrix_t *out, float fov, float aspect, float zNear, flo
 	if (0.01f > __builtin_fabs((double)depth)) {
 		return 0;
 	}
-	X87_SinCos(fov * 0.5f, &s, &c);
+	Float_SinCos(fov * 0.5f, &s, &c);
 	if (0.01f > __builtin_fabs((double)s)) {
 		return 0;
 	}
@@ -192,9 +192,9 @@ int Matrix_PerspectiveD3D(matrix_t *out, float fov, float aspect, float zNear, f
 
 void Matrix_RotX(matrix_t *self, float ang) {
 	Matrix_Identity(self);
-	float c = (float)Game_Cos((double)ang);
+	float c = (float)cos((double)ang);
 	self->m[5] = c;
-	float s = (float)Game_Sin((double)ang);
+	float s = (float)sin((double)ang);
 	self->m[6] = s;
 	self->m[9] = -s;
 	self->m[10] = c;
@@ -202,9 +202,9 @@ void Matrix_RotX(matrix_t *self, float ang) {
 
 void Matrix_RotY(matrix_t *self, float ang) {
 	Matrix_Identity(self);
-	float c = (float)Game_Cos((double)ang);
+	float c = (float)cos((double)ang);
 	self->m[0] = c;
-	float s = (float)Game_Sin((double)ang);
+	float s = (float)sin((double)ang);
 	self->m[8] = s;
 	self->m[2] = -s;
 	self->m[10] = c;
@@ -212,9 +212,9 @@ void Matrix_RotY(matrix_t *self, float ang) {
 
 void Matrix_RotZ(matrix_t *self, float ang) {
 	Matrix_Identity(self);
-	float c = (float)Game_Cos((double)ang);
+	float c = (float)cos((double)ang);
 	self->m[0] = c;
-	float s = (float)Game_Sin((double)ang);
+	float s = (float)sin((double)ang);
 	self->m[1] = s;
 	self->m[4] = -s;
 	self->m[5] = c;
@@ -222,8 +222,8 @@ void Matrix_RotZ(matrix_t *self, float ang) {
 
 /* the rotation by ang (radians) around axis, no translation */
 void Matrix_RotAxis(matrix_t *self, const vec3_t *axis, float ang) {
-	float c = (float)Game_Cos((double)ang);
-	float s = (float)Game_Sin((double)ang);
+	float c = (float)cos((double)ang);
+	float s = (float)sin((double)ang);
 	float len = (float)__builtin_sqrt((double)(axis->x * axis->x + axis->y * axis->y + axis->z * axis->z));
 	float x = axis->x, y = axis->y, z = axis->z;
 	float *m = self->m;

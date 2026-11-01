@@ -1740,9 +1740,9 @@ void cObjElementFXSebastianFlash_RandomPoints(cObjElementFXSebastianFlash *self)
 
 /* the sines and cosines of the negated angles of rot, for Vec3_RotateSC */
 static void FXA_InvRotSC(const vec3_t *rot, vec3_t *c, vec3_t *s) {
-	X87_SinCos(-rot->x, &s->x, &c->x);
-	X87_SinCos(-rot->y, &s->y, &c->y);
-	X87_SinCos(-rot->z, &s->z, &c->z);
+	Float_SinCos(-rot->x, &s->x, &c->x);
+	Float_SinCos(-rot->y, &s->y, &c->y);
+	Float_SinCos(-rot->z, &s->z, &c->z);
 }
 
 void cObjElementFXKill_Start(cObjElementFXKill *self, cEntity *e) {

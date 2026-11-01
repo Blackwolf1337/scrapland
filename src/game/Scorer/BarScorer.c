@@ -127,7 +127,7 @@ void cBarScorer_Draw(cBarScorer *self, int player) {
 	(void)player;
 	if (mode == 1) {
 		if (g_BarValue > 0.0f) {
-			g_BarValue = Scorer_X87MulSub(cTimer_GetDelta(&g_pWorld->timer), g_BarSpeedFactor, g_BarValue);
+			g_BarValue = (float)(g_BarValue - (cTimer_GetDelta(&g_pWorld->timer)) * g_BarSpeedFactor);
 			if (0.0f >= g_BarValue) {
 				g_BarValue = 0.0f;
 				if (cPy_Function_IsValid(g_BarOnFinish)) {
@@ -138,7 +138,7 @@ void cBarScorer_Draw(cBarScorer *self, int player) {
 			}
 		}
 	} else if (mode == 2 && self->maxValue > g_BarValue) {
-		g_BarValue = Scorer_X87MulAdd(cTimer_GetDelta(&g_pWorld->timer), g_BarSpeedFactor, g_BarValue);
+		g_BarValue = (float)((cTimer_GetDelta(&g_pWorld->timer)) * g_BarSpeedFactor + g_BarValue);
 		float max = self->maxValue;
 		float v = g_BarValue;
 		if (v >= max) {

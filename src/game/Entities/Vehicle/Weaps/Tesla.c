@@ -147,7 +147,7 @@ void Tesla_FireNative(cAbstractFile *f) {
 	/* the upgrades 5 and 6 use up their own ammo, at 0 the script restores the weapon */
 	int level = cWeaponManager_GetUpgrade(wm, g_TeslaIDWeap);
 	if ((uint32_t)(level - TESLA_UPG_TRACK) <= 1) {
-		float u = Weap_X87Sub(cWeaponManager_GetUAmmo(wm, g_TeslaIDWeap), (float)n * 0.5f);
+		float u = (float)((cWeaponManager_GetUAmmo(wm, g_TeslaIDWeap)) - ((float)n * 0.5f));
 		if (0.0f >= u) {
 			cWeaponManager_SetUpgrade(wm, g_TeslaIDWeap, 0);
 			u = 0.0f;
@@ -156,7 +156,7 @@ void Tesla_FireNative(cAbstractFile *f) {
 		}
 		cWeaponManager_SetUAmmo(wm, g_TeslaIDWeap, u);
 	}
-	float rest = Weap_X87Sub(cTargetLock_GetAmmo(wm, g_TeslaIDAmmo), (float)n * g_TeslaAmmoCost);
+	float rest = (float)((cTargetLock_GetAmmo(wm, g_TeslaIDAmmo)) - ((float)n * g_TeslaAmmoCost));
 	cWeaponManager_SetAmmo(wm, g_TeslaIDAmmo, Float_MaxSS(0.0f, rest));
 }
 

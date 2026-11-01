@@ -212,8 +212,8 @@ void CBmp_Exposure(CBmp *self, float a, float b) {
 	byte *p = self->img;
 	for (int n = self->height * self->width; n > 0; n--, p += 4) {
 		for (int i = 0; i < 4; i++) {
-			double e = Game_Exp((double)-((float)p[i] * a / b));
-			p[i] = Bmp_Clamp((int)X87_Fistp((1.0 - e) * (double)b));
+			double e = exp((double)-((float)p[i] * a / b));
+			p[i] = Bmp_Clamp((int)llrint((1.0 - e) * (double)b));
 		}
 	}
 }
@@ -227,7 +227,7 @@ void CBmp_Gamma(CBmp *self, float g, float b) {
 	byte *p = self->img;
 	for (int n = self->height * self->width; n > 0; n--, p += 4) {
 		for (int i = 0; i < 4; i++) {
-			p[i] = Bmp_Clamp((int)X87_Fistp(Game_Pow((double)((float)p[i] / b), (double)inv) * (double)b));
+			p[i] = Bmp_Clamp((int)llrint(pow((double)((float)p[i] / b), (double)inv) * (double)b));
 		}
 	}
 }

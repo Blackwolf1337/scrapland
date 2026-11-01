@@ -116,7 +116,7 @@ void cCTFEnemiesData_Think(cCTFEnemiesData *self) {
 	}
 	cEntity *usr = Logic_AsCar(ChType_Usr0());
 	cEntity *leader = Logic_AsCar(World_FindEntity(self->leader));
-	double maxAttack = crt_ceil((double)((float)Logic_Count(self->list->numElems) *
+	double maxAttack = ceil((double)((float)Logic_Count(self->list->numElems) *
 		g_PercEnemiesAttackPlayerWhenWinning));
 	self->numAttack = 0;
 	do {

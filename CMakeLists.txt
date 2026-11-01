@@ -22,7 +22,6 @@ file(GLOB_RECURSE LIB_SOURCES CONFIGURE_DEPENDS src/lib/*.c)
 add_library(scrapcode OBJECT
 	src/core/d3dlog.c
 	src/core/game.c
-	src/core/libm.c
 	src/core/log.c
 	src/core/testmod.c
 	${GAME_SOURCES}
@@ -48,13 +47,10 @@ target_link_options(scrapcode PUBLIC -static-libgcc -Wl,--enable-stdcall-fixup)
 set(PY152 third_party/python-1.5.2)
 add_library(python152 STATIC
 	src/python/classobject.c
-	src/python/complexobject.c
 	src/python/config.c
 	src/python/dictobject.c
-	src/python/floatobject.c
 	src/python/getpathp.c
 	src/python/import.c
-	src/python/intobject.c
 	src/python/listobject.c
 	src/python/pythonrun.c
 	src/python/stringobject.c
@@ -70,9 +66,12 @@ add_library(python152 STATIC
 	${PY152}/Objects/abstract.c
 	${PY152}/Objects/bufferobject.c
 	${PY152}/Objects/cobject.c
+	${PY152}/Objects/complexobject.c
 	${PY152}/Objects/fileobject.c
+	${PY152}/Objects/floatobject.c
 	${PY152}/Objects/frameobject.c
 	${PY152}/Objects/funcobject.c
+	${PY152}/Objects/intobject.c
 	${PY152}/Objects/longobject.c
 	${PY152}/Objects/methodobject.c
 	${PY152}/Objects/moduleobject.c
@@ -136,7 +135,7 @@ add_library(scrapres OBJECT src/standalone/scrap.rc)
 target_include_directories(scrapres PRIVATE src/standalone) # windres finds the res/ files from the include path
 set_source_files_properties(src/standalone/scrap.rc PROPERTIES OBJECT_DEPENDS "${RES_FILES}")
 add_executable(ScrapC WIN32 src/standalone/main.c src/standalone/crt.c src/standalone/crtinit.c src/standalone/crtxc.c
-	src/standalone/crtmath.c src/standalone/crtlibm.c src/standalone/crtvec.c src/standalone/crtnum.c
+	src/standalone/crtnum.c
 	src/standalone/crtfmt.c src/standalone/crtscan.c $<TARGET_OBJECTS:scrapres>)
 # stage 3c1a: the DLLs of the original are imports of ScrapC.exe itself (GAME_IMPORT of include/scrap/game.h). fmod
 # (in game/Bin, next to ScrapC.exe) through an import library made from its .def file in src/standalone, the others

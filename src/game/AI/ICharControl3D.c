@@ -180,7 +180,7 @@ static byte AICC3D_Corridor(cAICharControl *self, const vec3_t *a, const vec3_t 
 		return 0;
 	}
 	float r = Obj_Vtbl(me)->GetRadius(me);
-	float t = AICC_X87Mul(Obj_Vtbl(me)->GetRadius(me), g_FactorDistTestColCharAI);
+	float t = (float)((Obj_Vtbl(me)->GetRadius(me)) * g_FactorDistTestColCharAI);
 	float len = Float_MinSS(AICC3D_Way(a, b, &n), t);
 	if (!AICC3D_Lines(a, &n, r, len, end ? b : NULL, segs)) {
 		return 0;
@@ -210,7 +210,7 @@ byte cAICharControl3D_TestSides(cAICharControl3D *self, const vec3_t *a, const v
 
 	(void)r;
 	float rad = Obj_Vtbl(me)->GetRadius(me);
-	float len = AICC_X87Add(Obj_Vtbl(me)->GetRadius(me), 5.0f);
+	float len = (float)((Obj_Vtbl(me)->GetRadius(me)) + 5.0f);
 	AICC3D_Way(a, b, &n);
 	m.x = -n.x;
 	m.y = -n.y;
@@ -240,7 +240,7 @@ byte cAICharControl3D_TestStep(cAICharControl3D *self, const vec3_t *a, const ve
 
 	(void)r;
 	float rad = Obj_Vtbl(me)->GetRadius(me);
-	float t = AICC_X87Add(Obj_Vtbl(me)->GetRadius(me), 5.0f);
+	float t = (float)((Obj_Vtbl(me)->GetRadius(me)) + 5.0f);
 	float len = Float_MinSS(AICC3D_Way(a, b, &n), t);
 	return AICC3D_Lines(a, &n, rad, len, NULL, segs) != 0;
 }
@@ -262,7 +262,7 @@ byte cAICharControl3D_SideBlocked(cAICharControl3D *self, int side) {
 			return 0;
 		}
 	}
-	float r = AICC_X87Mul(Obj_Vtbl(self->ent)->GetRadius(self->ent), 1.5f);
+	float r = (float)((Obj_Vtbl(self->ent)->GetRadius(self->ent)) * 1.5f);
 	d.x = d.x * r;
 	d.y = d.y * r;
 	d.z = d.z * r;
@@ -554,9 +554,9 @@ float cAICharControl3D_KeepDist(cAICharControl3D *self, cEntity *hitEnt) {
 	CHECK(hitEnt != NULL);
 	float er = WChar(hitEnt)->wl.prim.radius;
 	float shirk = g_DistShirkCharAI;
-	float t = AICC_X87AddMul(Obj_Vtbl(self->ent)->GetRadius(self->ent), er, shirk);
+	float t = (float)(((Obj_Vtbl(self->ent)->GetRadius(self->ent)) + er) * shirk);
 	er = WChar(hitEnt)->wl.prim.radius;
-	float c = AICC_X87AddAdd(Obj_Vtbl(self->ent)->GetRadius(self->ent), er, t);
+	float c = (float)((Obj_Vtbl(self->ent)->GetRadius(self->ent)) + er + t);
 	float d = WChar(self->ent)->wl.prim.radius + WChar(hitEnt)->wl.prim.radius + t;
 	float k = Float_MaxSS(c, d);
 	const vec3_t *s = AICC_Pos(self, &b1);
@@ -567,7 +567,7 @@ float cAICharControl3D_KeepDist(cAICharControl3D *self, cEntity *hitEnt) {
 
 float cAICharControl3D_StrafeDist(cAICharControl3D *self, cEntity *hitEnt) {
 	CHECK(hitEnt != NULL);
-	return AICC_X87AddAdd(WChar(self->ent)->wl.prim.radius, WChar(hitEnt)->wl.prim.radius, g_MarginCollCharAI);
+	return (float)((WChar(self->ent)->wl.prim.radius) + (WChar(hitEnt)->wl.prim.radius) + g_MarginCollCharAI);
 }
 
 /* the angle between the view (the axis fwd turned by it) and the way to e below ang */
@@ -626,7 +626,7 @@ byte cAICharControl3D_Near(cAICharControl3D *self, cEntity *e) {
 	const vec3_t *p = AICC_EntPos(l, &b1);
 	const vec3_t *s = AICC_Pos(self, &b2);
 	float d = AICC3D_Len(s->x - p->x, s->y - p->y, s->z - p->z);
-	float k = AICC_X87Add(AICC_Vtbl(self)->KeepDist(self, e), 1.0f);
+	float k = (float)((AICC_Vtbl(self)->KeepDist(self, e)) + 1.0f);
 	return d > k;
 }
 
@@ -809,7 +809,7 @@ byte cAICharControl3D_StrafeBack(cAICharControl3D *self, const vec3_t *pos, cons
 	if (!flag) {
 		ang = 6.2831855f - ang;
 	}
-	float step = Game_Atan2F(Obj_Vtbl(me)->GetRadius(me), dist);
+	float step = (float)atan2(Obj_Vtbl(me)->GetRadius(me), dist);
 	prev.x = a.x * dist + pos->x;
 	prev.y = a.y * dist + pos->y;
 	prev.z = a.z * dist + pos->z;
@@ -876,7 +876,7 @@ byte cAICharControl3D_StrafeFwd(cAICharControl3D *self, const vec3_t *pos, const
 	if (!flag) {
 		ang = 6.2831855f - ang;
 	}
-	float step = (float)Game_Atan2(Obj_Vtbl(me)->GetRadius(me), dist) * 0.5f;
+	float step = (float)atan2(Obj_Vtbl(me)->GetRadius(me), dist) * 0.5f;
 	cur.x = a.x * dist + pos->x;
 	cur.y = a.y * dist + pos->y;
 	cur.z = a.z * dist + pos->z;

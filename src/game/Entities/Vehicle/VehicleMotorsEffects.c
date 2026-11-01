@@ -615,22 +615,6 @@ typedef struct VMExhaust {
 	byte cloud;
 } VMExhaust;
 
-/* c - a * b in the x87 registers (fmul, fsubr), rounded once to float */
-static inline float VME_X87MulSubr(float a, float b, float c) {
-	long double r;
-
-	__asm__("fmuls %2\n\tfsubrs %3" : "=t"(r) : "0"((long double)a), "m"(b), "m"(c));
-	return (float)r;
-}
-
-/* (a + b) + c in the x87 registers, rounded once to float */
-static inline float VME_X87AddAdd(float a, float b, float c) {
-	long double r;
-
-	__asm__("fadds %2\n\tfadds %3" : "=t"(r) : "0"((long double)a), "m"(b), "m"(c));
-	return (float)r;
-}
-
 /* the placed particles show while the motors run, with a cloud only one frame in four */
 static byte VME_Show(float speed, byte cloud) {
 	if (cloud) {
@@ -680,7 +664,7 @@ static void VME_RotTurn(CGameParticles *ps, const CGameParticles *base, float va
 
 /* the life time c - (lo..hi) * t */
 static float VME_Life(float c, float lo, float hi, float t) {
-	return VME_X87MulSubr(Rand_FloatRange(lo, hi), t, c);
+	return (float)(c - (Rand_FloatRange(lo, hi)) * t);
 }
 
 static inline uint32_t VME_Alpha(float a, uint32_t rgb) {
@@ -1680,7 +1664,7 @@ static void VME_Exhaust60(const VMExhaust *x) {
 	}
 	float t20 = t * 20.0f;
 	float r = Rand_FloatRange(10.0f, 15.0f);
-	r = VME_X87AddAdd(r, t20, k * 35.0f);
+	r = (float)(r + t20 + (k * 35.0f));
 	if (VME_StaticBegin(GAME_ARRAY(int, VME_Exhaust10_4486d8))) {
 		VME_SetPos(pos, xz, 3, r + 0.0f);
 		VME_StaticEnd(GAME_ARRAY(int, VME_Exhaust10_4486d8));

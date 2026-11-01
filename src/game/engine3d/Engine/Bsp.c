@@ -1058,8 +1058,8 @@ float *Bsp_DirSphere(float *out, float z, float u) {
 	float r = (float)__builtin_sqrt((double)(1.0f - z * z));
 	double a = (double)(float)((double)u * M_2PI_D);
 
-	out[0] = (float)Game_Cos(a) * r;
-	out[1] = (float)Game_Sin(a) * r;
+	out[0] = (float)cos(a) * r;
+	out[1] = (float)sin(a) * r;
 	out[2] = z;
 	return out;
 }
@@ -1084,10 +1084,10 @@ void Bsp_TexelBox(const box_t *b, int axis, float scale, int *x0, int *y0, int *
 		u1 = b->max.x * scale;
 		v1 = b->max.y * scale;
 	}
-	*x0 = (int)crt_floor((double)u0 - 0.5);
-	*y0 = (int)crt_floor((double)v0 - 0.5);
-	*x1 = (int)crt_floor((double)u1 + 0.5);
-	*y1 = (int)crt_floor((double)v1 + 0.5);
+	*x0 = (int)floor((double)u0 - 0.5);
+	*y0 = (int)floor((double)v0 - 0.5);
+	*x1 = (int)floor((double)u1 + 0.5);
+	*y1 = (int)floor((double)v1 + 0.5);
 }
 
 byte Bsp_SameSize(const box_t *a, int axis, float scale, const box_t *b) {
@@ -1142,8 +1142,8 @@ byte BspTri_TexelOf(const BspTri *tri, const vec3_t *p, int *x, int *y) {
 	float uv[2];
 
 	BspTri_Interp(tri, p, NULL, uv, 1);
-	*x = (int)crt_floor((double)((float)g_ShadowMapTexX * uv[0]));
-	*y = (int)crt_floor((double)((float)g_ShadowMapTexY * uv[1]));
+	*x = (int)floor((double)((float)g_ShadowMapTexX * uv[0]));
+	*y = (int)floor((double)((float)g_ShadowMapTexY * uv[1]));
 	return 1;
 }
 
@@ -1191,8 +1191,8 @@ float *Bsp_SampleTex(float *out, float u, float v, int axis, float scale, const 
 		s = 0.0f;
 		t = 0.0f;
 	}
-	s = s - (float)crt_floor((double)s);
-	t = t - (float)crt_floor((double)t);
+	s = s - (float)floor((double)s);
+	t = t - (float)floor((double)t);
 	CBmp_Sample(tex, &c, s, t);
 	out[0] = (float)(int)(c & 0xff) / 255.0f;
 	out[1] = (float)(int)(c >> 8 & 0xff) / 255.0f;
@@ -2618,7 +2618,6 @@ extern cGVar GVar_LightmapDebugTex;
 #define g_BspLinks GAME_GLOBAL(int, g_BspNumLinks)		/* the region links (radiosity code) */
 
 /* exe functions of other files with their prototypes there */
-double crt_ceil(double x);
 
 /* brightness and gamma on the light maps, then the vertex colors from them */
 void CBsp_AdjustGamma(CBsp *self) {

@@ -31,7 +31,7 @@ extern float g_GammaLastBlue;
 
 /* one channel through the curve, limited to 0..65535 */
 static uint16_t Gamma_Channel(uint16_t w, float expo, float mult, float scale) {
-	int v = (int)(Game_Pow((double)w * 0x1p-16, (double)expo) * 65536.0 * (double)mult * (double)scale);
+	int v = (int)(pow((double)w * 0x1p-16, (double)expo) * 65536.0 * (double)mult * (double)scale);
 	if (v < 1) {
 		return 0;
 	}

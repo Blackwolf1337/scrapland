@@ -913,9 +913,9 @@ static void FXS_DeconSpawn(cObjElementFXSceneDecontamination *self, int i, CGame
 	float r = FxElem_Rand(59.0f, 196.0f);
 	self->color[i] = (uint32_t)(int)r | ((((uint32_t)(int)g | 0x1000) << 8 | (uint32_t)(int)b) << 8);
 	double ang = (double)FxElem_Rand(6.2831855f, 0.0);
-	float cx = (float)Game_Cos(ang) * 125.0f;
+	float cx = (float)cos(ang) * 125.0f;
 	float y = Rand_FloatRange(-self->height, self->height);
-	float sz = (float)Game_Sin(ang) * 125.0f;
+	float sz = (float)sin(ang) * 125.0f;
 	vec3_t *e = &self->end[i];
 	e->x = cx - 20861.0f;
 	e->y = y + 1065.0f;

@@ -196,7 +196,7 @@ typedef struct BspVert {
 SD_SIZE(BspVert, 0x2c);
 
 static inline float Bsp_Quantize(float v) {
-	return (float)(int32_t)X87_Fistp((double)v * 1000.0) * 0.001f;
+	return (float)(int32_t)llrint((double)v * 1000.0) * 0.001f;
 }
 
 void CBsp_CreateBuffers(CBsp *self) {
@@ -1157,7 +1157,7 @@ void CBsp_RadAreas(CBsp *self) {
 										float den = r.den;
 										if (lal->falloff != 1.0f) {
 											float len = (float)__builtin_sqrt((double)r.d2);
-											float pw = (float)Game_Pow((double)(r.ca / len), (double)lal->falloff);
+											float pw = (float)pow((double)(r.ca / len), (double)lal->falloff);
 											cc = pw * r.cb;
 											den = len * r.k;
 										}

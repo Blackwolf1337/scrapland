@@ -394,52 +394,6 @@ static inline const vec3_t *AICC_EntPos(cEntity *e, vec3_t *buf) {
 	return Obj_Vtbl(e)->base.GetPos(e, buf);
 }
 
-/* the x87 arithmetic of the originals on the float returns (st0), in the precision the game set: a + b, a * k,
- * (a + b) * k, (a + b) + c */
-static inline float AICC_X87Add(float a, float b) {
-	float r;
-
-	__asm__("fadds %2" : "=t"(r) : "0"(a), "m"(b));
-	return r;
-}
-
-static inline float AICC_X87Mul(float a, float k) {
-	float r;
-
-	__asm__("fmuls %2" : "=t"(r) : "0"(a), "m"(k));
-	return r;
-}
-
-/* m - a */
-static inline float AICC_X87SubR(float a, float m) {
-	float r;
-
-	__asm__("fsubrs %2" : "=t"(r) : "0"(a), "m"(m));
-	return r;
-}
-
-/* a * b stored as a double */
-static inline double AICC_X87MulD(float a, float b) {
-	double r;
-
-	__asm__("fmuls %2" : "=t"(r) : "0"(a), "m"(b));
-	return r;
-}
-
-static inline float AICC_X87AddMul(float a, float b, float k) {
-	float r;
-
-	__asm__("fadds %2\n\tfmuls %3" : "=t"(r) : "0"(a), "m"(b), "m"(k));
-	return r;
-}
-
-static inline float AICC_X87AddAdd(float a, float b, float c) {
-	float r;
-
-	__asm__("fadds %2\n\tfadds %3" : "=t"(r) : "0"(a), "m"(b), "m"(c));
-	return r;
-}
-
 /* a segment of the corridor: p = a + v * r, q = p + nl (aim: q = p + normalize(b - p) * len); 1 when it is free */
 static inline int AICC_Seg(vec3_t *p, vec3_t *q, const vec3_t *a, const vec3_t *v, float r, const vec3_t *nl,
 	const vec3_t *b, float len) {

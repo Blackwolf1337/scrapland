@@ -104,8 +104,6 @@ uint64_t *crt_local_printf_options(void);
 uint64_t *crt_local_scanf_options(void);
 size_t crt_strcspn(const char *s, const char *set);
 int crt_fpclass(double x);
-double crt_floor(double x);
-double crt_ceil(double x);
 char *crt_mbsrchr(const char *s, unsigned int c);
 int crt_spawnlp(int mode, const char *cmd, const char *arg0, ...);
 int crt_atexit(void (*func)(void));
@@ -135,57 +133,6 @@ double crt_strtod(const char *s, char **end);
 int crt_islower(int c);
 int crt_isspace(int c);
 int crt_isupper(int c);
-/* the cdecl math functions (their addresses are in the math module's tables; calls of the C use src/core/libm.c) */
-double crt_acos(double x);
-double crt_asin(double x);
-double crt_atan(double x);
-double crt_atan2(double y, double x);
-double crt_cos(double x);
-double crt_cosh(double x);
-double crt_exp(double x);
-double crt_fabs(double x);
-double crt_fmod(double x, double y);
-double crt_frexp(double x, int *e);
-double crt_hypot(double x, double y);
-double crt_ldexp(double x, int e);
-double crt_log(double x);
-double crt_log10(double x);
-double crt_modf(double x, double *ip);
-double crt_pow(double x, double y);
-double crt_sin(double x);
-double crt_sinh(double x);
-double crt_sqrt(double x);
-double crt_tan(double x);
-double crt_tanh(double x);
-/* struct _exception of the runtime, the argument of the matherr callback */
-typedef struct {
-	int type;
-	char *name;
-	double arg1, arg2, retval;
-} crtMathExc_t;
-/* ScrapC.exe: errno after a math error that the matherr callback left to the runtime (crtmath.c) */
-void Crt_MathErrno(int type);
-/*
- * ScrapC.exe: the math entries of the runtime with conventions of their own, labels for the inline asm of
- * src/core/libm.c (src/standalone/crtmath.c or crtlibm.c, crtvec.c): the SSE2 entries
- * (argument and result in xmm0, the exponent of pow in xmm1), the _CI intrinsics (x87 stack), the conversions of a
- * float or double in xmm0 to edx:eax and the vector functions of two doubles in xmm0
- */
-void crt_libm_sse2_acos_precise(void);
-void crt_libm_sse2_asin_precise(void);
-void crt_libm_sse2_atan_precise(void);
-void crt_libm_sse2_cos_precise(void);
-void crt_libm_sse2_exp_precise(void);
-void crt_libm_sse2_log_precise(void);
-void crt_libm_sse2_pow_precise(void);
-void crt_libm_sse2_sin_precise(void);
-void crt_CIatan2(void);
-void crt_CIfmod(void);
-void crt_ftoui3(void);
-void crt_dtoui3(void);
-void crt_vdecl_cos2(void);
-void crt_vdecl_sin2(void);
-void crt_vdecl_exp2(void);
 /* the guards of the thread-safe function statics (MSVC _Init_thread_header/_Init_thread_footer); the epoch they
  * are tested against is at +0x20 of the TLS block of the exe, its index g_TlsIndex */
 void crt_Init_thread_header(int *guard);

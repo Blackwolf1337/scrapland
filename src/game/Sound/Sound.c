@@ -35,8 +35,8 @@ int Snd_Volume(float volume) {
 	if (volume < 0x1p-16f) {
 		return SOUND_VOL_OFF;
 	}
-	double v = Game_Log((double)Float_MinSS(1.0f, volume));
-	return (int)(float)(v / Game_Log(2.0) * 600.0);
+	double v = log((double)Float_MinSS(1.0f, volume));
+	return (int)(float)(v / log(2.0) * 600.0);
 }
 
 /* cSoundDesc */
@@ -125,7 +125,7 @@ void cSound_SetSound(cSound *self, const char *name, uint32_t flags) {
 
 void cSound_SetPitch(cSound *self, float semitones) {
 	if (semitones != 0.0f) {
-		self->desc.freq = (float)Game_Pow(2.0, (double)semitones / 12.0) * self->desc.freq;
+		self->desc.freq = (float)pow(2.0, (double)semitones / 12.0) * self->desc.freq;
 	}
 }
 
@@ -265,9 +265,9 @@ void CSoundSys_SetListener(CSoundSys *self, int id, const vec3_t *pos, const vec
 	l->pos = *pos;
 	l->ang = *ang;
 	l->vel = *vel;
-	X87_SinCos(-l->ang.x, &l->sin.x, &l->cos.x);
-	X87_SinCos(-l->ang.y, &l->sin.y, &l->cos.y);
-	X87_SinCos(-l->ang.z, &l->sin.z, &l->cos.z);
+	Float_SinCos(-l->ang.x, &l->sin.x, &l->cos.x);
+	Float_SinCos(-l->ang.y, &l->sin.y, &l->cos.y);
+	Float_SinCos(-l->ang.z, &l->sin.z, &l->cos.z);
 	if (g_SoundShowSetMode) {
 		Con_Printf("Listener:  Pos: %f %f %f  Vel: %f %f %f\n", (double)pos->x, (double)pos->y, (double)pos->z,
 			(double)vel->x, (double)vel->y, (double)vel->z);

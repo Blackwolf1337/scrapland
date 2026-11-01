@@ -165,14 +165,6 @@ extern double g_DXTimerBaseD;
 extern double g_DXTimerStopD;
 extern int g_DXTimerStopped;
 
-/* the x87 a - b of the original (fsub QWORD) in the precision the game set, stored as a float */
-static float X87_SubToFloat(double a, double b) {
-	long double r;
-
-	__asm__("fsubl %2" : "=t"(r) : "0"((long double)a), "m"(b));
-	return (float)r;
-}
-
 static float DXTimer_Seconds(int64_t t, int64_t freq) {
 	double n = Int64_ToDouble(t);
 	return (float)(n / Int64_ToDouble(freq));
@@ -248,12 +240,12 @@ noqp:;
 	}
 	switch (cmd) {
 	case DXUTIL_TIMER_GETELAPSEDTIME: {
-		float r = X87_SubToFloat(time, g_DXTimerLastD);
+		float r = (float)(time - g_DXTimerLastD);
 		g_DXTimerLastD = time;
 		return r;
 	}
 	case DXUTIL_TIMER_GETAPPTIME:
-		return X87_SubToFloat(time, g_DXTimerBaseD);
+		return (float)(time - g_DXTimerBaseD);
 	case DXUTIL_TIMER_RESET:
 		g_DXTimerStopped = 0;
 		g_DXTimerBaseD = time;

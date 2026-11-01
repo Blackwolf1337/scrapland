@@ -161,7 +161,7 @@ PyObject *SVec_GetAngle(PyObject *self, PyObject *args) {
 	else if (-1.0f > c) {
 		c = -1.0f;
 	}
-	return Py_BuildValue("d", Rad2Deg(Game_Acos((double)c)));
+	return Py_BuildValue("d", Rad2Deg(acos((double)c)));
 }
 
 /* AngX,AngY GetRotAng(vec) : Obtiene la rotacion de un vector. Takes x, y, z or a tuple; degrees. */

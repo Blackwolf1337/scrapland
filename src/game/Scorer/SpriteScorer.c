@@ -199,7 +199,7 @@ void cSpriteScorer_Draw(cSpriteScorer *self, int player) {
 	}
 	if (self->jumpFX != 0.0f) {
 		cScorer *sc = Scorer_Get(player);
-		float j = (float)Game_Sin((double)(sc->time * 10.0f));
+		float j = (float)sin((double)(sc->time * 10.0f));
 		y = y - self->jumpFX * j;
 	}
 	if (!self->isMultiSprite) {

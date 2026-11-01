@@ -1242,7 +1242,7 @@ void cAIVehicleControl_AccelPath(cAIVehicleControl *self) {
 	const vec3_t *p = VC_Pos(self, &b);
 	float distP = VC_Dist(p, &self->point);
 	if (VC_Same(&self->point, &self->dest)) {
-		lim = Game_Atan2F((double)self->dist, (double)distP);
+		lim = (float)atan2((double)self->dist, (double)distP);
 	}
 	float ang = VC_NoseAngle(self, &fwd);
 	if (VC_Same(&self->point, &self->dest)) {

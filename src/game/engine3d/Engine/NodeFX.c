@@ -145,9 +145,9 @@ int CNodeFX_Wheel_Apply(CNodeFX_Wheel *self, matrix_t *m, CNode3D *node, CRender
 		float nx = tm * self->noiseVel.x * 0.001f;
 		float ny = self->noiseVel.y * tm * 0.001f;
 		float nz = self->noiseVel.z * tm * 0.001f;
-		float sx = (float)Game_Sin((double)nx);
-		float sy = (float)Game_Sin((double)ny);
-		float sz = (float)Game_Sin((double)nz);
+		float sx = (float)sin((double)nx);
+		float sy = (float)sin((double)ny);
+		float sz = (float)sin((double)nz);
 		vec3_t v = { self->noiseAmt.x * sx, self->noiseAmt.y * sy, self->noiseAmt.z * sz };
 		Vec3_TransformDir0(&v, &v, &node->m);
 		Matrix_AddPos(m, &v);
@@ -323,7 +323,7 @@ int CNodeFX_Spring_Apply(CNodeFX_Spring *self, matrix_t *m, CNode3D *node, CRend
 			vec3_t axis = { f.z * e.y - f.y * e.z, f.x * e.z - f.z * e.x, f.y * e.x - f.x * e.y };
 			Vec3_Unit(&axis);
 			float c2 = -1.0f >= dot ? -1.0f : Float_MinSS(1.0f, dot);
-			float ang = (float)Game_Acos((double)c2);
+			float ang = (float)acos((double)c2);
 			quat_t q;
 			matrix_t rm, tmp;
 			Quat_ToMatrixD3D(&rm, Quat_FromAxisAngle(&q, &axis, -(ang * torsion)));

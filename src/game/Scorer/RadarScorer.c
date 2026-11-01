@@ -163,7 +163,7 @@ void cRadarScorer_DrawCone(cRadarScorer *self, const vec3_t *pos, float ang, flo
 	float dz = at.z - g_RadarCenterZ;
 	float dx = at.x - g_RadarCenterX;
 	float s, c;
-	X87_SinCos(g_RadarAngle, &s, &c);
+	Float_SinCos(g_RadarAngle, &s, &c);
 	float rx = dx * c - dz * s;
 	float cx = self->halfW + self->base.x;
 	float ry = dx * s + dz * c;
@@ -177,10 +177,10 @@ void cRadarScorer_DrawCone(cRadarScorer *self, const vec3_t *pos, float ang, flo
 	cy = cy + ry;
 	verts[0][0] = cx;
 	verts[0][1] = cy;
-	X87_SinCos(half + ang, &s, &c);
+	Float_SinCos(half + ang, &s, &c);
 	verts[1][0] = s * r + cx;
 	verts[1][1] = c * r + cy;
-	X87_SinCos(ang - half, &s, &c);
+	Float_SinCos(ang - half, &s, &c);
 	verts[2][0] = s * r + cx;
 	verts[2][1] = c * r + cy;
 	uint32_t color;
@@ -253,7 +253,7 @@ void cRadarScorer_DrawIcon(cRadarScorer *self, const vec3_t *pos, int icon, floa
 	float dz = p.z - g_RadarCenterZ;
 	float dx = p.x - g_RadarCenterX;
 	float s, co;
-	X87_SinCos(g_RadarAngle, &s, &co);
+	Float_SinCos(g_RadarAngle, &s, &co);
 	float rx = co * dx - s * dz;
 	size = 1.0f;
 	float ry = co * dz + s * dx;
@@ -290,7 +290,7 @@ void cRadarScorer_DrawIcon(cRadarScorer *self, const vec3_t *pos, int icon, floa
 			ry = k * ry;
 		}
 		if (flags & RADAR_ICON_OUT_POINT) {
-			a = (float)-Game_Atan2((double)rx, (double)ry);
+			a = (float)-atan2((double)rx, (double)ry);
 		} else if (flags & RADAR_ICON_OUT_ANG) {
 			a = ang - g_RadarAngle;
 		} else {
@@ -408,8 +408,8 @@ void cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntity *cam) {
 		uv[3][1] = cv + 0.0f;
 	} else {
 		float s0, c0, s1, c1;
-		X87_SinCos(g_RadarAngle + RADAR_MAP_UV_ANG0, &s0, &c0);
-		X87_SinCos(g_RadarAngle + RADAR_MAP_UV_ANG1, &s1, &c1);
+		Float_SinCos(g_RadarAngle + RADAR_MAP_UV_ANG0, &s0, &c0);
+		Float_SinCos(g_RadarAngle + RADAR_MAP_UV_ANG1, &s1, &c1);
 		uv[0][0] = s0 * su + cu;
 		uv[0][1] = c0 * sv + cv;
 		uv[1][0] = s1 * su + cu;
@@ -481,7 +481,7 @@ static void Radar_DrawCones(cRadarScorer *self, cEntity *target) {
 		if (!mode) {
 			continue;
 		}
-		float c = (float)Game_Cos((double)(ar->coneFov * 0.5f));
+		float c = (float)cos((double)(ar->coneFov * 0.5f));
 		float range = ar->coneDist / c;
 		float ang = g_RadarAngle - Obj_Vtbl(e)->GetSndAng(e, &a)->y + RADAR_PI;
 		cRadarScorer_DrawCone(self, Obj_Vtbl(e)->GetViewPos(e, &p), ang, ar->coneFov, range, mode);
@@ -715,7 +715,7 @@ void cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEntity *cam) {
 		cRadarScorer_DrawIcon(self, Obj_Vtbl(target)->GetViewPos(target, &t), 0, y, 0, 8, 0xffffffff, 0x80ff0000, 1);
 		return;
 	}
-	double s = Game_Sin((double)(Scorer_Get(self->base.player)->time * 8.0f));
+	double s = sin((double)(Scorer_Get(self->base.player)->time * 8.0f));
 	uint32_t v = (uint32_t)(int)((float)((s + 1.0) * 0.5) * 255.0f);
 	uint32_t c = (v << 8 | v) << 8 | 0xff0000ff;
 	float y = Obj_Vtbl(target)->GetViewAng(target, &a)->y;

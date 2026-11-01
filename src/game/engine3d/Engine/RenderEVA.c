@@ -354,7 +354,7 @@ void Particle_Quad(CParticle *p, const matrix_t *bill, const matrix_t *view, Gra
 		if (z1 > g_MinSparkDist && z2 > g_MinSparkDist) {
 			float sx = (x2 / z2 - x1 / z1) * a->sparkVelScale;
 			float sy = -((y2 / z2 - y1 / z1) * a->sparkVelScale);
-			float ang = Game_Atan2F((double)sx, (double)sy);
+			float ang = (float)atan2((double)sx, (double)sy);
 			float len = (float)__builtin_sqrt((double)(sy * sy + sx * sx));
 			float mx = Float_MinSS(g_MaxSparkSize, a->sparkMaxSize);
 			float s = len * 500.0f + 1.0f;
@@ -383,7 +383,7 @@ void Particle_Quad(CParticle *p, const matrix_t *bill, const matrix_t *view, Gra
 	vec3_t u, v;
 	if (rot != 0.0f) {
 		float sn, cs;
-		X87_SinCos(rot, &sn, &cs);
+		Float_SinCos(rot, &sn, &cs);
 		float chw = cs * hw, shw = sn * hw, chl = cs * hl, shl = sn * hl;
 		u = (vec3_t){ bill->m[0] * chw + bill->m[4] * shw, bill->m[1] * chw + bill->m[5] * shw,
 			bill->m[2] * chw + bill->m[6] * shw };

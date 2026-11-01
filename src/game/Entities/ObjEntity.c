@@ -340,7 +340,7 @@ void cObjEntity_GetCamera(cEntity *self, vec3_t *pos, vec3_t *ang) {
 		rot.y = ang->y + M_PI_F;
 		ang->z = orient->z;
 		rot.z = ang->z;
-		float s = (float)Game_Sin((double)-((cFollowCamEntity *)cam)->camAng);
+		float s = (float)sin((double)-((cFollowCamEntity *)cam)->camAng);
 		s = s * ((cFollowCamEntity *)o->cam)->dist;
 		off.x = o->camOff.x + 0.0f;
 		off.y = o->camOff.y + s;
@@ -1117,9 +1117,9 @@ static inline void Net_WriteAng(cAbstractFile *msg, float ang, byte full) {
 	float a = NormAng(ang);
 
 	if (full) {
-		Net_WriteShort(msg, (int)X87_Mul(a, NET_ANG_SHORT));
+		Net_WriteShort(msg, (int)(a * NET_ANG_SHORT));
 	} else {
-		Net_WriteByte(msg, (int)X87_Mul(a, NET_ANG_BYTE));
+		Net_WriteByte(msg, (int)(a * NET_ANG_BYTE));
 	}
 }
 

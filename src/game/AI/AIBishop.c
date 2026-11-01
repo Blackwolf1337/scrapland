@@ -53,7 +53,7 @@ double Vec3_Angle(const vec3_t *a, const vec3_t *b) {
 	Vec3_NormCopy(&na, a);
 	Vec3_NormCopy(&nb, b);
 	float dot = na.x * nb.x + na.y * nb.y + na.z * nb.z;
-	return Game_Acos((double)Float_MaxSS(-1.0f, Float_MinSS(1.0f, dot)));
+	return acos((double)Float_MaxSS(-1.0f, Float_MinSS(1.0f, dot)));
 }
 
 static int Ent_Life(cEntity *e) {
@@ -100,7 +100,7 @@ void cAIBishop_CheckAttack(cAIBishop *self) {
 	/* the half angle of the target at its distance, the angle of the view (down z) to it */
 	cEntity *t = c->base.target.target;
 	float tr = Obj_Vtbl(t)->GetRadius(t);
-	double half = Game_Atan2((double)tr, (double)dist);
+	double half = atan2((double)tr, (double)dist);
 	vec3_t fwd = { 0.0f, 0.0f, -1.0f };
 	vec3_t view = WChar(c->ent)->view;
 	vec3_t dir;

@@ -501,7 +501,7 @@ void Vulcan_FireNative(cAbstractFile *f) {
 	/* the upgrades 1 and 2 use up their own ammo, at 0 the script restores the weapon */
 	int level = cWeaponManager_GetUpgrade(wm, g_VulcanIDWeap);
 	if ((uint32_t)(level - VULCAN_UPG_FAST) <= 1) {
-		float u = Weap_X87Sub(cWeaponManager_GetUAmmo(wm, g_VulcanIDWeap), (float)n);
+		float u = (float)((cWeaponManager_GetUAmmo(wm, g_VulcanIDWeap)) - ((float)n));
 		if (0.0f >= u) {
 			cWeaponManager_SetUpgrade(wm, g_VulcanIDWeap, 0);
 			u = 0.0f;
@@ -510,7 +510,7 @@ void Vulcan_FireNative(cAbstractFile *f) {
 		}
 		cWeaponManager_SetUAmmo(wm, g_VulcanIDWeap, u);
 	}
-	float rest = Weap_X87Sub(cTargetLock_GetAmmo(wm, g_VulcanIDAmmo), (float)n * g_VulcanAmmoCost);
+	float rest = (float)((cTargetLock_GetAmmo(wm, g_VulcanIDAmmo)) - ((float)n * g_VulcanAmmoCost));
 	cWeaponManager_SetAmmo(wm, g_VulcanIDAmmo, Float_MaxSS(0.0f, rest));
 }
 

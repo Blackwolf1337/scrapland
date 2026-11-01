@@ -356,10 +356,10 @@ byte cAICharControl_CanMove(cAICharControl *self) {
 				return 1;
 			}
 			const vec3_t *b = &prev->v;
-			float r = AICC_X87Add(Obj_Vtbl(self->ent)->GetRadius(self->ent), 25.0f);
+			float r = (float)((Obj_Vtbl(self->ent)->GetRadius(self->ent)) + 25.0f);
 			float d = AICC_Vtbl(self)->DistSq(self, &self->goal, AICC_Pos(self, &buf));
 			if (r * r > d && Engine_TestLine(a, b, &hit, NULL)) {
-				r = AICC_X87Add(Obj_Vtbl(self->ent)->GetRadius(self->ent), 25.0f);
+				r = (float)((Obj_Vtbl(self->ent)->GetRadius(self->ent)) + 25.0f);
 				d = AICC_Vtbl(self)->DistSq(self, &hit, AICC_Pos(self, &buf));
 				if (r * r > d) {
 					AICC_Vtbl(self)->Stop(self);
@@ -882,14 +882,6 @@ void cAICharControl_WalkFwd(cAICharControl *self) {
 
 /* ---- the wait and the orbit around the target ---- */
 
-/* (m - a) - k in the x87 precision the game set */
-static inline float AICC_X87SubRSub(float a, float m, float k) {
-	float r;
-
-	__asm__("fsubrs %2\n\tfsubs %3" : "=t"(r) : "0"(a), "m"(m), "m"(k));
-	return r;
-}
-
 /* (x, 0, z) made a unit vector, the length from the squares of x and z */
 static inline vec3_t AICC_FlatNorm(float x, float z) {
 	vec3_t r;
@@ -1121,7 +1113,7 @@ byte cAICharControl_StartOrbit(cAICharControl *self, float dist) {
 		rot.z = 0.0f;
 		Vec3_Rotate(&p, &wv, &rot);
 		float a = (float)Vec3_Angle(&r, &wv);
-		byte flag = 3.14159274f > AICC_X87SubRSub(a, 6.28318548f, g_AngAttackBackCharAI);
+		byte flag = 3.14159274f > (float)(6.28318548f - a - g_AngAttackBackCharAI);
 		tp = AICC_EntPos(AICC_TargetEnt(self), &b1);
 		if (!AICC_Vtbl(self)->StrafeBack(self, tp, &r, &p, dist, left, flag)) {
 			left ^= 1;

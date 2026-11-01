@@ -13,14 +13,6 @@
 #define VT_LIGHT "Light"
 #define VT_ERROR "[Error]"
 
-/* the x87 addition of the original: st0 plus a float, rounded to float */
-static inline float VT_X87Add(long double a, float b) {
-	long double r;
-
-	__asm__("fadds %2" : "=t"(r) : "0"(a), "m"(b));
-	return (float)r;
-}
-
 cVehicleTraffic *cVehicleTraffic_ctor(cVehicleTraffic *self) {
 	self->begin.y = 0.0f;
 	self->begin.z = 0.0f;
@@ -94,7 +86,7 @@ byte cVehicleTraffic_Move(cVehicleTraffic *self, const vec3_t *from, const vec3_
 		void *ai = self->parent->vftable->GetAI(self->parent);
 		float r = radius;
 		if (ai && cAIVehicle_GetState(ai) == 4) {
-			r = VT_X87Add(cAIVehicle_GetPathWidth(ai), radius);
+			r = (float)((cAIVehicle_GetPathWidth(ai)) + radius);
 		}
 		if (r == radius) {
 			switch (self->type) {

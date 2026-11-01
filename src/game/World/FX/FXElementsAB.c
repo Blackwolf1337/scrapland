@@ -268,7 +268,7 @@ static void Limit_Rings(cFXElementsABFakeLimit *self, float dt) {
 				float fa = (float)__builtin_fabs((double)a) * -191.0f;
 				uint32_t color = (uint32_t)(0x40 - (int)fa) << 24 | 0x121240;
 				float s, c;
-				X87_SinCos(a, &s, &c);
+				Float_SinCos(a, &s, &c);
 				float step = g_ABLimitSegmentStep;
 				vec3_t in, rot, at;
 				const vec3_t *o;

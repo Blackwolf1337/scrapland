@@ -215,7 +215,7 @@ static void Weapon_DrawCharge(cWeaponScorer *self, cWeaponManager *wm, int w) {
 
 	cAmmoInfo *a = TABLE_AT(g_pWorld->ammo, WEAPON_AMMO_CHARGED);
 	cAmmoInfo *b = TABLE_AT(g_pWorld->ammo, WEAPON_AMMO_CHARGED);
-	float left = Weap_X87Sub(a->max, cWeaponManager_GetWeapAmmo(wm, (uint32_t)w));
+	float left = (float)(a->max - (cWeaponManager_GetWeapAmmo(wm, (uint32_t)w)));
 	float f = left / b->max;
 	if (self->ammoIcons[WEAPON_AMMO_CHARGED]) {
 		float e = 1.0f - f;
@@ -340,7 +340,7 @@ void cWeaponScorer_Draw(cWeaponScorer *self, int player) {
 	img->color = 0xffffffff;
 	CPsaImage_DrawFrame(img, self->backIndex, self->backOffX + self->base.x, self->backOffY + self->base.y);
 	if (upg) {
-		float f = Weap_X87Div(cWeaponManager_GetUAmmo(wm, w), WEAPON_UAMMO_MAX);
+		float f = (float)((cWeaponManager_GetUAmmo(wm, w)) / WEAPON_UAMMO_MAX);
 		CPsaImage_GetFrameUV(img, self->upgradeBarIndex, uv0, uv1);
 		img->color = self->upgradeBarColor;
 		Menu_DrawBar(img, self->upgradeBarOffX + self->base.x, self->upgradeBarOffY + self->base.y, f, 5, 0.0f, uv0[0],

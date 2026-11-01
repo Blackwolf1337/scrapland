@@ -35,14 +35,6 @@ extern cGVar GVar_EMIFile;
 #define MISSILE_NET_NONE 0xffff			/* no parent or target in the network state */
 
 /* the vtable slots used here */
-/* the x87 a - b of the original (fsubr), in the precision the game set */
-static inline float X87_Sub(float a, float b) {
-	float r;
-
-	__asm__("fsubrs %1" : "=t"(r) : "m"(a), "0"(b));
-	return r;
-}
-
 /* lo + rand / 32767 * range in double, as the original */
 static inline float Missile_Rand(double range, double lo) {
 	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * range + lo);
@@ -165,7 +157,7 @@ void cMissileEntity_Touch(cMissileEntity *self, cEntity *other, const vec3_t *po
 }
 
 void cMissileEntity_LifeTick(cMissileEntity *self) {
-	float t = X87_Sub(self->lifeTime, cTimer_GetDelta(&self->wl.obj.timer));
+	float t = (float)(self->lifeTime - (cTimer_GetDelta(&self->wl.obj.timer)));
 
 	self->lifeTime = t;
 	if (0.0f > t) {
@@ -578,8 +570,8 @@ void cMissileEntity_SetTurnSpeed(cMissileEntity *self, float speed) {
 void cMissileEntity_UpdateVel(cMissileEntity *self) {
 	float sy, cy, sx, cx;
 
-	X87_SinCos(self->wl.obj.ang.y, &sy, &cy);
-	X87_SinCos(self->wl.obj.ang.x - MISSILE_PI_2, &sx, &cx);
+	Float_SinCos(self->wl.obj.ang.y, &sy, &cy);
+	Float_SinCos(self->wl.obj.ang.x - MISSILE_PI_2, &sx, &cx);
 	float speed = self->speed;
 	self->wl.obj.vel.x = sx * sy * speed;
 	self->wl.obj.vel.z = sx * cy * speed;

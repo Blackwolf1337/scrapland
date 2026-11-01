@@ -204,7 +204,7 @@ void ChType_DesktopActionPress(cAbstractFile *params) {
 		up.y = g_DesktopJumpSpeed;
 		up.z = 0.0f;
 		/* the walk direction (the control at 0x4f8, 0x4fc) turns the jump, its length tilts it */
-		double a = Game_Atan2((double)-WChar(v)->control.strafe, (double)-WChar(v)->control.walk);
+		double a = atan2((double)-WChar(v)->control.strafe, (double)-WChar(v)->control.walk);
 		float yaw = (float)a + ay;
 		float len = (float)__builtin_sqrt((double)(WChar(v)->control.walk * WChar(v)->control.walk +
 			WChar(v)->control.strafe * WChar(v)->control.strafe));

@@ -402,7 +402,7 @@ void cActCtrl_SetDefLoop(void *ctrl, const char *action, byte force) {
 
 /* the time of the layer wrapped into its action, the part of the action that it is */
 static float Ship_Wrap(cActLayer *l, cAction *a, float t) {
-	t = (float)Game_Fmod((double)t, (double)Layer_End(l));
+	t = (float)fmod((double)t, (double)Layer_End(l));
 	l->time = t;
 	return t / (a ? a->anmTotalTime : -1.0f);
 }

@@ -18,14 +18,6 @@
 
 #include "scrap/d3d8.h"
 
-/* fld DWORD, fstp DWORD: the x87 copy of a float in the original (a signaling NaN becomes quiet) */
-static inline float X87_PassF(float f) {
-	float r;
-
-	__asm__("flds %1\n\tfstps %0" : "=m"(r) : "m"(f));
-	return r;
-}
-
 static inline float Sse_Lane(__m128 v, int i) {
 	float f[4];
 
@@ -228,14 +220,14 @@ matrix_t *__stdcall D3DX_MatrixTranspose(matrix_t *out, const matrix_t *m) {
 	static const byte pairs[5][2] = { { 2, 8 }, { 3, 12 }, { 6, 9 }, { 7, 13 }, { 11, 14 } };
 	float m1 = m->m[1], m4 = m->m[4];
 
-	out->m[1] = X87_PassF(m4);
-	out->m[4] = X87_PassF(m1);
+	out->m[1] = m4;
+	out->m[4] = m1;
 	for (int i = 0; i < 5; i++) {
 		uint32_t lo;
 		memcpy(&lo, &m->m[pairs[i][1]], 4);
 		float hi = m->m[pairs[i][0]];
 		memcpy(&out->m[pairs[i][0]], &lo, 4);
-		out->m[pairs[i][1]] = X87_PassF(hi);
+		out->m[pairs[i][1]] = hi;
 	}
 	if (out != m) {
 		static const byte diag[4] = { 0, 5, 10, 15 };
@@ -435,7 +427,7 @@ matrix_t *__stdcall D3DX_MatrixRotationY(matrix_t *out, float ang) {
 matrix_t *__stdcall D3DX_MatrixRotationZ(matrix_t *out, float ang) {
 	float s, c;
 
-	X87_SinCos(ang, &s, &c);
+	Float_SinCos(ang, &s, &c);
 	const float r0[4] = { c, s, 0.0f, 0.0f }, r1[4] = { -s, c, 0.0f, 0.0f }, r2[4] = { 0.0f, 0.0f, 1.0f, 0.0f };
 	D3dx_Rows(out, r0, r1, r2);
 	return out;
@@ -498,7 +490,7 @@ matrix_t *__stdcall D3DX_MatrixRotationQuaternion(matrix_t *out, const quat_t *q
 matrix_t *__stdcall D3DX_MatrixRotationYPR(matrix_t *out, float yaw, float pitch, float roll) {
 	quat_t q;
 
-	D3DX_QuaternionRotationYPR(&q, X87_PassF(yaw), X87_PassF(pitch), X87_PassF(roll));
+	D3DX_QuaternionRotationYPR(&q, yaw, pitch, roll);
 	D3DX_MatrixRotationQuaternion(out, &q);
 	return out;
 }

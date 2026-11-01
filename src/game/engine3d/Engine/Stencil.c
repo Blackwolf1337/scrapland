@@ -299,7 +299,7 @@ void E3D_SetShadowLight(CLight *l, int unused) {
 	d = l->d3d.Direction;
 	g_ShadowLightDir = *Vec3_Normalize(&n, &d);
 	g_ShadowRange = l->range == 0.0f ? 1000.0f : l->range * 1.1f;
-	g_ShadowCos = (float)Game_Cos((double)l->phi * 0.5 * 3.141592653589793 / 180.0);
+	g_ShadowCos = (float)cos((double)l->phi * 0.5 * 3.141592653589793 / 180.0);
 }
 
 void Stencil_Free(void) {

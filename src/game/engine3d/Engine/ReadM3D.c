@@ -1756,7 +1756,7 @@ void Scene_SetupLOD(CScene *scn) {
 		if (!(n2->aniLocked & 2) && (n->rot.x != n2->rot.x || n->rot.y != n2->rot.y || n->rot.z != n2->rot.z ||
 					     n->rot.w != n2->rot.w)) {
 			double d = Quat_DotAbs(&n->rot, &n2->rot);
-			if (Game_Cos(0x1.c98710add7e36p-10) > d) {
+			if (cos(0x1.c98710add7e36p-10) > d) {
 				Con_Warnf("WARN: LOD node QRot mismatch [Node: %s]\n", n->name);
 			}
 		}

@@ -273,15 +273,6 @@ int cMonitorScorer_Var(cMonitorScorer *self, const char *name, byte set, char **
 #define MONITOR_SIGNAL_Y 48.0f
 #define MONITOR_STATIC_H 24.0f		/* the static band runs over the view every 6 seconds */
 
-/* the x87 a * b of the original (a on the stack from a call, fmul DWORD), rounded by the control word, then to
- * float */
-static inline float Monitor_X87MulF(long double a, float b) {
-	long double r;
-
-	__asm__("fmuls %2" : "=t"(r) : "0"(a), "m"(b));
-	return (float)r;
-}
-
 /* the frame of the mask in the four corners of the view, mirrored */
 static void Monitor_DrawMask(cMonitorScorer *self) {
 	CPsaImage *m = self->mask;
@@ -362,9 +353,9 @@ static void Monitor_DrawHead(cMonitorScorer *self, float frameTime) {
 	}
 	CGameCamera_Copy(self->cam, cur);
 	CGameCamera_SetLookAt(self->cam, 1);
-	float sx = (float)Game_Sin(g_pApp->vftable->GetGameTime(g_pApp)) * MONITOR_HEAD_SWAY;
-	double t2 = X87_Mul(g_pApp->vftable->GetGameTime(g_pApp), 0.5);
-	float cy = (float)Game_Cos(t2) * MONITOR_HEAD_SWAY;
+	float sx = (float)sin(g_pApp->vftable->GetGameTime(g_pApp)) * MONITOR_HEAD_SWAY;
+	double t2 = ((g_pApp->vftable->GetGameTime(g_pApp)) * 0.5);
+	float cy = (float)cos(t2) * MONITOR_HEAD_SWAY;
 	cScorerModel *m = self->model;
 	float hy = m->height + MONITOR_HEAD_SWAY + cy;
 	float hz = m->radius * MONITOR_HEAD_BACK;
@@ -452,12 +443,12 @@ static uint32_t Monitor_DrawLooked(cMonitorScorer *self, cEntity *target, cEntit
 	float dist;
 	if (!isWalk) {
 		float l = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
-		float f = (float)Game_Exp((double)(l * -1.5f / MONITOR_VIEW_FAR));
+		float f = (float)exp((double)(l * -1.5f / MONITOR_VIEW_FAR));
 		dist = (1.0f - f) * MONITOR_VIEW_FAR;
 	} else if (Entity_IsType(e, TYEN_WITH_LIFE)) {
 		CGameModel *gm = vt->GetModel(e);
 		if (eIsCar && gm && CGameModel_IsLoaded(gm)) {
-			dist = Monitor_X87MulF(CGameModel_Radius(gm), 7.5f);
+			dist = (float)((CGameModel_Radius(gm)) * 7.5f);
 		} else {
 			dist = WLife(e)->prim.radius * 10.0f;
 		}
@@ -575,7 +566,7 @@ static void Monitor_DrawText(cMonitorScorer *self, cEntity *e, float frameTime, 
 			self->img350->scaleX = dim[0];
 			self->img350->scaleY = dim[1];
 			CPsaImage_Draw(self->img350, pos[0], pos[1]);
-			double b = X87_Mul(g_pApp->vftable->GetGameTime(g_pApp), 8.0);
+			double b = ((g_pApp->vftable->GetGameTime(g_pApp)) * 8.0);
 			if (!((int)b & 1)) {
 				CFont_PrintfAlignColor(self->smallFont, self->base.x + MONITOR_SIGNAL_X,
 					self->base.y + MONITOR_SIGNAL_Y, 4, 0xff0000, "NO SIGNAL");
@@ -591,7 +582,7 @@ static void Monitor_DrawText(cMonitorScorer *self, cEntity *e, float frameTime, 
 	s->color = (uint32_t)(int)(float)((double)r * RAND_SCALE * 192.0 + 0.0) << 24 | 0xffffff;
 	s->scaleX = 123.5f / (uv1[0] - uv0[0]);
 	s->scaleY = MONITOR_STATIC_H / (uv1[1] - uv0[1]);
-	double g = X87_Mul(g_pApp->vftable->GetGameTime(g_pApp), 20.0);
+	double g = ((g_pApp->vftable->GetGameTime(g_pApp)) * 20.0);
 	int k = (int)g % 120;
 	CPsaImage_DrawFrame(self->staticImg, self->staticIndex, self->base.x,
 		self->base.y + ((float)k - MONITOR_STATIC_H));

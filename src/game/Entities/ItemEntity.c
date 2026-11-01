@@ -49,14 +49,6 @@ static byte Item_FxVisible(cItemEntity *self) {
 	return FX_IsVisible(p->x, p->y, p->z, r + r, g_ItemFxDist, NULL, 0);
 }
 
-/* the x87 a / b * c of the original (fdivr, fmul), in the precision the game set */
-static inline float X87_DivMul(float a, float b, float c) {
-	float r;
-
-	__asm__("fdivrs %1\n\tfmuls %2" : "=t"(r) : "m"(a), "m"(c), "0"(b));
-	return r;
-}
-
 cEntity *cItemEntity_ctor(void *mem, const char *name, float x, float y, float z) {
 	cItemEntity *self = mem;
 
@@ -482,7 +474,7 @@ void cItemEntity_Update(cItemEntity *self) {
 		double dx = (double)(p->x - cam.x);
 		double dz = (double)(p->z - cam.z);
 		ang.x = 0.0f;
-		ang.y = (float)Game_Atan2(dx, dz);
+		ang.y = (float)atan2(dx, dz);
 		ang.z = 0.0f;
 		CGameModel_SetRot(&self->model, &ang);
 	}
@@ -490,7 +482,7 @@ void cItemEntity_Update(cItemEntity *self) {
 		float t = Timer_GetTime(&g_pWorld->timer);
 		float s = cTimer_GetSpeed(&g_pWorld->timer);
 		/* five blink phases a second of game time */
-		int phase = (int)X87_DivMul(t, s, 5.0f);
+		int phase = (int)(float)(t / s * 5.0f);
 		if (phase & 1) {
 			if (!CGameModel_IsEnabled(&self->model)) {
 				CGameModel_Enable(&self->model);
@@ -589,7 +581,7 @@ byte cItemEntity_NetNeedsSend(cItemEntity *self, float dist2) {
 	}
 	if (g_ItemSyncDist * g_ItemSyncDist > dist2) {
 		/* near ones now and then: the count and ten ticks a second of game time */
-		double t = X87_Mul(g_pApp->vftable->GetGameTime(g_pApp), 10.0);
+		double t = ((g_pApp->vftable->GetGameTime(g_pApp)) * 10.0);
 		uint32_t n = g_ItemSyncCount++;
 		if ((int)((double)n + t) & 1) {
 			return 1;

@@ -173,10 +173,10 @@ byte ArrowIndicator_Visible(cEntity *self, cEntity *other, float ang, float maxD
 			c = Vec2_Normalize(n, rv)[0];
 		} else if (WLife(other)->arrow.useAbsAngSel) {
 			const vec3_t *oa = Obj_Vtbl(other)->GetAng(other, &a);
-			X87_SinCos(ang - oa->y + M_PI_F, &s, &c);
+			Float_SinCos(ang - oa->y + M_PI_F, &s, &c);
 		}
 	}
-	if (!(c >= (float)Game_Cos(0.7853981633974483))) {
+	if (!(c >= (float)cos(0.7853981633974483))) {
 		return 0;
 	}
 	if (WLife(other)->arrow.useMapCheck && WLife(self)->arrow.useMapCheck) {
@@ -615,7 +615,7 @@ void cArrowIndicator_Update(cArrowIndicator *self) {
 		float h = g * g * (2.0f - g);
 		y = y + h * h * (2.0f - h) * 300.0f;
 	}
-	pos.y = (float)(Game_Sin((double)(t * 3.0f)) * 5.0) + y;
+	pos.y = (float)(sin((double)(t * 3.0f)) * 5.0) + y;
 	cArrowIndicator_SetModels(self, 1);
 	/* the model of the kind chosen before SetModels made it */
 	CGameModel *m = mission ? self->mission : (CGameModel *)self->arrow;
@@ -627,7 +627,7 @@ void cArrowIndicator_Update(cArrowIndicator *self) {
 	float cz = cam->z;
 	float cx = cam->x;
 	rot.x = 0.0f;
-	rot.y = Game_Atan2F((double)(pos.x - cx), (double)(pos.z - cz));
+	rot.y = (float)atan2((double)(pos.x - cx), (double)(pos.z - cz));
 	rot.z = 0.0f;
 	CGameModel_SetRot(m, &rot);
 	float st;

@@ -93,9 +93,9 @@ void Pad_DeadZone(float *x, float *y, float dz) {
 	float a = (float)__builtin_fabs((double)len);
 	float c = !(dz >= a) ? Float_MinSS(1.0f, a) : dz;
 	float k = (c - dz) / (1.0f - dz);
-	double ang = (double)(float)Game_Atan2(*x, *y);
-	*x = (float)Game_Sin(ang) * k;
-	*y = (float)Game_Cos(ang) * k;
+	double ang = (double)(float)atan2(*x, *y);
+	*x = (float)sin(ang) * k;
+	*y = (float)cos(ang) * k;
 }
 
 /* only the bindings of its own player (or none) */

@@ -79,7 +79,8 @@ CFXTexLava *CFXTexLava_ctor(CFXTexLava *self, const char *file) {
 		for (int i = 0; i < 256; i += 2) {
 			double in[2] = { (double)((float)i * LAVA_COS_STEP), (double)((float)(i + 1) * LAVA_COS_STEP) };
 			double out[2];
-			Game_CosPd(in, out);
+			out[0] = cos(in[0]);
+			out[1] = cos(in[1]);
 			g_LavaCos[i] = (float)out[0];
 			g_LavaCos[i + 1] = (float)out[1];
 		}
@@ -108,7 +109,7 @@ static int FXTex_Due(uint32_t *lastTime) {
 	if ((float)(double)(*lastTime + FXTEX_PERIOD) > now) {
 		return 0;
 	}
-	*lastTime = Game_FtoUI(now);
+	*lastTime = Float_ToU32(now);
 	return 1;
 }
 
@@ -118,7 +119,7 @@ static uint32_t FXTex_Mix(uint32_t dst, uint32_t src) {
 }
 
 static int Lava_Fistp(float f) {
-	return (int)X87_Fistp((double)f);
+	return (int)llrint((double)f);
 }
 
 int CFXTexLava_Update(CFXTexLava *self, CMap *map) {

@@ -889,7 +889,7 @@ void Mat_StageBumpMat(CMaterial *mat, uint32_t flags, uint32_t stage, float k, f
 	}
 	float c = 1.0f, sn = 0.0f;
 	if (rot != 0.0f) {
-		X87_SinCos(rot, &sn, &c);
+		Float_SinCos(rot, &sn, &c);
 	}
 	Render_TSS(stage, D3DTSS_BUMPENVMAT00, F2U(c * s));
 	Render_TSS(stage, D3DTSS_BUMPENVMAT01, F2U(sn * s));
@@ -1019,8 +1019,8 @@ void Shader_GlowFlickLightmap(CMaterial *mat, uint32_t flags) {
 	if (flags & 5) {
 		float f = Rand_Between(g_GlowFlickMod, 1.0f);
 		double t = (double)g_TimeMs;
-		float a = (float)(Game_Cos(t * 0.0089) * 0.02 + 0.98);
-		float b = (float)(Game_Cos(t * 0.0052) * 0.03 + 0.97);
+		float a = (float)(cos(t * 0.0089) * 0.02 + 0.98);
+		float b = (float)(cos(t * 0.0052) * 0.03 + 0.97);
 		float v = a * b * (f * f);
 		const float c[4] = { v, v, v, v };
 		Render_PSConst(0, c);

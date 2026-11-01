@@ -22,7 +22,6 @@
 int Game_Dir(char *dir, size_t size);
 int Game_Start(uintptr_t base, const char *dir);
 [[noreturn]] void Crt_Main(void);
-const char *Crt_MathInit(const char *dir);
 void Log_Open(const char *dir);
 
 static void Fatal(const char *fmt, ...) __attribute__((format(printf, 1, 2), noreturn));
@@ -71,10 +70,6 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
 	}
 	Log_Open(dir);
 	Orig_DInput8();
-	const char *missing = Crt_MathInit(dir);
-	if (missing) {
-		Fatal("the MSVC math: cannot load %s", missing);
-	}
 	Game_Start((uintptr_t)inst, dir);
 	Crt_Main();
 }

@@ -61,7 +61,7 @@ void Event_AnmSound2DEvent(cAbstractFile *params) {
 		p = strchr(p, ':');
 		if (p) {
 			*p++ = 0;
-			pan = (int)X87_Mul(crt_atof(p), 10000.0);
+			pan = (int)((crt_atof(p)) * 10000.0);
 		}
 	}
 	cSoundDesc_Init(&s.desc);

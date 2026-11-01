@@ -33,7 +33,7 @@ cAutoAim *cAutoAim_ctor(cAutoAim *self) {
 	self->speed = 1.5f;
 	self->distLimit = 20000.0f;
 	self->ang = 0.05f;
-	float c = (float)Game_Cos((double)0.05f);
+	float c = (float)cos((double)0.05f);
 	self->status = AUTOAIM_OFF;
 	self->dist = AUTOAIM_NODIST;
 	self->loAng = 0.05f;
@@ -86,7 +86,7 @@ byte cAutoAim_VarF(cAutoAim *self, const char *name, double *d, int set) {
 		if ((byte)set) {
 			float a = AA_Deg2Rad(*d);
 			self->ang = a;
-			self->cosAng = (float)Game_Cos((double)a);
+			self->cosAng = (float)cos((double)a);
 			return 1;
 		}
 		v = self->ang;
@@ -137,7 +137,7 @@ vec3_t *cAutoAim_GetAimPos(cAutoAim *self, vec3_t *out, cEntity *owner) {
 		e.y = tp.y - q.y;
 		e.z = tp.z - q.z;
 		float l = (float)__builtin_sqrt((double)(e.y * e.y + e.x * e.x + e.z * e.z));
-		float a = (float)Game_Atan2((double)l, (double)dist);
+		float a = (float)atan2((double)l, (double)dist);
 		float k = (self->ang - a) / self->ang;
 		out->x = e.x * k + q.x;
 		out->y = e.y * k + q.y;
@@ -177,7 +177,7 @@ void cAutoAim_Update(cAutoAim *self, cEntity *owner, float dt) {
 	if (self->deltaAng != 0.0f) {
 		float a = Float_MinSS(self->hiAng, Float_MaxSS(self->loAng, self->deltaAng * dt + self->ang));
 		self->ang = a;
-		self->cosAng = (float)Game_Cos((double)a);
+		self->cosAng = (float)cos((double)a);
 	}
 	float a2 = self->ang * self->ang;
 	self->prevAx = self->ax;
@@ -283,7 +283,7 @@ void cAutoAim_Update(cAutoAim *self, cEntity *owner, float dt) {
 
 void cAutoAim_SetAngle(cAutoAim *self, float ang) {
 	self->ang = ang;
-	self->cosAng = (float)Game_Cos((double)ang);
+	self->cosAng = (float)cos((double)ang);
 }
 
 void cAutoAim_SetRange(cAutoAim *self, float range) {

@@ -18,13 +18,6 @@ byte Logic_SetOriginCallback(cEntity *e);
 #define LOGIC_SETORIGINFUNC 0x151ce0
 #define g_NotCleanableByGearDef (GAME_ARRAY_IN(cString, GVar_NotCleanableByGear, 20))
 
-/* the x87 code of the original: a float plus a float, rounded by the x87 control word, then to float */
-static inline float Logic_X87Add(float a, float b) {
-	long double r;
-	__asm__("fadds %2" : "=t"(r) : "0"((long double)a), "m"(b));
-	return (float)r;
-}
-
 void *Logic_ctor(void *logic) {
 	cLogicControl *self = logic;
 
@@ -189,7 +182,7 @@ void Logic_Update(void *logic, float dt) {
 void Taunts_UpdateEndTime(void *taunts) {
 	cLogicControl *self = taunts;
 
-	self->talkEnd = Logic_X87Add(Timer_GetTime(&g_pWorld->timer), g_RemainTalkTime);
+	self->talkEnd = (float)((Timer_GetTime(&g_pWorld->timer)) + g_RemainTalkTime);
 }
 
 /* a character on the floor below it (floorDist above the hit), 0 and an error without a floor */

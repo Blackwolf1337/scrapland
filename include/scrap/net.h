@@ -145,7 +145,7 @@ typedef cUserNetManager *(*netuserfactory_t)(cNetClient *client, int slot);
 
 /* the time of the net code: CApp GetTime in milliseconds (x87 multiply, __dtoui3) */
 static inline uint32_t Net_TimeMs(void) {
-	return Game_DtoUI(X87_Mul(g_pApp->vftable->GetTime(g_pApp), 1000.0));
+	return Float_ToU32(((g_pApp->vftable->GetTime(g_pApp)) * 1000.0));
 }
 
 /* exe functions of other modules */

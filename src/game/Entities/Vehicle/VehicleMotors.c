@@ -598,7 +598,7 @@ void cVehicleMotor_UpdateAnimM(cVehicleMotor *self, float dt) {
 	if (!self->animMOn) {
 		return;
 	}
-	self->timeM = (float)Game_Fmod((double)(dt + self->timeM), (double)self->durM);
+	self->timeM = (float)fmod((double)(dt + self->timeM), (double)self->durM);
 	for (i = 0; i < VM_SIDES; i++) {
 		if (self->node[i] != -1) {
 			CGameModel_AnimDelta(&self->model[i], 1, self->timeM, NULL);

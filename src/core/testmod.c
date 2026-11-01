@@ -4,7 +4,7 @@
  * (DIFFTEST_REF) and compares the outputs.
  *
  * The functions and data go by name: SDTest.Sym(name) is the rva of a name of src/core/testsyms.inc (the address of
- * its C function or object minus the load address), and Call, Peek, Poke and ConvU take such a name in place of the
+ * its C function or object minus the load address), and Call, Peek and Poke take such a name in place of the
  * rva. SDTest.Base() is the load address of the exe, so SDTest.Base() + rva is the address the pointers of the game
  * hold. A renamed C function or object needs its new name in testsyms.inc, testaddrs.inc or testfuncs.inc.
  * SDTest.Orig(v) is v with an address (or rva) of a C object or function turned into the one of the original
@@ -27,8 +27,6 @@
  * SDTest.Poke(rva, value) writes an int.
  * SDTest.Proc(dll, name) is the function name of the loaded DLL dll as an rva for Call (its address minus the load
  * address of the exe), None when there is none: the Win32 functions for a test, in both runs the same.
- * SDTest.ConvU(rva, lo, hi, isdouble) calls a function that takes a float (isdouble 0, bits in lo) or double (bits in
- * lo and hi) in xmm0 and returns an unsigned int in eax, for the __ftoui3 and __dtoui3 conversions.
  * SDTest.OutFunc() is the address of a cdecl void(const char *) that collects text, SDTest.Out() returns and clears
  * that text (for the output callbacks of the engine).
  * SDTest.D3DLog(on) puts a proxy in place of the D3D device that writes its calls into that text (src/core/d3dlog.c),
@@ -646,43 +644,6 @@ static PyObject *SDTest_Poke(PyObject *self, PyObject *args) {
 	return Py_None;
 }
 
-/*
- * Calls a function of the exe that takes a float or double in xmm0 and returns in eax (the __ftoui3 and __dtoui3
- * conversions at rva 0x314310 and 0x3144f1, src/standalone/crtvec.c): lo and hi are the bits of the argument (lo
- * alone for a float), signed so Python 1.5.2 can pass the top bit. The asm keeps the bits exact, so a NaN or an
- * out of range value reaches the conversion as the test means it.
- */
-uint32_t TestMod_ConvCall(void *fn, uint32_t lo, uint32_t hi, int isdouble);
-__asm__(
-	".text\n\t"
-	".globl _TestMod_ConvCall\n"
-	"_TestMod_ConvCall:\n\t"
-	"movl 4(%esp), %eax\n\t"
-	"cmpl $0, 16(%esp)\n\t"
-	"je 1f\n\t"
-	"movsd 8(%esp), %xmm0\n\t"
-	"call *%eax\n\t"
-	"ret\n"
-	"1:\n\t"
-	"movss 8(%esp), %xmm0\n\t"
-	"call *%eax\n\t"
-	"ret\n");
-
-static PyObject *SDTest_ConvU(PyObject *self, PyObject *args) {
-	(void)self;
-	PyObject *at;
-	int rva, lo, hi, isdouble;
-
-	if (!PyArg_ParseTuple(args, "Oiii", &at, &lo, &hi, &isdouble) || !TestMod_ParseRva(at, &rva)) {
-		return NULL;
-	}
-	/* errno through crt_errno is the one the conversion sets: the exe's static CRT with the hooks off, the linked
-	 * UCRT in ScrapC.exe, each the one its __ftoui3 touches. Reset it so each call stands on its own. */
-	*crt_errno() = 0;
-	uint32_t r = TestMod_ConvCall(Game_Ptr((uint32_t)rva), (uint32_t)lo, (uint32_t)hi, isdouble);
-	return Py_BuildValue("ii", (int)r, *crt_errno());
-}
-
 static PyObject *SDTest_Sym(PyObject *self, PyObject *args) {
 	(void)self;
 	PyObject *name;
@@ -781,7 +742,6 @@ static PyMethodDef sdtest_methods[] = {
 	{ "Call", SDTest_Call, 1, NULL },
 	{ "Peek", SDTest_Peek, 1, NULL },
 	{ "Poke", SDTest_Poke, 1, NULL },
-	{ "ConvU", SDTest_ConvU, 1, NULL },
 	{ "Sym", SDTest_Sym, 1, NULL },
 	{ "Base", SDTest_Base, 1, NULL },
 	{ "Orig", SDTest_Orig, 1, NULL },

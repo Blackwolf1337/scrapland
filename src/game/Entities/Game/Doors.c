@@ -195,7 +195,7 @@ void Doors_SphereEntity(cAbstractFile *params) {
 	const vec3_t *p = e->vftable->GetPos(e, &tmp);
 	double dx = (double)(p->x - g_DoorPos.x);
 	double dz = (double)(p->z - g_DoorPos.z);
-	float side = (float)(Game_Atan2(dx, dz) - 1.5707963267948966);
+	float side = (float)(atan2(dx, dz) - 1.5707963267948966);
 	side = NormAng(side + g_DoorAngY);
 	if (side > 0.0f) {
 		g_DoorFront = 1;

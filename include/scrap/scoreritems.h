@@ -23,23 +23,6 @@
 #define CCREDITSSCORER_VFTABLE GAME_VFTABLE(cCreditsScorer_vftable)
 #define CBARSCORER_VFTABLE GAME_VFTABLE(cBarScorer_vftable)
 
-/* the x87 arithmetic of the originals on float returns (st0), in the precision the game set */
-static inline float Scorer_X87MulSub(float a, float b, float c) {
-	float r;
-
-	/* c - a * b */
-	__asm__("fmuls %1\n\tfsubrs %2" : "=t"(r) : "m"(b), "m"(c), "0"(a));
-	return r;
-}
-
-static inline float Scorer_X87MulAdd(float a, float b, float c) {
-	float r;
-
-	/* a * b + c */
-	__asm__("fmuls %1\n\tfadds %2" : "=t"(r) : "m"(b), "m"(c), "0"(a));
-	return r;
-}
-
 /* the abs of the originals (cdq, xor, sub): INT_MIN stays */
 static inline int Scorer_Abs(int v) {
 	uint32_t s = (uint32_t)(v >> 31);

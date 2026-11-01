@@ -344,7 +344,7 @@ void cNetVController_Write(cNetVController *self, byte flags, cEntity *e, void *
 		NetV_Write(msg, &b, 1);
 		cFollowCamEntity *cam = (cFollowCamEntity *)NETV_VEH(self)->wl.obj.cam;
 		if (cam) {
-			self->height = (float)Game_Sin((double)-cam->camAng) * cam->dist;
+			self->height = (float)sin((double)-cam->camAng) * cam->dist;
 		} else {
 			self->height = 0.0f;
 		}

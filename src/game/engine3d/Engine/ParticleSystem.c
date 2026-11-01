@@ -863,7 +863,7 @@ void CParticleActive_Update(CParticleActive *self, CParticleSystem *sp, float dt
 	} else {
 		self->p.size = (self->sizeEnd - self->sizeIni) * t + self->sizeIni;
 	}
-	uint32_t u = (uint32_t)X87_Fistp((double)(t * 16777216.0f));
+	uint32_t u = (uint32_t)llrint((double)(t * 16777216.0f));
 	u = u < 0xffffff ? u : 0xffffff;
 	uint32_t c0, c1, w;
 	if (!self->colorRamp) {
@@ -888,9 +888,9 @@ void CParticleActive_Update(CParticleActive *self, CParticleSystem *sp, float dt
 	}
 	int ini = self->spriteIni, cur = ini;
 	if (self->spriteIni < self->spriteEnd) {
-		cur = (int)X87_Fistp((double)((float)(self->spriteEnd - self->spriteIni) * t)) + self->spriteIni;
+		cur = (int)llrint((double)((float)(self->spriteEnd - self->spriteIni) * t)) + self->spriteIni;
 	} else if (self->spriteEnd < self->spriteIni) {
-		cur = self->spriteIni - (int)X87_Fistp((double)((float)(self->spriteIni - self->spriteEnd) * t));
+		cur = self->spriteIni - (int)llrint((double)((float)(self->spriteIni - self->spriteEnd) * t));
 	}
 	int s = ini;
 	if (cur > ini) {

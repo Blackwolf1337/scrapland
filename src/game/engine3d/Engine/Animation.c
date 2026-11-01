@@ -475,7 +475,7 @@ static void AnimNode_OptimizeRot(CAnimNode *self) {
 		}
 	}
 	quat_t q0 = self->Rot[0];
-	float cosErr = (float)Game_Cos((double)g_OptAnimRotErr * M_PI_D / DEG_PER_PI);
+	float cosErr = (float)cos((double)g_OptAnimRotErr * M_PI_D / DEG_PER_PI);
 	int lead = 0;
 	while (lead < self->num_frames && Anim_RotNear(&self->Rot[lead], &q0, cosErr)) {
 		lead++;
@@ -494,7 +494,7 @@ static void AnimNode_OptimizeRot(CAnimNode *self) {
 	}
 	if (!(self->OptFlags & ANIM_ROT)) {
 		double d = (double)minDot;
-		E3D_LogInfo(g_FileLog, "OptimizeAnim: ANIM_ROT: [%f deg.] [%f cos] %s", Game_Acos(d) * 2.0 * DEG_PER_PI / M_PI_D, d,
+		E3D_LogInfo(g_FileLog, "OptimizeAnim: ANIM_ROT: [%f deg.] [%f cos] %s", acos(d) * 2.0 * DEG_PER_PI / M_PI_D, d,
 			g_AnimNodeName);
 	}
 }
@@ -990,7 +990,7 @@ byte CAnimNode_GetVisible(CAnimNode *self, byte *visible, int frame, float subfr
 	int v = self->Visible[rel];
 	if (rel + 1 < self->num_frames && self->Visible[rel + 1] != v) {
 		int b = self->Visible[rel + 1];
-		v = (int)X87_Fistp((double)((float)(b - v) * subframe + (float)v));
+		v = (int)llrint((double)((float)(b - v) * subframe + (float)v));
 		CHECK((v & ~0xff) == 0);
 	}
 	*visible = v;

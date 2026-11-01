@@ -360,7 +360,7 @@ void cScraplandSubMenuScorer_Draw(cScraplandSubMenuScorer *self, int player) {
 	SubMenu_Draw(self->logo, self->scale, 0, 0, x, y);
 	SubMenu_Draw(self->ringMask, self->scale, 0xffffffff, 1, x, y);
 	self->ringReflection->color = 0x80ffffff;
-	double c = Game_Cos((double)(self->now * SUBMENU_REFLECTION_SPEED)) * GAME_GLOBAL(double, cScraplandSubMenuScorer_Draw_3ae448);	/* -pi */
+	double c = cos((double)(self->now * SUBMENU_REFLECTION_SPEED)) * GAME_GLOBAL(double, cScraplandSubMenuScorer_Draw_3ae448);	/* -pi */
 	float a = (float)(c + c);
 	for (int k = 0; k < 4; k++) {
 		float r[2];
@@ -632,7 +632,7 @@ void cScraplandMainMenuScorer_Draw(cScraplandMainMenuScorer *self, int player) {
 	CFont *font = g_FontScrapMedium;
 	for (int i = 0; i < 10; i++) {
 		float r = ScraplandScorer_Rand(GAME_GLOBAL(double, cScraplandMainMenuScorer_Draw_3ae270), 0.0);
-		double s = Game_Sin((double)(self->now * 8.0f - (float)i)) + 1.0;
+		double s = sin((double)(self->now * 8.0f - (float)i)) + 1.0;
 		font->effects = 0x40000;
 		font->align = 0;
 		font->color = (uint32_t)(int)(s * 90.0 + (double)r) << 24 | 0xb1eaff;

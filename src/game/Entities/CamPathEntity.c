@@ -11,14 +11,6 @@ static inline cCamPathEntity *Path(cEntity *e) {
 	return (cCamPathEntity *)e;
 }
 
-/* fadd of the x87 (the sum is rounded at the precision of the FPU first) */
-static inline float CamPath_X87Add(float a, float b) {
-	long double r;
-
-	__asm__("fadds %2" : "=t"(r) : "0"((long double)a), "m"(b));
-	return (float)r;
-}
-
 cCamPathPoint *cCamPathPoint_ctor(cCamPathPoint *self) {
 	self->pos.x = 0.0f;
 	self->pos.y = 0.0f;
@@ -258,7 +250,7 @@ void cCamPathPoint_Refresh(cCamPathPoint *self) {
 void cCamPathEntity_Update(cEntity *self) {
 	cCamPathEntity *p = Path(self);
 	float acc = 0.0f;
-	float t = CamPath_X87Add(cTimer_GetDelta(&g_pWorld->timer), p->time);
+	float t = (float)((cTimer_GetDelta(&g_pWorld->timer)) + p->time);
 
 	p->time = t;
 	int n = p->numPoints - 1;

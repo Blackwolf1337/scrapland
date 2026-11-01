@@ -13,13 +13,6 @@
 #define MAINT_VT(self) ((self)->base.base.vftable)
 #define MAINT_BASE(self) (&(self)->base.base)
 
-/* the x87 code of the original: a float plus two floats, rounded by the x87 control word, then to float */
-static inline float Maint_X87Add2(float a, float b, float c) {
-	long double r;
-	__asm__("fadds %2\n\tfadds %3" : "=t"(r) : "0"((long double)a), "m"(b), "m"(c));
-	return (float)r;
-}
-
 void *cMaintenanceLocalLogic_ctor(void *mem, cEntity *parent) {
 	cMaintenanceLocalLogic *self = mem;
 
@@ -71,7 +64,7 @@ void cMaintenanceLocalLogic_SetPlatform(cMaintenanceLocalLogic *self, float x, f
 	cEntity *platform = World_FindEntity("DM_Door_EditShip_00");
 	CHECK(platform && "La plataforma no existe");
 	float py = platform->vftable->GetPos(platform, &t)->y;
-	float h = Maint_X87Add2(Obj_Vtbl(p)->GetRadius(p), py, 100.0f);
+	float h = (float)((Obj_Vtbl(p)->GetRadius(p)) + py + 100.0f);
 	for (int i = 4; i < 8; i++) {
 		if (h > pt[i].y) {
 			pt[i].y = h;

@@ -43,7 +43,6 @@ extern int g_SaveCollideMeshParam;
 
 typedef void(*objCall_t)(void *self, void *arg);
 
-double crt_ceil(double x);
 
 static void *Ground_Obj(const CGround *self, uint32_t i) {
 	TABLE_CHECK(self->nodes, i, self->nNodes);
@@ -1340,9 +1339,9 @@ void CHeights_QuadInit(CHeights *self, int unused, const box_t *box, int numTri)
 	self->dim.z = self->ext.max.z - self->ext.min.z;
 	double size = __builtin_sqrt((double)(((self->dim.x * self->dim.z) / (float)numTri) * balance));
 	double k = 1.0 / size;
-	int nx = (int)crt_ceil((double)self->dim.x * k);
+	int nx = (int)ceil((double)self->dim.x * k);
 	self->nx = nx;
-	int nz = (int)crt_ceil((double)self->dim.z * k);
+	int nz = (int)ceil((double)self->dim.z * k);
 	self->nz = nz;
 	self->sizeX = self->dim.x / (float)nx;
 	self->sizeZ = self->dim.z / (float)nz;
@@ -1843,9 +1842,9 @@ void CGround_Build(CGround *self, CScene *scn) {
 	CHECK(2000000.0 > __builtin_fabs((double)self->Dim.y));
 	CHECK(2000000.0 > __builtin_fabs((double)self->Dim.z));
 	double k = 1.0 / __builtin_sqrt((double)(((self->Dim.z * self->Dim.x) / (float)nTri) * (float)g_GroundTrisPerNode));
-	int nx = (int)crt_ceil((double)self->Dim.x * k);
+	int nx = (int)ceil((double)self->Dim.x * k);
 	self->nx = nx;
-	int nz = (int)crt_ceil((double)self->Dim.z * k);
+	int nz = (int)ceil((double)self->Dim.z * k);
 	self->nz = nz;
 	Table_NewFC((CTable *)&self->nNodes, nz * nx);
 	for (int i = 0; i < self->nNodes; i++) {

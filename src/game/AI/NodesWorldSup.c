@@ -14,7 +14,6 @@
 #include "scrap/scrapmain.h"
 #include "scrap/scrapmodel.h"
 
-double crt_ceil(double x);
 
 #define NWSUP_EMPTY GAME_STR(str_Empty)	/* the "" of the exe */
 
@@ -517,9 +516,9 @@ void CNodesWorldSup_BuildGrid(CNodesWorld *self) {
 		}
 		top.y = pos.y + 5000.0f;
 	}
-	int nx = (int)crt_ceil((double)((top.x - self->sup.min.x) / self->sup.gridCell));
-	double ny = crt_ceil((double)((top.y - self->sup.min.y) / self->sup.gridCell));
-	double nz = crt_ceil((double)((top.z - self->sup.min.z) / self->sup.gridCell));
+	int nx = (int)ceil((double)((top.x - self->sup.min.x) / self->sup.gridCell));
+	double ny = ceil((double)((top.y - self->sup.min.y) / self->sup.gridCell));
+	double nz = ceil((double)((top.z - self->sup.min.z) / self->sup.gridCell));
 	cGridElements *grid = operator_new(sizeof(cGridElements));
 	if (grid) {
 		grid = NWGrid_ctor(grid, &top, &self->sup.min, nx, (int)ny, (int)nz);

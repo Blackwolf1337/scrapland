@@ -1283,7 +1283,7 @@ void cEmbeddedFXConversor_Update(cEmbeddedFXConversor *self, float dt) {
 	CGameParticles_NumParticles(p);
 	float t = dt * 3.0f + self->t;
 	self->t = t;
-	float c = (float)Game_Cos((double)t);
+	float c = (float)cos((double)t);
 	float a = (float)__builtin_fabs((double)c);
 	int r = crt_rand() % 24;
 	CGameParticles_SetParticle(p, 0, 0.0f, 0.0f, 0.0f, 180.0f,
@@ -1675,7 +1675,7 @@ void cEmbeddedFXExtraLife_Update(cEmbeddedFXExtraLife *self, float dt) {
 	}
 	float t = dt * 1.25f + self->t;
 	self->t = t;
-	float c = (float)Game_Cos((double)t);
+	float c = (float)cos((double)t);
 	float pulse = (float)__builtin_fabs((double)c);
 	n = 24;
 	for (int i = 0; i < 8; i++) {
@@ -2057,7 +2057,7 @@ void cEmbeddedFXBossShield_Update(cEmbeddedFXBossShield *self, float dt) {
 			int al = -1 - (int)((float)(r - (int)(((float)__builtin_fabs((double)a) - 1.0f) * 191.0f)) * vis);
 			uint32_t color = ((uint32_t)al << 24) | (c & 0xffffff);
 			float sn, cs;
-			X87_SinCos(a, &sn, &cs);
+			Float_SinCos(a, &sn, &cs);
 			float aspect = g_FXBossShieldAspect;
 			float ang = self->spin + (float)j * 0.055f;
 			vec3_t rr, v;

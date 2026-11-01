@@ -71,7 +71,7 @@ void CLensFlare_SetOn(CLensFlare *self, byte on) {
 	self->on = on;
 	LensFlare_Update(self);
 	if (on) {
-		self->lastTime = Game_FtoUI(g_TimeMsF);
+		self->lastTime = Float_ToU32(g_TimeMsF);
 	}
 }
 
@@ -279,7 +279,7 @@ void CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj) {
 	if (self->traceInterval > 0.0f) {
 		float now = g_TimeMsF;
 		float dt = (now - (float)(double)self->lastTime) * 0.001f;
-		self->lastTime = Game_FtoUI(now);
+		self->lastTime = Float_ToU32(now);
 		float t = self->traceTimer - dt;
 		self->traceTimer = t;
 		if (t <= 0.0f) {
@@ -335,10 +335,10 @@ void CLensFlare_DrawSprite(CLensFlare *self, float dist, uint32_t sprite, float 
 	float hy = cam->aspectScreen * size * self->scale;
 	byte ok = CMultiSprite_GetUV(ms, sprite, texMin, texMax);
 	CHECK(ok);
-	uint32_t color = Game_FtoUI(self->intens * a * 255.0f);
-	color = color << 8 | (Game_FtoUI(r * 255.0f) & 0xff);
-	color = color << 8 | (Game_FtoUI(g * 255.0f) & 0xff);
-	color = color << 8 | (Game_FtoUI(b * 255.0f) & 0xff);
+	uint32_t color = Float_ToU32(self->intens * a * 255.0f);
+	color = color << 8 | (Float_ToU32(r * 255.0f) & 0xff);
+	color = color << 8 | (Float_ToU32(g * 255.0f) & 0xff);
+	color = color << 8 | (Float_ToU32(b * 255.0f) & 0xff);
 	VertLensFlare *v = g_LensFlareVerts;
 	v[0] = (VertLensFlare){ cx - hx, cy - hy, 0.0f, color, 0, texMin[0], texMin[1] };
 	v[1] = (VertLensFlare){ cx - hx, cy + hy, 0.0f, color, 0, texMin[0], texMax[1] };

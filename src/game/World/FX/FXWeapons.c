@@ -379,7 +379,7 @@ void cObjElementFXATPC_Update(cObjElementFXATPC *self, cDebris *debris, float dt
 
 	vec3_t tmp, ang, mid;
 	ang = *Vec3_GetRotAng(&tmp, &dir);
-	float w0 = (float)Game_Sin((double)Float_MaxSS(s1, 0.2f)) * self->width;
+	float w0 = (float)sin((double)Float_MaxSS(s1, 0.2f)) * self->width;
 
 	/* the core */
 	CGameTrail_Reset(&self->core);

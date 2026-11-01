@@ -74,7 +74,7 @@ void ChType_DtritusKill(cAbstractFile *params) {
 	const vec3_t *pm = g_DtritusEnt->vftable->GetPos(g_DtritusEnt, &t2);
 	const vec3_t *pe2 = e->vftable->GetPos(e, &t3);
 	const vec3_t *pm2 = g_DtritusEnt->vftable->GetPos(g_DtritusEnt, &t4);
-	double a = Game_Atan2((double)(pe->x - pm->x), (double)(pe2->z - pm2->z));
+	double a = atan2((double)(pe->x - pm->x), (double)(pe2->z - pm2->z));
 	float n = NormAng(((float)a - Obj_Vtbl(g_DtritusEnt)->GetAng(g_DtritusEnt, &t1)->y) - M_PI_F);
 	double turn = (n > 0.0f ? M_PI_D : -M_PI_D) * 0.25;
 	float y = Obj_Vtbl(g_DtritusEnt)->GetAng(g_DtritusEnt, &t1)->y + (float)turn;

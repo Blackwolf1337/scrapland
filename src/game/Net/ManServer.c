@@ -256,8 +256,8 @@ void cClientNetManager_SendResources(cClientNetManager *self) {
 /* the ping byte of the stream: log2(ping + 1) * 24 */
 static byte ClientNet_PingByte(cNetClient *c) {
 	float p = (float)(double)(uint32_t)(c->ping + 1);
-	double a = Game_Log((double)p);
-	double b = Game_Log(2.0);
+	double a = log((double)p);
+	double b = log(2.0);
 	int v = (int)(a / b * 24.0);
 	if (v > 0xff) {
 		v = 0xff;

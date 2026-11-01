@@ -626,9 +626,9 @@ void CLight_AdjustD3D(CLight *self, D3DLight *l) {
 	}
 	if (g_LightGamma != 1.0f) {
 		double e = (double)(1.0f / g_LightGamma);
-		l->Diffuse.r = (float)Game_Pow((double)l->Diffuse.r, e);
-		l->Diffuse.g = (float)Game_Pow((double)l->Diffuse.g, e);
-		l->Diffuse.b = (float)Game_Pow((double)l->Diffuse.b, e);
+		l->Diffuse.r = (float)pow((double)l->Diffuse.r, e);
+		l->Diffuse.g = (float)pow((double)l->Diffuse.g, e);
+		l->Diffuse.b = (float)pow((double)l->Diffuse.b, e);
 	}
 	float desat = g_LightDesat;
 	if (desat != 0.0f) {

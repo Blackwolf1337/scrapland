@@ -105,8 +105,8 @@ void cFollowCamEntity_Slot(cEntity *self, float dt) {
 	Float_Approach(&fc->vSpeed, fc->vSpeedTo, fc->vSpeedRate * dt);
 	if (fc->dist > 1.0f && (fc->slowFrames <= 0 || 0.25f >= cTimer_GetSpeed(&g_pWorld->timer))) {
 		double e = (double)(float)((double)dt * 10.0);
-		float fy = (float)(1.0 / Game_Pow((double)((fc->vSpeed - 1.0f) * k + 1.0f), e));
-		float fx = (float)(1.0 / Game_Pow((double)((fc->hSpeed - 1.0f) * k + 1.0f), e));
+		float fy = (float)(1.0 / pow((double)((fc->vSpeed - 1.0f) * k + 1.0f), e));
+		float fx = (float)(1.0 / pow((double)((fc->hSpeed - 1.0f) * k + 1.0f), e));
 		fc->curAng[0] = fc->curAng[0] + NormAng(ax - fc->ang[0]) * (1.0f - fy);
 		fc->curAng[1] = fc->curAng[1] + NormAng(ay - fc->ang[1]) * (1.0f - fx);
 		return;
@@ -158,8 +158,8 @@ void cFollowCamEntity_Lerp(cEntity *self, float f) {
 	fc->center.x = o->x + fc->center.x;
 	fc->center.y = o->y + fc->center.y;
 	fc->center.z = o->z + fc->center.z;
-	X87_SinCos((fc->camAng + fc->ang[0]) - FCAM_HALF_PI, &s1, &c1);
-	X87_SinCos(fc->ang[1] - tilt, &s2, &c2);
+	Float_SinCos((fc->camAng + fc->ang[0]) - FCAM_HALF_PI, &s1, &c1);
+	Float_SinCos(fc->ang[1] - tilt, &s2, &c2);
 	float dx = -(s2 * s1);
 	float dz = -(c2 * s1);
 	float dy = -c1;

@@ -18,7 +18,7 @@ quat_t *Quat_Mul(quat_t *out, const quat_t *a, const quat_t *b) {
 quat_t *Quat_FromAxisAngle(quat_t *out, const vec3_t *axis, float ang) {
 	float s, c;
 
-	X87_SinCos(ang * 0.5f, &s, &c);
+	Float_SinCos(ang * 0.5f, &s, &c);
 	out->x = axis->x * s;
 	out->y = axis->y * s;
 	out->z = axis->z * s;
@@ -27,11 +27,11 @@ quat_t *Quat_FromAxisAngle(quat_t *out, const vec3_t *axis, float ang) {
 }
 
 float *Quat_ToAxisAngle(vec3_t *axis, float *ang, const quat_t *q) {
-	double a = Game_Acos((double)q->w);
+	double a = acos((double)q->w);
 	double k = 0.0;
 
 	if (a > 1e-20f) {
-		k = 1.0 / Game_Sin(a);
+		k = 1.0 / sin(a);
 	}
 	axis->x = (float)((double)q->x * k);
 	axis->y = (float)((double)q->y * k);
@@ -82,10 +82,10 @@ static void Quat_Interp(quat_t *out, const quat_t *a, const quat_t *c, double d,
 	double k0, k1;
 
 	if (far > 0.001) {
-		double om = Game_Acos(d);
-		double so = Game_Sin(om);
-		k0 = Game_Sin((1.0 - (double)t) * om) / so;
-		k1 = Game_Sin((double)t * om) / so;
+		double om = acos(d);
+		double so = sin(om);
+		k0 = sin((1.0 - (double)t) * om) / so;
+		k1 = sin((double)t * om) / so;
 	} else {
 		k0 = 1.0 - (double)t;
 		k1 = (double)t;
@@ -124,7 +124,7 @@ quat_t *Quat_Slerp(quat_t *out, const quat_t *a, const quat_t *b, float t) {
 
 /* the rotation angle of w in degrees */
 static double Quat_Degrees(float w) {
-	return Game_Acos(__builtin_fabs((double)w)) * 180.0 / M_PI_D;
+	return acos(__builtin_fabs((double)w)) * 180.0 / M_PI_D;
 }
 
 byte Quat_SlerpFlip(quat_t *out, const quat_t *a, const quat_t *b, float t) {
@@ -136,7 +136,7 @@ byte Quat_SlerpFlip(quat_t *out, const quat_t *a, const quat_t *b, float t) {
 		double da = Quat_Degrees(a->w);
 		double dc = Quat_Degrees(c.w);
 		if ((float)(dc + dc) + (float)(da + da) > 180.0f) {
-			double dd = Game_Acos(d) * 180.0 / M_PI_D;
+			double dd = acos(d) * 180.0 / M_PI_D;
 			if ((float)(dd + dd) > 80.0f) {
 				Quat_Neg(&c);
 				d = -d;
@@ -151,9 +151,9 @@ byte Quat_SlerpFlip(quat_t *out, const quat_t *a, const quat_t *b, float t) {
 quat_t *Quat_FromEuler(quat_t *out, float x, float y, float z) {
 	float sx, cx, sy, cy, sz, cz;
 
-	X87_SinCos(x * 0.5f, &sx, &cx);
-	X87_SinCos(y * 0.5f, &sy, &cy);
-	X87_SinCos(z * 0.5f, &sz, &cz);
+	Float_SinCos(x * 0.5f, &sx, &cx);
+	Float_SinCos(y * 0.5f, &sy, &cy);
+	Float_SinCos(z * 0.5f, &sz, &cz);
 	float a = sz * cx, b = cz * sx, c = cz * cx, e = sz * sx;
 	out->x = b * cy - a * sy;
 	out->z = a * cy + b * sy;

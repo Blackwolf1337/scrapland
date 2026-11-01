@@ -145,7 +145,7 @@ void ChType_MessengerTakeDataPack(cAbstractFile *params) {
 	const vec3_t *b = m->vftable->GetPos(m, &t2);
 	const vec3_t *c = dp->vftable->GetPos(dp, &t3);
 	const vec3_t *e = m->vftable->GetPos(m, &t4);
-	float at = Game_Atan2F((double)(a->x - b->x), (double)(c->z - e->z));
+	float at = (float)atan2((double)(a->x - b->x), (double)(c->z - e->z));
 	float n = NormAng(at - Obj_Vtbl(m)->GetAng(m, &t4)->y);
 	if (__builtin_fabs((double)n) > 1.5707963267948966) {
 		if (cActCtrl_Play(ChType_ActCtrl(m), "DropDataEnd", 0, 1.0f)) {
