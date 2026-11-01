@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/archio.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
@@ -20,20 +21,6 @@
 #include "scrap/win32.h"
 
 /* the methods of IDirect3DDevice8, IDirect3DSurface8 and IDirect3D8 only this file calls */
-#define D3DDEV_PRESENT 0x3c
-#define D3DDEV_BEGINSCENE 0x88
-#define D3DDEV_ENDSCENE 0x8c
-#define D3DSURF_GETDESC 0x20
-#define D3D_GETADAPTERIDENTIFIER 0x14
-#define D3D_GETDEVICECAPS 0x34
-typedef int(__stdcall *d3dScene_t)(void *dev);
-typedef int(__stdcall *d3dPresent_t)(void *dev, const void *src, const void *dst, void *hwnd, const void *dirty);
-typedef int(__stdcall *d3dCreateImageSurface_t)(void *dev, uint32_t w, uint32_t h, int fmt, void **surf);
-typedef int(__stdcall *d3dCopyRects_t)(void *dev, void *src, const void *rects, uint32_t n, void *dst,
-	const void *points);
-typedef int(__stdcall *d3dGetDesc_t)(void *surf, uint32_t *desc);
-typedef int(__stdcall *d3dGetAdapterIdentifier_t)(void *d3d, uint32_t adapter, uint32_t flags, D3DAdapterId *id);
-typedef int(__stdcall *d3dGetDeviceCaps_t)(void *d3d, uint32_t adapter, int type, D3DCaps8 *caps);
 #define D3DDEVTYPE_HAL 1
 #define D3D_SDK_VERSION 0xdc
 
@@ -307,10 +294,10 @@ void Video_CheckCaps(void) {
 	if (!d3d) {
 		return;
 	}
-	int hr = D3D_METHOD(d3d, d3dGetDeviceCaps_t, D3D_GETDEVICECAPS)(d3d, 0, D3DDEVTYPE_HAL, &caps);
+	int hr = Rd_D3DGetDeviceCaps(d3d, 0, D3DDEVTYPE_HAL, &caps);
 	byte ok = hr >= 0 && caps.PixelShaderVersion >= D3DPS_VERSION(1, 1);
 	id.Description[0] = 0;
-	D3D_METHOD(d3d, d3dGetAdapterIdentifier_t, D3D_GETADAPTERIDENTIFIER)(d3d, 0, 0, &id);
+	Rd_D3DGetAdapterIdentifier(d3d, 0, 0, &id);
 	if (!ok) {
 		const char *msg = Lang_GetStr("Menu_Video_Warning");
 		if (!msg) {
@@ -326,7 +313,7 @@ void Video_CheckCaps(void) {
 		exe_MessageBoxA(NULL, text, "Warning", 0x11030);
 		exe_BringWindowToTop(App_GetHWnd());
 	}
-	COM_RELEASE(d3d);
+	Rd_Release(d3d);
 }
 
 byte Render_ClearRect(float x, float y, float w, float h, byte target, uint32_t color) {
@@ -359,29 +346,29 @@ void Render_CopyBackBuffer(void) {
 	void *img = NULL, *back = NULL;
 	uint32_t desc[SURFDESC_WORDS];
 
-	D3D_METHOD(g_pd3dDevice, d3dGetBackBuffer_t, D3DDEV_GETBACKBUFFER)(g_pd3dDevice, 0, 0, &back);
-	if (D3D_METHOD(back, d3dGetDesc_t, D3DSURF_GETDESC)(back, desc) < 0) {
+	Rd_DevGetBackBuffer(g_pd3dDevice, 0, 0, &back);
+	if (Rd_SurfGetDesc(back, desc) < 0) {
 		return;
 	}
-	if (D3D_METHOD(g_pd3dDevice, d3dCreateImageSurface_t, D3DDEV_CREATEIMAGESURFACE)(g_pd3dDevice,
+	if (Rd_DevCreateImageSurface(g_pd3dDevice,
 		desc[SURFDESC_WIDTH], desc[SURFDESC_HEIGHT], (int)desc[SURFDESC_FORMAT], &img) < 0) {
 		return;
 	}
-	D3D_METHOD(g_pd3dDevice, d3dPresent_t, D3DDEV_PRESENT)(g_pd3dDevice, NULL, NULL, NULL, NULL);
-	D3D_METHOD(g_pd3dDevice, d3dCopyRects_t, D3DDEV_COPYRECTS)(g_pd3dDevice, back, NULL, 0, img, NULL);
+	Rd_DevPresent(g_pd3dDevice, NULL, NULL, NULL, NULL);
+	Rd_DevCopyRects(g_pd3dDevice, back, NULL, 0, img, NULL);
 	if (back) {
-		COM_RELEASE(back);
+		Rd_Release(back);
 		back = NULL;
 	}
-	D3D_METHOD(g_pd3dDevice, d3dPresent_t, D3DDEV_PRESENT)(g_pd3dDevice, NULL, NULL, NULL, NULL);
-	D3D_METHOD(g_pd3dDevice, d3dGetBackBuffer_t, D3DDEV_GETBACKBUFFER)(g_pd3dDevice, 0, 0, &back);
-	D3D_METHOD(g_pd3dDevice, d3dCopyRects_t, D3DDEV_COPYRECTS)(g_pd3dDevice, img, NULL, 0, back, NULL);
+	Rd_DevPresent(g_pd3dDevice, NULL, NULL, NULL, NULL);
+	Rd_DevGetBackBuffer(g_pd3dDevice, 0, 0, &back);
+	Rd_DevCopyRects(g_pd3dDevice, img, NULL, 0, back, NULL);
 	if (back) {
-		COM_RELEASE(back);
+		Rd_Release(back);
 		back = NULL;
 	}
 	if (img) {
-		COM_RELEASE(img);
+		Rd_Release(img);
 	}
 }
 
@@ -497,15 +484,15 @@ void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut) {
 		Splash_Draw(&rect, 0, tex);
 	}
 	if (tex) {
-		COM_RELEASE(tex);
+		Rd_Release(tex);
 	}
 }
 
 void Splash_Draw(const box_t *rect, uint32_t color, void *tex) {
-	D3D_METHOD(g_Engine->device, d3dScene_t, D3DDEV_BEGINSCENE)(g_Engine->device);
+	Rd_DevBeginScene(g_Engine->device);
 	Render_DrawTexRect(rect, color, color, tex);
-	D3D_METHOD(g_Engine->device, d3dScene_t, D3DDEV_ENDSCENE)(g_Engine->device);
-	D3D_METHOD(g_Engine->device, d3dPresent_t, D3DDEV_PRESENT)(g_Engine->device, NULL, NULL, NULL, NULL);
+	Rd_DevEndScene(g_Engine->device);
+	Rd_DevPresent(g_Engine->device, NULL, NULL, NULL, NULL);
 }
 
 void Splash_Reset(void) {
@@ -516,12 +503,12 @@ void Splash_Reset(void) {
 
 /* one frame of the loading screen drawn by draw */
 static void Loading_Frame(loadingDraw_t draw) {
-	D3D_METHOD(g_pd3dDevice, d3dScene_t, D3DDEV_BEGINSCENE)(g_pd3dDevice);
+	Rd_DevBeginScene(g_pd3dDevice);
 	Render_BeginFrame();
 	draw();
 	Render_EndView();
-	D3D_METHOD(g_pd3dDevice, d3dScene_t, D3DDEV_ENDSCENE)(g_pd3dDevice);
-	D3D_METHOD(g_pd3dDevice, d3dPresent_t, D3DDEV_PRESENT)(g_pd3dDevice, NULL, NULL, NULL, NULL);
+	Rd_DevEndScene(g_pd3dDevice);
+	Rd_DevPresent(g_pd3dDevice, NULL, NULL, NULL, NULL);
 }
 
 void Loading_DrawBack2(void) {
@@ -569,13 +556,13 @@ void Loading_Step(int percent) {
 	r.min.z = 0.0f;
 	r.max.y = 0.90478515625f;	/* 0x3f67a000 */
 	r.max.z = 0.0f;
-	D3D_METHOD(engine->device, d3dScene_t, D3DDEV_BEGINSCENE)(engine->device);
+	Rd_DevBeginScene(engine->device);
 	float q = 1.0f - p;
 	int green = (int)(q * 200.0f + p * 255.0f);
 	int red = (int)(q * 255.0f + p * 200.0f);
 	Render_DrawTexRect(&r, 0xffc800, ((uint32_t)red << 8 | (uint32_t)green) << 8, NULL);
-	D3D_METHOD(g_Engine->device, d3dScene_t, D3DDEV_ENDSCENE)(g_Engine->device);
-	D3D_METHOD(g_Engine->device, d3dPresent_t, D3DDEV_PRESENT)(g_Engine->device, NULL, NULL, NULL, NULL);
+	Rd_DevEndScene(g_Engine->device);
+	Rd_DevPresent(g_Engine->device, NULL, NULL, NULL, NULL);
 }
 
 void Loading_DrawBack(void) {

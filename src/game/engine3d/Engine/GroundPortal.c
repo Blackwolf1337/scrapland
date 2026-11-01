@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/gvar.h"
 #include "scrap/camera.h"
 #include "scrap/console.h"
@@ -305,7 +306,7 @@ byte SectorVis_Sphere(SectorVis *self, const vec3_t *pos, const vec3_t *center, 
 	if (g_PortalTest > 1) {
 		uint32_t view[6];
 		void *dev = g_pd3dDevice;
-		D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, view);
+		Rd_DevGetViewport(dev, view);
 		int x0 = Portal_Pixel(r.min.x + 1.0f, view[2], view[0]);
 		int y0 = Portal_Pixel(1.0f - r.min.y, view[3], view[1]) - 1;
 		int y1 = Portal_Pixel(1.0f - r.max.y, view[3], view[1]);
@@ -519,7 +520,7 @@ void Portals_DebugDraw(void) {
 		return;
 	}
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, vp);
+	Rd_DevGetViewport(dev, vp);
 	Text_Printf(300, 0x14, "zonas: %d", g_NumPaintZones);	/* "zonas: %d" */
 	for (int i = 0; i < g_NumPaintZones; i++) {
 		const PaintZone *zp = &g_PaintZones[i];
@@ -677,15 +678,15 @@ byte Portals_SetView(const PaintZone *zp) {
 		uint32_t vp[6];
 		m = *Render_GetProj();
 		dev = g_pd3dDevice;
-		D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &m);
+		Rd_DevSetTransform(dev, D3DTS_PROJECTION, &m);
 		dev = g_pd3dDevice;
-		D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, vp);
+		Rd_DevGetViewport(dev, vp);
 		vp[0] = 0;
 		vp[1] = 0;
 		vp[2] = (uint32_t)Render_GetViewportW();
 		vp[3] = (uint32_t)Render_GetViewportH();
 		dev = g_pd3dDevice;
-		D3D_METHOD(dev, d3dSetViewport_t, D3DDEV_SETVIEWPORT)(dev, vp);
+		Rd_DevSetViewport(dev, vp);
 		return 1;
 	}
 	int w = Render_GetViewportW();
@@ -713,7 +714,7 @@ byte Portals_SetView(const PaintZone *zp) {
 	}
 	uint32_t vp[6] = { (uint32_t)x0, (uint32_t)y0, (uint32_t)lx, (uint32_t)ly, 0, 0x3f800000 };
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetViewport_t, D3DDEV_SETVIEWPORT)(dev, vp);
+	Rd_DevSetViewport(dev, vp);
 	float fy0 = -((float)y0 / (float)h - 0.5f);
 	float fx0 = (float)x0 / (float)w - 0.5f;
 	float fx1 = (float)x1 / (float)w - 0.5f;
@@ -724,6 +725,6 @@ byte Portals_SetView(const PaintZone *zp) {
 	m.m[8] = (fx1 + fx0) / (fx0 - fx1);
 	m.m[9] = (fy1 + fy0) / (fy1 - fy0);
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &m);
+	Rd_DevSetTransform(dev, D3DTS_PROJECTION, &m);
 	return 1;
 }

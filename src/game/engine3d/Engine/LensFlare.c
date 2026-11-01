@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/flare.h"
@@ -129,12 +130,12 @@ void LensFlare_RenderAll(void) {
 		return;
 	}
 	Render_SetMaterial(g_LensFlareMat, 0);
-	D3D_METHOD(dev, d3dGetTransform_t, D3DDEV_GETTRANSFORM)(dev, D3DTS_VIEW, &view);
-	D3D_METHOD(dev, d3dGetTransform_t, D3DDEV_GETTRANSFORM)(dev, D3DTS_PROJECTION, &proj);
+	Rd_DevGetTransform(dev, D3DTS_VIEW, &view);
+	Rd_DevGetTransform(dev, D3DTS_PROJECTION, &proj);
 	Render_SetWorldMatrix(g_MatIdentity, 0);
-	D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_VIEW, g_MatIdentity);
-	D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, g_MatIdentity);
-	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, D3DFVF_LENSFLARE);
+	Rd_DevSetTransform(dev, D3DTS_VIEW, g_MatIdentity);
+	Rd_DevSetTransform(dev, D3DTS_PROJECTION, g_MatIdentity);
+	Rd_DevSetVertexShader(dev, D3DFVF_LENSFLARE);
 	for (int i = 0; i < g_nLensFlareRender; i++) {
 		CLensFlare *lf = g_LensFlareRender[i];
 		CHECK(lf->RenderIndex == i);
@@ -142,8 +143,8 @@ void LensFlare_RenderAll(void) {
 			CLensFlare_Render(lf, view, proj);
 		}
 	}
-	D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_VIEW, &view);
-	D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &proj);
+	Rd_DevSetTransform(dev, D3DTS_VIEW, &view);
+	Rd_DevSetTransform(dev, D3DTS_PROJECTION, &proj);
 }
 
 /* the sprites of a pattern as the bits of their floats: dist, sprite, size, r, g, b and the factor of the
@@ -344,7 +345,7 @@ void CLensFlare_DrawSprite(CLensFlare *self, float dist, uint32_t sprite, float 
 	v[1] = (VertLensFlare){ cx - hx, cy + hy, 0.0f, color, 0, texMin[0], texMax[1] };
 	v[2] = (VertLensFlare){ cx + hx, cy - hy, 0.0f, color, 0, texMax[0], texMin[1] };
 	v[3] = (VertLensFlare){ cx + hx, cy + hy, 0.0f, color, 0, texMax[0], texMax[1] };
-	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(*v));
+	Rd_DevDrawPrimitiveUP(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(*v));
 }
 
 void CLensFlare_SetIntens(CLensFlare *self, float v) {

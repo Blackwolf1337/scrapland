@@ -6,6 +6,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/gvar.h"
 #include "scrap/console.h"
 #include "scrap/d3d8.h"
@@ -46,7 +47,7 @@
 
 static void Stencil_RS(uint32_t state, uint32_t value) {
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, state, value);
+	Rd_DevSetRenderState(dev, state, value);
 }
 
 void StencilBlock_SetLights(byte on) {
@@ -60,10 +61,10 @@ void Stencil_DebugLine(const vec3_t *a, const vec3_t *b, uint32_t color) {
 	matrix_t world;
 	void *dev = g_pd3dDevice;
 
-	D3D_METHOD(dev, d3dGetTransform_t, D3DDEV_GETTRANSFORM)(dev, D3DTS_WORLD, &world);
+	Rd_DevGetTransform(dev, D3DTS_WORLD, &world);
 	Debug_DrawLine(a, b, color);
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_WORLD, &world);
+	Rd_DevSetTransform(dev, D3DTS_WORLD, &world);
 }
 
 #define STENCIL_MAX_SEGS 0x2000
@@ -150,9 +151,9 @@ static void Stencil_Extrude(const StencilBlock *b, const vec3_t *p, vec3_t *out)
 
 /* the world matrix of the group and the vertex buffer of positions */
 static void Stencil_SetGroup(StencilBlock *b, void *vb) {
-	D3D_METHOD(g_pd3dDevice, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(g_pd3dDevice, D3DTS_WORLD, &b->world);
-	D3D_METHOD(g_pd3dDevice, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(g_pd3dDevice, D3DFVF_XYZ);
-	D3D_METHOD(g_pd3dDevice, d3dSetStreamSource_t, D3DDEV_SETSTREAMSOURCE)(g_pd3dDevice, 0, vb, sizeof(vec3_t));
+	Rd_DevSetTransform(g_pd3dDevice, D3DTS_WORLD, &b->world);
+	Rd_DevSetVertexShader(g_pd3dDevice, D3DFVF_XYZ);
+	Rd_DevSetStreamSource(g_pd3dDevice, 0, vb, sizeof(vec3_t));
 }
 
 /* the sides of the volumes: a quad from each silhouette segment to its far ends (pass 0 fills the buffer) */
@@ -168,7 +169,7 @@ void Stencil_DrawSegs(int pass) {
 		CHECK(g_StencilBlock[group].useg <= g_StencilSegs);
 		last = g_StencilBlock[group].useg;
 		if (!pass) {
-			CHECK(!D3D_METHOD(g_StencilVB, d3dLock_t, D3DBUF_LOCK)(g_StencilVB, first * 4 * sizeof(vec3_t),
+			CHECK(!Rd_BufLock(g_StencilVB, first * 4 * sizeof(vec3_t),
 				(last - first) * 4 * sizeof(vec3_t), &v, group ? D3DLOCK_NOOVERWRITE : D3DLOCK_DISCARD));
 			for (i = first; i < last; i++, v += 4) {
 				seg = &g_StencilSegments[i * 2];
@@ -177,12 +178,12 @@ void Stencil_DrawSegs(int pass) {
 				v[0] = seg[1];
 				v[1] = seg[0];
 			}
-			D3D_METHOD(g_StencilVB, d3dUnlock_t, D3DBUF_UNLOCK)(g_StencilVB);
+			Rd_BufUnlock(g_StencilVB);
 		}
 		if (g_StencilDraw && last - first) {
 			Stencil_SetGroup(&g_StencilBlock[group], g_StencilVB);
-			D3D_METHOD(g_pd3dDevice, d3dSetIndices_t, D3DDEV_SETINDICES)(g_pd3dDevice, g_StencilIB, 0);
-			D3D_METHOD(g_pd3dDevice, d3dDrawIndexedPrimitive_t, D3DDEV_DRAWINDEXEDPRIMITIVE)(g_pd3dDevice,
+			Rd_DevSetIndices(g_pd3dDevice, g_StencilIB, 0);
+			Rd_DevDrawIndexedPrimitive(g_pd3dDevice,
 				D3DPT_TRIANGLELIST, first * 4, (last - first) * 4, first * 6, (last - first) * 2);
 		}
 		first = last;
@@ -210,9 +211,9 @@ void Stencil_DrawTris(int pass) {
 		}
 		if (!pass) {
 			flags = group ? D3DLOCK_NOOVERWRITE : D3DLOCK_DISCARD;
-			CHECK(!D3D_METHOD(g_StencilVB2, d3dLock_t, D3DBUF_LOCK)(g_StencilVB2, first * 3 * sizeof(vec3_t),
+			CHECK(!Rd_BufLock(g_StencilVB2, first * 3 * sizeof(vec3_t),
 				n * 3 * sizeof(vec3_t), &v1, flags));
-			CHECK(!D3D_METHOD(g_StencilVB3, d3dLock_t, D3DBUF_LOCK)(g_StencilVB3, first * 3 * sizeof(vec3_t),
+			CHECK(!Rd_BufLock(g_StencilVB3, first * 3 * sizeof(vec3_t),
 				n * 3 * sizeof(vec3_t), &v2, flags));
 			for (i = first; i < last; i++, v1 += 3, v2 += 3) {
 				tri = &g_StencilTriInv[i * 3];
@@ -223,16 +224,16 @@ void Stencil_DrawTris(int pass) {
 				v2[1] = tri[2];
 				v2[2] = tri[1];
 			}
-			D3D_METHOD(g_StencilVB3, d3dUnlock_t, D3DBUF_UNLOCK)(g_StencilVB3);
-			D3D_METHOD(g_StencilVB2, d3dUnlock_t, D3DBUF_UNLOCK)(g_StencilVB2);
+			Rd_BufUnlock(g_StencilVB3);
+			Rd_BufUnlock(g_StencilVB2);
 		}
 		if (g_StencilDraw) {
 			Stencil_SetGroup(&g_StencilBlock[group], g_StencilVB2);
-			D3D_METHOD(g_pd3dDevice, d3dDrawPrimitive_t, D3DDEV_DRAWPRIMITIVE)(g_pd3dDevice, D3DPT_TRIANGLELIST,
+			Rd_DevDrawPrimitive(g_pd3dDevice, D3DPT_TRIANGLELIST,
 				first * 3, n);
-			D3D_METHOD(g_pd3dDevice, d3dSetStreamSource_t, D3DDEV_SETSTREAMSOURCE)(g_pd3dDevice, 0, g_StencilVB3,
+			Rd_DevSetStreamSource(g_pd3dDevice, 0, g_StencilVB3,
 				sizeof(vec3_t));
-			D3D_METHOD(g_pd3dDevice, d3dDrawPrimitive_t, D3DDEV_DRAWPRIMITIVE)(g_pd3dDevice, D3DPT_TRIANGLELIST,
+			Rd_DevDrawPrimitive(g_pd3dDevice, D3DPT_TRIANGLELIST,
 				first * 3, n);
 		}
 		first = last;
@@ -317,19 +318,19 @@ void Stencil_Free(void) {
 		g_StencilTriInv = NULL;
 	}
 	if (g_StencilVB3) {
-		COM_RELEASE(g_StencilVB3);
+		Rd_Release(g_StencilVB3);
 		g_StencilVB3 = NULL;
 	}
 	if (g_StencilVB2) {
-		COM_RELEASE(g_StencilVB2);
+		Rd_Release(g_StencilVB2);
 		g_StencilVB2 = NULL;
 	}
 	if (g_StencilVB) {
-		COM_RELEASE(g_StencilVB);
+		Rd_Release(g_StencilVB);
 		g_StencilVB = NULL;
 	}
 	if (g_StencilIB) {
-		COM_RELEASE(g_StencilIB);
+		Rd_Release(g_StencilIB);
 		g_StencilIB = NULL;
 	}
 }
@@ -383,11 +384,11 @@ void Stencil_Init(void) {
 		operator_delete_sized(idx, 2);
 	}
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dCreateVB_t, D3DDEV_CREATEVB)(dev, 0x60000, 0x208, 2, 0, &g_StencilVB);
+	Rd_DevCreateVertexBuffer(dev, 0x60000, 0x208, 2, 0, &g_StencilVB);
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dCreateVB_t, D3DDEV_CREATEVB)(dev, 0x6c000, 0x208, 2, 0, &g_StencilVB2);
+	Rd_DevCreateVertexBuffer(dev, 0x6c000, 0x208, 2, 0, &g_StencilVB2);
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dCreateVB_t, D3DDEV_CREATEVB)(dev, 0x6c000, 0x208, 2, 0, &g_StencilVB3);
+	Rd_DevCreateVertexBuffer(dev, 0x6c000, 0x208, 2, 0, &g_StencilVB3);
 }
 
 /* the scene drawn: unlit where the stencil is set, then lit where it is not, the floor through g_StencilRender */
@@ -583,7 +584,7 @@ void Stencil_Mesh(struct CVertList *v, const void *tris, uint32_t nTri, struct C
 	matrix_t world, inv;
 	vec3_t lpos, ldir;
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dGetTransform_t, D3DDEV_GETTRANSFORM)(dev, D3DTS_WORLD, &world);
+	Rd_DevGetTransform(dev, D3DTS_WORLD, &world);
 	CHECK(D3DX_MatrixInverse(&inv, NULL, &world));
 	Vec3_TransformH(&lpos, &g_ShadowLightPos, &inv);
 	Vec3_TransformDir0(&ldir, &g_ShadowLightDir, &inv);

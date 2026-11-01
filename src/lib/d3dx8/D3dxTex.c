@@ -17,6 +17,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/d3d8.h"
 
 #include <windows.h>
@@ -40,25 +41,6 @@
 #define D3DLOCK_READONLY 0x10
 
 /* IDirect3DDevice8, IDirect3D8, IDirect3DTexture8, IDirect3DSurface8 */
-#define DEV_GETDIRECT3D 0x18
-#define DEV_GETDEVICECAPS 0x1c
-#define DEV_GETDISPLAYMODE 0x20
-#define DEV_UPDATETEXTURE 0x74
-#define D3D_CHECKDEVICEFORMAT 0x28
-#define TEX_GETLEVELCOUNT 0x34
-#define SURF_GETDESC 0x20
-#define SURF_LOCKRECT 0x24
-#define SURF_UNLOCKRECT 0x28
-typedef int(__stdcall *devGetDirect3D_t)(void *dev, void **d3d);
-typedef int(__stdcall *devGetCaps_t)(void *dev, D3DCaps8 *caps);
-typedef int(__stdcall *devGetDisplayMode_t)(void *dev, D3DDisplayMode *mode);
-typedef int(__stdcall *devUpdateTexture_t)(void *dev, void *src, void *dst);
-typedef int(__stdcall *d3dCheckDeviceFormat_t)(void *d3d, uint32_t adapter, int devType, int adapterFmt, uint32_t usage,
-	int rtype, int fmt);
-typedef uint32_t(__stdcall *texGetLevelCount_t)(void *tex);
-typedef int(__stdcall *surfGetDesc_t)(void *surf, d3dSurfaceDesc_t *desc);
-typedef int(__stdcall *surfLockRect_t)(void *surf, d3dLockedRect_t *lr, const RECT *rect, uint32_t flags);
-typedef int(__stdcall *surfUnlockRect_t)(void *surf);
 
 #define TEXCAPS_POW2 0x2
 #define TEXCAPS_SQUAREONLY 0x20
@@ -213,13 +195,13 @@ static int Tex_PickFormat(void *dev, uint32_t usage, int fmt) {
 	int64_t bestDist = -1;
 
 	if (dev) {
-		D3D_METHOD(dev, devGetDirect3D_t, DEV_GETDIRECT3D)(dev, &d3d);
-		D3D_METHOD(dev, devGetCaps_t, DEV_GETDEVICECAPS)(dev, &caps);
-		D3D_METHOD(dev, devGetDisplayMode_t, DEV_GETDISPLAYMODE)(dev, &mode);
+		Rd_DevGetDirect3D(dev, &d3d);
+		Rd_DevGetDeviceCaps(dev, &caps);
+		Rd_DevGetDisplayMode(dev, &mode);
 	}
 	for (int i = 0; i < TEX_FORMATS; i++) {
 		const texFormat_t *c = &texFormats[i];
-		if (d3d && D3D_METHOD(d3d, d3dCheckDeviceFormat_t, D3D_CHECKDEVICEFORMAT)(d3d, caps.AdapterOrdinal,
+		if (d3d && Rd_D3DCheckDeviceFormat(d3d, caps.AdapterOrdinal,
 			(int)caps.DeviceType, (int)mode.Format, usage, D3DRTYPE_TEXTURE, c->fmt) < 0) {
 			continue;
 		}
@@ -240,7 +222,7 @@ static int Tex_PickFormat(void *dev, uint32_t usage, int fmt) {
 		}
 	}
 	if (d3d) {
-		COM_RELEASE(d3d);
+		Rd_Release(d3d);
 	}
 	return best ? best->fmt : 0;
 }
@@ -308,7 +290,7 @@ int __stdcall D3DX_CheckTextureRequirements(void *dev, uint32_t *pw, uint32_t *p
 	}
 	levels = plevels ? *plevels : D3DX_DEFAULT;
 	if (pool != D3DPOOL_SCRATCH) {
-		D3D_METHOD(dev, devGetCaps_t, DEV_GETDEVICECAPS)(dev, &caps);
+		Rd_DevGetDeviceCaps(dev, &caps);
 		uint32_t texCaps = caps.TextureCaps;
 		if (w > caps.MaxTextureWidth) {
 			w = caps.MaxTextureWidth;
@@ -955,8 +937,8 @@ int __stdcall D3DX_LoadSurfaceFromSurface(void *dst, const void *dstPal, const v
 	if (!dst || !src) {
 		return D3DERR_INVALIDCALL;
 	}
-	if ((hr = D3D_METHOD(src, surfGetDesc_t, SURF_GETDESC)(src, &sd)) < 0
-		|| (hr = D3D_METHOD(dst, surfGetDesc_t, SURF_GETDESC)(dst, &dd)) < 0) {
+	if ((hr = Rd_SurfGetDesc(src, &sd)) < 0
+		|| (hr = Rd_SurfGetDesc(dst, &dd)) < 0) {
 		return hr;
 	}
 	sr = srcRect ? *srcRect : (RECT){ 0, 0, (LONG)sd.Width, (LONG)sd.Height };
@@ -975,11 +957,11 @@ int __stdcall D3DX_LoadSurfaceFromSurface(void *dst, const void *dstPal, const v
 	if ((s.f->codec == CODEC_DXT && ((sr.left | sr.top) & 3)) || (d.f->codec == CODEC_DXT && ((dr.left | dr.top) & 3))) {
 		return D3DERR_INVALIDCALL;
 	}
-	if ((hr = D3D_METHOD(src, surfLockRect_t, SURF_LOCKRECT)(src, &sl, srcRect, D3DLOCK_READONLY)) < 0) {
+	if ((hr = Rd_SurfLockRect(src, &sl, srcRect, D3DLOCK_READONLY)) < 0) {
 		return hr;
 	}
-	if ((hr = D3D_METHOD(dst, surfLockRect_t, SURF_LOCKRECT)(dst, &dl, dstRect, 0)) < 0) {
-		D3D_METHOD(src, surfUnlockRect_t, SURF_UNLOCKRECT)(src);
+	if ((hr = Rd_SurfLockRect(dst, &dl, dstRect, 0)) < 0) {
+		Rd_SurfUnlockRect(src);
 		return hr;
 	}
 	s.bits = sl.pBits;
@@ -987,8 +969,8 @@ int __stdcall D3DX_LoadSurfaceFromSurface(void *dst, const void *dstPal, const v
 	d.bits = dl.pBits;
 	d.pitch = dl.Pitch;
 	hr = Tex_Convert(&s, &d, Tex_Filter(filter, D3DX_FILTER_TRIANGLE), colorKey);
-	D3D_METHOD(dst, surfUnlockRect_t, SURF_UNLOCKRECT)(dst);
-	D3D_METHOD(src, surfUnlockRect_t, SURF_UNLOCKRECT)(src);
+	Rd_SurfUnlockRect(dst);
+	Rd_SurfUnlockRect(src);
 	return hr;
 }
 
@@ -1237,10 +1219,6 @@ typedef struct {
 	int Format;
 } d3dxImageInfo_t;
 
-#define TEX_LOCKRECT 0x40
-#define TEX_UNLOCKRECT 0x44
-typedef int(__stdcall *texLockRect_t)(void *tex, uint32_t level, d3dLockedRect_t *lr, const RECT *rect, uint32_t flags);
-typedef int(__stdcall *texUnlockRect_t)(void *tex, uint32_t level);
 
 /* lock level lv of tex as l */
 static int Tex_LockLevel(void *tex, uint32_t lv, int fmt, uint32_t flags, texLevel_t *l) {
@@ -1248,8 +1226,8 @@ static int Tex_LockLevel(void *tex, uint32_t lv, int fmt, uint32_t flags, texLev
 	d3dLockedRect_t lr;
 	int hr;
 
-	if ((hr = D3D_METHOD(tex, d3dGetLevelDesc_t, D3DTEX_GETLEVELDESC)(tex, lv, &desc)) < 0
-		|| (hr = D3D_METHOD(tex, texLockRect_t, TEX_LOCKRECT)(tex, lv, &lr, NULL, flags)) < 0) {
+	if ((hr = Rd_TexGetLevelDesc(tex, lv, &desc)) < 0
+		|| (hr = Rd_TexLockRect(tex, lv, &lr, NULL, flags)) < 0) {
 		return hr;
 	}
 	*l = (texLevel_t){ Tex_Format(fmt), lr.pBits, lr.Pitch, desc.Width, desc.Height };
@@ -1264,7 +1242,7 @@ static int Tex_LockLevel(void *tex, uint32_t lv, int fmt, uint32_t flags, texLev
 static int Tex_FillLevels(void *tex, const texFile_t *dds, int fmt, uint32_t filter, uint32_t mipFilter,
 	uint32_t colorKey) {
 	const texFormat_t *sf = Tex_Format(dds->fmt);
-	uint32_t levels = D3D_METHOD(tex, texGetLevelCount_t, TEX_GETLEVELCOUNT)(tex);
+	uint32_t levels = Rd_TexGetLevelCount(tex);
 	texLevel_t file = { sf, (byte *)dds->data, 0, dds->w, dds->h };
 	int hr = 0;
 
@@ -1284,9 +1262,9 @@ static int Tex_FillLevels(void *tex, const texFile_t *dds, int fmt, uint32_t fil
 			}
 		} else if ((hr = Tex_LockLevel(tex, lv - 1, fmt, D3DLOCK_READONLY, &up)) >= 0) {
 			hr = Tex_MipDown(&up, &l, mipFilter);
-			D3D_METHOD(tex, texUnlockRect_t, TEX_UNLOCKRECT)(tex, lv - 1);
+			Rd_TexUnlockRect(tex, lv - 1);
 		}
-		D3D_METHOD(tex, texUnlockRect_t, TEX_UNLOCKRECT)(tex, lv);
+		Rd_TexUnlockRect(tex, lv);
 		if (lv < dds->levels) {
 			file.bits += file.pitch * Tex_Rows(sf, file.h);
 			file.w = file.w > 1 ? file.w / 2 : 1;
@@ -1342,12 +1320,12 @@ int __stdcall D3DX_CreateTextureFromFileInMemoryEx(void *dev, const void *data, 
 		fmt = FMT_A8R8G8B8;
 	}
 	if ((hr = D3DX_CheckTextureRequirements(dev, &w, &h, &levels, usage, &fmt, pool)) < 0
-		|| (hr = D3D_METHOD(dev, d3dCreateTexture_t, D3DDEV_CREATETEXTURE)(dev, w, h, levels, usage, fmt, pool,
+		|| (hr = Rd_DevCreateTexture(dev, w, h, levels, usage, fmt, pool,
 			&tex)) < 0) {
 		goto done;
 	}
 	fill = tex;
-	if (pool == D3DPOOL_DEFAULT && (hr = D3D_METHOD(dev, d3dCreateTexture_t, D3DDEV_CREATETEXTURE)(dev, w, h, levels,
+	if (pool == D3DPOOL_DEFAULT && (hr = Rd_DevCreateTexture(dev, w, h, levels,
 		0, fmt, D3DPOOL_SYSTEMMEM, &fill)) < 0) {
 		fill = NULL;
 		goto done;
@@ -1355,14 +1333,14 @@ int __stdcall D3DX_CreateTextureFromFileInMemoryEx(void *dev, const void *data, 
 	hr = Tex_FillLevels(fill, &file, fmt, Tex_Filter(filter, D3DX_FILTER_TRIANGLE),
 		Tex_Filter(mipFilter, D3DX_FILTER_BOX), colorKey);
 	if (hr >= 0 && fill != tex) {
-		hr = D3D_METHOD(dev, devUpdateTexture_t, DEV_UPDATETEXTURE)(dev, fill, tex);
+		hr = Rd_DevUpdateTexture(dev, fill, tex);
 	}
 done:
 	if (fill && fill != tex) {
-		COM_RELEASE(fill);
+		Rd_Release(fill);
 	}
 	if (hr < 0 && tex) {
-		COM_RELEASE(tex);
+		Rd_Release(tex);
 	} else if (hr >= 0) {
 		*out = tex;
 	}

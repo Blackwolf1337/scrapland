@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/archio.h"
 #include "scrap/camera.h"
 #include "scrap/d3d8.h"
@@ -21,12 +22,12 @@
 
 static void Render_TSS(uint32_t stage, uint32_t type, uint32_t value) {
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(dev, stage, type, value);
+	Rd_DevSetTextureStageState(dev, stage, type, value);
 }
 
 static void Render_State(uint32_t state, uint32_t value) {
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, state, value);
+	Rd_DevSetRenderState(dev, state, value);
 }
 
 /* pixel shader i of g_PSNames when the device has it and it is not switched off in g_PSOff, else 0 */
@@ -39,7 +40,7 @@ static uint32_t Render_PSHandle(int i) {
 
 static void Render_SetPS(uint32_t handle) {
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetPixelShader_t, D3DDEV_SETPIXELSHADER)(dev, handle);
+	Rd_DevSetPixelShader(dev, handle);
 }
 
 static void Render_PS(int i, void *arg, byte flags) {
@@ -626,9 +627,9 @@ void CRenderVB_Reset(CRenderVB *self) {
 /* n bytes of src at off of the buffer */
 static void Buf_Write(void *buf, uint32_t off, const void *src, uint32_t n) {
 	void *p;
-	CHECK(D3D_METHOD(buf, d3dLock_t, D3DBUF_LOCK)(buf, off, n, &p, 0) >= 0);
+	CHECK(Rd_BufLock(buf, off, n, &p, 0) >= 0);
 	memcpy(p, src, n);
-	D3D_METHOD(buf, d3dUnlock_t, D3DBUF_UNLOCK)(buf);
+	Rd_BufUnlock(buf);
 }
 
 void CRenderIB_Add(CRenderIB *self, int numtri, const uint16_t *idx) {
@@ -650,7 +651,7 @@ void CRenderVB_Add(CRenderVB *self, int numvert, const void *verts) {
 /* the buffer (AddRef) at 0 and its used count at 8 of both kinds */
 static void *Buf_Get(void *const *buf, const int *used, int *out) {
 	*out = *used;
-	COM_ADDREF(*buf);
+	Rd_AddRef(*buf);
 	return *buf;
 }
 
@@ -669,7 +670,7 @@ void CRenderIB_Create(CRenderIB *self, uint32_t numtri) {
 	self->Used = 0;
 	if (numtri) {
 		void *dev = g_pd3dDevice;
-		CHECK(D3D_METHOD(dev, d3dCreateIB_t, D3DDEV_CREATEIB)(dev, numtri * 6, D3DUSAGE_WRITEONLY, D3DFMT_INDEX16,
+		CHECK(Rd_DevCreateIndexBuffer(dev, numtri * 6, D3DUSAGE_WRITEONLY, D3DFMT_INDEX16,
 			D3DPOOL_DEFAULT, &self->pVertIB) >= 0);
 	}
 }
@@ -683,7 +684,7 @@ void CRenderVB_Create(CRenderVB *self, uint32_t numvert, int size, uint32_t fvf)
 	self->FVF = fvf;
 	if (numvert) {
 		void *dev = g_pd3dDevice;
-		CHECK(D3D_METHOD(dev, d3dCreateVB_t, D3DDEV_CREATEVB)(dev, numvert * (uint32_t)size, D3DUSAGE_WRITEONLY, fvf,
+		CHECK(Rd_DevCreateVertexBuffer(dev, numvert * (uint32_t)size, D3DUSAGE_WRITEONLY, fvf,
 			D3DPOOL_DEFAULT, &self->pVertVB) >= 0);
 	}
 }
@@ -702,7 +703,7 @@ byte Render_Clear(const box_t *rect, uint32_t flags, uint32_t color, float z, ui
 		Render_ClipRect(r, g_ViewportFull, rect);
 	}
 	void *dev = g_pd3dDevice;
-	return D3D_METHOD(dev, d3dClear_t, D3DDEV_CLEAR)(dev, rect != NULL, rect ? r : NULL, flags, color, z, stencil) == 0;
+	return Rd_DevClear(dev, rect != NULL, rect ? r : NULL, flags, color, z, stencil) == 0;
 }
 
 void Render_GetViewportSize(int *width, int *height) {
@@ -725,12 +726,12 @@ static uint32_t F2U(float f) {
 
 static void Render_SetTexTransform(uint32_t stage, const matrix_t *m) {
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_TEXTURE0 + stage, m);
+	Rd_DevSetTransform(dev, D3DTS_TEXTURE0 + stage, m);
 }
 
 static void Render_PSConst(uint32_t reg, const float *c) {
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetPixelShaderConstant_t, D3DDEV_SETPIXELSHADERCONSTANT)(dev, reg, c, 1);
+	Rd_DevSetPixelShaderConstant(dev, reg, c, 1);
 }
 
 void Render_PSConstAlpha(const CMaterial *mat, uint32_t reg) {
@@ -786,7 +787,7 @@ void Mat_StageEnvMap(CMaterial *mat, uint32_t flags, uint32_t stage, float bias)
 		if (g_EnvMapViewDep == 1) {
 			matrix_t v;
 			void *dev = g_pd3dDevice;
-			D3D_METHOD(dev, d3dGetTransform_t, D3DDEV_GETTRANSFORM)(dev, D3DTS_VIEW, &v);
+			Rd_DevGetTransform(dev, D3DTS_VIEW, &v);
 			vec3_t dir = { v.m[2], v.m[6], v.m[10] }, ang;
 			Vec3_GetRotAng(&ang, &dir);
 			m.m[12] -= (float)((double)ang.y * M_1_PI_D);
@@ -1168,7 +1169,7 @@ void Render_D3DMaterial(const CMaterial *mat, const float *colors) {
 		p = m;
 	}
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetMaterial_t, D3DDEV_SETMATERIAL)(dev, p);
+	Rd_DevSetMaterial(dev, p);
 }
 
 const matrix_t *Render_GetProj(void) {
@@ -1189,7 +1190,7 @@ const vec3_t *Render_GetEyePos(void) {
 
 static void Render_SetTexture(uint32_t stage, void *tex) {
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetTexture_t, D3DDEV_SETTEXTURE)(dev, stage, tex);
+	Rd_DevSetTexture(dev, stage, tex);
 }
 
 void Render_DrawTexRect(const box_t *rect, uint32_t cLeft, uint32_t cRight, void *tex) {
@@ -1204,13 +1205,13 @@ void Render_DrawTexRect(const box_t *rect, uint32_t cLeft, uint32_t cRight, void
 	Render_TSS(0, D3DTSS_ADDRESSV, D3DTADDRESS_CLAMP);
 	uint32_t op;
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dGetTextureStageState_t, D3DDEV_GETTEXTURESTAGESTATE)(dev, 0, D3DTSS_COLOROP, &op);
+	Rd_DevGetTextureStageState(dev, 0, D3DTSS_COLOROP, &op);
 	Render_TSS(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
 	Render_TSS(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
 	Render_TSS(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
 	uint32_t vp[6];
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, vp);
+	Rd_DevGetViewport(dev, vp);
 	int r[4];
 	Render_ClipRect(r, vp, rect);
 	float x0 = (float)r[0] - 0.5f, y0 = (float)r[1] - 0.5f, x1 = (float)r[2] - 0.5f, y1 = (float)r[3] - 0.5f;
@@ -1221,9 +1222,9 @@ void Render_DrawTexRect(const box_t *rect, uint32_t cLeft, uint32_t cRight, void
 		{ x1, y1, 0.0f, 1.0f, cRight, 0, 1.0f, 1.0f },
 	};
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, D3DFVF_2D);
+	Rd_DevSetVertexShader(dev, D3DFVF_2D);
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(Vert2D));
+	Rd_DevDrawPrimitiveUP(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(Vert2D));
 	Render_TSS(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
 	Render_TSS(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
 	Render_TSS(0, D3DTSS_COLOROP, op);
@@ -1239,14 +1240,14 @@ void Render_EndD3D(void) {
 	void *dev = g_Engine->device;
 	if (dev) {
 		for (uint32_t i = 0; i < 8; i++) {
-			D3D_METHOD(dev, d3dSetTexture_t, D3DDEV_SETTEXTURE)(dev, i, NULL);
+			Rd_DevSetTexture(dev, i, NULL);
 		}
-		D3D_METHOD(dev, d3dSetPixelShader_t, D3DDEV_SETPIXELSHADER)(dev, 0);
+		Rd_DevSetPixelShader(dev, 0);
 	}
 	for (int i = 0; g_PSNames[i]; i++) {
 		if (g_PSHandles[i]) {
 			if (dev) {
-				D3D_METHOD(dev, d3dDeletePixelShader_t, D3DDEV_DELETEPIXELSHADER)(dev, g_PSHandles[i]);
+				Rd_DevDeletePixelShader(dev, g_PSHandles[i]);
 			}
 			g_PSHandles[i] = 0;
 		}
@@ -1266,7 +1267,7 @@ void Render_EndView(void) {
 	E3D_FlushBatch();
 	Render_SetMaterial(g_MatDefault, 0);
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetViewport_t, D3DDEV_SETVIEWPORT)(dev, g_ViewportFull);
+	Rd_DevSetViewport(dev, g_ViewportFull);
 	memset(g_Viewport, 0, 6 * sizeof(uint32_t));
 }
 
@@ -1313,23 +1314,23 @@ static void Render_LoadPS(int i) {
 	FileIO_ReadAll(name, &data, &size);
 	int hr = D3DX_AssembleShader(data, size, 0, NULL, &code, &errors);
 	if (errors || hr < 0) {
-		const char *msg = errors ? D3D_METHOD(errors, d3dxGetPointer_t, D3DXBUF_GETPOINTER)(errors)
+		const char *msg = errors ? Rd_XBufGetBufferPointer(errors)
 					 : "Could not open file";
 		Err_Printf(0, "Pixel Shader Errors (%s):\n%s", name, msg);
 	} else {
 		void *dev = g_pd3dDevice;
-		const void *p = D3D_METHOD(code, d3dxGetPointer_t, D3DXBUF_GETPOINTER)(code);
-		if (D3D_METHOD(dev, d3dCreatePixelShader_t, D3DDEV_CREATEPIXELSHADER)(dev, p, &g_PSHandles[i]) < 0) {
+		const void *p = Rd_XBufGetBufferPointer(code);
+		if (Rd_DevCreatePixelShader(dev, p, &g_PSHandles[i]) < 0) {
 			g_PSHandles[i] = 0;
 			E3D_LogVerbose(g_FileLog, "WARN: CreatePixelShader failed: %s", name);
 		}
 	}
 	Ptr_Delete(&data);
 	if (code) {
-		COM_RELEASE(code);
+		Rd_Release(code);
 	}
 	if (errors) {
-		COM_RELEASE(errors);
+		Rd_Release(errors);
 	}
 }
 
@@ -1386,7 +1387,7 @@ void Render_IniD3D(void) {
 		g_DeviceLogged = motor->devId;
 		Render_LogDevice(&caps, &mode, &zbuf);
 	}
-	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, g_ViewportFull);
+	Rd_DevGetViewport(dev, g_ViewportFull);
 	g_UseShaders2 = 0;
 	g_UseShaders = 1;
 	Render_SetMatrices();
@@ -1461,7 +1462,7 @@ void Render_BeginFrame(void) {
 	RenderGamma_Begin();
 	memcpy(g_Viewport, g_ViewportFull, 6 * sizeof(uint32_t));
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetViewport_t, D3DDEV_SETVIEWPORT)(dev, g_Viewport);
+	Rd_DevSetViewport(dev, g_Viewport);
 	Render_ResetState();
 	Render_State(D3DRS_AMBIENT, g_AmbientD3D);
 	Render_State(D3DRS_FOGENABLE, 0);
@@ -1479,14 +1480,14 @@ int Render_DrawListIdx(const CVertList *v, const uint16_t *idx, int ntri, byte s
 		g_RenderTris += ntri;
 		g_RenderVerts += v->nVert;
 	}
-	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, CVertList_FVF((CVertList *)v));
-	return D3D_METHOD(dev, d3dDrawIndexedPrimitiveUP_t, D3DDEV_DRAWINDEXEDPRIMITIVEUP)(dev, D3DPT_TRIANGLELIST, 0,
+	Rd_DevSetVertexShader(dev, CVertList_FVF((CVertList *)v));
+	return Rd_DevDrawIndexedPrimitiveUP(dev, D3DPT_TRIANGLELIST, 0,
 		(uint32_t)v->nVert, (uint32_t)ntri, idx, D3DFMT_INDEX16, v->pVert, (uint32_t)CVertList_Size((CVertList *)v));
 }
 
 static int Render_WorldToDevice(const matrix_t *m) {
 	void *dev = g_pd3dDevice;
-	return D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_WORLD, m);
+	return Rd_DevSetTransform(dev, D3DTS_WORLD, m);
 }
 
 int Render_SetWorldMatrix(const matrix_t *m, byte defer) {
@@ -1595,43 +1596,43 @@ static void Mat_Blend(void *dev, const CMaterial *mat, byte shAlphaTest, byte sh
 		blending = 1;
 	}
 	if (alphaTest && !(src == 2 && dst == 2)) {
-		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHATESTENABLE, 1);
-		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHAREF, at ? 0x80 : 1);
-		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHAFUNC, D3DCMP_GREATEREQUAL);
+		Rd_DevSetRenderState(dev, D3DRS_ALPHATESTENABLE, 1);
+		Rd_DevSetRenderState(dev, D3DRS_ALPHAREF, at ? 0x80 : 1);
+		Rd_DevSetRenderState(dev, D3DRS_ALPHAFUNC, D3DCMP_GREATEREQUAL);
 	} else {
-		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHATESTENABLE, 0);
+		Rd_DevSetRenderState(dev, D3DRS_ALPHATESTENABLE, 0);
 	}
 	if (mat->params.attrib & 0x400) {
 		alphaTest = 0;
 	}
 	if (!alphaTest && !blending) {
-		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHABLENDENABLE, 0);
-		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_FOGENABLE,
+		Rd_DevSetRenderState(dev, D3DRS_ALPHABLENDENABLE, 0);
+		Rd_DevSetRenderState(dev, D3DRS_FOGENABLE,
 			mat->params.fog ? (uint32_t)g_FogActive : 0);
-		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_COLORWRITEENABLE, 0xf);
+		Rd_DevSetRenderState(dev, D3DRS_COLORWRITEENABLE, 0xf);
 		if (g_PSOn) {
-			D3D_METHOD(dev, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(dev, 0, D3DTSS_ALPHAOP,
+			Rd_DevSetTextureStageState(dev, 0, D3DTSS_ALPHAOP,
 				D3DTOP_SELECTARG2);
 		}
 		return;
 	}
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHABLENDENABLE, at ^ 1);
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_SRCBLEND, (uint32_t)src);
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_DESTBLEND, (uint32_t)dst);
-	D3D_METHOD(dev, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(dev, 0, D3DTSS_ALPHAOP,
+	Rd_DevSetRenderState(dev, D3DRS_ALPHABLENDENABLE, at ^ 1);
+	Rd_DevSetRenderState(dev, D3DRS_SRCBLEND, (uint32_t)src);
+	Rd_DevSetRenderState(dev, D3DRS_DESTBLEND, (uint32_t)dst);
+	Rd_DevSetTextureStageState(dev, 0, D3DTSS_ALPHAOP,
 		!blending ? D3DTOP_SELECTARG1 : alphaTest ? D3DTOP_MODULATE : D3DTOP_SELECTARG2);
 	byte fog = mat->params.fog && g_FogActive && g_AlphaFog && (g_AlphaFog != 1 || (src == 5 && dst == 6));
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_FOGENABLE, fog);
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_COLORWRITEENABLE,
+	Rd_DevSetRenderState(dev, D3DRS_FOGENABLE, fog);
+	Rd_DevSetRenderState(dev, D3DRS_COLORWRITEENABLE,
 		src == 2 && dst == 2 ? 0xf : 7);
 }
 
 /* pass 1: the second texture set added */
 static void Mat_Pass1(void *dev) {
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHATESTENABLE, 0);
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ALPHABLENDENABLE, 1);
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_SRCBLEND, 2);
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_DESTBLEND, 2);
+	Rd_DevSetRenderState(dev, D3DRS_ALPHATESTENABLE, 0);
+	Rd_DevSetRenderState(dev, D3DRS_ALPHABLENDENABLE, 1);
+	Rd_DevSetRenderState(dev, D3DRS_SRCBLEND, 2);
+	Rd_DevSetRenderState(dev, D3DRS_DESTBLEND, 2);
 }
 
 int Render_SetMaterial(void *m, int pass) {
@@ -1659,23 +1660,23 @@ int Render_SetMaterial(void *m, int pass) {
 			E3D_LogWhite(g_FileLog, "MatLog: %d %d %d [%s] [%s]", g_FrameCount, g_MatChanges,
 				CMaterial_GetId((CMaterial *)mat, NULL), mat->Name, ctx);
 		}
-		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZWRITEENABLE, mat->params.zWrite);
-		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZFUNC, (uint32_t)mat->params.zFunc);
+		Rd_DevSetRenderState(dev, D3DRS_ZWRITEENABLE, mat->params.zWrite);
+		Rd_DevSetRenderState(dev, D3DRS_ZFUNC, (uint32_t)mat->params.zFunc);
 		Render_State(D3DRS_ZBIAS, mat->params.attrib & 0x800 ? g_DecalZBias : 0);
 		uint32_t light = 0;
 		if (mat->params.lighting) {
 			Render_D3DMaterial(mat, g_MatFX3 ? g_MatFX3->colors : mat->colors);
 			light = 1;
 		}
-		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_LIGHTING, light);
+		Rd_DevSetRenderState(dev, D3DRS_LIGHTING, light);
 		byte shAlphaTest = 1, shBlend = 1, shAlpha = 0;
 		if (g_UseShaders) {
 			CHECK(!pass);
 			Mat_Shader(mat, frameChanged, &shAlphaTest, &shBlend, &shAlpha);
 		} else if (mat->params.reflection && pass == 1) {
-			D3D_METHOD(dev, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(dev, 0, D3DTSS_TEXCOORDINDEX, 1);
+			Rd_DevSetTextureStageState(dev, 0, D3DTSS_TEXCOORDINDEX, 1);
 		} else {
-			D3D_METHOD(dev, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(dev, 0, D3DTSS_TEXCOORDINDEX, 0);
+			Rd_DevSetTextureStageState(dev, 0, D3DTSS_TEXCOORDINDEX, 0);
 		}
 		if (!pass) {
 			Mat_Blend(dev, mat, shAlphaTest, shBlend, shAlpha);
@@ -1761,7 +1762,7 @@ byte Render_ProjTile(const matrix_t *proj) {
 	Proj_Sub(&g_MatProj, proj, x0, x1, y0, y1);
 	CHECK(g_pd3dDevice);
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &g_MatProj);
+	Rd_DevSetTransform(dev, D3DTS_PROJECTION, &g_MatProj);
 	return 1;
 }
 
@@ -1771,7 +1772,7 @@ int Render_SetProj(const matrix_t *m) {
 		return E_FAIL;
 	}
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &g_MatProj);
+	Rd_DevSetTransform(dev, D3DTS_PROJECTION, &g_MatProj);
 	return 0;
 }
 
@@ -1847,10 +1848,10 @@ int Render_SetMap(uint32_t stage, CMap *map) {
 
 /* the vertex format, the stream and the indices of a draw */
 static void Render_Stream(void *dev, void *vb, uint32_t fvf, int size, void *ib, uint32_t baseVert) {
-	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, fvf);
-	D3D_METHOD(dev, d3dSetStreamSource_t, D3DDEV_SETSTREAMSOURCE)(dev, 0, vb, (uint32_t)size);
+	Rd_DevSetVertexShader(dev, fvf);
+	Rd_DevSetStreamSource(dev, 0, vb, (uint32_t)size);
 	if (ib) {
-		D3D_METHOD(dev, d3dSetIndices_t, D3DDEV_SETINDICES)(dev, ib, baseVert);
+		Rd_DevSetIndices(dev, ib, baseVert);
 	}
 }
 
@@ -1861,7 +1862,7 @@ int Render_DrawVBIBFmt(void *vb, void *ib, int frmt, uint32_t numVerts, uint32_t
 		return E_FAIL;
 	}
 	Render_Stream(dev, vb, VertList_FormatFVF(frmt), VertList_FormatSize(frmt), ib, baseVert);
-	D3D_METHOD(dev, d3dDrawIndexedPrimitive_t, D3DDEV_DRAWINDEXEDPRIMITIVE)(dev, D3DPT_TRIANGLELIST, 0, numVerts,
+	Rd_DevDrawIndexedPrimitive(dev, D3DPT_TRIANGLELIST, 0, numVerts,
 		startTri * 3, ntri);
 	return 0;
 }
@@ -1876,7 +1877,7 @@ int Render_DrawMeshD3D(const CMeshD3D *m) {
 		CHECK(m->pVertVB && !m->pVertIB);
 		CHECK(!m->BaseIndex && !m->StartIndex);
 		Render_Stream(dev, m->pVertVB, VertList_FormatFVF(m->vbFrmt), VertList_FormatSize(m->vbFrmt), NULL, 0);
-		D3D_METHOD(dev, d3dDrawPrimitive_t, D3DDEV_DRAWPRIMITIVE)(dev, D3DPT_TRIANGLESTRIP, 0,
+		Rd_DevDrawPrimitive(dev, D3DPT_TRIANGLESTRIP, 0,
 			(uint32_t)m->StripList - 2);
 		return 0;
 	}
@@ -1887,7 +1888,7 @@ int Render_DrawMeshD3D(const CMeshD3D *m) {
 	}
 	Render_Stream(dev, m->pVertVB, VertList_FormatFVF(m->vbFrmt), VertList_FormatSize(m->vbFrmt), m->pVertIB,
 		(uint32_t)m->BaseIndex);
-	D3D_METHOD(dev, d3dDrawIndexedPrimitive_t, D3DDEV_DRAWINDEXEDPRIMITIVE)(dev, D3DPT_TRIANGLELIST, 0,
+	Rd_DevDrawIndexedPrimitive(dev, D3DPT_TRIANGLELIST, 0,
 		(uint32_t)m->vert.nVert, (uint32_t)m->StartIndex * 3, ntri);
 	return 0;
 }
@@ -1898,7 +1899,7 @@ int Render_DrawVBIB(void *vb, void *ib, const CVertList *v, uint32_t ntri) {
 		return E_FAIL;
 	}
 	Render_Stream(dev, vb, CVertList_FVF((CVertList *)v), CVertList_Size((CVertList *)v), ib, 0);
-	D3D_METHOD(dev, d3dDrawIndexedPrimitive_t, D3DDEV_DRAWINDEXEDPRIMITIVE)(dev, D3DPT_TRIANGLELIST, 0,
+	Rd_DevDrawIndexedPrimitive(dev, D3DPT_TRIANGLELIST, 0,
 		(uint32_t)v->nVert, 0, ntri);
 	return 0;
 }
@@ -1913,7 +1914,7 @@ int Render_SetView(const matrix_t *m) {
 		return E_FAIL;
 	}
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_VIEW, &g_MatView);
+	Rd_DevSetTransform(dev, D3DTS_VIEW, &g_MatView);
 	return 0;
 }
 
@@ -1972,11 +1973,11 @@ byte Sph_IsVisible(const vec3_t *center, float radius, int arg) {
 /* n bytes of src into a new buffer (a vertex or index buffer, the same methods) */
 static int Buf_Fill(void *buf, const void *src, uint32_t lockSize, uint32_t n) {
 	void *p;
-	if (D3D_METHOD(buf, d3dLock_t, D3DBUF_LOCK)(buf, 0, lockSize, &p, 0) < 0) {
+	if (Rd_BufLock(buf, 0, lockSize, &p, 0) < 0) {
 		return E_FAIL;
 	}
 	memcpy(p, src, n);
-	D3D_METHOD(buf, d3dUnlock_t, D3DBUF_UNLOCK)(buf);
+	Rd_BufUnlock(buf);
 	return 0;
 }
 
@@ -1986,7 +1987,7 @@ int Render_CreateIB(void **ib, const void *tris, int nTri, byte dynamic) {
 	CHECK(nTri > 0);
 	uint32_t n = (uint32_t)nTri * 6;
 	void *dev = g_Engine->device;
-	if (D3D_METHOD(dev, d3dCreateIB_t, D3DDEV_CREATEIB)(dev, n, D3DUSAGE_WRITEONLY, D3DFMT_INDEX16,
+	if (Rd_DevCreateIndexBuffer(dev, n, D3DUSAGE_WRITEONLY, D3DFMT_INDEX16,
 		dynamic ? D3DPOOL_SYSTEMMEM : D3DPOOL_DEFAULT, ib) < 0) {
 		return E_FAIL;
 	}
@@ -2000,7 +2001,7 @@ int Render_CreateVB(void **vb, CVertList *vert, byte dynamic) {
 	int n = vert->nVert;
 	void *dev = g_Engine->device;
 	uint32_t fvf = CVertList_FVF(vert);
-	if (D3D_METHOD(dev, d3dCreateVB_t, D3DDEV_CREATEVB)(dev, (uint32_t)(CVertList_Size(vert) * n), D3DUSAGE_WRITEONLY,
+	if (Rd_DevCreateVertexBuffer(dev, (uint32_t)(CVertList_Size(vert) * n), D3DUSAGE_WRITEONLY,
 		fvf, dynamic ? D3DPOOL_SYSTEMMEM : D3DPOOL_DEFAULT, vb) < 0) {
 		return E_FAIL;
 	}
@@ -2018,7 +2019,7 @@ void Render_SetCamera(CCamera *cam) {
 	g_MatProj = *CCamera_GetProj(cam, &m);
 	void *dev = g_pd3dDevice;
 	if (dev) {
-		D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &g_MatProj);
+		Rd_DevSetTransform(dev, D3DTS_PROJECTION, &g_MatProj);
 	}
 	Frustum_Calc(&g_MatView, &g_MatProj);
 }
@@ -2051,7 +2052,7 @@ byte Render_ClipRect(int *out, const uint32_t *vp, const box_t *rect) {
 }
 
 void Render_NoIndexedBlend(void *dev) {
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_INDEXEDVERTEXBLENDENABLE, 0);
+	Rd_DevSetRenderState(dev, D3DRS_INDEXEDVERTEXBLENDENABLE, 0);
 }
 
 byte Render_SetViewRect(const box_t *rect, byte proj) {
@@ -2059,9 +2060,9 @@ byte Render_SetViewRect(const box_t *rect, byte proj) {
 	void *dev = g_pd3dDevice;
 	if (!rect) {
 		matrix_t m = g_MatProj;
-		D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &m);
+		Rd_DevSetTransform(dev, D3DTS_PROJECTION, &m);
 		dev = g_pd3dDevice;
-		D3D_METHOD(dev, d3dSetViewport_t, D3DDEV_SETVIEWPORT)(dev, g_Viewport);
+		Rd_DevSetViewport(dev, g_Viewport);
 		return 1;
 	}
 	uint32_t vp[6];
@@ -2074,14 +2075,14 @@ byte Render_SetViewRect(const box_t *rect, byte proj) {
 	vp[0] = (uint32_t)r[0];
 	vp[1] = (uint32_t)r[1];
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetViewport_t, D3DDEV_SETVIEWPORT)(dev, vp);
+	Rd_DevSetViewport(dev, vp);
 	if (proj) {
 		float fw = (float)w, fh = (float)h;
 		matrix_t m;
 		Proj_Sub(&m, &g_MatProj, (float)r[0] / fw - 0.5f, (float)r[2] / fw - 0.5f,
 			Float_Keep(-((float)r[1] / fh - 0.5f)), Float_Keep(-((float)r[3] / fh - 0.5f)));
 		dev = g_pd3dDevice;
-		D3D_METHOD(dev, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(dev, D3DTS_PROJECTION, &m);
+		Rd_DevSetTransform(dev, D3DTS_PROJECTION, &m);
 	}
 	return 1;
 }
@@ -2122,9 +2123,9 @@ int Render_Line(const vec3_t *a, const vec3_t *b, uint32_t color) {
 	} v[2] = { { *a, color }, { *b, color } };
 	Render_SetMaterial(g_MatLine, 0);
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, D3DFVF_XYZ | D3DFVF_DIFFUSE);
+	Rd_DevSetVertexShader(dev, D3DFVF_XYZ | D3DFVF_DIFFUSE);
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_LINELIST, 1, v, sizeof(v[0]));
+	Rd_DevDrawPrimitiveUP(dev, D3DPT_LINELIST, 1, v, sizeof(v[0]));
 	return 0;
 }
 
@@ -2211,8 +2212,8 @@ int Render_MeshD3D(CMeshD3D *m, CRenderNode *r) {
 		pass1 = 1;
 		if (!g_UseHWEnvMap) {
 			matrix_t view, world;
-			D3D_METHOD(dev, d3dGetTransform_t, D3DDEV_GETTRANSFORM)(dev, D3DTS_VIEW, &view);
-			D3D_METHOD(dev, d3dGetTransform_t, D3DDEV_GETTRANSFORM)(dev, D3DTS_WORLD, &world);
+			Rd_DevGetTransform(dev, D3DTS_VIEW, &view);
+			Rd_DevGetTransform(dev, D3DTS_WORLD, &world);
 			CVertList_EnvMapUV(&m->vert, &world, &view, m->mat->map[2], 1);
 			envSoft = 1;
 		}

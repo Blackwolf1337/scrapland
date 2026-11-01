@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/console.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
@@ -294,11 +295,11 @@ byte CWorld_LoadMoreDummies(CWorld *self, const char *ini) {
 }
 
 static void D3D_SetRenderState(void *dev, uint32_t state, uint32_t value) {
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, state, value);
+	Rd_DevSetRenderState(dev, state, value);
 }
 
 static void D3D_SetProj(const matrix_t *m) {
-	D3D_METHOD(g_pd3dDevice, d3dSetTransform_t, D3DDEV_SETTRANSFORM)(g_pd3dDevice, D3DTS_PROJECTION, m);
+	Rd_DevSetTransform(g_pd3dDevice, D3DTS_PROJECTION, m);
 }
 
 /* sky and floor: not lit by the lights of the level, never culled */

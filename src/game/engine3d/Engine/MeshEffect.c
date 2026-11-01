@@ -5,6 +5,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/e3dinput.h"
@@ -59,7 +60,7 @@ void MeshEffect_RenderScreens(void) {
 
 static void MeshEffect_SetRS(uint32_t state, uint32_t value) {
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, state, value);
+	Rd_DevSetRenderState(dev, state, value);
 }
 
 void MeshEffect_Render(void) {
@@ -109,7 +110,7 @@ void MeshEffect_Render(void) {
 	uint32_t fill;
 	void *dev = g_pd3dDevice;
 	g_MatFX1 = g_MeshEffectMat;
-	D3D_METHOD(dev, d3dGetRenderState_t, D3DDEV_GETRENDERSTATE)(dev, D3DRS_FILLMODE, &fill);
+	Rd_DevGetRenderState(dev, D3DRS_FILLMODE, &fill);
 	MeshEffect_SetRS(D3DRS_FILLMODE, D3DFILL_WIREFRAME);
 	int stencil = g_ShadowsStencil;
 	g_ShadowsStencil = 0;

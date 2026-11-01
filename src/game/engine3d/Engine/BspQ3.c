@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/bmp.h"
 #include "scrap/bspq3.h"
 #include "scrap/crt.h"
@@ -22,13 +23,10 @@ typedef CMeshD3D *(*bspQ3MeshD3DDelete_t)(CMeshD3D *self, byte flags);
 typedef int(*bspQ3MeshD3DDev_t)(CMeshD3D *self, void *dev);
 typedef CTriMesh *(*bspQ3TriMeshDelete_t)(CTriMesh *self, byte flags);
 /* ID3DXBaseMesh */
-typedef int(__stdcall *bspQ3DrawSubset_t)(void *mesh, uint32_t attrib);
-typedef uint32_t(__stdcall *bspQ3GetNum_t)(void *mesh);
-typedef int(__stdcall *bspQ3GetAttributeTable_t)(void *mesh, void *table, uint32_t *size);
 
 static void BspQ3_SetStage1(uint32_t colorOp, uint32_t alphaOp) {
-	D3D_METHOD(g_pd3dDevice, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(g_pd3dDevice, 1, 1, colorOp);
-	D3D_METHOD(g_pd3dDevice, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(g_pd3dDevice, 1, 4, alphaOp);
+	Rd_DevSetTextureStageState(g_pd3dDevice, 1, 1, colorOp);
+	Rd_DevSetTextureStageState(g_pd3dDevice, 1, 4, alphaOp);
 }
 
 /* the start of the lump readers: the size of the lump, CHECK of a whole number of elements */
@@ -79,7 +77,7 @@ void CBspQ3_dtor(CBspQ3 *self) {
 		self->MeshList = NULL;
 	}
 	if (self->pMesh) {
-		COM_RELEASE(self->pMesh);
+		Rd_Release(self->pMesh);
 		self->pMesh = NULL;
 	}
 	if (self->MeshD3D) {
@@ -131,17 +129,17 @@ long double Vec3_DotX87(const float *a, const float *b) {
 void CBspQ3_ReleaseD3D(CBspQ3 *self) {
 	((bspQ3MeshD3DDev_t)self->MeshD3D->vftable[MESHD3D_VF_INVALIDATE])(self->MeshD3D, g_pd3dDevice);
 	if (self->pMesh) {
-		COM_RELEASE(self->pMesh);
+		Rd_Release(self->pMesh);
 		self->pMesh = NULL;
 	}
 	for (int i = 0; i < self->MeshList->n; i++) {
 		BspQ3Mesh *m = self->MeshList->m[i];
 		if (m->pVertVB) {
-			COM_RELEASE(m->pVertVB);
+			Rd_Release(m->pVertVB);
 			m->pVertVB = NULL;
 		}
 		if (m->pVertIB) {
-			COM_RELEASE(m->pVertIB);
+			Rd_Release(m->pVertIB);
 			m->pVertIB = NULL;
 		}
 	}
@@ -366,18 +364,18 @@ void CBspQ3_Render(CBspQ3 *self) {
 	}
 	CHECK(self->pMesh);
 	uint32_t num;
-	D3D_METHOD(self->pMesh, bspQ3GetAttributeTable_t, 0x48)(self->pMesh, NULL, &num);
+	Rd_XMeshGetAttributeTable(self->pMesh, NULL, &num);
 	CHECK(num <= BSPQ3_SIZE_ATTRIBTABLE);
-	D3D_METHOD(self->pMesh, bspQ3GetAttributeTable_t, 0x48)(self->pMesh, g_BspQ3Attrib, &num);
+	Rd_XMeshGetAttributeTable(self->pMesh, g_BspQ3Attrib, &num);
 	const uint32_t *at = g_BspQ3Attrib;
 	for (uint32_t i = 0; i < num; i++) {
 		uint32_t id = *at;
 		Render_SetMaterial((void *)id, 0);
-		D3D_METHOD(self->pMesh, bspQ3DrawSubset_t, 0xc)(self->pMesh, id);
+		Rd_XMeshDrawSubset(self->pMesh, id);
 		at += 5;
 	}
-	g_RenderTris += D3D_METHOD(self->pMesh, bspQ3GetNum_t, 0x10)(self->pMesh);
-	g_RenderVerts += D3D_METHOD(self->pMesh, bspQ3GetNum_t, 0x14)(self->pMesh);
+	g_RenderTris += Rd_XMeshGetNumFaces(self->pMesh);
+	g_RenderVerts += Rd_XMeshGetNumVertices(self->pMesh);
 }
 
 void BspQ3Meshes_AddTri(BspQ3Meshes *self, const void *a, const void *b, const void *c, BspQ3Face *face) {

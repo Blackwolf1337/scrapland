@@ -4,6 +4,7 @@
  * more frames. Mode 1 copies the back buffer, mode 2 a system memory texture (noise with RenderLockNoise), mode 3
  * clears the target.
  */
+#include "scrap/rdev.h"
 #include "scrap/gvar.h"
 #include "scrap/crt.h"
 #include "scrap/d3d8.h"
@@ -36,7 +37,7 @@ typedef struct LockedRect {
 
 static void RenderLock_Free(void **tex) {
 	if (*tex) {
-		COM_RELEASE(*tex);
+		Rd_Release(*tex);
 		*tex = NULL;
 	}
 }
@@ -51,7 +52,7 @@ void RenderLock_ReleaseD3D(void) {
 
 static void RenderLock_Create(uint32_t usage, int fmt, int pool, void **tex) {
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dCreateTexture_t, D3DDEV_CREATETEXTURE)(dev, RENDERLOCK_SIZE, RENDERLOCK_SIZE, 1, usage, fmt,
+	Rd_DevCreateTexture(dev, RENDERLOCK_SIZE, RENDERLOCK_SIZE, 1, usage, fmt,
 		pool, tex);
 }
 
@@ -74,20 +75,20 @@ void RenderLock_CopyBack(void) {
 		return;
 	}
 	void *surf = NULL;
-	D3D_METHOD(g_TextBack, d3dGetSurfaceLevel_t, D3DTEX_GETSURFACELEVEL)(g_TextBack, 0, &surf);
+	Rd_TexGetSurfaceLevel(g_TextBack, 0, &surf);
 	if (!surf) {
 		return;
 	}
 	void *back = NULL;
 	void *dev = g_pd3dDevice;
-	if (D3D_METHOD(dev, d3dGetBackBuffer_t, D3DDEV_GETBACKBUFFER)(dev, 0, D3DBACKBUFFER_TYPE_MONO, &back) >= 0) {
+	if (Rd_DevGetBackBuffer(dev, 0, D3DBACKBUFFER_TYPE_MONO, &back) >= 0) {
 		int32_t rect[4] = { g_RenderLockRect[0], g_RenderLockRect[1], g_RenderLockRect[2], g_RenderLockRect[3] };
 		dev = g_pd3dDevice;
-		D3D_METHOD(dev, d3dCopyRects_t, D3DDEV_COPYRECTS)(dev, back, rect, 1, surf, NULL);
-		COM_RELEASE(back);
+		Rd_DevCopyRects(dev, back, rect, 1, surf, NULL);
+		Rd_Release(back);
 	}
 	if (surf) {
-		COM_RELEASE(surf);
+		Rd_Release(surf);
 	}
 }
 
@@ -103,38 +104,38 @@ void RenderLock_DrawMem(void) {
 	if (!RenderLock_Ready()) {
 		return;
 	}
-	if (D3D_METHOD(g_TextMem, d3dLockRect_t, D3DTEX_LOCKRECT)(g_TextMem, 0, &lr, NULL, 0) >= 0) {
+	if (Rd_TexLockRect(g_TextMem, 0, &lr, NULL, 0) >= 0) {
 		uint32_t c = (g_RenderLockNoise ? 0xaau : 0u) * 0x1010101u;
 		for (int i = 0; i < 8; i++) {
 			lr.pBits[i] = c;
 		}
-		D3D_METHOD(g_TextMem, d3dUnlockRect_t, D3DTEX_UNLOCKRECT)(g_TextMem, 0);
+		Rd_TexUnlockRect(g_TextMem, 0);
 	}
 	void *src = NULL;
 	void *dst = NULL;
-	if (D3D_METHOD(g_TextMem, d3dGetSurfaceLevel_t, D3DTEX_GETSURFACELEVEL)(g_TextMem, 0, &src) >= 0) {
+	if (Rd_TexGetSurfaceLevel(g_TextMem, 0, &src) >= 0) {
 		void *t = g_TextLock[g_TextLockIdx];
-		if (D3D_METHOD(t, d3dGetSurfaceLevel_t, D3DTEX_GETSURFACELEVEL)(t, 0, &dst) >= 0) {
+		if (Rd_TexGetSurfaceLevel(t, 0, &dst) >= 0) {
 			void *dev = g_pd3dDevice;
-			D3D_METHOD(dev, d3dCopyRects_t, D3DDEV_COPYRECTS)(dev, src, NULL, 0, dst, NULL);
+			Rd_DevCopyRects(dev, src, NULL, 0, dst, NULL);
 		}
 	}
 	if (src) {
-		COM_RELEASE(src);
+		Rd_Release(src);
 		src = NULL;
 	}
 	if (dst) {
-		COM_RELEASE(dst);
+		Rd_Release(dst);
 		dst = NULL;
 	}
-	if (D3D_METHOD(g_TextMem, d3dLockRect_t, D3DTEX_LOCKRECT)(g_TextMem, 0, &lr, NULL, 0) >= 0) {
+	if (Rd_TexLockRect(g_TextMem, 0, &lr, NULL, 0) >= 0) {
 		if (g_RenderLockNoise) {
 			uint32_t c = (byte)crt_rand() * 0x1010101u;
 			for (int i = 0; i < 8; i++) {
 				lr.pBits[i] = c;
 			}
 		}
-		D3D_METHOD(g_TextMem, d3dUnlockRect_t, D3DTEX_UNLOCKRECT)(g_TextMem, 0);
+		Rd_TexUnlockRect(g_TextMem, 0);
 	}
 	box_t rect;
 	vec3_t min = { 0.0f, 0.0f, 0.0f };
@@ -157,47 +158,47 @@ void RenderLock_Clear(void) {
 	void *oldRT = NULL;
 	void *oldZS = NULL;
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dGetSurface_t, D3DDEV_GETRENDERTARGET)(dev, &oldRT);
+	Rd_DevGetRenderTarget(dev, &oldRT);
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dGetSurface_t, D3DDEV_GETDEPTHSTENCILSURFACE)(dev, &oldZS);
+	Rd_DevGetDepthStencilSurface(dev, &oldZS);
 	void *t = g_TextLock[g_TextLockIdx];
-	D3D_METHOD(t, d3dGetSurfaceLevel_t, D3DTEX_GETSURFACELEVEL)(t, 0, &rt);
+	Rd_TexGetSurfaceLevel(t, 0, &rt);
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetRenderTarget_t, D3DDEV_SETRENDERTARGET)(dev, rt, NULL);
+	Rd_DevSetRenderTarget(dev, rt, NULL);
 	if (rt) {
-		COM_RELEASE(rt);
+		Rd_Release(rt);
 		rt = NULL;
 	}
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dClear_t, D3DDEV_CLEAR)(dev, 0, NULL, 1, 0xff00, 1.0f, 0);
+	Rd_DevClear(dev, 0, NULL, 1, 0xff00, 1.0f, 0);
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetRenderTarget_t, D3DDEV_SETRENDERTARGET)(dev, oldRT, oldZS);
+	Rd_DevSetRenderTarget(dev, oldRT, oldZS);
 	if (oldRT) {
-		COM_RELEASE(oldRT);
+		Rd_Release(oldRT);
 		oldRT = NULL;
 	}
 	if (oldZS) {
-		COM_RELEASE(oldZS);
+		Rd_Release(oldZS);
 		oldZS = NULL;
 	}
 	g_TextLockIdx = (g_TextLockIdx + 1) % g_RenderLockFrames;
 	rt = NULL;
 	t = g_TextLock[g_TextLockIdx];
-	D3D_METHOD(t, d3dGetSurfaceLevel_t, D3DTEX_GETSURFACELEVEL)(t, 0, &rt);
+	Rd_TexGetSurfaceLevel(t, 0, &rt);
 	void *mem = NULL;
 	if (!rt) {
 		return;
 	}
-	if (D3D_METHOD(g_TextMem, d3dGetSurfaceLevel_t, D3DTEX_GETSURFACELEVEL)(g_TextMem, 0, &mem) >= 0) {
+	if (Rd_TexGetSurfaceLevel(g_TextMem, 0, &mem) >= 0) {
 		dev = g_pd3dDevice;
-		D3D_METHOD(dev, d3dCopyRects_t, D3DDEV_COPYRECTS)(dev, rt, NULL, 0, mem, NULL);
+		Rd_DevCopyRects(dev, rt, NULL, 0, mem, NULL);
 	}
 	if (mem) {
-		COM_RELEASE(mem);
+		Rd_Release(mem);
 		mem = NULL;
 	}
 	if (rt) {
-		COM_RELEASE(rt);
+		Rd_Release(rt);
 	}
 }
 

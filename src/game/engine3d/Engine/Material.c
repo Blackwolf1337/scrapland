@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/gvar.h"
 #include "scrap/bmp.h"
 #include "scrap/console.h"
@@ -1353,7 +1354,7 @@ byte CMap_CopyBmp(CMap *self, int dx, int dy, const CImage *bmp, int sx, int sy,
 	if (!tex || !bmp || !bmp->img || sx < 0 || sy < 0 || dx < 0 || dy < 0) {
 		return 0;
 	}
-	if (D3D_METHOD(tex, d3dGetLevelDesc_t, D3DTEX_GETLEVELDESC)(tex, 0, &desc) < 0 || desc.Pool != D3DPOOL_MANAGED) {
+	if (Rd_TexGetLevelDesc(tex, 0, &desc) < 0 || desc.Pool != D3DPOOL_MANAGED) {
 		return 0;
 	}
 	/* D3DFMT_R5G6B5, D3DFMT_A8R8G8B8, D3DFMT_X8R8G8B8 */
@@ -1372,7 +1373,7 @@ byte CMap_CopyBmp(CMap *self, int dx, int dy, const CImage *bmp, int sx, int sy,
 	if (h >= (int)desc.Height - dy) {
 		h = (int)desc.Height - dy;
 	}
-	if (w <= 0 || h <= 0 || D3D_METHOD(tex, d3dLockRect_t, D3DTEX_LOCKRECT)(tex, 0, &lr, NULL, 0) < 0) {
+	if (w <= 0 || h <= 0 || Rd_TexLockRect(tex, 0, &lr, NULL, 0) < 0) {
 		return 0;
 	}
 	if (desc.Format == 0x17) {
@@ -1394,6 +1395,6 @@ byte CMap_CopyBmp(CMap *self, int dx, int dy, const CImage *bmp, int sx, int sy,
 			}
 		}
 	}
-	D3D_METHOD(tex, d3dUnlockRect_t, D3DTEX_UNLOCKRECT)(tex, 0);
+	Rd_TexUnlockRect(tex, 0);
 	return 1;
 }

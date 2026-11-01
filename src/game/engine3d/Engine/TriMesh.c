@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/trimesh.h"
@@ -525,8 +526,8 @@ void CTriMesh_Draw(CTriMesh *self, void *dev, int unused) {
 				v[k].uv.v = 0.0f;
 			}
 		}
-		D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, TRIMESH_FVF);
-		D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLELIST, 1, v, sizeof(CMeshVert));
+		Rd_DevSetVertexShader(dev, TRIMESH_FVF);
+		Rd_DevDrawPrimitiveUP(dev, D3DPT_TRIANGLELIST, 1, v, sizeof(CMeshVert));
 	}
 	g_RenderTris += self->nTri;
 	g_RenderVerts += self->nTri * 3;

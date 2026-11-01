@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/fonts.h"
@@ -104,8 +105,8 @@ void CGraphic3D_Draw(CGraphic3D *self) {
 		{ { -hw, -hh, 0.0f }, color, 0, 0.0f, 1.0f },
 		{ { hw, -hh, 0.0f }, color, 0, 1.0f, 1.0f },
 	};
-	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, D3DFVF_SPRITE);
-	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(v[0]));
+	Rd_DevSetVertexShader(dev, D3DFVF_SPRITE);
+	Rd_DevDrawPrimitiveUP(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(v[0]));
 	g_RenderTris += 2;
 	g_RenderVerts += 4;
 }

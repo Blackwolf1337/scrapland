@@ -2,6 +2,7 @@
  * Engine/RenderEVA.cpp of the engine3d: the meshes with a vertex animation or a skin and the particles, see the
  * RenderEVA part of include/scrap/render.h.
  */
+#include "scrap/rdev.h"
 #include "scrap/animvert.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
@@ -18,35 +19,35 @@
 #define NODE_NO_CASTSHADOWS (1u << 5)
 
 static void Dev_SetVertexShader(void *dev, uint32_t fvf) {
-	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, fvf);
+	Rd_DevSetVertexShader(dev, fvf);
 }
 
 static void Dev_SetStream(void *dev, void *vb, uint32_t stride) {
-	D3D_METHOD(dev, d3dSetStreamSource_t, D3DDEV_SETSTREAMSOURCE)(dev, 0, vb, stride);
+	Rd_DevSetStreamSource(dev, 0, vb, stride);
 }
 
 static void Dev_SetIndices(void *dev, void *ib, uint32_t base) {
-	D3D_METHOD(dev, d3dSetIndices_t, D3DDEV_SETINDICES)(dev, ib, base);
+	Rd_DevSetIndices(dev, ib, base);
 }
 
 static void Dev_DrawIndexed(void *dev, uint32_t numVerts, uint32_t ntri) {
-	D3D_METHOD(dev, d3dDrawIndexedPrimitive_t, D3DDEV_DRAWINDEXEDPRIMITIVE)(dev, D3DPT_TRIANGLELIST, 0, numVerts, 0,
+	Rd_DevDrawIndexedPrimitive(dev, D3DPT_TRIANGLELIST, 0, numVerts, 0,
 		ntri);
 }
 
 static void Buf_Release(void **buf) {
 	if (*buf) {
-		COM_RELEASE(*buf);
+		Rd_Release(*buf);
 		*buf = NULL;
 	}
 }
 
 static int Buf_Lock(void *buf, uint32_t off, uint32_t size, void **data, uint32_t flags) {
-	return D3D_METHOD(buf, d3dLock_t, D3DBUF_LOCK)(buf, off, size, data, flags);
+	return Rd_BufLock(buf, off, size, data, flags);
 }
 
 static void Buf_Unlock(void *buf) {
-	D3D_METHOD(buf, d3dUnlock_t, D3DBUF_UNLOCK)(buf);
+	Rd_BufUnlock(buf);
 }
 
 int RenderEVA_InitD3D(void) {
@@ -56,7 +57,7 @@ int RenderEVA_InitD3D(void) {
 	Buf_Release(&g_EVAVB);
 	void *dev = g_pd3dDevice;
 	g_EVAVBUsed = 0;
-	if (D3D_METHOD(dev, d3dCreateVB_t, D3DDEV_CREATEVB)(dev, MAX_VERT_VB * sizeof(CMeshVert),
+	if (Rd_DevCreateVertexBuffer(dev, MAX_VERT_VB * sizeof(CMeshVert),
 		D3DUSAGE_WRITEONLY_DYNAMIC, D3DFVF_TEX1, D3DPOOL_DEFAULT, &g_EVAVB) < 0) {
 		return E_FAIL;
 	}
@@ -81,7 +82,7 @@ int RenderEVA_CreateParticles(void) {
 		return E_FAIL;
 	}
 	void *dev = g_pd3dDevice;
-	if (D3D_METHOD(dev, d3dCreateVB_t, D3DDEV_CREATEVB)(dev, VB_PARTICLES * 4 * sizeof(Graphic3DVert),
+	if (Rd_DevCreateVertexBuffer(dev, VB_PARTICLES * 4 * sizeof(Graphic3DVert),
 		D3DUSAGE_WRITEONLY_DYNAMIC, D3DFVF_PART, D3DPOOL_DEFAULT, &g_PartVB) < 0) {
 		return E_FAIL;
 	}
@@ -518,7 +519,7 @@ int ParticleSystem_Draw2(CParticleSystem *sp, CRenderNode *r) {
 		Graphic3DVert q[4];
 		Particle_Quad(p, &bill, &view, q, ParticleSystem_PartAlpha(sp, p, fade, &eye, d2), sp->params.zBias);
 		Dev_SetVertexShader(dev, D3DFVF_PART);
-		D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, q, sizeof(q[0]));
+		Rd_DevDrawPrimitiveUP(dev, D3DPT_TRIANGLESTRIP, 2, q, sizeof(q[0]));
 		g_RenderParts++;
 	}
 	return 0;

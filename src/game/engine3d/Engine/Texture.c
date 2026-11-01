@@ -5,6 +5,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/gvar.h"
 #include "scrap/archio.h"
 #include "scrap/console.h"
@@ -81,21 +82,10 @@ typedef int(__stdcall *lstrcmpi_t)(const char *a, const char *b);
 #define exe_lstrcmpiA GAME_IMPORT(lstrcmpi_t, lstrcmpiA, 8)
 
 /* the texture and surface methods */
-typedef int(__stdcall *texGetDevice_t)(void *tex, void **dev);
-typedef uint32_t(__stdcall *texSetLOD_t)(void *tex, uint32_t lod);
-typedef uint32_t(__stdcall *texGetLevelCount_t)(void *tex);
-typedef int(__stdcall *texGetLevelDesc_t)(void *tex, uint32_t level, d3dSurfaceDesc_t *desc);
-typedef int(__stdcall *texGetSurfaceLevel_t)(void *tex, uint32_t level, void **surf);
-typedef int(__stdcall *devCreateTexture_t)(void *dev, uint32_t w, uint32_t h, uint32_t levels, uint32_t usage, int fmt,
-	int pool, void **tex);
-typedef int(__stdcall *devCreateImageSurface_t)(void *dev, uint32_t w, uint32_t h, int fmt, void **surf);
-typedef int(__stdcall *surfGetDesc_t)(void *surf, d3dSurfaceDesc_t *desc);
-typedef int(__stdcall *surfLockRect_t)(void *surf, d3dLockedRect_t *r, const void *rect, uint32_t flags);
-typedef int(__stdcall *surfUnlockRect_t)(void *surf);
 
 static void Tex_ReleaseD3D(CTexture *t) {
 	if (t->tex) {
-		COM_RELEASE(t->tex);
+		Rd_Release(t->tex);
 		t->tex = NULL;
 	}
 }
@@ -252,15 +242,15 @@ int CTexture_UploadLevel(CTexture *self, CBmp *src, int level) {
 	CBmp *p;
 	int hr;
 
-	hr = D3D_METHOD(self->tex, texGetDevice_t, 0xc)(self->tex, &dev);
+	hr = Rd_TexGetDevice(self->tex, &dev);
 	if (hr < 0) {
 		goto out;
 	}
-	hr = D3D_METHOD(self->tex, texGetLevelDesc_t, 0x38)(self->tex, level, &desc);
+	hr = Rd_TexGetLevelDesc(self->tex, level, &desc);
 	if (hr < 0) {
 		goto out;
 	}
-	hr = D3D_METHOD(dev, devCreateImageSurface_t, D3DDEV_CREATEIMAGESURFACE)(dev, desc.Width, desc.Height, FMT_A8R8G8B8, &surf);
+	hr = Rd_DevCreateImageSurface(dev, desc.Width, desc.Height, FMT_A8R8G8B8, &surf);
 	if (hr < 0) {
 		goto out;
 	}
@@ -291,20 +281,20 @@ int CTexture_UploadLevel(CTexture *self, CBmp *src, int level) {
 	}
 	hr = Surface_FromBmp(surf, p);
 	if (hr >= 0) {
-		hr = D3D_METHOD(self->tex, texGetSurfaceLevel_t, 0x3c)(self->tex, level, &dst);
+		hr = Rd_TexGetSurfaceLevel(self->tex, level, &dst);
 		if (hr >= 0) {
 			hr = D3DX_LoadSurfaceFromSurface(dst, NULL, NULL, surf, NULL, NULL, Tex_Dither() | D3DX_FILTER_POINT, 0);
-			COM_RELEASE(dst);
+			Rd_Release(dst);
 			if (hr < 0) {
 				E3D_LogBlue(g_FileLog, "D3DXLoadSurfaceFromSurface: hr: 0x%08x", hr);
 			} else {
 				if (surf) {
-					COM_RELEASE(surf);
+					Rd_Release(surf);
 					surf = NULL;
 				}
 				if (self->mipmap) {
 					level++;
-					if (D3D_METHOD(self->tex, texGetLevelCount_t, 0x34)(self->tex) > (uint32_t)level) {
+					if (Rd_TexGetLevelCount(self->tex) > (uint32_t)level) {
 						hr = CTexture_UploadLevel(self, p, level);
 					}
 				}
@@ -316,11 +306,11 @@ int CTexture_UploadLevel(CTexture *self, CBmp *src, int level) {
 	}
 out:
 	if (surf) {
-		COM_RELEASE(surf);
+		Rd_Release(surf);
 		surf = NULL;
 	}
 	if (dev) {
-		COM_RELEASE(dev);
+		Rd_Release(dev);
 	}
 	return hr;
 }
@@ -684,7 +674,7 @@ int CTexture_CreateD3D(CTexture *self, void *dev) {
 		if (w != (uint32_t)self->width || h != (uint32_t)self->height) {
 			E3D_LogVerbose(g_FileLog, "Invalid texture size: %d x %d", self->width, self->height);
 		}
-		hr = D3D_METHOD(dev, devCreateTexture_t, D3DDEV_CREATETEXTURE)(dev, w, h, !self->mipmap, 0, fmt, D3DPOOL_MANAGED, &self->tex);
+		hr = Rd_DevCreateTexture(dev, w, h, !self->mipmap, 0, fmt, D3DPOOL_MANAGED, &self->tex);
 		if (!hr) {
 			hr = CTexture_UploadLevel(self, self->bitmap, 0);
 		}
@@ -698,7 +688,7 @@ int CTexture_CreateD3D(CTexture *self, void *dev) {
 			E3D_LogBlue(g_FileLog, "ERROR: creando la textura (CBMP): '%s'", Path_FileName(self->Name));
 			return hr;
 		}
-		D3D_METHOD(self->tex, texGetLevelDesc_t, 0x38)(self->tex, 0, &desc);
+		Rd_TexGetLevelDesc(self->tex, 0, &desc);
 		Tex_LogCreated(self, "Texture (CBMP):  %-8s  %4d %4d  '%s'", "Format  (CBMP):  %-8s", fmt, desc.Format);
 	} else if (self->PngData) {
 		byte comp = self->compressed;
@@ -711,7 +701,7 @@ int CTexture_CreateD3D(CTexture *self, void *dev) {
 			E3D_LogBlue(g_FileLog, "ERROR: creando la textura (D3DX): '%s'", Path_FileName(self->Name));
 			return hr;
 		}
-		D3D_METHOD(self->tex, texGetLevelDesc_t, 0x38)(self->tex, 0, &desc);
+		Rd_TexGetLevelDesc(self->tex, 0, &desc);
 		self->width = desc.Width;
 		self->height = desc.Height;
 		if (!self->frame) {
@@ -735,7 +725,7 @@ int CTexture_CreateD3D(CTexture *self, void *dev) {
 				E3D_LogBlue(g_FileLog, "ERROR: creando la textura (D3DX): '%s'", Path_FileName(self->Name));
 				return hr;
 			}
-			D3D_METHOD(self->tex, texGetLevelDesc_t, 0x38)(self->tex, 0, &desc);
+			Rd_TexGetLevelDesc(self->tex, 0, &desc);
 			self->width = desc.Width;
 			self->height = desc.Height;
 		} else {
@@ -744,7 +734,7 @@ int CTexture_CreateD3D(CTexture *self, void *dev) {
 		Tex_LogCreated(self, "Texture (D3DX):  %-8s  %4d %4d  '%s'", "Format  (D3DX):  %-8s", fmt, desc.Format);
 	}
 	if (self->tex && g_TextureLOD > 0) {
-		D3D_METHOD(self->tex, texSetLOD_t, 0x2c)(self->tex, g_TextureLOD);
+		Rd_TexSetLOD(self->tex, g_TextureLOD);
 	}
 	return 0;
 }
@@ -976,14 +966,14 @@ int Surface_FromBmp(void *surf, const CBmp *bmp) {
 	byte *row;
 	int hr;
 
-	hr = D3D_METHOD(surf, surfGetDesc_t, 0x20)(surf, &desc);
+	hr = Rd_SurfGetDesc(surf, &desc);
 	if (hr < 0) {
 		return hr;
 	}
 	CHECK(desc.Format == FMT_A8R8G8B8);
 	CHECK(desc.Width == (uint32_t)bmp->width);
 	CHECK(desc.Height == (uint32_t)bmp->height);
-	hr = D3D_METHOD(surf, surfLockRect_t, 0x24)(surf, &lr, NULL, 0);
+	hr = Rd_SurfLockRect(surf, &lr, NULL, 0);
 	if (hr < 0) {
 		return hr;
 	}
@@ -998,7 +988,7 @@ int Surface_FromBmp(void *surf, const CBmp *bmp) {
 		}
 		row += lr.Pitch;
 	}
-	D3D_METHOD(surf, surfUnlockRect_t, 0x28)(surf);
+	Rd_SurfUnlockRect(surf);
 	return 0;
 }
 

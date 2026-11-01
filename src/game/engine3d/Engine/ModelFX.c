@@ -5,6 +5,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/global.h"
@@ -189,13 +190,13 @@ void ModelFX_Fade(CModel *m, NodeAnimCtx *ctx) {
 void ModelFX_Wire(CModel *m, NodeAnimCtx *ctx) {
 	uint32_t fill;
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dGetRenderState_t, D3DDEV_GETRENDERSTATE)(dev, D3DRS_FILLMODE, &fill);
+	Rd_DevGetRenderState(dev, D3DRS_FILLMODE, &fill);
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_FILLMODE, 2);
+	Rd_DevSetRenderState(dev, D3DRS_FILLMODE, 2);
 	ModelFX_Static(m, ctx);
 	Render_ClearForced();
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_FILLMODE, fill);
+	Rd_DevSetRenderState(dev, D3DRS_FILLMODE, fill);
 }
 
 void ModelFX_Glow(CModel *m, NodeAnimCtx *ctx) {

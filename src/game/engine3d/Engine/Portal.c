@@ -1,6 +1,7 @@
 /*
  * Engine/portal.cpp of the engine3d: CPortal, see include/scrap/portal.h.
  */
+#include "scrap/rdev.h"
 #include "scrap/e3dutil.h"
 #include "scrap/e3dworld.h"
 #include "scrap/portal.h"
@@ -307,7 +308,7 @@ byte CPortal_ClipRect(CPortal *self, box_t *rect) {
 	if (g_ShowPortals > 1) {
 		int vp[6];
 		void *dev = g_pd3dDevice;
-		D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, (uint32_t *)vp);
+		Rd_DevGetViewport(dev, (uint32_t *)vp);
 		Portal_DrawRect(vp, &b.min.x, 0xff00);
 	}
 	return 1;

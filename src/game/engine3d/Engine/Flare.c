@@ -1,6 +1,7 @@
 /*
  * Engine/flare.cpp of the engine3d: the lens flares, see include/scrap/flare.h.
  */
+#include "scrap/rdev.h"
 #include "scrap/e3dutil.h"
 #include "scrap/flare.h"
 #include "scrap/light.h"
@@ -102,7 +103,7 @@ void CFlare_Render(CFlare *self, void *dev, CRenderNode *r) {
 	matrix_t vp;
 	matrix_t mvp = *Matrix_MulD3D(&vp, Render_GetView(), proj);
 	uint32_t view[6];
-	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, view);
+	Rd_DevGetViewport(dev, view);
 	vec3_t s;
 	if (Vec3_TransformH(&s, &p, &mvp) || 0.02 > (double)s.z || s.z > 1.0f) {
 		self->visible = 0;

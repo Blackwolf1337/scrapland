@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/gvar.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
@@ -70,22 +71,20 @@ extern cGVar GVar_R_LightSort;
 extern cGVar GVar_R_LightMultName;
 #define g_LightMultName (GVar_R_LightMultName.value.s)
 
-typedef int(__stdcall *d3dSetLight_t)(void *dev, uint32_t idx, const D3DLight *l);
-typedef int(__stdcall *d3dLightEnable_t)(void *dev, uint32_t idx, int enable);
 
 static void D3D_SetLight(uint32_t idx, const D3DLight *l) {
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetLight_t, D3DDEV_SETLIGHT)(dev, idx, l);
+	Rd_DevSetLight(dev, idx, l);
 }
 
 static void D3D_LightEnable(uint32_t idx, int enable) {
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dLightEnable_t, D3DDEV_LIGHTENABLE)(dev, idx, enable);
+	Rd_DevLightEnable(dev, idx, enable);
 }
 
 static void D3D_SetRenderState(uint32_t state, uint32_t value) {
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, state, value);
+	Rd_DevSetRenderState(dev, state, value);
 }
 
 typedef void(*nodeDelete_t)(CNode3D *self, int flags);
@@ -426,8 +425,8 @@ void CLight_Render(CLight *self, void *dev, CRenderNode *r) {
 	v[2].color = color;
 	v[3].color = color;
 	v[4].color = color;
-	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, D3DFVF_XYZ_DIFFUSE);
-	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 3, v, sizeof(v[0]));
+	Rd_DevSetVertexShader(dev, D3DFVF_XYZ_DIFFUSE);
+	Rd_DevDrawPrimitiveUP(dev, D3DPT_TRIANGLESTRIP, 3, v, sizeof(v[0]));
 	g_RenderTris += 3;
 	g_RenderVerts += 5;
 	if (g_ShowLights > 1) {

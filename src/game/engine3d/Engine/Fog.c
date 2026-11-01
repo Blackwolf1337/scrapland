@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/e3dworld.h"
@@ -47,7 +48,7 @@ void CFog_InitD3D(CFog *self) {
 }
 
 static void Fog_State(void *dev, uint32_t state, uint32_t value) {
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, state, value);
+	Rd_DevSetRenderState(dev, state, value);
 }
 
 static uint32_t Float_Bits(float f) {

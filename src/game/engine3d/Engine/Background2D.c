@@ -1,6 +1,7 @@
 /*
  * The backgrounds of the engine3d, original source Engine/fondo2d.cpp (include/scrap/background2d.h).
  */
+#include "scrap/rdev.h"
 #include "scrap/crt.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
@@ -79,8 +80,8 @@ void CBackground2D_Render(CBackground2D *self) {
 		v[3] = (Vert2D){ x2, y2, 0.5f, 0.5f, color, 0, 1.0f, 1.0f };
 		CMap_CopyBmp(self->Mat->map[MAP_DIFFUSE], 0, 0, &self->bmp, (i & 1) << 8, (i >> 1) << 8, BACKGROUND2D_PIECE,
 			BACKGROUND2D_PIECE);
-		D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, D3DFVF_2D);
-		D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(Vert2D));
+		Rd_DevSetVertexShader(dev, D3DFVF_2D);
+		Rd_DevDrawPrimitiveUP(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(Vert2D));
 	}
 }
 

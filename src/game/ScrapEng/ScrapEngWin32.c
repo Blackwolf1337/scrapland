@@ -4,6 +4,7 @@
  * its address and the fault as a fatal error (Con_FatalErrorf). Of the menu commands only the device, full screen
  * and tiled shot are left; the debug toggles and profiler modes of the original are gone.
  */
+#include "scrap/rdev.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/dxutil.h"
@@ -14,8 +15,6 @@
 
 #define APP_EXCEPTIONFILTER 0x233410
 
-#define DEV_VT_SHOWCURSOR 0x30
-#define DEV_VT_PRESENT 0x3c
 
 #define WM_PAINT 0x0f
 #define WM_SETCURSOR 0x20
@@ -44,7 +43,7 @@ intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lPa
 			if (g_Engine->showCursorWhenFullscreen) {
 				void *dev = g_Engine->device;
 
-				((int(__stdcall *)(void *, int))(*(void ***)dev)[DEV_VT_SHOWCURSOR / 4])(dev, 1);
+				Rd_DevShowCursor(dev, 1);
 			}
 			return 1;
 		}
@@ -55,8 +54,7 @@ intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lPa
 		if (m && m->device && !m->ready && m->windowed && !Video_Busy()) {
 			void *dev = m->device;
 
-			((int(__stdcall *)(void *, void *, void *, void *, void *))(*(void ***)dev)[DEV_VT_PRESENT / 4])(dev,
-				NULL, NULL, NULL, NULL);
+			Rd_DevPresent(dev, NULL, NULL, NULL, NULL);
 			return exe_DefWindowProcA(hwnd, msg, wParam, lParam);
 		}
 		break;

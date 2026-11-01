@@ -1,6 +1,7 @@
 /*
  * Engine/grafico2d.cpp of the engine3d: CGraphic2D, see include/scrap/graphic2d.h.
  */
+#include "scrap/rdev.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/graphic2d.h"
@@ -53,8 +54,8 @@ static void Verts2D_ScaleX(Vert2D *v, uint32_t n) {
 }
 
 static void Draw_Verts(void *dev, int type, uint32_t nPrim, const Vert2D *v, uint32_t nVert) {
-	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, D3DFVF_2D);
-	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, type, nPrim, v, sizeof(Vert2D));
+	Rd_DevSetVertexShader(dev, D3DFVF_2D);
+	Rd_DevDrawPrimitiveUP(dev, type, nPrim, v, sizeof(Vert2D));
 	g_RenderTris += (int)nPrim;
 	g_RenderVerts += (int)nVert;
 }

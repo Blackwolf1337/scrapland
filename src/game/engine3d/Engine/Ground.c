@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/gvar.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
@@ -2033,7 +2034,7 @@ void Collide_TriVerts(CollideVert *out, const vec3_t *a, const vec3_t *b, const 
 void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
 	void *dev = g_pd3dDevice;
 
-	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, 0x142);	/* XYZ | DIFFUSE | TEX1 */
+	Rd_DevSetVertexShader(dev, 0x142);	/* XYZ | DIFFUSE | TEX1 */
 	int mode = g_ShowCollision;
 	for (int i = 0; i < self->nTri; i++) {
 		CCollideTri *t = &self->pTri[i];
@@ -2076,7 +2077,7 @@ void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
 		}
 		Collide_TriVerts(g_CollideVerts, a, b, c, color);
 		dev = g_pd3dDevice;
-		D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, 4, 1, g_CollideVerts, sizeof(CollideVert));
+		Rd_DevDrawPrimitiveUP(dev, 4, 1, g_CollideVerts, sizeof(CollideVert));
 		t->flags &= 0xfff;
 		mode = g_ShowCollision;
 	}
@@ -2085,16 +2086,16 @@ void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
 	}
 	if (!g_ShowMapSolid) {
 		dev = g_pd3dDevice;
-		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_FILLMODE, 2);
+		Rd_DevSetRenderState(dev, D3DRS_FILLMODE, 2);
 		CCollideMesh_DrawDebug(self, 1);
 		dev = g_pd3dDevice;
-		D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_FILLMODE, 3);
+		Rd_DevSetRenderState(dev, D3DRS_FILLMODE, 3);
 		if (!g_ShowMapSolid) {
 			return;
 		}
 	}
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_CULLMODE, 2);
+	Rd_DevSetRenderState(dev, D3DRS_CULLMODE, 2);
 	g_CollideAddColor[0] = 1.0f;
 	g_CollideAddColor[1] = 0.0f;
 	g_CollideAddColor[2] = 0.0f;
@@ -2105,7 +2106,7 @@ void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
 	g_CollideAddColor[2] = 0.0f;
 	g_CollideAddColor[3] = 1.0f;
 	dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_CULLMODE, 3);
+	Rd_DevSetRenderState(dev, D3DRS_CULLMODE, 3);
 }
 
 extern cGVar GVar_ShowMapQuads;

@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/archio.h"
 #include "scrap/console.h"
 #include "scrap/d3d8.h"
@@ -16,28 +17,10 @@
 #include "scrap/trails.h"
 
 /* IDirect3DDevice8, IDirect3DTexture8 and IDirect3DSurface8 methods not in d3d8.h */
-#define D3DDEV_CREATEDEPTHSTENCILSURFACE 0x68
-#define D3DDEV_BEGINSCENE 0x88
-#define D3DDEV_ENDSCENE 0x8c
-#define D3DSURF_GETDESC 0x20
-#define D3DSURF_LOCKRECT 0x24
-typedef int(__stdcall *rtCreateTexture_t)(void *dev, uint32_t w, uint32_t h, uint32_t levels, uint32_t usage, int fmt,
-	int pool, void **tex);
-typedef int(__stdcall *rtCreateDepthStencil_t)(void *dev, uint32_t w, uint32_t h, int fmt, int multisample,
-	void **surf);
-typedef int(__stdcall *rtSetRenderTarget_t)(void *dev, void *surf, void *z);
-typedef int(__stdcall *rtGetSurface_t)(void *dev, void **surf);
-typedef int(__stdcall *rtGetRenderState_t)(void *dev, uint32_t state, uint32_t *value);
-typedef int(__stdcall *rtGetSurfaceLevel_t)(void *tex, uint32_t level, void **surf);
-typedef int(__stdcall *rtCreateImageSurface_t)(void *dev, uint32_t w, uint32_t h, int fmt, void **surf);
-typedef int(__stdcall *rtCopyRects_t)(void *dev, void *src, const int *rects, uint32_t n, void *dst, const void *pts);
-typedef int(__stdcall *rtScene_t)(void *dev);
-typedef int(__stdcall *rtGetDesc_t)(void *surf, uint32_t *desc);	/* D3DSURFACE_DESC, 8 words */
 typedef struct RTLockedRect {
 	int Pitch;
 	byte *pBits;
 } RTLockedRect;
-typedef int(__stdcall *rtLockRect_t)(void *surf, RTLockedRect *lr, const int *rect, uint32_t flags);
 
 #define D3DFMT_A8R8G8B8 0x15
 #define D3DFILL_SOLID 3
@@ -52,22 +35,22 @@ static void *RT_Dev(void) {
 /* a render target texture of w x h, A8R8G8B8 (HRESULT) */
 static int RT_CreateTarget(uint32_t w, uint32_t h, void **tex) {
 	void *dev = RT_Dev();
-	return D3D_METHOD(dev, rtCreateTexture_t, D3DDEV_CREATETEXTURE)(dev, w, h, 1, D3DUSAGE_RENDERTARGET,
+	return Rd_DevCreateTexture(dev, w, h, 1, D3DUSAGE_RENDERTARGET,
 		D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, tex);
 }
 
 static void RT_SetRenderTarget(void *surf, void *z) {
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, rtSetRenderTarget_t, D3DDEV_SETRENDERTARGET)(dev, surf, z);
+	Rd_DevSetRenderTarget(dev, surf, z);
 }
 
 static void RT_GetSurfaceLevel(void *tex, void **surf) {
-	D3D_METHOD(tex, rtGetSurfaceLevel_t, D3DTEX_GETSURFACELEVEL)(tex, 0, surf);
+	Rd_TexGetSurfaceLevel(tex, 0, surf);
 }
 
 static void RT_GetTSS(uint32_t stage, uint32_t type, uint32_t *value) {
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, d3dGetTextureStageState_t, D3DDEV_GETTEXTURESTAGESTATE)(dev, stage, type, value);
+	Rd_DevGetTextureStageState(dev, stage, type, value);
 }
 
 /* surface 0 of tex as the render target without a depth buffer */
@@ -75,34 +58,34 @@ static void RT_SetTargetTexture(void *tex) {
 	void *surf = NULL;
 	RT_GetSurfaceLevel(tex, &surf);
 	RT_SetRenderTarget(surf, NULL);
-	COM_RELEASE(surf);
+	Rd_Release(surf);
 }
 
 static void RT_SetRS(uint32_t state, uint32_t value) {
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, state, value);
+	Rd_DevSetRenderState(dev, state, value);
 }
 
 static void RT_Release(void **obj) {
 	if (*obj) {
-		COM_RELEASE(*obj);
+		Rd_Release(*obj);
 		*obj = NULL;
 	}
 }
 
 static void RT_TSS(uint32_t stage, uint32_t type, uint32_t value) {
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, d3dSetTextureStageState_t, D3DDEV_SETTEXTURESTAGESTATE)(dev, stage, type, value);
+	Rd_DevSetTextureStageState(dev, stage, type, value);
 }
 
 static void RT_SetTexture(uint32_t stage, void *tex) {
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, d3dSetTexture_t, D3DDEV_SETTEXTURE)(dev, stage, tex);
+	Rd_DevSetTexture(dev, stage, tex);
 }
 
 static void RT_GetViewport(uint32_t *vp) {
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, vp);
+	Rd_DevGetViewport(dev, vp);
 }
 
 /* an unsigned viewport word as the exe converts it (through double) */
@@ -154,9 +137,9 @@ static void RT_ViewQuad(RTVert *v, const uint32_t *vp, uint32_t color, float du,
 
 static void RT_DrawQuad(const RTVert *v) {
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, RT_FVF);
+	Rd_DevSetVertexShader(dev, RT_FVF);
 	dev = RT_Dev();
-	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(RTVert));
+	Rd_DevDrawPrimitiveUP(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(RTVert));
 }
 
 /* FVF 0x2c4: XYZRHW, DIFFUSE, SPECULAR, TEX2 */
@@ -206,9 +189,9 @@ static void RT_Quad2(RTVert2 *v, float w, float h, uint32_t color, float w0, flo
 		}
 	}
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, RT_FVF2);
+	Rd_DevSetVertexShader(dev, RT_FVF2);
 	dev = RT_Dev();
-	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(RTVert2));
+	Rd_DevDrawPrimitiveUP(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(RTVert2));
 }
 
 /* a quad from 0, y0 to w, y1 with four texture sets: u[cx][set] on the left and right side, t[cy][set] on the top
@@ -239,9 +222,9 @@ static void RT_Quad4Y(float w, float y0, float y1, const float u[2][4], const fl
 		}
 	}
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, RT_FVF4);
+	Rd_DevSetVertexShader(dev, RT_FVF4);
 	dev = RT_Dev();
-	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(RTVert4));
+	Rd_DevDrawPrimitiveUP(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(RTVert4));
 }
 
 static void RT_Quad4(float w, float h, const float u[2][4], const float t[2][4], float su, float sv) {
@@ -265,9 +248,9 @@ static void RT_Stages4(uint32_t filter, byte setTex, void *tex) {
 /* the back buffer and the depth buffer of the device kept in g_RTBackBuffer, g_RTZBuffer */
 static void RT_GetBackBuffer(void) {
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, rtGetSurface_t, D3DDEV_GETRENDERTARGET)(dev, &g_RTBackBuffer);
+	Rd_DevGetRenderTarget(dev, &g_RTBackBuffer);
 	dev = RT_Dev();
-	D3D_METHOD(dev, rtGetSurface_t, D3DDEV_GETDEPTHSTENCILSURFACE)(dev, &g_RTZBuffer);
+	Rd_DevGetDepthStencilSurface(dev, &g_RTZBuffer);
 }
 
 /* the back buffer on again, released */
@@ -286,11 +269,11 @@ static void RT_BeginTarget(void *tex, void *z) {
 	RT_GetSurfaceLevel(tex, &surf);
 	RT_GetBackBuffer();
 	RT_SetRenderTarget(surf, z);
-	COM_RELEASE(surf);
+	Rd_Release(surf);
 	memcpy(g_RTSavedViewport, g_Viewport, 6 * sizeof(uint32_t));
 	memcpy(g_RTSavedViewportFull, g_ViewportFull, 6 * sizeof(uint32_t));
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, g_ViewportFull);
+	Rd_DevGetViewport(dev, g_ViewportFull);
 	memcpy(g_Viewport, g_ViewportFull, 6 * sizeof(uint32_t));
 }
 
@@ -482,14 +465,14 @@ void Credits_Blur(void) {
 	RT_Stages4(2, 1, g_CreditsTarget);
 	c[0] = c[1] = c[2] = c[3] = 1.0f;
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, d3dSetPixelShaderConstant_t, D3DDEV_SETPIXELSHADERCONSTANT)(dev, 0, c, 1);
+	Rd_DevSetPixelShaderConstant(dev, 0, c, 1);
 	float k = (float)g_CreditsAlpha / 255.0f * 0.05f + 0.2f;
 	if (!g_CreditsPhase) {
 		k = 0.25f;
 	}
 	c[0] = c[1] = c[2] = c[3] = k;
 	dev = RT_Dev();
-	D3D_METHOD(dev, d3dSetPixelShaderConstant_t, D3DDEV_SETPIXELSHADERCONSTANT)(dev, 1, c, 1);
+	Rd_DevSetPixelShaderConstant(dev, 1, c, 1);
 	float sx = (float)g_CreditsSizeX;
 	float sy = (float)g_CreditsSizeY;
 	float du = 0.5f / sx;
@@ -570,13 +553,13 @@ int RenderTarget_VideoMemory(void) {
 
 	for (n = 0; n < 0x400; n++) {
 		void *dev = RT_Dev();
-		if (D3D_METHOD(dev, rtCreateTexture_t, D3DDEV_CREATETEXTURE)(dev, 0x200, 0x200, 1, D3DUSAGE_RENDERTARGET,
+		if (Rd_DevCreateTexture(dev, 0x200, 0x200, 1, D3DUSAGE_RENDERTARGET,
 			D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &tex[n]) < 0) {
 			break;
 		}
 	}
 	for (int i = n - 1; i >= 0; i--) {
-		if ((int)COM_RELEASE(tex[i]) < 0) {
+		if ((int)Rd_Release(tex[i]) < 0) {
 			break;
 		}
 	}
@@ -627,10 +610,10 @@ void NewsPanel_Init(void) {
 	uint32_t size = (uint32_t)g_NewsPanelSize;
 	uint32_t zfmt = g_Engine->depthBufferDesc.Format;
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, rtCreateTexture_t, D3DDEV_CREATETEXTURE)(dev, size, size, 1, D3DUSAGE_RENDERTARGET,
+	Rd_DevCreateTexture(dev, size, size, 1, D3DUSAGE_RENDERTARGET,
 		g_Engine->backBufferDesc.Format, D3DPOOL_DEFAULT, &g_NewsPanelTarget);
 	dev = RT_Dev();
-	D3D_METHOD(dev, rtCreateDepthStencil_t, D3DDEV_CREATEDEPTHSTENCILSURFACE)(dev, size, size, (int)zfmt, 0,
+	Rd_DevCreateDepthStencilSurface(dev, size, size, (int)zfmt, 0,
 		&g_NewsPanelZ);
 }
 
@@ -789,7 +772,7 @@ void Bloom_Blur(void) {
 		float o = g_SceneBloomBlurOffset / g_BloomW;
 		RT_GetSurfaceLevel(g_BloomTarget2, &surf);
 		RT_SetRenderTarget(surf, NULL);
-		COM_RELEASE(surf);
+		Rd_Release(surf);
 		for (uint32_t i = 0; i < 4; i++) {
 			RT_SetTexture(i, g_BloomTarget1);
 		}
@@ -809,7 +792,7 @@ void Bloom_Blur(void) {
 		o = g_SceneBloomBlurOffset / g_BloomH;
 		RT_GetSurfaceLevel(g_BloomTarget1, &surf);
 		RT_SetRenderTarget(surf, NULL);
-		COM_RELEASE(surf);
+		Rd_Release(surf);
 		for (uint32_t i = 0; i < 4; i++) {
 			RT_SetTexture(i, g_BloomTarget2);
 		}
@@ -978,7 +961,7 @@ void DuDv_Render(void) {
 	}
 	if (!g_SceneRTargetSwap && g_SceneDuDvRTarget && g_SceneDuDvSavedTexture &&
 		g_SceneSourceTexture == g_SceneDuDvTarget && g_SceneSourceSurface) {
-		COM_RELEASE(g_SceneSourceSurface);
+		Rd_Release(g_SceneSourceSurface);
 		g_SceneSourceTexture = g_SceneDuDvSavedTexture;
 		g_SceneSourceSurface = g_SceneDuDvSavedSurface;
 	}
@@ -1047,7 +1030,7 @@ void DuDv_RenderBump(void) {
 	surf = NULL;
 	RT_GetSurfaceLevel(g_SceneDuDvBumpTarget, &surf);
 	RT_SetRenderTarget(surf, g_RTZBuffer);
-	COM_RELEASE(surf);
+	Rd_Release(surf);
 	if (!g_SceneDuDvFrame || g_SceneDuDvFrame + 1 >= g_FrameCount || g_SceneDuDvForced) {
 		Render_Clear(NULL, 1, 0xff8080, 1.0f, 0);
 	}
@@ -1227,9 +1210,9 @@ void DuDv_Draw(byte check) {
 		}
 	}
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, DUDV_FVF);
+	Rd_DevSetVertexShader(dev, DUDV_FVF);
 	dev = RT_Dev();
-	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(DuDvVert));
+	Rd_DevDrawPrimitiveUP(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(DuDvVert));
 }
 
 void DuDv_Copy(void) {
@@ -1281,10 +1264,10 @@ void MotionBlur_Add(void) {
 	c0[2] = 0.0f;
 	c0[3] = rest + rest + 0.15f;
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, d3dSetPixelShaderConstant_t, D3DDEV_SETPIXELSHADERCONSTANT)(dev, 0, c0, 1);
+	Rd_DevSetPixelShaderConstant(dev, 0, c0, 1);
 	c1[0] = c1[1] = c1[2] = c1[3] = 0.25f;
 	dev = RT_Dev();
-	D3D_METHOD(dev, d3dSetPixelShaderConstant_t, D3DDEV_SETPIXELSHADERCONSTANT)(dev, 1, c1, 1);
+	Rd_DevSetPixelShaderConstant(dev, 1, c1, 1);
 	float ov = g_SceneMotionBlurOffset / g_SceneH;
 	float ou = g_SceneMotionBlurOffset / g_SceneW;
 	float dv = 0.5f / g_SceneH;
@@ -1334,11 +1317,11 @@ void MotionBlur_Draw(void) {
 	}
 	c0[0] = c0[1] = c0[2] = c0[3] = k;
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, d3dSetPixelShaderConstant_t, D3DDEV_SETPIXELSHADERCONSTANT)(dev, 0, c0, 1);
+	Rd_DevSetPixelShaderConstant(dev, 0, c0, 1);
 	float r = 1.0f - k;
 	c1[0] = c1[1] = c1[2] = c1[3] = r;
 	dev = RT_Dev();
-	D3D_METHOD(dev, d3dSetPixelShaderConstant_t, D3DDEV_SETPIXELSHADERCONSTANT)(dev, 1, c1, 1);
+	Rd_DevSetPixelShaderConstant(dev, 1, c1, 1);
 	RT_TSS(0, D3DTSS_MINFILTER, 1);
 	RT_TSS(0, D3DTSS_MAGFILTER, 1);
 	RT_TSS(1, D3DTSS_MINFILTER, 2);
@@ -1361,7 +1344,7 @@ void MotionBlur_Init(void) {
 	g_MotionBlurW = g_SceneW * g_SceneMotionBlurSize;
 	g_MotionBlurH = g_SceneH * g_SceneMotionBlurSize;
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, vp);
+	Rd_DevGetViewport(dev, vp);
 	RT_CreateTarget((uint32_t)(int)g_MotionBlurW, (uint32_t)(int)g_MotionBlurH, &g_MotionBlurTarget);
 	g_MotionBlurFilled = 0;
 	g_SceneMotionBlurValue = 0.0f;
@@ -1436,9 +1419,9 @@ void RadialBlur_Draw(void) {
 		}
 	}
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, RT_FVF4);
+	Rd_DevSetVertexShader(dev, RT_FVF4);
 	dev = RT_Dev();
-	D3D_METHOD(dev, d3dDrawPrimitiveUP_t, D3DDEV_DRAWPRIMITIVEUP)(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(RTVert4));
+	Rd_DevDrawPrimitiveUP(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(RTVert4));
 }
 
 void RadialBlur_Release(void) {
@@ -1510,7 +1493,7 @@ void Scene_End(void) {
 			return;
 		}
 		void *dev = RT_Dev();
-		D3D_METHOD(dev, rtGetRenderState_t, D3DDEV_GETRENDERSTATE)(dev, D3DRS_FILLMODE, &fill);
+		Rd_DevGetRenderState(dev, D3DRS_FILLMODE, &fill);
 		RT_SetRS(D3DRS_FILLMODE, D3DFILL_SOLID);
 		for (int i = 0; i < RTFX_TOTAL; i++) {
 			if (!g_SceneFxOn[i]) {
@@ -1527,7 +1510,7 @@ void Scene_End(void) {
 				memcpy(g_ViewportFull, g_SceneViewport, 6 * sizeof(uint32_t));
 				memcpy(g_Viewport, g_SceneViewport, 6 * sizeof(uint32_t));
 				dev = RT_Dev();
-				D3D_METHOD(dev, d3dSetViewport_t, D3DDEV_SETVIEWPORT)(dev, g_Viewport);
+				Rd_DevSetViewport(dev, g_Viewport);
 				Scene_DrawSplit();
 			} else {
 				Scene_TargetBackBuffer();
@@ -1545,7 +1528,7 @@ void Scene_End(void) {
 		RT_SetRS(D3DRS_FILLMODE, fill);
 	}
 	if (g_SceneSourceSurface != g_RTBackBuffer && g_SceneSourceSurface) {
-		COM_RELEASE(g_SceneSourceSurface);
+		Rd_Release(g_SceneSourceSurface);
 		g_SceneSourceSurface = NULL;
 	}
 }
@@ -1581,7 +1564,7 @@ void Scene_Init(void) {
 	}
 	g_SceneNoSwap = 0;
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, d3dGetViewport_t, D3DDEV_GETVIEWPORT)(dev, vp);
+	Rd_DevGetViewport(dev, vp);
 	g_SceneW = RT_UToF(vp[2]);
 	g_SceneH = RT_UToF(vp[3]);
 	if (g_SplitScreen && !g_SceneRTargetSwap) {
@@ -1631,7 +1614,7 @@ void Scene_Init(void) {
 
 void Scene_TargetBackBuffer(void) {
 	if (g_SceneTargetSurface != g_RTBackBuffer && g_SceneTargetSurface) {
-		COM_RELEASE(g_SceneTargetSurface);
+		Rd_Release(g_SceneTargetSurface);
 	}
 	g_SceneTargetSurface = g_RTBackBuffer;
 	g_SceneTargetTexture = NULL;
@@ -1750,9 +1733,14 @@ static void RT_CapsTargets(void) {
 	RT_GetBackBuffer();
 }
 
-static void RT_Scene(uint32_t off) {
+/* BeginScene (begin) or EndScene */
+static void RT_Scene(int begin) {
 	void *dev = RT_Dev();
-	D3D_METHOD(dev, rtScene_t, off)(dev);
+	if (begin) {
+		Rd_DevBeginScene(dev);
+	} else {
+		Rd_DevEndScene(dev);
+	}
 }
 
 /* the scene target copied to a new 256 x 256 image surface *img; 0 when that fails */
@@ -1760,7 +1748,7 @@ static byte RT_CapsCopy(void **img) {
 	int rect[4];
 
 	void *dev = RT_Dev();
-	if (D3D_METHOD(dev, rtCreateImageSurface_t, D3DDEV_CREATEIMAGESURFACE)(dev, 0x100, 0x100, D3DFMT_A8R8G8B8,
+	if (Rd_DevCreateImageSurface(dev, 0x100, 0x100, D3DFMT_A8R8G8B8,
 		img) < 0) {
 		return 0;
 	}
@@ -1775,7 +1763,7 @@ static byte RT_CapsCopy(void **img) {
 		rect[3] = 0x100;
 	}
 	dev = RT_Dev();
-	return D3D_METHOD(dev, rtCopyRects_t, D3DDEV_COPYRECTS)(dev, g_SceneTargetSurface, rect, 1, *img, NULL) >= 0;
+	return Rd_DevCopyRects(dev, g_SceneTargetSurface, rect, 1, *img, NULL) >= 0;
 }
 
 /* the scene surfaces released, the back buffer on again */
@@ -1787,7 +1775,7 @@ static void RT_CapsRelease(void) {
 	RT_SetRenderTarget(g_RTBackBuffer, g_RTZBuffer);
 	RT_Release(&g_RTBackBuffer);
 	if (g_RTZBuffer) {
-		COM_RELEASE(g_RTZBuffer);
+		Rd_Release(g_RTZBuffer);
 	}
 	g_RTBackBuffer = NULL;
 	g_RTZBuffer = NULL;
@@ -1801,7 +1789,7 @@ static byte RT_CapsCompare(void *want, void *img, byte ok, byte shot, byte dudv,
 	RTLockedRect a, b;
 	void *surf = NULL;
 
-	if (D3D_METHOD(want, rtGetSurfaceLevel_t, D3DTEX_GETSURFACELEVEL)(want, 0, &surf) < 0) {
+	if (Rd_TexGetSurfaceLevel(want, 0, &surf) < 0) {
 		ok = 0;
 		goto done;
 	}
@@ -1811,16 +1799,16 @@ static byte RT_CapsCompare(void *want, void *img, byte ok, byte shot, byte dudv,
 	if (shot) {
 		Surface_SaveShot(img);
 	}
-	if (D3D_METHOD(surf, rtGetDesc_t, D3DSURF_GETDESC)(surf, da) < 0) {
+	if (Rd_SurfGetDesc(surf, da) < 0) {
 		ok = 0;
 	}
-	if (D3D_METHOD(surf, rtLockRect_t, D3DSURF_LOCKRECT)(surf, &a, NULL, D3DLOCK_READONLY) < 0) {
+	if (Rd_SurfLockRect(surf, &a, NULL, D3DLOCK_READONLY) < 0) {
 		ok = 0;
 	}
-	if (D3D_METHOD(img, rtGetDesc_t, D3DSURF_GETDESC)(img, db) < 0) {
+	if (Rd_SurfGetDesc(img, db) < 0) {
 		ok = 0;
 	}
-	if (D3D_METHOD(img, rtLockRect_t, D3DSURF_LOCKRECT)(img, &b, NULL, D3DLOCK_READONLY) < 0) {
+	if (Rd_SurfLockRect(img, &b, NULL, D3DLOCK_READONLY) < 0) {
 		ok = 0;
 	}
 	/* the surfaces stay locked, the original never unlocks them before the release */
@@ -1858,7 +1846,7 @@ static byte RT_CapsCompare(void *want, void *img, byte ok, byte shot, byte dudv,
 		count);
 done:
 	if (surf) {
-		COM_RELEASE(surf);
+		Rd_Release(surf);
 	}
 	return ok;
 }
@@ -1895,14 +1883,14 @@ byte DuDv_CheckCaps(void) {
 	}
 	RT_CapsTargets();
 	if (ok) {
-		RT_Scene(D3DDEV_BEGINSCENE);
+		RT_Scene(1);
 		RT_SetRenderTarget(g_SceneSourceSurface, NULL);
 		Render_Clear(NULL, 1, 0, 1.0f, 0);
 		RenderTarget_DrawTexQuad(&quad, 0xffffffff, test);
 		surf = NULL;
 		RT_GetSurfaceLevel(g_SceneDuDvBumpTarget, &surf);
 		RT_SetRenderTarget(surf, NULL);
-		COM_RELEASE(surf);
+		Rd_Release(surf);
 		Render_Clear(NULL, 1, 0xff8080, 1.0f, 0);
 		RenderTarget_DrawTexQuad(&quad, 0xffffffff, bump);
 		DuDv_Filter();
@@ -1910,7 +1898,7 @@ byte DuDv_CheckCaps(void) {
 			DuDv_CopyToTarget();
 		}
 		DuDv_Draw(1);
-		RT_Scene(D3DDEV_ENDSCENE);
+		RT_Scene(0);
 	}
 	RT_TSS(0, D3DTSS_MINFILTER, 1);
 	RT_TSS(0, D3DTSS_MAGFILTER, 1);
@@ -1941,7 +1929,7 @@ byte Scene_CheckCaps(void) {
 	}
 	RT_CapsTargets();
 	if (ok) {
-		RT_Scene(D3DDEV_BEGINSCENE);
+		RT_Scene(1);
 		RT_SetRenderTarget(g_SceneSourceSurface, NULL);
 		Render_Clear(NULL, 1, 0, 1.0f, 0);
 		RenderTarget_DrawTexQuad(&quad, 0xffffffff, test);
@@ -1960,7 +1948,7 @@ byte Scene_CheckCaps(void) {
 			RT_QuadTexels(v, g_SceneW, g_SceneH);
 		}
 		RT_DrawQuad(v);
-		RT_Scene(D3DDEV_ENDSCENE);
+		RT_Scene(0);
 	}
 	RT_TSS(0, D3DTSS_MINFILTER, 1);
 	RT_TSS(0, D3DTSS_MAGFILTER, 1);

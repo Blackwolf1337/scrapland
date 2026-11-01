@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/gvar.h"
 #include "scrap/dxutil.h"
 #include "scrap/e3dinput.h"
@@ -241,12 +242,9 @@ extern cGVar GVar_AutoScreenShot;
 extern void *g_EngineInitNext;
 extern void *g_EngineFrameNext;
 extern void *g_EngineReleaseNext;
-#define D3DDEV_BEGINSCENE 0x88
-#define D3DDEV_ENDSCENE 0x8c
 #define D3DRS_SHADEMODE 9
 #define D3DRS_DITHERENABLE 0x1a
 #define D3DRS_SPECULARENABLE 0x1d
-typedef int(__stdcall *d3dScene_t)(void *dev);
 
 /* Present waits for the vertical retrace: full screen with an interval other than immediate, windowed only with
  * the swap effect COPY_VSYNC (D3DPRESENT_PARAMETERS: 5 SwapEffect, 7 Windowed, 12 FullScreen_PresentationInterval) */
@@ -344,15 +342,15 @@ int CEngineApp_Render(CEngineApp *self) {
 	RenderTarget_Begin("Scene");
 	Render_Clear(NULL, 3, Color_ToD3D(&self->scene->fog), 1.0f, g_StencilClear);
 	g_ZEnable = self->useWBuffer && self->canWBuffer ? 2 : 1;
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZENABLE, g_ZEnable);
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZWRITEENABLE, 1);
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_FILLMODE, (g_RenderMode100 == 0) + 2);
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_SHADEMODE, (g_Engine431bae != 0) + 1);
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_SPECULARENABLE, g_VertexSpecular);
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_DITHERENABLE, g_Dither);
+	Rd_DevSetRenderState(dev, D3DRS_ZENABLE, g_ZEnable);
+	Rd_DevSetRenderState(dev, D3DRS_ZWRITEENABLE, 1);
+	Rd_DevSetRenderState(dev, D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
+	Rd_DevSetRenderState(dev, D3DRS_FILLMODE, (g_RenderMode100 == 0) + 2);
+	Rd_DevSetRenderState(dev, D3DRS_SHADEMODE, (g_Engine431bae != 0) + 1);
+	Rd_DevSetRenderState(dev, D3DRS_SPECULARENABLE, g_VertexSpecular);
+	Rd_DevSetRenderState(dev, D3DRS_DITHERENABLE, g_Dither);
 	g_AmbientD3D = Color_ToD3D(&self->scene->ambient);
-	if (D3D_METHOD(dev, d3dScene_t, D3DDEV_BEGINSCENE)(dev) >= 0) {
+	if (Rd_DevBeginScene(dev) >= 0) {
 		Render_SetCamera(World_Get()->cam);
 		Render_BeginFrame();
 		ShadowsStencil_Capture(1);
@@ -380,14 +378,14 @@ int CEngineApp_Render(CEngineApp *self) {
 		Engine_DrawStats();
 		Render_EndView();
 		RenderLock_Frame();
-		D3D_METHOD(dev, d3dScene_t, D3DDEV_ENDSCENE)(dev);
+		Rd_DevEndScene(dev);
 	}
 	if (g_TileOn) {
 		void *bb, *d = self->base.device;
 
-		D3D_METHOD(d, d3dGetBackBuffer_t, D3DDEV_GETBACKBUFFER)(d, 0, 0, &bb);
+		Rd_DevGetBackBuffer(d, 0, 0, &bb);
 		Surface_ShotCopy(bb);
-		COM_RELEASE(bb);
+		Rd_Release(bb);
 		g_TileOn = g_AutoShot != 0;
 	}
 	float fps = Float_MaxSS(g_LimitFps, g_RLimitFps);
@@ -511,8 +509,6 @@ extern int g_TexCreated;
 extern int g_TexCached;
 extern int g_TexUsed;
 extern int g_TexUsedPixels;
-#define D3DDEV_GETAVAILABLETEXTUREMEM 0x10
-typedef uint32_t(__stdcall *d3dGetAvailableTextureMem_t)(void *dev);
 
 void Engine_DrawStats(void) {
 	CCamera *cam;
@@ -551,7 +547,7 @@ void Engine_DrawStats(void) {
 	}
 	if (mode == 3) {
 		Font_Printf(g_FntComic14, 10.0f, 32.0f, 2, "FreeTextMem: %d Mb (pool %d)",
-			D3D_METHOD(g_pd3dDevice, d3dGetAvailableTextureMem_t, D3DDEV_GETAVAILABLETEXTUREMEM)(g_pd3dDevice) >> 20,
+			Rd_DevGetAvailableTextureMem(g_pd3dDevice) >> 20,
 			g_TexturePool);
 		ms[0] = 0x40;
 		exe_GlobalMemoryStatusEx(ms);

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/gvar.h"
 #include "scrap/cmd.h"
 #include "scrap/app.h"
@@ -939,7 +940,7 @@ byte Engine_FrameSetup(void) {
 	}
 	g_AmbientD3D = amb;
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_AMBIENT, amb);
+	Rd_DevSetRenderState(dev, D3DRS_AMBIENT, amb);
 done:
 	if (g_EngCallbacks[1] && g_CallbacksOn) {
 		g_EngCallbacks[1]();

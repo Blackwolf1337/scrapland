@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/gvar.h"
 #include "scrap/bsp.h"
 #include "scrap/console.h"
@@ -836,7 +837,7 @@ void CBsp_DrawWire(CBsp *self) {
 		return;
 	}
 	void *dev = g_pd3dDevice;
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_FILLMODE, 2);
+	Rd_DevSetRenderState(dev, D3DRS_FILLMODE, 2);
 	g_MatFX1 = self->matWire;
 	g_MatFX2 = g_WireFrame == 2 ? self->matWire : NULL;
 	g_LightmapMode2++;
@@ -854,7 +855,7 @@ void CBsp_DrawWire(CBsp *self) {
 	g_LightmapMode2--;
 	g_MatFX1 = NULL;
 	g_MatFX2 = NULL;
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_FILLMODE, 3);
+	Rd_DevSetRenderState(dev, D3DRS_FILLMODE, 3);
 }
 
 void CBsp_DrawFX(CBsp *self) {
@@ -933,17 +934,17 @@ void Bsp_PortalInfo(byte info) {
 void CBsp_ReleaseD3D(CBsp *self) {
 	for (int i = 0; i < self->num_lists; i++) {
 		if (self->lists[i]->pVertVB) {
-			COM_RELEASE(self->lists[i]->pVertVB);
+			Rd_Release(self->lists[i]->pVertVB);
 			self->lists[i]->pVertVB = NULL;
 		}
 		if (self->lists[i]->pVertIB) {
-			COM_RELEASE(self->lists[i]->pVertIB);
+			Rd_Release(self->lists[i]->pVertIB);
 			self->lists[i]->pVertIB = NULL;
 		}
 	}
 	for (BspNode *n = self->nodes; n; n = n->next) {
 		if (n->pVertVB) {
-			COM_RELEASE(n->pVertVB);
+			Rd_Release(n->pVertVB);
 			n->pVertVB = NULL;
 		}
 	}
@@ -952,12 +953,12 @@ void CBsp_ReleaseD3D(CBsp *self) {
 		BspZone *z = &((BspZone *)self->zones.p)[i];
 		for (int k = 0; k < 8; k++) {
 			if (z->vb[k].pVertVB) {
-				COM_RELEASE(z->vb[k].pVertVB);
+				Rd_Release(z->vb[k].pVertVB);
 				z->vb[k].pVertVB = NULL;
 			}
 		}
 		if (z->ib.pVertIB) {
-			COM_RELEASE(z->ib.pVertIB);
+			Rd_Release(z->ib.pVertIB);
 			z->ib.pVertIB = NULL;
 		}
 	}
@@ -985,7 +986,7 @@ void Bsp_ReleaseD3D(void) {
 	}
 	void *vb = g_pBSP_VB;
 	if (vb) {
-		COM_RELEASE(vb);
+		Rd_Release(vb);
 		g_pBSP_VB = NULL;
 	}
 	CBsp_ReleaseD3D(g_Bsp);

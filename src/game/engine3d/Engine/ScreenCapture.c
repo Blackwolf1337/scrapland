@@ -5,6 +5,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/bsp.h"
 #include "scrap/crt.h"
 #include "scrap/d3d8.h"
@@ -18,21 +19,11 @@ extern char g_ShotPath[260];	/* MAX_FILEPATH */
 extern int g_ShotNum;
 
 /* IDirect3DSurface8 and IDirect3DDevice8 */
-#define D3DSURF_GETDEVICE 0xc
-#define D3DSURF_GETDESC 0x20
-#define D3DSURF_LOCKRECT 0x24
-#define D3DSURF_UNLOCKRECT 0x28
 #define D3DLOCK_READONLY 0x10
 typedef struct CPLockedRect {
 	int Pitch;
 	byte *pBits;
 } CPLockedRect;
-typedef int(__stdcall *cpGetDesc_t)(void *surf, uint32_t *desc);	/* D3DSURFACE_DESC: format, ..., width, height */
-typedef int(__stdcall *cpLockRect_t)(void *surf, CPLockedRect *lr, const int *rect, uint32_t flags);
-typedef int(__stdcall *cpUnlockRect_t)(void *surf);
-typedef int(__stdcall *cpGetDevice_t)(void *surf, void **dev);
-typedef int(__stdcall *cpCreateImageSurface_t)(void *dev, uint32_t w, uint32_t h, int fmt, void **surf);
-typedef int(__stdcall *cpCopyRects_t)(void *dev, void *src, const int *rects, uint32_t n, void *dst, const void *pts);
 
 /* the doubling of the gamma2x setting, 0 stays 0 */
 static byte Shot_Double(byte c) {
@@ -82,8 +73,8 @@ byte Surface_SaveShot(void *surf) {
 		return 0;
 	}
 	Shot_NextName();
-	D3D_METHOD(surf, cpGetDesc_t, D3DSURF_GETDESC)(surf, desc);
-	if (D3D_METHOD(surf, cpLockRect_t, D3DSURF_LOCKRECT)(surf, &lr, NULL, D3DLOCK_READONLY)) {
+	Rd_SurfGetDesc(surf, desc);
+	if (Rd_SurfLockRect(surf, &lr, NULL, D3DLOCK_READONLY)) {
 		return 0;
 	}
 	switch (desc[0]) {
@@ -103,7 +94,7 @@ byte Surface_SaveShot(void *surf) {
 		break;
 	default:
 		E3D_LogBlue(g_FileLog, "capturar_pantalla(): formato no v\xe1lido: %d", desc[0]);
-		D3D_METHOD(surf, cpUnlockRect_t, D3DSURF_UNLOCKRECT)(surf);
+		Rd_SurfUnlockRect(surf);
 		return 0;
 	}
 	Pal16_SetMasks(r, g, b);
@@ -131,7 +122,7 @@ byte Surface_SaveShot(void *surf) {
 			p += 3;
 		}
 	}
-	D3D_METHOD(surf, cpUnlockRect_t, D3DSURF_UNLOCKRECT)(surf);
+	Rd_SurfUnlockRect(surf);
 	void *f = crt_fopen(g_ShotPath, "w+b");
 	if (f) {
 		Pcx_Write24(f, rgb, w, h);
@@ -150,24 +141,24 @@ byte Surface_ShotCopy(void *surf) {
 	uint32_t desc[8];
 	void *dev, *copy;
 
-	if (!surf || D3D_METHOD(surf, cpGetDesc_t, D3DSURF_GETDESC)(surf, desc)) {
+	if (!surf || Rd_SurfGetDesc(surf, desc)) {
 		return 0;
 	}
-	if (D3D_METHOD(surf, cpGetDevice_t, D3DSURF_GETDEVICE)(surf, &dev) < 0) {
+	if (Rd_SurfGetDevice(surf, &dev) < 0) {
 		return 0;
 	}
-	if (D3D_METHOD(dev, cpCreateImageSurface_t, D3DDEV_CREATEIMAGESURFACE)(dev, desc[6], desc[7], (int)desc[0],
+	if (Rd_DevCreateImageSurface(dev, desc[6], desc[7], (int)desc[0],
 		&copy)) {
-		COM_RELEASE(dev);
+		Rd_Release(dev);
 		return 0;
 	}
-	if (D3D_METHOD(dev, cpCopyRects_t, D3DDEV_COPYRECTS)(dev, surf, NULL, 0, copy, NULL)) {
-		COM_RELEASE(copy);
-		COM_RELEASE(dev);
+	if (Rd_DevCopyRects(dev, surf, NULL, 0, copy, NULL)) {
+		Rd_Release(copy);
+		Rd_Release(dev);
 		return 0;
 	}
 	byte r = Surface_SaveShot(copy);
-	COM_RELEASE(copy);
-	COM_RELEASE(dev);
+	Rd_Release(copy);
+	Rd_Release(dev);
 	return r;
 }

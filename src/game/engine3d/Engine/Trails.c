@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/node3d.h"
@@ -674,11 +675,11 @@ int Trails_Release(void) {
 		CHECK(g_TrailsVB);
 	}
 	if (g_TrailsVB) {
-		COM_RELEASE(g_TrailsVB);
+		Rd_Release(g_TrailsVB);
 		g_TrailsVB = NULL;
 	}
 	if (g_TrailsIB) {
-		COM_RELEASE(g_TrailsIB);
+		Rd_Release(g_TrailsIB);
 		g_TrailsIB = NULL;
 	}
 	return 0;
@@ -711,12 +712,12 @@ static const struct {
 
 int Trails_Init(void) {
 	void *dev = g_Engine->device;
-	if (D3D_METHOD(dev, d3dCreateVB_t, D3DDEV_CREATEVB)(dev, MAX_TRAILS_VB * sizeof(TrailVertex),
+	if (Rd_DevCreateVertexBuffer(dev, MAX_TRAILS_VB * sizeof(TrailVertex),
 		D3DUSAGE_WRITEONLY_DYNAMIC, TRAILS_FVF, 0, &g_TrailsVB) < 0) {
 		return E_FAIL;
 	}
 	dev = g_Engine->device;
-	if (D3D_METHOD(dev, d3dCreateIB_t, D3DDEV_CREATEIB)(dev, MAX_TRAILS_IB * sizeof(uint16_t),
+	if (Rd_DevCreateIndexBuffer(dev, MAX_TRAILS_IB * sizeof(uint16_t),
 		D3DUSAGE_WRITEONLY_DYNAMIC, D3DFMT_INDEX16, 0, &g_TrailsIB) < 0) {
 		return E_FAIL;
 	}
@@ -746,8 +747,8 @@ int Trails_InitLists(void) {
 
 /* the buffers unlocked and the geometry since the start drawn */
 static void Trails_Flush(void *dev, int startV, int startP, int startI) {
-	D3D_METHOD(g_TrailsVB, d3dUnlock_t, D3DBUF_UNLOCK)(g_TrailsVB);
-	D3D_METHOD(g_TrailsIB, d3dUnlock_t, D3DBUF_UNLOCK)(g_TrailsIB);
+	Rd_BufUnlock(g_TrailsVB);
+	Rd_BufUnlock(g_TrailsIB);
 	int nv = g_TrailsVertex - startV;
 	int np = g_TrailsPrims - startP;
 	int ni = g_TrailsIndex - startI;
@@ -756,13 +757,13 @@ static void Trails_Flush(void *dev, int startV, int startP, int startI) {
 		CHECK(startV + nv < MAX_TRAILS_VB);
 		CHECK(startI < MAX_TRAILS_IB);
 		CHECK(startI + ni < MAX_TRAILS_IB);
-		D3D_METHOD(dev, d3dDrawIndexedPrimitive_t, D3DDEV_DRAWINDEXEDPRIMITIVE)(dev, D3DPT_TRIANGLELIST, startV, nv,
+		Rd_DevDrawIndexedPrimitive(dev, D3DPT_TRIANGLELIST, startV, nv,
 			startI, np);
 	}
 }
 
 static int Trails_Lock(void *buf, uint32_t off, uint32_t size, void *data, uint32_t flags) {
-	return D3D_METHOD(buf, d3dLock_t, D3DBUF_LOCK)(buf, off, size, data, flags);
+	return Rd_BufLock(buf, off, size, data, flags);
 }
 
 void Trails_Render(int texture) {
@@ -771,10 +772,10 @@ void Trails_Render(int texture) {
 	}
 	void *dev = g_Engine->device;
 	Render_SetWorldMatrix(g_MatIdentity, 0);
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_CULLMODE, D3DCULL_NONE);
-	D3D_METHOD(dev, d3dSetVertexShader_t, D3DDEV_SETVERTEXSHADER)(dev, TRAILS_FVF);
-	D3D_METHOD(dev, d3dSetStreamSource_t, D3DDEV_SETSTREAMSOURCE)(dev, 0, g_TrailsVB, sizeof(TrailVertex));
-	D3D_METHOD(dev, d3dSetIndices_t, D3DDEV_SETINDICES)(dev, g_TrailsIB, 0);
+	Rd_DevSetRenderState(dev, D3DRS_CULLMODE, D3DCULL_NONE);
+	Rd_DevSetVertexShader(dev, TRAILS_FVF);
+	Rd_DevSetStreamSource(dev, 0, g_TrailsVB, sizeof(TrailVertex));
+	Rd_DevSetIndices(dev, g_TrailsIB, 0);
 	g_TrailsVertex = 0;
 	g_TrailsPrims = 0;
 	g_TrailsIndex = 0;
@@ -831,7 +832,7 @@ void Trails_Render(int texture) {
 			Trails_Flush(dev, startV, startP, startI);
 		}
 	}
-	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_CULLMODE, D3DCULL_CCW);
+	Rd_DevSetRenderState(dev, D3DRS_CULLMODE, D3DCULL_CCW);
 }
 
 void CTrail_SetLast(CTrail *self, const vec3_t *pos, const float *width, const uint32_t *color) {

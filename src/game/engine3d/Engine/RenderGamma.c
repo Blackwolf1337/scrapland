@@ -3,6 +3,7 @@
  * variables VideoGammaRGB (also a black level above 1), VideoScaleRGB and the three channel scales, doubled with
  * gamma2x. The values of the last ramp are kept so it is only set again when one changes.
  */
+#include "scrap/rdev.h"
 #include "scrap/gvar.h"
 #include "scrap/bsp.h"
 #include "scrap/d3d8.h"
@@ -85,9 +86,9 @@ void RenderGamma_Begin(void) {
 	}
 	/* the first entry changed and back, so the device sets the ramp even when it holds it already */
 	ramp[0][0] ^= 1;
-	D3D_METHOD(dev, d3dSetGammaRamp_t, D3DDEV_SETGAMMARAMP)(dev, 0, ramp);
+	Rd_DevSetGammaRamp(dev, 0, ramp);
 	ramp[0][0] ^= 1;
-	D3D_METHOD(dev, d3dSetGammaRamp_t, D3DDEV_SETGAMMARAMP)(dev, 0, ramp);
+	Rd_DevSetGammaRamp(dev, 0, ramp);
 	E3D_LogDebug(g_FileLog, "DBG: GAMMACONTROL: OK");
 }
 

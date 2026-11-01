@@ -6,6 +6,7 @@
  */
 #include <string.h>
 
+#include "scrap/rdev.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/dxutil.h"
@@ -47,17 +48,13 @@ intptr_t __stdcall D3DApp_WndProc(void *hwnd, uint32_t msg, uintptr_t w, intptr_
 	return app->vftable->MsgProc(app, hwnd, msg, w, l);
 }
 
-typedef int(__stdcall *d3dCheckDeviceFormat_t)(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t usage,
-	uint32_t rtype, uint32_t check);
-typedef int(__stdcall *d3dCheckDepthStencilMatch_t)(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt,
-	uint32_t rt, uint32_t ds);
 
 /* IDirect3D8::CheckDeviceFormat (as D3DUSAGE_DEPTHSTENCIL of a surface) and CheckDepthStencilMatch */
 byte D3DApp_DepthFormatOk(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t ds) {
-	if (D3D_METHOD(d3d, d3dCheckDeviceFormat_t, 0x28)(d3d, adapter, type, fmt, 2, 1, ds) < 0) {
+	if (Rd_D3DCheckDeviceFormat(d3d, adapter, type, fmt, 2, 1, ds) < 0) {
 		return 0;
 	}
-	if (D3D_METHOD(d3d, d3dCheckDepthStencilMatch_t, 0x30)(d3d, adapter, type, fmt, fmt, ds) < 0) {
+	if (Rd_D3DCheckDepthStencilMatch(d3d, adapter, type, fmt, fmt, ds) < 0) {
 		return 0;
 	}
 	return 1;
@@ -188,23 +185,21 @@ void CD3DApp_Pause(CD3DApplication *self, int pause) {
 	}
 }
 
-typedef int(__stdcall *d3dGetDepthStencil_t)(void *dev, void **surf);
-typedef int(__stdcall *d3dGetDesc_t)(void *surf, void *desc);
 
 /* the descriptions of the back buffer and the depth buffer, the aspect ratio of the back buffer */
 void CD3DApp_UpdateBackBufferDesc(CD3DApplication *self) {
 	void *surf;
 	void *dev = self->device;
 
-	D3D_METHOD(dev, d3dGetBackBuffer_t, 0x40)(dev, 0, 0, &surf);
-	D3D_METHOD(surf, d3dGetDesc_t, 0x20)(surf, &self->backBufferDesc);
-	COM_RELEASE(surf);
+	Rd_DevGetBackBuffer(dev, 0, 0, &surf);
+	Rd_SurfGetDesc(surf, &self->backBufferDesc);
+	Rd_Release(surf);
 	memset(&self->depthBufferDesc, 0, sizeof(self->depthBufferDesc));
 	if (self->useDepthBuffer) {
 		dev = self->device;
-		D3D_METHOD(dev, d3dGetDepthStencil_t, 0x84)(dev, &surf);
-		D3D_METHOD(surf, d3dGetDesc_t, 0x20)(surf, &self->depthBufferDesc);
-		COM_RELEASE(surf);
+		Rd_DevGetDepthStencilSurface(dev, &surf);
+		Rd_SurfGetDesc(surf, &self->depthBufferDesc);
+		Rd_Release(surf);
 	}
 	uint32_t w = self->backBufferDesc.Width, h = self->backBufferDesc.Height;
 	g_PhysicalAspectRatio = (float)(double)w / (float)(double)h;
@@ -212,7 +207,6 @@ void CD3DApp_UpdateBackBufferDesc(CD3DApplication *self) {
 	self->devId++;
 }
 
-typedef int(__stdcall *d3dReset_t)(void *dev, void *pp);
 
 /* without frame moving one frame is stepped: the timer started and stopped */
 static void D3DApp_SingleStep(CD3DApplication *self) {
@@ -226,7 +220,7 @@ static void D3DApp_SingleStep(CD3DApplication *self) {
 /* IDirect3DDevice8::Reset with the present parameters, logged when it fails; the gamma ramp set again */
 static int D3DApp_DevReset(CD3DApplication *self) {
 	void *dev = self->device;
-	int r = D3D_METHOD(dev, d3dReset_t, 0x38)(dev, &self->presentParams);
+	int r = Rd_DevReset(dev, &self->presentParams);
 
 	if (r < 0) {
 		E3D_LogBlue(g_FileLog, "ERROR: 'pd3dDevice->Reset()' failed: %08X", r);	/* "ERROR: 'pd3dDevice->Reset()' failed: %08X" */
@@ -285,10 +279,10 @@ int CD3DApp_Cleanup(CD3DApplication *self) {
 	if (self->device) {
 		self->vftable->InvalidateDeviceObjects(self);
 		self->vftable->DeleteDeviceObjects(self);
-		if (COM_RELEASE(self->device)) {
+		if (Rd_Release(self->device)) {
 			E3D_LogBlue(g_FileLog, "A D3D object has a non-zero reference count.");
 		}
-		COM_RELEASE(self->d3d);
+		Rd_Release(self->d3d);
 		self->device = NULL;
 		self->d3d = NULL;
 	}
@@ -304,7 +298,7 @@ static D3DDeviceInfo *D3DApp_CurDevice(CD3DApplication *self) {
 static byte D3DApp_Recreate(CD3DApplication *self, int *err) {
 	self->vftable->InvalidateDeviceObjects(self);
 	self->vftable->DeleteDeviceObjects(self);
-	if (COM_RELEASE(self->device)) {
+	if (Rd_Release(self->device)) {
 		*err = CD3DApp_DisplayErrorMsg(self, 0x8200000a, 1);	/* D3DAPPERR_NONZEROREFCOUNT */
 		return 0;
 	}
@@ -464,37 +458,6 @@ typedef int(__stdcall *enablewindow_t)(void *hwnd, int on);
 #define exe_EnableWindow GAME_IMPORT(enablewindow_t, EnableWindow, 8)
 
 /* IDirect3D8 and IDirect3DDevice8 */
-typedef uint32_t(__stdcall *d3dGetAdapterCount_t)(void *d3d);
-typedef int(__stdcall *d3dGetAdapterIdentifier_t)(void *d3d, uint32_t adapter, uint32_t flags, void *id);
-typedef uint32_t(__stdcall *d3dGetAdapterModeCount_t)(void *d3d, uint32_t adapter);
-typedef int(__stdcall *d3dEnumAdapterModes_t)(void *d3d, uint32_t adapter, uint32_t mode, D3DDisplayMode *out);
-typedef int(__stdcall *d3dGetAdapterDisplayMode_t)(void *d3d, uint32_t adapter, void *out);
-typedef int(__stdcall *d3dCheckDeviceType_t)(void *d3d, uint32_t adapter, uint32_t type, uint32_t dfmt, uint32_t bfmt,
-	int windowed);
-typedef int(__stdcall *d3dCheckDeviceMultiSampleType_t)(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt,
-	int windowed, uint32_t ms);
-typedef int(__stdcall *d3dGetDeviceCaps_t)(void *d3d, uint32_t adapter, uint32_t type, void *caps);
-typedef int(__stdcall *d3dCreateDevice_t)(void *d3d, uint32_t adapter, uint32_t type, void *hwnd, uint32_t behavior,
-	void *pp, void **dev);
-typedef int(__stdcall *devTestCooperativeLevel_t)(void *dev);
-typedef int(__stdcall *devGetDeviceCaps_t)(void *dev, void *caps);
-typedef void(__stdcall *devSetCursorPosition_t)(void *dev, int x, int y, uint32_t flags);
-typedef int(__stdcall *devShowCursor_t)(void *dev, int show);
-typedef int(__stdcall *devPresent_t)(void *dev, const void *src, const void *dst, void *hwnd, const void *dirty);
-#define D3D8_GETADAPTERCOUNT 0x10
-#define D3D8_GETADAPTERIDENTIFIER 0x14
-#define D3D8_GETADAPTERMODECOUNT 0x18
-#define D3D8_ENUMADAPTERMODES 0x1c
-#define D3D8_GETADAPTERDISPLAYMODE 0x20
-#define D3D8_CHECKDEVICETYPE 0x24
-#define D3D8_CHECKDEVICEMULTISAMPLETYPE 0x2c
-#define D3D8_GETDEVICECAPS 0x34
-#define D3D8_CREATEDEVICE 0x3c
-#define D3DDEV_TESTCOOPERATIVELEVEL 0xc
-#define D3DDEV_GETDEVICECAPS 0x1c
-#define D3DDEV_SETCURSORPOSITION 0x2c
-#define D3DDEV_SHOWCURSOR 0x30
-#define D3DDEV_PRESENT 0x3c
 
 /* the bounded lstrcatA of the stats strings */
 static void D3DApp_Cat(char *dst, int size, const char *src) {
@@ -553,7 +516,7 @@ int CD3DApp_Create(CD3DApplication *self, void *inst) {
 	}
 fail:
 	if (self->d3d) {
-		COM_RELEASE(self->d3d);
+		Rd_Release(self->d3d);
 		self->d3d = NULL;
 	}
 	return CD3DApp_DisplayErrorMsg(self, hr, 1);
@@ -632,27 +595,27 @@ int CD3DApp_BuildDeviceList(CD3DApplication *self) {
 	int halExists = 0, halWindowed = 0, halDesktop = 0, halSample = 0;
 	void *d3d = self->d3d;
 
-	for (uint32_t a = 0; a < D3D_METHOD(d3d, d3dGetAdapterCount_t, D3D8_GETADAPTERCOUNT)(d3d);
+	for (uint32_t a = 0; a < Rd_D3DGetAdapterCount(d3d);
 		a++, d3d = self->d3d) {
 		if (self->numAdapters >= MAX_D3DADAPTERS) {
 			continue;
 		}
 		D3DAdapterInfo *ad = &self->adapters[self->numAdapters];
-		D3D_METHOD(d3d, d3dGetAdapterIdentifier_t, D3D8_GETADAPTERIDENTIFIER)(d3d, a, 0, &ad->id);
+		Rd_D3DGetAdapterIdentifier(d3d, a, 0, &ad->id);
 		d3d = self->d3d;
-		D3D_METHOD(d3d, d3dGetAdapterDisplayMode_t, D3D8_GETADAPTERDISPLAYMODE)(d3d, a, &ad->desktopMode);
+		Rd_D3DGetAdapterDisplayMode(d3d, a, &ad->desktopMode);
 		ad->dwNumDevices = 0;
 		ad->dwCurrentDevice = 0;
 		/* the modes without the refresh rates, and their formats with the desktop one first */
 		uint32_t nModes = 0;
 		d3d = self->d3d;
-		uint32_t count = D3D_METHOD(d3d, d3dGetAdapterModeCount_t, D3D8_GETADAPTERMODECOUNT)(d3d, a);
+		uint32_t count = Rd_D3DGetAdapterModeCount(d3d, a);
 		uint32_t nFmts = 1;
 		fmts[0] = ad->desktopMode.Format;
 		for (uint32_t m = 0; m < count; m++) {
 			D3DDisplayMode dm;
 			d3d = self->d3d;
-			D3D_METHOD(d3d, d3dEnumAdapterModes_t, D3D8_ENUMADAPTERMODES)(d3d, a, m, &dm);
+			Rd_D3DEnumAdapterModes(d3d, a, m, &dm);
 			uint32_t i;
 			for (i = 0; i < nModes; i++) {
 				if (modes[i].Width == dm.Width && modes[i].Height == dm.Height && modes[i].Format == dm.Format) {
@@ -682,7 +645,7 @@ int CD3DApp_BuildDeviceList(CD3DApplication *self) {
 			D3DDeviceInfo *dev = &ad->devices[ad->dwNumDevices];
 			dev->DeviceType = types[t];
 			d3d = self->d3d;
-			D3D_METHOD(d3d, d3dGetDeviceCaps_t, D3D8_GETDEVICECAPS)(d3d, a, types[t], &dev->d3dCaps);
+			Rd_D3DGetDeviceCaps(d3d, a, types[t], &dev->d3dCaps);
 			dev->dwNumModes = 0;
 			dev->dwCurrentMode = 0;
 			dev->bCanDoWindowed = 0;
@@ -694,7 +657,7 @@ int CD3DApp_BuildDeviceList(CD3DApplication *self) {
 				fmtOk[f] = 0;
 				depth[f] = 0;
 				d3d = self->d3d;
-				if (D3D_METHOD(d3d, d3dCheckDeviceType_t, D3D8_CHECKDEVICETYPE)(d3d, a, dev->DeviceType, fmt, fmt, 0) < 0) {
+				if (Rd_D3DCheckDeviceType(d3d, a, dev->DeviceType, fmt, fmt, 0) < 0) {
 					continue;
 				}
 				if (dev->DeviceType == D3DDEVTYPE_HAL) {
@@ -882,7 +845,7 @@ int CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 	void *d3d = self->d3d;
 	/* differs from the original on purpose: the x87 keeps its double precision (the libm runs on the x87; without
 	 * FPU_PRESERVE Direct3D sets it to 24 bits and sin, cos ... lose most of their digits) */
-	hr = D3D_METHOD(d3d, d3dCreateDevice_t, D3D8_CREATEDEVICE)(d3d, self->adapter, dev->DeviceType,
+	hr = Rd_D3DCreateDevice(d3d, self->adapter, dev->DeviceType,
 		self->hWndFocus, mode->dwBehavior | D3DCREATE_FPU_PRESERVE, pp, &self->device);
 	if (hr >= 0) {
 		if (self->windowed) {
@@ -891,7 +854,7 @@ int CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 				0x40);
 		}
 		void *d = self->device;
-		D3D_METHOD(d, devGetDeviceCaps_t, D3DDEV_GETDEVICECAPS)(d, &self->caps);
+		Rd_DevGetDeviceCaps(d, &self->caps);
 		self->createFlags = mode->dwBehavior;
 		char *stats = self->deviceStats;
 		if (dev->DeviceType == D3DDEVTYPE_REF) {
@@ -928,7 +891,7 @@ int CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 		self->vftable->InvalidateDeviceObjects(self);
 		self->vftable->DeleteDeviceObjects(self);
 		if (self->device) {
-			COM_RELEASE(self->device);
+			Rd_Release(self->device);
 			self->device = NULL;
 		}
 	}
@@ -959,7 +922,7 @@ intptr_t CD3DApp_MsgProc(CD3DApplication *self, void *hwnd, uint32_t msg, uintpt
 	case 0xf:			/* WM_PAINT */
 		if (self->device && !self->ready && self->windowed) {
 			void *d = self->device;
-			D3D_METHOD(d, devPresent_t, D3DDEV_PRESENT)(d, NULL, NULL, NULL, NULL);
+			Rd_DevPresent(d, NULL, NULL, NULL, NULL);
 		}
 		break;
 	case 0x10:			/* WM_CLOSE */
@@ -973,7 +936,7 @@ intptr_t CD3DApp_MsgProc(CD3DApplication *self, void *hwnd, uint32_t msg, uintpt
 			exe_SetCursor(NULL);
 			if (self->showCursorWhenFullscreen) {
 				void *d = self->device;
-				D3D_METHOD(d, devShowCursor_t, D3DDEV_SHOWCURSOR)(d, 1);
+				Rd_DevShowCursor(d, 1);
 			}
 			return 1;
 		}
@@ -1034,7 +997,7 @@ intptr_t CD3DApp_MsgProc(CD3DApplication *self, void *hwnd, uint32_t msg, uintpt
 			exe_GetCursorPos(&pt);
 			exe_ScreenToClient(self->hWnd, &pt);
 			void *d = self->device;
-			D3D_METHOD(d, devSetCursorPosition_t, D3DDEV_SETCURSORPOSITION)(d, pt.x, pt.y, 0);
+			Rd_DevSetCursorPosition(d, pt.x, pt.y, 0);
 		}
 		break;
 	case 0x211:			/* WM_ENTERMENULOOP */
@@ -1098,7 +1061,7 @@ static void D3DApp_FrameStats(CD3DApplication *self) {
 	}
 	D3DDisplayMode mode;
 	void *d3d = self->d3d;
-	D3D_METHOD(d3d, d3dGetAdapterDisplayMode_t, D3D8_GETADAPTERDISPLAYMODE)(d3d, self->adapter, &mode);
+	Rd_D3DGetAdapterDisplayMode(d3d, self->adapter, &mode);
 	/* differs from the original on purpose: bounded by the 42 bytes of frameStats, the original used 90 and could
 	 * write over devId */
 	Bprintf(self->frameStats, sizeof(self->frameStats), "%.02f fps (%dx%dx%d)", (double)self->fps,
@@ -1144,7 +1107,7 @@ int CD3DApp_Render(CD3DApplication *self) {
 	}
 	if (!(g_pApp->flags & APPF_DEDICATED)) {
 		void *d = self->device;
-		hr = D3D_METHOD(d, devTestCooperativeLevel_t, D3DDEV_TESTCOOPERATIVELEVEL)(d);
+		hr = Rd_DevTestCooperativeLevel(d);
 		if (hr < 0) {
 			if (hr == D3DERR_DEVICELOST) {
 				return 0;
@@ -1155,7 +1118,7 @@ int CD3DApp_Render(CD3DApplication *self) {
 			if (self->windowed) {
 				D3DAdapterInfo *ad = &self->adapters[self->adapter];
 				void *d3d = self->d3d;
-				D3D_METHOD(d3d, d3dGetAdapterDisplayMode_t, D3D8_GETADAPTERDISPLAYMODE)(d3d,
+				Rd_D3DGetAdapterDisplayMode(d3d,
 					self->adapter, &ad->desktopMode);
 				self->presentParams.BackBufferFormat = ad->desktopMode.Format;
 			}
@@ -1193,7 +1156,7 @@ int CD3DApp_Render(CD3DApplication *self) {
 	D3DApp_FrameStats(self);
 	if (!(g_pApp->flags & APPF_DEDICATED)) {
 		void *d = self->device;
-		D3D_METHOD(d, devPresent_t, D3DDEV_PRESENT)(d, NULL, NULL, NULL, NULL);
+		Rd_DevPresent(d, NULL, NULL, NULL, NULL);
 	}
 	return 0;
 }
@@ -1227,7 +1190,7 @@ int CD3DApp_Run(CD3DApplication *self) {
 		int r = 0;
 		if (!(g_pApp->flags & APPF_DEDICATED)) {
 			void *d = self->device;
-			hr = D3D_METHOD(d, devTestCooperativeLevel_t, D3DDEV_TESTCOOPERATIVELEVEL)(d);
+			hr = Rd_DevTestCooperativeLevel(d);
 			if (hr < 0) {
 				if (hr == D3DERR_DEVICELOST) {
 					continue;
@@ -1237,7 +1200,7 @@ int CD3DApp_Run(CD3DApplication *self) {
 					if (self->windowed) {
 						D3DAdapterInfo *ad = &self->adapters[self->adapter];
 						void *d3d = self->d3d;
-						D3D_METHOD(d3d, d3dGetAdapterDisplayMode_t, D3D8_GETADAPTERDISPLAYMODE)(d3d,
+						Rd_D3DGetAdapterDisplayMode(d3d,
 							self->adapter, &ad->desktopMode);
 						self->presentParams.BackBufferFormat = ad->desktopMode.Format;
 					}
@@ -1279,7 +1242,7 @@ int CD3DApp_Run(CD3DApplication *self) {
 		D3DApp_FrameStats(self);
 		if (!(g_pApp->flags & APPF_DEDICATED)) {
 			void *d = self->device;
-			D3D_METHOD(d, devPresent_t, D3DDEV_PRESENT)(d, NULL, NULL, NULL, NULL);
+			Rd_DevPresent(d, NULL, NULL, NULL, NULL);
 		}
 		continue;
 failed:
@@ -1426,7 +1389,7 @@ intptr_t __stdcall D3DApp_SelectDeviceProc(void *dlg, uint32_t msg, uintptr_t w,
 			continue;
 		}
 		void *d3d = g_SelApp->d3d;
-		if (D3D_METHOD(d3d, d3dCheckDeviceMultiSampleType_t, D3D8_CHECKDEVICEMULTISAMPLETYPE)(d3d, g_SelAdapter,
+		if (Rd_D3DCheckDeviceMultiSampleType(d3d, g_SelAdapter,
 			dev->DeviceType, fmt, g_SelWindowed, t) < 0) {
 			continue;
 		}
