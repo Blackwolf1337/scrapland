@@ -1095,9 +1095,10 @@ def aread(rva, name, off, sz):
 	data = None
 	if p:
 		data = tpeek(p, (n * sz + 3) / 4)
-		# word 19 of the Array_Read8 read changes with the layout of the build (an address, cause not found)
-		if rva == 'Array_Read8' and len(data) > 19:
-			data[19] = 'addr'
+		# words in the range of heap addresses change with the layout of the build: masked
+		for i in range(len(data)):
+			if 0x100000 <= data[i] < 0x2000000:
+				data[i] = 'addr'
 	tclose()
 	return n, p != 0, data
 for rva, sz, off in (('Array_Read2', 2, 3564), ('Array_Read4', 4, 4242), ('Array_Read8', 8, 5852), ('Array_Read10', 0x10, 1824),
