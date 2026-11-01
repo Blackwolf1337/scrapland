@@ -8,6 +8,7 @@
 #include "scrap/fxchar.h"
 #include "scrap/fxcountermeasures.h"
 #include "scrap/fxmisc.h"
+#include "scrap/fxscene.h"
 #include "scrap/objentity.h"
 #include "scrap/scorer.h"
 #include "scrap/scrapmain.h"
@@ -1044,23 +1045,12 @@ void __thiscall cObjElementFXSparks_Emit(cObjElementFXSparks *self, int n, float
  * arrays of trails and lens flares, the fields they clear.
  */
 
-#define FX_U32(self, off) (*(uint32_t *)((byte *)(self) + (off)))
-#define FX_U8(self, off) (*(byte *)((byte *)(self) + (off)))
-
-static inline void FX_PartsCtor(void *self, uint32_t off) {
-	CGameParticles_ctor((CGameParticles *)((byte *)self + off));
+static inline void FX_TrailsCtor(CGameTrail *t, uint32_t n) {
+	crt_eh_vector_ctor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR), GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 }
 
-static inline void FX_PartsRelease(void *self, uint32_t off) {
-	CGameParticles_Release((CGameParticles *)((byte *)self + off));
-}
-
-static inline void FX_TrailsCtor(void *self, uint32_t off, uint32_t n) {
-	crt_eh_vector_ctor((byte *)self + off, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_ctor, CGAMETRAIL_CTOR), GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
-}
-
-static inline void FX_TrailsDtor(void *self, uint32_t off, uint32_t n) {
-	crt_eh_vector_dtor((byte *)self + off, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
+static inline void FX_TrailsDtor(CGameTrail *t, uint32_t n) {
+	crt_eh_vector_dtor(t, sizeof(CGameTrail), n, GAME_FUNC(CGameTrail_dtor, CGAMETRAIL_DTOR));
 }
 
 /* the start of every constructor: the base class leaves 0, then the vtable of the class */
@@ -1092,137 +1082,165 @@ cObjElementAbstract *__thiscall cObjElementAbstract_Delete(cObjElementAbstract *
 #define VT_FXSPUTNIK GAME_VFTABLE(cObjElementFXSputnik_vftable, 0x3cb15c)
 
 void *__thiscall cObjElementFXCharacterConversion_ctor(void *self) {
+	cObjElementFXCharacterConversion *s = self;
+
 	FX_SetVtbl(self, VT_FXCHARACTERCONVERSION);
-	FX_PartsCtor(self, 0xc);
-	FX_PartsCtor(self, 0xbc);
-	FX_TrailsCtor(self, 0x17c, 5);
-	FX_U8(self, 0x898) = 0;
-	FX_U32(self, 0x16c) = 0;
-	FX_U32(self, 0x170) = 0;
-	FX_U32(self, 0x4) = 0;
-	FX_U32(self, 0x8) = 0;
+	CGameParticles_ctor(&s->particles);
+	CGameParticles_ctor(&s->particles2);
+	FX_TrailsCtor(s->trails, 5);
+	s->started = 0;
+	s->time = 0.0f;
+	s->emitT = 0.0f;
+	s->attacker = NULL;
+	s->attacked = NULL;
 	return self;
 }
 
 void *__thiscall cObjElementFXCharacterConversor_ctor(void *self) {
+	cObjElementFXCharacterConversor *s = self;
+
 	FX_SetVtbl(self, VT_FXCHARACTERCONVERSOR);
-	FX_PartsCtor(self, 0xc);
-	FX_TrailsCtor(self, 0x110, 3);
-	FX_U8(self, 0x294) = 0;
-	FX_U32(self, 0xcc) = 0;
-	FX_U32(self, 0xd0) = 0;
-	FX_U32(self, 0xbc) = 0;
-	FX_U32(self, 0xc0) = 0;
-	FX_U32(self, 0x100) = 3;
+	CGameParticles_ctor(&s->particles);
+	FX_TrailsCtor(s->trails, 3);
+	s->started = 0;
+	s->time = 0.0f;
+	s->emitT = 0.0f;
+	s->phase = 0;
+	s->duration = 0.0f;
+	s->numTrails = 3;
 	return self;
 }
 
 void *__thiscall cObjElementFXCharacterDeath_ctor(void *self) {
+	cObjElementFXCharacterDeath *s = self;
+
 	FX_SetVtbl(self, VT_FXCHARACTERDEATH);
-	FX_PartsCtor(self, 0x8);
-	FX_PartsCtor(self, 0xb8);
-	FX_PartsCtor(self, 0x168);
-	FX_TrailsCtor(self, 0x224, 8);
-	FX_U8(self, 0xf64) = 0;
-	FX_U32(self, 0x4) = 0;
+	CGameParticles_ctor(&s->particles);
+	CGameParticles_ctor(&s->particles2);
+	CGameParticles_ctor(&s->particles3);
+	FX_TrailsCtor(s->trails, 8);
+	s->started = 0;
+	s->ent = NULL;
 	return self;
 }
 
 void *__thiscall cObjElementFXCharacterTeleport_ctor(void *self) {
+	cObjElementFXCharacterTeleport *s = self;
+
 	FX_SetVtbl(self, VT_FXCHARACTERTELEPORT);
-	FX_PartsCtor(self, 0xc);
-	FX_U8(self, 0xd4) = 0;
-	FX_U32(self, 0xcc) = 0;
-	FX_U32(self, 0xd0) = 0;
-	FX_U32(self, 0xbc) = 0;
-	FX_U32(self, 0xc0) = 0;
+	CGameParticles_ctor(&s->particles);
+	s->started = 0;
+	s->t = 0.0f;
+	s->emitT = 0.0f;
+	s->mode = 0;
+	s->duration = 0.0f;
 	return self;
 }
 
 void *__thiscall cObjElementFXMaintenanceWork_ctor(void *self) {
+	cObjElementFXMaintenanceWork *s = self;
+
 	FX_SetVtbl(self, VT_FXMAINTENANCEWORK);
-	FX_PartsCtor(self, 0xc);
-	FX_TrailsCtor(self, 0xc8, 2);
-	FX_U8(self, 0xdc) = 0;
-	FX_U32(self, 0x4) = 0;
-	FX_U32(self, 0x8) = 0;
-	FX_U32(self, 0xc0) = 0;
-	FX_U32(self, 0xbc) = 0;
-	FX_U32(self, 0xd4) = 0xffffffffu;
-	FX_U32(self, 0xd8) = 0;
+	CGameParticles_ctor(&s->particles);
+	FX_TrailsCtor(s->trails, 2);
+	s->started = 0;
+	s->maintenance = NULL;
+	s->ship = NULL;
+	s->time = 0.0f;
+	s->emitTime = 0.0f;
+	s->nodeLaser = 0xffffffffu;
+	s->sound = 0;
 	return self;
 }
 
 void *__thiscall cObjElementFXMoneyTransfer_ctor(void *self) {
+	cObjElementFXMoneyTransfer *s = self;
+
 	FX_SetVtbl(self, VT_FXMONEYTRANSFER);
-	FX_PartsCtor(self, 0xc);
-	FX_U8(self, 0xc8) = 0;
-	FX_U32(self, 0x4) = 0;
-	FX_U32(self, 0x8) = 0;
-	FX_U32(self, 0xbc) = 0;
-	FX_U32(self, 0xc0) = 0;
-	FX_U32(self, 0xc4) = 0xffffffffu;
+	CGameParticles_ctor(&s->particles);
+	s->started = 0;
+	s->from = NULL;
+	s->to = NULL;
+	s->emitT = 0.0f;
+	s->unused_c0 = 0.0f;
+	s->unused_c4 = 0xffffffffu;
 	return self;
 }
 
 void *__thiscall cObjElementFXSputnik_ctor(void *self) {
+	cObjElementFXSputnik *s = self;
+
 	FX_SetVtbl(self, VT_FXSPUTNIK);
-	FX_PartsCtor(self, 0x8);
-	FX_U8(self, 0xdc) = 0;
-	FX_U32(self, 0x4) = 0;
-	FX_U32(self, 0xbc) = 0;
-	FX_U32(self, 0xb8) = 0;
-	FX_U32(self, 0xc0) = 0;
-	FX_U32(self, 0xc8) = 0;
+	CGameParticles_ctor(&s->particles);
+	s->started = 0;
+	s->ent = NULL;
+	s->t = 0.0f;
+	s->emitT = 0.0f;
+	s->duration = 0.0f;
+	s->minMove = 0.0f;
 	return self;
 }
 
 void __thiscall cObjElementFXCharacterConversion_dtor(void *self) {
+	cObjElementFXCharacterConversion *s = self;
+
 	*(void **)self = VT_FXCHARACTERCONVERSION;
-	FX_TrailsDtor(self, 0x17c, 5);
-	FX_PartsRelease(self, 0xbc);
-	FX_PartsRelease(self, 0xc);
+	FX_TrailsDtor(s->trails, 5);
+	CGameParticles_Release(&s->particles2);
+	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXCharacterConversor_dtor(void *self) {
+	cObjElementFXCharacterConversor *s = self;
+
 	*(void **)self = VT_FXCHARACTERCONVERSOR;
-	FX_TrailsDtor(self, 0x110, 3);
-	FX_PartsRelease(self, 0xc);
+	FX_TrailsDtor(s->trails, 3);
+	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXCharacterDeath_dtor(void *self) {
+	cObjElementFXCharacterDeath *s = self;
+
 	*(void **)self = VT_FXCHARACTERDEATH;
-	FX_TrailsDtor(self, 0x224, 8);
-	FX_PartsRelease(self, 0x168);
-	FX_PartsRelease(self, 0xb8);
-	FX_PartsRelease(self, 0x8);
+	FX_TrailsDtor(s->trails, 8);
+	CGameParticles_Release(&s->particles3);
+	CGameParticles_Release(&s->particles2);
+	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXCharacterTeleport_dtor(void *self) {
+	cObjElementFXCharacterTeleport *s = self;
+
 	*(void **)self = VT_FXCHARACTERTELEPORT;
-	FX_PartsRelease(self, 0xc);
+	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXMaintenanceWork_dtor(void *self) {
+	cObjElementFXMaintenanceWork *s = self;
+
 	*(void **)self = VT_FXMAINTENANCEWORK;
-	FX_TrailsDtor(self, 0xc8, 2);
-	FX_PartsRelease(self, 0xc);
+	FX_TrailsDtor(s->trails, 2);
+	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXMoneyTransfer_dtor(void *self) {
+	cObjElementFXMoneyTransfer *s = self;
+
 	*(void **)self = VT_FXMONEYTRANSFER;
-	FX_PartsRelease(self, 0xc);
+	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXSputnik_dtor(void *self) {
+	cObjElementFXSputnik *s = self;
+
 	*(void **)self = VT_FXSPUTNIK;
-	FX_PartsRelease(self, 0x8);
+	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(self);
 }
 
@@ -1273,165 +1291,197 @@ void *__thiscall cObjElementFXSputnik_Delete(void *self, uint32_t flags) {
 #define VT_FXSCENEYAKUZZI GAME_VFTABLE(cObjElementFXSceneYakuzzi_vftable, 0x3cd260)
 
 void *__thiscall cObjElementFXSceneBeatPickus_ctor(void *self) {
+	cObjElementFXSceneBeatPickus *s = self;
+
 	FX_SetVtbl(self, VT_FXSCENEBEATPICKUS);
-	FX_PartsCtor(self, 0x1c);
-	FX_PartsCtor(self, 0xd0);
-	FX_PartsCtor(self, 0x184);
-	FX_U8(self, 0x23c) = 0;
-	FX_U32(self, 0xc) = 0;
-	FX_U32(self, 0x4) = 0;
-	FX_U32(self, 0x8) = 0;
-	FX_U32(self, 0xcc) = 0;
-	FX_U32(self, 0x180) = 0;
-	FX_U32(self, 0x234) = 0;
-	FX_U32(self, 0x238) = 0;
+	CGameParticles_ctor(&s->parts1c);
+	CGameParticles_ctor(&s->partsD0);
+	CGameParticles_ctor(&s->parts184);
+	s->started = 0;
+	s->ent = NULL;
+	s->t = 0.0f;
+	s->tPrev = 0.0f;
+	s->dustT = 0.0f;
+	s->debrisT = 0.0f;
+	s->sparkT = 0.0f;
+	s->hitT = 0.0f;
 	return self;
 }
 
 void *__thiscall cObjElementFXSceneBillArrives_A_ctor(void *self) {
+	cObjElementFXSceneBillArrives_A *s = self;
+
 	FX_SetVtbl(self, VT_FXSCENEBILLARRIVES_A);
-	CGameLensFlare_ctor((byte *)self + 0x14);
-	FX_PartsCtor(self, 0x1c);
-	FX_U8(self, 0xe8) = 0;
-	FX_U32(self, 0xc) = 0;
-	FX_U32(self, 0x10) = 0;
-	FX_U32(self, 0x4) = 0;
-	FX_U32(self, 0x8) = 0;
-	FX_U32(self, 0x18) = 0;
-	FX_U32(self, 0xcc) = 0;
+	CGameLensFlare_ctor(&s->flare);
+	CGameParticles_ctor(&s->particles);
+	s->started = 0;
+	s->ent = NULL;
+	s->capsule = NULL;
+	s->t = 0.0f;
+	s->tPrev = 0.0f;
+	s->jetT = 0.0f;
+	s->smokeT = 0.0f;
 	return self;
 }
 
 void *__thiscall cObjElementFXSceneBishops_ctor(void *self) {
+	cObjElementFXSceneBishops *s = self;
+
 	FX_SetVtbl(self, VT_FXSCENEBISHOPS);
-	FX_PartsCtor(self, 0xc);
-	FX_PartsCtor(self, 0xbc);
-	FX_TrailsCtor(self, 0x184, 12);
-	FX_U8(self, 0x1b4) = 0;
-	FX_U32(self, 0x4) = 0;
-	FX_U32(self, 0x8) = 0;
-	FX_U32(self, 0x16c) = 0;
-	FX_U32(self, 0x174) = 0;
-	FX_U32(self, 0x178) = 0;
-	FX_U32(self, 0x17c) = 0;
+	CGameParticles_ctor(&s->dataCodec);
+	CGameParticles_ctor(&s->glow);
+	FX_TrailsCtor(s->trails, 12);
+	s->started = 0;
+	s->ent = NULL;
+	s->detritus = NULL;
+	s->t = 0.0f;
+	s->master.x = 0.0f;
+	s->master.y = 0.0f;
+	s->master.z = 0.0f;
 	return self;
 }
 
 void *__thiscall cObjElementFXSceneDecontamination_ctor(void *self) {
+	cObjElementFXSceneDecontamination *s = self;
+
 	FX_SetVtbl(self, VT_FXSCENEDECONTAMINATION);
-	FX_PartsCtor(self, 0x4);
-	FX_TrailsCtor(self, 0x248, 40);
-	FX_U8(self, 0x11e8) = 0;
-	FX_U32(self, 0xb4) = 0;
-	FX_U32(self, 0xb8) = 0;
-	FX_U32(self, 0x104) = 0;
-	FX_U32(self, 0x100) = 0;
+	CGameParticles_ctor(&s->particles);
+	FX_TrailsCtor(s->trails, 40);
+	s->started = 0;
+	s->ent = NULL;
+	s->target = NULL;
+	s->t2 = 0.0f;
+	s->t = 0.0f;
 	return self;
 }
 
 void *__thiscall cObjElementFXSceneEnterMatrix_ctor(void *self) {
+	cObjElementFXSceneEnterMatrix *s = self;
+
 	FX_SetVtbl(self, VT_FXSCENEENTERMATRIX);
-	FX_PartsCtor(self, 0x10);
-	FX_TrailsCtor(self, 0x28c, 16);
-	CGameLensFlare_ctor((byte *)self + 0x790);
-	FX_U8(self, 0x794) = 0;
-	FX_U32(self, 0xc) = 0;
-	FX_U32(self, 0x4) = 0;
-	FX_U32(self, 0x8) = 0;
+	CGameParticles_ctor(&s->particles);
+	FX_TrailsCtor(s->trails, 16);
+	CGameLensFlare_ctor(&s->flare);
+	s->started = 0;
+	s->ent = NULL;
+	s->t = 0.0f;
+	s->tPrev = 0.0f;
 	return self;
 }
 
 void *__thiscall cObjElementFXSceneHumanCD_ctor(void *self) {
+	cObjElementFXSceneHumanCD *s = self;
+
 	FX_SetVtbl(self, VT_FXSCENEHUMANCD);
-	FX_PartsCtor(self, 0x10);
-	FX_PartsCtor(self, 0xc0);
-	FX_U8(self, 0x180) = 0;
-	FX_U32(self, 0xc) = 0;
-	FX_U32(self, 0x4) = 0;
-	FX_U32(self, 0x8) = 0;
+	CGameParticles_ctor(&s->parts10);
+	CGameParticles_ctor(&s->sparks);
+	s->started = 0;
+	s->ent = NULL;
+	s->t = 0.0f;
+	s->tPrev = 0.0f;
 	return self;
 }
 
 void *__thiscall cObjElementFXSceneTheEndB_ctor(void *self) {
+	cObjElementFXSceneTheEndB *s = self;
+
 	FX_SetVtbl(self, VT_FXSCENETHEENDB);
-	FX_PartsCtor(self, 0x14);
-	CGameLensFlare_ctor((byte *)self + 0xc4);
-	FX_U8(self, 0xc8) = 0;
-	FX_U32(self, 0xc) = 0;
-	FX_U32(self, 0x10) = 0;
-	FX_U32(self, 0x4) = 0;
-	FX_U32(self, 0x8) = 0;
+	CGameParticles_ctor(&s->particles);
+	CGameLensFlare_ctor(&s->flare);
+	s->started = 0;
+	s->ent = NULL;
+	s->bike = NULL;
+	s->t = 0.0f;
+	s->tPrev = 0.0f;
 	return self;
 }
 
 void *__thiscall cObjElementFXSceneYakuzzi_ctor(void *self) {
+	cObjElementFXSceneYakuzzi *s = self;
+
 	FX_SetVtbl(self, VT_FXSCENEYAKUZZI);
-	FX_PartsCtor(self, 0x10);
-	FX_U8(self, 0xd0) = 0;
-	FX_U32(self, 0xc) = 0;
-	FX_U32(self, 0x4) = 0;
-	FX_U32(self, 0x8) = 0;
-	FX_U32(self, 0xc0) = 0;
+	CGameParticles_ctor(&s->particles);
+	s->started = 0;
+	s->ent = NULL;
+	s->t = 0.0f;
+	s->tPrev = 0.0f;
+	s->emitT = 0.0f;
 	return self;
 }
 
 void __thiscall cObjElementFXSceneBeatPickus_dtor(void *self) {
+	cObjElementFXSceneBeatPickus *s = self;
+
 	*(void **)self = VT_FXSCENEBEATPICKUS;
-	FX_PartsRelease(self, 0x184);
-	FX_PartsRelease(self, 0xd0);
-	FX_PartsRelease(self, 0x1c);
+	CGameParticles_Release(&s->parts184);
+	CGameParticles_Release(&s->partsD0);
+	CGameParticles_Release(&s->parts1c);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXSceneBillArrives_A_dtor(void *self) {
+	cObjElementFXSceneBillArrives_A *s = self;
+
 	*(void **)self = VT_FXSCENEBILLARRIVES_A;
-	FX_PartsRelease(self, 0x1c);
-	CGameLensFlare_dtor((byte *)self + 0x14);
+	CGameParticles_Release(&s->particles);
+	CGameLensFlare_dtor(&s->flare);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXSceneBishops_dtor(void *self) {
+	cObjElementFXSceneBishops *s = self;
+
 	*(void **)self = VT_FXSCENEBISHOPS;
-	FX_TrailsDtor(self, 0x184, 12);
-	FX_PartsRelease(self, 0xbc);
-	FX_PartsRelease(self, 0xc);
+	FX_TrailsDtor(s->trails, 12);
+	CGameParticles_Release(&s->glow);
+	CGameParticles_Release(&s->dataCodec);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXSceneDecontamination_dtor(void *self) {
+	cObjElementFXSceneDecontamination *s = self;
+
 	*(void **)self = VT_FXSCENEDECONTAMINATION;
-	FX_TrailsDtor(self, 0x248, 40);
-	FX_PartsRelease(self, 0x4);
+	FX_TrailsDtor(s->trails, 40);
+	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(self);
 }
 
 /* the particles are released twice, as in the original */
 void __thiscall cObjElementFXSceneEnterMatrix_dtor(void *self) {
+	cObjElementFXSceneEnterMatrix *s = self;
+
 	*(void **)self = VT_FXSCENEENTERMATRIX;
-	FX_PartsRelease(self, 0x10);
-	CGameLensFlare_dtor((byte *)self + 0x790);
-	FX_TrailsDtor(self, 0x28c, 16);
-	FX_PartsRelease(self, 0x10);
+	CGameParticles_Release(&s->particles);
+	CGameLensFlare_dtor(&s->flare);
+	FX_TrailsDtor(s->trails, 16);
+	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXSceneHumanCD_dtor(void *self) {
+	cObjElementFXSceneHumanCD *s = self;
+
 	*(void **)self = VT_FXSCENEHUMANCD;
-	FX_PartsRelease(self, 0xc0);
-	FX_PartsRelease(self, 0x10);
+	CGameParticles_Release(&s->sparks);
+	CGameParticles_Release(&s->parts10);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXSceneTheEndB_dtor(void *self) {
+	cObjElementFXSceneTheEndB *s = self;
+
 	*(void **)self = VT_FXSCENETHEENDB;
-	CGameLensFlare_dtor((byte *)self + 0xc4);
-	FX_PartsRelease(self, 0x14);
+	CGameLensFlare_dtor(&s->flare);
+	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(self);
 }
 
 void __thiscall cObjElementFXSceneYakuzzi_dtor(void *self) {
+	cObjElementFXSceneYakuzzi *s = self;
+
 	*(void **)self = VT_FXSCENEYAKUZZI;
-	FX_PartsRelease(self, 0x10);
+	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(self);
 }
 
@@ -1498,58 +1548,70 @@ static inline void FX_TrailDtor(void *self, uint32_t off) {
 }
 
 void *__fastcall cObjElementFXFadeOutTrail_ctor(void *self) {
+	cObjElementFXFadeOutTrail *s = self;
+
 	FX_SetVtbl(self, VT_FXFADEOUTTRAIL);
 	FX_TrailCtor(self, 0x4);
 	FX_U16(self, 0x10) = 1;		/* running 1, on 0 */
-	FX_U32(self, 0xc) = 0;
-	FX_U32(self, 0x8) = 0;
+	s->t = 0.0f;
+	s->duration = 0.0f;
 	return self;
 }
 
 void *__fastcall cObjElementFXItemFade_ctor(void *self) {
+	cObjElementFXItemFade *s = self;
+
 	FX_SetVtbl(self, VT_FXITEMFADE);
-	FX_PartsCtor(self, 0x8);
+	CGameParticles_ctor(&s->particles);
 	FX_U16(self, 0xc8) = 0;
-	FX_U32(self, 0xc0) = 0;
-	FX_U32(self, 0xb8) = 0;
-	FX_U32(self, 0xbc) = 0;
-	FX_U32(self, 0xc4) = 0x3f800000;
+	s->t = 0.0f;
+	s->mode = 0;
+	s->duration = 0.0f;
+	s->scale = 1.0f;
 	return self;
 }
 
 void *__fastcall cObjElementFXItemTake_ctor(void *self) {
+	cObjElementFXItemTake *s = self;
+
 	FX_SetVtbl(self, VT_FXITEMTAKE);
-	FX_PartsCtor(self, 0xc);
+	CGameParticles_ctor(&s->particles);
 	FX_TrailCtor(self, 0xec);
 	FX_U16(self, 0x644) = 0;
-	FX_U32(self, 0x638) = 0;
-	FX_U32(self, 0x63c) = 0;
-	FX_U32(self, 0x630) = 0;
-	FX_U32(self, 0x634) = 0;
-	FX_U32(self, 0x640) = 0x3f800000;
+	s->t = 0.0f;
+	s->emitT = 0.0f;
+	s->mode = 0;
+	s->unused_634 = 0.0f;
+	s->scale = 1.0f;
 	return self;
 }
 
 void *__fastcall cObjElementFXModelFade_ctor(void *self) {
+	cObjElementFXModelFade *s = self;
+
 	FX_SetVtbl(self, VT_FXMODELFADE);
-	FX_U8(self, 0x10) = 0;
-	FX_U32(self, 0x4) = 0;
-	FX_U32(self, 0x8) = 0;
-	FX_U32(self, 0xc) = 0;
+	s->unused_10 = 0;
+	s->t = 0.0f;
+	s->duration = 0.0f;
+	s->fadeOut = 0.0f;
 	return self;
 }
 
 void *__fastcall cObjElementFXModelNoise_ctor(void *self) {
+	cObjElementFXModelNoise *s = self;
+
 	FX_SetVtbl(self, VT_FXMODELNOISE);
-	FX_U8(self, 0x10) = 0;
-	FX_U32(self, 0x8) = 0;
-	FX_U32(self, 0xc) = 0;
+	s->unused_10 = 0;
+	s->t = 0.0f;
+	s->duration = 0.0f;
 	return self;
 }
 
 void *__fastcall cObjElementFXParticleSystem_ctor(void *self) {
+	cObjElementFXParticleSystem *s = self;
+
 	FX_SetVtbl(self, VT_FXPARTICLESYSTEM);
-	FX_PartsCtor(self, 0x4);
+	CGameParticles_ctor(&s->particles);
 	FX_U16(self, 0xb4) = 1;		/* move 1, on 0 */
 	return self;
 }
@@ -1557,28 +1619,32 @@ void *__fastcall cObjElementFXParticleSystem_ctor(void *self) {
 cObjElementFXParticleSystemDuDv *__fastcall cObjElementFXParticleSystemDuDv_ctor(
 	cObjElementFXParticleSystemDuDv *self) {
 	FX_SetVtbl(self, VT_FXPARTICLESYSTEMDUDV);
-	FX_PartsCtor(self, 0x4);
+	CGameParticles_ctor(&self->particles);
 	FX_U16(self, 0xb4) = 1;
 	return self;
 }
 
 void *__fastcall cObjElementFXSparks_ctor(void *self) {
+	cObjElementFXSparks *s = self;
+
 	FX_SetVtbl(self, VT_FXSPARKS);
-	FX_TrailsCtor(self, 0xb3c, FXSPARKS_MAXSPARKS);
-	FX_PartsCtor(self, 0xbbc);
-	FX_U8(self, 0xc6c) = 0;
-	FX_U32(self, 0x4) = 0;
-	FX_U32(self, 0x8) = 0;
-	FX_U32(self, 0x9b0) = 0;
+	FX_TrailsCtor(s->trails, FXSPARKS_MAXSPARKS);
+	CGameParticles_ctor(&s->particles);
+	s->on = 0;
+	s->time = 0.0f;
+	s->dt = 0.0f;
+	s->trailT = 0.0f;
 	return self;
 }
 
 void *__fastcall cObjElementFXTrail_ctor(void *self) {
+	cObjElementFXTrail *s = self;
+
 	FX_SetVtbl(self, VT_FXTRAIL);
 	FX_TrailCtor(self, 0x4);
 	FX_U16(self, 0x19) = 1;		/* on 1 */
-	FX_U32(self, 0x14) = 0x43480000;	/* minDist 200 */
-	FX_U8(self, 0x18) = 0;
+	s->minDist = 200.0f;	/* minDist 200 */
+	s->stopped = 0;
 	return self;
 }
 
@@ -1589,34 +1655,42 @@ void __fastcall cObjElementFXFadeOutTrail_dtor(void *self) {
 }
 
 void __fastcall cObjElementFXItemFade_dtor(void *self) {
+	cObjElementFXItemFade *s = self;
+
 	*(void **)self = VT_FXITEMFADE;
-	FX_PartsRelease(self, 0x8);
+	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(self);
 }
 
 void __fastcall cObjElementFXItemTake_dtor(void *self) {
+	cObjElementFXItemTake *s = self;
+
 	*(void **)self = VT_FXITEMTAKE;
 	FX_TrailDtor(self, 0xec);
-	FX_PartsRelease(self, 0xc);
+	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(self);
 }
 
 void __fastcall cObjElementFXParticleSystem_dtor(void *self) {
+	cObjElementFXParticleSystem *s = self;
+
 	*(void **)self = VT_FXPARTICLESYSTEM;
-	FX_PartsRelease(self, 0x4);
+	CGameParticles_Release(&s->particles);
 	cObjElement_dtor(self);
 }
 
 void __fastcall cObjElementFXParticleSystemDuDv_dtor(cObjElementFXParticleSystemDuDv *self) {
 	*(void **)self = VT_FXPARTICLESYSTEMDUDV;
-	FX_PartsRelease(self, 0x4);
+	CGameParticles_Release(&self->particles);
 	cObjElement_dtor(self);
 }
 
 void __fastcall cObjElementFXSparks_dtor(void *self) {
+	cObjElementFXSparks *s = self;
+
 	*(void **)self = VT_FXSPARKS;
-	FX_PartsRelease(self, 0xbbc);
-	FX_TrailsDtor(self, 0xb3c, FXSPARKS_MAXSPARKS);
+	CGameParticles_Release(&s->particles);
+	FX_TrailsDtor(s->trails, FXSPARKS_MAXSPARKS);
 	cObjElement_dtor(self);
 }
 

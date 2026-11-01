@@ -114,14 +114,20 @@ typedef struct cObjElementFXModelFade {
 	float t;			/* 0x04 */
 	float duration;			/* 0x08 */
 	float fadeOut;			/* 0x0c the life of the debris over which it fades out */
+	byte unused_10;			/* 0x10 */
+	byte pad_11[3];
 } cObjElementFXModelFade;
+SD_SIZE(cObjElementFXModelFade, 0x14);
 
 typedef struct cObjElementFXModelNoise {
 	void *vftable;			/* 0x00 */
 	cEntity *ent;			/* 0x04 */
 	float t;			/* 0x08 */
 	float duration;			/* 0x0c */
+	byte unused_10;			/* 0x10 */
+	byte pad_11[3];
 } cObjElementFXModelNoise;
+SD_SIZE(cObjElementFXModelNoise, 0x14);
 
 typedef struct cObjElementFXParticleSystem {
 	void *vftable;			/* 0x00 */
