@@ -289,7 +289,9 @@ void __thiscall cVehicleEntity_CloudTick(cVehicleEntity *self, float dt);
 void __thiscall cVehicleEntity_NoFireTick(cVehicleEntity *self, float dt);
 void __thiscall cVehicleEntity_PushTick(cVehicleEntity *self, float dt);
 void __thiscall cVehicleEntity_SetMass(cVehicleEntity *self, float mass);
+/* the debris cloud on a vehicle for time (rva 0x10a150) */
 void __thiscall cVehicleEntity_SetCloud(cEntity *self, float time, byte on);
+/* a state flag for the network game */
 void __thiscall cVehicleEntity_SetNetFlag(cEntity *self, byte on);
 byte __fastcall cVehicleEntity_IsBoostReady(cVehicleEntity *self);
 int __thiscall cVehicleEntity_IsEMIed(cVehicleEntity *self);
@@ -335,6 +337,7 @@ void __thiscall cVehicleEntity_SetActive(cVehicleEntity *self, byte on);
 void __thiscall cVehicleEntity_RenderNow(cVehicleEntity *self);
 void __thiscall cVehicleEntity_GetCamPoint(cVehicleEntity *self, vec3_t *pos, vec3_t *ang);
 const char *__thiscall cVehicleEntity_GetClassName(cVehicleEntity *self);
+/* < 0 when no player controls the entity (assumed from SAI.EnableAI*) */
 int __thiscall cVehicleEntity_GetOwnerSlot(cEntity *e);
 float __thiscall cVehicleEntity_GetWRadius(cVehicleEntity *self);
 void __thiscall cVehicleEntity_UpdateOff(cVehicleEntity *self);

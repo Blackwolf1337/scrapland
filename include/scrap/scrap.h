@@ -134,10 +134,7 @@ void *__thiscall cStaticBuffer_Get(cStaticBuffer *self, uint32_t size);
 void __fastcall cStaticBuffer_Unlock(cStaticBuffer *self);
 cStaticBuffer *__fastcall cStaticBuffer_ctor(cStaticBuffer *self);
 void __fastcall cStaticBuffer_dtor(cStaticBuffer *self);
-/* the path of the game into buf (rva 0x20d100) */
-void App_GetPath(char *buf, int size);
 float __thiscall cWorld_GetMinCamDistSq(cWorld *world, const vec3_t *pos);
-void __thiscall Grid_Set(void *grid, const vec3_t *size);
 void __thiscall Parking_AddZone(void *parking, int flag, const vec3_t *pos, const char *name);
 /* nearest (farest != 0: farest) parked vehicle from pos; its position into out */
 const char *__thiscall Parking_Find(void *parking, int flag, const vec3_t *pos, vec3_t *out, int farest);
@@ -230,12 +227,9 @@ void DummySearch_Start(const char *name, int flag);
 void MissionArrows_Switch(const char *a, const char *b);
 byte Lang_Set(const char *lang, byte force);
 const char *Version_Get(void);
-void __thiscall CWinApp_LoadLevel(CApp *app, const char *level);
 int __thiscall cWorld_SetCam(cWorld *world, int i, const char *name);
 cEntity *__thiscall cWorld_GetUsrEntity(cWorld *world, int player);
 
-void Loading_Init(void);
-void Loading_End(void);
 int Video_GetCurrentMode(void);
 void Models_List(void);
 

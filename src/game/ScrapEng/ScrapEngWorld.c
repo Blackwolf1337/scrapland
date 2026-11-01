@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "scrap/archio.h"
+#include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"

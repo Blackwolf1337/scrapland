@@ -225,19 +225,15 @@ int Ini_GetPath(const char *sect, const char *key, char *dest, int size, const c
 /* DebugUtils.cpp (src/game/ScrapEng/DebugUtils.c): util_d3d.cpp lines with the identity of 0x431b10 */
 void DebugUtils_DrawAxes(const matrix_t *m, const vec3_t *pos, float size);	/* red, green, blue */
 void DebugUtils_DrawPoint(const vec3_t *pos, float size, uint32_t color);
-/* a sphere of lines: divV rings, divH segments */
+/* a sphere of lines: divV rings, divH segments (rva 0x219d20) */
 void DebugUtils_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH);
 void DebugUtils_DrawBox(const vec3_t *mn, const vec3_t *mx, uint32_t color);
 void DebugUtils_DrawLine(const vec3_t *a, const vec3_t *b, uint32_t color);
-/* a sphere of lines, divV rings (rva 0x219d20, not decompiled) */
-void DebugUtils_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH);
 void DebugUtils_DrawTri(const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color);
 /* divV meridians, divH (0: divV) parts of each, the axes at the center */
 void DebugUtils_DrawSphereM(const matrix_t *m, const vec3_t *c, float r, uint32_t color, int divV, int divH);
 
 /* other modules (src/imports.inc) */
-/* name NULL: a random loading screen; the fade and the time in ms */
-void Loading_Step(int percent);					/* rva 0x2157a0, -1: one step */
 /* the CMotorApp made (arg 0) or freed (Engine/Motor.cpp, src/game/engine3d/Engine/Engine.c) */
 void Engine3D_Create(void *hInst, void *hWnd, void *init, void *frame, void *release, int arg);
 void Engine3D_Shutdown(void);
@@ -285,8 +281,6 @@ int __thiscall CD3DApp_Cleanup(CD3DApplication *self);			/* rva 0x273d90 */
 int __thiscall CD3DApp_Render(CD3DApplication *self);			/* rva 0x275120 */
 int __thiscall CD3DApp_ResetDevice(CD3DApplication *self);		/* rva 0x275470 */
 int __thiscall CD3DApp_Reset(CD3DApplication *self);			/* rva 0x2754b0 */
-void *App_GetHInstance(void);					/* rva 0x20d1a0 */
-void *App_GetHWnd(void);					/* rva 0x20d290 */
 int Timer_GetFreq(int64_t *out);				/* rva 0x276cb0 */
 int Timer_GetQPFreq(int64_t *out);				/* rva 0x276d00 */
 /* Video_PlayFile: video.h */
@@ -310,9 +304,6 @@ void __thiscall CPsaImage_DrawScaled(CPsaImage *self, float x, float y, float sc
 void __thiscall CPsaImage_Load(CPsaImage *self, const char *name, const char *opac, int blend, uint32_t flags);
 void __thiscall CPsaImage_LoadOpac(CPsaImage *self, const char *name, const char *opac, uint32_t flags);
 void __thiscall CPsaImage_LoadName(CPsaImage *self, const char *name, uint32_t flags);
-/* ScrapEngMaterial.cpp: the source and destination blend of a blend mode (CHECK mode < 7) */
-uint32_t BlendMode_GetSrc(uint32_t mode);	/* rva 0x2a1a60 */
-uint32_t BlendMode_GetDst(uint32_t mode);	/* rva 0x2a1a00 */
 /* the camera of ScrapEngCamera.cpp (rva 0x21c6c0, 0x21c7c0, 0x21c980, 0x21ce80, 0x21ccf0) */
 /* the viewer camera moved by the keys of the second action set (rva 0x218080, this file, still the exe's) */
 void ViewerCamera_Move(CGameCamera *cam);

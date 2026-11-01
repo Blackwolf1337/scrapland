@@ -374,13 +374,10 @@ SD_SIZE(cFXElementsLighting, 0xe88);
 
 cFXElementsFireDrop *__thiscall cFXElementsFireDrop_ctor(cFXElementsFireDrop *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
-/* the flare at pos: intensity 0.65, 0x30 0.3, on */
+/* the flare at pos: intensity 0.65, 0x30 0.3, on (rva 0x1cf8b0, Elements_Create passes no name) */
 cFXElementsLensFlare *__thiscall cFXElementsLensFlare_ctor(cFXElementsLensFlare *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
 cFXElementsLighting *__thiscall cFXElementsLighting_ctor(cFXElementsLighting *self, const char *name,
-	const vec3_t *pos, const vec3_t *rot);
-/* rva 0x1cf8b0, Elements_Create passes no name */
-cFXElementsLensFlare *__thiscall cFXElementsLensFlare_ctor(cFXElementsLensFlare *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
 void __fastcall cFXElementsFireDrop_dtor(cFXElementsFireDrop *self);
 void __fastcall cFXElementsLensFlare_dtor(cFXElementsLensFlare *self);

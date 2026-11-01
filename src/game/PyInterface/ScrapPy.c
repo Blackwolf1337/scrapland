@@ -5,6 +5,8 @@
 #include <math.h>
 #include <string.h>
 
+#include "scrap/app.h"
+#include "scrap/collisiongrid.h"
 #include "scrap/console.h"
 #include "scrap/global.h"
 #include "scrap/python.h"

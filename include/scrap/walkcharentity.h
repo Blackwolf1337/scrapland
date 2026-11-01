@@ -144,8 +144,6 @@ void *__thiscall cAIHuman_ctor(void *mem, cEntity *e, int *arg);		/* 0x380 */
 void *__thiscall cAIChar_ctor(void *mem, cEntity *e, int *arg);		/* 0x380, every other class */
 
 /* engine side */
-/* the name of the default loop action of the controller, "" without one (rva 0x62c80) */
-const char *__thiscall cActCtrl_GetDefLoopName(void *ctrl);
 void __thiscall cWithLifeEntity_SetEmbeddedFX(cEntity *self, const char *fxType);	/* rva 0x12c7f0 */
 
 /* WalkCharEntity.c (the functions declared in chartype.h, ai.h and scoreritems.h too) */
@@ -182,6 +180,7 @@ void __thiscall cWalkCharEntity_Fall(cEntity *self, float dt);
 /* vf64: the flight of a class that can fly */
 void __thiscall cWalkCharEntity_Fly(cEntity *self, float dt);
 void *__thiscall cWithLifeEntity_GetActCtrl(cEntity *self);
+/* the fraction of the weapon energy above the full batteries */
 float __thiscall cWalkCharEntity_GetEnergyFrac(cEntity *e);
 vec3_t *__thiscall cWalkCharEntity_GetRenderAng(cEntity *self, vec3_t *out);
 vec3_t *__thiscall cWalkCharEntity_GetSndAng(cEntity *self, vec3_t *out);
@@ -189,8 +188,10 @@ vec3_t *__thiscall cWalkCharEntity_GetSndAng(cEntity *self, vec3_t *out);
 const char *__fastcall cWalkCharEntity_RelaxName(cEntity *self);
 void __thiscall cWalkCharEntity_GetCamera(cEntity *self, vec3_t *pos, vec3_t *ang);
 const char *__thiscall cWalkCharEntity_GetClassName(cEntity *self);
+/* < 0 when no player controls the entity (assumed from SAI.EnableAI*) */
 int __thiscall cWalkCharEntity_GetOwnerSlot(cEntity *e);
 float __thiscall cWalkCharEntity_GetRadius(cEntity *self);
+/* the count of the full batteries */
 int __thiscall cWalkCharEntity_GetBatteries(cEntity *e);
 byte __thiscall cWalkCharEntity_VarI(cEntity *self, const char *name, int *i, int set);
 byte __thiscall cWalkCharEntity_IsType(cEntity *self, const char *type);
@@ -212,10 +213,12 @@ void __thiscall cWalkCharEntity_Idle(cEntity *self, float dt);
 void __thiscall cWalkCharEntity_UpdateSelect(cEntity *self, float dt);
 void __thiscall cWalkCharEntity_SetActive(cEntity *self, byte on);
 void __thiscall cWalkCharEntity_SetAng(cEntity *self, const vec3_t *ang);
+/* the weapon energy of a character, 0 or more (rva 0xd4bc0) */
 void __thiscall cWalkCharEntity_SetEnergy(cEntity *self, float energy);
 /* the used energy, at most 1 */
 void __thiscall cWalkCharEntity_SetEnergyUsed(cEntity *self, float used);
 void __thiscall cWalkCharEntity_SetEmbeddedFX(cEntity *self, const char *fxType);
+/* the falling state of a character (0x464), with what goes with it (rva 0xd4c60) */
 void __thiscall cWalkCharEntity_SetFalling(cEntity *self, byte on);
 /* WithLifeEntity.h vf51 */
 void __thiscall cWithLifeEntity_SetMass(cEntity *self, float mass);
@@ -230,6 +233,7 @@ void __thiscall cWalkCharEntity_ApplyPush(cEntity *self, float dt);
 void __thiscall cWalkCharEntity_SetUsrControl(cEntity *self, int slot);
 void __thiscall cWalkCharEntity_SetVel(cEntity *self, const vec3_t *vel);
 void __thiscall cWalkCharEntity_SetViewAng(cEntity *self, const vec3_t *ang);
+/* the view of a character set to the direction from pos to it (rva 0xd5240) */
 void __thiscall cWalkCharEntity_SetViewFrom(cEntity *self, const vec3_t *pos);
 void __thiscall cWalkCharEntity_SetYModelDisp(cEntity *self, float y);
 /* vf61: the walk acceleration of the control, the friction and the speed limit */

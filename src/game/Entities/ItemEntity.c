@@ -7,6 +7,7 @@
 #include "scrap/console.h"
 #include "scrap/fxmisc.h"
 #include "scrap/itementity.h"
+#include "scrap/net.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/sound.h"
 #include "scrap/withlifeentity.h"

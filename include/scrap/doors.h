@@ -29,9 +29,6 @@
 #define g_DoorSphereFunc (&GAME_GLOBAL(cPy_Function, g_ChTypeSphereFunc, 0x46679c))	/* Doors_SphereEntity for the sphere test */
 #define DOORS_SPHEREENTITY 0x0f0570
 
-/* vehicles: a state flag for the network game, and the speed from the velocity */
-void __thiscall cVehicleEntity_SetNetFlag(cEntity *self, byte on);
-void __thiscall cVehicleEntity_UpdateSpeed(cEntity *self);
 
 /* the C functions; params holds the arguments of the call */
 void Doors_AcceleratorOnEnter(cAbstractFile *params);

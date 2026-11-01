@@ -220,12 +220,14 @@ int __thiscall cAIVehicle_GetStateFor(cAIVehicle *self, int state);
 void __stdcall cAIVehicle_InternStateName(int state, char *buf);
 void __thiscall cAIVehicle_GetInternStateName(cAIVehicle *self, char *buf);
 void __stdcall cAIVehicle_StateName(int state, char *buf);
+/* the names of the state and its sub state for the debug texts (0x100 bytes) */
 void __thiscall cAIVehicle_GetStateName(cAIVehicle *self, char *buf);
 cAIVehicleParams1 *__thiscall cAIVehicle_GetParamsInit(cAIVehicle *self);
 cAIVehicleParams2 *__thiscall cAIVehicle_GetParams2Init(cAIVehicle *self);
 cAIVehicleParams3 *__thiscall cAIVehicle_GetParams3Init(cAIVehicle *self);
 /* the vehicle closer than 15000 to p */
 byte __thiscall cAIVehicle_IsNear(cAIVehicle *self, const vec3_t *p);
+/* a flag of the attack part of the AI (+0x194, its +0x174), rva 0x8bef0 */
 byte __thiscall cAIVehicle_ControlFlag(cAIVehicle *self);
 byte __thiscall cAIVehicle_InSight(cAIVehicle *self);
 /* e within HookRange, not touching and at most 45 degrees off the nose; CanHook also in sight */
@@ -371,8 +373,6 @@ byte __thiscall cAIVehicleShoot_SetMode(cAIVehicleShoot *self, int a, int b, byt
 void __thiscall cAIVehicleShoot_GetInfo(cAIVehicleShoot *self, int *a, int *kind, byte *flag);
 
 /* ---- Global/Nto1Links.h: the out of line copies the AI calls ---- */
-/* node out of its ring (CHECK: Node, its data set) */
-void __fastcall Nto1Node_UnlinkChecked(Nto1Node *node);
 
 /* ---- cAIVehicleGroup ---- */
 /* an elevator of the group within dist of pos */

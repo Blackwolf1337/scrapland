@@ -410,8 +410,6 @@ void Functionary_WorkRelax(cEntity *e);
 byte __thiscall cGenCharLocalLogic_VarI(cGenCharLocalLogic *self, const char *name, int *i, byte set);
 byte __thiscall cGenCharLocalLogic_VarS(cGenCharLocalLogic *self, const char *name, char **s, byte set);
 void __thiscall cGenCharLocalLogic_OnRobbery(cGenCharLocalLogic *self, cEntity *e, float amount);
-/* the name of the default loop of the action controller, "" without one (rva 0x62c80) */
-const char *__thiscall cActCtrl_GetDefLoopName(void *ctrl);
 
 /* ---- the multiplayer modes (of cLogicControl) ---- */
 static inline cEntity *Logic_AttackTarget(cAIVehicle *ai) {
@@ -572,8 +570,6 @@ void __fastcall cEnemies_Relax(cEnemies *self);
 /* the AI parameters of a police car back to the defaults or random (rva 0x15b2f0, 0x15b3c0) */
 void PoliceAI_RestoreParams(cAIVehicle *ai);
 void PoliceAI_RandomParams(cAIVehicle *ai);
-/* a flag of the attack part of the AI (+0x194, its +0x174), rva 0x8bef0 */
-byte __thiscall cAIVehicle_ControlFlag(cAIVehicle *ai);
 
 cExtPolice *__fastcall cExtPolice_ctor(cExtPolice *self);
 cEntity *ExtPolice_CallCop(cEntity *e);

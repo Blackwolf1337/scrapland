@@ -124,7 +124,6 @@ void CApp_SFINIT0(void);
 byte App_CheckBlock(void);
 void Console_Execute(const char *cmd);
 void *App_GetObjData(const char *name);
-float World_TimeScale(void);
 void __thiscall CWinApp_LoadLevel(CApp *app, const char *level);
 void __thiscall App_PickLoadingTip(CApp *self, const char *level);
 void Loading_Init(void);
@@ -148,6 +147,7 @@ void __thiscall CWinApp_Shutdown(CWinApp *self);
 void __thiscall CWinApp_Exit(CWinApp *self);
 void __thiscall CWinApp_ResetParams(CWinApp *self);
 int __thiscall CWinApp_HasArg(CWinApp *self, const char *name);
+/* the path of the game into buf (rva 0x20d100) */
 void App_GetPath(char *buf, int size);
 const char *__thiscall App_RegGetString(CWinApp *self, const char *name);
 void *App_GetHInstance(void);
@@ -204,8 +204,6 @@ int Str_WrapText(char *text, char **lines, float maxWidth, int maxLines, const c
 int PyRun_ScrapString(const char *code);
 
 /* other modules of the exe (src/imports.inc) */
-void ActClassList_Done(void);					/* rva 0x062140 */
-void ActClassList_Init(void);					/* rva 0x0623a0 */
 void InputMaps_Done(void);					/* rva 0x139900 */
 void InputMaps_Init(void);					/* rva 0x139ba0 */
 void InputMaps_Clear(void);					/* rva 0x139cf0 */
@@ -222,9 +220,6 @@ void Menu_DrawFrame(void *img, int arg, float x, float y, float w, float h);	/* 
 /* a bar of frac (0..1) of the frame rectangle u0..v1 over the rectangle bu0..bv1, colors main and black */
 void Menu_DrawBar(void *img, float x, float y, float frac, int mode, float f, float u0, float v0, float u1, float v1,
 	float bu0, float bv0, float bu1, float bv1, uint32_t color, uint32_t black);	/* rva 0x1847f0 */
-void Sound_ResetVolumes(void);					/* rva 0x1a2060 */
-void Sound_Done(void);						/* rva 0x1a3150 */
-void Sound_Init(void);						/* rva 0x1a3260 */
 void Font_SetLanguage(const char *lang);			/* rva 0x21b1e0 */
 void *__thiscall CPsaImage_ctorTex(void *self, const char *name, int a, int b);	/* rva 0x22d0c0 */
 void *__thiscall CPsaImage_ctorFlags(void *self, const char *name, int a, int b, int flags);	/* rva 0x22d0f0 */

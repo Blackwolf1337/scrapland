@@ -119,8 +119,6 @@ void __thiscall EntityDList_dtor(void *list);
 /* the engine3d side: the camera of the view (NULL for none) and the box of the level */
 /* frees the model list at rva 0x4479a8 */
 void GameModelList_Free(void);
-void Sound_Update(float dt);
-void Sound_UpdatePaused(void);
 /* the action went over 0.5 for the player in this frame */
 /* RemainTalkTime > 0: a talk text is shown */
 int Talk_IsShown(void);

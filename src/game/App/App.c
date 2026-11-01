@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/actions.h"
 #include "scrap/ai.h"
 #include "scrap/app.h"
 #include "scrap/console.h"
@@ -11,6 +12,7 @@
 #include "scrap/filepak.h"
 #include "scrap/filesys.h"
 #include "scrap/input.h"
+#include "scrap/model.h"
 #include "scrap/net.h"
 #include "scrap/python.h"
 #include "scrap/scrapfont.h"

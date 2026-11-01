@@ -189,11 +189,8 @@
 void __thiscall cWithLifeEntity_SetBurner(cEntity *e, cEntity *attacker);
 void __thiscall cTargetLock_SetHookDelay(cTargetLock *self, float t);
 /* SndInterface.c */
-byte __thiscall cSndItem_Play(cSndItem *self, cEntity *e);
 void __thiscall cSndInterface_Resize(cSndInterface *self, int n);
 void __thiscall cSndInterface_SetSound(cSndInterface *self, int i, const char *name);
-/* Functions.c */
-byte __thiscall cPy_Function_SetNative(cPy_Function *self, nativefunc_t func);
 /* FXWeapons.cpp: the emitters of the explosion and the bee effects */
 void __thiscall cObjElementFXInfernoExplosion_Explode(cObjElementFXInfernoExplosion *self, float x, float y, float z,
 	float range, int bees, byte flag);

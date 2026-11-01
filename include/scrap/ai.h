@@ -505,13 +505,7 @@ cEntity *__thiscall cAIVehicle_GetNearestItemLife(cAIVehicle *ai);
 void __thiscall cAIVehicle_SetRotStatic(cAIVehicle *ai, float a, float b);
 void __thiscall cAIVehicle_SetInertia(cAIVehicle *ai, int on);
 
-/* the names of the state and its sub state for the debug texts (0x100 bytes) */
-void __thiscall cAIVehicle_GetStateName(cAIVehicle *ai, char *out);
-void __thiscall cAIVehicle_GetInternStateName(cAIVehicle *ai, char *out);
 
-/* < 0 when no player controls the entity (assumed from SAI.EnableAI*) */
-int __thiscall cVehicleEntity_GetOwnerSlot(cEntity *e);
-int __thiscall cWalkCharEntity_GetOwnerSlot(cEntity *e);
 
 /* the state of the vehicle AI, arguments by state (see SAIPy.c); 0 if it was not taken (rva 0x8dfb0) */
 byte cAIVehicle_SetState(cAIVehicle *ai, int state, ...);

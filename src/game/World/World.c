@@ -16,6 +16,8 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapworld.h"
 #include "scrap/sound.h"
+#include "scrap/vehicleentity.h"
+#include "scrap/walkcharentity.h"
 #include "scrap/withlifeentity.h"
 #include "scrap/world.h"
 

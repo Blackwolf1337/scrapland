@@ -289,6 +289,7 @@ void __thiscall cSndInterface_Tick(cSndInterface *self, float dt);
 void __thiscall cSndInterface_SetId(cSndInterface *self, const char *id);
 /* 0 stops it, else it starts when it does not play */
 void __thiscall cSndItem_SetVolume(cSndItem *self, cEntity *e, float volume);
+byte __thiscall cSndItem_Play(cSndItem *self, cEntity *e);
 
 /* the variable methods of the sounds (cSndInterface::vftable from slot 1) */
 typedef struct cSndInterfaceVtbl {

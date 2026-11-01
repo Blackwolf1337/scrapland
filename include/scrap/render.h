@@ -526,7 +526,6 @@ void Stencil_Mesh(struct CVertList *v, const void *tris, uint32_t nTri, struct C
 /* CVertList_EnvMapUV: vertlist.h */
 void VertList_InitD3D(void);			/* rva 0x2404f0, empty */
 void RenderTarget_InitD3D(void);		/* rva 0x220d20 */
-void ModelFX_InitD3D(void);			/* ModelFX.c, model.h */
 void VertList_ReleaseD3D(void);		/* rva 0x2404e0 (ListaVert.cpp), empty */
 void RenderTarget_ReleaseD3D(void);		/* rva 0x220c60 (RenderTarget.cpp) */
 

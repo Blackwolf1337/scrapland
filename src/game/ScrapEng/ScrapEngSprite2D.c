@@ -8,6 +8,7 @@
 #include "scrap/graphic2d.h"
 #include "scrap/scorerhud.h"
 #include "scrap/scrapmain.h"
+#include "scrap/scrapmaterial.h"
 #include "scrap/scrapworld.h"
 #include "scrap/texture.h"
 

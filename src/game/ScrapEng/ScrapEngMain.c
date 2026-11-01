@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "scrap/cmd.h"
+#include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"

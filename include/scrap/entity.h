@@ -173,7 +173,6 @@ int __thiscall cEntity_Vf21(cEntity *self, int a);
 
 /* the network game: an entity named "net..." of a client is the copy of a server one */
 byte Net_IsNetEntity(cEntity *e);
-int Net_GetSendRate(void);
 
 static inline int Entity_IsType(cEntity *e, const char *type) {
 	return e->vftable->IsType(e, type) != 0;

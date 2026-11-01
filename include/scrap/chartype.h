@@ -151,14 +151,6 @@ static inline int ChType_ActPriority(void *ctrl) {
 #define FLASH_ANGLE 1.5707963705062866		/* rva 0x3aeb90 */
 
 /* engine side */
-/* the name of the action of layer i, "" when it does not run (rva 0x62c40) */
-const char *__thiscall cActCtrl_GetActionName(void *ctrl, int i);
-/* the weapon energy of a character, 0 or more (rva 0xd4bc0) */
-void __thiscall cWalkCharEntity_SetEnergy(cEntity *self, float energy);
-/* the action, unless it runs already in its layer; 0 then or without it (rva 0x631c0) */
-byte __thiscall cActCtrl_PlayNew(void *ctrl, const char *action, int arg, float speed);
-/* the falling state of a character (0x464), with what goes with it (rva 0xd4c60) */
-void __thiscall cWalkCharEntity_SetFalling(cEntity *self, byte on);
 
 /* Banker.c: the shared parts */
 /* World.h, inlined: the entity of player slot 0 with the CHECK of a set one (cWorld_GetUsrEntity of scrap.h is the
@@ -335,12 +327,8 @@ static inline const char *ChType_ClassName(cEntity *e) {
 #define g_NurseTarget GAME_GLOBAL(cEntity *, g_NurseTarget, 0x446e50)
 
 /* engine side */
-/* the action of the controller (not when it runs already in its layer and one of priority runs); 0 if not */
-byte __thiscall cActCtrl_PlayAction(void *ctrl, void *action, int arg, int set, float speed);
 /* the name of the listener into the mayor logic (NULL clears it, rva 0x153010) */
 void __thiscall cMayorLocalLogic_SetListener(cLocalLogic *self, cEntity *e);
-/* the view of a character set to the direction from pos to it (rva 0xd5240) */
-void __thiscall cWalkCharEntity_SetViewFrom(cEntity *self, const vec3_t *pos);
 
 /* Mayor.c */
 void ChType_ListeningMayor(cAbstractFile *params);

@@ -33,8 +33,6 @@ typedef cTargetLock cWeaponManager;
 #define Vehicle_Effects(e) ((void *)&Veh(e)->effects)	/* Entities/Vehicle/VehicleEffects.cpp */
 
 
-/* the debris cloud on a vehicle for time (rva 0x10a150) */
-void __thiscall cVehicleEntity_SetCloud(cEntity *self, float time, byte on);
 /* the shot effect of the weapon slot (rva 0x103500) */
 void __thiscall cVehicleEffects_Shoot(void *self, int weap, int slot);
 /* World/FX/FXWeapons.cpp: the ATPC shot of the vehicle from origin to hit (rva 0x1fde50) */
@@ -48,7 +46,6 @@ void __thiscall cAIVehicle_WeapListChanged(void *ai);
 
 /* Sound/SndInterface.cpp */
 void __thiscall cSndItem_UpdateAt(cSndItem *self, cEntity *e);
-byte __thiscall cSndItem_Play(cSndItem *self, cEntity *e);
 void __fastcall cSndItem_Restart(cSndItem *self);
 
 /* the crosshair item of the HUD the weapons animate (a cCannonScorer, found by its name) */

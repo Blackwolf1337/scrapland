@@ -158,7 +158,7 @@ CMatList *__thiscall CMatList_DeleteObj(CMatList *self, byte flags);
 void __fastcall CMatList_dtor(CMatList *self);
 /* the string freed if set (the destructor of the string members) */
 void __fastcall String_dtor(char **self);
-CMatId *__fastcall CMatId_ctor(CMatId *self);		/* rva 0x2a79e0 */
+CMatId *__fastcall CMatId_ctor(CMatId *self);		/* rva 0x2a79e0, id -1 */
 void __fastcall CMatId_dtor(CMatId *self);		/* rva 0x2a79f0 */
 CMap *__thiscall CMap_ctor(CMap *self);
 void __thiscall CMap_dtor(CMap *self);
@@ -209,8 +209,6 @@ void String_Printf(char **self, const char *fmt, ...);
 /* rva 0x2a18a0 and 0x2a1920: the string as a CFileIO string (empty is NULL) */
 void __thiscall String_Read(char **self, CFileIO *f);
 void __thiscall String_Write(char **self, CFileIO *f);
-/* rva 0x2a1970: a VBprintf (1 KB) copy, NULL for a NULL fmt */
-void String_Printf(char **self, const char *fmt, ...);
 
 void __fastcall CObjRef_dtor(CObjRef *self);
 CTextStatic *__fastcall CTextStatic_ctor(CTextStatic *self);
@@ -242,9 +240,6 @@ void *__thiscall CMaterial_GetMultiSprite(CMaterial *self, uint32_t mapid);
 int __thiscall CMaterial_Read(CMaterial *self, CFileIO *f);
 int __thiscall CMaterial_Write(CMaterial *self, CFileIO *f);
 int __thiscall CMaterial_GetId(CMaterial *self, CMatId **out);
-/* src/game/engine3d/Engine/RenderShader.c: id -1 */
-CMatId *__fastcall CMatId_ctor(CMatId *self);
-void __fastcall CMatId_dtor(CMatId *self);
 /* 1 when the mode is up to date, else registered again (deferred for an unregistered one) and 0 */
 byte __thiscall CMatId_Check(CMatId *self, CMaterial *mat);
 /* the mode of the maps and flags of mat, CHECK(id == -1) */

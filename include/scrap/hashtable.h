@@ -30,7 +30,6 @@ typedef struct cPtrItem {
 } cPtrItem;
 SD_SIZE(cPtrItem, 0xc);
 
-cPtrItem *__thiscall PtrTable_Find(HashTable *self, const char *key, uint32_t slot);
 cPtrItem *__thiscall PtrTable_Insert(HashTable *self, const char *key, uint32_t slot, void *const *value);
 byte __thiscall PtrTable_Add(HashTable *self, const char *key, void *const *value, byte warn);
 byte __thiscall PtrTable_Get(HashTable *self, const char *key, void **out);

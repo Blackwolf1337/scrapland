@@ -551,7 +551,6 @@ byte __thiscall cGVar_SetString(cGVar *self, const char *s);
 int Transport_Wait(int ms);
 uint16_t Transport_Crc16(const byte *data, int size);
 int Net_IsMaster(void);
-int Net_PingInetSvrs(void);
 /* recvfrom of an encrypted packet: the plain length, -1 if none or the tag is wrong */
 int Transport_RecvFrom(uint32_t s, byte *buf, int len, int flags, NetAddr *from, int *fromlen);
 int Transport_SendTo(uint32_t s, const void *data, int len, int flags, const NetAddr *to, int tolen);

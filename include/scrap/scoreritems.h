@@ -1214,9 +1214,6 @@ void __thiscall SpecialAction_DrawEnergyOnly(cSpecialActionScorer *self, int pla
 #define g_FunctionarySpecialActionLow GAME_GLOBAL_IN(float, GVar_FunctionarySpecialActionLow, 16, 0x446738)	/* FunctionarySpecialActionLow */
 
 /* the exe functions the special action draws use (other modules) */
-/* the fraction of the weapon energy above the full batteries, and their count */
-float __thiscall cWalkCharEntity_GetEnergyFrac(cEntity *e);	/* rva 0x0d3740 */
-int __thiscall cWalkCharEntity_GetBatteries(cEntity *e);	/* rva 0x0d38e0 */
 /* frame + 1 stretched to the width w, frame at both ends (the right one mirrored), h the y scale (rva 0x184710) */
 void Menu_DrawStretch(CPsaImage *img, int frame, float x, float y, float w, float h);
 
