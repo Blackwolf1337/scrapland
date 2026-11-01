@@ -1,57 +1,25 @@
 /*
- * The D3D log of SDTest (src/core/testmod.c): a proxy in place of the IDirect3DDevice8 of the engine (g_pd3dDevice
- * and the device of the D3D application) that writes each call into a text and then passes it on to the real device.
- * Draw calls come with their vertices, state calls with their values, as hex words; pointers to objects only as
- * whether they are set. Calls of other methods are written as their vtable slot.
+ * The D3D log of SDTest (src/core/testmod.c): while it is on, g_pd3dDevice and the device of the D3D application
+ * are a stand-in object, and the render device (Rdev.c) writes each call on it into a text before it passes the call
+ * on to the real device. Calls on the real device itself (a pointer taken before) are not written. Draw calls come
+ * with their vertices, state calls with their values, as hex words; pointers to objects only as whether they are set.
+ * Calls of other methods are written as their vtable slot of IDirect3DDevice8.
  */
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "rdevbackend.h"
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 
-#define D3DDEV_METHODS 97
-#define STUB_SIZE 16
-
 typedef void (*d3dlogOut_t)(const char *s);
 
-void *d3dlog_real;
-static void *d3dlog_vtbl[D3DDEV_METHODS];
-static struct {
-	void **vtbl;
-} d3dlog_fake = { d3dlog_vtbl };
+void *rd_logDevice;
+void *rd_logReal;
+static byte rd_logStandIn;		/* the stand-in device, never called */
 static d3dlogOut_t d3dlog_out;
-static void *d3dlog_engine;		/* the device of the D3D application was the same, swapped too */
-
-void D3DLog_Record(uint32_t slot, const uint32_t *a);
-
-/* slot i: push i, then the common part, which logs the call and jumps to the real method with the real device as
- * this; the stack is that of the caller again, so the stdcall method pops the arguments */
-__asm__(
-	".text\n"
-	".balign 16\n"
-	"_d3dlog_stubs:\n"
-	".set d3dlog_i, 0\n"
-	".rept 97\n"
-	".balign 16\n"
-	"pushl $d3dlog_i\n"
-	"jmp d3dlog_common\n"
-	".set d3dlog_i, d3dlog_i + 1\n"
-	".endr\n"
-	"d3dlog_common:\n"
-	"movl (%esp), %eax\n"
-	"leal 12(%esp), %ecx\n"
-	"pushl %ecx\n"
-	"pushl %eax\n"
-	"call _D3DLog_Record\n"
-	"addl $8, %esp\n"
-	"popl %eax\n"
-	"movl _d3dlog_real, %ecx\n"
-	"movl %ecx, 4(%esp)\n"
-	"movl (%ecx), %edx\n"
-	"jmp *(%edx,%eax,4)\n");
-extern const byte d3dlog_stubs[] __asm__("_d3dlog_stubs");
+static byte d3dlog_engine;		/* the device of the D3D application was the same, swapped too */
 
 static void Log_Printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 static void Log_Printf(const char *fmt, ...) {
@@ -88,7 +56,7 @@ static uint32_t Prim_Vertices(uint32_t type, uint32_t count) {
 	}
 }
 
-void D3DLog_Record(uint32_t slot, const uint32_t *a) {
+void RdLog_Call(uint32_t slot, const uint32_t *a) {
 	switch (slot) {
 	case D3DDEV_SETTRANSFORM / 4:
 		Log_Printf("SetTransform(%u,", a[0]);
@@ -181,24 +149,23 @@ void D3DLog_Record(uint32_t slot, const uint32_t *a) {
 	d3dlog_out(")\n");
 }
 
-/* the proxy in place with an output, the real device back with NULL; nothing without a device */
+/* the stand-in in place with an output, the real device back with NULL; nothing without a device */
 void D3DLog_Set(d3dlogOut_t out) {
 	if (out && !d3dlog_out && g_pd3dDevice) {
-		for (int i = 0; i < D3DDEV_METHODS; i++) {
-			d3dlog_vtbl[i] = (void *)(d3dlog_stubs + STUB_SIZE * i);
-		}
-		d3dlog_real = g_pd3dDevice;
-		d3dlog_engine = g_Engine->device == d3dlog_real ? &d3dlog_fake : NULL;
+		rd_logReal = g_pd3dDevice;
+		d3dlog_engine = g_Engine->device == rd_logReal;
 		d3dlog_out = out;
-		g_pd3dDevice = &d3dlog_fake;
+		rd_logDevice = &rd_logStandIn;
+		g_pd3dDevice = rd_logDevice;
 		if (d3dlog_engine) {
-			g_Engine->device = &d3dlog_fake;
+			g_Engine->device = rd_logDevice;
 		}
 	} else if (!out && d3dlog_out) {
-		g_pd3dDevice = d3dlog_real;
+		g_pd3dDevice = rd_logReal;
 		if (d3dlog_engine) {
-			g_Engine->device = d3dlog_real;
+			g_Engine->device = rd_logReal;
 		}
+		rd_logDevice = NULL;
 		d3dlog_out = NULL;
 	}
 }

@@ -1,8 +1,8 @@
 /*
  * The render device: the methods of Direct3D 8 that the game uses, as plain functions on opaque objects (the
  * IDirect3D8, the device, its textures, surfaces and buffers, a D3DX mesh), so the renderer behind them can change.
- * The first argument is always the object. The D3D8 backend (src/game/engine3d/Render/RdevD3D8.c) calls the COM
- * method of the same name.
+ * The first argument is always the object. They pass the call to the backend of src/game/engine3d/Render/Rdev.c
+ * (rdevbackend.h); the device calls are written to the D3D log of the tests first (RdevLog.c).
  */
 #ifndef SCRAP_RDEV_H
 #define SCRAP_RDEV_H

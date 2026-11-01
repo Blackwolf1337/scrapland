@@ -20,7 +20,6 @@ file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS src/game/*.c)
 # the libraries linked into Scrap.exe that are C here (D3DX8, the ASE SDK, the M3D math)
 file(GLOB_RECURSE LIB_SOURCES CONFIGURE_DEPENDS src/lib/*.c)
 add_library(scrapcode OBJECT
-	src/core/d3dlog.c
 	src/core/game.c
 	src/core/log.c
 	src/core/testmod.c
