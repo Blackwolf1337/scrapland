@@ -580,7 +580,7 @@ void GearAim_SphereFunc(cAbstractFile *params) {
 			}
 		}
 		if (g_pWorld->alarm.on) {
-			if (Logic_RadarShow(e) == 1) {
+			if (Obj(e)->radarShow == 1) {
 				kind = 5;
 			} else if (!strcmp(Logic_TypeName(e), "Gear")) {
 				kind = 1;
@@ -622,7 +622,7 @@ score:;
 			sc = c / d2;
 			if (kind == 3) {
 				cEntity *pack = World_FindEntity(g_MessengerDataPack);
-				if (pack && pack->vftable->IsType(pack, "item") && ((cObjEntity *)pack)->mod.link.target == e) {
+				if (pack && pack->vftable->IsType(pack, "item") && Obj(pack)->mod.link.target == e) {
 					sc = sc * 3.0f;
 				}
 			}

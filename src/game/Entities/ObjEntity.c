@@ -42,10 +42,6 @@
 #define NET_ROT_SHORT_MAX 214466.0584850632	/* rva 0x3b38e8, 32000 * NET_ROT_SHORT */
 #define NET_ROT_BYTE_MAX 13.29940890019679	/* rva 0x3b38c0, 127 * NET_ROT_BYTE */
 
-static inline cObjEntity *Obj(cEntity *e) {
-	return (cObjEntity *)e;
-}
-
 static inline uint32_t Float_Bits(float f) {
 	uint32_t u;
 

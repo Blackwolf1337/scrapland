@@ -14,7 +14,7 @@ static CGameModel *Ctrl_Model(cActCtrl *self) {
 }
 
 static cTimer *Ctrl_Timer(cActCtrl *self) {
-	return &((cObjEntity *)self->owner)->timer;
+	return &Obj(self->owner)->timer;
 }
 
 static int Action_Anim(const cAction *a) {

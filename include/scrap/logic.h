@@ -292,7 +292,6 @@ static inline const char *Logic_TypeName(cEntity *e) {
 }
 
 /* the radar marker of an object (cObjEntity.radarShow, "RadarShow") */
-#define Logic_RadarShow(e) (((cObjEntity *)(e))->radarShow)
 
 /* the first and the next entity node of a list ring, NULL at the end */
 static inline Nto1Node *Logic_ListFirst(cEntityListData *l) {

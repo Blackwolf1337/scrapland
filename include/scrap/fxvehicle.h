@@ -36,7 +36,7 @@
 /* the vehicle fields the effects read */
 #define FXVeh_Motor(e, i) (Veh(e)->motors.motor[i])
 #define FXVeh_MotorNode(m, side) ((m)->node[side])
-#define FXVeh_EmbeddedFX(e) ((void *)((cObjEntity *)(e))->fx)
+#define FXVeh_EmbeddedFX(e) ((void *)Obj(e)->fx)
 #define FXVeh_Effects(e) ((void *)&Veh(e)->effects)		/* Entities/Vehicle/VehicleEffects.cpp */
 
 /* the engine variables */

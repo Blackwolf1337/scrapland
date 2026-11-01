@@ -162,7 +162,7 @@ void ChType_PoliceActionPress(cAbstractFile *params) {
 	if (!cActCtrl_Play(ChType_ActCtrl(v), usr ? "ActionInit" : "ActionInitNPC", 0, 1.0f)) {
 		return;
 	}
-	cObjMove *move = &((cObjEntity *)v)->move;
+	cObjMove *move = &Obj(v)->move;
 	const vec3_t *tp = victim->vftable->GetPos(victim, &t1);
 	const vec3_t *vp = v->vftable->GetPos(v, &t2);
 	float at = Game_Atan2F((double)(vp->x - tp->x), (double)(vp->z - tp->z));
@@ -259,5 +259,5 @@ void ChType_PoliceRestoreFreeTurn(cAbstractFile *params) {
 	cEntity *v = World_FindEntity(name);
 	CHECK(v);
 	CHECK(Entity_IsType(v, TYEN_WALKCHAR));
-	cObjMove_SetTime(&((cObjEntity *)v)->move, 0.0f);
+	cObjMove_SetTime(&Obj(v)->move, 0.0f);
 }

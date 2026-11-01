@@ -604,7 +604,7 @@ void __fastcall cArrowIndicator_Update(cArrowIndicator *self) {
 		return;
 	}
 	cEntity *e = self->parent;
-	off = ((cObjEntity *)e)->camOff;
+	off = Obj(e)->camOff;
 	const vec3_t *rr = Vec3_Rotate(&r, &off, Obj_Vtbl(e)->GetAng(e, &a));
 	const vec3_t *q = Obj_Vtbl(self->parent)->GetRenderPos(self->parent, &rp);
 	pos.x = q->x + rr->x;

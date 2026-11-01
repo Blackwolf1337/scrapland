@@ -30,7 +30,7 @@
 #define Func_Parent(self) ((self)->base.base.parent)
 
 static inline cTimer *Func_Timer(cEntity *e) {
-	return &((cObjEntity *)e)->timer;
+	return &Obj(e)->timer;
 }
 
 static void Func_SetWorkTime(cFunctionaryLocalLogic *self) {
@@ -283,7 +283,7 @@ void __thiscall cFunctionaryLocalLogic_Work(cFunctionaryLocalLogic *self, float 
 		if (strcmp(p->vftable->GetClassName(p), TYEN_WALKCHAR)) {
 			return;
 		}
-		cObjMove_SetTime(&((cObjEntity *)p)->move, 0.0f);
+		cObjMove_SetTime(&Obj(p)->move, 0.0f);
 		cActCtrl_Play(ChType_ActCtrl(p), "GetUp", 0, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(p), "Relax", 1);
 		Func_Vtbl(self)->StopWork(self, 1);
@@ -618,7 +618,7 @@ int __thiscall cFunctionaryLocalLogic_SetState(cFunctionaryLocalLogic *self, int
 			byte was = self->special;
 			self->fast = 1;
 			self->special = 1;
-			cObjMove_SetTime(&((cObjEntity *)p)->move, 0.0f);
+			cObjMove_SetTime(&Obj(p)->move, 0.0f);
 			cFunctionaryLocalLogic_FreeDesktop(self);
 			if (Func_Vtbl(self)->FastEscape(self)) {
 				if (!was) {
@@ -638,8 +638,8 @@ int __thiscall cFunctionaryLocalLogic_SetState(cFunctionaryLocalLogic *self, int
 	}
 	if (state != 8) {
 		cEntity *p = b->parent;
-		if (p && ((cObjEntity *)p)->move.active) {
-			cObjMove_SetTime(&((cObjEntity *)p)->move, 0.0f);
+		if (p && Obj(p)->move.active) {
+			cObjMove_SetTime(&Obj(p)->move, 0.0f);
 			cFunctionaryLocalLogic_FreeDesktop(self);
 		}
 		self->relaxed = 0;

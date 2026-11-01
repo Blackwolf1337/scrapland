@@ -69,14 +69,14 @@ void ChType_MessengerAttack(cAbstractFile *params) {
 		const char *dpn = g_MessengerDataPack;
 		if (!strcmp(cls, "Messenger") && *dpn) {
 			cEntity *dp = World_FindEntity(dpn);
-			if (dp && dp->vftable->IsType(dp, ITEM_TYPE) && ((cObjEntity *)dp)->mod.link.target == target) {
+			if (dp && dp->vftable->IsType(dp, ITEM_TYPE) && Obj(dp)->mod.link.target == target) {
 				dp->vftable->SetPos(dp, CGameModel_GetPos(Obj_Vtbl(dp)->GetModel(dp), &t1));
 				const vec3_t *n = Vec3_NormalizeTo(&nv, Obj_Vtbl(target)->GetVel(target, &t1));
 				vel.x = n->x * -100.0f;
 				vel.y = n->y * -100.0f;
 				vel.z = n->z * -100.0f;
 				Obj_Vtbl(dp)->SetVel(dp, &vel);
-				cModMove_Link(&((cObjEntity *)dp)->mod, "", "");
+				cModMove_Link(&Obj(dp)->mod, "", "");
 				cPy_Function_SetNative(&((cItemEntity *)dp)->onTake,
 					(nativefunc_t)GAME_FUNC(ChType_MessengerTakeDataPack, CHTYPE_MESSENGERTAKEDATAPACK));
 			}
@@ -134,7 +134,7 @@ void ChType_MessengerTakeDataPack(cAbstractFile *params) {
 	if (!dp || !dp->vftable->IsType(dp, ITEM_TYPE)) {
 		return;
 	}
-	cModMove *mod = &((cObjEntity *)dp)->mod;
+	cModMove *mod = &Obj(dp)->mod;
 	cModMove_Link(mod, "", "");
 	cModMove_Link(mod, name, "DC_DataPack");
 	mod->offMul = 0.0f;

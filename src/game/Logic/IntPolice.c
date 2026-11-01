@@ -120,7 +120,7 @@ void __fastcall AICtrl_Belligerant(void *ctrl) {
 			continue;
 		}
 		cBaseLocalLogic *l = e->lLogic;
-		if (l->idle || l->alwaysLock || l->busy || Logic_RadarShow(e) || l->state == 1 || l->state == 2) {
+		if (l->idle || l->alwaysLock || l->busy || Obj(e)->radarShow || l->state == 1 || l->state == 2) {
 			continue;
 		}
 		if (first) {
@@ -279,7 +279,7 @@ byte __thiscall AICtrl_Fuse(void *ctrl, cEntity *police, cEntity **out) {
 	Obj_Vtbl(gear)->SetEffectParam(gear, 0, 1.0f);
 	Obj_Vtbl(gear)->SetAng(gear, Obj_Vtbl(police)->GetAng(police, &t));
 	cActCtrl_Play(ChType_ActCtrl(gear), "PostFusion", 1, 1.0f);
-	cTimer_SetSpeedChecked(&((cObjEntity *)gear)->timer, 0.001f);
+	cTimer_SetSpeedChecked(&Obj(gear)->timer, 0.001f);
 	WChar(gear)->wl.god = 1;
 	if (out) {
 		*out = gear;
@@ -381,7 +381,7 @@ void AICtrl_Police2GearEnd(cAbstractFile *params) {
 	CHECK(gear);
 	Obj_Vtbl(gear)->SetEffect(gear, 0);
 	Obj_Vtbl(gear)->SetEffectParam(gear, 0, 0.0f);
-	cTimer_SetSpeedChecked(&((cObjEntity *)gear)->timer, 1.0f);
+	cTimer_SetSpeedChecked(&Obj(gear)->timer, 1.0f);
 	WChar(gear)->wl.god = 0;
 	cEntity_Del(poli);
 }

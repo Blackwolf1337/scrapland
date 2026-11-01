@@ -38,7 +38,6 @@ struct cEmbeddedFX {
 SD_SIZE(cEmbeddedFX, 8);
 
 /* the embedded effect of an entity with life */
-#define Entity_EmbeddedFX(e) (((cObjEntity *)(e))->fx)
 
 /* the blinking alarm light of the police, the gears and the sentinels (no vtable, a member) */
 typedef struct cEmbeddedFXAlarm {

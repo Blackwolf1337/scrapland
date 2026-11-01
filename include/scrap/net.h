@@ -141,7 +141,6 @@ typedef cUserNetManager *(*netuserfactory_t)(cNetClient *client, int slot);
 /* the fields of a vehicle the player descriptors carry */
 #define NetEnt_Weapons(e) ((void *)&Veh(e)->weapons)	/* cWeaponManager */
 #define NetEnt_Motors(e) ((void *)&Veh(e)->motors)
-#define NetEnt_Kind(e) (((cObjEntity *)(e))->netRes)			/* the byte after the id in the entity stream */
 
 /* the time of the net code: CApp GetTime in milliseconds (x87 multiply, __dtoui3) */
 static inline uint32_t Net_TimeMs(void) {

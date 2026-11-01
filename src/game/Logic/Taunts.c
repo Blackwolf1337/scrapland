@@ -278,7 +278,7 @@ byte Taunts_Warnings(float dt) {
 	}
 	for (Nto1Node *n = Logic_ListFirst(cabs); n; n = Logic_ListNext(n)) {
 		cEntity *cab = n->data;
-		if (!cab || Logic_RadarShow(cab) != 1) {
+		if (!cab || Obj(cab)->radarShow != 1) {
 			continue;
 		}
 		const vec3_t *up = usr->vftable->GetPos(usr, &t1);

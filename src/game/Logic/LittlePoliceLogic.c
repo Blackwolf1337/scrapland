@@ -188,7 +188,7 @@ byte __fastcall cLittlePoliceLocalLogic_GoMainMission(cLittlePoliceLocalLogic *s
 
 	self->policeResult = 0;
 	cEntity *e = cWorld_GetFirstEntity(g_pWorld);
-	while (e && !(e->active && e->vftable->IsType(e, TYEN_WITH_LIFE) && Logic_RadarShow(e) == 1)) {
+	while (e && !(e->active && e->vftable->IsType(e, TYEN_WITH_LIFE) && Obj(e)->radarShow == 1)) {
 		e = cEntity_Next(e);
 	}
 	if (!e) {

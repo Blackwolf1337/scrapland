@@ -74,7 +74,7 @@ byte __thiscall cRustyLocalLogic_VarS(cRustyLocalLogic *self, const char *name, 
 /* the character moves onto the junk point in t seconds and plays its work */
 static void Rusty_StartWork(cEntity *p, cEntity *junk, float t) {
 	vec3_t tmp;
-	cObjMove *m = &((cObjEntity *)p)->move;
+	cObjMove *m = &Obj(p)->move;
 
 	m->moveAng = *Obj_Vtbl(junk)->GetAng(junk, &tmp);
 	m->movePos = *p->vftable->GetPos(p, &tmp);
@@ -130,10 +130,10 @@ void __thiscall cRustyLocalLogic_Update(cRustyLocalLogic *self, float dt) {
 	}
 	if (st == 8) {
 		if (b->idle || b->alwaysLock) {
-			if (!((cObjEntity *)p)->move.active) {
+			if (!Obj(p)->move.active) {
 				return;
 			}
-			cObjMove_SetTime(&((cObjEntity *)p)->move, 0.0f);
+			cObjMove_SetTime(&Obj(p)->move, 0.0f);
 			g_RustyLoops = 0;
 			return;
 		}
@@ -144,7 +144,7 @@ void __thiscall cRustyLocalLogic_Update(cRustyLocalLogic *self, float dt) {
 			return;
 		}
 		g_RustyLoops = 0;
-		cObjMove_SetTime(&((cObjEntity *)p)->move, 0.0f);
+		cObjMove_SetTime(&Obj(p)->move, 0.0f);
 		cActCtrl_Play(ChType_ActCtrl(p), "Walk", 1, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(p), "Walk", 1);
 		cRustyLocalLogic_NextJunk(self);

@@ -201,9 +201,9 @@ cEntity *Inferno_Hit(const char *name) {
 	int i = 0;
 	do {
 		cEntity *o = Weap_Owner(g_pWorld, i);
-		if (o && Ent_Cam(o)) {
+		if (o && Obj(o)->cam) {
 			byte hit = Engine_TestLine(&pos, o->vftable->GetPos(o, &tmp), NULL, NULL);
-			if (Ent_Cam(o) && !hit) {
+			if (Obj(o)->cam && !hit) {
 				const vec3_t *p = o->vftable->GetPos(o, &op);
 				float dy = p->y - pos.y;
 				float dx = p->x - pos.x;
@@ -228,7 +228,7 @@ cEntity *Inferno_Hit(const char *name) {
 					if (g_SplitScreenGame) {
 						int k;
 						for (k = 0; k < 4; k++) {
-							const char *cam = Ent_Cam(o)->name;
+							const char *cam = Obj(o)->cam->name;
 							if (!strcmp(cam, cWorld_GetCamName(g_pWorld, k))) {
 								break;
 							}
@@ -244,7 +244,7 @@ cEntity *Inferno_Hit(const char *name) {
 						uint32_t a = (uint32_t)(-64 - (int)(w * -63.0f));
 						ScorerFade_Start(&sc->fade, (a << 24) | 0xffbe3c, 0xffffff, g_InfernoLifeTime * w * 0.5f);
 					}
-					cEntity *cam = Ent_Cam(o);
+					cEntity *cam = Obj(o)->cam;
 					if (cam) {
 						Cam_Shake(cam) = w * 0x1.c0f2eep-5f;
 						Cam_ShakeTime(cam) = g_InfernoLifeTime * w * 0.25f;

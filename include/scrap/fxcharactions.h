@@ -76,7 +76,6 @@
 #define g_BankMasterBatonPosZ GAME_GLOBAL_IN(float, GVar_BankMasterBatonPosZ, 16, 0x4460f4)
 
 /* the timer of a character (cWalkChar + 0x110) */
-#define Entity_Timer(e) (&((cObjEntity *)(e))->timer)
 /* a float of the Police character: its center is this much above the feet */
 
 typedef struct cObjElementFXBankMasterAttack {

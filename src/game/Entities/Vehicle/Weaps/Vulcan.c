@@ -22,7 +22,7 @@ static void Vulcan_Shells(cEntity *v) {
 	vec3_t ang, ctr, vel;
 	matrix_t mtx;
 
-	cEntity *player = Ent_Cam(v);
+	cEntity *player = Obj(v)->cam;
 	for (int i = 0; i < 4; i++) {
 		if (!cTargetLock_HasSlot(&Veh(v)->weapons, g_VulcanIDWeap, i)) {
 			continue;
@@ -205,7 +205,7 @@ void Vulcan_Shoot(cEntity *v) {
 	Controls_RumbleB(&Veh(v)->controls, 0.35f, 0.2f);
 	if (Veh(v)->weapons.weapSnd == -1) {
 		cWeaponManager_SetWeapSnd(wm, VULCAN_SND_SHOT);
-		cSndItem *s = PtrArray_Get(Ent_Sounds(v), VULCAN_SND_SHOT);
+		cSndItem *s = PtrArray_Get(&Obj(v)->snd, VULCAN_SND_SHOT);
 		if (s) {
 			s->time = 0.0f;
 		}
@@ -215,19 +215,19 @@ void Vulcan_Shoot(cEntity *v) {
 	cSndItem *s;
 	if (cWeaponManager_GetUpgrade(wm, g_VulcanIDWeap) == VULCAN_UPG_FAST) {
 		cWeaponManager_DelayFire(wm, g_VulcanTimeDelayUPG);
-		s = PtrArray_Get(Ent_Sounds(v), VULCAN_SND_SHOT);
+		s = PtrArray_Get(&Obj(v)->snd, VULCAN_SND_SHOT);
 		if (s) {
 			t = s->times[2];
 		}
 	} else {
 		cWeaponManager_DelayFire(wm, g_VulcanTimeDelay);
-		s = PtrArray_Get(Ent_Sounds(v), VULCAN_SND_SHOT);
+		s = PtrArray_Get(&Obj(v)->snd, VULCAN_SND_SHOT);
 		if (s) {
 			t = s->times[1];
 		}
 	}
 	for (int i = VULCAN_SND_SHOT; i < VULCAN_SND_SHOT + 3; i++) {
-		s = PtrArray_Get(Ent_Sounds(v), i);
+		s = PtrArray_Get(&Obj(v)->snd, i);
 		if (s) {
 			s->times[0] = t;
 		}
@@ -278,7 +278,7 @@ void Vulcan_CreateNative(cAbstractFile *f) {
 	Weap_ReadVec(f, &hit);
 	cAbstractFile_ReadString(f, targetName, 0x80);
 	cEntity *v = Weap_Vehicle(name);
-	cEntity *player = Ent_Cam(v);
+	cEntity *player = Obj(v)->cam;
 	Vulcan_Shells(v);
 	if (!FX_IsVisible(hit.x, hit.y, hit.z, 500.0f, g_FXVulcanHitDistance, NULL, 0)) {
 		goto target;
@@ -362,8 +362,8 @@ void Vulcan_CreateNative(cAbstractFile *f) {
 			if (w->owners[0]) {
 				CHECK(Entity_IsType(w->owners[0], TYEN_WITH_LIFE));
 			}
-			if (t == w->owners[0] && Entity_IsType(t, TYEN_WITH_LIFE) && Ent_Cam(t)) {
-				cEntity *c = Ent_Cam(t);
+			if (t == w->owners[0] && Entity_IsType(t, TYEN_WITH_LIFE) && Obj(t)->cam) {
+				cEntity *c = Obj(t)->cam;
 				Cam_Shake(c) = 0x1.c98712p-7f;
 				Cam_ShakeTime(c) = 0.06f;
 				size = size + size;

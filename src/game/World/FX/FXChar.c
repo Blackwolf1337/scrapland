@@ -1245,7 +1245,7 @@ void __thiscall cObjElementFXCharacterDeath_Update(cObjElementFXCharacterDeath *
 	FX_InRange(t, 0.0f, 0.7f, &a);
 	float k = 1.0f - a;
 	if (self->ent) {
-		cTimer_SetSpeedChecked(Entity_Timer(self->ent), FXC_Smooth(k));
+		cTimer_SetSpeedChecked(&Obj(self->ent)->timer, FXC_Smooth(k));
 	}
 	CGameModel *m = Obj_Vtbl(self->ent)->GetModel(self->ent);
 	CHECK(CGameModel_IsLoaded(m));

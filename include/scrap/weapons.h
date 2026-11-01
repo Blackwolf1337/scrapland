@@ -28,7 +28,7 @@ typedef cTargetLock cWeaponManager;
 #define TYEN_VEHICLE "Car"			/* the string at rva 0x3a77b8 */
 
 /* the fields of the vehicles (cVehicleEntity) and other entities the weapons use */
-#define Entity_FollowCam(e) ((cFollowCamEntity *)((cObjEntity *)(e))->cam)	/* of a player, NULL else */
+#define Entity_FollowCam(e) ((cFollowCamEntity *)Obj(e)->cam)	/* of a player, NULL else */
 #define Vehicle_AimTarget(e) ((cEntity *)Veh(e)->autoAim.target.target)
 #define Vehicle_Effects(e) ((void *)&Veh(e)->effects)	/* Entities/Vehicle/VehicleEffects.cpp */
 

@@ -649,8 +649,8 @@ byte __thiscall cObjElementFXFunctionarySpecialAction_Alive(cObjElementFXFunctio
 	if (d->life > 0.4f && !self->ent) {
 		d->life = 0.4f;
 	}
-	if (self->ent && cTimer_GetSpeed(Entity_Timer(self->ent)) == 1.0f
-		&& cTimer_GetSpeedTo(Entity_Timer(self->ent)) == 1.0f && 0.4f >= d->life) {
+	if (self->ent && cTimer_GetSpeed(&Obj(self->ent)->timer) == 1.0f
+		&& cTimer_GetSpeedTo(&Obj(self->ent)->timer) == 1.0f && 0.4f >= d->life) {
 		m = Obj_Vtbl(self->ent)->GetModel(self->ent);
 		if (!CGameModel_IsLoaded(m)) {
 			return 0;
@@ -3318,7 +3318,7 @@ void __thiscall cObjElementFXBankMasterSuction_Update(cObjElementFXBankMasterSuc
 }
 
 /* a player character: it has a follow camera */
-#define FXA_Player(e) (((cObjEntity *)(e))->cam)
+#define FXA_Player(e) (Obj(e)->cam)
 
 static inline uint32_t FXA_Bits(float f) {
 	uint32_t u;
@@ -3358,8 +3358,8 @@ void __thiscall cObjElementFXFunctionarySpecialAction_Update(cObjElementFXFuncti
 	CGameModel_SetRot(Debris_Model(d), &rot);
 	CGameModel_SetSortZ(Debris_Model(d), -74.0f, 0.0f);
 	Obj_Vtbl(self->ent)->GetRadius(self->ent);
-	float speed = cTimer_GetSpeed(Entity_Timer(self->ent));
-	cTimer_GetSpeedTo(Entity_Timer(self->ent));
+	float speed = cTimer_GetSpeed(&Obj(self->ent)->timer);
+	cTimer_GetSpeedTo(&Obj(self->ent)->timer);
 	byte run = 0;
 	if (WithLife_Vtbl(self->ent)->GetActCtrl(self->ent)) {
 		if (cActCtrl_IsActive(WithLife_Vtbl(self->ent)->GetActCtrl(self->ent), "Run") && speed > 1.0f) {

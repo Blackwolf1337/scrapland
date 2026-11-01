@@ -27,7 +27,6 @@
 
 /* the fields of the entities with life (ships, characters, missiles) */
 #define Ent_Active(e) (((cEntity *)(e))->active)
-#define Ent_Cam(e) (((cObjEntity *)(e))->cam)		/* the camera entity of a player character */
 #define Cam_ShakeTime(c) (((cFollowCamEntity *)(c))->quakeTime)
 #define Cam_Shake(c) (((cFollowCamEntity *)(c))->quakeFactor)
 
@@ -236,7 +235,7 @@ static inline cEntity *Weap_Owner(cWorld *w, int i) {
 
 /* sound i of the entity from its first volume and pitch */
 static inline void Weap_PlaySound(cEntity *e, int i) {
-	cSndItem *s = PtrArray_Get(Ent_Sounds(e), i);
+	cSndItem *s = PtrArray_Get(&Obj(e)->snd, i);
 	if (s) {
 		s->volume = s->vols[0];
 		s->pitch = s->pitches[0];
@@ -277,9 +276,9 @@ static inline void Weap_DropAtNode(cEntity *v, uint32_t node, matrix_t *mtx, vec
 
 /* the engine sound of a missile: one sound, looped */
 static inline void Weap_EngineSound(cEntity *m, const char *file, float vol, float attIni, float attEnd, float doppler) {
-	cSndInterface_Resize(Ent_Sounds(m), 1);
-	cSndInterface_SetSound(Ent_Sounds(m), 0, file);
-	cSndItem *s = PtrArray_Get(Ent_Sounds(m), 0);
+	cSndInterface_Resize(&Obj(m)->snd, 1);
+	cSndInterface_SetSound(&Obj(m)->snd, 0, file);
+	cSndItem *s = PtrArray_Get(&Obj(m)->snd, 0);
 	if (s) {
 		s->vols[0] = vol;
 		s->sound.desc.param1 = attIni;

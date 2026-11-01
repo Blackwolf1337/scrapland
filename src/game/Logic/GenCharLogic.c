@@ -217,13 +217,13 @@ states:
 			if (!self->ignoreAlarm) {
 				Logic_Vtbl(self)->SetState(self, GENCHAR_ALERT, NULL);
 			}
-		} else if (((cObjEntity *)p)->move.active && (b->idle || b->alwaysLock)) {
-			cObjMove_SetTime(&((cObjEntity *)p)->move, 0.0f);
+		} else if (Obj(p)->move.active && (b->idle || b->alwaysLock)) {
+			cObjMove_SetTime(&Obj(p)->move, 0.0f);
 			GENCHAR_VT(self)->Vf33(self, 0);
 		} else if (!b->idle && !b->alwaysLock) {
 			cEntity *e;
 			if (GENCHAR_VT(self)->CanAttack(self, p) && (e = GENCHAR_VT(self)->FindTarget(self)) != NULL) {
-				if (e->vftable->IsType(e, TYEN_WITH_LIFE) && !Logic_RadarShow(e) &&
+				if (e->vftable->IsType(e, TYEN_WITH_LIFE) && !Obj(e)->radarShow &&
 					Logic_InView(p, usr->vftable->GetPos(usr, &t), 3000.0f, 6.2831855f, 6.2831855f, 1)) {
 					Logic_Vtbl(self)->SetState(self, GENCHAR_ATTACK, e);
 					self->specialOn = 1;
@@ -530,7 +530,7 @@ byte __thiscall cGenCharLocalLogic_CanAttack(cGenCharLocalLogic *self, cEntity *
 		return 0;
 	}
 	float d = cWorld_GetMinCamDistSq(g_pWorld, e->vftable->GetPos(e, &t));
-	if (!(g_GenCharAttackLimit * g_GenCharAttackLimit > d) || Logic_RadarShow(e) || !e->vftable->GetAI(e)) {
+	if (!(g_GenCharAttackLimit * g_GenCharAttackLimit > d) || Obj(e)->radarShow || !e->vftable->GetAI(e)) {
 		return 0;
 	}
 	return GenChar_AISubState(e->vftable->GetAI(e)) != 12;

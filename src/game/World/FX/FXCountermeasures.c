@@ -390,8 +390,8 @@ byte __thiscall cObjElementFXHook_IsAlive(cObjElementFXHook *self, cDebris *debr
 			return 1;
 		}
 		/* the laser sound of the emitter plays */
-		if (PtrArray_Get(Ent_Sounds(self->emitter), WEAPON_LASER)
-			&& ((cSndItem *)PtrArray_Get(Ent_Sounds(self->emitter), WEAPON_LASER))->playing) {
+		if (PtrArray_Get(&Obj(self->emitter)->snd, WEAPON_LASER)
+			&& ((cSndItem *)PtrArray_Get(&Obj(self->emitter)->snd, WEAPON_LASER))->playing) {
 			return 1;
 		}
 	}

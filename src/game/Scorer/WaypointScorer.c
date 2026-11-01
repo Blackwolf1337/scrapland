@@ -13,7 +13,7 @@
 #include "scrap/world.h"
 
 /* the waypoint kind of an object (1..3 the color of the mark), 0 for none */
-#define Waypoint_Kind(e) (((cObjEntity *)(e))->radarShow)
+#define Waypoint_Kind(e) (Obj(e)->radarShow)
 
 cWaypointScorer *__fastcall cWaypointScorer_ctor(cWaypointScorer *self) {
 	cScorerItem_ctor(&self->base);

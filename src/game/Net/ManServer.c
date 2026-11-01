@@ -343,7 +343,7 @@ void __thiscall cClientNetManager_Send(cClientNetManager *self, uint32_t time) {
 			byte hdr[3];
 			uint16_t id = (uint16_t)crt_atoi(name + 3);
 			memcpy(hdr, &id, 2);
-			hdr[2] = NetEnt_Kind(e);
+			hdr[2] = Obj(e)->netRes;
 			if (id <= NET_PLAYER_MAX_ID) {
 				CHECK(pass);
 				if (me == e) {

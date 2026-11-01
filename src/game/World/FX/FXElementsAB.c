@@ -306,11 +306,10 @@ static void Limit_Rings(cFXElementsABFakeLimit *self, float dt) {
 
 
 /* the follow camera of a car (of a player) and its shaking */
-#define Car_Data(e) ((cFollowCamEntity *)((cObjEntity *)(e))->cam)
+#define Car_Data(e) ((cFollowCamEntity *)Obj(e)->cam)
 #define CarData_QuakeTime(d) ((d)->quakeTime)
 #define CarData_QuakeFactor(d) ((d)->quakeFactor)
 /* the model of an entity with render effects */
-#define Entity_FxModel(e) (&((cObjEntity *)(e))->model)
 
 /* the particles of the near limit on a grid of angles around dir (ang its angles), at the radius */
 static void Limit_NearGrid(cFXElementsABFakeLimit *self, const vec3_t *ang) {
@@ -495,7 +494,7 @@ static void Limit_Car(cFXElementsABFakeLimit *self, cEntity *e, float dt) {
 			}
 		}
 	}
-	uint32_t fx = CGameModel_GetEffect(Entity_FxModel(e), NULL);
+	uint32_t fx = CGameModel_GetEffect(&Obj(e)->model, NULL);
 	if (nearF > 0.0f) {
 		if (fx == 0 || fx == 6) {
 			Obj_Vtbl(e)->SetEffect(e, 6);

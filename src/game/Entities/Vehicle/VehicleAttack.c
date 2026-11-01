@@ -106,7 +106,7 @@ void __thiscall cVehicleAttack_HitBy(cVehicleAttack *self, const char *name) {
 	} else {
 		Nto1Node_LinkByName(&self->hitBy, name);
 	}
-	self->hitTime = Timer_GetTime(&((cObjEntity *)self->owner)->timer);
+	self->hitTime = Timer_GetTime(&Obj(self->owner)->timer);
 	if (!(g_pApp->flags & APPF_CLIENT)) {
 		self->hitCount++;
 	}

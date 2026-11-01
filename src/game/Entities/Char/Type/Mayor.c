@@ -96,7 +96,7 @@ void ChType_MayorSphereHit(cAbstractFile *params) {
 			(!usr || crt_strncmp(cActCtrl_GetActionName(ChType_ActCtrl(e), 0), "Relax", 5))) {
 			return;
 		}
-		if (usr || (!((cObjEntity *)e)->radarShow && g_MayorListenPercent > FxElem_Rand(100.0, 0.0))) {
+		if (usr || (!Obj(e)->radarShow && g_MayorListenPercent > FxElem_Rand(100.0, 0.0))) {
 			cActCtrl_PlayAction(ChType_ActCtrl(e), acm, 0, 1, 1.0f);
 			if (ChType_Action0(ChType_ActCtrl(e)) == acm) {
 				Logic_Vtbl(ll)->SetIdle(ll, 1);

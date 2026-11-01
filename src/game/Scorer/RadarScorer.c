@@ -689,7 +689,7 @@ void __thiscall cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEnt
 	if (g_RadarMMSelect) {
 		float best = 3.40282347e+38f;
 		for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
-			if (e == target || !e->active || !Entity_IsType(e, "Obj") || ((cObjEntity *)e)->radarShow != 1) {
+			if (e == target || !e->active || !Entity_IsType(e, "Obj") || Obj(e)->radarShow != 1) {
 				continue;
 			}
 			const vec3_t *tp = target->vftable->GetPos(target, &t);

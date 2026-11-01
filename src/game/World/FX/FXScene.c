@@ -538,7 +538,7 @@ void __thiscall cObjElementFXSceneTheEndB_Update(cObjElementFXSceneTheEndB *self
 		self->tPrev = self->t;
 		return;
 	}
-	cEmbeddedFXBike *efx = (cEmbeddedFXBike *)Entity_EmbeddedFX(self->bike);
+	cEmbeddedFXBike *efx = (cEmbeddedFXBike *)Obj(self->bike)->fx;
 	CHECK(efx);
 	/* the engine of the bike by the time of the scene */
 	if (FX_InRange(self->t, 0.0f, 8.0f, &f)) {
@@ -1738,12 +1738,12 @@ void __thiscall cObjElementFXSceneBillArrives_A_Update(cObjElementFXSceneBillArr
 	if (!self->capsule) {
 		cEntity *c = World_FindEntity("BillArrives_ACapsule");
 		self->capsule = c;
-		CHECK(c && Entity_EmbeddedFX(c));
+		CHECK(c && Obj(c)->fx);
 	}
 	float delta = FXS_Delta();
 	self->t = delta + self->t;
 	FXS_Follow(self->ent, d, -102.0f, &pos, &rot);
-	void *efx = self->capsule ? Entity_EmbeddedFX(self->capsule) : NULL;
+	void *efx = self->capsule ? Obj(self->capsule)->fx : NULL;
 	if (efx) {
 		float t = self->t;
 		if (!(t >= 12.4f)) {

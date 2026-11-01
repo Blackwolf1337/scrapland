@@ -143,7 +143,7 @@ SD_SIZE(cObjElementFXDebrisCloud, 0x1f4);
 
 /* the fields of the ships the hook reads */
 #define WEAPON_LASER 0x18						/* the slot of the laser in Entity_Weapons */
-#define Entity_PlayerCam(e) (((cObjEntity *)(e))->cam)	/* the camera data of the ship of a player, NULL else */
+#define Entity_PlayerCam(e) (Obj(e)->cam)	/* the camera data of the ship of a player, NULL else */
 
 /* a weapon of the world in a cTargetLock: the mounted slots (bit per slot), the upgrade and its ammo */
 typedef struct cWeaponSlot {

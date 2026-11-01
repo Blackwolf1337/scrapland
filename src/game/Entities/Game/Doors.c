@@ -236,6 +236,6 @@ void Doors_Usr0AutoDoorSlot(cAbstractFile *params) {
 	} else if (!Door_IsActive(door, "Close") && !Door_IsActive(door, "Closed")) {
 		Door_Play(door, "Close", "Closed");
 		/* the slot function of the door */
-		cPy_Function_SetNative(&((cObjEntity *)door)->onObjSlot, NULL);
+		cPy_Function_SetNative(&Obj(door)->onObjSlot, NULL);
 	}
 }

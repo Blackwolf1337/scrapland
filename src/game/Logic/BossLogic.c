@@ -42,8 +42,8 @@ void __thiscall cBossLocalLogic_Vf33(cBossLocalLogic *self, byte on) {
 		return;
 	}
 	cEntity *p = self->base.base.parent;
-	if (p && ((cObjEntity *)p)->move.active) {
-		cObjMove_SetTime(&((cObjEntity *)p)->move, 0.0f);
+	if (p && Obj(p)->move.active) {
+		cObjMove_SetTime(&Obj(p)->move, 0.0f);
 	}
 	self->base.base.vftable->SetState(self, 0, NULL);
 }
@@ -68,7 +68,7 @@ void __thiscall cBossLocalLogic_Update(cBossLocalLogic *self, float dt) {
 		if (!ai || ((cAIChar *)ai)->vftable->GetState(ai) != 0 || !(*(const cLogicBossAIVtbl **)ai)->Arrived(ai)) {
 			return;
 		}
-		cObjMove *m = &((cObjEntity *)p)->move;
+		cObjMove *m = &Obj(p)->move;
 		m->moveAng.x = 0.0f;
 		m->moveAng.y = self->workAng[1];
 		m->moveAng.z = 0.0f;
@@ -88,7 +88,7 @@ void __thiscall cBossLocalLogic_Update(cBossLocalLogic *self, float dt) {
 	cEntity *p = self->base.base.parent;
 	if (!self->base.base.idle && !self->base.base.alwaysLock) {
 		if (g_BossWasIdle) {
-			cObjMove_SetTime(&((cObjEntity *)p)->move, 0.5f);
+			cObjMove_SetTime(&Obj(p)->move, 0.5f);
 			g_BossWasIdle = 0;
 		}
 	} else {
@@ -129,8 +129,8 @@ int __thiscall cBossLocalLogic_SetState(cBossLocalLogic *self, int state, cEntit
 		return 1;
 	}
 	cEntity *p = self->base.base.parent;
-	if (p && ((cObjEntity *)p)->move.active) {
-		cObjMove_SetTime(&((cObjEntity *)p)->move, 0.0f);
+	if (p && Obj(p)->move.active) {
+		cObjMove_SetTime(&Obj(p)->move, 0.0f);
 	}
 	return cGenCharLocalLogic_SetState(&self->base, state, target);
 }

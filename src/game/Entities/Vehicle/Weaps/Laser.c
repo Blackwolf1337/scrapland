@@ -61,7 +61,7 @@ void Hook_AimNative(cAbstractFile *f) {
 }
 
 static void Hook_Silence(cEntity *v) {
-	cSndItem *s = PtrArray_Get(Ent_Sounds(v), SND_HOOK);
+	cSndItem *s = PtrArray_Get(&Obj(v)->snd, SND_HOOK);
 	if (s && s->playing) {
 		s->volume = 0.0f;
 		s->pitch = 0.0f;
@@ -158,7 +158,7 @@ void Hook_UpdateNative(cAbstractFile *f) {
 	}
 	cTargetLock_SetHookDelay(wm, 0.05f);
 	byte start = 1;
-	cSndItem *s = PtrArray_Get(Ent_Sounds(v), SND_HOOK);
+	cSndItem *s = PtrArray_Get(&Obj(v)->snd, SND_HOOK);
 	if (s) {
 		start = s->playing ^ 1;
 	}
@@ -430,7 +430,7 @@ void Laser_CreateNative(cAbstractFile *f) {
 					if (w->owners[0]) {
 						CHECK(Entity_IsType(w->owners[0], TYEN_WITH_LIFE));
 					}
-					if (t == w->owners[0] && Entity_IsType(t, TYEN_WITH_LIFE) && Ent_Cam(t)) {
+					if (t == w->owners[0] && Entity_IsType(t, TYEN_WITH_LIFE) && Obj(t)->cam) {
 						big = 2.0f;
 					}
 				}
@@ -643,14 +643,14 @@ void Hook_StopSound(cEntity *v) {
 
 /* the Hook sound and its start sound with a recoil, unless it plays already */
 void Hook_StartSound(cEntity *v) {
-	cSndItem *s = PtrArray_Get(Ent_Sounds(v), SND_HOOK);
+	cSndItem *s = PtrArray_Get(&Obj(v)->snd, SND_HOOK);
 	if (!s || s->playing) {
 		return;
 	}
 	s->volume = s->vols[0];
 	s->pitch = s->pitches[0];
 	cSndItem_Play(s, v);
-	s = PtrArray_Get(Ent_Sounds(v), SND_HOOK_START);
+	s = PtrArray_Get(&Obj(v)->snd, SND_HOOK_START);
 	if (s) {
 		s->volume = s->vols[0];
 		s->pitch = s->pitches[0];
@@ -678,9 +678,9 @@ void Sonic_FireNative(cAbstractFile *f) {
 		return;
 	}
 	Veh(v)->weapons.cmStamp = g_SonicRechargeTime;
-	cSndItem *s = PtrArray_Get(Ent_Sounds(v), 0x13);
+	cSndItem *s = PtrArray_Get(&Obj(v)->snd, 0x13);
 	if (s) {
-		cSndItem *src = PtrArray_Get(Ent_Sounds(v), 9);
+		cSndItem *src = PtrArray_Get(&Obj(v)->snd, 9);
 		if (src) {
 			s->volume = src->vols[0];
 			s->pitch = src->pitches[0];

@@ -431,14 +431,14 @@ static uint32_t Monitor_DrawLooked(cMonitorScorer *self, cEntity *target, cEntit
 		return textColor;
 	}
 	byte eIsCar = Entity_IsType(e, TYEN_CAR);
-	int show = ((cObjEntity *)e)->radarShow;
+	int show = Obj(e)->radarShow;
 	if (isCar && eIsCar && show) {
 		/* a mission ship blinks yellow (main) or cyan */
 		int k = (int)(time * 1024.0f) % 512;
 		int a = 0xff - k;
 		a = a < 0 ? -a : a;
 		CPsaImage *img = self->img350;
-		img->color = (uint32_t)(a / 2) << 24 | (((cObjEntity *)e)->radarShow == 1 ? 0xffff80 : 0x80ffff);
+		img->color = (uint32_t)(a / 2) << 24 | (Obj(e)->radarShow == 1 ? 0xffff80 : 0x80ffff);
 		img->scaleX = MONITOR_W;
 		img->scaleY = MONITOR_H;
 		CPsaImage_Draw(img, self->base.x, self->base.y);
@@ -534,7 +534,7 @@ static void Monitor_DrawText(cMonitorScorer *self, cEntity *e, float frameTime, 
 		n = i > len ? len : i;
 	}
 	if (e && Entity_IsType(e, TYEN_WALKCHAR)) {
-		textColor = ((cObjEntity *)e)->radarShow == 1 ? 0xeeffae : 0xaeffae;
+		textColor = Obj(e)->radarShow == 1 ? 0xeeffae : 0xaeffae;
 	}
 	CFont *f = self->smallFont;
 	f->shadow[0] = 1.0f;

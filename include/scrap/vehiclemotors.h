@@ -105,7 +105,6 @@ SD_SIZE(cVehicleMotors, 0xc8);
 #define Vehicle_Motors(e) (&((cVehicleEntity *)(e))->motors)
 
 /* the vehicle fields the motors read */
-#define VM_Timer(e) (&((cObjEntity *)(e))->timer)
 #define VM_Team(e) ((void *)&WLife(e)->arrow)	/* for cArrowIndicator_GetColor */
 
 /* the emit positions of the Calima particles of all motors (8) */

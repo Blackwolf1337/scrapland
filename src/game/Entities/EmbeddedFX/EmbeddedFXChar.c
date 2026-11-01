@@ -913,7 +913,7 @@ void EmbeddedFXChar_SetAlarm(const char *name, byte on) {
 		&& !strstr(CGameModel_Name(Obj_Vtbl(v)->GetModel(v)), "Gear")) {
 		return;
 	}
-	cEmbeddedFXAlarm_SetOn(&((cEmbeddedFXPolice *)Entity_EmbeddedFX(v))->alarm, on);
+	cEmbeddedFXAlarm_SetOn(&((cEmbeddedFXPolice *)Obj(v)->fx)->alarm, on);
 }
 
 /* the network messages: the character name, a second string and 4 bytes */

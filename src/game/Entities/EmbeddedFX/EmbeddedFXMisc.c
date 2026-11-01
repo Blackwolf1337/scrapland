@@ -1135,7 +1135,7 @@ static cEmbeddedFX *EFXM_ObjFX(const char *name) {
 
 	CHECK(v);
 	CHECK(v->vftable->IsType(v, TYEN_OBJECT));
-	return Entity_EmbeddedFX(v);
+	return Obj(v)->fx;
 }
 
 /* the shield of the entity BossShield hit */

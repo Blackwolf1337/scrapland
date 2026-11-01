@@ -163,7 +163,7 @@ void __fastcall cVehicleMotors_Update(cVehicleMotors *self) {
 	cEntity *owner = self->owner;
 	int i, j;
 
-	u.dt = cTimer_GetDelta(VM_Timer(owner));
+	u.dt = cTimer_GetDelta(&Obj(owner)->timer);
 	float a = Veh(owner)->smoothThrust;
 	float s = Veh(owner)->smoothSpeed + Veh(owner)->smoothSpeed;
 	u.speed = Veh(owner)->active;

@@ -407,7 +407,7 @@ void __thiscall cBaseLocalLogic_Update(cBaseLocalLogic *self, float dt) {
 				cEntity *victim = t;
 				if (t->vftable->IsType(t, TYEN_WALKCHAR) &&
 					(!strcmp(ChType_ActClass(ChType_ActCtrl(t))->name, "Gear") ||
-					((cObjEntity *)t)->radarShow)) {
+					Obj(t)->radarShow)) {
 					victim = p;
 				}
 				AICtrl_GearAttack(&g_pWorld->logic.aiCtrl, victim, 0);

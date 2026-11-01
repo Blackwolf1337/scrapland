@@ -112,7 +112,7 @@ void Event_AnmSoundLoopEvent(cAbstractFile *params) {
 	CHECK(volu);
 	*volu++ = 0;
 	char *pitch = Event_Next(volu);
-	cSndItem *it = PtrArray_Get(Ent_Sounds(ent), crt_atoi(snd));
+	cSndItem *it = PtrArray_Get(&Obj(ent)->snd, crt_atoi(snd));
 	if (it) {
 		it->volume = (float)crt_atof(volu);
 		/* the original reads the pitch also when there is none */

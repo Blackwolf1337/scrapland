@@ -92,7 +92,7 @@ cEntity *Maintenance_FindShip(void) {
 	if (!e->vftable->IsType(e, TYEN_CAR)) {
 		e = NULL;
 	}
-	if (CGameModel_GetEffect(&((cObjEntity *)e)->model, NULL)) {
+	if (CGameModel_GetEffect(&Obj(e)->model, NULL)) {
 		return NULL;
 	}
 	return e;
