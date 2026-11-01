@@ -1,6 +1,6 @@
 /*
- * The MSVC math as C of its own (stage 2b of docs/standalone.md), built into ScrapC.exe with the CMake option
- * SCRAP_OWN_MATH instead of loading Microsoft's ucrtbase (src/standalone/crtmath.c). Written from the C standard, the
+ * The MSVC math as C of its own (stage 2b of docs/standalone.md), the default of ScrapC.exe (src/standalone/crtmath.c
+ * takes ucrtbase_ms.dll instead when it is there). The entries are own_<name> here. Written from the C standard, the
  * documented behavior and the observed output of ucrtbase 10.0.10586 (the static UCRT of the original), not from
  * Microsoft's code.
  *
@@ -386,7 +386,7 @@ static double Libm_Result(dd_t y, int e, const char *name, double a1, double a2)
 
 /* ---- exp, log, log10, pow ---- */
 
-double crt_exp(double x) {
+double own_exp(double x) {
 	double ax = Libm_Abs(x);
 	if (!(ax < libm_inf)) {
 		if (Libm_IsNan(x)) {
@@ -429,11 +429,11 @@ static double Libm_LogCommon(double x, const char *name, int ten) {
 	return Dd_Round(l);
 }
 
-double crt_log(double x) {
+double own_log(double x) {
 	return Libm_LogCommon(x, "log", 0);
 }
 
-double crt_log10(double x) {
+double own_log10(double x) {
 	return Libm_LogCommon(x, "log10", 1);
 }
 
@@ -449,7 +449,7 @@ static int Libm_IntKind(double y) {
 	return Libm_Rint(ay * 0.5) == ay * 0.5 ? 2 : 1;
 }
 
-double crt_pow(double x, double y) {
+double own_pow(double x, double y) {
 	double ax = Libm_Abs(x), ay = Libm_Abs(y);
 	if (y == 0.0) {
 		return 1.0;
@@ -579,15 +579,15 @@ static double Libm_Trig(double x, int which, const char *name) {
 	}
 }
 
-double crt_sin(double x) {
+double own_sin(double x) {
 	return Libm_Trig(x, 0, "sin");
 }
 
-double crt_cos(double x) {
+double own_cos(double x) {
 	return Libm_Trig(x, 1, "cos");
 }
 
-double crt_tan(double x) {
+double own_tan(double x) {
 	return Libm_Trig(x, 2, "tan");
 }
 
@@ -627,7 +627,7 @@ static double Libm_X87Pio2(int neg) {
 }
 
 /* the cdecl atan: x87 paths for tiny arguments and those above 1 / (the low part of pi/2) */
-double crt_atan(double x) {
+double own_atan(double x) {
 	double ax = Libm_Abs(x);
 	if (ax < 0x1p-27) {
 		return x == 0.0 ? x : Libm_X87Tiny(x);
@@ -650,7 +650,7 @@ static dd_t Libm_Cofactor(double x) {
 	return w.hi == 0.0 ? w : Dd_Sqrt(w);
 }
 
-double crt_asin(double x) {
+double own_asin(double x) {
 	double ax = Libm_Abs(x);
 	if (Libm_IsNan(x)) {
 		return Libm_Quiet(x);
@@ -676,7 +676,7 @@ double crt_asin(double x) {
 	return Dd_Round(a);
 }
 
-double crt_acos(double x) {
+double own_acos(double x) {
 	double ax = Libm_Abs(x);
 	if (Libm_IsNan(x)) {
 		return Libm_Quiet(x);
@@ -736,7 +736,7 @@ long double Libm_CIAtan2(double y, double x) {
 	return a;
 }
 
-double crt_atan2(double y, double x) {
+double own_atan2(double y, double x) {
 	if (Libm_IsNan(x) || Libm_IsNan(y)) {
 		return Libm_NanPair("atan2", y, x);
 	}
@@ -752,7 +752,7 @@ static dd_t Libm_HypInv(dd_t y, int e) {
 	return (dd_t){ inv.hi * s, inv.lo * s };
 }
 
-double crt_sinh(double x) {
+double own_sinh(double x) {
 	double ax = Libm_Abs(x);
 	if (!(ax < libm_inf)) {
 		return Libm_IsNan(x) ? Libm_NanLow(x) : x;
@@ -782,7 +782,7 @@ double crt_sinh(double x) {
 	return d;
 }
 
-double crt_cosh(double x) {
+double own_cosh(double x) {
 	double ax = Libm_Abs(x);
 	if (!(ax < libm_inf)) {
 		return Libm_IsNan(x) ? Libm_NanLow(x) : ax;
@@ -811,7 +811,7 @@ double crt_cosh(double x) {
 	return d;
 }
 
-double crt_tanh(double x) {
+double own_tanh(double x) {
 	double ax = Libm_Abs(x);
 	if (Libm_IsNan(x)) {
 		return Libm_NanLow(x);
@@ -843,7 +843,7 @@ double crt_tanh(double x) {
 /* ---- sqrt and hypot: the x87 ---- */
 
 /* fsqrt in the caller's precision */
-double crt_sqrt(double x) {
+double own_sqrt(double x) {
 	if (Libm_IsNan(x)) {
 		/* the runtime calls matherr with type 0 for a NaN */
 		return Libm_Error(0, "sqrt", x, 0.0, Libm_Quiet(x));
@@ -895,7 +895,7 @@ static double Libm_DivX87(double a, double b) {
 }
 
 /* the matherr arguments are x and y divided by the larger of them */
-double crt_hypot(double x, double y) {
+double own_hypot(double x, double y) {
 	double ax = Libm_Abs(x), ay = Libm_Abs(y);
 	if (ax == libm_inf || ay == libm_inf) {
 		return libm_inf;
@@ -939,7 +939,7 @@ static double Libm_FmodCommon(double x, double y, int plain) {
 	return Libm_Fprem(x, y);
 }
 
-double crt_fmod(double x, double y) {
+double own_fmod(double x, double y) {
 	return Libm_FmodCommon(x, y, 1);
 }
 
@@ -949,7 +949,7 @@ long double Libm_CIFmod(double x, double y) {
 
 /* ---- the exact functions ---- */
 
-double crt_fabs(double x) {
+double own_fabs(double x) {
 	return Libm_IsNan(x) ? Libm_Quiet(x) : Libm_Abs(x);
 }
 
@@ -969,15 +969,15 @@ static double Libm_ToInt(double x, int up) {
 	return r == 0.0 ? (Libm_Sign(x) ? -0.0 : 0.0) : r;
 }
 
-double crt_floor(double x) {
+double own_floor(double x) {
 	return Libm_ToInt(x, 0);
 }
 
-double crt_ceil(double x) {
+double own_ceil(double x) {
 	return Libm_ToInt(x, 1);
 }
 
-double crt_frexp(double x, int *e) {
+double own_frexp(double x, int *e) {
 	if (!(Libm_Abs(x) < libm_inf)) {
 		*e = -1;
 		return Libm_IsNan(x) ? Libm_Quiet(x) : x;
@@ -996,12 +996,12 @@ double crt_frexp(double x, int *e) {
 	return Libm_Double((b & 0x800fffffffffffffull) | 0x3fe0000000000000ull);
 }
 
-double crt_ldexp(double x, int n) {
+double own_ldexp(double x, int n) {
 	if (!(Libm_Abs(x) < libm_inf) || x == 0.0) {
 		return Libm_IsNan(x) ? Libm_Quiet(x) : x;
 	}
 	int e;
-	crt_frexp(x, &e);
+	own_frexp(x, &e);
 	/* x = m * 2^e with m in [0.5, 1) */
 	int64_t t = (int64_t)e + n;
 	if (t > 1024) {
@@ -1023,7 +1023,7 @@ double crt_ldexp(double x, int n) {
 	return r;
 }
 
-double crt_modf(double x, double *ip) {
+double own_modf(double x, double *ip) {
 	if (Libm_IsNan(x)) {
 		*ip = Libm_Quiet(x);
 		return *ip;
@@ -1050,14 +1050,14 @@ double crt_modf(double x, double *ip) {
 		"fstpl (%esp)\n\tmovsd (%esp), %xmm0\n\t" \
 		"movl %ebp, %esp\n\tpopl %ebp\n\tret\n");
 
-LIBM_SSE2_ENTRY(crt_libm_sse2_acos_precise, crt_acos)
-LIBM_SSE2_ENTRY(crt_libm_sse2_asin_precise, crt_asin)
-LIBM_SSE2_ENTRY(crt_libm_sse2_atan_precise, Libm_Atan)
-LIBM_SSE2_ENTRY(crt_libm_sse2_cos_precise, crt_cos)
-LIBM_SSE2_ENTRY(crt_libm_sse2_exp_precise, crt_exp)
-LIBM_SSE2_ENTRY(crt_libm_sse2_log_precise, crt_log)
-LIBM_SSE2_ENTRY(crt_libm_sse2_pow_precise, crt_pow)
-LIBM_SSE2_ENTRY(crt_libm_sse2_sin_precise, crt_sin)
+LIBM_SSE2_ENTRY(own_libm_sse2_acos_precise, own_acos)
+LIBM_SSE2_ENTRY(own_libm_sse2_asin_precise, own_asin)
+LIBM_SSE2_ENTRY(own_libm_sse2_atan_precise, Libm_Atan)
+LIBM_SSE2_ENTRY(own_libm_sse2_cos_precise, own_cos)
+LIBM_SSE2_ENTRY(own_libm_sse2_exp_precise, own_exp)
+LIBM_SSE2_ENTRY(own_libm_sse2_log_precise, own_log)
+LIBM_SSE2_ENTRY(own_libm_sse2_pow_precise, own_pow)
+LIBM_SSE2_ENTRY(own_libm_sse2_sin_precise, own_sin)
 
 #define LIBM_CI_ENTRY(label, func) \
 	__asm__(".text\n\t.globl _" #label "\n\t.p2align 4\n_" #label ":\n\t" \
@@ -1066,5 +1066,5 @@ LIBM_SSE2_ENTRY(crt_libm_sse2_sin_precise, crt_sin)
 		"call _" #func "\n\t" \
 		"movl %ebp, %esp\n\tpopl %ebp\n\tret\n");
 
-LIBM_CI_ENTRY(crt_CIatan2, Libm_CIAtan2)
-LIBM_CI_ENTRY(crt_CIfmod, Libm_CIFmod)
+LIBM_CI_ENTRY(own_CIatan2, Libm_CIAtan2)
+LIBM_CI_ENTRY(own_CIfmod, Libm_CIFmod)

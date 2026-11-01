@@ -1,8 +1,8 @@
 #!/bin/bash
 # Puts Microsoft's ucrtbase.dll (from the VC++ 2015-2019 redistributable, the URL and hash winetricks uses) as
-# game/Bin/ucrtbase_ms.dll. ScrapC.exe takes only the MSVC math from it (docs/standalone.md, stage 2b): Wine's own
-# ucrtbase differs from the original's static UCRT in the last bits. ScrapC.exe runs without it (then with Wine's
-# math); on Windows it uses the system ucrtbase.dll and this file is not needed. Not in git (Microsoft binary).
+# game/Bin/ucrtbase_ms.dll. When it is there ScrapC.exe takes the MSVC math from it (docs/standalone.md, stage 2b),
+# exact in the last bits for the difftest. Without it ScrapC.exe uses its own math (src/standalone/crtlibm.c). Not in
+# git (Microsoft binary).
 set -e
 root=$(cd "$(dirname "$0")/../.." && pwd)
 dst=$root/game/Bin/ucrtbase_ms.dll
