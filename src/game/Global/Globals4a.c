@@ -562,7 +562,7 @@ cGVar GVar_R_LimitFPS SD_BSS(0x4a8fd8);
 cGVar GVar_VSync SD_BSS(0x4a8ff0);
 cGVar GVar_R_ShowInfo SD_BSS(0x4a9008);
 cGVar GVar_AutoScreenShot SD_BSS(0x4a9020);
-byte *g_Engine3D SD_BSS(0x4a9038);
+struct CEngineApp *g_Engine3D SD_BSS(0x4a9038);
 float g_LastTime SD_BSS(0x4a903c);
 float g_FpsTime SD_BSS(0x4a9040);
 int g_FpsFrames SD_BSS(0x4a9044);

@@ -188,16 +188,16 @@ void D3DLog_Set(d3dlogOut_t out) {
 			d3dlog_vtbl[i] = (void *)(d3dlog_stubs + STUB_SIZE * i);
 		}
 		d3dlog_real = g_pd3dDevice;
-		d3dlog_engine = g_EngineDev == d3dlog_real ? &d3dlog_fake : NULL;
+		d3dlog_engine = g_Engine->device == d3dlog_real ? &d3dlog_fake : NULL;
 		d3dlog_out = out;
 		g_pd3dDevice = &d3dlog_fake;
 		if (d3dlog_engine) {
-			g_EngineDev = &d3dlog_fake;
+			g_Engine->device = &d3dlog_fake;
 		}
 	} else if (!out && d3dlog_out) {
 		g_pd3dDevice = d3dlog_real;
 		if (d3dlog_engine) {
-			g_EngineDev = d3dlog_real;
+			g_Engine->device = d3dlog_real;
 		}
 		d3dlog_out = NULL;
 	}

@@ -32,7 +32,7 @@ typedef int(__stdcall *d3dCopyRects_t)(void *dev, void *src, const void *rects, 
 	const void *points);
 typedef int(__stdcall *d3dGetDesc_t)(void *surf, uint32_t *desc);
 typedef int(__stdcall *d3dGetAdapterIdentifier_t)(void *d3d, uint32_t adapter, uint32_t flags, D3DAdapterId *id);
-typedef int(__stdcall *d3dGetDeviceCaps_t)(void *d3d, uint32_t adapter, int type, uint32_t *caps);
+typedef int(__stdcall *d3dGetDeviceCaps_t)(void *d3d, uint32_t adapter, int type, D3DCaps8 *caps);
 #define D3DDEVTYPE_HAL 1
 #define D3D_SDK_VERSION 0xdc
 
@@ -298,7 +298,7 @@ static void Str_Append(char *dst, int size, const char *src) {
 }
 
 void Video_CheckCaps(void) {
-	uint32_t caps[D3DCAPS_WORDS];
+	D3DCaps8 caps;
 	D3DAdapterId id;
 	char text[0x400];
 
@@ -306,8 +306,8 @@ void Video_CheckCaps(void) {
 	if (!d3d) {
 		return;
 	}
-	int hr = D3D_METHOD(d3d, d3dGetDeviceCaps_t, D3D_GETDEVICECAPS)(d3d, 0, D3DDEVTYPE_HAL, caps);
-	byte ok = hr >= 0 && caps[D3DCAPS_PIXELSHADERVERSION] >= D3DPS_VERSION(1, 1);
+	int hr = D3D_METHOD(d3d, d3dGetDeviceCaps_t, D3D_GETDEVICECAPS)(d3d, 0, D3DDEVTYPE_HAL, &caps);
+	byte ok = hr >= 0 && caps.PixelShaderVersion >= D3DPS_VERSION(1, 1);
 	id.Description[0] = 0;
 	D3D_METHOD(d3d, d3dGetAdapterIdentifier_t, D3D_GETADAPTERIDENTIFIER)(d3d, 0, 0, &id);
 	if (!ok) {
@@ -441,7 +441,7 @@ void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut) {
 	E3D_LogPrint(g_FileLog, "SplashScreen: %s", path);
 	tex = NULL;
 	FileIO_ReadAll(path, &data, &size);
-	D3DX_CreateTextureFromFileInMemoryEx(g_EngineDev, data, size, 0, 0, 1, 0, 0, D3DPOOL_MANAGED, 1, 1, 0, NULL, NULL,
+	D3DX_CreateTextureFromFileInMemoryEx(g_Engine->device, data, size, 0, 0, 1, 0, 0, D3DPOOL_MANAGED, 1, 1, 0, NULL, NULL,
 		&tex);
 	Ptr_Delete(&data);
 	const box_t rect = { { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 0.0f } };
@@ -501,10 +501,10 @@ void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut) {
 }
 
 void Splash_Draw(const box_t *rect, uint32_t color, void *tex) {
-	D3D_METHOD(g_EngineDev, d3dScene_t, D3DDEV_BEGINSCENE)(g_EngineDev);
+	D3D_METHOD(g_Engine->device, d3dScene_t, D3DDEV_BEGINSCENE)(g_Engine->device);
 	Render_DrawTexRect(rect, color, color, tex);
-	D3D_METHOD(g_EngineDev, d3dScene_t, D3DDEV_ENDSCENE)(g_EngineDev);
-	D3D_METHOD(g_EngineDev, d3dPresent_t, D3DDEV_PRESENT)(g_EngineDev, NULL, NULL, NULL, NULL);
+	D3D_METHOD(g_Engine->device, d3dScene_t, D3DDEV_ENDSCENE)(g_Engine->device);
+	D3D_METHOD(g_Engine->device, d3dPresent_t, D3DDEV_PRESENT)(g_Engine->device, NULL, NULL, NULL, NULL);
 }
 
 void Splash_Reset(void) {
@@ -553,28 +553,28 @@ void Loading_Step(int percent) {
 			return;
 		}
 	}
-	byte *engine = g_Engine;
-	int x0 = (int)ENGINE_MODE(engine)[6] * 0x74 / 0x500;
-	if (!ENGINE_DEV(engine) || !g_D3DOn) {
+	CD3DApplication *engine = g_Engine;
+	int x0 = (int)engine->backBufferDesc.Width * 0x74 / 0x500;
+	if (!engine->device || !g_D3DOn) {
 		return;
 	}
 	float p = (float)percent / 100.0f;
-	int w = (int)ENGINE_MODE(engine)[6];
+	int w = (int)engine->backBufferDesc.Width;
 	float fw = (float)w;
 	r.min.x = (float)x0 / fw;
 	r.max.x = (float)(((w * 0x48c + 0x280) / 0x500 - x0) * percent / 100 + x0) / fw;
-	int h = (int)ENGINE_MODE(engine)[7];
+	int h = (int)engine->backBufferDesc.Height;
 	r.min.y = (float)(h * 0x398 / 1024) / (float)h;
 	r.min.z = 0.0f;
 	r.max.y = 0.90478515625f;	/* 0x3f67a000 */
 	r.max.z = 0.0f;
-	D3D_METHOD(ENGINE_DEV(engine), d3dScene_t, D3DDEV_BEGINSCENE)(ENGINE_DEV(engine));
+	D3D_METHOD(engine->device, d3dScene_t, D3DDEV_BEGINSCENE)(engine->device);
 	float q = 1.0f - p;
 	int green = (int)(q * 200.0f + p * 255.0f);
 	int red = (int)(q * 255.0f + p * 200.0f);
 	Render_DrawTexRect(&r, 0xffc800, ((uint32_t)red << 8 | (uint32_t)green) << 8, NULL);
-	D3D_METHOD(g_EngineDev, d3dScene_t, D3DDEV_ENDSCENE)(g_EngineDev);
-	D3D_METHOD(g_EngineDev, d3dPresent_t, D3DDEV_PRESENT)(g_EngineDev, NULL, NULL, NULL, NULL);
+	D3D_METHOD(g_Engine->device, d3dScene_t, D3DDEV_ENDSCENE)(g_Engine->device);
+	D3D_METHOD(g_Engine->device, d3dPresent_t, D3DDEV_PRESENT)(g_Engine->device, NULL, NULL, NULL, NULL);
 }
 
 void Loading_DrawBack(void) {

@@ -33,7 +33,7 @@ static uint16_t Gamma_Channel(uint16_t w, float expo, float mult, float scale) {
 }
 
 void RenderGamma_Begin(void) {
-	void *dev = ENGINE_DEV(g_Engine);
+	void *dev = g_Engine->device;
 	uint16_t ramp[3][GAMMA_RAMP];
 
 	CHECK(dev);

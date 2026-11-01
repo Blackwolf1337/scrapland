@@ -306,7 +306,7 @@ CMaterial *Mat_New(const CMaterial *orig, byte share) {
 	CMaterial *m = operator_new(sizeof(CMaterial));
 	m = m ? CMaterial_ctor(m) : NULL;
 	CMaterial_Assign(m, orig);
-	CMaterial_Prepare(m, g_EngineDev);
+	CMaterial_Prepare(m, g_Engine->device);
 	CMatList_Add(g_MatList, m);
 	return m;
 }

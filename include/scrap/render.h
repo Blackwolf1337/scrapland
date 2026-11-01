@@ -53,7 +53,6 @@ struct CVertList;
 #define g_MipmapBias GAME_GLOBAL_IN(float, GVar_R_MipmapBias, 16, 0x4ada68)		/* R_MipmapBias */
 #define g_MipmapBias2 GAME_GLOBAL(float, g_MipmapBias2, 0x4ad73c)
 #define g_MipmapsOn GAME_GLOBAL_IN(byte, group_4ad6f0, 2, 0x4ad6f2)
-#define ENGINE_MAXANISOTROPY(m) (*(uint32_t *)((m) + 0x2a448))
 /* the address modes of the stages as Render_SetMap last set them */
 #define g_StageMip (GAME_ARRAY(byte, g_StageMip, 0x4addb4))	/* the b8 (mipmaps) of the map */
 #define g_StageTile (GAME_ARRAY(byte, g_StageTile, 0x4addbc))	/* the bc of the map: bit 0 wraps u, bit 1 v */
@@ -191,7 +190,6 @@ enum {
 #define g_MatLine ((void *)GAME_PTR(CMaterial_MatLine, 0, 0x4ad918))	/* the material of the debug lines */
 #define g_ShowSphereVis GAME_GLOBAL_IN(int, GVar_R_ShowSphereVis, 16, 0x4adbd0)	/* R_ShowSphereVis 0, 1, 2 */
 #define g_VersionStr (GAME_ARRAY(char, g_VersionStr, 0x4ae540))	/* 0x40 */
-#define ENGINE_ZFORMAT(m) (*(uint32_t *)((m) + 0x2a4d0))
 #define g_MatCurrent GAME_GLOBAL(const CMaterial *, g_MatCurrent, 0x4ae580)
 /* what CNode3D_Render draws: the object classes (low 24 bits of the mask), the nodes whose flags & g_RenderFlagMask
  * is not 0 when g_RenderFlagNeg */

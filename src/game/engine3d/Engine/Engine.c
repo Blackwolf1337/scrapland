@@ -46,22 +46,9 @@
 
 #define CMOTORAPP_VFTABLE GAME_VFTABLE(CEngineApp_vftable, 0x3d59e0)
 #define CNULLINPUT_VFTABLE GAME_VFTABLE(CNullInput_vftable, 0x3d5934)
-#define CMOTORAPP_SIZE 0x2a600
 #define CNULLINPUT_SIZE 0x114
 
-#define ENGINE_TITLE(m) (*(const char **)((m) + 0x2a5ac))
-#define ENGINE_I2A5B4(m) (*(int *)((m) + 0x2a5b4))
-#define ENGINE_I2A5B8(m) (*(int *)((m) + 0x2a5b8))
-#define ENGINE_MINW(m) (*(int *)((m) + 0x2a5bc))
-#define ENGINE_MINH(m) (*(int *)((m) + 0x2a5c0))
-#define ENGINE_MENU(m) (*(void **)((m) + 0x2a5dc))
-#define ENGINE_I2A5E0(m) (*(int *)((m) + 0x2a5e0))
-#define ENGINE_TABLE(m) ((CTable *)((m) + 0x2a5e4))
-#define ENGINE_SCENE(m) (*(CScene **)((m) + 0x2a5ec))	/* EscenaGlobal, counted */
-#define ENGINE_W2A5F0(m) ((int *)((m) + 0x2a5f0))
-#define ENGINE_B2A5F9(m) (*(byte *)((m) + 0x2a5f9))
-
-#define g_Engine3D GAME_GLOBAL(byte *, g_Engine3D, 0x4a9038)
+#define g_Engine3D GAME_GLOBAL(CEngineApp *, g_Engine3D, 0x4a9038)
 /* the callbacks of Engine3D_Create: once after the device, each frame, at the end */
 #define g_EngineInit GAME_GLOBAL(void *, g_EngineInit, 0x4a8f90)
 #define g_EngineFrame GAME_GLOBAL(void *, g_EngineFrame, 0x4a8f94)
@@ -82,10 +69,6 @@ typedef void(__stdcall *initcommoncontrols_t)(void);
 /* the console command handler of the engine (E3D_Command) */
 #define ENGINE_CMDPROC 0x22eda0
 #define g_Input GAME_GLOBAL(void *, g_Input, 0x4db418)	/* the input of the engine, a CEntradaNula */
-#define ENGINE_OVERLAY(m) (*(void **)((m) + 0x2a5f0))	/* 8 bytes with a CGraphic2D */
-#define ENGINE_OBJ2A5F4(m) (*(void ***)((m) + 0x2a5f4))
-#define ENGINE_TIME(m) (*(float *)((m) + 0x2a518))	/* s */
-#define ENGINE_ELAPSED(m) (*(float *)((m) + 0x2a51c))
 /* the clock of the engine */
 #define g_FrameDelta GAME_GLOBAL(float, g_FrameMs, 0x4a8ed4)
 #define g_RealFrameSecs GAME_GLOBAL(float, g_RealFrameSecs, 0x4a8ee4)
@@ -102,37 +85,40 @@ typedef void(__stdcall *initcommoncontrols_t)(void);
 #define WM_KEYUP 0x101
 #define WM_COMMAND 0x111
 
-byte *__fastcall CEngineApp_ctor(byte *self) {
-	CD3DApp_ctor(self);
-	*(void **)self = CMOTORAPP_VFTABLE;
-	ENGINE_TABLE(self)->p = NULL;
-	ENGINE_TABLE(self)->n = 0;
-	ENGINE_TITLE(self) = "ScrapEngine [DX8]";
-	ENGINE_USEDEPTH(self) = 1;
-	ENGINE_MINW(self) = 640;
-	ENGINE_MINH(self) = 480;
-	ENGINE_MENU(self) = NULL;
-	ENGINE_I2A5E0(self) = 0;
-	ENGINE_SCENE(self) = NULL;
-	ENGINE_W2A5F0(self)[0] = 0;
-	ENGINE_W2A5F0(self)[1] = 0;
-	ENGINE_W2A5F0(self)[2] = 0;
-	ENGINE_W2A5F0(self)[3] = 0;
+CEngineApp *__fastcall CEngineApp_ctor(CEngineApp *self) {
+	CD3DApp_ctor(&self->base);
+	self->base.vftable = CMOTORAPP_VFTABLE;
+	self->table.p = NULL;
+	self->table.n = 0;
+	self->base.windowTitle = "ScrapEngine [DX8]";
+	self->base.useDepthBuffer = 1;
+	self->base.creationWidth = 640;
+	self->base.creationHeight = 480;
+	self->menu = NULL;
+	self->cameraMenu = NULL;
+	self->scene = NULL;
+	self->overlay = NULL;
+	self->obj2a5f4 = NULL;
+	self->canWBuffer = 0;
+	self->useWBuffer = 0;
+	self->canMenu9c5d = 0;
+	self->canMenu9c5c = 0;
+	self->menuMode = 0;
 	Engine_LoadVarsIni(g_M3dIni, NULL);
-	ENGINE_VSYNC(self) = g_VSync;
-	ENGINE_B2A5F9(self) = g_EngineIni7c != 0;
+	self->base.vsync = g_VSync;
+	self->useWBuffer = g_EngineIni7c != 0;
 	g_VertexSpecular = g_EngineIni80 != 0;
-	ENGINE_I2A5B8(self) = g_EngineIni84;
-	ENGINE_I2A5B4(self) = g_EngineDef1cf4;
+	self->base.minStencilBits = g_EngineIni84;
+	self->base.minDepthBits = g_EngineDef1cf4;
 	g_EngineMode = (g_EngineIni88 != 0) + 1;
 	DbgWin_Init(NULL);
 	return self;
 }
 
-static void Engine_Free(byte *m) {
-	Table_Free(ENGINE_TABLE(m));
-	CD3DApp_dtor(m);
-	operator_delete_sized(m, CMOTORAPP_SIZE);
+static void Engine_Free(CEngineApp *m) {
+	Table_Free(&m->table);
+	CD3DApp_dtor(&m->base);
+	operator_delete_sized(m, sizeof(CEngineApp));
 }
 
 /* the engine made (destroy 0) or freed */
@@ -140,12 +126,12 @@ void Engine3D_Create(void *hInst, void *hWnd, void *init, void *frame, void *rel
 	(void)hInst;
 	if (!destroy) {
 		void *mem;
-		byte *m;
+		CEngineApp *m;
 
 		CHECK(!g_Engine3D);
-		mem = operator_new(CMOTORAPP_SIZE);
+		mem = operator_new(sizeof(CEngineApp));
 		m = mem ? CEngineApp_ctor(mem) : NULL;
-		ENGINE_HWND(m) = hWnd;
+		m->base.hWnd = hWnd;
 		g_EngineInit = init;
 		g_EngineFrame = frame;
 		g_Engine3D = m;
@@ -177,7 +163,7 @@ void Engine3D_Shutdown(void) {
 }
 
 /* OneTimeSceneInit: the init callback of the game, the input, the fonts and trails, the global scene */
-int __thiscall CEngineApp_OneTimeSceneInit(byte *self) {
+int __thiscall CEngineApp_OneTimeSceneInit(CEngineApp *self) {
 	void *mem;
 
 	g_E3DCmdProc = GAME_FUNC(E3D_Command, ENGINE_CMDPROC);
@@ -193,7 +179,7 @@ int __thiscall CEngineApp_OneTimeSceneInit(byte *self) {
 	}
 	g_Input = mem;
 	mem = operator_new(8);
-	ENGINE_OVERLAY(self) = mem ? CGraphic2DList_ctor(mem) : NULL;
+	self->overlay = mem ? CGraphic2DList_ctor(mem) : NULL;
 	Fonts_Init();
 	Trails_InitLists();
 	LensFlare_InitList();
@@ -204,16 +190,16 @@ int __thiscall CEngineApp_OneTimeSceneInit(byte *self) {
 }
 
 /* FrameMove: the clock of the engine (real and game time, fps once a second) */
-int __thiscall CEngineApp_FrameMove(byte *self) {
-	float t = ENGINE_TIME(self), d;
+int __thiscall CEngineApp_FrameMove(CEngineApp *self) {
+	float t = self->base.time, d;
 
 	g_FrameDelta = t - g_LastTime;
 	g_LastTime = t;
 	g_TimeMsF = (float)((double)t * 1000.0);
-	g_RealFrameSecs = ENGINE_ELAPSED(self);
-	g_TimeD = (double)ENGINE_TIME(self);
+	g_RealFrameSecs = self->base.elapsedTime;
+	g_TimeD = (double)self->base.time;
 	g_TimeMsInt = (int)(g_TimeD * 1000.0);
-	g_FrameSec = World_TimeScale() * ENGINE_ELAPSED(self);
+	g_FrameSec = World_TimeScale() * self->base.elapsedTime;
 	if (!(ENGINE_MAXFRAME > g_FrameSec)) {
 		g_FrameSec = ENGINE_MAXFRAME;
 	}
@@ -227,13 +213,12 @@ int __thiscall CEngineApp_FrameMove(byte *self) {
 		g_Fps = (float)(n - g_FpsFrames) / d;
 		g_FpsFrames = n;
 		if (g_RenderOff) {
-			Win_SetTextf(ENGINE_HWND(self), "Scrapland dedicated server");
+			Win_SetTextf(self->base.hWnd, "Scrapland dedicated server");
 		}
 	}
 	return 0;
 }
 
-#define ENGINE_B2A5F8(m) (*(byte *)((m) + 0x2a5f8))
 #define g_RenderCounts (GAME_ARRAY(int, g_RenderCounts, 0x4a8f00))	/* [10], 8 counts (g_RenderTris and g_RenderVerts first), the frame clears 10 */
 #define g_Engine431bae GAME_GLOBAL_IN(byte, group_431bac, 2, 0x431bae)
 #define g_Dither GAME_GLOBAL(int, g_Dither, 0x431bd4)		/* [video] Tramas: dithering */
@@ -257,22 +242,21 @@ int __thiscall CEngineApp_FrameMove(byte *self) {
 #define D3DRS_SHADEMODE 9
 #define D3DRS_DITHERENABLE 0x1a
 #define D3DRS_SPECULARENABLE 0x1d
-#define D3DSWAPEFFECT_COPY_VSYNC 4
-#define D3DPRESENT_INTERVAL_IMMEDIATE 0x80000000
 typedef int(__stdcall *d3dScene_t)(void *dev);
 
 /* Present waits for the vertical retrace: full screen with an interval other than immediate, windowed only with
  * the swap effect COPY_VSYNC (D3DPRESENT_PARAMETERS: 5 SwapEffect, 7 Windowed, 12 FullScreen_PresentationInterval) */
-static byte Engine_PresentVSync(byte *self) {
-	const uint32_t *pp = ENGINE_PP(self);
+static byte Engine_PresentVSync(CD3DApplication *self) {
+	const D3DPresentParams *pp = &self->presentParams;
 
-	return pp[7] ? pp[5] == D3DSWAPEFFECT_COPY_VSYNC : pp[12] != D3DPRESENT_INTERVAL_IMMEDIATE;
+	return pp->Windowed ? pp->SwapEffect == D3DSWAPEFFECT_COPY_VSYNC :
+		pp->FullScreen_PresentationInterval != D3DPRESENT_INTERVAL_IMMEDIATE;
 }
 
 /* differs from the original on purpose (no sleeps): the original slept at the end of the frame until its time had
  * passed, the C checks before the next one: App_WinMain (also CD3DApp_Render and CD3DApp_Run) skips the frame while
  * this is 0 and its PeekMessage loop asks again; with vsync there is no own limiter */
-byte Engine_FrameDue(byte *self) {
+byte Engine_FrameDue(CD3DApplication *self) {
 	if (!g_LimitNext) {
 		return 1;
 	}
@@ -285,16 +269,16 @@ byte Engine_FrameDue(byte *self) {
 
 /* a pending reset of the device objects (g_ResetDev): with g_ResetDevOnly 0 also the world through the release
  * and init callbacks of the game; the HRESULT */
-int __fastcall CEngineApp_ResetDevice(byte *self) {
+int __fastcall CEngineApp_ResetDevice(CEngineApp *self) {
 	if (!g_ResetDev) {
 		return 0;
 	}
 	g_ResetDev = 0;
-	CHECK(ENGINE_DEV(self));
+	CHECK(self->base.device);
 	/* differs from the original on purpose (no sleeps): no Sleep(250) before the reset */
 	int hr;
 	if (!g_ResetDevOnly) {
-		hr = ENGINE_CALL(self, ENGINE_VT_INVALIDATE);
+		hr = self->base.vftable->DeleteDeviceObjects(&self->base);
 		if (hr < 0) {
 			return hr;
 		}
@@ -311,14 +295,14 @@ int __fastcall CEngineApp_ResetDevice(byte *self) {
 		}
 		CHECK(g_World);
 		Engine_GetScene(self);
-		hr = ENGINE_CALL(self, ENGINE_VT_RESTORE2);
+		hr = self->base.vftable->InitDeviceObjects(&self->base);
 		return hr < 0 ? hr : 0;
 	}
-	hr = ENGINE_CALL(self, ENGINE_VT_INVALIDATE);
+	hr = self->base.vftable->DeleteDeviceObjects(&self->base);
 	if (hr < 0) {
 		return hr;
 	}
-	hr = ENGINE_CALL(self, ENGINE_VT_DELETE);
+	hr = self->base.vftable->FinalCleanup(&self->base);
 	if (hr < 0) {
 		return hr;
 	}
@@ -326,27 +310,27 @@ int __fastcall CEngineApp_ResetDevice(byte *self) {
 	g_EngineFrame = g_EngineFrameNext;
 	g_EngineRelease = g_EngineReleaseNext;
 	Keyboard_Clear();
-	void *dev = ENGINE_DEV(self);
-	ENGINE_DEV(self) = NULL;
-	hr = ENGINE_CALL(self, ENGINE_VT_RESTORE);
+	void *dev = self->base.device;
+	self->base.device = NULL;
+	hr = self->base.vftable->OneTimeSceneInit(&self->base);
 	if (hr < 0) {
 		return hr;
 	}
-	ENGINE_DEV(self) = dev;
-	hr = ENGINE_CALL(self, ENGINE_VT_RESTORE2);
+	self->base.device = dev;
+	hr = self->base.vftable->InitDeviceObjects(&self->base);
 	return hr < 0 ? hr : 0;
 }
 
 /* Render (vtable 0x18): the scene into the target "Scene", the 2D and the frame callback of the game on top, the
  * screenshot of AutoScreenShot, the frame limiter; 1 when the game callback asks to quit or the reset failed */
-int __thiscall CEngineApp_Render(byte *self) {
-	if (!Engine_FrameDue(self)) {
+int __thiscall CEngineApp_Render(CEngineApp *self) {
+	if (!Engine_FrameDue(&self->base)) {
 		return 0;
 	}
 	if (CEngineApp_ResetDevice(self)) {
 		return 1;
 	}
-	void *dev = ENGINE_DEV(self);
+	void *dev = self->base.device;
 	g_FrameCount++;
 	int quit = 0;
 	g_TimeScaled = (int)((int64_t)g_TimeMult * (int64_t)Time_Get() / 1000);
@@ -354,8 +338,8 @@ int __thiscall CEngineApp_Render(byte *self) {
 		g_RenderCounts[i] = 0;
 	}
 	RenderTarget_Begin("Scene");
-	Render_Clear(NULL, 3, Color_ToD3D(&ENGINE_SCENE(self)->fog), 1.0f, g_StencilClear);
-	g_ZEnable = ENGINE_B2A5F9(self) && ENGINE_B2A5F8(self) ? 2 : 1;
+	Render_Clear(NULL, 3, Color_ToD3D(&self->scene->fog), 1.0f, g_StencilClear);
+	g_ZEnable = self->useWBuffer && self->canWBuffer ? 2 : 1;
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZENABLE, g_ZEnable);
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZWRITEENABLE, 1);
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
@@ -363,7 +347,7 @@ int __thiscall CEngineApp_Render(byte *self) {
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_SHADEMODE, (g_Engine431bae != 0) + 1);
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_SPECULARENABLE, g_VertexSpecular);
 	D3D_METHOD(dev, d3dSetRenderState_t, D3DDEV_SETRENDERSTATE)(dev, D3DRS_DITHERENABLE, g_Dither);
-	g_AmbientD3D = Color_ToD3D(&ENGINE_SCENE(self)->ambient);
+	g_AmbientD3D = Color_ToD3D(&self->scene->ambient);
 	if (D3D_METHOD(dev, d3dScene_t, D3DDEV_BEGINSCENE)(dev) >= 0) {
 		Render_SetCamera(World_Get()->cam);
 		Render_BeginFrame();
@@ -379,7 +363,7 @@ int __thiscall CEngineApp_Render(byte *self) {
 		MeshEffect_Render();
 		Trails_Render(-1);
 		LensFlare_RenderAll();
-		CGraphic2DList_Render((CGraphic2DList *)ENGINE_OVERLAY(self));
+		CGraphic2DList_Render(self->overlay);
 		RenderTarget_End("Scene");
 		E3D_FlushBatch();
 		Background2D_Render();
@@ -395,7 +379,7 @@ int __thiscall CEngineApp_Render(byte *self) {
 		D3D_METHOD(dev, d3dScene_t, D3DDEV_ENDSCENE)(dev);
 	}
 	if (g_TileOn) {
-		void *bb, *d = ENGINE_DEV(self);
+		void *bb, *d = self->base.device;
 
 		D3D_METHOD(d, d3dGetBackBuffer_t, D3DDEV_GETBACKBUFFER)(d, 0, 0, &bb);
 		Surface_ShotCopy(bb);
@@ -404,7 +388,7 @@ int __thiscall CEngineApp_Render(byte *self) {
 	}
 	float fps = Float_MaxSS(g_LimitFps, g_RLimitFps);
 	if ((double)fps > 0.1) {
-		if (Engine_PresentVSync(self)) {
+		if (Engine_PresentVSync(&self->base)) {
 			/* differs from the original on purpose (no sleeps): with vsync no own limiter, started again without */
 			g_LimitNext = 0;
 		} else {
@@ -430,9 +414,9 @@ int __thiscall CEngineApp_Render(byte *self) {
 }
 
 /* DeleteDeviceObjects: the device objects of the input, the textures, materials, shadows, trails and the world */
-int __thiscall CEngineApp_DeleteDeviceObjects(byte *self) {
+int __thiscall CEngineApp_DeleteDeviceObjects(CEngineApp *self) {
 	((void(__thiscall *)(void *))(*(void ***)g_Input)[2])(g_Input);
-	Table_Free(ENGINE_TABLE(self));
+	Table_Free(&self->table);
 	Texture_ReleaseAllD3D();
 	CMatList_Release(g_MatList);
 	Stencil_Free();
@@ -445,8 +429,8 @@ int __thiscall CEngineApp_DeleteDeviceObjects(byte *self) {
 }
 
 /* FinalCleanup: the global scene, the release callback of the game, everything of the engine */
-int __thiscall CEngineApp_FinalCleanup(byte *self) {
-	void *ov;
+int __thiscall CEngineApp_FinalCleanup(CEngineApp *self) {
+	CGraphic2DList *ov;
 
 	Engine_ReleaseScene(self);
 	if (g_EngineRelease) {
@@ -455,17 +439,17 @@ int __thiscall CEngineApp_FinalCleanup(byte *self) {
 	CHECK(!g_World);
 	Fonts_Free();
 	Debug_PointsClear();
-	ov = ENGINE_OVERLAY(self);
+	ov = self->overlay;
 	if (ov) {
 		CGraphic2DList_DeleteAll(ov);
 		operator_delete_sized(ov, 8);
-		ENGINE_OVERLAY(self) = NULL;
+		self->overlay = NULL;
 	}
-	if (ENGINE_OBJ2A5F4(self)) {
-		void **obj = ENGINE_OBJ2A5F4(self);
+	if (self->obj2a5f4) {
+		void **obj = self->obj2a5f4;
 
 		((void *(__thiscall *)(void *, int))((void **)obj[0])[0])(obj, 1);
-		ENGINE_OBJ2A5F4(self) = NULL;
+		self->obj2a5f4 = NULL;
 	}
 	UtilScene_FreeAll();
 	Trails_ResetAll();
@@ -483,20 +467,20 @@ int __thiscall CEngineApp_FinalCleanup(byte *self) {
 }
 
 /* ConfirmDevice: no device with the pure behaviour 0x10 */
-int __thiscall CEngineApp_ConfirmDevice(byte *self, void *caps, uint32_t behavior, int format) {
+int __thiscall CEngineApp_ConfirmDevice(CEngineApp *self, D3DCaps8 *caps, uint32_t behavior, int format) {
 	(void)self;
 	(void)caps;
 	(void)format;
 	return (byte)(behavior & 0x10) ? (int)0x80004005 : 0;
 }
 
-int __thiscall CEngineApp_RestoreDeviceObjects(byte *self) {
+int __thiscall CEngineApp_RestoreDeviceObjects(CEngineApp *self) {
 	(void)self;
 	g_EngineFrameCount++;
 	return 0;
 }
 
-int __thiscall CD3DApplication_Nothing(byte *self) {
+int __thiscall CD3DApplication_Nothing(CD3DApplication *self) {
 	(void)self;
 	return 0;
 }
@@ -638,34 +622,34 @@ void Engine_DrawStats(void) {
 }
 
 /* EscenaGlobal: the scene of the world (or its first one, or bmp/vacia.m3d), counted while the level runs */
-void __fastcall Engine_ReleaseScene(byte *self) {
+void __fastcall Engine_ReleaseScene(CEngineApp *self) {
 	CScene *e;
 
-	CHECK(ENGINE_SCENE(self));
-	if (ENGINE_SCENE(self)) {
-		ENGINE_SCENE(self)->Refs--;
-		e = ENGINE_SCENE(self);
+	CHECK(self->scene);
+	if (self->scene) {
+		self->scene->Refs--;
+		e = self->scene;
 		if (!e->Refs && e) {
 			((void *(__thiscall *)(CScene *, int))e->vftable[0])(e, 1);
 		}
-		ENGINE_SCENE(self) = NULL;
+		self->scene = NULL;
 	}
 }
 
-void __fastcall Engine_GetScene(byte *self) {
+void __fastcall Engine_GetScene(CEngineApp *self) {
 	CWorld *world;
 
-	CHECK(!ENGINE_SCENE(self));
+	CHECK(!self->scene);
 	world = World_Get();
-	ENGINE_SCENE(self) = world->GroundScale;
-	if (!ENGINE_SCENE(self)) {
-		ENGINE_SCENE(self) = Scene_Next(NULL);
+	self->scene = world->GroundScale;
+	if (!self->scene) {
+		self->scene = Scene_Next(NULL);
 	}
-	if (!ENGINE_SCENE(self)) {
-		ENGINE_SCENE(self) = Create_Model2("bmp/vacia.m3d", NULL, 2)->scene;
-		CHECK(ENGINE_SCENE(self));
+	if (!self->scene) {
+		self->scene = Create_Model2("bmp/vacia.m3d", NULL, 2)->scene;
+		CHECK(self->scene);
 	}
-	ENGINE_SCENE(self)->Refs++;
+	self->scene->Refs++;
 }
 
 /* ---- m3d.ini: the variables of the engine, in the order of the original ---- */
@@ -762,16 +746,13 @@ void Engine_LoadVarsIni(const char *name, const char *dir) {
 #define ENGINE_LIGHTSPROC 0x22dcf0	/* Engine_SceneDlgProc */
 #define ENGINE_LIGHTSDIALOG 0x99
 #define TVM_INSERTITEM 0x1100
-#define ENGINE_VT_PAUSE 0x34
 
 /* the modal dialog of the lights of the global scene, the application paused meanwhile */
-void __thiscall CEngineApp_LightsDialog(byte *self, void *hwnd, void *inst) {
-	typedef void(__thiscall * pause_t)(byte *, int);
-
-	((pause_t)(*(void ***)self)[ENGINE_VT_PAUSE / 4])(self, 1);
+void __thiscall CEngineApp_LightsDialog(CEngineApp *self, void *hwnd, void *inst) {
+	self->base.vftable->Pause(&self->base, 1);
 	exe_DialogBoxParamA(inst, (const char *)ENGINE_LIGHTSDIALOG, hwnd, GAME_FUNC(Engine_SceneDlgProc, ENGINE_LIGHTSPROC),
-		(intptr_t)ENGINE_SCENE(self));
-	((pause_t)(*(void ***)self)[ENGINE_VT_PAUSE / 4])(self, 0);
+		(intptr_t)self->scene);
+	self->base.vftable->Pause(&self->base, 0);
 }
 
 /* TVINSERTSTRUCT of the tree view of the scene dialog */
@@ -1121,7 +1102,7 @@ void E3D_Command(char *cmd) {
 			}
 		}
 		Scene_LogTree(e, NULL, 0);
-		hwnd = ENGINE_HWND(g_Engine);
+		hwnd = g_Engine->hWnd;
 		exe_CreateDialogParamA((void *)exe_GetWindowLongA(hwnd, GWL_HINSTANCE), (const char *)ENGINE_LIGHTSDIALOG, hwnd,
 			GAME_FUNC(Engine_SceneDlgProc, ENGINE_LIGHTSPROC), (intptr_t)e);
 		return;
@@ -1164,9 +1145,6 @@ void E3D_Command(char *cmd) {
 #define IDM_SHARPEN 0x9c65
 #define IDM_RELOADMATS 0x9c66
 #define IDM_CAMERA 50000		/* the cameras of the global scene from here */
-#define ENGINE_B2A5FA(m) (*(byte *)((m) + 0x2a5fa))
-#define ENGINE_B2A5FB(m) (*(byte *)((m) + 0x2a5fb))
-#define ENGINE_I2A5FC(m) (*(int *)((m) + 0x2a5fc))
 #define g_Engine4af7d4 GAME_GLOBAL(byte, g_Engine4af7d4, 0x4af7d4)
 #define g_Sharpen GAME_GLOBAL(int, g_Sharpen, 0x4b25e8)		/* [video] Sharpen of m3d.ini */
 #define g_MouseExcl GAME_GLOBAL(int, g_MouseExcl, 0x431cfc)		/* [dinput] raton_excl */
@@ -1176,37 +1154,36 @@ static uint32_t Menu_Check(int on) {
 }
 
 /* the menu items greyed and checked by the state */
-void __fastcall CEngineApp_UpdateMenu(byte *self) {
-	void *menu = ENGINE_MENU(self);
+void __fastcall CEngineApp_UpdateMenu(CEngineApp *self) {
+	void *menu = self->menu;
 
 	if (!menu) {
 		return;
 	}
 	exe_EnableMenuItem(menu, IDM_MODE0, g_MipmapsOn == 0);
-	exe_EnableMenuItem(ENGINE_MENU(self), IDM_MODE1, g_MipmapsOn == 0);
-	exe_EnableMenuItem(ENGINE_MENU(self), IDM_MODE2, g_MipmapsOn == 0);
-	exe_CheckMenuItem(ENGINE_MENU(self), IDM_MODE0, Menu_Check(g_EngineMode == 0));
-	exe_CheckMenuItem(ENGINE_MENU(self), IDM_MODE1, Menu_Check(g_EngineMode == 1));
-	exe_CheckMenuItem(ENGINE_MENU(self), IDM_MODE2, Menu_Check(g_EngineMode == 2));
-	exe_EnableMenuItem(ENGINE_MENU(self), IDM_9C5B, !ENGINE_B2A5FA(self) && !ENGINE_B2A5FB(self) ? MF_GRAYED : 0);
-	exe_EnableMenuItem(ENGINE_MENU(self), IDM_9C5D, ENGINE_B2A5FA(self) == 0);
-	exe_EnableMenuItem(ENGINE_MENU(self), IDM_9C5C, ENGINE_B2A5FB(self) == 0);
-	exe_CheckMenuItem(ENGINE_MENU(self), IDM_9C5B, Menu_Check(ENGINE_I2A5FC(self) == 0));
-	exe_CheckMenuItem(ENGINE_MENU(self), IDM_9C5D, Menu_Check(ENGINE_I2A5FC(self) == 1));
-	exe_CheckMenuItem(ENGINE_MENU(self), IDM_9C5C, Menu_Check(ENGINE_I2A5FC(self) == 1));
-	exe_EnableMenuItem(ENGINE_MENU(self), IDM_9C5A, ENGINE_B2A5F8(self) == 0);
-	exe_CheckMenuItem(ENGINE_MENU(self), IDM_9C5A, Menu_Check(ENGINE_B2A5F9(self) != 0));
-	exe_CheckMenuItem(ENGINE_MENU(self), IDM_SPECULAR, Menu_Check(g_VertexSpecular != 0));
-	exe_CheckMenuItem(ENGINE_MENU(self), IDM_RENDERMODE100, Menu_Check(g_RenderMode100 != 0));
-	exe_CheckMenuItem(ENGINE_MENU(self), IDM_9C57, Menu_Check(g_Engine431bae != 0));
-	exe_CheckMenuItem(ENGINE_MENU(self), IDM_USARVB, Menu_Check(g_UseVB != 0));
-	exe_CheckMenuItem(ENGINE_MENU(self), IDM_WORLD0, Menu_Check(*(byte *)World_Get() != 0));
-	exe_CheckMenuItem(ENGINE_MENU(self), IDM_SOLOB38, Menu_Check(g_RenderOnlyB38 != 0));
-	exe_CheckMenuItem(ENGINE_MENU(self), IDM_9C64, Menu_Check(g_Engine4af7d4 != 0));
-	exe_CheckMenuItem(ENGINE_MENU(self), IDM_SHARPEN, Menu_Check(g_Sharpen != 0));
+	exe_EnableMenuItem(self->menu, IDM_MODE1, g_MipmapsOn == 0);
+	exe_EnableMenuItem(self->menu, IDM_MODE2, g_MipmapsOn == 0);
+	exe_CheckMenuItem(self->menu, IDM_MODE0, Menu_Check(g_EngineMode == 0));
+	exe_CheckMenuItem(self->menu, IDM_MODE1, Menu_Check(g_EngineMode == 1));
+	exe_CheckMenuItem(self->menu, IDM_MODE2, Menu_Check(g_EngineMode == 2));
+	exe_EnableMenuItem(self->menu, IDM_9C5B, !self->canMenu9c5d && !self->canMenu9c5c ? MF_GRAYED : 0);
+	exe_EnableMenuItem(self->menu, IDM_9C5D, self->canMenu9c5d == 0);
+	exe_EnableMenuItem(self->menu, IDM_9C5C, self->canMenu9c5c == 0);
+	exe_CheckMenuItem(self->menu, IDM_9C5B, Menu_Check(self->menuMode == 0));
+	exe_CheckMenuItem(self->menu, IDM_9C5D, Menu_Check(self->menuMode == 1));
+	exe_CheckMenuItem(self->menu, IDM_9C5C, Menu_Check(self->menuMode == 1));
+	exe_EnableMenuItem(self->menu, IDM_9C5A, self->canWBuffer == 0);
+	exe_CheckMenuItem(self->menu, IDM_9C5A, Menu_Check(self->useWBuffer != 0));
+	exe_CheckMenuItem(self->menu, IDM_SPECULAR, Menu_Check(g_VertexSpecular != 0));
+	exe_CheckMenuItem(self->menu, IDM_RENDERMODE100, Menu_Check(g_RenderMode100 != 0));
+	exe_CheckMenuItem(self->menu, IDM_9C57, Menu_Check(g_Engine431bae != 0));
+	exe_CheckMenuItem(self->menu, IDM_USARVB, Menu_Check(g_UseVB != 0));
+	exe_CheckMenuItem(self->menu, IDM_WORLD0, Menu_Check(*(byte *)World_Get() != 0));
+	exe_CheckMenuItem(self->menu, IDM_SOLOB38, Menu_Check(g_RenderOnlyB38 != 0));
+	exe_CheckMenuItem(self->menu, IDM_9C64, Menu_Check(g_Engine4af7d4 != 0));
+	exe_CheckMenuItem(self->menu, IDM_SHARPEN, Menu_Check(g_Sharpen != 0));
 }
 
-#define ENGINE_SUBMENU(m) (*(void **)((m) + 0x2a5e0))	/* the cameras of the global scene */
 #define ENGINE_MAXCAMERAS 0x14
 #define MF_BYPOSITION 0x400
 #define D3DRS_88 0x88
@@ -1215,14 +1192,14 @@ void __fastcall CEngineApp_UpdateMenu(byte *self) {
 #define ENGINE_BUILD 0x15f8
 
 /* InitDeviceObjects: the device objects of the engine, the cameras menu, the title, the input on the window */
-int __thiscall CEngineApp_InitDeviceObjects(byte *self) {
+int __thiscall CEngineApp_InitDeviceObjects(CEngineApp *self) {
 	typedef int(__stdcall * setrenderstate_t)(void *, uint32_t, uint32_t);
-	void *dev = ENGINE_DEV(self);
+	void *dev = self->base.device;
 	char title[0x100];
 	int hr;
 
 	g_EngineInits++;
-	ENGINE_B2A5F8(self) = (byte)(ENGINE_RASTERCAPS(self) >> 18) & 1;
+	self->canWBuffer = (byte)(self->base.caps.RasterCaps >> 18) & 1;
 	Render_IniD3D();
 	CWorld_InitD3D(World_Get());
 	UtilScene_InitD3D();
@@ -1233,53 +1210,53 @@ int __thiscall CEngineApp_InitDeviceObjects(byte *self) {
 	CMatList_Prepare(g_MatList, dev);
 	Render_SetCamera(World_Get()->cam);
 	Render_SetWorldMatrix(g_MatIdentity, 0);
-	CScene_FindClass(ENGINE_SCENE(self), NULL, CLASS_OBJ3D_LIGHT);
+	CScene_FindClass(self->scene, NULL, CLASS_OBJ3D_LIGHT);
 	((setrenderstate_t)(*(void ***)dev)[DEV_VT_SETRENDERSTATE / 4])(dev, D3DRS_88, 1);
 	((setrenderstate_t)(*(void ***)dev)[DEV_VT_SETRENDERSTATE / 4])(dev, D3DRS_89, 1);
-	ENGINE_MENU(self) = exe_GetMenu(ENGINE_HWND(self));
+	self->menu = exe_GetMenu(self->base.hWnd);
 	CEngineApp_UpdateMenu(self);
-	CHECK(!ENGINE_TABLE(self)->p);
-	ENGINE_TABLE(self)->n = ENGINE_MAXCAMERAS;
-	ENGINE_TABLE(self)->p = operator_new_array(ENGINE_MAXCAMERAS * sizeof(void *));
-	CHECK(ENGINE_TABLE(self)->p);
-	CHECK(ENGINE_TABLE(self)->p);
-	memset(ENGINE_TABLE(self)->p, 0, (uint32_t)ENGINE_TABLE(self)->n * sizeof(void *));
-	ENGINE_SUBMENU(self) = exe_GetSubMenu(ENGINE_MENU(self), 2);
-	if (ENGINE_SUBMENU(self)) {
+	CHECK(!self->table.p);
+	self->table.n = ENGINE_MAXCAMERAS;
+	self->table.p = operator_new_array(ENGINE_MAXCAMERAS * sizeof(void *));
+	CHECK(self->table.p);
+	CHECK(self->table.p);
+	memset(self->table.p, 0, (uint32_t)self->table.n * sizeof(void *));
+	self->cameraMenu = exe_GetSubMenu(self->menu, 2);
+	if (self->cameraMenu) {
 		CNode3D *n;
 		uint32_t i = 0;
 
-		while (exe_DeleteMenu(ENGINE_SUBMENU(self), 0, MF_BYPOSITION)) {
+		while (exe_DeleteMenu(self->cameraMenu, 0, MF_BYPOSITION)) {
 		}
-		for (n = CScene_FindClass(ENGINE_SCENE(self), NULL, CLASS_OBJ3D_CAMERA); n;
-			n = CScene_FindClass(ENGINE_SCENE(self), n, CLASS_OBJ3D_CAMERA)) {
+		for (n = CScene_FindClass(self->scene, NULL, CLASS_OBJ3D_CAMERA); n;
+			n = CScene_FindClass(self->scene, n, CLASS_OBJ3D_CAMERA)) {
 			CCamera *cam;
 
-			if (i == (uint32_t)ENGINE_TABLE(self)->n) {
-				exe_AppendMenuA(ENGINE_SUBMENU(self), 0, i + IDM_CAMERA, "...");
+			if (i == (uint32_t)self->table.n) {
+				exe_AppendMenuA(self->cameraMenu, 0, i + IDM_CAMERA, "...");
 				break;
 			}
 			cam = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_CAMERA);
-			if (!ENGINE_TABLE(self)->p || i >= (uint32_t)ENGINE_TABLE(self)->n) {
+			if (!self->table.p || i >= (uint32_t)self->table.n) {
 				CHECK(0);
 			}
-			((CCamera **)ENGINE_TABLE(self)->p)[i] = cam;
-			exe_AppendMenuA(ENGINE_SUBMENU(self), 0, i + IDM_CAMERA, n->name);
+			((CCamera **)self->table.p)[i] = cam;
+			exe_AppendMenuA(self->cameraMenu, 0, i + IDM_CAMERA, n->name);
 			i++;
 		}
 	}
-	Bprintf(title, sizeof(title), "%s (%d)%s - [%s]", ENGINE_TITLE(self), ENGINE_BUILD, "", ENGINE_SCENE(self)->name);
-	if (!ENGINE_WINDOWED(self)) {
+	Bprintf(title, sizeof(title), "%s (%d)%s - [%s]", self->base.windowTitle, ENGINE_BUILD, "", self->scene->name);
+	if (!self->base.windowed) {
 		Bprintf(title, sizeof(title), "Scrapland (%d)%s", ENGINE_BUILD, "");
 	}
-	exe_SetWindowTextA(ENGINE_HWND(self), title);
+	exe_SetWindowTextA(self->base.hWnd, title);
 	{
 		typedef int(__thiscall * create_t)(void *, void *, void *, int);
 		void **vt = *(void ***)g_Input;
 		int excl = g_MouseExcl != 0;
 
-		hr = ((create_t)vt[1])(g_Input, ENGINE_HWND(self),
-			(void *)exe_GetWindowLongA(ENGINE_HWND(self), GWL_HINSTANCE), excl);
+		hr = ((create_t)vt[1])(g_Input, self->base.hWnd,
+			(void *)exe_GetWindowLongA(self->base.hWnd, GWL_HINSTANCE), excl);
 	}
 	if (hr < 0) {
 		return hr;
@@ -1289,7 +1266,7 @@ int __thiscall CEngineApp_InitDeviceObjects(byte *self) {
 }
 
 /* MsgProc: the input first, the keys, the menu commands of the window, then the one of CD3DApplication */
-intptr_t __thiscall CEngineApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam) {
+intptr_t __thiscall CEngineApp_MsgProc(CEngineApp *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam) {
 	if (g_Input) {
 		((void(__thiscall *)(void *, void *, uint32_t, uintptr_t, intptr_t))(*(void ***)g_Input)[7])(g_Input, hwnd,
 			msg, wParam, lParam);
@@ -1320,14 +1297,14 @@ intptr_t __thiscall CEngineApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uin
 			g_UseVB = g_UseVB == 0;
 			break;
 		case IDM_9C5A:
-			ENGINE_B2A5F9(self) = ENGINE_B2A5F9(self) == 0;
+			self->useWBuffer = self->useWBuffer == 0;
 			break;
 		case IDM_9C5B:
-			ENGINE_I2A5FC(self) = 0;
+			self->menuMode = 0;
 			break;
 		case IDM_9C5C:
 		case IDM_9C5D:
-			ENGINE_I2A5FC(self) = 1;
+			self->menuMode = 1;
 			break;
 		case IDM_LIGHTS:
 			CEngineApp_LightsDialog(self, hwnd, (void *)exe_GetWindowLongA(hwnd, GWL_HINSTANCE));
@@ -1354,23 +1331,23 @@ intptr_t __thiscall CEngineApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uin
 			/* the textures and materials made again */
 			Texture_ReleaseAllD3D();
 			CMatList_Release(g_MatList);
-			CMatList_Prepare(g_MatList, ENGINE_DEV(self));
+			CMatList_Prepare(g_MatList, self->base.device);
 			break;
 		default: {
 			/* a camera of the global scene into the world, the menu item checked */
 			int i = (int)id - IDM_CAMERA;
 
-			if (i >= 0 && i < ENGINE_TABLE(self)->n) {
+			if (i >= 0 && i < self->table.n) {
 				CCamera **cams;
 				int k;
 
-				for (k = 0; k < ENGINE_TABLE(self)->n; k++) {
-					exe_CheckMenuItem(ENGINE_MENU(self), (uint32_t)(k + IDM_CAMERA), i == k ? MF_CHECKED : 0);
+				for (k = 0; k < self->table.n; k++) {
+					exe_CheckMenuItem(self->menu, (uint32_t)(k + IDM_CAMERA), i == k ? MF_CHECKED : 0);
 				}
-				if (!ENGINE_TABLE(self)->p || (uint32_t)i >= (uint32_t)ENGINE_TABLE(self)->n) {
+				if (!self->table.p || (uint32_t)i >= (uint32_t)self->table.n) {
 					CHECK(0);
 				}
-				cams = ENGINE_TABLE(self)->p;
+				cams = self->table.p;
 				CWorld_SetCamera(World_Get(), cams[i]);
 			}
 			break;
@@ -1378,7 +1355,7 @@ intptr_t __thiscall CEngineApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uin
 		}
 		CEngineApp_UpdateMenu(self);
 	}
-	return CD3DApp_MsgProc(self, hwnd, msg, wParam, lParam);
+	return CD3DApp_MsgProc(&self->base, hwnd, msg, wParam, lParam);
 }
 
 /* ---- CEntradaNula: every method of the input does nothing ---- */

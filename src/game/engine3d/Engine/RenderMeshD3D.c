@@ -25,7 +25,7 @@ int MeshD3D_Render(CMeshD3D *self, void *ctx) {
 	CRenderNode *r = ctx;
 	matrix_t world;
 
-	if (!ENGINE_DEV(g_Engine)) {
+	if (!g_Engine->device) {
 		return E_FAIL;
 	}
 	Render_GetWorld(&world);
@@ -115,7 +115,7 @@ int RenderMesh_Compare(const void *a, const void *b) {
 }
 
 int RenderMeshD3D_AddTransp(CMeshD3D *m, const matrix_t *world, byte cont, CRenderNode *r) {
-	if (!ENGINE_DEV(g_Engine)) {
+	if (!g_Engine->device) {
 		return E_FAIL;
 	}
 	Batch_Alloc(&g_TabTransp, sizeof(RenderTranspEntry));

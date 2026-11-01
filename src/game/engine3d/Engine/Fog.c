@@ -38,8 +38,8 @@ void __fastcall CFog_dtor(CFog *self) {
 }
 
 void __fastcall CFog_InitD3D(CFog *self) {
-	CHECK(g_EngineDev);
-	uint32_t caps = ENGINE_RASTERCAPS(g_Engine);
+	CHECK(g_Engine->device);
+	uint32_t caps = g_Engine->caps.RasterCaps;
 	self->capsTable = (caps & D3DPRASTERCAPS_FOGTABLE) != 0;
 	self->capsW = (caps & D3DPRASTERCAPS_WFOG) != 0;
 	self->capsVertex = (caps & D3DPRASTERCAPS_FOGVERTEX) != 0;
@@ -57,7 +57,7 @@ static uint32_t Float_Bits(float f) {
 }
 
 void __fastcall CFog_Apply(CFog *self) {
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 	CHECK(dev);
 	if (!g_FogEnable) {
 		g_FogActive = 0;

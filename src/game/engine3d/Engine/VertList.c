@@ -1292,11 +1292,11 @@ void __thiscall CVertList_LightRampUV(CVertList *self, const matrix_t *world) {
 
 	CHECK(self->pVert);
 	on = 0;
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 	if (D3D_METHOD(dev, d3dGetLightEnable_t, D3DDEV_GETLIGHTENABLE)(dev, 0, &on) || !on) {
 		return;
 	}
-	dev = g_EngineDev;
+	dev = g_Engine->device;
 	D3D_METHOD(dev, d3dGetLight_t, D3DDEV_GETLIGHT)(dev, 0, &light);
 	const vec3_t *d = &light.Direction;
 	double len = __builtin_sqrt((double)(d->z * d->z + d->x * d->x));

@@ -9,6 +9,7 @@
 
 #include "scrap/archio.h"
 #include "scrap/camera.h"
+#include "scrap/dxutil.h"
 #include "scrap/e3dinput.h"
 #include "scrap/e3dutil.h"
 #include "scrap/model.h"
@@ -19,139 +20,26 @@
 #include "scrap/scrapworld.h"
 #include "scrap/table.h"
 
-/* the D3D framework of the DX8 SDK inside g_Engine (CD3DApplication): the adapters with their devices and modes */
-typedef struct D3DModeInfo {
-	uint32_t Width;			/* 0x00 */
-	uint32_t Height;		/* 0x04 */
-	uint32_t Format;		/* 0x08 D3DFORMAT */
-	uint32_t dwBehavior;		/* 0x0c */
-	uint32_t DepthStencilFormat;	/* 0x10 */
-} D3DModeInfo;
-SD_SIZE(D3DModeInfo, 0x14);
-
-#define MAX_D3DMODES 150
-#define MAX_D3DDEVICES 5
-
-typedef struct D3DDeviceInfo {
-	uint32_t DeviceType;		/* 0x00 1 HAL, 2 REF */
-	uint32_t d3dCaps[0x35];		/* 0x04 D3DCAPS8: Caps2 at word 3, DevCaps at word 7 */
-	const char *strDesc;		/* 0xd8 "HAL", "REF" (strings of the exe) */
-	int bCanDoWindowed;		/* 0xdc */
-	int dwNumModes;			/* 0xe0 */
-	D3DModeInfo modes[MAX_D3DMODES];	/* 0xe4 */
-	int dwCurrentMode;		/* 0xc9c */
-	int bWindowed;			/* 0xca0 */
-	uint32_t MultiSampleType;	/* 0xca4 */
-} D3DDeviceInfo;
-SD_OFFSET(D3DDeviceInfo, dwCurrentMode, 0xc9c);
-SD_SIZE(D3DDeviceInfo, 0xca8);
-
-typedef struct D3DAdapterInfo {
-	char Driver[0x200];			/* 0x0000 D3DADAPTER_IDENTIFIER8 */
-	char Description[0x200];		/* 0x0200 */
-	byte identRest[0x2c];			/* 0x0400 */
-	uint32_t desktopMode[4];		/* 0x042c d3ddmDesktop: width, height, refresh rate, format */
-	uint32_t dwNumDevices;			/* 0x043c */
-	D3DDeviceInfo devices[MAX_D3DDEVICES];	/* 0x0440 */
-	int dwCurrentDevice;			/* 0x4388 */
-} D3DAdapterInfo;
-SD_OFFSET(D3DAdapterInfo, dwNumDevices, 0x43c);
-SD_OFFSET(D3DAdapterInfo, dwCurrentDevice, 0x4388);
-SD_SIZE(D3DAdapterInfo, 0x438c);
-
-#define MAX_D3DADAPTERS 10
-
-/*
- * CD3DApplication of d3dapp.cpp, 0x2a5dc bytes (g_Engine): the DX8 SDK members with the device id and the mode of
- * the game. The code reads them through the ENGINE_ macros (byte offsets) of e3dutil.h, dxutil.h, scrapmain.h.
- */
-typedef struct CD3DApplication {
-	const void *vftable;			/* 0x00000 */
-	D3DAdapterInfo adapters[MAX_D3DADAPTERS];	/* 0x00004 */
-	uint32_t numAdapters;			/* 0x2a37c */
-	uint32_t adapter;			/* 0x2a380 */
-	int windowed;				/* 0x2a384 */
-	int active;				/* 0x2a388 */
-	int ready;				/* 0x2a38c */
-	int frameMoving;			/* 0x2a390 */
-	int singleStep;				/* 0x2a394 */
-	uint32_t presentParams[13];		/* 0x2a398 D3DPRESENT_PARAMETERS */
-	void *hWnd;				/* 0x2a3cc */
-	void *hWndFocus;			/* 0x2a3d0 */
-	void *d3d;				/* 0x2a3d4 IDirect3D8 */
-	void *device;				/* 0x2a3d8 IDirect3DDevice8 */
-	uint32_t caps[0x35];			/* 0x2a3dc D3DCAPS8 */
-	uint32_t backBufferDesc[8];		/* 0x2a4b0 D3DSURFACE_DESC */
-	uint32_t depthBufferDesc[8];		/* 0x2a4d0 D3DSURFACE_DESC */
-	uint32_t createFlags;			/* 0x2a4f0 the behavior of CreateDevice */
-	uint32_t windowStyle;			/* 0x2a4f4 */
-	int32_t windowBounds[4];		/* 0x2a4f8 RECT */
-	int32_t windowClient[4];		/* 0x2a508 RECT */
-	float time;				/* 0x2a518 s */
-	float elapsedTime;			/* 0x2a51c */
-	float fps;				/* 0x2a520 */
-	char deviceStats[90];			/* 0x2a524 */
-	char frameStats[42];			/* 0x2a57e */
-	int devId;				/* 0x2a5a8 */
-	const char *windowTitle;		/* 0x2a5ac */
-	int useDepthBuffer;			/* 0x2a5b0 */
-	uint32_t minDepthBits;			/* 0x2a5b4 */
-	uint32_t minStencilBits;		/* 0x2a5b8 */
-	uint32_t creationWidth;			/* 0x2a5bc */
-	uint32_t creationHeight;		/* 0x2a5c0 */
-	int showCursorWhenFullscreen;		/* 0x2a5c4 */
-	int vsync;				/* 0x2a5c8 */
-	int fullscreen;				/* 0x2a5cc */
-	int width;				/* 0x2a5d0 */
-	int height;				/* 0x2a5d4 */
-	int bpp;				/* 0x2a5d8 */
-} CD3DApplication;
-SD_OFFSET(CD3DApplication, numAdapters, 0x2a37c);
-SD_OFFSET(CD3DApplication, presentParams, 0x2a398);
-SD_OFFSET(CD3DApplication, caps, 0x2a3dc);
-SD_OFFSET(CD3DApplication, createFlags, 0x2a4f0);
-SD_OFFSET(CD3DApplication, time, 0x2a518);
-SD_OFFSET(CD3DApplication, frameStats, 0x2a57e);
-SD_OFFSET(CD3DApplication, devId, 0x2a5a8);
-SD_OFFSET(CD3DApplication, vsync, 0x2a5c8);
-SD_SIZE(CD3DApplication, 0x2a5dc);
-
-/* CMotorApp of Engine/Motor.cpp, 0x2a600 bytes (g_Engine3D); Engine.c reads it through ENGINE_ macros too */
+/* CMotorApp of Engine/Motor.cpp, 0x2a600 bytes (g_Engine3D, also g_Engine as its CD3DApplication) */
 typedef struct CEngineApp {
 	CD3DApplication base;			/* 0x00000 */
 	void *menu;				/* 0x2a5dc HMENU */
 	void *cameraMenu;			/* 0x2a5e0 the submenu of the cameras of the global scene */
 	CTable table;				/* 0x2a5e4 */
 	CScene *scene;				/* 0x2a5ec EscenaGlobal, counted */
-	void *overlay;				/* 0x2a5f0 8 bytes with a CGraphic2D */
+	struct CGraphic2DList *overlay;		/* 0x2a5f0 */
 	void **obj2a5f4;			/* 0x2a5f4 an object deleted by FinalCleanup */
 	byte canWBuffer;			/* 0x2a5f8 D3DPRASTERCAPS_WBUFFER of the device */
 	byte useWBuffer;			/* 0x2a5f9 the W buffer (g_ZEnable 2) when the device can */
-	byte unused_2a5fa;				/* 0x2a5fa */
-	byte unused_2a5fb;				/* 0x2a5fb */
-	int unused_2a5fc;				/* 0x2a5fc */
+	/* the menu items 0x9c5b..0x9c5d: two of them enabled by these, the third checked by menuMode 0, the other two by 1 */
+	byte canMenu9c5d;			/* 0x2a5fa */
+	byte canMenu9c5c;			/* 0x2a5fb */
+	int menuMode;				/* 0x2a5fc */
 } CEngineApp;
 SD_OFFSET(CEngineApp, table, 0x2a5e4);
 SD_OFFSET(CEngineApp, overlay, 0x2a5f0);
 SD_OFFSET(CEngineApp, canWBuffer, 0x2a5f8);
 SD_SIZE(CEngineApp, 0x2a600);
-
-/* more of g_Engine (see e3dutil.h) */
-#define ENGINE_ADAPTERINFO(m) ((D3DAdapterInfo *)ENGINE_ADAPTERS(m) + ENGINE_ADAPTER(m))
-#define ENGINE_WINDOWED(m) (*(int *)((m) + 0x2a384))
-#define ENGINE_PP(m) ((uint32_t *)((m) + 0x2a398))	/* D3DPRESENT_PARAMETERS, 13 words */
-#define ENGINE_VSYNC(m) (*(int *)((m) + 0x2a5c8))
-#define ENGINE_FULLSCREEN(m) (*(int *)((m) + 0x2a5cc))
-#define ENGINE_WIDTH(m) (*(int *)((m) + 0x2a5d0))
-#define ENGINE_HEIGHT(m) (*(int *)((m) + 0x2a5d4))
-#define ENGINE_BPP(m) (*(int *)((m) + 0x2a5d8))
-/* the D3D framework methods of g_Engine (thiscall, HRESULT) by their vtable offset */
-#define ENGINE_CALL(m, off) (((int(__thiscall *)(byte *)) (*(void ***)(m))[(off) / 4])(m))
-#define ENGINE_VT_RESTORE 0x08		/* InitDeviceObjects/RestoreDeviceObjects of the level */
-#define ENGINE_VT_RESTORE2 0x0c
-#define ENGINE_VT_INVALIDATE 0x20
-#define ENGINE_VT_DELETE 0x24
-#define ENGINE_VT_CREATE 0x28		/* (hInstance) */
 
 /* a camera of the game (0x3c bytes) over a CCamera of the engine */
 
@@ -353,30 +241,30 @@ void Loading_Step(int percent);					/* rva 0x2157a0, -1: one step */
 /* the CMotorApp made (arg 0) or freed (Engine/Motor.cpp, src/game/engine3d/Engine/Engine.c) */
 void Engine3D_Create(void *hInst, void *hWnd, void *init, void *frame, void *release, int arg);
 void Engine3D_Shutdown(void);
-byte *__fastcall CEngineApp_ctor(byte *self);
+CEngineApp *__fastcall CEngineApp_ctor(CEngineApp *self);
 /* the ini name (in dir, NULL for the game directory) into the variables of the engine */
 void Engine_LoadVarsIni(const char *name, const char *dir);
-void __thiscall CEngineApp_LightsDialog(byte *self, void *hwnd, void *inst);
+void __thiscall CEngineApp_LightsDialog(CEngineApp *self, void *hwnd, void *inst);
 intptr_t TreeView_InsertItemf(void *hwnd, void *item, const char *fmt, ...);
 void Scene_LogTree(CScene *scn, CNode3D *node, int indent);
 /* a command of the debug console of the engine: listar, listar lights, arbol <scene>, ver uniones */
 void E3D_Command(char *cmd);
-void __fastcall CEngineApp_UpdateMenu(byte *self);
-int __thiscall CEngineApp_InitDeviceObjects(byte *self);
-intptr_t __thiscall CEngineApp_MsgProc(byte *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
-int __thiscall CEngineApp_ConfirmDevice(byte *self, void *caps, uint32_t behavior, int format);
-int __thiscall CEngineApp_RestoreDeviceObjects(byte *self);
-int __thiscall CEngineApp_OneTimeSceneInit(byte *self);
-int __thiscall CEngineApp_FrameMove(byte *self);
+void __fastcall CEngineApp_UpdateMenu(CEngineApp *self);
+int __thiscall CEngineApp_InitDeviceObjects(CEngineApp *self);
+intptr_t __thiscall CEngineApp_MsgProc(CEngineApp *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
+int __thiscall CEngineApp_ConfirmDevice(CEngineApp *self, D3DCaps8 *caps, uint32_t behavior, int format);
+int __thiscall CEngineApp_RestoreDeviceObjects(CEngineApp *self);
+int __thiscall CEngineApp_OneTimeSceneInit(CEngineApp *self);
+int __thiscall CEngineApp_FrameMove(CEngineApp *self);
 /* Render (vtable 0x18): the frame, 1 to quit; at once 0 while Engine_FrameDue is 0 */
-int __thiscall CEngineApp_Render(byte *self);
+int __thiscall CEngineApp_Render(CEngineApp *self);
 /* the reset of the device objects that g_ResetDev asks for, the HRESULT */
-int __fastcall CEngineApp_ResetDevice(byte *self);
+int __fastcall CEngineApp_ResetDevice(CEngineApp *self);
 /* 0 while the frame limiter (limitaFPS, R_LimitFPS; none with vsync) holds the next frame back */
-byte Engine_FrameDue(byte *self);
-int __thiscall CEngineApp_DeleteDeviceObjects(byte *self);
-int __thiscall CEngineApp_FinalCleanup(byte *self);
-int __thiscall CD3DApplication_Nothing(byte *self);
+byte Engine_FrameDue(CD3DApplication *self);
+int __thiscall CEngineApp_DeleteDeviceObjects(CEngineApp *self);
+int __thiscall CEngineApp_FinalCleanup(CEngineApp *self);
+int __thiscall CD3DApplication_Nothing(CD3DApplication *self);
 char *Engine_ColorStr(const byte *c);
 const char *Engine_BoolStr(int b);
 CWorld *World_GetChecked(void);
@@ -386,17 +274,17 @@ void Engine_DrawStats(void);
 void Engine_DrawFpsGraph(float y);
 /* the modal dialog of the global scene: its counts and a tree of the nodes, the node selected in the tree */
 intptr_t __stdcall Engine_SceneDlgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
-void __fastcall Engine_ReleaseScene(byte *self);
-void __fastcall Engine_GetScene(byte *self);
+void __fastcall Engine_ReleaseScene(CEngineApp *self);
+void __fastcall Engine_GetScene(CEngineApp *self);
 CNullInput *__thiscall CNullInput_Delete(CNullInput *self, byte flags);
 int __thiscall CNullInput_Nothing3(CNullInput *self, int a, int b, int c);
 int __thiscall CNullInput_Nothing1(CNullInput *self, int a);
 int __thiscall CNullInput_Nothing(CNullInput *self);
 void __thiscall CNullInput_Nothing4(CNullInput *self, int a, int b, int c, int d);
-int __thiscall CD3DApp_Cleanup(byte *self);			/* rva 0x273d90 */
-int __thiscall CD3DApp_Render(byte *self);			/* rva 0x275120 */
-int __thiscall CD3DApp_ResetDevice(byte *self);		/* rva 0x275470 */
-int __thiscall CD3DApp_Reset(byte *self);			/* rva 0x2754b0 */
+int __thiscall CD3DApp_Cleanup(CD3DApplication *self);			/* rva 0x273d90 */
+int __thiscall CD3DApp_Render(CD3DApplication *self);			/* rva 0x275120 */
+int __thiscall CD3DApp_ResetDevice(CD3DApplication *self);		/* rva 0x275470 */
+int __thiscall CD3DApp_Reset(CD3DApplication *self);			/* rva 0x2754b0 */
 void *App_GetHInstance(void);					/* rva 0x20d1a0 */
 void *App_GetHWnd(void);					/* rva 0x20d290 */
 int Timer_GetFreq(int64_t *out);				/* rva 0x276cb0 */

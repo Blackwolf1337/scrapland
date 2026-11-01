@@ -85,7 +85,7 @@ void MeshEffect_Render(void) {
 		m->params.srcBlend = 2;
 		m->params.dstBlend = 2;
 		g_MeshEffectMatInit = 1;
-		CMaterial_Prepare(m, ENGINE_DEV(g_Engine));
+		CMaterial_Prepare(m, g_Engine->device);
 	}
 	E3D_FlushBatch();
 	if (g_MeshEffectStencil) {

@@ -223,20 +223,97 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DLOCK_NOOVERWRITE 0x1000
 #define D3DLOCK_DISCARD 0x2000
 
-/* D3DCAPS8 as words */
-enum {
-	D3DCAPS_TEXTURECAPS = 0x3c / 4,
-	D3DCAPS_MAXTEXTUREWIDTH = 0x58 / 4,
-	D3DCAPS_MAXTEXTUREHEIGHT = 0x5c / 4,
-	D3DCAPS_MAXANISOTROPY = 0x6c / 4,
-	D3DCAPS_MAXTEXTUREBLENDSTAGES = 0x94 / 4,
-	D3DCAPS_MAXSIMULTANEOUSTEXTURES = 0x98 / 4,
-	D3DCAPS_MAXACTIVELIGHTS = 0xa0 / 4,
-	D3DCAPS_MAXSTREAMS = 0xbc / 4,
-	D3DCAPS_VERTEXSHADERVERSION = 0xc4 / 4,
-	D3DCAPS_PIXELSHADERVERSION = 0xcc / 4,
-	D3DCAPS_WORDS = 0x35,
-};
+/* D3DCAPS8 */
+typedef struct D3DCaps8 {
+	uint32_t DeviceType;			/* 0x00 */
+	uint32_t AdapterOrdinal;		/* 0x04 */
+	uint32_t Caps;				/* 0x08 */
+	uint32_t Caps2;				/* 0x0c */
+	uint32_t Caps3;				/* 0x10 */
+	uint32_t PresentationIntervals;		/* 0x14 */
+	uint32_t CursorCaps;			/* 0x18 */
+	uint32_t DevCaps;			/* 0x1c */
+	uint32_t PrimitiveMiscCaps;		/* 0x20 */
+	uint32_t RasterCaps;			/* 0x24 */
+	uint32_t ZCmpCaps;			/* 0x28 */
+	uint32_t SrcBlendCaps;			/* 0x2c */
+	uint32_t DestBlendCaps;			/* 0x30 */
+	uint32_t AlphaCmpCaps;			/* 0x34 */
+	uint32_t ShadeCaps;			/* 0x38 */
+	uint32_t TextureCaps;			/* 0x3c */
+	uint32_t TextureFilterCaps;		/* 0x40 */
+	uint32_t CubeTextureFilterCaps;		/* 0x44 */
+	uint32_t VolumeTextureFilterCaps;	/* 0x48 */
+	uint32_t TextureAddressCaps;		/* 0x4c */
+	uint32_t VolumeTextureAddressCaps;	/* 0x50 */
+	uint32_t LineCaps;			/* 0x54 */
+	uint32_t MaxTextureWidth;		/* 0x58 */
+	uint32_t MaxTextureHeight;		/* 0x5c */
+	uint32_t MaxVolumeExtent;		/* 0x60 */
+	uint32_t MaxTextureRepeat;		/* 0x64 */
+	uint32_t MaxTextureAspectRatio;		/* 0x68 */
+	uint32_t MaxAnisotropy;			/* 0x6c */
+	float MaxVertexW;			/* 0x70 */
+	float GuardBandLeft;			/* 0x74 */
+	float GuardBandTop;			/* 0x78 */
+	float GuardBandRight;			/* 0x7c */
+	float GuardBandBottom;			/* 0x80 */
+	float ExtentsAdjust;			/* 0x84 */
+	uint32_t StencilCaps;			/* 0x88 */
+	uint32_t FVFCaps;			/* 0x8c */
+	uint32_t TextureOpCaps;			/* 0x90 */
+	uint32_t MaxTextureBlendStages;		/* 0x94 */
+	uint32_t MaxSimultaneousTextures;	/* 0x98 */
+	uint32_t VertexProcessingCaps;		/* 0x9c */
+	uint32_t MaxActiveLights;		/* 0xa0 */
+	uint32_t MaxUserClipPlanes;		/* 0xa4 */
+	uint32_t MaxVertexBlendMatrices;	/* 0xa8 */
+	uint32_t MaxVertexBlendMatrixIndex;	/* 0xac */
+	float MaxPointSize;			/* 0xb0 */
+	uint32_t MaxPrimitiveCount;		/* 0xb4 */
+	uint32_t MaxVertexIndex;		/* 0xb8 */
+	uint32_t MaxStreams;			/* 0xbc */
+	uint32_t MaxStreamStride;		/* 0xc0 */
+	uint32_t VertexShaderVersion;		/* 0xc4 */
+	uint32_t MaxVertexShaderConst;		/* 0xc8 */
+	uint32_t PixelShaderVersion;		/* 0xcc */
+	float MaxPixelShaderValue;		/* 0xd0 */
+} D3DCaps8;
+SD_OFFSET(D3DCaps8, RasterCaps, 0x24);
+SD_OFFSET(D3DCaps8, MaxAnisotropy, 0x6c);
+SD_OFFSET(D3DCaps8, PixelShaderVersion, 0xcc);
+SD_SIZE(D3DCaps8, 0xd4);
+
+/* D3DDISPLAYMODE */
+typedef struct D3DDisplayMode {
+	uint32_t Width;			/* 0x0 */
+	uint32_t Height;		/* 0x4 */
+	uint32_t RefreshRate;		/* 0x8 */
+	uint32_t Format;		/* 0xc */
+} D3DDisplayMode;
+SD_SIZE(D3DDisplayMode, 0x10);
+
+/* D3DPRESENT_PARAMETERS */
+typedef struct D3DPresentParams {
+	uint32_t BackBufferWidth;		/* 0x00 */
+	uint32_t BackBufferHeight;		/* 0x04 */
+	uint32_t BackBufferFormat;		/* 0x08 */
+	uint32_t BackBufferCount;		/* 0x0c */
+	uint32_t MultiSampleType;		/* 0x10 */
+	uint32_t SwapEffect;			/* 0x14 */
+	void *hDeviceWindow;			/* 0x18 */
+	int Windowed;				/* 0x1c */
+	int EnableAutoDepthStencil;		/* 0x20 */
+	uint32_t AutoDepthStencilFormat;	/* 0x24 */
+	uint32_t Flags;				/* 0x28 */
+	uint32_t FullScreen_RefreshRateInHz;	/* 0x2c */
+	uint32_t FullScreen_PresentationInterval;	/* 0x30 */
+} D3DPresentParams;
+SD_SIZE(D3DPresentParams, 0x34);
+#define D3DSWAPEFFECT_DISCARD 1
+#define D3DSWAPEFFECT_COPY_VSYNC 4
+#define D3DPRESENT_INTERVAL_IMMEDIATE 0x80000000
+
 #define D3DPTEXTURECAPS_POW2 0x2
 #define D3DPTEXTURECAPS_TEXREPEATNOTSCALEDBYSIZE 0x40
 #define D3DPTEXTURECAPS_NONPOW2CONDITIONAL 0x100

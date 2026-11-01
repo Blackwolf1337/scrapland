@@ -50,8 +50,8 @@
 #define SURF_LOCKRECT 0x24
 #define SURF_UNLOCKRECT 0x28
 typedef int(__stdcall *devGetDirect3D_t)(void *dev, void **d3d);
-typedef int(__stdcall *devGetCaps_t)(void *dev, uint32_t *caps);
-typedef int(__stdcall *devGetDisplayMode_t)(void *dev, uint32_t *mode);
+typedef int(__stdcall *devGetCaps_t)(void *dev, D3DCaps8 *caps);
+typedef int(__stdcall *devGetDisplayMode_t)(void *dev, D3DDisplayMode *mode);
 typedef int(__stdcall *devUpdateTexture_t)(void *dev, void *src, void *dst);
 typedef int(__stdcall *d3dCheckDeviceFormat_t)(void *d3d, uint32_t adapter, int devType, int adapterFmt, uint32_t usage,
 	int rtype, int fmt);
@@ -60,13 +60,10 @@ typedef int(__stdcall *surfGetDesc_t)(void *surf, d3dSurfaceDesc_t *desc);
 typedef int(__stdcall *surfLockRect_t)(void *surf, d3dLockedRect_t *lr, const RECT *rect, uint32_t flags);
 typedef int(__stdcall *surfUnlockRect_t)(void *surf);
 
-#define CAPS_DEVICETYPE 0
-#define CAPS_ADAPTER 1
 #define TEXCAPS_POW2 0x2
 #define TEXCAPS_SQUAREONLY 0x20
 #define TEXCAPS_NONPOW2CONDITIONAL 0x100
 #define TEXCAPS_MIPMAP 0x4000
-#define CAPS_MAXTEXTUREASPECTRATIO (0x68 / 4)
 
 /* ---- the formats ---- */
 
@@ -211,18 +208,19 @@ static int Tex_PickFormat(void *dev, uint32_t usage, int fmt) {
 	const texFormat_t *req = Tex_Format(fmt);
 	const texFormat_t *best = NULL;
 	void *d3d = NULL;
-	uint32_t caps[D3DCAPS_WORDS], mode[4];
+	D3DCaps8 caps;
+	D3DDisplayMode mode;
 	int64_t bestDist = -1;
 
 	if (dev) {
 		D3D_METHOD(dev, devGetDirect3D_t, DEV_GETDIRECT3D)(dev, &d3d);
-		D3D_METHOD(dev, devGetCaps_t, DEV_GETDEVICECAPS)(dev, caps);
-		D3D_METHOD(dev, devGetDisplayMode_t, DEV_GETDISPLAYMODE)(dev, mode);
+		D3D_METHOD(dev, devGetCaps_t, DEV_GETDEVICECAPS)(dev, &caps);
+		D3D_METHOD(dev, devGetDisplayMode_t, DEV_GETDISPLAYMODE)(dev, &mode);
 	}
 	for (int i = 0; i < TEX_FORMATS; i++) {
 		const texFormat_t *c = &texFormats[i];
-		if (d3d && D3D_METHOD(d3d, d3dCheckDeviceFormat_t, D3D_CHECKDEVICEFORMAT)(d3d, caps[CAPS_ADAPTER],
-			(int)caps[CAPS_DEVICETYPE], (int)mode[3], usage, D3DRTYPE_TEXTURE, c->fmt) < 0) {
+		if (d3d && D3D_METHOD(d3d, d3dCheckDeviceFormat_t, D3D_CHECKDEVICEFORMAT)(d3d, caps.AdapterOrdinal,
+			(int)caps.DeviceType, (int)mode.Format, usage, D3DRTYPE_TEXTURE, c->fmt) < 0) {
 			continue;
 		}
 		if (c->fmt == req->fmt) {
@@ -272,7 +270,7 @@ static uint32_t Tex_ChainLevels(uint32_t w, uint32_t h) {
  */
 int __stdcall D3DX_CheckTextureRequirements(void *dev, uint32_t *pw, uint32_t *ph, uint32_t *plevels, uint32_t usage,
 	int *pfmt, int pool) {
-	uint32_t caps[D3DCAPS_WORDS];
+	D3DCaps8 caps;
 	uint32_t w, h, levels;
 	int fmt;
 
@@ -310,15 +308,15 @@ int __stdcall D3DX_CheckTextureRequirements(void *dev, uint32_t *pw, uint32_t *p
 	}
 	levels = plevels ? *plevels : D3DX_DEFAULT;
 	if (pool != D3DPOOL_SCRATCH) {
-		D3D_METHOD(dev, devGetCaps_t, DEV_GETDEVICECAPS)(dev, caps);
-		uint32_t texCaps = caps[D3DCAPS_TEXTURECAPS];
-		if (w > caps[D3DCAPS_MAXTEXTUREWIDTH]) {
-			w = caps[D3DCAPS_MAXTEXTUREWIDTH];
+		D3D_METHOD(dev, devGetCaps_t, DEV_GETDEVICECAPS)(dev, &caps);
+		uint32_t texCaps = caps.TextureCaps;
+		if (w > caps.MaxTextureWidth) {
+			w = caps.MaxTextureWidth;
 		}
-		if (h > caps[D3DCAPS_MAXTEXTUREHEIGHT]) {
-			h = caps[D3DCAPS_MAXTEXTUREHEIGHT];
+		if (h > caps.MaxTextureHeight) {
+			h = caps.MaxTextureHeight;
 		}
-		uint32_t ratio = texCaps & TEXCAPS_SQUAREONLY ? 1 : caps[CAPS_MAXTEXTUREASPECTRATIO];
+		uint32_t ratio = texCaps & TEXCAPS_SQUAREONLY ? 1 : caps.MaxTextureAspectRatio;
 		if (ratio) {
 			if (w > ratio * h) {
 				w = ratio * h;

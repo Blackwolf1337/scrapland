@@ -266,7 +266,7 @@ void UtilScene_FreeAll(void) {
 }
 
 void UtilScene_ReleaseD3D(void) {
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 
 	CHECK((g_pApp->flags >> 2 & 1) || dev);
 	for (CSceneList *le = g_SceneList; le; le = le->next) {
@@ -281,7 +281,7 @@ void UtilScene_ReleaseD3D(void) {
 }
 
 void UtilScene_InitD3D(void) {
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 
 	CHECK(dev);
 	for (CModelList *lm = g_ModelList; lm; lm = lm->next) {
@@ -524,7 +524,7 @@ CScene *Create_Scene(byte *shared, const char *name, const char *name2, const ve
 		if (p) {
 			CSceneList_ctor(p, scn, name, name2, scale, flags, &g_SceneList);
 		}
-		if (!g_EngineDev) {
+		if (!g_Engine->device) {
 			return scn;
 		}
 		CHECK(flags & SCENE_AUTOINIT);
@@ -559,13 +559,13 @@ made:
 			SM3_Save(name, scn);
 		}
 	}
-	if (*shared || !g_EngineDev) {
+	if (*shared || !g_Engine->device) {
 		return scn;
 	}
 	CHECK(autoinit);
 initD3D:
-	CScene_InitD3D(scn, g_EngineDev);
-	CMatList_Prepare(g_MatList, g_EngineDev);
+	CScene_InitD3D(scn, g_Engine->device);
+	CMatList_Prepare(g_MatList, g_Engine->device);
 	return scn;
 }
 
@@ -591,8 +591,8 @@ CModel *Create_Model(const char *name, const char *name2, const vec3_t *scale, f
 			CModelList_ctor(p, m, name, name2, flags, &g_ModelList);
 		}
 	}
-	if (g_EngineDev && autoinit) {
-		CModel_InitD3D(m, g_EngineDev, 0);
+	if (g_Engine->device && autoinit) {
+		CModel_InitD3D(m, g_Engine->device, 0);
 	}
 	return m;
 }

@@ -8,23 +8,10 @@
 
 #include <stdarg.h>
 
+#include "scrap/dxutil.h"
 #include "scrap/game.h"
 #include "scrap/render.h"
 
-/* g_pD3DApp, the D3D application of the engine3d (CD3DApplication of the D3D framework): its window, its device
- * (NULL before it is made) and the RasterCaps of the device */
-#define g_Engine GAME_GLOBAL(byte *, g_Engine, 0x4b1c04)
-#define ENGINE_HWND(m) (*(void **)((m) + 0x2a3cc))
-#define ENGINE_DEV(m) (*(void **)((m) + 0x2a3d8))
-#define ENGINE_RASTERCAPS(m) (*(uint32_t *)((m) + 0x2a400))
-#define ENGINE_CAPS(m) ((const uint32_t *)((m) + 0x2a3dc))	/* D3DCAPS8, 0x35 words */
-#define ENGINE_ADAPTER(m) (*(int *)((m) + 0x2a380))
-#define ENGINE_ADAPTERS(m) ((m) + 4)			/* 0x438c each, the identifier first */
-#define ENGINE_MODE(m) ((const uint32_t *)((m) + 0x2a4b0))	/* 8 words: format, ..., w, h */
-#define ENGINE_ZBUF(m) ((const uint32_t *)((m) + 0x2a4d0))
-#define ENGINE_DEVID(m) (*(int *)((m) + 0x2a5a8))
-#define ENGINE_DEVNAME(m) ((const char *)((m) + 0x2a524))
-#define g_EngineDev ENGINE_DEV(g_Engine)
 /* the frames drawn by the engine3d */
 #define g_FrameCount GAME_GLOBAL(int, g_FrameCount, 0x4a8ec8)
 /* the time of the last frame (the clock of the engine, also g_FrameDelta of Engine.c) */

@@ -64,7 +64,7 @@ void __thiscall CGraphic2D_Draw(CGraphic2D *self, const float *pos, const float 
 	if (g_RenderOff) {
 		return;
 	}
-	void *dev = g_EngineDev;
+	void *dev = g_Engine->device;
 	CHECK(dev);
 	CHECK(self->Mat);
 	Render_SetMaterialAnim(self->Mat, self->AnimMat);
@@ -197,7 +197,7 @@ void __thiscall CGraphic2D_CreateMat(CGraphic2D *self, const char *tex, const ch
 	if (!self->Mat) {
 		self->Mat = Mat_AddCopy(&m);
 	}
-	CMaterial_Prepare(self->Mat, g_EngineDev);
+	CMaterial_Prepare(self->Mat, g_Engine->device);
 	AnimMat_Free(&self->AnimMat);
 	CMap *map = self->Mat->map[0];
 	if (map) {
