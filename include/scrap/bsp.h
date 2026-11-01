@@ -437,7 +437,7 @@ void CBsp_ColorSinLmap(CBsp *self);
 void CBsp_RemoveLights(CBsp *self);
 
 /* drawing */
-void __stdcall BspTri_Draw(BspTri *tri);
+void BspTri_Draw(BspTri *tri);
 void CBsp_DrawTri(CBsp *self, BspTri *tri, byte pass);
 void CBsp_DrawZone(CBsp *self, int sector, byte pass);
 void CBsp_DrawPass(CBsp *self, byte pass);

@@ -74,7 +74,7 @@ cTalkScorer *cTalkScorer_Delete(cTalkScorer *self, byte flags) {
 	return self;
 }
 
-cEntity *__stdcall Talk_GetUseTarget(int player) {
+cEntity *Talk_GetUseTarget(int player) {
 	if (Input_GetActionSet() != TALK_ACTION_SET) {
 		return NULL;
 	}

@@ -157,7 +157,7 @@ int Timer_FixedStep(float fps);
 #define DXUTIL_TIMER_GETABSOLUTETIME 4
 #define DXUTIL_TIMER_GETAPPTIME 5
 #define DXUTIL_TIMER_GETELAPSEDTIME 6
-float __stdcall DXUtil_Timer(int cmd);
+float DXUtil_Timer(int cmd);
 /* the distinct values of timeGetTime during ms (the original busy waited, the C answers ms) */
 int Timer_CountTicks(int ms);
 /* the performance counter ticks during ms (the original busy waited from the start of a timeGetTime tick on, the C

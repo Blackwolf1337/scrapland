@@ -62,26 +62,30 @@ typedef uint32_t (*call_int_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t,
 typedef float (*call_float_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t,
 	uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 
-#define THIS_TYPES(name, ret) \
-	typedef ret(*name##0_t)(uint32_t); \
-	typedef ret(*name##1_t)(uint32_t, uint32_t); \
-	typedef ret(*name##2_t)(uint32_t, uint32_t, uint32_t); \
-	typedef ret(*name##3_t)(uint32_t, uint32_t, uint32_t, uint32_t); \
-	typedef ret(*name##4_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); \
-	typedef ret(*name##5_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); \
-	typedef ret(*name##6_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); \
-	typedef ret(*name##7_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
+#define THIS_TYPES(name, ret, conv) \
+	typedef ret(conv *name##0_t)(uint32_t); \
+	typedef ret(conv *name##1_t)(uint32_t, uint32_t); \
+	typedef ret(conv *name##2_t)(uint32_t, uint32_t, uint32_t); \
+	typedef ret(conv *name##3_t)(uint32_t, uint32_t, uint32_t, uint32_t); \
+	typedef ret(conv *name##4_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); \
+	typedef ret(conv *name##5_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); \
+	typedef ret(conv *name##6_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t); \
+	typedef ret(conv *name##7_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
 		uint32_t); \
-	typedef ret(*name##8_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
+	typedef ret(conv *name##8_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
 		uint32_t, uint32_t); \
-	typedef ret(*name##9_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
+	typedef ret(conv *name##9_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
 		uint32_t, uint32_t, uint32_t); \
-	typedef ret(*name##10_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
+	typedef ret(conv *name##10_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
 		uint32_t, uint32_t, uint32_t, uint32_t); \
-	typedef ret(*name##11_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
+	typedef ret(conv *name##11_t)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, \
 		uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
-THIS_TYPES(this, uint32_t)
-THIS_TYPES(thisf, float)
+THIS_TYPES(this, uint32_t, )
+THIS_TYPES(thisf, float, )
+/* the callbacks of Windows, COM and FMOD and the D3DX functions keep __stdcall: the tests call them with "t" and a
+ * dummy this, which works as a thiscall call (this in ecx, the callee pops the rest) */
+THIS_TYPES(std, uint32_t, __thiscall)
+THIS_TYPES(stdf, float, __thiscall)
 
 /* a method with the exact count of its arguments */
 #define CALL_THIS(name, fn, a, n) \
@@ -118,6 +122,43 @@ static uint32_t Call_This(void *fn, const uint32_t *a, int n) {
 
 static float Call_ThisFloat(void *fn, const uint32_t *a, int n) {
 	CALL_THIS(thisf, fn, a, n)
+}
+
+static uint32_t Call_Std(void *fn, const uint32_t *a, int n) {
+	CALL_THIS(std, fn, a, n)
+}
+
+static float Call_StdFloat(void *fn, const uint32_t *a, int n) {
+	CALL_THIS(stdf, fn, a, n)
+}
+
+/* the __stdcall functions the tests call (their assembler names without the decoration, --enable-stdcall-fixup) */
+#define TEST_STDCALL(name) extern char sds_##name[] __asm__("_" #name);
+#define TEST_STDCALLS \
+	TEST_STDCALL(D3DX_AssembleShader) TEST_STDCALL(D3DX_CheckTextureRequirements) \
+	TEST_STDCALL(D3DX_LoadSurfaceFromSurface) TEST_STDCALL(D3DX_MatrixInverse) TEST_STDCALL(D3DX_MatrixMultiply) \
+	TEST_STDCALL(D3DX_MatrixRotationQuaternion) TEST_STDCALL(D3DX_MatrixRotationX) TEST_STDCALL(D3DX_MatrixRotationY) \
+	TEST_STDCALL(D3DX_MatrixRotationYPR) TEST_STDCALL(D3DX_MatrixRotationZ) TEST_STDCALL(D3DX_MatrixTranspose) \
+	TEST_STDCALL(D3DX_Vec3Normalize) TEST_STDCALL(D3DX_Vec3Transform) TEST_STDCALL(DbgWin_DlgProc) \
+	TEST_STDCALL(Engine_SceneDlgProc) TEST_STDCALL(Friends_IsEnemyTarget) TEST_STDCALL(Music_FileClose) \
+	TEST_STDCALL(Music_FileOpen) TEST_STDCALL(Music_FileRead) TEST_STDCALL(Music_FileSeek) \
+	TEST_STDCALL(Music_FileTell) TEST_STDCALL(Music_True16a) TEST_STDCALL(Music_True16b) \
+	TEST_STDCALL(Nto1Node_UnlinkOpt) TEST_STDCALL(TrafficSectors_Add) TEST_STDCALL(TrafficSectors_SetTracks) \
+	TEST_STDCALL(VMEffects_SetupHaze) TEST_STDCALL(cAIVehicleShoot_WeaponName) \
+	TEST_STDCALL(cAIVehicle_InternStateName) TEST_STDCALL(cAIVehicle_IsGroupState) TEST_STDCALL(cAIVehicle_StateName)
+TEST_STDCALLS
+#undef TEST_STDCALL
+#define TEST_STDCALL(name) sds_##name,
+static const char *const testStdcalls[] = { TEST_STDCALLS };
+#undef TEST_STDCALL
+
+static int TestMod_IsStdcall(const void *fn) {
+	for (size_t i = 0; i < sizeof(testStdcalls) / sizeof(testStdcalls[0]); i++) {
+		if (testStdcalls[i] == fn) {
+			return 1;
+		}
+	}
+	return 0;
 }
 
 /* the return value as the first character of sig says, NULL for None */
@@ -425,7 +466,9 @@ static PyObject *SDTest_Call(PyObject *self, PyObject *args) {
 
 	void *fn = Game_Ptr((uint32_t)rva);
 	PyObject *ret;
-	if (thiscall && sig[0] == 'f') {
+	if (thiscall && TestMod_IsStdcall(fn)) {
+		ret = sig[0] == 'f' ? PyFloat_FromDouble(Call_StdFloat(fn, a, n)) : SDTest_Result(sig[0], Call_Std(fn, a, n));
+	} else if (thiscall && sig[0] == 'f') {
 		ret = PyFloat_FromDouble(Call_ThisFloat(fn, a, n));
 	} else if (thiscall) {
 		ret = SDTest_Result(sig[0], Call_This(fn, a, n));

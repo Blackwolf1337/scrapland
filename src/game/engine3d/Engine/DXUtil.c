@@ -178,7 +178,7 @@ static float DXTimer_Seconds(int64_t t, int64_t freq) {
 	return (float)(n / Int64_ToDouble(freq));
 }
 
-float __stdcall DXUtil_Timer(int cmd) {
+float DXUtil_Timer(int cmd) {
 	int64_t freq;
 
 	if (!g_DXTimerInit) {

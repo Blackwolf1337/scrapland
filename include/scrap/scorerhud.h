@@ -340,7 +340,7 @@ cTalkScorer *cTalkScorer_ctor(cTalkScorer *self);
 void cTalkScorer_dtor(cTalkScorer *self);
 cTalkScorer *cTalkScorer_Delete(cTalkScorer *self, byte flags);
 /* the character of the player in front of its character (the use target), NULL if none */
-cEntity *__stdcall Talk_GetUseTarget(int player);
+cEntity *Talk_GetUseTarget(int player);
 int cTalkScorer_Var(cTalkScorer *self, const char *name, byte set, char **s, double *d, int *i);
 /* the use text (vf05) and the talk (vf04) up from the item position */
 void cTalkScorer_Draw(cTalkScorer *self, int player);

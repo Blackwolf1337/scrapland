@@ -692,7 +692,7 @@ static byte Bsp_MatPass(const CMaterial *m) {
 	return m->params.attrib & 0x10 ? 1 : 2;
 }
 
-void __stdcall BspTri_Draw(BspTri *tri) {
+void BspTri_Draw(BspTri *tri) {
 	if (tri->pVertVB && g_UseVB) {
 		Render_DrawVBIBFmt(tri->pVertVB, tri->pVertIB, tri->lv.frmt, (uint32_t)tri->lv.nVert, (uint32_t)tri->numTri,
 			(uint32_t)tri->baseVert, (uint32_t)tri->startTri);
