@@ -9,7 +9,7 @@
 #define SCRAPLAND_WHITE "2D/white.tga"
 /* a random time: rand() / 32767 * range + add, as a float */
 static float ScraplandScorer_Rand(double range, double add) {
-	return (float)((double)(crt_rand() & 0x7fff) * g_ScorerRandScale * range + add);
+	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * range + add);
 }
 
 cScraplandMainMenuScorer *cScraplandMainMenuScorer_ctor(cScraplandMainMenuScorer *self) {
@@ -137,7 +137,7 @@ void cScraplandMainMenuScorer_Init(cScraplandMainMenuScorer *self) {
 		g_MainMenuSparkWait[k] = ScraplandScorer_Rand(GAME_GLOBAL(double, cScraplandMainMenuScorer_Draw_3b11a0), 0.0);
 		int r = crt_rand() & 0x7fff;
 		g_MainMenuSparkTime[k] = 0.0f;
-		g_MainMenuSparkLength[k] = (float)((double)r * g_ScorerRandScale * GAME_GLOBAL(double, cScraplandMainMenuScorer_Draw_3b9748) + GAME_GLOBAL(double, cScraplandMainMenuScorer_Draw_3c40e8));
+		g_MainMenuSparkLength[k] = (float)((double)r * RAND_SCALE * GAME_GLOBAL(double, cScraplandMainMenuScorer_Draw_3b9748) + GAME_GLOBAL(double, cScraplandMainMenuScorer_Draw_3c40e8));
 		g_MainMenuSparkFrame[k] = crt_rand() % 14;
 		g_MainMenuSparkDir[k] = (byte)crt_rand() & 1;
 	}
@@ -565,7 +565,7 @@ static void MainMenu_Sparks(cScraplandMainMenuScorer *self, float dt) {
 				/* the original reads the letter lengths by the spark index, past them for k >= 9 into the spark waits
 				 * that follow them there (a separate C object since stage 3c2) */
 				g_MainMenuSparkTime[k] = k < 9 ? g_MainMenuLength[k] : g_MainMenuSparkWait[k - 9];
-				g_MainMenuSparkLength[k] = (float)((double)r * g_ScorerRandScale * GAME_GLOBAL(double, cScraplandMainMenuScorer_Draw_3b9748) + GAME_GLOBAL(double, cScraplandMainMenuScorer_Draw_3c40e8));
+				g_MainMenuSparkLength[k] = (float)((double)r * RAND_SCALE * GAME_GLOBAL(double, cScraplandMainMenuScorer_Draw_3b9748) + GAME_GLOBAL(double, cScraplandMainMenuScorer_Draw_3c40e8));
 				g_MainMenuSparkFrame[k] = crt_rand() % 14;
 				g_MainMenuSparkDir[k] = (byte)crt_rand() & 1;
 			}

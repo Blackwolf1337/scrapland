@@ -9,7 +9,6 @@
 #include "scrap/walkcharentity.h"
 
 #define EVENT_STR 0x80
-#define RAND_SCALE 0x1.0002000400080p-15	/* 1 / 32767 */
 
 /* the entity name and the value string of the event */
 static void Event_Read(cAbstractFile *params, char *name, char *str) {

@@ -13,11 +13,10 @@
 #include "scrap/vehiclemotors.h"
 #include "scrap/weaps2.h"
 
-#define g_RandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 
 /* (rand() & 0x7fff) / 32767 * mul + add, the double expression of the original */
 static inline double VME_Rand(double mul, double add) {
-	return (double)(crt_rand() & 0x7fff) * g_RandScale * mul + add;
+	return (double)(crt_rand() & 0x7fff) * RAND_SCALE * mul + add;
 }
 
 static CGameParticles *VME_NewParticles(void) {
@@ -168,7 +167,7 @@ void cVehicleMotorsEffects_Init(cVehicleMotorsEffects *self) {
 
 float Rand_FloatRange(float lo, float hi) {
 	float d = hi - lo;
-	return (float)((double)(crt_rand() & 0x7fff) * g_RandScale * (double)d + (double)lo);
+	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * (double)d + (double)lo);
 }
 
 void __stdcall VMEffects_SetupHaze(float thrust, float speed, vec3_t *pos, int n, CGameParticles *ps) {

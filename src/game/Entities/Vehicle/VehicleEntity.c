@@ -27,7 +27,6 @@
 #define VEH_EMPTY GAME_STR(str_Empty)		/* "" */
 #define CGAMEMODEL_CTOR 0x105e60	/* CGameModel_ctor(self, NULL) */
 #define CGAMEMODEL_DTOR 0x20ec10
-#define VEH_RAND_SCALE 3.051850947599719e-05	/* 1 / 32767 (the double at rva 0x3a3d60) */
 #define CAIVEHICLE_SIZE 0x3b0
 #define CEMBEDDEDFXVEHICLE_SIZE 0x1b0
 
@@ -216,7 +215,7 @@ cEntity *cVehicleEntity_ctor(void *mem, const char *name, float x, float y, floa
 	self->histAcc.z = 0.0f;
 	self->histAccLen = 0.0f;
 	self->hitTime = 0.0f;
-	self->timeOfs = (float)((double)(crt_rand() & 0x7fff) * VEH_RAND_SCALE * 100.0 + 0.0);
+	self->timeOfs = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 100.0 + 0.0);
 	cVehicleEffects_SetOwner(&self->effects, Veh_Ent(self));
 	cVehicleTraffic_SetParent(&self->traffic, Veh_Ent(self));
 	self->wl.arrow.alwaysUse = 1;

@@ -15,7 +15,6 @@
 #include "scrap/weapons.h"
 #include "scrap/world.h"
 
-#define g_RandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 #define FX_PI 3.1415927f
 #define FX_PI_3 1.0471976f
 
@@ -33,7 +32,7 @@ static inline CGameModel *Entity_Model(cEntity *e) {
 
 /* rand() in [0, 1] times range, plus add (all in double) */
 static inline float Fx_Rand(double range, double add) {
-	return (float)((double)(crt_rand() & 0x7fff) * g_RandScale * range + add);
+	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * range + add);
 }
 
 vec3_t *cWorld_GetCamPos(cWorld *self, vec3_t *out) {
@@ -664,7 +663,7 @@ static void EMI_Bolt(cObjElementFXEMI *self, int i, const vec3_t *pos, float dt,
 			float dz = prev.z - pt.z;
 			float w;
 			if (k > 0 && k < segs - 2) {
-				double r = (double)(crt_rand() & 0x7fff) * g_RandScale;
+				double r = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
 				float range = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) * 0.5f - 1.5f;
 				float jit = (float)(r * (double)range + 1.5);
 				const vec3_t *d = FX_RandomDir(&tmp);
@@ -1014,7 +1013,7 @@ void cObjElementFXSonicExplosion_Explode(cObjElementFXSonicExplosion *self, floa
 	for (int i = 1; i < 8; i++) {
 		int r = crt_rand() & 0x7fff;
 		p->rotVar = 0.0f;
-		float f = (float)((double)r * g_RandScale * 6.2831854820251465 + 0.0);
+		float f = (float)((double)r * RAND_SCALE * 6.2831854820251465 + 0.0);
 		p->rotIni = f;
 		p->rotEnd = f;
 		p->sizeIni = (g_FXSonicRadius / 10.0f) * (float)i;
@@ -1115,7 +1114,7 @@ void cObjElementFXSonicExplosion_Explode(cObjElementFXSonicExplosion *self, floa
 
 static void cObjElementFXDebrisCloud_Shuffle(cObjElementFXDebrisCloud *self) {
 	for (int i = 0; i < FXDEBRISCLOUD_RANDS; i++) {
-		double d = (double)(crt_rand() & 0x7fff) * g_RandScale;
+		double d = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
 		self->rands[i] = (float)(d + d + 0.0);
 	}
 }

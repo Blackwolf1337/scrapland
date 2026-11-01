@@ -8,12 +8,11 @@
 #include "scrap/slotcontroller.h"
 
 #define cSlotController_vftable ((const cSlotControllerVtbl *)GAME_VFTABLE(cSlotController_vftable))
-#define g_RandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 #define g_SlotEpsilon GAME_GLOBAL(float, g_SlotEpsilon)	/* 0.001 */
 
 /* rand() of the exe as a double in [0, 1] times range */
 static double RandRange(double range) {
-	return (double)(crt_rand() & 0x7fff) * g_RandScale * range;
+	return (double)(crt_rand() & 0x7fff) * RAND_SCALE * range;
 }
 
 /* time to the first slot: interval minus a random part of it (the original adds 0.0 in double first) */

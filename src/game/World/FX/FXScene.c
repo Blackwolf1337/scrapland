@@ -49,7 +49,7 @@ static void FXS_Follow(cEntity *e, cDebris *d, float sortZ, vec3_t *pos, vec3_t 
 
 /* rand() of the exe in [0, 1] (double) */
 static inline double FXS_Rnd(void) {
-	return (double)(crt_rand() & 0x7fff) * g_FxRandScale;
+	return (double)(crt_rand() & 0x7fff) * RAND_SCALE;
 }
 
 /* the particles to the node of the debris model */

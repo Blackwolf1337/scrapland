@@ -11,7 +11,6 @@
 #include "scrap/weapons.h"
 
 #define NEWS_FOV 0.87266463f				/* 50 degrees */
-#define g_NewsRandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 #define g_NewsRandRange GAME_GLOBAL(double, g_HeadRandRange)	/* 2 pi as a float */
 #define g_NewsRandOfs GAME_GLOBAL(double, g_NewsRandOfs)	/* pi as a float */
 /* the three watched entity lists of the world */
@@ -145,7 +144,7 @@ void cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e) {
 	float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 	if (d > r + r) {
 		/* a new point around the entity */
-		double a = (double)(float)((double)(crt_rand() & 0x7fff) * g_NewsRandScale * g_NewsRandRange - g_NewsRandOfs);
+		double a = (double)(float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * g_NewsRandRange - g_NewsRandOfs);
 		float cx = (float)Game_Cos(a) * r;
 		float cy = r * 0.5f;
 		float sz = (float)Game_Sin(a) * r;

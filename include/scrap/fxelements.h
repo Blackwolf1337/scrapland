@@ -260,9 +260,8 @@ void cFXElementsMentalControllerMainFX_Update(cFXElementsMentalControllerMainFX 
 void FXElementsPress_Create(void);
 
 /* rand() of the exe in [0, 1] times range, plus add (all in double), the way the effects pick their values */
-#define g_FxRandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 static inline float FxElem_Rand(double range, double add) {
-	return (float)((double)(crt_rand() & 0x7fff) * g_FxRandScale * range + add);
+	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * range + add);
 }
 
 /* ---- FXElements.cpp ---- */

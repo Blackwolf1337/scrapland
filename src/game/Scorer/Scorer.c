@@ -930,10 +930,10 @@ void ScorerFx_Draw(void *fx, int player, float dt) {
 	}
 	n = (int)((1.0f - f) * (float)g_NoiseFactorBegin + (float)g_NoiseFactor * f);
 	if (n > 1) {
-		double r0 = (double)(crt_rand() & 0x7fff) * g_ScorerRandScale;
+		double r0 = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
 		int r1 = crt_rand() & 0x7fff;
 		CPsaImage *img = g_ScorerNoise;
-		double r1d = (double)r1 * g_ScorerRandScale;
+		double r1d = (double)r1 * RAND_SCALE;
 		float u = (float)(r0 + r0 + 0.0);
 		float w = (float)(r1d + r1d + 0.0);
 		img->uv0[1] = u;

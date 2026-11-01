@@ -998,7 +998,6 @@ extern cGVar GVar_XboxSavingMsgStr;
 #define g_XboxSavingMsgStr (GVar_XboxSavingMsgStr.value.s)	/* XboxSavingMsgStr */
 extern cGVar GVar_ShowConsoleLog;
 #define g_ShowConsoleLog (GVar_ShowConsoleLog.value.i)		/* ShowConsoleLog */
-#define g_ScorerRandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 
 /* a bool variable of an item: 1 or 0 */
 static inline int ScorerVar_Bool(byte *v, byte set, int *i) {

@@ -399,7 +399,7 @@ void Laser_CreateNative(cAbstractFile *f) {
 			float rad = WLife(w)->prim.radius;
 			const vec3_t *c = Obj_Vtbl(v)->GetViewPos(v, &tmp);
 			Weap_Norm(&n, c->x - hit.x, c->y - hit.y, c->z - hit.z);
-			float rr = (float)((double)(crt_rand() & 0x7fff) * g_WeapRandScale * 0.30000001192092896 +
+			float rr = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 0.30000001192092896 +
 				0.10000000149011612);
 			hit.x = hit.x + n.x * rad * rr;
 			hit.y = hit.y + n.y * rad * rr;
@@ -461,11 +461,11 @@ void Laser_CreateNative(cAbstractFile *f) {
 			p->initAccMax.z = 0.0f;
 			p->sizeIni = size;
 			p->sizeLife = 0.2f;
-			p->sizeEnd = (float)((double)(crt_rand() & 0x7fff) * g_WeapRandScale * 50.0 + 200.0) * big;
+			p->sizeEnd = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 50.0 + 200.0) * big;
 			p->colorIni = 0xffc400;
 			p->colorEnd = 0xffff8000;
 			p->birthRate = 0;
-			p->lifeTime = (float)((double)(crt_rand() & 0x7fff) * g_WeapRandScale * 0.050000011920928955 + 0.25);
+			p->lifeTime = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 0.050000011920928955 + 0.25);
 			CGameParticles_Apply(p);
 			CGameParticles_Emit(p, 1, 1, time, &mtx);
 			zs = scale * 90.0f;
@@ -477,11 +477,11 @@ void Laser_CreateNative(cAbstractFile *f) {
 			p->initPosMax.y = 0.0f;
 			p->sizeIni = size;
 			p->sizeLife = 0.25f;
-			p->sizeEnd = (float)((double)(crt_rand() & 0x7fff) * g_WeapRandScale * 50.0 + 300.0) * big;
+			p->sizeEnd = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 50.0 + 300.0) * big;
 			p->colorIni = 0x40c48000;
 			p->colorEnd = 0xffc48000;
 			p->birthRate = 0;
-			p->lifeTime = (float)((double)(crt_rand() & 0x7fff) * g_WeapRandScale * 0.04999998211860657 +
+			p->lifeTime = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 0.04999998211860657 +
 				0.4000000059604645);
 			CGameParticles_Apply(p);
 			CGameParticles_Emit(p, 1, 1, time, &mtx);
@@ -494,11 +494,11 @@ void Laser_CreateNative(cAbstractFile *f) {
 			p->initPosMax.y = 0.0f;
 			p->sizeIni = size;
 			p->sizeLife = 0.3f;
-			p->sizeEnd = (float)((double)(crt_rand() & 0x7fff) * g_WeapRandScale * 100.0 + 400.0) * big;
+			p->sizeEnd = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 100.0 + 400.0) * big;
 			p->colorIni = 0x80c44000;
 			p->colorEnd = 0xffc44000;
 			p->birthRate = 0;
-			p->lifeTime = (float)((double)(crt_rand() & 0x7fff) * g_WeapRandScale * 0.050000011920928955 +
+			p->lifeTime = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 0.050000011920928955 +
 				0.550000011920929);
 			CGameParticles_Apply(p);
 			CGameParticles_Emit(p, 1, 1, time, &mtx);

@@ -15,7 +15,6 @@
 #include "scrap/weapons.h"
 #include "scrap/world.h"
 
-#define g_RandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 
 /* the ship of an effect */
 #define FXV_Veh(e) ((const cVehicleEntity *)(e))
@@ -309,7 +308,7 @@ void *cObjElementFXVehicleSputnik_Delete(void *self, uint32_t flags) {
 
 /* rand() in [0, 1] times range plus add, all in double */
 static inline float FXV_Rand(double range, double add) {
-	return (float)((double)(crt_rand() & 0x7fff) * g_RandScale * range + add);
+	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * range + add);
 }
 
 static inline uint32_t *FXV_Ramp(uint32_t *ramp) {
@@ -656,7 +655,7 @@ void cObjElementFXVehicleSpawn_Update(cObjElementFXVehicleSpawn *self, cDebris *
 		FX_Normalize(&self->rayDir[n], b->x - pos.x, b->y - pos.y, b->z - pos.z);
 		self->rayLen[self->numRays] = FXV_Rand(0.5, 0.30000001192092896);
 		self->raySpeed[self->numRays] = FXV_Rand(230.0, 185.0);
-		double r = (double)(crt_rand() & 0x7fff) * g_RandScale;
+		double r = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
 		self->rayAcc[self->numRays] = -(float)(r + r + 1.5);
 		b = &self->rayBase[self->numRays];
 		float dx = b->x - pos.x;
@@ -762,14 +761,14 @@ void cObjElementFXFiredEntity_Update(cObjElementFXFiredEntity *self, cDebris *de
 			at.y = dir.y * sj + pos.y;
 			at.z = dir.z * sj + pos.z;
 			FX_RandomDir(&rd);
-			double r = (double)(crt_rand() & 0x7fff) * g_RandScale;
+			double r = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
 			if (still) {
 				float sc = (float)(r * 4.0 + 1.0);
 				float rx = rd.x * sc;
 				float ry = rd.y * sc;
 				float rz = rd.z * sc;
 				float lo = size * -0.5f;
-				FXV_TurnZ(&o, (float)((double)(crt_rand() & 0x7fff) * g_RandScale * (double)(size * 0.5f - lo)
+				FXV_TurnZ(&o, (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * (double)(size * 0.5f - lo)
 					+ (double)lo), &rot);
 				p->initPosMin.x = pos.x + o.x + rx;
 				p->initPosMin.y = o.y + pos.y + ry;
@@ -2523,7 +2522,7 @@ void cObjElementFXVehicleSputnik_Update(cObjElementFXVehicleSputnik *self, cDebr
 			if (life > 0.0f) {
 				vec3_t *rp = &self->rayPos[i];
 				vec3_t dv, n, off, o, tgt, p;
-				double r = (double)(crt_rand() & 0x7fff) * g_RandScale;
+				double r = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
 				dv.x = rp->x - spos.x;
 				dv.z = rp->z - spos.z;
 				float w = (float)(r + r - 1.0) + self->rayWidth[i];
@@ -3137,7 +3136,7 @@ void cObjElementFXVehicleSputnik_Reset(cObjElementFXVehicleSputnik *self, cDebri
 	}
 	for (int i = 0; i < FXVSPUTNIK_RANDS; i++) {
 		self->rayLife[i] = -1.0f;
-		self->rayDelay[i] = (float)((double)(crt_rand() & 0x7fff) * g_RandScale * (double)0.4f + (double)0.15f);
+		self->rayDelay[i] = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * (double)0.4f + (double)0.15f);
 	}
 }
 

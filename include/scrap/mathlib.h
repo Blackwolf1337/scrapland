@@ -12,6 +12,7 @@
 #define M_PI_F 3.1415927f
 #define M_1_PI_D 0.3183098861837907
 #define DEG_PER_PI 180.0
+#define RAND_SCALE (1.0 / 32767.0)	/* crt_rand() * RAND_SCALE: 0..1 */
 
 /* radians to degrees in double, as the engine computes it (rad * 180 / pi) */
 static inline double Rad2Deg(double rad) {

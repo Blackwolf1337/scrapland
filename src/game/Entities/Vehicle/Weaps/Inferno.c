@@ -210,9 +210,9 @@ cEntity *Inferno_Hit(const char *name) {
 				float dz = p->z - pos.z;
 				float dist = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 				if (1.0f > dist) {
-					double r0 = (double)(crt_rand() & 0x7fff) * g_WeapRandScale;
-					double r1 = (double)(crt_rand() & 0x7fff) * g_WeapRandScale;
-					double r2 = (double)(crt_rand() & 0x7fff) * g_WeapRandScale;
+					double r0 = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
+					double r1 = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
+					double r2 = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
 					rnd.x = (float)((r2 + r2) - 1.0);
 					rnd.y = (float)((r1 + r1) - 1.0);
 					rnd.z = (float)((r0 + r0) - 1.0);
@@ -457,9 +457,9 @@ void Inferno_SphereHit(cAbstractFile *f) {
 		dz *= inv;
 	}
 	if (1.0f > dist) {
-		double r0 = (double)(crt_rand() & 0x7fff) * g_WeapRandScale;
-		double r1 = (double)(crt_rand() & 0x7fff) * g_WeapRandScale;
-		double r2 = (double)(crt_rand() & 0x7fff) * g_WeapRandScale;
+		double r0 = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
+		double r1 = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
+		double r2 = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
 		rnd.x = (float)((r2 + r2) - 1.0);
 		rnd.y = (float)((r1 + r1) - 1.0);
 		rnd.z = (float)((r0 + r0) - 1.0);

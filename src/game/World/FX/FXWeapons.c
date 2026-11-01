@@ -13,12 +13,11 @@
 #include "scrap/weaps2.h"
 #include "scrap/world.h"
 
-#define g_RandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 #define FX_PI 3.1415927f				/* 0x40490fdb */
 
 /* rand() in [0, 1] times range, plus add (all in double) */
 static inline float FXW_Rand(double range, double add) {
-	return (float)((double)(crt_rand() & 0x7fff) * g_RandScale * range + add);
+	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * range + add);
 }
 
 static inline float FXW_Delta(void) {
@@ -1602,7 +1601,7 @@ void cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *debris, float 
 			last->z = 0.0f;
 			for (int k = 1; k < self->numPts - 1; k++) {
 				float amp = g_FXTeslaRandRadius;
-				float s = (float)((double)(crt_rand() & 0x7fff) * g_RandScale * (double)amp + 0.0);
+				float s = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * (double)amp + 0.0);
 				vec3_t rd;
 				const vec3_t *rr = FX_RandomDir(&rd);
 				offs[k].x = rr->x * s;
@@ -1736,7 +1735,7 @@ void cObjElementFXTesla_Update(cObjElementFXTesla *self, cDebris *debris, float 
 					float range = dist * 0.09f - lo;
 					for (int k = 0; k < 2; k++) {
 						vec3_t rd;
-						float s = (float)((double)(crt_rand() & 0x7fff) * g_RandScale * (double)range + (double)lo);
+						float s = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * (double)range + (double)lo);
 						const vec3_t *rr = FX_RandomDir(&rd);
 						X[k].x = s * rr->x + q.x;
 						X[k].y = rr->y * s + q.y;

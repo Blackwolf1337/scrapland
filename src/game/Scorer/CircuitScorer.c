@@ -7,12 +7,11 @@
 #include "scrap/app.h"
 #include "scrap/scoreritems.h"
 
-#define g_CircuitRandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 
 
 /* rand() / 32767 * scale + ofs in double, as the original */
 static float Circuit_Rand(double scale, double ofs) {
-	return (float)((double)(crt_rand() & 0x7fff) * g_CircuitRandScale * scale + ofs);
+	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * scale + ofs);
 }
 
 cCircuitPath *cCircuitPath_ctor(cCircuitPath *self) {
@@ -253,7 +252,7 @@ static void Circuit_Respawn(int k) {
 	f->delay = Circuit_Rand((double)0.2f, (double)0.2f);
 	int r = crt_rand() & 0x7fff;
 	float len = g_CircuitPaths[f->path].total / 550.0f;
-	float t = len * (float)((double)r * g_CircuitRandScale * GAME_GLOBAL(double, cCircuitScorer_Draw_3c2608) + (double)0.7f);
+	float t = len * (float)((double)r * RAND_SCALE * GAME_GLOBAL(double, cCircuitScorer_Draw_3c2608) + (double)0.7f);
 	f->duration = t;
 	f->time = t;
 	f->reverse = crt_rand() & 1;

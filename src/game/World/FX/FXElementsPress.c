@@ -11,7 +11,6 @@
 #include "scrap/scrap.h"
 #include "scrap/sound.h"
 
-#define g_RandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 #define PRESS_NAME_SKIP 11			/* "DM_Element_" before the name of the element in the dummy */
 #define CGAMETRAIL_CTOR 0x21ddb0
 #define CGAMETRAIL_DTOR 0x21de40
@@ -251,7 +250,7 @@ byte cFXElementsMentalControllerDamageFX_Init(cFXElementsMentalControllerDamageF
 		self->flashSparksMax[k] = CGameModel_NodeIniInt(model, self->flashNode[k], "FlashEmitter", "SparksMax", 8);
 		float lo = self->flashSleepMin[k];
 		float hi = self->flashSleepMax[k];
-		double r = (double)(crt_rand() & 0x7fff) * g_RandScale;
+		double r = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
 		self->flashSleep[k] = (float)(r * (double)(hi - lo) + (double)lo);
 	}
 	return 1;
@@ -485,7 +484,7 @@ byte cFXElementsMentalControllerMainFX_Init(cFXElementsMentalControllerMainFX *s
 	for (int i = 0; i < FXMENTALMAINTRAILS; i++) {
 		MainFX_TubeTrail(&self->tubeTrails[i], &up, 2, 0xd);
 		MainFX_TubeTrail(&self->glowTrails[i], &up, 2, 0xe);
-		float du = (float)((double)(crt_rand() & 0x7fff) * g_RandScale * 3.0 + 3.0);
+		float du = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 3.0 + 3.0);
 		CGameTrail_SetUVScale(&self->glowTrails[i], du, 1.0f);
 		/* the quarter of the texture of the first 8 tubes */
 		if (i < 8) {
@@ -508,10 +507,10 @@ byte cFXElementsMentalControllerMainFX_Init(cFXElementsMentalControllerMainFX *s
 	self->glowDuration = 0.0f;
 	self->glowPause = 0.0f;
 	for (int k = 0; k < FXMENTALMAINGLOWS; k++) {
-		self->glowPhase[k] = (float)((double)(crt_rand() & 0x7fff) * g_RandScale - 1.0);
+		self->glowPhase[k] = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE - 1.0);
 		double r = (double)(crt_rand() & 0x7fff);
 		self->glowSide[k] = k & 1;
-		self->glowSpeed[k] = (float)(r * g_RandScale * 0.19999998807907104 + 0.800000011920929);
+		self->glowSpeed[k] = (float)(r * RAND_SCALE * 0.19999998807907104 + 0.800000011920929);
 		int g = crt_rand() % 32;
 		int r2 = crt_rand() % 32;
 		int b = crt_rand() % 64;

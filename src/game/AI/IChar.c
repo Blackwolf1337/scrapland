@@ -19,7 +19,6 @@
 
 extern cGVar GVar_RADIUS_OBJECTIVE_IN_ROUTE;
 #define g_AICRadiusInRoute (GVar_RADIUS_OBJECTIVE_IN_ROUTE.value.f)	/* RADIUS_OBJECTIVE_IN_ROUTE */
-#define g_AICRandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 #define AIC_ANG45 ((double)0.785398185f)		/* pi / 4 as a float */
 #define AIC_ANG90 1.5707963267948966			/* pi / 2 */
 #define AIC_LOST_TIME 15.0f				/* LOST_PATH gives up */
@@ -67,7 +66,7 @@ static inline vec3_t *AIC_CtlVec(cAICharControl *c, int ofs, vec3_t *out) {
 
 /* rand() of the exe in [-1, 1] */
 static inline float AIC_RandSigned(void) {
-	double r = (double)(crt_rand() & 0x7fff) * g_AICRandScale;
+	double r = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
 
 	return (float)(r + r - 1.0);
 }

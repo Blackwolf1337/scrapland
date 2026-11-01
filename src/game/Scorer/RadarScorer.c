@@ -386,8 +386,8 @@ void cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntity *cam) {
 	verts[3][0] = w;
 	verts[3][1] = -h;
 	if (Radar_IsEMIed(target) && !self->menuMap) {
-		double r0 = (double)(crt_rand() & 0x7fff) * g_ScorerRandScale;
-		double r1 = (double)(crt_rand() & 0x7fff) * g_ScorerRandScale;
+		double r0 = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
+		double r1 = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
 		cu = (float)(r1 + r1 - 1.0);
 		cv = (float)(r0 + r0 - 1.0);
 	} else {

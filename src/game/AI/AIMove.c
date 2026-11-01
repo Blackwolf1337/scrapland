@@ -14,7 +14,6 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/walkcharentity.h"
 
-#define g_AIMoveRandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 #define AIMOVE_STOP_TIME 10.0f
 #define AIMOVE_EV_STOPPED 7
 
@@ -205,7 +204,7 @@ byte cAIMove_CanTarget(cAIMove *self, cEntity *e) {
 
 /* rand() of the exe in [lo, lo + span] */
 static inline float AIMove_Rand(double span, double lo) {
-	return (float)((double)(crt_rand() & 0x7fff) * g_AIMoveRandScale * span + lo);
+	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * span + lo);
 }
 
 vec3_t *cAIMove_RandomPoint(cAIMove *self, vec3_t *out, const vec3_t *p, float r) {

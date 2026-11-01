@@ -12,7 +12,6 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/world.h"
 
-#define g_RandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMEPARTICLES_DTOR 0x21d1c0
 #define CGAMETRAIL_CTOR 0x21ddb0
@@ -30,7 +29,7 @@
 typedef const char *(*vehicleName_t)(cEntity *self, int i);
 
 static float EFX_Rand(double scale, double add) {
-	return (float)((double)(crt_rand() & 0x7fff) * g_RandScale * scale + add);
+	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * scale + add);
 }
 
 /* the inlined strcmp of the original: the first two characters as a word, then the rest */
@@ -839,7 +838,7 @@ void cEmbeddedFXVehicleVote_Update(cEmbeddedFXVehicleVote *self) {
 		for (int n = 15; n; n--) {
 			uint32_t a = (uint32_t)(crt_rand() % 64 + 0x20) << 24;
 			float k = side ? 1280.0f : 2280.0f;
-			float d = (float)((double)(crt_rand() & 0x7fff) * g_RandScale * (double)(k - 540.0f) + 540.0);
+			float d = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * (double)(k - 540.0f) + 540.0);
 			float k2 = side ? -0.8999999761581421f : 1.0f;
 			vec3_t ra = {0.0f, 0.0f, 0.0f};
 			ra.y = EFX_Rand(6.2831854820251465, 0.0);
@@ -920,7 +919,7 @@ void cEmbeddedFXVehicleVote_Update(cEmbeddedFXVehicleVote *self) {
 		p->rotIni = EFX_Rand(6.2831854820251465, 0.0);
 		p->rotVar = 6.2831854820251465f;
 		p->rotEnd = p->rotIni +
-			(float)((double)(crt_rand() & 0x7fff) * g_RandScale * 2.094395160675049 - 1.0471975803375244);
+			(float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 2.094395160675049 - 1.0471975803375244);
 		p->lifeTime = 0.2f - EFX_Rand(0.030000001192092896, 0.019999999552965164);
 		CGameParticles_Apply(p);
 	}

@@ -549,8 +549,8 @@ static void Monitor_DrawText(cMonitorScorer *self, cEntity *e, float frameTime, 
 		CPsaImage *img = self->noiseImg;
 		img->f18 = 0.8f;
 		img->f1c = 0.8f;
-		float r = (float)((double)(crt_rand() & 0x7fff) * g_ScorerRandScale + 0.0);
-		img->uv0[0] = (float)((double)(crt_rand() & 0x7fff) * g_ScorerRandScale + 0.0);
+		float r = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE + 0.0);
+		img->uv0[0] = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE + 0.0);
 		img->uv0[1] = r;
 		img = self->noiseImg;
 		float du = MONITOR_W / img->f18, dv = MONITOR_H / img->f1c;
@@ -583,12 +583,12 @@ static void Monitor_DrawText(cMonitorScorer *self, cEntity *e, float frameTime, 
 		}
 	}
 	int r = crt_rand() & 0x7fff;
-	self->frame->color = (uint32_t)(int)(float)((double)r * g_ScorerRandScale * 128.0 + 128.0) << 24 | 0xffffff;
+	self->frame->color = (uint32_t)(int)(float)((double)r * RAND_SCALE * 128.0 + 128.0) << 24 | 0xffffff;
 	CPsaImage_DrawFrame(self->frame, self->frameIndex, x, y);
 	CPsaImage_GetFrameUV(self->staticImg, self->staticIndex, uv0, uv1);
 	r = crt_rand() & 0x7fff;
 	CPsaImage *s = self->staticImg;
-	s->color = (uint32_t)(int)(float)((double)r * g_ScorerRandScale * 192.0 + 0.0) << 24 | 0xffffff;
+	s->color = (uint32_t)(int)(float)((double)r * RAND_SCALE * 192.0 + 0.0) << 24 | 0xffffff;
 	s->scaleX = 123.5f / (uv1[0] - uv0[0]);
 	s->scaleY = MONITOR_STATIC_H / (uv1[1] - uv0[1]);
 	double g = X87_Mul(g_pApp->vftable->GetGameTime(g_pApp), 20.0);

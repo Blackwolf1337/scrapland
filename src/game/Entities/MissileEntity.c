@@ -16,7 +16,6 @@
 #include "scrap/withlifeentity.h"
 
 #define MISSILE_CLASSNAME "Missile"
-#define MISSILE_RAND_SCALE 3.051850947599719e-05		/* 1 / 32767 */
 
 #define MISSILE_PI_2 0x1.921fb6p+0f				/* pi / 2 as float (0x3fc90fdb) */
 
@@ -46,7 +45,7 @@ static inline float X87_Sub(float a, float b) {
 
 /* lo + rand / 32767 * range in double, as the original */
 static inline float Missile_Rand(double range, double lo) {
-	return (float)((double)(crt_rand() & 0x7fff) * MISSILE_RAND_SCALE * range + lo);
+	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * range + lo);
 }
 
 /* lo + rand / 32767 * (v - lo) with lo = -v, the random spread of the swarm */
@@ -194,7 +193,7 @@ void cMissileEntity_Wobble(cMissileEntity *self, float k) {
 	float lo2 = k * -8.0f;
 	int r = crt_rand();
 	float hi2 = k * 8.0f;
-	float w = (float)((double)(r & 0x7fff) * MISSILE_RAND_SCALE * (double)(hi2 - lo2) + (double)lo2);
+	float w = (float)((double)(r & 0x7fff) * RAND_SCALE * (double)(hi2 - lo2) + (double)lo2);
 	/* the roll only grows */
 	if (self->wl.obj.rotVel.z >= 0.0f && w > 0.0f) {
 		self->wl.obj.rotVel.z = self->wl.obj.rotVel.z + w;

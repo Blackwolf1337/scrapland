@@ -42,9 +42,9 @@ void Swarm_BeeDeath(cEntity *sw, float x, float y, float z, byte sound) {
 	} else if (n > 3) {
 		n = 3;
 	}
-	float time = (float)((double)(crt_rand() & 0x7fff) * g_WeapRandScale * 0.15000003576278687 + 0.6499999761581421);
-	float size = (float)((double)(crt_rand() & 0x7fff) * g_WeapRandScale * 0.13999998569488525 + 0.18000000715255737);
-	float r = (float)((double)(crt_rand() & 0x7fff) * g_WeapRandScale * 20.0 + 10.0);
+	float time = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 0.15000003576278687 + 0.6499999761581421);
+	float size = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 0.13999998569488525 + 0.18000000715255737);
+	float r = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 20.0 + 10.0);
 	const vec3_t *d = FX_RandomDir(&rd);
 	FXSwarm_BeeDeath(d->x * r + x, d->y * r + y, d->z * r + z, 0.0f, 0.0f, 0.0f, size, time, n);
 	if (sound) {
@@ -188,9 +188,9 @@ cEntity *Swarm_HitFX(const char *name, const char *ship, const char *target) {
 		dir.y = v->y * inv;
 		dir.z = v->z * inv;
 	}
-	float time = (float)((double)(crt_rand() & 0x7fff) * g_WeapRandScale * 0.10000002384185791 + 0.8999999761581421);
-	float size = (float)((double)(crt_rand() & 0x7fff) * g_WeapRandScale * 0.10000002384185791 + 0.8999999761581421);
-	float r = (float)((double)(crt_rand() & 0x7fff) * g_WeapRandScale * 60.0 + 32.0);
+	float time = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 0.10000002384185791 + 0.8999999761581421);
+	float size = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 0.10000002384185791 + 0.8999999761581421);
+	float r = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 60.0 + 32.0);
 	const vec3_t *d = FX_RandomDir(&rd);
 	FXSwarm_Hit(d->x * r + c.x, d->y * r + c.y, d->z * r + c.z, 0.0f, 0.0f, 0.0f, size * 0.75f + k, time, dir.x,
 		dir.y, dir.z);

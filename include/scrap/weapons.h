@@ -97,9 +97,8 @@ static inline float Weap_X87Div(float a, float b) {
 }
 
 /* rand() in [0, 1] (double) */
-#define g_WeapRandScale GAME_GLOBAL(double, g_FxRandScale)	/* 1/32767 */
 static inline double Weap_Rand01(void) {
-	return (double)(crt_rand() & 0x7fff) * g_WeapRandScale;
+	return (double)(crt_rand() & 0x7fff) * RAND_SCALE;
 }
 
 /* the cannon color of the HUD items (alpha 0xbf) */

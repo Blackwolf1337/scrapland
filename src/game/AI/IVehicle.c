@@ -1313,7 +1313,7 @@ static float AIV_TrackRoom(cAIVehicle *self, CNodesTraffic *t, int track) {
 
 /* rand() in -w..w as the original computes it */
 static inline float AIV_TrackRand(double range, double base) {
-	return (float)((double)(crt_rand() & 0x7fff) * g_WeapRandScale * range + base);
+	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * range + base);
 }
 
 /* A x (0, 1, 0) with the products by 0 of the original, (1, 0, 0) when that is near 0 too */
@@ -2125,10 +2125,10 @@ common: {
 		}
 		g_DepthPathRouteOutDoorAI = g_DepthPathRouteOutDoorAIInit;
 		/* a random direction in the plane, x and z in -1..1 */
-		double r = (double)(crt_rand() & 0x7fff) * g_WeapRandScale;
+		double r = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
 		vec3_t dir;
 		dir.x = (float)(r + r - 1.0);
-		r = (double)(crt_rand() & 0x7fff) * g_WeapRandScale;
+		r = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
 		self->rotA = p->rotA;
 		dir.z = (float)(r + r - 1.0);
 		dir.y = 0.0f;

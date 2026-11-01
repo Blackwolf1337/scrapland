@@ -23,7 +23,6 @@
 #include "scrap/scoreritems.h"
 
 #define APP_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
-#define APP_RANDSCALE GAME_GLOBAL(double, g_FxRandScale)	/* 1 / 32767 */
 
 /* the engine callbacks of the exe (Engine_SetCallback) */
 #define APP_CB_WORLDFRAME ((void (*)(void))(void *)Scorer_Render)
@@ -522,7 +521,7 @@ void App_PickLoadingTip(CApp *self, const char *level) {
 		for (i = 0; i < sizeof(mixed) / sizeof(mixed[0]) && !fmt; i++) {
 			if (!crt_stricmp(name, mixed[i])) {
 				int r = crt_rand() & 0x7fff;
-				double d = (double)r * APP_RANDSCALE;
+				double d = (double)r * RAND_SCALE;
 				d = d + d;
 				float f = (float)(d - 1.0);
 				fmt = !(f > 0.0f) ? out : ind;

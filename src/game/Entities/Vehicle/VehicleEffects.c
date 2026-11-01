@@ -20,7 +20,6 @@
 #define CGAMETRAIL_CTOR 0x21ddb0
 #define CGAMETRAIL_DTOR 0x21de40
 
-#define VEFF_RAND_SCALE 3.051850947599719e-05	/* 1 / 32767 (the double at rva 0x3a3d60) */
 
 static inline cEntity *VE_Ent(cVehicleEntity *v) {
 	return &v->wl.obj.base;
@@ -177,7 +176,7 @@ static vec3_t *VE_TrailPoint(cVehicleTrails *self, CGameModel *model, int node, 
 
 /* rand / 32767 * range - sub in double, as the original */
 static inline float VE_RandSub(double range, double sub) {
-	return (float)((double)(crt_rand() & 0x7fff) * VEFF_RAND_SCALE * range - sub);
+	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * range - sub);
 }
 
 void cVehicleTrails_Update(cVehicleTrails *self, float dt) {
@@ -503,7 +502,7 @@ void cVehicleEffects_UpdateState(cVehicleEffects *self, float dt) {
 	from.x = c->x + r->x;
 	from.y = c->y + r->y;
 	from.z = c->z + r->z;
-	float rnd = (float)((double)(crt_rand() & 0x7fff) * VEFF_RAND_SCALE * 0.19999998807907104 + 0.75);
+	float rnd = (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * 0.19999998807907104 + 0.75);
 	v.x = 0.0f;
 	v.y = -(g_WindFXSmokeMaxDist * k);
 	v.z = -(rnd * g_WindFXSmokeMaxDist * k);
@@ -574,7 +573,7 @@ void cVehicleEffects_Update(cVehicleEffects *self, float dt) {
 
 /* rand / 32767 * range + add in double, as the original */
 static inline float VE_RandAdd(double range, double add) {
-	return (float)((double)(crt_rand() & 0x7fff) * VEFF_RAND_SCALE * range + add);
+	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * range + add);
 }
 
 /* the constants of the smoke of one kind of tube */
@@ -613,7 +612,7 @@ static void VE_TubePuff(cVehicleTubes *self, CGameParticles *p, const VE_TubeSmo
 	Vec3_Rotate(&vel, &v, rot);
 	float az;
 	if (k->accZSub) {
-		az = (float)(k->accZ[1] - (double)(crt_rand() & 0x7fff) * VEFF_RAND_SCALE * k->accZ[0]);
+		az = (float)(k->accZ[1] - (double)(crt_rand() & 0x7fff) * RAND_SCALE * k->accZ[0]);
 	} else {
 		az = VE_RandSub(k->accZ[0], k->accZ[1]);
 	}
@@ -712,7 +711,7 @@ extern uint32_t g_WindSmokeRamps[18];	/* 2 color ramps of 9 colors */
 
 /* rand / 32767 * range + add with a float range, as the original */
 static inline float VE_RandAddF(float range, float add) {
-	return (float)((double)(crt_rand() & 0x7fff) * VEFF_RAND_SCALE * (double)range + (double)add);
+	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * (double)range + (double)add);
 }
 
 /* -1 or 1 */
