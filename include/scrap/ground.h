@@ -231,14 +231,12 @@ byte Ground_PointInTri(const vec3_t *p, const vec3_t *a, const vec3_t *b, const 
 float Ground_Dist2PointSeg(const vec3_t *a, const vec3_t *b, const vec3_t *p, vec3_t *out);
 /* the query of checkbbox.cpp ("colis"): the box min/max (use_minmax 1) or min2/max2 (2), moved by pos */
 typedef struct CCollisionBBox {
-	byte pad_0[0x18];
 	vec3_t pos;			/* 0x18 */
 	vec3_t min;			/* 0x24 */
 	vec3_t max;			/* 0x30 */
 	vec3_t min2;			/* 0x3c */
 	vec3_t max2;			/* 0x48 */
 	int use_minmax;		/* 0x54 */
-	byte pad_58[0x24];
 	int calc_response;		/* 0x7c must be 0 */
 } CCollisionBBox;
 

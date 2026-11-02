@@ -124,7 +124,6 @@ typedef struct cObjElementFXVehicleDamage {
 	float trailTime;		/* 0x244 since the last puff of the trail */
 	int numExhausts;		/* 0x248 */
 	FXVExhaust exhausts[FXV_EXHAUSTS];	/* 0x24c */
-	byte pad_28c[0x2cc - 0x28c];
 	byte on;			/* 0x2cc */
 	byte pad_2cd[3];
 } cObjElementFXVehicleDamage;
@@ -146,7 +145,6 @@ typedef struct cObjElementFXVehicleEMI {
 	vec3_t dir;			/* 0x00d0 of the last step */
 	int numExhausts;		/* 0x00dc */
 	FXVExhaust exhausts[FXV_EXHAUSTS];	/* 0x00e0 */
-	byte pad_120[0x160 - 0x120];
 	int part[FXVEMI_TRAILS];	/* 0x0160 the exhaust of the ray, -1 the whole ship */
 	float rayTime[FXVEMI_TRAILS];	/* 0x01a0 */
 	vec3_t pts[FXVEMI_TRAILS][FXVEMI_POINTS];	/* 0x01e0 a ring, in the space of the model */
@@ -171,7 +169,6 @@ typedef struct cObjElementFXVehicleFire {
 	byte pad_170[4];
 	int numExhausts;		/* 0x174 */
 	FXVExhaust exhausts[FXV_EXHAUSTS];	/* 0x178 */
-	byte pad_1b8[0x1f8 - 0x1b8];
 	byte on;			/* 0x1f8 */
 	byte pad_1f9[3];
 } cObjElementFXVehicleFire;
@@ -184,7 +181,6 @@ typedef struct cObjElementFXVehicleSpawn {
 	CGameParticles particles;	/* 0x008 on Dummy01 */
 	float stepTime;			/* 0x0b8 of the frame */
 	float time;			/* 0x0bc */
-	byte pad_c0[0xd8 - 0xc0];
 	vec3_t rayBase[FXVSPAWN_RAYS];	/* 0x0d8 */
 	vec3_t rayDir[FXVSPAWN_RAYS];	/* 0x45c */
 	float rayLen[FXVSPAWN_RAYS];	/* 0x7e0 */
@@ -212,7 +208,6 @@ typedef struct cObjElementFXVehicleSputnik {
 	byte pad_c9[3];
 	int numExhausts;		/* 0x00cc */
 	FXVExhaust exhausts[FXV_EXHAUSTS];	/* 0x00d0 */
-	byte pad_110[0x190 - 0x110];
 	int sputnikNode;		/* 0x0190 "Bip Spootnick MASTER" of the entity "Sputnik", -1 none */
 	CGameTrail trails[FXVSPUTNIK_TRAILS];	/* 0x0194 15 rays per trail */
 	vec3_t rayPos[FXVSPUTNIK_RANDS];	/* 0x01c8 the point of the ship */

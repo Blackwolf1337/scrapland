@@ -834,7 +834,6 @@ void cEnemiesTraffic_Update(cEnemiesTraffic *self, float dt);
 typedef struct cRustyLocalLogic {
 	cGenCharLocalLogic base;	/* 0x00 */
 	cEntity *junk;			/* 0x68 the junk point */
-	byte pad_6c[0x84 - 0x6c];
 } cRustyLocalLogic;
 
 /* every TimeBetweeenTaunts (outdoor maps), dt is not used */

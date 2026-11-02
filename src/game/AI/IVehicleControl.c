@@ -1912,7 +1912,7 @@ cAIVehicleGroup *cAIVehicleGroup_ctor(void *mem) {
 	cAIVehicleGroup *self = mem;
 
 	cAIEntityGroup_ctor(self);
-	self->vftable = CAIVEHICLEGROUP_VFTABLE;
+	self->base.vftable = CAIVEHICLEGROUP_VFTABLE;
 	float now = Timer_GetTime(&g_pWorld->timer);
 	self->numStopped = 0;
 	self->reposTime = now;
@@ -1927,7 +1927,7 @@ cAIVehicleGroup *cAIVehicleGroup_ctor(void *mem) {
 
 /* ---- cAIVehicleGroup (the same source; cAIVehicleGroup_ctor in ai.h) ---- */
 static void cAIVehicleGroup_dtor(cAIVehicleGroup *self) {
-	self->vftable = CAIVEHICLEGROUP_VFTABLE;
+	self->base.vftable = CAIVEHICLEGROUP_VFTABLE;
 	cAIEntityGroup_dtor(self);
 }
 

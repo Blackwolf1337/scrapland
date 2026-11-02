@@ -270,7 +270,6 @@ typedef struct cObjElementFXPoliceGearConversion {
 	float smokeT;			/* 0x0cc since the last smoke ring */
 	byte pad_d0[4];
 	CGameParticles particles2;	/* 0x0d4 */
-	byte pad_184[0x1a4 - 0x184];
 	vec3_t bubblePos[FXGEAR_BUBBLES];	/* 0x1a4 the bubbles of the fusion around the waist */
 	float bubbleH[FXGEAR_BUBBLES];		/* 0x474 their height */
 	float bubbleVel[FXGEAR_BUBBLES];	/* 0x564 */

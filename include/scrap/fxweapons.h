@@ -51,7 +51,6 @@ typedef struct cObjElementFXATPC {
 	CGameParticles particles;	/* 0x020 on Dummy01 */
 	CGameParticles particles2;	/* 0x0d0 */
 	float time;			/* 0x180 since the shot */
-	byte pad_184[0x188 - 0x184];
 	int numSlots;			/* 0x188 the mounted slots of the shooter */
 	byte slotOn[FXATPC_SLOTS];	/* 0x18c */
 	vec3_t slotPos[FXATPC_SLOTS];	/* 0x190 the weapon nodes of the slots */
@@ -127,7 +126,6 @@ typedef struct cObjElementFXLaser {
 	cObjElementFX base;
 	CGameTrail trail;		/* 0x004 */
 	CGameParticles particles;	/* 0x008 on Dummy01 */
-	byte pad_b8[0xc4 - 0xb8];
 	float time;			/* 0x0c4 */
 	vec3_t start;			/* 0x0c8 */
 	vec3_t end;			/* 0x0d4 */

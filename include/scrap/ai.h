@@ -49,16 +49,7 @@ struct cAIEntityGroup {
 };
 
 struct cAIVehicleGroup {
-	union {
-		cAIEntityGroup base;	/* 0x00 */
-		struct {
-			const cAIEntityGroupVtbl *vftable;	/* 0x00 */
-			byte pad_4[0x54 - 0x4];
-			int numVehicles;		/* 0x54 */
-			byte pad_58[0x5c - 0x58];
-			float changeTime;		/* 0x5c the time since the last change of state */
-		};
-	};
+	cAIEntityGroup base;	/* 0x00 the vehicles; changeTime: the time since the last change of state */
 	/* the vehicle AIs in the internal state STOPPED: all, the traffic by class (2, 1, 0) and IN_ROUTE */
 	int numStopped;			/* 0x60 */
 	int numStoppedHeavy;		/* 0x64 */

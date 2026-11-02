@@ -34,7 +34,6 @@ typedef struct cVehicleTrails {
 	int nodes[VEFF_TRAILS];		/* 0x1c -1 for none */
 	float dist;			/* 0x2c from the last point */
 	vec3_t last;			/* 0x30 the center at the last point */
-	byte pad_3c[0x48 - 0x3c];
 	float time;			/* 0x48 since the last shrink */
 	uint32_t color;			/* 0x4c */
 	float segment;			/* 0x50 approaches the segment length */

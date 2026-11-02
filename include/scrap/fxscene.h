@@ -90,7 +90,6 @@ typedef struct cObjElementFXSceneEnterMatrix {
 	float tPrev;			/* 0x008 */
 	cEntity *ent;			/* 0x00c */
 	CGameParticles particles;	/* 0x010 Dummy01: the glows at the ends of the rays, 6 a ray */
-	byte pad_c0[0x180 - 0xc0];
 	vec3_t center;			/* 0x180 of EnterMatrixMatrix */
 	float life[FXMATRIX_TRAILS];	/* 0x18c of the ray, -1 none */
 	float wait[FXMATRIX_TRAILS];	/* 0x1cc until the next ray */

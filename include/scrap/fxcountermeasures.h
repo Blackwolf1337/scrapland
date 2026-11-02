@@ -75,7 +75,6 @@ typedef struct cObjElementFXEMI {
 	float hideTime;			/* 0x0bc */
 	float c0;			/* 0x0c0 0.6 */
 	float time;			/* 0x0c4 since the start */
-	byte pad_c8[0xd4 - 0xc8];
 	float trailTime[FXEMI_TRAILS];	/* 0x0d4 the time left of bolt i, -1 for a trail not running */
 	CGameTrail trails[FXEMI_TRAILS]; /* 0x0f4 */
 	vec3_t ctrl[FXEMI_TRAILS][FXEMI_CTRL];	/* 0x114 the control points of the curve */
@@ -115,7 +114,6 @@ typedef struct cObjElementFXDebrisCloud {
 	CGameParticles particles;	/* 0x00c */
 	float emitT;			/* 0x0bc the time since the last puffs */
 	float time;			/* 0x0c0 since the start */
-	byte pad_c4[0xd0 - 0xc4];
 	float rands[FXDEBRISCLOUD_RANDS]; /* 0x0d0 random numbers in [0, 2]: the phases of the cloud particles */
 	byte on;			/* 0x1f0 set by the countermeasure that drops it */
 	byte pad_1f1[3];
