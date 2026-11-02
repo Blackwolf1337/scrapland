@@ -456,9 +456,11 @@ byte cFXElementsLighting_Init(cMapElement *elem) {
 		CGameTrail_SetPremul(trail, 0);
 		self->life[i] = -1.0f;
 		self->sleep[i] = -1.0f;
-		/* 16 bytes of -1 every 8 bytes: the last pair also sets the first 8 glow flags */
-		memset((byte *)self->pair + 8 * i, 0xff, 16);
+		self->pair[i][0] = -1;
+		self->pair[i][1] = -1;
 	}
+	/* the original cleared 16 bytes for each pair, the last store reached the first 8 glow flags */
+	memset(self->glow, 0xff, 8);
 	self->visible = 0;
 	self->time = 0.0f;
 	CHECK(CGameModel_IsLoaded(model));
