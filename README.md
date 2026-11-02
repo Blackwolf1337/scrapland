@@ -124,7 +124,7 @@ Against the old reference these differences are accepted: the text of NaN, "1d5"
 
 ## Roadmap
 
-- Plain C without rva macros (partly done). Done: the code has no rva arguments (the `GAME_*` macros take names only), all game functions are plain cdecl, read-only strings are literals, many globals are plain extern declarations, and the script variables are read as `GVar_X.value.i/.f/.s` (types in `include/scrap/gvar.h`). Open: moving data into its owner files, raw offsets to named fields, typed vtables.
+- Plain C without rva macros (done except raw offsets). Done: the code has no rva arguments and no `GAME_*` macros, all game functions are plain cdecl, read-only strings are literals, every vtable is a typed struct with designated initializers next to its class, and the script variables are read as `GVar_X.value.i/.f/.s` (types in `include/scrap/gvar.h`). The data (the old `Globals*.c` and `Strings*.c`) lives in the files that use it, as plain extern objects named after their use or text. Open: raw offsets to named fields (the pad arrays and the `+ 0x..` accesses).
 - Drop the bit-exact emulation of the MSVC CRT and math (done 2026-11-02). The game uses the platform libc and libm. `crt_*` in `include/scrap/crt.h` is a thin wrapper over libc (`src/standalone/crt.c`) for the builds on other platforms. The Direct3D device is created with `D3DCREATE_FPU_PRESERVE` so the x87 libm keeps double precision. The INT_MIN-safe integer division of `src/python/intobject.c` stays because gcc wraps `-(-x/y)`.
 - A Vulkan-only renderer replacing Direct3D 8 (done 2026-11-02). Videos play through FFmpeg and the 30 pixel shaders and the fixed function are GLSL. See `docs/vulkan.md`.
 

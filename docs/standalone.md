@@ -1438,3 +1438,9 @@ deleted functions left), sdlevel 19095 (89), and 9894 of 9894 hooks installed. `
 Scrap.exe 1.6.1 (it was 14378) and 23 resources match. A run of ScrapC.exe with Galaxy.dll and steam_api.dll moved out
 of game/Bin gives the same sdtest and sdlevel outputs as Scrap.exe. In the test prefix the sign-in of the original took
 about 2.7 million passes of the message loop, the C runs no such path now.
+
+## Later: the data files and macros are gone
+
+The files and macros described above no longer exist (branch `data-owners`). `src/game/Global/Globals*.c`, `Strings*.c` and `Vtables.c` are deleted. Each of their 3666 objects moved into the `.c` file that uses it most, or next to the table that points at it, or into `src/game/Global/StaticInit.c` for engine variables only StaticInit registers. 5 objects nothing used were deleted. The macros `GAME_GLOBAL`, `GAME_ARRAY`, `GAME_GLOBAL_IN`, `GAME_ARRAY_IN`, `GAME_PTR`, `GAME_STR`, `GAME_GVAR`, `GAME_GVARFUNC`, `GAME_VFTABLE` and `SD_SYM` are gone too: the code uses the objects by name with normal extern declarations, and only `StaticInit.c` keeps a by-name macro (`SI_REF`).
+
+No object is named after an rva now. Strings are named after their text (`str_<Text>`), scalar constants became literals, tables are named after the function that uses them plus a kind (`Ramp`, `Pos`, `Color`, `Table`), and the 15 `group_<rva>` blobs of byte flags are one variable per flag. The objects keep external linkage until the 32-bit difftest harness (`testaddrs.inc`, `testsyms.inc`), which refers to them by symbol name, is retired.
