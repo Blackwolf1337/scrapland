@@ -135,7 +135,6 @@ static float Call_StdFloat(void *fn, const uint32_t *a, int n) {
 #define TEST_STDCALL(name) extern char sds_##name[] __asm__("_" #name);
 #define TEST_STDCALLS \
 	TEST_STDCALL(App_ExceptionFilter) TEST_STDCALL(App_WinMain) TEST_STDCALL(App_WndProc) TEST_STDCALL(Bsp_DlgProc) \
-	\
 	TEST_STDCALL(crt_eh_vector_ctor) \
 	TEST_STDCALL(crt_eh_vector_dtor) TEST_STDCALL(D3DApp_WndProc) \
 	TEST_STDCALL(D3DX_CheckTextureRequirements) \
@@ -144,24 +143,8 @@ static float Call_StdFloat(void *fn, const uint32_t *a, int n) {
 	TEST_STDCALL(D3DX_MatrixRotationX) TEST_STDCALL(D3DX_MatrixRotationY) TEST_STDCALL(D3DX_MatrixRotationYPR) \
 	TEST_STDCALL(D3DX_MatrixRotationZ) TEST_STDCALL(D3DX_MatrixTranspose) TEST_STDCALL(D3DX_QuaternionRotationYPR) \
 	TEST_STDCALL(D3DX_Vec3Normalize) TEST_STDCALL(D3DX_Vec3Transform) TEST_STDCALL(DbgWin_DlgProc) \
-	TEST_STDCALL(Engine_SceneDlgProc) TEST_STDCALL(FSOUND_Close) TEST_STDCALL(FSOUND_GetChannelsPlaying) \
-	TEST_STDCALL(FSOUND_GetCPUUsage) TEST_STDCALL(FSOUND_GetCurrentSample) TEST_STDCALL(FSOUND_GetDriverCaps) \
-	TEST_STDCALL(FSOUND_GetDriverName) TEST_STDCALL(FSOUND_GetError) TEST_STDCALL(FSOUND_GetFrequency) \
-	TEST_STDCALL(FSOUND_GetLoopMode) TEST_STDCALL(FSOUND_GetMaxChannels) TEST_STDCALL(FSOUND_GetMemoryStats) \
-	TEST_STDCALL(FSOUND_GetMixer) TEST_STDCALL(FSOUND_GetNumDrivers) TEST_STDCALL(FSOUND_GetNumHWChannels) \
-	TEST_STDCALL(FSOUND_GetNumSubChannels) TEST_STDCALL(FSOUND_GetOutput) TEST_STDCALL(FSOUND_GetPan) \
-	TEST_STDCALL(FSOUND_GetPriority) TEST_STDCALL(FSOUND_GetReserved) TEST_STDCALL(FSOUND_GetSFXMasterVolume) \
-	TEST_STDCALL(FSOUND_GetVersion) TEST_STDCALL(FSOUND_GetVolume) TEST_STDCALL(FSOUND_Init) \
-	TEST_STDCALL(FSOUND_IsPlaying) TEST_STDCALL(FSOUND_PlaySoundEx) TEST_STDCALL(FSOUND_Sample_Free) \
-	TEST_STDCALL(FSOUND_Sample_GetDefaults) TEST_STDCALL(FSOUND_Sample_GetMode) TEST_STDCALL(FSOUND_Sample_GetName) \
-	TEST_STDCALL(FSOUND_Sample_Load) TEST_STDCALL(FSOUND_SetDriver) TEST_STDCALL(FSOUND_SetFrequency) \
-	TEST_STDCALL(FSOUND_SetLoopMode) TEST_STDCALL(FSOUND_SetOutput) TEST_STDCALL(FSOUND_SetPan) \
-	TEST_STDCALL(FSOUND_SetPaused) TEST_STDCALL(FSOUND_SetReserved) TEST_STDCALL(FSOUND_SetVolume) \
-	TEST_STDCALL(FSOUND_StopSound) TEST_STDCALL(FSOUND_Stream_Close) TEST_STDCALL(FSOUND_Stream_GetLengthMs) \
-	TEST_STDCALL(FSOUND_Stream_GetOpenState) TEST_STDCALL(FSOUND_Stream_GetSample) TEST_STDCALL(FSOUND_Stream_GetTime) \
-	TEST_STDCALL(FSOUND_Stream_Open) TEST_STDCALL(FSOUND_Stream_PlayEx) TEST_STDCALL(FSOUND_Stream_SetBufferSize) \
-	TEST_STDCALL(Music_FileClose) TEST_STDCALL(Music_FileOpen) TEST_STDCALL(Music_FileRead) TEST_STDCALL(Music_FileSeek) \
-	TEST_STDCALL(Music_FileTell) TEST_STDCALL(Music_True16a) TEST_STDCALL(Music_True16b) TEST_STDCALL(Wsock_bind) \
+	TEST_STDCALL(Engine_SceneDlgProc) \
+	TEST_STDCALL(Wsock_bind) \
 	TEST_STDCALL(Wsock_closesocket) TEST_STDCALL(Wsock_gethostbyaddr) TEST_STDCALL(Wsock_gethostbyname) \
 	TEST_STDCALL(Wsock_htonl) TEST_STDCALL(Wsock_htons) TEST_STDCALL(Wsock_ioctlsocket) TEST_STDCALL(Wsock_ntohs) \
 	TEST_STDCALL(Wsock_recvfrom) TEST_STDCALL(Wsock_select) TEST_STDCALL(Wsock_sendto) TEST_STDCALL(Wsock_setsockopt) \

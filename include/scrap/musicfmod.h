@@ -1,7 +1,7 @@
 /*
- * engine3d/mpeg/music_fmod.cpp of the game: the FMOD start and end, the music stream (one .ogg, opened in the
- * background, started when FMOD has opened it; its volume is MusicMainVolume * the fade volume * the voiceover
- * factor) and the 8 voice streams (&U&D&N.ogg, the dialogs; a voiceover voice turns the music down while it is
+ * engine3d/mpeg/music_fmod.cpp of the game: the start and end of the sound mixer (include/scrap/snd.h, FMOD in the
+ * original), the music stream (one .ogg, started one second after its open; its volume is MusicMainVolume * the fade
+ * volume * the voiceover factor) and the 8 voice streams (&U&D&N.ogg, the dialogs; a voiceover voice turns the music down while it is
  * open). The screen debug info of both with S_Show 2. The results are bytes in al; the ones the sound code passes
  * on in eax are declared int.
  */
@@ -33,7 +33,7 @@ void cMusicVoice_dtor(cMusicVoice *self);
 int Fmod_Close(void);
 int Fmod_IsInit(void);
 
-/* the voices; NULL without FMOD */
+/* the voices; NULL without the mixer */
 cMusicVoice *Voice_Get(uint32_t voice);
 void Voice_Wait(cMusicVoice *v, const char *what);	/* nothing: the voices open at once (Voice_Open) */
 void Voice_Close(cMusicVoice *v);
@@ -52,7 +52,7 @@ void Voices_DrawDebug(int x, int y);
 byte Voices_DrawDebugDefault(void);
 
 /* the music */
-byte Music_Ready(void);				/* started now if FMOD has opened it, closed if it failed */
+byte Music_Ready(void);				/* started one second after the open */
 byte Music_UpdateVolumes(void);
 void Music_DrawDebug(int x, int y);
 byte Music_Wait(void);					/* Music_Ready, the original waited for the open */
@@ -70,14 +70,7 @@ byte Music_SetMainVolume(float v);
 byte Music_FadeOut(float a, float vol);
 byte Music_Update(void);
 
-/* the FMOD file callbacks (not set by the game) */
-int __stdcall Music_FileClose(void *f);
-void *__stdcall Music_FileOpen(const char *name);
-int __stdcall Music_FileRead(void *buf, int size, void *f);
-int __stdcall Music_FileSeek(void *f, int pos, signed char mode);
-int __stdcall Music_FileTell(void *f);
+/* an empty callback of the module */
 void Music_Nop(void);
-byte __stdcall Music_True16a(int a, int b, int c, int d);
-byte __stdcall Music_True16b(int a, int b, int c, int d);
 
 #endif

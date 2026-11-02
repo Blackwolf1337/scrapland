@@ -1,15 +1,16 @@
 /*
- * Sound/SoundDX8.cpp of the game: CSoundXBox, the FMOD 3 backend of CSoundSys. The samples are loaded from the
- * packs as .wav into a table by sound name; every play takes a free FMOD channel. See include/scrap/sound.h.
+ * Sound/SoundDX8.cpp of the game: CSoundXBox, the backend of CSoundSys on the sound mixer (include/scrap/snd.h, FMOD 3
+ * in the original). The samples are loaded from the packs as .wav into a table by sound name; every play takes a free
+ * channel. See include/scrap/sound.h.
  */
 #include <string.h>
 
 #include "scrap/gvar.h"
 #include "scrap/console.h"
 #include "scrap/filepak.h"
-#include "scrap/fmod.h"
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
+#include "scrap/snd.h"
 #include "scrap/sound.h"
 
 #define SOUND_TABLE_SLOTS 0x1c9
@@ -129,16 +130,16 @@ void CSoundXBox_Load(CSoundXBox *self, const char *name, int unused) {
 	void *data = operator_new_array(size);
 	CHECK(cFilePack_Read(&f, data, size) == size);
 	CHECK(cFilePack_Close(&f));
-	FSOUND_GetMemoryStats(&mem0, &memMax);
-	v.sample = FSOUND_Sample_Load(FSOUND_UNMANAGED, data, 0x88000, 0, size);
+	Snd_MemoryStats(&mem0, &memMax);
+	v.sample = Snd_SampleLoad(data, size);
 	if (!v.sample) {
-		Con_Bluef("SOUND ERROR: %s: %s\n", Fmod_ErrorString(FSOUND_GetError()), path);
+		Con_Bluef("SOUND ERROR: %s: %s\n", Fmod_ErrorString(Snd_GetError()), path);
 	}
-	if (FSOUND_Sample_GetMode(v.sample) & FSOUND_STEREO) {
+	if (Snd_SampleStereo(v.sample)) {
 		v.desc.volume = Snd_Volume(0.5f);
 	}
-	FSOUND_Sample_GetDefaults(v.sample, &v.freq, NULL, NULL, NULL);
-	FSOUND_GetMemoryStats(&mem1, &memMax);
+	v.freq = Snd_SampleRate(v.sample);
+	Snd_MemoryStats(&mem1, &memMax);
 	Con_Verbosef("SOUND MEMORY: %d (%+d) %s, %d Hz\n", (int)(mem1 >> 10), (int)(mem1 - mem0) / 1024, path, v.freq);
 	if (data) {
 		operator_delete_sized(data, 0);
@@ -170,7 +171,7 @@ void CSoundXBox_DeleteSound(CSoundXBox *self, const char *name) {
 	cSoundDesc_Init(&tmp);
 	cSoundStrItem *it = CSoundXBox_Find(self, name);
 	if (it) {
-		FSOUND_Sample_Free(it->value.sample);
+		Snd_SampleFree(it->value.sample);
 		CHECK(SoundStrTable_Delete(&self->sounds, name));
 	}
 }
@@ -178,10 +179,9 @@ void CSoundXBox_DeleteSound(CSoundXBox *self, const char *name) {
 void CSoundXBox_StopAllSounds(CSoundXBox *self) {
 	(void)self;
 	Sound_Nop();
-	int n = FSOUND_GetMaxChannels();
-	for (int i = 0; i < n; i++) {
-		if (!FSOUND_GetReserved(i)) {
-			FSOUND_StopSound(i);
+	for (int i = 0; i < SND_CHANNELS; i++) {
+		if (!Snd_GetReserved(i)) {
+			Snd_Stop(i);
 		}
 	}
 }
@@ -202,7 +202,7 @@ void CSoundXBox_DeleteAllSounds(CSoundXBox *self) {
 			}
 		}
 		cSoundStrItem *it = (cSoundStrItem *)t->slots[i];
-		FSOUND_Sample_Free(it->value.sample);
+		Snd_SampleFree(it->value.sample);
 		CHECK(SoundStrTable_Delete(t, it->key));
 	}
 }
@@ -308,13 +308,12 @@ byte CSoundXBox_UpdateSound(CSoundXBox *self, const char *name, const cSoundDesc
 	return Fmod_SetChannel(handle, &v.desc);
 }
 
-/* a tail jump to FSOUND_StopSound in the original */
 int CSoundXBox_StopSound(CSoundXBox *self, int handle) {
 	(void)self;
-	return FSOUND_StopSound(handle);
+	return Snd_Stop(handle);
 }
 
-/* the FMOD channel functions */
+/* the channel functions (FMOD's in the original; the error texts are FMOD 3's, Snd_GetError numbers them alike) */
 
 const char *Fmod_ErrorString(int err) {
 	const char *const texts[] = {
@@ -334,13 +333,11 @@ const char *Fmod_ErrorString(int err) {
 }
 
 byte Fmod_SetChannel(int channel, const cSoundDesc *d) {
-	int deffreq;
-
 	g_SoundAutoplayVolume = -48.0f;
-	if (!FSOUND_IsPlaying(channel)) {
+	if (!Snd_IsPlaying(channel)) {
 		return 0;
 	}
-	FSOUND_Sample_GetDefaults(FSOUND_GetCurrentSample(channel), &deffreq, NULL, NULL, NULL);
+	int deffreq = Snd_SampleRate(Snd_ChannelSample(channel));
 	float f = d->freq * g_SndFreqScale;
 	int freq = deffreq;
 	if (f != 1.0f) {
@@ -348,7 +345,7 @@ byte Fmod_SetChannel(int channel, const cSoundDesc *d) {
 	}
 	float v = (float)pow(2.0, (double)d->volume * 0.6 / 600.0);
 	float vol = 0.0f >= v ? 0.0f : Float_MinSS(1.0f, v);
-	FSOUND_SetVolume(channel, (int)(vol * 255.0f));
+	Snd_SetVolume(channel, (int)(vol * 255.0f));
 	int pan = d->pan / 20 + 128;
 	if (pan <= 0) {
 		pan = 0;
@@ -356,14 +353,14 @@ byte Fmod_SetChannel(int channel, const cSoundDesc *d) {
 		pan = 255;
 	}
 	if (!g_isDolby) {
-		FSOUND_SetPan(channel, pan);
+		Snd_SetPan(channel, pan);
 	}
 	if (freq <= 200) {
 		freq = 200;
 	} else if (freq >= 100000) {
 		freq = 100000;
 	}
-	FSOUND_SetFrequency(channel, freq);
+	Snd_SetFrequency(channel, freq);
 	return 1;
 }
 
@@ -372,29 +369,28 @@ int Fmod_Play(void *sample, const cSoundDesc *d, const char *name) {
 	if (!sample || g_S_SkipPlay) {
 		return 0;
 	}
-	int ch = FSOUND_PlaySoundEx(FSOUND_FREE, sample, NULL, 1);
+	int ch = Snd_Play(sample, 1);
 	if (ch == -1) {
 		return 0;
 	}
 	Fmod_SetChannel(ch, d);
-	FSOUND_SetLoopMode(ch, (d->loop != 0) + 1);
-	FSOUND_SetPaused(ch, 0);
+	Snd_SetLoop(ch, d->loop != 0);
+	Snd_SetPaused(ch, 0);
 	return ch;
 }
 
 extern cGVar GVar_S_Show;
 #define g_S_Show (GVar_S_Show.value.i)		/* S_Show: 1 the channels, 3 the memory */
 
-/* vf31 (DebugDraw): S_Show 3 the memory of FMOD, 1 the software and hardware channels with their state and the
- * sample, volume, pan and frequency of each hardware channel in two columns */
+/* vf31 (DebugDraw): S_Show 3 the memory of the samples, 1 the channels with their state and the volume, pan and
+ * frequency of each in two columns (the original also listed FMOD's hardware channels) */
 void CSoundXBox_DebugDraw(CSoundXBox *self, int xi, int yi) {
-	int hw2D, hw3D, hwTotal;
 	uint32_t cur, max;
 
 	(void)self;
 	float x = (float)xi + 20.0f;
 	if (g_S_Show == 3) {
-		FSOUND_GetMemoryStats(&cur, &max);
+		Snd_MemoryStats(&cur, &max);
 		CFont_PrintfColorShadow(g_FontHoratioSmall, x, (float)yi + 20.0f, 0xffff00, "memory: %d %d", cur >> 10,
 			max >> 10);
 		return;
@@ -403,77 +399,34 @@ void CSoundXBox_DebugDraw(CSoundXBox *self, int xi, int yi) {
 		return;
 	}
 	CFont *f = g_FontTerminal8;
-	FSOUND_GetNumHWChannels(&hw2D, &hw3D, &hwTotal);
-	int maxc = FSOUND_GetMaxChannels();
-	int playing = FSOUND_GetChannelsPlaying();
-	int sw = maxc - hwTotal;
-	CFont_PrintfColorShadow(g_FontTerminal8, x, (float)yi, 0xffff00, "SoundXBox:");
-	CFont_PrintfColorShadow(g_FontTerminal8, x, (float)yi + 10.0f, 0xff00, "NumSWChannels: %d", sw);
-	CFont_PrintfColorShadow(g_FontTerminal8, x, (float)yi + 20.0f, 0xff00, "NumHWChannels: %d %d %d", hw2D, hw3D,
-		hwTotal);
-	CFont_PrintfColorShadow(g_FontTerminal8, x, (float)yi + 30.0f, 0xff00, "SFXMasterVolume: %d",
-		FSOUND_GetSFXMasterVolume());
-	float y = (float)yi + 40.0f;
-	int n = 0;
-	for (int i = 0; i < sw; i++) {
-		if (FSOUND_IsPlaying(i)) {
-			n++;
-		}
-	}
-	CFont_PrintfColorShadow(g_FontTerminal8, x, y, n ? 0xff0000 : 0xff00, "Channels playing (SW): %d", n);
-	int i = hwTotal ? sw : 0;
-	if (i < maxc) {
-		int k = 0;
-		float y1 = y + 10.0f;
-		float y2 = y + 20.0f;
-		do {
-			float cx = (float)k + x + 30.0f;
-			signed char on = (signed char)FSOUND_IsPlaying(i);
-			signed char res = (signed char)FSOUND_GetReserved(i);
-			CFont_PrintfColorShadow(g_FontTerminal8, cx, y1, 0xff00, "%s", on ? "*" : ".");
-			CFont_PrintfColorShadow(g_FontTerminal8, cx, y2, 0xff00, "%s", res ? "R" : "");
-			i++;
-			k += 5;
-		} while (i < maxc);
+	int playing = Snd_ChannelsPlaying();
+	CFont_PrintfColorShadow(f, x, (float)yi, 0xffff00, "SoundXBox: %s", Snd_DeviceName());
+	float y = (float)yi + 10.0f;
+	CFont_PrintfColorShadow(f, x, y, playing ? 0xff0000 : 0xff00, "Channels playing: %d", playing);
+	for (int i = 0, k = 0; i < SND_CHANNELS; i++, k += 5) {
+		float cx = (float)k + x + 30.0f;
+		CFont_PrintfColorShadow(f, cx, y + 10.0f, 0xff00, "%s", Snd_IsPlaying(i) ? "*" : ".");
+		CFont_PrintfColorShadow(f, cx, y + 20.0f, 0xff00, "%s", Snd_GetReserved(i) ? "R" : "");
 	}
 	y = y + 20.0f;
 	float top = y;
 	float cx = x + 10.0f;
-	i = hwTotal ? maxc - hw2D : 0;
-	if (i < maxc) {
-		int mid = (i + maxc) / 2;
-		do {
-			void *smp = FSOUND_GetCurrentSample(i);
-			if (i == mid) {
-				cx = cx + 300.0f;
-				y = top;
-			}
-			y = y + 10.0f;
-			CFont_PrintfColorShadow(g_FontTerminal8, cx, y, 0xff00, "%2d", i);
-			if (FSOUND_Sample_GetName(smp)) {
-				uint32_t col = FSOUND_GetPriority(i) == 0x100 ? 0xff : 0xffff00;
-				CFont_PrintfColorShadow(f, f->x, y, col, "  [%s]", FSOUND_Sample_GetName(smp));
-			}
-			if (smp) {
-				int pri = FSOUND_GetPriority(i);
-				int vol = FSOUND_GetVolume(i);
-				int pan = FSOUND_GetPan(i);
-				int freq = FSOUND_GetFrequency(i);
-				signed char on = (signed char)FSOUND_IsPlaying(i);
-				uint32_t loop = FSOUND_GetLoopMode(i);
-				FSOUND_GetReserved(i);
-				uint32_t col = on ? 0xff00 : 0x8000;
-				CFont_PrintfColorShadow(f, f->x, y, col, "  %s", loop == FSOUND_LOOP_OFF ? " " : "L");
-				CFont_PrintfColorShadow(f, f->x, y, col, "  vpf: %3d %3d %5d %3d", vol, pan, freq, pri);
-			} else {
-				CFont_PrintfColorShadow(f, f->x, y, 0x8000, "  ---");
-			}
-			i++;
-		} while (i < maxc);
+	for (int i = 0; i < SND_CHANNELS; i++) {
+		if (i == SND_CHANNELS / 2) {
+			cx = cx + 300.0f;
+			y = top;
+		}
+		y = y + 10.0f;
+		CFont_PrintfColorShadow(f, cx, y, 0xff00, "%2d", i);
+		if (Snd_IsPlaying(i)) {
+			CFont_PrintfColorShadow(f, f->x, y, 0xff00, "  %s", Snd_GetLoop(i) ? "L" : " ");
+			CFont_PrintfColorShadow(f, f->x, y, 0xff00, "  vpf: %3d %3d %5d %3d", Snd_GetVolume(i), Snd_GetPan(i),
+				Snd_GetFrequency(i), SND_PRIORITY);
+		} else {
+			CFont_PrintfColorShadow(f, f->x, y, 0x8000, "  ---");
+		}
 	}
-	double cpu = FSOUND_GetCPUUsage();
-	CFont_PrintfColorShadow(g_FontTerminal8, x, y + 10.0f, 0xffff00, "channels: %d/%d  cpu %5.02f%%", playing, maxc,
-		cpu);
-	FSOUND_GetMemoryStats(&cur, &max);
-	CFont_PrintfColorShadow(g_FontTerminal8, x, y + 20.0f, 0xffff00, "memory: %d %d", cur >> 10, max >> 10);
+	Snd_MemoryStats(&cur, &max);
+	CFont_PrintfColorShadow(f, x, y + 10.0f, 0xffff00, "channels: %d/%d", playing, SND_CHANNELS);
+	CFont_PrintfColorShadow(f, x, y + 20.0f, 0xffff00, "memory: %d %d", cur >> 10, max >> 10);
 }

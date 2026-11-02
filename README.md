@@ -2,7 +2,7 @@
 
 Recreation of Scrapland Remastered 1.6.1 (GOG build 52159, `Bin/Scrap.exe`) as C. The code is functionally equivalent C, not the original source. It is not bit-exact with the original: the game uses the platform libc and libm.
 
-`ScrapC.exe` is a standalone exe built only from the C code in `src/` and real libraries. It needs the game files (packs, `fmod.dll`) in `game/Bin`, but no code of the original exe.
+`ScrapC.exe` is a standalone exe built only from the C code in `src/` and real libraries. It needs the game files (the packs) and the FFmpeg DLLs of `tools/ffmpeg.sh`, but no code or DLL of the original. Sound goes through its own mixer (`src/game/Sound/Snd.c`, miniaudio for the output, stb_vorbis for the .ogg files) in place of FMOD 3.
 
 Until 2026-11-01 the work was done with a hook DLL (the re3 method: a proxy `dinput8.dll` replaced original functions one by one). That state is kept in the tag `hooked-final`. The history of the stages is in `docs/standalone.md`.
 

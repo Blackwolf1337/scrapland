@@ -128,19 +128,7 @@ mupoke(symva('g_MusicPaused'), 1)
 check('Music_PlayFile same', lambda: (SDTest.Call('Music_PlayFile', 'bss', 'test.OGG', 'MUSIC/')[0], mui(symva('g_MusicPaused')),
 	SDTest.Peek('g_MusicName', 's')))
 
-# the file callbacks
-check('Music_FileOpen missing', lambda: SDTest.Call('Music_FileOpen', 'tiis', 0, 'no/such/file.ogg')[0])
-muf1 = SDTest.Call('Music_FileOpen', 'tiis', 0, 'sdcall.py')[0]
-check('Music_FileOpen', lambda: muf1 != 0)
-if muf1:
-	check('Music_FileTell', lambda: SDTest.Call('Music_FileTell', 'tiii', 0, muf1)[0])
-	check('Music_FileRead', lambda: SDTest.Call('Music_FileRead', 'tiibii', 0, '', 8, muf1)[0:2])
-	check('Music_FileSeek', lambda: SDTest.Call('Music_FileSeek', 'tiiiii', 0, muf1, 3, 0x100)[0])
-	check('Music_FileTell 2', lambda: SDTest.Call('Music_FileTell', 'tiii', 0, muf1)[0])
-	check('Music_FileRead 2', lambda: SDTest.Call('Music_FileRead', 'tiibii', 0, '', 4, muf1)[0:2])
-	check('Music_FileClose', lambda: SDTest.Call('Music_FileClose', 'tiii', 0, muf1)[0])
-check('Music_True16a', lambda: SDTest.Call('Music_True16a', 'tbiiiii', 0, 1, 2, 3, 4)[0])
-check('Music_True16b', lambda: SDTest.Call('Music_True16b', 'tbiiiii', 0, 1, 2, 3, 4)[0])
+# (the FMOD file callbacks are gone with FMOD)
 check('Music_Nop', lambda: SDTest.Call('Music_Nop', 'v')[0])
 
 # back

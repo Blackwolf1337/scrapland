@@ -1,7 +1,7 @@
 /*
  * The video player of the engine3d: a .avi or .vds file (AVI with XviD video and PCM sound) decoded by FFmpeg
  * (libavformat, libavcodec, libswscale; tools/ffmpeg.sh builds them), its frames drawn through the render device and
- * its sound played by an FMOD stream, until a key, the pad or the end of the file. The message loop drives it, one
+ * its sound played by a stream of the sound mixer, until a key, the pad or the end of the file. The message loop drives it, one
  * Video_Step per pass, which never waits: it decodes up to the frame that is due and draws that.
  */
 #include <string.h>
@@ -15,12 +15,12 @@
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/filesys.h"
-#include "scrap/fmod.h"
 #include "scrap/mathlib.h"
 #include "scrap/misc.h"
 #include "scrap/rdev.h"
 #include "scrap/render.h"
 #include "scrap/scrapmain.h"
+#include "scrap/snd.h"
 #include "scrap/video.h"
 #include "scrap/win32.h"
 
@@ -36,15 +36,9 @@ typedef uint32_t(__stdcall *xinputGetState_t)(uint32_t user, void *state);
 #define DIK_NUMPADENTER 0x9c
 #define XINPUT_GAMEPAD_A_B 0x3000
 
-/* FMOD 3 stream modes */
-#define FSOUND_16BITS 0x10
-#define FSOUND_MONO 0x20
-#define FSOUND_SIGNED 0x100
-#define FSOUND_2D 0x2000
 
 #define VIDEO_PACKETS 32		/* packets read per Video_Step at most */
-#define VIDEO_RING (1u << 20)		/* bytes of decoded sound ahead of FMOD, about 6 s of 44.1 kHz stereo */
-#define VIDEO_FMOD_BLOCK 8192		/* bytes FMOD asks for per callback */
+#define VIDEO_RING (1u << 20)		/* bytes of decoded sound ahead of the mixer, about 6 s of 44.1 kHz stereo */
 
 extern int g_VideoPadHeld;
 #define g_VideoMirror GAME_GLOBAL_IN(uint32_t, GVar_PlayVideoFX, 16)	/* 1: up-down, 2: left-right */
@@ -112,14 +106,14 @@ static struct {
 	int w, h;
 	uint32_t t0;			/* timeGetTime of pts 0 */
 	double pts;			/* of the pending picture, seconds */
-	void *sound;			/* the FMOD stream, NULL without sound */
+	SndStream *sound;		/* the sound stream, NULL without sound */
 	const char *rest;		/* the name after the '|' of Video_PlayFile, played after the first one */
 	const char *restDir;
 	int result;			/* of the Video_PlayFile that ended last */
 } video;
 
 /*
- * The decoded sound between Video_Step (the only writer of head) and the stream thread of FMOD (the only writer of
+ * The decoded sound between Video_Step (the only writer of head) and the thread of the sound mixer (the only writer of
  * tail): the bytes from tail to head are unplayed.
  */
 static struct {
@@ -139,20 +133,19 @@ static void Video_RingPut(const byte *p, uint32_t n) {
 	__atomic_store_n(&video_ring.head, head + n, __ATOMIC_RELEASE);
 }
 
-/* FMOD asks for len bytes (on its stream thread); silence where the ring has none */
-static signed char __stdcall Video_SoundCallback(void *stream, void *buf, int len, void *user) {
+/* the mixer asks for len bytes (on its thread); silence where the ring has none */
+static void Video_SoundCallback(void *buf, int len, void *user) {
 	uint32_t tail = video_ring.tail;
 	uint32_t have = __atomic_load_n(&video_ring.head, __ATOMIC_ACQUIRE) - tail;
 	uint32_t n = (uint32_t)len < have ? (uint32_t)len : have;
 	byte *out = buf;
 
-	(void)stream, (void)user;
+	(void)user;
 	for (uint32_t i = 0; i < n; i++) {
 		out[i] = video_ring.data[(tail + i) & (VIDEO_RING - 1)];
 	}
 	memset(out + n, 0, (size_t)len - n);
 	__atomic_store_n(&video_ring.tail, tail + n, __ATOMIC_RELEASE);
-	return 1;
 }
 
 static AVCodecContext *Video_OpenCodec(int idx) {
@@ -169,8 +162,7 @@ static AVCodecContext *Video_OpenCodec(int idx) {
 /* everything of the file closed, the sound stopped */
 static void Video_Close(void) {
 	if (video.sound) {
-		FSOUND_Stream_Stop(video.sound);
-		FSOUND_Stream_Close(video.sound);
+		Snd_StreamClose(video.sound);
 		video.sound = NULL;
 	}
 	if (video.tex) {
@@ -219,14 +211,13 @@ static int Video_Open(const char *path) {
 		return 0;
 	}
 	E3D_LogDebug(g_FileLog, "  video: %d x %d, %s", video.w, video.h, avcodec_get_name(video.vdec->codec_id));
-	/* the sound: 16 bit PCM through an FMOD stream that reads the ring; none when FMOD cannot */
+	/* the sound: 16 bit PCM through a mixer stream that reads the ring; none without the mixer */
 	video_ring.head = video_ring.tail = 0;
 	if (video.aidx >= 0 && (video.adec = Video_OpenCodec(video.aidx)) != NULL) {
 		int ch = video.adec->ch_layout.nb_channels;
 		if (video.adec->sample_fmt == AV_SAMPLE_FMT_S16 && (ch == 1 || ch == 2)) {
-			uint32_t mode = FSOUND_16BITS | FSOUND_SIGNED | FSOUND_2D | (ch == 2 ? FSOUND_STEREO : FSOUND_MONO);
-			video.sound = FSOUND_Stream_Create(Video_SoundCallback, VIDEO_FMOD_BLOCK, mode, video.adec->sample_rate,
-				NULL);
+			/* the intro videos play before the sound system starts: the mixer starts here then (Snd_Init once) */
+			video.sound = Snd_Init() ? Snd_StreamPcm(video.adec->sample_rate, ch, Video_SoundCallback, NULL) : NULL;
 		}
 		if (!video.sound) {
 			avcodec_free_context(&video.adec);
@@ -360,7 +351,7 @@ static void Video_StreamStep(void) {
 			video.t0 = exe_timeGetTime() - (uint32_t)(video.pts * 1000.0);
 			video.started = 1;
 			if (video.sound) {
-				FSOUND_Stream_Play(FSOUND_FREE, video.sound);
+				Snd_StreamPlay(video.sound, 0);
 			}
 		}
 		if (video.pts * 1000.0 > (double)(exe_timeGetTime() - video.t0)) {

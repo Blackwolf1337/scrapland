@@ -1,8 +1,8 @@
 /*
- * The sound system (original source: Sound/). g_pSound is the CSoundSys instance, made as its FMOD 3 backend
+ * The sound system (original source: Sound/). g_pSound is the CSoundSys instance, made as its mixer backend
  * CSoundXBox (Sound/SoundDX8.cpp, the name is from the Xbox port); scripts reach it through the SSound module.
  * Sounds are loaded by name into a hash table of samples with their default parameters (cSoundDesc); a cSound
- * (Sound/Sound.cpp) is a named sound with its parameters and the FMOD channel it plays on. Volumes are in
+ * (Sound/Sound.cpp) is a named sound with its parameters and the mixer channel it plays on. Volumes are in
  * hundredths of dB (0 full, -100000 off), pans in hundredths of dB too (-10000 left .. 10000 right).
  * Property sets ("PS") are the positional sounds of Sound/PosSound.cpp with the variable interface of the action
  * classes.
@@ -39,7 +39,7 @@ SD_OFFSET(cSoundDesc, param3, 0x10);
 typedef struct cSound {
 	cSoundDesc desc;		/* 0x00 */
 	char name[SOUND_NAME_MAX_LEN];	/* 0x1c */
-	int handle;			/* 0x3c FMOD channel, 0 none */
+	int handle;			/* 0x3c mixer channel, 0 none */
 } cSound;
 SD_SIZE(cSound, 0x40);
 
@@ -119,7 +119,7 @@ struct CSoundSys {
 };
 SD_SIZE(CSoundSys, 0x80);
 
-/* the FMOD backend: the samples by name (SoundStrTable, cSoundTableValue) */
+/* the mixer backend (include/scrap/snd.h; FMOD 3 in the original): the samples by name */
 typedef struct CSoundXBox {
 	CSoundSys sys;				/* 0x00 */
 	HashTable sounds;			/* 0x80 457 slots, not case sensitive */
@@ -129,9 +129,9 @@ typedef struct CSoundXBox {
 } CSoundXBox;
 SD_SIZE(CSoundXBox, 0x94);
 
-/* a value of the sample table: the FMOD sample, its parameters and its default frequency */
+/* a value of the sample table: the sample, its parameters and its default frequency */
 typedef struct cSoundTableValue {
-	void *sample;				/* 0x00 FSOUND_SAMPLE */
+	void *sample;				/* 0x00 SndSample */
 	cSoundDesc desc;			/* 0x04 */
 	int freq;				/* 0x20 */
 } cSoundTableValue;

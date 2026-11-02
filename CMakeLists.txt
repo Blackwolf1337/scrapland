@@ -25,13 +25,19 @@ add_library(scrapcode OBJECT
 	src/core/testmod.c
 	${GAME_SOURCES}
 	${LIB_SOURCES}
+	# the sound output and the .ogg decoder (third_party, public domain), without the warnings of the game code
+	src/sound/ma.c
+	third_party/stb/stb_vorbis.c
 )
+set_source_files_properties(src/sound/ma.c third_party/stb/stb_vorbis.c PROPERTIES COMPILE_OPTIONS -w)
 target_include_directories(scrapcode PUBLIC
 	include
 	src
 	third_party/python-1.5.2/config
 	third_party/python-1.5.2/Include
 	third_party/vulkan/include
+	third_party/miniaudio
+	third_party/stb
 )
 # Scrap.exe does its float math with SSE2 (MSVC /arch:SSE2): same here, x87 80 bit intermediates would change
 # the last bits of results
@@ -188,7 +194,7 @@ set(IMPLIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/implib)
 file(MAKE_DIRECTORY ${IMPLIB_DIR})
 set(IMPLIBS)
 set(n 10)
-foreach(dll xinput9_1_0 winmm wsock32 fmod comctl32)
+foreach(dll xinput9_1_0 winmm wsock32 comctl32)
 	string(TOLOWER ${dll} lib)
 	set(implib ${IMPLIB_DIR}/${n}-lib${lib}.a)
 	if(EXISTS ${CMAKE_SOURCE_DIR}/src/standalone/${dll}.def)

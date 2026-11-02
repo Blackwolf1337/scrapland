@@ -1,6 +1,6 @@
 /*
- * engine3d/mpeg/music_fmod.cpp of the game: FMOD, the music stream and the voice streams, see
- * include/scrap/musicfmod.h.
+ * engine3d/mpeg/music_fmod.cpp of the game: the music stream and the voice streams, on the sound mixer
+ * (include/scrap/snd.h) in place of FMOD; see include/scrap/musicfmod.h.
  */
 #include <string.h>
 
@@ -10,21 +10,15 @@
 #include "scrap/crt.h"
 #include "scrap/e3dutil.h"
 #include "scrap/filepak.h"
-#include "scrap/fmod.h"
 #include "scrap/mathlib.h"
 #include "scrap/musicfmod.h"
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
+#include "scrap/snd.h"
 #include "scrap/sound.h"
 #include "scrap/misc.h"
 #include "scrap/win32.h"
 
-#define FMOD_VERSION 3.73f
-#define MUSIC_MODE 0x41080132			/* FSOUND_LOOP_NORMAL | 2D | ... | NONBLOCKING */
-#define FSOUND_NONBLOCKING 0x01000000
-/* the same with FSOUND_LOOP_OFF; differs from the original on purpose (no blocking waits): without
- * FSOUND_NONBLOCKING, see Voice_Open */
-#define VOICE_MODE (0x41080131 & ~FSOUND_NONBLOCKING)
 #define MUSIC_SHOW_DEBUG 2			/* S_Show */
 
 /* engine variables */
@@ -73,20 +67,6 @@ static int Time_Since(uint32_t since) {
 	return (int)((d ^ m) - m);
 }
 
-/* the music streams Music_Stop let go while FMOD still opened them in the background: FMOD can not close a file
- * stream that opens (FSOUND_Stream_Close fails), Music_Update closes them once it has opened them */
-#define MUSIC_MAX_CLOSING 8
-static void *music_closing[MUSIC_MAX_CLOSING];
-
-static void Music_CloseOpened(void) {
-	for (int i = 0; i < MUSIC_MAX_CLOSING; i++) {
-		if (music_closing[i] && FSOUND_Stream_GetOpenState(music_closing[i]) != FSOUND_STREAM_OPENING) {
-			FSOUND_Stream_Close(music_closing[i]);
-			music_closing[i] = NULL;
-		}
-	}
-}
-
 /* the voices of the static array */
 cMusicVoice *cMusicVoice_ctor(cMusicVoice *self) {
 	self->name[0] = 0;
@@ -104,58 +84,26 @@ void cMusicVoice_dtor(cMusicVoice *self) {
 /* the FMOD start */
 
 int Fmod_Init(void) {
-	static const char *const outputs[] = {
-		"NoSound", "Windows Multimedia Waveout", "Direct Sound", "A3D", "Open Sound System",
-		"Enlightenment Sound Daemon", "ALSA", "ASIO", "XBOX", "PS2", "MAC", "GC",
-	};
-	uint32_t caps;
-	float version;
-	int output;
-
 	if (g_FmodState > 0) {
 		return 1;
 	}
 	if (g_FmodState < 0) {
 		return 0;
 	}
-	version = FSOUND_GetVersion();
-	if (version < FMOD_VERSION) {
-		Con_FatalErrorf("Error: You are using the wrong DLL version!  You should be using FMOD %.02f",
-			(double)FMOD_VERSION);
+	E3D_LogPrint(g_FileLog, "Sound Init");
+	if (!Snd_Init()) {
+		E3D_LogBlue(g_FileLog, "SOUND ERROR: %s", Fmod_ErrorString(Snd_GetError()));
 		g_FmodState = -1;
 		return 0;
 	}
-	FSOUND_SetOutput(FSOUND_OUTPUT_DSOUND);
-	E3D_LogPrint(g_FileLog, "FMOD Init");
-	output = FSOUND_GetOutput();
-	if ((uint32_t)output < sizeof(outputs) / sizeof(outputs[0])) {
-		E3D_LogPrint(g_FileLog, outputs[output]);
-	}
-	E3D_LogPrint(g_FileLog, " Driver list");
-	/* the caps share the stack slot of the version in the original */
-	memcpy(&caps, &version, sizeof(caps));
-	for (int i = 0; i < FSOUND_GetNumDrivers(); i++) {
-		FSOUND_GetDriverCaps(i, &caps);
-		E3D_LogPrint(g_FileLog, "  %d - %s  [caps: %04xh]", i + 1, FSOUND_GetDriverName(i), caps);
-	}
-	FSOUND_SetDriver(0);
-	if (!FSOUND_Init(44100, 32, 0)) {
-		E3D_LogBlue(g_FileLog, "SOUND ERROR: %s", Fmod_ErrorString(FSOUND_GetError()));
-		FSOUND_Close();
-		g_FmodState = -1;
-		return 0;
-	}
-	E3D_LogPrint(g_FileLog, "Mixer: %d", FSOUND_GetMixer());
-	FSOUND_Stream_SetBufferSize(g_S_StreamBufferSize);
+	E3D_LogPrint(g_FileLog, "Sound output: %s", Snd_DeviceName());
 	g_FmodState = 1;
 	return 1;
 }
 
 int Fmod_Close(void) {
 	if (g_FmodState > 0) {
-		Music_CloseOpened();
-		memset(music_closing, 0, sizeof(music_closing));
-		FSOUND_Close();
+		Snd_Close();
 		g_FmodState = 0;
 	}
 	return 1;
@@ -175,8 +123,8 @@ cMusicVoice *Voice_Get(uint32_t voice) {
 	return &g_MusicVoices[voice];
 }
 
-/* differs from the original on purpose (no blocking waits): the voices open without FSOUND_NONBLOCKING (Voice_Open),
- * there is nothing to wait for; the original polled the open state in Sleep(10) steps. Only for its rva */
+/* differs from the original on purpose (no blocking waits): the voices open at once (Voice_Open), there is nothing
+ * to wait for; the original polled the open state in Sleep(10) steps */
 void Voice_Wait(cMusicVoice *v, const char *what) {
 	(void)v;
 	(void)what;
@@ -184,7 +132,7 @@ void Voice_Wait(cMusicVoice *v, const char *what) {
 
 void Voice_Close(cMusicVoice *v) {
 	if (v->stream) {
-		FSOUND_Stream_Close(v->stream);
+		Snd_StreamClose(v->stream);
 		g_NumVoices--;
 		g_NumVoiceovers -= v->voiceover;
 		v->stream = NULL;
@@ -207,7 +155,7 @@ void Voice_ApplyVolume(cMusicVoice *v, float volume) {
 		return;
 	}
 	if (v->channel != -1) {
-		FSOUND_SetVolume(v->channel, (int)(Volume_Clamp(volume) * g_VoiceMainVolume * 255.0f));
+		Snd_SetVolume(v->channel, (int)(Volume_Clamp(volume) * g_VoiceMainVolume * 255.0f));
 	}
 }
 
@@ -231,10 +179,10 @@ int Voice_Unused(int voice) {
 	if (!v || !v->stream) {
 		return 0;
 	}
-	if (FSOUND_Stream_GetOpenState(v->stream) == FSOUND_STREAM_OPENING || v->channel < 0) {
+	if (v->channel < 0) {
 		return 1;
 	}
-	return FSOUND_IsPlaying(v->channel) != 0;
+	return Snd_IsPlaying(v->channel) != 0;
 }
 
 int Voice_Open(const char *name, int voice, int voiceover) {
@@ -250,16 +198,16 @@ int Voice_Open(const char *name, int voice, int voiceover) {
 	}
 	Path_Format(path, name, "&U&D&N.ogg");
 	Voice_Close(v);
-	/* differs from the original on purpose (no blocking waits): VOICE_MODE opens the stream here and now instead of in
-	 * the background; the scripts read the length (Voice_Remain) right after PlayVoice, the original waited there */
+	/* differs from the original on purpose (no blocking waits): the stream opens here and now instead of in the
+	 * background; the scripts read the length (Voice_Remain) right after PlayVoice, the original waited there */
 	if (Pack_GetFileInfo(path, pack, &offset, &size)) {
 		Path_Format(path, path, "PACK:&N&E");
-		v->stream = FSOUND_Stream_Open(pack, VOICE_MODE, offset, size);
+		v->stream = Snd_StreamOpen(pack, (uint32_t)offset, (uint32_t)size, 0);
 	} else {
-		v->stream = FSOUND_Stream_Open(path, VOICE_MODE, 0, 0);
+		v->stream = Snd_StreamOpen(path, 0, 0, 0);
 	}
 	if (!v->stream) {
-		E3D_LogBlue(g_FileLog, "Error: %s", Fmod_ErrorString(FSOUND_GetError()));
+		E3D_LogBlue(g_FileLog, "Error: %s", Fmod_ErrorString(Snd_GetError()));
 		return 0;
 	}
 	t = exe_timeGetTime();
@@ -289,7 +237,7 @@ int Voice_SetParam(int voice, float pan) {
 	}
 	p = Volume_Clamp((pan + 1.0f) * 0.5f);
 	if (!g_isDolby) {
-		FSOUND_SetPan(v->channel, (int)(p * 255.0f));
+		Snd_SetPan(v->channel, (int)(p * 255.0f));
 	}
 	return 1;
 }
@@ -302,21 +250,16 @@ int Voice_Play(int voice) {
 		return 0;
 	}
 	if (v->stream && v->channel < 0) {
-		if (FSOUND_Stream_GetOpenState(v->stream) != 0) {
-			E3D_LogBlue(g_FileLog, "ERROR: voice file not found [%s]", v->name);
-			Voice_Close(v);
-			return 0;
-		}
-		v->channel = FSOUND_Stream_PlayEx(FSOUND_FREE, v->stream, NULL, 1);
-		freq = FSOUND_GetFrequency(v->channel);
+		v->channel = Snd_StreamPlay(v->stream, 1);
+		freq = Snd_GetFrequency(v->channel);
 		if (g_TimerFreqMult > 1) {
-			FSOUND_SetFrequency(v->channel, freq / g_TimerFreqMult);
+			Snd_SetFrequency(v->channel, freq / g_TimerFreqMult);
 		}
 		if (!g_isDolby) {
-			FSOUND_SetPan(v->channel, 0x80);
+			Snd_SetPan(v->channel, 0x80);
 		}
 		Voice_ApplyVolume(v, 1.0f);
-		FSOUND_SetPaused(v->channel, 0);
+		Snd_SetPaused(v->channel, 0);
 		v->playTime = exe_timeGetTime();
 	}
 	return 1;
@@ -331,8 +274,8 @@ int Voice_Remain(int voice, float *remain) {
 	if (!v || !v->stream) {
 		return 0;
 	}
-	len = FSOUND_Stream_GetLengthMs(v->stream);
-	t = FSOUND_Stream_GetTime(v->stream);
+	len = Snd_StreamLengthMs(v->stream);
+	t = Snd_StreamTimeMs(v->stream);
 	if (t >= len) {
 		t = len;
 	}
@@ -380,7 +323,7 @@ void Voices_UpdatePause(void) {
 	for (uint32_t i = 0; i < MUSIC_MAX_VOICES; i++) {
 		cMusicVoice *v = Voice_Get(i);
 		if (v && v->stream && v->channel >= 0) {
-			FSOUND_SetPaused(v->channel, g_VoicesPaused);
+			Snd_SetPaused(v->channel, g_VoicesPaused);
 		}
 	}
 }
@@ -414,9 +357,6 @@ void Voices_DrawDebug(int x, int y) {
 			CFont_PrintfColorShadow(g_FontTerminal8, g_FontTerminal8->x, yy, color, "  [%s]",
 				Path_FileName(v->name));
 		}
-		if (v->stream && FSOUND_Stream_GetOpenState(v->stream) == FSOUND_STREAM_OPENING) {
-			v->waitTime = exe_timeGetTime();
-		}
 		CFont_PrintfColorShadow(g_FontTerminal8, g_FontTerminal8->x, yy, color, "  %d %d", v->waitTime - v->openTime,
 			v->playTime - v->openTime);
 		Music_DrawStream(g_FontTerminal8->x, yy, v->stream, v->channel, &playing);
@@ -427,11 +367,10 @@ void Voices_DrawDebug(int x, int y) {
 			playingCount++;
 		}
 	}
-	double cpu = FSOUND_GetCPUUsage();
-	CFont_PrintfColorShadow(g_FontTerminal8, (float)x, yy + 10.0f, 0xffff00, "channels: %d/%d  cpu %5.02f%%",
-		playingCount, MUSIC_MAX_VOICES, cpu);
+	CFont_PrintfColorShadow(g_FontTerminal8, (float)x, yy + 10.0f, 0xffff00, "channels: %d/%d", playingCount,
+		MUSIC_MAX_VOICES);
 	uint32_t memCur, memMax;
-	FSOUND_GetMemoryStats(&memCur, &memMax);
+	Snd_MemoryStats(&memCur, &memMax);
 	CFont_PrintfColorShadow(g_FontTerminal8, (float)x, yy + 20.0f, 0xffff00, "memory: %d %d", memCur >> 10,
 		memMax >> 10);
 }
@@ -444,28 +383,17 @@ byte Voices_DrawDebugDefault(void) {
 /* the music */
 
 byte Music_Ready(void) {
-	int st;
-
 	if (!g_MusicStream) {
 		return 0;
 	}
 	if (g_MusicChannel != -1) {
 		return 1;
 	}
-	st = FSOUND_Stream_GetOpenState(g_MusicStream);
-	if (st == 0) {
-		if (Time_Since(g_MusicOpenTime) < 1000) {
-			return 0;
-		}
-		return Music_Start();
-	}
-	if (st == FSOUND_STREAM_OPENING) {
+	/* the original started the stream one second after the open at the earliest */
+	if (Time_Since(g_MusicOpenTime) < 1000) {
 		return 0;
 	}
-	E3D_LogBlue(g_FileLog, "ERROR: music file not found [%s]", g_MusicName);
-	FSOUND_Stream_Close(g_MusicStream);
-	g_MusicStream = NULL;
-	return 0;
+	return Music_Start();
 }
 
 byte Music_UpdateVolumes(void) {
@@ -502,12 +430,7 @@ void Music_DrawDebug(int x, int y) {
 	if (g_MusicName[0]) {
 		CFont_PrintfColorShadow(g_FontTerminal8, g_FontTerminal8->x, yy, color, "  [%s]", g_MusicName);
 	}
-	if (g_MusicStream && FSOUND_Stream_GetOpenState(g_MusicStream) == FSOUND_STREAM_OPENING) {
-		t = exe_timeGetTime();
-		g_MusicWaitTime = t;
-	} else {
-		t = g_MusicWaitTime;
-	}
+	t = g_MusicWaitTime;
 	CFont_PrintfColorShadow(g_FontTerminal8, g_FontTerminal8->x, yy, color, "  %d", t - g_MusicOpenTime);
 	Music_DrawStream(g_FontTerminal8->x, yy, g_MusicStream, g_MusicChannel, &playing);
 	CFont_PrintfColorShadow(g_FontTerminal8, (float)x, yy + 10.0f, 0xffff00, "main_vol: %.2f  vol: %.2f",
@@ -521,17 +444,6 @@ byte Music_Wait(void) {
 	return Music_Ready();
 }
 
-static void Music_CloseLater(void *stream) {
-	Music_CloseOpened();
-	for (int i = 0; i < MUSIC_MAX_CLOSING; i++) {
-		if (!music_closing[i]) {
-			music_closing[i] = stream;
-			return;
-		}
-	}
-	E3D_LogBlue(g_FileLog, "WARN: music stream left open");
-}
-
 byte Music_Open(const char *name) {
 	char pack[0x80];
 	int offset, size;
@@ -542,12 +454,12 @@ byte Music_Open(const char *name) {
 	}
 	CHECK(!g_MusicStream);
 	if (Pack_GetFileInfo(name, pack, &offset, &size)) {
-		g_MusicStream = FSOUND_Stream_Open(pack, MUSIC_MODE, offset, size);
+		g_MusicStream = Snd_StreamOpen(pack, (uint32_t)offset, (uint32_t)size, 1);
 	} else {
-		g_MusicStream = FSOUND_Stream_Open(name, MUSIC_MODE, 0, 0);
+		g_MusicStream = Snd_StreamOpen(name, 0, 0, 1);
 	}
 	if (!g_MusicStream) {
-		E3D_LogBlue(g_FileLog, "Error: %s", Fmod_ErrorString(FSOUND_GetError()));
+		E3D_LogBlue(g_FileLog, "Error: %s", Fmod_ErrorString(Snd_GetError()));
 		return 0;
 	}
 	g_MusicChannel = -1;
@@ -562,44 +474,37 @@ byte Music_Open(const char *name) {
 void Music_SetPaused(int paused) {
 	g_MusicPaused = paused;
 	if (Music_Ready()) {
-		FSOUND_SetPaused(g_MusicChannel, (byte)g_MusicPaused);
+		Snd_SetPaused(g_MusicChannel, (byte)g_MusicPaused);
 	}
 }
 
 byte Music_Start(void) {
-	void *sample;
 	int freq;
 
 	if (!g_MusicStream) {
 		return 0;
 	}
-	CHECK(FSOUND_Stream_GetOpenState(g_MusicStream) == 0);
-	sample = FSOUND_Stream_GetSample(g_MusicStream);
-	if (sample) {
-		FSOUND_Sample_GetDefaults(sample, &freq, NULL, NULL, NULL);
-		E3D_LogDebug2(g_FileLog, "Name      : %s", FSOUND_Sample_GetName(sample));
-		E3D_LogDebug2(g_FileLog, "Frequency : %d", freq);
-	}
-	g_MusicChannel = FSOUND_Stream_PlayEx(FSOUND_FREE, g_MusicStream, NULL, 1);
-	FSOUND_SetReserved(g_MusicChannel, 1);
-	freq = FSOUND_GetFrequency(g_MusicChannel);
+	E3D_LogDebug2(g_FileLog, "Name      : %s", g_MusicName);
+	E3D_LogDebug2(g_FileLog, "Frequency : %d", Snd_StreamRate(g_MusicStream));
+	g_MusicChannel = Snd_StreamPlay(g_MusicStream, 1);
+	Snd_SetReserved(g_MusicChannel, 1);
+	freq = Snd_GetFrequency(g_MusicChannel);
 	if (g_TimerFreqMult > 1) {
-		FSOUND_SetFrequency(g_MusicChannel, freq / g_TimerFreqMult);
+		Snd_SetFrequency(g_MusicChannel, freq / g_TimerFreqMult);
 	}
 	if (!g_isDolby) {
-		FSOUND_SetPan(g_MusicChannel, -1);	/* FSOUND_STEREOPAN */
+		Snd_SetPan(g_MusicChannel, SND_PAN_STEREO);
 	}
 	Music_ApplyVolume();
-	E3D_LogDebug2(g_FileLog, "channels  : %d", FSOUND_GetNumSubChannels(g_MusicChannel));
 	if (Music_Ready()) {
-		FSOUND_SetPaused(g_MusicChannel, (byte)g_MusicPaused);
+		Snd_SetPaused(g_MusicChannel, (byte)g_MusicPaused);
 	}
 	return 1;
 }
 
 void Music_ApplyVolume(void) {
 	if (Music_Ready()) {
-		FSOUND_SetVolume(g_MusicChannel,
+		Snd_SetVolume(g_MusicChannel,
 			(int)(g_MusicVolume * g_MusicCurMainVolume * g_MusicVoiceover * 255.0f));
 	}
 }
@@ -623,22 +528,18 @@ void Music_DrawStream(float x, float y, void *stream, int channel, byte *playing
 		CFont_PrintfColorShadow(g_FontTerminal8, x, y, 0x8000, "  ---");
 		return;
 	}
-	if (FSOUND_Stream_GetOpenState(stream) == FSOUND_STREAM_OPENING) {
-		CFont_PrintfColorShadow(g_FontTerminal8, x, y, 0xff, "  opening...");
-		return;
-	}
 	if (channel < 0) {
 		CFont_PrintfColorShadow(g_FontTerminal8, x, y, 0xff, "  waiting...");
 		return;
 	}
-	vol = FSOUND_GetVolume(channel);
-	pan = FSOUND_GetPan(channel);
-	freq = FSOUND_GetFrequency(channel);
-	isPlaying = FSOUND_IsPlaying(channel);
+	vol = Snd_GetVolume(channel);
+	pan = Snd_GetPan(channel);
+	freq = Snd_GetFrequency(channel);
+	isPlaying = Snd_IsPlaying(channel);
 	color = isPlaying ? 0xff00 : 0x8000;
 	CFont_PrintfColorShadow(g_FontTerminal8, x, y, color, "  vpf: %6d %6d %6d", vol, pan, freq);
-	len = FSOUND_Stream_GetLengthMs(stream);
-	t = FSOUND_Stream_GetTime(stream);
+	len = Snd_StreamLengthMs(stream);
+	t = Snd_StreamTimeMs(stream);
 	CFont_PrintfColorShadow(g_FontTerminal8, g_FontTerminal8->x, y, color, "  %.1f%%",
 		(double)(((float)t * 100.0f) / (float)len));
 	*playing = isPlaying != 0;
@@ -671,20 +572,15 @@ byte Music_Pause(void) {
 
 byte Music_Stop(void) {
 	if (Music_Wait()) {
-		FSOUND_SetReserved(g_MusicChannel, 0);
-		FSOUND_Stream_Close(g_MusicStream);
+		Snd_SetReserved(g_MusicChannel, 0);
+		Snd_StreamClose(g_MusicStream);
 		g_MusicStream = NULL;
 		g_MusicChannel = -1;
 		return 1;
 	}
 	if (g_MusicStream) {
-		/* differs from the original on purpose (no blocking waits): closed without the wait for the open and the
-		 * start, by Music_Update while FMOD still opens it */
-		if (FSOUND_Stream_GetOpenState(g_MusicStream) == FSOUND_STREAM_OPENING) {
-			Music_CloseLater(g_MusicStream);
-		} else {
-			FSOUND_Stream_Close(g_MusicStream);
-		}
+		/* differs from the original on purpose (no blocking waits): closed without the wait for the start */
+		Snd_StreamClose(g_MusicStream);
 		g_MusicStream = NULL;
 		g_MusicChannel = -1;
 	}
@@ -716,50 +612,10 @@ byte Music_Update(void) {
 	Music_UpdateVolumes();
 	Voices_DrawDebug(10, 0xb4);
 	Voices_UpdatePause();
-	/* differs from the original on purpose (no blocking waits): the streams Music_Stop could not close yet */
-	Music_CloseOpened();
 	return 1;
-}
-
-/* the FMOD file callbacks */
-
-int __stdcall Music_FileClose(void *f) {
-	return crt_fclose(f);
-}
-
-void *__stdcall Music_FileOpen(const char *name) {
-	return crt_fopen(name, "rb");
-}
-
-int __stdcall Music_FileRead(void *buf, int size, void *f) {
-	return (int)crt_fread(buf, 1, size, f);
-}
-
-int __stdcall Music_FileSeek(void *f, int pos, signed char mode) {
-	return crt_fseek(f, pos, mode);
-}
-
-int __stdcall Music_FileTell(void *f) {
-	return crt_ftell(f);
 }
 
 /* empty callbacks of the module */
 
 void Music_Nop(void) {
-}
-
-byte __stdcall Music_True16a(int a, int b, int c, int d) {
-	(void)a;
-	(void)b;
-	(void)c;
-	(void)d;
-	return 1;
-}
-
-byte __stdcall Music_True16b(int a, int b, int c, int d) {
-	(void)a;
-	(void)b;
-	(void)c;
-	(void)d;
-	return 1;
 }
