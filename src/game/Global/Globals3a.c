@@ -9,7 +9,6 @@
 
 
 
-#undef g_FxRandScale
 #undef g_HeadRandOfs
 #undef g_HeadRandRange
 #undef g_NewsRandOfs
@@ -18,7 +17,6 @@
 const double g_HeadRandOfs;
 const float Init_GVar_LaserDistLimit_3a3710 = 3.0f;
 const float g_SlotEpsilon = 0.001f;
-const double g_FxRandScale = 0.00003051850947599719;
 const float Init_GVar_MaxDistChaseElevatorAI_3a5ac0 = 10000.0f;
 const double g_HeadRandRange = 6.2831854820251465;
 const float Init_GVar_LaserDistLimit_3a8e38 = 2.0f;

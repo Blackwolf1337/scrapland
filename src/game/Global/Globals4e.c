@@ -97,7 +97,6 @@
 #undef g_TXFCab
 #undef g_TXFCab2
 #undef g_TabObj
-#undef g_TlsIndex
 #undef g_UseWSMVar
 
 CTable g_TabObj;
@@ -184,5 +183,4 @@ int g_BspNumLinks;
 CTable g_RadNormals;
 char *g_ReadString;
 cReadStack *g_ReadStack;
-uint32_t g_TlsIndex;
 

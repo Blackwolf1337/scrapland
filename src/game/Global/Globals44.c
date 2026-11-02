@@ -138,11 +138,9 @@
 #undef g_PcPads
 #undef g_PlayerInput
 #undef g_PoliceBossEnt
-#undef g_PrintfOptions
 #undef g_RustyLoops
 #undef g_SaveVarCount
 #undef g_SaveVars
-#undef g_ScanfOptions
 #undef g_SetOriginFunc
 #undef g_ShipGroupFound
 #undef g_ShipGroupShips
@@ -192,7 +190,6 @@ cGVar GVar_ShootBishopAI;
 cGVar GVar_OffsetAngShootBishopAI;
 cGVar GVar_DistMaxShootBishopAI;
 cGVar GVar_TimeShootBishopAI;
-uint64_t g_PrintfOptions;
 cGVar GVar_DistMinCheckPauseAI;
 cGVar GVar_DistRadPauseCharAI;
 cGVar GVar_MinNumTalksCharAI;
@@ -232,7 +229,6 @@ cGVar GVar_TimeBetweenEventCollCharAI;
 cGVar GVar_MinDistStrafeCharAI;
 cGVar GVar_TimeStrafeLostObjCharAI;
 cAICharGroup *g_CharGroup;
-uint64_t g_ScanfOptions;
 cGVar GVar_TimeStrafeUnderAttackBishopAI;
 cGVar GVar_AngleStrafeUnderAttackBishopAI;
 cGVar GVar_TimeStrafeUnderAttackGearAI;

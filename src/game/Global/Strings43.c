@@ -14,7 +14,6 @@ char str_PyDoc_SWeap_FillPriority[] = "FillPriority() : Inizializa las prioridad
 char str_PyDoc_SWeap_GetFirstiWeap[] = "GetFirstiWeap() : Obtiene el arma primera y por defecto";
 char str_PyDoc_SWeap_NetExec[] = "NetExec() : Rutinas de red de los misiles";
 char str_431a98[] = "Scrapland";
-char str_431aa4[] = "ScrapClass";
 char str_431bf0[128] = "m3d.ini";
 char str_432608[] = "Unknown error";
 char str_432a88[16] = "luces.rad";
