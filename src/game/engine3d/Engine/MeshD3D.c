@@ -151,6 +151,10 @@ IObject3D *CMeshD3D_Delete(IObject3D *base, byte flags) {
 	return base;
 }
 
+MeshD3DObj g_D3DObj[512];
+
+int g_NumD3DObj;
+
 int MeshD3D_NewObj(void) {
 	CHECK(g_NumD3DObj < MAX_D3D_OBJ);
 	int i = g_NumD3DObj;
@@ -474,6 +478,8 @@ int MeshD3D_CompareTri(const void *a, const void *b) {
 	return (int)(MeshD3D_Len2(&cb) - MeshD3D_Len2(&ca));
 }
 
+MeshD3DVert *g_WeldVert;
+
 int MeshD3D_CompareVertIdx(const void *a, const void *b) {
 	return MeshD3D_CompareVert(&g_WeldVert[*(const int *)a], &g_WeldVert[*(const int *)b]);
 }
@@ -761,6 +767,8 @@ void CMeshD3D_SetTri(CMeshD3D *self, uint32_t i, uint16_t a, uint16_t b, uint16_
 	self->pTri[i][1] = b;
 	self->pTri[i][2] = c;
 }
+
+int g_MaxTriGroup = 2048;
 
 int MeshD3D_GroupFits(const MeshD3DGroup *g, const MeshD3DTriTmp *t) {
 	if (g && t && g->mat == t->mat) {

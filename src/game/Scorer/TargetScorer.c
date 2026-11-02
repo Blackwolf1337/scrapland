@@ -15,17 +15,21 @@
 #include "scrap/weapons.h"
 #include "scrap/withlifeentity.h"
 
-extern cGVar GVar_LittlePointingArrowSize;
+cGVar GVar_LittlePointingArrowSize;
+
 #define g_EnemyMarkScale (GVar_LittlePointingArrowSize.value.f)	/* the size of the marks of DrawEnemies, none for 0 */
 #define TS_PULSE_SPEED 4.0f
 #define TS_PULSE_RANGE -254.0
 #define TS_MARK_HEIGHT 380.0f
 #define TS_HALF_SCREEN 240.0f
-extern cGVar GVar_TargetScorerSwitchSound;
+cGVar GVar_TargetScorerSwitchSound;
+
 #define g_TargetSwitchSound (GVar_TargetScorerSwitchSound.value.s)	/* TargetScorerSwitchSound */
-extern cGVar GVar_TargetScorerSwitchSoundVol;
+cGVar GVar_TargetScorerSwitchSoundVol;
+
 #define g_TargetSwitchSoundVol (GVar_TargetScorerSwitchSoundVol.value.f)
-extern cGVar GVar_EnemyFireSize;
+cGVar GVar_EnemyFireSize;
+
 #define g_EnemyFireSize (GVar_EnemyFireSize.value.f)		/* the scale of the arrow to the attacker */
 extern cGVar GVar_AttackerMarkTime;
 #define g_AttackerMarkTime (GVar_AttackerMarkTime.value.f)		/* the attacker arrow shows this long after a hit */

@@ -12,7 +12,6 @@
 #include "scrap/weapons.h"
 
 /* the draw handler of each character action: (item, player) */
-extern typeof(void (*)(cSpecialActionScorer *, int)) g_SpecialActionDraw[15];
 
 static const char *const s_InactiveColors[4] = {"InactiveColorRed", "InactiveColorGreen", "InactiveColorBlue",
 	"InactiveColorAlpha"};
@@ -158,6 +157,26 @@ int cSpecialActionScorer_Var(cScorerItem *base, const char *name, int set, char 
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
+SD_SYM(SpecialAction_DrawDefault);
+SD_SYM(SpecialAction_DrawBanker);
+SD_SYM(SpecialAction_DrawTarget);
+SD_SYM(SpecialAction_DrawGear);
+SD_SYM(SpecialAction_DrawVictim);
+SD_SYM(SpecialAction_DrawOn);
+SD_SYM(SpecialAction_DrawLowEnergy);
+SD_SYM(SpecialAction_DrawFunctionary);
+SD_SYM(SpecialAction_DrawEnergyOnly);
+SD_SYM(SpecialAction_DrawGear2);
+SD_SYM(SpecialAction_DrawGear3);
+typeof(void (*)(cSpecialActionScorer *, int)) g_SpecialActionDraw[15] = {
+	(void *)sd_SpecialAction_DrawDefault, (void *)sd_SpecialAction_DrawBanker, (void *)sd_SpecialAction_DrawTarget,
+	(void *)sd_SpecialAction_DrawGear, (void *)sd_SpecialAction_DrawVictim, (void *)sd_SpecialAction_DrawOn,
+	(void *)sd_SpecialAction_DrawOn, (void *)sd_SpecialAction_DrawOn, (void *)sd_SpecialAction_DrawLowEnergy,
+	(void *)sd_SpecialAction_DrawFunctionary, (void *)sd_SpecialAction_DrawEnergyOnly,
+	(void *)sd_SpecialAction_DrawGear2, (void *)sd_SpecialAction_DrawGear3, (void *)sd_SpecialAction_DrawOn,
+	(void *)sd_SpecialAction_DrawOn,
+};
+
 void cSpecialActionScorer_Draw(cScorerItem *base, int player) {
 	cSpecialActionScorer *self = (cSpecialActionScorer *)base;
 	if (!g_SpecialActionActive) {
@@ -170,24 +189,14 @@ void cSpecialActionScorer_Draw(cScorerItem *base, int player) {
 
 /* ---- the draws of the character actions ---- */
 
-extern int g_SpecialActionState;	/* the icon state drawn last: 0 off, 1 on, 2 active */
-extern float g_SpecialActionFade;	/* counts down 0.2 s after a state change */
-extern float g_GearAimSpreadX;	/* the aim cone of the gear target search */
-extern float g_GearAimSpreadY;
-extern int g_GearAimMode;		/* 1..3: which targets the search takes */
 /* the state of the gear aim: the target and its score, its screen position, the aim cross that moves from the
  * center to it (offset, lock time) and the blink of the cross while the energy is low */
-extern cEntity *g_GearAimTarget;
-extern float g_GearAimBest;	/* the lowest score of the search, FLT_MAX at its start */
-extern float g_GearAimPos[2];	/* [2] */
-extern float g_GearAimCenter[2];	/* [2] where the cross starts, 320 240 */
-extern float g_GearAimOff[2];	/* [2] Pos - Center */
-extern byte g_GearAimLocked;
-extern float g_GearAimLockTime;
-extern cGVar GVar_GearTargetCrossBlinkTime;
+cGVar GVar_GearTargetCrossBlinkTime;
+
 #define g_GearTargetCrossBlinkTime (GVar_GearTargetCrossBlinkTime.def.f)
 #define g_GearAimBlink (GVar_GearTargetCrossBlinkTime.value.f)
-extern cGVar GVar_GearTargetSphereRadius;
+cGVar GVar_GearTargetSphereRadius;
+
 #define g_GearTargetSphereRadius (GVar_GearTargetSphereRadius.value.f)
 extern cGVar GVar_GearStdFar;
 #define g_GearStdFar (GVar_GearStdFar.value.f)
@@ -215,6 +224,10 @@ static cEntity *SpecialAction_User(void) {
 static byte SpecialAction_IsActive(cEntity *e, const char *action) {
 	return cActCtrl_IsActive(WithLife_Vtbl(e)->GetActCtrl(e), action);
 }
+
+int g_SpecialActionState = 1;
+
+float g_SpecialActionFade = 0.2f;
 
 /* the icon of the action in state (0 off, 1 on, 2 active), its color faded over 0.2 s after a change, and the
  * blinking glow while active */
@@ -419,6 +432,12 @@ void SpecialAction_DrawTarget(cSpecialActionScorer *self, int player) {
 	cSpecialActionScorer_DrawIcon(self, player, 1);
 }
 
+int g_GearAimMode;
+
+float g_GearAimSpreadX = 1.5707964f;
+
+float g_GearAimSpreadY = 1.5707964f;
+
 /* 3, 11, 12: the gear aim with its cone and mode */
 void SpecialAction_DrawGear(cSpecialActionScorer *self, int player) {
 	g_GearAimSpreadX = 1.5707964f;
@@ -555,6 +574,16 @@ void cSpecialActionScorer_DrawCannon(cSpecialActionScorer *self, int player, con
 	}
 }
 
+cEntity *g_GearAimTarget;
+
+float g_GearAimOff[2];
+
+float g_GearAimBest = 3.4028235e+38f;
+
+float g_GearAimPos[2] = { 320.0f, 240.0f };
+
+float g_GearAimCenter[2] = { 320.0f, 240.0f };
+
 /* the sphere callback of the gear target search (params: the entity name): the score of each character the player
  * sees (or that is free to the line of sight with a kind): the squared screen distance to the center, or for the
  * kinds (the messenger of mode 3, in the alarm a radar target, a gear, a sentinel, a bishop when they attack) a
@@ -651,6 +680,10 @@ score:;
 		g_GearAimOff[1] = y - g_GearAimCenter[1];
 	}
 }
+
+byte g_GearAimLocked;
+
+float g_GearAimLockTime;
 
 /* the special action of the gear: the target search around the player in a sphere, the aim cross that moves from the
  * last place to the target in 0.3 s (and grows on the way) and locks on it, red and blinking while the energy is low;
@@ -776,3 +809,12 @@ const cScorerItemVtbl cSpecialActionScorer_vftable = {
 	.Var = cSpecialActionScorer_Var,
 	.Delete = cSpecialActionScorer_Delete,
 };
+
+cGVar GVar_GearTargetName;
+
+cGVar GVar_SpecialActionActive;
+
+cGVar GVar_FunctionarySpecialActionLow;
+
+cGVar GVar_GearLowWeaponEnergy;
+

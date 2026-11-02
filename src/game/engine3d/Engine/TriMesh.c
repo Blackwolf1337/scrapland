@@ -16,7 +16,6 @@ extern const IObject3DVtbl CTriMesh_vftable;
 #define TRIMESH_FLT_MAX 3.4028234663852886e+38f
 
 /* draw the meshes through their D3D mesh */
-extern byte g_MeshD3DOn;
 /* statistics of the frame */
 
 
@@ -497,6 +496,8 @@ void CTriMesh_Transform(CTriMesh *self, const matrix_t *m) {
 		}
 	}
 }
+
+byte g_MeshD3DOn = 1;
 
 void CTriMesh_Draw(IObject3D *elem, void *dev, CRenderNode *unused) {
 	CTriMesh *self = (CTriMesh *)elem;

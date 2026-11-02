@@ -78,6 +78,8 @@ void *ScorerFx_ctor(void *self) {
 	return self;
 }
 
+char str_Empty[] = "";
+
 cScorer *cScorer_ctor(cScorer *self) {
 	self->vftable = CSCORER_VFTABLE;
 	cString_ctor(&self->hint);
@@ -584,6 +586,8 @@ void cScorer_SetDefault(cScorer *scorer, const char *name) {
 	cString_Set(&scorer->current, name);
 }
 
+cScorer *g_Scorers;
+
 /* ---- the scorers of the players ---- */
 
 cScorer *Scorer_Get(int player) {
@@ -602,13 +606,19 @@ void Scorer_SetInputState(int state) {
 	sc[3].skipFrames = state;
 }
 
+CPsaImage *g_ScorerWhite;
+
 CPsaImage *Scorer_GetWhite(void) {
 	return g_ScorerWhite;
 }
 
+CPsaImage *g_ScorerMarker;
+
 CPsaImage *Scorer_GetMarker(void) {
 	return g_ScorerMarker;
 }
+
+CPsaImage *g_ScorerNoise;
 
 CPsaImage *Scorer_GetNoise(void) {
 	return g_ScorerNoise;
@@ -619,6 +629,8 @@ static CPsaImage *Scorer_NewTex(const char *name, const char *a, int flags) {
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	return img ? CPsaImage_ctorTex(img, name, a, flags) : NULL;
 }
+
+cNewsPanel *g_NewsPanel;
 
 void Scorer_Init(void) {
 	g_ScorerWhite = Scorer_NewTex("2D/white.tga", 0, 0x24);
@@ -1180,6 +1192,8 @@ void cScorer_UpdateCursor(cScorer *scorer, int player) {
 	}
 }
 
+CApp *g_pApp;
+
 /* the frame of a scorer: time, screen effects, cursor, the items and the focus marker */
 void cScorer_Draw(cScorer *scorer, int player) {
 	scorer->lastTime = scorer->time;
@@ -1419,20 +1433,17 @@ byte Scorer_Render(void) {
 
 /* ---- the full screen console ---- */
 
-extern byte g_ConsoleOn;
-extern byte g_ConsoleCheckInput;	/* g_pWorld->checkInput while the console is open */
-extern byte g_ConsoleClosing;
-extern byte g_ConsoleBusy;
-extern cVirtualKeyboard g_ConsoleSavedKeyboard;
-extern uint32_t g_ConsoleSavedSet;
-extern cPlayerInput g_ConsoleSavedInput;
-extern CPsaImage *g_ConsoleWhite;
-extern char * g_ConsoleHistory[16];	/* cStrings: 0 the line typed, 1.. the commands */
 #define CONSOLE_HISTORY 16
-extern float g_ConsoleTime;		/* the game time of the open or the close */
-extern int g_ConsoleHistoryPos;
 #define CONSOLE_KEYBOARD_SIZE 0x10c
 #define CONSOLE_ONINPUT 0x1741b0			/* Console_OnInput as the exe stores it */
+
+byte g_ConsoleOn;
+
+char *g_ConsoleHistory[16];
+
+int g_ConsoleHistoryPos;
+
+cPlayerInput g_PlayerInput[4];
 
 /* the line typed into the console: a Python line for FullScreenConsoleCallback, else a console command */
 void Console_OnInput(int player, const char *text) {
@@ -1480,6 +1491,22 @@ void Console_HistoryDown(void) {
 		cPlayerInput_SetString(&g_PlayerInput[0], g_ConsoleHistory[g_ConsoleHistoryPos]);
 	}
 }
+
+byte g_ConsoleCheckInput;
+
+byte g_ConsoleClosing;
+
+byte g_ConsoleBusy;
+
+cVirtualKeyboard g_ConsoleSavedKeyboard;
+
+uint32_t g_ConsoleSavedSet;
+
+cPlayerInput g_ConsoleSavedInput;
+
+CPsaImage *g_ConsoleWhite;
+
+float g_ConsoleTime;
 
 void Scorer_SetConsole(int on) {
 	byte b = (byte)on;
@@ -1838,3 +1865,76 @@ const cScorerItemVtbl cScorerItem_vftable = {
 const cScorerVtbl cScorer_vftable = {
 	.Delete = cScorer_Delete,
 };
+
+cGVar GVar_FileNameMap2D;
+
+cGVar GVar_CinemaBlackBandHeight;
+
+cGVar GVar_MotionBlurFactorBegin;
+
+cGVar GVar_OnAcceptSoundVol;
+
+cGVar GVar_CameraCloudPlaneSize;
+
+cGVar GVar_CameraCloudRed;
+
+cGVar GVar_XboxSavingMsgStr;
+
+cGVar GVar_XboxNoPadMsgP;
+
+cGVar GVar_OnFocusSoundVol;
+
+cGVar GVar_CameraCloudDistance;
+
+cGVar GVar_NoiseEndTime;
+
+cGVar GVar_NoiseFactor;
+
+cGVar GVar_MotionBlurEndTime;
+
+cGVar GVar_OnAcceptSound;
+
+cGVar GVar_XboxNoPadMsgPBig;
+
+cGVar GVar_NoiseTime;
+
+cGVar GVar_CameraCloudGreen;
+
+cGVar GVar_XboxSavingMsg;
+
+cGVar GVar_NoiseFactorBegin;
+
+cGVar GVar_ScorerMarker;
+
+cGVar GVar_MotionBlurTime;
+
+cGVar GVar_CameraScene;
+
+cGVar GVar_ScorerMarkerSpeed;
+
+cGVar GVar_OnFocusSound;
+
+cGVar GVar_CameraCloudBlue;
+
+cGVar GVar_MotionBlurFactorEnd;
+
+cGVar GVar_CameraCloudThickness;
+
+cGVar GVar_XboxNoPadMsg;
+
+cGVar GVar_CameraCloudAlpha;
+
+cGVar GVar_ScorerMarkerColor;
+
+cGVar GVar_MotionBlurOffVar;
+
+cGVar GVar_CShow;
+
+cGVarFunction GVar_FullScreenConsoleCallback;
+
+cGVar GVar_ShowConsoleLog;
+
+cGVar GVar_R_SceneMotionBlurOff;
+
+cGVar GVar_SplitScreen;
+

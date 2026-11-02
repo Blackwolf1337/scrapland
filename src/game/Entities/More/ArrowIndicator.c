@@ -72,6 +72,10 @@ cArrowIndicator *cArrowIndicator_ctor(cArrowIndicator *self) {
 	return self;
 }
 
+cArrowModel *g_ArrowPool;
+
+int g_ArrowPoolCount;
+
 /* the model to the pool, or deleted when the pool is full */
 static void Arrow_ToPool(cArrowModel *m) {
 	if (g_ArrowPoolCount > ARROW_POOL_MAX) {
@@ -641,6 +645,11 @@ void cArrowIndicator_Update(cArrowIndicator *self) {
 	CGameModel_RootMotion(m, st, NULL, NULL);
 }
 
+uint32_t g_ArrowGlowRamps[2][9] = {
+	{ 0x80ffff00, 0x84ffff00, 0x94ffff00, 0xa4ffff00, 0xb9ffff00, 0xcdffff00, 0xe8ffff00, 0xffffff00, 0xffffff00 },
+	{ 0x8000ffff, 0x8400ffff, 0x9400ffff, 0xa400ffff, 0xb900ffff, 0xcd00ffff, 0xe800ffff, 0xff00ffff, 0xff00ffff },
+};
+
 void cArrowGlow_Update(cArrowGlow *self, CGameModel *model) {
 	CGameParticles *pt = &self->base;
 	vec3_t mp;
@@ -821,3 +830,20 @@ void MissionArrows_Switch(const char *on, const char *off) {
 		}
 	}
 }
+
+cGVar GVar_ArrowViewRadius;
+
+cGVar GVar_ArrowActiveHorizontal;
+
+cGVar GVar_ArrowMissionFile;
+
+cGVar GVar_ArrowUseFile;
+
+cGVar GVar_ArrowTargetFile;
+
+cGVar GVar_FXArrowIndicatorFlash_SizeMax;
+
+cGVar GVar_FXArrowIndicatorFlash_DistGrow;
+
+cGVar GVar_FXArrowIndicatorFlash_SizeMin;
+

@@ -94,6 +94,8 @@ void cString_Printf(cString *self, const char *fmt, ...) {
 	cString_SetN(self, buf, (int)strlen(buf));
 }
 
+char g_StrTmp[256];
+
 /* n characters of s at the end; a string of more than 255 characters goes through a concatenated copy */
 void cString_Append(cString *self, const char *s, int n) {
 	if (n <= 0) {

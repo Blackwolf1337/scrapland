@@ -20,3 +20,6 @@ void ChType_FXSebastianFlash(cAbstractFile *params) {
 		cObjElementFXSebastianFlash_RandomPoints(el);
 	}
 }
+
+cGVar GVar_FXSebastianFlashFile;
+

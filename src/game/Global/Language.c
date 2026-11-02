@@ -22,12 +22,10 @@ typedef struct cLangItem {
 } cLangItem;
 SD_SIZE(cLangItem, 0x10);
 
-extern HashTable g_LangTable;
+cGVar GVar_SelectedLanguage;
+
 #define g_LangName (((cString *)&GVar_SelectedLanguage.value))		/* the language asked for */
-extern cGVar GVar_SelectedLanguage;
 #define g_LangDefault (GVar_SelectedLanguage.def.s)	/* the language when that file is missing */
-extern char *g_LangBuffer;
-extern char *g_IdLang;		/* the language loaded */
 
 cLangItem *LangTable_Find(HashTable *self, const char *key, uint32_t slot) {
 	for (cLangItem *it = (cLangItem *)self->slots[slot]; it; it = it->next) {
@@ -93,6 +91,12 @@ void LangTable_Clear(HashTable *self) {
 	self->numSlots = 0;
 	self->slots = NULL;
 }
+
+char *g_LangBuffer;
+
+char *g_IdLang;
+
+HashTable g_LangTable = { .numSlots = 457 };
 
 void Lang_Free(void) {
 	HashTable *t = (&g_LangTable);

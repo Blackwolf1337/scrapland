@@ -230,5 +230,211 @@ PyObject *SWeap_NetExec(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-extern PyMethodDef SWeap_methods[16];
+const char str_PyMethod_SWeap_GetNWeap[] = "GetNWeap";
+
+SD_SYM(str_PyMethod_SWeap_GetNWeap);
+SD_SYM(SWeap_GetNWeap);
+char str_PyDoc_SWeap_GetNWeap[] = "GetNWeap() : Obtiene el numero de armas en el juego";
+
+SD_SYM(str_PyDoc_SWeap_GetNWeap);
+const char str_PyMethod_SWeap_GetNAmmo[] = "GetNAmmo";
+
+SD_SYM(str_PyMethod_SWeap_GetNAmmo);
+SD_SYM(SWeap_GetNAmmo);
+char str_PyDoc_SWeap_GetNAmmo[] = "GetNAmmo() : Obtiene el numero de municiones en el juego";
+
+SD_SYM(str_PyDoc_SWeap_GetNAmmo);
+const char str_PyMethod_SWeap_InitWeap[] = "InitWeap";
+
+SD_SYM(str_PyMethod_SWeap_InitWeap);
+SD_SYM(SWeap_InitWeap);
+char str_PyDoc_SWeap_InitWeap[] = "InitWeap(num) : Inicializa las armas num es el numero de armas";
+
+SD_SYM(str_PyDoc_SWeap_InitWeap);
+const char str_PyMethod_SWeap_InitAmmo[] = "InitAmmo";
+
+SD_SYM(str_PyMethod_SWeap_InitAmmo);
+SD_SYM(SWeap_InitAmmo);
+char str_PyDoc_SWeap_InitAmmo[56] = "InitAmmo(num) : Inicializa las municiones del juego";
+
+SD_SYM(str_PyDoc_SWeap_InitAmmo);
+const char str_PyMethod_SWeap_GetFAmmo[] = "GetFAmmo";
+
+SD_SYM(str_PyMethod_SWeap_GetFAmmo);
+SD_SYM(SWeap_GetFAmmo);
+char str_PyDoc_SWeap_GetFAmmo[] =
+	"GetFAmmo(numammo,svar) : Obtiene un valor numerico de las municiones";
+
+SD_SYM(str_PyDoc_SWeap_GetFAmmo);
+const char str_PyMethod_SWeap_GetSAmmo[] = "GetSAmmo";
+
+SD_SYM(str_PyMethod_SWeap_GetSAmmo);
+SD_SYM(SWeap_GetSAmmo);
+char str_PyDoc_SWeap_GetSAmmo[72] =
+	"GetSAmmo(numammo,svar) : Obtiene un valor cadena de las municiones";
+
+SD_SYM(str_PyDoc_SWeap_GetSAmmo);
+const char str_PyMethod_SWeap_SetFAmmo[] = "SetFAmmo";
+
+SD_SYM(str_PyMethod_SWeap_SetFAmmo);
+SD_SYM(SWeap_SetFAmmo);
+char str_PyDoc_SWeap_SetFAmmo[80] =
+	"GetFAmmo(numammo,svar,fvalue) : Pone un valor numerico de las municiones";
+
+SD_SYM(str_PyDoc_SWeap_SetFAmmo);
+const char str_PyMethod_SWeap_SetSAmmo[] = "SetSAmmo";
+
+SD_SYM(str_PyMethod_SWeap_SetSAmmo);
+SD_SYM(SWeap_SetSAmmo);
+char str_PyDoc_SWeap_SetSAmmo[] =
+	"SetSAmmo(numammo,svar,svalue) : Pone un valor cadena de las municiones";
+
+SD_SYM(str_PyDoc_SWeap_SetSAmmo);
+const char str_PyMethod_SWeap_GetFWeap[] = "GetFWeap";
+
+SD_SYM(str_PyMethod_SWeap_GetFWeap);
+SD_SYM(SWeap_GetFWeap);
+char str_PyDoc_SWeap_GetFWeap[] =
+	"GetFWeap(numWeap,svar) : Obtiene un valor numerico de las municiones";
+
+SD_SYM(str_PyDoc_SWeap_GetFWeap);
+const char str_PyMethod_SWeap_GetSWeap[] = "GetSWeap";
+
+SD_SYM(str_PyMethod_SWeap_GetSWeap);
+SD_SYM(SWeap_GetSWeap);
+char str_PyDoc_SWeap_GetSWeap[72] =
+	"GetSWeap(numWeap,svar) : Obtiene un valor cadena de las municiones";
+
+SD_SYM(str_PyDoc_SWeap_GetSWeap);
+const char str_PyMethod_SWeap_SetFWeap[] = "SetFWeap";
+
+SD_SYM(str_PyMethod_SWeap_SetFWeap);
+SD_SYM(SWeap_SetFWeap);
+char str_PyDoc_SWeap_SetFWeap[80] =
+	"GetFWeap(numWeap,svar,fvalue) : Pone un valor numerico de las municiones";
+
+SD_SYM(str_PyDoc_SWeap_SetFWeap);
+const char str_PyMethod_SWeap_SetSWeap[] = "SetSWeap";
+
+SD_SYM(str_PyMethod_SWeap_SetSWeap);
+SD_SYM(SWeap_SetSWeap);
+SD_SYM(str_PyDoc_SWeap_SetSWeap);
+const char str_PyMethod_SWeap_FillPriority[] = "FillPriority";
+
+SD_SYM(str_PyMethod_SWeap_FillPriority);
+SD_SYM(SWeap_FillPriority);
+SD_SYM(str_PyDoc_SWeap_FillPriority);
+const char str_PyMethod_SWeap_GetFirstiWeap[] = "GetFirstiWeap";
+
+SD_SYM(str_PyMethod_SWeap_GetFirstiWeap);
+SD_SYM(SWeap_GetFirstiWeap);
+SD_SYM(str_PyDoc_SWeap_GetFirstiWeap);
+const char str_PyMethod_SWeap_NetExec[] = "NetExec";
+
+SD_SYM(str_PyMethod_SWeap_NetExec);
+SD_SYM(SWeap_NetExec);
+SD_SYM(str_PyDoc_SWeap_NetExec);
+PyMethodDef SWeap_methods[16] = {
+	{
+		.ml_name = (void *)sd_str_PyMethod_SWeap_GetNWeap,
+		.ml_meth = (void *)sd_SWeap_GetNWeap,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SWeap_GetNWeap,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SWeap_GetNAmmo,
+		.ml_meth = (void *)sd_SWeap_GetNAmmo,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SWeap_GetNAmmo,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SWeap_InitWeap,
+		.ml_meth = (void *)sd_SWeap_InitWeap,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SWeap_InitWeap,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SWeap_InitAmmo,
+		.ml_meth = (void *)sd_SWeap_InitAmmo,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SWeap_InitAmmo,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SWeap_GetFAmmo,
+		.ml_meth = (void *)sd_SWeap_GetFAmmo,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SWeap_GetFAmmo,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SWeap_GetSAmmo,
+		.ml_meth = (void *)sd_SWeap_GetSAmmo,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SWeap_GetSAmmo,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SWeap_SetFAmmo,
+		.ml_meth = (void *)sd_SWeap_SetFAmmo,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SWeap_SetFAmmo,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SWeap_SetSAmmo,
+		.ml_meth = (void *)sd_SWeap_SetSAmmo,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SWeap_SetSAmmo,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SWeap_GetFWeap,
+		.ml_meth = (void *)sd_SWeap_GetFWeap,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SWeap_GetFWeap,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SWeap_GetSWeap,
+		.ml_meth = (void *)sd_SWeap_GetSWeap,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SWeap_GetSWeap,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SWeap_SetFWeap,
+		.ml_meth = (void *)sd_SWeap_SetFWeap,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SWeap_SetFWeap,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SWeap_SetSWeap,
+		.ml_meth = (void *)sd_SWeap_SetSWeap,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SWeap_SetSWeap,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SWeap_FillPriority,
+		.ml_meth = (void *)sd_SWeap_FillPriority,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SWeap_FillPriority,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SWeap_GetFirstiWeap,
+		.ml_meth = (void *)sd_SWeap_GetFirstiWeap,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SWeap_GetFirstiWeap,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SWeap_NetExec,
+		.ml_meth = (void *)sd_SWeap_NetExec,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SWeap_NetExec,
+	},
+};
+
 SD_PY_MODULE(SWeap, 0x430128)
+
+char str_PyDoc_SWeap_SetSWeap[] =
+	"SetSWeap(numammo,svar,svalue) : Pone un valor cadena de las municiones";
+
+char str_PyDoc_SWeap_FillPriority[] = "FillPriority() : Inizializa las prioridades de las armas";
+
+char str_PyDoc_SWeap_GetFirstiWeap[] = "GetFirstiWeap() : Obtiene el arma primera y por defecto";
+
+char str_PyDoc_SWeap_NetExec[] = "NetExec() : Rutinas de red de los misiles";
+

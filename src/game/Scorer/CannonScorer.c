@@ -263,3 +263,8 @@ const cCannonScorerVtbl cCannonScorer_vftable = {
 	.base.Delete = cCannonScorer_Delete,
 	.DrawLock = cCannonScorer_DrawLock,
 };
+
+cGVar GVar_CannonScorerNoAmmoSound;
+
+cGVar GVar_CannonScorerNoAmmoSoundVol;
+

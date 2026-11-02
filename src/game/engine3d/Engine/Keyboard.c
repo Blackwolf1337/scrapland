@@ -7,9 +7,15 @@
 #include "scrap/e3dinput.h"
 #include "scrap/platform.h"
 
+uint32_t g_TimePaused;
+
 uint32_t Time_Get(void) {
 	return Plat_Ticks() - g_TimePaused;
 }
+
+int g_TimeResumed;
+
+uint32_t g_TimePause;
 
 void Time_Pause(int on) {
 	if (on) {
@@ -23,9 +29,17 @@ void Time_Pause(int on) {
 	}
 }
 
+byte g_KeyboardKeys[256];
+
 void Keyboard_Clear(void) {
 	memset(g_KeyboardKeys, 0, 256);
 }
+
+uint16_t g_KeyboardBuf[32];
+
+int g_KeyboardBufStart;
+
+int g_KeyboardBufCount;
 
 int Keyboard_GetChars(uint16_t *dest, int n) {
 	CHECK(dest);

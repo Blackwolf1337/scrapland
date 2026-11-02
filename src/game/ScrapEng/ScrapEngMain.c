@@ -65,6 +65,8 @@ enum {
 	DBG_CAMERA = 0x1d,
 };
 
+struct CD3DApplication *g_Engine;
+
 static D3DAdapterInfo *Engine_AdapterInfo(void) {
 	CHECK(g_Engine);
 	D3DAdapterInfo *ai = &g_Engine->adapters[g_Engine->adapter];
@@ -193,6 +195,12 @@ void Engine_Close(void) {
 	Con_Printf("Engine 3D closed\n");
 }
 
+CGameCamera *g_ViewerCamera;
+
+CPsaImage *g_Watermark;
+
+CWorld *g_World;
+
 byte Engine_FinalCleanup(void) {
 	CPsaImage *w = g_Watermark;
 	if (w) {
@@ -218,6 +226,8 @@ byte Engine_FinalCleanup(void) {
 	ParticleSystem_LoadIni(NULL, NULL);
 	return 1;
 }
+
+CGameCamera *g_CamCurrent;
 
 CGameCamera *Camera_GetCurrent(void) {
 	return g_CamCurrent;
@@ -265,6 +275,40 @@ int Video_GetModes(int i, char *buf) {
 int Video_GetStatus(void) {
 	return g_VideoStatus;
 }
+
+int g_LightmapOff;
+
+float g_ClipNear;
+
+float g_ClipFar;
+
+char g_SkyPath[260];
+
+float g_SkyPosScaleIni;
+
+char g_GroundPath[260];
+
+float g_SkyRotationIni;
+
+int g_FogActiveIni;
+
+int g_FogTableMode;
+
+ColorIntens g_FogColorIni;
+
+ColorIntens g_ModelAmbientIni;
+
+int g_FogLinear = 1;
+
+float g_FogRangeIni = 0.5f;
+
+float g_FogRangeEnd = 1.0f;
+
+float g_FogDensityIni = 0.5f;
+
+vec3_t g_GroundScale = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
+
+int g_MaxLightmap = 2;
 
 byte Engine_OneTimeInit(void) {
 	g_RenderFlag6e0 = g_RenderFlag6e4;
@@ -322,6 +366,12 @@ byte Engine_OneTimeInit(void) {
 	g_Watermark = p ? CPsaImage_ctor(p, "bmp/norm1.alpha.psa", 0x10008) : NULL;
 	return 1;
 }
+
+const int g_EngineVersion = 5624;
+
+byte g_MapTextSavingOn;
+
+int g_TimerQPMult = 1;
 
 void Engine_Init(void) {
 	int64_t freq;
@@ -393,6 +443,14 @@ void Engine_LevelEnd(void) {
 	}
 	Splash_Show(NULL, 1, 0, 0);
 }
+
+int g_VideoBufferSize;
+
+int g_MapTextSaving;
+
+byte g_DrawProgressBar;
+
+void *g_MapTextDataFile;
 
 void Engine_LevelInit(void) {
 	char path[MAX_FILEPATH];
@@ -667,6 +725,10 @@ void Eng_Printf(int fnt, float x, float y, int align, uint32_t color, const char
 	CFont_PrintfAlignColor(font, x, y, (align & 2) * 2, color, "%s", buf);
 }
 
+typeof(void (*)(void)) g_EngCallbacks[4];
+
+byte g_CallbacksOn = 1;
+
 byte Engine_FrameMove(void) {
 	if (g_EngCallbacks[0] && g_CallbacksOn) {
 		g_EngCallbacks[0]();
@@ -685,6 +747,8 @@ byte Engine_FrameMove(void) {
 	}
 	return 1;
 }
+
+byte g_ResetPending;
 
 void Engine_Render(void) {
 	CHECK(g_Engine);
@@ -706,20 +770,25 @@ static float DebugValue(uint32_t i) {
 	return TABLE_AT(TABLE_AT(g_ActionSets, 1)->actions, i)->value[0];
 }
 
+cGVar GVar_ViewerClipNear;
+
 /* the free camera of the viewer (Gvars) */
-extern cGVar GVar_ViewerClipNear;
 #define g_ViewerClipNear (GVar_ViewerClipNear.value.f)
-extern cGVar GVar_ViewerClipFar;
+cGVar GVar_ViewerClipFar;
+
 #define g_ViewerClipFar (GVar_ViewerClipFar.value.f)
-extern cGVar GVar_ViewerFOV;
+cGVar GVar_ViewerFOV;
+
 #define g_ViewerFOV (GVar_ViewerFOV.value.f)	/* degrees, 0: the camera keeps its own */
-extern cGVar GVar_ViewerCameraTgt;
+cGVar GVar_ViewerCameraTgt;
+
 #define g_ViewerCameraTgt (GVar_ViewerCameraTgt.value.i)	/* orbits around the target */
-extern cGVar GVar_ViewerCameraVel;
+cGVar GVar_ViewerCameraVel;
+
 #define g_ViewerCameraVel (GVar_ViewerCameraVel.value.f)
-extern cGVar GVar_ViewerCameraInv;
+cGVar GVar_ViewerCameraInv;
+
 #define g_ViewerCameraInv (GVar_ViewerCameraInv.value.i)	/* the pitch not inverted */
-extern float g_ViewerSpeed;	/* doubled and halved by the debug keys */
 #define VIEWER_MIN_DIST 20.0f
 /* the actions of the debug set */
 #define DBG_VIEWER_TGT 23
@@ -732,6 +801,10 @@ extern float g_ViewerSpeed;	/* doubled and halved by the debug keys */
 #define DBG_VIEWER_FWD 16
 #define DBG_VIEWER_BACK 9
 #define DBG_VIEWER_PAN 18
+
+float g_FrameMs;
+
+float g_ViewerSpeed = 1.0f;
 
 /* the viewer camera by the debug actions: turned (or panned with the pan action) in free mode, orbiting the
  * target (or moved up and down with the pan action) in target mode */
@@ -815,6 +888,12 @@ void ViewerCamera_Move(CGameCamera *cam) {
 	cam->pos.y = cam->target.y + d.y * r;
 }
 
+cGVar g_GvEnvBump;
+
+cGVar g_GvGlowMap;
+
+cGVar g_GvEnvMap;
+
 byte Engine_DebugKeys(void) {
 	if (!g_ViewerCameraAnim) {
 		Camera_SetCurrent(g_ViewerCamera);
@@ -852,6 +931,8 @@ byte Engine_DebugKeys(void) {
 	}
 	return 1;
 }
+
+char g_DVFName[256];
 
 /* Scrap.ProcessDVF: 1 starts the tiled shot; the AVI recorder of 2, 3 and 4 is gone (2 and 4 still clear the name) */
 void DVF_Process(const char *name, int arg) {
@@ -904,6 +985,12 @@ byte Eng_ResetViewRect(void) {
 	return Render_SetViewRect(NULL, 1);
 }
 
+uint32_t g_AmbientD3D;
+
+byte g_UseVB = 1;
+
+byte g_ModelsOn = 1;
+
 byte Engine_FrameSetup(void) {
 	g_ShowCollision = g_ShowMapCollision;
 	g_WireFrame = g_ShowMapWireFrame;
@@ -934,6 +1021,8 @@ done:
 	return 1;
 }
 
+char g_ScreenshotName[256];
+
 void Screenshot_Take(const char *name) {
 	g_TileOn = 1;
 	if (!name || !*name) {
@@ -941,6 +1030,8 @@ void Screenshot_Take(const char *name) {
 	}
 	Str_Copy(g_ScreenshotName, name, 0x100);
 }
+
+int g_LoadingScreen = -1;
 
 void Loading_RandomName(char *buf, int size) {
 	char level[MAX_FILEPATH], next[MAX_FILEPATH], fmt[MAX_FILEPATH];
@@ -1168,9 +1259,6 @@ int Ini_GetPath(const char *sect, const char *key, char *dest, int size, const c
 
 /* the globals of m3d.ini without a better home */
 extern int g_ShadowMapMultitext;
-extern int g_ShadowMapSoft;
-extern int g_ShadowMapWriteTemp;
-extern float g_ShadowMapAtten;
 extern float g_ShadowMapScale;
 extern float g_ShadowMapRes;
 extern int g_ShadowMapTexX;
@@ -1179,26 +1267,46 @@ extern float g_ShadowMapGamma;
 extern float g_ShadowMapBrightness;
 extern int g_ShadowMapRadiosity;
 extern int g_ShadowMapIllumGlobal;
-extern int g_ShadowMapNoLightAmb;
 extern int g_ShadowMapModulate4x;
-extern int g_ShadowMapBounces;
-extern float g_ShadowMapCoefRad;
-extern int g_ShadowMapUseTxf;
-extern int g_ShadowsDestAlpha;
-extern float g_FlareSize;
+float g_FlareSize = 200.0f;
+
 #define g_FlaresSizeDef g_FlareSize
-extern int g_FlareAttenDist;
+int g_FlareAttenDist;
+
 #define g_FlaresAttenDist g_FlareAttenDist
-extern float g_FlareAttenDistIni;
+float g_FlareAttenDistIni = 200.0f;
+
 #define g_FlaresAttenIni g_FlareAttenDistIni
-extern float g_FlareAttenDistEnd;
+float g_FlareAttenDistEnd = 3000.0f;
+
 #define g_FlaresAttenEnd g_FlareAttenDistEnd
-extern float g_FlareFadeIn;
+float g_FlareFadeIn = 8.0f;
+
 #define g_FlaresFadeIn g_FlareFadeIn
-extern float g_FlareFadeOut;
+float g_FlareFadeOut = 8.0f;
+
 #define g_FlaresFadeOut g_FlareFadeOut
-extern int g_FlareShowInfo;
+int g_FlareShowInfo;
+
 #define g_FlaresShowInfo g_FlareShowInfo
+
+int g_ShadowMapSoft;
+
+int g_ShadowMapWriteTemp;
+
+float g_ShadowMapAtten;
+
+int g_ShadowMapNoLightAmb;
+
+int g_ShadowMapUseTxf;
+
+int g_ShadowsDestAlpha;
+
+int g_ShadowMapDlg = 1;
+
+int g_ShadowMapBounces = 1;
+
+float g_ShadowMapCoefRad = 0.1f;
 
 void Engine_LoadIni(const char *name, const char *dir) {
 	static const char *const paths[4] = { "ruta1", "ruta2", "ruta3", "ruta4" };
@@ -1267,3 +1375,42 @@ void Engine_LoadIni(const char *name, const char *dir) {
 	}
 	CIniFile_dtor(&ini);
 }
+
+char str_431bf0[128] = "m3d.ini";
+
+cGVar GVar_RenderUseVB;
+
+cGVar GVar_ShowSplashScreen;
+
+cGVar GVar_ModelAmbient;
+
+cGVar GVar_ShowMapWireFrame;
+
+cGVar GVar_RenderLightmap;
+
+cGVar GVar_ComputeMapTextSaving;
+
+cGVar GVar_RenderModels;
+
+cGVar GVar_ProgressBar;
+
+cGVar GVar_PlayVideo;
+
+cGVar GVar_VideoHeight;
+
+cGVar GVar_VideoWidth;
+
+cGVar GVar_VideoBPP;
+
+cGVar GVar_CollisionEpsilon;
+
+cGVar GVar_ViewerCameraAnim;
+
+cGVar GVar_ShowMapCollision;
+
+cGVar GVar_FullScreen;
+
+cGVar GVar_VSync;
+
+cGVar GVar_isDemo;
+

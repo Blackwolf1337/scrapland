@@ -10,6 +10,8 @@
 
 #define READ_BLANK(c) ((c) == '\t' || (c) == ' ')
 
+char *g_ReadString;
+
 static void Read_SkipBlanks(void) {
 	while (*g_ReadString && READ_BLANK(*g_ReadString)) {
 		g_ReadString++;
@@ -37,6 +39,8 @@ void Read_String(char *dest, int size) {
 	dest[n] = '\0';
 	g_ReadString = p + 1;
 }
+
+cReadStack *g_ReadStack;
 
 void Read_Pop(void) {
 	CHECK(g_ReadStack);

@@ -92,6 +92,8 @@ void CSoundXBox_Close(CSoundSys *base) {
 	self->sys.vftable->DeleteAllSounds(&self->sys);
 }
 
+float g_SndFreqScale = 1.0f;
+
 /* the volume offset follows SoundMainVolume (at a change everything stops), the pitch the timer */
 void CSoundXBox_Update(CSoundSys *base) {
 	CSoundXBox *self = (CSoundXBox *)base;
@@ -396,7 +398,8 @@ int Fmod_Play(void *sample, const cSoundDesc *d, const char *name) {
 	return ch;
 }
 
-extern cGVar GVar_S_Show;
+cGVar GVar_S_Show;
+
 #define g_S_Show (GVar_S_Show.value.i)		/* S_Show: 1 the channels, 3 the memory */
 
 /* vf31 (DebugDraw): S_Show 3 the memory of the samples, 1 the channels with their state and the volume, pan and
@@ -493,3 +496,14 @@ const CSoundSysVtbl CSoundXBox_vftable = {
 	.GetVoiceString = CSoundSys_GetVoiceString,
 	.VoiceUnused = CSoundSys_VoiceUnused,
 };
+
+cGVar GVar_SoundMainVolume;
+
+cGVar GVar_S_SkipUpdates;
+
+cGVar GVar_SoundSwapChannels;
+
+cGVar GVar_S_PitchScale;
+
+cGVar GVar_S_SkipPlay;
+

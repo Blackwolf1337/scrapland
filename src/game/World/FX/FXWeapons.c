@@ -262,13 +262,13 @@ cObjElementFX *cObjElementFXTesla_Delete(cObjElementFX *base, byte flags) {
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXTesla));
 }
 
+cGVar GVar_ATPCShootSize;
+
 /* ---- cObjElementFXATPC ---- */
 
-extern cGVar GVar_ATPCShootSize;
 #define g_ATPCShootSize (GVar_ATPCShootSize.value.f)
 #define FXATPC_RAMP_CORE 0x4317a0	/* [-16..0], by the time */
 #define FXATPC_RAMP_GLOW 0x431758	/* [2] */
-extern uint32_t FXATPC_GLOW_RAMPS[18];	/* [2 * 9] */
 #define FXATPC_RAMP_RING 0x43177c
 
 static inline uint32_t FXW_Gray(int a) {
@@ -293,9 +293,13 @@ static void FXW_RingPoint(vec3_t *out, float a, const vec3_t *ang) {
 	Vec3_Rotate(out, Vec3_Rotate(&o, &up, &rv), ang);
 }
 
+uint32_t cObjElementFXATPC_Update_4317a0[18] = {
+	0x18c4c4ff, 0x10e1b980, 0x8ffaf40, 0x4ff7d00, 0xff5f00, 0xff4b00, 0xff4100, 0x4eb3c00, 0x8e13700, 0x10c32800,
+	0x20af2300, 0x40911e00, 0x60801900, 0x80801900, 0xa4801900, 0xe0801900, 0xff801900,
+};
+
 /* the beam: the line fades in, while the shot lasts the core, the turning rings (endRing,
  * rings and ringsDuDv for the dudv pass) and the glow particles at both ends */
-extern uint32_t cObjElementFXATPC_Update_4317a0[18];
 void cObjElementFXATPC_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	cObjElementFXATPC *self = (cObjElementFXATPC *)base;
 	(void)dt;
@@ -534,6 +538,11 @@ static inline void FXW_NoRot(CGameParticles *p) {
 	p->rotEnd = 0.0f;
 	p->rotVar = 0.0f;
 }
+
+uint32_t FXATPC_GLOW_RAMPS[18] = {
+	0x80ffdca0, 0xf1be82, 0xdca573, 0xc8965a, 0x20b48748, 0x40c37d32, 0xa4d76428, 0xffe14b23, 0xffff3214,
+	0x20ffc300, 0x10ffa500, 0xff5f00, 0xff4100, 0x20e14b00, 0x40af5a00, 0xa4802800, 0xff400a00, 0xff200300,
+};
 
 /* the shot of the vehicle v from origin to hit: the glow along the weapon slots, along the beam, at the hit and
  * sparks back towards v (target is not used) */
@@ -951,6 +960,8 @@ static void FXW_RandDir(vec3_t *out) {
 	rot.x = FXW_Rand((double)M_2PI_F, 0.0);
 	Vec3_Rotate(out, &one, &rot);
 }
+
+uint32_t g_FXInfernoRamp[10] = { 0xff565656, 0x80fff05a, 0x80969696, 0x805e5edc, 0xa444444c, 0xc00f0f38, 0xde070728, 0xff020219, 0xff000000 };
 
 /* the rays (up to the floor within range) and the core particles of an explosion at x y z; bees widens it */
 void cObjElementFXInfernoExplosion_Explode(cObjElementFXInfernoExplosion *self, float x, float y, float z,
@@ -1456,13 +1467,16 @@ void cObjElementFXSwarmMissile_Reset(cObjElementFX *base, cDebris *debris) {
 	self->lastShrink = 0.0f;
 }
 
+cGVar GVar_TeslaRange;
+
 /* ---- cObjElementFXTesla ---- */
 
-extern cGVar GVar_TeslaRange;
 #define g_TeslaRange (GVar_TeslaRange.value.f)
-extern cGVar GVar_FXTeslaStepTime;
+cGVar GVar_FXTeslaStepTime;
+
 #define g_FXTeslaStepTime (GVar_FXTeslaStepTime.value.f)
-extern cGVar GVar_FXTeslaRandRadius;
+cGVar GVar_FXTeslaRandRadius;
+
 #define g_FXTeslaRandRadius (GVar_FXTeslaRandRadius.value.f)
 #define FXTESLA_RAMP_SPARK 0x431930		/* [2] */
 
@@ -1474,9 +1488,13 @@ static void FXW_TeslaBack(vec3_t *tpos, const vec3_t *n, float r) {
 	tpos->z = s * (n->z * r) + tpos->z;
 }
 
+uint32_t cObjElementFXTesla_Update_431930[18] = {
+	0xffb9b9ed, 0x80b5b5f0, 0xb2b2f2, 0xafaff5, 0x20aaaaf9, 0x40a7a7fc, 0x80a3a3ff, 0xc0a3a3ff, 0xffa3a3ff,
+	0xff5b5bff, 0x966464fe, 0x506d6dfd, 0x7878fc, 0x8585fb, 0x409696f9, 0x809b9bf9, 0xc49b9bf9, 0xff9b9bf9,
+};
+
 /* the ray of each mounted slot from its weapon node to the target (or the aim point), drawn as four trails through
  * the points that move to new random offsets every FXTeslaStepTime, the glow at both ends */
-extern uint32_t cObjElementFXTesla_Update_431930[18];
 void cObjElementFXTesla_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	cObjElementFXTesla *self = (cObjElementFXTesla *)base;
 	(void)dt;
@@ -1913,15 +1931,16 @@ void cObjElementFXTesla_SetEmitter(cObjElementFXTesla *self, cEntity *e) {
 	}
 }
 
+cGVar GVar_SwarmBeeExplosionFile;
+
 /* ---- the Swarm emitters ---- */
 
-extern cGVar GVar_SwarmBeeExplosionFile;
 #define g_SwarmBeeExplosionFile (GVar_SwarmBeeExplosionFile.value.s)
-extern cGVar GVar_SwarmExplosionFile;
+cGVar GVar_SwarmExplosionFile;
+
 #define g_SwarmExplosionFile (GVar_SwarmExplosionFile.value.s)
 #define FXSWARM_RAMP_BEE 0x431978
 #define FXSWARM_RAMP_FLASH 0x431a2c		/* [2] */
-extern uint32_t FXSWARM_FLASH_RAMPS[18];	/* [2 * 9] */
 #define FXSWARM_RAMP_SMOKE 0x4319c0		/* [3] */
 #define FXSWARM_RAMP_SPARK 0x431a50		/* [2] */
 #define FXSWARM_RAMP_HIT 0x431810		/* [2] */
@@ -1952,8 +1971,22 @@ static void FXW_Moving(CGameParticles *p, const vec3_t *pos, const vec3_t *vel) 
 	p->initAccMax = p->initAccMin;
 }
 
-extern uint32_t FXSwarm_BeeDeath_431978[18];
-extern uint32_t FXSwarm_BeeDeath_4319c0[27];
+uint32_t FXSwarm_BeeDeath_431978[18] = {
+	0xffffffff, 0xa4ffffff, 0xa4ffdc78, 0xa4dca528, 0xc4805c14, 0xd260400a, 0xeb403005, 0xff000000, 0xff000000,
+	0xff565656, 0xb4ffc86e, 0x8cef781e, 0x969a3c0e, 0xc37c260a, 0xd25e1c06, 0xeb220501, 0xff000000, 0xff000000,
+};
+
+uint32_t FXSwarm_BeeDeath_4319c0[27] = {
+	0xff000000, 0xa01e1e1e, 0x802d2d2d, 0x80373737, 0x802d2d2d, 0x80232323, 0xc0191919, 0xff000000, 0xff000000,
+	0xff000000, 0xa0282828, 0x80373737, 0x80464646, 0x80505050, 0x80414141, 0xc0232323, 0xff000000, 0xff000000,
+	0xff000000, 0xa0323232, 0x80414141, 0x804b4b4b, 0x805f5f5f, 0x804b4b4b, 0xc02d2d2d, 0xff000000, 0xff000000,
+};
+
+uint32_t FXSWARM_FLASH_RAMPS[18] = {
+	0x80ffffff, 0x60ffffff, 0x60ffffff, 0x60ffffff, 0x80ffffff, 0xa4ffffff, 0xc0808080, 0xff000000, 0xff000000,
+	0x80ffe1c8, 0x6effe1c8, 0x60ffe1c8, 0x6effe1c8, 0x80ffe1c8, 0x80ffe1c8, 0xc0808080, 0xff000000, 0xff000000,
+};
+
 void FXSwarm_BeeDeath(float x, float y, float z, float vx, float vy, float vz, float size, float time, int n) {
 	CHECK(size >= 0.01f);
 	CHECK(time >= 0.01f);
@@ -2123,8 +2156,15 @@ static void FXW_HitSpark(CGameParticles *p, const vec3_t *pos, const vec3_t *o, 
 	p->initAccMax = p->initAccMin;
 }
 
+uint32_t FXSwarm_Hit_431858[54] = {
+	0xff000000, 0x80202020, 0x80414141, 0x8a4b4b4b, 0xa4464646, 0xc02d2d2d, 0xe4181818, 0xff000000, 0xff000000,
+	0xff000000, 0x80373737, 0x804b4b4b, 0x80555555, 0xa4505050, 0xc0373737, 0xe4202020, 0xff000000, 0xff000000,
+	0x80ffffff, 0x60ffffff, 0x80ffffff, 0x60ffffff, 0x80ffffff, 0x80ffffff, 0xc0808080, 0xff000000, 0xff000000,
+	0x80ffe1c8, 0x6effe1c8, 0x60ffe1c8, 0x6effe1c8, 0x80ffe1c8, 0x80ffe1c8, 0xc0808080, 0xff000000, 0xff000000,
+	0x80ffc8c8, 0x6effc8c8, 0x60ffc8c8, 0x6effc8c8, 0x80ffc8c8, 0x80ffc8c8, 0xc0808080, 0xff000000, 0xff000000,
+};
+
 /* the end of the sizes, life and rotation of a spark of the hit and its emission */
-extern uint32_t FXSwarm_Hit_431858[54];
 static void FXW_HitSparkEmit(CGameParticles *p, float size, double irange, double iadd, double erange, double eadd,
 	double lrange, double ladd, double trange, double tadd) {
 	p->sizeIni = FXW_Rand(irange, iadd) * size;
@@ -2142,9 +2182,13 @@ static void FXW_HitSparkEmit(CGameParticles *p, float size, double irange, doubl
 	CGameParticles_EmitDt(p, 1, 1, FXW_Rand(trange, tadd));
 }
 
+uint32_t FXSwarm_Hit_431810[18] = {
+	0xebffad2a, 0xaafeee90, 0x82ef7d38, 0x96bc4110, 0xb97a2a0a, 0xd23f1805, 0xeb0e0801, 0xff000000, 0xff000000,
+	0xeb565656, 0xb4ffc86e, 0x8cef781e, 0x969a3c0e, 0xc37c260a, 0xd25e1c06, 0xeb220501, 0xff000000, 0xff000000,
+};
+
 /* the hit of a swarm at x y z (moving with v, the shot along d): smoke debris flying off, the bees, the explosion
  * moved out from the wall next to it and its sparks */
-extern uint32_t FXSwarm_Hit_431810[18];
 void FXSwarm_Hit(float x, float y, float z, float vx, float vy, float vz, float size, float time, float dx, float dy,
 	float dz) {
 	CHECK(size >= 0.01f);
@@ -2368,3 +2412,36 @@ const cObjElementFXVtbl cObjElementFXInfernoExplosion_vftable = {
 	.Start = cObjElementFXInfernoExplosion_Start,
 	.Reset = cObjElementFXInfernoExplosion_Reset,
 };
+
+cGVar GVar_ATPCTrailTime;
+
+cGVar GVar_FXInfernoRayInitSizeMax;
+
+cGVar GVar_FXInfernoCoreSize;
+
+cGVar GVar_FXInfernoRayRadius;
+
+cGVar GVar_FXInfernoExplosionTime;
+
+cGVar GVar_FXInfernoRayAccMin;
+
+cGVar GVar_FXInfernoRaySpeedMin;
+
+cGVar GVar_FXInfernoExplosionFadeTime;
+
+cGVar GVar_FXInfernoRayInitSizeMin;
+
+cGVar GVar_FXInfernoRayAccMax;
+
+cGVar GVar_FXInfernoRayMinSize;
+
+cGVar GVar_FXInfernoRaySpeedMax;
+
+cGVar GVar_FXLaserBeamSize;
+
+cGVar GVar_FXLaserBeamHeight;
+
+cGVar GVar_FXTeslaFadeOutTime;
+
+cGVar GVar_FXTeslaFollowTime;
+

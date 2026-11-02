@@ -268,5 +268,289 @@ PyObject *SInput_CheckPadButton(PyObject *self, PyObject *args) {
 	return Py_BuildValue("i", 0);
 }
 
-extern PyMethodDef SInput_methods[21];
+SD_SYM(str_PyMethod_SInput_SetActionSet);
+SD_SYM(SInput_SetActionSet);
+SD_SYM(str_PyDoc_SInput_SetActionSet);
+SD_SYM(str_PyMethod_SInput_GetActionSet);
+SD_SYM(SInput_GetActionSet);
+SD_SYM(str_PyDoc_SInput_GetActionSet);
+SD_SYM(str_PyMethod_SInput_AssingEntry);
+SD_SYM(SInput_AssingEntry);
+SD_SYM(str_PyDoc_SInput_AssingEntry);
+SD_SYM(str_PyMethod_SInput_GetEntry);
+SD_SYM(SInput_GetEntry);
+SD_SYM(str_PyDoc_SInput_GetEntry);
+SD_SYM(str_PyMethod_SInput_ListenToDefine);
+SD_SYM(SInput_ListenToDefine);
+SD_SYM(str_PyDoc_SInput_ListenToDefine);
+SD_SYM(str_PyMethod_SInput_AbortListenToDefine);
+SD_SYM(SInput_AbortListenToDefine);
+SD_SYM(str_PyDoc_SInput_AbortListenToDefine);
+SD_SYM(str_PyMethod_SInput_GetDefinedList);
+SD_SYM(SInput_GetDefinedList);
+SD_SYM(str_PyDoc_SInput_GetDefinedList);
+SD_SYM(str_PyMethod_SInput_GetDefinedEntry);
+SD_SYM(SInput_GetDefinedEntry);
+SD_SYM(str_PyDoc_SInput_GetDefinedEntry);
+SD_SYM(str_PyMethod_SInput_ClearDefinedList);
+SD_SYM(SInput_ClearDefinedList);
+SD_SYM(str_PyDoc_SInput_ClearDefinedList);
+SD_SYM(str_PyMethod_SInput_ResetToDefault);
+SD_SYM(SInput_ResetToDefault);
+SD_SYM(str_PyDoc_SInput_ResetToDefault);
+SD_SYM(str_PyMethod_SInput_SetString);
+SD_SYM(SInput_SetString);
+SD_SYM(str_PyDoc_SInput_SetString);
+SD_SYM(str_PyMethod_SInput_GetString);
+SD_SYM(SInput_GetString);
+SD_SYM(str_PyDoc_SInput_GetString);
+SD_SYM(str_PyMethod_SInput_GetCursorChar);
+SD_SYM(SInput_GetCursorChar);
+SD_SYM(str_PyDoc_SInput_GetCursorChar);
+SD_SYM(str_PyMethod_SInput_GetVirtualKeyboard);
+SD_SYM(SInput_GetVirtualKeyboard);
+SD_SYM(str_PyDoc_SInput_GetVirtualKeyboard);
+SD_SYM(str_PyMethod_SInput_SetVirtualKeyboard);
+SD_SYM(SInput_SetVirtualKeyboard);
+SD_SYM(str_PyDoc_SInput_SetVirtualKeyboard);
+SD_SYM(str_PyMethod_SInput_SetInputFunc);
+SD_SYM(SInput_SetInputFunc);
+SD_SYM(str_PyDoc_SInput_SetInputFunc);
+SD_SYM(str_PyMethod_SInput_Bind);
+SD_SYM(SInput_Bind);
+SD_SYM(str_PyDoc_SInput_Bind);
+SD_SYM(str_PyMethod_SInput_Rumble);
+SD_SYM(SInput_Rumble);
+SD_SYM(str_PyDoc_SInput_Rumble);
+SD_SYM(str_PyMethod_SInput_ResetToSplit);
+SD_SYM(SInput_ResetToSplit);
+SD_SYM(str_PyDoc_SInput_ResetToSplit);
+SD_SYM(str_PyMethod_SInput_CheckPadButton);
+SD_SYM(SInput_CheckPadButton);
+SD_SYM(str_PyDoc_SInput_CheckPadButton);
+PyMethodDef SInput_methods[21] = {
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_SetActionSet,
+		.ml_meth = (void *)sd_SInput_SetActionSet,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_SetActionSet,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_GetActionSet,
+		.ml_meth = (void *)sd_SInput_GetActionSet,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_GetActionSet,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_AssingEntry,
+		.ml_meth = (void *)sd_SInput_AssingEntry,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_AssingEntry,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_GetEntry,
+		.ml_meth = (void *)sd_SInput_GetEntry,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_GetEntry,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_ListenToDefine,
+		.ml_meth = (void *)sd_SInput_ListenToDefine,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_ListenToDefine,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_AbortListenToDefine,
+		.ml_meth = (void *)sd_SInput_AbortListenToDefine,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_AbortListenToDefine,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_GetDefinedList,
+		.ml_meth = (void *)sd_SInput_GetDefinedList,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_GetDefinedList,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_GetDefinedEntry,
+		.ml_meth = (void *)sd_SInput_GetDefinedEntry,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_GetDefinedEntry,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_ClearDefinedList,
+		.ml_meth = (void *)sd_SInput_ClearDefinedList,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_ClearDefinedList,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_ResetToDefault,
+		.ml_meth = (void *)sd_SInput_ResetToDefault,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_ResetToDefault,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_SetString,
+		.ml_meth = (void *)sd_SInput_SetString,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_SetString,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_GetString,
+		.ml_meth = (void *)sd_SInput_GetString,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_GetString,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_GetCursorChar,
+		.ml_meth = (void *)sd_SInput_GetCursorChar,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_GetCursorChar,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_GetVirtualKeyboard,
+		.ml_meth = (void *)sd_SInput_GetVirtualKeyboard,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_GetVirtualKeyboard,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_SetVirtualKeyboard,
+		.ml_meth = (void *)sd_SInput_SetVirtualKeyboard,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_SetVirtualKeyboard,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_SetInputFunc,
+		.ml_meth = (void *)sd_SInput_SetInputFunc,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_SetInputFunc,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_Bind,
+		.ml_meth = (void *)sd_SInput_Bind,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_Bind,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_Rumble,
+		.ml_meth = (void *)sd_SInput_Rumble,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_Rumble,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_ResetToSplit,
+		.ml_meth = (void *)sd_SInput_ResetToSplit,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_ResetToSplit,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SInput_CheckPadButton,
+		.ml_meth = (void *)sd_SInput_CheckPadButton,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SInput_CheckPadButton,
+	},
+};
+
 SD_PY_MODULE(SInput, 0x42d790)
+
+const char str_PyMethod_SInput_SetActionSet[] = "SetActionSet";
+
+const char str_PyMethod_SInput_GetActionSet[] = "GetActionSet";
+
+const char str_PyMethod_SInput_AssingEntry[] = "AssingEntry";
+
+const char str_PyMethod_SInput_GetEntry[] = "GetEntry";
+
+const char str_PyMethod_SInput_ListenToDefine[] = "ListenToDefine";
+
+const char str_PyMethod_SInput_AbortListenToDefine[] = "AbortListenToDefine";
+
+const char str_PyMethod_SInput_GetDefinedList[] = "GetDefinedList";
+
+const char str_PyMethod_SInput_GetDefinedEntry[] = "GetDefinedEntry";
+
+const char str_PyMethod_SInput_ClearDefinedList[] = "ClearDefinedList";
+
+const char str_PyMethod_SInput_ResetToDefault[] = "ResetToDefault";
+
+const char str_PyMethod_SInput_SetString[] = "SetString";
+
+const char str_PyMethod_SInput_GetString[] = "GetString";
+
+const char str_PyMethod_SInput_GetCursorChar[] = "GetCursorChar";
+
+const char str_PyMethod_SInput_GetVirtualKeyboard[] = "GetVirtualKeyboard";
+
+const char str_PyMethod_SInput_SetVirtualKeyboard[] = "SetVirtualKeyboard";
+
+const char str_PyMethod_SInput_SetInputFunc[] = "SetInputFunc";
+
+const char str_PyMethod_SInput_Bind[] = "Bind";
+
+const char str_PyMethod_SInput_Rumble[] = "Rumble";
+
+const char str_PyMethod_SInput_ResetToSplit[] = "ResetToSplit";
+
+const char str_PyMethod_SInput_CheckPadButton[] = "CheckPadButton";
+
+char str_PyDoc_SInput_SetActionSet[] =
+	"SetActionSet(string name) :  Pone el set de acciones requerido...";
+
+char str_PyDoc_SInput_GetActionSet[68] =
+	"string GetActionSet() :  Obtiene el set de acciones Actual...";
+
+char str_PyDoc_SInput_AssingEntry[] =
+	"int AssingEntry(Device,Entry,Player,ActionSet,Action) :  Asigna una entrada... retorna 0 o el Nro de"
+	" parametro erroneo";
+
+char str_PyDoc_SInput_GetEntry[] =
+	"(Player,Action) GetEntry(Device,Entry,ActionSet) :  Obtiene una entrada, (0,) si vacia";
+
+char str_PyDoc_SInput_ListenToDefine[] =
+	"ListenToDefine(iPlayer,ActionSet,Action,LaFunction) : Espera a que el usuario mueva un control y lo "
+	"redefine";
+
+char str_PyDoc_SInput_AbortListenToDefine[] = "AbortListenToDefine() : Aborta la redefinicion en curso";
+
+char str_PyDoc_SInput_GetDefinedEntry[] =
+	"value GetDefinedEntry(iPlayer,ActionSet,Action,Device) : obtiene una cadena con la primera definicio"
+	"n del control que encuentre";
+
+char str_PyDoc_SInput_GetDefinedList[] =
+	"GetDefinedList(iPlayer,ActionSet,Action) : obtiene una cadena con la definicion de controles";
+
+char str_PyDoc_SInput_ClearDefinedList[] =
+	"ClearDefinedList(iPlayer,ActionSet,Action) : Elimina todas las entradas de un control.";
+
+char str_PyDoc_SInput_ResetToDefault[112] =
+	"ResetToDefault(iPlayer,ActionSet,Action) : Pone todas las entradas de los controles a valores por de"
+	"fecto.";
+
+char str_PyDoc_SInput_SetString[] =
+	"SetString(iPlayer,String) : Modifica la cadena de entrada de texto.";
+
+char str_PyDoc_SInput_GetString[] = "GetString(iPlayer) : Obtiene la cadena de entrada de texto.";
+
+char str_PyDoc_SInput_GetCursorChar[] =
+	"GetCursorChar(iPlayer) : Obtiene el (x,y,caracter) que indican el estado del cursor.";
+
+char str_PyDoc_SInput_GetVirtualKeyboard[88] =
+	"GetVirtualKeyboard() : Obtiene el (W,H,Board) que son datos del keyboard virtual.";
+
+char str_PyDoc_SInput_SetVirtualKeyboard[] =
+	"SetVirtualKeyboard(tipo de teclado) : Cambia el teclado virtual";
+
+char str_PyDoc_SInput_SetInputFunc[] =
+	"SetInputFunc(iPlayer,modfunc) : agrega la funcion callback de entrada modfunc(iPlayer,string)";
+
+char str_PyDoc_SInput_Bind[88] =
+	"Bind(iPlayer,ActionSet,Action) : obtiene una cadena con la definicion de controles";
+
+char str_PyDoc_SInput_Rumble[72] = "Rumble(iPlayer,Left,Right,Time) : Inicializa el rumble de un pad.";
+
+char str_PyDoc_SInput_ResetToSplit[96] =
+	"ResetToSplit() : Resetea el sistema de entrada de datos para iniciar el modo split screen.";
+
+char str_PyDoc_SInput_CheckPadButton[] =
+	"CheckPadButton() : Chequea el estado de un determinado botón del pad.";
+

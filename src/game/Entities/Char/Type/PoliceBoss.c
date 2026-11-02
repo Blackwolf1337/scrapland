@@ -134,6 +134,8 @@ void ChType_PoliceBossBrupBounce(cDebris *d, const byte *hit) {
 	}
 }
 
+cEntity *g_PoliceBossEnt;
+
 /* params: the boss: Action when it does not fall and no action of priority runs */
 void ChType_PoliceBossAction(cAbstractFile *params) {
 	char name[0x80];
@@ -181,3 +183,26 @@ void ChType_PoliceBossSphereHit(cAbstractFile *params) {
 		cEntity_AddLink(g_PoliceBossEnt, &WChar(e)->listen);
 	}
 }
+
+cGVar GVar_PoliceBossBrupBaseFile;
+
+cGVar GVar_PoliceBossBrupDebrisMax;
+
+cGVar GVar_PoliceBossBrupBounce1Sound;
+
+cGVar GVar_PoliceBossBrupDirRand;
+
+cGVar GVar_PoliceBossActionRadius;
+
+cGVar GVar_PoliceBossBrupPosY;
+
+cGVar GVar_PoliceBossBrupPosX;
+
+cGVar GVar_PoliceBossBrupBounceSoundVol;
+
+cGVar GVar_PoliceBossBrupBounce2Sound;
+
+cGVar GVar_PoliceBossBrupPosZ;
+
+cGVar GVar_PoliceBossBrupDebrisMin;
+

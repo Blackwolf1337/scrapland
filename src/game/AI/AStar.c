@@ -1035,3 +1035,6 @@ const cBinaryHeapVtbl cBinaryHeap_ElemAStar_vftable = {
 	.SiftUp = cBinaryHeap_SiftUp,
 	.SiftDown = cBinaryHeap_SiftDown,
 };
+
+cGVar GVar_ShowAStarAI;
+

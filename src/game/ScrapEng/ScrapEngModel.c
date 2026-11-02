@@ -70,6 +70,20 @@ void CGameModel_LoadScaled(CGameModel *self, const char *name, const vec3_t *sca
 	CGameModel_Load(self, name, NULL, scale);
 }
 
+cGVar GVar_R_CoefMLODTraffic;
+
+cGVar GVar_R_CoefMLODEngines;
+
+cGVar GVar_R_CoefMLODOutElement;
+
+cGVar GVar_R_CoefMLODMenuElement;
+
+cGVar GVar_R_CoefMLODCharacters;
+
+cGVar GVar_R_CoefMLODPilots;
+
+cGVar GVar_R_CoefMLODShips;
+
 /* the LOD distance of the model times the coefficient of its LOD group */
 static void CGameModel_LodGroup(CGameModel *self, CIniFile *ini) {
 	const struct {
@@ -1201,3 +1215,8 @@ void CRotation_SetEuler(CRotation *self, const vec3_t *ang) {
 	}
 	self->flags &= ~ROT_ZERO;
 }
+
+cGVar GVar_R_ForcePreRenderTransform;
+
+cGVar GVar_R_GetModelVertex;
+

@@ -21,6 +21,10 @@ static void Batch_Alloc(CTable *t, uint32_t size) {
 	}
 }
 
+CTable g_TabMesh;
+
+RenderMeshEntry *g_MeshList[1026];
+
 int MeshD3D_Render(CMeshD3D *self, void *ctx) {
 	CRenderNode *r = ctx;
 	matrix_t world;
@@ -118,6 +122,12 @@ int RenderMesh_Compare(const void *a, const void *b) {
 	return (eb->mesh->pSkin == NULL) - (ea->mesh->pSkin == NULL);
 }
 
+CTable g_TabTransp;
+
+RenderTranspEntry *g_TranspList[1026];
+
+int g_TranspGroup = 1;
+
 int RenderMeshD3D_AddTransp(CMeshD3D *m, const matrix_t *world, byte cont, CRenderNode *r) {
 	if (!g_Engine->device) {
 		return E_FAIL;
@@ -206,6 +216,10 @@ int RenderTransp_Compare(const void *a, const void *b) {
 	return eb->dist2 > ea->dist2 ? 1 : -1;
 }
 
+CTable g_TabObj;
+
+RenderObjEntry *g_ObjList[1026];
+
 int ParticleSystem_Draw(CParticleSystem *sp, CRenderNode *r) {
 	if (!g_pd3dDevice) {
 		return E_FAIL;
@@ -262,3 +276,10 @@ int RenderObj_Compare(const void *a, const void *b) {
 	const RenderObjEntry *ea = *(RenderObjEntry *const *)a, *eb = *(RenderObjEntry *const *)b;
 	return eb->dist2 > ea->dist2 ? 1 : -1;
 }
+
+cGVar GVar_R_MeshCache;
+
+cGVar GVar_R_TranspZBias;
+
+cGVar GVar_R_ShowTranspBox;
+

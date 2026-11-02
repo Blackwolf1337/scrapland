@@ -273,3 +273,14 @@ const cBaseLocalLogicVtbl cNurseLocalLogic_vftable = {
 	.SetOriginAng = cBaseLocalLogic_SetOriginAng,
 	.RestartState = cNurseLocalLogic_RestartState,
 };
+
+cGVar GVar_NurseBankerDetect;
+
+cGVar GVar_NursePoliceRefuse;
+
+cGVar GVar_NurseEscapeTime;
+
+cGVar GVar_NurseAlertSpeed;
+
+cGVar GVar_NurseRelaxSpeed;
+

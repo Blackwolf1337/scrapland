@@ -574,3 +574,8 @@ int cEntityList_Var(void *list, const char *name, int set, char **s, double *d, 
 	}
 	return 0;
 }
+
+cGVar GVar_GridUseTopLimit;
+
+cGVar GVar_ShowDummy;
+

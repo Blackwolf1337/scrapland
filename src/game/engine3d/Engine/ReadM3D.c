@@ -164,6 +164,12 @@ static void M3D_ReadBinString(char *dest, int size) {
 	dest[n] = '\0';
 }
 
+byte g_M3DBinary;
+
+byte g_M3DLabels;
+
+char g_M3DString[1024];
+
 void M3D_Label(const char *name) {
 	if (!g_M3DBinary) {
 		if (g_M3DLabels) {
@@ -310,6 +316,8 @@ void M3D_ReadTransform(const char *name, m3dTransform_t *mt) {
 	M3D_ReadVec3("MT_Esc:", &mt->scale, 1);
 }
 
+char g_M3DName[260];
+
 void M3D_ReadIndex(int expected) {
 	if (!g_M3DBinary) {
 		Read_NextLine();
@@ -323,6 +331,8 @@ void M3D_ReadIndex(int expected) {
 		g_ReadString++;
 	}
 }
+
+cLog g_FileLog;
 
 /* the cache path of name opened and its header checked: the open file positioned after it, NULL when there is none
  * or it is out of date while the M3D can make it again */
@@ -371,6 +381,8 @@ static CScene *M3D_CacheRead(CFileIO *f, const char *sceneName, const char *id, 
 	return scn;
 }
 
+CScene *g_SceneAnimParent;
+
 CScene *CM3_Load(const char *name) {
 	char path[260];
 
@@ -382,6 +394,8 @@ CScene *CM3_Load(const char *name) {
 	CFileIO *f = M3D_CacheOpen(path, name, "CM3", g_CM3CheckTime, g_SceneAnimParent->name);
 	return f ? M3D_CacheRead(f, g_M3DName, "CM3", 1, 0) : NULL;
 }
+
+CScene *g_SceneLODParent;
 
 CScene *SM3_Load(const char *name) {
 	char path[260], ini[260];
@@ -458,6 +472,8 @@ void SM3_Save(const char *name, CScene *scn) {
 	Path_Format(ini, name, "&U&D&N.INI");
 	M3D_CacheWrite(path, scn, "SM3", name, ini, 0);
 }
+
+byte g_M3DOk = 1;
 
 void M3D_SetOk(byte ok) {
 	if (ok) {
@@ -720,6 +736,20 @@ void Node_ClearName(char *name) {
 	}
 }
 
+byte g_M3DUseOpacity;
+
+byte g_M3DUseEnvmap;
+
+byte g_M3DUseBumpmap;
+
+byte g_M3DUseGlowmap;
+
+int g_UseEnvMap = 1;
+
+int g_UseBumpMap = 1;
+
+int g_UseGlowMap = 1;
+
 byte M3D_ActiveMap(const CMaterial *mat, int mapid) {
 	if (mat->params.attrib & MAT_SHADER) {
 		return 1;
@@ -738,6 +768,14 @@ byte M3D_ActiveMap(const CMaterial *mat, int mapid) {
 	}
 }
 
+
+int g_M3DNumMat;
+
+CMaterial *g_M3DMat[512];
+
+int g_M3DMatId[512];
+
+int g_M3DMatSub[512];
 
 /* the materials of the file */
 
@@ -773,6 +811,8 @@ CMaterial *M3D_FindMat(int iMat, int iSubmat) {
 	}
 	return res;
 }
+
+byte g_M3DMatUsado[512];
 
 void M3D_MatUsado(CMaterial *mat) {
 	if (!mat) {
@@ -883,6 +923,8 @@ static void M3D_ReadFloatTo(float *dest) {
 }
 
 
+M3DNode *g_M3DNodes;
+
 /* the objects of the file and their animation tables */
 
 M3DNode *M3D_NodeDat(const CNode3D *node) {
@@ -969,6 +1011,8 @@ static void M3DTable_ReadValue(uint32_t *dest, byte flt) {
 		*dest = (uint32_t)M3D_ReadInt(NULL);
 	}
 }
+
+int g_M3DFrames;
 
 /* an "Animacion:" table of the frames: runs of values (count, values; 20 a line in text) or of one value (-count,
  * value); a single run over all frames makes it fixed */
@@ -1125,6 +1169,8 @@ void Scene_FlagNames(CScene *scn) {
 	}
 }
 
+int g_M3DVersion;
+
 void Scene_FlagsIni(CScene *scn) {
 	if (g_M3DVersion <= 12) {
 		return;
@@ -1232,6 +1278,8 @@ CNode3D *Scene_FindCollapsible(CNode3D *node, const CNode3D *parent) {
 	}
 	return res;
 }
+
+CMatList *g_M3DLMat;
 
 void Scene_UsedMats(CScene *scn) {
 	CTable *mats = &scn->mats;
@@ -1458,6 +1506,10 @@ void Scene_MatricesObj(CScene *scn) {
 		n->mObj = inv;
 	}
 }
+
+int g_M3DFirstFrame;
+
+int g_M3DLastFrame;
 
 void Scene_AnimLocal(CScene *scn, byte anim) {
 	m3dTransform_t da;
@@ -2075,6 +2127,10 @@ static void M3D_Normalize(vec3_t *v) {
 	v->z = z * s;
 }
 
+float g_M3DPreScaleU;
+
+float g_M3DPreScaleV;
+
 void M3D_ReadMesh(CNode3D *node, byte anim) {
 	m3dTransform_t mt;
 	matrix_t tmp, m;
@@ -2227,6 +2283,8 @@ static CMap *M3D_SetMap(CMaterial *mat, uint32_t mapid, const char *name) {
 	CHECK(!CMaterial_GetMapName(mat, mapid));
 	return CMaterial_SetMap(mat, mapid, name);
 }
+
+char g_M3DTexturePath[260];
 
 void M3D_ReadMap(CMaterial *mat, int iMat, int iSubmat, int idx, int type) {
 	char buf[0x100], name[0x100], class[0x100];
@@ -2594,6 +2652,8 @@ static void M3D_ReadEVA(CNode3D *node, M3DNode *dat) {
 	E3D_DebugPrintf("\noptimizar EVA: '%s'  %d -> %d  (%.2f %%)", node->name, before, after,
 		(double)after * 100.0 / (double)before);
 }
+
+char g_M3DBaseName[260];
 
 /* the animation tables of an object: its tracks and visibility, the values of its kind; the mask of the channels
  * that stay */
@@ -3051,6 +3111,14 @@ static void M3D_ReadSceneColor(const char *tok, ColorIntens *c) {
 	c->intens = 1.0f;
 }
 
+char g_M3DDir[260];
+
+CIniFile *g_M3DFileINI;
+
+char g_M3DSceneMax[260];
+
+M3DTable *g_M3DSceneTables;
+
 /* the M3D file name (the model or, with g_SceneAnimParent set, an animation of it; the .CM3 of an animation first),
  * name2 the node of a game model to make its root; arg is not used */
 CScene *Scene_Load(const char *name, int arg, const char *name2) {
@@ -3323,15 +3391,32 @@ CScene *Scene_Load(const char *name, int arg, const char *name2) {
 
 /* ---- the static initializers; name and description are the strings of the exe ---- */
 
-extern cGVar g_ShowNodesTreeVar;
-extern cGVar g_UseWSMVar;
+
+cGVar g_ShowNodesTreeVar;
 
 void ReadM3D_InitShowNodesTree(void) {
 	/* "ShowNodesTree", "Show nodes tree at model M3D loading time (0/1)" */
 	GVar_InitInt((&g_ShowNodesTreeVar), "ShowNodesTree", 0, "Show nodes tree at model M3D loading time (0/1)", 0);
 }
 
+cGVar g_UseWSMVar;
+
 void ReadM3D_InitUseWSM(void) {
 	/* "UseWSM", "Use ObjTMAfterWSM (0/1)" */
 	GVar_InitInt((&g_UseWSMVar), "UseWSM", 0, "Use ObjTMAfterWSM (0/1)", 0);
 }
+
+cGVar GVar_CM3_DeleteM3D;
+
+cGVar GVar_OptimizeNodes;
+
+cGVar GVar_CM3_UseScenes;
+
+cGVar GVar_SM3_CheckTime;
+
+cGVar GVar_SharedTexuresPath;
+
+cGVar GVar_CM3_CheckTime;
+
+cGVar GVar_SM3_UseScenes;
+

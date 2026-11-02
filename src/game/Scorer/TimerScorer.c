@@ -119,3 +119,16 @@ const cScorerItemVtbl cTimerScorer_vftable = {
 	.Var = cTimerScorer_Var,
 	.Delete = cTimerScorer_Delete,
 };
+
+cGVar GVar_TimeToFinishCurrentMission;
+
+cGVar GVar_TimeToCancelCurrentMission;
+
+cGVar GVar_CounterType;
+
+cGVar GVar_TimeInactiveTimer;
+
+cGVar GVar_TimeSpecialUseTimer;
+
+cGVar GVar_TimeWarning;
+

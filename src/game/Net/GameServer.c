@@ -33,6 +33,16 @@ void Net_ServerResetFuncs(void) {
 	}
 }
 
+char g_NetServerHost[256];
+
+char g_NetServerIP[256];
+
+uint16_t g_NetServerPort;
+
+void *g_NetServerData;
+
+void *g_NetServerCtl;
+
 byte Net_CloseServer(const char *msg) {
 	byte on = g_NetServerPort != 0;
 
@@ -77,6 +87,8 @@ const char *Net_GetServerMap(void) {
 uint16_t Net_GetServerPort(void) {
 	return g_NetServerPort;
 }
+
+float g_NetHeartbeat;
 
 /* a server on port b (0: the default) for a clients with the level name; c: the next free port */
 byte Net_InitServer(const char *name, int a, int b, int c) {
@@ -176,6 +188,10 @@ void Net_ServerFrameHead(void) {
 	}
 }
 
+int g_NetServerDataSize;
+
+int g_NetServerCtlSize;
+
 /* the rest after the wait: receive, send to the clients in turn, drop the ones that timed out */
 byte Net_ServerFrameTail(void) {
 	int r;
@@ -263,3 +279,12 @@ void Net_DumpData(const char *title, const void *data, int size) {
 	Net_HexDump(data, size);
 	Con_Printf("\n");
 }
+
+cGVar GVar_BrowserCode;
+
+cGVarFunction GVar_OnClientJoin;
+
+cGVar GVar_HeartbeatTime;
+
+cGVar GVar_ServerMinSendDelay;
+

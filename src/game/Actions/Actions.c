@@ -346,3 +346,6 @@ ints:
 const cActionVtbl cActionMove_vftable = {
 	.Delete = cAction_Delete,
 };
+
+cGVar GVar_DefInterpTime;
+

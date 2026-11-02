@@ -110,6 +110,10 @@ cEntity *Swarm_NetCreate(const char *name, vec3_t pos, vec3_t dir) {
 	return m;
 }
 
+char g_SwarmHudTarget[4][0x80];
+
+float g_SwarmHudTime[4];
+
 void Swarm_HudNative(cAbstractFile *f) {
 	Weap_UpdateHud(f, g_SwarmHudTarget, g_SwarmHudTime, 4, 3);
 }
@@ -364,6 +368,15 @@ void Swarm_NetSetUpNative(cAbstractFile *f) {
 	Swarm_NetSetUp(name);
 }
 
+SD_SYM(GVar_SwarmNumber1);
+SD_SYM(GVar_SwarmNumber2);
+SD_SYM(GVar_SwarmNumber3);
+SD_SYM(GVar_SwarmNumber4);
+int *g_SwarmSlotData[4] = {
+	&((cGVar *)sd_GVar_SwarmNumber1)->value.i, &((cGVar *)sd_GVar_SwarmNumber2)->value.i,
+	&((cGVar *)sd_GVar_SwarmNumber3)->value.i, &((cGVar *)sd_GVar_SwarmNumber4)->value.i,
+};
+
 /* the model, speeds, bees (SwarmNumber1..4 per mounted bay of the ship), the upgrade and the engine sound */
 void Swarm_NetSetUp(const char *name) {
 	vec3_t tmp, ang, vel;
@@ -455,6 +468,8 @@ byte Tesla_Shoot(cEntity *v) {
 	return 1;
 }
 
+int g_SwarmAmmoCosts[6];
+
 /* the static initializer: the table of the costs from the variables, which are made before it */
 void Swarm_InitAmmoCosts(void) {
 	g_SwarmAmmoCosts[0] = g_SwarmAmmoCost1;
@@ -464,3 +479,84 @@ void Swarm_InitAmmoCosts(void) {
 	g_SwarmAmmoCosts[4] = 0;
 	g_SwarmAmmoCosts[5] = 0;
 }
+
+cGVar GVar_SwarmIDWeap;
+
+cGVar GVar_SwarmHitSoundVol;
+
+cGVar GVar_SwarmMissileFile;
+
+cGVar GVar_SwarmUpTopSpeed;
+
+cGVar GVar_SwarmEngineSoundAttIni;
+
+cGVar GVar_SwarmBeeSoundAttEnd;
+
+cGVar GVar_SwarmDeathTime;
+
+cGVar GVar_SwarmBeeRadius;
+
+cGVar GVar_SwarmMinRadius;
+
+cGVar GVar_SwarmAmmoCost2;
+
+cGVar GVar_SwarmBeesSpeed;
+
+cGVar GVar_SwarmHitSound;
+
+cGVar GVar_SwarmHitSoundAttIni;
+
+cGVar GVar_SwarmNormSpeed;
+
+cGVar GVar_SwarmAmmoCost1;
+
+cGVar GVar_SwarmLifeTime;
+
+cGVar GVar_SwarmHitForce;
+
+cGVar GVar_SwarmTurnSpeedUPG;
+
+cGVar GVar_SwarmFastSpeed;
+
+cGVar GVar_SwarmTurnSpeed;
+
+cGVar GVar_SwarmAmmoCost3;
+
+cGVar GVar_SwarmArmor;
+
+cGVar GVar_SwarmAmmoCost4;
+
+cGVar GVar_SwarmEngineSound;
+
+cGVar GVar_SwarmBeeSoundVol;
+
+cGVar GVar_SwarmIDAmmo;
+
+cGVar GVar_SwarmEngineSoundVol;
+
+cGVar GVar_SwarmTimeDelay;
+
+cGVar GVar_SwarmBeeSoundAttIni;
+
+cGVar GVar_SwarmHitSoundAttEnd;
+
+cGVar GVar_SwarmBeeSound;
+
+cGVar GVar_SwarmNumber1;
+
+cGVar GVar_SwarmEngineSoundAttEnd;
+
+cGVar GVar_SwarmEngineSoundDoppler;
+
+cGVar GVar_TeslaDownRangeTimePad;
+
+cGVar GVar_TeslaMinAngRangePad;
+
+cGVar GVar_TeslaDownRangeTime;
+
+cGVar GVar_TeslaMinAngRangeUpg;
+
+cGVar GVar_TeslaMinAngRangeUpgPad;
+
+cGVar GVar_TeslaMinAngRange;
+

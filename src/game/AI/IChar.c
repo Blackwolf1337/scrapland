@@ -17,7 +17,8 @@
 #include "scrap/scrap.h"
 #include "scrap/scrapmodel.h"
 
-extern cGVar GVar_RADIUS_OBJECTIVE_IN_ROUTE;
+cGVar GVar_RADIUS_OBJECTIVE_IN_ROUTE;
+
 #define g_AICRadiusInRoute (GVar_RADIUS_OBJECTIVE_IN_ROUTE.value.f)	/* RADIUS_OBJECTIVE_IN_ROUTE */
 #define AIC_ANG45 ((double)0.785398185f)		/* pi / 4 as a float */
 #define AIC_ANG90 1.5707963267948966			/* pi / 2 */
@@ -477,6 +478,8 @@ void cAIChar_Debugf(cAI *base, const char *fmt, ...) {
 	Con_Print(0xffffff, text, 1);
 }
 
+cAICharGroup *g_CharGroup;
+
 /* ---- the update ---- */
 
 void cAIChar_Update(cAI *elem, float dt) {
@@ -685,6 +688,8 @@ void cAIChar_CheckRepos(cAI *elem) {
 		}
 	}
 }
+
+void *g_SetOriginFunc;
 
 byte cAIChar_Repos(cAI *elem, float minDist, float maxDist, byte flag) {
 	cAIChar *self = (cAIChar *)elem;
@@ -2043,3 +2048,22 @@ const cAICharVtbl cAIChar_vftable = {
 	.CheckTalk = cAIChar_CheckTalk,
 	.Facing = cAIChar_Facing,
 };
+
+cGVar GVar_DistMinCheckPauseAI;
+
+cGVar GVar_DistRadPauseCharAI;
+
+cGVar GVar_MinNumTalksCharAI;
+
+cGVar GVar_MinTimeStoppedCharAI;
+
+cGVar GVar_MinTalkCharAI;
+
+cGVar GVar_DistMaxCheckPauseAI;
+
+cGVar GVar_MinTimeStopTempCharAI;
+
+cGVar GVar_DistMinCheckReposAI;
+
+cGVar GVar_DistMaxCheckReposAI;
+

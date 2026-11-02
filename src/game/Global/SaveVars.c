@@ -9,9 +9,6 @@
 #include "scrap/hashtable.h"
 #include "scrap/scrap.h"
 
-extern cGVar GVar_LastSaveGameName;
-extern cGVarFunction GVar_OnCrazyDealFinished;
-extern cGVarFunction GVar_OnCrazyDealTarget;
 
 void App_GetConfigDir(char *buf, int size);
 
@@ -26,13 +23,20 @@ SD_SIZE(cSaveGameInfo, 0x48);
 #define SAVE_MAGIC "Scrapland savegame"
 #define SAVE_SLOTS 7
 
-extern HashTable g_SaveVarTable;
-extern cSaveVar *g_SaveVars;
-extern int g_SaveVarCount;
+cGVar GVar_LastSaveGameName;
+
 #define g_SaveDesc (((cString *)&GVar_LastSaveGameName.value))	/* the description of the save loaded last */
+cGVarFunction GVar_OnCrazyDealTarget;
+
 /* called when the number of finished crazy deals changes: one deal, and all three (with g_SuperDealAvaliable) */
 #define g_OnCrazyDeal (((cPy_Function *)&GVar_OnCrazyDealTarget.func))
+cGVarFunction GVar_OnCrazyDealFinished;
+
 #define g_OnAllCrazyDeals (((cPy_Function *)&GVar_OnCrazyDealFinished.func))
+
+cSaveVar *g_SaveVars;
+
+int g_SaveVarCount;
 
 cSaveVar *cSaveVar_ctor(cSaveVar *self, const char *name, const char *value) {
 	cString_ctor(&self->name);
@@ -44,6 +48,8 @@ cSaveVar *cSaveVar_ctor(cSaveVar *self, const char *name, const char *value) {
 	g_SaveVarCount++;
 	return self;
 }
+
+HashTable g_SaveVarTable = { .numSlots = 457 };
 
 static cSaveVar *SaveVar_Find(const char *name) {
 	return PtrTable_Value((&g_SaveVarTable), name);

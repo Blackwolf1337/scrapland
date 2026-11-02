@@ -27,3 +27,12 @@ void ChType_FXMercenaryDrink(cAbstractFile *params) {
 		cObjElementFXMercenaryDrink_SetC0(el, g_MercenaryDrinkPosX, g_MercenaryDrinkPosY, g_MercenaryDrinkPosZ);
 	}
 }
+
+cGVar GVar_MercenaryDrinkPosY;
+
+cGVar GVar_FXMercenaryDrinkFile;
+
+cGVar GVar_MercenaryDrinkPosX;
+
+cGVar GVar_MercenaryDrinkPosZ;
+

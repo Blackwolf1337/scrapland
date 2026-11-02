@@ -21,43 +21,31 @@
 
 #define MUSIC_SHOW_DEBUG 2			/* S_Show */
 
+cGVar GVar_MusicMainVolume;
+
 /* engine variables */
-extern cGVar GVar_MusicMainVolume;
 #define g_MusicMainVolume (GVar_MusicMainVolume.value.f)
-extern cGVar GVar_VoiceMainVolume;
+cGVar GVar_VoiceMainVolume;
+
 #define g_VoiceMainVolume (GVar_VoiceMainVolume.value.f)
 extern cGVar GVar_S_Show;
 #define g_S_Show (GVar_S_Show.value.i)
-extern cGVar GVar_S_StreamBufferSize;
+cGVar GVar_S_StreamBufferSize;
+
 #define g_S_StreamBufferSize (GVar_S_StreamBufferSize.value.i)	/* ms */
-extern cGVar GVar_S_VoiceoverFadein;
+cGVar GVar_S_VoiceoverFadein;
+
 #define g_S_VoiceoverFadein (GVar_S_VoiceoverFadein.value.f)
-extern cGVar GVar_S_VoiceoverFadeout;
+cGVar GVar_S_VoiceoverFadeout;
+
 #define g_S_VoiceoverFadeout (GVar_S_VoiceoverFadeout.value.f)
 extern cGVar GVar_S_VoiceoverVolume;
 #define g_S_VoiceoverVolume (GVar_S_VoiceoverVolume.value.f)
 /* the frame of the engine */
-extern float g_RealFrameSecs;
 extern float g_Fps;
 
 /* the music */
-extern float g_MusicCurMainVolume;	/* approaches MusicMainVolume in 1 / fps steps */
-extern float g_MusicVolume;
-extern float g_MusicVoiceover;		/* the voiceover factor */
-extern int g_MusicChannel;		/* -1 until it plays */
-extern float g_MusicVoiceoverTarget;
-extern float g_MusicVoiceoverSpeed;
-extern float g_MusicFadeTarget;
-extern float g_MusicFadeSpeed;
-extern char g_MusicName[260];		/* 0x104 */
-extern void *g_MusicStream;
-extern int g_MusicPaused;
-extern uint32_t g_MusicOpenTime;
-extern uint32_t g_MusicWaitTime;
 /* the voices */
-extern int g_NumVoices;
-extern int g_NumVoiceovers;
-extern byte g_VoicesPaused;
 
 /* |now - since| as the original computes it (cdq, xor, sub) */
 static int Time_Since(uint32_t since) {
@@ -80,6 +68,8 @@ cMusicVoice *cMusicVoice_ctor(cMusicVoice *self) {
 void cMusicVoice_dtor(cMusicVoice *self) {
 	(void)self;
 }
+
+int g_FmodState;
 
 /* the FMOD start */
 
@@ -129,6 +119,10 @@ void Voice_Wait(cMusicVoice *v, const char *what) {
 	(void)v;
 	(void)what;
 }
+
+int g_NumVoices;
+
+int g_NumVoiceovers;
 
 void Voice_Close(cMusicVoice *v) {
 	if (v->stream) {
@@ -313,6 +307,8 @@ int Voice_SetVolume(int voice, float volume) {
 	return 1;
 }
 
+byte g_VoicesPaused;
+
 void Voices_UpdatePause(void) {
 	byte paused = World_TimeScale() == 0.0f || !g_pApp->active;
 
@@ -333,6 +329,8 @@ void D3DApp_OnActivate(void) {
 		Voices_UpdatePause();
 	}
 }
+
+CFont *g_FontTerminal8;
 
 void Voices_DrawDebug(int x, int y) {
 	float yy;
@@ -380,6 +378,12 @@ byte Voices_DrawDebugDefault(void) {
 	return 1;
 }
 
+void *g_MusicStream;
+
+uint32_t g_MusicOpenTime;
+
+int g_MusicChannel = -1;
+
 /* the music */
 
 byte Music_Ready(void) {
@@ -395,6 +399,22 @@ byte Music_Ready(void) {
 	}
 	return Music_Start();
 }
+
+float g_RealFrameSecs;
+
+float g_MusicCurMainVolume;
+
+float g_MusicVolume = 1.0f;
+
+float g_MusicVoiceover = 1.0f;
+
+float g_MusicVoiceoverTarget = 1.0f;
+
+float g_MusicVoiceoverSpeed = 1.0f;
+
+float g_MusicFadeTarget = 1.0f;
+
+float g_MusicFadeSpeed = 1.0f;
 
 byte Music_UpdateVolumes(void) {
 	Music_Ready();
@@ -414,6 +434,10 @@ byte Music_UpdateVolumes(void) {
 	}
 	return 1;
 }
+
+char g_MusicName[260];
+
+uint32_t g_MusicWaitTime;
 
 void Music_DrawDebug(int x, int y) {
 	float yy;
@@ -443,6 +467,8 @@ void Music_DrawDebug(int x, int y) {
 byte Music_Wait(void) {
 	return Music_Ready();
 }
+
+int g_MusicPaused;
 
 byte Music_Open(const char *name) {
 	char pack[0x80];
@@ -619,3 +645,10 @@ byte Music_Update(void) {
 
 void Music_Nop(void) {
 }
+
+cGVar GVar_TimerFreqMult;
+
+cMusicVoice cMusicVoice_MusicVoices[8];
+
+cGVar GVar_isDolby;
+

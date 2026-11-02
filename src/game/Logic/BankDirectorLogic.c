@@ -143,3 +143,6 @@ const cGenCharLocalLogicVtbl cBankDirectorLocalLogic_vftable = {
 	.GoTo = cGenCharLocalLogic_GoTo,
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };
+
+cGVar GVar_GenCharSpecialActionTime;
+

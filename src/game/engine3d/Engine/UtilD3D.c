@@ -42,6 +42,8 @@ void Debug_DrawBoxM(const matrix_t *m, const vec3_t *mn, const vec3_t *mx, uint3
 	Box_Lines(mn, mx, color);
 }
 
+matrix_t g_MatIdentity;
+
 void Debug_DrawBox(const vec3_t *mn, const vec3_t *mx, uint32_t color) {
 	Render_SetWorldMatrix((&g_MatIdentity), 0);
 	Box_Lines(mn, mx, color);

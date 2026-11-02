@@ -208,6 +208,8 @@ IObject3D *CParticleSystem_Delete(IObject3D *base, byte flags) {
 	return base;
 }
 
+CIniFile g_ParticleSystemIni;
+
 void CParticleSystem_Init(CParticleSystem *self, CNode3D *node, const char *type, const ParticleSystemParams *params,
 	CIniFile *ini) {
 	CHECK(node);
@@ -1023,3 +1025,20 @@ const CParticleVtbl CParticleActive_vftable = {
 	.Init = CParticleActive_Init,
 	.Update = CParticleActive_Update,
 };
+
+cGVar GVar_R_Particles;
+
+cGVar GVar_R_ParticleScale;
+
+cGVar GVar_R_ParticleVelScale;
+
+cGVar GVar_R_ParticleFlags;
+
+cGVar GVar_R_ParticlesCount;
+
+cGVar GVar_R_ParticleSector;
+
+cGVar GVar_R_ParticleRate;
+
+cGVar GVar_R_ParticleLife;
+

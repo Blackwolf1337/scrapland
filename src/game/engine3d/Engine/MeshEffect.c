@@ -19,20 +19,20 @@
 #define KEY_M 0x32
 #define KEY_CTRL 0x1d
 
-extern int g_MeshEffectOn;
-extern int g_MeshEffectStencil;
-extern int g_NumScreens;
-extern int g_NumModels;
-extern CMaterial g_MeshEffectMat;	/* a static object of the file */
-extern CModel * g_Screens[10];
-extern CModel * g_Models[10];
-extern byte g_MeshEffectMatInit;
+
+int g_NumScreens;
+
+CModel *g_Screens[10];
 
 void MeshEffect_AddScreen(CModel *m) {
 	CHECK(g_NumScreens < MAX_SCREENS);
 	g_Screens[g_NumScreens] = m;
 	g_NumScreens++;
 }
+
+int g_NumModels;
+
+CModel *g_Models[10];
 
 void MeshEffect_AddModel(CModel *m) {
 	CHECK(g_NumModels < MAX_MODELS);
@@ -62,6 +62,14 @@ static void MeshEffect_SetRS(uint32_t state, uint32_t value) {
 	void *dev = g_pd3dDevice;
 	Rd_DevSetRenderState(dev, state, value);
 }
+
+int g_MeshEffectOn;
+
+int g_MeshEffectStencil;
+
+CMaterial g_MeshEffectMat;
+
+byte g_MeshEffectMatInit;
 
 void MeshEffect_Render(void) {
 	if (g_KeyboardKeys[KEY_M] && g_KeyboardKeys[KEY_CTRL]) {

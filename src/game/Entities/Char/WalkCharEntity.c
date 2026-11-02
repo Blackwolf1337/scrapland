@@ -1931,3 +1931,18 @@ const cWalkCharVtbl cWalkCharEntity_vftable = {
 	.SetViewAng = cWalkCharEntity_SetViewAng,
 	.SetYModelDisp = cWalkCharEntity_SetYModelDisp,
 };
+
+cGVar GVar_EnergyRechargeTime;
+
+cGVar GVar_AbortSelectDistance;
+
+cGVar GVar_EnergyBarActive;
+
+cGVar GVar_SndLoopCharNPCMul;
+
+cGVar GVar_CharUsrPushSpeed;
+
+cGVar GVar_CharGrav;
+
+cGVar GVar_TimeToAbortSelectChar;
+

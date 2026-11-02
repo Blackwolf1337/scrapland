@@ -209,3 +209,20 @@ void Alarm_Update(cAlarm *self, float dt) {
 	self->sameChar = self->on && (!strcmp(self->lastChars, chars) || notGuaranteed);
 	self->notDefChar = self->notDefChar || notGuaranteed;
 }
+
+cGVar GVar_AlarmFallDelta;
+
+cGVar GVar_PoliceTauntRace;
+
+cGVar GVar_AlarmGrowDelta;
+
+cGVar GVar_EasyAlarmFallFactor;
+
+cGVar GVar_AlarmFallMission;
+
+cGVarFunction GVar_AlarmCallback;
+
+cGVar GVar_UsrDefChar;
+
+cGVar GVar_GuaranteedChars;
+

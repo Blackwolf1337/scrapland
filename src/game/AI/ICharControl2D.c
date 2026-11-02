@@ -353,6 +353,10 @@ void cAICharControl2D_Walk(cAICharControl2D *self) {
 	}
 }
 
+void *g_AStar2D;
+
+CNodesWorld2D *g_NodesWorld2D;
+
 /* the path of pathfinding to p; the point after the start becomes the goal */
 byte cAICharControl2D_FindPath(cAICharControl2D *self, const vec3_t *p) {
 	vec3_t pos;
@@ -1220,3 +1224,14 @@ const cAICharControl2DVtbl cAICharControl2D_vftable = {
 	.FloorAt = cAICharControl2D_FloorAt,
 	.TestStep = cAICharControl2D_TestStep,
 };
+
+cGVar GVar_DepthPathRouteInDoorAI;
+
+cGVar GVar_DistShirkCharAI;
+
+cGVar GVar_FactorDistTestColCharAI;
+
+cGVar GVar_FactorDistTestColBackCharAI;
+
+cGVar GVar_MarginCollCharAI;
+

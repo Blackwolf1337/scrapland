@@ -146,3 +146,6 @@ const cAICharVtbl cAIBankMaster_vftable = {
 	.CheckTalk = cAIChar_CheckTalk,
 	.Facing = cAIChar_Facing,
 };
+
+cGVar GVar_BankMasterVacumDist;
+

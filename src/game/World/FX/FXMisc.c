@@ -142,7 +142,8 @@ byte FX_IsVisible(float x, float y, float z, float radius, float maxDist, const 
 	return 1;
 }
 
-extern uint32_t FX_ItemBlink_430b44[9];
+uint32_t FX_ItemBlink_430b44[9] = { 0x80669eff, 0x84669eff, 0x94669eff, 0xa4669eff, 0xb9669eff, 0xcd669eff, 0xe8669eff, 0xff669eff, 0xff669eff };
+
 void FX_ItemBlink(cEntity *e) {
 	CGameModel *m = Obj_Vtbl(e)->GetModel(e);
 
@@ -659,8 +660,13 @@ static void FX_StillAt(CGameParticles *sp, const vec3_t *pos) {
 	sp->rotIni = sp->rotEnd = FX_RandF((double)6.28318548f, 0.0);
 }
 
+uint32_t FX_EmitFade_430ad8[27] = {
+	0x2043696d, 0x30436972, 0x40436976, 0x5c42687b, 0x8042687f, 0xa4426885, 0xc0426886, 0xff426886, 0xff426886,
+	0x20000000, 0x30000000, 0x40102534, 0x5c2046d1, 0x80205aff, 0xa42048ff, 0xc0104489, 0xff000000, 0xff000000,
+	0x30c8c8ff, 0x40f0f0ff, 0x20c4c4c4, 0x808080ff, 0xa44040ff, 0xc02020ff, 0xe10000ff, 0xff0000ff, 0xff0000ff,
+};
+
 /* the particles applied and one emitted with one of the three fade ramps */
-extern uint32_t FX_EmitFade_430ad8[27];
 static void FX_EmitFade(CGameParticles *sp) {
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
@@ -764,7 +770,15 @@ void cObjElementFXItemTake_Start(cObjElementFXItemTake *self, cEntity *e) {
 	}
 }
 
-extern uint32_t cObjElementFXItemTake_Update_430b68[56];
+uint32_t cObjElementFXItemTake_Update_430b68[56] = {
+	0x2040406d, 0x30404072, 0x40273476, 0x5c23307b, 0x801c2a7f, 0xa4162285, 0xc0101986, 0xff0c1086, 0xff080886,
+	0x20050540, 0x30101080, 0x402020b4, 0x5c3030d1, 0x804040ff, 0xa44040ff, 0xc0202089, 0xff000000, 0xff000000,
+	0x306464ff, 0x405050ff, 0x204242c4, 0x803030ff, 0xa41818ff, 0xc00606ff, 0xe10000ff, 0xff0000ff, 0xff0000ff, 0,
+	0x40ff801e, 0x4bff6019, 0x60c0400a, 0x70802005, 0x80400a00, 0xa40d0500, 0xc0050000, 0xff000000, 0xff000000,
+	0x40ffeb5a, 0x4bffd741, 0x60c0a41e, 0x70805c0f, 0x80402305, 0xa40d0500, 0xc0050000, 0xff000000, 0xff000000,
+	0x20dedeff, 0x4bbebeeb, 0x60a4a4dc, 0x705c5cbe, 0x8040406e, 0xa4202055, 0xc00f0f40, 0xff000000, 0xff000000,
+};
+
 void cObjElementFXItemTake_Update(cObjElementFX *base, cDebris *d, float dt) {
 	cObjElementFXItemTake *self = (cObjElementFXItemTake *)base;
 	CGameParticles *sp = &self->particles;
@@ -2064,3 +2078,12 @@ const cObjElementFXVtbl cObjElementFXSceneTheEndB_vftable = {
 	.Start = cObjElementFXSceneTheEndB_Attach,
 	.Reset = cObjElementFXSceneTheEndB_Reset,
 };
+
+cGVar GVar_FXItemTakeFile;
+
+cGVar GVar_FXItemFadeFile;
+
+cGVar GVar_FXItemBlinkFile;
+
+cGVar GVar_FXShipEditBuildFile;
+

@@ -13,11 +13,14 @@
 #include "scrap/model.h"
 #include "scrap/misc.h"
 
-extern cGVar GVar_R_SortModels;
+cGVar GVar_R_SortModels;
+
 #define g_SortModels (GVar_R_SortModels.value.i)	/* R_SortModels */
-extern cGVar GVar_R_SortShow;
+cGVar GVar_R_SortShow;
+
 #define g_SortShow (GVar_R_SortShow.value.i)	/* R_SortShow */
-extern cGVar GVar_R_SortInvert;
+cGVar GVar_R_SortInvert;
+
 #define g_SortInvert (GVar_R_SortInvert.value.i)	/* R_SortInvert */
 
 #define SORT_TEXT_X 200.0f
@@ -100,6 +103,8 @@ void CModelList_dtor(CModelList *self) {
 	}
 }
 
+CModelList *g_ModelsRender[1026];
+
 void Model_UpdateRender(CModel *m) {
 	CModelList *lm = m->list;
 
@@ -134,6 +139,8 @@ void Model_UpdateRender(CModel *m) {
 	last->renderIndex = idx;
 	lm->renderIndex = -1;
 }
+
+CSceneList *g_SceneList;
 
 byte SceneList_Release(CScene *scn, byte force) {
 	CSceneList *le = g_SceneList;
@@ -178,6 +185,8 @@ byte SceneList_Release(CScene *scn, byte force) {
 	SceneList_Free(le);
 	return 1;
 }
+
+CModelList *g_ModelList;
 
 void Model_Destroy(CModel **pm, byte force) {
 	CHECK(pm);

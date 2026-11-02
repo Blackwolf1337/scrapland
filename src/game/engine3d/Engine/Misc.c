@@ -61,6 +61,10 @@ void Misc_FiniFileLog(void) {
 	cLog_dtor((&g_FileLog));
 }
 
+uint32_t g_LogFileMask;
+
+uint32_t g_LogConMask = 65535;
+
 void cLog_Write(cLog *self, uint32_t mask, const char *text) {
 	if (g_LogLevel == LOG_LEVEL_RESET) {
 		g_LogConMask = LOG_CON_DEFAULT;
@@ -121,6 +125,8 @@ static void E3D_LogV(cLog *log, uint32_t bit, const char *fmt, va_list ap) {
 		E3D_LogV(log, bit, fmt, ap); \
 		va_end(ap); \
 	}
+int g_DbgCon;
+
 /* INT32_MIN: at any log level */
 E3D_LOG(E3D_LogPrint, LOG_PRINT, INT32_MIN)
 E3D_LOG(E3D_LogDebug, LOG_DEBUG, INT32_MIN)
@@ -218,6 +224,8 @@ char *Path_Copy(char *dest, const char *src, int size) {
 	return dest;
 }
 
+char g_E3DDir[264];
+
 void Path_Normalize(char *dest, const char *path, int size) {
 	char drive[4], dir[0x100];
 	char b[2 * MAX_FILEPATH];
@@ -298,8 +306,8 @@ char *String_Unquote(char *dest, const char *src) {
 	return dest;
 }
 
-extern byte g_RSqrtTable[144];
-extern char g_ExePath[264];	/* GetModuleFileName at the start, 0x103 */
+
+char g_ExePath[264];
 
 char *E3D_GetExePath(void) {
 	return g_ExePath;
@@ -313,6 +321,8 @@ void Misc_InitE3DDir(void) {
 	Path_Part(g_E3DDir, g_ExePath, PATH_DRIVE | PATH_DIR);
 	Path_Normalize(g_E3DDir, "../", -1);	/* "../" */
 }
+
+byte g_RSqrtTable[144];
 
 /* the bits 15..22 (rounded) of 1 / sqrt of the 128 mantissa steps of the exponents 0x7f (0..63) and 0x7e */
 void RSqrt_InitTable(void) {
@@ -362,3 +372,6 @@ float RSqrt(float x) {
 void DbgCon_Init(void) {
 	g_DbgCon = g_DbgConWindow || g_DbgConStd;
 }
+
+cGVar GVar_EngineDebugLevel;
+

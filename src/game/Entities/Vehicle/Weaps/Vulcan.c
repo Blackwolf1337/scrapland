@@ -10,7 +10,6 @@
 #define VULCAN_UPG_WIDE 2
 #define VULCAN_SND_SHOT 5		/* the shot sounds 5..7 of the ship */
 
-extern uint32_t g_VulcanRamps[3][9];	/* the color ramps of the hit particles */
 
 /* a random float of the effects: rand() in [0, 1] times mul plus add, in double */
 static inline float Vul_Rand(double mul, double add) {
@@ -82,6 +81,12 @@ static void Vul_PosOnly(CGameParticles *p, const vec3_t *off) {
 	p->initAccMax.y = 0.0f;
 	p->initAccMax.z = 0.0f;
 }
+
+uint32_t g_VulcanRamps[3][9] = {
+	{ 0x80fff696, 0x20ffb45a, 0x40e68211, 0x80ab5e0d, 0x964c4408, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000 },
+	{ 0x80ffebd2, 0x20ffd75a, 0x40e6c811, 0x80ab8c0d, 0x964c3a08, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000 },
+	{ 0xff808080, 0x80808080, 0x5c808080, 0x80808080, 0xa4808080, 0xc0808080, 0xde808080, 0xff000000, 0xff000000 },
+};
 
 /* the sparks of a hit: fewer far from the camera, more on a target */
 static void Vul_Sparks(CGameParticles *p, const matrix_t *mtx, float dist, float size, float k, byte target) {
@@ -557,3 +562,44 @@ void Vulcan_AimOn(cEntity *v) {
 	cAutoAim_SetAngle(Veh_Aim(v), 0x1.f46bbap-3f);
 	Veh(v)->autoAim.distLimit = g_VulcanDistLimit;
 }
+
+cGVar GVar_VulcanIDAmmo;
+
+cGVar GVar_FXVulcanHitDistance;
+
+cGVar GVar_VulcanTimeDelay;
+
+cGVar GVar_VulcanRic2Sound;
+
+cGVar GVar_VulcanRicSoundAttIni;
+
+cGVar GVar_VulcanTimeDelayUPG;
+
+cGVar GVar_VulcanHitForce;
+
+cGVar GVar_VulcanDamageEasy;
+
+cGVar GVar_VulcanHitFile;
+
+cGVar GVar_VulcanRic1Sound;
+
+cGVar GVar_VulcanRic0Sound;
+
+cGVar GVar_VulcanAmmoCost;
+
+cGVar GVar_VulcanBulletFile;
+
+cGVar GVar_VulcanDamage;
+
+cGVar GVar_VulcanHitUseNormal;
+
+cGVar GVar_VulcanRic0SoundVol;
+
+cGVar GVar_VulcanRic2SoundVol;
+
+cGVar GVar_VulcanRic1SoundVol;
+
+cGVar GVar_VulcanRange;
+
+cGVar GVar_VulcanRicSoundAttEnd;
+

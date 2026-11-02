@@ -57,6 +57,8 @@ static uint32_t Float_Bits(float f) {
 	return u;
 }
 
+int g_FogActive;
+
 void CFog_Apply(CFog *self) {
 	void *dev = g_Engine->device;
 	CHECK(dev);
@@ -130,3 +132,12 @@ void CFog_SetRange(CFog *self, float start, float end) {
 	self->start = start;
 	self->end = end;
 }
+
+cGVar GVar_R_FogDensity;
+
+cGVar GVar_R_FogEnable;
+
+cGVar GVar_R_FogAbsDist;
+
+cGVar GVar_R_FogColor;
+

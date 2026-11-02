@@ -14,8 +14,13 @@
 
 /* params: the desktop. A fast landing seen from near enough: four puffs around the point it lands on and a ring of
  * dust thrown out of it. */
-extern uint32_t ChType_FXDesktopFallEnd_428008[18];
-extern uint32_t ChType_FXDesktopFallEnd_428050[10];
+uint32_t ChType_FXDesktopFallEnd_428008[18] = {
+	0xff000000, 0x80303030, 0x60304040, 0x60404040, 0x60404040, 0x80404040, 0xbe303030, 0xff000000, 0xff000000,
+	0xff000000, 0x80404040, 0x60606060, 0x60606060, 0x60606060, 0x80606060, 0xbe404040, 0xff000000, 0xff000000,
+};
+
+uint32_t ChType_FXDesktopFallEnd_428050[10] = { 0xff565656, 0xb4fff06e, 0x8cefa01e, 0x969a500e, 0xc3604b1e, 0xd2404040, 0xeb202020, 0xff000000, 0xff000000 };
+
 void ChType_FXDesktopFallEnd(cAbstractFile *params) {
 	char name[0x80];
 	vec3_t tmp, one, rot, d, xaxis;
@@ -254,3 +259,16 @@ void ChType_DesktopActionPress(cAbstractFile *params) {
 		SaveVar_Inc("Stats.Jump.Police", 1);
 	}
 }
+
+cGVar GVar_DesktopJumpPrice;
+
+cGVar GVar_DesktopJumpSlideTime;
+
+cGVar GVar_FXDesktopFallEndDist;
+
+cGVar GVar_DesktopJumpSpeed;
+
+cGVar GVar_FXDesktopFallEndFile;
+
+cGVar GVar_FallSoundVel;
+

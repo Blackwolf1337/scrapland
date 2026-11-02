@@ -8,7 +8,6 @@
 
 #define TRACE_FLT_MAX 3.4028234663852886e+38f
 
-extern traceCell_t g_TraceCell;
 
 byte Heights_CellStep(CHeights *alt, int *x, int *z, const vec3_t *a, const vec3_t *b, float *t) {
 	float x1 = (float)(*x + 1) * alt->sizeX + alt->ext.min.x;
@@ -57,6 +56,8 @@ byte Heights_CellStep(CHeights *alt, int *x, int *z, const vec3_t *a, const vec3
 	}
 	return 0;
 }
+
+traceCell_t g_TraceCell;
 
 byte Heights_TraceStep(CHeights *alt) {
 	traceCell_t *tc = &g_TraceCell;
@@ -140,6 +141,8 @@ static int Seg_HitTri(const CCollideTri *tri, const CCollideMesh *mesh, const ve
 }
 
 enum { SEG_TEST, SEG_POS, SEG_TRI };
+
+int g_QuadTriCacheID;
 
 /* the walk of TestSeg (the first hit), TraceSegPos and TraceSeg (the nearest hit); mode 0 skips the meshes and the
  * triangles without collisions, TraceSeg with mode 1 also the triangles without the 0x40 flag */

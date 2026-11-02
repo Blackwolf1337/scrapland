@@ -73,6 +73,8 @@ void ChType_BankMasterAttack(cAbstractFile *params) {
 	ChType_Attack(params, g_BankMasterAmmoCost);
 }
 
+cEntity *g_BankMasterEnt;
+
 /* the sphere test of the hit: params the character in the sphere. Within 60 degrees in front of the bank master its
  * money goes over, with the effect, and its logic is told */
 void ChType_BankMasterSuction(cAbstractFile *params) {
@@ -157,3 +159,12 @@ void ChType_FXBankMasterAttack(cAbstractFile *params) {
 		cObjElementFXBankMasterAttack_Start(el, v);
 	}
 }
+
+cGVar GVar_BankerStealAmount;
+
+cGVar GVar_FXBankMasterAttackFile;
+
+cGVar GVar_BankMasterAmmoCost;
+
+cGVar GVar_FXBankMasterSuctionFile;
+

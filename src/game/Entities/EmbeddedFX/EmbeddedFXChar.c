@@ -46,12 +46,6 @@ extern const cEmbeddedFXVtbl cEmbeddedFXMercenary_vftable;
 #define LASER_COLOR 0x800000
 
 /* the color ramps of the alarm and maintenance particles (9 colors) */
-extern uint32_t g_RampAlarmA[9];
-extern uint32_t g_RampAlarmB[9];
-extern uint32_t g_RampAlarmC[27];
-extern uint32_t g_RampAlarmD[9];
-extern uint32_t g_RampMaintenance[9];
-extern uint32_t g_RampMaintenanceEnd[9];
 
 /* rand() & 0x7fff as 0..1 (double) */
 static inline double EFX_Rnd(void) {
@@ -1107,6 +1101,18 @@ static const float efx_alarmSize[6] = { 80.0f, 250.0f, 60.0f, 120.0f, 180.0f, 29
 static const uint32_t efx_alarmRGB[12] = { 0x8080ff, 0x1010ff, 0x80, 0xc0, 0xde, 0xc0,
 	0xff8080, 0xff1010, 0x800000, 0xc00000, 0xde0000, 0xc00000 };
 
+uint32_t g_RampAlarmB[9] = { 0xff0000ff, 0x400000ff, 0x400000ff, 0x5c0000ff, 0x800000ff, 0xa40000ff, 0xc40000ff, 0xff0000ff, 0xff0000ff };
+
+uint32_t g_RampAlarmA[9] = { 0xff8080ff, 0x408080ff, 0x408080ff, 0x5c8080ff, 0x808080ff, 0xa48080ff, 0xc48080ff, 0xff8080ff, 0xff8080ff };
+
+uint32_t g_RampAlarmD[9] = { 0xffff0000, 0x40ff0000, 0x40ff0000, 0x5cff0000, 0x80ff0000, 0xa4ff0000, 0xc4ff0000, 0xffff0000, 0xffff0000 };
+
+uint32_t g_RampAlarmC[27] = {
+	0xffff8080, 0x40ff8080, 0x40ff8080, 0x5cff8080, 0x80ff8080, 0xa4ff8080, 0xc4ff8080, 0xffff8080, 0xffff8080,
+	0xff0000ff, 0x400000ff, 0x200000ff, 0x400000ff, 0x800000ff, 0xa40000ff, 0xc40000ff, 0xe00000ff, 0xff0000ff,
+	0xffc4c4ff, 0x80c4c4ff, 0x40c4c4ff, 0x60c4c4ff, 0x80c4c4ff, 0xa4c4c4ff, 0xc4c4c4ff, 0xe0c4c4ff, 0xffc4c4ff,
+};
+
 /* blinks twice in the period of 0.9 s while on; the level fades to the state */
 void cEmbeddedFXAlarm_Update(cEmbeddedFXAlarm *self, float dt) {
 	if (self->on) {
@@ -1151,6 +1157,10 @@ void cEmbeddedFXPolice_Update(cEmbeddedFX *base, float dt) {
 	cEmbeddedFXPolice *self = (cEmbeddedFXPolice *)base;
 	cEmbeddedFXAlarm_Update(&self->alarm, dt);
 }
+
+uint32_t g_RampMaintenanceEnd[9] = { 0x30ff8000, 0x40ff8000, 0x4bff8000, 0x5cff8000, 0x80ff8000, 0xa4ff8000, 0xc4ff8000, 0xffff8000, 0xffff8000 };
+
+uint32_t g_RampMaintenance[9] = { 0x10ffc480, 0x20ffc464, 0x30ffba5a, 0x5cffaa46, 0x80ffa032, 0xa4ff9626, 0xc4ff8c12, 0xffff8700, 0xffff8000 };
 
 /* a light blinks every 1.2 s */
 void cEmbeddedFXMaintenance_Update(cEmbeddedFX *base, float dt) {
@@ -1205,13 +1215,17 @@ void cEmbeddedFXMaintenance_Update(cEmbeddedFX *base, float dt) {
 }
 
 
-extern cGVar GVar_SentinelLaserScanerDist;
+cGVar GVar_SentinelLaserScanerDist;
+
 #define g_SentinelLaserScanerDist (GVar_SentinelLaserScanerDist.value.f)	/* "SentinelLaserScanerDist" */
-extern cGVar GVar_SentinelStdFar;
+cGVar GVar_SentinelStdFar;
+
 #define g_SentinelStdFar (GVar_SentinelStdFar.value.f)
-extern cGVar GVar_SentinelStdFovY;
+cGVar GVar_SentinelStdFovY;
+
 #define g_SentinelStdFovY (GVar_SentinelStdFovY.value.f)
-extern cGVar GVar_SentinelStdFovX;
+cGVar GVar_SentinelStdFovX;
+
 #define g_SentinelStdFovX (GVar_SentinelStdFovX.value.f)
 
 static void EFX_SentinelClear(cEmbeddedFXSentinel *self) {
@@ -1577,7 +1591,8 @@ void cEmbeddedFXCrazyGambler_Update(cEmbeddedFX *elem, float dt) {
 	}
 }
 
-extern cGVar GVar_MessengerLightingDist;
+cGVar GVar_MessengerLightingDist;
+
 #define g_MessengerLightingDist (GVar_MessengerLightingDist.value.f)	/* "MessengerLightingDist" */
 
 /* the flag of vertex v of ray r (v may be -1: the byte before the ray) */
@@ -1738,11 +1753,10 @@ void cEmbeddedFXMessenger_Update(cEmbeddedFX *elem, float dt) {
 	}
 }
 
-extern cGVar GVar_FXMercenaryDrinkSmokeFile;
+cGVar GVar_FXMercenaryDrinkSmokeFile;
+
 #define g_FXMercenaryDrinkSmokeFile (GVar_FXMercenaryDrinkSmokeFile.value.s)	/* "FXMercenaryDrinkSmokeFile" */
 /* the color ramps of the bubbles and of the smoke, two of 9 colors each */
-extern uint32_t g_RampMercenaryBubbles[18];
-extern uint32_t g_RampMercenarySmoke[18];
 
 static inline byte EFX_MercSprite(void) {
 	return (crt_rand() & 1) ? 0x09 : 0x48;
@@ -1770,6 +1784,11 @@ static void EFX_MercEmit(CGameParticles *p, uint32_t *ramps) {
 	CGameParticles_SetColorRamp(p, ramps + (crt_rand() & 1) * 9);
 	CGameParticles_EmitN(p, 1, 0);
 }
+
+uint32_t g_RampMercenaryBubbles[18] = {
+	0x30a0ff8c, 0x40a0ff8c, 0x4ba0ff8c, 0x5ca0ff8c, 0x80a0ff8c, 0xa4a0ff8c, 0xc4408037, 0xff000000, 0xff000000,
+	0x10c4ff80, 0x20c4ff64, 0x30baff5a, 0x5caaff46, 0x80a0ff32, 0xa496ff26, 0xc4408012, 0xff000000, 0xff000000,
+};
 
 /* a bubble out of the tank (the pipe: higher up, smaller and slower) */
 static void EFX_MercBubble(CGameParticles *p, byte pipe) {
@@ -1809,6 +1828,11 @@ static void EFX_MercBubble(CGameParticles *p, byte pipe) {
 
 /* the actions the mercenary does not smoke in */
 static const char *const efx_mercQuiet[] = { "Drink", "Cheer", "Relax0", "Relax1", "TalkHappy" };
+
+uint32_t g_RampMercenarySmoke[18] = {
+	0xc8a0ff8c, 0xd2a0ff8c, 0xdea0ff8c, 0xe6a0ff8c, 0xeea0ff8c, 0xf5a0ff8c, 0xfa408037, 0xff000000, 0xff000000,
+	0xc8c4ff80, 0xd2c4ff64, 0xdebaff5a, 0xe6aaff46, 0xeea0ff32, 0xf596ff26, 0xfa408012, 0xff000000, 0xff000000,
+};
 
 /* a puff of the smoke of the cigar: a particle of a debris of the drink smoke system, at the mouth */
 static void EFX_MercSmoke(cEmbeddedFXMercenary *self, CGameModel *model) {
@@ -1927,12 +1951,13 @@ void cEmbeddedFXMercenary_Update(cEmbeddedFX *elem, float dt) {
 	EFX_MercSmoke(self, model);
 }
 
-extern cGVar GVar_FXRustySparksSound;
+cGVar GVar_FXRustySparksSound;
+
 #define g_FXRustySparksSound (GVar_FXRustySparksSound.value.s)	/* "FXRustyChispasSound" */
-extern cGVar GVar_FXRustySparksSoundVol;
+cGVar GVar_FXRustySparksSoundVol;
+
 #define g_FXRustySparksSoundVol (GVar_FXRustySparksSoundVol.value.f)	/* "FXRustyChispasSoundVol" */
 /* the color ramps of the sparks of the pigtail (9 colors each) */
-extern uint32_t g_RampRustySparks[28];
 
 static inline void EFX_RustyStill(CGameParticles *p) {
 	p->initPosMin.x = 0.0f;
@@ -1961,6 +1986,12 @@ static vec3_t EFX_RustyDir(void) {
 	ang.z = a1;
 	return *Vec3_Rotate(&out, &one, &ang);
 }
+
+uint32_t g_RampRustySparks[28] = {
+	0x809696ff, 0x20d2d2ff, 0x406e6ee6, 0x803737be, 0x96191996, 0xa4030378, 0xc000006e, 0xff000032, 0xff000000,
+	0x80d2d2ff, 0x209696ff, 0x406411e1, 0x803232b4, 0x961e1e55, 0xa40a0a2d, 0xc0050519, 0xff00000a, 0xff000000,
+	0x80d2d2ff, 0x205a5aff, 0x401111e6, 0x800d0dab, 0x9608084c, 0xa4030338, 0xc000001e, 0xff00000a, 0xff000000,
+};
 
 /* the burst of sparks out of the pigtail: two flashes and 4..8 sparks, and their sound */
 static void EFX_RustySparks(cEmbeddedFXRusty *self) {

@@ -612,3 +612,18 @@ const cMapElementVtbl cFXElementsABFakeLimit_vftable = {
 	.Init = cFXElementsABFakeLimit_Init,
 	.Update = cFXElementsABFakeLimit_Update,
 };
+
+cGVar GVar_FXABFakeLimitSegmentStep;
+
+cGVar GVar_FXABFakeLimitRingRotSpeed;
+
+cGVar GVar_FXABFakeLimitRadius;
+
+cGVar GVar_FXABFakeLimitDistLighting;
+
+cGVar GVar_FXABFakeLimitSegmentSize;
+
+cGVar GVar_FXABFakeLimitQuakeFactor;
+
+cGVar GVar_FXABFakeLimitQuakeTime;
+

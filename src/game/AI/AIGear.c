@@ -253,3 +253,8 @@ const cAICharVtbl cAIGear_vftable = {
 	.CheckTalk = cAIChar_CheckTalk,
 	.Facing = cAIChar_Facing,
 };
+
+cGVar GVar_ShootGearAI;
+
+cGVar GVar_OffsetAngShootGearAI;
+

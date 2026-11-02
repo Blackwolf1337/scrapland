@@ -295,6 +295,8 @@ void cEmbeddedFXVehicle_Hide(cEmbeddedFXVehicle *self) {
 	}
 }
 
+CGameModel g_SirenModel;
+
 void cEmbeddedFXVehicle_Render(cEmbeddedFXVehicle *self) {
 	CGameParticles_SetVisible(&self->follow, 0);
 	CGameModel_RenderNow(&self->model, 0);
@@ -389,6 +391,10 @@ cFXVehicleSirens *cFXVehicleSirens_ctor(cFXVehicleSirens *self, cEmbeddedFXVehic
 	return self;
 }
 
+int g_SirenRefs;
+
+CGameParticles g_SirenParticles;
+
 void cFXVehicleSirens_dtor(cFXVehicleSirens *self) {
 	(void)self;
 	if (--g_SirenRefs <= 0 && CGameModel_IsLoaded((&g_SirenModel))) {
@@ -462,10 +468,14 @@ static int Sirens_IsPolice(cEntity *v) {
 	return Str_EqualW(((vehicleName_t)(*(void ***)v)[0xf4 / 4])(v, 0), "P_Police");
 }
 
-extern uint32_t data_428550[9];
-extern uint32_t data_428574[9];
-extern uint32_t data_428598[9];
-extern uint32_t data_4285bc[9];
+uint32_t data_428550[9] = { 0xff0000ff, 0x200000ff, 0x300000ff, 0x400000ff, 0x5c0000ff, 0x800000ff, 0xc40000ff, 0xff0000ff, 0xff0000ff };
+
+uint32_t data_428574[9] = { 0xff8080ff, 0x208080ff, 0x308080ff, 0x408080ff, 0x5c8080ff, 0x808080ff, 0xc48080ff, 0xff8080ff, 0xff8080ff };
+
+uint32_t data_428598[9] = { 0xffff0000, 0x20ff0000, 0x30ff0000, 0x40ff0000, 0x5cff0000, 0x80ff0000, 0xc4ff0000, 0xffff0000, 0xffff0000 };
+
+uint32_t data_4285bc[9] = { 0xffff8080, 0x20ff8080, 0x30ff8080, 0x40ff8080, 0x5cff8080, 0x80ff8080, 0xc4ff8080, 0xffff8080, 0xffff8080 };
+
 void cFXVehicleSirens_Update(cFXVehicleSirens *self) {
 	cEntity *v = self->owner->owner;
 	vec3_t pos, rot;
@@ -616,7 +626,11 @@ static void Probe_Flash(CGameParticles *p, int src, int i1, int i2, float frac, 
 		((uint32_t)c << 24) | 0xff0000, 5, 0.0f);
 }
 
-extern uint32_t cEmbeddedFXVehicleProbe_Update_4285e0[18];
+uint32_t cEmbeddedFXVehicleProbe_Update_4285e0[18] = {
+	0x4ff4010, 0x10ff300c, 0x20ff2008, 0x40ff1806, 0x5cff1004, 0x80ff0802, 0xc4ff0000, 0xffff0000, 0xffff0000,
+	0x80ff2020, 0x40ff2020, 0x5cff2020, 0x80ff2020, 0xa4ff2020, 0xc4ff2020, 0xe1ff2020, 0xffff2020, 0xffff2020,
+};
+
 void cEmbeddedFXVehicleProbe_Update(cEmbeddedFXVehicleSub *base) {
 	cEmbeddedFXVehicleProbe *self = (cEmbeddedFXVehicleProbe *)base;
 	CGameModel *model = Obj_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
@@ -1001,3 +1015,20 @@ const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicleVote_vftable = {
 	.Update = cEmbeddedFXVehicleVote_Update,
 	.SetActive = cEmbeddedFXVehicleVote_SetActive,
 };
+
+cGVar GVar_FXVehicleSiren_DistGrow;
+
+cGVar GVar_FXVehicleEmbeddedFile;
+
+cGVar GVar_FXVehicleProbeLight_SizeMin;
+
+cGVar GVar_FXVehicleSiren_SizeMin;
+
+cGVar GVar_FXTrafficEmbeddedFile;
+
+cGVar GVar_FXVehicleProbeLight_SizeMax;
+
+cGVar GVar_FXVehicleSiren_SizeMax;
+
+cGVar GVar_FXVehicleProbeLight_DistGrow;
+

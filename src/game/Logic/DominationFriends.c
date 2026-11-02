@@ -127,3 +127,6 @@ const cDominationLogicVtbl cDominationFriendsLogic_vftable = {
 	.GetList = cDominationFriendsLogic_GetList,
 	.GetTeam = cDominationLogic_GetTeamTrue,
 };
+
+cGVarFunction GVar_OnDominFriendDeath;
+

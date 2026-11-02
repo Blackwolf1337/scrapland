@@ -58,6 +58,8 @@ void ChType_BettyActionPress(cAbstractFile *params) {
 	}
 }
 
+cEntity *g_BettyEnt;
+
 /* params: Betty, "turn,pitch" (degrees), a float: the slow motion and the camera of the aim */
 void ChType_BettyCameraSet(cAbstractFile *params) {
 	char name[0x80], arg[0x80];
@@ -229,3 +231,26 @@ void ChType_FXBettyAttack(cAbstractFile *params) {
 		cObjElementFXBettyAttack_Emit(el, hp.x, hp.y, hp.z);
 	}
 }
+
+cGVar GVar_BettyHitTimeFader;
+
+cGVar GVar_FXBettyAttackFile;
+
+cGVar GVar_BettyHSpeed;
+
+cGVar GVar_BettyHitPosY;
+
+cGVar GVar_BettyHitRadius;
+
+cGVar GVar_BettyVSpeed;
+
+cGVar GVar_FXBettyKillFile;
+
+cGVar GVar_BettyHitTopLimit;
+
+cGVar GVar_BettyHitPosX;
+
+cGVar GVar_BettyHitTimeSpeed;
+
+cGVar GVar_BettyHitPosZ;
+

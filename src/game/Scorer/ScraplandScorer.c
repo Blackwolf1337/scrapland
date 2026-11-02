@@ -103,20 +103,58 @@ cScorerItem *cScraplandSubMenuScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-extern const double SubMenu_RandWait_3abbc0;
-extern const double SubMenu_RandWait_3ae240;
-extern const double cScraplandMainMenuScorer_Draw_3afd68;
-extern const double cScraplandMainMenuScorer_Draw_3b11a0;
-extern const double cScraplandMainMenuScorer_Draw_3b9748;
-extern const double cScraplandMainMenuScorer_Draw_3c40e8;
-extern const double cScraplandMainMenuScorer_Draw_3c4108;
-extern const double cScraplandMainMenuScorer_Draw_3c4118;
-extern const double cScraplandMainMenuScorer_Init_3ae260;
-extern const double cScraplandMainMenuScorer_Init_3ae440;
-extern const double cScraplandMainMenuScorer_Init_3aeb60;
-extern const double cScraplandMainMenuScorer_Init_3aeba0;
-extern const double cScraplandMainMenuScorer_Init_3b1f08;
-extern const double cScraplandMainMenuScorer_Init_3c40b8;
+const double cScraplandMainMenuScorer_Draw_3b11a0 = 12.0;
+
+const double cScraplandMainMenuScorer_Init_3c40b8 = 0.07999998331069946;
+
+const double cScraplandMainMenuScorer_Init_3b1f08 = 45.0;
+
+const double SubMenu_RandWait_3abbc0 = 0.10000000149011612;
+
+const double cScraplandMainMenuScorer_Draw_3c40e8 = 0.6399999856948853;
+
+const double SubMenu_RandWait_3ae240 = 0.30000001192092896;
+
+const double cScraplandMainMenuScorer_Draw_3c4108 = 3.4000000953674316;
+
+const double cScraplandMainMenuScorer_Init_3ae260 = 30.0;
+
+const double cScraplandMainMenuScorer_Init_3ae440 = 0.25;
+
+const double cScraplandMainMenuScorer_Draw_3c4118 = 14.600000381469727;
+
+const double cScraplandMainMenuScorer_Init_3aeb60 = 0.18000000715255737;
+
+const double cScraplandMainMenuScorer_Init_3aeba0 = 15.0;
+
+const double cScraplandMainMenuScorer_Draw_3afd68 = 8.0;
+
+const double cScraplandMainMenuScorer_Draw_3b9748 = 0.13999998569488525;
+
+byte g_MainMenuAnimInit;
+
+float g_MainMenuWait[9];
+
+float g_MainMenuTime[9];
+
+float g_MainMenuLength[9];
+
+float g_MainMenuSparkWait[19];
+
+byte g_MainMenuSparkDir[19];
+
+float g_MainMenuSparkTime[19];
+
+float g_MainMenuNeonNext;
+
+float g_MainMenuSparkLength[19];
+
+float g_MainMenuNeonGroup[3];
+
+int g_MainMenuSparkFrame[19];
+
+float g_MainMenuNeonWait[21];
+
 void cScraplandMainMenuScorer_Init(cScraplandMainMenuScorer *self) {
 	self->time = (float)g_pApp->vftable->GetGameTime(g_pApp);
 	if (g_MainMenuAnimInit) {
@@ -171,10 +209,14 @@ void cScraplandMainMenuScorer_Init(cScraplandMainMenuScorer *self) {
 }
 
 /* the random wait of the sub menu logo until its next ring: short, middle or (mostly) long */
-extern const double SubMenu_RandWait_3aeb68;
-extern const double SubMenu_RandWait_3aeb88;
-extern const double SubMenu_RandWait_3c40f0;
-extern const double SubMenu_RandWait_3c4100;
+const double SubMenu_RandWait_3c40f0 = 1.1999999284744263;
+
+const double SubMenu_RandWait_3c4100 = 1.7000000476837158;
+
+const double SubMenu_RandWait_3aeb68 = 0.20000000298023224;
+
+const double SubMenu_RandWait_3aeb88 = 0.800000011920929;
+
 static float SubMenu_RandWait(void) {
 	if (crt_rand() % 4 == 0) {
 		return ScraplandScorer_Rand(SubMenu_RandWait_3c4100, SubMenu_RandWait_3aeb88);
@@ -186,16 +228,28 @@ static float SubMenu_RandWait(void) {
 }
 
 /* the random length of a ring */
-extern const double SubMenu_RandRing_3aeb50;
-extern const double SubMenu_RandRing_3c40c0;
-extern const double SubMenu_RandRing_3c40d8;
-extern const double SubMenu_RandRing_3c40e0;
+const double SubMenu_RandRing_3c40c0 = 0.07999999821186066;
+
+const double SubMenu_RandRing_3c40d8 = 0.23999999463558197;
+
+const double SubMenu_RandRing_3c40e0 = 0.3400000035762787;
+
+const double SubMenu_RandRing_3aeb50 = 0.1599999964237213;
+
 static float SubMenu_RandRing(void) {
 	if (crt_rand() & 1) {
 		return ScraplandScorer_Rand(SubMenu_RandRing_3aeb50, SubMenu_RandRing_3c40e0);
 	}
 	return ScraplandScorer_Rand(SubMenu_RandRing_3c40c0, SubMenu_RandRing_3c40d8);
 }
+
+byte g_SubMenuAnimInit;
+
+float g_SubMenuWait;
+
+float g_SubMenuRingTime;
+
+float g_SubMenuRingWait;
 
 void cScraplandSubMenuScorer_Init(cScraplandSubMenuScorer *self) {
 	self->time = (float)g_pApp->vftable->GetGameTime(g_pApp);
@@ -367,9 +421,14 @@ static void SubMenu_Draw(CPsaImage *img, float scale, uint32_t color, byte setCo
 	CPsaImage_Draw(img, x, y);
 }
 
+const double cScraplandSubMenuScorer_Draw_3ae448 = -3.141592653589793;
+
+int g_SubMenuRingDir;
+
+int g_SubMenuRingFrame;
+
 /* vf00: the logo, the ring mask, its reflection turning back and forth, the ring border and the flickering glow;
  * after a random wait a ring of lightning frames runs in or out */
-extern const double cScraplandSubMenuScorer_Draw_3ae448;
 void cScraplandSubMenuScorer_Draw(cScorerItem *base, int player) {
 	cScraplandSubMenuScorer *self = (cScraplandSubMenuScorer *)base;
 	static const float uv[4][2] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
@@ -444,8 +503,6 @@ void cScraplandSubMenuScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the main menu logo: the screen positions of the lighting frames and of the sparks */
-extern float g_MainMenuLightPos[5][2];	/* [5] */
-extern float g_MainMenuSparkPos[19][2];	/* [MAINMENU_SPARKS] */
 
 #define MAINMENU_MAX_DT 0.2f
 #define MAINMENU_NEONS 21		/* the neon frames 18.. */
@@ -492,11 +549,16 @@ static void MainMenu_DrawNeon(cScraplandMainMenuScorer *self, int frame) {
 }
 
 /* the neon tubes: each flickers while its wait runs, else it is nearly full on */
-extern const double cScraplandMainMenuScorer_Draw_3ae218;
-extern const double cScraplandMainMenuScorer_Draw_3ae228;
-extern const double cScraplandMainMenuScorer_Draw_3aeb38;
-extern const double cScraplandMainMenuScorer_Draw_3aeba8;
-extern const double cScraplandMainMenuScorer_Draw_3c40c8;
+const double cScraplandMainMenuScorer_Draw_3c40c8 = 0.10000000894069672;
+
+const double cScraplandMainMenuScorer_Draw_3ae218 = 0.09999999403953552;
+
+const double cScraplandMainMenuScorer_Draw_3ae228 = 0.15000000596046448;
+
+const double cScraplandMainMenuScorer_Draw_3aeb38 = 0.05000000074505806;
+
+const double cScraplandMainMenuScorer_Draw_3aeba8 = 60.0;
+
 static void MainMenu_Neons(cScraplandMainMenuScorer *self, float dt) {
 	for (int k = 0; k < MAINMENU_NEONS; k++) {
 		float *w = &g_MainMenuNeonWait[k];
@@ -534,6 +596,8 @@ static void MainMenu_Neons(cScraplandMainMenuScorer *self, float dt) {
 		}
 	}
 }
+
+float g_MainMenuLightPos[5][2] = { { 472.0f, 88.0f }, { 193.0f, 156.0f }, { 290.0f, 94.0f }, { 158.0f, 93.0f }, { 360.0f, 156.0f } };
 
 /* the lighting of a letter after its random wait, the alpha of the letter */
 static int MainMenu_Letter(cScraplandMainMenuScorer *self, int k, float dt) {
@@ -585,8 +649,32 @@ static int MainMenu_Letter(cScraplandMainMenuScorer *self, int k, float dt) {
 }
 
 /* the sparks: each one runs its frames after a random wait */
-extern const double cScraplandMainMenuScorer_Draw_3c40f8;
-extern const double cScraplandMainMenuScorer_Draw_3c4110;
+const double cScraplandMainMenuScorer_Draw_3c40f8 = 1.399999976158142;
+
+const double cScraplandMainMenuScorer_Draw_3c4110 = 10.600000381469727;
+
+float g_MainMenuSparkPos[19][2] = {
+	{ 116.0f, 104.0f },
+	{ 104.0f, 169.0f },
+	{ 169.0f, 106.0f },
+	{ 166.0f, 168.0f },
+	{ 194.0f, 109.0f },
+	{ 199.0f, 172.0f },
+	{ 220.0f, 165.0f },
+	{ 247.0f, 169.0f },
+	{ 273.0f, 166.0f },
+	{ 301.0f, 106.0f },
+	{ 306.0f, 169.0f },
+	{ 356.0f, 108.0f },
+	{ 372.0f, 164.0f },
+	{ 400.0f, 167.0f },
+	{ 426.0f, 165.0f },
+	{ 458.0f, 164.0f },
+	{ 482.0f, 110.0f },
+	{ 514.0f, 110.0f },
+	{ 516.0f, 166.0f },
+};
+
 static void MainMenu_Sparks(cScraplandMainMenuScorer *self, float dt) {
 	for (int k = 0; k < MAINMENU_SPARKS; k++) {
 		if (!(g_MainMenuSparkTime[k] > 0.0f)) {
@@ -620,9 +708,12 @@ static void MainMenu_Sparks(cScraplandMainMenuScorer *self, float dt) {
 	}
 }
 
+const double cScraplandMainMenuScorer_Draw_3ae270 = 75.0;
+
+CFont *g_FontScrapMedium;
+
 /* vf00: the logo and its glow, the flickering neon tubes, the letters with their lighting, the sparks and the
  * pulsing "Remastered" */
-extern const double cScraplandMainMenuScorer_Draw_3ae270;
 void cScraplandMainMenuScorer_Draw(cScorerItem *base, int player) {
 	cScraplandMainMenuScorer *self = (cScraplandMainMenuScorer *)base;
 	static const char remastered[] = "Remastered";

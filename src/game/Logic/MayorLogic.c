@@ -38,6 +38,12 @@ byte cMayorLocalLogic_TargetDone(cLocalLogic *elem) {
 	return self->base.specialTime > g_GenCharSpecialActionTime;
 }
 
+cEntity *g_MayorTarget;
+
+cEntity *g_MayorSearchEnt;
+
+float g_MayorTargetDist = 3.4028235e+38f;
+
 /* vf30: at the search time the nearest dazed character in view in the sphere of MayorBlabliblaRadius */
 cEntity *cMayorLocalLogic_FindTarget(cLocalLogic *elem) {
 	cMayorLocalLogic *self = (cMayorLocalLogic *)elem;

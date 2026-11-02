@@ -27,7 +27,8 @@
 extern const ObjRefVtbl CNode3D_vftable;
 #define CNODO3D_VFTABLE (&CNode3D_vftable)
 
-extern cGVar GVar_R_Node3D_Count;
+cGVar GVar_R_Node3D_Count;
+
 #define g_Node3DCount (GVar_R_Node3D_Count.value.i)	/* R_Nodo3D_Count */
 extern byte g_RenderOff;
 extern int g_RenderCounts[10];
@@ -35,28 +36,39 @@ extern int g_RenderCounts[10];
 #define g_NodesUpdated g_RenderCounts[5]
 /* the pass of the renderer and its filters of the nodes */
 
+cGVar GVar_R_NodeSlerp2;
+
 /* the engine variables of the nodes (Gvars) */
-extern cGVar GVar_R_NodeSlerp2;
 #define g_NodeSlerp2 (GVar_R_NodeSlerp2.value.i)	/* R_NodeSlerp2 0/1/2 */
-extern cGVar GVar_R_ShowLocalBox;
+cGVar GVar_R_ShowLocalBox;
+
 #define g_ShowLocalBox (GVar_R_ShowLocalBox.value.i)
-extern cGVar GVar_R_ShowLBoxMin;
+cGVar GVar_R_ShowLBoxMin;
+
 #define g_ShowLBoxMin (GVar_R_ShowLBoxMin.value.i)	/* the nodes with an index from .. to (0: no limit) */
-extern cGVar GVar_R_ShowLBoxMax;
+cGVar GVar_R_ShowLBoxMax;
+
 #define g_ShowLBoxMax (GVar_R_ShowLBoxMax.value.i)
-extern cGVar GVar_R_ShowLBoxName;
+cGVar GVar_R_ShowLBoxName;
+
 #define g_ShowLBoxName (GVar_R_ShowLBoxName.value.s)	/* a wildcard of the names, "" for all */
-extern cGVar GVar_R_SkipAnim;
+cGVar GVar_R_SkipAnim;
+
 #define g_SkipAnim (GVar_R_SkipAnim.value.i)
-extern cGVar GVar_R_SkipAnimVis;
+cGVar GVar_R_SkipAnimVis;
+
 #define g_SkipAnimVis (GVar_R_SkipAnimVis.value.i)
-extern cGVar GVar_R_SkipNodeFX;
+cGVar GVar_R_SkipNodeFX;
+
 #define g_SkipNodeFX (GVar_R_SkipNodeFX.value.i)
-extern cGVar GVar_R_SkipNodes;
+cGVar GVar_R_SkipNodes;
+
 #define g_SkipNodes (GVar_R_SkipNodes.value.i)
-extern cGVar GVar_R_SkipTrans2;
+cGVar GVar_R_SkipTrans2;
+
 #define g_SkipTrans2 (GVar_R_SkipTrans2.value.i)	/* in the passes 2..9 and 12..19 */
-extern cGVar GVar_R_SkipTrans;
+cGVar GVar_R_SkipTrans;
+
 #define g_SkipTrans (GVar_R_SkipTrans.value.i)
 
 /* the check of Nodo3D.cpp that ends the game, with the name of the node */

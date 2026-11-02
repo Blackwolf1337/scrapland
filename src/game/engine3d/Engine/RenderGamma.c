@@ -12,23 +12,22 @@
 #include "scrap/misc.h"
 
 #define GAMMA_RAMP 256
-extern cGVar GVar_VideoGammaRGB;
+cGVar GVar_VideoGammaRGB;
+
 #define g_VideoGammaRGB (GVar_VideoGammaRGB.value.f)
-extern cGVar GVar_VideoScaleRGB;
+cGVar GVar_VideoScaleRGB;
+
 #define g_VideoScaleRGB (GVar_VideoScaleRGB.value.f)
-extern cGVar GVar_VideoScaleRed;
+cGVar GVar_VideoScaleRed;
+
 #define g_VideoScaleRed (GVar_VideoScaleRed.value.f)
-extern cGVar GVar_VideoScaleGreen;
+cGVar GVar_VideoScaleGreen;
+
 #define g_VideoScaleGreen (GVar_VideoScaleGreen.value.f)
-extern cGVar GVar_VideoScaleBlue;
+cGVar GVar_VideoScaleBlue;
+
 #define g_VideoScaleBlue (GVar_VideoScaleBlue.value.f)
 /* the values of the ramp set last */
-extern int g_GammaLast2x;
-extern float g_GammaLastRGB;
-extern float g_GammaLastScale;
-extern float g_GammaLastRed;
-extern float g_GammaLastGreen;
-extern float g_GammaLastBlue;
 
 /* one channel through the curve, limited to 0..65535 */
 static uint16_t Gamma_Channel(uint16_t w, float expo, float mult, float scale) {
@@ -38,6 +37,18 @@ static uint16_t Gamma_Channel(uint16_t w, float expo, float mult, float scale) {
 	}
 	return v > 0xfffe ? 0xffff : (uint16_t)v;
 }
+
+int g_GammaLast2x;
+
+float g_GammaLastRGB = 1.0f;
+
+float g_GammaLastScale = 1.0f;
+
+float g_GammaLastRed = 1.0f;
+
+float g_GammaLastGreen = 1.0f;
+
+float g_GammaLastBlue = 1.0f;
 
 void RenderGamma_Begin(void) {
 	void *dev = g_Engine->device;

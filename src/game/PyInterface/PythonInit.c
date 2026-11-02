@@ -9,17 +9,22 @@
 
 #include <marshal.h>
 
-extern cGVar GVar_Viewer;
+cGVar GVar_Viewer;
+
 #define g_IsViewer (GVar_Viewer.value.i)		/* model viewer build: Viewer.py instead of Init.py */
-extern cGVar GVar_PythonExecute;
+cGVar GVar_PythonExecute;
+
 #define g_PythonExecute (GVar_PythonExecute.value.s)	/* engine variable PythonExecute */
-extern cStaticBuffer cStaticBuffer_PyStaticBuffer[2];
+cStaticBuffer cStaticBuffer_PyStaticBuffer[2];
+
 #define g_PyStaticBuffer (&cStaticBuffer_PyStaticBuffer[0])
 
 /* PyRun_SimpleString of the exe, changed by the engine: CR dropped, the code is called "Scrap input" */
 int PyRun_ScrapString(const char *code);
 /* frees the free lists of the object types after Py_Finalize */
 void Py_FiniObjects(void);
+
+byte g_PythonReady;
 
 void Python_Init(void) {
 	char cmd[0x100];

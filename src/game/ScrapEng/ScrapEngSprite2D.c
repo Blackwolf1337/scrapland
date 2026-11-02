@@ -13,15 +13,16 @@
 #include "scrap/texture.h"
 
 /* the scale of the images, of SPR2D 0x10000 and of SPR2D 0x20000 (two floats each) */
-extern float g_Sprite2DScale[2];
-extern float g_Sprite2DScaleA[2];
-extern float g_Sprite2DScaleB[2];
 
 #define Sprite_Graphic(p) ((CGraphic2D *)(p)->sprite)
 
 static CMultiSprite *Sprite_MultiSprite(const CPsaImage *self) {
 	return Sprite_Graphic(self)->Mat->map[0]->MultiSprite;
 }
+
+int g_CountSprite2D;
+
+float g_Sprite2DScale[2] = { 1.0f, 1.0f };
 
 void CPsaImage_Init(CPsaImage *self) {
 	g_CountSprite2D++;
@@ -203,6 +204,10 @@ void CPsaImage_DrawPoly(void *img, const float *pos, const float *uv, const uint
 	}
 	CGraphic2D_Draw(self->sprite, pos, uv, colors, (uint32_t)n, mode);
 }
+
+float g_Sprite2DScaleA[2] = { 0.5f, 0.5f };
+
+float g_Sprite2DScaleB[2] = { 1.0f, 1.0f };
 
 /* the CGraphic2D of the sheet name (opac: the opacity map) with the blend mode and the SPR2D flags */
 void CPsaImage_Load(CPsaImage *self, const char *name, const char *opac, int blend, uint32_t flags) {

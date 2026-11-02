@@ -23,7 +23,6 @@ extern const CD3DApplicationVtbl CD3DApplication_vftable;
 #define D3DAPP_TIMER_START 1
 #define D3DAPP_TIMER_STOP 2
 
-extern int g_AppPausedCount;
 
 
 int D3DApp_SortModes(const D3DDisplayMode *a, const D3DDisplayMode *b) {
@@ -154,6 +153,8 @@ int CD3DApp_AdjustWindowForChange(CD3DApplication *self) {
 	Plat_ShowCursor(self->windowed || self->showCursorWhenFullscreen);
 	return 0;
 }
+
+int g_AppPausedCount;
 
 /* vf13: pause counted over the callers, the timer stopped with the first and started with the last */
 void CD3DApp_Pause(CD3DApplication *self, int pause) {
@@ -387,8 +388,6 @@ int CD3DApp_ToggleFullscreen(CD3DApplication *self) {
 #define D3DCREATE_PUREDEVICE 0x10
 #define D3DCREATE_FPU_PRESERVE 0x2
 
-extern uint32_t g_D3DAppFrames;
-extern float g_D3DAppLastTime;
 
 
 /* IDirect3D8 and IDirect3DDevice8 */
@@ -747,6 +746,10 @@ int CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 	CD3DApp_DisplayErrorMsg(hr);
 	return hr;
 }
+
+float g_D3DAppLastTime;
+
+uint32_t g_D3DAppFrames;
 
 static void D3DApp_FrameStats(CD3DApplication *self) {
 	float t = DXUtil_Timer(DXUTIL_TIMER_GETABSOLUTETIME);

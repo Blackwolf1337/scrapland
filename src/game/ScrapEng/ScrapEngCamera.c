@@ -103,6 +103,12 @@ void CGameCamera_SetNode(CGameCamera *self, CRenderNode *node) {
 	self->Node = node;
 }
 
+int g_CamCompositeIdx;
+
+float g_CamCompositeFrame;
+
+float g_CamCompositeFPS = 1.0f;
+
 CNode3D *CamComposite_Find(CModel *model, CIniFile *ini) {
 	char key[32], name[128];
 	int idx = -1;
@@ -136,6 +142,10 @@ CNode3D *CamComposite_Find(CModel *model, CIniFile *ini) {
 	}
 	return NULL;
 }
+
+CFont *g_FontHoratioSmall;
+
+char g_CamCompositeName[128];
 
 void CamComposite_DrawDebug(void) {
 	if (!g_ShowSceneCamera) {
@@ -184,6 +194,8 @@ static void CGameCamera_FromNode(CGameCamera *self, CModel *model, CNode3D *node
 	}
 }
 
+int g_CameraNodes = 1;
+
 CCamera *CGameCamera_Update(CGameCamera *self) {
 	CAM_CHECK(self);
 	CRenderNode *node = self->Node;
@@ -226,3 +238,10 @@ vec3_t *CGameCamera_ToLocal(const CGameCamera *self, vec3_t *out, const vec3_t *
 	*out = *Vec3_RotateInv(&t, out, &self->rot);
 	return out;
 }
+
+cGVar GVar_CameraDefViewAspect;
+
+cGVar GVar_ShowSceneCamera;
+
+cGVar GVar_PhysicalAspectRatio;
+

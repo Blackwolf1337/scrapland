@@ -16,18 +16,21 @@
 #define D3DFMT_R5G6B5 23
 #define D3DBACKBUFFER_TYPE_MONO 0
 
+cGVar GVar_R_VideoLockMode;
+
 /* the engine variables: RenderLock (the mode), RenderLockFrames (1..3) and RenderLockNoise */
-extern cGVar GVar_R_VideoLockMode;
 #define g_RenderLock (GVar_R_VideoLockMode.value.i)
-extern cGVar GVar_R_VideoLockBuf;
+cGVar GVar_R_VideoLockBuf;
+
 #define g_RenderLockFrames (GVar_R_VideoLockBuf.value.i)
-extern cGVar GVar_R_VideoLockShow;
+cGVar GVar_R_VideoLockShow;
+
 #define g_RenderLockNoise (GVar_R_VideoLockShow.value.i)
-extern void * g_TextLock[7];	/* RENDERLOCK_MAX render targets */
+void *g_TextLock[7];
+
 #define g_TextMem (g_TextLock[3])		/* system memory */
 #define g_TextBack (g_TextLock[4])		/* in the format of the back buffer */
 #define g_TextLockIdx (*(int *)&g_TextLock[5])
-extern const int32_t g_RenderLockRect[4];	/* 0, 0, 4, 4 */
 
 /* D3DLOCKED_RECT */
 typedef struct LockedRect {
@@ -68,6 +71,8 @@ void RenderLock_InitD3D(void) {
 	RenderLock_Create(0, D3DFMT_R5G6B5, D3DPOOL_SYSTEMMEM, &g_TextMem);
 	RenderLock_Create(0, fmt, D3DPOOL_SYSTEMMEM, &g_TextBack);
 }
+
+const int32_t g_RenderLockRect[4] = { 0, 0, 4, 4 };
 
 /* mode 1: a part of the back buffer into the system texture */
 void RenderLock_CopyBack(void) {

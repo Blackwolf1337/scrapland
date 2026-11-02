@@ -16,9 +16,6 @@
 #include "scrap/scrapmain.h"
 
 /* the characters near the control (CharsNear, FindAvoid): the sphere test collects them here */
-extern cEntity * g_AICCNear[20];	/* 20 */
-extern int g_AICCNumNear;
-extern cEntity *g_AICCNearSelf;	/* the character itself, left out */
 #define g_AICCNearFunc ((&g_ChTypeSphereFunc))
 #define AICC_NEAR_NATIVE ((nativefunc_t)AICC_NearChar)	/* AICC_NearChar (its C version behind the hook) */
 #define AICC_MAX_NEAR 20
@@ -32,9 +29,10 @@ static inline vec3_t *AICC_ViewDir(vec3_t *out, cEntity *e) {
 	return Vec3_Rotate(out, &fwd, &ang);
 }
 
+const int cAICharControl_ctor_3a9a2c = 50;
+
 /* ---- construction ---- */
 
-extern const int cAICharControl_ctor_3a9a2c;
 cAICharControl *cAICharControl_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg) {
 	cAICharControl *self = mem;
 
@@ -281,6 +279,12 @@ byte cAICharControl_UpdateRoutePath(cAICharControl *self) {
 byte cAICharControl_UpdateFollowB(cAICharControl *self) {
 	return AICC_Vtbl(self)->UpdateFollow(self) != 0;
 }
+
+cEntity *g_AICCNear[20];
+
+int g_AICCNumNear;
+
+cEntity *g_AICCNearSelf;
 
 /* the sphere test of CharsNear: the walking characters but the control's own one, up to 20 */
 void AICC_NearChar(cAbstractFile *params) {
@@ -2125,3 +2129,32 @@ const cAICharControlVtbl cAICharControl_vftable = {
 	.StartOrbit = cAICharControl_StartOrbit,
 	.Stop2 = cAICharControl_Stop2,
 };
+
+cGVar GVar_AngAttackBackCharAI;
+
+cGVar GVar_TimeEventCollCharAI;
+
+cGVar GVar_MinAngleSearchPointCharAI;
+
+cGVar GVar_NumPointsSearchSegmentCharAI;
+
+cGVar GVar_ShowCharAI;
+
+cGVar GVar_TimeTestCollCharAI;
+
+cGVar GVar_DistNextPosGoTargetCharAI;
+
+cGVar GVar_OffsetAngOrientCharAI;
+
+cGVar GVar_NameDebugShirkAI;
+
+cGVar GVar_MarginDetectCollCharAI;
+
+cGVar GVar_TimeStopCollCharAI;
+
+cGVar GVar_TimeBetweenEventCollCharAI;
+
+cGVar GVar_TimeStrafeLostObjCharAI;
+
+cGVar GVar_ShowTestCanGoAI;
+

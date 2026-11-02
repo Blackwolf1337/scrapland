@@ -8,6 +8,16 @@
 #include "scrap/console.h"
 #include "scrap/net.h"
 
+char g_NetClientServer[256];
+
+uint16_t g_NetClientPort;
+
+cNetClient *g_NetClient;
+
+void *g_NetClientData;
+
+void *g_NetClientCtl;
+
 byte Net_CloseClient(void) {
 	if (!g_NetClientServer[0]) {
 		return 0;
@@ -59,6 +69,10 @@ static void Net_SetStatus(const char *s) {
 		cString_Set(g_ClientConnectionStatus, s);
 	}
 }
+
+int g_NetClientDataSize;
+
+int g_NetClientCtlSize;
 
 byte Net_ClientFrame(void) {
 	int slot;
@@ -179,3 +193,12 @@ byte Net_ClientReady(void) {
 	}
 	return 0;
 }
+
+cGVarFunction GVar_OnChatString;
+
+cGVar GVar_ClientPPS;
+
+cGVarFunction GVar_OnUsrString;
+
+cGVarFunction GVar_ClientSetPlayer;
+

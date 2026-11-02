@@ -34,6 +34,10 @@ cUserNetManager *cServerNetManager_Delete(cUserNetManager *base, byte flags) {
 	return base;
 }
 
+byte g_NetClientPings[256];
+
+cFileMem g_NetMsg;
+
 /* the entities of the stream: an id ("net<id>") and a resource byte each, then the state of the entity */
 static void ServerNet_ReadEntities(cServerNetManager *self, int size) {
 	char name[0x80];
@@ -241,3 +245,32 @@ const cServerNetManagerVtbl cServerNetManager_vftable = {
 	.base.SetLocalData = cUserNetManager_Nop,
 	.SendHello = cServerNetManager_SendHello,
 };
+
+cGVar GVar_LogNetData;
+
+cGVar GVar_ClientPassword;
+
+cGVarFunction GVar_ClientAfterCreate;
+
+cGVarFunction GVar_ClientCreate;
+
+cGVar GVar_WeaponBayList;
+
+cGVar GVar_Motor3Model;
+
+cGVar GVar_PlayerMaxLife;
+
+cGVar GVar_Motor1Model;
+
+cGVar GVar_PilotModel;
+
+cGVar GVar_Motor0Model;
+
+cGVar GVar_PlayerName;
+
+cGVar GVar_Motor2Model;
+
+cGVar GVar_PlayerTeamID;
+
+cGVar GVar_PlayerModel;
+

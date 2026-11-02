@@ -373,8 +373,16 @@ static void FXV_FireSprites(CGameParticles *p) {
 #define FXV_RAMP_SMOKE 0x43119c		/* [2] */
 #define FXV_RAMP_SMOKE2 0x431178
 
-extern uint32_t cObjElementFXFiredDebris_Update_4310e8[18];
-extern uint32_t cObjElementFXFiredDebris_Update_431130[18];
+uint32_t cObjElementFXFiredDebris_Update_4310e8[18] = {
+	0xff565656, 0xe2fff696, 0xc4e68211, 0xc4ab5e0d, 0xc49c3a08, 0xc46a2617, 0xe640190e, 0xff000000, 0xff000000,
+	0xff565656, 0xaaffec82, 0xa0ef8228, 0xaa9a260f, 0xbb7c1f0c, 0xcc5e170a, 0xe1400f05, 0xff000000, 0xff000000,
+};
+
+uint32_t cObjElementFXFiredDebris_Update_431130[18] = {
+	0xff000000, 0x5a0f0f0f, 0x40141414, 0x401e1e1e, 0x5a191919, 0x800f0f0f, 0xc0050505, 0xff000000, 0xff000000,
+	0xff000000, 0x5a141414, 0x5a282828, 0x46323232, 0x503c3c3c, 0x802d2d2d, 0xc00f0f0f, 0xff000000, 0xff000000,
+};
+
 void cObjElementFXFiredDebris_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	cObjElementFXFiredDebris *self = (cObjElementFXFiredDebris *)base;
 	CGameModel *model = Debris_Model(debris);
@@ -497,8 +505,13 @@ void cObjElementFXFiredDebris_Update(cObjElementFX *base, cDebris *debris, float
 	}
 }
 
-extern uint32_t cObjElementFXSmokeDebris_Update_431178[9];
-extern uint32_t cObjElementFXSmokeDebris_Update_43119c[19];
+uint32_t cObjElementFXSmokeDebris_Update_431178[9] = { 0xffffffff, 0xc4ffc680, 0xc4ffc680, 0xc4dea460, 0xc4c48040, 0xc4804020, 0xe6402010, 0xff000000, 0xff000000 };
+
+uint32_t cObjElementFXSmokeDebris_Update_43119c[19] = {
+	0xff000000, 0x80202020, 0x80414141, 0x8a4b4b4b, 0xa4464646, 0xc02d2d2d, 0xe4181818, 0xff000000, 0xff000000,
+	0xff000000, 0x80373737, 0x804b4b4b, 0x80555555, 0xa4505050, 0xc0373737, 0xe4202020, 0xff000000, 0xff000000,
+};
+
 void cObjElementFXSmokeDebris_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	cObjElementFXSmokeDebris *self = (cObjElementFXSmokeDebris *)base;
 	CGameModel *model = Debris_Model(debris);
@@ -686,9 +699,10 @@ void cObjElementFXVehicleSpawn_Update(cObjElementFX *base, cDebris *debris, floa
 	self->stepTime = 0.0f;
 }
 
+cGVar GVar_FXFiredEntitySmokeStep;
+
 /* ---- FiredEntity ---- */
 
-extern cGVar GVar_FXFiredEntitySmokeStep;
 #define g_FXFiredEntitySmokeStep (GVar_FXFiredEntitySmokeStep.value.f)
 #define FXV_RAMP_FIREDENT_SMOKE 0x4315e8	/* [2] */
 #define FXV_RAMP_FIREDENT_FIRE 0x431630		/* [5] */
@@ -703,8 +717,22 @@ static vec3_t *FXV_TurnZ(vec3_t *out, float z, const vec3_t *rot) {
 }
 
 /* the smoke and fire behind a burning entity, one emission per step of the way since the last one */
-extern uint32_t cObjElementFXFiredEntity_Update_4315e8[18];
-extern uint32_t cObjElementFXFiredEntity_Update_431630[74];
+uint32_t cObjElementFXFiredEntity_Update_4315e8[18] = {
+	0xfffff696, 0xa4fff08c, 0xafe6b411, 0xb9ab720d, 0xc89c4408, 0xd76a2603, 0xe6401400, 0xff000000, 0xff000000,
+	0xffffe65a, 0xa4ffe150, 0xafef8228, 0xb99a440f, 0xc87c1f0c, 0xd75e170a, 0xe1400f05, 0xff000000, 0xff000000,
+};
+
+uint32_t cObjElementFXFiredEntity_Update_431630[74] = {
+	0xff000000, 0x40141414, 0x40141414, 0x40141414, 0x60141414, 0x800a0a0a, 0xc0050505, 0xff000000, 0xff000000,
+	0xff000000, 0x40191919, 0x40191919, 0x40191919, 0x60191919, 0x800d0d0d, 0xc0060606, 0xff000000, 0xff000000,
+	0xff000000, 0x401e1e1e, 0x401e1e1e, 0x401e1e1e, 0x601e1e1e, 0x800f0f0f, 0xc0070707, 0xff000000, 0xff000000,
+	0xff000000, 0x40232323, 0x40232323, 0x40232323, 0x60232323, 0x80111111, 0xc0080808, 0xff000000, 0xff000000,
+	0xff000000, 0x40282828, 0x40282828, 0x40282828, 0x60282828, 0x80141414, 0xc00a0a0a, 0xff000000, 0xff000000, 0,
+	0xff47e2e2, 0x403bb9ff, 0x103ea4ff, 0x104296ff, 0x204787ff, 0x804a7eff, 0xc04165db, 0xff000000, 0xff000000,
+	0xff8080ff, 0xa48080ff, 0x808080ff, 0x808080ff, 0x808080ff, 0xa48080ff, 0xc08080ff, 0xff8080ff, 0xff8080ff,
+	0xff4040ff, 0xa44040ff, 0x804040ff, 0x804040ff, 0x804040ff, 0xa44040ff, 0xc04040ff, 0xff4040ff, 0xff4040ff,
+};
+
 void cObjElementFXFiredEntity_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	cObjElementFXFiredEntity *self = (cObjElementFXFiredEntity *)base;
 	(void)dt;
@@ -1179,7 +1207,6 @@ void cObjElementFXVehicleEMI_Update(cObjElementFX *base, cDebris *debris, float 
 /* ---- Fire ---- */
 
 #define FXV_RAMP_FIRE 0x431530		/* [3] */
-extern uint32_t FXV_FIRE_RAMPS[27];	/* [3 * 9] */
 #define FXV_RAMP_FIRE2 0x431554		/* [2] */
 #define FXV_RAMP_FIRESMOKE 0x43159c	/* [2] */
 
@@ -1190,7 +1217,17 @@ static inline float FXV_FireSize(float s, float r) {
 }
 
 /* the flames along the ship (16 of its vertices and 8 of a motor) and the smoke behind a fast AI ship */
-extern uint32_t cObjElementFXVehicleFire_Update_43159c[19];
+uint32_t FXV_FIRE_RAMPS[27] = {
+	0xff3b00, 0xff4300, 0xff5200, 0xff6000, 0x20ff7300, 0x80ff8300, 0xc4804100, 0xff000000, 0, 0x80ffffff, 0xffff94,
+	0xf3f750, 0xcda736, 0x20a44a18, 0x80871005, 0xc4800000, 0xff000000, 0, 0xff000000, 0x80824c11, 0x40ef6e20,
+	0x20ff7d32, 0x40b48250, 0x80877732, 0xc45e4022, 0xff000000,
+};
+
+uint32_t cObjElementFXVehicleFire_Update_43159c[19] = {
+	0xff3c3c3c, 0xc0333333, 0x802c2c2c, 0x40232323, 0x401a1a1a, 0x80101010, 0xc0070707, 0xff000000, 0xff000000,
+	0xff464646, 0x80373737, 0x60282828, 0x40323232, 0x603c3c3c, 0x802d2d2d, 0xc00f0f0f, 0xff000000, 0xff000000,
+};
+
 void cObjElementFXVehicleFire_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	cObjElementFXVehicleFire *self = (cObjElementFXVehicleFire *)base;
 	cEntity *e = self->entity;
@@ -1426,14 +1463,14 @@ void cObjElementFXVehicleFire_Update(cObjElementFX *base, cDebris *debris, float
 	self->emitTime = 0.0f;
 }
 
+cGVar GVar_FXVehicleDamageSmokeStep;
+
 /* ---- Damage ---- */
 
-extern cGVar GVar_FXVehicleDamageSmokeStep;
 #define g_FXVehicleDamageSmokeStep (GVar_FXVehicleDamageSmokeStep.value.f)	/* FXVehicleDamageSmokeStep */
 #define FXV_RAMP_TRAIL 0x4311e8		/* [2] */
 #define FXV_RAMP_DEBRIS 0x431254
 #define FXV_RAMP_FLAME 0x431278		/* [3] */
-extern uint32_t FXV_FLAME_RAMPS[27];	/* [3 * 9] */
 #define FXV_RAMP_FLAME2 0x43129c	/* [2] */
 #define FXV_RAMP_DSMOKE 0x4312e8	/* [5] */
 #define FXV_DAMAGE_VERTS 12		/* of the ship, then 6 of a motor */
@@ -1454,8 +1491,9 @@ static void FXV_VelBrake(CGameParticles *p, const vec3_t *vel, double range, dou
 	p->initAccMax = p->initAccMin;
 }
 
+uint32_t FXV_DamageDebris_431254[9] = { 0x80dcdcff, 0x84d2d2ff, 0x8c8282e6, 0x965e5eab, 0xa444444c, 0xc00f0f38, 0xde050519, 0xff000000, 0xff000000 };
+
 /* a still piece of debris at r, lifeTime scaled by k, its rotation at the end turned by up to +-90 degrees */
-extern uint32_t FXV_DamageDebris_431254[9];
 static void FXV_DamageDebris(CGameParticles *p, const vec3_t *r, double iniRange, double iniAdd, double endRange,
 	double endAdd, double lifeRange, double lifeAdd, float k, byte sprite) {
 	const vec3_t zero = { 0.0f, 0.0f, 0.0f };
@@ -1476,8 +1514,15 @@ static void FXV_DamageDebris(CGameParticles *p, const vec3_t *r, double iniRange
 	CGameParticles_EmitN(p, 1, 0);
 }
 
+uint32_t FXV_DamageDebris_4312e8[46] = {
+	0xff000000, 0x40141414, 0x40141414, 0x40141414, 0x60141414, 0x800a0a0a, 0xc0050505, 0xff000000, 0xff000000,
+	0xff000000, 0x40191919, 0x40191919, 0x40191919, 0x60191919, 0x800d0d0d, 0xc0060606, 0xff000000, 0xff000000,
+	0xff000000, 0x401e1e1e, 0x401e1e1e, 0x401e1e1e, 0x601e1e1e, 0x800f0f0f, 0xc0070707, 0xff000000, 0xff000000,
+	0xff000000, 0x40232323, 0x40232323, 0x40232323, 0x60232323, 0x80111111, 0xc0080808, 0xff000000, 0xff000000,
+	0xff000000, 0x40282828, 0x40282828, 0x40282828, 0x60282828, 0x80141414, 0xc00a0a0a, 0xff000000, 0xff000000,
+};
+
 /* the smoke at a vertex r of the ship moving with vel; c3, c4 the sizes */
-extern uint32_t FXV_DamageDebris_4312e8[46];
 static void FXV_DamageSmoke(CGameParticles *p, const vec3_t *r, const vec3_t *vel, float c3, float c4,
 	double lifeRange, double lifeAdd, double rotRange, double rotAdd) {
 	p->initPosMin = *r;
@@ -1502,6 +1547,12 @@ static inline float FXV_FlameSize(float c, double range, double add) {
 	float r1 = FXV_Rand(0.69999998807907104, -0.34999999403953552);
 	return FXV_Rand(range, add) * (r1 * c + c);
 }
+
+uint32_t FXV_FLAME_RAMPS[27] = {
+	0xff3b00, 0xff4300, 0xff5200, 0xff6000, 0x20ff7300, 0x80ff8300, 0xc4804100, 0xff000000, 0xff000000, 0x80ffffff,
+	0xffff94, 0xf3f750, 0xcda736, 0x20a44a18, 0x80871005, 0xc4800000, 0xff000000, 0xff000000, 0xff000000,
+	0x80824c11, 0x40ef6e20, 0x20ff7d32, 0x40b48250, 0x80877732, 0xc45e4022, 0xff000000, 0xff000000,
+};
 
 /* a flame at the vertex r of the ship (n its direction from the ship) moving with vel; c3, c4 the sizes */
 static void FXV_DamageFlame(cObjElementFXVehicleDamage *self, cDebris *debris, const vec3_t *r, const vec3_t *n,
@@ -1571,8 +1622,13 @@ static void FXV_DamageFlame(cObjElementFXVehicleDamage *self, cDebris *debris, c
 	}
 }
 
+uint32_t cObjElementFXVehicleDamage_Update_4311e8[27] = {
+	0xfffff696, 0xa4fff08c, 0xafe6b411, 0xb9ab720d, 0xc89c4408, 0xd76a2603, 0xe6401400, 0xff000000, 0xff000000,
+	0xffffe65a, 0xa4ffe150, 0xafef8228, 0xb99a440f, 0xc87c1f0c, 0xd75e170a, 0xe1400f05, 0xff000000, 0xff000000,
+	0xffffa032, 0xa4ff7832, 0xafef3c19, 0xb99a230f, 0xc87c0f0a, 0xd75e0a05, 0xe1400502, 0xff000000, 0xff000000,
+};
+
 /* a puff of the trail of smoke at pt: around the position of the ship (far) or behind it */
-extern uint32_t cObjElementFXVehicleDamage_Update_4311e8[27];
 static void FXV_TrailPuff(CGameParticles *p, const vec3_t *pt, const vec3_t *pos, const vec3_t *rot, float rad,
 	float sc, byte far) {
 	vec3_t d, o, r, v;
@@ -1956,15 +2012,15 @@ trail:
 	FXV_DamageTrail(self, &pos, &rot, t, rad);
 }
 
+cGVar GVar_ShipExplosionMaxDist;
+
 /* ---- FX_ShipExplosion ---- */
 
-extern cGVar GVar_ShipExplosionMaxDist;
 #define g_ShipExplosionMaxDist (GVar_ShipExplosionMaxDist.value.f)	/* ShipExplosionMaxDist */
 #define FXV_RAMP_XFLAME 0x4313a0	/* [2] */
 #define FXV_RAMP_XSPARK 0x4313e8
 #define FXV_RAMP_XSMOKE 0x43140c
 #define FXV_RAMP_XFIRE 0x431454		/* [3] */
-extern uint32_t FXV_XFIRE_RAMPS[27];	/* [3 * 9] */
 #define FXV_RAMP_XPUFF 0x431478		/* [2] */
 #define FXV_RAMP_XBALL 0x4314c0		/* [3] */
 #define FXV_PI_2 1.5707964f
@@ -2047,8 +2103,18 @@ static void FXV_ShipDebris(cDebrisSys *sys, int n, const vec3_t *pos, float scal
 	}
 }
 
+uint32_t FX_ShipExplosion_4313a0[18] = {
+	0xff000000, 0x80ffffff, 0x40ffffff, 0x40ffffff, 0x40ffffff, 0x80c4c4c4, 0xc4808080, 0xff000000, 0xff000000,
+	0xff000000, 0x80ffe8e8, 0x40ffe8e8, 0x40ffe8e8, 0x40ffe8e8, 0x80c4a0a0, 0xc4806464, 0xff000000, 0xff000000,
+};
+
+uint32_t FXV_XFIRE_RAMPS[27] = {
+	0xff000000, 0x400f0f0f, 0x30141414, 0x30232323, 0x401e1e1e, 0x80141414, 0xc80f0f0f, 0xff000000, 0xff000000,
+	0xff000000, 0x5a191919, 0x40232323, 0x40323232, 0x5a3c3c3c, 0xa8323232, 0xc8141414, 0xff000000, 0xff000000,
+	0xff000000, 0x5a1e1e1e, 0x402d2d2d, 0x403c3c3c, 0x5a464646, 0xa83c3c3c, 0xc8141414, 0xff000000, 0xff000000,
+};
+
 /* the flames: 8 puffs each along a curved way out of the explosion, the ways apart from the last one */
-extern uint32_t FX_ShipExplosion_4313a0[18];
 static void FXV_ShipFlames(CGameParticles *p, int numFlames, const vec3_t *pos, const vec3_t *vel, float scale,
 	float time) {
 	vec3_t prev = { 0.0f, 0.0f, 0.0f };
@@ -2131,8 +2197,13 @@ static void FXV_ShipFlames(CGameParticles *p, int numFlames, const vec3_t *pos, 
 }
 
 /* the puffs on a sphere around the explosion: 4 x 4 directions, each with up to four kinds by chance */
-extern uint32_t FX_ShipExplosion_4313e8[9];
-extern uint32_t FX_ShipExplosion_43140c[18];
+uint32_t FX_ShipExplosion_4313e8[9] = { 0xff000000, 0xaafeee90, 0x82ef7d38, 0x96bc4110, 0xb97a2a0a, 0xd23f1805, 0xeb0e0801, 0xff000000, 0xff000000 };
+
+uint32_t FX_ShipExplosion_43140c[18] = {
+	0xff000000, 0xa4feee90, 0x60efa438, 0x40bc6410, 0x607a500a, 0x803f2805, 0xc40e0801, 0xff000000, 0xff000000,
+	0xff565656, 0xaaffec82, 0xa0ef8228, 0xaa9a260f, 0xbb7c1f0c, 0xcc5e1706, 0xe1320a01, 0xff000000, 0xff000000,
+};
+
 static void FXV_ShipSphere(CGameParticles *p, const vec3_t *pos, const vec3_t *vel, float scale, float time) {
 	const vec3_t one = { 1.0f, 1.0f, 1.0f };
 	vec3_t dir;
@@ -2270,7 +2341,12 @@ static void FXV_ShipSphere(CGameParticles *p, const vec3_t *pos, const vec3_t *v
 	} while (6.2831853071795862 > (double)a);
 }
 
-extern uint32_t FX_ShipExplosion_4314c0[28];
+uint32_t FX_ShipExplosion_4314c0[28] = {
+	0xff000000, 0x80ffffff, 0x40ffffff, 0x40ffffff, 0x40ffffff, 0x80c4c4c4, 0xc4808080, 0xff000000, 0xff000000,
+	0xff000000, 0x80ffc0c0, 0x40ffc0c0, 0x40ffc0c0, 0x40ffc0c0, 0x80c48c8c, 0xc4805050, 0xff000000, 0xff000000,
+	0xff000000, 0x80ffe8c0, 0x40ffe8c0, 0x40ffe8c0, 0x40ffe8c0, 0x80c4a58c, 0xc4806450, 0xff000000, 0xff000000,
+};
+
 void FX_ShipExplosion(vec3_t pos, vec3_t vel, float scale, float time, int numFlames, int collision) {
 	vec3_t from, to, hit, tmp;
 	CCollisionTri tri;
@@ -3373,3 +3449,10 @@ const cObjElementFXVtbl cObjElementFXVehicleAccelerator_vftable = {
 	.Start = cObjElementFXVehicleAccelerator_Start,
 	.Reset = cObjElementFXVehicleAccelerator_Reset,
 };
+
+cGVar GVar_FXShipExplosionFile;
+
+cGVar GVar_FXFiredDebrisFile;
+
+cGVar GVar_FXSmokeDebrisFile;
+

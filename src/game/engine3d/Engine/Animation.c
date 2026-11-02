@@ -60,6 +60,8 @@ static float Stream_Float(const void *s, int k, int size, int i) {
 	return f;
 }
 
+CAnimBlock *g_ActAnimBlock;
+
 static int AnimBlock_Inside(const void *ptr) {
 	const CAnimBlock *b = g_ActAnimBlock;
 
@@ -332,6 +334,8 @@ void CAnimNode_Read(CAnimNode *self, CFileIO *f) {
 	CFileIO_Error(f, "NAM");
 }
 
+cMemStats g_AnimMemStats;
+
 void CAnimation_Read(CAnimation *self, CFileIO *f) {
 	g_MemStatsContext = (&g_AnimMemStats);
 	CFileIO_BeginBlock(f, "ANI");
@@ -430,6 +434,8 @@ static int Anim_RotNear(const quat_t *a, const quat_t *b, float cosErr) {
 static int Anim_FovNear(float a, float b, float eps) {
 	return !(__builtin_fabs((double)(a - b)) > (double)eps);
 }
+
+char g_AnimNodeName[256];
 
 static void AnimNode_OptimizePos(CAnimNode *self) {
 	const vec3_t *p = self->Pos;
@@ -1022,3 +1028,14 @@ void CAnimation_SwapNodes(CAnimation *self, uint32_t i, uint32_t j) {
 	g_AnimNodeCount--;
 	CAnimNode_Init(&tmp, 0, 0, ANIM_POS | ANIM_ROT);
 }
+
+cGVar GVar_OptAnimPosErr;
+
+cGVar GVar_OptimizeAnims;
+
+cGVar GVar_OptAnimFovErr;
+
+cGVar GVar_R_AnimNode_Count;
+
+cGVar GVar_OptAnimRotErr;
+

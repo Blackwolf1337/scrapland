@@ -19,6 +19,8 @@
 /* the scorer state the definition of a key switches to (rva 0x1710f0, Scorer/) */
 void Scorer_SetInputState(int state);
 
+cInputDevList g_InputDevices;
+
 /*
  * The walk over the device ring with the iterator of the list, as the exe: the iterator is a global, every step
  * reads it back and compares with the head.
@@ -31,6 +33,8 @@ static cInputDevNode *Devices_Next(void) {
 	cInputDevNode *n = g_InputDevices.iter = g_InputDevices.iter->next;
 	return n == g_InputDevices.head ? NULL : n;
 }
+
+cActionSetTable g_ActionSets;
 
 /* the set and the action by name: 0 found, 1 no such set, 2 no such action */
 static int Input_FindAction(const char *set, const char *action, uint32_t *s, uint32_t *a) {
@@ -103,6 +107,12 @@ cAbstractIDevice *cAbstractIDevice_Delete(cAbstractIDevice *self, byte flags) {
 	return self;
 }
 
+int g_ToDefinePlayer = -1;
+
+int g_ToDefineAction = -1;
+
+uint32_t g_ToDefineSet = 0xffffffff;
+
 void Input_AbortListenToDefine(void) {
 	g_ToDefineSet = -1;
 	g_ToDefineAction = -1;
@@ -156,6 +166,8 @@ int Input_Bind(int player, const char *a, const char *b, const char *c) {
 	cPy_Function_SetFunc(&ia->func[player], c);
 	return 0;
 }
+
+float g_InactivityTimer;
 
 /* CheckInactivityTime seconds without an action held calls the function of the inactivity */
 void Input_CheckInactivity(float dt) {
@@ -437,6 +449,8 @@ void Input_Update(float dt) {
 	Input_CheckInactivity(dt);
 }
 
+cPy_Function g_DefineFunc;
+
 /* the callback of ListenToDefine with a function: called once */
 void Input_OnDefined(void) {
 	cPy_Function_Execute((&g_DefineFunc), 0);
@@ -489,6 +503,8 @@ void cAbstractIDevice_SetAxis(cAbstractIDevice *self, int entry, float value) {
 	cAbstractIDevice_SetValue(self, entry, value > 0.0f ? value : 0.0f);
 	cAbstractIDevice_SetValue(self, entry + 1, 0.0f > value ? -value : 0.0f);
 }
+
+input_cb_t g_OnDefined;
 
 /* the new value of an entry: defines the waiting key on a press, else raises the action it is bound to */
 void cAbstractIDevice_SetValue(cAbstractIDevice *self, int entry, float value) {
@@ -639,3 +655,10 @@ const cGVarListVtbl cFuncGvar_vftable = {
 	.Save = (void *)crt_purecall,
 	.Load = (void *)crt_purecall,
 };
+
+cGVar GVar_CheckInactivityTime;
+
+cGVarFunction GVar_CheckInactivityFunc;
+
+cGVar GVar_PauseInactivityTime;
+

@@ -28,6 +28,10 @@
 #define BSP_INV255 0x1.010102p-8f
 
 
+int g_BspNumLights;
+
+BspLight g_BspLights[512];
+
 /* the lights of the scene */
 
 void Bsp_TakeLights(CScene *scn) {
@@ -112,6 +116,10 @@ void Bsp_TakeLights(CScene *scn) {
 	}
 }
 
+
+float g_ShadowMapScale = 1.0f;
+
+float g_ShadowMapRes = 0.5f;
 
 /* the texels of the lists */
 
@@ -329,9 +337,10 @@ void CBsp_CreateBuffers(CBsp *self) {
 }
 
 
+cGVar GVar_LightmapLinearAtten;
+
 /* the direct light of the lights of g_BspLights */
 
-extern cGVar GVar_LightmapLinearAtten;
 #define g_LightmapLinearAtten (GVar_LightmapLinearAtten.value.i)	/* gvar */
 
 /* the segment from c (moved back along the light direction d) to the light at dest blocked by the floor */
@@ -367,6 +376,8 @@ static inline float Bsp_Dist2(const vec3_t *a, const vec3_t *b) {
 
 	return dy * dy + dx * dx + dz * dz;
 }
+
+int g_ShadowMapIllumGlobal;
 
 /* the light maps of a list: light all lights, light2 the stencil ones, rad2 each times its rad */
 static void BspTri_DirectLight(BspTri *list, CScene *scn, CGround *ground, float diag) {
@@ -693,6 +704,8 @@ typedef struct BspRadRay {
 	float ca, cb, d2, k, den;
 } BspRadRay;
 
+float g_BspRadMinD2;
+
 static int BspRad_Ray(BspRadRay *r, const vec3_t *e, const vec3_t *pos, const vec3_t *n, const BspTri *s) {
 	r->d.x = e->x - pos->x;
 	r->d.y = e->y - pos->y;
@@ -756,6 +769,12 @@ static byte BspRad_List(BspTxf *txf, const char *fmt, int pass, int i, int n, in
 }
 
 static const float bspMagenta[3] = { 1.0f, 0.0f, 1.0f };
+
+int g_BspLodCount[4];
+
+float g_BspLodLevel;
+
+float g_BspLodDist[6] = { 20.0f, 5.0f, 40.0f, 10.0f, 80.0f, 20.0f };
 
 /* the global light: per bounce, every texel of the lists gathers the light of the areas of all other lists (rad2, the
  * last bounce) in front of it that the floor (and the portals) do not hide; the result into rad, with the TXF cache.
@@ -1208,6 +1227,8 @@ static byte BspTri_InsideXZ(const BspTri *p, float cx, float cz) {
 	return s3 == s1;
 }
 
+BspTri *g_BspTriTmp;
+
 /* the triangles of the pool g_BspTriTmp of the same node, axis, material and side, sharing two vertices with a
  * triangle of list and with their box still on one light map page, moved to the end of list (box its box). A floor
  * triangle over another one of the list stays (yellow mask color), one with three shared vertices too (red) */
@@ -1330,6 +1351,8 @@ static void BspTri_UvLmap(BspTri *list, int x0, int y0) {
 		}
 	}
 }
+
+int g_LmapOption58;
 
 /* the triangles of the meshes of the scene into the pool g_BspTriTmp (the two sided ones again turned) */
 static void Bsp_TakeTriangles(CScene *scn, byte allow) {
@@ -1552,3 +1575,14 @@ void CBsp_Calculate(CBsp *self) {
 	Plat_SetThreadPriority(0);
 	Bsp_EndMessage(self, s);
 }
+
+cGVar GVar_RadSkipBySectors;
+
+cGVar GVar_RadiosityPortals;
+
+cGVar GVar_RadiosityMinDist;
+
+cGVar GVar_TXF_Helper;
+
+cGVar GVar_TXF_CheckFiles;
+

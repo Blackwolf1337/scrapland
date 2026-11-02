@@ -22,35 +22,48 @@
 #include "scrap/timer.h"
 #include "scrap/vehicleentity.h"
 
-extern cGVar GVar_ShowVehAI;
+
+cGVar GVar_ShowPathAI;
 
 /* the engine variables */
-extern cGVar GVar_ShowPathAI;
 #define g_ShowPathAI (GVar_ShowPathAI.value.i)
 extern cGVar GVar_DepthPathRouteOutDoorAI;
 #define g_DepthPathRouteOutDoorAI (GVar_DepthPathRouteOutDoorAI.value.i)
+cGVar GVar_ShowVehAI;
+
 #define g_ShowVehAI (&(*(cString *)&GVar_ShowVehAI.value))
-extern cGVar GVar_LimVelTurnObjectiveAI;
+cGVar GVar_LimVelTurnObjectiveAI;
+
 #define g_LimVelTurnObjectiveAI (GVar_LimVelTurnObjectiveAI.value.f)
-extern cGVar GVar_DistBoostAI;
+cGVar GVar_DistBoostAI;
+
 #define g_DistBoostAI (GVar_DistBoostAI.value.f)
-extern cGVar GVar_DepthSearchPosGoAI;
+cGVar GVar_DepthSearchPosGoAI;
+
 #define g_DepthSearchPosGoAI (GVar_DepthSearchPosGoAI.value.i)
-extern cGVar GVar_TimeReactTurnAI;
+cGVar GVar_TimeReactTurnAI;
+
 #define g_TimeReactTurnAI (GVar_TimeReactTurnAI.value.f)
-extern cGVar GVar_DistBrakeObjAI;
+cGVar GVar_DistBrakeObjAI;
+
 #define g_DistBrakeObjAI (GVar_DistBrakeObjAI.value.f)
-extern cGVar GVar_MinAngleSearchPointAI;
+cGVar GVar_MinAngleSearchPointAI;
+
 #define g_MinAngleSearchPointAI (GVar_MinAngleSearchPointAI.value.f)
-extern cGVar GVar_TimeMaxReachBoostAI;
+cGVar GVar_TimeMaxReachBoostAI;
+
 #define g_TimeMaxReachBoostAI (GVar_TimeMaxReachBoostAI.value.f)
-extern cGVar GVar_VelTurnAI;
+cGVar GVar_VelTurnAI;
+
 #define g_VelTurnAI (GVar_VelTurnAI.value.f)
-extern cGVar GVar_DecVelBrakeAI;
+cGVar GVar_DecVelBrakeAI;
+
 #define g_DecVelBrakeAI (GVar_DecVelBrakeAI.value.f)
-extern cGVar GVar_ShowStopShipAI;
+cGVar GVar_ShowStopShipAI;
+
 #define g_ShowStopShipAI (GVar_ShowStopShipAI.value.i)
-extern cGVar GVar_MinTimeReposAI;
+cGVar GVar_MinTimeReposAI;
+
 #define g_MinTimeReposAI (GVar_MinTimeReposAI.value.f)
 
 #define AIVC_MAX_FREE 50		/* the free nodes the path keeps */

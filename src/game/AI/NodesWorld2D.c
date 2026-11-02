@@ -583,6 +583,8 @@ byte CNodesWorld2D_TestCorner(CNodesWorld2D *self, const vec3_t *a, const vec3_t
 	return NW2D_CornerSides(&B, &n1, &n0, r, debug);
 }
 
+cNW2DBody g_NW2DBodies[3];
+
 byte CNodesWorld2D_TestWalk(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float shrink) {
 	for (int i = 0; i < 3; i++) {
 		const cNW2DBody *body = &g_NW2DBodies[i];
@@ -1582,3 +1584,12 @@ const CNodesWorldVtbl CNodesWorld2D_vftable = {
 	.ClearLists = CNodesWorld2D_ClearLists,
 	.SaveInfPath = CNodesWorldSup_SaveInfPath,
 };
+
+cGVar GVar_ShowNodes2DAI;
+
+cGVar GVar_AltPerpFloorAI;
+
+cGVar GVar_AltMinTestWalkAI;
+
+cGVar GVar_ShowInfoRegAI;
+

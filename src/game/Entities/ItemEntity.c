@@ -588,6 +588,8 @@ byte cItemEntity_VarS(cEntity *base, const char *name, char **s, int set) {
 	return cObjEntity_VarS(Item_Ent(self), name, s, set);
 }
 
+uint32_t g_ItemSyncCount;
+
 byte cItemEntity_NetNeedsSend(cEntity *base, float dist2) {
 	cItemEntity *self = (cItemEntity *)base;
 	if (self->syncTicks > 0) {
@@ -692,3 +694,8 @@ const cObjEntityVtbl cItemEntity_vftable = {
 	.SetEffectParam = cObjEntity_SetEffectParam,
 	.Render = cObjEntity_Render,
 };
+
+cGVar GVar_FXItemFadeMaxDist;
+
+cGVar GVar_NetItemDistAct;
+

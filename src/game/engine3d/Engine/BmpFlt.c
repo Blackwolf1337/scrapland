@@ -23,6 +23,10 @@ typedef struct {
 	int ch;
 } txfKind_t;
 
+TXF_header g_TXFCab;
+
+TXF_header g_TXFCab2;
+
 static TXF_header *TXF_Header(const txfKind_t *k) {
 	return k->version == 1 ? (&g_TXFCab) : (&g_TXFCab2);
 }

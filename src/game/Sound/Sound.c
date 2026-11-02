@@ -10,6 +10,8 @@
 #include "scrap/scrap.h"
 #include "scrap/sound.h"
 
+CSoundSys *g_pSound;
+
 /* the start and the end of the sound system */
 
 void Sound_Init(void) {
@@ -555,3 +557,14 @@ const CSoundSysVtbl CSoundSys_vftable = {
 	.GetVoiceString = CSoundSys_GetVoiceString,
 	.VoiceUnused = CSoundSys_VoiceUnused,
 };
+
+cGVar GVar_SoundDopplerLevel;
+
+cGVar GVar_SoundShowSetMode;
+
+cGVar GVar_SoundPanningFactor;
+
+cGVar GVar_SoundDistAttenuation;
+
+cGVar GVar_SoundAutoplayVolume;
+

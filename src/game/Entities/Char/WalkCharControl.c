@@ -246,3 +246,10 @@ void cWalkCharControl_Update(cWalkCharControl *self, cEntity *wle, float dt) {
 		}
 	}
 }
+
+cGVar GVar_AlwaysRun;
+
+cGVar GVar_WalkCameraCenter;
+
+cGVar GVar_PadTurnSpeed;
+

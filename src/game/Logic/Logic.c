@@ -16,6 +16,8 @@
 byte Logic_SetOriginCallback(cEntity *e);
 
 #define LOGIC_SETORIGINFUNC 0x151ce0
+cGVar GVar_NotCleanableByGear;
+
 #define g_NotCleanableByGearDef (((cString *)&GVar_NotCleanableByGear.def))
 
 void *Logic_ctor(void *logic) {
@@ -254,3 +256,8 @@ byte Logic_SetOnFloor(cEntity *e) {
 const cLogicControlVtbl cLogicControl_vftable = {
 	.Delete = Logic_Delete,
 };
+
+cGVar GVar_TimeBetweeenTaunts;
+
+cGVar GVar_TimeBetweeenWarnings;
+

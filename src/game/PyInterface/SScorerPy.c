@@ -534,5 +534,460 @@ PyObject *SScorer_PreloadTexture(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-extern PyMethodDef SScorer_methods[34];
+SD_SYM(str_PyMethod_SScorer_Add);
+SD_SYM(SScorer_Add);
+SD_SYM(str_PyDoc_SScorer_Add);
+SD_SYM(str_PyMethod_SScorer_Clear);
+SD_SYM(SScorer_Clear);
+SD_SYM(str_PyDoc_SScorer_Clear);
+SD_SYM(str_PyMethod_SScorer_Set);
+SD_SYM(SScorer_Set);
+SD_SYM(str_PyDoc_SScorer_Set);
+SD_SYM(str_PyMethod_SScorer_Get);
+SD_SYM(SScorer_Get);
+SD_SYM(str_PyDoc_SScorer_Get);
+SD_SYM(str_PyMethod_SScorer_Show);
+SD_SYM(SScorer_Show);
+SD_SYM(str_PyDoc_SScorer_Show);
+SD_SYM(str_PyMethod_SScorer_Hide);
+SD_SYM(SScorer_Hide);
+SD_SYM(str_PyDoc_SScorer_Hide);
+SD_SYM(str_PyMethod_SScorer_SetCursor);
+SD_SYM(SScorer_SetCursor);
+SD_SYM(str_PyDoc_SScorer_SetCursor);
+SD_SYM(str_PyMethod_SScorer_SetDefault);
+SD_SYM(SScorer_SetDefault);
+SD_SYM(str_PyDoc_SScorer_SetDefault);
+SD_SYM(str_PyMethod_SScorer_GetDefault);
+SD_SYM(SScorer_GetDefault);
+SD_SYM(str_PyDoc_SScorer_GetDefault);
+SD_SYM(str_PyMethod_SScorer_GetCurrent);
+SD_SYM(SScorer_GetCurrent);
+SD_SYM(str_PyDoc_SScorer_GetCurrent);
+SD_SYM(str_PyMethod_SScorer_SetOnCancel);
+SD_SYM(SScorer_SetOnCancel);
+SD_SYM(str_PyDoc_SScorer_SetOnCancel);
+SD_SYM(str_PyMethod_SScorer_SetOnNext);
+SD_SYM(SScorer_SetOnNext);
+SD_SYM(str_PyDoc_SScorer_SetOnNext);
+SD_SYM(str_PyMethod_SScorer_SetOnPrev);
+SD_SYM(SScorer_SetOnPrev);
+SD_SYM(str_PyDoc_SScorer_SetOnPrev);
+SD_SYM(str_PyMethod_SScorer_SetOnSpecialHint);
+SD_SYM(SScorer_SetOnSpecialHint);
+SD_SYM(str_PyDoc_SScorer_SetOnSpecialHint);
+SD_SYM(str_PyMethod_SScorer_AddModel);
+SD_SYM(SScorer_AddModel);
+SD_SYM(str_PyDoc_SScorer_AddModel);
+SD_SYM(str_PyMethod_SScorer_SetMPFunc);
+SD_SYM(SScorer_SetMPFunc);
+SD_SYM(str_PyDoc_SScorer_SetMPFunc);
+SD_SYM(str_PyMethod_SScorer_PreloadTexture);
+SD_SYM(SScorer_PreloadTexture);
+SD_SYM(str_PyDoc_SScorer_PreloadTexture);
+SD_SYM(str_PyMethod_SScorer_AddChatMsg);
+SD_SYM(SScorer_AddChatMsg);
+SD_SYM(str_PyDoc_SScorer_AddChatMsg);
+SD_SYM(str_PyMethod_SScorer_SetConsole);
+SD_SYM(SScorer_SetConsole);
+SD_SYM(str_PyDoc_SScorer_SetConsole);
+SD_SYM(str_PyMethod_SScorer_SetSpeechText);
+SD_SYM(SScorer_SetSpeechText);
+SD_SYM(str_PyDoc_SScorer_SetSpeechText);
+SD_SYM(str_PyMethod_SScorer_SetSpeechCallback);
+SD_SYM(SScorer_SetSpeechCallback);
+SD_SYM(str_PyDoc_SScorer_SetSpeechCallback);
+SD_SYM(str_PyMethod_SScorer_CancelSpeech);
+SD_SYM(SScorer_CancelSpeech);
+SD_SYM(str_PyDoc_SScorer_CancelSpeech);
+SD_SYM(str_PyMethod_SScorer_SetHeadMonitor);
+SD_SYM(SScorer_SetHeadMonitor);
+SD_SYM(str_PyDoc_SScorer_SetHeadMonitor);
+SD_SYM(str_PyMethod_SScorer_Fade);
+SD_SYM(SScorer_Fade);
+SD_SYM(str_PyDoc_SScorer_Fade);
+SD_SYM(str_PyMethod_SScorer_SetCinema);
+SD_SYM(SScorer_SetCinema);
+SD_SYM(str_PyDoc_SScorer_SetCinema);
+SD_SYM(str_PyMethod_SScorer_SetMsgText);
+SD_SYM(SScorer_SetMsgText);
+SD_SYM(str_PyDoc_SScorer_SetMsgText);
+SD_SYM(str_PyMethod_SScorer_SetLabelText);
+SD_SYM(SScorer_SetLabelText);
+SD_SYM(str_PyDoc_SScorer_SetLabelText);
+SD_SYM(str_PyMethod_SScorer_Get2DPos);
+SD_SYM(SScorer_Get2DPos);
+SD_SYM(str_PyDoc_SScorer_Get2DPos);
+SD_SYM(str_PyMethod_SScorer_GetTextArea);
+SD_SYM(SScorer_GetTextArea);
+SD_SYM(str_PyDoc_SScorer_GetTextArea);
+SD_SYM(str_PyMethod_SScorer_GetMenuAccept);
+SD_SYM(SScorer_GetMenuAccept);
+SD_SYM(str_PyDoc_SScorer_GetMenuAccept);
+SD_SYM(str_PyMethod_SScorer_SetMarkerSprite);
+SD_SYM(SScorer_SetMarkerSprite);
+SD_SYM(str_PyDoc_SScorer_SetMarkerSprite);
+SD_SYM(str_PyMethod_SScorer_GetItem);
+SD_SYM(SScorer_GetItem);
+SD_SYM(str_PyDoc_SScorer_GetItem);
+SD_SYM(str_PyMethod_SScorer_New);
+SD_SYM(SScorer_New);
+SD_SYM(str_PyDoc_SScorer_New);
+PyMethodDef SScorer_methods[34] = {
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_Add,
+		.ml_meth = (void *)sd_SScorer_Add,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_Add,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_Clear,
+		.ml_meth = (void *)sd_SScorer_Clear,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_Clear,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_Set,
+		.ml_meth = (void *)sd_SScorer_Set,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_Set,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_Get,
+		.ml_meth = (void *)sd_SScorer_Get,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_Get,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_Show,
+		.ml_meth = (void *)sd_SScorer_Show,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_Show,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_Hide,
+		.ml_meth = (void *)sd_SScorer_Hide,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_Hide,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_SetCursor,
+		.ml_meth = (void *)sd_SScorer_SetCursor,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_SetCursor,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_SetDefault,
+		.ml_meth = (void *)sd_SScorer_SetDefault,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_SetDefault,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_GetDefault,
+		.ml_meth = (void *)sd_SScorer_GetDefault,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_GetDefault,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_GetCurrent,
+		.ml_meth = (void *)sd_SScorer_GetCurrent,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_GetCurrent,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_SetOnCancel,
+		.ml_meth = (void *)sd_SScorer_SetOnCancel,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_SetOnCancel,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_SetOnNext,
+		.ml_meth = (void *)sd_SScorer_SetOnNext,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_SetOnNext,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_SetOnPrev,
+		.ml_meth = (void *)sd_SScorer_SetOnPrev,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_SetOnPrev,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_SetOnSpecialHint,
+		.ml_meth = (void *)sd_SScorer_SetOnSpecialHint,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_SetOnSpecialHint,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_AddModel,
+		.ml_meth = (void *)sd_SScorer_AddModel,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_AddModel,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_SetMPFunc,
+		.ml_meth = (void *)sd_SScorer_SetMPFunc,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_SetMPFunc,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_PreloadTexture,
+		.ml_meth = (void *)sd_SScorer_PreloadTexture,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_PreloadTexture,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_AddChatMsg,
+		.ml_meth = (void *)sd_SScorer_AddChatMsg,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_AddChatMsg,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_SetConsole,
+		.ml_meth = (void *)sd_SScorer_SetConsole,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_SetConsole,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_SetSpeechText,
+		.ml_meth = (void *)sd_SScorer_SetSpeechText,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_SetSpeechText,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_SetSpeechCallback,
+		.ml_meth = (void *)sd_SScorer_SetSpeechCallback,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_SetSpeechCallback,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_CancelSpeech,
+		.ml_meth = (void *)sd_SScorer_CancelSpeech,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_CancelSpeech,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_SetHeadMonitor,
+		.ml_meth = (void *)sd_SScorer_SetHeadMonitor,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_SetHeadMonitor,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_Fade,
+		.ml_meth = (void *)sd_SScorer_Fade,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_Fade,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_SetCinema,
+		.ml_meth = (void *)sd_SScorer_SetCinema,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_SetCinema,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_SetMsgText,
+		.ml_meth = (void *)sd_SScorer_SetMsgText,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_SetMsgText,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_SetLabelText,
+		.ml_meth = (void *)sd_SScorer_SetLabelText,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_SetLabelText,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_Get2DPos,
+		.ml_meth = (void *)sd_SScorer_Get2DPos,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_Get2DPos,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_GetTextArea,
+		.ml_meth = (void *)sd_SScorer_GetTextArea,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_GetTextArea,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_GetMenuAccept,
+		.ml_meth = (void *)sd_SScorer_GetMenuAccept,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_GetMenuAccept,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_SetMarkerSprite,
+		.ml_meth = (void *)sd_SScorer_SetMarkerSprite,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_SetMarkerSprite,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_GetItem,
+		.ml_meth = (void *)sd_SScorer_GetItem,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_GetItem,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_New,
+		.ml_meth = (void *)sd_SScorer_New,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SScorer_New,
+	},
+};
+
 SD_PY_MODULE(SScorer, 0x42ec68)
+
+const char str_PyMethod_SScorer_Hide[] = "Hide";
+
+const char str_PyMethod_SScorer_Add[] = "Add";
+
+const char str_PyMethod_SScorer_Clear[] = "Clear";
+
+const char str_PyMethod_SScorer_Show[] = "Show";
+
+const char str_PyMethod_SScorer_SetCursor[] = "SetCursor";
+
+const char str_PyMethod_SScorer_SetDefault[] = "SetDefault";
+
+const char str_PyMethod_SScorer_GetDefault[] = "GetDefault";
+
+const char str_PyMethod_SScorer_GetCurrent[] = "GetActual";
+
+const char str_PyMethod_SScorer_SetOnCancel[] = "SetOnCancel";
+
+const char str_PyMethod_SScorer_SetOnNext[] = "SetOnNext";
+
+const char str_PyMethod_SScorer_SetOnPrev[] = "SetOnPrev";
+
+const char str_PyMethod_SScorer_SetOnSpecialHint[] = "SetOnSpecialHint";
+
+const char str_PyMethod_SScorer_AddModel[] = "AddModel";
+
+const char str_PyMethod_SScorer_SetMPFunc[] = "SetMPFunc";
+
+const char str_PyMethod_SScorer_PreloadTexture[] = "PreloadTexture";
+
+const char str_PyMethod_SScorer_AddChatMsg[] = "AddChatMsg";
+
+const char str_PyMethod_SScorer_SetConsole[] = "SetConsole";
+
+const char str_PyMethod_SScorer_SetSpeechText[] = "SetSpeechText";
+
+const char str_PyMethod_SScorer_SetSpeechCallback[] = "SetSpeechCallback";
+
+const char str_PyMethod_SScorer_CancelSpeech[] = "CancelSpeech";
+
+const char str_PyMethod_SScorer_SetHeadMonitor[] = "SetHeadMonitor";
+
+const char str_PyMethod_SScorer_Fade[] = "Fade";
+
+const char str_PyMethod_SScorer_SetCinema[] = "SetCinema";
+
+const char str_PyMethod_SScorer_SetMsgText[] = "SetMsgText";
+
+const char str_PyMethod_SScorer_SetLabelText[] = "SetLabelText";
+
+const char str_PyMethod_SScorer_Get2DPos[] = "Get2DPos";
+
+const char str_PyMethod_SScorer_GetTextArea[] = "GetTextArea";
+
+const char str_PyMethod_SScorer_GetMenuAccept[] = "GetMenuAccept";
+
+const char str_PyMethod_SScorer_SetMarkerSprite[] = "SetMarkerSprite";
+
+const char str_PyMethod_SScorer_GetItem[] = "GetItem";
+
+const char str_PyMethod_SScorer_New[] = "New";
+
+char str_PyDoc_SScorer_PreloadTexture[] = "PreloadTexture(filename) : Precarga una textura";
+
+char str_PyDoc_SScorer_AddChatMsg[80] =
+	"AddChatMsg(string,red,gree,blue) : Agrega un mensaje a la lista de chat.";
+
+char str_PyDoc_SScorer_SetConsole[72] =
+	"SetConsole(show) : oculta/ muestra la consola de pantalla completa";
+
+char str_PyDoc_SScorer_SetSpeechText[] =
+	"SetSpeechText(text,time,r,g,b) : activa el texto de una conversacion que durará un tiempo espeficico";
+
+char str_PyDoc_SScorer_SetSpeechCallback[] =
+	"SetSpeechCallback(Callback) : Especifica la funcion callback que será llamada";
+
+char str_PyDoc_SScorer_CancelSpeech[] = "CancelSpeech(time) : cancela un mensaje remoto";
+
+char str_PyDoc_SScorer_SetHeadMonitor[] =
+	"SetHeadMonitor(Head,Msg,anm) : Especifica la cabeza que será usada en el monitor y el mensaje.";
+
+char str_PyDoc_SScorer_Fade[] = "Fade(id,(r,g,b,a),(r,g,b,a),time) : Realiza un fade de rgba a rgba.";
+
+char str_PyDoc_SScorer_SetCinema[] = "SetCinema(id,status,time) : Activa el modo escena de cine.";
+
+char str_PyDoc_SScorer_SetMsgText[] =
+	"SetMsgText(text,time) : Muestra un mensaje de sistema y lo desactiva en el tiempo de mundo time";
+
+char str_PyDoc_SScorer_SetLabelText[104] =
+	"SetLabelText(text,time) : Muestra un rotulo de sistema y lo desactiva en el tiempo de mundo time";
+
+char str_PyDoc_SScorer_Get2DPos[] =
+	"(x,y) Get2DPos(vector3d) : obtiene en cordenadas de pantalla una posicion del escenario";
+
+char str_PyDoc_SScorer_GetTextArea[128] =
+	"(width, height) GetTextArea(fontType, text) : obtiene la anchura y la altura de un texto dado el tex"
+	"to y el tipo de fuente";
+
+char str_PyDoc_SScorer_GetMenuAccept[] =
+	"GetMenuAccept(id) : Devuelve el estado de la acción de menu aceptar.";
+
+char str_PyDoc_SScorer_SetMarkerSprite[] =
+	"SetMarkerSprite(id,SpriteName) : pone un sprite como marcador";
+
+char str_PyDoc_SScorer_Add[] = "Add(playernumber,itemname,itemtype,AtEnd) : Agrega un item al scorer.";
+
+char str_PyDoc_SScorer_Clear[] = "Clear(playernumber) : Limpia el scorer completamente.";
+
+char str_PyDoc_SScorer_Set[96] =
+	"Set(playernumber,itemname,varname,value) :  Modifica el valor de una variable de un item";
+
+char str_PyDoc_SScorer_Get[] =
+	"Get(playernumber,itemname,varname) :  Obtiene el valor de una variable de un item";
+
+char str_PyDoc_SScorer_GetItem[] = "GetItem(playernumber,itemname) :  Obtiene un objeto item";
+
+char str_PyDoc_SScorer_New[] =
+	"New(playernumber,itemname,itemtype,AtEnd) : Agrega un item al scorer y obtiene la entidad.";
+
+char str_PyDoc_SScorer_Show[] = "Show(playernumber) : Activa el scorer.";
+
+char str_PyDoc_SScorer_Hide[] = "Hide(playernumber) : Desactiva el scorer.";
+
+char str_PyDoc_SScorer_SetCursor[80] =
+	"SetCursor(playernumber,CursorName) : pone un item del scorer como cursor";
+
+char str_PyDoc_SScorer_SetDefault[88] =
+	"SetDefault(playernumber,DefaultItemName) : pone un item del scorer 'por defecto'";
+
+char str_PyDoc_SScorer_GetDefault[] =
+	"DefaultItemName GetDefault(playernumber) Obtiene el nombre del item por defecto";
+
+char str_PyDoc_SScorer_GetCurrent[64] = "ActualItem GetActual(playernumber) Obtiene el item actual";
+
+char str_PyDoc_SScorer_SetOnCancel[104] =
+	"SetOnCancel(playernumber,CancelEvent) : Define la funcion que se ejecutara en el caso del escape.";
+
+char str_PyDoc_SScorer_SetOnNext[] =
+	"SetOnNext(playernumber,CancelEvent) : Define la funcion que se ejecutara en el caso del pagina abajo"
+	".";
+
+char str_PyDoc_SScorer_SetOnPrev[] =
+	"SetOnPrev(playernumber,CancelEvent) : Define la funcion que se ejecutara en el caso del pagina abajo"
+	".";
+
+char str_PyDoc_SScorer_SetOnSpecialHint[] =
+	"SetOnSpecialHint(playernumber,SpecialHintTestFunc,SpecialHint) : Define la funcion que decide si se "
+	"muestra un hint especial";
+
+char str_PyDoc_SScorer_AddModel[] =
+	"AddModel(playernumber,Name,ModelFile,numanim,Radius) : Pre carga un modelo para usarse en el scorer.";
+
+char str_PyDoc_SScorer_SetMPFunc[104] =
+	"SetMPFunc(playernumber,Callback) : Callback(id,showmpscorer) (muestra oculta el scorer multiplayer)";
+

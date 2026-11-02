@@ -210,3 +210,30 @@ void FX_BishopSellLife(cEntity *attacker, cEntity *attacked) {
 		cObjElementFXBishopSellLife_SetAttacked(el, attacked);
 	}
 }
+
+cGVar GVar_BishopHitSound;
+
+cGVar GVar_BishopAngleVariation;
+
+cGVar GVar_BishopHitSoundVol;
+
+cGVar GVar_BishopWeaponDamage;
+
+cGVar GVar_BishopAttackPosZ;
+
+cGVar GVar_FXBishopSellLifeFile;
+
+cGVar GVar_FXBishopAttackFile;
+
+cGVar GVar_BishopAttackPosX;
+
+cGVar GVar_BishopAttackPosY;
+
+cGVar GVar_BishopAmmoCost;
+
+cGVar GVar_BishopAttackRandOff;
+
+cGVar GVar_BishopShootSoundVol;
+
+cGVar GVar_BishopShootSound;
+

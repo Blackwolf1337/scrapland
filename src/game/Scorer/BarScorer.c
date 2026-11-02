@@ -183,3 +183,16 @@ const cSpriteScorerVtbl cBarScorer_vftable = {
 	.base.Delete = cBarScorer_Delete,
 	.SetMultiSprite = cSpriteScorer_SetMultiSprite,
 };
+
+cGVarFunction GVar_OnFinishAutoUpdate;
+
+cGVar GVar_BlinkTime;
+
+cGVar GVar_IsAutoUpdatable;
+
+cGVar GVar_AutoUpdateSpeedFactor;
+
+cGVar GVar_AutoUpdateStopValue;
+
+cGVar GVar_BarValue;
+

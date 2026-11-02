@@ -143,22 +143,30 @@ void Controls_RumbleB(cVehicleControls *self, float strength, float time) {
 
 /* ---- the items a ship takes (native functions "TakeEner", "TakeLife", "TakeMiss", "TakePart") ---- */
 
+cGVar GVar_ItemEnerAdds;
+
 /* the engine variables of the items: the ammo or life they add and the time until they come back */
-extern cGVar GVar_ItemEnerAdds;
 #define g_ItemEnerAdds (GVar_ItemEnerAdds.value.i)
-extern cGVar GVar_ItemEnerRespawnTime;
+cGVar GVar_ItemEnerRespawnTime;
+
 #define g_ItemEnerRespawnTime (GVar_ItemEnerRespawnTime.value.f)
-extern cGVar GVar_ItemLifeAdds;
+cGVar GVar_ItemLifeAdds;
+
 #define g_ItemLifeAdds (GVar_ItemLifeAdds.value.i)
-extern cGVar GVar_ItemLifeRespawnTime;
+cGVar GVar_ItemLifeRespawnTime;
+
 #define g_ItemLifeRespawnTime (GVar_ItemLifeRespawnTime.value.f)
-extern cGVar GVar_ItemMissAdds;
+cGVar GVar_ItemMissAdds;
+
 #define g_ItemMissAdds (GVar_ItemMissAdds.value.i)
-extern cGVar GVar_ItemMissRespawnTime;
+cGVar GVar_ItemMissRespawnTime;
+
 #define g_ItemMissRespawnTime (GVar_ItemMissRespawnTime.value.f)
-extern cGVar GVar_ItemPartAdds;
+cGVar GVar_ItemPartAdds;
+
 #define g_ItemPartAdds (GVar_ItemPartAdds.value.i)
-extern cGVar GVar_ItemPartRespawnTime;
+cGVar GVar_ItemPartRespawnTime;
+
 #define g_ItemPartRespawnTime (GVar_ItemPartRespawnTime.value.f)
 
 /* the arguments: the item and the ship that took it; the ship or NULL when it is no "Car" */
@@ -485,21 +493,28 @@ byte cVehicleO648_IsStale(void *o) {
 	return 1;
 }
 
+cGVar GVar_VehicleBlockSwitchAdvance;
+
 /* ---- the controls of a player ship from the input actions ---- */
 
-extern cGVar GVar_VehicleBlockSwitchAdvance;
 #define g_VehicleBlockSwitchAdvance (GVar_VehicleBlockSwitchAdvance.value.i)
-extern cGVar GVar_VehicleCenterPadBounce;
+cGVar GVar_VehicleCenterPadBounce;
+
 #define g_VehicleCenterPadBounce (GVar_VehicleCenterPadBounce.value.f)
-extern cGVar GVar_VehicleAttackModeMinDist;
+cGVar GVar_VehicleAttackModeMinDist;
+
 #define g_VehicleAttackModeMinDist (GVar_VehicleAttackModeMinDist.value.f)
-extern cGVar GVar_VehicleAttackModeMaxDist;
+cGVar GVar_VehicleAttackModeMaxDist;
+
 #define g_VehicleAttackModeMaxDist (GVar_VehicleAttackModeMaxDist.value.f)
-extern cGVar GVar_TimeWSwitchNo;
+cGVar GVar_TimeWSwitchNo;
+
 #define g_TimeWSwitchNo (GVar_TimeWSwitchNo.value.f)
-extern cGVar GVar_XtrTimeWSwitchNo;
+cGVar GVar_XtrTimeWSwitchNo;
+
 #define g_XtrTimeWSwitchNo (GVar_XtrTimeWSwitchNo.value.f)
-extern cGVar GVar_AttackerMarkTime;
+cGVar GVar_AttackerMarkTime;
+
 #define g_AttackerMarkTime (GVar_AttackerMarkTime.value.f)
 
 /* the actions of the vehicle action set */
@@ -812,3 +827,16 @@ void cVehicleControls_Tick(cVehicleControls *c, cEntity *v, float dt) {
 		c->rumbleB = 0.0f;
 	}
 }
+
+cGVar GVar_CurrentWaypointName2;
+
+cGVar GVar_CurrentWaypointName;
+
+cGVar GVar_VehicleCamDist2;
+
+cGVarFunction GVar_OnLifeItemTaken;
+
+cGVar GVar_TgtRegenerationTime;
+
+cGVar GVar_VehicleCenterPadLock;
+

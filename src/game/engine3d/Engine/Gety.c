@@ -267,8 +267,9 @@ byte CGround_GetYBelow(CGround *self, float x, float z, float maxY, float *out) 
 	return 0;
 }
 
+cGVar g_FastGetYSectorVar;
+
 /* the static initializer: "FastGetYSector", "Fast GetYSector (0/1)", on */
-extern cGVar g_FastGetYSectorVar;
 
 void Gety_InitFastGetYSector(void) {
 	GVar_InitInt((&g_FastGetYSectorVar), "FastGetYSector", 0, "Fast GetYSector (0/1)", 1);

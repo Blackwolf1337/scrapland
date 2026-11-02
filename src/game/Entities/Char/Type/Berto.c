@@ -25,6 +25,8 @@ void ChType_BertoAttack(cAbstractFile *params) {
 	ChType_Attack(params, g_BertoAmmoCost);
 }
 
+cEntity *g_BertoEnt;
+
 /* the flash test of the hit (OnFlash): params a flashed character, other than Berto, with the flash effect from
  * Berto to it and the flash sound at it */
 void ChType_BertoFlashHit(cAbstractFile *params) {
@@ -89,3 +91,16 @@ void ChType_FXBertoAttack(cAbstractFile *params) {
 		cObjElementFXBertoAttack_Start(el, v);
 	}
 }
+
+cGVar GVar_FXBertoFlashFile;
+
+cGVar GVar_BertoFlashSound;
+
+cGVar GVar_BertoFlashDist;
+
+cGVar GVar_BertoFlashSoundVol;
+
+cGVar GVar_BertoAmmoCost;
+
+cGVar GVar_FXBertoAttackFile;
+

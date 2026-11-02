@@ -36,6 +36,12 @@ int HashTable_KeyEq(HashTable *self, const char *a, const char *b) {
 	return self->caseSensitive ? strcmp(a, b) == 0 : crt_stricmp(a, b) == 0;
 }
 
+cMemPool *g_HashItemPool;
+
+int g_HashItemRefs;
+
+uint32_t g_HashItemValues[32];
+
 void *HashItem_Alloc(uint32_t size) {
 	if (!g_HashItemPool) {
 		cMemPool *mem = operator_new(sizeof(*mem));

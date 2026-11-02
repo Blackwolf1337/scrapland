@@ -9,9 +9,11 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapworld.h"
 
-extern const double g_HeadRandRange;	/* 2 pi as a float */
-extern const double g_HeadRandOfs;	/* 0 */
 #define HEAD_FOV 0.87266463f				/* 50 degrees */
+
+const double g_HeadRandOfs;
+
+const double g_HeadRandRange = 6.2831854820251465;
 
 cHeadScorer *cHeadScorer_ctor(cHeadScorer *self) {
 	cScorerItem_ctor(&self->base);

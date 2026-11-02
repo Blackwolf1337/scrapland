@@ -4,9 +4,12 @@
 #include "scrap/chartype.h"
 #include "scrap/fxelements.h"
 
-extern uint32_t RUSTY_RAMPS[18];		/* [2 * 9], the flash, the smoke */
+uint32_t RUSTY_RAMPS[18] = {
+	0x80fff696, 0x20ffb45a, 0x40e68211, 0x80ab5e0d, 0x964c4408, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
+	0x80ffebd2, 0x20ffd75a, 0x40e6c811, 0x80ab8c0d, 0x964c3a08, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
+};
+
 #define RUSTY_RAMP_SMOKE ((&RUSTY_RAMPS[9]))	/* the second of RUSTY_RAMPS */
-extern uint32_t RUSTY_RAMP_DEBRIS[9];	/* [9] */
 #define RUSTY_TWO_PI 6.2831854820251465
 
 static void Rusty_PosMin(CGameParticles *p, float x, float y, float z) {
@@ -28,6 +31,8 @@ static void Rusty_Still(CGameParticles *p, const vec3_t *pos) {
 	p->initAccMin.z = 0.0f;
 	p->initAccMax = p->initAccMin;
 }
+
+uint32_t RUSTY_RAMP_DEBRIS[9] = { 0xff808080, 0xa4808080, 0xa4808080, 0xa4808080, 0xa4808080, 0xc0808080, 0xde808080, 0xff000000, 0xff000000 };
 
 /* params: Rusty. At the point of the hit when it is in sight: a flash, a glow and smoke, 7..35 sparks sprayed up
  * along the view and 12 pieces of debris */
@@ -209,3 +214,12 @@ void ChType_FXRustyHit(cAbstractFile *params) {
 		CGameParticles_EmitDt(p, 1, 1, (float)i * 0.0299999993f);
 	}
 }
+
+cGVar GVar_RustyHitPosX;
+
+cGVar GVar_RustyHitPosZ;
+
+cGVar GVar_RustyHitPosY;
+
+cGVar GVar_FXRustyHitFile;
+

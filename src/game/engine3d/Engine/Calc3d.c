@@ -8,8 +8,6 @@
 #include "scrap/nodefx.h"
 
 #define VEC3_STR 0x40
-extern char g_Vec3StrDeg[256];	/* 4 x VEC3_STR */
-extern char g_Vec3Str[256];
 
 /* ---- matriz.h: the D3DX wrappers and the box of the corners ---- */
 
@@ -162,10 +160,14 @@ static char *Vec3_Format(char *buf, uint32_t slot, int prec, double x, double y,
 	return s;
 }
 
+char g_Vec3StrDeg[256];
+
 char *Vec3_StrDeg(const vec3_t *v, uint32_t slot, int prec) {
 	return Vec3_Format(g_Vec3StrDeg, slot, prec, (double)v->x * 180.0 / M_PI_D, (double)v->y * 180.0 / M_PI_D,
 		(double)v->z * 180.0 / M_PI_D);
 }
+
+char g_Vec3Str[256];
 
 char *Vec3_Str(const vec3_t *v, uint32_t slot, int prec) {
 	return Vec3_Format(g_Vec3Str, slot, prec, (double)v->x, (double)v->y, (double)v->z);

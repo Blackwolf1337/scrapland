@@ -18,33 +18,46 @@
 #include "scrap/weaps2.h"
 #include "scrap/world.h"
 
-extern cGVar GVar_ShowVehWeapAI;
+
+cGVar GVar_ShowVehWeapAI;
 
 /* the engine variables */
 #define g_ShowVehWeapAI (&(*(cString *)&GVar_ShowVehWeapAI.value))
-extern cGVar GVar_TimeShootAI;
+cGVar GVar_TimeShootAI;
+
 #define g_TimeShootAI (GVar_TimeShootAI.value.f)
-extern cGVar GVar_TimeShootCMAI;
+cGVar GVar_TimeShootCMAI;
+
 #define g_TimeShootCMAI (GVar_TimeShootCMAI.value.f)
-extern cGVar GVar_TimeChangeWeapAI;
+cGVar GVar_TimeChangeWeapAI;
+
 #define g_TimeChangeWeapAI (GVar_TimeChangeWeapAI.value.f)
-extern cGVar GVar_TimeChangeWeapCMAI;
+cGVar GVar_TimeChangeWeapCMAI;
+
 #define g_TimeChangeWeapCMAI (GVar_TimeChangeWeapCMAI.value.f)
-extern cGVar GVar_ShortDistShootAI;
+cGVar GVar_ShortDistShootAI;
+
 #define g_ShortDistShootAI (GVar_ShortDistShootAI.value.f)
-extern cGVar GVar_OffsetAngShootAI;
+cGVar GVar_OffsetAngShootAI;
+
 #define g_OffsetAngShootAI (GVar_OffsetAngShootAI.value.f)
-extern cGVar GVar_MinDistCMAI;
+cGVar GVar_MinDistCMAI;
+
 #define g_MinDistCMAI (GVar_MinDistCMAI.value.f)
-extern cGVar GVar_VulcanIDWeap;
+cGVar GVar_VulcanIDWeap;
+
 #define g_VulcanIDWeap (GVar_VulcanIDWeap.value.i)
-extern cGVar GVar_VulcanDistLimit;
+cGVar GVar_VulcanDistLimit;
+
 #define g_VulcanDistLimit (GVar_VulcanDistLimit.value.f)
-extern cGVar GVar_VulcanDistLimitUPG;
+cGVar GVar_VulcanDistLimitUPG;
+
 #define g_VulcanDistLimitUPG (GVar_VulcanDistLimitUPG.value.f)
-extern cGVar GVar_TeslaDistLimit;
+cGVar GVar_TeslaDistLimit;
+
 #define g_TeslaDistLimit (GVar_TeslaDistLimit.value.f)
-extern cGVar GVar_SwarmDistLimit;
+cGVar GVar_SwarmDistLimit;
+
 #define g_SwarmDistLimit (GVar_SwarmDistLimit.value.f)
 
 #define AIVS_AMMO_HOOK 3		/* the ammo kind of the hook */
@@ -986,3 +999,14 @@ void cAIVehicleShoot_WeapListChanged(cAIVehicleShoot *self) {
 const cAIVehicleShootVtbl cAIVehicleShootControl_vftable = {
 	.Delete = cAIVehicleShoot_Delete,
 };
+
+cGVar GVar_NotShootAI;
+
+cGVar GVar_InfernoIDWeap;
+
+cGVar GVar_DevastatorDistLimit;
+
+cGVar GVar_InfernoDistLimit;
+
+cGVar GVar_LaserDistLimit;
+

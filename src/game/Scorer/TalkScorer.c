@@ -19,6 +19,12 @@ static int Talk_Wrap(char *text, char **lines) {
 	return Str_WrapText(text, lines, g_TalkWidth, TALK_MAX_LINES, "Horatio");
 }
 
+char g_TalkText[6400];
+
+int g_TalkNumLines;
+
+char *g_TalkLines[40];
+
 cTalkScorer *cTalkScorer_ctor(cTalkScorer *self) {
 	float dim[2];
 
@@ -154,6 +160,10 @@ void cTalkScorer_Draw(cScorerItem *base, int player) {
 	vt->DrawUse(self, player, pos);
 	vt->DrawTalk(self, player, pos);
 }
+
+cPy_Function g_TalkCallback;
+
+int g_TalkColor[3] = { 174, 229, 251 };
 
 void cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos) {
 	float dt, scroll, w, lh, x, y, hgt;
@@ -320,3 +330,12 @@ const cTalkScorerVtbl cTalkScorer_vftable = {
 	.DrawTalk = cTalkScorer_DrawTalk,
 	.DrawUse = cTalkScorer_DrawUse,
 };
+
+cGVar GVar_MaxTalkLineSizePix;
+
+cGVar GVar_TimeToAbortChatText;
+
+cGVar GVar_RemainTalkTime;
+
+cGVar GVar_FullTalkTime;
+

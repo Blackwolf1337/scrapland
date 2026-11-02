@@ -651,10 +651,8 @@ typedef struct DebugPoint {
 } DebugPoint;
 SD_SIZE(DebugPoint, 0x14);
 
-extern CTable g_Points;	/* DebugPoint[], grown by a quarter */
-extern int g_NumPoints;
-extern byte g_PointsOn;	/* set by the first point */
-extern int g_MaxPoints;	/* 4000: all cleared at that count, 0 no limit */
+
+CTable g_Points;
 
 static DebugPoint *Point(int i) {
 	TABLE_CHECK(g_Points.p, i, g_Points.n);
@@ -666,6 +664,12 @@ int Debug_PointLine(const vec3_t *a, const vec3_t *b, uint32_t ca, uint32_t cb) 
 	Debug_Point(b, cb, 1.0f);
 	return 0;
 }
+
+byte g_PointsOn;
+
+int g_NumPoints;
+
+int g_MaxPoints = 4000;
 
 int Debug_Point(const vec3_t *pos, uint32_t color, float type) {
 	g_PointsOn = 1;
@@ -714,3 +718,22 @@ int Debug_PointsDraw(void) {
 	}
 	return 0;
 }
+
+cGVar GVar_RenderWorld;
+
+cGVar GVar_RenderSky;
+
+cGVar GVar_WorldPreIllum;
+
+cGVar GVar_SkyRotation;
+
+cGVar GVar_SkyZBuffer;
+
+cGVar GVar_SkyPosScale;
+
+cGVar GVar_SkyTubeTest;
+
+cGVar GVar_ShowWorldDummies;
+
+cGVar GVar_SkyInit;
+

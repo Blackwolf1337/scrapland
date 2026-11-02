@@ -254,3 +254,12 @@ const cBaseLocalLogicVtbl cGateKeeperLocalLogic_vftable = {
 	.SetOriginAng = cBaseLocalLogic_SetOriginAng,
 	.RestartState = cGateKeeperLocalLogic_RestartState,
 };
+
+cGVar GVar_GateKeeperStdFar;
+
+cGVar GVar_GateKeeperStdFovY;
+
+cGVar GVar_GateKeeperHiddenTime;
+
+cGVar GVar_GateKeeperStdFovX;
+

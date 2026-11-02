@@ -261,3 +261,12 @@ void ChType_PoliceRestoreFreeTurn(cAbstractFile *params) {
 	CHECK(Entity_IsType(v, TYEN_WALKCHAR));
 	cObjMove_SetTime(&Obj(v)->move, 0.0f);
 }
+
+cGVar GVar_FXPoliceStealFile;
+
+cGVar GVar_FXPoliceGearConversionFile;
+
+cGVar GVar_PoliceAlarmStepSTM;
+
+cGVar GVar_PoliceStealAmount;
+

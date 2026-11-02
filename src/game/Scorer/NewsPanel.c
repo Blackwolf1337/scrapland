@@ -13,8 +13,9 @@
 #define NEWS_FOV 0.87266463f				/* 50 degrees */
 extern const double g_HeadRandRange;
 #define g_NewsRandRange g_HeadRandRange	/* 2 pi as a float */
-extern const double g_NewsRandOfs;	/* pi as a float */
 /* the model of an entity with life (slot 0x98) */
+int g_EngineInits;
+
 /* its render (slot 0xb8) */
 
 cNewsPanel *cNewsPanel_ctor(cNewsPanel *self) {
@@ -122,6 +123,8 @@ void cNewsPanel_Update(cNewsPanel *self) {
 	}
 	self->lastTime = t;
 }
+
+const double g_NewsRandOfs = 3.1415927410125732;
 
 void cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e) {
 	vec3_t tmp;
@@ -272,3 +275,34 @@ void cNewsPanel_DrawNews(cNewsPanel *self, float dt) {
 		self->closedDrawn = 1;
 	}
 }
+
+cGVar GVar_NewsPanelCloseSpeed;
+
+cGVar GVar_NewsLogoBmp;
+
+cGVar GVar_NewsPanelShowHead;
+
+cGVar GVar_NewsPanelW;
+
+cGVar GVar_NewsPanelX;
+
+cGVar GVar_NewsPanelOpenSpeed;
+
+cGVar GVar_NewsPanelDisplacement;
+
+cGVar GVar_NewsPanelH;
+
+cGVar GVar_BackNewsBmp;
+
+cGVar GVar_NewsPanelY;
+
+cGVar GVar_NewsPanelDistance;
+
+cGVar GVar_NewsHead;
+
+cGVar GVar_NewsPanelActive;
+
+cGVar GVar_NewsPanelMove;
+
+cGVar GVar_NewsPanelAspect;
+

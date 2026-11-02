@@ -319,6 +319,8 @@ static cEntity *Monitor_FindLooked(cEntity *target, byte isCar, byte isWalk) {
 	return e && Entity_IsType(e, TYEN_WITH_LIFE) ? e : NULL;
 }
 
+char g_HeadMonitorName[128];
+
 /* the head of e in the monitor when no talk shows one, its descriptor as the text */
 static void Monitor_SetHead(cMonitorScorer *self, cEntity *e) {
 	cWithLifeEntity *w = WLife(e);
@@ -751,6 +753,10 @@ void cMonitorScorer_DrawMonitor(cMonitorScorer *self, int player, cEntity *targe
 	}
 }
 
+char g_HeadMonitorText[128];
+
+int g_HeadMonitorAnim = 1;
+
 void cMonitorScorer_Draw(cScorerItem *base, int player) {
 	cMonitorScorer *self = (cMonitorScorer *)base;
 	if (!(byte)Talk_IsShown() || !g_HeadMonitorName[0]) {
@@ -857,3 +863,6 @@ const cHeadScorerVtbl cMonitorScorer_vftable = {
 	.SetAnim = cMonitorScorer_SetAnim,
 	.SetModel = cMonitorScorer_SetModel,
 };
+
+cGVar GVar_FirstPhotoMessage;
+

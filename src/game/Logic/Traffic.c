@@ -27,31 +27,42 @@
 #include "scrap/weapons.h"
 #include "scrap/world.h"
 
-extern cGVarFunction GVar_OnNeedMoreChasingTraffic;
-extern cGVarFunction GVar_OnNeedMoreTraffic;
-extern cGVarFunction GVar_OnPlayerHelpedPolice;
 
 #define TRAFFIC_DAMAGE_NATIVE 0x15af10
 #define TRAFFIC_DEATH_NATIVE 0x15b160
 #define TRAFFIC_ONAIEND 0x15ae60
-extern cGVar GVar_MaxTrafficEnemy;
+cGVar GVar_MaxTrafficEnemy;
+
 #define g_MaxTrafficEnemy (GVar_MaxTrafficEnemy.value.i)
+cGVarFunction GVar_OnNeedMoreTraffic;
+
 #define g_OnNeedMoreTraffic (((cPy_Function *)&GVar_OnNeedMoreTraffic.func))
-extern cGVar GVar_MaxFightingTrafficSize;
+cGVar GVar_MaxFightingTrafficSize;
+
 #define g_MaxFightingTrafficSize (GVar_MaxFightingTrafficSize.value.f)
+cGVarFunction GVar_OnPlayerHelpedPolice;
+
 #define g_OnPlayerHelpedPolice (((cPy_Function *)&GVar_OnPlayerHelpedPolice.func))
-extern cGVar GVar_ProbTrafficFighting;
+cGVar GVar_ProbTrafficFighting;
+
 #define g_ProbTrafficFighting (GVar_ProbTrafficFighting.value.f)
-extern cGVar GVar_TrafficRemovalDist;
+cGVar GVar_TrafficRemovalDist;
+
 #define g_TrafficRemovalDist (GVar_TrafficRemovalDist.value.f)
-extern cGVar GVar_TrafficDamageTolerance;
+cGVar GVar_TrafficDamageTolerance;
+
 #define g_TrafficDamageTolerance (GVar_TrafficDamageTolerance.value.i)
-extern cGVar GVar_MaxTrafficEnemyTime;
+cGVar GVar_MaxTrafficEnemyTime;
+
 #define g_MaxTrafficEnemyTime (GVar_MaxTrafficEnemyTime.value.f)
-extern cGVar GVar_MinTrafficEnemyTime;
+cGVar GVar_MinTrafficEnemyTime;
+
 #define g_MinTrafficEnemyTime (GVar_MinTrafficEnemyTime.value.f)
+cGVarFunction GVar_OnNeedMoreChasingTraffic;
+
 #define g_OnNeedMoreChasingTraffic (((cPy_Function *)&GVar_OnNeedMoreChasingTraffic.func))
-extern cGVar GVar_iTrafficNumber;
+cGVar GVar_iTrafficNumber;
+
 #define g_iTrafficNumber (GVar_iTrafficNumber.value.i)
 /* the callback of the AI when the move ends (rva 0x15c of the AI) */
 #define AIV_OnEnd(ai) (((cAIVehicle *)(ai))->onArrive)
@@ -544,3 +555,6 @@ void cEnemiesTraffic_Update(cEnemiesTraffic *self, float dt) {
 		self->timer = 0.0f;
 	}
 }
+
+cGVar GVar_MaxChasingShips;
+

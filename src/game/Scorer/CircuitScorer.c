@@ -111,6 +111,8 @@ static const struct {
 	} },
 };
 
+cCircuitPath g_CircuitPaths[9];
+
 void CircuitScorer_InitPaths(void) {
 	for (int p = 0; p < 9; p++) {
 		g_CircuitPaths[p].numPoints = s_CircuitPoints[p].numPoints;
@@ -194,8 +196,11 @@ int cCircuitScorer_Var(cScorerItem *base, const char *name, int set, char **s, d
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
+const double cCircuitScorer_Draw_3c2608 = 0.5000000596046448;
+
+cCircuitFlare g_CircuitFlares[4];
+
 /* a flare at its end: a path no other flare runs, a pause, the duration by the path length, a direction */
-extern const double cCircuitScorer_Draw_3c2608;
 static void Circuit_Respawn(int k) {
 	cCircuitFlare *f = &g_CircuitFlares[k];
 

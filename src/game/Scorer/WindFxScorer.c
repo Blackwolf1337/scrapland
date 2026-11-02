@@ -41,22 +41,30 @@ cScorerItem *cWindFxScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
+cGVar GVar_WindFxScorerFadeFactor;
+
 /* the engine variables of the wind (WindFxScorer*) */
-extern cGVar GVar_WindFxScorerFadeFactor;
 #define g_WindFxFadeFactor (GVar_WindFxScorerFadeFactor.value.f)
-extern cGVar GVar_WindFxScorerFwAngle;
+cGVar GVar_WindFxScorerFwAngle;
+
 #define g_WindFxFwAngle (GVar_WindFxScorerFwAngle.value.f)	/* degrees, the side tests turned by it */
-extern cGVar GVar_WindFxScorerHorizontal;
+cGVar GVar_WindFxScorerHorizontal;
+
 #define g_WindFxHorizontal (GVar_WindFxScorerHorizontal.value.f)	/* the length of the side tests at full speed */
-extern cGVar GVar_WindFxScorerVertical;
+cGVar GVar_WindFxScorerVertical;
+
 #define g_WindFxVertical (GVar_WindFxScorerVertical.value.f)
-extern cGVar GVar_WindFxScorerShow;
+cGVar GVar_WindFxScorerShow;
+
 #define g_WindFxShow (GVar_WindFxScorerShow.value.i)
-extern cGVar GVar_WindFxScorerSoundVol;
+cGVar GVar_WindFxScorerSoundVol;
+
 #define g_WindFxSoundVol (GVar_WindFxScorerSoundVol.value.f)
-extern cGVar GVar_WindFxScorerSpeedPitch;
+cGVar GVar_WindFxScorerSpeedPitch;
+
 #define g_WindFxSpeedPitch (GVar_WindFxScorerSpeedPitch.value.f)
-extern cGVar GVar_WindFxScorerSpeedVol;
+cGVar GVar_WindFxScorerSpeedVol;
+
 #define g_WindFxSpeedVol (GVar_WindFxScorerSpeedVol.value.f)
 
 #define WINDFX_MAX_SPEED 28000.0f	/* the speed of the ship to 0..1 */
@@ -165,3 +173,6 @@ const cScorerItemVtbl cWindFxScorer_vftable = {
 	.Var = cScorerItem_Var,
 	.Delete = cWindFxScorer_Delete,
 };
+
+cGVar GVar_WindFxScorerSound;
+

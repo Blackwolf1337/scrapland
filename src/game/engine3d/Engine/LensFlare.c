@@ -38,6 +38,10 @@ void CLensFlare_dtor(CLensFlare *self) {
 	}
 }
 
+CLensFlare *g_LensFlareRender[8];
+
+int g_nLensFlareRender;
+
 void LensFlare_Update(CLensFlare *lf) {
 	if (!lf) {
 		return;
@@ -96,6 +100,8 @@ void LensFlare_Set(CLensFlare *lf, byte on) {
 int LensFlare_Release(void) {
 	return 0;
 }
+
+CMaterial *g_LensFlareMat;
 
 int LensFlare_Init(void) {
 	CMaterial m;
@@ -322,6 +328,8 @@ void CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj) {
 	}
 }
 
+VertLensFlare g_LensFlareVerts[4];
+
 void CLensFlare_DrawSprite(CLensFlare *self, float dist, uint32_t sprite, float size, float r, float g,
 	float b, float a) {
 	void *dev = g_Engine->device;
@@ -375,3 +383,6 @@ void CLensFlare_SetType(CLensFlare *self, int type) {
 void CLensFlare_SetRelative(CLensFlare *self, byte relative) {
 	self->relative = relative;
 }
+
+cGVar GVar_R_LensFlare;
+

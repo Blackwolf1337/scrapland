@@ -7,6 +7,8 @@
 
 #include "scrap/chartype.h"
 
+cEntity *g_HumanEnt;
+
 /* the C function of the human (cHumanLocalLogic.func): the character of that name gets away from the human */
 void HumanLogic_Escape(cAbstractFile *params) {
 	char name[0x80];

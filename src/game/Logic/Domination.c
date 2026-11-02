@@ -12,12 +12,20 @@
 #include "scrap/nodestraffic.h"
 #include "scrap/scrapcollision.h"
 
+int g_DominNumZones;
+
+DominZone g_DominZones[4];
+
 void Domination_AddZone(cEntity *zone) {
 	CHECK(g_DominNumZones < MAX_DOMIN_ZONES && "numZones < MAX_DOMIN_ZONES");
 	g_DominZones[g_DominNumZones].zone = zone;
 	g_DominZones[g_DominNumZones].state = 0;
 	g_DominNumZones++;
 }
+
+vec3_t g_DominBatonPos;
+
+int g_DominBatonState;
 
 void Domination_SetBatonState(const vec3_t *pos, int state) {
 	CHECK((uint32_t)state <= 2 && "state >= 0 && state <= 2");
@@ -318,3 +326,18 @@ const cDominationLogicVtbl cDominationEnemiesLogic_vftable = {
 	.GetList = cDominationEnemiesLogic_GetList,
 	.GetTeam = cDominationLogic_GetTeamFalse,
 };
+
+cGVar GVar_MaxDominDistChase;
+
+cGVar GVar_DominMaxRangeDist;
+
+cGVar GVar_MinDominDistChase;
+
+cGVar GVar_DominFightingFreezeControlAim;
+
+cGVar GVar_DominWithinRangeDist;
+
+cGVar GVar_DominFightingFreezeCadenceShoot;
+
+cGVar GVar_DominMinRangeDist;
+

@@ -39,7 +39,8 @@ extern const cObjElementFXVtbl cObjElementAbstract_vftable;
 #define DEBRIS_STEP 0.05f
 #define DEBRIS_MAXSTEP 0.1f
 
-extern cGVar GVar_O_Show;
+cGVar GVar_O_Show;
+
 #define g_OShow (GVar_O_Show.value.i)	/* O_Show, the debug text of the pools */
 
 /* the constructor of an effect class (returns the object) */

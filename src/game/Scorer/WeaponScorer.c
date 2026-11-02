@@ -182,14 +182,13 @@ int cWeaponScorer_Var(cScorerItem *base, const char *name, int set, char **s, do
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-extern cGVar GVar_WeaponChangeFadeTime;
+cGVar GVar_WeaponChangeFadeTime;
+
 #define g_WeaponChangeFadeTime (GVar_WeaponChangeFadeTime.value.f)	/* WeaponChangeFadeTime */
-extern cGVar GVar_WeaponChangeShowTime;
+cGVar GVar_WeaponChangeShowTime;
+
 #define g_WeaponChangeShowTime (GVar_WeaponChangeShowTime.value.f)	/* WeaponChangeShowTime: the slots after a change */
 /* the slot row of the weapons, shared by all items: per weapon 0 none, 1 with ammo, 2 without; its place in the row */
-extern int g_WeaponSlotState[7];		/* [WEAPONSCORER_WEAPONS] */
-extern int g_WeaponSlotPlace[7];		/* [WEAPONSCORER_WEAPONS] */
-extern int g_WeaponSlotCount;
 
 #define WEAPON_UAMMO_MAX 200.0f		/* the ammo of an upgrade */
 #define WEAPON_AMMO_CHARGED 3		/* the ammo kind with a bar of its charge instead of a number */
@@ -256,6 +255,12 @@ static void Weapon_DrawAmmo(cWeaponScorer *self, cWeaponManager *wm, int w, int 
 			0, self->ammoTextColor, "%d", n);
 	}
 }
+
+int g_WeaponSlotState[7];
+
+int g_WeaponSlotPlace[7];
+
+int g_WeaponSlotCount;
 
 /* the row of the weapon slots after a change: the weapons of the ship in their order, the selected one framed */
 static void Weapon_DrawSlots(cWeaponScorer *self, cWeaponManager *wm, int player, int sel, float frameTime) {

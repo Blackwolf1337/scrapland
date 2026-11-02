@@ -15,10 +15,6 @@
 #include "scrap/scrapmodel.h"
 
 /* the state names of the debug texts (pointer tables of the exe) */
-extern const char * LOGIC_GEARSTATES[5];
-extern const char * LOGIC_SENTINELSTATES[7];
-extern const char * LOGIC_NURSESTATES[4];
-extern const char * LOGIC_GENCHARSTATES[11];
 
 cBaseLocalLogic *cBaseLocalLogic_ctor(cBaseLocalLogic *self, cEntity *parent) {
 	vec3_t tmp, ang, out;
@@ -259,6 +255,48 @@ void Logic_ShowShipList(const char *name, byte visible) {
 		Logic_ShowShip(Logic_AsCar(e));
 	}
 }
+
+SD_SYM(str_3bd078);
+SD_SYM(str_3bd084);
+SD_SYM(str_3bd090);
+SD_SYM(str_3bd09c);
+SD_SYM(str_3bd0b0);
+const char *LOGIC_GEARSTATES[5] = { (void *)sd_str_3bd078, (void *)sd_str_3bd084, (void *)sd_str_3bd090, (void *)sd_str_3bd09c, (void *)sd_str_3bd0b0 };
+
+SD_SYM(str_3bd0bc);
+SD_SYM(str_3bd0cc);
+SD_SYM(str_3bd0dc);
+SD_SYM(str_3bd0ec);
+SD_SYM(str_3bd100);
+SD_SYM(str_3bd114);
+SD_SYM(str_3bd128);
+const char *LOGIC_SENTINELSTATES[7] = {
+	(void *)sd_str_3bd0bc, (void *)sd_str_3bd0cc, (void *)sd_str_3bd0dc, (void *)sd_str_3bd0ec,
+	(void *)sd_str_3bd100, (void *)sd_str_3bd114, (void *)sd_str_3bd128,
+};
+
+SD_SYM(str_3bd13c);
+SD_SYM(str_3bd148);
+SD_SYM(str_3bd154);
+SD_SYM(str_3bd164);
+const char *LOGIC_NURSESTATES[4] = { (void *)sd_str_3bd13c, (void *)sd_str_3bd148, (void *)sd_str_3bd154, (void *)sd_str_3bd164 };
+
+SD_SYM(str_3bd174);
+SD_SYM(str_3bd184);
+SD_SYM(str_3bd194);
+SD_SYM(str_3bd1a4);
+SD_SYM(str_3bd1b4);
+SD_SYM(str_3bd1c4);
+SD_SYM(str_3bd1d4);
+SD_SYM(str_3bd1e4);
+SD_SYM(str_3bd200);
+SD_SYM(str_3bd21c);
+SD_SYM(str_3bd238);
+const char *LOGIC_GENCHARSTATES[11] = {
+	(void *)sd_str_3bd174, (void *)sd_str_3bd184, (void *)sd_str_3bd194, (void *)sd_str_3bd1a4,
+	(void *)sd_str_3bd1b4, (void *)sd_str_3bd1c4, (void *)sd_str_3bd1d4, (void *)sd_str_3bd1e4,
+	(void *)sd_str_3bd200, (void *)sd_str_3bd21c, (void *)sd_str_3bd238,
+};
 
 /* ShowAI: the ship lists of an outdoor map, else the character lists */
 void Logic_ShowAI(byte visible) {
@@ -792,3 +830,64 @@ const cBaseLocalLogicVtbl cBaseLocalLogic_vftable = {
 	.SetOriginAng = cBaseLocalLogic_SetOriginAng,
 	.RestartState = cBaseLocalLogic_RestartState,
 };
+
+const char str_3bd078[] = "GEAR_RELAX";
+
+const char str_3bd084[] = "GEAR_CHASE";
+
+const char str_3bd090[] = "GEAR_ATTACK";
+
+const char str_3bd09c[] = "GEAR_STAY_IN_PLACE";
+
+const char str_3bd0b0[] = "GEAR_SCORT";
+
+const char str_3bd0bc[] = "SENTINEL_RELAX";
+
+const char str_3bd0cc[] = "SENTINEL_SEARCH";
+
+const char str_3bd0dc[] = "SENTINEL_ACUSE";
+
+const char str_3bd0ec[] = "SENTINEL_INSPECT";
+
+const char str_3bd100[] = "SENTINEL_SUSPECT";
+
+const char str_3bd114[] = "SENTINEL_GOTO_WATCH";
+
+const char str_3bd128[] = "SENTINEL_ATTACK_NPC";
+
+const char str_3bd13c[] = "NURSE_RELAX";
+
+const char str_3bd148[] = "NURSE_ALERT";
+
+const char str_3bd154[] = "NURSE_ESCAPE";
+
+const char str_3bd164[] = "NURSE_ATTACK";
+
+const char str_3bd174[] = "GENCHAR_RELAX";
+
+const char str_3bd184[] = "GENCHAR_ALERT";
+
+const char str_3bd194[] = "GENCHAR_ACUSE";
+
+const char str_3bd1a4[] = "GENCHAR_ESCAPE";
+
+const char str_3bd1b4[] = "GENCHAR_ATTACK";
+
+const char str_3bd1c4[] = "GENCHAR_CHASE";
+
+const char str_3bd1d4[] = "GENCHAR_STAY";
+
+const char str_3bd1e4[] = "GENCHAR_SPECIAL_BEHAVIOUR_1";
+
+const char str_3bd200[] = "GENCHAR_SPECIAL_BEHAVIOUR_2";
+
+const char str_3bd21c[] = "GENCHAR_SPECIAL_BEHAVIOUR_3";
+
+const char str_3bd238[] = "GENCHAR_GET_IT";
+
+cGVar GVar_LogicAwakeTime;
+
+cGVar GVar_DefActionRadius;
+
+cGVar GVar_GearRageMaxTime;
+

@@ -583,3 +583,8 @@ const CNodesTrafficVtbl CNodesTrafficInDoor_vftable = {
 	.RandomPointNear = CNodesTraffic_RandomPointNear,
 	.RandomPointAhead = CNodesTraffic_RandomPointAhead,
 };
+
+cGVar GVar_MaxNumTrackLowDensityAI;
+
+cGVar GVar_MaxNumTrackNormalDensityAI;
+

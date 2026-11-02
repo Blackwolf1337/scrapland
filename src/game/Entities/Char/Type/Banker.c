@@ -190,3 +190,6 @@ byte ChType_Steal(cEntity **thief, cEntity **victim, int amount, const char *sta
 	WChar(*thief)->moneyReward += n / 10;
 	return n != 0;
 }
+
+cGVar GVar_FXBankerStealFile;
+

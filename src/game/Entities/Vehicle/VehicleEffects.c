@@ -427,6 +427,8 @@ void cVehicleEffects_Start(cVehicleEffects *self, const char *name) {
 	}
 }
 
+float g_WindFXSmokeLast;
+
 void cVehicleEffects_UpdateState(cVehicleEffects *self, float dt) {
 	vec3_t v, out, center, from, to, hit;
 
@@ -518,7 +520,6 @@ void cVehicleEffects_UpdateState(cVehicleEffects *self, float dt) {
 /* ---- the parts before the range of the file: constructors, destructor, Update and the escape tubes ---- */
 
 #define VEFF_TUBE_STEP 0.025f			/* between two emissions */
-extern uint32_t g_VehicleSmokeRamps[28];	/* 3 color ramps of 9 colors */
 
 cVehicleEffects *cVehicleEffects_ctor(cVehicleEffects *self) {
 	self->owner = NULL;
@@ -596,6 +597,12 @@ static const VE_TubeSmoke VE_TubeSmokes[2] = {
 	/* VEFF_TUBES_MERC */
 	{ { 150.0, 650.0 }, { 100.0, 50.0 }, { 40.0, 20.0 }, { 950.0, 400.0 }, { 40.0, 20.0 }, 0, 40.0,
 		{ 0x1.9999980000000p-3, 0x1.cccccc0000000p-2 }, { 0x1.41b2f80000000p-1, 0x1.41b2f80000000p-2 } },
+};
+
+uint32_t g_VehicleSmokeRamps[28] = {
+	0xff000000, 0xc0232323, 0xa43c3c3c, 0xa44b4b4b, 0xa4373737, 0xc0232323, 0xdc191919, 0xff000000, 0xff000000,
+	0xff000000, 0xc02d2d2d, 0xa44b4b4b, 0xa4565656, 0xa4414141, 0xc02c2c2c, 0xdc1e1e1e, 0xff000000, 0xff000000,
+	0xff000000, 0xc0373737, 0xa4555555, 0xa4606060, 0xa44b4b4b, 0xc0363636, 0xdc232323, 0xff000000, 0xff000000,
 };
 
 /* one puff of a tube: the velocity and acceleration (turned with the model), emitted when the system has room */
@@ -707,7 +714,6 @@ void cVehicleTubes_Update(cVehicleTubes *self, float dt) {
 
 /* ---- the wind smoke ---- */
 
-extern uint32_t g_WindSmokeRamps[18];	/* 2 color ramps of 9 colors */
 
 /* rand / 32767 * range + add with a float range, as the original */
 static inline float VE_RandAddF(float range, float add) {
@@ -718,6 +724,11 @@ static inline float VE_RandAddF(float range, float add) {
 static inline float VE_RandSign(void) {
 	return (float)((crt_rand() & 1) * 2 - 1);
 }
+
+uint32_t g_WindSmokeRamps[18] = {
+	0xc8404040, 0xb4404040, 0xb9404040, 0xbe404040, 0xd2404040, 0xe6404040, 0xf0404040, 0xff404040, 0xff404040,
+	0xbe5c5c5c, 0xaa5c5c5c, 0xaf5c5c5c, 0xb45c5c5c, 0xcd5c5c5c, 0xe15c5c5c, 0xeb5c5c5c, 0xff5c5c5c, 0xff5c5c5c,
+};
 
 void cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float y, float z) {
 	vec3_t vel, cam, tmp, n, unit, side, ang, dir;
@@ -828,19 +839,25 @@ void cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float y, float z)
 
 /* ---- the shoot effects: the particles of m_FollowSistPart2 of the embedded FX at the weapon ---- */
 
-/* the color ramps of the shots (9 colors each) */
-extern uint32_t VS_RAMP_FIRE[18];	/* [2 * 9], 2 ramps */
-#define VS_RAMP_FIRE2 ((&VS_RAMP_FIRE[9]))
-extern uint32_t VS_RAMP_SMOKE[9];
-extern uint32_t VS_RAMP_ATPC[19];
+uint32_t VS_RAMP_FIRE[18] = {
+	0xff191919, 0x80282828, 0x80373737, 0x80414141, 0x803c3c3c, 0x80373737, 0xb4323232, 0xff000000, 0xff000000,
+	0xff1e1e1e, 0x803c3c3c, 0x805a5a5a, 0x80505050, 0x80464646, 0x803c3c3c, 0xb4323232, 0xff000000, 0xff000000,
+};
 
-extern cGVar GVar_FXVulcanFireScale;
+/* the color ramps of the shots (9 colors each) */
+#define VS_RAMP_FIRE2 ((&VS_RAMP_FIRE[9]))
+
+cGVar GVar_FXVulcanFireScale;
+
 #define g_FXVulcanFireScale (GVar_FXVulcanFireScale.value.f)
-extern cGVar GVar_FXVulcanFireTime;
+cGVar GVar_FXVulcanFireTime;
+
 #define g_FXVulcanFireTime (GVar_FXVulcanFireTime.value.f)
-extern cGVar GVar_FXDevastatorFireScale;
+cGVar GVar_FXDevastatorFireScale;
+
 #define g_FXDevastatorFireScale (GVar_FXDevastatorFireScale.value.f)
-extern cGVar GVar_FXDevastatorFireTime;
+cGVar GVar_FXDevastatorFireTime;
+
 #define g_FXDevastatorFireTime (GVar_FXDevastatorFireTime.value.f)
 
 #define VS_PI_2 0x1.921fb6p+0f
@@ -903,6 +920,8 @@ static inline void VS_Spread(CGameParticles *p, const vec3_t *d, float xy, doubl
 	p->initPosMax.y = d->y + xy;
 	p->initPosMax.z = d->z + z1;
 }
+
+uint32_t VS_RAMP_SMOKE[9] = { 0x80fff696, 0x8cffdc73, 0xa0e6aa46, 0xb4be6928, 0xc888410f, 0xde5e1405, 0xf51e0602, 0xff000000, 0xff000000 };
 
 /* the first part of the Vulcan and the Devastator: the flash, then the smoke spread */
 static void VS_FlashEnd(CGameParticles *p, int n) {
@@ -1168,6 +1187,11 @@ static void VS_Swarm(cVehicleEffects *self, CGameModel *model, CGameParticles *p
 	VS_Emit(p);
 }
 
+uint32_t VS_RAMP_ATPC[19] = {
+	0xffe1e1f5, 0x80ebbeb4, 0xf59b87, 0x10ff7d5f, 0x20ff5f28, 0x60ff5016, 0xa4c42d0a, 0xff000000, 0xff000000,
+	0xffffe655, 0x80ffb437, 0x80ff8719, 0x80ff4b0a, 0x80ff3c02, 0xa4ff2800, 0xdec40a00, 0xff000000, 0xff000000,
+};
+
 static void VS_ATPC(cVehicleEffects *self, CGameModel *model, CGameParticles *p, int slot) {
 	vec3_t d;
 
@@ -1277,3 +1301,32 @@ void cVehicleEffects_Shoot(void *effects, int weap, int slot) {
 		VS_Inferno(self, model, p, slot);
 	}
 }
+
+cGVar GVar_FXVehicleSpeedTrailDist;
+
+cGVar GVar_WindFXSmokeSizeDiv;
+
+cGVar GVar_FXVehicleSputnikFile;
+
+cGVar GVar_WindFXSmokeTimeStep;
+
+cGVar GVar_WindFxSmoke;
+
+cGVar GVar_FXVehicleFireFile;
+
+cGVar GVar_WindFXSmokeMinVel;
+
+cGVar GVar_WindFxSmokeFile;
+
+cGVar GVar_FXVehicleDamageFile;
+
+cGVar GVar_FXVehicleSpeedTrailFadeOutH;
+
+cGVar GVar_FXVehicleSpeedTrailSize;
+
+cGVar GVar_FXSetOnFireLifePercent;
+
+cGVar GVar_WindFXSmokeMaxDist;
+
+cGVar GVar_FXVehicleEMIFile;
+

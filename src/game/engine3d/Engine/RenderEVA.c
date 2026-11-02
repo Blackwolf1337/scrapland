@@ -50,6 +50,10 @@ static void Buf_Unlock(void *buf) {
 	Rd_BufUnlock(buf);
 }
 
+void *g_EVAVB;
+
+int g_EVAVBUsed;
+
 int RenderEVA_InitD3D(void) {
 	CHECK(g_Engine);
 	CHECK(g_pd3dDevice);
@@ -63,6 +67,16 @@ int RenderEVA_InitD3D(void) {
 	}
 	return RenderEVA_CreateParticles() < 0 ? E_FAIL : 0;
 }
+
+void *g_PartVB;
+
+void *g_PartIB;
+
+int g_PartVBUsed;
+
+uint16_t *g_PartTri;
+
+int g_PartNumTri;
 
 int RenderEVA_CreateParticles(void) {
 	CHECK(!g_PartTri);
@@ -524,3 +538,28 @@ int ParticleSystem_Draw2(CParticleSystem *sp, CRenderNode *r) {
 	}
 	return 0;
 }
+
+cGVar GVar_R_ParticlesOne;
+
+cGVar GVar_R_UseSkin;
+
+cGVar GVar_R_MaxSparkSize;
+
+cGVar GVar_R_ShowSkin;
+
+cGVar GVar_R_ShowEVA;
+
+cGVar GVar_R_MinSparkDist;
+
+cGVar GVar_R_ParticlesDraw;
+
+cGVar GVar_R_ParticlesZBias;
+
+cGVar GVar_R_ParticlesAlphaDist;
+
+cGVar GVar_R_UseEVA;
+
+cGVar GVar_R_ParticlesLock;
+
+cGVar GVar_R_SkinNodeSpace;
+

@@ -6,6 +6,8 @@
 
 #include "scrap/e3dinput.h"
 
+byte g_InputInit;
+
 /* one at a time, the state cleared */
 IInput *IInput_ctor(IInput *self) {
 	self->vftable = IINPUT_VFTABLE;

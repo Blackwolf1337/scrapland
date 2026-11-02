@@ -212,3 +212,6 @@ const IObject3DVtbl CGraphic3D_vftable = {
 	.Write = CGraphic3D_Write,
 	.Read = CGraphic3D_Read,
 };
+
+cGVar GVar_R_SpriteSector;
+

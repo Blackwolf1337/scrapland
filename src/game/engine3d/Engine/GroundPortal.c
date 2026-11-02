@@ -23,13 +23,17 @@
 #define PORTAL_EPS 8.0e-6f			/* the step out of a portal, times the distance to the origin */
 #define MAX_ZONES 0x80
 
+CZone *g_Zones[132];
+
 /* the sector counts by their name tags (the sky ones are g_PortalUnion) */
 #define g_NumEndSectors (*(int *)&((void * *)g_Zones)[130])
 #define g_NumOutSectors (*(int *)&((void * *)g_Zones)[131])
+cGVar GVar_R_PortalClip;
+
 /* the projection and the viewport narrowed to the rectangle of each seen sector */
-extern cGVar GVar_R_PortalClip;
 #define g_PortalClip (GVar_R_PortalClip.value.i)
-extern cGVar GVar_R_PortalBand;
+cGVar GVar_R_PortalBand;
+
 #define g_PortalBand (GVar_R_PortalBand.value.i)	/* pixels added around it */
 
 
@@ -378,6 +382,8 @@ int Sector_Traverse(int sector, const vec3_t *a, const vec3_t *b, byte front) {
 	return sector;
 }
 
+int g_NumPaintZones;
+
 void Zone_Paint(uint32_t zone, const box_t *rect) {
 	CHECK(zone < (uint32_t)g_NumZones);
 	CHECK(g_Zones[zone]);
@@ -500,6 +506,8 @@ PaintZone *PaintZone_ctor(PaintZone *self) {
 void PaintZone_dtor(PaintZone *self) {
 	(void)self;
 }
+
+PaintZone g_PaintAll;
 
 /* the static initializer (rva 0x05d6f0, the constructor inlined) and the atexit destructor of
  * (&g_PaintAll) */
@@ -728,3 +736,16 @@ byte Portals_SetView(const PaintZone *zp) {
 	Rd_DevSetTransform(dev, D3DTS_PROJECTION, &m);
 	return 1;
 }
+
+cGVar GVar_R_PortalNorm;
+
+cGVar GVar_R_PortalPos;
+
+cGVar GVar_R_PortalDist;
+
+cGVar GVar_R_PortalExt;
+
+cGVar GVar_R_PortalEnd;
+
+cGVar GVar_R_ShowPortals;
+

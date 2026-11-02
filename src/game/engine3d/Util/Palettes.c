@@ -9,6 +9,8 @@
 /* the shifts of the exe are bytes, the cpu masks them to 5 bits */
 #define PAL_SH(v) ((v) & 31)
 
+Pal16Shift g_Pal16Shift;
+
 uint32_t Pal16_FromRGB(byte r, byte g, byte b) {
 	const Pal16Shift *s = &g_Pal16Shift;
 	uint32_t c = (uint32_t)(r >> PAL_SH(s->rShr)) << PAL_SH(s->rShl);

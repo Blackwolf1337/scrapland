@@ -20,7 +20,6 @@
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
 
-extern cGVar GVar_R_DrawMLODMask;
 
 #define CLOD_DTOR 0x252d80
 #define LIGHT_OMNI_NAME "omni"
@@ -30,9 +29,11 @@ extern cGVar GVar_R_DrawMLODMask;
 #define MORPH_SPEED_MAX 0.08f
 #define STENCIL_DIST 4000.0f
 
-extern cGVar GVar_R_SkipAnimInterp;
+cGVar GVar_R_SkipAnimInterp;
+
 #define g_AnimPause (GVar_R_SkipAnimInterp.value.i)	/* the animations stand still */
-extern cGVar GVar_R_AnimInterpMult;
+cGVar GVar_R_AnimInterpMult;
+
 #define g_AnimSpeed (GVar_R_AnimInterpMult.value.f)	/* the speed of all animations */
 #define g_FrameTime g_FrameMs	/* the time of the frame */
 
@@ -863,35 +864,51 @@ const char *CLight_TypeName(const CLight *l) {
 	return NULL;
 }
 
+cGVar GVar_R_UseMLOD;
+
 /* the render variables of the models */
-extern cGVar GVar_R_UseMLOD;
 #define g_UseMLOD (GVar_R_UseMLOD.value.i)		/* R_UseMLOD */
-extern cGVar GVar_R_DistMLOD1;
+cGVar GVar_R_DistMLOD1;
+
 #define g_DistMLOD1 (GVar_R_DistMLOD1.value.f)		/* R_DistMLOD1, the distance of LOD i is i times it */
+cGVar GVar_R_DrawMLODMask;
+
 #define g_DrawMLODMask (*(uint32_t *)&GVar_R_DrawMLODMask.value)	/* R_DrawMLODMask: the LODs drawn as the main model */
-extern cGVar GVar_R_DrawMLODMin;
+cGVar GVar_R_DrawMLODMin;
+
 #define g_DrawMLODMin (GVar_R_DrawMLODMin.value.i)		/* R_DrawMLODMin */
-extern cGVar GVar_R_DrawMLODPart;
+cGVar GVar_R_DrawMLODPart;
+
 #define g_DrawMLODPart (GVar_R_DrawMLODPart.value.i)		/* R_DrawMLODPart: the particles of the main model with a LOD */
-extern cGVar GVar_R_ModelFastIsVis;
+cGVar GVar_R_ModelFastIsVis;
+
 #define g_ModelFastIsVis (GVar_R_ModelFastIsVis.value.i)	/* R_ModelFastIsVis */
-extern cGVar GVar_R_ModelPortalVis;
+cGVar GVar_R_ModelPortalVis;
+
 #define g_ModelPortalVis (GVar_R_ModelPortalVis.value.i)	/* R_ModelPortalVis */
-extern cGVar GVar_R_SphereVisMult;
+cGVar GVar_R_SphereVisMult;
+
 #define g_SphereVisMult (GVar_R_SphereVisMult.value.f)	/* R_SphereVisMult */
-extern cGVar GVar_R_DistMStencil;
+cGVar GVar_R_DistMStencil;
+
 #define g_DistMStencil (GVar_R_DistMStencil.value.f)	/* R_DistMStencil */
-extern cGVar GVar_R_SkipUpdateVis;
+cGVar GVar_R_SkipUpdateVis;
+
 #define g_SkipUpdateVis (GVar_R_SkipUpdateVis.value.i)	/* R_SkipUpdateVis */
-extern cGVar GVar_R_ShowModelSector;
+cGVar GVar_R_ShowModelSector;
+
 #define g_ShowModelSector (GVar_R_ShowModelSector.value.i)	/* R_ShowModelSector */
-extern cGVar GVar_R_LightLimit;
+cGVar GVar_R_LightLimit;
+
 #define g_LightLimit (GVar_R_LightLimit.value.i)		/* R_LightLimit, -1: no lights chosen */
-extern cGVar GVar_R_ShowModelLights;
+cGVar GVar_R_ShowModelLights;
+
 #define g_ShowModelLights (GVar_R_ShowModelLights.value.i)	/* R_ShowModelLights */
-extern cGVar GVar_R_ShowModelBox;
+cGVar GVar_R_ShowModelBox;
+
 #define g_ShowModelBox (GVar_R_ShowModelBox.value.i)		/* R_ShowModelBox */
-extern cGVar GVar_R_ShowModelPos;
+cGVar GVar_R_ShowModelPos;
+
 #define g_ShowModelPos (GVar_R_ShowModelPos.value.i)		/* R_ShowModelPos */
 
 /* the passes that draw only the models seen in the last frame */
@@ -1018,6 +1035,8 @@ found:
 	Model_SetEnable(m, 0);
 	return 1;
 }
+
+CFont3 *g_FntTerm8;
 
 /* R_ShowModelLights 2 to 4: a text and a line to each light chosen for the model */
 static void Model_ShowLights(CModel *self, CLight **lights, int n, int limit) {

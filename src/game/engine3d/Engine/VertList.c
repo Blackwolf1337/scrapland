@@ -109,6 +109,18 @@ void CVertList_Write(CVertList *self, CFileIO *f) {
 	CHECK(!f->error);
 }
 
+uint32_t g_hVShader_Tex1_XBox;
+
+uint32_t g_hVShader_Tex1C_XBox;
+
+uint32_t g_hVShader_LTex1_XBox;
+
+uint32_t g_hVShader_LTex1N_XBox;
+
+uint32_t g_hVShader_LTex2_XBox;
+
+uint32_t g_hVShader_LTex2N_XBox;
+
 uint32_t VertList_FormatFVF(int frmt) {
 	switch (frmt) {
 	case VERT_TEX1:
@@ -1131,6 +1143,8 @@ byte VertList_Strip(CVertList *out, const CVertList *in, const uint16_t *tris, i
 	return 1;
 }
 
+int g_VCacheVert[16];
+
 int VertCache_Find(int v) {
 	for (int i = 0; i < VCACHE_SIZE; i++) {
 		if (g_VCacheVert[i] == v) {
@@ -1139,6 +1153,8 @@ int VertCache_Find(int v) {
 	}
 	return -1;
 }
+
+int g_VCacheAge[20];
 
 int VertCache_Oldest(void) {
 	int best = 1000000, slot = 0;

@@ -1103,6 +1103,8 @@ void CNodesWorldSup_FreeGraph(CNodesWorld *self) {
 	self->sup.vftable->ClearLists(self);
 }
 
+cMemStats g_MemStats;
+
 void CNodesWorldSup_FreeTemp(CNodesWorld *self) {
 	Con_Printf("Restoring Memory Temp...\n");
 	int mem = g_MemStats.bytes;

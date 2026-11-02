@@ -21,14 +21,18 @@
 
 #define Debris_Next(d) (((cDebris *)(d))->next)
 
+cGVar GVar_FXDumbMotorFile;
+
 /* the debris systems of the fire effects (SetEmbeddedFX) */
-extern cGVar GVar_FXDumbMotorFile;
 #define g_MissileFXDumbMotor (GVar_FXDumbMotorFile.value.s)
-extern cGVar GVar_FXGearMissileFile;
+cGVar GVar_FXGearMissileFile;
+
 #define g_MissileFXGearMissile (GVar_FXGearMissileFile.value.s)
-extern cGVar GVar_CloudFile;
+cGVar GVar_CloudFile;
+
 #define g_MissileFXCloud (GVar_CloudFile.value.s)
-extern cGVar GVar_EMIFile;
+cGVar GVar_EMIFile;
+
 #define g_MissileFXEMI (GVar_EMIFile.value.s)
 
 #define MISSILE_ENTLIST 8			/* the entity lists the missiles hit */
@@ -129,6 +133,8 @@ void cMissileEntity_RotStep(cEntity *base, float dt) {
 	self->wl.obj.ang.x = self->wl.obj.ang.x + self->wl.obj.rotVel.x * dt;
 	Missile_Vtbl(self)->UpdateVel(&self->wl.obj.base);
 }
+
+char g_MissileHits[4][0x80];
 
 void cMissileEntity_Touch(cEntity *base, cEntity *other, const vec3_t *point, const vec3_t *dir) {
 	cMissileEntity *self = (cMissileEntity *)base;
@@ -1234,6 +1240,8 @@ void cMissileEntity_Swarm(cEntity *base, float dt) {
 	self->lastPos = *Obj_Vtbl(Missile_Ent(self))->GetViewPos(Missile_Ent(self), &tmp);
 }
 
+vec3_t g_DebrisDrop[4];
+
 void cMissileEntity_AddToSwarm(cEntity *base, int n) {
 	cMissileEntity *self = (cMissileEntity *)base;
 	if (!self->hiddenSwarm) {
@@ -1423,3 +1431,8 @@ const cMissileEntityVtbl cMissileEntity_vftable = {
 	.SetSwarm = cMissileEntity_SetSwarm,
 	.Explode = cMissileEntity_Explode,
 };
+
+cGVar GVar_Gravity;
+
+cGVar GVar_ActiveExtrapolation;
+

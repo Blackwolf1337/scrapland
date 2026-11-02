@@ -19,7 +19,8 @@
 void ExtPolice_OnDamage(cAbstractFile *params);
 void ExtPolice_OnDeath(cAbstractFile *params);
 
-extern cGVar GVar_MaxDistReposAI;
+cGVar GVar_MaxDistReposAI;
+
 #define g_MaxDistReposAI (GVar_MaxDistReposAI.value.f)
 
 cExtPolice *cExtPolice_ctor(cExtPolice *self) {
@@ -287,3 +288,10 @@ void cExtPolice_Update(cExtPolice *self, float dt) {
 		cExtPolice_Think(self);
 	}
 }
+
+cGVarFunction GVar_PoliceWaveEliminated;
+
+cGVar GVar_DoResetOutPolice;
+
+cGVar GVar_TrafficFightingMaxDist;
+

@@ -99,13 +99,15 @@ void CPortal_Render(IObject3D *base, void *dev, CRenderNode *r) {
 }
 
 /* the material of the debug drawing, a static of CPortal_DrawDebug */
-extern CMaterial g_PortalMat;
-extern int g_PortalMatGuard[2];
+
+CMaterial g_PortalMat;
 
 /* the atexit destructor of it */
 void Portal_FiniMat(void) {
 	CMaterial_dtor(&g_PortalMat);
 }
+
+int g_PortalMatGuard[2];
 
 void CPortal_DrawDebug(CPortal *self, uint32_t color) {
 	CHECK(g_ShowPortals);

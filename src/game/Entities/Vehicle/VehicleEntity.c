@@ -38,40 +38,55 @@ CGameModel *CGameModel_ctorDefault(CGameModel *self) {
 }
 
 /* the names of the pilot animations by index ("Left", "Right", "Go", "Back", "Relax") */
-extern const char * g_PilotAnimNames[6];
+
+cGVar GVar_ShipPathFmt;
 
 /* the engine variables */
-extern cGVar GVar_ShipPathFmt;
 #define g_ShipPathFmt (GVar_ShipPathFmt.value.s)
-extern cGVar GVar_VeCharsPathFmt;
+cGVar GVar_VeCharsPathFmt;
+
 #define g_VeCharsPathFmt (GVar_VeCharsPathFmt.value.s)
-extern cGVar GVar_AmorPieceWeight;
+cGVar GVar_AmorPieceWeight;
+
 #define g_AmorPieceWeight (GVar_AmorPieceWeight.value.f)
-extern cGVar GVar_MotorDownFactor;
+cGVar GVar_MotorDownFactor;
+
 #define g_MotorDownFactor (GVar_MotorDownFactor.value.f)
-extern cGVar GVar_VehicleCrashMinTime;
+cGVar GVar_VehicleCrashMinTime;
+
 #define g_VehicleCrashMinTime (GVar_VehicleCrashMinTime.value.f)
-extern cGVar GVar_VehicleCrashAccLo;
+cGVar GVar_VehicleCrashAccLo;
+
 #define g_VehicleCrashAccLo (GVar_VehicleCrashAccLo.value.f)
-extern cGVar GVar_VehicleCrashAccMed;
+cGVar GVar_VehicleCrashAccMed;
+
 #define g_VehicleCrashAccMed (GVar_VehicleCrashAccMed.value.f)
-extern cGVar GVar_VehicleCrashAccHi;
+cGVar GVar_VehicleCrashAccHi;
+
 #define g_VehicleCrashAccHi (GVar_VehicleCrashAccHi.value.f)
-extern cGVar GVar_VehicleCrashAccHev;
+cGVar GVar_VehicleCrashAccHev;
+
 #define g_VehicleCrashAccHev (GVar_VehicleCrashAccHev.value.f)
-extern cGVar GVar_FxSpeedVariation;
+cGVar GVar_FxSpeedVariation;
+
 #define g_FxSpeedVariation (GVar_FxSpeedVariation.value.f)
-extern cGVar GVar_FxAngVariation;
+cGVar GVar_FxAngVariation;
+
 #define g_FxAngVariation (GVar_FxAngVariation.value.f)
-extern cGVar GVar_FxVelVariation;
+cGVar GVar_FxVelVariation;
+
 #define g_FxVelVariation (GVar_FxVelVariation.value.f)
-extern cGVar GVar_FxAccVariation;
+cGVar GVar_FxAccVariation;
+
 #define g_FxAccVariation (GVar_FxAccVariation.value.f)
-extern cGVar GVar_FxBoostTimeDuration;
+cGVar GVar_FxBoostTimeDuration;
+
 #define g_FxBoostTimeDuration (GVar_FxBoostTimeDuration.value.f)
-extern cGVar GVar_VehicleEditingMode;
+cGVar GVar_VehicleEditingMode;
+
 #define g_VehicleEditingMode (GVar_VehicleEditingMode.value.i)
-extern cGVar GVar_NPCSndMotorVolFactor;
+cGVar GVar_NPCSndMotorVolFactor;
+
 #define g_NPCSndMotorVolFactor (GVar_NPCSndMotorVolFactor.value.f)
 
 /* the camera data of a player ship (vehicle + 0xf0) */
@@ -1054,6 +1069,13 @@ byte cVehicleEntity_SetPilot(cEntity *elem, int slot, const char *name, float sx
 	return 1;
 }
 
+SD_SYM(str_3a3954);
+SD_SYM(str_3a395c);
+SD_SYM(str_3b53f4);
+SD_SYM(str_3ae0f4);
+SD_SYM(str_3ad2f4);
+const char *g_PilotAnimNames[6] = { (void *)sd_str_3a3954, (void *)sd_str_3a395c, (void *)sd_str_3b53f4, (void *)sd_str_3ae0f4, (void *)sd_str_3ad2f4 };
+
 byte cVehicleEntity_SetPilotAnim(cEntity *base, int slot, int anim) {
 	cVehicleEntity *self = (cVehicleEntity *)base;
 	char path[0x200];
@@ -1699,18 +1721,24 @@ byte cVehicleEntity_VarV(cEntity *base, const char *name, double *x, double *y, 
 
 /* ---- the flight ---- */
 
+cGVar GVar_FreeSpaceMagnetCenterX;
+
 /* the magnet that pulls the ships back to the center in the free space */
-extern cGVar GVar_FreeSpaceMagnetCenterX;
 #define g_FreeSpaceMagnetCenterX (GVar_FreeSpaceMagnetCenterX.value.f)
-extern cGVar GVar_FreeSpaceMagnetCenterY;
+cGVar GVar_FreeSpaceMagnetCenterY;
+
 #define g_FreeSpaceMagnetCenterY (GVar_FreeSpaceMagnetCenterY.value.f)
-extern cGVar GVar_FreeSpaceMagnetCenterZ;
+cGVar GVar_FreeSpaceMagnetCenterZ;
+
 #define g_FreeSpaceMagnetCenterZ (GVar_FreeSpaceMagnetCenterZ.value.f)
-extern cGVar GVar_FreeSpaceMagnetLoRadius;
+cGVar GVar_FreeSpaceMagnetLoRadius;
+
 #define g_FreeSpaceMagnetLoRadius (GVar_FreeSpaceMagnetLoRadius.value.f)
-extern cGVar GVar_FreeSpaceMagnetHiRadius;
+cGVar GVar_FreeSpaceMagnetHiRadius;
+
 #define g_FreeSpaceMagnetHiRadius (GVar_FreeSpaceMagnetHiRadius.value.f)
-extern cGVar GVar_FreeSpaceMagnetAccel;
+cGVar GVar_FreeSpaceMagnetAccel;
+
 #define g_FreeSpaceMagnetAccel (GVar_FreeSpaceMagnetAccel.value.f)
 
 #define VEH_PI_F 0x1.921fb6p+1f
@@ -1920,17 +1948,22 @@ void cVehicleEntity_Step(cVehicleEntity *self, float dt) {
 	self->wl.obj.ang.y = ry * dt + self->wl.obj.ang.y;
 }
 
+cGVar GVar_HiRacerFov;
+
 /* ---- the model and the camera of a slot (vf24, rva 0x105ea0) ---- */
 
-extern cGVar GVar_HiRacerFov;
 #define g_HiRacerFov (GVar_HiRacerFov.value.f)		/* degrees at top speed */
-extern cGVar GVar_LoRacerFov;
+cGVar GVar_LoRacerFov;
+
 #define g_LoRacerFov (GVar_LoRacerFov.value.f)
-extern cGVar GVar_MotorTrustRotationX;
+cGVar GVar_MotorTrustRotationX;
+
 #define g_MotorTrustRotationX (GVar_MotorTrustRotationX.value.f)
-extern cGVar GVar_MotorTrustRotationY;
+cGVar GVar_MotorTrustRotationY;
+
 #define g_MotorTrustRotationY (GVar_MotorTrustRotationY.value.f)
-extern cGVar GVar_PilotViewDist;
+cGVar GVar_PilotViewDist;
+
 #define g_PilotViewDist (GVar_PilotViewDist.value.f)	/* the pilot is drawn nearer to the camera */
 
 #define VEH_CAM_PITCH -0x1.0c1524p-2f			/* -15 degrees */
@@ -2138,3 +2171,18 @@ const cVehicleEntityVtbl cVehicleEntity_vftable = {
 	.GetPilotPos = cVehicleEntity_GetPilotPos,
 	.Crash = cVehicleEntity_Crash,
 };
+
+const char str_3b53f4[] = "Go";
+
+const char str_3a3954[] = "Left";
+
+const char str_3a395c[] = "Right";
+
+const char str_3ad2f4[] = "Relax";
+
+const char str_3ae0f4[] = "Back";
+
+cGVar GVar_TopLimit;
+
+cGVar GVar_AtmosphereLimit;
+

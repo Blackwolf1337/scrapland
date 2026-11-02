@@ -20,8 +20,9 @@
 #define CGAMETRAIL_CTOR 0x21ddb0
 #define CGAMETRAIL_DTOR 0x21de40
 
+cGVar GVar_MessengerTubeState;
+
 /* the switch of the DataPack lasers (a Gvar) */
-extern cGVar GVar_MessengerTubeState;
 #define g_DataPackOn (GVar_MessengerTubeState.value.i)
 /* "" of the original, the glow node of a coin name that matches none */
 
@@ -1194,12 +1195,15 @@ void EmbeddedFXMisc_MeetingPointMsg(cAbstractFile *f) {
 
 /* ---- vf03: Update ---- */
 
+cGVar GVar_DataPackInterTime;
+
 /* the DataPack engine variables */
-extern cGVar GVar_DataPackInterTime;
 #define g_DataPackInterTime (GVar_DataPackInterTime.value.f)
-extern cGVar GVar_DataPackLaserLong;
+cGVar GVar_DataPackLaserLong;
+
 #define g_DataPackLaserLong (GVar_DataPackLaserLong.value.f)
-extern cGVar GVar_DataPackLaserSize;
+cGVar GVar_DataPackLaserSize;
+
 #define g_DataPackLaserSize (GVar_DataPackLaserSize.value.f)
 
 /*
@@ -1972,12 +1976,15 @@ void cEmbeddedFXTreasure_Update(cEmbeddedFX *elem, float dt) {
 	}
 }
 
+cGVar GVar_FXBossShieldAspect;
+
 /* the BossShield engine variables */
-extern cGVar GVar_FXBossShieldAspect;
 #define g_FXBossShieldAspect (GVar_FXBossShieldAspect.value.f)
-extern cGVar GVar_FXBossShieldRadius;
+cGVar GVar_FXBossShieldRadius;
+
 #define g_FXBossShieldRadius (GVar_FXBossShieldRadius.value.f)
-extern cGVar GVar_FXBossShieldScale;
+cGVar GVar_FXBossShieldScale;
+
 #define g_FXBossShieldScale (GVar_FXBossShieldScale.value.f)
 
 /* a random point on the shield */
@@ -2167,8 +2174,9 @@ static void EFXM_SparkPos(CGameParticles *p, float s, const vec3_t *c) {
 	p->initPosMax = p->initPosMin;
 }
 
+uint32_t EFXM_SparkFlash_428450[9] = { 0x10f5f5ff, 0x20e1e1ff, 0x30b4b4e6, 0x409b9bbe, 0x607d7d96, 0x805f5f78, 0xc055556e, 0xff282832, 0xff000000 };
+
 /* a flash of the sparks: the sizes and the life from the random ranges */
-extern uint32_t EFXM_SparkFlash_428450[9];
 static void EFXM_SparkFlash(CGameParticles *p, double ini, double iniAdd, double endAdd, byte sprite, double life,
 	double lifeAdd) {
 	CGameParticles_SetColorRamp(p, EFXM_SparkFlash_428450);
@@ -2183,8 +2191,12 @@ static void EFXM_SparkFlash(CGameParticles *p, double ini, double iniAdd, double
 	CGameParticles_EmitN(p, 1, 1);
 }
 
+uint32_t EFXM_SparkFlash_428474[19] = {
+	0x10d2d2ff, 0x209696ff, 0x306464e1, 0x403232b4, 0x601e1e55, 0x800a0a2d, 0xc0050519, 0xff00000a, 0xff000000,
+	0x10d2d2ff, 0x20b4b4ff, 0x309393e6, 0x405353ab, 0x602d2d4c, 0x80141438, 0xc005051e, 0xff00000a, 0xff000000,
+};
+
 /* three rays that jump between random points now and then, a burst of sparks at the top */
-extern uint32_t EFXM_SparkFlash_428474[19];
 void cEmbeddedFXBattery_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXBattery *self = (cEmbeddedFXBattery *)elem;
 	CGameParticles *p = &self->glow;
@@ -2358,7 +2370,6 @@ void cEmbeddedFXBattery_Update(cEmbeddedFX *elem, float dt) {
 /* ---- vf03: the Update of the Moto ---- */
 
 /* the color ramps of the flames and the smoke of the engines (9 colors each) */
-extern uint32_t g_RampBike[36];
 
 /* the 6 flames along the way of an engine: the distance, the add of the size, the alpha (rand % mod - sub) and the
  * color of the main engine and of the two others */
@@ -2389,6 +2400,13 @@ static void EFXM_BikeVel(CGameParticles *p, float spread, float z1, float z2, co
 	p->initVelMax.y = v->y * scale;
 	p->initVelMax.z = v->z * scale;
 }
+
+uint32_t g_RampBike[36] = {
+	0x8054b9eb, 0x2050b9eb, 0x304ab4eb, 0x5240afeb, 0xa42eaaeb, 0xc026a5eb, 0xe120a0eb, 0xff189beb, 0xff1096eb,
+	0xff54cdff, 0x4050cdff, 0x304acdff, 0x4046cdff, 0x8040cdff, 0xc03ccdff, 0xe136cdff, 0xff2ccdff, 0xff22cdff,
+	0x80b954eb, 0x20b950eb, 0x30b44aeb, 0x52af40eb, 0xa4aa2eeb, 0xc0a526eb, 0xe1a020eb, 0xff9b18eb, 0xff9610eb,
+	0xffcd54ff, 0x40cd50ff, 0x30cd4aff, 0x40cd46ff, 0x80cd40ff, 0xc0cd3cff, 0xe1cd36ff, 0xffcd2cff, 0xffcd22ff,
+};
 
 /*
  * The engines of the Moto while they run: the 16 glows of each of the two down engines, 6 flames along the way of

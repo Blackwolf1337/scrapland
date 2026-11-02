@@ -267,6 +267,10 @@ static byte ClientNet_PingByte(cNetClient *c) {
 	return (byte)v;
 }
 
+const float g_NetMaxDist2 = 1.21e+10f;
+
+vec3_t g_NetOrigin;
+
 void cClientNetManager_Send(cUserNetManager *elem, uint32_t time) {
 	cClientNetManager *self = (cClientNetManager *)elem;
 	byte b[2];
@@ -431,3 +435,12 @@ const cUserNetManagerVtbl cClientNetManager_vftable = {
 	.Send = cClientNetManager_Send,
 	.SetLocalData = cClientNetManager_SetLocalData,
 };
+
+cGVar GVar_NetMaxResourcesSend;
+
+cGVarFunction GVar_OnClientModify;
+
+cGVar GVar_ServerRemotePassword;
+
+cGVarFunction GVar_OnClientExit;
+

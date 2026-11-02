@@ -25,7 +25,6 @@
 #include "scrap/video.h"
 #include "scrap/platform.h"
 
-extern cGVar GVar_PlayVideoFX;
 
 #define VK_ESCAPE 0x1b
 #define VK_SPACE 0x20
@@ -40,8 +39,11 @@ extern cGVar GVar_PlayVideoFX;
 #define VIDEO_PACKETS 32		/* packets read per Video_Step at most */
 #define VIDEO_RING (1u << 20)		/* bytes of decoded sound ahead of the mixer, about 6 s of 44.1 kHz stereo */
 
-extern int g_VideoPadHeld;
+cGVar GVar_PlayVideoFX;
+
 #define g_VideoMirror (*(uint32_t *)&GVar_PlayVideoFX.value)	/* 1: up-down, 2: left-right */
+
+int g_VideoPadHeld;
 
 byte Video_PadPressed(void) {
 	uint32_t state[4] = { 0, 0, 0, 0 };

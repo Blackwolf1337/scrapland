@@ -12,27 +12,38 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/weapons.h"
 
-extern cGVar GVar_GearStdFar;
+cGVar GVar_GearStdFar;
+
 #define g_GearStdFar (GVar_GearStdFar.value.f)
-extern cGVar GVar_GearStdFovY;
+cGVar GVar_GearStdFovY;
+
 #define g_GearStdFovY (GVar_GearStdFovY.value.f)
-extern cGVar GVar_GearStdFovX;
+cGVar GVar_GearStdFovX;
+
 #define g_GearStdFovX (GVar_GearStdFovX.value.f)
-extern cGVar GVar_GearLostTargetTime;
+cGVar GVar_GearLostTargetTime;
+
 #define g_GearLostTargetTime (GVar_GearLostTargetTime.value.f)
-extern cGVar GVar_GearRelaxSpeed;
+cGVar GVar_GearRelaxSpeed;
+
 #define g_GearRelaxSpeed (GVar_GearRelaxSpeed.value.f)
-extern cGVar GVar_GearRobberyDetection;
+cGVar GVar_GearRobberyDetection;
+
 #define g_GearRobberyDetection (GVar_GearRobberyDetection.value.f)
-extern cGVar GVar_Gear2PoliceAlways;
+cGVar GVar_Gear2PoliceAlways;
+
 #define g_Gear2PoliceAlways (GVar_Gear2PoliceAlways.value.i)
-extern cGVar GVar_GearChaseSpeed;
+cGVar GVar_GearChaseSpeed;
+
 #define g_GearChaseSpeed (GVar_GearChaseSpeed.value.f)
-extern cGVar GVar_GearAttackSpeed;
+cGVar GVar_GearAttackSpeed;
+
 #define g_GearAttackSpeed (GVar_GearAttackSpeed.value.f)
-extern cGVar GVar_GearAttackNPCTime;
+cGVar GVar_GearAttackNPCTime;
+
 #define g_GearAttackNPCTime (GVar_GearAttackNPCTime.value.f)
-extern cGVar GVar_GearScortSpeed;
+cGVar GVar_GearScortSpeed;
+
 #define g_GearScortSpeed (GVar_GearScortSpeed.value.f)
 
 int Vec3_Differ(const float *a, const float *b);

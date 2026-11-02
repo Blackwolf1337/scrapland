@@ -71,10 +71,14 @@ void Bsp2Node_dtor(Bsp2Node *self) {
 	Table_Free(&self->tris);
 }
 
+int g_Bsp2NComp;
+
 int BspLights_CheckLine(BspLights *self, const vec3_t *a, const vec3_t *b, vec3_t *out) {
 	CHECK(++g_Bsp2NComp);
 	return Bsp2_CheckLine(a, b, out, self->root) == 1;
 }
+
+int g_Bsp2NTriCmp;
 
 int Bsp2_CheckLine(const vec3_t *a, const vec3_t *b, vec3_t *out, Bsp2Node *node) {
 	if (node->front && node->back) {
@@ -139,6 +143,10 @@ int Bsp2_CheckLine(const vec3_t *a, const vec3_t *b, vec3_t *out, Bsp2Node *node
 	return -1;
 }
 
+vec3_t g_Bsp2Eye;
+
+int g_Bsp2Color;
+
 void BspLights_Render(void *self) {
 	BspLights *l = self;
 
@@ -173,6 +181,10 @@ void Bsp2_AddTri(byte countOnly, Bsp2Node *node, uint32_t *nFront, uint32_t *nBa
 		(*nBack)++;
 	}
 }
+
+int g_Bsp2Hits;
+
+int g_Bsp2Misses;
 
 void Bsp2_Stats(int print) {
 	if (print) {

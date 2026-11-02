@@ -116,6 +116,8 @@ static void VM_UpdateEffects(cVehicleMotors *self, cVehicleMotorsEffects *eff, V
 	cVehicleMotorsEffects_Trails(eff, u->dt, *pc, *pa, vel, u->thrust * u->alpha, u->k4c8, color);
 }
 
+vec3_t g_HazePos[8];
+
 /* the Calima particles (the hot air under the exhausts) of the motors of a player ship */
 static void VM_Haze(cVehicleMotors *self, VMUpdate *u) {
 	vec3_t t;
@@ -930,3 +932,24 @@ const cVehicleMotorsVtbl cVehicleMotors_vftable = {
 	.VarS = cVehicleMotors_VarS,
 	.VarV = cVehicleMotors_VarV,
 };
+
+cGVar GVar_EnginePathFmt;
+
+cGVar GVar_FXVehicleDeathTrailFile;
+
+cGVar GVar_FXMotorSmokeFile;
+
+cGVar GVar_FXMotorHazeOffset;
+
+cGVar GVar_FXEngineTrailHideTime;
+
+cGVar GVar_FXEngineGlowDistFadeMid;
+
+cGVar GVar_FXMotorHaze;
+
+cGVar GVar_FXMotorHazeFile;
+
+cGVar GVar_FXEngineGlowDistFadeMult;
+
+cGVar GVar_FXEngineGlowDistFadeTo;
+

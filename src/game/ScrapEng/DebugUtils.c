@@ -7,13 +7,14 @@
 #include "scrap/scrapmain.h"
 #include "scrap/utild3d.h"
 
-extern matrix_t g_DebugIdentity;
 
 void DebugUtils_DrawAxes(const matrix_t *m, const vec3_t *pos, float size) {
 	static const uint32_t colors[3] = { 0xff0000, 0xff00, 0xff };
 	Render_SetWorldMatrix(m, 0);
 	Debug_CrossLines(pos, size, colors);
 }
+
+matrix_t g_DebugIdentity = { .m = { 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f } };
 
 void DebugUtils_DrawPoint(const vec3_t *pos, float size, uint32_t color) {
 	Debug_DrawPointM((&g_DebugIdentity), pos, size, color);

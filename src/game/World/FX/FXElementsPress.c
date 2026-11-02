@@ -259,11 +259,14 @@ byte cFXElementsMentalControllerDamageFX_Init(cMapElement *elem) {
 	return 1;
 }
 
-extern cGVar GVar_FXElementsMentalControllerDamageFXMaxDist;
+cGVar GVar_FXElementsMentalControllerDamageFXMaxDist;
+
 #define g_DamageFXMaxDist (GVar_FXElementsMentalControllerDamageFXMaxDist.value.f)		/* FXElementsMentalControllerDamageFXMaxDist */
-extern cGVar GVar_FXElementsMentalControllerDamageSound;
+cGVar GVar_FXElementsMentalControllerDamageSound;
+
 #define g_DamageFXSound (GVar_FXElementsMentalControllerDamageSound.value.s)	/* FXElementsMentalControllerDamageSound */
-extern cGVar GVar_FXElementsMentalControllerDamageSoundVol;
+cGVar GVar_FXElementsMentalControllerDamageSoundVol;
+
 #define g_DamageFXSoundVol (GVar_FXElementsMentalControllerDamageSoundVol.value.f)		/* FXElementsMentalControllerDamageSoundVol */
 #define DAMAGEFX_SMOKE_RAMPS 0x4309f8				/* 3 color ramps of 9 colors */
 #define DAMAGEFX_FLASH_RAMPS 0x430a68
@@ -272,8 +275,13 @@ static inline uint32_t *Press_Ramp(uint32_t *ramps, int i) {
 	return ramps + i * 9;
 }
 
+uint32_t DamageFX_Glow_430a68[28] = {
+	0x10f0f0ff, 0x20d2d2ff, 0x306e6ee6, 0x405555be, 0x60414196, 0x802d2d78, 0xc019196e, 0xff0a0a32, 0xff000000,
+	0x10d2d2ff, 0x209696ff, 0x306464e1, 0x403232b4, 0x601e1e55, 0x800a0a2d, 0xc0050519, 0xff00000a, 0xff000000,
+	0x10d2d2ff, 0x20b4b4ff, 0x309393e6, 0x405353ab, 0x602d2d4c, 0x80141438, 0xc005051e, 0xff00000a, 0xff000000,
+};
+
 /* one flash glow at the emitter: sizes and life random, scaled by s */
-extern uint32_t DamageFX_Glow_430a68[28];
 static void DamageFX_Glow(CGameParticles *p, float s, double iniRange, double iniAdd, double endRange, double endAdd,
 	byte sprite, double lifeRange, double lifeAdd) {
 	CGameParticles_SetColorRamp(p, Press_Ramp(DamageFX_Glow_430a68, 0));
@@ -288,7 +296,12 @@ static void DamageFX_Glow(CGameParticles *p, float s, double iniRange, double in
 	CGameParticles_EmitN(p, 1, 1);
 }
 
-extern uint32_t cFXElementsMentalControllerDamageFX_Update_4309f8[28];
+uint32_t cFXElementsMentalControllerDamageFX_Update_4309f8[28] = {
+	0xff000000, 0x94191919, 0x78232323, 0x782d2d2d, 0x782d2d2d, 0x78232323, 0xc4191919, 0xff000000, 0xff000000,
+	0xff000000, 0xa4232323, 0x7d2d2d2d, 0x7d373737, 0x7d373737, 0x7d282828, 0xd2191919, 0xff000000, 0xff000000,
+	0xff000000, 0xc02d2d2d, 0x843c3c3c, 0x84414141, 0x84373737, 0xa42d2d2d, 0xdc1e1e1e, 0xff000000, 0xff000000,
+};
+
 void cFXElementsMentalControllerDamageFX_Update(cMapElement *elem, float dt) {
 	cFXElementsMentalControllerDamageFX *self = (cFXElementsMentalControllerDamageFX *)elem;
 	CGameModel *model = &self->base.base.Mod;
@@ -1016,3 +1029,6 @@ const cMapElementVtbl cFXElementsMentalControllerMainFX_vftable = {
 	.Init = cFXElementsMentalControllerMainFX_Init,
 	.Update = cFXElementsMentalControllerMainFX_Update,
 };
+
+cGVar GVar_FXElementsMentalControllerMaxDist;
+

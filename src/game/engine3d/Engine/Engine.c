@@ -46,7 +46,6 @@
 #include "scrap/misc.h"
 #include "scrap/platform.h"
 
-extern cGVar GVar_R_StencilRefClear;
 
 extern const CD3DApplicationVtbl CEngineApp_vftable;
 #define CMOTORAPP_VFTABLE (&CEngineApp_vftable)
@@ -54,39 +53,30 @@ extern const IInputVtbl CNullInput_vftable;
 #define CNULLINPUT_VFTABLE (&CNullInput_vftable)
 #define CNULLINPUT_SIZE 0x114
 
-extern struct CEngineApp *g_Engine3D;
 /* the callbacks of Engine3D_Create: once after the device, each frame, at the end */
-extern void *g_EngineInit;
-extern void *g_EngineFrame;
-extern void *g_EngineRelease;
-extern int g_EngineFrameCount;
 /* the values m3d.ini gave (Engine_LoadVarsIni) */
-extern int g_EngineIni7c;
-extern int g_EngineIni80;
-extern int g_EngineIni84;
-extern int g_EngineIni88;
-extern int g_EngineDef1cf4;
-extern char g_ColorStr[64];	/* 0x40 */
 
 
 /* the console command handler of the engine (E3D_Command) */
 #define ENGINE_CMDPROC 0x22eda0
-extern void *g_Input;	/* the input of the engine, a CEntradaNula */
 /* the clock of the engine */
 #define g_FrameDelta g_FrameMs
 extern float g_RealFrameSecs;
-extern double g_TimeD;
-extern int g_TimeMsInt;
-extern double g_GameTimeD;
-extern float g_LastTime;
-extern float g_FpsTime;
-extern int g_FpsFrames;
-extern float g_Fps;
 #define ENGINE_MAXFRAME 0.1f
 
 #define WM_KEYDOWN 0x100
 #define WM_KEYUP 0x101
 #define WM_COMMAND 0x111
+
+int g_EngineIni7c;
+
+int g_EngineIni80;
+
+int g_EngineIni84;
+
+int g_EngineIni88;
+
+int g_EngineDef1cf4 = 16;
 
 CEngineApp *CEngineApp_ctor(CEngineApp *self) {
 	CD3DApp_ctor(&self->base);
@@ -123,6 +113,14 @@ static void Engine_Free(CEngineApp *m) {
 	CD3DApp_dtor(&m->base);
 	operator_delete_sized(m, sizeof(CEngineApp));
 }
+
+void *g_EngineInit;
+
+void *g_EngineFrame;
+
+void *g_EngineRelease;
+
+struct CEngineApp *g_Engine3D;
 
 /* the engine made (destroy 0) or freed */
 void Engine3D_Create(void *hInst, void *hWnd, void *init, void *frame, void *release, int destroy) {
@@ -164,6 +162,10 @@ void Engine3D_Shutdown(void) {
 	g_Engine3D = NULL;
 }
 
+void *g_Input;
+
+void *g_E3DCmdProc;
+
 /* OneTimeSceneInit: the init callback of the game, the input, the fonts and trails, the global scene */
 int CEngineApp_OneTimeSceneInit(CD3DApplication *base) {
 	CEngineApp *self = (CEngineApp *)base;
@@ -191,6 +193,24 @@ int CEngineApp_OneTimeSceneInit(CD3DApplication *base) {
 	Engine_GetScene(self);
 	return 0;
 }
+
+float g_TimeMsF;
+
+double g_TimeD;
+
+int g_TimeMsInt;
+
+double g_GameTimeD;
+
+float g_FrameSec;
+
+float g_LastTime;
+
+float g_FpsTime;
+
+int g_FpsFrames;
+
+float g_Fps = 30.0f;
 
 /* FrameMove: the clock of the engine (real and game time, fps once a second) */
 int CEngineApp_FrameMove(CD3DApplication *elem) {
@@ -223,27 +243,20 @@ int CEngineApp_FrameMove(CD3DApplication *elem) {
 	return 0;
 }
 
-extern int g_RenderCounts[10];	/* [10], 8 counts (g_RenderTris and g_RenderVerts first), the frame clears 10 */
-extern byte g_Engine431bae;
-extern int g_Dither;		/* [video] Tramas: dithering */
+cGVar GVar_R_LimitFPS;
+
 /* the frame limiter: [video] limitaFPS of m3d.ini and the console variable R_LimitFPS, the larger counts */
-extern float g_LimitFps;
-extern cGVar GVar_R_LimitFPS;
 #define g_RLimitFps (GVar_R_LimitFPS.value.f)
-extern uint32_t g_LimitNext;	/* the start of the next frame, timeGetTime * 3 (0: none yet) */
-extern cGVar GVar_R_ForceFPS;
+cGVar GVar_R_ForceFPS;
+
 #define g_RForceFps (GVar_R_ForceFPS.value.f)		/* R_ForceFPS: frames of a fixed length (Timer_FixedStep) */
-extern int g_TimeMult;
-extern int g_TimeScaled;	/* Time_Get() * g_TimeMult / 1000 */
-extern cGVar GVar_AutoScreenShot;
+cGVar GVar_AutoScreenShot;
+
 #define g_AutoShot (GVar_AutoScreenShot.value.i)		/* the console variable AutoScreenShot */
+cGVar GVar_R_StencilRefClear;
+
 #define g_StencilClear (*(uint32_t *)&GVar_R_StencilRefClear.value)
-extern byte g_ResetDev;	/* the device objects made again at the next frame */
-extern byte g_ResetDevOnly;	/* 1: without the world, 0: the game callbacks too */
 /* the callbacks of the game the reset puts in place */
-extern void *g_EngineInitNext;
-extern void *g_EngineFrameNext;
-extern void *g_EngineReleaseNext;
 #define D3DRS_SHADEMODE 9
 #define D3DRS_DITHERENABLE 0x1a
 #define D3DRS_SPECULARENABLE 0x1d
@@ -256,6 +269,10 @@ static byte Engine_PresentVSync(CD3DApplication *self) {
 	return pp->Windowed ? pp->SwapEffect == D3DSWAPEFFECT_COPY_VSYNC :
 		pp->FullScreen_PresentationInterval != D3DPRESENT_INTERVAL_IMMEDIATE;
 }
+
+float g_LimitFps;
+
+uint32_t g_LimitNext;
 
 /* differs from the original on purpose (no sleeps): the original slept at the end of the frame until its time had
  * passed, the C checks before the next one: App_WinMain (also CD3DApp_Render and CD3DApp_Run) skips the frame while
@@ -270,6 +287,16 @@ byte Engine_FrameDue(CD3DApplication *self) {
 	}
 	return Plat_Ticks() * 3 >= g_LimitNext;
 }
+
+byte g_ResetDev;
+
+void *g_EngineInitNext;
+
+void *g_EngineFrameNext;
+
+void *g_EngineReleaseNext;
+
+byte g_ResetDevOnly = 1;
 
 /* a pending reset of the device objects (g_ResetDev): with g_ResetDevOnly 0 also the world through the release
  * and init callbacks of the game; the HRESULT */
@@ -324,6 +351,18 @@ int CEngineApp_ResetDevice(CEngineApp *self) {
 	hr = self->base.vftable->InitDeviceObjects(&self->base);
 	return hr < 0 ? hr : 0;
 }
+
+int g_TimeScaled;
+
+int g_RenderCounts[10];
+
+uint32_t g_ZEnable;
+
+byte g_Engine431bae = 1;
+
+int g_Dither = 1;
+
+int g_TimeMult = 25;
 
 /* Render (vtable 0x18): the scene into the target "Scene", the 2D and the frame callback of the game on top, the
  * screenshot of AutoScreenShot, the frame limiter; 1 when the game callback asks to quit or the reset failed */
@@ -482,6 +521,8 @@ int CEngineApp_ConfirmDevice(CD3DApplication *base, D3DCaps8 *caps, uint32_t beh
 	return (byte)(behavior & 0x10) ? (int)0x80004005 : 0;
 }
 
+int g_EngineFrameCount;
+
 int CEngineApp_RestoreDeviceObjects(CD3DApplication *base) {
 	CEngineApp *self = (CEngineApp *)base;
 	(void)self;
@@ -493,6 +534,8 @@ int CD3DApplication_Nothing(CD3DApplication *self) {
 	(void)self;
 	return 0;
 }
+
+char g_ColorStr[64];
 
 /* "r g b a i" of a color with intensity (4 bytes and a float), in a static buffer */
 char *Engine_ColorStr(const byte *c) {
@@ -509,13 +552,20 @@ CWorld *World_GetChecked(void) {
 	return World_Get();
 }
 
+cGVar GVar_TexturePool;
+
 /* the info overlay of R_ShowInfo (Engine_DrawStats, modes 1 to 4) */
-extern cGVar GVar_TexturePool;
 #define g_TexturePool (GVar_TexturePool.value.i)
-extern int g_TexCreated;
-extern int g_TexCached;
-extern int g_TexUsed;
-extern int g_TexUsedPixels;
+
+CFont3 *g_FntComic14;
+
+int g_TexCreated;
+
+int g_TexCached;
+
+int g_TexUsed;
+
+int g_TexUsedPixels;
 
 void Engine_DrawStats(void) {
 	CCamera *cam;
@@ -611,23 +661,52 @@ void Engine_GetScene(CEngineApp *self) {
 enum { INI_BOOL, INI_LONG, INI_FLOAT, INI_TEXT };
 #define INI_TEXT_SIZE 0x40
 
-extern int g_MouseExcl;		/* [dinput] raton_excl */
-extern int g_Sharpen;		/* [video] Sharpen of m3d.ini */
 /* the ini name (in dir, NULL for the game directory) into the variables */
-extern float engineIni_431bb0;
-extern uint32_t engineIni_431bb4;
-extern uint32_t engineIni_431bb8;
-extern uint32_t engineIni_431bbc;
-extern uint32_t engineIni_431bc8;
-extern uint32_t engineIni_431bd0;
-extern uint32_t engineIni_431cf8;
-extern uint32_t engineIni_431d74;
-extern uint32_t engineIni_4a8f28;
-extern uint32_t engineIni_4a8f30[16];
-extern int g_TexErrDif;
-extern int g_TextBPP;
 extern int g_TextOpBPP;
-extern int g_UseTextures;
+int g_Sharpen;
+
+int g_TexErrDif;
+
+int g_InputInvX;
+
+int g_InputInvY;
+
+int g_InputInvZ;
+
+uint32_t engineIni_4a8f28;
+
+int g_Overdraw;
+
+uint32_t engineIni_4a8f30[16];
+
+int g_DbgConWindow;
+
+int g_DbgConStd;
+
+float g_MipmapBias2;
+
+float engineIni_431bb0 = 0.35f;
+
+uint32_t engineIni_431bb4 = 0x7fffffff;
+
+uint32_t engineIni_431bb8 = 1;
+
+uint32_t engineIni_431bbc = 1;
+
+uint32_t engineIni_431bc8 = 1;
+
+int g_UseTextures = 1;
+
+uint32_t engineIni_431bd0 = 1;
+
+uint32_t engineIni_431cf8 = 1;
+
+int g_MouseExcl = 1;
+
+uint32_t engineIni_431d74 = 2;
+
+int g_TextBPP = 16;
+
 void Engine_LoadVarsIni(const char *name, const char *dir) {
 	const struct {
 		byte kind;
@@ -711,14 +790,21 @@ void Engine_LoadVarsIni(const char *name, const char *dir) {
 }
 
 /* the frame time graph of R_Profiler 4 (Engine_DrawStats) */
-extern char g_FpsText[64];	/* 0x40, "frame: fps fps  ms" when the fps jumped */
-extern float g_FpsTextTime;
-extern float g_FpsGraph[120];	/* FPS_GRAPH bars of 2 vertices (x, 0) (x, frame ms) */
-extern float g_FpsGraphPeak[120];	/* the same with the falling peak */
-extern int g_FpsGraphPos;
-extern float g_FpsScaleTime;
-extern float g_FpsScale;	/* the height of the graph: 200 ms per 200 fps */
 #define FPS_GRAPH 30
+
+char g_FpsText[64];
+
+float g_FpsTextTime;
+
+float g_FpsGraph[120];
+
+float g_FpsGraphPeak[120];
+
+int g_FpsGraphPos;
+
+float g_FpsScaleTime;
+
+float g_FpsScale = 100.0f;
 
 void Engine_DrawFpsGraph(float y) {
 	CGraphic2D g;
@@ -788,8 +874,9 @@ void Scene_LogTree(CScene *scn, CNode3D *node, int indent) {
 	} while (n);
 }
 
+byte g_ShowJoins;
+
 /* the commands of the debug console of the engine (g_E3DCmdProc) */
-extern byte g_ShowJoins;	/* the joints of the meshes drawn */
 void E3D_Command(char *cmd) {
 	char *s;
 	CScene *e;
@@ -830,7 +917,6 @@ void E3D_Command(char *cmd) {
 	E3D_DebugPrintf(crt_rand() & 1 ? "\nque te zurzan" : "\npirate");
 }
 
-extern byte g_Engine4af7d4;
 #define ENGINE_MAXCAMERAS 0x14
 #define D3DRS_88 0x88
 #define D3DRS_89 0x89
@@ -961,3 +1047,8 @@ const IInputVtbl CNullInput_vftable = {
 	.AcquireKeys = IInput_AcquireKeysFalse,
 	.WndProc = IInput_WndProcNop,
 };
+
+cGVar GVar_R_ShowInfo;
+
+byte g_Engine4af7d4;
+

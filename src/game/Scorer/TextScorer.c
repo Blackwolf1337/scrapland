@@ -86,6 +86,10 @@ cScorerItem *cTextTypingScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
+cTextScorer *g_TextEditItem[4];
+
+cScorerItem *g_TextEditCursor[4];
+
 void TextEdit_End(int player) {
 	cTextScorer *item;
 
@@ -222,6 +226,8 @@ int cTextTypingScorer_Var(cScorerItem *base, const char *name, int set, char **s
 #define KEYS_BLINK 511			/* the cursor blinks every 511/1024 s */
 #define KEYS_CENTER 4			/* the align of the keys and the centered text */
 #define KEYS_HINT_SIZE 0x80
+
+CPsaImage *g_ScorerTabs;
 
 /* vf04: the text being typed with a blinking cursor; with the virtual keyboard active the grid of its keys (the one
  * under the cursor lit), the button hints and the cursor item on the key */
@@ -441,3 +447,8 @@ const cTextScorerVtbl cTextTypingScorer_vftable = {
 	.base.Delete = cTextTypingScorer_Delete,
 	.DrawKeyboard = cTextScorer_DrawKeyboard,
 };
+
+cGVar GVar_TextTypingSound;
+
+cGVar GVar_TextTypingSoundVol;
+

@@ -67,3 +67,10 @@ void cStrMoney_Update(void *obj, float dt) {
 		}
 	}
 }
+
+cGVarFunction GVar_OnMoneyReachCallback;
+
+cGVar GVar_OnMoneyReachValue;
+
+cGVar GVar_StrMoneyUpdate;
+

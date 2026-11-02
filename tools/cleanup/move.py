@@ -33,12 +33,11 @@ for f, ns in by_owner.items():
         o = objs[n]
         s = re.sub(r'^extern [^;\n]*\b%s\b[^;\n]*;[^\n]*\n' % n, '', s, flags=re.M)
         labels = [x[3:] for x in TOK.findall(o['text']) if x.startswith('sd_')]
-        block = ''.join(symlines[x] for x in dict.fromkeys(labels)
-                        if x in symlines and not re.search(r'^SD_SYM\(%s\);' % x, s, re.M))
-        block += o['text'] + '\n'
         c = d.strip_comments(s)
         c = re.sub(r'"(\\.|[^"\\\n])*"', lambda m: ' ' * len(m.group(0)), c)
         m = re.search(r'\b(sd_)?%s\b' % n, c)
+        if not m and n.endswith('_methods'):	# SD_PY_MODULE pastes the name
+            m = re.search(r'\bSD_PY_MODULE\(%s\b' % n[:-len('_methods')], c)
         if m:
             decls = d.top_decls(s)
             at = next((a for a, b, t in decls if a <= m.start() < b), None)
@@ -47,11 +46,15 @@ for f, ns in by_owner.items():
                 while at > 0 and c[at - 2] == '\\':
                     at = c.rfind('\n', 0, at - 1) + 1
             # before the comment that belongs to that construct
-            cm = re.search(r'(/\*(?:(?!\*/).)*\*/\n)$', s[:at], re.S)
-            if cm and s[:at].endswith('*/\n'):
-                at = cm.start()
-            s = s[:at] + block + '\n' + s[at:]
+            cm = re.search(r'(?:^|\n)(/\*(?:(?!\*/).)*\*/\n)$', s[:at], re.S)
+            if cm and (cm.start(1) == 0 or s[cm.start(1) - 1] == '\n'):
+                at = cm.start(1)
         else:
-            s = s.rstrip('\n') + '\n\n' + block
+            at = len(s.rstrip('\n')) + 1
+            s = s[:at] + '\n'
+            at += 1
+        block = ''.join(symlines[x] for x in dict.fromkeys(labels)
+                        if x in symlines and not re.search(r'^SD_SYM\(%s\);' % x, s[:at], re.M))
+        s = s[:at] + block + o['text'] + '\n\n' + s[at:]
     open(f, 'w').write(s)
 print(len(own), 'objects into', len(by_owner), 'files')

@@ -103,6 +103,8 @@ void cSndInterface_Free(cSndInterface *self) {
 	Mem_Free(self->snds);
 }
 
+cSndInterface *g_SndInterfaces;
+
 cSndInterface *cSndInterface_ctor(cSndInterface *self, int n) {
 	self->vftable = CSNDINTERFACE_VFTABLE;
 	if (g_SndInterfaces) {

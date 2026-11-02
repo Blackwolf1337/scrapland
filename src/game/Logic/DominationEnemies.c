@@ -149,3 +149,8 @@ void cDominationEnemiesLogic_Update(cDominationLogic *base, float dt) {
 		cDominationSide_Think(s);
 	}
 }
+
+cGVarFunction GVar_OnDominEnemyDeath;
+
+cGVar GVar_LeaderName;
+

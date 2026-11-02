@@ -30,8 +30,9 @@
 #define P_WAIT 0
 
 /* the frame counter of the engine */
+cGVar GVar_R_Tex_Count;
+
 /* entries alive (engine variable R_Tex_Count) */
-extern cGVar GVar_R_Tex_Count;
 #define g_TexCount (GVar_R_Tex_Count.value.i)
 /* statistics: device textures made from raw files, raw files with a device texture, entries used in the frame and
  * their pixels */
@@ -39,43 +40,49 @@ extern int g_TexCreated;
 extern int g_TexCached;
 extern int g_TexUsed;
 extern int g_TexUsedPixels;
-extern int g_TexPurgeFrame;
 /* keep the CBmp pixels after the device texture is made */
-extern int g_TexKeepBitmaps;
 /* the [video] settings Sharpen, ErrDif, TextBPP, TextOpBPP */
 extern int g_Sharpen;
 #define g_TexSharpen g_Sharpen
 extern int g_TexErrDif;
 extern int g_TextBPP;
-extern int g_TextOpBPP;
-extern int g_TexMipFadeOn;
-extern int g_TexFixedBPP;
+cGVar GVar_SharpenMore;
+
 /* engine variables */
-extern cGVar GVar_SharpenMore;
 #define g_SharpenMore (GVar_SharpenMore.value.i)
-extern cGVar GVar_MipmapFade;
+cGVar GVar_MipmapFade;
+
 #define g_MipmapFade (GVar_MipmapFade.value.i)
-extern cGVar GVar_MipmapColor;
+cGVar GVar_MipmapColor;
+
 #define g_MipmapColor (GVar_MipmapColor.value.i)
-extern cGVar GVar_CachedTex;
+cGVar GVar_CachedTex;
+
 #define g_CachedTex (GVar_CachedTex.value.i)
-extern cGVar GVar_BumpMipmap;
+cGVar GVar_BumpMipmap;
+
 #define g_BumpMipmap (GVar_BumpMipmap.value.i)
-extern cGVar GVar_DUDVMipmap;
+cGVar GVar_DUDVMipmap;
+
 #define g_DUDVMipmap (GVar_DUDVMipmap.value.i)
-extern cGVar GVar_R_PShaders;
+cGVar GVar_R_PShaders;
+
 #define g_PShaders (GVar_R_PShaders.value.i)
 extern cGVar GVar_LoadTextures;
 #define g_LoadTextures (GVar_LoadTextures.value.i)
 extern cGVar GVar_TexturePool;
 #define g_TexturePool (GVar_TexturePool.value.i)
-extern cGVar GVar_BuildDDS;
+cGVar GVar_BuildDDS;
+
 #define g_BuildDDS (GVar_BuildDDS.value.i)
-extern cGVar GVar_TextureLOD;
+cGVar GVar_TextureLOD;
+
 #define g_TextureLOD (GVar_TextureLOD.value.i)
-extern cGVar GVar_BumpDDS;
+cGVar GVar_BumpDDS;
+
 #define g_BumpDDS (GVar_BumpDDS.value.i)
-extern cGVar GVar_SaveDXT5;
+cGVar GVar_SaveDXT5;
+
 #define g_SaveDXT5 (GVar_SaveDXT5.value.i)
 
 /* kernel32 of the exe: the names compare in the user's locale */
@@ -106,6 +113,8 @@ static int Tex_FormatRGB(int bpp, int alpha, int bump) {
 	return alpha ? 0x1a : 0x17;
 }
 
+int g_TexFixedBPP = 24;
+
 static int Tex_BPP(const CTexture *t) {
 	return t->flags & TEXF_FIXEDBPP ? g_TexFixedBPP : t->bpp;
 }
@@ -135,6 +144,8 @@ CBmp *CBmp_Delete(CBmp *self, byte flags) {
 	}
 	return self;
 }
+
+CTexture *g_TexList;
 
 CTexture *CTexture_ctor(CTexture *self, const char *name, const char *opac, int kind, uint32_t flags) {
 	CMultiSprite_ctor(&self->multi);
@@ -232,6 +243,8 @@ CTexture *Texture_FindPurge(void) {
 	}
 	return NULL;
 }
+
+int g_TexMipFadeOn = 1;
 
 int CTexture_UploadLevel(CTexture *self, CBmp *src, int level) {
 	void *dev = NULL;
@@ -377,6 +390,8 @@ int Texture_Remove(const char *name, const char *opac) {
 	}
 	return 0;
 }
+
+int g_TexPurgeFrame;
 
 void *Texture_Load(CTexture *t, void *dev) {
 	if (t->PngData) {
@@ -527,6 +542,8 @@ byte Tex_IsPower2(int n) {
 	return !(n & (n - 1));
 }
 
+int g_TextOpBPP = 32;
+
 int CTexture_LoadFile(CTexture *self, byte load) {
 	char *name = self->Name;
 	char *ext;
@@ -639,6 +656,8 @@ static void Tex_LogCreated(CTexture *self, const char *line, const char *formatL
 		E3D_LogDebug((&g_FileLog), formatLine, D3DFmt_Name(made));
 	}
 }
+
+int g_TexKeepBitmaps;
 
 int CTexture_CreateD3D(CTexture *self, void *dev) {
 	d3dSurfaceDesc_t desc = { 0 };

@@ -220,3 +220,22 @@ void Tesla_AimOn(cEntity *v) {
 	Veh(v)->autoAim.loAng = min;
 	cAutoAim_SetAngle(Veh_Aim(v), min);
 }
+
+cGVar GVar_TeslaIDWeap;
+
+cGVar GVar_TeslaTrackForce;
+
+cGVar GVar_TeslaShootFile;
+
+cGVar GVar_TeslaMaxAngRangePad;
+
+cGVar GVar_TeslaUpRangeTime;
+
+cGVar GVar_TeslaHitForce;
+
+cGVar GVar_TeslaIDAmmo;
+
+cGVar GVar_TeslaAmmoCost;
+
+cGVar GVar_TeslaMaxAngRange;
+

@@ -54,6 +54,12 @@ void CTrail_dtor(CTrail *self) {
 	CTrail_Clear(self);
 }
 
+CTrail *g_TrailsRender[17][MAX_TRAILS_RENDER];
+
+int g_nTrails;
+
+int g_nTrailsRender[17];
+
 void Trails_UpdateRender(CTrail *t) {
 	if (!t) {
 		return;
@@ -331,6 +337,12 @@ static void Trail_FadeLevels(const CTrail *t, int cnt, int i, uint32_t *a0, uint
 		*a1 = ((i + 1) * q) & 0xff;
 	}
 }
+
+int g_TrailsVertex;
+
+int g_TrailsPrims;
+
+int g_TrailsIndex;
 
 int CTrail_BuildRibbon(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
 	if (self->numTrails <= 1 || !self->segments) {
@@ -670,6 +682,10 @@ int Trails_ResetAll(void) {
 	return 0;
 }
 
+void *g_TrailsVB;
+
+void *g_TrailsIB;
+
 int Trails_Release(void) {
 	if (!(g_pApp->flags >> 2 & 1)) {
 		CHECK(g_TrailsIB);
@@ -710,6 +726,8 @@ static const struct {
 	{ "2d/gfx/CIRCLETRAIL.BMP", 5, 2, 0 },
 	{ "2d/gfx/NOISETRAIL.DUDV.BMP", 2, 2, 1 },
 };
+
+struct CMaterial *g_TrailsMat[17];
 
 int Trails_Init(void) {
 	void *dev = g_Engine->device;
@@ -896,3 +914,6 @@ void CTrail_Move(CTrail *self, vec3_t d) {
 		p->z = p->z + d.z;
 	}
 }
+
+cGVar GVar_R_Trails;
+

@@ -6,6 +6,8 @@
 
 #include "scrap/lex.h"
 
+cClex g_Cl;
+
 int CmdLex_Expect(int type) {
 	const char *name;
 

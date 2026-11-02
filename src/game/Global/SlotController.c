@@ -9,7 +9,6 @@
 
 extern const cSlotControllerVtbl cSlotController_vftable;
 #define CSLOTCONTROLLER_VFTABLE (&cSlotController_vftable)
-extern const float g_SlotEpsilon;	/* 0.001 */
 
 /* rand() of the exe as a double in [0, 1] times range */
 static double RandRange(double range) {
@@ -49,6 +48,8 @@ int cSlotController_Tick(cSlotController *self, float dt) {
 	self->time -= dt;
 	return self->time <= 0.0f;
 }
+
+const float g_SlotEpsilon = 0.001f;
 
 /* a slot that is still more than 1 ms ahead starts now, its interval shortened by the time left */
 void cSlotController_Restart(cSlotController *self) {

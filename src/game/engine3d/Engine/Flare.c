@@ -179,3 +179,8 @@ const IObject3DVtbl CFlare_vftable = {
 	.Write = IObject3D_WriteFalse,
 	.Read = IObject3D_ReadFalse,
 };
+
+cGVar GVar_R_ShowFlaresInfo;
+
+cGVar GVar_R_SkipFlares;
+

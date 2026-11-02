@@ -13,10 +13,7 @@
 #define CLIP_MAX 16
 
 /* the contact points and faces of the response of CGround_CheckBBox (colis->calc_respuesta), counted from 0 */
-extern int g_NTortas;
-extern int g_NResponseFaces;
 #define FACES_TORTAS 64
-extern int g_ResponseFaces[64][3];	/* [FACES_TORTAS] */
 
 /* the box sides a point is outside of: 1 x > max, 2 x < min, 4 and 8 for y, 0x10 and 0x20 for z */
 static byte Box_OutCode(const vec3_t *mn, const vec3_t *mx, const vec3_t *p) {
@@ -360,6 +357,10 @@ byte CGround_CollideOBB(CGround *self, const matrix_t *m, const vec3_t *half, ve
 	return 1;
 }
 
+int g_NTortas;
+
+int g_NResponseFaces;
+
 /* with colis->calc_respuesta (a fatal CHECK) the original also collects the contact points and faces of the box
  * into a response; that code can not run and is left out */
 byte CGround_CheckBBox(CGround *self, CCollisionBBox *collision) {
@@ -408,6 +409,8 @@ byte CGround_CheckBBox(CGround *self, CCollisionBBox *collision) {
 	}
 	return 0;
 }
+
+int g_ResponseFaces[64][3];
 
 /* the static initializer: the faces of the response cleared */
 void CheckBBox_InitResponseFaces(void) {

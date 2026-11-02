@@ -7,6 +7,10 @@
 #include "scrap/console.h"
 #include "scrap/net.h"
 
+uint32_t g_NetWaitTime = 5000;
+
+uint32_t g_NetCloseTime = 2000;
+
 /* the time out of the state, the same code is inlined in Send */
 static int NetClient_CheckTime(cNetClient *self, uint32_t time) {
 	uint32_t d = time - self->lastRecv;
@@ -33,6 +37,8 @@ static void NetClient_PopHead(cNetClient *self) {
 	Mem_Free(n->data);
 	Mem_Free(n);
 }
+
+netuserfactory_t g_NetUserFactory;
 
 cNetClient *cNetClient_ctor(cNetClient *self, int slot) {
 	netuserfactory_t f = g_NetUserFactory;
@@ -108,6 +114,8 @@ void cNetClient_Push(cNetClient *self, const void *data, uint16_t size) {
 int cNetClient_UpdateState(cNetClient *self, uint32_t time) {
 	return NetClient_CheckTime(self, time);
 }
+
+uint32_t g_NetSendDelay = 100;
 
 int cNetClient_Flush(cNetClient *self, uint32_t time, int slot) {
 	if (time > self->lastSend + g_NetSendDelay) {
@@ -270,3 +278,6 @@ const cUserNetManagerVtbl cUserNetManager_vftable = {
 	.Send = (void *)crt_purecall,
 	.SetLocalData = cUserNetManager_Nop,
 };
+
+cGVar GVar_NetTimeOut;
+

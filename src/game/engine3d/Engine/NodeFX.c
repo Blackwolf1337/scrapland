@@ -33,6 +33,11 @@ byte INodeFX_Type(INodeFX *self) {
 	return NODEFX_NONE;
 }
 
+uint32_t g_TimeMs;
+
+SD_SYM(str_3e3bc8);
+const char *g_NodeEffectSect = (void *)sd_str_3e3bc8;
+
 /* ---- CNodeFX_Wheel ---- */
 
 CNodeFX_Wheel *CNodeFX_Wheel_ctor(CNodeFX_Wheel *self, CNode3D *node, int type) {
@@ -437,3 +442,30 @@ const INodeFXVtbl CNodeFX_Spring_vftable = {
 	.Type = CNodeFX_Spring_Type,
 	.Apply = CNodeFX_Spring_Apply,
 };
+
+const char str_3e3bc8[] = "NodeEffect";
+
+cGVar GVar_NodeFXSpringMidP;
+
+cGVar GVar_NodeFXSpringDamp2;
+
+cGVar GVar_NodeFXWheelShow;
+
+cGVar GVar_NodeFXSpringMSec;
+
+cGVar GVar_NodeFXWheelRadius;
+
+cGVar GVar_NodeFXSpringDebug;
+
+cGVar GVar_NodeFXSpringRotX;
+
+cGVar GVar_NodeFXSpringShow;
+
+cGVar GVar_NodeFXSpringDamp1;
+
+cGVar GVar_NodeFXSpringRot;
+
+cGVar GVar_NodeFXWheelSlide;
+
+cGVar GVar_NodeFXSpringSprng;
+

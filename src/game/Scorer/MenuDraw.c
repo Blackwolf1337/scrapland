@@ -184,10 +184,11 @@ static int Menu_FadeStep(cScorer *sc) {
 	return step < 1 ? 1 : step;
 }
 
-extern float g_MetroRing;	/* 0..1, the phase of the rings */
-extern float g_FadeOutFinalAcc;
-extern cGVar GVar_FadeOutFinalTime;
+cGVar GVar_FadeOutFinalTime;
+
 #define g_FadeOutFinalTime (GVar_FadeOutFinalTime.value.f)	/* the time of ScorerSpriteFadeOutFinal */
+
+float g_MetroRing;
 
 /* the four rings name0..name3 (the last letter of the name replaced) growing and fading around the player mark */
 void Scorer_MetroUsrHere(cAbstractFile *params) {
@@ -281,6 +282,8 @@ void Scorer_SpriteFadeOut(cAbstractFile *params) {
 		item->visible = 0;
 	}
 }
+
+float g_FadeOutFinalAcc;
 
 /* the item comes in over g_FadeOutFinalTime (the time summed in a global); the OnRender is dropped at full alpha */
 void Scorer_SpriteFadeOutFinal(cAbstractFile *params) {

@@ -190,3 +190,6 @@ byte CMultiSprite_Save(const CMultiSprite *self, const char *name) {
 	cFileBlock_dtor(&f);
 	return ok != 0;
 }
+
+cGVar GVar_BuildMST;
+

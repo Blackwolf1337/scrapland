@@ -133,6 +133,14 @@ void cRadarScorer_UpdateFloor(cRadarScorer *self, float y) {
 	}
 }
 
+float g_RadarScale;
+
+float g_RadarAngle;
+
+float g_RadarCenterX;
+
+float g_RadarCenterZ;
+
 void cRadarScorer_DrawCone(cRadarScorer *self, const vec3_t *pos, float ang, float spread, float range,
 	int mode) {
 	float verts[3][2];
@@ -434,11 +442,13 @@ void cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntity *cam) {
 	Radar_DrawMapImage(self, img, alpha, &verts[0][0], &uv[0][0]);
 }
 
+cGVar GVar_RadarShowAll;
+
 /* ---- the radar ---- */
 
-extern cGVar GVar_RadarShowAll;
 #define g_RadarShowAll (GVar_RadarShowAll.value.i)		/* RadarShowAll: the neutral vehicles and characters too */
-extern cGVar GVar_IsSecondMission;
+cGVar GVar_IsSecondMission;
+
 #define g_IsSecondMission (GVar_IsSecondMission.value.i)	/* IsSecondMission */
 
 #define RADAR_PI 3.14159274f
@@ -923,3 +933,8 @@ const cScorerItemVtbl cRadarScorer_vftable = {
 	.Var = cRadarScorer_Var,
 	.Delete = cRadarScorer_Delete,
 };
+
+cGVar GVar_SuperDealAvaliable;
+
+cGVar GVar_RadarMMSelect;
+

@@ -100,6 +100,8 @@ static void CTF_Patrol(cAIVehicle *ai) {
 	cAIVehicle_SetState(ai, 3, NULL, 5.0, 2.0);
 }
 
+char g_CTFFlagName[128];
+
 /* the flag name copied for the leader (the strcpy of the original, the buffer has 0x80 bytes) */
 static void CTF_SetFlagName(const char *flag) {
 	size_t n = strnlen(flag, 0x7f);
@@ -298,3 +300,10 @@ const cLocalLogicVtbl cCTFEnemiesLocalLogic_vftable = {
 	.VarS = cLocalLogic_VarSFalse,
 	.VarV = cLocalLogic_VarVNone,
 };
+
+cGVar GVar_LeaderFlag;
+
+cGVar GVar_PlayerCTFTeamIsWinning;
+
+cGVar GVar_PercEnemiesAttackPlayerWhenWinning;
+

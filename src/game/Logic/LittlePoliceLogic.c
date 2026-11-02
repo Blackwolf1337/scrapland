@@ -190,6 +190,8 @@ cEntity *cLittlePoliceLocalLogic_FindTarget(cLocalLogic *elem) {
 	return e;
 }
 
+byte g_LittlePoliceArrived;
+
 /* to the first active object with the radar mark 1 (state 10), unless near it already (MainMissionStopDist) */
 byte cLittlePoliceLocalLogic_GoMainMission(cLittlePoliceLocalLogic *self) {
 	vec3_t t1, t2;
@@ -623,3 +625,20 @@ const cLittlePoliceLocalLogicVtbl cLittlePoliceLocalLogic_vftable = {
 	.base.UpdateGetIt = cLittlePoliceLocalLogic_UpdateGetIt,
 	.UpdateLook = cLittlePoliceLocalLogic_UpdateLook,
 };
+
+cGVar GVar_GenCharStdFovX;
+
+cGVar GVar_GenCharStdFar;
+
+cGVar GVar_GenCharStdFovY;
+
+cGVar GVar_LittlePoliceStopAcusingMaxDistFromUser;
+
+cGVar GVar_LittlePoliceMaxDistFar;
+
+cGVar GVar_LittlePoliceAsksForMoney;
+
+cGVar GVar_LittlePoliceChasingTime;
+
+cGVar GVar_MainMissionStopDist;
+

@@ -15,7 +15,8 @@
 #include "scrap/material.h"
 #include "scrap/utild3d.h"
 
-extern cGVar GVar_R_ShowPreIllumVtx;
+cGVar GVar_R_ShowPreIllumVtx;
+
 #define g_ShowPreIllumVtx (GVar_R_ShowPreIllumVtx.value.i)	/* R_ShowPreIllumVtx: 1 no light colors, 2 no emissive ones */
 
 /* a vertex of VERT_LTEX1N */

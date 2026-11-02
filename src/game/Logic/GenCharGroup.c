@@ -10,6 +10,12 @@
 /* defined further down or in another file without a header */
 void *GenCharGroup_MakeLogic(cEntity *e);
 
+cGVar GVar_BankDirectorAgressive;
+
+cGVar GVar_BishopAttackOnAlarm;
+
+cGVar GVar_GenCharAttackActive;
+
 cGenCharGroup *cGenCharGroup_ctor(cGenCharGroup *self) {
 	self->level = -1;
 	self->timer = 0.0f;

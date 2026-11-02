@@ -126,6 +126,12 @@ static void RT_QuadTexels(RTVert *v, float su, float sv) {
 	}
 }
 
+float g_SceneW;
+
+float g_SceneH;
+
+byte g_RTLinNonPow2;
+
 /* the viewport as a quad from 0, 0 with the texture coordinates 0..1 moved by du, dv (the texel centers), in
  * texels of the scene size with g_RTLinNonPow2 */
 static void RT_ViewQuad(RTVert *v, const uint32_t *vp, uint32_t color, float du, float dv) {
@@ -245,6 +251,10 @@ static void RT_Stages4(uint32_t filter, byte setTex, void *tex) {
 	}
 }
 
+void *g_RTBackBuffer;
+
+void *g_RTZBuffer;
+
 /* the back buffer and the depth buffer of the device kept in g_RTBackBuffer, g_RTZBuffer */
 static void RT_GetBackBuffer(void) {
 	void *dev = RT_Dev();
@@ -259,6 +269,12 @@ static void RT_RestoreBackBuffer(void) {
 	RT_Release(&g_RTBackBuffer);
 	RT_Release(&g_RTZBuffer);
 }
+
+uint32_t g_RTSavedViewport[6];
+
+uint32_t g_RTSavedViewportFull[6];
+
+uint32_t g_ViewportFull[6];
 
 /* the viewports kept, the one of the target (surface 0 of tex, z) as both */
 static void RT_BeginTarget(void *tex, void *z) {
@@ -320,74 +336,110 @@ static CMaterial *RT_MakeMat(const CMaterial *cur, const char *name, const char 
 #define RT_BLACK "bmp/rgb_black.tga"
 #define RT_ATTRIB (MAT_SHADER | MAT_LOADTEX)
 
+CMaterial *g_CreditsMatBlur;
+
 void RenderTarget_MakeCreditsMatBlur(void) {
 	g_CreditsMatBlur = RT_MakeMat(g_CreditsMatBlur, "Material_CreditsTargetBlur (+shader:MotionBlurAdd)", RT_WHITE,
 		RT_ATTRIB, 0, 2, 1, 0, 0);
 }
 
+CMaterial *g_CreditsMat;
+
 void RenderTarget_MakeCreditsMat(void) {
 	g_CreditsMat = RT_MakeMat(g_CreditsMat, "Material_CreditsTarget", RT_WHITE, MAT_LOADTEX, 1, 5, 2, 0, 0);
 }
+
+CMaterial *g_BloomMatBlur;
 
 void RenderTarget_MakeBloomMatBlur(void) {
 	g_BloomMatBlur = RT_MakeMat(g_BloomMatBlur, "Material_BloomBlur (+shader:BloomBlur)", RT_WHITE, RT_ATTRIB, 0, 2, 1,
 		0, 0);
 }
 
+CMaterial *g_BloomMatFilter;
+
 void RenderTarget_MakeBloomMatFilter(void) {
 	g_BloomMatFilter = RT_MakeMat(g_BloomMatFilter, "Material_BloomFilter (+shader:BloomFilter)", RT_WHITE, RT_ATTRIB,
 		0, 2, 1, 0, 0);
 }
 
+CMaterial *g_BloomMatShow;
+
 void RenderTarget_MakeBloomMatShow(void) {
 	g_BloomMatShow = RT_MakeMat(g_BloomMatShow, "Material_BloomShow", RT_BLACK, MAT_LOADTEX, 0, 2, 1, 0, 0);
 }
+
+CMaterial *g_BloomMatTarget;
 
 void RenderTarget_MakeBloomMatTarget(void) {
 	g_BloomMatTarget = RT_MakeMat(g_BloomMatTarget, "Material_BloomTarget (+shader:BloomTarget)", RT_BLACK, RT_ATTRIB,
 		0, 2, 1, 0, 0);
 }
 
+CMaterial *g_BlurMatCopy;
+
 void RenderTarget_MakeBlurMatCopy(void) {
 	g_BlurMatCopy = RT_MakeMat(g_BlurMatCopy, "Material_BlurCopy", RT_WHITE, MAT_LOADTEX, 0, 2, 1, 0, 0);
 }
+
+CMaterial *g_BlurMatTarget;
 
 void RenderTarget_MakeBlurMatTarget(void) {
 	g_BlurMatTarget = RT_MakeMat(g_BlurMatTarget, "Material_BlurTarget (+shader:BlurTarget)", RT_WHITE, RT_ATTRIB, 0,
 		2, 1, 0, 0);
 }
 
+CMaterial *g_SceneDuDvMatCopy;
+
 void RenderTarget_MakeDuDvMatCopy(void) {
 	g_SceneDuDvMatCopy = RT_MakeMat(g_SceneDuDvMatCopy, "Material_DuDvCopy", RT_WHITE, MAT_LOADTEX, 0, 2, 1, 0, 0);
 }
 
+CMaterial *g_SceneDuDvMatDebug;
+
 void RenderTarget_MakeDuDvMatDebug(void) {
 	g_SceneDuDvMatDebug = RT_MakeMat(g_SceneDuDvMatDebug, "Material_DuDvDebug", RT_WHITE, MAT_LOADTEX, 0, 2, 1, 0, 0);
 }
+
+CMaterial *g_SceneDuDvMatFilter;
 
 void RenderTarget_MakeDuDvMatFilter(void) {
 	g_SceneDuDvMatFilter = RT_MakeMat(g_SceneDuDvMatFilter, "Material_DuDvFilter (+shader:DUDVFilter)", RT_WHITE,
 		RT_ATTRIB, 0, 2, 1, 0, 0);
 }
 
+CMaterial *g_SceneDuDvMatRTarget;
+
 void RenderTarget_MakeDuDvMatRTarget(void) {
 	g_SceneDuDvMatRTarget = RT_MakeMat(g_SceneDuDvMatRTarget, "Material_DuDvTarget (+shader:DUDVTarget)", RT_WHITE,
 		RT_ATTRIB, 0, 2, 1, 1, 0);
 }
+
+CMaterial *g_MotionBlurMatAdd;
 
 void RenderTarget_MakeMotionBlurMatAdd(void) {
 	g_MotionBlurMatAdd = RT_MakeMat(g_MotionBlurMatAdd, "Material_BlurAdd (+shader:MotionBlurAdd)", RT_WHITE,
 		RT_ATTRIB, 1, 5, 6, 0, 0);
 }
 
+CMaterial *g_MotionBlurMatTarget;
+
 void RenderTarget_MakeMotionBlurMatTarget(void) {
 	g_MotionBlurMatTarget = RT_MakeMat(g_MotionBlurMatTarget, "Material_BlurTarget (+shader:MotionBlurTarget)",
 		RT_WHITE, RT_ATTRIB, 0, 2, 1, 0, 0);
 }
 
+CMaterial *g_SceneMatCopy;
+
 void RenderTarget_MakeSceneMatCopy(void) {
 	g_SceneMatCopy = RT_MakeMat(g_SceneMatCopy, "Material_SceneCopy", RT_WHITE, MAT_LOADTEX, 0, 2, 1, 0, 1);
 }
+
+void *g_CreditsTarget;
+
+int g_CreditsSavedW;
+
+int g_CreditsSavedH;
 
 /* ---- Credits ---- */
 
@@ -442,6 +494,10 @@ static void Credits_Taps(float *taps, float d, float b, float o, float o2) {
 	taps[2] = d + (o + b);
 	taps[3] = d + (o2 + b);
 }
+
+byte g_RTLinPow2;
+
+uint32_t g_CreditsBlurTime;
 
 void Credits_Blur(void) {
 	uint32_t vp[6];
@@ -566,6 +622,10 @@ int RenderTarget_VideoMemory(void) {
 	return n << 20;
 }
 
+void *g_NewsPanelTarget;
+
+void *g_NewsPanelZ;
+
 /* ---- NewsPanel ---- */
 
 byte NewsPanel_Begin(void) {
@@ -625,6 +685,8 @@ int RenderTarget_Pow2Size(int n) {
 	}
 	return n > 0x100 ? 0x200 : 0x100;
 }
+
+int g_RTMode;
 
 int RenderTarget_Mode(const char *name) {
 	if (!name) {
@@ -715,6 +777,10 @@ void Bloom_Render(void) {
 	Render_ClearForced();
 }
 
+void *g_SceneSourceTexture;
+
+void *g_BloomTarget1;
+
 /* the source into the first bloom target through four taps, two horizontal and two vertical */
 void Bloom_Filter(void) {
 	uint32_t vp[6];
@@ -745,6 +811,12 @@ void Bloom_Filter(void) {
 	}
 	RT_Quad4(w, h, u, t, g_SceneW, g_SceneH);
 }
+
+float g_BloomW;
+
+float g_BloomH;
+
+void *g_BloomTarget2;
 
 /* the passes of the blur between the two bloom targets: four taps horizontal into the second, four vertical back
  * into the first */
@@ -812,6 +884,8 @@ void Bloom_Blur(void) {
 		RT_Quad4(w, h, u, t, g_BloomW, g_BloomH);
 	}
 }
+
+void *g_SceneTargetSurface;
 
 /* the source with the first bloom target added into the target (R_SceneBloomRTarget 2: the bloom alone, dark) */
 void Bloom_Show(void) {
@@ -942,6 +1016,18 @@ byte Blur_IsOn(void) {
 	return g_SceneBlurRTarget && g_BlurMatTarget && g_BlurMatCopy && g_BloomTarget1 && g_SceneBlurValue > 0.0f;
 }
 
+void *g_SceneDuDvSavedTexture;
+
+void *g_SceneDuDvSavedSurface;
+
+byte g_SceneNoSwap;
+
+void *g_SceneSourceSurface;
+
+void *g_SceneDuDvTarget;
+
+int g_SceneDuDvFrame;
+
 /* ---- DuDv ---- */
 
 void DuDv_Render(void) {
@@ -968,6 +1054,8 @@ void DuDv_Render(void) {
 	Render_ClearForced();
 }
 
+void *g_SceneDuDvBumpTarget;
+
 void DuDv_Release(void) {
 	g_SceneDuDvMatRTarget = NULL;
 	g_SceneDuDvMatFilter = NULL;
@@ -988,6 +1076,8 @@ static byte RT_SameDriver(void) {
 	}
 	return !strcmp(Render_GetDriver(), last);
 }
+
+int g_SceneDuDvCheckedMode = -1;
 
 void DuDv_Init(void) {
 	g_SceneDuDvFrame = 0;
@@ -1124,6 +1214,10 @@ typedef struct DuDvVert {
 } DuDvVert;
 SD_SIZE(DuDvVert, 0x34);
 
+byte g_TexRepeat;
+
+byte g_TexNoPow2;
+
 /* the source deformed by the bump target into the target; with check the scale of a 640 x 480 test */
 void DuDv_Draw(byte check) {
 	uint32_t vp[6];
@@ -1231,7 +1325,12 @@ void MotionBlur_Render(void) {
 	Render_ClearForced();
 }
 
-extern uint32_t g_MotionBlurTime;
+
+byte g_MotionBlurFilled;
+
+void *g_MotionBlurTarget;
+
+uint32_t g_MotionBlurLast;
 
 /* the source added to the motion blur target through four taps, about every 1/25 s of game time; the shader
  * constants: the fade of the time passed since then, a quarter for each tap */
@@ -1253,11 +1352,11 @@ void MotionBlur_Add(void) {
 	Render_SetMaterial(g_MotionBlurMatAdd, 0);
 	RT_Stages4(2, 1, g_SceneSourceTexture);
 	uint32_t now = g_TimeMs;
-	float dt = RT_UToF(now - g_MotionBlurTime) * 0.001f;
+	float dt = RT_UToF(now - g_MotionBlurLast) * 0.001f;
 	if (World_TimeScale() * 0.04f > dt) {
 		return;
 	}
-	g_MotionBlurTime = now;
+	g_MotionBlurLast = now;
 	float rest = dt - World_TimeScale() * 0.04f;
 	c0[0] = 0.0f;
 	c0[1] = 0.0f;
@@ -1292,6 +1391,10 @@ void MotionBlur_Add(void) {
 	t[1][3] = dv + (ov + 1.0f - off);
 	RT_Quad4(w, h, u, t, g_SceneW, g_SceneH);
 }
+
+float g_MotionBlurW;
+
+float g_MotionBlurH;
 
 /* the source and the motion blur target mixed into the target by R_SceneMotionBlurValue (0..1) */
 void MotionBlur_Draw(void) {
@@ -1364,6 +1467,8 @@ void RadialBlur_Render(void) {
 	Render_ClearForced();
 }
 
+CMaterial *g_RadialBlurMat;
+
 /* the source three times, the copies moved by R_SceneRadialBlurValue * R_SceneRadialBlurOffset to the middle, through
  * the radial mask into the target */
 void RadialBlur_Draw(void) {
@@ -1432,6 +1537,30 @@ byte RadialBlur_IsOn(void) {
 	return g_SceneRadialBlurRTarget && g_SceneMotionBlurRTarget && g_RadialBlurMat && g_SceneRadialBlurValue > 0.0f;
 }
 
+byte g_SceneOn;
+
+void *g_SceneTargetTexture;
+
+void *g_SceneRT1;
+
+void *g_SceneRT2;
+
+void *g_SceneRT3;
+
+byte g_SceneFxOn[5];
+
+int g_SceneFxLast;
+
+SD_SYM(DuDv_IsOn);
+SD_SYM(Bloom_IsOn);
+SD_SYM(MotionBlur_IsOn);
+SD_SYM(RadialBlur_IsOn);
+SD_SYM(Blur_IsOn);
+rtFxOn_t g_RTFxOn[5] = {
+	(void *)sd_DuDv_IsOn, (void *)sd_Bloom_IsOn, (void *)sd_MotionBlur_IsOn, (void *)sd_RadialBlur_IsOn,
+	(void *)sd_Blur_IsOn,
+};
+
 /* ---- Scene ---- */
 
 byte Scene_Begin(void) {
@@ -1484,6 +1613,18 @@ byte Scene_Begin(void) {
 	RT_SetRenderTarget(g_SceneSourceSurface, g_RTZBuffer);
 	return 1;
 }
+
+uint32_t g_SceneViewport[6];
+
+SD_SYM(DuDv_Render);
+SD_SYM(Bloom_Render);
+SD_SYM(MotionBlur_Render);
+SD_SYM(RadialBlur_Render);
+SD_SYM(Blur_Render);
+rtFxRender_t g_RTFxRender[5] = {
+	(void *)sd_DuDv_Render, (void *)sd_Bloom_Render, (void *)sd_MotionBlur_Render, (void *)sd_RadialBlur_Render,
+	(void *)sd_Blur_Render,
+};
 
 void Scene_End(void) {
 	uint32_t fill;
@@ -1539,6 +1680,8 @@ void Scene_Release(void) {
 	RT_Release(&g_SceneRT2);
 	RT_Release(&g_SceneRT3);
 }
+
+int g_SceneCheckedMode = -1;
 
 void Scene_Init(void) {
 	uint32_t vp[6];
@@ -1979,3 +2122,70 @@ byte RenderTarget_PixelEqual(int pitchA, const byte *bitsA, int pitchB, const by
 	}
 	return 1;
 }
+
+cGVar GVar_R_SceneBloomRTarget;
+
+cGVar GVar_R_SceneBloomBlurSize;
+
+cGVar GVar_R_SplitScreenCamera;
+
+cGVar GVar_R_CreditsPhase;
+
+cGVar GVar_R_SceneDuDvScale;
+
+cGVar GVar_R_SceneForceLinPow2;
+
+cGVar GVar_R_SceneBlurRTarget;
+
+cGVar GVar_R_SceneRTarget;
+
+cGVar GVar_R_SceneDuDvRTarget;
+
+cGVar GVar_R_SceneForceLinNonPow2;
+
+cGVar GVar_R_SceneRadialBlurOffset;
+
+cGVar GVar_R_SceneBloomBlurPasses;
+
+cGVar GVar_R_SceneBlurOffset;
+
+cGVar GVar_R_SceneRadialBlurRTarget;
+
+cGVar GVar_R_CreditsSizeX;
+
+cGVar GVar_R_NewsPanelRTarget;
+
+cGVar GVar_R_SceneDuDvCheckPixels;
+
+cGVar GVar_R_SceneMotionBlurValue;
+
+cGVar GVar_R_SceneCheckPixels;
+
+cGVar GVar_R_SplitScreen;
+
+cGVar GVar_R_SceneBloomBlurOffset;
+
+cGVar GVar_R_NewsPanelWire;
+
+cGVar GVar_R_SceneMotionBlurRTarget;
+
+cGVar GVar_R_SceneBlurValue;
+
+cGVar GVar_R_SceneRadialBlurValue;
+
+cGVar GVar_R_SceneDuDvFilter;
+
+cGVar GVar_R_SceneMotionBlurSize;
+
+cGVar GVar_R_SceneMotionBlurOffset;
+
+cGVar GVar_R_NewsPanelSize;
+
+cGVar GVar_R_SceneRTargetSwap;
+
+cGVar GVar_R_CreditsRTarget;
+
+cGVar GVar_R_CreditsSizeY;
+
+cGVar GVar_R_SceneDuDvForced;
+

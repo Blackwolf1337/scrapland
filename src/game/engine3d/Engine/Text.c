@@ -32,6 +32,8 @@ void Text_Draw(int x, int y, const char *s) {
 	}
 }
 
+TextMsg *g_TextStack;
+
 /* the texts of Text_Draw (yellow with a shadow in the font of the messages), then the message stack */
 void Text_DrawStack(void) {
 	for (int i = 0; i < text_queued; i++) {
@@ -76,6 +78,10 @@ void Text_Pop(void) {
 	g_TextStack = m->next;
 	Mem_Free(m);
 }
+
+int g_TextX;
+
+int g_TextY;
 
 void Text_Printf3D(const vec3_t *pos, const char *fmt, ...) {
 	char buf[TEXT_BUF];

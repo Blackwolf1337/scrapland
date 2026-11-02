@@ -12,13 +12,7 @@
 #include "scrap/e3dutil.h"
 
 #define PROC_TYPES 16
-extern cProcType g_ProcTypes[16];	/* tipo_si_no, tipo_bucle, tipo_nota, ... */
-extern char g_ProcBuf[1024];	/* 0x400, the number of an identifier */
 
-extern procrange_t g_ProcRangeChar;
-extern procrange_t g_ProcRangeByte;
-extern procrange_t g_ProcRangeShort;
-extern procrange_t g_ProcRangeWord;
 
 #define IS_BLANK(c) ((c) == '\t' || (c) == ' ')
 
@@ -72,6 +66,34 @@ int Proc_TypeLookup(char *dest, const char *name, const void *data, int size) {
 	}
 	return -1;
 }
+
+char g_ProcBuf[1024];
+
+procrange_t g_ProcRangeChar = { .lo = -128, .hi = 127 };
+
+procrange_t g_ProcRangeByte = { .hi = 255 };
+
+procrange_t g_ProcRangeShort = { .lo = -32768, .hi = 32767 };
+
+procrange_t g_ProcRangeWord = { .hi = 65535 };
+
+SD_SYM(str_3dbf48);
+SD_SYM(data_432450);
+SD_SYM(str_3dbf54);
+SD_SYM(data_432470);
+SD_SYM(str_3dbf60);
+SD_SYM(Proc_Note);
+SD_SYM(str_3dbf6c);
+SD_SYM(data_432480);
+SD_SYM(str_3dbf80);
+SD_SYM(data_43249c);
+cProcType g_ProcTypes[16] = {
+	{ .name = (void *)sd_str_3dbf48, .data = (void *)sd_data_432450 },
+	{ .name = (void *)sd_str_3dbf54, .data = (void *)sd_data_432470 },
+	{ .name = (void *)sd_str_3dbf60, .convert = (void *)sd_Proc_Note },
+	{ .name = (void *)sd_str_3dbf6c, .data = (void *)sd_data_432480 },
+	{ .name = (void *)sd_str_3dbf80, .data = (void *)sd_data_43249c },
+};
 
 /* one "&" field: *pfmt is at the '&'; both pointers move past what was read */
 int Proc_ReadField(va_list *ap, const char **psrc, const char **pfmt) {
@@ -361,3 +383,88 @@ done:
 	va_end(ap);
 	return count;
 }
+
+const char str_3dbe94[] = "NO 0";
+
+const char str_3dbe9c[] = "OFF 0";
+
+const char str_3dbea4[] = "FALSE 0";
+
+const char str_3dbeac[] = "SI 1";
+
+const char str_3dbeb4[] = "ON 1";
+
+const char str_3dbebc[] = "YES 1";
+
+const char str_3dbec4[] = "TRUE 1";
+
+const char str_3dbecc[] = "LOCAL 1";
+
+const char str_3dbed4[] = "GLOBAL 2";
+
+const char str_3dbee0[] = "U 0";
+
+const char str_3dbee4[] = "SIN_SIGNO 0";
+
+const char str_3dbef0[] = "UNSIGNED 0";
+
+const char str_3dbefc[] = "S 1";
+
+const char str_3dbf00[] = "CON_SIGNO 1";
+
+const char str_3dbf0c[] = "SIGNED 1";
+
+const char str_3dbf18[] = "MN 0";
+
+const char str_3dbf20[] = "MONO 0";
+
+const char str_3dbf28[] = "ST 1";
+
+const char str_3dbf30[] = "ESTEREO 1";
+
+const char str_3dbf3c[] = "STEREO 1";
+
+const char str_3dbf48[] = "tipo_si_no";
+
+const char str_3dbf54[] = "tipo_bucle";
+
+const char str_3dbf60[] = "tipo_nota";
+
+const char str_3dbf6c[] = "tipo_sample_signo";
+
+const char str_3dbf80[] = "tipo_sample_mnst";
+
+SD_SYM(str_3dbe94);
+SD_SYM(str_3dbe9c);
+SD_SYM(str_3dbea4);
+SD_SYM(str_3dbeac);
+SD_SYM(str_3dbeb4);
+SD_SYM(str_3dbebc);
+SD_SYM(str_3dbec4);
+void *data_432450[8] = {
+	(void *)sd_str_3dbe94, (void *)sd_str_3dbe9c, (void *)sd_str_3dbea4, (void *)sd_str_3dbeac,
+	(void *)sd_str_3dbeb4, (void *)sd_str_3dbebc, (void *)sd_str_3dbec4,
+};
+
+SD_SYM(str_3dbecc);
+SD_SYM(str_3dbed4);
+void *data_432470[4] = { (void *)sd_str_3dbe94, (void *)sd_str_3dbecc, (void *)sd_str_3dbed4 };
+
+SD_SYM(str_3dbee0);
+SD_SYM(str_3dbee4);
+SD_SYM(str_3dbef0);
+SD_SYM(str_3dbefc);
+SD_SYM(str_3dbf00);
+SD_SYM(str_3dbf0c);
+void *data_432480[7] = {
+	(void *)sd_str_3dbee0, (void *)sd_str_3dbee4, (void *)sd_str_3dbef0, (void *)sd_str_3dbefc,
+	(void *)sd_str_3dbf00, (void *)sd_str_3dbf0c,
+};
+
+SD_SYM(str_3dbf18);
+SD_SYM(str_3dbf20);
+SD_SYM(str_3dbf28);
+SD_SYM(str_3dbf30);
+SD_SYM(str_3dbf3c);
+void *data_43249c[7] = { (void *)sd_str_3dbf18, (void *)sd_str_3dbf20, (void *)sd_str_3dbf28, (void *)sd_str_3dbf30, (void *)sd_str_3dbf3c };
+

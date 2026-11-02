@@ -32,12 +32,7 @@ extern const IObject3DVtbl CGround_vftable;
 #define GROUND_FLT_MAX 3.4028234663852886e+38f
 
 /* the statistics of the queries, cleared with the query number */
-extern uint32_t g_CollisionStats[6];	/* 6 */
-extern uint32_t g_CollisionStats2;
-extern uint32_t g_CollisionCache;
 /* while a .amc file is read: the meshes by their Param (256), while one is written the next Param */
-extern CCollideMesh ** g_LoadMeshList;
-extern int g_SaveCollideMeshParam;
 
 /* the accessor of table.h */
 
@@ -139,6 +134,8 @@ CCollideMesh *CCollideMesh_ctor(CCollideMesh *self) {
 	self->outSector = 0;
 	return self;
 }
+
+int g_CollisionQuadCount;
 
 CCollideQuad *CCollideQuad_ctor(CCollideQuad *self) {
 	self->pTri = NULL;
@@ -256,6 +253,20 @@ void CHeights_dtor(CHeights *self) {
 	crt_eh_vector_dtor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, (void *)CCollideMesh_dtor);
 }
 
+uint32_t g_CollisionCache;
+
+uint32_t g_CollisionNComp;
+
+uint32_t g_CollisionTests;
+
+uint32_t g_CollisionTestsTotal;
+
+uint32_t g_CollisionStats[6];
+
+uint32_t g_CollisionStats2;
+
+float g_CollisionEpsilon = 0.0001f;
+
 /* CGround */
 
 CGround *CGround_ctor(CGround *self) {
@@ -367,6 +378,8 @@ void CCollideMesh_GetTri(CCollideMesh *self, int i, CCollideTri *tri, vec3_t *v0
 	}
 }
 
+CCollideMesh **g_LoadMeshList;
+
 /* the files */
 
 void CCollideMesh_Read(CCollideMesh *self, CFileIO *f) {
@@ -391,6 +404,8 @@ void CCollideMesh_Read(CCollideMesh *self, CFileIO *f) {
 	Table_Read1C(f, (CTable *)&self->nTri);
 	CFileIO_Error(f, "CMSH");
 }
+
+int g_SaveCollideMeshParam;
 
 void CCollideMesh_Write(CCollideMesh *self, CFileIO *f) {
 	CHECK(g_SaveCollideMeshParam < 256);
@@ -1738,7 +1753,6 @@ void Ground_DrawDebug(void) {
 #define NODE_FLAG_EMPTY (1u << 1)
 #define NODE_FLAG_GROUND (1u << 3)	/* taken into the floor */
 /* the triangles per floor node */
-extern int g_GroundTrisPerNode;
 
 /* the mesh of a scene node: its own collision mesh at 0x30 when it has one */
 static CTriMesh *Ground_NodeMesh(CNode3D *node) {
@@ -1805,6 +1819,8 @@ static uint32_t Ground_TriFlags(uint32_t nodeFlags, const CMaterial *mat, byte o
 	}
 	return fl;
 }
+
+int g_GroundTrisPerNode = 80;
 
 void CGround_Build(CGround *self, CScene *scn) {
 	const char *name = scn->name;
@@ -1952,17 +1968,18 @@ void CGround_CalcIllum(void *ground, CNode3D *node, CScene *scn) {
 	}
 }
 
+cGVar GVar_ShowMapSolid;
+
 /* the debug view of the collision meshes (c_show and ShowMapSolid) */
-extern cGVar GVar_ShowMapSolid;
 #define g_ShowMapSolid (GVar_ShowMapSolid.value.i)		/* 0 wireframe, 1 solid, 2 solid with fog */
-extern float g_CollideAddColor[4];	/* added to the shaded colors, rgba */
-extern CollideVert g_CollideVerts[3];	/* the triangle drawn */
 #define g_SectorColors ((&g_BspColors[1]))
 
 /* the shading of the solid view: (0 < s) ? min(1, s) : 0 the way the original branches (NaN to the minss) */
 static float Collide_Clamp01(float s) {
 	return 0.0f >= s ? 0.0f : Float_MinSS(1.0f, s);
 }
+
+float g_CollideAddColor[4] = { 0, 0, 0, 1.0f };
 
 void Collide_TriVerts(CollideVert *out, const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color) {
 	if (g_ShowMapSolid) {
@@ -2029,6 +2046,10 @@ void Collide_TriVerts(CollideVert *out, const vec3_t *a, const vec3_t *b, const 
 	out[1].color = color;
 	out[2].color = color;
 }
+
+int g_ShowCollision;
+
+CollideVert g_CollideVerts[3];
 
 /* the triangles of the mesh by their flags (g_ShowCollision 1: the marked ones, 3: those with flag 4 only, 4: the
  * marks ignored, 5: by sector), the marks cleared; top: the wireframe or the solid view with the back faces in red */
@@ -2110,15 +2131,18 @@ void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
 	Rd_DevSetRenderState(dev, D3DRS_CULLMODE, 3);
 }
 
-extern cGVar GVar_ShowMapQuads;
+cGVar GVar_ShowMapQuads;
+
 #define g_ShowMapQuads (GVar_ShowMapQuads.value.i)		/* ShowMapQuads: the boxes of the quads, 2..6 by kind */
-extern cGVar GVar_ShowMapQDist;
+cGVar GVar_ShowMapQDist;
+
 #define g_ShowMapQDist (GVar_ShowMapQDist.value.f)	/* ShowMapQDist: only the quads this near the camera, 0 all */
-extern cGVar GVar_AnalyzeQuads;
+cGVar GVar_AnalyzeQuads;
+
 #define g_AnalyzeQuads (GVar_AnalyzeQuads.value.i)		/* AnalizeQuads: 1 the quads checked once */
 /* the material of the debug view, a static of CGround_DrawDebug */
-extern CMaterial g_CollideMat;
-extern int g_CollideMatGuard[2];
+
+CMaterial g_CollideMat;
 
 /* the atexit destructor of it */
 void Ground_FiniCollideMat(void) {
@@ -2250,6 +2274,10 @@ static void Ground_AnalyzeQuads(CGround *self) {
 	g_AnalyzeQuads = 0;
 }
 
+CMaterial *g_MatGround;
+
+int g_CollideMatGuard[2];
+
 /* the debug view of the collision: the mode of c_show (6, 7 the solid views, 7 with a blinking background), the
  * quads, the analysis, then the meshes of the sectors seen and the meshes added at run time once each */
 void CGround_DrawDebug(CGround *self) {
@@ -2325,3 +2353,6 @@ const IObject3DVtbl CGround_vftable = {
 	.Write = CGround_Write,
 	.Read = CGround_Read,
 };
+
+cGVar GVar_MapCollisionBalance;
+

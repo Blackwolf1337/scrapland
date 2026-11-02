@@ -12,14 +12,16 @@
 #include "scrap/platform.h"
 
 /* the performance counter of the engine: since g_TimerBase, or the fixed time while one is set */
-extern int64_t g_TimerFixed;
-extern int64_t g_TimerBase;
 
 /* differs from the original on purpose (no busy waits): the original counted the distinct values of timeGetTime
  * during ms, which the 1 ms period of CWinApp_Init (timeBeginPeriod) makes ms; no caller in the exe */
 int Timer_CountTicks(int ms) {
 	return ms > 0 ? ms : 0;
 }
+
+int64_t g_TimerFixed;
+
+int64_t g_TimerBase;
 
 int Timer_GetFreq(int64_t *out) {
 	if (g_TimerFixed) {
@@ -53,8 +55,9 @@ int Timer_FixedStep(float fps) {
 	return 1;
 }
 
+int64_t g_TimerQPFreq = -1LL;
+
 /* the frequency of the performance counter times g_TimerQPMult, taken once (-1 until then), 0 without a counter */
-extern int64_t g_TimerQPFreq;
 
 int Timer_GetQPFreq(int64_t *out) {
 	if (((uint32_t)g_TimerQPFreq & (uint32_t)((uint64_t)g_TimerQPFreq >> 32)) == 0xffffffff) {
@@ -79,21 +82,31 @@ int64_t Timer_MeasureQP(int ms) {
 }
 
 /* the state of DXUtil_Timer: the counter path in ticks, the timeGetTime path in seconds */
-extern int g_DXTimerInit;
-extern int g_DXTimerQP;
-extern int64_t g_DXTimerFreq;
-extern int64_t g_DXTimerStop;
-extern int64_t g_DXTimerLast;
-extern int64_t g_DXTimerBase;
-extern double g_DXTimerLastD;
-extern double g_DXTimerBaseD;
-extern double g_DXTimerStopD;
-extern int g_DXTimerStopped;
 
 static float DXTimer_Seconds(int64_t t, int64_t freq) {
 	double n = Int64_ToDouble(t);
 	return (float)(n / Int64_ToDouble(freq));
 }
+
+int g_DXTimerInit;
+
+int g_DXTimerQP;
+
+int64_t g_DXTimerFreq;
+
+int64_t g_DXTimerStop;
+
+int64_t g_DXTimerLast;
+
+int64_t g_DXTimerBase;
+
+double g_DXTimerLastD;
+
+double g_DXTimerBaseD;
+
+double g_DXTimerStopD;
+
+int g_DXTimerStopped = 1;
 
 float DXUtil_Timer(int cmd) {
 	int64_t freq;

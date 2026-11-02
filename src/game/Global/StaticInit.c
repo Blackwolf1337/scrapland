@@ -361,3 +361,556 @@ void MemPools_PrintAll(void);
 	}
 
 #include "StaticInit.inc"
+
+const float Init_GVar_LaserDistLimit_3a3710 = 3.0f;
+
+const float Init_GVar_MaxDistChaseElevatorAI_3a5ac0 = 10000.0f;
+
+const float Init_GVar_LaserDistLimit_3a8e38 = 2.0f;
+
+CMaterial CMaterial_390078;
+
+cGVar GVar_QuickMessageString4;
+
+cGVar GVar_QuickMessageString2;
+
+cGVar GVar_QuickMessageString6;
+
+cGVar GVar_QuickMessageString3;
+
+cGVar GVar_QuickMessageString5;
+
+cGVar GVar_QuickMessageString1;
+
+cGVar GVar_R_SkipModelFX;
+
+cGVar GVar_NumRadarIcons;
+
+cPy_NativeFunc NativeFunc_AnmSetAction;
+
+cPy_NativeFunc NativeFunc_AnmCommand;
+
+cPy_NativeFunc NativeFunc_AnmSetDefaultLoop;
+
+cGVar GVar_MovieFramerate;
+
+cGVar GVar_MovieJpegQuality;
+
+cPy_NativeFunc NativeFunc_AnmChangeRandomAnm;
+
+cGVar GVar_MovieUseMemory;
+
+cPy_NativeFunc NativeFunc_AnmStopChan;
+
+cGVar GVar_MovieCacheSize;
+
+cPy_NativeFunc NativeFunc_AnmSetDisplAng;
+
+cPy_NativeFunc NativeFunc_StreamingVoice;
+
+cPy_NativeFunc NativeFunc_AnmSoundLoopEvent;
+
+cGVar GVar_ScorerMarginV;
+
+cPy_NativeFunc NativeFunc_WarningPolice;
+
+cPy_NativeFunc NativeFunc_AnmSound2DEvent;
+
+cPy_NativeFunc NativeFunc_AnmSoundEvent;
+
+cPy_NativeFunc NativeFunc_StopStreamingVoice;
+
+cGVar GVar_OptAnimPosMax;
+
+cGVar GVar_MinTimeStoppedTurnPatrolCharAI;
+
+cGVar GVar_MaxDistStopVisObjChaseWithOutActionAI;
+
+cGVar GVar_MaxRotCharAI;
+
+cGVar GVar_MaxDistStopVisObjChaseWithActionAI;
+
+cGVar GVar_LimVelTurnCharAI;
+
+cGVar GVar_MinDistStrafeCharAI;
+
+cGVar GVar_FileArrowNextAlpha;
+
+cPy_NativeFunc NativeFunc_EditText;
+
+cGVar GVar_DimWindowReposYAI;
+
+cGVar GVar_MaxMarginObjTrafficAI;
+
+cPy_NativeFunc NativeFunc_ScorerSpriteGlow;
+
+cPy_NativeFunc NativeFunc_ScorerSpriteFadeIn;
+
+cGVar GVar_DistMinItemAI;
+
+cPy_NativeFunc NativeFunc_ScorerMetroUsrHere;
+
+cPy_NativeFunc NativeFunc_ScorerSpriteFadeOut;
+
+cGVar GVar_MinDistBetweenTrafficAI;
+
+cPy_NativeFunc NativeFunc_ScorerSpriteFadeOutFinal;
+
+cPy_NativeFunc NativeFunc_ScorerSpriteFlash;
+
+cPy_NativeFunc NativeFunc_BoostScorer;
+
+cGVar GVar_DimWindowReposXAI;
+
+cGVar GVar_ShootAI;
+
+cGVar GVar_MaxAngleReposAI;
+
+cGVar GVar_MaxRotAI;
+
+cGVar GVar_MinRotAI;
+
+cGVar GVar_ASEPublic;
+
+cNetRandom cNetRandom_4628a8;
+
+cGVar GVar_ViewerModel;
+
+cGVar GVar_ViewerModelOffsetY;
+
+cGVar GVar_ViewerAnim;
+
+cGVar GVar_BatchBuildGraph3DAI;
+
+cGVar GVar_ViewerIniAI;
+
+cGVar GVar_BatchBuildGraph2DAI;
+
+cNetRandom cNetRandom_464358;
+
+cPy_NativeFunc NativeFunc_BankDirectorActionPress;
+
+cPy_NativeFunc NativeFunc_BankDirectorActionRelease;
+
+cPy_NativeFunc NativeFunc_BankerAttack;
+
+cPy_NativeFunc NativeFunc_BankDirectorEndActionInit;
+
+cPy_NativeFunc NativeFunc_BankMasterAttack;
+
+cPy_NativeFunc NativeFunc_BankMasterActionInit;
+
+cPy_NativeFunc NativeFunc_PrintMemBlockData;
+
+cPy_NativeFunc NativeFunc_BankMasterActionEnd;
+
+cPy_NativeFunc NativeFunc_BankMasterHitEvent;
+
+cPy_NativeFunc NativeFunc_FXBankMasterAttack;
+
+cPy_NativeFunc NativeFunc_BankMasterActionPress;
+
+cPy_NativeFunc NativeFunc_BertoAttack;
+
+cPy_NativeFunc NativeFunc_FXBertoAttack;
+
+cPy_NativeFunc NativeFunc_BertoActionInit;
+
+cPy_NativeFunc NativeFunc_BertoActionPress;
+
+cPy_NativeFunc NativeFunc_BertoActionEnd;
+
+cPy_NativeFunc NativeFunc_BertoHitEvent;
+
+cPy_NativeFunc NativeFunc_BettyRestoreTime;
+
+cPy_NativeFunc NativeFunc_BettyCameraSet;
+
+cPy_NativeFunc NativeFunc_BettyActionPress;
+
+cPy_NativeFunc NativeFunc_FXBettyAttack;
+
+cPy_NativeFunc NativeFunc_BettyHitEvent;
+
+cGVar GVar_SoundFrequency;
+
+cGVar GVar_SoundChannels;
+
+cGVar GVar_S_PriorityMode;
+
+cPy_NativeFunc NativeFunc_BettyEndEvent;
+
+cGVar GVar_SoundBits;
+
+cGVar GVar_SoundStereo;
+
+cGVar GVar_SoundUseHardware;
+
+cGVar GVar_S_PlayMute;
+
+cPy_NativeFunc NativeFunc_BishopEndActionEnd;
+
+cPy_NativeFunc NativeFunc_FXCharacterTeleport;
+
+cPy_NativeFunc NativeFunc_BishopActionPress;
+
+cPy_NativeFunc NativeFunc_FXBishopSellLife;
+
+cGVar GVar_MaxPlayerLives;
+
+cGVar GVar_BishopLivePrice;
+
+cPy_NativeFunc NativeFunc_FXCharacterDazed;
+
+cPy_NativeFunc NativeFunc_FXCharacterBlaBliBla;
+
+cPy_NativeFunc NativeFunc_BishopAttack;
+
+cPy_NativeFunc NativeFunc_FXCrazyGamblerSetHeadModel;
+
+cPy_NativeFunc NativeFunc_FXDesktopFallEnd;
+
+cPy_NativeFunc NativeFunc_DesktopActionPress;
+
+cGVar GVar_FXCharacterPoliceGearConversionFile;
+
+cPy_NativeFunc NativeFunc_FXDTritusAttack;
+
+cPy_NativeFunc NativeFunc_DtritusEndEvent;
+
+cPy_NativeFunc NativeFunc_DtritusRestartEvent;
+
+cGVar GVar_ShowTSCMode;
+
+cPy_NativeFunc NativeFunc_DtritusActionPress;
+
+cPy_NativeFunc NativeFunc_DtritusHitEvent;
+
+cPy_NativeFunc NativeFunc_GearActionPress;
+
+cPy_NativeFunc NativeFunc_GearShoot;
+
+cPy_NativeFunc NativeFunc_GearHit;
+
+cPy_NativeFunc NativeFunc_GearEndActionEnd;
+
+cPy_NativeFunc NativeFunc_GearShootLoad;
+
+cGVar GVar_FXVehicleAcceleratorFile;
+
+cPy_NativeFunc NativeFunc_MapElementsActivate;
+
+cPy_NativeFunc NativeFunc_GearInitAction;
+
+cPy_NativeFunc NativeFunc_GearEndAction;
+
+cGVar GVar_XboxSavePath;
+
+cPy_NativeFunc NativeFunc_FXMaintenanceWork;
+
+cGVar GVar_XboxSaveName6;
+
+cGVar GVar_XboxSaveName3;
+
+cPy_NativeFunc NativeFunc_ListeningMayor;
+
+cPy_NativeFunc NativeFunc_MayorEndAction;
+
+cGVar GVar_XboxSaveName0;
+
+cGVar GVar_Fraglimit;
+
+cPy_NativeFunc NativeFunc_FXMercenaryDrink;
+
+cGVar GVar_XboxProfileName;
+
+cGVar GVar_XboxSaveName1;
+
+cPy_NativeFunc NativeFunc_MessengerActionPress;
+
+cGVar GVar_XboxSaveName5;
+
+cGVar GVar_XBRumblePadPad;
+
+cPy_NativeFunc NativeFunc_MessengerAttack;
+
+cGVar GVar_XboxCanSave;
+
+cGVar GVar_ShowCredits;
+
+cGVar GVar_XboxSaveName2;
+
+cGVar GVar_NumProfiles;
+
+cPy_NativeFunc NativeFunc_MessengerTakeDataPack;
+
+cGVar GVar_XboxSaveName4;
+
+cPy_NativeFunc NativeFunc_MessengerEndActionEnd;
+
+cGVar GVar_XBNumControllers;
+
+cPy_NativeFunc NativeFunc_NurseDoHammerHit;
+
+cGVar GVar_isXboxDebug;
+
+cGVar GVar_XboxFileCacheSize;
+
+cPy_NativeFunc NativeFunc_NurseTryHammerAgain;
+
+cPy_NativeFunc NativeFunc_NurseBackHitControl;
+
+cPy_NativeFunc NativeFunc_NurseActionPress;
+
+cGVar GVar_DefaultServerAddress;
+
+cPy_NativeFunc NativeFunc_NurseInitHammerLoop;
+
+cGVar GVar_MakeDedicated;
+
+cPy_NativeFunc NativeFunc_NurseActionRelease;
+
+cPy_NativeFunc NativeFunc_ListeningPolice;
+
+cPy_NativeFunc NativeFunc_FXPoliceGearConversion;
+
+cPy_NativeFunc NativeFunc_PoliceEndActionMoney;
+
+cGVar GVar_JoinServerOnStartup;
+
+cPy_NativeFunc NativeFunc_FXPoliceSteal;
+
+cPy_NativeFunc NativeFunc_PoliceRestoreFreeTurn;
+
+cPy_NativeFunc NativeFunc_PoliceActionPress;
+
+cPy_NativeFunc NativeFunc_FXPoliceBossBrup;
+
+cPy_NativeFunc NativeFunc_PoliceBossBrup;
+
+cPy_NativeFunc NativeFunc_PoliceBossAction;
+
+cPy_NativeFunc NativeFunc_FXRustyHit;
+
+cPy_NativeFunc NativeFunc_FXSebastianFlash;
+
+cPy_NativeFunc NativeFunc_SentinelActionRelease;
+
+cPy_NativeFunc NativeFunc_SentinelActionPress;
+
+cPy_NativeFunc NativeFunc_SentinelPoint;
+
+cPy_NativeFunc NativeFunc_FXPoliceAlarmEnd;
+
+cPy_NativeFunc NativeFunc_FXPoliceAlarmInit;
+
+cPy_NativeFunc NativeFunc_FXMeetingPointCountDown;
+
+cPy_NativeFunc NativeFunc_FXBossShieldSet;
+
+cPy_NativeFunc NativeFunc_FXBossOnDamage;
+
+cPy_NativeFunc NativeFunc_AcceleratorOnEnter;
+
+cGVar GVar_MapTriCacheRecalc;
+
+cPy_NativeFunc NativeFunc_ChangeDoorState;
+
+cPy_NativeFunc NativeFunc_AutoDoorSlot;
+
+cPy_NativeFunc NativeFunc_BackDoorSlot;
+
+cPy_NativeFunc NativeFunc_AutoDoorUsrSlot;
+
+cPy_NativeFunc NativeFunc_FrontDoorSlot;
+
+cPy_NativeFunc NativeFunc_Usr0AutoDoorSlot;
+
+cPy_NativeFunc NativeFunc_CloseDoorSlot;
+
+cPy_NativeFunc NativeFunc_TakeMiss;
+
+cPy_NativeFunc NativeFunc_TakeLife;
+
+cPy_NativeFunc NativeFunc_TakeEner;
+
+cPy_NativeFunc NativeFunc_TakePart;
+
+cGVar GVar_FXVehicleSpeedTrailFollowFactor;
+
+cGVar GVar_HangarShip5;
+
+cGVar GVar_HangarShip3;
+
+cGVar GVar_HangarShip9;
+
+cGVar GVar_HangarShip8;
+
+cGVar GVar_HangarShip2;
+
+cGVar GVar_iHangarShip;
+
+cGVar GVar_HangarShip4;
+
+cGVar GVar_HangarShip7;
+
+cGVar GVar_HangarShip1;
+
+cGVar GVar_HangarShip6;
+
+cGVar GVar_STrafficCapsule;
+
+cPy_NativeFunc NativeFunc_ATPCCreate;
+
+cPy_NativeFunc NativeFunc_ATPCOnStart;
+
+cPy_NativeFunc NativeFunc_ATPCOnEnd;
+
+cPy_NativeFunc NativeFunc_ATPCFire;
+
+cPy_NativeFunc NativeFunc_ATPCFX;
+
+cPy_NativeFunc NativeFunc_ATPCXplosionCall;
+
+cPy_NativeFunc NativeFunc_CloudOnHit;
+
+cPy_NativeFunc NativeFunc_CloudFire;
+
+cPy_NativeFunc NativeFunc_DevastatorCreate;
+
+cPy_NativeFunc NativeFunc_DevastatorRelease;
+
+cPy_NativeFunc NativeFunc_DevastatorFire;
+
+cPy_NativeFunc NativeFunc_DevastatorPress;
+
+cPy_NativeFunc NativeFunc_DevastatorFX;
+
+cPy_NativeFunc NativeFunc_EMIOnHit;
+
+cGVar GVar_EMIRadius;
+
+cPy_NativeFunc NativeFunc_EMIFire;
+
+cPy_NativeFunc NativeFunc_InfernoFX;
+
+cPy_NativeFunc NativeFunc_InfernoRelease;
+
+cPy_NativeFunc NativeFunc_InfernoHit;
+
+cPy_NativeFunc NativeFunc_InfernoPress;
+
+cPy_NativeFunc NativeFunc_InfernoServerHit;
+
+cPy_NativeFunc NativeFunc_InfernoOnStart;
+
+cPy_NativeFunc NativeFunc_InfernoCreate;
+
+cPy_NativeFunc NativeFunc_InfernoOnEnd;
+
+cPy_NativeFunc NativeFunc_InfernoOnObjSlot;
+
+cPy_NativeFunc NativeFunc_InfernoSetUp;
+
+cPy_NativeFunc NativeFunc_InfernoClientFire;
+
+cGVar GVar_InfernoFastSpeed;
+
+cPy_NativeFunc NativeFunc_InfernoFire;
+
+cPy_NativeFunc NativeFunc_HookPlugFX;
+
+cPy_NativeFunc NativeFunc_HookDeActivate;
+
+cPy_NativeFunc NativeFunc_LaserPress;
+
+cPy_NativeFunc NativeFunc_LaserFX;
+
+cPy_NativeFunc NativeFunc_HookActivate;
+
+cPy_NativeFunc NativeFunc_LaserFire;
+
+cPy_NativeFunc NativeFunc_HookFire;
+
+cPy_NativeFunc NativeFunc_LaserRelease;
+
+cPy_NativeFunc NativeFunc_LaserCreate;
+
+cPy_NativeFunc NativeFunc_SonicXplde;
+
+cPy_NativeFunc NativeFunc_SonicFire;
+
+cPy_NativeFunc NativeFunc_SwarmHit;
+
+cPy_NativeFunc NativeFunc_SwarmOnStart;
+
+cPy_NativeFunc NativeFunc_SwarmPress;
+
+cGVar GVar_SwarmDamage;
+
+cGVar GVar_SwarmRangeUPG;
+
+cPy_NativeFunc NativeFunc_SwarmCreate;
+
+cGVar GVar_SwarmNumber3;
+
+cPy_NativeFunc NativeFunc_SwarmSetUp;
+
+cPy_NativeFunc NativeFunc_SwarmOnEnd;
+
+cPy_NativeFunc NativeFunc_SwarmFire;
+
+cGVar GVar_SwarmRange;
+
+cGVar GVar_SwarmNumber4;
+
+cPy_NativeFunc NativeFunc_SwarmRelease;
+
+cPy_NativeFunc NativeFunc_SwarmServerHit;
+
+cPy_NativeFunc NativeFunc_SwarmClientFire;
+
+cPy_NativeFunc NativeFunc_SwarmFX;
+
+cGVar GVar_SwarmNumber2;
+
+cPy_NativeFunc NativeFunc_TeslaCreate;
+
+cPy_NativeFunc NativeFunc_TeslaFire;
+
+cPy_NativeFunc NativeFunc_TeslaPress;
+
+cPy_NativeFunc NativeFunc_TeslaRelease;
+
+cPy_NativeFunc NativeFunc_TeslaFX;
+
+cPy_NativeFunc NativeFunc_VulcanFX;
+
+cPy_NativeFunc NativeFunc_VulcanFire;
+
+cPy_NativeFunc NativeFunc_VulcanRelease;
+
+cPy_NativeFunc NativeFunc_VulcanCreate;
+
+cPy_NativeFunc NativeFunc_VulcanPress;
+
+cGVar GVar_BishopSpecialActionTime;
+
+cGVar GVar_RelaxSeatsFunctionaryListName;
+
+cGVar GVar_GenCharSpecialActionRadius;
+
+cGVar GVar_GetAwayHumanDist;
+
+cPy_NativeFunc NativeFunc_Police2GearEnd;
+
+cGVar GVar_SecondaryMissionDesc;
+
+cGVar GVar_PrimaryMissionDesc;
+
+cPy_NativeFunc NativeFunc_IncrementHits;
+
+cPy_NativeFunc NativeFunc_EndOfLaugh;
+
+cGVar GVar_PlayerHelpedPoliceReward;
+

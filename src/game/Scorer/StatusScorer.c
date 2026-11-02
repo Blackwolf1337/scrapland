@@ -187,28 +187,39 @@ int cStatusScorer_Var(cScorerItem *base, const char *name, int set, char **s, do
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
+cGVar GVar_StdMaxLife;
+
 /* the life engine variables */
-extern cGVar GVar_StdMaxLife;
 #define g_StdMaxLife (GVar_StdMaxLife.value.i)			/* the max life of what is no ship */
-extern cGVar GVar_DangerLifeLevel;
+cGVar GVar_DangerLifeLevel;
+
 #define g_DangerLifeLevel (GVar_DangerLifeLevel.value.i)		/* percent: the life blinks red below it */
-extern cGVar GVar_WarningLifeLevel;
+cGVar GVar_WarningLifeLevel;
+
 #define g_WarningLifeLevel (GVar_WarningLifeLevel.value.i)		/* percent: the low life sound fades in below it */
-extern cGVar GVar_DangerLifeSoundVol;
+cGVar GVar_DangerLifeSoundVol;
+
 #define g_DangerLifeSoundVol (GVar_DangerLifeSoundVol.value.f)
-extern cGVar GVar_RegenerationSoundVol;
+cGVar GVar_RegenerationSoundVol;
+
 #define g_RegenerationSoundVol (GVar_RegenerationSoundVol.value.f)
-extern cGVar GVar_RegenerationSoundPitchMax;
+cGVar GVar_RegenerationSoundPitchMax;
+
 #define g_RegenerationSoundPitchMax (GVar_RegenerationSoundPitchMax.value.f)
-extern cGVar GVar_RegenerationSoundPitchMin;
+cGVar GVar_RegenerationSoundPitchMin;
+
 #define g_RegenerationSoundPitchMin (GVar_RegenerationSoundPitchMin.value.f)
-extern cGVar GVar_InitRegenerationSound;
+cGVar GVar_InitRegenerationSound;
+
 #define g_InitRegenerationSound (GVar_InitRegenerationSound.value.s)
-extern cGVar GVar_InitRegenerationSoundVol;
+cGVar GVar_InitRegenerationSoundVol;
+
 #define g_InitRegenerationSoundVol (GVar_InitRegenerationSoundVol.value.f)
-extern cGVar GVar_EndRegenerationSound;
+cGVar GVar_EndRegenerationSound;
+
 #define g_EndRegenerationSound (GVar_EndRegenerationSound.value.s)
-extern cGVar GVar_EndRegenerationSoundVol;
+cGVar GVar_EndRegenerationSoundVol;
+
 #define g_EndRegenerationSoundVol (GVar_EndRegenerationSoundVol.value.f)
 
 #define STATUS_SEGMENTS 7		/* the boost segments over the life icon */
@@ -492,3 +503,8 @@ const cScorerItemVtbl cStatusScorer_vftable = {
 	.Var = cStatusScorer_Var,
 	.Delete = cStatusScorer_Delete,
 };
+
+cGVar GVar_DangerLifeSound;
+
+cGVar GVar_RegenerationSound;
+

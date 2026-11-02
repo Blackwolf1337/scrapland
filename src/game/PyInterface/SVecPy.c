@@ -192,5 +192,162 @@ PyObject *SVec_NormAng(PyObject *self, PyObject *args) {
 	return Py_BuildValue("d", Rad2Deg((double)NormAng((float)Deg2Rad(ang))));
 }
 
-extern PyMethodDef SVec_methods[13];
+SD_SYM(str_PyMethod_SScorer_Add);
+SD_SYM(SVec_Add);
+SD_SYM(str_PyDoc_SVec_Add);
+SD_SYM(str_PyMethod_SVec_Sub);
+SD_SYM(SVec_Sub);
+SD_SYM(str_PyDoc_SVec_Sub);
+SD_SYM(str_PyMethod_SVec_Mod);
+SD_SYM(SVec_Mod);
+SD_SYM(str_PyDoc_SVec_Mod);
+SD_SYM(str_PyMethod_SVec_ModSqr);
+SD_SYM(SVec_ModSqr);
+SD_SYM(str_PyDoc_SVec_ModSqr);
+SD_SYM(str_PyMethod_SVec_Norm);
+SD_SYM(SVec_Norm);
+SD_SYM(str_PyDoc_SVec_Norm);
+SD_SYM(str_PyMethod_SVec_Prod);
+SD_SYM(SVec_Prod);
+SD_SYM(str_PyDoc_SVec_Prod);
+SD_SYM(str_PyMethod_SVec_DProd);
+SD_SYM(SVec_DProd);
+SD_SYM(str_PyDoc_SVec_DProd);
+SD_SYM(str_PyMethod_SVec_CProd);
+SD_SYM(SVec_CProd);
+SD_SYM(str_PyDoc_SVec_CProd);
+SD_SYM(str_PyMethod_SVec_Rotate3D);
+SD_SYM(SVec_Rotate3D);
+SD_SYM(str_PyDoc_SVec_Rotate3D);
+SD_SYM(str_PyMethod_SVec_GetAngle);
+SD_SYM(SVec_GetAngle);
+SD_SYM(str_PyDoc_SVec_GetAngle);
+SD_SYM(str_PyMethod_SVec_GetRotAng);
+SD_SYM(SVec_GetRotAng);
+SD_SYM(str_PyDoc_SVec_GetRotAng);
+SD_SYM(str_PyMethod_SVec_NormAng);
+SD_SYM(SVec_NormAng);
+SD_SYM(str_PyDoc_SVec_NormAng);
+PyMethodDef SVec_methods[13] = {
+	{
+		.ml_name = (void *)sd_str_PyMethod_SScorer_Add,
+		.ml_meth = (void *)sd_SVec_Add,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SVec_Add,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SVec_Sub,
+		.ml_meth = (void *)sd_SVec_Sub,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SVec_Sub,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SVec_Mod,
+		.ml_meth = (void *)sd_SVec_Mod,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SVec_Mod,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SVec_ModSqr,
+		.ml_meth = (void *)sd_SVec_ModSqr,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SVec_ModSqr,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SVec_Norm,
+		.ml_meth = (void *)sd_SVec_Norm,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SVec_Norm,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SVec_Prod,
+		.ml_meth = (void *)sd_SVec_Prod,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SVec_Prod,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SVec_DProd,
+		.ml_meth = (void *)sd_SVec_DProd,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SVec_DProd,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SVec_CProd,
+		.ml_meth = (void *)sd_SVec_CProd,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SVec_CProd,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SVec_Rotate3D,
+		.ml_meth = (void *)sd_SVec_Rotate3D,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SVec_Rotate3D,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SVec_GetAngle,
+		.ml_meth = (void *)sd_SVec_GetAngle,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SVec_GetAngle,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SVec_GetRotAng,
+		.ml_meth = (void *)sd_SVec_GetRotAng,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SVec_GetRotAng,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SVec_NormAng,
+		.ml_meth = (void *)sd_SVec_NormAng,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SVec_NormAng,
+	},
+};
+
 SD_PY_MODULE(SVec, 0x42fc80)
+
+const char str_PyMethod_SVec_Sub[] = "Sub";
+
+const char str_PyMethod_SVec_Mod[] = "Mod";
+
+const char str_PyMethod_SVec_ModSqr[] = "ModSqr";
+
+const char str_PyMethod_SVec_Norm[] = "Norm";
+
+const char str_PyMethod_SVec_Prod[] = "Prod";
+
+const char str_PyMethod_SVec_DProd[] = "DProd";
+
+const char str_PyMethod_SVec_CProd[] = "CProd";
+
+const char str_PyMethod_SVec_Rotate3D[] = "Rotate3D";
+
+const char str_PyMethod_SVec_GetAngle[] = "GetAngle";
+
+const char str_PyMethod_SVec_GetRotAng[] = "GetRotAng";
+
+const char str_PyMethod_SVec_NormAng[] = "NormAng";
+
+char str_PyDoc_SVec_Add[] = "res Add(v1,v2) : suma dos vectores 3D";
+
+char str_PyDoc_SVec_Sub[] = "res Sub(v1,v2) : Resta dos vectores 3D";
+
+char str_PyDoc_SVec_Mod[] = "res Mod(v1) : Devuelve el modulo de un vector";
+
+char str_PyDoc_SVec_ModSqr[] = "res ModSqr(v1) : Devuelve el modulo (al cuadrado) de un vector";
+
+char str_PyDoc_SVec_Norm[] = "res Norm(v1) : Normaliza un vector";
+
+char str_PyDoc_SVec_Prod[] = "res Prod(v1,f) : multiplica un vector por un numero";
+
+char str_PyDoc_SVec_DProd[] = "res DProd(v1,v2) : Calcula el producto escalar de dos vectores";
+
+char str_PyDoc_SVec_CProd[] = "vRes CProd(v1,v2) : Calcula el producto vectorial de dos vectores";
+
+char str_PyDoc_SVec_Rotate3D[] = "res Rotate3D(src,rot) : Rota un vector";
+
+char str_PyDoc_SVec_GetAngle[] = "Ang GetAngle(vec) : Obtiene el ángulo entre dos vectores";
+
+char str_PyDoc_SVec_GetRotAng[] = "AngX,AngY GetRotAng(vec) : Obtiene la rotacion de un vector";
+
+char str_PyDoc_SVec_NormAng[44] = "rAng NormAng(Ang) : Normaliza un angulo";
+

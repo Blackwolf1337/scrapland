@@ -20,9 +20,11 @@
 /* defined further down or in another file without a header */
 void *GenCharGroup_MakeLogic(cEntity *e);
 
-extern cGVar GVar_MessengerPrepareDistance;
+cGVar GVar_MessengerPrepareDistance;
+
 #define g_MessengerPrepareDistance (GVar_MessengerPrepareDistance.value.f)	/* MessengerPrepareDistance */
-extern cGVar GVar_MessengerObjectiveDistance;
+cGVar GVar_MessengerObjectiveDistance;
+
 #define g_MessengerObjectiveDistance (GVar_MessengerObjectiveDistance.value.f)	/* MessengerObjetiveDistance */
 #define MSG_THINK_STEP 0.13f				/* rva 0x3b60e0, the interval of the think */
 
@@ -425,3 +427,12 @@ const cGenCharLocalLogicVtbl cMessengerLocalLogic_vftable = {
 	.GoTo = cMessengerLocalLogic_GoTo,
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };
+
+cGVar GVar_MessengerDropPrice;
+
+cGVarFunction GVar_MessengerDropCallback;
+
+cGVar GVar_MessengerDataPackMissionArrow;
+
+cGVar GVar_MessengerGotoSpeed;
+

@@ -20,6 +20,8 @@
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
 
+void *g_pd3dDevice;
+
 static void Render_TSS(uint32_t stage, uint32_t type, uint32_t value) {
 	void *dev = g_pd3dDevice;
 	Rd_DevSetTextureStageState(dev, stage, type, value);
@@ -29,6 +31,8 @@ static void Render_State(uint32_t state, uint32_t value) {
 	void *dev = g_pd3dDevice;
 	Rd_DevSetRenderState(dev, state, value);
 }
+
+uint32_t g_PSHandles[32];
 
 /* pixel shader i of g_PSNames when the device has it and it is not switched off in g_PSOff, else 0 */
 static uint32_t Render_PSHandle(int i) {
@@ -105,6 +109,8 @@ static void Stage_Alpha(uint32_t stage, uint32_t arg1, uint32_t arg2, uint32_t o
 	Render_TSS(stage, D3DTSS_ALPHAOP, op);
 }
 
+int g_DiffuseMod4x = 1;
+
 static uint32_t Op_Diffuse(void) {
 	return g_DiffuseMod4x ? D3DTOP_MODULATE4X : D3DTOP_MODULATE;
 }
@@ -151,6 +157,8 @@ void Render_PSFixed(void *arg, byte flags) {
 	}
 }
 
+CMaterial *g_LightmapMat;
+
 /* the shader modes (g_ShaderTab, g_ShaderTab2 with the lightmap): a pixel shader with its constants, the fixed
  * texture stages without one. Flags 1 begin, 4 the next material of the same mode, 2 end; the end takes the
  * textures of the stages beyond 0 away. */
@@ -165,6 +173,8 @@ void Shader_DiffuseNoLit(CMaterial *mat, uint32_t flags) {
 		Stage_End();
 	}
 }
+
+uint32_t g_LightmapOp = 4;
 
 void Shader_DiffuseLightmap(CMaterial *mat, uint32_t flags) {
 	(void)mat;
@@ -546,6 +556,8 @@ void Shader_ScrollLightmap(CMaterial *mat, uint32_t flags) {
 	Shader_GlowmapLightmap(mat, flags);
 }
 
+plane_t g_Frustum[6];
+
 /* the distance of p to frustum plane i */
 static float Frustum_Dist(int i, const vec3_t *p) {
 	const plane_t *pl = &g_Frustum[i];
@@ -734,6 +746,8 @@ static void Render_PSConst(uint32_t reg, const float *c) {
 	Rd_DevSetPixelShaderConstant(dev, reg, c, 1);
 }
 
+const CMaterial *g_MatForced;
+
 void Render_PSConstAlpha(const CMaterial *mat, uint32_t reg) {
 	static const float one[4] = { 1.0f, 1.0f, 1.0f, 0.0f };
 	float c[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -760,6 +774,10 @@ void Mat_StageEnvBump(CMaterial *mat, uint32_t flags, uint32_t stageEnv, uint32_
 	}
 	Mat_StageEnvMap(mat, flags, stageEnv, bias);
 }
+
+matrix_t g_MatBillboard;
+
+int g_UseHWEnvMap = 1;
 
 void Mat_StageEnvMap(CMaterial *mat, uint32_t flags, uint32_t stage, float bias) {
 	CHECK(g_UseHWEnvMap);
@@ -802,6 +820,168 @@ void Mat_StageEnvMap(CMaterial *mat, uint32_t flags, uint32_t stage, float bias)
 		Render_TSS(stage, D3DTSS_TEXCOORDINDEX, stage);
 	}
 }
+
+SD_SYM(str_3d9104);
+SD_SYM(Shader_DiffuseLightmap);
+SD_SYM(str_3d910c);
+SD_SYM(str_3d8f78);
+SD_SYM(Shader_EnvmapLightmap);
+SD_SYM(str_3d9114);
+SD_SYM(str_3d8f38);
+SD_SYM(Shader_MaskEnvmapLightmap);
+SD_SYM(str_3d9120);
+SD_SYM(str_3d8f1c);
+SD_SYM(Shader_MaskEnvBumpLightmap);
+SD_SYM(str_3d912c);
+SD_SYM(str_3d8fa0);
+SD_SYM(Shader_GlowmapLightmap);
+SD_SYM(str_3d9134);
+SD_SYM(str_3d8ef8);
+SD_SYM(Shader_GlowmapMaskEnvmapLightmap);
+SD_SYM(str_3d9148);
+SD_SYM(Shader_GlowmapMaskEnvBump);
+SD_SYM(str_3d915c);
+SD_SYM(Shader_Clouds);
+SD_SYM(str_3d9164);
+SD_SYM(str_3d8fb8);
+SD_SYM(Shader_Hologram);
+SD_SYM(str_3d9170);
+SD_SYM(str_3d8fcc);
+SD_SYM(Shader_GlowFlickLightmap);
+SD_SYM(str_3d917c);
+SD_SYM(str_3d8fe8);
+SD_SYM(Shader_Electric);
+SD_SYM(str_3bbe9c);
+SD_SYM(str_3d8ffc);
+SD_SYM(Shader_Fire);
+SD_SYM(str_3d9188);
+SD_SYM(str_3d900c);
+SD_SYM(Shader_Glass);
+SD_SYM(str_3d9190);
+SD_SYM(str_3d901c);
+SD_SYM(Shader_Waves);
+SD_SYM(str_3d9198);
+SD_SYM(Shader_ScrollLightmap);
+SD_SYM(str_3c2ddc);
+SD_SYM(str_3d902c);
+SD_SYM(Shader_Noise);
+SD_SYM(str_3d91a0);
+SD_SYM(str_3d91ac);
+SD_SYM(str_3d91b8);
+SD_SYM(str_3d91c4);
+SD_SYM(str_3d91d4);
+SD_SYM(str_3d91e8);
+SD_SYM(str_3d91f4);
+SD_SYM(str_3d9200);
+SD_SYM(str_3d920c);
+SD_SYM(str_3d9220);
+SD_SYM(Shader_DiffuseNoLit);
+ShaderTab g_ShaderTab2[32] = {
+	{ .Name = (void *)sd_str_3d9104, .flags = 257, .fnRender = (void *)sd_Shader_DiffuseLightmap },
+	{
+		.Index = 1,
+		.Name = (void *)sd_str_3d910c,
+		.File = (void *)sd_str_3d8f78,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_EnvmapLightmap,
+	},
+	{
+		.Index = 2,
+		.Name = (void *)sd_str_3d9114,
+		.File = (void *)sd_str_3d8f38,
+		.flags = 256,
+		.fnRender = (void *)sd_Shader_MaskEnvmapLightmap,
+	},
+	{
+		.Index = 3,
+		.Name = (void *)sd_str_3d9120,
+		.File = (void *)sd_str_3d8f1c,
+		.flags = 256,
+		.fnRender = (void *)sd_Shader_MaskEnvBumpLightmap,
+	},
+	{
+		.Index = 4,
+		.Name = (void *)sd_str_3d912c,
+		.File = (void *)sd_str_3d8fa0,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_GlowmapLightmap,
+	},
+	{
+		.Index = 5,
+		.Name = (void *)sd_str_3d9134,
+		.File = (void *)sd_str_3d8ef8,
+		.flags = 256,
+		.fnRender = (void *)sd_Shader_GlowmapMaskEnvmapLightmap,
+	},
+	{
+		.Index = 6,
+		.Name = (void *)sd_str_3d9148,
+		.File = (void *)sd_str_3d8ef8,
+		.flags = 256,
+		.fnRender = (void *)sd_Shader_GlowmapMaskEnvBump,
+	},
+	{ .Index = 7, .Name = (void *)sd_str_3d915c, .flags = 257, .fnRender = (void *)sd_Shader_Clouds },
+	{
+		.Index = 8,
+		.Name = (void *)sd_str_3d9164,
+		.File = (void *)sd_str_3d8fb8,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_Hologram,
+	},
+	{
+		.Index = 9,
+		.Name = (void *)sd_str_3d9170,
+		.File = (void *)sd_str_3d8fcc,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_GlowFlickLightmap,
+	},
+	{
+		.Index = 10,
+		.Name = (void *)sd_str_3d917c,
+		.File = (void *)sd_str_3d8fe8,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_Electric,
+	},
+	{
+		.Index = 11,
+		.Name = (void *)sd_str_3bbe9c,
+		.File = (void *)sd_str_3d8ffc,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_Fire,
+	},
+	{
+		.Index = 12,
+		.Name = (void *)sd_str_3d9188,
+		.File = (void *)sd_str_3d900c,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_Glass,
+	},
+	{
+		.Index = 13,
+		.Name = (void *)sd_str_3d9190,
+		.File = (void *)sd_str_3d901c,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_Waves,
+	},
+	{ .Index = 14, .Name = (void *)sd_str_3d9198, .flags = 257, .fnRender = (void *)sd_Shader_ScrollLightmap },
+	{
+		.Index = 15,
+		.Name = (void *)sd_str_3c2ddc,
+		.File = (void *)sd_str_3d902c,
+		.flags = 257,
+		.fnRender = (void *)sd_Shader_Noise,
+	},
+	{ .Index = 16, .Name = (void *)sd_str_3d91a0, .flags = 257 },
+	{ .Index = 17, .Name = (void *)sd_str_3d91ac, .flags = 257 },
+	{ .Index = 18, .Name = (void *)sd_str_3d91b8, .flags = 257 },
+	{ .Index = 19, .Name = (void *)sd_str_3d91c4, .flags = 257 },
+	{ .Index = 20, .Name = (void *)sd_str_3d91d4, .flags = 257 },
+	{ .Index = 21, .Name = (void *)sd_str_3d91e8, .flags = 257 },
+	{ .Index = 22, .Name = (void *)sd_str_3d91f4, .flags = 257 },
+	{ .Index = 23, .Name = (void *)sd_str_3d9200, .flags = 257 },
+	{ .Index = 24, .Name = (void *)sd_str_3d920c, .flags = 257 },
+	{ .Index = 25, .Name = (void *)sd_str_3d9220, .flags = 257, .fnRender = (void *)sd_Shader_DiffuseNoLit },
+};
 
 void Render_Shader(uint32_t mode, void *a, void *b) {
 	CHECK((byte)mode < MAX_SHADER_TAB);
@@ -1001,6 +1181,8 @@ void Shader_Hologram(CMaterial *mat, uint32_t flags) {
 	}
 }
 
+CMaterial *g_MatBump;
+
 /* the glow flickers (R_GlowFlickMod..1 squared, two slow waves of the time), moved by the bump noise map; Glowmap
  * without the pixel shader */
 void Shader_GlowFlickLightmap(CMaterial *mat, uint32_t flags) {
@@ -1172,9 +1354,13 @@ void Render_D3DMaterial(const CMaterial *mat, const float *colors) {
 	Rd_DevSetMaterial(dev, p);
 }
 
+matrix_t g_MatProj;
+
 const matrix_t *Render_GetProj(void) {
 	return &g_MatProj;
 }
+
+matrix_t g_MatView;
 
 const matrix_t *Render_GetView(void) {
 	return &g_MatView;
@@ -1183,6 +1369,8 @@ const matrix_t *Render_GetView(void) {
 const matrix_t *Render_GetBillboard(void) {
 	return &g_MatBillboard;
 }
+
+vec3_t g_EyePos;
 
 const vec3_t *Render_GetEyePos(void) {
 	return &g_EyePos;
@@ -1233,6 +1421,49 @@ void Render_DrawTexRect(const box_t *rect, uint32_t cLeft, uint32_t cRight, void
 	g_pd3dDevice = saved;
 }
 
+byte g_D3DOn;
+
+SD_SYM(str_3d8e70);
+SD_SYM(str_3d8e84);
+SD_SYM(str_3d8e98);
+SD_SYM(str_3d8eb4);
+SD_SYM(str_3d8ec8);
+SD_SYM(str_3d8edc);
+SD_SYM(str_3d8ef8);
+SD_SYM(str_3d8f1c);
+SD_SYM(str_3d8f38);
+SD_SYM(str_3d8f54);
+SD_SYM(str_3d8f68);
+SD_SYM(str_3d8f78);
+SD_SYM(str_3d8f90);
+SD_SYM(str_3d8fa0);
+SD_SYM(str_3d8fb8);
+SD_SYM(str_3d8fcc);
+SD_SYM(str_3d8fe8);
+SD_SYM(str_3d8ffc);
+SD_SYM(str_3d900c);
+SD_SYM(str_3d901c);
+SD_SYM(str_3d902c);
+SD_SYM(str_3d903c);
+SD_SYM(str_3d9050);
+SD_SYM(str_3d9064);
+SD_SYM(str_3d9078);
+SD_SYM(str_3d9090);
+SD_SYM(str_3d90ac);
+SD_SYM(str_3d90c0);
+SD_SYM(str_3d90d4);
+SD_SYM(str_3d90e8);
+const char *g_PSNames[32] = {
+	(void *)sd_str_3d8e70, (void *)sd_str_3d8e84, (void *)sd_str_3d8e98, (void *)sd_str_3d8eb4,
+	(void *)sd_str_3d8ec8, (void *)sd_str_3d8edc, (void *)sd_str_3d8ef8, (void *)sd_str_3d8f1c,
+	(void *)sd_str_3d8f38, (void *)sd_str_3d8f54, (void *)sd_str_3d8f68, (void *)sd_str_3d8f78,
+	(void *)sd_str_3d8f90, (void *)sd_str_3d8fa0, (void *)sd_str_3d8fb8, (void *)sd_str_3d8fcc,
+	(void *)sd_str_3d8fe8, (void *)sd_str_3d8ffc, (void *)sd_str_3d900c, (void *)sd_str_3d901c,
+	(void *)sd_str_3d902c, (void *)sd_str_3d903c, (void *)sd_str_3d9050, (void *)sd_str_3d9064,
+	(void *)sd_str_3d9078, (void *)sd_str_3d9090, (void *)sd_str_3d90ac, (void *)sd_str_3d90c0,
+	(void *)sd_str_3d90d4, (void *)sd_str_3d90e8,
+};
+
 void Render_EndD3D(void) {
 	E3D_DebugPrintf("\n> RenderFinD3D()");
 	g_D3DOn = 0;
@@ -1263,6 +1494,8 @@ void Render_EndD3D(void) {
 	E3D_DebugPrintf("\n< RenderFinD3D()");
 }
 
+uint32_t g_Viewport[6];
+
 void Render_EndView(void) {
 	E3D_FlushBatch();
 	Render_SetMaterial(g_MatDefault, 0);
@@ -1270,6 +1503,12 @@ void Render_EndView(void) {
 	Rd_DevSetViewport(dev, g_ViewportFull);
 	memset(g_Viewport, 0, 6 * sizeof(uint32_t));
 }
+
+CMaterial *g_MatFX2;
+
+const CMaterial *g_MatFX3;
+
+const CMaterial *g_MatCurrent;
 
 void Render_ClearForced(void) {
 	E3D_FlushBatch();
@@ -1280,15 +1519,23 @@ void Render_ClearForced(void) {
 	g_MatCurrent = NULL;
 }
 
+char g_DriverStr[256];
+
 const char *Render_GetDriver(void) {
 	return g_DriverStr;
 }
+
+char g_VersionStr[64];
 
 static void Render_LogVersion(const char *fmt, uint32_t ver) {
 	char *buf = g_VersionStr;
 	Bprintf(buf, 0x40, "%d.%d", ver >> 8 & 0xff, ver & 0xff);
 	E3D_LogPrint((&g_FileLog), fmt, buf);
 }
+
+D3DAdapterId g_Adapter;
+
+char g_DeviceStr[256];
 
 static void Render_LogDevice(const D3DCaps8 *caps, const d3dSurfaceDesc_t *mode, const d3dSurfaceDesc_t *zbuf) {
 	E3D_LogPrint((&g_FileLog), "%s", g_Engine->deviceStats);
@@ -1314,6 +1561,8 @@ static void Render_LoadPS(int i) {
 	}
 }
 
+matrix_t g_MatBias;
+
 /* the identity and the bias matrix */
 static void Render_SetMatrices(void) {
 	Matrix_LoadIdentity((matrix_t *)(&g_MatIdentity));
@@ -1323,6 +1572,8 @@ static void Render_SetMatrices(void) {
 	g_MatBias.m[10] = 1.0f / 2048;
 }
 
+byte g_UseShaders = 1;
+
 /* the static initializer: the shaders on with the hardware environment maps, and the two matrices */
 void Render_InitMatrices(void) {
 	if (g_UseHWEnvMap) {
@@ -1330,6 +1581,24 @@ void Render_InitMatrices(void) {
 	}
 	Render_SetMatrices();
 }
+
+int g_FrameCount;
+
+CMaterial *g_MatWhite;
+
+CMaterial *g_MatCheckerboard;
+
+CMaterial *g_MatGray;
+
+CMaterial *g_MatInvis;
+
+byte g_MipmapsOn;
+
+byte g_TexPow2;
+
+int g_DeviceLogged;
+
+byte g_UseShaders2;
 
 void Render_IniD3D(void) {
 	static const struct {
@@ -1435,6 +1704,8 @@ void Render_IniD3D(void) {
 	E3D_DebugPrintf("\n< RenderIniD3D()");
 }
 
+int g_RenderI1F4;
+
 void Render_BeginFrame(void) {
 	g_pd3dDevice = g_Engine->device;
 	CHECK(g_pd3dDevice);
@@ -1469,6 +1740,10 @@ static int Render_WorldToDevice(const matrix_t *m) {
 	void *dev = g_pd3dDevice;
 	return Rd_DevSetTransform(dev, D3DTS_WORLD, m);
 }
+
+matrix_t g_MatWorld;
+
+int g_WorldSet = 1;
 
 int Render_SetWorldMatrix(const matrix_t *m, byte defer) {
 	g_WorldSet = 0;
@@ -1511,6 +1786,18 @@ int Render_SetWorld(void) {
 	return 0;
 }
 
+byte g_StageMip[8];
+
+byte g_StageTile[8];
+
+uint32_t g_FilterMip = 1;
+
+uint32_t g_AnisotropyCur = 2;
+
+uint32_t g_FilterMin = 2;
+
+uint32_t g_FilterMag = 2;
+
 void Render_ResetState(void) {
 	uint32_t filter = g_TexFilter == 2 ? 3 : (uint32_t)(g_TexFilter != 0) + 1;
 	g_FilterMin = filter;
@@ -1535,6 +1822,8 @@ void Render_ResetState(void) {
 		g_StageTile[i] = 3;
 	}
 }
+
+uint32_t g_ShaderCurrent;
 
 /* the shader mode of the material through its id (pass 0 only); the alpha test, the blending and its value from
  * the bytes 4, 5, 6 of the id */
@@ -1614,6 +1903,12 @@ static void Mat_Pass1(void *dev) {
 	Rd_DevSetRenderState(dev, D3DRS_SRCBLEND, 2);
 	Rd_DevSetRenderState(dev, D3DRS_DESTBLEND, 2);
 }
+
+CMaterial *g_MatCtx;
+
+int g_MatPass;
+
+int g_MatFrame;
 
 int Render_SetMaterial(void *m, int pass) {
 	if (!m) {
@@ -1709,6 +2004,14 @@ static void Proj_Sub(matrix_t *out, const matrix_t *proj, float x0, float x1, fl
 	*out = m;
 }
 
+int g_TileState;
+
+int g_TileX;
+
+int g_TileY;
+
+int g_Tiles = 4;
+
 byte Render_ProjTile(const matrix_t *proj) {
 	byte on = g_TileOn;
 	if (g_TileState < 2) {
@@ -1785,6 +2088,10 @@ void Render_SetLightmapMat(CMaterial *mat, int mode) {
 
 typedef void(*fxTexUpdate_t)(void *fx, CMap *map);
 typedef void *(*fxTexGet_t)(void *fx);
+
+void *g_StageTex[8];
+
+int g_StageTexFrame[8];
 
 int Render_SetMap(uint32_t stage, CMap *map) {
 	CHECK(g_pd3dDevice);
@@ -2182,6 +2489,8 @@ void Frustum_Calc(const matrix_t *view, const matrix_t *proj) {
 	}
 }
 
+byte g_RenderOnlyB38;
+
 int Render_MeshD3D(CMeshD3D *m, CRenderNode *r) {
 	CHECK(m);
 	/* the shadow pass of a model being drawn with stencil shadows */
@@ -2239,3 +2548,140 @@ int Render_MeshD3D(CMeshD3D *m, CRenderNode *r) {
 	g_RenderVerts += m->vert.nVert;
 	return 0;
 }
+
+const char str_3d8e70[] = "bmp/lightmap.psh";
+
+const char str_3d8e84[] = "bmp/specular.psh";
+
+const char str_3d8e98[] = "bmp/GlowmapMaskEnvBump.psh";
+
+const char str_3d8eb4[] = "bmp/MaskEnvBump.psh";
+
+const char str_3d8ec8[] = "bmp/MaskEnvmap.psh";
+
+const char str_3d8edc[] = "bmp/GlowmapMaskEnvmap.psh";
+
+const char str_3d8ef8[] = "bmp/GlowmapMaskEnvmapLightmap.psh";
+
+const char str_3d8f1c[] = "bmp/MaskEnvBumpLightmap.psh";
+
+const char str_3d8f38[] = "bmp/MaskEnvmapLightmap.psh";
+
+const char str_3d8f54[] = "bmp/CloudTest.psh";
+
+const char str_3d8f68[] = "bmp/Envmap.psh";
+
+const char str_3d8f78[] = "bmp/EnvmapLightmap.psh";
+
+const char str_3d8f90[] = "bmp/Glowmap.psh";
+
+const char str_3d8fa0[] = "bmp/GlowmapLightmap.psh";
+
+const char str_3d8fb8[] = "bmp/Hologram.psh";
+
+const char str_3d8fcc[] = "bmp/GlowFlickLightmap.psh";
+
+const char str_3d8fe8[] = "bmp/Electric.psh";
+
+const char str_3d8ffc[] = "bmp/Fire.psh";
+
+const char str_3d900c[] = "bmp/Glass.psh";
+
+const char str_3d901c[] = "bmp/Waves.psh";
+
+const char str_3d902c[] = "bmp/Noise.psh";
+
+const char str_3d903c[] = "bmp/BloomFilter.psh";
+
+const char str_3d9050[] = "bmp/BloomBlur.psh";
+
+const char str_3d9064[] = "bmp/BloomTarget.psh";
+
+const char str_3d9078[] = "bmp/MotionBlurAdd.psh";
+
+const char str_3d9090[] = "bmp/MotionBlurTarget.psh";
+
+const char str_3d90ac[] = "bmp/BlurTarget.psh";
+
+const char str_3d90c0[] = "bmp/DUDVFilter.psh";
+
+const char str_3d90d4[] = "bmp/DUDVTarget.psh";
+
+const char str_3d90e8[] = "bmp/RadialBlurTarget.psh";
+
+cGVar GVar_R_VBIBTriLimit;
+
+cGVar GVar_R_CloudB;
+
+cGVar GVar_R_UseDefTexture;
+
+cGVar GVar_R_CloudScale1;
+
+cGVar GVar_R_GlowFlickMod;
+
+cGVar GVar_R_CloudEmi;
+
+cGVar GVar_R_LastDevice;
+
+cGVar GVar_R_UseDefMaterial;
+
+cGVar GVar_R_MipFilter;
+
+cGVar GVar_R_CullMode;
+
+CMaterial CMaterial_MatLine;
+
+cGVar GVar_R_EnvBlend;
+
+cGVar GVar_R_CloudG;
+
+cGVar GVar_R_EnvBumpScale;
+
+cGVar GVar_R_GlowFlickBump;
+
+cGVar GVar_R_CloudVel2x;
+
+cGVar GVar_R_MipmapBias;
+
+cGVar GVar_R_AlphaFog;
+
+cGVar GVar_R_PSMask;
+
+cGVar GVar_R_EnvMapOffset;
+
+cGVar GVar_R_CloudVel1y;
+
+cGVar GVar_R_CloudVel1x;
+
+cGVar GVar_R_CloudR;
+
+cGVar GVar_R_CloudVel2y;
+
+cGVar GVar_R_EnvMapScale;
+
+cGVar GVar_R_EnvMapViewDep;
+
+cGVar GVar_R_GlowFlickTile;
+
+cGVar GVar_R_CloudA;
+
+cGVar GVar_R_Anisotropy;
+
+cGVar GVar_R_EnvBumpBias;
+
+cGVar GVar_R_ShowSphereVis;
+
+cGVar GVar_R_MaterialLog;
+
+cGVar GVar_R_GlowFlickBRot;
+
+cGVar GVar_R_CloudScale2;
+
+cGVar GVar_R_GlowFlickRot;
+
+CMaterial CMaterial_MatDefault;
+
+cGVar GVar_R_PShaderCount;
+
+cGVar GVar_R_DecalZBias;
+

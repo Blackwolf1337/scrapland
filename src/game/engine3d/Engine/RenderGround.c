@@ -6,10 +6,16 @@
 #include "scrap/render.h"
 #include "scrap/renderground.h"
 
+CTable g_BatchTab;
+
 static BatchMesh *Batch_Entry(uint32_t i) {
 	TABLE_CHECK(g_BatchTab.p, i, g_BatchTab.n);
 	return &((BatchMesh *)g_BatchTab.p)[i];
 }
+
+BatchMesh *g_BatchOrder[512];
+
+uint32_t g_BatchUsed;
 
 void Batch_AddMesh(void *mesh, void *dev) {
 	if (!g_BatchTab.n) {

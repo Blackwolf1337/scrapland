@@ -11,6 +11,8 @@
 
 #include <string.h>
 
+cWorld *g_pWorld;
+
 #define WEAPS (g_pWorld->weapons)
 #define AMMOS (g_pWorld->ammo)
 
@@ -193,6 +195,8 @@ uint32_t cWeaponManager_GetSlots(cWeaponManager *self, int w) {
 	}
 	return self->weaps[w].slots;
 }
+
+char g_WeapListBuf[512];
 
 /* the slot masks of all weapons as "m0,m1,..." in a static buffer */
 char *cWeaponManager_GetWeapList(cWeaponManager *self) {
@@ -787,6 +791,8 @@ void cWeaponManager_PlayStartSnd(cWeaponManager *self) {
 	Vehicle_StartSnd(self->owner, 0x14);
 }
 
+int g_WeaponNeedOrder[3][6] = { { 0, 3, 1, 5, 2, 4 }, { 1, 5, 2, 4, 0, 3 }, { 2, 4, 0, 3, 1, 5 } };
+
 /* the ammo kind of a mounted weapon below its maximum, in one of three random orders; 0 for none */
 int cWeaponManager_WeaponNeed(cWeaponManager *self) {
 	if (g_pWorld->weapons.count <= 6) {
@@ -870,3 +876,8 @@ void cWeaponManager_ClearWeaps(cWeaponManager *self) {
 const cTargetLockVtbl cWeaponManager_vftable = {
 	.Delete = cWeaponManager_Delete,
 };
+
+cGVar GVar_LaserIDWeap;
+
+cGVarFunction GVar_HookPlugFunc;
+

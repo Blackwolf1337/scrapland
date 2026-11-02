@@ -149,3 +149,6 @@ void cCTFFriends_Update(cCTFFriends *self, float dt) {
 		cCTFFriendsData_Think(d);
 	}
 }
+
+cGVar GVar_PercFriendsAttackLeaderWhenWinning;
+

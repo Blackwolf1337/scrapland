@@ -78,3 +78,6 @@ const cAIEntityGroupVtbl cAIEntityGroup_vftable = {
 	.AllowChange = cAIEntityGroup_AllowChange,
 	.Update = cAIEntityGroup_Update,
 };
+
+cGVar GVar_TimeBetwChangeStateAI;
+

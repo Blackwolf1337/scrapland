@@ -50,6 +50,10 @@ void ATPC_PlaySound(const char *name, const vec3_t *pos, float attIni, float att
 	g_pSound->vftable->PlaySound(g_pSound, name, &desc, NULL);
 }
 
+char g_ATPCShooter[128];
+
+char g_ATPCVictim[128];
+
 /* "!ATPCCreate" (vehicle, hit point, target): the shot effect from the mounted slots (beyond the convergence distance
  * from their middle) to the hit, the hit sound and the capsule sound and shake for the player near the shot */
 void ATPC_Create(cAbstractFile *params) {
@@ -262,6 +266,8 @@ void ATPC_FX(cAbstractFile *params) {
 	}
 	item->angle = 0.0f;
 }
+
+float g_ATPCNumSlots;
 
 /* "!ATPCFire" (vehicle): the ammo of the shot, the aim and the line of the hit */
 void ATPC_Fire(cAbstractFile *params) {
@@ -534,3 +540,68 @@ void Cloud_OnHit(cAbstractFile *params) {
 		cMissileEntity_SetSwarmSpeed((cMissileEntity *)e, Missile(e)->swarmSpeed / 5.0f);
 	}
 }
+
+cGVarFunction GVar_RestoreUpgradeFunc;
+
+cGVar GVar_ATPCIDWeap;
+
+cGVar GVar_ATPCCapsuleSoundAttEnd;
+
+cGVar GVar_ATPCCapsuleSoundAttIni;
+
+cGVar GVar_ATPCUpgradeDelay;
+
+cGVar GVar_ATPCCapsuleSound;
+
+cGVar GVar_ATPCCapsuleSoundRadius;
+
+cGVar GVar_ATPCAmmoCost;
+
+cGVar GVar_ATPCExtraDamage;
+
+cGVar GVar_ATPCExplosionRadius;
+
+cGVar GVar_ATPCCapsuleExtendedSound;
+
+cGVar GVar_ATPCHitSound;
+
+cGVar GVar_ATPCMainDamage;
+
+cGVar GVar_ATPCHitSoundAttEnd;
+
+cGVar GVar_ATPCHitSoundAttIni;
+
+cGVar GVar_ATPCHitSoundVol;
+
+cGVar GVar_ATPCDelay;
+
+cGVar GVar_ATPCHitForce;
+
+cGVar GVar_ATPCCapsuleSoundVol;
+
+cGVar GVar_ATPCRange;
+
+cGVar GVar_ATPCConvDist;
+
+cGVar GVar_ATPCShootFile;
+
+cGVar GVar_ATPCCapsuleExtendedSoundAttIni;
+
+cGVar GVar_ATPCCapsuleExtendedSoundAttEnd;
+
+cGVar GVar_ATPCCapsuleExtendedSoundVol;
+
+cGVar GVar_ATPCIDAmmo;
+
+cGVarFunction GVar_CreateCloudFunc;
+
+cGVar GVar_CloudLifeTime;
+
+cGVar GVar_CloudAmmoNeed;
+
+cGVar GVar_CloudIDAmmo;
+
+cGVar GVar_CloudRechargeTime;
+
+cGVarFunction GVar_SetUpCloudFunc;
+

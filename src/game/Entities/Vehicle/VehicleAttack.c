@@ -237,3 +237,6 @@ int cVehicleAttack_NetFlags(cVehicleAttack *self, byte flags, byte *changed) {
 	}
 	return flags >> 7;
 }
+
+cGVar GVar_WeapHitClientResetTime;
+

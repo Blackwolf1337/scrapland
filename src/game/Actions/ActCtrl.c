@@ -594,3 +594,6 @@ const cActCtrlVarVtbl cActCtrl_vftable = {
 	.VarS = cActCtrl_VarS,
 	.VarV = cActCtrl_VarVFalse,
 };
+
+cGVar GVar_LogActEvents;
+

@@ -199,3 +199,12 @@ const cAICharVtbl cAIMessenger_vftable = {
 	.CheckTalk = cAIChar_CheckTalk,
 	.Facing = cAIChar_Facing,
 };
+
+cGVar GVar_OffsetAngShootMessengerAI;
+
+cGVar GVar_ShootMessengerAI;
+
+cGVar GVar_TimeShootMessengerAI;
+
+cGVar GVar_DistMaxShootMessengerAI;
+

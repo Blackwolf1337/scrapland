@@ -726,6 +726,8 @@ void Sonic_FireNative(cAbstractFile *f) {
 	cWeaponManager_SetAmmo(&Veh(v)->weapons, g_SonicIDAmmo, (float)(ammo - Missile(m)->swarmCount / 3));
 }
 
+vec3_t g_SonicHitPos;
+
 /* the explosion of a mine at x y z (read into g_SonicHitPos) */
 void Sonic_ExplodeNative(cAbstractFile *f) {
 	vec3_t *p = &g_SonicHitPos;
@@ -750,3 +752,48 @@ void Sonic_ExplodeNative(cAbstractFile *f) {
 		cObjElementFXSonicExplosion_Explode(fx, p->x, p->y, p->z);
 	}
 }
+
+cGVar GVar_LaserAmmoCost;
+
+cGVar GVar_LaserRange;
+
+cGVar GVar_LaserShootFile;
+
+cGVar GVar_LaserHitForce;
+
+cGVar GVar_LaserHitFile;
+
+cGVar GVar_HookEMITime;
+
+cGVar GVar_LaserTimeDelay;
+
+cGVar GVar_LaserRicSoundVol;
+
+cGVar GVar_LaserIDAmmo;
+
+cGVar GVar_LaserHookFile;
+
+cGVar GVar_LaserDamage;
+
+cGVar GVar_HookAccel;
+
+cGVar GVar_LaserMinSpeed;
+
+cGVar GVar_LaserRicSound;
+
+cGVar GVar_SonicRechargeTime;
+
+cGVar GVar_SonicArmor;
+
+cGVar GVar_FXSonicXpldeFile;
+
+cGVar GVar_SonicLifeTime;
+
+cGVar GVar_SonicIDAmmo;
+
+cGVar GVar_SonicAmmoNeed;
+
+cGVarFunction GVar_CreateSonicFunc;
+
+cGVarFunction GVar_SetUpSonicFunc;
+

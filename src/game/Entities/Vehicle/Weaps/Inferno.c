@@ -114,6 +114,10 @@ void Weap_UpdateHud(cAbstractFile *f, char (*targets)[0x80], float *times, int l
 		g_CannonScorerColorBlue;
 }
 
+char g_InfernoHudTarget[4][0x80];
+
+float g_InfernoHudTime[4];
+
 void Inferno_HudNative(cAbstractFile *f) {
 	Weap_UpdateHud(f, g_InfernoHudTarget, g_InfernoHudTime, 11, 12);
 }
@@ -336,6 +340,14 @@ void Inferno_ServerHitNative(cAbstractFile *f) {
 	Inferno_Explode(name);
 }
 
+cEntity *g_InfernoOwner;
+
+float g_InfernoRange;
+
+cEntity *g_InfernoMissile;
+
+vec3_t g_InfernoPos;
+
 /* the explosion: the effect, then (not on clients) InfernoXplosionCall on the entities in the sphere */
 void Inferno_Explode(const char *name) {
 	vec3_t tmp;
@@ -427,6 +439,8 @@ void Inferno_NetSetUp(const char *name) {
 		g_InfernoEngineSoundAttEnd, g_InfernoEngineSoundDoppler);
 }
 
+char g_InfernoHitName[128];
+
 /* InfernoXplosionCall, for each entity in the sphere of the explosion: damage, push and burn by the distance */
 void Inferno_SphereHit(cAbstractFile *f) {
 	vec3_t tmp, rnd, nrm, vel;
@@ -514,3 +528,70 @@ void Inferno_SphereHit(cAbstractFile *f) {
 		cWithLifeEntity_SetBurner(e, g_InfernoOwner);
 	}
 }
+
+cGVar GVar_CannonScorerColorRed;
+
+cGVar GVar_CannonScorerColorBlue;
+
+cGVar GVar_CannonScorerColorGreen;
+
+cGVar GVar_InfernoEngineSoundVol;
+
+cGVar GVar_InfernoRangeMin;
+
+cGVar GVar_InfernoTimeDelay;
+
+cGVar GVar_InfernoAmmoCost;
+
+cGVar GVar_InfernoUpTopSpeed;
+
+cGVar GVar_InfernoIDAmmo;
+
+cGVar GVar_InfernoLifeTime;
+
+cGVar GVar_InfernoEngineSoundAttIni;
+
+cGVar GVar_InfernoTurnSpeed;
+
+cGVar GVar_InfernoMaxDamage;
+
+cGVar GVar_InfernoHitSoundVol;
+
+cGVar GVar_InfernoHitSoundAttEndRadius;
+
+cGVar GVar_InfernoEngineSoundDoppler;
+
+cGVar GVar_InfernoBeesSpeed;
+
+cGVar GVar_InfernoUpgFireFactor;
+
+cGVar GVar_InfernoInvUpgExtraDamage;
+
+cGVar GVar_InfernoHitForce;
+
+cGVar GVar_InfernoRangeBay;
+
+cGVar GVar_InfernoArmor;
+
+cGVar GVar_InfernoUpgFireTime;
+
+cGVar GVar_InfernoHitSound;
+
+cGVar GVar_InfernoMinDamage;
+
+cGVar GVar_InfernoEngineSound;
+
+cGVar GVar_InfernoNormSpeed;
+
+cPy_NativeFunc NativeFunc_InfernoXplosionCall;
+
+cGVar GVar_InfernoMissileFile;
+
+cGVar GVar_FXInfernoExplosionMaxDist;
+
+cGVar GVar_InfernoHitSoundAttIniRadius;
+
+cGVar GVar_InfernoEngineSoundAttEnd;
+
+cGVar GVar_InfernoExplosionFile;
+

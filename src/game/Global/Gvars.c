@@ -15,6 +15,8 @@ void App_GetConfigDir(char *buf, int size);	/* the directory of Scrap.cfg with i
 #define GVAR_READONLY 0x1
 #define GVAR_SAVE 0x2		/* set from the config file or changed: written by Config_Save */
 
+cGVar *g_GVars;
+
 /* the base constructor: puts the variable in front of g_GVars; the derived class sets the type */
 cGVar *cGVar_ctor(cGVar *self, const char *name, byte flags, const char *description) {
 	self->base.next = g_GVars;
@@ -79,6 +81,8 @@ byte cGVar_SetFlag(cGVar *self, byte bit, byte on) {
 	}
 	return 1;
 }
+
+HashTable *g_GVarTable;
 
 void GVars_Init(void) {
 	CHECK(g_GVarTable == NULL);

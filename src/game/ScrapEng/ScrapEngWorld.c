@@ -88,6 +88,14 @@ byte Sector_Visible(int sector) {
 	return Sector_IsVisible(sector);
 }
 
+CNode3D *g_WorldInfoNode;
+
+WorldDummy *g_WorldInfoDummy;
+
+byte g_WorldInfoWild;
+
+char g_WorldInfoPattern[260];
+
 void WorldInfo_Begin(const char *pattern, byte wild) {
 	g_WorldInfoNode = NULL;
 	g_WorldInfoDummy = NULL;
@@ -223,6 +231,12 @@ int Bool_GetSet(byte *flag, int value, byte set) {
 	}
 	return old != 0;
 }
+
+byte g_TileOn;
+
+byte g_VertexSpecular;
+
+byte g_RenderMode100;
 
 int RenderMode(int mode, int value, byte set) {
 	static const char *const filters[3] = { "Point", "Linear", "Anisotropic" };
@@ -364,6 +378,10 @@ static uint32_t Splash_Color(int c) {
 	return ((uint32_t)c << 8 | (uint32_t)c) << 8 | (uint32_t)c;
 }
 
+char g_SplashLast[260];
+
+uint32_t g_SplashTime;
+
 void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut) {
 	char path[MAX_FILEPATH];
 	void *tex, *data;
@@ -470,6 +488,8 @@ void Loading_DrawBack2(void) {
 	}
 }
 
+int g_LoadingCount;
+
 void Loading_Step(int percent) {
 	box_t r;
 
@@ -520,3 +540,10 @@ void Loading_DrawBack(void) {
 		Loading_Frame(g_LoadingDraw);
 	}
 }
+
+cGVar GVar_ShowProgressBar;
+
+cGVar GVar_SplashScreenFade;
+
+cGVar GVar_R_TexFilter;
+

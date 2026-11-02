@@ -445,6 +445,10 @@ void cCreditsScorer_Draw(cScorerItem *base, int player) {
 	cCreditsScorer_DrawLines(self, 0, self->base.color);
 }
 
+char *g_HintLines[2];
+
+char g_HintText[1280];
+
 void cHintScorer_Draw(cScorerItem *base, int player) {
 	cHintScorer *self = (cHintScorer *)base;
 	cScorer *sc = Scorer_Get(player);
@@ -499,6 +503,10 @@ void cHintScorer_Draw(cScorerItem *base, int player) {
 	}
 }
 
+char g_LabelText[250];
+
+float g_LabelTime;
+
 void cLabelScorer_Draw(cScorerItem *base, int player) {
 	cLabelScorer *self = (cLabelScorer *)base;
 	const char *text;
@@ -533,6 +541,10 @@ void cLabelScorer_Draw(cScorerItem *base, int player) {
 		self->base.color, "%s", text);
 }
 
+int g_MsgNumLines;
+
+char *g_MsgLines[20];
+
 void cMsgScorer_Draw(cScorerItem *base, int player) {
 	cMsgScorer *self = (cMsgScorer *)base;
 	(void)player;
@@ -552,6 +564,8 @@ void Scorer_SetLabelText(const char *text, float time) {
 	Str_Copy(g_LabelText, text, 0xfa);
 	g_LabelTime = time;
 }
+
+char g_MsgText[62500];
 
 void Scorer_SetMsgText(const char *text, float time, const char *font) {
 	Str_Copy(g_MsgText, text, 0xf424);
@@ -600,3 +614,18 @@ const cScorerItemVtbl cCreditsScorer_vftable = {
 	.Var = cCreditsScorer_Var,
 	.Delete = cCreditsScorer_Delete,
 };
+
+cGVar GVar_MissionScorerName;
+
+cGVar GVar_TimeToMsg;
+
+cGVar GVar_HintAppearsTime;
+
+cGVar GVar_R_CreditsX;
+
+cGVar GVar_R_CreditsY;
+
+cGVar GVar_R_CreditsClear;
+
+cGVar GVar_R_CreditsAlpha;
+

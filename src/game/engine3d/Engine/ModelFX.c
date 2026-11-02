@@ -45,6 +45,8 @@ static void Scene_Draw(const CModel *m, NodeAnimCtx *ctx) {
 	CScene_Render(m->scene, ctx);
 }
 
+CMaterial g_FXMat;
+
 /* the blend states of the shared effect material */
 static void FXMat_Set(int src, int dst, byte lighting, int zFunc, byte zWrite) {
 	g_FXMat.params.srcBlend = src;
@@ -97,6 +99,8 @@ static void ModelFX_Jump(const CModel *m, NodeAnimCtx *ctx) {
 	CScene_Update(m->scene, ctx);
 }
 
+struct CGraphic2D g_FXGraphicStatic;
+
 /* the scan lines over the screen and the noise texture g at random places */
 static void ModelFX_Overlay(CGraphic2D *g) {
 	CGraphic2D *lines = &g_FXGraphicStatic;
@@ -126,6 +130,8 @@ static void ModelFX_Overlay(CGraphic2D *g) {
 	Render_Clear(NULL, D3DCLEAR_ZBUFFER, 0, 1.0f, 0);
 }
 
+struct CGraphic2D g_FXGraphicNoise2;
+
 void ModelFX_Static(CModel *m, NodeAnimCtx *ctx) {
 	ModelFX_Jump(m, ctx);
 	Render_ClearForced();
@@ -146,6 +152,8 @@ void ModelFX_Static(CModel *m, NodeAnimCtx *ctx) {
 void ModelFX_Base(CModel *m, NodeAnimCtx *ctx) {
 	ModelFX_Forced(m, ctx, 4);
 }
+
+uint32_t g_RenderClassMask;
 
 /* the model again with the forced material, the classes masked */
 static void ModelFX_Again(const CModel *m, NodeAnimCtx *ctx) {
@@ -227,13 +235,19 @@ static void ModelFX_Shader(CModel *m, NodeAnimCtx *ctx, CMaterial *mat) {
 	ModelFX_Again(m, ctx);
 }
 
+CMaterial *g_MatElectric;
+
 void ModelFX_Electric(CModel *m, NodeAnimCtx *ctx) {
 	ModelFX_Shader(m, ctx, g_MatElectric);
 }
 
+CMaterial *g_MatFire;
+
 void ModelFX_Fire(CModel *m, NodeAnimCtx *ctx) {
 	ModelFX_Shader(m, ctx, g_MatFire);
 }
+
+CMaterial *g_MatNoise;
 
 void ModelFX_Noise(CModel *m, NodeAnimCtx *ctx) {
 	int base = (int)(ModelFX_Param(m) * 256.0f);
@@ -356,6 +370,8 @@ static void FXGraphic_Create(CGraphic2D *g, const char *tex, int src, int dst, u
 	g->noTexture = 1;
 	CGraphic2D_CreateMat(g, tex, NULL, src, dst, 1, flags);
 }
+
+struct CGraphic2D g_FXGraphicNoise1;
 
 void ModelFX_InitD3D(void) {
 	FXGraphic_Create(&g_FXGraphicStatic, "bmp/noise_static.alpha.tga", 5, 6, 0x10);

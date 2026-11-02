@@ -20,15 +20,19 @@
 #include "scrap/vehicletraffic.h"
 #include "scrap/weapons.h"
 
-extern cGVar GVar_RADIUS_OBJECTIVE_TRAFFIC;
+cGVar GVar_RADIUS_OBJECTIVE_TRAFFIC;
+
 #define g_RadiusObjectiveTraffic (GVar_RADIUS_OBJECTIVE_TRAFFIC.value.f)		/* RADIUS_OBJECTIVE_TRAFFIC */
-extern cGVar GVar_RADIUS_OBJECTIVE_TRAFFIC_INDOOR;
+cGVar GVar_RADIUS_OBJECTIVE_TRAFFIC_INDOOR;
+
 #define g_RadiusObjectiveTrafficInDoor (GVar_RADIUS_OBJECTIVE_TRAFFIC_INDOOR.value.f)	/* RADIUS_OBJECTIVE_TRAFFIC_INDOOR */
 extern cGVar GVar_RADIUS_OBJECTIVE_IN_ROUTE;
 #define g_RadiusObjectiveInRoute (GVar_RADIUS_OBJECTIVE_IN_ROUTE.value.f)		/* RADIUS_OBJECTIVE_IN_ROUTE */
-extern cGVar GVar_VelTrafficLightRotAI;
+cGVar GVar_VelTrafficLightRotAI;
+
 #define g_VelTrafficLightRotAI (GVar_VelTrafficLightRotAI.value.f)
-extern cGVar GVar_MaxDistAroundReposAI;
+cGVar GVar_MaxDistAroundReposAI;
+
 #define g_MaxDistAroundReposAI (GVar_MaxDistAroundReposAI.value.f)
 #define AIV_NEAR_DIST2 225000000.0f		/* 15000 squared */
 #define AIV_ROT_SPEED_A 8334.0f
@@ -44,6 +48,8 @@ static inline cVehicleTraffic *AIV_VehTraffic(cEntity *v) {
 static inline CNodesTraffic *AIV_Outdoor(void) {
 	return (CNodesTraffic *)g_NodesTraffic;
 }
+
+CNodesTraffic *g_NodesTrafficInDoor;
 
 static inline CNodesTraffic *AIV_Indoor(void) {
 	return (CNodesTraffic *)g_NodesTrafficInDoor;
@@ -405,6 +411,8 @@ void cAIVehicle_Draw(cAI *elem) {
 	cAIVehicleControl_Draw(self->control);
 	cAIVehicleShoot_Draw(self->shoot);
 }
+
+cAIVehicleGroup *g_VehicleGroup;
 
 void cAIVehicle_Update(cAI *elem, float dt) {
 	cAIVehicle *self = (cAIVehicle *)elem;
@@ -1411,7 +1419,8 @@ vec3_t *cAIVehicle_TrackPointRandom(cAIVehicle *self, vec3_t *out, const vec3_t 
 	return out;
 }
 
-extern cGVar GVar_VelReposBackAI;
+cGVar GVar_VelReposBackAI;
+
 #define g_VelReposBackAI (GVar_VelReposBackAI.value.f)	/* VelReposBackAI */
 #define AIV_REPOS_HALF 0.5f
 #define AIV_REPOS_FOV 1.5f
@@ -1895,7 +1904,8 @@ done:
 }
 
 #define g_RadiusShipGraph g_NWNodeRadius			/* RADIUS_SHIP_GRAPH */
-extern cGVar GVar_DepthPathRouteOutDoorAI;
+cGVar GVar_DepthPathRouteOutDoorAI;
+
 #define g_DepthPathRouteOutDoorAI (GVar_DepthPathRouteOutDoorAI.value.i)
 #define g_DepthPathRouteOutDoorAIInit (GVar_DepthPathRouteOutDoorAI.def.i)	/* its default */
 #define AIV_LOST_SPEED 600.0
@@ -2396,17 +2406,22 @@ void cAIVehicle_FindAmmo(cAIVehicle *self, cEntity *exclude) {
 	self->itemAmmoBest = cAIVehicle_NearestAmmoAny(self, &dist, &self->itemAmmo, exclude, factor);
 }
 
+cGVar GVar_DistNotGetAwayAI;
+
 /* ---- the reactions, the hook and the items of the states ---- */
 
-extern cGVar GVar_DistNotGetAwayAI;
 #define g_DistNotGetAwayAI (GVar_DistNotGetAwayAI.value.f)
-extern cGVar GVar_DistGetAwayBoostAI;
+cGVar GVar_DistGetAwayBoostAI;
+
 #define g_DistGetAwayBoostAI (GVar_DistGetAwayBoostAI.value.f)
-extern cGVar GVar_MaxDistElevatorAI;
+cGVar GVar_MaxDistElevatorAI;
+
 #define g_MaxDistElevatorAI (GVar_MaxDistElevatorAI.value.f)
-extern cGVar GVar_MinDistChaseElevatorAI;
+cGVar GVar_MinDistChaseElevatorAI;
+
 #define g_MinDistChaseElevatorAI (GVar_MinDistChaseElevatorAI.value.f)
-extern cGVar GVar_MaxDistChaseElevatorAI;
+cGVar GVar_MaxDistChaseElevatorAI;
+
 #define g_MaxDistChaseElevatorAI (GVar_MaxDistChaseElevatorAI.value.f)
 #define AIV_LOST_TIME 15.0f
 #define AIV_ITEM_NEAR 10000.0f
@@ -3118,11 +3133,14 @@ void cAIVehicle_FightingAfterItem(cAIVehicle *self) {
 	AIV_GoToItem(self, AIVI_FINISHING_LINE_AMMO, e);
 }
 
-extern cGVar GVar_VelReposStopAI;
+cGVar GVar_VelReposStopAI;
+
 #define g_VelReposStopAI (GVar_VelReposStopAI.value.f)	/* VelReposStopAI */
-extern cGVar GVar_MaxDistReposStopAI;
+cGVar GVar_MaxDistReposStopAI;
+
 #define g_MaxDistReposStopAI (GVar_MaxDistReposStopAI.value.f)	/* MaxDistReposStopAI */
-extern cGVar GVar_MinDistReposStopAI;
+cGVar GVar_MinDistReposStopAI;
+
 #define g_MinDistReposStopAI (GVar_MinDistReposStopAI.value.f)	/* MinDistReposStopAI */
 
 /* the repositioning on a traffic track in view, once the vehicle is placed, again when it got too far from the camera
@@ -3292,3 +3310,22 @@ const cAIMoveVtbl cAIVehicle_vftable = {
 	.IsMoving = cAIVehicle_IsMoving,
 	.CanTarget = cAIMove_CanTarget,
 };
+
+cGVar GVar_MaxDistReposNotVisAI;
+
+cGVar GVar_MinDistReposNotVisAI;
+
+cGVarFunction GVar_OnObjectiveNullAI;
+
+cGVar GVar_MaxDistChaseAI;
+
+cGVar GVar_MinDistReposAI;
+
+cGVar GVar_MinDistChaseAI;
+
+cGVar GVar_TimeDamageAI;
+
+cGVarFunction GVar_OnItemTakenAI;
+
+cGVar GVar_HookRange;
+

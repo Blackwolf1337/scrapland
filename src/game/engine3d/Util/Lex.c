@@ -7,11 +7,15 @@
 #include "scrap/e3dutil.h"
 #include "scrap/lex.h"
 
+cLexFile *g_Lex;
+
 /* the inlined read of the next character */
 static int Lex_Getc(void) {
 	CHECK(g_Lex);
 	return crt_fgetc(g_Lex->f);
 }
+
+int g_LexCh = -1;
 
 /* closes the current file and goes on with the including one */
 static void Lex_Pop(void) {
@@ -80,6 +84,10 @@ void Lex_String(void) {
 		g_LexCh = Lex_Getc();
 	}
 }
+
+char g_LexToken[1024];
+
+int g_LexTokenLen;
 
 /* "#inc "file"" */
 void Lex_Directive(void) {
@@ -232,6 +240,8 @@ void Lex_Print(const char *fmt, ...) {
 	va_end(ap);
 }
 
+lexout_t g_LexOut;
+
 void Lex_VPrint(const char *fmt, va_list ap) {
 	char buf[0x400];
 
@@ -324,6 +334,12 @@ int Lex_Peek(void) {
 	CHECK(ch == ch2);
 	return ch;
 }
+
+int g_LexErrors;
+
+int g_LexWarnings;
+
+char g_LexDir[260];
 
 /* relative to the current file first, then to g_LexDir */
 int Lex_Open(const char *name, int escapes) {

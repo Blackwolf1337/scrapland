@@ -15,8 +15,6 @@
 #include "scrap/weapons.h"
 
 #define MOUSE_NAME "Mouse"
-extern char g_MouseLabelBuf[32];	/* 0x20 bytes */
-extern char g_MouseNameBuf[32];	/* 0x20 bytes */
 
 static const char *const mouse_names[6] = { "Right", "Left", "Down", "Up", "WheelUp", "WheelDown" };
 static const char *const mouse_labels[6] = { "PC_Mouse_Right", "PC_Mouse_Left", "PC_Mouse_Down", "PC_Mouse_Up",
@@ -75,6 +73,8 @@ const char *cPcMouse_GetName(cAbstractIDevice *self) {
 	return MOUSE_NAME;
 }
 
+char g_MouseNameBuf[32];
+
 /* "Right" .. "WheelDown", "But1" .. "But4" for the buttons, "Unknow" else */
 const char *cPcMouse_GetEntryName(cAbstractIDevice *self, int entry) {
 	(void)self;
@@ -89,6 +89,8 @@ const char *cPcMouse_GetEntryName(cAbstractIDevice *self, int entry) {
 	snprintf(g_MouseNameBuf, 0x20, "But%d", entry + 1);
 	return g_MouseNameBuf;
 }
+
+char g_MouseLabelBuf[32];
 
 const char *cPcMouse_GetEntryLabel(cAbstractIDevice *self, int entry) {
 	(void)self;
@@ -108,12 +110,16 @@ void cPcMouse_SetDefaults(cAbstractIDevice *self) {
 	Device_SetEntries(self, mouse_defaults, sizeof(mouse_defaults) / sizeof(mouse_defaults[0]));
 }
 
+cPcMouse g_Mouse;
+
 void Mouse_Init(void) {
 	Con_Printf("Input device: %s initialized.\n", MOUSE_NAME);
 	cPcMouse_SetDefaults(&g_Mouse.base);
 	cAbstractIDevice *d = &g_Mouse.base;
 	InputDevices_Add(&g_InputDevices, &d);
 }
+
+exe_mouse_state g_MouseState;
 
 /*
  * The speed is the movement of the last 1/30 second (every frame in the menu); the sensitivity counts in the
@@ -208,3 +214,10 @@ const cAbstractIDeviceVtbl cPcMouse_vftable = {
 	.IsReserved = cPcMouse_IsReserved,
 	.SetEntry = cPcMouse_SetEntry,
 };
+
+cGVar GVar_MouseSensitivityV;
+
+cGVar GVar_MouseSensitivityH;
+
+cGVar GVar_InvertMouse;
+

@@ -16,15 +16,17 @@
 
 extern const cGenCharLocalLogicVtbl cRustyLocalLogic_vftable;
 #define CRUSTYLOCALLOGIC_VFTABLE (&cRustyLocalLogic_vftable.base)
-extern cEntityListData *g_JunkPointsList;
-extern cGVar GVar_JunkPointsListName;
+cGVar GVar_JunkPointsListName;
+
 #define g_JunkPointsListName (GVar_JunkPointsListName.value.s)	/* cString "JunkPointsListName" */
-extern int g_RustyLoops;			/* the working loops done at this point */
-extern cGVar GVar_NumWorkingLoops;
+cGVar GVar_NumWorkingLoops;
+
 #define g_NumWorkingLoops (GVar_NumWorkingLoops.value.i)
-extern cGVar GVar_PlatformRadiusSqr;
+cGVar GVar_PlatformRadiusSqr;
+
 #define g_PlatformRadiusSqr (GVar_PlatformRadiusSqr.value.i)
-extern int s_RustyLastJunkPoint;		/* -1 at the start */
+
+cEntityListData *g_JunkPointsList;
 
 void *cRustyLocalLogic_ctor(void *mem, cEntity *parent) {
 	cRustyLocalLogic *self = mem;
@@ -48,6 +50,8 @@ cLocalLogic *cRustyLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 	}
 	return elem;
 }
+
+int g_RustyLoops;
 
 /* the native at the end of a working loop of the character of that name: after the last one it relaxes */
 void Rusty_LoopDone(cAbstractFile *params) {
@@ -174,6 +178,8 @@ void cRustyLocalLogic_Update(cLocalLogic *elem, float dt) {
 		b->vftable->SetState(&self->base.base.logic, 7, NULL);
 	}
 }
+
+int s_RustyLastJunkPoint = -1;
 
 /* a random junk point other than the last one */
 void cRustyLocalLogic_NextJunk(cRustyLocalLogic *self) {

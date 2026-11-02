@@ -182,3 +182,8 @@ byte cVehicleTraffic_VarV(cVehicleTraffic *self, const char *name, double *x, do
 	}
 	return 0;
 }
+
+cGVar GVar_UseTrafficCollisionSkip;
+
+cGVar GVar_TrafficSpeed;
+

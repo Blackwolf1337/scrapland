@@ -17,7 +17,6 @@
 #include "scrap/misc.h"
 
 /* 1 in the exe: the light map materials keep the blend of CMaterial_Prepare */
-extern byte g_BspQ3LMapNoBlend;
 
 /* ID3DXBaseMesh */
 
@@ -242,6 +241,8 @@ void CBspQ3_ReadFaces(CBspQ3 *self) {
 	}
 }
 
+byte g_BspQ3LMapNoBlend = 1;
+
 void CBspQ3_ReadLMaps(CBspQ3 *self) {
 	char path[MAX_FILEPATH];
 
@@ -329,6 +330,8 @@ int CBspQ3_ReadLump(CBspQ3 *self, int id, void **out, int elem) {
 	*out = BspQ3_LumpCopy(self, id, size);
 	return n;
 }
+
+uint32_t g_BspQ3Attrib[640];
 
 void CBspQ3_Render(CBspQ3 *self) {
 	CHECK(g_pd3dDevice);
@@ -421,6 +424,10 @@ void BspQ3Meshes_Count(BspQ3Meshes *self, BspQ3Face *face, int ntri) {
 	m->nTri += ntri;
 }
 
+byte g_BspQ3VertL[64];
+
+CMeshVert g_BspQ3Vert[64];
+
 void CBspQ3_Build(CBspQ3 *self) {
 	CHECK(!self->MeshD3D);
 	CHECK(!self->MeshList);
@@ -481,6 +488,8 @@ void CBspQ3_Build(CBspQ3 *self) {
 	}
 }
 
+CBspQ3 *g_BspQ3;
+
 void BspQ3_ReleaseD3D(void) {
 	if (g_BspQ3) {
 		CBspQ3_ReleaseD3D(g_BspQ3);
@@ -513,7 +522,8 @@ void BspQ3_Render(void) {
 
 /* the static initializer of a vertex array after g_BspQ3VertL that no code reads */
 #define BSPQ3_VERTG 0x40
-extern Graphic3DVert g_BspQ3VertG[64];	/* [BSPQ3_VERTG] */
+
+Graphic3DVert g_BspQ3VertG[64];
 
 void BspQ3_InitVertG(void) {
 	for (int i = 0; i < BSPQ3_VERTG; i++) {

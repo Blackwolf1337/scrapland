@@ -102,6 +102,10 @@ void cFile2_SkipTo(cFile2 *self, int pos, const char *name) {
 	}
 }
 
+cPackLocation g_PackFound;
+
+HashTable g_PackIndex = { .numSlots = 457 };
+
 /* the instance of cNameItem (value int), the HashTable.h parts in src/game/Global/HashTable.c */
 
 HASHTABLE_STR(NameTable, cNameItem)
@@ -148,6 +152,8 @@ void PackNames_Add(cStringList *list, const cString *str) {
 	DList_LinkFirst(list, node);
 }
 
+cStringList g_PackNames;
+
 /* the cString of the pack being recorded with that name */
 char **PackNames_Find(const char *name) {
 	cStringList *list = (&g_PackNames);
@@ -166,6 +172,10 @@ char **PackNames_Find(const char *name) {
 		}
 	}
 }
+
+cPackEntryList g_PackEntries;
+
+uint32_t g_PackNumEntries;
 
 /* the entry of the build list with that name; the iterator of the list stays on it */
 cPackEntry *PackEntry_Find(const char *name) {
@@ -239,6 +249,14 @@ cAbstractFile *cFilePack_Destroy(cAbstractFile *elem, int flags) {
 	}
 	return elem;
 }
+
+int g_NumPackFiles;
+
+cFile2 g_PackFiles[128];
+
+int g_PackLocked;
+
+void *g_LstFile;
 
 /*
  * name is relative to the open pack (g_PackName). A name in the index is read from its pack, else from disk; while
@@ -607,6 +625,10 @@ int Pack_Extract(const char *dir) {
 
 /* building a pack: the files of filelist.2Bpack, then by mode files found below the directory */
 
+int g_PackDirLen;
+
+int g_PackBuildMode;
+
 /*
  * a file of the walk for Pack_Build. Mode 2 adds everything (2D/ also as .dds), 3 Python files, 2D/Loading/,
  * Sounds/Stream/ and Music/, 4 Sounds/Voices/; other modes everything but .dds. Saves, models, ini, scc, html and
@@ -796,6 +818,8 @@ void Pack_Build(const char *dir, const char *outName, int mode) {
 	cFile_dtor(&in);
 }
 
+HashTable *g_NameTable;
+
 /* the duplicate check of Pack_CheckDuplicates: base names without extension */
 void Pack_AddFileName(const char *path) {
 	char name[0x100];
@@ -890,3 +914,12 @@ const cAbstractFileVtbl cFilePack_vftable = {
 	.Size = cFilePack_Size,
 	.Destroy = cFilePack_Destroy,
 };
+
+cGVar GVar_PathInPackFile;
+
+cGVar GVar_BuildPackPrompt;
+
+cGVar GVar_BuildPackExclude;
+
+cGVar GVar_BuildPackInclude;
+

@@ -488,26 +488,39 @@ void cObjElementFXEMI_SetEntity(cObjElementFXEMI *self, cEntity *e) {
 	self->entity = e;
 }
 
-extern cGVar GVar_FXEMIFollowTime;
+cGVar GVar_FXEMIFollowTime;
+
 #define g_FXEMIFollowTime (GVar_FXEMIFollowTime.value.f)
-extern cGVar GVar_FXEMIRandRadius;
+cGVar GVar_FXEMIRandRadius;
+
 #define g_FXEMIRandRadius (GVar_FXEMIRandRadius.value.f)
-extern cGVar GVar_FXEMIStepTime;
+cGVar GVar_FXEMIStepTime;
+
 #define g_FXEMIStepTime (GVar_FXEMIStepTime.value.f)
-extern cGVar GVar_EMIThunder1Sound;
+cGVar GVar_EMIThunder1Sound;
+
 #define g_EMIThunder1Sound (GVar_EMIThunder1Sound.value.s)
-extern cGVar GVar_EMIThunder2Sound;
+cGVar GVar_EMIThunder2Sound;
+
 #define g_EMIThunder2Sound (GVar_EMIThunder2Sound.value.s)
-extern cGVar GVar_EMIThunderSoundAttIni;
+cGVar GVar_EMIThunderSoundAttIni;
+
 #define g_EMIThunderSoundAttIni (GVar_EMIThunderSoundAttIni.value.f)
-extern cGVar GVar_EMIThunderSoundAttEnd;
+cGVar GVar_EMIThunderSoundAttEnd;
+
 #define g_EMIThunderSoundAttEnd (GVar_EMIThunderSoundAttEnd.value.f)
-extern cGVar GVar_EMIThunderSoundVol;
+cGVar GVar_EMIThunderSoundVol;
+
 #define g_EMIThunderSoundVol (GVar_EMIThunderSoundVol.value.f)
 #define FXEMI_RAMPS 0x430888		/* 3 color ramps of 9 colors: 0..1 for most, 1..2 for the last glow */
 #define FXEMI_ENTITIES 0x13		/* the entity lists the bolts hit */
 
-extern uint32_t EMI_Emit_430888[28];
+uint32_t EMI_Emit_430888[28] = {
+	0xffb9b9ed, 0xa4b5b5f0, 0x80b2b2f2, 0x60afaff5, 0x80aaaaf9, 0xa4a7a7fc, 0xc0a3a3ff, 0xffa3a3ff, 0xffa3a3ff,
+	0xff7d73ed, 0xa47979f0, 0x807676f2, 0x607373f5, 0x806e6ef9, 0xa46b6bfc, 0xc06767ff, 0xff6767ff, 0xff6767ff,
+	0xff47e2e2, 0x803bb9ff, 0x603ea4ff, 0x404296ff, 0x604787ff, 0x804a7eff, 0xc04165db, 0xff000000, 0xff000000,
+};
+
 static uint32_t *EMI_Ramp(int first) {
 	return EMI_Emit_430888 + (first + (crt_rand() & 1)) * 9;
 }
@@ -1170,8 +1183,13 @@ static inline float FXCM_Smooth(float f) {
 	return (3.0f - (f + f)) * (f * f);
 }
 
+uint32_t FXDebrisCloud_Puff_4308f8[28] = {
+	0xff000000, 0xd0110f0d, 0xb4252321, 0xb4252321, 0xb4252321, 0xb4252321, 0xd0110f0d, 0xff000000, 0xff000000,
+	0xff000000, 0xd7171411, 0xbe302d2a, 0xbe302d2a, 0xbe302d2a, 0xbe302d2a, 0xd7171411, 0xff000000, 0xff000000,
+	0xff000000, 0xe11d1915, 0xc83b3733, 0xc83b3733, 0xc83b3733, 0xc83b3733, 0xe11d1915, 0xff000000, 0xff000000,
+};
+
 /* a puff of debris from the center out along a random direction (scale: a random factor rounded to tenths) */
-extern uint32_t FXDebrisCloud_Puff_4308f8[28];
 static void FXDebrisCloud_Puff(cObjElementFXDebrisCloud *self, float size, double kRange, double kAdd, double rotRange,
 	double rotAdd, double lifeRange, double lifeAdd, float sizeLo, float sizeHi, double endRange, double endAdd,
 	int sprite) {
@@ -1505,3 +1523,16 @@ const cObjElementFXVtbl cObjElementFXDebrisCloud_vftable = {
 	.Start = cObjElementFXDebrisCloud_Start,
 	.Reset = cObjElementFXDebrisCloud_Reset,
 };
+
+cGVar GVar_EMILowRadiusFactor;
+
+cGVar GVar_FXHookFadeTime;
+
+cGVar GVar_FXHookSize;
+
+cGVar GVar_LaserHookSparksFile;
+
+cGVar GVar_FXHookTensor;
+
+cGVar GVar_FXSonicRadius;
+

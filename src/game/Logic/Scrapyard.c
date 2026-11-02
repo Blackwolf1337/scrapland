@@ -26,29 +26,37 @@ extern const cLocalLogicVtbl cScrapyardLocalLogic_vftable;
 #define SHIPGROUP_ONAIEND 0x157e60
 #define SHIPGROUP_MAX_FOUND 10
 
-extern cGVar GVar_MaxMosquitosDist;
+cGVar GVar_MaxMosquitosDist;
+
 #define g_MaxMosquitosDist (GVar_MaxMosquitosDist.value.f)
-extern cGVar GVar_MaxMosquitos;
+cGVar GVar_MaxMosquitos;
+
 #define g_MaxMosquitos (GVar_MaxMosquitos.value.i)
-extern cGVar GVar_MinPercMosquitosAttackingIntruder;
+cGVar GVar_MinPercMosquitosAttackingIntruder;
+
 #define g_MinPercMosquitosAttackingIntruder (GVar_MinPercMosquitosAttackingIntruder.value.f)
-extern cGVar GVar_MosquitosTriggeredShipName;
+cGVar GVar_MosquitosTriggeredShipName;
+
 #define g_MosquitosTriggeredShipName (GVar_MosquitosTriggeredShipName.value.s)
-extern cGVar GVar_MaxMadHuntersDist;
+cGVar GVar_MaxMadHuntersDist;
+
 #define g_MaxMadHuntersDist (GVar_MaxMadHuntersDist.value.f)
-extern cGVar GVar_MaxMadHunters;
+cGVar GVar_MaxMadHunters;
+
 #define g_MaxMadHunters (GVar_MaxMadHunters.value.i)
-extern cGVar GVar_MinPercMadHuntersAttackingIntruder;
+cGVar GVar_MinPercMadHuntersAttackingIntruder;
+
 #define g_MinPercMadHuntersAttackingIntruder (GVar_MinPercMadHuntersAttackingIntruder.value.f)
-extern cGVar GVar_MadHuntersTriggeredShipName;
+cGVar GVar_MadHuntersTriggeredShipName;
+
 #define g_MadHuntersTriggeredShipName (GVar_MadHuntersTriggeredShipName.value.s)
-extern cGVar GVar_OnMosquitoDeathMoney;
+cGVar GVar_OnMosquitoDeathMoney;
+
 #define g_OnMosquitoDeathMoney (GVar_OnMosquitoDeathMoney.value.i)
-extern cGVar GVar_OnMadHunterDeathMoney;
+cGVar GVar_OnMadHunterDeathMoney;
+
 #define g_OnMadHunterDeathMoney (GVar_OnMadHunterDeathMoney.value.i)
 /* the ships the sphere native found around a lair */
-extern int g_ShipGroupFound;
-extern cEntity * g_ShipGroupShips[10];	/* [SHIPGROUP_MAX_FOUND] */
 /* the callback of the AI when the move ends (rva 0x15c of the AI) */
 #define AIV_OnEnd(ai) (((cAIVehicle *)(ai))->onArrive)
 
@@ -131,6 +139,10 @@ static cShipGroup *ShipGroup_Of(cEntity *e) {
 	}
 	return &g_pWorld->logic.madHunters;
 }
+
+int g_ShipGroupFound;
+
+cEntity *g_ShipGroupShips[10];
 
 void cShipGroupData_Think(cShipGroupData *self) {
 	vec3_t tmp;

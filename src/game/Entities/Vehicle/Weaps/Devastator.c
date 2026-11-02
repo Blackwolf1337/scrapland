@@ -51,6 +51,19 @@ static inline float Dev_RandSym(float r) {
 	return (float)(Weap_Rand01() * (double)(r - lo) + (double)lo);
 }
 
+char g_DevShooter[128];
+
+char g_DevVictim[128];
+
+vec3_t g_DevCenter;
+
+uint32_t g_DevColorRamps[36] = {
+	0x60ffffff, 0x60ffffff, 0x60ffffff, 0x60ffffff, 0x80ffffff, 0x80ffffff, 0xc0808080, 0xff000000, 0xff000000,
+	0x80ffffc8, 0x80ffffc8, 0x80ffffc8, 0x80ffffc8, 0x80ffffc8, 0x80ffffc8, 0xc080805c, 0xff000000, 0xff000000,
+	0x80ffc0c0, 0x80ffc0c0, 0x80ffc0c0, 0x80ffc0c0, 0x80ffc0c0, 0x80ffc0c0, 0xc0808080, 0xff000000, 0xff000000,
+	0x80ffc080, 0x80ffc080, 0x80ffaf80, 0x80ffa480, 0x80ff9a6a, 0x80ff8c5c, 0xc0807840, 0xff000000, 0xff000000,
+};
+
 /* "!DevastatorCreate" (vehicle, hit point into (&g_DevCenter), entity hit, shot number): the shot of the next mounted
  * slot (a bullet for a player), then where the effects are visible the explosion particles on the floor at the hit,
  * the shot trail and the sparks, the damage of the sphere around the hit (not on a net client) and the boom */
@@ -706,3 +719,60 @@ void Inferno_ClientFireNet(cAbstractFile *params) {
 	cAbstractFile_ReadString(params, name, 0x80);
 	Inferno_Shoot(name);
 }
+
+cGVar GVar_DevastatorIDWeap;
+
+cGVar GVar_DevastatorBulletFile;
+
+cGVar GVar_FXDevastatorDistance;
+
+cGVar GVar_DevastatorRechargeTime;
+
+cGVar GVar_DevastatorExplosionRadius;
+
+cGVar GVar_DevastatorExtraDamage;
+
+cGVar GVar_DevastatorHitForce;
+
+cGVar GVar_DevastatorIDAmmo;
+
+cPy_NativeFunc NativeFunc_DevastatorXplosionCall;
+
+cGVar GVar_DevastatorShootFile;
+
+cGVar GVar_DevastatorBoomSoundVol;
+
+cGVar GVar_DevastatorMinDamage;
+
+cGVar GVar_DevastatorSpreadAngle;
+
+cGVar GVar_FXDevastatorRadius;
+
+cGVar GVar_DevastatorRange;
+
+cGVar GVar_DevastatorSparksFile;
+
+cGVar GVar_DevastatorBoomSoundAttEnd;
+
+cGVar GVar_DevastatorHitFile;
+
+cGVar GVar_DevastatorBoomSound;
+
+cGVar GVar_FXDevastatorScale;
+
+cGVar GVar_DevastatorAmmoCost;
+
+cGVar GVar_DevastatorBoomSoundAttIni;
+
+cGVarFunction GVar_CreateEMIFunc;
+
+cGVar GVar_EMIRechargeTime;
+
+cGVar GVar_EMIAmmoNeed;
+
+cGVarFunction GVar_SetUpEMIFunc;
+
+cGVar GVar_EMILifeTime;
+
+cGVar GVar_EMIIDAmmo;
+

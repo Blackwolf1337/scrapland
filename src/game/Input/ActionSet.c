@@ -15,8 +15,6 @@
 #define INPUTACTION_DTOR 0x139430
 #define ACTIONSET_CTOR 0x1392b0
 #define ACTIONSET_DTOR 0x139480
-extern const char VK_STANDARD[80];	/* "ABC...xyz 0123456789.:,;-!\"&/()=?\b\n" */
-extern const char VK_CONSOLE[108];	/* the same with the console signs */
 
 #define CPYFUNCTION_CTOR 0x192170
 #define CPYFUNCTION_DTOR 0x192200
@@ -213,6 +211,8 @@ cActionSet *cActionSet_Delete(cActionSet *s, uint32_t flags) {
 	return s;
 }
 
+cVirtualKeyboard g_VirtualKeyboard;
+
 /* the accept key on the virtual keyboard: the character under the cursor typed, once per press */
 void cPlayerInput_PressKey(cPlayerInput *in, int player) {
 	if (in->keyDown) {
@@ -262,6 +262,8 @@ void cActionSet_HoldPressed(cActionSet *s) {
 		}
 	}
 }
+
+uint32_t g_CurActionSet = 0xffffffff;
 
 uint32_t Input_GetActionSet(void) {
 	return g_CurActionSet;
@@ -554,6 +556,10 @@ cVirtualKeyboard *cVirtualKeyboard_ctor(cVirtualKeyboard *vk) {
 	return vk;
 }
 
+const char VK_STANDARD[80] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz 0123456789.:,;-!\"&/()=?\010\n";
+
+const char VK_CONSOLE[108] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\\#@|$%=':+*~{_}[]<>^\t`ñÑ¿¡ 0123456789.:,;-!\"&/()=?\010\n";
+
 /* "Standard", "Numbers" or "Console"; 0 for another name (the grid stays) */
 byte cVirtualKeyboard_Set(cVirtualKeyboard *vk, const char *text) {
 	byte ok = 1;
@@ -630,3 +636,6 @@ byte cActionSet_AnyActive(cActionSet *s) {
 	}
 	return 0;
 }
+
+cGVar GVar_LogRumble;
+

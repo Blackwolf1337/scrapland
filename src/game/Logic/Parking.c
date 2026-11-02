@@ -16,20 +16,23 @@
 #include "scrap/world.h"
 #include "scrap/weapons.h"
 
-extern cGVarFunction GVar_OnParkedOut;
-extern cGVarFunction GVar_OnParkingOccupied;
 
-extern cGVar GVar_ParkingCheckRadius;
+cGVar GVar_ParkingCheckRadius;
+
 #define g_ParkingCheckRadius (GVar_ParkingCheckRadius.value.f)
-extern cGVar GVar_ParkingCharCheckDistance;
+cGVar GVar_ParkingCharCheckDistance;
+
 #define g_ParkingCharCheckDistance (GVar_ParkingCharCheckDistance.value.f)
-extern cGVar GVar_ParkingVehicleCheckDistance;
+cGVar GVar_ParkingVehicleCheckDistance;
+
 #define g_ParkingVehicleCheckDistance (GVar_ParkingVehicleCheckDistance.value.f)
+cGVarFunction GVar_OnParkedOut;
+
 #define g_OnParkedOut (((cPy_Function *)&GVar_OnParkedOut.func))
+cGVarFunction GVar_OnParkingOccupied;
+
 #define g_OnParkingOccupied (((cPy_Function *)&GVar_OnParkingOccupied.func))
 /* what the sphere native found: a ship, else the last other entity */
-extern cEntity *g_ParkingShip;
-extern cEntity *g_ParkingOther;
 #define PARKING_NATIVE 0x155ed0
 #define PARKING_FARTHER 0x155e90
 #define PARKING_NEARER 0x155eb0
@@ -148,6 +151,10 @@ static cParkingZone *Parking_Next(cParkingList *list) {
 	list->iter = n;
 	return n ? &n->zone : NULL;
 }
+
+cEntity *g_ParkingShip;
+
+cEntity *g_ParkingOther;
 
 /* the ship (ParkingShip) or other entity (ParkingOther) in the zone, of the ParkingCheckRadius sphere */
 static void Parking_Look(const cParkingZone *z) {

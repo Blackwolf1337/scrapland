@@ -15,8 +15,9 @@
 extern const cMapElementVtbl cMapElement_vftable;
 #define CMAPELEMENT_VFTABLE (&cMapElement_vftable)
 
+cGVar GVar_ElementModelPath;
+
 /* ElementModelPath, the folder of the element models (a cString, "Models/Elements/") */
-extern cGVar GVar_ElementModelPath;
 #define g_ElementModelPath (GVar_ElementModelPath.value.s)
 
 /* ---- cMapElement ---- */

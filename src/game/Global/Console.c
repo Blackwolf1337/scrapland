@@ -12,14 +12,11 @@
 #include "scrap/game.h"
 #include "scrap/platform.h"
 
-extern void *g_LogFile;
-extern void *g_LogAIFile;
-extern int g_ConCol;
-extern cGVar GVar_LogFile;
+cGVar GVar_LogFile;
+
 #define g_LogName (GVar_LogFile.value.s)
-extern uint32_t g_LastError;
-extern char g_ConBuf[1024];		/* 0x400, the text of the printf functions */
-extern cGVar GVar_AlwaysFlushLog;
+cGVar GVar_AlwaysFlushLog;
+
 #define g_LogFlush (GVar_AlwaysFlushLog.value.i)		/* flush the logs after every text */
 
 #define CON_COLOR_BLUE 0xff
@@ -90,6 +87,12 @@ void DebugLog_Write(const char *text, uint32_t color, void *f) {
 	}
 }
 
+cConLine g_ConLines[23];
+
+int g_ConLine;
+
+int g_ConCol;
+
 /* the text into the ring of console lines; a line takes up to 127 characters, more are cut */
 static void Con_AddLines(const char *text, uint32_t color) {
 	cConLine *lines = g_ConLines;
@@ -113,12 +116,18 @@ static void Con_AddLines(const char *text, uint32_t color) {
 	g_ConCol += (int)strlen(rest);
 }
 
+void *g_LogFile;
+
+void *g_LogAIFile;
+
 static void Con_Output(const char *text, uint32_t color) {
 	ConsoleWin_Add(text, color);
 	DebugLog_Write(text, color, g_LogFile);
 	DebugLog_Write(text, color, g_LogAIFile);
 	Con_AddLines(text, color);
 }
+
+char g_ConBuf[1024];
 
 /* printf into g_ConBuf and out in color */
 static void Con_VOutput(uint32_t color, const char *fmt, va_list ap) {
@@ -137,6 +146,8 @@ static void Con_VOutput(uint32_t color, const char *fmt, va_list ap) {
 	}
 
 #define LEVEL g_DebugLevel
+uint32_t g_LastError;
+
 CON_PRINTF(Con_Printf, 0, LEVEL != 0)
 CON_PRINTF(Con_Bluef, CON_COLOR_BLUE, LEVEL != 0)
 CON_PRINTF(Con_Errorf, CON_COLOR_ERROR, LEVEL != 0)
@@ -277,3 +288,6 @@ void CheckFailed(const char *expr, const char *file, const char *date, int line)
 	}
 	Con_Fatal(msg);
 }
+
+cGVar GVar_debug;
+

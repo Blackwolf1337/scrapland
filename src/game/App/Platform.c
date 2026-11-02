@@ -767,3 +767,6 @@ int Plat_VulkanSurface(void *instance, void *surface) {
 	}
 	return 1;
 }
+
+cGVar GVar_InactiveBackgroundApp;
+

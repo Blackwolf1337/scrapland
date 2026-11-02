@@ -8,6 +8,8 @@
 #include "scrap/fxelements.h"
 #include "scrap/scrapcollision.h"
 
+cEntity *g_MayorEnt;
+
 /* params: the listener, an event, a float. It stops listening (its logic goes on, Relax) unless its mayor still
  * talks near it and in sight */
 void ChType_ListeningMayor(cAbstractFile *params) {
@@ -119,3 +121,10 @@ sleep:
 	}
 	cActCtrl_Play(ChType_ActCtrl(e), "Dazed", 1, 10.0f);
 }
+
+cGVar GVar_MayorListenPercent;
+
+cGVar GVar_MayorSleepPercent;
+
+cGVar GVar_MayorBlabliblaRadius;
+

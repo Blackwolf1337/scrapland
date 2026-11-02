@@ -593,3 +593,30 @@ const cGenCharLocalLogicVtbl cGenCharLocalLogic_vftable = {
 	.GoTo = cGenCharLocalLogic_GoTo,
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };
+
+cGVarFunction GVar_OnDefStateCallback;
+
+cGVar GVar_GenCharAcuseAgainTime;
+
+cGVar GVar_GenCharRobberyDetection;
+
+cGVar GVar_GenCharAlertSpeed;
+
+cGVar GVar_GenCharAcuseTime;
+
+cGVar GVar_GenCharSpecialChaseSpeed;
+
+cGVar GVar_GenCharAttackSpeed;
+
+cGVar GVar_GenCharGetAwayTime;
+
+cGVar GVar_GenCharAttackLimit;
+
+cGVar GVar_GenCharPoliceRefuse;
+
+cGVar GVar_GenCharEscapeSpeed;
+
+cGVar GVar_GenCharMaxSpecialActionTime;
+
+cGVar GVar_GenCharMinSpecialActionTime;
+

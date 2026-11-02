@@ -22,26 +22,24 @@ int Vec3_Differ(const float *a, const float *b);
 
 
 /* set while a material is deleted: the textures without references go too */
-extern int g_TexDeleteUnused;
-extern int g_AnimCycleDefault;
+cGVar GVar_DDS_MarkSource;
+
 /* engine variables DDS_MarkSource, LoadTextures, DDS_CheckMark, MatEmissive, DDS_UseTextures */
-extern cGVar GVar_DDS_MarkSource;
 #define g_DDSMarkSource (GVar_DDS_MarkSource.value.i)
-extern cGVar GVar_LoadTextures;
+cGVar GVar_LoadTextures;
+
 #define g_LoadTextures (GVar_LoadTextures.value.i)
-extern cGVar GVar_DDS_CheckMark;
+cGVar GVar_DDS_CheckMark;
+
 #define g_DDSCheckMark (GVar_DDS_CheckMark.value.i)
-extern cGVar GVar_MatEmissive;
+cGVar GVar_MatEmissive;
+
 #define g_MatEmissive (GVar_MatEmissive.value.f)
-extern cGVar GVar_DDS_UseTextures;
+cGVar GVar_DDS_UseTextures;
+
 #define g_DDSUseTextures (GVar_DDS_UseTextures.value.i)
-extern char g_TexturePaths[10][MAX_FILEPATH];
-extern char g_TextureExts[10][MAX_FILEPATH];
-extern char g_MatStr[256];
 extern int g_ShadowsStencil;
 #define g_LightmapsHigh g_ShadowsStencil
-extern float g_AnimFpsDefault;
-extern uint32_t g_BlendTable[6];
 extern int g_MaxLightmap;
 
 #define BLEND_MODES 6
@@ -97,6 +95,8 @@ CTextStatic *CTextStatic_ctor(CTextStatic *self) {
 	self->Hint = NULL;
 	return self;
 }
+
+int g_TexDeleteUnused;
 
 void CTextStatic_dtor(CTextStatic *self) {
 	if (!Texture_Release(self->Hint) && g_TexDeleteUnused) {
@@ -171,6 +171,11 @@ CMaterial *CMaterial_Delete(CMaterial *self, byte flags) {
 	}
 	return self;
 }
+
+SD_SYM(CMatList_vftable);
+CMatList g_MatList = { .vftable = (void *)sd_CMatList_vftable };
+
+uint32_t g_BlendTable[6] = { 1, 2, 3, 4, 5, 6 };
 
 void Mat_ConvertBlend(uint32_t *mode, byte toFile, byte legacy) {
 	if (legacy) {
@@ -454,6 +459,8 @@ byte Mat_CompareNames(const CMaterial *a, const CMaterial *b) {
 	return 1;
 }
 
+char g_MatStr[256];
+
 const char *Mat_Str(const CMaterial *m) {
 	if (m) {
 		Bprintf(g_MatStr, 0x100, "%s [%s]", m->Name, m->map[0] ? m->map[0]->Name : NULL);
@@ -483,6 +490,8 @@ void CMatList_Add(CMatList *self, CMaterial *mat) {
 	self->last = mat;
 	mat->Refs++;
 }
+
+char g_TextureExts[10][MAX_FILEPATH];
 
 void Tex_AddExtension(const char *ext) {
 	char tmp[0x114];
@@ -533,6 +542,8 @@ void Tex_AddExtension(const char *ext) {
 	}
 	E3D_LogDebug((&g_FileLog), "DBG: ExtensTexturas%d: '%s'", i + 1, d);
 }
+
+char g_TexturePaths[10][MAX_FILEPATH];
 
 void Tex_AddPath(const char *path) {
 	int i;
@@ -714,6 +725,10 @@ char *CMap_ResolvePath(CMap *self, byte load, CMap *alpha) {
 	}
 	return self->path;
 }
+
+int g_AnimCycleDefault;
+
+float g_AnimFpsDefault = 25.0f;
 
 void CMap_LoadTexture(CMap *self, void *dev, CMap *alpha, int kind) {
 	char buf[MAX_FILEPATH];

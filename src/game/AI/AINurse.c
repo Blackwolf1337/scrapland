@@ -201,3 +201,8 @@ const cAICharVtbl cAINurse_vftable = {
 	.CheckTalk = cAIChar_CheckTalk,
 	.Facing = cAIChar_Facing,
 };
+
+cGVar GVar_DistActionNurseAI;
+
+cGVar GVar_OffsetMoveNurseAI;
+

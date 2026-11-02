@@ -22,6 +22,8 @@ static float Rad_Float(uint32_t bits) {
 	return f;
 }
 
+int g_BspNumLinks;
+
 BspLink *BspLink_ctor(BspLink *self, BspLink *next, BspRegion *region, float ff) {
 	g_BspNumLinks++;
 	self->next = next;
@@ -42,7 +44,8 @@ RadAreaLight *RadAreaLight_ctor(RadAreaLight *self) {
 	return self;
 }
 
-extern char str_432a88[16];
+char str_432a88[16] = "luces.rad";
+
 CRadiosity *CRadiosity_ctor(CRadiosity *self, const char *dir) {
 	char name[MAX_FILEPATH];
 
@@ -301,6 +304,8 @@ byte CRadiosity_GetColor(CRadiosity *self, CMaterial *Mat, void *dest) {
 byte CRadiosity_ReadMatWarn(CRadiosity *self, CMaterial *Mat, RadAreaLight *dest) {
 	return Rad_Warn(Mat, CRadiosity_ReadMat(self, Mat, dest));
 }
+
+CTable g_RadNormals;
 
 vec3_t *Rad_Normals(uint32_t *num) {
 	CTable *t = &g_RadNormals;

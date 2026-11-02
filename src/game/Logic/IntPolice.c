@@ -603,3 +603,14 @@ void AICtrl_SentinelDeath(cAbstractFile *params) {
 	g_pWorld->logic.aiCtrl.watchTime = 0.0f;
 	AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, p);
 }
+
+cGVarFunction GVar_CreatePolice;
+
+cGVar GVar_PoliceLogicBelligerant;
+
+cGVarFunction GVar_CreateGear;
+
+cGVar GVar_SentinelNextGotoTime;
+
+cGVar GVar_SentinelAbortyNPCAttDist;
+

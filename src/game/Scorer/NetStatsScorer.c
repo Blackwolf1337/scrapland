@@ -40,6 +40,10 @@ int cNetStatsScorer_Var(cScorerItem *base, const char *name, int set, char **s, 
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
+int g_NetStatSentSlot;
+
+int g_NetStatSent;
+
 void cNetStatsScorer_Draw(cScorerItem *base, int player) {
 	cNetStatsScorer *self = (cNetStatsScorer *)base;
 	cScorerItem *it = &self->base;
@@ -125,3 +129,12 @@ const cScorerItemVtbl cNetStatsScorer_vftable = {
 	.Var = cNetStatsScorer_Var,
 	.Delete = cNetStatsScorer_Delete,
 };
+
+cGVar GVar_ShowNetStatus;
+
+cGVar GVar_ShowClientPing;
+
+cGVar GVar_ClientPingY;
+
+cGVar GVar_ClientPingX;
+

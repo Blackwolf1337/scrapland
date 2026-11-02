@@ -255,5 +255,240 @@ PyObject *SSound_VoiceRemain(PyObject *self, PyObject *args) {
 	return Py_BuildValue("d", result);
 }
 
-extern PyMethodDef SSound_methods[18];
+SD_SYM(str_PyMethod_SSound_LoadSound);
+SD_SYM(SSound_LoadSound);
+SD_SYM(str_PyDoc_SSound_LoadSound);
+SD_SYM(str_PyMethod_SSound_PlaySound);
+SD_SYM(SSound_PlaySound);
+SD_SYM(str_PyDoc_SSound_PlaySound);
+SD_SYM(str_PyMethod_SSound_Play);
+SD_SYM(SSound_Play);
+SD_SYM(str_PyDoc_SSound_Play);
+SD_SYM(str_PyMethod_SSound_StopAllSounds);
+SD_SYM(SSound_StopAllSounds);
+SD_SYM(str_PyDoc_SSound_StopAllSounds);
+SD_SYM(str_PyMethod_SSound_SetPS);
+SD_SYM(SSound_SetPS);
+SD_SYM(str_PyDoc_SSound_SetPS);
+SD_SYM(str_PyMethod_SSound_GetPS);
+SD_SYM(SSound_GetPS);
+SD_SYM(str_PyDoc_SSound_GetPS);
+SD_SYM(str_PyMethod_SSound_UsePS);
+SD_SYM(SSound_UsePS);
+SD_SYM(str_PyDoc_SSound_UsePS);
+SD_SYM(str_PyMethod_SSound_CreatePS);
+SD_SYM(SSound_CreatePS);
+SD_SYM(str_PyDoc_SSound_CreatePS);
+SD_SYM(str_PyMethod_SSound_SetMusic);
+SD_SYM(SSound_SetMusic);
+SD_SYM(str_PyDoc_SSound_SetMusic);
+SD_SYM(str_PyMethod_SSound_SetMusicVolume);
+SD_SYM(SSound_SetMusicVolume);
+SD_SYM(str_PyDoc_SSound_SetMusicVolume);
+SD_SYM(str_PyMethod_SSound_OpenVoice);
+SD_SYM(SSound_OpenVoice);
+SD_SYM(str_PyDoc_SSound_OpenVoice);
+SD_SYM(str_PyMethod_SSound_PlayVoice);
+SD_SYM(SSound_PlayVoice);
+SD_SYM(str_PyDoc_SSound_PlayVoice);
+SD_SYM(str_PyMethod_SSound_StopVoice);
+SD_SYM(SSound_StopVoice);
+SD_SYM(str_PyDoc_SSound_StopVoice);
+SD_SYM(str_PyMethod_SSound_VoiceRemain);
+SD_SYM(SSound_VoiceRemain);
+SD_SYM(str_PyDoc_SSound_VoiceRemain);
+SD_SYM(str_PyMethod_SSound_SetVoiceVolume);
+SD_SYM(SSound_SetVoiceVolume);
+SD_SYM(str_PyDoc_SSound_SetVoiceVolume);
+SD_SYM(str_PyMethod_SSound_SetVoiceString);
+SD_SYM(SSound_SetVoiceString);
+SD_SYM(str_PyDoc_SSound_SetVoiceString);
+SD_SYM(str_PyMethod_SSound_DeleteAllSounds);
+SD_SYM(SSound_DeleteAllSounds);
+SD_SYM(str_PyDoc_SSound_DeleteAllSounds);
+PyMethodDef SSound_methods[18] = {
+	{
+		.ml_name = (void *)sd_str_PyMethod_SSound_LoadSound,
+		.ml_meth = (void *)sd_SSound_LoadSound,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SSound_LoadSound,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SSound_PlaySound,
+		.ml_meth = (void *)sd_SSound_PlaySound,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SSound_PlaySound,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SSound_Play,
+		.ml_meth = (void *)sd_SSound_Play,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SSound_Play,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SSound_StopAllSounds,
+		.ml_meth = (void *)sd_SSound_StopAllSounds,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SSound_StopAllSounds,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SSound_SetPS,
+		.ml_meth = (void *)sd_SSound_SetPS,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SSound_SetPS,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SSound_GetPS,
+		.ml_meth = (void *)sd_SSound_GetPS,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SSound_GetPS,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SSound_UsePS,
+		.ml_meth = (void *)sd_SSound_UsePS,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SSound_UsePS,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SSound_CreatePS,
+		.ml_meth = (void *)sd_SSound_CreatePS,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SSound_CreatePS,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SSound_SetMusic,
+		.ml_meth = (void *)sd_SSound_SetMusic,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SSound_SetMusic,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SSound_SetMusicVolume,
+		.ml_meth = (void *)sd_SSound_SetMusicVolume,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SSound_SetMusicVolume,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SSound_OpenVoice,
+		.ml_meth = (void *)sd_SSound_OpenVoice,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SSound_OpenVoice,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SSound_PlayVoice,
+		.ml_meth = (void *)sd_SSound_PlayVoice,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SSound_PlayVoice,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SSound_StopVoice,
+		.ml_meth = (void *)sd_SSound_StopVoice,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SSound_StopVoice,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SSound_VoiceRemain,
+		.ml_meth = (void *)sd_SSound_VoiceRemain,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SSound_VoiceRemain,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SSound_SetVoiceVolume,
+		.ml_meth = (void *)sd_SSound_SetVoiceVolume,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SSound_SetVoiceVolume,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SSound_SetVoiceString,
+		.ml_meth = (void *)sd_SSound_SetVoiceString,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SSound_SetVoiceString,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SSound_DeleteAllSounds,
+		.ml_meth = (void *)sd_SSound_DeleteAllSounds,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SSound_DeleteAllSounds,
+	},
+};
+
 SD_PY_MODULE(SSound, 0x42f558)
+
+const char str_PyMethod_SSound_LoadSound[] = "LoadSound";
+
+const char str_PyMethod_SSound_PlaySound[] = "PlaySound";
+
+const char str_PyMethod_SSound_Play[] = "Play";
+
+const char str_PyMethod_SSound_StopAllSounds[] = "StopAllSounds";
+
+const char str_PyMethod_SSound_SetPS[] = "SetPS";
+
+const char str_PyMethod_SSound_GetPS[] = "GetPS";
+
+const char str_PyMethod_SSound_UsePS[] = "UsePS";
+
+const char str_PyMethod_SSound_CreatePS[] = "CreatePS";
+
+const char str_PyMethod_SSound_SetMusic[] = "SetMusic";
+
+const char str_PyMethod_SSound_SetMusicVolume[] = "SetMusicVolume";
+
+const char str_PyMethod_SSound_OpenVoice[] = "OpenVoice";
+
+const char str_PyMethod_SSound_PlayVoice[] = "PlayVoice";
+
+const char str_PyMethod_SSound_StopVoice[] = "StopVoice";
+
+const char str_PyMethod_SSound_VoiceRemain[] = "VoiceRemain";
+
+const char str_PyMethod_SSound_SetVoiceVolume[] = "SetVoiceVolume";
+
+const char str_PyMethod_SSound_SetVoiceString[] = "SetVoiceString";
+
+const char str_PyMethod_SSound_DeleteAllSounds[] = "DeleteAllSounds";
+
+char str_PyDoc_SSound_SetVoiceVolume[] = "SetVoiceVolume(channel,volume) : set the volume of a voice.";
+
+char str_PyDoc_SSound_CreatePS[] = "CreatePS(Name) : Crea un nuevo sonido posicional";
+
+char str_PyDoc_SSound_SetVoiceString[] =
+	"SetVoiceString(channel,volume) : set string user data of a voice.";
+
+char str_PyDoc_SSound_DeleteAllSounds[60] = "SCRAP_DeleteAllSounds() : elimina todos los sonidos.";
+
+char str_PyDoc_SSound_LoadSound[] =
+	"LoadSound(soundfile) : carga un sonido desde un archivo empaquetado.";
+
+char str_PyDoc_SSound_PlaySound[] =
+	"PlaySound((x,y,z),'soundname',vol[,AttenIni,AttenEnd,Doppler]) : ejecuta un sonido en la posicion da"
+	"da con el volumen deseado.";
+
+char str_PyDoc_SSound_Play[] =
+	"Play('soundname'[,vol,pan]) : ejecuta un sonido con el volumen deseado.";
+
+char str_PyDoc_SSound_StopAllSounds[] = "SCRAP_StopAllSounds() : para todos los sonidos.";
+
+char str_PyDoc_SSound_SetPS[] =
+	"SetPS(name,varname,value) :  Modifica el valor de una variable de un sonido posicional";
+
+char str_PyDoc_SSound_GetPS[] =
+	"GetPS(name,varname) :  Obtiene el valor de una variable de un sonido posicional";
+
+char str_PyDoc_SSound_UsePS[] = "UsePS(Name) : Crea un nuevo sonido posicional";
+
+char str_PyDoc_SSound_SetMusic[] =
+	"SetMusic('soundname'[,vol]) : set the file of the background music.";
+
+char str_PyDoc_SSound_SetMusicVolume[] =
+	"SetMusicVolume(vel) : set the volume of the background music.";
+
+char str_PyDoc_SSound_OpenVoice[60] = "OpenVoice(name,channel) : Preload a voice on a channel.";
+
+char str_PyDoc_SSound_PlayVoice[] =
+	"PlayVoice(channel) : play a voice loaded on the specified channel.";
+
+char str_PyDoc_SSound_StopVoice[] = "StopVoice(channel) : stop a voice on the specified channel.";
+
+char str_PyDoc_SSound_VoiceRemain[72] =
+	"VoiceRemain(channel,time) : return the remaining time of a voice.";
+

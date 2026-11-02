@@ -50,6 +50,10 @@ static void Stencil_RS(uint32_t state, uint32_t value) {
 	Rd_DevSetRenderState(dev, state, value);
 }
 
+StencilBlock *g_StencilBlock;
+
+int g_StencilGroups;
+
 void StencilBlock_SetLights(byte on) {
 	for (int i = 0; i < g_StencilGroups; i++) {
 		CHECK(g_StencilBlock[i].Light);
@@ -69,11 +73,14 @@ void Stencil_DebugLine(const vec3_t *a, const vec3_t *b, uint32_t color) {
 
 #define STENCIL_MAX_SEGS 0x2000
 #define STENCIL_MAX_TRIS 0x3000
-extern cGVar GVar_R_StencilLDir;
+cGVar GVar_R_StencilLDir;
+
 #define g_StencilLDir (GVar_R_StencilLDir.value.f)	/* R_StencilLDir: the distance of a directional light */
-extern cGVar GVar_R_StencilFisq;
+cGVar GVar_R_StencilFisq;
+
 #define g_StencilFisq (GVar_R_StencilFisq.value.i)	/* R_StencilFisq: RSqrt_Estimate instead of sqrt */
-extern cGVar GVar_R_StencilDraw;
+cGVar GVar_R_StencilDraw;
+
 #define g_StencilDraw (GVar_R_StencilDraw.value.i)	/* R_StencilDraw */
 
 /* the far end of the volume edge from p (in the space of the mesh): R_StencilLDir along the light of a directional
@@ -156,6 +163,14 @@ static void Stencil_SetGroup(StencilBlock *b, void *vb) {
 	Rd_DevSetStreamSource(g_pd3dDevice, 0, vb, sizeof(vec3_t));
 }
 
+void *g_StencilVB;
+
+void *g_StencilIB;
+
+vec3_t *g_StencilSegments;
+
+int g_StencilSegs;
+
 /* the sides of the volumes: a quad from each silhouette segment to its far ends (pass 0 fills the buffer) */
 void Stencil_DrawSegs(int pass) {
 	vec3_t *seg, *v;
@@ -190,6 +205,14 @@ void Stencil_DrawSegs(int pass) {
 	}
 	Render_WorldDirty();
 }
+
+void *g_StencilVB2;
+
+void *g_StencilVB3;
+
+vec3_t *g_StencilTriInv;
+
+int g_StencilInv;
 
 /* the caps of the volumes: the triangles facing away from the light at their far ends and turned around in place
  * (pass 0 fills both buffers) */
@@ -241,6 +264,16 @@ void Stencil_DrawTris(int pass) {
 	Render_WorldDirty();
 }
 
+byte g_RenderFlagNeg;
+
+uint32_t g_RenderFlagMask;
+
+int g_ShadowsStencil;
+
+void *g_StencilRender;
+
+int g_StencilCapture;
+
 void ShadowsStencil_Set(byte on) {
 	byte ok;
 
@@ -267,12 +300,26 @@ void ShadowsStencil_Set(byte on) {
 	g_StencilGroups = 0;
 }
 
+float g_StencilMultFrame = 1.0f;
+
 void ShadowsStencil_Capture(byte on) {
 	if (!g_RenderOff && g_ShadowsStencil) {
 		g_StencilMultFrame = g_StencilMult;
 		g_StencilCapture = on != 0;
 	}
 }
+
+vec3_t g_ShadowLightPos;
+
+vec3_t g_ShadowLightDir;
+
+CLight *g_ShadowLight;
+
+float g_ShadowCos;
+
+int g_ShadowLightType = 5002;
+
+float g_ShadowRange = 1000.0f;
 
 void E3D_SetShadowLight(CLight *l, int unused) {
 	vec3_t d, n;
@@ -433,6 +480,8 @@ static void Stencil_DrawScene(void) {
 	E3D_FlushBatch();
 }
 
+CMaterial g_StencilMat;
+
 void ShadowsStencil_Render(void) {
 	if (g_RenderOff) {
 		return;
@@ -505,14 +554,18 @@ void ShadowsStencil_Render(void) {
 	g_ShadowLight = NULL;
 }
 
+cGVar GVar_R_StencilBBox;
+
 /* the capture of the volumes of one mesh list */
-extern cGVar GVar_R_StencilBBox;
 #define g_StencilBBox (GVar_R_StencilBBox.value.i)	/* R_StencilBBox: the segment to the light tested */
-extern cGVar GVar_R_StencilViewDisp;
+cGVar GVar_R_StencilViewDisp;
+
 #define g_StencilViewDisp (GVar_R_StencilViewDisp.value.f)	/* R_StencilViewDisp: the volumes moved along the view */
-extern int g_StencilGroupsMax;
-extern byte g_TriFacing[65536];		/* [0x10000] the triangles facing the light */
 #define LIGHT_SPOT 0x1389
+
+byte g_TriFacing[65536];
+
+int g_StencilGroupsMax;
 
 void Stencil_Mesh(struct CVertList *v, const void *tris, uint32_t nTri, struct CMeshD3D *m, struct CRenderNode *r) {
 	(void)v;
@@ -682,3 +735,18 @@ done:
 		g_StencilGroupsMax = g_StencilGroups;
 	}
 }
+
+cGVar GVar_R_StencilRefModels;
+
+cGVar GVar_R_StencilMult;
+
+cGVar GVar_R_ShowStencil;
+
+cGVar GVar_R_StencilTog;
+
+cGVar GVar_R_StencilSelf;
+
+cGVar GVar_R_StencilRefWorld;
+
+cGVar GVar_R_StencilShadows;
+

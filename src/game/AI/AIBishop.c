@@ -260,3 +260,12 @@ const cAICharVtbl cAIBishop_vftable = {
 	.CheckTalk = cAIChar_CheckTalk,
 	.Facing = cAIChar_Facing,
 };
+
+cGVar GVar_ShootBishopAI;
+
+cGVar GVar_OffsetAngShootBishopAI;
+
+cGVar GVar_DistMaxShootBishopAI;
+
+cGVar GVar_TimeShootBishopAI;
+

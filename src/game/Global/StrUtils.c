@@ -12,8 +12,6 @@
 
 /* __local_stdio_printf_options of the UCRT in the exe */
 
-extern char g_Utf8Buf[1024];	/* 0x400 bytes, the result of Str_FromUTF8 */
-extern char g_VersionBuf[256];
 
 char *Str_Copy(char *dst, const char *src, int size) {
 	CHECK(dst && src && size > 0);
@@ -143,6 +141,8 @@ void Str_TrimBlanks(char *s) {
 	}
 }
 
+char g_Utf8Buf[1024];
+
 /*
  * UTF-8 to the 8 bit font encoding: U+0080..U+00FF as they are, Cyrillic U+0410..U+044F as the escape 0x01 '0'
  * and three hex digits, other characters as '.'. The result is in a static buffer; a longer text ends the game.
@@ -204,6 +204,8 @@ char *Str_FromUTF8(const char *s) {
 	out[o] = 0;
 	return out;
 }
+
+char g_VersionBuf[256];
 
 const char *Version_Get(void) {
 	Str_Printf(g_VersionBuf, 0x100, "%d.%d%s  %s  %s", 1, 1, " (GMC3)", "Nov 24 2021", "15:24:17");

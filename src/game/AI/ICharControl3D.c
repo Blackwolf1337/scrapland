@@ -463,6 +463,8 @@ void cAICharControl3D_Walk(cAICharControl3D *self) {
 	}
 }
 
+void *g_AStar;
+
 byte cAICharControl3D_FindPath(cAICharControl3D *self, const vec3_t *p) {
 	vec3_t pos;
 	byte noPath, reach;
@@ -1015,3 +1017,6 @@ const cAICharControl3DVtbl cAICharControl3D_vftable = {
 	.base.Stop2 = cAICharControl_Stop2,
 	.TestStep = cAICharControl3D_TestStep,
 };
+
+cGVar GVar_ShowShirkAI;
+

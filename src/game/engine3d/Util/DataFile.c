@@ -8,7 +8,6 @@
 #include "scrap/e3dutil.h"
 
 
-extern int g_FileErr;	/* the code of "Faltan datos", -1 until the first DataFile_New */
 
 #define IS_BLANK(c) ((c) == '\t' || (c) == ' ')
 
@@ -260,6 +259,8 @@ void DataFile_Free(cDataFile *dat) {
 	dat->id = 0;
 	Mem_Free(dat);
 }
+
+int g_FileErr = -1;
 
 cDataFile *DataFile_New(void) {
 	if (g_FileErr == -1) {

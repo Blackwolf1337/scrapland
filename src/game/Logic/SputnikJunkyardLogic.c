@@ -13,10 +13,9 @@
 
 extern const cGenCharLocalLogicVtbl cSputnikJunkyardLocalLogic_vftable;
 #define CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE (&cSputnikJunkyardLocalLogic_vftable.base)
-extern cGVar GVar_SputnikJunyardTimeToPissPlayer;
+cGVar GVar_SputnikJunyardTimeToPissPlayer;
+
 #define g_SputnikJunyardTimeToPissPlayer (GVar_SputnikJunyardTimeToPissPlayer.value.f)
-extern cEntity *g_SputnikPisser;	/* the Sputnik that laughs at the player */
-extern float g_SputnikTime;		/* since the camera exists */
 /* the angles of the camera entity */
 #define Sputnik_CamAng(cam) ((const vec3_t *)&((cCamControl *)(cam))->cam.rot)
 
@@ -29,6 +28,8 @@ static void Sputnik_Walk(cGenCharLocalLogic *self) {
 	ai->vftable->SetState(&ai->base.base, 1, (double)g_GenCharRelaxSpeed, 0);
 }
 
+float g_SputnikTime;
+
 cSputnikJunkyardLocalLogic *cSputnikJunkyardLocalLogic_ctor(cSputnikJunkyardLocalLogic *self,
 	cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 1);
@@ -39,6 +40,8 @@ cSputnikJunkyardLocalLogic *cSputnikJunkyardLocalLogic_ctor(cSputnikJunkyardLoca
 	}
 	return self;
 }
+
+cEntity *g_SputnikPisser;
 
 cLocalLogic *cSputnikJunkyardLocalLogic_Delete(cLocalLogic *base, byte flags) {
 	cSputnikJunkyardLocalLogic *self = (cSputnikJunkyardLocalLogic *)base;

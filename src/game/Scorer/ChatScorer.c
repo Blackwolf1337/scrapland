@@ -6,6 +6,8 @@
 
 #include "scrap/scoreritems.h"
 
+float g_ChatTime;
+
 cChatScorer *cChatScorer_ctor(cChatScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CCHATSCORER_VFTABLE;
@@ -38,6 +40,8 @@ cScorerItem *cChatScorer_Delete(cScorerItem *base, byte flags) {
 	}
 	return base;
 }
+
+cChatMsg g_ChatMsgs[16];
 
 /* the static initializer: the lines empty and white */
 void ChatScorer_InitMsgs(void) {
@@ -95,3 +99,6 @@ const cScorerItemVtbl cChatScorer_vftable = {
 	.Var = cChatScorer_Var,
 	.Delete = cChatScorer_Delete,
 };
+
+cGVar GVar_ChatMsgPersistence;
+

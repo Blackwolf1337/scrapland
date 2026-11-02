@@ -301,6 +301,8 @@ static float CFont3_UniHeight(const CFont3 *self) {
 	return CFont3_GlyphHeight(self, CFont3_Glyph(self, self->first)) * self->uniScale[1];
 }
 
+CUnifont g_Unifont;
+
 void CFont3_Measure(const CFont3 *self, float x, float y, uint16_t align, const char *s, float *pos,
 	float *dim) {
 	float w = 0.0f, h = 0.0f;
@@ -577,6 +579,16 @@ static void Fnt_Brightness(CFont3 *self, byte uni, float x, float y, uint32_t co
 	} while (3.0f >= d);
 }
 
+CMaterial *g_FntMatOutline;
+
+int g_FntMatOutlineInit;
+
+CMaterial *g_FntMatOutlineUni;
+
+int g_FntMatOutlineUniInit;
+
+CMaterial *g_MatFX1;
+
 void CFont3_PrintOutline(CFont3 *self, float x, float y, uint32_t color, const char *s) {
 	if (!s) {
 		return;
@@ -773,6 +785,9 @@ void Fonts_Init(void) {
 	g_FntTerm8->round = 1;
 }
 
+SD_SYM(str_3d3e38);
+const char *g_FontsDir = (void *)sd_str_3d3e38;
+
 void CUnifont_Load(CUnifont *self) {
 	cFilePack f;
 	char ust[128], tga[128], uct[128];
@@ -887,3 +902,6 @@ byte CUnifont_SetSprite(const CUnifont *self, uint16_t i, float w, float h) {
 	g->scale[1] = h / (g->v1 - g->v0);
 	return 1;
 }
+
+const char str_3d3e38[] = "2d/fonts-drm/";
+

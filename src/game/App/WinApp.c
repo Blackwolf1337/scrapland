@@ -61,6 +61,14 @@ void CWinApp_ShowConsole(CApp *base, byte show) {
 	(void)self, (void)show;
 }
 
+int g_WinWidth = 640;
+
+int g_WinHeight = 480;
+
+int g_WideWinWidth = 640;
+
+int g_WideWinHeight = 360;
+
 /* the main window through SDL: 640 x 480 (-widewindow 640 x 360), -dedicated 350 x 1 and not resizable */
 byte CWinApp_CreateMainWindow(CWinApp *self) {
 	byte wide = (byte)CWinApp_HasArg(self, "widewindow");
@@ -141,6 +149,20 @@ void App_GetPath(char *buf, int size) {
 void *App_GetHInstance(void) {
 	return g_pWinApp->hInstance;
 }
+
+uint32_t g_TimeQPPause;
+
+uint32_t g_TimeMsPause;
+
+byte g_TimeInit;
+
+int g_TimeUseQP;
+
+int64_t g_TimeQPFreq;
+
+int64_t g_TimeQPStart;
+
+uint32_t g_TimeMsStart;
 
 /* vf14: seconds since the first call, by the performance counter if there is one, else by timeGetTime */
 double CWinApp_GetTime(CApp *base) {
@@ -369,3 +391,8 @@ const CAppVtbl CWinApp_vftable = {
 	.RunApp = CWinApp_RunApp,
 	.IsDedicatedWin = CWinApp_IsDedicatedWin,
 };
+
+char str_431a98[] = "Scrapland";
+
+cGVar GVar_SoundInit;
+

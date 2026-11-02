@@ -13,6 +13,8 @@ static void NetServer_Free(cNetClient *c) {
 	operator_delete_sized(c, sizeof(*c));
 }
 
+cNetClient **g_NetClients;
+
 void NetServer_SendAll(const void *data, uint16_t size) {
 	for (int i = 0; i < Transport_GetMaxClients(); i++) {
 		cNetClient *c = g_NetClients[i];
@@ -30,6 +32,8 @@ void NetServer_SendAllBut(const void *data, uint16_t size, int slot) {
 		}
 	}
 }
+
+uint32_t g_NetNextSend;
 
 int NetServer_SendTo(uint32_t time, int slot, int size, const void *data) {
 	if (Transport_GetMaxClients() <= slot || !g_NetClients[slot]) {
@@ -245,3 +249,14 @@ int NetServer_Receive(uint32_t time, void *data, int *dataSize, void *ctl, int *
 	cStaticBuffer_Unlock(g_PyStaticBuffer);
 	return slot;
 }
+
+cGVar GVar_UseServerPassword;
+
+cGVar GVar_ForceServerVehicle;
+
+cGVar GVar_ServerPassword;
+
+cGVar GVar_ServerName;
+
+cGVar GVar_ServerDataRateLimit;
+

@@ -8,6 +8,8 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/groundportal.h"
 
+float g_LastCollisionEpsilon;
+
 void CollisionEpsilon_Set(byte restore) {
 	if (restore) {
 		if (g_LastCollisionEpsilon == 0.0f) {
@@ -369,3 +371,24 @@ byte Engine_TestSphere(const vec3_t *a, const vec3_t *b, float r, vec3_t *out, C
 done:
 	return res;
 }
+
+cGVar GVar_c_schk;
+
+cGVar GVar_c_sboxmult;
+
+cGVar GVar_c_sbox;
+
+cGVar GVar_c_iter;
+
+cGVar GVar_c_sld2;
+
+cGVar GVar_c_sldi;
+
+cGVar GVar_c_scts;
+
+cGVar GVar_c_sboxshow;
+
+cGVar GVar_c_caps;
+
+cGVar GVar_c_hold;
+

@@ -14,29 +14,39 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
 
-extern cGVarFunction GVar_OnFunctionaryStartsWorking;
 
-extern cEntityListData *g_DesktopsList;	/* the list of the desktops, once found */
-extern cGVar GVar_DesktopsFunctionaryListName;
+cGVar GVar_DesktopsFunctionaryListName;
+
 #define g_DesktopsListName (GVar_DesktopsFunctionaryListName.value.s)	/* DesktopsFunctionaryListName */
-extern cGVar GVar_FunctionaryAssignWorkDistance;
+cGVar GVar_FunctionaryAssignWorkDistance;
+
 #define g_FunctionaryAssignWorkDistance (GVar_FunctionaryAssignWorkDistance.value.f)
+cGVarFunction GVar_OnFunctionaryStartsWorking;
+
 #define g_OnFunctionaryStartsWorking (((cPy_Function *)&GVar_OnFunctionaryStartsWorking.func))
-extern cGVar GVar_FunctionarySpecialActionStatesTransitionTime;
+cGVar GVar_FunctionarySpecialActionStatesTransitionTime;
+
 #define g_FunctionarySpecialActionStatesTransitionTime (GVar_FunctionarySpecialActionStatesTransitionTime.value.f)
-extern cGVar GVar_FunctionaryMinTimeToSitDown;
+cGVar GVar_FunctionaryMinTimeToSitDown;
+
 #define g_FunctionaryMinTimeToSitDown (GVar_FunctionaryMinTimeToSitDown.value.f)
-extern cGVar GVar_FunctionaryMaxTimeToSitDown;
+cGVar GVar_FunctionaryMaxTimeToSitDown;
+
 #define g_FunctionaryMaxTimeToSitDown (GVar_FunctionaryMaxTimeToSitDown.value.f)
-extern cGVar GVar_FunctionaryMintimeToStopWorking;
+cGVar GVar_FunctionaryMintimeToStopWorking;
+
 #define g_FunctionaryMinTimeToStopWorking (GVar_FunctionaryMintimeToStopWorking.value.f)
-extern cGVar GVar_FunctionaryMaxtimeToStopWorking;
+cGVar GVar_FunctionaryMaxtimeToStopWorking;
+
 #define g_FunctionaryMaxTimeToStopWorking (GVar_FunctionaryMaxtimeToStopWorking.value.f)
-extern cGVar GVar_FunctionaryEffectFastSound;
+cGVar GVar_FunctionaryEffectFastSound;
+
 #define g_FunctionaryEffectFastSound (GVar_FunctionaryEffectFastSound.value.s)
-extern cGVar GVar_FunctionaryEffectFastSoundVol;
+cGVar GVar_FunctionaryEffectFastSoundVol;
+
 #define g_FunctionaryEffectFastSoundVol (GVar_FunctionaryEffectFastSoundVol.value.f)
-extern cGVar GVar_CharProcessReduction;
+cGVar GVar_CharProcessReduction;
+
 #define g_CharProcessReduction (GVar_CharProcessReduction.value.f)
 
 #define Func_Vtbl(self) Functionary_Vtbl(self)
@@ -53,6 +63,8 @@ static void Func_SetWorkTime(cFunctionaryLocalLogic *self) {
 	self->relaxTime = t * 0.5f;
 	self->playTime = t * 3.0f;
 }
+
+cEntityListData *g_DesktopsList;
 
 cFunctionaryLocalLogic *cFunctionaryLocalLogic_ctor(cFunctionaryLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(&self->base, parent, 0);
@@ -786,3 +798,8 @@ const cFunctionaryLocalLogicVtbl cFunctionaryLocalLogic_vftable = {
 	.AssignDesktop = cFunctionaryLocalLogic_AssignDesktop,
 	.ReleaseDesktop = cFunctionaryLocalLogic_ReleaseDesktop,
 };
+
+cGVar GVar_FunctionarySpecialActionTime;
+
+cGVar GVar_GenCharRelaxSpeed;
+

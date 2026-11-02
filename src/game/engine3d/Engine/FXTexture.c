@@ -69,6 +69,10 @@ static void FXTex_FreeBmp(CBmp **bmp) {
 	}
 }
 
+float g_LavaCos[256];
+
+byte g_LavaCosInit;
+
 CFXTexLava *CFXTexLava_ctor(CFXTexLava *self, const char *file) {
 	self->base.vftable = CFXTEXLAVA_VFTABLE;
 	self->lastTime = 0;
@@ -122,6 +126,8 @@ static uint32_t FXTex_Mix(uint32_t dst, uint32_t src) {
 static int Lava_Fistp(float f) {
 	return (int)llrint((double)f);
 }
+
+int g_LavaOffset[128];
 
 int CFXTexLava_Update(IFXTexture *base, CMap *map) {
 	CFXTexLava *self = (CFXTexLava *)base;

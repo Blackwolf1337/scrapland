@@ -170,7 +170,8 @@ float Rand_FloatRange(float lo, float hi) {
 	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * (double)d + (double)lo);
 }
 
-extern const uint32_t VMEffects_SetupHaze_3b57d8[9];
+const uint32_t VMEffects_SetupHaze_3b57d8[9] = { 0xbf404040, 0x7f808080, 0x7f808080, 0x7f808080, 0xa35c5c5c, 0xbf404040, 0xdf202020, 0xff000000, 0xff000000 };
+
 void VMEffects_SetupHaze(float thrust, float speed, vec3_t *pos, int n, CGameParticles *ps) {
 	float t = Float_MaxSS(0.3f, thrust);
 
@@ -391,7 +392,11 @@ void cVehicleMotorsEffects_SetVisible(cVehicleMotorsEffects *self, byte on) {
 	self->visible = on;
 }
 
-extern uint32_t cVehicleMotorsEffects_Smoke_4287f8[18];
+uint32_t cVehicleMotorsEffects_Smoke_4287f8[18] = {
+	0xff000000, 0x60191919, 0x60232323, 0x602d2d2d, 0x60282828, 0xa41e1e1e, 0xd40f0f0f, 0xff000000, 0xff000000,
+	0xff000000, 0x80232323, 0x60323232, 0x60414141, 0x60373737, 0xa4282828, 0xd4141414, 0xff000000, 0xff000000,
+};
+
 void cVehicleMotorsEffects_Smoke(cVehicleMotorsEffects *self, float dt, CGameParticles *ps) {
 	vec3_t v, rot, up, dir, r, mp, rd;
 	int j;
@@ -923,9 +928,15 @@ static void VME_Exhaust6(const VMExhaust *x) {
 }
 
 /* 10: the emitted smoke, two pairs beside the z axis and a flare */
-extern const uint32_t VME_Exhaust10_3b57fc[10];
-extern int VME_Exhaust10_448510[2];
-extern vec3_t VME_Exhaust10_4484e0[4];
+const uint32_t VME_Exhaust10_3b57fc[10] = {
+	0x320a280f, 0x30191919, 0x2d0f2332, 0x2c0a3264, 0x2a143796, 0x282850fa, 0x283264fa, 0x23466efb, 0x1e5a82fd,
+	0x146496ff,
+};
+
+vec3_t VME_Exhaust10_4484e0[4];
+
+int VME_Exhaust10_448510[2];
+
 static void VME_Exhaust10(const VMExhaust *x) {
 	static const float xz[] = { -30.0f, 0.0f, 30.0f, 0.0f, -10.0f, 0.0f, 10.0f, 0.0f };
 	CGameParticles *ps = x->ps;
@@ -972,8 +983,12 @@ static void VME_Exhaust10(const VMExhaust *x) {
 	VME_Flare(ps, n - 5, k, 750.0f, 0x1e32d2, 7);
 }
 
+const uint32_t VME_Exhaust10_3b5824[10] = {
+	0x320f0f28, 0x30191919, 0x2d32230f, 0x2c64320a, 0x2ac85500, 0x28fa6419, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
+	0x14ff9664,
+};
+
 /* 11: the emitted smoke, four particles along the z axis and a flare */
-extern const uint32_t VME_Exhaust10_3b5824[10];
 static void VME_Exhaust11(const VMExhaust *x) {
 	CGameParticles *ps = x->ps;
 	float t = x->t, k = x->k;
@@ -1021,9 +1036,15 @@ static void VME_Exhaust11(const VMExhaust *x) {
 }
 
 /* 12: the emitted smoke at six positions, a particle at each and a flare */
-extern const uint32_t VME_Exhaust10_3b584c[10];
-extern int VME_Exhaust10_448560;
-extern vec3_t VME_Exhaust10_448518[6];
+const uint32_t VME_Exhaust10_3b584c[10] = {
+	0x321e1e0f, 0x30191919, 0x2d0f2332, 0x2c0a3264, 0x32143796, 0x640a50fa, 0x643264fa, 0x37466efb, 0x1e5a82fd,
+	0x646496ff,
+};
+
+vec3_t VME_Exhaust10_448518[6];
+
+int VME_Exhaust10_448560;
+
 static void VME_Exhaust12(const VMExhaust *x) {
 	static const float xz[] = { -26.0f, -26.0f, 26.0f, 26.0f, 26.0f, -26.0f, -26.0f, 26.0f, 0.0f, -26.0f, 0.0f, 26.0f };
 	CGameParticles *ps = x->ps;
@@ -1066,9 +1087,15 @@ static void VME_Exhaust12(const VMExhaust *x) {
 }
 
 /* 13: the emitted smoke at two random positions, two pairs and two flares */
-extern const uint32_t VME_Exhaust10_3b5874[10];
-extern int VME_Exhaust10_44857c;
-extern vec3_t VME_Exhaust10_448564[2];
+const uint32_t VME_Exhaust10_3b5874[10] = {
+	0x32280f0f, 0x30191919, 0x2d0f2332, 0x2c0a2d80, 0x2a0f41e1, 0x28194beb, 0x282855f8, 0x23325ffa, 0x1e3c69fd,
+	0x144678ff,
+};
+
+vec3_t VME_Exhaust10_448564[2];
+
+int VME_Exhaust10_44857c;
+
 static void VME_Exhaust13(const VMExhaust *x) {
 	CGameParticles *ps = x->ps;
 	vec3_t *pos = VME_Exhaust10_448564;
@@ -1116,9 +1143,15 @@ static void VME_Exhaust13(const VMExhaust *x) {
 }
 
 /* 14: the emitted smoke at four positions, two quads and a flare */
-extern const uint32_t VME_Exhaust10_3b589c[10];
-extern int VME_Exhaust10_4485b0[2];
-extern vec3_t VME_Exhaust10_448580[4];
+const uint32_t VME_Exhaust10_3b589c[10] = {
+	0x320f0f19, 0x30191923, 0x2d23233c, 0x2c2d2d80, 0x2a4141e1, 0x284b4beb, 0x285555f8, 0x235f5ffa, 0x1e6969fd,
+	0x147878ff,
+};
+
+vec3_t VME_Exhaust10_448580[4];
+
+int VME_Exhaust10_4485b0[2];
+
 static void VME_Exhaust14(const VMExhaust *x) {
 	static const float xz[] = { 0.0f, -65.0f, 0.0f, 65.0f, -65.0f, 0.0f, 65.0f, 0.0f };
 	CGameParticles *ps = x->ps;
@@ -1163,8 +1196,13 @@ static void VME_Exhaust14(const VMExhaust *x) {
 }
 
 /* 15: the emitted smoke on a circle of eight positions, a particle at each and a flare */
-extern const uint32_t VME_Exhaust10_3b58c4[10];
-extern vec3_t VME_Exhaust10_4485b8[8];
+const uint32_t VME_Exhaust10_3b58c4[10] = {
+	0x320f0f19, 0x30191923, 0x2d23233c, 0x2c2d2d80, 0x2a4141e1, 0x284b4beb, 0x285555f8, 0x235f5ffa, 0x1e6969fd,
+	0x147878ff,
+};
+
+vec3_t VME_Exhaust10_4485b8[8];
+
 static void VME_Exhaust15(const VMExhaust *x) {
 	CGameParticles *ps = x->ps;
 	vec3_t *pos = VME_Exhaust10_4485b8;
@@ -1224,8 +1262,12 @@ static void VME_Exhaust15(const VMExhaust *x) {
 	VME_FlareDir(ps, x->model, n - 9, k, 40.0f, 700.0f, 0x1e3cd2, 5);
 }
 
+const uint32_t VME_Exhaust10_3b58ec[10] = {
+	0x320f0f28, 0x30191919, 0x2d23320f, 0x2c2d800a, 0x2a50e100, 0x285feb19, 0x2864f832, 0x236efa46, 0x1e82fd5a,
+	0x1496ff64,
+};
+
 /* 20: the emitted smoke, four particles along the z axis and a flare */
-extern const uint32_t VME_Exhaust10_3b58ec[10];
 static void VME_Exhaust20(const VMExhaust *x) {
 	CGameParticles *ps = x->ps;
 	float t = x->t, k = x->k;
@@ -1265,8 +1307,12 @@ static void VME_Exhaust20(const VMExhaust *x) {
 	VME_Flare(ps, n - 5, k, 700.0f, 0x64e614, 7);
 }
 
+const uint32_t VME_Exhaust10_3b5914[10] = {
+	0x32030f0a, 0x30071914, 0x2d0a321e, 0x2c0f8028, 0x2a14e137, 0x2819d741, 0x2828f855, 0x2332fa5f, 0x1e41fd6e,
+	0x1450ff7d,
+};
+
 /* 21: like 20 at node 0, a second smoke and one particle at node 1 */
-extern const uint32_t VME_Exhaust10_3b5914[10];
 static void VME_Exhaust21(const VMExhaust *x) {
 	CGameParticles *ps = x->ps, *ps2 = x->ps2;
 	float t = x->t, k = x->k;
@@ -1488,9 +1534,15 @@ static void VME_ExhaustLine4(const VMExhaust *x, const VMExhaustLine4 *l, const 
 }
 
 /* 27: the emitted smoke at four positions, two quads around the z axis and a flare */
-extern const uint32_t VME_Exhaust10_3b598c[10];
-extern int VME_Exhaust10_448648[2];
-extern vec3_t VME_Exhaust10_448618[4];
+const uint32_t VME_Exhaust10_3b598c[10] = {
+	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
+	0x14ff9664,
+};
+
+vec3_t VME_Exhaust10_448618[4];
+
+int VME_Exhaust10_448648[2];
+
 static void VME_Exhaust27(const VMExhaust *x) {
 	static const float xz[] = { -36.0f, 36.0f, 36.0f, 36.0f, -36.0f, -36.0f, 36.0f, -36.0f };
 	CGameParticles *ps = x->ps;
@@ -1550,8 +1602,12 @@ static void VME_Exhaust27(const VMExhaust *x) {
 	VME_FlareDir(ps, x->model, n - 9, k, 40.0f, 1200.0f, 0xfff05a, 7);
 }
 
+const uint32_t VME_Exhaust10_3b5a04[10] = {
+	0x320f030f, 0x30190719, 0x2d320d23, 0x2c80122d, 0x2ae11750, 0x28eb1e5f, 0x28f82864, 0x23fa2d6e, 0x1efd3282,
+	0x14ff3296,
+};
+
 /* 36: the emitted smoke, five particles along the z axis and a flare along it */
-extern const uint32_t VME_Exhaust10_3b5a04[10];
 static void VME_Exhaust36(const VMExhaust *x) {
 	CGameParticles *ps = x->ps;
 	float t = x->t, k = x->k;
@@ -1590,8 +1646,12 @@ static void VME_Exhaust36(const VMExhaust *x) {
 	VME_FlareDir(ps, x->model, n - 6, k, 40.0f, 800.0f, 0xe678be, 1);
 }
 
+const uint32_t VME_Exhaust10_3b5a54[10] = {
+	0x320a140f, 0x300c1919, 0x2d0f2332, 0x2c0a3264, 0x2a143796, 0x282850fa, 0x283264fa, 0x23466efb, 0x1e5a82fd,
+	0x146496ff,
+};
+
 /* 45: the emitted smoke, four particles along the z axis and a flare along it */
-extern const uint32_t VME_Exhaust10_3b5a54[10];
 static void VME_Exhaust45(const VMExhaust *x) {
 	CGameParticles *ps = x->ps;
 	float t = x->t, k = x->k;
@@ -1632,9 +1692,15 @@ static void VME_Exhaust45(const VMExhaust *x) {
 }
 
 /* 50: the emitted smoke at eight positions, a particle at each and a flare */
-extern const uint32_t VME_Exhaust10_3b5a7c[10];
-extern int VME_Exhaust10_4486b0;
-extern vec3_t VME_Exhaust10_448650[8];
+const uint32_t VME_Exhaust10_3b5a7c[10] = {
+	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
+	0x14ff9664,
+};
+
+vec3_t VME_Exhaust10_448650[8];
+
+int VME_Exhaust10_4486b0;
+
 static void VME_Exhaust50(const VMExhaust *x) {
 	static const float xz[] = {
 		-50.0f, -54.0f, 50.0f, -18.0f, -50.0f, 18.0f, 50.0f, 54.0f, 50.0f, -54.0f, -50.0f, -18.0f, 50.0f, 18.0f,
@@ -1679,9 +1745,15 @@ static void VME_Exhaust50(const VMExhaust *x) {
 }
 
 /* 60: the emitted smoke at three positions, two pairs and two flares */
-extern const uint32_t VME_Exhaust10_3b5acc[10];
-extern int VME_Exhaust10_4486d8;
-extern vec3_t VME_Exhaust10_4486b4[3];
+const uint32_t VME_Exhaust10_3b5acc[10] = {
+	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
+	0x14ff9664,
+};
+
+vec3_t VME_Exhaust10_4486b4[3];
+
+int VME_Exhaust10_4486d8;
+
 static void VME_Exhaust60(const VMExhaust *x) {
 	static const float xz[] = { 0.0f, 0.0f, 0.0f, -40.0f, 0.0f, 40.0f };
 	CGameParticles *ps = x->ps;
@@ -1724,12 +1796,36 @@ static void VME_Exhaust60(const VMExhaust *x) {
 	VME_FlarePair(ps, x->model, n - 6, k, 0.0f, 1.0f, 0.0f, 30.0f, 1000.0f, 0xe6963c);
 }
 
-extern const uint32_t VME_Exhaust10_3b593c[10];
-extern const uint32_t VME_Exhaust10_3b5964[10];
-extern const uint32_t VME_Exhaust10_3b59b4[10];
-extern const uint32_t VME_Exhaust10_3b59dc[10];
-extern const uint32_t VME_Exhaust10_3b5a2c[10];
-extern const uint32_t VME_Exhaust10_3b5aa4[10];
+const uint32_t VME_Exhaust10_3b593c[10] = {
+	0x320f0503, 0x30190f07, 0x2d32230d, 0x2c802d12, 0x2ae15017, 0x28eb5f1e, 0x28f86428, 0x23fa6e2d, 0x1efd8232,
+	0x14ff9632,
+};
+
+const uint32_t VME_Exhaust10_3b5964[10] = {
+	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
+	0x14ff9664,
+};
+
+const uint32_t VME_Exhaust10_3b59b4[10] = {
+	0x320f0503, 0x30190f07, 0x2d32230d, 0x2c802d12, 0x2ae15017, 0x28eb5f1e, 0x28f86428, 0x23fa6e2d, 0x1efd8232,
+	0x14ff9632,
+};
+
+const uint32_t VME_Exhaust10_3b59dc[10] = {
+	0x320f030f, 0x30190719, 0x2d320d23, 0x2c80122d, 0x2ae11750, 0x28eb1e5f, 0x28f82864, 0x23fa2d6e, 0x1efd3282,
+	0x14ff3296,
+};
+
+const uint32_t VME_Exhaust10_3b5a2c[10] = {
+	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
+	0x14ff9664,
+};
+
+const uint32_t VME_Exhaust10_3b5aa4[10] = {
+	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
+	0x14ff9664,
+};
+
 void cVehicleMotorsEffects_Exhaust(cVehicleMotorsEffects *self, float thrust, float k, float f4bc,
 	float speed, byte cloud, float fade) {
 	VMExhaust x;
@@ -1830,3 +1926,22 @@ void cVehicleMotorsEffects_Exhaust(cVehicleMotorsEffects *self, float thrust, fl
 		}
 	}
 }
+
+cGVar GVar_FXEngineTrailOffset;
+
+cGVar GVar_FXEngineTrailSize;
+
+cGVar GVar_FXEngineTrailDist;
+
+cGVar GVar_FXEngineGlowSizeAtt;
+
+cGVar GVar_FXEngineGlowDistFadeFrom;
+
+cGVar GVar_FXEngineBirthRate;
+
+cGVar GVar_FXEngineGlowSize;
+
+cGVar GVar_FXEngineGlowSizeMax;
+
+cGVar GVar_FXEngineTrailDistSpeedFactor;
+

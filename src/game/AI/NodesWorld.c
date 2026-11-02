@@ -173,6 +173,8 @@ void NWBox_Init(cNWBox *box) {
 	box->b.z = -3.4028234663852886e+38f;
 }
 
+float g_NWNodeRadius;
+
 /* ---- CNodesWorld ---- */
 
 CNodesWorld *CNodesWorld_ctor(void *mem) {
@@ -1879,3 +1881,10 @@ const CNodesWorldVtbl CNodesWorld_vftable = {
 	.ClearLists = CNodesWorld_ClearLists,
 	.SaveInfPath = CNodesWorldSup_SaveInfPath,
 };
+
+cGVar GVar_ShowAI;
+
+cGVar GVar_ShowNodesAI;
+
+cGVar GVar_IsMapOutDoor;
+

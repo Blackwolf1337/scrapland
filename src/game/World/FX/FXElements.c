@@ -16,7 +16,6 @@
 #define CGAMETRAIL_DTOR 0x21de40
 
 /* the colour ramps of the fire drops, 9 colours each: 0 and 1 fire, 2 smoke, 3 sparks */
-extern uint32_t g_FireDropRamps[4][9];
 
 /* ---- construction ---- */
 
@@ -174,6 +173,13 @@ static void FireDrop_SetSprite(CGameParticles *p, byte sprite) {
 	p->spriteIni = sprite;
 	p->spriteEnd = sprite;
 }
+
+uint32_t g_FireDropRamps[4][9] = {
+	{ 0xff3b00, 0xff4302, 0xff5203, 0xff5c05, 0x20ff5a09, 0x80c04b04, 0xc4601901, 0xff200800 },
+	{ 0x40fffaf0, 0xffeb80, 0xf3cd50, 0xcd9136, 0x20a44a18, 0x80871005, 0xc4800000, 0xff000000 },
+	{ 0xff000000, 0x80824c0e, 0x40ef641e, 0x20ff732e, 0x40b47848, 0x80876d2e, 0xc45e401a, 0xff000000 },
+	{ 0xff4b20, 0xff3e10, 0xff2d08, 0xff2000, 0x20c01400, 0x80800a00, 0xc4400500, 0xff000000 },
+};
 
 /* the colour ramp picked after the ramp is switched on, the parameters applied, one particle emitted */
 static void FireDrop_Emit(cFXElementsFireDrop *self, int kind, float t) {
@@ -812,3 +818,16 @@ const cMapElementVtbl cFXElementsLensFlare_vftable = {
 	.Init = cMapElement_InitTrue,
 	.Update = cMapElement_UpdateNop,
 };
+
+cGVar GVar_FXElementsFireDropMaxDist;
+
+cGVar GVar_FXElementsFireDropSoundAttIni;
+
+cGVar GVar_FXElementsFireDropSoundVol;
+
+cGVar GVar_FXElementsFireDropSoundAttEnd;
+
+cGVar GVar_FXElementsFireDropRateAtt;
+
+cGVar GVar_FXElementsFireDropSound;
+

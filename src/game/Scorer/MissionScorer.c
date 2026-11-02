@@ -43,6 +43,8 @@ cScorerItem *cMissionScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
+const char *g_MissionMapName;
+
 /* Status0 of the scripts: the station text of the mission map, if it is not this level or the orbit */
 static void Mission_SetStation(cMissionScorer *self) {
 	char buf[0x20];
@@ -64,6 +66,10 @@ static void Mission_SetStation(cMissionScorer *self) {
 	g_MissionMapName = Lang_GetStr(buf);
 }
 
+int g_MissionStatus[3];
+
+float g_MissionStatusTime[3];
+
 /* Status0..2: the scorer time is taken on every set */
 static int Mission_VarStatus(cMissionScorer *self, int k, byte set, int *i) {
 	if (!set) {
@@ -81,6 +87,14 @@ static int Mission_VarStatus(cMissionScorer *self, int k, byte set, int *i) {
 	}
 	return 3;
 }
+
+int g_MissionBlinkOn;
+
+float g_MissionBlinkTime;
+
+float g_MissionBlinkLast;
+
+float g_MissionSolidTime;
 
 int cMissionScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cMissionScorer *self = (cMissionScorer *)base;
@@ -189,6 +203,10 @@ int cMissionScorer_Var(cScorerItem *base, const char *name, int set, char **s, d
 	return cSpriteScorer_Var(&self->base.base, name, set, s, d, i);
 }
 
+uint32_t g_MissionStatusColors[3] = { 0xffff20, 0xff4020, 0x2577ff };
+
+float g_MissionStatusOfs[3][2] = { { 23.5f, 40.0f }, { 17.0f, 32.5f }, { 31.0f, 32.5f } };
+
 void cMissionScorer_Draw(cScorerItem *base, int player) {
 	cMissionScorer *self = (cMissionScorer *)base;
 	cScorerItem *it = &self->base.base;
@@ -283,3 +301,14 @@ const cSpriteScorerVtbl cMissionScorer_vftable = {
 	.base.Delete = cMissionScorer_Delete,
 	.SetMultiSprite = cSpriteScorer_SetMultiSprite,
 };
+
+cGVar GVar_NextMissionSecondLineOffsetXBox;
+
+cGVar GVar_NextMissionSecondLineOffsetPC;
+
+cGVar GVar_NextMissionFirstLineOffsetXBox;
+
+cGVar GVar_NextMissionFirstLineOffsetPC;
+
+cGVar GVar_ScorerMarginH;
+

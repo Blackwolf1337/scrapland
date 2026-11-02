@@ -11,6 +11,8 @@
 
 #define BMP_PIXEL 4
 #define CRT_EEXIST 17
+const int g_ErrPcxFormat = 50;
+
 /* errno for a bad file (also TXF) */
 #define g_ImgBadFormat g_ErrPcxFormat
 
@@ -22,10 +24,6 @@
 #define TGA_RUN 0x80		/* packet header: a run, else raw pixels */
 #define TGA_PACKET_MAX 128
 
-extern bmpFileCab_t g_BmpFileHeader;
-extern bmpInfoCab_t g_BmpInfoCab;
-extern texCab_t g_TexHeader;
-extern tgaCab_t g_TgaCab;
 
 void *Img_Pixel(const CImage *b, uint32_t x, uint32_t y, int bytes) {
 	CHECK(b->img);
@@ -429,6 +427,10 @@ static int Img_SaveRefused(const char *name, uint32_t flags) {
 	return 1;
 }
 
+bmpFileCab_t g_BmpFileHeader;
+
+bmpInfoCab_t g_BmpInfoCab;
+
 int BMP_Save(const char *name, const CBmp *orig, uint32_t flags) {
 	bmpFileCab_t *fc = (&g_BmpFileHeader);
 	bmpInfoCab_t *ic = (&g_BmpInfoCab);
@@ -479,6 +481,8 @@ fail:
 	E3D_LogBlue((&g_FileLog), "escr_BMP_24(): Error de escritura: '%s'", name);
 	return -1;
 }
+
+texCab_t g_TexHeader;
 
 int TEX_Save(const char *name, const CBmp *orig, uint32_t flags) {
 	texCab_t *c = (&g_TexHeader);
@@ -550,6 +554,8 @@ static void Tga_PutRow(const uint32_t *row, int w, uint32_t mask, int alpha, voi
 		}
 	}
 }
+
+tgaCab_t g_TgaCab;
 
 int TGA_Save(const char *name, const CBmp *orig, uint32_t flags) {
 	tgaCab_t *c = (&g_TgaCab);

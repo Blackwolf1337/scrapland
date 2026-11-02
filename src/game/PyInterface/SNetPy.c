@@ -296,5 +296,354 @@ PyObject *SNet_GetPing(PyObject *self, PyObject *args) {
 	return Py_BuildValue("i", Net_GetPing(player));
 }
 
-extern PyMethodDef SNet_methods[26];
+SD_SYM(str_PyMethod_SNet_InitServer);
+SD_SYM(SNet_InitServer);
+SD_SYM(str_PyDoc_SNet_InitServer);
+SD_SYM(str_PyMethod_SNet_CloseServer);
+SD_SYM(SNet_CloseServer);
+SD_SYM(str_PyDoc_SNet_CloseServer);
+SD_SYM(str_PyMethod_SNet_ServerChangeLevel);
+SD_SYM(SNet_ServerChangeLevel);
+SD_SYM(str_PyDoc_SNet_ServerChangeLevel);
+SD_SYM(str_PyMethod_SNet_IsServer);
+SD_SYM(SNet_IsServer);
+SD_SYM(str_PyDoc_SNet_IsServer);
+SD_SYM(str_PyMethod_SNet_IsDedicated);
+SD_SYM(SNet_IsDedicated);
+SD_SYM(str_PyDoc_SNet_IsDedicated);
+SD_SYM(str_PyMethod_SNet_GetServerData);
+SD_SYM(SNet_GetServerData);
+SD_SYM(str_PyDoc_SNet_GetServerData);
+SD_SYM(str_PyMethod_SNet_AddResource);
+SD_SYM(SNet_AddResource);
+SD_SYM(str_PyDoc_SNet_AddResource);
+SD_SYM(str_PyMethod_SNet_ModifyUsrData);
+SD_SYM(SNet_ModifyUsrData);
+SD_SYM(str_PyDoc_SNet_ModifyUsrData);
+SD_SYM(str_PyMethod_SNet_GetBotName);
+SD_SYM(SNet_GetBotName);
+SD_SYM(str_PyDoc_SNet_GetBotName);
+SD_SYM(str_PyMethod_SNet_GetObjName);
+SD_SYM(SNet_GetObjName);
+SD_SYM(str_PyDoc_SNet_GetObjName);
+SD_SYM(str_PyMethod_SNet_Kick);
+SD_SYM(SNet_Kick);
+SD_SYM(str_PyDoc_SNet_Kick);
+SD_SYM(str_PyMethod_SNet_InitClient);
+SD_SYM(SNet_InitClient);
+SD_SYM(str_PyDoc_SNet_InitClient);
+SD_SYM(str_PyMethod_SNet_CloseClient);
+SD_SYM(SNet_CloseClient);
+SD_SYM(str_PyDoc_SNet_CloseClient);
+SD_SYM(str_PyMethod_SNet_IsClient);
+SD_SYM(SNet_IsClient);
+SD_SYM(str_PyDoc_SNet_IsClient);
+SD_SYM(str_PyMethod_SNet_GetClientData);
+SD_SYM(SNet_GetClientData);
+SD_SYM(str_PyDoc_SNet_GetClientData);
+SD_SYM(str_PyMethod_SNet_GetMyClientShip);
+SD_SYM(SNet_GetMyClientShip);
+SD_SYM(str_PyDoc_SNet_GetMyClientShip);
+SD_SYM(str_PyMethod_SNet_InitBrowser);
+SD_SYM(SNet_InitBrowser);
+SD_SYM(str_PyDoc_SNet_InitBrowser);
+SD_SYM(str_PyMethod_SNet_DoneBrowser);
+SD_SYM(SNet_DoneBrowser);
+SD_SYM(str_PyDoc_SNet_DoneBrowser);
+SD_SYM(str_PyMethod_SNet_SendUsrString);
+SD_SYM(SNet_SendUsrString);
+SD_SYM(str_PyDoc_SNet_SendUsrString);
+SD_SYM(str_PyMethod_SNet_SendChatString);
+SD_SYM(SNet_SendChatString);
+SD_SYM(str_PyDoc_SNet_SendChatString);
+SD_SYM(str_PyMethod_SNet_SendCtrlString);
+SD_SYM(SNet_SendCtrlString);
+SD_SYM(str_PyDoc_SNet_SendCtrlString);
+SD_SYM(str_PyMethod_SNet_SendMasterString);
+SD_SYM(SNet_SendMasterString);
+SD_SYM(str_PyDoc_SNet_SendMasterString);
+SD_SYM(str_PyMethod_SNet_IsMaster);
+SD_SYM(SNet_IsMaster);
+SD_SYM(str_PyDoc_SNet_IsMaster);
+SD_SYM(str_PyMethod_SNet_PingInetSvrs);
+SD_SYM(SNet_PingInetSvrs);
+SD_SYM(str_PyDoc_SNet_PingInetSvrs);
+SD_SYM(str_PyMethod_SNet_GetPing);
+SD_SYM(SNet_GetPing);
+SD_SYM(str_PyDoc_SNet_GetPing);
+PyMethodDef SNet_methods[26] = {
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_InitServer,
+		.ml_meth = (void *)sd_SNet_InitServer,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_InitServer,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_CloseServer,
+		.ml_meth = (void *)sd_SNet_CloseServer,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_CloseServer,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_ServerChangeLevel,
+		.ml_meth = (void *)sd_SNet_ServerChangeLevel,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_ServerChangeLevel,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_IsServer,
+		.ml_meth = (void *)sd_SNet_IsServer,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_IsServer,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_IsDedicated,
+		.ml_meth = (void *)sd_SNet_IsDedicated,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_IsDedicated,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_GetServerData,
+		.ml_meth = (void *)sd_SNet_GetServerData,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_GetServerData,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_AddResource,
+		.ml_meth = (void *)sd_SNet_AddResource,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_AddResource,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_ModifyUsrData,
+		.ml_meth = (void *)sd_SNet_ModifyUsrData,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_ModifyUsrData,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_GetBotName,
+		.ml_meth = (void *)sd_SNet_GetBotName,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_GetBotName,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_GetObjName,
+		.ml_meth = (void *)sd_SNet_GetObjName,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_GetObjName,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_Kick,
+		.ml_meth = (void *)sd_SNet_Kick,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_Kick,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_InitClient,
+		.ml_meth = (void *)sd_SNet_InitClient,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_InitClient,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_CloseClient,
+		.ml_meth = (void *)sd_SNet_CloseClient,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_CloseClient,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_IsClient,
+		.ml_meth = (void *)sd_SNet_IsClient,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_IsClient,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_GetClientData,
+		.ml_meth = (void *)sd_SNet_GetClientData,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_GetClientData,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_GetMyClientShip,
+		.ml_meth = (void *)sd_SNet_GetMyClientShip,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_GetMyClientShip,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_InitBrowser,
+		.ml_meth = (void *)sd_SNet_InitBrowser,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_InitBrowser,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_DoneBrowser,
+		.ml_meth = (void *)sd_SNet_DoneBrowser,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_DoneBrowser,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_SendUsrString,
+		.ml_meth = (void *)sd_SNet_SendUsrString,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_SendUsrString,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_SendChatString,
+		.ml_meth = (void *)sd_SNet_SendChatString,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_SendChatString,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_SendCtrlString,
+		.ml_meth = (void *)sd_SNet_SendCtrlString,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_SendCtrlString,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_SendMasterString,
+		.ml_meth = (void *)sd_SNet_SendMasterString,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_SendMasterString,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_IsMaster,
+		.ml_meth = (void *)sd_SNet_IsMaster,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_IsMaster,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_PingInetSvrs,
+		.ml_meth = (void *)sd_SNet_PingInetSvrs,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_PingInetSvrs,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SNet_GetPing,
+		.ml_meth = (void *)sd_SNet_GetPing,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SNet_GetPing,
+	},
+};
+
 SD_PY_MODULE(SNet, 0x42e610)
+
+const char str_PyMethod_SNet_InitServer[] = "InitServer";
+
+const char str_PyMethod_SNet_CloseServer[] = "CloseServer";
+
+const char str_PyMethod_SNet_ServerChangeLevel[] = "ServerChangeLevel";
+
+const char str_PyMethod_SNet_IsServer[] = "IsServer";
+
+const char str_PyMethod_SNet_IsDedicated[] = "IsDedicated";
+
+const char str_PyMethod_SNet_GetServerData[] = "GetServerData";
+
+const char str_PyMethod_SNet_AddResource[] = "AddResource";
+
+const char str_PyMethod_SNet_ModifyUsrData[] = "ModifyUsrData";
+
+const char str_PyMethod_SNet_GetBotName[] = "GetBotName";
+
+const char str_PyMethod_SNet_GetObjName[] = "GetObjName";
+
+const char str_PyMethod_SNet_Kick[] = "Kick";
+
+const char str_PyMethod_SNet_InitClient[] = "InitClient";
+
+const char str_PyMethod_SNet_CloseClient[] = "CloseClient";
+
+const char str_PyMethod_SNet_IsClient[] = "IsClient";
+
+const char str_PyMethod_SNet_GetClientData[] = "GetClientData";
+
+const char str_PyMethod_SNet_GetMyClientShip[] = "GetMyClientShip";
+
+const char str_PyMethod_SNet_InitBrowser[] = "InitBrowser";
+
+const char str_PyMethod_SNet_DoneBrowser[] = "DoneBrowser";
+
+const char str_PyMethod_SNet_SendUsrString[] = "SendUsrString";
+
+const char str_PyMethod_SNet_SendChatString[] = "SendChatString";
+
+const char str_PyMethod_SNet_SendCtrlString[] = "SendCtrlString";
+
+const char str_PyMethod_SNet_SendMasterString[] = "SendMasterString";
+
+const char str_PyMethod_SNet_IsMaster[] = "IsMaster";
+
+const char str_PyMethod_SNet_PingInetSvrs[] = "PingInetSvrs";
+
+const char str_PyMethod_SNet_GetPing[] = "GetPing";
+
+char str_PyDoc_SNet_ModifyUsrData[] =
+	"ModifyUsrData(ClientId) : \n modifica desde el servidor los datos locales.";
+
+char str_PyDoc_SNet_ServerChangeLevel[68] =
+	"ServerChangeLevel(resource name) : carga el siguiente nivel.";
+
+char str_PyDoc_SNet_AddResource[] =
+	"resourceid AddResource(resource name) : intenta agregar un recurso si este no existe. -1 si el pool "
+	"esta lleno";
+
+char str_PyDoc_SNet_InitServer[] =
+	"InitServer(LevelPath,MaxPlayers,ipport) : Intenta inicializar el servidor.";
+
+char str_PyDoc_SNet_CloseServer[68] = "CloseServer(LevelPath) : Acaba el servidor y carga un nivel.";
+
+char str_PyDoc_SNet_IsServer[] =
+	"IsServer() : 1 si esta activado el sistema servidor \n"
+	" NOTA: es para depuracion, mejor use Scrap.GetNetFlags()";
+
+char str_PyDoc_SNet_IsDedicated[] = "IsDedicated() : 1 si ha arrancado en modo servidor dedicado";
+
+char str_PyDoc_SNet_GetServerData[68] =
+	"GetServerData() : Obtiene la tupla (Hostname,ipaddress,ipport)";
+
+char str_PyDoc_SNet_GetBotName[112] =
+	"GetBotName() : Obtiene un nombre valido de entidad jugador manejada por el servidor (bot o jugador l"
+	"ocal)";
+
+char str_PyDoc_SNet_GetObjName[] = "GetObjName() : Obtiene un nombre valido de Objeto cualesquiera.";
+
+char str_PyDoc_SNet_Kick[] = "Kick(entityname) : saca del servidor a un usuario no deseado.";
+
+char str_PyDoc_SNet_InitBrowser[] = "InitBrowser(port) : Inicializa el browser de red local.";
+
+char str_PyDoc_SNet_DoneBrowser[] = "DoneBrowser() : Cierra el browser de red local.";
+
+char str_PyDoc_SNet_GetMyClientShip[56] = "GetMyClientShip() : retorna el nombre de su nave.";
+
+char str_PyDoc_SNet_InitClient[] =
+	"InitClient(ipAddress,ipport) : Inicia el proceso de coneccion con el servidor.";
+
+char str_PyDoc_SNet_CloseClient[64] = "CloseClient(LevelPath) : Acaba el cliente y carga un nivel.";
+
+char str_PyDoc_SNet_IsClient[] =
+	"IsClient() : 1 si esta activado el sistema cliente \n"
+	"NOTA: Scrap.GetNetFlags() tiene el flag cliente activado \nsi la coneccion se hizo efectiva";
+
+char str_PyDoc_SNet_GetClientData[] = "GetClientData() : Obtiene la tupla (ipaddress,ipport)";
+
+char str_PyDoc_SNet_SendUsrString[104] =
+	"SendUsrString(id,string) : -1 significa a todo el mundo en modo servidor, para cliente id se ignora";
+
+char str_PyDoc_SNet_SendChatString[] =
+	"SendChatString(id,string) : -1 significa a todo el mundo en modo servidor, para cliente id se ignora";
+
+char str_PyDoc_SNet_SendCtrlString[72] =
+	"SendCtrlString(string) : Envia una cadena de control a los usuarios";
+
+char str_PyDoc_SNet_SendMasterString[] =
+	"SendMasterString(string) : envia una cadena al master. Si retorna cero no hay master.";
+
+char str_PyDoc_SNet_IsMaster[] =
+	"IsMaster() : 1 si esta activado el sistema cliente \n"
+	"NOTA: Scrap.GetNetFlags() tiene el flag cliente activado \nsi la coneccion se hizo efectiva";
+
+char str_PyDoc_SNet_PingInetSvrs[] =
+	"PingInetSvrs() : 1 exitoso. revisa el estado de los servidores en internet. Se realiza despues de br"
+	"owse.";
+
+char str_PyDoc_SNet_GetPing[60] = "GetPing(EntityName) : Devuelve el ping de un cliente.";
+

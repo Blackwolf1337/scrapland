@@ -51,6 +51,8 @@ static void App_CopyStr(char *dst, const char *src, size_t size) {
 	dst[n] = 0;
 }
 
+int *g_AppBlock;
+
 CApp *CApp_ctor(CApp *self, const char *cmdLine) {
 	self->vftable = g_CAppVftable;
 	cString_ctor(&self->levelPath);
@@ -106,6 +108,10 @@ CApp *CApp_Delete(CApp *self, byte flags) {
 void CApp_Nop(CApp *self) {
 	(void)self;
 }
+
+cGVar g_GVarMasterServerAddress;
+
+cGVar g_GVarMasterServerPort;
 
 /* vf00: the world and the subsystems of the level closed */
 void CApp_DoneGame(CApp *self) {
@@ -237,6 +243,10 @@ void CApp_Shutdown(CApp *self) {
 		self->vftable->RunApp(self, path, *g_ReRunAtExitParams, 0);
 	}
 }
+
+void *g_XLoadIcon;
+
+byte g_XLoadOn;
 
 static void Loading_Stop(void) {
 	Engine_SetCallback(NULL, 4);
@@ -386,6 +396,14 @@ void Loading_Init(void) {
 	Loading_Begin();
 }
 
+int g_XLoadFrames;
+
+int g_XLoadIconFrame;
+
+float g_XLoadStart;
+
+float g_XLoadLastStep;
+
 /* the loading icon of the Xbox loading screen; the original has an unused ecx */
 void Loading_Start(void *unused) {
 	(void)unused;
@@ -467,6 +485,8 @@ void CApp_LoadLevelNow(CApp *self, const char *level) {
 	}
 	CApp_LoadLevelEnd(self, level, t0, 1);
 }
+
+CFont *g_FontHoratio;
 
 /* engine callback 3 with isXbox: the loading tip in a frame */
 byte Loading_DrawXbox(void) {
@@ -979,3 +999,32 @@ const CAppVtbl CApp_vftable = {
 	.RunApp = CApp_RunApp,
 	.IsDedicatedWin = CApp_IsDedicatedWin,
 };
+
+cGVar GVar_ServerMapList;
+
+cGVar GVar_iLoadMsgString;
+
+cGVar GVar_iMap;
+
+cGVar GVar_ReRunAtExitParams;
+
+cGVarFunction GVar_AfterDrawCallback;
+
+cGVar GVar_DrawNextFrame;
+
+cGVar GVar_DefaultMaxPlayersOnServer;
+
+cGVar GVar_ModFileName;
+
+cGVar GVar_DisableSkipSlot;
+
+cGVar GVar_ForceReload;
+
+cGVar GVar_isXbox;
+
+cGVar GVar_ModPathName;
+
+cGVar GVar_LoadMsgString;
+
+cGVar GVar_DefaultServerPort;
+

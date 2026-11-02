@@ -862,6 +862,8 @@ void CNodesTraffic_FindNodes(CNodesTraffic *self, const vec3_t *pos, int type, I
 	}
 }
 
+float g_TrafficSearchDist = 200000.0f;
+
 void CNodesTraffic_CollectCell(CNodesTraffic *self, const vec3_t *pos, int type, cTrafficCell *cell,
 	InfoTrafficNode *list, int max, int *count, float radius, float distMin, float distMax, byte vis, byte useMax) {
 	g_TrafficSearchDist = g_DistGetPVisTrafficAI;
@@ -1280,3 +1282,22 @@ const cGridElementsVtbl cGridElements_InfoTrafficNode_vftable = {
 	.Free = cGridElements_Free,
 	.CellIndex = cGridElements_CellIndex,
 };
+
+cGVar GVar_MinDistNodeTrafficAI;
+
+cGVar GVar_DistGetPVisTrafficAI;
+
+cGVar GVar_ShowNumTrafficAI;
+
+cGVar GVar_ShowTrafficAI;
+
+cGVar GVar_HTrafficCapsule;
+
+cGVar GVar_MNTrafficCapsule;
+
+cGVar GVar_NTrafficCapsule;
+
+cGVar GVar_HNTrafficCapsule;
+
+cGVar GVar_MTrafficCapsule;
+

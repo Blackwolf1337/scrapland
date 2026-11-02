@@ -42,6 +42,8 @@ void ChType_DtritusActionPress(cAbstractFile *params) {
 	}
 }
 
+cEntity *g_DtritusEnt;
+
 /* the sphere test of the punch: params the hit character, killed; D-Tritus turns by 45 degrees away from it, the
  * world in slow motion, the kill effect */
 void ChType_DtritusKill(cAbstractFile *params) {
@@ -194,3 +196,12 @@ void ChType_FXDTritusAttack(cAbstractFile *params) {
 		cObjElementFXDTritusAttack_Start(el, v);
 	}
 }
+
+cGVar GVar_DTritusHitTimeFader;
+
+cGVar GVar_FXDTritusAttackFile;
+
+cGVar GVar_DTritusHitTimeSpeed;
+
+cGVar GVar_FXDTritusKillFile;
+

@@ -5,6 +5,10 @@
 #include "scrap/scorerhud.h"
 #include "scrap/scrapmain.h"
 
+CFont *g_FontScrapBig;
+
+float g_TabBackTextWidth = -1.0f;
+
 cTabScorer *cTabScorer_ctor(cTabScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CTABSCORER_VFTABLE;

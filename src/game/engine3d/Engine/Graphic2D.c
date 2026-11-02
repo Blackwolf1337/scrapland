@@ -7,7 +7,6 @@
 #include "scrap/graphic2d.h"
 
 /* the corner of the texture of each corner of the rectangle (u0 v0, u1 v0, u0 v1, u1 v1) by rot */
-extern int g_Graphic2DRot[4][4];
 
 CGraphic2D *CGraphic2D_ctorTex(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags) {
 	CGraphic2D_Init(self);
@@ -59,6 +58,19 @@ static void Draw_Verts(void *dev, int type, uint32_t nPrim, const Vert2D *v, uin
 	g_RenderTris += (int)nPrim;
 	g_RenderVerts += (int)nVert;
 }
+
+Vert2D g_Verts2D[64];
+
+double g_Screen2DInvW = 0.00125;
+
+double g_Screen2DInvH = 0.0016666666666666668;
+
+int g_Graphic2DRot[4][4] = {
+	{ 0, 1, 2, 3 },
+	{ 2, 0, 3, 1 },
+	{ 3, 2, 1 },
+	{ 1, 3, 0, 2 },
+};
 
 void CGraphic2D_Draw(CGraphic2D *self, const float *pos, const float *uv, const uint32_t *colors,
 	uint32_t nVert, int type) {
@@ -150,6 +162,10 @@ void CGraphic2D_Draw(CGraphic2D *self, const float *pos, const float *uv, const 
 	Verts2D_ScaleX(v, 4);
 	Draw_Verts(dev, D3DPT_TRIANGLESTRIP, 2, v, 4);
 }
+
+int g_Screen2DW = 800;
+
+int g_Screen2DH = 600;
 
 void Graphic2D_SetScreen(int w, int h) {
 	g_Screen2DW = w;
@@ -259,3 +275,6 @@ void Graphic2D_GetScreen(int *w, int *h) {
 		*h = g_Screen2DH;
 	}
 }
+
+cGVar GVar_SpriteScaleWidth;
+

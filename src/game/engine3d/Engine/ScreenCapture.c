@@ -15,8 +15,6 @@
 #include "scrap/misc.h"
 #include "scrap/platform.h"
 
-extern char g_ShotPath[260];	/* MAX_FILEPATH */
-extern int g_ShotNum;
 
 /* IDirect3DSurface8 and IDirect3DDevice8 */
 #define D3DLOCK_READONLY 0x10
@@ -30,6 +28,10 @@ static byte Shot_Double(byte c) {
 	uint32_t v = (uint32_t)c * 2;
 	return v >= 0xff ? 0xff : (byte)v;
 }
+
+char g_ShotPath[260];
+
+int g_ShotNum = -1;
 
 /* the name of the next shot: "Shot*" (or the name set) with the first free number 1..9999 for the '*' */
 static void Shot_NextName(void) {

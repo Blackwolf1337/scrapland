@@ -20,14 +20,17 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
 
+SD_SYM(str_3c082c);
+SD_SYM(str_3c0830);
+SD_SYM(str_3c0834);
+SD_SYM(str_3c0838);
+SD_SYM(str_Empty);
+char *s_TauntRaces[5] = { (void *)sd_str_3c082c, (void *)sd_str_3c0830, (void *)sd_str_3c0834, (void *)sd_str_3c0838, (void *)sd_str_Empty };
+
 /* the statics of the police taunts: the count per race, the races, the last race and the time */
-extern HashTable s_TauntRaceCounts;	/* of cNameItem, 0x1c9 slots, case sensitive */
-extern char * s_TauntRaces[5];		/* "SBi", "SBa", "SFu", "SPo" */
 #define s_TauntLastRace (s_TauntRaces[4])
-extern int s_TauntPoliceCount;		/* -1 at the start */
-extern float s_TauntLastTime;
-extern int s_TauntCountsGuard;
-extern int s_TauntTimeGuard;
+
+HashTable s_TauntRaceCounts = { .numSlots = 457 };
 
 /* the atexit destructor of the count table */
 void Taunts_FiniCounts(void) {
@@ -59,6 +62,12 @@ cEntity *Logic_RandomCar(cEntityListData *list) {
 	}
 	return Logic_AsCar(n->data);
 }
+
+int s_TauntCountsGuard;
+
+float s_TauntLastTime;
+
+int s_TauntTimeGuard;
 
 /* the kind of the police taunt of the ship (3, 4, 6 by the count of its race), -1 for none now */
 int Taunts_PoliceKind(cEntity *ship) {
@@ -165,6 +174,8 @@ void Taunts_Play(const char *ship, const char *race, int kind) {
 	cPy_Function_Execute(g_OnTaunt, 0);
 	Taunts_UpdateEndTime(&g_pWorld->logic);
 }
+
+int s_TauntPoliceCount = -1;
 
 /* the ship that attacks usr taunts it by its AI state; the police has its own kinds */
 void Taunts_Attacker(cEntity *usr, cEntity *ship) {
@@ -300,3 +311,18 @@ byte Taunts_Warnings(float dt) {
 	}
 	return 0;
 }
+
+const char str_3c082c[] = "SBi";
+
+const char str_3c0830[] = "SBa";
+
+const char str_3c0834[] = "SFu";
+
+const char str_3c0838[] = "SPo";
+
+cGVar GVar_PhoneCabWarningDist;
+
+cGVar GVar_TimeBetweeenTaunts2;
+
+cGVarFunction GVar_OnTaunt;
+

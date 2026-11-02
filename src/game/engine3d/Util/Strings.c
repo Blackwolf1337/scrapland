@@ -6,8 +6,6 @@
 #include "scrap/e3dutil.h"
 #include "scrap/material.h"
 
-extern char g_ThousandsSep;
-extern char g_IntBuf[20];	/* the result of String_FromInt(NULL, n) */
 
 /* c at pos, the characters from pos up to len (the terminator at len included) one further */
 void String_InsertChar(char *s, char c, int pos, int len) {
@@ -30,6 +28,8 @@ char *String_Dup(const char *s) {
 	return memcpy(Mem_Alloc(n), s, n);
 }
 
+char g_ThousandsSep = 46;
+
 int String_Thousands(char *s) {
 	int len = (int)strlen(s);
 	int count = 3;
@@ -45,6 +45,8 @@ int String_Thousands(char *s) {
 	}
 	return len;
 }
+
+char g_IntBuf[20];
 
 char *String_FromInt(char *buf, int n) {
 	if (!buf) {

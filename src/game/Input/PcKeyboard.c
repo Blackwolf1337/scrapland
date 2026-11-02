@@ -14,7 +14,6 @@
 #include "scrap/video.h"
 
 #define KB_NAME "Kb"
-extern char g_KeyNameBuf[40];	/* 0x28 bytes */
 
 /* the DIK_ names of the config file (the jump table of the original) */
 static const char *const kb_names[0xee] = {
@@ -113,6 +112,8 @@ const char *cPcKeyboard_GetName(cPcKeyboard *self) {
 	return KB_NAME;
 }
 
+char g_KeyNameBuf[40];
+
 /* the DIK_ name; another code is its hex digits and "Code" */
 const char *cPcKeyboard_GetEntryName(cPcKeyboard *self, int entry) {
 	(void)self;
@@ -133,12 +134,16 @@ void cPcKeyboard_SetDefaults(cPcKeyboard *self) {
 	Device_SetEntries(self, kb_defaults, sizeof(kb_defaults) / sizeof(kb_defaults[0]));
 }
 
+cPcKeyboard g_Keyboard;
+
 void Keyboard_Init(void) {
 	Con_Printf("Input device: %s initialized.\n", KB_NAME);
 	cPcKeyboard_SetDefaults((&g_Keyboard));
 	cAbstractIDevice *d = (&g_Keyboard);
 	InputDevices_Add(&g_InputDevices, &d);
 }
+
+char g_KeyState[256];
 
 void cPcKeyboard_Update(cPcKeyboard *self, float dt) {
 	(void)dt;

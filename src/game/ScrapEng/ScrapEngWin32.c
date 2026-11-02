@@ -15,7 +15,6 @@
 #define APP_EXCEPTIONFILTER 0x233410
 
 
-extern void *g_PrevExceptionFilter;
 
 #define EXC_ACCESS_VIOLATION 0xc0000005u
 
@@ -90,6 +89,8 @@ int __stdcall App_ExceptionFilter(void **ep) {
 #ifdef _WIN32
 void *__stdcall SetUnhandledExceptionFilter(void *filter);
 #endif
+
+void *g_PrevExceptionFilter;
 
 /* the filter on Windows only; elsewhere a crash ends the process the normal way of the system */
 void App_SetExceptionFilter(byte on) {

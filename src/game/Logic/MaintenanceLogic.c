@@ -13,6 +13,10 @@
 #define MAINT_VT(self) ((self)->base.base.vftable)
 #define MAINT_BASE(self) (&(self)->base.base)
 
+cEntity *g_MaintenanceShip;
+
+cEntity *g_MaintenanceFirstShip;
+
 void *cMaintenanceLocalLogic_ctor(void *mem, cEntity *parent) {
 	cMaintenanceLocalLogic *self = mem;
 
@@ -282,3 +286,8 @@ const cGenCharLocalLogicVtbl cMaintenanceLocalLogic_vftable = {
 	.GoTo = cGenCharLocalLogic_GoTo,
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };
+
+cGVar GVar_MaintenanceTimeToNextPos;
+
+cGVar GVar_MaintenanceSphereRadiusFactor;
+

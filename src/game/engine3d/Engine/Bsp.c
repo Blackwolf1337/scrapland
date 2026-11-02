@@ -93,6 +93,8 @@ void CBmpFlt2_Rotate(CBmpFlt2 *self, const CBmpFlt2 *orig) {
 }
 
 
+int g_TxfMode;
+
 /* the TXF cache */
 
 BspTxf *BspTxf_ctor(BspTxf *self, const char *map, const char *name, int n, int on) {
@@ -277,6 +279,10 @@ void BspLMap_dtor(BspLMap *self) {
 	Img_Free(&self->bmp, 4);
 }
 
+int g_LmapInfo;
+
+int g_LmapInfo2 = 1;
+
 void BspLMap_Init(BspLMap *self, int width, int height) {
 	self->minX = width + 1;
 	self->minY = height + 1;
@@ -285,6 +291,8 @@ void BspLMap_Init(BspLMap *self, int width, int height) {
 		CBmp_CreateFill(&self->info, width, height, 0x100020);
 	}
 }
+
+int g_LmapSecond;
 
 CMaterial *BspLMap_GetMat(const BspLMap *self) {
 	int second = g_R_ForceLMap;
@@ -361,6 +369,8 @@ CRenderVB *BspZone_GetVB(BspZone *self, int frmt) {
 	CHECK(0);
 	return NULL;
 }
+
+BspLMap *g_BspLMaps;
 
 void CBsp_dtor(CBsp *self) {
 	if (self->lights) {
@@ -637,6 +647,10 @@ void BspTri_GetExt2(const BspTri *tri, int *x0, int *y0, int *x1, int *y1) {
 	*y1 = tri->ext2[3];
 }
 
+int g_ShadowMapTexX = 256;
+
+int g_ShadowMapTexY = 256;
+
 byte BspTri_IsTexel(int x0, int y0, int x, int y, uint32_t color, const BspTri *tri) {
 	uint32_t dx = (uint32_t)(x - x0);
 	uint32_t dy = (uint32_t)(y - y0);
@@ -695,6 +709,10 @@ static byte Bsp_MatPass(const CMaterial *m) {
 	return m->params.attrib & 0x10 ? 1 : 2;
 }
 
+int g_BspTris;
+
+int g_BspVerts;
+
 void BspTri_Draw(BspTri *tri) {
 	if (tri->pVertVB && g_UseVB) {
 		Render_DrawVBIBFmt(tri->pVertVB, tri->pVertIB, tri->lv.frmt, (uint32_t)tri->lv.nVert, (uint32_t)tri->numTri,
@@ -708,10 +726,20 @@ void BspTri_Draw(BspTri *tri) {
 	g_BspVerts += tri->lv.nVert;
 }
 
+int g_Gamma2x;
+
+int g_ShadowMapModulate4x;
+
 /* the modulation of the light maps: 4x with modulate4x on a device without gamma2x */
 static inline int Bsp_LmapMode(void) {
 	return !g_Gamma2x && g_ShadowMapModulate4x ? 4 : 1;
 }
+
+int g_ShadowMapMultitext;
+
+int g_LightmapMode2;
+
+int g_RenderPass;
 
 void CBsp_DrawTri(CBsp *self, BspTri *tri, byte pass) {
 	CMaterial *mat = tri->Mat;
@@ -778,6 +806,8 @@ void CBsp_DrawZone(CBsp *self, int sector, byte pass) {
 	}
 }
 
+BspTri *g_TriList[1024];
+
 /* the lists of the pass in a zone into g_TriList */
 static int CBsp_ListZone(BspTri *tri, int sector, byte pass, int n) {
 	for (; tri; tri = tri->zone_next) {
@@ -789,6 +819,8 @@ static int CBsp_ListZone(BspTri *tri, int sector, byte pass, int n) {
 	}
 	return n;
 }
+
+PaintZone g_PaintZones[128];
 
 void CBsp_DrawPass(CBsp *self, byte pass) {
 	byte perSector = g_MapDrawBySector != 0;
@@ -829,6 +861,8 @@ void CBsp_DrawPass(CBsp *self, byte pass) {
 	}
 }
 
+int g_WireFrame;
+
 void CBsp_DrawWire(CBsp *self) {
 	if (g_KeyF8 && g_KeyX) {
 		g_KeyF8 = 0;
@@ -859,6 +893,8 @@ void CBsp_DrawWire(CBsp *self) {
 	Rd_DevSetRenderState(dev, D3DRS_FILLMODE, 3);
 }
 
+byte g_RenderOff;
+
 void CBsp_DrawFX(CBsp *self) {
 	if (g_RenderOff) {
 		return;
@@ -871,6 +907,8 @@ void CBsp_DrawFX(CBsp *self) {
 	g_BspTris = 0;
 	g_BspVerts = 0;
 }
+
+CBsp *g_Bsp;
 
 void CBsp_Render(CBsp *self) {
 	if (g_RenderOff) {
@@ -890,6 +928,14 @@ void CBsp_Render(CBsp *self) {
 		CBsp_DrawPass(self, 1);
 	}
 }
+
+byte g_BspSectorOk;
+
+int g_BspSectorErrors;
+
+int g_BspSectorSeen;
+
+vec3_t g_BspEyePrev;
 
 /* the sector of the eye for the portals (info: the counters on the screen instead) */
 void Bsp_PortalInfo(byte info) {
@@ -967,6 +1013,8 @@ void CBsp_ReleaseD3D(CBsp *self) {
 }
 
 
+int g_ShadowMapUse;
+
 /* the global functions called by mundo.cpp */
 
 void Bsp_Free(void) {
@@ -980,6 +1028,8 @@ void Bsp_Free(void) {
 		g_Bsp = NULL;
 	}
 }
+
+void *g_pBSP_VB;
 
 void Bsp_ReleaseD3D(void) {
 	if (!g_ShadowMapUse) {
@@ -1003,6 +1053,8 @@ void Bsp_InitD3D(void) {
 		CHECK(!g_pBSP_VB);
 	}
 }
+
+int g_CalcLmap2;
 
 /* the floor drawn again for the stencil shadows (the callback of g_StencilRender) */
 void Bsp_RenderStencil(void) {
@@ -1471,6 +1523,11 @@ void BspLMap_Copy(CBmp *dst, int dx, int dy, const CBmpFlt2 *orig, const CBmp *m
 	}
 }
 
+uint32_t g_BspColors[16] = {
+	0, 128, 32768, 32896, 0x800000, 0x800080, 0x808000, 0xc0c0c0, 0x808080, 255, 65280, 65535, 0xff0000, 0xff00ff,
+	0xffff00, 0xffffff,
+};
+
 byte BspLMap_Insert(BspTri *list, BspLMap *lm, int w, int h) {
 	int x, y;
 
@@ -1640,6 +1697,8 @@ void CBsp_ColorSinLmap(CBsp *self) {
 		list->flags |= BSPTRI_NOLMAP;
 	}
 }
+
+int g_ShadowMapRadiosity;
 
 /* the lists of the area lights out of the map */
 void CBsp_RemoveLights(CBsp *self) {
@@ -1960,10 +2019,7 @@ int BspTri_CmpZone(const void *pa, const void *pb) {
 
 /* the map compiler: debug output, the TXF cache, the area sums */
 
-extern int g_BspDebugCnt;
-extern int g_BspDebugSel;		/* the region drawn without links */
 /* the collision cache counters of suelo.cpp: hit, miss, peak */
-extern uint32_t g_BspCacheStats[3];	/* [3], the hits, the misses and g_CollisionTestsMax */
 
 void Bsp_MatInfo(CMaterial *m) {
 	uint32_t attrib = m->params.attrib;
@@ -1978,6 +2034,10 @@ void Bsp_MatInfo(CMaterial *m) {
 
 	Con_Verbosef("  %-20s  D:[%s]  G:[%s]  %s%s%s%s%s  %s  %04X\n", m->Name, dif, glow, d, o, e, b, g, transp, attrib);
 }
+
+int g_BspDebugCnt;
+
+int g_BspDebugSel = -1;
 
 /* the boxes of the regions with links (and the selected one) and their links; the regions drawn */
 int BspRegion_Debug(BspRegion *r) {
@@ -2335,6 +2395,8 @@ void BspTxf_Load(BspTxf *self, BspTri **lists, int n, int which) {
 	BspTxf_Info(self);
 }
 
+uint32_t g_BspCacheStats[3];
+
 /* the end of the compilation: the time and the collision cache counters; yes exits the game */
 void Bsp_EndMessage(CBsp *self, int secs) {
 	char buf[0x400];
@@ -2356,7 +2418,6 @@ void Bsp_EndMessage(CBsp *self, int secs) {
 
 /* the map: made from the floor of the world */
 
-extern int g_LmapSaveIni;	/* the settings back into the .ini of the map */
 
 
 /* the obj3D of a node as its class (the inline cast of objeto3D.h, NULL with a failed CHECK) */
@@ -2369,6 +2430,8 @@ static void *Obj3D_As(CNode3D *n, uint32_t class) {
 	}
 	return o;
 }
+
+int g_ShadowMapCalculate;
 
 CBsp *CBsp_ctor(CBsp *self, const char *name, const vec3_t *scale) {
 	char buf[0x104];
@@ -2438,7 +2501,10 @@ static void Bsp_LogNodes(CScene *scn, const char *fmt, byte done) {
 	}
 }
 
-extern float g_ShadowMapBrightness;
+float g_ShadowMapGamma = 1.0f;
+
+float g_ShadowMapBrightness = 1.0f;
+
 void Bsp_Create(void) {
 	char buf[0x104];
 
@@ -2535,9 +2601,10 @@ void Bsp_Create(void) {
 	}
 }
 
+cGVar GVar_LightmapDebugTex;
+
 /* the radiosity: the areas and region trees of the lists, the links between regions */
 
-extern cGVar GVar_LightmapDebugTex;
 #define g_LightmapDebugTex (GVar_LightmapDebugTex.value.i)	/* gvar */
 #define g_BspLinks g_BspNumLinks		/* the region links (radiosity code) */
 
@@ -2653,6 +2720,8 @@ int BspRegion_Link(CBsp *self, BspRegion *a, BspRegion *b, int link, float thres
 	return 1;
 }
 
+int g_BspAreasTotal[4];
+
 /* the sample points of the texels of each triangle of the lists and their levels of detail */
 void CBsp_InitAreas(CBsp *self) {
 	CTable tmp;
@@ -2735,9 +2804,10 @@ void CBsp_InitAreas(CBsp *self) {
 }
 
 
+cGVar GVar_LightmapGlowMult;
+
 /* the glow of the lists and the shadows of the area lights */
 
-extern cGVar GVar_LightmapGlowMult;
 #define g_LightmapGlowMult (GVar_LightmapGlowMult.value.f)	/* gvar */
 
 /* the glow map of the material sampled into lightA, squared */
@@ -2861,6 +2931,8 @@ void CBmpFlt_FillGaps(CBmpFlt *img, const CBmp *mask) {
 	}
 }
 
+
+int g_LmapSaveIni = 1;
 
 /* the light map settings back into "<map>.ini" when one changed (a backup of the old file first) */
 void CBsp_SaveIni(CBsp *self) {
@@ -3180,3 +3252,30 @@ void Bsp_InitLights(void) {
 		g_BspLights[i].cache = (CGroundHit){ 0, 0, NULL };
 	}
 }
+
+cGVar GVar_LightmapDxtPadding;
+
+cGVar GVar_ShowInfoOnSectorError;
+
+cGVar GVar_MapDrawBySector;
+
+cGVar GVar_R_ForceLMap;
+
+cGVar GVar_MapRenderMat;
+
+cGVar GVar_RenderMap;
+
+cGVar GVar_R_UsePortals;
+
+cGVar GVar_MapSortByShader;
+
+cGVar GVar_LightmapLimitUV;
+
+cGVar GVar_RenderSectors;
+
+cGVar GVar_MapDrawSector;
+
+cGVar GVar_LightmapPackMode;
+
+cGVar GVar_MapRenderMap;
+

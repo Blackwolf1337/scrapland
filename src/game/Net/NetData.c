@@ -26,6 +26,8 @@ static char *Net_StrDup(const char *s) {
 	return p;
 }
 
+char *g_NetResources[256];
+
 int Net_AddResource(const char *name) {
 	if (!g_pApp->flags) {
 		return 0;
@@ -60,6 +62,8 @@ int Net_AddResource(const char *name) {
 	return -1;
 }
 
+cGVar g_GVarServerType;
+
 void Net_Done(void) {
 	for (int i = 0; i < NET_RESOURCES; i++) {
 		if (g_NetResources[i]) {
@@ -69,6 +73,8 @@ void Net_Done(void) {
 	}
 	cGVar_SetFlag((&g_GVarServerType), 1, 0);
 }
+
+int g_NetBotCounter;
 
 void Net_GetBotName(char *buf) {
 	do {
@@ -86,6 +92,8 @@ int Net_GetPlayerIndex(const char *name) {
 	}
 	return -1;
 }
+
+int g_NetObjCounter;
 
 void Net_GetObjName(char *buf) {
 	do {
@@ -111,6 +119,8 @@ int Net_GetPing(const char *player) {
 	}
 	return Net_GetClientPing((uint32_t)Net_GetPlayerIndex(player));
 }
+
+byte g_NetResInit;
 
 void Net_Init(void) {
 	for (int i = 0; i < NET_RESOURCES; i++) {
@@ -377,6 +387,8 @@ int Net_DoneBrowser(void) {
 	return Transport_CloseBrowser();
 }
 
+int g_NetBrowserPort;
+
 int Net_InitBrowser(int a, const char *address) {
 	if (!a) {
 		a = NET_DEFAULT_PORT;
@@ -419,3 +431,18 @@ void NetData_OnBrowse(const char *ip, int port, const NetServerInfo *info, int p
 	cPy_Function_AddParamS(g_OnNetBrowseCallback, info->map);
 	cPy_Function_Execute(g_OnNetBrowseCallback, 0);
 }
+
+cGVar GVar_NetMaxPlayersInitSend;
+
+cGVarFunction GVar_ClientSetConfig;
+
+cGVarFunction GVar_MasterCommandFunc;
+
+cGVarFunction GVar_ClientAddRes;
+
+cGVar GVar_ClientRemotePassword;
+
+cGVarFunction GVar_OnNetBrowseCallback;
+
+cGVarFunction GVar_ClientDelRes;
+

@@ -18,7 +18,6 @@
 #include "scrap/platform.h"
 
 #define PAD_ERROR "ERROR"
-extern char g_PadLabelBuf[32];	/* 0x20 bytes */
 
 static const char *const pad_labels[0x34] = {
 	[0x00] = "A", [0x01] = "B", [0x02] = "X", [0x03] = "Y", [0x04] = "BLACK", [0x05] = "WHITE", [0x06] = "BACK",
@@ -38,6 +37,8 @@ static const byte pad_defaults[][3] = {
 	{ 7, 2, 5 }, { 22, 2, 5 }, { 10, 2, 6 }, { 13, 2, 7 }, { 11, 2, 8 },
 };
 
+int g_PadCodes[24] = { 35, 34, 33, 32, 8, 41, 40, 39, 38, 9, 0, 1, 2, 3, 4, 10, 5, 11, 7, 6, 50, 51, 49, 48 };
+
 static void Pad_Bind(cPcPad *pad, int code, int set, int action) {
 	cAbstractIDevice_SetEntry(&pad->base, g_PadCodes[code], set, pad->index, action, 0);
 }
@@ -52,6 +53,8 @@ cPcPad *cPcPad_ctor(cPcPad *self, int index) {
 	memset(self->f25, 0, sizeof(self->f25));
 	return self;
 }
+
+cPcPad g_PcPads[4];
 
 /* the atexit destructor and the static initializer of the four pads; the original has
  * the constructor inlined */
@@ -235,6 +238,8 @@ const char *cPcPad_GetEntryName(cAbstractIDevice *elem, int entry) {
 	return self->base.vftable->GetEntryLabel(&self->base, entry);
 }
 
+char g_PadLabelBuf[32];
+
 /* "A" .. "DOWN"; "But13" .. "But32" for the buttons without a name, "Unknow" above */
 const char *cPcPad_GetEntryLabel(cAbstractIDevice *base, int entry) {
 	cPcPad *self = (cPcPad *)base;
@@ -250,6 +255,8 @@ const char *cPcPad_GetEntryLabel(cAbstractIDevice *base, int entry) {
 	memcpy(g_PadLabelBuf, "Unknow", 7);
 	return g_PadLabelBuf;
 }
+
+int g_NumPcPads;
 
 /* the four pads into the device list (the static objects, no device check) */
 int Pad_Init(void) {
@@ -393,3 +400,30 @@ const cAbstractIDeviceVtbl cPcPad_vftable = {
 	.IsReserved = cAbstractIDevice_IsReservedTrue,
 	.SetEntry = cPcPad_SetEntry,
 };
+
+cGVar GVar_XBInvertCharYPad;
+
+cGVar GVar_XBInvertLRChar;
+
+cGVar GVar_XBCDigitalAsAnalog;
+
+cGVar GVar_XBVDigitalAsAnalog;
+
+cGVar GVar_XBInvertLRVehicle;
+
+cGVar GVar_XBInvertVehicleYPad;
+
+cGVar GVar_XBCameraAutoPad;
+
+cGVar GVar_XBVehicleAsFPS;
+
+cGVar GVar_IsUsingMouse;
+
+cGVar GVar_MainPcPad;
+
+cGVar GVar_PCPadDeadZone;
+
+cGVar GVar_PCPadConnected;
+
+cGVar GVar_PCPadForeground;
+

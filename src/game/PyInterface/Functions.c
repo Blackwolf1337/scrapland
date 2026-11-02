@@ -13,6 +13,8 @@ byte Py_IsReady(void) {
 	return g_PythonReady;
 }
 
+cFileMem *g_FreeParamFiles;
+
 /* a parameter file from the free list or a new one with a 0x200 byte buffer */
 cFileMem *ParamFile_Get(void) {
 	cFileMem *f = g_FreeParamFiles;
@@ -43,6 +45,8 @@ extern cPy_Function g_ChTypeSphereFunc;
 void PyFunction_FiniSphereFunc(void) {
 	cPy_Function_dtor(g_SphereFunc);
 }
+
+cPy_Function *g_PyFunctions;
 
 void PyFunction_InitSphereFunc(void) {
 	cPy_Function *head = g_PyFunctions, *self = g_SphereFunc;
@@ -202,6 +206,8 @@ byte cPy_Function_SetPython(cPy_Function *self, const char *module, const char *
 	cPy_Function_Clear(self);
 	return 0;
 }
+
+cPy_NativeFunc *g_NativeFuncs;
 
 byte cPy_Function_SetFunc(cPy_Function *self, const char *name) {
 	char module[0x100];

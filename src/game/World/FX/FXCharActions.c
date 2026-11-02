@@ -1231,17 +1231,19 @@ void cObjElementFXGearMissile_Run(void *self, cDebris *d) {
 	}
 }
 
+cGVar GVar_GearMissileThunder1Sound;
+
 /* ---- cObjElementFXGearMissile_Update ---- */
 
-extern cGVar GVar_GearMissileThunder1Sound;
 #define g_GearMissileThunder1Sound (GVar_GearMissileThunder1Sound.value.s)
-extern cGVar GVar_GearMissileThunder2Sound;
+cGVar GVar_GearMissileThunder2Sound;
+
 #define g_GearMissileThunder2Sound (GVar_GearMissileThunder2Sound.value.s)
-extern cGVar GVar_GearMissileThunderSoundVol;
+cGVar GVar_GearMissileThunderSoundVol;
+
 #define g_GearMissileThunderSoundVol (GVar_GearMissileThunderSoundVol.value.f)
 #define FXGEAR_RAMP_BALL 0x4306b0
 #define FXGEAR_RAMPS 0x4306d4		/* 3 color ramps of 9 colors */
-extern uint32_t FXGEAR_PUFF_RAMPS[27];	/* [3 * 9] */
 #define FXGEAR_RAMP_PUFF 0x4306f8
 #define FXGEAR_RAMP_SPARK 0x430788
 #define FXGEAR_ENTITIES 0x11		/* the entity lists the bolts hit */
@@ -1258,6 +1260,12 @@ static uint32_t GM_Color(int a, uint32_t rgb) {
 	}
 	return (uint32_t)a << 24 | rgb;
 }
+
+uint32_t FXGEAR_PUFF_RAMPS[27] = {
+	0xff5b66ff, 0x966462fe, 0x506d5dfd, 0x7812fc, 0x8551fb, 0x40964af9, 0x809b47f9, 0xc49b47f9, 0xff9b47f9,
+	0xff86edff, 0xff8ddbff, 0x8095c4ff, 0x9dadff, 0xa598ff, 0x40ae7eff, 0x80b765ff, 0xffb765ff, 0xffb765ff,
+	0xffffad2a, 0xc0feee90, 0x80ef6f38, 0x40bc3010, 0x407a1f0a, 0x5c3f1005, 0x800e0401, 0xff000000, 0xff000000,
+};
 
 static uint32_t *GM_Ramp3(void) {
 	return FXGEAR_PUFF_RAMPS + crt_rand() % 3 * 9;
@@ -1492,8 +1500,9 @@ static void GM_NewBolt(cObjElementFXGearMissile *self, int i, const vec3_t *pos,
 	snd->vftable->PlayAt(snd, name, &hit, vol);
 }
 
+uint32_t GM_Puff_430788[9] = { 0xff565656, 0xf6f6ff, 0x8282e6, 0x5e5eab, 0x44444c, 0xf0f38, 0x80070728, 0xff020219, 0xff000000 };
+
 /* the puffs of the ball and the sparks behind it */
-extern uint32_t GM_Puff_430788[9];
 static void GM_Puffs(cObjElementFXGearMissile *self, const vec3_t *pos) {
 	CGameParticles *p = &self->particles;
 	CGameParticles *sp = &self->sparks;
@@ -1627,8 +1636,9 @@ static void GM_Fade(cObjElementFXGearMissile *self, float q) {
 	}
 }
 
+uint32_t cObjElementFXGearMissile_Update_4306b0[9] = { 0xffb9b9ed, 0x80b5b5f0, 0xb2b2f2, 0xafaff5, 0x20aaaaf9, 0x40a7a7fc, 0x80a3a3ff, 0xc0a3a3ff, 0xffa3a3ff };
+
 /* the sparks of the ball while it fades */
-extern uint32_t cObjElementFXGearMissile_Update_4306b0[9];
 static void GM_FadeSparks(cObjElementFXGearMissile *self, cDebris *debris, float dt) {
 	CGameParticles *p = &self->particles;
 	vec3_t d;
@@ -1856,6 +1866,12 @@ void cObjElementFXDTritusAttack_Start(cObjElementFXDTritusAttack *self, cEntity 
 	}
 }
 
+byte g_FXFunctionaryInit;
+
+int g_FXFunctionaryVertex[14];
+
+uint32_t g_FXFunctionaryColor[14];
+
 void cObjElementFXFunctionarySpecialAction_Start(void *self, cEntity *e) {
 	cObjElementFXFunctionarySpecialAction *s = self;
 	vec3_t v, rot, out, pos;
@@ -1903,7 +1919,11 @@ static void FXA_Jitter(vec3_t *p, float r) {
 	p->z = p->z + d->z * r;
 }
 
-extern uint32_t cObjElementFXBettyAttack_Emit_4307d0[18];
+uint32_t cObjElementFXBettyAttack_Emit_4307d0[18] = {
+	0x20fff5c3, 0x20ffc36e, 0x20965028, 0x305e220a, 0x60441205, 0xa4190700, 0xde0a0200, 0xff000000, 0xff000000,
+	0x20fff57d, 0x20ffb950, 0x20a0461e, 0x306e1805, 0x604e1202, 0xa4280700, 0xde0a0200, 0xff000000, 0xff000000,
+};
+
 void cObjElementFXBettyAttack_Emit(cObjElementFXBettyAttack *self, float x, float y, float z) {
 	CGameParticles *sp = &self->particles;
 	vec3_t v, ang, out;
@@ -2219,8 +2239,14 @@ static void FXA_Brake(CGameParticles *sp, float k) {
 	sp->initAccMax = sp->initAccMin;
 }
 
-extern uint32_t cObjElementFXPoliceGearConversion_Start_4305d8[27];
-extern uint32_t cObjElementFXPoliceGearConversion_Start_430644[9];
+uint32_t cObjElementFXPoliceGearConversion_Start_4305d8[27] = {
+	0xffff6e46, 0x6eff5a37, 0x80b4462a, 0x8778371e, 0x9632190f, 0xa4140503, 0xc0080201, 0xff000000, 0xff000000,
+	0xffff965a, 0x6eff6e41, 0x80b45032, 0x87783c23, 0x9632190f, 0xa4140503, 0xc0080201, 0xff000000, 0xff000000,
+	0xffa48278, 0x6e91695f, 0x806e5046, 0x875a3c32, 0x96321923, 0xa4140519, 0xc0080205, 0xff000000, 0xff000000,
+};
+
+uint32_t cObjElementFXPoliceGearConversion_Start_430644[9] = { 0xffebebff, 0x20e1e1ff, 0x20d5d5ff, 0x20cacaff, 0x40c0c0ff, 0x60c0c0ff, 0x80c0c0ff, 0xffc0c0ff, 0xffc0c0ff };
+
 void cObjElementFXPoliceGearConversion_Update(cObjElementFX *base, cDebris *d, float dt) {
 	cObjElementFXPoliceGearConversion *self = (cObjElementFXPoliceGearConversion *)base;
 	vec3_t p, rot, v, dir, o, ang, tmp, verts[6];
@@ -2954,7 +2980,8 @@ void cObjElementFXDTritusAttack_Update(cObjElementFX *base, cDebris *d, float dt
 
 #define FXA_RAMP_POLICESTEAL 0x4307ac
 
-extern uint32_t cObjElementFXBankerSteal_Update_4307ac[9];
+uint32_t cObjElementFXBankerSteal_Update_4307ac[9] = { 0xff000000, 0x80808080, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0x80808080, 0xff000000, 0xff000000 };
+
 void cObjElementFXPoliceSteal_Update(cObjElementFX *base, cDebris *d, float dt) {
 	cObjElementFXPoliceSteal *self = (cObjElementFXPoliceSteal *)base;
 	vec3_t tmp, a, b, v, ang, dir;
@@ -3747,8 +3774,12 @@ void cObjElementFXMessengerTakeDataPack_Update(cObjElementFX *base, cDebris *d, 
 
 #define FXA_RAMP_MERCURY 0x430668		/* [2] */
 
+uint32_t FXMercenary_Drop_430668[18] = {
+	0x30a0ff8c, 0x40a0ff8c, 0x4ba0ff8c, 0x5ca0ff8c, 0x80a0ff8c, 0xa4a0ff8c, 0xc4408037, 0xff000000, 0xff000000,
+	0x10c4ff80, 0x20c4ff64, 0x30baff5a, 0x5caaff46, 0x80a0ff32, 0xa496ff26, 0xc4408012, 0xff000000, 0xff000000,
+};
+
 /* a drop of mercury: the sprite and size, the rotation, the ramp and the emission */
-extern uint32_t FXMercenary_Drop_430668[18];
 static void FXMercenary_Drop(CGameParticles *sp, float life, byte second) {
 	sp->lifeTime = life;
 	sp->sizeLife = 1.0f;
@@ -4019,8 +4050,13 @@ void cObjElementFXBishopAttack_Update(cObjElementFX *base, cDebris *d, float dt)
 }
 
 #define FXA_RAMP_SELLLIFE 0x430818		/* [3] */
-extern uint32_t FXA_SELLLIFE_RAMPS[27];	/* [3 * 9] */
 #define FXA_RAMP_SELLLIFE2 0x43083c		/* [2] */
+
+uint32_t FXA_SELLLIFE_RAMPS[27] = {
+	0x405aff5a, 0x4b4bff4b, 0x603ce63c, 0x7023ab23, 0x80264b26, 0xa40d380d, 0xc0051e05, 0xff000000, 0xff000000,
+	0x4080ff80, 0x4b6eff6e, 0x605ae65a, 0x703cab3c, 0x80234b23, 0xa40a380a, 0xc0051e05, 0xff000000, 0xff000000,
+	0x4040ff40, 0x4b32ff32, 0x6028e628, 0x701eab1e, 0x80144b14, 0xa40a380a, 0xc0051e05, 0xff000000, 0xff000000,
+};
 
 /* the glow of the Bishop: rotation, the ramp and one particle */
 static void FXSellLife_Glow(CGameParticles *sp) {
@@ -4432,3 +4468,24 @@ const cObjElementFXVtbl cObjElementFXMercenaryDrink_vftable = {
 	.Start = FXCharActions_Attach8,
 	.Reset = cObjElementFXMercenaryDrink_Reset,
 };
+
+cGVar GVar_BankerStealSoundVol;
+
+cGVar GVar_BankerStealPosZ;
+
+cGVar GVar_BankerStealPosX;
+
+cGVar GVar_BankerSteal2Sound;
+
+cGVar GVar_BankerSteal3Sound;
+
+cGVar GVar_BankerStealPosY;
+
+cGVar GVar_BankerSteal1Sound;
+
+cGVar GVar_BankMasterBatonPosZ;
+
+cGVar GVar_BankMasterBatonPosY;
+
+cGVar GVar_BankMasterBatonPosX;
+

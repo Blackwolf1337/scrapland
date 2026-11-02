@@ -111,5 +111,94 @@ PyObject *SFX_EmbeddedSet(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-extern PyMethodDef SFX_methods[7];
+SD_SYM(str_PyMethod_SFX_ShipExplosion);
+SD_SYM(SFX_ShipExplosion);
+SD_SYM(str_PyDoc_SFX_ShipExplosion);
+SD_SYM(str_PyMethod_SFX_CharacterConversor);
+SD_SYM(SFX_CharacterConversor);
+SD_SYM(str_PyDoc_SFX_CharacterConversor);
+SD_SYM(str_PyMethod_SFX_CharacterConversion);
+SD_SYM(SFX_CharacterConversion);
+SD_SYM(str_PyDoc_SFX_CharacterConversion);
+SD_SYM(str_PyMethod_SFX_BishopSellLife);
+SD_SYM(SFX_BishopSellLife);
+SD_SYM(str_PyDoc_SFX_BishopSellLife);
+SD_SYM(str_PyMethod_SFX_MoneyTransfer);
+SD_SYM(SFX_MoneyTransfer);
+SD_SYM(str_PyDoc_SFX_MoneyTransfer);
+SD_SYM(str_PyMethod_SFX_EmbeddedSet);
+SD_SYM(SFX_EmbeddedSet);
+SD_SYM(str_PyDoc_SFX_EmbeddedSet);
+PyMethodDef SFX_methods[7] = {
+	{
+		.ml_name = (void *)sd_str_PyMethod_SFX_ShipExplosion,
+		.ml_meth = (void *)sd_SFX_ShipExplosion,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SFX_ShipExplosion,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SFX_CharacterConversor,
+		.ml_meth = (void *)sd_SFX_CharacterConversor,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SFX_CharacterConversor,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SFX_CharacterConversion,
+		.ml_meth = (void *)sd_SFX_CharacterConversion,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SFX_CharacterConversion,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SFX_BishopSellLife,
+		.ml_meth = (void *)sd_SFX_BishopSellLife,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SFX_BishopSellLife,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SFX_MoneyTransfer,
+		.ml_meth = (void *)sd_SFX_MoneyTransfer,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SFX_MoneyTransfer,
+	},
+	{
+		.ml_name = (void *)sd_str_PyMethod_SFX_EmbeddedSet,
+		.ml_meth = (void *)sd_SFX_EmbeddedSet,
+		.ml_flags = 1,
+		.ml_doc = (void *)sd_str_PyDoc_SFX_EmbeddedSet,
+	},
+};
+
 SD_PY_MODULE(SFX, 0x42d060)
+
+const char str_PyMethod_SFX_ShipExplosion[] = "ShipExplosion";
+
+const char str_PyMethod_SFX_CharacterConversor[] = "CharacterConversor";
+
+const char str_PyMethod_SFX_CharacterConversion[] = "CharacterConversion";
+
+const char str_PyMethod_SFX_BishopSellLife[] = "BishopSellLife";
+
+const char str_PyMethod_SFX_MoneyTransfer[] = "MoneyTransfer";
+
+const char str_PyMethod_SFX_EmbeddedSet[] = "EmbeddedSet";
+
+char str_PyDoc_SFX_ShipExplosion[] =
+	"ShipExplosion(V3D Pos, V3D Vel, float scale, float time, float nflames, bool bcolision) : Explosión "
+	"de la nave.";
+
+char str_PyDoc_SFX_CharacterConversor[] =
+	"FXCharacterConversor(CharacterName, ConversorName, phase) : Conversor de Personajes.";
+
+char str_PyDoc_SFX_CharacterConversion[88] =
+	"FXCharacterConversion(AttackerName, AttackedName, time) : Conversión de Personajes.";
+
+char str_PyDoc_SFX_BishopSellLife[] =
+	"FXBishopSellLife(AttackerName, AttackedName) : Efecto de dar vida (de Attacker [Bishop ó NULL] a Att"
+	"acked[Usuario]).";
+
+char str_PyDoc_SFX_MoneyTransfer[] =
+	"FXMoneyTransfer(EntityFrom, EntityTo, Time) : Transferencia de dinero";
+
+char str_PyDoc_SFX_EmbeddedSet[] =
+	"FXEmbeddedSet(EntityName, FXType) : Asigna el controlador de efectos embedidos.";
+

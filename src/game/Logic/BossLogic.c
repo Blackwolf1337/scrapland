@@ -50,6 +50,8 @@ void cBossLocalLogic_Vf33(cLocalLogic *elem, byte on) {
 	self->base.base.vftable->SetState(&self->base.base.logic, 0, NULL);
 }
 
+byte g_BossWasIdle;
+
 /* vf17 */
 void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cBossLocalLogic *self = (cBossLocalLogic *)elem;
@@ -178,3 +180,10 @@ const cGenCharLocalLogicVtbl cBossLocalLogic_vftable = {
 	.GoTo = cGenCharLocalLogic_GoTo,
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };
+
+cGVar GVar_BossWalkingTime;
+
+cGVar GVar_BossWorkPlace;
+
+cGVar GVar_BossWorkingTime;
+

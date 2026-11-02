@@ -71,6 +71,8 @@ void cMemBlocks_Free(cMemBlocks *self, void *p) {
 	self->status[idx / 32] &= ~(1u << (idx % 32));
 }
 
+cMemPool *g_MemPools;
+
 cMemPool *cMemPool_ctor(cMemPool *self, const char *name, const uint32_t *values) {
 	self->blocks = Mem_Alloc(MEMPOOL_CLASSES * sizeof(*self->blocks));
 	for (uint32_t i = 0; i < MEMPOOL_CLASSES; i++) {
@@ -175,6 +177,13 @@ void MemPools_PrintAll(void) {
 	}
 }
 
+cMemPool *g_PyPool;
+
+uint32_t g_PyPoolValues[32] = {
+	115, 36, 102, 944, 411, 410, 2643, 2070, 2182, 1877, 1189, 956, 642, 1320, 208, 120, 113, 64, 76, 63, 42, 59,
+	38, 52, 23, 30, 42, 22, 24, 28, 19, 24,
+};
+
 static cMemPool *PyPool_Get(void) {
 	if (!g_PyPool) {
 		cMemPool *mem = operator_new(sizeof(*mem));
@@ -203,6 +212,10 @@ void PyPool_Delete(void) {
 		g_PyPool = NULL;
 	}
 }
+
+cMemStats g_PyMemStats;
+
+cMemStats *g_MemStatsContext;
 
 /* the entry points set the statistics context only for the call (and leave it NULL) */
 void *PyPool_Malloc(size_t size) {

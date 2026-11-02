@@ -693,3 +693,6 @@ const cWithLifeEntityVtbl cWithLifeEntity_vftable = {
 	.SetActCtrl = cWithLifeEntity_SetActCtrl,
 	.IsEMIed = cWithLifeEntity_IsEMIed,
 };
+
+cGVarFunction GVar_OnGeneralDamage;
+

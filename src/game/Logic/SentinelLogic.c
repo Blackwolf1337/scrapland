@@ -19,35 +19,48 @@
 
 extern const cSentinelLocalLogicVtbl cSentinelLocalLogic_vftable;
 #define CSENTINELLOCALLOGIC_VFTABLE (&cSentinelLocalLogic_vftable.base)
-extern cGVar GVar_SentinelInspectTime;
+cGVar GVar_SentinelInspectTime;
+
 #define g_SentinelInspectTime (GVar_SentinelInspectTime.value.f)
-extern cGVar GVar_SentinelSuspectTime;
+cGVar GVar_SentinelSuspectTime;
+
 #define g_SentinelSuspectTime (GVar_SentinelSuspectTime.value.f)
-extern cGVar GVar_SentinelBankerNPCDetect;
+cGVar GVar_SentinelBankerNPCDetect;
+
 #define g_SentinelBankerNPCDetect (GVar_SentinelBankerNPCDetect.value.f)
-extern cGVar GVar_SentinelGotoSpeed;
+cGVar GVar_SentinelGotoSpeed;
+
 #define g_SentinelGotoSpeed (GVar_SentinelGotoSpeed.value.f)
-extern cGVar GVar_SentinelAcuseTime;
+cGVar GVar_SentinelAcuseTime;
+
 #define g_SentinelAcuseTime (GVar_SentinelAcuseTime.value.f)
-extern cGVar GVar_SentinelGotoTime;
+cGVar GVar_SentinelGotoTime;
+
 #define g_SentinelGotoTime (GVar_SentinelGotoTime.value.f)
-extern cGVar GVar_SentinelAcuseSpeed;
+cGVar GVar_SentinelAcuseSpeed;
+
 #define g_SentinelAcuseSpeed (GVar_SentinelAcuseSpeed.value.f)
-extern cGVar GVar_SentinelSearchSpeed;
+cGVar GVar_SentinelSearchSpeed;
+
 #define g_SentinelSearchSpeed (GVar_SentinelSearchSpeed.value.f)
-extern cGVar GVar_SentinelSuspectSpeed;
+cGVar GVar_SentinelSuspectSpeed;
+
 #define g_SentinelSuspectSpeed (GVar_SentinelSuspectSpeed.value.f)
-extern cGVar GVar_SentinelGotoRadius;
+cGVar GVar_SentinelGotoRadius;
+
 #define g_SentinelGotoRadius (GVar_SentinelGotoRadius.value.f)
 extern cGVar GVar_SentinelStdFar;
 #define g_SentinelStdFar (GVar_SentinelStdFar.value.f)
 extern cGVar GVar_SentinelStdFovY;
 #define g_SentinelStdFovY (GVar_SentinelStdFovY.value.f)
-extern cGVar GVar_SentinelInspectSpeed;
+cGVar GVar_SentinelInspectSpeed;
+
 #define g_SentinelInspectSpeed (GVar_SentinelInspectSpeed.value.f)
-extern cGVar GVar_SentinelBankerDetect;
+cGVar GVar_SentinelBankerDetect;
+
 #define g_SentinelBankerDetect (GVar_SentinelBankerDetect.value.f)
-extern cGVar GVar_SentinelRelaxSpeed;
+cGVar GVar_SentinelRelaxSpeed;
+
 #define g_SentinelRelaxSpeed (GVar_SentinelRelaxSpeed.value.f)
 extern cGVar GVar_SentinelStdFovX;
 #define g_SentinelStdFovX (GVar_SentinelStdFovX.value.f)

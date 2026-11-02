@@ -9,6 +9,10 @@
 #include "scrap/fxelements.h"
 #include "scrap/primitive.h"
 
+char g_NurseName[128];
+
+cEntity *g_NurseTarget;
+
 /* the sphere test of the hit: params a character, not the nurse; the player is never the target */
 void ChType_NurseSphereHit(cAbstractFile *params) {
 	char name[0x80];
@@ -27,9 +31,6 @@ void ChType_NurseSphereHit(cAbstractFile *params) {
 	}
 }
 
-extern uint32_t NURSE_RAMP_GLOW[9];	/* [9] */
-extern uint32_t NURSE_RAMPS_STARS[18];	/* [2 * 9], two ramps */
-extern uint32_t NURSE_RAMPS_SPARKS[18];	/* [2 * 9], two ramps */
 #define NURSE_TWO_PI 6.2831854820251465
 
 static void Nurse_PosMin(CGameParticles *p, float x, float y, float z) {
@@ -50,6 +51,18 @@ static void Nurse_Start(CGameParticles *p, float rotVar, uint16_t sprites) {
 	CGameParticles_Apply(p);
 	CGameParticles_SetColorRampOn(p, 1);
 }
+
+uint32_t NURSE_RAMPS_STARS[18] = {
+	0xff000000, 0x5a202020, 0x20303030, 0x20303030, 0x20303030, 0x80303030, 0xbe202020, 0xff000000, 0xff000000,
+	0xff000000, 0x5a404040, 0x20606060, 0x20606060, 0x20606060, 0x80606060, 0xbe404040, 0xff000000, 0xff000000,
+};
+
+uint32_t NURSE_RAMPS_SPARKS[18] = {
+	0xffb9b9ed, 0x80b5b5f0, 0xb2b2f2, 0xafaff5, 0x20aaaaf9, 0x40a7a7fc, 0x80a3a3ff, 0xc0a3a3ff, 0xffa3a3ff,
+	0xff9191ed, 0x808d8df0, 0x8a8af2, 0x8787f5, 0x208282f9, 0x407f7ffc, 0x807b7bff, 0xc07b7bff, 0xff7b7bff,
+};
+
+uint32_t NURSE_RAMP_GLOW[9] = { 0xff565656, 0xb4fff06e, 0x8cefa01e, 0x969a500e, 0xc3604b1e, 0xd2404040, 0xeb202020, 0xff000000, 0xff000000 };
 
 void Nurse_HammerFX(cEntity *v) {
 	vec3_t off, mr, t, pos, up, one, rot, dir, x1, t2, cam;
@@ -242,6 +255,8 @@ void Nurse_HammerFX(cEntity *v) {
 		CGameParticles_EmitDt(p, 1, 0, e);
 	}
 }
+
+cPad g_Pads[4];
 
 /* the hit of the hammer of the nurse g_NurseName at the end of ActionLoop: the character in front (the sphere test
  * for the player, the target of the AI when it sleeps near it) is blocked by a gatekeeper, a gear or another nurse,
@@ -449,3 +464,14 @@ void ChType_NurseTryHammerAgain(cAbstractFile *params) {
 		cActCtrl_Play(ChType_ActCtrl(v), "ActionInit", 1, 1.0f);
 	}
 }
+
+cGVarFunction GVar_OnSleep;
+
+cGVar GVar_NurseAlarmHit;
+
+cGVar GVar_NurseDispDist;
+
+cGVar GVar_FXHammerHitFile;
+
+cGVar GVar_NurseDispRad;
+
