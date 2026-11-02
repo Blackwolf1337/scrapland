@@ -799,7 +799,7 @@ int Scorer_GetCamVarInt(int player, const char *name) {
 }
 
 void Scorer_DrawPyMemStats(void) {
-	cMemStats *ms = g_PyMemStats;
+	cMemStats *ms = (&g_PyMemStats);
 
 	CFont_PrintfAlign(g_FontHoratioSmall, 48.0f, 40.0f, 0, "%d Bytes. (%d)top", ms->bytes, ms->peakBytes);
 	CFont_PrintfAlign(g_FontHoratioSmall, 48.0f, 60.0f, 0, "%d Blocks. (%d)top", ms->blocks, ms->peakBlocks);
@@ -1424,9 +1424,9 @@ byte Scorer_Render(void) {
 #define g_ConsoleCheckInput GAME_GLOBAL_IN(byte, group_4601fc, 1)	/* g_pWorld->checkInput while the console is open */
 #define g_ConsoleClosing GAME_GLOBAL_IN(byte, group_4601fc, 2)
 #define g_ConsoleBusy GAME_GLOBAL_IN(byte, group_4601fc, 3)
-#define g_ConsoleSavedKeyboard (GAME_ARRAY(cVirtualKeyboard, g_ConsoleSavedKeyboard))
+extern cVirtualKeyboard g_ConsoleSavedKeyboard;
 extern uint32_t g_ConsoleSavedSet;
-#define g_ConsoleSavedInput (GAME_ARRAY(cPlayerInput, g_ConsoleSavedInput))
+extern cPlayerInput g_ConsoleSavedInput;
 extern CPsaImage *g_ConsoleWhite;
 extern char * g_ConsoleHistory[16];	/* cStrings: 0 the line typed, 1.. the commands */
 #define CONSOLE_HISTORY 16
@@ -1493,7 +1493,7 @@ void Scorer_SetConsole(int on) {
 	if (b) {
 		g_ConsoleSavedSet = Input_GetActionSet();
 		Input_SelectActionSet(2);
-		memcpy(g_ConsoleSavedInput, &g_PlayerInput[0], sizeof(cPlayerInput));
+		memcpy((&g_ConsoleSavedInput), &g_PlayerInput[0], sizeof(cPlayerInput));
 		cPlayerInput_SetString(&g_PlayerInput[0], EXE_EMPTY);
 		g_PlayerInput[0].onDone = (void *)Console_OnInput;
 		CPsaImage *img = operator_new(sizeof(CPsaImage));
@@ -1502,17 +1502,17 @@ void Scorer_SetConsole(int on) {
 		g_pWorld->checkInput = 0;
 		double t = g_pApp->vftable->GetGameTime(g_pApp);
 		g_ConsoleClosing = 0;
-		memcpy(g_ConsoleSavedKeyboard, &g_VirtualKeyboard, CONSOLE_KEYBOARD_SIZE);
+		memcpy((&g_ConsoleSavedKeyboard), &g_VirtualKeyboard, CONSOLE_KEYBOARD_SIZE);
 		g_ConsoleTime = (float)t;
 		cVirtualKeyboard_Set(&g_VirtualKeyboard, "Console");
 		g_ConsoleHistoryPos = 0;
 	} else {
 		Input_SelectActionSet((int)g_ConsoleSavedSet);
-		memcpy(&g_PlayerInput[0], g_ConsoleSavedInput, sizeof(cPlayerInput));
+		memcpy(&g_PlayerInput[0], (&g_ConsoleSavedInput), sizeof(cPlayerInput));
 		Scorer_FreeImage(g_ConsoleWhite);
 		g_ConsoleWhite = NULL;
 		g_pWorld->checkInput = g_ConsoleCheckInput;
-		memcpy(&g_VirtualKeyboard, g_ConsoleSavedKeyboard, CONSOLE_KEYBOARD_SIZE);
+		memcpy(&g_VirtualKeyboard, (&g_ConsoleSavedKeyboard), CONSOLE_KEYBOARD_SIZE);
 	}
 	g_ConsoleBusy = 0;
 }

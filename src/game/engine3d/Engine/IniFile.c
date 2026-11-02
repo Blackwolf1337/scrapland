@@ -25,7 +25,7 @@ CIniFile *CIniFile_ctorLoad(CIniFile *self, const char *name, const char *dir) {
 	self->dat = DataFile_New();
 	IniFile_Path(path, name, dir);
 	int r = DataFile_Load(self->dat, path, DataFile_Count(self->dat));
-	E3D_LogInfo(g_FileLog, "INI: %s%s", path, r == 0 ? " <ok>" : " <not found>");
+	E3D_LogInfo((&g_FileLog), "INI: %s%s", path, r == 0 ? " <ok>" : " <not found>");
 	return self;
 }
 
@@ -93,7 +93,7 @@ int CIniFile_Count(CIniFile *self) {
 }
 
 static void IniFile_Invalid(const char *sect, const char *key, const char *text) {
-	E3D_LogBlue(g_FileLog, "Invalid parameter: [%s] %s = %s", sect, key, text);
+	E3D_LogBlue((&g_FileLog), "Invalid parameter: [%s] %s = %s", sect, key, text);
 }
 
 /* "R G B A" as 0xAARRGGBB */
@@ -229,9 +229,9 @@ int CIniFile_Load(CIniFile *self, const char *name, const char *dir, byte verbos
 	IniFile_Path(path, name, dir);
 	int r = DataFile_Load(self->dat, path, DataFile_Count(self->dat));
 	if (verbose) {
-		E3D_LogDebug(g_FileLog, "INI: %s%s", path, r == 0 ? "" : " <not found>");
+		E3D_LogDebug((&g_FileLog), "INI: %s%s", path, r == 0 ? "" : " <not found>");
 	}
-	E3D_LogInfo(g_FileLog, "INI: %s%s", path, r == 0 ? " <ok>" : " <not found>");
+	E3D_LogInfo((&g_FileLog), "INI: %s%s", path, r == 0 ? " <ok>" : " <not found>");
 	return r;
 }
 

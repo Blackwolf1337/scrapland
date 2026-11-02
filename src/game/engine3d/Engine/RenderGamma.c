@@ -89,7 +89,7 @@ void RenderGamma_Begin(void) {
 	Rd_DevSetGammaRamp(dev, 0, ramp);
 	ramp[0][0] ^= 1;
 	Rd_DevSetGammaRamp(dev, 0, ramp);
-	E3D_LogDebug(g_FileLog, "DBG: GAMMACONTROL: OK");
+	E3D_LogDebug((&g_FileLog), "DBG: GAMMACONTROL: OK");
 }
 
 void RenderGamma_ReleaseD3D(void) {

@@ -13,6 +13,14 @@
 #include "scrap/mathlib.h"
 #include "scrap/table.h"
 
+extern cGVar GVar_R_Anisotropy;
+extern cGVar GVar_R_DecalZBias;
+extern cGVar GVar_R_LastDevice;
+extern cGVar GVar_R_PSMask;
+extern cGVar GVar_R_VBIBTriLimit;
+extern cGVar g_GvEnvBump;
+extern cGVar g_GvEnvMap;
+
 struct CMaterial;
 typedef struct CMaterial CMaterial;
 struct CVertList;
@@ -20,7 +28,7 @@ struct CVertList;
 /* the D3D device of the engine3d, NULL without one */
 extern void *g_pd3dDevice;
 /* the identity matrix */
-#define g_MatIdentity (GAME_ARRAY(const matrix_t, g_MatIdentity))
+extern matrix_t g_MatIdentity;
 /* the triangles and vertices drawn in the frame (statistics) */
 #define g_RenderTris GAME_GLOBAL_IN(int, g_RenderCounts, 0)
 #define g_RenderVerts GAME_GLOBAL_IN(int, g_RenderCounts, 4)
@@ -42,7 +50,7 @@ extern uint32_t g_AmbientD3D;
 extern uint32_t g_Viewport[6];
 /* the planes of the view frustum (normal, d; outside where the distance is positive) */
 #define MAX_PLANES_FRUSTUM 6
-#define g_Frustum (GAME_ARRAY(const plane_t, g_Frustum))
+extern plane_t g_Frustum[6];
 /* the texture filters of the stages (Render_ResetState from the variables below): min, mag, mip, anisotropy */
 extern uint32_t g_FilterMin;
 extern uint32_t g_FilterMag;
@@ -52,7 +60,7 @@ extern cGVar GVar_R_TexFilter;
 #define g_TexFilter (GVar_R_TexFilter.value.i)		/* R_TexFilter 0 point, 1 linear, 2 anisotropic */
 extern cGVar GVar_R_MipFilter;
 #define g_MipFilter (GVar_R_MipFilter.value.i)		/* R_MipFilter 0 point, 1 linear */
-#define g_Anisotropy (*(uint32_t *)&GAME_GVAR(GVar_R_Anisotropy)->value)	/* R_Anisotropy */
+#define g_Anisotropy (*(uint32_t *)&GVar_R_Anisotropy.value)	/* R_Anisotropy */
 extern cGVar GVar_R_MipmapBias;
 #define g_MipmapBias (GVar_R_MipmapBias.value.f)		/* R_MipmapBias */
 extern float g_MipmapBias2;
@@ -64,7 +72,7 @@ extern byte g_StageTile[8];	/* the bc of the map: bit 0 wraps u, bit 1 v */
 extern void * g_StageTex[8];	/* [8] */
 extern int g_StageTexFrame[8];	/* [8] */
 #define g_TexChanges GAME_GLOBAL_IN(int, g_RenderCounts, 8)
-#define g_VBIBTriLimit (*(uint32_t *)&GAME_GVAR(GVar_R_VBIBTriLimit)->value)	/* R_VBIBTriLimit */
+#define g_VBIBTriLimit (*(uint32_t *)&GVar_R_VBIBTriLimit.value)	/* R_VBIBTriLimit */
 /* the projection split into g_Tiles x g_Tiles parts (screenshots larger than the screen), one per frame */
 extern int g_Tiles;
 extern int g_TileState;
@@ -84,7 +92,7 @@ extern CMaterial *g_LightmapMat;
 #define g_UseShaders GAME_GLOBAL_IN(byte, group_43240c, 1)
 extern cGVar GVar_R_MaterialLog;
 #define g_MaterialLog (GVar_R_MaterialLog.value.i)		/* R_MaterialLog */
-#define g_DecalZBias (*(uint32_t *)&GAME_GVAR(GVar_R_DecalZBias)->value)	/* R_DecalZBias */
+#define g_DecalZBias (*(uint32_t *)&GVar_R_DecalZBias.value)	/* R_DecalZBias */
 extern cGVar GVar_R_AlphaFog;
 #define g_AlphaFog (GVar_R_AlphaFog.value.i)		/* R_AlphaFog 0, 1 (only add blending), 2 */
 extern cGVar GVar_R_UseDefMaterial;
@@ -127,8 +135,8 @@ extern cGVar GVar_R_EnvMapScale;
 #define g_EnvMapScale (GVar_R_EnvMapScale.value.f)	/* R_EnvMapScale */
 extern cGVar GVar_R_EnvMapViewDep;
 #define g_EnvMapViewDep (GVar_R_EnvMapViewDep.value.i)	/* R_EnvMapViewDep 0, 1, 2 */
-#define g_EnvBump (*(int *)&GAME_GVAR(g_GvEnvBump)->value)		/* R_EnvBump */
-#define g_EnvMap (*(int *)&GAME_GVAR(g_GvEnvMap)->value)		/* R_EnvMap */
+#define g_EnvBump (*(int *)&g_GvEnvBump.value)		/* R_EnvBump */
+#define g_EnvMap (*(int *)&g_GvEnvMap.value)		/* R_EnvMap */
 extern cGVar GVar_R_EnvBlend;
 #define g_EnvBlend (GVar_R_EnvBlend.value.i)		/* R_EnvBlend */
 /* the engine variables of the Clouds and GlowFlick shader modes (R_CloudR and so on) */
@@ -176,8 +184,8 @@ typedef struct ShaderTab {
 	shaderRender_t fnRender;	/* 0x14 */
 } ShaderTab;
 SD_SIZE(ShaderTab, 0x18);
-#define g_ShaderTab (GAME_ARRAY(const ShaderTab, g_ShaderTab))	/* [32], ends with a NULL name */
-#define g_ShaderTab2 (GAME_ARRAY(const ShaderTab, g_ShaderTab2))
+extern ShaderTab g_ShaderTab[32];	/* [32], ends with a NULL name */
+extern ShaderTab g_ShaderTab2[32];
 /* the pixel shaders: on (the device has them), their handles, the ones switched off (a bit each from 0x200000) */
 #define MAX_PS 9
 extern cGVar GVar_R_PShaders;
@@ -206,9 +214,9 @@ enum {
 	PS_WAVES = 19,
 	PS_NOISE = 20,
 };
-#define g_PSOff (*(uint32_t *)&GAME_GVAR(GVar_R_PSMask)->value)
+#define g_PSOff (*(uint32_t *)&GVar_R_PSMask.value)
 /* all pixel shaders made from their files (the names end with NULL) */
-#define g_PSNames (GAME_ARRAY(const char *const, g_PSNames))
+extern const char *g_PSNames[32];
 extern uint32_t g_PSHandles[32];	/* [32], one per slot of g_PSNames */
 extern cGVar GVar_R_PShaderCount;
 #define g_PShaderCount (GVar_R_PShaderCount.value.i)	/* R_PShaderCount, the changes of the frame */
@@ -235,7 +243,7 @@ extern byte g_RenderFlagNeg;	/* the last one Render_SetMaterial set */
 extern D3DAdapterId g_Adapter;
 extern char g_DriverStr[256];	/* 0x100 */
 extern char g_DeviceStr[256];	/* 0x100 */
-#define g_DriverName (((cString *)&GAME_GVAR(GVar_R_LastDevice)->value))
+#define g_DriverName (((cString *)&GVar_R_LastDevice.value))
 extern int g_DeviceLogged;
 /* the identity scaled by 1/2048 */
 extern matrix_t g_MatBias;

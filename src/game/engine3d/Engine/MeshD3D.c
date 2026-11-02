@@ -330,7 +330,7 @@ byte CMeshD3D_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	}
 	CFileIO_WriteInt(f, i);
 	if (i < 0) {
-		E3D_LogInfo(g_FileLog, "WARN: Null material in object: %s", self->node->name);
+		E3D_LogInfo((&g_FileLog), "WARN: Null material in object: %s", self->node->name);
 		CHECK(self->node->flags & NODE_NO_RENDER);
 		self->mat = NULL;
 	}

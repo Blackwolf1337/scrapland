@@ -11,7 +11,7 @@
 
 extern cMemPool *g_HashItemPool;
 extern int g_HashItemRefs;
-#define g_HashItemValues (GAME_ARRAY(uint32_t, g_HashItemValues))	/* [MEMPOOL_CLASSES] */
+extern uint32_t g_HashItemValues[32];	/* [MEMPOOL_CLASSES] */
 
 HashTable *HashTable_ctor(HashTable *self, int numSlots, byte caseSensitive);
 /* the slot of key: a 4 bit shift hash folded to 28 bits, case-insensitive unless caseSensitive (global.h) */

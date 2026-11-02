@@ -54,14 +54,14 @@ CNodeFX_Wheel *CNodeFX_Wheel_ctor(CNodeFX_Wheel *self, CNode3D *node, int type) 
 	} else {
 		CHECK(0);
 	}
-	E3D_LogWhite(g_FileLog, "CNodeFX_Wheel:  Radius: %f", (double)self->radius);
+	E3D_LogWhite((&g_FileLog), "CNodeFX_Wheel:  Radius: %f", (double)self->radius);
 	const char *trans = Vec3_Str(&self->trans, 1, 3);
 	const char *rot = Vec3_Str(&self->rot, 0, 3);
-	E3D_LogWhite(g_FileLog, "  Rotation: %s  Translation: %s", rot, trans);
+	E3D_LogWhite((&g_FileLog), "  Rotation: %s  Translation: %s", rot, trans);
 	const char *amt = Vec3_Str(&self->noiseAmt, 2, 3);
 	const char *vel = Vec3_Str(&self->noiseVel, 1, 3);
 	const char *roll = Vec3_Str(&self->roll, 0, 3);
-	E3D_LogWhite(g_FileLog, "  Roll: %s  NoiseVel: %s  NoiseAmt: %s", roll, vel, amt);
+	E3D_LogWhite((&g_FileLog), "  Roll: %s  NoiseVel: %s  NoiseAmt: %s", roll, vel, amt);
 	self->ang = zero;
 	self->noiseBase = (uint32_t)(crt_rand() % 20000) + g_TimeMs;
 	return self;
@@ -222,7 +222,7 @@ CNodeFX_Spring *CNodeFX_Spring_ctor(CNodeFX_Spring *self, CNode3D *node, int typ
 	self->spring = CIniFile_GetFloat(node->ini, g_NodeEffectSect, "Spring", self->spring);
 	self->torsion = CIniFile_GetFloat(node->ini, g_NodeEffectSect, "Torsion", self->torsion);
 	self->damp2 = CIniFile_GetFloat(node->ini, g_NodeEffectSect, "Damp2", self->damp2);
-	E3D_LogWhite(g_FileLog, "CNodeFX_Spring:  Damping: %f  Spring: %f  Torsion: %f  Damp2: %f", (double)self->damping,
+	E3D_LogWhite((&g_FileLog), "CNodeFX_Spring:  Damping: %f  Spring: %f  Torsion: %f  Damp2: %f", (double)self->damping,
 		(double)self->spring, (double)self->torsion, (double)self->damp2);
 	Spring_Clear(self);
 	return self;
@@ -370,7 +370,7 @@ void *NodeFX_New(const char *type, CNode3D *node) {
 		type = tmp;
 	}
 	CHECK(type && node);
-	E3D_LogWhite(g_FileLog, "NodeFX: [%s] in node: %s", type, node->name);
+	E3D_LogWhite((&g_FileLog), "NodeFX: [%s] in node: %s", type, node->name);
 	if (!crt_stricmp(type, "Wheel")) {
 		p = operator_new(sizeof(CNodeFX_Wheel));
 		return p ? CNodeFX_Wheel_ctor(p, node, 0) : NULL;
@@ -395,7 +395,7 @@ void *NodeFX_New(const char *type, CNode3D *node) {
 		p = operator_new(sizeof(CNodeFX_Spring));
 		return p ? CNodeFX_Spring_ctor(p, node, 3) : NULL;
 	}
-	E3D_LogBlue(g_FileLog, "Unknown Node Effect: %s", type);
+	E3D_LogBlue((&g_FileLog), "Unknown Node Effect: %s", type);
 	return NULL;
 }
 
@@ -413,7 +413,7 @@ void *NodeFX_Clone(INodeFX *fx) {
 		p = operator_new(sizeof(CNodeFX_Spring));
 		return p ? CNodeFX_Spring_ctorCopy(p, (CNodeFX_Spring *)fx) : NULL;
 	}
-	E3D_LogBlue(g_FileLog, "Unknown Node Effect: %d", NODEFX_TYPE(fx));
+	E3D_LogBlue((&g_FileLog), "Unknown Node Effect: %d", NODEFX_TYPE(fx));
 	return NULL;
 }
 

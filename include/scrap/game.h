@@ -241,8 +241,8 @@ SD_OFFSET(CWinApp, hwnd, 0x7c);
 SD_OFFSET(CWinApp, unused_84, 0x84);
 SD_SIZE(CWinApp, 0x90);
 
-#define g_pWorld GAME_GLOBAL(cWorld *, g_pWorld)
-#define g_pApp GAME_GLOBAL(CApp *, g_pApp)
+extern cWorld *g_pWorld;
+extern CApp *g_pApp;
 /* the application is always a CWinApp */
 #define g_pWinApp ((CWinApp *)g_pApp)
 

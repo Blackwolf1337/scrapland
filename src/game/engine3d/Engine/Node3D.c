@@ -233,7 +233,7 @@ byte CNode3D_AnimChannel(CNode3D *self, NodeAnimChannel *c, vec3_t *pos, quat_t 
 		conj = Quat_Conj(&self->rot);
 		Quat_Mul(&b, &q2, &conj);
 		if (Quat_SlerpFlip(rot, &a, &b, w)) {
-			E3D_LogWhite(g_FileLog, "node: %s", self->name);
+			E3D_LogWhite((&g_FileLog), "node: %s", self->name);
 		}
 		*rot = *Quat_Mul(&t, rot, &self->rot);
 		return 1;

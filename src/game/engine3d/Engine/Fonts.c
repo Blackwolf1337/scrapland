@@ -232,7 +232,7 @@ CFont3 *CFont3_ctor(CFont3 *self, const char *tex, const char *opac, byte first,
 	Path_Format(mst, tmp, "&u&d&n.MST");
 	CMultiSprite_ctor(&ms);
 	if (File_TimeDiff(mst, tex, 0) < 0) {
-		E3D_LogBlue(g_FileLog, "WARN: [%s] is older than [%s]", mst, tex);
+		E3D_LogBlue((&g_FileLog), "WARN: [%s] is older than [%s]", mst, tex);
 	} else if (CMultiSprite_Load(&ms, mst)) {
 		CHECK(last - first + 2 == ms.n);
 		self->bmpWidth = ms.width;

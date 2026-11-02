@@ -22,6 +22,8 @@
 #include "scrap/slotcontroller.h"
 #include "scrap/walkcharentity.h"
 
+extern cGVar GVar_ShowCharAI;
+
 #define CAICHARCONTROL_SIZE sizeof(cAICharControl)
 
 /* the moves of cAICharControl_SetMove (mode at 0x74) */
@@ -559,7 +561,7 @@ extern cGVar GVar_TimeBetweenEventCollCharAI;
 #define g_TimeBetweenEventCollCharAI (GVar_TimeBetweenEventCollCharAI.value.f)	/* "TimeBetweenEventCollCharAI" */
 extern cGVar GVar_TimeStrafeLostObjCharAI;
 #define g_TimeStrafeLostObjCharAI (GVar_TimeStrafeLostObjCharAI.value.f)	/* "TimeStrafeLostObjCharAI" */
-#define g_ShowCharAI (*(cString *)&GAME_GVAR(GVar_ShowCharAI)->value)		/* "ShowCharAI": the name of the character shown */
+#define g_ShowCharAI (*(cString *)&GVar_ShowCharAI.value)		/* "ShowCharAI": the name of the character shown */
 extern cGVar GVar_NameDebugShirkAI;
 #define g_NameDebugShirkAI (GVar_NameDebugShirkAI.value.s)		/* "NameDebugShirkAI" (a cString) */
 

@@ -440,8 +440,8 @@ void Input_Update(float dt) {
 
 /* the callback of ListenToDefine with a function: called once */
 void Input_OnDefined(void) {
-	cPy_Function_Execute(g_DefineFunc, 0);
-	cPy_Function_SetFunc(g_DefineFunc, NULL);
+	cPy_Function_Execute((&g_DefineFunc), 0);
+	cPy_Function_SetFunc((&g_DefineFunc), NULL);
 }
 
 void Input_UpdateDevices(float dt) {
@@ -548,7 +548,7 @@ void Input_SetDefineFunc(const char *func) {
 		return;
 	}
 	g_OnDefined = (void (*)(void))(void *)Input_OnDefined;	/* Input_OnDefined of the exe */
-	cPy_Function_SetFunc(g_DefineFunc, func);
+	cPy_Function_SetFunc((&g_DefineFunc), func);
 }
 
 byte cAbstractIDevice_IsReserved(cAbstractIDevice *self, int entry) {

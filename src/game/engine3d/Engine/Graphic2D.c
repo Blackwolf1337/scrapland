@@ -7,7 +7,7 @@
 #include "scrap/graphic2d.h"
 
 /* the corner of the texture of each corner of the rectangle (u0 v0, u1 v0, u0 v1, u1 v1) by rot */
-#define g_Graphic2DRot (GAME_ARRAY(const int[4], g_Graphic2DRot))
+extern int g_Graphic2DRot[4][4];
 
 CGraphic2D *CGraphic2D_ctorTex(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags) {
 	CGraphic2D_Init(self);
@@ -32,7 +32,7 @@ CGraphic2D *CGraphic2D_ctor(CGraphic2D *self) {
 void CGraphic2D_dtor(CGraphic2D *self) {
 	AnimMat_Free(&self->AnimMat);
 	if (self->own && self->Mat) {
-		CMatList_Delete(g_MatList, self->Mat);
+		CMatList_Delete((&g_MatList), self->Mat);
 	}
 }
 
@@ -193,7 +193,7 @@ void CGraphic2D_CreateMat(CGraphic2D *self, const char *tex, const char *opac, i
 		self->own = 1;
 	}
 	if (!self->own) {
-		self->Mat = CMatList_Find(g_MatList, &m);
+		self->Mat = CMatList_Find((&g_MatList), &m);
 	}
 	if (!self->Mat) {
 		self->Mat = Mat_AddCopy(&m);

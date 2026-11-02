@@ -12,6 +12,20 @@
 #include "scrap/pyfunction.h"
 #include "scrap/scrap.h"
 
+extern cGVarFunction GVar_ChatEvent;
+extern cGVarFunction GVar_EscapeEvent;
+extern cGVarFunction GVar_MainMissionEvent;
+extern cGVarFunction GVar_OnGeneralDamage;
+extern cGVarFunction GVar_OnLifeItemTaken;
+extern cGVarFunction GVar_OnSleep;
+extern cGVar GVar_PriorityWeapon;
+extern cGVarFunction GVar_QChatEvent1;
+extern cGVarFunction GVar_QChatEvent2;
+extern cGVarFunction GVar_QChatEvent3;
+extern cGVarFunction GVar_QChatEvent4;
+extern cGVarFunction GVar_QChatEvent5;
+extern cGVarFunction GVar_QChatEvent6;
+
 /* a weapon of g_pWorld->weapons (SWeap.InitWeap) */
 struct cWeapInfo {
 	char *name;			/* 0x00 string object */
@@ -161,25 +175,25 @@ extern cGVar GVar_NotShootAI;
 #define g_NotShootAIDef (GVar_NotShootAI.def.i)
 extern cGVar GVar_RemainTalkTime;
 #define g_RemainTalkTime (GVar_RemainTalkTime.value.f)
-#define g_PriorityWeapon (((cString *)&GAME_GVAR(GVar_PriorityWeapon)->value))	/* PriorityWeapon, its default at +4 */
+#define g_PriorityWeapon (((cString *)&GVar_PriorityWeapon.value))	/* PriorityWeapon, its default at +4 */
 extern cGVar GVar_R_SplitScreenCamera;
 #define g_SplitScreenCamera (GVar_R_SplitScreenCamera.value.i)		/* R_SplitScreenCamera */
 extern cGVar GVar_R_SplitScreenUpdate;
 #define g_SplitScreenUpdate (GVar_R_SplitScreenUpdate.value.i)		/* R_SplitScreenUpdate */
 extern char g_UniqueName[128];		/* 0x80 bytes, the result of cWorld_UniqueName */
 /* script callbacks (cPy_Function of the GVAR_SCRIPT_FUNCTION variables) */
-#define g_OnSleep (((cPy_Function *)&GAME_GVARFUNC(GVar_OnSleep)->func))
-#define g_OnLifeItemTaken (((cPy_Function *)&GAME_GVARFUNC(GVar_OnLifeItemTaken)->func))
-#define g_OnGeneralDamage (((cPy_Function *)&GAME_GVARFUNC(GVar_OnGeneralDamage)->func))
-#define g_MainMissionEvent (((cPy_Function *)&GAME_GVARFUNC(GVar_MainMissionEvent)->func))
-#define g_EscapeEvent (((cPy_Function *)&GAME_GVARFUNC(GVar_EscapeEvent)->func))
-#define g_ChatEvent (((cPy_Function *)&GAME_GVARFUNC(GVar_ChatEvent)->func))
-#define g_QChatEvent1 (((cPy_Function *)&GAME_GVARFUNC(GVar_QChatEvent1)->func))
-#define g_QChatEvent2 (((cPy_Function *)&GAME_GVARFUNC(GVar_QChatEvent2)->func))
-#define g_QChatEvent3 (((cPy_Function *)&GAME_GVARFUNC(GVar_QChatEvent3)->func))
-#define g_QChatEvent4 (((cPy_Function *)&GAME_GVARFUNC(GVar_QChatEvent4)->func))
-#define g_QChatEvent5 (((cPy_Function *)&GAME_GVARFUNC(GVar_QChatEvent5)->func))
-#define g_QChatEvent6 (((cPy_Function *)&GAME_GVARFUNC(GVar_QChatEvent6)->func))
+#define g_OnSleep (((cPy_Function *)&GVar_OnSleep.func))
+#define g_OnLifeItemTaken (((cPy_Function *)&GVar_OnLifeItemTaken.func))
+#define g_OnGeneralDamage (((cPy_Function *)&GVar_OnGeneralDamage.func))
+#define g_MainMissionEvent (((cPy_Function *)&GVar_MainMissionEvent.func))
+#define g_EscapeEvent (((cPy_Function *)&GVar_EscapeEvent.func))
+#define g_ChatEvent (((cPy_Function *)&GVar_ChatEvent.func))
+#define g_QChatEvent1 (((cPy_Function *)&GVar_QChatEvent1.func))
+#define g_QChatEvent2 (((cPy_Function *)&GVar_QChatEvent2.func))
+#define g_QChatEvent3 (((cPy_Function *)&GVar_QChatEvent3.func))
+#define g_QChatEvent4 (((cPy_Function *)&GVar_QChatEvent4.func))
+#define g_QChatEvent5 (((cPy_Function *)&GVar_QChatEvent5.func))
+#define g_QChatEvent6 (((cPy_Function *)&GVar_QChatEvent6.func))
 
 /* World/World.cpp (the rest is in scrap.h, entity.h and game.h) */
 float Vec3_DotViewDir(const vec3_t *v, float ax, float ay);

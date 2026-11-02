@@ -93,7 +93,7 @@ byte Surface_SaveShot(void *surf) {
 		r = 0x7c00, g = 0x3e0, b = 0x1f, bits = 16;
 		break;
 	default:
-		E3D_LogBlue(g_FileLog, "capturar_pantalla(): formato no v\xe1lido: %d", desc[0]);
+		E3D_LogBlue((&g_FileLog), "capturar_pantalla(): formato no v\xe1lido: %d", desc[0]);
 		Rd_SurfUnlockRect(surf);
 		return 0;
 	}

@@ -267,7 +267,7 @@ void File_MkDirRel(const char *dir) {
 	File_CheckRelative(dir);
 	String_Copy(buf, dir, sizeof(buf));
 	int r = crt_mkdir(buf);
-	E3D_Log(g_FileLog, "FILE MKDIR: %s <%s>", buf, r ? "error" : "ok");
+	E3D_Log((&g_FileLog), "FILE MKDIR: %s <%s>", buf, r ? "error" : "ok");
 }
 
 void *File_OpenRel(const char *name, const char *mode) {
@@ -277,7 +277,7 @@ void *File_OpenRel(const char *name, const char *mode) {
 	String_Copy(buf, name, sizeof(buf));
 	CHECK(!strcmp(mode, "wb") || !strcmp(mode, "wt") || !strcmp(mode, "rb") || !strcmp(mode, "rt"));
 	void *f = crt_fopen(buf, mode);
-	E3D_Log(g_FileLog, "FILE OPEN: %s [%s] <%s>", buf, mode, f ? "ok" : "not found");
+	E3D_Log((&g_FileLog), "FILE OPEN: %s [%s] <%s>", buf, mode, f ? "ok" : "not found");
 	return f;
 }
 
@@ -295,7 +295,7 @@ void *FileIO_Open(const char *name, const char *mode) {
 	} else {
 		CHECK(!strcmp(mode, "rb"));
 		if (File_Check(name, 0, 1) != 0) {
-			E3D_Log(g_FileLog, "file open: %s <%s>", name, "not found");
+			E3D_Log((&g_FileLog), "file open: %s <%s>", name, "not found");
 			return NULL;
 		}
 		fmode = FILE_MODE_READ;
@@ -435,7 +435,7 @@ int File_Check(const char *name, int mode, byte pack) {
 		return -1;
 	}
 	int r = crt_access(buf, mode);
-	E3D_Log(g_FileLog, "FILE ACCESS: %s <%s> <%s>", buf, r ? "not found" : "ok", File_LogKind(pack));
+	E3D_Log((&g_FileLog), "FILE ACCESS: %s <%s> <%s>", buf, r ? "not found" : "ok", File_LogKind(pack));
 	return r;
 }
 
@@ -448,6 +448,6 @@ int File_StatX(const char *name, void *st, byte pack) {
 		return -1;
 	}
 	int r = crt_stat32(buf, st);
-	E3D_Log(g_FileLog, "FILE STAT: %s <%s> <%s>", buf, r ? "not found" : "ok", File_LogKind(pack));
+	E3D_Log((&g_FileLog), "FILE STAT: %s <%s> <%s>", buf, r ? "not found" : "ok", File_LogKind(pack));
 	return r;
 }

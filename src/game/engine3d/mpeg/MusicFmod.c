@@ -90,13 +90,13 @@ int Fmod_Init(void) {
 	if (g_FmodState < 0) {
 		return 0;
 	}
-	E3D_LogPrint(g_FileLog, "Sound Init");
+	E3D_LogPrint((&g_FileLog), "Sound Init");
 	if (!Snd_Init()) {
-		E3D_LogBlue(g_FileLog, "SOUND ERROR: %s", Fmod_ErrorString(Snd_GetError()));
+		E3D_LogBlue((&g_FileLog), "SOUND ERROR: %s", Fmod_ErrorString(Snd_GetError()));
 		g_FmodState = -1;
 		return 0;
 	}
-	E3D_LogPrint(g_FileLog, "Sound output: %s", Snd_DeviceName());
+	E3D_LogPrint((&g_FileLog), "Sound output: %s", Snd_DeviceName());
 	g_FmodState = 1;
 	return 1;
 }
@@ -207,7 +207,7 @@ int Voice_Open(const char *name, int voice, int voiceover) {
 		v->stream = Snd_StreamOpen(path, 0, 0, 0);
 	}
 	if (!v->stream) {
-		E3D_LogBlue(g_FileLog, "Error: %s", Fmod_ErrorString(Snd_GetError()));
+		E3D_LogBlue((&g_FileLog), "Error: %s", Fmod_ErrorString(Snd_GetError()));
 		return 0;
 	}
 	t = Plat_Ticks();
@@ -459,7 +459,7 @@ byte Music_Open(const char *name) {
 		g_MusicStream = Snd_StreamOpen(name, 0, 0, 1);
 	}
 	if (!g_MusicStream) {
-		E3D_LogBlue(g_FileLog, "Error: %s", Fmod_ErrorString(Snd_GetError()));
+		E3D_LogBlue((&g_FileLog), "Error: %s", Fmod_ErrorString(Snd_GetError()));
 		return 0;
 	}
 	g_MusicChannel = -1;
@@ -484,8 +484,8 @@ byte Music_Start(void) {
 	if (!g_MusicStream) {
 		return 0;
 	}
-	E3D_LogDebug2(g_FileLog, "Name      : %s", g_MusicName);
-	E3D_LogDebug2(g_FileLog, "Frequency : %d", Snd_StreamRate(g_MusicStream));
+	E3D_LogDebug2((&g_FileLog), "Name      : %s", g_MusicName);
+	E3D_LogDebug2((&g_FileLog), "Frequency : %d", Snd_StreamRate(g_MusicStream));
 	g_MusicChannel = Snd_StreamPlay(g_MusicStream, 1);
 	Snd_SetReserved(g_MusicChannel, 1);
 	freq = Snd_GetFrequency(g_MusicChannel);
@@ -510,7 +510,7 @@ void Music_ApplyVolume(void) {
 }
 
 byte Music_Voiceover(float factor, float speed) {
-	E3D_LogDebug2(g_FileLog, "music_voiceover: %.2f, %.2f, %.3f", (double)factor, (double)speed,
+	E3D_LogDebug2((&g_FileLog), "music_voiceover: %.2f, %.2f, %.3f", (double)factor, (double)speed,
 		(double)((float)__builtin_fabs((double)(factor - g_MusicVoiceover)) / Float_MaxSS(speed, 0.001f)));
 	g_MusicVoiceoverTarget = factor;
 	g_MusicVoiceoverSpeed = speed;
@@ -550,14 +550,14 @@ byte Music_PlayFile(const char *name, const char *dir) {
 
 	if (!name || !name[0]) {
 		Music_SetPaused(0);
-		E3D_LogDebug2(g_FileLog, "Music unpaused");
+		E3D_LogDebug2((&g_FileLog), "Music unpaused");
 		return 1;
 	}
 	Bprintf(path, 0x104, "%s%s", dir ? dir : "", name);
-	E3D_LogPrint(g_FileLog, "MUSIC: %s", path);
+	E3D_LogPrint((&g_FileLog), "MUSIC: %s", path);
 	if (g_MusicStream && crt_stricmp(g_MusicName, path) == 0) {
 		Music_SetPaused(0);
-		E3D_LogDebug2(g_FileLog, "Music already started");
+		E3D_LogDebug2((&g_FileLog), "Music already started");
 		return 1;
 	}
 	Music_Stop();

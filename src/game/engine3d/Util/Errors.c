@@ -13,7 +13,7 @@
 
 extern const char * g_ErrTable[200];
 #define g_ErrUnknown GAME_STR(str_432608)	/* "Unknown error" */
-#define g_ErrCustom (GAME_ARRAY(const char, g_ErrCustom))
+extern char g_ErrCustom[4];
 extern int g_ErrLastCode;
 extern int g_ErrLastFatal;
 

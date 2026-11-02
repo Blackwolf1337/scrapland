@@ -10,7 +10,7 @@
 #define NETRAND_MM 156
 #define NETRAND_UM 0xffffffff80000000ull
 #define NETRAND_LM 0x7fffffffull
-#define g_NetRandMag01 (GAME_ARRAY(const uint64_t, g_NetRandMag01))	/* 0, 0xb5026f5aa96619e9 */
+extern uint64_t g_NetRandMag01[2];	/* 0, 0xb5026f5aa96619e9 */
 
 /* the next output of the twister */
 static uint64_t NetRandom_Gen(cNetRandom *self) {

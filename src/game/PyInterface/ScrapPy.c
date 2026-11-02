@@ -54,7 +54,7 @@ PyObject *Scrap_AddParamf(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "d", &v)) {
 		return NULL;
 	}
-	cPy_Function_AddParamF(g_CallFunc, (float)v);
+	cPy_Function_AddParamF((&g_CallFunc), (float)v);
 	return Py_ReturnNone();
 }
 
@@ -66,7 +66,7 @@ PyObject *Scrap_AddParami(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "i", &v)) {
 		return NULL;
 	}
-	cPy_Function_AddParamI(g_CallFunc, v);
+	cPy_Function_AddParamI((&g_CallFunc), v);
 	return Py_ReturnNone();
 }
 
@@ -78,7 +78,7 @@ PyObject *Scrap_AddParams(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "s", &v)) {
 		return NULL;
 	}
-	cPy_Function_AddParamS(g_CallFunc, v);
+	cPy_Function_AddParamS((&g_CallFunc), v);
 	return Py_ReturnNone();
 }
 
@@ -295,7 +295,7 @@ PyObject *Scrap_Execute(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	cPy_Function_Execute(g_CallFunc, 0);
+	cPy_Function_Execute((&g_CallFunc), 0);
 	return Py_ReturnNone();
 }
 
@@ -814,8 +814,8 @@ PyObject *Scrap_SetCallFunc(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "s", &func)) {
 		return NULL;
 	}
-	cPy_Function_SetFunc(g_CallFunc, func);
-	return Py_BuildValue("i", cPy_Function_IsValid(g_CallFunc) ? 1 : 0);
+	cPy_Function_SetFunc((&g_CallFunc), func);
+	return Py_BuildValue("i", cPy_Function_IsValid((&g_CallFunc)) ? 1 : 0);
 }
 
 /* SetCam(i, name) */

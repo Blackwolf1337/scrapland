@@ -11,6 +11,8 @@
 #include "scrap/gvar.h"
 #include "scrap/node3d.h"
 
+extern cGVar GVar_NodeFXSpringMSec;
+
 
 /* the types vftable[1] returns */
 enum { NODEFX_NONE = 0, NODEFX_WHEEL = 1, NODEFX_SPRING = 2 };
@@ -77,7 +79,7 @@ extern cGVar GVar_NodeFXSpringDamp2;
 #define g_NodeFXSpringDamp2 (GVar_NodeFXSpringDamp2.value.f)	/* NodeFXSpringDamp2 */
 extern cGVar GVar_NodeFXSpringDebug;
 #define g_NodeFXSpringDebug (GVar_NodeFXSpringDebug.value.i)	/* NodeFXSpringDebug: the variables instead of the members */
-#define g_NodeFXSpringMSec (*(uint32_t *)&GAME_GVAR(GVar_NodeFXSpringMSec)->value)	/* NodeFXSpringMSec, the step */
+#define g_NodeFXSpringMSec (*(uint32_t *)&GVar_NodeFXSpringMSec.value)	/* NodeFXSpringMSec, the step */
 extern cGVar GVar_NodeFXSpringMidP;
 #define g_NodeFXSpringMidP (GVar_NodeFXSpringMidP.value.f)	/* NodeFXSpringMidP */
 extern cGVar GVar_NodeFXSpringRot;

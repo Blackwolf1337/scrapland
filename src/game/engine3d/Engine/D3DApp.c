@@ -211,7 +211,7 @@ static int D3DApp_DevReset(CD3DApplication *self) {
 	int r = Rd_DevReset(dev, &self->presentParams);
 
 	if (r < 0) {
-		E3D_LogBlue(g_FileLog, "ERROR: 'pd3dDevice->Reset()' failed: %08X", r);	/* "ERROR: 'pd3dDevice->Reset()' failed: %08X" */
+		E3D_LogBlue((&g_FileLog), "ERROR: 'pd3dDevice->Reset()' failed: %08X", r);	/* "ERROR: 'pd3dDevice->Reset()' failed: %08X" */
 	}
 	RenderGamma_Begin();
 	return r;
@@ -229,7 +229,7 @@ int CD3DApp_Reset(CD3DApplication *self) {
 	self->vftable->DeleteDeviceObjects(self);
 	r = D3DApp_DevReset(self);
 	if (r < 0) {
-		E3D_LogBlue(g_FileLog, "ERROR: ResetDevice(): %08X", r);	/* "ERROR: ResetDevice(): %08X" */
+		E3D_LogBlue((&g_FileLog), "ERROR: ResetDevice(): %08X", r);	/* "ERROR: ResetDevice(): %08X" */
 	}
 	CD3DApp_UpdateBackBufferDesc(self);
 	Splash_Reset();
@@ -268,7 +268,7 @@ int CD3DApp_Cleanup(CD3DApplication *self) {
 		self->vftable->InvalidateDeviceObjects(self);
 		self->vftable->DeleteDeviceObjects(self);
 		if (Rd_Release(self->device)) {
-			E3D_LogBlue(g_FileLog, "A D3D object has a non-zero reference count.");
+			E3D_LogBlue((&g_FileLog), "A D3D object has a non-zero reference count.");
 		}
 		Rd_Release(self->d3d);
 		self->device = NULL;
@@ -588,7 +588,7 @@ int CD3DApp_BuildDeviceList(CD3DApplication *self) {
 					fmtOk[f] = 0;
 				} else {
 					const char *ds = D3DFmt_Name((int)depth[f]);
-					E3D_LogDebug(g_FileLog, "Backbuffer format valid: %-8s %-8s", D3DFmt_Name((int)fmt), ds);
+					E3D_LogDebug((&g_FileLog), "Backbuffer format valid: %-8s %-8s", D3DFmt_Name((int)fmt), ds);
 				}
 			}
 			/* the modes of the formats the device takes */

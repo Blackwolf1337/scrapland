@@ -182,7 +182,7 @@ void CGraphic3D_CreateMat(CGraphic3D *self, const char *tex, const char *opac, i
 		m.map[0]->filter = 0;
 		m.map[0]->tile = 0;
 	}
-	self->Mat = CMatList_Find(g_MatList, &m);
+	self->Mat = CMatList_Find((&g_MatList), &m);
 	if (!self->Mat) {
 		self->Mat = Mat_AddCopy(&m);
 	}

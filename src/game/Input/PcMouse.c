@@ -110,8 +110,8 @@ void cPcMouse_SetDefaults(cAbstractIDevice *self) {
 
 void Mouse_Init(void) {
 	Con_Printf("Input device: %s initialized.\n", MOUSE_NAME);
-	cPcMouse_SetDefaults(&g_Mouse->base);
-	cAbstractIDevice *d = &g_Mouse->base;
+	cPcMouse_SetDefaults(&g_Mouse.base);
+	cAbstractIDevice *d = &g_Mouse.base;
 	InputDevices_Add(&g_InputDevices, &d);
 }
 

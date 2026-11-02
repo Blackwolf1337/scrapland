@@ -21,7 +21,7 @@
 #include "scrap/weapons.h"
 
 /* the statics of the police taunts: the count per race, the races, the last race and the time */
-#define s_TauntRaceCounts (GAME_ARRAY(HashTable, s_TauntRaceCounts))	/* of cNameItem, 0x1c9 slots, case sensitive */
+extern HashTable s_TauntRaceCounts;	/* of cNameItem, 0x1c9 slots, case sensitive */
 extern char * s_TauntRaces[5];		/* "SBi", "SBa", "SFu", "SPo" */
 #define s_TauntLastRace (GAME_ARRAY(char *, s_TauntRaces)[4])
 extern int s_TauntPoliceCount;		/* -1 at the start */
@@ -31,7 +31,7 @@ extern float s_TauntLastTime;
 
 /* the atexit destructor of the count table */
 void Taunts_FiniCounts(void) {
-	NameTable_Clear(s_TauntRaceCounts);
+	NameTable_Clear((&s_TauntRaceCounts));
 }
 
 /* a random index below n (rand01 * (n - 1) rounded half up), the node that far into the ring */
@@ -67,10 +67,10 @@ int Taunts_PoliceKind(cEntity *ship) {
 	if (*s_TauntCountsGuard > epoch) {
 		crt_Init_thread_header(s_TauntCountsGuard);
 		if (*s_TauntCountsGuard == -1) {
-			s_TauntRaceCounts->slots = New_Array(0x1c9, sizeof(*s_TauntRaceCounts->slots));
-			memset(s_TauntRaceCounts->slots, 0, 0x1c9 * sizeof(*s_TauntRaceCounts->slots));
-			s_TauntRaceCounts->locked = 0;
-			s_TauntRaceCounts->caseSensitive = 1;
+			s_TauntRaceCounts.slots = New_Array(0x1c9, sizeof(*s_TauntRaceCounts.slots));
+			memset(s_TauntRaceCounts.slots, 0, 0x1c9 * sizeof(*s_TauntRaceCounts.slots));
+			s_TauntRaceCounts.locked = 0;
+			s_TauntRaceCounts.caseSensitive = 1;
 			crt_atexit(Taunts_FiniCounts);
 			crt_Init_thread_footer(s_TauntCountsGuard);
 		}
@@ -92,14 +92,14 @@ int Taunts_PoliceKind(cEntity *ship) {
 	}
 	s_TauntLastTime = now;
 	int old = 0;
-	cNameItem *it = NameTable_Find(s_TauntRaceCounts, race, HashTable_Slot(s_TauntRaceCounts, race));
+	cNameItem *it = NameTable_Find((&s_TauntRaceCounts), race, HashTable_Slot((&s_TauntRaceCounts), race));
 	if (it) {
 		old = it->value;
 		intptr_t v = (old + 1) % 3;
-		NameTable_Set(s_TauntRaceCounts, race, &v);
+		NameTable_Set((&s_TauntRaceCounts), race, &v);
 	} else {
 		intptr_t v = 1;
-		NameTable_Add(s_TauntRaceCounts, race, &v, 0);
+		NameTable_Add((&s_TauntRaceCounts), race, &v, 0);
 	}
 	for (int i = 0; i < 4; i++) {
 		if (!strncmp(s_TauntRaces[i], race, 3)) {

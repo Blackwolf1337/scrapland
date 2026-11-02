@@ -1126,7 +1126,7 @@ byte VertList_Strip(CVertList *out, const CVertList *in, const uint16_t *tris, i
 	if (strip) {
 		operator_delete_sized(strip, 2);
 	}
-	E3D_LogDebug(g_FileLog, "Strips Verts: %d -> %d", in->nVert, out->nVert);
+	E3D_LogDebug((&g_FileLog), "Strips Verts: %d -> %d", in->nVert, out->nVert);
 	return 1;
 }
 
@@ -1211,8 +1211,8 @@ byte VertCache_Optimize(uint16_t *tris, int nTri) {
 		VertCache_Add(tris[1]);
 		VertCache_Add(tris[2]);
 	}
-	E3D_LogDebug(g_FileLog, " prev. hit: %d  miss: %d", hits, misses);
-	E3D_LogDebug(g_FileLog, " opt.  hit: %d  miss: %d", g_VCacheHits, g_VCacheMisses);
+	E3D_LogDebug((&g_FileLog), " prev. hit: %d  miss: %d", hits, misses);
+	E3D_LogDebug((&g_FileLog), " opt.  hit: %d  miss: %d", g_VCacheHits, g_VCacheMisses);
 	return 1;
 }
 

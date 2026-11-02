@@ -1,3 +1,71 @@
+extern cGVarFunction GVar_AfterDrawCallback;
+extern cGVarFunction GVar_AlarmCallback;
+extern cGVarFunction GVar_ChatEvent;
+extern cGVarFunction GVar_CheckInactivityFunc;
+extern cGVarFunction GVar_ClientAddRes;
+extern cGVarFunction GVar_ClientAfterCreate;
+extern cGVarFunction GVar_ClientCreate;
+extern cGVarFunction GVar_ClientDelRes;
+extern cGVarFunction GVar_ClientSetConfig;
+extern cGVarFunction GVar_ClientSetPlayer;
+extern cGVarFunction GVar_CreateCloudFunc;
+extern cGVarFunction GVar_CreateEMIFunc;
+extern cGVarFunction GVar_CreateGear;
+extern cGVarFunction GVar_CreatePolice;
+extern cGVarFunction GVar_CreateSonicFunc;
+extern cGVarFunction GVar_EscapeEvent;
+extern cGVarFunction GVar_FullScreenConsoleCallback;
+extern cGVarFunction GVar_HookPlugFunc;
+extern cGVarFunction GVar_LifeReachedCallback;
+extern cGVarFunction GVar_MainMissionEvent;
+extern cGVarFunction GVar_MasterCommandFunc;
+extern cGVar GVar_MaxDistElevatorAI;
+extern cGVarFunction GVar_MessengerDropCallback;
+extern cGVarFunction GVar_MessengerTakenCallback;
+extern cGVar GVar_MinDistChaseElevatorAI;
+extern cGVarFunction GVar_OnChatString;
+extern cGVarFunction GVar_OnClientExit;
+extern cGVarFunction GVar_OnClientJoin;
+extern cGVarFunction GVar_OnClientModify;
+extern cGVarFunction GVar_OnCrazyDealFinished;
+extern cGVarFunction GVar_OnCrazyDealTarget;
+extern cGVarFunction GVar_OnDefStateCallback;
+extern cGVarFunction GVar_OnDominEnemyDeath;
+extern cGVarFunction GVar_OnDominFriendDeath;
+extern cGVarFunction GVar_OnFinishAutoUpdate;
+extern cGVarFunction GVar_OnFlash;
+extern cGVarFunction GVar_OnFunctionaryStartsWorking;
+extern cGVarFunction GVar_OnGeneralDamage;
+extern cGVarFunction GVar_OnItemTakenAI;
+extern cGVarFunction GVar_OnLifeItemTaken;
+extern cGVarFunction GVar_OnMoneyReachCallback;
+extern cGVarFunction GVar_OnNeedMoreChasingTraffic;
+extern cGVarFunction GVar_OnNeedMoreTraffic;
+extern cGVarFunction GVar_OnNetBrowseCallback;
+extern cGVarFunction GVar_OnObjectiveNullAI;
+extern cGVarFunction GVar_OnParkedOut;
+extern cGVarFunction GVar_OnParkingOccupied;
+extern cGVarFunction GVar_OnPlayerHelpedPolice;
+extern cGVarFunction GVar_OnSleep;
+extern cGVarFunction GVar_OnTaunt;
+extern cGVarFunction GVar_OnUsrString;
+extern cGVarFunction GVar_PoliceWaveEliminated;
+extern cGVarFunction GVar_QChatEvent1;
+extern cGVarFunction GVar_QChatEvent2;
+extern cGVarFunction GVar_QChatEvent3;
+extern cGVarFunction GVar_QChatEvent4;
+extern cGVarFunction GVar_QChatEvent5;
+extern cGVarFunction GVar_QChatEvent6;
+extern cGVarFunction GVar_RestoreUpgradeFunc;
+extern cGVarFunction GVar_SetUpCloudFunc;
+extern cGVarFunction GVar_SetUpEMIFunc;
+extern cGVarFunction GVar_SetUpSonicFunc;
+extern cPlayerInput g_ConsoleSavedInput;
+extern cVirtualKeyboard g_ConsoleSavedKeyboard;
+extern CMaterial g_MeshEffectMat;
+extern CGameModel g_SirenModel;
+extern CGameParticles g_SirenParticles;
+extern CMaterial g_StencilMat;
 /*
  * The dynamic initializers of the game in the order of the __xc table of the CRT, each after the destructor it
  * registers (made from the code of the exe by the initpat.py of the tag hooked-final). Expanded by StaticInit.c.
@@ -90,8 +158,8 @@ INIT_GVAR_FLOAT(Init_GVar_DistNotGetAwayAI, SI_REF(GVar_DistNotGetAwayAI), "Dist
 INIT_GVAR_FLOAT(Init_GVar_DistGetAwayBoostAI, SI_REF(GVar_DistGetAwayBoostAI), "DistGetAwayBoostAI", 4, "Distance min. get away with boost.", 5000.0f)
 INIT_GVAR_FLOAT(Init_GVar_TimeDamageAI, SI_REF(GVar_TimeDamageAI), "TimeDamageAI", 4, "Time in sec. control damage.", 3.0f)
 INIT_GVAR_FLOAT(Init_GVar_MaxDistElevatorAI, SI_REF(GVar_MaxDistElevatorAI), "MaxDistElevatorAI", 4, "Distance Max. to detect elevator near.\n", 10000.0f)
-INIT_GVAR_FLOAT_DATA(Init_GVar_MinDistChaseElevatorAI, SI_REF(GVar_MinDistChaseElevatorAI), "MinDistChaseElevatorAI", 4, "Distance Min. to objective Chase AI inside hangar.\n", &GAME_GVARFUNC(GVar_MaxDistElevatorAI)->func)
-INIT_GVAR_FLOAT_ADD(Init_GVar_MaxDistChaseElevatorAI, SI_REF(GVar_MaxDistChaseElevatorAI), "MaxDistChaseElevatorAI", 4, "Distance Max. to objective Chase AI inside hangar.\n", &GAME_GVARFUNC(GVar_MinDistChaseElevatorAI)->func, SI_REF(Init_GVar_MaxDistChaseElevatorAI_3a5ac0))
+INIT_GVAR_FLOAT_DATA(Init_GVar_MinDistChaseElevatorAI, SI_REF(GVar_MinDistChaseElevatorAI), "MinDistChaseElevatorAI", 4, "Distance Min. to objective Chase AI inside hangar.\n", &GVar_MaxDistElevatorAI.value.f)
+INIT_GVAR_FLOAT_ADD(Init_GVar_MaxDistChaseElevatorAI, SI_REF(GVar_MaxDistChaseElevatorAI), "MaxDistChaseElevatorAI", 4, "Distance Max. to objective Chase AI inside hangar.\n", &GVar_MinDistChaseElevatorAI.value.f, SI_REF(Init_GVar_MaxDistChaseElevatorAI_3a5ac0))
 INIT_GVAR_FLOAT(Init_GVar_MinDistChaseAI, SI_REF(GVar_MinDistChaseAI), "MinDistChaseAI", 4, "Distance Min. to objective Chase AI.\n", 5000.0f)
 INIT_GVAR_FLOAT(Init_GVar_MaxDistChaseAI, SI_REF(GVar_MaxDistChaseAI), "MaxDistChaseAI", 4, "Distance Max. to objective Chase AI.\n", 15000.0f)
 INIT_GVAR_FLOAT(Init_GVar_MinDistBetweenTrafficAI, SI_REF(GVar_MinDistBetweenTrafficAI), "MinDistBetweenTrafficAI", 4, "Distance Min. between two ships of traffic.\n", 5000.0f)
@@ -105,9 +173,9 @@ INIT_GVAR_FLOAT(Init_GVar_RADIUS_OBJECTIVE_TRAFFIC_INDOOR, SI_REF(GVar_RADIUS_OB
 INIT_GVAR_FLOAT(Init_GVar_VelReposBackAI, SI_REF(GVar_VelReposBackAI), "VelReposBackAI", 4, "Vel. to repos agent back to camera.\n", 3000.0f)
 INIT_GVAR_FLOAT(Init_GVar_VelReposStopAI, SI_REF(GVar_VelReposStopAI), "VelReposStopAI", 4, "Vel. to repos agent back to camera.\n", 7000.0f)
 INIT_GVAR_FLOAT(Init_GVar_VelTrafficLightRotAI, SI_REF(GVar_VelTrafficLightRotAI), "VelTrafficLightRotAI", 4, "Vel. traffic light to rotate.\n", 5556.0f)
-FINI_CALL(Fini_GVar_OnItemTakenAI, &GAME_GVARFUNC(GVar_OnItemTakenAI)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnItemTakenAI, &GVar_OnItemTakenAI.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnItemTakenAI, Fini_GVar_OnItemTakenAI, SI_REF(GVar_OnItemTakenAI), "OnItemTakenAI", 0, "Execute function in Python to take item", "")
-FINI_CALL(Fini_GVar_OnObjectiveNullAI, &GAME_GVARFUNC(GVar_OnObjectiveNullAI)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnObjectiveNullAI, &GVar_OnObjectiveNullAI.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnObjectiveNullAI, Fini_GVar_OnObjectiveNullAI, SI_REF(GVar_OnObjectiveNullAI), "OnObjectiveNullAI", 0, "Execute function in Python if objective is null", "")
 FINI_GVAR_STRING(Fini_GVar_ShowVehAI, SI_REF(GVar_ShowVehAI))
 INIT_GVAR_STRING(Init_GVar_ShowVehAI, Fini_GVar_ShowVehAI, SI_REF(GVar_ShowVehAI), "ShowVehAI", 4, "Show Features vehicle.\n", "")
@@ -313,7 +381,7 @@ INIT_NATIVE_FUNC(Init_NativeFunc_GearActionPress, SI_REF(NativeFunc_GearActionPr
 INIT_NATIVE_FUNC(Init_NativeFunc_GearInitAction, SI_REF(NativeFunc_GearInitAction), "GearInitAction", ChType_GearInitAction)
 INIT_NATIVE_FUNC(Init_NativeFunc_GearEndAction, SI_REF(NativeFunc_GearEndAction), "GearEndAction", ChType_GearEndAction)
 INIT_NATIVE_FUNC(Init_NativeFunc_GearEndActionEnd, SI_REF(NativeFunc_GearEndActionEnd), "GearEndActionEnd", ChType_EndActionEnd)
-FINI_CALL(Fini_GVar_OnFlash, &GAME_GVARFUNC(GVar_OnFlash)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnFlash, &GVar_OnFlash.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnFlash, Fini_GVar_OnFlash, SI_REF(GVar_OnFlash), "OnFlash", 0, "Function to be called when the the player, flash someone", "")
 FINI_GVAR_STRING(Fini_GVar_MaintenanceWorkSound, SI_REF(GVar_MaintenanceWorkSound))
 INIT_GVAR_STRING(Init_GVar_MaintenanceWorkSound, Fini_GVar_MaintenanceWorkSound, SI_REF(GVar_MaintenanceWorkSound), "MaintenanceWorkSound", 0, "Maintenance Work sound name", "MaintenanceWorkSound")
@@ -354,7 +422,7 @@ INIT_NATIVE_FUNC(Init_NativeFunc_MessengerTakeDataPack, SI_REF(NativeFunc_Messen
 INIT_NATIVE_FUNC(Init_NativeFunc_MessengerAttack, SI_REF(NativeFunc_MessengerAttack), "MessengerAttack", ChType_MessengerAttack)
 INIT_NATIVE_FUNC(Init_NativeFunc_MessengerActionPress, SI_REF(NativeFunc_MessengerActionPress), "MessengerActionPress", ChType_ActionPress)
 INIT_NATIVE_FUNC(Init_NativeFunc_MessengerEndActionEnd, SI_REF(NativeFunc_MessengerEndActionEnd), "MessengerEndActionEnd", ChType_EndActionEnd)
-FINI_CALL(Fini_GVar_OnSleep, &GAME_GVARFUNC(GVar_OnSleep)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnSleep, &GVar_OnSleep.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnSleep, Fini_GVar_OnSleep, SI_REF(GVar_OnSleep), "OnSleep", 0, "Function to be called when the the player, as a nurse, sleeps someone", "")
 FINI_GVAR_STRING(Fini_GVar_FXHammerHitFile, SI_REF(GVar_FXHammerHitFile))
 INIT_GVAR_STRING(Init_GVar_FXHammerHitFile, Fini_GVar_FXHammerHitFile, SI_REF(GVar_FXHammerHitFile), "FXHammerHitFile", 0, "Default Model for Nurse Hammer Hit Effect", "Models/GFX/Nurse/HammerHit.M3D")
@@ -481,7 +549,7 @@ INIT_GVAR_FLOAT(Init_GVar_ErrorMax, SI_REF(GVar_ErrorMax), "ErrorMax", 0, "", 10
 INIT_GVAR_FLOAT(Init_GVar_ErrorFix, SI_REF(GVar_ErrorFix), "ErrorFix", 0, "", 1.0f)
 INIT_GVAR_INT(Init_GVar_ItemLifeAdds, SI_REF(GVar_ItemLifeAdds), "ItemLifeAdds", 0, "Default Increment to the Item -> Life", 50)
 INIT_GVAR_FLOAT(Init_GVar_ItemLifeRespawnTime, SI_REF(GVar_ItemLifeRespawnTime), "ItemLifeRespawnTime", 0, "Time to respawn the Item -> Life", 20.0f)
-FINI_CALL(Fini_GVar_OnLifeItemTaken, &GAME_GVARFUNC(GVar_OnLifeItemTaken)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnLifeItemTaken, &GVar_OnLifeItemTaken.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnLifeItemTaken, Fini_GVar_OnLifeItemTaken, SI_REF(GVar_OnLifeItemTaken), "OnLifeItemTaken", 0, "Function to be called when an item is taken", "")
 INIT_NATIVE_FUNC(Init_NativeFunc_TakeLife, SI_REF(NativeFunc_TakeLife), "TakeLife", Controls_TakeLifeNative)
 INIT_GVAR_INT(Init_GVar_ItemPartAdds, SI_REF(GVar_ItemPartAdds), "ItemPartAdds", 0, "Default Increment to the Item -> Particle Ammo", 250)
@@ -627,9 +695,9 @@ INIT_GVAR_FLOAT(Init_GVar_MNTrafficCapsule, SI_REF(GVar_MNTrafficCapsule), "MNTr
 INIT_GVAR_FLOAT(Init_GVar_NTrafficCapsule, SI_REF(GVar_NTrafficCapsule), "NTrafficCapsule", 0, "Normal Radius of the Traffic Segment", 2500.0f)
 INIT_GVAR_FLOAT(Init_GVar_STrafficCapsule, SI_REF(GVar_STrafficCapsule), "STrafficCapsule", 0, "Small/Minimal Radius of the Traffic Segment", 1500.0f)
 INIT_GVAR_INT(Init_GVar_UseTrafficCollisionSkip, SI_REF(GVar_UseTrafficCollisionSkip), "UseTrafficCollisionSkip", 0, "1 if uses 0 if not", 1)
-FINI_CALL(Fini_GVar_RestoreUpgradeFunc, &GAME_GVARFUNC(GVar_RestoreUpgradeFunc)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_RestoreUpgradeFunc, &GVar_RestoreUpgradeFunc.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_RestoreUpgradeFunc, Fini_GVar_RestoreUpgradeFunc, SI_REF(GVar_RestoreUpgradeFunc), "RestoreUpgradeFunc", 0, "Function to be called when an upgrade is restored", "Items.RestoreUpgrade")
-FINI_CALL(Fini_GVar_HookPlugFunc, &GAME_GVARFUNC(GVar_HookPlugFunc)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_HookPlugFunc, &GVar_HookPlugFunc.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_HookPlugFunc, Fini_GVar_HookPlugFunc, SI_REF(GVar_HookPlugFunc), "HookPlugFunc", 0, "HookPlugFunc(VehicleName,state) when the hook changes de state", "")
 INIT_GVAR_INT(Init_GVar_LaserIDWeap, SI_REF(GVar_LaserIDWeap), "LaserIDWeap", 0, "The default weapon idx for the laser", 1)
 INIT_GVAR_INT(Init_GVar_VulcanIDWeap, SI_REF(GVar_VulcanIDWeap), "VulcanIDWeap", 0, "The default weapon idx for the vulcan", 2)
@@ -674,9 +742,9 @@ INIT_NATIVE_FUNC(Init_NativeFunc_ATPCXplosionCall, SI_REF(NativeFunc_ATPCXplosio
 INIT_NATIVE_FUNC(Init_NativeFunc_ATPCCreate, SI_REF(NativeFunc_ATPCCreate), "ATPCCreate", ATPC_Create)
 INIT_NATIVE_FUNC(Init_NativeFunc_ATPCFire, SI_REF(NativeFunc_ATPCFire), "ATPCFire", ATPC_Fire)
 INIT_NATIVE_FUNC(Init_NativeFunc_ATPCFX, SI_REF(NativeFunc_ATPCFX), "ATPCFX", ATPC_FX)
-FINI_CALL(Fini_GVar_CreateCloudFunc, &GAME_GVARFUNC(GVar_CreateCloudFunc)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_CreateCloudFunc, &GVar_CreateCloudFunc.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_CreateCloudFunc, Fini_GVar_CreateCloudFunc, SI_REF(GVar_CreateCloudFunc), "CreateCloudFunc", 0, "Function to be called to create the cloud", "")
-FINI_CALL(Fini_GVar_SetUpCloudFunc, &GAME_GVARFUNC(GVar_SetUpCloudFunc)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_SetUpCloudFunc, &GVar_SetUpCloudFunc.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_SetUpCloudFunc, Fini_GVar_SetUpCloudFunc, SI_REF(GVar_SetUpCloudFunc), "SetUpCloudFunc", 0, "Function to be called to set up the cloud properties", "")
 INIT_GVAR_INT(Init_GVar_CloudAmmoNeed, SI_REF(GVar_CloudAmmoNeed), "CloudAmmoNeed", 0, "The default cost ammunition for the cloud", 20)
 INIT_GVAR_INT(Init_GVar_CloudIDAmmo, SI_REF(GVar_CloudIDAmmo), "CloudIDAmmo", 0, "Cloud Ammo ID", 0)
@@ -708,7 +776,7 @@ INIT_GVAR_FLOAT(Init_GVar_DevastatorHitForce, SI_REF(GVar_DevastatorHitForce), "
 INIT_GVAR_FLOAT(Init_GVar_DevastatorRechargeTime, SI_REF(GVar_DevastatorRechargeTime), "DevastatorRechargeTime", 0, "Time between a single vulcan shoot.", 0.25f)
 INIT_GVAR_FLOAT(Init_GVar_DevastatorMinDamage, SI_REF(GVar_DevastatorMinDamage), "DevastatorMinDamage", 0, "The base of the minimal damage of Devastator", 2.0f)
 INIT_GVAR_FLOAT(Init_GVar_DevastatorExtraDamage, SI_REF(GVar_DevastatorExtraDamage), "DevastatorExtraDamage", 0, "Aditional damage about the distance", 5.0f)
-INIT_GVAR_FLOAT_DATA(Init_GVar_DevastatorDistLimit, SI_REF(GVar_DevastatorDistLimit), "DevastatorDistLimit", 0, "Distance limit shoots", &GAME_GVARFUNC(GVar_DevastatorRange)->func)
+INIT_GVAR_FLOAT_DATA(Init_GVar_DevastatorDistLimit, SI_REF(GVar_DevastatorDistLimit), "DevastatorDistLimit", 0, "Distance limit shoots", &GVar_DevastatorRange.value.f)
 INIT_GVAR_FLOAT(Init_GVar_FXDevastatorDistance, SI_REF(GVar_FXDevastatorDistance), "FXDevastatorDistance", 0, "Distance of Devastator Explosion Effect", 95000.0f)
 INIT_GVAR_FLOAT(Init_GVar_FXDevastatorRadius, SI_REF(GVar_FXDevastatorRadius), "FXDevastatorRadius", 0, "Radius of Devastator Explosion Effect", 600.0f)
 INIT_GVAR_FLOAT(Init_GVar_FXDevastatorScale, SI_REF(GVar_FXDevastatorScale), "FXDevastatorScale", 0, "Scale of Devastator Explosion Effect", 1.2f)
@@ -718,9 +786,9 @@ INIT_NATIVE_FUNC(Init_NativeFunc_DevastatorXplosionCall, SI_REF(NativeFunc_Devas
 INIT_NATIVE_FUNC(Init_NativeFunc_DevastatorCreate, SI_REF(NativeFunc_DevastatorCreate), "DevastatorCreate", Devastator_Create)
 INIT_NATIVE_FUNC(Init_NativeFunc_DevastatorFire, SI_REF(NativeFunc_DevastatorFire), "DevastatorFire", Devastator_Fire)
 INIT_NATIVE_FUNC(Init_NativeFunc_DevastatorFX, SI_REF(NativeFunc_DevastatorFX), "DevastatorFX", Devastator_FX)
-FINI_CALL(Fini_GVar_CreateEMIFunc, &GAME_GVARFUNC(GVar_CreateEMIFunc)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_CreateEMIFunc, &GVar_CreateEMIFunc.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_CreateEMIFunc, Fini_GVar_CreateEMIFunc, SI_REF(GVar_CreateEMIFunc), "CreateEMIFunc", 0, "Function to be called to create the EMI", "")
-FINI_CALL(Fini_GVar_SetUpEMIFunc, &GAME_GVARFUNC(GVar_SetUpEMIFunc)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_SetUpEMIFunc, &GVar_SetUpEMIFunc.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_SetUpEMIFunc, Fini_GVar_SetUpEMIFunc, SI_REF(GVar_SetUpEMIFunc), "SetUpEMIFunc", 0, "Function to be called to set up the EMI properties", "")
 INIT_GVAR_INT(Init_GVar_EMIIDAmmo, SI_REF(GVar_EMIIDAmmo), "EMIIDAmmo", 0, "EMI Ammo ID", 0)
 INIT_GVAR_INT(Init_GVar_EMIAmmoNeed, SI_REF(GVar_EMIAmmoNeed), "EMIAmmoNeed", 0, "The deault cost ammunition for the EMI", 5)
@@ -815,7 +883,7 @@ INIT_GVAR_FLOAT(Init_GVar_LaserRange, SI_REF(GVar_LaserRange), "LaserRange", 0, 
 INIT_GVAR_FLOAT(Init_GVar_LaserAmmoCost, SI_REF(GVar_LaserAmmoCost), "LaserAmmoCost", 0, "Cost Per hit at laser", 10.0f)
 INIT_GVAR_FLOAT(Init_GVar_LaserTimeDelay, SI_REF(GVar_LaserTimeDelay), "LaserTimeDelay", 0, "Time in seconds between the laser shoots", 0.2f)
 INIT_GVAR_INT(Init_GVar_LaserDamage, SI_REF(GVar_LaserDamage), "LaserDamage", 0, "Damage per shoot", 3)
-INIT_GVAR_FLOAT_MULDIV(Init_GVar_LaserDistLimit, SI_REF(GVar_LaserDistLimit), "LaserDistLimit", 0, "Distance limit shoots", &GAME_GVARFUNC(GVar_LaserRange)->func, SI_REF(Init_GVar_LaserDistLimit_3a8e38), SI_REF(Init_GVar_LaserDistLimit_3a3710))
+INIT_GVAR_FLOAT_MULDIV(Init_GVar_LaserDistLimit, SI_REF(GVar_LaserDistLimit), "LaserDistLimit", 0, "Distance limit shoots", &GVar_LaserRange.value.f, SI_REF(Init_GVar_LaserDistLimit_3a8e38), SI_REF(Init_GVar_LaserDistLimit_3a3710))
 INIT_GVAR_FLOAT(Init_GVar_LaserMinSpeed, SI_REF(GVar_LaserMinSpeed), "LaserMinSpeed", 0, "The minimun Speed of the laser shoots", 50000.0f)
 FINI_GVAR_STRING(Fini_GVar_LaserRicSound, SI_REF(GVar_LaserRicSound))
 INIT_GVAR_STRING(Init_GVar_LaserRicSound, Fini_GVar_LaserRicSound, SI_REF(GVar_LaserRicSound), "LaserRicSound", 0, "First Laser puchuing sound name", "VulcanRic0")
@@ -837,9 +905,9 @@ INIT_NATIVE_FUNC(Init_NativeFunc_HookPlugFX, SI_REF(NativeFunc_HookPlugFX), "Hoo
 INIT_NATIVE_FUNC(Init_NativeFunc_HookFire, SI_REF(NativeFunc_HookFire), "HookFire", Hook_UpdateNative)
 INIT_NATIVE_FUNC(Init_NativeFunc_HookActivate, SI_REF(NativeFunc_HookActivate), "HookActivate", Hook_AimNative)
 INIT_NATIVE_FUNC(Init_NativeFunc_HookDeActivate, SI_REF(NativeFunc_HookDeActivate), "HookDeActivate", Hook_OffNative)
-FINI_CALL(Fini_GVar_CreateSonicFunc, &GAME_GVARFUNC(GVar_CreateSonicFunc)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_CreateSonicFunc, &GVar_CreateSonicFunc.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_CreateSonicFunc, Fini_GVar_CreateSonicFunc, SI_REF(GVar_CreateSonicFunc), "CreateSonicFunc", 0, "Function to be called to create the mine", "")
-FINI_CALL(Fini_GVar_SetUpSonicFunc, &GAME_GVARFUNC(GVar_SetUpSonicFunc)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_SetUpSonicFunc, &GVar_SetUpSonicFunc.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_SetUpSonicFunc, Fini_GVar_SetUpSonicFunc, SI_REF(GVar_SetUpSonicFunc), "SetUpSonicFunc", 0, "Function to be called to set up the mine properties", "")
 INIT_GVAR_INT(Init_GVar_SonicIDAmmo, SI_REF(GVar_SonicIDAmmo), "SonicIDAmmo", 0, "Sonic Ammo ID", 0)
 INIT_GVAR_INT(Init_GVar_SonicAmmoNeed, SI_REF(GVar_SonicAmmoNeed), "SonicAmmoNeed", 0, "Sonic Ammo Need", 0)
@@ -926,7 +994,7 @@ INIT_GVAR_STRING(Init_GVar_TeslaShootFile, Fini_GVar_TeslaShootFile, SI_REF(GVar
 INIT_GVAR_FLOAT(Init_GVar_TeslaMinAngRangeUpg, SI_REF(GVar_TeslaMinAngRangeUpg), "TeslaMinAngRangeUpg", 0, "The minimun angle range with upgrade (no hit case at tesla)", 10.0f)
 INIT_GVAR_FLOAT(Init_GVar_TeslaMinAngRangeUpgPad, SI_REF(GVar_TeslaMinAngRangeUpgPad), "TeslaMinAngRangeUpgPad", 0, "The minimun angle range with upgrade (no hit case at tesla) Pad Controller", 17.0f)
 INIT_GVAR_FLOAT(Init_GVar_TeslaTrackForce, SI_REF(GVar_TeslaTrackForce), "TeslaTrackForce", 0, "Traking force that have a single tesla shoot with upgrade (TN/Seg)", 10000.0f)
-INIT_GVAR_FLOAT_DATA(Init_GVar_TeslaDistLimit, SI_REF(GVar_TeslaDistLimit), "TeslaDistLimit", 0, "Distance limit shoots", &GAME_GVARFUNC(GVar_TeslaRange)->func)
+INIT_GVAR_FLOAT_DATA(Init_GVar_TeslaDistLimit, SI_REF(GVar_TeslaDistLimit), "TeslaDistLimit", 0, "Distance limit shoots", &GVar_TeslaRange.value.f)
 INIT_GVAR_FLOAT(Init_GVar_FXTeslaFadeOutTime, SI_REF(GVar_FXTeslaFadeOutTime), "FXTeslaFadeOutTime", 0, "Time that use the Tesla to fade out", 0.1f)
 INIT_GVAR_FLOAT(Init_GVar_FXTeslaFollowTime, SI_REF(GVar_FXTeslaFollowTime), "FXTeslaFollowTime", 0, "Time that use the Tesla to follow the curve", 0.025f)
 INIT_GVAR_FLOAT(Init_GVar_FXTeslaStepTime, SI_REF(GVar_FXTeslaStepTime), "FXTeslaStepTime", 0, "Time step to change the follow curve for the Tesla", 0.06f)
@@ -946,8 +1014,8 @@ INIT_GVAR_FLOAT(Init_GVar_VulcanRange, SI_REF(GVar_VulcanRange), "VulcanRange", 
 INIT_GVAR_FLOAT(Init_GVar_VulcanAmmoCost, SI_REF(GVar_VulcanAmmoCost), "VulcanAmmoCost", 0, "Cost Per hit at vulcan", 0.5f)
 INIT_GVAR_FLOAT(Init_GVar_VulcanTimeDelay, SI_REF(GVar_VulcanTimeDelay), "VulcanTimeDelay", 0, "Time between vulcan shoots", 0.1f)
 INIT_GVAR_FLOAT(Init_GVar_VulcanTimeDelayUPG, SI_REF(GVar_VulcanTimeDelayUPG), "VulcanTimeDelayUPG", 0, "Time between vulcan shoots (UPGRADE)", 0.075f)
-INIT_GVAR_FLOAT_MULDIV(Init_GVar_VulcanDistLimit, SI_REF(GVar_VulcanDistLimit), "VulcanDistLimit", 0, "Distance limit shoots", &GAME_GVARFUNC(GVar_VulcanRange)->func, SI_REF(Init_GVar_LaserDistLimit_3a8e38), SI_REF(Init_GVar_LaserDistLimit_3a3710))
-INIT_GVAR_FLOAT_DATA(Init_GVar_VulcanDistLimitUPG, SI_REF(GVar_VulcanDistLimitUPG), "VulcanDistLimitUPG", 0, "Distance limit shoots(UPGRADE)", &GAME_GVARFUNC(GVar_VulcanRange)->func)
+INIT_GVAR_FLOAT_MULDIV(Init_GVar_VulcanDistLimit, SI_REF(GVar_VulcanDistLimit), "VulcanDistLimit", 0, "Distance limit shoots", &GVar_VulcanRange.value.f, SI_REF(Init_GVar_LaserDistLimit_3a8e38), SI_REF(Init_GVar_LaserDistLimit_3a3710))
+INIT_GVAR_FLOAT_DATA(Init_GVar_VulcanDistLimitUPG, SI_REF(GVar_VulcanDistLimitUPG), "VulcanDistLimitUPG", 0, "Distance limit shoots(UPGRADE)", &GVar_VulcanRange.value.f)
 INIT_GVAR_INT(Init_GVar_VulcanDamage, SI_REF(GVar_VulcanDamage), "VulcanDamage", 0, "Vulcan damage per slot", 2)
 INIT_GVAR_INT(Init_GVar_VulcanDamageEasy, SI_REF(GVar_VulcanDamageEasy), "VulcanDamageEasy", 0, "Vulcan damage per slot (easy Set)", 1)
 FINI_GVAR_STRING(Fini_GVar_VulcanRic0Sound, SI_REF(GVar_VulcanRic0Sound))
@@ -969,7 +1037,7 @@ INIT_NATIVE_FUNC(Init_NativeFunc_VulcanCreate, SI_REF(NativeFunc_VulcanCreate), 
 INIT_NATIVE_FUNC(Init_NativeFunc_VulcanFire, SI_REF(NativeFunc_VulcanFire), "VulcanFire", Vulcan_FireNative)
 INIT_NATIVE_FUNC(Init_NativeFunc_VulcanFX, SI_REF(NativeFunc_VulcanFX), "VulcanFX", Vulcan_HudNative)
 INIT_GVAR_INT(Init_GVar_StdMaxLife, SI_REF(GVar_StdMaxLife), "StdMaxLife", 0, "Standard max life for characters and soon.", 100)
-FINI_CALL(Fini_GVar_OnGeneralDamage, &GAME_GVARFUNC(GVar_OnGeneralDamage)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnGeneralDamage, &GVar_OnGeneralDamage.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnGeneralDamage, Fini_GVar_OnGeneralDamage, SI_REF(GVar_OnGeneralDamage), "OnGeneralDamage", 0, "Función callback de daño de propósito general", "")
 FINI_GVAR_STRING(Fini_GVar_PathInPackFile, SI_REF(GVar_PathInPackFile))
 INIT_GVAR_STRING(Init_GVar_PathInPackFile, Fini_GVar_PathInPackFile, SI_REF(GVar_PathInPackFile), "PathInPackFile", 1, "Used to convert the system to the new pack system...", "")
@@ -994,9 +1062,9 @@ FINI_GVAR_STRING(Fini_GVar_LastSaveGameName, SI_REF(GVar_LastSaveGameName))
 INIT_GVAR_STRING(Init_GVar_LastSaveGameName, Fini_GVar_LastSaveGameName, SI_REF(GVar_LastSaveGameName), "LastSaveGameName", 0, "Last SaveGame Name", "")
 FINI_CALL(Fini_SaveVarTable, SI_REF(g_SaveVarTable), PtrTable_Clear)
 INIT_HASHTABLE(Init_SaveVarTable, Fini_SaveVarTable, SI_REF(g_SaveVarTable), 0x1c9, 4, 0x724, 0, 1)
-FINI_CALL(Fini_GVar_OnCrazyDealFinished, &GAME_GVARFUNC(GVar_OnCrazyDealFinished)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnCrazyDealFinished, &GVar_OnCrazyDealFinished.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnCrazyDealFinished, Fini_GVar_OnCrazyDealFinished, SI_REF(GVar_OnCrazyDealFinished), "OnCrazyDealFinished", 0, "Function to be called when a taunt is to be launched", "")
-FINI_CALL(Fini_GVar_OnCrazyDealTarget, &GAME_GVARFUNC(GVar_OnCrazyDealTarget)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnCrazyDealTarget, &GVar_OnCrazyDealTarget.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnCrazyDealTarget, Fini_GVar_OnCrazyDealTarget, SI_REF(GVar_OnCrazyDealTarget), "OnCrazyDealTarget", 0, "Function to be called when a crazy deal target is reached", "")
 FINI_VECTOR(Fini_cStaticBuffer_PyStaticBuffer, SI_REF(cStaticBuffer_PyStaticBuffer), sizeof(cStaticBuffer), 2, cStaticBuffer_dtor)
 INIT_VECTOR(Init_cStaticBuffer_PyStaticBuffer, Fini_cStaticBuffer_PyStaticBuffer, SI_REF(cStaticBuffer_PyStaticBuffer), sizeof(cStaticBuffer), 2, cStaticBuffer_ctor, cStaticBuffer_dtor)
@@ -1009,7 +1077,7 @@ FINI_CALL(Fini_cPy_Function_DefineFunc, SI_REF(g_DefineFunc), cPy_Function_dtor)
 INIT_OBJECT(Init_cPy_Function_DefineFunc, Fini_cPy_Function_DefineFunc, SI_REF(g_DefineFunc), cPy_Function_ctor)
 FINI_DLIST(Fini_InputDevices, SI_REF(g_InputDevices), InputDevices_Clear, 12)
 INIT_ATEXIT(Init_InputDevices, Fini_InputDevices)
-FINI_CALL(Fini_GVar_CheckInactivityFunc, &GAME_GVARFUNC(GVar_CheckInactivityFunc)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_CheckInactivityFunc, &GVar_CheckInactivityFunc.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_CheckInactivityFunc, Fini_GVar_CheckInactivityFunc, SI_REF(GVar_CheckInactivityFunc), "CheckInactivityFunc", 0, "Inactivity time function to launch.\n", "")
 INIT_GVAR_FLOAT(Init_GVar_CheckInactivityTime, SI_REF(GVar_CheckInactivityTime), "CheckInactivityTime", 0, "Inactivity time in seconds to launch the Function.", 120.0f)
 INIT_GVAR_INT(Init_GVar_PauseInactivityTime, SI_REF(GVar_PauseInactivityTime), "PauseInactivityTime", 0, "Pause Inactivity time if need.", 0)
@@ -1029,7 +1097,7 @@ INIT_GVAR_FLOAT(Init_GVar_EasyAlarmFallFactor, SI_REF(GVar_EasyAlarmFallFactor),
 INIT_GVAR_FLOAT(Init_GVar_AlarmFallDelta, SI_REF(GVar_AlarmFallDelta), "AlarmFallDelta", 0, "The alarm status go down.", -0.05f)
 INIT_GVAR_FLOAT(Init_GVar_AlarmFallMission, SI_REF(GVar_AlarmFallMission), "AlarmFallMission", 0, "The alarm status go down. (if outdoormap and mission)", 1.0f)
 INIT_GVAR_FLOAT(Init_GVar_AlarmGrowDelta, SI_REF(GVar_AlarmGrowDelta), "AlarmGrowDelta", 0, "The alarm status go up.", 0.1f)
-FINI_CALL(Fini_GVar_AlarmCallback, &GAME_GVARFUNC(GVar_AlarmCallback)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_AlarmCallback, &GVar_AlarmCallback.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_AlarmCallback, Fini_GVar_AlarmCallback, SI_REF(GVar_AlarmCallback), "AlarmCallback", 0, "The alarm Callback function.", "")
 FINI_GVAR_STRING(Fini_GVar_UsrDefChar, SI_REF(GVar_UsrDefChar))
 INIT_GVAR_STRING(Init_GVar_UsrDefChar, Fini_GVar_UsrDefChar, SI_REF(GVar_UsrDefChar), "UsrDefChar", 0, "Standard main character type", "Dtritus")
@@ -1062,13 +1130,13 @@ INIT_GVAR_FLOAT(Init_GVar_DominWithinRangeDist, SI_REF(GVar_DominWithinRangeDist
 INIT_GVAR_INT(Init_GVar_DominFightingFreezeCadenceShoot, SI_REF(GVar_DominFightingFreezeCadenceShoot), "DominFightingFreezeCadenceShoot", 0, "Domin fighting freeze cadence shoot", 2)
 INIT_GVAR_INT(Init_GVar_DominFightingFreezeControlAim, SI_REF(GVar_DominFightingFreezeControlAim), "DominFightingFreezeControlAim", 0, "Domin fighting freeze control aim", 6)
 INIT_CALL(Init_DominBatonPos, SI_REF(g_DominBatonPos), Stub_ReturnSelf)
-FINI_CALL(Fini_GVar_OnDominEnemyDeath, &GAME_GVARFUNC(GVar_OnDominEnemyDeath)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnDominEnemyDeath, &GVar_OnDominEnemyDeath.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnDominEnemyDeath, Fini_GVar_OnDominEnemyDeath, SI_REF(GVar_OnDominEnemyDeath), "OnDominEnemyDeath", 0, "Called when an enemy dies", "")
 FINI_GVAR_STRING(Fini_GVar_LeaderName, SI_REF(GVar_LeaderName))
 INIT_GVAR_STRING(Init_GVar_LeaderName, Fini_GVar_LeaderName, SI_REF(GVar_LeaderName), "LeaderName", 0, "Leader name", "")
-FINI_CALL(Fini_GVar_OnDominFriendDeath, &GAME_GVARFUNC(GVar_OnDominFriendDeath)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnDominFriendDeath, &GVar_OnDominFriendDeath.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnDominFriendDeath, Fini_GVar_OnDominFriendDeath, SI_REF(GVar_OnDominFriendDeath), "OnDominFriendDeath", 0, "Called when a friend dies", "")
-FINI_CALL(Fini_GVar_PoliceWaveEliminated, &GAME_GVARFUNC(GVar_PoliceWaveEliminated)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_PoliceWaveEliminated, &GVar_PoliceWaveEliminated.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_PoliceWaveEliminated, Fini_GVar_PoliceWaveEliminated, SI_REF(GVar_PoliceWaveEliminated), "PoliceWaveEliminated", 0, "Called if no police active in game.", "")
 INIT_GVAR_INT(Init_GVar_DoResetOutPolice, SI_REF(GVar_DoResetOutPolice), "DoResetOutPolice", 0, "if true, the police will be reset.", 0)
 FINI_GVAR_STRING(Fini_GVar_DesktopsFunctionaryListName, SI_REF(GVar_DesktopsFunctionaryListName))
@@ -1082,7 +1150,7 @@ INIT_GVAR_FLOAT(Init_GVar_FunctionaryMaxtimeToStopWorking, SI_REF(GVar_Functiona
 INIT_GVAR_FLOAT(Init_GVar_FunctionarySpecialActionStatesTransitionTime, SI_REF(GVar_FunctionarySpecialActionStatesTransitionTime), "FunctionarySpecialActionStatesTransitionTime", 0, "Functionary special action states transition time", 0.5f)
 INIT_GVAR_FLOAT(Init_GVar_FunctionarySpecialActionTime, SI_REF(GVar_FunctionarySpecialActionTime), "FunctionarySpecialActionTime", 0, "Functionary special action time", 1.5f)
 INIT_GVAR_FLOAT(Init_GVar_FunctionaryAssignWorkDistance, SI_REF(GVar_FunctionaryAssignWorkDistance), "FunctionaryAssignWorkDistance", 0, "Distance from the chair to reposisionate the functionary", 600.0f)
-FINI_CALL(Fini_GVar_OnFunctionaryStartsWorking, &GAME_GVARFUNC(GVar_OnFunctionaryStartsWorking)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnFunctionaryStartsWorking, &GVar_OnFunctionaryStartsWorking.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnFunctionaryStartsWorking, Fini_GVar_OnFunctionaryStartsWorking, SI_REF(GVar_OnFunctionaryStartsWorking), "OnFunctionaryStartsWorking", 0, "Function to be called when a functionary sits down and starts working", "")
 INIT_GVAR_FLOAT(Init_GVar_GateKeeperHiddenTime, SI_REF(GVar_GateKeeperHiddenTime), "GateKeeperHiddenTime", 0, "Time iniside the shell of the gatekeeper when attacked", 5.0f)
 INIT_GVAR_FLOAT(Init_GVar_GateKeeperStdFovX, SI_REF(GVar_GateKeeperStdFovX), "GateKeeperStdFovX", 0, "Standard GateKeeper FieldOfView", 2.3561945f)
@@ -1118,13 +1186,13 @@ INIT_GVAR_FLOAT(Init_GVar_GenCharAcuseTime, SI_REF(GVar_GenCharAcuseTime), "GenC
 INIT_GVAR_FLOAT(Init_GVar_GenCharAcuseAgainTime, SI_REF(GVar_GenCharAcuseAgainTime), "GenCharAcuseAgainTime", 0, "Time to acuse again after having received damage from the Gear (being acusing the main char)", 4.0f)
 INIT_GVAR_FLOAT(Init_GVar_GenCharPoliceRefuse, SI_REF(GVar_GenCharPoliceRefuse), "GenCharPoliceRefuse", 0, "Percentage of times when the generic char escapes from the police", 50.0f)
 INIT_GVAR_FLOAT(Init_GVar_GenCharSpecialChaseSpeed, SI_REF(GVar_GenCharSpecialChaseSpeed), "GenCharSpecialChaseSpeed", 0, "Gen char special chase speed", -1.0f)
-FINI_CALL(Fini_GVar_OnDefStateCallback, &GAME_GVARFUNC(GVar_OnDefStateCallback)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnDefStateCallback, &GVar_OnDefStateCallback.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnDefStateCallback, Fini_GVar_OnDefStateCallback, SI_REF(GVar_OnDefStateCallback), "OnDefStateCallback", 0, "Python function to be called when the NPC is forced to have the default state", "")
 INIT_GVAR_FLOAT(Init_GVar_GetAwayHumanDist, SI_REF(GVar_GetAwayHumanDist), "GetAwayHumanDist", 0, "Get away human dist", 600.0f)
 INIT_NATIVE_FUNC(Init_NativeFunc_Police2GearEnd, SI_REF(NativeFunc_Police2GearEnd), "Police2GearEnd", AICtrl_Police2GearEnd)
-FINI_CALL(Fini_GVar_CreateGear, &GAME_GVARFUNC(GVar_CreateGear)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_CreateGear, &GVar_CreateGear.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_CreateGear, Fini_GVar_CreateGear, SI_REF(GVar_CreateGear), "CreateGear", 0, "This function is called if we need a Gear", "")
-FINI_CALL(Fini_GVar_CreatePolice, &GAME_GVARFUNC(GVar_CreatePolice)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_CreatePolice, &GVar_CreatePolice.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_CreatePolice, Fini_GVar_CreatePolice, SI_REF(GVar_CreatePolice), "CreatePolice", 0, "This function is called if we need a Police", "")
 INIT_GVAR_INT(Init_GVar_PoliceLogicBelligerant, SI_REF(GVar_PoliceLogicBelligerant), "PoliceLogicBelligerant", 0, "Must Be Initialized as 1 if Police Map", 0)
 INIT_GVAR_INT(Init_GVar_LittlePoliceAsksForMoney, SI_REF(GVar_LittlePoliceAsksForMoney), "LittlePoliceAsksForMoney", 0, "Little police asks for money", 1)
@@ -1142,16 +1210,16 @@ INIT_GVAR_INT(Init_GVar_MessengerDataPackMissionArrow, SI_REF(GVar_MessengerData
 INIT_GVAR_INT(Init_GVar_MessengerTubeState, SI_REF(GVar_MessengerTubeState), "MessengerTubeState", 0, "State of the tube : 0:Empty or 1:filled", 1)
 INIT_GVAR_FLOAT(Init_GVar_MessengerObjectiveDistance, SI_REF(GVar_MessengerObjectiveDistance), "MessengerObjetiveDistance", 0, "Distance to the objetive to drop...", 300.0f)
 INIT_GVAR_FLOAT(Init_GVar_MessengerPrepareDistance, SI_REF(GVar_MessengerPrepareDistance), "MessengerPrepareDistance", 0, "Distance to the objetive to prepare drop", 1200.0f)
-FINI_CALL(Fini_GVar_MessengerDropCallback, &GAME_GVARFUNC(GVar_MessengerDropCallback)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_MessengerDropCallback, &GVar_MessengerDropCallback.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_MessengerDropCallback, Fini_GVar_MessengerDropCallback, SI_REF(GVar_MessengerDropCallback), "MessengerDropCallback", 0, "Called if a messager drop a datapack", "")
-FINI_CALL(Fini_GVar_MessengerTakenCallback, &GAME_GVARFUNC(GVar_MessengerTakenCallback)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_MessengerTakenCallback, &GVar_MessengerTakenCallback.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_MessengerTakenCallback, Fini_GVar_MessengerTakenCallback, SI_REF(GVar_MessengerTakenCallback), "MessengerTakenCallback", 0, "Called if a messager takes a datapack", "")
 INIT_GVAR_INT(Init_GVar_MessengerDropPrice, SI_REF(GVar_MessengerDropPrice), "MessengerDropPrice", 0, "The price if a messager drop the tube...", 500)
 FINI_GVAR_STRING(Fini_GVar_MessengerDataPack, SI_REF(GVar_MessengerDataPack))
 INIT_GVAR_STRING(Init_GVar_MessengerDataPack, Fini_GVar_MessengerDataPack, SI_REF(GVar_MessengerDataPack), "MessengerDataPack", 0, "Desktops functionary list name", "MessengerDataPack")
 INIT_GVAR_FLOAT(Init_GVar_MessengerGotoSpeed, SI_REF(GVar_MessengerGotoSpeed), "MessengerGotoSpeed", 0, "Messenger speed when carry a tube or go for it.", 1.0f)
 INIT_GVAR_FLOAT(Init_GVar_StrMoneyUpdate, SI_REF(GVar_StrMoneyUpdate), "StrMoneyUpdate", 0, "Time to update the Money Scorer", 0.1f)
-FINI_CALL(Fini_GVar_OnMoneyReachCallback, &GAME_GVARFUNC(GVar_OnMoneyReachCallback)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnMoneyReachCallback, &GVar_OnMoneyReachCallback.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnMoneyReachCallback, Fini_GVar_OnMoneyReachCallback, SI_REF(GVar_OnMoneyReachCallback), "OnMoneyReachCallback", 0, "Function to be called when money reach 'OnMoneyReachValue'", "")
 INIT_GVAR_INT(Init_GVar_OnMoneyReachValue, SI_REF(GVar_OnMoneyReachValue), "OnMoneyReachValue", 0, "if money reach these vaule, the call OnMoneyReachCallback", 0)
 INIT_GVAR_FLOAT(Init_GVar_NurseRelaxSpeed, SI_REF(GVar_NurseRelaxSpeed), "NurseRelaxSpeed", 0, "Nurse speed (Relax)", 0.3f)
@@ -1159,7 +1227,7 @@ INIT_GVAR_FLOAT(Init_GVar_NurseAlertSpeed, SI_REF(GVar_NurseAlertSpeed), "NurseA
 INIT_GVAR_FLOAT(Init_GVar_NurseEscapeTime, SI_REF(GVar_NurseEscapeTime), "NurseEscapeTime", 0, "Nurse Escape Time", 8.0f)
 INIT_GVAR_FLOAT(Init_GVar_NurseBankerDetect, SI_REF(GVar_NurseBankerDetect), "NurseBankerDetect", 0, "percentage of times when the Nurse escapes from the banker", 30.0f)
 INIT_GVAR_FLOAT(Init_GVar_NursePoliceRefuse, SI_REF(GVar_NursePoliceRefuse), "NursePoliceRefuse", 0, "percentage of times when the Nurse escapes from the police", 50.0f)
-FINI_CALL(Fini_GVar_OnTaunt, &GAME_GVARFUNC(GVar_OnTaunt)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnTaunt, &GVar_OnTaunt.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnTaunt, Fini_GVar_OnTaunt, SI_REF(GVar_OnTaunt), "OnTaunt", 0, "Function to be called when a taunt is to be launched", "")
 INIT_GVAR_FLOAT(Init_GVar_TimeBetweeenTaunts, SI_REF(GVar_TimeBetweeenTaunts), "TimeBetweeenTaunts", 0, "Time betweeen general taunts.", 22.0f)
 INIT_GVAR_FLOAT(Init_GVar_TimeBetweeenTaunts2, SI_REF(GVar_TimeBetweeenTaunts2), "TimeBetweeenTaunts2", 0, "Time betweeen taunts when the Boss controls all the robots.", 15.0f)
@@ -1168,9 +1236,9 @@ INIT_GVAR_FLOAT(Init_GVar_PhoneCabWarningDist, SI_REF(GVar_PhoneCabWarningDist),
 INIT_GVAR_FLOAT(Init_GVar_ParkingCharCheckDistance, SI_REF(GVar_ParkingCharCheckDistance), "ParkingCharCheckDistance", 0, "At this distance, the parking will be check.", 20000.0f)
 INIT_GVAR_FLOAT(Init_GVar_ParkingVehicleCheckDistance, SI_REF(GVar_ParkingVehicleCheckDistance), "ParkingVehiCheckDistance", 0, "At this distance, the parking will be check.", 100000.0f)
 INIT_GVAR_FLOAT(Init_GVar_ParkingCheckRadius, SI_REF(GVar_ParkingCheckRadius), "ParkingCheckRadius", 0, "Spere to check the position of the item or ship.", 200.0f)
-FINI_CALL(Fini_GVar_OnParkingOccupied, &GAME_GVARFUNC(GVar_OnParkingOccupied)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnParkingOccupied, &GVar_OnParkingOccupied.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnParkingOccupied, Fini_GVar_OnParkingOccupied, SI_REF(GVar_OnParkingOccupied), "OnParkingOccupied", 0, "Callback when a parking zone is occupied.", "")
-FINI_CALL(Fini_GVar_OnParkedOut, &GAME_GVARFUNC(GVar_OnParkedOut)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnParkedOut, &GVar_OnParkedOut.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnParkedOut, Fini_GVar_OnParkedOut, SI_REF(GVar_OnParkedOut), "OnParkedOut", 0, "Callback when a occupied parking zone is free.", "")
 INIT_GVAR_FLOAT(Init_GVar_PoliceBossMinSpecialActionTime, SI_REF(GVar_PoliceBossMinSpecialActionTime), "PoliceBossMinSpecialActionTime", 0, "PoliceBoss min special action time", 12.0f)
 INIT_GVAR_FLOAT(Init_GVar_PoliceBossMaxSpecialActionTime, SI_REF(GVar_PoliceBossMaxSpecialActionTime), "PoliceBossMaxSpecialActionTime", 0, "PoliceBoss max special action time", 24.0f)
@@ -1181,7 +1249,7 @@ INIT_GVAR_FLOAT(Init_GVar_RegenerationCharTimeRate, SI_REF(GVar_RegenerationChar
 FINI_GVAR_STRING(Fini_GVar_RegenerationItem, SI_REF(GVar_RegenerationItem))
 INIT_GVAR_STRING(Init_GVar_RegenerationItem, Fini_GVar_RegenerationItem, SI_REF(GVar_RegenerationItem), "RegenerationItem", 0, "Name of the bar item to make the regeneration", "RegenerationBar")
 INIT_GVAR_INT(Init_GVar_LifeToLaunchCallback, SI_REF(GVar_LifeToLaunchCallback), "LifeToLaunchCallback", 0, "Life to launch callback", 30)
-FINI_CALL(Fini_GVar_LifeReachedCallback, &GAME_GVARFUNC(GVar_LifeReachedCallback)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_LifeReachedCallback, &GVar_LifeReachedCallback.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_LifeReachedCallback, Fini_GVar_LifeReachedCallback, SI_REF(GVar_LifeReachedCallback), "LifeReachedCallback", 0, "Life reached callback", "")
 FINI_GVAR_STRING(Fini_GVar_JunkPointsListName, SI_REF(GVar_JunkPointsListName))
 INIT_GVAR_STRING(Init_GVar_JunkPointsListName, Fini_GVar_JunkPointsListName, SI_REF(GVar_JunkPointsListName), "JunkPointsListName", 1, "Junk points list name", "JunkPoints")
@@ -1220,11 +1288,11 @@ INIT_GVAR_FLOAT(Init_GVar_SentinelBankerDetect, SI_REF(GVar_SentinelBankerDetect
 INIT_GVAR_FLOAT(Init_GVar_SentinelBankerNPCDetect, SI_REF(GVar_SentinelBankerNPCDetect), "SentinelBankerNPCDetect", 0, "percentage of times when the eye acuse the banker (for npcs)", 50.0f)
 INIT_GVAR_FLOAT(Init_GVar_SputnikJunyardTimeToPissPlayer, SI_REF(GVar_SputnikJunyardTimeToPissPlayer), "SputnikJunyardTimeToPissPlayer", 0, "SputnikJunyard time to piss player", 60.0f)
 INIT_NATIVE_FUNC(Init_NativeFunc_EndOfLaugh, SI_REF(NativeFunc_EndOfLaugh), "EndOfLaugh", Sputnik_LaughDone)
-FINI_CALL(Fini_GVar_OnNeedMoreTraffic, &GAME_GVARFUNC(GVar_OnNeedMoreTraffic)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnNeedMoreTraffic, &GVar_OnNeedMoreTraffic.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnNeedMoreTraffic, Fini_GVar_OnNeedMoreTraffic, SI_REF(GVar_OnNeedMoreTraffic), "OnNeedMoreTraffic", 0, "Called if the traffic is not enough", "")
-FINI_CALL(Fini_GVar_OnNeedMoreChasingTraffic, &GAME_GVARFUNC(GVar_OnNeedMoreChasingTraffic)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnNeedMoreChasingTraffic, &GVar_OnNeedMoreChasingTraffic.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnNeedMoreChasingTraffic, Fini_GVar_OnNeedMoreChasingTraffic, SI_REF(GVar_OnNeedMoreChasingTraffic), "OnNeedMoreChasingTraffic", 0, "Called if the chasing traffic is not enough", "")
-FINI_CALL(Fini_GVar_OnPlayerHelpedPolice, &GAME_GVARFUNC(GVar_OnPlayerHelpedPolice)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnPlayerHelpedPolice, &GVar_OnPlayerHelpedPolice.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnPlayerHelpedPolice, Fini_GVar_OnPlayerHelpedPolice, SI_REF(GVar_OnPlayerHelpedPolice), "OnPlayerHelpedPolice", 0, "Called if player helped police", "")
 INIT_GVAR_INT(Init_GVar_PlayerHelpedPoliceReward, SI_REF(GVar_PlayerHelpedPoliceReward), "PlayerHelpedPoliceReward", 0, "Player helped police reward", 2000)
 INIT_GVAR_INT(Init_GVar_iTrafficNumber, SI_REF(GVar_iTrafficNumber), "iTrafficNumber", 0, "Sets the traffic on the sky", 0)
@@ -1240,7 +1308,7 @@ INIT_GVAR_INT(Init_GVar_MaxChasingShips, SI_REF(GVar_MaxChasingShips), "MaxChasi
 INIT_GVAR_FLOAT(Init_GVar_TimeToMsg, SI_REF(GVar_TimeToMsg), "TimeToMsg", 1, "Tiempo restante hasta que desaparezca el mensaje", 0.0f)
 FINI_GVAR_STRING(Fini_GVar_MissionScorerName, SI_REF(GVar_MissionScorerName))
 INIT_GVAR_STRING(Init_GVar_MissionScorerName, Fini_GVar_MissionScorerName, SI_REF(GVar_MissionScorerName), "MissionScorerName", 1, "Mission scorer name", "Mission")
-FINI_CALL(Fini_GVar_OnFinishAutoUpdate, &GAME_GVARFUNC(GVar_OnFinishAutoUpdate)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnFinishAutoUpdate, &GVar_OnFinishAutoUpdate.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnFinishAutoUpdate, Fini_GVar_OnFinishAutoUpdate, SI_REF(GVar_OnFinishAutoUpdate), "OnFinishAutoUpdate", 0, "Called on finished auto update", "")
 INIT_GVAR_FLOAT(Init_GVar_BlinkTime, SI_REF(GVar_BlinkTime), "BlinkTime", 0, "Blink time", 0.1f)
 INIT_GVAR_FLOAT(Init_GVar_BarValue, SI_REF(GVar_BarValue), "BarValue", 0, "", 0.0f)
@@ -1339,7 +1407,7 @@ INIT_GVAR_FLOAT(Init_GVar_XboxSavingMsg, SI_REF(GVar_XboxSavingMsg), "XboxSaving
 FINI_GVAR_STRING(Fini_GVar_XboxSavingMsgStr, SI_REF(GVar_XboxSavingMsgStr))
 INIT_GVAR_STRING(Init_GVar_XboxSavingMsgStr, Fini_GVar_XboxSavingMsgStr, SI_REF(GVar_XboxSavingMsgStr), "XboxSavingMsgStr", 0, "the remain 'Saving...' text message in language table.", "XBox_Saving_Msg_")
 INIT_GVAR_FLOAT(Init_GVar_HintAppearsTime, SI_REF(GVar_HintAppearsTime), "HintAppearsTime", 0, "Time to show the hint in the menu", 0.5f)
-FINI_CALL(Fini_GVar_FullScreenConsoleCallback, &GAME_GVARFUNC(GVar_FullScreenConsoleCallback)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_FullScreenConsoleCallback, &GVar_FullScreenConsoleCallback.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_FullScreenConsoleCallback, Fini_GVar_FullScreenConsoleCallback, SI_REF(GVar_FullScreenConsoleCallback), "FullScreenConsoleCallback", 0, "This function is called when imput an string on fullscreen console.", "")
 INIT_GVAR_INT(Init_GVar_ShowConsoleLog, SI_REF(GVar_ShowConsoleLog), "ShowConsoleLog", 0, "1 to show allways the console", 0)
 INIT_CALL(Init_cVirtualKeyboard_ConsoleSavedKeyboard, SI_REF(g_ConsoleSavedKeyboard), cVirtualKeyboard_ctor)
@@ -1425,17 +1493,17 @@ INIT_GVAR_INT(Init_GVar_NetTimeOut, SI_REF(GVar_NetTimeOut), "NetTimeOut", 2, "#
 INIT_GVAR_INT(Init_GVar_NetMaxPlayersInitSend, SI_REF(GVar_NetMaxPlayersInitSend), "NetMaxPlayersInitSend", 0, "Maximun number of net players send per packet at the startup.", 4)
 FINI_CALL(Fini_cFileMem_NetMsg, SI_REF(g_NetMsg), cFileMem_dtor)
 INIT_OBJECT_ARGS(Init_cFileMem_NetMsg, Fini_cFileMem_NetMsg, SI_REF(g_NetMsg), cFileMem_ctor, 0, 0, 0)
-FINI_CALL(Fini_GVar_ClientAddRes, &GAME_GVARFUNC(GVar_ClientAddRes)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_ClientAddRes, &GVar_ClientAddRes.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_ClientAddRes, Fini_GVar_ClientAddRes, SI_REF(GVar_ClientAddRes), "ClientAddRes", 0, "ClientAddRes(Num,Descriptor)", "")
-FINI_CALL(Fini_GVar_ClientDelRes, &GAME_GVARFUNC(GVar_ClientDelRes)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_ClientDelRes, &GVar_ClientDelRes.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_ClientDelRes, Fini_GVar_ClientDelRes, SI_REF(GVar_ClientDelRes), "ClientDelRes", 0, "ClientDelRes(Num,Descriptor)", "")
-FINI_CALL(Fini_GVar_ClientCreate, &GAME_GVARFUNC(GVar_ClientCreate)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_ClientCreate, &GVar_ClientCreate.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_ClientCreate, Fini_GVar_ClientCreate, SI_REF(GVar_ClientCreate), "ClientCreate", 0, "ClientCreate(EntityName,ResoruceName)", "")
-FINI_CALL(Fini_GVar_ClientAfterCreate, &GAME_GVARFUNC(GVar_ClientAfterCreate)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_ClientAfterCreate, &GVar_ClientAfterCreate.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_ClientAfterCreate, Fini_GVar_ClientAfterCreate, SI_REF(GVar_ClientAfterCreate), "ClientAfterCreate", 0, "ClientAfterCreate(EntityName,ResoruceName)", "")
-FINI_CALL(Fini_GVar_ClientSetPlayer, &GAME_GVARFUNC(GVar_ClientSetPlayer)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_ClientSetPlayer, &GVar_ClientSetPlayer.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_ClientSetPlayer, Fini_GVar_ClientSetPlayer, SI_REF(GVar_ClientSetPlayer), "ClientSetPlayer", 0, "ClientSetPlayer(EntityName)", "")
-FINI_CALL(Fini_GVar_ClientSetConfig, &GAME_GVARFUNC(GVar_ClientSetConfig)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_ClientSetConfig, &GVar_ClientSetConfig.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_ClientSetConfig, Fini_GVar_ClientSetConfig, SI_REF(GVar_ClientSetConfig), "ClientSetConfig", 0, "ClientSetConfig(entityname,ModelName,MaxLife,UsrName,PilotName,Motor0,Motor1,Motor2,Motor3,WeaponBay,tgtype) player ship modifed", "")
 INIT_GVAR_INT(Init_GVar_ClientPPS, SI_REF(GVar_ClientPPS), "ClientPPS", 6, "Number of packets per second that will be send/request to the server [1..20]\n", 20)
 FINI_GVAR_STRING(Fini_GVar_ClientPassword, SI_REF(GVar_ClientPassword))
@@ -1450,26 +1518,26 @@ FINI_GVAR_STRING(Fini_GVar_ServerRemotePassword, SI_REF(GVar_ServerRemotePasswor
 INIT_GVAR_STRING(Init_GVar_ServerRemotePassword, Fini_GVar_ServerRemotePassword, SI_REF(GVar_ServerRemotePassword), "ServerRemotePassword", 6, "Password for client remote control(server). If empty, no remote control allowed.", "")
 FINI_GVAR_STRING(Fini_GVar_ServerName, SI_REF(GVar_ServerName))
 INIT_GVAR_STRING(Init_GVar_ServerName, Fini_GVar_ServerName, SI_REF(GVar_ServerName), "ServerName", 6, "Name of the network server\n", "Unnamed Server")
-FINI_CALL(Fini_GVar_OnClientExit, &GAME_GVARFUNC(GVar_OnClientExit)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnClientExit, &GVar_OnClientExit.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnClientExit, Fini_GVar_OnClientExit, SI_REF(GVar_OnClientExit), "OnClientExit", 0, "OnClientExit(entityname,ModelName,UsrName) player ship will be deleted", "")
-FINI_CALL(Fini_GVar_OnClientJoin, &GAME_GVARFUNC(GVar_OnClientJoin)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnClientJoin, &GVar_OnClientJoin.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnClientJoin, Fini_GVar_OnClientJoin, SI_REF(GVar_OnClientJoin), "OnClientJoin", 0, "OnClientJoin(entityname,ModelName,MaxLife,UsrName,PilotName,Motor0,Motor1,Motor2,Motor3,WeaponBay,tgtype) player ship created", "")
-FINI_CALL(Fini_GVar_OnClientModify, &GAME_GVARFUNC(GVar_OnClientModify)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnClientModify, &GVar_OnClientModify.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnClientModify, Fini_GVar_OnClientModify, SI_REF(GVar_OnClientModify), "OnClientModify", 0, "OnClientModify(entityname,ModelName,MaxLife,UsrName,PilotName,Motor0,Motor1,Motor2,Motor3,WeaponBay,tgtype) player ship modified", "")
 INIT_GVAR_INT(Init_GVar_ServerMinSendDelay, SI_REF(GVar_ServerMinSendDelay), "ServerMinSendDelay", 6, "Mininimal delay between packets (in seconds).", 5)
 FINI_GVAR_STRING(Fini_GVar_ClientConectionStatus, SI_REF(GVar_ClientConectionStatus))
 INIT_GVAR_STRING(Init_GVar_ClientConectionStatus, Fini_GVar_ClientConectionStatus, SI_REF(GVar_ClientConectionStatus), "ClientConectionStatus", 1, "String with conection information\n", "")
-FINI_CALL(Fini_GVar_OnUsrString, &GAME_GVARFUNC(GVar_OnUsrString)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnUsrString, &GVar_OnUsrString.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnUsrString, Fini_GVar_OnUsrString, SI_REF(GVar_OnUsrString), "OnUsrString", 0, "OnUsrString(UsrId,UsrString) UsrId is the number id ('net'UsrId)", "")
-FINI_CALL(Fini_GVar_OnChatString, &GAME_GVARFUNC(GVar_OnChatString)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnChatString, &GVar_OnChatString.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnChatString, Fini_GVar_OnChatString, SI_REF(GVar_OnChatString), "OnChatString", 0, "OnChatString(UsrId,UsrString) UsrId is the number id ('net'UsrId)", "")
-FINI_CALL(Fini_GVar_OnNetBrowseCallback, &GAME_GVARFUNC(GVar_OnNetBrowseCallback)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_OnNetBrowseCallback, &GVar_OnNetBrowseCallback.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_OnNetBrowseCallback, Fini_GVar_OnNetBrowseCallback, SI_REF(GVar_OnNetBrowseCallback), "OnNetBrowseCallback", 0, "Called every time that server is found in a browsing operation.", "")
 INIT_GVAR_INT(Init_GVar_MasterServerPort, SI_REF(g_GVarMasterServerPort), "MasterServerPort", 4, "Master server port for internet. (0 = No master) \n", 5000)
 FINI_GVAR_STRING(Fini_GVar_MasterServerAddress, SI_REF(g_GVarMasterServerAddress))
 INIT_GVAR_STRING(Init_GVar_MasterServerAddress, Fini_GVar_MasterServerAddress, SI_REF(g_GVarMasterServerAddress), "MasterServerAddress", 4, "Master server address for internet.", "scrapland.mercurysteam.com")
 INIT_GVAR_FLOAT(Init_GVar_HeartbeatTime, SI_REF(GVar_HeartbeatTime), "HeartbeatTime", 6, "Heartbeat to the master server.\n", 30.0f)
-FINI_CALL(Fini_GVar_MasterCommandFunc, &GAME_GVARFUNC(GVar_MasterCommandFunc)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_MasterCommandFunc, &GVar_MasterCommandFunc.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_MasterCommandFunc, Fini_GVar_MasterCommandFunc, SI_REF(GVar_MasterCommandFunc), "MasterCommandFunc", 0, "MasterCommandFunc(string) (master server sends data)", "")
 INIT_CALL(Init_cNetRandom_464358, SI_REF(cNetRandom_464358), cNetRandom_ctorSeeded)
 INIT_GVAR_INT(Init_GVar_ServerDataRateLimit, SI_REF(GVar_ServerDataRateLimit), "ServerDataRateLimit", 2, "Rate Limit in bytes per second\n", 8192)
@@ -1628,23 +1696,23 @@ INIT_GVAR_STRING(Init_GVar_PriorityWeapon, Fini_GVar_PriorityWeapon, SI_REF(GVar
 INIT_GVAR_FLOAT(Init_GVar_Gravity, SI_REF(GVar_Gravity), "Gravity", 0, "Global Gravity\n", 4900.0f)
 INIT_GVAR_FLOAT(Init_GVar_AtmosphereLimit, SI_REF(GVar_AtmosphereLimit), "AtmosphereLimit", 0, "The atmosphere end", 6726.0f)
 INIT_GVAR_FLOAT(Init_GVar_TopLimit, SI_REF(GVar_TopLimit), "TopLimit", 0, "The hi map limit, after the atmosphere", 9000.0f)
-FINI_CALL(Fini_GVar_EscapeEvent, &GAME_GVARFUNC(GVar_EscapeEvent)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_EscapeEvent, &GVar_EscapeEvent.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_EscapeEvent, Fini_GVar_EscapeEvent, SI_REF(GVar_EscapeEvent), "EscapeEvent", 0, "EscapeEvent(id) <MainMenu> event when input is not in ´menu´ mode.", NULL)
-FINI_CALL(Fini_GVar_MainMissionEvent, &GAME_GVARFUNC(GVar_MainMissionEvent)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_MainMissionEvent, &GVar_MainMissionEvent.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_MainMissionEvent, Fini_GVar_MainMissionEvent, SI_REF(GVar_MainMissionEvent), "MainMissionEvent", 0, "MainMissionEvent(id) <Mission menu> event when input is not in ´menu´ mode.", NULL)
-FINI_CALL(Fini_GVar_QChatEvent6, &GAME_GVARFUNC(GVar_QChatEvent6)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_QChatEvent6, &GVar_QChatEvent6.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_QChatEvent6, Fini_GVar_QChatEvent6, SI_REF(GVar_QChatEvent6), "QChatEvent6", 0, "QChatEvent6(id) only for racer input modes. The quick chat message has been pressed.\n", NULL)
-FINI_CALL(Fini_GVar_QChatEvent5, &GAME_GVARFUNC(GVar_QChatEvent5)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_QChatEvent5, &GVar_QChatEvent5.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_QChatEvent5, Fini_GVar_QChatEvent5, SI_REF(GVar_QChatEvent5), "QChatEvent5", 0, "QChatEvent5(id) only for racer input modes. The quick chat message has been pressed.", NULL)
-FINI_CALL(Fini_GVar_QChatEvent4, &GAME_GVARFUNC(GVar_QChatEvent4)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_QChatEvent4, &GVar_QChatEvent4.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_QChatEvent4, Fini_GVar_QChatEvent4, SI_REF(GVar_QChatEvent4), "QChatEvent4", 0, "QChatEvent4(id) only for racer input modes. The quick chat message has been pressed.", NULL)
-FINI_CALL(Fini_GVar_QChatEvent3, &GAME_GVARFUNC(GVar_QChatEvent3)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_QChatEvent3, &GVar_QChatEvent3.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_QChatEvent3, Fini_GVar_QChatEvent3, SI_REF(GVar_QChatEvent3), "QChatEvent3", 0, "QChatEvent3(id) only for racer input modes. The quick chat message has been pressed.", NULL)
-FINI_CALL(Fini_GVar_QChatEvent2, &GAME_GVARFUNC(GVar_QChatEvent2)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_QChatEvent2, &GVar_QChatEvent2.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_QChatEvent2, Fini_GVar_QChatEvent2, SI_REF(GVar_QChatEvent2), "QChatEvent2", 0, "QChatEvent2(id) only for racer input modes. The quick chat message has been pressed.", NULL)
-FINI_CALL(Fini_GVar_QChatEvent1, &GAME_GVARFUNC(GVar_QChatEvent1)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_QChatEvent1, &GVar_QChatEvent1.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_QChatEvent1, Fini_GVar_QChatEvent1, SI_REF(GVar_QChatEvent1), "QChatEvent1", 0, "QChatEvent1(id) only for racer input modes. The quick chat message has been pressed.", NULL)
-FINI_CALL(Fini_GVar_ChatEvent, &GAME_GVARFUNC(GVar_ChatEvent)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_ChatEvent, &GVar_ChatEvent.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_ChatEvent, Fini_GVar_ChatEvent, SI_REF(GVar_ChatEvent), "ChatEvent", 0, "ChatEvent(id) only for racer input modes.   The chat key has been pressed.", NULL)
 INIT_GVAR_INT(Init_GVar_Fraglimit, SI_REF(GVar_Fraglimit), "Fraglimit", 14, "Number of frags to win a match...\n", 20)
 FINI_GVAR_STRING(Fini_GVar_ServerMapList, SI_REF(GVar_ServerMapList))
@@ -1700,7 +1768,7 @@ INIT_GVAR_INT(Init_GVar_Viewer, SI_REF(GVar_Viewer), "Viewer", 4, " 0(default) :
 INIT_GVAR_INT(Init_GVar_DisableSkipSlot, SI_REF(GVar_DisableSkipSlot), "DisableSkipSlot", 0, "Don't skip slots in low framerates (0/1)", 0)
 INIT_GVAR_INT(Init_GVar_ForceReload, SI_REF(GVar_ForceReload), "ForceReload", 0, " if set to 1, the nex level will be fully reloaded.", 0)
 INIT_GVAR_INT(Init_GVar_DrawNextFrame, SI_REF(GVar_DrawNextFrame), "DrawNextFrame", 0, "If the next frame will be drawed....", 0)
-FINI_CALL(Fini_GVar_AfterDrawCallback, &GAME_GVARFUNC(GVar_AfterDrawCallback)->func, cPy_Function_dtor)
+FINI_CALL(Fini_GVar_AfterDrawCallback, &GVar_AfterDrawCallback.func, cPy_Function_dtor)
 INIT_GVAR_FUNCTION(Init_GVar_AfterDrawCallback, Fini_GVar_AfterDrawCallback, SI_REF(GVar_AfterDrawCallback), "AfterDrawCallback", 0, "This function will be called after draw and reseted.", "")
 INIT_GVAR_INT(Init_GVar_MakeDedicated, SI_REF(GVar_MakeDedicated), "MakeDedicated", 4, "", 0)
 INIT_GVAR_INT(Init_GVar_DefaultServerPort, SI_REF(GVar_DefaultServerPort), "DefaultServerPort", 6, "Default conection port.\n", 28086)

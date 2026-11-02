@@ -15,6 +15,9 @@
 #include "scrap/material.h"
 #include "scrap/render.h"
 
+extern cGVar GVar_R_StencilRefModels;
+extern cGVar GVar_R_StencilRefWorld;
+
 #define STENCIL_MAX_GROUPS 0x400
 
 /* a group of volumes of one light */
@@ -46,7 +49,7 @@ extern void *g_StencilVB;	/* pVB_Stencil */
 extern void *g_StencilIB;	/* pIB_Stencil, quads of 4 vertices */
 extern void *g_StencilVB2;
 extern void *g_StencilVB3;
-#define g_StencilMat (GAME_ARRAY(CMaterial, g_StencilMat))	/* the material of the volumes */
+extern CMaterial g_StencilMat;	/* the material of the volumes */
 
 /* the light of the shadows (E3D_SetShadowLight) */
 extern CLight *g_ShadowLight;
@@ -62,8 +65,8 @@ extern cGVar GVar_R_ShowStencil;
 extern cGVar GVar_R_StencilMult;
 #define g_StencilMult (GVar_R_StencilMult.value.f)	/* R_StencilMult */
 extern float g_StencilMultFrame;
-#define g_StencilRefWorld (*(uint32_t *)&GAME_GVAR(GVar_R_StencilRefWorld)->value)	/* R_StencilRefWorld */
-#define g_StencilRefModels (*(uint32_t *)&GAME_GVAR(GVar_R_StencilRefModels)->value)	/* R_StencilRefModels */
+#define g_StencilRefWorld (*(uint32_t *)&GVar_R_StencilRefWorld.value)	/* R_StencilRefWorld */
+#define g_StencilRefModels (*(uint32_t *)&GVar_R_StencilRefModels.value)	/* R_StencilRefModels */
 extern cGVar GVar_R_StencilSelf;
 #define g_StencilSelf (GVar_R_StencilSelf.value.i)	/* R_StencilSelf */
 extern cGVar GVar_R_StencilTog;

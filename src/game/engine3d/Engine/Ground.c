@@ -280,9 +280,9 @@ CGround *CGround_ctor(CGround *self) {
 	g_CollisionTestsTotal = 0;
 	g_CollisionStats2 = 0;
 	g_CollisionCache = 0;
-	E3D_LogDebug(g_FileLog, "CollisionEpsilon: %f", (double)g_CollisionEpsilon);
-	E3D_LogDebug(g_FileLog, "CollisionBalance: %f", (double)g_CollisionBalance);
-	E3D_LogDebug(g_FileLog, "CollisionCacheSize: %d", 1);
+	E3D_LogDebug((&g_FileLog), "CollisionEpsilon: %f", (double)g_CollisionEpsilon);
+	E3D_LogDebug((&g_FileLog), "CollisionBalance: %f", (double)g_CollisionBalance);
+	E3D_LogDebug((&g_FileLog), "CollisionCacheSize: %d", 1);
 	return self;
 }
 
@@ -518,7 +518,7 @@ int CGround_LoadCollision(CGround *self, const char *name) {
 
 	Path_Merge(amc, ".amc", name);
 	if (File_TimeDiff(amc, name, 0) < 0) {
-		E3D_LogBlue(g_FileLog, "WARN: [%s] is older than [%s]", amc, name);
+		E3D_LogBlue((&g_FileLog), "WARN: [%s] is older than [%s]", amc, name);
 		return 1;
 	}
 	memset(list, 0, sizeof(list));
@@ -678,7 +678,7 @@ void CGround_NewQuery(CGround *self) {
 		Ground_ClearNComp(q->Mesh);
 	}
 	CHECK(quads == g_CollisionQuadCount);
-	E3D_LogDebug(g_FileLog, "Reset NCOMP of collision triangles [%d Quads, %d Meshes]", quads, meshes);
+	E3D_LogDebug((&g_FileLog), "Reset NCOMP of collision triangles [%d Quads, %d Meshes]", quads, meshes);
 }
 
 /* the geometry */
@@ -1372,7 +1372,7 @@ void CHeights_QuadAddMesh(CHeights *self, CCollideMesh *mesh, int initTri) {
 		CCollideQuad *q = CCollideQuad_Find(self, self->outSector, self->MeshID, mesh);
 		CCollideQuad_AddAllTris(self, q);
 		CCollideQuad_CalcExt(self, q);
-		E3D_LogWhite(g_FileLog, "QuadAddMesh: OutSector: %d included", q->nTri);
+		E3D_LogWhite((&g_FileLog), "QuadAddMesh: OutSector: %d included", q->nTri);
 		return;
 	}
 	for (int i = 0; i < self->nQuads; i++) {
@@ -1449,7 +1449,7 @@ void CHeights_QuadAddMesh(CHeights *self, CCollideMesh *mesh, int initTri) {
 			maxTri = maxTri > q->nTri ? maxTri : q->nTri;
 		}
 	}
-	E3D_LogWhite(g_FileLog, "QuadAddMesh: %d included, %d discarded (%d MaxTriQuad)", included, discarded, maxTri);
+	E3D_LogWhite((&g_FileLog), "QuadAddMesh: %d included, %d discarded (%d MaxTriQuad)", included, discarded, maxTri);
 	if (!included) {
 		Con_Warnf("QuadAddMesh: No triangles included in the collision system.\n");
 	}
@@ -1526,7 +1526,7 @@ void CGround_AddMesh(CGround *self, CCollideMesh *mesh, CTriMesh *tm, uint32_t *
 		}
 	}
 	if (tm->nTri > 0 && (degenerate || invalid)) {
-		E3D_LogVerbose(g_FileLog, "ERROR: CollisionMeshAdd: %d caras degeneradas, %d caras no validas  [sector: %d]",
+		E3D_LogVerbose((&g_FileLog), "ERROR: CollisionMeshAdd: %d caras degeneradas, %d caras no validas  [sector: %d]",
 			degenerate, invalid, mesh->sector - 1);
 	}
 	box_t *b = &mesh->Ext;
@@ -1546,7 +1546,7 @@ void CGround_AddMesh(CGround *self, CCollideMesh *mesh, CTriMesh *tm, uint32_t *
 	uint32_t t0 = Plat_Ticks();
 	CHeights_QuadAddMesh(&self->heights, mesh, nt);
 	uint32_t t1 = Plat_Ticks();
-	E3D_LogWhite(g_FileLog, "QuadAddMesh: %d Kb  [%d tri, %d vtx]  [sector: %d]  [%.2f sec.]",
+	E3D_LogWhite((&g_FileLog), "QuadAddMesh: %d Kb  [%d tri, %d vtx]  [sector: %d]  [%.2f sec.]",
 		(g_MemStats->bytes - mem) / 1024, tm->nTri, tm->nVert, mesh->sector - 1, (double)(t1 - t0) / 1000.0);
 }
 
@@ -1686,7 +1686,7 @@ void CGround_CreateQuadCollision(CGround *self) {
 	for (int j = 0; j < alt->nQuads; j++) {
 		CHECK(Heights_Quad(alt, j)->Mesh);
 	}
-	E3D_LogWhite(g_FileLog, "Empty collision quads: %d", empty);
+	E3D_LogWhite((&g_FileLog), "Empty collision quads: %d", empty);
 }
 
 /* the floor nodes and the debug drawing */
@@ -1701,7 +1701,7 @@ void CGround_NodesToD3D(CGround *self, int fvf) {
 void CGround_Draw(IObject3D *base, void *dev, CRenderNode *unused) {
 	CGround *self = (CGround *)base;
 	(void)unused;
-	Render_SetWorldMatrix(g_MatIdentity, 0);
+	Render_SetWorldMatrix((&g_MatIdentity), 0);
 	for (int i = 0; i < self->nNodes; i++) {
 		if (!Ground_Obj(self, i)) {
 			continue;
@@ -2273,7 +2273,7 @@ void CGround_DrawDebug(CGround *self) {
 	if (!g_ShowCollision) {
 		return;
 	}
-	Render_SetWorldMatrix(g_MatIdentity, 0);
+	Render_SetWorldMatrix((&g_MatIdentity), 0);
 	if (*g_CollideMatGuard > crt_InitEpoch()) {
 		crt_Init_thread_header(g_CollideMatGuard);
 		if (*g_CollideMatGuard == -1) {

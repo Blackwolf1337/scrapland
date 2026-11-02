@@ -462,7 +462,7 @@ static void AnimNode_OptimizePos(CAnimNode *self) {
 		}
 	}
 	if (!(self->OptFlags & ANIM_POS)) {
-		E3D_LogInfo(g_FileLog, "OptimizeAnim: ANIM_POS: [%s] %s", Vec3_Str(&range, 0, 6), g_AnimNodeName);
+		E3D_LogInfo((&g_FileLog), "OptimizeAnim: ANIM_POS: [%s] %s", Vec3_Str(&range, 0, 6), g_AnimNodeName);
 	}
 }
 
@@ -494,7 +494,7 @@ static void AnimNode_OptimizeRot(CAnimNode *self) {
 	}
 	if (!(self->OptFlags & ANIM_ROT)) {
 		double d = (double)minDot;
-		E3D_LogInfo(g_FileLog, "OptimizeAnim: ANIM_ROT: [%f deg.] [%f cos] %s", acos(d) * 2.0 * DEG_PER_PI / M_PI_D, d,
+		E3D_LogInfo((&g_FileLog), "OptimizeAnim: ANIM_ROT: [%f deg.] [%f cos] %s", acos(d) * 2.0 * DEG_PER_PI / M_PI_D, d,
 			g_AnimNodeName);
 	}
 }

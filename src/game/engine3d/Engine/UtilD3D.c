@@ -43,7 +43,7 @@ void Debug_DrawBoxM(const matrix_t *m, const vec3_t *mn, const vec3_t *mx, uint3
 }
 
 void Debug_DrawBox(const vec3_t *mn, const vec3_t *mx, uint32_t color) {
-	Render_SetWorldMatrix(g_MatIdentity, 0);
+	Render_SetWorldMatrix((&g_MatIdentity), 0);
 	Box_Lines(mn, mx, color);
 }
 
@@ -91,7 +91,7 @@ void Debug_DrawPointM(const matrix_t *m, const vec3_t *pos, float size, uint32_t
 }
 
 void Debug_DrawPoint(const vec3_t *pos, float size, uint32_t color) {
-	Debug_DrawPointM(g_MatIdentity, pos, size, color);
+	Debug_DrawPointM((&g_MatIdentity), pos, size, color);
 }
 
 static void Debug_SphereCenter(const matrix_t *m, const vec3_t *c, float r) {
@@ -165,7 +165,7 @@ void Debug_DrawSphereM(const matrix_t *m, const vec3_t *c, float r, uint32_t col
 }
 
 void Debug_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH) {
-	Debug_DrawSphereM(g_MatIdentity, c, r, color, divV, divH);
+	Debug_DrawSphereM((&g_MatIdentity), c, r, color, divV, divH);
 }
 
 void Debug_DrawLineM(const matrix_t *m, const vec3_t *a, const vec3_t *b, uint32_t color) {
@@ -174,7 +174,7 @@ void Debug_DrawLineM(const matrix_t *m, const vec3_t *a, const vec3_t *b, uint32
 }
 
 void Debug_DrawLine(const vec3_t *a, const vec3_t *b, uint32_t color) {
-	Debug_DrawLineM(g_MatIdentity, a, b, color);
+	Debug_DrawLineM((&g_MatIdentity), a, b, color);
 }
 
 void Debug_DrawTriM(const matrix_t *m, const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color) {
@@ -185,7 +185,7 @@ void Debug_DrawTriM(const matrix_t *m, const vec3_t *a, const vec3_t *b, const v
 }
 
 void Debug_DrawTri(const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color) {
-	Debug_DrawTriM(g_MatIdentity, a, b, c, color);
+	Debug_DrawTriM((&g_MatIdentity), a, b, c, color);
 }
 
 const char *Obj3D_ClassName(uint32_t class) {

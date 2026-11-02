@@ -24,6 +24,9 @@
 #include "scrap/weaps.h"
 #include "scrap/world.h"
 
+extern cGVarFunction GVar_CreateSonicFunc;
+extern cGVarFunction GVar_SetUpSonicFunc;
+
 #define TYEN_MISSILE "Missile"
 
 /* the fields of the entities with life (ships, characters, missiles) */
@@ -148,8 +151,8 @@ extern cGVar GVar_SonicIDAmmo;
 #define g_SonicIDAmmo (GVar_SonicIDAmmo.value.i)
 extern cGVar GVar_SonicAmmoNeed;
 #define g_SonicAmmoNeed (GVar_SonicAmmoNeed.value.i)
-#define g_CreateSonicFunc (((cPy_Function *)&GAME_GVARFUNC(GVar_CreateSonicFunc)->func))
-#define g_SetUpSonicFunc (((cPy_Function *)&GAME_GVARFUNC(GVar_SetUpSonicFunc)->func))
+#define g_CreateSonicFunc (((cPy_Function *)&GVar_CreateSonicFunc.func))
+#define g_SetUpSonicFunc (((cPy_Function *)&GVar_SetUpSonicFunc.func))
 extern cGVar GVar_SwarmHitSoundVol;
 #define g_SwarmHitSoundVol (GVar_SwarmHitSoundVol.value.f)
 extern cGVar GVar_SwarmMissileFile;
@@ -299,11 +302,11 @@ extern char g_InfernoHitName[128];	/* 0x80, the entity of the sphere callback */
 extern cEntity *g_InfernoOwner;	/* the ship of the exploding missile, NULL if none */
 extern float g_InfernoRange;
 extern cEntity *g_InfernoMissile;
-#define g_InfernoHudTarget (GAME_ARRAY(char[0x80], g_InfernoHudTarget))	/* per player: the target shown */
+extern char g_InfernoHudTarget[4][0x80];	/* per player: the target shown */
 extern float g_InfernoHudTime[4];	/* per player */
 extern vec3_t g_InfernoPos;
 extern vec3_t g_SonicHitPos;
-#define g_SwarmHudTarget (GAME_ARRAY(char[0x80], g_SwarmHudTarget))
+extern char g_SwarmHudTarget[4][0x80];
 extern float g_SwarmHudTime[4];
 #define g_InfernoSphereFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0))
 extern int * g_SwarmSlotData[4];	/* per slot: a pointer to the int AddBees takes */

@@ -242,7 +242,7 @@ void CParticleSystem_Init(CParticleSystem *self, CNode3D *node, const char *type
 	} else if (ini) {
 		CParticleSystem_ReadParams(self, ini);
 	} else {
-		CParticleSystem_ReadParams(self, g_ParticleSystemIni);
+		CParticleSystem_ReadParams(self, (&g_ParticleSystemIni));
 	}
 }
 
@@ -373,7 +373,7 @@ byte CParticleSystem_GetBox(CParticleSystem *self, box_t *box) {
 	box->min = (vec3_t){ 3.4028234663852886e+38f, 3.4028234663852886e+38f, 3.4028234663852886e+38f };
 	box->max = (vec3_t){ -3.4028234663852886e+38f, -3.4028234663852886e+38f, -3.4028234663852886e+38f };
 	if (!(self->params.flags & PARTICLESYSTEM_LOCAL)) {
-		E3D_LogInfo(g_FileLog, "INFO: Non-local static particle system: BBox not calculated: %s", self->type);
+		E3D_LogInfo((&g_FileLog), "INFO: Non-local static particle system: BBox not calculated: %s", self->type);
 		return 0;
 	}
 	for (int i = 0; i < self->params.nParticles; i++) {
@@ -395,7 +395,7 @@ void CParticleSystem_ReadParams(CParticleSystem *self, CIniFile *ini) {
 	char texture[0x100], key[0x20];
 	vec3_t zero, v;
 
-	E3D_LogWhite(g_FileLog, "Particle system: %s [%s]", self->type, self->node->name);
+	E3D_LogWhite((&g_FileLog), "Particle system: %s [%s]", self->type, self->node->name);
 	if (!CIniFile_FindSection(ini, self->type, 1)) {
 		Con_Warnf("ERROR: Particle system data not found: %s\n", self->type);
 		self->enabled = 0;
@@ -597,7 +597,7 @@ void CParticleSystem_Emit(CParticleSystem *self, int n, byte force, float dt, co
 }
 
 void CParticleSystem_EmitN(CParticleSystem *self, int n, byte force) {
-	CParticleSystem_Emit(self, n, force, 0.0f, g_MatIdentity);
+	CParticleSystem_Emit(self, n, force, 0.0f, (&g_MatIdentity));
 }
 
 void CParticleSystem_EmitM(CParticleSystem *self, int n, byte force, const matrix_t *m) {
@@ -605,7 +605,7 @@ void CParticleSystem_EmitM(CParticleSystem *self, int n, byte force, const matri
 }
 
 void CParticleSystem_EmitDt(CParticleSystem *self, int n, byte force, float dt) {
-	CParticleSystem_Emit(self, n, force, dt, g_MatIdentity);
+	CParticleSystem_Emit(self, n, force, dt, (&g_MatIdentity));
 }
 
 byte CParticleSystem_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
@@ -747,10 +747,10 @@ vec3_t *ParticleSystem_RandVec(vec3_t *out, const vec3_t *a, const vec3_t *b) {
 
 void ParticleSystem_LoadIni(const char *name, const char *dir) {
 	if (!name) {
-		CIniFile_Clear(g_ParticleSystemIni);
+		CIniFile_Clear((&g_ParticleSystemIni));
 		return;
 	}
-	CIniFile_Load(g_ParticleSystemIni, name, dir, 1);
+	CIniFile_Load((&g_ParticleSystemIni), name, dir, 1);
 }
 
 void CParticleSystem_Render(IObject3D *base, void *dev, CRenderNode *r) {

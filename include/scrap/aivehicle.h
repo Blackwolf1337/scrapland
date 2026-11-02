@@ -18,7 +18,11 @@
 #include "scrap/cstring.h"
 #include "scrap/nodestraffic.h"
 #include "scrap/pyfunction.h"
+#include "scrap/scrap.h"
 #include "scrap/slotcontroller.h"
+
+extern cGVarFunction GVar_OnItemTakenAI;
+extern cGVarFunction GVar_OnObjectiveNullAI;
 
 extern const cAIMoveVtbl cAIVehicle_vftable;
 #define CAIVEHICLE_VFTABLE (&cAIVehicle_vftable)
@@ -169,8 +173,8 @@ extern cGVar GVar_TimeDamageAI;
 #define g_TimeDamageAI (GVar_TimeDamageAI.value.f)
 extern cGVar GVar_HookRange;
 #define g_HookRange (GVar_HookRange.value.f)
-#define g_OnObjectiveNullAI (&(*(cPy_Function *)&GAME_GVARFUNC(GVar_OnObjectiveNullAI)->func))
-#define g_OnItemTakenAI (&(*(cPy_Function *)&GAME_GVARFUNC(GVar_OnItemTakenAI)->func))
+#define g_OnObjectiveNullAI (&(*(cPy_Function *)&GVar_OnObjectiveNullAI.func))
+#define g_OnItemTakenAI (&(*(cPy_Function *)&GVar_OnItemTakenAI.func))
 
 /* ---- AI/AIVehicle.cpp (src/game/AI/IVehicle.c); more in ai.h, nodestraffic.h, embeddedfxvehicle.h, weapons.h,
  * vehicletraffic.h and vehicleentity.h (the constructor) ---- */

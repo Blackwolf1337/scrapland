@@ -46,6 +46,8 @@
 #include "scrap/misc.h"
 #include "scrap/platform.h"
 
+extern cGVar GVar_R_StencilRefClear;
+
 extern const CD3DApplicationVtbl CEngineApp_vftable;
 #define CMOTORAPP_VFTABLE (&CEngineApp_vftable)
 extern const IInputVtbl CNullInput_vftable;
@@ -236,7 +238,7 @@ extern int g_TimeMult;
 extern int g_TimeScaled;	/* Time_Get() * g_TimeMult / 1000 */
 extern cGVar GVar_AutoScreenShot;
 #define g_AutoShot (GVar_AutoScreenShot.value.i)		/* the console variable AutoScreenShot */
-#define g_StencilClear (*(uint32_t *)&GAME_GVAR(GVar_R_StencilRefClear)->value)
+#define g_StencilClear (*(uint32_t *)&GVar_R_StencilRefClear.value)
 #define g_ResetDev GAME_GLOBAL_IN(byte, group_4a8efc, 2)		/* the device objects made again at the next frame */
 #define g_ResetDevOnly GAME_GLOBAL_IN(byte, group_431bac, 3)	/* 1: without the world, 0: the game callbacks too */
 /* the callbacks of the game the reset puts in place */
@@ -402,12 +404,12 @@ int CEngineApp_Render(CD3DApplication *elem) {
 				g_LimitNext = Plat_Ticks() * 3;
 			}
 			if (Plat_Ticks() * 3 >= g_LimitNext + frame) {
-				E3D_LogVerbose(g_FileLog, "WARN: LimitFPS: Framerate below fps limit by %d ms",
+				E3D_LogVerbose((&g_FileLog), "WARN: LimitFPS: Framerate below fps limit by %d ms",
 					(Plat_Ticks() * 3 - g_LimitNext - frame) / 3);
 			}
 			if (Plat_Ticks() * 3 - g_LimitNext > 15000) {
 				g_LimitNext = Plat_Ticks() * 3;
-				E3D_LogBlue(g_FileLog, "ERROR: LimitFPS: Out of sync (frame exceeded 5 sec)");
+				E3D_LogBlue((&g_FileLog), "ERROR: LimitFPS: Out of sync (frame exceeded 5 sec)");
 			}
 			/* differs from the original on purpose (no sleeps): the wait for g_LimitNext is Engine_FrameDue */
 			g_LimitNext += frame;
@@ -423,7 +425,7 @@ int CEngineApp_DeleteDeviceObjects(CD3DApplication *base) {
 	((void(*)(void *))(*(void ***)g_Input)[2])(g_Input);
 	Table_Free(&self->table);
 	Texture_ReleaseAllD3D();
-	CMatList_Release(g_MatList);
+	CMatList_Release((&g_MatList));
 	Stencil_Free();
 	Trails_Release();
 	LensFlare_Release();
@@ -461,7 +463,7 @@ int CEngineApp_FinalCleanup(CD3DApplication *base) {
 	Trails_ResetAll();
 	LensFlare_ClearAll();
 	Background2D_Release();
-	CMatList_DeleteAll(g_MatList);
+	CMatList_DeleteAll((&g_MatList));
 	Texture_DeleteAll();
 	Tex_ClearPaths();
 	Tex_ClearExtensions();
@@ -684,11 +686,11 @@ void Engine_LoadVarsIni(const char *name, const char *dir) {
 				break;
 			}
 		}
-		E3D_LogInfo(g_FileLog, "*INI: [Video,etc.]: %s%s", path, " <ok>");
+		E3D_LogInfo((&g_FileLog), "*INI: [Video,etc.]: %s%s", path, " <ok>");
 	} else {
 		E3D_DebugPrintf("\nINI: no encontrado");
-		E3D_LogInfo(g_FileLog, "*INI: [Video,etc.]: %s%s", path, " <not found>");
-		E3D_LogBlue(g_FileLog, "INI: %s%s", path, " <not found>");
+		E3D_LogInfo((&g_FileLog), "*INI: [Video,etc.]: %s%s", path, " <not found>");
+		E3D_LogBlue((&g_FileLog), "INI: %s%s", path, " <not found>");
 	}
 	DataFile_Free(dat);
 }
@@ -758,10 +760,10 @@ void Scene_LogTree(CScene *scn, CNode3D *node, int indent) {
 		return;
 	}
 	if (!node) {
-		E3D_LogPrint(g_FileLog, "escena: %*s%s", indent, "", scn->name);
+		E3D_LogPrint((&g_FileLog), "escena: %*s%s", indent, "", scn->name);
 		node = scn->Node3D;
 	}
-	E3D_LogPrint(g_FileLog, "%*s%s", indent, "", node->name);
+	E3D_LogPrint((&g_FileLog), "%*s%s", indent, "", node->name);
 	n = node;
 	do {
 		if (n->parent == node) {
@@ -837,9 +839,9 @@ int CEngineApp_InitDeviceObjects(CD3DApplication *elem) {
 	Trails_Init();
 	LensFlare_Init();
 	Background2D_Reset();
-	CMatList_Prepare(g_MatList, dev);
+	CMatList_Prepare((&g_MatList), dev);
 	Render_SetCamera(World_Get()->cam);
-	Render_SetWorldMatrix(g_MatIdentity, 0);
+	Render_SetWorldMatrix((&g_MatIdentity), 0);
 	CScene_FindClass(self->scene, NULL, CLASS_OBJ3D_LIGHT);
 	Rd_DevSetRenderState(dev, D3DRS_88, 1);
 	Rd_DevSetRenderState(dev, D3DRS_89, 1);

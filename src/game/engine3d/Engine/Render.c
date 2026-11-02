@@ -1287,21 +1287,21 @@ const char *Render_GetDriver(void) {
 static void Render_LogVersion(const char *fmt, uint32_t ver) {
 	char *buf = GAME_ARRAY(char, g_VersionStr);
 	Bprintf(buf, 0x40, "%d.%d", ver >> 8 & 0xff, ver & 0xff);
-	E3D_LogPrint(g_FileLog, fmt, buf);
+	E3D_LogPrint((&g_FileLog), fmt, buf);
 }
 
 static void Render_LogDevice(const D3DCaps8 *caps, const d3dSurfaceDesc_t *mode, const d3dSurfaceDesc_t *zbuf) {
-	E3D_LogPrint(g_FileLog, "%s", g_Engine->deviceStats);
-	E3D_LogPrint(g_FileLog, "Driver: %s  WHQL: %d", g_DriverStr, g_Adapter.WHQLLevel);
-	E3D_LogPrint(g_FileLog, "%s", g_DeviceStr);
-	E3D_LogPrint(g_FileLog, "Mode: %dx%d %s", mode->Width, mode->Height, D3DFmt_Name(mode->Format));
-	E3D_LogPrint(g_FileLog, "ZBuf: %dx%d %s", zbuf->Width, zbuf->Height, D3DFmt_Name(zbuf->Format));
-	E3D_LogPrint(g_FileLog, "MaxTexture: %dx%d", caps->MaxTextureWidth, caps->MaxTextureHeight);
-	E3D_LogPrint(g_FileLog, "MaxAnisotropy: %d", caps->MaxAnisotropy);
-	E3D_LogPrint(g_FileLog, "MaxTextureBlendStages: %d", caps->MaxTextureBlendStages);
-	E3D_LogPrint(g_FileLog, "MaxSimultaneousTextures: %d", caps->MaxSimultaneousTextures);
-	E3D_LogPrint(g_FileLog, "MaxActiveLights: %d", caps->MaxActiveLights);
-	E3D_LogPrint(g_FileLog, "MaxStreams: %d", caps->MaxStreams);
+	E3D_LogPrint((&g_FileLog), "%s", g_Engine->deviceStats);
+	E3D_LogPrint((&g_FileLog), "Driver: %s  WHQL: %d", g_DriverStr, g_Adapter.WHQLLevel);
+	E3D_LogPrint((&g_FileLog), "%s", g_DeviceStr);
+	E3D_LogPrint((&g_FileLog), "Mode: %dx%d %s", mode->Width, mode->Height, D3DFmt_Name(mode->Format));
+	E3D_LogPrint((&g_FileLog), "ZBuf: %dx%d %s", zbuf->Width, zbuf->Height, D3DFmt_Name(zbuf->Format));
+	E3D_LogPrint((&g_FileLog), "MaxTexture: %dx%d", caps->MaxTextureWidth, caps->MaxTextureHeight);
+	E3D_LogPrint((&g_FileLog), "MaxAnisotropy: %d", caps->MaxAnisotropy);
+	E3D_LogPrint((&g_FileLog), "MaxTextureBlendStages: %d", caps->MaxTextureBlendStages);
+	E3D_LogPrint((&g_FileLog), "MaxSimultaneousTextures: %d", caps->MaxSimultaneousTextures);
+	E3D_LogPrint((&g_FileLog), "MaxActiveLights: %d", caps->MaxActiveLights);
+	E3D_LogPrint((&g_FileLog), "MaxStreams: %d", caps->MaxStreams);
 	Render_LogVersion("VertexShaderVersion: %s", caps->VertexShaderVersion);
 	Render_LogVersion("PixelShaderVersion: %s", caps->PixelShaderVersion);
 }
@@ -1310,13 +1310,13 @@ static void Render_LoadPS(int i) {
 	void *dev = g_pd3dDevice;
 	if (Rd_DevCreatePixelShader(dev, g_PSNames[i], &g_PSHandles[i]) < 0) {
 		g_PSHandles[i] = 0;
-		E3D_LogVerbose(g_FileLog, "WARN: CreatePixelShader failed: %s", g_PSNames[i]);
+		E3D_LogVerbose((&g_FileLog), "WARN: CreatePixelShader failed: %s", g_PSNames[i]);
 	}
 }
 
 /* the identity and the bias matrix */
 static void Render_SetMatrices(void) {
-	Matrix_LoadIdentity((matrix_t *)g_MatIdentity);
+	Matrix_LoadIdentity((matrix_t *)(&g_MatIdentity));
 	Matrix_LoadIdentity(&g_MatBias);
 	g_MatBias.m[0] = 1.0f / 2048;
 	g_MatBias.m[5] = 1.0f / 2048;
@@ -1392,7 +1392,7 @@ void Render_IniD3D(void) {
 		Render_TSS(i, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
 	}
 	if (caps.PixelShaderVersion < D3DPS_VERSION(1, 1)) {
-		E3D_LogBlue(g_FileLog, "The graphics device does not support Pixel Shader 1.1");
+		E3D_LogBlue((&g_FileLog), "The graphics device does not support Pixel Shader 1.1");
 		g_PSOn = 0;
 		g_EnvBump = 0;
 		g_EnvMap = 0;
@@ -1431,7 +1431,7 @@ void Render_IniD3D(void) {
 		g_FrameCount++;
 	}
 	g_D3DOn = 1;
-	E3D_LogPrint(g_FileLog, "Render device initialized");
+	E3D_LogPrint((&g_FileLog), "Render device initialized");
 	E3D_DebugPrintf("\n< RenderIniD3D()");
 }
 
@@ -1637,7 +1637,7 @@ int Render_SetMaterial(void *m, int pass) {
 		g_MatCtx = g_LightmapMat;
 		if (g_MaterialLog) {
 			const char *ctx = g_LightmapMat ? g_LightmapMat->Name : GAME_STR(str_Empty);
-			E3D_LogWhite(g_FileLog, "MatLog: %d %d %d [%s] [%s]", g_FrameCount, g_MatChanges,
+			E3D_LogWhite((&g_FileLog), "MatLog: %d %d %d [%s] [%s]", g_FrameCount, g_MatChanges,
 				CMaterial_GetId((CMaterial *)mat, NULL), mat->Name, ctx);
 		}
 		Rd_DevSetRenderState(dev, D3DRS_ZWRITEENABLE, mat->params.zWrite);
@@ -1915,7 +1915,7 @@ byte Box_IsVisible(const matrix_t *m, const box_t *box, const char *name, float 
 	if (!(r > 0.0f)) {
 		vec3_t pos = { m->m[12], m->m[13], m->m[14] };
 		/* the center x where the radius is meant, as the original */
-		E3D_LogBlue(g_FileLog, "ERROR: Invalid radius: %f  Model: %s  Pos: %s", (double)c.x, name, Vec3_Str(&pos, 0, 6));
+		E3D_LogBlue((&g_FileLog), "ERROR: Invalid radius: %f  Model: %s  Pos: %s", (double)c.x, name, Vec3_Str(&pos, 0, 6));
 		CHECK(r > 0.0f);
 	}
 	int out;
@@ -2170,7 +2170,7 @@ void Frustum_Calc(const matrix_t *view, const matrix_t *proj) {
 	matrix_t tmp, m, inv;
 	m = *Matrix_MulD3D(&tmp, view, proj);
 	if (!D3DX_MatrixInverse(&inv, NULL, &m)) {
-		E3D_LogDebug(g_FileLog, "  ERROR: UpdateVisibilityPlanes(): Could not calculate the inverse matrix");
+		E3D_LogDebug((&g_FileLog), "  ERROR: UpdateVisibilityPlanes(): Could not calculate the inverse matrix");
 		return;
 	}
 	for (int i = 0; i < 8; i++) {

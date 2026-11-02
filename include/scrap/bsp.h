@@ -299,9 +299,9 @@ extern int g_BspSectorErrors;
 extern vec3_t g_BspEyePrev;
 extern float g_BspLodLevel;
 /* the distances of the level of detail of the areas, plain and for large lists */
-#define g_BspLodDist (GAME_ARRAY(const float, g_BspLodDist))
+extern float g_BspLodDist[7];
 extern int g_BspLodCount[4];
-#define g_BspColors (GAME_ARRAY(const uint32_t, g_BspColors))	/* [16], debug colors */
+extern uint32_t g_BspColors[16];	/* [16], debug colors */
 /* the globals of m3d.ini ([mapa_sombras], read in ScrapEngMain.c, the same definitions) */
 extern int g_ShadowMapMultitext;
 extern float g_ShadowMapScale;

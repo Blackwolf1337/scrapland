@@ -16,6 +16,8 @@
 #include "scrap/pyfunction.h"
 #include "scrap/scrap.h"
 
+extern cGVarFunction GVar_CheckInactivityFunc;
+
 #define MAX_LOCAL_PLAYERS 4
 #define NUM_SETS 4			/* action sets: menu, character, debug, vehicle */
 
@@ -196,7 +198,7 @@ struct cAbstractIDevice {
 };
 SD_SIZE(cAbstractIDevice, 0x10);
 
-/* PcKeyboard.cpp: the keyboard adds no members (g_Keyboard, 0x10 bytes) */
+/* PcKeyboard.cpp: the keyboard adds no members ((&g_Keyboard), 0x10 bytes) */
 typedef cAbstractIDevice cPcKeyboard;
 
 typedef struct cPcMouse {
@@ -253,14 +255,14 @@ extern int g_ToDefinePlayer;
 extern int g_ToDefineAction;
 extern uint32_t g_ToDefineSet;
 /* the XInput entries of the pad buttons and half axes in the order of the defaults */
-#define g_PadCodes (GAME_ARRAY(const int, g_PadCodes))	/* [24] */
+extern int g_PadCodes[24];	/* [24] */
 extern cGVar GVar_LogRumble;
 #define g_LogRumble (GVar_LogRumble.value.i)		/* LogRumble */
 extern cGVar GVar_CheckInactivityTime;
 #define g_InactivityTime (GVar_CheckInactivityTime.value.f)	/* CheckInactivityTime */
 #define g_InactivityTimeDef (GVar_CheckInactivityTime.def.f)
-#define g_InactivityFunc (((cPy_Function *)&GAME_GVARFUNC(GVar_CheckInactivityFunc)->func))
-#define g_DefineFunc (GAME_ARRAY(cPy_Function, g_DefineFunc))	/* the function of ListenToDefine */
+#define g_InactivityFunc (((cPy_Function *)&GVar_CheckInactivityFunc.func))
+extern cPy_Function g_DefineFunc;	/* the function of ListenToDefine */
 extern cInputDevList g_InputDevices;
 extern cGVar GVar_PauseInactivityTime;
 #define g_PauseInactivity (GVar_PauseInactivityTime.value.i)	/* PauseInactivityTime */
@@ -300,7 +302,7 @@ void Device_SetEntries(cAbstractIDevice *d, const byte (*t)[3], int n);
 extern byte g_InputOpen;		/* the devices are open (Input_OpenDevices, not on a dedicated server) */
 
 /* Input/PcKeyboard.cpp */
-#define g_Keyboard (GAME_ARRAY(cPcKeyboard, g_Keyboard))
+extern cPcKeyboard g_Keyboard;
 extern char g_KeyState[256];		/* [256] DIK_ */
 cPcKeyboard *cPcKeyboard_ctor(cPcKeyboard *self);
 cPcKeyboard *cPcKeyboard_Delete(cPcKeyboard *self, byte flags);
@@ -322,7 +324,7 @@ extern cGVar GVar_MouseSensitivityV;
 #define g_MouseSensV (GVar_MouseSensitivityV.value.f)		/* MouseSensitivityV */
 extern cGVar GVar_InvertMouse;
 #define g_InvertMouse (GVar_InvertMouse.value.i)		/* InvertMouse */
-#define g_Mouse (GAME_ARRAY(cPcMouse, g_Mouse))
+extern cPcMouse g_Mouse;
 /* DIMOUSESTATE */
 typedef struct exe_mouse_state {
 	int32_t x, y, z;		/* 0x0 */

@@ -254,7 +254,7 @@ void ShadowsStencil_Set(byte on) {
 		ok = 1;
 	}
 	byte v = ok ? on : 0;
-	E3D_LogDebug(g_FileLog, "Stencil shadows %s", v ? "ON" : "OFF");
+	E3D_LogDebug((&g_FileLog), "Stencil shadows %s", v ? "ON" : "OFF");
 	g_ShadowsStencil = v;
 	g_StencilCapture = 0;
 	g_StencilRender = NULL;
@@ -452,10 +452,10 @@ void ShadowsStencil_Render(void) {
 	if (!g_ShadowsStencil) {
 		return;
 	}
-	Render_SetWorldMatrix(g_MatIdentity, 0);
-	g_StencilMat->params.lighting = 0;
-	g_StencilMat->params.zFunc = (g_ShowStencil != 2) + 4;
-	Render_SetMaterial(g_StencilMat, 0);
+	Render_SetWorldMatrix((&g_MatIdentity), 0);
+	g_StencilMat.params.lighting = 0;
+	g_StencilMat.params.zFunc = (g_ShowStencil != 2) + 4;
+	Render_SetMaterial((&g_StencilMat), 0);
 	/* the volumes: front faces count up, back faces down */
 	Stencil_RS(RS_ZWRITEENABLE, 0);
 	Stencil_RS(RS_STENCILENABLE, g_ShowStencil != 2);

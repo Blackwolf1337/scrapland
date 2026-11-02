@@ -89,7 +89,7 @@ extern void *g_TrailsIB;
 extern int g_TrailsVertex;	/* vertices, primitives and indices in the buffers */
 extern int g_TrailsPrims;
 extern int g_TrailsIndex;
-#define g_TrailsRender (GAME_ARRAY(CTrail *[MAX_TRAILS_RENDER], g_TrailsRender))
+extern CTrail *g_TrailsRender[17][MAX_TRAILS_RENDER];
 extern int g_nTrails;
 extern int g_nTrailsRender[17];	/* [MAX_TRAILS_TEXTURES] */
 

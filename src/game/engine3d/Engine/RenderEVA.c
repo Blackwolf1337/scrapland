@@ -446,7 +446,7 @@ int ParticleSystem_Draw2(CParticleSystem *sp, CRenderNode *r) {
 	CHECK(sp->mat);
 	Render_SetMaterial(sp->mat, 0);
 	const matrix_t *m = r ? &r->m : &sp->node->m;
-	matrix_t world = *g_MatIdentity;
+	matrix_t world = g_MatIdentity;
 	matrix_t bill = *Render_GetBillboard();
 	matrix_t view = *Render_GetView();
 	uint32_t flags = sp->params.flags;

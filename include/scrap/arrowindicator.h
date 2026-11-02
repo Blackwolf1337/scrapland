@@ -15,6 +15,9 @@
 #include "scrap/pyfunction.h"
 #include "scrap/scrapparticles.h"
 
+extern cGVar GVar_ArrowMissionFile;
+extern cGVar GVar_ArrowTargetFile;
+
 #define ARROW_MAX_OPTS 8
 
 /* the glow of a mission arrow: particles with a timer, a color ramp and a scale from the model name */
@@ -81,8 +84,8 @@ extern cGVar GVar_ArrowViewRadius;
 #define g_ArrowNearDist (GVar_ArrowViewRadius.value.f)	/* shown nearer */
 extern cGVar GVar_ArrowActiveHorizontal;
 #define g_ArrowYMargin (GVar_ArrowActiveHorizontal.value.f)	/* the height difference allowed over both radii */
-#define g_MissionArrowOn (&(*(cString *)&GAME_GVAR(GVar_ArrowMissionFile)->value))	/* the models of MissionArrows_Switch */
-#define g_MissionArrowOff (&(*(cString *)&GAME_GVAR(GVar_ArrowTargetFile)->value))
+#define g_MissionArrowOn (&(*(cString *)&GVar_ArrowMissionFile.value))	/* the models of MissionArrows_Switch */
+#define g_MissionArrowOff (&(*(cString *)&GVar_ArrowTargetFile.value))
 extern cGVar GVar_ArrowUseFile;
 #define g_ArrowUseModel (GVar_ArrowUseFile.value.s)
 extern cGVar GVar_FXArrowIndicatorFlash_DistGrow;
@@ -91,7 +94,7 @@ extern cGVar GVar_FXArrowIndicatorFlash_SizeMin;
 #define g_ArrowGlowMin (GVar_FXArrowIndicatorFlash_SizeMin.value.f)
 extern cGVar GVar_FXArrowIndicatorFlash_SizeMax;
 #define g_ArrowGlowMax (GVar_FXArrowIndicatorFlash_SizeMax.value.f)
-#define g_ArrowGlowRamps (GAME_ARRAY(uint32_t[9], g_ArrowGlowRamps))
+extern uint32_t g_ArrowGlowRamps[2][9];
 
 /* in / |in| (in itself for a length 0), returns out */
 float *Vec2_Normalize(float *out, const float *in);

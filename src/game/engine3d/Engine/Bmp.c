@@ -476,7 +476,7 @@ int BMP_Save(const char *name, const CBmp *orig, uint32_t flags) {
 	return 0;
 fail:
 	crt_fclose(f);
-	E3D_LogBlue(g_FileLog, "escr_BMP_24(): Error de escritura: '%s'", name);
+	E3D_LogBlue((&g_FileLog), "escr_BMP_24(): Error de escritura: '%s'", name);
 	return -1;
 }
 
@@ -501,7 +501,7 @@ int TEX_Save(const char *name, const CBmp *orig, uint32_t flags) {
 		return 0;
 	}
 	crt_fclose(f);
-	E3D_LogBlue(g_FileLog, "escr_TEX(): Error de escritura: '%s'", name);
+	E3D_LogBlue((&g_FileLog), "escr_TEX(): Error de escritura: '%s'", name);
 	return -1;
 }
 
@@ -571,7 +571,7 @@ int TGA_Save(const char *name, const CBmp *orig, uint32_t flags) {
 	c->bits = alpha ? 32 : 24;
 	if (crt_fwrite(c, sizeof(*c), 1, f) != 1) {
 		crt_fclose(f);
-		E3D_LogBlue(g_FileLog, "escr_TGA(): Error de escritura: '%s'", name);
+		E3D_LogBlue((&g_FileLog), "escr_TGA(): Error de escritura: '%s'", name);
 		return -1;
 	}
 	for (int y = 0; y < orig->height; y++) {
@@ -596,7 +596,7 @@ int CBmp_Save(CBmp *self, const char *name, uint32_t flags) {
 static int Img_LoadFailed(void *f, const char *fmt, const char *name) {
 	FileIO_Close(f);
 	*crt_errno() = g_ImgBadFormat;
-	E3D_LogBlue(g_FileLog, fmt, name);
+	E3D_LogBlue((&g_FileLog), fmt, name);
 	return -1;
 }
 

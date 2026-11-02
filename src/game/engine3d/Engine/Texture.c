@@ -284,7 +284,7 @@ int CTexture_UploadLevel(CTexture *self, CBmp *src, int level) {
 			hr = D3DX_LoadSurfaceFromSurface(dst, NULL, NULL, surf, NULL, NULL, Tex_Dither() | D3DX_FILTER_POINT, 0);
 			Rd_Release(dst);
 			if (hr < 0) {
-				E3D_LogBlue(g_FileLog, "D3DXLoadSurfaceFromSurface: hr: 0x%08x", hr);
+				E3D_LogBlue((&g_FileLog), "D3DXLoadSurfaceFromSurface: hr: 0x%08x", hr);
 			} else {
 				if (surf) {
 					Rd_Release(surf);
@@ -363,7 +363,7 @@ int Texture_DeleteAll(void) {
 
 void Texture_Delete(CTexture *t) {
 	if (t) {
-		E3D_LogDebug2(g_FileLog, "  Texture deleted: %s", t->Name);
+		E3D_LogDebug2((&g_FileLog), "  Texture deleted: %s", t->Name);
 		Texture_Free(t);
 	}
 }
@@ -411,7 +411,7 @@ CMultiSprite *Texture_GetMultiSprite(CTexture *t, const char *name) {
 	}
 	if (name) {
 		byte ok = CMultiSprite_Build(&t->multi, name);
-		E3D_LogWhite(g_FileLog, "CMapaMat: BuildMultiSpriteTable: %s: %s", ok ? "OK" : "ERROR", name);
+		E3D_LogWhite((&g_FileLog), "CMapaMat: BuildMultiSpriteTable: %s: %s", ok ? "OK" : "ERROR", name);
 		if (ok) {
 			return &t->multi;
 		}
@@ -513,7 +513,7 @@ CTexture *Texture_Lookup(const char *name, const char *opac) {
 			if (!crt_stricmp(opac, t->Opac)) {
 				return t;
 			}
-			E3D_LogVerbose(g_FileLog, "WARN: Same texture with different alpha: %s, %s, %s", name, opac, t->Opac);
+			E3D_LogVerbose((&g_FileLog), "WARN: Same texture with different alpha: %s, %s, %s", name, opac, t->Opac);
 		}
 	}
 	return NULL;
@@ -583,9 +583,9 @@ int CTexture_LoadFile(CTexture *self, byte load) {
 		if (self->Opac[0] && !self->alpha) {
 			self->bpp = g_TextOpBPP;
 			self->alpha = 1;
-			E3D_LogBlue(g_FileLog, "ERROR: %s with opacity map:", ext);
-			E3D_LogVerbose(g_FileLog, "  text: '%s'", name);
-			E3D_LogVerbose(g_FileLog, "  opac: '%s'", self->Opac);
+			E3D_LogBlue((&g_FileLog), "ERROR: %s with opacity map:", ext);
+			E3D_LogVerbose((&g_FileLog), "  text: '%s'", name);
+			E3D_LogVerbose((&g_FileLog), "  opac: '%s'", self->Opac);
 		}
 		return 0;
 	}
@@ -621,7 +621,7 @@ int CTexture_LoadFile(CTexture *self, byte load) {
 			CBmp_MixChannels(&o, 7, 8);
 			CBmp_Resample(self->bitmap, &o, 8);
 		} else {
-			E3D_LogBlue(g_FileLog, "WARN: Opacity map not found: '%s'", self->Opac);
+			E3D_LogBlue((&g_FileLog), "WARN: Opacity map not found: '%s'", self->Opac);
 		}
 		Img_Free(&o, BMP_PIXEL);
 	}
@@ -633,9 +633,9 @@ int CTexture_LoadFile(CTexture *self, byte load) {
 
 /* the log lines of a new device texture: the format asked for and the one the device made */
 static void Tex_LogCreated(CTexture *self, const char *line, const char *formatLine, int fmt, int made) {
-	E3D_LogDebug(g_FileLog, line, D3DFmt_Name(fmt), self->width, self->height, Path_FileName(self->Name));
+	E3D_LogDebug((&g_FileLog), line, D3DFmt_Name(fmt), self->width, self->height, Path_FileName(self->Name));
 	if (made != fmt) {
-		E3D_LogDebug(g_FileLog, formatLine, D3DFmt_Name(made));
+		E3D_LogDebug((&g_FileLog), formatLine, D3DFmt_Name(made));
 	}
 }
 
@@ -670,7 +670,7 @@ int CTexture_CreateD3D(CTexture *self, void *dev) {
 			D3DX_CheckTextureRequirements(dev, &w, &h, NULL, 0, &fmt, D3DPOOL_MANAGED);
 		}
 		if (w != (uint32_t)self->width || h != (uint32_t)self->height) {
-			E3D_LogVerbose(g_FileLog, "Invalid texture size: %d x %d", self->width, self->height);
+			E3D_LogVerbose((&g_FileLog), "Invalid texture size: %d x %d", self->width, self->height);
 		}
 		hr = Rd_DevCreateTexture(dev, w, h, !self->mipmap, 0, fmt, D3DPOOL_MANAGED, &self->tex);
 		if (!hr) {
@@ -683,7 +683,7 @@ int CTexture_CreateD3D(CTexture *self, void *dev) {
 			Img_Free(self->bitmap, BMP_PIXEL);
 		}
 		if (hr < 0) {
-			E3D_LogBlue(g_FileLog, "ERROR: creando la textura (CBMP): '%s'", Path_FileName(self->Name));
+			E3D_LogBlue((&g_FileLog), "ERROR: creando la textura (CBMP): '%s'", Path_FileName(self->Name));
 			return hr;
 		}
 		Rd_TexGetLevelDesc(self->tex, 0, &desc);
@@ -696,7 +696,7 @@ int CTexture_CreateD3D(CTexture *self, void *dev) {
 			comp ? 0 : fmt, D3DPOOL_MANAGED, Tex_Dither() | D3DX_FILTER_TRIANGLE, Tex_Dither() | D3DX_FILTER_BOX, 0,
 			NULL, NULL, &self->tex);
 		if (hr < 0) {
-			E3D_LogBlue(g_FileLog, "ERROR: creando la textura (D3DX): '%s'", Path_FileName(self->Name));
+			E3D_LogBlue((&g_FileLog), "ERROR: creando la textura (D3DX): '%s'", Path_FileName(self->Name));
 			return hr;
 		}
 		Rd_TexGetLevelDesc(self->tex, 0, &desc);
@@ -720,7 +720,7 @@ int CTexture_CreateD3D(CTexture *self, void *dev) {
 				Tex_Dither() | D3DX_FILTER_BOX, 0, NULL, NULL, &self->tex);
 			Ptr_Delete(&buf);
 			if (hr < 0) {
-				E3D_LogBlue(g_FileLog, "ERROR: creando la textura (D3DX): '%s'", Path_FileName(self->Name));
+				E3D_LogBlue((&g_FileLog), "ERROR: creando la textura (D3DX): '%s'", Path_FileName(self->Name));
 				return hr;
 			}
 			Rd_TexGetLevelDesc(self->tex, 0, &desc);
@@ -826,7 +826,7 @@ int CTexture_SaveDDS(CTexture *self, CBmp *orig, int level, byte keepExt) {
 	if (crt_rename(path, tmp)) {
 		Con_FatalErrorf("SaveCBitmapDDS: Could not rename: '%s' -> '%s'", Path_FileName(path), Path_FileName(tmp));
 	}
-	E3D_LogDebug(g_FileLog, "SaveCBitmapDDS: File saved: '%s' [mip:%d] [opac:%s]", Path_FileName(tmp), level,
+	E3D_LogDebug((&g_FileLog), "SaveCBitmapDDS: File saved: '%s' [mip:%d] [opac:%s]", Path_FileName(tmp), level,
 		Tex_OpacName(self));
 	return 0;
 }

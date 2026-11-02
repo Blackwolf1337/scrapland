@@ -84,10 +84,10 @@ void Bsp_TakeLights(CScene *scn) {
 			}
 		}
 		if (l->stencil && l->noLmap) {
-			E3D_LogBlue(g_FileLog, "Stencil light with NO_LIGHTMAP flag: %s", n->name);
+			E3D_LogBlue((&g_FileLog), "Stencil light with NO_LIGHTMAP flag: %s", n->name);
 		}
 		if (l->stencil != (n->flags >> 26 & 1)) {
-			E3D_LogBlue(g_FileLog, "Light with RT_SHADOWS flag but no shadow enabled: %s", n->name);
+			E3D_LogBlue((&g_FileLog), "Light with RT_SHADOWS flag but no shadow enabled: %s", n->name);
 		}
 		CLight_SetActive(light, 0);
 	}
@@ -228,9 +228,9 @@ void CBsp_CreateBuffers(CBsp *self) {
 		(int (*)(const void *, const void *))(void *)BspTri_CmpZone);
 	for (int i = 0; i < self->num_lists; i++) {
 		BspTri *l = self->lists[i];
-		E3D_LogPrint(g_FileLog, "%4d %-40s (%p)  lmap %02d  zona %02d  tri %d", i, l->Mat->Name, (void *)l->Mat,
+		E3D_LogPrint((&g_FileLog), "%4d %-40s (%p)  lmap %02d  zona %02d  tri %d", i, l->Mat->Name, (void *)l->Mat,
 			l->LMap ? l->LMap->id : -1, l->zone, BspTri_Count(l));
-		E3D_LogPrint(g_FileLog, "     [%s]", CMaterial_GetMapName(self->lists[i]->Mat, MAP_DIFFUSE));
+		E3D_LogPrint((&g_FileLog), "     [%s]", CMaterial_GetMapName(self->lists[i]->Mat, MAP_DIFFUSE));
 	}
 	/* the vertices of each list without the repeated ones */
 	int faces = 0, verts = 0;
@@ -915,7 +915,7 @@ void CBsp_RadGlobal(CBsp *self) {
 		nNo);
 	E3D_DebugPrintf("\n");
 	if (g_TxfMode && g_TxfMode != 3) {
-		E3D_LogPrint(g_FileLog, "TFX checking finished");
+		E3D_LogPrint((&g_FileLog), "TFX checking finished");
 		Err_Printf(0, "TFX checking finished");
 		crt_exit(-1);
 	}
@@ -1364,11 +1364,11 @@ static void Bsp_TakeTriangles(CScene *scn, byte allow) {
 				CTriMesh_GetTriVert(mesh, &vm[2], (uint32_t)i, pass ? 1 : 2);
 				if (Bsp_Vec3Equal(&vm[0].pos, &vm[1].pos) || Bsp_Vec3Equal(&vm[1].pos, &vm[2].pos) ||
 					Bsp_Vec3Equal(&vm[2].pos, &vm[0].pos)) {
-					E3D_LogBlue(g_FileLog, "Invalid triangle #%d in object: %s", i, n->name);
+					E3D_LogBlue((&g_FileLog), "Invalid triangle #%d in object: %s", i, n->name);
 					continue;
 				}
 				if (!Plane_Calc(&pl, &vm[0].pos, &vm[1].pos, &vm[2].pos)) {
-					E3D_LogBlue(g_FileLog, "Invalid face normal #%d in object: %s", i, n->name);
+					E3D_LogBlue((&g_FileLog), "Invalid face normal #%d in object: %s", i, n->name);
 					continue;
 				}
 				if (last) {
@@ -1540,7 +1540,7 @@ void CBsp_Calculate(CBsp *self) {
 	float secs = (float)((double)(Plat_Ticks() - t0) / 1000.0);
 	int s = (int)secs;
 	E3D_DebugPrintf("\ncalcular_mapas(): %.2f seg. (%d:%02d:%02d hms)\n", (double)secs, s / 3600, s / 60 % 60, s % 60);
-	E3D_LogPrint(g_FileLog, "calcular_mapas(): %.2f seg. (%d:%02d:%02d hms)", (double)secs, s / 3600, s / 60 % 60,
+	E3D_LogPrint((&g_FileLog), "calcular_mapas(): %.2f seg. (%d:%02d:%02d hms)", (double)secs, s / 3600, s / 60 % 60,
 		s % 60);
 	E3D_DebugPrintf("\ng_CheckLine3D_lmap_ntricmp: %u   g_CheckLine3D_lmap_ncomp: %u\n", ground->traceStats[0],
 		g_CollisionNComp);

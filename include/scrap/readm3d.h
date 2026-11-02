@@ -17,6 +17,9 @@
 #include "scrap/node3d.h"
 #include "scrap/table.h"
 
+extern cGVar g_ShowNodesTreeVar;
+extern cGVar g_UseWSMVar;
+
 #define M3D_STRING 0x400
 
 #define g_M3DBinary GAME_GLOBAL_IN(byte, group_4e1fa4, 0)
@@ -27,7 +30,6 @@ extern char g_M3DDir[260];	/* MAX_FILEPATH, its directory */
 extern char g_M3DBaseName[260];	/* MAX_FILEPATH, its name without the extension */
 extern char g_M3DSceneMax[260];	/* MAX_FILEPATH, "Escena:" (the scene of the editor) */
 extern CIniFile *g_M3DFileINI;	/* the .ini of the file, until the scene takes it */
-#define g_M3DSceneTables GAME_GLOBAL(M3DTable *, g_M3DSceneTables)	/* 6: the animated ambient and background colors */
 /* the scene of the model while an animation of it (lee_M3D_Estatica) or a LOD model of it is read */
 extern CScene *g_SceneAnimParent;
 extern CScene *g_SceneLODParent;
@@ -45,7 +47,7 @@ extern cGVar GVar_SM3_UseScenes;
 extern cGVar GVar_CM3_DeleteM3D;
 #define g_CM3DeleteM3D (GVar_CM3_DeleteM3D.value.i)		/* CM3_DeleteM3D */
 #define g_M3DOk GAME_GLOBAL_IN(byte, group_432a7c, 0)
-#define g_ShowNodesTree (*(int *)&GAME_GVAR(g_ShowNodesTreeVar)->value)		/* ShowNodesTree */
+#define g_ShowNodesTree (*(int *)&g_ShowNodesTreeVar.value)		/* ShowNodesTree */
 /* the [Model] switches of the ini of the model being read */
 #define g_M3DUseOpacity GAME_GLOBAL_IN(byte, group_4e1fa4, 2)
 #define g_M3DUseEnvmap GAME_GLOBAL_IN(byte, group_4e1fa4, 3)
@@ -73,7 +75,7 @@ extern cGVar GVar_SharedTexuresPath;
 #define g_SharedTexturesPath (GVar_SharedTexuresPath.value.s)	/* gvar SharedTexuresPath, for "$name" maps */
 extern cGVar GVar_OptimizeNodes;
 #define g_OptimizeNodes (GVar_OptimizeNodes.value.i)	/* gvar: 1 delete unused nodes, 2 collapse to bip nodes, 4 AniMask */
-#define g_UseWSM (*(int *)&GAME_GVAR(g_UseWSMVar)->value)		/* gvar UseWSM */
+#define g_UseWSM (*(int *)&g_UseWSMVar.value)		/* gvar UseWSM */
 extern int g_UseTextures;		/* video UsarTexturas: without, maps of b8 1 become colors */
 
 /* an animation table of the file: one value a frame (CTable of int or float) */
@@ -84,6 +86,7 @@ typedef struct M3DTable {
 	byte pad9[3];
 } M3DTable;
 SD_SIZE(M3DTable, 0xc);
+extern M3DTable *g_M3DSceneTables;	/* 6: the animated ambient and background colors */
 
 /* the tables of a vector or rotation: x, then z and y (the files are z up), then w or the angle */
 typedef struct M3DTable4 {
@@ -252,7 +255,7 @@ CNode3D *Node_FindDescendant(CNode3D *node, const CNode3D *ancestor);
 CNode3D *Node_FindDescendantPrev(CNode3D *node, const CNode3D *ancestor);
 /* a plain mesh child of parent that can be joined into it (with a LOD the last one, or the first not in the main LOD) */
 CNode3D *Scene_FindCollapsible(CNode3D *node, const CNode3D *parent);
-/* the used materials of the file into the scene table and g_MatList, g_M3DLMat deleted */
+/* the used materials of the file into the scene table and (&g_MatList), g_M3DLMat deleted */
 void Scene_UsedMats(CScene *scn);
 /* the camera, light and portal of node (with anim: the animated values of frame of an existing one) */
 void M3D_ReadCamera(CNode3D *node, byte anim, int frame);

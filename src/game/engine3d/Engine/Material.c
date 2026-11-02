@@ -35,12 +35,12 @@ extern cGVar GVar_MatEmissive;
 #define g_MatEmissive (GVar_MatEmissive.value.f)
 extern cGVar GVar_DDS_UseTextures;
 #define g_DDSUseTextures (GVar_DDS_UseTextures.value.i)
-#define g_TexturePaths (GAME_ARRAY(char[MAX_FILEPATH], g_TexturePaths))
-#define g_TextureExts (GAME_ARRAY(char[MAX_FILEPATH], g_TextureExts))
+extern char g_TexturePaths[10][MAX_FILEPATH];
+extern char g_TextureExts[10][MAX_FILEPATH];
 extern char g_MatStr[256];
 #define g_LightmapsHigh GAME_GLOBAL(int, g_ShadowsStencil)
 extern float g_AnimFpsDefault;
-#define g_BlendTable (GAME_ARRAY(const uint32_t, g_BlendTable))
+extern uint32_t g_BlendTable[6];
 extern int g_MaxLightmap;
 
 #define BLEND_MODES 6
@@ -175,7 +175,7 @@ void Mat_ConvertBlend(uint32_t *mode, byte toFile, byte legacy) {
 	if (legacy) {
 		CHECK(*mode - 1 < BLEND_MODES);
 		/* the original reads the word at 0x431d30 + 4 * mode: g_BlendTable[mode - 1], for 0 (after the CHECK) the last
-		 * word of g_MatList before it, a separate C object since stage 3c2 */
+		 * word of (&g_MatList) before it, a separate C object since stage 3c2 */
 		*mode = *mode ? g_BlendTable[*mode - 1] : (uint32_t)(uintptr_t)GAME_GLOBAL(CMatList, g_MatList).last;	/* the word after the table: the last material of the list, as in the original */
 		return;
 	}
@@ -207,7 +207,7 @@ void *CMaterial_GetMultiSprite(CMaterial *self, uint32_t mapid) {
 	CHECK(mapid < MAP_TOTAL);
 	CMap *m = self->map[mapid];
 	if (!m) {
-		E3D_LogWhite(g_FileLog, "BuildMultiSpriteTable: Map not found in Material: %s", self->Name);
+		E3D_LogWhite((&g_FileLog), "BuildMultiSpriteTable: Map not found in Material: %s", self->Name);
 		return NULL;
 	}
 	if (CMap_BuildMultiSprite(m)) {
@@ -282,10 +282,10 @@ void DDS_Hide(const char *name, uint32_t attr) {
 		return;
 	}
 	if (!Plat_SetFileAttributes(name, attr)) {
-		E3D_LogBlue(g_FileLog, "DDS: Could not hide: %s", name);
+		E3D_LogBlue((&g_FileLog), "DDS: Could not hide: %s", name);
 		return;
 	}
-	E3D_LogWhite(g_FileLog, "DDS: Hide: %s", name);
+	E3D_LogWhite((&g_FileLog), "DDS: Hide: %s", name);
 }
 
 void DDS_Unhide(const char *name, uint32_t attr) {
@@ -294,17 +294,17 @@ void DDS_Unhide(const char *name, uint32_t attr) {
 	if (a == 0xffffffff || !(attr & a)) {
 		return;
 	}
-	E3D_LogBlue(g_FileLog, "DDS: Hidden file: %s", name);
+	E3D_LogBlue((&g_FileLog), "DDS: Hidden file: %s", name);
 	if (!Plat_SetFileAttributes(name, ~attr & a)) {
-		E3D_LogBlue(g_FileLog, "DDS: Could not unhide: %s", name);
+		E3D_LogBlue((&g_FileLog), "DDS: Could not unhide: %s", name);
 		return;
 	}
-	E3D_LogWhite(g_FileLog, "DDS: Unhide: %s", name);
+	E3D_LogWhite((&g_FileLog), "DDS: Unhide: %s", name);
 }
 
 CMaterial *Mat_New(const CMaterial *orig, byte share) {
 	if (share) {
-		CMaterial *m = CMatList_Find(g_MatList, orig);
+		CMaterial *m = CMatList_Find((&g_MatList), orig);
 		if (m) {
 			return m;
 		}
@@ -313,7 +313,7 @@ CMaterial *Mat_New(const CMaterial *orig, byte share) {
 	m = m ? CMaterial_ctor(m) : NULL;
 	CMaterial_Assign(m, orig);
 	CMaterial_Prepare(m, g_Engine->device);
-	CMatList_Add(g_MatList, m);
+	CMatList_Add((&g_MatList), m);
 	return m;
 }
 
@@ -321,7 +321,7 @@ CMaterial *Mat_AddCopy(const CMaterial *orig) {
 	CMaterial *m = operator_new(sizeof(CMaterial));
 	m = m ? CMaterial_ctor(m) : NULL;
 	CMaterial_Assign(m, orig);
-	CMatList_Add(g_MatList, m);
+	CMatList_Add((&g_MatList), m);
 	return m;
 }
 
@@ -446,7 +446,7 @@ byte Mat_CompareNames(const CMaterial *a, const CMaterial *b) {
 	if ((a->params.attrib & MAT_NAMED) || (b->params.attrib & MAT_NAMED)) {
 		CHECK(a->Name && b->Name);
 		if (strcmp(a->Name, b->Name)) {
-			E3D_LogInfo(g_FileLog, "MatCompareNames: [%s] [%s]", a->Name, b->Name);
+			E3D_LogInfo((&g_FileLog), "MatCompareNames: [%s] [%s]", a->Name, b->Name);
 			return 0;
 		}
 	}
@@ -530,7 +530,7 @@ void Tex_AddExtension(const char *ext) {
 	} else {
 		String_Copy(d, tmp, MAX_FILEPATH);
 	}
-	E3D_LogDebug(g_FileLog, "DBG: ExtensTexturas%d: '%s'", i + 1, d);
+	E3D_LogDebug((&g_FileLog), "DBG: ExtensTexturas%d: '%s'", i + 1, d);
 }
 
 void Tex_AddPath(const char *path) {
@@ -546,7 +546,7 @@ void Tex_AddPath(const char *path) {
 	}
 	CHECK(i < MAX_TEXTURE_PATHS);
 	Path_Copy(g_TexturePaths[i], path, MAX_FILEPATH);
-	E3D_LogDebug(g_FileLog, "DBG: RutaTextura%d: '%s'", i + 1, g_TexturePaths[i]);
+	E3D_LogDebug((&g_FileLog), "DBG: RutaTextura%d: '%s'", i + 1, g_TexturePaths[i]);
 }
 
 void Tex_ClearExtensions(void) {
@@ -647,7 +647,7 @@ int Tex_FindInPaths(const char *name, char *out) {
 
 static void Mat_LogOlder(const char *dds, const char *orig) {
 	if (File_TimeDiff(dds, orig, 0) < 0) {
-		E3D_LogVerbose(g_FileLog, "WARN: [%s] is older than [%s]", Path_FileName(dds), Path_FileName(orig));
+		E3D_LogVerbose((&g_FileLog), "WARN: [%s] is older than [%s]", Path_FileName(dds), Path_FileName(orig));
 	}
 }
 
@@ -773,7 +773,7 @@ void CMap_LoadTexture(CMap *self, void *dev, CMap *alpha, int kind) {
 		}
 		self->frames = i;
 		if (i < 2) {
-			E3D_LogVerbose(g_FileLog, "WARN: Animated texture with %d frame: %s", i, self->path);
+			E3D_LogVerbose((&g_FileLog), "WARN: Animated texture with %d frame: %s", i, self->path);
 		}
 		CHECK(!self->TextAni);
 		CHECK(!self->AnimMat);
@@ -1083,7 +1083,7 @@ void CMatList_DeleteAll(CMatList *self) {
 		n++;
 		self->first = next;
 	}
-	E3D_LogDebug2(g_FileLog, "ListaMat: %d materials deleted", n);
+	E3D_LogDebug2((&g_FileLog), "ListaMat: %d materials deleted", n);
 	self->last = NULL;
 	self->first = NULL;
 }
@@ -1273,9 +1273,9 @@ void CMatList_dtor(CMatList *self) {
 	}
 }
 
-/* the atexit destructor of g_MatList (rva 0x38ec70, the destructor inlined) */
+/* the atexit destructor of (&g_MatList) (rva 0x38ec70, the destructor inlined) */
 void Material_FiniMatList(void) {
-	CMatList_dtor(g_MatList);
+	CMatList_dtor((&g_MatList));
 }
 
 void CMap_dtor(CMap *self) {

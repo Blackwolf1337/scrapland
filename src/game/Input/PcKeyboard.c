@@ -135,8 +135,8 @@ void cPcKeyboard_SetDefaults(cPcKeyboard *self) {
 
 void Keyboard_Init(void) {
 	Con_Printf("Input device: %s initialized.\n", KB_NAME);
-	cPcKeyboard_SetDefaults(g_Keyboard);
-	cAbstractIDevice *d = g_Keyboard;
+	cPcKeyboard_SetDefaults((&g_Keyboard));
+	cAbstractIDevice *d = (&g_Keyboard);
 	InputDevices_Add(&g_InputDevices, &d);
 }
 

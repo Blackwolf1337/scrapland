@@ -21,6 +21,9 @@
 #include "scrap/scrapworld.h"
 #include "scrap/table.h"
 
+extern cGVar GVar_ModelAmbient;
+extern cGVar GVar_PlayVideo;
+
 /* CMotorApp of Engine/Motor.cpp, 0x2a600 bytes (g_Engine3D, also g_Engine as its CD3DApplication) */
 typedef struct CEngineApp {
 	CD3DApplication base;			/* 0x00000 */
@@ -80,7 +83,7 @@ extern CGameCamera *g_CamCurrent;	/* the camera drawn */
 extern CGameCamera *g_ViewerCamera;	/* gViewerCamera, made with the engine */
 extern CPsaImage *g_Watermark;
 /* the callbacks of Engine_SetCallback (1..4): before each frame, after the frame setup, two more */
-#define g_EngCallbacks (GAME_ARRAY(void (*)(void), g_EngCallbacks))	/* [4], 2 and 3 are g_LoadingDraw2 and g_LoadingDraw */
+extern typeof(void (*)(void)) g_EngCallbacks[4];	/* [4], 2 and 3 are g_LoadingDraw2 and g_LoadingDraw */
 #define g_DrawProgressBar GAME_GLOBAL_IN(byte, group_4a8324, 0)
 #define g_ResetPending GAME_GLOBAL_IN(byte, group_4a8324, 1)	/* Video_SetCurrentMode: reset the device at the next frame */
 #define g_ProgressBarCount GAME_GLOBAL(int, g_LoadingCount)
@@ -94,18 +97,18 @@ extern char g_DVFName[256];		/* 0x100 */
 extern int g_LoadingScreen;	/* the last random loading screen */
 #define g_M3dIni GAME_STR(str_431bf0)		/* "m3d.ini" */
 /* the video to play at the start and after a level ("" when played, unless bit 0 of its flags) */
-#define g_StartVideo (((cString *)&GAME_GVAR(GVar_PlayVideo)->value))
-#define g_StartVideoFlags (*(uint32_t *)&GAME_GVAR(GVar_PlayVideo)->base.flags)
+#define g_StartVideo (((cString *)&GVar_PlayVideo.value))
+#define g_StartVideoFlags (*(uint32_t *)&GVar_PlayVideo.base.flags)
 extern cGVar GVar_isDemo;
 #define g_IsDemo (GVar_isDemo.value.i)
 extern cGVar GVar_isXbox;
 #define g_IsXbox (GVar_isXbox.value.i)
-#define g_EngineVersion GAME_GLOBAL(int, g_EngineVersion)
+extern const int g_EngineVersion;
 
 /* m3d.ini of the level (Engine_LoadIni) */
 extern char g_GroundPath[260];	/* [suelo] ruta_m3d, 0x104 */
-#define g_GroundScale (GAME_ARRAY(vec3_t, g_GroundScale))
-#define g_ModelAmbientIni (GAME_ARRAY(ColorIntens, g_ModelAmbientIni))	/* [suelo] model_ambient */
+extern vec3_t g_GroundScale;
+extern ColorIntens g_ModelAmbientIni;	/* [suelo] model_ambient */
 extern float g_ClipNear;		/* [camara] forzar_clipNear */
 extern float g_ClipFar;
 extern char g_SkyPath[260];	/* [cielo], 0x104 */
@@ -117,7 +120,7 @@ extern int g_FogLinear;
 extern float g_FogRangeIni;
 extern float g_FogRangeEnd;
 extern float g_FogDensityIni;
-#define g_FogColorIni (GAME_ARRAY(ColorIntens, g_FogColorIni))
+extern ColorIntens g_FogColorIni;
 extern int g_GroundTrisPerNode;
 
 /* the engine variables (Gvars) */
@@ -139,7 +142,7 @@ extern cGVar GVar_RenderUseVB;
 #define g_RenderUseVB (GVar_RenderUseVB.value.i)
 extern cGVar GVar_RenderModels;
 #define g_RenderModels (GVar_RenderModels.value.i)
-#define g_ModelAmbient (*(uint32_t *)&GAME_GVAR(GVar_ModelAmbient)->value)	/* D3D color, 0: the one of m3d.ini */
+#define g_ModelAmbient (*(uint32_t *)&GVar_ModelAmbient.value)	/* D3D color, 0: the one of m3d.ini */
 extern cGVar GVar_TimerFreqMult;
 #define g_TimerFreqMult (GVar_TimerFreqMult.value.i)
 extern cGVar GVar_VideoWidth;
@@ -156,9 +159,9 @@ extern cGVar GVar_ProgressBar;
 #define g_ProgressBar (GVar_ProgressBar.value.i)
 extern cGVar GVar_R_StencilShadows;
 #define g_StencilShadows (GVar_R_StencilShadows.value.i)	/* R_StencilShadows */
-#define g_GvEnvMap (GAME_ARRAY(cGVar, g_GvEnvMap))	/* R_EnvMap, R_EnvBump and R_GlowMap as variables */
-#define g_GvEnvBump (GAME_ARRAY(cGVar, g_GvEnvBump))
-#define g_GvGlowMap (GAME_ARRAY(cGVar, g_GvGlowMap))
+extern cGVar g_GvEnvMap;	/* R_EnvMap, R_EnvBump and R_GlowMap as variables */
+extern cGVar g_GvEnvBump;
+extern cGVar g_GvGlowMap;
 /* what the frame setup takes from the variables */
 extern int g_ShowCollision;
 extern int g_WireFrame;

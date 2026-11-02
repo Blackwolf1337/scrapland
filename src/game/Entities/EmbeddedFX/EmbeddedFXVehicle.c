@@ -307,8 +307,8 @@ void cEmbeddedFXVehicle_Render(cEmbeddedFXVehicle *self) {
 		FXVehicle_RenderAttached(self->attached);
 		self->attached = NULL;
 	}
-	if (self->sirens && CGameModel_IsLoaded(g_SirenModel)) {
-		CGameModel_RenderNow(g_SirenModel, 0);
+	if (self->sirens && CGameModel_IsLoaded((&g_SirenModel))) {
+		CGameModel_RenderNow((&g_SirenModel), 0);
 	}
 }
 
@@ -391,9 +391,9 @@ cFXVehicleSirens *cFXVehicleSirens_ctor(cFXVehicleSirens *self, cEmbeddedFXVehic
 
 void cFXVehicleSirens_dtor(cFXVehicleSirens *self) {
 	(void)self;
-	if (--g_SirenRefs <= 0 && CGameModel_IsLoaded(g_SirenModel)) {
-		CGameParticles_Release(g_SirenParticles);
-		CGameModel_LoadName(g_SirenModel, NULL);
+	if (--g_SirenRefs <= 0 && CGameModel_IsLoaded((&g_SirenModel))) {
+		CGameParticles_Release((&g_SirenParticles));
+		CGameModel_LoadName((&g_SirenModel), NULL);
 	}
 }
 
@@ -405,14 +405,14 @@ byte cFXVehicleSirens_Init(cFXVehicleSirens *self) {
 
 	self->time = time;
 	self->lastTime = time;
-	if (refs <= 1 && !CGameModel_IsLoaded(g_SirenModel)) {
-		CGameModel_LoadName(g_SirenModel, g_FXVehicleEmbeddedFile);
-		CHECK(CGameModel_IsLoaded(g_SirenModel));
-		CGameModel_Disable(g_SirenModel);
-		int node = CGameModel_FindRenderNode(g_SirenModel, "Dummy01");
+	if (refs <= 1 && !CGameModel_IsLoaded((&g_SirenModel))) {
+		CGameModel_LoadName((&g_SirenModel), g_FXVehicleEmbeddedFile);
+		CHECK(CGameModel_IsLoaded((&g_SirenModel)));
+		CGameModel_Disable((&g_SirenModel));
+		int node = CGameModel_FindRenderNode((&g_SirenModel), "Dummy01");
 		CHECK(node > -1);
-		CGameParticles_Attach(g_SirenParticles, g_SirenModel, node);
-		CHECK(g_SirenParticles->ParticleSystem);
+		CGameParticles_Attach((&g_SirenParticles), (&g_SirenModel), node);
+		CHECK(g_SirenParticles.ParticleSystem);
 	}
 	CHECK(self->owner->owner);
 	CGameModel *vm = Obj_Vtbl(self->owner->owner)->GetModel(self->owner->owner);
@@ -449,7 +449,7 @@ static void Sirens_Flash(cFXVehicleSirens *self, const vec3_t *pos, byte alarm, 
 	Particles_SetSize(p, mid, k * 350.0f, 0.1f, 5);
 	Particles_Emit(p, ramp2);
 	if (self->owner->followed) {
-		p = g_SirenParticles;
+		p = (&g_SirenParticles);
 		Particles_SetPos(p, pos);
 		Particles_SetSize(p, 60.0f, 450.0f, 0.08f, 2);
 		Particles_Emit(p, ramp1);
@@ -479,8 +479,8 @@ void cFXVehicleSirens_Update(cFXVehicleSirens *self) {
 	if (fx->followed) {
 		CGameModel_GetPos(&fx->model, &pos);
 		CGameModel_GetRot(&fx->model, &rot);
-		CGameModel_SetPos(g_SirenModel, &pos);
-		CGameModel_SetRot(g_SirenModel, &rot);
+		CGameModel_SetPos((&g_SirenModel), &pos);
+		CGameModel_SetRot((&g_SirenModel), &rot);
 	}
 	float t = self->time + dt;
 	self->time = t;

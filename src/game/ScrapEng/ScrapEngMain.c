@@ -284,8 +284,8 @@ byte Engine_OneTimeInit(void) {
 	g_SkyPath[0] = 0;
 	g_SkyPosScaleIni = 0.0f;
 	g_SkyRotationIni = 0.0f;
-	g_FogColorIni->intens = 0.0f;
-	g_ModelAmbientIni->intens = 0.0f;
+	g_FogColorIni.intens = 0.0f;
+	g_ModelAmbientIni.intens = 0.0f;
 	Engine_LoadIni(g_M3dIni, NULL);
 	Engine_LoadIni(g_GroundPath, ".ini");
 	ParticleSystem_LoadIni(NULL, NULL);
@@ -295,7 +295,7 @@ byte Engine_OneTimeInit(void) {
 	g_World = p ? CWorld_ctor(p) : NULL;
 	WorldInfo_Reset();
 	CWorld_LoadSky(g_World, g_SkyPath);
-	CWorld_LoadGroundScale(g_World, g_GroundPath, g_GroundScale);
+	CWorld_LoadGroundScale(g_World, g_GroundPath, (&g_GroundScale));
 	CWorld_SetSkyPos(g_World, g_SkyPosScaleIni);
 	CWorld_SetSkyRot(g_World, g_SkyRotationIni);
 	CWorld_SetClip(g_World, g_ClipNear, g_ClipFar);
@@ -304,8 +304,8 @@ byte Engine_OneTimeInit(void) {
 	g_World->fog.table = g_FogTableMode != 0;
 	g_World->fog.density = g_FogDensityIni;
 	g_World->fog.mode = g_FogLinear ? 3 : 1;	/* D3DFOG_LINEAR, D3DFOG_EXP */
-	if (g_FogColorIni->intens != 0.0f) {
-		CFog_SetColor(&g_World->fog, g_FogColorIni->rgba, g_FogColorIni->intens);
+	if (g_FogColorIni.intens != 0.0f) {
+		CFog_SetColor(&g_World->fog, g_FogColorIni.rgba, g_FogColorIni.intens);
 	}
 	Cmd_ReadFile("engine.txt");
 	Fonts_Load();
@@ -335,7 +335,7 @@ void Engine_Init(void) {
 	void *hWnd = App_GetHWnd();
 	g_TimerQPMult = g_TimerFreqMult;
 	Timer_GetQPFreq(&freq);
-	E3D_LogDebug(g_FileLog, "TimerQPFreq: %d", (int)freq);
+	E3D_LogDebug((&g_FileLog), "TimerQPFreq: %d", (int)freq);
 	Engine3D_Create(hInst, hWnd, (void *)Engine_OneTimeInit, (void *)Engine_FrameMove,
 		(void *)Engine_FinalCleanup, 0);
 	g_Engine->fullscreen = g_FullScreen && !APP_DEDICATED(g_pApp);
@@ -382,7 +382,7 @@ void Engine_LevelEnd(void) {
 	Splash_Show("2D/Loading/00Black.dds", 0, 0, 0);
 	if (*g_StartVideo) {
 		if (**g_StartVideo && CD3DApp_ResetDevice(g_Engine) < 0) {
-			E3D_LogBlue(g_FileLog, "ERROR: 'ResetDevice()' failed");
+			E3D_LogBlue((&g_FileLog), "ERROR: 'ResetDevice()' failed");
 		}
 		/* differs from the original on purpose (no blocking waits): the rest after the video from
 		 * Engine_VideoResume */
@@ -526,7 +526,7 @@ byte Music_Play(const char *name, const char *cmd, float volume) {
 	if (!crt_stricmp(cmd, "fadeout")) {
 		return Music_FadeOut(0.0f, volume);
 	}
-	E3D_LogBlue(g_FileLog, "MusicPlayer: invalid command: %s", cmd);
+	E3D_LogBlue((&g_FileLog), "MusicPlayer: invalid command: %s", cmd);
 	return 0;
 }
 
@@ -779,7 +779,7 @@ void ViewerCamera_Move(CGameCamera *cam) {
 		return;
 	}
 	if (pan) {
-		Debug_DrawAxes(g_MatIdentity, &cam->target, 100.0f);
+		Debug_DrawAxes((&g_MatIdentity), &cam->target, 100.0f);
 		mv = fwd * speed;
 		cam->target.y = mv + cam->target.y;
 		cam->pos.y = mv + cam->pos.y;
@@ -836,13 +836,13 @@ byte Engine_DebugKeys(void) {
 		Con_Verbosef("Vertex specular: %d\n", g_VertexSpecular);
 	}
 	if (DebugAction(DBG_ENVMAP)) {
-		GVar_SetIntVerbose(g_GvEnvMap, g_GvEnvMap->value.i == 0);
+		GVar_SetIntVerbose((&g_GvEnvMap), g_GvEnvMap.value.i == 0);
 	}
 	if (DebugAction(DBG_ENVBUMP)) {
-		GVar_SetIntVerbose(g_GvEnvBump, g_GvEnvBump->value.i == 0);
+		GVar_SetIntVerbose((&g_GvEnvBump), g_GvEnvBump.value.i == 0);
 	}
 	if (DebugAction(DBG_GLOWMAP)) {
-		GVar_SetIntVerbose(g_GvGlowMap, g_GvGlowMap->value.i == 0);
+		GVar_SetIntVerbose((&g_GvGlowMap), g_GvGlowMap.value.i == 0);
 	}
 	if (DebugAction(DBG_CAMERA) && !shift) {
 		Camera_SaveRestore(g_ViewerCamera, 0);
@@ -884,7 +884,7 @@ void Engine_ResetAll(void) {
 		m->presentParams.FullScreen_PresentationInterval = m->vsync ? 0 : D3DPRESENT_INTERVAL_IMMEDIATE;
 	}
 	if (CD3DApp_Reset(g_Engine) < 0) {
-		E3D_LogBlue(g_FileLog, "ERROR: ResetEngine3D_All()");
+		E3D_LogBlue((&g_FileLog), "ERROR: ResetEngine3D_All()");
 	}
 }
 
@@ -892,8 +892,8 @@ void Engine_ResetTextures(void) {
 	Con_Printf("ResetEngine3D_Textures\n");
 	CHECK(g_Engine->device);
 	Texture_ReleaseAllD3D();
-	CMatList_Release(g_MatList);
-	CMatList_Prepare(g_MatList, g_Engine->device);
+	CMatList_Release((&g_MatList));
+	CMatList_Prepare((&g_MatList), g_Engine->device);
 }
 
 int Eng_RenderTargetEnd(void) {
@@ -917,12 +917,12 @@ byte Engine_FrameSetup(void) {
 		g_LightmapOff = 1;
 	}
 	uint32_t amb = g_ModelAmbient;
-	if (g_ModelAmbientIni->intens == 0.0f) {
+	if (g_ModelAmbientIni.intens == 0.0f) {
 		if (!amb) {
 			goto done;
 		}
 	} else if (!amb) {
-		amb = Color_ToD3D(g_ModelAmbientIni);
+		amb = Color_ToD3D((&g_ModelAmbientIni));
 	}
 	g_AmbientD3D = amb;
 	void *dev = g_pd3dDevice;
@@ -1047,9 +1047,9 @@ void Video_SetCurrentMode(int mode) {
 
 void Engine_SetGround(const char *dir, const char *name, const vec3_t *scale) {
 	Str_PrintfQuiet(g_GroundPath, MAX_FILEPATH, "%s/%s", dir, name);
-	g_GroundScale->x = scale->x;
-	g_GroundScale->y = scale->y;
-	g_GroundScale->z = scale->z;
+	g_GroundScale.x = scale->x;
+	g_GroundScale.y = scale->y;
+	g_GroundScale.z = scale->z;
 }
 
 void Model_Info(const char *name, int n) {
@@ -1094,7 +1094,7 @@ int Timer_GetQPFreq64(int64_t *out) {
 		*out = f;
 		return r != 0;
 	}
-	E3D_LogDebug(g_FileLog, "TimerQPFreq: %d", (int)f);
+	E3D_LogDebug((&g_FileLog), "TimerQPFreq: %d", (int)f);
 	return r != 0;
 }
 
@@ -1111,7 +1111,7 @@ int Engine_ToggleOption(int opt) {
  */
 byte Video_PlayThen(const char *name, void (*done)(int result)) {
 	if (Video_Busy() || eng_wait != ENGWAIT_NONE) {
-		E3D_LogBlue(g_FileLog, "VideoPlayer: a video plays already: %s", name);
+		E3D_LogBlue((&g_FileLog), "VideoPlayer: a video plays already: %s", name);
 		if (done) {
 			done(0);
 		}
@@ -1135,7 +1135,7 @@ byte Video_Play(const char *name, const char *cmd, float arg) {
 	if (!crt_stricmp(cmd, "play")) {
 		return Video_PlayThen(name, NULL);
 	}
-	E3D_LogBlue(g_FileLog, "VideoPlayer: invalid command: %s", cmd);
+	E3D_LogBlue((&g_FileLog), "VideoPlayer: invalid command: %s", cmd);
 	return 0;
 }
 
@@ -1202,7 +1202,7 @@ void Engine_LoadIni(const char *name, const char *dir) {
 	CIniFile_ctor(&ini);
 	if (!CIniFile_Load(&ini, name, dir, 1)) {
 		CIniFile_ReadText(&ini, "suelo", "ruta_m3d", g_GroundPath, MAX_FILEPATH);
-		Ini_GetColor("suelo", "model_ambient", g_ModelAmbientIni, &ini);
+		Ini_GetColor("suelo", "model_ambient", (&g_ModelAmbientIni), &ini);
 		CIniFile_ReadFloat(&ini, "camara", "forzar_clipNear", &g_ClipNear);
 		CIniFile_ReadFloat(&ini, "camara", "forzar_clipFar", &g_ClipFar);
 		CIniFile_ReadText(&ini, "cielo", "path", g_SkyPath, MAX_FILEPATH);
@@ -1216,7 +1216,7 @@ void Engine_LoadIni(const char *name, const char *dir) {
 		CIniFile_ReadFloat(&ini, "niebla", "rango_ini", &g_FogRangeIni);
 		CIniFile_ReadFloat(&ini, "niebla", "rango_fin", &g_FogRangeEnd);
 		CIniFile_ReadFloat(&ini, "niebla", "densidad", &g_FogDensityIni);
-		Ini_GetColor("niebla", "color", g_FogColorIni, &ini);
+		Ini_GetColor("niebla", "color", (&g_FogColorIni), &ini);
 		CIniFile_ReadBool(&ini, "mapa_sombras", "usar", &g_ShadowMapUse);
 		CIniFile_ReadBool(&ini, "mapa_sombras", "dlg", &g_ShadowMapDlg);
 		CIniFile_ReadBool(&ini, "mapa_sombras", "calcular", &g_ShadowMapCalculate);

@@ -89,7 +89,7 @@ WorldDummy *WorldDummy_ctorNode(WorldDummy *self, CNode3D *node) {
 	self->rot = *Matrix_ToEuler(&rot, &node->m);
 	Dummy_CheckName(self, "WARN: Node set as World Dummy: %s\n");
 	if (node->ini) {
-		E3D_LogWhite(g_FileLog, "INFO: World Dummy has UserProp: %s", self->name);
+		E3D_LogWhite((&g_FileLog), "INFO: World Dummy has UserProp: %s", self->name);
 	}
 	self->ini = node->ini;
 	node->ini = NULL;
@@ -209,7 +209,7 @@ int World_LoadDUM(const char *path, WorldDummy **list) {
 	void *mem = operator_new(sizeof(CFileIO));
 	CFileIO *f = mem ? CFileIO_ctor(mem, name, "rb") : NULL;
 	CHECK(!f->error);
-	E3D_LogDebug2(g_FileLog, "Load_DUM: %s", name);
+	E3D_LogDebug2((&g_FileLog), "Load_DUM: %s", name);
 	CFileIO_BeginBlock(f, "DUM");
 	CHECK(CFileIO_ReadInt(f) == 1);
 	int count = CFileIO_ReadInt(f);
@@ -238,7 +238,7 @@ int World_SaveDUM(const char *path, const WorldDummy *list) {
 	char name[MAX_FILEPATH];
 
 	Path_Format(name, path, "&U&D&N.dum");
-	E3D_LogDebug2(g_FileLog, "Save_DUM: %s", name);
+	E3D_LogDebug2((&g_FileLog), "Save_DUM: %s", name);
 	void *mem = operator_new(sizeof(CFileIO));
 	CFileIO *f = mem ? CFileIO_ctor(mem, name, "wb") : NULL;
 	CHECK(!f->error);
@@ -328,7 +328,7 @@ static void World_RenderSky(CWorld *self, void *dev) {
 		cam->pos.z * k * g_SkyPosScale };
 	sky->rot.y = (float)((double)g_SkyRotation * M_PI_D / DEG_PER_PI) + self->skyRot;
 	CModel_UpdateAnims(sky, 0.0f, -1);
-	if (Portals_SetView(g_PaintAll)) {
+	if (Portals_SetView((&g_PaintAll))) {
 		CModel_Render(self->Sky);
 	}
 	E3D_FlushBatch();
@@ -524,7 +524,7 @@ static void World_TakeDummies(CWorld *self) {
 				Con_FatalErrorf("Only non-ref dummies can be named DM_*\n\nNode: %s\n", n->name);
 			}
 		} else if (!CNode3D_Class(n) && !refs) {
-			E3D_LogInfo(g_FileLog, "WARN: Node NOT set as World Dummy: %s", n->name);
+			E3D_LogInfo((&g_FileLog), "WARN: Node NOT set as World Dummy: %s", n->name);
 		}
 	}
 }
@@ -547,7 +547,7 @@ static void World_LightsSector(CWorld *self) {
 		}
 		if (sector >= 0) {
 			assigned++;
-			E3D_LogWhite(g_FileLog, "Light sector %d: %s", sector, light->node->name);
+			E3D_LogWhite((&g_FileLog), "Light sector %d: %s", sector, light->node->name);
 		}
 	}
 	Con_Verbosef("World lights: %d (asigned: %d, unasigned: %d)\n", lights, assigned, lights - assigned);

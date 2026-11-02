@@ -187,6 +187,6 @@ int E3D_MathErr(void *exc) {
 		return 0;
 	}
 	const char *msg = e->type >= 1 && e->type <= 6 ? msgs[e->type - 1] : "unknown math error";
-	E3D_LogBlue(g_FileLog, "Math Error: %s: %s: %f", e->name, msg, e->arg1);
+	E3D_LogBlue((&g_FileLog), "Math Error: %s: %s: %f", e->name, msg, e->arg1);
 	return 0;
 }

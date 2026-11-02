@@ -139,14 +139,14 @@ void BspTxf_Info(BspTxf *self) {
 	E3D_DebugPrintf("\nwritten: %d, skipped: %d, already locked: %d", self->written, self->skipped, self->locked);
 	E3D_DebugPrintf("\nwrite retries: %d, read retries: %d, auto deleted: %d\n", self->writeRetries,
 		self->readRetries, self->deleted);
-	E3D_LogPrint(g_FileLog, "TXF info: %s", Path_FileName(self->base));
-	E3D_LogPrint(g_FileLog, " time: %d:%02d:%02d hms", secs / 3600, m, s);
-	E3D_LogPrint(g_FileLog, " written: %d", self->written);
-	E3D_LogPrint(g_FileLog, " skipped: %d", self->skipped);
-	E3D_LogPrint(g_FileLog, " already locked: %d", self->locked);
-	E3D_LogPrint(g_FileLog, " write retries: %d", self->writeRetries);
-	E3D_LogPrint(g_FileLog, " read retries: %d", self->readRetries);
-	E3D_LogPrint(g_FileLog, " auto deleted: %d", self->deleted);
+	E3D_LogPrint((&g_FileLog), "TXF info: %s", Path_FileName(self->base));
+	E3D_LogPrint((&g_FileLog), " time: %d:%02d:%02d hms", secs / 3600, m, s);
+	E3D_LogPrint((&g_FileLog), " written: %d", self->written);
+	E3D_LogPrint((&g_FileLog), " skipped: %d", self->skipped);
+	E3D_LogPrint((&g_FileLog), " already locked: %d", self->locked);
+	E3D_LogPrint((&g_FileLog), " write retries: %d", self->writeRetries);
+	E3D_LogPrint((&g_FileLog), " read retries: %d", self->readRetries);
+	E3D_LogPrint((&g_FileLog), " auto deleted: %d", self->deleted);
 }
 
 
@@ -793,7 +793,7 @@ static int CBsp_ListZone(BspTri *tri, int sector, byte pass, int n) {
 void CBsp_DrawPass(CBsp *self, byte pass) {
 	byte perSector = g_MapDrawBySector != 0;
 
-	Render_SetWorldMatrix(g_MatIdentity, 0);
+	Render_SetWorldMatrix((&g_MatIdentity), 0);
 	if (!g_RenderSectors) {
 		return;
 	}
@@ -863,7 +863,7 @@ void CBsp_DrawFX(CBsp *self) {
 	if (g_RenderOff) {
 		return;
 	}
-	Render_SetWorldMatrix(g_MatIdentity, 0);
+	Render_SetWorldMatrix((&g_MatIdentity), 0);
 	CBsp_DrawWire(self);
 	if (g_ProfMode == 2) {
 		Font_PrintfXY(g_FntComic14, 10.0f, 260.0f, "tri: %d %d", g_BspTris, g_BspVerts);
@@ -876,7 +876,7 @@ void CBsp_Render(CBsp *self) {
 	if (g_RenderOff) {
 		return;
 	}
-	Render_SetWorldMatrix(g_MatIdentity, 0);
+	Render_SetWorldMatrix((&g_MatIdentity), 0);
 	if (!g_PortalsOn) {
 		g_NumPaintZones = 0;
 	} else if (g_ShowPortals) {
@@ -1963,7 +1963,7 @@ int BspTri_CmpZone(const void *pa, const void *pb) {
 extern int g_BspDebugCnt;
 extern int g_BspDebugSel;		/* the region drawn without links */
 /* the collision cache counters of suelo.cpp: hit, miss, peak */
-#define g_BspCacheStats (GAME_ARRAY(const int, g_BspCacheStats))	/* [3], the hits, the misses and g_CollisionTestsMax */
+extern int g_BspCacheStats[3];	/* [3], the hits, the misses and g_CollisionTestsMax */
 
 void Bsp_MatInfo(CMaterial *m) {
 	uint32_t attrib = m->params.attrib;
@@ -2252,7 +2252,7 @@ void BspTxf_Save(BspTxf *self, CBmpFlt2 *bmp) {
 		 * again */
 		CHECK(self->writeRetries < 100);
 		self->writeRetries++;
-		E3D_LogPrint(g_FileLog, "Retry %d of %d", self->writeRetries, 100);
+		E3D_LogPrint((&g_FileLog), "Retry %d of %d", self->writeRetries, 100);
 		return;
 	}
 	self->written++;
@@ -2297,7 +2297,7 @@ void BspTxf_Load(BspTxf *self, BspTri **lists, int n, int which) {
 		if (!CBmpFlt2_Load(bmp, self->name, 0, info, sizeof(info))) {
 			if (bmp->width != tri->lx || bmp->height != tri->ly) {
 				E3D_DebugPrintf("Bad TXF: %s  [%s]   \n", Path_FileName(self->name), info);
-				E3D_LogBlue(g_FileLog, "Bad TXF: %s  [%s]  size: %dx%d  required: %dx%d", Path_FileName(self->name),
+				E3D_LogBlue((&g_FileLog), "Bad TXF: %s  [%s]  size: %dx%d  required: %dx%d", Path_FileName(self->name),
 					info, bmp->width, bmp->height, tri->lx, tri->ly);
 				CHECK(g_TxfMode);
 				CBmpFlt2_CreateFill(bmp, tri->lx, tri->ly, magenta);
@@ -2311,7 +2311,7 @@ void BspTxf_Load(BspTxf *self, BspTri **lists, int n, int which) {
 		CBmpFlt2_CreateFill(bmp, tri->lx, tri->ly, magenta);
 		if (g_TxfMode) {
 			E3D_DebugPrintf("TXF not found: %s   \n", Path_FileName(self->name));
-			E3D_LogBlue(g_FileLog, "TXF not found: %s", Path_FileName(self->name));
+			E3D_LogBlue((&g_FileLog), "TXF not found: %s", Path_FileName(self->name));
 			if (g_TxfMode == 2 && File_Exists(self->name)) {
 				crt_remove(self->name);
 			}
@@ -2429,12 +2429,12 @@ static void Bsp_LogNodes(CScene *scn, const char *fmt, byte done) {
 		uint32_t f = n->flags;
 		if ((f & 0x20008) == 0x20008) {
 			if (done) {
-				E3D_LogInfo(g_FileLog, "Map node: %s  [c:%s]", n->name, Bsp_NodeClass(n));
+				E3D_LogInfo((&g_FileLog), "Map node: %s  [c:%s]", n->name, Bsp_NodeClass(n));
 			}
 			continue;
 		}
 		const char *cls = Bsp_NodeClass(n);
-		E3D_LogWhite(g_FileLog, fmt, n->name, f >> 17 & 1 ? "" : "  [TRANS]", f >> 3 & 1 ? "" : "  [RENDER]", cls);
+		E3D_LogWhite((&g_FileLog), fmt, n->name, f >> 17 & 1 ? "" : "  [TRANS]", f >> 3 & 1 ? "" : "  [RENDER]", cls);
 	}
 }
 
@@ -2474,7 +2474,7 @@ void Bsp_Create(void) {
 			CHECK(!light->active);
 			n->flags |= 0x20008;
 			Bsp_MarkNode(n, 1);
-			E3D_LogWhite(g_FileLog, "World: Light object DELETED: %s", n->name);
+			E3D_LogWhite((&g_FileLog), "World: Light object DELETED: %s", n->name);
 			continue;
 		}
 		if (CNode3D_Class(n) != CLASS_OBJ3D_GROUND && CNode3D_Class(n) != CLASS_OBJ3D_PORTAL &&
@@ -2526,7 +2526,7 @@ void Bsp_Create(void) {
 	Bsp_LogNodes(world->GroundScale, "World node: %s%s%s  [c:%s]", 0);
 	Bsp_LogNodes(g_Bsp->model->scene, "Map node: %s%s%s  [c:%s]", 1);
 	CScene *mscn = g_Bsp->model->scene;
-	E3D_LogInfo(g_FileLog, "Total: %d world nodes, %d map nodes", CScene_NumNodes(world->GroundScale),
+	E3D_LogInfo((&g_FileLog), "Total: %d world nodes, %d map nodes", CScene_NumNodes(world->GroundScale),
 		CScene_NumNodes(mscn));
 	if (!World_Get()->GroundScale->fromAmc) {
 		Path_Format(buf, g_Bsp->name, "&U&D&N_2.SM3");
@@ -2921,11 +2921,11 @@ int CBsp_ReadEMI(CBsp *self) {
 	CHECK(CFileIO_BeginBlock(f, "EMI") == 0);
 	int version = CFileIO_ReadInt(f);
 	CHECK(version >= 103 && version <= 105);
-	E3D_LogDebug2(g_FileLog, "EMI: Version: %d", version);
+	E3D_LogDebug2((&g_FileLog), "EMI: Version: %d", version);
 	CHashTable_ctor(&tabMat, 0x1f);
 	CHashTable_ctor(&tabLMap, 0x1f);
 	int n = CFileIO_ReadInt(f);
-	E3D_LogDebug2(g_FileLog, "EMI: Materials: %d", n);
+	E3D_LogDebug2((&g_FileLog), "EMI: Materials: %d", n);
 	String_Copy(texPath, dir, sizeof(texPath));
 	CIniFile *ini = World_Get()->GroundScale->ini;
 	CHECK(ini);
@@ -2935,7 +2935,7 @@ int CBsp_ReadEMI(CBsp *self) {
 			CMaterial *mm = operator_new(sizeof(CMaterial));
 			CMaterial *mat = mm ? CMaterial_ctor(mm) : NULL;
 			CHashTable_AddInt(&tabMat, CFileIO_ReadInt(f), mat, 0);
-			CMatList_Add(g_MatList, mat);
+			CMatList_Add((&g_MatList), mat);
 			CMaterial_Read(mat, f);
 			mat->params.attrib |= MAT_NOSHARE;
 			/* the maps are looked for in the texture path of the map */
@@ -2984,7 +2984,7 @@ int CBsp_ReadEMI(CBsp *self) {
 	}
 	CHECK(!self->num_lists);
 	self->num_lists = CFileIO_ReadInt(f);
-	E3D_LogDebug2(g_FileLog, "EMI: List count: %d", self->num_lists);
+	E3D_LogDebug2((&g_FileLog), "EMI: List count: %d", self->num_lists);
 	CHECK(self->num_lists < BSP_MAX_LISTS);
 	for (int i = 0; i < self->num_lists; i++) {
 		BspTri *tm = operator_new(sizeof(BspTri));
@@ -2998,7 +2998,7 @@ int CBsp_ReadEMI(CBsp *self) {
 			CFileIO_ReadString(f, sector, sizeof(sector));
 			tri->zone = Sector_Find(sector);
 			if (!strcmp(sector, "_nosector_")) {
-				E3D_LogInfo(g_FileLog, "WARN: Mesh without sector [%s]", buf);
+				E3D_LogInfo((&g_FileLog), "WARN: Mesh without sector [%s]", buf);
 			} else if (!strcmp(sector, "_unasigned_")) {
 				Con_Warnf("WARN: Mesh without sector [%s]\n", buf);
 			}
@@ -3048,7 +3048,7 @@ void CBsp_Prepare(CBsp *self) {
 	if (g_DebugLevel < 3) {
 		return;
 	}
-	E3D_LogDebug(g_FileLog, "\nMap triangles by material/sector:");
+	E3D_LogDebug((&g_FileLog), "\nMap triangles by material/sector:");
 	for (int zn = 0; zn < self->zones.n; zn++) {
 		TABLE_CHECK(self->zones.p, zn, self->zones.n);
 		BspTri *tri = ((BspZone *)self->zones.p)[zn].tris;
@@ -3087,7 +3087,7 @@ void CBsp_Prepare(CBsp *self) {
 			e->frmt = tri->lv.frmt;
 		}
 	}
-	E3D_LogDebug(g_FileLog, "\nTotal map triangles by material:");
+	E3D_LogDebug((&g_FileLog), "\nTotal map triangles by material:");
 	crt_qsort(tab.p, (size_t)tab.n, sizeof(BspMatStat), (int (*)(const void *, const void *))(void *)BspTri_CmpId);
 	int totTri = 0, totVert = 0;
 	for (int i = 0; i < tab.n; i++) {
@@ -3099,7 +3099,7 @@ void CBsp_Prepare(CBsp *self) {
 		totTri += e->numTri;
 		totVert += e->numVert;
 	}
-	E3D_LogDebug(g_FileLog, "\nMap total: %d materials, %d triangles, %d vertexes\n", tab.n, totTri, totVert);
+	E3D_LogDebug((&g_FileLog), "\nMap total: %d materials, %d triangles, %d vertexes\n", tab.n, totTri, totVert);
 	if (tab.p) {
 		operator_delete_array(tab.p);
 	}
@@ -3153,7 +3153,7 @@ void CBsp_InitD3D(CBsp *self) {
 		tri->baseVert = 0;
 		tri->startTri = 0;
 		if (tri->lv.nVert < 6 || tri->numTri < 3) {
-			E3D_LogInfo(g_FileLog, "EMI: List index: %d   tri: %d   vert: %d", i, tri->numTri, tri->lv.nVert);
+			E3D_LogInfo((&g_FileLog), "EMI: List index: %d   tri: %d   vert: %d", i, tri->numTri, tri->lv.nVert);
 		}
 		CHECK(Render_CreateVB(&tri->pVertVB, &tri->lv, !g_ShadowMapMultitext) == 0);
 		CHECK(Render_CreateIB(&tri->pVertIB, tri->pTri, tri->numTri, !g_ShadowMapMultitext) == 0);

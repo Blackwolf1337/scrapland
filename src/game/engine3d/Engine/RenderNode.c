@@ -141,7 +141,7 @@ void CRenderNode_SetLook(CRenderNode *self, int type) {
 		void *mem;
 		NodeLook *look;
 
-		E3D_LogWhite(g_FileLog, "WARN: SetNodeRotation: Deferred creation: %s", self->node->name);
+		E3D_LogWhite((&g_FileLog), "WARN: SetNodeRotation: Deferred creation: %s", self->node->name);
 		mem = operator_new(sizeof(NodeLook));
 		look = mem ? NodeLook_ctor(mem) : NULL;
 		self->look = look;

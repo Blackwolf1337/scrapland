@@ -67,7 +67,7 @@ void Net_Done(void) {
 			g_NetResources[i] = NULL;
 		}
 	}
-	cGVar_SetFlag(g_GVarServerType, 1, 0);
+	cGVar_SetFlag((&g_GVarServerType), 1, 0);
 }
 
 void Net_GetBotName(char *buf) {
@@ -122,7 +122,7 @@ void Net_Init(void) {
 	g_NetResInit = 1;
 	g_NetObjCounter = NET_PLAYER_MAX_ID + 1;
 	g_NetBotCounter = 0x100;
-	cGVar_SetFlag(g_GVarServerType, 1, Net_IsServer() || Net_IsClient());
+	cGVar_SetFlag((&g_GVarServerType), 1, Net_IsServer() || Net_IsClient());
 	g_MasterCommandCallback = (netmastercmd_t)NetData_OnMasterCommand;
 }
 

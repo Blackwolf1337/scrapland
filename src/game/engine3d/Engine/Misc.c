@@ -56,9 +56,9 @@ void cLog_dtor(cLog *self) {
 	}
 }
 
-/* the atexit destructor of g_FileLog (rva 0x38ece0, the destructor inlined) */
+/* the atexit destructor of (&g_FileLog) (rva 0x38ece0, the destructor inlined) */
 void Misc_FiniFileLog(void) {
-	cLog_dtor(g_FileLog);
+	cLog_dtor((&g_FileLog));
 }
 
 void cLog_Write(cLog *self, uint32_t mask, const char *text) {
@@ -182,7 +182,7 @@ byte File_TimeChanged(int saved, const char *name, int tol) {
 	if ((int)ad <= tol) {
 		return 0;
 	}
-	E3D_LogVerbose(g_FileLog, "WARN: FileTime changed: %s (Saved:%d / Now:%d / Diff:%d)", name, saved, now, diff);
+	E3D_LogVerbose((&g_FileLog), "WARN: FileTime changed: %s (Saved:%d / Now:%d / Diff:%d)", name, saved, now, diff);
 	return 1;
 }
 
@@ -298,7 +298,7 @@ char *String_Unquote(char *dest, const char *src) {
 	return dest;
 }
 
-#define g_RSqrtTable (GAME_ARRAY(const byte, g_RSqrtTable))
+extern byte g_RSqrtTable[144];
 extern char g_ExePath[264];	/* GetModuleFileName at the start, 0x103 */
 
 char *E3D_GetExePath(void) {

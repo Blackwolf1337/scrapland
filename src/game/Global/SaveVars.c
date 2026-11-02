@@ -9,6 +9,10 @@
 #include "scrap/hashtable.h"
 #include "scrap/scrap.h"
 
+extern cGVar GVar_LastSaveGameName;
+extern cGVarFunction GVar_OnCrazyDealFinished;
+extern cGVarFunction GVar_OnCrazyDealTarget;
+
 void App_GetConfigDir(char *buf, int size);
 
 /* an entry of the save list of SaveGames_GetList */
@@ -25,10 +29,10 @@ SD_SIZE(cSaveGameInfo, 0x48);
 #define g_SaveVarTable (&GAME_GLOBAL(HashTable, g_SaveVarTable))	/* of cPtrItem, 457 slots */
 extern cSaveVar *g_SaveVars;
 extern int g_SaveVarCount;
-#define g_SaveDesc (((cString *)&GAME_GVAR(GVar_LastSaveGameName)->value))	/* the description of the save loaded last */
+#define g_SaveDesc (((cString *)&GVar_LastSaveGameName.value))	/* the description of the save loaded last */
 /* called when the number of finished crazy deals changes: one deal, and all three (with g_SuperDealAvaliable) */
-#define g_OnCrazyDeal (((cPy_Function *)&GAME_GVARFUNC(GVar_OnCrazyDealTarget)->func))
-#define g_OnAllCrazyDeals (((cPy_Function *)&GAME_GVARFUNC(GVar_OnCrazyDealFinished)->func))
+#define g_OnCrazyDeal (((cPy_Function *)&GVar_OnCrazyDealTarget.func))
+#define g_OnAllCrazyDeals (((cPy_Function *)&GVar_OnCrazyDealFinished.func))
 
 cSaveVar *cSaveVar_ctor(cSaveVar *self, const char *name, const char *value) {
 	cString_ctor(&self->name);

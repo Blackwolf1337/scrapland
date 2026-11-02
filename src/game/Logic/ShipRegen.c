@@ -14,6 +14,8 @@
 #include "scrap/weapons.h"
 #include "scrap/world.h"
 
+extern cGVarFunction GVar_LifeReachedCallback;
+
 extern cGVar GVar_RegenerationStartTime;
 #define g_RegenerationStartTime (GVar_RegenerationStartTime.value.f)
 extern cGVar GVar_RegenerationTimeRate;
@@ -26,7 +28,7 @@ extern cGVar GVar_RegenerationItem;
 #define g_RegenerationItem (GVar_RegenerationItem.value.s)
 extern cGVar GVar_LifeToLaunchCallback;
 #define g_LifeToLaunchCallback (GVar_LifeToLaunchCallback.value.i)
-#define g_LifeReachedCallback (((cPy_Function *)&GAME_GVARFUNC(GVar_LifeReachedCallback)->func))
+#define g_LifeReachedCallback (((cPy_Function *)&GVar_LifeReachedCallback.func))
 
 cShipRegen *ShipRegen_ctor(cShipRegen *self) {
 	self->unused_00 = 0;

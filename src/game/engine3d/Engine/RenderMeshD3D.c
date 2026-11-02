@@ -80,10 +80,10 @@ int RenderMeshD3D_Flush(void) {
 			RenderMeshEntry *e = g_MeshList[i];
 			if (g_MeshCache == 10) {
 				if (last == -1) {
-					E3D_LogVerbose(g_FileLog, "%s", e->mesh->node->scene->name);
+					E3D_LogVerbose((&g_FileLog), "%s", e->mesh->node->scene->name);
 				}
 				CMeshD3D *m = e->mesh;
-				E3D_LogDebug(g_FileLog, " %s  [%d (%d)] skin:%d [%s]", m->node->name, e->list, last, m->pSkin != NULL,
+				E3D_LogDebug((&g_FileLog), " %s  [%d (%d)] skin:%d [%s]", m->node->name, e->list, last, m->pSkin != NULL,
 					m->mat->Name);
 			}
 			if (e->list != last) {
@@ -136,7 +136,7 @@ int RenderMeshD3D_AddTransp(CMeshD3D *m, const matrix_t *world, byte cont, CRend
 		e = Table_GetN(&g_TabTransp, (uint32_t)g_UsedTransp, sizeof(RenderTranspEntry));
 		e->world = w;
 		int group = g_TranspGroup;
-		if (world == g_MatIdentity) {
+		if (world == (&g_MatIdentity)) {
 			group = 0;
 		}
 		e = Table_GetN(&g_TabTransp, (uint32_t)g_UsedTransp, sizeof(RenderTranspEntry));

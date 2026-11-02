@@ -10,7 +10,9 @@
 #include "scrap/render.h"
 #include "scrap/misc.h"
 
-#define g_GlowMap (*(int *)&GAME_GVAR(g_GvGlowMap)->value)		/* R_GlowMap */
+extern cGVar g_GvGlowMap;
+
+#define g_GlowMap (*(int *)&g_GvGlowMap.value)		/* R_GlowMap */
 extern uint32_t g_ShaderModeMask;
 #define SHADER_NAME 0x40
 
@@ -27,7 +29,7 @@ void CMatId_dtor(CMatId *self) {
 byte CMatId_Check(CMatId *self, CMaterial *mat) {
 	if (self->id == -1) {
 		CHECK(!mat->map[MAP_DIFFUSE]);
-		E3D_LogWhite(g_FileLog, "GetShaderMode: Deferred update: %s", mat->Name);
+		E3D_LogWhite((&g_FileLog), "GetShaderMode: Deferred update: %s", mat->Name);
 		CMatId_Register(self, mat);
 		return 0;
 	}
@@ -83,7 +85,7 @@ void CMatId_Register(CMatId *self, CMaterial *mat) {
 		alpha = 0;
 	}
 	if (!(mat->params.attrib & MAT_SHADER) && (glow || bump) && env && !mask) {
-		E3D_LogInfo(g_FileLog, "Invalid shader for material: %s", mat->Name);
+		E3D_LogInfo((&g_FileLog), "Invalid shader for material: %s", mat->Name);
 	}
 	CHECK(mode < MAX_SHADER_TAB);
 	self->alphaTest = (byte)g_ShaderTab[mode].flags;
@@ -98,6 +100,6 @@ void RenderGamma_LogShaderMask(void) {
 
 	if (g_ShaderModeMask != m) {
 		g_ShaderModeMask = m;
-		E3D_LogWhite(g_FileLog, "ShaderModeMask: %04X", m);
+		E3D_LogWhite((&g_FileLog), "ShaderModeMask: %04X", m);
 	}
 }

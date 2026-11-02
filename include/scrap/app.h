@@ -12,6 +12,13 @@
 #include "scrap/pyfunction.h"
 #include "scrap/scrap.h"
 
+extern cGVarFunction GVar_AfterDrawCallback;
+extern cGVar GVar_DefaultServerPort;
+extern cGVar GVar_LoadMsgString;
+extern cGVar GVar_ReRunAtExitParams;
+extern cGVar GVar_ServerMapList;
+extern cGVar GVar_iMap;
+
 extern const CAppVtbl CApp_vftable;
 #define g_CAppVftable (&CApp_vftable)
 extern const CAppVtbl CWinApp_vftable;
@@ -20,10 +27,10 @@ extern const CAppVtbl CWinApp_vftable;
 /* engine variables (Gvars) */
 extern cGVar GVar_iLoadMsgString;
 #define g_LoadMsgIndex (GVar_iLoadMsgString.value.i)		/* iLoadMsgString: the next loading tip */
-#define g_iMap (((cString *)&GAME_GVAR(GVar_iMap)->value))		/* iMap: the first level */
-#define g_iMapDefault (((cString *)&GAME_GVAR(GVar_iMap)->def))	/* its default value */
-#define g_ReRunAtExitParams (((cString *)&GAME_GVAR(GVar_ReRunAtExitParams)->value))	/* RunApp of the game with them at the end */
-#define g_AfterDrawCallback (((cPy_Function *)&GAME_GVARFUNC(GVar_AfterDrawCallback)->func))
+#define g_iMap (((cString *)&GVar_iMap.value))		/* iMap: the first level */
+#define g_iMapDefault (((cString *)&GVar_iMap.def))	/* its default value */
+#define g_ReRunAtExitParams (((cString *)&GVar_ReRunAtExitParams.value))	/* RunApp of the game with them at the end */
+#define g_AfterDrawCallback (((cPy_Function *)&GVar_AfterDrawCallback.func))
 extern cGVar GVar_DrawNextFrame;
 #define g_DrawNextFrame (GVar_DrawNextFrame.value.i)
 extern cGVar GVar_DefaultMaxPlayersOnServer;
@@ -37,19 +44,19 @@ extern cGVar GVar_ForceReload;
 #define g_ForceReload (GVar_ForceReload.value.i)		/* reload the floor of the same level */
 extern cGVar GVar_ModPathName;
 #define g_ModPathName (GVar_ModPathName.value.s)	/* a directory of packs after "mods" */
-#define g_LoadMsgString (((cString *)&GAME_GVAR(GVar_LoadMsgString)->value))	/* the loading tip */
-#define g_DefaultServerPort (*(uint16_t *)&GAME_GVAR(GVar_DefaultServerPort)->value)
+#define g_LoadMsgString (((cString *)&GVar_LoadMsgString.value))	/* the loading tip */
+#define g_DefaultServerPort (*(uint16_t *)&GVar_DefaultServerPort.value)
 extern cGVar GVar_InactiveBackgroundApp;
 #define g_InactiveBackgroundApp (GVar_InactiveBackgroundApp.value.i)	/* the frames go on without the focus */
-#define g_ServerMapList (((cString *)&GAME_GVAR(GVar_ServerMapList)->value))
-#define g_PlayerName (((cString *)&GAME_GVAR(GVar_PlayerName)->value))
+#define g_ServerMapList (((cString *)&GVar_ServerMapList.value))
+#define g_PlayerName (((cString *)&GVar_PlayerName.value))
 extern cGVar GVar_SoundInit;
 #define g_SoundInit (GVar_SoundInit.value.i)
 extern cGVar GVar_LoadTextures;
 #define g_LoadTextures (GVar_LoadTextures.value.i)
-#define g_GVarMasterServerAddress (GAME_ARRAY(cGVar, g_GVarMasterServerAddress))
-#define g_GVarMasterServerPort (GAME_ARRAY(cGVar, g_GVarMasterServerPort))
-#define g_LangName (((cString *)&GAME_GVAR(GVar_SelectedLanguage)->value))		/* the language asked for */
+extern cGVar g_GVarMasterServerAddress;
+extern cGVar g_GVarMasterServerPort;
+#define g_LangName (((cString *)&GVar_SelectedLanguage.value))		/* the language asked for */
 extern cGVar GVar_SelectedLanguage;
 #define g_LangDefault (GVar_SelectedLanguage.def.s)	/* the language when that file is missing */
 extern cGVar GVar_LogFile;

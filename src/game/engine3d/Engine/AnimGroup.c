@@ -247,7 +247,7 @@ CAnimGroup *AnimGroup_New(CScene *scene, CScene *anim, const char *name) {
 	char sect[64];
 	Bprintf(sect, sizeof(sect), "Morphing:%s", g->name);
 	if (!CIniFile_FindSection(scene->ini, sect, 1)) {
-		E3D_LogBlue(g_FileLog, "Morphing sequence data not found: [%s]", sect);
+		E3D_LogBlue((&g_FileLog), "Morphing sequence data not found: [%s]", sect);
 	}
 	for (int i = 0; i < MAX_MORPHDATA; i++) {
 		if (MorphData_Read(scene->ini, sect, i, &g->morph[i], targets) && i > 0 && !Morph_Tag(&g->morph[i])) {

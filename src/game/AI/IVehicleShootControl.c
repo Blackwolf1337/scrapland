@@ -18,8 +18,10 @@
 #include "scrap/weaps2.h"
 #include "scrap/world.h"
 
+extern cGVar GVar_ShowVehWeapAI;
+
 /* the engine variables */
-#define g_ShowVehWeapAI (&(*(cString *)&GAME_GVAR(GVar_ShowVehWeapAI)->value))
+#define g_ShowVehWeapAI (&(*(cString *)&GVar_ShowVehWeapAI.value))
 extern cGVar GVar_TimeShootAI;
 #define g_TimeShootAI (GVar_TimeShootAI.value.f)
 extern cGVar GVar_TimeShootCMAI;

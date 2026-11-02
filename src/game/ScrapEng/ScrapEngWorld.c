@@ -383,7 +383,7 @@ void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut) {
 		Con_Verbosef("WARN: SplashScreen not found: %s\n", path);
 		return;
 	}
-	E3D_LogPrint(g_FileLog, "SplashScreen: %s", path);
+	E3D_LogPrint((&g_FileLog), "SplashScreen: %s", path);
 	tex = NULL;
 	FileIO_ReadAll(path, &data, &size);
 	D3DX_CreateTextureFromFileInMemoryEx(g_Engine->device, data, size, 0, 0, 1, 0, 0, D3DPOOL_MANAGED, 1, 1, 0, NULL, NULL,

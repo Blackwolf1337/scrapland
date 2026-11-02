@@ -21,12 +21,25 @@
 #include "scrap/pyfunction.h"
 #include "scrap/withlifeentity.h"
 
+extern cGVarFunction GVar_AlarmCallback;
+extern cGVarFunction GVar_CreateGear;
+extern cGVarFunction GVar_CreatePolice;
+extern cGVarFunction GVar_MessengerDropCallback;
+extern cGVarFunction GVar_OnDefStateCallback;
+extern cGVarFunction GVar_OnDominEnemyDeath;
+extern cGVarFunction GVar_OnDominFriendDeath;
+extern cGVarFunction GVar_OnMoneyReachCallback;
+extern cGVarFunction GVar_OnTaunt;
+extern cGVar GVar_PoliceTauntRace;
+extern cGVarFunction GVar_PoliceWaveEliminated;
+extern cGVar GVar_UsrDefChar;
+
 #define LOGIC_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
 
 /* ---- AlarmStatus.cpp: the cAlarm of include/scrap/alarm.h ---- */
 
 /* engine variables (Gvars) */
-#define g_AlarmCallback (((cPy_Function *)&GAME_GVARFUNC(GVar_AlarmCallback)->func))	/* AlarmCallback (on) */
+#define g_AlarmCallback (((cPy_Function *)&GVar_AlarmCallback.func))	/* AlarmCallback (on) */
 extern cGVar GVar_AlarmFallDelta;
 #define g_AlarmFallDelta (GVar_AlarmFallDelta.value.f)
 extern cGVar GVar_AlarmFallMission;
@@ -37,8 +50,8 @@ extern cGVar GVar_EasyAlarmFallFactor;
 #define g_EasyAlarmFallFactor (GVar_EasyAlarmFallFactor.value.f)
 extern cGVar GVar_GuaranteedChars;
 #define g_GuaranteedChars (GVar_GuaranteedChars.value.s)		/* ",type1,type2," */
-#define g_PoliceTauntRace (((cString *)&GAME_GVAR(GVar_PoliceTauntRace)->value))	/* the default at +4 */
-#define g_UsrDefChar (((cString *)&GAME_GVAR(GVar_UsrDefChar)->value))
+#define g_PoliceTauntRace (((cString *)&GVar_PoliceTauntRace.value))	/* the default at +4 */
+#define g_UsrDefChar (((cString *)&GVar_UsrDefChar.value))
 extern cGVar GVar_GenCharAttackActive;
 #define g_GenCharAttackActive (GVar_GenCharAttackActive.value.i)
 
@@ -638,8 +651,8 @@ extern const cDominationLogicVtbl cDominationFriendsLogic_vftable;
 /* the engine variable LeaderName (the leader ship of the enemies) and the death callbacks of the sides */
 extern cGVar GVar_LeaderName;
 #define g_DominLeaderName (GVar_LeaderName.value.s)
-#define g_OnDominEnemyDeath (((cPy_Function *)&GAME_GVARFUNC(GVar_OnDominEnemyDeath)->func))
-#define g_OnDominFriendDeath (((cPy_Function *)&GAME_GVARFUNC(GVar_OnDominFriendDeath)->func))
+#define g_OnDominEnemyDeath (((cPy_Function *)&GVar_OnDominEnemyDeath.func))
+#define g_OnDominFriendDeath (((cPy_Function *)&GVar_OnDominFriendDeath.func))
 
 void Domination_AddZone(cEntity *zone);
 void Domination_SetZoneState(int zone, int state);
@@ -688,7 +701,7 @@ void cEnemies_Relax(cEnemies *self);
 
 extern cGVar GVar_DoResetOutPolice;
 #define g_ExtPoliceChasing (GVar_DoResetOutPolice.value.i)		/* the cars were sent after the player */
-#define g_PoliceWaveEliminated (((cPy_Function *)&GAME_GVARFUNC(GVar_PoliceWaveEliminated)->func))	/* no police car left */
+#define g_PoliceWaveEliminated (((cPy_Function *)&GVar_PoliceWaveEliminated.func))	/* no police car left */
 extern cGVar GVar_TrafficFightingMaxDist;
 #define g_TrafficFightingMaxDist (GVar_TrafficFightingMaxDist.value.f)
 
@@ -825,7 +838,7 @@ extern cGVar GVar_GenCharMaxSpecialActionTime;
 #define g_GenCharMaxSpecialActionTime (GVar_GenCharMaxSpecialActionTime.value.f)
 extern cGVar GVar_GenCharAlertSpeed;
 #define g_GenCharAlertSpeed (GVar_GenCharAlertSpeed.value.f)
-#define g_OnDefStateCallback (((cPy_Function *)&GAME_GVARFUNC(GVar_OnDefStateCallback)->func))	/* (name) after RestartState */
+#define g_OnDefStateCallback (((cPy_Function *)&GVar_OnDefStateCallback.func))	/* (name) after RestartState */
 extern cGVar GVar_GenCharAcuseAgainTime;
 #define g_GenCharAcuseAgainTime (GVar_GenCharAcuseAgainTime.value.f)
 extern cGVar GVar_GenCharRobberyDetection;
@@ -897,8 +910,8 @@ extern const cInfItemVtbl cInfItem_vftable;
 cInfItem *cInfItem_ctor(cInfItem *self);
 void cInfItem_dtor(cInfItem *self);
 
-#define g_CreatePolice (((cPy_Function *)&GAME_GVARFUNC(GVar_CreatePolice)->func))	/* (name, x, y, z) */
-#define g_CreateGear (((cPy_Function *)&GAME_GVARFUNC(GVar_CreateGear)->func))	/* (name, x, y, z) */
+#define g_CreatePolice (((cPy_Function *)&GVar_CreatePolice.func))	/* (name, x, y, z) */
+#define g_CreateGear (((cPy_Function *)&GVar_CreateGear.func))	/* (name, x, y, z) */
 extern cGVar GVar_PoliceLogicBelligerant;
 #define g_PoliceLogicBelligerant (GVar_PoliceLogicBelligerant.value.i)
 extern cGVar GVar_SentinelNextGotoTime;
@@ -1093,7 +1106,7 @@ extern cGVar GVar_MessengerTubeState;
 extern cGVar GVar_MessengerDropPrice;
 #define g_MessengerDropPrice (GVar_MessengerDropPrice.value.i)
 #define g_MessengerDropPriceDef (GVar_MessengerDropPrice.def.i)
-#define g_MessengerDropCallback (((cPy_Function *)&GAME_GVARFUNC(GVar_MessengerDropCallback)->func))
+#define g_MessengerDropCallback (((cPy_Function *)&GVar_MessengerDropCallback.func))
 extern cGVar GVar_MessengerDataPackMissionArrow;
 #define g_MessengerDataPackMissionArrow (GVar_MessengerDataPackMissionArrow.value.i)
 #define g_MessengerDataPackMissionArrowDef (GVar_MessengerDataPackMissionArrow.def.i)
@@ -1118,7 +1131,7 @@ SD_OFFSET(cStrMoney, money, 0x18);
 /* the digits from the first one not "0", "0" for none */
 const char *cStrMoney_GetStr(cStrMoney *self);
 
-#define g_OnMoneyReachCallback (((cPy_Function *)&GAME_GVARFUNC(GVar_OnMoneyReachCallback)->func))
+#define g_OnMoneyReachCallback (((cPy_Function *)&GVar_OnMoneyReachCallback.func))
 extern cGVar GVar_OnMoneyReachValue;
 #define g_OnMoneyReachValue (GVar_OnMoneyReachValue.value.i)
 extern cGVar GVar_StrMoneyUpdate;
@@ -1157,7 +1170,7 @@ extern cGVar GVar_NurseAlertSpeed;
 #define g_LogicSphereFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0))
 
 /* Taunts (between NurseLogic.cpp and Parking.cpp): OnTaunt(ship, race, kind) */
-#define g_OnTaunt (((cPy_Function *)&GAME_GVARFUNC(GVar_OnTaunt)->func))
+#define g_OnTaunt (((cPy_Function *)&GVar_OnTaunt.func))
 extern cGVar GVar_PhoneCabWarningDist;
 #define g_PhoneCabWarningDist (GVar_PhoneCabWarningDist.value.f)
 extern cGVar GVar_TimeBetweeenTaunts2;

@@ -101,7 +101,7 @@ static inline const cMissileEntityVtbl *Missile_Vtbl(cMissileEntity *e) {
 SD_SIZE(cMissileEntity, 0x7e8);
 
 /* the WithLife entities the missiles touched, by name (4 of 0x80) */
-#define g_MissileHits (GAME_ARRAY(char[0x80], g_MissileHits))
+extern char g_MissileHits[4][0x80];
 
 /* the base class (src/game/Entities/WithLifeEntity.c) */
 void cWithLifeEntity_dtor(cEntity *self);

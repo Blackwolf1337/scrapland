@@ -33,7 +33,7 @@ SD_SIZE(cMemPool, 0x14);
 extern cMemPool *g_PyPool;
 extern cMemPool *g_MemPools;
 #define g_PyPoolValues (&GAME_GLOBAL_IN(uint32_t, g_PyPoolValues, 0))	/* MEMPOOL_CLASSES block counts */
-#define g_PyMemStats (GAME_ARRAY(cMemStats, g_PyMemStats))	/* the context of the interpreter's allocations */
+extern cMemStats g_PyMemStats;	/* the context of the interpreter's allocations */
 
 cMemPool *cMemPool_ctor(cMemPool *self, const char *name, const uint32_t *values);
 void cMemPool_dtor(cMemPool *self);

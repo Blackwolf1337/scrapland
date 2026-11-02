@@ -334,7 +334,7 @@ static CFileIO *M3D_CacheOpen(const char *path, const char *name, const char *id
 		operator_delete_sized(f, sizeof(CFileIO));
 		return NULL;
 	}
-	E3D_LogDebug(g_FileLog, id[0] == 'C' ? "CM3: %s" : "SM3: %s", path);
+	E3D_LogDebug((&g_FileLog), id[0] == 'C' ? "CM3: %s" : "SM3: %s", path);
 	if (CFileIO_BeginBlock(f, id)) {
 		CheckFailed(id[0] == 'C' ? "f->leer_ini_bloque( \"CM3\" ) == 0" : "f->leer_ini_bloque( \"SM3\" ) == 0",
 			__FILE__, __TIMESTAMP__, __LINE__);
@@ -409,7 +409,7 @@ CScene *SM3_Load(const char *name) {
 /* the cache path of esc written: the header, then the scene */
 static void M3D_CacheWrite(const char *path, CScene *scn, const char *id, const char *name, const char *other,
 	byte bAnim) {
-	E3D_LogVerbose(g_FileLog, id[0] == 'C' ? "Save_CM3: %s" : "Save_SM3: %s", path);
+	E3D_LogVerbose((&g_FileLog), id[0] == 'C' ? "Save_CM3: %s" : "Save_SM3: %s", path);
 	CFileIO *f = operator_new(sizeof(CFileIO));
 	f = f ? CFileIO_ctor(f, path, "wb") : NULL;
 	if (!f->error) {
@@ -466,7 +466,7 @@ void M3D_SetOk(byte ok) {
 	}
 	if (g_M3DOk) {
 		g_M3DOk = 0;
-		E3D_LogVerbose(g_FileLog, "ERROR: lee_M3D(): '%s'", g_M3DName);
+		E3D_LogVerbose((&g_FileLog), "ERROR: lee_M3D(): '%s'", g_M3DName);
 	}
 }
 
@@ -477,7 +477,7 @@ void Scene_CheckDuplicates(CScene *scn, CNode3D *node) {
 		if (n2 == node) {
 			return;
 		}
-		E3D_LogVerbose(g_FileLog, "Duplicated node: '%s' [%s] (%d,%d) [%s] [%s]", node->name, scn->name, node->index,
+		E3D_LogVerbose((&g_FileLog), "Duplicated node: '%s' [%s] (%d,%d) [%s] [%s]", node->name, scn->name, node->index,
 			n2->index, node->parent ? node->parent->name : "(null)", n2->parent ? n2->parent->name : "(null)");
 		if (CNode3D_Class(node) || node->flags & NODE_JOIN2 || CNode3D_Class(n2) || n2->flags & NODE_JOIN2) {
 			Con_Warnf("Duplicated node: %s\n", node->name);
@@ -561,7 +561,7 @@ void Scene_Particles(CScene *scn) {
 		CIniFile *ini = operator_new(sizeof(CIniFile));
 		scn->userProp = ini ? CIniFile_ctor(ini) : NULL;
 		if (!CIniFile_Load(scn->userProp, scn->name, "model_particles.ini", 0)) {
-			E3D_LogDebug(g_FileLog, "INI: %s: %s", scn->name, "model_particles.ini");
+			E3D_LogDebug((&g_FileLog), "INI: %s: %s", scn->name, "model_particles.ini");
 		} else if (scn->userProp) {
 			CIniFile_dtor(scn->userProp);
 			operator_delete_sized(scn->userProp, sizeof(CIniFile));
@@ -589,7 +589,7 @@ void Scene_Particles(CScene *scn) {
 		}
 		CNode3D *n2 = CScene_FindNode(g_SceneLODParent, n->name);
 		if (!n2) {
-			E3D_LogBlue(g_FileLog, "ERROR: LOD particles node not found in main LOD: %s", n->name);
+			E3D_LogBlue((&g_FileLog), "ERROR: LOD particles node not found in main LOD: %s", n->name);
 			continue;
 		}
 		if (CNode3D_Class(n2) != CLASS_OBJ3D_PARTICLESYSTEM) {
@@ -605,7 +605,7 @@ void Scene_Particles(CScene *scn) {
 }
 
 void Scene_Clear(CScene *scn, const char *pass) {
-	E3D_LogWhite(g_FileLog, "cleaning nodes (pass %s):", pass);
+	E3D_LogWhite((&g_FileLog), "cleaning nodes (pass %s):", pass);
 	CScene_DeleteEmpty(scn, 0, 0, 1);
 	if (g_ShowNodesTree && !g_SceneAnimParent) {
 		Scene_ShowTree(scn, 0, 0);
@@ -797,7 +797,7 @@ void M3D_ShareMats(CMatList *list) {
 		CMaterial *mat = CMatList_Find(list, g_M3DMat[i]);
 		CHECK(!mat->sub);
 		if (g_M3DMat[i] != mat) {
-			E3D_LogDebug(g_FileLog, "WARN: Duplicated material: [%s]->[%s] [%s]", g_M3DMat[i]->Name, mat->Name,
+			E3D_LogDebug((&g_FileLog), "WARN: Duplicated material: [%s]->[%s] [%s]", g_M3DMat[i]->Name, mat->Name,
 				CMaterial_GetMapName(mat, 0));
 		}
 		g_M3DMat[i] = mat;
@@ -1120,7 +1120,7 @@ void Scene_FlagNames(CScene *scn) {
 		if (!g_SceneLODParent) {
 			n->obj58 = NodeFX_New(type, n);
 		} else {
-			E3D_LogWhite(g_FileLog, "INFO: LOD Node effect skipped in node: %s", n->name);
+			E3D_LogWhite((&g_FileLog), "INFO: LOD Node effect skipped in node: %s", n->name);
 		}
 	}
 }
@@ -1135,19 +1135,19 @@ void Scene_FlagsIni(CScene *scn) {
 			continue;
 		}
 		if (CIniFile_GetInt(ini, "SlerpNodes", n->name, 1) == 2) {
-			E3D_LogInfo(g_FileLog, "INFO: slerp2 node: %s", n->name);
+			E3D_LogInfo((&g_FileLog), "INFO: slerp2 node: %s", n->name);
 			n->flags |= NODE_SLERP2;
 		}
 		if (CIniFile_GetInt(ini, "MorphNodes", n->name, 0) && !g_SceneLODParent) {
-			E3D_LogInfo(g_FileLog, "INFO: morph node: %s", n->name);
+			E3D_LogInfo((&g_FileLog), "INFO: morph node: %s", n->name);
 			n->flags |= 0x800000;
 		}
 		if (CIniFile_GetInt(ini, "HideNodes", n->name, 0)) {
-			E3D_LogInfo(g_FileLog, "INFO: hidding node: %s", n->name);
+			E3D_LogInfo((&g_FileLog), "INFO: hidding node: %s", n->name);
 			n->flags |= NODE_DELETE;
 		}
 		if (CIniFile_GetInt(ini, "UnhideNodes", n->name, 0)) {
-			E3D_LogInfo(g_FileLog, "INFO: unhidding node: %s", n->name);
+			E3D_LogInfo((&g_FileLog), "INFO: unhidding node: %s", n->name);
 			n->flags &= ~NODE_DELETE;
 		}
 	}
@@ -1245,7 +1245,7 @@ void Scene_UsedMats(CScene *scn) {
 		CMaterial *mat = g_M3DMat[i];
 		if (!g_M3DMatUsado[i]) {
 			const char *type = mat->params.matClass == 1 ? "multimat" : "material";
-			E3D_LogDebug(g_FileLog, "WARN: Unused %s: [%s] [%s]", type, mat->Name, CMaterial_GetMapName(mat, 0));
+			E3D_LogDebug((&g_FileLog), "WARN: Unused %s: [%s] [%s]", type, mat->Name, CMaterial_GetMapName(mat, 0));
 			continue;
 		}
 		mat = CMatList_Extract(g_M3DLMat, mat, 1);
@@ -1255,13 +1255,13 @@ void Scene_UsedMats(CScene *scn) {
 		CHECK(!mat->sub);
 		CHECK(included < M3D_MAX_MAT_SCENE);
 		mat->params.attrib |= MAT_NOSHARE;
-		CMatList_Add(g_MatList, mat);
+		CMatList_Add((&g_MatList), mat);
 		TABLE_CHECK(mats->p, included, mats->n);
 		((CMaterial **)mats->p)[included] = mat;
 		included++;
 	}
 	if (g_M3DLMat) {
-		E3D_LogWhite(g_FileLog, "Scene materials: %d included, %d deleted", included, CMatList_Count(g_M3DLMat, 1));
+		E3D_LogWhite((&g_FileLog), "Scene materials: %d included, %d deleted", included, CMatList_Count(g_M3DLMat, 1));
 		if (g_M3DLMat) {
 			g_M3DLMat->vftable->Delete(g_M3DLMat, 1);
 			g_M3DLMat = NULL;
@@ -1315,7 +1315,7 @@ void M3D_ReadCamera(CNode3D *node, byte anim, int frame) {
 	cam->rangeFar = M3D_ReadFloat("RangoLejos:");
 	M3D_ReadFloat("DistObjetivo:");
 	if ((double)(cam->zFar / cam->zNear) > 1000000.0) {
-		E3D_LogDebug(g_FileLog, "WARN: Invalid camera clipping range: %s", node->name);
+		E3D_LogDebug((&g_FileLog), "WARN: Invalid camera clipping range: %s", node->name);
 		cam->zNear = 1.0f;
 		cam->zFar = 100000.0f;
 	}
@@ -1421,7 +1421,7 @@ void M3D_ReadPortal(CNode3D *node, byte anim) {
 	String_Set(&M3D_NodeDat(node)->side2, g_M3DString);
 	if (0.0f >= p->width || 0.0f >= p->height) {
 		M3D_SetOk(0);
-		E3D_LogBlue(g_FileLog, "  WARN: Portal: '%s'  Width: %f  Height: %f", node->name, (double)p->width,
+		E3D_LogBlue((&g_FileLog), "  WARN: Portal: '%s'  Width: %f  Height: %f", node->name, (double)p->width,
 			(double)p->height);
 	}
 }
@@ -1534,11 +1534,11 @@ void Scene_CollapseBip(CScene *scn) {
 		if (!n2) {
 			continue;
 		}
-		E3D_LogInfo(g_FileLog, "BIP: Colapsed node: %s -> %s [f:%08X]", n2->name, n->name, n2->flags);
+		E3D_LogInfo((&g_FileLog), "BIP: Colapsed node: %s -> %s [f:%08X]", n2->name, n->name, n2->flags);
 		CHECK(!(n->flags & 0xc30000));
 		CHECK(!(n2->flags & 0xc30000));
 		if (n2->flags & 0xfffffe8b) {
-			E3D_LogBlue(g_FileLog, "WARN: Colapsed node: %s [f:%08X]", n2->name, n2->flags);
+			E3D_LogBlue((&g_FileLog), "WARN: Colapsed node: %s [f:%08X]", n2->name, n2->flags);
 		}
 		CNode3D_SetObj3D(n, n2->obj3D);
 		n->flags &= 0xfffdff77;
@@ -1660,12 +1660,12 @@ void Scene_NodeTable(CScene *scn) {
 		if (g_OptimizeNodes & 4) {
 			if (v == 0) {
 				mask = 0;
-				E3D_LogWhite(g_FileLog, "AniMask: IniValue %d: %s (node animation discarded)", 0, n->name);
+				E3D_LogWhite((&g_FileLog), "AniMask: IniValue %d: %s (node animation discarded)", 0, n->name);
 			} else if (v > 0) {
-				E3D_LogWhite(g_FileLog, "AniMask: IniValue %d: %s (node animation NOT discarded)", v, n->name);
+				E3D_LogWhite((&g_FileLog), "AniMask: IniValue %d: %s (node animation NOT discarded)", v, n->name);
 			} else if ((n->flags & 0x600000) == 0x600000) {
 				mask = 0;
-				E3D_LogInfo(g_FileLog, "AniMask: BIPED+NO_TABNODOR node: %s (node animation discarded)", n->name);
+				E3D_LogInfo((&g_FileLog), "AniMask: BIPED+NO_TABNODOR node: %s (node animation discarded)", n->name);
 			} else if (!(n->flags & NODE_BIP)) {
 				CHECK(CNode3D_Class(n) != CLASS_OBJ3D_MESHD3D);
 				if (CNode3D_Class(n) == CLASS_OBJ3D_TRIMESH) {
@@ -1677,11 +1677,11 @@ void Scene_NodeTable(CScene *scn) {
 								n->name, n->flags);
 							mask = 0xffffffff;
 						} else if (n->Refs - (n->prev != NULL) - (n->next != NULL)) {
-							E3D_LogInfo(g_FileLog, "AniMask: skinned mesh node: %s (ref-node animation NOT discarded)",
+							E3D_LogInfo((&g_FileLog), "AniMask: skinned mesh node: %s (ref-node animation NOT discarded)",
 								n->name);
 							mask = 0xffffffff;
 						} else {
-							E3D_LogWhite(g_FileLog, "AniMask: skinned mesh node: %s (node animation discarded)", n->name);
+							E3D_LogWhite((&g_FileLog), "AniMask: skinned mesh node: %s (node animation discarded)", n->name);
 						}
 					}
 				}
@@ -1693,7 +1693,7 @@ void Scene_NodeTable(CScene *scn) {
 }
 
 void Scene_SetupLOD(CScene *scn) {
-	E3D_LogWhite(g_FileLog, "LOD Model setup: %s", Path_FileName(scn->name));
+	E3D_LogWhite((&g_FileLog), "LOD Model setup: %s", Path_FileName(scn->name));
 	String_Set(&scn->mainLOD, g_SceneLODParent->name);
 	for (CNode3D *n = scn->Node3D; n; n = n->next) {
 		CNode3D *n2 = CScene_FindNode(g_SceneLODParent, n->name);
@@ -1712,7 +1712,7 @@ void Scene_SetupLOD(CScene *scn) {
 			CHECK(!(n->flags & 0x420000));
 			CHECK(!(n->parent->flags & 0x420000));
 			CHECK(!(n2->parent->flags & 0x420000));
-			E3D_LogWhite(g_FileLog, "LOD node XRef: %s [f:%08X] [c:%s]", n->name, n->flags,
+			E3D_LogWhite((&g_FileLog), "LOD node XRef: %s [f:%08X] [c:%s]", n->name, n->flags,
 				Obj3D_ClassName(CNode3D_Class(n)));
 		}
 		if (CNode3D_Class(n) && CNode3D_Class(n) != CLASS_OBJ3D_TRIMESH) {
@@ -1727,7 +1727,7 @@ void Scene_SetupLOD(CScene *scn) {
 		n->index = -1;
 		if (!n2) {
 			if (Wild_Match("*LOD[1-9]*", n->name)) {
-				E3D_LogInfo(g_FileLog, "WARN: LOD node not found in MainLOD [Node: %s]", n->name);
+				E3D_LogInfo((&g_FileLog), "WARN: LOD node not found in MainLOD [Node: %s]", n->name);
 			} else {
 				Con_Warnf("WARN: LOD node not found in MainLOD [Node: %s]\n", n->name);
 			}
@@ -1902,7 +1902,7 @@ void Scene_AnimParents(CScene *scn, CScene *staticScn) {
 			if (p) {
 				parent = p;
 			} else {
-				E3D_LogBlue(g_FileLog, "  Parent not found: '%s'  Node: '%s'  Parent: '%s'", n2->parent->name, n2->name,
+				E3D_LogBlue((&g_FileLog), "  Parent not found: '%s'  Node: '%s'  Parent: '%s'", n2->parent->name, n2->name,
 					parent ? parent->name : "(null)");
 			}
 		}
@@ -1938,7 +1938,7 @@ void Scene_Hierarchy(CScene *scn) {
 			}
 		}
 		if (pp != n->parent) {
-			E3D_LogInfo(g_FileLog, "HIERARCHY__: New parent for node: %s [new: %s] [prev: %s] [f:%08X]", n->name,
+			E3D_LogInfo((&g_FileLog), "HIERARCHY__: New parent for node: %s [new: %s] [prev: %s] [f:%08X]", n->name,
 				pp->name, n->parent->name, n->flags);
 			TABLE_CHECK(t.p, i, num);
 			((M3DNodeParent *)t.p)[i].parent = pp;
@@ -1951,7 +1951,7 @@ void Scene_Hierarchy(CScene *scn) {
 		for (CNode3D *a = p1->parent; a && a->index >= 0; a = a->parent) {
 			CNode3D *d = Node_FindDescendant(scn->Node3D, a);
 			if (d) {
-				E3D_LogInfo(g_FileLog, "HIERARCHY: (disabled): new parent for node: %s [new: %s] [prev: %s] [f:%08X]",
+				E3D_LogInfo((&g_FileLog), "HIERARCHY: (disabled): new parent for node: %s [new: %s] [prev: %s] [f:%08X]",
 					n->name, d->name, p1->name, n->flags);
 				break;
 			}
@@ -2007,7 +2007,7 @@ static void M3D_ReadPhysique(CNode3D *node, M3DNode *dat, int nVert) {
 			}
 			if (n >= SKIN_MAX_BONES) {
 				M3D_SetOk(0);
-				E3D_LogVerbose(g_FileLog, "  physique:  objeto: '%s'  vertice: %d  pesos: %d  peso: %f", node->name, i,
+				E3D_LogVerbose((&g_FileLog), "  physique:  objeto: '%s'  vertice: %d  pesos: %d  peso: %f", node->name, i,
 					bones, (double)weight);
 				CHECK(vskin->NumBones < SKIN_MAX_BONES);
 			}
@@ -2035,7 +2035,7 @@ static void M3D_ReadPhysique(CNode3D *node, M3DNode *dat, int nVert) {
 			deleted++;
 		}
 	}
-	E3D_LogWhite(g_FileLog, "  INFO: Physique:  vertices: %4d  pesos borrados: %4d / %-4d  objeto: '%s'", vertices,
+	E3D_LogWhite((&g_FileLog), "  INFO: Physique:  vertices: %4d  pesos borrados: %4d / %-4d  objeto: '%s'", vertices,
 		deleted, weights, node->name);
 }
 
@@ -2053,12 +2053,12 @@ static CMaterial *M3D_MatColorMesh(const vec3_t *c) {
 	*(uint32_t *)mat->params.specular = 0xffffff;
 	String_Printf(&mat->Name, "color_malla [%d,%d,%d]", mat->params.diffuse[0], mat->params.diffuse[1],
 		mat->params.diffuse[2]);
-	CMaterial *found = CMatList_Find(g_MatList, mat);
+	CMaterial *found = CMatList_Find((&g_MatList), mat);
 	if (found) {
 		mat->vftable->Delete(mat, 1);
 		return found;
 	}
-	CMatList_Add(g_MatList, mat);
+	CMatList_Add((&g_MatList), mat);
 	return mat;
 }
 
@@ -2102,14 +2102,14 @@ void M3D_ReadMesh(CNode3D *node, byte anim) {
 	M3D_ReadBool("DefMalla:");
 	if (!nVert || !nTri) {
 		M3D_SetOk(0);
-		E3D_LogVerbose(g_FileLog, "  objeto: '%s'  caras: %d  nVert: %d  nTVert: %d", node->name, nTri, nVert, nTVert);
+		E3D_LogVerbose((&g_FileLog), "  objeto: '%s'  caras: %d  nVert: %d  nTVert: %d", node->name, nTri, nVert, nTVert);
 	}
 	CTriMesh_SetNumVert(mesh, nVert, 0);
 	CTriMesh_SetNumTVert(mesh, nTVert, 0);
 	CTriMesh_SetNumTri(mesh, nTri, 0);
 	if (nTVert > nTri * 3 && nTVert > 5000) {
 		M3D_SetOk(0);
-		E3D_LogVerbose(g_FileLog, "  objeto: '%s'  caras: %d  nTVert: %d  (3*caras: %d)", node->name, nTri, nTVert,
+		E3D_LogVerbose((&g_FileLog), "  objeto: '%s'  caras: %d  nTVert: %d  (3*caras: %d)", node->name, nTri, nTVert,
 			nTri * 3);
 	}
 	M3D_ReadTransform("local_a_pivote", &mt);
@@ -2164,7 +2164,7 @@ void M3D_ReadMesh(CNode3D *node, byte anim) {
 	}
 	if (degen) {
 		M3D_SetOk(0);
-		E3D_LogVerbose(g_FileLog, "  caras degeneradas: %d  caras: %d  objeto: '%s'", degen, nTri, node->name);
+		E3D_LogVerbose((&g_FileLog), "  caras degeneradas: %d  caras: %d  objeto: '%s'", degen, nTri, node->name);
 	}
 	if (nTVert) {
 		float maxU = 0.0f, maxV = 0.0f;
@@ -2180,7 +2180,7 @@ void M3D_ReadMesh(CNode3D *node, byte anim) {
 		}
 		if ((maxU > 16.0f || maxV > 16.0f) && !(node->flags & 0x80)) {
 			M3D_SetOk(0);
-			E3D_LogVerbose(g_FileLog, "  WARN: coord. de textura: %f %f  objeto: '%s'", (double)maxU, (double)maxV,
+			E3D_LogVerbose((&g_FileLog), "  WARN: coord. de textura: %f %f  objeto: '%s'", (double)maxU, (double)maxV,
 				node->name);
 		}
 		for (int i = 0; i < nTri; i++) {
@@ -2492,7 +2492,7 @@ void M3D_ReadMaterial(CMatList *list, int iMat, int iSubmat) {
 		mat->params.transp = 1;
 	}
 	if (mat->params.transp && mat->params.reflection && mat->params.srcBlend == 5) {
-		E3D_LogVerbose(g_FileLog, "WARN: transparent environment mapped material without (+transp:premult)  [%s]",
+		E3D_LogVerbose((&g_FileLog), "WARN: transparent environment mapped material without (+transp:premult)  [%s]",
 			mat->Name);
 		mat->params.srcBlend = 2;
 		if (!(mat->params.attrib & MAT_SHADER)) {
@@ -2645,11 +2645,11 @@ static uint32_t M3D_ReadAnimNode(CScene *scn, CNode3D *node, M3DNode *dat, int k
 	}
 	if (!exported) {
 		mask = 0;
-		E3D_LogWhite(g_FileLog, "Animation node hidden: %s (node animation discarded)", node->name);
+		E3D_LogWhite((&g_FileLog), "Animation node hidden: %s (node animation discarded)", node->name);
 	} else if (mask && !bStatic && g_SceneAnimParent) {
 		m = CNode3D_Find(g_SceneAnimParent->Node3D, node->name, 1);
 		if (!m) {
-			E3D_LogWhite(g_FileLog, "Animation node not found in Model: %s (node animation discarded)", node->name);
+			E3D_LogWhite((&g_FileLog), "Animation node not found in Model: %s (node animation discarded)", node->name);
 			if (mask & ANIM_VIS) {
 				Con_Warnf("Visibility animation discarded: %s\n", node->name);
 			}
@@ -2658,7 +2658,7 @@ static uint32_t M3D_ReadAnimNode(CScene *scn, CNode3D *node, M3DNode *dat, int k
 			uint32_t v = ~(uint32_t)m->aniLocked & mask;
 
 			if (v != mask) {
-				E3D_LogWhite(g_FileLog, "Animation node masked: %s (node animation discarded)", node->name);
+				E3D_LogWhite((&g_FileLog), "Animation node masked: %s (node animation discarded)", node->name);
 			}
 			mask = v;
 		}
@@ -2671,7 +2671,7 @@ static uint32_t M3D_ReadAnimNode(CScene *scn, CNode3D *node, M3DNode *dat, int k
 		}
 		mask = 0;
 		CAnimNode_Init(dat->AnimNode, (uint32_t)g_M3DFrames, (uint32_t)g_M3DFirstFrame, 0);
-		E3D_LogWhite(g_FileLog, "Animation node for EVA mesh: %s (node animation discarded)", node->name);
+		E3D_LogWhite((&g_FileLog), "Animation node for EVA mesh: %s (node animation discarded)", node->name);
 		CHECK(g_SceneAnimParent);
 		CHECK(CNode3D_Find(g_SceneAnimParent->Node3D, node->name, 1));
 		M3D_ReadEVA(node, dat);
@@ -2913,7 +2913,7 @@ static CNode3D *M3D_ModelRoot(CScene *scn, const char *name2) {
 		if (strcmp(root->name, "DC_Root")) {
 			Con_Warnf("WARN: RootNode: %s\n", root->name);
 		}
-		E3D_LogWhite(g_FileLog, "RootNode: %s", root->name);
+		E3D_LogWhite((&g_FileLog), "RootNode: %s", root->name);
 		String_Set(&scn->node, root->name);
 		parent = CNode3D_FindPrev(root, "_raiz_escena");
 		CHECK(parent);
@@ -2950,7 +2950,7 @@ static void M3D_Targets(CScene *scn) {
 		t = CNode3D_Find(scn->Node3D, dat->target, 1);
 		CHECK(t);
 		if (CNode3D_Find(t, dat->target, 0)) {
-			E3D_LogBlue(g_FileLog, "ERROR: Duplicated target node: %s", t->name);
+			E3D_LogBlue((&g_FileLog), "ERROR: Duplicated target node: %s", t->name);
 		}
 		if (CNode3D_Class(n) == CLASS_OBJ3D_CAMERA) {
 			CCamera *cam = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_CAMERA);
@@ -2982,14 +2982,14 @@ static void M3D_OptimizeNodes(CScene *scn) {
 		}
 		if (n->obj3D) {
 			if ((n->flags & NODE_BIP) && !(n->flags & NODE_NO_RENDER)) {
-				E3D_LogBlue(g_FileLog, "WARN: BIP node with NO_RENDER not set: %s", n->name);
+				E3D_LogBlue((&g_FileLog), "WARN: BIP node with NO_RENDER not set: %s", n->name);
 			}
 			if (n->flags & NODE_NO_RENDER) {
 				if (n->flags & NODE_BIP) {
 					CHECK(CNode3D_Class(n) == CLASS_OBJ3D_TRIMESH);
 					CNode3D_FreeObj3D(n);
 				} else {
-					E3D_LogInfo(g_FileLog, "NOT deleted object from node: %s", n->name);
+					E3D_LogInfo((&g_FileLog), "NOT deleted object from node: %s", n->name);
 				}
 			}
 			if (n->obj3D) {
@@ -3003,10 +3003,10 @@ static void M3D_OptimizeNodes(CScene *scn) {
 			}
 			n->flags |= NODE_NO_TRANS_TAB;
 			if (!Node_IsOfGame(n)) {
-				E3D_LogInfo(g_FileLog, "NODO_NO_TRANS -> hidden: %s", n->name);
+				E3D_LogInfo((&g_FileLog), "NODO_NO_TRANS -> hidden: %s", n->name);
 				n->flags |= NODE_DELETE;
 			} else {
-				E3D_LogWhite(g_FileLog, "NODO_NO_TRANS: %s", n->name);
+				E3D_LogWhite((&g_FileLog), "NODO_NO_TRANS: %s", n->name);
 			}
 		}
 	}
@@ -3032,7 +3032,7 @@ static void M3D_OptimizeNodes(CScene *scn) {
 			CHECK(flags & NODE_NO_RENDER);
 			n->flags |= NODE_NO_TRANS_TAB;
 			change = 1;
-			E3D_LogInfo(g_FileLog, "NODO_NO_TRANS__%d -> hidden: %s", pass, n->name);
+			E3D_LogInfo((&g_FileLog), "NODO_NO_TRANS__%d -> hidden: %s", pass, n->name);
 			n->flags |= NODE_DELETE;
 		}
 		pass++;
@@ -3071,14 +3071,14 @@ CScene *Scene_Load(const char *name, int arg, const char *name2) {
 	if (g_SceneAnimParent && g_CM3UseScenes == 1 && (cm3 = CM3_Load(g_M3DName)) != NULL) {
 		return cm3;
 	}
-	E3D_LogDebug(g_FileLog, "M3D: %s", g_M3DName);
+	E3D_LogDebug((&g_FileLog), "M3D: %s", g_M3DName);
 	castShadows = 1;
 	rcvShadows = 1;
 	CHECK(!g_M3DFileINI);
 	p = operator_new(sizeof(CIniFile));
 	g_M3DFileINI = p ? CIniFile_ctor(p) : NULL;
 	if (!CIniFile_Load(g_M3DFileINI, g_M3DName, ".ini", 0)) {
-		E3D_LogDebug(g_FileLog, "INI: %s.ini", g_M3DBaseName);
+		E3D_LogDebug((&g_FileLog), "INI: %s.ini", g_M3DBaseName);
 		castShadows = CIniFile_GetBool(g_M3DFileINI, "Model", "CastShadows", 1);
 		rcvShadows = CIniFile_GetBool(g_M3DFileINI, "Model", "RcvShadows", 1);
 		CIniFile_GetText(g_M3DFileINI, "Model", "TexturePath", g_M3DTexturePath, MAX_FILEPATH, NULL);
@@ -3277,7 +3277,7 @@ CScene *Scene_Load(const char *name, int arg, const char *name2) {
 		operator_delete_sized(t, 6 * sizeof(M3DTable));
 		g_M3DSceneTables = NULL;
 	}
-	E3D_LogWhite(g_FileLog, "cleaning nodes (pass %s):", "3");
+	E3D_LogWhite((&g_FileLog), "cleaning nodes (pass %s):", "3");
 	CScene_DeleteEmpty(scn, 0, 0, 1);
 	if (g_ShowNodesTree && !g_SceneAnimParent) {
 		Scene_ShowTree(scn, NULL, 0);
@@ -3294,7 +3294,7 @@ CScene *Scene_Load(const char *name, int arg, const char *name2) {
 		Scene_CheckDuplicates(scn, node);
 	}
 	CScene_Join(scn, 0, "(+merge_nodes)");
-	E3D_LogWhite(g_FileLog, "cleaning nodes (pass %s):", "4");
+	E3D_LogWhite((&g_FileLog), "cleaning nodes (pass %s):", "4");
 	CScene_DeleteEmpty(scn, 0, 0, 1);
 	if (g_ShowNodesTree && !g_SceneAnimParent) {
 		Scene_ShowTree(scn, NULL, 0);
@@ -3307,7 +3307,7 @@ CScene *Scene_Load(const char *name, int arg, const char *name2) {
 	} else if (bAnim) {
 		CHECK(bStatic);
 		AnimGroup_MapNodes(scn, scn);
-		E3D_LogVerbose(g_FileLog, "INFO: Model with embedded animation: %s", scn->name);
+		E3D_LogVerbose((&g_FileLog), "INFO: Model with embedded animation: %s", scn->name);
 	}
 	Scene_NodeTable(scn);
 	if (g_SceneLODParent) {
@@ -3323,15 +3323,15 @@ CScene *Scene_Load(const char *name, int arg, const char *name2) {
 
 /* ---- the static initializers; name and description are the strings of the exe ---- */
 
-#define g_ShowNodesTreeVar (GAME_ARRAY(cGVar, g_ShowNodesTreeVar))
-#define g_UseWSMVar (GAME_ARRAY(cGVar, g_UseWSMVar))
+extern cGVar g_ShowNodesTreeVar;
+extern cGVar g_UseWSMVar;
 
 void ReadM3D_InitShowNodesTree(void) {
 	/* "ShowNodesTree", "Show nodes tree at model M3D loading time (0/1)" */
-	GVar_InitInt(g_ShowNodesTreeVar, "ShowNodesTree", 0, "Show nodes tree at model M3D loading time (0/1)", 0);
+	GVar_InitInt((&g_ShowNodesTreeVar), "ShowNodesTree", 0, "Show nodes tree at model M3D loading time (0/1)", 0);
 }
 
 void ReadM3D_InitUseWSM(void) {
 	/* "UseWSM", "Use ObjTMAfterWSM (0/1)" */
-	GVar_InitInt(g_UseWSMVar, "UseWSM", 0, "Use ObjTMAfterWSM (0/1)", 0);
+	GVar_InitInt((&g_UseWSMVar), "UseWSM", 0, "Use ObjTMAfterWSM (0/1)", 0);
 }

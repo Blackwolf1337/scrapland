@@ -19,12 +19,12 @@
 #define RGB 3
 
 typedef struct {
-	int version;			/* 1 RGBA (the header g_TXFCab), 2 RGB (g_TXFCab2) */
+	int version;			/* 1 RGBA (the header (&g_TXFCab)), 2 RGB ((&g_TXFCab2)) */
 	int ch;
 } txfKind_t;
 
 static TXF_header *TXF_Header(const txfKind_t *k) {
-	return k->version == 1 ? g_TXFCab : g_TXFCab2;
+	return k->version == 1 ? (&g_TXFCab) : (&g_TXFCab2);
 }
 
 static float *BmpFlt_Pixel(const CBmpFlt *b, uint32_t x, uint32_t y, int ch) {
@@ -69,7 +69,7 @@ static int TXF_LoadKind(const txfKind_t *k, const char *name, CBmpFlt *dest, voi
 	}
 fail:
 	crt_fclose(f);
-	E3D_LogBlue(g_FileLog, "LoadTXF: Read error: '%s' [%s]", name, Err_Str(*crt_errno()));
+	E3D_LogBlue((&g_FileLog), "LoadTXF: Read error: '%s' [%s]", name, Err_Str(*crt_errno()));
 	return -1;
 }
 
@@ -109,7 +109,7 @@ static int TXF_SaveKind(const txfKind_t *k, const char *name, const CBmpFlt *ori
 fail:
 	crt_fclose(f);
 log:
-	E3D_LogBlue(g_FileLog, "SaveTXF: Write error: '%s' [%s]", name, Err_Str(*crt_errno()));
+	E3D_LogBlue((&g_FileLog), "SaveTXF: Write error: '%s' [%s]", name, Err_Str(*crt_errno()));
 	return -1;
 }
 

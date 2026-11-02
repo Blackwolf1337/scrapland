@@ -110,7 +110,7 @@ void CApp_Nop(CApp *self) {
 
 /* vf00: the world and the subsystems of the level closed */
 void CApp_DoneGame(CApp *self) {
-	cGVar *port = g_GVarMasterServerPort, *addr = g_GVarMasterServerAddress;
+	cGVar *port = (&g_GVarMasterServerPort), *addr = (&g_GVarMasterServerAddress);
 
 	(void)self;
 	InputMaps_Clear();

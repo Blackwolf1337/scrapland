@@ -572,7 +572,7 @@ int g_XLoadIconFrame;
 float g_XLoadStart;
 float g_XLoadLastStep;
 byte g_XLoadOn;
-CWinApp *g_pApp;
+CApp *g_pApp;
 cGVar GVar_InactiveBackgroundApp;
 uint32_t g_TimeQPPause;
 uint32_t g_TimeMsPause;

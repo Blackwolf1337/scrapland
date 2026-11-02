@@ -274,7 +274,7 @@ byte SectorVis_Sphere(SectorVis *self, const vec3_t *pos, const vec3_t *center, 
 	float scr[2], w;
 
 	if (0.0f >= radius) {
-		E3D_LogVerbose(g_FileLog, "WARN: Portals_IsVisible: Invalid radius: %f [%s]", (double)radius, name);
+		E3D_LogVerbose((&g_FileLog), "WARN: Portals_IsVisible: Invalid radius: %f [%s]", (double)radius, name);
 	}
 	CHECK(radius > 0.0f);
 	if (!SectorVis_Update(self, pos, name)) {
@@ -502,13 +502,13 @@ void PaintZone_dtor(PaintZone *self) {
 }
 
 /* the static initializer (rva 0x05d6f0, the constructor inlined) and the atexit destructor of
- * g_PaintAll */
+ * (&g_PaintAll) */
 void GroundPortal_FiniPaintAll(void) {
-	PaintZone_dtor(g_PaintAll);
+	PaintZone_dtor((&g_PaintAll));
 }
 
 void GroundPortal_InitPaintAll(void) {
-	PaintZone_ctor(g_PaintAll);
+	PaintZone_ctor((&g_PaintAll));
 	crt_atexit(GroundPortal_FiniPaintAll);
 }
 
@@ -638,17 +638,17 @@ void Sectors_Create(CScene *scn) {
 	for (int i = 0; i < g_NumZones; i++) {
 		CZone *z = g_Zones[i];
 		CHECK(i == z->id);
-		E3D_LogDebug2(g_FileLog, "Sector: %s  Ident: %d", z->node->name, z->id);
+		E3D_LogDebug2((&g_FileLog), "Sector: %s  Ident: %d", z->node->name, z->id);
 		for (int k = 0; k < z->numNodes; k++) {
-			E3D_LogDebug2(g_FileLog, "  Node: %d  (%s)", k, z->nodes[k]->name);
+			E3D_LogDebug2((&g_FileLog), "  Node: %d  (%s)", k, z->nodes[k]->name);
 		}
 		for (int k = 0; k < z->numPortals; k++) {
 			CNode3D *s1 = ((CPortal *)Obj3D_Cast(z->portals[k]->obj3D, CLASS_OBJ3D_PORTAL))->zones[0];
 			CNode3D *s2 = ((CPortal *)Obj3D_Cast(z->portals[k]->obj3D, CLASS_OBJ3D_PORTAL))->zones[1];
-			E3D_LogDebug2(g_FileLog, "  Portal: %d  (%s)  Side1: '%s'  Side2: '%s'", k, z->portals[k]->name,
+			E3D_LogDebug2((&g_FileLog), "  Portal: %d  (%s)  Side1: '%s'  Side2: '%s'", k, z->portals[k]->name,
 				Node_NameOrNull(s1), Node_NameOrNull(s2));
 			if (!s1 || !s2) {
-				E3D_LogBlue(g_FileLog, "  WARN: Portal: %d  (%s)  Side1: '%s'  Side2: '%s'", k,
+				E3D_LogBlue((&g_FileLog), "  WARN: Portal: %d  (%s)  Side1: '%s'  Side2: '%s'", k,
 					z->portals[k]->name, Node_NameOrNull(s1), Node_NameOrNull(s2));
 			}
 		}

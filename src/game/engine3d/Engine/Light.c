@@ -17,6 +17,8 @@
 #include "scrap/groundportal.h"
 #include "scrap/utild3d.h"
 
+extern cGVar GVar_MonitorAmbient;
+
 extern const IObject3DVtbl CLight_vftable;
 #define CLUZ_VFTABLE (&CLight_vftable)
 #define LIGHT_INV255 (1.0f / 255.0f)
@@ -40,7 +42,7 @@ extern cGVar GVar_R_SpotlightClamp;
 #define g_SpotlightClamp (GVar_R_SpotlightClamp.value.f)
 extern cGVar GVar_R_LightDesat;
 #define g_LightDesat (GVar_R_LightDesat.value.f)
-#define g_MonitorAmbient (*(uint32_t *)&GAME_GVAR(GVar_MonitorAmbient)->value)
+#define g_MonitorAmbient (*(uint32_t *)&GVar_MonitorAmbient.value)
 extern cGVar GVar_R_LightTrace;
 #define g_LightTrace (GVar_R_LightTrace.value.i)
 extern cGVar GVar_R_SpotlightAdjust;
@@ -205,7 +207,7 @@ void CLight_dtor(CLight *self) {
 	CHECK(g_LightsTotal > 0);
 	if (--g_LightsTotal == 0) {
 		g_LightIndexD3D = 0;
-		E3D_LogDebug(g_FileLog, "Global light index reset");
+		E3D_LogDebug((&g_FileLog), "Global light index reset");
 	}
 	self->vftable = IOBJECT3D_VFTABLE;
 }
@@ -368,7 +370,7 @@ void CLight_Reset(IObject3D *elem, void *arg) {
 extern cGVar GVar_R_ShowLights;
 #define g_ShowLights (GVar_R_ShowLights.value.i)
 extern CMaterial g_LightMat;
-#define g_LightMatGuard (GAME_ARRAY(int, g_LightMatGuard))
+extern int g_LightMatGuard;
 
 /* the atexit destructor of it */
 void Light_FiniMat(void) {
@@ -399,12 +401,12 @@ void CLight_Render(IObject3D *base, void *dev, CRenderNode *r) {
 	if (!self->show && !g_ShowLights) {
 		return;
 	}
-	if (*g_LightMatGuard > crt_InitEpoch()) {
-		crt_Init_thread_header(g_LightMatGuard);
-		if (*g_LightMatGuard == -1) {
+	if (g_LightMatGuard > crt_InitEpoch()) {
+		crt_Init_thread_header((&g_LightMatGuard));
+		if (g_LightMatGuard == -1) {
 			CMaterial_ctor(&g_LightMat);
 			crt_atexit(Light_FiniMat);
-			crt_Init_thread_footer(g_LightMatGuard);
+			crt_Init_thread_footer((&g_LightMatGuard));
 		}
 	}
 	Render_SetWorld();

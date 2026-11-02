@@ -91,7 +91,7 @@ void CMeshD3D_CalcSegments(CMeshD3D *self, byte all) {
 				} else if (segs[s].tri[1] == 0xffff) {
 					segs[s].tri[1] = (uint16_t)(i + group);
 				} else {
-					E3D_LogBlue(g_FileLog, "WARN: calcular_segmentos(): lado con > 2 tris [Mat: %s]",
+					E3D_LogBlue((&g_FileLog), "WARN: calcular_segmentos(): lado con > 2 tris [Mat: %s]",
 						m->mat->Name);
 				}
 			}
@@ -118,5 +118,5 @@ void CMeshD3D_CalcSegments(CMeshD3D *self, byte all) {
 	}
 	self->segs = out;
 	self->numSegs = (uint32_t)numSeg + 1;
-	E3D_LogWhite(g_FileLog, "INFO: Segmentos: %d [Mat: %s]", numSeg, self->mat->Name);
+	E3D_LogWhite((&g_FileLog), "INFO: Segmentos: %d [Mat: %s]", numSeg, self->mat->Name);
 }

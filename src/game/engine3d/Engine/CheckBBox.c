@@ -16,7 +16,7 @@
 extern int g_NTortas;
 extern int g_NResponseFaces;
 #define FACES_TORTAS 64
-#define g_ResponseFaces (GAME_ARRAY(int[3], g_ResponseFaces))	/* [FACES_TORTAS] */
+extern int g_ResponseFaces[64][3];	/* [FACES_TORTAS] */
 
 /* the box sides a point is outside of: 1 x > max, 2 x < min, 4 and 8 for y, 0x10 and 0x20 for z */
 static byte Box_OutCode(const vec3_t *mn, const vec3_t *mx, const vec3_t *p) {

@@ -16,7 +16,7 @@
 #define CGAMETRAIL_DTOR 0x21de40
 
 /* the colour ramps of the fire drops, 9 colours each: 0 and 1 fire, 2 smoke, 3 sparks */
-#define g_FireDropRamps (GAME_ARRAY(uint32_t[9], g_FireDropRamps))
+extern uint32_t g_FireDropRamps[4][9];
 
 /* ---- construction ---- */
 

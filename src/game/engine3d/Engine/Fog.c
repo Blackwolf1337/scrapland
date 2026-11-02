@@ -44,7 +44,7 @@ void CFog_InitD3D(CFog *self) {
 	self->capsTable = (caps & D3DPRASTERCAPS_FOGTABLE) != 0;
 	self->capsW = (caps & D3DPRASTERCAPS_WFOG) != 0;
 	self->capsVertex = (caps & D3DPRASTERCAPS_FOGVERTEX) != 0;
-	E3D_LogDebug2(g_FileLog, "Fog init: w = %d  tab = %d", self->capsW, self->capsTable);
+	E3D_LogDebug2((&g_FileLog), "Fog init: w = %d  tab = %d", self->capsW, self->capsTable);
 }
 
 static void Fog_State(void *dev, uint32_t state, uint32_t value) {

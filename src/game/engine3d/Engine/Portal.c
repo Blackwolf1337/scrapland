@@ -211,7 +211,7 @@ void CPortal_UpdateCache(CPortal *self, const matrix_t *unused) {
 	CHECK(Plane_Calc(&self->cache_plane, &self->cache_vert[0], &self->cache_vert[1], &self->cache_vert[2]));
 	float a = (float)(acos(__builtin_fabs((double)self->cache_plane.n.y)) * 180.0 / 3.141592653589793);
 	if (a > 89.9f && 91.1f > a && a != 90.0f) {
-		E3D_LogInfo(g_FileLog, "WARN: unaligned vertical portal: %s", self->node->name);
+		E3D_LogInfo((&g_FileLog), "WARN: unaligned vertical portal: %s", self->node->name);
 	}
 }
 

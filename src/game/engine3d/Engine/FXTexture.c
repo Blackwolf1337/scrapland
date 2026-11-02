@@ -240,7 +240,7 @@ void *FXTexture_Create(byte kind, CMap *map) {
 		return p ? CFXNewsPanel_ctor(p) : NULL;
 	}
 	}
-	E3D_LogBlue(g_FileLog, "Texture FX not found: %s", map->Name);
+	E3D_LogBlue((&g_FileLog), "Texture FX not found: %s", map->Name);
 	return NULL;
 }
 

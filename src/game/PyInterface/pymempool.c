@@ -206,21 +206,21 @@ void PyPool_Delete(void) {
 
 /* the entry points set the statistics context only for the call (and leave it NULL) */
 void *PyPool_Malloc(size_t size) {
-	g_MemStatsContext = g_PyMemStats;
+	g_MemStatsContext = (&g_PyMemStats);
 	void *p = PyPool_MallocImpl(size);
 	g_MemStatsContext = NULL;
 	return p;
 }
 
 void *PyPool_Realloc(void *p, size_t size) {
-	g_MemStatsContext = g_PyMemStats;
+	g_MemStatsContext = (&g_PyMemStats);
 	void *np = PyPool_ReallocImpl(p, size);
 	g_MemStatsContext = NULL;
 	return np;
 }
 
 void PyPool_Free(void *p) {
-	g_MemStatsContext = g_PyMemStats;
+	g_MemStatsContext = (&g_PyMemStats);
 	PyPool_FreeImpl(p);
 	g_MemStatsContext = NULL;
 }

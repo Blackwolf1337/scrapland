@@ -55,7 +55,7 @@ byte CGraphic3D_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
 void CGraphic3D_SetNode(CGraphic3D *self, CNode3D *node);
 /* the texture with its opacity map (additive alpha without one) */
 void CGraphic3D_SetTexture(CGraphic3D *self, const char *tex, const char *opac);
-/* the material of the textures, shared through g_MatList; alpha: the diffuse alpha, 0 is not transparent */
+/* the material of the textures, shared through (&g_MatList); alpha: the diffuse alpha, 0 is not transparent */
 void CGraphic3D_CreateMat(CGraphic3D *self, const char *tex, const char *opac, int src, int dst, byte alpha);
 void CGraphic3D_Init(CGraphic3D *self);
 

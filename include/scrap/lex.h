@@ -51,10 +51,10 @@ extern int g_LexTokenLen;
 extern int g_LexErrors;
 extern int g_LexWarnings;
 extern char g_LexDir[260];	/* MAX_FILEPATH, where Lex_Open looks second */
-#define g_LexOut GAME_GLOBAL(lexout_t, g_LexOut)
 extern cClex g_Cl;
 
 typedef void (*lexout_t)(const char *text);
+extern lexout_t g_LexOut;
 
 /* Util/Lex.cpp */
 void Lex_String(void);

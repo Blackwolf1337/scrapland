@@ -33,7 +33,7 @@ extern cGVar GVar_EngineDebugLevel;
 #define LOG_LEVEL_RESET 10
 #define LOG_CON_DEFAULT 0x91
 /* the log of the engine ("FILE OPEN: ...") */
-#define g_FileLog (GAME_ARRAY(cLog, g_FileLog))
+extern cLog g_FileLog;
 /* the debug console: on, as a dialog window, as a text console */
 extern int g_DbgCon;
 extern int g_DbgConWindow;

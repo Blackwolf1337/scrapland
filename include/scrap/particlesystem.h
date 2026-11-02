@@ -191,7 +191,7 @@ extern cGVar GVar_R_ParticleSector;
 #define g_ParticleSystemDebug (GVar_R_ParticleSector.value.i)	/* 1: visibility, 2: drawn, 3: with the name */
 extern cGVar GVar_R_ParticlesCount;
 #define g_ParticleSystemCount (GVar_R_ParticlesCount.value.i)	/* the particles of all systems */
-#define g_ParticleSystemIni (GAME_ARRAY(CIniFile, g_ParticleSystemIni))	/* the particle ini */
+extern CIniFile g_ParticleSystemIni;	/* the particle ini */
 extern cGVar GVar_R_ParticleVelScale;
 #define g_ParticleSystemPosScale (GVar_R_ParticleVelScale.value.f)
 extern cGVar GVar_R_ParticleScale;

@@ -25,6 +25,10 @@
 #include "scrap/walkcharentity.h"
 #include "scrap/world.h"
 
+extern cGVarFunction GVar_MessengerTakenCallback;
+extern cGVarFunction GVar_OnFlash;
+extern cGVarFunction GVar_OnSleep;
+
 /* the fields of the characters (cWalkCharEntity) the types use */
 #define WChar_FX(e) ((void *)WChar(e)->wl.obj.fx)		/* the embedded effect */
 #define WChar_Listen(e) ((cEntity *)WChar(e)->listen.target)		/* its target: the mayor, the police */
@@ -55,7 +59,7 @@ static inline int ChType_ActPriority(void *ctrl) {
 
 /* the C function of the sphere tests of the natives (also g_DoorSphereFunc, g_InfernoSphereFunc) */
 #define g_ChTypeSphereFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0))
-#define g_OnFlash (((cPy_Function *)&GAME_GVARFUNC(GVar_OnFlash)->func))		/* OnFlash, the C function of the flashes */
+#define g_OnFlash (((cPy_Function *)&GVar_OnFlash.func))		/* OnFlash, the C function of the flashes */
 
 /* the natives one native calls through a sphere or flash test (rva, the same pointer as the original) */
 #define CHTYPE_BANKMASTERSUCTION 0x0c1a70
@@ -376,7 +380,7 @@ extern cGVar GVar_MessengerTakeDataPackSound;
 #define g_MessengerTakeDataPackSound (GVar_MessengerTakeDataPackSound.value.s)
 extern cGVar GVar_MessengerTakeDataPackSoundVol;
 #define g_MessengerTakeDataPackSoundVol (GVar_MessengerTakeDataPackSoundVol.value.f)
-#define g_MessengerTakenCallback (((cPy_Function *)&GAME_GVARFUNC(GVar_MessengerTakenCallback)->func))	/* "MessengerTakenCallback" */
+#define g_MessengerTakenCallback (((cPy_Function *)&GVar_MessengerTakenCallback.func))	/* "MessengerTakenCallback" */
 extern cGVar GVar_MessengerDataPack;
 #define g_MessengerDataPack (GVar_MessengerDataPack.value.s)	/* "MessengerDataPack": the name of the data pack */
 extern cGVar GVar_FXHammerHitFile;
@@ -387,7 +391,7 @@ extern cGVar GVar_NurseDispDist;
 #define g_NurseDispDist (GVar_NurseDispDist.value.f)
 extern cGVar GVar_NurseDispRad;
 #define g_NurseDispRad (GVar_NurseDispRad.value.f)
-#define g_OnSleep (((cPy_Function *)&GAME_GVARFUNC(GVar_OnSleep)->func))		/* "OnSleep" */
+#define g_OnSleep (((cPy_Function *)&GVar_OnSleep.func))		/* "OnSleep" */
 extern cGVar GVar_FXPoliceGearConversionFile;
 #define g_FXPoliceGearConversionFile (GVar_FXPoliceGearConversionFile.value.s)
 extern cGVar GVar_FXPoliceStealFile;

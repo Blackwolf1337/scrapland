@@ -161,7 +161,7 @@ struct CMatList {
 SD_SIZE(CMatList, 0x10);
 
 /* the materials of the engine */
-#define g_MatList (GAME_ARRAY(CMatList, g_MatList))
+extern CMatList g_MatList;
 
 /* the constructors and destructors of material.h */
 CMatList *CMatList_DeleteObj(CMatList *self, byte flags);
@@ -282,9 +282,9 @@ byte MatParams_Equal(const uint32_t *self, const uint32_t *other);
 int Vec2_Differ(const float *a, const float *b);
 /* blend modes between the file values and the engine (legacy: the files of version 1) */
 void Mat_ConvertBlend(uint32_t *mode, byte toFile, byte legacy);
-/* a copy of orig in g_MatList, prepared; with share an equal material of the list instead */
+/* a copy of orig in (&g_MatList), prepared; with share an equal material of the list instead */
 CMaterial *Mat_New(const CMaterial *orig, byte share);
-/* a copy of orig added to g_MatList, not prepared */
+/* a copy of orig added to (&g_MatList), not prepared */
 CMaterial *Mat_AddCopy(const CMaterial *orig);
 /* the own animation of a sprite: freed; a running copy of the one of map (if map has one) */
 void AnimMat_Free(CAnimMat **slot);

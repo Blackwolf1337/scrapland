@@ -75,10 +75,10 @@ static void CGameModel_LodGroup(CGameModel *self, CIniFile *ini) {
 	const struct {
 		const char *name;
 		const float *coef;
-	} groups[7] = { { "Ships", ((float *)&GAME_GVAR(GVar_R_CoefMLODShips)->value) }, { "Pilots", ((float *)&GAME_GVAR(GVar_R_CoefMLODPilots)->value) },
-		{ "Engines", ((float *)&GAME_GVAR(GVar_R_CoefMLODEngines)->value) }, { "Traffic", ((float *)&GAME_GVAR(GVar_R_CoefMLODTraffic)->value) },
-		{ "Characters", ((float *)&GAME_GVAR(GVar_R_CoefMLODCharacters)->value) }, { "OutElement", ((float *)&GAME_GVAR(GVar_R_CoefMLODOutElement)->value) },
-		{ "MenuElement", ((float *)&GAME_GVAR(GVar_R_CoefMLODMenuElement)->value) } };
+	} groups[7] = { { "Ships", ((float *)&GVar_R_CoefMLODShips.value) }, { "Pilots", ((float *)&GVar_R_CoefMLODPilots.value) },
+		{ "Engines", ((float *)&GVar_R_CoefMLODEngines.value) }, { "Traffic", ((float *)&GVar_R_CoefMLODTraffic.value) },
+		{ "Characters", ((float *)&GVar_R_CoefMLODCharacters.value) }, { "OutElement", ((float *)&GVar_R_CoefMLODOutElement.value) },
+		{ "MenuElement", ((float *)&GVar_R_CoefMLODMenuElement.value) } };
 	char group[260];
 
 	if (!ini || !CIniFile_GetText(ini, "Model", "LOD_Group", group, sizeof(group), NULL)) {
@@ -87,14 +87,14 @@ static void CGameModel_LodGroup(CGameModel *self, CIniFile *ini) {
 		}
 		return;
 	}
-	E3D_LogWhite(g_FileLog, "LOD_%s: %s", group, self->Model->name);
+	E3D_LogWhite((&g_FileLog), "LOD_%s: %s", group, self->Model->name);
 	for (int i = 0; i < 7; i++) {
 		if (!crt_stricmp(group, groups[i].name)) {
 			self->Model->lodDist *= *groups[i].coef;
 			return;
 		}
 	}
-	E3D_LogBlue(g_FileLog, "LOD group not found: %s [Model: %s]", group, self->Model->name);
+	E3D_LogBlue((&g_FileLog), "LOD group not found: %s [Model: %s]", group, self->Model->name);
 }
 
 void CGameModel_Load(CGameModel *self, const char *name, const char *name2, const vec3_t *scale) {
@@ -465,7 +465,7 @@ void CGameModel_AnimCmd(CGameModel *self, const char *cmd) {
 		CModel_SetMorphSubset(self->Model, (uint32_t)slot, tag);
 		return;
 	}
-	E3D_LogBlue(g_FileLog, "Invalid anim command: %s", cmd);
+	E3D_LogBlue((&g_FileLog), "Invalid anim command: %s", cmd);
 }
 
 byte CGameModel_AnimTime(CGameModel *self, int i, float frame, float *time) {
@@ -1078,7 +1078,7 @@ void CGameModel_ClosestVertex(CGameModel *self, float x, float y, float z, vec3_
 void CGameModel_FreeCollision(CGameModel *self) {
 	if (self->CollideMesh) {
 		GM_CHECK(self);
-		E3D_LogWhite(g_FileLog, "~CollisionMesh: %s (ID: %d)", self->Model->name, self->CollisionMeshID);
+		E3D_LogWhite((&g_FileLog), "~CollisionMesh: %s (ID: %d)", self->Model->name, self->CollisionMeshID);
 		CGround_RemoveMesh(World_Ground(), self->CollideMesh, self->CollisionMeshID, self->CollisionIni);
 		if (self->CollideMesh) {
 			CCollideMesh_dtor(self->CollideMesh);
@@ -1106,7 +1106,7 @@ void CGameModel_EnableCollision(CGameModel *self, byte on, byte create) {
 	if (!self->CollisionMeshID) {
 		CheckFailed("CollisionMeshID", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-	E3D_LogWhite(g_FileLog, "Collision Mesh: %s [%s]", self->Model->name, on ? "ENABLE" : "DISABLE");
+	E3D_LogWhite((&g_FileLog), "Collision Mesh: %s [%s]", self->Model->name, on ? "ENABLE" : "DISABLE");
 	if (self->collide != on) {
 		self->collide = on;
 		CGround_SetMeshCollide(World_Ground(), self->CollideMesh, self->collide, self->CollisionMeshID,
@@ -1163,9 +1163,9 @@ byte CGameModel_CreateCollision(CGameModel *self, byte all) {
 	CTriMesh tw;
 	CTriMesh_ctorCopy(&tw, (CTriMesh *)scn->CollideMesh);
 	CTriMesh_Transform(&tw, &mw);
-	E3D_LogDebug(g_FileLog, "StaticCollisionInit: %s, %d tri, %d vert", self->Model->name, tw.nTri, tw.nVert);
+	E3D_LogDebug((&g_FileLog), "StaticCollisionInit: %s, %d tri, %d vert", self->Model->name, tw.nTri, tw.nVert);
 	if (!tw.nTri || !tw.nVert) {
-		E3D_LogWhite(g_FileLog, "Model has no collision mesh: %s", self->Model->name);
+		E3D_LogWhite((&g_FileLog), "Model has no collision mesh: %s", self->Model->name);
 		self->CollisionMeshID = -1;
 		ok = 0;
 	} else {

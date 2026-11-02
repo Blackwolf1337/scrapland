@@ -174,10 +174,10 @@ RadAreaLight *CRadiosity_Get(CRadiosity *self, CMaterial *Mat) {
 static byte Rad_Warn(const CMaterial *Mat, byte found) {
 	if (Mat->params.attrib & MAT_AREALIGHT) {
 		if (!found) {
-			E3D_LogBlue(g_FileLog, "WARN: Area light data not found: %s", Mat->Name);
+			E3D_LogBlue((&g_FileLog), "WARN: Area light data not found: %s", Mat->Name);
 		}
 	} else if (found) {
-		E3D_LogBlue(g_FileLog, "WARN: Old area light definition found: %s", Mat->Name);
+		E3D_LogBlue((&g_FileLog), "WARN: Old area light definition found: %s", Mat->Name);
 	}
 	return found;
 }

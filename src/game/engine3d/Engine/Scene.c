@@ -61,14 +61,14 @@ void CScene_dtor(CScene *self) {
 	self->vftable = CSCENE_VFTABLE;
 	E3D_DebugPrintf("\n> Escena::~Escena(): '%s' (%08Xh)", self->name, self);
 	self->anim = NULL;
-	E3D_LogDebug2(g_FileLog, " Scene deleted: %s", self->name);
+	E3D_LogDebug2((&g_FileLog), " Scene deleted: %s", self->name);
 	void *dev = g_pd3dDevice;
 	if (dev) {
 		CScene_ReleaseD3D(self, dev);
 	}
 	for (int i = 0; i < self->mats.n; i++) {
 		TABLE_CHECK(self->mats.p, i, self->mats.n);
-		CMatList_Delete(g_MatList, ((CMaterial **)self->mats.p)[i]);
+		CMatList_Delete((&g_MatList), ((CMaterial **)self->mats.p)[i]);
 		TABLE_CHECK(self->mats.p, i, self->mats.n);
 		((CMaterial **)self->mats.p)[i] = NULL;
 	}
@@ -229,7 +229,7 @@ void CScene_Read(CScene *self, CFileIO *f, byte bAnim) {
 		TABLE_CHECK(self->mats.p, i, self->mats.n);
 		CHECK(((CMaterial **)self->mats.p)[i]->params.attrib & MAT_NOSHARE);
 		TABLE_CHECK(self->mats.p, i, self->mats.n);
-		CMatList_Add(g_MatList, ((CMaterial **)self->mats.p)[i]);
+		CMatList_Add((&g_MatList), ((CMaterial **)self->mats.p)[i]);
 	}
 	CHECK(CFileIO_ReadInt(f) == 1);
 	int count = CFileIO_ReadInt(f);
@@ -433,7 +433,7 @@ void CScene_CompactMats(CScene *self) {
 		TABLE_CHECK(self->mats.p, i, self->mats.n);
 		if (!(((CMaterial **)self->mats.p)[i]->params.attrib & 4)) {
 			TABLE_CHECK(self->mats.p, i, self->mats.n);
-			CMatList_Delete(g_MatList, ((CMaterial **)self->mats.p)[i]);
+			CMatList_Delete((&g_MatList), ((CMaterial **)self->mats.p)[i]);
 			TABLE_CHECK(self->mats.p, i, self->mats.n);
 			((CMaterial **)self->mats.p)[i] = NULL;
 		} else {
@@ -508,7 +508,7 @@ void CScene_UpdateBox(CScene *self, box_t *out, byte first) {
 	}
 	if (box->min.x > box->max.x && box->min.y > box->max.y && box->min.z > box->max.z) {
 		if (!self->AnimM3D || self->Node3D) {
-			E3D_LogInfo(g_FileLog, "ERROR: CEscena: Invalid BBox: %s", self->name);
+			E3D_LogInfo((&g_FileLog), "ERROR: CEscena: Invalid BBox: %s", self->name);
 		}
 		if (first) {
 			*box = (box_t){ { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
@@ -609,13 +609,13 @@ void CScene_DeleteEmpty(CScene *self, uint32_t class, byte bRefs, byte flagged) 
 				if (n->Refs == refs) {
 					if (!(n->flags & NODE_BONE)) {
 						CHECK(n->parent);
-						E3D_LogWhite(g_FileLog, "DEL_NODE: Node deleted: %s [parent: %s] [f:%08X]", n->name,
+						E3D_LogWhite((&g_FileLog), "DEL_NODE: Node deleted: %s [parent: %s] [f:%08X]", n->name,
 							n->parent->name, n->flags);
 						deleted = 1;
 						CScene_RemoveNode(self, n);
 						n->vftable->Delete(&n->ref, 1);
 					} else {
-						E3D_LogInfo(g_FileLog, "DEL_NODE: Node NOT deleted [Bone]: %s [parent: %s] [f:%08X]",
+						E3D_LogInfo((&g_FileLog), "DEL_NODE: Node NOT deleted [Bone]: %s [parent: %s] [f:%08X]",
 							n->name, n->parent->name, n->flags);
 						Con_FatalErrorf("Hidden bone: %s", n->name);
 					}
@@ -631,7 +631,7 @@ void CScene_SetScale(CScene *self, const vec3_t *s) {
 		return;
 	}
 	const char *name = self->name;
-	E3D_LogInfo(g_FileLog, "SCENE SCALE: %s [%s]", Vec3_Str(s, 0, 6), name);
+	E3D_LogInfo((&g_FileLog), "SCENE SCALE: %s [%s]", Vec3_Str(s, 0, 6), name);
 	matrix_t m;
 	Matrix_LoadIdentity(&m);
 	m.m[0] = s->x;

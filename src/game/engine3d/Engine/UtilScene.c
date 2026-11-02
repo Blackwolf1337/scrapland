@@ -569,7 +569,7 @@ made:
 	CHECK(autoinit);
 initD3D:
 	CScene_InitD3D(scn, g_Engine->device);
-	CMatList_Prepare(g_MatList, g_Engine->device);
+	CMatList_Prepare((&g_MatList), g_Engine->device);
 	return scn;
 }
 

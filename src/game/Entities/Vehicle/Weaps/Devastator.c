@@ -51,7 +51,7 @@ static inline float Dev_RandSym(float r) {
 	return (float)(Weap_Rand01() * (double)(r - lo) + (double)lo);
 }
 
-/* "!DevastatorCreate" (vehicle, hit point into g_DevCenter, entity hit, shot number): the shot of the next mounted
+/* "!DevastatorCreate" (vehicle, hit point into (&g_DevCenter), entity hit, shot number): the shot of the next mounted
  * slot (a bullet for a player), then where the effects are visible the explosion particles on the floor at the hit,
  * the shot trail and the sparks, the damage of the sphere around the hit (not on a net client) and the boom */
 void Devastator_Create(cAbstractFile *params) {
@@ -61,9 +61,9 @@ void Devastator_Create(cAbstractFile *params) {
 	int shot;
 
 	cAbstractFile_ReadString(params, g_DevShooter, 0x80);
-	params->vftable->Read(params, &g_DevCenter->x, 4);
-	params->vftable->Read(params, &g_DevCenter->y, 4);
-	params->vftable->Read(params, &g_DevCenter->z, 4);
+	params->vftable->Read(params, &g_DevCenter.x, 4);
+	params->vftable->Read(params, &g_DevCenter.y, 4);
+	params->vftable->Read(params, &g_DevCenter.z, 4);
 	cAbstractFile_ReadString(params, g_DevVictim, 0x80);
 	params->vftable->Read(params, &shot, 4);
 	cEntity *v = Weap_GetVehicle(g_DevShooter);
@@ -119,7 +119,7 @@ void Devastator_Create(cAbstractFile *params) {
 		break;
 	}
 
-	vec3_t *C = g_DevCenter;
+	vec3_t *C = (&g_DevCenter);
 	float dy = origin.y - C->y;
 	float dx = origin.x - C->x;
 	float dz = origin.z - C->z;
@@ -365,9 +365,9 @@ sphere:
 		if (up == 7) {
 			rad = rad * 1.5f;
 		}
-		cWorld_SphereCallF(g_pWorld, 8, g_DevCenter, rad, g_InfernoSphereFunc, 1);
+		cWorld_SphereCallF(g_pWorld, 8, (&g_DevCenter), rad, g_InfernoSphereFunc, 1);
 	}
-	ATPC_PlaySound(g_DevastatorBoomSound, g_DevCenter, g_DevastatorBoomSoundAttIni, g_DevastatorBoomSoundAttEnd,
+	ATPC_PlaySound(g_DevastatorBoomSound, (&g_DevCenter), g_DevastatorBoomSoundAttIni, g_DevastatorBoomSoundAttEnd,
 		g_DevastatorBoomSoundVol);
 }
 
@@ -525,7 +525,7 @@ void Devastator_SetUp(cEntity *v) {
 	cAutoAim_Update(&Veh(v)->autoAim, v, 0.025f);
 }
 
-/* "!DevastatorXplosionCall" (entity): the damage and push of the explosion at g_DevCenter */
+/* "!DevastatorXplosionCall" (entity): the damage and push of the explosion at (&g_DevCenter) */
 void Devastator_XplosionCall(cAbstractFile *params) {
 	vec3_t p, in, r, n;
 
@@ -536,9 +536,9 @@ void Devastator_XplosionCall(cAbstractFile *params) {
 	}
 	int oldLife = WLife(victim)->life;
 	const vec3_t *pp = victim->vftable->GetPos(victim, &p);
-	float dy = pp->y - g_DevCenter->y;
-	float dx = pp->x - g_DevCenter->x;
-	float dz = pp->z - g_DevCenter->z;
+	float dy = pp->y - g_DevCenter.y;
+	float dx = pp->x - g_DevCenter.x;
+	float dz = pp->z - g_DevCenter.z;
 	float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 	if (d != 0.0f) {
 		float inv = 1.0f / d;

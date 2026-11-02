@@ -16,7 +16,7 @@ typedef struct BlendModeEntry {
 } BlendModeEntry;
 SD_SIZE(BlendModeEntry, 0xc);
 
-#define g_BlendModeTable (GAME_ARRAY(const BlendModeEntry, g_BlendModeTable))
+extern BlendModeEntry g_BlendModeTable[7];
 
 uint32_t BlendMode_GetDst(uint32_t mode);
 /* ScrapEngMaterial.cpp: the source and destination blend of a blend mode (CHECK mode < 7) */

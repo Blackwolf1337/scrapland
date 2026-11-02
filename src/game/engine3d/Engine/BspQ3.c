@@ -222,13 +222,13 @@ void CBspQ3_ReadFaces(CBspQ3 *self) {
 		String_Set(&tmp.Name, self->faces[i].shader->name);
 		CMaterial_SetMap(&tmp, MAP_DIFFUSE, buf);
 		tmp.params.lighting = 0;
-		CMaterial *mat = CMatList_Find(g_MatList, &tmp);
+		CMaterial *mat = CMatList_Find((&g_MatList), &tmp);
 		if (!mat) {
 			mat = operator_new(sizeof(CMaterial));
 			mat = mat ? CMaterial_ctor(mat) : NULL;
 			CMaterial_Assign(mat, &tmp);
 			CMaterial_Prepare(mat, g_Engine->device);
-			CMatList_Add(g_MatList, mat);
+			CMatList_Add((&g_MatList), mat);
 		}
 		self->faces[i].mat = mat;
 		if (self->faces[i].shader->flags & 0x20) {
@@ -288,7 +288,7 @@ void CBspQ3_ReadLMaps(CBspQ3 *self) {
 		mat->map[MAP_DIFFUSE]->lightmap = 1;
 		mat->params.zWrite = 0;
 		CMaterial_Prepare(mat, g_Engine->device);
-		CMatList_Add(g_MatList, mat);
+		CMatList_Add((&g_MatList), mat);
 		if (!g_BspQ3LMapNoBlend) {
 			mat->params.srcBlend = 9;
 			mat->params.dstBlend = 3;
@@ -332,7 +332,7 @@ int CBspQ3_ReadLump(CBspQ3 *self, int id, void **out, int elem) {
 
 void CBspQ3_Render(CBspQ3 *self) {
 	CHECK(g_pd3dDevice);
-	Render_SetWorldMatrix(g_MatIdentity, 0);
+	Render_SetWorldMatrix((&g_MatIdentity), 0);
 	CHECK(self->MeshD3D);
 	if (!g_KeyL) {
 		for (int i = 0; i < self->MeshList->n; i++) {

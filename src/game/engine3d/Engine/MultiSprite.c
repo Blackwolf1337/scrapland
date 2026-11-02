@@ -36,7 +36,7 @@ byte CMultiSprite_Build(CMultiSprite *self, const char *name) {
 	CHECK(!self->n);
 	Path_Format(mst, name, "&U&D&N.mst");
 	if (File_TimeDiff(mst, name, 0) < 0) {
-		E3D_LogBlue(g_FileLog, "WARN: [%s] is older than [%s]", mst, name);
+		E3D_LogBlue((&g_FileLog), "WARN: [%s] is older than [%s]", mst, name);
 	} else if (CMultiSprite_Load(self, mst)) {
 		return 1;
 	}

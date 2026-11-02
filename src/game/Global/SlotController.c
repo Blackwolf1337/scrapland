@@ -9,7 +9,7 @@
 
 extern const cSlotControllerVtbl cSlotController_vftable;
 #define CSLOTCONTROLLER_VFTABLE (&cSlotController_vftable)
-#define g_SlotEpsilon GAME_GLOBAL(float, g_SlotEpsilon)	/* 0.001 */
+extern const float g_SlotEpsilon;	/* 0.001 */
 
 /* rand() of the exe as a double in [0, 1] times range */
 static double RandRange(double range) {

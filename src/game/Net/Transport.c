@@ -366,7 +366,7 @@ int Transport_MasterPacket(const byte *buf, int len) {
 		if (strlen(port)) {
 			p = crt_atoi(port);
 		}
-		cGVar_SetString(g_GVarMasterServerAddress, addr);
+		cGVar_SetString((&g_GVarMasterServerAddress), addr);
 		int mp = g_MasterServerPort;
 		if (!(g_MasterServerPortFlags & 1)) {
 			mp = p;

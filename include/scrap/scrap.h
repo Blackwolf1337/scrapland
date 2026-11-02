@@ -18,8 +18,8 @@
 #include "scrap/scrapmodel.h"
 
 /* the function of Scrap.SetCallFunc with its parameters (AddParamX) for Scrap.Execute */
-#define g_CallFunc (GAME_ARRAY(cPy_Function, g_CallFunc))
-#define g_PackName (((cString *)&GAME_GVAR(GVar_PathInPackFile)->value))	/* string object, the open pack */
+extern cPy_Function g_CallFunc;
+#define g_PackName (((cString *)&GVar_PathInPackFile.value))	/* string object, the open pack */
 extern cGVar GVar_SuperDealAvaliable;
 #define g_SuperDealAvaliable (GVar_SuperDealAvaliable.value.i)	/* SuperDealAvaliable, all three crazy deals done */
 

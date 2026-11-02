@@ -38,13 +38,13 @@ void CBackground2D_Init(CBackground2D *self) {
 	m.map[MAP_DIFFUSE]->filter = 0;
 	m.map[MAP_DIFFUSE]->tile = 0;
 	m.map[MAP_DIFFUSE]->ba = 1;
-	self->Mat = CMatList_Find(g_MatList, &m);
+	self->Mat = CMatList_Find((&g_MatList), &m);
 	if (!self->Mat) {
 		CMaterial *p = operator_new(sizeof(CMaterial));
 		self->Mat = p ? CMaterial_ctor(p) : NULL;
 		CMaterial_Assign(self->Mat, &m);
 		CMaterial_Prepare(self->Mat, g_Engine->device);
-		CMatList_Add(g_MatList, self->Mat);
+		CMatList_Add((&g_MatList), self->Mat);
 	}
 	CMaterial_dtor(&m);
 }
@@ -103,7 +103,7 @@ void Background2D_Render(void) {
 		if (!g_BackgroundCurrent[0]) {
 			return;
 		}
-		E3D_LogDebug(g_FileLog, "fondo2d_Render(): nuevo fondo: '%s' (frame: %d)", g_BackgroundCurrent, g_FrameCount);
+		E3D_LogDebug((&g_FileLog), "fondo2d_Render(): nuevo fondo: '%s' (frame: %d)", g_BackgroundCurrent, g_FrameCount);
 		if (!g_BackgroundGraphic) {
 			int w, h;
 			Graphic2D_GetScreen(&w, &h);

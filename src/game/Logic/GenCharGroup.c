@@ -14,11 +14,11 @@ cGenCharGroup *cGenCharGroup_ctor(cGenCharGroup *self) {
 	self->level = -1;
 	self->timer = 0.0f;
 	self->attackers = 0;
-	g_BishopAttackOnAlarm = (*(int *)&GAME_GVAR(GVar_BishopAttackOnAlarm)->def);
+	g_BishopAttackOnAlarm = (*(int *)&GVar_BishopAttackOnAlarm.def);
 	void *m = operator_new(sizeof(cMessengers));
 	self->messengers = m ? cMessengers_ctor(m) : NULL;
-	g_BankDirectorAgressive = (*(int *)&GAME_GVAR(GVar_BankDirectorAgressive)->def);
-	g_GenCharAttackActive = (*(int *)&GAME_GVAR(GVar_GenCharAttackActive)->def);
+	g_BankDirectorAgressive = (*(int *)&GVar_BankDirectorAgressive.def);
+	g_GenCharAttackActive = (*(int *)&GVar_GenCharAttackActive.def);
 	return self;
 }
 

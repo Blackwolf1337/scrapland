@@ -23,7 +23,7 @@ extern int g_MeshEffectOn;
 extern int g_MeshEffectStencil;
 extern int g_NumScreens;
 extern int g_NumModels;
-#define g_MeshEffectMat (GAME_ARRAY(CMaterial, g_MeshEffectMat))	/* a static object of the file */
+extern CMaterial g_MeshEffectMat;	/* a static object of the file */
 extern CModel * g_Screens[10];
 extern CModel * g_Models[10];
 extern byte g_MeshEffectMatInit;
@@ -74,7 +74,7 @@ void MeshEffect_Render(void) {
 		return;
 	}
 	if (!g_MeshEffectMatInit) {
-		CMaterial *m = g_MeshEffectMat;
+		CMaterial *m = (&g_MeshEffectMat);
 		m->params.fog = 0;
 		m->params.zWrite = 0;
 		m->params.zFunc = (g_MeshEffectStencil != 0) + 4;
@@ -109,7 +109,7 @@ void MeshEffect_Render(void) {
 	}
 	uint32_t fill;
 	void *dev = g_pd3dDevice;
-	g_MatFX1 = g_MeshEffectMat;
+	g_MatFX1 = (&g_MeshEffectMat);
 	Rd_DevGetRenderState(dev, D3DRS_FILLMODE, &fill);
 	MeshEffect_SetRS(D3DRS_FILLMODE, D3DFILL_WIREFRAME);
 	int stencil = g_ShadowsStencil;

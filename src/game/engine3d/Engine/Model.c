@@ -20,6 +20,8 @@
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
 
+extern cGVar GVar_R_DrawMLODMask;
+
 #define CLOD_DTOR 0x252d80
 #define LIGHT_OMNI_NAME "omni"
 #define LIGHT_SPOT_NAME "foco"
@@ -328,10 +330,10 @@ byte CModel_SetMorphSubset(CModel *self, uint32_t slot, const char *tag) {
 	CAnimGroup *a = Model_Slot(self, slot)->anim;
 
 	CHECK(a && a->morph && a->Anim->AnimM3D->flag);
-	E3D_LogWhite(g_FileLog, "SetMorphSubset: [%s] [%s]", a->name, tag);
+	E3D_LogWhite((&g_FileLog), "SetMorphSubset: [%s] [%s]", a->name, tag);
 	uint32_t i = (uint32_t)MorphData_Find(a->morph, tag);
 	if (i >= MAX_MORPHDATA) {
-		E3D_LogBlue(g_FileLog, "Morph tag not found: %s", tag);
+		E3D_LogBlue((&g_FileLog), "Morph tag not found: %s", tag);
 		return 0;
 	}
 	float k = MORPH_SPEED_MAX, s = a->ctrl.speed;
@@ -655,11 +657,11 @@ void CModel_SetScene(CModel *self, CScene *scn) {
 	if (scn->ini) {
 		if (CIniFile_GetBool(scn->ini, "Model", "StaticLighting", 0)) {
 			self->dynLight = 0;
-			E3D_LogWhite(g_FileLog, "MODEL: StaticLighting: %s", self->name);
+			E3D_LogWhite((&g_FileLog), "MODEL: StaticLighting: %s", self->name);
 		}
 		if (CIniFile_GetBool(self->scene->ini, "Model", "AlwaysVisible", 0)) {
 			self->alwaysVisible = 1;
-			E3D_LogWhite(g_FileLog, "MODEL: AlwaysVisible: %s", self->name);
+			E3D_LogWhite((&g_FileLog), "MODEL: AlwaysVisible: %s", self->name);
 		}
 		float r = CIniFile_GetFloat(self->scene->ini, "Model", "BBoxRadius", 0.0f);
 		if (r != 0.0f) {
@@ -673,7 +675,7 @@ void CModel_SetScene(CModel *self, CScene *scn) {
 			b->max.x = r + b->max.x;
 			b->max.y = b->max.y + r;
 			b->max.z = b->max.z + r;
-			E3D_LogWhite(g_FileLog, "MODEL: BBoxRadius: %f [%s]", (double)r, self->name);
+			E3D_LogWhite((&g_FileLog), "MODEL: BBoxRadius: %f [%s]", (double)r, self->name);
 		}
 		self->sortZBias = CIniFile_GetFloat(self->scene->ini, "Model", "SortZBias", self->sortZBias);
 		self->sortZMult = CIniFile_GetFloat(self->scene->ini, "Model", "SortZMult", self->sortZMult);
@@ -784,7 +786,7 @@ void CModel_BuildRenderNodes(CModel *self, int unused) {
 			if (l->active) {
 				Con_Warnf("WARN: Active light [%s] in model: %s\n", n->name, self->name);
 			} else {
-				E3D_LogVerbose(g_FileLog, "WARN: Unhidden light [%s] in model: %s", n->name, self->name);
+				E3D_LogVerbose((&g_FileLog), "WARN: Unhidden light [%s] in model: %s", n->name, self->name);
 			}
 		}
 	}
@@ -866,7 +868,7 @@ extern cGVar GVar_R_UseMLOD;
 #define g_UseMLOD (GVar_R_UseMLOD.value.i)		/* R_UseMLOD */
 extern cGVar GVar_R_DistMLOD1;
 #define g_DistMLOD1 (GVar_R_DistMLOD1.value.f)		/* R_DistMLOD1, the distance of LOD i is i times it */
-#define g_DrawMLODMask (*(uint32_t *)&GAME_GVAR(GVar_R_DrawMLODMask)->value)	/* R_DrawMLODMask: the LODs drawn as the main model */
+#define g_DrawMLODMask (*(uint32_t *)&GVar_R_DrawMLODMask.value)	/* R_DrawMLODMask: the LODs drawn as the main model */
 extern cGVar GVar_R_DrawMLODMin;
 #define g_DrawMLODMin (GVar_R_DrawMLODMin.value.i)		/* R_DrawMLODMin */
 extern cGVar GVar_R_DrawMLODPart;

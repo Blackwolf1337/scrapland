@@ -240,7 +240,7 @@ SD_OFFSET(PcxHeader, lx, 0x46);
 SD_SIZE(PcxHeader, 0x80);
 
 /* the error code of a header that is no 8 bit PCX (errno) */
-#define g_ErrPcxFormat GAME_GLOBAL(int, g_ErrPcxFormat)
+extern const int g_ErrPcxFormat;
 
 /* the pixels from src into dest (planes interleaved), the end of the data read */
 const byte *Pcx_Decode(byte *dest, const byte *src, const PcxHeader *hdr);

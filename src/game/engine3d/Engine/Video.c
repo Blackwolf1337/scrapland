@@ -25,6 +25,8 @@
 #include "scrap/video.h"
 #include "scrap/platform.h"
 
+extern cGVar GVar_PlayVideoFX;
+
 #define VK_ESCAPE 0x1b
 #define VK_SPACE 0x20
 #define VK_RETURN 0xd
@@ -39,7 +41,7 @@
 #define VIDEO_RING (1u << 20)		/* bytes of decoded sound ahead of the mixer, about 6 s of 44.1 kHz stereo */
 
 extern int g_VideoPadHeld;
-#define g_VideoMirror (*(uint32_t *)&GAME_GVAR(GVar_PlayVideoFX)->value)	/* 1: up-down, 2: left-right */
+#define g_VideoMirror (*(uint32_t *)&GVar_PlayVideoFX.value)	/* 1: up-down, 2: left-right */
 
 byte Video_PadPressed(void) {
 	uint32_t state[4] = { 0, 0, 0, 0 };
@@ -183,19 +185,19 @@ static int Video_Open(const char *path) {
 	void *dev = g_Engine ? g_Engine->device : NULL;
 
 	if (!dev) {
-		E3D_LogBlue(g_FileLog, "ERROR: no render device for the video");
+		E3D_LogBlue((&g_FileLog), "ERROR: no render device for the video");
 		return 0;
 	}
 	char sys[0x400];
 	crt_syspath(path, sys, sizeof(sys));	/* FFmpeg opens the file itself */
 	if (avformat_open_input(&video.fmt, sys, NULL, NULL) < 0 || avformat_find_stream_info(video.fmt, NULL) < 0) {
-		E3D_LogBlue(g_FileLog, "ERROR: the video does not open: %s", path);
+		E3D_LogBlue((&g_FileLog), "ERROR: the video does not open: %s", path);
 		return 0;
 	}
 	video.vidx = av_find_best_stream(video.fmt, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
 	video.aidx = av_find_best_stream(video.fmt, AVMEDIA_TYPE_AUDIO, -1, video.vidx, NULL, 0);
 	if (video.vidx < 0 || !(video.vdec = Video_OpenCodec(video.vidx))) {
-		E3D_LogBlue(g_FileLog, "ERROR: no video stream that decodes in %s", path);
+		E3D_LogBlue((&g_FileLog), "ERROR: no video stream that decodes in %s", path);
 		return 0;
 	}
 	video.w = video.vdec->width;
@@ -210,7 +212,7 @@ static int Video_Open(const char *path) {
 			&video.tex) < 0) {
 		return 0;
 	}
-	E3D_LogDebug(g_FileLog, "  video: %d x %d, %s", video.w, video.h, avcodec_get_name(video.vdec->codec_id));
+	E3D_LogDebug((&g_FileLog), "  video: %d x %d, %s", video.w, video.h, avcodec_get_name(video.vdec->codec_id));
 	/* the sound: 16 bit PCM through a mixer stream that reads the ring; none without the mixer */
 	video_ring.head = video_ring.tail = 0;
 	if (video.aidx >= 0 && (video.adec = Video_OpenCodec(video.aidx)) != NULL) {
@@ -418,7 +420,7 @@ int Video_PlayPath(const char *name, const char *dir, byte warn) {
 			return 0;
 		}
 	}
-	E3D_LogPrint(g_FileLog, "VIDEO: %s", path);
+	E3D_LogPrint((&g_FileLog), "VIDEO: %s", path);
 	video.played = 0;
 	if (!Video_Open(path)) {
 		Video_Close();

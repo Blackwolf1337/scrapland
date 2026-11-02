@@ -771,7 +771,7 @@ void Trails_Render(int texture) {
 		return;
 	}
 	void *dev = g_Engine->device;
-	Render_SetWorldMatrix(g_MatIdentity, 0);
+	Render_SetWorldMatrix((&g_MatIdentity), 0);
 	Rd_DevSetRenderState(dev, D3DRS_CULLMODE, D3DCULL_NONE);
 	Rd_DevSetVertexShader(dev, TRAILS_FVF);
 	Rd_DevSetStreamSource(dev, 0, g_TrailsVB, sizeof(TrailVertex));

@@ -128,11 +128,11 @@ CNode3D *CamComposite_Find(CModel *model, CIniFile *ini) {
 			if (r) {
 				return r->node;
 			}
-			E3D_LogBlue(g_FileLog, "CAM-COMPOSITE camera not found: %s", name);
+			E3D_LogBlue((&g_FileLog), "CAM-COMPOSITE camera not found: %s", name);
 		}
 	}
 	if (idx) {
-		E3D_LogBlue(g_FileLog, "CAM-COMPOSITE information invalid on model: %s", model->name);
+		E3D_LogBlue((&g_FileLog), "CAM-COMPOSITE information invalid on model: %s", model->name);
 	}
 	return NULL;
 }

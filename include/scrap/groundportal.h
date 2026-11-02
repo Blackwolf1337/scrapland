@@ -10,6 +10,8 @@
 #include "scrap/gvar.h"
 #include "scrap/node3d.h"
 
+extern cGVar g_FastGetYSectorVar;
+
 #define MAX_PORTALS 32
 
 typedef struct CZone {
@@ -70,7 +72,7 @@ extern int g_NumPaintZones;
 #define g_PaintI148 GAME_GLOBAL_IN(int, g_PaintAll, 0)
 #define g_PaintRect (GAME_GLOBAL_IN(box_t, g_PaintAll, 4))
 #define g_PaintNum GAME_GLOBAL_IN(int, g_PaintAll, 28)
-#define g_PaintAll (GAME_ARRAY(PaintZone, g_PaintAll))	/* the same three as one */
+extern PaintZone g_PaintAll;	/* the same three as one */
 
 
 CZone *CZone_ctor(CZone *self);
@@ -141,6 +143,6 @@ SD_SIZE(GroundRay, 0x20);
 byte CGround_RayVert(void *ground, float x, float z, GroundRay *res);
 /* the highest triangle point between minY and y with the flags of info; 1 when found */
 byte CGround_GetYInfo(void *ground, float x, float z, GroundRay *info);
-#define g_RayVertSectors (*(int *)&GAME_GVAR(g_FastGetYSectorVar)->value)
+#define g_RayVertSectors (*(int *)&g_FastGetYSectorVar.value)
 
 #endif

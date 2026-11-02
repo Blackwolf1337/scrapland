@@ -14,12 +14,14 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
 
+extern cGVarFunction GVar_OnFunctionaryStartsWorking;
+
 extern cEntityListData *g_DesktopsList;	/* the list of the desktops, once found */
 extern cGVar GVar_DesktopsFunctionaryListName;
 #define g_DesktopsListName (GVar_DesktopsFunctionaryListName.value.s)	/* DesktopsFunctionaryListName */
 extern cGVar GVar_FunctionaryAssignWorkDistance;
 #define g_FunctionaryAssignWorkDistance (GVar_FunctionaryAssignWorkDistance.value.f)
-#define g_OnFunctionaryStartsWorking (((cPy_Function *)&GAME_GVARFUNC(GVar_OnFunctionaryStartsWorking)->func))
+#define g_OnFunctionaryStartsWorking (((cPy_Function *)&GVar_OnFunctionaryStartsWorking.func))
 extern cGVar GVar_FunctionarySpecialActionStatesTransitionTime;
 #define g_FunctionarySpecialActionStatesTransitionTime (GVar_FunctionarySpecialActionStatesTransitionTime.value.f)
 extern cGVar GVar_FunctionaryMinTimeToSitDown;

@@ -132,9 +132,9 @@ void LensFlare_RenderAll(void) {
 	Render_SetMaterial(g_LensFlareMat, 0);
 	Rd_DevGetTransform(dev, D3DTS_VIEW, &view);
 	Rd_DevGetTransform(dev, D3DTS_PROJECTION, &proj);
-	Render_SetWorldMatrix(g_MatIdentity, 0);
-	Rd_DevSetTransform(dev, D3DTS_VIEW, g_MatIdentity);
-	Rd_DevSetTransform(dev, D3DTS_PROJECTION, g_MatIdentity);
+	Render_SetWorldMatrix((&g_MatIdentity), 0);
+	Rd_DevSetTransform(dev, D3DTS_VIEW, (&g_MatIdentity));
+	Rd_DevSetTransform(dev, D3DTS_PROJECTION, (&g_MatIdentity));
 	Rd_DevSetVertexShader(dev, D3DFVF_LENSFLARE);
 	for (int i = 0; i < g_nLensFlareRender; i++) {
 		CLensFlare *lf = g_LensFlareRender[i];
