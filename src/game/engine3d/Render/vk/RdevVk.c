@@ -771,9 +771,9 @@ static int Vk_DevSetIndices(void *dev, void *ib, uint32_t baseVertex) {
 	return D3D_OK;
 }
 
-static int Vk_DevCreatePixelShader(void *dev, const void *code, uint32_t *handle) {
-	(void)dev;
-	*handle = Vkd_CreatePixelShader(code);
+static int Vk_DevCreatePixelShader(void *dev, const char *name, const void *code, uint32_t *handle) {
+	(void)dev, (void)code;
+	*handle = Vkd_CreatePixelShader(name);
 	return *handle ? D3D_OK : D3DERR_INVALIDCALL;
 }
 

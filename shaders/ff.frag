@@ -1,18 +1,8 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 // The pixel part of the fixed function of Direct3D 8: the texture stages with their operations and arguments,
-// bump env mapping, the specular add, the alpha test and fog.
-#include "ff.glsl"
-
-layout(set = 0, binding = 1) uniform sampler2D tex[4];
-
-layout(location = 0) in vec4 inDiffuse;
-layout(location = 1) in vec4 inSpecular;
-layout(location = 2) in vec4 inTex[4];
-layout(location = 6) in float inFog;
-layout(location = 7) in float inEyeZ;
-
-layout(location = 0) out vec4 outColor;
+// bump env mapping and the specular add; the alpha test and fog in frag.glsl.
+#include "frag.glsl"
 
 vec4 Arg(int a, vec4 cur, vec4 texel, vec4 temp) {
 	vec4 v;
@@ -68,19 +58,6 @@ vec4 Op(int op, vec4 a1, vec4 a2, vec4 a0, vec4 cur, vec4 texel) {
 	}
 }
 
-bool AlphaPass(int func, float a, float ref) {
-	switch (func) {
-	case 1: return false;
-	case 2: return a < ref;
-	case 3: return a == ref;
-	case 4: return a <= ref;
-	case 5: return a > ref;
-	case 6: return a != ref;
-	case 7: return a >= ref;
-	default: return true;
-	}
-}
-
 void main() {
 	vec4 cur = inDiffuse;
 	vec4 temp = vec4(0.0);
@@ -93,9 +70,7 @@ void main() {
 		}
 		vec4 texel = vec4(1.0);
 		if (s < 4 && ff.stageTex[s].z != 0) {
-			vec4 tc = inTex[s];
-			vec2 uv = (ff.stageTex[s].y & 0x100) != 0 && tc.w != 0.0 ? tc.xy / tc.w : tc.xy;
-			texel = texture(tex[s], uv + bump);
+			texel = texture(tex[s], TexCoord(s) + bump);
 		}
 		bump = vec2(0.0);
 		if (cop == 22 || cop == 23) {
@@ -121,38 +96,5 @@ void main() {
 	if ((ff.flags.x & FL_SPECULARENABLE) != 0) {
 		cur.rgb = clamp(cur.rgb + inSpecular.rgb, 0.0, 1.0);
 	}
-	if (!AlphaPass(ff.flags.w, cur.a, ff.misc.y)) {
-		discard;
-	}
-	vec4 nofog = cur;
-	float f = 1.0;
-	if ((ff.flags.x & FL_FOG) != 0) {
-		f = inFog;
-		if (ff.flags.z != 0) {
-			float d = abs(inEyeZ);
-			int mode = ff.flags.z;
-			if (mode == 3) {
-				f = clamp((ff.fogParams.y - d) * ff.fogParams.w, 0.0, 1.0);
-			} else if (mode == 1) {
-				f = clamp(exp(-d * ff.fogParams.z), 0.0, 1.0);
-			} else {
-				float x = d * ff.fogParams.z;
-				f = clamp(exp(-x * x), 0.0, 1.0);
-			}
-		}
-		cur.rgb = mix(ff.fogColor.rgb, cur.rgb, f);
-	}
-	int dbg = int(ff.misc.z);
-	if (dbg == 1) {
-		cur = ff.stageTex[0].z != 0 ? texture(tex[0], inTex[0].xy) : vec4(1.0, 0.0, 1.0, 1.0);
-	} else if (dbg == 2) {
-		cur = inDiffuse;
-	} else if (dbg == 3) {
-		cur = vec4(vec3(f), 1.0);
-	} else if (dbg == 4) {
-		cur = vec4(nofog.rgb, 1.0);
-	} else if (dbg == 5) {
-		cur = vec4(vec3(nofog.a), 1.0);
-	}
-	outColor = cur;
+	Finish(cur);
 }

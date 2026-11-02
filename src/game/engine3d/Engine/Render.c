@@ -1320,7 +1320,7 @@ static void Render_LoadPS(int i) {
 	} else {
 		void *dev = g_pd3dDevice;
 		const void *p = Rd_XBufGetBufferPointer(code);
-		if (Rd_DevCreatePixelShader(dev, p, &g_PSHandles[i]) < 0) {
+		if (Rd_DevCreatePixelShader(dev, name, p, &g_PSHandles[i]) < 0) {
 			g_PSHandles[i] = 0;
 			E3D_LogVerbose(g_FileLog, "WARN: CreatePixelShader failed: %s", name);
 		}

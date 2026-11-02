@@ -135,13 +135,13 @@ int Rd_DevCreateIndexBuffer(void *dev, uint32_t len, uint32_t usage, int fmt, in
 	return rd->DevCreateIndexBuffer(dev, len, usage, fmt, pool, ib);
 }
 
-int Rd_DevCreatePixelShader(void *dev, const void *code, uint32_t *handle) {
+int Rd_DevCreatePixelShader(void *dev, const char *name, const void *code, uint32_t *handle) {
 	if (rd_logDevice && dev == rd_logDevice) {
 		const uint32_t a[] = { (uint32_t)(uintptr_t)code, (uint32_t)(uintptr_t)handle };
 		RdLog_Call(0x15c / 4, a);
 		dev = rd_logReal;
 	}
-	return rd->DevCreatePixelShader(dev, code, handle);
+	return rd->DevCreatePixelShader(dev, name, code, handle);
 }
 
 int Rd_DevCreateTexture(void *dev, uint32_t w, uint32_t h, uint32_t levels, uint32_t usage, int fmt, int pool,

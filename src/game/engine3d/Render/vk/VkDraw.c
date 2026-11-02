@@ -19,6 +19,21 @@ static const uint32_t vkd_ffFrag[] = {
 #include "ff_frag.inc"
 };
 
+typedef struct VkdPsCode {
+	const char *name;
+	const uint32_t *code;
+	size_t size;
+} VkdPsCode;
+
+#include "ps_all.inc"
+
+#define VKD_NUM_PS (sizeof(vkd_psCode) / sizeof(vkd_psCode[0]))
+
+/* files of the game with the same shader as another */
+static const char *const vkd_psAlias[][2] = { { "fire", "electric" } };
+
+static VkShaderModule vkd_psModule[VKD_NUM_PS];
+
 /* the uniform block of shaders/ff.glsl, std140 */
 typedef struct VkdFF {
 	float world[16], view[16], proj[16], texm[4][16];
@@ -143,6 +158,10 @@ void Vkd_Shutdown(void) {
 	Vk_DestroyBuffer(&vkd_defaults);
 	vkDestroyShaderModule(vk.device, vkd_vert, NULL);
 	vkDestroyShaderModule(vk.device, vkd_frag, NULL);
+	for (size_t i = 0; i < VKD_NUM_PS; i++) {
+		vkDestroyShaderModule(vk.device, vkd_psModule[i], NULL);
+		vkd_psModule[i] = VK_NULL_HANDLE;
+	}
 	vkDestroyPipelineLayout(vk.device, vkd_layout, NULL);
 	vkDestroyDescriptorSetLayout(vk.device, vkd_setLayout, NULL);
 	vkd_layout = VK_NULL_HANDLE;
@@ -422,6 +441,16 @@ static VkPipeline Vkd_Pipeline(const VkdPipeKey *k) {
 		{ .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
 			.module = vkd_frag, .pName = "main" },
 	};
+	if (k->ps) {
+		VkShaderModule *m = &vkd_psModule[k->ps - 1];
+		if (!*m) {
+			*m = Vkd_Module(vkd_psCode[k->ps - 1].code, vkd_psCode[k->ps - 1].size);
+		}
+		if (!*m) {
+			return VK_NULL_HANDLE;
+		}
+		st[1].module = *m;
+	}
 	VkFormat color = VK_FORMAT_B8G8R8A8_UNORM;
 	VkPipelineRenderingCreateInfo pr = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
@@ -756,7 +785,7 @@ static int Vkd_Prepare(VkoDev *d, uint32_t fvf, uint32_t stride, uint32_t cls, V
 		.blend = (rs[27] ? 1 : 0) | (rs[19] & 31) << 1 | (rs[20] & 31) << 6 | (rs[171] & 7) << 11,
 		.writeMask = rs[168] & 15,
 		.fill = rs[8] == 1 ? 1 : rs[8] == 2 ? 2 : 3,
-		.ps = 0,
+		.ps = d->ps <= VKD_NUM_PS ? d->ps : 0,
 		.depth = d->zs != NULL,
 	};
 	VkPipeline p = Vkd_Pipeline(&key);
@@ -889,8 +918,25 @@ int Vkd_DrawIndexedUP(VkoDev *d, int type, uint32_t primCount, uint32_t numVerti
 	return 0;
 }
 
-uint32_t Vkd_CreatePixelShader(const void *code) {
-	static uint32_t next;
-	(void)code;
-	return ++next;
+uint32_t Vkd_CreatePixelShader(const char *name) {
+	char base[64];
+	const char *b = strrchr(name, '/');
+	size_t n = 0;
+
+	for (b = b ? b + 1 : name; *b && *b != '.' && n < sizeof(base) - 1; b++) {
+		base[n++] = (char)(*b >= 'A' && *b <= 'Z' ? *b + 32 : *b);
+	}
+	base[n] = 0;
+	for (size_t i = 0; i < sizeof(vkd_psAlias) / sizeof(vkd_psAlias[0]); i++) {
+		if (!strcmp(base, vkd_psAlias[i][0])) {
+			snprintf(base, sizeof(base), "%s", vkd_psAlias[i][1]);
+		}
+	}
+	for (size_t i = 0; i < VKD_NUM_PS; i++) {
+		if (!strcmp(base, vkd_psCode[i].name)) {
+			return (uint32_t)i + 1;
+		}
+	}
+	Com_Printf("vulkan: no GLSL port of the pixel shader %s\n", name);
+	return 0;
 }

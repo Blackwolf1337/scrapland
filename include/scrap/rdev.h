@@ -36,7 +36,8 @@ int Rd_DevCopyRects(void *dev, void *src, const void *rects, uint32_t n, void *d
 int Rd_DevCreateDepthStencilSurface(void *dev, uint32_t w, uint32_t h, int fmt, int multisample, void **surf);
 int Rd_DevCreateImageSurface(void *dev, uint32_t w, uint32_t h, int fmt, void **surf);
 int Rd_DevCreateIndexBuffer(void *dev, uint32_t len, uint32_t usage, int fmt, int pool, void **ib);
-int Rd_DevCreatePixelShader(void *dev, const void *code, uint32_t *handle);
+/* name: the file of the shader (bmp/<name>.psh), which picks the GLSL port under Vulkan; code: its D3D8 tokens */
+int Rd_DevCreatePixelShader(void *dev, const char *name, const void *code, uint32_t *handle);
 int Rd_DevCreateTexture(void *dev, uint32_t w, uint32_t h, uint32_t levels, uint32_t usage, int fmt, int pool,
 	void **tex);
 int Rd_DevCreateVertexBuffer(void *dev, uint32_t len, uint32_t usage, uint32_t fvf, int pool, void **vb);

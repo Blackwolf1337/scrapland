@@ -35,7 +35,7 @@ typedef struct RdBackend {
 	int(*DevCreateDepthStencilSurface)(void *dev, uint32_t w, uint32_t h, int fmt, int multisample, void **surf);
 	int(*DevCreateImageSurface)(void *dev, uint32_t w, uint32_t h, int fmt, void **surf);
 	int(*DevCreateIndexBuffer)(void *dev, uint32_t len, uint32_t usage, int fmt, int pool, void **ib);
-	int(*DevCreatePixelShader)(void *dev, const void *code, uint32_t *handle);
+	int(*DevCreatePixelShader)(void *dev, const char *name, const void *code, uint32_t *handle);
 	int(*DevCreateTexture)(void *dev, uint32_t w, uint32_t h, uint32_t levels, uint32_t usage, int fmt, int pool,
 		void **tex);
 	int(*DevCreateVertexBuffer)(void *dev, uint32_t len, uint32_t usage, uint32_t fvf, int pool, void **vb);

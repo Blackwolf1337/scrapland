@@ -106,7 +106,8 @@ static int D3D8_DevCreateIndexBuffer(void *dev, uint32_t len, uint32_t usage, in
 		usage, fmt, pool, ib);
 }
 
-static int D3D8_DevCreatePixelShader(void *dev, const void *code, uint32_t *handle) {
+static int D3D8_DevCreatePixelShader(void *dev, const char *name, const void *code, uint32_t *handle) {
+	(void)name;
 	return ((int(__stdcall *)(void *, const void *, uint32_t *))(*(void ***)dev)[0x15c / 4])(dev, code, handle);
 }
 

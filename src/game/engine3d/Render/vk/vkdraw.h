@@ -24,7 +24,7 @@ int Vkd_DrawIndexedUP(VkoDev *d, int type, uint32_t primCount, uint32_t numVerti
 void Vkd_FrameDone(void);
 /* this frame is the one of SCRAP_VK_TRACE: the calls go into the log */
 int Vkd_Tracing(void);
-/* a handle for the ps.1.1 tokens (the GLSL port of that shader) */
-uint32_t Vkd_CreatePixelShader(const void *code);
+/* the handle of the GLSL port of bmp/<name>.psh (shaders/ps/), 0 when there is none */
+uint32_t Vkd_CreatePixelShader(const char *name);
 
 #endif

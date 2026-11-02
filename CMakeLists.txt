@@ -45,10 +45,21 @@ target_link_options(scrapcode PUBLIC -static-libgcc -Wl,--enable-stdcall-fixup)
 find_program(GLSLANG glslangValidator REQUIRED)
 set(SHADER_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders)
 file(MAKE_DIRECTORY ${SHADER_DIR})
-file(GLOB SHADER_HEADERS CONFIGURE_DEPENDS shaders/*.glsl)
+file(GLOB SHADER_HEADERS CONFIGURE_DEPENDS shaders/*.glsl shaders/ps/*.glsl)
+# the pixel shaders of the game (shaders/ps/<name>.frag for bmp/<name>.psh) and ps_all.inc with their table
+file(GLOB PS_SOURCES CONFIGURE_DEPENDS RELATIVE ${CMAKE_SOURCE_DIR}/shaders shaders/ps/*.frag)
+set(PS_ALL "/* made by CMakeLists.txt: the SPIR-V of shaders/ps/<name>.frag and their names */\n")
+set(PS_TABLE "static const VkdPsCode vkd_psCode[] = {\n")
+foreach(s ${PS_SOURCES})
+	get_filename_component(n ${s} NAME_WE)
+	string(APPEND PS_ALL "static const uint32_t vkd_ps_${n}[] = {\n#include \"ps_${n}_frag.inc\"\n};\n")
+	string(APPEND PS_TABLE "\t{ \"${n}\", vkd_ps_${n}, sizeof(vkd_ps_${n}) },\n")
+endforeach()
+file(CONFIGURE OUTPUT ${SHADER_DIR}/ps_all.inc CONTENT "${PS_ALL}${PS_TABLE}};\n")
 set(SHADER_INCS)
-foreach(s ff.vert ff.frag)
+foreach(s ff.vert ff.frag ${PS_SOURCES})
 	string(REPLACE "." "_" n ${s})
+	string(REPLACE "/" "_" n ${n})
 	add_custom_command(OUTPUT ${SHADER_DIR}/${n}.inc
 		COMMAND ${GLSLANG} -V --target-env vulkan1.3 -x -o ${SHADER_DIR}/${n}.inc ${CMAKE_SOURCE_DIR}/shaders/${s}
 		DEPENDS shaders/${s} ${SHADER_HEADERS}
