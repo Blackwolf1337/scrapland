@@ -109,6 +109,7 @@ cAICharControl *cAICharControl_ctor(void *mem, cEntity *ent, cAIChar *ai, int *a
 	self->farDist = 0.0f;
 	self->dir.x = self->dir.y = self->dir.z = -1.0f;
 	self->routePoint.x = self->routePoint.y = self->routePoint.z = -1.0f;
+	self->target = NULL;	/* not set by the original: SetParams of a new control read whatever the heap held */
 	self->targetEnt = NULL;
 	self->stuck = 0;
 	self->avoidChar = 0;
