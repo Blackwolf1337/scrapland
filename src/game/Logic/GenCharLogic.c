@@ -104,14 +104,14 @@ void cGenCharLocalLogic_ToAlert(cLocalLogic *elem, cAIChar *ai) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
 
-	ai->vftable->SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_GenCharAlertSpeed, 0);
+	ai->vftable->SetState(&ai->base.base, 6, b->origin, (double)b->actionRadius, (double)g_GenCharAlertSpeed, 0);
 }
 
 void cGenCharLocalLogic_ToRelax(cLocalLogic *elem, cAIChar *ai) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
 
-	ai->vftable->SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_GenCharRelaxSpeed, 1);
+	ai->vftable->SetState(&ai->base.base, 6, b->origin, (double)b->actionRadius, (double)g_GenCharRelaxSpeed, 1);
 }
 
 /* ---- part 3 ---- */
@@ -168,7 +168,7 @@ static inline byte GenChar_Rand101(void) {
 }
 
 static inline int GenChar_AISubState(cAIChar *ai) {
-	return ai->vftable->GetInternState(ai);
+	return ai->vftable->GetInternState(&ai->base.base);
 }
 
 /* vf17 */
@@ -301,7 +301,7 @@ states:
 		cGenCharLocalLogic_ResetSpecial(self);
 		return;
 	case GENCHAR_STAY:
-		if (ai->vftable->GetState(ai) != 4 && !cAIChar_TestFlags(self)) {
+		if (ai->vftable->GetState(&ai->base.base) != 4 && !cAIChar_TestFlags(self)) {
 			vec3_t o = b->origin;
 			const vec3_t *pp = b->parent->vftable->GetPos(b->parent, &t);
 			float dy = pp->y - o.y, dx = pp->x - o.x, dz = pp->z - o.z;
@@ -363,7 +363,7 @@ byte cGenCharLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *police) {
 void cGenCharLocalLogic_UpdateGetIt(cLocalLogic *base, cAIChar *ai, float dt) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)base;
 	(void)dt;
-	if (ai->vftable->GetState(ai) != 4) {
+	if (ai->vftable->GetState(&ai->base.base) != 4) {
 		Logic_Vtbl(self)->RestartState(&self->base.logic);
 	}
 }
@@ -429,7 +429,7 @@ void cGenCharLocalLogic_GoTo(cLocalLogic *elem, cAIChar *ai, cEntity *e) {
 
 	GenChar_Dir(&dir, pp, ep);
 	const vec3_t *tp = e->vftable->GetPos(e, &t3);
-	ai->vftable->SetState(ai, 4, *tp, dir, 70.0, 1.0);
+	ai->vftable->SetState(&ai->base.base, 4, *tp, dir, 70.0, 1.0);
 }
 
 /* vf19: the AI state of the logic state; always 1 */
@@ -462,7 +462,7 @@ byte cGenCharLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) 
 	case GENCHAR_ACCUSE:
 		if (ok && g_pWorld->alarm.sameChar) {
 			self->time = g_GenCharAcuseTime;
-			ai->vftable->SetState(ai, 8, target, 1);
+			ai->vftable->SetState(&ai->base.base, 8, target, 1);
 			if (WithLife_Vtbl(p)->GetAction(p, "Discover")) {
 				cGenCharLocalLogic_Discover(self);
 				cGenCharGroup_RaiseLevel((&g_pWorld->logic.genChars), 0);
@@ -471,7 +471,7 @@ byte cGenCharLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) 
 		break;
 	case GENCHAR_GETAWAY:
 		if (ok) {
-			ai->vftable->SetState(ai, 5, target, (double)g_GenCharEscapeSpeed);
+			ai->vftable->SetState(&ai->base.base, 5, target, (double)g_GenCharEscapeSpeed);
 		}
 		self->time = 0.0f;
 		break;
@@ -479,25 +479,25 @@ byte cGenCharLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) 
 		if (ok) {
 			if (!strcmp(Logic_TypeName(p), "Mayor")) {
 				cAIChar *a2 = b->parent->vftable->GetAI(b->parent);
-				a2->vftable->SetState(a2, 2, target, (double)g_GenCharAttackSpeed);
+				a2->vftable->SetState(&a2->base.base, 2, target, (double)g_GenCharAttackSpeed);
 			} else {
 				float speed = target == cWorld_GetUsrEntity(g_pWorld, 0) ? g_GenCharAttackSpeed : 1.0f;
-				ai->vftable->SetState(ai, 2, target, (double)speed);
+				ai->vftable->SetState(&ai->base.base, 2, target, (double)speed);
 			}
 		}
 		break;
 	case GENCHAR_CHASE:
 		if (ok) {
 			if (0.0f > g_GenCharSpecialChaseSpeed) {
-				ai->vftable->SetState(ai, 3, target, (double)g_GenCharAlertSpeed);
+				ai->vftable->SetState(&ai->base.base, 3, target, (double)g_GenCharAlertSpeed);
 			} else {
-				ai->vftable->SetState(ai, 3, target, (double)g_GenCharSpecialChaseSpeed);
+				ai->vftable->SetState(&ai->base.base, 3, target, (double)g_GenCharSpecialChaseSpeed);
 			}
 		}
 		break;
 	case GENCHAR_STAY:
 		if (ok) {
-			ai->vftable->SetState(ai, 4, b->origin, b->originAng, 70.0, 1.0);
+			ai->vftable->SetState(&ai->base.base, 4, b->origin, b->originAng, 70.0, 1.0);
 		}
 		break;
 	case GENCHAR_GET_IT:

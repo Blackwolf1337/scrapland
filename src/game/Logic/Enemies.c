@@ -89,7 +89,7 @@ void cEnemies_Attack(cEnemies *self, cEntity *usr) {
 			}
 		} else {
 			if (usr->vftable->IsType(usr, TYEN_CAR)) {
-				Nto1Node *att = ai->vftable->GetTargetNode(ai);
+				Nto1Node *att = ai->vftable->GetTarget(&ai->base.base);
 				if (st == 0 || att->target != usr) {
 					cAIVehicle_SetState(ai, AIV_STATE_ATTACK, usr);
 				}

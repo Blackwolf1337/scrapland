@@ -515,7 +515,7 @@ void cGenCharLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount);
 
 /* ---- the multiplayer modes (of cLogicControl) ---- */
 static inline cEntity *Logic_AttackTarget(cAIVehicle *ai) {
-	return (cEntity *)ai->vftable->GetTargetNode(ai)->target;
+	return (cEntity *)ai->vftable->GetTarget(&ai->base.base)->target;
 }
 
 /* the vehicle AI state constants the modes use */

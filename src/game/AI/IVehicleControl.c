@@ -455,7 +455,7 @@ byte cAIVehicleControl_CheckTarget(cAIVehicleControl *self) {
 			int st = cAIVehicle_GetState(self->ai);
 			Con_Bluef("OBJECTIVE_DIED - cAIVehicleControl::CheckIntensive - Entidad: %s - State: %d - StateIntern: "
 				"%d\n", name, st, in);
-			self->ai->vftable->Event(self->ai, 3);
+			self->ai->vftable->Event(&self->ai->base.base, 3);
 			return 0;
 		}
 	}
@@ -714,11 +714,11 @@ void cAIVehicleControl_CheckArrive(cAIVehicleControl *self) {
 	} else {
 		goto other;
 	}
-	if (self->ai->vftable->Event(self->ai, ev)) {
+	if (self->ai->vftable->Event(&self->ai->base.base, ev)) {
 		return;
 	}
 other:
-	self->ai->vftable->Event(self->ai, 5);
+	self->ai->vftable->Event(&self->ai->base.base, 5);
 }
 
 /* ---- the update ---- */
@@ -1330,11 +1330,11 @@ byte cAIVehicleControl_SetPath(cAIVehicleControl *self, const vec3_t *p) {
 	return 1;
 fail:
 	if (!goalOk) {
-		self->ai->vftable->Event(self->ai, 1);
+		self->ai->vftable->Event(&self->ai->base.base, 1);
 		return 0;
 	}
 	if (!startOk) {
-		self->ai->vftable->Event(self->ai, 0);
+		self->ai->vftable->Event(&self->ai->base.base, 0);
 	}
 	return 0;
 }
@@ -1362,7 +1362,7 @@ byte cAIVehicleControl_RebuildPath(cAIVehicleControl *self) {
 	VC_Pos(self, &buf);
 	if (!CNodesWorld_BuildPath(g_NodesWorld, &self->path, g_DepthPathRouteOutDoorAI, &self->dir, &buf,
 		self->pathDirect, &self->pathNode, self->radius, self->pathFlat)) {
-		self->ai->vftable->Event(self->ai, 0);
+		self->ai->vftable->Event(&self->ai->base.base, 0);
 		return 0;
 	}
 	cNWVecNode *h = self->path.head;
@@ -1673,7 +1673,7 @@ byte cAIVehicleControl_UpdatePoint(cAIVehicleControl *self, float dt) {
 	(void)dt;
 	if (self->path.count > 0) {
 		cAIVehicleControl_CheckArrive(self);
-		if (!self->ai->vftable->GetChanged(self->ai)) {
+		if (!self->ai->vftable->base.GetChanged(&self->ai->base.base)) {
 			if (!cAIVehicleControl_PathStep(self)) {
 				return 0;
 			}
@@ -1692,7 +1692,7 @@ byte cAIVehicleControl_UpdateDirect(cAIVehicleControl *self, float dt) {
 	(void)dt;
 	if (self->path.count > 0) {
 		cAIVehicleControl_CheckArrive(self);
-		if (!self->ai->vftable->GetChanged(self->ai)) {
+		if (!self->ai->vftable->base.GetChanged(&self->ai->base.base)) {
 			cAIVehicleControl_TurnToPoint(self);
 			cAIVehicleControl_StrafeToPoint(self);
 			cAIVehicleControl_AccelPath(self);
@@ -1705,7 +1705,7 @@ byte cAIVehicleControl_UpdatePath(cAIVehicleControl *self, float dt) {
 	(void)dt;
 	if (self->path.count > 0) {
 		cAIVehicleControl_CheckArrive(self);
-		if (!self->ai->vftable->GetChanged(self->ai)) {
+		if (!self->ai->vftable->base.GetChanged(&self->ai->base.base)) {
 			if (!cAIVehicleControl_PathStepDir(self)) {
 				return 0;
 			}
@@ -1811,7 +1811,7 @@ byte cAIVehicleControl_SetMove(cAIVehicleControl *self, int mode, ...) {
 		break;
 	}
 	case AIVC_CHASE: {
-		Nto1Node *node = self->ai->vftable->GetTargetNode(self->ai);
+		Nto1Node *node = self->ai->vftable->GetTarget(&self->ai->base.base);
 		double mn = va_arg(ap, double);
 		double mx = va_arg(ap, double);
 		int boost = va_arg(ap, int);
@@ -1821,7 +1821,7 @@ byte cAIVehicleControl_SetMove(cAIVehicleControl *self, int mode, ...) {
 		break;
 	}
 	case AIVC_ORIENT:
-		r = cAIVehicleControl_SetOrient(self, self->ai->vftable->GetTargetNode(self->ai));
+		r = cAIVehicleControl_SetOrient(self, self->ai->vftable->GetTarget(&self->ai->base.base));
 		break;
 	case AIVC_PATH: {
 		vec3_t dir = va_arg(ap, vec3_t);

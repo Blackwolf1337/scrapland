@@ -421,7 +421,7 @@ PyObject *SetStateChar0(PyObject *self, PyObject *args) {
 	if (PyArg_ParseTuple(args, "is", &st, &name)) {
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
-			return StateResult(ai->vftable->SetState(ai, st), name, "STATIC_CHAR");
+			return StateResult(ai->vftable->SetState(&ai->base.base, st), name, "STATIC_CHAR");
 		}
 	}
 	return SetState_Error(name, "STATIC_CHAR", err, NULL);
@@ -437,7 +437,7 @@ PyObject *SetStateChar1(PyObject *self, PyObject *args) {
 	if (PyArg_ParseTuple(args, "isf|i", &st, &name, &f, &flag)) {
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
-			return StateResult(ai->vftable->SetState(ai, st, (double)f, flag == 1), name, "IN_ROUTE_CHAR");
+			return StateResult(ai->vftable->SetState(&ai->base.base, st, (double)f, flag == 1), name, "IN_ROUTE_CHAR");
 		}
 	}
 	return SetState_Error(name, "IN_ROUTE_CHAR", err, NULL);
@@ -457,7 +457,7 @@ static PyObject *CharStateTargetF(PyObject *args, const char *state) {
 		}
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
-			return StateResult(ai->vftable->SetState(ai, st, t, (double)f), name, state);
+			return StateResult(ai->vftable->SetState(&ai->base.base, st, t, (double)f), name, state);
 		}
 	}
 	return SetState_Error(name, state, err, NULL);
@@ -476,7 +476,7 @@ static PyObject *CharStateTargetI(PyObject *args, const char *state) {
 		}
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
-			return StateResult(ai->vftable->SetState(ai, st, t, flag == 1), name, state);
+			return StateResult(ai->vftable->SetState(&ai->base.base, st, t, flag == 1), name, state);
 		}
 	}
 	return SetState_Error(name, state, err, NULL);
@@ -505,7 +505,7 @@ PyObject *SetStateChar4(PyObject *self, PyObject *args) {
 	if (PyArg_ParseTuple(args, "isffffffff", &st, &name, &a.x, &a.y, &a.z, &b.x, &b.y, &b.z, &f1, &f2)) {
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
-			return StateResult(ai->vftable->SetState(ai, st, a, b, (double)f1, (double)f2), name, "GO_TO_CHAR");
+			return StateResult(ai->vftable->SetState(&ai->base.base, st, a, b, (double)f1, (double)f2), name, "GO_TO_CHAR");
 		}
 	}
 	return SetState_Error(name, "GO_TO_CHAR", err, NULL);
@@ -528,7 +528,7 @@ PyObject *SetStateChar6(PyObject *self, PyObject *args) {
 	if (PyArg_ParseTuple(args, "isfffff|i", &st, &name, &pos.x, &pos.y, &pos.z, &f1, &f2, &flag)) {
 		cAIChar *ai = StateAI(name, SetState_CheckChar, &err);
 		if (ai) {
-			return StateResult(ai->vftable->SetState(ai, st, pos, (double)f1, (double)f2, flag == 1), name,
+			return StateResult(ai->vftable->SetState(&ai->base.base, st, pos, (double)f1, (double)f2, flag == 1), name,
 				"PATROL_ZONE_CHAR");
 		}
 	}
@@ -606,7 +606,7 @@ PyObject *SAI_GetStateChar(PyObject *self, PyObject *args) {
 		cEntity *e = World_FindEntity(name);
 		cAIChar *ai = e ? e->vftable->GetAI(e) : NULL;
 		if (ai) {
-			return Py_BuildValue("i", ai->vftable->GetState(ai));
+			return Py_BuildValue("i", ai->vftable->GetState(&ai->base.base));
 		}
 	}
 	return Py_ReturnNone();

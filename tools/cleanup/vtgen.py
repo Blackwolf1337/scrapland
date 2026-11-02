@@ -7,7 +7,7 @@
 #                                          (at the base part when <Struct> embeds the family struct), the array
 #                                          leaves Vtables.c
 #   vtgen.py fields <Struct>              the slot fields of a struct in slot order (with the embedded bases)
-import re, sys, os
+import os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import vtlib as v
 
@@ -124,6 +124,7 @@ ERR_RE = re.compile(r"^(.+?):(\d+):\d+: error: initialization of ‘(.+?)’(?: 
 
 def parse_fptype(t):
     """'int (*)(cScorerItem *, int)' -> ('int', ['cScorerItem *', 'int'])"""
+    t = re.sub(r'(?:struct )?__va_list_tag ?\*', 'va_list', t)
     i = t.index('(*)')
     ret = t[:i].strip()
     params = v.split_params(t[i + 3:].strip()[1:-1])
@@ -253,6 +254,15 @@ CALL_RE = re.compile(r"^(.+?):(\d+):(\d+): error: passing argument (\d+) of ‘(
 NOTE_RE = re.compile(r"note: expected ‘(?:const )?(?:struct )?(\w+) \*’ but argument is of type ‘(?:const )?(?:struct )?(\w+) \*’")
 
 
+def display_to_index(line, col):
+    """the display column of gcc (tabs to 8) to an index"""
+    i, d = 0, 1
+    while i < len(line) and d < col:
+        d = (d - 1) // 8 * 8 + 9 if line[i] == '\t' else d + 1
+        i += 1
+    return i
+
+
 def arg_end(line, i):
     depth = 0
     while i < len(line):
@@ -290,6 +300,8 @@ def fixcall(logfile):
                 print('report: %s:%s %s -> %s no path' % (m.group(1), m.group(2), derived, base))
                 continue
         loc = (m.group(1), int(m.group(2)), int(m.group(3)))
+        if not os.path.exists(v.ROOT + m.group(1)):
+            continue
         if open(v.ROOT + m.group(1)).read().split('\n')[loc[1] - 1].lstrip().startswith('#define'):
             ex = next((re.match(r'^(.+?):(\d+):(\d+): note: in expansion of macro', x) for x in lines[k + 1:k + 20]
                        if re.match(r'^(.+?):(\d+):(\d+): note: in expansion of macro', x)), None)
@@ -297,17 +309,28 @@ def fixcall(logfile):
                 print('report: %s:%s inside a macro' % loc[:2])
                 continue
             loc = (ex.group(1), int(ex.group(2)), int(ex.group(3)))
-        edits.setdefault(v.ROOT + loc[0], []).append((loc[1], loc[2], path, m.group(5)))
+        # the range of the argument from the marker line of gcc (the caret of 'a->b' is on the '->')
+        span = None
+        if loc[0] == m.group(1) and k + 2 < len(lines):
+            mk = re.match(r'^(\s*\|\s)(.*)$', lines[k + 2])
+            if mk and re.match(r'^\s*\d+ \|', lines[k + 1]):
+                r = [j for j, ch in enumerate(mk.group(2)) if ch in '~^']
+                if r:
+                    span = (r[0] + 1, r[-1] + 1)
+        edits.setdefault(os.path.realpath(v.ROOT + loc[0]), []).append((loc[1], loc[2], path, m.group(5), span))
     for f, es in edits.items():
         src = open(f).read().split('\n')
-        for ln, col, path, fn in sorted(set(es), key=lambda e: (e[0], -e[1])):  # noqa
+        uniq = {}
+        for e in es:	# a header error comes once per source file, the callee text differs (<U...> of gcc)
+            uniq.setdefault((e[0], e[1]), e)
+        for ln, col, path, fn, span in sorted(uniq.values(), key=lambda e: (e[0], -e[1])):  # noqa
             line = src[ln - 1]
-            # the display column of gcc (tabs to 8) to an index
-            i, d = 0, 1
-            while i < len(line) and d < col:
-                d = (d - 1) // 8 * 8 + 9 if line[i] == '\t' else d + 1
-                i += 1
-            e = arg_end(line, i)
+            if span:
+                i = display_to_index(line, span[0])
+                e = display_to_index(line, span[1] + 1)
+            else:
+                i = display_to_index(line, col)
+                e = arg_end(line, i)
             arg = line[i:e].strip()
             if not arg:
                 print('report: %s:%d empty argument' % (v.rel(f), ln))
@@ -561,3 +584,38 @@ def fixvt(logfile):
 
 if __name__ == '__main__' and sys.argv[1] in ('protos', 'fixvt'):
     {'protos': protos, 'fixvt': fixvt}[sys.argv[1]](sys.argv[2])
+
+
+# ---- fixmember: "'const cXVtbl' has no member named 'F'" where F sits in an embedded base: insert the path
+def fixmember(log):
+    st = v.structs()
+    lines = open(log, errors='replace').read().split('\n')
+    edits = {}
+    for x in lines:
+        x = re.sub(r"‘[^’]*’ \{aka ‘([^’]*)’\}", r"‘\1’", x)
+        m = re.match(r"^(.+?):(\d+):(\d+): error: ‘(?:const )?(?:struct )?(\w+Vtbl\w*)’ has no member named ‘(\w+)’", x)
+        if not m or m.group(4) not in st:
+            continue
+        path = next((d for d, f in fields(st, m.group(4)) if f == m.group(5) and '.' in d), None)
+        if not path:
+            print('report: %s:%s %s.%s' % (m.group(1), m.group(2), m.group(4), m.group(5)))
+            continue
+        edits.setdefault(os.path.realpath(v.ROOT + m.group(1)), set()).add((int(m.group(2)), int(m.group(3)), path, m.group(5)))
+    for f, es in edits.items():
+        t = open(f).read().split('\n')
+        for ln, col, path, name in sorted(es, reverse=True):
+            s = t[ln - 1]
+            c = display_to_index(s, col)
+            mm = re.match(r'\s*(->|\.)\s*', s[c:])
+            if mm:
+                c += mm.end()
+            if s[c:c + len(name)] != name:
+                print('report: %s:%d column' % (v.rel(f), ln))
+                continue
+            t[ln - 1] = s[:c] + path + s[c + len(name):]
+            print('%s:%d %s' % (v.rel(f), ln, path))
+        open(f, 'w').write('\n'.join(t))
+
+
+if __name__ == '__main__' and sys.argv[1] == 'fixmember':
+    fixmember(sys.argv[2])

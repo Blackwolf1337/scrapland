@@ -16,16 +16,18 @@ void *cAIBankDirector_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAIBankDirector *cAIBankDirector_Delete(cAIBankDirector *self, byte flags) {
+cAI *cAIBankDirector_Delete(cAI *elem, byte flags) {
+	cAIBankDirector *self = (cAIBankDirector *)elem;
 	self->base.vftable = CAIBANKDIRECTOR_VFTABLE;
 	cAIChar_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cAIBankDirector));
 	}
-	return self;
+	return elem;
 }
 
-void cAIBank_CheckAttack(cAIBank *self) {
+void cAIBank_CheckAttack(cAI *elem) {
+	cAIBank *self = (cAIBank *)elem;
 	cAIChar *c = &self->base;
 	cAICharControl *ctl = c->control;
 	byte go;
@@ -57,12 +59,13 @@ void cAIBank_CheckAttack(cAIBank *self) {
 	c->ctrl->act = 0;
 }
 
-void cAIBankDirector_SetRanges(cAIBankDirector *self) {
+void cAIBankDirector_SetRanges(cAI *elem) {
+	cAIBankDirector *self = (cAIBankDirector *)elem;
 	cAIChar *c = &self->base;
 
 	if (c->state != 3) {
 		if (c->state != 7) {
-			cAIChar_SetDists(c);
+			cAIChar_SetDists(&c->base.base);
 			return;
 		}
 		c->actMin = 0.0f;
@@ -72,7 +75,8 @@ void cAIBankDirector_SetRanges(cAIBankDirector *self) {
 	c->chaseNear = 300.0f;
 }
 
-byte cAIBank_SetState(cAIBank *self, int state, ...) {
+byte cAIBank_SetState(cAI *elem, int state, ...) {
+	cAIBank *self = (cAIBank *)elem;
 	cAIChar *c = &self->base;
 	va_list ap;
 
@@ -81,30 +85,134 @@ byte cAIBank_SetState(cAIBank *self, int state, ...) {
 		self->money = WChar(c->ent)->money;
 		state = 7;
 	}
-	if (!c->vftable->IsGroupState(c, state) || g_CharGroup->vftable->CanChange(g_CharGroup)) {
-		c->vftable->BeginChange(c, state);
+	if (!c->vftable->IsGroupState(&c->base.base, state) || g_CharGroup->vftable->CanChange(g_CharGroup)) {
+		c->vftable->BeginChange(&c->base.base, state);
 	}
 	va_start(ap, state);
-	byte r = cAIChar_ChangeState(c, state, ap);
+	byte r = cAIChar_ChangeState(&c->base.base, state, ap);
 	va_end(ap);
 	return r;
 }
 
-byte cAIBank_SetStateIntern(cAIBank *self, int state, ...) {
+byte cAIBank_SetStateIntern(cAI *elem, int state, ...) {
+	cAIBank *self = (cAIBank *)elem;
 	cAIChar *c = &self->base;
 	va_list ap;
 
 	AIChar_DebugState(c, "Demanda interna de CAMBIO de ESTADO -> %s", state);
-	if (c->vftable->IsGroupState(c, state)) {
+	if (c->vftable->IsGroupState(&c->base.base, state)) {
 		g_CharGroup->vftable->AllowChange(g_CharGroup);
 	}
 	if (state == 2) {
 		self->money = WChar(c->ent)->money;
 		state = 7;
 	}
-	c->vftable->BeginChange(c, state);
+	c->vftable->BeginChange(&c->base.base, state);
 	va_start(ap, state);
-	byte r = cAIChar_ChangeState(c, state, ap);
+	byte r = cAIChar_ChangeState(&c->base.base, state, ap);
 	va_end(ap);
 	return r;
 }
+
+/* the vtable of cAIBankDirector */
+const cAICharVtbl cAIBankDirector_vftable = {
+	.base.base.Delete = cAIBankDirector_Delete,
+	.base.base.Update = cAIChar_Update,
+	.base.base.UpdateOff = cAIChar_UpdateOff,
+	.base.base.Draw = cAIChar_Draw,
+	.base.base.GetChanged = cAI_GetChanged,
+	.base.base.IsVisible = cAI_IsVisible,
+	.base.base.Debugf = cAIChar_Debugf,
+	.base.base.VarI = cAIChar_VarI,
+	.base.base.VarF = cAIChar_VarF,
+	.base.base.VarS = cAIChar_VarS,
+	.base.base.VarV = cAIChar_VarV,
+	.base.base.Print = cAI_Print,
+	.base.base.GetEventName = cAI_GetEventName,
+	.base.base.OnEvent = cAI_OnEvent,
+	.base.GetTarget = cAIMove_GetTarget,
+	.base.CanJump = cAIMove_CanJump,
+	.base.GetStopped = cAIMove_GetStopped,
+	.base.IsPaused = cAIChar_IsPaused,
+	.base.GetTargetEnt = cAIMove_GetTargetEnt,
+	.base.GetArrived = cAIMove_GetArrived,
+	.base.RandomPoint = cAIMove_RandomPoint,
+	.base.CheckStopped = cAIMove_CheckStopped,
+	.base.Event = cAIChar_Event,
+	.base.IsMoving = cAIChar_IsMoving,
+	.base.CanTarget = cAIMove_CanTarget,
+	.CheckParams = cAIChar_CheckParams,
+	.ChangeState = cAIChar_ChangeState,
+	.SetState = cAIBank_SetState,
+	.RestoreState = cAIChar_RestoreState,
+	.SetInternStateV = cAIChar_SetInternStateV,
+	.SetInternState = cAIChar_SetInternState,
+	.GetState = cAIChar_GetState,
+	.GetInternState = cAIChar_GetInternState,
+	.StateName = cAIChar_StateName,
+	.GetStateName = cAIChar_GetStateName,
+	.InternStateName = cAIChar_InternStateName,
+	.GetInternStateName = cAIChar_GetInternStateName,
+	.GetDirect = cAIChar_GetDirect,
+	.GetDirect2 = cAIChar_GetDirect2,
+	.GetControl = cAIChar_GetControl,
+	.GetLast = cAIChar_GetLast,
+	.SaveTo = cAIChar_SaveTo,
+	.SetRepos = cAIChar_SetRepos,
+	.GetRepos = cAIChar_GetRepos,
+	.IsTalking = cAIChar_IsTalking,
+	.GetCollide = cAIChar_GetCollide,
+	.React = cAIChar_React,
+	.CheckAction = cAIChar_CheckAction,
+	.GetChanged2 = cAIChar_GetChanged,
+	.CanTalk = cAIChar_CanTalk,
+	.SetStateIntern = cAIBank_SetStateIntern,
+	.RestoreStateIntern = cAIChar_RestoreStateIntern,
+	.ChangeStateMore = cAIChar_ChangeStateMore,
+	.IsGroupState = cAIChar_IsGroupState,
+	.Repos = cAIChar_Repos,
+	.AfterRepos = cAIChar_AfterRepos,
+	.SetDists = cAIBankDirector_SetRanges,
+	.SetDists2 = cAIChar_SetDists2,
+	.BeginChange = cAIChar_BeginChange,
+	.SetPauseCheck = cAIChar_SetPauseCheck,
+	.SaveState = cAIChar_SaveState,
+	.RestoreSaved = cAIChar_RestoreSaved,
+	.SetPaused = cAIChar_SetPaused,
+	.UpdateAction1 = cAIChar_UpdateAction1,
+	.UpdateAction0 = cAIChar_UpdateAction0,
+	.UpdateAction = cAI_UpdateActionNop,
+	.CheckActDist = cAIBank_CheckAttack,
+	.SetAction = cAIChar_SetAction,
+	.UpdateMove = cAIChar_UpdateMove,
+	.EventDefault = cAIChar_EventDefault,
+	.EventInRoute = cAIChar_EventInRoute,
+	.EventPatrol = cAIChar_EventPatrol,
+	.EventGoTo = cAIChar_EventGoTo,
+	.EventGetAway = cAIChar_EventGetAway,
+	.EventChase = cAI_EventChaseFalse,
+	.EventChaseBack = cAIChar_EventChaseBack,
+	.EventChaseNoAction = cAI_EventChaseNoActionFalse,
+	.EventLostPath = cAIChar_EventLostPath,
+	.Resume = cAIChar_Resume,
+	.UpdateThink = cAIChar_UpdateThink,
+	.CheckPause = cAIChar_CheckPause,
+	.CheckRepos = cAIChar_CheckRepos,
+	.CanRepos = cAIChar_CanRepos,
+	.Think = cAIChar_Think,
+	.ThinkInRoute = cAIChar_ThinkInRoute,
+	.ThinkGetAway = cAI_ThinkGetAwayNop,
+	.ThinkChase = cAI_ThinkChaseNop,
+	.ThinkChaseBack = cAI_ThinkChaseBackNop,
+	.ThinkChaseNoAction = cAI_ThinkChaseNoActionNop,
+	.ThinkLostPath = cAIChar_ThinkLostPath,
+	.ThinkLostPathChase = cAIChar_ThinkLostPathChase,
+	.ReactLostPath = cAIChar_ReactLostPath,
+	.ReactLostPathChase = cAIChar_ReactLostPath,
+	.ReactPatrol = cAIChar_ReactPatrol,
+	.ReactInRoute = cAIChar_ReactInRoute,
+	.ThinkGoTo = cAI_ThinkGoToNop,
+	.ThinkPatrol = cAIChar_ThinkPatrol,
+	.CheckTalk = cAIChar_CheckTalk,
+	.Facing = cAIChar_Facing,
+};

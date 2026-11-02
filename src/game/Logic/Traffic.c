@@ -220,7 +220,7 @@ static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEnti
 	if (st != 2 || !usr) {
 		return Logic_ListNext(n);
 	}
-	if (ai->vftable->GetTargetEnt(ai) == usr) {
+	if (ai->vftable->GetTargetEnt(&ai->base.base) == usr) {
 		Nto1Node *next = Logic_ListNext(n);
 		PoliceAI_RestoreParams(ai);
 		cEntity_SetList(e, "EnemiesTraffic");
@@ -228,7 +228,7 @@ static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEnti
 		return next;
 	}
 	CGameModel *tm = NULL;
-	cEntity *t = ai->vftable->GetTargetEnt(ai);
+	cEntity *t = ai->vftable->GetTargetEnt(&ai->base.base);
 	if (t) {
 		if (!t->vftable->IsType(t, TYEN_CAR)) {
 			return Logic_ListNext(n);
@@ -246,7 +246,7 @@ static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEnti
 	PoliceAI_RestoreParams(ai);
 	Traffic_Patrol(ai);
 	cEntity_SetList(e, "Traffic");
-	cEntity *o = ai->vftable->GetTargetEnt(ai);
+	cEntity *o = ai->vftable->GetTargetEnt(&ai->base.base);
 	if (!o || !o->vftable->IsType(o, TYEN_CAR)) {
 		return next;
 	}

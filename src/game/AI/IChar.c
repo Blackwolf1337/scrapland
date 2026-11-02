@@ -86,11 +86,11 @@ static void AIC_CopyName(char *dst, int size, const char *src) {
 }
 
 static inline void AIC_ResumeRoute(cAIChar *self) {
-	self->vftable->SetStateIntern(self, AIC_IN_ROUTE, (double)self->base.speed, (int)self->pauses);
+	self->vftable->SetStateIntern(&self->base.base, AIC_IN_ROUTE, (double)self->base.speed, (int)self->pauses);
 }
 
 static inline void AIC_ResumePatrol(cAIChar *self) {
-	self->vftable->SetStateIntern(self, AIC_PATROL_ZONE, self->base.center, (double)self->base.radius,
+	self->vftable->SetStateIntern(&self->base.base, AIC_PATROL_ZONE, self->base.center, (double)self->base.radius,
 		(double)self->base.speed, (int)self->pauses);
 }
 
@@ -141,8 +141,8 @@ void *cAIChar_ctor(void *mem, cEntity *e, int *arg) {
 	CHECK(self->control);
 	self->state = AIC_STATE_NONE;
 	self->internState = AICI_NONE;
-	cAIChar_Debugf(self, "Entidad CREADA");
-	cAIChar_SetStateIntern(self, AIC_STATIC);
+	cAIChar_Debugf(&self->base.base, "Entidad CREADA");
+	cAIChar_SetStateIntern(&self->base.base, AIC_STATIC);
 	self->back = 0;
 	self->pauseCheck = 0;
 	self->base.paused = 0;
@@ -177,16 +177,17 @@ void cAIChar_dtor(cAIChar *self) {
 	if (self->control) {
 		AICC_Vtbl(self->control)->Delete(self->control, 1);
 	}
-	cAIChar_Debugf(self, "Entidad DESTRUIDA");
+	cAIChar_Debugf(&self->base.base, "Entidad DESTRUIDA");
 	cAIMove_dtor(&self->base);
 }
 
-cAIChar *cAIChar_Delete(cAIChar *self, byte flags) {
+cAI *cAIChar_Delete(cAI *base, byte flags) {
+	cAIChar *self = (cAIChar *)base;
 	cAIChar_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAICHAR_SIZE);
 	}
-	return self;
+	return base;
 }
 
 /* ---- Global/Nto1Links.h and a vector compare, out of line in this part of the exe ---- */
@@ -211,79 +212,96 @@ byte cAIChar_EventNone(cAIChar *self, int ev) {
 	return 0;
 }
 
-byte cAIChar_GetChanged(cAIChar *self) {
+byte cAIChar_GetChanged(cAI *elem) {
+	cAIChar *self = (cAIChar *)elem;
 	return self->base.base.changed;
 }
 
-byte cAIChar_IsPaused(cAIChar *self) {
+byte cAIChar_IsPaused(cAI *elem) {
+	cAIChar *self = (cAIChar *)elem;
 	return self->base.paused;
 }
 
-int cAIChar_GetState(cAIChar *self) {
+int cAIChar_GetState(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	return self->state;
 }
 
-int cAIChar_GetInternState(cAIChar *self) {
+int cAIChar_GetInternState(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	return self->internState;
 }
 
-cAICharControl *cAIChar_GetControl(cAIChar *ai) {
+cAICharControl *cAIChar_GetControl(cAI *base) {
+	cAIChar *ai = (cAIChar *)base;
 	return ai->control;
 }
 
-cAICharSaved *cAIChar_GetLast(cAIChar *self) {
+cAICharSaved *cAIChar_GetLast(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	return &self->last;
 }
 
-cAICharSaved *cAIChar_SaveTo(cAIChar *self, cAICharSaved *s) {
-	self->vftable->SaveState(self, s);
+cAICharSaved *cAIChar_SaveTo(cAI *base, cAICharSaved *s) {
+	cAIChar *self = (cAIChar *)base;
+	self->vftable->SaveState(&self->base.base, s);
 	return s;
 }
 
-byte cAIChar_GetRepos(cAIChar *self) {
+byte cAIChar_GetRepos(cAI *elem) {
+	cAIChar *self = (cAIChar *)elem;
 	return self->base.repos;
 }
 
-byte cAIChar_IsTalking(cAIChar *self) {
+byte cAIChar_IsTalking(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	return self->talking;
 }
 
-byte cAIChar_CanTalk(cAIChar *self) {
+byte cAIChar_CanTalk(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	return self->canTalk;
 }
 
-byte cAIChar_GetDirect(cAIChar *self) {
+byte cAIChar_GetDirect(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	return AICC_Vtbl(self->control)->IsDirect(self->control);
 }
 
-byte cAIChar_GetDirect2(cAIChar *self) {
+byte cAIChar_GetDirect2(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	return AICC_Vtbl(self->control)->IsDirect2(self->control);
 }
 
-void cAIChar_Draw(cAIChar *self) {
+void cAIChar_Draw(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	AICC_Vtbl(self->control)->Draw(self->control);
 }
 
-void cAIChar_UpdateOff(cAIChar *self, float dt) {
-	cAIMove_UpdateOff(&self->base, dt);
+void cAIChar_UpdateOff(cAI *elem, float dt) {
+	cAIChar *self = (cAIChar *)elem;
+	cAIMove_UpdateOff(&self->base.base, dt);
 }
 
-byte cAIChar_SetRepos(cAIChar *self, byte on, byte now) {
+byte cAIChar_SetRepos(cAI *elem, byte on, byte now) {
+	cAIChar *self = (cAIChar *)elem;
 	self->base.repos = on;
 	if (on && now) {
-		return self->vftable->Repos(self, 0.0f, g_DistMaxCheckReposAI, 0);
+		return self->vftable->Repos(&self->base.base, 0.0f, g_DistMaxCheckReposAI, 0);
 	}
 	return 0;
 }
 
-void cAIChar_SetPauseCheck(cAIChar *self, byte on) {
+void cAIChar_SetPauseCheck(cAI *base, byte on) {
+	cAIChar *self = (cAIChar *)base;
 	self->pauseCheck = on;
 	if (!on) {
-		self->vftable->SetPaused(self, 0);
+		self->vftable->SetPaused(&self->base.base, 0);
 	}
 }
 
-void cAIChar_SetPaused(cAIChar *self, byte on) {
+void cAIChar_SetPaused(cAI *elem, byte on) {
+	cAIChar *self = (cAIChar *)elem;
 	self->base.paused = on;
 	if (on) {
 		AICC_Vtbl(self->control)->Stop(self->control);
@@ -291,37 +309,43 @@ void cAIChar_SetPaused(cAIChar *self, byte on) {
 	}
 }
 
-void cAIChar_UpdateAction0(cAIChar *self) {
+void cAIChar_UpdateAction0(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	self->ctrl->act = 0;
 }
 
-void cAIChar_SetAction(cAIChar *self, int action) {
+void cAIChar_SetAction(cAI *base, int action) {
+	cAIChar *self = (cAIChar *)base;
 	self->action = action;
 	if (!action) {
-		self->vftable->UpdateMove(self, 0.0f);
+		self->vftable->UpdateMove(&self->base.base, 0.0f);
 	}
 }
 
-void cAIChar_CheckParams(cAIChar *self, int stupidPathfinding) {
+void cAIChar_CheckParams(cAI *base, int stupidPathfinding) {
+	cAIChar *self = (cAIChar *)base;
 	if (stupidPathfinding) {
 		Con_Bluef("ERROR PARAM.: %s\n", self->ent->name);
 		CHECK(stupidPathfinding == 0);
 	}
 }
 
-byte cAIChar_CanRepos(cAIChar *self, int state) {
+byte cAIChar_CanRepos(cAI *base, int state) {
+	cAIChar *self = (cAIChar *)base;
 	(void)self;
 	return state == AIC_PATROL_ZONE || state == AIC_IN_ROUTE || state == AIC_STATIC_LOST ||
 		state == AIC_STATIC_OBJ_NOT_ACCESS;
 }
 
-byte cAIChar_IsGroupState(cAIChar *self, int state) {
+byte cAIChar_IsGroupState(cAI *base, int state) {
+	cAIChar *self = (cAIChar *)base;
 	(void)self;
 	return state != AIC_STATIC && state != AIC_STATIC_LOST && state != AIC_STATIC_OBJ_NOT_ACCESS &&
 		state != AIC_STATIC_CHANGE_STATE && state != AIC_LOST_PATH && state != AIC_LOST_PATH_CHASE;
 }
 
-void cAIChar_SetDists(cAIChar *self) {
+void cAIChar_SetDists(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	switch (self->state) {
 	case AIC_CHASE_WITH_ACTION:
 		self->actMin = 400.0f;
@@ -340,13 +364,15 @@ void cAIChar_SetDists(cAIChar *self) {
 	}
 }
 
-void cAIChar_SetDists2(cAIChar *self) {
-	self->vftable->SetDists(self);
+void cAIChar_SetDists2(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
+	self->vftable->SetDists(&self->base.base);
 }
 
 /* ---- script variables ---- */
 
-byte cAIChar_VarI(cAIChar *self, const char *name, int *i, byte set) {
+byte cAIChar_VarI(cAI *elem, const char *name, int *i, byte set) {
+	cAIChar *self = (cAIChar *)elem;
 	if (!*name) {
 		return 0;
 	}
@@ -354,36 +380,39 @@ byte cAIChar_VarI(cAIChar *self, const char *name, int *i, byte set) {
 		if (!set) {
 			*i = self->base.repos;
 		} else if (*i == 0) {
-			self->vftable->SetRepos(self, 0, 0);
+			self->vftable->SetRepos(&self->base.base, 0, 0);
 		} else if (*i == 1) {
-			self->vftable->SetRepos(self, 1, 0);
+			self->vftable->SetRepos(&self->base.base, 1, 0);
 		} else if (*i == 2) {
-			self->vftable->SetRepos(self, 1, 1);
+			self->vftable->SetRepos(&self->base.base, 1, 1);
 		}
 		return 1;
 	}
-	return cAIMove_VarI(&self->base, name, i, set);
+	return cAIMove_VarI(&self->base.base, name, i, set);
 }
 
-byte cAIChar_VarF(cAIChar *self, const char *name, double *d, byte set) {
+byte cAIChar_VarF(cAI *elem, const char *name, double *d, byte set) {
+	cAIChar *self = (cAIChar *)elem;
 	if (!*name) {
 		return 0;
 	}
-	return cAIMove_VarF(&self->base, name, d, set);
+	return cAIMove_VarF(&self->base.base, name, d, set);
 }
 
-byte cAIChar_VarS(cAIChar *self, const char *name, char **s, byte set) {
+byte cAIChar_VarS(cAI *elem, const char *name, char **s, byte set) {
+	cAIChar *self = (cAIChar *)elem;
 	if (!*name) {
 		return 0;
 	}
-	return cAIMove_VarS(&self->base, name, s, set);
+	return cAIMove_VarS(&self->base.base, name, s, set);
 }
 
-byte cAIChar_VarV(cAIChar *self, const char *name, double *x, double *y, double *z, byte set) {
+byte cAIChar_VarV(cAI *elem, const char *name, double *x, double *y, double *z, byte set) {
+	cAIChar *self = (cAIChar *)elem;
 	if (!*name) {
 		return 0;
 	}
-	return cAIMove_VarV(&self->base, name, x, y, z, set);
+	return cAIMove_VarV(&self->base.base, name, x, y, z, set);
 }
 
 /* ---- the names of the states and the debug text ---- */
@@ -402,29 +431,34 @@ static const char *const s_InternStateNames[] = {
 	"FOLLOW_THE_PATH_CHAR", "STATE_INTERN_RELAX_CHAR", "TALK_TO_CHAR", "STATE_INTERN_NONE_CHAR"
 };
 
-void cAIChar_StateName(cAIChar *self, int state, char *buf) {
+void cAIChar_StateName(cAI *base, int state, char *buf) {
+	cAIChar *self = (cAIChar *)base;
 	(void)self;
 	if ((uint32_t)state < sizeof(s_StateNames) / sizeof(s_StateNames[0])) {
 		memcpy(buf, s_StateNames[state], strlen(s_StateNames[state]) + 1);
 	}
 }
 
-void cAIChar_GetStateName(cAIChar *self, char *buf) {
-	self->vftable->StateName(self, self->state, buf);
+void cAIChar_GetStateName(cAI *base, char *buf) {
+	cAIChar *self = (cAIChar *)base;
+	self->vftable->StateName(&self->base.base, self->state, buf);
 }
 
-void cAIChar_InternStateName(cAIChar *self, int state, char *buf) {
+void cAIChar_InternStateName(cAI *base, int state, char *buf) {
+	cAIChar *self = (cAIChar *)base;
 	(void)self;
 	if ((uint32_t)state < sizeof(s_InternStateNames) / sizeof(s_InternStateNames[0])) {
 		memcpy(buf, s_InternStateNames[state], strlen(s_InternStateNames[state]) + 1);
 	}
 }
 
-void cAIChar_GetInternStateName(cAIChar *self, char *buf) {
-	self->vftable->InternStateName(self, self->internState, buf);
+void cAIChar_GetInternStateName(cAI *base, char *buf) {
+	cAIChar *self = (cAIChar *)base;
+	self->vftable->InternStateName(&self->base.base, self->internState, buf);
 }
 
-void cAIChar_Debugf(cAIChar *self, const char *fmt, ...) {
+void cAIChar_Debugf(cAI *base, const char *fmt, ...) {
+	cAIChar *self = (cAIChar *)base;
 	char text[1024];
 	char intern[256];
 	char state[256];
@@ -432,8 +466,8 @@ void cAIChar_Debugf(cAIChar *self, const char *fmt, ...) {
 	va_list ap;
 
 	crt_strtime(time);
-	self->vftable->GetStateName(self, state);
-	self->vftable->GetInternStateName(self, intern);
+	self->vftable->GetStateName(&self->base.base, state);
+	self->vftable->GetInternStateName(&self->base.base, intern);
 	Str_PrintfQuiet(text, sizeof(text), "[%s] (%s) [%s - %s] - ", time, self->ent->name, state, intern);
 	va_start(ap, fmt);
 	Str_VPrintf(state, 0xff, fmt, ap);
@@ -445,26 +479,27 @@ void cAIChar_Debugf(cAIChar *self, const char *fmt, ...) {
 
 /* ---- the update ---- */
 
-void cAIChar_Update(cAIChar *self, float dt) {
+void cAIChar_Update(cAI *elem, float dt) {
+	cAIChar *self = (cAIChar *)elem;
 	if (self->pending.state != AIC_STATE_NONE && g_CharGroup->vftable->CanChange(g_CharGroup)) {
-		self->vftable->RestoreState(self, &self->pending);
+		self->vftable->RestoreState(&self->base.base, &self->pending);
 	}
 	self->base.base.dt = dt;
 	self->routeTime = self->routeTime + dt;
-	self->vftable->CheckRepos(self);
+	self->vftable->CheckRepos(&self->base.base);
 	if (self->state == AIC_STATIC) {
 		return;
 	}
-	self->vftable->CheckPause(self);
+	self->vftable->CheckPause(&self->base.base);
 	if (self->base.paused) {
 		return;
 	}
-	cAIMove_Update(&self->base, dt);
-	self->vftable->React(self);
+	cAIMove_Update(&self->base.base, dt);
+	self->vftable->React(&self->base.base);
 	if (self->base.base.changed) {
 		return;
 	}
-	self->vftable->UpdateThink(self);
+	self->vftable->UpdateThink(&self->base.base);
 	if (self->base.base.changed) {
 		return;
 	}
@@ -472,27 +507,29 @@ void cAIChar_Update(cAIChar *self, float dt) {
 	if (self->base.base.changed) {
 		return;
 	}
-	self->vftable->UpdateMove(self, dt);
+	self->vftable->UpdateMove(&self->base.base, dt);
 }
 
-void cAIChar_UpdateMove(cAIChar *self, float dt) {
+void cAIChar_UpdateMove(cAI *elem, float dt) {
+	cAIChar *self = (cAIChar *)elem;
 	(void)dt;
 	if (g_NotShootAI) {
 		self->ctrl->act = 0;
 		return;
 	}
-	if (!self->base.base.changed && (!self->vftable->React(self) || !self->vftable->CheckAction(self))) {
+	if (!self->base.base.changed && (!self->vftable->React(&self->base.base) || !self->vftable->CheckAction(&self->base.base))) {
 		return;
 	}
 	if (self->action == 0) {
-		self->vftable->UpdateAction0(self);
+		self->vftable->UpdateAction0(&self->base.base);
 	} else if (self->action == 1) {
-		self->vftable->UpdateAction1(self);
+		self->vftable->UpdateAction1(&self->base.base);
 	}
-	self->vftable->UpdateAction(self);
+	self->vftable->UpdateAction(&self->base.base);
 }
 
-void cAIChar_UpdateThink(cAIChar *self) {
+void cAIChar_UpdateThink(cAI *elem) {
+	cAIChar *self = (cAIChar *)elem;
 	cSlotController *s = &self->base.base.slotThink;
 	float t;
 
@@ -500,11 +537,12 @@ void cAIChar_UpdateThink(cAIChar *self) {
 		return;
 	}
 	while (cSlotController_FireReset(s, &t)) {
-		self->vftable->Think(self);
+		self->vftable->Think(&self->base.base);
 	}
 }
 
-void cAIChar_UpdateAction1(cAIChar *self) {
+void cAIChar_UpdateAction1(cAI *elem) {
+	cAIChar *self = (cAIChar *)elem;
 	cSlotController *s = &self->slotAction;
 	cWalkCharEntity *t = WChar(AIC_Target(self));
 	float tm;
@@ -521,11 +559,12 @@ void cAIChar_UpdateAction1(cAIChar *self) {
 		return;
 	}
 	while (cSlotController_FireReset(s, &tm)) {
-		self->vftable->CheckActDist(self);
+		self->vftable->CheckActDist(&self->base.base);
 	}
 }
 
-void cAIChar_CheckActDist(cAIChar *self) {
+void cAIChar_CheckActDist(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	cActCtrl *ac = AIC_ActCtrl(self->ent);
 	byte act = 0;
 
@@ -589,10 +628,11 @@ static byte AIC_PauseWanted(cAIChar *self) {
 			return 0;
 		}
 	}
-	return !self->vftable->IsVisible(self);
+	return !self->vftable->base.base.IsVisible(&self->base.base);
 }
 
-void cAIChar_CheckPause(cAIChar *self) {
+void cAIChar_CheckPause(cAI *elem) {
+	cAIChar *self = (cAIChar *)elem;
 	cSlotController *s = &self->slotPause;
 	float t;
 
@@ -600,11 +640,12 @@ void cAIChar_CheckPause(cAIChar *self) {
 		return;
 	}
 	while (cSlotController_FireReset(s, &t)) {
-		self->vftable->SetPaused(self, AIC_PauseWanted(self));
+		self->vftable->SetPaused(&self->base.base, AIC_PauseWanted(self));
 	}
 }
 
-void cAIChar_CheckRepos(cAIChar *self) {
+void cAIChar_CheckRepos(cAI *elem) {
+	cAIChar *self = (cAIChar *)elem;
 	cSlotController *s = &self->slotRepos;
 	float t;
 
@@ -619,7 +660,7 @@ void cAIChar_CheckRepos(cAIChar *self) {
 		if (!nw->sup.vftable->InGrid(nw, &cam)) {
 			return;
 		}
-		if (self->vftable->CanRepos(self, self->state) &&
+		if (self->vftable->CanRepos(&self->base.base, self->state) &&
 			!CGameModel_IsVisible(Obj_Vtbl(self->ent)->GetModel(self->ent))) {
 			vec3_t a, b;
 			const vec3_t *p;
@@ -636,16 +677,17 @@ void cAIChar_CheckRepos(cAIChar *self) {
 				int f = Floor_Get(&g_pWorld->floor, cam.y);
 
 				p = AIC_Pos(self->ent, &b);
-				if (f == Floor_Get(&g_pWorld->floor, p->y) || self->vftable->IsVisible(self)) {
+				if (f == Floor_Get(&g_pWorld->floor, p->y) || self->vftable->base.base.IsVisible(&self->base.base)) {
 					continue;
 				}
 			}
-			self->vftable->Repos(self, g_DistMinCheckReposAI, g_DistMaxCheckReposAI, 1);
+			self->vftable->Repos(&self->base.base, g_DistMinCheckReposAI, g_DistMaxCheckReposAI, 1);
 		}
 	}
 }
 
-byte cAIChar_Repos(cAIChar *self, float minDist, float maxDist, byte flag) {
+byte cAIChar_Repos(cAI *elem, float minDist, float maxDist, byte flag) {
+	cAIChar *self = (cAIChar *)elem;
 	vec3_t pos, d, ang, zero, tmp;
 	cWorld *w;
 	byte r = cAICharGroup_FindRepos(g_CharGroup, &pos, self->ent, minDist, maxDist, flag);
@@ -674,17 +716,18 @@ byte cAIChar_Repos(cAIChar *self, float minDist, float maxDist, byte flag) {
 	if (!self->ent->active) {
 		self->ent->vftable->SetActive(self->ent, 1);
 	}
-	self->vftable->AfterRepos(self);
+	self->vftable->AfterRepos(&self->base.base);
 	origin = g_SetOriginFunc;
 	if (!origin || !origin(self->ent)) {
 		self->base.center = *AIC_Pos(self->ent, &tmp);
-		self->vftable->Resume(self);
+		self->vftable->Resume(&self->base.base);
 	}
 	self->base.reposing = 0;
 	return r;
 }
 
-void cAIChar_AfterRepos(cAIChar *self) {
+void cAIChar_AfterRepos(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	if (self->state == AIC_IN_ROUTE) {
 		if (self->internState == AICI_TALK_TO) {
 			AIC_ResumeRoute(self);
@@ -696,7 +739,8 @@ void cAIChar_AfterRepos(cAIChar *self) {
 	}
 }
 
-void cAIChar_Resume(cAIChar *self) {
+void cAIChar_Resume(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	if (self->state == AIC_IN_ROUTE) {
 		AIC_ResumeRoute(self);
 	} else if (self->state == AIC_PATROL_ZONE) {
@@ -704,7 +748,8 @@ void cAIChar_Resume(cAIChar *self) {
 	}
 }
 
-cEntity *cAIChar_GetCollide(cAIChar *self) {
+cEntity *cAIChar_GetCollide(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	const char *name = Nto1Node_TargetName(&WChar(self->ent)->collide);
 	cEntity *e;
 
@@ -721,12 +766,13 @@ cEntity *cAIChar_GetCollide(cAIChar *self) {
 
 /* ---- the reactions and the think of the states ---- */
 
-byte cAIChar_React(cAIChar *self) {
+byte cAIChar_React(cAI *elem) {
+	cAIChar *self = (cAIChar *)elem;
 	cEntity *t;
 
 	switch (self->state) {
 	case AIC_IN_ROUTE:
-		self->vftable->ReactInRoute(self);
+		self->vftable->ReactInRoute(&self->base.base);
 		break;
 	case AIC_CHASE_WITH_ACTION:
 	case AIC_CHASE_WITHOUT_ACTION:
@@ -736,28 +782,29 @@ byte cAIChar_React(cAIChar *self) {
 	case AIC_ORIENT_DYNAMIC_OBJECTIVE_WITH_ACTION:
 		t = AIC_Target(self);
 		if (!t || !t->active) {
-			self->vftable->Event(self, 3);
+			self->vftable->base.Event(&self->base.base, 3);
 		}
 		break;
 	case AIC_PATROL_ZONE:
-		self->vftable->ReactPatrol(self);
+		self->vftable->ReactPatrol(&self->base.base);
 		break;
 	case AIC_LOST_PATH:
-		self->vftable->ReactLostPath(self);
+		self->vftable->ReactLostPath(&self->base.base);
 		break;
 	case AIC_LOST_PATH_CHASE:
 		t = AIC_Target(self);
 		if (t && t->active) {
-			self->vftable->ReactLostPathChase(self);
+			self->vftable->ReactLostPathChase(&self->base.base);
 		} else {
-			self->vftable->Event(self, 3);
+			self->vftable->base.Event(&self->base.base, 3);
 		}
 		break;
 	}
 	return !self->base.base.changed;
 }
 
-byte cAIChar_CheckAction(cAIChar *self) {
+byte cAIChar_CheckAction(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	cEntity *t;
 
 	if (self->action == 1) {
@@ -765,34 +812,37 @@ byte cAIChar_CheckAction(cAIChar *self) {
 		if (!t || !t->active) {
 			Con_Bluef("OBJECTIVE_DIED - cAIChar::CheckIntensiveAction - Entidad: %s - State: %d - StateIntern: %d\n",
 				self->ent->name, self->state, self->internState);
-			self->vftable->Event(self, 3);
+			self->vftable->base.Event(&self->base.base, 3);
 			return 0;
 		}
 	}
 	return 1;
 }
 
-void cAIChar_ReactPatrol(cAIChar *self) {
+void cAIChar_ReactPatrol(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	cEntity *t = AIC_Target(self);
 
 	if (self->internState == AICI_TALK_TO && (!t || !t->active)) {
 		AIC_ResumePatrol(self);
 		self->talking = 0;
 	}
-	self->vftable->CheckTalk(self);
+	self->vftable->CheckTalk(&self->base.base);
 }
 
-void cAIChar_ReactInRoute(cAIChar *self) {
+void cAIChar_ReactInRoute(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	cEntity *t = AIC_Target(self);
 
 	if (self->internState == AICI_TALK_TO && (!t || !t->active)) {
 		AIC_ResumeRoute(self);
 		self->talking = 0;
 	}
-	self->vftable->CheckTalk(self);
+	self->vftable->CheckTalk(&self->base.base);
 }
 
-void cAIChar_ReactLostPath(cAIChar *self) {
+void cAIChar_ReactLostPath(cAI *elem) {
+	cAIChar *self = (cAIChar *)elem;
 	cSlotController *s = &self->slotLost;
 	float t;
 
@@ -817,50 +867,53 @@ void cAIChar_ReactLostPath(cAIChar *self) {
 			on = CNodesWorld2D_HasPointVis(g_NodesWorld2D, AIC_Pos(e, &a), r, h1, h2);
 		}
 		if (on) {
-			self->vftable->RestoreStateIntern(self, &self->resume);
+			self->vftable->RestoreStateIntern(&self->base.base, &self->resume);
 		}
 	}
 }
 
-void cAIChar_Think(cAIChar *self) {
+void cAIChar_Think(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	switch (self->state) {
 	case AIC_IN_ROUTE:
-		self->vftable->ThinkInRoute(self);
+		self->vftable->ThinkInRoute(&self->base.base);
 		return;
 	case AIC_CHASE_WITH_ACTION:
-		self->vftable->ThinkChase(self);
+		self->vftable->ThinkChase(&self->base.base);
 		return;
 	case AIC_CHASE_WITHOUT_ACTION:
-		self->vftable->ThinkChaseNoAction(self);
+		self->vftable->ThinkChaseNoAction(&self->base.base);
 		return;
 	case AIC_GO_TO:
-		self->vftable->ThinkGoTo(self);
+		self->vftable->ThinkGoTo(&self->base.base);
 		return;
 	case AIC_GET_AWAY:
-		self->vftable->ThinkGetAway(self);
+		self->vftable->ThinkGetAway(&self->base.base);
 		return;
 	case AIC_PATROL_ZONE:
-		self->vftable->ThinkPatrol(self);
+		self->vftable->ThinkPatrol(&self->base.base);
 		return;
 	case AIC_CHASE_WITH_ACTION_BACK:
-		self->vftable->ThinkChaseBack(self);
+		self->vftable->ThinkChaseBack(&self->base.base);
 		return;
 	case AIC_LOST_PATH:
-		self->vftable->ThinkLostPath(self);
+		self->vftable->ThinkLostPath(&self->base.base);
 		return;
 	case AIC_LOST_PATH_CHASE:
-		self->vftable->ThinkLostPathChase(self);
+		self->vftable->ThinkLostPathChase(&self->base.base);
 		return;
 	}
 }
 
-void cAIChar_ThinkLostPath(cAIChar *self) {
+void cAIChar_ThinkLostPath(cAI *elem) {
+	cAIChar *self = (cAIChar *)elem;
 	if (self->base.base.stateTime > AIC_LOST_TIME) {
-		self->vftable->SetStateIntern(self, AIC_STATIC_LOST);
+		self->vftable->SetStateIntern(&self->base.base, AIC_STATIC_LOST);
 	}
 }
 
-void cAIChar_ThinkLostPathChase(cAIChar *self) {
+void cAIChar_ThinkLostPathChase(cAI *elem) {
+	cAIChar *self = (cAIChar *)elem;
 	vec3_t a, b;
 	const vec3_t *tp = AIC_Pos(AIC_Target(self), &a);
 	const vec3_t *p = AIC_Pos(self->ent, &b);
@@ -868,18 +921,18 @@ void cAIChar_ThinkLostPathChase(cAIChar *self) {
 	if (AICC_Vtbl(self->control)->TestLine(self->control, p, tp)) {
 		const vec3_t *q = AIC_Pos(AIC_Target(self), &b);
 
-		self->vftable->SetInternState(self, AICI_FINISHING_LINE_DIRECT, *q, (double)self->chaseFar,
+		self->vftable->SetInternState(&self->base.base, AICI_FINISHING_LINE_DIRECT, *q, (double)self->chaseFar,
 			(double)self->base.speed);
 		return;
 	}
-	self->vftable->SetInternState(self, AICI_STOPPED);
+	self->vftable->SetInternState(&self->base.base, AICI_STOPPED);
 }
 
 /* PAUSED_CONTROL ends: back to the kept state */
 static void AIC_EndPause(cAIChar *self) {
 	self->base.base.stateTime = 0.0f;
 	AICC_Vtbl(self->control)->SetHold(self->control, 0);
-	self->vftable->RestoreSaved(self, &self->resume);
+	self->vftable->RestoreSaved(&self->base.base, &self->resume);
 }
 
 /* FOLLOW_THE_PATH of a state that pauses: now and then PAUSED_CONTROL (the state kept); 1 then */
@@ -888,8 +941,8 @@ static int AIC_MaybePause(cAIChar *self) {
 		return 0;
 	}
 	self->base.base.stateTime = 0.0f;
-	self->vftable->SaveState(self, &self->resume);
-	self->vftable->SetInternState(self, AICI_PAUSED_CONTROL);
+	self->vftable->SaveState(&self->base.base, &self->resume);
+	self->vftable->SetInternState(&self->base.base, AICI_PAUSED_CONTROL);
 	return 1;
 }
 
@@ -914,22 +967,22 @@ static int AIC_Talk(cAIChar *self, int kinds, int atLeast) {
 	}
 	WChar(self->ent)->relaxTime = 2.0f;
 	ai = AIC_AI(AIC_Target(self));
-	self->talking = !ai->vftable->IsTalking(ai);
+	self->talking = !ai->vftable->IsTalking(&ai->base.base);
 	if (!self->talking || AIC_ActionIs(self->ent, 0, 11)) {
 		ai = AIC_AI(AIC_Target(self));
-		if (ai->vftable->GetTarget(ai)->target == self->ent) {
+		if (ai->vftable->base.GetTarget(&ai->base.base)->target == self->ent) {
 			ai = AIC_AI(AIC_Target(self));
-			if (ai->vftable->GetInternState(ai) == AICI_TALK_TO) {
+			if (ai->vftable->GetInternState(&ai->base.base) == AICI_TALK_TO) {
 				return 0;
 			}
 		}
 	}
 	ai = AIC_AI(AIC_Target(self));
-	if (ai->vftable->GetInternState(ai) != AICI_TALK_TO) {
+	if (ai->vftable->GetInternState(&ai->base.base) != AICI_TALK_TO) {
 		return 1;
 	}
 	ai = AIC_AI(AIC_Target(self));
-	if (ai->vftable->GetTarget(ai)->target != self->ent) {
+	if (ai->vftable->base.GetTarget(&ai->base.base)->target != self->ent) {
 		return 1;
 	}
 	if (self->numTalks > g_MinNumTalksCharAI && crt_rand() % 5 == 0) {
@@ -956,7 +1009,8 @@ static int AIC_Talk(cAIChar *self, int kinds, int atLeast) {
 	return 0;
 }
 
-void cAIChar_ThinkInRoute(cAIChar *self) {
+void cAIChar_ThinkInRoute(cAI *elem) {
+	cAIChar *self = (cAIChar *)elem;
 	switch (self->internState) {
 	case AICI_PAUSED_CONTROL:
 		if (self->pauses) {
@@ -979,7 +1033,8 @@ void cAIChar_ThinkInRoute(cAIChar *self) {
 	}
 }
 
-void cAIChar_ThinkPatrol(cAIChar *self) {
+void cAIChar_ThinkPatrol(cAI *elem) {
+	cAIChar *self = (cAIChar *)elem;
 	vec3_t a;
 	const vec3_t *p;
 
@@ -1008,7 +1063,7 @@ void cAIChar_ThinkPatrol(cAIChar *self) {
 
 			if ((float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) > self->base.radius) {
 				self->base.base.stateTime = 0.0f;
-				self->vftable->SetInternState(self, AICI_RELAX);
+				self->vftable->SetInternState(&self->base.base, AICI_RELAX);
 			}
 		}
 		return;
@@ -1029,7 +1084,7 @@ void cAIChar_ThinkPatrol(cAIChar *self) {
 		}
 		AIC_Pos(self->ent, &a);
 		self->base.inPath = 0;
-		self->vftable->SetInternState(self, AICI_FINISHING_LINE, self->base.center, (double)g_AICRadiusInRoute,
+		self->vftable->SetInternState(&self->base.base, AICI_FINISHING_LINE, self->base.center, (double)g_AICRadiusInRoute,
 			(double)self->base.speed);
 		return;
 	case AICI_TALK_TO:
@@ -1041,7 +1096,8 @@ void cAIChar_ThinkPatrol(cAIChar *self) {
 	}
 }
 
-void cAIChar_CheckTalk(cAIChar *self) {
+void cAIChar_CheckTalk(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	cEntity *o;
 	cAIChar *ai;
 	vec3_t a, b;
@@ -1052,7 +1108,7 @@ void cAIChar_CheckTalk(cAIChar *self) {
 		g_pWorld->alarm.on || !(self->routeTime > 5.0f)) {
 		return;
 	}
-	o = self->vftable->GetCollide(self);
+	o = self->vftable->GetCollide(&self->base.base);
 	AIC_ActCtrl(self->ent);
 	if (!o) {
 		return;
@@ -1062,20 +1118,20 @@ void cAIChar_CheckTalk(cAIChar *self) {
 		return;
 	}
 	ai = AIC_AI(o);
-	if (!ai->vftable->CanTalk(ai)) {
+	if (!ai->vftable->CanTalk(&ai->base.base)) {
 		return;
 	}
 	ai = AIC_AI(o);
-	if (ai->vftable->GetState(ai) != AIC_PATROL_ZONE) {
+	if (ai->vftable->GetState(&ai->base.base) != AIC_PATROL_ZONE) {
 		ai = AIC_AI(o);
-		if (ai->vftable->GetState(ai) != AIC_IN_ROUTE) {
+		if (ai->vftable->GetState(&ai->base.base) != AIC_IN_ROUTE) {
 			return;
 		}
 	}
 	ai = AIC_AI(o);
-	if (ai->vftable->GetInternState(ai) != AICI_FOLLOW_THE_PATH) {
+	if (ai->vftable->GetInternState(&ai->base.base) != AICI_FOLLOW_THE_PATH) {
 		ai = AIC_AI(o);
-		if (ai->vftable->GetInternState(ai) != AICI_FINISHING_LINE) {
+		if (ai->vftable->GetInternState(&ai->base.base) != AICI_FINISHING_LINE) {
 			return;
 		}
 	}
@@ -1084,12 +1140,13 @@ void cAIChar_CheckTalk(cAIChar *self) {
 	y1 = AIC_Pos(self->ent, &a)->y + r1;
 	if ((double)g_MinTalkCharAI > __builtin_fabs((double)(y1 - (AIC_Pos(o, &b)->y + r2)))) {
 		ai = AIC_AI(o);
-		ai->vftable->SetInternState(ai, AICI_TALK_TO, self->ent);
-		self->vftable->SetInternState(self, AICI_TALK_TO, o);
+		ai->vftable->SetInternState(&ai->base.base, AICI_TALK_TO, self->ent);
+		self->vftable->SetInternState(&self->base.base, AICI_TALK_TO, o);
 	}
 }
 
-byte cAIChar_Facing(cAIChar *self, cEntity *a, cEntity *b) {
+byte cAIChar_Facing(cAI *elem, cEntity *a, cEntity *b) {
+	cAIChar *self = (cAIChar *)elem;
 	vec3_t t1, t2, d, nd, r;
 	const vec3_t *pa = AIC_Pos(a, &t1);
 	const vec3_t *pb = AIC_Pos(b, &t2);
@@ -1118,8 +1175,9 @@ byte cAIChar_Facing(cAIChar *self, cEntity *a, cEntity *b) {
 
 /* ---- the events of the move ---- */
 
-byte cAIChar_Event(cAIChar *self, int ev) {
-	byte (*f)(cAIChar *self, int ev);
+byte cAIChar_Event(cAI *base, int ev) {
+	cAIChar *self = (cAIChar *)base;
+	byte (*f)(cAI *self, int ev);
 	byte r;
 
 	switch (self->state) {
@@ -1148,42 +1206,43 @@ byte cAIChar_Event(cAIChar *self, int ev) {
 		f = self->vftable->EventLostPath;
 		break;
 	default:
-		return self->vftable->EventDefault(self, ev);
+		return self->vftable->EventDefault(&self->base.base, ev);
 	}
-	r = f(self, ev);
+	r = f(&self->base.base, ev);
 	if (!r) {
-		r = self->vftable->EventDefault(self, ev);
+		r = self->vftable->EventDefault(&self->base.base, ev);
 	}
 	return r;
 }
 
-byte cAIChar_EventDefault(cAIChar *self, int ev) {
+byte cAIChar_EventDefault(cAI *base, int ev) {
+	cAIChar *self = (cAIChar *)base;
 	switch (ev) {
 	case 0:
 		if (self->state != AIC_LOST_PATH && self->state != AIC_LOST_PATH_CHASE) {
-			self->vftable->SaveState(self, &self->resume);
+			self->vftable->SaveState(&self->base.base, &self->resume);
 			if (self->state == AIC_CHASE_WITH_ACTION || self->state == AIC_CHASE_WITHOUT_ACTION ||
 				self->state == AIC_CHASE_WITH_ACTION_BACK) {
-				self->vftable->OnEvent(self, 0);
-				self->vftable->SetStateIntern(self, AIC_LOST_PATH_CHASE);
-			} else if (!self->vftable->SetStateIntern(self, AIC_LOST_PATH)) {
-				self->vftable->OnEvent(self, 0);
-				self->vftable->SetStateIntern(self, AIC_STATIC_LOST);
+				self->vftable->base.base.OnEvent(&self->base.base, 0);
+				self->vftable->SetStateIntern(&self->base.base, AIC_LOST_PATH_CHASE);
+			} else if (!self->vftable->SetStateIntern(&self->base.base, AIC_LOST_PATH)) {
+				self->vftable->base.base.OnEvent(&self->base.base, 0);
+				self->vftable->SetStateIntern(&self->base.base, AIC_STATIC_LOST);
 			}
 		}
 		return 1;
 	case 1:
-		self->vftable->OnEvent(self, 1);
-		self->vftable->SetStateIntern(self, AIC_STATIC_OBJ_NOT_ACCESS);
+		self->vftable->base.base.OnEvent(&self->base.base, 1);
+		self->vftable->SetStateIntern(&self->base.base, AIC_STATIC_OBJ_NOT_ACCESS);
 		return 1;
 	case 3:
-		self->vftable->OnEvent(self, 3);
-		self->vftable->SetStateIntern(self, AIC_STATIC);
+		self->vftable->base.base.OnEvent(&self->base.base, 3);
+		self->vftable->SetStateIntern(&self->base.base, AIC_STATIC);
 		return 1;
 	case 7:
-		self->vftable->OnEvent(self, 7);
-		self->vftable->SaveState(self, &self->resume);
-		self->vftable->SetStateIntern(self, AIC_STATIC);
+		self->vftable->base.base.OnEvent(&self->base.base, 7);
+		self->vftable->SaveState(&self->base.base, &self->resume);
+		self->vftable->SetStateIntern(&self->base.base, AIC_STATIC);
 		return 1;
 	}
 	return 0;
@@ -1194,7 +1253,7 @@ static byte AIC_EventTurn(cAIChar *self, int ev) {
 	if (self->internState != AICI_TALK_TO || self->talkTurn) {
 		return 0;
 	}
-	self->vftable->OnEvent(self, ev);
+	self->vftable->base.base.OnEvent(&self->base.base, ev);
 	self->talking = 1;
 	self->talkTurn = 1;
 	self->internState = AICI_TALK_TO;
@@ -1204,33 +1263,35 @@ static byte AIC_EventTurn(cAIChar *self, int ev) {
 	return 1;
 }
 
-byte cAIChar_EventInRoute(cAIChar *self, int ev) {
+byte cAIChar_EventInRoute(cAI *elem, int ev) {
+	cAIChar *self = (cAIChar *)elem;
 	vec3_t d;
 
 	switch (ev) {
 	case 2:
 	case 4:
-		self->vftable->OnEvent(self, ev);
+		self->vftable->base.base.OnEvent(&self->base.base, ev);
 		d = AIC_ViewDir(self->ent);
-		self->vftable->SetInternState(self, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute,
+		self->vftable->SetInternState(&self->base.base, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute,
 			(double)self->base.speed, 1, 1);
 		return 1;
 	case 6:
 		return AIC_EventTurn(self, ev);
 	case 10:
-		self->vftable->OnEvent(self, ev);
+		self->vftable->base.base.OnEvent(&self->base.base, ev);
 		d = AIC_ViewDir(self->ent);
 		d.x = -d.x;
 		d.y = -d.y;
 		d.z = -d.z;
-		self->vftable->SetInternState(self, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute,
+		self->vftable->SetInternState(&self->base.base, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute,
 			(double)self->base.speed, 0, 1);
 		return 1;
 	}
 	return 0;
 }
 
-byte cAIChar_EventPatrol(cAIChar *self, int ev) {
+byte cAIChar_EventPatrol(cAI *elem, int ev) {
+	cAIChar *self = (cAIChar *)elem;
 	vec3_t d, nd, a;
 	const vec3_t *p;
 	float dist;
@@ -1239,16 +1300,16 @@ byte cAIChar_EventPatrol(cAIChar *self, int ev) {
 	case 2:
 	case 4:
 		if (self->internState == AICI_FINISHING_LINE) {
-			self->vftable->OnEvent(self, ev);
+			self->vftable->base.base.OnEvent(&self->base.base, ev);
 			d.x = AIC_RandSigned();
 			d.z = AIC_RandSigned();
 			d.y = 0.0f;
-			self->vftable->SetInternState(self, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute,
+			self->vftable->SetInternState(&self->base.base, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute,
 				(double)self->base.speed, 0, 1);
 		} else {
-			self->vftable->OnEvent(self, ev);
+			self->vftable->base.base.OnEvent(&self->base.base, ev);
 			d = AIC_ViewDir(self->ent);
-			self->vftable->SetInternState(self, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute,
+			self->vftable->SetInternState(&self->base.base, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute,
 				(double)self->base.speed, 1, 1);
 		}
 		return 1;
@@ -1267,31 +1328,33 @@ byte cAIChar_EventPatrol(cAIChar *self, int ev) {
 		if (dist > self->base.radius && AIC_ANG90 > Vec3_Angle(&nd, &d)) {
 			return 0;
 		}
-		self->vftable->OnEvent(self, ev);
-		self->vftable->SetInternState(self, AICI_FOLLOW_THE_PATH, nd, (double)g_AICRadiusInRoute,
+		self->vftable->base.base.OnEvent(&self->base.base, ev);
+		self->vftable->SetInternState(&self->base.base, AICI_FOLLOW_THE_PATH, nd, (double)g_AICRadiusInRoute,
 			(double)self->base.speed, 0, 1);
 		return 1;
 	}
 	return 0;
 }
 
-byte cAIChar_EventGoTo(cAIChar *self, int ev) {
+byte cAIChar_EventGoTo(cAI *elem, int ev) {
+	cAIChar *self = (cAIChar *)elem;
 	if (ev == 2) {
 		if (self->internState == AICI_FINISHING_LINE) {
-			self->vftable->OnEvent(self, 2);
-			self->vftable->SetInternState(self, AICI_STOPPED_ORIENT_STATIC, self->base.dir);
+			self->vftable->base.base.OnEvent(&self->base.base, 2);
+			self->vftable->SetInternState(&self->base.base, AICI_STOPPED_ORIENT_STATIC, self->base.dir);
 			return 1;
 		}
 	} else if (ev == 6 && self->internState == AICI_STOPPED_ORIENT_STATIC) {
-		self->vftable->OnEvent(self, 6);
+		self->vftable->base.base.OnEvent(&self->base.base, 6);
 		self->base.arrived = 1;
-		self->vftable->SetStateIntern(self, AIC_STATIC);
+		self->vftable->SetStateIntern(&self->base.base, AIC_STATIC);
 		return 1;
 	}
 	return 0;
 }
 
-byte cAIChar_EventGetAway(cAIChar *self, int ev) {
+byte cAIChar_EventGetAway(cAI *elem, int ev) {
+	cAIChar *self = (cAIChar *)elem;
 	vec3_t a, b, d;
 	const vec3_t *tp, *p;
 
@@ -1299,50 +1362,52 @@ byte cAIChar_EventGetAway(cAIChar *self, int ev) {
 	case 2:
 	case 4:
 	case 5:
-		self->vftable->OnEvent(self, ev);
+		self->vftable->base.base.OnEvent(&self->base.base, ev);
 		tp = AIC_Pos(AIC_Target(self), &a);
 		p = AIC_Pos(self->ent, &b);
 		d.x = p->x - tp->x;
 		d.y = p->y - tp->y;
 		d.z = p->z - tp->z;
-		self->vftable->SetInternState(self, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute,
+		self->vftable->SetInternState(&self->base.base, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute,
 			(double)self->base.speed, 1, 0);
 		return 1;
 	case 10:
-		self->vftable->OnEvent(self, ev);
+		self->vftable->base.base.OnEvent(&self->base.base, ev);
 		d = AIC_ViewDir(self->ent);
 		d.x = -d.x;
 		d.y = -d.y;
 		d.z = -d.z;
-		self->vftable->SetInternState(self, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute,
+		self->vftable->SetInternState(&self->base.base, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute,
 			(double)self->base.speed, 0, 0);
 		return 1;
 	}
 	return 0;
 }
 
-byte cAIChar_EventChaseBack(cAIChar *self, int ev) {
+byte cAIChar_EventChaseBack(cAI *base, int ev) {
+	cAIChar *self = (cAIChar *)base;
 	if (ev == 8) {
-		self->vftable->OnEvent(self, 8);
+		self->vftable->base.base.OnEvent(&self->base.base, 8);
 		self->back = 1;
 		return 1;
 	}
 	if (ev == 9) {
-		self->vftable->OnEvent(self, 9);
+		self->vftable->base.base.OnEvent(&self->base.base, 9);
 		self->back = 0;
 		return 1;
 	}
 	return 0;
 }
 
-byte cAIChar_EventLostPath(cAIChar *self, int ev) {
+byte cAIChar_EventLostPath(cAI *elem, int ev) {
+	cAIChar *self = (cAIChar *)elem;
 	vec3_t buf;
 	const vec3_t *g;
 
 	if (ev == 7) {
-		self->vftable->OnEvent(self, 7);
-		self->vftable->SaveState(self, &self->resume);
-		self->vftable->SetStateIntern(self, AIC_STATIC_LOST);
+		self->vftable->base.base.OnEvent(&self->base.base, 7);
+		self->vftable->SaveState(&self->base.base, &self->resume);
+		self->vftable->SetStateIntern(&self->base.base, AIC_STATIC_LOST);
 		return 1;
 	}
 	if (ev != 2) {
@@ -1356,14 +1421,15 @@ byte cAIChar_EventLostPath(cAIChar *self, int ev) {
 	if (self->lostPoint.x == -FLT_MAX && self->lostPoint.y == -FLT_MAX && self->lostPoint.z == -FLT_MAX) {
 		return 1;
 	}
-	self->vftable->OnEvent(self, 2);
-	self->vftable->SetInternState(self, AICI_FINISHING_LINE_DIRECT, self->lostPoint, 50.0, (double)self->base.speed);
+	self->vftable->base.base.OnEvent(&self->base.base, 2);
+	self->vftable->SetInternState(&self->base.base, AICI_FINISHING_LINE_DIRECT, self->lostPoint, 50.0, (double)self->base.speed);
 	return 1;
 }
 
 /* ---- the state kept and restored ---- */
 
-void cAIChar_SaveState(cAIChar *self, cAICharSaved *s) {
+void cAIChar_SaveState(cAI *elem, cAICharSaved *s) {
+	cAIChar *self = (cAIChar *)elem;
 	cEntity *t = AIC_Target(self);
 
 	if (t) {
@@ -1389,7 +1455,8 @@ void cAIChar_SaveState(cAIChar *self, cAICharSaved *s) {
 	s->orient = self->orient;
 }
 
-void cAIChar_RestoreSaved(cAIChar *self, const cAICharSaved *s) {
+void cAIChar_RestoreSaved(cAI *elem, const cAICharSaved *s) {
+	cAIChar *self = (cAIChar *)elem;
 	cEntity *e;
 
 	self->base.base.changed = 1;
@@ -1420,7 +1487,7 @@ void cAIChar_RestoreSaved(cAIChar *self, const cAICharSaved *s) {
 
 /* RestoreState and RestoreStateIntern: the state of s again through SetState (or SetStateIntern) */
 static byte AIC_Restore(cAIChar *self, const cAICharSaved *s, int intern) {
-	byte (*set)(cAIChar *self, int state, ...);
+	byte (*set)(cAI *self, int state, ...);
 
 	set = intern ? self->vftable->SetStateIntern : self->vftable->SetState;
 	switch (s->state) {
@@ -1428,41 +1495,44 @@ static byte AIC_Restore(cAIChar *self, const cAICharSaved *s, int intern) {
 	case AIC_STATIC_LOST:
 	case AIC_STATIC_OBJ_NOT_ACCESS:
 	case AIC_STATIC_CHANGE_STATE:
-		return set(self, s->state);
+		return set(&self->base.base, s->state);
 	case AIC_IN_ROUTE:
-		return set(self, AIC_IN_ROUTE, (double)s->speed, (int)s->pauses);
+		return set(&self->base.base, AIC_IN_ROUTE, (double)s->speed, (int)s->pauses);
 	case AIC_CHASE_WITH_ACTION:
 	case AIC_CHASE_WITHOUT_ACTION:
 	case AIC_GET_AWAY:
 	case AIC_CHASE_WITH_ACTION_BACK:
-		return set(self, s->state, World_FindEntity(s->target), (double)s->speed);
+		return set(&self->base.base, s->state, World_FindEntity(s->target), (double)s->speed);
 	case AIC_GO_TO:
-		return set(self, AIC_GO_TO, s->dest, s->dir, (double)s->dist, (double)s->speed);
+		return set(&self->base.base, AIC_GO_TO, s->dest, s->dir, (double)s->dist, (double)s->speed);
 	case AIC_PATROL_ZONE:
-		return set(self, AIC_PATROL_ZONE, s->center, (double)s->radius, (double)s->speed, (int)s->pauses);
+		return set(&self->base.base, AIC_PATROL_ZONE, s->center, (double)s->radius, (double)s->speed, (int)s->pauses);
 	case AIC_ORIENT_DYNAMIC_OBJECTIVE:
 	case AIC_ORIENT_DYNAMIC_OBJECTIVE_WITH_ACTION:
-		return set(self, s->state, World_FindEntity(s->target), (int)s->orient);
+		return set(&self->base.base, s->state, World_FindEntity(s->target), (int)s->orient);
 	case AIC_LOST_PATH:
-		return set(self, AIC_LOST_PATH);
+		return set(&self->base.base, AIC_LOST_PATH);
 	case AIC_LOST_PATH_CHASE:
-		return set(self, AIC_LOST_PATH_CHASE);
+		return set(&self->base.base, AIC_LOST_PATH_CHASE);
 	}
 	return 1;
 }
 
-byte cAIChar_RestoreState(cAIChar *self, const cAICharSaved *s) {
+byte cAIChar_RestoreState(cAI *base, const cAICharSaved *s) {
+	cAIChar *self = (cAIChar *)base;
 	return AIC_Restore(self, s, 0);
 }
 
-byte cAIChar_RestoreStateIntern(cAIChar *self, const cAICharSaved *s) {
+byte cAIChar_RestoreStateIntern(cAI *base, const cAICharSaved *s) {
+	cAIChar *self = (cAIChar *)base;
 	return AIC_Restore(self, s, 1);
 }
 
 /* ---- the change of state ---- */
 
-void cAIChar_BeginChange(cAIChar *self, int state) {
-	self->vftable->SaveState(self, &self->last);
+void cAIChar_BeginChange(cAI *elem, int state) {
+	cAIChar *self = (cAIChar *)elem;
+	self->vftable->SaveState(&self->base.base, &self->last);
 	self->base.base.stateTime = 0.0f;
 	self->base.base.changing = 1;
 	self->base.base.changed = 1;
@@ -1471,35 +1541,37 @@ void cAIChar_BeginChange(cAIChar *self, int state) {
 	self->talking = 0;
 }
 
-byte cAIChar_SetState(cAIChar *self, int state, ...) {
+byte cAIChar_SetState(cAI *base, int state, ...) {
+	cAIChar *self = (cAIChar *)base;
 	char buf[256];
 	va_list ap;
 	byte r;
 
-	self->vftable->StateName(self, state, buf);
-	self->vftable->Debugf(self, "Demanda externa de CAMBIO de ESTADO -> %s", buf);
-	if (!self->vftable->IsGroupState(self, state) || g_CharGroup->vftable->CanChange(g_CharGroup)) {
-		self->vftable->BeginChange(self, state);
+	self->vftable->StateName(&self->base.base, state, buf);
+	self->vftable->base.base.Debugf(&self->base.base, "Demanda externa de CAMBIO de ESTADO -> %s", buf);
+	if (!self->vftable->IsGroupState(&self->base.base, state) || g_CharGroup->vftable->CanChange(g_CharGroup)) {
+		self->vftable->BeginChange(&self->base.base, state);
 	}
 	va_start(ap, state);
-	r = self->vftable->ChangeState(self, state, ap);
+	r = self->vftable->ChangeState(&self->base.base, state, ap);
 	va_end(ap);
 	return r;
 }
 
-byte cAIChar_SetStateIntern(cAIChar *self, int state, ...) {
+byte cAIChar_SetStateIntern(cAI *base, int state, ...) {
+	cAIChar *self = (cAIChar *)base;
 	char buf[256];
 	va_list ap;
 	byte r;
 
-	self->vftable->StateName(self, state, buf);
-	self->vftable->Debugf(self, "Demanda interna de CAMBIO de ESTADO -> %s", buf);
-	if (self->vftable->IsGroupState(self, state)) {
+	self->vftable->StateName(&self->base.base, state, buf);
+	self->vftable->base.base.Debugf(&self->base.base, "Demanda interna de CAMBIO de ESTADO -> %s", buf);
+	if (self->vftable->IsGroupState(&self->base.base, state)) {
 		g_CharGroup->vftable->AllowChange(g_CharGroup);
 	}
-	self->vftable->BeginChange(self, state);
+	self->vftable->BeginChange(&self->base.base, state);
 	va_start(ap, state);
-	r = self->vftable->ChangeState(self, state, ap);
+	r = self->vftable->ChangeState(&self->base.base, state, ap);
 	va_end(ap);
 	return r;
 }
@@ -1516,11 +1588,12 @@ static void AIC_StartWalk(cAIChar *self, float speed) {
 		d.x = AIC_RandSigned();
 		d.z = AIC_RandSigned();
 		d.y = 0.0f;
-		self->vftable->SetInternState(self, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute, (double)speed, 0, 1);
+		self->vftable->SetInternState(&self->base.base, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute, (double)speed, 0, 1);
 	}
 }
 
-byte cAIChar_ChangeState(cAIChar *self, int state, va_list ap) {
+byte cAIChar_ChangeState(cAI *elem, int state, va_list ap) {
+	cAIChar *self = (cAIChar *)elem;
 	char buf[256];
 	byte allowed = 1;
 	byte ok = 1;
@@ -1529,7 +1602,7 @@ byte cAIChar_ChangeState(cAIChar *self, int state, va_list ap) {
 	float speed;
 	int intern;
 
-	if (self->vftable->IsGroupState(self, state) && !(allowed = g_CharGroup->vftable->CanChange(g_CharGroup))) {
+	if (self->vftable->IsGroupState(&self->base.base, state) && !(allowed = g_CharGroup->vftable->CanChange(g_CharGroup))) {
 		self->pending.state = state;
 	} else if (state != AIC_STATIC_CHANGE_STATE) {
 		self->pending.state = AIC_STATE_NONE;
@@ -1540,8 +1613,8 @@ byte cAIChar_ChangeState(cAIChar *self, int state, va_list ap) {
 	}
 	switch (state) {
 	case AIC_STATIC:
-		self->vftable->SetPauseCheck(self, 0);
-		self->vftable->SetInternState(self, AICI_STOPPED);
+		self->vftable->SetPauseCheck(&self->base.base, 0);
+		self->vftable->SetInternState(&self->base.base, AICI_STOPPED);
 		break;
 	case AIC_IN_ROUTE:
 		if (!allowed) {
@@ -1550,7 +1623,7 @@ byte cAIChar_ChangeState(cAIChar *self, int state, va_list ap) {
 			goto wait;
 		}
 		self->routeTime = 0.0f;
-		self->vftable->SetPauseCheck(self, 1);
+		self->vftable->SetPauseCheck(&self->base.base, 1);
 		speed = (float)va_arg(ap, double);
 		self->pauses = (byte)va_arg(ap, int);
 		AIC_StartWalk(self, speed);
@@ -1564,7 +1637,7 @@ byte cAIChar_ChangeState(cAIChar *self, int state, va_list ap) {
 			goto wait;
 		}
 		self->routeTime = 0.0f;
-		self->vftable->SetPauseCheck(self, 1);
+		self->vftable->SetPauseCheck(&self->base.base, 1);
 		self->base.center = va_arg(ap, vec3_t);
 		self->base.radius = (float)va_arg(ap, double);
 		speed = (float)va_arg(ap, double);
@@ -1583,17 +1656,17 @@ byte cAIChar_ChangeState(cAIChar *self, int state, va_list ap) {
 			float dist;
 
 			self->base.arrived = 0;
-			self->vftable->SetPauseCheck(self, 0);
+			self->vftable->SetPauseCheck(&self->base.base, 0);
 			dest = va_arg(ap, vec3_t);
 			self->base.dir = va_arg(ap, vec3_t);
 			dist = (float)va_arg(ap, double);
 			speed = (float)va_arg(ap, double);
-			self->vftable->SetInternState(self, AICI_FINISHING_LINE, dest, (double)dist, (double)speed);
+			self->vftable->SetInternState(&self->base.base, AICI_FINISHING_LINE, dest, (double)dist, (double)speed);
 		}
 		break;
 	case AIC_GET_AWAY:
 		e = va_arg(ap, cEntity *);
-		if (!self->vftable->CanTarget(self, e)) {
+		if (!self->vftable->base.CanTarget(&self->base.base, e)) {
 			ok = 0;
 			break;
 		}
@@ -1605,16 +1678,16 @@ byte cAIChar_ChangeState(cAIChar *self, int state, va_list ap) {
 			vec3_t a, b, d;
 			const vec3_t *tp, *p;
 
-			self->vftable->SetPauseCheck(self, 0);
+			self->vftable->SetPauseCheck(&self->base.base, 0);
 			speed = (float)va_arg(ap, double);
 			AIC_LinkTarget(self, e);
-			self->vftable->SetDists2(self);
+			self->vftable->SetDists2(&self->base.base);
 			tp = AIC_Pos(e, &a);
 			p = AIC_Pos(self->ent, &b);
 			d.x = p->x - tp->x;
 			d.y = p->y - tp->y;
 			d.z = p->z - tp->z;
-			self->vftable->SetInternState(self, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute,
+			self->vftable->SetInternState(&self->base.base, AICI_FOLLOW_THE_PATH, d, (double)g_AICRadiusInRoute,
 				(double)speed, 0, 0);
 		}
 		break;
@@ -1622,7 +1695,7 @@ byte cAIChar_ChangeState(cAIChar *self, int state, va_list ap) {
 	case AIC_CHASE_WITHOUT_ACTION:
 	case AIC_CHASE_WITH_ACTION_BACK:
 		e = va_arg(ap, cEntity *);
-		if (!self->vftable->CanTarget(self, e)) {
+		if (!self->vftable->base.CanTarget(&self->base.base, e)) {
 			ok = 0;
 			break;
 		}
@@ -1631,24 +1704,24 @@ byte cAIChar_ChangeState(cAIChar *self, int state, va_list ap) {
 			self->pending.speed = (float)va_arg(ap, double);
 			goto wait;
 		}
-		self->vftable->SetPauseCheck(self, 0);
+		self->vftable->SetPauseCheck(&self->base.base, 0);
 		AIC_LinkTarget(self, e);
 		speed = (float)va_arg(ap, double);
-		self->vftable->SetDists2(self);
+		self->vftable->SetDists2(&self->base.base);
 		if (self->last.state == self->state && !strcmp(self->last.target, e->name)) {
 			self->base.speed = speed;
 			AICC_Vtbl(self->control)->SetSpeed(self->control, speed);
 		} else {
 			intern = state == AIC_CHASE_WITH_ACTION ? AICI_INT_CHASE_WITH_ACTION :
 				state == AIC_CHASE_WITHOUT_ACTION ? AICI_INT_CHASE_WITHOUT_ACTION : AICI_INT_CHASE_WITH_ACTION_BACK;
-			self->vftable->SetInternState(self, intern, (double)speed);
+			self->vftable->SetInternState(&self->base.base, intern, (double)speed);
 		}
 		AICC_Vtbl(self->control)->Nop(self->control);
 		break;
 	case AIC_ORIENT_DYNAMIC_OBJECTIVE:
 	case AIC_ORIENT_DYNAMIC_OBJECTIVE_WITH_ACTION:
 		e = va_arg(ap, cEntity *);
-		if (!self->vftable->CanTarget(self, e)) {
+		if (!self->vftable->base.CanTarget(&self->base.base, e)) {
 			ok = 0;
 			break;
 		}
@@ -1659,17 +1732,17 @@ byte cAIChar_ChangeState(cAIChar *self, int state, va_list ap) {
 		} else {
 			byte orient;
 
-			self->vftable->SetPauseCheck(self, 0);
+			self->vftable->SetPauseCheck(&self->base.base, 0);
 			AIC_LinkTarget(self, e);
 			orient = (byte)va_arg(ap, int);
-			self->vftable->SetDists2(self);
-			self->vftable->SetInternState(self, state == AIC_ORIENT_DYNAMIC_OBJECTIVE ? AICI_STOPPED_ORIENT_DYNAMIC :
+			self->vftable->SetDists2(&self->base.base);
+			self->vftable->SetInternState(&self->base.base, state == AIC_ORIENT_DYNAMIC_OBJECTIVE ? AICI_STOPPED_ORIENT_DYNAMIC :
 				AICI_STOPPED_ORIENT_DYNAMIC_WITH_ACTION, (int)orient);
 			AICC_Vtbl(self->control)->Nop(self->control);
 		}
 		break;
 	default:
-		ok = self->vftable->ChangeStateMore(self, state, allowed, ap);
+		ok = self->vftable->ChangeStateMore(&self->base.base, state, allowed, ap);
 		break;
 	}
 	if (allowed) {
@@ -1677,15 +1750,15 @@ byte cAIChar_ChangeState(cAIChar *self, int state, va_list ap) {
 		if (!ok) {
 			goto fail;
 		}
-		if (self->vftable->IsGroupState(self, state)) {
+		if (self->vftable->IsGroupState(&self->base.base, state)) {
 			g_CharGroup->vftable->ResetChange(g_CharGroup);
 		}
-		self->vftable->StateName(self, state, buf);
+		self->vftable->StateName(&self->base.base, state, buf);
 		t = AIC_Target(self);
 		if (!t) {
-			self->vftable->Debugf(self, "CAMBIO DE ESTADO REALIZADO -> %s", buf);
+			self->vftable->base.base.Debugf(&self->base.base, "CAMBIO DE ESTADO REALIZADO -> %s", buf);
 		} else {
-			self->vftable->Debugf(self, "CAMBIO DE ESTADO REALIZADO -> %s - OBJETIVO: %s", buf, t->name);
+			self->vftable->base.base.Debugf(&self->base.base, "CAMBIO DE ESTADO REALIZADO -> %s - OBJETIVO: %s", buf, t->name);
 		}
 		return ok;
 	}
@@ -1693,16 +1766,17 @@ byte cAIChar_ChangeState(cAIChar *self, int state, va_list ap) {
 		goto fail;
 	}
 wait:
-	self->vftable->Debugf(self, "En ESPERA CAMBIO de ESTADO -> STATIC_CHANGE_STATE_CHAR");
-	self->vftable->SetStateIntern(self, AIC_STATIC_CHANGE_STATE);
+	self->vftable->base.base.Debugf(&self->base.base, "En ESPERA CAMBIO de ESTADO -> STATIC_CHANGE_STATE_CHAR");
+	self->vftable->SetStateIntern(&self->base.base, AIC_STATIC_CHANGE_STATE);
 	return ok;
 fail:
 	Con_Bluef("CAMBIO de ESTADO con PARAMETROS INCORRECTOS\n");
-	self->vftable->SetStateIntern(self, AIC_STATIC);
+	self->vftable->SetStateIntern(&self->base.base, AIC_STATIC);
 	return ok;
 }
 
-byte cAIChar_ChangeStateMore(cAIChar *self, int state, int allowed, va_list ap) {
+byte cAIChar_ChangeStateMore(cAI *elem, int state, int allowed, va_list ap) {
+	cAIChar *self = (cAIChar *)elem;
 	vec3_t a, b, none;
 
 	(void)allowed;
@@ -1716,21 +1790,21 @@ byte cAIChar_ChangeStateMore(cAIChar *self, int state, int allowed, va_list ap) 
 		none.y = -FLT_MAX;
 		none.z = -FLT_MAX;
 		if ((byte)Vec3_Differ(&a.x, &none.x)) {
-			self->vftable->SetPauseCheck(self, 0);
-			self->vftable->SetInternState(self, AICI_FINISHING_LINE_DIRECT, a, 50.0, (double)self->base.speed);
+			self->vftable->SetPauseCheck(&self->base.base, 0);
+			self->vftable->SetInternState(&self->base.base, AICI_FINISHING_LINE_DIRECT, a, 50.0, (double)self->base.speed);
 		} else {
-			self->vftable->SetStateIntern(self, AIC_STATIC);
+			self->vftable->SetStateIntern(&self->base.base, AIC_STATIC);
 		}
 		return 1;
 	case AIC_LOST_PATH_CHASE:
 	case AIC_STATIC_CHANGE_STATE:
-		self->vftable->SetPauseCheck(self, 0);
-		self->vftable->SetInternState(self, AICI_STOPPED);
+		self->vftable->SetPauseCheck(&self->base.base, 0);
+		self->vftable->SetInternState(&self->base.base, AICI_STOPPED);
 		return 1;
 	case AIC_STATIC_LOST:
 	case AIC_STATIC_OBJ_NOT_ACCESS:
-		self->vftable->SetPauseCheck(self, 1);
-		self->vftable->SetInternState(self, AICI_STOPPED);
+		self->vftable->SetPauseCheck(&self->base.base, 1);
+		self->vftable->SetInternState(&self->base.base, AICI_STOPPED);
 		return 1;
 	}
 	Con_Bluef("ERROR PARAM. AI: ESTADO INEXISTENTE.\n");
@@ -1739,15 +1813,16 @@ byte cAIChar_ChangeStateMore(cAIChar *self, int state, int allowed, va_list ap) 
 
 /* ---- the internal state ---- */
 
-void cAIChar_SetInternStateV(cAIChar *self, int state, va_list ap) {
+void cAIChar_SetInternStateV(cAI *elem, int state, va_list ap) {
+	cAIChar *self = (cAIChar *)elem;
 	char buf[256];
 	cAICharControl *c;
 	cEntity *e;
 	byte ok;
 	int act = 0;
 
-	self->vftable->InternStateName(self, state, buf);
-	self->vftable->Debugf(self, "CAMBIO de ESTADO INTERNO -> %s", buf);
+	self->vftable->InternStateName(&self->base.base, state, buf);
+	self->vftable->base.base.Debugf(&self->base.base, "CAMBIO de ESTADO INTERNO -> %s", buf);
 	self->base.base.changed = 1;
 	self->base.base.relaxCount = 0;
 	self->internState = state;
@@ -1816,21 +1891,23 @@ void cAIChar_SetInternStateV(cAIChar *self, int state, va_list ap) {
 		return;
 	}
 	if (ok) {
-		self->vftable->SetAction(self, act);
+		self->vftable->SetAction(&self->base.base, act);
 	}
 }
 
-void cAIChar_SetInternState(cAIChar *self, int state, ...) {
+void cAIChar_SetInternState(cAI *base, int state, ...) {
+	cAIChar *self = (cAIChar *)base;
 	va_list ap;
 
 	va_start(ap, state);
-	self->vftable->SetInternStateV(self, state, ap);
+	self->vftable->SetInternStateV(&self->base.base, state, ap);
 	va_end(ap);
 }
 
 /* ---- the action of the state ---- */
 
-byte cAIChar_IsMoving(cAIChar *self) {
+byte cAIChar_IsMoving(cAI *base) {
+	cAIChar *self = (cAIChar *)base;
 	cWalkCharEntity *w;
 
 	switch (self->internState) {
@@ -1863,3 +1940,106 @@ byte cAIChar_IsMoving(cAIChar *self) {
 	}
 	return 0;
 }
+
+/* the vtable of cAIChar */
+const cAICharVtbl cAIChar_vftable = {
+	.base.base.Delete = cAIChar_Delete,
+	.base.base.Update = cAIChar_Update,
+	.base.base.UpdateOff = cAIChar_UpdateOff,
+	.base.base.Draw = cAIChar_Draw,
+	.base.base.GetChanged = cAI_GetChanged,
+	.base.base.IsVisible = cAI_IsVisible,
+	.base.base.Debugf = cAIChar_Debugf,
+	.base.base.VarI = cAIChar_VarI,
+	.base.base.VarF = cAIChar_VarF,
+	.base.base.VarS = cAIChar_VarS,
+	.base.base.VarV = cAIChar_VarV,
+	.base.base.Print = cAI_Print,
+	.base.base.GetEventName = cAI_GetEventName,
+	.base.base.OnEvent = cAI_OnEvent,
+	.base.GetTarget = cAIMove_GetTarget,
+	.base.CanJump = cAIMove_CanJump,
+	.base.GetStopped = cAIMove_GetStopped,
+	.base.IsPaused = cAIChar_IsPaused,
+	.base.GetTargetEnt = cAIMove_GetTargetEnt,
+	.base.GetArrived = cAIMove_GetArrived,
+	.base.RandomPoint = cAIMove_RandomPoint,
+	.base.CheckStopped = cAIMove_CheckStopped,
+	.base.Event = cAIChar_Event,
+	.base.IsMoving = cAIChar_IsMoving,
+	.base.CanTarget = cAIMove_CanTarget,
+	.CheckParams = cAIChar_CheckParams,
+	.ChangeState = cAIChar_ChangeState,
+	.SetState = cAIChar_SetState,
+	.RestoreState = cAIChar_RestoreState,
+	.SetInternStateV = cAIChar_SetInternStateV,
+	.SetInternState = cAIChar_SetInternState,
+	.GetState = cAIChar_GetState,
+	.GetInternState = cAIChar_GetInternState,
+	.StateName = cAIChar_StateName,
+	.GetStateName = cAIChar_GetStateName,
+	.InternStateName = cAIChar_InternStateName,
+	.GetInternStateName = cAIChar_GetInternStateName,
+	.GetDirect = cAIChar_GetDirect,
+	.GetDirect2 = cAIChar_GetDirect2,
+	.GetControl = cAIChar_GetControl,
+	.GetLast = cAIChar_GetLast,
+	.SaveTo = cAIChar_SaveTo,
+	.SetRepos = cAIChar_SetRepos,
+	.GetRepos = cAIChar_GetRepos,
+	.IsTalking = cAIChar_IsTalking,
+	.GetCollide = cAIChar_GetCollide,
+	.React = cAIChar_React,
+	.CheckAction = cAIChar_CheckAction,
+	.GetChanged2 = cAIChar_GetChanged,
+	.CanTalk = cAIChar_CanTalk,
+	.SetStateIntern = cAIChar_SetStateIntern,
+	.RestoreStateIntern = cAIChar_RestoreStateIntern,
+	.ChangeStateMore = cAIChar_ChangeStateMore,
+	.IsGroupState = cAIChar_IsGroupState,
+	.Repos = cAIChar_Repos,
+	.AfterRepos = cAIChar_AfterRepos,
+	.SetDists = cAIChar_SetDists,
+	.SetDists2 = cAIChar_SetDists2,
+	.BeginChange = cAIChar_BeginChange,
+	.SetPauseCheck = cAIChar_SetPauseCheck,
+	.SaveState = cAIChar_SaveState,
+	.RestoreSaved = cAIChar_RestoreSaved,
+	.SetPaused = cAIChar_SetPaused,
+	.UpdateAction1 = cAIChar_UpdateAction1,
+	.UpdateAction0 = cAIChar_UpdateAction0,
+	.UpdateAction = cAI_UpdateActionNop,
+	.CheckActDist = cAIChar_CheckActDist,
+	.SetAction = cAIChar_SetAction,
+	.UpdateMove = cAIChar_UpdateMove,
+	.EventDefault = cAIChar_EventDefault,
+	.EventInRoute = cAIChar_EventInRoute,
+	.EventPatrol = cAIChar_EventPatrol,
+	.EventGoTo = cAIChar_EventGoTo,
+	.EventGetAway = cAIChar_EventGetAway,
+	.EventChase = cAI_EventChaseFalse,
+	.EventChaseBack = cAIChar_EventChaseBack,
+	.EventChaseNoAction = cAI_EventChaseNoActionFalse,
+	.EventLostPath = cAIChar_EventLostPath,
+	.Resume = cAIChar_Resume,
+	.UpdateThink = cAIChar_UpdateThink,
+	.CheckPause = cAIChar_CheckPause,
+	.CheckRepos = cAIChar_CheckRepos,
+	.CanRepos = cAIChar_CanRepos,
+	.Think = cAIChar_Think,
+	.ThinkInRoute = cAIChar_ThinkInRoute,
+	.ThinkGetAway = cAI_ThinkGetAwayNop,
+	.ThinkChase = cAI_ThinkChaseNop,
+	.ThinkChaseBack = cAI_ThinkChaseBackNop,
+	.ThinkChaseNoAction = cAI_ThinkChaseNoActionNop,
+	.ThinkLostPath = cAIChar_ThinkLostPath,
+	.ThinkLostPathChase = cAIChar_ThinkLostPathChase,
+	.ReactLostPath = cAIChar_ReactLostPath,
+	.ReactLostPathChase = cAIChar_ReactLostPath,
+	.ReactPatrol = cAIChar_ReactPatrol,
+	.ReactInRoute = cAIChar_ReactInRoute,
+	.ThinkGoTo = cAI_ThinkGoToNop,
+	.ThinkPatrol = cAIChar_ThinkPatrol,
+	.CheckTalk = cAIChar_CheckTalk,
+	.Facing = cAIChar_Facing,
+};

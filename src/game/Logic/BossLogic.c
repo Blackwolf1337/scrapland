@@ -119,7 +119,7 @@ byte cBossLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 			vec3_t rot = { 0.0f, self->workAng[1], 0.0f };
 			vec3_t dir = { 0.0f, 0.0f, -1.0f };
 			Vec3_Rotate(&out, &dir, &rot);
-			ai->vftable->SetState(ai, 4, self->workPos, out, 100.0, (double)g_GenCharRelaxSpeed);
+			ai->vftable->SetState(&ai->base.base, 4, self->workPos, out, 100.0, (double)g_GenCharRelaxSpeed);
 		}
 		return 1;
 	}

@@ -178,11 +178,11 @@ byte cAICharControl_CheckTarget(cAICharControl *self) {
 		cEntity *t = AICC_TargetEnt(self);
 		if (!t || !t->active) {
 			const char *name = self->ent->name;
-			int in = AICC_OwnerVtbl(self->ai)->GetInternState(self->ai);
-			int st = AICC_OwnerVtbl(self->ai)->GetState(self->ai);
+			int in = AICC_OwnerVtbl(self->ai)->GetInternState(&self->ai->base.base);
+			int st = AICC_OwnerVtbl(self->ai)->GetState(&self->ai->base.base);
 			Con_Bluef("OBJECTIVE_DIED - cAICharControl::CheckIntensive - Entidad: %s - State: %d - StateIntern: %d\n",
 				name, st, in);
-			AICC_OwnerVtbl(self->ai)->Event(self->ai, 3);
+			AICC_OwnerVtbl(self->ai)->base.Event(&self->ai->base.base, 3);
 			return 0;
 		}
 	}
@@ -322,7 +322,7 @@ void cAICharControl_AwayCheck(cAICharControl *self) {
 	d.z = p->z - s->z;
 	double a = Vec3_Angle(&d, &fwd);
 	if ((double)g_OffsetAngOrientCharAI > a) {
-		AICC_OwnerVtbl(self->ai)->Event(self->ai, 6);
+		AICC_OwnerVtbl(self->ai)->base.Event(&self->ai->base.base, 6);
 	}
 }
 
@@ -332,7 +332,7 @@ void cAICharControl_DirCheck(cAICharControl *self) {
 	AICC_ViewDir(&fwd, self->ent);
 	double a = Vec3_Angle(&self->dir, &fwd);
 	if ((double)g_OffsetAngOrientCharAI > a) {
-		AICC_OwnerVtbl(self->ai)->Event(self->ai, 6);
+		AICC_OwnerVtbl(self->ai)->base.Event(&self->ai->base.base, 6);
 	}
 }
 
@@ -381,8 +381,8 @@ byte cAICharControl_Update(cAICharControl *self, float dt) {
 	if (self->hold) {
 		return 1;
 	}
-	if (!AICC_OwnerVtbl(self->ai)->GetChanged2(self->ai)) {
-		if (!AICC_OwnerVtbl(self->ai)->React(self->ai) || !vt->CheckTarget(self)) {
+	if (!AICC_OwnerVtbl(self->ai)->GetChanged2(&self->ai->base.base)) {
+		if (!AICC_OwnerVtbl(self->ai)->React(&self->ai->base.base) || !vt->CheckTarget(self)) {
 			return 0;
 		}
 	}
@@ -757,7 +757,7 @@ void cAICharControl_Strafe(cAICharControl *self) {
 			if (self->blocked) {
 				self->collStopTime = 0.0f;
 				if (self->blockedByChar && self->collEventTime > g_TimeBetweenEventCollCharAI &&
-						AICC_OwnerVtbl(self->ai)->Event(self->ai, 10)) {
+						AICC_OwnerVtbl(self->ai)->base.Event(&self->ai->base.base, 10)) {
 					self->collEventTime = 0.0f;
 				clear:
 					self->blocked = 0;
@@ -779,7 +779,7 @@ void cAICharControl_Strafe(cAICharControl *self) {
 				break;
 			}
 		}
-		if (AICC_OwnerVtbl(self->ai)->CanJump(self->ai) && self->blocked && !self->side && !vt->SideBlocked(self, 3)) {
+		if (AICC_OwnerVtbl(self->ai)->base.CanJump(&self->ai->base.base) && self->blocked && !self->side && !vt->SideBlocked(self, 3)) {
 			self->ctrl->jump = self->speed;
 		} else {
 			self->ctrl->jump = 0.0f;
@@ -1613,7 +1613,7 @@ byte cAICharControl_UpdateAway(cAICharControl *self, float dt) {
 	self->goal = *AICC_EntPos(AICC_TargetEnt(self), &buf);
 	self->dest = self->goal;
 	vt->AwayCheck(self);
-	if (!AICC_OwnerVtbl(self->ai)->GetChanged(self->ai)) {
+	if (!AICC_OwnerVtbl(self->ai)->base.base.GetChanged(&self->ai->base.base)) {
 		vt->TurnFollow(self);
 		self->ctrl->strafe = 0.0f;
 		self->ctrl->jump = 0.0f;
@@ -1629,7 +1629,7 @@ static byte AICC_PathFrame(cAICharControl *self, byte(*check)(cAICharControl *se
 
 	if (self->path.count > 0) {
 		vt->CheckArrived(self);
-		if (!AICC_OwnerVtbl(self->ai)->GetChanged(self->ai)) {
+		if (!AICC_OwnerVtbl(self->ai)->base.base.GetChanged(&self->ai->base.base)) {
 			if (check && !check(self)) {
 				return 0;
 			}
@@ -1651,7 +1651,7 @@ byte cAICharControl_UpdateDir(cAICharControl *self, float dt) {
 
 	(void)dt;
 	vt->DirCheck(self);
-	if (!AICC_OwnerVtbl(self->ai)->GetChanged(self->ai)) {
+	if (!AICC_OwnerVtbl(self->ai)->base.base.GetChanged(&self->ai->base.base)) {
 		vt->DirTurn(self);
 		self->ctrl->strafe = 0.0f;
 		self->ctrl->jump = 0.0f;
@@ -1867,7 +1867,7 @@ byte cAICharControl_SetMove(cAICharControl *self, int mode, ...) {
 	}
 	case AICC_FOLLOW:
 	case AICC_FOLLOW_PATH: {
-		Nto1Node *t = AICC_OwnerVtbl(self->ai)->GetTarget(self->ai);
+		Nto1Node *t = AICC_OwnerVtbl(self->ai)->base.GetTarget(&self->ai->base.base);
 		double near = va_arg(ap, double);
 		double far = va_arg(ap, double);
 		double speed = va_arg(ap, double);
@@ -1886,7 +1886,7 @@ byte cAICharControl_SetMove(cAICharControl *self, int mode, ...) {
 	}
 	case AICC_AWAY: {
 		self->direct = 1;
-		Nto1Node *t = AICC_OwnerVtbl(self->ai)->GetTarget(self->ai);
+		Nto1Node *t = AICC_OwnerVtbl(self->ai)->base.GetTarget(&self->ai->base.base);
 		vt->Away(self, t, (byte)va_arg(ap, int));
 		break;
 	}
@@ -1959,7 +1959,7 @@ byte cAICharControl_GoTo(cAICharControl *self, const vec3_t *p, float dist, floa
 	}
 	byte r = AICC_Vtbl(self)->FindPath(self, p);
 	if (r && self->pathRes == 2) {
-		AICC_OwnerVtbl(self->ai)->Event(self->ai, 1);
+		AICC_OwnerVtbl(self->ai)->base.Event(&self->ai->base.base, 1);
 	}
 	return r;
 }

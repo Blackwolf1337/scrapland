@@ -509,7 +509,7 @@ byte cAICharControl_UpdateGoTo(cAICharControl *self, float dt);
 byte cAICharControl_UpdateGoToDirect(cAICharControl *self, float dt);
 byte cAICharControl_Wait(cAICharControl *self, float dt);
 /* the control of the AI of a character (0x19c of cAIChar) */
-cAICharControl *cAIChar_GetControl(cAIChar *ai);
+cAICharControl *cAIChar_GetControl(cAI *base);
 
 #define CAICHARCONTROL_VFTABLE GAME_VFTABLE(cAICharControl_vftable)
 

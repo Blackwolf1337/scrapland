@@ -99,13 +99,13 @@ void cSentinelLocalLogic_Watch(void *sentinel, const vec3_t *pos) {
 	}
 	cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 	cBaseLocalLogic_SetState(&b->logic, 5, NULL);
-	if (ai->vftable->GetState(ai) != 4) {
+	if (ai->vftable->GetState(&ai->base.base) != 4) {
 		const vec3_t *pp = b->parent->vftable->GetPos(b->parent, &tmp);
 		vec3_t dir;
 		dir.z = pos->z - pp->z;
 		dir.x = pos->x - pp->x;
 		dir.y = 0.0f;
-		ai->vftable->SetState(ai, 4, *pos, dir, (double)(WLife(b->parent)->prim.radius + g_SentinelGotoRadius),
+		ai->vftable->SetState(&ai->base.base, 4, *pos, dir, (double)(WLife(b->parent)->prim.radius + g_SentinelGotoRadius),
 			(double)g_SentinelGotoSpeed);
 	}
 	self->time = g_SentinelGotoTime;
@@ -138,7 +138,7 @@ void cSentinelLocalLogic_Think(cLocalLogic *elem, float dt, byte quiet) {
 		self->time = self->time - dt;
 	} else {
 		cAIChar *ai = p->vftable->GetAI(p);
-		if (!ai->vftable->GetDirect(ai)) {
+		if (!ai->vftable->GetDirect(&ai->base.base)) {
 			self->time = self->time - dt;
 		}
 	}
@@ -287,12 +287,12 @@ void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *p, floa
 	case 5:
 		WChar(p)->wl.arrow.canUse = 0;
 		WLife(p)->arrow.coneStatus = a->sameChar ? 2 : 1;
-		if (ai->vftable->GetState(ai)) {
+		if (ai->vftable->GetState(&ai->base.base)) {
 			self->time = g_SentinelGotoTime;
 			return;
 		}
 		if (0.0f < self->time) {
-			ai->vftable->SetState(ai, 0);
+			ai->vftable->SetState(&ai->base.base, 0);
 			cActCtrl_PlayNew(ChType_ActCtrl(s), "Relax0", 0, 1.0f);
 			WChar(s)->control.hRot = 0.5f;
 			return;
@@ -300,7 +300,7 @@ void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *p, floa
 		WChar(s)->control.hRot = 0.0f;
 		break;
 	case 6:
-		if (!g_pWorld->alarm.on && b->target.target && ai->vftable->GetState(ai)) {
+		if (!g_pWorld->alarm.on && b->target.target && ai->vftable->GetState(&ai->base.base)) {
 			if (!CGameModel_IsVisible(Obj_Vtbl(p)->GetModel(p))) {
 				float d = cWorld_GetMinCamDistSq(g_pWorld, p->vftable->GetPos(p, &tmp));
 				float r = g_SentinelAbortyNPCAttDist;
@@ -308,7 +308,7 @@ void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *p, floa
 					break;
 				}
 			}
-			if (ai->vftable->GetDirect(ai)) {
+			if (ai->vftable->GetDirect(&ai->base.base)) {
 				self->time = g_SentinelAcuseTime;
 			}
 			WChar(p)->wl.arrow.canUse = 0;
@@ -358,31 +358,31 @@ byte cSentinelLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target)
 	switch (b->state) {
 	case 0:
 		if (ok) {
-			ai->vftable->SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_SentinelRelaxSpeed, 1);
+			ai->vftable->SetState(&ai->base.base, 6, b->origin, (double)b->actionRadius, (double)g_SentinelRelaxSpeed, 1);
 		}
 		self->time = 0.0f;
 		return ok;
 	case 1:
 		if (ok) {
-			ai->vftable->SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_SentinelSearchSpeed, 1);
+			ai->vftable->SetState(&ai->base.base, 6, b->origin, (double)b->actionRadius, (double)g_SentinelSearchSpeed, 1);
 		}
 		self->time = 0.0f;
 		return ok;
 	case 2:
 		if (ok && target) {
-			ai->vftable->SetState(ai, 2, target, (double)g_SentinelAcuseSpeed);
+			ai->vftable->SetState(&ai->base.base, 2, target, (double)g_SentinelAcuseSpeed);
 		}
 		self->time = g_SentinelAcuseTime;
 		return ok;
 	case 3:
 		if (ok && target) {
-			ai->vftable->SetState(ai, 3, target, (double)g_SentinelInspectSpeed);
+			ai->vftable->SetState(&ai->base.base, 3, target, (double)g_SentinelInspectSpeed);
 		}
 		self->time = g_SentinelInspectTime;
 		return ok;
 	case 4:
 		if (ok && target) {
-			ai->vftable->SetState(ai, 3, target, (double)g_SentinelSuspectSpeed);
+			ai->vftable->SetState(&ai->base.base, 3, target, (double)g_SentinelSuspectSpeed);
 		}
 		self->time = g_SentinelSuspectTime;
 		return ok;
@@ -398,7 +398,7 @@ byte cSentinelLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target)
 		return ok;
 	case 6:
 		if (ok && target) {
-			ai->vftable->SetState(ai, 2, target, (double)g_SentinelAcuseSpeed);
+			ai->vftable->SetState(&ai->base.base, 2, target, (double)g_SentinelAcuseSpeed);
 			self->time = g_SentinelAcuseTime;
 		}
 		return ok;

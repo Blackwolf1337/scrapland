@@ -274,8 +274,8 @@ void ChType_NurseHit(void) {
 		cWorld_SphereCallF(g_pWorld, 0x10, &hit, g_NurseDispRad, g_ChTypeSphereFunc, 0);
 	} else {
 		cAIChar *ai = v->vftable->GetAI(v);
-		if (ai->vftable->GetTarget(ai)) {
-			g_NurseTarget = ai->vftable->GetTargetEnt(ai);
+		if (ai->vftable->base.GetTarget(&ai->base.base)) {
+			g_NurseTarget = ai->vftable->base.GetTargetEnt(&ai->base.base);
 			if (!g_NurseTarget) {
 				goto fail;
 			}

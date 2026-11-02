@@ -164,3 +164,72 @@ void cAI_OnEvent(cAI *self, int ev) {
 	self->vftable->GetEventName(self, ev, name);
 	self->vftable->Debugf(self, "EVENTO interno -> %s", name);
 }
+
+/* the slot EventChase of a class that does only return 0 */
+byte cAI_EventChaseFalse(cAI *self, int ev) {
+	(void)self;
+	(void)ev;
+	return 0;
+}
+
+/* the slot EventChaseNoAction of a class that does only return 0 */
+byte cAI_EventChaseNoActionFalse(cAI *self, int ev) {
+	(void)self;
+	(void)ev;
+	return 0;
+}
+
+/* the slot Event of a class that does only return 1 */
+byte cAI_EventTrue(cAI *self, int ev) {
+	(void)self;
+	(void)ev;
+	return 1;
+}
+
+/* the slot ThinkChaseBack of a class that does nothing there */
+void cAI_ThinkChaseBackNop(cAI *self) {
+	(void)self;
+}
+
+/* the slot ThinkChaseNoAction of a class that does nothing there */
+void cAI_ThinkChaseNoActionNop(cAI *self) {
+	(void)self;
+}
+
+/* the slot ThinkChase of a class that does nothing there */
+void cAI_ThinkChaseNop(cAI *self) {
+	(void)self;
+}
+
+/* the slot ThinkGetAway of a class that does nothing there */
+void cAI_ThinkGetAwayNop(cAI *self) {
+	(void)self;
+}
+
+/* the slot ThinkGoTo of a class that does nothing there */
+void cAI_ThinkGoToNop(cAI *self) {
+	(void)self;
+}
+
+/* the slot UpdateAction of a class that does nothing there */
+void cAI_UpdateActionNop(cAI *self) {
+	(void)self;
+}
+
+/* the vtable of cAI */
+const cAIBaseVtbl cAI_vftable = {
+	.Delete = cAI_Delete,
+	.Update = cAI_Update,
+	.UpdateOff = cAI_UpdateOff,
+	.Draw = cAI_Draw,
+	.GetChanged = cAI_GetChanged,
+	.IsVisible = cAI_IsVisible,
+	.Debugf = (void *)crt_purecall,
+	.VarI = cAI_VarI,
+	.VarF = cAI_VarF,
+	.VarS = cAI_VarS,
+	.VarV = cAI_VarV,
+	.Print = cAI_Print,
+	.GetEventName = cAI_GetEventName,
+	.OnEvent = cAI_OnEvent,
+};

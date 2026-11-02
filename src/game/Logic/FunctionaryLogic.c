@@ -257,7 +257,7 @@ void cFunctionaryLocalLogic_Work(cLocalLogic *elem, float dt) {
 	}
 	cEntity *p = Func_Parent(self);
 	cAIChar *ai = p->vftable->GetAI(p);
-	if (ai->vftable->IsPaused(ai)) {
+	if (ai->vftable->base.IsPaused(&ai->base.base)) {
 		return;
 	}
 	int st = self->base.base.state;
@@ -310,8 +310,8 @@ void cFunctionaryLocalLogic_Work(cLocalLogic *elem, float dt) {
 	if (st != 7) {
 		return;
 	}
-	if (((cAIChar *)ai)->vftable->GetState(ai) != 0 ||
-		!((cAIChar *)ai)->vftable->GetArrived(ai) ||
+	if (((cAIChar *)ai)->vftable->GetState(&ai->base.base) != 0 ||
+		!((cAIChar *)ai)->vftable->base.GetArrived(&ai->base.base) ||
 		strcmp(p->vftable->GetClassName(p), TYEN_WALKCHAR)) {
 		return;
 	}
@@ -609,7 +609,7 @@ static void Func_GoToWork(cFunctionaryLocalLogic *self, cAIChar *ai) {
 	}
 	vec3_t fwd = { 0.0f, 0.0f, -1.0f };
 	Vec3_Rotate(&dir, &fwd, &ang);
-	ai->vftable->SetState(ai, 4, pos, dir, 50.0, (double)self->goToWorkSpeed);
+	ai->vftable->SetState(&ai->base.base, 4, pos, dir, 50.0, (double)self->goToWorkSpeed);
 }
 
 /* vf19 */
@@ -627,7 +627,7 @@ byte cFunctionaryLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 			GenChar_Vtbl(self)->UpdateView(&self->base.base.logic);
 		}
 		if (b->state == 0 && ok) {
-			ai->vftable->SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_GenCharRelaxSpeed, 0);
+			ai->vftable->SetState(&ai->base.base, 6, b->origin, (double)b->actionRadius, (double)g_GenCharRelaxSpeed, 0);
 		}
 		return 1;
 	}
@@ -636,7 +636,7 @@ byte cFunctionaryLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 		if ((byte)cBaseLocalLogic_SetState(&b->logic, 3, target)) {
 			cEntity *p = b->parent;
 			cAIChar *ai = p->vftable->GetAI(p);
-			ai->vftable->SetState(ai, 5, target, (double)g_GenCharAlertSpeed);
+			ai->vftable->SetState(&ai->base.base, 5, target, (double)g_GenCharAlertSpeed);
 			byte was = self->special;
 			self->fast = 1;
 			self->special = 1;

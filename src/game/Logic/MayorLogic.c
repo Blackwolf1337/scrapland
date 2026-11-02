@@ -60,13 +60,13 @@ cEntity *cMayorLocalLogic_FindTarget(cLocalLogic *elem) {
 void cMayorLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
 	cMayorLocalLogic *self = (cMayorLocalLogic *)base;
 	(void)self;
-	ai->vftable->SetState(ai, 1, (double)g_GenCharAlertSpeed, 0);
+	ai->vftable->SetState(&ai->base.base, 1, (double)g_GenCharAlertSpeed, 0);
 }
 
 void cMayorLocalLogic_ToRelax(cLocalLogic *base, cAIChar *ai) {
 	cMayorLocalLogic *self = (cMayorLocalLogic *)base;
 	(void)self;
-	ai->vftable->SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
+	ai->vftable->SetState(&ai->base.base, 1, (double)g_GenCharRelaxSpeed, 0);
 }
 
 /* vf17: during the special action the AI listens to the listener once */
@@ -79,7 +79,7 @@ void cMayorLocalLogic_Update(cLocalLogic *elem, float dt) {
 			cAIChar *ai = p->vftable->GetAI(p);
 			cEntity *e = World_FindEntity(self->listener);
 			if (e) {
-				ai->vftable->SetState(ai, 9, e, 0);
+				ai->vftable->SetState(&ai->base.base, 9, e, 0);
 			}
 			self->listener[0] = 0;
 		}

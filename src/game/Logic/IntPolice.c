@@ -24,7 +24,7 @@ void AICtrl_SentinelDeath(cAbstractFile *params);
 
 /* the AI of the character may act */
 static inline byte AICtrl_AIActive(cAIChar *ai) {
-	return ai->vftable->GetRepos(ai);
+	return ai->vftable->GetRepos(&ai->base.base);
 }
 
 /* the sentinel logic: the accuse (no other sentinel accuses) and the think */

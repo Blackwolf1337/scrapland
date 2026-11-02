@@ -935,7 +935,7 @@ byte cWalkCharEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	if (!s) {
 		if (self->ai && !strcmp(name, "AIState")) {
 			cAIChar *ai = self->ai;
-			*i = ai->vftable->GetState(ai);
+			*i = ai->vftable->GetState(&ai->base.base);
 			return 1;
 		}
 		if (!strcmp(name, "ActionPriority")) {

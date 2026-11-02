@@ -27,19 +27,21 @@ void *cAIGear_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAIChar *cAIGear_Delete(cAIChar *self, byte flags) {
+cAI *cAIGear_Delete(cAI *base, byte flags) {
+	cAIChar *self = (cAIChar *)base;
 	self->vftable = CAIGEAR_VFTABLE;
 	cAIChar_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIGEAR_SIZE);
 	}
-	return self;
+	return base;
 }
 
-void cAIGear_UpdateAction(cAIGear *self) {
+void cAIGear_UpdateAction(cAI *elem) {
+	cAIGear *self = (cAIGear *)elem;
 	cAIChar *c = &self->base;
 
-	if (c->vftable->CanRepos(c, c->state) || !AICC_Vtbl(c->control)->IsBlocked(c->control)) {
+	if (c->vftable->CanRepos(&c->base.base, c->state) || !AICC_Vtbl(c->control)->IsBlocked(c->control)) {
 		return;
 	}
 	const char *name = Nto1Node_TargetName(&WChar(c->ent)->collide);
@@ -49,13 +51,14 @@ void cAIGear_UpdateAction(cAIGear *self) {
 	cEntity *o = World_FindEntity(name);
 	if (o && o->vftable->GetAI(o)) {
 		cAIChar *ai = o->vftable->GetAI(o);
-		if (ai->vftable->IsPaused(ai)) {
+		if (ai->vftable->base.IsPaused(&ai->base.base)) {
 			c->ctrl->act = 1;
 		}
 	}
 }
 
-void cAIGear_CheckActDist(cAIGear *self) {
+void cAIGear_CheckActDist(cAI *elem) {
+	cAIGear *self = (cAIGear *)elem;
 	cAIChar *c = &self->base;
 	float f = c->standTime;
 	vec3_t a, b, d;
@@ -86,7 +89,7 @@ void cAIGear_CheckActDist(cAIGear *self) {
 	d.x = tp->x - op->x;
 	d.z = tp->z - op->z;
 	float dist = (float)__builtin_sqrt((double)(d.x * d.x + 0.0f + d.z * d.z));
-	if (!c->vftable->GetDirect2(c) || !(dist > c->actMin) || !(c->actMax > dist)) {
+	if (!c->vftable->GetDirect2(&c->base.base) || !(dist > c->actMin) || !(c->actMax > dist)) {
 		c->standTime = 0.0f;
 		c->ctrl->act = 0;
 		return;
@@ -111,7 +114,8 @@ void cAIGear_CheckActDist(cAIGear *self) {
 	c->ctrl->act = 1;
 }
 
-void cAIGear_SetDists(cAIGear *self) {
+void cAIGear_SetDists(cAI *elem) {
+	cAIGear *self = (cAIGear *)elem;
 	cAIChar *c = &self->base;
 
 	if (c->state == 2) {
@@ -122,14 +126,15 @@ void cAIGear_SetDists(cAIGear *self) {
 		return;
 	}
 	if (c->state != 3) {
-		cAIChar_SetDists(c);
+		cAIChar_SetDists(&c->base.base);
 		return;
 	}
 	c->chaseFar = 1000.0f;
 	c->chaseNear = 400.0f;
 }
 
-void cAIGear_SetShoot(cAIGear *self) {
+void cAIGear_SetShoot(cAI *elem) {
+	cAIGear *self = (cAIGear *)elem;
 	cEntity *t = self->base.base.target.target;
 
 	if (t->vftable->GetAI(t)) {
@@ -139,9 +144,112 @@ void cAIGear_SetShoot(cAIGear *self) {
 		self->shootFactor = g_ShootGearAI;
 		self->shootAng = g_OffsetAngShootGearAI;
 	}
-	self->base.vftable->SetDists(&self->base);
+	self->base.vftable->SetDists(&self->base.base.base);
 }
 
 byte cAIGear_IsBlocked(cAIGear *self) {
 	return self->blocked;
 }
+
+/* the vtable of cAIGear */
+const cAICharVtbl cAIGear_vftable = {
+	.base.base.Delete = cAIGear_Delete,
+	.base.base.Update = cAIChar_Update,
+	.base.base.UpdateOff = cAIChar_UpdateOff,
+	.base.base.Draw = cAIChar_Draw,
+	.base.base.GetChanged = cAI_GetChanged,
+	.base.base.IsVisible = cAI_IsVisible,
+	.base.base.Debugf = cAIChar_Debugf,
+	.base.base.VarI = cAIChar_VarI,
+	.base.base.VarF = cAIChar_VarF,
+	.base.base.VarS = cAIChar_VarS,
+	.base.base.VarV = cAIChar_VarV,
+	.base.base.Print = cAI_Print,
+	.base.base.GetEventName = cAI_GetEventName,
+	.base.base.OnEvent = cAI_OnEvent,
+	.base.GetTarget = cAIMove_GetTarget,
+	.base.CanJump = cAIMove_CanJump,
+	.base.GetStopped = cAIMove_GetStopped,
+	.base.IsPaused = cAIChar_IsPaused,
+	.base.GetTargetEnt = cAIMove_GetTargetEnt,
+	.base.GetArrived = cAIMove_GetArrived,
+	.base.RandomPoint = cAIMove_RandomPoint,
+	.base.CheckStopped = cAIMove_CheckStopped,
+	.base.Event = cAIChar_Event,
+	.base.IsMoving = cAIChar_IsMoving,
+	.base.CanTarget = cAIMove_CanTarget,
+	.CheckParams = cAIChar_CheckParams,
+	.ChangeState = cAIChar_ChangeState,
+	.SetState = cAIChar_SetState,
+	.RestoreState = cAIChar_RestoreState,
+	.SetInternStateV = cAIChar_SetInternStateV,
+	.SetInternState = cAIChar_SetInternState,
+	.GetState = cAIChar_GetState,
+	.GetInternState = cAIChar_GetInternState,
+	.StateName = cAIChar_StateName,
+	.GetStateName = cAIChar_GetStateName,
+	.InternStateName = cAIChar_InternStateName,
+	.GetInternStateName = cAIChar_GetInternStateName,
+	.GetDirect = cAIChar_GetDirect,
+	.GetDirect2 = cAIChar_GetDirect2,
+	.GetControl = cAIChar_GetControl,
+	.GetLast = cAIChar_GetLast,
+	.SaveTo = cAIChar_SaveTo,
+	.SetRepos = cAIChar_SetRepos,
+	.GetRepos = cAIChar_GetRepos,
+	.IsTalking = cAIChar_IsTalking,
+	.GetCollide = cAIChar_GetCollide,
+	.React = cAIChar_React,
+	.CheckAction = cAIChar_CheckAction,
+	.GetChanged2 = cAIChar_GetChanged,
+	.CanTalk = cAIChar_CanTalk,
+	.SetStateIntern = cAIChar_SetStateIntern,
+	.RestoreStateIntern = cAIChar_RestoreStateIntern,
+	.ChangeStateMore = cAIChar_ChangeStateMore,
+	.IsGroupState = cAIChar_IsGroupState,
+	.Repos = cAIChar_Repos,
+	.AfterRepos = cAIChar_AfterRepos,
+	.SetDists = cAIGear_SetDists,
+	.SetDists2 = cAIGear_SetShoot,
+	.BeginChange = cAIChar_BeginChange,
+	.SetPauseCheck = cAIChar_SetPauseCheck,
+	.SaveState = cAIChar_SaveState,
+	.RestoreSaved = cAIChar_RestoreSaved,
+	.SetPaused = cAIChar_SetPaused,
+	.UpdateAction1 = cAIChar_UpdateAction1,
+	.UpdateAction0 = cAIChar_UpdateAction0,
+	.UpdateAction = cAIGear_UpdateAction,
+	.CheckActDist = cAIGear_CheckActDist,
+	.SetAction = cAIChar_SetAction,
+	.UpdateMove = cAIChar_UpdateMove,
+	.EventDefault = cAIChar_EventDefault,
+	.EventInRoute = cAIChar_EventInRoute,
+	.EventPatrol = cAIChar_EventPatrol,
+	.EventGoTo = cAIChar_EventGoTo,
+	.EventGetAway = cAIChar_EventGetAway,
+	.EventChase = cAI_EventChaseFalse,
+	.EventChaseBack = cAIChar_EventChaseBack,
+	.EventChaseNoAction = cAI_EventChaseNoActionFalse,
+	.EventLostPath = cAIChar_EventLostPath,
+	.Resume = cAIChar_Resume,
+	.UpdateThink = cAIChar_UpdateThink,
+	.CheckPause = cAIChar_CheckPause,
+	.CheckRepos = cAIChar_CheckRepos,
+	.CanRepos = cAIChar_CanRepos,
+	.Think = cAIChar_Think,
+	.ThinkInRoute = cAIChar_ThinkInRoute,
+	.ThinkGetAway = cAI_ThinkGetAwayNop,
+	.ThinkChase = cAI_ThinkChaseNop,
+	.ThinkChaseBack = cAI_ThinkChaseBackNop,
+	.ThinkChaseNoAction = cAI_ThinkChaseNoActionNop,
+	.ThinkLostPath = cAIChar_ThinkLostPath,
+	.ThinkLostPathChase = cAIChar_ThinkLostPathChase,
+	.ReactLostPath = cAIChar_ReactLostPath,
+	.ReactLostPathChase = cAIChar_ReactLostPath,
+	.ReactPatrol = cAIChar_ReactPatrol,
+	.ReactInRoute = cAIChar_ReactInRoute,
+	.ThinkGoTo = cAI_ThinkGoToNop,
+	.ThinkPatrol = cAIChar_ThinkPatrol,
+	.CheckTalk = cAIChar_CheckTalk,
+	.Facing = cAIChar_Facing,
+};

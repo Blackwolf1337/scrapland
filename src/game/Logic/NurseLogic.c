@@ -221,23 +221,23 @@ byte cNurseLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	switch (b->state) {
 	case 0:
 		if (ok) {
-			ai->vftable->SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_NurseRelaxSpeed, 1);
+			ai->vftable->SetState(&ai->base.base, 6, b->origin, (double)b->actionRadius, (double)g_NurseRelaxSpeed, 1);
 		}
 		return 1;
 	case 1:
 		if (ok) {
-			ai->vftable->SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_NurseAlertSpeed, 0);
+			ai->vftable->SetState(&ai->base.base, 6, b->origin, (double)b->actionRadius, (double)g_NurseAlertSpeed, 0);
 		}
 		return 1;
 	case 2:
 		if (ok) {
-			ai->vftable->SetState(ai, 5, target, 1.0);
+			ai->vftable->SetState(&ai->base.base, 5, target, 1.0);
 		}
 		self->time = 0.0f;
 		return 1;
 	case 3:
 		if (ok) {
-			ai->vftable->SetState(ai, 2, b->target.target, 1.0);
+			ai->vftable->SetState(&ai->base.base, 2, b->target.target, 1.0);
 			self->time = 0.0f;
 		}
 		return 1;

@@ -26,7 +26,7 @@ static void Sputnik_Walk(cGenCharLocalLogic *self) {
 	cEntity *p = self->base.parent;
 	cAIChar *ai = p->vftable->GetAI(p);
 
-	ai->vftable->SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
+	ai->vftable->SetState(&ai->base.base, 1, (double)g_GenCharRelaxSpeed, 0);
 }
 
 cSputnikJunkyardLocalLogic *cSputnikJunkyardLocalLogic_ctor(cSputnikJunkyardLocalLogic *self,
@@ -89,7 +89,7 @@ void cSputnikJunkyardLocalLogic_Update(cLocalLogic *elem, float dt) {
 	}
 	cAIChar *ai = p->vftable->GetAI(p);
 	void *ctrl = ChType_ActCtrl(p);
-	int st = ai->vftable->GetState(ai);
+	int st = ai->vftable->GetState(&ai->base.base);
 	if (st) {
 		return;
 	}
@@ -131,7 +131,7 @@ byte cSputnikJunkyardLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *
 	dir.x = -d.x;
 	dir.y = -d.y;
 	dir.z = -d.z;
-	ai->vftable->SetState(ai, 4, pos, dir, 100.0, 0.25);
+	ai->vftable->SetState(&ai->base.base, 4, pos, dir, 100.0, 0.25);
 	return 1;
 }
 

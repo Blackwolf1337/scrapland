@@ -107,7 +107,7 @@ static byte AIVS_TargetDied(cAIVehicleShoot *self, const char *fmt) {
 	int st = cAIVehicle_GetState(self->ai);
 
 	Con_Bluef(fmt, name, st, in);
-	self->ai->vftable->Event(self->ai, 3);
+	self->ai->vftable->Event(&self->ai->base.base, 3);
 	return 0;
 }
 
@@ -864,12 +864,12 @@ byte cAIVehicleShoot_InRange(cAIVehicleShoot *self, int w) {
 byte cAIVehicleShoot_SetMode(cAIVehicleShoot *self, int a, int b, byte c) {
 	byte r = 1;
 
-	if (!self->ai->vftable->GetTargetNode(self->ai)->target && c) {
+	if (!self->ai->vftable->GetTarget(&self->ai->base.base)->target && c) {
 		a = 0;
 		b = 0;
 		r = 0;
 	}
-	self->target = self->ai->vftable->GetTargetNode(self->ai);
+	self->target = self->ai->vftable->GetTarget(&self->ai->base.base);
 	self->hook = c;
 	self->mode = a;
 	self->modeCM = b;

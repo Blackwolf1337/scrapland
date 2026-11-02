@@ -19,7 +19,7 @@ static inline const cLittlePoliceLocalLogicVtbl *LP_VT(const void *l) {
 
 /* the AI of the character still has its target */
 static inline byte LP_AIHasTarget(cAIChar *ai) {
-	return ai->vftable->GetDirect(ai);
+	return ai->vftable->GetDirect(&ai->base.base);
 }
 
 static inline float LP_DistSq(const vec3_t *a, const vec3_t *b) {
@@ -223,7 +223,7 @@ void cLittlePoliceLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
 	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)base;
 	cBaseLocalLogic *b = LP_BASE(self);
 
-	ai->vftable->SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_GenCharAlertSpeed, 1);
+	ai->vftable->SetState(&ai->base.base, 6, b->origin, (double)b->actionRadius, (double)g_GenCharAlertSpeed, 1);
 }
 
 /* vf03 */
@@ -299,14 +299,14 @@ void cLittlePoliceLocalLogic_Update(cLocalLogic *elem, float dt) {
 		cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 		switch (b->state) {
 		case 2: {
-			if (ai->vftable->GetState(ai) != 3) {
+			if (ai->vftable->GetState(&ai->base.base) != 3) {
 				if (!accuse) {
 					Logic_Vtbl(self)->SetState(&self->base.base.logic, 1, NULL);
 					return;
 				}
 				if (!Logic_InView(p, usr->vftable->GetPos(usr, &t1), g_LittlePoliceMaxDistFar, g_GenCharStdFovY,
 					g_GenCharStdFovX, 1)) {
-					ai->vftable->SetState(ai, 3, b->target.target, 1.0);
+					ai->vftable->SetState(&ai->base.base, 3, b->target.target, 1.0);
 					return;
 				}
 				cGenCharLocalLogic_Discover(&self->base);
@@ -332,7 +332,7 @@ void cLittlePoliceLocalLogic_Update(cLocalLogic *elem, float dt) {
 				if (!accuse) {
 					goto alert;
 				}
-				ai->vftable->SetState(ai, 8, b->target.target, 1);
+				ai->vftable->SetState(&ai->base.base, 8, b->target.target, 1);
 				self->lostTime = 0.0f;
 				return;
 			}
@@ -493,11 +493,11 @@ void cLittlePoliceLocalLogic_UpdateGetIt(cLocalLogic *base, cAIChar *ai, float d
 		const vec3_t *pp = p->vftable->GetPos(p, &t2);
 		float d = (float)__builtin_sqrt((double)LP_DistSq(pp, up));
 		if (!(d > 2000.0f)) {
-			if (ai->vftable->GetState(ai) == 0) {
-				ai->vftable->SetState(ai, 8, usr, 1);
+			if (ai->vftable->GetState(&ai->base.base) == 0) {
+				ai->vftable->SetState(&ai->base.base, 8, usr, 1);
 				return;
 			}
-			if (ai->vftable->GetState(ai) != 8) {
+			if (ai->vftable->GetState(&ai->base.base) != 8) {
 				self->lostTime = 5.0f;
 				return;
 			}
@@ -542,8 +542,8 @@ void cLittlePoliceLocalLogic_GoTo(cLocalLogic *base, cAIChar *ai, cEntity *e) {
 		dir.z = d.z * inv;
 	}
 	const vec3_t *tp = e->vftable->GetPos(e, &t3);
-	ai->vftable->SetState(ai, 4, *tp, dir, (double)g_MainMissionStopDist, 1.0);
-	g_LittlePoliceArrived = ai->vftable->GetState(ai) == 4;
+	ai->vftable->SetState(&ai->base.base, 4, *tp, dir, (double)g_MainMissionStopDist, 1.0);
+	g_LittlePoliceArrived = ai->vftable->GetState(&ai->base.base) == 4;
 }
 
 /* vf20: a change of the idle restarts the search time (not in state 4) */
@@ -567,7 +567,7 @@ byte cLittlePoliceLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *tar
 		if ((byte)cBaseLocalLogic_SetState(&b->logic, 8, target)) {
 			LP_VT(self)->base.UpdateView(&self->base.base.logic);
 			cAIChar *ai = b->parent->vftable->GetAI(b->parent);
-			ai->vftable->SetState(ai, 3, target, (double)g_GenCharAlertSpeed);
+			ai->vftable->SetState(&ai->base.base, 3, target, (double)g_GenCharAlertSpeed);
 		}
 		return 1;
 	}
@@ -575,7 +575,7 @@ byte cLittlePoliceLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *tar
 		if ((byte)cBaseLocalLogic_SetState(&b->logic, 7, target)) {
 			LP_VT(self)->base.UpdateView(&self->base.base.logic);
 			cAIChar *ai = b->parent->vftable->GetAI(b->parent);
-			ai->vftable->SetState(ai, 8, target, 1);
+			ai->vftable->SetState(&ai->base.base, 8, target, 1);
 			cGenCharLocalLogic_Discover(&self->base);
 		}
 		return 1;

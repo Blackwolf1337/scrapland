@@ -237,12 +237,12 @@ void cAICharControl2D_CheckArrived(cAICharControl2D *self) {
 		goto none;
 	}
 	ai = self->ai;
-	if (AICC_OwnerVtbl(ai)->Event(ai, ev)) {
+	if (AICC_OwnerVtbl(ai)->base.Event(&ai->base.base, ev)) {
 		return;
 	}
 none:
 	ai = self->ai;
-	AICC_OwnerVtbl(ai)->Event(ai, 5);
+	AICC_OwnerVtbl(ai)->base.Event(&ai->base.base, 5);
 }
 
 void cAICharControl2D_Turn(cAICharControl2D *self) {
@@ -374,11 +374,11 @@ byte cAICharControl2D_FindPath(cAICharControl2D *self, const vec3_t *p) {
 		}
 		if (!ok) {
 			if (!reach) {
-				AICC_OwnerVtbl(self->ai)->Event(self->ai, 1);
+				AICC_OwnerVtbl(self->ai)->base.Event(&self->ai->base.base, 1);
 				return 0;
 			}
 			if (!noPath) {
-				AICC_OwnerVtbl(self->ai)->Event(self->ai, 0);
+				AICC_OwnerVtbl(self->ai)->base.Event(&self->ai->base.base, 0);
 			}
 			return 0;
 		}
@@ -409,7 +409,7 @@ byte cAICharControl2D_FindRoute(cAICharControl2D *self) {
 	float fr = AICC_FloorRadius(self);
 	if (!CNodesWorld2D_BuildPath(g_NodesWorld2D, &self->path, g_DepthPathRouteInDoorAI, &self->routePoint, &pos,
 			self->routeA, &self->routeNode, self->radius, WChar(self->ent)->floorDist, fr, self->routeB)) {
-		AICC_OwnerVtbl(self->ai)->Event(self->ai, 0);
+		AICC_OwnerVtbl(self->ai)->base.Event(&self->ai->base.base, 0);
 		return 0;
 	}
 	self->path.iter = self->path.head;

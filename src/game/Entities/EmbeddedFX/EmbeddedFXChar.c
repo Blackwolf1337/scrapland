@@ -1248,7 +1248,7 @@ void cEmbeddedFXSentinel_Update(cEmbeddedFX *elem, float dt) {
 		self->state = (ChType_SentinelTarget(e) != NULL) + 2;
 	} else if (self->state == 0 && e->vftable->GetAI(e)) {
 		cAIChar *ai = e->vftable->GetAI(e);
-		if (ai->vftable->GetState(ai) == 2) {
+		if (ai->vftable->GetState(&ai->base.base) == 2) {
 			self->state = 3;
 		}
 	}

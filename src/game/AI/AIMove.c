@@ -81,18 +81,20 @@ void cAIMove_dtor(cAIMove *self) {
 	cAI_dtor(&self->base);
 }
 
-cAIMove *cAIMove_Delete(cAIMove *self, byte flags) {
+cAI *cAIMove_Delete(cAI *base, byte flags) {
+	cAIMove *self = (cAIMove *)base;
 	cAIMove_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIMOVE_SIZE);
 	}
-	return self;
+	return base;
 }
 
-void cAIMove_CheckStopped(cAIMove *self, float dt) {
+void cAIMove_CheckStopped(cAI *elem, float dt) {
+	cAIMove *self = (cAIMove *)elem;
 	vec3_t buf;
 
-	if (self->vftable->IsMoving(self)) {
+	if (self->vftable->IsMoving(&self->base)) {
 		const vec3_t *v = Obj_Vtbl(self->base.entity)->GetVel(self->base.entity, &buf);
 		if (v->x * v->x + v->y * v->y + v->z * v->z == 0.0f) {
 			float t = dt + self->stopTime;
@@ -100,7 +102,7 @@ void cAIMove_CheckStopped(cAIMove *self, float dt) {
 			if (t > AIMOVE_STOP_TIME) {
 				self->stopTime = 0.0f;
 				self->stopped = 1;
-				self->vftable->Event(self, AIMOVE_EV_STOPPED);
+				self->vftable->Event(&self->base, AIMOVE_EV_STOPPED);
 				return;
 			}
 			self->stopped = 0;
@@ -110,34 +112,40 @@ void cAIMove_CheckStopped(cAIMove *self, float dt) {
 	self->stopTime = 0.0f;
 }
 
-void cAIMove_Draw(cAIMove *self) {
+void cAIMove_Draw(cAI *elem) {
+	cAIMove *self = (cAIMove *)elem;
 	cAI_Draw(&self->base);
 }
 
-void cAIMove_Update(cAIMove *self, float dt) {
+void cAIMove_Update(cAI *elem, float dt) {
+	cAIMove *self = (cAIMove *)elem;
 	cAI_Update(&self->base, dt);
-	self->vftable->CheckStopped(self, dt);
+	self->vftable->CheckStopped(&self->base, dt);
 }
 
-void cAIMove_UpdateOff(cAIMove *self, float dt) {
+void cAIMove_UpdateOff(cAI *elem, float dt) {
+	cAIMove *self = (cAIMove *)elem;
 	cAI_UpdateOff(&self->base, dt);
 }
 
-byte cAIMove_VarF(cAIMove *self, const char *name, double *d, byte set) {
+byte cAIMove_VarF(cAI *elem, const char *name, double *d, byte set) {
+	cAIMove *self = (cAIMove *)elem;
 	if (!*name) {
 		return 0;
 	}
 	return cAI_VarF(&self->base, name, d, set);
 }
 
-byte cAIMove_VarI(cAIMove *self, const char *name, int *i, byte set) {
+byte cAIMove_VarI(cAI *elem, const char *name, int *i, byte set) {
+	cAIMove *self = (cAIMove *)elem;
 	if (!*name) {
 		return 0;
 	}
 	return cAI_VarI(&self->base, name, i, set);
 }
 
-byte cAIMove_VarS(cAIMove *self, const char *name, char **s, byte set) {
+byte cAIMove_VarS(cAI *elem, const char *name, char **s, byte set) {
+	cAIMove *self = (cAIMove *)elem;
 	if (!*name) {
 		return 0;
 	}
@@ -152,34 +160,41 @@ byte cAIMove_VarS(cAIMove *self, const char *name, char **s, byte set) {
 	return cAI_VarS(&self->base, name, s, set);
 }
 
-byte cAIMove_VarV(cAIMove *self, const char *name, double *x, double *y, double *z, byte set) {
+byte cAIMove_VarV(cAI *elem, const char *name, double *x, double *y, double *z, byte set) {
+	cAIMove *self = (cAIMove *)elem;
 	if (!*name) {
 		return 0;
 	}
 	return cAI_VarV(&self->base, name, x, y, z, set);
 }
 
-byte cAIMove_CanJump(cAIMove *self) {
+byte cAIMove_CanJump(cAI *base) {
+	cAIMove *self = (cAIMove *)base;
 	return self->flying;
 }
 
-cEntity *cAIMove_GetTargetEnt(cAIMove *self) {
+cEntity *cAIMove_GetTargetEnt(cAI *base) {
+	cAIMove *self = (cAIMove *)base;
 	return self->target.target;
 }
 
-Nto1Node *cAIMove_GetTarget(cAIMove *self) {
+Nto1Node *cAIMove_GetTarget(cAI *base) {
+	cAIMove *self = (cAIMove *)base;
 	return &self->target;
 }
 
-byte cAIMove_GetStopped(cAIMove *self) {
+byte cAIMove_GetStopped(cAI *base) {
+	cAIMove *self = (cAIMove *)base;
 	return self->stopped;
 }
 
-byte cAIMove_GetArrived(cAIMove *self) {
+byte cAIMove_GetArrived(cAI *base) {
+	cAIMove *self = (cAIMove *)base;
 	return self->arrived;
 }
 
-byte cAIMove_IsPaused(cAIMove *self) {
+byte cAIMove_IsPaused(cAI *base) {
+	cAIMove *self = (cAIMove *)base;
 	return self->paused;
 }
 
@@ -189,7 +204,8 @@ byte cAIMove_Event(cAIMove *self, int ev) {
 	return 1;
 }
 
-byte cAIMove_CanTarget(cAIMove *self, cEntity *e) {
+byte cAIMove_CanTarget(cAI *base, cEntity *e) {
+	cAIMove *self = (cAIMove *)base;
 	(void)self;
 	if (!e) {
 		Con_Warnf("Objetivo din\xe1mico = NULL\n");
@@ -207,7 +223,8 @@ static inline float AIMove_Rand(double span, double lo) {
 	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * span + lo);
 }
 
-vec3_t *cAIMove_RandomPoint(cAIMove *self, vec3_t *out, const vec3_t *p, float r) {
+vec3_t *cAIMove_RandomPoint(cAI *elem, vec3_t *out, const vec3_t *p, float r) {
+	cAIMove *self = (cAIMove *)elem;
 	vec3_t q;
 
 	*out = *p;
@@ -247,3 +264,32 @@ vec3_t *cAIMove_RandomPoint(cAIMove *self, vec3_t *out, const vec3_t *p, float r
 	}
 	return out;
 }
+
+/* the vtable of cAIMove */
+const cAIMoveVtbl cAIMove_vftable = {
+	.base.Delete = cAIMove_Delete,
+	.base.Update = cAIMove_Update,
+	.base.UpdateOff = cAIMove_UpdateOff,
+	.base.Draw = cAIMove_Draw,
+	.base.GetChanged = cAI_GetChanged,
+	.base.IsVisible = cAI_IsVisible,
+	.base.Debugf = (void *)crt_purecall,
+	.base.VarI = cAIMove_VarI,
+	.base.VarF = cAIMove_VarF,
+	.base.VarS = cAIMove_VarS,
+	.base.VarV = cAIMove_VarV,
+	.base.Print = cAI_Print,
+	.base.GetEventName = cAI_GetEventName,
+	.base.OnEvent = cAI_OnEvent,
+	.GetTarget = cAIMove_GetTarget,
+	.CanJump = cAIMove_CanJump,
+	.GetStopped = cAIMove_GetStopped,
+	.IsPaused = cAIMove_IsPaused,
+	.GetTargetEnt = cAIMove_GetTargetEnt,
+	.GetArrived = cAIMove_GetArrived,
+	.RandomPoint = cAIMove_RandomPoint,
+	.CheckStopped = cAIMove_CheckStopped,
+	.Event = cAI_EventTrue,
+	.IsMoving = (void *)crt_purecall,
+	.CanTarget = cAIMove_CanTarget,
+};

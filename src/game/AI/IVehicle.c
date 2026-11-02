@@ -82,7 +82,7 @@ void *cAIVehicle_ctor(void *mem, cEntity *v, void *p1, void *p2, void *p3) {
 	CHECK(self->shoot);
 	self->state = AIV_STATE_NONE;
 	self->internState = AIVI_STATE_INTERN_NONE;
-	cAIVehicle_Debugf(self, "Entidad CREADA");
+	cAIVehicle_Debugf(&self->base.base, "Entidad CREADA");
 	self->damageTime = 0.0f;
 	self->lifeMark = Veh(self->vehicle)->wl.life;
 	self->itemLifeMark = self->lifeMark;
@@ -151,7 +151,7 @@ void cAIVehicle_dtor(cAIVehicle *self) {
 	if (self->shoot) {
 		self->shoot->vftable->Delete(self->shoot, 1);
 	}
-	cAIVehicle_Debugf(self, "Entidad DESTRUIDA");
+	cAIVehicle_Debugf(&self->base.base, "Entidad DESTRUIDA");
 	cString_dtor(&self->itemAmmoK[2].name);
 	cString_dtor(&self->itemAmmoK[1].name);
 	cString_dtor(&self->itemAmmoK[0].name);
@@ -160,12 +160,13 @@ void cAIVehicle_dtor(cAIVehicle *self) {
 	cAIMove_dtor(&self->base);
 }
 
-cAIVehicle *cAIVehicle_Delete(cAIVehicle *self, byte flags) {
+cAI *cAIVehicle_Delete(cAI *base, byte flags) {
+	cAIVehicle *self = (cAIVehicle *)base;
 	cAIVehicle_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIVEHICLE_SIZE);
 	}
-	return self;
+	return base;
 }
 
 void cAIVehicle_ApplyParams(cAIVehicle *self) {
@@ -332,7 +333,7 @@ byte cAIVehicle_NeedRepos(cAIVehicle *self) {
 		}
 	}
 	else if (!(dist > self->maxDistReposNotVis)) {
-		if (!(dist > self->minDistReposNotVis) || self->vftable->IsVisible(self)) {
+		if (!(dist > self->minDistReposNotVis) || self->vftable->base.IsVisible(&self->base.base)) {
 			return 0;
 		}
 	}
@@ -398,20 +399,22 @@ byte cAIVehicle_CheckTarget(cAIVehicle *self) {
 	return 1;
 }
 
-void cAIVehicle_Draw(cAIVehicle *self) {
-	cAIMove_Draw(&self->base);
+void cAIVehicle_Draw(cAI *elem) {
+	cAIVehicle *self = (cAIVehicle *)elem;
+	cAIMove_Draw(&self->base.base);
 	cAIVehicleControl_Draw(self->control);
 	cAIVehicleShoot_Draw(self->shoot);
 }
 
-void cAIVehicle_Update(cAIVehicle *self, float dt) {
+void cAIVehicle_Update(cAI *elem, float dt) {
+	cAIVehicle *self = (cAIVehicle *)elem;
 	if (self->pending.state != AIV_STATE_NONE && g_VehicleGroup->vftable->CanChange(g_VehicleGroup)) {
 		cAIVehicle_RestoreState(self, &self->pending);
 	}
 	if (self->state == AIV_FREEZE) {
 		return;
 	}
-	cAIMove_Update(&self->base, dt);
+	cAIMove_Update(&self->base.base, dt);
 	cAIVehicle_UpdateGraph(self);
 	if (self->base.base.changed) {
 		return;
@@ -435,21 +438,24 @@ void cAIVehicle_Update(cAIVehicle *self, float dt) {
 	cAIVehicleShoot_Update2(self->shoot, dt);
 }
 
-void cAIVehicle_UpdateOff(cAIVehicle *self, float dt) {
-	cAIMove_UpdateOff(&self->base, dt);
+void cAIVehicle_UpdateOff(cAI *elem, float dt) {
+	cAIVehicle *self = (cAIVehicle *)elem;
+	cAIMove_UpdateOff(&self->base.base, dt);
 	cAIVehicle_UpdateGraph(self);
 }
 
 /* ---- the script variables: "Repos" here, the rest in cAIMove ---- */
 
-byte cAIVehicle_VarF(cAIVehicle *self, const char *name, double *d, byte set) {
+byte cAIVehicle_VarF(cAI *elem, const char *name, double *d, byte set) {
+	cAIVehicle *self = (cAIVehicle *)elem;
 	if (!*name) {
 		return 0;
 	}
-	return cAIMove_VarF(&self->base, name, d, set);
+	return cAIMove_VarF(&self->base.base, name, d, set);
 }
 
-byte cAIVehicle_VarI(cAIVehicle *self, const char *name, int *i, byte set) {
+byte cAIVehicle_VarI(cAI *elem, const char *name, int *i, byte set) {
+	cAIVehicle *self = (cAIVehicle *)elem;
 	if (!*name) {
 		return 0;
 	}
@@ -461,21 +467,23 @@ byte cAIVehicle_VarI(cAIVehicle *self, const char *name, int *i, byte set) {
 		*i = self->base.repos;
 		return 1;
 	}
-	return cAIMove_VarI(&self->base, name, i, set);
+	return cAIMove_VarI(&self->base.base, name, i, set);
 }
 
-byte cAIVehicle_VarS(cAIVehicle *self, const char *name, char **s, byte set) {
+byte cAIVehicle_VarS(cAI *elem, const char *name, char **s, byte set) {
+	cAIVehicle *self = (cAIVehicle *)elem;
 	if (!*name) {
 		return 0;
 	}
-	return cAIMove_VarS(&self->base, name, s, set);
+	return cAIMove_VarS(&self->base.base, name, s, set);
 }
 
-byte cAIVehicle_VarV(cAIVehicle *self, const char *name, double *x, double *y, double *z, byte set) {
+byte cAIVehicle_VarV(cAI *elem, const char *name, double *x, double *y, double *z, byte set) {
+	cAIVehicle *self = (cAIVehicle *)elem;
 	if (!*name) {
 		return 0;
 	}
-	return cAIMove_VarV(&self->base, name, x, y, z, set);
+	return cAIMove_VarV(&self->base.base, name, x, y, z, set);
 }
 
 /* ---- the getters ---- */
@@ -740,7 +748,8 @@ byte cAIVehicle_IsGroupState(int state) {
 }
 
 /* the vehicle is steered (thrust or turn) in a moving state */
-byte cAIVehicle_IsMoving(cAIVehicle *self) {
+byte cAIVehicle_IsMoving(cAI *base) {
+	cAIVehicle *self = (cAIVehicle *)base;
 	int in = self->internState;
 
 	if (in == AIVI_STOPPED || in == AIVI_STATE_INTERN_NONE || in == AIVI_ORIENT_SHOOTING) {
@@ -757,7 +766,8 @@ byte cAIVehicle_IsMoving(cAIVehicle *self) {
 
 /* ---- the debug text: "[time] (vehicle) [state - internal state] - text" on the console ---- */
 
-void cAIVehicle_Debugf(cAIVehicle *self, const char *fmt, ...) {
+void cAIVehicle_Debugf(cAI *base, const char *fmt, ...) {
+	cAIVehicle *self = (cAIVehicle *)base;
 	char text[1024];
 	char intern[256];
 	char state[256];
@@ -779,7 +789,8 @@ void cAIVehicle_Debugf(cAIVehicle *self, const char *fmt, ...) {
 /* ---- the events of the move (cAIMove), by state ---- */
 
 /* the handler of the state, else the default one; the result of the one that ran (callers test al) */
-byte cAIVehicle_Event(cAIVehicle *self, int ev) {
+byte cAIVehicle_Event(cAI *base, int ev) {
+	cAIVehicle *self = (cAIVehicle *)base;
 	byte done = 0;
 
 	switch (self->state) {
@@ -823,11 +834,11 @@ byte cAIVehicle_EventChase(cAIVehicle *self, int ev) {
 		return 0;
 	}
 	if (self->internState != AIVI_FINISHING_LINE_LIFE) {
-		self->vftable->OnEvent(self, 2);
+		self->vftable->base.OnEvent(&self->base.base, 2);
 		cAIVehicle_SetInternState(self, AIVI_CHASE_NOT_SHOOTING, (double)self->chaseMin, (double)self->chaseMax);
 		return 1;
 	}
-	self->vftable->OnEvent(self, 2);
+	self->vftable->base.OnEvent(&self->base.base, 2);
 	cAIVehicle_ItemsChase(self);
 	return 1;
 }
@@ -837,7 +848,7 @@ byte cAIVehicle_EventDefault(cAIVehicle *self, int ev) {
 	switch (ev) {
 	case 0: {
 		vec3_t a;
-		self->vftable->OnEvent(self, 0);
+		self->vftable->base.OnEvent(&self->base.base, 0);
 		cAIVehicle_SaveState(self, &self->saved);
 		int s = self->state;
 		int st = AIV_LOST_PATH;
@@ -854,11 +865,11 @@ byte cAIVehicle_EventDefault(cAIVehicle *self, int ev) {
 		return 1;
 	}
 	case 1:
-		self->vftable->OnEvent(self, 1);
+		self->vftable->base.OnEvent(&self->base.base, 1);
 		cAIVehicle_SetStateIntern(self, AIV_FREEZE_OBJ_NOT_ACCESS);
 		return 1;
 	case 3:
-		self->vftable->OnEvent(self, 3);
+		self->vftable->base.OnEvent(&self->base.base, 3);
 		cAIVehicle_SetStateIntern(self, AIV_FREEZE);
 		if (cPy_Function_IsValid(g_OnObjectiveNullAI)) {
 			cPy_Function_AddParamS(g_OnObjectiveNullAI, self->vehicle->name);
@@ -875,15 +886,15 @@ byte cAIVehicle_EventFighting(cAIVehicle *self, int ev) {
 	}
 	switch (self->internState) {
 	case AIVI_FINISHING_LINE_LIFE:
-		self->vftable->OnEvent(self, 2);
+		self->vftable->base.OnEvent(&self->base.base, 2);
 		cAIVehicle_ItemsFighting(self);
 		return 1;
 	case AIVI_FINISHING_LINE_AMMO:
-		self->vftable->OnEvent(self, 2);
+		self->vftable->base.OnEvent(&self->base.base, 2);
 		cAIVehicle_FightingAfterItem(self);
 		return 1;
 	}
-	self->vftable->OnEvent(self, 2);
+	self->vftable->base.OnEvent(&self->base.base, 2);
 	cAIVehicle_SetInternState(self, AIVI_CHASE_SHOOTING, (double)self->chaseMin, (double)self->chaseMax);
 	return 1;
 }
@@ -904,14 +915,14 @@ static void AIV_AwayFromTarget(cAIVehicle *self) {
 }
 
 static void AIV_FollowAway(cAIVehicle *self, int ev) {
-	self->vftable->OnEvent(self, ev);
+	self->vftable->base.OnEvent(&self->base.base, ev);
 	AIV_AwayFromTarget(self);
 }
 
 byte cAIVehicle_EventGetAway(cAIVehicle *self, int ev) {
 	if (self->internState == AIVI_FINISHING_LINE_LIFE) {
 		if (ev == 2) {
-			self->vftable->OnEvent(self, 2);
+			self->vftable->base.OnEvent(&self->base.base, 2);
 			cAIVehicle_ItemsGetAway(self);
 			return 1;
 		}
@@ -926,7 +937,7 @@ byte cAIVehicle_EventGetAway(cAIVehicle *self, int ev) {
 byte cAIVehicle_EventGetAwayStop(cAIVehicle *self, int ev) {
 	if (self->internState == AIVI_FINISHING_LINE_LIFE) {
 		if (ev == 2) {
-			self->vftable->OnEvent(self, 2);
+			self->vftable->base.OnEvent(&self->base.base, 2);
 			cAIVehicle_ItemsGetAwayStop(self);
 			return 1;
 		}
@@ -953,7 +964,7 @@ byte cAIVehicle_EventGoTo(cAIVehicle *self, int ev) {
 		taken = self->onArrive(self);
 	}
 	if (!taken && !self->stopAtGoal) {
-		self->vftable->OnEvent(self, 2);
+		self->vftable->base.OnEvent(&self->base.base, 2);
 		cAIVehicle_SetStateIntern(self, AIV_FREEZE);
 	}
 	return 1;
@@ -962,14 +973,14 @@ byte cAIVehicle_EventGoTo(cAIVehicle *self, int ev) {
 byte cAIVehicle_EventInRoute(cAIVehicle *self, int ev) {
 	if (self->internState == AIVI_FINISHING_LINE_LIFE) {
 		if (ev == 2) {
-			self->vftable->OnEvent(self, 2);
+			self->vftable->base.OnEvent(&self->base.base, 2);
 			cAIVehicle_ItemsInRoute(self);
 			return 1;
 		}
 	}
 	else if (self->internState == AIVI_FOLLOW_THE_PATH && (ev == 2 || ev == 4)) {
 		vec3_t dir;
-		self->vftable->OnEvent(self, ev);
+		self->vftable->base.OnEvent(&self->base.base, ev);
 		AIV_NoseDir(self, &dir);
 		cAIVehicle_SetInternState(self, AIVI_FOLLOW_THE_PATH, dir, (double)g_RadiusObjectiveInRoute, 0, 1,
 			self->base.repos, (double)self->rotA, (double)self->rotB);
@@ -982,7 +993,7 @@ byte cAIVehicle_EventLostPath(cAIVehicle *self, int ev) {
 	if (ev != 7) {
 		return 0;
 	}
-	self->vftable->OnEvent(self, 7);
+	self->vftable->base.OnEvent(&self->base.base, 7);
 	cAIVehicle_SetStateIntern(self, AIV_FREEZE_LOST);
 	return 1;
 }
@@ -992,7 +1003,7 @@ byte cAIVehicle_EventLostPath(cAIVehicle *self, int ev) {
 static void AIV_NextNode(cAIVehicle *self, vec3_t *p, int track, int node, float radius) {
 	vec3_t a;
 
-	self->vftable->OnEvent(self, 2);
+	self->vftable->base.OnEvent(&self->base.base, 2);
 	*p = *cAIVehicle_TrackPoint(self, &a, p, track, node);
 	self->track = track;
 	self->node = node;
@@ -1016,7 +1027,7 @@ byte cAIVehicle_EventTraffic(cAIVehicle *self, int ev) {
 		AIV_NextNode(self, &p, track, node, g_RadiusObjectiveTraffic);
 		return 1;
 	}
-	self->vftable->OnEvent(self, 2);
+	self->vftable->base.OnEvent(&self->base.base, 2);
 	t = AIV_Outdoor();
 	t->vftable->RemoveVehicle(t, self->track);
 	cAIVehicle_SetInternState(self, AIVI_STOPPED);
@@ -1045,7 +1056,7 @@ byte cAIVehicle_EventTrafficInDoor(cAIVehicle *self, int ev) {
 	float dy = p.y - 0.0f;
 	float dz = p.z - a.z;
 	if (!(dy * dy + dx * dx + dz * dz > AIV_ARRIVED_DIST2)) {
-		self->vftable->OnEvent(self, 2);
+		self->vftable->base.OnEvent(&self->base.base, 2);
 		t = AIV_Indoor();
 		t->vftable->RemoveVehicle(t, self->track);
 		cAIVehicle_SetInternState(self, AIVI_STOPPED);
@@ -1662,7 +1673,7 @@ byte cAIVehicle_SetState(cAIVehicle *ai, int state, ...) {
 	va_list ap;
 
 	cAIVehicle_StateName(state, name);
-	ai->vftable->Debugf(ai, "Demanda externa de CAMBIO de ESTADO -> %s", name);
+	ai->vftable->base.Debugf(&ai->base.base, "Demanda externa de CAMBIO de ESTADO -> %s", name);
 	va_start(ap, state);
 	byte r = cAIVehicle_ChangeState(ai, state, ap);
 	va_end(ap);
@@ -1675,7 +1686,7 @@ byte cAIVehicle_SetStateIntern(cAIVehicle *self, int state, ...) {
 	va_list ap;
 
 	cAIVehicle_StateName(state, name);
-	self->vftable->Debugf(self, "Demanda interna de CAMBIO de ESTADO -> %s", name);
+	self->vftable->base.Debugf(&self->base.base, "Demanda interna de CAMBIO de ESTADO -> %s", name);
 	if (!AIV_FreeState(state)) {
 		g_VehicleGroup->vftable->AllowChange(g_VehicleGroup);
 	}
@@ -1702,7 +1713,7 @@ void cAIVehicle_SetInternState(cAIVehicle *self, int state, ...) {
 	byte sc = 1;
 
 	cAIVehicle_InternStateName(state, name);
-	self->vftable->Debugf(self, "CAMBIO de ESTADO INTERNO -> %s", name);
+	self->vftable->base.Debugf(&self->base.base, "CAMBIO de ESTADO INTERNO -> %s", name);
 	int old = self->internState;
 	int d = 0;
 	self->base.base.changed = 1;
@@ -1920,7 +1931,7 @@ byte cAIVehicle_ChangeStateMore(cAIVehicle *self, int state, byte allowed, va_li
 	switch (state) {
 	case AIV_FIGHTING_HOOK:
 		e = va_arg(ap, cEntity *);
-		if (!self->vftable->CanTarget(self, e)) {
+		if (!self->vftable->CanTarget(&self->base.base, e)) {
 			return 0;
 		}
 		AIV_PendingTarget(self, e);
@@ -1938,7 +1949,7 @@ byte cAIVehicle_ChangeStateMore(cAIVehicle *self, int state, byte allowed, va_li
 		return 1;
 	case AIV_GET_AWAY:
 		e = va_arg(ap, cEntity *);
-		if (!self->vftable->CanTarget(self, e)) {
+		if (!self->vftable->CanTarget(&self->base.base, e)) {
 			return 0;
 		}
 		AIV_PendingTarget(self, e);
@@ -2068,7 +2079,7 @@ common: {
 	case AIV_CHASE:
 	case AIV_GET_AWAY_STOP:
 		e = va_arg(ap, cEntity *);
-		if (!self->vftable->CanTarget(self, e)) {
+		if (!self->vftable->CanTarget(&self->base.base, e)) {
 			ok = 0;
 			break;
 		}
@@ -2188,10 +2199,10 @@ common: {
 		}
 		cAIVehicle_StateName(state, name);
 		if (!AIV_Target(self)) {
-			self->vftable->Debugf(self, "CAMBIO DE ESTADO REALIZADO -> %s", name);
+			self->vftable->base.Debugf(&self->base.base, "CAMBIO DE ESTADO REALIZADO -> %s", name);
 		}
 		else {
-			self->vftable->Debugf(self, "CAMBIO DE ESTADO REALIZADO -> %s - OBJETIVO: %s", name,
+			self->vftable->base.Debugf(&self->base.base, "CAMBIO DE ESTADO REALIZADO -> %s - OBJETIVO: %s", name,
 				AIV_Target(self)->name);
 		}
 		return ok;
@@ -2207,7 +2218,7 @@ wait:
 	ok = 1;
 waiting:
 	if (!AIV_VehTraffic(self->vehicle)->off) {
-		self->vftable->Debugf(self, "En ESPERA CAMBIO de ESTADO -> FREEZE_CHANGE_STATE");
+		self->vftable->base.Debugf(&self->base.base, "En ESPERA CAMBIO de ESTADO -> FREEZE_CHANGE_STATE");
 		cAIVehicle_SetStateIntern(self, AIV_FREEZE_CHANGE_STATE);
 	}
 	return ok;
@@ -2882,7 +2893,7 @@ void cAIVehicle_ThinkRace(cAIVehicle *self) {
 			int n = g_VehicleGroup->vftable->NumVehicles(g_VehicleGroup);
 			for (int i = 0; i < n; i++) {
 				cEntity *e = g_VehicleGroup->vftable->GetVehicle(g_VehicleGroup, i);
-				if (e == self->vehicle || !self->vftable->CanTarget(self, e) || !cAIVehicle_CanHook(self, e)) {
+				if (e == self->vehicle || !self->vftable->CanTarget(&self->base.base, e) || !cAIVehicle_CanHook(self, e)) {
 					continue;
 				}
 				if (AIV_Target(self) != e) {
@@ -3173,7 +3184,7 @@ void cAIVehicle_GraphTraffic(cAIVehicle *self) {
 	double ang = Vec3_Angle(&d, &dir);
 	if (ang > (double)(cam->cam.fov * AIV_REPOS_HALF * AIV_REPOS_FOV) && !self->base.trafficPlaced) {
 		if (!(dist > self->maxDistReposNotVis)) {
-			if (!(dist > self->minDistReposNotVis) || self->vftable->IsVisible(self)) {
+			if (!(dist > self->minDistReposNotVis) || self->vftable->base.IsVisible(&self->base.base)) {
 				return;
 			}
 		}
@@ -3216,7 +3227,7 @@ void cAIVehicle_GraphTrafficInDoor(cAIVehicle *self) {
 	}
 	switch (self->base.base.seen) {
 	case 0:
-		if (self->vftable->IsVisible(self)) {
+		if (self->vftable->base.IsVisible(&self->base.base)) {
 			self->base.base.seen = 1;
 			return;
 		}
@@ -3228,12 +3239,12 @@ void cAIVehicle_GraphTrafficInDoor(cAIVehicle *self) {
 		}
 		return;
 	case 1:
-		if (!self->vftable->IsVisible(self)) {
+		if (!self->vftable->base.IsVisible(&self->base.base)) {
 			self->base.base.seen = 0;
 		}
 		return;
 	case 2:
-		if (self->vftable->IsVisible(self)) {
+		if (self->vftable->base.IsVisible(&self->base.base)) {
 			self->base.base.seen = 1;
 			return;
 		}
@@ -3252,3 +3263,32 @@ int cAIVehicle_GetTrackType(cAIVehicle *self) {
 void cAIVehicle_WeapListChanged(void *ai) {
 	cAIVehicleShoot_WeapListChanged(((cAIVehicle *)ai)->shoot);
 }
+
+/* the vtable of cAIVehicle */
+const cAIMoveVtbl cAIVehicle_vftable = {
+	.base.Delete = cAIVehicle_Delete,
+	.base.Update = cAIVehicle_Update,
+	.base.UpdateOff = cAIVehicle_UpdateOff,
+	.base.Draw = cAIVehicle_Draw,
+	.base.GetChanged = cAI_GetChanged,
+	.base.IsVisible = cAI_IsVisible,
+	.base.Debugf = cAIVehicle_Debugf,
+	.base.VarI = cAIVehicle_VarI,
+	.base.VarF = cAIVehicle_VarF,
+	.base.VarS = cAIVehicle_VarS,
+	.base.VarV = cAIVehicle_VarV,
+	.base.Print = cAI_Print,
+	.base.GetEventName = cAI_GetEventName,
+	.base.OnEvent = cAI_OnEvent,
+	.GetTarget = cAIMove_GetTarget,
+	.CanJump = cAIMove_CanJump,
+	.GetStopped = cAIMove_GetStopped,
+	.IsPaused = cAIMove_IsPaused,
+	.GetTargetEnt = cAIMove_GetTargetEnt,
+	.GetArrived = cAIMove_GetArrived,
+	.RandomPoint = cAIMove_RandomPoint,
+	.CheckStopped = cAIMove_CheckStopped,
+	.Event = cAIVehicle_Event,
+	.IsMoving = cAIVehicle_IsMoving,
+	.CanTarget = cAIMove_CanTarget,
+};

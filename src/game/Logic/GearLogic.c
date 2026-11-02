@@ -43,7 +43,7 @@ int Vec3_Differ(const float *a, const float *b);
 static inline byte Gear_AIHasTarget(void *ai) {
 	cAIChar *a = ai;
 
-	return a->vftable->GetDirect(a);
+	return a->vftable->GetDirect(&a->base.base);
 }
 
 static inline cAIChar *Gear_AI(cGearLocalLogic *self) {
@@ -250,11 +250,11 @@ attack:
 		}
 		if ((byte)Vec3_Differ(&tp.x, &o.x) && !locked) {
 			cAIChar *ai = Gear_AI(self);
-			if (ai->vftable->GetState(ai) != 4) {
+			if (ai->vftable->GetState(&ai->base.base) != 4) {
 				float dy = tp.y - o.y, dx = tp.x - o.x, dz = tp.z - o.z;
 				if (dy * dy + dx * dx + dz * dz > 1000000.0f) {
 					ai = Gear_AI(self);
-					ai->vftable->SetState(ai, 4, b->origin, b->originAng, 100.0, (double)g_GearRelaxSpeed);
+					ai->vftable->SetState(&ai->base.base, 4, b->origin, b->originAng, 100.0, (double)g_GearRelaxSpeed);
 				}
 			}
 		}
@@ -434,18 +434,18 @@ byte cGearLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	switch (b->state) {
 	case 0:
 		if (ok) {
-			ai->vftable->SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_GearRelaxSpeed);
+			ai->vftable->SetState(&ai->base.base, 6, b->origin, (double)b->actionRadius, (double)g_GearRelaxSpeed);
 		}
 		break;
 	case 1:
 		if (ok) {
-			ai->vftable->SetState(ai, 2, target, (double)(target == usr ? g_GearChaseSpeed : 1.0f));
+			ai->vftable->SetState(&ai->base.base, 2, target, (double)(target == usr ? g_GearChaseSpeed : 1.0f));
 		}
 		self->lostTime = 0.0f;
 		break;
 	case 2:
 		if (ok) {
-			ai->vftable->SetState(ai, 2, target, (double)(target == usr ? g_GearAttackSpeed : 1.0f));
+			ai->vftable->SetState(&ai->base.base, 2, target, (double)(target == usr ? g_GearAttackSpeed : 1.0f));
 			if (target != cWorld_GetUsrEntity(g_pWorld, 0)) {
 				self->lostTime = g_GearLostTargetTime - g_GearAttackNPCTime;
 			}
@@ -453,13 +453,13 @@ byte cGearLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 		break;
 	case 3:
 		if (ok) {
-			ai->vftable->SetState(ai, 4, b->origin, b->originAng, 100.0, (double)g_GearRelaxSpeed);
+			ai->vftable->SetState(&ai->base.base, 4, b->origin, b->originAng, 100.0, (double)g_GearRelaxSpeed);
 		}
 		break;
 	case 4:
 		if (ok) {
 			if (target) {
-				ai->vftable->SetState(ai, 3, target, (double)g_GearScortSpeed);
+				ai->vftable->SetState(&ai->base.base, 3, target, (double)g_GearScortSpeed);
 			} else {
 				Gear_Vtbl(self)->SetState(&self->base.logic, 0, NULL);
 			}

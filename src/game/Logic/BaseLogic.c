@@ -164,15 +164,15 @@ void Logic_ShowChar(Nto1Node *node, const char **names) {
 	e->vftable->GetPos(e, &p);
 	int st = l->state;
 	cAIChar *ai = e->vftable->GetAI(e);
-	ai->vftable->GetStateName(ai, state);
-	ai->vftable->GetInternStateName(ai, sub);
+	ai->vftable->GetStateName(&ai->base.base, state);
+	ai->vftable->GetInternStateName(&ai->base.base, sub);
 	cEntity *t = l->target.target;
 	if (t) {
 		DebugUtils_DrawLine(&p, t->vftable->GetPos(t, &tmp), 0xff0000);
 	} else {
 		ai = e->vftable->GetAI(e);
-		if (ai && ai->vftable->GetState(ai) == 4) {
-			ai->vftable->SaveTo(ai, &goal);
+		if (ai && ai->vftable->GetState(&ai->base.base) == 4) {
+			ai->vftable->SaveTo(&ai->base.base, &goal);
 			DebugUtils_DrawLine(&p, &goal.dest, 0xff0000);
 		}
 	}
@@ -218,8 +218,8 @@ void Logic_ShowShip(cEntity *e) {
 	cAIVehicle_GetStateName(ai, state);
 	cAIVehicle_GetInternStateName(ai, sub);
 	int st = cAIVehicle_GetState(ai);
-	if ((st == AIV_STATE_ATTACK || st == AIV_STATE_CHASE) && ai->vftable->GetTargetEnt(ai)) {
-		cEntity *t = ai->vftable->GetTargetEnt(ai);
+	if ((st == AIV_STATE_ATTACK || st == AIV_STATE_CHASE) && ai->vftable->GetTargetEnt(&ai->base.base)) {
+		cEntity *t = ai->vftable->GetTargetEnt(&ai->base.base);
 		DebugUtils_DrawLine(&p, t->vftable->GetPos(t, &lp), 0xff0000);
 	}
 	g_FontTerminal8->color = 0xffffff;
@@ -347,7 +347,7 @@ void cBaseLocalLogic_Refresh(cLocalLogic *base) {
 		return;
 	}
 	cAIChar *ai = p->vftable->GetAI(p);
-	if (ai->vftable->GetState(ai) == 6) {
+	if (ai->vftable->GetState(&ai->base.base) == 6) {
 		self->idle = 1;
 		self->vftable->SetState(&self->logic, self->state, self->target.target);
 	}
@@ -486,7 +486,7 @@ void cBaseLocalLogic_SetIdle(cLocalLogic *base, byte idle) {
 	CHECK(self->parent->vftable->IsType(self->parent, TYEN_WALKCHAR));
 	if (self->parent->vftable->GetAI(self->parent)) {
 		cAIChar *ai = self->parent->vftable->GetAI(self->parent);
-		ai->vftable->SetState(ai, 0);
+		ai->vftable->SetState(&ai->base.base, 0);
 	}
 	self->idle = 1;
 }

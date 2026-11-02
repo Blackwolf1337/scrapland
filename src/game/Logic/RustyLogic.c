@@ -97,7 +97,7 @@ static void Rusty_GoToJunk(cRustyLocalLogic *self, cAIChar *ai, double speed) {
 	fwd.z = -1.0f;
 	Vec3_Rotate(&dir, &fwd, &ang);
 	const vec3_t *pos = self->junk->vftable->GetPos(self->junk, &fwd);
-	ai->vftable->SetState(ai, 4, *pos, dir, 100.0, speed);
+	ai->vftable->SetState(&ai->base.base, 4, *pos, dir, 100.0, speed);
 }
 
 /* vf17 */
@@ -114,7 +114,7 @@ void cRustyLocalLogic_Update(cLocalLogic *elem, float dt) {
 	}
 	if (st == 7) {
 		cAIChar *ai = p->vftable->GetAI(p);
-		if (ai->vftable->GetState(ai) || !ai->vftable->GetArrived(ai)) {
+		if (ai->vftable->GetState(&ai->base.base) || !ai->vftable->base.GetArrived(&ai->base.base)) {
 			return;
 		}
 		if (strcmp(p->vftable->GetClassName(p), TYEN_WALKCHAR)) {

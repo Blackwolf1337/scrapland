@@ -334,7 +334,7 @@ cLocalLogic *cMessengerLocalLogic_Delete(cLocalLogic *base, byte flags) {
 void cMessengerLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
 	cMessengerLocalLogic *self = (cMessengerLocalLogic *)base;
 	(void)self;
-	ai->vftable->SetState(ai, 1, 1.0, 0);
+	ai->vftable->SetState(&ai->base.base, 1, 1.0, 0);
 }
 
 /* vf17: team 3, 0 while it attacks a player */
@@ -384,7 +384,7 @@ void cMessengerLocalLogic_GoTo(cLocalLogic *elem, cAIChar *ai, cEntity *e) {
 	}
 	const matrix_t *mm = CGameModel_NodeMatrix(Obj_Vtbl(e)->GetModel(e), &m, node, 0, NULL, 0);
 	vec3_t np = { mm->m[12], mm->m[13], mm->m[14] };
-	ai->vftable->SetState(ai, 4, np, dir, 70.0, (double)speed);
+	ai->vftable->SetState(&ai->base.base, 4, np, dir, 70.0, (double)speed);
 }
 
 /* the vtable of cMessengerLocalLogic */

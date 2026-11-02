@@ -26,7 +26,7 @@ void HumanLogic_Escape(cAbstractFile *params) {
 	if (!strcmp(type, "Gear") || !strcmp(type, "Sentinel") || !strcmp(type, "Police")) {
 		return;
 	}
-	ai->vftable->SetState(ai, 5, g_HumanEnt, (double)g_GenCharEscapeSpeed);
+	ai->vftable->SetState(&ai->base.base, 5, g_HumanEnt, (double)g_GenCharEscapeSpeed);
 }
 
 void *cHumanLocalLogic_ctor(void *mem, cEntity *parent) {

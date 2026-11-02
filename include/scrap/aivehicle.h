@@ -20,7 +20,8 @@
 #include "scrap/pyfunction.h"
 #include "scrap/slotcontroller.h"
 
-#define CAIVEHICLE_VFTABLE GAME_VFTABLE(cAIVehicle_vftable)
+extern const cAIMoveVtbl cAIVehicle_vftable;
+#define CAIVEHICLE_VFTABLE (&cAIVehicle_vftable)
 #define CAIVEHICLE_SIZE sizeof(cAIVehicle)
 #define CAIVEHICLECONTROL_SIZE sizeof(cAIVehicleControl)
 #define CAIVEHICLESHOOT_SIZE sizeof(cAIVehicleShoot)
@@ -69,35 +70,10 @@ SD_OFFSET(cAIVehicleSaved, target, 0x19);
 SD_OFFSET(cAIVehicleSaved, dir, 0x9c);
 SD_SIZE(cAIVehicleSaved, 0xcc);
 
-typedef struct cAIVehicleVtbl {
-	cAIVehicle *(*Delete)(cAIVehicle *self, byte flags);			/* 0x00 */
-	void(*Update)(cAIVehicle *self, float dt);				/* 0x04 */
-	void(*UpdateOff)(cAIVehicle *self, float dt);				/* 0x08 */
-	void(*Draw)(cAIVehicle *self);						/* 0x0c */
-	byte(*GetChanged)(cAIVehicle *self);					/* 0x10 */
-	byte(*IsVisible)(cAIVehicle *self);					/* 0x14 */
-	void (*Debugf)(cAIVehicle *self, const char *fmt, ...);				/* 0x18 */
-	byte(*VarI)(cAIVehicle *self, const char *name, int *i, byte set);	/* 0x1c */
-	void *vf08_0c[5];
-	void(*OnEvent)(cAIVehicle *self, int ev);				/* 0x34 the debug text of the event */
-	Nto1Node *(*GetTargetNode)(cAIVehicle *self);			/* 0x38 &target */
-	void *vf0f_11[3];
-	cEntity *(*GetTargetEnt)(cAIVehicle *self);				/* 0x48 the target */
-	void *vf13_15[3];
-	byte(*Event)(cAIVehicle *self, int ev);				/* 0x58 vf22 */
-	byte(*IsMoving)(cAIVehicle *self);					/* 0x5c vf23 */
-	byte(*CanTarget)(cAIVehicle *self, cEntity *e);			/* 0x60 */
-} cAIVehicleVtbl;
-SD_OFFSET(cAIVehicleVtbl, Debugf, 0x18);
-SD_OFFSET(cAIVehicleVtbl, OnEvent, 0x34);
-SD_OFFSET(cAIVehicleVtbl, GetTargetNode, 0x38);
-SD_OFFSET(cAIVehicleVtbl, Event, 0x58);
-SD_OFFSET(cAIVehicleVtbl, CanTarget, 0x60);
-
 struct cAIVehicle {
 	union {
 		cAIMove base;			/* 0x000 */
-		const cAIVehicleVtbl *vftable;
+		const cAIMoveVtbl *vftable;
 	};
 	cAIVehicleSaved pending;	/* 0x090 state AIV_STATE_NONE for none */
 	byte(*onArrive)(cAIVehicle *self);	/* 0x15c GO_TO arrived: 1 if it took care of it */
@@ -199,7 +175,7 @@ extern cGVar GVar_HookRange;
 /* ---- AI/AIVehicle.cpp (src/game/AI/IVehicle.c); more in ai.h, nodestraffic.h, embeddedfxvehicle.h, weapons.h,
  * vehicletraffic.h and vehicleentity.h (the constructor) ---- */
 void cAIVehicle_dtor(cAIVehicle *self);
-cAIVehicle *cAIVehicle_Delete(cAIVehicle *self, byte flags);
+cAI *cAIVehicle_Delete(cAI *base, byte flags);
 /* the boost flag of the vehicle from CONTROL_AIM (after the parameters changed) */
 void cAIVehicle_ApplyParams(cAIVehicle *self);
 void cAIVehicle_React(cAIVehicle *self);
@@ -210,13 +186,13 @@ void cAIVehicle_UpdateGraph(cAIVehicle *self);
 void cAIVehicle_UpdateRoute(cAIVehicle *self);
 void cAIVehicle_UpdateThink(cAIVehicle *self);
 byte cAIVehicle_CheckTarget(cAIVehicle *self);
-void cAIVehicle_Draw(cAIVehicle *self);
-void cAIVehicle_Update(cAIVehicle *self, float dt);
-void cAIVehicle_UpdateOff(cAIVehicle *self, float dt);
-byte cAIVehicle_VarF(cAIVehicle *self, const char *name, double *d, byte set);
-byte cAIVehicle_VarI(cAIVehicle *self, const char *name, int *i, byte set);
-byte cAIVehicle_VarS(cAIVehicle *self, const char *name, char **s, byte set);
-byte cAIVehicle_VarV(cAIVehicle *self, const char *name, double *x, double *y, double *z, byte set);
+void cAIVehicle_Draw(cAI *elem);
+void cAIVehicle_Update(cAI *elem, float dt);
+void cAIVehicle_UpdateOff(cAI *elem, float dt);
+byte cAIVehicle_VarF(cAI *elem, const char *name, double *d, byte set);
+byte cAIVehicle_VarI(cAI *elem, const char *name, int *i, byte set);
+byte cAIVehicle_VarS(cAI *elem, const char *name, char **s, byte set);
+byte cAIVehicle_VarV(cAI *elem, const char *name, double *x, double *y, double *z, byte set);
 cAIVehicleControl *cAIVehicle_GetControl(cAIVehicle *self);
 byte cAIVehicle_GetChanged(cAIVehicle *self);
 int cAIVehicle_GetPrevState(cAIVehicle *self);
@@ -245,9 +221,9 @@ byte cAIVehicle_IsGroupState(int state);
 void cAIVehicle_CheckParams1(cAIVehicle *self, const cAIVehicleParams1 *p);
 void cAIVehicle_CheckParams2(cAIVehicle *self, const cAIVehicleParams2 *p);
 void cAIVehicle_CheckParams3(cAIVehicle *self, const cAIVehicleParams3 *p);
-byte cAIVehicle_IsMoving(cAIVehicle *self);
-void cAIVehicle_Debugf(cAIVehicle *self, const char *fmt, ...);
-byte cAIVehicle_Event(cAIVehicle *self, int ev);
+byte cAIVehicle_IsMoving(cAI *base);
+void cAIVehicle_Debugf(cAI *base, const char *fmt, ...);
+byte cAIVehicle_Event(cAI *base, int ev);
 byte cAIVehicle_EventChase(cAIVehicle *self, int ev);
 byte cAIVehicle_EventDefault(cAIVehicle *self, int ev);
 byte cAIVehicle_EventFighting(cAIVehicle *self, int ev);
