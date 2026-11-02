@@ -11,7 +11,6 @@
 #include "scrap/vehiclemotors.h"
 #include "scrap/weaps2.h"
 
-#define VM_EMPTY GAME_STR(str_Empty)	/* the "" of the exe */
 
 /* "DC_EngineA_01": the slot of motor (A..D) and side (1, 2) */
 static inline void VM_SlotName(char *buf, int motor, int side) {
@@ -359,13 +358,13 @@ const char *cVehicleMotors_GetMotorName(cVehicleMotors *self, uint32_t motor, in
 		if (count) {
 			*count = 0;
 		}
-		return VM_EMPTY;
+		return str_Empty;
 	}
 	int n = VM_NumNodes(self->motor[motor]);
 	if (count) {
 		*count = n;
 	}
-	return n > 0 ? self->motor[motor]->name : VM_EMPTY;
+	return n > 0 ? self->motor[motor]->name : str_Empty;
 }
 
 int cVehicleMotors_NumSlots(cVehicleMotors *self, byte motor) {

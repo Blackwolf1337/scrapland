@@ -34,7 +34,6 @@ extern cGVar GVar_PoliceTauntRace;
 extern cGVarFunction GVar_PoliceWaveEliminated;
 extern cGVar GVar_UsrDefChar;
 
-#define LOGIC_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
 
 /* ---- AlarmStatus.cpp: the cAlarm of include/scrap/alarm.h ---- */
 

@@ -22,7 +22,6 @@
 #include "scrap/scrapworld.h"
 #include "scrap/world.h"
 
-#define NW_EMPTY GAME_STR(str_Empty)	/* the "" of the exe */
 
 
 /* ---- Global/DList.h ---- */
@@ -1126,7 +1125,7 @@ void CNodesWorld_Load(CNodesWorld *self, int arg, const char *name, const vec3_t
 	vec3_t top;
 
 	Con_Printf("\nCreating Nodes...\n");
-	Con_Bluef("%s", NW_EMPTY);
+	Con_Bluef("%s", str_Empty);
 	self->sup.nodeSize = *pos;
 	NW_SetNodeSize(self);
 	self->sup.nodeTenth.x = self->sup.nodeSize.x * 0.1f;
@@ -1169,7 +1168,7 @@ void CNodesWorld_Load(CNodesWorld *self, int arg, const char *name, const vec3_t
 		}
 		self->sup.vftable->BuildGrid(self);
 		Con_Printf("NODES 3D AI LEVEL LOADED.\n\n");
-		Con_Bluef("%s", NW_EMPTY);
+		Con_Bluef("%s", str_Empty);
 		goto end;
 	}
 	float mn = Float_MinSS(pos->z, Float_MinSS(pos->y, pos->x));
@@ -1233,7 +1232,7 @@ void CNodesWorld_Load(CNodesWorld *self, int arg, const char *name, const vec3_t
 		Con_Printf("NUM. POINTS OF VISIBILITY EXTRA MAP: %d\n", self->sup.extraPoints.count);
 		Con_Printf("NUM. POINTS OF VISIBILITY TOTAL: %d\n", self->sup.points.count);
 		Con_Printf("NUM. LINKS BETWEEN POINTS VIS.: %d\n", self->sup.numPointLinks);
-		Con_Bluef("%s", NW_EMPTY);
+		Con_Bluef("%s", str_Empty);
 		if (made) {
 			CNodesWorld_SaveInfPath(self);
 		}
@@ -1245,7 +1244,7 @@ void CNodesWorld_Load(CNodesWorld *self, int arg, const char *name, const vec3_t
 			self->sup.created = 1;
 			Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
 			Con_Printf("NODES 3D AI LEVEL LOADED.\n");
-			Con_Bluef("%s", NW_EMPTY);
+			Con_Bluef("%s", str_Empty);
 			goto end;
 		}
 	} else {
@@ -1259,7 +1258,7 @@ void CNodesWorld_Load(CNodesWorld *self, int arg, const char *name, const vec3_t
 	}
 	Con_Bluef("NODES 3D AI LEVEL NOT LOADED.\n\n");
 end:
-	Con_Bluef("%s", NW_EMPTY);
+	Con_Bluef("%s", str_Empty);
 }
 
 void CNodesWorld_Analyze(CNodesWorld *self, const vec3_t *size) {
@@ -1267,7 +1266,7 @@ void CNodesWorld_Analyze(CNodesWorld *self, const vec3_t *size) {
 	g_NWDrawMode = 7;
 	self->analyzing = 1;
 	self->analyzeSize = *size;
-	CNodesWorld_Load(self, 0, NW_EMPTY, size);
+	CNodesWorld_Load(self, 0, str_Empty, size);
 	self->analyzing = 0;
 	if (!self->open) {
 		Con_Printf("\nESCENARIO CERRADO\n");
@@ -1284,7 +1283,7 @@ void CNodesWorld_Analyze(CNodesWorld *self, const vec3_t *size) {
 	} else {
 		Con_Bluef("\nNUM. PUNTOS EN SECTORES INCORRECTOS: %d\n", self->sup.errUnlinked.count);
 	}
-	Con_Bluef("%s", NW_EMPTY);
+	Con_Bluef("%s", str_Empty);
 }
 
 void CNodesWorld_AnalyzeGraph(CNodesWorld *self) {
@@ -1346,11 +1345,11 @@ void CNodesWorld_AnalyzeGraph(CNodesWorld *self) {
 	if (bad) {
 		Con_Bluef("\n\nNUM. LINKS NO CONMUTATIVOS: %d\n", self->sup.errOneWay.count / 2);
 		Con_Bluef("GRAFO ERRONEO!\n");
-		Con_Bluef("%s", NW_EMPTY);
+		Con_Bluef("%s", str_Empty);
 		return;
 	}
 	Con_Printf("\nGRAFO CON LINKS CONMUTATIVOS\n");
-	Con_Bluef("%s", NW_EMPTY);
+	Con_Bluef("%s", str_Empty);
 }
 
 /* ---- the generation of the graph ---- */

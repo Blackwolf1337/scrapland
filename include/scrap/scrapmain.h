@@ -96,7 +96,8 @@ extern char g_DVFName[256];		/* 0x100 */
 extern int g_BspSectorSeen;
 #define g_VideoStatus g_BspSectorSeen
 extern int g_LoadingScreen;	/* the last random loading screen */
-#define g_M3dIni GAME_STR(str_431bf0)		/* "m3d.ini" */
+extern char str_431bf0[128];
+#define g_M3dIni str_431bf0		/* "m3d.ini" */
 /* the video to play at the start and after a level ("" when played, unless bit 0 of its flags) */
 #define g_StartVideo (((cString *)&GVar_PlayVideo.value))
 #define g_StartVideoFlags (*(uint32_t *)&GVar_PlayVideo.base.flags)

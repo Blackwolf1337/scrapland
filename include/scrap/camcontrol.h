@@ -27,7 +27,6 @@
 #define CAM_CLASSNAME "Cam"
 #define CAMPATH_CLASSNAME "CamPath"
 #define FCAM_CLASSNAME "FCam"
-#define CAM_EXE_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
 #define FCAM_ONSWITCH_DESC "<OnSwtich func>"
 
 typedef struct cCamControl {

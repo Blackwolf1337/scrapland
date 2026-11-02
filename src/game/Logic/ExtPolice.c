@@ -30,7 +30,7 @@ cExtPolice *cExtPolice_ctor(cExtPolice *self) {
 	self->timer = 0.0f;
 	self->retarget = 5.0f;
 	self->raised = -1;
-	cPy_Function_SetFunc(g_PoliceWaveEliminated, LOGIC_EMPTY);
+	cPy_Function_SetFunc(g_PoliceWaveEliminated, str_Empty);
 	return self;
 }
 
@@ -128,7 +128,7 @@ static void ExtPolice_Relax(cEntity *e, cAIVehicle *ai) {
 static void ExtPolice_Taunt(cExtPolice *self) {
 	if (self->alarm) {
 		int r = crt_rand();
-		Taunts_Play(LOGIC_EMPTY, *g_PoliceTauntRace, r % 3 + 10);
+		Taunts_Play(str_Empty, *g_PoliceTauntRace, r % 3 + 10);
 	}
 }
 

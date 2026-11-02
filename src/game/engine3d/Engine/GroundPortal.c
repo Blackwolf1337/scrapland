@@ -94,7 +94,7 @@ void SectorVis_Draw(SectorVis *self, const vec3_t *pos, byte visible, byte cache
 	color = visible ? on : off;
 draw:
 	Debug_Text3D(g_FntComic14, 0.0f, 0.0f, pos, color, "%d%s", self->sector,	/* "%d%s" */
-		(self->flags & SECTORVIS_CACHED) ? GAME_STR(str_Empty) : "*");	/* "", "*" */
+		(self->flags & SECTORVIS_CACHED) ? str_Empty : "*");	/* "", "*" */
 }
 
 /* the cached sector is seen (none counts as seen) */

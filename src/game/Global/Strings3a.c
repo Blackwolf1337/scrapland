@@ -8,7 +8,7 @@
 #include "scrap/shared.h"
 
 
-const char str_Empty[] = "";
+char str_Empty[] = "";
 const char str_3a3954[] = "Left";
 const char str_3a395c[] = "Right";
 const char str_3ad2f4[] = "Relax";

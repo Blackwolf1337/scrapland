@@ -16,7 +16,6 @@
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
 
-#define NW2D_EMPTY GAME_STR(str_Empty)	/* the "" of the exe */
 
 int crt_chmod(const char *path, int mode);
 
@@ -671,11 +670,11 @@ void CNodesWorld2D_AnalyzeGraph(CNodesWorld2D *self) {
 	if (bad) {
 		Con_Bluef("\n\nNUM. LINKS NO CONMUTATIVOS: %d\n", w->sup.errOneWay.count / 2);
 		Con_Bluef("GRAFO ERRONEO!\n");
-		Con_Bluef("%s", NW2D_EMPTY);
+		Con_Bluef("%s", str_Empty);
 		return;
 	}
 	Con_Printf("\nGRAFO CON LINKS CONMUTATIVOS\n");
-	Con_Bluef("%s", NW2D_EMPTY);
+	Con_Bluef("%s", str_Empty);
 }
 
 void CNodesWorld2D_GetPairs(CNodesWorld2D *self, cNWPairList *list) {
@@ -1203,7 +1202,7 @@ void CNodesWorld2D_Load(CNodesWorld2D *self, int arg, const char *name, const ve
 	box_t box;
 
 	Con_Printf("\nCreating Nodes...\n");
-	Con_Bluef("%s", NW2D_EMPTY);
+	Con_Bluef("%s", str_Empty);
 	memcpy(g_NW2DBodies, bodies, sizeof(bodies));
 	w->sup.nodeSize = *pos;
 	NW2D_SetNodeSize(w);
@@ -1234,7 +1233,7 @@ void CNodesWorld2D_Load(CNodesWorld2D *self, int arg, const char *name, const ve
 		}
 		w->sup.vftable->BuildGrid(w);
 		Con_Printf("NODES 2D AI LEVEL LOADED.\n\n");
-		Con_Bluef("%s", NW2D_EMPTY);
+		Con_Bluef("%s", str_Empty);
 		goto end;
 	}
 	if (!(Float_MinSS(pos->z, Float_MinSS(pos->y, pos->x)) > 10.0f) ||
@@ -1286,7 +1285,7 @@ void CNodesWorld2D_Load(CNodesWorld2D *self, int arg, const char *name, const ve
 	Con_Printf("NUM. POINTS OF VISIBILITY EXTRA MAP 2D: %d\n", w->sup.extraPoints.count);
 	Con_Printf("NUM. POINTS OF VISIBILITY TOTAL 2D: %d\n", w->sup.points.count);
 	Con_Printf("NUM. LINKS BETWEEN POINTS VIS. 2D: %d\n", w->sup.numPointLinks);
-	Con_Bluef("%s", NW2D_EMPTY);
+	Con_Bluef("%s", str_Empty);
 	if (made) {
 		CNodesWorld2D_SaveInfPath(self);
 		w->sup.vftable->FreeTemp(w);
@@ -1300,9 +1299,9 @@ void CNodesWorld2D_Load(CNodesWorld2D *self, int arg, const char *name, const ve
 	}
 	w->sup.created = 1;
 	Con_Printf("NODES 2D AI LEVEL LOADED.\n");
-	Con_Bluef("%s", NW2D_EMPTY);
+	Con_Bluef("%s", str_Empty);
 end:
-	Con_Bluef("%s", NW2D_EMPTY);
+	Con_Bluef("%s", str_Empty);
 }
 
 /* ---- the generation of the graph ---- */

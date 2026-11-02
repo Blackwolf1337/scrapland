@@ -332,7 +332,7 @@ byte cSndInterface_StrVar(cSndInterface *self, const char *name, char **v, int s
 		return 1;
 	}
 	cSndItem *it = PtrArray_Get(self, idx);
-	*v = (char *)(it ? cSound_GetName(&it->sound) : GAME_STR(str_Empty));
+	*v = (char *)(it ? cSound_GetName(&it->sound) : str_Empty);
 	return 1;
 }
 

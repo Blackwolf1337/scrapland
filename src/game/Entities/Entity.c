@@ -14,7 +14,6 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/world.h"
 
-#define EXE_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
 #define ENTITY_CLASSNAME "Entity"
 
 /* the variable methods of the AI (from vtable slot 7) and of the local logic (from slot 3) */
@@ -393,7 +392,7 @@ byte cEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 		}
 		if (n) {
 			cEntity *e = Node_Entity(n);
-			*s = e ? e->name : EXE_EMPTY;
+			*s = e ? e->name : str_Empty;
 			return 1;
 		}
 	}
@@ -403,7 +402,7 @@ byte cEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 		}
 		char **list = self->listNode.node.target;
 		char *ln = list ? *list : NULL;
-		*s = ln ? ln : EXE_EMPTY;
+		*s = ln ? ln : str_Empty;
 		return 1;
 	}
 	if (!strcmp(name, "Name") && !(byte)set) {
@@ -420,7 +419,7 @@ byte cEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 const char *Nto1Node_TargetName(const Nto1Node *node) {
 	cEntity *e = node->target;
 
-	return e ? e->name : EXE_EMPTY;
+	return e ? e->name : str_Empty;
 }
 
 byte cEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set) {

@@ -25,7 +25,6 @@
 #include "scrap/world.h"
 
 #define VEH_CLASSNAME "Car"
-#define VEH_EMPTY GAME_STR(str_Empty)		/* "" */
 #define CGAMEMODEL_CTOR 0x105e60	/* CGameModel_ctor(self, NULL) */
 #define CGAMEMODEL_DTOR 0x20ec10
 #define CAIVEHICLE_SIZE sizeof(cAIVehicle)
@@ -987,7 +986,7 @@ const char *cVehicleEntity_GetPilot(cEntity *base, int slot) {
 	if (slot == 0 && *Veh_PilotNode(self, slot) != -1) {
 		return Veh_PilotName(self, 0);
 	}
-	return VEH_EMPTY;
+	return str_Empty;
 }
 
 byte cVehicleEntity_GetPilotPos(cEntity *base, int slot, vec3_t *pos, vec3_t *ang) {

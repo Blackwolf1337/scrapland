@@ -335,7 +335,7 @@ const char *cBaseLocalLogic_GetName(cLocalLogic *base) {
 
 const char *cLocalLogic_GetName(cLocalLogic *self) {
 	(void)self;
-	return LOGIC_EMPTY;
+	return str_Empty;
 }
 
 /* back to the state when idle in AI state 6 */
@@ -538,7 +538,7 @@ byte cBaseLocalLogic_VarS(cLocalLogic *base, const char *name, char **s, byte se
 		return 1;
 	}
 	cEntity *t = self->target.target;
-	*s = t ? t->name : LOGIC_EMPTY;
+	*s = t ? t->name : str_Empty;
 	return 1;
 }
 

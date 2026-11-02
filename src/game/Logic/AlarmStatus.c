@@ -30,7 +30,7 @@ static void Alarm_CopyChars(char *dst, const char *src) {
 
 cAlarm *Alarm_ctor(cAlarm *self) {
 	Alarm_Reset(self);
-	cPy_Function_SetFunc(g_AlarmCallback, LOGIC_EMPTY);
+	cPy_Function_SetFunc(g_AlarmCallback, str_Empty);
 	return self;
 }
 
@@ -66,7 +66,7 @@ void Alarm_Reset(cAlarm *self) {
 	self->locked = 0;
 	self->notGuaranteed = 0;
 	self->tauntReady = 1;
-	cString_Set(&g_GuaranteedChars, LOGIC_EMPTY);
+	cString_Set(&g_GuaranteedChars, str_Empty);
 	cString_Assign(g_PoliceTauntRace, g_PoliceTauntRace + 1);
 }
 
@@ -162,7 +162,7 @@ void Alarm_Set(cAlarm *self, float level) {
 		self->value = 1.0f;
 		Alarm_SetOn(self, 1);
 		if (self->tauntReady && g_IsMapOutDoor == 1) {
-			Taunts_Play(LOGIC_EMPTY, *g_PoliceTauntRace, crt_rand() % 2 + 1);
+			Taunts_Play(str_Empty, *g_PoliceTauntRace, crt_rand() % 2 + 1);
 			self->tauntReady = 0;
 		}
 	}

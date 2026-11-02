@@ -154,7 +154,7 @@ byte cAIMove_VarS(cAI *elem, const char *name, char **s, byte set) {
 			return 0;
 		}
 		cEntity *t = self->target.target;
-		*s = t ? t->name : ACT_EMPTY;
+		*s = t ? t->name : str_Empty;
 		return 1;
 	}
 	return cAI_VarS(&self->base, name, s, set);

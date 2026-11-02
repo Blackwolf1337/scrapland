@@ -42,12 +42,10 @@
 #define GAME_PTR(owner, off) ((void *)((char *)SD_REF_(sd_##owner, SD_CPFX #owner) + (off)))
 
 
-/* a string of src/game/Global/Strings*.c (char *) */
-#define GAME_STR(name) \
-	({ \
-		extern char name[]; \
-		(char *)name; \
-	})
+/* the one "" of the game: char * fields hold it for "no string", the code compares with it by address (never
+ * written) */
+extern char str_Empty[];
+
 
 /* weapon and ammo descriptors of the world tables (defined in include/scrap/world.h) */
 typedef struct cWeapInfo cWeapInfo;

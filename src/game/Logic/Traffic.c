@@ -89,7 +89,7 @@ cEnemiesTraffic *cEnemiesTraffic_ctor(cEnemiesTraffic *self) {
 	self->traffic = NULL;
 	self->enemies = NULL;
 	self->timer = 0.0f;
-	cPy_Function_SetFunc(g_OnNeedMoreTraffic, LOGIC_EMPTY);
+	cPy_Function_SetFunc(g_OnNeedMoreTraffic, str_Empty);
 	g_iTrafficNumber = 0;
 	self->usr = NULL;
 	self->attackTime = 0.0f;

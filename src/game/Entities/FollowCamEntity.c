@@ -537,7 +537,7 @@ byte cFollowCamEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 			cEntity *e = World_FindEntity(*s);
 			cCamEntity_SetTarget(self, e && e->vftable->IsType(e, TYEN_OBJECT) ? e : NULL);
 		} else {
-			*s = fc->target ? fc->target->name : CAM_EXE_EMPTY;
+			*s = fc->target ? fc->target->name : str_Empty;
 		}
 		return 1;
 	}

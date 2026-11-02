@@ -607,7 +607,7 @@ int cActClass_Var(cActClass *cls, const char *name, int set, char **s, double *d
 			if ((byte)set) {
 				cActClass_SetDefAction(cls, *s);
 			} else {
-				*s = cls->defAction ? cls->defAction->name : ACT_EMPTY;
+				*s = cls->defAction ? cls->defAction->name : str_Empty;
 			}
 			return ACTVAR_STRING;
 		}
@@ -615,7 +615,7 @@ int cActClass_Var(cActClass *cls, const char *name, int set, char **s, double *d
 			if ((byte)set) {
 				cActClass_SetModelFile(cls, *s);
 			} else {
-				*s = cls->modelFile ? cls->modelFile : ACT_EMPTY;
+				*s = cls->modelFile ? cls->modelFile : str_Empty;
 			}
 			return ACTVAR_STRING;
 		}

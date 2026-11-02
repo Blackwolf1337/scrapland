@@ -22,7 +22,6 @@
 #include "scrap/world.h"
 #include "scrap/scoreritems.h"
 
-#define APP_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
 
 /* the engine callbacks of the exe (Engine_SetCallback) */
 #define APP_CB_WORLDFRAME ((void (*)(void))(void *)Scorer_Render)

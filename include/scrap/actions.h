@@ -24,7 +24,6 @@ typedef struct cActCtrl cActCtrl;
 /* type of a variable as returned by the Var functions */
 enum { ACTVAR_NONE = 0, ACTVAR_STRING = 1, ACTVAR_DOUBLE = 2, ACTVAR_INT = 3 };
 
-#define ACT_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
 
 typedef struct cActCtrlVarVtbl {
 	void *(*Delete)(cActCtrl *self, byte flags);				/* 0x00 */

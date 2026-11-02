@@ -543,7 +543,7 @@ int cEntityList_Var(void *list, const char *name, int set, char **s, double *d, 
 						return 1;
 					}
 				}
-				*s = GAME_STR(str_Empty);	/* "" */
+				*s = str_Empty;	/* "" */
 				return 1;
 			}
 			if (!crt_stricmp(name, "First")) {
@@ -552,7 +552,7 @@ int cEntityList_Var(void *list, const char *name, int set, char **s, double *d, 
 					*s = ((cEntity *)n->data)->name;
 					return 1;
 				}
-				*s = GAME_STR(str_Empty);
+				*s = str_Empty;
 				return 1;
 			}
 		}

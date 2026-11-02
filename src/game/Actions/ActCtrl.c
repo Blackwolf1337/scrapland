@@ -219,7 +219,7 @@ const char *cActCtrl_GetActionName(void *ctrl, int i) {
 	if (l->on && l->action) {
 		return l->action->name;
 	}
-	return ACT_EMPTY;
+	return str_Empty;
 }
 
 cActLayer *cActCtrl_GetLayer(void *ctrl, int i) {
@@ -229,7 +229,7 @@ cActLayer *cActCtrl_GetLayer(void *ctrl, int i) {
 const char *cActCtrl_GetDefLoopName(void *ctrl) {
 	cActCtrl *self = ctrl;
 
-	return self->defLoop ? self->defLoop->name : ACT_EMPTY;
+	return self->defLoop ? self->defLoop->name : str_Empty;
 }
 
 void cActCtrl_InitHeads(cActCtrl *self) {
@@ -521,7 +521,7 @@ byte cActCtrl_VarS(cActCtrl *self, const char *name, char **s, int set) {
 		} else if (self->layers[0].on && self->layers[0].action) {
 			*s = self->layers[0].action->name;
 		} else {
-			*s = ACT_EMPTY;
+			*s = str_Empty;
 		}
 		return 1;
 	}
@@ -546,7 +546,7 @@ byte cActCtrl_VarS(cActCtrl *self, const char *name, char **s, int set) {
 		self->defLoop = a;
 		return 1;
 	}
-	*s = self->defLoop ? self->defLoop->name : ACT_EMPTY;
+	*s = self->defLoop ? self->defLoop->name : str_Empty;
 	return 1;
 }
 

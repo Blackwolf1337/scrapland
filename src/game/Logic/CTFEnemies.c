@@ -30,7 +30,7 @@ cCTFEnemies *cCTFEnemies_ctor(cCTFEnemies *self) {
 		return self;
 	}
 	cString_ctor(&d->leader);
-	cString_Set(&d->leader, LOGIC_EMPTY);
+	cString_Set(&d->leader, str_Empty);
 	d->list = NULL;
 	d->timer = 0.0f;
 	d->bonus = 0.0f;
@@ -158,7 +158,7 @@ void cCTFEnemiesData_Think(cCTFEnemiesData *self) {
 		const char *flag = g_LeaderFlag;
 		if (st == 0 || st == 3) {
 			g_CTFFlagName[0] = 0;
-			if (strcmp(flag, LOGIC_EMPTY)) {
+			if (strcmp(flag, str_Empty)) {
 				CTF_SetFlagName(flag);
 				cCTFEnemiesData_GoToFlag(self, flag, ai);
 			} else if (usr) {
@@ -172,7 +172,7 @@ void cCTFEnemiesData_Think(cCTFEnemiesData *self) {
 				g_CTFFlagName[0] = 0;
 			}
 		} else if (st == AIV_STATE_ATTACK) {
-			if (strcmp(flag, LOGIC_EMPTY)) {
+			if (strcmp(flag, str_Empty)) {
 				CTF_SetFlagName(flag);
 				cCTFEnemiesData_GoToFlag(self, flag, ai);
 			}
@@ -211,7 +211,7 @@ byte cCTFEnemiesLocalLogic_VarI(cCTFEnemiesLocalLogic *self, const char *name, i
 	} else if (*i == 1) {
 		cString_Set(&ctf->d->leader, e->name);
 	} else if (e == leader) {
-		cString_Set(&ctf->d->leader, LOGIC_EMPTY);
+		cString_Set(&ctf->d->leader, str_Empty);
 	}
 	return 1;
 }

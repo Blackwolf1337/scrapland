@@ -291,7 +291,6 @@ void cWalkCharEntity_UnlinkCollide(cEntity *self) {
 #define WCE_WALKCHAR "WalkChar"	/* "WalkChar", the class name */
 #define WCE_RELAX "Relax"
 #define WCE_RELAXALARM "RelaxAlarm"
-#define WCE_EMPTY GAME_STR(str_Empty)		/* "" */
 
 #define WCE_MIN_DT 9.99999997e-07f
 #define WCE_MIN_MOVE2 0.00249999994f		/* rva 0x3b0834: a smaller walk step is undone */
@@ -1216,7 +1215,7 @@ void cWalkCharEntity_UpdateSelect(cEntity *self, float dt) {
 			cPy_Function_AddParamS(&w->outSelect, Nto1Node_TargetName(&w->listen));
 		} else {
 			cPy_Function_AddParamS(&w->outSelect, self->name);
-			cPy_Function_AddParamS(&w->outSelect, WCE_EMPTY);
+			cPy_Function_AddParamS(&w->outSelect, str_Empty);
 		}
 		cPy_Function_Execute(&w->outSelect, 1);
 	}
@@ -1622,7 +1621,7 @@ byte cWalkCharEntity_VarV(cEntity *self, const char *name, double *x, double *y,
 /* the init action of a walk, "" when the class needs none (strafeInit) and one of the walk actions runs already */
 static inline const char *WCE_Init(cEntity *self, byte strafeInit, byte(*running)(cEntity *),
 	const char *init) {
-	return strafeInit && running(self) ? WCE_EMPTY : init;
+	return strafeInit && running(self) ? str_Empty : init;
 }
 
 static byte WCE_StrafeOrMove(cEntity *self) {

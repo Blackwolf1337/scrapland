@@ -12,7 +12,8 @@
 #define ERR_CUSTOM -2	/* Err_Printf: no text of its own (g_ErrCustom) */
 
 extern const char * g_ErrTable[200];
-#define g_ErrUnknown GAME_STR(str_432608)	/* "Unknown error" */
+extern char str_432608[];
+#define g_ErrUnknown str_432608	/* "Unknown error" */
 extern char g_ErrCustom[4];
 extern int g_ErrLastCode;
 extern int g_ErrLastFatal;

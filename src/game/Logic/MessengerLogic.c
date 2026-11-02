@@ -25,7 +25,6 @@ extern cGVar GVar_MessengerPrepareDistance;
 extern cGVar GVar_MessengerObjectiveDistance;
 #define g_MessengerObjectiveDistance (GVar_MessengerObjectiveDistance.value.f)	/* MessengerObjetiveDistance */
 #define MSG_THINK_STEP 0.13f				/* rva 0x3b60e0, the interval of the think */
-#define MSG_EMPTY GAME_STR(str_Empty)	/* "" */
 
 #define MSG_VT(self) ((self)->base.vftable)
 
@@ -123,7 +122,7 @@ byte Messenger_Deliver(cEntity *m, cEntity *desk, cEntity *pack) {
 	}
 	pack->vftable->SetPos(pack, CGameModel_GetPos(Obj_Vtbl(pack)->GetModel(pack), &tmp));
 	cObjEntity *po = (cObjEntity *)pack;
-	cModMove_Link(&po->mod, MSG_EMPTY, MSG_EMPTY);
+	cModMove_Link(&po->mod, str_Empty, str_Empty);
 	po->mod.offMul = 0.0f;
 	po->mod.deltaOffMul = 4.0f;
 	po->mod.useLinkAng = 1;

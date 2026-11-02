@@ -58,7 +58,7 @@ cGearLocalLogic *cGearLocalLogic_ctor(cGearLocalLogic *self, cEntity *parent) {
 	self->lostTime = 0.0f;
 	self->called = 0;
 	self->defaultState = 0;
-	cString_ctorStr(&self->defaultTarget, LOGIC_EMPTY);
+	cString_ctorStr(&self->defaultTarget, str_Empty);
 	self->base.state = 0;
 	cBaseLocalLogic_SetIdle(&self->base.logic, 0);
 	self->sirenTime = (float)(Weap_Rand01() * (double)0.2f + 0.0);

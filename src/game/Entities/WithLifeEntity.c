@@ -132,7 +132,7 @@ void cWithLifeEntity_Burn(cEntity *self, float dt) {
 	}
 	w->burnAcc = w->burnAcc - dt;
 	cEntity *burner = w->burner.target;
-	cVehicleAttack_HitBy(&w->attack, burner ? burner->name : ACT_EMPTY);
+	cVehicleAttack_HitBy(&w->attack, burner ? burner->name : str_Empty);
 	w->fireRemain = w->fireRemain - k * dt;
 	if (w->god || !(0.0f > w->burnAcc)) {
 		return;
@@ -479,7 +479,7 @@ void cWithLifeEntity_SetActive(cEntity *self, byte on) {
 }
 
 void cWithLifeEntity_SetUsrName(cEntity *e, const char *name) {
-	cString_Set(&WLife(e)->usrName, name == ACT_EMPTY ? NULL : name);
+	cString_Set(&WLife(e)->usrName, name == str_Empty ? NULL : name);
 }
 
 /* not for an entity that is gone (in the dead list) */
@@ -539,7 +539,7 @@ byte cWithLifeEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 		if ((byte)set) {
 			cWithLifeEntity_SetUsrName(self, *s);
 		} else {
-			*s = w->usrName ? w->usrName : ACT_EMPTY;
+			*s = w->usrName ? w->usrName : str_Empty;
 		}
 		return 1;
 	}
@@ -554,7 +554,7 @@ byte cWithLifeEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 		if ((byte)set) {
 			WithLife_Vtbl(self)->SetActCtrl(self, *s);
 		} else {
-			*s = w->actCtrl ? w->actCtrl->cls->name : ACT_EMPTY;
+			*s = w->actCtrl ? w->actCtrl->cls->name : str_Empty;
 		}
 		return 1;
 	}
@@ -571,7 +571,7 @@ byte cWithLifeEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 			cWithLifeEntity_SetBurner(self, World_FindEntity(*s));
 		} else {
 			cEntity *b = w->burner.target;
-			*s = b ? b->name : ACT_EMPTY;
+			*s = b ? b->name : str_Empty;
 		}
 		return 1;
 	}

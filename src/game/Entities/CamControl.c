@@ -31,7 +31,7 @@ void cCamControl_dtor(cEntity *self) {
 
 	self->vftable = CCAMCONTROL_VFTABLE;
 	if (c->slot >= 0 && !strcmp(self->name, cWorld_GetCamName(g_pWorld, c->slot))) {
-		cWorld_SetCam(g_pWorld, c->slot, CAM_EXE_EMPTY);
+		cWorld_SetCam(g_pWorld, c->slot, str_Empty);
 	}
 	CGameCamera_dtor(&c->cam);
 	cEntity_dtor(self);

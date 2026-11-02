@@ -695,7 +695,7 @@ void EMI_OnHit(cAbstractFile *params) {
 	}
 	if (Entity_IsType(e, "Missile") && r >= d) {
 		cMissileEntity_SetType((cMissileEntity *)e, 1);
-		cMissileEntity_SetTarget((cMissileEntity *)e, GAME_STR(str_Empty));
+		cMissileEntity_SetTarget((cMissileEntity *)e, str_Empty);
 	}
 }
 

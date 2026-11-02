@@ -24,7 +24,7 @@ cGenCharLocalLogic *cGenCharLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *p
 	float t = Rand_FloatRange(g_GenCharMinSpecialActionTime, g_GenCharMaxSpecialActionTime);
 	self->defaultState = 0;
 	self->searchTime = t;
-	cString_Set(&self->defaultTarget, LOGIC_EMPTY);
+	cString_Set(&self->defaultTarget, str_Empty);
 	self->alarmState = 3;
 	if (!(byte)noRestart) {
 		cGenCharLocalLogic_RestartState(&self->base.logic);

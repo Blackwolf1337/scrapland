@@ -23,7 +23,6 @@ extern cEntity *g_AICCNearSelf;	/* the character itself, left out */
 #define AICC_NEAR_NATIVE ((nativefunc_t)AICC_NearChar)	/* AICC_NearChar (its C version behind the hook) */
 #define AICC_MAX_NEAR 20
 
-#define AICC_EXE_EMPTY GAME_STR(str_Empty)	/* "" */
 
 /* the unit vector the view of e looks along: (0, 0, -1) turned by its view angles */
 static inline vec3_t *AICC_ViewDir(vec3_t *out, cEntity *e) {
@@ -603,7 +602,7 @@ void cAICharControl_UpdateAvoid(cAICharControl *self) {
 	if (!self->side && !self->blocked) {
 		self->blocked = 0;
 		self->side = 0;
-		if (strcmp(Nto1Node_TargetName(&WChar(self->ent)->collide), AICC_EXE_EMPTY) && g_AICCNumNear == 1 && g_AICCNear[0]) {
+		if (strcmp(Nto1Node_TargetName(&WChar(self->ent)->collide), str_Empty) && g_AICCNumNear == 1 && g_AICCNear[0]) {
 			cEntity *n = g_AICCNear[0];
 			if (self->link.target != n) {
 				if (self->link.target) {
@@ -1188,7 +1187,7 @@ static void AICC_DrawPath(cAICharControl *self) {
 static void AICC_DrawShirk(cAICharControl *self) {
 	const char *dbg = g_NameDebugShirkAI;
 
-	if (strcmp(dbg, self->ent->name) && strcmp(dbg, AICC_EXE_EMPTY)) {
+	if (strcmp(dbg, self->ent->name) && strcmp(dbg, str_Empty)) {
 		return;
 	}
 	if (self->debugStrafe.head) {

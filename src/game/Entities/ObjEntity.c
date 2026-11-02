@@ -17,7 +17,6 @@
 #include "scrap/scrapcollision.h"
 
 #define OBJ_CLASSNAME "Obj"
-#define EXE_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
 #define OBJ_ONENDMOVE_DESC "<ObjMove.OnEnd> function"
 #define OBJ_ONOBJSLOT_DESC "<OnObjSlot> function"
 
@@ -726,7 +725,7 @@ byte cObjEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 		return 1;
 	}
 	if (!(byte)set && !strcmp(name, "CamName")) {
-		*s = o->cam ? o->cam->name : EXE_EMPTY;
+		*s = o->cam ? o->cam->name : str_Empty;
 		return 1;
 	}
 	if (!strcmp(name, "NetRes")) {

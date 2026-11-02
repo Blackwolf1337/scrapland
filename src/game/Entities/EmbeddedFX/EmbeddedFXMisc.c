@@ -24,7 +24,6 @@
 extern cGVar GVar_MessengerTubeState;
 #define g_DataPackOn (GVar_MessengerTubeState.value.i)
 /* "" of the original, the glow node of a coin name that matches none */
-#define EFXM_EMPTY GAME_STR(str_Empty)
 
 /* rand() & 0x7fff as 0..1 (double) */
 static inline double EFXM_Rnd(void) {
@@ -1081,7 +1080,7 @@ void EmbeddedFXMisc_Create(cEntity *obj, const char *model, cEmbeddedFX **fx) {
 		cEmbeddedFXCoin *c = EFXM_NEW(cEmbeddedFXCoin);
 		/* the coins of the B set are bigger */
 		float scale = 1.0f;
-		const char *node = EFXM_EMPTY;
+		const char *node = str_Empty;
 		uint32_t color;
 		if (EFXM_Is(model, "Coin1.m3d")) {
 			node = "DOB_Coin1_Glow";

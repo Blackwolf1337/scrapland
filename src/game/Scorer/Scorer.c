@@ -42,7 +42,6 @@ extern const cScorerVtbl cScorer_vftable;
 #define CSCORER_VFTABLE (&cScorer_vftable)
 extern const cScorerItemVtbl cScorerItem_vftable;
 #define CSCORERITEM_VFTABLE (&cScorerItem_vftable)
-#define EXE_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
 #define SCORER_NO_ACCEPT -10.0f			/* cScorer.acceptTime off */
 
 /* ---- construction ---- */
@@ -98,8 +97,8 @@ cScorer *cScorer_ctor(cScorer *self) {
 	self->cursor = NULL;
 	cString_Set(&self->current, NULL);
 	self->visible = 1;
-	cString_Set(&self->hint, EXE_EMPTY);
-	cString_Set(&self->specialHint, EXE_EMPTY);
+	cString_Set(&self->hint, str_Empty);
+	cString_Set(&self->specialHint, str_Empty);
 	self->hintTime = 0.0f;
 	cPy_Function_SetFunc(&self->onCancel, NULL);
 	cPy_Function_SetFunc(&self->onPrev, NULL);
@@ -155,11 +154,11 @@ cScorerItem *cScorerItem_ctor(cScorerItem *self) {
 	self->delMe = 0;
 	self->visible = 1;
 	self->next = NULL;
-	cString_Set(&self->down, EXE_EMPTY);
+	cString_Set(&self->down, str_Empty);
 	cString_Assign(&self->up, &self->down);
 	cString_Assign(&self->right, &self->up);
 	cString_Assign(&self->left, &self->right);
-	cString_Set(&self->hint, EXE_EMPTY);
+	cString_Set(&self->hint, str_Empty);
 	self->player = 0;
 	self->multiPress = 0;
 	self->maxHintLineWidth = 0xff;
@@ -550,11 +549,11 @@ void cScorer_SetCursorItem(cScorer *scorer, int player, const char *from, const 
 	if (from && (it = cScorer_FindItem(scorer, from)) && cPy_Function_IsValid(&it->onLooseFocus)) {
 		cPy_Function_AddParamI(&it->onLooseFocus, player);
 		cPy_Function_AddParamS(&it->onLooseFocus, from);
-		cPy_Function_AddParamS(&it->onLooseFocus, to ? to : EXE_EMPTY);
+		cPy_Function_AddParamS(&it->onLooseFocus, to ? to : str_Empty);
 		cPy_Function_Execute(&it->onLooseFocus, 0);
 	}
 	if (!to) {
-		cString_Set(&scorer->hint, EXE_EMPTY);
+		cString_Set(&scorer->hint, str_Empty);
 		return;
 	}
 	it = cScorer_FindItem(scorer, to);
@@ -566,7 +565,7 @@ void cScorer_SetCursorItem(cScorer *scorer, int player, const char *from, const 
 	}
 	scorer->hintTime = scorer->time;
 	if (!it || !cPy_Function_IsValid(&it->onAccept)) {
-		cString_Set(&scorer->hint, EXE_EMPTY);
+		cString_Set(&scorer->hint, str_Empty);
 		return;
 	}
 	cScorer_TakeHint(scorer, it);
@@ -641,14 +640,14 @@ void Scorer_Init(void) {
 	sc[2].player = 2;
 	sc[3].player = 3;
 	cString_Set(&g_FileNameMap2D, "2D/Black.tga");
-	Scorer_SetSpeechText(EXE_EMPTY, 0.0f, 0xff, 0xff, 0xff);
-	Scorer_SetSpeechCallback(EXE_EMPTY, NULL);
-	Scorer_SetHeadMonitor(EXE_EMPTY, EXE_EMPTY, 1);
+	Scorer_SetSpeechText(str_Empty, 0.0f, 0xff, 0xff, 0xff);
+	Scorer_SetSpeechCallback(str_Empty, NULL);
+	Scorer_SetHeadMonitor(str_Empty, str_Empty, 1);
 	if (!(GVAR_FLAGS(g_CurrentWaypointName) & 1)) {
-		cString_Set(&g_CurrentWaypointName, EXE_EMPTY);
+		cString_Set(&g_CurrentWaypointName, str_Empty);
 	}
 	if (!(GVAR_FLAGS(g_CurrentWaypointName2) & 1)) {
-		cString_Set(&g_CurrentWaypointName2, EXE_EMPTY);
+		cString_Set(&g_CurrentWaypointName2, str_Empty);
 	}
 	if (!(GVAR_FLAGS(g_CameraCloudDistance) & 1)) {
 		g_CameraCloudDistance = GVAR_DEF(float, g_CameraCloudDistance);
@@ -671,8 +670,8 @@ void Scorer_Init(void) {
 	if (!(GVAR_FLAGS(g_CameraCloudBlue) & 1)) {
 		g_CameraCloudBlue = GVAR_DEF(int, g_CameraCloudBlue);
 	}
-	Scorer_SetMsgText(EXE_EMPTY, 0.0f, "Horatio");
-	Scorer_SetLabelText(EXE_EMPTY, 0.0f);
+	Scorer_SetMsgText(str_Empty, 0.0f, "Horatio");
+	Scorer_SetLabelText(str_Empty, 0.0f);
 	cNewsPanel *np = operator_new(sizeof(cNewsPanel));
 	np = np ? cNewsPanel_ctor(np) : NULL;
 	g_NewsPanel = np;
@@ -1105,16 +1104,16 @@ void cScorer_UpdateCursor(cScorer *scorer, int player) {
 					continue;
 				}
 				cString_Assign(&scorer->current, &it->name);
-				if (up && cString_CmpStr(&it->up, EXE_EMPTY)) {
+				if (up && cString_CmpStr(&it->up, str_Empty)) {
 					cString_Assign(&scorer->current, &it->up);
 				}
-				if (down && cString_CmpStr(&it->down, EXE_EMPTY)) {
+				if (down && cString_CmpStr(&it->down, str_Empty)) {
 					cString_Assign(&scorer->current, &it->down);
 				}
-				if (left && cString_CmpStr(&it->left, EXE_EMPTY)) {
+				if (left && cString_CmpStr(&it->left, str_Empty)) {
 					cString_Assign(&scorer->current, &it->left);
 				}
-				if (right && cString_CmpStr(&it->right, EXE_EMPTY)) {
+				if (right && cString_CmpStr(&it->right, str_Empty)) {
 					cString_Assign(&scorer->current, &it->right);
 				}
 				if (cString_Cmp(&scorer->current, &it->name)) {
@@ -1452,7 +1451,7 @@ void Console_OnInput(int player, const char *text) {
 	} else {
 		Console_Execute(text);
 	}
-	cPlayerInput_SetString(&g_PlayerInput[0], EXE_EMPTY);
+	cPlayerInput_SetString(&g_PlayerInput[0], str_Empty);
 	g_ConsoleHistoryPos = 0;
 	if (g_ConsoleOn) {
 		g_PlayerInput[0].onDone = (void *)Console_OnInput;
@@ -1494,7 +1493,7 @@ void Scorer_SetConsole(int on) {
 		g_ConsoleSavedSet = Input_GetActionSet();
 		Input_SelectActionSet(2);
 		memcpy((&g_ConsoleSavedInput), &g_PlayerInput[0], sizeof(cPlayerInput));
-		cPlayerInput_SetString(&g_PlayerInput[0], EXE_EMPTY);
+		cPlayerInput_SetString(&g_PlayerInput[0], str_Empty);
 		g_PlayerInput[0].onDone = (void *)Console_OnInput;
 		CPsaImage *img = operator_new(sizeof(CPsaImage));
 		g_ConsoleWhite = img ? CPsaImage_ctor(img, "2D/white.tga", 0x24) : NULL;

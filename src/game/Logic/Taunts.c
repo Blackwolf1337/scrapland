@@ -291,7 +291,7 @@ byte Taunts_Warnings(float dt) {
 		float d = g_PhoneCabWarningDist;
 		if (d * d >= dy * dy + dx * dx + dz * dz) {
 			if ((byte)cPy_Function_IsValid(g_OnTaunt)) {
-				cPy_Function_AddParamS(g_OnTaunt, LOGIC_EMPTY);
+				cPy_Function_AddParamS(g_OnTaunt, str_Empty);
 				cPy_Function_AddParamS(g_OnTaunt, "DeepThroat");
 				cPy_Function_AddParamI(g_OnTaunt, 1);
 				cPy_Function_Execute(g_OnTaunt, 0);

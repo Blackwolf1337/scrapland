@@ -310,7 +310,7 @@ ints:
 			if ((byte)set) {
 				cAction_SetAnmFile(act, *s);
 			} else {
-				*s = act->anmFile ? act->anmFile : ACT_EMPTY;
+				*s = act->anmFile ? act->anmFile : str_Empty;
 			}
 			return ACTVAR_STRING;
 		}

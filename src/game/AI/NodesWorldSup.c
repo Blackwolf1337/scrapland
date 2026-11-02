@@ -15,7 +15,6 @@
 #include "scrap/scrapmodel.h"
 
 
-#define NWSUP_EMPTY GAME_STR(str_Empty)	/* the "" of the exe */
 
 /* ---- Global/DList.h ---- */
 
@@ -1615,7 +1614,7 @@ void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops) {
 		made++;
 		Con_Printf("Creating Point of Visibility Inter-Region No Link Num: %d...\n", made);
 		Con_Printf("Point of Visibility: %.2f %.2f %.2f\n", (double)tmp.pos.x, (double)tmp.pos.y, (double)tmp.pos.z);
-		Con_Bluef("%s", NWSUP_EMPTY);
+		Con_Bluef("%s", str_Empty);
 		Con_Printf("Creating Region...\n");
 		if (!ops->is2D) {
 			Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
@@ -1681,7 +1680,7 @@ byte NWSup_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, co
 		NWPointList_Add(&self->sup.points, &tmp.pos);
 		Con_Printf("Created Point of Visibility Num: %d\n", self->sup.points.count);
 		Con_Printf("Point of Visibility: %.2f %.2f %.2f\n", (double)tmp.pos.x, (double)tmp.pos.y, (double)tmp.pos.z);
-		Con_Bluef("%s", NWSUP_EMPTY);
+		Con_Bluef("%s", str_Empty);
 		Con_Printf("Creating Region...\n");
 		ops->createRegion(self, &p);
 		if (!ops->is2D) {

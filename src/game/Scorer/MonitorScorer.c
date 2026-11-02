@@ -335,7 +335,7 @@ static void Monitor_SetHead(cMonitorScorer *self, cEntity *e) {
 		self->noise = 0.0f;
 		self->textTime = 1.0f;
 		self->anim = 0;
-		Str_Copy(self->text, w->usrName ? w->usrName : ACT_EMPTY, sizeof(self->text));
+		Str_Copy(self->text, w->usrName ? w->usrName : str_Empty, sizeof(self->text));
 	}
 	if (self->model && self->anim != w->headAnim) {
 		HeadScorer_SetAnim(self, w->headAnim);
@@ -479,7 +479,7 @@ static uint32_t Monitor_DrawLooked(cMonitorScorer *self, cEntity *target, cEntit
 	Camera_SetCurrent(cur);
 	if (e != self->lastTarget) {
 		self->lastTarget = e;
-		Str_Copy(self->text, WLife(e)->usrName ? WLife(e)->usrName : ACT_EMPTY, sizeof(self->text));
+		Str_Copy(self->text, WLife(e)->usrName ? WLife(e)->usrName : str_Empty, sizeof(self->text));
 		self->textTime = 0.5f;
 		self->textShown = 0.0f;
 		self->noise = 2.0f;
@@ -637,7 +637,7 @@ static void Monitor_DrawObjective(cMonitorScorer *self, cEntity *e, float time, 
 		name = e->name;
 	} else {
 		o->color = 0x808080;
-		name = ACT_EMPTY;
+		name = str_Empty;
 	}
 	if (strcmp(self->objName, name)) {
 		self->objWas = self->objName[0] != 0;

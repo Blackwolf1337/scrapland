@@ -244,7 +244,7 @@ void ShipGroup_SphereNative(cAbstractFile *params) {
 		return;
 	}
 	const char *list = cEntity_GetListName(e);
-	if (list && list != LOGIC_EMPTY && !strcmp(list, "Mosquitos")) {
+	if (list && list != str_Empty && !strcmp(list, "Mosquitos")) {
 		return;
 	}
 	g_ShipGroupShips[g_ShipGroupFound] = e;

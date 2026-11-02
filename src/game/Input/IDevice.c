@@ -14,7 +14,6 @@
 #include "scrap/platform.h"
 #include "scrap/world.h"
 
-#define EXE_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
 #define DEV_NODE_SIZE sizeof(cInputDevNode)
 
 /* the scorer state the definition of a key switches to (rva 0x1710f0, Scorer/) */
@@ -225,7 +224,7 @@ void cAbstractIDevice_ClearEntries(cAbstractIDevice *self) {
 
 /* the label of the entry bound to player and action, the one of the named device first; "" for none */
 const char *Input_FindBinding(uint32_t player, int set, int action, const char *device, byte check) {
-	const char *r = EXE_EMPTY;
+	const char *r = str_Empty;
 
 	if (player > 3) {
 		return r;
@@ -250,7 +249,7 @@ char *Input_GetDefinedEntry(int player, const char *a, const char *b, const char
 	uint32_t set, act;
 
 	if (Input_FindAction(a, b, &set, &act)) {
-		return EXE_EMPTY;
+		return str_Empty;
 	}
 	return (char *)Input_FindBinding(player, set, act, c, (byte)flag);
 }
@@ -323,7 +322,7 @@ int Input_GetEntry(const char *a, const char *b, const char *c, int *index, char
 			*index = e->sets[set].player;
 			uint32_t act = e->sets[set].action;
 			if (act == 0xffffffffu) {
-				*name = EXE_EMPTY;
+				*name = str_Empty;
 				return 0;
 			}
 			*name = TABLE_AT(TABLE_AT(g_ActionSets, set)->actions, act)->name;
