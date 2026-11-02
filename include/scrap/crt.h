@@ -73,6 +73,8 @@ int crt_stat32(const char *name, void *st);
 /* the name of a path of the game on this system (for libraries that open files themselves): a copy on Windows;
  * elsewhere with '/', no drive letter and the case of the existing files (src/standalone/crtposix.c) */
 char *crt_syspath(const char *path, char *out, int size);
+/* a path of the system as the game sees paths: a copy on Windows; elsewhere "Z:" and '\\' (crtposix.c) */
+char *crt_gamepath(const char *path, char *out, int size);
 [[noreturn]] void crt_exit(int code);
 intptr_t crt_findfirst32(const char *spec, crt_finddata32 *fd);
 int crt_findnext32(intptr_t h, crt_finddata32 *fd);

@@ -427,7 +427,8 @@ def aloFindLinks(tag, m, pts, dy, rvas):
 
 def aloGen3D(dy):
 	tag = '3d%d' % int(dy)
-	m = aloNew(0x3f0)
+	# zeroed: the constructor leaves fields that the searches read (the Windows heap gave zeros there)
+	m = aloCalloc(0x3f0)
 	SDTest.Call('CNodesWorld_ctor', 'tii', m)
 	buf, sets, pts, pos = aloGenSetup(m, dy)
 	for k in range(len(pos)):
@@ -470,7 +471,8 @@ def aloGen3D(dy):
 
 def aloGen2D(dy):
 	tag = '2d%d' % int(dy)
-	m = aloNew(0x378)
+	# zeroed: the constructor leaves fields that the searches read (the Windows heap gave zeros there)
+	m = aloCalloc(0x378)
 	SDTest.Call('CNodesWorld2D_ctor', 'tii', m)
 	buf, sets, pts, pos = aloGenSetup(m, dy)
 	# the free searches walk the bodies on the floor: only far above the level, where there is no floor
@@ -526,7 +528,8 @@ def aloSetDummy(m, v):
 
 def aloGenerate(w):
 	nodes = aloI(w + 0x1a8)
-	m = aloNew(0x3f0)
+	# zeroed: the constructor leaves fields that the searches read (the Windows heap gave zeros there)
+	m = aloCalloc(0x3f0)
 	SDTest.Call('CNodesWorld_ctor', 'tii', m)
 	SDTest.Call('CNodesWorld_Load', 'tviisF', m, -2, '', (1400.0, 1400.0, 1400.0))
 	snap = aloI(aloI(m) + 0x1c) - 0x400000
@@ -575,7 +578,8 @@ def aloGenerate(w):
 # the 2D steps of the generation far above the level, where the bodies find no floor (the walk tests are not
 # reached): the buffer, a region with the debug regions on, the next start
 def aloGenerate2D():
-	m = aloNew(0x378)
+	# zeroed: the constructor leaves fields that the searches read (the Windows heap gave zeros there)
+	m = aloCalloc(0x378)
 	SDTest.Call('CNodesWorld2D_ctor', 'tii', m)
 	SDTest.Call('CNodesWorld2D_Load', 'tviisF', m, -2, '', (300.0, 400.0, 500.0))
 	q = (1000.0, 1000000.0, -2000.0)

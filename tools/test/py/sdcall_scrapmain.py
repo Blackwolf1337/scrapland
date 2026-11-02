@@ -34,11 +34,13 @@ check('Camera_GetCurrent', lambda: SDTest.Call('Camera_GetCurrent', 'i')[0] == S
 check('Video_GetStatus', lambda: SDTest.Call('Video_GetStatus', 'i')[0])
 check('Engine_IsFullScreen', lambda: SDTest.Call('Engine_IsFullScreen', 'b')[0])
 check('Keys_SkipPressed', lambda: SDTest.Call('Keys_SkipPressed', 'b')[0])
-check('Video_GetCurrentMode', lambda: SDTest.Call('Video_GetCurrentMode', 'i')[0])
+# the modes are the platform's (see Scrap.GetVideoModes in sdtest.py): the count as the number of modes, the
+# formats of the first two
+check('Video_GetCurrentMode', lambda: SDTest.Call('Video_GetCurrentMode', 'i')[0] >= 0)
 smn = SDTest.Call('Video_GetModes', 'iii', -1, 0)[0]
-check('Video_GetModes', lambda: (smn, SDTest.Call('Video_GetModes', 'iiz', 0, None)[0]))
-for i in range(min(smn, 40)):
-	check('Video_GetModes' + fmt((i,)), lambda i=i: SDTest.Call('Video_GetModes', 'iib', i, ''))
+check('Video_GetModes', lambda: (smn > 0, smn % 2, SDTest.Call('Video_GetModes', 'iiz', 0, None)[0] == smn))
+for i in range(min(smn, 2)):
+	check('Video_GetModes' + fmt((i,)), lambda i=i: SDTest.Call('Video_GetModes', 'iib', i, '')[1][-9:])
 check('Video_PlayStart 0', lambda: SDTest.Call('Video_PlayStart', 'bi', 0)[0])
 check('Video_Play bad', lambda: SDTest.Call('Video_Play', 'bzsf', None, 'sdx', 0.0)[0])
 check('Music_Play bad', lambda: SDTest.Call('Music_Play', 'bzsf', None, 'sdx', 0.5)[0])

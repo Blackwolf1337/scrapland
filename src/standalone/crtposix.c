@@ -102,6 +102,16 @@ char *crt_syspath(const char *path, char *out, int size) {
 	return out;
 }
 
+char *crt_gamepath(const char *path, char *out, int size) {
+	snprintf(out, (size_t)size, "%s%s", path[0] == '/' ? "Z:" : "", path);
+	for (char *c = out; *c; c++) {
+		if (*c == '/') {
+			*c = '\\';
+		}
+	}
+	return out;
+}
+
 /* ---- heap ---- */
 
 size_t crt_msize(void *p) {
@@ -268,12 +278,13 @@ SD_SIZE(CrtStat32, 0x24);
 SD_OFFSET(CrtStat32, mtime, 0x1c);
 
 static void Crt_Stat32(const struct stat *s, void *out) {
+	/* the drive number (Z: is 25) in st_dev and st_rdev and no inode, as the runtime of Windows gives them */
 	CrtStat32 st = {
-		.dev = (uint32_t)s->st_dev,
-		.ino = (uint16_t)s->st_ino,
+		.dev = 25,
+		.ino = 0,
 		.mode = (uint16_t)((s->st_mode & S_IFDIR ? 0x4000 : 0x8000) | (s->st_mode & 0700)),
 		.nlink = (int16_t)s->st_nlink,
-		.rdev = (uint32_t)s->st_rdev,
+		.rdev = 25,
 		.size = (int32_t)s->st_size,
 		.atime = (int32_t)s->st_atime,
 		.mtime = (int32_t)s->st_mtime,

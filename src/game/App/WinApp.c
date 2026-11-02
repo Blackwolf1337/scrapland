@@ -127,7 +127,9 @@ int CWinApp_HasArg(CWinApp *self, const char *name) {
 }
 
 void App_GetPath(char *buf, int size) {
-	Plat_ExePath(buf, size);
+	char exe[0x400];
+	Plat_ExePath(exe, sizeof(exe));
+	crt_gamepath(exe, buf, size);
 }
 
 void *App_GetHInstance(void) {

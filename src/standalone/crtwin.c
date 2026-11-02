@@ -249,3 +249,8 @@ char *crt_syspath(const char *path, char *out, int size) {
 	snprintf(out, (size_t)size, "%s", path);
 	return out;
 }
+
+char *crt_gamepath(const char *path, char *out, int size) {
+	snprintf(out, (size_t)size, "%s", path);
+	return out;
+}

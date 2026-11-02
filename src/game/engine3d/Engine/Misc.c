@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "scrap/archio.h"
+#include "scrap/crt.h"
 #include "scrap/bsp.h"
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
@@ -306,7 +307,9 @@ char *E3D_GetExePath(void) {
 
 /* the static initializer: the path of the exe, g_E3DDir from its directory and "../" */
 void Misc_InitE3DDir(void) {
-	Plat_ExePath(g_ExePath, sizeof(g_ExePath));
+	char exe[sizeof(g_ExePath)];
+	Plat_ExePath(exe, sizeof(exe));
+	crt_gamepath(exe, g_ExePath, sizeof(g_ExePath));
 	Path_Part(g_E3DDir, g_ExePath, PATH_DRIVE | PATH_DIR);
 	Path_Normalize(g_E3DDir, "../", -1);	/* "../" */
 }

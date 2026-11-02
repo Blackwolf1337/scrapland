@@ -16,7 +16,12 @@
 #        DIFFTEST_NOCACHE=1  run the reference even when its outputs are cached
 #        DIFFTEST_NATIVE=1   the current build is the native Linux one (build-linux/ScrapC, through native.sh in the
 #                            same game folder of the slot, so the paths are the same); the reference stays the Windows
-#                            exe in Wine. The outputs are compared without the CR of the Windows line ends.
+#                            exe in Wine. The outputs are compared without the CR of the Windows line ends. The
+#                            differences of the two systems that were reviewed (libm last bits, qsort ties, the
+#                            uninitialized memory and heap pointers some checks print, the paths with other drives)
+#                            are in tools/test/native-accepted/<scenario>.txt by the names of their checks (the part
+#                            before " = "; the values of some change from run to run): only other checks fail.
+#                            DIFFTEST_ACCEPT=1 writes the differences of this run as the new accepted list.
 root=$(cd "$(dirname "$0")/../.." && pwd)
 ref=${DIFFTEST_REF:-$root/build-ref-noexact/ScrapC.exe}
 out=$root/build/difftest
@@ -159,6 +164,23 @@ scenario() {
 		echo "$s: $(($(wc -l < "$out/$s-c.out") - 1)) checks match" \
 			"($(grep -c ' = exception ' "$out/$s-c.out") raise an exception in both)" > "$out/$s.result"
 		return 0
+	fi
+	if [ "$native" = 1 ]; then
+		local accepted=$root/tools/test/native-accepted/$s.txt
+		grep '^[-+][^-+]' "$out/$s.diff" | sed -E 's/^[-+]//; s/ = .*//' | LC_ALL=C sort -u > "$out/$s.lines"
+		if [ "${DIFFTEST_ACCEPT:-0}" = 1 ]; then
+			mkdir -p "$root/tools/test/native-accepted"
+			cp "$out/$s.lines" "$accepted"
+		fi
+		LC_ALL=C comm -23 "$out/$s.lines" "$accepted" 2> /dev/null > "$out/$s.new" ||
+			cp "$out/$s.lines" "$out/$s.new"
+		if [ -f "$accepted" ] && [ ! -s "$out/$s.new" ]; then
+			echo "$s: $(($(wc -l < "$out/$s-c.out") - 1)) checks match except" \
+				"$(wc -l < "$out/$s.lines") reviewed native ones" > "$out/$s.result"
+			return 0
+		fi
+		echo "$s: $(wc -l < "$out/$s.new") more checks differ, see $out/$s.new and $out/$s.diff" > "$out/$s.result"
+		return 1
 	fi
 	echo "$s: outputs differ, see $out/$s.diff" > "$out/$s.result"
 	return 1
