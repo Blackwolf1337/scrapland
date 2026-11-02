@@ -18,13 +18,8 @@
 #define Entity_Pos(e) (&((cEntity *)(e))->pos)
 #define Entity_GridNode(e) (&((cEntity *)(e))->gridNode)	/* target the cell, data the entity */
 
-/* the engine variables (Gvars) */
-extern cGVar GVar_GridUseTopLimit;
-#define g_GridUseTopLimit (GVar_GridUseTopLimit.value.i)
 extern cGVar GVar_TopLimit;
 #define g_TopLimit (GVar_TopLimit.value.f)
-extern cGVar GVar_ShowDummy;
-#define g_ShowDummy (GVar_ShowDummy.value.s)	/* the dummies drawn (a wildcard pattern), "" for none */
 
 /* the destructor of a cell (Nto1Links.h, rva) for the new[] of the cells */
 #define NTO1NODE_DTOR 0x0eeb90
@@ -32,29 +27,14 @@ extern cGVar GVar_ShowDummy;
 
 #define Grid_IsOk(grid) (((const cCollisionGrid *)(grid))->cells != NULL)
 
-/* a cell head: an empty ring (the constructor of new[]) */
-Nto1Node *GridCell_ctor(Nto1Node *self);
-
 /* the grid is used as void * (the byte array of cWorld) */
 void *Grid_ctor(void *grid);
 void Grid_dtor(void *grid);
-/* the cells freed, the box cleared */
-void Grid_Free(void *grid);
 void Grid_Init(void *grid, const vec3_t *min, const vec3_t *max, const vec3_t *cell);
 /* the grid made again with the cells of size; the top of the box is TopLimit with GridUseTopLimit */
 void Grid_Set(void *grid, const vec3_t *size);
 /* the entity into the cell of its position (none without active) */
 void Grid_Add(void *grid, cEntity *e);
-/* the first entity of cell x y z (outside of the box: the outside list); NULL for an empty cell or one the segment
- * query has seen */
-cEntity *Grid_GetCell(void *grid, int x, int y, int z);
-cEntity *Grid_GetCellAt(void *grid, const vec3_t *pos);
-/* the next entity of the cell of the query, NULL at its end */
-cEntity *Grid_NextInCell(void *grid);
-/* the next cell of the box query; 1 after the last */
-byte Grid_StepCell(void *grid);
-/* the stamp of a new segment query */
-void Grid_NewQuery(void *grid);
 /* the entities near the segment, ext the size of the box moved along it */
 cEntity *Grid_FirstOnSegment(void *grid, const vec3_t *from, const vec3_t *to, const vec3_t *ext);
 cEntity *Grid_NextOnSegment(void *grid);

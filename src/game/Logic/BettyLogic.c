@@ -7,6 +7,9 @@
 #include "scrap/logic.h"
 #include "scrap/objentity.h"
 
+#define CBETTYLOCALLOGIC_VFTABLE (&cBettyLocalLogic_vftable.base.base)
+static const cFunctionaryLocalLogicVtbl cBettyLocalLogic_vftable;
+
 cBettyLocalLogic *cBettyLocalLogic_ctor(cBettyLocalLogic *self, cEntity *parent) {
 	cFunctionaryLocalLogic_ctor(&self->base, parent);
 	self->base.base.base.vftable = CBETTYLOCALLOGIC_VFTABLE;
@@ -14,7 +17,7 @@ cBettyLocalLogic *cBettyLocalLogic_ctor(cBettyLocalLogic *self, cEntity *parent)
 	return self;
 }
 
-cLocalLogic *cBettyLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static cLocalLogic *cBettyLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 	cBettyLocalLogic *self = (cBettyLocalLogic *)elem;
 	self->base.base.base.vftable = CBETTYLOCALLOGIC_VFTABLE;
 	cFunctionaryLocalLogic_dtor(&self->base);
@@ -25,14 +28,14 @@ cLocalLogic *cBettyLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 }
 
 /* vf40 */
-void cBettyLocalLogic_AssignDesktop(cLocalLogic *elem, float maxDist) {
+static void cBettyLocalLogic_AssignDesktop(cLocalLogic *elem, float maxDist) {
 	cBettyLocalLogic *self = (cBettyLocalLogic *)elem;
 	(void)maxDist;
 	Logic_LinkDesktop(&self->base, "BettyDesktop");
 }
 
 /* vf38 (the callers use the returned out): the angles at the desktop, turned by a quarter the other way */
-vec3_t *cBettyLocalLogic_GetWorkAng(cLocalLogic *elem, vec3_t *out) {
+static vec3_t *cBettyLocalLogic_GetWorkAng(cLocalLogic *elem, vec3_t *out) {
 	cBettyLocalLogic *self = (cBettyLocalLogic *)elem;
 	vec3_t tmp;
 
@@ -46,7 +49,7 @@ vec3_t *cBettyLocalLogic_GetWorkAng(cLocalLogic *elem, vec3_t *out) {
 }
 
 /* the vtable of cBettyLocalLogic */
-const cFunctionaryLocalLogicVtbl cBettyLocalLogic_vftable = {
+static const cFunctionaryLocalLogicVtbl cBettyLocalLogic_vftable = {
 	.base.base.base.Delete = cBettyLocalLogic_Delete,
 	.base.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.base.Vf02 = cFunctionaryLocalLogic_Vf02,

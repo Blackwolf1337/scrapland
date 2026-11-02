@@ -8,34 +8,6 @@
 
 cClex g_Cl;
 
-int CmdLex_Expect(int type) {
-	const char *name;
-
-	if (g_Cl.type == type) {
-		return 0;
-	}
-	switch (type) {
-	case CLEX_IDENT:
-		name = "an identifier";
-		break;
-	case CLEX_INT:
-		name = "an integer";
-		break;
-	case CLEX_FLOAT:
-		name = "a floating point number";
-		break;
-	case CLEX_STRING:
-		name = "a string";
-		break;
-	default:
-		name = (const char *)(intptr_t)type;
-		CHECK(0);
-		break;
-	}
-	Lex_Error(0, "%s %s: '%s'", "It is not", name, g_Cl.text);
-	return -1;
-}
-
 int CmdLex_IsChar(int c) {
 	return g_Cl.type == CLEX_CHAR && g_Cl.value.i == c;
 }
@@ -61,36 +33,6 @@ static int CmdLex_Sign(void) {
 		return c;
 	}
 	return '+';
-}
-
-int CmdLex_GetInt(int *out) {
-	int sign = CmdLex_Sign();
-	int v = g_Cl.value.i;
-
-	switch (g_Cl.type) {
-	case CLEX_IDENT:
-		return -1;
-	case CLEX_INT:
-		break;
-	case CLEX_FLOAT:
-		Lex_Error(1, "%s: '%s'", "Double to integer conversion", g_Cl.text);
-		v = (int)g_Cl.value.d;
-		break;
-	case CLEX_STRING:
-		Lex_Error(0, "Invalid operand type");
-		return -1;
-	default:
-		Lex_Error(0, "Missing operand");
-		return -1;
-	}
-	if (sign == '-') {
-		v = -v;
-	}
-	CmdLex_Next();
-	if (out) {
-		*out = v;
-	}
-	return 0;
 }
 
 int CmdLex_GetDouble(double *out) {
@@ -124,43 +66,6 @@ int CmdLex_GetDouble(double *out) {
 }
 
 /* depth 0: first up to the next '{' */
-void CmdLex_SkipBlock(int depth) {
-	if (depth == 0) {
-		CmdLex_SkipTo('{');
-		depth = 1;
-	} else if (depth < 1) {
-		return;
-	}
-	do {
-		CmdLex_SkipToAny("{}");
-		if (g_Cl.type == CLEX_ERR) {
-			return;
-		}
-		depth += g_Cl.value.i == '{' ? 1 : -1;
-		CmdLex_Next();
-	} while (depth > 0);
-}
-
-void CmdLex_SkipTo(int c) {
-	for (;;) {
-		if (g_Cl.type == CLEX_CHAR) {
-			if (g_Cl.value.i == c) {
-				CmdLex_Next();
-				return;
-			}
-		} else if (g_Cl.type == CLEX_ERR) {
-			return;
-		}
-		CmdLex_Next();
-	}
-}
-
-void CmdLex_SkipToAny(const char *chars) {
-	while (!(g_Cl.type == CLEX_CHAR && strchr(chars, g_Cl.value.i)) && g_Cl.type != CLEX_ERR) {
-		CmdLex_Next();
-	}
-}
-
 void CmdLex_Next(void) {
 	int n;
 

@@ -28,41 +28,40 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
-
 #define TRAFFIC_DAMAGE_NATIVE 0x15af10
 #define TRAFFIC_DEATH_NATIVE 0x15b160
 #define TRAFFIC_ONAIEND 0x15ae60
-cGVar GVar_MaxTrafficEnemy;
+static cGVar GVar_MaxTrafficEnemy;
 
 #define g_MaxTrafficEnemy (GVar_MaxTrafficEnemy.value.i)
-cGVarFunction GVar_OnNeedMoreTraffic;
+static cGVarFunction GVar_OnNeedMoreTraffic;
 
 #define g_OnNeedMoreTraffic (((cPy_Function *)&GVar_OnNeedMoreTraffic.func))
-cGVar GVar_MaxFightingTrafficSize;
+static cGVar GVar_MaxFightingTrafficSize;
 
 #define g_MaxFightingTrafficSize (GVar_MaxFightingTrafficSize.value.f)
-cGVarFunction GVar_OnPlayerHelpedPolice;
+static cGVarFunction GVar_OnPlayerHelpedPolice;
 
 #define g_OnPlayerHelpedPolice (((cPy_Function *)&GVar_OnPlayerHelpedPolice.func))
-cGVar GVar_ProbTrafficFighting;
+static cGVar GVar_ProbTrafficFighting;
 
 #define g_ProbTrafficFighting (GVar_ProbTrafficFighting.value.f)
-cGVar GVar_TrafficRemovalDist;
+static cGVar GVar_TrafficRemovalDist;
 
 #define g_TrafficRemovalDist (GVar_TrafficRemovalDist.value.f)
-cGVar GVar_TrafficDamageTolerance;
+static cGVar GVar_TrafficDamageTolerance;
 
 #define g_TrafficDamageTolerance (GVar_TrafficDamageTolerance.value.i)
-cGVar GVar_MaxTrafficEnemyTime;
+static cGVar GVar_MaxTrafficEnemyTime;
 
 #define g_MaxTrafficEnemyTime (GVar_MaxTrafficEnemyTime.value.f)
-cGVar GVar_MinTrafficEnemyTime;
+static cGVar GVar_MinTrafficEnemyTime;
 
 #define g_MinTrafficEnemyTime (GVar_MinTrafficEnemyTime.value.f)
-cGVarFunction GVar_OnNeedMoreChasingTraffic;
+static cGVarFunction GVar_OnNeedMoreChasingTraffic;
 
 #define g_OnNeedMoreChasingTraffic (((cPy_Function *)&GVar_OnNeedMoreChasingTraffic.func))
-cGVar GVar_iTrafficNumber;
+static cGVar GVar_iTrafficNumber;
 
 #define g_iTrafficNumber (GVar_iTrafficNumber.value.i)
 /* the callback of the AI when the move ends (rva 0x15c of the AI) */
@@ -114,7 +113,7 @@ void cEnemiesTraffic_dtor(cEnemiesTraffic *self) {
 }
 
 /* the two ships may fight (ProbTrafficFighting percent) */
-byte Traffic_FightChance(cEntity *a, cEntity *b) {
+static byte Traffic_FightChance(cEntity *a, cEntity *b) {
 	if (a == b) {
 		return 0;
 	}
@@ -123,7 +122,7 @@ byte Traffic_FightChance(cEntity *a, cEntity *b) {
 
 /* the ship of the traffic farthest from the cameras goes, unless it is in view and nearer than
  * TrafficRemovalDist */
-void cEnemiesTraffic_RemoveFarthest(cEnemiesTraffic *self) {
+static void cEnemiesTraffic_RemoveFarthest(cEnemiesTraffic *self) {
 	vec3_t tmp;
 	float best = 0.0f;
 	cEntity *far = NULL;
@@ -150,7 +149,7 @@ void cEnemiesTraffic_RemoveFarthest(cEnemiesTraffic *self) {
 }
 
 /* a ship of a random traffic list with a free line to e (up to four tries), else the last one seen */
-cEntity *Traffic_FindOther(cEntity *e) {
+static cEntity *Traffic_FindOther(cEntity *e) {
 	static const char *const lists[4] = { "Traffic", "HeavyTraffic", "MediumTraffic", "NormalTraffic" };
 	vec3_t t1, t2;
 
@@ -185,6 +184,7 @@ static cAIVehicle *Traffic_AI(cEntity *e) {
 }
 
 /* a fighter of the list FightingTraffic: back to the traffic when the fight is over or far from the player */
+static byte Traffic_OnAIEnd(cAIVehicle *ai);
 static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEntity *usr, byte alarm,
 	const vec3_t *up) {
 	vec3_t tmp;
@@ -279,7 +279,7 @@ static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEnti
 	return next;
 }
 
-void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
+static void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 	vec3_t tmp, cp;
 
 	if (self->bossRobots == -1) {
@@ -432,6 +432,8 @@ void cEnemiesTraffic_Think(cEnemiesTraffic *self) {
 	self->usr = usr;
 }
 
+static void Traffic_DamageNative(cAbstractFile *params);
+static void Traffic_DeathNative(cAbstractFile *params);
 void cEnemiesTraffic_Init(cEnemiesTraffic *self) {
 	static const char *const names[4] = { "EnemiesTraffic", "ChasingTraffic", "FightingTraffic", "Traffic" };
 	cEntityListData **lists[4] = { &self->enemies, &self->chasing, &self->fighting, &self->traffic };
@@ -445,7 +447,7 @@ void cEnemiesTraffic_Init(cEnemiesTraffic *self) {
 }
 
 /* the AI callback of a fighter at the end of its move: back to the traffic */
-byte Traffic_OnAIEnd(cAIVehicle *ai) {
+static byte Traffic_OnAIEnd(cAIVehicle *ai) {
 	if (!ai) {
 		return 0;
 	}
@@ -461,7 +463,7 @@ byte Traffic_OnAIEnd(cAIVehicle *ai) {
 }
 
 /* the damage native of the lists: a ship the player hit hard enough attacks it (EnemiesTraffic) */
-void Traffic_DamageNative(cAbstractFile *params) {
+static void Traffic_DamageNative(cAbstractFile *params) {
 	char name[0x80], attacker[0x80];
 	float damage;
 
@@ -492,7 +494,7 @@ void Traffic_DamageNative(cAbstractFile *params) {
 }
 
 /* the death native: a ship the player killed raises the alarm, unless the police chased it */
-void Traffic_DeathNative(cAbstractFile *params) {
+static void Traffic_DeathNative(cAbstractFile *params) {
 	char name[0x80], killer[0x80];
 
 	cAbstractFile_ReadString(params, name, sizeof(name));

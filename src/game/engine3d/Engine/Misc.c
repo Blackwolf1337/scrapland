@@ -16,6 +16,9 @@
 #include "scrap/platform.h"
 #include "scrap/staticinit.h"
 
+#define g_LogLevel (GVar_EngineDebugLevel.value.i)	/* 10: the console mask goes back to 0x91 */
+static cGVar GVar_EngineDebugLevel;
+
 #define LOG_LINE 0x400
 #define LOG_NAME "engine.log"
 #define CRT_LC_TIME 5
@@ -25,7 +28,7 @@
 #define STAT32_SIZE 0x24
 #define STAT32_MTIME 0x1c
 
-void cLog_Open(cLog *self) {
+static void cLog_Open(cLog *self) {
 	char path[MAX_FILEPATH];
 	char date[LOG_TIME];
 	int32_t t;
@@ -47,7 +50,7 @@ void cLog_Open(cLog *self) {
 }
 
 /* the end of the log file: a line end and closed */
-void cLog_dtor(cLog *self) {
+static void cLog_dtor(cLog *self) {
 	if (self->f) {
 		crt_fprintf(self->f, "\r\n");
 		if (self->f) {
@@ -58,14 +61,15 @@ void cLog_dtor(cLog *self) {
 }
 
 /* the atexit destructor of (&g_FileLog) (rva 0x38ece0, the destructor inlined) */
-void Misc_FiniFileLog(void) {
+static void Misc_FiniFileLog(void) {
 	cLog_dtor((&g_FileLog));
 }
 
-uint32_t g_LogFileMask;
-uint32_t g_LogConMask = 65535;
+static uint32_t g_LogFileMask;
+static uint32_t g_LogConMask = 65535;
 
-void cLog_Write(cLog *self, uint32_t mask, const char *text) {
+/* text to the console printers of the bits in mask and to the file */
+static void cLog_Write(cLog *self, uint32_t mask, const char *text) {
 	if (g_LogLevel == LOG_LEVEL_RESET) {
 		g_LogConMask = LOG_CON_DEFAULT;
 	}
@@ -125,7 +129,8 @@ static void E3D_LogV(cLog *log, uint32_t bit, const char *fmt, va_list ap) {
 		E3D_LogV(log, bit, fmt, ap); \
 		va_end(ap); \
 	}
-int g_DbgCon;
+/* the debug console: on, as a dialog window, as a text console */
+static int g_DbgCon;
 
 /* INT32_MIN: at any log level */
 E3D_LOG(E3D_LogPrint, LOG_PRINT, INT32_MIN)
@@ -224,7 +229,8 @@ char *Path_Copy(char *dest, const char *src, int size) {
 	return dest;
 }
 
-char g_E3DDir[264];
+/* where the relative paths start: the game directory with a "\\" at the end */
+static char g_E3DDir[264];
 
 void Path_Normalize(char *dest, const char *path, int size) {
 	char drive[4], dir[0x100];
@@ -275,39 +281,7 @@ void Path_Normalize(char *dest, const char *path, int size) {
 	String_Copy(dest, b, size);
 }
 
-char *String_Unquote(char *dest, const char *src) {
-	if (!dest) {
-		return NULL;
-	}
-	*dest = '\0';
-	if (!src) {
-		return NULL;
-	}
-	const char *p = src;
-	while (*p == '\t' || *p == ' ') {
-		p++;
-	}
-	if (!*p) {
-		return NULL;
-	}
-	if (*p == '"') {
-		const char *s = ++p;
-		while (*p && *p != '"') {
-			p++;
-		}
-		String_Copy(dest, s, p - s + 1);
-		return dest;
-	}
-	/* the whole string, blanks before the word too */
-	size_t i = 0;
-	do {
-		dest[i] = src[i];
-	} while (src[i++]);
-	return dest;
-}
-
-
-char g_ExePath[264];
+static char g_ExePath[264];
 
 char *E3D_GetExePath(void) {
 	return g_ExePath;
@@ -322,10 +296,10 @@ void Misc_InitE3DDir(void) {
 	Path_Normalize(g_E3DDir, "../", -1);	/* "../" */
 }
 
-byte g_RSqrtTable[144];
+static byte g_RSqrtTable[144];
 
 /* the bits 15..22 (rounded) of 1 / sqrt of the 128 mantissa steps of the exponents 0x7f (0..63) and 0x7e */
-void RSqrt_InitTable(void) {
+static void RSqrt_InitTable(void) {
 	byte *t = (byte *)g_RSqrtTable;
 	int i;
 
@@ -361,19 +335,12 @@ float Ang_Wrap(float a) {
 	return a;
 }
 
-float RSqrt(float x) {
-	float y = RSqrt_Estimate(x);
-
-	y = (3.0f - y * y * x) * y * 0.5f;
-	return (3.0f - y * y * x) * y * 0.5f;
-}
-
 /* the debug output on when the ini asks for the console window or the text console; it goes to stdout */
 void DbgCon_Init(void) {
 	g_DbgCon = g_DbgConWindow || g_DbgConStd;
 }
 
-cGVar GVar_EngineDebugLevel;
+static cGVar GVar_EngineDebugLevel;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_EngineDebugLevel, &GVar_EngineDebugLevel, "EngineDebugLevel", 0, "Extra engine debug info (0/1/2)", 0)

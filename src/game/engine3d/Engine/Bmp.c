@@ -24,7 +24,6 @@ const int g_ErrPcxFormat = 50;
 #define TGA_RUN 0x80		/* packet header: a run, else raw pixels */
 #define TGA_PACKET_MAX 128
 
-
 void *Img_Pixel(const CImage *b, uint32_t x, uint32_t y, int bytes) {
 	CHECK(b->img);
 	CHECK(x < (uint32_t)b->width);
@@ -39,10 +38,6 @@ void Img_Free(CImage *b, int bytes) {
 		operator_delete_sized(b->img, bytes);
 		b->img = NULL;
 	}
-}
-
-void CBmp_dtor(CBmp *self) {
-	Img_Free(self, BMP_PIXEL);
 }
 
 void Img_Create(CImage *b, int width, int height, int bytes) {
@@ -102,7 +97,8 @@ static uint32_t Bmp_SwapRB(uint32_t p) {
 	return (p & 0xff00ff00) | (p & 0xff) << 16 | (p >> 16 & 0xff);
 }
 
-uint32_t Color_Lerp(uint32_t a, uint32_t b, float t) {
+/* 0xAARRGGBB colors: a + (b - a) * t in steps of 1/256 */
+static uint32_t Color_Lerp(uint32_t a, uint32_t b, float t) {
 	int k = (int)(t * 256.0f);
 	uint32_t r = 0;
 
@@ -117,7 +113,7 @@ uint32_t *CBmp_Pixel(const CBmp *self, uint32_t x, uint32_t y) {
 	return Img_Pixel(self, x, y, BMP_PIXEL);
 }
 
-void CBmp_Create(CBmp *self, int width, int height) {
+static void CBmp_Create(CBmp *self, int width, int height) {
 	Img_Create(self, width, height, BMP_PIXEL);
 }
 
@@ -148,84 +144,6 @@ void CBmp_Copy(CBmp *self, int x, int y, const CBmp *orig, int ox, int oy, int w
 			if (mask & 1u << (i & 3)) {
 				d[i] = s[i];
 			}
-		}
-	}
-}
-
-void CBmp_Effect(CBmp *self, int kind) {
-	CHECK(self->img);
-	int w = self->width, h = self->height;
-	if (kind == 1) {
-		for (int y = 0; y < h; y++) {
-			byte *p = (byte *)CBmp_Pixel(self, 0, y);
-			if (w - 2 <= 2) {
-				continue;
-			}
-			/* the pixels to the left are taken before they change */
-			byte l2[4], l1[4];
-			memcpy(l2, p, 4);
-			memcpy(l1, p + 4, 4);
-			for (int x = 2; x < w - 2; x++) {
-				byte *c = p + x * 4;
-				byte cur[4];
-				memcpy(cur, c, 4);
-				for (int i = 0; i < 3; i++) {
-					c[i] = (byte)((unsigned)(l1[i] + l2[i] + c[8 + i] + c[4 + i] + c[i]) / 5);
-				}
-				memcpy(l2, l1, 4);
-				memcpy(l1, cur, 4);
-			}
-		}
-	} else if (kind == 2) {
-		for (int x = 0; x < w; x++) {
-			byte *p = (byte *)CBmp_Pixel(self, x, h - 1);
-			p[0] = (crt_rand() & 0x7f) + 0x80;
-			p[1] = crt_rand();
-			p[2] = 0;
-		}
-		for (int y = 0; y < h - 1; y++) {
-			byte *row = (byte *)CBmp_Pixel(self, 0, y);
-			const byte *next = row + w * 4;
-			for (int x = 1; x < w - 1; x++) {
-				for (int i = 0; i < 3; i++) {
-					const byte *n = next + x * 4 + i;
-					row[x * 4 + i] = (byte)((((unsigned)n[-4] + n[0] + n[4]) * 0x3f + row[x * 4 + i] * 0x40u) >> 8);
-				}
-			}
-		}
-	} else if (kind == 3) {
-		for (int y = 0; y < h; y++) {
-			byte *p = (byte *)CBmp_Pixel(self, 0, y);
-			for (int x = 0; x < w; x++, p += 4) {
-				for (int i = 0; i < 3; i++) {
-					p[i] = (byte)(p[i] * 3 >> 2);
-				}
-			}
-		}
-	}
-}
-
-void CBmp_Exposure(CBmp *self, float a, float b) {
-	CHECK(self->img);
-	byte *p = self->img;
-	for (int n = self->height * self->width; n > 0; n--, p += 4) {
-		for (int i = 0; i < 4; i++) {
-			double e = exp((double)-((float)p[i] * a / b));
-			p[i] = Bmp_Clamp((int)llrint((1.0 - e) * (double)b));
-		}
-	}
-}
-
-void CBmp_Gamma(CBmp *self, float g, float b) {
-	CHECK(self->img);
-	if (g == 1.0f) {
-		return;
-	}
-	float inv = 1.0f / g;
-	byte *p = self->img;
-	for (int n = self->height * self->width; n > 0; n--, p += 4) {
-		for (int i = 0; i < 4; i++) {
-			p[i] = Bmp_Clamp((int)llrint(pow((double)((float)p[i] / b), (double)inv) * (double)b));
 		}
 	}
 }
@@ -345,12 +263,6 @@ void CBmp_Sharpen(CBmp *self) {
 	Bmp_Filter3x3(self, k, 0x10, 5);
 }
 
-void CBmp_Blur(CBmp *self) {
-	static const int k[9] = { 1, 2, 1, 2, 4, 2, 1, 2, 1 };
-
-	Bmp_Filter3x3(self, k, 8, 4);
-}
-
 void CBmp_Resample(CBmp *self, const CBmp *orig, uint32_t mask) {
 	if (Img_ResampleCopy(self, orig, mask, BMP_PIXEL)) {
 		return;
@@ -427,10 +339,10 @@ static int Img_SaveRefused(const char *name, uint32_t flags) {
 	return 1;
 }
 
-bmpFileCab_t g_BmpFileHeader;
-bmpInfoCab_t g_BmpInfoCab;
+static bmpFileCab_t g_BmpFileHeader;
+static bmpInfoCab_t g_BmpInfoCab;
 
-int BMP_Save(const char *name, const CBmp *orig, uint32_t flags) {
+static int BMP_Save(const char *name, const CBmp *orig, uint32_t flags) {
 	bmpFileCab_t *fc = (&g_BmpFileHeader);
 	bmpInfoCab_t *ic = (&g_BmpInfoCab);
 
@@ -481,9 +393,9 @@ fail:
 	return -1;
 }
 
-texCab_t g_TexHeader;
+static texCab_t g_TexHeader;
 
-int TEX_Save(const char *name, const CBmp *orig, uint32_t flags) {
+static int TEX_Save(const char *name, const CBmp *orig, uint32_t flags) {
 	texCab_t *c = (&g_TexHeader);
 
 	CHECK(name && orig && orig->img);
@@ -554,9 +466,9 @@ static void Tga_PutRow(const uint32_t *row, int w, uint32_t mask, int alpha, voi
 	}
 }
 
-tgaCab_t g_TgaCab;
+static tgaCab_t g_TgaCab;
 
-int TGA_Save(const char *name, const CBmp *orig, uint32_t flags) {
+static int TGA_Save(const char *name, const CBmp *orig, uint32_t flags) {
 	tgaCab_t *c = (&g_TgaCab);
 
 	CHECK(name && orig && orig->img);
@@ -605,7 +517,7 @@ static int Img_LoadFailed(void *f, const char *fmt, const char *name) {
 	return -1;
 }
 
-int BMP_Load(const char *name, CBmp *dest, uint32_t flags) {
+static int BMP_Load(const char *name, CBmp *dest, uint32_t flags) {
 	static const char bad[] = "leer_BMP_24(): Formato no v\xe1lido: '%s'";
 	bmpFileCab_t *fc = (&g_BmpFileHeader);
 	bmpInfoCab_t *ic = (&g_BmpInfoCab);
@@ -665,7 +577,7 @@ int BMP_Load(const char *name, CBmp *dest, uint32_t flags) {
 	return 0;
 }
 
-int TEX_Load(const char *name, CBmp *dest, uint32_t flags) {
+static int TEX_Load(const char *name, CBmp *dest, uint32_t flags) {
 	texCab_t *c = (&g_TexHeader);
 
 	(void)flags;
@@ -693,7 +605,7 @@ static void Tga_GetPixel(byte *d, int alpha, void *f) {
 	d[3] = alpha ? FileIO_Getc(f) : 0;
 }
 
-int TGA_Load(const char *name, CBmp *dest, uint32_t flags) {
+static int TGA_Load(const char *name, CBmp *dest, uint32_t flags) {
 	tgaCab_t *c = (&g_TgaCab);
 
 	(void)flags;

@@ -15,8 +15,6 @@ typedef struct BlendModeEntry {
 	uint32_t dst;			/* 0x8 */
 } BlendModeEntry;
 
-extern BlendModeEntry g_BlendModeTable[7];
-
 uint32_t BlendMode_GetDst(uint32_t mode);
 /* ScrapEngMaterial.cpp: the source and destination blend of a blend mode (CHECK mode < 7) */
 uint32_t BlendMode_GetSrc(uint32_t mode);

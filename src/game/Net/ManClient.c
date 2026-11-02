@@ -11,6 +11,38 @@
 #include "scrap/objentity.h"
 #include "scrap/staticinit.h"
 
+#define g_ServerNetManagerVftable (&cServerNetManager_vftable.base)
+#define g_LogNetData (GVar_LogNetData.value.i)		/* LogNetData */
+#define g_ClientPassword (GVar_ClientPassword.value.s)
+#define g_ClientAfterCreateFlags (GVar_ClientAfterCreate.head.flags)
+#define g_ClientAfterCreate (((cPy_Function *)&GVar_ClientAfterCreate.func))
+#define g_PlayerNameStr (GVar_PlayerName.value.s)
+#define g_PlayerModel (GVar_PlayerModel.value.s)
+#define g_PlayerMaxLife (GVar_PlayerMaxLife.value.i)
+#define g_PilotModel (GVar_PilotModel.value.s)
+#define g_Motor0Model (GVar_Motor0Model.value.s)
+#define g_Motor1Model (GVar_Motor1Model.value.s)
+#define g_Motor2Model (GVar_Motor2Model.value.s)
+#define g_Motor3Model (GVar_Motor3Model.value.s)
+#define g_WeaponBayList (GVar_WeaponBayList.value.s)
+#define g_PlayerTeamID (GVar_PlayerTeamID.value.i)
+#define g_PlayerName (((cString *)&GVar_PlayerName.value))
+static const cServerNetManagerVtbl cServerNetManager_vftable;
+static cGVar GVar_WeaponBayList;
+static cGVar GVar_PlayerTeamID;
+static cGVar GVar_PlayerName;
+static cGVar GVar_PlayerModel;
+static cGVar GVar_PlayerMaxLife;
+static cGVar GVar_PilotModel;
+static cGVar GVar_Motor3Model;
+static cGVar GVar_Motor2Model;
+static cGVar GVar_Motor1Model;
+static cGVar GVar_Motor0Model;
+static cGVar GVar_LogNetData;
+static cGVar GVar_ClientPassword;
+static cGVarFunction GVar_ClientAfterCreate;
+
+static void cServerNetManager_SendHello(cUserNetManager *elem, byte type);
 cServerNetManager *cServerNetManager_ctor(cServerNetManager *self, cNetClient *client, int slot) {
 	cUserNetManager_ctor(&self->base, client, slot);
 	self->base.vftable = g_ServerNetManagerVftable;
@@ -20,13 +52,13 @@ cServerNetManager *cServerNetManager_ctor(cServerNetManager *self, cNetClient *c
 	return self;
 }
 
-void cServerNetManager_dtor(cServerNetManager *self) {
+static void cServerNetManager_dtor(cServerNetManager *self) {
 	self->base.vftable = g_ServerNetManagerVftable;
 	Con_Print(0, "disconected!\n", 0);
 	cUserNetManager_dtor(&self->base);
 }
 
-cUserNetManager *cServerNetManager_Delete(cUserNetManager *base, byte flags) {
+static cUserNetManager *cServerNetManager_Delete(cUserNetManager *base, byte flags) {
 	cServerNetManager *self = (cServerNetManager *)base;
 	cServerNetManager_dtor(self);
 	if (flags & 1) {
@@ -35,7 +67,7 @@ cUserNetManager *cServerNetManager_Delete(cUserNetManager *base, byte flags) {
 	return base;
 }
 
-byte g_NetClientPings[256];
+static byte g_NetClientPings[256];
 cFileMem g_NetMsg;
 
 /* the entities of the stream: an id ("net<id>") and a resource byte each, then the state of the entity */
@@ -110,7 +142,7 @@ static void ServerNet_ReadEntities(cServerNetManager *self, int size) {
 	}
 }
 
-void cServerNetManager_OnReceive(cUserNetManager *elem, void *data, int size, void *ctl, int ctlSize) {
+static void cServerNetManager_OnReceive(cUserNetManager *elem, void *data, int size, void *ctl, int ctlSize) {
 	cServerNetManager *self = (cServerNetManager *)elem;
 	char s[0x80];
 	byte kind, n;
@@ -184,7 +216,7 @@ int Net_GetClientPing(uint32_t slot) {
 	return (int)pow(2.0, (double)g_NetClientPings[slot] / 24.0);
 }
 
-void cServerNetManager_SendHello(cUserNetManager *elem, byte type) {
+static void cServerNetManager_SendHello(cUserNetManager *elem, byte type) {
 	cServerNetManager *self = (cServerNetManager *)elem;
 	uint32_t v;
 
@@ -214,7 +246,7 @@ void cServerNetManager_SendHello(cUserNetManager *elem, byte type) {
 	cStaticBuffer_Unlock(g_NetStaticBuffer);
 }
 
-void cServerNetManager_Send(cUserNetManager *base, uint32_t time) {
+static void cServerNetManager_Send(cUserNetManager *base, uint32_t time) {
 	cServerNetManager *self = (cServerNetManager *)base;
 	cEntity *e = World_FindEntity(self->name);
 
@@ -238,7 +270,7 @@ void cUserNetManager_Nop(cUserNetManager *self) {
 }
 
 /* the vtable of cServerNetManager */
-const cServerNetManagerVtbl cServerNetManager_vftable = {
+static const cServerNetManagerVtbl cServerNetManager_vftable = {
 	.base.Delete = cServerNetManager_Delete,
 	.base.OnReceive = cServerNetManager_OnReceive,
 	.base.Send = cServerNetManager_Send,
@@ -246,20 +278,21 @@ const cServerNetManagerVtbl cServerNetManager_vftable = {
 	.SendHello = cServerNetManager_SendHello,
 };
 
-cGVar GVar_LogNetData;
-cGVar GVar_ClientPassword;
-cGVarFunction GVar_ClientAfterCreate;
+static cGVar GVar_LogNetData;
+static cGVar GVar_ClientPassword;
+static cGVarFunction GVar_ClientAfterCreate;
 cGVarFunction GVar_ClientCreate;
-cGVar GVar_WeaponBayList;
-cGVar GVar_Motor3Model;
-cGVar GVar_PlayerMaxLife;
-cGVar GVar_Motor1Model;
-cGVar GVar_PilotModel;
-cGVar GVar_Motor0Model;
-cGVar GVar_PlayerName;
-cGVar GVar_Motor2Model;
-cGVar GVar_PlayerTeamID;
-cGVar GVar_PlayerModel;
+static cGVar GVar_WeaponBayList;
+static cGVar GVar_Motor3Model;
+static cGVar GVar_PlayerMaxLife;
+static cGVar GVar_Motor1Model;
+static cGVar GVar_PilotModel;
+static cGVar GVar_Motor0Model;
+/* the player config the client sends in its hello (gvar values) */
+static cGVar GVar_PlayerName;
+static cGVar GVar_Motor2Model;
+static cGVar GVar_PlayerTeamID;
+static cGVar GVar_PlayerModel;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_WeaponBayList, &GVar_WeaponBayList)

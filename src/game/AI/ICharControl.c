@@ -16,11 +16,37 @@
 #include "scrap/scrapmain.h"
 #include "scrap/staticinit.h"
 
+#define CAICHARCONTROL_VFTABLE (&cAICharControl_vftable)
+#define g_MarginDetectCollCharAI (GVar_MarginDetectCollCharAI.value.f)	/* "MarginDetectCollCharAI" */
+#define g_OffsetAngOrientCharAI (GVar_OffsetAngOrientCharAI.value.f)	/* "OffsetAngOrientCharAI" */
+#define g_MinAngleSearchPointCharAI (GVar_MinAngleSearchPointCharAI.value.f)	/* "MinAngleSearchPointCharAI" */
+#define g_DistNextPosGoTargetCharAI (GVar_DistNextPosGoTargetCharAI.value.f)	/* "DistNextPosGoTargetCharAI" */
+#define g_NumPointsSearchSegmentCharAI (GVar_NumPointsSearchSegmentCharAI.value.i)	/* "NumPointsSearchSegmentCharAI" */
+#define g_TimeEventCollCharAI (GVar_TimeEventCollCharAI.value.f)	/* "TimeEventCollCharAI" */
+#define g_TimeStopCollCharAI (GVar_TimeStopCollCharAI.value.f)		/* "TimeStopCollCharAI" */
+#define g_TimeTestCollCharAI (GVar_TimeTestCollCharAI.value.f)		/* "TimeTestCollCharAI" */
+#define g_TimeBetweenEventCollCharAI (GVar_TimeBetweenEventCollCharAI.value.f)	/* "TimeBetweenEventCollCharAI" */
+#define g_TimeStrafeLostObjCharAI (GVar_TimeStrafeLostObjCharAI.value.f)	/* "TimeStrafeLostObjCharAI" */
+#define g_ShowCharAI (GVar_ShowCharAI.value.s)		/* "ShowCharAI": the name of the character shown */
+#define g_NameDebugShirkAI (GVar_NameDebugShirkAI.value.s)		/* "NameDebugShirkAI" (a cString) */
+static const cAICharControlVtbl cAICharControl_vftable;
+static cGVar GVar_TimeTestCollCharAI;
+static cGVar GVar_TimeStrafeLostObjCharAI;
+static cGVar GVar_TimeStopCollCharAI;
+static cGVar GVar_TimeEventCollCharAI;
+static cGVar GVar_TimeBetweenEventCollCharAI;
+static cGVar GVar_ShowCharAI;
+static cGVar GVar_OffsetAngOrientCharAI;
+static cGVar GVar_NumPointsSearchSegmentCharAI;
+static cGVar GVar_NameDebugShirkAI;
+static cGVar GVar_MinAngleSearchPointCharAI;
+static cGVar GVar_MarginDetectCollCharAI;
+static cGVar GVar_DistNextPosGoTargetCharAI;
+
 /* the characters near the control (CharsNear, FindAvoid): the sphere test collects them here */
 #define g_AICCNearFunc ((&g_ChTypeSphereFunc))
 #define AICC_NEAR_NATIVE ((nativefunc_t)AICC_NearChar)	/* AICC_NearChar (its C version behind the hook) */
 #define AICC_MAX_NEAR 20
-
 
 /* the unit vector the view of e looks along: (0, 0, -1) turned by its view angles */
 static inline vec3_t *AICC_ViewDir(vec3_t *out, cEntity *e) {
@@ -130,7 +156,7 @@ cAICharControl *cAICharControl_ctor(void *mem, cEntity *ent, cAIChar *ai, int *a
 /* the node of the avoided character (the same code as Nto1Node_dtor, used by the 2D and 3D destructors) */
 
 /* the debug segment list and its free nodes */
-void DListSeg_Free(cNWSegList *list) {
+static void DListSeg_Free(cNWSegList *list) {
 	DListSeg_Clear(list);
 	DList_FreePool(list, sizeof(cNWSegNode));
 }
@@ -148,7 +174,7 @@ byte Vec3_Equal(const vec3_t *a, const vec3_t *b) {
 	return a->x == b->x && a->y == b->y && a->z == b->z;
 }
 
-cAICharControl *cAICharControl_Delete(cAICharControl *self, byte flags) {
+static cAICharControl *cAICharControl_Delete(cAICharControl *self, byte flags) {
 	cAICharControl_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAICHARCONTROL_SIZE);
@@ -280,12 +306,12 @@ byte cAICharControl_UpdateFollowB(cAICharControl *self) {
 	return AICC_Vtbl(self)->UpdateFollow(self) != 0;
 }
 
-cEntity *g_AICCNear[20];
-int g_AICCNumNear;
-cEntity *g_AICCNearSelf;
+static cEntity *g_AICCNear[20];
+static int g_AICCNumNear;
+static cEntity *g_AICCNearSelf;
 
 /* the sphere test of CharsNear: the walking characters but the control's own one, up to 20 */
-void AICC_NearChar(cAbstractFile *params) {
+static void AICC_NearChar(cAbstractFile *params) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(params, name, sizeof(name));
@@ -1126,7 +1152,6 @@ byte cAICharControl_StartOrbit(cAICharControl *self, float dist) {
 }
 
 /* ---- the debug view ---- */
-
 
 /* ShowPathAI: the corridor of the last path test, the view, the goal, the velocity and the path */
 static void AICC_DrawPath(cAICharControl *self) {
@@ -2025,7 +2050,7 @@ void cAICharControl_SetHold(cAICharControl *self, byte on) {
 }
 
 /* the vtable of cAICharControl */
-const cAICharControlVtbl cAICharControl_vftable = {
+static const cAICharControlVtbl cAICharControl_vftable = {
 	.Delete = cAICharControl_Delete,
 	.Draw = cAICharControl_Draw,
 	.GetWalkDir = cAICharControl_GetWalkDir,
@@ -2129,18 +2154,18 @@ const cAICharControlVtbl cAICharControl_vftable = {
 };
 
 cGVar GVar_AngAttackBackCharAI;
-cGVar GVar_TimeEventCollCharAI;
-cGVar GVar_MinAngleSearchPointCharAI;
-cGVar GVar_NumPointsSearchSegmentCharAI;
-cGVar GVar_ShowCharAI;
-cGVar GVar_TimeTestCollCharAI;
-cGVar GVar_DistNextPosGoTargetCharAI;
-cGVar GVar_OffsetAngOrientCharAI;
-cGVar GVar_NameDebugShirkAI;
-cGVar GVar_MarginDetectCollCharAI;
-cGVar GVar_TimeStopCollCharAI;
-cGVar GVar_TimeBetweenEventCollCharAI;
-cGVar GVar_TimeStrafeLostObjCharAI;
+static cGVar GVar_TimeEventCollCharAI;
+static cGVar GVar_MinAngleSearchPointCharAI;
+static cGVar GVar_NumPointsSearchSegmentCharAI;
+static cGVar GVar_ShowCharAI;
+static cGVar GVar_TimeTestCollCharAI;
+static cGVar GVar_DistNextPosGoTargetCharAI;
+static cGVar GVar_OffsetAngOrientCharAI;
+static cGVar GVar_NameDebugShirkAI;
+static cGVar GVar_MarginDetectCollCharAI;
+static cGVar GVar_TimeStopCollCharAI;
+static cGVar GVar_TimeBetweenEventCollCharAI;
+static cGVar GVar_TimeStrafeLostObjCharAI;
 cGVar GVar_ShowTestCanGoAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

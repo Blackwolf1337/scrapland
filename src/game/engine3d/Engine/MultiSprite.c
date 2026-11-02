@@ -13,6 +13,9 @@
 #include "scrap/misc.h"
 #include "scrap/staticinit.h"
 
+#define g_BuildMST (GVar_BuildMST.value.i)	/* BuildMST: load the .mst files */
+static cGVar GVar_BuildMST;
+
 #define MAX_SPRITES 256
 
 CMultiSprite *CMultiSprite_ctor(CMultiSprite *self) {
@@ -31,6 +34,7 @@ void CMultiSprite_dtor(CMultiSprite *self) {
 	}
 }
 
+static byte CMultiSprite_BuildTable(CMultiSprite *self, const char *name);
 byte CMultiSprite_Build(CMultiSprite *self, const char *name) {
 	char mst[260];
 
@@ -56,7 +60,8 @@ static byte Index_Alpha(const CBmp *b, uint32_t x, uint32_t y) {
 	return ((const byte *)Img_Pixel(b, x, y, 4))[3];
 }
 
-byte CMultiSprite_BuildTable(CMultiSprite *self, const char *name) {
+/* the table from the &U&D&N.index.bmp of the texture name */
+static byte CMultiSprite_BuildTable(CMultiSprite *self, const char *name) {
 	CBmp bmp = { 0, 0, NULL }, pal = { 0, 0, NULL };
 	MSprite info[MAX_SPRITES];
 	char path[260];
@@ -192,7 +197,7 @@ byte CMultiSprite_Save(const CMultiSprite *self, const char *name) {
 	return ok != 0;
 }
 
-cGVar GVar_BuildMST;
+static cGVar GVar_BuildMST;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_BuildMST, &GVar_BuildMST, "BuildMST", 0, "Build and load MultiSprite MST files (0/1)", 1)

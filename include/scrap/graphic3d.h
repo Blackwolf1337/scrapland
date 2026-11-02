@@ -9,11 +9,6 @@
 #include "scrap/meshd3d.h"
 #include "scrap/groundportal.h"
 
-extern const IObject3DVtbl CGraphic3D_vftable;
-#define CGRAPHIC3D_VFTABLE (&CGraphic3D_vftable)
-extern cGVar GVar_R_SpriteSector;
-#define g_ShowSprites (GVar_R_SpriteSector.value.i)	/* 1: visibility, 2: drawn, 3: with the name */
-
 typedef struct CGraphic3D {
 	union {
 		IObject3D base;
@@ -39,22 +34,10 @@ typedef struct Graphic3DVert {
 	float u, v;
 } Graphic3DVert;
 
-CGraphic3D *CGraphic3D_ctorTex(CGraphic3D *self, const char *tex, const vec3_t *pos, const float *size);
-/* with the texture and its opacity map (CGraphic3D_SetTexture) */
-CGraphic3D *CGraphic3D_ctorTex2(CGraphic3D *self, const char *tex, const char *opac);
 Graphic3DVert *Graphic3DVert_ctor(Graphic3DVert *self);
 CGraphic3D *CGraphic3D_ctor(CGraphic3D *self);
-void CGraphic3D_dtor(CGraphic3D *self);
-IObject3D *CGraphic3D_Delete(IObject3D *base, byte flags);
-byte CGraphic3D_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
-void CGraphic3D_Draw(CGraphic3D *self);
-void CGraphic3D_Render(IObject3D *base, void *dev, CRenderNode *r);
-byte CGraphic3D_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
 void CGraphic3D_SetNode(CGraphic3D *self, CNode3D *node);
-/* the texture with its opacity map (additive alpha without one) */
-void CGraphic3D_SetTexture(CGraphic3D *self, const char *tex, const char *opac);
 /* the material of the textures, shared through (&g_MatList); alpha: the diffuse alpha, 0 is not transparent */
 void CGraphic3D_CreateMat(CGraphic3D *self, const char *tex, const char *opac, int src, int dst, byte alpha);
-void CGraphic3D_Init(CGraphic3D *self);
 
 #endif

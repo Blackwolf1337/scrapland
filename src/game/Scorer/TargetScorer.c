@@ -16,20 +16,23 @@
 #include "scrap/withlifeentity.h"
 #include "scrap/staticinit.h"
 
-cGVar GVar_LittlePointingArrowSize;
+#define CTARGETSCORER_VFTABLE (&cTargetScorer_vftable)
+static const cScorerItemVtbl cTargetScorer_vftable;
+
+static cGVar GVar_LittlePointingArrowSize;
 
 #define g_EnemyMarkScale (GVar_LittlePointingArrowSize.value.f)	/* the size of the marks of DrawEnemies, none for 0 */
 #define TS_PULSE_SPEED 4.0f
 #define TS_PULSE_RANGE -254.0
 #define TS_MARK_HEIGHT 380.0f
 #define TS_HALF_SCREEN 240.0f
-cGVar GVar_TargetScorerSwitchSound;
+static cGVar GVar_TargetScorerSwitchSound;
 
 #define g_TargetSwitchSound (GVar_TargetScorerSwitchSound.value.s)	/* TargetScorerSwitchSound */
-cGVar GVar_TargetScorerSwitchSoundVol;
+static cGVar GVar_TargetScorerSwitchSoundVol;
 
 #define g_TargetSwitchSoundVol (GVar_TargetScorerSwitchSoundVol.value.f)
-cGVar GVar_EnemyFireSize;
+static cGVar GVar_EnemyFireSize;
 
 #define g_EnemyFireSize (GVar_EnemyFireSize.value.f)		/* the scale of the arrow to the attacker */
 extern cGVar GVar_AttackerMarkTime;
@@ -166,7 +169,9 @@ static void Target_DrawAttacker(cTargetScorer *self, cEntity *ship) {
 	img->scaleY = 1.0f;
 }
 
-void cTargetScorer_DrawTarget(cTargetScorer *self, cEntity *ship) {
+/* the mark of the target of the ship and the arrow to its last attacker; the marks of the enemies and friends
+ * around it */
+static void cTargetScorer_DrawTarget(cTargetScorer *self, cEntity *ship) {
 	cVehicleEntity *v = Veh(ship);
 
 	if (self->target[0] && strcmp(self->target, v->target)) {
@@ -196,13 +201,13 @@ cTargetScorer *cTargetScorer_ctor(cTargetScorer *self) {
 	return self;
 }
 
-void cTargetScorer_dtor(cTargetScorer *self) {
+static void cTargetScorer_dtor(cTargetScorer *self) {
 	self->base.vftable = CTARGETSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	cScorerItem_dtor(&self->base);
 }
 
-cScorerItem *cTargetScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cTargetScorer_Delete(cScorerItem *base, byte flags) {
 	cTargetScorer *self = (cTargetScorer *)base;
 	cTargetScorer_dtor(self);
 	if (flags & 1) {
@@ -211,7 +216,7 @@ cScorerItem *cTargetScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-int cTargetScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+static int cTargetScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cTargetScorer *self = (cTargetScorer *)base;
 	if (s && !crt_stricmp(name, "Sprite") && set) {
 		self->img = ScorerImg_Replace(self->img, *s, 2, 0x10060);
@@ -233,7 +238,7 @@ int cTargetScorer_Var(cScorerItem *base, const char *name, int set, char **s, do
 
 /* a mark over the entities with life in view that are enemies or friends of the ship, pulsing red for the enemies
  * (blue in a network game of team 0), the visibility from the camera tested when testTime ran out */
-void cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship) {
+static void cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship) {
 	float uv0[2], uv1[2], pos[4][2], uv[4][2], scr[2], depth;
 	vec3_t tmp, cam;
 
@@ -309,7 +314,7 @@ void cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship) {
 	}
 }
 
-void cTargetScorer_Draw(cScorerItem *base, int player) {
+static void cTargetScorer_Draw(cScorerItem *base, int player) {
 	cTargetScorer *self = (cTargetScorer *)base;
 	cEntity *ship;
 
@@ -326,7 +331,7 @@ void cTargetScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cTargetScorer */
-const cScorerItemVtbl cTargetScorer_vftable = {
+static const cScorerItemVtbl cTargetScorer_vftable = {
 	.Draw = cTargetScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cTargetScorer_Var,

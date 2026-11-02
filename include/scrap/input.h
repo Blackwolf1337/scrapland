@@ -16,8 +16,6 @@
 #include "scrap/pyfunction.h"
 #include "scrap/scrap.h"
 
-extern cGVarFunction GVar_CheckInactivityFunc;
-
 #define MAX_LOCAL_PLAYERS 4
 #define NUM_SETS 4			/* action sets: menu, character, debug, vehicle */
 
@@ -77,7 +75,6 @@ extern cActionSetTable g_ActionSets;
 extern cPlayerInput g_PlayerInput[4];	/* [MAX_LOCAL_PLAYERS] */
 extern cVirtualKeyboard g_VirtualKeyboard;
 extern cPad g_Pads[4];		/* [MAX_LOCAL_PLAYERS] */
-extern uint32_t g_CurActionSet;	/* Input_GetActionSet */
 
 /* rva 0x133a30 is cString_EqStr on the name */
 static inline byte ActionSet_IsNamed(cActionSet *set, const char *name) {
@@ -104,45 +101,18 @@ void cPad_Rumble(cPad *pad, float a, float b, float c);
 /* rva 0x13a1b0: whether the action is pressed for the player */
 byte cInputAction_Pressed(cInputAction *a, int player);
 
-/* ActionSet.cpp (src/game/Input/ActionSet.c); the cInputAction functions also exist as loops over a set */
-void ActionTable_Init(cInputActionTable *t, int num);
-void ActionSetTable_Init(cActionSetTable *t, int num);
-void cInputAction_Init(cInputAction *a, const char *name, byte latch);
-void cActionSet_Init(cActionSet *s, int num, const char *name);
-void cPad_Init(cPad *pad, int index);
-void cPad_Update(cPad *pad);
-void cPad_Stop(cPad *pad);
 void cPlayerInput_MoveCursor(cPlayerInput *in, float dx, float dy);
 byte cPlayerInput_SetCursorChar(cPlayerInput *in, char c);
-void cPlayerInput_Clear(cPlayerInput *in);
 void Input_UpdateActions(void);
-void Input_ClearActions(void);
-void cInputAction_Shift(cInputAction *a);
-void cInputAction_Fire(cInputAction *a);
 byte cInputAction_Released(cInputAction *a, int player);
-void cInputAction_Clear(cInputAction *a);
-void cInputAction_Keep(cInputAction *a);
-void cInputAction_Latch(cInputAction *a);
-void cActionSet_Shift(cActionSet *s);
 void cActionSet_Fire(cActionSet *s);
-void cActionSet_Clear(cActionSet *s);
-void cActionSet_Keep(cActionSet *s);
-void cActionSet_Latch(cActionSet *s);
 byte cActionSet_AnyActive(cActionSet *s);
-void Input_OnTextDone(int player, const char *text);
 
 void cPlayerInput_PressKey(cPlayerInput *in, int player);
 void cActionSet_HoldPressed(cActionSet *s);
 cActionSetTable *ActionSets_ctor(cActionSetTable *sets);
-cInputAction *cInputAction_ctor(cInputAction *a);
-cActionSet *cActionSet_ctor(cActionSet *s);
 cPlayerInput *cPlayerInput_ctor(cPlayerInput *in);
-void ActionSetTable_Free(cActionSetTable *t);
-void cInputAction_dtor(cInputAction *a);
-void cActionSet_dtor(cActionSet *s);
 void cPlayerInput_dtor(cPlayerInput *in);
-cInputAction *cInputAction_Delete(cInputAction *a, uint32_t flags);
-cActionSet *cActionSet_Delete(cActionSet *s, uint32_t flags);
 
 /*
  * Input/IDevice.cpp: the devices. An entry is a key, button or half axis; sets[set] is the binding of it in that
@@ -220,157 +190,39 @@ typedef struct cInputDevNode {
 } cInputDevNode;
 typedef DLIST(cInputDevNode) cInputDevList;
 
-extern const cAbstractIDeviceVtbl cAbstractIDevice_vftable;
-#define CABSTRACTIDEVICE_VFTABLE (&cAbstractIDevice_vftable)
-extern const cGVarListVtbl cFuncGvarDevices_vftable;
-#define CFUNCGVARDEVICES_VFTABLE (&cFuncGvarDevices_vftable)
-extern const cAbstractIDeviceVtbl cPcKeyboard_vftable;
-#define CPCKEYBOARD_VFTABLE (&cPcKeyboard_vftable)
-extern const cAbstractIDeviceVtbl cPcMouse_vftable;
-#define CPCMOUSE_VFTABLE (&cPcMouse_vftable)
-extern const cAbstractIDeviceVtbl cPcPad_vftable;
-#define CPCPAD_VFTABLE (&cPcPad_vftable)
-
-/* the player, action and set waiting for the next key (SInput.ListenToDefine), -1 for none */
-extern int g_ToDefinePlayer;
-extern int g_ToDefineAction;
-extern uint32_t g_ToDefineSet;
-/* the XInput entries of the pad buttons and half axes in the order of the defaults */
-extern int g_PadCodes[24];	/* [24] */
-extern cGVar GVar_LogRumble;
-#define g_LogRumble (GVar_LogRumble.value.i)		/* LogRumble */
-extern cGVar GVar_CheckInactivityTime;
-#define g_InactivityTime (GVar_CheckInactivityTime.value.f)	/* CheckInactivityTime */
-#define g_InactivityTimeDef (GVar_CheckInactivityTime.def.f)
-#define g_InactivityFunc (((cPy_Function *)&GVar_CheckInactivityFunc.func))
-extern cPy_Function g_DefineFunc;	/* the function of ListenToDefine */
 extern cInputDevList g_InputDevices;
-extern cGVar GVar_PauseInactivityTime;
-#define g_PauseInactivity (GVar_PauseInactivityTime.value.i)	/* PauseInactivityTime */
 typedef void (*input_cb_t)(void);
-extern input_cb_t g_OnDefined;
-extern float g_InactivityTimer;
 
 cAbstractIDevice *cAbstractIDevice_ctor(cAbstractIDevice *self);
 cFuncGvarDevices *cFuncGvarDevices_ctor(cFuncGvarDevices *self, cAbstractIDevice *dev);
 void cAbstractIDevice_dtor(cAbstractIDevice *self);
-cAbstractIDevice *cAbstractIDevice_Delete(cAbstractIDevice *self, byte flags);
 byte cAbstractIDevice_SetEntry(cAbstractIDevice *self, int entry, int set, int player, int action, byte check);
-byte cAbstractIDevice_IsReserved(cAbstractIDevice *self, int entry);
-void cAbstractIDevice_ClearEntries(cAbstractIDevice *self);
-void cAbstractIDevice_GetEntry(cAbstractIDevice *self, int entry, int set, int *player, int *action);
 void cAbstractIDevice_InitEntries(cAbstractIDevice *self, int n);
 void cAbstractIDevice_SetValue(cAbstractIDevice *self, int entry, float value);
 void cAbstractIDevice_SetAxis(cAbstractIDevice *self, int entry, float value);
 byte cAbstractIDevice_IsReservedTrue(cAbstractIDevice *self, int entry);
 void cAbstractIDevice_SetGameDefaultsNop(cAbstractIDevice *self);
-void cFuncGvarDevices_Save(struct cFuncGvar *elem, void *f);
-void cFuncGvarDevices_Load(struct cFuncGvar *elem, void *f);
-void InputDevices_Clear(cInputDevList *list);
 void InputDevices_Add(cInputDevList *list, cAbstractIDevice **dev);
-void Input_CheckInactivity(float dt);
-int Input_ClearBinding(uint32_t player, int set, int action, byte check);
-const char *Input_FindBinding(uint32_t player, int set, int action, const char *device, byte check);
-int Input_ListBindings(uint32_t player, int set, int action, char *buf, int size, byte check);
-void Input_SetToDefine(int player, int action, uint32_t set);
-void Input_OnDefined(void);
 void Input_UpdateDevices(float dt);
 void Input_ResetInactivity(void);
-void Input_SetDefineCallback(void (*f)(void));
-void Input_SetDefineFunc(const char *func);
 void Device_SetEntries(cAbstractIDevice *d, const byte (*t)[3], int n);
 
 extern byte g_InputOpen;		/* the devices are open (Input_OpenDevices, not on a dedicated server) */
 
-/* Input/PcKeyboard.cpp */
-extern cPcKeyboard g_Keyboard;
-extern char g_KeyState[256];		/* [256] DIK_ */
-cPcKeyboard *cPcKeyboard_ctor(cPcKeyboard *self);
-cPcKeyboard *cPcKeyboard_Delete(cPcKeyboard *self, byte flags);
-byte cPcKeyboard_SetEntry(cPcKeyboard *self, int entry, int set, int player, int action, byte check);
-const char *cPcKeyboard_GetName(cPcKeyboard *self);
-const char *cPcKeyboard_GetEntryName(cPcKeyboard *self, int entry);
-const char *cPcKeyboard_GetEntryLabel(cPcKeyboard *self, int entry);
-void cPcKeyboard_SetDefaults(cPcKeyboard *self);
 void Keyboard_Init(void);
-void cPcKeyboard_Update(cPcKeyboard *self, float dt);
-void cPcKeyboard_SetGameDefaults(cPcKeyboard *self);
-int32_t Keyboard_Poll(void);
-byte cPcKeyboard_IsReserved(cPcKeyboard *self, int entry);
 
-/* Input/PcMouse.cpp */
-extern cGVar GVar_MouseSensitivityH;
-#define g_MouseSensH (GVar_MouseSensitivityH.value.f)		/* MouseSensitivityH */
-extern cGVar GVar_MouseSensitivityV;
-#define g_MouseSensV (GVar_MouseSensitivityV.value.f)		/* MouseSensitivityV */
-extern cGVar GVar_InvertMouse;
-#define g_InvertMouse (GVar_InvertMouse.value.i)		/* InvertMouse */
-extern cPcMouse g_Mouse;
 /* DIMOUSESTATE */
 typedef struct exe_mouse_state {
 	int32_t x, y, z;		/* 0x0 */
 	char buttons[4];		/* 0xc */
 } exe_mouse_state;
-extern exe_mouse_state g_MouseState;
 extern cGVar GVar_IsUsingMouse;
 #define g_IsUsingMouse (GVar_IsUsingMouse.value.i)		/* IsUsingMouse */
-cPcMouse *cPcMouse_ctor(cPcMouse *self);
-cAbstractIDevice *cPcMouse_Delete(cAbstractIDevice *elem, byte flags);
 void Mouse_Acquire(byte on);
-byte cPcMouse_SetEntry(cAbstractIDevice *self, int entry, int set, int player, int action, byte check);
-const char *cPcMouse_GetName(cAbstractIDevice *self);
-const char *cPcMouse_GetEntryName(cAbstractIDevice *self, int entry);
-const char *cPcMouse_GetEntryLabel(cAbstractIDevice *self, int entry);
-void cPcMouse_SetDefaults(cAbstractIDevice *self);
 void Mouse_Init(void);
-void cPcMouse_Update(cAbstractIDevice *elem, float dt);
-void cPcMouse_SetGameDefaults(cAbstractIDevice *self);
-int32_t Mouse_Poll(void);
-byte cPcMouse_IsReserved(cAbstractIDevice *self, int entry);
 
-/* Input/PcPad.cpp: XInput pads */
-extern cGVar GVar_MainPcPad;
-#define g_MainPcPad (GVar_MainPcPad.value.i)		/* MainPcPad: the pad of player 0, -1 all */
-extern cGVar GVar_PCPadDeadZone;
-#define g_PadDeadZone (GVar_PCPadDeadZone.value.f)	/* PCPadDeadZone */
-extern cGVar GVar_PCPadConnected;
-#define g_PCPadConnected (GVar_PCPadConnected.value.i)	/* PCPadConnected */
-extern cPcPad g_PcPads[4];		/* [4] */
-extern cGVar GVar_PCPadForeground;
-#define g_PadForeground (GVar_PCPadForeground.value.i)	/* PCPadForeground: read only while the window is in front */
-extern int g_NumPcPads;
 extern cGVar GVar_WalkCameraCenter;
 #define g_WalkCameraCenter (GVar_WalkCameraCenter.value.f)	/* WalkCameraCenter */
-extern cGVar GVar_XBCDigitalAsAnalog;
-#define g_XBCDigitalAsAnalog (GVar_XBCDigitalAsAnalog.value.i)
-extern cGVar GVar_XBCameraAutoPad;
-#define g_XBCameraAutoPad (GVar_XBCameraAutoPad.value.i)
-extern cGVar GVar_XBInvertCharYPad;
-#define g_XBInvertCharYPad (GVar_XBInvertCharYPad.value.i)
-extern cGVar GVar_XBInvertLRChar;
-#define g_XBInvertLRChar (GVar_XBInvertLRChar.value.i)
-extern cGVar GVar_XBInvertLRVehicle;
-#define g_XBInvertLRVehicle (GVar_XBInvertLRVehicle.value.i)
-extern cGVar GVar_XBInvertVehicleYPad;
-#define g_XBInvertVehicleYPad (GVar_XBInvertVehicleYPad.value.i)
-extern cGVar GVar_XBVDigitalAsAnalog;
-#define g_XBVDigitalAsAnalog (GVar_XBVDigitalAsAnalog.value.i)
-extern cGVar GVar_XBVehicleAsFPS;
-#define g_XBVehicleAsFPS (GVar_XBVehicleAsFPS.value.i)
-cPcPad *cPcPad_ctor(cPcPad *self, int index);
-cAbstractIDevice *cPcPad_Delete(cAbstractIDevice *elem, byte flags);
-void Pad_DeadZone(float *x, float *y, float dz);
-byte cPcPad_SetEntry(cAbstractIDevice *elem, int entry, int set, int player, int action, byte check);
-void cPcPad_SetVehicleDefaults(cPcPad *self);
-void cPcPad_SetCharDefaults(cPcPad *self);
-const char *cPcPad_GetName(cAbstractIDevice *base);
-const char *cPcPad_GetEntryName(cAbstractIDevice *elem, int entry);
-const char *cPcPad_GetEntryLabel(cAbstractIDevice *base, int entry);
 int Pad_Init(void);
-void cPcPad_SetDefaults(cAbstractIDevice *base);
-void cPcPad_Update(cAbstractIDevice *elem, float dt);
-void cPcPad_SetGameDefaults(cPcPad *self);
-uint32_t Pad_Poll(int index);
-byte cPcPad_IsReserved(cPcPad *self, int entry);
 
 #endif

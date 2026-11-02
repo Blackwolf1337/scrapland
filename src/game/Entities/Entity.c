@@ -14,6 +14,9 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/world.h"
 
+#define CENTITY_VFTABLE (&cEntity_vftable)
+static const cEntityVtbl cEntity_vftable;
+
 #define ENTITY_CLASSNAME "Entity"
 
 /* the variable methods of the AI (from vtable slot 7) and of the local logic (from slot 3) */
@@ -127,7 +130,7 @@ void cEntity_dtor(cEntity *self) {
 	cString_dtor((cString *)&self->name);
 }
 
-cEntity *cEntity_Delete(cEntity *self, uint32_t flags) {
+static cEntity *cEntity_Delete(cEntity *self, uint32_t flags) {
 	cEntity_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cEntity));
@@ -135,7 +138,8 @@ cEntity *cEntity_Delete(cEntity *self, uint32_t flags) {
 	return self;
 }
 
-void EntityDList_Add(void *head, EntityDNode *node) {
+/* node joins the ring of head and counts in its numElems */
+static void EntityDList_Add(void *head, EntityDNode *node) {
 	EntityDNode *h = head;
 
 	CHECK(node->numElems == NULL);
@@ -154,7 +158,7 @@ void cEntity_CollisionOff(cEntity *self) {
 	}
 }
 
-void cEntity_CollisionOn(cEntity *self) {
+static void cEntity_CollisionOn(cEntity *self) {
 	if (!self->mask) {
 		self->mask = self->savedMask;
 		self->savedMask = 0;
@@ -223,10 +227,6 @@ char *cEntity_GetListName(cEntity *self) {
 	return list ? *list : NULL;
 }
 
-cEntity *cEntity_NextInList(cEntity *self) {
-	return Node_Entity(self->listNode.node.next);
-}
-
 cEntity *cEntity_Next(cEntity *e) {
 	return Node_Entity(e->worldNode.next);
 }
@@ -243,7 +243,7 @@ void cEntity_GetTargetAngle(cEntity *self, float *ang, float dist, cEntity **tar
 	*target = NULL;
 }
 
-const char *cEntity_GetClassName(cEntity *self) {
+static const char *cEntity_GetClassName(cEntity *self) {
 	(void)self;
 	return ENTITY_CLASSNAME;
 }
@@ -460,22 +460,6 @@ byte cEntity_TestLine(cEntity *self, const vec3_t *from, vec3_t *hit) {
 	return 0;
 }
 
-byte cEntity_TestSphere(cEntity *self, cEntity *exclude, const vec3_t *center, float radius, int arg) {
-	(void)self;
-	(void)exclude;
-	(void)center;
-	(void)radius;
-	(void)arg;
-	return 0;
-}
-
-void cEntity_Vf11(cEntity *self, int a, int b, int c) {
-	(void)self;
-	(void)a;
-	(void)b;
-	(void)c;
-}
-
 void cEntity_Vf20(cEntity *self) {
 	(void)self;
 }
@@ -487,7 +471,7 @@ int cEntity_Vf21(cEntity *self, int a) {
 }
 
 /* the vtable of cEntity */
-const cEntityVtbl cEntity_vftable = {
+static const cEntityVtbl cEntity_vftable = {
 	.Update = cEntity_Update,
 	.Render = cEntity_Render,
 	.UpdateOff = cEntity_UpdateOff,

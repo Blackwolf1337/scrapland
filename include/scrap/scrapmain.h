@@ -21,9 +21,6 @@
 #include "scrap/scrapworld.h"
 #include "scrap/table.h"
 
-extern cGVar GVar_ModelAmbient;
-extern cGVar GVar_PlayVideo;
-
 /* CMotorApp of Engine/Motor.cpp, 0x2a600 bytes (g_Engine3D, also g_Engine as its CD3DApplication) */
 typedef struct CEngineApp {
 	CD3DApplication base;			/* 0x00000 */
@@ -72,81 +69,27 @@ void CPsaImage_DrawFrame(CPsaImage *self, int frame, float x, float y);
 /* with the mirror modes 0..3 of the sprite (mode) and of the image (flip) */
 void CPsaImage_DrawFrameFlip(CPsaImage *self, int frame, float x, float y, int mode, int flip);
 
-/* the state of the engine glue */
-extern CGameCamera *g_CamCurrent;	/* the camera drawn */
-extern CGameCamera *g_ViewerCamera;	/* gViewerCamera, made with the engine */
-extern CPsaImage *g_Watermark;
 /* the callbacks of Engine_SetCallback (1..4): before each frame, after the frame setup, two more */
 extern typeof(void (*)(void)) g_EngCallbacks[4];	/* [4], 2 and 3 are g_LoadingDraw2 and g_LoadingDraw */
 extern byte g_DrawProgressBar;
-extern byte g_ResetPending;	/* Video_SetCurrentMode: reset the device at the next frame */
 #define g_ProgressBarCount g_LoadingCount
-extern void *g_MapTextDataFile;	/* FILE of the exe's CRT */
-extern int g_MapTextSaving;
-extern int g_VideoBufferSize;
 extern byte g_CallbacksOn;
 extern char g_ScreenshotName[256];	/* 0x100 */
-extern char g_DVFName[256];		/* 0x100 */
 extern int g_BspSectorSeen;
 #define g_VideoStatus g_BspSectorSeen
-extern int g_LoadingScreen;	/* the last random loading screen */
 extern char str_M3dIni[128];
 #define g_M3dIni str_M3dIni		/* "m3d.ini" */
 /* the video to play at the start and after a level ("" when played, unless bit 0 of its flags) */
-#define g_StartVideo (((cString *)&GVar_PlayVideo.value))
-#define g_StartVideoFlags (GVar_PlayVideo.base.flags)
 extern cGVar GVar_isDemo;
 #define g_IsDemo (GVar_isDemo.value.i)
 extern cGVar GVar_isXbox;
 #define g_IsXbox (GVar_isXbox.value.i)
 extern const int g_EngineVersion;
 
-/* m3d.ini of the level (Engine_LoadIni) */
-extern char g_GroundPath[260];	/* [suelo] ruta_m3d, 0x104 */
-extern vec3_t g_GroundScale;
-extern ColorIntens g_ModelAmbientIni;	/* [suelo] model_ambient */
-extern float g_ClipNear;		/* [camara] forzar_clipNear */
-extern float g_ClipFar;
-extern char g_SkyPath[260];	/* [cielo], 0x104 */
-extern float g_SkyPosScaleIni;
-extern float g_SkyRotationIni;
-extern int g_FogActiveIni;	/* [niebla] */
-extern int g_FogTableMode;
-extern int g_FogLinear;
-extern float g_FogRangeIni;
-extern float g_FogRangeEnd;
-extern float g_FogDensityIni;
-extern ColorIntens g_FogColorIni;
 extern int g_GroundTrisPerNode;
 
-/* the engine variables (Gvars) */
-extern cGVar GVar_RenderLightmap;
-#define g_RenderLightmap (GVar_RenderLightmap.value.i)
-extern cGVar GVar_CollisionEpsilon;
-#define g_GvCollisionEpsilon (GVar_CollisionEpsilon.value.f)	/* CollisionEpsilon */
-extern cGVar GVar_FullScreen;
-#define g_FullScreen (GVar_FullScreen.value.i)
-extern cGVar GVar_ComputeMapTextSaving;
-#define g_ComputeMapTextSaving (GVar_ComputeMapTextSaving.value.i)
-extern cGVar GVar_ViewerCameraAnim;
-#define g_ViewerCameraAnim (GVar_ViewerCameraAnim.value.i)
-extern cGVar GVar_ShowMapCollision;
-#define g_ShowMapCollision (GVar_ShowMapCollision.value.i)
-extern cGVar GVar_ShowMapWireFrame;
-#define g_ShowMapWireFrame (GVar_ShowMapWireFrame.value.i)
-extern cGVar GVar_RenderUseVB;
-#define g_RenderUseVB (GVar_RenderUseVB.value.i)
-extern cGVar GVar_RenderModels;
-#define g_RenderModels (GVar_RenderModels.value.i)
-#define g_ModelAmbient (GVar_ModelAmbient.value.u)	/* D3D color, 0: the one of m3d.ini */
 extern cGVar GVar_TimerFreqMult;
 #define g_TimerFreqMult (GVar_TimerFreqMult.value.i)
-extern cGVar GVar_VideoWidth;
-#define g_VideoWidth (GVar_VideoWidth.value.i)
-extern cGVar GVar_VideoHeight;
-#define g_VideoHeight (GVar_VideoHeight.value.i)
-extern cGVar GVar_VideoBPP;
-#define g_VideoBPP (GVar_VideoBPP.value.i)
 extern cGVar GVar_VSync;
 #define g_VSync (GVar_VSync.value.i)
 extern cGVar GVar_ShowSplashScreen;
@@ -166,17 +109,12 @@ extern int g_LightmapOff;
 extern int g_CalcLmap2;		/* [mapa_sombras] calc_lmap2 */
 extern int g_MaxLightmap;
 extern int g_TimerQPMult;
-extern byte g_MapTextSavingOn;
 extern byte g_VertexSpecular;
 extern cGVar GVar_R_UseMLOD;
 #define g_RenderFlag6e0 (GVar_R_UseMLOD.value.i)	/* taken from 0x4ae6e4 at the start */
 #define g_RenderFlag6e4 (GVar_R_UseMLOD.def.i)
 
 void Engine_Close(void);
-/* the three callbacks of the engine: once after the device, each frame, at the end */
-byte Engine_OneTimeInit(void);
-byte Engine_FrameMove(void);
-byte Engine_FinalCleanup(void);
 void Engine_Init(void);
 /* 1 while Engine_Init, Engine_LevelEnd or Video_PlayStart waits for its video (the message loop plays it) */
 int Engine_VideoWait(void);
@@ -188,32 +126,16 @@ void Engine_LevelLoaded(void);
 void Engine_LevelEnd(void);
 void Engine_Render(void);
 byte Engine_FrameSetup(void);
-byte Engine_DebugKeys(void);
-void Engine_ResetAll(void);
-void Engine_ResetTextures(void);
-/* the options of Engine_Option (rva 0x214a30, ScrapEngWorld.cpp) */
-int Engine_GetOption(int opt);
-int Engine_SetOption(int opt, int value);
 int Engine_ToggleOption(int opt);
 void Engine_SetCallback(void (*fn)(void), int which);
 char *Engine_SetIniName(const char *name);
 void Engine_SetGround(const char *dir, const char *name, const vec3_t *scale);
-/* m3d.ini: [suelo], [camara], [cielo], [niebla], [mapa_sombras], [sombras_stencil], [flares], [texturas] */
-void Engine_LoadIni(const char *name, const char *dir);
 const void *Eng_Identity(const void *v);
 
 CGameCamera *Camera_GetCurrent(void);
 void Camera_SetCurrent(CGameCamera *cam);
-/* camera.set: position, angles and target of the camera, save != 0 writes it */
-void Camera_SaveRestore(CGameCamera *cam, byte save);
 
-/* the bits of the color of a D3DFORMAT (32 or 16, 0 for the others) */
-int Format_Bpp(int fmt);
 int Video_GetStatus(void);
-/* the start video played if there is one (play != 0) */
-byte Video_PlayStart(byte play);
-/* escape, space or enter held */
-byte Keys_SkipPressed(void);
 
 /* a random loading screen name of the level into buf (with a %02d for the number) */
 void Loading_RandomName(char *buf, int size);
@@ -223,74 +145,29 @@ void Loading_Fade(void);
  * into depth (NULL or 1 float); 0 when |x| or |y| reach w, then out is the direction to pos at the edge */
 /* the direction of pos from the middle of the screen at the edge of the screen */
 void Engine_DirToScreen(const vec3_t *pos, float *dest);
-void Eng_Printf3D(const vec3_t *pos, const char *fmt, ...);
-void Eng_PrintfRel(int dx, int dy, const char *fmt, ...);
-void Eng_PrintfXY(int x, int y, const char *fmt, ...);
 int Eng_RenderTargetEnd(void);
 int Eng_RenderTargetBegin(const char *name);
 byte Eng_ResetViewRect(void);
 /* the view in 640 x 480 coordinates */
 byte Eng_SetViewRect(float x, float y, float w, float h);
 
-void GVar_SetIntVerbose(cGVar *v, int value);
 int Timer_GetFreq64(int64_t *out);
 int Timer_GetQPFreq64(int64_t *out);
-byte Wild_MatchCase(const char *pattern, const char *name, byte ignoreCase);
-void Ini_GetColor(const char *sect, const char *key, ColorIntens *color, CIniFile *ini);
-/* the path of key relative to the directory of base into dest; 0 or -1 */
-int Ini_GetPath(const char *sect, const char *key, char *dest, int size, const char *base, CIniFile *ini);
 
-/* DebugUtils.cpp (src/game/ScrapEng/DebugUtils.c): util_d3d.cpp lines with the identity of 0x431b10 */
-void DebugUtils_DrawAxes(const matrix_t *m, const vec3_t *pos, float size);	/* red, green, blue */
-void DebugUtils_DrawPoint(const vec3_t *pos, float size, uint32_t color);
 /* a sphere of lines: divV rings, divH segments */
 void DebugUtils_DrawSphere(const vec3_t *c, float r, uint32_t color, int divV, int divH);
 void DebugUtils_DrawBox(const vec3_t *mn, const vec3_t *mx, uint32_t color);
 void DebugUtils_DrawLine(const vec3_t *a, const vec3_t *b, uint32_t color);
 void DebugUtils_DrawTri(const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color);
-/* divV meridians, divH (0: divV) parts of each, the axes at the center */
-void DebugUtils_DrawSphereM(const matrix_t *m, const vec3_t *c, float r, uint32_t color, int divV, int divH);
 
 /* other modules (src/imports.inc) */
 /* the CMotorApp made (arg 0) or freed (Engine/Motor.cpp, src/game/engine3d/Engine/Engine.c) */
 void Engine3D_Create(void *hInst, void *hWnd, void *init, void *frame, void *release, int arg);
 void Engine3D_Shutdown(void);
-CEngineApp *CEngineApp_ctor(CEngineApp *self);
-/* the ini name (in dir, NULL for the game directory) into the variables of the engine */
-void Engine_LoadVarsIni(const char *name, const char *dir);
-void Scene_LogTree(CScene *scn, CNode3D *node, int indent);
-/* a command of the debug console of the engine: listar, listar lights, arbol <scene>, ver uniones */
-void E3D_Command(char *cmd);
 void CEngineApp_UpdateMenu(CEngineApp *self);
-int CEngineApp_InitDeviceObjects(CD3DApplication *elem);
-int CEngineApp_ConfirmDevice(CD3DApplication *base, D3DCaps8 *caps, uint32_t behavior, uint32_t format);
-int CEngineApp_RestoreDeviceObjects(CD3DApplication *base);
-int CEngineApp_OneTimeSceneInit(CD3DApplication *base);
-int CEngineApp_FrameMove(CD3DApplication *elem);
-/* Render (vtable 0x18): the frame, 1 to quit; at once 0 while Engine_FrameDue is 0 */
-int CEngineApp_Render(CD3DApplication *elem);
-/* the reset of the device objects that g_ResetDev asks for, the HRESULT */
-int CEngineApp_ResetDevice(CEngineApp *self);
 /* 0 while the frame limiter (limitaFPS, R_LimitFPS; none with vsync) holds the next frame back */
 byte Engine_FrameDue(CD3DApplication *self);
-int CEngineApp_DeleteDeviceObjects(CD3DApplication *base);
-int CEngineApp_FinalCleanup(CD3DApplication *base);
 int CD3DApplication_Nothing(CD3DApplication *self);
-char *Engine_ColorStr(const byte *c);
-const char *Engine_BoolStr(int b);
-CWorld *World_GetChecked(void);
-/* the statistics on the screen by R_Profiler: 1 fps, 2 camera and lights, 3 memory, 4 frame time graph, 5 profiler */
-void Engine_DrawStats(void);
-/* the frame time graph at the bottom, the fps text at y */
-void Engine_DrawFpsGraph(float y);
-/* the modal dialog of the global scene: its counts and a tree of the nodes, the node selected in the tree */
-void Engine_ReleaseScene(CEngineApp *self);
-void Engine_GetScene(CEngineApp *self);
-CNullInput *CNullInput_Delete(CNullInput *self, byte flags);
-int CNullInput_Nothing3(CNullInput *self, int a, int b, int c);
-int CNullInput_Nothing1(CNullInput *self, int a);
-int CNullInput_Nothing(CNullInput *self);
-void CNullInput_Nothing4(CNullInput *self, int a, int b, int c, int d);
 int CD3DApp_Cleanup(CD3DApplication *self);
 int CD3DApp_Render(CD3DApplication *self);
 int CD3DApp_ResetDevice(CD3DApplication *self);
@@ -302,16 +179,7 @@ void ShadowsStencil_Set(byte on);
 CPsaImage *CPsaImage_ctor(CPsaImage *self, const char *name, int flags);
 void CPsaImage_dtor(CPsaImage *self);
 void CPsaImage_Draw(CPsaImage *self, float x, float y);
-/* ScrapEngSprite2D.cpp, the rest (src/game/ScrapEng/ScrapEngSprite2D.c) */
-void CPsaImage_Init(CPsaImage *self);
-CPsaImage *CPsaImage_ctorEmpty(CPsaImage *self);
-void CPsaImage_DrawScaled(CPsaImage *self, float x, float y, float scale);
-/* the CGraphic2D of the sheet name (opac: the opacity map) with a blend mode (BlendMode_*) and the SPR2D flags */
-void CPsaImage_Load(CPsaImage *self, const char *name, const char *opac, int blend, uint32_t flags);
-void CPsaImage_LoadName(CPsaImage *self, const char *name, uint32_t flags);
 /* the camera of ScrapEngCamera.cpp */
-/* the viewer camera moved by the keys of the second action set (rva 0x218080, this file, still the exe's) */
-void ViewerCamera_Move(CGameCamera *cam);
 /* Cmd_ReadFile: cmd.h */
 
 #endif

@@ -4,6 +4,9 @@
  */
 #include "scrap/scoreritems.h"
 
+#define CSLIDERSCORER_VFTABLE (&cSliderScorer_vftable)
+static const cScorerItemVtbl cSliderScorer_vftable;
+
 static const char *const s_SliderColors[4] = {"Red", "Green", "Blue", "Alpha"};
 
 cSliderScorer *cSliderScorer_ctor(cSliderScorer *self) {
@@ -30,7 +33,7 @@ cSliderScorer *cSliderScorer_ctor(cSliderScorer *self) {
 	return self;
 }
 
-void cSliderScorer_dtor(cSliderScorer *self) {
+static void cSliderScorer_dtor(cSliderScorer *self) {
 	self->base.vftable = CSLIDERSCORER_VFTABLE;
 	if (self->img) {
 		ScorerImg_Free(self->img);
@@ -40,7 +43,7 @@ void cSliderScorer_dtor(cSliderScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cScorerItem *cSliderScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cSliderScorer_Delete(cScorerItem *base, byte flags) {
 	cSliderScorer *self = (cSliderScorer *)base;
 	cSliderScorer_dtor(self);
 	if (flags & 1) {
@@ -49,11 +52,11 @@ cScorerItem *cSliderScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-void cSliderScorer_SetFile(cSliderScorer *self, uint32_t flags, const char *file) {
+static void cSliderScorer_SetFile(cSliderScorer *self, uint32_t flags, const char *file) {
 	self->img = ScorerImg_Replace(self->img, file, self->blend, flags);
 }
 
-int cSliderScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+static int cSliderScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cSliderScorer *self = (cSliderScorer *)base;
 	int r;
 
@@ -135,7 +138,7 @@ int cSliderScorer_Var(cScorerItem *base, const char *name, int set, char **s, do
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void cSliderScorer_Draw(cScorerItem *base, int player) {
+static void cSliderScorer_Draw(cScorerItem *base, int player) {
 	cSliderScorer *self = (cSliderScorer *)base;
 	float uv0[2], uv1[2], suv0[2], suv1[2];
 	float frac, bw, bh, sw, sh, m;
@@ -202,7 +205,7 @@ void cSliderScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cSliderScorer */
-const cScorerItemVtbl cSliderScorer_vftable = {
+static const cScorerItemVtbl cSliderScorer_vftable = {
 	.Draw = cSliderScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cSliderScorer_Var,

@@ -31,12 +31,7 @@ typedef struct cVehicleAttack {
 	float resetTime;		/* 0x78 the world time the shots on the target are dropped */
 } cVehicleAttack;
 
-extern cGVar GVar_WeapHitClientResetTime;
-#define g_VehicleAttackReset (GVar_WeapHitClientResetTime.value.f)	/* the time the shots on a target are kept */
-
 cVehicleAttack *cVehicleAttack_ctor(cVehicleAttack *self);
-/* in WithLifeEntity.c */
-void cVehicleAttack_dtor(cVehicleAttack *self);
 /* drops the target after its reset time */
 void cVehicleAttack_Expire(cVehicleAttack *self);
 /* the entity of the hit info, "" for none */

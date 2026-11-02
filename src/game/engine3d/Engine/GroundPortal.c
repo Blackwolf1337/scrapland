@@ -20,27 +20,37 @@
 #include "scrap/misc.h"
 #include "scrap/staticinit.h"
 
+#define g_SectorCache (GVar_R_PortalPos.value.i)	/* the cached sector is used when the position is the same */
+#define g_PortalTest (GVar_R_PortalExt.value.i)	/* the screen rectangle test; 2: drawn */
+#define g_PortalFront (GVar_R_PortalNorm.value.i)	/* portals the camera is in front of beyond the near distance are skipped */
+#define g_PortalExterior (GVar_R_PortalEnd.value.i)	/* exterior sectors do not look into interior ones */
+#define g_PortalNear (GVar_R_PortalDist.value.f)	/* the near distance of the portals, times zNear / 256 * 128 */
+static cGVar GVar_R_PortalPos;
+static cGVar GVar_R_PortalNorm;
+static cGVar GVar_R_PortalExt;
+static cGVar GVar_R_PortalEnd;
+static cGVar GVar_R_PortalDist;
+
 #define PORTAL_ASPECT 1.33f			/* the screen height of a sphere */
 #define PORTAL_EPS 8.0e-6f			/* the step out of a portal, times the distance to the origin */
 #define MAX_ZONES 0x80
 
-CZone *g_Zones[128];
-int g_NumZones;
-int g_PortalUnion;
-int g_NumEndSectors;
-int g_NumOutSectors;
+static CZone *g_Zones[128];
+static int g_NumZones;
+static int g_PortalUnion;
+static int g_NumEndSectors;
+static int g_NumOutSectors;
 
 /* the sector counts by their name tags (the sky ones are g_PortalUnion) */
-cGVar GVar_R_PortalClip;
+static cGVar GVar_R_PortalClip;
 
 /* the projection and the viewport narrowed to the rectangle of each seen sector */
 #define g_PortalClip (GVar_R_PortalClip.value.i)
-cGVar GVar_R_PortalBand;
+static cGVar GVar_R_PortalBand;
 
 #define g_PortalBand (GVar_R_PortalBand.value.i)	/* pixels added around it */
 
-
-CZone *CZone_ctor(CZone *self) {
+static CZone *CZone_ctor(CZone *self) {
 	self->rect = (box_t){ { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
 	self->id = -1;
 	self->locked = 0;
@@ -58,7 +68,7 @@ CZone *CZone_ctor(CZone *self) {
 	return self;
 }
 
-void CZone_dtor(CZone *self) {
+static void CZone_dtor(CZone *self) {
 	if (self->node) {
 		ObjRef_Release(&self->node);
 	}
@@ -105,6 +115,7 @@ draw:
 }
 
 /* the cached sector is seen (none counts as seen) */
+static CZone *Sector_Get(uint32_t sector);
 static byte SectorVis_Seen(SectorVis *self) {
 	self->flags |= SECTORVIS_CACHED;
 	if (self->sector < 0) {
@@ -184,22 +195,6 @@ byte Sector_IsVisible(int sector) {
 	return Sector_Get((uint32_t)sector)->Frame3D == g_FrameCount;
 }
 
-CZone *Zone_FindNode(CNode3D *node, byte main) {
-	for (int i = 0; i < g_NumZones; i++) {
-		CZone *z = g_Zones[i];
-		if (!main) {
-			for (int k = 0; k < z->numNodes; k++) {
-				if (z->nodes[k] == node) {
-					return z;
-				}
-			}
-		} else if (node == z->node) {
-			return z;
-		}
-	}
-	return NULL;
-}
-
 int Sector_OfNode(CNode3D *node) {
 	for (; node; node = node->parent) {
 		int s = Sector_Find(node->name);
@@ -219,7 +214,7 @@ int Sector_Find(const char *name) {
 	return -1;
 }
 
-CZone *Sector_Get(uint32_t sector) {
+static CZone *Sector_Get(uint32_t sector) {
 	CHECK(sector < (uint32_t)g_NumZones);
 	CHECK(g_Zones[sector]);
 	return g_Zones[sector];
@@ -242,7 +237,8 @@ void Sectors_FreeAll(void) {
 	g_NumZones = 0;
 }
 
-byte Portal_Project(const vec3_t *p, float *out, float *w) {
+/* the screen position (-1..1) of p and its w; 0 outside the view (out then the direction to p on the border) */
+static byte Portal_Project(const vec3_t *p, float *out, float *w) {
 	matrix_t vp;
 	Matrix_MulD3D(&vp, Render_GetView(), Render_GetProj());
 	const float *m = vp.m;
@@ -387,7 +383,8 @@ int Sector_Traverse(int sector, const vec3_t *a, const vec3_t *b, byte front) {
 
 int g_NumPaintZones;
 
-void Zone_Paint(uint32_t zone, const box_t *rect) {
+/* sector seen through rect, and the sectors behind its portals through their part of it */
+static void Zone_Paint(uint32_t zone, const box_t *rect) {
 	CHECK(zone < (uint32_t)g_NumZones);
 	CHECK(g_Zones[zone]);
 	CHECK(g_Zones[zone]->locked == 0);
@@ -470,6 +467,7 @@ void Zone_Paint(uint32_t zone, const box_t *rect) {
 	g_Zones[zone]->locked = 0;
 }
 
+static void Portals_DebugDraw(void);
 void Portals_Cull(uint32_t sector) {
 	if (!g_NumZones) {
 		return;
@@ -514,7 +512,7 @@ PaintZone g_PaintAll;
 
 /* the static initializer (rva 0x05d6f0, the constructor inlined) and the atexit destructor of
  * (&g_PaintAll) */
-void GroundPortal_FiniPaintAll(void) {
+static void GroundPortal_FiniPaintAll(void) {
 	PaintZone_dtor((&g_PaintAll));
 }
 
@@ -523,7 +521,8 @@ void GroundPortal_InitPaintAll(void) {
 	crt_atexit(GroundPortal_FiniPaintAll);
 }
 
-void Portals_DebugDraw(void) {
+/* the debug drawing of the seen sectors (gvRenderShowPortals 2, 3 also their rectangles as text) */
+static void Portals_DebugDraw(void) {
 	uint32_t vp[6];
 	void *dev;
 
@@ -740,11 +739,11 @@ byte Portals_SetView(const PaintZone *zp) {
 	return 1;
 }
 
-cGVar GVar_R_PortalNorm;
-cGVar GVar_R_PortalPos;
-cGVar GVar_R_PortalDist;
-cGVar GVar_R_PortalExt;
-cGVar GVar_R_PortalEnd;
+static cGVar GVar_R_PortalNorm;
+static cGVar GVar_R_PortalPos;
+static cGVar GVar_R_PortalDist;
+static cGVar GVar_R_PortalExt;
+static cGVar GVar_R_PortalEnd;
 cGVar GVar_R_ShowPortals;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -9,11 +9,17 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/staticinit.h"
 
-cEntity *g_MayorEnt;
+#define g_MayorListenPercent (GVar_MayorListenPercent.value.f)
+#define g_MayorSleepPercent (GVar_MayorSleepPercent.value.f)
+static cGVar GVar_MayorSleepPercent;
+static cGVar GVar_MayorListenPercent;
+
+/* the characters of the running actions (the "MeEnt" CHECKs), the nurse by name and the character it hits */
+static cEntity *g_MayorEnt;
 
 /* params: the listener, an event, a float. It stops listening (its logic goes on, Relax) unless its mayor still
  * talks near it and in sight */
-void ChType_ListeningMayor(cAbstractFile *params) {
+static void ChType_ListeningMayor(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 	vec3_t t1, t2;
 
@@ -53,7 +59,8 @@ void ChType_ListeningMayor(cAbstractFile *params) {
 
 /* params: the mayor, an event, a float: ChType_MayorSphereHit for the characters in his radius, Relax again once
  * the button is up */
-void ChType_MayorEndAction(cAbstractFile *params) {
+static void ChType_MayorSphereHit(cAbstractFile *params);
+static void ChType_MayorEndAction(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 	vec3_t tmp;
 
@@ -73,7 +80,7 @@ void ChType_MayorEndAction(cAbstractFile *params) {
 /* the sphere test of MayorEndAction: params a character. One whose logic listens to the mayor starts MayorListen
  * (always for the player, else by MayorListenPercent and not when busy), with the alarm on or for a sentinel of the
  * player it falls asleep (by MayorSleepPercent for an AI mayor) */
-void ChType_MayorSphereHit(cAbstractFile *params) {
+static void ChType_MayorSphereHit(cAbstractFile *params) {
 	char name[0x80];
 
 	CHECK(g_MayorEnt);
@@ -123,11 +130,11 @@ sleep:
 	cActCtrl_Play(ChType_ActCtrl(e), "Dazed", 1, 10.0f);
 }
 
-cGVar GVar_MayorListenPercent;
-cGVar GVar_MayorSleepPercent;
+static cGVar GVar_MayorListenPercent;
+static cGVar GVar_MayorSleepPercent;
 cGVar GVar_MayorBlabliblaRadius;
-cPy_NativeFunc NativeFunc_MayorEndAction;
-cPy_NativeFunc NativeFunc_ListeningMayor;
+static cPy_NativeFunc NativeFunc_MayorEndAction;
+static cPy_NativeFunc NativeFunc_ListeningMayor;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_MayorBlabliblaRadius, &GVar_MayorBlabliblaRadius, "MayorBlabliblaRadius", 0, "Radius of Mayor´s Bla-Blas.", 1000.0f)

@@ -8,6 +8,11 @@
 #include "scrap/vehicletraffic.h"
 #include "scrap/staticinit.h"
 
+#define g_UseTrafficCollisionSkip (GVar_UseTrafficCollisionSkip.value.i)
+#define g_TrafficSpeed (GVar_TrafficSpeed.value.f)
+static cGVar GVar_UseTrafficCollisionSkip;
+static cGVar GVar_TrafficSpeed;
+
 /* the type names of the exe */
 #define VT_HEAVY "Heavy"
 #define VT_MEDIUM "Medium"
@@ -184,8 +189,9 @@ byte cVehicleTraffic_VarV(cVehicleTraffic *self, const char *name, double *x, do
 	return 0;
 }
 
-cGVar GVar_UseTrafficCollisionSkip;
-cGVar GVar_TrafficSpeed;
+/* the engine variables */
+static cGVar GVar_UseTrafficCollisionSkip;
+static cGVar GVar_TrafficSpeed;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_TrafficSpeed, &GVar_TrafficSpeed, "TrafficSpeed", 0, "Terminal speed for the traffic", 5600.0f)

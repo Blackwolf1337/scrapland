@@ -127,45 +127,21 @@ typedef struct cSoundStrItem {
 	struct cSoundStrItem *next;		/* 0x28 */
 } cSoundStrItem;
 
-extern const CSoundSysVtbl CSoundSys_vftable;
-#define CSOUNDSYS_VFTABLE (&CSoundSys_vftable)
-extern const CSoundSysVtbl CSoundXBox_vftable;
-#define CSOUNDXBOX_VFTABLE (&CSoundXBox_vftable)
-
 extern CSoundSys *g_pSound;
 
 /* engine variables of the sound system */
 extern cGVar GVar_SoundAutoplayVolume;
 #define g_SoundAutoplayVolume (GVar_SoundAutoplayVolume.value.f)	/* dB, the volume below which nothing plays */
-extern cGVar GVar_SoundDistAttenuation;
-#define g_SoundDistAttenuation (GVar_SoundDistAttenuation.value.f)
-extern cGVar GVar_SoundDopplerLevel;
-#define g_SoundDopplerLevel (GVar_SoundDopplerLevel.value.f)
-extern cGVar GVar_SoundPanningFactor;
-#define g_SoundPanningFactor (GVar_SoundPanningFactor.value.f)
-extern cGVar GVar_SoundShowSetMode;
-#define g_SoundShowSetMode (GVar_SoundShowSetMode.value.i)		/* Compute3D and SetListener print their input */
-extern cGVar GVar_SoundMainVolume;
-#define g_SoundMainVolume (GVar_SoundMainVolume.value.f)
 extern cGVar GVar_SoundInit;
 #define g_SoundInit (GVar_SoundInit.value.i)
-extern cGVar GVar_SoundSwapChannels;
-#define g_SoundSwapChannels (GVar_SoundSwapChannels.value.i)
 extern cGVar GVar_S_PitchScale;
 #define g_S_PitchScale (GVar_S_PitchScale.value.f)
-extern cGVar GVar_S_SkipPlay;
-#define g_S_SkipPlay (GVar_S_SkipPlay.value.i)
-extern cGVar GVar_S_SkipUpdates;
-#define g_S_SkipUpdates (GVar_S_SkipUpdates.value.i)
 extern cGVar GVar_isDolby;
 #define g_isDolby (GVar_isDolby.value.i)			/* no pan */
-extern float g_SndFreqScale;		/* S_PitchScale over the timer multiplier */
 
 /* volume 0..1 to the engine's volume value */
 int Snd_Volume(float volume);
 void cSoundDesc_Init(cSoundDesc *desc);
-void cSoundDesc_Copy(cSoundDesc *desc, const cSoundDesc *src);
-void cSoundDesc_Set(cSoundDesc *desc, int volume, int pan, float freq, byte loop, byte prio);
 /* the volume and pan of a sound at pos (without doppler) */
 void cSoundDesc_SetPos(cSoundDesc *desc, const vec3_t *pos);
 
@@ -234,10 +210,6 @@ typedef struct cSoundPS {
 	char *name;			/* 0x68 cString, the key in (&g_SndPSTable) */
 } cSoundPS;
 
-extern HashTable g_SndPSTable;
-extern byte g_SndPSEnabled;
-extern cSoundPS *g_SndPSList;
-
 /* the property set of that name or NULL */
 cSoundPS *SndPS_Get(const char *name);
 /* NULL if the name is taken */
@@ -249,15 +221,10 @@ void SndPS_StopAll(void);
 void Sound_ResetVolumes(void);
 /* like cActClass_Var: set != 0 writes *s or *d / *i, else reads all; returns 1 string, 2 double, 3 int, 0 */
 int cSoundPS_Var(cSoundPS *ps, const char *name, int set, char **s, double *d, int *i);
-cSoundPS *cSoundPS_ctor(cSoundPS *self);
-void cSoundPS_dtor(cSoundPS *self);
 /* CShow 3: the spheres of the positional sounds */
 void SndPS_DrawAll(void);
-void cSoundPS_Update(cSoundPS *self, float dt);
 /* the music, the property sets and the voices of a frame */
 void Sound_Update(float dt);
-void Sound_UpdateMusic(float dt);
-void Sound_StopTalk(void);
 /* the talk of the character of that name ended (StopStreamingVoice) */
 void Sound_TalkDone(const char *name);
 
@@ -301,10 +268,6 @@ struct cSndInterface {
 	cEntity *owner;			/* 0x18 */
 };
 
-extern const cSndInterfaceVtbl cSndInterface_vftable;
-#define CSNDINTERFACE_VFTABLE (&cSndInterface_vftable)
-extern cSndInterface *g_SndInterfaces;
-
 /* Sound/SndInterface.cpp (src/game/Sound/SndInterface.c) */
 cSndInterface *cSndInterface_ctor(cSndInterface *self, int n);
 void cSndInterface_dtor(cSndInterface *self);
@@ -313,7 +276,6 @@ void cSndInterface_StopAll(cSndInterface *self, int unused);
 void cSndInterface_Tick(cSndInterface *self, float dt);
 /* the three characters of the id ("sdd") */
 void cSndInterface_SetId(cSndInterface *self, const char *id);
-byte cSndInterface_VarVFalse(cSndInterface *self, const char *name, double *x, double *y, double *z, int set);
 /* 0 stops it, else it starts when it does not play */
 void cSndItem_SetVolume(cSndItem *self, cEntity *e, float volume);
 byte cSndItem_Play(cSndItem *self, cEntity *e);
@@ -329,10 +291,6 @@ void Sound_UpdatePaused(void);
 CSoundXBox *CSoundXBox_New(void);
 /* the text of an FMOD error code */
 const char *Fmod_ErrorString(int err);
-/* volume, pan and frequency of a playing channel; 0 when it does not play */
-byte Fmod_SetChannel(int channel, const cSoundDesc *d);
-/* plays a sample with the parameters, the channel or 0 */
-int Fmod_Play(void *sample, const cSoundDesc *d, const char *name);
 
 /* the instance of Global/HashTable.h in src/game/Global/HashTables.c */
 cSoundStrItem *SoundStrTable_Find(HashTable *self, const char *key, uint32_t slot);
@@ -350,10 +308,5 @@ typedef struct cWavInfo {
 } cWavInfo;
 
 typedef struct cAbstractFile cAbstractFile;
-
-/* reads the RIFF header up to the data chunk; 0, -1 with errno set (0x32 not a supported wav) */
-int Wav_ReadInfo(cAbstractFile *file, cWavInfo *info);
-/* reads a dword, which must be id unless id is 0; 0 or -1 */
-int Wav_ReadChunk(cAbstractFile *file, uint32_t *out, uint32_t id);
 
 #endif

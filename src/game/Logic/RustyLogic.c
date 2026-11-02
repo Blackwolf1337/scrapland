@@ -15,19 +15,19 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
-extern const cGenCharLocalLogicVtbl cRustyLocalLogic_vftable;
+static const cGenCharLocalLogicVtbl cRustyLocalLogic_vftable;
 #define CRUSTYLOCALLOGIC_VFTABLE (&cRustyLocalLogic_vftable.base)
-cGVar GVar_JunkPointsListName;
+static cGVar GVar_JunkPointsListName;
 
 #define g_JunkPointsListName (GVar_JunkPointsListName.value.s)	/* cString "JunkPointsListName" */
-cGVar GVar_NumWorkingLoops;
+static cGVar GVar_NumWorkingLoops;
 
 #define g_NumWorkingLoops (GVar_NumWorkingLoops.value.i)
-cGVar GVar_PlatformRadiusSqr;
+static cGVar GVar_PlatformRadiusSqr;
 
 #define g_PlatformRadiusSqr (GVar_PlatformRadiusSqr.value.i)
 
-cEntityListData *g_JunkPointsList;
+static cEntityListData *g_JunkPointsList;
 
 void *cRustyLocalLogic_ctor(void *mem, cEntity *parent) {
 	cRustyLocalLogic *self = mem;
@@ -41,7 +41,7 @@ void *cRustyLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-cLocalLogic *cRustyLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static cLocalLogic *cRustyLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 	cRustyLocalLogic *self = (cRustyLocalLogic *)elem;
 	self->base.base.vftable = CRUSTYLOCALLOGIC_VFTABLE;
 	g_JunkPointsList = NULL;
@@ -52,10 +52,10 @@ cLocalLogic *cRustyLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 	return elem;
 }
 
-int g_RustyLoops;
+static int g_RustyLoops;
 
 /* the native at the end of a working loop of the character of that name: after the last one it relaxes */
-void Rusty_LoopDone(cAbstractFile *params) {
+static void Rusty_LoopDone(cAbstractFile *params) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(params, name, sizeof(name));
@@ -68,12 +68,12 @@ void Rusty_LoopDone(cAbstractFile *params) {
 }
 
 /* vf03 and vf05 */
-byte cRustyLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, byte set) {
+static byte cRustyLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, byte set) {
 	cRustyLocalLogic *self = (cRustyLocalLogic *)elem;
 	return cBaseLocalLogic_VarI(&self->base.base.logic, name, i, set);
 }
 
-byte cRustyLocalLogic_VarS(cLocalLogic *elem, const char *name, char **s, byte set) {
+static byte cRustyLocalLogic_VarS(cLocalLogic *elem, const char *name, char **s, byte set) {
 	cRustyLocalLogic *self = (cRustyLocalLogic *)elem;
 	return cBaseLocalLogic_VarS(&self->base.base.logic, name, s, set);
 }
@@ -106,7 +106,8 @@ static void Rusty_GoToJunk(cRustyLocalLogic *self, cAIChar *ai, double speed) {
 }
 
 /* vf17 */
-void cRustyLocalLogic_Update(cLocalLogic *elem, float dt) {
+static void cRustyLocalLogic_NextJunk(cRustyLocalLogic *self);
+static void cRustyLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cRustyLocalLogic *self = (cRustyLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base.base;
 	int st = b->state;
@@ -180,10 +181,10 @@ void cRustyLocalLogic_Update(cLocalLogic *elem, float dt) {
 	}
 }
 
-int s_RustyLastJunkPoint = -1;
+static int s_RustyLastJunkPoint = -1;
 
 /* a random junk point other than the last one */
-void cRustyLocalLogic_NextJunk(cRustyLocalLogic *self) {
+static void cRustyLocalLogic_NextJunk(cRustyLocalLogic *self) {
 	int i;
 
 	do {
@@ -204,7 +205,7 @@ void cRustyLocalLogic_NextJunk(cRustyLocalLogic *self) {
 }
 
 /* vf19: 7 the walk to the junk point, 9 pissed; the others of the GenChar logic */
-byte cRustyLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
+static byte cRustyLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cRustyLocalLogic *self = (cRustyLocalLogic *)elem;
 	if (state == 7) {
 		if ((byte)cBaseLocalLogic_SetState(&self->base.base.logic, 7, target)) {
@@ -223,7 +224,7 @@ byte cRustyLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 }
 
 /* the vtable of cRustyLocalLogic */
-const cGenCharLocalLogicVtbl cRustyLocalLogic_vftable = {
+static const cGenCharLocalLogicVtbl cRustyLocalLogic_vftable = {
 	.base.base.Delete = cRustyLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.Vf02 = cLocalLogic_Vf02True,
@@ -262,7 +263,7 @@ const cGenCharLocalLogicVtbl cRustyLocalLogic_vftable = {
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };
 
-cPy_NativeFunc NativeFunc_IncrementHits;
+static cPy_NativeFunc NativeFunc_IncrementHits;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_JunkPointsListName, &GVar_JunkPointsListName)

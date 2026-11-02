@@ -9,9 +9,12 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapworld.h"
 
+#define CHEADSCORER_VFTABLE (&cHeadScorer_vftable.base)
+static const cHeadScorerVtbl cHeadScorer_vftable;
+
 #define HEAD_FOV 0.87266463f				/* 50 degrees */
 
-const double g_HeadRandOfs;
+static const double g_HeadRandOfs;
 const double g_HeadRandRange = 6.2831854820251465;
 
 cHeadScorer *cHeadScorer_ctor(cHeadScorer *self) {
@@ -27,7 +30,7 @@ cHeadScorer *cHeadScorer_ctor(cHeadScorer *self) {
 	return self;
 }
 
-void cHeadScorer_dtor(cHeadScorer *self) {
+static void cHeadScorer_dtor(cHeadScorer *self) {
 	CGameCamera *cam = self->cam;
 	self->base.vftable = CHEADSCORER_VFTABLE;
 	if (cam) {
@@ -38,7 +41,7 @@ void cHeadScorer_dtor(cHeadScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cScorerItem *cHeadScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cHeadScorer_Delete(cScorerItem *base, byte flags) {
 	cHeadScorer *self = (cHeadScorer *)base;
 	cHeadScorer_dtor(self);
 	if (flags & 1) {
@@ -47,7 +50,8 @@ cScorerItem *cHeadScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-int cHeadScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+/* HeadModel (set), HeadAnimIndex, VW, VH */
+static int cHeadScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cHeadScorer *self = (cHeadScorer *)base;
 	if (set && s && !crt_stricmp(name, "HeadModel")) {
 		HeadScorer_SetModel(self, *s);
@@ -72,7 +76,7 @@ int cHeadScorer_Var(cScorerItem *base, const char *name, int set, char **s, doub
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void cHeadScorer_Draw(cScorerItem *base, int player) {
+static void cHeadScorer_Draw(cScorerItem *base, int player) {
 	cHeadScorer *self = (cHeadScorer *)base;
 	vec3_t tmp;
 
@@ -119,7 +123,8 @@ void cHeadScorer_Draw(cScorerItem *base, int player) {
 	Eng_ResetViewRect();
 }
 
-byte cHeadScorer_SetModel(cScorerItem *base, const char *name) {
+/* vf05: the model of that name of the scorer of the item, its animation set again; 1 if found */
+static byte cHeadScorer_SetModel(cScorerItem *base, const char *name) {
 	cHeadScorer *self = (cHeadScorer *)base;
 	cScorerModel *m = cScorer_FindModel(Scorer_Get(self->base.player), name);
 
@@ -136,7 +141,8 @@ byte cHeadScorer_SetModel(cScorerItem *base, const char *name) {
 	return self->model != NULL;
 }
 
-void cHeadScorer_SetAnim(cScorerItem *base, int anim) {
+/* vf04: the animation (an index of the model's list) from its start, looped */
+static void cHeadScorer_SetAnim(cScorerItem *base, int anim) {
 	cHeadScorer *self = (cHeadScorer *)base;
 	cScorerModel *m = self->model;
 
@@ -156,7 +162,7 @@ void cHeadScorer_SetAnim(cScorerItem *base, int anim) {
 }
 
 /* the vtable of cHeadScorer */
-const cHeadScorerVtbl cHeadScorer_vftable = {
+static const cHeadScorerVtbl cHeadScorer_vftable = {
 	.base.Draw = cHeadScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cHeadScorer_Var,

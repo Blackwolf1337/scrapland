@@ -68,7 +68,6 @@ typedef struct cPackEntry {
 	int size;			/* 0x108 */
 } cPackEntry;
 
-
 typedef struct cPackEntryNode {
 	struct cPackEntryNode *next;	/* 0x0 */
 	struct cPackEntryNode *prev;	/* 0x4 */
@@ -84,30 +83,9 @@ typedef struct cStringNode {
 typedef DLIST(cPackEntryNode) cPackEntryList;
 typedef DLIST(cStringNode) cStringList;
 
-extern HashTable g_PackIndex;
-extern cPackEntryList g_PackEntries;
-extern cStringList g_PackNames;
-extern int g_NumPackFiles;
-extern cFile2 g_PackFiles[128];
-extern HashTable *g_NameTable;	/* of cNameItem, while Python_CompileAll collects */
-extern cGVar GVar_BuildPackExclude;
-#define g_PackExclude (GVar_BuildPackExclude.value.s)	/* ';' separated patterns not to pack */
-extern cGVar GVar_BuildPackInclude;
-#define g_PackInclude (GVar_BuildPackInclude.value.s)	/* ';' separated patterns to pack, all if empty */
-extern int g_PackLocked;		/* a cFilePack is open (only one at a time) */
-extern void *g_LstFile;		/* the file list being recorded */
-extern uint32_t g_PackNumEntries;
-extern int g_PackDirLen;		/* characters to skip of the walked names */
-extern int g_PackBuildMode;
-extern cPackLocation g_PackFound;	/* result of PackIndex_Find */
 extern cGVar GVar_PathInPackFile;
 #define g_PackNameStr (GVar_PathInPackFile.value.s)	/* chars of g_PackName, the prefix of the open pack */
-extern cGVar GVar_BuildPackPrompt;
-#define g_PackBuildAsk (GVar_BuildPackPrompt.value.i)	/* ask before quitting after Pack_Build */
 
-cFile2 *cFile2_ctor(cFile2 *self);
-void cFile2_dtor(cFile2 *self);
-void PackEntries_Clear(cPackEntryList *list);
 void PackIndexTable_Clear(HashTable *self);
 cFilePack *cFilePack_ctor(cFilePack *self);
 void cFilePack_dtor(cFilePack *self);
@@ -127,10 +105,5 @@ int PackLog_Add(const char *name);
 /* mounts name.packed (src/game/FileSys/FilePak.c) */
 byte Pack_Open(const char *name, const char *dir, size_t bufSize);
 int Pack_Extract(const char *dir);
-
-extern const cAbstractFileVtbl cFile2_vftable;
-#define CFILE2_VFTABLE (&cFile2_vftable)
-extern const cAbstractFileVtbl cFilePack_vftable;
-#define CFILEPACK_VFTABLE (&cFilePack_vftable)
 
 #endif

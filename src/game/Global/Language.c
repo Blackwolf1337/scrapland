@@ -27,7 +27,7 @@ cGVar GVar_SelectedLanguage;
 #define g_LangName (((cString *)&GVar_SelectedLanguage.value))		/* the language asked for */
 #define g_LangDefault (GVar_SelectedLanguage.def.s)	/* the language when that file is missing */
 
-cLangItem *LangTable_Find(HashTable *self, const char *key, uint32_t slot) {
+static cLangItem *LangTable_Find(HashTable *self, const char *key, uint32_t slot) {
 	for (cLangItem *it = (cLangItem *)self->slots[slot]; it; it = it->next) {
 		if (HashTable_KeyEq(self, it->key, key)) {
 			return it;
@@ -36,7 +36,7 @@ cLangItem *LangTable_Find(HashTable *self, const char *key, uint32_t slot) {
 	return NULL;
 }
 
-cLangItem *LangTable_Insert(HashTable *self, const char *key, uint32_t slot, const cLangText *value) {
+static cLangItem *LangTable_Insert(HashTable *self, const char *key, uint32_t slot, const cLangText *value) {
 	CHECK(!self->locked);
 	cLangItem *it = HashItem_Alloc(sizeof(*it));
 	if (it) {
@@ -51,7 +51,7 @@ cLangItem *LangTable_Insert(HashTable *self, const char *key, uint32_t slot, con
 }
 
 /* takes the item of key out of its slot, NULL if there is none */
-cLangItem *LangTable_Unlink(HashTable *self, const char *key, uint32_t slot) {
+static cLangItem *LangTable_Unlink(HashTable *self, const char *key, uint32_t slot) {
 	cLangItem **link = (cLangItem **)&self->slots[slot];
 	CHECK(!self->locked);
 	for (; *link; link = &(*link)->next) {
@@ -65,7 +65,7 @@ cLangItem *LangTable_Unlink(HashTable *self, const char *key, uint32_t slot) {
 	return NULL;
 }
 
-byte LangTable_Delete(HashTable *self, const char *key) {
+static byte LangTable_Delete(HashTable *self, const char *key) {
 	CHECK(!self->locked);
 	cLangItem *it = LangTable_Unlink(self, key, HashTable_Slot(self, key));
 	if (!it) {
@@ -75,7 +75,8 @@ byte LangTable_Delete(HashTable *self, const char *key) {
 	return 1;
 }
 
-void LangTable_Clear(HashTable *self) {
+/* the string table of the language (src/game/Global/Language.c) */
+static void LangTable_Clear(HashTable *self) {
 	CHECK(!self->locked);
 	if (!self->slots) {
 		return;
@@ -92,10 +93,10 @@ void LangTable_Clear(HashTable *self) {
 	self->slots = NULL;
 }
 
-char *g_LangBuffer;
-char *g_IdLang;
+static char *g_LangBuffer;
+static char *g_IdLang;
 
-HashTable g_LangTable = { .numSlots = 457 };
+static HashTable g_LangTable = { .numSlots = 457 };
 
 void Lang_Free(void) {
 	HashTable *t = (&g_LangTable);
@@ -187,7 +188,7 @@ PyObject *Lang_GetEntries(const char *name, int n) {
 }
 
 /* parses the file into the table; a line goes up to CR, or to LF when nothing follows the CR */
-void Lang_Load(const char *lang, cAbstractFile *f) {
+static void Lang_Load(const char *lang, cAbstractFile *f) {
 	cLangText value;
 
 	Lang_Free();

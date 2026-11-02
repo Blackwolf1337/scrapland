@@ -8,6 +8,9 @@
 #include "scrap/scrap.h"
 #include "scrap/walkcharentity.h"
 
+#define CAIDESKTOP_VFTABLE (&cAIDesktop_vftable)
+static const cAICharVtbl cAIDesktop_vftable;
+
 #define CAIDESKTOP_SIZE sizeof(cAIDesktop)
 
 void *cAIDesktop_ctor(void *mem, cEntity *e, int *arg) {
@@ -18,12 +21,7 @@ void *cAIDesktop_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-void cAIDesktop_dtor(cAIDesktop *self) {
-	self->vftable = CAIDESKTOP_VFTABLE;
-	cAIChar_dtor(self);
-}
-
-cAI *cAIDesktop_Delete(cAI *base, byte flags) {
+static cAI *cAIDesktop_Delete(cAI *base, byte flags) {
 	cAIDesktop *self = (cAIDesktop *)base;
 	self->vftable = CAIDESKTOP_VFTABLE;
 	cAIChar_dtor(self);
@@ -33,7 +31,7 @@ cAI *cAIDesktop_Delete(cAI *base, byte flags) {
 	return base;
 }
 
-void cAIDesktop_UpdateAction0(cAI *base) {
+static void cAIDesktop_UpdateAction0(cAI *base) {
 	cAIDesktop *self = (cAIDesktop *)base;
 	static const char *const busy[] = {"Fall", "ActMoreF", "ActMoreB", "ActUpB", "ActUpF", "ActUpL", "ActUpR"};
 	byte act = 0;
@@ -55,7 +53,7 @@ void cAIDesktop_UpdateAction0(cAI *base) {
 }
 
 /* the vtable of cAIDesktop */
-const cAICharVtbl cAIDesktop_vftable = {
+static const cAICharVtbl cAIDesktop_vftable = {
 	.base.base.Delete = cAIDesktop_Delete,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,

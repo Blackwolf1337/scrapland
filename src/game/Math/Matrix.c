@@ -19,14 +19,8 @@ matrix_t *Matrix_Copy(matrix_t *self, const matrix_t *src) {
 	return self;
 }
 
-matrix_t *Matrix_FromFloats(matrix_t *self, const float *f) {
-	CHECK(f);
-	memcpy(self->m, f, sizeof(self->m));
-	return self;
-}
-
 /* out = self * other */
-matrix_t *Matrix_Mul(const matrix_t *self, matrix_t *out, const matrix_t *other) {
+static matrix_t *Matrix_Mul(const matrix_t *self, matrix_t *out, const matrix_t *other) {
 	const matrix_t a = *self, b = *other;
 
 	for (int r = 0; r < 4; r++) {
@@ -104,7 +98,7 @@ vec3_t *Matrix_GetRotAng(const matrix_t *self, vec3_t *out) {
 }
 
 /* the inverse of a rotation and translation; 0 if the last column is not 0 0 0 1 */
-byte Matrix_InvertAffine(matrix_t *out, const matrix_t *m) {
+static byte Matrix_InvertAffine(matrix_t *out, const matrix_t *m) {
 	const float *a = m->m;
 	float *o = out->m;
 
@@ -142,6 +136,8 @@ int Matrix_Invert(matrix_t *out, const matrix_t *m) {
 }
 
 /* m = m * Rz * Rx * Ry for the angles ang */
+static void Matrix_RotX(matrix_t *self, float ang);
+static void Matrix_RotZ(matrix_t *self, float ang);
 matrix_t *Matrix_Rotate(matrix_t *m, const vec3_t *ang) {
 	matrix_t rx, ry, rz, t1, t2, t3;
 
@@ -162,35 +158,7 @@ const vec3_t *Matrix_Scale(matrix_t *self, const vec3_t *s) {
 	return s;
 }
 
-/* 0 if far and near are too close or the field of view (radians) too small */
-byte Matrix_Perspective(matrix_t *out, float fov, float aspect, float zNear, float zFar) {
-	float depth = zFar - zNear;
-	float s, c;
-
-	if (0.01f > __builtin_fabs((double)depth)) {
-		return 0;
-	}
-	Float_SinCos(fov * 0.5f, &s, &c);
-	if (0.01f > __builtin_fabs((double)s)) {
-		return 0;
-	}
-	float q = zFar / depth;
-	memset(out->m, 0, sizeof(out->m));
-	float cot = c / s;
-	out->m[11] = 1.0f;
-	out->m[5] = cot;
-	out->m[0] = cot * aspect;
-	out->m[10] = q;
-	out->m[14] = -(q * zNear);
-	return 1;
-}
-
-/* the same as an HRESULT (matriz.h, rva 0x23a190) */
-int Matrix_PerspectiveD3D(matrix_t *out, float fov, float aspect, float zNear, float zFar) {
-	return Matrix_Perspective(out, fov, aspect, zNear, zFar) ? 0 : (int)0x80070057;
-}
-
-void Matrix_RotX(matrix_t *self, float ang) {
+static void Matrix_RotX(matrix_t *self, float ang) {
 	Matrix_Identity(self);
 	float c = (float)cos((double)ang);
 	self->m[5] = c;
@@ -210,7 +178,7 @@ void Matrix_RotY(matrix_t *self, float ang) {
 	self->m[10] = c;
 }
 
-void Matrix_RotZ(matrix_t *self, float ang) {
+static void Matrix_RotZ(matrix_t *self, float ang) {
 	Matrix_Identity(self);
 	float c = (float)cos((double)ang);
 	self->m[0] = c;

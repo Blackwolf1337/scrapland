@@ -11,6 +11,9 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
+#define g_VehicleAttackReset (GVar_WeapHitClientResetTime.value.f)	/* the time the shots on a target are kept */
+static cGVar GVar_WeapHitClientResetTime;
+
 #define VATT_MAX_NETCOUNT 15
 
 cVehicleAttack *cVehicleAttack_ctor(cVehicleAttack *self) {
@@ -239,7 +242,7 @@ int cVehicleAttack_NetFlags(cVehicleAttack *self, byte flags, byte *changed) {
 	return flags >> 7;
 }
 
-cGVar GVar_WeapHitClientResetTime;
+static cGVar GVar_WeapHitClientResetTime;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_WeapHitClientResetTime, &GVar_WeapHitClientResetTime, "WeapHitClientResetTime", 2, "Tolerance to reset the values of the queue of hits to the client\n", 1.0f)

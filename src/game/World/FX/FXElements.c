@@ -12,6 +12,25 @@
 #include "scrap/sound.h"
 #include "scrap/staticinit.h"
 
+#define CFXELEMENTSLIGHTING_VFTABLE (&cFXElementsLighting_vftable)
+#define CFXELEMENTSFIREDROP_VFTABLE (&cFXElementsFireDrop_vftable)
+#define CFXELEMENTSLENSFLARE_VFTABLE (&cFXElementsLensFlare_vftable)
+#define g_FireDropMaxDist (GVar_FXElementsFireDropMaxDist.value.f)	/* FXElementsFireDropMaxDist */
+#define g_FireDropRateAtt (GVar_FXElementsFireDropRateAtt.value.f)	/* FXElementsFireDropRateAtt */
+#define g_FireDropSoundAttIni (GVar_FXElementsFireDropSoundAttIni.value.f)	/* FXElementsFireDropSoundAttIni */
+#define g_FireDropSoundAttEnd (GVar_FXElementsFireDropSoundAttEnd.value.f)	/* FXElementsFireDropSoundAttEnd */
+#define g_FireDropSoundVol (GVar_FXElementsFireDropSoundVol.value.f)	/* FXElementsFireDropSoundVol */
+#define g_FireDropSound (GVar_FXElementsFireDropSound.value.s)	/* FXElementsFireDropSound, a cString */
+static const cMapElementVtbl cFXElementsLighting_vftable;
+static const cMapElementVtbl cFXElementsLensFlare_vftable;
+static const cMapElementVtbl cFXElementsFireDrop_vftable;
+static cGVar GVar_FXElementsFireDropSoundVol;
+static cGVar GVar_FXElementsFireDropSoundAttIni;
+static cGVar GVar_FXElementsFireDropSoundAttEnd;
+static cGVar GVar_FXElementsFireDropSound;
+static cGVar GVar_FXElementsFireDropRateAtt;
+static cGVar GVar_FXElementsFireDropMaxDist;
+
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMETRAIL_CTOR 0x21ddb0
 #define CGAMETRAIL_DTOR 0x21de40
@@ -53,20 +72,20 @@ cFXElementsLighting *cFXElementsLighting_ctor(cFXElementsLighting *self, const c
 }
 
 /* the particle members are released twice, by the class and by the member destructor */
-void cFXElementsFireDrop_dtor(cFXElementsFireDrop *self) {
+static void cFXElementsFireDrop_dtor(cFXElementsFireDrop *self) {
 	self->base.vftable = CFXELEMENTSFIREDROP_VFTABLE;
 	CGameParticles_Release(&self->drops);
 	CGameParticles_Release(&self->drops);
 	cMapElement_dtor(&self->base);
 }
 
-void cFXElementsLensFlare_dtor(cFXElementsLensFlare *self) {
+static void cFXElementsLensFlare_dtor(cFXElementsLensFlare *self) {
 	self->base.vftable = CFXELEMENTSLENSFLARE_VFTABLE;
 	CGameLensFlare_dtor(self->flare);
 	cMapElement_dtor(&self->base);
 }
 
-void cFXElementsLighting_dtor(cFXElementsLighting *self) {
+static void cFXElementsLighting_dtor(cFXElementsLighting *self) {
 	self->base.vftable = CFXELEMENTSLIGHTING_VFTABLE;
 	for (int i = 0; i < FXLIGHTINGBOLTS; i++) {
 		CGameTrail_Clear(&self->trails[i]);
@@ -77,7 +96,7 @@ void cFXElementsLighting_dtor(cFXElementsLighting *self) {
 	cMapElement_dtor(&self->base);
 }
 
-cMapElement *cFXElementsFireDrop_Delete(cMapElement *base, byte flags) {
+static cMapElement *cFXElementsFireDrop_Delete(cMapElement *base, byte flags) {
 	cFXElementsFireDrop *self = (cFXElementsFireDrop *)base;
 	cFXElementsFireDrop_dtor(self);
 	if (flags & 1) {
@@ -86,7 +105,7 @@ cMapElement *cFXElementsFireDrop_Delete(cMapElement *base, byte flags) {
 	return base;
 }
 
-cMapElement *cFXElementsLensFlare_Delete(cMapElement *base, byte flags) {
+static cMapElement *cFXElementsLensFlare_Delete(cMapElement *base, byte flags) {
 	cFXElementsLensFlare *self = (cFXElementsLensFlare *)base;
 	cFXElementsLensFlare_dtor(self);
 	if (flags & 1) {
@@ -95,7 +114,7 @@ cMapElement *cFXElementsLensFlare_Delete(cMapElement *base, byte flags) {
 	return base;
 }
 
-cMapElement *cFXElementsLighting_Delete(cMapElement *base, byte flags) {
+static cMapElement *cFXElementsLighting_Delete(cMapElement *base, byte flags) {
 	cFXElementsLighting *self = (cFXElementsLighting *)base;
 	cFXElementsLighting_dtor(self);
 	if (flags & 1) {
@@ -104,24 +123,9 @@ cMapElement *cFXElementsLighting_Delete(cMapElement *base, byte flags) {
 	return base;
 }
 
-void cFXElementsFireDrop_Release(cFXElementsFireDrop *self) {
-	CGameParticles_Release(&self->drops);
-}
-
-void cFXElementsLensFlare_Release(cFXElementsLensFlare *self) {
-	(void)self;
-}
-
-void cFXElementsLighting_Release(cFXElementsLighting *self) {
-	for (int i = 0; i < FXLIGHTINGBOLTS; i++) {
-		CGameTrail_Clear(&self->trails[i]);
-	}
-	CGameParticles_Release(&self->glows);
-}
-
 /* ---- cFXElementsFireDrop ---- */
 
-byte cFXElementsFireDrop_Init(cMapElement *elem) {
+static byte cFXElementsFireDrop_Init(cMapElement *elem) {
 	cFXElementsFireDrop *self = (cFXElementsFireDrop *)elem;
 	CGameModel *model = &self->base.Mod;
 	vec3_t tmp;
@@ -175,7 +179,7 @@ static void FireDrop_SetSprite(CGameParticles *p, byte sprite) {
 	p->spriteEnd = sprite;
 }
 
-uint32_t g_FireDropRamps[4][9] = {
+static uint32_t g_FireDropRamps[4][9] = {
 	{ 0xff3b00, 0xff4302, 0xff5203, 0xff5c05, 0x20ff5a09, 0x80c04b04, 0xc4601901, 0xff200800 },
 	{ 0x40fffaf0, 0xffeb80, 0xf3cd50, 0xcd9136, 0x20a44a18, 0x80871005, 0xc4800000, 0xff000000 },
 	{ 0xff000000, 0x80824c0e, 0x40ef641e, 0x20ff732e, 0x40b47848, 0x80876d2e, 0xc45e401a, 0xff000000 },
@@ -356,7 +360,7 @@ static void FireDrop_EmitDue(cFXElementsFireDrop *self, float *emitTime, float i
 }
 
 /* near the camera: a burst of drops (more the nearer) with the sound, then a pause */
-void cFXElementsFireDrop_Update(cMapElement *elem, float dt) {
+static void cFXElementsFireDrop_Update(cMapElement *elem, float dt) {
 	cFXElementsFireDrop *self = (cFXElementsFireDrop *)elem;
 	CGameModel *model = &self->base.Mod;
 	vec3_t tmp;
@@ -427,21 +431,9 @@ void cFXElementsFireDrop_Update(cMapElement *elem, float dt) {
 	}
 }
 
-/* ---- cFXElementsLensFlare ---- */
-
-byte cFXElementsLensFlare_Init(cFXElementsLensFlare *self) {
-	(void)self;
-	return 1;
-}
-
-void cFXElementsLensFlare_Update(cFXElementsLensFlare *self, float dt) {
-	(void)self;
-	(void)dt;
-}
-
 /* ---- cFXElementsLighting ---- */
 
-byte cFXElementsLighting_Init(cMapElement *elem) {
+static byte cFXElementsLighting_Init(cMapElement *elem) {
 	cFXElementsLighting *self = (cFXElementsLighting *)elem;
 	CGameModel *model = &self->base.Mod;
 	char buf[0x100];
@@ -749,7 +741,7 @@ static void Lighting_Draw(cFXElementsLighting *self, int i, float dt, int from, 
 }
 
 /* every bolt with two links or more: drawn while its life lasts, then cleared until its pause is over */
-void cFXElementsLighting_Update(cMapElement *elem, float dt) {
+static void cFXElementsLighting_Update(cMapElement *elem, float dt) {
 	cFXElementsLighting *self = (cFXElementsLighting *)elem;
 	CGameModel *model = &self->base.Mod;
 
@@ -802,32 +794,32 @@ void cFXElementsLighting_Update(cMapElement *elem, float dt) {
 }
 
 /* the vtable of cFXElementsLighting */
-const cMapElementVtbl cFXElementsLighting_vftable = {
+static const cMapElementVtbl cFXElementsLighting_vftable = {
 	.Delete = cFXElementsLighting_Delete,
 	.Init = cFXElementsLighting_Init,
 	.Update = cFXElementsLighting_Update,
 };
 
 /* the vtable of cFXElementsFireDrop */
-const cMapElementVtbl cFXElementsFireDrop_vftable = {
+static const cMapElementVtbl cFXElementsFireDrop_vftable = {
 	.Delete = cFXElementsFireDrop_Delete,
 	.Init = cFXElementsFireDrop_Init,
 	.Update = cFXElementsFireDrop_Update,
 };
 
 /* the vtable of cFXElementsLensFlare */
-const cMapElementVtbl cFXElementsLensFlare_vftable = {
+static const cMapElementVtbl cFXElementsLensFlare_vftable = {
 	.Delete = cFXElementsLensFlare_Delete,
 	.Init = cMapElement_InitTrue,
 	.Update = cMapElement_UpdateNop,
 };
 
-cGVar GVar_FXElementsFireDropMaxDist;
-cGVar GVar_FXElementsFireDropSoundAttIni;
-cGVar GVar_FXElementsFireDropSoundVol;
-cGVar GVar_FXElementsFireDropSoundAttEnd;
-cGVar GVar_FXElementsFireDropRateAtt;
-cGVar GVar_FXElementsFireDropSound;
+static cGVar GVar_FXElementsFireDropMaxDist;
+static cGVar GVar_FXElementsFireDropSoundAttIni;
+static cGVar GVar_FXElementsFireDropSoundVol;
+static cGVar GVar_FXElementsFireDropSoundAttEnd;
+static cGVar GVar_FXElementsFireDropRateAtt;
+static cGVar GVar_FXElementsFireDropSound;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_FXElementsFireDropMaxDist, &GVar_FXElementsFireDropMaxDist, "FXElementsFireDropMaxDist", 0, "Maximun Distance to show the Elements Fire Drop Effect", 200000.0f)

@@ -45,7 +45,7 @@ static cEntity *World_Usr0(void) {
 }
 
 /* params: the accelerator object, the car that entered it */
-void Doors_AcceleratorOnEnter(cAbstractFile *params) {
+static void Doors_AcceleratorOnEnter(cAbstractFile *params) {
 	char objName[0x80], carName[0x80];
 	vec3_t tmp, push, dir;
 	const vec3_t *v;
@@ -93,19 +93,22 @@ void Doors_AcceleratorOnEnter(cAbstractFile *params) {
 	}
 }
 
-void Doors_AutoDoorSlot(cAbstractFile *params) {
+static void Doors_Slot(cAbstractFile *params, uint32_t flags);
+static void Doors_AutoDoorSlot(cAbstractFile *params) {
 	Doors_Slot(params, DOOR_CLOSE | DOOR_FRONT | DOOR_BACK);
 }
 
-byte g_DoorFront;
-byte g_DoorBack;
-byte g_DoorUsrFront;
-byte g_DoorUsrBack;
-float g_DoorAngY;
-vec3_t g_DoorPos;
+/* the state of the last sphere test of Doors_Slot */
+static byte g_DoorFront;
+static byte g_DoorBack;
+static byte g_DoorUsrFront;
+static byte g_DoorUsrBack;
+static float g_DoorAngY;
+static vec3_t g_DoorPos;
 
 /* params: the door, an unused float. The entities in the sphere of the door set the side flags first. */
-void Doors_Slot(cAbstractFile *params, uint32_t flags) {
+static void Doors_SphereEntity(cAbstractFile *params);
+static void Doors_Slot(cAbstractFile *params, uint32_t flags) {
 	char name[0x80];
 	int unused;
 	vec3_t tmp;
@@ -142,16 +145,16 @@ void Doors_Slot(cAbstractFile *params, uint32_t flags) {
 	}
 }
 
-void Doors_AutoDoorUsrSlot(cAbstractFile *params) {
+static void Doors_AutoDoorUsrSlot(cAbstractFile *params) {
 	Doors_Slot(params, DOOR_CLOSE | DOOR_USR);
 }
 
-void Doors_BackDoorSlot(cAbstractFile *params) {
+static void Doors_BackDoorSlot(cAbstractFile *params) {
 	Doors_Slot(params, DOOR_CLOSE | DOOR_BACK);
 }
 
 /* params: the door, "on" or "off", a float that is only printed */
-void Doors_ChangeDoorState(cAbstractFile *params) {
+static void Doors_ChangeDoorState(cAbstractFile *params) {
 	char name[0x80], state[0x80];
 	float arg;
 
@@ -172,16 +175,16 @@ void Doors_ChangeDoorState(cAbstractFile *params) {
 	Con_Warnf("ChangeDoorState('%s','%s',%f): unknow state.\n", name, state, (double)arg);
 }
 
-void Doors_CloseDoorSlot(cAbstractFile *params) {
+static void Doors_CloseDoorSlot(cAbstractFile *params) {
 	Doors_Slot(params, DOOR_CLOSE);
 }
 
-void Doors_FrontDoorSlot(cAbstractFile *params) {
+static void Doors_FrontDoorSlot(cAbstractFile *params) {
 	Doors_Slot(params, DOOR_CLOSE | DOOR_FRONT);
 }
 
 /* params: an entity in the sphere of the door; characters (but the gate keepers), player 0 and AI cars count */
-void Doors_SphereEntity(cAbstractFile *params) {
+static void Doors_SphereEntity(cAbstractFile *params) {
 	char name[0x80];
 	vec3_t tmp;
 
@@ -219,7 +222,7 @@ void Doors_SphereEntity(cAbstractFile *params) {
 }
 
 /* params: the door, an unused float. Opens while player 0 is in its sphere (plus the radius of the player). */
-void Doors_Usr0AutoDoorSlot(cAbstractFile *params) {
+static void Doors_Usr0AutoDoorSlot(cAbstractFile *params) {
 	char name[0x80];
 	int unused;
 	vec3_t t1, t2;
@@ -248,14 +251,14 @@ void Doors_Usr0AutoDoorSlot(cAbstractFile *params) {
 	}
 }
 
-cPy_NativeFunc NativeFunc_AcceleratorOnEnter;
-cPy_NativeFunc NativeFunc_AutoDoorSlot;
-cPy_NativeFunc NativeFunc_AutoDoorUsrSlot;
-cPy_NativeFunc NativeFunc_CloseDoorSlot;
-cPy_NativeFunc NativeFunc_FrontDoorSlot;
-cPy_NativeFunc NativeFunc_BackDoorSlot;
-cPy_NativeFunc NativeFunc_Usr0AutoDoorSlot;
-cPy_NativeFunc NativeFunc_ChangeDoorState;
+static cPy_NativeFunc NativeFunc_AcceleratorOnEnter;
+static cPy_NativeFunc NativeFunc_AutoDoorSlot;
+static cPy_NativeFunc NativeFunc_AutoDoorUsrSlot;
+static cPy_NativeFunc NativeFunc_CloseDoorSlot;
+static cPy_NativeFunc NativeFunc_FrontDoorSlot;
+static cPy_NativeFunc NativeFunc_BackDoorSlot;
+static cPy_NativeFunc NativeFunc_Usr0AutoDoorSlot;
+static cPy_NativeFunc NativeFunc_ChangeDoorState;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_NATIVE_FUNC(Init_NativeFunc_AcceleratorOnEnter, &NativeFunc_AcceleratorOnEnter, "AcceleratorOnEnter", Doors_AcceleratorOnEnter)

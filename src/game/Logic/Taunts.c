@@ -21,19 +21,26 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
-extern const char str_SBi[];
-extern const char str_SBa[];
-extern const char str_SFu[];
-extern const char str_SPo[];
-char *s_TauntRaces[5] = { (void *)str_SBi, (void *)str_SBa, (void *)str_SFu, (void *)str_SPo, (void *)str_Empty };
+#define g_OnTaunt (((cPy_Function *)&GVar_OnTaunt.func))
+#define g_PhoneCabWarningDist (GVar_PhoneCabWarningDist.value.f)
+#define g_TimeBetweeenTaunts2 (GVar_TimeBetweeenTaunts2.value.f)	/* while the boss controls the robots */
+static cGVar GVar_TimeBetweeenTaunts2;
+static cGVar GVar_PhoneCabWarningDist;
+static cGVarFunction GVar_OnTaunt;
+
+static const char str_SBi[];
+static const char str_SBa[];
+static const char str_SFu[];
+static const char str_SPo[];
+static char *s_TauntRaces[5] = { (void *)str_SBi, (void *)str_SBa, (void *)str_SFu, (void *)str_SPo, (void *)str_Empty };
 
 /* the statics of the police taunts: the count per race, the races, the last race and the time */
 #define s_TauntLastRace (s_TauntRaces[4])
 
-HashTable s_TauntRaceCounts = { .numSlots = 457 };
+static HashTable s_TauntRaceCounts = { .numSlots = 457 };
 
 /* the atexit destructor of the count table */
-void Taunts_FiniCounts(void) {
+static void Taunts_FiniCounts(void) {
 	NameTable_Clear((&s_TauntRaceCounts));
 }
 
@@ -63,12 +70,12 @@ cEntity *Logic_RandomCar(cEntityListData *list) {
 	return Logic_AsCar(n->data);
 }
 
-int s_TauntCountsGuard;
-float s_TauntLastTime;
-int s_TauntTimeGuard;
+static int s_TauntCountsGuard;
+static float s_TauntLastTime;
+static int s_TauntTimeGuard;
 
 /* the kind of the police taunt of the ship (3, 4, 6 by the count of its race), -1 for none now */
-int Taunts_PoliceKind(cEntity *ship) {
+static int Taunts_PoliceKind(cEntity *ship) {
 	int epoch = crt_InitEpoch();
 
 	if (s_TauntCountsGuard > epoch) {
@@ -173,10 +180,10 @@ void Taunts_Play(const char *ship, const char *race, int kind) {
 	Taunts_UpdateEndTime(&g_pWorld->logic);
 }
 
-int s_TauntPoliceCount = -1;
+static int s_TauntPoliceCount = -1;
 
 /* the ship that attacks usr taunts it by its AI state; the police has its own kinds */
-void Taunts_Attacker(cEntity *usr, cEntity *ship) {
+static void Taunts_Attacker(cEntity *usr, cEntity *ship) {
 	if (!usr || !ship) {
 		return;
 	}
@@ -310,13 +317,13 @@ byte Taunts_Warnings(float dt) {
 	return 0;
 }
 
-const char str_SBi[] = "SBi";
-const char str_SBa[] = "SBa";
-const char str_SFu[] = "SFu";
-const char str_SPo[] = "SPo";
-cGVar GVar_PhoneCabWarningDist;
-cGVar GVar_TimeBetweeenTaunts2;
-cGVarFunction GVar_OnTaunt;
+static const char str_SBi[] = "SBi";
+static const char str_SBa[] = "SBa";
+static const char str_SFu[] = "SFu";
+static const char str_SPo[] = "SPo";
+static cGVar GVar_PhoneCabWarningDist;
+static cGVar GVar_TimeBetweeenTaunts2;
+static cGVarFunction GVar_OnTaunt;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_CALL(Fini_GVar_OnTaunt, &GVar_OnTaunt.func, cPy_Function_dtor)

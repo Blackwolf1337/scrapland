@@ -27,6 +27,25 @@
 #include "scrap/misc.h"
 #include "scrap/staticinit.h"
 
+#define g_CM3CheckTime (GVar_CM3_CheckTime.value.i)		/* CM3_CheckTime */
+#define g_CM3UseScenes (GVar_CM3_UseScenes.value.i)		/* CM3_UseScenes 0, 1, 2 */
+#define g_SM3CheckTime (GVar_SM3_CheckTime.value.i)		/* SM3_CheckTime */
+#define g_SM3UseScenes (GVar_SM3_UseScenes.value.i)		/* SM3_UseScenes 0, 1, 2 */
+#define g_CM3DeleteM3D (GVar_CM3_DeleteM3D.value.i)		/* CM3_DeleteM3D */
+#define g_ShowNodesTree (g_ShowNodesTreeVar.value.i)		/* ShowNodesTree */
+#define g_SharedTexturesPath (GVar_SharedTexuresPath.value.s)	/* gvar SharedTexuresPath, for "$name" maps */
+#define g_OptimizeNodes (GVar_OptimizeNodes.value.i)	/* gvar: 1 delete unused nodes, 2 collapse to bip nodes, 4 AniMask */
+#define g_UseWSM (g_UseWSMVar.value.i)		/* gvar UseWSM */
+static cGVar g_UseWSMVar;
+static cGVar g_ShowNodesTreeVar;
+static cGVar GVar_SharedTexuresPath;
+static cGVar GVar_SM3_UseScenes;
+static cGVar GVar_SM3_CheckTime;
+static cGVar GVar_OptimizeNodes;
+static cGVar GVar_CM3_UseScenes;
+static cGVar GVar_CM3_DeleteM3D;
+static cGVar GVar_CM3_CheckTime;
+
 /* the constructors and destructors of the reader data, passed to the new[] and delete[] loops of the CRT */
 #define M3DTABLE_CTOR 0x2bba90
 #define M3DTABLE_DTOR 0x2bbd20		/* Table_Free */
@@ -41,19 +60,20 @@ static void M3D_StringFree(char **s) {
 	}
 }
 
-M3DTable *M3DTable_ctor(M3DTable *self) {
+/* the constructors and destructors of the reader data; M3DTable is freed by Table_Free */
+static M3DTable *M3DTable_ctor(M3DTable *self) {
 	self->p = NULL;
 	self->n = 0;
 	self->fixed = 0;
 	return self;
 }
 
-char **String_ctor(char **self) {
+static char **String_ctor(char **self) {
 	*self = NULL;
 	return self;
 }
 
-M3DTrack *M3DTrack_ctor(M3DTrack *self) {
+static M3DTrack *M3DTrack_ctor(M3DTrack *self) {
 	crt_eh_vector_ctor(&self->pos, sizeof(M3DTable), 4, (void *)M3DTable_ctor, (void *)Table_Free);
 	self->sgn.p = NULL;
 	self->sgn.n = 0;
@@ -64,7 +84,7 @@ M3DTrack *M3DTrack_ctor(M3DTrack *self) {
 	return self;
 }
 
-M3DNode *M3DNode_ctor(M3DNode *self) {
+static M3DNode *M3DNode_ctor(M3DNode *self) {
 	self->target = NULL;
 	self->side2 = NULL;
 	self->skin.p = NULL;
@@ -88,11 +108,7 @@ void M3DSkinVert_dtor(M3DSkinVert *self) {
 	crt_eh_vector_dtor(self->bone, sizeof(char *), SKIN_MAX_BONES, (void *)String_dtor);
 }
 
-void M3DTable4_dtor(M3DTable4 *self) {
-	crt_eh_vector_dtor(self->t, sizeof(M3DTable), 4, (void *)Table_Free);
-}
-
-void M3DTrack_dtor(M3DTrack *self) {
+static void M3DTrack_dtor(M3DTrack *self) {
 	crt_eh_vector_dtor(&self->scale, sizeof(M3DTable), 4, (void *)Table_Free);
 	crt_eh_vector_dtor(&self->rotScale, sizeof(M3DTable), 4, (void *)Table_Free);
 	crt_eh_vector_dtor(&self->rot, sizeof(M3DTable), 4, (void *)Table_Free);
@@ -100,13 +116,15 @@ void M3DTrack_dtor(M3DTrack *self) {
 	crt_eh_vector_dtor(&self->pos, sizeof(M3DTable), 4, (void *)Table_Free);
 }
 
-void M3DTable6_dtor(M3DTable *self) {
+/* 6 tables freed, the last first */
+static void M3DTable6_dtor(M3DTable *self) {
 	for (int i = 5; i >= 0; i--) {
 		Table_Free((CTable *)&self[i]);
 	}
 }
 
-void M3DSkin_Free(CTable *self) {
+/* the delete[] of a table of M3DSkinVert */
+static void M3DSkin_Free(CTable *self) {
 	if (self->p) {
 		Delete_Objects(self->p, sizeof(M3DSkinVert), (void *)M3DSkinVert_dtor);
 		self->p = NULL;
@@ -114,7 +132,7 @@ void M3DSkin_Free(CTable *self) {
 	}
 }
 
-void M3DNode_dtor(M3DNode *self) {
+static void M3DNode_dtor(M3DNode *self) {
 	M3DTable6_dtor(self->t2a4);
 	M3DTrack_dtor(&self->track2);
 	M3DTrack_dtor(&self->track);
@@ -123,40 +141,8 @@ void M3DNode_dtor(M3DNode *self) {
 	M3D_StringFree(&self->target);
 }
 
-/* the deleting destructors: flags 2 the array with its count before it, 1 the memory freed */
-M3DNode *M3DNode_Delete(M3DNode *self, uint32_t flags) {
-	if (flags & 2) {
-		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(M3DNode), *mem, (void *)M3DNode_dtor);
-		if (flags & 1) {
-			operator_delete_array(mem);
-		}
-		return (M3DNode *)mem;
-	}
-	M3DNode_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(M3DNode));
-	}
-	return self;
-}
-
-M3DSkinVert *M3DSkinVert_Delete(M3DSkinVert *self, uint32_t flags) {
-	if (flags & 2) {
-		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(M3DSkinVert), *mem, (void *)M3DSkinVert_dtor);
-		if (flags & 1) {
-			operator_delete_array(mem);
-		}
-		return (M3DSkinVert *)mem;
-	}
-	M3DSkinVert_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(M3DSkinVert));
-	}
-	return self;
-}
-
 /* a binary string: its length, then the characters */
+static int M3D_ReadInt(const char *tok);
 static void M3D_ReadBinString(char *dest, int size) {
 	int n = M3D_ReadInt(NULL);
 
@@ -165,11 +151,13 @@ static void M3D_ReadBinString(char *dest, int size) {
 	dest[n] = '\0';
 }
 
-byte g_M3DBinary;
-byte g_M3DLabels;
-char g_M3DString[1024];
+static byte g_M3DBinary;
+static byte g_M3DLabels;
+static char g_M3DString[1024];
 
-void M3D_Label(const char *name) {
+/* text: the line must start with the label (or just the next line without labels); binary: the stored label must
+ * be name */
+static void M3D_Label(const char *name) {
 	if (!g_M3DBinary) {
 		if (g_M3DLabels) {
 			Read_Expect(name);
@@ -184,7 +172,8 @@ void M3D_Label(const char *name) {
 	}
 }
 
-int M3D_ReadInt(const char *tok) {
+/* the values; tok is the label before them, NULL to go on at the same place */
+static int M3D_ReadInt(const char *tok) {
 	int v = 0, n = 0;
 
 	if (tok) {
@@ -216,7 +205,7 @@ int M3D_ReadInt(const char *tok) {
 	return u;
 }
 
-float M3D_ReadFloat(const char *tok) {
+static float M3D_ReadFloat(const char *tok) {
 	float f = 0.0f;
 	int n = 0;
 
@@ -234,7 +223,7 @@ float M3D_ReadFloat(const char *tok) {
 	return f;
 }
 
-byte M3D_ReadBool(const char *tok) {
+static byte M3D_ReadBool(const char *tok) {
 	if (g_M3DBinary) {
 		uint32_t v = M3D_ReadInt(tok);
 		CHECK(v < 2);
@@ -255,7 +244,8 @@ byte M3D_ReadBool(const char *tok) {
 	return 0;
 }
 
-char *M3D_ReadString(const char *tok, char *dest, int size, byte quoted) {
+/* into dest (g_M3DString when NULL); text quoted or the rest of the line */
+static char *M3D_ReadString(const char *tok, char *dest, int size, byte quoted) {
 	CHECK(!dest || size > 0);
 	if (tok) {
 		M3D_Label(tok);
@@ -274,7 +264,8 @@ char *M3D_ReadString(const char *tok, char *dest, int size, byte quoted) {
 	return dest;
 }
 
-void M3D_ReadVec3(const char *tok, vec3_t *v, byte swapYZ) {
+/* swapYZ: the files are z up */
+static void M3D_ReadVec3(const char *tok, vec3_t *v, byte swapYZ) {
 	CHECK(v);
 	float x = M3D_ReadFloat(tok);
 	float a = M3D_ReadFloat(NULL);
@@ -284,13 +275,14 @@ void M3D_ReadVec3(const char *tok, vec3_t *v, byte swapYZ) {
 	v->z = swapYZ ? a : b;
 }
 
-void M3D_ReadVec2(const char *tok, float *v) {
+static void M3D_ReadVec2(const char *tok, float *v) {
 	CHECK(v);
 	v[0] = M3D_ReadFloat(tok);
 	v[1] = M3D_ReadFloat(NULL);
 }
 
-void M3D_ReadQuat(const char *tok, quat_t *q, byte swapYZ) {
+/* axis and angle in the file, the axis turned around */
+static void M3D_ReadQuat(const char *tok, quat_t *q, byte swapYZ) {
 	CHECK(q);
 	float x = M3D_ReadFloat(tok);
 	float a = M3D_ReadFloat(NULL);
@@ -301,7 +293,8 @@ void M3D_ReadQuat(const char *tok, quat_t *q, byte swapYZ) {
 	*q = *Quat_FromAxisAngle(&r, &axis, ang);
 }
 
-void M3D_ReadTransform(const char *name, m3dTransform_t *mt) {
+/* the transform named name */
+static void M3D_ReadTransform(const char *name, m3dTransform_t *mt) {
 	CHECK(mt);
 	if (g_M3DLabels) {
 		M3D_Label("MT:");
@@ -315,9 +308,10 @@ void M3D_ReadTransform(const char *name, m3dTransform_t *mt) {
 	M3D_ReadVec3("MT_Esc:", &mt->scale, 1);
 }
 
-char g_M3DName[260];
+static char g_M3DName[260];
 
-void M3D_ReadIndex(int expected) {
+/* an index line "n:", fatal if it is not expected */
+static void M3D_ReadIndex(int expected) {
 	if (!g_M3DBinary) {
 		Read_NextLine();
 	}
@@ -382,7 +376,8 @@ static CScene *M3D_CacheRead(CFileIO *f, const char *sceneName, const char *id, 
 
 CScene *g_SceneAnimParent;
 
-CScene *CM3_Load(const char *name) {
+/* the animation scene of the .CM3 of name for g_SceneAnimParent, NULL without a valid one */
+static CScene *CM3_Load(const char *name) {
 	char path[260];
 
 	CHECK(g_SceneAnimParent);
@@ -396,6 +391,7 @@ CScene *CM3_Load(const char *name) {
 
 CScene *g_SceneLODParent;
 
+static void Scene_Particles(CScene *scn);
 CScene *SM3_Load(const char *name) {
 	char path[260], ini[260];
 
@@ -449,7 +445,9 @@ static void M3D_CacheWrite(const char *path, CScene *scn, const char *id, const 
 	operator_delete_sized(f, sizeof(CFileIO));
 }
 
-void CM3_Save(const char *name, CScene *scn) {
+/* the .CM3 of the animation scene esc of name and the .SM3 of the model scene esc (with SM3_UseScenes); a
+ * failed write is reported, not fatal. CM3_DeleteM3D deletes the M3D after */
+static void CM3_Save(const char *name, CScene *scn) {
 	char path[260];
 
 	CHECK(g_SceneAnimParent);
@@ -472,9 +470,10 @@ void SM3_Save(const char *name, CScene *scn) {
 	M3D_CacheWrite(path, scn, "SM3", name, ini, 0);
 }
 
-byte g_M3DOk = 1;
+static byte g_M3DOk = 1;
 
-void M3D_SetOk(byte ok) {
+/* ok: g_M3DOk set; else the first failure after it reported */
+static void M3D_SetOk(byte ok) {
 	if (ok) {
 		g_M3DOk = 1;
 		return;
@@ -485,7 +484,8 @@ void M3D_SetOk(byte ok) {
 	}
 }
 
-void Scene_CheckDuplicates(CScene *scn, CNode3D *node) {
+/* the log of the other nodes named as node before it */
+static void Scene_CheckDuplicates(CScene *scn, CNode3D *node) {
 	for (CNode3D *n = scn->Node3D; n;) {
 		CNode3D *n2 = CNode3D_Find(n, node->name, 1);
 		CHECK(n2);
@@ -501,23 +501,16 @@ void Scene_CheckDuplicates(CScene *scn, CNode3D *node) {
 	}
 }
 
-void Node_MarkBip(CNode3D *node) {
-	static const char *const pre[4] = { "Bip ", "Bip_", "BipB", "Bone" };
-	for (int i = 0; i < 4; i++) {
-		if (!crt_strncmp(node->name, pre[i], 4)) {
-			node->flags |= NODE_BIP;
-			return;
-		}
-	}
-}
-
 /* the material of the first triangle of the mesh of the node */
 static CMaterial *Node_MatTri0(CNode3D *n, CTriMesh **mesh) {
 	*mesh = Obj3D_TriMesh(n->obj3D);
 	return CTriMesh_GetTri(*mesh, 0)->mat;
 }
 
-void Scene_Flares(CScene *scn) {
+/* the "flare*" nodes to CFlare (size from "(tam=n)" in the name), the "sprite*" nodes to CGraphic3D, both from the
+ * material of their first triangle */
+static byte Node_ParamInt(const char *name, const char *key, int *out);
+static void Scene_Flares(CScene *scn) {
 	if (!scn || !scn->Node3D) {
 		return;
 	}
@@ -546,7 +539,7 @@ void Scene_Flares(CScene *scn) {
 	}
 }
 
-void Scene_Sprites(CScene *scn) {
+static void Scene_Sprites(CScene *scn) {
 	if (!scn || !scn->Node3D) {
 		return;
 	}
@@ -571,7 +564,9 @@ void Scene_Sprites(CScene *scn) {
 	}
 }
 
-void Scene_Particles(CScene *scn) {
+/* the particle systems of the nodes with a Particles section (model_particles.ini of the scene in userProp); the
+ * nodes of a LOD model point at those of the main LOD */
+static void Scene_Particles(CScene *scn) {
 	if (!g_SceneLODParent && !scn->fromAmc) {
 		CIniFile *ini = operator_new(sizeof(CIniFile));
 		scn->userProp = ini ? CIniFile_ctor(ini) : NULL;
@@ -619,7 +614,8 @@ void Scene_Particles(CScene *scn) {
 	}
 }
 
-void Scene_Clear(CScene *scn, const char *pass) {
+/* the empty nodes deleted; the tree logged with ShowNodesTree */
+static void Scene_Clear(CScene *scn, const char *pass) {
 	E3D_LogWhite((&g_FileLog), "cleaning nodes (pass %s):", pass);
 	CScene_DeleteEmpty(scn, 0, 0, 1);
 	if (g_ShowNodesTree && !g_SceneAnimParent) {
@@ -627,37 +623,8 @@ void Scene_Clear(CScene *scn, const char *pass) {
 	}
 }
 
-byte Float_AlmostEqual(float a, float b) {
-	if (a == b) {
-		return 1;
-	}
-	if (a == 0.0f || b == 0.0f) {
-		return 0;
-	}
-	if ((a > 0.0f && 0.0f > b) || (0.0f > a && b > 0.0f)) {
-		return 0;
-	}
-	double r = (double)(a / b);
-	if (r > 0x1.000004p+0) {
-		return 0;
-	}
-	return !(0x1.fffff8p-1 > r);
-}
-
-byte Node_IsAncestor(const CNode3D *node, const CNode3D *prev, byte cross) {
-	CHECK(node && prev);
-	for (const CNode3D *p = node->parent; p; p = p->parent) {
-		if (p == prev) {
-			return 1;
-		}
-		if (!cross && p->flags & NODE_DELETE) {
-			return 0;
-		}
-	}
-	return 0;
-}
-
-byte Node_IsOfGame(const CNode3D *node) {
+/* the nodes the game uses by name: DR_, DM_, DC_, DF_, D_Cam-, Actor_, Traffic_, NAVEBERTO */
+static byte Node_IsOfGame(const CNode3D *node) {
 	static const struct {
 		const char *pre;
 		int n;
@@ -671,7 +638,8 @@ byte Node_IsOfGame(const CNode3D *node) {
 	return 0;
 }
 
-byte Node_ParamInt(const char *name, const char *key, int *out) {
+/* the int of "(key=n)" or "(+key=n)" in name */
+static byte Node_ParamInt(const char *name, const char *key, int *out) {
 	const char *s = name;
 	size_t len = strlen(key);
 
@@ -716,7 +684,8 @@ byte Node_ParamInt(const char *name, const char *key, int *out) {
 	return 0;
 }
 
-void Node_ClearName(char *name) {
+/* bytes above 127 to '_', a warning for a space at the end */
+static void Node_ClearName(char *name) {
 	int i = 0;
 
 	if (!*name) {
@@ -735,41 +704,25 @@ void Node_ClearName(char *name) {
 	}
 }
 
-byte g_M3DUseOpacity;
-byte g_M3DUseEnvmap;
-byte g_M3DUseBumpmap;
-byte g_M3DUseGlowmap;
+/* the [Model] switches of the ini of the model being read */
+static byte g_M3DUseOpacity;
+static byte g_M3DUseEnvmap;
+static byte g_M3DUseBumpmap;
+static byte g_M3DUseGlowmap;
 int g_UseEnvMap = 1;
 int g_UseBumpMap = 1;
 int g_UseGlowMap = 1;
 
-byte M3D_ActiveMap(const CMaterial *mat, int mapid) {
-	if (mat->params.attrib & MAT_SHADER) {
-		return 1;
-	}
-	switch (mapid) {
-	case MAP_OPACITY:
-		return g_M3DUseOpacity;
-	case MAP_ENVIRONMENT:
-		return g_UseEnvMap && g_M3DUseEnvmap;
-	case MAP_BUMP:
-		return g_UseBumpMap && g_M3DUseBumpmap;
-	case MAP_GLOW:
-		return g_UseGlowMap && g_M3DUseGlowmap;
-	default:
-		return 1;
-	}
-}
-
-
-int g_M3DNumMat;
-CMaterial *g_M3DMat[512];
-int g_M3DMatId[512];
-int g_M3DMatSub[512];
+static int g_M3DNumMat;
+static CMaterial *g_M3DMat[512];
+static int g_M3DMatId[512];
+static int g_M3DMatSub[512];
 
 /* the materials of the file */
 
-CMaterial *M3D_FindMat(int iMat, int iSubmat) {
+/* the material of the file for its material index and sub material (-1: the material itself); a sub material
+ * index past the end wraps around unless it is below the count */
+static CMaterial *M3D_FindMat(int iMat, int iSubmat) {
 	for (int i = 0; i < g_M3DNumMat; i++) {
 		if (g_M3DMatId[i] != iMat || g_M3DMatSub[i] != iSubmat) {
 			continue;
@@ -802,9 +755,10 @@ CMaterial *M3D_FindMat(int iMat, int iSubmat) {
 	return res;
 }
 
-byte g_M3DMatUsado[512];
+static byte g_M3DMatUsado[512];
 
-void M3D_MatUsado(CMaterial *mat) {
+/* the entries of mat in the file table marked used, CHECK of at least one */
+static void M3D_MatUsado(CMaterial *mat) {
 	if (!mat) {
 		return;
 	}
@@ -818,7 +772,8 @@ void M3D_MatUsado(CMaterial *mat) {
 	CHECK(cnt > 0);
 }
 
-void M3D_ShareMats(CMatList *list) {
+/* the materials of the table (not the multi materials) replaced by the equal ones of list */
+static void M3D_ShareMats(CMatList *list) {
 	for (int i = 0; i < g_M3DNumMat; i++) {
 		if (g_M3DMat[i]->params.matClass == 1) {
 			continue;
@@ -850,7 +805,8 @@ static uint32_t M3D_Color(const vec3_t *c) {
 	return (uint32_t)b[0] | (uint32_t)b[1] << 8 | (uint32_t)b[2] << 16 | (uint32_t)b[3] << 24;
 }
 
-void M3D_ReadColors(CMaterial *mat) {
+/* Ambient, Diffuse, Specular, Shine, ShineStrength, Transparency of a standard material */
+static void M3D_ReadColors(CMaterial *mat) {
 	vec3_t c;
 
 	M3D_ReadVec3("Ambient:", &c, 0);
@@ -871,33 +827,6 @@ void M3D_ReadColors(CMaterial *mat) {
 	mat->params.diffuse[3] = 0;
 }
 
-
-/* the readers of single values */
-
-void M3D_ReadMatrix(const char *name, matrix_t *out) {
-	m3dTransform_t mt;
-
-	M3D_ReadTransform(name, &mt);
-	M3DTransform_ToMatrix(&mt, out);
-}
-
-void M3D_ReadVec2Next(float *v) {
-	M3D_ReadVec2(NULL, v);
-}
-
-vec3_t *M3D_ReadVec3Ret(vec3_t *v, const char *tok, byte swapYZ) {
-	M3D_ReadVec3(tok, v, swapYZ);
-	return v;
-}
-
-void M3D_ReadVec3Next(vec3_t *v, byte swapYZ) {
-	M3D_ReadVec3(NULL, v, swapYZ);
-}
-
-char *M3D_ReadQString(const char *tok, char *dest, int size) {
-	return M3D_ReadString(tok, dest, size, 1);
-}
-
 /* the float of M3D_ReadFloat(NULL) stored as read (the inlined copies of the original never pass it through x87) */
 static void M3D_ReadFloatTo(float *dest) {
 	int n;
@@ -912,18 +841,19 @@ static void M3D_ReadFloatTo(float *dest) {
 	g_ReadString += n;
 }
 
-
-M3DNode *g_M3DNodes;
+static M3DNode *g_M3DNodes;
 
 /* the objects of the file and their animation tables */
 
-M3DNode *M3D_NodeDat(const CNode3D *node) {
+/* the reader data of the object of node */
+static M3DNode *M3D_NodeDat(const CNode3D *node) {
 	CHECK(g_M3DNodes && node);
 	CHECK(node->index >= 0);
 	return &g_M3DNodes[node->index];
 }
 
-vec3_t *M3DTable4_GetVec(M3DTable4 *self, vec3_t *out, uint32_t i) {
+/* frame i of the tables (x, z, y order of the file: the y up result) */
+static vec3_t *M3DTable4_GetVec(M3DTable4 *self, vec3_t *out, uint32_t i) {
 	TABLE_CHECK(self->t[2].p, i, self->t[2].n);
 	const float *z = (const float *)self->t[2].p + i;
 	TABLE_CHECK(self->t[1].p, i, self->t[1].n);
@@ -935,7 +865,7 @@ vec3_t *M3DTable4_GetVec(M3DTable4 *self, vec3_t *out, uint32_t i) {
 	return out;
 }
 
-quat_t *M3DTable4_GetQuat(M3DTable4 *self, quat_t *out, uint32_t i) {
+static quat_t *M3DTable4_GetQuat(M3DTable4 *self, quat_t *out, uint32_t i) {
 	TABLE_CHECK(self->t[3].p, i, self->t[3].n);
 	const float *w = (const float *)self->t[3].p + i;
 	TABLE_CHECK(self->t[2].p, i, self->t[2].n);
@@ -950,7 +880,7 @@ quat_t *M3DTable4_GetQuat(M3DTable4 *self, quat_t *out, uint32_t i) {
 	return out;
 }
 
-void M3DTable4_SetVec(M3DTable4 *self, uint32_t i, const vec3_t *v) {
+static void M3DTable4_SetVec(M3DTable4 *self, uint32_t i, const vec3_t *v) {
 	TABLE_CHECK(self->t[0].p, i, self->t[0].n);
 	((float *)self->t[0].p)[i] = v->x;
 	TABLE_CHECK(self->t[1].p, i, self->t[1].n);
@@ -959,7 +889,8 @@ void M3DTable4_SetVec(M3DTable4 *self, uint32_t i, const vec3_t *v) {
 	((float *)self->t[2].p)[i] = v->z;
 }
 
-void M3DTable4_RotToQuat(M3DTable4 *self, uint32_t i) {
+/* the axis and angle of frame i turned into the quaternion (the axis negated) */
+static void M3DTable4_RotToQuat(M3DTable4 *self, uint32_t i) {
 	vec3_t v, axis;
 	quat_t q;
 
@@ -978,7 +909,8 @@ void M3DTable4_RotToQuat(M3DTable4 *self, uint32_t i) {
 	((float *)self->t[3].p)[i] = q.w;
 }
 
-matrix_t *M3DNode_FrameMatrix(M3DNode *self, matrix_t *out, uint32_t frame) {
+/* the transform of frame of the first track as a matrix */
+static matrix_t *M3DNode_FrameMatrix(M3DNode *self, matrix_t *out, uint32_t frame) {
 	m3dTransform_t mt;
 	vec3_t v;
 	quat_t q;
@@ -1002,7 +934,7 @@ static void M3DTable_ReadValue(uint32_t *dest, byte flt) {
 	}
 }
 
-int g_M3DFrames;
+static int g_M3DFrames;
 
 /* an "Animacion:" table of the frames: runs of values (count, values; 20 a line in text) or of one value (-count,
  * value); a single run over all frames makes it fixed */
@@ -1056,32 +988,16 @@ static void M3DTable_Read(M3DTable *self, const char *name, byte flt) {
 	} while (fr < self->n);
 }
 
-void M3DTable_ReadInt(M3DTable *self, const char *name) {
+/* the table "Animacion: nombre" of g_M3DFrames values */
+static void M3DTable_ReadInt(M3DTable *self, const char *name) {
 	M3DTable_Read(self, name, 0);
 }
 
-void M3DTable_ReadFloat(M3DTable *self, const char *name) {
+static void M3DTable_ReadFloat(M3DTable *self, const char *name) {
 	M3DTable_Read(self, name, 1);
 }
 
-void M3DTable4_Read(M3DTable4 *self, const char *n1, const char *n2, const char *n3, const char *n4,
-	byte inv23) {
-	CHECK(!inv23 || (n2 && n3));
-	if (n1) {
-		M3DTable_ReadFloat(&self->t[0], n1);
-	}
-	if (n2) {
-		M3DTable_ReadFloat(&self->t[inv23 ? 2 : 1], n2);
-	}
-	if (n3) {
-		M3DTable_ReadFloat(&self->t[inv23 ? 1 : 2], n3);
-	}
-	if (n4) {
-		M3DTable_ReadFloat(&self->t[3], n4);
-	}
-}
-
-void M3DTrack_Read(M3DTrack *self) {
+static void M3DTrack_Read(M3DTrack *self) {
 	M3DTable_ReadFloat(&self->pos.t[0], "PosX");
 	M3DTable_ReadFloat(&self->pos.t[2], "PosY");
 	M3DTable_ReadFloat(&self->pos.t[1], "PosZ");
@@ -1103,10 +1019,10 @@ void M3DTrack_Read(M3DTrack *self) {
 	}
 }
 
-
 /* the nodes */
 
-void Node_FlagName(CNode3D *node, const char *on, const char *off, uint32_t flag) {
+/* flag set with on in the name, cleared with off, else taken from the parent */
+static void Node_FlagName(CNode3D *node, const char *on, const char *off, uint32_t flag) {
 	if (on && strstr(node->name, on)) {
 		node->flags |= flag;
 		return;
@@ -1120,7 +1036,8 @@ void Node_FlagName(CNode3D *node, const char *on, const char *off, uint32_t flag
 	}
 }
 
-void Scene_FlagNames(CScene *scn) {
+/* the flags of the "(+x)" / "(-x)" names, the slerp and the node effects of the user properties */
+static void Scene_FlagNames(CScene *scn) {
 	static const struct {
 		const char *on, *off;
 		uint32_t flag;
@@ -1159,9 +1076,11 @@ void Scene_FlagNames(CScene *scn) {
 	}
 }
 
-int g_M3DVersion;
+/* the state of the reader while an M3D file is read */
+static int g_M3DVersion;
 
-void Scene_FlagsIni(CScene *scn) {
+/* SlerpNodes, MorphNodes, HideNodes, UnhideNodes of the ini (version 13 on); the hidden bones of the skins shown */
+static void Scene_FlagsIni(CScene *scn) {
 	if (g_M3DVersion <= 12) {
 		return;
 	}
@@ -1210,7 +1129,8 @@ void Scene_FlagsIni(CScene *scn) {
 	}
 }
 
-CNode3D *Node_FindDescendant(CNode3D *node, const CNode3D *ancestor) {
+/* the first node from node on (not NODE_DELETE) below ancestor without a NODE_DELETE node between */
+static CNode3D *Node_FindDescendant(CNode3D *node, const CNode3D *ancestor) {
 	for (; node; node = node->next) {
 		if (node->flags & NODE_DELETE) {
 			continue;
@@ -1228,23 +1148,8 @@ CNode3D *Node_FindDescendant(CNode3D *node, const CNode3D *ancestor) {
 	return NULL;
 }
 
-CNode3D *Node_FindDescendantPrev(CNode3D *node, const CNode3D *ancestor) {
-	CHECK(node && ancestor);
-	for (CNode3D *n = node->prev; n; n = n->prev) {
-		if (n->flags & NODE_DELETE) {
-			continue;
-		}
-		CHECK(ancestor);
-		for (const CNode3D *p = n->parent; p; p = p->parent) {
-			if (p == ancestor) {
-				return n;
-			}
-		}
-	}
-	return NULL;
-}
-
-CNode3D *Scene_FindCollapsible(CNode3D *node, const CNode3D *parent) {
+/* a plain mesh child of parent that can be joined into it (with a LOD the last one, or the first not in the main LOD) */
+static CNode3D *Scene_FindCollapsible(CNode3D *node, const CNode3D *parent) {
 	CIniFile *ini = g_SceneLODParent ? g_SceneLODParent->ini : node->scene->ini;
 	CNode3D *res = NULL;
 
@@ -1269,9 +1174,10 @@ CNode3D *Scene_FindCollapsible(CNode3D *node, const CNode3D *parent) {
 	return res;
 }
 
-CMatList *g_M3DLMat;
+static CMatList *g_M3DLMat;
 
-void Scene_UsedMats(CScene *scn) {
+/* the used materials of the file into the scene table and (&g_MatList), g_M3DLMat deleted */
+static void Scene_UsedMats(CScene *scn) {
 	CTable *mats = &scn->mats;
 	int included = 0;
 
@@ -1308,7 +1214,6 @@ void Scene_UsedMats(CScene *scn) {
 	Table_ResizeN(mats, included, sizeof(CMaterial *));
 }
 
-
 /* the objects: cameras, lights, portals (anim: the values of a frame of an animation file) */
 
 /* the target name ("NombreObjetivo:") of a camera or light into the reader data */
@@ -1318,7 +1223,8 @@ static void M3D_ReadTarget(CNode3D *node) {
 	String_Set(&M3D_NodeDat(node)->target, g_M3DString);
 }
 
-void M3D_ReadCamera(CNode3D *node, byte anim, int frame) {
+/* the camera, light and portal of node (with anim: the animated values of frame of an existing one) */
+static void M3D_ReadCamera(CNode3D *node, byte anim, int frame) {
 	if (anim) {
 		CHECK(CNode3D_Class(node) == CLASS_OBJ3D_CAMERA);
 		float fov = M3D_ReadFloat("FOV:");
@@ -1359,7 +1265,7 @@ void M3D_ReadCamera(CNode3D *node, byte anim, int frame) {
 	}
 }
 
-void M3D_ReadLight(CNode3D *node, byte anim, int frame) {
+static void M3D_ReadLight(CNode3D *node, byte anim, int frame) {
 	vec3_t c;
 
 	if (anim) {
@@ -1431,7 +1337,7 @@ void M3D_ReadLight(CNode3D *node, byte anim, int frame) {
 	}
 }
 
-void M3D_ReadPortal(CNode3D *node, byte anim) {
+static void M3D_ReadPortal(CNode3D *node, byte anim) {
 	if (anim) {
 		return;
 	}
@@ -1464,7 +1370,6 @@ void M3D_ReadPortal(CNode3D *node, byte anim) {
 	}
 }
 
-
 /* the scene after the objects are read */
 
 /* CHECK of a decomposed node matrix: no scale, no mirror */
@@ -1475,15 +1380,13 @@ static void M3D_CheckNoScale(const m3dTransform_t *da) {
 	CHECK(da->sign == 1.0f);
 }
 
-matrix_t *M3DNode_CalcMatrix(M3DNode *self) {
-	return M3DTransform_ToMatrixAnim(&self->mt, &self->mNode);
-}
-
-int M3D_NextLine(void) {
+/* Read_NextLine in text files (0 for binary ones; the original leaves eax there) */
+static int M3D_NextLine(void) {
 	return g_M3DBinary ? 0 : Read_NextLine();
 }
 
-void Scene_MatricesObj(CScene *scn) {
+/* the world matrices: CHECK of no scale, qLook from them, mObj their inverses */
+static void Scene_MatricesObj(CScene *scn) {
 	m3dTransform_t da;
 	matrix_t inv;
 
@@ -1497,10 +1400,11 @@ void Scene_MatricesObj(CScene *scn) {
 	}
 }
 
-int g_M3DFirstFrame;
-int g_M3DLastFrame;
+static int g_M3DFirstFrame;
+static int g_M3DLastFrame;
 
-void Scene_AnimLocal(CScene *scn, byte anim) {
+/* the positions and rotations relative to the parents, with anim also those of the animation frames */
+static void Scene_AnimLocal(CScene *scn, byte anim) {
 	m3dTransform_t da;
 	matrix_t inv, tmp, loc, mp, mn;
 	vec3_t v, pos;
@@ -1562,7 +1466,8 @@ void Scene_AnimLocal(CScene *scn, byte anim) {
 	}
 }
 
-void Scene_CollapseBip(CScene *scn) {
+/* the mesh of a plain child joined into the empty Biped nodes */
+static void Scene_CollapseBip(CScene *scn) {
 	matrix_t tmp, m;
 
 	CScene_UpdateNodes(scn);
@@ -1603,58 +1508,8 @@ void Scene_CollapseBip(CScene *scn) {
 	}
 }
 
-void Scene_SkinMesh(CScene *scn) {
-	CNode3D *n = scn->Node3D;
-
-	for (; n; n = n->next) {
-		if (n->index >= 0 && M3D_NodeDat(n)->skin.n) {
-			break;
-		}
-	}
-	if (!n) {
-		return;
-	}
-	CTriMesh *all = operator_new(sizeof(CTriMesh));
-	all = all ? CTriMesh_ctor(all) : NULL;
-	CScene_UpdateNodes(scn);
-	for (n = scn->Node3D; n; n = n->next) {
-		if (n->flags & NODE_HIDE || CNode3D_Class(n) != CLASS_OBJ3D_TRIMESH) {
-			continue;
-		}
-		CTriMesh *mesh = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_TRIMESH);
-		if (!mesh->pSkin) {
-			CTriMesh_Transform(mesh, &n->m);
-			if (!mesh->pSkin) {
-				CTriMesh_AllocSkin(mesh);
-				for (int i = 0; i < mesh->nVert; i++) {
-					byte *s = CTriMesh_GetSkin(mesh, (uint32_t)i);
-					s[0] = 1;
-					CHECK((uint32_t)n->index < 256);
-					n->flags |= NODE_BONE;
-					s[1] = (byte)n->index;
-					*(float *)(s + 4) = 1.0f;
-				}
-			}
-		}
-		CHECK(mesh->pTri);
-		CTriMesh_Add(all, mesh, 0, 0);
-		CNode3D_FreeObj3D(n);
-		if (!(n->flags & NODE_BONE)) {
-			n->flags |= 0x420008;
-		}
-	}
-	if (all->nTri && all->nVert) {
-		CNode3D *node = operator_new(sizeof(CNode3D));
-		node = node ? CNode3D_ctor(node) : NULL;
-		String_Set(&node->name, "SkinMesh");
-		CNode3D_SetObj3D(node, (IObject3D *)all);
-		CScene_AddNode(scn, node);
-		return;
-	}
-	all->vftable->Delete(&all->base, 1);
-}
-
-void Scene_NodeTable(CScene *scn) {
+/* i48 of the nodes (those without NODE_NO_RENDERNODE first), the bones of the skins to it; the AnimNodes masks */
+static void Scene_NodeTable(CScene *scn) {
 	int k = 0;
 
 	CScene_NumNodes(scn);
@@ -1733,7 +1588,8 @@ void Scene_NodeTable(CScene *scn) {
 	}
 }
 
-void Scene_SetupLOD(CScene *scn) {
+/* a LOD model: the nodes matched with those of the main LOD by name, warnings for the differences */
+static void Scene_SetupLOD(CScene *scn) {
 	E3D_LogWhite((&g_FileLog), "LOD Model setup: %s", Path_FileName(scn->name));
 	String_Set(&scn->mainLOD, g_SceneLODParent->name);
 	for (CNode3D *n = scn->Node3D; n; n = n->next) {
@@ -1804,7 +1660,8 @@ void Scene_SetupLOD(CScene *scn) {
 	}
 }
 
-void Scene_PhysiqueSkin(CScene *scn) {
+/* the Physique weights into the skins of the meshes (version 13 on) */
+static void Scene_PhysiqueSkin(CScene *scn) {
 	if (g_M3DVersion <= 12) {
 		return;
 	}
@@ -1924,11 +1781,13 @@ static void Scene_SortNodes(CScene *scn) {
 	}
 }
 
-void Scene_Sort(CScene *scn) {
+/* the nodes reordered so that the parents come first */
+static void Scene_Sort(CScene *scn) {
 	Scene_SortNodes(scn);
 }
 
-void Scene_AnimParents(CScene *scn, CScene *staticScn) {
+/* the parents of an animation scene set as in the model, then reordered */
+static void Scene_AnimParents(CScene *scn, CScene *staticScn) {
 	CHECK(staticScn->Node3D);
 	for (CNode3D *n = scn->Node3D; n; n = n->next) {
 		CNode3D *n2 = CNode3D_Find(staticScn->Node3D, n->name, 1);
@@ -1954,7 +1813,8 @@ void Scene_AnimParents(CScene *scn, CScene *staticScn) {
 	Scene_SortNodes(scn);
 }
 
-void Scene_Hierarchy(CScene *scn) {
+/* with OptimizeNodes: the nodes under deleted (NODE_DELETE) parents moved up, cleaned before and after */
+static void Scene_Hierarchy(CScene *scn) {
 	if (!g_OptimizeNodes) {
 		return;
 	}
@@ -2010,7 +1870,6 @@ void Scene_Hierarchy(CScene *scn) {
 		operator_delete_array(tab);
 	}
 }
-
 
 /* the meshes */
 
@@ -2116,10 +1975,12 @@ static void M3D_Normalize(vec3_t *v) {
 	v->z = z * s;
 }
 
-float g_M3DPreScaleU;
-float g_M3DPreScaleV;
+static float g_M3DPreScaleU;
+static float g_M3DPreScaleV;
 
-void M3D_ReadMesh(CNode3D *node, byte anim) {
+/* the mesh of node ("TipoGeom: Malla"): vertices through the pivot, Physique weights, faces with their materials,
+ * texture vertices and faces, normals (nothing with anim) */
+static void M3D_ReadMesh(CNode3D *node, byte anim) {
 	m3dTransform_t mt;
 	matrix_t tmp, m;
 	vec3_t color, v;
@@ -2253,7 +2114,6 @@ void M3D_ReadMesh(CNode3D *node, byte anim) {
 	}
 }
 
-
 /* the materials */
 
 /* the texture map tipos of the "Mapa:" names */
@@ -2272,9 +2132,10 @@ static CMap *M3D_SetMap(CMaterial *mat, uint32_t mapid, const char *name) {
 	return CMaterial_SetMap(mat, mapid, name);
 }
 
-char g_M3DTexturePath[260];
+static char g_M3DTexturePath[260];
 
-void M3D_ReadMap(CMaterial *mat, int iMat, int iSubmat, int idx, int type) {
+/* a texture map of mat and its sub maps (type: of the parent map, the "Mapa:" class sets it; idx unused) */
+static void M3D_ReadMap(CMaterial *mat, int iMat, int iSubmat, int idx, int type) {
 	char buf[0x100], name[0x100], class[0x100];
 	float quantity = 1.0f;
 
@@ -2399,7 +2260,8 @@ void M3D_ReadMap(CMaterial *mat, int iMat, int iSubmat, int idx, int type) {
 	}
 }
 
-void M3D_ReadMaterial(CMatList *list, int iMat, int iSubmat) {
+/* a material into list and the table of the file, with its maps and sub materials (iSubmat -1 for a material) */
+static void M3D_ReadMaterial(CMatList *list, int iMat, int iSubmat) {
 	char buf[0x100];
 
 	CHECK(list);
@@ -2566,7 +2428,6 @@ void M3D_ReadMaterial(CMatList *list, int iMat, int iSubmat) {
 	}
 }
 
-
 /* the reader of the M3D files */
 
 #define M3DNODE_CTOR 0x2bbb90
@@ -2641,7 +2502,7 @@ static void M3D_ReadEVA(CNode3D *node, M3DNode *dat) {
 		(double)after * 100.0 / (double)before);
 }
 
-char g_M3DBaseName[260];
+static char g_M3DBaseName[260];
 
 /* the animation tables of an object: its tracks and visibility, the values of its kind; the mask of the channels
  * that stay */
@@ -3099,10 +2960,10 @@ static void M3D_ReadSceneColor(const char *tok, ColorIntens *c) {
 	c->intens = 1.0f;
 }
 
-char g_M3DDir[260];
-CIniFile *g_M3DFileINI;
-char g_M3DSceneMax[260];
-M3DTable *g_M3DSceneTables;
+static char g_M3DDir[260];
+static CIniFile *g_M3DFileINI;
+static char g_M3DSceneMax[260];
+static M3DTable *g_M3DSceneTables;
 
 /* the M3D file name (the model or, with g_SceneAnimParent set, an animation of it; the .CM3 of an animation first),
  * name2 the node of a game model to make its root; arg is not used */
@@ -3376,28 +3237,27 @@ CScene *Scene_Load(const char *name, int arg, const char *name2) {
 
 /* ---- the static initializers; name and description are the strings of the exe ---- */
 
-
-cGVar g_ShowNodesTreeVar;
+static cGVar g_ShowNodesTreeVar;
 
 void ReadM3D_InitShowNodesTree(void) {
 	/* "ShowNodesTree", "Show nodes tree at model M3D loading time (0/1)" */
 	GVar_InitInt((&g_ShowNodesTreeVar), "ShowNodesTree", 0, "Show nodes tree at model M3D loading time (0/1)", 0);
 }
 
-cGVar g_UseWSMVar;
+static cGVar g_UseWSMVar;
 
 void ReadM3D_InitUseWSM(void) {
 	/* "UseWSM", "Use ObjTMAfterWSM (0/1)" */
 	GVar_InitInt((&g_UseWSMVar), "UseWSM", 0, "Use ObjTMAfterWSM (0/1)", 0);
 }
 
-cGVar GVar_CM3_DeleteM3D;
-cGVar GVar_OptimizeNodes;
-cGVar GVar_CM3_UseScenes;
-cGVar GVar_SM3_CheckTime;
-cGVar GVar_SharedTexuresPath;
-cGVar GVar_CM3_CheckTime;
-cGVar GVar_SM3_UseScenes;
+static cGVar GVar_CM3_DeleteM3D;
+static cGVar GVar_OptimizeNodes;
+static cGVar GVar_CM3_UseScenes;
+static cGVar GVar_SM3_CheckTime;
+static cGVar GVar_SharedTexuresPath;
+static cGVar GVar_CM3_CheckTime;
+static cGVar GVar_SM3_UseScenes;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_OptimizeNodes, &GVar_OptimizeNodes, "OptimizeNodes", 0, "0=none, 1=delete unused nodes, 2=colapse to bip nodes, 4=AniMask, 7=all", 7)

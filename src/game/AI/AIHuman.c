@@ -6,6 +6,9 @@
 #include "scrap/aichar.h"
 #include "scrap/walkcharentity.h"
 
+#define CAIHUMAN_VFTABLE (&cAIHuman_vftable)
+static const cAICharVtbl cAIHuman_vftable;
+
 #define CAIHUMAN_SIZE sizeof(cAIHuman)
 
 void *cAIHuman_ctor(void *mem, cEntity *e, int *arg) {
@@ -17,7 +20,8 @@ void *cAIHuman_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAI *cAIHuman_Delete(cAI *base, byte flags) {
+/* AIHuman.c */
+static cAI *cAIHuman_Delete(cAI *base, byte flags) {
 	cAIHuman *self = (cAIHuman *)base;
 	self->vftable = CAIHUMAN_VFTABLE;
 	cAIChar_dtor(self);
@@ -27,7 +31,7 @@ cAI *cAIHuman_Delete(cAI *base, byte flags) {
 	return base;
 }
 
-void cAIHuman_SetDists(cAI *base) {
+static void cAIHuman_SetDists(cAI *base) {
 	cAIHuman *self = (cAIHuman *)base;
 	if (self->state != 3) {
 		cAIChar_SetDists(&self->base.base);
@@ -38,7 +42,7 @@ void cAIHuman_SetDists(cAI *base) {
 }
 
 /* the vtable of cAIHuman */
-const cAICharVtbl cAIHuman_vftable = {
+static const cAICharVtbl cAIHuman_vftable = {
 	.base.base.Delete = cAIHuman_Delete,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,

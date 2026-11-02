@@ -50,33 +50,17 @@ typedef struct CTriMesh {
 vec3_t *CVertList_GetNormal(CVertList *self, vec3_t *out, uint32_t i);
 uv_t *CVertList_GetUV(CVertList *self, uv_t *out, uint32_t i);
 
-
-CMeshTri *CMeshTri_ctor(CMeshTri *self);
-
 CTriMesh *CTriMesh_ctor(CTriMesh *self);
 CTriMesh *CTriMesh_ctorCopy(CTriMesh *self, const CTriMesh *orig);
-/* the meshes of src, with all its list */
-CTriMesh *CTriMesh_ctorD3D(CTriMesh *self, CMeshD3D *src, byte all);
 void CTriMesh_dtor(CTriMesh *self);
-IObject3D *CTriMesh_Delete(IObject3D *base, byte flags);
-/* the members after the vftable cleared, except the box */
-void CTriMesh_Init(CTriMesh *self);
 /* the arrays and the D3D mesh freed, everything 0 */
 void CTriMesh_Clear(CTriMesh *self);
-/* the Read and Write slots of IObject3D: not supported, 0 */
-byte CTriMesh_NoFile(CTriMesh *self, void *f, void *ctx);
-/* through the D3D mesh when there is one and g_MeshD3DOn, else each triangle with DrawPrimitiveUP */
-void CTriMesh_Draw(IObject3D *elem, void *dev, CRenderNode *unused);
 
 /* the counts set; a larger one than allocated doubles the array (realloc: else CHECK there is none yet) */
 void CTriMesh_SetNumVert(CTriMesh *self, int n, byte realloc);
 /* 0 frees the texture vertices (the count stays) */
 void CTriMesh_SetNumTVert(CTriMesh *self, int n, byte realloc);
 void CTriMesh_SetNumTri(CTriMesh *self, int n, byte realloc);
-/* one more: the index of the new one */
-int CTriMesh_AddVert(CTriMesh *self);
-int CTriMesh_AddTVert(CTriMesh *self);
-int CTriMesh_AddTri(CTriMesh *self);
 void *CTriMesh_AllocSkin(CTriMesh *self);
 void *CTriMesh_GetSkin(CTriMesh *self, uint32_t i);
 
@@ -96,16 +80,11 @@ void CTriMesh_SetTriVerts(CTriMesh *self, uint32_t i, int a, int b, int c);
 void CTriMesh_SetTriTVerts(CTriMesh *self, uint32_t i, int a, int b, int c);
 void CTriMesh_SetTriNormals(CTriMesh *self, uint32_t i, const vec3_t *a, const vec3_t *b, const vec3_t *c);
 void CTriMesh_SetTriMat(CTriMesh *self, uint32_t i, void *mat);
-void CTriMesh_SetTriFlags(CTriMesh *self, uint32_t i, uint32_t flags);
-/* the last triangle moved to i */
-void CTriMesh_RemoveTri(CTriMesh *self, uint32_t i);
 /* corner vert of triangle tri; uv 0 without texture vertices */
 void CTriMesh_GetTriVert(CTriMesh *self, CMeshVert *out, uint32_t tri, uint32_t vert);
 /* a triangle of new vertices (and texture vertices if tvert) */
 void CTriMesh_AddTriVerts(CTriMesh *self, const CMeshVert *a, const CMeshVert *b, const CMeshVert *c,
 	void *mat, byte tvert, uint32_t flags);
-/* texture vertex 0 at (0, 0) for all triangles, when there are triangles but no texture vertices */
-void CTriMesh_CreateTVert(CTriMesh *self);
 
 /* the vertices and triangles of src (and of its list if all) added */
 void CTriMesh_AddD3D(CTriMesh *self, CMeshD3D *src, byte all);

@@ -23,6 +23,10 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/staticinit.h"
 
+#define CAIVEHICLEGROUP_VFTABLE (&cAIVehicleGroup_vftable)
+#define CAIVEHICLECONTROL_VFTABLE (&cAIVehicleControl_vftable)
+static const cAIEntityGroupVtbl cAIVehicleGroup_vftable;
+static const cAIVehicleControlVtbl cAIVehicleControl_vftable;
 
 cGVar GVar_ShowPathAI;
 
@@ -30,40 +34,40 @@ cGVar GVar_ShowPathAI;
 #define g_ShowPathAI (GVar_ShowPathAI.value.i)
 extern cGVar GVar_DepthPathRouteOutDoorAI;
 #define g_DepthPathRouteOutDoorAI (GVar_DepthPathRouteOutDoorAI.value.i)
-cGVar GVar_ShowVehAI;
+static cGVar GVar_ShowVehAI;
 
 #define g_ShowVehAI (&GVar_ShowVehAI.value.s)
-cGVar GVar_LimVelTurnObjectiveAI;
+static cGVar GVar_LimVelTurnObjectiveAI;
 
 #define g_LimVelTurnObjectiveAI (GVar_LimVelTurnObjectiveAI.value.f)
-cGVar GVar_DistBoostAI;
+static cGVar GVar_DistBoostAI;
 
 #define g_DistBoostAI (GVar_DistBoostAI.value.f)
-cGVar GVar_DepthSearchPosGoAI;
+static cGVar GVar_DepthSearchPosGoAI;
 
 #define g_DepthSearchPosGoAI (GVar_DepthSearchPosGoAI.value.i)
-cGVar GVar_TimeReactTurnAI;
+static cGVar GVar_TimeReactTurnAI;
 
 #define g_TimeReactTurnAI (GVar_TimeReactTurnAI.value.f)
-cGVar GVar_DistBrakeObjAI;
+static cGVar GVar_DistBrakeObjAI;
 
 #define g_DistBrakeObjAI (GVar_DistBrakeObjAI.value.f)
-cGVar GVar_MinAngleSearchPointAI;
+static cGVar GVar_MinAngleSearchPointAI;
 
 #define g_MinAngleSearchPointAI (GVar_MinAngleSearchPointAI.value.f)
-cGVar GVar_TimeMaxReachBoostAI;
+static cGVar GVar_TimeMaxReachBoostAI;
 
 #define g_TimeMaxReachBoostAI (GVar_TimeMaxReachBoostAI.value.f)
-cGVar GVar_VelTurnAI;
+static cGVar GVar_VelTurnAI;
 
 #define g_VelTurnAI (GVar_VelTurnAI.value.f)
-cGVar GVar_DecVelBrakeAI;
+static cGVar GVar_DecVelBrakeAI;
 
 #define g_DecVelBrakeAI (GVar_DecVelBrakeAI.value.f)
-cGVar GVar_ShowStopShipAI;
+static cGVar GVar_ShowStopShipAI;
 
 #define g_ShowStopShipAI (GVar_ShowStopShipAI.value.i)
-cGVar GVar_MinTimeReposAI;
+static cGVar GVar_MinTimeReposAI;
 
 #define g_MinTimeReposAI (GVar_MinTimeReposAI.value.f)
 
@@ -134,6 +138,7 @@ static vec3_t *VC_PathFirst(cAIVehicleControl *self) {
 }
 
 /* the corridor of the vehicle from its position to p free */
+static byte cAIVehicleControl_TestCorridor(cAIVehicleControl *self, const vec3_t *a, const vec3_t *b, float unused);
 static byte VC_Free(cAIVehicleControl *self, const vec3_t *p) {
 	vec3_t buf;
 	float r = VC_Radius(self);
@@ -248,7 +253,8 @@ cAIVehicleControl *cAIVehicleControl_ctor(void *mem, cEntity *v, cAIVehicle *ai,
 	return self;
 }
 
-void cAIVehicleControl_dtor(cAIVehicleControl *self) {
+/* ---- AI/AIVehicleControl.cpp (src/game/AI/IVehicleControl.c); the rest in aivehicle.h ---- */
+static void cAIVehicleControl_dtor(cAIVehicleControl *self) {
 	cNWVecList *l = &self->path;
 
 	self->vftable = CAIVEHICLECONTROL_VFTABLE;
@@ -261,7 +267,7 @@ void cAIVehicleControl_dtor(cAIVehicleControl *self) {
 	l->numFree = 0;
 }
 
-cAIVehicleControl *cAIVehicleControl_Delete(cAIVehicleControl *self, byte flags) {
+static cAIVehicleControl *cAIVehicleControl_Delete(cAIVehicleControl *self, byte flags) {
 	cAIVehicleControl_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAIVEHICLECONTROL_SIZE);
@@ -277,7 +283,7 @@ void cAIVehicleControl_ApplyParams(cAIVehicleControl *self) {
 
 /* the segment a b and 8 segments around it at the radius of the vehicle (sideways, up and down, diagonal), each
  * at most AIVC_MAX_LEN long, free of the level; the segments kept for the debug view */
-byte cAIVehicleControl_TestCorridor(cAIVehicleControl *self, const vec3_t *a, const vec3_t *b,
+static byte cAIVehicleControl_TestCorridor(cAIVehicleControl *self, const vec3_t *a, const vec3_t *b,
 	float unused) {
 	vec3_t a0 = *a, b0 = *b;
 	vec3_t u, s, ns, t, nt, d1, d2, in, ul;
@@ -400,69 +406,10 @@ byte cAIVehicleControl_TestCorridor(cAIVehicleControl *self, const vec3_t *a, co
 	return 1;
 }
 
-/* the two diagonals across the end of the corridor along dir (len at most the radius) free of the level */
-byte cAIVehicleControl_TestEnd(cAIVehicleControl *self, const vec3_t *a, const vec3_t *dir, float len) {
-	vec3_t e, s, w, m, q[4];
-	float r;
-
-	r = VC_Radius(self);
-	if (!(r > len)) {
-		len = VC_Radius(self);
-	}
-	e.x = a->x + dir->x * len;
-	e.y = a->y + dir->y * len;
-	e.z = a->z + dir->z * len;
-	float k = dir->y * 0.0f;
-	float sx = k - dir->z, sy = dir->z * 0.0f - dir->x * 0.0f, sz = dir->x - k;
-	if (sx == 0.0f && sy == 0.0f && sz == 0.0f) {
-		sx = 1.0f;
-		sy = 0.0f;
-		sz = 0.0f;
-	}
-	NW_Normalize(&s, sx, sy, sz);
-	NW_Normalize(&w, dir->y * s.z - dir->z * s.y, dir->z * s.x - dir->x * s.z, dir->x * s.y - dir->y * s.x);
-	NW_Normalize(&m, w.x + s.x, w.y + s.y, w.z + s.z);
-	r = VC_Radius(self);
-	q[0].x = m.x * r + e.x;
-	q[0].y = m.y * r + e.y;
-	q[0].z = m.z * r + e.z;
-	r = VC_Radius(self);
-	q[1].x = -m.x * r + e.x;
-	q[1].y = -m.y * r + e.y;
-	q[1].z = -m.z * r + e.z;
-	if (Engine_TestLine(&q[0], &q[1], NULL, NULL)) {
-		return 0;
-	}
-	NW_Normalize(&m, s.x - w.x, s.y - w.y, s.z - w.z);
-	r = VC_Radius(self);
-	q[2].x = m.x * r + e.x;
-	q[2].y = m.y * r + e.y;
-	q[2].z = m.z * r + e.z;
-	r = VC_Radius(self);
-	q[3].x = -m.x * r + e.x;
-	q[3].y = -m.y * r + e.y;
-	q[3].z = -m.z * r + e.z;
-	if (Engine_TestLine(&q[2], &q[3], NULL, NULL)) {
-		return 0;
-	}
-	self->endCap[0][0] = q[0];
-	self->endCap[0][1] = q[1];
-	self->endCap[1][0] = q[2];
-	self->endCap[1][1] = q[3];
-	return 1;
-}
-
-byte cAIVehicleControl_TestEndTo(cAIVehicleControl *self, const vec3_t *a, const vec3_t *b) {
-	vec3_t dir;
-	float len = NW_Normalize(&dir, b->x - a->x, b->y - a->y, b->z - a->z);
-
-	return cAIVehicleControl_TestEnd(self, a, &dir, len);
-}
-
 /* ---- the checks ---- */
 
 /* the target of the chase or of the orientation still there; else the event 3 (target gone) */
-byte cAIVehicleControl_CheckTarget(cAIVehicleControl *self) {
+static byte cAIVehicleControl_CheckTarget(cAIVehicleControl *self) {
 	if (self->mode == AIVC_CHASE || self->mode == AIVC_ORIENT) {
 		cEntity *t = VC_Target(self);
 		if (!t || !t->active) {
@@ -479,7 +426,9 @@ byte cAIVehicleControl_CheckTarget(cAIVehicleControl *self) {
 }
 
 /* on the last node of a path: the corridor to the goal blocked makes the path direct and lost */
-byte cAIVehicleControl_CheckPathFree(cAIVehicleControl *self) {
+static byte cAIVehicleControl_NodeIsLast(cAIVehicleControl *self);
+static byte cAIVehicleControl_SetDirectPath(cAIVehicleControl *self, const vec3_t *p);
+static byte cAIVehicleControl_CheckPathFree(cAIVehicleControl *self) {
 	if (self->pathState != 0 && cAIVehicleControl_NodeIsLast(self) && !VC_Free(self, &self->dest)) {
 		self->lost = 1;
 		cAIVehicleControl_SetDirectPath(self, &self->dest);
@@ -491,7 +440,8 @@ byte cAIVehicleControl_CheckPathFree(cAIVehicleControl *self) {
 
 /* the point to steer to: the goal when the graph sees it, else the point or the node when they are free, else one
  * of the next two nodes; a new path when none is */
-byte cAIVehicleControl_FindPoint(cAIVehicleControl *self) {
+static byte cAIVehicleControl_SetPath(cAIVehicleControl *self, const vec3_t *p);
+static byte cAIVehicleControl_FindPoint(cAIVehicleControl *self) {
 	vec3_t buf;
 
 	self->seen = 0;
@@ -548,7 +498,8 @@ repath:
 }
 
 /* FindPoint of the path along a direction: a new path from the nose of the vehicle when no point is free */
-byte cAIVehicleControl_FindPointDir(cAIVehicleControl *self) {
+static byte cAIVehicleControl_RebuildPath(cAIVehicleControl *self);
+static byte cAIVehicleControl_FindPointDir(cAIVehicleControl *self) {
 	vec3_t rot, out;
 
 	self->seen = 0;
@@ -613,7 +564,7 @@ static byte VC_SeesTarget(cAIVehicleControl *self, const vec3_t *tp) {
 }
 
 /* the chase: directly at the target while it is seen, else a path to it, renewed now and then */
-byte cAIVehicleControl_ChasePath(cAIVehicleControl *self) {
+static byte cAIVehicleControl_ChasePath(cAIVehicleControl *self) {
 	vec3_t tp, buf;
 	float t;
 
@@ -674,7 +625,7 @@ byte cAIVehicleControl_ChasePath(cAIVehicleControl *self) {
 }
 
 /* the orientation: the target point while the segment to it is free */
-byte cAIVehicleControl_ChaseLine(cAIVehicleControl *self) {
+static byte cAIVehicleControl_ChaseLine(cAIVehicleControl *self) {
 	vec3_t tp, buf;
 	float t;
 
@@ -708,7 +659,7 @@ byte cAIVehicleControl_ChaseLine(cAIVehicleControl *self) {
 
 /* at the goal: the event 2 (arrived) within dist, 4 within four times dist, else 5 (or when the AI does not take
  * it) */
-void cAIVehicleControl_CheckArrive(cAIVehicleControl *self) {
+static void cAIVehicleControl_CheckArrive(cAIVehicleControl *self) {
 	cSlotController *slot = &self->slotArrive;
 	vec3_t buf;
 	float t;
@@ -739,6 +690,11 @@ other:
 
 /* ---- the update ---- */
 
+static byte cAIVehicleControl_UpdateChase(cAIVehicleControl *self, float dt);
+static byte cAIVehicleControl_UpdateDirect(cAIVehicleControl *self, float dt);
+static byte cAIVehicleControl_UpdateOrient(cAIVehicleControl *self, float dt);
+static byte cAIVehicleControl_UpdatePath(cAIVehicleControl *self, float dt);
+static byte cAIVehicleControl_UpdatePoint(cAIVehicleControl *self, float dt);
 void cAIVehicleControl_Update(cAIVehicleControl *self, float dt) {
 	if (!cAIVehicle_GetChanged(self->ai) &&
 		(!cAIVehicle_Think(self->ai) || !cAIVehicleControl_CheckTarget(self))) {
@@ -777,7 +733,7 @@ static float VC_Turn(float want, float *cur, float *store, float lim) {
 }
 
 /* the turn to the target of the chase (factor 2 * CONTROL_AIM) */
-void cAIVehicleControl_TurnToTarget(cAIVehicleControl *self) {
+static void cAIVehicleControl_TurnToTarget(cAIVehicleControl *self) {
 	vec3_t a, b, r, d, want, cur;
 	const vec3_t *tp = VC_TargetPos(self, &a);
 	const vec3_t *p = VC_Pos(self, &b);
@@ -801,7 +757,7 @@ void cAIVehicleControl_TurnToTarget(cAIVehicleControl *self) {
 }
 
 /* the turn to the point (factor rotA, at most rotB) */
-void cAIVehicleControl_TurnToPoint(cAIVehicleControl *self) {
+static void cAIVehicleControl_TurnToPoint(cAIVehicleControl *self) {
 	vec3_t b, r, d, want, cur;
 	const vec3_t *p = VC_Pos(self, &b);
 
@@ -823,6 +779,7 @@ void cAIVehicleControl_TurnToPoint(cAIVehicleControl *self) {
 }
 
 /* the point and the target position after a step of the path slot */
+static void cAIVehicleControl_Smooth(cAIVehicleControl *self);
 static void VC_StepDone(cAIVehicleControl *self) {
 	vec3_t buf;
 
@@ -833,7 +790,7 @@ static void VC_StepDone(cAIVehicleControl *self) {
 }
 
 /* the path slot: the point of the path; while lost a new path to the goal every 3 s */
-byte cAIVehicleControl_PathStep(cAIVehicleControl *self) {
+static byte cAIVehicleControl_PathStep(cAIVehicleControl *self) {
 	cSlotController *slot = &self->slotPath;
 	float t;
 
@@ -867,7 +824,7 @@ byte cAIVehicleControl_PathStep(cAIVehicleControl *self) {
 }
 
 /* PathStep of the chase: the new paths lead to the target */
-byte cAIVehicleControl_PathStepChase(cAIVehicleControl *self) {
+static byte cAIVehicleControl_PathStepChase(cAIVehicleControl *self) {
 	cSlotController *slot = &self->slotPath;
 	vec3_t buf;
 	float t;
@@ -901,7 +858,7 @@ byte cAIVehicleControl_PathStepChase(cAIVehicleControl *self) {
 	return 1;
 }
 
-byte cAIVehicleControl_PathStepDir(cAIVehicleControl *self) {
+static byte cAIVehicleControl_PathStepDir(cAIVehicleControl *self) {
 	cSlotController *slot = &self->slotPath;
 	float t;
 
@@ -919,7 +876,8 @@ byte cAIVehicleControl_PathStepDir(cAIVehicleControl *self) {
 /* ---- the strafe ---- */
 
 /* the strafe toward the point in the frame of the vehicle (small vehicles only; lost: at random) */
-void cAIVehicleControl_StrafeToPoint(cAIVehicleControl *self) {
+static void cAIVehicleControl_StrafeRandom(cAIVehicleControl *self);
+static void cAIVehicleControl_StrafeToPoint(cAIVehicleControl *self) {
 	vec3_t b, d, rot, loc, n;
 
 	if (self->lost) {
@@ -964,7 +922,7 @@ static byte VC_AheadBlocked(cAIVehicleControl *self) {
 
 /* the dodge while the vehicle loses life (and now and then at random): sideways for a random time; 0 while it
  * does not dodge */
-byte cAIVehicleControl_StrafeDodge(cAIVehicleControl *self) {
+static byte cAIVehicleControl_StrafeDodge(cAIVehicleControl *self) {
 	cSlotController *slot = &self->slotStrafe;
 	vec3_t b;
 	float t;
@@ -1031,7 +989,7 @@ byte cAIVehicleControl_StrafeDodge(cAIVehicleControl *self) {
 }
 
 /* the strafe of the chase between chaseMin / 2 and chaseMax: random sideways speeds of MAX_VEL_STRAFE */
-void cAIVehicleControl_StrafeChase(cAIVehicleControl *self) {
+static void cAIVehicleControl_StrafeChase(cAIVehicleControl *self) {
 	cSlotController *slot = &self->slotStrafe;
 	vec3_t a, b;
 	float t;
@@ -1083,7 +1041,7 @@ write:
 }
 
 /* the strafe while lost: small random sideways speeds */
-void cAIVehicleControl_StrafeRandom(cAIVehicleControl *self) {
+static void cAIVehicleControl_StrafeRandom(cAIVehicleControl *self) {
 	cSlotController *slot = &self->slotStrafe;
 	float t;
 
@@ -1152,7 +1110,7 @@ static void VC_Boost(cAIVehicleControl *self, byte nearGoal, float distP, float 
 }
 
 /* the acceleration of the chase while the target is not seen: by the distance to it, the brakes before the point */
-void cAIVehicleControl_AccelToTarget(cAIVehicleControl *self) {
+static void cAIVehicleControl_AccelToTarget(cAIVehicleControl *self) {
 	vec3_t a, b, fwd;
 	byte slow = 0;
 	float val = 0.0f;
@@ -1202,7 +1160,7 @@ void cAIVehicleControl_AccelToTarget(cAIVehicleControl *self) {
 
 /* the acceleration of the chase: back below chaseMin, ahead beyond chaseMax (with a hysteresis to the middle); the
  * boost when the target cannot be reached in TIME_MAX_REACH_BOOST */
-void cAIVehicleControl_AccelChase(cAIVehicleControl *self) {
+static void cAIVehicleControl_AccelChase(cAIVehicleControl *self) {
 	vec3_t a, b, fwd;
 
 	self->braking = 0;
@@ -1246,7 +1204,7 @@ void cAIVehicleControl_AccelChase(cAIVehicleControl *self) {
 
 /* the acceleration along a path: the brakes before the point (TIME_REACT_TURN) and at the goal, the velocity along
  * the nose without inertia */
-void cAIVehicleControl_AccelPath(cAIVehicleControl *self) {
+static void cAIVehicleControl_AccelPath(cAIVehicleControl *self) {
 	vec3_t b, fwd;
 	byte slow = 0, slowA = 0;
 	float val = 0.0f, lim = 0.0f;
@@ -1319,7 +1277,7 @@ set:
 /* ---- the paths ---- */
 
 /* a path to p over the graph (A*), the point its first node; else the event 1 (not reachable) or 0 (lost) */
-byte cAIVehicleControl_SetPath(cAIVehicleControl *self, const vec3_t *p) {
+static byte cAIVehicleControl_SetPath(cAIVehicleControl *self, const vec3_t *p) {
 	vec3_t buf;
 	byte startOk, goalOk;
 
@@ -1356,7 +1314,7 @@ fail:
 }
 
 /* the path from the vehicle straight to p */
-byte cAIVehicleControl_SetDirectPath(cAIVehicleControl *self, const vec3_t *p) {
+static byte cAIVehicleControl_SetDirectPath(cAIVehicleControl *self, const vec3_t *p) {
 	vec3_t buf;
 
 	self->dest = *p;
@@ -1370,7 +1328,7 @@ byte cAIVehicleControl_SetDirectPath(cAIVehicleControl *self, const vec3_t *p) {
 }
 
 /* the path along dir over the graph (DepthPathRouteOutDoorAI nodes), its last node the goal; else the event 0 */
-byte cAIVehicleControl_RebuildPath(cAIVehicleControl *self) {
+static byte cAIVehicleControl_RebuildPath(cAIVehicleControl *self) {
 	vec3_t buf;
 
 	CHECK(g_NodesWorld != NULL);
@@ -1489,7 +1447,8 @@ void cAIVehicleControl_Stop(cAIVehicleControl *self) {
 
 /* the point as far along the path as the corridor is free; to a blocked node by halving between the last free
  * point and it (DepthSearchPosGoAI times, while the angle to them is above MinAngleSearchPointAI) */
-void cAIVehicleControl_Smooth(cAIVehicleControl *self) {
+static void cAIVehicleControl_RandomNear(cAIVehicleControl *self, vec3_t *p);
+static void cAIVehicleControl_Smooth(cAIVehicleControl *self) {
 	cNWVecNode *saved = self->path.iter;
 	cNWVecNode *n = saved->prev;
 	vec3_t *p;
@@ -1593,17 +1552,8 @@ cAIVehicleParams2 *cAIVehicleControl_GetParamsInit(cAIVehicleControl *self) {
 	return &self->paramsInit;
 }
 
-/* the node is the first one of the path (the one in front of head) */
-byte cAIVehicleControl_NodeIsFirst(cAIVehicleControl *self) {
-	cNWVecNode *saved = self->path.iter;
-	vec3_t *p = VC_PathFirst(self);
-
-	self->path.iter = saved;
-	return p == self->node;
-}
-
 /* the node is the one behind head */
-byte cAIVehicleControl_NodeIsLast(cAIVehicleControl *self) {
+static byte cAIVehicleControl_NodeIsLast(cAIVehicleControl *self) {
 	cNWVecNode *saved = self->path.iter;
 	cNWVecNode *h = self->path.head;
 	cNWVecNode *n;
@@ -1620,20 +1570,6 @@ byte cAIVehicleControl_GetStrafing(cAIVehicleControl *self) {
 	return self->strafing;
 }
 
-/* the goal seen from the vehicle and from the node at less than pi / 8 apart */
-byte cAIVehicleControl_NodeOnWay(cAIVehicleControl *self) {
-	vec3_t buf, a, b;
-	const vec3_t *p = VC_Pos(self, &buf);
-
-	a.x = self->dest.x - p->x;
-	a.y = self->dest.y - p->y;
-	a.z = self->dest.z - p->z;
-	b.x = self->dest.x - self->node->x;
-	b.y = self->dest.y - self->node->y;
-	b.z = self->dest.z - self->node->z;
-	return (double)(M_PI_F / 8.0f) > Vec3_Angle(&a, &b);
-}
-
 byte cAIVehicleControl_GetFlag(cAIVehicleControl *self) {
 	return self->inSight;
 }
@@ -1644,7 +1580,8 @@ byte cAIVehicleControl_InSight(cAIVehicleControl *self) {
 
 /* ---- the moves ---- */
 
-byte cAIVehicleControl_UpdateChase(cAIVehicleControl *self, float dt) {
+/* the moves of Update (dt not used) */
+static byte cAIVehicleControl_UpdateChase(cAIVehicleControl *self, float dt) {
 	(void)dt;
 	if (self->path.count > 0) {
 		if (!cAIVehicleControl_ChasePath(self)) {
@@ -1672,7 +1609,7 @@ byte cAIVehicleControl_UpdateChase(cAIVehicleControl *self, float dt) {
 	return 1;
 }
 
-byte cAIVehicleControl_UpdateOrient(cAIVehicleControl *self, float dt) {
+static byte cAIVehicleControl_UpdateOrient(cAIVehicleControl *self, float dt) {
 	(void)dt;
 	if (!cAIVehicleControl_ChaseLine(self)) {
 		return 0;
@@ -1685,7 +1622,7 @@ byte cAIVehicleControl_UpdateOrient(cAIVehicleControl *self, float dt) {
 	return 1;
 }
 
-byte cAIVehicleControl_UpdatePoint(cAIVehicleControl *self, float dt) {
+static byte cAIVehicleControl_UpdatePoint(cAIVehicleControl *self, float dt) {
 	(void)dt;
 	if (self->path.count > 0) {
 		cAIVehicleControl_CheckArrive(self);
@@ -1704,7 +1641,7 @@ byte cAIVehicleControl_UpdatePoint(cAIVehicleControl *self, float dt) {
 	return 1;
 }
 
-byte cAIVehicleControl_UpdateDirect(cAIVehicleControl *self, float dt) {
+static byte cAIVehicleControl_UpdateDirect(cAIVehicleControl *self, float dt) {
 	(void)dt;
 	if (self->path.count > 0) {
 		cAIVehicleControl_CheckArrive(self);
@@ -1717,7 +1654,7 @@ byte cAIVehicleControl_UpdateDirect(cAIVehicleControl *self, float dt) {
 	return 1;
 }
 
-byte cAIVehicleControl_UpdatePath(cAIVehicleControl *self, float dt) {
+static byte cAIVehicleControl_UpdatePath(cAIVehicleControl *self, float dt) {
 	(void)dt;
 	if (self->path.count > 0) {
 		cAIVehicleControl_CheckArrive(self);
@@ -1742,12 +1679,8 @@ void cAIVehicleControl_ClearDest(cAIVehicleControl *self) {
 	self->targetPos.z = -FLT_MAX;
 }
 
-void cAIVehicleControl_ResetLife(cAIVehicleControl *self) {
-	VC_LifeMark(self);
-}
-
 /* the chase of the target of node between chaseMin and chaseMax: a path to it unless the same target is chased */
-byte cAIVehicleControl_SetChase(cAIVehicleControl *self, Nto1Node *node, float chaseMin, float chaseMax,
+static byte cAIVehicleControl_SetChase(cAIVehicleControl *self, Nto1Node *node, float chaseMin, float chaseMax,
 	byte boost, float rotA, float rotB) {
 	vec3_t buf;
 
@@ -1783,6 +1716,11 @@ void cAIVehicleControl_SetInertia(cAIVehicleControl *self, int on) {
 	self->inertia = (byte)on;
 }
 
+static void cAIVehicleControl_ClearAll(cAIVehicleControl *self);
+static byte cAIVehicleControl_MoveDirect(cAIVehicleControl *self, const vec3_t *dest, float dist, byte boost, float accel, float rotA, float rotB);
+static byte cAIVehicleControl_MovePath(cAIVehicleControl *self, const vec3_t *dir, float dist, byte boost, float accel, byte direct, byte flat, float rotA, float rotB, byte strafe);
+static byte cAIVehicleControl_MovePoint(cAIVehicleControl *self, const vec3_t *dest, float dist, byte boost, float accel, float rotA, float rotB, byte stopAtGoal, byte strafe);
+static byte cAIVehicleControl_SetOrient(cAIVehicleControl *self, Nto1Node *node);
 byte cAIVehicleControl_SetMove(cAIVehicleControl *self, int mode, ...) {
 	va_list ap;
 	byte r = 1;
@@ -1859,34 +1797,9 @@ byte cAIVehicleControl_SetMove(cAIVehicleControl *self, int mode, ...) {
 	return r;
 }
 
-/* a random goal around dest within dist where the vehicle fits (3 tries) */
-void cAIVehicleControl_RandomDest(cAIVehicleControl *self, vec3_t *out) {
-	for (int k = 0; k < 3;) {
-		vec3_t n, c;
-		k++;
-		double r1 = (double)(crt_rand() & 0x7fff) * AIVC_RAND_INV;
-		double r2 = (double)(crt_rand() & 0x7fff) * AIVC_RAND_INV;
-		float x = (float)(r1 + r1 - 1.0);
-		float y = (float)(r2 + r2 - 1.0);
-		double r3 = (double)(crt_rand() & 0x7fff) * AIVC_RAND_INV;
-		float z = (float)(r3 + r3 - 1.0);
-		NW_Normalize(&n, x, y, z);
-		float d = self->dist;
-		float s = (float)((double)(crt_rand() & 0x7fff) * AIVC_RAND_INV * (double)d + 0.0);
-		c.x = self->dest.x + n.x * s;
-		c.y = self->dest.y + n.y * s;
-		c.z = self->dest.z + n.z * s;
-		if (!Engine_TestSphere(&c, &c, self->radius, NULL, NULL)) {
-			*out = c;
-			self->dest = c;
-			return;
-		}
-	}
-}
-
 /* a random point within 3000 of the blocked node p that the vehicle fits in and the graph sees from the node and
  * from the next one (3 tries) */
-void cAIVehicleControl_RandomNear(cAIVehicleControl *self, vec3_t *p) {
+static void cAIVehicleControl_RandomNear(cAIVehicleControl *self, vec3_t *p) {
 	if (VC_Same(p, &self->dest)) {
 		return;
 	}
@@ -1914,7 +1827,7 @@ void cAIVehicleControl_RandomNear(cAIVehicleControl *self, vec3_t *p) {
 	self->path.iter = saved;
 }
 
-byte cAIVehicleControl_SetOrient(cAIVehicleControl *self, Nto1Node *node) {
+static byte cAIVehicleControl_SetOrient(cAIVehicleControl *self, Nto1Node *node) {
 	CHECK(node != NULL);
 	CHECK(node->target != NULL);
 	int mark = Veh(self->vehicle)->wl.life + 1;
@@ -1924,7 +1837,7 @@ byte cAIVehicleControl_SetOrient(cAIVehicleControl *self, Nto1Node *node) {
 	return 1;
 }
 
-byte cAIVehicleControl_MovePath(cAIVehicleControl *self, const vec3_t *dir, float dist, byte boost,
+static byte cAIVehicleControl_MovePath(cAIVehicleControl *self, const vec3_t *dir, float dist, byte boost,
 	float accel, byte direct, byte flat, float rotA, float rotB, byte strafe) {
 	self->boost = boost;
 	self->pathDirect = direct;
@@ -1948,7 +1861,7 @@ void cAIVehicleControl_SetRotStatic(cAIVehicleControl *self, float a, float b) {
 	self->rotB = b;
 }
 
-byte cAIVehicleControl_MovePoint(cAIVehicleControl *self, const vec3_t *dest, float dist, byte boost,
+static byte cAIVehicleControl_MovePoint(cAIVehicleControl *self, const vec3_t *dest, float dist, byte boost,
 	float accel, float rotA, float rotB, byte stopAtGoal, byte strafe) {
 	self->distMin = Float_MinSS(self->radius, dist);
 	VC_LifeMark(self);
@@ -1965,7 +1878,7 @@ byte cAIVehicleControl_MovePoint(cAIVehicleControl *self, const vec3_t *dest, fl
 	return cAIVehicleControl_SetPath(self, dest);
 }
 
-byte cAIVehicleControl_MoveDirect(cAIVehicleControl *self, const vec3_t *dest, float dist, byte boost,
+static byte cAIVehicleControl_MoveDirect(cAIVehicleControl *self, const vec3_t *dest, float dist, byte boost,
 	float accel, float rotA, float rotB) {
 	self->distMin = Float_MinSS(self->radius, dist);
 	self->lifeMark = Veh(self->vehicle)->wl.life + 1;
@@ -1981,13 +1894,8 @@ byte cAIVehicleControl_MoveDirect(cAIVehicleControl *self, const vec3_t *dest, f
 	return cAIVehicleControl_SetDirectPath(self, dest);
 }
 
-void cAIVehicleControl_ResetClear(cAIVehicleControl *self) {
-	VC_LifeMark(self);
-	cAIVehicleControl_ClearAll(self);
-}
-
 /* the controls let go, the goal and the point -FLT_MAX */
-void cAIVehicleControl_ClearAll(cAIVehicleControl *self) {
+static void cAIVehicleControl_ClearAll(cAIVehicleControl *self) {
 	VC_Release(self);
 	self->dest.x = -FLT_MAX;
 	self->dest.y = -FLT_MAX;
@@ -1999,6 +1907,7 @@ void cAIVehicleControl_ClearAll(cAIVehicleControl *self) {
 
 /* ---- cAIVehicleGroup ---- */
 
+static void cAIVehicleGroup_FindElevators(cAIVehicleGroup *self);
 cAIVehicleGroup *cAIVehicleGroup_ctor(void *mem) {
 	cAIVehicleGroup *self = mem;
 
@@ -2016,12 +1925,13 @@ cAIVehicleGroup *cAIVehicleGroup_ctor(void *mem) {
 	return self;
 }
 
-void cAIVehicleGroup_dtor(cAIVehicleGroup *self) {
+/* ---- cAIVehicleGroup (the same source; cAIVehicleGroup_ctor in ai.h) ---- */
+static void cAIVehicleGroup_dtor(cAIVehicleGroup *self) {
 	self->vftable = CAIVEHICLEGROUP_VFTABLE;
 	cAIEntityGroup_dtor(self);
 }
 
-cAIEntityGroup *cAIVehicleGroup_Delete(cAIEntityGroup *base, byte flags) {
+static cAIEntityGroup *cAIVehicleGroup_Delete(cAIEntityGroup *base, byte flags) {
 	cAIVehicleGroup *self = (cAIVehicleGroup *)base;
 	cAIVehicleGroup_dtor(self);
 	if (flags & 1) {
@@ -2079,7 +1989,7 @@ static void VC_FindDummies(cAIVehicleGroup *self, const char *pattern, size_t si
 }
 
 /* the positions of the elevator and metro doors of the level (DM_Door_Elevator_*, DM_Door_MetroExt_*) */
-void cAIVehicleGroup_FindElevators(cAIVehicleGroup *self) {
+static void cAIVehicleGroup_FindElevators(cAIVehicleGroup *self) {
 	self->numElevators = 0;
 	VC_FindDummies(self, "DM_Door_Elevator_*", sizeof("DM_Door_Elevator_*"));
 	VC_FindDummies(self, "DM_Door_MetroExt_*", sizeof("DM_Door_MetroExt_*"));
@@ -2090,7 +2000,7 @@ void cAIVehicleGroup_ResetRepos(cAIVehicleGroup *self) {
 }
 
 /* the vtable of cAIVehicleGroup */
-const cAIEntityGroupVtbl cAIVehicleGroup_vftable = {
+static const cAIEntityGroupVtbl cAIVehicleGroup_vftable = {
 	.Delete = cAIVehicleGroup_Delete,
 	.Clear = cAIEntityGroup_Clear,
 	.Add = cAIEntityGroup_Add,
@@ -2103,7 +2013,7 @@ const cAIEntityGroupVtbl cAIVehicleGroup_vftable = {
 };
 
 /* the vtable of cAIVehicleControl */
-const cAIVehicleControlVtbl cAIVehicleControl_vftable = {
+static const cAIVehicleControlVtbl cAIVehicleControl_vftable = {
 	.Delete = cAIVehicleControl_Delete,
 };
 

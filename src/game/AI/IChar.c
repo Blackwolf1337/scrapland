@@ -18,6 +18,27 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/staticinit.h"
 
+#define CAICHAR_VFTABLE (&cAIChar_vftable)
+#define g_DistMaxCheckPauseAI (GVar_DistMaxCheckPauseAI.value.f)	/* "DistMaxCheckPauseAI" */
+#define g_DistMinCheckPauseAI (GVar_DistMinCheckPauseAI.value.f)	/* "DistMinCheckPauseAI" */
+#define g_DistRadPauseCharAI (GVar_DistRadPauseCharAI.value.f)		/* "DistRadPauseCharAI" */
+#define g_DistMaxCheckReposAI (GVar_DistMaxCheckReposAI.value.f)	/* "DistMaxCheckReposAI" */
+#define g_DistMinCheckReposAI (GVar_DistMinCheckReposAI.value.f)	/* "DistMinCheckReposAI" */
+#define g_MinTalkCharAI (GVar_MinTalkCharAI.value.f)		/* "MinTalkCharAI": the height difference */
+#define g_MinNumTalksCharAI (GVar_MinNumTalksCharAI.value.i)		/* "MinNumTalksCharAI" */
+#define g_MinTimeStoppedCharAI (GVar_MinTimeStoppedCharAI.value.f)	/* "MinTimeStoppedCharAI" */
+#define g_MinTimeStopTempCharAI (GVar_MinTimeStopTempCharAI.value.f)	/* "MinTimeStopTempCharAI" */
+static const cAICharVtbl cAIChar_vftable;
+static cGVar GVar_MinTimeStoppedCharAI;
+static cGVar GVar_MinTimeStopTempCharAI;
+static cGVar GVar_MinTalkCharAI;
+static cGVar GVar_MinNumTalksCharAI;
+static cGVar GVar_DistRadPauseCharAI;
+static cGVar GVar_DistMinCheckReposAI;
+static cGVar GVar_DistMinCheckPauseAI;
+static cGVar GVar_DistMaxCheckReposAI;
+static cGVar GVar_DistMaxCheckPauseAI;
+
 cGVar GVar_RADIUS_OBJECTIVE_IN_ROUTE;
 
 #define g_AICRadiusInRoute (GVar_RADIUS_OBJECTIVE_IN_ROUTE.value.f)	/* RADIUS_OBJECTIVE_IN_ROUTE */
@@ -183,7 +204,7 @@ void cAIChar_dtor(cAIChar *self) {
 	cAIMove_dtor(&self->base);
 }
 
-cAI *cAIChar_Delete(cAI *base, byte flags) {
+static cAI *cAIChar_Delete(cAI *base, byte flags) {
 	cAIChar *self = (cAIChar *)base;
 	cAIChar_dtor(self);
 	if (flags & 1) {
@@ -200,18 +221,6 @@ void Nto1Head_Link(Nto1Node *head, Nto1Node *node) {
 
 int Vec3_Differ(const float *a, const float *b) {
 	return !(a[0] == b[0] && a[1] == b[1] && a[2] == b[2]);
-}
-
-/* ---- small slots ---- */
-
-void cAIChar_Nop(cAIChar *self) {
-	(void)self;
-}
-
-byte cAIChar_EventNone(cAIChar *self, int ev) {
-	(void)self;
-	(void)ev;
-	return 0;
 }
 
 byte cAIChar_GetChanged(cAI *elem) {
@@ -1948,7 +1957,7 @@ byte cAIChar_IsMoving(cAI *base) {
 }
 
 /* the vtable of cAIChar */
-const cAICharVtbl cAIChar_vftable = {
+static const cAICharVtbl cAIChar_vftable = {
 	.base.base.Delete = cAIChar_Delete,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
@@ -2050,15 +2059,16 @@ const cAICharVtbl cAIChar_vftable = {
 	.Facing = cAIChar_Facing,
 };
 
-cGVar GVar_DistMinCheckPauseAI;
-cGVar GVar_DistRadPauseCharAI;
-cGVar GVar_MinNumTalksCharAI;
-cGVar GVar_MinTimeStoppedCharAI;
-cGVar GVar_MinTalkCharAI;
-cGVar GVar_DistMaxCheckPauseAI;
-cGVar GVar_MinTimeStopTempCharAI;
-cGVar GVar_DistMinCheckReposAI;
-cGVar GVar_DistMaxCheckReposAI;
+static cGVar GVar_DistMinCheckPauseAI;
+static cGVar GVar_DistRadPauseCharAI;
+static cGVar GVar_MinNumTalksCharAI;
+static cGVar GVar_MinTimeStoppedCharAI;
+static cGVar GVar_MinTalkCharAI;
+/* the engine variables of the character AI */
+static cGVar GVar_DistMaxCheckPauseAI;
+static cGVar GVar_MinTimeStopTempCharAI;
+static cGVar GVar_DistMinCheckReposAI;
+static cGVar GVar_DistMaxCheckReposAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_DistMinCheckPauseAI, &GVar_DistMinCheckPauseAI, "DistMinCheckPauseAI", 4, "Distance to check pause.\n", 2000.0f)

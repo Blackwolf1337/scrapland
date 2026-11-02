@@ -21,6 +21,11 @@
 #include "scrap/platform.h"
 #include "scrap/staticinit.h"
 
+#define g_SplashFade (GVar_SplashScreenFade.value.u)	/* ms */
+#define g_LoadingBar (GVar_ShowProgressBar.value.i)
+static cGVar GVar_SplashScreenFade;
+static cGVar GVar_ShowProgressBar;
+
 /* the methods of IDirect3DDevice8, IDirect3DSurface8 and IDirect3D8 only this file calls */
 #define D3DDEVTYPE_HAL 1
 #define D3D_SDK_VERSION 0xdc
@@ -39,7 +44,8 @@ enum { SURFDESC_FORMAT = 0, SURFDESC_WIDTH = 6, SURFDESC_HEIGHT = 7, SURFDESC_WO
 
 /* the world node info */
 
-void WorldInfo_FromDummy(WorldNodeInfo *info, const WorldDummy *dummy) {
+/* the world node info */
+static void WorldInfo_FromDummy(WorldNodeInfo *info, const WorldDummy *dummy) {
 	matrix_t m;
 
 	if (!info || !dummy) {
@@ -57,7 +63,7 @@ void WorldInfo_FromDummy(WorldNodeInfo *info, const WorldDummy *dummy) {
 	info->dummy = 1;
 }
 
-void WorldInfo_FromNode(WorldNodeInfo *info, CNode3D *node) {
+static void WorldInfo_FromNode(WorldNodeInfo *info, CNode3D *node) {
 	if (!info || !node) {
 		return;
 	}
@@ -77,6 +83,7 @@ box_t *World_GetBox(box_t *out) {
 	return out;
 }
 
+static box_t *CGround_GetCollideExt(const CGround *self, box_t *out);
 box_t *World_GetCollideBox(box_t *out) {
 	box_t box;
 
@@ -89,10 +96,10 @@ byte Sector_Visible(int sector) {
 	return Sector_IsVisible(sector);
 }
 
-CNode3D *g_WorldInfoNode;
-WorldDummy *g_WorldInfoDummy;
-byte g_WorldInfoWild;
-char g_WorldInfoPattern[260];
+static CNode3D *g_WorldInfoNode;
+static WorldDummy *g_WorldInfoDummy;
+static byte g_WorldInfoWild;
+static char g_WorldInfoPattern[260];
 
 void WorldInfo_Begin(const char *pattern, byte wild) {
 	g_WorldInfoNode = NULL;
@@ -104,6 +111,8 @@ void WorldInfo_Begin(const char *pattern, byte wild) {
 	g_WorldInfoWild = wild;
 }
 
+static byte WorldInfo_NextDummy(WorldNodeInfo *info);
+static byte WorldInfo_NextNode(WorldNodeInfo *info);
 byte WorldInfo_Next(WorldNodeInfo *info) {
 	if (WorldInfo_NextDummy(info)) {
 		return 1;
@@ -134,17 +143,8 @@ float WorldInfo_GetFloat(const char *sect, const char *key, float def) {
 	return CIniFile_GetFloat(WorldInfo_UserProp(), sect, key, def);
 }
 
-int WorldInfo_GetInt(const char *sect, const char *key, int def) {
-	return CIniFile_GetInt(WorldInfo_UserProp(), sect, key, def);
-}
-
 char *WorldInfo_GetText(const char *sect, const char *key, char *dest, int size, const char *def) {
 	return CIniFile_GetText(WorldInfo_UserProp(), sect, key, dest, size, def);
-}
-
-vec3_t *WorldInfo_GetVec3(vec3_t *out, const char *sect, const char *key, const vec3_t *def) {
-	CIniFile_GetVec3(WorldInfo_UserProp(), out, sect, key, def);
-	return out;
 }
 
 int Sector_At(const vec3_t *pos) {
@@ -187,7 +187,7 @@ static byte WorldInfo_Match(const char *name) {
 	return Wild_Match(g_WorldInfoPattern, low) != 0;
 }
 
-byte WorldInfo_NextDummy(WorldNodeInfo *info) {
+static byte WorldInfo_NextDummy(WorldNodeInfo *info) {
 	do {
 		g_WorldInfoDummy = g_WorldInfoDummy ? g_WorldInfoDummy->next : World_Get()->dummies;
 		if (!g_WorldInfoDummy) {
@@ -198,7 +198,7 @@ byte WorldInfo_NextDummy(WorldNodeInfo *info) {
 	return 1;
 }
 
-byte WorldInfo_NextNode(WorldNodeInfo *info) {
+static byte WorldInfo_NextNode(WorldNodeInfo *info) {
 	do {
 		CWorld *world = World_Get();
 		g_WorldInfoNode = CWorld_FindClass(world, g_WorldInfoNode, 0);
@@ -210,7 +210,8 @@ byte WorldInfo_NextNode(WorldNodeInfo *info) {
 	return 1;
 }
 
-box_t *CGround_GetCollideExt(const CGround *self, box_t *out) {
+/* the inline of ground.h */
+static box_t *CGround_GetCollideExt(const CGround *self, box_t *out) {
 	*out = self->CollideExt;
 	return out;
 }
@@ -221,7 +222,8 @@ matrix_t *Matrix_Self(matrix_t *m) {
 
 /* RenderMode and the rest */
 
-int Bool_GetSet(byte *flag, int value, byte set) {
+/* the old value of *flag, set to value with set */
+static int Bool_GetSet(byte *flag, int value, byte set) {
 	byte old = *flag;
 
 	if (set) {
@@ -339,32 +341,6 @@ void Render_CopyBackBuffer(void) {
 	}
 }
 
-/* the splash screens */
-
-void Splash_Black(void) {
-	Splash_Show("2D/Loading/00Black.dds", 0, 0, 0);
-}
-
-void Splash_Promos(void) {
-	Splash_Show("2D/Loading/00Black.dds", 0, 0, 0);
-	if (g_IsDemo) {
-		Splash_Show("2D/Loading/00Promo01.dds", 1, 6000, 1);
-		if (g_IsDemo) {
-			Splash_Show("2D/Loading/00Promo02.dds", 1, 20000, 1);
-		}
-	}
-}
-
-void Splash_Logos(void) {
-	if (g_IsDemo) {
-		Splash_Show("2D/Loading/00LogoEnlight.dds", 1, 4000, 1);
-		if (g_IsDemo) {
-			Splash_Show("2D/Loading/00LogoMSE.dds", 1, 4000, 1);
-		}
-	}
-	Splash_Show("2D/Loading/00Legal_global.dds", 1, 0, 0);
-}
-
 /* the gray of a fade at dt of fade ms (the uint conversions of the original go through double) */
 static int Splash_Gray(uint32_t dt, float fade) {
 	return (int)((float)(double)dt / fade * 255.0f);
@@ -374,9 +350,10 @@ static uint32_t Splash_Color(int c) {
 	return ((uint32_t)c << 8 | (uint32_t)c) << 8 | (uint32_t)c;
 }
 
-char g_SplashLast[260];
-uint32_t g_SplashTime;
+static char g_SplashLast[260];
+static uint32_t g_SplashTime;
 
+static void Splash_Draw(const box_t *rect, uint32_t color, void *tex);
 void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut) {
 	char path[MAX_FILEPATH];
 	void *tex, *data;
@@ -451,7 +428,8 @@ void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut) {
 	}
 }
 
-void Splash_Draw(const box_t *rect, uint32_t color, void *tex) {
+/* one frame with the texture over the screen in color */
+static void Splash_Draw(const box_t *rect, uint32_t color, void *tex) {
 	Rd_DevBeginScene(g_Engine->device);
 	Render_DrawTexRect(rect, color, color, tex);
 	Rd_DevEndScene(g_Engine->device);
@@ -474,17 +452,9 @@ static void Loading_Frame(loadingDraw_t draw) {
 	Rd_DevPresent(g_pd3dDevice, NULL, NULL, NULL, NULL);
 }
 
-void Loading_DrawBack2(void) {
-	if (!g_LoadingDraw2 || !g_LoadingDrawOn) {
-		return;
-	}
-	for (int i = 2; i != 0; i--) {
-		Loading_Frame(g_LoadingDraw2);
-	}
-}
-
 int g_LoadingCount;
 
+static void Loading_DrawBack(void);
 void Loading_Step(int percent) {
 	box_t r;
 
@@ -530,14 +500,14 @@ void Loading_Step(int percent) {
 	Rd_DevPresent(g_Engine->device, NULL, NULL, NULL, NULL);
 }
 
-void Loading_DrawBack(void) {
+static void Loading_DrawBack(void) {
 	if (g_LoadingDraw && g_LoadingDrawOn) {
 		Loading_Frame(g_LoadingDraw);
 	}
 }
 
-cGVar GVar_ShowProgressBar;
-cGVar GVar_SplashScreenFade;
+static cGVar GVar_ShowProgressBar;
+static cGVar GVar_SplashScreenFade;
 cGVar GVar_R_TexFilter;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

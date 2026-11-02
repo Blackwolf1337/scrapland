@@ -5,8 +5,11 @@
 #include "scrap/scorerhud.h"
 #include "scrap/scrapmain.h"
 
+#define CTABSCORER_VFTABLE (&cTabScorer_vftable)
+static const cScorerItemVtbl cTabScorer_vftable;
+
 CFont *g_FontScrapBig;
-float g_TabBackTextWidth = -1.0f;
+static float g_TabBackTextWidth = -1.0f;
 
 cTabScorer *cTabScorer_ctor(cTabScorer *self) {
 	cScorerItem_ctor(&self->base);
@@ -35,7 +38,7 @@ cTabScorer *cTabScorer_ctor(cTabScorer *self) {
 	return self;
 }
 
-void cTabScorer_dtor(cTabScorer *self) {
+static void cTabScorer_dtor(cTabScorer *self) {
 	CPsaImage *img = self->img;
 	self->base.vftable = CTABSCORER_VFTABLE;
 	if (img) {
@@ -45,7 +48,7 @@ void cTabScorer_dtor(cTabScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cScorerItem *cTabScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cTabScorer_Delete(cScorerItem *base, byte flags) {
 	cTabScorer *self = (cTabScorer *)base;
 	cTabScorer_dtor(self);
 	if (flags & 1) {
@@ -54,11 +57,12 @@ cScorerItem *cTabScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-void cTabScorer_SetFile(cTabScorer *self, uint32_t flags, const char *name) {
+static void cTabScorer_SetFile(cTabScorer *self, uint32_t flags, const char *name) {
 	self->img = ScorerImg_Replace(self->img, name, self->blend, flags);
 }
 
-void cTabScorer_UpdateSize(cTabScorer *self) {
+/* the cells of the size, the tab over all of them when none is set */
+static void cTabScorer_UpdateSize(cTabScorer *self) {
 	int cell;
 
 	self->cell = self->highRes ? 7 : 14;
@@ -86,7 +90,7 @@ static int Tab_SetInt(cTabScorer *self, int *v, byte set, int *i) {
 	return 3;
 }
 
-int cTabScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+static int cTabScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cTabScorer *self = (cTabScorer *)base;
 	static const char *const colors[4] = {"Red", "Green", "Blue", "Alpha"};
 	int r;
@@ -172,7 +176,8 @@ int cTabScorer_Var(cScorerItem *base, const char *name, int set, char **s, doubl
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void cTabScorer_DrawRect(cTabScorer *self, CPsaImage *img, int x0, int y0, int x1, int y1, int frame) {
+/* the frame stretched over the cells x0, y0 to x1, y1 */
+static void cTabScorer_DrawRect(cTabScorer *self, CPsaImage *img, int x0, int y0, int x1, int y1, int frame) {
 	float uv0[2], uv1[2], pos[8], uv[8];
 	float du, dv, w, h;
 
@@ -202,7 +207,8 @@ void cTabScorer_DrawRect(cTabScorer *self, CPsaImage *img, int x0, int y0, int x
 	CPsaImage_DrawPoly(img, pos, uv, NULL, 4, 6);
 }
 
-void cTabScorer_DrawCell(cTabScorer *self, CPsaImage *img, int x, int y, int frame, int rot, int flip) {
+/* the frame in the cell x, y turned by rot quarters (0..7), flip mirrored */
+static void cTabScorer_DrawCell(cTabScorer *self, CPsaImage *img, int x, int y, int frame, int rot, int flip) {
 	/* the corners of the cell in the drawing order, and mirrored */
 	static const float corners[2][8] = {
 		{0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f},
@@ -236,7 +242,7 @@ void cTabScorer_DrawCell(cTabScorer *self, CPsaImage *img, int x, int y, int fra
 
 /* the cells of the frame of the original are inlined copies of cTabScorer_DrawCell (rotations 0, 1, 3 and the
  * mirrored 0), called here */
-void cTabScorer_Draw(cScorerItem *base, int player) {
+static void cTabScorer_Draw(cScorerItem *base, int player) {
 	cTabScorer *self = (cTabScorer *)base;
 	int saveInit, saveEnd, n, lim, k;
 
@@ -379,7 +385,7 @@ done:
 }
 
 /* the vtable of cTabScorer */
-const cScorerItemVtbl cTabScorer_vftable = {
+static const cScorerItemVtbl cTabScorer_vftable = {
 	.Draw = cTabScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cTabScorer_Var,

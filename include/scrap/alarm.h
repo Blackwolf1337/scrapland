@@ -23,13 +23,11 @@ typedef struct cAlarm {
 } cAlarm;
 
 cAlarm *Alarm_ctor(cAlarm *self);
-void Alarm_Reset(cAlarm *self);
 void Alarm_Update(cAlarm *self, float dt);
 /* the sign of the grow rate (-1, 0, 1) */
 int Alarm_GetValue(cAlarm *self);
 byte Alarm_IsLocked(cAlarm *self);
 void Alarm_SetOn(cAlarm *self, byte on);
-void Alarm_SetGrowRate(cAlarm *self, float grow);
 void Alarm_Set(cAlarm *self, float level);
 void Alarm_SetChar(cAlarm *self, const char *name);
 void Alarm_SetGrow(cAlarm *self, int grow);

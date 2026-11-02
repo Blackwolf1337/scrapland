@@ -15,7 +15,7 @@ static inline uint32_t SizeWords(uint32_t size) {
 	return (size >> 2) + ((size & 3) != 0);
 }
 
-cMemBlocks *cMemBlocks_ctor(cMemBlocks *self, uint32_t blockSize, uint32_t numBlocks) {
+static cMemBlocks *cMemBlocks_ctor(cMemBlocks *self, uint32_t blockSize, uint32_t numBlocks) {
 	self->blockSize = blockSize;
 	self->numBlocks = numBlocks;
 	self->usedBlocks = 0;
@@ -25,19 +25,19 @@ cMemBlocks *cMemBlocks_ctor(cMemBlocks *self, uint32_t blockSize, uint32_t numBl
 	return self;
 }
 
-void cMemBlocks_SetMemory(cMemBlocks *self, uint32_t *status, byte *data) {
+static void cMemBlocks_SetMemory(cMemBlocks *self, uint32_t *status, byte *data) {
 	self->status = status;
 	memset(status, 0, self->numWords * 4);
 	self->data = data;
 }
 
-byte cMemBlocks_Owns(cMemBlocks *self, const void *p) {
+static byte cMemBlocks_Owns(cMemBlocks *self, const void *p) {
 	return self->usedBlocks && (uintptr_t)self->data <= (uintptr_t)p &&
 		(uintptr_t)p <= (uintptr_t)self->data + (self->numBlocks - 1) * self->blockSize;
 }
 
 /* a free block; with every block in use the memory comes from Mem_Alloc */
-void *cMemBlocks_Alloc(cMemBlocks *self) {
+static void *cMemBlocks_Alloc(cMemBlocks *self) {
 	if (self->usedBlocks == self->numBlocks) {
 		return Mem_Alloc(self->blockSize);
 	}
@@ -59,7 +59,7 @@ void *cMemBlocks_Alloc(cMemBlocks *self) {
 	return NULL;
 }
 
-void cMemBlocks_Free(cMemBlocks *self, void *p) {
+static void cMemBlocks_Free(cMemBlocks *self, void *p) {
 	if (!cMemBlocks_Owns(self, p)) {
 		Mem_Free(p);
 		return;
@@ -72,7 +72,7 @@ void cMemBlocks_Free(cMemBlocks *self, void *p) {
 	self->status[idx / 32] &= ~(1u << (idx % 32));
 }
 
-cMemPool *g_MemPools;
+static cMemPool *g_MemPools;
 
 cMemPool *cMemPool_ctor(cMemPool *self, const char *name, const uint32_t *values) {
 	self->blocks = Mem_Alloc(MEMPOOL_CLASSES * sizeof(*self->blocks));
@@ -146,7 +146,7 @@ void cMemPool_Free(cMemPool *self, void *p) {
 }
 
 /* a pool block moves to the class of the new size (Mem_Alloc if it has none) */
-void *cMemPool_Realloc(cMemPool *self, void *p, uint32_t size) {
+static void *cMemPool_Realloc(cMemPool *self, void *p, uint32_t size) {
 	int i = cMemPool_Find(self, p);
 	if (i < 0) {
 		return Mem_Realloc(p, size);
@@ -172,15 +172,15 @@ static void cMemPool_PrintValues(cMemPool *self) {
 	Con_Printf("//////////////////////////////////////\n\n\n\n\n");
 }
 
-void MemPools_PrintAll(void) {
+static void MemPools_PrintAll(void) {
 	for (cMemPool *p = g_MemPools; p; p = p->next) {
 		cMemPool_PrintValues(p);
 	}
 }
 
-cMemPool *g_PyPool;
+static cMemPool *g_PyPool;
 
-uint32_t g_PyPoolValues[32] = {
+static uint32_t g_PyPoolValues[32] = {
 	115, 36, 102, 944, 411, 410, 2643, 2070, 2182, 1877, 1189, 956, 642, 1320, 208, 120, 113, 64, 76, 63, 42, 59,
 	38, 52, 23, 30, 42, 22, 24, 28, 19, 24,
 };
@@ -193,15 +193,15 @@ static cMemPool *PyPool_Get(void) {
 	return g_PyPool;
 }
 
-void *PyPool_MallocImpl(uint32_t size) {
+static void *PyPool_MallocImpl(uint32_t size) {
 	return cMemPool_Alloc(PyPool_Get(), size);
 }
 
-void *PyPool_ReallocImpl(void *p, uint32_t size) {
+static void *PyPool_ReallocImpl(void *p, uint32_t size) {
 	return cMemPool_Realloc(PyPool_Get(), p, size);
 }
 
-void PyPool_FreeImpl(void *p) {
+static void PyPool_FreeImpl(void *p) {
 	cMemPool_Free(PyPool_Get(), p);
 }
 
@@ -238,7 +238,7 @@ void PyPool_Free(void *p) {
 	g_MemStatsContext = NULL;
 }
 
-cPy_NativeFunc NativeFunc_PrintMemBlockData;
+static cPy_NativeFunc NativeFunc_PrintMemBlockData;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_NATIVE_FUNC(Init_NativeFunc_PrintMemBlockData, &NativeFunc_PrintMemBlockData, "PrintMemBlockData", MemPools_PrintAll)

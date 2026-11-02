@@ -31,22 +31,6 @@ void CGameLensFlare_SetOn(void *self, byte on) {
 	CLensFlare_SetOn(LF(self), on);
 }
 
-float CGameLensFlare_GetIntensity(const void *self) {
-	return LF(self)->intens;
-}
-
-float CGameLensFlare_GetTraceInterval(const void *self) {
-	return LF(self)->traceInterval;
-}
-
-float CGameLensFlare_GetScale(const void *self) {
-	return LF(self)->scale;
-}
-
-int CGameLensFlare_GetType(const void *self) {
-	return LF(self)->type;
-}
-
 void CGameLensFlare_SetIntensity(void *self, float v) {
 	CLensFlare_SetIntens(LF(self), v);
 }

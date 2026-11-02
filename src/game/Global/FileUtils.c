@@ -110,7 +110,7 @@ byte Dir_Change(const char *path, const char *sub) {
 }
 
 /* case-insensitive wildcard match of name against pattern ('*', '?', "[...]") */
-byte Str_MatchNoCase(const char *pattern, const char *name) {
+static byte Str_MatchNoCase(const char *pattern, const char *name) {
 	char n[520];
 	char p[520];
 

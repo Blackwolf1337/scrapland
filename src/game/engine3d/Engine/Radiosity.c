@@ -22,29 +22,10 @@ static float Rad_Float(uint32_t bits) {
 	return f;
 }
 
-int g_BspNumLinks;
+/* the links alive */
+static int g_BspNumLinks;
 
-BspLink *BspLink_ctor(BspLink *self, BspLink *next, BspRegion *region, float ff) {
-	g_BspNumLinks++;
-	self->next = next;
-	self->region = region;
-	self->ff = ff;
-	return self;
-}
-
-RadAreaLight *RadAreaLight_ctor(RadAreaLight *self) {
-	self->name = NULL;
-	self->rgbi[0] = self->rgbi[1] = self->rgbi[2] = self->rgbi[3] = 0;
-	self->intensity = 1.0f;
-	self->next = NULL;
-	self->unused_10 = 0.0f;
-	self->atten[1] = 0.0f;
-	self->atten[0] = 0.0f;
-	self->falloff = 1.0f;
-	return self;
-}
-
-char str_LucesRad[16] = "luces.rad";
+static char str_LucesRad[16] = "luces.rad";
 
 CRadiosity *CRadiosity_ctor(CRadiosity *self, const char *dir) {
 	char name[MAX_FILEPATH];
@@ -90,7 +71,8 @@ BspRegion *BspRegion_ctor(BspRegion *self, int x, int y, int lx, int ly, BspRegi
 	return self;
 }
 
-void BspLink_dtor(BspLink *self) {
+/* the next links deleted */
+static void BspLink_dtor(BspLink *self) {
 	g_BspNumLinks--;
 	if (self->next) {
 		BspLink *e = self->next;
@@ -101,6 +83,7 @@ void BspLink_dtor(BspLink *self) {
 	self->region = NULL;
 }
 
+static RadAreaLight *RadAreaLight_Delete(RadAreaLight *self, byte flags);
 void CRadiosity_dtor(CRadiosity *self) {
 	if (self->table) {
 		CHashTable *t = self->table;
@@ -141,20 +124,7 @@ void BspRegion_dtor(BspRegion *self) {
 	self->parent = NULL;
 }
 
-BspLink *BspLink_Delete(BspLink *self, byte flags) {
-	g_BspNumLinks--;
-	if (self->next) {
-		BspLink_Delete(self->next, 1);
-		self->next = NULL;
-	}
-	self->region = NULL;
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(BspLink));
-	}
-	return self;
-}
-
-RadAreaLight *RadAreaLight_Delete(RadAreaLight *self, byte flags) {
+static RadAreaLight *RadAreaLight_Delete(RadAreaLight *self, byte flags) {
 	if (self->next) {
 		RadAreaLight_Delete(self->next, 1);
 		self->next = NULL;
@@ -168,12 +138,7 @@ RadAreaLight *RadAreaLight_Delete(RadAreaLight *self, byte flags) {
 	return self;
 }
 
-RadAreaLight *CRadiosity_Get(CRadiosity *self, CMaterial *Mat) {
-	RadAreaLight *l = CRadiosity_Find(self, Mat);
-
-	return l ? l : CRadiosity_Add(self, Mat);
-}
-
+/* the area light of Mat, read when it is not in the table yet (NULL for none) */
 /* the warnings of a material whose flag and definition do not match; the result of the read */
 static byte Rad_Warn(const CMaterial *Mat, byte found) {
 	if (Mat->params.attrib & MAT_AREALIGHT) {
@@ -186,39 +151,14 @@ static byte Rad_Warn(const CMaterial *Mat, byte found) {
 	return found;
 }
 
-RadAreaLight *CRadiosity_Add(CRadiosity *self, CMaterial *Mat) {
-	CHECK(Mat);
-	if (!Rad_Warn(Mat, CRadiosity_ReadMat(self, Mat, NULL))) {
-		return NULL;
-	}
-	RadAreaLight *l = operator_new(sizeof(RadAreaLight));
-	if (l) {
-		l = RadAreaLight_ctor(l);
-	}
-	byte found = Rad_Warn(Mat, CRadiosity_ReadMat(self, Mat, l));
-	CHECK(found);
-	l->next = self->list;
-	self->list = l;
-	CHashTable_AddInt(self->table, (int)(uintptr_t)Mat, l, 0);
-	return l;
-}
-
-RadAreaLight *CRadiosity_Find(CRadiosity *self, CMaterial *Mat) {
-	void *l;
-
-	CHECK(Mat);
-	CHECK(self->table);
-	l = NULL;
-	CHashTable_GetInt(self->table, (int)(uintptr_t)Mat, &l);
-	return l;
-}
-
+static byte CRadiosity_ReadMat(CRadiosity *self, CMaterial *Mat, RadAreaLight *dest);
 /* (byte)(int)((double)v + 0.5) of a color byte through 0..1 */
 static byte Rad_Byte(byte v) {
 	return (byte)(int)((double)((float)v * (1.0f / 255.0f) * 255.0f) + 0.5);
 }
 
-byte CRadiosity_ReadMat(CRadiosity *self, CMaterial *Mat, RadAreaLight *dest) {
+/* the section of the area light named in the material name into dest (may be NULL): 1 found */
+static byte CRadiosity_ReadMat(CRadiosity *self, CMaterial *Mat, RadAreaLight *dest) {
 	char name[RAD_NAME], buf[RAD_NAME];
 
 	CHECK(Mat);
@@ -289,23 +229,12 @@ found:
 	return 1;
 }
 
-byte CRadiosity_GetColor(CRadiosity *self, CMaterial *Mat, void *dest) {
-	CHECK(Mat && dest);
-	RadAreaLight *l = CRadiosity_Find(self, Mat);
-	if (!l) {
-		return 0;
-	}
-	uint32_t *d = dest;
-	d[0] = *(const uint32_t *)l->rgbi;
-	*(float *)&d[1] = l->intensity;
-	return 1;
-}
-
 byte CRadiosity_ReadMatWarn(CRadiosity *self, CMaterial *Mat, RadAreaLight *dest) {
 	return Rad_Warn(Mat, CRadiosity_ReadMat(self, Mat, dest));
 }
 
-CTable g_RadNormals;
+/* the unit normals of bmp\normales.rad, read once */
+static CTable g_RadNormals;
 
 vec3_t *Rad_Normals(uint32_t *num) {
 	CTable *t = &g_RadNormals;
@@ -339,7 +268,7 @@ vec3_t *Rad_Normals(uint32_t *num) {
 }
 
 /* the atexit destructor of g_RadNormals and the static initializer that registers it */
-void Radiosity_FiniNormals(void) {
+static void Radiosity_FiniNormals(void) {
 	Table_Free(&g_RadNormals);
 }
 

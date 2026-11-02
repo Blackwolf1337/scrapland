@@ -7,6 +7,9 @@
 #include "scrap/logic.h"
 #include "scrap/objentity.h"
 
+#define CBERTOLOCALLOGIC_VFTABLE (&cBertoLocalLogic_vftable.base.base.base)
+static const cBertoLocalLogicVtbl cBertoLocalLogic_vftable;
+
 cBertoLocalLogic *cBertoLocalLogic_ctor(cBertoLocalLogic *self, cEntity *parent) {
 	cFunctionaryLocalLogic_ctor(&self->base, parent);
 	self->base.base.base.vftable = CBERTOLOCALLOGIC_VFTABLE;
@@ -14,7 +17,7 @@ cBertoLocalLogic *cBertoLocalLogic_ctor(cBertoLocalLogic *self, cEntity *parent)
 	return self;
 }
 
-cLocalLogic *cBertoLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static cLocalLogic *cBertoLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 	cBertoLocalLogic *self = (cBertoLocalLogic *)elem;
 	self->base.base.base.vftable = CBERTOLOCALLOGIC_VFTABLE;
 	cFunctionaryLocalLogic_dtor(&self->base);
@@ -35,7 +38,7 @@ void Logic_LinkDesktop(cFunctionaryLocalLogic *self, const char *name) {
 }
 
 /* vf40 */
-void cBertoLocalLogic_AssignDesktop(cLocalLogic *elem, float maxDist) {
+static void cBertoLocalLogic_AssignDesktop(cLocalLogic *elem, float maxDist) {
 	cBertoLocalLogic *self = (cBertoLocalLogic *)elem;
 	(void)maxDist;
 	Logic_LinkDesktop(&self->base, "BertoDesktop");
@@ -62,7 +65,7 @@ void cBertoLocalLogic_Update(cLocalLogic *elem, float dt) {
 }
 
 /* vf38 (the callers use the returned out): the angles at the desktop, turned by a quarter */
-vec3_t *cBertoLocalLogic_GetWorkAng(cLocalLogic *elem, vec3_t *out) {
+static vec3_t *cBertoLocalLogic_GetWorkAng(cLocalLogic *elem, vec3_t *out) {
 	cBertoLocalLogic *self = (cBertoLocalLogic *)elem;
 	vec3_t tmp;
 
@@ -76,7 +79,7 @@ vec3_t *cBertoLocalLogic_GetWorkAng(cLocalLogic *elem, vec3_t *out) {
 }
 
 /* the vtable of cBertoLocalLogic */
-const cBertoLocalLogicVtbl cBertoLocalLogic_vftable = {
+static const cBertoLocalLogicVtbl cBertoLocalLogic_vftable = {
 	.base.base.base.base.Delete = cBertoLocalLogic_Delete,
 	.base.base.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.base.base.Vf02 = cFunctionaryLocalLogic_Vf02,

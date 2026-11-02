@@ -13,6 +13,19 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/staticinit.h"
 
+#define g_AlarmCallback (((cPy_Function *)&GVar_AlarmCallback.func))	/* AlarmCallback (on) */
+#define g_AlarmFallDelta (GVar_AlarmFallDelta.value.f)
+#define g_AlarmFallMission (GVar_AlarmFallMission.value.f)
+#define g_AlarmGrowDelta (GVar_AlarmGrowDelta.value.f)
+#define g_EasyAlarmFallFactor (GVar_EasyAlarmFallFactor.value.f)
+#define g_GuaranteedChars (GVar_GuaranteedChars.value.s)		/* ",type1,type2," */
+static cGVar GVar_GuaranteedChars;
+static cGVar GVar_EasyAlarmFallFactor;
+static cGVar GVar_AlarmGrowDelta;
+static cGVar GVar_AlarmFallMission;
+static cGVar GVar_AlarmFallDelta;
+static cGVarFunction GVar_AlarmCallback;
+
 /* the alarm takes changes */
 static int Alarm_Open(const cAlarm *self) {
 	if (self->locked) {
@@ -29,6 +42,7 @@ static void Alarm_CopyChars(char *dst, const char *src) {
 	dst[n] = 0;
 }
 
+static void Alarm_Reset(cAlarm *self);
 cAlarm *Alarm_ctor(cAlarm *self) {
 	Alarm_Reset(self);
 	cPy_Function_SetFunc(g_AlarmCallback, str_Empty);
@@ -55,7 +69,7 @@ byte Alarm_IsLocked(cAlarm *self) {
 	return 0;
 }
 
-void Alarm_Reset(cAlarm *self) {
+static void Alarm_Reset(cAlarm *self) {
 	self->value = 0.0f;
 	self->on = 0;
 	self->chars[0] = 0;
@@ -103,12 +117,6 @@ void Alarm_SetOn(cAlarm *self, byte on) {
 		return;
 	}
 	AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, usr->vftable->GetPos(usr, &tmp));
-}
-
-void Alarm_SetGrowRate(cAlarm *self, float grow) {
-	if (Alarm_Open(self)) {
-		self->grow = grow;
-	}
 }
 
 /* 1 grow, 0 stop, -1 fall (slower in the mission map of an outdoor map and in an easy single game) */
@@ -211,14 +219,14 @@ void Alarm_Update(cAlarm *self, float dt) {
 	self->notDefChar = self->notDefChar || notGuaranteed;
 }
 
-cGVar GVar_AlarmFallDelta;
+static cGVar GVar_AlarmFallDelta;
 cGVar GVar_PoliceTauntRace;
-cGVar GVar_AlarmGrowDelta;
-cGVar GVar_EasyAlarmFallFactor;
-cGVar GVar_AlarmFallMission;
-cGVarFunction GVar_AlarmCallback;
+static cGVar GVar_AlarmGrowDelta;
+static cGVar GVar_EasyAlarmFallFactor;
+static cGVar GVar_AlarmFallMission;
+static cGVarFunction GVar_AlarmCallback;
 cGVar GVar_UsrDefChar;
-cGVar GVar_GuaranteedChars;
+static cGVar GVar_GuaranteedChars;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_EasyAlarmFallFactor, &GVar_EasyAlarmFallFactor, "EasyAlarmFallFactor", 0, "The alarm status go down multiplier for easy mode.", 1.2f)

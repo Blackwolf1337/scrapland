@@ -11,9 +11,10 @@
 #define NETRAND_UM 0xffffffff80000000ull
 #define NETRAND_LM 0x7fffffffull
 
-uint64_t g_NetRandMag01[2] = { 0, 0xb5026f5aa96619e9ULL };
+static uint64_t g_NetRandMag01[2] = { 0, 0xb5026f5aa96619e9ULL };
 
 /* the next output of the twister */
+static void cNetRandom_Seed(cNetRandom *self, uint64_t seed);
 static uint64_t NetRandom_Gen(cNetRandom *self) {
 	uint64_t *mt = self->mt;
 	uint64_t x;
@@ -54,12 +55,14 @@ static uint64_t NetRandom_Shuffle(cNetRandom *self, uint64_t y) {
 	return r;
 }
 
-cNetRandom *cNetRandom_ctor(cNetRandom *self) {
+/* the random numbers (src/game/Net/NetRandom.c) */
+static cNetRandom *cNetRandom_ctor(cNetRandom *self) {
 	self->mti = NETRAND_NN + 1;
 	return self;
 }
 
-void cNetRandom_InitByArray(cNetRandom *self, const uint64_t *key, uint32_t len) {
+static void cNetRandom_Fill(cNetRandom *self);
+static void cNetRandom_InitByArray(cNetRandom *self, const uint64_t *key, uint32_t len) {
 	uint64_t *mt = self->mt;
 	uint32_t i = 1, j = 0, k;
 
@@ -88,7 +91,7 @@ void cNetRandom_InitByArray(cNetRandom *self, const uint64_t *key, uint32_t len)
 	cNetRandom_Fill(self);
 }
 
-void cNetRandom_Seed(cNetRandom *self, uint64_t seed) {
+static void cNetRandom_Seed(cNetRandom *self, uint64_t seed) {
 	self->mt[0] = seed;
 	for (self->mti = 1; self->mti < NETRAND_NN; self->mti++) {
 		int i = self->mti;
@@ -101,7 +104,7 @@ uint64_t cNetRandom_Next(cNetRandom *self) {
 	return NetRandom_Shuffle(self, NetRandom_Gen(self));
 }
 
-void cNetRandom_Fill(cNetRandom *self) {
+static void cNetRandom_Fill(cNetRandom *self) {
 	for (int n = 0; n < 0x100; n++) {
 		self->table[n] = NetRandom_Shuffle(self, NetRandom_Gen(self));
 	}

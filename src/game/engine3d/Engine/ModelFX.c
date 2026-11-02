@@ -46,7 +46,7 @@ static void Scene_Draw(const CModel *m, NodeAnimCtx *ctx) {
 	CScene_Render(m->scene, ctx);
 }
 
-CMaterial g_FXMat;
+static CMaterial g_FXMat;
 
 /* the blend states of the shared effect material */
 static void FXMat_Set(int src, int dst, byte lighting, int zFunc, byte zWrite) {
@@ -100,7 +100,7 @@ static void ModelFX_Jump(const CModel *m, NodeAnimCtx *ctx) {
 	CScene_Update(m->scene, ctx);
 }
 
-struct CGraphic2D g_FXGraphicStatic;
+static struct CGraphic2D g_FXGraphicStatic;
 
 /* the scan lines over the screen and the noise texture g at random places */
 static void ModelFX_Overlay(CGraphic2D *g) {
@@ -131,9 +131,11 @@ static void ModelFX_Overlay(CGraphic2D *g) {
 	Render_Clear(NULL, D3DCLEAR_ZBUFFER, 0, 1.0f, 0);
 }
 
-struct CGraphic2D g_FXGraphicNoise2;
+static struct CGraphic2D g_FXGraphicNoise2;
 
-void ModelFX_Static(CModel *m, NodeAnimCtx *ctx) {
+/* 1: a TV picture with static, 2 and 3: faded out (2 over a gray pass), 4: 1 in wire frame, 5: green glow, 6:
+ * electric, 7: fire, 8: noise */
+static void ModelFX_Static(CModel *m, NodeAnimCtx *ctx) {
 	ModelFX_Jump(m, ctx);
 	Render_ClearForced();
 	FXMat_Colors(0x802020, 0x801010, 0);
@@ -150,7 +152,8 @@ void ModelFX_Static(CModel *m, NodeAnimCtx *ctx) {
 	ModelFX_Overlay(&g_FXGraphicNoise2);
 }
 
-void ModelFX_Base(CModel *m, NodeAnimCtx *ctx) {
+/* the gray pass of 2 and 8, and a variant of 1 no effect uses */
+static void ModelFX_Base(CModel *m, NodeAnimCtx *ctx) {
 	ModelFX_Forced(m, ctx, 4);
 }
 
@@ -188,15 +191,15 @@ static void ModelFX_FadeOut(CModel *m, NodeAnimCtx *ctx, byte base) {
 	ModelFX_Again(m, ctx);
 }
 
-void ModelFX_FadeLit(CModel *m, NodeAnimCtx *ctx) {
+static void ModelFX_FadeLit(CModel *m, NodeAnimCtx *ctx) {
 	ModelFX_FadeOut(m, ctx, 1);
 }
 
-void ModelFX_Fade(CModel *m, NodeAnimCtx *ctx) {
+static void ModelFX_Fade(CModel *m, NodeAnimCtx *ctx) {
 	ModelFX_FadeOut(m, ctx, 0);
 }
 
-void ModelFX_Wire(CModel *m, NodeAnimCtx *ctx) {
+static void ModelFX_Wire(CModel *m, NodeAnimCtx *ctx) {
 	uint32_t fill;
 	void *dev = g_pd3dDevice;
 	Rd_DevGetRenderState(dev, D3DRS_FILLMODE, &fill);
@@ -208,7 +211,7 @@ void ModelFX_Wire(CModel *m, NodeAnimCtx *ctx) {
 	Rd_DevSetRenderState(dev, D3DRS_FILLMODE, fill);
 }
 
-void ModelFX_Glow(CModel *m, NodeAnimCtx *ctx) {
+static void ModelFX_Glow(CModel *m, NodeAnimCtx *ctx) {
 	int a = ModelFX_Alpha(m);
 	Scene_Draw(m, ctx);
 	Render_ClearForced();
@@ -236,21 +239,21 @@ static void ModelFX_Shader(CModel *m, NodeAnimCtx *ctx, CMaterial *mat) {
 	ModelFX_Again(m, ctx);
 }
 
-CMaterial *g_MatElectric;
+static CMaterial *g_MatElectric;
 
-void ModelFX_Electric(CModel *m, NodeAnimCtx *ctx) {
+static void ModelFX_Electric(CModel *m, NodeAnimCtx *ctx) {
 	ModelFX_Shader(m, ctx, g_MatElectric);
 }
 
-CMaterial *g_MatFire;
+static CMaterial *g_MatFire;
 
-void ModelFX_Fire(CModel *m, NodeAnimCtx *ctx) {
+static void ModelFX_Fire(CModel *m, NodeAnimCtx *ctx) {
 	ModelFX_Shader(m, ctx, g_MatFire);
 }
 
-CMaterial *g_MatNoise;
+static CMaterial *g_MatNoise;
 
-void ModelFX_Noise(CModel *m, NodeAnimCtx *ctx) {
+static void ModelFX_Noise(CModel *m, NodeAnimCtx *ctx) {
 	int base = (int)(ModelFX_Param(m) * 256.0f);
 	int a;
 	if (Rand_Flicker(4) + base <= 0) {
@@ -372,7 +375,7 @@ static void FXGraphic_Create(CGraphic2D *g, const char *tex, int src, int dst, u
 	CGraphic2D_CreateMat(g, tex, NULL, src, dst, 1, flags);
 }
 
-struct CGraphic2D g_FXGraphicNoise1;
+static struct CGraphic2D g_FXGraphicNoise1;
 
 void ModelFX_InitD3D(void) {
 	FXGraphic_Create(&g_FXGraphicStatic, "bmp/noise_static.alpha.tga", 5, 6, 0x10);

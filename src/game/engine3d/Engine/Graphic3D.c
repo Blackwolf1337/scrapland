@@ -12,6 +12,11 @@
 #include "scrap/particlesystem.h"
 #include "scrap/staticinit.h"
 
+#define CGRAPHIC3D_VFTABLE (&CGraphic3D_vftable)
+#define g_ShowSprites (GVar_R_SpriteSector.value.i)	/* 1: visibility, 2: drawn, 3: with the name */
+static cGVar GVar_R_SpriteSector;
+static const IObject3DVtbl CGraphic3D_vftable;
+
 #define D3DFVF_SPRITE 0x1c2		/* XYZ | DIFFUSE | SPECULAR | TEX1 */
 
 /* the members both constructors clear */
@@ -27,21 +32,7 @@ static void Graphic3D_Clear(CGraphic3D *self) {
 	self->node = NULL;
 }
 
-CGraphic3D *CGraphic3D_ctorTex(CGraphic3D *self, const char *tex, const vec3_t *pos, const float *size) {
-	Graphic3D_Clear(self);
-	CGraphic3D_CreateMat(self, tex, NULL, 5, 2, 0xff);
-	self->pos = *pos;
-	self->width = size[0];
-	self->height = size[1];
-	return self;
-}
-
-CGraphic3D *CGraphic3D_ctorTex2(CGraphic3D *self, const char *tex, const char *opac) {
-	Graphic3D_Clear(self);
-	CGraphic3D_SetTexture(self, tex, opac);
-	return self;
-}
-
+/* with the texture and its opacity map (CGraphic3D_SetTexture) */
 /* the constructor of the vertices (nothing to do), the static vertex arrays of the exe call it */
 Graphic3DVert *Graphic3DVert_ctor(Graphic3DVert *self) {
 	return self;
@@ -52,7 +43,7 @@ CGraphic3D *CGraphic3D_ctor(CGraphic3D *self) {
 	return self;
 }
 
-void CGraphic3D_dtor(CGraphic3D *self) {
+static void CGraphic3D_dtor(CGraphic3D *self) {
 	self->vftable = CGRAPHIC3D_VFTABLE;
 	ObjRef_Drop(&self->node);
 	self->node = NULL;
@@ -60,7 +51,7 @@ void CGraphic3D_dtor(CGraphic3D *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-IObject3D *CGraphic3D_Delete(IObject3D *base, byte flags) {
+static IObject3D *CGraphic3D_Delete(IObject3D *base, byte flags) {
 	CGraphic3D *self = (CGraphic3D *)base;
 	CGraphic3D_dtor(self);
 	if (flags & 1) {
@@ -69,7 +60,7 @@ IObject3D *CGraphic3D_Delete(IObject3D *base, byte flags) {
 	return base;
 }
 
-byte CGraphic3D_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+static byte CGraphic3D_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CGraphic3D *self = (CGraphic3D *)base;
 	char tex[0x100], opac[0x100];
 	byte diffuse[4];
@@ -88,7 +79,7 @@ byte CGraphic3D_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	return 1;
 }
 
-void CGraphic3D_Draw(CGraphic3D *self) {
+static void CGraphic3D_Draw(CGraphic3D *self) {
 	void *dev = g_Engine->device;
 	CHECK(dev);
 	CHECK(self->Mat);
@@ -114,7 +105,7 @@ void CGraphic3D_Draw(CGraphic3D *self) {
 	g_RenderVerts += 4;
 }
 
-void CGraphic3D_Render(IObject3D *base, void *dev, CRenderNode *r) {
+static void CGraphic3D_Render(IObject3D *base, void *dev, CRenderNode *r) {
 	CGraphic3D *self = (CGraphic3D *)base;
 	(void)dev;
 	CNode3D *n = self->node;
@@ -137,7 +128,7 @@ void CGraphic3D_Render(IObject3D *base, void *dev, CRenderNode *r) {
 	CGraphic3D_Draw(self);
 }
 
-byte CGraphic3D_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+static byte CGraphic3D_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CGraphic3D *self = (CGraphic3D *)base;
 	CHECK(Wild_Match("sprite*", ctx->node->name));
 	CHECK(self->node == ctx->node);
@@ -160,10 +151,6 @@ void CGraphic3D_SetNode(CGraphic3D *self, CNode3D *node) {
 	}
 	ObjRef_Drop(&self->node);
 	self->node = node;
-}
-
-void CGraphic3D_SetTexture(CGraphic3D *self, const char *tex, const char *opac) {
-	CGraphic3D_CreateMat(self, tex, opac, 5, opac ? 6 : 2, opac ? 0 : 0xff);
 }
 
 void CGraphic3D_CreateMat(CGraphic3D *self, const char *tex, const char *opac, int src, int dst, byte alpha) {
@@ -193,18 +180,8 @@ void CGraphic3D_CreateMat(CGraphic3D *self, const char *tex, const char *opac, i
 	CMaterial_dtor(&m);
 }
 
-void CGraphic3D_Init(CGraphic3D *self) {
-	self->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
-	self->width = 1.0f;
-	self->class = CLASS_OBJ3D_GRAPHIC3D;
-	self->height = 1.0f;
-	self->Mat = NULL;
-	self->AnimMat = NULL;
-	self->node = NULL;
-}
-
 /* the vtable of CGraphic3D */
-const IObject3DVtbl CGraphic3D_vftable = {
+static const IObject3DVtbl CGraphic3D_vftable = {
 	.Delete = CGraphic3D_Delete,
 	.Update = IObject3D_UpdateNop,
 	.Render = CGraphic3D_Render,
@@ -214,7 +191,7 @@ const IObject3DVtbl CGraphic3D_vftable = {
 	.Read = CGraphic3D_Read,
 };
 
-cGVar GVar_R_SpriteSector;
+static cGVar GVar_R_SpriteSector;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_R_SpriteSector, &GVar_R_SpriteSector, "R_SpriteSector", 0, "Use sector visibility for sprites", 1)

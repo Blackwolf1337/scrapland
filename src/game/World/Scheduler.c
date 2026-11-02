@@ -6,13 +6,15 @@
 #include "scrap/scheduler.h"
 #include "scrap/world.h"
 
-void SchedList_Add(cSchedList *list, cScheduledFunc *const *f) {
+/* the DList instance */
+static void SchedList_Add(cSchedList *list, cScheduledFunc *const *f) {
 	cSchedNode *node = DList_NewNode(list, sizeof(*node));
 	node->func = *f;
 	DList_LinkFirst(list, node);
 }
 
-void SchedList_Insert(cSchedList *list, cScheduledFunc *const *f) {
+/* in front of the iterator */
+static void SchedList_Insert(cSchedList *list, cScheduledFunc *const *f) {
 	cSchedNode *head = list->head;
 
 	if (list->iter == head) {
@@ -26,15 +28,15 @@ void SchedList_Insert(cSchedList *list, cScheduledFunc *const *f) {
 	list->head = head;
 }
 
-void SchedList_Clear(cSchedList *list) {
+static void SchedList_Clear(cSchedList *list) {
 	DList_Clear(list, sizeof(cSchedNode));
 }
 
-void SchedList_RemoveIter(cSchedList *list) {
+static void SchedList_RemoveIter(cSchedList *list) {
 	DList_RemoveIter(list, sizeof(cSchedNode));
 }
 
-void SchedList_RemoveHead(cSchedList *list) {
+static void SchedList_RemoveHead(cSchedList *list) {
 	DList_RemoveHead(list, sizeof(cSchedNode));
 }
 
@@ -46,7 +48,7 @@ static void cScheduledFunc_Free(cScheduledFunc *f) {
 	}
 }
 
-void cScheduledFunc_Set(cScheduledFunc *self, float time, PyObject *func, PyObject *params, const char *name) {
+static void cScheduledFunc_Set(cScheduledFunc *self, float time, PyObject *func, PyObject *params, const char *name) {
 	CHECK(self->func == NULL);
 	CHECK(self->params == NULL);
 	CHECK(func != NULL);
@@ -146,11 +148,6 @@ void Scheduler_Run(cScheduledFuncStack *self, float now) {
 	}
 }
 
-void cScheduledFunc_dtor(cScheduledFunc *self) {
-	Py_XDECREF(self->func);
-	Py_XDECREF(self->params);
-}
-
 void cScheduledFuncStack_dtor(void *stack) {
 	cScheduledFuncStack *self = stack;
 
@@ -160,7 +157,7 @@ void cScheduledFuncStack_dtor(void *stack) {
 	DList_FreePool(&self->list, sizeof(cSchedNode));
 }
 
-cScheduledFuncStack *cScheduledFuncStack_Delete(cScheduledFuncStack *self, byte flags) {
+static cScheduledFuncStack *cScheduledFuncStack_Delete(cScheduledFuncStack *self, byte flags) {
 	cScheduledFuncStack_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));

@@ -8,81 +8,6 @@
 #define PCX_RUN 0xc0
 #define PCX_COUNT 0x3f
 
-const byte *Pcx_Decode(byte *dest, const byte *src, const PcxHeader *hdr) {
-	int lx = hdr->lx, rows = hdr->ly, np = hdr->planes;
-	byte *lim = dest + np * rows * lx;
-
-	CHECK(dest && src);
-	CHECK(lim > dest);
-	if (!rows) {
-		return src;
-	}
-	do {
-		byte rep = 0;
-		if (np) {
-			for (int p = 0; p < np; p++) {
-				byte *d = dest + p;
-				int x = lx;
-				while (x > 0) {
-					if (!rep) {
-						rep = *src++;
-					}
-					if ((rep & PCX_RUN) != PCX_RUN) {
-						*d = rep;
-						x--;
-						d += np;
-						rep = 0;
-						continue;
-					}
-					rep &= PCX_COUNT;
-					if (x < rep) {
-						/* the run goes on in the next plane */
-						rep = (byte)(rep - x) | PCX_RUN;
-						do {
-							x--;
-							*d = *src;
-							d += np;
-						} while (x > 0);
-						break;
-					}
-					x -= rep;
-					for (; rep; rep--) {
-						*d = *src;
-						d += np;
-					}
-					src++;
-				}
-				int skip = hdr->bpl - lx;
-				CHECK(skip < 2);
-				while (skip) {
-					if (!rep) {
-						rep = *src++;
-					}
-					CHECK(rep == 193);
-					if ((rep & PCX_RUN) == PCX_RUN) {
-						rep &= PCX_COUNT;
-						if (skip < rep) {
-							rep = (byte)(rep - skip) | PCX_RUN;
-							break;
-						}
-						skip -= rep;
-						rep = 0;
-						src++;
-					} else {
-						skip--;
-						rep = 0;
-					}
-				}
-				CHECK(d <= lim + p);
-				CHECK(!x);
-			}
-			CHECK(!rep);
-		}
-		dest += np * lx;
-	} while (--rows > 0);
-	return src;
-}
-
 /* the header of an 8 bit image of lx * ly with planes planes */
 static void Pcx_InitHeader(PcxHeader *hdr, int lx, int ly, byte planes) {
 	memset(hdr, 0, sizeof(*hdr));
@@ -152,17 +77,3 @@ int Pcx_Write24(void *f, const byte *mem, int lx, int ly) {
 	return 0;
 }
 
-int Pcx_CheckHeader(PcxHeader *hdr) {
-	CHECK(hdr);
-	if (hdr->manuf != 10 || hdr->version != 5 || hdr->encoding != 1 || hdr->bpp != 8) {
-		*crt_errno() = g_ErrPcxFormat;
-		return -1;
-	}
-	if (!hdr->lx) {
-		hdr->lx = (uint16_t)(hdr->xmax - hdr->xmin + 1);
-	}
-	if (!hdr->ly) {
-		hdr->ly = (uint16_t)(hdr->ymax - hdr->ymin + 1);
-	}
-	return 0;
-}

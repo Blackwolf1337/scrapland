@@ -8,8 +8,13 @@
 #include "scrap/hashtable.h"
 #include "scrap/staticinit.h"
 
+#define CDOMINATIONFRIENDSLOGIC_VFTABLE (&cDominationFriendsLogic_vftable)
+#define g_OnDominFriendDeath (((cPy_Function *)&GVar_OnDominFriendDeath.func))
+static const cDominationLogicVtbl cDominationFriendsLogic_vftable;
+static cGVarFunction GVar_OnDominFriendDeath;
+
 /* defined further down or in another file without a header */
-void DominationFriends_OnDeath(cAbstractFile *params);
+static void DominationFriends_OnDeath(cAbstractFile *params);
 
 cDominationFriendsLogic *cDominationFriendsLogic_ctor(cDominationFriendsLogic *self) {
 	cDominationLogic_ctor(&self->base);
@@ -34,7 +39,7 @@ void cDominationFriendsLogic_dtor(cDominationFriendsLogic *self) {
 	cDominationLogic_dtor(&self->base);
 }
 
-cDominationLogic *cDominationFriendsLogic_Delete(cDominationLogic *base, byte flags) {
+static cDominationLogic *cDominationFriendsLogic_Delete(cDominationLogic *base, byte flags) {
 	cDominationFriendsLogic *self = (cDominationFriendsLogic *)base;
 	cDominationFriendsLogic_dtor(self);
 	if (flags & 1) {
@@ -43,7 +48,7 @@ cDominationLogic *cDominationFriendsLogic_Delete(cDominationLogic *base, byte fl
 	return base;
 }
 
-void cDominationFriendsSide_Think(cDominationFriendsSide *self) {
+static void cDominationFriendsSide_Think(cDominationFriendsSide *self) {
 	Nto1Node *n = Logic_ListFirst(self->list);
 
 	if (!n) {
@@ -63,32 +68,13 @@ void cDominationFriendsSide_Think(cDominationFriendsSide *self) {
 }
 
 /* vf03 */
-cEntityListData *cDominationFriendsLogic_GetList(cDominationLogic *base) {
+static cEntityListData *cDominationFriendsLogic_GetList(cDominationLogic *base) {
 	cDominationFriendsLogic *self = (cDominationFriendsLogic *)base;
 	return self->side->list;
 }
 
-/* vf04 */
-int cDominationFriendsLogic_GetTeam(cDominationFriendsLogic *self) {
-	(void)self;
-	return 1;
-}
-
-cEntity *cDominationFriendsLogic_FindShipOfZone(cDominationFriendsLogic *self, cEntity *zone) {
-	for (Nto1Node *n = Logic_ListFirst(self->side->list); n; n = Logic_ListNext(n)) {
-		cEntity *e = n->data;
-		CHECK(e && "e = node->GetNode()");
-		const char *key = e->name;
-		cNameItem *it = NameTable_Find(&self->base.assigned, key, HashTable_Slot(&self->base.assigned, key));
-		if (it && it->value && (cEntity *)it->value == zone) {
-			return Logic_AsCar(e);
-		}
-	}
-	return NULL;
-}
-
 /* vf01 */
-void cDominationFriendsLogic_Init(cDominationLogic *base) {
+static void cDominationFriendsLogic_Init(cDominationLogic *base) {
 	cDominationFriendsLogic *self = (cDominationFriendsLogic *)base;
 	cDominationFriendsSide *s = self->side;
 
@@ -98,17 +84,18 @@ void cDominationFriendsLogic_Init(cDominationLogic *base) {
 }
 
 /* the native of the deaths */
-void DominationFriends_OnDeath(cAbstractFile *params) {
+static cEntity *cDominationFriendsLogic_ReleaseZone(cDominationLogic *self, const char *name);
+static void DominationFriends_OnDeath(cAbstractFile *params) {
 	Domination_OnDeath(params, &g_pWorld->logic.dominFriends.base, cDominationFriendsLogic_ReleaseZone,
 		g_OnDominFriendDeath);
 }
 
-cEntity *cDominationFriendsLogic_ReleaseZone(cDominationLogic *self, const char *name) {
+static cEntity *cDominationFriendsLogic_ReleaseZone(cDominationLogic *self, const char *name) {
 	return Domination_ReleaseZone(self, name, 3, 1);
 }
 
 /* vf02 */
-void cDominationFriendsLogic_Update(cDominationLogic *base, float dt) {
+static void cDominationFriendsLogic_Update(cDominationLogic *base, float dt) {
 	cDominationFriendsLogic *self = (cDominationFriendsLogic *)base;
 	cDominationFriendsSide *s = self->side;
 	float t = s->timer + dt;
@@ -121,7 +108,7 @@ void cDominationFriendsLogic_Update(cDominationLogic *base, float dt) {
 }
 
 /* the vtable of cDominationFriendsLogic */
-const cDominationLogicVtbl cDominationFriendsLogic_vftable = {
+static const cDominationLogicVtbl cDominationFriendsLogic_vftable = {
 	.Delete = cDominationFriendsLogic_Delete,
 	.Init = cDominationFriendsLogic_Init,
 	.Update = cDominationFriendsLogic_Update,
@@ -129,7 +116,7 @@ const cDominationLogicVtbl cDominationFriendsLogic_vftable = {
 	.GetTeam = cDominationLogic_GetTeamTrue,
 };
 
-cGVarFunction GVar_OnDominFriendDeath;
+static cGVarFunction GVar_OnDominFriendDeath;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_CALL(Fini_GVar_OnDominFriendDeath, &GVar_OnDominFriendDeath.func, cPy_Function_dtor)

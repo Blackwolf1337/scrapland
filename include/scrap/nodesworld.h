@@ -228,9 +228,6 @@ struct CNodesWorld {
 	cNWTriList tris;		/* 0x3d8 */
 };
 
-extern const CNodesWorldVtbl CNodesWorld_vftable;
-#define CNODESWORLD_VFTABLE (&CNodesWorld_vftable)
-
 /* the globals of the module */
 extern cGVar GVar_ShowTestCanGoAI;
 #define g_NWDebugSegs (GVar_ShowTestCanGoAI.value.i)		/* the path tests keep their segments in the list they get */
@@ -259,66 +256,25 @@ void NWVecList_Free(cNWVecList *list);
 /* the list of a struct at +0xc */
 void NWIntList_Add(cNWIntList *list, void *const *data);
 void NWVecList_Add(cNWVecList *list, const vec3_t *v);
-void NWTriList_Add(cNWTriList *list, const float *data);
 /* data: the 0x3c bytes from pos on */
 void NWPointList_Add(cNWPointList *list, const void *data);
 /* in front of the iterator, the head kept (Add when the iterator is the head) */
 void NWIntList_AddBefore(cNWIntList *list, void *const *data);
-/* at the end, head stays */
-void NWSegList_Append(cNWSegList *list, const vec3_t *seg);
 void NWIntList_Clear(cNWIntList *list);
 void NWVecList_Clear(cNWVecList *list);
-void NWTriList_Clear(cNWTriList *list);
 void NWPointList_Clear(cNWPointList *list);
 void NWIntList_RemoveHead(cNWIntList *list);
 void NWVecList_RemoveHead(cNWVecList *list);
-/* to the free list while it has room, else the links and the node deleted */
-void NWPointList_Release(cNWPointList *list, cNWPointNode *node);
-/* a node from the free list, else a new one with the links and box zeroed */
-cNWPointNode *NWPointList_NewNode(cNWPointList *list);
 void NWBox_Init(cNWBox *box);
 
 /* ---- CNodesWorld ---- */
 
 /* the generation of the graph */
-/* the dummies DM_PointGraph3DAI* into extraPoints (a fatal error for one in the level) */
-void CNodesWorld_AddExtraPoints(CNodesWorld *self);
-/* the pairs of points nearer than 2 * f40 that are not linked, into list sorted by the distance */
-void CNodesWorld_GetPairs(CNodesWorld *self, cNWPairList *list);
-/* the extra points into the points, linked to the points free of the level within linkDist */
-void CNodesWorld_LinkExtra(CNodesWorld *self);
-/* the distance from pos to the nearest point of the set of its buffer cell, FLT_MAX without one */
-float CNodesWorld_NearestVisDist(CNodesWorld *self, const vec3_t *pos);
-/* the cell to link the pair of points through: NWSup_FindLinkBox, NWSup_FindLinkCell; Free: the cells of reachedCells whose
- * center sees both points free of the level (the distance on the floor plane) */
-byte CNodesWorld_FindLinkBox(CNodesWorld *self, const vec3_t *const *pair, const cNWBox *box, int *out);
-byte CNodesWorld_FindLinkCell(CNodesWorld *self, const vec3_t *const *pair, int *out);
-byte CNodesWorld_FindLinkFree(CNodesWorld *self, const vec3_t *const *pair, int *out);
-/* the next start of the generation (NWSup_NextInit), the way to the cell free of the level */
-byte CNodesWorld_NextInit(CNodesWorld *self, vec3_t *out);
-/* the buffer of the box min max: the cells reached from init free of the level (NWSup_IniBuffer); with the
- * analysis also the cells outside the sectors and the triangles around them (LogTri) */
-byte CNodesWorld_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
 /* the triangle tri hit around p into tris and the file of the analysis (not twice, at most 1000); hit is changed
  * into meters with y and z swapped */
 void CNodesWorld_LogTri(CNodesWorld *self, const vec3_t *p, vec3_t *hit, const struct CCollisionTri *tri);
-/* the region of the new point of visibility (NWSup_CreateRegion): the cells nearer than f40 that a sphere reaches */
-void CNodesWorld_CreateRegion(CNodesWorld *self, const vec3_t *start);
-/* the points of visibility between the regions (NWSup_InterRegion) */
-void CNodesWorld_InterRegion(CNodesWorld *self);
-/* NWSup_Generate: the start free of the level */
-byte CNodesWorld_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
 /* the debug view of g_NWDrawMode */
 void CNodesWorld_Draw(CNodesWorld *self);
-/* not called in the exe: the link test of a and b as spheres and a line (red with a hit, counted in i358), the box
- * of the cell at p (red in the level) */
-void CNodesWorld_DrawLinkTest(CNodesWorld *self, const vec3_t *a, const vec3_t *b);
-void CNodesWorld_DrawCell(CNodesWorld *self, const vec3_t *p);
-/* not called in the exe: Unreachable over the links whose point the sphere leaves free to the center of the cell */
-byte CNodesWorld_UnreachableFree(CNodesWorld *self, const vec3_t *from, const vec3_t *to, int index);
-/* the analysis of the level into <name>/AI/AnalisisMap.txt (writes a file): the buffer from init with the triangles
- * around its cells, whether the region is open; 0 for a start in the level or outside the box */
-byte CNodesWorld_AnalyzeMap(CNodesWorld *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
 
 /* the name of the level with file after it, in a buffer of 0x100 like the original */
 void NW_LevelPath(char *path, const CNodesWorld *self, const char *file);
@@ -333,16 +289,6 @@ void NW_DebugSeg(cNWSegList *debug, const vec3_t *a, const vec3_t *b);
 int NW_PathSide(const vec3_t *a, const vec3_t *side, float r, const vec3_t *dl, cNWSegList *debug);
 /* the segment between b + u * r and b + v * r free of the level */
 int NW_CornerSide(const vec3_t *b, const vec3_t *u, const vec3_t *v, float r, cNWSegList *debug);
-/* CNodesWorld_ctor: ai.h */
-void CNodesWorld_dtor(CNodesWorld *self);
-CNodesWorld *CNodesWorld_Delete(CNodesWorld *self, byte flags);
-/* the graph file <name>/AI/PathAI of the base class */
-byte CNodesWorld_LoadGraph(CNodesWorld *self);
-/* the points and their links into <name>/AI/PathAI.pth (writes a file) */
-byte CNodesWorld_SavePath(CNodesWorld *self);
-/* <name>/AI/InfPathAI.pth of the base class (writes a file) */
-byte CNodesWorld_SaveInfPath(CNodesWorld *self);
-void CNodesWorld_ClearLists(CNodesWorld *self);
 /* the segment a b free of the level, also the 4 (mode 1: 3) segments around it at radius r; self not used */
 byte CNodesWorld_TestPath(CNodesWorld *self, const vec3_t *a, const vec3_t *b, float r, float r2,
 	cNWSegList *debug, int mode);
@@ -350,19 +296,8 @@ byte CNodesWorld_TestPath(CNodesWorld *self, const vec3_t *a, const vec3_t *b, f
  * flat: the other side of the pairs); self not used */
 byte CNodesWorld_TestCorner(CNodesWorld *self, const vec3_t *a, const vec3_t *b, const vec3_t *c, float r,
 	float r2, byte flat, cNWSegList *debug);
-/* the analysis of a segment of the level: 1 when it is free (hit = b, the hit of tri FLT_MAX; outdoors 0 straight
- * up) or it hits a solid triangle facing it (hitFrom and hitTo kept unless b3b0) */
-byte CNodesWorld_TestSurface(CNodesWorld *self, const vec3_t *a, const vec3_t *b, vec3_t *hit,
-	struct CCollisionTri *tri);
 /* TestSurface from pos along the 6 axis directions as far as the largest side of the level box */
 byte CNodesWorld_TestSurfaceAround(CNodesWorld *self, const vec3_t *pos, vec3_t *hit, struct CCollisionTri *tri);
-/* the points of visibility of the cell between distMin and the visibility distance (and distMax with useMax):
- * mode 0 TestPath with radius, 1 the segment, 2 indoors on the same floor */
-void CNodesWorld_CollectCell(CNodesWorld *self, const vec3_t *pos, cNWIntList *cell, const vec3_t **list,
-	int max, int *count, float radius, float distMin, float distMax, int mode, byte useMax);
-/* the cells ring by ring around the cell of pos; soft goes on past distMax until one is found */
-void CNodesWorld_SearchRings(CNodesWorld *self, const vec3_t *pos, const vec3_t **list, int max, int *count,
-	float radius, float distMin, float distMax, byte soft, int mode);
 /* the points of visibility around pos: the cell of pos, then the rings */
 void CNodesWorld_GetPointsVis(CNodesWorld *self, const vec3_t *pos, const vec3_t **list, int max,
 	int *count, float radius, float distMin, float distMax, byte soft, int mode);
@@ -382,12 +317,6 @@ byte CNodesWorld_GetRacePointDir(CNodesWorld *self, vec3_t *out, const vec3_t *i
 	float maxDist, int arg, const vec3_t *dir, float maxAngle);
 /* the nearest point of visibility the segment sees, else the nearest one */
 void CNodesWorld_NearestPointVis(CNodesWorld *self, const vec3_t *pos, vec3_t *out);
-/* a random point between the node and a random linked node, at most maxDist from the node */
-void CNodesWorld_RandomNearNode(CNodesWorld *self, int node, float maxDist, vec3_t *out);
-/* such a point (without maxDist) between distMin and distMax from pos in the cone of maxAngle around dir, else
- * RandomNearNode with maxDist */
-void CNodesWorld_RandomAheadNode(CNodesWorld *self, int node, const vec3_t *pos, float distMin,
-	float distMax, float maxDist, const vec3_t *dir, float maxAngle, vec3_t *out);
 /* CNodesWorld_GetRacePoint (a random point of visibility on the floor of initial between minDist and maxDist),
  * CNodesWorld_Analyze (Load in the analysis mode, writes AnalisisMap.txt) and CNodesWorld_AnalyzeGraph: ai.h */
 

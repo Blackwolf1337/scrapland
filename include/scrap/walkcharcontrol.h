@@ -36,17 +36,10 @@ typedef struct cWalkCharControl {
 
 extern cGVar GVar_WalkCameraCenter;
 #define g_WalkCameraCenter (GVar_WalkCameraCenter.value.f)	/* "WalkCameraCenter" */
-extern cGVar GVar_AlwaysRun;
-#define g_AlwaysRun (GVar_AlwaysRun.value.i)		/* "AlwaysRun" */
-extern cGVar GVar_PadTurnSpeed;
-#define g_PadTurnSpeed (GVar_PadTurnSpeed.value.f)	/* "PadTurnSpeed" */
 extern cGVar GVar_EnergyBarActive;
 #define g_EnergyBarActive (GVar_EnergyBarActive.value.i)	/* "EnergyBarActive" */
-extern cGVar GVar_EnergyRechargeTime;
-#define g_EnergyRechargeTime (GVar_EnergyRechargeTime.value.f)	/* "EnergyRechargeTime" */
 
 cWalkCharControl *cWalkCharControl_ctor(cWalkCharControl *self);
-void cWalkCharControl_dtor(cWalkCharControl *self);
 /* the values cleared, the control off (on) or on */
 void cWalkCharControl_Reset(cWalkCharControl *self, byte on);
 /* the values cleared, the control on */

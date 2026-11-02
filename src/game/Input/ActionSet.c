@@ -12,6 +12,9 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
+#define g_LogRumble (GVar_LogRumble.value.i)		/* LogRumble */
+static cGVar GVar_LogRumble;
+
 #define INPUTACTION_CTOR 0x139240
 #define INPUTACTION_DTOR 0x139430
 #define ACTIONSET_CTOR 0x1392b0
@@ -21,6 +24,9 @@
 #define CPYFUNCTION_DTOR 0x192200
 
 /* the static constructor of g_ActionSets: the four sets and the names of their actions */
+static void ActionSetTable_Init(cActionSetTable *t, int num);
+static void ActionTable_Init(cInputActionTable *t, int num);
+static void cInputAction_Init(cInputAction *a, const char *name, byte latch);
 cActionSetTable *ActionSets_ctor(cActionSetTable *sets) {
 	cActionSet *s;
 
@@ -129,14 +135,14 @@ cActionSetTable *ActionSets_ctor(cActionSetTable *sets) {
 	return sets;
 }
 
-cInputAction *cInputAction_ctor(cInputAction *a) {
+static cInputAction *cInputAction_ctor(cInputAction *a) {
 	cString_ctor(&a->name);
 	crt_eh_vector_ctor(a->func, sizeof(cPy_Function), MAX_LOCAL_PLAYERS, (void *)cPy_Function_ctor,
 		(void *)cPy_Function_dtor);
 	return a;
 }
 
-cActionSet *cActionSet_ctor(cActionSet *s) {
+static cActionSet *cActionSet_ctor(cActionSet *s) {
 	cString_ctor(&s->name);
 	s->actions.items = NULL;
 	s->actions.count = 0;
@@ -158,12 +164,14 @@ cPlayerInput *cPlayerInput_ctor(cPlayerInput *in) {
 }
 
 /* the atexit destructor of g_ActionSets (rva 0x38d950, the Free inlined) */
+static void ActionSetTable_Free(cActionSetTable *t);
 void ActionSet_FiniActionSets(void) {
 	ActionSetTable_Free(&g_ActionSets);
 }
 
 /* the Global/Table.h Free of the sets */
-void ActionSetTable_Free(cActionSetTable *t) {
+static void cActionSet_dtor(cActionSet *s);
+static void ActionSetTable_Free(cActionSetTable *t) {
 	if (t->items) {
 		Delete_Objects(t->items, sizeof(cActionSet), (void *)cActionSet_dtor);
 		t->items = NULL;
@@ -171,12 +179,12 @@ void ActionSetTable_Free(cActionSetTable *t) {
 	}
 }
 
-void cInputAction_dtor(cInputAction *a) {
+static void cInputAction_dtor(cInputAction *a) {
 	crt_eh_vector_dtor(a->func, sizeof(cPy_Function), MAX_LOCAL_PLAYERS, (void *)cPy_Function_dtor);
 	cString_dtor(&a->name);
 }
 
-void cActionSet_dtor(cActionSet *s) {
+static void cActionSet_dtor(cActionSet *s) {
 	if (s->actions.items) {
 		Delete_Objects(s->actions.items, sizeof(cInputAction), (void *)cInputAction_dtor);
 		s->actions.items = NULL;
@@ -187,29 +195,6 @@ void cActionSet_dtor(cActionSet *s) {
 
 void cPlayerInput_dtor(cPlayerInput *in) {
 	cPy_Function_dtor(&in->func);
-}
-
-/* the vector deleting destructors: flags 2 is an array with its count before it, 1 frees */
-cInputAction *cInputAction_Delete(cInputAction *a, uint32_t flags) {
-	if (flags & 2) {
-		return Delete_VectorPart(a, flags, sizeof(cInputAction), (void *)cInputAction_dtor);
-	}
-	cInputAction_dtor(a);
-	if (flags & 1) {
-		operator_delete_sized(a, sizeof(*a));
-	}
-	return a;
-}
-
-cActionSet *cActionSet_Delete(cActionSet *s, uint32_t flags) {
-	if (flags & 2) {
-		return Delete_VectorPart(s, flags, sizeof(cActionSet), (void *)cActionSet_dtor);
-	}
-	cActionSet_dtor(s);
-	if (flags & 1) {
-		operator_delete_sized(s, sizeof(*s));
-	}
-	return s;
 }
 
 cVirtualKeyboard g_VirtualKeyboard;
@@ -264,7 +249,7 @@ void cActionSet_HoldPressed(cActionSet *s) {
 	}
 }
 
-uint32_t g_CurActionSet = 0xffffffff;
+static uint32_t g_CurActionSet = 0xffffffff;
 
 uint32_t Input_GetActionSet(void) {
 	return g_CurActionSet;
@@ -279,32 +264,27 @@ char cPlayerInput_GetCursorChar(cPlayerInput *in) {
 }
 
 /* the Global/Table.h Init of the two instances: new T[num] with the constructors */
-void ActionTable_Init(cInputActionTable *t, int num) {
+static void ActionTable_Init(cInputActionTable *t, int num) {
 	CHECK(!t->items && num > 0);
 	t->count = num;
 	t->items = New_Objects(num, sizeof(cInputAction), (void *)cInputAction_ctor, (void *)cInputAction_dtor);
 	CHECK(t->items);
 }
 
-void ActionSetTable_Init(cActionSetTable *t, int num) {
+static void ActionSetTable_Init(cActionSetTable *t, int num) {
 	CHECK(!t->items && num > 0);
 	t->count = num;
 	t->items = New_Objects(num, sizeof(cActionSet), (void *)cActionSet_ctor, (void *)cActionSet_dtor);
 	CHECK(t->items);
 }
 
-void cInputAction_Init(cInputAction *a, const char *name, byte latch) {
+static void cInputAction_Init(cInputAction *a, const char *name, byte latch) {
 	a->latch = latch;
 	cString_Set(&a->name, name);
 	memset(a->pressed, 0, sizeof(a->pressed));
 }
 
-void cActionSet_Init(cActionSet *s, int num, const char *name) {
-	cString_Set(&s->name, name);
-	ActionTable_Init(&s->actions, num);
-}
-
-void cPad_Init(cPad *pad, int index) {
+static void cPad_Init(cPad *pad, int index) {
 	pad->motor[0] = 0.0f;
 	pad->motor[1] = 0.0f;
 	pad->prev[0] = 0.0f;
@@ -315,6 +295,7 @@ void cPad_Init(cPad *pad, int index) {
 	pad->index = index;
 }
 
+static void Input_ClearActions(void);
 void InputMaps_Init(void) {
 	g_CurActionSet = 0;
 	Input_ClearActions();
@@ -323,6 +304,7 @@ void InputMaps_Init(void) {
 	}
 }
 
+static void cPad_Stop(cPad *pad);
 void InputMaps_Clear(void) {
 	for (int i = 0; i < MAX_LOCAL_PLAYERS; i++) {
 		cPad_Stop(&g_Pads[i]);
@@ -333,7 +315,7 @@ void InputMaps_Done(void) {
 }
 
 /* every 0.05 seconds: counts the duration down and passes the motors to the callback while one of them runs */
-void cPad_Update(cPad *pad) {
+static void cPad_Update(cPad *pad) {
 	double next = (double)(pad->time + 0.05f);
 
 	if (!(g_pApp->vftable->GetGameTime(g_pApp) > next)) {
@@ -410,6 +392,7 @@ byte cPlayerInput_SetCursorChar(cPlayerInput *in, char c) {
 }
 
 /* the start of a frame: the values of the last frame become prev, the rumble goes on */
+static void cActionSet_Shift(cActionSet *s);
 void Input_UpdateActions(void) {
 	for (int i = 0; i < MAX_LOCAL_PLAYERS; i++) {
 		g_PlayerInput[i].keyWasDown = g_PlayerInput[i].keyDown;
@@ -425,14 +408,14 @@ void Input_UpdateActions(void) {
 	}
 }
 
-void cInputAction_Shift(cInputAction *a) {
+static void cInputAction_Shift(cInputAction *a) {
 	for (int p = 0; p < MAX_LOCAL_PLAYERS; p++) {
 		a->prev[p] = a->value[p];
 		a->value[p] = 0.0f;
 	}
 }
 
-void cActionSet_Shift(cActionSet *s) {
+static void cActionSet_Shift(cActionSet *s) {
 	for (uint32_t i = 0; (int)i < s->actions.count; i++) {
 		cInputAction_Shift(TABLE_AT(s->actions, i));
 	}
@@ -443,7 +426,7 @@ byte cInputAction_Pressed(cInputAction *a, int player) {
 }
 
 /* the bound functions of the players that pressed the action in this frame */
-void cInputAction_Fire(cInputAction *a) {
+static void cInputAction_Fire(cInputAction *a) {
 	for (int p = 0; p < MAX_LOCAL_PLAYERS; p++) {
 		if (0.5f > a->prev[p] && a->value[p] > 0.5f) {
 			cPy_Function_AddParamI(&a->func[p], p);
@@ -462,7 +445,7 @@ byte cInputAction_Released(cInputAction *a, int player) {
 	return a->prev[player] > 0.5f && 0.5f > a->value[player];
 }
 
-void cPad_Stop(cPad *pad) {
+static void cPad_Stop(cPad *pad) {
 	if (pad->onRumble) {
 		pad->onRumble(pad->index, 0.0f, 0.0f);
 	}
@@ -471,7 +454,8 @@ void cPad_Stop(cPad *pad) {
 	pad->duration = 0.0f;
 }
 
-void Input_ClearActions(void) {
+static void cActionSet_Clear(cActionSet *s);
+static void Input_ClearActions(void) {
 	for (uint32_t i = 0; (int)i < g_ActionSets.count; i++) {
 		cActionSet_Clear(TABLE_AT(g_ActionSets, i));
 	}
@@ -485,46 +469,40 @@ void Input_ResetActions(void) {
 	Input_ResetInactivity();
 }
 
-void cInputAction_Clear(cInputAction *a) {
+static void cInputAction_Clear(cInputAction *a) {
 	for (int p = 0; p < MAX_LOCAL_PLAYERS; p++) {
 		a->value[p] = 0.0f;
 		a->prev[p] = 0.0f;
 	}
 }
 
-void cActionSet_Clear(cActionSet *s) {
+static void cActionSet_Clear(cActionSet *s) {
 	for (uint32_t i = 0; (int)i < s->actions.count; i++) {
 		cInputAction_Clear(TABLE_AT(s->actions, i));
 	}
 }
 
-void cPlayerInput_Clear(cPlayerInput *in) {
-	memset(in->text, 0, 0x80);
-	in->maxLen = 0x80;
-	in->cursorX = 0.0f;
-	in->cursorY = 0.0f;
-	in->len = 0;
-}
-
+static void cActionSet_Keep(cActionSet *s);
 void Input_ResetStates(void) {
 	for (uint32_t i = 0; (int)i < g_ActionSets.count; i++) {
 		cActionSet_Keep(TABLE_AT(g_ActionSets, i));
 	}
 }
 
-void cInputAction_Keep(cInputAction *a) {
+static void cInputAction_Keep(cInputAction *a) {
 	for (int p = 0; p < MAX_LOCAL_PLAYERS; p++) {
 		a->prev[p] = a->value[p];
 	}
 }
 
-void cActionSet_Keep(cActionSet *s) {
+static void cActionSet_Keep(cActionSet *s) {
 	for (uint32_t i = 0; (int)i < s->actions.count; i++) {
 		cInputAction_Keep(TABLE_AT(s->actions, i));
 	}
 }
 
 /* clears the old and the new set and reads the devices once, so that a held key does not fire in the new set */
+static void cActionSet_Latch(cActionSet *s);
 void Input_SelectActionSet(int index) {
 	Scorer_SetConsole(0);
 	CHECK(NUM_SETS > index);
@@ -536,7 +514,7 @@ void Input_SelectActionSet(int index) {
 	Input_Update(0.1f);
 }
 
-void cInputAction_Latch(cInputAction *a) {
+static void cInputAction_Latch(cInputAction *a) {
 	for (int p = 0; p < MAX_LOCAL_PLAYERS; p++) {
 		if (!a->latch) {
 			return;
@@ -545,7 +523,7 @@ void cInputAction_Latch(cInputAction *a) {
 	}
 }
 
-void cActionSet_Latch(cActionSet *s) {
+static void cActionSet_Latch(cActionSet *s) {
 	for (uint32_t i = 0; (int)i < s->actions.count; i++) {
 		cInputAction_Latch(TABLE_AT(s->actions, i));
 	}
@@ -557,9 +535,9 @@ cVirtualKeyboard *cVirtualKeyboard_ctor(cVirtualKeyboard *vk) {
 	return vk;
 }
 
-const char VK_STANDARD[80] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz 0123456789.:,;-!\"&/()=?\010\n";
+static const char VK_STANDARD[80] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz 0123456789.:,;-!\"&/()=?\010\n";
 
-const char VK_CONSOLE[108] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\\#@|$%=':+*~{_}[]<>^\t`ñÑ¿¡ 0123456789.:,;-!\"&/()=?\010\n";
+static const char VK_CONSOLE[108] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\\#@|$%=':+*~{_}[]<>^\t`ñÑ¿¡ 0123456789.:,;-!\"&/()=?\010\n";
 
 /* "Standard", "Numbers" or "Console"; 0 for another name (the grid stays) */
 byte cVirtualKeyboard_Set(cVirtualKeyboard *vk, const char *text) {
@@ -584,6 +562,7 @@ byte cVirtualKeyboard_Set(cVirtualKeyboard *vk, const char *text) {
 }
 
 /* the function gets player and text when the player ends the line (Input_OnTextDone of the exe) */
+static void Input_OnTextDone(int player, const char *text);
 void cPlayerInput_SetInputFunc(cPlayerInput *in, const char *func) {
 	in->onDone = (void (*)(int, const char *))(void *)Input_OnTextDone;
 	cPy_Function_SetFunc(&in->func, func);
@@ -618,7 +597,7 @@ void cPlayerInput_SetString(cPlayerInput *in, const char *text) {
 	in->len = (int)strlen(in->text);
 }
 
-void Input_OnTextDone(int player, const char *text) {
+static void Input_OnTextDone(int player, const char *text) {
 	cPy_Function *f = &g_PlayerInput[player].func;
 
 	cPy_Function_AddParamI(f, player);
@@ -638,7 +617,7 @@ byte cActionSet_AnyActive(cActionSet *s) {
 	return 0;
 }
 
-cGVar GVar_LogRumble;
+static cGVar GVar_LogRumble;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_LogRumble, &GVar_LogRumble, "LogRumble", 0, "Log the input and output to the rumble interface.", 0)

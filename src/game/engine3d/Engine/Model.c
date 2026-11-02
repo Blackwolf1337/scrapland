@@ -21,6 +21,8 @@
 #include "scrap/misc.h"
 #include "scrap/staticinit.h"
 
+#define CMODEL_VFTABLE (&CModel_vftable)
+static const CModelVtbl CModel_vftable;
 
 #define CLOD_DTOR 0x252d80
 #define LIGHT_OMNI_NAME "omni"
@@ -30,10 +32,10 @@
 #define MORPH_SPEED_MAX 0.08f
 #define STENCIL_DIST 4000.0f
 
-cGVar GVar_R_SkipAnimInterp;
+static cGVar GVar_R_SkipAnimInterp;
 
 #define g_AnimPause (GVar_R_SkipAnimInterp.value.i)	/* the animations stand still */
-cGVar GVar_R_AnimInterpMult;
+static cGVar GVar_R_AnimInterpMult;
 
 #define g_AnimSpeed (GVar_R_AnimInterpMult.value.f)	/* the speed of all animations */
 #define g_FrameTime g_FrameMs	/* the time of the frame */
@@ -153,10 +155,6 @@ CModel *CModel_ctor(CModel *self) {
 	return self;
 }
 
-void Table_DeleteLods(CTable *t) {
-	Lods_Delete(t);
-}
-
 CLod *CLod_ctor(CLod *self) {
 	self->model = NULL;
 	self->unused_04 = 0;
@@ -167,7 +165,7 @@ void CLod_dtor(CLod *self) {
 	CHECK(!self->model);
 }
 
-void CModel_dtor(CModel *self) {
+static void CModel_dtor(CModel *self) {
 	self->vftable = CMODEL_VFTABLE;
 	for (uint32_t i = 0; (int)i < self->lods.n; i++) {
 		Model_Destroy(&Model_Lod(self, i)->model, 0);
@@ -181,40 +179,7 @@ void CModel_dtor(CModel *self) {
 	}
 }
 
-/* the array branch of the vector deleting destructors: the count before the objects, the destructor on each */
-static void *DeleteVecArray(void *self, uint32_t flags, uint32_t size, void *dtor) {
-	uint32_t *mem = (uint32_t *)self - 1;
-
-	crt_eh_vector_dtor(self, size, *mem, dtor);
-	if (flags & 1) {
-		operator_delete_array(mem);
-	}
-	return mem;
-}
-
-void *CLod_DeleteVec(CLod *self, uint32_t flags) {
-	if (flags & 2) {
-		return DeleteVecArray(self, flags, sizeof(CLod), (void *)CLod_dtor);
-	}
-	CLod_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CLod));
-	}
-	return self;
-}
-
-void *CRenderNode_DeleteVec(CRenderNode *self, uint32_t flags) {
-	if (flags & 2) {
-		return DeleteVecArray(self, flags, sizeof(CRenderNode), (void *)CRenderNode_dtor);
-	}
-	CRenderNode_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CRenderNode));
-	}
-	return self;
-}
-
-CModel *CModel_Delete(CModel *self, byte flags) {
+static CModel *CModel_Delete(CModel *self, byte flags) {
 	CModel_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -241,13 +206,6 @@ CAnimSlot *CModel_GetSlot(CModel *self, uint32_t i) {
 	return Model_Slot(self, i);
 }
 
-double CAnim_GetSpeed(CAnimGroup *a) {
-	if (a && !g_AnimPause) {
-		return (double)a->ctrl.speed * (double)g_AnimSpeed;
-	}
-	return 0.0;
-}
-
 void CModel_InitD3D(CModel *self, void *dev, byte scene) {
 	CHECK(self->scene);
 	if (scene) {
@@ -255,6 +213,7 @@ void CModel_InitD3D(CModel *self, void *dev, byte scene) {
 	}
 }
 
+static void CModel_AnimOffset(CModel *self, NodeAnimCtx *ctx);
 void CModel_SetupRender(CModel *self, NodeAnimCtx *ctx) {
 	vec3_t one;
 
@@ -386,53 +345,6 @@ byte CModel_AddAnimEvents(CModel *self, const char *name, float start, float end
 	return 1;
 }
 
-void CModel_AnimPlay(CModel *self, uint32_t slot) {
-	CAnimGroup *a = Model_Slot(self, slot)->anim;
-
-	if (a) {
-		CAnimCtrl_Play(&a->ctrl);
-	}
-}
-
-int CModel_AnimState(CModel *self, uint32_t slot) {
-	CAnimGroup *a = Model_Slot(self, slot)->anim;
-
-	if (a) {
-		return a->ctrl.state;
-	}
-	return ANIM_END;
-}
-
-void CModel_AnimStop(CModel *self, uint32_t slot) {
-	CAnimGroup *a = Model_Slot(self, slot)->anim;
-
-	if (a) {
-		CAnimCtrl_Stop(&a->ctrl);
-	}
-}
-
-void CModel_AnimPause(CModel *self, uint32_t slot) {
-	CAnimGroup *a = Model_Slot(self, slot)->anim;
-
-	if (a) {
-		CAnimCtrl_Pause(&a->ctrl);
-	}
-}
-
-void CModel_AnimFade(CModel *self, float t, uint32_t slot) {
-	CAnimGroup *a = Model_Slot(self, slot)->anim;
-
-	if (a) {
-		CAnimCtrl_Fade(&a->ctrl, t);
-	}
-}
-
-void CModel_MoveForward(CModel *self, float d) {
-	vec3_t v = { 0.0f, 0.0f, -d }, t;
-
-	Model_AddMove(self, Vec3_Rotate(&t, &v, &self->rot));
-}
-
 void CModel_UpdateAnims(CModel *self, float dt, int iAnim) {
 	(void)dt;
 	CHECK(iAnim == -1);
@@ -499,13 +411,6 @@ void CModel_UpdateAnims(CModel *self, float dt, int iAnim) {
 	}
 }
 
-CNode3D *CModel_FindClass(CModel *self, CNode3D *from, uint32_t class) {
-	if (self->scene) {
-		return CScene_FindClass(self->scene, from, class);
-	}
-	return NULL;
-}
-
 CNode3D *CModel_FindNode(CModel *self, const char *name) {
 	if (self->scene && self->scene->Node3D) {
 		return CNode3D_Find(self->scene->Node3D, name, 1);
@@ -560,7 +465,8 @@ CNode3D *CModel_FindNodeWild(CModel *self, const char *pat) {
 	return NULL;
 }
 
-void CModel_AnimOffset(CModel *self, NodeAnimCtx *ctx) {
+/* animOfs from the animation of slot 0 of the context, blended with the previous one */
+static void CModel_AnimOffset(CModel *self, NodeAnimCtx *ctx) {
 	CHECK(ctx);
 	Vec3_Zero(&self->animOfs);
 	if (ctx->chan[0].anim && ctx->chan[0].anim->anim[0]) {
@@ -613,24 +519,6 @@ void CModel_SetAnim(CModel *self, int idx, uint32_t slot) {
 	}
 	if (a) {
 		CAnimCtrl_Start(&a->ctrl);
-	}
-}
-
-void CModel_SetAnimName(CModel *self, const char *name, uint32_t slot) {
-	CHECK(0);
-	CAnimGroup *cur = Model_Slot(self, slot)->anim;
-	if (cur && name && !crt_stricmp(cur->Anim->AnimM3D->name, name)) {
-		return;
-	}
-	CAnimGroup *a = CAnimGroups_Find(&self->anims, name, NULL);
-	if (a != cur) {
-		if (a) {
-			CAnimCtrl_Start(&a->ctrl);
-		}
-		CAnimSlot *s = Model_Slot(self, slot);
-		s->anim = a;
-		s->prev = NULL;
-		s->blend = 0.0f;
 	}
 }
 
@@ -711,12 +599,6 @@ void CModel_SetScene(CModel *self, CScene *scn) {
 	}
 }
 
-void CModel_SetCallback(CModel *self, modelCallback_t fn, void *arg, void *arg2) {
-	self->callback = fn;
-	self->cbArg = arg;
-	self->cbArg2 = arg2;
-}
-
 void CModel_SetPivot(CModel *self, const vec3_t *v, byte rel, byte update) {
 	if (rel) {
 		CHECK(self->scene);
@@ -749,14 +631,6 @@ byte CModel_SetPivotNode(CModel *self, const char *name) {
 		}
 	}
 	return 0;
-}
-
-void CModel_SetSlotAnim(CModel *self, uint32_t slot, CAnimGroup *a) {
-	CAnimSlot *s = Model_Slot(self, slot);
-
-	s->anim = a;
-	s->prev = NULL;
-	s->blend = 0.0f;
 }
 
 /* the render nodes of the nodes with (pass 1) or without (pass 0) NODE_NO_RENDERNODE, from index k on */
@@ -805,19 +679,6 @@ void CModel_BuildRenderNodes(CModel *self, int unused) {
 	CHECK(k == self->renderNodes->n);
 }
 
-void Model_Check(CModel *m) {
-	CHECK(m);
-}
-
-CAnimation *CModel_GetSlotAnimM3D(CModel *self, uint32_t slot) {
-	CAnimGroup *a = Model_Slot(self, slot)->anim;
-
-	if (a) {
-		return a->Anim->AnimM3D;
-	}
-	return NULL;
-}
-
 CAnimGroup *CModel_GetAnim(CModel *self, int i) {
 	return CAnimGroups_Get(&self->anims, i);
 }
@@ -838,20 +699,8 @@ const char *CModel_GetAnimName(CModel *self, int i) {
 	return NULL;
 }
 
-CAnimGroup *CModel_GetSlotAnim(CModel *self, uint32_t slot) {
-	return Model_Slot(self, slot)->anim;
-}
-
-float CModel_GetSlotFrame(CModel *self, uint32_t slot) {
-	CAnimGroup *a = Model_Slot(self, slot)->anim;
-
-	if (a) {
-		return a->ctrl.frame;
-	}
-	return 0.0f;
-}
-
-const char *CLight_TypeName(const CLight *l) {
+/* light.h: "omni", "foco", "direc" */
+static const char *CLight_TypeName(const CLight *l) {
 	switch (l->type) {
 	case LIGHT_OMNI:
 		return LIGHT_OMNI_NAME;
@@ -869,46 +718,46 @@ cGVar GVar_R_UseMLOD;
 
 /* the render variables of the models */
 #define g_UseMLOD (GVar_R_UseMLOD.value.i)		/* R_UseMLOD */
-cGVar GVar_R_DistMLOD1;
+static cGVar GVar_R_DistMLOD1;
 
 #define g_DistMLOD1 (GVar_R_DistMLOD1.value.f)		/* R_DistMLOD1, the distance of LOD i is i times it */
-cGVar GVar_R_DrawMLODMask;
+static cGVar GVar_R_DrawMLODMask;
 
 #define g_DrawMLODMask (GVar_R_DrawMLODMask.value.u)	/* R_DrawMLODMask: the LODs drawn as the main model */
-cGVar GVar_R_DrawMLODMin;
+static cGVar GVar_R_DrawMLODMin;
 
 #define g_DrawMLODMin (GVar_R_DrawMLODMin.value.i)		/* R_DrawMLODMin */
-cGVar GVar_R_DrawMLODPart;
+static cGVar GVar_R_DrawMLODPart;
 
 #define g_DrawMLODPart (GVar_R_DrawMLODPart.value.i)		/* R_DrawMLODPart: the particles of the main model with a LOD */
-cGVar GVar_R_ModelFastIsVis;
+static cGVar GVar_R_ModelFastIsVis;
 
 #define g_ModelFastIsVis (GVar_R_ModelFastIsVis.value.i)	/* R_ModelFastIsVis */
-cGVar GVar_R_ModelPortalVis;
+static cGVar GVar_R_ModelPortalVis;
 
 #define g_ModelPortalVis (GVar_R_ModelPortalVis.value.i)	/* R_ModelPortalVis */
-cGVar GVar_R_SphereVisMult;
+static cGVar GVar_R_SphereVisMult;
 
 #define g_SphereVisMult (GVar_R_SphereVisMult.value.f)	/* R_SphereVisMult */
-cGVar GVar_R_DistMStencil;
+static cGVar GVar_R_DistMStencil;
 
 #define g_DistMStencil (GVar_R_DistMStencil.value.f)	/* R_DistMStencil */
-cGVar GVar_R_SkipUpdateVis;
+static cGVar GVar_R_SkipUpdateVis;
 
 #define g_SkipUpdateVis (GVar_R_SkipUpdateVis.value.i)	/* R_SkipUpdateVis */
-cGVar GVar_R_ShowModelSector;
+static cGVar GVar_R_ShowModelSector;
 
 #define g_ShowModelSector (GVar_R_ShowModelSector.value.i)	/* R_ShowModelSector */
-cGVar GVar_R_LightLimit;
+static cGVar GVar_R_LightLimit;
 
 #define g_LightLimit (GVar_R_LightLimit.value.i)		/* R_LightLimit, -1: no lights chosen */
-cGVar GVar_R_ShowModelLights;
+static cGVar GVar_R_ShowModelLights;
 
 #define g_ShowModelLights (GVar_R_ShowModelLights.value.i)	/* R_ShowModelLights */
-cGVar GVar_R_ShowModelBox;
+static cGVar GVar_R_ShowModelBox;
 
 #define g_ShowModelBox (GVar_R_ShowModelBox.value.i)		/* R_ShowModelBox */
-cGVar GVar_R_ShowModelPos;
+static cGVar GVar_R_ShowModelPos;
 
 #define g_ShowModelPos (GVar_R_ShowModelPos.value.i)		/* R_ShowModelPos */
 
@@ -940,7 +789,8 @@ static float Model_Sphere(CModel *self, const matrix_t *m, vec3_t *c) {
 	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz)) * 0.5f;
 }
 
-byte CModel_Visibility(CModel *self, const matrix_t *m) {
+/* 0 not seen, 2 only the stencil shadow, 3 seen; the value of the last frame in the passes that keep it */
+static byte CModel_Visibility(CModel *self, const matrix_t *m) {
 	int pass = g_RenderPass;
 	vec3_t c;
 
@@ -976,7 +826,8 @@ hidden:
 	return 0;
 }
 
-byte CModel_UpdateLOD(CModel *self) {
+/* a LOD drawn instead (then 1); 0 without LODs or the main model near enough */
+static byte CModel_UpdateLOD(CModel *self) {
 	int i;
 	CLod *l = NULL;
 
@@ -1250,7 +1101,7 @@ void CModel_Render(CModel *self) {
 }
 
 /* the vtable of CModel */
-const CModelVtbl CModel_vftable = {
+static const CModelVtbl CModel_vftable = {
 	.Delete = CModel_Delete,
 };
 

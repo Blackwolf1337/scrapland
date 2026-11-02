@@ -37,7 +37,7 @@ static char *Event_Next(char *s) {
 	return p;
 }
 
-void Event_AnmSound2DEvent(cAbstractFile *params) {
+static void Event_AnmSound2DEvent(cAbstractFile *params) {
 	char name[EVENT_STR], snd[EVENT_STR];
 	float t;
 	cSound s;
@@ -74,7 +74,7 @@ void Event_AnmSound2DEvent(cAbstractFile *params) {
 	g_pSound->vftable->PlaySound(g_pSound, snd, &s.desc, NULL);
 }
 
-void Event_AnmSoundEvent(cAbstractFile *params) {
+static void Event_AnmSoundEvent(cAbstractFile *params) {
 	char name[EVENT_STR], snd[EVENT_STR];
 	float t;
 	cSound s;
@@ -101,7 +101,7 @@ void Event_AnmSoundEvent(cAbstractFile *params) {
 	g_pSound->vftable->PlaySound(g_pSound, snd, &s.desc, NULL);
 }
 
-void Event_AnmSoundLoopEvent(cAbstractFile *params) {
+static void Event_AnmSoundLoopEvent(cAbstractFile *params) {
 	char name[EVENT_STR], snd[EVENT_STR];
 	float t;
 
@@ -127,14 +127,14 @@ void Event_AnmSoundLoopEvent(cAbstractFile *params) {
 	}
 }
 
-void Event_StopStreamingVoice(cAbstractFile *params) {
+static void Event_StopStreamingVoice(cAbstractFile *params) {
 	char name[EVENT_STR];
 
 	cAbstractFile_ReadString(params, name, EVENT_STR);
 	Sound_TalkDone(name);
 }
 
-void Event_StreamingVoice(cAbstractFile *params) {
+static void Event_StreamingVoice(cAbstractFile *params) {
 	char name[EVENT_STR], str[EVENT_STR];
 	float t;
 
@@ -155,7 +155,7 @@ void Event_StreamingVoice(cAbstractFile *params) {
 	}
 }
 
-void Event_WarningPolice(cAbstractFile *params) {
+static void Event_WarningPolice(cAbstractFile *params) {
 	char name[EVENT_STR], str[EVENT_STR];
 	float t;
 
@@ -163,12 +163,12 @@ void Event_WarningPolice(cAbstractFile *params) {
 	Sound_PlayVoice(name, str, NULL, 1);
 }
 
-cPy_NativeFunc NativeFunc_AnmSoundLoopEvent;
-cPy_NativeFunc NativeFunc_AnmSoundEvent;
-cPy_NativeFunc NativeFunc_AnmSound2DEvent;
-cPy_NativeFunc NativeFunc_WarningPolice;
-cPy_NativeFunc NativeFunc_StreamingVoice;
-cPy_NativeFunc NativeFunc_StopStreamingVoice;
+static cPy_NativeFunc NativeFunc_AnmSoundLoopEvent;
+static cPy_NativeFunc NativeFunc_AnmSoundEvent;
+static cPy_NativeFunc NativeFunc_AnmSound2DEvent;
+static cPy_NativeFunc NativeFunc_WarningPolice;
+static cPy_NativeFunc NativeFunc_StreamingVoice;
+static cPy_NativeFunc NativeFunc_StopStreamingVoice;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_NATIVE_FUNC(Init_NativeFunc_AnmSoundLoopEvent, &NativeFunc_AnmSoundLoopEvent, "AnmSoundLoopEvent", Event_AnmSoundLoopEvent)

@@ -12,9 +12,9 @@
 #include "scrap/logic.h"
 #include "scrap/staticinit.h"
 
-extern const cGenCharLocalLogicVtbl cSputnikJunkyardLocalLogic_vftable;
+static const cGenCharLocalLogicVtbl cSputnikJunkyardLocalLogic_vftable;
 #define CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE (&cSputnikJunkyardLocalLogic_vftable.base)
-cGVar GVar_SputnikJunyardTimeToPissPlayer;
+static cGVar GVar_SputnikJunyardTimeToPissPlayer;
 
 #define g_SputnikJunyardTimeToPissPlayer (GVar_SputnikJunyardTimeToPissPlayer.value.f)
 /* the angles of the camera entity */
@@ -29,7 +29,7 @@ static void Sputnik_Walk(cGenCharLocalLogic *self) {
 	ai->vftable->SetState(&ai->base.base, 1, (double)g_GenCharRelaxSpeed, 0);
 }
 
-float g_SputnikTime;
+static float g_SputnikTime;
 
 cSputnikJunkyardLocalLogic *cSputnikJunkyardLocalLogic_ctor(cSputnikJunkyardLocalLogic *self,
 	cEntity *parent) {
@@ -42,9 +42,10 @@ cSputnikJunkyardLocalLogic *cSputnikJunkyardLocalLogic_ctor(cSputnikJunkyardLoca
 	return self;
 }
 
-cEntity *g_SputnikPisser;
+static cEntity *g_SputnikPisser;
 
-cLocalLogic *cSputnikJunkyardLocalLogic_Delete(cLocalLogic *base, byte flags) {
+/* SputnikJunkyardLogic.cpp: a cGenCharLocalLogic, states 7 the walk, 8 the laugh in front of the camera */
+static cLocalLogic *cSputnikJunkyardLocalLogic_Delete(cLocalLogic *base, byte flags) {
 	cSputnikJunkyardLocalLogic *self = (cSputnikJunkyardLocalLogic *)base;
 	SPUTNIK_VT(self) = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
 	g_SputnikPisser = NULL;
@@ -56,7 +57,7 @@ cLocalLogic *cSputnikJunkyardLocalLogic_Delete(cLocalLogic *base, byte flags) {
 }
 
 /* the native at the end of the laugh of the character of that name: back to the walk */
-void Sputnik_LaughDone(cAbstractFile *params) {
+static void Sputnik_LaughDone(cAbstractFile *params) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(params, name, sizeof(name));
@@ -67,7 +68,7 @@ void Sputnik_LaughDone(cAbstractFile *params) {
 }
 
 /* vf17 */
-void cSputnikJunkyardLocalLogic_Update(cLocalLogic *elem, float dt) {
+static void cSputnikJunkyardLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cSputnikJunkyardLocalLogic *self = (cSputnikJunkyardLocalLogic *)elem;
 	cEntity *p = self->base.parent;
 
@@ -104,7 +105,7 @@ void cSputnikJunkyardLocalLogic_Update(cLocalLogic *elem, float dt) {
 }
 
 /* vf19: 7 the walk, 8 to the point 200 in front of the camera, facing it; always 1 */
-byte cSputnikJunkyardLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
+static byte cSputnikJunkyardLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cSputnikJunkyardLocalLogic *self = (cSputnikJunkyardLocalLogic *)elem;
 	if (state == 7) {
 		if ((byte)cBaseLocalLogic_SetState(&self->base.logic, 7, target)) {
@@ -140,7 +141,7 @@ byte cSputnikJunkyardLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *
 }
 
 /* the vtable of cSputnikJunkyardLocalLogic */
-const cGenCharLocalLogicVtbl cSputnikJunkyardLocalLogic_vftable = {
+static const cGenCharLocalLogicVtbl cSputnikJunkyardLocalLogic_vftable = {
 	.base.base.Delete = cSputnikJunkyardLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.Vf02 = cLocalLogic_Vf02True,
@@ -179,7 +180,7 @@ const cGenCharLocalLogicVtbl cSputnikJunkyardLocalLogic_vftable = {
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };
 
-cPy_NativeFunc NativeFunc_EndOfLaugh;
+static cPy_NativeFunc NativeFunc_EndOfLaugh;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_SputnikJunyardTimeToPissPlayer, &GVar_SputnikJunyardTimeToPissPlayer, "SputnikJunyardTimeToPissPlayer", 0, "SputnikJunyard time to piss player", 60.0f)

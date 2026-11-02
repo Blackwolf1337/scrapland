@@ -8,9 +8,6 @@
 
 #include "scrap/node3d.h"
 
-extern const ObjRefVtbl CScene_vftable;
-#define CSCENE_VFTABLE (&CScene_vftable)
-
 /* node flags read here */
 #define NODE_JOIN1 (1u << 0)		/* CScene_Join with sel */
 #define NODE_JOIN2 (1u << 1)		/* CScene_Join without sel */
@@ -27,10 +24,7 @@ enum {
 	SCENE_MSG_CAMERAS = 3		/* a, b: the floats at 0x2c and 0x30 of the cameras, 0 keeps them */
 };
 
-
 CScene *CScene_ctor(CScene *self);
-void CScene_dtor(CScene *self);
-ObjRef *CScene_Delete(ObjRef *base, byte flags);
 void CScene_Msg(CScene *self, int msg, int a, int b, int c, int d);
 /* ReleaseD3D and InitD3D of the objects of all nodes */
 void CScene_ReleaseD3D(CScene *self, void *dev);
@@ -56,9 +50,6 @@ CNode3D *CScene_FindClass(CScene *self, CNode3D *from, uint32_t class);
 CNode3D *CScene_FindNode(CScene *self, const char *name);
 /* box from the boxes of the nodes, merged into out (copied if first); an empty scene gets a zero box with first */
 void CScene_UpdateBox(CScene *self, box_t *out, byte first);
-/* the skin weights of the vertex buffer meshes (calcular_pesos) */
-void CScene_CalcWeights(CScene *self);
-int CScene_CountClass(CScene *self, uint32_t class);
 int CScene_NumNodes(CScene *self);
 /* convertir_a_D3D; the static lighting first when the ini says so */
 void CScene_ConvertD3D(CScene *self, uint32_t flags);

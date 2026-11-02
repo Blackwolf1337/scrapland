@@ -97,17 +97,6 @@ byte cAutoAim_VarF(cAutoAim *self, const char *name, double *d, int set) {
 	return 1;
 }
 
-void cAutoAim_SetSlot(cAutoAim *self, float interval, const float *ang) {
-	self->prevAx = self->ax;
-	self->prevAy = self->ay;
-	self->interval = interval;
-	self->time = Timer_GetTime(&g_pWorld->timer);
-	if (ang) {
-		self->ax = ang[0];
-		self->ay = ang[1];
-	}
-}
-
 vec3_t *cAutoAim_GetAimPos(cAutoAim *self, vec3_t *out, cEntity *owner) {
 	vec3_t cp, ca, v, r1, r2, tp, q, e;
 	cEntity *t;

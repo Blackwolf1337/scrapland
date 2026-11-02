@@ -14,22 +14,15 @@
 #include "scrap/scrap.h"
 
 extern cGVarFunction GVar_ClientAddRes;
-extern cGVarFunction GVar_ClientAfterCreate;
 extern cGVar GVar_ClientConectionStatus;
 extern cGVarFunction GVar_ClientCreate;
 extern cGVarFunction GVar_ClientDelRes;
-extern cGVarFunction GVar_ClientSetConfig;
 extern cGVarFunction GVar_ClientSetPlayer;
-extern cGVar GVar_LastMasterCommandSent;
-extern cGVarFunction GVar_MasterCommandFunc;
 extern cGVarFunction GVar_OnChatString;
 extern cGVarFunction GVar_OnClientExit;
 extern cGVarFunction GVar_OnClientJoin;
-extern cGVarFunction GVar_OnClientModify;
 extern cGVarFunction GVar_OnNetBrowseCallback;
 extern cGVarFunction GVar_OnUsrString;
-extern cGVar GVar_ServerPassword;
-extern cGVar GVar_ServerRemotePassword;
 
 #define NET_GAME_ID 0xceba
 #define NET_GAME_VERSION 0x101
@@ -110,13 +103,6 @@ typedef struct cClientNetManager {
 	uint16_t sends;			/* 0x498 counts the sends, picks the client of the ping byte */
 	byte pad_49a[2];
 } cClientNetManager;
-
-extern const cUserNetManagerVtbl cUserNetManager_vftable;
-#define g_UserNetManagerVftable (&cUserNetManager_vftable)
-extern const cServerNetManagerVtbl cServerNetManager_vftable;
-#define g_ServerNetManagerVftable (&cServerNetManager_vftable.base)
-extern const cUserNetManagerVtbl cClientNetManager_vftable;
-#define g_ClientNetManagerVftable (&cClientNetManager_vftable)
 
 /* cNetClient.state */
 #define NETCLIENT_CONNECTING 0
@@ -217,71 +203,19 @@ typedef struct NetServerInfo {
 	byte pad_5b;
 } NetServerInfo;
 
-/* GameClient */
-extern char g_NetClientServer[256];	/* [0x100] the server address, "" when not connected */
-extern uint16_t g_NetClientPort;
-extern cNetClient *g_NetClient;
-extern void *g_NetClientData;	/* the receive buffers, 24000 bytes */
-extern int g_NetClientDataSize;
-extern void *g_NetClientCtl;
-extern int g_NetClientCtlSize;
-/* GameServer */
-extern char g_NetServerHost[256];	/* [0x100] */
-extern char g_NetServerIP[256];	/* [0x100] */
-extern cGVar GVar_BrowserCode;
-#define g_NetBrowserCode (GVar_BrowserCode.value.s)	/* BrowserCode (cString) */
-extern uint16_t g_NetServerPort;	/* 0 without a server */
-extern void *g_NetServerData;
-extern int g_NetServerDataSize;
-extern void *g_NetServerCtl;
-extern int g_NetServerCtlSize;
-extern float g_NetHeartbeat;	/* GetTime of the last heartbeat to the master */
-extern cGVar GVar_LogNetData;
-#define g_LogNetData (GVar_LogNetData.value.i)		/* LogNetData */
-extern byte g_NetClientPings[256];	/* [0x100] the pings the server sends, log2 * 24 */
-/* the engine variables (gvars) of Net/: values and their flags byte (bit 0: scripts may not write) */
-extern cGVar GVar_NetMaxResourcesSend;
-#define g_NetMaxResourcesSend (GVar_NetMaxResourcesSend.value.i)
-extern cGVar GVar_NetTimeOut;
-#define g_NetTimeOut (GVar_NetTimeOut.value.i)		/* NetTimeOut, < 0 never */
-extern cGVar GVar_NetMaxPlayersInitSend;
-#define g_NetMaxPlayersInitSend (GVar_NetMaxPlayersInitSend.value.i)
 extern cGVar GVar_ClientPPS;
 #define g_ClientPPS (GVar_ClientPPS.value.i)
-extern cGVar GVar_HeartbeatTime;
-#define g_HeartbeatTime (GVar_HeartbeatTime.value.f)
-extern cGVar GVar_ServerMinSendDelay;
-#define g_ServerMinSendDelay (GVar_ServerMinSendDelay.value.i)
 #define g_ClientConnectionStatus (((cString *)&GVar_ClientConectionStatus.value))	/* ClientConectionStatus */
-extern cGVar GVar_UseServerPassword;
-#define g_UseServerPassword (GVar_UseServerPassword.value.i)
 #define g_MasterServerAddress (*(char * *)&g_GVarMasterServerAddress.value)
 #define g_MasterServerPortFlags (g_GVarMasterServerPort.base.flags)
 #define g_MasterServerPort (g_GVarMasterServerPort.value.i)
-extern cGVar GVar_ClientPassword;
-#define g_ClientPassword (GVar_ClientPassword.value.s)
-extern cGVar GVar_ClientRemotePassword;
-#define g_ClientRemotePassword (GVar_ClientRemotePassword.value.s)
-#define g_ServerRemotePassword (((cString *)&GVar_ServerRemotePassword.value))
-extern cGVar GVar_ForceServerVehicle;
-#define g_ForceServerVehicle (GVar_ForceServerVehicle.value.i)
-#define g_ServerPassword (((cString *)&GVar_ServerPassword.value))
-extern cGVar GVar_ServerName;
-#define g_ServerName (GVar_ServerName.value.s)
 extern cGVar g_GVarServerType;
 #define g_ServerType (*(char * *)&g_GVarServerType.value)	/* ServerType (cString) */
-#define g_LastMasterCommandFlags (GVar_LastMasterCommandSent.base.flags)
-#define g_LastMasterCommand (((cString *)&GVar_LastMasterCommandSent.value))	/* LastMasterCommandSent */
-extern cGVar GVar_ServerDataRateLimit;
-#define g_ServerDataRateLimit (GVar_ServerDataRateLimit.value.i)
 /* the script callbacks (cPy_Function in the gvar) and the flags of their gvars */
 #define g_OnClientJoinFlags (GVar_OnClientJoin.head.flags)
 #define g_OnClientJoin (((cPy_Function *)&GVar_OnClientJoin.func))
-#define g_ClientSetConfig (((cPy_Function *)&GVar_ClientSetConfig.func))
 #define g_OnChatStringFlags (GVar_OnChatString.head.flags)
 #define g_OnChatString (((cPy_Function *)&GVar_OnChatString.func))
-#define g_MasterCommandFunc (((cPy_Function *)&GVar_MasterCommandFunc.func))
-#define g_OnClientModify (((cPy_Function *)&GVar_OnClientModify.func))
 #define g_ClientAddResFlags (GVar_ClientAddRes.head.flags)
 #define g_ClientAddRes (((cPy_Function *)&GVar_ClientAddRes.func))
 #define g_OnUsrStringFlags (GVar_OnUsrString.head.flags)
@@ -294,53 +228,15 @@ extern cGVar GVar_ServerDataRateLimit;
 #define g_ClientDelRes (((cPy_Function *)&GVar_ClientDelRes.func))
 #define g_ClientSetPlayerFlags (GVar_ClientSetPlayer.head.flags)
 #define g_ClientSetPlayer (((cPy_Function *)&GVar_ClientSetPlayer.func))
-#define g_ClientAfterCreateFlags (GVar_ClientAfterCreate.head.flags)
-#define g_ClientAfterCreate (((cPy_Function *)&GVar_ClientAfterCreate.func))
 #define g_ClientCreateFlags (GVar_ClientCreate.head.flags)
 #define g_ClientCreate (((cPy_Function *)&GVar_ClientCreate.func))
-/* the player config the client sends in its hello (gvar values) */
-extern cGVar GVar_PlayerName;
-#define g_PlayerNameStr (GVar_PlayerName.value.s)
-extern cGVar GVar_PlayerModel;
-#define g_PlayerModel (GVar_PlayerModel.value.s)
-extern cGVar GVar_PlayerMaxLife;
-#define g_PlayerMaxLife (GVar_PlayerMaxLife.value.i)
-extern cGVar GVar_PilotModel;
-#define g_PilotModel (GVar_PilotModel.value.s)
-extern cGVar GVar_Motor0Model;
-#define g_Motor0Model (GVar_Motor0Model.value.s)
-extern cGVar GVar_Motor1Model;
-#define g_Motor1Model (GVar_Motor1Model.value.s)
-extern cGVar GVar_Motor2Model;
-#define g_Motor2Model (GVar_Motor2Model.value.s)
-extern cGVar GVar_Motor3Model;
-#define g_Motor3Model (GVar_Motor3Model.value.s)
-extern cGVar GVar_WeaponBayList;
-#define g_WeaponBayList (GVar_WeaponBayList.value.s)
-extern cGVar GVar_PlayerTeamID;
-#define g_PlayerTeamID (GVar_PlayerTeamID.value.i)
 
-/* msgman.cpp */
-extern uint32_t g_NetWaitTime;	/* 5000: no answer that long, NETCLIENT_WAITING */
-extern uint32_t g_NetCloseTime;	/* 2000: after the goodbye */
-extern uint32_t g_NetSendDelay;	/* 100 */
-extern netuserfactory_t g_NetUserFactory;
 extern cFileMem g_NetMsg;
 extern cStaticBuffer cStaticBuffer_PyStaticBuffer[2];
 #define g_NetStaticBuffer (&cStaticBuffer_PyStaticBuffer[1])
 #define g_PyStaticBuffer (&cStaticBuffer_PyStaticBuffer[0])
 extern vec3_t g_NetOrigin;
-extern const float g_NetMaxDist2;	/* the distance (squared) of the near entities */
-/* NetData.cpp */
-extern int g_NetObjCounter;
-extern int g_NetBotCounter;
-extern char * g_NetResources[256];	/* [NET_RESOURCES] Mem_Alloc names */
-extern byte g_NetResInit;
-extern int g_NetBrowserPort;
 #define NET_OFFLINE "Offline"
-/* the server side client table */
-extern cNetClient ** g_NetClients;	/* [Transport_GetMaxClients()] */
-extern uint32_t g_NetNextSend;
 typedef void (*netmastercmd_t)(const char *cmd);
 extern netmastercmd_t g_MasterCommandCallback;
 /* the counters for the stats (same names as include/scrap/scoreritems.h) */
@@ -348,21 +244,6 @@ extern int g_NetStatSent;
 extern int g_NetStatSentSlot;
 extern int g_NetStatRecv;
 extern int g_NetStatRecvSlot;
-/* transport.cpp */
-extern uint32_t g_NetSocket;
-extern cNetRandom g_NetRandom;
-extern NetAddr g_NetLocalAddr;
-extern NetAddr g_NetServerAddr;
-extern int g_NetMode;		/* NETMODE_ */
-extern int g_NetMasterOn;
-extern int g_NetMaxClients;
-extern int g_NetNumClients;
-extern NetAddr *g_NetClientAddrs;	/* [g_NetMaxClients], family 0: free */
-extern NetPingServer *g_NetPingServers;
-extern uint32_t g_NetBrowseStart;
-extern NetAddr g_NetMasterAddr;
-extern byte g_NetServerFullPkt[5];	/* 5 bytes: 0, 0, 0, 0, 8 */
-extern byte g_NetNeedPasswordPkt[5];	/* 5 bytes: 0, 0, 0, 0, 9 */
 
 /* Net/Sock.c: the UDP socket on Winsock or BSD sockets */
 int Sock_Startup(void);			/* 1 when the network can be used */
@@ -380,16 +261,11 @@ static inline uint16_t Net_Htons(uint16_t v) {
 	return (uint16_t)(v << 8 | v >> 8);
 }
 
-extern cGVar GVar_Fraglimit;
-#define g_Fraglimit (GVar_Fraglimit.value.i)
-
 /* GameClient (src/game/Net/GameClient.c) */
 byte Net_CloseClient(void);
-void Net_ClientResetFuncs(void);
 byte Net_ClientFrame(void);
 void Net_ClientReset(void);
 byte Net_CloseClientMsg(const char *msg);
-cUserNetManager *Net_NewServerManager(cNetClient *client, int slot);
 const char *Net_GetClientName(void);
 uint16_t Net_GetClientPort(void);
 cNetClient *Net_GetClient(void);
@@ -398,10 +274,7 @@ byte Net_IsClient(void);
 /* asks the server for everything (NETMSG_USR_DATA) */
 byte Net_ClientReady(void);
 
-/* GameServer.cpp (src/game/Net/GameServer.c) */
-void Net_ServerResetFuncs(void);
 byte Net_CloseServer(const char *msg);
-cUserNetManager *Net_NewClientManager(cNetClient *client, int slot);
 const char *Net_GetServerName(void);
 const char *Net_GetServerMap(void);
 uint16_t Net_GetServerPort(void);
@@ -412,50 +285,29 @@ byte Net_ServerChangeLevel(const char *level);
 byte Net_ServerFrame(void);
 void Net_ServerFrameHead(void);
 byte Net_ServerFrameTail(void);
-/* a hex and text dump of data into the console, 16 bytes a line */
-void Net_HexDump(const void *data, int size);
 void Net_DumpData(const char *title, const void *data, int size);
 
 /* ManClient.cpp (src/game/Net/ManClient.c) */
 cServerNetManager *cServerNetManager_ctor(cServerNetManager *self, cNetClient *client, int slot);
-void cServerNetManager_dtor(cServerNetManager *self);
-cUserNetManager *cServerNetManager_Delete(cUserNetManager *base, byte flags);
-void cServerNetManager_OnReceive(cUserNetManager *elem, void *data, int size, void *ctl, int ctlSize);
 /* the ping of a client the server reported (2^(b/24)), 0 unknown */
 int Net_GetClientPing(uint32_t slot);
-void cServerNetManager_SendHello(cUserNetManager *elem, byte type);
-void cServerNetManager_Send(cUserNetManager *base, uint32_t time);
 void cUserNetManager_Nop(cUserNetManager *self);
 
 /* ManServer.cpp (src/game/Net/ManServer.c) */
 cClientNetManager *cClientNetManager_ctor(cClientNetManager *self, cNetClient *client, int slot);
-void cClientNetManager_dtor(cClientNetManager *self);
-cUserNetManager *cClientNetManager_Delete(cUserNetManager *base, byte flags);
-void cClientNetManager_OnReceive(cUserNetManager *elem, void *data, int size, void *ctl, int ctlSize);
-/* creates the ship "net<slot>", sends the level and the resources */
-void cClientNetManager_InitClient(cClientNetManager *self);
 /* the descriptor of player slot to every client (toAll) or to all but that one */
 void ManServer_SendUsrData(int slot, byte toAll);
-void cClientNetManager_SendResources(cClientNetManager *self);
-void cClientNetManager_Send(cUserNetManager *elem, uint32_t time);
-/* the descriptors of all players to this client (unless local), then this one's to the others */
-void cClientNetManager_SendUsers(cClientNetManager *self, byte local);
-void cClientNetManager_SetLocalData(cUserNetManager *elem);
 
 /* msgman.cpp (src/game/Net/MsgMan.c) */
 cNetClient *cNetClient_ctor(cNetClient *self, int slot);
 cUserNetManager *cUserNetManager_ctor(cUserNetManager *self, cNetClient *client, int slot);
 void cNetClient_dtor(cNetClient *self);
 void cUserNetManager_dtor(cUserNetManager *self);
-cUserNetManager *cUserNetManager_Delete(cUserNetManager *self, byte flags);
 /* a reliable message into the queue */
 void cNetClient_Push(cNetClient *self, const void *data, uint16_t size);
-int cNetClient_UpdateState(cNetClient *self, uint32_t time);
 /* an empty packet when nothing went out for g_NetSendDelay; 0 once timed out */
 int cNetClient_Flush(cNetClient *self, uint32_t time, int slot);
 void cNetClient_RequestFull(cNetClient *self);
-cNetMsgNode *cNetClient_NewMsg(cNetClient *self, const void *data, uint16_t size);
-void cNetClient_GetSeq(cNetClient *self, int *head, int *in);
 uint32_t cNetClient_TimeToSend(cNetClient *self, uint32_t time);
 void cNetClient_Goodbye(cNetClient *self);
 int cNetClient_ClientRecv(cNetClient *self, uint32_t time, int *slot, void *data, int *dataSize, void *ctl,
@@ -464,17 +316,10 @@ int cNetClient_ClientRecv(cNetClient *self, uint32_t time, int *slot, void *data
 uint32_t cNetClient_Send(cNetClient *self, uint32_t time, int slot, int size, const void *data);
 int cNetClient_Receive(cNetClient *self, uint32_t time, const byte *pkt, int len, void *data, int *dataSize,
 	void *ctl, int *ctlSize);
-void MsgMan_SetCloseTime(uint32_t ms);
 void MsgMan_SetUserFactory(netuserfactory_t f);
 void MsgMan_SetSendDelay(uint32_t ms);
-void MsgMan_SetWaitTime(uint32_t ms);
 
-/* the random numbers (src/game/Net/NetRandom.c) */
-cNetRandom *cNetRandom_ctor(cNetRandom *self);
-void cNetRandom_InitByArray(cNetRandom *self, const uint64_t *key, uint32_t len);
-void cNetRandom_Seed(cNetRandom *self, uint64_t seed);
 uint64_t cNetRandom_Next(cNetRandom *self);
-void cNetRandom_Fill(cNetRandom *self);
 /* seeded from GetTickCount64 through ChaCha20 */
 cNetRandom *cNetRandom_ctorSeeded(cNetRandom *self);
 
@@ -491,19 +336,13 @@ int Net_GetPing(const char *player);
 void Net_Init(void);
 void NetData_ReadResources(cAbstractFile *f);
 void NetData_ReadUsrDescriptors(cAbstractFile *f);
-void NetData_ReadUsrDescriptor(cAbstractFile *f, cEntity *e);
 void NetData_WriteResources(cAbstractFile *f, uint16_t first, byte count);
 byte Net_SendChatString(const char *text, int arg);
 byte Net_SendCtrlString(const char *text);
-/* a chat (chat) or user string to client slot (-1 all) or to the server */
-byte Net_SendString(const char *text, int slot, byte chat);
 byte Net_SendUsrString(const char *text, int arg);
-void NetData_OnMasterCommand(const char *cmd);
 void NetData_WriteUsr(cAbstractFile *f, uint16_t slot);
-void NetData_WriteUsrDescriptor(cAbstractFile *f, cEntity *e);
 /* the descriptors of the players from e on (NetMaxPlayersInitSend at most); the entity to go on with */
 cEntity *NetData_WriteUsrDescriptors(cAbstractFile *f, cEntity *e);
-byte Net_GetNetIndex(const char *name, int *n);
 byte Net_IsPlayerName(const char *name);
 int Net_InitBrowser(int a, const char *address);
 int Net_DoneBrowser(void);
@@ -518,7 +357,6 @@ void NetServer_Done(void);
 void NetServer_GetInfo(NetServerInfo *info);
 int NetServer_GetSlotByIndex(int n);
 cNetClient *NetServer_GetClient(int slot);
-int NetServer_GetIndexOfSlot(int slot);
 int NetServer_NextToSend(uint32_t time);
 int NetServer_Init(int maxClients, uint16_t port, int arg);
 void NetServer_Goodbye(void);
@@ -528,28 +366,21 @@ byte Net_ModifyUsrData(int arg);
 /* the slot of the packet read (-1 none, -2 refused) */
 int NetServer_Receive(uint32_t time, void *data, int *dataSize, void *ctl, int *ctlSize);
 
-/* transport.cpp (src/game/Net/Transport.c) */
-int Transport_PingServer(const NetAddr *addr);
 int Transport_CloseBrowser(void);
 void Transport_CloseClient(void);
 void Transport_Close(void);
 int Transport_RemoveClient(int slot);
 /* the number of connected clients (the name comes from its callers) */
 int Net_GetSendRate(void);
-int Transport_PingFreeSlot(void);
 int Transport_Recv(byte *buf, int *len);
-int Transport_FindClient(const NetAddr *addr);
 int Transport_GetMaxClients(void);
 int Transport_GetMode(void);
-int Transport_PingTime(const NetAddr *addr);
 uint16_t Transport_GetLocalPort(void);
 int Transport_SetMaster(const char *address, uint16_t port);
 int Transport_InitBrowser(const char *address, uint16_t port);
 int Transport_InitClient(const char *address, uint16_t port);
 int Transport_InitServer(int maxClients, uint16_t port);
-int Transport_Startup(void);
 int Net_PingInetSvrs(void);
-int Transport_MasterPacket(const byte *buf, int len);
 int Transport_SendNeedPassword(int slot);
 /* the host name of address (a name or a dotted IP), its IP as text into ip, as number into addr; NULL if unknown */
 const char *Transport_Resolve(const char *address, char *ip, uint32_t *addr);
@@ -557,13 +388,8 @@ int Transport_PingMaster(void);
 int Transport_SendToClient(const void *data, int size, int slot);
 void Transport_SendToServer(const void *data, int size);
 int Net_SendMasterString(const char *text);
-byte cGVar_SetString(cGVar *self, const char *s);
 int Transport_Wait(int ms);
-uint16_t Transport_Crc16(const byte *data, int size);
 int Net_IsMaster(void);
-/* recvfrom of an encrypted packet: the plain length, -1 if none or the tag is wrong */
-int Transport_RecvFrom(uint32_t s, byte *buf, int len, int flags, NetAddr *from, int *fromlen);
-int Transport_SendTo(uint32_t s, const void *data, int len, int flags, const NetAddr *to, int tolen);
 
 /* the crypto of the packets (src/game/Net/Crypto.c) */
 cNetBuffer *cNetBuffer_ctor(cNetBuffer *self, uint32_t cap);
@@ -571,26 +397,12 @@ void cNetBuffer_dtor(cNetBuffer *self);
 byte *cNetBuffer_Data(cNetBuffer *self);
 uint32_t cNetBuffer_Size(cNetBuffer *self);
 int cNetBuffer_Append(cNetBuffer *self, const void *src, uint32_t n);
-int cNetBuffer_AppendBuffer(cNetBuffer *self, const cNetBuffer *src);
 /* the bytes and zeros up to the next multiple of 16 of n */
 int cNetBuffer_AppendPad16(cNetBuffer *self, const void *src, uint32_t n);
-int cNetBuffer_AppendBufferPad16(cNetBuffer *self, const cNetBuffer *src);
-int cNetBuffer_WriteU16(cNetBuffer *self, uint16_t v);
-int cNetBuffer_WriteU32(cNetBuffer *self, uint32_t v);
 int cNetBuffer_WriteU64(cNetBuffer *self, uint64_t v);
-int cNetBuffer_WriteU8(cNetBuffer *self, byte v);
-void cNetBuffer_Reserve(cNetBuffer *self, uint32_t cap);
 cChaCha *cChaCha_ctor(cChaCha *self);
-void cChaCha_Init(cChaCha *self, const byte *key, uint32_t counter, const byte *nonce);
 void cChaCha_Crypt(cChaCha *self, const byte *key, uint32_t counter, const byte *nonce, const byte *in,
 	byte *out, uint32_t len);
-/* one block of rounds (20) of the state into out (64 bytes); self is not used */
-void cChaCha_Block(cChaCha *self, const uint32_t *state, byte *out, int rounds);
-void cChaCha_QuarterRound(cChaCha *self, uint32_t *x, int a, int b, int c, int d);
-uint32_t cChaCha_Rotl(cChaCha *self, uint32_t v, int n);
-void cChaCha_Store(cChaCha *self, const uint32_t *x, byte *out);
-void cChaCha_StoreU32(cChaCha *self, uint32_t v, byte *out);
-uint32_t cChaCha_LoadU32(cChaCha *self, const byte *p);
 /* Poly1305 (poly1305-donna) of size bytes of msg with key (32 bytes) into mac (16 bytes) */
 void Poly1305_Auth(byte *mac, const byte *msg, uint32_t size, const byte *key);
 

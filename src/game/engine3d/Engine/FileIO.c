@@ -41,6 +41,7 @@ CFileIO *CFileIO_ctor(CFileIO *self, const char *name, const char *mode) {
 	return self;
 }
 
+static int CFileIO_Close(CFileIO *self);
 void CFileIO_dtor(CFileIO *self) {
 	CHECK(self->error || !self->block);
 	CFileIO_Close(self);
@@ -80,13 +81,9 @@ int CFileIO_Finish(CFileIO *self) {
 	return 0;
 }
 
-void File_RelPath(char *dest, const char *path) {
-	File_CheckRelative(path);
-	String_Copy(dest, path, MAX_FILEPATH);
-}
-
 /* the open blocks are dropped: the block pointer starts with its id, so it passes for the id */
-int CFileIO_Close(CFileIO *self) {
+static void CFileIO_PopBlock(CFileIO *self, const char *id);
+static int CFileIO_Close(CFileIO *self) {
 	while (self->block) {
 		CFileIO_PopBlock(self, (const char *)self->block);
 	}
@@ -129,6 +126,7 @@ int CFileIO_WriteString(CFileIO *self, const char *s) {
 }
 
 /* the size of the block into its placeholder */
+static int CFileIO_SetError(CFileIO *self, const char *what);
 int CFileIO_EndBlockWrite(CFileIO *self, const char *id) {
 	if (self->error) {
 		return -1;
@@ -160,6 +158,8 @@ int CFileIO_WriteInt(CFileIO *self, int32_t v) {
 	return 0;
 }
 
+static void CFileIO_PushBlock(CFileIO *self, const char *id, int pos);
+static uint32_t IdToDword(const char *id);
 int CFileIO_BeginBlockWrite(CFileIO *self, const char *id) {
 	if (self->error) {
 		return -1;
@@ -219,15 +219,6 @@ char *FileIO_Gets(char *buf, int size, void *f) {
 	return buf;
 }
 
-int CFileIO_Unsupported(CFileIO *self) {
-	if (!self->error) {
-		CHECK(0);
-		self->error = 1;
-		self->err = *crt_errno();
-	}
-	return -1;
-}
-
 int FileIO_Read(void *buf, int size, int count, void *f) {
 	cAbstractFile *file = f;
 
@@ -235,21 +226,17 @@ int FileIO_Read(void *buf, int size, int count, void *f) {
 	return count;
 }
 
-int FileIO_Size(void *f) {
-	cAbstractFile *file = f;
-	return file->vftable->Size(file);
-}
-
 int FileIO_Tell(void *f) {
 	cAbstractFile *file = f;
 	return file->vftable->Tell(file);
 }
 
+static int File_Check(const char *name, int mode, byte pack);
 int File_AccessPack(const char *name, int mode) {
 	return File_Check(name, mode, 1);
 }
 
-uint32_t IdToDword(const char *id) {
+static uint32_t IdToDword(const char *id) {
 	CHECK(id);
 	const char *p1 = id[0] ? id + 1 : id;
 	const char *p2 = p1[0] ? p1 + 1 : p1;
@@ -281,10 +268,7 @@ void *File_OpenRel(const char *name, const char *mode) {
 	return f;
 }
 
-int File_Stat(const char *name, void *st) {
-	return File_StatX(name, st, 0);
-}
-
+static int File_StatX(const char *name, void *st, byte pack);
 /* "wb" makes a file on disk, "rb" reads one from the packs or the disk */
 void *FileIO_Open(const char *name, const char *mode) {
 	uint32_t fmode;
@@ -399,7 +383,7 @@ int CFileIO_BeginBlock(CFileIO *self, const char *id) {
 	return CFileIO_BeginBlockSize(self, id, NULL);
 }
 
-void CFileIO_PushBlock(CFileIO *self, const char *id, int pos) {
+static void CFileIO_PushBlock(CFileIO *self, const char *id, int pos) {
 	cBlockFile *b = operator_new(sizeof(*b));
 	b->prev = self->block;
 	b->id = IdToDword(id);
@@ -407,14 +391,14 @@ void CFileIO_PushBlock(CFileIO *self, const char *id, int pos) {
 	self->block = b;
 }
 
-int CFileIO_SetError(CFileIO *self, const char *what) {
+static int CFileIO_SetError(CFileIO *self, const char *what) {
 	(void)what;
 	self->error = 1;
 	self->err = *crt_errno();
 	return -1;
 }
 
-void CFileIO_PopBlock(CFileIO *self, const char *id) {
+static void CFileIO_PopBlock(CFileIO *self, const char *id) {
 	CHECK(self->block);
 	CHECK(self->block->id == IdToDword(id));
 	cBlockFile *prev = self->block->prev;
@@ -422,7 +406,8 @@ void CFileIO_PopBlock(CFileIO *self, const char *id) {
 	self->block = prev;
 }
 
-int File_Check(const char *name, int mode, byte pack) {
+/* access or stat of a name relative to the game directory, logged; pack: in the packs while they are in use */
+static int File_Check(const char *name, int mode, byte pack) {
 	char buf[MAX_FILEPATH];
 
 	File_CheckRelative(name);
@@ -439,7 +424,7 @@ int File_Check(const char *name, int mode, byte pack) {
 	return r;
 }
 
-int File_StatX(const char *name, void *st, byte pack) {
+static int File_StatX(const char *name, void *st, byte pack) {
 	char buf[MAX_FILEPATH];
 
 	File_CheckRelative(name);

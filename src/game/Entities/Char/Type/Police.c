@@ -10,8 +10,15 @@
 #include "scrap/modmove.h"
 #include "scrap/staticinit.h"
 
+#define g_FXPoliceGearConversionFile (GVar_FXPoliceGearConversionFile.value.s)
+#define g_FXPoliceStealFile (GVar_FXPoliceStealFile.value.s)
+#define g_PoliceAlarmStepSTM (GVar_PoliceAlarmStepSTM.value.f)
+static cGVar GVar_PoliceAlarmStepSTM;
+static cGVar GVar_FXPoliceStealFile;
+static cGVar GVar_FXPoliceGearConversionFile;
+
 /* params: the police, an event, a float: the effect of the conversion into a gear for 5 seconds */
-void ChType_FXPoliceGearConversion(cAbstractFile *params) {
+static void ChType_FXPoliceGearConversion(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -26,7 +33,8 @@ void ChType_FXPoliceGearConversion(cAbstractFile *params) {
 }
 
 /* params: the attacker and the attacked (both WalkChars): the coins of the steal */
-void ChType_FXPoliceSteal(cAbstractFile *params) {
+static void FX_PoliceSteal(cEntity *attacker, cEntity *attacked);
+static void ChType_FXPoliceSteal(cAbstractFile *params) {
 	char a[0x80], b[0x80];
 
 	cAbstractFile_ReadString(params, a, 0x80);
@@ -41,7 +49,7 @@ void ChType_FXPoliceSteal(cAbstractFile *params) {
 }
 
 /* the coins from attacked to attacker for 1.35 s when the attacker is in sight */
-void FX_PoliceSteal(cEntity *attacker, cEntity *attacked) {
+static void FX_PoliceSteal(cEntity *attacker, cEntity *attacked) {
 	vec3_t tmp;
 
 	CHECK(attacker);
@@ -73,7 +81,7 @@ static int Police_Talks(const char *a) {
 
 /* params: the listener, an event, a float. It stops listening (its logic goes on, Relax) once its police does not
  * talk any more */
-void ChType_ListeningPolice(cAbstractFile *params) {
+static void ChType_ListeningPolice(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -145,7 +153,7 @@ byte ChType_PoliceFindListener(cEntity *v, cEntity **victim, byte *usr, void **a
 
 /* params: the police. It talks to its listener (turned to it, ActionInit, ActionInitNPC for an AI), which listens
  * when it is an AI and awake; the player calls the sentinels */
-void ChType_PoliceActionPress(cAbstractFile *params) {
+static void ChType_PoliceActionPress(cAbstractFile *params) {
 	char name[0x80];
 	vec3_t t1, t2;
 	cEntity *victim = NULL;
@@ -188,7 +196,7 @@ void ChType_PoliceActionPress(cAbstractFile *params) {
 
 /* params: the police, an event, a float. The end of the talk: the money of the listener (PoliceStealQuanto) when
  * it pays, the alarm for the player, the gears on an AI that does not pay; the police lets it go */
-void ChType_PoliceEndActionMoney(cAbstractFile *params) {
+static void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 	byte usr = 0;
 
@@ -253,7 +261,7 @@ void ChType_PoliceEndActionMoney(cAbstractFile *params) {
 }
 
 /* params: the police, an event, a float: the turn of its move ends */
-void ChType_PoliceRestoreFreeTurn(cAbstractFile *params) {
+static void ChType_PoliceRestoreFreeTurn(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -263,16 +271,16 @@ void ChType_PoliceRestoreFreeTurn(cAbstractFile *params) {
 	cObjMove_SetTime(&Obj(v)->move, 0.0f);
 }
 
-cGVar GVar_FXPoliceStealFile;
-cGVar GVar_FXPoliceGearConversionFile;
-cGVar GVar_PoliceAlarmStepSTM;
+static cGVar GVar_FXPoliceStealFile;
+static cGVar GVar_FXPoliceGearConversionFile;
+static cGVar GVar_PoliceAlarmStepSTM;
 cGVar GVar_PoliceStealAmount;
-cPy_NativeFunc NativeFunc_PoliceActionPress;
-cPy_NativeFunc NativeFunc_PoliceRestoreFreeTurn;
-cPy_NativeFunc NativeFunc_PoliceEndActionMoney;
-cPy_NativeFunc NativeFunc_ListeningPolice;
-cPy_NativeFunc NativeFunc_FXPoliceSteal;
-cPy_NativeFunc NativeFunc_FXPoliceGearConversion;
+static cPy_NativeFunc NativeFunc_PoliceActionPress;
+static cPy_NativeFunc NativeFunc_PoliceRestoreFreeTurn;
+static cPy_NativeFunc NativeFunc_PoliceEndActionMoney;
+static cPy_NativeFunc NativeFunc_ListeningPolice;
+static cPy_NativeFunc NativeFunc_FXPoliceSteal;
+static cPy_NativeFunc NativeFunc_FXPoliceGearConversion;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_PoliceStealAmount, &GVar_PoliceStealAmount, "PoliceStealQuanto", 0, "Money stealed by the banker to the main player", 10)

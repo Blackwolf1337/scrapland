@@ -10,6 +10,11 @@
 #include "scrap/cstring.h"
 #include "scrap/staticinit.h"
 
+#define CACTIONMOVE_VFTABLE (&cActionMove_vftable)
+#define g_DefInterpTime (GVar_DefInterpTime.value.f)	/* DefInterpTime of new actions */
+static const cActionVtbl cActionMove_vftable;
+static cGVar GVar_DefInterpTime;
+
 cAction *cAction_ctor(cAction *self, cActClass *parent, const char *name) {
 	self->vftable = CACTIONMOVE_VFTABLE;
 	cString_ctor(&self->name);
@@ -44,7 +49,7 @@ cAction *cAction_ctor(cAction *self, cActClass *parent, const char *name) {
 	return self;
 }
 
-cActEvent *cActEvent_ctor(cActEvent *self, float time, cActEvent *next) {
+static cActEvent *cActEvent_ctor(cActEvent *self, float time, cActEvent *next) {
 	cString_ctor(&self->name);
 	cPy_Function_ctor(&self->func);
 	self->time = time;
@@ -54,7 +59,7 @@ cActEvent *cActEvent_ctor(cActEvent *self, float time, cActEvent *next) {
 	return self;
 }
 
-void cAction_dtor(cAction *self) {
+static void cAction_dtor(cAction *self) {
 	self->vftable = CACTIONMOVE_VFTABLE;
 	if (self->anmFile) {
 		Mem_Free(self->anmFile);
@@ -72,7 +77,7 @@ void cAction_dtor(cAction *self) {
 	cString_dtor(&self->name);
 }
 
-cAction *cAction_Delete(cAction *self, byte flags) {
+static cAction *cAction_Delete(cAction *self, byte flags) {
 	cAction_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -80,7 +85,8 @@ cAction *cAction_Delete(cAction *self, byte flags) {
 	return self;
 }
 
-void cAction_AddEvent(cAction *self, float time) {
+/* a new event at time (after the ones before it), as the lastEvent */
+static void cAction_AddEvent(cAction *self, float time) {
 	cActEvent **link = &self->events;
 
 	while (*link && !((*link)->time >= time)) {
@@ -101,7 +107,8 @@ void cActEvent_Fire(cActEvent *self, const char *entity) {
 	cPy_Function_Execute(&self->func, 0);
 }
 
-int cActEvent_Var(cActEvent *self, const char *name, int set, char **s, double *d, int *i) {
+/* the variables after "Event": of the last event */
+static int cActEvent_Var(cActEvent *self, const char *name, int set, char **s, double *d, int *i) {
 	if (i && !crt_stricmp(name, "Discardable")) {
 		if ((byte)set) {
 			self->discardable = *i != 0;
@@ -135,7 +142,8 @@ int cActEvent_Var(cActEvent *self, const char *name, int set, char **s, double *
 	return 0;
 }
 
-void cAction_SetAnmFile(cAction *self, const char *file) {
+/* the animation of the file added to the model of the class; a warning if the action has one */
+static void cAction_SetAnmFile(cAction *self, const char *file) {
 	if (self->anmFile) {
 		Con_Warnf("WARNING: '%s' action already has assigned '%s' as animation.\n '%s' can't be assigned.\n",
 			self->name, self->anmFile, file);
@@ -344,11 +352,11 @@ ints:
 }
 
 /* the vtable of cActionMove */
-const cActionVtbl cActionMove_vftable = {
+static const cActionVtbl cActionMove_vftable = {
 	.Delete = cAction_Delete,
 };
 
-cGVar GVar_DefInterpTime;
+static cGVar GVar_DefInterpTime;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_DefInterpTime, &GVar_DefInterpTime, "DefInterpTime", 0, "Interpolation value by default.", 0.12f)

@@ -21,7 +21,7 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
-cGVar GVar_isActionMusic;
+static cGVar GVar_isActionMusic;
 
 /* engine variables of the music and the voices (value, default) */
 #define g_isActionMusic (GVar_isActionMusic.value.i)
@@ -30,7 +30,7 @@ cGVar GVar_WarnVoiceVolume;
 
 #define g_WarnVoiceVolume (GVar_WarnVoiceVolume.value.f)
 #define g_WarnVoiceVolumeDef (GVar_WarnVoiceVolume.def.f)
-cGVar GVar_isActionIndoor;
+static cGVar GVar_isActionIndoor;
 
 #define g_isActionIndoor (GVar_isActionIndoor.value.i)
 #define g_isActionIndoorDef (GVar_isActionIndoor.def.i)
@@ -38,36 +38,36 @@ cGVar GVar_MaxPoliceWarnDist;
 
 #define g_MaxPoliceWarnDist (GVar_MaxPoliceWarnDist.value.f)
 #define g_MaxPoliceWarnDistDef (GVar_MaxPoliceWarnDist.def.f)
-cGVar GVar_useDynamicMusic;
+static cGVar GVar_useDynamicMusic;
 
 #define g_useDynamicMusic (GVar_useDynamicMusic.value.i)
 #define g_useDynamicMusicDef (GVar_useDynamicMusic.def.i)
-cGVar GVar_ForceNoActionMusic;
+static cGVar GVar_ForceNoActionMusic;
 
 #define g_ForceNoActionMusic (GVar_ForceNoActionMusic.value.i)
 #define g_ForceNoActionMusicDef (GVar_ForceNoActionMusic.def.i)
-cGVar GVar_ActionMusicTimeFade;
+static cGVar GVar_ActionMusicTimeFade;
 
 #define g_ActionMusicTimeFade (GVar_ActionMusicTimeFade.value.f)
-cGVar GVar_OutActionMusicVolume;
+static cGVar GVar_OutActionMusicVolume;
 
 #define g_OutActionMusicVolume (GVar_OutActionMusicVolume.value.f)
-cGVar GVar_OutRelaxMusicVolume;
+static cGVar GVar_OutRelaxMusicVolume;
 
 #define g_OutRelaxMusicVolume (GVar_OutRelaxMusicVolume.value.f)
-cGVar GVar_iOutActionMusic;
+static cGVar GVar_iOutActionMusic;
 
 #define g_iOutActionMusic (GVar_iOutActionMusic.value.i)
-cGVar GVar_iOutRelaxMusic;
+static cGVar GVar_iOutRelaxMusic;
 
 #define g_iOutRelaxMusic (GVar_iOutRelaxMusic.value.i)
-cGVar GVar_OutActionMusic;
+static cGVar GVar_OutActionMusic;
 
 #define g_OutActionMusic (GVar_OutActionMusic.value.s)	/* format with the number */
-cGVar GVar_OutRelaxMusic;
+static cGVar GVar_OutRelaxMusic;
 
 #define g_OutRelaxMusic (GVar_OutRelaxMusic.value.s)
-cGVar GVar_MusicTimeChange;
+static cGVar GVar_MusicTimeChange;
 
 #define g_MusicTimeChange (GVar_MusicTimeChange.value.f)
 cGVar GVar_NumEnemiesInRadar;
@@ -82,27 +82,27 @@ cGVar GVar_S_VoiceoverVolume;
 
 #define TALK_VOICE 2
 
-cGVar GVar_MinVoiceVolumeChat;
+static cGVar GVar_MinVoiceVolumeChat;
 
 #define g_MinVoiceVolumeChat (GVar_MinVoiceVolumeChat.value.f)	/* MinVoiceVolumeChat */
 #define VOICE_END 0.001f		/* rva 0x3a3d58: the talk ends with less left */
 #define VOICE_PAN -0.5f
 #define VOICE_MIN_SPEED 0.8f		/* rva 0x3b0844: no voices in slow motion */
-cGVar GVar_VoicePlayDelay;
+static cGVar GVar_VoicePlayDelay;
 
 #define g_VoicePlayDelay (GVar_VoicePlayDelay.value.f)	/* VoicePlayDelay */
-cGVar GVar_StreamPath;
+static cGVar GVar_StreamPath;
 
 #define g_StreamPath (GVar_StreamPath.value.s)	/* StreamPath "Sounds/Stream/" */
-cGVar GVar_VoicePath;
+static cGVar GVar_VoicePath;
 
 #define g_VoicePath (GVar_VoicePath.value.s)	/* VoicePath "Sounds/Voices/" */
 
-void Sound_UpdateVoice(int voice);
+static void Sound_UpdateVoice(int voice);
 
-cSoundPS *g_SndPSList;
+static cSoundPS *g_SndPSList;
 
-cSoundPS *cSoundPS_ctor(cSoundPS *self) {
+static cSoundPS *cSoundPS_ctor(cSoundPS *self) {
 	cSound_Init(&self->sound);
 	cString_ctor(&self->name);
 	self->volume = 1.0f;
@@ -121,12 +121,12 @@ cSoundPS *cSoundPS_ctor(cSoundPS *self) {
 	return self;
 }
 
-void cSoundPS_dtor(cSoundPS *self) {
+static void cSoundPS_dtor(cSoundPS *self) {
 	cString_dtor(&self->name);
 	cSound_Stop(&self->sound);
 }
 
-void cSoundPS_Update(cSoundPS *self, float dt) {
+static void cSoundPS_Update(cSoundPS *self, float dt) {
 	vec3_t vel;
 
 	if (!self->loop) {
@@ -146,10 +146,6 @@ void cSoundPS_Update(cSoundPS *self, float dt) {
 	self->sound.desc.volume += Snd_Volume(self->volume);
 	cSound_SetPitch(&self->sound, self->pitch);
 	cSound_Update(&self->sound);
-}
-
-void cSoundPS_SetSound(cSoundPS *self, const char *name) {
-	cSound_SetSound(&self->sound, name, 4);
 }
 
 int cSoundPS_Var(cSoundPS *ps, const char *name, int set, char **s, double *d, int *i) {
@@ -202,7 +198,7 @@ int cSoundPS_Var(cSoundPS *ps, const char *name, int set, char **s, double *d, i
 	return 0;
 }
 
-HashTable g_SndPSTable = { .numSlots = 457 };
+static HashTable g_SndPSTable = { .numSlots = 457 };
 
 /* the property sets */
 
@@ -229,7 +225,7 @@ void SndPS_StopAll(void) {
 	}
 }
 
-byte g_SndPSEnabled = 1;
+static byte g_SndPSEnabled = 1;
 
 byte SndPS_Use(byte use) {
 	SndPS_StopAll();
@@ -237,9 +233,9 @@ byte SndPS_Use(byte use) {
 	return 1;
 }
 
-float g_MusicWait;
-int g_MusicAction;
-float g_MusicFade = 0.00001f;
+static float g_MusicWait;
+static int g_MusicAction;
+static float g_MusicFade = 0.00001f;
 
 void Sound_ResetVolumes(void) {
 	HashTable *t = (&g_SndPSTable);
@@ -276,7 +272,7 @@ void Sound_ResetVolumes(void) {
 }
 
 /* the debug view: the attenuation spheres in a color by the doppler factor and the names */
-void cSoundPS_Draw(cSoundPS *self) {
+static void cSoundPS_Draw(cSoundPS *self) {
 	int u = (int)(self->sound.desc.param3 * 255.0f);
 	DebugUtils_DrawSphere(&self->pos, self->sound.desc.param1 + 20.0f, (255 - u) << 8 | u << 16 | u, 10, 0);
 	if (self->sound.desc.param2 > 3.0f) {
@@ -295,7 +291,7 @@ void SndPS_DrawAll(void) {
 
 /* the music */
 
-void Sound_UpdateMusic(float dt) {
+static void Sound_UpdateMusic(float dt) {
 	char name[256];
 	int want, cur;
 
@@ -381,14 +377,14 @@ void Sound_UpdateMusic(float dt) {
 
 /* the talk voice */
 
-void Sound_StopTalk(void) {
+static void Sound_StopTalk(void) {
 	g_pSound->vftable->StopVoice(g_pSound, TALK_VOICE);
 	g_MaxPoliceWarnDist = g_MaxPoliceWarnDistDef;
 	g_WarnVoiceVolume = g_WarnVoiceVolumeDef;
 }
 
-float g_TalkDelay;
-byte g_TalkStop;
+static float g_TalkDelay;
+static byte g_TalkStop;
 
 /* the talk voice name has ended: stops it, or later when it has not started yet */
 void Sound_TalkDone(const char *name) {
@@ -410,7 +406,7 @@ void Sound_TalkDone(const char *name) {
  * between ArrowActiveRadius and ArrowDeactivationRadius of the gap, the talk voice (2) fades over
  * MaxPoliceWarnDist, is panned by the side the speaker is on and stops at its end; MinVoiceVolumeChat is always
  * heard. Without the speaker the voice stops. */
-void Sound_UpdateVoice(int voice) {
+static void Sound_UpdateVoice(int voice) {
 	char name[0x80];
 	vec3_t tmp1, tmp2, d, rot;
 	float remain, vol;
@@ -486,7 +482,7 @@ void Sound_UpdateVoice(int voice) {
 	g_pSound->vftable->SetVoiceVolume(g_pSound, voice, (1.0f - g_MinVoiceVolumeChat) * vol + g_MinVoiceVolumeChat);
 }
 
-uint32_t g_VoiceCount;
+static uint32_t g_VoiceCount;
 
 /* the talk voice of the character name for event (in an alarm, or "AnmStr" and "Abort" always): the file arg (in
  * VoicePath with force, else StreamPath) or a warning of its type (Gear, Police, the generic ones) picked by the count;

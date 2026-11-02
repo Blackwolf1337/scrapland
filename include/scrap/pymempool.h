@@ -28,9 +28,6 @@ typedef struct cMemPool {
 	struct cMemPool *next;		/* 0x10 g_MemPools */
 } cMemPool;
 
-extern cMemPool *g_PyPool;
-extern cMemPool *g_MemPools;
-extern uint32_t g_PyPoolValues[32];
 extern cMemStats g_PyMemStats;	/* the context of the interpreter's allocations */
 
 cMemPool *cMemPool_ctor(cMemPool *self, const char *name, const uint32_t *values);

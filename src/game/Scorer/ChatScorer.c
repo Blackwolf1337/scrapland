@@ -7,7 +7,12 @@
 #include "scrap/scoreritems.h"
 #include "scrap/staticinit.h"
 
-float g_ChatTime;
+#define CCHATSCORER_VFTABLE (&cChatScorer_vftable)
+#define g_ChatScrollTime (GVar_ChatMsgPersistence.value.f)	/* an empty line comes in after this */
+static const cScorerItemVtbl cChatScorer_vftable;
+static cGVar GVar_ChatMsgPersistence;
+
+static float g_ChatTime;
 
 cChatScorer *cChatScorer_ctor(cChatScorer *self) {
 	cScorerItem_ctor(&self->base);
@@ -23,7 +28,7 @@ cChatScorer *cChatScorer_ctor(cChatScorer *self) {
 	return self;
 }
 
-void cChatScorer_dtor(cChatScorer *self) {
+static void cChatScorer_dtor(cChatScorer *self) {
 	CPsaImage *img = self->img;
 	self->base.vftable = CCHATSCORER_VFTABLE;
 	if (img) {
@@ -33,7 +38,7 @@ void cChatScorer_dtor(cChatScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cScorerItem *cChatScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cChatScorer_Delete(cScorerItem *base, byte flags) {
 	cChatScorer *self = (cChatScorer *)base;
 	cChatScorer_dtor(self);
 	if (flags & 1) {
@@ -42,7 +47,7 @@ cScorerItem *cChatScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-cChatMsg g_ChatMsgs[16];
+static cChatMsg g_ChatMsgs[16];
 
 /* the static initializer: the lines empty and white */
 void ChatScorer_InitMsgs(void) {
@@ -64,7 +69,8 @@ void Scorer_AddChatMsg(const char *text, uint32_t rgb) {
 	g_ChatMsgs[CHAT_MSGS - 1].color = rgb;
 }
 
-int cChatScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+/* NumMsg */
+static int cChatScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cChatScorer *self = (cChatScorer *)base;
 	if (i && !crt_stricmp(name, "NumMsg")) {
 		return ScorerVar_Int(&self->numMsg, set, i);
@@ -72,7 +78,7 @@ int cChatScorer_Var(cScorerItem *base, const char *name, int set, char **s, doub
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void cChatScorer_Draw(cScorerItem *base, int player) {
+static void cChatScorer_Draw(cScorerItem *base, int player) {
 	cChatScorer *self = (cChatScorer *)base;
 	(void)player;
 	float dt = Timer_GetTime(&g_pWorld->timer) - g_ChatTime;
@@ -94,14 +100,14 @@ void cChatScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cChatScorer */
-const cScorerItemVtbl cChatScorer_vftable = {
+static const cScorerItemVtbl cChatScorer_vftable = {
 	.Draw = cChatScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cChatScorer_Var,
 	.Delete = cChatScorer_Delete,
 };
 
-cGVar GVar_ChatMsgPersistence;
+static cGVar GVar_ChatMsgPersistence;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_ChatMsgPersistence, &GVar_ChatMsgPersistence, "ChatMsgPersistence", 2, "Time that will be printed the chat message", 1.0f)

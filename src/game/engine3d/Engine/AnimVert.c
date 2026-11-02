@@ -16,7 +16,7 @@ CEVA *CEVA_ctor(CEVA *self) {
 	return self;
 }
 
-CAnimVert *CAnimVert_ctor(CAnimVert *self) {
+static CAnimVert *CAnimVert_ctor(CAnimVert *self) {
 	self->nTr = 0;
 	self->Tr = NULL;
 	self->scale = 0.0f;
@@ -24,7 +24,7 @@ CAnimVert *CAnimVert_ctor(CAnimVert *self) {
 	return self;
 }
 
-void CAnimVert_FreeTr(CAnimVert *self) {
+static void CAnimVert_FreeTr(CAnimVert *self) {
 	if (!self->Tr) {
 		return;
 	}
@@ -36,7 +36,7 @@ void CAnimVert_FreeTr(CAnimVert *self) {
 	}
 }
 
-void CAnimVert_FreeTr2(CAnimVert *self) {
+static void CAnimVert_FreeTr2(CAnimVert *self) {
 	if (!self->Tr2) {
 		return;
 	}
@@ -48,25 +48,9 @@ void CAnimVert_FreeTr2(CAnimVert *self) {
 	}
 }
 
-void CAnimVert_dtor(CAnimVert *self) {
+static void CAnimVert_dtor(CAnimVert *self) {
 	CAnimVert_FreeTr(self);
 	CAnimVert_FreeTr2(self);
-}
-
-void *CAnimVert_Delete(CAnimVert *self, uint32_t flags) {
-	if (flags & 2) {
-		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(*self), *mem, (void *)CAnimVert_dtor);
-		if (flags & 1) {
-			operator_delete_array(mem);
-		}
-		return mem;
-	}
-	CAnimVert_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
 }
 
 void CAnimVert_AllocTr(CAnimVert *self, int frames) {
@@ -76,7 +60,7 @@ void CAnimVert_AllocTr(CAnimVert *self, int frames) {
 	self->Tr = New_Array(frames, sizeof(vec3_t));
 }
 
-void CAnimVert_AllocTr2(CAnimVert *self) {
+static void CAnimVert_AllocTr2(CAnimVert *self) {
 	CHECK(!self->Tr2);
 	CHECK(self->nTr > 0);
 	self->Tr2 = New_Array(self->nTr, 3);
@@ -92,39 +76,6 @@ vec3_t *CAnimVert_Frame(CAnimVert *self, uint32_t frame) {
 /* a + (b - a) * t of compressed steps, times esc */
 static float AnimVert_Step(int a, int b, float t, float scale) {
 	return ((float)(b - a) * t + (float)a) * scale;
-}
-
-void CAnimVert_GetPos(CAnimVert *self, uint32_t frame, float subframe, vec3_t *pos) {
-	CHECK(self->Tr || self->Tr2);
-	CHECK(self->nTr > 0);
-	CHECK(pos);
-	CHECK((int)frame >= 0);
-	CHECK(subframe >= 0.0f && subframe < 1.0f);
-	if (frame >= self->nTr) {
-		return;
-	}
-	if (!self->Tr) {
-		const int8_t *c = self->Tr2 + frame * 3;
-		float e = self->scale;
-		if (frame < self->nTr - 1) {
-			pos->x = AnimVert_Step(c[0], c[3], subframe, e) + pos->x;
-			pos->y = AnimVert_Step(c[1], c[4], subframe, e) + pos->y;
-			pos->z = AnimVert_Step(c[2], c[5], subframe, e) + pos->z;
-		} else {
-			pos->x = (float)c[0] * e + pos->x;
-			pos->y = (float)c[1] * e + pos->y;
-			pos->z = (float)c[2] * e + pos->z;
-		}
-		return;
-	}
-	vec3_t a = self->Tr[frame];
-	if (frame < self->nTr - 1) {
-		const vec3_t *b = &self->Tr[frame + 1];
-		a.x = (b->x - a.x) * subframe + a.x;
-		a.y = (b->y - a.y) * subframe + a.y;
-		a.z = (b->z - a.z) * subframe + a.z;
-	}
-	*pos = a;
 }
 
 void CAnimVert_AddPos(CAnimVert *self, uint32_t frame1, uint32_t frame2, float t, float *pos) {
@@ -146,7 +97,7 @@ void CAnimVert_AddPos(CAnimVert *self, uint32_t frame1, uint32_t frame2, float t
 	}
 }
 
-void CAnimVert_Scale(CAnimVert *self, float x, float y, float z) {
+static void CAnimVert_Scale(CAnimVert *self, float x, float y, float z) {
 	if (self->Tr) {
 		for (uint32_t f = 0; f < self->nTr; f++) {
 			vec3_t *v = CAnimVert_Frame(self, f);
@@ -165,7 +116,8 @@ static float AnimVert_Dist(float a, float b) {
 	return (float)__builtin_fabs((double)(a - b));
 }
 
-void CAnimVert_Compress(CAnimVert *self) {
+/* Tr to Tr2 */
+static void CAnimVert_Compress(CAnimVert *self) {
 	float m = 0.0f;
 	vec3_t base = *CAnimVert_Frame(self, 0);
 
@@ -194,7 +146,8 @@ void CAnimVert_Compress(CAnimVert *self) {
 	CAnimVert_FreeTr(self);
 }
 
-void CAnimVert_Optimize(CAnimVert *self) {
+/* no animation if all frames are like the first one, else compressed */
+static void CAnimVert_Optimize(CAnimVert *self) {
 	const vec3_t *base = CAnimVert_Frame(self, 0);
 	uint32_t f;
 
@@ -213,7 +166,8 @@ void CAnimVert_Optimize(CAnimVert *self) {
 	}
 }
 
-void AnimVert_Read(CFileIO *f, CAnimVert **pAV) {
+/* compressed from the file into *pAV (a flag first) */
+static void AnimVert_Read(CFileIO *f, CAnimVert **pAV) {
 	CHECK(*pAV);
 	CHECK(!(*pAV)->Tr && !(*pAV)->Tr2);
 	if (!CFileIO_ReadInt(f)) {
@@ -228,7 +182,7 @@ void AnimVert_Read(CFileIO *f, CAnimVert **pAV) {
 	CFileIO_Read(f, av->Tr2, av->nTr * 3);
 }
 
-void AnimVert_Write(CFileIO *f, CAnimVert *av) {
+static void AnimVert_Write(CFileIO *f, CAnimVert *av) {
 	if (!av->Tr && !av->Tr2) {
 		CFileIO_WriteInt(f, 0);
 		return;

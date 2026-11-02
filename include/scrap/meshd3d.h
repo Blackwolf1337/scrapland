@@ -14,9 +14,6 @@
 #include "scrap/material.h"
 #include "scrap/table.h"
 
-extern const IObject3DVtbl CMeshD3D_vftable;
-#define CMESHD3D_VFTABLE (&CMeshD3D_vftable)
-
 /* Build flags */
 #define MESHD3D_ONESIDED 0x01		/* no back faces for two sided materials */
 #define MESHD3D_VERTORIG 0x02		/* keep the CTriMesh index of each vertex */
@@ -140,71 +137,14 @@ typedef struct MeshD3DGroup {
 } MeshD3DGroup;
 
 #define MAX_D3D_OBJ 0x200
-extern MeshD3DObj g_D3DObj[512];
-extern int g_NumD3DObj;
-/* the vertices MeshD3D_CompareVertIdx sorts */
-extern MeshD3DVert *g_WeldVert;
-/* the triangles of a group, 0x800 */
-extern int g_MaxTriGroup;
 
-/* the deleting destructor */
-IObject3D *CMeshD3D_Delete(IObject3D *base, byte flags);
 CMeshD3D *CMeshD3D_ctor(CMeshD3D *self);
 /* made from mesh (MALLAD3D_* flags), the object of node when there is one */
 CMeshD3D *CMeshD3D_ctorMesh(CMeshD3D *self, CTriMesh *mesh, uint32_t flags, CNode3D *node);
-void CMeshD3D_dtor(CMeshD3D *self);
-/* the members after the vftable cleared, except vert, box and ext */
-void CMeshD3D_Init(CMeshD3D *self);
-void CMeshD3D_Build(CMeshD3D *self, CTriMesh *mesh, uint32_t flags);
 
-/* the slots of the vftable */
-void CMeshD3D_SetRender(IObject3D *base, CRenderNode *renderNode);
-void CMeshD3D_Draw(IObject3D *base, void *dev, CRenderNode *ctx);
-void CMeshD3D_Restore(IObject3D *base, void *dev);
-void CMeshD3D_Invalidate(IObject3D *base, void *dev);
-byte CMeshD3D_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
-byte CMeshD3D_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
-
-/* the buffers of this mesh, 0 or E_FAIL without vertices or triangles */
-int CMeshD3D_CreateVB(CMeshD3D *self);
-/* the node of all meshes of the list, referenced */
-void CMeshD3D_SetNode(CMeshD3D *self, CNode3D *node);
-void CMeshD3D_AllocTri(CMeshD3D *self, int n);
-void CMeshD3D_SetTri(CMeshD3D *self, uint32_t i, uint16_t a, uint16_t b, uint16_t c);
 /* the unit normal of triangle i (unnormalized when its length is 0) */
 vec3_t *CMeshD3D_TriNormal(CMeshD3D *self, vec3_t *out, uint32_t i);
-/* ext and center */
-void CMeshD3D_CalcCenter(CMeshD3D *self);
-/* ext, center and box (of the list), merged into out (copied if first) */
-void CMeshD3D_CalcBox(CMeshD3D *self, box_t *out, byte first);
 void CMeshD3D_GetBox(CMeshD3D *self, box_t *out, byte recalc);
-/* CHECKs of vertices and triangles, of the list and of this mesh (0) */
-void CMeshD3D_CheckList(CMeshD3D *self);
-int CMeshD3D_Check(CMeshD3D *self);
-
-/* the temporary objects */
-int MeshD3D_NewObj(void);
-void MeshD3DObj_AllocVert(MeshD3DObj *obj, int n);
-void MeshD3DObj_AllocTri(MeshD3DObj *obj, int n);
-void MeshD3DObj_SetVert(MeshD3DObj *obj, int i, const MeshD3DVert *v);
-void MeshD3DObj_SetTri(MeshD3DObj *obj, int i, const MeshD3DTri *t);
-void MeshD3DObj_SetMat(MeshD3DObj *obj, CMaterial *mat);
-void MeshD3DObj_Free(MeshD3DObj *obj);
-/* equal vertices made one; the vertices removed */
-int MeshD3DObj_Weld(MeshD3DObj *obj);
-/* triangle i of m, flipped (corners 1 and 2 swapped, the normals turned) unless keep */
-void MeshD3D_FillTri(MeshD3DTriTmp *t, CTriMesh *m, uint32_t i, byte keep);
-/* whether t can go into g: the same material and room */
-int MeshD3D_GroupFits(const MeshD3DGroup *g, const MeshD3DTriTmp *t);
-/* the plane of the corners and their center */
-void MeshD3D_TriPlane(const MeshD3DTriTmp *t, vec3_t *center, plane_t *plane);
-
-/* qsort orders: vertices by bone, then bytes; vertex indices into g_WeldVert; groups by the name of map 0, the
- * material and the index; triangles by the side of their plane, then the distance of their center */
-int MeshD3D_CompareVert(const void *a, const void *b);
-int MeshD3D_CompareVertIdx(const void *a, const void *b);
-int MeshD3D_CompareGroup(const void *a, const void *b);
-int MeshD3D_CompareTri(const void *a, const void *b);
 
 /* the drawing of a mesh list (HRESULT) */
 int MeshD3D_Render(CMeshD3D *self, void *ctx);

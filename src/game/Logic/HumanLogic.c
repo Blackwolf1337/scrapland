@@ -7,10 +7,13 @@
 
 #include "scrap/chartype.h"
 
-cEntity *g_HumanEnt;
+#define CHUMANLOCALLOGIC_VFTABLE (&cHumanLocalLogic_vftable)
+static const cBaseLocalLogicVtbl cHumanLocalLogic_vftable;
+
+static cEntity *g_HumanEnt;
 
 /* the C function of the human (cHumanLocalLogic.func): the character of that name gets away from the human */
-void HumanLogic_Escape(cAbstractFile *params) {
+static void HumanLogic_Escape(cAbstractFile *params) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(params, name, sizeof(name));
@@ -42,13 +45,13 @@ void *cHumanLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-void cHumanLocalLogic_dtor(cHumanLocalLogic *self) {
+static void cHumanLocalLogic_dtor(cHumanLocalLogic *self) {
 	self->base.vftable = CHUMANLOCALLOGIC_VFTABLE;
 	cPy_Function_dtor(&self->func);
 	cBaseLocalLogic_dtor(&self->base);
 }
 
-cLocalLogic *cHumanLocalLogic_Delete(cLocalLogic *base, byte flags) {
+static cLocalLogic *cHumanLocalLogic_Delete(cLocalLogic *base, byte flags) {
 	cHumanLocalLogic *self = (cHumanLocalLogic *)base;
 	cHumanLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -58,7 +61,7 @@ cLocalLogic *cHumanLocalLogic_Delete(cLocalLogic *base, byte flags) {
 }
 
 /* the vtable of cHumanLocalLogic */
-const cBaseLocalLogicVtbl cHumanLocalLogic_vftable = {
+static const cBaseLocalLogicVtbl cHumanLocalLogic_vftable = {
 	.base.Delete = cHumanLocalLogic_Delete,
 	.base.GetName = cBaseLocalLogic_GetName,
 	.base.Vf02 = cLocalLogic_Vf02True,

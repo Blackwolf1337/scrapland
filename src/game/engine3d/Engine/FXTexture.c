@@ -10,6 +10,15 @@
 #include "scrap/rendertarget.h"
 #include "scrap/misc.h"
 
+#define CFXNEWSPANEL_VFTABLE (&CFXNewsPanel_vftable)
+#define CFXTEXSCROLL_VFTABLE (&CFXTexScroll_vftable)
+#define CFXTEXLAVA_VFTABLE (&CFXTexLava_vftable)
+#define IFXTEXTURE_VFTABLE (&IFXTexture_vftable)
+static const IFXTextureVtbl IFXTexture_vftable;
+static const IFXTextureVtbl CFXTexScroll_vftable;
+static const IFXTextureVtbl CFXTexLava_vftable;
+static const IFXTextureVtbl CFXNewsPanel_vftable;
+
 extern int g_TimeMsInt;	/* the engine time in ms as an int */
 #define FXTEX_MASK (FXTEX_SIZE - 1)
 
@@ -28,11 +37,11 @@ static float Float_FromBits(uint32_t bits) {
 #define LAVA_SCROLL 7.0f
 #define LAVA_COS_STEP Float_FromBits(0x3cc90fdb)	/* 2 pi / 256 */
 
-void IFXTexture_dtor(IFXTexture *self) {
+static void IFXTexture_dtor(IFXTexture *self) {
 	self->vftable = IFXTEXTURE_VFTABLE;
 }
 
-IFXTexture *IFXTexture_Delete(IFXTexture *self, byte flags) {
+static IFXTexture *IFXTexture_Delete(IFXTexture *self, byte flags) {
 	self->vftable = IFXTEXTURE_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -40,7 +49,7 @@ IFXTexture *IFXTexture_Delete(IFXTexture *self, byte flags) {
 	return self;
 }
 
-void *IFXTexture_GetTexture(IFXTexture *self) {
+static void *IFXTexture_GetTexture(IFXTexture *self) {
 	(void)self;
 	return NULL;
 }
@@ -69,10 +78,11 @@ static void FXTex_FreeBmp(CBmp **bmp) {
 	}
 }
 
-float g_LavaCos[256];
-byte g_LavaCosInit;
+/* the cos of the 256 angles of the lava, made by the first lava */
+static float g_LavaCos[256];
+static byte g_LavaCosInit;
 
-CFXTexLava *CFXTexLava_ctor(CFXTexLava *self, const char *file) {
+static CFXTexLava *CFXTexLava_ctor(CFXTexLava *self, const char *file) {
 	self->base.vftable = CFXTEXLAVA_VFTABLE;
 	self->lastTime = 0;
 	FXTex_LoadBmps(&self->bmp, &self->orig, file);
@@ -91,14 +101,14 @@ CFXTexLava *CFXTexLava_ctor(CFXTexLava *self, const char *file) {
 	return self;
 }
 
-void CFXTexLava_dtor(CFXTexLava *self) {
+static void CFXTexLava_dtor(CFXTexLava *self) {
 	self->base.vftable = CFXTEXLAVA_VFTABLE;
 	FXTex_FreeBmp(&self->bmp);
 	FXTex_FreeBmp(&self->orig);
 	IFXTexture_dtor(&self->base);
 }
 
-IFXTexture *CFXTexLava_Delete(IFXTexture *base, byte flags) {
+static IFXTexture *CFXTexLava_Delete(IFXTexture *base, byte flags) {
 	CFXTexLava *self = (CFXTexLava *)base;
 	CFXTexLava_dtor(self);
 	if (flags & 1) {
@@ -126,9 +136,9 @@ static int Lava_Fistp(float f) {
 	return (int)llrint((double)f);
 }
 
-int g_LavaOffset[128];
+static int g_LavaOffset[128];
 
-int CFXTexLava_Update(IFXTexture *base, CMap *map) {
+static int CFXTexLava_Update(IFXTexture *base, CMap *map) {
 	CFXTexLava *self = (CFXTexLava *)base;
 	if (!FXTex_Due(&self->lastTime)) {
 		return 0;
@@ -157,7 +167,7 @@ int CFXTexLava_Update(IFXTexture *base, CMap *map) {
 	return 0;
 }
 
-CFXTexScroll *CFXTexScroll_ctor(CFXTexScroll *self, const char *file) {
+static CFXTexScroll *CFXTexScroll_ctor(CFXTexScroll *self, const char *file) {
 	self->base.vftable = CFXTEXSCROLL_VFTABLE;
 	self->lastTime = 0;
 	self->offset = 0;
@@ -167,14 +177,14 @@ CFXTexScroll *CFXTexScroll_ctor(CFXTexScroll *self, const char *file) {
 	return self;
 }
 
-void CFXTexScroll_dtor(CFXTexScroll *self) {
+static void CFXTexScroll_dtor(CFXTexScroll *self) {
 	self->base.vftable = CFXTEXSCROLL_VFTABLE;
 	FXTex_FreeBmp(&self->bmp);
 	FXTex_FreeBmp(&self->orig);
 	IFXTexture_dtor(&self->base);
 }
 
-IFXTexture *CFXTexScroll_Delete(IFXTexture *base, byte flags) {
+static IFXTexture *CFXTexScroll_Delete(IFXTexture *base, byte flags) {
 	CFXTexScroll *self = (CFXTexScroll *)base;
 	CFXTexScroll_dtor(self);
 	if (flags & 1) {
@@ -183,7 +193,7 @@ IFXTexture *CFXTexScroll_Delete(IFXTexture *base, byte flags) {
 	return base;
 }
 
-int CFXTexScroll_Update(IFXTexture *base, CMap *map) {
+static int CFXTexScroll_Update(IFXTexture *base, CMap *map) {
 	CFXTexScroll *self = (CFXTexScroll *)base;
 	if (!FXTex_Due(&self->lastTime)) {
 		return 0;
@@ -202,13 +212,13 @@ int CFXTexScroll_Update(IFXTexture *base, CMap *map) {
 	return 0;
 }
 
-CFXNewsPanel *CFXNewsPanel_ctor(CFXNewsPanel *self) {
+static CFXNewsPanel *CFXNewsPanel_ctor(CFXNewsPanel *self) {
 	self->base.vftable = CFXNEWSPANEL_VFTABLE;
 	self->time = 0;
 	return self;
 }
 
-IFXTexture *CFXNewsPanel_Delete(IFXTexture *elem, byte flags) {
+static IFXTexture *CFXNewsPanel_Delete(IFXTexture *elem, byte flags) {
 	CFXNewsPanel *self = (CFXNewsPanel *)elem;
 	IFXTexture_dtor(&self->base);
 	if (flags & 1) {
@@ -217,14 +227,14 @@ IFXTexture *CFXNewsPanel_Delete(IFXTexture *elem, byte flags) {
 	return elem;
 }
 
-int CFXNewsPanel_Update(IFXTexture *base, CMap *map) {
+static int CFXNewsPanel_Update(IFXTexture *base, CMap *map) {
 	CFXNewsPanel *self = (CFXNewsPanel *)base;
 	(void)map;
 	self->time = g_TimeMsInt;
 	return 0;
 }
 
-void *CFXNewsPanel_GetTexture(IFXTexture *base) {
+static void *CFXNewsPanel_GetTexture(IFXTexture *base) {
 	CFXNewsPanel *self = (CFXNewsPanel *)base;
 	(void)self;
 	return NewsPanel_GetTarget();
@@ -265,28 +275,28 @@ byte FXTexture_Kind(const char *name) {
 }
 
 /* the vtable of IFXTexture */
-const IFXTextureVtbl IFXTexture_vftable = {
+static const IFXTextureVtbl IFXTexture_vftable = {
 	.Delete = IFXTexture_Delete,
 	.Update = (void *)crt_purecall,
 	.GetTexture = IFXTexture_GetTexture,
 };
 
 /* the vtable of CFXTexLava */
-const IFXTextureVtbl CFXTexLava_vftable = {
+static const IFXTextureVtbl CFXTexLava_vftable = {
 	.Delete = CFXTexLava_Delete,
 	.Update = CFXTexLava_Update,
 	.GetTexture = IFXTexture_GetTexture,
 };
 
 /* the vtable of CFXTexScroll */
-const IFXTextureVtbl CFXTexScroll_vftable = {
+static const IFXTextureVtbl CFXTexScroll_vftable = {
 	.Delete = CFXTexScroll_Delete,
 	.Update = CFXTexScroll_Update,
 	.GetTexture = IFXTexture_GetTexture,
 };
 
 /* the vtable of CFXNewsPanel */
-const IFXTextureVtbl CFXNewsPanel_vftable = {
+static const IFXTextureVtbl CFXNewsPanel_vftable = {
 	.Delete = CFXNewsPanel_Delete,
 	.Update = CFXNewsPanel_Update,
 	.GetTexture = CFXNewsPanel_GetTexture,

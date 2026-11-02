@@ -13,11 +13,10 @@
 
 #define PROC_TYPES 16
 
-
 #define IS_BLANK(c) ((c) == '\t' || (c) == ' ')
 
 /* tipo_nota: "C4", "A#3", "Eb-1": the MIDI number of the note */
-int Proc_Note(char *dest, const char *src, const void *type, int size) {
+static int Proc_Note(char *dest, const char *src, const void *type, int size) {
 	static const int notes[] = { 9, 11, 0, 2, 4, 5, 7 };	/* A..G */
 	int octave;
 
@@ -52,7 +51,7 @@ int Proc_Note(char *dest, const char *src, const void *type, int size) {
 }
 
 /* the value of name in a NULL ended list of "NAME value" lines, case-insensitive */
-int Proc_TypeLookup(char *dest, const char *name, const void *data, int size) {
+static int Proc_TypeLookup(char *dest, const char *name, const void *data, int size) {
 	const char *const *list = data;
 	size_t n = strlen(name);
 
@@ -67,26 +66,26 @@ int Proc_TypeLookup(char *dest, const char *name, const void *data, int size) {
 	return -1;
 }
 
-char g_ProcBuf[1024];
+static char g_ProcBuf[1024];
 
-procrange_t g_ProcRangeChar = { .lo = -128, .hi = 127 };
+static procrange_t g_ProcRangeChar = { .lo = -128, .hi = 127 };
 
-procrange_t g_ProcRangeByte = { .hi = 255 };
+static procrange_t g_ProcRangeByte = { .hi = 255 };
 
-procrange_t g_ProcRangeShort = { .lo = -32768, .hi = 32767 };
+static procrange_t g_ProcRangeShort = { .lo = -32768, .hi = 32767 };
 
-procrange_t g_ProcRangeWord = { .hi = 65535 };
+static procrange_t g_ProcRangeWord = { .hi = 65535 };
 
-extern void *ProcDat_YesNoNames[8];
-extern void *ProcDat_LoopNames[4];
-extern void *ProcDat_SignNames[7];
-extern void *ProcDat_MonoStereoNames[7];
-extern const char str_TipoSiNo[];
-extern const char str_TipoBucle[];
-extern const char str_TipoNota[];
-extern const char str_TipoSampleSigno[];
-extern const char str_TipoSampleMnst[];
-cProcType g_ProcTypes[16] = {
+static void *ProcDat_YesNoNames[8];
+static void *ProcDat_LoopNames[4];
+static void *ProcDat_SignNames[7];
+static void *ProcDat_MonoStereoNames[7];
+static const char str_TipoSiNo[];
+static const char str_TipoBucle[];
+static const char str_TipoNota[];
+static const char str_TipoSampleSigno[];
+static const char str_TipoSampleMnst[];
+static cProcType g_ProcTypes[16] = {
 	{ .name = (void *)str_TipoSiNo, .data = (void *)ProcDat_YesNoNames },
 	{ .name = (void *)str_TipoBucle, .data = (void *)ProcDat_LoopNames },
 	{ .name = (void *)str_TipoNota, .convert = (void *)Proc_Note },
@@ -95,7 +94,7 @@ cProcType g_ProcTypes[16] = {
 };
 
 /* one "&" field: *pfmt is at the '&'; both pointers move past what was read */
-int Proc_ReadField(va_list *ap, const char **psrc, const char **pfmt) {
+static int Proc_ReadField(va_list *ap, const char **psrc, const char **pfmt) {
 	const char *src = *psrc;
 	const char *p = *pfmt;
 	int prec = -1;
@@ -305,30 +304,6 @@ int Proc_ReadField(va_list *ap, const char **psrc, const char **pfmt) {
 	return 0;
 }
 
-/* a new type of identifiers; -1 if the name is taken or the table full */
-int Proc_DefineType(const char *ident, const void *defin) {
-	cProcType *free = NULL;
-
-	CHECK(ident && defin);
-	for (int j = 0; j < PROC_TYPES; j++) {
-		cProcType *t = &g_ProcTypes[j];
-		if (!t->name) {
-			if (!free) {
-				free = t;
-			}
-		} else if (!strcmp(t->name, ident)) {
-			return -1;
-		}
-	}
-	if (!free) {
-		return -1;
-	}
-	free->convert = NULL;
-	free->name = ident;
-	free->data = defin;
-	return 0;
-}
-
 static const char *Proc_SkipBlanks(const char *s) {
 	while (IS_BLANK(*s)) {
 		s++;
@@ -383,43 +358,43 @@ done:
 	return count;
 }
 
-const char str_NO0[] = "NO 0";
-const char str_OFF0[] = "OFF 0";
-const char str_FALSE0[] = "FALSE 0";
-const char str_SI1[] = "SI 1";
-const char str_ON1[] = "ON 1";
-const char str_YES1[] = "YES 1";
-const char str_TRUE1[] = "TRUE 1";
-const char str_LOCAL1[] = "LOCAL 1";
-const char str_GLOBAL2[] = "GLOBAL 2";
-const char str_U0[] = "U 0";
-const char str_SINSIGNO0[] = "SIN_SIGNO 0";
-const char str_UNSIGNED0[] = "UNSIGNED 0";
-const char str_S1[] = "S 1";
-const char str_CONSIGNO1[] = "CON_SIGNO 1";
-const char str_SIGNED1[] = "SIGNED 1";
-const char str_MN0[] = "MN 0";
-const char str_MONO0[] = "MONO 0";
-const char str_ST1[] = "ST 1";
-const char str_ESTEREO1[] = "ESTEREO 1";
-const char str_STEREO1[] = "STEREO 1";
-const char str_TipoSiNo[] = "tipo_si_no";
-const char str_TipoBucle[] = "tipo_bucle";
-const char str_TipoNota[] = "tipo_nota";
-const char str_TipoSampleSigno[] = "tipo_sample_signo";
-const char str_TipoSampleMnst[] = "tipo_sample_mnst";
+static const char str_NO0[] = "NO 0";
+static const char str_OFF0[] = "OFF 0";
+static const char str_FALSE0[] = "FALSE 0";
+static const char str_SI1[] = "SI 1";
+static const char str_ON1[] = "ON 1";
+static const char str_YES1[] = "YES 1";
+static const char str_TRUE1[] = "TRUE 1";
+static const char str_LOCAL1[] = "LOCAL 1";
+static const char str_GLOBAL2[] = "GLOBAL 2";
+static const char str_U0[] = "U 0";
+static const char str_SINSIGNO0[] = "SIN_SIGNO 0";
+static const char str_UNSIGNED0[] = "UNSIGNED 0";
+static const char str_S1[] = "S 1";
+static const char str_CONSIGNO1[] = "CON_SIGNO 1";
+static const char str_SIGNED1[] = "SIGNED 1";
+static const char str_MN0[] = "MN 0";
+static const char str_MONO0[] = "MONO 0";
+static const char str_ST1[] = "ST 1";
+static const char str_ESTEREO1[] = "ESTEREO 1";
+static const char str_STEREO1[] = "STEREO 1";
+static const char str_TipoSiNo[] = "tipo_si_no";
+static const char str_TipoBucle[] = "tipo_bucle";
+static const char str_TipoNota[] = "tipo_nota";
+static const char str_TipoSampleSigno[] = "tipo_sample_signo";
+static const char str_TipoSampleMnst[] = "tipo_sample_mnst";
 
-void *ProcDat_YesNoNames[8] = {
+static void *ProcDat_YesNoNames[8] = {
 	(void *)str_NO0, (void *)str_OFF0, (void *)str_FALSE0, (void *)str_SI1,
 	(void *)str_ON1, (void *)str_YES1, (void *)str_TRUE1,
 };
 
-void *ProcDat_LoopNames[4] = { (void *)str_NO0, (void *)str_LOCAL1, (void *)str_GLOBAL2 };
+static void *ProcDat_LoopNames[4] = { (void *)str_NO0, (void *)str_LOCAL1, (void *)str_GLOBAL2 };
 
-void *ProcDat_SignNames[7] = {
+static void *ProcDat_SignNames[7] = {
 	(void *)str_U0, (void *)str_SINSIGNO0, (void *)str_UNSIGNED0, (void *)str_S1,
 	(void *)str_CONSIGNO1, (void *)str_SIGNED1,
 };
 
-void *ProcDat_MonoStereoNames[7] = { (void *)str_MN0, (void *)str_MONO0, (void *)str_ST1, (void *)str_ESTEREO1, (void *)str_STEREO1 };
+static void *ProcDat_MonoStereoNames[7] = { (void *)str_MN0, (void *)str_MONO0, (void *)str_ST1, (void *)str_ESTEREO1, (void *)str_STEREO1 };
 

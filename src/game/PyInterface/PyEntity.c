@@ -11,7 +11,7 @@ static inline float Deg2RadF(double deg) {
 }
 
 /* Del() : removes the entity; 1 if it went */
-PyObject *cPyEntity_Del(PyObject *self, PyObject *args) {
+static PyObject *cPyEntity_Del(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
@@ -23,7 +23,7 @@ PyObject *cPyEntity_Del(PyObject *self, PyObject *args) {
 }
 
 /* SetModel(file[,scale]) : model of the entity, uniform scale (default 1) */
-PyObject *cPyEntity_SetModel(PyObject *self, PyObject *args) {
+static PyObject *cPyEntity_SetModel(PyObject *self, PyObject *args) {
 	char *file;
 	double scale = 1.0;
 
@@ -40,7 +40,7 @@ PyObject *cPyEntity_SetModel(PyObject *self, PyObject *args) {
 }
 
 /* SetFX(type) : embedded effect controller of the entity */
-PyObject *cPyEntity_SetFX(PyObject *self, PyObject *args) {
+static PyObject *cPyEntity_SetFX(PyObject *self, PyObject *args) {
 	char *type;
 
 	if (!PyArg_ParseTuple(args, "s", &type)) {
@@ -58,7 +58,7 @@ PyObject *cPyEntity_SetFX(PyObject *self, PyObject *args) {
  * GetTgAng(angx, angy, dist) : angles to the target and its name ("" if none). The original keeps the target in
  * the stack slot of self, so if the engine writes no target it reads a name from the Python object; same here.
  */
-PyObject *cPyEntity_GetTgAng(PyObject *self, PyObject *args) {
+static PyObject *cPyEntity_GetTgAng(PyObject *self, PyObject *args) {
 	double ax, ay, dist;
 
 	if (!PyArg_ParseTuple(args, "ddd", &ax, &ay, &dist)) {
@@ -75,7 +75,7 @@ PyObject *cPyEntity_GetTgAng(PyObject *self, PyObject *args) {
 }
 
 /* DrawWeap(angx, angy, dist) : aim of the weapon: ((x, y, z), dist, target name or "") */
-PyObject *cPyEntity_DrawWeap(PyObject *self, PyObject *args) {
+static PyObject *cPyEntity_DrawWeap(PyObject *self, PyObject *args) {
 	double ax, ay, d;
 
 	if (!PyArg_ParseTuple(args, "ddd", &ax, &ay, &d)) {
@@ -94,7 +94,7 @@ PyObject *cPyEntity_DrawWeap(PyObject *self, PyObject *args) {
 }
 
 /* IsType(type) : 1 if the entity is of that type; None without entity */
-PyObject *cPyEntity_IsType(PyObject *self, PyObject *args) {
+static PyObject *cPyEntity_IsType(PyObject *self, PyObject *args) {
 	char *type = NULL;
 
 	if (!PyArg_ParseTuple(args, "s", &type)) {
@@ -110,6 +110,7 @@ PyObject *cPyEntity_IsType(PyObject *self, PyObject *args) {
 
 /* type functions of cPyEntity (type object rva 0x428e18) */
 
+static PyTypeObject cPyEntity_Type;
 PyObject *PyEntity_New(const char *name) {
 	cEntity *e = World_FindEntity(name);
 	if (!e) {
@@ -129,7 +130,7 @@ PyObject *PyEntity_New(const char *name) {
 }
 
 /* tp_dealloc */
-void PyEntity_Dealloc(PyObject *self) {
+static void PyEntity_Dealloc(PyObject *self) {
 	cEntityRef *ref = ((cPyEntity *)self)->ref;
 	if (ref) {
 		Nto1Node_Done(&ref->link);
@@ -139,7 +140,7 @@ void PyEntity_Dealloc(PyObject *self) {
 }
 
 /* tp_print: the text goes to fprintf as the format, like in the original */
-int PyEntity_Print(PyObject *self, FILE *fp, int flags) {
+static int PyEntity_Print(PyObject *self, FILE *fp, int flags) {
 	static char buf[0x100];
 	const char *name = ((cPyEntity *)self)->ref->name;
 
@@ -153,13 +154,13 @@ int PyEntity_Print(PyObject *self, FILE *fp, int flags) {
 	return 0;
 }
 
-extern const char str_PyMethod_cPyEntity_Del[];
-extern const char str_PyMethod_cPyEntity_DrawWeap[];
-extern const char str_PyMethod_cPyEntity_GetTgAng[];
-extern const char str_PyMethod_cPyEntity_IsType[];
-extern const char str_PyMethod_cPyEntity_SetFX[];
-extern const char str_PyMethod_cPyEntity_SetModel[];
-PyMethodDef cPyEntity_methods[7] = {
+static const char str_PyMethod_cPyEntity_Del[];
+static const char str_PyMethod_cPyEntity_DrawWeap[];
+static const char str_PyMethod_cPyEntity_GetTgAng[];
+static const char str_PyMethod_cPyEntity_IsType[];
+static const char str_PyMethod_cPyEntity_SetFX[];
+static const char str_PyMethod_cPyEntity_SetModel[];
+static PyMethodDef cPyEntity_methods[7] = {
 	{ .ml_name = (void *)str_PyMethod_cPyEntity_Del, .ml_meth = (void *)cPyEntity_Del, .ml_flags = 1 },
 	{
 		.ml_name = (void *)str_PyMethod_cPyEntity_SetModel,
@@ -181,12 +182,12 @@ PyMethodDef cPyEntity_methods[7] = {
 };
 
 /* a method of cPyEntity by name */
-PyObject *PyEntity_FindMethod(PyObject *self, char *name) {
+static PyObject *PyEntity_FindMethod(PyObject *self, char *name) {
 	return Py_FindMethod(cPyEntity_methods, self, name);
 }
 
 /* tp_getattr: script variable of the entity (int, float, vector, string), else a method */
-PyObject *PyEntity_GetAttr(PyObject *self, char *name) {
+static PyObject *PyEntity_GetAttr(PyObject *self, char *name) {
 	cEntityRef *ref = ((cPyEntity *)self)->ref;
 	cEntity *e = ref->link.target;
 	int i;
@@ -224,7 +225,7 @@ PyObject *PyEntity_GetAttr(PyObject *self, char *name) {
  * tp_setattr: the value is tried as int, float, vector and string, each type that parses goes to the matching
  * variable until one takes it
  */
-int PyEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
+static int PyEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
 	cEntityRef *ref = ((cPyEntity *)self)->ref;
 	cEntity *e = ref->link.target;
 	int parsed = 0;
@@ -295,15 +296,15 @@ void cEntity_AddLink(cEntity *self, Nto1Node *node) {
 	self->links.next = node;
 }
 
-const char str_CPyEntity[] = "cPyEntity";
-const char str_PyMethod_cPyEntity_Del[] = "Del";
-const char str_PyMethod_cPyEntity_SetModel[] = "SetModel";
-const char str_PyMethod_cPyEntity_SetFX[] = "SetFX";
-const char str_PyMethod_cPyEntity_GetTgAng[] = "GetTgAng";
-const char str_PyMethod_cPyEntity_DrawWeap[] = "DrawWeap";
-const char str_PyMethod_cPyEntity_IsType[] = "IsType";
+static const char str_CPyEntity[] = "cPyEntity";
+static const char str_PyMethod_cPyEntity_Del[] = "Del";
+static const char str_PyMethod_cPyEntity_SetModel[] = "SetModel";
+static const char str_PyMethod_cPyEntity_SetFX[] = "SetFX";
+static const char str_PyMethod_cPyEntity_GetTgAng[] = "GetTgAng";
+static const char str_PyMethod_cPyEntity_DrawWeap[] = "DrawWeap";
+static const char str_PyMethod_cPyEntity_IsType[] = "IsType";
 extern const char str_CPyEntity[];
-PyTypeObject cPyEntity_Type = {
+static PyTypeObject cPyEntity_Type = {
 	.ob_refcnt = 1,
 	.ob_type = &PyType_Type,
 	.tp_name = (void *)str_CPyEntity,

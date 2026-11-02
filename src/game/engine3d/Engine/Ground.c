@@ -24,7 +24,10 @@
 #include "scrap/platform.h"
 #include "scrap/staticinit.h"
 
-extern const IObject3DVtbl CGround_vftable;
+#define g_CollisionBalance (GVar_MapCollisionBalance.value.f)
+static cGVar GVar_MapCollisionBalance;
+
+static const IObject3DVtbl CGround_vftable;
 #define CGROUND_VFTABLE (&CGround_vftable)
 #define CCOLLIDEMESH_CTOR 0x2586b0
 #define CCOLLIDEMESH_DTOR 0x20eb70
@@ -38,7 +41,6 @@ extern const IObject3DVtbl CGround_vftable;
 /* the accessor of table.h */
 
 typedef void(*objCall_t)(void *self, void *arg);
-
 
 static void *Ground_Obj(const CGround *self, uint32_t i) {
 	TABLE_CHECK(self->nodes, i, self->nNodes);
@@ -88,15 +90,16 @@ static void Table_Write(CFileIO *f, CTable *t, int size) {
 	CFileIO_Write(f, t->p, t->n * size);
 }
 
-void Table_Write2(CFileIO *f, CTable *t) {
+/* engine3d/engine/table.h: count, sizeof(T) and the elements */
+static void Table_Write2(CFileIO *f, CTable *t) {
 	Table_Write(f, t, 2);
 }
 
-void Table_Write1C(CFileIO *f, CTable *t) {
+static void Table_Write1C(CFileIO *f, CTable *t) {
 	Table_Write(f, t, 0x1c);
 }
 
-void Table_WriteC(CFileIO *f, CTable *t) {
+static void Table_WriteC(CFileIO *f, CTable *t) {
 	Table_Write(f, t, 0xc);
 }
 
@@ -111,7 +114,8 @@ static void Table_DeleteObjs(void *p) {
 	}
 }
 
-void Table_FreeObjs(CTable *t) {
+/* elements with a vector deleting destructor (vftable[0]) or plain new[]; the table empty after */
+static void Table_FreeObjs(CTable *t) {
 	if (t->p) {
 		Table_DeleteObjs(t->p);
 		t->p = NULL;
@@ -119,10 +123,9 @@ void Table_FreeObjs(CTable *t) {
 	}
 }
 
-
 /* engine3d/engine/ground.h */
 
-CCollideMesh *CCollideMesh_ctor(CCollideMesh *self) {
+static CCollideMesh *CCollideMesh_ctor(CCollideMesh *self) {
 	self->Refs = 0;
 	memset(&self->Ext, 0, sizeof(self->Ext));
 	self->nVert = 0;
@@ -136,7 +139,7 @@ CCollideMesh *CCollideMesh_ctor(CCollideMesh *self) {
 	return self;
 }
 
-int g_CollisionQuadCount;
+static int g_CollisionQuadCount;
 
 CCollideQuad *CCollideQuad_ctor(CCollideQuad *self) {
 	self->pTri = NULL;
@@ -169,22 +172,6 @@ void CCollideQuad_dtor(CCollideQuad *self) {
 	Table_Free((CTable *)&self->nTri);
 }
 
-CCollideQuad *CCollideQuad_Delete(CCollideQuad *self, uint32_t flags) {
-	if (flags & 2) {
-		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(*self), *mem, (void *)CCollideQuad_dtor);
-		if (flags & 1) {
-			operator_delete_array(mem);
-		}
-		return (CCollideQuad *)mem;
-	}
-	CCollideQuad_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
-}
-
 /* the vector deleting destructor of the floor nodes (CNode3D, 0xfc bytes) */
 ObjRef *CNode3D_VecDelete(ObjRef *base, byte flags) {
 	void *self = (void *)base;
@@ -203,7 +190,7 @@ ObjRef *CNode3D_VecDelete(ObjRef *base, byte flags) {
 	return base;
 }
 
-CHeights *CHeights_ctor(CHeights *self) {
+static CHeights *CHeights_ctor(CHeights *self) {
 	crt_eh_vector_ctor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, (void *)CCollideMesh_ctor,
 		(void *)CCollideMesh_dtor);
 	crt_eh_vector_ctor(self->_CollideMesh2, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, (void *)CCollideMesh_ctor,
@@ -232,7 +219,7 @@ static void Heights_FreeQuads(CHeights *self) {
 	}
 }
 
-void CHeights_dtor(CHeights *self) {
+static void CHeights_dtor(CHeights *self) {
 	Heights_FreeQuads(self);
 	if (self->outSector) {
 		CCollideQuad *q = self->outSector;
@@ -254,12 +241,12 @@ void CHeights_dtor(CHeights *self) {
 	crt_eh_vector_dtor(self->_CollideMesh1, sizeof(CCollideMesh), MAX_COLLIDE_SECTORS, (void *)CCollideMesh_dtor);
 }
 
-uint32_t g_CollisionCache;
+static uint32_t g_CollisionCache;
 uint32_t g_CollisionNComp;
 uint32_t g_CollisionTests;
-uint32_t g_CollisionTestsTotal;
-uint32_t g_CollisionStats[6];
-uint32_t g_CollisionStats2;
+static uint32_t g_CollisionTestsTotal;
+static uint32_t g_CollisionStats[6];
+static uint32_t g_CollisionStats2;
 float g_CollisionEpsilon = 0.0001f;
 
 /* CGround */
@@ -291,25 +278,20 @@ CGround *CGround_ctor(CGround *self) {
 	return self;
 }
 
-void CGround_dtor(CGround *self) {
+static void CGround_dtor(CGround *self) {
 	self->vftable = CGROUND_VFTABLE;
 	CHeights_dtor(&self->heights);
 	Table_FreeObjs((CTable *)&self->nNodes);
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-IObject3D *CGround_Delete(IObject3D *base, byte flags) {
+static IObject3D *CGround_Delete(IObject3D *base, byte flags) {
 	CGround *self = (CGround *)base;
 	CGround_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
 	return base;
-}
-
-void CGround_Nop(CGround *self, void *arg) {
-	(void)self;
-	(void)arg;
 }
 
 static void Ground_NodesCall(CGround *self, void *arg, int slot) {
@@ -319,19 +301,20 @@ static void Ground_NodesCall(CGround *self, void *arg, int slot) {
 	}
 }
 
-void CGround_NodesVf3(IObject3D *base, void *arg) {
+static void CGround_NodesVf3(IObject3D *base, void *arg) {
 	CGround *self = (CGround *)base;
 	Ground_NodesCall(self, arg, 3);
 }
 
-void CGround_NodesVf4(IObject3D *base, void *arg) {
+static void CGround_NodesVf4(IObject3D *base, void *arg) {
 	CGround *self = (CGround *)base;
 	Ground_NodesCall(self, arg, 4);
 }
 
 /* the triangles of the collision meshes */
 
-plane_t *CCollideMesh_TriPlane(CCollideMesh *self, plane_t *out, uint32_t i) {
+/* the plane of triangle i (unit normal, unchanged when it has length 0) */
+static plane_t *CCollideMesh_TriPlane(CCollideMesh *self, plane_t *out, uint32_t i) {
 	CHECK((uint32_t)i < (uint32_t)self->nTri);
 	const CCollideTri *tri = &self->pTri[i];
 	const vec3_t *v0 = &self->pVert[tri->v[0]], *v1 = &self->pVert[tri->v[1]], *v2 = &self->pVert[tri->v[2]];
@@ -347,37 +330,12 @@ plane_t *CCollideMesh_TriPlane(CCollideMesh *self, plane_t *out, uint32_t i) {
 	return out;
 }
 
-void CCollideMesh_TriWithPlane(CCollideMesh *self, CCollideTri *out, int i) {
-	const CCollideTri *tri = &self->pTri[i];
-	plane_t pl;
-
-	out->ncomp = 0;
-	out->plane = *CCollideMesh_TriPlane(self, &pl, i);
-	memcpy(out->v, tri->v, sizeof(out->v));
-	out->flags = tri->flags;
-	out->ncomp = 0;
-}
-
-void CCollideMesh_GetTri(CCollideMesh *self, int i, CCollideTri *tri, vec3_t *v0, vec3_t *v1, vec3_t *v2) {
-	if (tri) {
-		*tri = self->pTri[i];
-	}
-	if (v0) {
-		*v0 = self->pVert[self->pTri[i].v[0]];
-	}
-	if (v1) {
-		*v1 = self->pVert[self->pTri[i].v[1]];
-	}
-	if (v2) {
-		*v2 = self->pVert[self->pTri[i].v[2]];
-	}
-}
-
-CCollideMesh **g_LoadMeshList;
+static CCollideMesh **g_LoadMeshList;
 
 /* the files */
 
-void CCollideMesh_Read(CCollideMesh *self, CFileIO *f) {
+/* the "CMSH" block; the mesh is entered in the load list by its Param */
+static void CCollideMesh_Read(CCollideMesh *self, CFileIO *f) {
 	char name[128];
 
 	CFileIO_BeginBlock(f, "CMSH");
@@ -400,9 +358,9 @@ void CCollideMesh_Read(CCollideMesh *self, CFileIO *f) {
 	CFileIO_Error(f, "CMSH");
 }
 
-int g_SaveCollideMeshParam;
+static int g_SaveCollideMeshParam;
 
-void CCollideMesh_Write(CCollideMesh *self, CFileIO *f) {
+static void CCollideMesh_Write(CCollideMesh *self, CFileIO *f) {
 	CHECK(g_SaveCollideMeshParam < 256);
 	self->Param = (byte)g_SaveCollideMeshParam++;
 	CFileIO_BeginBlockWrite(f, "CMSH");
@@ -433,7 +391,8 @@ static void CCollideQuad_SetMesh(CCollideQuad *self, CCollideMesh *mesh) {
 	self->Mesh = mesh;
 }
 
-void CCollideQuad_Read(CCollideQuad *self, CFileIO *f) {
+/* the "QUAD" block and the next ones */
+static void CCollideQuad_Read(CCollideQuad *self, CFileIO *f) {
 	CFileIO_BeginBlock(f, "QUAD");
 	CHECK(CFileIO_ReadInt(f) == 1);
 	int mesh = CFileIO_ReadInt(f);
@@ -462,7 +421,7 @@ static int32_t Ground_FloatBits(float f) {
 	return i;
 }
 
-void CCollideQuad_Write(CCollideQuad *self, CFileIO *f) {
+static void CCollideQuad_Write(CCollideQuad *self, CFileIO *f) {
 	CFileIO_BeginBlockWrite(f, "QUAD");
 	CFileIO_WriteInt(f, 1);
 	CFileIO_WriteInt(f, self->Mesh->Param);
@@ -478,7 +437,8 @@ void CCollideQuad_Write(CCollideQuad *self, CFileIO *f) {
 	CFileIO_EndBlockWrite(f, "QUAD");
 }
 
-byte CGround_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+/* the "SUEL" block: 1 */
+static byte CGround_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CGround *self = (CGround *)base;
 	(void)ctx;
 	CFileIO_BeginBlock(f, "SUEL");
@@ -494,7 +454,7 @@ byte CGround_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	return 1;
 }
 
-byte CGround_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+static byte CGround_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CGround *self = (CGround *)base;
 	(void)ctx;
 	CFileIO_BeginBlockWrite(f, "SUEL");
@@ -520,7 +480,8 @@ static void Ground_Close(CFileIO *f) {
 	operator_delete_sized(f, sizeof(*f));
 }
 
-int CGround_LoadCollision(CGround *self, const char *name) {
+/* the .amc file of the scene name: 0 loaded, 1 older than the scene, -1 failed */
+static int CGround_LoadCollision(CGround *self, const char *name) {
 	char amc[MAX_FILEPATH];
 	CCollideMesh *list[256];
 	CHeights *alt = &self->heights;
@@ -579,7 +540,8 @@ int CGround_LoadCollision(CGround *self, const char *name) {
 	return -1;
 }
 
-int CGround_SaveCollision(CGround *self, const char *name) {
+/* 0 written, -1 failed */
+static int CGround_SaveCollision(CGround *self, const char *name) {
 	char amc[MAX_FILEPATH];
 	CHeights *alt = &self->heights;
 
@@ -632,7 +594,8 @@ int CGround_SaveCollision(CGround *self, const char *name) {
 
 /* the queries */
 
-void CHeights_SetParam(CHeights *self, byte param) {
+/* the Param of all meshes of the quads */
+static void CHeights_SetParam(CHeights *self, byte param) {
 	for (int i = 0; i < self->nQuads; i++) {
 		for (CCollideQuad *q = Heights_Quad(self, i); q; q = q->next) {
 			q->Mesh->Param = param;
@@ -711,32 +674,6 @@ byte Ground_PointInTri(const vec3_t *p, const vec3_t *a, const vec3_t *b, const 
 	return 1;
 }
 
-float Ground_DistPointSeg(const vec3_t *a, const vec3_t *b, const vec3_t *p, vec3_t *out) {
-	float ax = a->x, ay = a->y, az = a->z;
-	float dx = b->x - ax, dy = b->y - ay, dz = b->z - az;
-	vec3_t u = Vec3_Scaled((vec3_t){ dx, dy, dz }, Vec3_Len(dx, dy, dz));
-
-	float pd = -(p->y * u.y + p->x * u.x + p->z * u.z);
-	float t = -(ay * u.y + ax * u.x + az * u.z + pd);
-	if (0.0f >= t) {
-		if (out) {
-			*out = *a;
-		}
-		return (float)__builtin_sqrt((double)Vec3_Dist2(p, a));
-	}
-	if (t * t > dy * dy + dx * dx + dz * dz) {
-		if (out) {
-			*out = *b;
-		}
-		return (float)__builtin_sqrt((double)Vec3_Dist2(p, b));
-	}
-	vec3_t c = { ax + u.x * t, ay + u.y * t, az + u.z * t };
-	if (out) {
-		*out = c;
-	}
-	return (float)__builtin_sqrt((double)Vec3_Dist2(p, &c));
-}
-
 float Ground_Dist2PointSeg(const vec3_t *a, const vec3_t *b, const vec3_t *p, vec3_t *out) {
 	float dx = b->x - a->x, dy = b->y - a->y, dz = b->z - a->z;
 	float len2 = dy * dy + dx * dx + dz * dz;
@@ -772,7 +709,8 @@ static float Plane_Dist(const plane_t *pl, const vec3_t *v) {
 	return pl->n.y * v->y + v->x * pl->n.x + pl->n.z * v->z + pl->d;
 }
 
-byte Ground_SegPlane(const vec3_t *a, const vec3_t *b, float r, const plane_t *pl, float *t) {
+/* the parameter t at which the segment a b comes within r of the plane; 0 if it stays farther away on one side */
+static byte Ground_SegPlane(const vec3_t *a, const vec3_t *b, float r, const plane_t *pl, float *t) {
 	CHECK(t);
 	float da = Plane_Dist(pl, a);
 	float db = Plane_Dist(pl, b);
@@ -809,7 +747,8 @@ static byte Ground_Root01(float a, float b, float c, float *t) {
 	return 1;
 }
 
-byte Ground_SegEdge(const vec3_t *a, const vec3_t *b, const vec3_t *p, const vec3_t *q, float r, float *t) {
+/* the first t in [0, 1] at which the segment p q comes within r of the edge a b (or of its end a); 0 for none */
+static byte Ground_SegEdge(const vec3_t *a, const vec3_t *b, const vec3_t *p, const vec3_t *q, float r, float *t) {
 	CHECK(t);
 	float ex = b->x - a->x, ey = b->y - a->y, ez = b->z - a->z;
 	float mx = q->x - p->x, my = q->y - p->y, mz = q->z - p->z;
@@ -847,7 +786,8 @@ byte Ground_SegEdge(const vec3_t *a, const vec3_t *b, const vec3_t *p, const vec
 	return Ground_Root01(mm, wm, ww - r * r, t) == 1;
 }
 
-byte Ground_SphereTri(const vec3_t *c, float r, const CCollideTri *tri, const CCollideMesh *mesh, vec3_t *res) {
+/* the point of the triangle nearest to the sphere center c, if it is within r */
+static byte Ground_SphereTri(const vec3_t *c, float r, const CCollideTri *tri, const CCollideMesh *mesh, vec3_t *res) {
 	CHECK(tri && mesh && res);
 	float r2 = r * r;
 	const plane_t *pl = &tri->plane;
@@ -885,7 +825,8 @@ static vec3_t Vec3_Lerp(const vec3_t *a, const vec3_t *b, float t) {
 	return (vec3_t){ a->x + (b->x - a->x) * t, a->y + (b->y - a->y) * t, a->z + (b->z - a->z) * t };
 }
 
-byte Ground_SweepTri(const vec3_t *a, const vec3_t *b, float r, const CCollideTri *tri, const CCollideMesh *mesh,
+/* the position where a sphere of radius r moving from a to b first touches the triangle */
+static byte Ground_SweepTri(const vec3_t *a, const vec3_t *b, float r, const CCollideTri *tri, const CCollideMesh *mesh,
 	vec3_t *res) {
 	const plane_t *pl = &tri->plane;
 	float t;
@@ -1182,21 +1123,23 @@ static const CCollideTri *Quad_Tri(const CCollideQuad *q, int i) {
 	return &q->Mesh->pTri[q->pTri[i]];
 }
 
-float CCollideQuad_TriMaxY(CCollideQuad *self, const CCollideTri *tri) {
+/* the highest and the lowest corner of a triangle of the mesh */
+static float CCollideQuad_TriMaxY(CCollideQuad *self, const CCollideTri *tri) {
 	const vec3_t *v = self->Mesh->pVert;
 	float y0 = v[tri->v[0]].y, y1 = v[tri->v[1]].y, y2 = v[tri->v[2]].y;
 	float m = y0 > y1 ? y0 : y1;
 	return m > y2 ? m : y2;
 }
 
-float CCollideQuad_TriMinY(CCollideQuad *self, const CCollideTri *tri) {
+static float CCollideQuad_TriMinY(CCollideQuad *self, const CCollideTri *tri) {
 	const vec3_t *v = self->Mesh->pVert;
 	float y0 = v[tri->v[0]].y, y1 = v[tri->v[1]].y, y2 = v[tri->v[2]].y;
 	float m = y0 < y1 ? y0 : y1;
 	return y2 > m ? m : y2;
 }
 
-int CCollideQuad_LowestTri(CCollideQuad *self) {
+/* the index (in pTri) of the colliding triangle with the lowest lowest corner below maxY, -1 for none */
+static int CCollideQuad_LowestTri(CCollideQuad *self) {
 	int best = -1;
 	float low = self->maxY;
 
@@ -1214,7 +1157,8 @@ int CCollideQuad_LowestTri(CCollideQuad *self) {
 	return best;
 }
 
-void CCollideQuad_CalcGap(CCollideQuad *self) {
+/* the largest vertical gap between the triangles into gapTop and gapBottom */
+static void CCollideQuad_CalcGap(CCollideQuad *self) {
 	self->gapBottom = self->minY;
 	self->gapTop = self->maxY;
 	int cur = CCollideQuad_LowestTri(self);
@@ -1290,7 +1234,8 @@ void CCollideQuad_CalcGap(CCollideQuad *self) {
 	}
 }
 
-void CCollideQuad_CalcExt(CHeights *self, CCollideQuad *q) {
+/* minY and maxY from the triangles (widened by the epsilon), then the gap */
+static void CCollideQuad_CalcExt(CHeights *self, CCollideQuad *q) {
 	(void)self;
 	box_t b = { { GROUND_FLT_MAX, GROUND_FLT_MAX, GROUND_FLT_MAX }, { -GROUND_FLT_MAX, -GROUND_FLT_MAX, -GROUND_FLT_MAX } };
 
@@ -1313,7 +1258,8 @@ void CCollideQuad_CalcExt(CHeights *self, CCollideQuad *q) {
 	CCollideQuad_CalcGap(q);
 }
 
-void CCollideQuad_AddAllTris(CHeights *self, CCollideQuad *q) {
+/* all triangles of the mesh */
+static void CCollideQuad_AddAllTris(CHeights *self, CCollideQuad *q) {
 	(void)self;
 	Table_Alloc2((CTable *)&q->nTri, q->Mesh->nTri);
 	for (int i = 0; i < q->nTri; i++) {
@@ -1323,7 +1269,8 @@ void CCollideQuad_AddAllTris(CHeights *self, CCollideQuad *q) {
 	}
 }
 
-CCollideQuad *CCollideQuad_Find(CHeights *self, CCollideQuad *quad, uint32_t id, CCollideMesh *mesh) {
+/* the quad of mesh (with that MeshID) in the chain of quad, a new one at the end */
+static CCollideQuad *CCollideQuad_Find(CHeights *self, CCollideQuad *quad, uint32_t id, CCollideMesh *mesh) {
 	(void)self;
 	CHECK(quad && mesh);
 	if (quad->Mesh == mesh && quad->Mesh->MeshID == id) {
@@ -1346,7 +1293,8 @@ CCollideQuad *CCollideQuad_Find(CHeights *self, CCollideQuad *quad, uint32_t id,
 	return quad->next;
 }
 
-void CHeights_QuadInit(CHeights *self, int unused, const box_t *box, int numTri) {
+/* the grid over box for about numTri triangles (and the balance) per cell */
+static void CHeights_QuadInit(CHeights *self, int unused, const box_t *box, int numTri) {
 	(void)unused;
 	CHECK(!self->CollideMesh1.pTri && !self->CollideMesh1.pVert);
 	CHECK(!self->CollideMesh2.pTri && !self->CollideMesh2.pVert);
@@ -1370,7 +1318,8 @@ void CHeights_QuadInit(CHeights *self, int unused, const box_t *box, int numTri)
 	Con_Verbosef("QuadInit: %d x %d  (NumTri: %d)  (size: %.2f)\n", self->nx, self->nz, numTri, size);
 }
 
-void CHeights_QuadAddMesh(CHeights *self, CCollideMesh *mesh, int initTri) {
+/* the triangles of mesh from initTri (0) into the quads of the cells they touch */
+static void CHeights_QuadAddMesh(CHeights *self, CCollideMesh *mesh, int initTri) {
 	int included = 0, discarded = 0, maxTri = 0;
 
 	CHECK(!initTri);
@@ -1592,14 +1541,6 @@ void CGround_SetMeshCollide(CGround *self, CCollideMesh *mesh, byte on, int Mesh
 	mesh->flags |= TRI_ALT_NO_COLLISIONS;
 }
 
-void CGround_CalcGaps(CGround *self) {
-	for (int i = 0; i < self->heights.nQuads; i++) {
-		for (CCollideQuad *q = Heights_Quad(&self->heights, i); q; q = q->next) {
-			CCollideQuad_CalcGap(q);
-		}
-	}
-}
-
 /* objeto3D.h: the object of a node as the class wanted, NULL (a failed CHECK) for another */
 static CTriMesh *Ground_ObjMesh(void *obj) {
 	if (((CTriMesh *)obj)->class != CLASS_OBJ3D_TRIMESH) {
@@ -1609,7 +1550,9 @@ static CTriMesh *Ground_ObjMesh(void *obj) {
 	return obj;
 }
 
-void CGround_BuildSectorMesh(CGround *self, CCollideMesh *mesh, int mode, uint32_t sector) {
+/* the triangles of the floor nodes in sector - 1 (all for -1) into mesh: mode 1 the colliding ones, mode 2 the
+ * others (the mesh then gets TRI_ALT_NO_COLLISIONS) */
+static void CGround_BuildSectorMesh(CGround *self, CCollideMesh *mesh, int mode, uint32_t sector) {
 	CTriMesh *m = operator_new(sizeof(CTriMesh));
 	m = m ? CTriMesh_ctor(m) : NULL;
 	if (mode == 2) {
@@ -1666,7 +1609,8 @@ void CGround_BuildSectorMesh(CGround *self, CCollideMesh *mesh, int mode, uint32
 	m->vftable->Delete(&m->base, 1);
 }
 
-void CGround_CreateQuadCollision(CGround *self) {
+/* the grid and the meshes of all sectors from the floor nodes; empty cells get CollideMesh1 */
+static void CGround_CreateQuadCollision(CGround *self) {
 	CHeights *alt = &self->heights;
 	int empty = 0;
 
@@ -1707,7 +1651,8 @@ void CGround_NodesToD3D(CGround *self, int fvf) {
 	}
 }
 
-void CGround_Draw(IObject3D *base, void *dev, CRenderNode *unused) {
+/* the vertex buffer meshes of the floor nodes */
+static void CGround_Draw(IObject3D *base, void *dev, CRenderNode *unused) {
 	CGround *self = (CGround *)base;
 	(void)unused;
 	Render_SetWorldMatrix((&g_MatIdentity), 0);
@@ -1725,12 +1670,7 @@ void CGround_Draw(IObject3D *base, void *dev, CRenderNode *unused) {
 	Batch_Flush(dev);
 }
 
-void Ground_DrawBox(const vec3_t *c, float r, uint32_t color) {
-	vec3_t mn = { c->x - r, c->y - r, c->z - r };
-	vec3_t mx = { c->x + r, c->y + r, c->z + r };
-	Debug_DrawBox(&mn, &mx, color);
-}
-
+static void CGround_DrawDebug(CGround *self);
 void Ground_DrawDebug(void) {
 	CHECK(g_World);
 	CGround *ground = g_World->ObjGround;
@@ -1963,7 +1903,7 @@ void CGround_CalcIllum(void *ground, CNode3D *node, CScene *scn) {
 	}
 }
 
-cGVar GVar_ShowMapSolid;
+static cGVar GVar_ShowMapSolid;
 
 /* the debug view of the collision meshes (c_show and ShowMapSolid) */
 #define g_ShowMapSolid (GVar_ShowMapSolid.value.i)		/* 0 wireframe, 1 solid, 2 solid with fog */
@@ -1974,9 +1914,11 @@ static float Collide_Clamp01(float s) {
 	return 0.0f >= s ? 0.0f : Float_MinSS(1.0f, s);
 }
 
-float g_CollideAddColor[4] = { 0, 0, 0, 1.0f };
+static float g_CollideAddColor[4] = { 0, 0, 0, 1.0f };
 
-void Collide_TriVerts(CollideVert *out, const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color) {
+/* the three vertices of a triangle, shaded by its normal with the texture projected along its main axis in the
+ * solid view (ShowMapSolid) */
+static void Collide_TriVerts(CollideVert *out, const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color) {
 	if (g_ShowMapSolid) {
 		float e2x = c->x - a->x, e2y = c->y - a->y, e2z = c->z - a->z;
 		float e1y = b->y - a->y, e1z = b->z - a->z, e1x = b->x - a->x;
@@ -2043,11 +1985,11 @@ void Collide_TriVerts(CollideVert *out, const vec3_t *a, const vec3_t *b, const 
 }
 
 int g_ShowCollision;
-CollideVert g_CollideVerts[3];
+static CollideVert g_CollideVerts[3];
 
 /* the triangles of the mesh by their flags (g_ShowCollision 1: the marked ones, 3: those with flag 4 only, 4: the
  * marks ignored, 5: by sector), the marks cleared; top: the wireframe or the solid view with the back faces in red */
-void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
+static void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
 	void *dev = g_pd3dDevice;
 
 	Rd_DevSetVertexShader(dev, 0x142);	/* XYZ | DIFFUSE | TEX1 */
@@ -2125,21 +2067,21 @@ void CCollideMesh_DrawDebug(CCollideMesh *self, int nested) {
 	Rd_DevSetRenderState(dev, D3DRS_CULLMODE, 3);
 }
 
-cGVar GVar_ShowMapQuads;
+static cGVar GVar_ShowMapQuads;
 
 #define g_ShowMapQuads (GVar_ShowMapQuads.value.i)		/* ShowMapQuads: the boxes of the quads, 2..6 by kind */
-cGVar GVar_ShowMapQDist;
+static cGVar GVar_ShowMapQDist;
 
 #define g_ShowMapQDist (GVar_ShowMapQDist.value.f)	/* ShowMapQDist: only the quads this near the camera, 0 all */
-cGVar GVar_AnalyzeQuads;
+static cGVar GVar_AnalyzeQuads;
 
 #define g_AnalyzeQuads (GVar_AnalyzeQuads.value.i)		/* AnalizeQuads: 1 the quads checked once */
 /* the material of the debug view, a static of CGround_DrawDebug */
 
-CMaterial g_CollideMat;
+static CMaterial g_CollideMat;
 
 /* the atexit destructor of it */
-void Ground_FiniCollideMat(void) {
+static void Ground_FiniCollideMat(void) {
 	CMaterial_dtor(&g_CollideMat);
 }
 
@@ -2269,11 +2211,11 @@ static void Ground_AnalyzeQuads(CGround *self) {
 }
 
 CMaterial *g_MatGround;
-int g_CollideMatGuard[2];
+static int g_CollideMatGuard[2];
 
 /* the debug view of the collision: the mode of c_show (6, 7 the solid views, 7 with a blinking background), the
  * quads, the analysis, then the meshes of the sectors seen and the meshes added at run time once each */
-void CGround_DrawDebug(CGround *self) {
+static void CGround_DrawDebug(CGround *self) {
 	int show = g_ShowCollision;
 
 	if (show == 0) {
@@ -2337,7 +2279,7 @@ void CGround_DrawDebug(CGround *self) {
 }
 
 /* the vtable of CGround */
-const IObject3DVtbl CGround_vftable = {
+static const IObject3DVtbl CGround_vftable = {
 	.Delete = CGround_Delete,
 	.Update = IObject3D_UpdateNop,
 	.Render = CGround_Draw,
@@ -2347,7 +2289,7 @@ const IObject3DVtbl CGround_vftable = {
 	.Read = CGround_Read,
 };
 
-cGVar GVar_MapCollisionBalance;
+static cGVar GVar_MapCollisionBalance;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_MapCollisionBalance, &GVar_MapCollisionBalance, "MapCollisionBalance", 0, "Faces per quad balance", 12.0f)

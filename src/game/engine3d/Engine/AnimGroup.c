@@ -11,7 +11,6 @@
 #define MORPH_INTERP 25
 #define MORPH_PARAM7 100
 
-
 static uint16_t Morph_Tag(const MorphData *d) {
 	uint16_t t;
 	memcpy(&t, d->Tag, sizeof(t));
@@ -22,7 +21,8 @@ static void Morph_SetTag(MorphData *d, uint16_t t) {
 	memcpy(d->Tag, &t, sizeof(t));
 }
 
-void AnimEvents_Free(CAnimEvent **list) {
+/* the events of the list deleted */
+static void AnimEvents_Free(CAnimEvent **list) {
 	CAnimEvent *ev = *list;
 	if (ev) {
 		CAnimEvent_dtor(ev);
@@ -31,7 +31,7 @@ void AnimEvents_Free(CAnimEvent **list) {
 	}
 }
 
-void CAnimGroup_dtor(CAnimGroup *self) {
+static void CAnimGroup_dtor(CAnimGroup *self) {
 	CHECK(self->Anim);
 	ObjRef_Release(&self->Anim);
 	if (self->morph) {
@@ -73,7 +73,8 @@ int MorphData_Find(const MorphData *md, const char *tag) {
 	return -1;
 }
 
-byte MorphData_Read(CIniFile *ini, const char *sect, int i, MorphData *d, int targets) {
+/* "<i>_Data" (6 bytes from Target on) and "<i>_Tag" of the section; 0 without the data */
+static byte MorphData_Read(CIniFile *ini, const char *sect, int i, MorphData *d, int targets) {
 	char key[32];
 	char tmp[256];
 

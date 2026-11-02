@@ -129,11 +129,8 @@ typedef struct cPyMenuEntity {
 	char *name;			/* 0xc Mem_Alloc copy */
 } cPyMenuEntity;
 
-extern PyTypeObject cPyMenuEntity_Type;
-
 /* the handle of a scorer item, NULL (no Python error) if there is no such item */
 PyObject *ScorerItem_PyNew(int player, const char *name);
-
 
 void Scorer_AddChatMsg(const char *text, uint32_t rgb);
 void Scorer_SetConsole(int on);

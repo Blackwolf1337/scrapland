@@ -13,67 +13,6 @@
 #include "scrap/misc.h"
 #include "scrap/staticinit.h"
 
-CFontGrid *CFontGrid_ctor(CFontGrid *self, const char *tex, const char *opac, byte first, byte last,
-	int cellWidth, int cellHeight, float space) {
-	CGraphic2D_ctor(&self->graphic);
-	CGraphic2D_SetTexture(&self->graphic, tex, opac, 0);
-	self->graphic.screen = 1;
-	self->graphic.screenSize = 1;
-	self->unused_54 = 0;
-	self->unused_50 = 0;
-	CHECK(first <= last);
-	self->cellWidth = cellWidth;
-	self->cellHeight = cellHeight;
-	self->first = first;
-	self->last = last;
-	self->space = space;
-	return self;
-}
-
-void CFontGrid_Print(CFontGrid *self, float x, float y, const char *s) {
-	int perRow = 0x100 / self->cellWidth;
-	float cw = (float)self->cellWidth * (1.0f / 256.0f);
-	float ch = (float)self->cellHeight * (1.0f / 256.0f);
-	for (const byte *c = (const byte *)s; *c; c++) {
-		if (*c >= self->first && *c <= self->last) {
-			int i = *c - self->first;
-			self->graphic.v0 = (float)(i / perRow) * ch;
-			self->graphic.v1 = self->graphic.v0 + ch;
-			self->graphic.u0 = (float)(i % perRow) * cw;
-			self->graphic.u1 = self->graphic.u0 + cw;
-			self->graphic.x = x;
-			self->graphic.y = y;
-			CGraphic2D_Render(&self->graphic);
-		}
-		x = self->space + x;
-	}
-}
-
-CDigits *CDigits_ctor(CDigits *self) {
-	char tex[128], opac[128];
-
-	for (int i = 0; i < 10; i++) {
-		CGraphic2D_ctor(&self->digit[i]);
-	}
-	for (int i = 0; i < 10; i++) {
-		snprintf(tex, sizeof(tex), "bmp/digitos/digito%04d.tga", i + 1);
-		snprintf(opac, sizeof(opac), "bmp/digitos/digito%04do.tga", i + 1);
-		CGraphic2D_SetTexture(&self->digit[i], tex, opac, 0);
-		self->digit[i].screen = 1;
-		self->digit[i].screenSize = 1;
-	}
-	self->unused_2ac = 0;
-	self->unused_2a8 = 0;
-	self->unused_2b0 = 24.0f;
-	return self;
-}
-
-void CDigits_dtor(CDigits *self) {
-	for (int i = 9; i >= 0; i--) {
-		CGraphic2D_dtor(&self->digit[i]);
-	}
-}
-
 static const FntGlyph *CFont3_Glyph(const CFont3 *self, uint32_t i) {
 	TABLE_CHECK(self->glyphs.p, i, self->glyphs.n);
 	return (const FntGlyph *)self->glyphs.p + i;
@@ -93,6 +32,7 @@ static byte Pixel_IsBorder(const CBmp *b, int x, int y, uint32_t border) {
 
 /* the glyphs between the border color (the pixel 0, 0): rows of glyphs between border rows, in each row the glyphs
  * between border pixels; the last letter found */
+static int Bmp_RowBorder(const CBmp *b, int y, uint32_t border);
 static byte CFont3_Scan(CFont3 *self, const CBmp *bmp, byte last) {
 	byte letter = self->first;
 	int w = self->bmpWidth, h = self->bmpHeight;
@@ -286,14 +226,14 @@ void CFont3_dtor(CFont3 *self) {
 	Table_Free(&self->glyphs);
 }
 
-float CFont3_GlyphWidth(const CFont3 *self, const FntGlyph *g) {
+static float CFont3_GlyphWidth(const CFont3 *self, const FntGlyph *g) {
 	if (self->mono) {
 		return self->graphic->scale2[0] * self->width;
 	}
 	return (g->u1 - g->u0) * (float)self->bmpWidth * self->graphic->scale2[0];
 }
 
-float CFont3_GlyphHeight(const CFont3 *self, const FntGlyph *g) {
+static float CFont3_GlyphHeight(const CFont3 *self, const FntGlyph *g) {
 	return (g->v1 - g->v0) * (float)self->bmpHeight * self->graphic->scale2[1];
 }
 
@@ -304,6 +244,8 @@ static float CFont3_UniHeight(const CFont3 *self) {
 
 CUnifont g_Unifont;
 
+static byte CUnifont_Parse(const CUnifont *self, const char *s, uint16_t *out);
+static float CUnifont_Width(const CUnifont *self, uint16_t i, float h);
 void CFont3_Measure(const CFont3 *self, float x, float y, uint16_t align, const char *s, float *pos,
 	float *dim) {
 	float w = 0.0f, h = 0.0f;
@@ -369,11 +311,6 @@ uint32_t Font_SetColor(CFont3 *self, uint32_t color) {
 	return 2;
 }
 
-uint32_t Font_SetFlags(CFont3 *self, uint32_t flags) {
-	self->flags = flags;
-	return 8;
-}
-
 /* the control characters of a font with them are drawn white (keeping the alpha) */
 static byte CFont3_Control(const CFont3 *self, byte c) {
 	return self->first < 0x20 && c < 0x20 && self->graphic->color;
@@ -389,6 +326,7 @@ static void CFont3_SetGlyph(CFont3 *self, const FntGlyph *g, float x, float y) {
 	graphic->y = y;
 }
 
+static byte CUnifont_SetSprite(const CUnifont *self, uint16_t i, float w, float h);
 void CFont3_Print(CFont3 *self, float x, float y, const char *s) {
 	if (!s) {
 		return;
@@ -431,12 +369,14 @@ void CFont3_Print(CFont3 *self, float x, float y, const char *s) {
 	self->y = y;
 }
 
-void CFont3_PrintColor(CFont3 *self, float x, float y, uint32_t color, const char *s) {
+static void CFont3_PrintColor(CFont3 *self, float x, float y, uint32_t color, const char *s) {
 	self->graphic->color = color;
 	CFont3_Print(self, x, y, s);
 	self->graphic->color = 0xffffff;
 }
 
+static void CFont3_PrintOutline(CFont3 *self, float x, float y, uint32_t color, const char *s);
+static void CFont3_PrintWave(CFont3 *self, float x, float y, uint32_t color, float wave, const char *s);
 void CFont3_PrintAlign(CFont3 *self, float x, float y, uint32_t flags, uint32_t color, const char *s) {
 	float pos[2];
 
@@ -453,7 +393,7 @@ void CFont3_PrintAlign(CFont3 *self, float x, float y, uint32_t flags, uint32_t 
 	}
 }
 
-void CFont3_PrintWave(CFont3 *self, float x, float y, uint32_t color, float wave, const char *s) {
+static void CFont3_PrintWave(CFont3 *self, float x, float y, uint32_t color, float wave, const char *s) {
 	if (!s) {
 		return;
 	}
@@ -580,13 +520,16 @@ static void Fnt_Brightness(CFont3 *self, byte uni, float x, float y, uint32_t co
 	} while (3.0f >= d);
 }
 
-CMaterial *g_FntMatOutline;
-int g_FntMatOutlineInit;
-CMaterial *g_FntMatOutlineUni;
-int g_FntMatOutlineUniInit;
+/* the materials of the outline of CFont3_PrintOutline (the font and the unicode font), made again after each start
+ * of the device (g_EngineInits) or for another texture */
+static CMaterial *g_FntMatOutline;
+static int g_FntMatOutlineInit;
+static CMaterial *g_FntMatOutlineUni;
+static int g_FntMatOutlineUniInit;
 CMaterial *g_MatFX1;
 
-void CFont3_PrintOutline(CFont3 *self, float x, float y, uint32_t color, const char *s) {
+/* a black outline (a pixel to each corner), the text, then a glow fading out to 3 pixels in its color */
+static void CFont3_PrintOutline(CFont3 *self, float x, float y, uint32_t color, const char *s) {
 	if (!s) {
 		return;
 	}
@@ -713,22 +656,6 @@ void Debug_Text3D(CFont3 *font, float x, float y, const vec3_t *pos, uint32_t co
 	CFont3_PrintShadow(font, sx, sy, color, buf);
 }
 
-void Font_PrintfCenter(CFont3 *font, float x, float y, const char *fmt, ...) {
-	char buf[1024];
-	float pos[2];
-	va_list ap;
-
-	va_start(ap, fmt);
-	VBprintf(buf, sizeof(buf), fmt, ap);
-	va_end(ap);
-	CFont3_Measure(font, x + 1.0f, y + 2.0f, FNT_ALIGN_CENTER, buf, pos, NULL);
-	CFont3_PrintColor(font, pos[0], pos[1], 0, buf);
-	CFont3_Measure(font, x, y, FNT_ALIGN_CENTER, buf, pos, NULL);
-	font->graphic->color = 0xffffff;
-	CFont3_Print(font, pos[0], pos[1], buf);
-	font->graphic->color = 0xffffff;
-}
-
 void Font_Printf(CFont3 *font, float x, float y, byte flags, const char *fmt, ...) {
 	char buf[1024];
 	va_list ap;
@@ -742,7 +669,8 @@ void Font_Printf(CFont3 *font, float x, float y, byte flags, const char *fmt, ..
 	CFont3_PrintColor(font, x, y, flags & FNT_PRINT_COLOR ? font->color : 0xffffff, buf);
 }
 
-int Bmp_RowBorder(const CBmp *b, int y, uint32_t border) {
+/* the pixels from the left of row y in the color of the border (the alpha not compared) */
+static int Bmp_RowBorder(const CBmp *b, int y, uint32_t border) {
 	int x = 0;
 	while (x < b->width) {
 		uint32_t p = *(const uint32_t *)Img_Pixel(b, (uint32_t)x, (uint32_t)y, 4);
@@ -782,7 +710,7 @@ void Fonts_Init(void) {
 	g_FntTerm8->round = 1;
 }
 
-extern const char str_2dFontsDrm[];
+static const char str_2dFontsDrm[];
 const char *g_FontsDir = (void *)str_2dFontsDrm;
 
 void CUnifont_Load(CUnifont *self) {
@@ -830,7 +758,8 @@ void CUnifont_Free(CUnifont *self) {
 	self->last = 0;
 }
 
-byte CUnifont_Parse(const CUnifont *self, const char *s, uint16_t *out) {
+/* the "\1XXXX" at s: 1 and the sprite in *out (0 out of the range), 0 if s is not one */
+static byte CUnifont_Parse(const CUnifont *self, const char *s, uint16_t *out) {
 	*out = 0;
 	if (!self->first || !s || s[0] != 1) {
 		return 0;
@@ -869,7 +798,8 @@ static const MSprite *CUnifont_Sprite(const CUnifont *self, uint16_t i) {
 	return &ms->p[i];
 }
 
-float CUnifont_Width(const CUnifont *self, uint16_t i, float h) {
+/* the width of sprite i at the height h, 0 if there is none */
+static float CUnifont_Width(const CUnifont *self, uint16_t i, float h) {
 	const MSprite *s = CUnifont_Sprite(self, i);
 	if (!s) {
 		return 0.0f;
@@ -877,7 +807,8 @@ float CUnifont_Width(const CUnifont *self, uint16_t i, float h) {
 	return (float)s->cx * h / (float)s->cy;
 }
 
-byte CUnifont_SetSprite(const CUnifont *self, uint16_t i, float w, float h) {
+/* sprite i of size w by h on the sprite of the font, 0 if there is none */
+static byte CUnifont_SetSprite(const CUnifont *self, uint16_t i, float w, float h) {
 	if (!self->first) {
 		return 0;
 	}
@@ -900,7 +831,7 @@ byte CUnifont_SetSprite(const CUnifont *self, uint16_t i, float w, float h) {
 	return 1;
 }
 
-const char str_2dFontsDrm[] = "2d/fonts-drm/";
+static const char str_2dFontsDrm[] = "2d/fonts-drm/";
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_CALL(Fini_CUnifont_Unifont, &g_Unifont, CUnifont_Free)

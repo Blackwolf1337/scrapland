@@ -7,8 +7,6 @@
 #include "scrap/archio.h"
 #include "scrap/e3dutil.h"
 
-
-
 #define IS_BLANK(c) ((c) == '\t' || (c) == ' ')
 
 /* the inlined check at the start of every function */
@@ -18,6 +16,7 @@ static void DataFile_Check(const cDataFile *dat) {
 }
 
 /* DataFile_LineType as the original inlines it in the searches, with only the second check */
+static void DataFile_Classify(cDataFile *dat, int idx);
 static int DataFile_TypeOf(cDataFile *dat, int idx) {
 	CHECK(dat->id == DATAFILE_ID);
 	cDatLine *lin = DataFile_Line(dat, idx);
@@ -83,10 +82,6 @@ void DataFile_InsertAt(cDataFile *dat, const char *text, int idx) {
 	dat->count++;
 	dat->cur = p;
 	dat->curIdx = idx + 1;
-}
-
-int DataFile_StrnCmp(cDataFile *dat, const char *a, const char *b, size_t n) {
-	return DataFile_Compare(dat, a, b, n);
 }
 
 int DataFile_SectionEnd(cDataFile *dat, int idx) {
@@ -194,7 +189,7 @@ void DataFile_SectionName(char *dest, const char *header, int size) {
 	CHECK(*close == ']');
 }
 
-void DataFile_Classify(cDataFile *dat, int idx) {
+static void DataFile_Classify(cDataFile *dat, int idx) {
 	DataFile_Check(dat);
 	cDatLine *lin = DataFile_Line(dat, idx);
 	if (!lin || lin->type == LINE_HEAD) {
@@ -260,7 +255,7 @@ void DataFile_Free(cDataFile *dat) {
 	Mem_Free(dat);
 }
 
-int g_FileErr = -1;
+static int g_FileErr = -1;
 
 cDataFile *DataFile_New(void) {
 	if (g_FileErr == -1) {
@@ -309,7 +304,7 @@ int DataFile_Load(cDataFile *dat, const char *name, int idx) {
 	return 0;
 }
 
-const char *DataFile_Value(cDataFile *dat, int idx, int *len) {
+static const char *DataFile_Value(cDataFile *dat, int idx, int *len) {
 	cDatLine *lin = DataFile_Line(dat, idx);
 	if (!lin || DataFile_LineType(dat, idx) != LINE_KEY) {
 		return NULL;
@@ -371,23 +366,6 @@ void DataFile_SetValue(cDataFile *dat, const char *value, int idx) {
 int DataFile_Count(cDataFile *dat) {
 	DataFile_Check(dat);
 	return dat->count - 1;
-}
-
-void DataFile_Dump(cDataFile *dat, int from, int to) {
-	DataFile_Check(dat);
-	int i = from > 0 ? from : 0;
-	CHECK(dat->id == DATAFILE_ID);
-	if (to > dat->count - 1) {
-		CHECK(dat->id == DATAFILE_ID);
-		to = dat->count - 1;
-	}
-	for (; i <= to; i++) {
-		cDatLine *lin = DataFile_Line(dat, i);
-		CHECK(lin);
-		CHECK(!lin->next || lin->next->prev == lin);
-		CHECK(!lin->prev || lin->prev->next == lin);
-		DataFile_Printf("\n%3d %d  %s", i, DataFile_TypeOf(dat, i), lin->text);
-	}
 }
 
 /* the cached line is the start when it is nearer than the head */

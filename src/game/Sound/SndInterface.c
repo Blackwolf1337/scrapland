@@ -8,10 +8,13 @@
 #include "scrap/sound.h"
 #include "scrap/world.h"
 
+#define CSNDINTERFACE_VFTABLE (&cSndInterface_vftable)
+static const cSndInterfaceVtbl cSndInterface_vftable;
+
 /* a field of a sound by the character of an "xxx%c" variable, which the original does not check */
 #define SndItem_Field(it, type, c, base) ((type *)((byte *)(it) + (c) * 4 - (base)))
 
-void cSndItem_Clear(cSndItem *self) {
+static void cSndItem_Clear(cSndItem *self) {
 	self->volume = 0.0f;
 	self->pitch = 0.0f;
 	self->time = 0.0f;
@@ -24,14 +27,8 @@ void cSndItem_Clear(cSndItem *self) {
 	self->playing = 0;
 }
 
-cSndItem *cSndItem_ctorName(cSndItem *self, const char *name, uint32_t flags) {
+static cSndItem *cSndItem_ctorName(cSndItem *self, const char *name, uint32_t flags) {
 	cSound_ctor(&self->sound, name, flags);
-	cSndItem_Clear(self);
-	return self;
-}
-
-cSndItem *cSndItem_ctor(cSndItem *self) {
-	cSound_Init(&self->sound);
 	cSndItem_Clear(self);
 	return self;
 }
@@ -71,7 +68,7 @@ void cSndItem_SetVolume(cSndItem *self, cEntity *e, float volume) {
 	}
 }
 
-void cSndItem_Tick(cSndItem *self, cEntity *e, float dt) {
+static void cSndItem_Tick(cSndItem *self, cEntity *e, float dt) {
 	if (self->volume == 0.0f) {
 		if (self->playing) {
 			self->playing = 0;
@@ -85,14 +82,14 @@ void cSndItem_Tick(cSndItem *self, cEntity *e, float dt) {
 
 /* cSndInterface */
 
-void cSndInterface_Alloc(cSndInterface *self, int n) {
+static void cSndInterface_Alloc(cSndInterface *self, int n) {
 	CHECK(n > 0);
 	self->nsnd = n;
 	self->snds = Mem_Alloc(n * sizeof(*self->snds));
 	memset(self->snds, 0, self->nsnd * sizeof(*self->snds));
 }
 
-void cSndInterface_Free(cSndInterface *self) {
+static void cSndInterface_Free(cSndInterface *self) {
 	for (int i = 0; i < self->nsnd; i++) {
 		cSndItem *it = self->snds[i];
 		if (it) {
@@ -103,7 +100,7 @@ void cSndInterface_Free(cSndInterface *self) {
 	Mem_Free(self->snds);
 }
 
-cSndInterface *g_SndInterfaces;
+static cSndInterface *g_SndInterfaces;
 
 cSndInterface *cSndInterface_ctor(cSndInterface *self, int n) {
 	self->vftable = CSNDINTERFACE_VFTABLE;
@@ -129,7 +126,7 @@ void cSndInterface_dtor(cSndInterface *self) {
 	cSndInterface_Free(self);
 }
 
-cSndInterface *cSndInterface_Destroy(cSndInterface *self, byte flags) {
+static cSndInterface *cSndInterface_Destroy(cSndInterface *self, byte flags) {
 	cSndInterface_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cSndInterface));
@@ -196,7 +193,7 @@ void cSndInterface_Tick(cSndInterface *self, float dt) {
 }
 
 /* "<id><nn>_<rest>": the sound number and the rest */
-byte cSndInterface_ParseName(cSndInterface *self, const char *name, int *idx, const char **rest) {
+static byte cSndInterface_ParseName(cSndInterface *self, const char *name, int *idx, const char **rest) {
 	char num[3];
 
 	if ((int)strlen(name) < 6 || name[5] != '_' || memcmp(self->id, name, 2) || self->id[2] != name[2]) {
@@ -218,7 +215,7 @@ byte cSndInterface_ParseName(cSndInterface *self, const char *name, int *idx, co
 }
 
 /* "<id>_n" the count, "loop", "int0".."int4" */
-byte cSndInterface_IntVar(cSndInterface *self, const char *name, int *v, int set) {
+static byte cSndInterface_IntVar(cSndInterface *self, const char *name, int *v, int set) {
 	char count[6];
 	const char *rest;
 	int idx;
@@ -271,7 +268,7 @@ static byte SndItem_Float(float *f, double *v, byte set) {
 }
 
 /* "ini", "end", "dopp", "vol", "time", "pitch" and "vol0".."vol4", "pitch0".."pitch4", "time0".."time4" */
-byte cSndInterface_FloatVar(cSndInterface *self, const char *name, double *v, int set) {
+static byte cSndInterface_FloatVar(cSndInterface *self, const char *name, double *v, int set) {
 	const char *rest;
 	int idx;
 
@@ -322,7 +319,7 @@ byte cSndInterface_FloatVar(cSndInterface *self, const char *name, double *v, in
 }
 
 /* "name": the sound name */
-byte cSndInterface_StrVar(cSndInterface *self, const char *name, char **v, int set) {
+static byte cSndInterface_StrVar(cSndInterface *self, const char *name, char **v, int set) {
 	const char *rest;
 	int idx;
 
@@ -336,17 +333,6 @@ byte cSndInterface_StrVar(cSndInterface *self, const char *name, char **v, int s
 	cSndItem *it = PtrArray_Get(self, idx);
 	*v = (char *)(it ? cSound_GetName(&it->sound) : str_Empty);
 	return 1;
-}
-
-/* vtable slot 0x10 */
-byte cSndInterface_Null(cSndInterface *self, int a, int b, int c, int d, int e) {
-	(void)self;
-	(void)a;
-	(void)b;
-	(void)c;
-	(void)d;
-	(void)e;
-	return 0;
 }
 
 /* while the game is paused: the looping sounds of all entities silent, the looping property sets stopped */
@@ -364,7 +350,7 @@ void Sound_UpdatePaused(void) {
 }
 
 /* the slot VarV of a class that does only return 0 */
-byte cSndInterface_VarVFalse(cSndInterface *self, const char *name, double *x, double *y, double *z, int set) {
+static byte cSndInterface_VarVFalse(cSndInterface *self, const char *name, double *x, double *y, double *z, int set) {
 	(void)self;
 	(void)name;
 	(void)x;
@@ -375,7 +361,7 @@ byte cSndInterface_VarVFalse(cSndInterface *self, const char *name, double *x, d
 }
 
 /* the vtable of cSndInterface */
-const cSndInterfaceVtbl cSndInterface_vftable = {
+static const cSndInterfaceVtbl cSndInterface_vftable = {
 	.Delete = cSndInterface_Destroy,
 	.VarI = cSndInterface_IntVar,
 	.VarF = cSndInterface_FloatVar,

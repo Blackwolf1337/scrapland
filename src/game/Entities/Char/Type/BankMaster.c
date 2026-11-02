@@ -7,6 +7,13 @@
 #include "scrap/chartype.h"
 #include "scrap/staticinit.h"
 
+#define g_FXBankMasterAttackFile (GVar_FXBankMasterAttackFile.value.s)
+#define g_BankMasterAmmoCost (GVar_BankMasterAmmoCost.value.f)
+#define g_FXBankMasterSuctionFile (GVar_FXBankMasterSuctionFile.value.s)
+static cGVar GVar_FXBankMasterSuctionFile;
+static cGVar GVar_FXBankMasterAttackFile;
+static cGVar GVar_BankMasterAmmoCost;
+
 #define BANKMASTER_SUCTION_ANG 1.0471975511965976	/* rva 0x3ad5f8, 60 degrees */
 
 void ChType_ActionSound(cEntity *v, byte loop, byte stop) {
@@ -22,7 +29,7 @@ void ChType_ActionSound(cEntity *v, byte loop, byte stop) {
 }
 
 /* params: the bank master, an event, a float */
-void ChType_BankMasterActionEnd(cAbstractFile *params) {
+static void ChType_BankMasterActionEnd(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -35,7 +42,7 @@ void ChType_BankMasterActionEnd(cAbstractFile *params) {
 	}
 }
 
-void ChType_BankMasterActionInit(cAbstractFile *params) {
+static void ChType_BankMasterActionInit(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -43,7 +50,9 @@ void ChType_BankMasterActionInit(cAbstractFile *params) {
 	ChType_ActionSound(v, 1, 0);
 }
 
-void ChType_ActionPress(cAbstractFile *params) {
+/* BankMasterActionPress, BertoActionPress and BishopActionPress: for a character that does not fall and runs no
+ * other action, Action as the loop and ActionInit */
+static void ChType_ActionPress(cAbstractFile *params) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -70,15 +79,16 @@ void ChType_Attack(cAbstractFile *params, float cost) {
 	cWalkCharEntity_SetEnergy(v, energy - cost);
 }
 
-void ChType_BankMasterAttack(cAbstractFile *params) {
+static void ChType_BankMasterAttack(cAbstractFile *params) {
 	ChType_Attack(params, g_BankMasterAmmoCost);
 }
 
-cEntity *g_BankMasterEnt;
+/* the characters of the running actions (the "MeEnt" CHECKs) */
+static cEntity *g_BankMasterEnt;
 
 /* the sphere test of the hit: params the character in the sphere. Within 60 degrees in front of the bank master its
  * money goes over, with the effect, and its logic is told */
-void ChType_BankMasterSuction(cAbstractFile *params) {
+static void ChType_BankMasterSuction(cAbstractFile *params) {
 	char name[0x80];
 	vec3_t t1, t2, t3, t4, d, diff, n;
 	cEntity *victim;
@@ -129,7 +139,7 @@ void ChType_BankMasterSuction(cAbstractFile *params) {
 }
 
 /* params: the bank master, an event, a float. The energy of a shot, then the suction in the sphere around it. */
-void ChType_BankMasterHitEvent(cAbstractFile *params) {
+static void ChType_BankMasterHitEvent(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 	vec3_t tmp;
 
@@ -147,7 +157,7 @@ void ChType_BankMasterHitEvent(cAbstractFile *params) {
 	cWorld_SphereCallF(g_pWorld, 0x10, pos, radius, &g_ChTypeSphereFunc, 0);
 }
 
-void ChType_FXBankMasterAttack(cAbstractFile *params) {
+static void ChType_FXBankMasterAttack(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -162,18 +172,18 @@ void ChType_FXBankMasterAttack(cAbstractFile *params) {
 }
 
 cGVar GVar_BankerStealAmount;
-cGVar GVar_FXBankMasterAttackFile;
-cGVar GVar_BankMasterAmmoCost;
-cGVar GVar_FXBankMasterSuctionFile;
-cPy_NativeFunc NativeFunc_BankMasterAttack;
-cPy_NativeFunc NativeFunc_BankMasterActionPress;
-cPy_NativeFunc NativeFunc_BankMasterHitEvent;
-cPy_NativeFunc NativeFunc_BankMasterActionInit;
-cPy_NativeFunc NativeFunc_BankMasterActionEnd;
-cPy_NativeFunc NativeFunc_FXBankMasterAttack;
-cPy_NativeFunc NativeFunc_BertoActionPress;
-cPy_NativeFunc NativeFunc_BishopActionPress;
-cPy_NativeFunc NativeFunc_MessengerActionPress;
+static cGVar GVar_FXBankMasterAttackFile;
+static cGVar GVar_BankMasterAmmoCost;
+static cGVar GVar_FXBankMasterSuctionFile;
+static cPy_NativeFunc NativeFunc_BankMasterAttack;
+static cPy_NativeFunc NativeFunc_BankMasterActionPress;
+static cPy_NativeFunc NativeFunc_BankMasterHitEvent;
+static cPy_NativeFunc NativeFunc_BankMasterActionInit;
+static cPy_NativeFunc NativeFunc_BankMasterActionEnd;
+static cPy_NativeFunc NativeFunc_FXBankMasterAttack;
+static cPy_NativeFunc NativeFunc_BertoActionPress;
+static cPy_NativeFunc NativeFunc_BishopActionPress;
+static cPy_NativeFunc NativeFunc_MessengerActionPress;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_BankerStealAmount, &GVar_BankerStealAmount, "BankerStealQuanto", 0, "Money stealed by the banker to the main player", 30)

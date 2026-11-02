@@ -19,28 +19,8 @@
 #define DOOR_BACK 0x4		/* open for an entity behind */
 #define DOOR_USR 0x8		/* open for player 0 on either side */
 
-/* the state of the last sphere test of Doors_Slot */
-extern byte g_DoorFront;	/* an entity in front of the door */
-extern byte g_DoorBack;
-extern byte g_DoorUsrFront;	/* player 0 in front */
-extern byte g_DoorUsrBack;
-extern float g_DoorAngY;		/* the y angle of the door */
-extern vec3_t g_DoorPos;
 extern cPy_Function g_ChTypeSphereFunc;
 #define g_DoorSphereFunc (&g_ChTypeSphereFunc)	/* Doors_SphereEntity for the sphere test */
 #define DOORS_SPHEREENTITY 0x0f0570
-
-
-/* the C functions; params holds the arguments of the call */
-void Doors_AcceleratorOnEnter(cAbstractFile *params);
-void Doors_Slot(cAbstractFile *params, uint32_t flags);
-void Doors_AutoDoorSlot(cAbstractFile *params);
-void Doors_AutoDoorUsrSlot(cAbstractFile *params);
-void Doors_BackDoorSlot(cAbstractFile *params);
-void Doors_ChangeDoorState(cAbstractFile *params);
-void Doors_CloseDoorSlot(cAbstractFile *params);
-void Doors_FrontDoorSlot(cAbstractFile *params);
-void Doors_SphereEntity(cAbstractFile *params);
-void Doors_Usr0AutoDoorSlot(cAbstractFile *params);
 
 #endif

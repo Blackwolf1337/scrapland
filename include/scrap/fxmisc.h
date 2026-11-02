@@ -54,23 +54,10 @@ static inline float FX_Rand(double range, double add) {
 /* an entity that is deleted (the int at 0x20) or off: the effect lets it go */
 #define Entity_Removed(e) (((cEntity *)(e))->deadNode.target)
 
-/* the engine variables (Gvars): the files of the debris systems of the effects */
-extern cGVar GVar_FXItemBlinkFile;
-#define g_FXItemBlinkFile (GVar_FXItemBlinkFile.value.s)
-extern cGVar GVar_FXItemFadeFile;
-#define g_FXItemFadeFile (GVar_FXItemFadeFile.value.s)
-extern cGVar GVar_FXItemTakeFile;
-#define g_FXItemTakeFile (GVar_FXItemTakeFile.value.s)
 extern cGVar GVar_FXCharacterSputnikFile;
 #define g_FXCharacterSputnikFile (GVar_FXCharacterSputnikFile.value.s)
-extern cGVar GVar_FXShipEditBuildFile;
-#define g_FXShipEditBuildFile (GVar_FXShipEditBuildFile.value.s)
 extern cGVar GVar_FXSmokeDebrisFile;
 #define g_FXSmokeDebrisFile (GVar_FXSmokeDebrisFile.value.s)
-extern cGVar GVar_FXFiredDebrisFile;
-#define g_FXFiredDebrisFile (GVar_FXFiredDebrisFile.value.s)
-extern cGVar GVar_FXShipExplosionFile;
-#define g_FXShipExplosionFile (GVar_FXShipExplosionFile.value.s)
 
 /* the color ramps (9 colors) of the particles */
 #define FX_RAMP_BLINK 0x430b44
@@ -214,41 +201,12 @@ vec3_t *Vec3_NormalizeTo(vec3_t *out, const vec3_t *in);
 
 /* the element methods; the same code of several classes is one function */
 byte FXMisc_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys);
-void FXMisc_Nop(cObjElementFX *base, cDebris *arg);
-void FXMisc_Clear4(cObjElementFX *base, cDebris *arg);
-void FXMisc_Clear8(cObjElementFX *base, cDebris *arg);
-void cObjElementFXItemFade_Update(cObjElementFX *base, cDebris *d, float dt);
-void cObjElementFXItemFade_Attach(cObjElementFX *base, cDebris *d);
-void cObjElementFXItemFade_Reset(cObjElementFX *base, cDebris *arg);
-/* the fade of the model of e starts with the blink particles around it */
-void cObjElementFXItemFade_Start(cObjElementFXItemFade *self, cEntity *e);
-void cObjElementFXItemTake_Update(cObjElementFX *base, cDebris *d, float dt);
-void cObjElementFXItemTake_Attach(cObjElementFX *base, cDebris *d);
-void cObjElementFXItemTake_Reset(cObjElementFX *base, cDebris *arg);
-/* the random lines of particles from e (to the target set after it) */
-void cObjElementFXItemTake_Start(cObjElementFXItemTake *self, cEntity *e);
-void cObjElementFXModelFade_Update(cObjElementFX *base, cDebris *d, float dt);
-byte cObjElementFXModelFade_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys);
-void cObjElementFXModelNoise_Update(cObjElementFX *base, cDebris *d, float dt);
-byte cObjElementFXModelNoise_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys);
-void cObjElementFXParticleSystem_Update(cObjElementFX *base, cDebris *d, float dt);
-void cObjElementFXParticleSystem_Attach(cObjElementFX *base, cDebris *d);
-void cObjElementFXParticleSystemDuDv_Attach(cObjElementFX *base, cDebris *d);
-void cObjElementFXSparks_Update(cObjElementFX *base, cDebris *d, float dt);
-void cObjElementFXSparks_Attach(cObjElementFX *base, cDebris *d);
-void cObjElementFXSparks_Reset(cObjElementFX *base, cDebris *arg);
 /* n sparks at p along dir turned by up to the spread angles; the pairs are random ranges */
 void cObjElementFXSparks_Emit(cObjElementFXSparks *self, int n, float px, float py, float pz, float dx,
 	float dy, float dz, float sx, float sy, float sz, float jx, float jy, float jz, float speedMin, float speedMax,
 	float sizeMin, float sizeMax, float scaleHead, float scaleTail, float lifeMin, float lifeMax, float lmMin,
 	float lmMax, float delayMin, float delayMax, uint32_t color, float noiseMin, float noiseMax, float segMin,
 	float segMax, int sprite);
-void cObjElementFXTrail_Update(cObjElementFX *base, cDebris *d, float dt);
-byte cObjElementFXTrail_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys);
-void cObjElementFXTrail_Reset(cObjElementFX *base, cDebris *arg);
-byte cObjElementFXFadeOutTrail_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys);
-void cObjElementFXFadeOutTrail_Reset(cObjElementFX *base, cDebris *arg);
-void cObjElementFXFadeOutTrail_Update(cObjElementFX *base, cDebris *d, float dt);
 /* the constructors and destructors (rva 0x1da190..0x1da6c8) and the deleting destructors (vtable slot
  * 0, rva 0x1da6d0..0x1da940) */
 void *cObjElementFXFadeOutTrail_ctor(void *self);
@@ -260,29 +218,10 @@ void *cObjElementFXParticleSystem_ctor(void *self);
 cObjElementFXParticleSystemDuDv *cObjElementFXParticleSystemDuDv_ctor(cObjElementFXParticleSystemDuDv *self);
 void *cObjElementFXSparks_ctor(void *self);
 void *cObjElementFXTrail_ctor(void *self);
-void cObjElementFXFadeOutTrail_dtor(void *self);
-void cObjElementFXItemFade_dtor(void *self);
-void cObjElementFXItemTake_dtor(void *self);
-void cObjElementFXModelFade_dtor(void *self);
-void cObjElementFXModelNoise_dtor(void *self);
-void cObjElementFXParticleSystem_dtor(void *self);
-void cObjElementFXParticleSystemDuDv_dtor(cObjElementFXParticleSystemDuDv *self);
-void cObjElementFXSparks_dtor(void *self);
-void cObjElementFXTrail_dtor(void *self);
-cObjElementFX *cObjElementFXFadeOutTrail_Delete(cObjElementFX *base, byte flags);
-cObjElementFX *cObjElementFXItemFade_Delete(cObjElementFX *base, byte flags);
-cObjElementFX *cObjElementFXItemTake_Delete(cObjElementFX *base, byte flags);
-cObjElementFX *cObjElementFXModelFade_Delete(cObjElementFX *base, byte flags);
-cObjElementFX *cObjElementFXModelNoise_Delete(cObjElementFX *base, byte flags);
-cObjElementFX *cObjElementFXParticleSystem_Delete(cObjElementFX *base, byte flags);
-cObjElementFX *cObjElementFXParticleSystemDuDv_Delete(cObjElementFX *base, byte flags);
-cObjElementFX *cObjElementFXSparks_Delete(cObjElementFX *base, byte flags);
-cObjElementFX *cObjElementFXTrail_Delete(cObjElementFX *base, byte flags);
 /* the elements of the effects started by name: the entity (its model a CHECK), fields at 0x8 and 0xc */
 void FXMisc_SetEntity(void *self, cEntity *e);
 void FXMisc_SetF8(void *self, float v);
 void FXMisc_SetFC(void *self, float v);
-void FXMisc_SetI8(void *self, int v);
 
 /* the free functions */
 /* the particles to "Dummy01" of the model, to the node index of the pointer itself without a model (as the

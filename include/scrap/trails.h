@@ -75,41 +75,19 @@ typedef struct CTrail {
 	float unused_50;			/* 0x50 */
 } CTrail;
 
-/* the lists of the active trails and the shared buffers (IDirect3DVertexBuffer8, IDirect3DIndexBuffer8) */
-extern struct CMaterial * g_TrailsMat[17];	/* [MAX_TRAILS_TEXTURES] */
-extern cGVar GVar_R_Trails;
-#define g_TrailsOn (GVar_R_Trails.value.i)
-extern void *g_TrailsVB;
-extern void *g_TrailsIB;
-extern int g_TrailsVertex;	/* vertices, primitives and indices in the buffers */
-extern int g_TrailsPrims;
-extern int g_TrailsIndex;
-extern CTrail *g_TrailsRender[17][MAX_TRAILS_RENDER];
-extern int g_nTrails;
-extern int g_nTrailsRender[17];	/* [MAX_TRAILS_TEXTURES] */
-
 CTrail *CTrail_ctor(CTrail *self);
 void CTrail_dtor(CTrail *self);
-/* into or out of gTrailsRender as render says; the last of the list takes the free slot */
-void Trails_UpdateRender(CTrail *t);
 /* no points, out of the render list */
 void CTrail_Clear(CTrail *self);
 /* everything but uLen and f50, the points copied; the sizes must be equal */
 void CTrail_Copy(CTrail *self, const CTrail *from);
 /* one point less, out of the render list at none */
 void CTrail_Shrink(CTrail *self);
-void CTrail_SetActive(CTrail *self, byte on);
 /* no points, the render list as it is */
 void CTrail_Reset(CTrail *self);
 void CTrail_AddPos(CTrail *self, vec3_t pos);
 void CTrail_AddPosColor(CTrail *self, vec3_t pos, uint32_t color);
 void CTrail_Add(CTrail *self, vec3_t pos, float width, uint32_t color);
-/* the geometry of the trail into the locked buffers, the pointers moved on; S_OK or E_FAIL for an unknown type */
-int CTrail_Build(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
-int CTrail_BuildRibbon(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
-int CTrail_BuildCross(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
-int CTrail_BuildQuads(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
-int CTrail_BuildFan(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
 void CTrail_SetTransp(CTrail *self, byte transp);
 void CTrail_SetColor(CTrail *self, uint32_t color);
 void CTrail_SetSmooth(CTrail *self, byte on);
@@ -126,7 +104,6 @@ void CTrail_SetTexture(CTrail *self, int texture);
 void CTrail_SetUVScale(CTrail *self, float du, float dv);
 void CTrail_SetFade(CTrail *self, byte on);
 void CTrail_SetULen(CTrail *self, float uLen, float f50);
-void Trail_SetRender(CTrail *t, byte on);
 /* all render lists emptied, their trails cleared; 0 */
 int Trails_ResetAll(void);
 /* the buffers released; 0 */

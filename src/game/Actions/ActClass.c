@@ -13,6 +13,9 @@
 #include "scrap/sound.h"
 #include "scrap/walkcharentity.h"
 
+#define CACTCLASS_VFTABLE (&cActClass_vftable)
+static const cActClassVtbl cActClass_vftable;
+
 /* ---- DList<cString> ---- */
 
 /* to the free list while it has room, else freed */
@@ -43,7 +46,7 @@ cStringNode *cStringList_NewNode(cStringList *list) {
 	return node;
 }
 
-void cStringList_RemoveHead(cStringList *list) {
+static void cStringList_RemoveHead(cStringList *list) {
 	cStringNode *p = list->head;
 
 	list->iter = NULL;
@@ -80,7 +83,7 @@ void cStringList_FreePool(cStringList *list) {
 }
 
 /* the list destructor: the nodes and the free pool */
-void cStringList_dtor(cStringList *list) {
+static void cStringList_dtor(cStringList *list) {
 	cStringList_Clear(list);
 	cStringList_FreePool(list);
 }
@@ -89,7 +92,7 @@ void cStringList_dtor(cStringList *list) {
 
 #define ACTCLASS_SLOTS 0x1c9
 
-cActNodeMod *cActNodeMod_ctor(cActNodeMod *self) {
+static cActNodeMod *cActNodeMod_ctor(cActNodeMod *self) {
 	memset(self->ang, 0, sizeof(self->ang));
 	self->node = ACT_NODE_NONE;
 	return self;
@@ -163,7 +166,8 @@ cActClass *cActClass_ctor(cActClass *self, const char *name) {
 	return self;
 }
 
-void cActClass_dtor(cActClass *self) {
+static void cActClass_FreeResources(cActClass *self);
+static void cActClass_dtor(cActClass *self) {
 	self->vftable = CACTCLASS_VFTABLE;
 	if (self->users) {
 		Con_Bluef("ERROR : The class %s is going to be deleted but the reference counter is %d\n", self->name,
@@ -211,7 +215,7 @@ void cActClass_dtor(cActClass *self) {
 	cString_dtor(&self->name);
 }
 
-cActClass *cActClass_Delete(cActClass *self, byte flags) {
+static cActClass *cActClass_Delete(cActClass *self, byte flags) {
 	cActClass_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -247,7 +251,8 @@ cAction *cActClass_CreateAction(cActClass *self, const char *name) {
 	return act;
 }
 
-void cActClass_AddSoundRes(cActClass *self, const char *file) {
+/* the sound of the file loaded and its name kept for FreeResources */
+static void cActClass_AddSoundRes(cActClass *self, const char *file) {
 	char name[0x80];
 	cString str;
 
@@ -261,7 +266,8 @@ void cActClass_AddSoundRes(cActClass *self, const char *file) {
 	cString_dtor(&str);
 }
 
-void cActClass_FreeResources(cActClass *self) {
+/* OnFreeResources called, the sounds and the model released */
+static void cActClass_FreeResources(cActClass *self) {
 	cStringList *l = &self->sounds;
 
 	cPy_Function_Execute(&self->onFreeResources, 0);
@@ -277,14 +283,16 @@ cAction *cActClass_GetAction(cActClass *cls, const char *name) {
 	return PtrTable_Value(&cls->actions, name);
 }
 
-cAction *cActClass_SetDefAction(cActClass *self, const char *name) {
+/* NULL when there is no action of that name */
+static cAction *cActClass_SetDefAction(cActClass *self, const char *name) {
 	cAction *a = PtrTable_Value(&self->actions, name);
 
 	self->defAction = a;
 	return a;
 }
 
-void cActClass_SetModelFile(cActClass *self, const char *file) {
+/* a warning if the class has a model already */
+static void cActClass_SetModelFile(cActClass *self, const char *file) {
 	if (self->modelFile) {
 		Con_Warnf("WARNING: '%s' Active class already has assigned '%s' as model.\n '%s' can't be assigned.\n",
 			self->name, self->modelFile, file);
@@ -297,7 +305,8 @@ void cActClass_SetModelFile(cActClass *self, const char *file) {
 	memcpy(self->modelFile, file, n);
 }
 
-void cActNodeMod_SetNode(int *node, CGameModel *model, const char *name) {
+/* "_Move_The_Model_" or a render node of the model; a message if it has no such node */
+static void cActNodeMod_SetNode(int *node, CGameModel *model, const char *name) {
 	if (strcmp(name, "_Move_The_Model_") == 0) {
 		*node = ACT_NODE_MODEL;
 		return;
@@ -317,7 +326,8 @@ static double Rad_ToDeg(float r) {
 	return (double)r * DEG_PER_PI / M_PI_D;
 }
 
-int cActClassCam_Var(cActClassCam *self, const char *name, int set, char **s, double *d, int *i) {
+/* the camera variables of the class (only d is used) */
+static int cActClassCam_Var(cActClassCam *self, const char *name, int set, char **s, double *d, int *i) {
 	float v;
 
 	(void)s;
@@ -628,6 +638,6 @@ int cActClass_Var(cActClass *cls, const char *name, int set, char **s, double *d
 }
 
 /* the vtable of cActClass */
-const cActClassVtbl cActClass_vftable = {
+static const cActClassVtbl cActClass_vftable = {
 	.Delete = cActClass_Delete,
 };

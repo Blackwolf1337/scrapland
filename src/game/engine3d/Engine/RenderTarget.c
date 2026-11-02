@@ -17,6 +17,61 @@
 #include "scrap/trails.h"
 #include "scrap/staticinit.h"
 
+#define g_NewsPanelRTarget (GVar_R_NewsPanelRTarget.value.i)		/* R_NewsPanelRTarget */
+#define g_NewsPanelSize (GVar_R_NewsPanelSize.value.i)		/* R_NewsPanelSize, pow2 */
+#define g_NewsPanelWire (GVar_R_NewsPanelWire.value.i)		/* R_NewsPanelWire */
+#define g_SceneRTarget (GVar_R_SceneRTarget.value.i)		/* R_SceneRTarget, 3 skips the caps check memory */
+#define g_SceneRTargetSwap (GVar_R_SceneRTargetSwap.value.i)		/* R_SceneRTargetSwap */
+#define g_SceneForceLinPow2 (GVar_R_SceneForceLinPow2.value.i)		/* R_SceneForceLinPow2 -1/0/1 */
+#define g_SceneForceLinNonPow2 (GVar_R_SceneForceLinNonPow2.value.i)	/* R_SceneForceLinNonPow2 -1/0/1 */
+#define g_SceneCheckPixels (GVar_R_SceneCheckPixels.value.i)		/* R_SceneCheckPixels */
+#define g_SceneDuDvFilter (GVar_R_SceneDuDvFilter.value.i)		/* R_SceneDuDvFilter */
+#define g_SceneDuDvScale (GVar_R_SceneDuDvScale.value.f)		/* R_SceneDuDvScale */
+#define g_SceneDuDvForced (GVar_R_SceneDuDvForced.value.i)		/* R_SceneDuDvForced */
+#define g_SceneDuDvCheckPixels (GVar_R_SceneDuDvCheckPixels.value.i)	/* R_SceneDuDvCheckPixels */
+#define g_SceneBloomRTarget (GVar_R_SceneBloomRTarget.value.i)		/* R_SceneBloomRTarget */
+#define g_SceneBloomBlurPasses (GVar_R_SceneBloomBlurPasses.value.i)	/* R_SceneBloomBlurPasses */
+#define g_SceneBloomBlurOffset (GVar_R_SceneBloomBlurOffset.value.f)	/* R_SceneBloomBlurOffset, texels */
+#define g_SceneBloomBlurSize (GVar_R_SceneBloomBlurSize.value.f)	/* R_SceneBloomBlurSize, of the scene size */
+#define g_SceneMotionBlurRTarget (GVar_R_SceneMotionBlurRTarget.value.i)	/* R_SceneMotionBlurRTarget */
+#define g_SceneMotionBlurOffset (GVar_R_SceneMotionBlurOffset.value.f)	/* R_SceneMotionBlurOffset, texels */
+#define g_SceneMotionBlurSize (GVar_R_SceneMotionBlurSize.value.f)	/* R_SceneMotionBlurSize, of the scene size */
+#define g_SceneRadialBlurRTarget (GVar_R_SceneRadialBlurRTarget.value.i)	/* R_SceneRadialBlurRTarget */
+#define g_SceneRadialBlurValue (GVar_R_SceneRadialBlurValue.value.f)	/* R_SceneRadialBlurValue */
+#define g_SceneRadialBlurOffset (GVar_R_SceneRadialBlurOffset.value.f)	/* R_SceneRadialBlurOffset */
+#define g_SceneBlurRTarget (GVar_R_SceneBlurRTarget.value.i)		/* R_SceneBlurRTarget */
+#define g_SceneBlurValue (GVar_R_SceneBlurValue.value.f)		/* R_SceneBlurValue */
+#define g_SceneBlurOffset (GVar_R_SceneBlurOffset.value.f)		/* R_SceneBlurOffset, texels */
+#define g_CreditsRTarget (GVar_R_CreditsRTarget.value.i)		/* R_CreditsRTarget */
+#define g_CreditsSizeY (GVar_R_CreditsSizeY.value.i)		/* R_CreditsSizeY, pow2 */
+static cGVar GVar_R_SceneRadialBlurValue;
+static cGVar GVar_R_SceneRadialBlurRTarget;
+static cGVar GVar_R_SceneRadialBlurOffset;
+static cGVar GVar_R_SceneRTargetSwap;
+static cGVar GVar_R_SceneRTarget;
+static cGVar GVar_R_SceneMotionBlurSize;
+static cGVar GVar_R_SceneMotionBlurRTarget;
+static cGVar GVar_R_SceneMotionBlurOffset;
+static cGVar GVar_R_SceneForceLinPow2;
+static cGVar GVar_R_SceneForceLinNonPow2;
+static cGVar GVar_R_SceneDuDvScale;
+static cGVar GVar_R_SceneDuDvForced;
+static cGVar GVar_R_SceneDuDvFilter;
+static cGVar GVar_R_SceneDuDvCheckPixels;
+static cGVar GVar_R_SceneCheckPixels;
+static cGVar GVar_R_SceneBlurValue;
+static cGVar GVar_R_SceneBlurRTarget;
+static cGVar GVar_R_SceneBlurOffset;
+static cGVar GVar_R_SceneBloomRTarget;
+static cGVar GVar_R_SceneBloomBlurSize;
+static cGVar GVar_R_SceneBloomBlurPasses;
+static cGVar GVar_R_SceneBloomBlurOffset;
+static cGVar GVar_R_NewsPanelWire;
+static cGVar GVar_R_NewsPanelSize;
+static cGVar GVar_R_NewsPanelRTarget;
+static cGVar GVar_R_CreditsSizeY;
+static cGVar GVar_R_CreditsRTarget;
+
 /* IDirect3DDevice8, IDirect3DTexture8 and IDirect3DSurface8 methods not in d3d8.h */
 typedef struct RTLockedRect {
 	int Pitch;
@@ -126,9 +181,9 @@ static void RT_QuadTexels(RTVert *v, float su, float sv) {
 	}
 }
 
-float g_SceneW;
-float g_SceneH;
-byte g_RTLinNonPow2;
+static float g_SceneW;
+static float g_SceneH;
+static byte g_RTLinNonPow2;
 
 /* the viewport as a quad from 0, 0 with the texture coordinates 0..1 moved by du, dv (the texel centers), in
  * texels of the scene size with g_RTLinNonPow2 */
@@ -247,8 +302,9 @@ static void RT_Stages4(uint32_t filter, byte setTex, void *tex) {
 	}
 }
 
-void *g_RTBackBuffer;
-void *g_RTZBuffer;
+/* the back buffer and depth buffer of the device while a target is on (referenced) */
+static void *g_RTBackBuffer;
+static void *g_RTZBuffer;
 
 /* the back buffer and the depth buffer of the device kept in g_RTBackBuffer, g_RTZBuffer */
 static void RT_GetBackBuffer(void) {
@@ -265,8 +321,9 @@ static void RT_RestoreBackBuffer(void) {
 	RT_Release(&g_RTZBuffer);
 }
 
-uint32_t g_RTSavedViewport[6];
-uint32_t g_RTSavedViewportFull[6];
+/* the viewports (6 words) of before a NewsPanel or Credits target: the current one and the whole one */
+static uint32_t g_RTSavedViewport[6];
+static uint32_t g_RTSavedViewportFull[6];
 uint32_t g_ViewportFull[6];
 
 /* the viewports kept, the one of the target (surface 0 of tex, z) as both */
@@ -329,112 +386,117 @@ static CMaterial *RT_MakeMat(const CMaterial *cur, const char *name, const char 
 #define RT_BLACK "bmp/rgb_black.tga"
 #define RT_ATTRIB (MAT_SHADER | MAT_LOADTEX)
 
-CMaterial *g_CreditsMatBlur;
+static CMaterial *g_CreditsMatBlur;
 
-void RenderTarget_MakeCreditsMatBlur(void) {
+/* the materials of the effects, each made once (CHECK that it is not made) */
+static void RenderTarget_MakeCreditsMatBlur(void) {
 	g_CreditsMatBlur = RT_MakeMat(g_CreditsMatBlur, "Material_CreditsTargetBlur (+shader:MotionBlurAdd)", RT_WHITE,
 		RT_ATTRIB, 0, 2, 1, 0, 0);
 }
 
-CMaterial *g_CreditsMat;
+static CMaterial *g_CreditsMat;
 
-void RenderTarget_MakeCreditsMat(void) {
+static void RenderTarget_MakeCreditsMat(void) {
 	g_CreditsMat = RT_MakeMat(g_CreditsMat, "Material_CreditsTarget", RT_WHITE, MAT_LOADTEX, 1, 5, 2, 0, 0);
 }
 
-CMaterial *g_BloomMatBlur;
+static CMaterial *g_BloomMatBlur;
 
-void RenderTarget_MakeBloomMatBlur(void) {
+static void RenderTarget_MakeBloomMatBlur(void) {
 	g_BloomMatBlur = RT_MakeMat(g_BloomMatBlur, "Material_BloomBlur (+shader:BloomBlur)", RT_WHITE, RT_ATTRIB, 0, 2, 1,
 		0, 0);
 }
 
-CMaterial *g_BloomMatFilter;
+static CMaterial *g_BloomMatFilter;
 
-void RenderTarget_MakeBloomMatFilter(void) {
+static void RenderTarget_MakeBloomMatFilter(void) {
 	g_BloomMatFilter = RT_MakeMat(g_BloomMatFilter, "Material_BloomFilter (+shader:BloomFilter)", RT_WHITE, RT_ATTRIB,
 		0, 2, 1, 0, 0);
 }
 
-CMaterial *g_BloomMatShow;
+static CMaterial *g_BloomMatShow;
 
-void RenderTarget_MakeBloomMatShow(void) {
+static void RenderTarget_MakeBloomMatShow(void) {
 	g_BloomMatShow = RT_MakeMat(g_BloomMatShow, "Material_BloomShow", RT_BLACK, MAT_LOADTEX, 0, 2, 1, 0, 0);
 }
 
-CMaterial *g_BloomMatTarget;
+static CMaterial *g_BloomMatTarget;
 
-void RenderTarget_MakeBloomMatTarget(void) {
+static void RenderTarget_MakeBloomMatTarget(void) {
 	g_BloomMatTarget = RT_MakeMat(g_BloomMatTarget, "Material_BloomTarget (+shader:BloomTarget)", RT_BLACK, RT_ATTRIB,
 		0, 2, 1, 0, 0);
 }
 
-CMaterial *g_BlurMatCopy;
+static CMaterial *g_BlurMatCopy;
 
-void RenderTarget_MakeBlurMatCopy(void) {
+static void RenderTarget_MakeBlurMatCopy(void) {
 	g_BlurMatCopy = RT_MakeMat(g_BlurMatCopy, "Material_BlurCopy", RT_WHITE, MAT_LOADTEX, 0, 2, 1, 0, 0);
 }
 
-CMaterial *g_BlurMatTarget;
+/* Blur and radial blur: the materials */
+static CMaterial *g_BlurMatTarget;
 
-void RenderTarget_MakeBlurMatTarget(void) {
+static void RenderTarget_MakeBlurMatTarget(void) {
 	g_BlurMatTarget = RT_MakeMat(g_BlurMatTarget, "Material_BlurTarget (+shader:BlurTarget)", RT_WHITE, RT_ATTRIB, 0,
 		2, 1, 0, 0);
 }
 
-CMaterial *g_SceneDuDvMatCopy;
+static CMaterial *g_SceneDuDvMatCopy;
 
-void RenderTarget_MakeDuDvMatCopy(void) {
+static void RenderTarget_MakeDuDvMatCopy(void) {
 	g_SceneDuDvMatCopy = RT_MakeMat(g_SceneDuDvMatCopy, "Material_DuDvCopy", RT_WHITE, MAT_LOADTEX, 0, 2, 1, 0, 0);
 }
 
-CMaterial *g_SceneDuDvMatDebug;
+static CMaterial *g_SceneDuDvMatDebug;
 
-void RenderTarget_MakeDuDvMatDebug(void) {
+static void RenderTarget_MakeDuDvMatDebug(void) {
 	g_SceneDuDvMatDebug = RT_MakeMat(g_SceneDuDvMatDebug, "Material_DuDvDebug", RT_WHITE, MAT_LOADTEX, 0, 2, 1, 0, 0);
 }
 
-CMaterial *g_SceneDuDvMatFilter;
+static CMaterial *g_SceneDuDvMatFilter;
 
-void RenderTarget_MakeDuDvMatFilter(void) {
+static void RenderTarget_MakeDuDvMatFilter(void) {
 	g_SceneDuDvMatFilter = RT_MakeMat(g_SceneDuDvMatFilter, "Material_DuDvFilter (+shader:DUDVFilter)", RT_WHITE,
 		RT_ATTRIB, 0, 2, 1, 0, 0);
 }
 
-CMaterial *g_SceneDuDvMatRTarget;
+static CMaterial *g_SceneDuDvMatRTarget;
 
-void RenderTarget_MakeDuDvMatRTarget(void) {
+static void RenderTarget_MakeDuDvMatRTarget(void) {
 	g_SceneDuDvMatRTarget = RT_MakeMat(g_SceneDuDvMatRTarget, "Material_DuDvTarget (+shader:DUDVTarget)", RT_WHITE,
 		RT_ATTRIB, 0, 2, 1, 1, 0);
 }
 
-CMaterial *g_MotionBlurMatAdd;
+static CMaterial *g_MotionBlurMatAdd;
 
-void RenderTarget_MakeMotionBlurMatAdd(void) {
+static void RenderTarget_MakeMotionBlurMatAdd(void) {
 	g_MotionBlurMatAdd = RT_MakeMat(g_MotionBlurMatAdd, "Material_BlurAdd (+shader:MotionBlurAdd)", RT_WHITE,
 		RT_ATTRIB, 1, 5, 6, 0, 0);
 }
 
-CMaterial *g_MotionBlurMatTarget;
+static CMaterial *g_MotionBlurMatTarget;
 
-void RenderTarget_MakeMotionBlurMatTarget(void) {
+static void RenderTarget_MakeMotionBlurMatTarget(void) {
 	g_MotionBlurMatTarget = RT_MakeMat(g_MotionBlurMatTarget, "Material_BlurTarget (+shader:MotionBlurTarget)",
 		RT_WHITE, RT_ATTRIB, 0, 2, 1, 0, 0);
 }
 
-CMaterial *g_SceneMatCopy;
+static CMaterial *g_SceneMatCopy;
 
-void RenderTarget_MakeSceneMatCopy(void) {
+static void RenderTarget_MakeSceneMatCopy(void) {
 	g_SceneMatCopy = RT_MakeMat(g_SceneMatCopy, "Material_SceneCopy", RT_WHITE, MAT_LOADTEX, 0, 2, 1, 0, 1);
 }
 
-void *g_CreditsTarget;
-int g_CreditsSavedW;
-int g_CreditsSavedH;
+/* Credits: the texture, its materials, the 2D screen size of before Begin, the last blur time */
+static void *g_CreditsTarget;
+static int g_CreditsSavedW;
+static int g_CreditsSavedH;
 
 /* ---- Credits ---- */
 
-byte Credits_Begin(void) {
+/* Credits: the target on (the 2D screen of its size), off with the text drawn to the screen */
+static void Credits_Init(void);
+static byte Credits_Begin(void) {
 	CHECK(!g_RTBackBuffer && !g_RTZBuffer);
 	if (g_CreditsRTarget && g_PSOn && !g_CreditsTarget) {
 		Credits_Init();
@@ -451,7 +513,9 @@ byte Credits_Begin(void) {
 	return 1;
 }
 
-void Credits_End(void) {
+static void Credits_Blur(void);
+static void Credits_Draw(void);
+static void Credits_End(void) {
 	if (!g_CreditsTarget || !g_CreditsRTarget || !g_PSOn || g_CreditsAlpha <= 0) {
 		return;
 	}
@@ -463,13 +527,13 @@ void Credits_End(void) {
 	Credits_Draw();
 }
 
-void Credits_Release(void) {
+static void Credits_Release(void) {
 	g_CreditsMat = NULL;
 	g_CreditsMatBlur = NULL;
 	RT_Release(&g_CreditsTarget);
 }
 
-void Credits_Init(void) {
+static void Credits_Init(void) {
 	CHECK(!g_CreditsTarget);
 	if (g_CreditsRTarget && g_PSOn && !g_CreditsTarget && !g_CreditsMat && !g_CreditsMatBlur) {
 		RT_CreateTarget((uint32_t)g_CreditsSizeX, (uint32_t)g_CreditsSizeY, &g_CreditsTarget);
@@ -486,10 +550,13 @@ static void Credits_Taps(float *taps, float d, float b, float o, float o2) {
 	taps[3] = d + (o2 + b);
 }
 
-byte g_RTLinPow2;
-uint32_t g_CreditsBlurTime;
+/* the pixel texture coordinates: the device needs them on pow2 textures (the Credits, NewsPanel and bloom sizes)
+ * and on the other ones (the scene size) */
+static byte g_RTLinPow2;
+static uint32_t g_CreditsBlurTime;
 
-void Credits_Blur(void) {
+/* the trail: the target drawn over itself shifted (about every 1/20 s of game time) */
+static void Credits_Blur(void) {
 	uint32_t vp[6];
 	float u[2][4], t[2][4];
 	float c[4];
@@ -562,7 +629,8 @@ void Credits_Blur(void) {
 	}
 }
 
-void Credits_Draw(void) {
+/* the target drawn to the screen at R_CreditsX, R_CreditsY with R_CreditsAlpha */
+static void Credits_Draw(void) {
 	uint32_t vp[6];
 	RTVert v[4];
 
@@ -593,31 +661,13 @@ void Credits_Draw(void) {
 	RT_DrawQuad(v);
 }
 
-int RenderTarget_VideoMemory(void) {
-	void *tex[0x400];
-	int n;
-
-	for (n = 0; n < 0x400; n++) {
-		void *dev = RT_Dev();
-		if (Rd_DevCreateTexture(dev, 0x200, 0x200, 1, D3DUSAGE_RENDERTARGET,
-			D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &tex[n]) < 0) {
-			break;
-		}
-	}
-	for (int i = n - 1; i >= 0; i--) {
-		if ((int)Rd_Release(tex[i]) < 0) {
-			break;
-		}
-	}
-	return n << 20;
-}
-
-void *g_NewsPanelTarget;
-void *g_NewsPanelZ;
+/* NewsPanel: the texture and its depth buffer */
+static void *g_NewsPanelTarget;
+static void *g_NewsPanelZ;
 
 /* ---- NewsPanel ---- */
 
-byte NewsPanel_Begin(void) {
+static byte NewsPanel_Begin(void) {
 	CHECK(!g_RTBackBuffer && !g_RTZBuffer);
 	if (!g_NewsPanelTarget || !g_NewsPanelZ || !g_NewsPanelRTarget) {
 		return 0;
@@ -629,7 +679,7 @@ byte NewsPanel_Begin(void) {
 	return 1;
 }
 
-void NewsPanel_End(void) {
+static void NewsPanel_End(void) {
 	if (!g_NewsPanelTarget || !g_NewsPanelZ || !g_NewsPanelRTarget) {
 		return;
 	}
@@ -641,7 +691,7 @@ void NewsPanel_End(void) {
 	}
 }
 
-void NewsPanel_Release(void) {
+static void NewsPanel_Release(void) {
 	RT_Release(&g_NewsPanelTarget);
 	RT_Release(&g_NewsPanelZ);
 }
@@ -650,7 +700,7 @@ void *NewsPanel_GetTarget(void) {
 	return g_NewsPanelTarget;
 }
 
-void NewsPanel_Init(void) {
+static void NewsPanel_Init(void) {
 	CHECK(!g_NewsPanelTarget);
 	if (!g_NewsPanelRTarget) {
 		return;
@@ -668,16 +718,11 @@ void NewsPanel_Init(void) {
 
 /* ---- the targets by name ---- */
 
-int RenderTarget_Pow2Size(int n) {
-	if (n > 0x200) {
-		return 0x400;
-	}
-	return n > 0x100 ? 0x200 : 0x100;
-}
+/* the target of RenderTarget_Begin, RTARGET_NONE between Begin and End */
+static int g_RTMode;
 
-int g_RTMode;
-
-int RenderTarget_Mode(const char *name) {
+/* RTARGET_* of a name, the target begun for NULL; a fatal error for an unknown name */
+static int RenderTarget_Mode(const char *name) {
 	if (!name) {
 		return g_RTMode;
 	}
@@ -694,6 +739,7 @@ int RenderTarget_Mode(const char *name) {
 	return RTARGET_NONE;
 }
 
+static byte Scene_Begin(void);
 byte RenderTarget_Begin(const char *name) {
 	int mode = RenderTarget_Mode(name);
 	CHECK(!g_RTMode);
@@ -710,6 +756,7 @@ byte RenderTarget_Begin(const char *name) {
 	return 0;
 }
 
+static void Scene_End(void);
 byte RenderTarget_End(const char *name) {
 	int mode = RenderTarget_Mode(name);
 	CHECK(g_RTMode == mode);
@@ -729,6 +776,12 @@ byte RenderTarget_End(const char *name) {
 	return 1;
 }
 
+static void Bloom_Release(void);
+static void Blur_Release(void);
+static void DuDv_Release(void);
+static void MotionBlur_Release(void);
+static void RadialBlur_Release(void);
+static void Scene_Release(void);
 void RenderTarget_ReleaseD3D(void) {
 	NewsPanel_Release();
 	Credits_Release();
@@ -740,6 +793,11 @@ void RenderTarget_ReleaseD3D(void) {
 	Blur_Release();
 }
 
+static void Bloom_Init(void);
+static void Blur_Init(void);
+static void DuDv_Init(void);
+static void MotionBlur_Init(void);
+static void Scene_Init(void);
 void RenderTarget_InitD3D(void) {
 	if (g_RenderOff) {
 		return;
@@ -758,7 +816,11 @@ void RenderTarget_InitD3D(void) {
 
 /* ---- Bloom ---- */
 
-void Bloom_Render(void) {
+/* the effects: the frame of the effect (render), whether it is on in this frame, its targets made and released */
+static void Bloom_Blur(void);
+static void Bloom_Filter(void);
+static void Bloom_Show(void);
+static void Bloom_Render(void) {
 	Render_ClearForced();
 	Bloom_Filter();
 	Bloom_Blur();
@@ -766,11 +828,11 @@ void Bloom_Render(void) {
 	Render_ClearForced();
 }
 
-void *g_SceneSourceTexture;
-void *g_BloomTarget1;
+static void *g_SceneSourceTexture;
+static void *g_BloomTarget1;
 
 /* the source into the first bloom target through four taps, two horizontal and two vertical */
-void Bloom_Filter(void) {
+static void Bloom_Filter(void) {
 	uint32_t vp[6];
 	float u[2][4], t[2][4];
 
@@ -800,13 +862,14 @@ void Bloom_Filter(void) {
 	RT_Quad4(w, h, u, t, g_SceneW, g_SceneH);
 }
 
-float g_BloomW;
-float g_BloomH;
-void *g_BloomTarget2;
+/* Bloom: the size of its targets, the two targets, the materials */
+static float g_BloomW;
+static float g_BloomH;
+static void *g_BloomTarget2;
 
 /* the passes of the blur between the two bloom targets: four taps horizontal into the second, four vertical back
  * into the first */
-void Bloom_Blur(void) {
+static void Bloom_Blur(void) {
 	uint32_t vp[6];
 	float u[2][4], t[2][4];
 	void *surf;
@@ -871,10 +934,10 @@ void Bloom_Blur(void) {
 	}
 }
 
-void *g_SceneTargetSurface;
+static void *g_SceneTargetSurface;
 
 /* the source with the first bloom target added into the target (R_SceneBloomRTarget 2: the bloom alone, dark) */
-void Bloom_Show(void) {
+static void Bloom_Show(void) {
 	uint32_t vp[6];
 	RTVert2 v[4];
 
@@ -904,7 +967,7 @@ void Bloom_Show(void) {
 		g_SceneH, g_BloomW, g_BloomH);
 }
 
-void Bloom_Release(void) {
+static void Bloom_Release(void) {
 	g_BloomMatShow = NULL;
 	g_BloomMatFilter = NULL;
 	g_BloomMatBlur = NULL;
@@ -913,7 +976,7 @@ void Bloom_Release(void) {
 	RT_Release(&g_BloomTarget2);
 }
 
-void Bloom_Init(void) {
+static void Bloom_Init(void) {
 	if (!g_SceneBloomRTarget) {
 		return;
 	}
@@ -927,20 +990,21 @@ void Bloom_Init(void) {
 	RenderTarget_MakeBloomMatTarget();
 }
 
-byte Bloom_IsOn(void) {
+static byte Bloom_IsOn(void) {
 	return g_SceneBloomRTarget && g_BloomTarget1;
 }
 
 /* ---- Blur ---- */
 
-void Blur_Render(void) {
+static void Blur_Draw(void);
+static void Blur_Render(void) {
 	Render_ClearForced();
 	Blur_Draw();
 	Render_ClearForced();
 }
 
 /* the source blurred through four taps into the first bloom target, then copied to the target */
-void Blur_Draw(void) {
+static void Blur_Draw(void) {
 	uint32_t vp[6];
 	float u[2][4], t[2][4];
 	RTVert v[4];
@@ -986,32 +1050,42 @@ void Blur_Draw(void) {
 	RT_DrawQuad(v);
 }
 
-void Blur_Release(void) {
+static void Blur_Release(void) {
 	g_BlurMatTarget = NULL;
 	g_BlurMatCopy = NULL;
 }
 
-void Blur_Init(void) {
+static void Blur_Init(void) {
 	if (g_SceneBlurRTarget) {
 		RenderTarget_MakeBlurMatTarget();
 		RenderTarget_MakeBlurMatCopy();
 	}
 }
 
-byte Blur_IsOn(void) {
+static byte Blur_IsOn(void) {
 	return g_SceneBlurRTarget && g_BlurMatTarget && g_BlurMatCopy && g_BloomTarget1 && g_SceneBlurValue > 0.0f;
 }
 
-void *g_SceneDuDvSavedTexture;
-void *g_SceneDuDvSavedSurface;
-byte g_SceneNoSwap;
-void *g_SceneSourceSurface;
-void *g_SceneDuDvTarget;
-int g_SceneDuDvFrame;
+/* the target of before the DuDv target became the source (texture, surface) */
+static void *g_SceneDuDvSavedTexture;
+static void *g_SceneDuDvSavedSurface;
+/* the next swap is skipped (the DuDv effect kept its target) */
+static byte g_SceneNoSwap;
+/* the source the next effect reads (the scene is drawn into it) and the target it draws into (textures and their
+ * surface 0, referenced); they swap after each effect */
+static void *g_SceneSourceSurface;
+/* DuDv: the deformation target, the frame it was drawn in, the bump target, the materials */
+static void *g_SceneDuDvTarget;
+static int g_SceneDuDvFrame;
 
 /* ---- DuDv ---- */
 
-void DuDv_Render(void) {
+static void DuDv_Copy(void);
+static void DuDv_Debug(void);
+static void DuDv_Draw(byte check);
+static void DuDv_Filter(void);
+static void DuDv_RenderBump(void);
+static void DuDv_Render(void) {
 	Render_ClearForced();
 	DuDv_RenderBump();
 	if (!g_SceneDuDvForced && (g_SceneDuDvFrame != g_FrameCount || (g_SceneSourceTexture != g_SceneDuDvTarget &&
@@ -1035,9 +1109,9 @@ void DuDv_Render(void) {
 	Render_ClearForced();
 }
 
-void *g_SceneDuDvBumpTarget;
+static void *g_SceneDuDvBumpTarget;
 
-void DuDv_Release(void) {
+static void DuDv_Release(void) {
 	g_SceneDuDvMatRTarget = NULL;
 	g_SceneDuDvMatFilter = NULL;
 	g_SceneDuDvMatCopy = NULL;
@@ -1058,9 +1132,10 @@ static byte RT_SameDriver(void) {
 	return !strcmp(Render_GetDriver(), last);
 }
 
-int g_SceneDuDvCheckedMode = -1;
+static int g_SceneDuDvCheckedMode = -1;
 
-void DuDv_Init(void) {
+static byte DuDv_CheckCaps(void);
+static void DuDv_Init(void) {
 	g_SceneDuDvFrame = 0;
 	if (!g_SceneDuDvRTarget) {
 		g_SceneDuDvCheckedMode = 0;
@@ -1089,11 +1164,12 @@ void DuDv_Init(void) {
 	g_SceneDuDvCheckedMode = g_SceneDuDvRTarget;
 }
 
-byte DuDv_IsOn(void) {
+static byte DuDv_IsOn(void) {
 	return g_SceneDuDvRTarget >= 1 && g_SceneDuDvBumpTarget;
 }
 
-void DuDv_RenderBump(void) {
+/* the models and trails of the deformation pass drawn into the bump target */
+static void DuDv_RenderBump(void) {
 	void *surf;
 
 	CHECK(g_SceneDuDvRTarget);
@@ -1145,14 +1221,14 @@ static void DuDv_CopySource(void) {
 	RT_TSS(0, D3DTSS_COLOROP, op2);
 }
 
-void DuDv_CopyToTarget(void) {
+static void DuDv_CopyToTarget(void) {
 	CHECK(g_SceneDuDvRTarget);
 	CHECK(g_SceneSourceTexture && g_SceneDuDvTarget);
 	RT_SetTargetTexture(g_SceneDuDvTarget);
 	DuDv_CopySource();
 }
 
-void DuDv_Debug(void) {
+static void DuDv_Debug(void) {
 	uint32_t vp[6];
 	RTVert v[4];
 
@@ -1168,7 +1244,7 @@ void DuDv_Debug(void) {
 	RT_DrawQuad(v);
 }
 
-void DuDv_Filter(void) {
+static void DuDv_Filter(void) {
 	uint32_t vp[6];
 	RTVert v[4];
 
@@ -1198,7 +1274,7 @@ byte g_TexRepeat;
 byte g_TexNoPow2;
 
 /* the source deformed by the bump target into the target; with check the scale of a 640 x 480 test */
-void DuDv_Draw(byte check) {
+static void DuDv_Draw(byte check) {
 	uint32_t vp[6];
 	DuDvVert v[4];
 
@@ -1288,7 +1364,7 @@ void DuDv_Draw(byte check) {
 	Rd_DevDrawPrimitiveUP(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(DuDvVert));
 }
 
-void DuDv_Copy(void) {
+static void DuDv_Copy(void) {
 	CHECK(g_SceneDuDvRTarget);
 	CHECK(g_SceneTargetSurface && g_SceneSourceTexture);
 	RT_SetRenderTarget(g_SceneTargetSurface, NULL);
@@ -1297,21 +1373,22 @@ void DuDv_Copy(void) {
 
 /* ---- Motion blur ---- */
 
-void MotionBlur_Render(void) {
+static void MotionBlur_Add(void);
+static void MotionBlur_Draw(void);
+static void MotionBlur_Render(void) {
 	Render_ClearForced();
 	MotionBlur_Add();
 	MotionBlur_Draw();
 	Render_ClearForced();
 }
 
-
-byte g_MotionBlurFilled;
-void *g_MotionBlurTarget;
-uint32_t g_MotionBlurLast;
+static byte g_MotionBlurFilled;
+static void *g_MotionBlurTarget;
+static uint32_t g_MotionBlurLast;
 
 /* the source added to the motion blur target through four taps, about every 1/25 s of game time; the shader
  * constants: the fade of the time passed since then, a quarter for each tap */
-void MotionBlur_Add(void) {
+static void MotionBlur_Add(void) {
 	uint32_t vp[6];
 	float u[2][4], t[2][4];
 	float c0[4], c1[4];
@@ -1369,11 +1446,12 @@ void MotionBlur_Add(void) {
 	RT_Quad4(w, h, u, t, g_SceneW, g_SceneH);
 }
 
-float g_MotionBlurW;
-float g_MotionBlurH;
+/* Motion blur: the size, the target, the materials, the first frame (the target is not filled yet) */
+static float g_MotionBlurW;
+static float g_MotionBlurH;
 
 /* the source and the motion blur target mixed into the target by R_SceneMotionBlurValue (0..1) */
-void MotionBlur_Draw(void) {
+static void MotionBlur_Draw(void) {
 	uint32_t vp[6];
 	RTVert2 v[4];
 	float c0[4], c1[4];
@@ -1408,13 +1486,13 @@ void MotionBlur_Draw(void) {
 	RT_Quad2(v, RT_UToF(vp[2]), RT_UToF(vp[3]), 0xffffffff, g_SceneW, g_SceneH, g_MotionBlurW, g_MotionBlurH);
 }
 
-void MotionBlur_Release(void) {
+static void MotionBlur_Release(void) {
 	g_MotionBlurMatTarget = NULL;
 	g_MotionBlurMatAdd = NULL;
 	RT_Release(&g_MotionBlurTarget);
 }
 
-void MotionBlur_Init(void) {
+static void MotionBlur_Init(void) {
 	uint32_t vp[6];
 
 	if (!g_SceneMotionBlurRTarget || g_SplitScreen) {
@@ -1431,23 +1509,24 @@ void MotionBlur_Init(void) {
 	RenderTarget_MakeMotionBlurMatAdd();
 }
 
-byte MotionBlur_IsOn(void) {
+static byte MotionBlur_IsOn(void) {
 	return g_SceneMotionBlurRTarget && g_MotionBlurTarget && g_SceneMotionBlurValue > 0.0f;
 }
 
 /* ---- Radial blur ---- */
 
-void RadialBlur_Render(void) {
+static void RadialBlur_Draw(void);
+static void RadialBlur_Render(void) {
 	Render_ClearForced();
 	RadialBlur_Draw();
 	Render_ClearForced();
 }
 
-CMaterial *g_RadialBlurMat;
+static CMaterial *g_RadialBlurMat;
 
 /* the source three times, the copies moved by R_SceneRadialBlurValue * R_SceneRadialBlurOffset to the middle, through
  * the radial mask into the target */
-void RadialBlur_Draw(void) {
+static void RadialBlur_Draw(void) {
 	uint32_t vp[6];
 	RTVert4 v[4];
 
@@ -1505,30 +1584,33 @@ void RadialBlur_Draw(void) {
 	Rd_DevDrawPrimitiveUP(dev, D3DPT_TRIANGLESTRIP, 2, v, sizeof(RTVert4));
 }
 
-void RadialBlur_Release(void) {
+static void RadialBlur_Release(void) {
 	g_RadialBlurMat = NULL;
 }
 
-byte RadialBlur_IsOn(void) {
+static byte RadialBlur_IsOn(void) {
 	return g_SceneRadialBlurRTarget && g_SceneMotionBlurRTarget && g_RadialBlurMat && g_SceneRadialBlurValue > 0.0f;
 }
 
-byte g_SceneOn;
-void *g_SceneTargetTexture;
-void *g_SceneRT1;
-void *g_SceneRT2;
-void *g_SceneRT3;
-byte g_SceneFxOn[5];
-int g_SceneFxLast;
+/* Scene: on, the size of the textures, the textures (the third one in split screen), the copy material */
+static byte g_SceneOn;
+static void *g_SceneTargetTexture;
+static void *g_SceneRT1;
+static void *g_SceneRT2;
+static void *g_SceneRT3;
+/* the effects on in this frame and the last one of them, -1 none */
+static byte g_SceneFxOn[5];
+static int g_SceneFxLast;
 
-rtFxOn_t g_RTFxOn[5] = {
+static rtFxOn_t g_RTFxOn[5] = {
 	(void *)DuDv_IsOn, (void *)Bloom_IsOn, (void *)MotionBlur_IsOn, (void *)RadialBlur_IsOn,
 	(void *)Blur_IsOn,
 };
 
 /* ---- Scene ---- */
 
-byte Scene_Begin(void) {
+/* Scene: on with the target of the effects, off with the effects drawn */
+static byte Scene_Begin(void) {
 	CHECK(!g_RTBackBuffer && !g_RTZBuffer);
 	if (!g_SceneOn || !g_SceneRTarget || !g_PSOn) {
 		return 0;
@@ -1579,14 +1661,18 @@ byte Scene_Begin(void) {
 	return 1;
 }
 
-uint32_t g_SceneViewport[6];
+/* the full viewport of before the split screen halved it */
+static uint32_t g_SceneViewport[6];
 
-rtFxRender_t g_RTFxRender[5] = {
+static rtFxRender_t g_RTFxRender[5] = {
 	(void *)DuDv_Render, (void *)Bloom_Render, (void *)MotionBlur_Render, (void *)RadialBlur_Render,
 	(void *)Blur_Render,
 };
 
-void Scene_End(void) {
+static void Scene_DrawSplit(void);
+static void Scene_Swap(void);
+static void Scene_TargetBackBuffer(void);
+static void Scene_End(void) {
 	uint32_t fill;
 
 	if (g_SceneOn && g_SceneRTarget && g_PSOn) {
@@ -1634,16 +1720,18 @@ void Scene_End(void) {
 	}
 }
 
-void Scene_Release(void) {
+static void Scene_Release(void) {
 	g_SceneMatCopy = NULL;
 	RT_Release(&g_SceneRT1);
 	RT_Release(&g_SceneRT2);
 	RT_Release(&g_SceneRT3);
 }
 
-int g_SceneCheckedMode = -1;
+/* the R_SceneRTarget and R_SceneDuDvRTarget the caps were checked for, -1 never */
+static int g_SceneCheckedMode = -1;
 
-void Scene_Init(void) {
+static byte Scene_CheckCaps(void);
+static void Scene_Init(void) {
 	uint32_t vp[6];
 	byte ok;
 
@@ -1715,7 +1803,8 @@ void Scene_Init(void) {
 	g_SceneCheckedMode = g_SceneRTarget;
 }
 
-void Scene_TargetBackBuffer(void) {
+/* the target is the back buffer (for the last effect) */
+static void Scene_TargetBackBuffer(void) {
 	if (g_SceneTargetSurface != g_RTBackBuffer && g_SceneTargetSurface) {
 		Rd_Release(g_SceneTargetSurface);
 	}
@@ -1723,7 +1812,8 @@ void Scene_TargetBackBuffer(void) {
 	g_SceneTargetTexture = NULL;
 }
 
-void Scene_DrawSplit(void) {
+/* the two halves of the split screen drawn to the back buffer */
+static void Scene_DrawSplit(void) {
 	uint32_t vp[6];
 	RTVert v[4];
 
@@ -1758,7 +1848,8 @@ void Scene_DrawSplit(void) {
 	}
 }
 
-void Scene_Swap(void) {
+/* target and source swapped (with R_SceneRTargetSwap, unless g_SceneNoSwap) */
+static void Scene_Swap(void) {
 	if (g_SceneRTargetSwap) {
 		byte skip = g_SceneNoSwap;
 		g_SceneNoSwap = 0;
@@ -1775,7 +1866,8 @@ void Scene_Swap(void) {
 	g_SceneNoSwap = 0;
 }
 
-void RenderTarget_DrawTexQuad(const box_t *quad, uint32_t color, void *tex) {
+/* the texture tex as the rectangle quad (0..1 of the whole viewport) in color */
+static void RenderTarget_DrawTexQuad(const box_t *quad, uint32_t color, void *tex) {
 	int r[4];
 	RTVert v[4];
 
@@ -1885,6 +1977,7 @@ static void RT_CapsRelease(void) {
 }
 
 /* surface 0 of want against the copy img (saved as a screenshot with shot); ok when it was made and both match */
+static byte RenderTarget_PixelEqual(int pitchA, const byte *bitsA, int pitchB, const byte *bitsB, int x, int bpp, int y, int tol);
 static byte RT_CapsCompare(void *want, void *img, byte ok, byte shot, byte dudv, int maxPixels) {
 	static const byte points[8][2] = { { 0, 0 }, { 255, 0 }, { 0, 255 }, { 255, 255 },
 		{ 4, 4 }, { 251, 4 }, { 4, 251 }, { 251, 251 } };
@@ -1966,7 +2059,8 @@ static void RT_CapsEnd(CMaterial *mat) {
 	Render_ClearForced();
 }
 
-byte DuDv_CheckCaps(void) {
+/* the deformation through the device on test textures, compared with the expected result */
+static byte DuDv_CheckCaps(void) {
 	void *test = NULL, *bump = NULL, *result = NULL, *img = NULL;
 	void *surf;
 	byte ok;
@@ -2018,7 +2112,8 @@ byte DuDv_CheckCaps(void) {
 	return ok;
 }
 
-byte Scene_CheckCaps(void) {
+/* the scene target drawn into and read back on a test scene, compared with the back buffer */
+static byte Scene_CheckCaps(void) {
 	void *test = NULL, *img = NULL;
 	uint32_t vp[6];
 	RTVert v[4];
@@ -2066,7 +2161,9 @@ byte Scene_CheckCaps(void) {
 	return ok;
 }
 
-byte RenderTarget_PixelEqual(int pitchA, const byte *bitsA, int pitchB, const byte *bitsB, int x, int bpp, int y,
+/* the pixel (x, y) of two locked surfaces (pitch, bits; bpp bytes a pixel) has the same r, g and b, each within
+ * tol when tol > 0 */
+static byte RenderTarget_PixelEqual(int pitchA, const byte *bitsA, int pitchB, const byte *bitsB, int x, int bpp, int y,
 	int tol) {
 	const byte *a = bitsA + pitchA * y + x * bpp;
 	const byte *b = bitsB + pitchB * y + x * bpp;
@@ -2083,39 +2180,40 @@ byte RenderTarget_PixelEqual(int pitchA, const byte *bitsA, int pitchB, const by
 	return 1;
 }
 
-cGVar GVar_R_SceneBloomRTarget;
-cGVar GVar_R_SceneBloomBlurSize;
+static cGVar GVar_R_SceneBloomRTarget;
+static cGVar GVar_R_SceneBloomBlurSize;
 cGVar GVar_R_SplitScreenCamera;
 cGVar GVar_R_CreditsPhase;
-cGVar GVar_R_SceneDuDvScale;
-cGVar GVar_R_SceneForceLinPow2;
-cGVar GVar_R_SceneBlurRTarget;
-cGVar GVar_R_SceneRTarget;
+static cGVar GVar_R_SceneDuDvScale;
+static cGVar GVar_R_SceneForceLinPow2;
+static cGVar GVar_R_SceneBlurRTarget;
+static cGVar GVar_R_SceneRTarget;
 cGVar GVar_R_SceneDuDvRTarget;
-cGVar GVar_R_SceneForceLinNonPow2;
-cGVar GVar_R_SceneRadialBlurOffset;
-cGVar GVar_R_SceneBloomBlurPasses;
-cGVar GVar_R_SceneBlurOffset;
-cGVar GVar_R_SceneRadialBlurRTarget;
+static cGVar GVar_R_SceneForceLinNonPow2;
+static cGVar GVar_R_SceneRadialBlurOffset;
+static cGVar GVar_R_SceneBloomBlurPasses;
+static cGVar GVar_R_SceneBlurOffset;
+static cGVar GVar_R_SceneRadialBlurRTarget;
 cGVar GVar_R_CreditsSizeX;
-cGVar GVar_R_NewsPanelRTarget;
-cGVar GVar_R_SceneDuDvCheckPixels;
+/* the engine variables (Gvar values) */
+static cGVar GVar_R_NewsPanelRTarget;
+static cGVar GVar_R_SceneDuDvCheckPixels;
 cGVar GVar_R_SceneMotionBlurValue;
-cGVar GVar_R_SceneCheckPixels;
+static cGVar GVar_R_SceneCheckPixels;
 cGVar GVar_R_SplitScreen;
-cGVar GVar_R_SceneBloomBlurOffset;
-cGVar GVar_R_NewsPanelWire;
-cGVar GVar_R_SceneMotionBlurRTarget;
-cGVar GVar_R_SceneBlurValue;
-cGVar GVar_R_SceneRadialBlurValue;
-cGVar GVar_R_SceneDuDvFilter;
-cGVar GVar_R_SceneMotionBlurSize;
-cGVar GVar_R_SceneMotionBlurOffset;
-cGVar GVar_R_NewsPanelSize;
-cGVar GVar_R_SceneRTargetSwap;
-cGVar GVar_R_CreditsRTarget;
-cGVar GVar_R_CreditsSizeY;
-cGVar GVar_R_SceneDuDvForced;
+static cGVar GVar_R_SceneBloomBlurOffset;
+static cGVar GVar_R_NewsPanelWire;
+static cGVar GVar_R_SceneMotionBlurRTarget;
+static cGVar GVar_R_SceneBlurValue;
+static cGVar GVar_R_SceneRadialBlurValue;
+static cGVar GVar_R_SceneDuDvFilter;
+static cGVar GVar_R_SceneMotionBlurSize;
+static cGVar GVar_R_SceneMotionBlurOffset;
+static cGVar GVar_R_NewsPanelSize;
+static cGVar GVar_R_SceneRTargetSwap;
+static cGVar GVar_R_CreditsRTarget;
+static cGVar GVar_R_CreditsSizeY;
+static cGVar GVar_R_SceneDuDvForced;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_R_NewsPanelRTarget, &GVar_R_NewsPanelRTarget, "R_NewsPanelRTarget", 0, "Init NewsPanel render target (0/1)", 1)

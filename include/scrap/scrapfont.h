@@ -34,7 +34,6 @@ typedef struct CFont {
 
 /* the fonts by name (Font_Get) */
 extern CFont *g_FontTerminal8;
-extern CFont *g_FontTerminal8Fixed;
 extern CFont *g_FontBigNumbers;
 extern CFont *g_FontScrapBig;
 extern CFont *g_FontScrapMedium;
@@ -44,24 +43,13 @@ extern CFont *g_FontHoratioSmall;
 /* CFont_Load(name, unused, NULL): only a NULL name works */
 CFont *CFont_ctor(CFont *self, const char *name, void *unused);
 void CFont_dtor(CFont *self);
-void CFont_ResetX(CFont *self);
 /* the font name of ini (none for NULL) */
 void CFont_Load(CFont *self, const char *name, void *unused, CIniFile *ini);
 /* the CFont3 of the texture name of the height size (generating mode) made and deleted again; self not used */
 byte CFont_Build(CFont *self, const char *name, int size);
-/* the size and the aligned position of a printf text (CFont3_Measure) */
-void CFont_MeasureV(CFont *self, float *pos, float *dim, float x, float y, byte flags, const char *fmt,
-	va_list ap);
 void Font_TextSize(CFont *font, float *pos, float *dim, float x, float y, const char *fmt, ...);
 void Font_TextSizeAlign(CFont *font, float *pos, float *dim, float x, float y, byte flags, const char *fmt, ...);
-/* txt at the cursor, the cursor after it */
-void CFont_Print(CFont *self, const char *txt);
-void CFont_PrintXY(CFont *self, float x, float y, const char *txt);
-void CFont_Printf(CFont *font, const char *fmt, ...);
-void CFont_PrintfVA(CFont *self, const char *fmt, va_list ap);
 void CFont_PrintfXY(CFont *font, float x, float y, const char *fmt, ...);
-/* flags CFONT_*, the cursor at the end after */
-void CFont_PrintfV(CFont *self, float x, float y, uint32_t flags, const char *fmt, va_list ap);
 void CFont_PrintfFlags(CFont *font, float x, float y, uint32_t flags, const char *fmt, ...);
 void CFont_PrintfAlign(CFont *font, float x, float y, uint32_t align, const char *fmt, ...);
 void CFont_PrintfAlignColor(CFont *font, float x, float y, uint32_t align, uint32_t color, const char *fmt, ...);

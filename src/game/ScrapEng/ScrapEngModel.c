@@ -18,6 +18,18 @@
 #include "scrap/misc.h"
 #include "scrap/staticinit.h"
 
+#define g_GetModelVertex (GVar_R_GetModelVertex.value.i)		/* R_GetModelVertex, else the model position */
+#define g_ForcePreRenderTransform (GVar_R_ForcePreRenderTransform.value.i)	/* R_ForcePreRenderTransform */
+#define g_CoefMLODShips (GVar_R_CoefMLODShips.value.f)
+#define g_CoefMLODPilots (GVar_R_CoefMLODPilots.value.f)
+#define g_CoefMLODEngines (GVar_R_CoefMLODEngines.value.f)
+#define g_CoefMLODTraffic (GVar_R_CoefMLODTraffic.value.f)
+#define g_CoefMLODCharacters (GVar_R_CoefMLODCharacters.value.f)
+#define g_CoefMLODOutElement (GVar_R_CoefMLODOutElement.value.f)
+#define g_CoefMLODMenuElement (GVar_R_CoefMLODMenuElement.value.f)
+static cGVar GVar_R_GetModelVertex;
+static cGVar GVar_R_ForcePreRenderTransform;
+
 #define GM_CHECK(self) \
 	do { \
 		if (!(self)->Model) { \
@@ -41,11 +53,7 @@ void CCollideMesh_dtor(CCollideMesh *self) {
 	}
 }
 
-void CAnimMat_SetFrame(CAnimMat *self, int frame) {
-	self->frame = frame;
-	self->framef = (float)frame;
-}
-
+static void CGameModel_Load(CGameModel *self, const char *name, const char *name2, const vec3_t *scale);
 CGameModel *CGameModel_ctor(CGameModel *self, const char *name) {
 	static const vec3_t one = { 1.0f, 1.0f, 1.0f };
 	self->Model = NULL;
@@ -70,13 +78,13 @@ void CGameModel_LoadScaled(CGameModel *self, const char *name, const vec3_t *sca
 	CGameModel_Load(self, name, NULL, scale);
 }
 
-cGVar GVar_R_CoefMLODTraffic;
-cGVar GVar_R_CoefMLODEngines;
-cGVar GVar_R_CoefMLODOutElement;
-cGVar GVar_R_CoefMLODMenuElement;
-cGVar GVar_R_CoefMLODCharacters;
-cGVar GVar_R_CoefMLODPilots;
-cGVar GVar_R_CoefMLODShips;
+static cGVar GVar_R_CoefMLODTraffic;
+static cGVar GVar_R_CoefMLODEngines;
+static cGVar GVar_R_CoefMLODOutElement;
+static cGVar GVar_R_CoefMLODMenuElement;
+static cGVar GVar_R_CoefMLODCharacters;
+static cGVar GVar_R_CoefMLODPilots;
+static cGVar GVar_R_CoefMLODShips;
 
 /* the LOD distance of the model times the coefficient of its LOD group */
 static void CGameModel_LodGroup(CGameModel *self, CIniFile *ini) {
@@ -105,7 +113,8 @@ static void CGameModel_LodGroup(CGameModel *self, CIniFile *ini) {
 	E3D_LogBlue((&g_FileLog), "LOD group not found: %s [Model: %s]", group, self->Model->name);
 }
 
-void CGameModel_Load(CGameModel *self, const char *name, const char *name2, const vec3_t *scale) {
+/* the model of name (the .sm3 if the name is .m3d and the other way with the app flag 4) at the scale */
+static void CGameModel_Load(CGameModel *self, const char *name, const char *name2, const vec3_t *scale) {
 	char alt[262], fmt[260], path[260];
 	CModel *lods[10];
 
@@ -170,6 +179,7 @@ void CGameModel_Load(CGameModel *self, const char *name, const char *name2, cons
 	}
 }
 
+static void CGameModel_FreeCollision(CGameModel *self);
 void CGameModel_Release(CGameModel *self, byte free) {
 	CGameModel_FreeCollision(self);
 	if (free) {
@@ -200,11 +210,6 @@ byte CGameModel_IsLoaded(const CGameModel *self) {
 const char *CGameModel_Name(const CGameModel *self) {
 	GM_CHECK(self);
 	return self->Model->name;
-}
-
-const char *CGameModel_SceneName(const CGameModel *self) {
-	GM_CHECK(self);
-	return self->Model->scene->name;
 }
 
 void CGameModel_Enable(CGameModel *self) {
@@ -269,19 +274,6 @@ void CGameModel_SetRot(CGameModel *self, const vec3_t *v) {
 void CGameModel_SetRot2(CGameModel *self, const vec3_t *v) {
 	GM_CHECK(self);
 	self->Model->rot2 = *v;
-}
-
-void CGameModel_MoveForward(CGameModel *self, float d) {
-	vec3_t a, b;
-
-	GM_CHECK(self);
-	b = (vec3_t){ 0.0f, 0.0f, d };
-	Vec3_Rotate(&a, &b, &self->Model->rot2);
-	const vec3_t *r = Vec3_Rotate(&b, &a, &self->Model->rot);
-	CModel *m = self->Model;
-	m->pos.x = m->pos.x + r->x;
-	m->pos.y = r->y + m->pos.y;
-	m->pos.z = r->z + m->pos.z;
 }
 
 void CGameModel_SetPivot(CGameModel *self, const vec3_t *v, byte rel, byte recalcBB) {
@@ -433,12 +425,6 @@ byte CGameModel_AnimInfo(CGameModel *self, int i, float *dur, float *fps) {
 	return 1;
 }
 
-byte CGameModel_SetAnimVel(CGameModel *self, int i, float vel) {
-	GM_CHECK(self);
-	CGameModel_Link(self, i)->ctrl.vel = vel;
-	return 1;
-}
-
 byte CGameModel_SetAnimFactor(CGameModel *self, int i, float factor) {
 	GM_CHECK(self);
 	CGameModel_Link(self, i)->ctrl.factor = factor;
@@ -512,19 +498,12 @@ void CGameModel_SetAnim(CGameModel *self, int i, uint32_t chan, int unused) {
 	self->Model->animate = 0;
 }
 
-void CGameModel_StopAnims(CGameModel *self) {
-	GM_CHECK(self);
-	for (uint32_t i = 0; i < 4; i++) {
-		CModel_SetAnim(self->Model, 0, i);
-	}
-}
-
 void CGameModel_StopAnim(CGameModel *self, uint32_t chan) {
 	GM_CHECK(self);
 	CModel_SetAnim(self->Model, -1, chan);
 }
 
-CAnimGroup *CGameModel_ChanAnim(CGameModel *self, uint32_t chan) {
+static CAnimGroup *CGameModel_ChanAnim(CGameModel *self, uint32_t chan) {
 	GM_CHECK(self);
 	TABLE_CHECK(self->Model->slots.p, chan, self->Model->slots.n);
 	return ((CAnimSlot *)self->Model->slots.p)[chan].anim;
@@ -761,21 +740,6 @@ static CMeshD3D *Node_MeshD3D(CNode3D *n) {
 	return (CMeshD3D *)o;
 }
 
-byte CGameModel_SetTexFrame(CGameModel *self, const char *name, int frame) {
-	for (CNode3D *n = self->Model->scene->Node3D; n; n = n->next) {
-		if (CNode3D_Class(n) != CLASS_OBJ3D_MESHD3D) {
-			continue;
-		}
-		CMeshD3D *m = Node_MeshD3D(n);
-		CMap *map = m->mat->map[0];
-		if (map && !crt_stricmp(m->mat->Name, name)) {
-			CAnimMat_SetFrame(map->AnimMat, frame);
-			return 1;
-		}
-	}
-	return 0;
-}
-
 /* the render node transforms of this frame (or always with R_ForcePreRenderTransform) */
 static void CGameModel_UpdateTransforms(CGameModel *self) {
 	static const vec3_t one = { 1.0f, 1.0f, 1.0f };
@@ -810,27 +774,6 @@ static CMeshD3D *RenderNode_Mesh(CRenderNode *r, byte hidden) {
 /* the world matrix of a mesh of render node r: the skinned one with a skin */
 static const matrix_t *RenderNode_MatrixMesh(const CRenderNode *r, const CMeshD3D *m) {
 	return m->pSkin ? &r->mObj : &r->m;
-}
-
-int CGameModel_VertexCounts(CGameModel *self, int *out, int max) {
-	int n = self->Model->renderNodes->n;
-	if (!out) {
-		return n;
-	}
-	for (int i = 0; i < n; i++, out++) {
-		CRenderNode *r = CGameModel_RenderNode(self, (uint32_t)i);
-		if (i >= max) {
-			CheckFailed("n < MaxNodes", __FILE__, __TIMESTAMP__, __LINE__);
-		}
-		*out = 0;
-		CNode3D *nd = r->node;
-		if (!(nd->flags & NODE_HIDE) && CNode3D_Class(nd) == CLASS_OBJ3D_MESHD3D) {
-			for (CMeshD3D *m = Node_MeshD3D(nd); m; m = m->next) {
-				*out += (int)m->vert.nVert;
-			}
-		}
-	}
-	return n;
 }
 
 static void Pos_Repeat(vec3_t *pos, int count, const vec3_t *p, int *index) {
@@ -1083,7 +1026,8 @@ void CGameModel_ClosestVertex(CGameModel *self, float x, float y, float z, vec3_
 	}
 }
 
-void CGameModel_FreeCollision(CGameModel *self) {
+/* the collision mesh */
+static void CGameModel_FreeCollision(CGameModel *self) {
 	if (self->CollideMesh) {
 		GM_CHECK(self);
 		E3D_LogWhite((&g_FileLog), "~CollisionMesh: %s (ID: %d)", self->Model->name, self->CollisionMeshID);
@@ -1099,6 +1043,7 @@ void CGameModel_FreeCollision(CGameModel *self) {
 	self->collide = 0;
 }
 
+static byte CGameModel_CreateCollision(CGameModel *self, byte all);
 void CGameModel_EnableCollision(CGameModel *self, byte on, byte create) {
 	if (self->CollisionMeshID == -1) {
 		return;
@@ -1122,7 +1067,7 @@ void CGameModel_EnableCollision(CGameModel *self, byte on, byte create) {
 	}
 }
 
-byte CGameModel_CreateCollision(CGameModel *self, byte all) {
+static byte CGameModel_CreateCollision(CGameModel *self, byte all) {
 	matrix_t mw;
 	byte ok;
 
@@ -1210,8 +1155,9 @@ void CRotation_SetEuler(CRotation *self, const vec3_t *ang) {
 	self->flags &= ~ROT_ZERO;
 }
 
-cGVar GVar_R_ForcePreRenderTransform;
-cGVar GVar_R_GetModelVertex;
+static cGVar GVar_R_ForcePreRenderTransform;
+/* the engine variables (Gvars) */
+static cGVar GVar_R_GetModelVertex;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_R_CoefMLODShips, &GVar_R_CoefMLODShips, "R_CoefMLODShips", 0, "Ships LOD coef.", 8000.0f)

@@ -18,13 +18,26 @@
 #include "scrap/withlifeentity.h"
 #include "scrap/staticinit.h"
 
+#define CMESSENGERLOCALLOGIC_VFTABLE (&cMessengerLocalLogic_vftable.base)
+#define g_MessengerDropPrice (GVar_MessengerDropPrice.value.i)
+#define g_MessengerDropPriceDef (GVar_MessengerDropPrice.def.i)
+#define g_MessengerDropCallback (((cPy_Function *)&GVar_MessengerDropCallback.func))
+#define g_MessengerDataPackMissionArrow (GVar_MessengerDataPackMissionArrow.value.i)
+#define g_MessengerDataPackMissionArrowDef (GVar_MessengerDataPackMissionArrow.def.i)
+#define g_MessengerGotoSpeed (GVar_MessengerGotoSpeed.value.f)
+static const cGenCharLocalLogicVtbl cMessengerLocalLogic_vftable;
+static cGVar GVar_MessengerGotoSpeed;
+static cGVar GVar_MessengerDropPrice;
+static cGVarFunction GVar_MessengerDropCallback;
+static cGVar GVar_MessengerDataPackMissionArrow;
+
 /* defined further down or in another file without a header */
 void *GenCharGroup_MakeLogic(cEntity *e);
 
-cGVar GVar_MessengerPrepareDistance;
+static cGVar GVar_MessengerPrepareDistance;
 
 #define g_MessengerPrepareDistance (GVar_MessengerPrepareDistance.value.f)	/* MessengerPrepareDistance */
-cGVar GVar_MessengerObjectiveDistance;
+static cGVar GVar_MessengerObjectiveDistance;
 
 #define g_MessengerObjectiveDistance (GVar_MessengerObjectiveDistance.value.f)	/* MessengerObjetiveDistance */
 #define MSG_THINK_STEP 0.13f				/* rva 0x3b60e0, the interval of the think */
@@ -39,7 +52,8 @@ void cMessengers_dtor(void *self) {
 	(void)self;
 }
 
-cEntity *cMessengers_FindDesk(cMessengers *self) {
+/* a random desk of the type of the tube state; count grows to the desks seen */
+static cEntity *cMessengers_FindDesk(cMessengers *self) {
 	const char *type = g_MessengerTubeState ? "BureaucracyDesktopFunctionary" : "DoorDataTMaker";
 	float count = (float)self->count;
 	int k = (int)(float)(Weap_Rand01() * (double)count + 0.0);
@@ -74,7 +88,7 @@ static int Msg_IsMessenger(cEntity *e) {
 /* messenger m with the pack at the desk: near it the drop starts (DropDataInit, then the DropData loop); at the node
  * DC_DataPack of the desk the pack goes onto it (the price and the stat for the player, the callback, the desk
  * closes). 1 while the drop goes on, 0 out of range (the drop is ended) */
-byte Messenger_Deliver(cEntity *m, cEntity *desk, cEntity *pack) {
+static byte Messenger_Deliver(cEntity *m, cEntity *desk, cEntity *pack) {
 	vec3_t tmp;
 	matrix_t mat;
 
@@ -142,6 +156,7 @@ byte Messenger_Deliver(cEntity *m, cEntity *desk, cEntity *pack) {
 /* every 0.13 s: the pack on a desk (the door of the desk closes, after 5 s the pack goes back out, the tube state
  * changes), carried by the player (the messengers follow, the mission arrow on the desk) or by a messenger (to a
  * desk of the tube state), or free (the messengers go for it) */
+static void cMessengers_SetStateAll(cMessengers *self, int state, cEntity *e);
 void cMessengers_Think(void *obj) {
 	cMessengers *self = obj;
 	vec3_t old, p;
@@ -297,7 +312,8 @@ void cMessengers_Init(void *obj) {
 	self->target = NULL;
 }
 
-void cMessengers_SetStateAll(cMessengers *self, int state, cEntity *e) {
+/* the state of every messenger but e (and not on the radar), -1: back to its default state */
+static void cMessengers_SetStateAll(cMessengers *self, int state, cEntity *e) {
 	for (Nto1Node *n = Logic_ListFirst(self->list); n; n = Logic_ListNext(n)) {
 		cEntity *m = n->data;
 		cBaseLocalLogic *l = (cBaseLocalLogic *)Logic_GetLocalLogic(m);
@@ -322,7 +338,7 @@ cMessengerLocalLogic *cMessengerLocalLogic_ctor(cMessengerLocalLogic *self, cEnt
 	return self;
 }
 
-cLocalLogic *cMessengerLocalLogic_Delete(cLocalLogic *base, byte flags) {
+static cLocalLogic *cMessengerLocalLogic_Delete(cLocalLogic *base, byte flags) {
 	cMessengerLocalLogic *self = (cMessengerLocalLogic *)base;
 	MSG_VT(self) = CMESSENGERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
@@ -333,14 +349,14 @@ cLocalLogic *cMessengerLocalLogic_Delete(cLocalLogic *base, byte flags) {
 }
 
 /* vf28 and vf27: the same walk in alert and relaxed */
-void cMessengerLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
+static void cMessengerLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
 	cMessengerLocalLogic *self = (cMessengerLocalLogic *)base;
 	(void)self;
 	ai->vftable->SetState(&ai->base.base, 1, 1.0, 0);
 }
 
 /* vf17: team 3, 0 while it attacks a player */
-void cMessengerLocalLogic_Update(cLocalLogic *elem, float dt) {
+static void cMessengerLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cMessengerLocalLogic *self = (cMessengerLocalLogic *)elem;
 	cGenCharLocalLogic_Update(&self->base.logic, dt);
 	WLife(self->base.parent)->arrow.tgType = 3;
@@ -354,7 +370,7 @@ void cMessengerLocalLogic_Update(cLocalLogic *elem, float dt) {
 
 /* vf34: to the node DC_DataPack of e when it has one (MessengerGotoSpeed, 0.25 in the easy single game), else the
  * walk of the GenChars */
-void cMessengerLocalLogic_GoTo(cLocalLogic *elem, cAIChar *ai, cEntity *e) {
+static void cMessengerLocalLogic_GoTo(cLocalLogic *elem, cAIChar *ai, cEntity *e) {
 	cMessengerLocalLogic *self = (cMessengerLocalLogic *)elem;
 	vec3_t t1, t2, d, dir;
 	matrix_t m;
@@ -390,7 +406,7 @@ void cMessengerLocalLogic_GoTo(cLocalLogic *elem, cAIChar *ai, cEntity *e) {
 }
 
 /* the vtable of cMessengerLocalLogic */
-const cGenCharLocalLogicVtbl cMessengerLocalLogic_vftable = {
+static const cGenCharLocalLogicVtbl cMessengerLocalLogic_vftable = {
 	.base.base.Delete = cMessengerLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.Vf02 = cLocalLogic_Vf02True,
@@ -429,10 +445,10 @@ const cGenCharLocalLogicVtbl cMessengerLocalLogic_vftable = {
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };
 
-cGVar GVar_MessengerDropPrice;
-cGVarFunction GVar_MessengerDropCallback;
-cGVar GVar_MessengerDataPackMissionArrow;
-cGVar GVar_MessengerGotoSpeed;
+static cGVar GVar_MessengerDropPrice;
+static cGVarFunction GVar_MessengerDropCallback;
+static cGVar GVar_MessengerDataPackMissionArrow;
+static cGVar GVar_MessengerGotoSpeed;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_MessengerDataPackMissionArrow, &GVar_MessengerDataPackMissionArrow, "MessengerDataPackMissionArrow", 0, "Type of indication of the 'Game of the messengers' mission.", 2)

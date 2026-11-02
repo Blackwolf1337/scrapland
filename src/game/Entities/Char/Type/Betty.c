@@ -11,6 +11,29 @@
 #include "scrap/vehicleattack.h"
 #include "scrap/staticinit.h"
 
+#define g_BettyHitTimeFader (GVar_BettyHitTimeFader.value.f)
+#define g_FXBettyAttackFile (GVar_FXBettyAttackFile.value.s)
+#define g_BettyHSpeed (GVar_BettyHSpeed.value.f)
+#define g_BettyHitPosY (GVar_BettyHitPosY.value.f)
+#define g_BettyHitRadius (GVar_BettyHitRadius.value.f)
+#define g_BettyVSpeed (GVar_BettyVSpeed.value.f)
+#define g_FXBettyKillFile (GVar_FXBettyKillFile.value.s)
+#define g_BettyHitTopLimit (GVar_BettyHitTopLimit.value.f)
+#define g_BettyHitPosX (GVar_BettyHitPosX.value.f)
+#define g_BettyHitTimeSpeed (GVar_BettyHitTimeSpeed.value.f)
+#define g_BettyHitPosZ (GVar_BettyHitPosZ.value.f)
+static cGVar GVar_FXBettyKillFile;
+static cGVar GVar_FXBettyAttackFile;
+static cGVar GVar_BettyVSpeed;
+static cGVar GVar_BettyHitTopLimit;
+static cGVar GVar_BettyHitTimeSpeed;
+static cGVar GVar_BettyHitTimeFader;
+static cGVar GVar_BettyHitRadius;
+static cGVar GVar_BettyHitPosZ;
+static cGVar GVar_BettyHitPosY;
+static cGVar GVar_BettyHitPosX;
+static cGVar GVar_BettyHSpeed;
+
 static inline cFollowCamEntity *Betty_Cam(cEntity *v) {
 	return (cFollowCamEntity *)WChar(v)->wl.obj.cam;
 }
@@ -30,7 +53,7 @@ static void Betty_HitPos(cEntity *v, vec3_t *out) {
 }
 
 /* params: Betty. With 0.9 of energy or more: the shot action, the energy all used, the turn of the camera */
-void ChType_BettyActionPress(cAbstractFile *params) {
+static void ChType_BettyActionPress(cAbstractFile *params) {
 	char name[0x80];
 	vec3_t tmp, ang;
 
@@ -59,10 +82,10 @@ void ChType_BettyActionPress(cAbstractFile *params) {
 	}
 }
 
-cEntity *g_BettyEnt;
+static cEntity *g_BettyEnt;
 
 /* params: Betty, "turn,pitch" (degrees), a float: the slow motion and the camera of the aim */
-void ChType_BettyCameraSet(cAbstractFile *params) {
+static void ChType_BettyCameraSet(cAbstractFile *params) {
 	char name[0x80], arg[0x80];
 	vec3_t ang;
 	float unused;
@@ -90,7 +113,8 @@ void ChType_BettyCameraSet(cAbstractFile *params) {
 	WChar_Vtbl(g_BettyEnt)->SetViewAng(g_BettyEnt, &ang);
 }
 
-void ChType_DirAngles(const vec3_t *dir, vec3_t *out) {
+/* out the angles that turn the z axis into dir (cdecl, rva 0xc3780) */
+static void ChType_DirAngles(const vec3_t *dir, vec3_t *out) {
 	vec3_t tmp;
 
 	*out = *Vec3_GetRotAng(&tmp, dir);
@@ -98,7 +122,7 @@ void ChType_DirAngles(const vec3_t *dir, vec3_t *out) {
 
 /* the sphere test of the shot: params a character in the sphere, killed when it is not too far above or below
  * Betty, with the kill effect turned towards it from the point of the shot */
-void ChType_BettyKill(cAbstractFile *params) {
+static void ChType_BettyKill(cAbstractFile *params) {
 	char name[0x80];
 	vec3_t t1, t2, t3, hp, dir, ang;
 
@@ -146,7 +170,7 @@ void ChType_BettyKill(cAbstractFile *params) {
 }
 
 /* params: Betty, the turn of the camera (degrees), a float: she stops and looks ahead again */
-void ChType_BettyEndEvent(cAbstractFile *params) {
+static void ChType_BettyEndEvent(cAbstractFile *params) {
 	char name[0x80], arg[0x80];
 	vec3_t v;
 	float unused;
@@ -171,7 +195,7 @@ void ChType_BettyEndEvent(cAbstractFile *params) {
 }
 
 /* params: Betty, the charge (0 to 16), a float: the shot, its sphere smaller for a stronger charge */
-void ChType_BettyHitEvent(cAbstractFile *params) {
+static void ChType_BettyHitEvent(cAbstractFile *params) {
 	char name[0x80], arg[0x80];
 	vec3_t hp, tmp;
 
@@ -194,7 +218,7 @@ void ChType_BettyHitEvent(cAbstractFile *params) {
 }
 
 /* params: Betty, an event, a float: the world speed back */
-void ChType_BettyRestoreTime(cAbstractFile *params) {
+static void ChType_BettyRestoreTime(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -207,7 +231,7 @@ void ChType_BettyRestoreTime(cAbstractFile *params) {
 }
 
 /* params: Betty, an event, a float: the shot effect, a shake of the camera and the white fade of the player */
-void ChType_FXBettyAttack(cAbstractFile *params) {
+static void ChType_FXBettyAttack(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 	vec3_t hp;
 
@@ -233,23 +257,23 @@ void ChType_FXBettyAttack(cAbstractFile *params) {
 	}
 }
 
-cGVar GVar_BettyHitTimeFader;
-cGVar GVar_FXBettyAttackFile;
-cGVar GVar_BettyHSpeed;
-cGVar GVar_BettyHitPosY;
-cGVar GVar_BettyHitRadius;
-cGVar GVar_BettyVSpeed;
-cGVar GVar_FXBettyKillFile;
-cGVar GVar_BettyHitTopLimit;
-cGVar GVar_BettyHitPosX;
-cGVar GVar_BettyHitTimeSpeed;
-cGVar GVar_BettyHitPosZ;
-cPy_NativeFunc NativeFunc_BettyActionPress;
-cPy_NativeFunc NativeFunc_BettyHitEvent;
-cPy_NativeFunc NativeFunc_BettyRestoreTime;
-cPy_NativeFunc NativeFunc_BettyEndEvent;
-cPy_NativeFunc NativeFunc_BettyCameraSet;
-cPy_NativeFunc NativeFunc_FXBettyAttack;
+static cGVar GVar_BettyHitTimeFader;
+static cGVar GVar_FXBettyAttackFile;
+static cGVar GVar_BettyHSpeed;
+static cGVar GVar_BettyHitPosY;
+static cGVar GVar_BettyHitRadius;
+static cGVar GVar_BettyVSpeed;
+static cGVar GVar_FXBettyKillFile;
+static cGVar GVar_BettyHitTopLimit;
+static cGVar GVar_BettyHitPosX;
+static cGVar GVar_BettyHitTimeSpeed;
+static cGVar GVar_BettyHitPosZ;
+static cPy_NativeFunc NativeFunc_BettyActionPress;
+static cPy_NativeFunc NativeFunc_BettyHitEvent;
+static cPy_NativeFunc NativeFunc_BettyRestoreTime;
+static cPy_NativeFunc NativeFunc_BettyEndEvent;
+static cPy_NativeFunc NativeFunc_BettyCameraSet;
+static cPy_NativeFunc NativeFunc_FXBettyAttack;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_BettyHitTimeSpeed, &GVar_BettyHitTimeSpeed, "BettyHitTimeSpeed", 0, "Betty Effect Time", 0.35f)

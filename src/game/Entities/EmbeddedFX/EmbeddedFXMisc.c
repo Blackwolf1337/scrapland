@@ -16,6 +16,39 @@
 #include "scrap/withlifeentity.h"
 #include "scrap/staticinit.h"
 
+#define VT_EFX_DATAPACK (&cEmbeddedFXDataPack_vftable)
+#define VT_EFX_DATACUBE (&cEmbeddedFXDataCube_vftable)
+#define VT_EFX_CAPSULE (&cEmbeddedFXCapsule_vftable)
+#define VT_EFX_MATRIX (&cEmbeddedFXMatrix_vftable)
+#define VT_EFX_AMPLIFIER (&cEmbeddedFXAmplifier_vftable)
+#define VT_EFX_MEETINGPOINT (&cEmbeddedFXMeetingPoint_vftable)
+#define VT_EFX_EXTRALIFE (&cEmbeddedFXExtraLife_vftable)
+#define VT_EFX_BATTERY (&cEmbeddedFXBattery_vftable)
+#define VT_EFX_TREASURE (&cEmbeddedFXTreasure_vftable)
+#define VT_EFX_FLAG (&cEmbeddedFXFlag_vftable)
+#define VT_EFX_DTRITUSDESKTOP (&cEmbeddedFXDTritusDesktop_vftable)
+#define VT_EFX_BIKE (&cEmbeddedFXBike_vftable)
+#define VT_EFX_BOSSSHIELD (&cEmbeddedFXBossShield_vftable)
+#define VT_EFX_CONVERSOR (&cEmbeddedFXConversor_vftable)
+#define VT_EFX_COIN (&cEmbeddedFXCoin_vftable)
+#define VT_EFX_ITEM (&cEmbeddedFXItem_vftable)
+static const cEmbeddedFXVtbl cEmbeddedFXTreasure_vftable;
+static const cEmbeddedFXVtbl cEmbeddedFXMeetingPoint_vftable;
+static const cEmbeddedFXVtbl cEmbeddedFXMatrix_vftable;
+static const cEmbeddedFXVtbl cEmbeddedFXItem_vftable;
+static const cEmbeddedFXVtbl cEmbeddedFXFlag_vftable;
+static const cEmbeddedFXVtbl cEmbeddedFXExtraLife_vftable;
+static const cEmbeddedFXVtbl cEmbeddedFXDataPack_vftable;
+static const cEmbeddedFXVtbl cEmbeddedFXDataCube_vftable;
+static const cEmbeddedFXVtbl cEmbeddedFXDTritusDesktop_vftable;
+static const cEmbeddedFXVtbl cEmbeddedFXConversor_vftable;
+static const cEmbeddedFXVtbl cEmbeddedFXCoin_vftable;
+static const cEmbeddedFXVtbl cEmbeddedFXCapsule_vftable;
+static const cEmbeddedFXVtbl cEmbeddedFXBossShield_vftable;
+static const cEmbeddedFXVtbl cEmbeddedFXBike_vftable;
+static const cEmbeddedFXVtbl cEmbeddedFXBattery_vftable;
+static const cEmbeddedFXVtbl cEmbeddedFXAmplifier_vftable;
+
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMEPARTICLES_DTOR 0x21d1c0
 #define CGAMETRAIL_CTOR 0x21ddb0
@@ -57,7 +90,7 @@ static inline cEmbeddedFX *EFXM_Delete(cEmbeddedFX *self, byte flags, uint32_t s
 
 /* ---- constructors ---- */
 
-cEmbeddedFXAmplifier *cEmbeddedFXAmplifier_ctor(cEmbeddedFXAmplifier *self) {
+static cEmbeddedFXAmplifier *cEmbeddedFXAmplifier_ctor(cEmbeddedFXAmplifier *self) {
 	EFX_SetVtbl(self, VT_EFX_AMPLIFIER);
 	CGameParticles_ctor(&self->flares);
 	CGameTrail_ctor(&self->trail);
@@ -66,7 +99,7 @@ cEmbeddedFXAmplifier *cEmbeddedFXAmplifier_ctor(cEmbeddedFXAmplifier *self) {
 	return self;
 }
 
-cEmbeddedFXBattery *cEmbeddedFXBattery_ctor(cEmbeddedFXBattery *self) {
+static cEmbeddedFXBattery *cEmbeddedFXBattery_ctor(cEmbeddedFXBattery *self) {
 	EFX_SetVtbl(self, VT_EFX_BATTERY);
 	CGameParticles_ctor(&self->glow);
 	EFXM_TrailsCtor(self->trails, FXBATTERY_TRAILS);
@@ -74,7 +107,7 @@ cEmbeddedFXBattery *cEmbeddedFXBattery_ctor(cEmbeddedFXBattery *self) {
 	return self;
 }
 
-cEmbeddedFXBossShield *cEmbeddedFXBossShield_ctor(cEmbeddedFXBossShield *self) {
+static cEmbeddedFXBossShield *cEmbeddedFXBossShield_ctor(cEmbeddedFXBossShield *self) {
 	EFX_SetVtbl(self, VT_EFX_BOSSSHIELD);
 	CGameParticles_ctor(&self->particles);
 	EFXM_TrailsCtor(self->trails, FXBOSSSHIELD_TRAILS);
@@ -82,7 +115,7 @@ cEmbeddedFXBossShield *cEmbeddedFXBossShield_ctor(cEmbeddedFXBossShield *self) {
 	return self;
 }
 
-cEmbeddedFXCapsule *cEmbeddedFXCapsule_ctor(cEmbeddedFXCapsule *self) {
+static cEmbeddedFXCapsule *cEmbeddedFXCapsule_ctor(cEmbeddedFXCapsule *self) {
 	EFX_SetVtbl(self, VT_EFX_CAPSULE);
 	EFXM_ParticlesCtor(self->motors, FXCAPSULE_MOTORS);
 	self->base.ent = NULL;
@@ -97,15 +130,15 @@ static void *EFXM_Ctor10(void *self, const cEmbeddedFXVtbl *vt) {
 	return self;
 }
 
-cEmbeddedFXCoin *cEmbeddedFXCoin_ctor(cEmbeddedFXCoin *self) {
+static cEmbeddedFXCoin *cEmbeddedFXCoin_ctor(cEmbeddedFXCoin *self) {
 	return EFXM_Ctor10(self, VT_EFX_COIN);
 }
 
-cEmbeddedFXConversor *cEmbeddedFXConversor_ctor(cEmbeddedFXConversor *self) {
+static cEmbeddedFXConversor *cEmbeddedFXConversor_ctor(cEmbeddedFXConversor *self) {
 	return EFXM_Ctor10(self, VT_EFX_CONVERSOR);
 }
 
-cEmbeddedFXDTritusDesktop *cEmbeddedFXDTritusDesktop_ctor(cEmbeddedFXDTritusDesktop *self) {
+static cEmbeddedFXDTritusDesktop *cEmbeddedFXDTritusDesktop_ctor(cEmbeddedFXDTritusDesktop *self) {
 	EFX_SetVtbl(self, VT_EFX_DTRITUSDESKTOP);
 	CGameParticles_ctor(&self->glow);
 	CGameTrail_ctor(&self->trail);
@@ -115,7 +148,7 @@ cEmbeddedFXDTritusDesktop *cEmbeddedFXDTritusDesktop_ctor(cEmbeddedFXDTritusDesk
 	return self;
 }
 
-cEmbeddedFXDataCube *cEmbeddedFXDataCube_ctor(cEmbeddedFXDataCube *self) {
+static cEmbeddedFXDataCube *cEmbeddedFXDataCube_ctor(cEmbeddedFXDataCube *self) {
 	EFX_SetVtbl(self, VT_EFX_DATACUBE);
 	CGameParticles_ctor(&self->glow);
 	CGameParticles_ctor(&self->flares);
@@ -123,7 +156,7 @@ cEmbeddedFXDataCube *cEmbeddedFXDataCube_ctor(cEmbeddedFXDataCube *self) {
 	return self;
 }
 
-cEmbeddedFXDataPack *cEmbeddedFXDataPack_ctor(cEmbeddedFXDataPack *self) {
+static cEmbeddedFXDataPack *cEmbeddedFXDataPack_ctor(cEmbeddedFXDataPack *self) {
 	EFX_SetVtbl(self, VT_EFX_DATAPACK);
 	CGameParticles_ctor(&self->glow);
 	CGameParticles_ctor(&self->codec);
@@ -136,7 +169,7 @@ cEmbeddedFXDataPack *cEmbeddedFXDataPack_ctor(cEmbeddedFXDataPack *self) {
 	return self;
 }
 
-cEmbeddedFXExtraLife *cEmbeddedFXExtraLife_ctor(cEmbeddedFXExtraLife *self) {
+static cEmbeddedFXExtraLife *cEmbeddedFXExtraLife_ctor(cEmbeddedFXExtraLife *self) {
 	EFX_SetVtbl(self, VT_EFX_EXTRALIFE);
 	CGameParticles_ctor(&self->glow);
 	CGameTrail_ctor(&self->trail);
@@ -144,7 +177,7 @@ cEmbeddedFXExtraLife *cEmbeddedFXExtraLife_ctor(cEmbeddedFXExtraLife *self) {
 	return self;
 }
 
-cEmbeddedFXFlag *cEmbeddedFXFlag_ctor(cEmbeddedFXFlag *self) {
+static cEmbeddedFXFlag *cEmbeddedFXFlag_ctor(cEmbeddedFXFlag *self) {
 	EFX_SetVtbl(self, VT_EFX_FLAG);
 	CGameParticles_ctor(&self->particles);
 	self->base.ent = NULL;
@@ -153,11 +186,11 @@ cEmbeddedFXFlag *cEmbeddedFXFlag_ctor(cEmbeddedFXFlag *self) {
 	return self;
 }
 
-cEmbeddedFXItem *cEmbeddedFXItem_ctor(cEmbeddedFXItem *self) {
+static cEmbeddedFXItem *cEmbeddedFXItem_ctor(cEmbeddedFXItem *self) {
 	return EFXM_Ctor10(self, VT_EFX_ITEM);
 }
 
-cEmbeddedFXMatrix *cEmbeddedFXMatrix_ctor(cEmbeddedFXMatrix *self) {
+static cEmbeddedFXMatrix *cEmbeddedFXMatrix_ctor(cEmbeddedFXMatrix *self) {
 	EFX_SetVtbl(self, VT_EFX_MATRIX);
 	CGameParticles_ctor(&self->glow);
 	CGameParticles_ctor(&self->flares);
@@ -167,7 +200,7 @@ cEmbeddedFXMatrix *cEmbeddedFXMatrix_ctor(cEmbeddedFXMatrix *self) {
 	return self;
 }
 
-cEmbeddedFXMeetingPoint *cEmbeddedFXMeetingPoint_ctor(cEmbeddedFXMeetingPoint *self) {
+static cEmbeddedFXMeetingPoint *cEmbeddedFXMeetingPoint_ctor(cEmbeddedFXMeetingPoint *self) {
 	EFX_SetVtbl(self, VT_EFX_MEETINGPOINT);
 	CGameParticles_ctor(&self->light);
 	CGameParticles_ctor(&self->flares);
@@ -180,7 +213,7 @@ cEmbeddedFXMeetingPoint *cEmbeddedFXMeetingPoint_ctor(cEmbeddedFXMeetingPoint *s
 	return self;
 }
 
-cEmbeddedFXBike *cEmbeddedFXBike_ctor(cEmbeddedFXBike *self) {
+static cEmbeddedFXBike *cEmbeddedFXBike_ctor(cEmbeddedFXBike *self) {
 	EFX_SetVtbl(self, VT_EFX_BIKE);
 	EFXM_ParticlesCtor(self->engine, FXBIKE_ENGINES);
 	EFXM_ParticlesCtor(self->down, FXBIKE_DOWN);
@@ -189,7 +222,7 @@ cEmbeddedFXBike *cEmbeddedFXBike_ctor(cEmbeddedFXBike *self) {
 	return self;
 }
 
-cEmbeddedFXTreasure *cEmbeddedFXTreasure_ctor(cEmbeddedFXTreasure *self) {
+static cEmbeddedFXTreasure *cEmbeddedFXTreasure_ctor(cEmbeddedFXTreasure *self) {
 	EFX_SetVtbl(self, VT_EFX_TREASURE);
 	CGameParticles_ctor(&self->glow);
 	CGameTrail_ctor(&self->trail);
@@ -201,28 +234,28 @@ cEmbeddedFXTreasure *cEmbeddedFXTreasure_ctor(cEmbeddedFXTreasure *self) {
 
 /* ---- destructors ---- */
 
-void cEmbeddedFXAmplifier_dtor(cEmbeddedFXAmplifier *self) {
+static void cEmbeddedFXAmplifier_dtor(cEmbeddedFXAmplifier *self) {
 	self->base.vftable = VT_EFX_AMPLIFIER;
 	CGameTrail_dtor(&self->trail);
 	CGameParticles_Release(&self->flares);
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void cEmbeddedFXBattery_dtor(cEmbeddedFXBattery *self) {
+static void cEmbeddedFXBattery_dtor(cEmbeddedFXBattery *self) {
 	self->base.vftable = VT_EFX_BATTERY;
 	EFXM_TrailsDtor(self->trails, FXBATTERY_TRAILS);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void cEmbeddedFXBossShield_dtor(cEmbeddedFXBossShield *self) {
+static void cEmbeddedFXBossShield_dtor(cEmbeddedFXBossShield *self) {
 	self->base.vftable = VT_EFX_BOSSSHIELD;
 	EFXM_TrailsDtor(self->trails, FXBOSSSHIELD_TRAILS);
 	CGameParticles_Release(&self->particles);
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void cEmbeddedFXCapsule_dtor(cEmbeddedFXCapsule *self) {
+static void cEmbeddedFXCapsule_dtor(cEmbeddedFXCapsule *self) {
 	self->base.vftable = VT_EFX_CAPSULE;
 	EFXM_ParticlesDtor(self->motors, FXCAPSULE_MOTORS);
 	cEmbeddedFX_dtor(&self->base);
@@ -235,29 +268,29 @@ static void EFXM_Dtor10(cEmbeddedFX *self, const cEmbeddedFXVtbl *vt) {
 	cEmbeddedFX_dtor(self);
 }
 
-void cEmbeddedFXCoin_dtor(cEmbeddedFXCoin *self) {
+static void cEmbeddedFXCoin_dtor(cEmbeddedFXCoin *self) {
 	EFXM_Dtor10(&self->base, VT_EFX_COIN);
 }
 
-void cEmbeddedFXConversor_dtor(cEmbeddedFXConversor *self) {
+static void cEmbeddedFXConversor_dtor(cEmbeddedFXConversor *self) {
 	EFXM_Dtor10(&self->base, VT_EFX_CONVERSOR);
 }
 
-void cEmbeddedFXDTritusDesktop_dtor(cEmbeddedFXDTritusDesktop *self) {
+static void cEmbeddedFXDTritusDesktop_dtor(cEmbeddedFXDTritusDesktop *self) {
 	self->base.vftable = VT_EFX_DTRITUSDESKTOP;
 	CGameTrail_dtor(&self->trail);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void cEmbeddedFXDataCube_dtor(cEmbeddedFXDataCube *self) {
+static void cEmbeddedFXDataCube_dtor(cEmbeddedFXDataCube *self) {
 	self->base.vftable = VT_EFX_DATACUBE;
 	CGameParticles_Release(&self->flares);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void cEmbeddedFXDataPack_dtor(cEmbeddedFXDataPack *self) {
+static void cEmbeddedFXDataPack_dtor(cEmbeddedFXDataPack *self) {
 	self->base.vftable = VT_EFX_DATAPACK;
 	CGameTrail_dtor(&self->trail);
 	CGameParticles_Release(&self->laser);
@@ -266,22 +299,22 @@ void cEmbeddedFXDataPack_dtor(cEmbeddedFXDataPack *self) {
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void cEmbeddedFXExtraLife_dtor(cEmbeddedFXExtraLife *self) {
+static void cEmbeddedFXExtraLife_dtor(cEmbeddedFXExtraLife *self) {
 	self->base.vftable = VT_EFX_EXTRALIFE;
 	CGameTrail_dtor(&self->trail);
 	CGameParticles_Release(&self->glow);
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void cEmbeddedFXFlag_dtor(cEmbeddedFXFlag *self) {
+static void cEmbeddedFXFlag_dtor(cEmbeddedFXFlag *self) {
 	EFXM_Dtor10(&self->base, VT_EFX_FLAG);
 }
 
-void cEmbeddedFXItem_dtor(cEmbeddedFXItem *self) {
+static void cEmbeddedFXItem_dtor(cEmbeddedFXItem *self) {
 	EFXM_Dtor10(&self->coin.base, VT_EFX_ITEM);
 }
 
-void cEmbeddedFXMatrix_dtor(cEmbeddedFXMatrix *self) {
+static void cEmbeddedFXMatrix_dtor(cEmbeddedFXMatrix *self) {
 	self->base.vftable = VT_EFX_MATRIX;
 	CGameTrail_dtor(&self->trail);
 	CGameParticles_Release(&self->flares);
@@ -289,7 +322,7 @@ void cEmbeddedFXMatrix_dtor(cEmbeddedFXMatrix *self) {
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void cEmbeddedFXMeetingPoint_dtor(cEmbeddedFXMeetingPoint *self) {
+static void cEmbeddedFXMeetingPoint_dtor(cEmbeddedFXMeetingPoint *self) {
 	self->base.vftable = VT_EFX_MEETINGPOINT;
 	CGameParticles_Release(&self->countDown);
 	CGameParticles_Release(&self->flares);
@@ -297,7 +330,7 @@ void cEmbeddedFXMeetingPoint_dtor(cEmbeddedFXMeetingPoint *self) {
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void cEmbeddedFXBike_dtor(cEmbeddedFXBike *self) {
+static void cEmbeddedFXBike_dtor(cEmbeddedFXBike *self) {
 	self->base.vftable = VT_EFX_BIKE;
 	EFXM_ParticlesDtor(self->tube, FXBIKE_TUBES);
 	EFXM_ParticlesDtor(self->down, FXBIKE_DOWN);
@@ -305,7 +338,7 @@ void cEmbeddedFXBike_dtor(cEmbeddedFXBike *self) {
 	cEmbeddedFX_dtor(&self->base);
 }
 
-void cEmbeddedFXTreasure_dtor(cEmbeddedFXTreasure *self) {
+static void cEmbeddedFXTreasure_dtor(cEmbeddedFXTreasure *self) {
 	self->base.vftable = VT_EFX_TREASURE;
 	CGameTrail_dtor(&self->trail);
 	CGameParticles_Release(&self->glow);
@@ -314,97 +347,97 @@ void cEmbeddedFXTreasure_dtor(cEmbeddedFXTreasure *self) {
 
 /* ---- vf00: deleting destructors ---- */
 
-cEmbeddedFX *cEmbeddedFXAmplifier_Delete(cEmbeddedFX *elem, byte flags) {
+static cEmbeddedFX *cEmbeddedFXAmplifier_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXAmplifier *self = (cEmbeddedFXAmplifier *)elem;
 	cEmbeddedFXAmplifier_dtor(self);
 	return EFXM_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *cEmbeddedFXBattery_Delete(cEmbeddedFX *elem, byte flags) {
+static cEmbeddedFX *cEmbeddedFXBattery_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXBattery *self = (cEmbeddedFXBattery *)elem;
 	cEmbeddedFXBattery_dtor(self);
 	return EFXM_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *cEmbeddedFXBossShield_Delete(cEmbeddedFX *elem, byte flags) {
+static cEmbeddedFX *cEmbeddedFXBossShield_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXBossShield *self = (cEmbeddedFXBossShield *)elem;
 	cEmbeddedFXBossShield_dtor(self);
 	return EFXM_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *cEmbeddedFXCapsule_Delete(cEmbeddedFX *elem, byte flags) {
+static cEmbeddedFX *cEmbeddedFXCapsule_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXCapsule *self = (cEmbeddedFXCapsule *)elem;
 	cEmbeddedFXCapsule_dtor(self);
 	return EFXM_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *cEmbeddedFXCoin_Delete(cEmbeddedFX *elem, byte flags) {
+static cEmbeddedFX *cEmbeddedFXCoin_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXCoin *self = (cEmbeddedFXCoin *)elem;
 	cEmbeddedFXCoin_dtor(self);
 	return EFXM_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *cEmbeddedFXConversor_Delete(cEmbeddedFX *elem, byte flags) {
+static cEmbeddedFX *cEmbeddedFXConversor_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXConversor *self = (cEmbeddedFXConversor *)elem;
 	cEmbeddedFXConversor_dtor(self);
 	return EFXM_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *cEmbeddedFXDTritusDesktop_Delete(cEmbeddedFX *elem, byte flags) {
+static cEmbeddedFX *cEmbeddedFXDTritusDesktop_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXDTritusDesktop *self = (cEmbeddedFXDTritusDesktop *)elem;
 	cEmbeddedFXDTritusDesktop_dtor(self);
 	return EFXM_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *cEmbeddedFXDataCube_Delete(cEmbeddedFX *elem, byte flags) {
+static cEmbeddedFX *cEmbeddedFXDataCube_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXDataCube *self = (cEmbeddedFXDataCube *)elem;
 	cEmbeddedFXDataCube_dtor(self);
 	return EFXM_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *cEmbeddedFXDataPack_Delete(cEmbeddedFX *elem, byte flags) {
+static cEmbeddedFX *cEmbeddedFXDataPack_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXDataPack *self = (cEmbeddedFXDataPack *)elem;
 	cEmbeddedFXDataPack_dtor(self);
 	return EFXM_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *cEmbeddedFXExtraLife_Delete(cEmbeddedFX *elem, byte flags) {
+static cEmbeddedFX *cEmbeddedFXExtraLife_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXExtraLife *self = (cEmbeddedFXExtraLife *)elem;
 	cEmbeddedFXExtraLife_dtor(self);
 	return EFXM_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *cEmbeddedFXFlag_Delete(cEmbeddedFX *elem, byte flags) {
+static cEmbeddedFX *cEmbeddedFXFlag_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXFlag *self = (cEmbeddedFXFlag *)elem;
 	cEmbeddedFXFlag_dtor(self);
 	return EFXM_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *cEmbeddedFXItem_Delete(cEmbeddedFX *elem, byte flags) {
+static cEmbeddedFX *cEmbeddedFXItem_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXItem *self = (cEmbeddedFXItem *)elem;
 	cEmbeddedFXItem_dtor(self);
 	return EFXM_Delete(&self->coin.base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *cEmbeddedFXMatrix_Delete(cEmbeddedFX *elem, byte flags) {
+static cEmbeddedFX *cEmbeddedFXMatrix_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXMatrix *self = (cEmbeddedFXMatrix *)elem;
 	cEmbeddedFXMatrix_dtor(self);
 	return EFXM_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *cEmbeddedFXMeetingPoint_Delete(cEmbeddedFX *elem, byte flags) {
+static cEmbeddedFX *cEmbeddedFXMeetingPoint_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXMeetingPoint *self = (cEmbeddedFXMeetingPoint *)elem;
 	cEmbeddedFXMeetingPoint_dtor(self);
 	return EFXM_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *cEmbeddedFXBike_Delete(cEmbeddedFX *elem, byte flags) {
+static cEmbeddedFX *cEmbeddedFXBike_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXBike *self = (cEmbeddedFXBike *)elem;
 	cEmbeddedFXBike_dtor(self);
 	return EFXM_Delete(&self->base, flags, sizeof(*self));
 }
 
-cEmbeddedFX *cEmbeddedFXTreasure_Delete(cEmbeddedFX *elem, byte flags) {
+static cEmbeddedFX *cEmbeddedFXTreasure_Delete(cEmbeddedFX *elem, byte flags) {
 	cEmbeddedFXTreasure *self = (cEmbeddedFXTreasure *)elem;
 	cEmbeddedFXTreasure_dtor(self);
 	return EFXM_Delete(&self->base, flags, sizeof(*self));
@@ -424,12 +457,12 @@ static byte EFXM_ResetTrail(CGameTrail *t) {
 	return 1;
 }
 
-byte cEmbeddedFXAmplifier_Reset(cEmbeddedFX *base) {
+static byte cEmbeddedFXAmplifier_Reset(cEmbeddedFX *base) {
 	cEmbeddedFXAmplifier *self = (cEmbeddedFXAmplifier *)base;
 	return EFXM_ResetTrail(&self->trail);
 }
 
-byte cEmbeddedFXBattery_Reset(cEmbeddedFX *base) {
+static byte cEmbeddedFXBattery_Reset(cEmbeddedFX *base) {
 	cEmbeddedFXBattery *self = (cEmbeddedFXBattery *)base;
 	for (int i = 0; i < FXBATTERY_TRAILS; i++) {
 		CGameTrail *t = &self->trails[i];
@@ -444,7 +477,7 @@ byte cEmbeddedFXBattery_Reset(cEmbeddedFX *base) {
 	return 1;
 }
 
-byte cEmbeddedFXBossShield_Reset(cEmbeddedFX *base) {
+static byte cEmbeddedFXBossShield_Reset(cEmbeddedFX *base) {
 	cEmbeddedFXBossShield *self = (cEmbeddedFXBossShield *)base;
 	for (int i = 0; i < FXBOSSSHIELD_SLOTS; i++) {
 		self->t[i] = -1.0f;
@@ -462,30 +495,30 @@ byte cEmbeddedFXBossShield_Reset(cEmbeddedFX *base) {
 	return 1;
 }
 
-byte cEmbeddedFXCoin_Reset(cEmbeddedFX *base) {
+static byte cEmbeddedFXCoin_Reset(cEmbeddedFX *base) {
 	cEmbeddedFXCoin *self = (cEmbeddedFXCoin *)base;
 	self->scale = 1.0f;
 	return 1;
 }
 
-byte cEmbeddedFXConversor_Reset(cEmbeddedFX *base) {
+static byte cEmbeddedFXConversor_Reset(cEmbeddedFX *base) {
 	cEmbeddedFXConversor *self = (cEmbeddedFXConversor *)base;
 	self->t = 0.0f;
 	return 1;
 }
 
-byte cEmbeddedFXDTritusDesktop_Reset(cEmbeddedFX *base) {
+static byte cEmbeddedFXDTritusDesktop_Reset(cEmbeddedFX *base) {
 	cEmbeddedFXDTritusDesktop *self = (cEmbeddedFXDTritusDesktop *)base;
 	return EFXM_ResetTrail(&self->trail);
 }
 
-byte cEmbeddedFXDataPack_Reset(cEmbeddedFX *base) {
+static byte cEmbeddedFXDataPack_Reset(cEmbeddedFX *base) {
 	cEmbeddedFXDataPack *self = (cEmbeddedFXDataPack *)base;
 	CGameTrail_SetMaxTrails(&self->trail, 4);
 	return 1;
 }
 
-byte cEmbeddedFXExtraLife_Reset(cEmbeddedFX *base) {
+static byte cEmbeddedFXExtraLife_Reset(cEmbeddedFX *base) {
 	cEmbeddedFXExtraLife *self = (cEmbeddedFXExtraLife *)base;
 	EFXM_TrailStyle(&self->trail, 31, 3, 9);
 	CGameTrail_SetPremul(&self->trail, 1);
@@ -494,14 +527,14 @@ byte cEmbeddedFXExtraLife_Reset(cEmbeddedFX *base) {
 	return 1;
 }
 
-byte cEmbeddedFXItem_Reset(cEmbeddedFX *base) {
+static byte cEmbeddedFXItem_Reset(cEmbeddedFX *base) {
 	cEmbeddedFXItem *self = (cEmbeddedFXItem *)base;
 	self->coin.scale = 1.0f;
 	self->phase = crt_rand() % 512;
 	return 1;
 }
 
-byte cEmbeddedFXMatrix_Reset(cEmbeddedFX *base) {
+static byte cEmbeddedFXMatrix_Reset(cEmbeddedFX *base) {
 	cEmbeddedFXMatrix *self = (cEmbeddedFXMatrix *)base;
 	EFXM_TrailStyle(&self->trail, 7, 3, 9);
 	CGameTrail_SetPremul(&self->trail, 1);
@@ -512,7 +545,7 @@ byte cEmbeddedFXMatrix_Reset(cEmbeddedFX *base) {
 	return 1;
 }
 
-byte cEmbeddedFXBike_Reset(cEmbeddedFX *base) {
+static byte cEmbeddedFXBike_Reset(cEmbeddedFX *base) {
 	cEmbeddedFXBike *self = (cEmbeddedFXBike *)base;
 	self->t[0] = 0.0f;
 	self->t[1] = 0.0f;
@@ -523,7 +556,7 @@ byte cEmbeddedFXBike_Reset(cEmbeddedFX *base) {
 	return 1;
 }
 
-byte cEmbeddedFXTreasure_Reset(cEmbeddedFX *base) {
+static byte cEmbeddedFXTreasure_Reset(cEmbeddedFX *base) {
 	cEmbeddedFXTreasure *self = (cEmbeddedFXTreasure *)base;
 	self->timer = 0.0f;
 	self->dur = 0.0f;
@@ -535,13 +568,13 @@ byte cEmbeddedFXTreasure_Reset(cEmbeddedFX *base) {
 /* ---- vf02: Release ---- */
 
 /* Amplifier, Coin, Conversor, Flag, Item, MeetingPoint: the dummy at 0x0c, the particles at 0x10 */
-void cEmbeddedFXCoin_Release(cEmbeddedFX *base) {
+static void cEmbeddedFXCoin_Release(cEmbeddedFX *base) {
 	cEmbeddedFXCoin *self = (cEmbeddedFXCoin *)base;
 	self->dummyGlow = -1;
 	CGameParticles_Release(&self->glow);
 }
 
-void cEmbeddedFXBattery_Release(cEmbeddedFX *base) {
+static void cEmbeddedFXBattery_Release(cEmbeddedFX *base) {
 	cEmbeddedFXBattery *self = (cEmbeddedFXBattery *)base;
 	self->dummyGlow = -1;
 	CGameParticles_Release(&self->glow);
@@ -552,27 +585,27 @@ void cEmbeddedFXBattery_Release(cEmbeddedFX *base) {
 }
 
 /* BossShield: the trails cleared (also its Stop) */
-void cEmbeddedFXBossShield_Release(cEmbeddedFX *base) {
+static void cEmbeddedFXBossShield_Release(cEmbeddedFX *base) {
 	cEmbeddedFXBossShield *self = (cEmbeddedFXBossShield *)base;
 	for (int i = 0; i < FXBOSSSHIELD_TRAILS; i++) {
 		CGameTrail_Clear(&self->trails[i]);
 	}
 }
 
-void cEmbeddedFXCapsule_Release(cEmbeddedFX *base) {
+static void cEmbeddedFXCapsule_Release(cEmbeddedFX *base) {
 	cEmbeddedFXCapsule *self = (cEmbeddedFXCapsule *)base;
 	CGameParticles_Release(&self->motors[0]);
 	CGameParticles_Release(&self->motors[1]);
 	CGameParticles_Release(&self->motors[2]);
 }
 
-void cEmbeddedFXDTritusDesktop_Release(cEmbeddedFX *base) {
+static void cEmbeddedFXDTritusDesktop_Release(cEmbeddedFX *base) {
 	cEmbeddedFXDTritusDesktop *self = (cEmbeddedFXDTritusDesktop *)base;
 	self->dummyGlow = -1;
 	CGameParticles_Release(&self->glow);
 }
 
-void cEmbeddedFXDataCube_Release(cEmbeddedFX *base) {
+static void cEmbeddedFXDataCube_Release(cEmbeddedFX *base) {
 	cEmbeddedFXDataCube *self = (cEmbeddedFXDataCube *)base;
 	self->dummyGlow = -1;
 	self->dummyFlares = -1;
@@ -580,7 +613,7 @@ void cEmbeddedFXDataCube_Release(cEmbeddedFX *base) {
 	CGameParticles_Release(&self->flares);
 }
 
-void cEmbeddedFXDataPack_Release(cEmbeddedFX *base) {
+static void cEmbeddedFXDataPack_Release(cEmbeddedFX *base) {
 	cEmbeddedFXDataPack *self = (cEmbeddedFXDataPack *)base;
 	self->dummyGlow = -1;
 	self->dummyCodec = -1;
@@ -590,14 +623,14 @@ void cEmbeddedFXDataPack_Release(cEmbeddedFX *base) {
 	CGameParticles_Release(&self->laser);
 }
 
-void cEmbeddedFXExtraLife_Release(cEmbeddedFX *base) {
+static void cEmbeddedFXExtraLife_Release(cEmbeddedFX *base) {
 	cEmbeddedFXExtraLife *self = (cEmbeddedFXExtraLife *)base;
 	self->dummyGlow = -1;
 	self->dummyBar = -1;
 	CGameParticles_Release(&self->glow);
 }
 
-void cEmbeddedFXMatrix_Release(cEmbeddedFX *base) {
+static void cEmbeddedFXMatrix_Release(cEmbeddedFX *base) {
 	cEmbeddedFXMatrix *self = (cEmbeddedFXMatrix *)base;
 	self->dummyGlow = -1;
 	self->dummyFlares = -1;
@@ -605,7 +638,7 @@ void cEmbeddedFXMatrix_Release(cEmbeddedFX *base) {
 	CGameParticles_Release(&self->flares);
 }
 
-void cEmbeddedFXBike_Release(cEmbeddedFX *base) {
+static void cEmbeddedFXBike_Release(cEmbeddedFX *base) {
 	cEmbeddedFXBike *self = (cEmbeddedFXBike *)base;
 	for (int i = 0; i < FXBIKE_ENGINES; i++) {
 		CGameParticles_Release(&self->engine[i]);
@@ -619,7 +652,7 @@ void cEmbeddedFXBike_Release(cEmbeddedFX *base) {
 	self->on = 0;
 }
 
-void cEmbeddedFXTreasure_Release(cEmbeddedFX *base) {
+static void cEmbeddedFXTreasure_Release(cEmbeddedFX *base) {
 	cEmbeddedFXTreasure *self = (cEmbeddedFXTreasure *)base;
 	self->dummyGlow = -1;
 	CGameParticles_Release(&self->glow);
@@ -631,7 +664,7 @@ void cEmbeddedFXTreasure_Release(cEmbeddedFX *base) {
 
 /* ---- the trails cleared (vf05 with keep 0) ---- */
 
-void cEmbeddedFXBattery_Clear(cEmbeddedFXBattery *self) {
+static void cEmbeddedFXBattery_Clear(cEmbeddedFXBattery *self) {
 	for (int i = 0; i < FXBATTERY_TRAILS; i++) {
 		CGameTrail_Clear(&self->trails[i]);
 	}
@@ -639,97 +672,57 @@ void cEmbeddedFXBattery_Clear(cEmbeddedFXBattery *self) {
 
 /* ---- vf05: Stop ---- */
 
-void cEmbeddedFXAmplifier_Stop(cEmbeddedFX *base, byte keep) {
+static void cEmbeddedFXAmplifier_Stop(cEmbeddedFX *base, byte keep) {
 	cEmbeddedFXAmplifier *self = (cEmbeddedFXAmplifier *)base;
 	if (!keep) {
 		CGameTrail_Clear(&self->trail);
 	}
 }
 
-void cEmbeddedFXBattery_Stop(cEmbeddedFX *base, byte keep) {
+static void cEmbeddedFXBattery_Stop(cEmbeddedFX *base, byte keep) {
 	cEmbeddedFXBattery *self = (cEmbeddedFXBattery *)base;
 	if (!keep) {
 		cEmbeddedFXBattery_Clear(self);
 	}
 }
 
-void cEmbeddedFXDTritusDesktop_Stop(cEmbeddedFX *base, byte keep) {
+static void cEmbeddedFXDTritusDesktop_Stop(cEmbeddedFX *base, byte keep) {
 	cEmbeddedFXDTritusDesktop *self = (cEmbeddedFXDTritusDesktop *)base;
 	if (!keep) {
 		CGameTrail_Clear(&self->trail);
 	}
 }
 
-void cEmbeddedFXDataPack_Stop(cEmbeddedFX *base, byte keep) {
+static void cEmbeddedFXDataPack_Stop(cEmbeddedFX *base, byte keep) {
 	cEmbeddedFXDataPack *self = (cEmbeddedFXDataPack *)base;
 	if (!keep) {
 		CGameTrail_Clear(&self->trail);
 	}
 }
 
-void cEmbeddedFXExtraLife_Stop(cEmbeddedFX *base, byte keep) {
+static void cEmbeddedFXExtraLife_Stop(cEmbeddedFX *base, byte keep) {
 	cEmbeddedFXExtraLife *self = (cEmbeddedFXExtraLife *)base;
 	if (!keep) {
 		CGameTrail_Clear(&self->trail);
 	}
 }
 
-void cEmbeddedFXMatrix_Stop(cEmbeddedFX *base, byte keep) {
+static void cEmbeddedFXMatrix_Stop(cEmbeddedFX *base, byte keep) {
 	cEmbeddedFXMatrix *self = (cEmbeddedFXMatrix *)base;
 	if (!keep) {
 		CGameTrail_Clear(&self->trail);
 	}
 }
 
-void cEmbeddedFXTreasure_Stop(cEmbeddedFX *base, byte keep) {
+static void cEmbeddedFXTreasure_Stop(cEmbeddedFX *base, byte keep) {
 	cEmbeddedFXTreasure *self = (cEmbeddedFXTreasure *)base;
 	if (!keep) {
 		CGameTrail_Clear(&self->trail);
 	}
 }
 
-/* ---- setters (most have no caller in the exe) ---- */
-
-void cEmbeddedFXBossShield_SetMode(cEmbeddedFXBossShield *self, int mode) {
-	self->mode = mode;
-}
-
-void cEmbeddedFXBossShield_SetHit(cEmbeddedFXBossShield *self, float hit) {
-	self->hit = hit;
-}
-
-/* the float at 0xc0: the scale of Coin and Item, t of Conversor and Flag */
-void cEmbeddedFXCoin_SetScale(cEmbeddedFXCoin *self, float scale) {
-	self->scale = scale;
-}
-
-/* the int at 0xc4: the color of Coin and Item */
-void cEmbeddedFXCoin_SetColor(cEmbeddedFXCoin *self, uint32_t color) {
-	self->color = color;
-}
-
-void cEmbeddedFXExtraLife_SetScale(cEmbeddedFXExtraLife *self, float scale) {
-	self->scale = scale;
-}
-
-void cEmbeddedFXMatrix_SetScale(cEmbeddedFXMatrix *self, float scale) {
-	self->scale = scale;
-}
-
-void cEmbeddedFXTreasure_SetScale(cEmbeddedFXTreasure *self, float scale) {
-	self->scale = scale;
-}
-
-void cEmbeddedFXTreasure_SetType(cEmbeddedFXTreasure *self, int type) {
-	self->type = type;
-}
-
 void cEmbeddedFXDataPack_SetOn(cEmbeddedFXDataPack *self, byte on) {
 	self->on = on;
-}
-
-void cEmbeddedFXDataPack_On(cEmbeddedFXDataPack *self) {
-	self->on = 1;
 }
 
 void cEmbeddedFXBike_SetThrottle(cEmbeddedFXBike *self, float a, float b) {
@@ -738,7 +731,7 @@ void cEmbeddedFXBike_SetThrottle(cEmbeddedFXBike *self, float a, float b) {
 	self->boost = b;
 }
 
-void cEmbeddedFXFlag_SetColor(cEmbeddedFXFlag *self, const char *name) {
+static void cEmbeddedFXFlag_SetColor(cEmbeddedFXFlag *self, const char *name) {
 	self->scale = 1.0f;
 	if (!crt_stricmp(name, "YellowS")) {
 		self->color = 0xffff40;
@@ -763,7 +756,7 @@ void cEmbeddedFXFlag_SetColor(cEmbeddedFXFlag *self, const char *name) {
 }
 
 /* the count down of the meeting point: the light out, a and b for it */
-void cEmbeddedFXMeetingPoint_SetCountDown(cEmbeddedFXMeetingPoint *self, float a, float b) {
+static void cEmbeddedFXMeetingPoint_SetCountDown(cEmbeddedFXMeetingPoint *self, float a, float b) {
 	CGameParticles_KillAll(&self->countDown);
 	self->countA = a;
 	self->countT = 0.0f;
@@ -817,7 +810,7 @@ static void EFXM_Attach(CGameParticles *p, int *dummy, CGameModel *model, const 
 	CHECK(p->ParticleSystem);
 }
 
-void cEmbeddedFXAmplifier_Init(cEmbeddedFXAmplifier *self, cEntity *e) {
+static void cEmbeddedFXAmplifier_Init(cEmbeddedFXAmplifier *self, cEntity *e) {
 	CGameModel *model = EFXM_Owner(&self->base, e);
 	vec3_t pos;
 
@@ -829,20 +822,20 @@ void cEmbeddedFXAmplifier_Init(cEmbeddedFXAmplifier *self, cEntity *e) {
 	EFXM_Node(&self->dummyRoot, model, "OB_Amplificador_Cuerpo");
 }
 
-void cEmbeddedFXBattery_Init(cEmbeddedFXBattery *self, cEntity *e) {
+static void cEmbeddedFXBattery_Init(cEmbeddedFXBattery *self, cEntity *e) {
 	CGameModel *model = EFXM_Owner(&self->base, e);
 
 	EFXM_Attach(&self->glow, &self->dummyGlow, model, "DOB_Batery_Glow");
 	EFXM_Node(&self->dummyRoot, model, "DC_Root");
 }
 
-void cEmbeddedFXBossShield_Init(cEmbeddedFXBossShield *self, cEntity *e) {
+static void cEmbeddedFXBossShield_Init(cEmbeddedFXBossShield *self, cEntity *e) {
 	CGameModel *model = EFXM_Owner(&self->base, e);
 
 	EFXM_Attach(&self->particles, NULL, model, "Dummy01");
 }
 
-void cEmbeddedFXCapsule_Init(cEmbeddedFXCapsule *self, cEntity *e) {
+static void cEmbeddedFXCapsule_Init(cEmbeddedFXCapsule *self, cEntity *e) {
 	CGameModel *model = EFXM_Owner(&self->base, e);
 
 	EFXM_Attach(&self->motors[0], NULL, model, "DS_CapsulaBill_Motor_01");
@@ -851,7 +844,7 @@ void cEmbeddedFXCapsule_Init(cEmbeddedFXCapsule *self, cEntity *e) {
 }
 
 /* Coin and Item (two copies, the factory uses this one for both): the glow on node */
-void cEmbeddedFXCoin_Init(cEmbeddedFXCoin *self, cEntity *e, const char *node) {
+static void cEmbeddedFXCoin_Init(cEmbeddedFXCoin *self, cEntity *e, const char *node) {
 	CGameModel *model = EFXM_Owner(&self->base, e);
 
 	self->scale = 1.0f;
@@ -859,13 +852,13 @@ void cEmbeddedFXCoin_Init(cEmbeddedFXCoin *self, cEntity *e, const char *node) {
 	EFXM_Attach(&self->glow, &self->dummyGlow, model, node);
 }
 
-void cEmbeddedFXConversor_Init(cEmbeddedFXConversor *self, cEntity *e) {
+static void cEmbeddedFXConversor_Init(cEmbeddedFXConversor *self, cEntity *e) {
 	CGameModel *model = EFXM_Owner(&self->base, e);
 
 	EFXM_Attach(&self->glow, &self->dummyGlow, model, "DOB_Conversor-Mandos_Glow");
 }
 
-void cEmbeddedFXDTritusDesktop_Init(cEmbeddedFXDTritusDesktop *self, cEntity *e) {
+static void cEmbeddedFXDTritusDesktop_Init(cEmbeddedFXDTritusDesktop *self, cEntity *e) {
 	CGameModel *model = EFXM_Owner(&self->base, e);
 
 	EFXM_Attach(&self->glow, &self->dummyGlow, model, "DOB_Interfono_Calling");
@@ -875,7 +868,7 @@ void cEmbeddedFXDTritusDesktop_Init(cEmbeddedFXDTritusDesktop *self, cEntity *e)
 	EFXM_Node(&self->dummyRoot, model, "OB_Interfono_Base");
 }
 
-void cEmbeddedFXDataCube_Init(cEmbeddedFXDataCube *self, cEntity *e) {
+static void cEmbeddedFXDataCube_Init(cEmbeddedFXDataCube *self, cEntity *e) {
 	CGameModel *model = EFXM_Owner(&self->base, e);
 	vec3_t pos;
 	int n = 0;
@@ -899,7 +892,7 @@ void cEmbeddedFXDataCube_Init(cEmbeddedFXDataCube *self, cEntity *e) {
 	}
 }
 
-void cEmbeddedFXDataPack_Init(cEmbeddedFXDataPack *self, cEntity *e) {
+static void cEmbeddedFXDataPack_Init(cEmbeddedFXDataPack *self, cEntity *e) {
 	CGameModel *model = EFXM_Owner(&self->base, e);
 	vec3_t pos;
 
@@ -911,7 +904,7 @@ void cEmbeddedFXDataPack_Init(cEmbeddedFXDataPack *self, cEntity *e) {
 	self->on = g_DataPackOn != 0;
 }
 
-void cEmbeddedFXExtraLife_Init(cEmbeddedFXExtraLife *self, cEntity *e) {
+static void cEmbeddedFXExtraLife_Init(cEmbeddedFXExtraLife *self, cEntity *e) {
 	CGameModel *model = EFXM_Owner(&self->base, e);
 
 	EFXM_Attach(&self->glow, &self->dummyGlow, model, "DOB_ExtraLife_Glow");
@@ -919,13 +912,13 @@ void cEmbeddedFXExtraLife_Init(cEmbeddedFXExtraLife *self, cEntity *e) {
 	EFXM_Node(&self->dummyRoot, model, "DC_Root");
 }
 
-void cEmbeddedFXFlag_Init(cEmbeddedFXFlag *self, cEntity *e) {
+static void cEmbeddedFXFlag_Init(cEmbeddedFXFlag *self, cEntity *e) {
 	CGameModel *model = EFXM_Owner(&self->base, e);
 
 	EFXM_Attach(&self->particles, &self->dummy, model, "DOB_FlapCTF_Glow");
 }
 
-void cEmbeddedFXMatrix_Init(cEmbeddedFXMatrix *self, cEntity *e) {
+static void cEmbeddedFXMatrix_Init(cEmbeddedFXMatrix *self, cEntity *e) {
 	CGameModel *model = EFXM_Owner(&self->base, e);
 
 	EFXM_Attach(&self->glow, &self->dummyGlow, model, "DOB_DataCube_Glow");
@@ -933,7 +926,7 @@ void cEmbeddedFXMatrix_Init(cEmbeddedFXMatrix *self, cEntity *e) {
 	EFXM_Node(&self->dummyRoot, model, "DC_Root");
 }
 
-void cEmbeddedFXMeetingPoint_Init(cEmbeddedFXMeetingPoint *self, cEntity *e) {
+static void cEmbeddedFXMeetingPoint_Init(cEmbeddedFXMeetingPoint *self, cEntity *e) {
 	CGameModel *model = EFXM_Owner(&self->base, e);
 	vec3_t pos;
 
@@ -959,7 +952,7 @@ void cEmbeddedFXMeetingPoint_Init(cEmbeddedFXMeetingPoint *self, cEntity *e) {
 	EFXM_Attach(&self->countDown, NULL, model, "DF_Light_02");
 }
 
-void cEmbeddedFXBike_Init(cEmbeddedFXBike *self, cEntity *e) {
+static void cEmbeddedFXBike_Init(cEmbeddedFXBike *self, cEntity *e) {
 	CGameModel *model = EFXM_Owner(&self->base, e);
 	char name[128];
 
@@ -980,7 +973,7 @@ void cEmbeddedFXBike_Init(cEmbeddedFXBike *self, cEntity *e) {
 	}
 }
 
-void cEmbeddedFXTreasure_Init(cEmbeddedFXTreasure *self, cEntity *e) {
+static void cEmbeddedFXTreasure_Init(cEmbeddedFXTreasure *self, cEntity *e) {
 	CGameModel *model = EFXM_Owner(&self->base, e);
 
 	EFXM_Attach(&self->glow, &self->dummyGlow, model, "DOB_Treasure_Glow");
@@ -1161,7 +1154,7 @@ static cEmbeddedFX *EFXM_ObjFX(const char *name) {
 }
 
 /* the shield of the entity BossShield hit */
-void EmbeddedFXMisc_BossShieldHit(void) {
+static void EmbeddedFXMisc_BossShieldHit(void) {
 	cEmbeddedFXBossShield *fx = (cEmbeddedFXBossShield *)EFXM_ObjFX("BossShield");
 
 	CHECK(fx);
@@ -1169,7 +1162,7 @@ void EmbeddedFXMisc_BossShieldHit(void) {
 }
 
 /* the entity name and the mode of its shield */
-void EmbeddedFXMisc_BossShieldMsg(cAbstractFile *f) {
+static void EmbeddedFXMisc_BossShieldMsg(cAbstractFile *f) {
 	char name[128];
 	int v = 0;
 
@@ -1181,7 +1174,7 @@ void EmbeddedFXMisc_BossShieldMsg(cAbstractFile *f) {
 }
 
 /* the entity name, a and the count of the meeting point count down (b = count * 220) */
-void EmbeddedFXMisc_MeetingPointMsg(cAbstractFile *f) {
+static void EmbeddedFXMisc_MeetingPointMsg(cAbstractFile *f) {
 	char name[128];
 	float a;
 	int count = 0;
@@ -1196,14 +1189,14 @@ void EmbeddedFXMisc_MeetingPointMsg(cAbstractFile *f) {
 
 /* ---- vf03: Update ---- */
 
-cGVar GVar_DataPackInterTime;
+static cGVar GVar_DataPackInterTime;
 
 /* the DataPack engine variables */
 #define g_DataPackInterTime (GVar_DataPackInterTime.value.f)
-cGVar GVar_DataPackLaserLong;
+static cGVar GVar_DataPackLaserLong;
 
 #define g_DataPackLaserLong (GVar_DataPackLaserLong.value.f)
-cGVar GVar_DataPackLaserSize;
+static cGVar GVar_DataPackLaserSize;
 
 #define g_DataPackLaserSize (GVar_DataPackLaserSize.value.f)
 
@@ -1269,8 +1262,7 @@ static inline int EFXM_Min255(int a) {
 	return a > 0xff ? 0xff : a;
 }
 
-
-void cEmbeddedFXCoin_Update(cEmbeddedFX *elem, float dt) {
+static void cEmbeddedFXCoin_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXCoin *self = (cEmbeddedFXCoin *)elem;
 	CGameParticles *p = &self->glow;
 
@@ -1297,7 +1289,7 @@ void cEmbeddedFXCoin_Update(cEmbeddedFX *elem, float dt) {
 }
 
 /* the glow pulses with the world time, the phase differs per item */
-void cEmbeddedFXItem_Update(cEmbeddedFX *elem, float dt) {
+static void cEmbeddedFXItem_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXItem *self = (cEmbeddedFXItem *)elem;
 	cEmbeddedFXCoin *c = &self->coin;
 	CGameParticles *p = &c->glow;
@@ -1321,7 +1313,7 @@ void cEmbeddedFXItem_Update(cEmbeddedFX *elem, float dt) {
 }
 
 /* a pulse in the middle and 9 glows on a sphere around it */
-void cEmbeddedFXConversor_Update(cEmbeddedFX *elem, float dt) {
+static void cEmbeddedFXConversor_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXConversor *self = (cEmbeddedFXConversor *)elem;
 	CGameParticles *p = &self->glow;
 	vec3_t out;
@@ -1414,7 +1406,7 @@ static void EFXM_ArcStart(CGameTrail *trail, const matrix_t *m, vec3_t pos, vec3
 }
 
 /* four arcs of three segments around the body */
-void cEmbeddedFXAmplifier_Update(cEmbeddedFX *elem, float dt) {
+static void cEmbeddedFXAmplifier_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXAmplifier *self = (cEmbeddedFXAmplifier *)elem;
 	matrix_t m;
 	vec3_t ang, pos, a, b;
@@ -1443,7 +1435,7 @@ void cEmbeddedFXAmplifier_Update(cEmbeddedFX *elem, float dt) {
 }
 
 /* the calling light blinks while the owner calls; the arc while the animation DTritusDesktop_Calling plays */
-void cEmbeddedFXDTritusDesktop_Update(cEmbeddedFX *elem, float dt) {
+static void cEmbeddedFXDTritusDesktop_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXDTritusDesktop *self = (cEmbeddedFXDTritusDesktop *)elem;
 	matrix_t m;
 	vec3_t ang, rot, pos, a, b;
@@ -1489,7 +1481,7 @@ void cEmbeddedFXDTritusDesktop_Update(cEmbeddedFX *elem, float dt) {
 }
 
 /* the laser along -y of the model; the glow and the letters fade with the global switch */
-void cEmbeddedFXDataPack_Update(cEmbeddedFX *elem, float dt) {
+static void cEmbeddedFXDataPack_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXDataPack *self = (cEmbeddedFXDataPack *)elem;
 	vec3_t rot, d, base, q, tmp;
 
@@ -1540,7 +1532,7 @@ void cEmbeddedFXDataPack_Update(cEmbeddedFX *elem, float dt) {
 }
 
 /* three glows around the pole, bigger with the distance to the camera; a flash at the top every 0.5 s */
-void cEmbeddedFXFlag_Update(cEmbeddedFX *elem, float dt) {
+static void cEmbeddedFXFlag_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXFlag *self = (cEmbeddedFXFlag *)elem;
 	CGameParticles *p = &self->particles;
 	vec3_t tmp, out;
@@ -1602,7 +1594,7 @@ void cEmbeddedFXFlag_Update(cEmbeddedFX *elem, float dt) {
 	}
 }
 /* the light flashes every 0.8 s; the count down shows three lights one after the other */
-void cEmbeddedFXMeetingPoint_Update(cEmbeddedFX *elem, float dt) {
+static void cEmbeddedFXMeetingPoint_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXMeetingPoint *self = (cEmbeddedFXMeetingPoint *)elem;
 	static const uint32_t colorsA[3] = { 0xffffa4a4, 0xffffffa4, 0xffa4ffa4 };
 	static const uint32_t colorsB[3] = { 0xffff0808, 0xffffff08, 0xff08ff08 };
@@ -1676,7 +1668,7 @@ void cEmbeddedFXMeetingPoint_Update(cEmbeddedFX *elem, float dt) {
 }
 
 /* rays from the two ends of the bar along the angles of the root, glows on the bar */
-void cEmbeddedFXExtraLife_Update(cEmbeddedFX *elem, float dt) {
+static void cEmbeddedFXExtraLife_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXExtraLife *self = (cEmbeddedFXExtraLife *)elem;
 	CGameParticles *p = &self->glow;
 	matrix_t m, mb;
@@ -1751,7 +1743,7 @@ void cEmbeddedFXExtraLife_Update(cEmbeddedFX *elem, float dt) {
 }
 
 /* three rays between two points of the root that move at random; Matrix.m3d only while Matrix_Visible plays */
-void cEmbeddedFXMatrix_Update(cEmbeddedFX *elem, float dt) {
+static void cEmbeddedFXMatrix_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXMatrix *self = (cEmbeddedFXMatrix *)elem;
 	matrix_t m;
 	vec3_t rot, d, ang, t1, t2, pp;
@@ -1852,7 +1844,7 @@ void cEmbeddedFXMatrix_Update(cEmbeddedFX *elem, float dt) {
 }
 
 /* glows in the color of the type, a spark now and then, rays up from the root */
-void cEmbeddedFXTreasure_Update(cEmbeddedFX *elem, float dt) {
+static void cEmbeddedFXTreasure_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXTreasure *self = (cEmbeddedFXTreasure *)elem;
 	CGameParticles *p = &self->glow;
 	matrix_t m;
@@ -1977,14 +1969,14 @@ void cEmbeddedFXTreasure_Update(cEmbeddedFX *elem, float dt) {
 	}
 }
 
-cGVar GVar_FXBossShieldAspect;
+static cGVar GVar_FXBossShieldAspect;
 
 /* the BossShield engine variables */
 #define g_FXBossShieldAspect (GVar_FXBossShieldAspect.value.f)
-cGVar GVar_FXBossShieldRadius;
+static cGVar GVar_FXBossShieldRadius;
 
 #define g_FXBossShieldRadius (GVar_FXBossShieldRadius.value.f)
-cGVar GVar_FXBossShieldScale;
+static cGVar GVar_FXBossShieldScale;
 
 #define g_FXBossShieldScale (GVar_FXBossShieldScale.value.f)
 
@@ -2031,7 +2023,7 @@ static float EFXM_ShieldVis(cEmbeddedFXBossShield *self, float h, float a) {
 }
 
 /* the glows of the slots move on the shield; 16 rings turn around it; the regeneration from the scorer */
-void cEmbeddedFXBossShield_Update(cEmbeddedFX *elem, float dt) {
+static void cEmbeddedFXBossShield_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXBossShield *self = (cEmbeddedFXBossShield *)elem;
 	CGameParticles *p = &self->particles;
 	vec3_t pos, rot, o, o2, P = { 0.0f, 0.0f, 0.0f };
@@ -2175,7 +2167,7 @@ static void EFXM_SparkPos(CGameParticles *p, float s, const vec3_t *c) {
 	p->initPosMax = p->initPosMin;
 }
 
-uint32_t EFXM_SparkFlashRamp[9] = { 0x10f5f5ff, 0x20e1e1ff, 0x30b4b4e6, 0x409b9bbe, 0x607d7d96, 0x805f5f78, 0xc055556e, 0xff282832, 0xff000000 };
+static uint32_t EFXM_SparkFlashRamp[9] = { 0x10f5f5ff, 0x20e1e1ff, 0x30b4b4e6, 0x409b9bbe, 0x607d7d96, 0x805f5f78, 0xc055556e, 0xff282832, 0xff000000 };
 
 /* a flash of the sparks: the sizes and the life from the random ranges */
 static void EFXM_SparkFlash(CGameParticles *p, double ini, double iniAdd, double endAdd, byte sprite, double life,
@@ -2192,13 +2184,13 @@ static void EFXM_SparkFlash(CGameParticles *p, double ini, double iniAdd, double
 	CGameParticles_EmitN(p, 1, 1);
 }
 
-uint32_t EFXM_SparkFlashTable[19] = {
+static uint32_t EFXM_SparkFlashTable[19] = {
 	0x10d2d2ff, 0x209696ff, 0x306464e1, 0x403232b4, 0x601e1e55, 0x800a0a2d, 0xc0050519, 0xff00000a, 0xff000000,
 	0x10d2d2ff, 0x20b4b4ff, 0x309393e6, 0x405353ab, 0x602d2d4c, 0x80141438, 0xc005051e, 0xff00000a, 0xff000000,
 };
 
 /* three rays that jump between random points now and then, a burst of sparks at the top */
-void cEmbeddedFXBattery_Update(cEmbeddedFX *elem, float dt) {
+static void cEmbeddedFXBattery_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXBattery *self = (cEmbeddedFXBattery *)elem;
 	CGameParticles *p = &self->glow;
 	matrix_t m;
@@ -2402,7 +2394,7 @@ static void EFXM_BikeVel(CGameParticles *p, float spread, float z1, float z2, co
 	p->initVelMax.z = v->z * scale;
 }
 
-uint32_t g_RampBike[36] = {
+static uint32_t g_RampBike[36] = {
 	0x8054b9eb, 0x2050b9eb, 0x304ab4eb, 0x5240afeb, 0xa42eaaeb, 0xc026a5eb, 0xe120a0eb, 0xff189beb, 0xff1096eb,
 	0xff54cdff, 0x4050cdff, 0x304acdff, 0x4046cdff, 0x8040cdff, 0xc03ccdff, 0xe136cdff, 0xff2ccdff, 0xff22cdff,
 	0x80b954eb, 0x20b950eb, 0x30b44aeb, 0x52af40eb, 0xa4aa2eeb, 0xc0a526eb, 0xe1a020eb, 0xff9b18eb, 0xff9610eb,
@@ -2414,7 +2406,7 @@ uint32_t g_RampBike[36] = {
  * the three engines (the main one at DF_MotorTrust_01, the others beside it) and every 0.02 s a puff of smoke at each,
  * with more puffs filling the way from where the engine was at the last one.
  */
-void cEmbeddedFXBike_Update(cEmbeddedFX *elem, float dt) {
+static void cEmbeddedFXBike_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXBike *self = (cEmbeddedFXBike *)elem;
 	CGameModel *model = Obj_Vtbl(self->base.ent)->GetModel(self->base.ent);
 	matrix_t m;
@@ -2547,7 +2539,7 @@ void cEmbeddedFXBike_Update(cEmbeddedFX *elem, float dt) {
 }
 
 /* the vtable of cEmbeddedFXDataPack */
-const cEmbeddedFXVtbl cEmbeddedFXDataPack_vftable = {
+static const cEmbeddedFXVtbl cEmbeddedFXDataPack_vftable = {
 	.Delete = cEmbeddedFXDataPack_Delete,
 	.Reset = cEmbeddedFXDataPack_Reset,
 	.Release = cEmbeddedFXDataPack_Release,
@@ -2557,7 +2549,7 @@ const cEmbeddedFXVtbl cEmbeddedFXDataPack_vftable = {
 };
 
 /* the vtable of cEmbeddedFXDataCube */
-const cEmbeddedFXVtbl cEmbeddedFXDataCube_vftable = {
+static const cEmbeddedFXVtbl cEmbeddedFXDataCube_vftable = {
 	.Delete = cEmbeddedFXDataCube_Delete,
 	.Reset = cEmbeddedFX_ResetTrue,
 	.Release = cEmbeddedFXDataCube_Release,
@@ -2567,7 +2559,7 @@ const cEmbeddedFXVtbl cEmbeddedFXDataCube_vftable = {
 };
 
 /* the vtable of cEmbeddedFXCapsule */
-const cEmbeddedFXVtbl cEmbeddedFXCapsule_vftable = {
+static const cEmbeddedFXVtbl cEmbeddedFXCapsule_vftable = {
 	.Delete = cEmbeddedFXCapsule_Delete,
 	.Reset = cEmbeddedFX_ResetTrue,
 	.Release = cEmbeddedFXCapsule_Release,
@@ -2577,7 +2569,7 @@ const cEmbeddedFXVtbl cEmbeddedFXCapsule_vftable = {
 };
 
 /* the vtable of cEmbeddedFXMatrix */
-const cEmbeddedFXVtbl cEmbeddedFXMatrix_vftable = {
+static const cEmbeddedFXVtbl cEmbeddedFXMatrix_vftable = {
 	.Delete = cEmbeddedFXMatrix_Delete,
 	.Reset = cEmbeddedFXMatrix_Reset,
 	.Release = cEmbeddedFXMatrix_Release,
@@ -2587,7 +2579,7 @@ const cEmbeddedFXVtbl cEmbeddedFXMatrix_vftable = {
 };
 
 /* the vtable of cEmbeddedFXAmplifier */
-const cEmbeddedFXVtbl cEmbeddedFXAmplifier_vftable = {
+static const cEmbeddedFXVtbl cEmbeddedFXAmplifier_vftable = {
 	.Delete = cEmbeddedFXAmplifier_Delete,
 	.Reset = cEmbeddedFXAmplifier_Reset,
 	.Release = cEmbeddedFXCoin_Release,
@@ -2597,7 +2589,7 @@ const cEmbeddedFXVtbl cEmbeddedFXAmplifier_vftable = {
 };
 
 /* the vtable of cEmbeddedFXMeetingPoint */
-const cEmbeddedFXVtbl cEmbeddedFXMeetingPoint_vftable = {
+static const cEmbeddedFXVtbl cEmbeddedFXMeetingPoint_vftable = {
 	.Delete = cEmbeddedFXMeetingPoint_Delete,
 	.Reset = cEmbeddedFX_ResetTrue,
 	.Release = cEmbeddedFXCoin_Release,
@@ -2607,7 +2599,7 @@ const cEmbeddedFXVtbl cEmbeddedFXMeetingPoint_vftable = {
 };
 
 /* the vtable of cEmbeddedFXExtraLife */
-const cEmbeddedFXVtbl cEmbeddedFXExtraLife_vftable = {
+static const cEmbeddedFXVtbl cEmbeddedFXExtraLife_vftable = {
 	.Delete = cEmbeddedFXExtraLife_Delete,
 	.Reset = cEmbeddedFXExtraLife_Reset,
 	.Release = cEmbeddedFXExtraLife_Release,
@@ -2617,7 +2609,7 @@ const cEmbeddedFXVtbl cEmbeddedFXExtraLife_vftable = {
 };
 
 /* the vtable of cEmbeddedFXBattery */
-const cEmbeddedFXVtbl cEmbeddedFXBattery_vftable = {
+static const cEmbeddedFXVtbl cEmbeddedFXBattery_vftable = {
 	.Delete = cEmbeddedFXBattery_Delete,
 	.Reset = cEmbeddedFXBattery_Reset,
 	.Release = cEmbeddedFXBattery_Release,
@@ -2627,7 +2619,7 @@ const cEmbeddedFXVtbl cEmbeddedFXBattery_vftable = {
 };
 
 /* the vtable of cEmbeddedFXTreasure */
-const cEmbeddedFXVtbl cEmbeddedFXTreasure_vftable = {
+static const cEmbeddedFXVtbl cEmbeddedFXTreasure_vftable = {
 	.Delete = cEmbeddedFXTreasure_Delete,
 	.Reset = cEmbeddedFXTreasure_Reset,
 	.Release = cEmbeddedFXTreasure_Release,
@@ -2637,7 +2629,7 @@ const cEmbeddedFXVtbl cEmbeddedFXTreasure_vftable = {
 };
 
 /* the vtable of cEmbeddedFXFlag */
-const cEmbeddedFXVtbl cEmbeddedFXFlag_vftable = {
+static const cEmbeddedFXVtbl cEmbeddedFXFlag_vftable = {
 	.Delete = cEmbeddedFXFlag_Delete,
 	.Reset = cEmbeddedFX_ResetTrue,
 	.Release = cEmbeddedFXCoin_Release,
@@ -2647,7 +2639,7 @@ const cEmbeddedFXVtbl cEmbeddedFXFlag_vftable = {
 };
 
 /* the vtable of cEmbeddedFXDTritusDesktop */
-const cEmbeddedFXVtbl cEmbeddedFXDTritusDesktop_vftable = {
+static const cEmbeddedFXVtbl cEmbeddedFXDTritusDesktop_vftable = {
 	.Delete = cEmbeddedFXDTritusDesktop_Delete,
 	.Reset = cEmbeddedFXDTritusDesktop_Reset,
 	.Release = cEmbeddedFXDTritusDesktop_Release,
@@ -2657,7 +2649,7 @@ const cEmbeddedFXVtbl cEmbeddedFXDTritusDesktop_vftable = {
 };
 
 /* the vtable of cEmbeddedFXBike */
-const cEmbeddedFXVtbl cEmbeddedFXBike_vftable = {
+static const cEmbeddedFXVtbl cEmbeddedFXBike_vftable = {
 	.Delete = cEmbeddedFXBike_Delete,
 	.Reset = cEmbeddedFXBike_Reset,
 	.Release = cEmbeddedFXBike_Release,
@@ -2667,7 +2659,7 @@ const cEmbeddedFXVtbl cEmbeddedFXBike_vftable = {
 };
 
 /* the vtable of cEmbeddedFXBossShield */
-const cEmbeddedFXVtbl cEmbeddedFXBossShield_vftable = {
+static const cEmbeddedFXVtbl cEmbeddedFXBossShield_vftable = {
 	.Delete = cEmbeddedFXBossShield_Delete,
 	.Reset = cEmbeddedFXBossShield_Reset,
 	.Release = cEmbeddedFXBossShield_Release,
@@ -2677,7 +2669,7 @@ const cEmbeddedFXVtbl cEmbeddedFXBossShield_vftable = {
 };
 
 /* the vtable of cEmbeddedFXConversor */
-const cEmbeddedFXVtbl cEmbeddedFXConversor_vftable = {
+static const cEmbeddedFXVtbl cEmbeddedFXConversor_vftable = {
 	.Delete = cEmbeddedFXConversor_Delete,
 	.Reset = cEmbeddedFXConversor_Reset,
 	.Release = cEmbeddedFXCoin_Release,
@@ -2687,7 +2679,7 @@ const cEmbeddedFXVtbl cEmbeddedFXConversor_vftable = {
 };
 
 /* the vtable of cEmbeddedFXCoin */
-const cEmbeddedFXVtbl cEmbeddedFXCoin_vftable = {
+static const cEmbeddedFXVtbl cEmbeddedFXCoin_vftable = {
 	.Delete = cEmbeddedFXCoin_Delete,
 	.Reset = cEmbeddedFXCoin_Reset,
 	.Release = cEmbeddedFXCoin_Release,
@@ -2697,7 +2689,7 @@ const cEmbeddedFXVtbl cEmbeddedFXCoin_vftable = {
 };
 
 /* the vtable of cEmbeddedFXItem */
-const cEmbeddedFXVtbl cEmbeddedFXItem_vftable = {
+static const cEmbeddedFXVtbl cEmbeddedFXItem_vftable = {
 	.Delete = cEmbeddedFXItem_Delete,
 	.Reset = cEmbeddedFXItem_Reset,
 	.Release = cEmbeddedFXCoin_Release,
@@ -2706,9 +2698,9 @@ const cEmbeddedFXVtbl cEmbeddedFXItem_vftable = {
 	.Stop = cEmbeddedFX_StopNop,
 };
 
-cPy_NativeFunc NativeFunc_FXMeetingPointCountDown;
-cPy_NativeFunc NativeFunc_FXBossShieldSet;
-cPy_NativeFunc NativeFunc_FXBossOnDamage;
+static cPy_NativeFunc NativeFunc_FXMeetingPointCountDown;
+static cPy_NativeFunc NativeFunc_FXBossShieldSet;
+static cPy_NativeFunc NativeFunc_FXBossOnDamage;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_DataPackLaserSize, &GVar_DataPackLaserSize, "DataPackLaserSize", 0, "DataPack Size of the Laser", 8.0f)

@@ -15,8 +15,15 @@
 #include "scrap/withlifeentity.h"
 #include "scrap/staticinit.h"
 
+#define g_NetBrowserCode (GVar_BrowserCode.value.s)	/* BrowserCode (cString) */
+#define g_HeartbeatTime (GVar_HeartbeatTime.value.f)
+#define g_ServerMinSendDelay (GVar_ServerMinSendDelay.value.i)
+static cGVar GVar_ServerMinSendDelay;
+static cGVar GVar_HeartbeatTime;
+static cGVar GVar_BrowserCode;
+
 /* the script callbacks of the server gvars back to none (unless scripts may not write them) */
-void Net_ServerResetFuncs(void) {
+static void Net_ServerResetFuncs(void) {
 	if (!(g_OnClientJoinFlags & 1)) {
 		cPy_Function_SetFunc(g_OnClientJoin, "");
 	}
@@ -34,11 +41,12 @@ void Net_ServerResetFuncs(void) {
 	}
 }
 
-char g_NetServerHost[256];
-char g_NetServerIP[256];
-uint16_t g_NetServerPort;
-void *g_NetServerData;
-void *g_NetServerCtl;
+/* GameServer */
+static char g_NetServerHost[256];
+static char g_NetServerIP[256];
+static uint16_t g_NetServerPort;
+static void *g_NetServerData;
+static void *g_NetServerCtl;
 
 byte Net_CloseServer(const char *msg) {
 	byte on = g_NetServerPort != 0;
@@ -64,7 +72,7 @@ byte Net_CloseServer(const char *msg) {
 }
 
 /* g_NetUserFactory of the server */
-cUserNetManager *Net_NewClientManager(cNetClient *client, int slot) {
+static cUserNetManager *Net_NewClientManager(cNetClient *client, int slot) {
 	cClientNetManager *m = operator_new(sizeof(cClientNetManager));
 
 	if (!m) {
@@ -85,7 +93,7 @@ uint16_t Net_GetServerPort(void) {
 	return g_NetServerPort;
 }
 
-float g_NetHeartbeat;
+static float g_NetHeartbeat;
 
 /* a server on port b (0: the default) for a clients with the level name; c: the next free port */
 byte Net_InitServer(const char *name, int a, int b, int c) {
@@ -185,8 +193,8 @@ void Net_ServerFrameHead(void) {
 	}
 }
 
-int g_NetServerDataSize;
-int g_NetServerCtlSize;
+static int g_NetServerDataSize;
+static int g_NetServerCtlSize;
 
 /* the rest after the wait: receive, send to the clients in turn, drop the ones that timed out */
 byte Net_ServerFrameTail(void) {
@@ -227,7 +235,8 @@ byte Net_ServerFrame(void) {
 	return Net_ServerFrameTail();
 }
 
-void Net_HexDump(const void *data, int size) {
+/* a hex and text dump of data into the console, 16 bytes a line */
+static void Net_HexDump(const void *data, int size) {
 	const byte *d = data;
 	char line[0x47];
 	char *ascii = line + 0x36;
@@ -276,10 +285,10 @@ void Net_DumpData(const char *title, const void *data, int size) {
 	Con_Printf("\n");
 }
 
-cGVar GVar_BrowserCode;
+static cGVar GVar_BrowserCode;
 cGVarFunction GVar_OnClientJoin;
-cGVar GVar_HeartbeatTime;
-cGVar GVar_ServerMinSendDelay;
+static cGVar GVar_HeartbeatTime;
+static cGVar GVar_ServerMinSendDelay;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_BrowserCode, &GVar_BrowserCode)

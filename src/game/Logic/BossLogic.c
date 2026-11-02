@@ -8,6 +8,15 @@
 #include "scrap/objentity.h"
 #include "scrap/staticinit.h"
 
+#define CBOSSLOCALLOGIC_VFTABLE (&cBossLocalLogic_vftable.base)
+#define g_BossWalkingTime (GVar_BossWalkingTime.value.f)
+#define g_BossWorkPlace (GVar_BossWorkPlace.value.s)
+#define g_BossWorkingTime (GVar_BossWorkingTime.value.f)
+static const cGenCharLocalLogicVtbl cBossLocalLogic_vftable;
+static cGVar GVar_BossWorkingTime;
+static cGVar GVar_BossWorkPlace;
+static cGVar GVar_BossWalkingTime;
+
 /* the AI slot the boss asks */
 typedef struct cLogicBossAIVtbl {
 	void *vf00_12[19];
@@ -27,7 +36,7 @@ cBossLocalLogic *cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity *parent) {
 	return self;
 }
 
-cLocalLogic *cBossLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static cLocalLogic *cBossLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 	cBossLocalLogic *self = (cBossLocalLogic *)elem;
 	self->base.base.vftable = CBOSSLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(&self->base);
@@ -38,7 +47,7 @@ cLocalLogic *cBossLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 }
 
 /* vf33 (0x84): at work, the end of the work */
-void cBossLocalLogic_Vf33(cLocalLogic *elem, byte on) {
+static void cBossLocalLogic_Vf33(cLocalLogic *elem, byte on) {
 	cBossLocalLogic *self = (cBossLocalLogic *)elem;
 	if (self->base.base.state != 8 || !on) {
 		return;
@@ -50,10 +59,10 @@ void cBossLocalLogic_Vf33(cLocalLogic *elem, byte on) {
 	self->base.base.vftable->SetState(&self->base.base.logic, 0, NULL);
 }
 
-byte g_BossWasIdle;
+static byte g_BossWasIdle;
 
 /* vf17 */
-void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
+static void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cBossLocalLogic *self = (cBossLocalLogic *)elem;
 	cGenCharLocalLogic_Update(&self->base.base.logic, dt);
 	int st = self->base.base.state;
@@ -110,7 +119,7 @@ void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
 }
 
 /* vf19: 7 the way to the work place (AI state 4 with the place and the direction of its angle), 8 the work */
-byte cBossLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
+static byte cBossLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cBossLocalLogic *self = (cBossLocalLogic *)elem;
 	vec3_t out;
 
@@ -142,7 +151,7 @@ byte cBossLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 }
 
 /* the vtable of cBossLocalLogic */
-const cGenCharLocalLogicVtbl cBossLocalLogic_vftable = {
+static const cGenCharLocalLogicVtbl cBossLocalLogic_vftable = {
 	.base.base.Delete = cBossLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.Vf02 = cLocalLogic_Vf02True,
@@ -181,9 +190,9 @@ const cGenCharLocalLogicVtbl cBossLocalLogic_vftable = {
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };
 
-cGVar GVar_BossWalkingTime;
-cGVar GVar_BossWorkPlace;
-cGVar GVar_BossWorkingTime;
+static cGVar GVar_BossWalkingTime;
+static cGVar GVar_BossWorkPlace;
+static cGVar GVar_BossWorkingTime;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_BossWorkPlace, &GVar_BossWorkPlace)

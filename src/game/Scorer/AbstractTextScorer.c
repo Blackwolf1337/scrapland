@@ -9,6 +9,21 @@
 #include "scrap/scoreritems.h"
 #include "scrap/staticinit.h"
 
+#define CABSTRACTTEXTSCORER_VFTABLE (&cAbstractTextScorer_vftable)
+#define CMSGSCORER_VFTABLE (&cMsgScorer_vftable)
+#define CLABELSCORER_VFTABLE (&cLabelScorer_vftable)
+#define CHINTSCORER_VFTABLE (&cHintScorer_vftable)
+#define CCREDITSSCORER_VFTABLE (&cCreditsScorer_vftable)
+#define g_HintAppearsTime (GVar_HintAppearsTime.value.f)	/* HintAppearsTime */
+#define g_MissionScorerName (GVar_MissionScorerName.value.s)	/* MissionScorerName, the item hiding the label */
+static const cScorerItemVtbl cMsgScorer_vftable;
+static const cScorerItemVtbl cLabelScorer_vftable;
+static const cScorerItemVtbl cHintScorer_vftable;
+static const cScorerItemVtbl cCreditsScorer_vftable;
+static const cScorerItemVtbl cAbstractTextScorer_vftable;
+static cGVar GVar_MissionScorerName;
+static cGVar GVar_HintAppearsTime;
+
 /* the strings Var returns (those of the exe) */
 #define STR_LEFT "Left"
 #define STR_RIGHT "Right"
@@ -89,7 +104,7 @@ void cAbstractTextScorer_dtor(cAbstractTextScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-void cCreditsScorer_dtor(cCreditsScorer *self) {
+static void cCreditsScorer_dtor(cCreditsScorer *self) {
 	g_CreditsAlpha = 0;
 	cAbstractTextScorer_dtor(&self->base);
 }
@@ -104,15 +119,15 @@ static void TabText_dtor(cHintScorer *self, const cScorerItemVtbl *vftable) {
 	cAbstractTextScorer_dtor(&self->base);
 }
 
-void cHintScorer_dtor(cHintScorer *self) {
+static void cHintScorer_dtor(cHintScorer *self) {
 	TabText_dtor(self, CHINTSCORER_VFTABLE);
 }
 
-void cLabelScorer_dtor(cLabelScorer *self) {
+static void cLabelScorer_dtor(cLabelScorer *self) {
 	TabText_dtor(self, CLABELSCORER_VFTABLE);
 }
 
-cScorerItem *cAbstractTextScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cAbstractTextScorer_Delete(cScorerItem *base, byte flags) {
 	cAbstractTextScorer *self = (cAbstractTextScorer *)base;
 	cAbstractTextScorer_dtor(self);
 	if (flags & 1) {
@@ -121,7 +136,7 @@ cScorerItem *cAbstractTextScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-cScorerItem *cCreditsScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cCreditsScorer_Delete(cScorerItem *base, byte flags) {
 	cCreditsScorer *self = (cCreditsScorer *)base;
 	cCreditsScorer_dtor(self);
 	if (flags & 1) {
@@ -130,7 +145,7 @@ cScorerItem *cCreditsScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-cScorerItem *cHintScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cHintScorer_Delete(cScorerItem *base, byte flags) {
 	cHintScorer *self = (cHintScorer *)base;
 	cHintScorer_dtor(self);
 	if (flags & 1) {
@@ -139,7 +154,7 @@ cScorerItem *cHintScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-cScorerItem *cLabelScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cLabelScorer_Delete(cScorerItem *base, byte flags) {
 	cLabelScorer *self = (cLabelScorer *)base;
 	cLabelScorer_dtor(self);
 	if (flags & 1) {
@@ -148,7 +163,7 @@ cScorerItem *cLabelScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-cScorerItem *cMsgScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cMsgScorer_Delete(cScorerItem *base, byte flags) {
 	cMsgScorer *self = (cMsgScorer *)base;
 	cAbstractTextScorer_dtor(&self->base);
 	if (flags & 1) {
@@ -270,7 +285,8 @@ int cAbstractTextScorer_Var(cScorerItem *base, const char *name, int set, char *
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-int cCreditsScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+/* Time, Life, FadeIn, FadeOut; set only: Text0..Text19 */
+static int cCreditsScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cCreditsScorer *self = (cCreditsScorer *)base;
 	if (d) {
 		if (!crt_stricmp(name, "Time")) {
@@ -300,7 +316,7 @@ int cCreditsScorer_Var(cScorerItem *base, const char *name, int set, char **s, d
 }
 
 /* also cLabelScorer */
-int cHintScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+static int cHintScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cHintScorer *self = (cHintScorer *)base;
 	int r;
 
@@ -336,7 +352,8 @@ int cHintScorer_Var(cScorerItem *base, const char *name, int set, char **s, doub
 
 /* ---- drawing ---- */
 
-void cCreditsScorer_DrawLines(cCreditsScorer *self, byte fade, uint32_t color) {
+/* the 20 lines at the position of the phase: fade 0 the scorer, 1 the render target */
+static void cCreditsScorer_DrawLines(cCreditsScorer *self, byte fade, uint32_t color) {
 	byte columns = self->lines[8][0];
 	float sx, sy;
 
@@ -390,7 +407,7 @@ void cCreditsScorer_DrawLines(cCreditsScorer *self, byte fade, uint32_t color) {
 	}
 }
 
-void cCreditsScorer_Draw(cScorerItem *base, int player) {
+static void cCreditsScorer_Draw(cScorerItem *base, int player) {
 	cCreditsScorer *self = (cCreditsScorer *)base;
 	cScorer *sc = Scorer_Get(player);
 	float old = self->time;
@@ -446,10 +463,11 @@ void cCreditsScorer_Draw(cScorerItem *base, int player) {
 	cCreditsScorer_DrawLines(self, 0, self->base.color);
 }
 
-char *g_HintLines[2];
-char g_HintText[1280];
+/* the hint text and its two lines */
+static char *g_HintLines[2];
+static char g_HintText[1280];
 
-void cHintScorer_Draw(cScorerItem *base, int player) {
+static void cHintScorer_Draw(cScorerItem *base, int player) {
 	cHintScorer *self = (cHintScorer *)base;
 	cScorer *sc = Scorer_Get(player);
 	cScorerItem *item = cScorer_FindItem(sc, sc->current);
@@ -503,10 +521,11 @@ void cHintScorer_Draw(cScorerItem *base, int player) {
 	}
 }
 
-char g_LabelText[250];
-float g_LabelTime;
+/* the label (Scorer_SetLabelText) */
+static char g_LabelText[250];
+static float g_LabelTime;
 
-void cLabelScorer_Draw(cScorerItem *base, int player) {
+static void cLabelScorer_Draw(cScorerItem *base, int player) {
 	cLabelScorer *self = (cLabelScorer *)base;
 	const char *text;
 
@@ -540,10 +559,10 @@ void cLabelScorer_Draw(cScorerItem *base, int player) {
 		self->base.color, "%s", text);
 }
 
-int g_MsgNumLines;
-char *g_MsgLines[20];
+static int g_MsgNumLines;
+static char *g_MsgLines[20];
 
-void cMsgScorer_Draw(cScorerItem *base, int player) {
+static void cMsgScorer_Draw(cScorerItem *base, int player) {
 	cMsgScorer *self = (cMsgScorer *)base;
 	(void)player;
 	if (!(0.0f >= g_MsgTime) && !(g_MsgTime > Timer_GetTime(&g_pWorld->timer))) {
@@ -563,7 +582,8 @@ void Scorer_SetLabelText(const char *text, float time) {
 	g_LabelTime = time;
 }
 
-char g_MsgText[62500];
+/* the message (Scorer_SetMsgText): the text and its lines */
+static char g_MsgText[62500];
 
 void Scorer_SetMsgText(const char *text, float time, const char *font) {
 	Str_Copy(g_MsgText, text, 0xf424);
@@ -574,7 +594,7 @@ void Scorer_SetMsgText(const char *text, float time, const char *font) {
 }
 
 /* the vtable of cAbstractTextScorer */
-const cScorerItemVtbl cAbstractTextScorer_vftable = {
+static const cScorerItemVtbl cAbstractTextScorer_vftable = {
 	.Draw = (void *)crt_purecall,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cAbstractTextScorer_Var,
@@ -582,7 +602,7 @@ const cScorerItemVtbl cAbstractTextScorer_vftable = {
 };
 
 /* the vtable of cMsgScorer */
-const cScorerItemVtbl cMsgScorer_vftable = {
+static const cScorerItemVtbl cMsgScorer_vftable = {
 	.Draw = cMsgScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cAbstractTextScorer_Var,
@@ -590,7 +610,7 @@ const cScorerItemVtbl cMsgScorer_vftable = {
 };
 
 /* the vtable of cLabelScorer */
-const cScorerItemVtbl cLabelScorer_vftable = {
+static const cScorerItemVtbl cLabelScorer_vftable = {
 	.Draw = cLabelScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cHintScorer_Var,
@@ -598,7 +618,7 @@ const cScorerItemVtbl cLabelScorer_vftable = {
 };
 
 /* the vtable of cHintScorer */
-const cScorerItemVtbl cHintScorer_vftable = {
+static const cScorerItemVtbl cHintScorer_vftable = {
 	.Draw = cHintScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cHintScorer_Var,
@@ -606,16 +626,16 @@ const cScorerItemVtbl cHintScorer_vftable = {
 };
 
 /* the vtable of cCreditsScorer */
-const cScorerItemVtbl cCreditsScorer_vftable = {
+static const cScorerItemVtbl cCreditsScorer_vftable = {
 	.Draw = cCreditsScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cCreditsScorer_Var,
 	.Delete = cCreditsScorer_Delete,
 };
 
-cGVar GVar_MissionScorerName;
+static cGVar GVar_MissionScorerName;
 cGVar GVar_TimeToMsg;
-cGVar GVar_HintAppearsTime;
+static cGVar GVar_HintAppearsTime;
 cGVar GVar_R_CreditsX;
 cGVar GVar_R_CreditsY;
 cGVar GVar_R_CreditsClear;

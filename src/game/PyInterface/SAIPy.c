@@ -31,7 +31,7 @@ CNodesTraffic *g_NodesTraffic;
 CNodesWorld *g_NodesWorld;
 
 /* IniAI(levelname, IsMapOutDoor) : creates the navigation graphs, traffic, A* and AI groups of the level */
-PyObject *SAI_IniAI(PyObject *self, PyObject *args) {
+static PyObject *SAI_IniAI(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
@@ -75,7 +75,7 @@ PyObject *SAI_IniAI(PyObject *self, PyObject *args) {
 }
 
 /* BuildGraph(arg, x, y, z) */
-PyObject *SAI_BuildGraph(PyObject *self, PyObject *args) {
+static PyObject *SAI_BuildGraph(PyObject *self, PyObject *args) {
 	int arg;
 	float x, y, z;
 
@@ -89,7 +89,7 @@ PyObject *SAI_BuildGraph(PyObject *self, PyObject *args) {
 }
 
 /* AnalizeMap(size) : analyses the level with a cube of that size; makes the graph if there is none */
-PyObject *SAI_AnalyzeMap(PyObject *self, PyObject *args) {
+static PyObject *SAI_AnalyzeMap(PyObject *self, PyObject *args) {
 	float size;
 
 	(void)self;
@@ -106,7 +106,7 @@ PyObject *SAI_AnalyzeMap(PyObject *self, PyObject *args) {
 }
 
 /* AnalizeGraph() : Analiza características grafo. No argument check. */
-PyObject *SAI_AnalyzeGraph(PyObject *self, PyObject *args) {
+static PyObject *SAI_AnalyzeGraph(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
 	CNodesWorld_AnalyzeGraph(g_NodesWorld);
@@ -114,7 +114,7 @@ PyObject *SAI_AnalyzeGraph(PyObject *self, PyObject *args) {
 }
 
 /* AnalizeGraph2D() : No argument check. */
-PyObject *SAI_AnalyzeGraph2D(PyObject *self, PyObject *args) {
+static PyObject *SAI_AnalyzeGraph2D(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
 	CNodesWorld2D_AnalyzeGraph(g_NodesWorld2D);
@@ -122,7 +122,7 @@ PyObject *SAI_AnalyzeGraph2D(PyObject *self, PyObject *args) {
 }
 
 /* AnalizeTraffic() : traffic graph of the level (indoor or outdoor) */
-PyObject *SAI_AnalyzeTraffic(PyObject *self, PyObject *args) {
+static PyObject *SAI_AnalyzeTraffic(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -134,7 +134,7 @@ PyObject *SAI_AnalyzeTraffic(PyObject *self, PyObject *args) {
 }
 
 /* BuildGraph2D(arg, x, y, z) : indoor levels only */
-PyObject *SAI_BuildGraph2D(PyObject *self, PyObject *args) {
+static PyObject *SAI_BuildGraph2D(PyObject *self, PyObject *args) {
 	int arg;
 	float x, y, z;
 
@@ -165,7 +165,7 @@ enum {
 };
 
 /* the report in the console (Spanish texts of the original), returns None */
-PyObject *SetState_Error(const char *entity, const char *state, int err, const char *target) {
+static PyObject *SetState_Error(const char *entity, const char *state, int err, const char *target) {
 	static const char *const texts[] = {
 		[1] = "PARAMETROS INCORRECTOS\n",
 		[2] = "CAMBIO DE ESTADO EN TODAS LAS ENTIDADES\n",
@@ -202,27 +202,15 @@ static int CheckAIEntity(cEntity *e, const char *type) {
 	return 0;
 }
 
-/* whether the dot product of p with each of the n vectors reaches r * r (rva 0x195ef0, not called in the exe) */
-byte Vec3_AllDotsReach(const vec3_t *v, int n, const vec3_t *p, float r) {
-	float r2 = r * r;
-
-	for (int i = 0; i < n; i++) {
-		if (r2 > v[i].x * p->x + v[i].y * p->y + v[i].z * p->z) {
-			return 0;
-		}
-	}
-	return 1;
-}
-
-int SetState_CheckChar(cEntity *e) {
+static int SetState_CheckChar(cEntity *e) {
 	return CheckAIEntity(e, TYEN_WALKCHAR);
 }
 
-int SetState_CheckVehicle(cEntity *e) {
+static int SetState_CheckVehicle(cEntity *e) {
 	return CheckAIEntity(e, TYEN_CAR);
 }
 
-int SetState_CheckTarget(cEntity *e) {
+static int SetState_CheckTarget(cEntity *e) {
 	if (!e) {
 		return SSERR_TARGET_NULL;
 	}
@@ -274,13 +262,13 @@ static cEntity *StateTarget(const char *name, const char *target, const char *st
 }
 
 /* SAI_VEHICLE_FREEZE: (state, vehicle) */
-PyObject *SetStateVehicle0(PyObject *self, PyObject *args) {
+static PyObject *SetStateVehicle0(PyObject *self, PyObject *args) {
 	(void)self;
 	return VehicleStateSimple(args, "FREEZE");
 }
 
 /* SAI_VEHICLE_GO_TO: (state, vehicle, x, y, z, f[, flag, f, f, f, flag]); flags count as on only when 1 */
-PyObject *SetStateVehicle1(PyObject *self, PyObject *args) {
+static PyObject *SetStateVehicle1(PyObject *self, PyObject *args) {
 	int st, err = SSERR_PARAMS, i5 = 0, i9 = 0;
 	char *name = NULL;
 	vec3_t pos;
@@ -317,13 +305,13 @@ static PyObject *VehicleStateTarget(PyObject *args, const char *state) {
 }
 
 /* SAI_VEHICLE_FIGHTING: (state, vehicle, target) */
-PyObject *SetStateVehicle2(PyObject *self, PyObject *args) {
+static PyObject *SetStateVehicle2(PyObject *self, PyObject *args) {
 	(void)self;
 	return VehicleStateTarget(args, "FIGHTING");
 }
 
 /* SAI_VEHICLE_IN_ROUTE: (state, vehicle[, flag, f, f]) */
-PyObject *SetStateVehicle3(PyObject *self, PyObject *args) {
+static PyObject *SetStateVehicle3(PyObject *self, PyObject *args) {
 	int st, err = SSERR_PARAMS, flag = 1;
 	char *name = NULL;
 	float a = 5.0f, b = 2.0f;
@@ -339,13 +327,13 @@ PyObject *SetStateVehicle3(PyObject *self, PyObject *args) {
 }
 
 /* SAI_VEHICLE_TRAFFIC: (state, vehicle) */
-PyObject *SetStateVehicle4(PyObject *self, PyObject *args) {
+static PyObject *SetStateVehicle4(PyObject *self, PyObject *args) {
 	(void)self;
 	return VehicleStateSimple(args, "TRAFFIC");
 }
 
 /* SAI_VEHICLE_GET_AWAY_STOP: (state, vehicle, target, f); every error but the target one reports PARAMETROS */
-PyObject *SetStateVehicle5(PyObject *self, PyObject *args) {
+static PyObject *SetStateVehicle5(PyObject *self, PyObject *args) {
 	int st, err;
 	char *name = NULL, *target;
 	float f;
@@ -366,7 +354,7 @@ PyObject *SetStateVehicle5(PyObject *self, PyObject *args) {
 }
 
 /* SAI_VEHICLE_RACE: (state, vehicle, x, y, z, f[, flag, flag]) */
-PyObject *SetStateVehicle6(PyObject *self, PyObject *args) {
+static PyObject *SetStateVehicle6(PyObject *self, PyObject *args) {
 	int st, err = SSERR_PARAMS, i1 = 1, i2 = 0;
 	char *name = NULL;
 	vec3_t pos;
@@ -383,7 +371,7 @@ PyObject *SetStateVehicle6(PyObject *self, PyObject *args) {
 }
 
 /* SAI_VEHICLE_CHASE: (state, vehicle, target[, f, f]), defaults from the engine */
-PyObject *SetStateVehicle7(PyObject *self, PyObject *args) {
+static PyObject *SetStateVehicle7(PyObject *self, PyObject *args) {
 	int st, err = SSERR_PARAMS;
 	char *name = NULL, *target;
 	float a = g_AIChaseDefault1, b = g_AIChaseDefault2;
@@ -404,19 +392,19 @@ PyObject *SetStateVehicle7(PyObject *self, PyObject *args) {
 }
 
 /* SAI_VEHICLE_FIGHTING_FREEZE: (state, vehicle, target) */
-PyObject *SetStateVehicle8(PyObject *self, PyObject *args) {
+static PyObject *SetStateVehicle8(PyObject *self, PyObject *args) {
 	(void)self;
 	return VehicleStateTarget(args, "FIGHTING_FREEZE");
 }
 
 /* SAI_VEHICLE_TRAFFIC_INDOOR: (state, vehicle) */
-PyObject *SetStateVehicle9(PyObject *self, PyObject *args) {
+static PyObject *SetStateVehicle9(PyObject *self, PyObject *args) {
 	(void)self;
 	return VehicleStateSimple(args, "TRAFFIC_INDOOR");
 }
 
 /* SAI_CHAR_STATIC: (state, char) */
-PyObject *SetStateChar0(PyObject *self, PyObject *args) {
+static PyObject *SetStateChar0(PyObject *self, PyObject *args) {
 	int st, err = SSERR_PARAMS;
 	char *name = NULL;
 
@@ -431,7 +419,7 @@ PyObject *SetStateChar0(PyObject *self, PyObject *args) {
 }
 
 /* SAI_CHAR_IN_ROUTE: (state, char, f[, flag]) */
-PyObject *SetStateChar1(PyObject *self, PyObject *args) {
+static PyObject *SetStateChar1(PyObject *self, PyObject *args) {
 	int st, err = SSERR_PARAMS, flag = 1;
 	char *name = NULL;
 	float f;
@@ -486,19 +474,19 @@ static PyObject *CharStateTargetI(PyObject *args, const char *state) {
 }
 
 /* SAI_CHAR_CHASE_WITH_ACTION: (state, char, target, f) */
-PyObject *SetStateChar2(PyObject *self, PyObject *args) {
+static PyObject *SetStateChar2(PyObject *self, PyObject *args) {
 	(void)self;
 	return CharStateTargetF(args, "CHASE_WITH_ACTION_CHAR");
 }
 
 /* SAI_CHAR_CHASE_WITHOUT_ACTION: (state, char, target, f) */
-PyObject *SetStateChar3(PyObject *self, PyObject *args) {
+static PyObject *SetStateChar3(PyObject *self, PyObject *args) {
 	(void)self;
 	return CharStateTargetF(args, "CHASE_WITHOUT_ACTION_CHAR");
 }
 
 /* SAI_CHAR_GO_TO: (state, char, x, y, z, x, y, z, f, f) */
-PyObject *SetStateChar4(PyObject *self, PyObject *args) {
+static PyObject *SetStateChar4(PyObject *self, PyObject *args) {
 	int st, err = SSERR_PARAMS;
 	char *name = NULL;
 	vec3_t a, b;
@@ -515,13 +503,13 @@ PyObject *SetStateChar4(PyObject *self, PyObject *args) {
 }
 
 /* SAI_CHAR_GET_AWAY: (state, char, target, f) */
-PyObject *SetStateChar5(PyObject *self, PyObject *args) {
+static PyObject *SetStateChar5(PyObject *self, PyObject *args) {
 	(void)self;
 	return CharStateTargetF(args, "GET_AWAY_CHAR");
 }
 
 /* SAI_CHAR_PATROL_ZONE: (state, char, x, y, z, f, f[, flag]) */
-PyObject *SetStateChar6(PyObject *self, PyObject *args) {
+static PyObject *SetStateChar6(PyObject *self, PyObject *args) {
 	int st, err = SSERR_PARAMS, flag = 1;
 	char *name = NULL;
 	vec3_t pos;
@@ -539,19 +527,19 @@ PyObject *SetStateChar6(PyObject *self, PyObject *args) {
 }
 
 /* SAI_CHAR_CHASE_WITH_ACTION_BACK: (state, char, target, f) */
-PyObject *SetStateChar7(PyObject *self, PyObject *args) {
+static PyObject *SetStateChar7(PyObject *self, PyObject *args) {
 	(void)self;
 	return CharStateTargetF(args, "CHASE_WITH_ACTION_BACK_CHAR");
 }
 
 /* SAI_CHAR_ORIENT_DINAMIC_OBJECTIVE: (state, char, target, flag) */
-PyObject *SetStateChar8(PyObject *self, PyObject *args) {
+static PyObject *SetStateChar8(PyObject *self, PyObject *args) {
 	(void)self;
 	return CharStateTargetI(args, "ORIENT_DINAMIC_OBJECTIVE_CHAR");
 }
 
 /* SAI_CHAR_ORIENT_DINAMIC_OBJECTIVE_WITH_ACTION: (state, char, target, flag) */
-PyObject *SetStateChar9(PyObject *self, PyObject *args) {
+static PyObject *SetStateChar9(PyObject *self, PyObject *args) {
 	(void)self;
 	return CharStateTargetI(args, "ORIENT_DINAMIC_OBJECTIVE_WITH_ACTION_CHAR");
 }
@@ -569,7 +557,7 @@ static PyObject *(*const charStates[10])(PyObject *, PyObject *) = {
 	SetStateChar5, SetStateChar6, SetStateChar7, SetStateChar8, SetStateChar9,
 };
 
-PyObject *SAI_SetStateVehicle(PyObject *self, PyObject *args) {
+static PyObject *SAI_SetStateVehicle(PyObject *self, PyObject *args) {
 	uint32_t state = (uint32_t)PyInt_AsLong(PyTuple_GetItem(args, 0));
 	if (state > 9) {
 		return Py_ReturnNone();
@@ -577,7 +565,7 @@ PyObject *SAI_SetStateVehicle(PyObject *self, PyObject *args) {
 	return vehicleStates[state](self, args);
 }
 
-PyObject *SAI_SetStateChar(PyObject *self, PyObject *args) {
+static PyObject *SAI_SetStateChar(PyObject *self, PyObject *args) {
 	uint32_t state = (uint32_t)PyInt_AsLong(PyTuple_GetItem(args, 0));
 	if (state > 9) {
 		return Py_ReturnNone();
@@ -586,7 +574,7 @@ PyObject *SAI_SetStateChar(PyObject *self, PyObject *args) {
 }
 
 /* GetStateVehicle(name) : state number of the vehicle AI, None without AI */
-PyObject *SAI_GetStateVehicle(PyObject *self, PyObject *args) {
+static PyObject *SAI_GetStateVehicle(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
@@ -601,7 +589,7 @@ PyObject *SAI_GetStateVehicle(PyObject *self, PyObject *args) {
 }
 
 /* GetStateChar(name) : state number of the character AI, None without AI */
-PyObject *SAI_GetStateChar(PyObject *self, PyObject *args) {
+static PyObject *SAI_GetStateChar(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
@@ -620,7 +608,7 @@ PyObject *SAI_GetStateChar(PyObject *self, PyObject *args) {
  * conversions for 26 pointers, so a 27th argument writes through an undefined pointer; the same here. Failure
  * returns NULL without a Python exception.
  */
-PyObject *SAI_EnableAIVehicle(PyObject *self, PyObject *args) {
+static PyObject *SAI_EnableAIVehicle(PyObject *self, PyObject *args) {
 	char *name;
 	int enable;
 	cAIVehicleParams1 p1 = { .boostItemLife = 1, .boostItemAmmo = 1, .itemAmmo = 0.25f, .hookRace = 0, .hookMap = 0,
@@ -656,7 +644,7 @@ PyObject *SAI_EnableAIVehicle(PyObject *self, PyObject *args) {
 }
 
 /* EnableAIChar(name, enable, arg) : the name must match the entity exactly (the table lookup ignores case) */
-PyObject *SAI_EnableAIChar(PyObject *self, PyObject *args) {
+static PyObject *SAI_EnableAIChar(PyObject *self, PyObject *args) {
 	char *name;
 	int enable, arg;
 
@@ -676,7 +664,7 @@ PyObject *SAI_EnableAIChar(PyObject *self, PyObject *args) {
  * GetNextRacePoint(initialPoint, minDist, maxDist) : next race point; maxDist grows by 1000 until one is found
  * (outdoors only one try). Past 1e8 the CHECK fails. A parse error returns None with the error set.
  */
-PyObject *SAI_GetNextRacePoint(PyObject *self, PyObject *args) {
+static PyObject *SAI_GetNextRacePoint(PyObject *self, PyObject *args) {
 	vec3_t initial, out;
 	float minDist, maxDist;
 
@@ -701,7 +689,7 @@ PyObject *SAI_GetNextRacePoint(PyObject *self, PyObject *args) {
 }
 
 /* GetNearestItemLife(name) : name of the nearest life item for the AI of the entity, else None */
-PyObject *SAI_GetNearestItemLife(PyObject *self, PyObject *args) {
+static PyObject *SAI_GetNearestItemLife(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
@@ -718,7 +706,7 @@ PyObject *SAI_GetNearestItemLife(PyObject *self, PyObject *args) {
 }
 
 /* GetRandomVisibilityPoint() : a random point of the visibility graph (CRT rand), None if there is none */
-PyObject *SAI_GetRandomVisibilityPoint(PyObject *self, PyObject *args) {
+static PyObject *SAI_GetRandomVisibilityPoint(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
 	int n = g_NodesWorld->sup.vftable->NumVisPoints(g_NodesWorld);
@@ -731,7 +719,7 @@ PyObject *SAI_GetRandomVisibilityPoint(PyObject *self, PyObject *args) {
 }
 
 /* GetReposCharPos(pos, name[, targetName]) : free position for a character, None if it fails */
-PyObject *SAI_GetReposCharPos(PyObject *self, PyObject *args) {
+static PyObject *SAI_GetReposCharPos(PyObject *self, PyObject *args) {
 	vec3_t pos, out;
 	char *name, *targetName = NULL;
 
@@ -753,7 +741,7 @@ PyObject *SAI_GetReposCharPos(PyObject *self, PyObject *args) {
 }
 
 /* InitVehicleRace() : No argument check. */
-PyObject *SAI_InitVehicleRace(PyObject *self, PyObject *args) {
+static PyObject *SAI_InitVehicleRace(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
 	g_VehicleGroup->vftable->Clear(&g_VehicleGroup->base);
@@ -761,7 +749,7 @@ PyObject *SAI_InitVehicleRace(PyObject *self, PyObject *args) {
 }
 
 /* AddVehicleRace(name) : adds a vehicle to the race group */
-PyObject *SAI_AddVehicleRace(PyObject *self, PyObject *args) {
+static PyObject *SAI_AddVehicleRace(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
@@ -775,7 +763,7 @@ PyObject *SAI_AddVehicleRace(PyObject *self, PyObject *args) {
 }
 
 /* SetRotStaticObj(name, a, b) */
-PyObject *SAI_SetRotStaticObj(PyObject *self, PyObject *args) {
+static PyObject *SAI_SetRotStaticObj(PyObject *self, PyObject *args) {
 	char *name;
 	float a, b;
 
@@ -791,7 +779,7 @@ PyObject *SAI_SetRotStaticObj(PyObject *self, PyObject *args) {
 }
 
 /* SetInertia(name, on) : on only for the value 1 */
-PyObject *SAI_SetInertia(PyObject *self, PyObject *args) {
+static PyObject *SAI_SetInertia(PyObject *self, PyObject *args) {
 	char *name;
 	int on;
 
@@ -809,56 +797,56 @@ PyObject *SAI_SetInertia(PyObject *self, PyObject *args) {
 void *g_AppPyOne;
 
 /* GetOD() : returns the object at rva 0x46797c without a new reference (a folded stub in the original) */
-PyObject *SAI_GetOD(PyObject *self, PyObject *args) {
+static PyObject *SAI_GetOD(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
 	return (PyObject *)g_AppPyOne;
 }
 
-extern char str_PyDoc_SAI_AddVehicleRace[];
-extern char str_PyDoc_SAI_AnalyzeGraph[];
-extern char str_PyDoc_SAI_AnalyzeGraph2D[];
-extern char str_PyDoc_SAI_AnalyzeMap[];
-extern char str_PyDoc_SAI_AnalyzeTraffic[56];
-extern char str_PyDoc_SAI_BuildGraph[];
-extern char str_PyDoc_SAI_BuildGraph2D[];
-extern char str_PyDoc_SAI_EnableAIChar[];
-extern char str_PyDoc_SAI_EnableAIVehicle[];
-extern char str_PyDoc_SAI_GetNearestItemLife[104];
-extern char str_PyDoc_SAI_GetNextRacePoint[256];
-extern char str_PyDoc_SAI_GetRandomVisibilityPoint[];
-extern char str_PyDoc_SAI_GetReposCharPos[];
-extern char str_PyDoc_SAI_GetStateChar[];
-extern char str_PyDoc_SAI_GetStateVehicle[];
-extern char str_PyDoc_SAI_IniAI[];
-extern char str_PyDoc_SAI_InitVehicleRace[60];
-extern char str_PyDoc_SAI_SetInertia[72];
-extern char str_PyDoc_SAI_SetRotStaticObj[];
-extern char str_PyDoc_SAI_SetStateChar[];
-extern char str_PyDoc_SAI_SetStateVehicle[872];
-extern const char str_PyMethod_SAI_AddVehicleRace[];
-extern const char str_PyMethod_SAI_AnalyzeGraph[];
-extern const char str_PyMethod_SAI_AnalyzeGraph2D[];
-extern const char str_PyMethod_SAI_AnalyzeMap[];
-extern const char str_PyMethod_SAI_AnalyzeTraffic[];
-extern const char str_PyMethod_SAI_BuildGraph[];
-extern const char str_PyMethod_SAI_BuildGraph2D[];
-extern const char str_PyMethod_SAI_EnableAIChar[];
-extern const char str_PyMethod_SAI_EnableAIVehicle[];
-extern const char str_PyMethod_SAI_GetNearestItemLife[];
-extern const char str_PyMethod_SAI_GetNextRacePoint[];
-extern const char str_PyMethod_SAI_GetOD[];
-extern const char str_PyMethod_SAI_GetRandomVisibilityPoint[];
-extern const char str_PyMethod_SAI_GetReposCharPos[];
-extern const char str_PyMethod_SAI_GetStateChar[];
-extern const char str_PyMethod_SAI_GetStateVehicle[];
-extern const char str_PyMethod_SAI_IniAI[];
-extern const char str_PyMethod_SAI_InitVehicleRace[];
-extern const char str_PyMethod_SAI_SetInertia[];
-extern const char str_PyMethod_SAI_SetRotStaticObj[];
-extern const char str_PyMethod_SAI_SetStateChar[];
-extern const char str_PyMethod_SAI_SetStateVehicle[];
-PyMethodDef SAI_methods[23] = {
+static char str_PyDoc_SAI_AddVehicleRace[];
+static char str_PyDoc_SAI_AnalyzeGraph[];
+static char str_PyDoc_SAI_AnalyzeGraph2D[];
+static char str_PyDoc_SAI_AnalyzeMap[];
+static char str_PyDoc_SAI_AnalyzeTraffic[56];
+static char str_PyDoc_SAI_BuildGraph[];
+static char str_PyDoc_SAI_BuildGraph2D[];
+static char str_PyDoc_SAI_EnableAIChar[];
+static char str_PyDoc_SAI_EnableAIVehicle[];
+static char str_PyDoc_SAI_GetNearestItemLife[104];
+static char str_PyDoc_SAI_GetNextRacePoint[256];
+static char str_PyDoc_SAI_GetRandomVisibilityPoint[];
+static char str_PyDoc_SAI_GetReposCharPos[];
+static char str_PyDoc_SAI_GetStateChar[];
+static char str_PyDoc_SAI_GetStateVehicle[];
+static char str_PyDoc_SAI_IniAI[];
+static char str_PyDoc_SAI_InitVehicleRace[60];
+static char str_PyDoc_SAI_SetInertia[72];
+static char str_PyDoc_SAI_SetRotStaticObj[];
+static char str_PyDoc_SAI_SetStateChar[];
+static char str_PyDoc_SAI_SetStateVehicle[872];
+static const char str_PyMethod_SAI_AddVehicleRace[];
+static const char str_PyMethod_SAI_AnalyzeGraph[];
+static const char str_PyMethod_SAI_AnalyzeGraph2D[];
+static const char str_PyMethod_SAI_AnalyzeMap[];
+static const char str_PyMethod_SAI_AnalyzeTraffic[];
+static const char str_PyMethod_SAI_BuildGraph[];
+static const char str_PyMethod_SAI_BuildGraph2D[];
+static const char str_PyMethod_SAI_EnableAIChar[];
+static const char str_PyMethod_SAI_EnableAIVehicle[];
+static const char str_PyMethod_SAI_GetNearestItemLife[];
+static const char str_PyMethod_SAI_GetNextRacePoint[];
+static const char str_PyMethod_SAI_GetOD[];
+static const char str_PyMethod_SAI_GetRandomVisibilityPoint[];
+static const char str_PyMethod_SAI_GetReposCharPos[];
+static const char str_PyMethod_SAI_GetStateChar[];
+static const char str_PyMethod_SAI_GetStateVehicle[];
+static const char str_PyMethod_SAI_IniAI[];
+static const char str_PyMethod_SAI_InitVehicleRace[];
+static const char str_PyMethod_SAI_SetInertia[];
+static const char str_PyMethod_SAI_SetRotStaticObj[];
+static const char str_PyMethod_SAI_SetStateChar[];
+static const char str_PyMethod_SAI_SetStateVehicle[];
+static PyMethodDef SAI_methods[23] = {
 	{
 		.ml_name = (void *)str_PyMethod_SAI_AnalyzeMap,
 		.ml_meth = (void *)SAI_AnalyzeMap,
@@ -995,43 +983,43 @@ PyMethodDef SAI_methods[23] = {
 
 SD_PY_MODULE(SAI, 0x42a488)
 
-char str_PyDoc_SAI_IniAI[] = "IniAI(levelPath) : Inicializa AI para un nivel.";
+static char str_PyDoc_SAI_IniAI[] = "IniAI(levelPath) : Inicializa AI para un nivel.";
 
-char str_PyDoc_SAI_BuildGraph[] =
+static char str_PyDoc_SAI_BuildGraph[] =
 	"BuildGraph(int numNodesRadius, float sizeNodeX, float sizeNodeY, float sizeNodeZ) : Crea el Grafo as"
 	"ociado al Pathfinding";
 
-const char str_PyMethod_SAI_AnalyzeMap[] = "AnalizeMap";
-const char str_PyMethod_SAI_AnalyzeGraph[] = "AnalizeGraph";
-const char str_PyMethod_SAI_AnalyzeGraph2D[] = "AnalizeGraph2D";
+static const char str_PyMethod_SAI_AnalyzeMap[] = "AnalizeMap";
+static const char str_PyMethod_SAI_AnalyzeGraph[] = "AnalizeGraph";
+static const char str_PyMethod_SAI_AnalyzeGraph2D[] = "AnalizeGraph2D";
 
-char str_PyDoc_SAI_AnalyzeMap[] = "AnalizeMap(float sizeNode) : Analiza características mapa.";
+static char str_PyDoc_SAI_AnalyzeMap[] = "AnalizeMap(float sizeNode) : Analiza características mapa.";
 
-const char str_PyMethod_SAI_AnalyzeTraffic[] = "AnalizeTraffic";
-const char str_PyMethod_SAI_BuildGraph[] = "BuildGraph";
+static const char str_PyMethod_SAI_AnalyzeTraffic[] = "AnalizeTraffic";
+static const char str_PyMethod_SAI_BuildGraph[] = "BuildGraph";
 
-char str_PyDoc_SAI_AnalyzeGraph[] = "AnalizeGraph() : Analiza características grafo.";
+static char str_PyDoc_SAI_AnalyzeGraph[] = "AnalizeGraph() : Analiza características grafo.";
 
-const char str_PyMethod_SAI_BuildGraph2D[] = "BuildGraph2D";
+static const char str_PyMethod_SAI_BuildGraph2D[] = "BuildGraph2D";
 
-char str_PyDoc_SAI_AnalyzeGraph2D[] = "AnalizeGraph2D() : Analiza características grafo 2D.";
+static char str_PyDoc_SAI_AnalyzeGraph2D[] = "AnalizeGraph2D() : Analiza características grafo 2D.";
 
-const char str_PyMethod_SAI_SetStateVehicle[] = "SetStateVehicle";
-const char str_PyMethod_SAI_SetStateChar[] = "SetStateChar";
+static const char str_PyMethod_SAI_SetStateVehicle[] = "SetStateVehicle";
+static const char str_PyMethod_SAI_SetStateChar[] = "SetStateChar";
 
-char str_PyDoc_SAI_AnalyzeTraffic[56] = "AnalizeTraffic() : Analiza características tráfico.";
+static char str_PyDoc_SAI_AnalyzeTraffic[56] = "AnalizeTraffic() : Analiza características tráfico.";
 
-const char str_PyMethod_SAI_GetStateVehicle[] = "GetStateVehicle";
+static const char str_PyMethod_SAI_GetStateVehicle[] = "GetStateVehicle";
 
-char str_PyDoc_SAI_BuildGraph2D[] =
+static char str_PyDoc_SAI_BuildGraph2D[] =
 	"BuildGraph2D(int numNodesRadius, float sizeNodeX, float sizeNodeY, float sizeNodeZ) : Crea el Grafo "
 	"asociado al Pathfinding 2D";
 
-const char str_PyMethod_SAI_GetStateChar[] = "GetStateChar";
-const char str_PyMethod_SAI_EnableAIVehicle[] = "EnableAIVehicle";
-const char str_PyMethod_SAI_EnableAIChar[] = "EnableAIChar";
+static const char str_PyMethod_SAI_GetStateChar[] = "GetStateChar";
+static const char str_PyMethod_SAI_EnableAIVehicle[] = "EnableAIVehicle";
+static const char str_PyMethod_SAI_EnableAIChar[] = "EnableAIChar";
 
-char str_PyDoc_SAI_SetStateVehicle[872] =
+static char str_PyDoc_SAI_SetStateVehicle[872] =
 	"SetStateVehicle(0, string nameAgent) : Estado sin movimiento ni disparo.\n"
 	" SetStateVehicle(1, float posObjX, float posObjY, float posObjZ, radiusObj, string nameAgent) : Esta"
 	"do alcanzar posición.\n"
@@ -1045,18 +1033,18 @@ char str_PyDoc_SAI_SetStateVehicle[872] =
 	" SetStateVehicle(8, string nameObjectiveDin, string nameAgent) : Estado lucha manteniendo posición."
 	"\n SetStateVehicle(9, string nameAgent) : Estado tráfico en interiores.\n";
 
-const char str_PyMethod_SAI_IniAI[] = "IniAI";
-const char str_PyMethod_SAI_GetNextRacePoint[] = "GetNextRacePoint";
-const char str_PyMethod_SAI_GetNearestItemLife[] = "GetNearestItemLife";
-const char str_PyMethod_SAI_GetRandomVisibilityPoint[] = "GetRandomVisibilityPoint";
-const char str_PyMethod_SAI_GetReposCharPos[] = "GetReposCharPos";
-const char str_PyMethod_SAI_InitVehicleRace[] = "InitVehicleRace";
-const char str_PyMethod_SAI_AddVehicleRace[] = "AddVehicleRace";
-const char str_PyMethod_SAI_SetRotStaticObj[] = "SetRotStaticObj";
-const char str_PyMethod_SAI_SetInertia[] = "SetInertia";
-const char str_PyMethod_SAI_GetOD[] = "GetOD";
+static const char str_PyMethod_SAI_IniAI[] = "IniAI";
+static const char str_PyMethod_SAI_GetNextRacePoint[] = "GetNextRacePoint";
+static const char str_PyMethod_SAI_GetNearestItemLife[] = "GetNearestItemLife";
+static const char str_PyMethod_SAI_GetRandomVisibilityPoint[] = "GetRandomVisibilityPoint";
+static const char str_PyMethod_SAI_GetReposCharPos[] = "GetReposCharPos";
+static const char str_PyMethod_SAI_InitVehicleRace[] = "InitVehicleRace";
+static const char str_PyMethod_SAI_AddVehicleRace[] = "AddVehicleRace";
+static const char str_PyMethod_SAI_SetRotStaticObj[] = "SetRotStaticObj";
+static const char str_PyMethod_SAI_SetInertia[] = "SetInertia";
+static const char str_PyMethod_SAI_GetOD[] = "GetOD";
 
-char str_PyDoc_SAI_GetStateVehicle[] =
+static char str_PyDoc_SAI_GetStateVehicle[] =
 	"GetStateVehicle(string nameEntity) : Devuelve el estado de la IA del vehículo.\n"
 	" 0 : Estado sin movimiento ni disparo.\n 1 : Estado alcanzar posición.\n"
 	" 2 : Estado persecución enemigo.\n 3 : Estado en ruta.\n 4 : Estado tráfico.\n"
@@ -1064,14 +1052,14 @@ char str_PyDoc_SAI_GetStateVehicle[] =
 	" 8 : Estado persecución enemigo con uso de hook.\n"
 	" 9 : Estado sin movimiento ni disparo por estar objetivo en posición inválida.\n";
 
-char str_PyDoc_SAI_GetStateChar[] =
+static char str_PyDoc_SAI_GetStateChar[] =
 	"GetStateChar(string nameEntity) : Devuelve el estado de la IA del personaje.\n";
 
-char str_PyDoc_SAI_EnableAIVehicle[] =
+static char str_PyDoc_SAI_EnableAIVehicle[] =
 	"EnableAIVehicle(string nameEntity, int enable, int controlStrafe, int controlBrake, int stupidPathfi"
 	"nding) : Habilita la IA del vehículo indicando características asociadas al movimiento).";
 
-char str_PyDoc_SAI_SetStateChar[] =
+static char str_PyDoc_SAI_SetStateChar[] =
 	"SetStateChar(0, string nameAgent) : Estado sin movimiento ni disparo.\n"
 	" SetStateChar(1, string nameAgent, float vel, int withStopTemp) : Estado en ruta.\n"
 	" SetStateChar(2, string nameAgent, string nameObjective, float vel) : Estado en persecución objetivo"
@@ -1088,33 +1076,33 @@ char str_PyDoc_SAI_SetStateChar[] =
 	" SetStateChar(9, string nameAgent, string nameObjective, int goBack) : Orientación sobre objetivo di"
 	"námico con acción.";
 
-char str_PyDoc_SAI_EnableAIChar[] =
+static char str_PyDoc_SAI_EnableAIChar[] =
 	"EnableAIChar(string nameEntity, int enable, int stupidPathfinding) : Habilita la IA del personaje in"
 	"dicando características asociadas al movimiento).";
 
-char str_PyDoc_SAI_GetNextRacePoint[256] =
+static char str_PyDoc_SAI_GetNextRacePoint[256] =
 	"(point) GetNextRacePoint(initialPoint, minDist, maxDist) : A partir de un punto inicial 'initialPoin"
 	"t', una distancia mínima 'minDist' y una distancia máxima 'maxDist', devuelve un punto aleatorio a p"
 	"artir del grafo 3D de la IA en el interior actual.";
 
-char str_PyDoc_SAI_GetNearestItemLife[104] =
+static char str_PyDoc_SAI_GetNearestItemLife[104] =
 	"(itemName) GetNearestItemLife(vehicleName)) : Devuelve el item de vida más cercano a una nave dada.";
 
-char str_PyDoc_SAI_GetRandomVisibilityPoint[] =
+static char str_PyDoc_SAI_GetRandomVisibilityPoint[] =
 	"(point) GetRandomVisibilityPoint() : Devuelve un punto aleatorio del grafo de puntos de visibilidad.";
 
-char str_PyDoc_SAI_GetReposCharPos[] =
+static char str_PyDoc_SAI_GetReposCharPos[] =
 	"(x,y,z) GetReposCharPos((x,y,z) ,EntityClass,[,EntityName]) : Obtiene un punto de reposicion de pers"
 	"onaje (si entidad, se asigna).\n Retorna (None) si falla";
 
-char str_PyDoc_SAI_InitVehicleRace[60] = "InitVehicleRace() : Inicializa carrera de vehículos.";
+static char str_PyDoc_SAI_InitVehicleRace[60] = "InitVehicleRace() : Inicializa carrera de vehículos.";
 
-char str_PyDoc_SAI_AddVehicleRace[] =
+static char str_PyDoc_SAI_AddVehicleRace[] =
 	"bool AddVehicleRace(cWithLifeEntity *entidad) : Asigna entidad como perteneciente a carrera.";
 
-char str_PyDoc_SAI_SetRotStaticObj[] =
+static char str_PyDoc_SAI_SetRotStaticObj[] =
 	"bool SetRotStaticObj(float maxVelRot, float limIncVelRot) : Asigna rotaciones para movimiento hacia "
 	"objetivo estático.";
 
-char str_PyDoc_SAI_SetInertia[72] = "void SetInertia(bool inertia) : Indica si la nave tiene inercia.";
+static char str_PyDoc_SAI_SetInertia[72] = "void SetInertia(bool inertia) : Indica si la nave tiene inercia.";
 

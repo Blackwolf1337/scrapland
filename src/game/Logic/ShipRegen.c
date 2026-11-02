@@ -15,26 +15,25 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
-
-cGVar GVar_RegenerationStartTime;
+static cGVar GVar_RegenerationStartTime;
 
 #define g_RegenerationStartTime (GVar_RegenerationStartTime.value.f)
-cGVar GVar_RegenerationTimeRate;
+static cGVar GVar_RegenerationTimeRate;
 
 #define g_RegenerationTimeRate (GVar_RegenerationTimeRate.value.f)
-cGVar GVar_RegenerationCharStartTime;
+static cGVar GVar_RegenerationCharStartTime;
 
 #define g_RegenerationCharStartTime (GVar_RegenerationCharStartTime.value.f)
-cGVar GVar_RegenerationCharTimeRate;
+static cGVar GVar_RegenerationCharTimeRate;
 
 #define g_RegenerationCharTimeRate (GVar_RegenerationCharTimeRate.value.f)
-cGVar GVar_RegenerationItem;
+static cGVar GVar_RegenerationItem;
 
 #define g_RegenerationItem (GVar_RegenerationItem.value.s)
-cGVar GVar_LifeToLaunchCallback;
+static cGVar GVar_LifeToLaunchCallback;
 
 #define g_LifeToLaunchCallback (GVar_LifeToLaunchCallback.value.i)
-cGVarFunction GVar_LifeReachedCallback;
+static cGVarFunction GVar_LifeReachedCallback;
 
 #define g_LifeReachedCallback (((cPy_Function *)&GVar_LifeReachedCallback.func))
 
@@ -59,7 +58,8 @@ static void ShipRegen_Callback(cEntity *e, int dir) {
 	cPy_Function_Execute(g_LifeReachedCallback, 0);
 }
 
-void ShipRegen_UpdateShip(cShipRegen *self, float dt) {
+/* the points of the ship of SetShipToRegenerate (LifeReachedCallback at LifeToLaunchCallback) and its bar */
+static void ShipRegen_UpdateShip(cShipRegen *self, float dt) {
 	cShipRegenShip *s = self->ship;
 
 	if (!s->name[0]) {

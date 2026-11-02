@@ -13,6 +13,13 @@
 #include "scrap/withlifeentity.h"
 #include "scrap/staticinit.h"
 
+#define CITEMENTITY_VFTABLE (&cItemEntity_vftable.base)
+#define g_ItemFxDist (GVar_FXItemFadeMaxDist.value.f)		/* the fade effects only nearer (60000) */
+#define g_ItemSyncDist (GVar_NetItemDistAct.value.f)
+static const cObjEntityVtbl cItemEntity_vftable;
+static cGVar GVar_NetItemDistAct;
+static cGVar GVar_FXItemFadeMaxDist;
+
 #define ITEM_CLASSNAME "item"
 
 /* the entity callback of the sphere test: other touched self at point */
@@ -82,7 +89,7 @@ cEntity *cItemEntity_ctor(void *mem, const char *name, float x, float y, float z
 	return &self->base;
 }
 
-void cItemEntity_dtor(cItemEntity *self) {
+static void cItemEntity_dtor(cItemEntity *self) {
 	self->base.vftable = CITEMENTITY_VFTABLE;
 	cPy_Function_dtor(&self->onReset);
 	cPy_Function_dtor(&self->onTake);
@@ -90,7 +97,7 @@ void cItemEntity_dtor(cItemEntity *self) {
 	cObjEntity_dtor(&self->base);
 }
 
-cEntity *cItemEntity_Delete(cEntity *base, uint32_t flags) {
+static cEntity *cItemEntity_Delete(cEntity *base, uint32_t flags) {
 	cItemEntity *self = (cItemEntity *)base;
 	cItemEntity_dtor(self);
 	if (flags & 1) {
@@ -99,7 +106,7 @@ cEntity *cItemEntity_Delete(cEntity *base, uint32_t flags) {
 	return base;
 }
 
-void cItemEntity_Touch(cEntity *elem, cEntity *other, const vec3_t *point, const vec3_t *dir) {
+static void cItemEntity_Touch(cEntity *elem, cEntity *other, const vec3_t *point, const vec3_t *dir) {
 	cItemEntity *self = (cItemEntity *)elem;
 	cEntity *pl = Item_Usr0();
 
@@ -125,7 +132,8 @@ void cItemEntity_Touch(cEntity *elem, cEntity *other, const vec3_t *point, const
 	cPy_Function_Execute(&self->onTake, 0);
 }
 
-byte cItemEntity_VarF(cEntity *elem, const char *name, double *d, int set) {
+static void cItemEntity_SetBackTime(cItemEntity *self, float t);
+static byte cItemEntity_VarF(cEntity *elem, const char *name, double *d, int set) {
 	cItemEntity *self = (cItemEntity *)elem;
 	if (!*name) {
 		return 0;
@@ -165,26 +173,13 @@ byte cItemEntity_VarF(cEntity *elem, const char *name, double *d, int set) {
 	return cObjEntity_VarF(&self->base, name, d, set);
 }
 
-vec3_t *cItemEntity_GetOrigin(cItemEntity *self, vec3_t *out) {
-	*out = self->origin;
-	return out;
-}
-
-char *cItemEntity_GetOwner(cItemEntity *self) {
-	return self->owner;
-}
-
-float cItemEntity_GetBackTime(cItemEntity *self) {
-	return self->backTime;
-}
-
-const char *cItemEntity_GetClassName(cEntity *base) {
+static const char *cItemEntity_GetClassName(cEntity *base) {
 	cItemEntity *self = (cItemEntity *)base;
 	(void)self;
 	return ITEM_CLASSNAME;
 }
 
-float cItemEntity_GetRadius(cEntity *base) {
+static float cItemEntity_GetRadius(cEntity *base) {
 	cItemEntity *self = (cItemEntity *)base;
 	return self->radius;
 }
@@ -198,7 +193,7 @@ static inline void Item_VarFlag(byte *flag, int *i, int set) {
 	}
 }
 
-byte cItemEntity_VarI(cEntity *elem, const char *name, int *i, int set) {
+static byte cItemEntity_VarI(cEntity *elem, const char *name, int *i, int set) {
 	cItemEntity *self = (cItemEntity *)elem;
 	if (!*name) {
 		return 0;
@@ -238,7 +233,7 @@ byte cItemEntity_VarI(cEntity *elem, const char *name, int *i, int set) {
 	return cObjEntity_VarI(&self->base, name, i, set);
 }
 
-byte cItemEntity_IsType(cEntity *elem, const char *type) {
+static byte cItemEntity_IsType(cEntity *elem, const char *type) {
 	cItemEntity *self = (cItemEntity *)elem;
 	if (!strcmp(type, ITEM_CLASSNAME)) {
 		return 1;
@@ -246,7 +241,7 @@ byte cItemEntity_IsType(cEntity *elem, const char *type) {
 	return cObjEntity_IsType(&self->base, type);
 }
 
-void cItemEntity_NetRead(cEntity *base, void *msg, int unused) {
+static void cItemEntity_NetRead(cEntity *base, void *msg, int unused) {
 	cItemEntity *self = (cItemEntity *)base;
 	(void)unused;
 	self->obj.net->vftable->Read(self->obj.net, msg);
@@ -257,7 +252,7 @@ void cItemEntity_NetRead(cEntity *base, void *msg, int unused) {
 	}
 }
 
-void cItemEntity_NetWrite(cEntity *base, float dist2, void *msg, int full) {
+static void cItemEntity_NetWrite(cEntity *base, float dist2, void *msg, int full) {
 	cItemEntity *self = (cItemEntity *)base;
 	(void)dist2;
 	byte all = (0.0f >= (float)self->syncTicks) | (byte)full;
@@ -267,7 +262,7 @@ void cItemEntity_NetWrite(cEntity *base, float dist2, void *msg, int full) {
 	}
 }
 
-void cItemEntity_Tick(cEntity *elem, float dt) {
+static void cItemEntity_Tick(cEntity *elem, float dt) {
 	cItemEntity *self = (cItemEntity *)elem;
 	vec3_t to, hit;
 
@@ -349,26 +344,20 @@ void cItemEntity_Tick(cEntity *elem, float dt) {
 	self->noFx = 0;
 }
 
-void cItemEntity_SetOrigin(cItemEntity *self, const vec3_t *v) {
-	self->origin.x = v->x;
-	self->origin.y = v->y;
-	self->origin.z = v->z;
-}
-
-void cItemEntity_SetOwner(cItemEntity *self, const char *name) {
+static void cItemEntity_SetOwner(cItemEntity *self, const char *name) {
 	Str_Copy(self->owner, name, 0x80);
 	if (self->respawn <= 0.0f) {
 		cItemEntity_SetRespawn(self, 1.0f);
 	}
 }
 
-void cItemEntity_SetPos(cEntity *base, const vec3_t *pos) {
+static void cItemEntity_SetPos(cEntity *base, const vec3_t *pos) {
 	cItemEntity *self = (cItemEntity *)base;
 	self->syncTicks = Net_GetSendRate() * 5;
 	cObjEntity_SetPos(Item_Ent(self), pos);
 }
 
-void cItemEntity_SetBackTime(cItemEntity *self, float t) {
+static void cItemEntity_SetBackTime(cItemEntity *self, float t) {
 	if (t > 0.0f) {
 		self->backTime = t;
 		return;
@@ -440,7 +429,8 @@ void cItemEntity_SetRespawn(cItemEntity *self, float t) {
 	}
 }
 
-void cItemEntity_SetTypeMarker(cItemEntity *self, const char *types) {
+/* the teams of the letters R, B, G, N, K (either case); "" all */
+static void cItemEntity_SetTypeMarker(cItemEntity *self, const char *types) {
 	if (!*types) {
 		self->typeMask = 0xffff;
 		return;
@@ -475,7 +465,7 @@ void cItemEntity_SetTypeMarker(cItemEntity *self, const char *types) {
 	}
 }
 
-void cItemEntity_Update(cEntity *elem) {
+static void cItemEntity_Update(cEntity *elem) {
 	cItemEntity *self = (cItemEntity *)elem;
 	vec3_t tmp, ang;
 
@@ -509,7 +499,7 @@ void cItemEntity_Update(cEntity *elem) {
 	}
 }
 
-byte cItemEntity_TestSphere(cEntity *elem, cEntity *other, const vec3_t *center, float radius, const vec3_t *arg) {
+static byte cItemEntity_TestSphere(cEntity *elem, cEntity *other, const vec3_t *center, float radius, const vec3_t *arg) {
 	cItemEntity *self = (cItemEntity *)elem;
 	vec3_t tmp, dir, point;
 
@@ -551,7 +541,7 @@ byte cItemEntity_TestSphere(cEntity *elem, cEntity *other, const vec3_t *center,
 	return 1;
 }
 
-byte cItemEntity_VarS(cEntity *base, const char *name, char **s, int set) {
+static byte cItemEntity_VarS(cEntity *base, const char *name, char **s, int set) {
 	cItemEntity *self = (cItemEntity *)base;
 	if (!*name) {
 		return 0;
@@ -589,9 +579,9 @@ byte cItemEntity_VarS(cEntity *base, const char *name, char **s, int set) {
 	return cObjEntity_VarS(Item_Ent(self), name, s, set);
 }
 
-uint32_t g_ItemSyncCount;
+static uint32_t g_ItemSyncCount;
 
-byte cItemEntity_NetNeedsSend(cEntity *base, float dist2) {
+static byte cItemEntity_NetNeedsSend(cEntity *base, float dist2) {
 	cItemEntity *self = (cItemEntity *)base;
 	if (self->syncTicks > 0) {
 		return 1;
@@ -607,7 +597,7 @@ byte cItemEntity_NetNeedsSend(cEntity *base, float dist2) {
 	return 0;
 }
 
-byte cItemEntity_VarV(cEntity *elem, const char *name, double *x, double *y, double *z, int set) {
+static byte cItemEntity_VarV(cEntity *elem, const char *name, double *x, double *y, double *z, int set) {
 	cItemEntity *self = (cItemEntity *)elem;
 	vec3_t v;
 
@@ -646,7 +636,7 @@ byte cItemEntity_VarV(cEntity *elem, const char *name, double *x, double *y, dou
 }
 
 /* the vtable of cItemEntity */
-const cObjEntityVtbl cItemEntity_vftable = {
+static const cObjEntityVtbl cItemEntity_vftable = {
 	.base.Update = cItemEntity_Update,
 	.base.Render = cEntity_Render,
 	.base.UpdateOff = cObjEntity_UpdateOff,
@@ -696,8 +686,8 @@ const cObjEntityVtbl cItemEntity_vftable = {
 	.Render = cObjEntity_Render,
 };
 
-cGVar GVar_FXItemFadeMaxDist;
-cGVar GVar_NetItemDistAct;
+static cGVar GVar_FXItemFadeMaxDist;
+static cGVar GVar_NetItemDistAct;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_FXItemFadeMaxDist, &GVar_FXItemFadeMaxDist, "FXItemFadeMaxDist", 0, "Maximun Distance to show the Item Fade Effect", 60000.0f)

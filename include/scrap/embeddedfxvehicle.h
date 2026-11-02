@@ -17,7 +17,6 @@
 #include "scrap/scrapparticles.h"
 #include "scrap/scraptrails.h"
 
-
 typedef struct cEmbeddedFXVehicleSub cEmbeddedFXVehicleSub;
 
 typedef struct cEmbeddedFXVehicleVtbl {
@@ -28,19 +27,11 @@ typedef struct cEmbeddedFXVehicleVtbl {
 	void(*Update)(cEmbeddedFXVehicleSub *self);			/* 0x10 */
 	void(*SetActive)(cEmbeddedFXVehicleSub *self, byte on);	/* 0x14 */
 } cEmbeddedFXVehicleVtbl;
-extern const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicleVote_vftable;
-#define CEMBEDDEDFXVEHICLEVOTE_VFTABLE (&cEmbeddedFXVehicleVote_vftable)
-extern const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicleProbe_vftable;
-#define CEMBEDDEDFXVEHICLEPROBE_VFTABLE (&cEmbeddedFXVehicleProbe_vftable)
-extern const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicle_vftable;
-#define CEMBEDDEDFXVEHICLE_VFTABLE (&cEmbeddedFXVehicle_vftable)
 
 /* the common head of the three classes: the vtable */
 struct cEmbeddedFXVehicleSub {
 	const cEmbeddedFXVehicleVtbl *vftable;
 };
-void cEmbeddedFXVehicleSub_DoneNop(cEmbeddedFXVehicleSub *self);
-void cEmbeddedFXVehicleSub_ConfigureNop(cEmbeddedFXVehicleSub *self, float unused);
 
 typedef struct cFXVehicleSirens cFXVehicleSirens;
 
@@ -115,28 +106,6 @@ typedef struct cEmbeddedFXVehicleVote {
 
 /* the vehicle fields used here */
 
-/* the shared siren model and particles */
-extern CGameModel g_SirenModel;
-extern int g_SirenRefs;
-extern CGameParticles g_SirenParticles;
-
-/* engine variables */
-extern cGVar GVar_FXVehicleEmbeddedFile;
-#define g_FXVehicleEmbeddedFile (GVar_FXVehicleEmbeddedFile.value.s)	/* the string of the cString */
-extern cGVar GVar_FXTrafficEmbeddedFile;
-#define g_FXTrafficEmbeddedFile (GVar_FXTrafficEmbeddedFile.value.s)
-extern cGVar GVar_FXVehicleSiren_DistGrow;
-#define g_FXVehicleSirenDistGrow (GVar_FXVehicleSiren_DistGrow.value.f)
-extern cGVar GVar_FXVehicleSiren_SizeMin;
-#define g_FXVehicleSirenSizeMin (GVar_FXVehicleSiren_SizeMin.value.f)
-extern cGVar GVar_FXVehicleSiren_SizeMax;
-#define g_FXVehicleSirenSizeMax (GVar_FXVehicleSiren_SizeMax.value.f)
-extern cGVar GVar_FXVehicleProbeLight_DistGrow;
-#define g_FXVehicleProbeLightDistGrow (GVar_FXVehicleProbeLight_DistGrow.value.f)
-extern cGVar GVar_FXVehicleProbeLight_SizeMin;
-#define g_FXVehicleProbeLightSizeMin (GVar_FXVehicleProbeLight_SizeMin.value.f)
-extern cGVar GVar_FXVehicleProbeLight_SizeMax;
-#define g_FXVehicleProbeLightSizeMax (GVar_FXVehicleProbeLight_SizeMax.value.f)
 extern cGVar GVar_MinDistReposAI;
 #define g_MinDistReposAI (GVar_MinDistReposAI.value.f)
 extern cGVar GVar_MaxDistReposAI;
@@ -148,49 +117,11 @@ void FXVehicle_RenderAttached(void *element);
 void cAIVehicle_GetFadeDists(void *ai, float *nearDist, float *farDist);
 
 cEmbeddedFXVehicle *cEmbeddedFXVehicle_ctor(cEmbeddedFXVehicle *self);
-void cEmbeddedFXVehicle_dtor(cEmbeddedFXVehicle *self);
-cEmbeddedFXVehicleSub *cEmbeddedFXVehicle_Delete(cEmbeddedFXVehicleSub *base, byte flags);
-byte cEmbeddedFXVehicle_Init(cEmbeddedFXVehicleSub *base);
-void cEmbeddedFXVehicle_Done(cEmbeddedFXVehicleSub *base);
-void cEmbeddedFXVehicle_Configure(cEmbeddedFXVehicleSub *base, float unused);
-void cEmbeddedFXVehicle_Update(cEmbeddedFXVehicleSub *base);
-void cEmbeddedFXVehicle_SetActive(cEmbeddedFXVehicleSub *base, byte on);
-void cEmbeddedFXVehicle_Hide(cEmbeddedFXVehicle *self);
 void cEmbeddedFXVehicle_Render(cEmbeddedFXVehicle *self);
 void cEmbeddedFXVehicle_SetAttached(cEmbeddedFXVehicle *self, void *element);
 /* the model, sirens and Probe / Vote of the vehicle */
 void cEmbeddedFXVehicle_SetOwner(cEmbeddedFXVehicle *self, cEntity *owner);
 void cEmbeddedFXVehicle_SetTraffic(cEmbeddedFXVehicle *self, byte on);
 void cEmbeddedFXVehicle_StartFade(cEmbeddedFXVehicle *self);
-void cEmbeddedFXVehicle_SetAIRange(cEmbeddedFXVehicle *self, byte on);
-
-cFXVehicleSirens *cFXVehicleSirens_ctor(cFXVehicleSirens *self, cEmbeddedFXVehicle *owner);
-/* the shared model and particles released with the last one (self is not used) */
-void cFXVehicleSirens_dtor(cFXVehicleSirens *self);
-byte cFXVehicleSirens_Init(cFXVehicleSirens *self);
-void cFXVehicleSirens_Update(cFXVehicleSirens *self);
-
-cEmbeddedFXVehicleProbe *cEmbeddedFXVehicleProbe_ctor(cEmbeddedFXVehicleProbe *self,
-	cEmbeddedFXVehicle *fx);
-void cEmbeddedFXVehicleProbe_dtor(cEmbeddedFXVehicleProbe *self);
-cEmbeddedFXVehicleSub *cEmbeddedFXVehicleProbe_Delete(cEmbeddedFXVehicleSub *base, byte flags);
-byte cEmbeddedFXVehicleProbe_Init(cEmbeddedFXVehicleSub *base);
-void cEmbeddedFXVehicleProbe_Done(cEmbeddedFXVehicleProbe *self);
-void cEmbeddedFXVehicleProbe_Configure(cEmbeddedFXVehicleProbe *self, int unused);
-void cEmbeddedFXVehicleProbe_Update(cEmbeddedFXVehicleSub *base);
-void cEmbeddedFXVehicleProbe_SetActive(cEmbeddedFXVehicleSub *base, byte on);
-void cEmbeddedFXVehicleProbe_ClearTrail(cEmbeddedFXVehicleProbe *self);
-
-cEmbeddedFXVehicleVote *cEmbeddedFXVehicleVote_ctor(cEmbeddedFXVehicleVote *self,
-	cEmbeddedFXVehicle *fx);
-void cEmbeddedFXVehicleVote_dtor(cEmbeddedFXVehicleVote *self);
-cEmbeddedFXVehicleSub *cEmbeddedFXVehicleVote_Delete(cEmbeddedFXVehicleSub *base, byte flags);
-byte cEmbeddedFXVehicleVote_Init(cEmbeddedFXVehicleSub *base);
-void cEmbeddedFXVehicleVote_Done(cEmbeddedFXVehicleSub *base);
-void cEmbeddedFXVehicleVote_Configure(cEmbeddedFXVehicleVote *self, int unused);
-void cEmbeddedFXVehicleVote_Update(cEmbeddedFXVehicleSub *base);
-void cEmbeddedFXVehicleVote_SetActive(cEmbeddedFXVehicleSub *base, byte on);
-void cEmbeddedFXVehicleVote_ClearTrails(cEmbeddedFXVehicleVote *self);
-void cEmbeddedFXVehicleVote_SetType(cEmbeddedFXVehicleVote *self, int type);
 
 #endif

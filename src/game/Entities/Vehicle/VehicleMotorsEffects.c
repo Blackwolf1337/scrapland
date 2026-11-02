@@ -14,6 +14,24 @@
 #include "scrap/weaps2.h"
 #include "scrap/staticinit.h"
 
+#define g_FXEngineTrailOffset (GVar_FXEngineTrailOffset.value.f)
+#define g_FXEngineTrailSize (GVar_FXEngineTrailSize.value.f)
+#define g_FXEngineTrailDist (GVar_FXEngineTrailDist.value.f)
+#define g_FXEngineGlowSizeAtt (GVar_FXEngineGlowSizeAtt.value.f)
+#define g_FXEngineGlowDistFadeFrom (GVar_FXEngineGlowDistFadeFrom.value.f)
+#define g_FXEngineBirthRate (GVar_FXEngineBirthRate.value.i)	/* of the exhaust at thrust 0, 100 at full thrust */
+#define g_FXEngineGlowSize (GVar_FXEngineGlowSize.value.f)
+#define g_FXEngineGlowSizeMax (GVar_FXEngineGlowSizeMax.value.f)
+#define g_FXEngineTrailDistSpeedFactor (GVar_FXEngineTrailDistSpeedFactor.value.f)
+static cGVar GVar_FXEngineTrailSize;
+static cGVar GVar_FXEngineTrailOffset;
+static cGVar GVar_FXEngineTrailDistSpeedFactor;
+static cGVar GVar_FXEngineTrailDist;
+static cGVar GVar_FXEngineGlowSizeMax;
+static cGVar GVar_FXEngineGlowSizeAtt;
+static cGVar GVar_FXEngineGlowSize;
+static cGVar GVar_FXEngineGlowDistFadeFrom;
+static cGVar GVar_FXEngineBirthRate;
 
 /* (rand() & 0x7fff) / 32767 * mul + add, the double expression of the original */
 static inline double VME_Rand(double mul, double add) {
@@ -171,7 +189,7 @@ float Rand_FloatRange(float lo, float hi) {
 	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * (double)d + (double)lo);
 }
 
-const uint32_t VMEffects_SetupHazeRamp[9] = { 0xbf404040, 0x7f808080, 0x7f808080, 0x7f808080, 0xa35c5c5c, 0xbf404040, 0xdf202020, 0xff000000, 0xff000000 };
+static const uint32_t VMEffects_SetupHazeRamp[9] = { 0xbf404040, 0x7f808080, 0x7f808080, 0x7f808080, 0xa35c5c5c, 0xbf404040, 0xdf202020, 0xff000000, 0xff000000 };
 
 void VMEffects_SetupHaze(float thrust, float speed, vec3_t *pos, int n, CGameParticles *ps) {
 	float t = Float_MaxSS(0.3f, thrust);
@@ -393,7 +411,7 @@ void cVehicleMotorsEffects_SetVisible(cVehicleMotorsEffects *self, byte on) {
 	self->visible = on;
 }
 
-uint32_t cVehicleMotorsEffects_SmokeRamps[18] = {
+static uint32_t cVehicleMotorsEffects_SmokeRamps[18] = {
 	0xff000000, 0x60191919, 0x60232323, 0x602d2d2d, 0x60282828, 0xa41e1e1e, 0xd40f0f0f, 0xff000000, 0xff000000,
 	0xff000000, 0x80232323, 0x60323232, 0x60414141, 0x60373737, 0xa4282828, 0xd4141414, 0xff000000, 0xff000000,
 };
@@ -929,13 +947,13 @@ static void VME_Exhaust6(const VMExhaust *x) {
 }
 
 /* 10: the emitted smoke, two pairs beside the z axis and a flare */
-const uint32_t VME_Exhaust10Table[10] = {
+static const uint32_t VME_Exhaust10Table[10] = {
 	0x320a280f, 0x30191919, 0x2d0f2332, 0x2c0a3264, 0x2a143796, 0x282850fa, 0x283264fa, 0x23466efb, 0x1e5a82fd,
 	0x146496ff,
 };
 
-vec3_t VME_Exhaust10Pos[4];
-int VME_Exhaust10Table20[2];
+static vec3_t VME_Exhaust10Pos[4];
+static int VME_Exhaust10Table20[2];
 
 static void VME_Exhaust10(const VMExhaust *x) {
 	static const float xz[] = { -30.0f, 0.0f, 30.0f, 0.0f, -10.0f, 0.0f, 10.0f, 0.0f };
@@ -983,7 +1001,7 @@ static void VME_Exhaust10(const VMExhaust *x) {
 	VME_Flare(ps, n - 5, k, 750.0f, 0x1e32d2, 7);
 }
 
-const uint32_t VME_Exhaust10Table2[10] = {
+static const uint32_t VME_Exhaust10Table2[10] = {
 	0x320f0f28, 0x30191919, 0x2d32230f, 0x2c64320a, 0x2ac85500, 0x28fa6419, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
 	0x14ff9664,
 };
@@ -1036,13 +1054,13 @@ static void VME_Exhaust11(const VMExhaust *x) {
 }
 
 /* 12: the emitted smoke at six positions, a particle at each and a flare */
-const uint32_t VME_Exhaust10Table3[10] = {
+static const uint32_t VME_Exhaust10Table3[10] = {
 	0x321e1e0f, 0x30191919, 0x2d0f2332, 0x2c0a3264, 0x32143796, 0x640a50fa, 0x643264fa, 0x37466efb, 0x1e5a82fd,
 	0x646496ff,
 };
 
-vec3_t VME_Exhaust10Pos2[6];
-int VME_Exhaust10Count;
+static vec3_t VME_Exhaust10Pos2[6];
+static int VME_Exhaust10Count;
 
 static void VME_Exhaust12(const VMExhaust *x) {
 	static const float xz[] = { -26.0f, -26.0f, 26.0f, 26.0f, 26.0f, -26.0f, -26.0f, 26.0f, 0.0f, -26.0f, 0.0f, 26.0f };
@@ -1086,13 +1104,13 @@ static void VME_Exhaust12(const VMExhaust *x) {
 }
 
 /* 13: the emitted smoke at two random positions, two pairs and two flares */
-const uint32_t VME_Exhaust10Table4[10] = {
+static const uint32_t VME_Exhaust10Table4[10] = {
 	0x32280f0f, 0x30191919, 0x2d0f2332, 0x2c0a2d80, 0x2a0f41e1, 0x28194beb, 0x282855f8, 0x23325ffa, 0x1e3c69fd,
 	0x144678ff,
 };
 
-vec3_t VME_Exhaust10Pos3[2];
-int VME_Exhaust10Count2;
+static vec3_t VME_Exhaust10Pos3[2];
+static int VME_Exhaust10Count2;
 
 static void VME_Exhaust13(const VMExhaust *x) {
 	CGameParticles *ps = x->ps;
@@ -1141,13 +1159,13 @@ static void VME_Exhaust13(const VMExhaust *x) {
 }
 
 /* 14: the emitted smoke at four positions, two quads and a flare */
-const uint32_t VME_Exhaust10Table5[10] = {
+static const uint32_t VME_Exhaust10Table5[10] = {
 	0x320f0f19, 0x30191923, 0x2d23233c, 0x2c2d2d80, 0x2a4141e1, 0x284b4beb, 0x285555f8, 0x235f5ffa, 0x1e6969fd,
 	0x147878ff,
 };
 
-vec3_t VME_Exhaust10Pos4[4];
-int VME_Exhaust10Table21[2];
+static vec3_t VME_Exhaust10Pos4[4];
+static int VME_Exhaust10Table21[2];
 
 static void VME_Exhaust14(const VMExhaust *x) {
 	static const float xz[] = { 0.0f, -65.0f, 0.0f, 65.0f, -65.0f, 0.0f, 65.0f, 0.0f };
@@ -1193,12 +1211,12 @@ static void VME_Exhaust14(const VMExhaust *x) {
 }
 
 /* 15: the emitted smoke on a circle of eight positions, a particle at each and a flare */
-const uint32_t VME_Exhaust10Table6[10] = {
+static const uint32_t VME_Exhaust10Table6[10] = {
 	0x320f0f19, 0x30191923, 0x2d23233c, 0x2c2d2d80, 0x2a4141e1, 0x284b4beb, 0x285555f8, 0x235f5ffa, 0x1e6969fd,
 	0x147878ff,
 };
 
-vec3_t VME_Exhaust10Pos5[8];
+static vec3_t VME_Exhaust10Pos5[8];
 
 static void VME_Exhaust15(const VMExhaust *x) {
 	CGameParticles *ps = x->ps;
@@ -1259,7 +1277,7 @@ static void VME_Exhaust15(const VMExhaust *x) {
 	VME_FlareDir(ps, x->model, n - 9, k, 40.0f, 700.0f, 0x1e3cd2, 5);
 }
 
-const uint32_t VME_Exhaust10Table7[10] = {
+static const uint32_t VME_Exhaust10Table7[10] = {
 	0x320f0f28, 0x30191919, 0x2d23320f, 0x2c2d800a, 0x2a50e100, 0x285feb19, 0x2864f832, 0x236efa46, 0x1e82fd5a,
 	0x1496ff64,
 };
@@ -1304,7 +1322,7 @@ static void VME_Exhaust20(const VMExhaust *x) {
 	VME_Flare(ps, n - 5, k, 700.0f, 0x64e614, 7);
 }
 
-const uint32_t VME_Exhaust10Table8[10] = {
+static const uint32_t VME_Exhaust10Table8[10] = {
 	0x32030f0a, 0x30071914, 0x2d0a321e, 0x2c0f8028, 0x2a14e137, 0x2819d741, 0x2828f855, 0x2332fa5f, 0x1e41fd6e,
 	0x1450ff7d,
 };
@@ -1531,13 +1549,13 @@ static void VME_ExhaustLine4(const VMExhaust *x, const VMExhaustLine4 *l, const 
 }
 
 /* 27: the emitted smoke at four positions, two quads around the z axis and a flare */
-const uint32_t VME_Exhaust10Table11[10] = {
+static const uint32_t VME_Exhaust10Table11[10] = {
 	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
 	0x14ff9664,
 };
 
-vec3_t VME_Exhaust10Pos6[4];
-int VME_Exhaust10Table22[2];
+static vec3_t VME_Exhaust10Pos6[4];
+static int VME_Exhaust10Table22[2];
 
 static void VME_Exhaust27(const VMExhaust *x) {
 	static const float xz[] = { -36.0f, 36.0f, 36.0f, 36.0f, -36.0f, -36.0f, 36.0f, -36.0f };
@@ -1598,7 +1616,7 @@ static void VME_Exhaust27(const VMExhaust *x) {
 	VME_FlareDir(ps, x->model, n - 9, k, 40.0f, 1200.0f, 0xfff05a, 7);
 }
 
-const uint32_t VME_Exhaust10Table14[10] = {
+static const uint32_t VME_Exhaust10Table14[10] = {
 	0x320f030f, 0x30190719, 0x2d320d23, 0x2c80122d, 0x2ae11750, 0x28eb1e5f, 0x28f82864, 0x23fa2d6e, 0x1efd3282,
 	0x14ff3296,
 };
@@ -1642,7 +1660,7 @@ static void VME_Exhaust36(const VMExhaust *x) {
 	VME_FlareDir(ps, x->model, n - 6, k, 40.0f, 800.0f, 0xe678be, 1);
 }
 
-const uint32_t VME_Exhaust10Table16[10] = {
+static const uint32_t VME_Exhaust10Table16[10] = {
 	0x320a140f, 0x300c1919, 0x2d0f2332, 0x2c0a3264, 0x2a143796, 0x282850fa, 0x283264fa, 0x23466efb, 0x1e5a82fd,
 	0x146496ff,
 };
@@ -1688,13 +1706,13 @@ static void VME_Exhaust45(const VMExhaust *x) {
 }
 
 /* 50: the emitted smoke at eight positions, a particle at each and a flare */
-const uint32_t VME_Exhaust10Table17[10] = {
+static const uint32_t VME_Exhaust10Table17[10] = {
 	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
 	0x14ff9664,
 };
 
-vec3_t VME_Exhaust10Pos7[8];
-int VME_Exhaust10Count3;
+static vec3_t VME_Exhaust10Pos7[8];
+static int VME_Exhaust10Count3;
 
 static void VME_Exhaust50(const VMExhaust *x) {
 	static const float xz[] = {
@@ -1740,13 +1758,13 @@ static void VME_Exhaust50(const VMExhaust *x) {
 }
 
 /* 60: the emitted smoke at three positions, two pairs and two flares */
-const uint32_t VME_Exhaust10Table19[10] = {
+static const uint32_t VME_Exhaust10Table19[10] = {
 	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
 	0x14ff9664,
 };
 
-vec3_t VME_Exhaust10Pos8[3];
-int VME_Exhaust10Count4;
+static vec3_t VME_Exhaust10Pos8[3];
+static int VME_Exhaust10Count4;
 
 static void VME_Exhaust60(const VMExhaust *x) {
 	static const float xz[] = { 0.0f, 0.0f, 0.0f, -40.0f, 0.0f, 40.0f };
@@ -1790,32 +1808,32 @@ static void VME_Exhaust60(const VMExhaust *x) {
 	VME_FlarePair(ps, x->model, n - 6, k, 0.0f, 1.0f, 0.0f, 30.0f, 1000.0f, 0xe6963c);
 }
 
-const uint32_t VME_Exhaust10Table9[10] = {
+static const uint32_t VME_Exhaust10Table9[10] = {
 	0x320f0503, 0x30190f07, 0x2d32230d, 0x2c802d12, 0x2ae15017, 0x28eb5f1e, 0x28f86428, 0x23fa6e2d, 0x1efd8232,
 	0x14ff9632,
 };
 
-const uint32_t VME_Exhaust10Table10[10] = {
+static const uint32_t VME_Exhaust10Table10[10] = {
 	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
 	0x14ff9664,
 };
 
-const uint32_t VME_Exhaust10Table12[10] = {
+static const uint32_t VME_Exhaust10Table12[10] = {
 	0x320f0503, 0x30190f07, 0x2d32230d, 0x2c802d12, 0x2ae15017, 0x28eb5f1e, 0x28f86428, 0x23fa6e2d, 0x1efd8232,
 	0x14ff9632,
 };
 
-const uint32_t VME_Exhaust10Table13[10] = {
+static const uint32_t VME_Exhaust10Table13[10] = {
 	0x320f030f, 0x30190719, 0x2d320d23, 0x2c80122d, 0x2ae11750, 0x28eb1e5f, 0x28f82864, 0x23fa2d6e, 0x1efd3282,
 	0x14ff3296,
 };
 
-const uint32_t VME_Exhaust10Table15[10] = {
+static const uint32_t VME_Exhaust10Table15[10] = {
 	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
 	0x14ff9664,
 };
 
-const uint32_t VME_Exhaust10Table18[10] = {
+static const uint32_t VME_Exhaust10Table18[10] = {
 	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
 	0x14ff9664,
 };
@@ -1921,15 +1939,15 @@ void cVehicleMotorsEffects_Exhaust(cVehicleMotorsEffects *self, float thrust, fl
 	}
 }
 
-cGVar GVar_FXEngineTrailOffset;
-cGVar GVar_FXEngineTrailSize;
-cGVar GVar_FXEngineTrailDist;
-cGVar GVar_FXEngineGlowSizeAtt;
-cGVar GVar_FXEngineGlowDistFadeFrom;
-cGVar GVar_FXEngineBirthRate;
-cGVar GVar_FXEngineGlowSize;
-cGVar GVar_FXEngineGlowSizeMax;
-cGVar GVar_FXEngineTrailDistSpeedFactor;
+static cGVar GVar_FXEngineTrailOffset;
+static cGVar GVar_FXEngineTrailSize;
+static cGVar GVar_FXEngineTrailDist;
+static cGVar GVar_FXEngineGlowSizeAtt;
+static cGVar GVar_FXEngineGlowDistFadeFrom;
+static cGVar GVar_FXEngineBirthRate;
+static cGVar GVar_FXEngineGlowSize;
+static cGVar GVar_FXEngineGlowSizeMax;
+static cGVar GVar_FXEngineTrailDistSpeedFactor;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_FXEngineBirthRate, &GVar_FXEngineBirthRate, "FXEngineBirthRate", 0, "BirthRate at Trust 0, (always 100 at Max Trust)", 20)

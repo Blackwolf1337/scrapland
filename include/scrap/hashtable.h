@@ -9,10 +9,6 @@
 #include "scrap/game.h"
 #include "scrap/pymempool.h"
 
-extern cMemPool *g_HashItemPool;
-extern int g_HashItemRefs;
-extern uint32_t g_HashItemValues[32];	/* [MEMPOOL_CLASSES] */
-
 HashTable *HashTable_ctor(HashTable *self, int numSlots, byte caseSensitive);
 /* the slot of key: a 4 bit shift hash folded to 28 bits, case-insensitive unless caseSensitive (global.h) */
 /* equal keys in the case mode of the table */
@@ -31,7 +27,6 @@ typedef struct cPtrItem {
 
 cPtrItem *PtrTable_Insert(HashTable *self, const char *key, uint32_t slot, void *const *value);
 byte PtrTable_Add(HashTable *self, const char *key, void *const *value, byte warn);
-cPtrItem *PtrTable_Unlink(HashTable *self, const char *key, uint32_t slot);
 byte PtrTable_Delete(HashTable *self, const char *key);
 void PtrTable_Clear(HashTable *self);
 /* the value of key, NULL if it is not there */

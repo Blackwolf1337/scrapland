@@ -20,23 +20,18 @@ typedef struct cReadStack {
 } cReadStack;
 
 extern char *g_ReadString;
-extern cReadStack *g_ReadStack;
 
 /* dir (may be NULL) and name, binary "rb" else "rt" */
 void Read_Open(const char *dir, const char *name, int binary);
 /* errno after closing */
 int Read_Close(void);
-void Read_Pop(void);
 /* the next line with text into g_ReadString: 0, -1 at the end */
 int Read_NextLine(void);
 /* the next line must start with tok and a blank, g_ReadString then is at the value */
 void Read_Expect(const char *tok);
-/* "text" at g_ReadString */
-void Read_String(char *dest, int size);
 /* with tok NULL the value of the current line */
 void Read_Text(const char *tok, char *dest, int size);
 void Read_QText(const char *tok, char *dest, int size);
-void Read_Float(const char *tok, float *dest);
 void Read_Int(const char *tok, int *dest);
 void Read_Bytes(void *dest, int n);
 int Read_Byte(void);

@@ -19,30 +19,32 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
+#define CAIVEHICLESHOOT_VFTABLE (&cAIVehicleShootControl_vftable)
+static const cAIVehicleShootVtbl cAIVehicleShootControl_vftable;
 
-cGVar GVar_ShowVehWeapAI;
+static cGVar GVar_ShowVehWeapAI;
 
 /* the engine variables */
 #define g_ShowVehWeapAI (&GVar_ShowVehWeapAI.value.s)
-cGVar GVar_TimeShootAI;
+static cGVar GVar_TimeShootAI;
 
 #define g_TimeShootAI (GVar_TimeShootAI.value.f)
-cGVar GVar_TimeShootCMAI;
+static cGVar GVar_TimeShootCMAI;
 
 #define g_TimeShootCMAI (GVar_TimeShootCMAI.value.f)
-cGVar GVar_TimeChangeWeapAI;
+static cGVar GVar_TimeChangeWeapAI;
 
 #define g_TimeChangeWeapAI (GVar_TimeChangeWeapAI.value.f)
-cGVar GVar_TimeChangeWeapCMAI;
+static cGVar GVar_TimeChangeWeapCMAI;
 
 #define g_TimeChangeWeapCMAI (GVar_TimeChangeWeapCMAI.value.f)
-cGVar GVar_ShortDistShootAI;
+static cGVar GVar_ShortDistShootAI;
 
 #define g_ShortDistShootAI (GVar_ShortDistShootAI.value.f)
-cGVar GVar_OffsetAngShootAI;
+static cGVar GVar_OffsetAngShootAI;
 
 #define g_OffsetAngShootAI (GVar_OffsetAngShootAI.value.f)
-cGVar GVar_MinDistCMAI;
+static cGVar GVar_MinDistCMAI;
 
 #define g_MinDistCMAI (GVar_MinDistCMAI.value.f)
 cGVar GVar_VulcanIDWeap;
@@ -57,7 +59,7 @@ cGVar GVar_VulcanDistLimitUPG;
 cGVar GVar_TeslaDistLimit;
 
 #define g_TeslaDistLimit (GVar_TeslaDistLimit.value.f)
-cGVar GVar_SwarmDistLimit;
+static cGVar GVar_SwarmDistLimit;
 
 #define g_SwarmDistLimit (GVar_SwarmDistLimit.value.f)
 
@@ -134,6 +136,7 @@ static inline byte AIVS_TargetActive(cAIVehicleShoot *self) {
 
 /* ---- construction ---- */
 
+static void cAIVehicleShoot_InitWeapons(cAIVehicleShoot *self);
 cAIVehicleShoot *cAIVehicleShoot_ctor(void *mem, cEntity *v, cAIVehicle *ai, void *params) {
 	cAIVehicleShoot *self = mem;
 
@@ -168,7 +171,8 @@ cAIVehicleShoot *cAIVehicleShoot_ctor(void *mem, cEntity *v, cAIVehicle *ai, voi
 	return self;
 }
 
-cAIVehicleShoot *cAIVehicleShoot_Delete(cAIVehicleShoot *self, byte flags) {
+/* ---- AI/AIVehicleShootControl.cpp (src/game/AI/IVehicleShootControl.c); the rest in aivehicle.h ---- */
+static cAIVehicleShoot *cAIVehicleShoot_Delete(cAIVehicleShoot *self, byte flags) {
 	self->vftable = CAIVEHICLESHOOT_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, CAIVEHICLESHOOT_SIZE);
@@ -178,7 +182,7 @@ cAIVehicleShoot *cAIVehicleShoot_Delete(cAIVehicleShoot *self, byte flags) {
 
 /* ---- the checks of the target ---- */
 
-byte cAIVehicleShoot_CheckTarget(cAIVehicleShoot *self) {
+static byte cAIVehicleShoot_CheckTarget(cAIVehicleShoot *self) {
 	if (self->mode == 1 && !AIVS_TargetActive(self)) {
 		return AIVS_TargetDied(self, "OBJECTIVE_DIED - cAIVehicleShootControl::CheckIntensiveShoot - Entidad: %s - "
 			"State: %d - StateIntern: %d\n");
@@ -186,7 +190,7 @@ byte cAIVehicleShoot_CheckTarget(cAIVehicleShoot *self) {
 	return 1;
 }
 
-byte cAIVehicleShoot_CheckTargetCM(cAIVehicleShoot *self) {
+static byte cAIVehicleShoot_CheckTargetCM(cAIVehicleShoot *self) {
 	if (self->modeCM == 1) {
 		if (!AIVS_TargetActive(self)) {
 			return AIVS_TargetDied(self, "OBJECTIVE_DIED - cAIVehicleShootControl::CheckIntensiveShootCM - "
@@ -201,7 +205,8 @@ byte cAIVehicleShoot_CheckTargetCM(cAIVehicleShoot *self) {
 
 /* ---- the weapon and the countermeasure in use ---- */
 
-void cAIVehicleShoot_UpdateWeapon(cAIVehicleShoot *self) {
+static byte cAIVehicleShoot_InRange(cAIVehicleShoot *self, int w);
+static void cAIVehicleShoot_UpdateWeapon(cAIVehicleShoot *self) {
 	cSlotController *slot = &self->slotWeap;
 	float t;
 
@@ -224,7 +229,8 @@ void cAIVehicleShoot_UpdateWeapon(cAIVehicleShoot *self) {
 	} while (cSlotController_FireReset(slot, &t));
 }
 
-void cAIVehicleShoot_UpdateCM(cAIVehicleShoot *self) {
+static void cAIVehicleShoot_SelectCM(cAIVehicleShoot *self);
+static void cAIVehicleShoot_UpdateCM(cAIVehicleShoot *self) {
 	cSlotController *slot = &self->slotWeap;
 	float t;
 
@@ -264,7 +270,7 @@ static int AIVS_Counter(cAIVehicleShoot *self) {
 
 /* the fire button pulled by the cadence (the counterattack after damage); the slow weapons less often when the
  * target looks away */
-void cAIVehicleShoot_PullFire(cAIVehicleShoot *self) {
+static void cAIVehicleShoot_PullFire(cAIVehicleShoot *self) {
 	int w = self->weap.weapon;
 	int r;
 
@@ -306,7 +312,7 @@ void cAIVehicleShoot_PullFire(cAIVehicleShoot *self) {
 	}
 }
 
-void cAIVehicleShoot_Fire(cAIVehicleShoot *self) {
+static void cAIVehicleShoot_Fire(cAIVehicleShoot *self) {
 	cSlotController *slot = &self->slotFire;
 	float t;
 
@@ -352,7 +358,7 @@ done:
 }
 
 /* the ammo button for countermeasures at a target near behind the vehicle (or while it strafes) */
-void cAIVehicleShoot_FireCM(cAIVehicleShoot *self) {
+static void cAIVehicleShoot_FireCM(cAIVehicleShoot *self) {
 	cSlotController *slot = &self->slotFireCM;
 	float t;
 
@@ -401,7 +407,7 @@ far:
 }
 
 /* the hook: the ammo button while there is hook energy, at a locked point or the target within the hook range */
-void cAIVehicleShoot_FireHook(cAIVehicleShoot *self) {
+static void cAIVehicleShoot_FireHook(cAIVehicleShoot *self) {
 	cSlotController *slot = &self->slotFireCM;
 	float t;
 
@@ -451,6 +457,7 @@ off:
 /* ---- the choice of the weapons ---- */
 
 /* the weapon in use by the distance to the target, when set; 1 if any weapon fits the distance */
+static float cAIVehicleShoot_WeapAmmo(cAIVehicleShoot *self, int w);
 byte cAIVehicleShoot_TargetInSight(cAIVehicleShoot *self, int arg) {
 	int nearW[3], farW[7];
 	int nn = 0, nf = 0;
@@ -526,7 +533,7 @@ store:
 }
 
 /* the countermeasure by the use percentages of the parameters among the kinds with ammo */
-void cAIVehicleShoot_SelectCM(cAIVehicleShoot *self) {
+static void cAIVehicleShoot_SelectCM(cAIVehicleShoot *self) {
 	int c0 = -1, c1 = -1, c2 = -1;
 	int n = 0;
 	cAIVSWeap sel;
@@ -633,6 +640,7 @@ void cAIVehicleShoot_Update2(cAIVehicleShoot *self, float dt) {
 	self->ctl->cm = 0;
 }
 
+static void cAIVehicleShoot_WeaponName(int w, char *buf);
 void cAIVehicleShoot_Draw(cAIVehicleShoot *self) {
 	char name[0x14];
 
@@ -647,92 +655,12 @@ void cAIVehicleShoot_Draw(cAIVehicleShoot *self) {
 
 /* ---- the ammo ---- */
 
-/* the ammo of the weapons that fit the distance */
-float cAIVehicleShoot_AmmoAt(cAIVehicleShoot *self, float dist) {
-	float s = 0.0f;
-	byte b;
-
-	if (g_ShortDistShootAI > dist) {
-		if (self->weaps[AIVS_VULCAN].avail || self->weaps[AIVS_DEVASTATOR].avail) {
-			s = AIVS_Ammo(self, 0) + 0.0f;
-		}
-		b = self->weaps[AIVS_TESLA].avail;
-	} else {
-		if (self->weaps[AIVS_VULCAN].avail && self->weaps[AIVS_VULCAN].kind == 2) {
-			s = AIVS_Ammo(self, 0) + 0.0f;
-		}
-		if (self->weaps[AIVS_SWARM].avail || self->weaps[AIVS_INFERNO].avail) {
-			s = AIVS_Ammo(self, 1) + s;
-		}
-		b = self->weaps[AIVS_ATPC].avail;
-	}
-	if (b) {
-		s = AIVS_Ammo(self, 2) + s;
-	}
-	return s;
-}
-
 static inline float AIVS_MaxAmmo(int kind) {
 	return TABLE_AT(g_pWorld->ammo, kind)->max;
 }
 
-/* the most ammo of the weapons that fit the distance */
-float cAIVehicleShoot_MaxAmmoAt(cAIVehicleShoot *self, float dist) {
-	float s = 0.0f;
-
-	if (g_ShortDistShootAI > dist) {
-		if (self->weaps[AIVS_VULCAN].avail || self->weaps[AIVS_DEVASTATOR].avail) {
-			s = s + AIVS_MaxAmmo(0);
-		}
-		if (!self->weaps[AIVS_TESLA].avail) {
-			return s;
-		}
-	} else {
-		if (self->weaps[AIVS_VULCAN].avail && self->weaps[AIVS_VULCAN].kind == 2) {
-			s = s + AIVS_MaxAmmo(0);
-		}
-		if (self->weaps[AIVS_SWARM].avail || self->weaps[AIVS_INFERNO].avail) {
-			s = s + AIVS_MaxAmmo(1);
-		}
-		if (!self->weaps[AIVS_ATPC].avail) {
-			return s;
-		}
-	}
-	return AIVS_MaxAmmo(2) + s;
-}
-
-float cAIVehicleShoot_MaxAmmo(cAIVehicleShoot *self) {
-	float s = 0.0f;
-
-	if (self->weaps[AIVS_VULCAN].avail || self->weaps[AIVS_DEVASTATOR].avail) {
-		s = s + AIVS_MaxAmmo(0);
-	}
-	if (self->weaps[AIVS_TESLA].avail || self->weaps[AIVS_ATPC].avail) {
-		s = s + AIVS_MaxAmmo(2);
-	}
-	if (self->weaps[AIVS_SWARM].avail || self->weaps[AIVS_INFERNO].avail) {
-		s = AIVS_MaxAmmo(1) + s;
-	}
-	return s;
-}
-
-float cAIVehicleShoot_TotalAmmo(cAIVehicleShoot *self) {
-	float s = 0.0f;
-
-	if (self->weaps[AIVS_VULCAN].avail || self->weaps[AIVS_DEVASTATOR].avail) {
-		s = AIVS_Ammo(self, 0) + 0.0f;
-	}
-	if (self->weaps[AIVS_SWARM].avail || self->weaps[AIVS_INFERNO].avail) {
-		s = AIVS_Ammo(self, 1) + s;
-	}
-	if (self->weaps[AIVS_TESLA].avail || self->weaps[AIVS_ATPC].avail) {
-		s = AIVS_Ammo(self, 2) + s;
-	}
-	return s;
-}
-
 /* the ammo of the kind of weapon w, 0 for the laser and unknown ones */
-float cAIVehicleShoot_WeapAmmo(cAIVehicleShoot *self, int w) {
+static float cAIVehicleShoot_WeapAmmo(cAIVehicleShoot *self, int w) {
 	float a = 0.0f;
 	int kind = AIVS_AmmoKind(w);
 
@@ -756,12 +684,8 @@ cAIVehicleParams3 *cAIVehicleShoot_GetParamsInit(cAIVehicleShoot *self) {
 	return &self->paramsInit;
 }
 
-cAIVSWeap *cAIVehicleShoot_GetWeaps(cAIVehicleShoot *self) {
-	return self->weaps;
-}
-
 /* the name of the weapon for the debug text; the bytes of the original string copies */
-void cAIVehicleShoot_WeaponName(int w, char *buf) {
+static void cAIVehicleShoot_WeaponName(int w, char *buf) {
 	if (w == g_VulcanIDWeap) {
 		memcpy(buf, "VULCAN", 7);
 	} else if (w == g_DevastatorIDWeap) {
@@ -821,7 +745,7 @@ byte cAIVehicleShoot_HasAmmo(cAIVehicleShoot *self, float factor) {
 }
 
 /* the inferno at dist with ammo for a shot */
-byte cAIVehicleShoot_InfernoReady(cAIVehicleShoot *self, float dist) {
+static byte cAIVehicleShoot_InfernoReady(cAIVehicleShoot *self, float dist) {
 	if (self->weaps[AIVS_INFERNO].avail && g_InfernoDistLimit > dist) {
 		float cost = (float)g_InfernoAmmoCost;
 		if (cAIVehicleShoot_WeapAmmo(self, g_InfernoIDWeap) > cost) {
@@ -848,7 +772,7 @@ byte cAIVehicleShoot_UsesAmmo(cAIVehicleShoot *self, int kind, float factor) {
 }
 
 /* the target within the range of weapon w */
-byte cAIVehicleShoot_InRange(cAIVehicleShoot *self, int w) {
+static byte cAIVehicleShoot_InRange(cAIVehicleShoot *self, int w) {
 	float dist = AIVS_TargetDist(self);
 
 	if (w == g_VulcanIDWeap) {
@@ -912,7 +836,7 @@ byte cAIVehicleShoot_SetMode(cAIVehicleShoot *self, int a, int b, byte c) {
 
 /* the table of the weapons from the slots of the vehicle; kind and upgrade of a weapon the vehicle does not have
  * stay those of the one before it, like the locals of the original */
-void cAIVehicleShoot_InitWeapons(cAIVehicleShoot *self) {
+static void cAIVehicleShoot_InitWeapons(cAIVehicleShoot *self) {
 	cTargetLock *wm = AIVS_Weapons(self);
 	int kind = 0, upgrade = 0;
 
@@ -997,7 +921,7 @@ void cAIVehicleShoot_WeapListChanged(cAIVehicleShoot *self) {
 }
 
 /* the vtable of cAIVehicleShootControl */
-const cAIVehicleShootVtbl cAIVehicleShootControl_vftable = {
+static const cAIVehicleShootVtbl cAIVehicleShootControl_vftable = {
 	.Delete = cAIVehicleShoot_Delete,
 };
 

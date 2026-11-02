@@ -6,7 +6,11 @@
 
 #include "scrap/e3dinput.h"
 
-byte g_InputInit;
+#define IINPUT_VFTABLE (&IInput_vftable)
+static const IInputVtbl IInput_vftable;
+
+/* entrada.cpp */
+static byte g_InputInit;
 
 /* one at a time, the state cleared */
 IInput *IInput_ctor(IInput *self) {
@@ -22,7 +26,7 @@ void IInput_dtor(IInput *self) {
 	g_InputInit = 0;
 }
 
-IInput *IInput_Delete(IInput *self, byte flags) {
+static IInput *IInput_Delete(IInput *self, byte flags) {
 	IInput_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(IInput));
@@ -82,7 +86,7 @@ void IInput_WndProcNop(IInput *self, void *hwnd, uint32_t msg, uint32_t wparam, 
 }
 
 /* the vtable of IInput */
-const IInputVtbl IInput_vftable = {
+static const IInputVtbl IInput_vftable = {
 	.Delete = IInput_Delete,
 	.Init = (void *)crt_purecall,
 	.Release = (void *)crt_purecall,

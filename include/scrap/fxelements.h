@@ -43,23 +43,11 @@ static inline void MapElement_Add(cMapElement *e) {
 /* rva 0x202ca0: the model of the element name at pos and rot (radians), 0x202e20 the destructor */
 cMapElement *cMapElement_ctor(cMapElement *self, const char *name, const vec3_t *pos, const vec3_t *rot);
 void cMapElement_dtor(cMapElement *self);
-cMapElement *cMapElement_Delete(cMapElement *self, byte flags);
 /* rva 0x203310 (1), 0x203520 (the animation of the visible model) */
 byte cMapElement_Init(cMapElement *self);
 void cMapElement_Update(cMapElement *self, float dt);
 byte cMapElement_InitTrue(cMapElement *self);
 void cMapElement_UpdateNop(cMapElement *self, float dt);
-
-extern const cMapElementVtbl cFXElementsOrbitBuoy_vftable;
-#define CFXELEMENTSORBITBUOY_VFTABLE (&cFXElementsOrbitBuoy_vftable)
-extern const cMapElementVtbl cFXElementsOrbitBuoyController_vftable;
-#define CFXELEMENTSORBITBUOYCONTROLLER_VFTABLE (&cFXElementsOrbitBuoyController_vftable)
-extern const cMapElementVtbl cFXElementsMentalController_vftable;
-#define CFXELEMENTSMENTALCONTROLLER_VFTABLE (&cFXElementsMentalController_vftable)
-extern const cMapElementVtbl cFXElementsMentalControllerDamageFX_vftable;
-#define CFXELEMENTSMENTALCONTROLLERDAMAGEFX_VFTABLE (&cFXElementsMentalControllerDamageFX_vftable)
-extern const cMapElementVtbl cFXElementsMentalControllerMainFX_vftable;
-#define CFXELEMENTSMENTALCONTROLLERMAINFX_VFTABLE (&cFXElementsMentalControllerMainFX_vftable)
 
 /* ---- FXElementsOrbit.cpp ---- */
 
@@ -83,26 +71,8 @@ typedef struct cFXElementsOrbitBuoyController {
 	float fade[FXORBITBOYACOLUMNS][FXORBITBOYACOLUMNCOUNT];			/* 0x12c 1 down to 0, again */
 } cFXElementsOrbitBuoyController;
 
-cFXElementsOrbitBuoyController *cFXElementsOrbitBuoyController_ctor(cFXElementsOrbitBuoyController *self,
-	const char *name, const vec3_t *pos, const vec3_t *rot);
-
-byte cFXElementsOrbitBuoy_Init(cMapElement *elem);
-void cFXElementsOrbitBuoy_Update(cMapElement *elem, float dt);
-byte cFXElementsOrbitBuoyController_Init(cMapElement *elem);
-void cFXElementsOrbitBuoyController_Update(cMapElement *elem, float dt);
-void cFXElementsOrbitBuoyController_SetBuoy(cFXElementsOrbitBuoyController *self, int type, int column,
-	int number, cFXElementsOrbitBuoy *buoy);
 /* the controller and the buoys of the dummies DM_Element_OrbitBoya* of the level */
 void FXElementsOrbit_Create(void);
-cFXElementsOrbitBuoy *cFXElementsOrbitBuoy_ctor(cFXElementsOrbitBuoy *self, const char *name,
-	const vec3_t *pos, const vec3_t *rot);
-void cFXElementsOrbitBuoy_dtor(cFXElementsOrbitBuoy *self);
-void cFXElementsOrbitBuoyController_dtor(cFXElementsOrbitBuoyController *self);
-cMapElement *cFXElementsOrbitBuoy_Delete(cMapElement *base, byte flags);
-cMapElement *cFXElementsOrbitBuoyController_Delete(cMapElement *base, byte flags);
-/* the light released; the controller has nothing to release */
-void cFXElementsOrbitBuoy_ReleaseLight(cFXElementsOrbitBuoy *self);
-void cFXElementsOrbitBuoyController_Release(cFXElementsOrbitBuoyController *self);
 
 /* ---- FXElementsPress.cpp ---- */
 
@@ -194,40 +164,7 @@ typedef struct cFXElementsMentalControllerMainFX {
 
 /* the main controller of the level, NULL before the Press elements are made */
 extern cFXElementsMentalControllerMainFX *g_MentalMainFX;
-extern cGVar GVar_FXElementsMentalControllerMaxDist;
-#define g_MentalControllerMaxDist (GVar_FXElementsMentalControllerMaxDist.value.f)	/* FXElementsMentalControllerMaxDist */
 
-cFXElementsMentalController *cFXElementsMentalController_ctor(cFXElementsMentalController *self,
-	const char *name, const vec3_t *pos, const vec3_t *rot);
-cFXElementsMentalControllerDamageFX *cFXElementsMentalControllerDamageFX_ctor(
-	cFXElementsMentalControllerDamageFX *self, const char *name, const vec3_t *pos, const vec3_t *rot);
-cFXElementsMentalControllerMainFX *cFXElementsMentalControllerMainFX_ctor(
-	cFXElementsMentalControllerMainFX *self, const char *name, const vec3_t *pos, const vec3_t *rot);
-void cFXElementsMentalController_dtor(cFXElementsMentalController *self);
-void cFXElementsMentalControllerDamageFX_dtor(cFXElementsMentalControllerDamageFX *self);
-void cFXElementsMentalControllerMainFX_dtor(cFXElementsMentalControllerMainFX *self);
-cMapElement *cFXElementsMentalController_Delete(cMapElement *base, byte flags);
-cMapElement *cFXElementsMentalControllerDamageFX_Delete(cMapElement *base, byte flags);
-cMapElement *cFXElementsMentalControllerMainFX_Delete(cMapElement *base, byte flags);
-/* the particles of the damaged controller and the data fluid released (not referenced by the exe) */
-void cFXElementsMentalControllerDamageFX_ReleaseParticles(cFXElementsMentalControllerDamageFX *self);
-void cFXElementsMentalControllerMainFX_ReleaseFluid(cFXElementsMentalControllerMainFX *self);
-/* every trail cleared, every particle out */
-void cFXElementsMentalControllerMainFX_Clear(cFXElementsMentalControllerMainFX *self);
-
-byte cFXElementsMentalController_Init(cMapElement *elem);
-void cFXElementsMentalController_Update(cMapElement *elem, float dt);
-byte cFXElementsMentalControllerDamageFX_Init(cMapElement *elem);
-/* near the camera: smoke from the emitters (more often the nearer), flashes with sparks and a sound when they sleep
- * out */
-void cFXElementsMentalControllerDamageFX_Update(cMapElement *elem, float dt);
-byte cFXElementsMentalControllerMainFX_Init(cMapElement *elem);
-void cFXElementsMentalControllerMainFX_SetController(cFXElementsMentalControllerMainFX *self, int index,
-	cFXElementsMentalController *ctrl);
-void cFXElementsMentalControllerMainFX_SetPhase(cFXElementsMentalControllerMainFX *self, int phase);
-/* vf02: while a controller is seen or the camera is near the top: the drops of data along the tubes (phase < 5), the
- * glow up the tube and the glows over the top (phase 2..4); else the model off and everything cleared */
-void cFXElementsMentalControllerMainFX_Update(cMapElement *elem, float dt);
 /* the main controller and the controllers of the dummies of the level, by the act of the story (SaveVar GameAct) */
 void FXElementsPress_Create(void);
 
@@ -237,13 +174,6 @@ static inline float FxElem_Rand(double range, double add) {
 }
 
 /* ---- FXElements.cpp ---- */
-
-extern const cMapElementVtbl cFXElementsLighting_vftable;
-#define CFXELEMENTSLIGHTING_VFTABLE (&cFXElementsLighting_vftable)
-extern const cMapElementVtbl cFXElementsFireDrop_vftable;
-#define CFXELEMENTSFIREDROP_VFTABLE (&cFXElementsFireDrop_vftable)
-extern const cMapElementVtbl cFXElementsLensFlare_vftable;
-#define CFXELEMENTSLENSFLARE_VFTABLE (&cFXElementsLensFlare_vftable)
 
 /* drops of fire from the node DC_Root while the camera is within FXElementsFireDropMaxDist: bursts with pauses,
  * the parameters from the section FXFireDrop of the node (0x118 bytes, constructor rva 0x1cf850) */
@@ -326,19 +256,6 @@ typedef struct cFXElementsLighting {
 	int numPts;					/* 0xe84 6 */
 } cFXElementsLighting;
 
-extern cGVar GVar_FXElementsFireDropMaxDist;
-#define g_FireDropMaxDist (GVar_FXElementsFireDropMaxDist.value.f)	/* FXElementsFireDropMaxDist */
-extern cGVar GVar_FXElementsFireDropRateAtt;
-#define g_FireDropRateAtt (GVar_FXElementsFireDropRateAtt.value.f)	/* FXElementsFireDropRateAtt */
-extern cGVar GVar_FXElementsFireDropSoundAttIni;
-#define g_FireDropSoundAttIni (GVar_FXElementsFireDropSoundAttIni.value.f)	/* FXElementsFireDropSoundAttIni */
-extern cGVar GVar_FXElementsFireDropSoundAttEnd;
-#define g_FireDropSoundAttEnd (GVar_FXElementsFireDropSoundAttEnd.value.f)	/* FXElementsFireDropSoundAttEnd */
-extern cGVar GVar_FXElementsFireDropSoundVol;
-#define g_FireDropSoundVol (GVar_FXElementsFireDropSoundVol.value.f)	/* FXElementsFireDropSoundVol */
-extern cGVar GVar_FXElementsFireDropSound;
-#define g_FireDropSound (GVar_FXElementsFireDropSound.value.s)	/* FXElementsFireDropSound, a cString */
-
 cFXElementsFireDrop *cFXElementsFireDrop_ctor(cFXElementsFireDrop *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
 /* the flare at pos: intensity 0.65, 0x30 0.3, on (rva 0x1cf8b0, Elements_Create passes no name) */
@@ -346,30 +263,8 @@ cFXElementsLensFlare *cFXElementsLensFlare_ctor(cFXElementsLensFlare *self, cons
 	const vec3_t *pos, const vec3_t *rot);
 cFXElementsLighting *cFXElementsLighting_ctor(cFXElementsLighting *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot);
-void cFXElementsFireDrop_dtor(cFXElementsFireDrop *self);
-void cFXElementsLensFlare_dtor(cFXElementsLensFlare *self);
-void cFXElementsLighting_dtor(cFXElementsLighting *self);
-cMapElement *cFXElementsFireDrop_Delete(cMapElement *base, byte flags);
-cMapElement *cFXElementsLensFlare_Delete(cMapElement *base, byte flags);
-cMapElement *cFXElementsLighting_Delete(cMapElement *base, byte flags);
-/* the particles (and trails) released; the lens flare has nothing to release */
-void cFXElementsFireDrop_Release(cFXElementsFireDrop *self);
-void cFXElementsLensFlare_Release(cFXElementsLensFlare *self);
-void cFXElementsLighting_Release(cFXElementsLighting *self);
-
-byte cFXElementsFireDrop_Init(cMapElement *elem);
-void cFXElementsFireDrop_Update(cMapElement *elem, float dt);
-byte cFXElementsLensFlare_Init(cFXElementsLensFlare *self);
-void cFXElementsLensFlare_Update(cFXElementsLensFlare *self, float dt);
-byte cFXElementsLighting_Init(cMapElement *elem);
-void cFXElementsLighting_Update(cMapElement *elem, float dt);
 
 /* ---- FXElementsAB.cpp ---- */
-
-extern const cMapElementVtbl cFXElementsABFakeMeteors_vftable;
-#define CFXELEMENTSABFAKEMETEORS_VFTABLE (&cFXElementsABFakeMeteors_vftable)
-extern const cMapElementVtbl cFXElementsABFakeLimit_vftable;
-#define CFXELEMENTSABFAKELIMIT_VFTABLE (&cFXElementsABFakeLimit_vftable)
 
 #define FXABBOLTS 10
 #define FXABRINGS 4
@@ -411,37 +306,6 @@ typedef struct cFXElementsABFakeMeteors {
 	CGameTrail curve;			/* 0x577c only its Bezier helpers are used */
 } cFXElementsABFakeMeteors;
 
-/* the engine variables FXABFakeLimit* */
-extern cGVar GVar_FXABFakeLimitRingRotSpeed;
-#define g_ABLimitRingRotSpeed (GVar_FXABFakeLimitRingRotSpeed.value.f)	/* RingRotSpeed */
-extern cGVar GVar_FXABFakeLimitSegmentStep;
-#define g_ABLimitSegmentStep (GVar_FXABFakeLimitSegmentStep.value.f)	/* SegmentStep */
-extern cGVar GVar_FXABFakeLimitSegmentSize;
-#define g_ABLimitSegmentSize (GVar_FXABFakeLimitSegmentSize.value.f)	/* SegmentSize */
-extern cGVar GVar_FXABFakeLimitRadius;
-#define g_ABLimitRadius (GVar_FXABFakeLimitRadius.value.f)		/* Radius */
-extern cGVar GVar_FXABFakeLimitDistLighting;
-#define g_ABLimitDistLighting (GVar_FXABFakeLimitDistLighting.value.f)	/* DistLighting */
-extern cGVar GVar_FXABFakeLimitQuakeFactor;
-#define g_ABLimitQuakeFactor (GVar_FXABFakeLimitQuakeFactor.value.f)	/* QuakeFactor */
-extern cGVar GVar_FXABFakeLimitQuakeTime;
-#define g_ABLimitQuakeTime (GVar_FXABFakeLimitQuakeTime.value.f)		/* QuakeTime */
-
-cFXElementsABFakeLimit *cFXElementsABFakeLimit_ctor(cFXElementsABFakeLimit *self, const char *name,
-	const vec3_t *pos, const vec3_t *rot);
-cFXElementsABFakeMeteors *cFXElementsABFakeMeteors_ctor(cFXElementsABFakeMeteors *self, const char *name,
-	const vec3_t *pos, const vec3_t *rot);
-void cFXElementsABFakeLimit_dtor(cFXElementsABFakeLimit *self);
-void cFXElementsABFakeMeteors_dtor(cFXElementsABFakeMeteors *self);
-cMapElement *cFXElementsABFakeLimit_Delete(cMapElement *base, byte flags);
-cMapElement *cFXElementsABFakeMeteors_Delete(cMapElement *base, byte flags);
-/* the bolt times cleared, every trail cleared */
-void cFXElementsABFakeLimit_Clear(cFXElementsABFakeLimit *self);
-
-byte cFXElementsABFakeLimit_Init(cMapElement *elem);
-void cFXElementsABFakeLimit_Update(cMapElement *elem, float dt);
-byte cFXElementsABFakeMeteors_Init(cMapElement *elem);
-void cFXElementsABFakeMeteors_Update(cMapElement *elem, float dt);
 /* the meteors and the limit of the dummies DM_Element_ABFakeMeteors and DM_Element_ABFakeLimit of the level */
 void FXElementsAB_Create(void);
 

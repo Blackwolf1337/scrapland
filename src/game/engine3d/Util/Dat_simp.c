@@ -58,12 +58,6 @@ int Dat_GetBool(cDataFile *dat, const char *sect, const char *key, int *out) {
 	return Dat_Find(dat, sect, key, buf) && Proc_Scan(buf, "&(tipo_si_no)l", out) == 1 ? 0 : -1;
 }
 
-int Dat_GetDouble(cDataFile *dat, const char *sect, const char *key, double *out) {
-	char buf[0x104];
-
-	return Dat_Find(dat, sect, key, buf) && Proc_Scan(buf, "&d", out) == 1 ? 0 : -1;
-}
-
 int Dat_GetFloat(cDataFile *dat, const char *sect, const char *key, float *out) {
 	char buf[0x104];
 
@@ -82,34 +76,3 @@ int Dat_GetText(cDataFile *dat, const char *sect, const char *key, char *dest, i
 	return Dat_Find(dat, sect, key, buf) && Proc_Scan(buf, "&.*t", size - 1, dest) == 1 ? 0 : -1;
 }
 
-void Dat_GetList(cDataFile *dat, const char *sect, const char *key, cDataFile *dest) {
-	char buf[0x104];
-	char item[0x104];
-
-	CHECK(dest);
-	int s = DataFile_FindSection(dat, sect, 1);
-	if (!s) {
-		return;
-	}
-	for (int k = DataFile_FindKey(dat, key, s + 1, buf, VALUE_SIZE); k; k = DataFile_FindKey(dat, key, k + 1, buf, VALUE_SIZE)) {
-		if (Proc_Scan(buf, "&.*t", 0x100, item) != 1) {
-			return;
-		}
-		DataFile_AddLine(dest, item, DataFile_Count(dest));
-	}
-}
-
-int Dat_GetWord(cDataFile *dat, const char *sect, const char *key, uint16_t *out) {
-	char buf[0x104];
-
-	return Dat_Find(dat, sect, key, buf) && Proc_Scan(buf, "&w", out) == 1 ? 0 : -1;
-}
-
-int Dat_GetStr(cDataFile *dat, const char *sect, const char *key, char *dest, int size) {
-	CHECK(dest && size > 0);
-	int s = DataFile_FindSection(dat, sect, 1);
-	if (!s) {
-		return -1;
-	}
-	return DataFile_FindKey(dat, key, s + 1, dest, size) ? 0 : -1;
-}

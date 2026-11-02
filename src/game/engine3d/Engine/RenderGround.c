@@ -6,15 +6,15 @@
 #include "scrap/render.h"
 #include "scrap/renderground.h"
 
-CTable g_BatchTab;
+static CTable g_BatchTab;
 
 static BatchMesh *Batch_Entry(uint32_t i) {
 	TABLE_CHECK(g_BatchTab.p, i, g_BatchTab.n);
 	return &((BatchMesh *)g_BatchTab.p)[i];
 }
 
-BatchMesh *g_BatchOrder[512];
-uint32_t g_BatchUsed;
+static BatchMesh *g_BatchOrder[512];
+static uint32_t g_BatchUsed;
 
 void Batch_AddMesh(void *mesh, void *dev) {
 	if (!g_BatchTab.n) {
@@ -45,6 +45,7 @@ void Batch_AddMesh(void *mesh, void *dev) {
 	}
 }
 
+static int Batch_Compare(const void *a, const void *b);
 void Batch_Flush(void *dev) {
 	(void)dev;
 	if (!g_BatchUsed) {
@@ -71,7 +72,8 @@ void Batch_Flush(void *dev) {
 	g_BatchUsed = 0;
 }
 
-int Batch_Compare(const void *a, const void *b) {
+/* qsort order of g_BatchOrder: texture, material, then z ascending */
+static int Batch_Compare(const void *a, const void *b) {
 	const BatchMesh *ea = *(BatchMesh *const *)a;
 	const BatchMesh *eb = *(BatchMesh *const *)b;
 	int d = (int)(ea->tex - eb->tex);
@@ -87,7 +89,7 @@ int Batch_Compare(const void *a, const void *b) {
 }
 
 /* the atexit destructor of (&g_BatchTab) and the static initializer that registers it */
-void RenderGround_FiniBatchTab(void) {
+static void RenderGround_FiniBatchTab(void) {
 	Table_Free((&g_BatchTab));
 }
 

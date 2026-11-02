@@ -630,10 +630,6 @@ static void Vkd_FrameDone(void) {
 	}
 }
 
-void Vkd_TraceStart(void) {
-	vkd_traceState = 1;
-}
-
 int Vkd_Tracing(void) {
 	return vkd_traceState == 1;
 }

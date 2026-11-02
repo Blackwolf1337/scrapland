@@ -4,6 +4,11 @@
  */
 #include "scrap/scorerhud.h"
 
+#define CSPRITESCORER_VFTABLE (&cSpriteScorer_vftable.base)
+#define CGRADIENTSCORER_VFTABLE (&cGradientScorer_vftable.base)
+static const cSpriteScorerVtbl cSpriteScorer_vftable;
+static const cSpriteScorerVtbl cGradientScorer_vftable;
+
 int ScorerVar_Table(void *item, const ScorerVarDef *defs, int n, const char *name, byte set, double *d, int *i) {
 	static const int shifts[4] = {16, 8, 0, 24};
 
@@ -28,6 +33,7 @@ int ScorerVar_Table(void *item, const ScorerVarDef *defs, int n, const char *nam
 	return 0;
 }
 
+static void cSpriteScorer_SetFile(cSpriteScorer *self, uint32_t flags, const char *name);
 cSpriteScorer *cSpriteScorer_ctor(cSpriteScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CSPRITESCORER_VFTABLE;
@@ -61,7 +67,7 @@ void cSpriteScorer_dtor(cSpriteScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cScorerItem *cSpriteScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cSpriteScorer_Delete(cScorerItem *base, byte flags) {
 	cSpriteScorer *self = (cSpriteScorer *)base;
 	cSpriteScorer_dtor(self);
 	if (flags & 1) {
@@ -70,7 +76,8 @@ cScorerItem *cSpriteScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-void cSpriteScorer_SetFile(cSpriteScorer *self, uint32_t flags, const char *name) {
+/* the image of the file with flags (the 0x40000 flag when Discardable) */
+static void cSpriteScorer_SetFile(cSpriteScorer *self, uint32_t flags, const char *name) {
 	self->img = ScorerImg_Replace(self->img, name, self->blendingMode, (self->discardable ? 0x40000 : 0) | flags);
 }
 
@@ -191,7 +198,7 @@ int cSpriteScorer_Var(cScorerItem *base, const char *name, int set, char **s, do
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void cSpriteScorer_Draw(cScorerItem *base, int player) {
+static void cSpriteScorer_Draw(cScorerItem *base, int player) {
 	cSpriteScorer *self = (cSpriteScorer *)base;
 	float x = self->base.x;
 	float y = self->base.y;
@@ -227,7 +234,7 @@ cGradientScorer *cGradientScorer_ctor(cGradientScorer *self) {
 	return self;
 }
 
-cScorerItem *cGradientScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cGradientScorer_Delete(cScorerItem *base, byte flags) {
 	cGradientScorer *self = (cGradientScorer *)base;
 	cSpriteScorer_dtor(&self->base);
 	if (flags & 1) {
@@ -236,7 +243,8 @@ cScorerItem *cGradientScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-int cGradientScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+/* ColorSelected, Red, Green, Blue, Alpha of the selected corner, then the sprite variables */
+static int cGradientScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cGradientScorer *self = (cGradientScorer *)base;
 	static const char *const colors[4] = {"Red", "Green", "Blue", "Alpha"};
 	int r;
@@ -258,7 +266,7 @@ int cGradientScorer_Var(cScorerItem *base, const char *name, int set, char **s, 
 	return cSpriteScorer_Var(&self->base.base, name, set, s, d, i);
 }
 
-void cGradientScorer_Draw(cScorerItem *base, int player) {
+static void cGradientScorer_Draw(cScorerItem *base, int player) {
 	cGradientScorer *self = (cGradientScorer *)base;
 	/* the unit square, as positions (scaled by the image) and as texture coordinates */
 	static const float quad[8] = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
@@ -278,7 +286,7 @@ void cGradientScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cSpriteScorer */
-const cSpriteScorerVtbl cSpriteScorer_vftable = {
+static const cSpriteScorerVtbl cSpriteScorer_vftable = {
 	.base.Draw = cSpriteScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cSpriteScorer_Var,
@@ -287,7 +295,7 @@ const cSpriteScorerVtbl cSpriteScorer_vftable = {
 };
 
 /* the vtable of cGradientScorer */
-const cSpriteScorerVtbl cGradientScorer_vftable = {
+static const cSpriteScorerVtbl cGradientScorer_vftable = {
 	.base.Draw = cGradientScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cGradientScorer_Var,

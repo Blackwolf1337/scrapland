@@ -5,7 +5,16 @@
 #include "scrap/fxelements.h"
 #include "scrap/staticinit.h"
 
-uint32_t RUSTY_RAMPS[18] = {
+#define g_FXRustyHitFile (GVar_FXRustyHitFile.value.s)
+#define g_RustyHitPosX (GVar_RustyHitPosX.value.f)
+#define g_RustyHitPosY (GVar_RustyHitPosY.value.f)
+#define g_RustyHitPosZ (GVar_RustyHitPosZ.value.f)
+static cGVar GVar_RustyHitPosZ;
+static cGVar GVar_RustyHitPosY;
+static cGVar GVar_RustyHitPosX;
+static cGVar GVar_FXRustyHitFile;
+
+static uint32_t RUSTY_RAMPS[18] = {
 	0x80fff696, 0x20ffb45a, 0x40e68211, 0x80ab5e0d, 0x964c4408, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 	0x80ffebd2, 0x20ffd75a, 0x40e6c811, 0x80ab8c0d, 0x964c3a08, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 };
@@ -33,11 +42,11 @@ static void Rusty_Still(CGameParticles *p, const vec3_t *pos) {
 	p->initAccMax = p->initAccMin;
 }
 
-uint32_t RUSTY_RAMP_DEBRIS[9] = { 0xff808080, 0xa4808080, 0xa4808080, 0xa4808080, 0xa4808080, 0xc0808080, 0xde808080, 0xff000000, 0xff000000 };
+static uint32_t RUSTY_RAMP_DEBRIS[9] = { 0xff808080, 0xa4808080, 0xa4808080, 0xa4808080, 0xa4808080, 0xc0808080, 0xde808080, 0xff000000, 0xff000000 };
 
 /* params: Rusty. At the point of the hit when it is in sight: a flash, a glow and smoke, 7..35 sparks sprayed up
  * along the view and 12 pieces of debris */
-void ChType_FXRustyHit(cAbstractFile *params) {
+static void ChType_FXRustyHit(cAbstractFile *params) {
 	char name[0x80];
 	vec3_t ang, off, t, t2, pos, d0, sang, n, in;
 
@@ -219,11 +228,11 @@ void ChType_FXRustyHit(cAbstractFile *params) {
 	}
 }
 
-cGVar GVar_RustyHitPosX;
-cGVar GVar_RustyHitPosZ;
-cGVar GVar_RustyHitPosY;
-cGVar GVar_FXRustyHitFile;
-cPy_NativeFunc NativeFunc_FXRustyHit;
+static cGVar GVar_RustyHitPosX;
+static cGVar GVar_RustyHitPosZ;
+static cGVar GVar_RustyHitPosY;
+static cGVar GVar_FXRustyHitFile;
+static cPy_NativeFunc NativeFunc_FXRustyHit;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_FXRustyHitFile, &GVar_FXRustyHitFile)

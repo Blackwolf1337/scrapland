@@ -7,8 +7,11 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
+#define g_FXMaintenanceWorkFile (GVar_FXMaintenanceWorkFile.value.s)
+static cGVar GVar_FXMaintenanceWorkFile;
+
 /* params: the robot, the ship, the time of the effect */
-void ChType_FXMaintenanceWork(cAbstractFile *params) {
+static void ChType_FXMaintenanceWork(cAbstractFile *params) {
 	char name[0x80], shipName[0x80];
 	float time;
 	vec3_t tmp;
@@ -42,8 +45,8 @@ byte cAIChar_TestFlags(const void *self) {
 	return ((const byte *)self)[0x28] || ((const byte *)self)[0x2a];
 }
 
-cGVar GVar_FXMaintenanceWorkFile;
-cPy_NativeFunc NativeFunc_FXMaintenanceWork;
+static cGVar GVar_FXMaintenanceWorkFile;
+static cPy_NativeFunc NativeFunc_FXMaintenanceWork;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_FXMaintenanceWorkFile, &GVar_FXMaintenanceWorkFile)

@@ -14,8 +14,6 @@ void Plat_Shutdown(void);
 /* the window with a client area of w x h (resizable unless fixed), hidden until Plat_ShowWindow; 0 on failure */
 int Plat_CreateWindow(const char *title, int w, int h, byte fixed);
 void Plat_ShowWindow(void);
-/* the SDL_Window, and the HWND of it on Windows (NULL elsewhere) for the Win32 code that is left */
-void *Plat_Window(void);
 void *Plat_NativeWindow(void);
 /* the client area in pixels, the window rectangle on the desktop (left, top, right, bottom) */
 void Plat_ClientSize(int *w, int *h);

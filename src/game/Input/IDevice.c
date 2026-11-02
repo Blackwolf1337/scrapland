@@ -15,6 +15,18 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
+#define CABSTRACTIDEVICE_VFTABLE (&cAbstractIDevice_vftable)
+#define CFUNCGVARDEVICES_VFTABLE (&cFuncGvarDevices_vftable)
+#define g_InactivityTime (GVar_CheckInactivityTime.value.f)	/* CheckInactivityTime */
+#define g_InactivityTimeDef (GVar_CheckInactivityTime.def.f)
+#define g_InactivityFunc (((cPy_Function *)&GVar_CheckInactivityFunc.func))
+#define g_PauseInactivity (GVar_PauseInactivityTime.value.i)	/* PauseInactivityTime */
+static const cGVarListVtbl cFuncGvarDevices_vftable;
+static const cAbstractIDeviceVtbl cAbstractIDevice_vftable;
+static cGVar GVar_PauseInactivityTime;
+static cGVar GVar_CheckInactivityTime;
+static cGVarFunction GVar_CheckInactivityFunc;
+
 #define DEV_NODE_SIZE sizeof(cInputDevNode)
 
 /* the scorer state the definition of a key switches to (rva 0x1710f0, Scorer/) */
@@ -100,7 +112,7 @@ void cAbstractIDevice_dtor(cAbstractIDevice *self) {
 	}
 }
 
-cAbstractIDevice *cAbstractIDevice_Delete(cAbstractIDevice *self, byte flags) {
+static cAbstractIDevice *cAbstractIDevice_Delete(cAbstractIDevice *self, byte flags) {
 	cAbstractIDevice_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cAbstractIDevice));
@@ -108,9 +120,10 @@ cAbstractIDevice *cAbstractIDevice_Delete(cAbstractIDevice *self, byte flags) {
 	return self;
 }
 
-int g_ToDefinePlayer = -1;
-int g_ToDefineAction = -1;
-uint32_t g_ToDefineSet = 0xffffffff;
+/* the player, action and set waiting for the next key (SInput.ListenToDefine), -1 for none */
+static int g_ToDefinePlayer = -1;
+static int g_ToDefineAction = -1;
+static uint32_t g_ToDefineSet = 0xffffffff;
 
 void Input_AbortListenToDefine(void) {
 	g_ToDefineSet = -1;
@@ -166,10 +179,10 @@ int Input_Bind(int player, const char *a, const char *b, const char *c) {
 	return 0;
 }
 
-float g_InactivityTimer;
+static float g_InactivityTimer;
 
 /* CheckInactivityTime seconds without an action held calls the function of the inactivity */
-void Input_CheckInactivity(float dt) {
+static void Input_CheckInactivity(float dt) {
 	float t;
 
 	if (!g_PauseInactivity) {
@@ -189,12 +202,12 @@ void Input_CheckInactivity(float dt) {
 	}
 }
 
-void InputDevices_Clear(cInputDevList *list) {
+static void InputDevices_Clear(cInputDevList *list) {
 	DList_Clear(list, DEV_NODE_SIZE);
 }
 
 /* the binding of player to action in set off every entry of every device; check spares the reserved entries */
-int Input_ClearBinding(uint32_t player, int set, int action, byte check) {
+static int Input_ClearBinding(uint32_t player, int set, int action, byte check) {
 	if (player > 3) {
 		return 1;
 	}
@@ -221,7 +234,7 @@ int Input_ClearDefinedList(int player, const char *a, const char *b, int flag) {
 	return Input_ClearBinding(player, set, act, (byte)flag);
 }
 
-void cAbstractIDevice_ClearEntries(cAbstractIDevice *self) {
+static void cAbstractIDevice_ClearEntries(cAbstractIDevice *self) {
 	for (int i = 0; i < self->nEntries; i++) {
 		cDevEntry *e = &self->entries[i];
 		for (int s = 0; s < NUM_SETS; s++) {
@@ -234,7 +247,7 @@ void cAbstractIDevice_ClearEntries(cAbstractIDevice *self) {
 }
 
 /* the label of the entry bound to player and action, the one of the named device first; "" for none */
-const char *Input_FindBinding(uint32_t player, int set, int action, const char *device, byte check) {
+static const char *Input_FindBinding(uint32_t player, int set, int action, const char *device, byte check) {
 	const char *r = str_Empty;
 
 	if (player > 3) {
@@ -266,7 +279,7 @@ char *Input_GetDefinedEntry(int player, const char *a, const char *b, const char
 }
 
 /* "device:label, " for every entry bound to player and action, without the last ", " */
-int Input_ListBindings(uint32_t player, int set, int action, char *buf, int size, byte check) {
+static int Input_ListBindings(uint32_t player, int set, int action, char *buf, int size, byte check) {
 	buf[0] = 0;
 	if (player > 3) {
 		return 1;
@@ -300,13 +313,6 @@ int Input_GetDefinedList(int player, const char *a, const char *b, char *buf, in
 		return r + 1;
 	}
 	return Input_ListBindings(player, set, act, buf, size, (byte)flag);
-}
-
-void cAbstractIDevice_GetEntry(cAbstractIDevice *self, int entry, int set, int *player, int *action) {
-	CHECK(entry < self->nEntries);
-	CHECK(set < NUM_SETS);
-	*player = self->entries[entry].sets[set].player;
-	*action = self->entries[entry].sets[set].action;
 }
 
 /* GetEntry(device, entry, set): the player and the action name bound to it; 1 no device, 2 no entry, 3 no set */
@@ -351,6 +357,8 @@ void cAbstractIDevice_InitEntries(cAbstractIDevice *self, int n) {
 }
 
 /* ListenToDefine(player, set, action, function): the next key pressed is bound; 1 bad player, 2 no set, 3 no action */
+static void Input_SetDefineFunc(const char *func);
+static void Input_SetToDefine(int player, int action, uint32_t set);
 int Input_ListenToDefine(int player, const char *a, const char *b, const char *c) {
 	uint32_t set, act;
 
@@ -366,7 +374,7 @@ int Input_ListenToDefine(int player, const char *a, const char *b, const char *c
 	return 0;
 }
 
-void Input_SetToDefine(int player, int action, uint32_t set) {
+static void Input_SetToDefine(int player, int action, uint32_t set) {
 	CHECK((int)set < NUM_SETS);
 	CHECK(action < TABLE_AT(g_ActionSets, set)->actions.count);
 	CHECK(player < MAX_LOCAL_PLAYERS);
@@ -379,7 +387,7 @@ void Input_SetToDefine(int player, int action, uint32_t set) {
 }
 
 /* the lines "set.action.player = entry" of the device up to "name = <end>" */
-void cFuncGvarDevices_Load(struct cFuncGvar *elem, void *f) {
+static void cFuncGvarDevices_Load(struct cFuncGvar *elem, void *f) {
 	cFuncGvarDevices *self = (cFuncGvarDevices *)elem;
 	char line[0x200];
 	char *value;
@@ -448,10 +456,10 @@ void Input_Update(float dt) {
 	Input_CheckInactivity(dt);
 }
 
-cPy_Function g_DefineFunc;
+static cPy_Function g_DefineFunc;
 
 /* the callback of ListenToDefine with a function: called once */
-void Input_OnDefined(void) {
+static void Input_OnDefined(void) {
 	cPy_Function_Execute((&g_DefineFunc), 0);
 	cPy_Function_SetFunc((&g_DefineFunc), NULL);
 }
@@ -476,7 +484,7 @@ void Input_ResetToDefault(void) {
 	}
 }
 
-void cFuncGvarDevices_Save(struct cFuncGvar *elem, void *f) {
+static void cFuncGvarDevices_Save(struct cFuncGvar *elem, void *f) {
 	cFuncGvarDevices *self = (cFuncGvarDevices *)elem;
 	char buf[0x100];
 
@@ -503,7 +511,7 @@ void cAbstractIDevice_SetAxis(cAbstractIDevice *self, int entry, float value) {
 	cAbstractIDevice_SetValue(self, entry + 1, 0.0f > value ? -value : 0.0f);
 }
 
-input_cb_t g_OnDefined;
+static input_cb_t g_OnDefined;
 
 /* the new value of an entry: defines the waiting key on a press, else raises the action it is bound to */
 void cAbstractIDevice_SetValue(cAbstractIDevice *self, int entry, float value) {
@@ -550,12 +558,7 @@ void cAbstractIDevice_SetValue(cAbstractIDevice *self, int entry, float value) {
 	}
 }
 
-void Input_SetDefineCallback(void (*f)(void)) {
-	CHECK(f != NULL);
-	g_OnDefined = f;
-}
-
-void Input_SetDefineFunc(const char *func) {
+static void Input_SetDefineFunc(const char *func) {
 	CHECK(func != NULL);
 	if (!*func) {
 		g_OnDefined = NULL;
@@ -565,7 +568,7 @@ void Input_SetDefineFunc(const char *func) {
 	cPy_Function_SetFunc((&g_DefineFunc), func);
 }
 
-byte cAbstractIDevice_IsReserved(cAbstractIDevice *self, int entry) {
+static byte cAbstractIDevice_IsReserved(cAbstractIDevice *self, int entry) {
 	(void)self;
 	(void)entry;
 	return 0;
@@ -631,7 +634,7 @@ void cAbstractIDevice_SetGameDefaultsNop(cAbstractIDevice *self) {
 }
 
 /* the vtable of cAbstractIDevice */
-const cAbstractIDeviceVtbl cAbstractIDevice_vftable = {
+static const cAbstractIDeviceVtbl cAbstractIDevice_vftable = {
 	.Delete = cAbstractIDevice_Delete,
 	.SetDefaults = (void *)crt_purecall,
 	.SetGameDefaults = (void *)crt_purecall,
@@ -644,20 +647,14 @@ const cAbstractIDeviceVtbl cAbstractIDevice_vftable = {
 };
 
 /* the vtable of cFuncGvarDevices */
-const cGVarListVtbl cFuncGvarDevices_vftable = {
+static const cGVarListVtbl cFuncGvarDevices_vftable = {
 	.Save = cFuncGvarDevices_Save,
 	.Load = cFuncGvarDevices_Load,
 };
 
-/* the vtable of cFuncGvar */
-const cGVarListVtbl cFuncGvar_vftable = {
-	.Save = (void *)crt_purecall,
-	.Load = (void *)crt_purecall,
-};
-
-cGVar GVar_CheckInactivityTime;
-cGVarFunction GVar_CheckInactivityFunc;
-cGVar GVar_PauseInactivityTime;
+static cGVar GVar_CheckInactivityTime;
+static cGVarFunction GVar_CheckInactivityFunc;
+static cGVar GVar_PauseInactivityTime;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_OBJECT(Init_ActionSets, ActionSet_FiniActionSets, &g_ActionSets, ActionSets_ctor)

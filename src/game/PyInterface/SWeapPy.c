@@ -9,7 +9,7 @@
 #include "scrap/world.h"
 
 /* GetNWeap() : Obtiene el numero de armas en el juego */
-PyObject *SWeap_GetNWeap(PyObject *self, PyObject *args) {
+static PyObject *SWeap_GetNWeap(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -18,7 +18,7 @@ PyObject *SWeap_GetNWeap(PyObject *self, PyObject *args) {
 }
 
 /* GetNAmmo() : Obtiene el numero de municiones en el juego */
-PyObject *SWeap_GetNAmmo(PyObject *self, PyObject *args) {
+static PyObject *SWeap_GetNAmmo(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -27,7 +27,7 @@ PyObject *SWeap_GetNAmmo(PyObject *self, PyObject *args) {
 }
 
 /* InitWeap(num) : Inicializa las armas num es el numero de armas. None for num <= 0. */
-PyObject *SWeap_InitWeap(PyObject *self, PyObject *args) {
+static PyObject *SWeap_InitWeap(PyObject *self, PyObject *args) {
 	int num;
 
 	(void)self;
@@ -42,7 +42,7 @@ PyObject *SWeap_InitWeap(PyObject *self, PyObject *args) {
 }
 
 /* InitAmmo(num) : Inicializa las municiones del juego. No check of num here, the table checks it. */
-PyObject *SWeap_InitAmmo(PyObject *self, PyObject *args) {
+static PyObject *SWeap_InitAmmo(PyObject *self, PyObject *args) {
 	int num;
 
 	(void)self;
@@ -54,7 +54,7 @@ PyObject *SWeap_InitAmmo(PyObject *self, PyObject *args) {
 }
 
 /* GetFAmmo(numammo,svar) : Obtiene un valor numerico de las municiones */
-PyObject *SWeap_GetFAmmo(PyObject *self, PyObject *args) {
+static PyObject *SWeap_GetFAmmo(PyObject *self, PyObject *args) {
 	int n;
 	char *var;
 	float value;
@@ -70,7 +70,7 @@ PyObject *SWeap_GetFAmmo(PyObject *self, PyObject *args) {
 }
 
 /* GetSAmmo(numammo,svar) : Obtiene un valor cadena de las municiones */
-PyObject *SWeap_GetSAmmo(PyObject *self, PyObject *args) {
+static PyObject *SWeap_GetSAmmo(PyObject *self, PyObject *args) {
 	int n;
 	char *var, *value;
 
@@ -85,7 +85,7 @@ PyObject *SWeap_GetSAmmo(PyObject *self, PyObject *args) {
 }
 
 /* SetFAmmo(numammo,svar,fvalue) : Pone un valor numerico de las municiones */
-PyObject *SWeap_SetFAmmo(PyObject *self, PyObject *args) {
+static PyObject *SWeap_SetFAmmo(PyObject *self, PyObject *args) {
 	int n;
 	char *var;
 	double value;
@@ -105,7 +105,7 @@ PyObject *SWeap_SetFAmmo(PyObject *self, PyObject *args) {
  * NULL without a Python exception for n >= count (signed compare first) and for an unknown var; Python then
  * reports "error return without exception set". Kept as the original does it.
  */
-PyObject *SWeap_SetSAmmo(PyObject *self, PyObject *args) {
+static PyObject *SWeap_SetSAmmo(PyObject *self, PyObject *args) {
 	int n;
 	char *var, *value;
 
@@ -123,7 +123,7 @@ PyObject *SWeap_SetSAmmo(PyObject *self, PyObject *args) {
 }
 
 /* GetFWeap(numWeap,svar) : Obtiene un valor numerico de las armas */
-PyObject *SWeap_GetFWeap(PyObject *self, PyObject *args) {
+static PyObject *SWeap_GetFWeap(PyObject *self, PyObject *args) {
 	int n;
 	char *var;
 	float value;
@@ -139,7 +139,7 @@ PyObject *SWeap_GetFWeap(PyObject *self, PyObject *args) {
 }
 
 /* GetSWeap(numWeap,svar) : Obtiene un valor cadena de las armas */
-PyObject *SWeap_GetSWeap(PyObject *self, PyObject *args) {
+static PyObject *SWeap_GetSWeap(PyObject *self, PyObject *args) {
 	int n;
 	char *var, *value;
 
@@ -154,7 +154,7 @@ PyObject *SWeap_GetSWeap(PyObject *self, PyObject *args) {
 }
 
 /* SetFWeap(numWeap,svar,fvalue) : Pone un valor numerico de las armas */
-PyObject *SWeap_SetFWeap(PyObject *self, PyObject *args) {
+static PyObject *SWeap_SetFWeap(PyObject *self, PyObject *args) {
 	int n;
 	char *var;
 	double value;
@@ -170,7 +170,7 @@ PyObject *SWeap_SetFWeap(PyObject *self, PyObject *args) {
 }
 
 /* SetSWeap(numWeap,svar,svalue) : Pone un valor cadena de las armas */
-PyObject *SWeap_SetSWeap(PyObject *self, PyObject *args) {
+static PyObject *SWeap_SetSWeap(PyObject *self, PyObject *args) {
 	int n;
 	char *var, *value;
 
@@ -185,7 +185,7 @@ PyObject *SWeap_SetSWeap(PyObject *self, PyObject *args) {
 }
 
 /* FillPriority() : Inizializa las prioridades de las armas */
-PyObject *SWeap_FillPriority(PyObject *self, PyObject *args) {
+static PyObject *SWeap_FillPriority(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -195,7 +195,7 @@ PyObject *SWeap_FillPriority(PyObject *self, PyObject *args) {
 }
 
 /* GetFirstiWeap() : Obtiene el arma primera y por defecto */
-PyObject *SWeap_GetFirstiWeap(PyObject *self, PyObject *args) {
+static PyObject *SWeap_GetFirstiWeap(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -207,7 +207,7 @@ PyObject *SWeap_GetFirstiWeap(PyObject *self, PyObject *args) {
  * NetExec(cmd[,name]) : Rutinas de red de los misiles. Unknown commands do nothing. Without the second argument
  * the original passes an uninitialized pointer; here it is NULL.
  */
-PyObject *SWeap_NetExec(PyObject *self, PyObject *args) {
+static PyObject *SWeap_NetExec(PyObject *self, PyObject *args) {
 	char *cmd, *name = NULL;
 	const vec3_t zero = { 0.0f, 0.0f, 0.0f };
 
@@ -230,66 +230,66 @@ PyObject *SWeap_NetExec(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-const char str_PyMethod_SWeap_GetNWeap[] = "GetNWeap";
+static const char str_PyMethod_SWeap_GetNWeap[] = "GetNWeap";
 
-char str_PyDoc_SWeap_GetNWeap[] = "GetNWeap() : Obtiene el numero de armas en el juego";
+static char str_PyDoc_SWeap_GetNWeap[] = "GetNWeap() : Obtiene el numero de armas en el juego";
 
-const char str_PyMethod_SWeap_GetNAmmo[] = "GetNAmmo";
+static const char str_PyMethod_SWeap_GetNAmmo[] = "GetNAmmo";
 
-char str_PyDoc_SWeap_GetNAmmo[] = "GetNAmmo() : Obtiene el numero de municiones en el juego";
+static char str_PyDoc_SWeap_GetNAmmo[] = "GetNAmmo() : Obtiene el numero de municiones en el juego";
 
-const char str_PyMethod_SWeap_InitWeap[] = "InitWeap";
+static const char str_PyMethod_SWeap_InitWeap[] = "InitWeap";
 
-char str_PyDoc_SWeap_InitWeap[] = "InitWeap(num) : Inicializa las armas num es el numero de armas";
+static char str_PyDoc_SWeap_InitWeap[] = "InitWeap(num) : Inicializa las armas num es el numero de armas";
 
-const char str_PyMethod_SWeap_InitAmmo[] = "InitAmmo";
+static const char str_PyMethod_SWeap_InitAmmo[] = "InitAmmo";
 
-char str_PyDoc_SWeap_InitAmmo[56] = "InitAmmo(num) : Inicializa las municiones del juego";
+static char str_PyDoc_SWeap_InitAmmo[56] = "InitAmmo(num) : Inicializa las municiones del juego";
 
-const char str_PyMethod_SWeap_GetFAmmo[] = "GetFAmmo";
+static const char str_PyMethod_SWeap_GetFAmmo[] = "GetFAmmo";
 
-char str_PyDoc_SWeap_GetFAmmo[] =
+static char str_PyDoc_SWeap_GetFAmmo[] =
 	"GetFAmmo(numammo,svar) : Obtiene un valor numerico de las municiones";
 
-const char str_PyMethod_SWeap_GetSAmmo[] = "GetSAmmo";
+static const char str_PyMethod_SWeap_GetSAmmo[] = "GetSAmmo";
 
-char str_PyDoc_SWeap_GetSAmmo[72] =
+static char str_PyDoc_SWeap_GetSAmmo[72] =
 	"GetSAmmo(numammo,svar) : Obtiene un valor cadena de las municiones";
 
-const char str_PyMethod_SWeap_SetFAmmo[] = "SetFAmmo";
+static const char str_PyMethod_SWeap_SetFAmmo[] = "SetFAmmo";
 
-char str_PyDoc_SWeap_SetFAmmo[80] =
+static char str_PyDoc_SWeap_SetFAmmo[80] =
 	"GetFAmmo(numammo,svar,fvalue) : Pone un valor numerico de las municiones";
 
-const char str_PyMethod_SWeap_SetSAmmo[] = "SetSAmmo";
+static const char str_PyMethod_SWeap_SetSAmmo[] = "SetSAmmo";
 
-char str_PyDoc_SWeap_SetSAmmo[] =
+static char str_PyDoc_SWeap_SetSAmmo[] =
 	"SetSAmmo(numammo,svar,svalue) : Pone un valor cadena de las municiones";
 
-const char str_PyMethod_SWeap_GetFWeap[] = "GetFWeap";
+static const char str_PyMethod_SWeap_GetFWeap[] = "GetFWeap";
 
-char str_PyDoc_SWeap_GetFWeap[] =
+static char str_PyDoc_SWeap_GetFWeap[] =
 	"GetFWeap(numWeap,svar) : Obtiene un valor numerico de las municiones";
 
-const char str_PyMethod_SWeap_GetSWeap[] = "GetSWeap";
+static const char str_PyMethod_SWeap_GetSWeap[] = "GetSWeap";
 
-char str_PyDoc_SWeap_GetSWeap[72] =
+static char str_PyDoc_SWeap_GetSWeap[72] =
 	"GetSWeap(numWeap,svar) : Obtiene un valor cadena de las municiones";
 
-const char str_PyMethod_SWeap_SetFWeap[] = "SetFWeap";
+static const char str_PyMethod_SWeap_SetFWeap[] = "SetFWeap";
 
-char str_PyDoc_SWeap_SetFWeap[80] =
+static char str_PyDoc_SWeap_SetFWeap[80] =
 	"GetFWeap(numWeap,svar,fvalue) : Pone un valor numerico de las municiones";
 
-const char str_PyMethod_SWeap_SetSWeap[] = "SetSWeap";
-const char str_PyMethod_SWeap_FillPriority[] = "FillPriority";
-const char str_PyMethod_SWeap_GetFirstiWeap[] = "GetFirstiWeap";
-const char str_PyMethod_SWeap_NetExec[] = "NetExec";
-extern char str_PyDoc_SWeap_FillPriority[];
-extern char str_PyDoc_SWeap_GetFirstiWeap[];
-extern char str_PyDoc_SWeap_NetExec[];
-extern char str_PyDoc_SWeap_SetSWeap[];
-PyMethodDef SWeap_methods[16] = {
+static const char str_PyMethod_SWeap_SetSWeap[] = "SetSWeap";
+static const char str_PyMethod_SWeap_FillPriority[] = "FillPriority";
+static const char str_PyMethod_SWeap_GetFirstiWeap[] = "GetFirstiWeap";
+static const char str_PyMethod_SWeap_NetExec[] = "NetExec";
+static char str_PyDoc_SWeap_FillPriority[];
+static char str_PyDoc_SWeap_GetFirstiWeap[];
+static char str_PyDoc_SWeap_NetExec[];
+static char str_PyDoc_SWeap_SetSWeap[];
+static PyMethodDef SWeap_methods[16] = {
 	{
 		.ml_name = (void *)str_PyMethod_SWeap_GetNWeap,
 		.ml_meth = (void *)SWeap_GetNWeap,
@@ -384,12 +384,12 @@ PyMethodDef SWeap_methods[16] = {
 
 SD_PY_MODULE(SWeap, 0x430128)
 
-char str_PyDoc_SWeap_SetSWeap[] =
+static char str_PyDoc_SWeap_SetSWeap[] =
 	"SetSWeap(numammo,svar,svalue) : Pone un valor cadena de las municiones";
 
-char str_PyDoc_SWeap_FillPriority[] = "FillPriority() : Inizializa las prioridades de las armas";
+static char str_PyDoc_SWeap_FillPriority[] = "FillPriority() : Inizializa las prioridades de las armas";
 
-char str_PyDoc_SWeap_GetFirstiWeap[] = "GetFirstiWeap() : Obtiene el arma primera y por defecto";
+static char str_PyDoc_SWeap_GetFirstiWeap[] = "GetFirstiWeap() : Obtiene el arma primera y por defecto";
 
-char str_PyDoc_SWeap_NetExec[] = "NetExec() : Rutinas de red de los misiles";
+static char str_PyDoc_SWeap_NetExec[] = "NetExec() : Rutinas de red de los misiles";
 

@@ -14,13 +14,13 @@
 #include "scrap/misc.h"
 #include "scrap/staticinit.h"
 
-cGVar GVar_R_SortModels;
+static cGVar GVar_R_SortModels;
 
 #define g_SortModels (GVar_R_SortModels.value.i)	/* R_SortModels */
-cGVar GVar_R_SortShow;
+static cGVar GVar_R_SortShow;
 
 #define g_SortShow (GVar_R_SortShow.value.i)	/* R_SortShow */
-cGVar GVar_R_SortInvert;
+static cGVar GVar_R_SortInvert;
 
 #define g_SortInvert (GVar_R_SortInvert.value.i)	/* R_SortInvert */
 
@@ -41,7 +41,8 @@ static void SceneList_Free(CSceneList *le) {
 	operator_delete_sized(le, sizeof(*le));
 }
 
-CSceneList *CSceneList_ctor(CSceneList *self, CScene *scn, const char *name, const char *name2,
+/* Engine/util_escena.cpp (src/game/engine3d/Engine/UtilScene.c) */
+static CSceneList *CSceneList_ctor(CSceneList *self, CScene *scn, const char *name, const char *name2,
 	const vec3_t *scale, uint32_t flags, CSceneList **list) {
 	self->name = NULL;
 	self->name2 = NULL;
@@ -62,7 +63,8 @@ CSceneList *CSceneList_ctor(CSceneList *self, CScene *scn, const char *name, con
 	return self;
 }
 
-CModelList *CModelList_ctor(CModelList *self, CModel *m, const char *name, const char *name2,
+static void Model_UpdateRender(CModel *m);
+static CModelList *CModelList_ctor(CModelList *self, CModel *m, const char *name, const char *name2,
 	uint32_t flags, CModelList **list) {
 	self->name = NULL;
 	self->name2 = NULL;
@@ -83,7 +85,7 @@ CModelList *CModelList_ctor(CModelList *self, CModel *m, const char *name, const
 	return self;
 }
 
-void CModelList_dtor(CModelList *self) {
+static void CModelList_dtor(CModelList *self) {
 	CHECK(self->flags & SCENE_AUTOINIT);
 	CHECK(self->model);
 	CModel *m = self->model;
@@ -104,11 +106,12 @@ void CModelList_dtor(CModelList *self) {
 	}
 }
 
-CModelList *g_ModelsRender[1024];
-int g_NumModelsRender;
-int g_MaxModelsRender;
+static CModelList *g_ModelsRender[1024];
+static int g_NumModelsRender;
+static int g_MaxModelsRender;
 
-void Model_UpdateRender(CModel *m) {
+/* into gModelosRender while enabled, out of it while not */
+static void Model_UpdateRender(CModel *m) {
 	CModelList *lm = m->list;
 
 	if (!lm) {
@@ -143,7 +146,7 @@ void Model_UpdateRender(CModel *m) {
 	lm->renderIndex = -1;
 }
 
-CSceneList *g_SceneList;
+static CSceneList *g_SceneList;
 
 byte SceneList_Release(CScene *scn, byte force) {
 	CSceneList *le = g_SceneList;
@@ -189,7 +192,7 @@ byte SceneList_Release(CScene *scn, byte force) {
 	return 1;
 }
 
-CModelList *g_ModelList;
+static CModelList *g_ModelList;
 
 void Model_Destroy(CModel **pm, byte force) {
 	CHECK(pm);
@@ -398,6 +401,7 @@ CScene *Scene_Next(CScene *scn) {
 	return le->scene;
 }
 
+static int ModelList_CompareKey(const void *a, const void *b);
 void Models_Render(void) {
 	if (!g_ModelsOn) {
 		return;
@@ -454,24 +458,14 @@ void Models_Render(void) {
 	}
 }
 
-CSceneList *CSceneList_Find(CSceneList *self, const char *name, const char *name2,
+static int String_EqualNoCase(const char *a, const char *b);
+static CSceneList *CSceneList_Find(CSceneList *self, const char *name, const char *name2,
 	const vec3_t *scale, uint32_t flags, uint32_t mask) {
 	for (CSceneList *le = self; le; le = le->next) {
 		if ((le->flags & mask) == (flags & mask) && String_EqualNoCase(le->name, name) &&
 			String_EqualNoCase(le->name2, name2) && ((flags & SCENE_IGNORE_SCALE) || (le->scale.x == scale->x &&
 			le->scale.y == scale->y && le->scale.z == scale->z))) {
 			return le;
-		}
-	}
-	return NULL;
-}
-
-CModelList *CModelList_Find(CModelList *self, const char *name, const char *name2, uint32_t flags,
-	uint32_t mask) {
-	for (CModelList *lm = self; lm; lm = lm->next) {
-		if ((lm->flags & mask) == (flags & mask) && String_EqualNoCase(lm->name, name) &&
-			String_EqualNoCase(lm->name2, name2)) {
-			return lm;
 		}
 	}
 	return NULL;
@@ -488,7 +482,7 @@ CModel *Model_FindName(const char *name) {
 	return NULL;
 }
 
-int String_EqualNoCase(const char *a, const char *b) {
+static int String_EqualNoCase(const char *a, const char *b) {
 	if (a) {
 		if (b) {
 			return !crt_stricmp(a, b);
@@ -500,6 +494,7 @@ int String_EqualNoCase(const char *a, const char *b) {
 	return !b || !*b;
 }
 
+static CScene *Create_Scene(byte *shared, const char *name, const char *name2, const vec3_t *scale, float threshold, uint32_t flags);
 void Create_Animation(CModel *m, const char *name, uint32_t flags) {
 	CScene *scn = m ? m->scene : NULL;
 	byte shared;
@@ -514,7 +509,7 @@ void Create_Animation(CModel *m, const char *name, uint32_t flags) {
 	CModel_AddAnim(m, anim, NULL);
 }
 
-CScene *Create_Scene(byte *shared, const char *name, const char *name2, const vec3_t *scale, float threshold,
+static CScene *Create_Scene(byte *shared, const char *name, const char *name2, const vec3_t *scale, float threshold,
 	uint32_t flags) {
 	CScene *scn;
 	void *p;
@@ -585,7 +580,7 @@ initD3D:
 	return scn;
 }
 
-CModel *Create_Model(const char *name, const char *name2, const vec3_t *scale, float threshold, uint32_t flags) {
+static CModel *Create_Model(const char *name, const char *name2, const vec3_t *scale, float threshold, uint32_t flags) {
 	CModel *m = operator_new(sizeof(CModel));
 	byte shared;
 
@@ -631,7 +626,7 @@ CModel *Create_Model2(const char *name, const char *name2, uint32_t flags) {
 	return Create_Model(name, name2, &one, -1.0f, flags);
 }
 
-int ModelList_CompareKey(const void *a, const void *b) {
+static int ModelList_CompareKey(const void *a, const void *b) {
 	const CModelList *la = *(CModelList *const *)a;
 	const CModelList *lb = *(CModelList *const *)b;
 

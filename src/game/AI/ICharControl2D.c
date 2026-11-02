@@ -13,6 +13,11 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/staticinit.h"
 
+#define CAICHARCONTROL2D_VFTABLE (&cAICharControl2D_vftable.base)
+#define g_FactorDistTestColBackCharAI (GVar_FactorDistTestColBackCharAI.value.f)	/* "FactorDistTestColBackCharAI" */
+static const cAICharControl2DVtbl cAICharControl2D_vftable;
+static cGVar GVar_FactorDistTestColBackCharAI;
+
 /* the distance on the floor (x and z), the sum of the squares from z */
 static inline float AICC2D_FlatDist(float dx, float dz) {
 	return (float)__builtin_sqrt((double)(dz * dz + dx * dx));
@@ -64,7 +69,7 @@ void cAICharControl2D_dtor(cAICharControl2D *self) {
 	cAICharControl_dtor(self);
 }
 
-cAICharControl2D *cAICharControl2D_Delete(cAICharControl2D *self, byte flags) {
+static cAICharControl2D *cAICharControl2D_Delete(cAICharControl2D *self, byte flags) {
 	self->vftable = CAICHARCONTROL2D_VFTABLE;
 	cAICharControl_dtor(self);
 	if (flags & 1) {
@@ -1119,7 +1124,7 @@ byte cAICharControl2D_TryStrafe(cAICharControl2D *self, int side, cEntity *hitEn
 }
 
 /* the vtable of cAICharControl2D */
-const cAICharControl2DVtbl cAICharControl2D_vftable = {
+static const cAICharControl2DVtbl cAICharControl2D_vftable = {
 	.base.Delete = cAICharControl2D_Delete,
 	.base.Draw = cAICharControl2D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,
@@ -1228,7 +1233,7 @@ const cAICharControl2DVtbl cAICharControl2D_vftable = {
 cGVar GVar_DepthPathRouteInDoorAI;
 cGVar GVar_DistShirkCharAI;
 cGVar GVar_FactorDistTestColCharAI;
-cGVar GVar_FactorDistTestColBackCharAI;
+static cGVar GVar_FactorDistTestColBackCharAI;
 cGVar GVar_MarginCollCharAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -23,11 +23,6 @@ typedef struct cVehicleTraffic {
 	byte pad_29[3];
 } cVehicleTraffic;
 
-/* the engine variables */
-extern cGVar GVar_UseTrafficCollisionSkip;
-#define g_UseTrafficCollisionSkip (GVar_UseTrafficCollisionSkip.value.i)
-extern cGVar GVar_TrafficSpeed;
-#define g_TrafficSpeed (GVar_TrafficSpeed.value.f)
 extern cGVar GVar_HTrafficCapsule;
 #define g_HTrafficCapsule (GVar_HTrafficCapsule.value.f)
 extern cGVar GVar_NTrafficCapsule;

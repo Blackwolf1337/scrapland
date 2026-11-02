@@ -13,8 +13,6 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/world.h"
 
-extern const cObjEntityVtbl cItemEntity_vftable;
-#define CITEMENTITY_VFTABLE (&cItemEntity_vftable.base)
 #define CITEMENTITY_SIZE sizeof(cItemEntity)
 
 typedef struct cItemEntity {
@@ -47,38 +45,7 @@ typedef struct cItemEntity {
 	cPy_Function onReset;		/* 0x384 (item) */
 } cItemEntity;
 
-extern cGVar GVar_FXItemFadeMaxDist;
-#define g_ItemFxDist (GVar_FXItemFadeMaxDist.value.f)		/* the fade effects only nearer (60000) */
-extern cGVar GVar_NetItemDistAct;
-#define g_ItemSyncDist (GVar_NetItemDistAct.value.f)
-extern uint32_t g_ItemSyncCount;
-
-void cItemEntity_dtor(cItemEntity *self);
-cEntity *cItemEntity_Delete(cEntity *base, uint32_t flags);
-void cItemEntity_Touch(cEntity *elem, cEntity *other, const vec3_t *point, const vec3_t *dir);
-byte cItemEntity_VarF(cEntity *elem, const char *name, double *d, int set);
-vec3_t *cItemEntity_GetOrigin(cItemEntity *self, vec3_t *out);
-char *cItemEntity_GetOwner(cItemEntity *self);
-float cItemEntity_GetBackTime(cItemEntity *self);
-const char *cItemEntity_GetClassName(cEntity *base);
-float cItemEntity_GetRadius(cEntity *base);
-byte cItemEntity_VarI(cEntity *elem, const char *name, int *i, int set);
-byte cItemEntity_IsType(cEntity *elem, const char *type);
-void cItemEntity_NetRead(cEntity *base, void *msg, int unused);
-void cItemEntity_NetWrite(cEntity *base, float dist2, void *msg, int full);
-void cItemEntity_Tick(cEntity *elem, float dt);
-void cItemEntity_SetOrigin(cItemEntity *self, const vec3_t *v);
-void cItemEntity_SetOwner(cItemEntity *self, const char *name);
-void cItemEntity_SetPos(cEntity *base, const vec3_t *pos);
-void cItemEntity_SetBackTime(cItemEntity *self, float t);
 /* t > 0: taken, hidden for t (fade out, take sound); else back (fade in) */
 void cItemEntity_SetRespawn(cItemEntity *self, float t);
-/* the teams of the letters R, B, G, N, K (either case); "" all */
-void cItemEntity_SetTypeMarker(cItemEntity *self, const char *types);
-void cItemEntity_Update(cEntity *elem);
-byte cItemEntity_TestSphere(cEntity *elem, cEntity *other, const vec3_t *center, float radius, const vec3_t *arg);
-byte cItemEntity_VarS(cEntity *base, const char *name, char **s, int set);
-byte cItemEntity_NetNeedsSend(cEntity *base, float dist2);
-byte cItemEntity_VarV(cEntity *elem, const char *name, double *x, double *y, double *z, int set);
 
 #endif

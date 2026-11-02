@@ -18,7 +18,14 @@
 #include "scrap/platform.h"
 #include "scrap/staticinit.h"
 
-CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char *cmdLine, int nCmdShow) {
+#define g_CWinAppVftable (&CWinApp_vftable)
+#define g_ScrapTitle str_Scrapland	/* "Scrapland" */
+static char str_Scrapland[];
+static const CAppVtbl CWinApp_vftable;
+
+/* WinApp.c */
+static int CWinApp_HasArg(CWinApp *self, const char *name);
+static CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char *cmdLine, int nCmdShow) {
 	char path[0x104];
 
 	CApp_ctor(&self->base, cmdLine);
@@ -35,13 +42,13 @@ CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char *cmdLi
 	return self;
 }
 
-void CWinApp_dtor(CWinApp *self) {
+static void CWinApp_dtor(CWinApp *self) {
 	self->base.vftable = g_CWinAppVftable;
 	CApp_dtor(&self->base);
 }
 
 /* vf03 */
-CApp *CWinApp_Delete(CApp *base, byte flags) {
+static CApp *CWinApp_Delete(CApp *base, byte flags) {
 	CWinApp *self = (CWinApp *)base;
 	CWinApp_dtor(self);
 	if (flags & 1) {
@@ -51,24 +58,24 @@ CApp *CWinApp_Delete(CApp *base, byte flags) {
 }
 
 /* vf17: the console window is gone */
-void CWinApp_ConsoleAdd(CApp *base, const char *text, uint32_t color) {
+static void CWinApp_ConsoleAdd(CApp *base, const char *text, uint32_t color) {
 	CWinApp *self = (CWinApp *)base;
 	(void)self, (void)text, (void)color;
 }
 
 /* vf16: the console window is gone */
-void CWinApp_ShowConsole(CApp *base, byte show) {
+static void CWinApp_ShowConsole(CApp *base, byte show) {
 	CWinApp *self = (CWinApp *)base;
 	(void)self, (void)show;
 }
 
-int g_WinWidth = 640;
-int g_WinHeight = 480;
-int g_WideWinWidth = 640;
-int g_WideWinHeight = 360;
+static int g_WinWidth = 640;
+static int g_WinHeight = 480;
+static int g_WideWinWidth = 640;
+static int g_WideWinHeight = 360;
 
 /* the main window through SDL: 640 x 480 (-widewindow 640 x 360), -dedicated 350 x 1 and not resizable */
-byte CWinApp_CreateMainWindow(CWinApp *self) {
+static byte CWinApp_CreateMainWindow(CWinApp *self) {
 	byte wide = (byte)CWinApp_HasArg(self, "widewindow");
 	self->dedicatedWin = (byte)CWinApp_HasArg(self, "dedicated");
 	int w = wide ? g_WideWinWidth : g_WinWidth, h = wide ? g_WideWinHeight : g_WinHeight;
@@ -84,14 +91,14 @@ byte CWinApp_CreateMainWindow(CWinApp *self) {
 }
 
 /* vf18: the original asked in a modal dialog of the console window, which is gone: no text (None for Python) */
-const char *CWinApp_DebugInput(CApp *base, const char *prompt) {
+static const char *CWinApp_DebugInput(CApp *base, const char *prompt) {
 	CWinApp *self = (CWinApp *)base;
 	(void)self, (void)prompt;
 	return NULL;
 }
 
 /* vf08: no textures and no sound for -dedicated */
-void CWinApp_InitDedicated(CApp *base) {
+static void CWinApp_InitDedicated(CApp *base) {
 	CWinApp *self = (CWinApp *)base;
 	(void)self;
 	g_LoadTextures = 0;
@@ -99,7 +106,7 @@ void CWinApp_InitDedicated(CApp *base) {
 }
 
 /* vf06 */
-void CWinApp_Shutdown(CApp *elem) {
+static void CWinApp_Shutdown(CApp *elem) {
 	CWinApp *self = (CWinApp *)elem;
 	CApp_Shutdown(&self->base);
 	Plat_Shutdown();
@@ -107,21 +114,21 @@ void CWinApp_Shutdown(CApp *elem) {
 }
 
 /* vf09 */
-void CWinApp_Exit(CApp *base) {
+static void CWinApp_Exit(CApp *base) {
 	CWinApp *self = (CWinApp *)base;
 	(void)self;
 	Plat_Quit();
 }
 
 /* vf13 */
-void CWinApp_ResetParams(CApp *elem) {
+static void CWinApp_ResetParams(CApp *elem) {
 	CWinApp *self = (CWinApp *)elem;
 	self->console = 0;
 	CApp_ResetParams(&self->base);
 }
 
 /* "-name" in the command line (case-insensitive), followed by ':', ' ' or the end */
-int CWinApp_HasArg(CWinApp *self, const char *name) {
+static int CWinApp_HasArg(CWinApp *self, const char *name) {
 	char buf[0x400];
 
 	Str_Copy(buf, self->base.cmdLine, 0x400);
@@ -148,16 +155,17 @@ void *App_GetHInstance(void) {
 	return g_pWinApp->hInstance;
 }
 
-uint32_t g_TimeQPPause;
-uint32_t g_TimeMsPause;
-byte g_TimeInit;
-int g_TimeUseQP;
-int64_t g_TimeQPFreq;
-int64_t g_TimeQPStart;
-uint32_t g_TimeMsStart;
+/* WinMain.cpp state */
+static uint32_t g_TimeQPPause;
+static uint32_t g_TimeMsPause;
+static byte g_TimeInit;
+static int g_TimeUseQP;
+static int64_t g_TimeQPFreq;
+static int64_t g_TimeQPStart;
+static uint32_t g_TimeMsStart;
 
 /* vf14: seconds since the first call, by the performance counter if there is one, else by timeGetTime */
-double CWinApp_GetTime(CApp *base) {
+static double CWinApp_GetTime(CApp *base) {
 	CWinApp *self = (CWinApp *)base;
 	(void)self;
 	if (!g_TimeInit) {
@@ -207,7 +215,7 @@ static void CWinApp_InitStep(CWinApp *self) {
 
 /* vf04: the window, the language, then CApp_Init, which may leave its videos to the message loop
  * (CWinApp_InitStep) */
-byte CWinApp_Init(CApp *elem) {
+static byte CWinApp_Init(CApp *elem) {
 	CWinApp *self = (CWinApp *)elem;
 	App_SetExceptionFilter(1);
 	if (!CWinApp_CreateMainWindow(self)) {
@@ -236,7 +244,7 @@ byte CWinApp_Init(CApp *elem) {
 }
 
 /* vf05: CApp_Frame (the original ran the GOG and Steam callbacks first) */
-byte CWinApp_Frame(CApp *elem) {
+static byte CWinApp_Frame(CApp *elem) {
 	CWinApp *self = (CWinApp *)elem;
 	/* differs from the original on purpose (no sleeps): no Sleep(250) while the app is in the background; CApp_Frame
 	 * then only takes the time and returns 0, the PeekMessage loop of App_WinMain calls it again */
@@ -261,7 +269,7 @@ void App_GetConfigDir(char *buf, int size) {
 }
 
 /* vf12: -console, -inifile:name, else CApp_ParseParam */
-byte CWinApp_ParseParam(CApp *elem, const char *param, const char *ext) {
+static byte CWinApp_ParseParam(CApp *elem, const char *param, const char *ext) {
 	CWinApp *self = (CWinApp *)elem;
 	if (!crt_stricmp("console", param)) {
 		self->console = 1;
@@ -275,7 +283,7 @@ byte CWinApp_ParseParam(CApp *elem, const char *param, const char *ext) {
 }
 
 /* vf19: starts exe (from the game directory) with the command line, without waiting */
-byte CWinApp_RunApp(CApp *base, const char *exe, const char *cmdLine, int arg) {
+static byte CWinApp_RunApp(CApp *base, const char *exe, const char *cmdLine, int arg) {
 	CWinApp *self = (CWinApp *)base;
 	char path[0x104], cmd[0x208], args[0x208];
 
@@ -295,7 +303,7 @@ byte CWinApp_RunApp(CApp *base, const char *exe, const char *cmdLine, int arg) {
 }
 
 /* vf20 */
-byte CWinApp_IsDedicatedWin(CApp *base) {
+static byte CWinApp_IsDedicatedWin(CApp *base) {
 	CWinApp *self = (CWinApp *)base;
 	return self->dedicatedWin;
 }
@@ -360,7 +368,7 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 }
 
 /* the vtable of CWinApp */
-const CAppVtbl CWinApp_vftable = {
+static const CAppVtbl CWinApp_vftable = {
 	.DoneGame = CApp_DoneGame,
 	.InitGame = CApp_InitGame,
 	.InitDebug = CApp_Nop,
@@ -384,7 +392,7 @@ const CAppVtbl CWinApp_vftable = {
 	.IsDedicatedWin = CWinApp_IsDedicatedWin,
 };
 
-char str_Scrapland[] = "Scrapland";
+static char str_Scrapland[] = "Scrapland";
 cGVar GVar_SoundInit;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

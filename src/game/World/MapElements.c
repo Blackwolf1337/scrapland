@@ -13,10 +13,10 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
-extern const cMapElementVtbl cMapElement_vftable;
+static const cMapElementVtbl cMapElement_vftable;
 #define CMAPELEMENT_VFTABLE (&cMapElement_vftable)
 
-cGVar GVar_ElementModelPath;
+static cGVar GVar_ElementModelPath;
 
 /* ElementModelPath, the folder of the element models (a cString, "Models/Elements/") */
 #define g_ElementModelPath (GVar_ElementModelPath.value.s)
@@ -51,7 +51,7 @@ void cMapElement_dtor(cMapElement *self) {
 	CGameModel_Reset(&self->Mod);
 }
 
-cMapElement *cMapElement_Delete(cMapElement *self, byte flags) {
+static cMapElement *cMapElement_Delete(cMapElement *self, byte flags) {
 	cMapElement_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -172,7 +172,7 @@ void Elements_Create(void *elements) {
 }
 
 /* the first element with the model of name within maxDist of pos */
-cMapElement *Elements_Find(void *elements, const char *name, vec3_t pos, float maxDist) {
+static cMapElement *Elements_Find(void *elements, const char *name, vec3_t pos, float maxDist) {
 	cMapElement *e;
 
 	for (e = *(cMapElement **)elements; e; e = e->next) {
@@ -202,7 +202,7 @@ void Elements_Update(void *elements, float dt) {
 }
 
 /* the state of an element from a saved game: name, position, the search radius and on or off */
-void Elements_Load(cAbstractFile *f) {
+static void Elements_Load(cAbstractFile *f) {
 	char name[128];
 	vec3_t pos;
 	float maxDist;
@@ -240,13 +240,13 @@ void cMapElement_UpdateNop(cMapElement *self, float dt) {
 }
 
 /* the vtable of cMapElement */
-const cMapElementVtbl cMapElement_vftable = {
+static const cMapElementVtbl cMapElement_vftable = {
 	.Delete = cMapElement_Delete,
 	.Init = cMapElement_Init,
 	.Update = cMapElement_Update,
 };
 
-cPy_NativeFunc NativeFunc_MapElementsActivate;
+static cPy_NativeFunc NativeFunc_MapElementsActivate;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_ElementModelPath, &GVar_ElementModelPath)

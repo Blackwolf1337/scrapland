@@ -58,44 +58,12 @@ struct cBinaryHeap {
 /* the only instance */
 typedef cBinaryHeap cBinaryHeap_ElemAStarPtr;
 
-cBinaryHeap *cBinaryHeap_ctor(cBinaryHeap *self, int capacity, binHeapLess_t less, binHeapEq_t equals,
-	binHeapIndex_t setIndex);
-void cBinaryHeap_dtor(cBinaryHeap *self);
-cBinaryHeap *cBinaryHeap_Delete(cBinaryHeap *self, byte flags);
-void cBinaryHeap_Clear(cBinaryHeap *self);
-byte cBinaryHeap_Push(cBinaryHeap *self, void *const *item);
-byte cBinaryHeap_Top(cBinaryHeap *self, void ***out);
-byte cBinaryHeap_Pop(cBinaryHeap *self);
-byte cBinaryHeap_Get(cBinaryHeap *self, void ***out, int i);
-byte cBinaryHeap_Find(cBinaryHeap *self, const void *item, int *index, void ***out);
-byte cBinaryHeap_Set(cBinaryHeap *self, void *const *item, int i);
-/* 4 bytes in the exe, too short for the hook jump: only for the C callers */
-int cBinaryHeap_Count(cBinaryHeap *self);
-void cBinaryHeap_Fix(cBinaryHeap *self, int i);
-/* 1 if the element moved */
-byte cBinaryHeap_SiftUp(cBinaryHeap *self, int i);
-byte cBinaryHeap_SiftDown(cBinaryHeap *self, int i);
-
-byte AStar_ElemLess(void *const *a, void *const *b);
-byte AStar_ElemEq(void *const *a, const void *b);
-void AStar_ElemSetIndex(void **elem, int index);
-
 /* the table of the searched nodes, by point */
 typedef struct cAStarItem {
 	cAStarInfo value;		/* 0x00 */
 	intptr_t key;			/* 0x0c the node */
 	struct cAStarItem *next;	/* 0x10 */
 } cAStarItem;
-
-/* the number hash of HashTable.h: the nibbles from the low end */
-uint32_t AStarTable_Slot(HashTable *self, uintptr_t key);
-cAStarItem *AStarTable_Find(HashTable *self, intptr_t key, uint32_t slot);
-cAStarItem *AStarTable_Insert(HashTable *self, intptr_t key, uint32_t slot, const cAStarInfo *v);
-byte AStarTable_Add(HashTable *self, intptr_t key, const cAStarInfo *v, byte warn);
-byte AStarTable_Get(HashTable *self, intptr_t key, cAStarItem **out);
-/* the items freed, the slots kept */
-void AStarTable_Clear(HashTable *self);
-void AStarTable_dtor(HashTable *self);
 
 /* ---- the search: CAStarSup with CAStar (CNodesWorld) and CAStar2D (CNodesWorld2D) ---- */
 
@@ -161,52 +129,9 @@ typedef struct CAStar2D {
 	float h2;			/* 0x4c */
 } CAStar2D;
 
-extern cGVar GVar_ShowAStarAI;
-#define g_AStarDrawMode (GVar_ShowAStarAI.value.i)	/* 1 closed, 2 open, 3 both */
-
-/* the table of 1009 slots of the search (Global/HashTable.h with int keys) */
-HashTable *AStarTable_ctor(HashTable *self, int size);
-
-/* CAStarSup, the base class: the table, the ends zeroed, maxDist */
-CAStarSup *CAStarSup_ctor(CAStarSup *self);
-void CAStarSup_dtor(CAStarSup *self);
-CAStarSup *CAStarSup_Delete(CAStarSup *self, byte flags);
-void CAStarSup_Draw(CAStarSup *self, uint32_t color);
-HashTable *CAStarSup_GetTable(CAStarSup *self);
-/* the A* from start to goal over the points of visibility; path: goal first, the start last. ok 0 when the lists are
- * full or the start has no points, found 0 when the goal has no point or the graph has no way */
-byte CAStarSup_Search(CAStarSup *self, cNWVecList *path, int stupid, byte *ok, byte *found, int *state);
-void CAStarSup_BuildPath(CAStarSup *self, cNWVecList *path, const ElemAStar *elem);
-float CAStarSup_Heuristic(CAStarSup *self, const vec3_t *p);
-float CAStarSup_Dist(CAStarSup *self, const vec3_t *a, const vec3_t *b);
-byte CAStarSup_GetElem(CAStarSup *self, const vec3_t *node, ElemAStar **out, cAStarItem **info);
-byte CAStarSup_AddElem(CAStarSup *self, const ElemAStar *e);
-byte CAStarSup_CloseAdd(CAStarSup *self, ElemAStar *const *e);
-byte CAStarSup_CloseRemove(CAStarSup *self, int i);
-byte CAStarSup_TableGet(CAStarSup *self, const vec3_t *node, cAStarItem **out);
-void CAStarSup_Reset(CAStarSup *self);
-
-/* CAStar and CAStar2D: CAStar_ctor and CAStar2D_ctor are in ai.h */
-void CAStar_dtor(CAStar *self);
-CAStarSup *CAStar_Delete(CAStarSup *elem, byte flags);
-void CAStar2D_dtor(CAStar2D *self);
-CAStarSup *CAStar2D_Delete(CAStarSup *elem, byte flags);
-/* the element and the table item of every point of visibility (both classes) */
-void CAStar_InitList(CAStar *self);
 /* Draw when g_AStarDrawMode is on */
 void CAStar_DrawDebug(CAStar *self);
 void CAStar2D_DrawDebug(CAStar *self);
-byte CAStar_TestPath(CAStarSup *elem, const vec3_t *a, const vec3_t *b);
-byte CAStar2D_TestPath(CAStarSup *elem, const vec3_t *a, const vec3_t *b);
-void CAStar_NearestStart(CAStarSup *elem);
-void CAStar2D_NearestStart(CAStarSup *elem);
-void CAStar_PointsVis(CAStarSup *base, const vec3_t *pos, const vec3_t **list, int max, int *count);
-void CAStar2D_PointsVis(CAStarSup *base, const vec3_t *pos, const vec3_t **list, int max, int *count);
-void CAStar_PointsVisFile(CAStarSup *base, const vec3_t *pos, const vec3_t **list, int max, int *count, int *state, int file);
-void CAStar2D_PointsVisFile(CAStarSup *base, const vec3_t *pos, const vec3_t **list, int max, int *count, int *state, int file);
-/* the slots that go on to the graph (both classes) */
-int CAStar_FileOf(CAStarSup *base, const vec3_t *node);
-void CAStar_OtherLinks(CAStarSup *base, const vec3_t *node, const vec3_t *pos, const vec3_t **list, int max, int *count);
 /* CAStar_FindPath and CAStar_GetPointsVis: nodesworld.h; CAStar2D_FindPath and CAStar2D_GetPointsVis:
  * aicharcontrol.h */
 

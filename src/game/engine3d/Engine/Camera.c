@@ -7,11 +7,10 @@
 #include "scrap/camera.h"
 #include "scrap/scrapcamera.h"
 
-extern const IObject3DVtbl CCamera_vftable;
+static const IObject3DVtbl CCamera_vftable;
 #define CCAMERA_VFTABLE (&CCamera_vftable)
 /* the limit of the projection, a float constant widened */
 #define CAMERA_EPS ((double)0.01f)
-
 
 /* the reference to n in *slot, the old one released */
 static void Camera_Link(CNode3D **slot, CNode3D *n) {
@@ -71,7 +70,7 @@ void CCamera_dtor(CCamera *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-IObject3D *CCamera_Delete(IObject3D *base, byte flags) {
+static IObject3D *CCamera_Delete(IObject3D *base, byte flags) {
 	CCamera *self = (CCamera *)base;
 	CCamera_dtor(self);
 	if (flags & 1) {
@@ -80,19 +79,8 @@ IObject3D *CCamera_Delete(IObject3D *base, byte flags) {
 	return base;
 }
 
-void CCamera_Clear(CCamera *self) {
-	CCamera_ClearVectors(self);
-	self->class = CLASS_OBJ3D_CAMERA;
-	self->node = NULL;
-	self->nodeTarget = NULL;
-}
-
 void CCamera_SetNode(CCamera *self, CNode3D *node) {
 	Camera_Link(&self->node, node);
-}
-
-void CCamera_SetNodeTarget(CCamera *self, CNode3D *node) {
-	Camera_Link(&self->nodeTarget, node);
 }
 
 /* the members from rot to mode as the file has them */
@@ -105,7 +93,8 @@ static const struct {
 	{ offsetof(CCamera, aspectScreen), 4 }, { offsetof(CCamera, mode), 4 },
 };
 
-byte CCamera_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+/* the "CAM" block; ctx holds the node at 0x4 */
+static byte CCamera_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CCamera *self = (CCamera *)base;
 	CCamera_SetNode(self, ((MeshD3D_FileCtx *)ctx)->node);
 	CFileIO_BeginBlock(f, "CAM");
@@ -117,7 +106,7 @@ byte CCamera_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	return 1;
 }
 
-byte CCamera_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+static byte CCamera_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CCamera *self = (CCamera *)base;
 	CHECK(self->node == ((MeshD3D_FileCtx *)ctx)->node);
 	CFileIO_BeginBlockWrite(f, "CAM");
@@ -153,7 +142,8 @@ static vec3_t Camera_Unit(vec3_t v, float len) {
 	return v;
 }
 
-void CCamera_LookAt(CCamera *self, matrix_t *m, const vec3_t *dir, const vec3_t *up) {
+/* the rotation looking along dir with up (made orthogonal) */
+static void CCamera_LookAt(CCamera *self, matrix_t *m, const vec3_t *dir, const vec3_t *up) {
 	(void)self;
 	vec3_t n = Camera_Unit(*dir, (float)__builtin_sqrt((double)(dir->x * dir->x + dir->y * dir->y + dir->z * dir->z)));
 	float d = n.y * up->y + n.x * up->x + n.z * up->z;
@@ -184,7 +174,7 @@ void CCamera_LookAtRot(CCamera *self) {
 	self->rot.x = (float)atan2((double)-dy, __builtin_sqrt((double)(dz * dz + dx * dx)));
 }
 
-void CCamera_ViewMatrix(CCamera *self, matrix_t *m) {
+static void CCamera_ViewMatrix(CCamera *self, matrix_t *m) {
 	if (self->mode == CAMERA_LOOKAT) {
 		CCamera_LookAtRot(self);
 	}
@@ -202,7 +192,8 @@ matrix_t *CCamera_GetView(CCamera *self, matrix_t *m) {
 	return m;
 }
 
-byte CCamera_ProjMatrix(CCamera *self, matrix_t *m) {
+/* 0 for a near and far plane too close or a too narrow field of view */
+static byte CCamera_ProjMatrix(CCamera *self, matrix_t *m) {
 	float zNear = self->zNear, zFar = self->zFar;
 	float d = zFar - zNear;
 	float s, c;
@@ -251,7 +242,7 @@ void CCamera_Strafe(CCamera *self, float side, float rise) {
 }
 
 /* the slot Update: with CamaraNodos the fov and the position from the animated node */
-void CCamera_Update(IObject3D *base, CRenderNode *r) {
+static void CCamera_Update(IObject3D *base, CRenderNode *r) {
 	CCamera *self = (CCamera *)base;
 	(void)r;
 	if (!g_CameraNodes || !self->node || !CNode3D_Track(self->node, 0)) {
@@ -263,25 +254,8 @@ void CCamera_Update(IObject3D *base, CRenderNode *r) {
 	CCamera_UpdateVectors(self);
 }
 
-/* the slots Render, InitD3D and ReleaseD3D do nothing */
-void CCamera_Render(CCamera *self, void *arg, CRenderNode *r) {
-	(void)self;
-	(void)arg;
-	(void)r;
-}
-
-void CCamera_InitD3D(CCamera *self, void *dev) {
-	(void)self;
-	(void)dev;
-}
-
-void CCamera_ReleaseD3D(CCamera *self, void *dev) {
-	(void)self;
-	(void)dev;
-}
-
 /* the vtable of CCamera */
-const IObject3DVtbl CCamera_vftable = {
+static const IObject3DVtbl CCamera_vftable = {
 	.Delete = CCamera_Delete,
 	.Update = CCamera_Update,
 	.Render = IObject3D_RenderNop,

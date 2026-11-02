@@ -14,6 +14,9 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/walkcharentity.h"
 
+#define CAIMOVE_VFTABLE (&cAIMove_vftable)
+static const cAIMoveVtbl cAIMove_vftable;
+
 #define AIMOVE_STOP_TIME 10.0f
 #define AIMOVE_EV_STOPPED 7
 
@@ -68,20 +71,13 @@ cAIMove *cAIMove_ctor(cAIMove *self, cEntity *e) {
 	return self;
 }
 
-cAIMove *cAIMove_ctorDefault(cAIMove *self) {
-	cAI_ctorDefault(&self->base);
-	self->vftable = CAIMOVE_VFTABLE;
-	AIMove_InitTarget(self);
-	return self;
-}
-
 void cAIMove_dtor(cAIMove *self) {
 	self->vftable = CAIMOVE_VFTABLE;
 	Nto1Node_Done(&self->target);
 	cAI_dtor(&self->base);
 }
 
-cAI *cAIMove_Delete(cAI *base, byte flags) {
+static cAI *cAIMove_Delete(cAI *base, byte flags) {
 	cAIMove *self = (cAIMove *)base;
 	cAIMove_dtor(self);
 	if (flags & 1) {
@@ -198,12 +194,6 @@ byte cAIMove_IsPaused(cAI *base) {
 	return self->paused;
 }
 
-byte cAIMove_Event(cAIMove *self, int ev) {
-	(void)self;
-	(void)ev;
-	return 1;
-}
-
 byte cAIMove_CanTarget(cAI *base, cEntity *e) {
 	cAIMove *self = (cAIMove *)base;
 	(void)self;
@@ -266,7 +256,7 @@ vec3_t *cAIMove_RandomPoint(cAI *elem, vec3_t *out, const vec3_t *p, float r) {
 }
 
 /* the vtable of cAIMove */
-const cAIMoveVtbl cAIMove_vftable = {
+static const cAIMoveVtbl cAIMove_vftable = {
 	.base.Delete = cAIMove_Delete,
 	.base.Update = cAIMove_Update,
 	.base.UpdateOff = cAIMove_UpdateOff,

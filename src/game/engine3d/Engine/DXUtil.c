@@ -13,14 +13,8 @@
 
 /* the performance counter of the engine: since g_TimerBase, or the fixed time while one is set */
 
-/* differs from the original on purpose (no busy waits): the original counted the distinct values of timeGetTime
- * during ms, which the 1 ms period of CWinApp_Init (timeBeginPeriod) makes ms; no caller in the exe */
-int Timer_CountTicks(int ms) {
-	return ms > 0 ? ms : 0;
-}
-
-int64_t g_TimerFixed;
-int64_t g_TimerBase;
+static int64_t g_TimerFixed;
+static int64_t g_TimerBase;
 
 int Timer_GetFreq(int64_t *out) {
 	if (g_TimerFixed) {
@@ -54,7 +48,7 @@ int Timer_FixedStep(float fps) {
 	return 1;
 }
 
-int64_t g_TimerQPFreq = -1LL;
+static int64_t g_TimerQPFreq = -1LL;
 
 /* the frequency of the performance counter times g_TimerQPMult, taken once (-1 until then), 0 without a counter */
 
@@ -69,17 +63,6 @@ int Timer_GetQPFreq(int64_t *out) {
 	return g_TimerQPFreq != 0;
 }
 
-/* differs from the original on purpose (no busy waits): the counter ticks of ms from its frequency, not measured
- * (no caller in the exe) */
-int64_t Timer_MeasureQP(int ms) {
-	int64_t freq;
-
-	if (ms <= 0 || !Plat_Frequency(&freq)) {
-		return 0;
-	}
-	return freq * ms / 1000;
-}
-
 /* the state of DXUtil_Timer: the counter path in ticks, the timeGetTime path in seconds */
 
 static float DXTimer_Seconds(int64_t t, int64_t freq) {
@@ -87,16 +70,16 @@ static float DXTimer_Seconds(int64_t t, int64_t freq) {
 	return (float)(n / Int64_ToDouble(freq));
 }
 
-int g_DXTimerInit;
-int g_DXTimerQP;
-int64_t g_DXTimerFreq;
-int64_t g_DXTimerStop;
-int64_t g_DXTimerLast;
-int64_t g_DXTimerBase;
-double g_DXTimerLastD;
-double g_DXTimerBaseD;
-double g_DXTimerStopD;
-int g_DXTimerStopped = 1;
+static int g_DXTimerInit;
+static int g_DXTimerQP;
+static int64_t g_DXTimerFreq;
+static int64_t g_DXTimerStop;
+static int64_t g_DXTimerLast;
+static int64_t g_DXTimerBase;
+static double g_DXTimerLastD;
+static double g_DXTimerBaseD;
+static double g_DXTimerStopD;
+static int g_DXTimerStopped = 1;
 
 float DXUtil_Timer(int cmd) {
 	int64_t freq;

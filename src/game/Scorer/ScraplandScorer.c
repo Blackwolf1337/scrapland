@@ -6,12 +6,19 @@
 
 #include "scrap/scoreritems.h"
 
+#define CSCRAPLANDMAINMENUSCORER_VFTABLE (&cScraplandMainMenuScorer_vftable)
+#define CSCRAPLANDSUBMENUSCORER_VFTABLE (&cScraplandSubMenuScorer_vftable)
+static const cScorerItemVtbl cScraplandSubMenuScorer_vftable;
+static const cScorerItemVtbl cScraplandMainMenuScorer_vftable;
+
 #define SCRAPLAND_WHITE "2D/white.tga"
 /* a random time: rand() / 32767 * range + add, as a float */
 static float ScraplandScorer_Rand(double range, double add) {
 	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * range + add);
 }
 
+static void cScraplandMainMenuScorer_Init(cScraplandMainMenuScorer *self);
+static void cScraplandMainMenuScorer_SetLighting(cScraplandMainMenuScorer *self, uint32_t flags, const char *file);
 cScraplandMainMenuScorer *cScraplandMainMenuScorer_ctor(cScraplandMainMenuScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CSCRAPLANDMAINMENUSCORER_VFTABLE;
@@ -30,6 +37,8 @@ cScraplandMainMenuScorer *cScraplandMainMenuScorer_ctor(cScraplandMainMenuScorer
 	return self;
 }
 
+static void cScraplandSubMenuScorer_Init(cScraplandSubMenuScorer *self);
+static void cScraplandSubMenuScorer_SetLighting(cScraplandSubMenuScorer *self, uint32_t flags, const char *file);
 cScraplandSubMenuScorer *cScraplandSubMenuScorer_ctor(cScraplandSubMenuScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CSCRAPLANDSUBMENUSCORER_VFTABLE;
@@ -64,7 +73,7 @@ static void ScraplandScorer_Drop(CPsaImage **slot) {
 	}
 }
 
-void cScraplandMainMenuScorer_dtor(cScraplandMainMenuScorer *self) {
+static void cScraplandMainMenuScorer_dtor(cScraplandMainMenuScorer *self) {
 	self->base.vftable = CSCRAPLANDMAINMENUSCORER_VFTABLE;
 	ScraplandScorer_Drop(&self->logo);
 	ScraplandScorer_Drop(&self->glow);
@@ -73,7 +82,7 @@ void cScraplandMainMenuScorer_dtor(cScraplandMainMenuScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-void cScraplandSubMenuScorer_dtor(cScraplandSubMenuScorer *self) {
+static void cScraplandSubMenuScorer_dtor(cScraplandSubMenuScorer *self) {
 	self->base.vftable = CSCRAPLANDSUBMENUSCORER_VFTABLE;
 	ScraplandScorer_Drop(&self->logo);
 	ScraplandScorer_Drop(&self->glow);
@@ -85,7 +94,7 @@ void cScraplandSubMenuScorer_dtor(cScraplandSubMenuScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cScorerItem *cScraplandMainMenuScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cScraplandMainMenuScorer_Delete(cScorerItem *base, byte flags) {
 	cScraplandMainMenuScorer *self = (cScraplandMainMenuScorer *)base;
 	cScraplandMainMenuScorer_dtor(self);
 	if (flags & 1) {
@@ -94,7 +103,7 @@ cScorerItem *cScraplandMainMenuScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-cScorerItem *cScraplandSubMenuScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cScraplandSubMenuScorer_Delete(cScorerItem *base, byte flags) {
 	cScraplandSubMenuScorer *self = (cScraplandSubMenuScorer *)base;
 	cScraplandSubMenuScorer_dtor(self);
 	if (flags & 1) {
@@ -103,20 +112,22 @@ cScorerItem *cScraplandSubMenuScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-byte g_MainMenuAnimInit;
-float g_MainMenuWait[9];
-float g_MainMenuTime[9];
-float g_MainMenuLength[9];
-float g_MainMenuSparkWait[19];
-byte g_MainMenuSparkDir[19];
-float g_MainMenuSparkTime[19];
-float g_MainMenuNeonNext;
-float g_MainMenuSparkLength[19];
-float g_MainMenuNeonGroup[3];
-int g_MainMenuSparkFrame[19];
-float g_MainMenuNeonWait[21];
+/* the global animation state, set up once by the first constructor (random times) */
+static byte g_MainMenuAnimInit;
+static float g_MainMenuWait[9];
+static float g_MainMenuTime[9];
+static float g_MainMenuLength[9];
+static float g_MainMenuSparkWait[19];
+static byte g_MainMenuSparkDir[19];
+static float g_MainMenuSparkTime[19];
+static float g_MainMenuNeonNext;
+static float g_MainMenuSparkLength[19];
+static float g_MainMenuNeonGroup[3];
+static int g_MainMenuSparkFrame[19];
+static float g_MainMenuNeonWait[21];
 
-void cScraplandMainMenuScorer_Init(cScraplandMainMenuScorer *self) {
+/* the time of the item and, once, the random animation state */
+static void cScraplandMainMenuScorer_Init(cScraplandMainMenuScorer *self) {
 	self->time = (float)g_pApp->vftable->GetGameTime(g_pApp);
 	if (g_MainMenuAnimInit) {
 		return;
@@ -188,12 +199,12 @@ static float SubMenu_RandRing(void) {
 	return ScraplandScorer_Rand((double)0.08f, (double)0.24f);
 }
 
-byte g_SubMenuAnimInit;
-float g_SubMenuWait;
-float g_SubMenuRingTime;
-float g_SubMenuRingWait;
+static byte g_SubMenuAnimInit;
+static float g_SubMenuWait;
+static float g_SubMenuRingTime;
+static float g_SubMenuRingWait;
 
-void cScraplandSubMenuScorer_Init(cScraplandSubMenuScorer *self) {
+static void cScraplandSubMenuScorer_Init(cScraplandSubMenuScorer *self) {
 	self->time = (float)g_pApp->vftable->GetGameTime(g_pApp);
 	if (g_SubMenuAnimInit) {
 		return;
@@ -213,15 +224,17 @@ static uint32_t ScraplandScorer_LightingFlags(uint32_t flags, const char *file) 
 	return flags | 0x40;
 }
 
-void cScraplandMainMenuScorer_SetGlow(cScraplandMainMenuScorer *self, uint32_t flags, const char *file) {
+/* the image setters (flags, file) */
+static void cScraplandMainMenuScorer_SetGlow(cScraplandMainMenuScorer *self, uint32_t flags, const char *file) {
 	self->glow = ScorerImg_Replace(self->glow, file, 2, flags);
 }
 
-void cScraplandSubMenuScorer_SetGlow(cScraplandSubMenuScorer *self, uint32_t flags, const char *file) {
+static void cScraplandSubMenuScorer_SetGlow(cScraplandSubMenuScorer *self, uint32_t flags, const char *file) {
 	self->glow = ScorerImg_Replace(self->glow, file, 2, flags | 0x40000);
 }
 
-void cScraplandMainMenuScorer_SetLighting(cScraplandMainMenuScorer *self, uint32_t flags,
+/* 2D/white.tga loads without the flag 0x40, any other file with it */
+static void cScraplandMainMenuScorer_SetLighting(cScraplandMainMenuScorer *self, uint32_t flags,
 	const char *file) {
 	CPsaImage *old = self->lighting;
 	if (old) {
@@ -230,7 +243,7 @@ void cScraplandMainMenuScorer_SetLighting(cScraplandMainMenuScorer *self, uint32
 	self->lighting = ScorerImg_Replace(NULL, file, 2, ScraplandScorer_LightingFlags(flags, file));
 }
 
-void cScraplandSubMenuScorer_SetLighting(cScraplandSubMenuScorer *self, uint32_t flags,
+static void cScraplandSubMenuScorer_SetLighting(cScraplandSubMenuScorer *self, uint32_t flags,
 	const char *file) {
 	CPsaImage *old = self->lighting;
 	if (old) {
@@ -239,34 +252,35 @@ void cScraplandSubMenuScorer_SetLighting(cScraplandSubMenuScorer *self, uint32_t
 	self->lighting = ScorerImg_Replace(NULL, file, 2, ScraplandScorer_LightingFlags(flags, file) | 0x40000);
 }
 
-void cScraplandMainMenuScorer_SetLogo(cScraplandMainMenuScorer *self, uint32_t flags, const char *file) {
+static void cScraplandMainMenuScorer_SetLogo(cScraplandMainMenuScorer *self, uint32_t flags, const char *file) {
 	self->logo = ScorerImg_Replace(self->logo, file, 3, flags);
 }
 
-void cScraplandSubMenuScorer_SetLogo(cScraplandSubMenuScorer *self, uint32_t flags, const char *file) {
+static void cScraplandSubMenuScorer_SetLogo(cScraplandSubMenuScorer *self, uint32_t flags, const char *file) {
 	self->logo = ScorerImg_Replace(self->logo, file, 3, flags | 0x40000);
 }
 
-void cScraplandMainMenuScorer_SetNeon(cScraplandMainMenuScorer *self, uint32_t flags, const char *file) {
+static void cScraplandMainMenuScorer_SetNeon(cScraplandMainMenuScorer *self, uint32_t flags, const char *file) {
 	self->neon = ScorerImg_Replace(self->neon, file, 2, flags);
 }
 
-void cScraplandSubMenuScorer_SetRingBorder(cScraplandSubMenuScorer *self, uint32_t flags,
+static void cScraplandSubMenuScorer_SetRingBorder(cScraplandSubMenuScorer *self, uint32_t flags,
 	const char *file) {
 	self->ringBorder = ScorerImg_Replace(self->ringBorder, file, 3, flags | 0x40000);
 }
 
-void cScraplandSubMenuScorer_SetRingMask(cScraplandSubMenuScorer *self, uint32_t flags,
+static void cScraplandSubMenuScorer_SetRingMask(cScraplandSubMenuScorer *self, uint32_t flags,
 	const char *file) {
 	self->ringMask = ScorerImg_Replace(self->ringMask, file, 2, flags | 0x41000);
 }
 
-void cScraplandSubMenuScorer_SetRingReflection(cScraplandSubMenuScorer *self, uint32_t flags,
+static void cScraplandSubMenuScorer_SetRingReflection(cScraplandSubMenuScorer *self, uint32_t flags,
 	const char *file) {
 	self->ringReflection = ScorerImg_Replace(self->ringReflection, file, 2, flags | 0x42010);
 }
 
-int cScraplandMainMenuScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+/* HighRes; set only: FileLogo, FileGlow, FileNeon, FileLighting */
+static int cScraplandMainMenuScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cScraplandMainMenuScorer *self = (cScraplandMainMenuScorer *)base;
 	if (i && !crt_stricmp(name, "HighRes")) {
 		CHECK(*i == 0 || *i == 1);
@@ -293,7 +307,8 @@ int cScraplandMainMenuScorer_Var(cScorerItem *base, const char *name, int set, c
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-int cScraplandSubMenuScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+/* set only: FileLogo, FileGlow, FileLighting, FileRingMask, FileRingReflection, FileRingBorder; HighRes, Scale */
+static int cScraplandSubMenuScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cScraplandSubMenuScorer *self = (cScraplandSubMenuScorer *)base;
 	if (s) {
 		uint32_t flags = 0;
@@ -363,12 +378,12 @@ static void SubMenu_Draw(CPsaImage *img, float scale, uint32_t color, byte setCo
 	CPsaImage_Draw(img, x, y);
 }
 
-int g_SubMenuRingDir;
-int g_SubMenuRingFrame;
+static int g_SubMenuRingDir;
+static int g_SubMenuRingFrame;
 
 /* vf00: the logo, the ring mask, its reflection turning back and forth, the ring border and the flickering glow;
  * after a random wait a ring of lightning frames runs in or out */
-void cScraplandSubMenuScorer_Draw(cScorerItem *base, int player) {
+static void cScraplandSubMenuScorer_Draw(cScorerItem *base, int player) {
 	cScraplandSubMenuScorer *self = (cScraplandSubMenuScorer *)base;
 	static const float uv[4][2] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
 	static const float corners[4][2] = {{-0.5f, -0.5f}, {0.5f, -0.5f}, {0.5f, 0.5f}, {-0.5f, 0.5f}};
@@ -526,7 +541,7 @@ static void MainMenu_Neons(cScraplandMainMenuScorer *self, float dt) {
 	}
 }
 
-float g_MainMenuLightPos[5][2] = { { 472.0f, 88.0f }, { 193.0f, 156.0f }, { 290.0f, 94.0f }, { 158.0f, 93.0f }, { 360.0f, 156.0f } };
+static float g_MainMenuLightPos[5][2] = { { 472.0f, 88.0f }, { 193.0f, 156.0f }, { 290.0f, 94.0f }, { 158.0f, 93.0f }, { 360.0f, 156.0f } };
 
 /* the lighting of a letter after its random wait, the alpha of the letter */
 static int MainMenu_Letter(cScraplandMainMenuScorer *self, int k, float dt) {
@@ -578,7 +593,7 @@ static int MainMenu_Letter(cScraplandMainMenuScorer *self, int k, float dt) {
 }
 
 /* the sparks: each one runs its frames after a random wait */
-float g_MainMenuSparkPos[19][2] = {
+static float g_MainMenuSparkPos[19][2] = {
 	{ 116.0f, 104.0f },
 	{ 104.0f, 169.0f },
 	{ 169.0f, 106.0f },
@@ -637,7 +652,7 @@ CFont *g_FontScrapMedium;
 
 /* vf00: the logo and its glow, the flickering neon tubes, the letters with their lighting, the sparks and the
  * pulsing "Remastered" */
-void cScraplandMainMenuScorer_Draw(cScorerItem *base, int player) {
+static void cScraplandMainMenuScorer_Draw(cScorerItem *base, int player) {
 	cScraplandMainMenuScorer *self = (cScraplandMainMenuScorer *)base;
 	static const char remastered[] = "Remastered";
 	float pos[2], dim[2];
@@ -692,7 +707,7 @@ void cScraplandMainMenuScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cScraplandMainMenuScorer */
-const cScorerItemVtbl cScraplandMainMenuScorer_vftable = {
+static const cScorerItemVtbl cScraplandMainMenuScorer_vftable = {
 	.Draw = cScraplandMainMenuScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cScraplandMainMenuScorer_Var,
@@ -700,7 +715,7 @@ const cScorerItemVtbl cScraplandMainMenuScorer_vftable = {
 };
 
 /* the vtable of cScraplandSubMenuScorer */
-const cScorerItemVtbl cScraplandSubMenuScorer_vftable = {
+static const cScorerItemVtbl cScraplandSubMenuScorer_vftable = {
 	.Draw = cScraplandSubMenuScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cScraplandSubMenuScorer_Var,

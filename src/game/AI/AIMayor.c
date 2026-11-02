@@ -6,6 +6,9 @@
 #include "scrap/aichar.h"
 #include "scrap/walkcharentity.h"
 
+#define CAIMAYOR_VFTABLE (&cAIMayor_vftable)
+static const cAICharVtbl cAIMayor_vftable;
+
 #define CAIMAYOR_SIZE sizeof(cAIMayor)
 
 void *cAIMayor_ctor(void *mem, cEntity *e, int *arg) {
@@ -16,7 +19,8 @@ void *cAIMayor_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAI *cAIMayor_Delete(cAI *base, byte flags) {
+/* AIMayor.c */
+static cAI *cAIMayor_Delete(cAI *base, byte flags) {
 	cAIMayor *self = (cAIMayor *)base;
 	self->vftable = CAIMAYOR_VFTABLE;
 	cAIChar_dtor(self);
@@ -26,7 +30,7 @@ cAI *cAIMayor_Delete(cAI *base, byte flags) {
 	return base;
 }
 
-void cAIMayor_CheckActDist(cAI *base) {
+static void cAIMayor_CheckActDist(cAI *base) {
 	cAIMayor *self = (cAIMayor *)base;
 	float dist = AIChar_TargetDistFlat(self);
 
@@ -34,7 +38,7 @@ void cAIMayor_CheckActDist(cAI *base) {
 		dist > self->actMin && self->actMax > dist;
 }
 
-void cAIMayor_SetDists(cAI *base) {
+static void cAIMayor_SetDists(cAI *base) {
 	cAIMayor *self = (cAIMayor *)base;
 	if (self->state == 2) {
 		self->actMin = 0.0f;
@@ -48,7 +52,7 @@ void cAIMayor_SetDists(cAI *base) {
 }
 
 /* the vtable of cAIMayor */
-const cAICharVtbl cAIMayor_vftable = {
+static const cAICharVtbl cAIMayor_vftable = {
 	.base.base.Delete = cAIMayor_Delete,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,

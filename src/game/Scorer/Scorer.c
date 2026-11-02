@@ -39,15 +39,70 @@
 #include "scrap/scorerhud.h"
 #include "scrap/staticinit.h"
 
-extern const cScorerVtbl cScorer_vftable;
+#define g_CinemaBlackBandHeight (GVar_CinemaBlackBandHeight.value.f)	/* CinemaBlackBandHeight */
+#define g_NoiseFactor (GVar_NoiseFactor.value.i)		/* NoiseFactor */
+#define g_NoiseFactorBegin (GVar_NoiseFactorBegin.value.i)	/* NoiseFactorBegin */
+#define g_NoiseTime (GVar_NoiseTime.value.f)		/* NoiseTime */
+#define g_NoiseEndTime (GVar_NoiseEndTime.value.f)		/* NoiseEndTime */
+#define g_FullScreenConsoleCallback (&GVar_FullScreenConsoleCallback.func)	/* FullScreenConsoleCallback */
+#define g_CameraCloudDistance (GVar_CameraCloudDistance.value.f)	/* CameraCloudDistance */
+#define g_CameraCloudPlaneSize (GVar_CameraCloudPlaneSize.value.f)	/* CameraCloudPlaneSize */
+#define g_CameraCloudThickness (GVar_CameraCloudThickness.value.f)	/* CameraCloudThickness */
+#define g_CameraCloudAlpha (GVar_CameraCloudAlpha.value.i)	/* CameraCloudAlpha */
+#define g_CameraCloudRed (GVar_CameraCloudRed.value.i)		/* CameraCloudRed */
+#define g_CameraCloudGreen (GVar_CameraCloudGreen.value.i)	/* CameraCloudGreen */
+#define g_CameraCloudBlue (GVar_CameraCloudBlue.value.i)		/* CameraCloudBlue */
+#define g_OnAcceptSound (GVar_OnAcceptSound.value.s)	/* OnAcceptSound */
+#define g_OnAcceptSoundVol (GVar_OnAcceptSoundVol.value.f)	/* OnAcceptSoundVol */
+#define g_OnFocusSound (GVar_OnFocusSound.value.s)		/* OnFocusSound */
+#define g_OnFocusSoundVol (GVar_OnFocusSoundVol.value.f)	/* OnFocusSoundVol */
+#define g_ScorerMarkerOn (GVar_ScorerMarker.value.i)		/* ScorerMarker */
+#define g_ScorerMarkerColor (GVar_ScorerMarkerColor.value.u)	/* ScorerMarkerColor */
+#define g_ScorerMarkerSpeed (GVar_ScorerMarkerSpeed.value.f)	/* ScorerMarkerSpeed */
+#define g_CShow (GVar_CShow.value.i)			/* CShow */
+#define g_XboxNoPadMsg (GVar_XboxNoPadMsg.value.i)		/* XboxNoPadMsg */
+#define g_XboxNoPadMsgP (GVar_XboxNoPadMsgP.value.i)		/* XboxNoPadMsgP */
+#define g_XboxNoPadMsgPBig (GVar_XboxNoPadMsgPBig.value.i)	/* XboxNoPadMsgPBig */
+#define g_XboxSavingMsg (GVar_XboxSavingMsg.value.f)		/* XboxSavingMsg */
+#define g_XboxSavingMsgStr (GVar_XboxSavingMsgStr.value.s)	/* XboxSavingMsgStr */
+#define g_ShowConsoleLog (GVar_ShowConsoleLog.value.i)		/* ShowConsoleLog */
+static cGVar GVar_XboxSavingMsgStr;
+static cGVar GVar_XboxSavingMsg;
+static cGVar GVar_XboxNoPadMsgPBig;
+static cGVar GVar_XboxNoPadMsgP;
+static cGVar GVar_XboxNoPadMsg;
+static cGVar GVar_ShowConsoleLog;
+static cGVar GVar_ScorerMarkerSpeed;
+static cGVar GVar_ScorerMarkerColor;
+static cGVar GVar_ScorerMarker;
+static cGVar GVar_OnFocusSoundVol;
+static cGVar GVar_OnFocusSound;
+static cGVar GVar_OnAcceptSoundVol;
+static cGVar GVar_OnAcceptSound;
+static cGVar GVar_NoiseTime;
+static cGVar GVar_NoiseFactorBegin;
+static cGVar GVar_NoiseFactor;
+static cGVar GVar_NoiseEndTime;
+static cGVarFunction GVar_FullScreenConsoleCallback;
+static cGVar GVar_CinemaBlackBandHeight;
+static cGVar GVar_CameraCloudThickness;
+static cGVar GVar_CameraCloudRed;
+static cGVar GVar_CameraCloudPlaneSize;
+static cGVar GVar_CameraCloudGreen;
+static cGVar GVar_CameraCloudDistance;
+static cGVar GVar_CameraCloudBlue;
+static cGVar GVar_CameraCloudAlpha;
+static cGVar GVar_CShow;
+
+static const cScorerVtbl cScorer_vftable;
 #define CSCORER_VFTABLE (&cScorer_vftable)
-extern const cScorerItemVtbl cScorerItem_vftable;
+static const cScorerItemVtbl cScorerItem_vftable;
 #define CSCORERITEM_VFTABLE (&cScorerItem_vftable)
 #define SCORER_NO_ACCEPT -10.0f			/* cScorer.acceptTime off */
 
 /* ---- construction ---- */
 
-ScorerCinema *ScorerCinema_ctor(ScorerCinema *self) {
+static ScorerCinema *ScorerCinema_ctor(ScorerCinema *self) {
 	self->time = 1.0f;
 	self->life = 1.0f;
 	self->on = 0;
@@ -55,7 +110,7 @@ ScorerCinema *ScorerCinema_ctor(ScorerCinema *self) {
 	return self;
 }
 
-ScorerFade *ScorerFade_ctor(ScorerFade *self) {
+static ScorerFade *ScorerFade_ctor(ScorerFade *self) {
 	for (int k = 0; k < 4; k++) {
 		self->from[k] = 0.0f;
 		self->to[k] = 0.0f;
@@ -66,7 +121,7 @@ ScorerFade *ScorerFade_ctor(ScorerFade *self) {
 }
 
 /* the noise and motion blur: globals only */
-void *ScorerFx_ctor(void *self) {
+static void *ScorerFx_ctor(void *self) {
 	g_NoiseFactor = 0;
 	g_NoiseFactorBegin = 0;
 	g_NoiseTime = 0.0f;
@@ -81,7 +136,7 @@ void *ScorerFx_ctor(void *self) {
 
 char str_Empty[] = "";
 
-cScorer *cScorer_ctor(cScorer *self) {
+static cScorer *cScorer_ctor(cScorer *self) {
 	self->vftable = CSCORER_VFTABLE;
 	cString_ctor(&self->hint);
 	cString_ctor(&self->specialHint);
@@ -168,7 +223,8 @@ cScorerItem *cScorerItem_ctor(cScorerItem *self) {
 	return self;
 }
 
-void cScorer_dtor(cScorer *self) {
+static void cScorer_Free(cScorer *scorer);
+static void cScorer_dtor(cScorer *self) {
 	self->vftable = CSCORER_VFTABLE;
 	cScorer_Free(self);
 	cPy_Function_dtor(&self->mpFunc);
@@ -198,7 +254,7 @@ void cScorerItem_dtor(cScorerItem *self) {
 }
 
 /* the vector deleting destructor: flags 2 the array of new[] (its count before it), 1 frees */
-cScorer *cScorer_Delete(cScorer *self, byte flags) {
+static cScorer *cScorer_Delete(cScorer *self, byte flags) {
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
 		crt_eh_vector_dtor(self, sizeof(cScorer), *mem, (void *)cScorer_dtor);
@@ -214,7 +270,7 @@ cScorer *cScorer_Delete(cScorer *self, byte flags) {
 	return self;
 }
 
-cScorerItem *cScorerItem_Delete(cScorerItem *self, byte flags) {
+static cScorerItem *cScorerItem_Delete(cScorerItem *self, byte flags) {
 	cScorerItem_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cScorerItem));
@@ -277,15 +333,6 @@ cScorerModel *cScorer_FindModel(cScorer *scorer, const char *name) {
 	return NULL;
 }
 
-CGameModel *cScorer_FindModelModel(cScorer *scorer, const char *name) {
-	for (cScorerModel *m = scorer->models; m; m = m->next) {
-		if (!strcmp(m->name, name)) {
-			return &m->model;
-		}
-	}
-	return NULL;
-}
-
 /* ---- the items ---- */
 
 void cScorer_Clear(cScorer *scorer) {
@@ -306,7 +353,7 @@ void cScorer_Clear(cScorer *scorer) {
 }
 
 /* the items and the models deleted */
-void cScorer_Free(cScorer *scorer) {
+static void cScorer_Free(cScorer *scorer) {
 	cString_Set(&scorer->defaultItem, NULL);
 	scorer->cursor = NULL;
 	cString_Set(&scorer->current, NULL);
@@ -366,7 +413,7 @@ void cScorer_SetParam(cScorer *scorer, const char *name, const char *value) {
 }
 
 /* the items marked DelMe deleted */
-void cScorer_RemoveDeleted(cScorer *scorer, int player) {
+static void cScorer_RemoveDeleted(cScorer *scorer, int player) {
 	cScorerItem **link = &scorer->items;
 
 	(void)player;
@@ -545,7 +592,7 @@ static void cScorer_TakeHint(cScorer *scorer, cScorerItem *it) {
 }
 
 /* the cursor moves from the item from to the item to (names, NULL for none) */
-void cScorer_SetCursorItem(cScorer *scorer, int player, const char *from, const char *to) {
+static void cScorer_SetCursorItem(cScorer *scorer, int player, const char *from, const char *to) {
 	cScorerItem *it;
 
 	scorer->acceptTime = SCORER_NO_ACCEPT;
@@ -587,7 +634,7 @@ void cScorer_SetDefault(cScorer *scorer, const char *name) {
 	cString_Set(&scorer->current, name);
 }
 
-cScorer *g_Scorers;
+static cScorer *g_Scorers;
 
 /* ---- the scorers of the players ---- */
 
@@ -607,23 +654,15 @@ void Scorer_SetInputState(int state) {
 	sc[3].skipFrames = state;
 }
 
-CPsaImage *g_ScorerWhite;
+static CPsaImage *g_ScorerWhite;
 
-CPsaImage *Scorer_GetWhite(void) {
+static CPsaImage *Scorer_GetWhite(void) {
 	return g_ScorerWhite;
 }
 
-CPsaImage *g_ScorerMarker;
+static CPsaImage *g_ScorerMarker;
 
-CPsaImage *Scorer_GetMarker(void) {
-	return g_ScorerMarker;
-}
-
-CPsaImage *g_ScorerNoise;
-
-CPsaImage *Scorer_GetNoise(void) {
-	return g_ScorerNoise;
-}
+static CPsaImage *g_ScorerNoise;
 
 /* a new image of the sheet name (CPsaImage_ctorTex), NULL if the allocation fails */
 static CPsaImage *Scorer_NewTex(const char *name, const char *a, int flags) {
@@ -631,7 +670,7 @@ static CPsaImage *Scorer_NewTex(const char *name, const char *a, int flags) {
 	return img ? CPsaImage_ctorTex(img, name, a, flags) : NULL;
 }
 
-cNewsPanel *g_NewsPanel;
+static cNewsPanel *g_NewsPanel;
 
 void Scorer_Init(void) {
 	g_ScorerWhite = Scorer_NewTex("2D/white.tga", 0, 0x24);
@@ -777,40 +816,7 @@ void Scorer_GetCamVarStr(int player, char *buf, const char *name, int size) {
 	}
 }
 
-/* the int (or the float cut) of the entity variable name of the player's camera target, 0 if none */
-int Scorer_GetCamVarInt(int player, const char *name) {
-	const char *camName;
-	cEntity *e;
-	int iv;
-	double dv;
-
-	if (!*name) {
-		return 0;
-	}
-	camName = cWorld_GetCamName(g_pWorld, player);
-	e = NULL;
-	if (*camName) {
-		cEntity *cam = World_FindEntity(camName);
-		if (cam) {
-			if (!cam->vftable->IsType(cam, FCAM_CLASSNAME)) {
-				return 0;
-			}
-			e = cCamEntity_GetTarget(cam);
-			if (!e || !e->vftable->IsType(e, TYEN_WITH_LIFE)) {
-				return 0;
-			}
-		}
-	}
-	if (e->vftable->VarI(e, name, &iv, 0)) {
-		return iv;
-	}
-	if (!e->vftable->VarF(e, name, &dv, 0)) {
-		return 0;
-	}
-	return (int)dv;
-}
-
-void Scorer_DrawPyMemStats(void) {
+static void Scorer_DrawPyMemStats(void) {
 	cMemStats *ms = (&g_PyMemStats);
 
 	CFont_PrintfAlign(g_FontHoratioSmall, 48.0f, 40.0f, 0, "%d Bytes. (%d)top", ms->bytes, ms->peakBytes);
@@ -852,7 +858,7 @@ void ScorerFade_Start(ScorerFade *fade, uint32_t from, uint32_t to, float time) 
 	fade->life = time;
 }
 
-void ScorerFade_Draw(ScorerFade *fade, int player, float dt) {
+static void ScorerFade_Draw(ScorerFade *fade, int player, float dt) {
 	(void)player;
 	fade->time = fade->time - dt;
 	if (0.0f > fade->time) {
@@ -889,7 +895,7 @@ void ScorerCinema_Set(ScorerCinema *cinema, byte on, float time) {
 	}
 }
 
-void ScorerCinema_Draw(ScorerCinema *cinema, int player, float dt) {
+static void ScorerCinema_Draw(ScorerCinema *cinema, int player, float dt) {
 	float life = cinema->life;
 	float t = cinema->time + dt;
 	float f, h;
@@ -925,7 +931,7 @@ void ScorerCinema_Draw(ScorerCinema *cinema, int player, float dt) {
 }
 
 /* the noise over the screen and the motion blur of the scene */
-void ScorerFx_Draw(void *fx, int player, float dt) {
+static void ScorerFx_Draw(void *fx, int player, float dt) {
 	float f = 1.0f;
 	float v;
 	int n;
@@ -988,7 +994,7 @@ void ScorerFx_Draw(void *fx, int player, float dt) {
 
 /* the MPFunc of the scorer with (player, 1) on the press and (player, 0) on the release of the action 23 of the
  * character set */
-void cScorer_UpdateMP(cScorer *scorer, float dt) {
+static void cScorer_UpdateMP(cScorer *scorer, float dt) {
 	(void)dt;
 	if (Input_GetActionSet() != 1) {
 		return;
@@ -1052,7 +1058,7 @@ static void cScorer_Call(cScorer *scorer, cPy_Function *f, int player) {
 
 /* the cursor item moved by the axes and the item moves by the keys, the accept, delete, cancel, next and prev
  * functions, the cursor blinking */
-void cScorer_UpdateCursor(cScorer *scorer, int player) {
+static void cScorer_UpdateCursor(cScorer *scorer, int player) {
 	cScorerItem *it;
 	cScorerItem *cur;
 	float dy = (Menu_Action(MENU_DOWN_AXIS)->value[player] - Menu_Action(MENU_UP_AXIS)->value[player])
@@ -1196,7 +1202,7 @@ void cScorer_UpdateCursor(cScorer *scorer, int player) {
 CApp *g_pApp;
 
 /* the frame of a scorer: time, screen effects, cursor, the items and the focus marker */
-void cScorer_Draw(cScorer *scorer, int player) {
+static void cScorer_Draw(cScorer *scorer, int player) {
 	scorer->lastTime = scorer->time;
 	float t = (float)g_pApp->vftable->GetGameTime(g_pApp);
 	scorer->time = t;
@@ -1268,7 +1274,7 @@ void cScorer_Draw(cScorer *scorer, int player) {
 }
 
 /* the cloud fade of a camera near the atmosphere limit: a gradient over the screen */
-void cScorer_DrawClouds(cScorer *scorer, int player) {
+static void cScorer_DrawClouds(cScorer *scorer, int player) {
 	static const float pos[8] = {0.0f, 0.0f, 640.0f, 0.0f, 640.0f, 480.0f, 0.0f, 480.0f};
 	static const float uv[8] = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
 	/* the corners of the cloud plane around the camera; corner k colors vertex k + 1 (mod 4) */
@@ -1325,7 +1331,7 @@ void cScorer_DrawClouds(cScorer *scorer, int player) {
 }
 
 /* the Xbox texts of the scorer: Saving..., the pad messages */
-void cScorer_DrawNoPadMsg(cScorer *scorer, int index, float y, byte big, int pad) {
+static void cScorer_DrawNoPadMsg(cScorer *scorer, int index, float y, byte big, int pad) {
 	CPsaImage *img = g_ScorerWhite;
 	const char *next;
 	float off;
@@ -1357,7 +1363,7 @@ void cScorer_DrawNoPadMsg(cScorer *scorer, int index, float y, byte big, int pad
 		Lang_GetStr(next));
 }
 
-void cScorer_DrawXboxMsgs(cScorer *scorer, int player) {
+static void cScorer_DrawXboxMsgs(cScorer *scorer, int player) {
 	char buf[0x80];
 
 	if (g_XboxSavingMsg > 0.0f && !g_IsDemo) {
@@ -1387,6 +1393,8 @@ void cScorer_DrawXboxMsgs(cScorer *scorer, int player) {
 }
 
 /* the scorers of the frame (one view, two in split screen), the sound update; always 1 */
+static byte Scorer_DrawConsole(void);
+static void Scorer_DrawDebug(void);
 byte Scorer_Render(void) {
 	CGameCamera *saved = NULL;
 	int n;
@@ -1438,13 +1446,13 @@ byte Scorer_Render(void) {
 #define CONSOLE_KEYBOARD_SIZE 0x10c
 #define CONSOLE_ONINPUT 0x1741b0			/* Console_OnInput as the exe stores it */
 
-byte g_ConsoleOn;
-char *g_ConsoleHistory[16];
-int g_ConsoleHistoryPos;
+static byte g_ConsoleOn;
+static char *g_ConsoleHistory[16];
+static int g_ConsoleHistoryPos;
 cPlayerInput g_PlayerInput[4];
 
 /* the line typed into the console: a Python line for FullScreenConsoleCallback, else a console command */
-void Console_OnInput(int player, const char *text) {
+static void Console_OnInput(int player, const char *text) {
 	(void)player;
 	for (int k = CONSOLE_HISTORY - 1; k > 0; k--) {
 		cString_Assign(&g_ConsoleHistory[k], &g_ConsoleHistory[k - 1]);
@@ -1467,7 +1475,7 @@ void Console_OnInput(int player, const char *text) {
 	}
 }
 
-void Console_HistoryUp(void) {
+static void Console_HistoryUp(void) {
 	if (!g_ConsoleHistoryPos) {
 		cString_Set(&g_ConsoleHistory[0], g_PlayerInput[0].text);
 	}
@@ -1480,7 +1488,7 @@ void Console_HistoryUp(void) {
 	}
 }
 
-void Console_HistoryDown(void) {
+static void Console_HistoryDown(void) {
 	g_ConsoleHistoryPos--;
 	if (g_ConsoleHistoryPos < 0) {
 		g_ConsoleHistoryPos = 0;
@@ -1490,14 +1498,14 @@ void Console_HistoryDown(void) {
 	}
 }
 
-byte g_ConsoleCheckInput;
-byte g_ConsoleClosing;
-byte g_ConsoleBusy;
-cVirtualKeyboard g_ConsoleSavedKeyboard;
-uint32_t g_ConsoleSavedSet;
-cPlayerInput g_ConsoleSavedInput;
-CPsaImage *g_ConsoleWhite;
-float g_ConsoleTime;
+static byte g_ConsoleCheckInput;
+static byte g_ConsoleClosing;
+static byte g_ConsoleBusy;
+static cVirtualKeyboard g_ConsoleSavedKeyboard;
+static uint32_t g_ConsoleSavedSet;
+static cPlayerInput g_ConsoleSavedInput;
+static CPsaImage *g_ConsoleWhite;
+static float g_ConsoleTime;
 
 void Scorer_SetConsole(int on) {
 	byte b = (byte)on;
@@ -1586,7 +1594,9 @@ static void Console_Complete(void) {
 	cPlayerInput_SetString(&g_PlayerInput[0], buf);
 }
 
-byte Scorer_DrawConsole(void) {
+/* the full screen console (the ring of the console lines sliding in and out, the input line), else the console
+ * log of ShowConsoleLog and the console key: 1 while it is shown (instead of the scorer) */
+static byte Scorer_DrawConsole(void) {
 	float h;
 
 	if (!g_ConsoleOn) {
@@ -1785,7 +1795,9 @@ static void Dbg_DrawEntities(void) {
 	}
 }
 
-void Scorer_DrawDebug(void) {
+/* CShow (1 the grid, 2 the entities, 3 the sounds, 4 and 6 the AI, 5 the Python memory, 7 the ships), the dummies
+ * and the AI drawings of NWAnalizeOn */
+static void Scorer_DrawDebug(void) {
 	switch (g_CShow) {
 	case CSHOW_GRID:
 		Grid_Draw(&g_pWorld->grid);
@@ -1845,7 +1857,7 @@ void Scorer_DrawDebug(void) {
 }
 
 /* the vtable of cScorerItem */
-const cScorerItemVtbl cScorerItem_vftable = {
+static const cScorerItemVtbl cScorerItem_vftable = {
 	.Draw = (void *)crt_purecall,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cScorerItem_Var,
@@ -1853,44 +1865,44 @@ const cScorerItemVtbl cScorerItem_vftable = {
 };
 
 /* the vtable of cScorer */
-const cScorerVtbl cScorer_vftable = {
+static const cScorerVtbl cScorer_vftable = {
 	.Delete = cScorer_Delete,
 };
 
 cGVar GVar_FileNameMap2D;
-cGVar GVar_CinemaBlackBandHeight;
+static cGVar GVar_CinemaBlackBandHeight;
 cGVar GVar_MotionBlurFactorBegin;
-cGVar GVar_OnAcceptSoundVol;
-cGVar GVar_CameraCloudPlaneSize;
-cGVar GVar_CameraCloudRed;
-cGVar GVar_XboxSavingMsgStr;
-cGVar GVar_XboxNoPadMsgP;
-cGVar GVar_OnFocusSoundVol;
-cGVar GVar_CameraCloudDistance;
-cGVar GVar_NoiseEndTime;
-cGVar GVar_NoiseFactor;
+static cGVar GVar_OnAcceptSoundVol;
+static cGVar GVar_CameraCloudPlaneSize;
+static cGVar GVar_CameraCloudRed;
+static cGVar GVar_XboxSavingMsgStr;
+static cGVar GVar_XboxNoPadMsgP;
+static cGVar GVar_OnFocusSoundVol;
+static cGVar GVar_CameraCloudDistance;
+static cGVar GVar_NoiseEndTime;
+static cGVar GVar_NoiseFactor;
 cGVar GVar_MotionBlurEndTime;
-cGVar GVar_OnAcceptSound;
-cGVar GVar_XboxNoPadMsgPBig;
-cGVar GVar_NoiseTime;
-cGVar GVar_CameraCloudGreen;
-cGVar GVar_XboxSavingMsg;
-cGVar GVar_NoiseFactorBegin;
-cGVar GVar_ScorerMarker;
+static cGVar GVar_OnAcceptSound;
+static cGVar GVar_XboxNoPadMsgPBig;
+static cGVar GVar_NoiseTime;
+static cGVar GVar_CameraCloudGreen;
+static cGVar GVar_XboxSavingMsg;
+static cGVar GVar_NoiseFactorBegin;
+static cGVar GVar_ScorerMarker;
 cGVar GVar_MotionBlurTime;
 cGVar GVar_CameraScene;
-cGVar GVar_ScorerMarkerSpeed;
-cGVar GVar_OnFocusSound;
-cGVar GVar_CameraCloudBlue;
+static cGVar GVar_ScorerMarkerSpeed;
+static cGVar GVar_OnFocusSound;
+static cGVar GVar_CameraCloudBlue;
 cGVar GVar_MotionBlurFactorEnd;
-cGVar GVar_CameraCloudThickness;
-cGVar GVar_XboxNoPadMsg;
-cGVar GVar_CameraCloudAlpha;
-cGVar GVar_ScorerMarkerColor;
+static cGVar GVar_CameraCloudThickness;
+static cGVar GVar_XboxNoPadMsg;
+static cGVar GVar_CameraCloudAlpha;
+static cGVar GVar_ScorerMarkerColor;
 cGVar GVar_MotionBlurOffVar;
-cGVar GVar_CShow;
-cGVarFunction GVar_FullScreenConsoleCallback;
-cGVar GVar_ShowConsoleLog;
+static cGVar GVar_CShow;
+static cGVarFunction GVar_FullScreenConsoleCallback;
+static cGVar GVar_ShowConsoleLog;
 cGVar GVar_R_SceneMotionBlurOff;
 cGVar GVar_SplitScreen;
 

@@ -74,17 +74,8 @@ matrix_t *Matrix_RotationX(matrix_t *out, float ang) {
 	return D3DX_MatrixRotationX(out, ang);
 }
 
-matrix_t *Matrix_RotationY(matrix_t *out, float ang) {
-	return D3DX_MatrixRotationY(out, ang);
-}
-
 matrix_t *Matrix_RotationZ(matrix_t *out, float ang) {
 	return D3DX_MatrixRotationZ(out, ang);
-}
-
-matrix_t *Matrix_RotationAxis(matrix_t *out, const vec3_t *axis, float ang) {
-	Matrix_RotAxis(out, axis, ang);
-	return out;
 }
 
 /* ---- calculo3d.cpp ---- */
@@ -160,14 +151,14 @@ static char *Vec3_Format(char *buf, uint32_t slot, int prec, double x, double y,
 	return s;
 }
 
-char g_Vec3StrDeg[256];
+static char g_Vec3StrDeg[256];
 
 char *Vec3_StrDeg(const vec3_t *v, uint32_t slot, int prec) {
 	return Vec3_Format(g_Vec3StrDeg, slot, prec, (double)v->x * 180.0 / M_PI_D, (double)v->y * 180.0 / M_PI_D,
 		(double)v->z * 180.0 / M_PI_D);
 }
 
-char g_Vec3Str[256];
+static char g_Vec3Str[256];
 
 char *Vec3_Str(const vec3_t *v, uint32_t slot, int prec) {
 	return Vec3_Format(g_Vec3Str, slot, prec, (double)v->x, (double)v->y, (double)v->z);

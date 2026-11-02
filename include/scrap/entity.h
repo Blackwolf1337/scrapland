@@ -50,7 +50,6 @@ typedef struct cEntityVtbl {
 	void *(*GetAI)(cEntity *self);				/* 0x58 vf22 */
 } cEntityVtbl;
 
-
 /* Nto1Links.h with a shared count: the head (data NULL) owns the int, every linked node points to it */
 typedef struct EntityDNode {
 	Nto1Node node;			/* 0x00 */
@@ -74,9 +73,6 @@ struct cEntity {
 	void *lLogic;			/* 0x74 local logic made by the list ("LLogic" variables) */
 	void *ai;			/* 0x78 the AI (GetAI, "AI_" variables) */
 };
-
-extern const cEntityVtbl cEntity_vftable;
-#define CENTITY_VFTABLE (&cEntity_vftable)
 
 /* a vehicle ("Car"): include/scrap/vehicleentity.h */
 typedef struct cVehicleEntity cVehicleEntity;
@@ -116,11 +112,8 @@ byte cEntity_Del(cEntity *self);
 /* Entities/Entity.cpp; cEntity_ctor, cEntity_Next and EntityDList_dtor are declared in world.h */
 void Nto1Node_dtor(Nto1Node *node);
 void cEntity_dtor(cEntity *self);
-/* node joins the ring of head and counts in its numElems */
-void EntityDList_Add(void *head, EntityDNode *node);
 /* the mask to savedMask (no collisions) and back */
 void cEntity_CollisionOff(cEntity *self);
-void cEntity_CollisionOn(cEntity *self);
 /* node linked to the entity src is linked to, or unlinked */
 void Nto1Node_LinkAs(Nto1Node *node, const Nto1Node *src);
 /* node linked to the entity of that name, or unlinked */
@@ -129,15 +122,12 @@ void Nto1Node_LinkByName(Nto1Node *node, const char *name);
 const char *Nto1Node_TargetName(const Nto1Node *node);
 /* the name of the entity list, NULL for none */
 char *cEntity_GetListName(cEntity *self);
-cEntity *cEntity_NextInList(cEntity *self);
 /* into the entity list of that name (NULL or "": none), which also makes the local logic; 0 if no such list */
 byte cEntity_SetList(cEntity *self, const char *list);
 /* the cEntity vtable slots */
 void cEntity_Update(cEntity *self);
 void cEntity_Render(cEntity *self, void *arg);
 void cEntity_UpdateOff(cEntity *self);
-cEntity *cEntity_Delete(cEntity *self, uint32_t flags);
-const char *cEntity_GetClassName(cEntity *self);
 byte cEntity_IsType(cEntity *self, const char *type);
 vec3_t *cEntity_GetPos(cEntity *self, vec3_t *out);
 void cEntity_SetPos(cEntity *self, const vec3_t *pos);
@@ -154,8 +144,6 @@ byte cEntity_VarV(cEntity *self, const char *name, double *x, double *y, double 
 void *cEntity_GetAI(cEntity *self);
 /* the inline virtual functions of Entity.h: vf09 and vf10 (no hit), vf11, vf20 (nothing) and vf21 (0) */
 byte cEntity_TestLine(cEntity *self, const vec3_t *from, vec3_t *hit);
-byte cEntity_TestSphere(cEntity *self, cEntity *exclude, const vec3_t *center, float radius, int arg);
-void cEntity_Vf11(cEntity *self, int a, int b, int c);
 void cEntity_Vf20(cEntity *self);
 int cEntity_Vf21(cEntity *self, int a);
 byte cEntity_NetNeedsSendTrue(cEntity *self, float dist2);

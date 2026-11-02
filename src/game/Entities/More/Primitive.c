@@ -31,6 +31,7 @@ byte cPrimitive_VarF(cPrimitive *self, const char *name, double *d, int set) {
 	return 1;
 }
 
+static byte cPrimitive_SegHit(cPrimitive *self, const vec3_t *a, vec3_t *p);
 byte cPrimitive_TestSegment(cPrimitive *self, const vec3_t *a, vec3_t *p) {
 	if (self->on && self->radius > 0.0f) {
 		return cPrimitive_SegHit(self, a, p);
@@ -38,7 +39,7 @@ byte cPrimitive_TestSegment(cPrimitive *self, const vec3_t *a, vec3_t *p) {
 	return 0;
 }
 
-byte cPrimitive_SegHit(cPrimitive *self, const vec3_t *a, vec3_t *p) {
+static byte cPrimitive_SegHit(cPrimitive *self, const vec3_t *a, vec3_t *p) {
 	vec3_t hit, pos;
 
 	if (!self->on) {
@@ -51,10 +52,6 @@ byte cPrimitive_SegHit(cPrimitive *self, const vec3_t *a, vec3_t *p) {
 	}
 	*p = hit;
 	return 1;
-}
-
-void cPrimitive_SetOn(cPrimitive *self, byte on) {
-	self->on = self->radius > 0.0f ? on : 0;
 }
 
 void cPrimitive_SetOwner(cPrimitive *self, cEntity *owner) {
@@ -73,6 +70,7 @@ void cPrimitive_SetSize(cPrimitive *self, float size) {
 	self->on = 1;
 }
 
+static byte cPrimitive_SphereHit(cPrimitive *self, cEntity *other, const vec3_t *c, float r, const vec3_t *prev);
 byte cPrimitive_TestSphere(cPrimitive *self, cEntity *other, const vec3_t *c, float r, const vec3_t *prev) {
 	if (self->on && self->radius > 0.0f) {
 		return cPrimitive_SphereHit(self, other, c, r, prev);
@@ -80,7 +78,7 @@ byte cPrimitive_TestSphere(cPrimitive *self, cEntity *other, const vec3_t *c, fl
 	return 0;
 }
 
-byte cPrimitive_SphereHit(cPrimitive *self, cEntity *other, const vec3_t *c, float r, const vec3_t *prev) {
+static byte cPrimitive_SphereHit(cPrimitive *self, cEntity *other, const vec3_t *c, float r, const vec3_t *prev) {
 	vec3_t pos, n, q;
 	float d2;
 

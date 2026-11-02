@@ -24,7 +24,6 @@ typedef struct cActCtrl cActCtrl;
 /* type of a variable as returned by the Var functions */
 enum { ACTVAR_NONE = 0, ACTVAR_STRING = 1, ACTVAR_DOUBLE = 2, ACTVAR_INT = 3 };
 
-
 typedef struct cActCtrlVarVtbl {
 	void *(*Delete)(cActCtrl *self, byte flags);				/* 0x00 */
 	byte(*VarI)(cActCtrl *self, const char *name, int *i, int set);		/* 0x04 */
@@ -32,8 +31,6 @@ typedef struct cActCtrlVarVtbl {
 	byte(*VarS)(cActCtrl *self, const char *name, char **s, int set);		/* 0x0c */
 	byte(*VarV)(cActCtrl *self, const char *name, double *x, double *y, double *z, int set); /* 0x10 */
 } cActCtrlVarVtbl;
-extern const cActCtrlVarVtbl cActCtrl_vftable;
-#define CACTCTRL_VFTABLE (&cActCtrl_vftable)
 
 #define ACT_LAYERS 4			/* the layers of a controller, the channels of the model */
 #define ACT_NODEMODS 3			/* the turned nodes of a class ("NodeN_...") */
@@ -64,8 +61,6 @@ typedef struct cActClassCam {
 typedef struct cActClassVtbl {
 	struct cActClass *(*Delete)(struct cActClass *self, byte flags);	/* 0x00 */
 } cActClassVtbl;
-extern const cActClassVtbl cActClass_vftable;
-#define CACTCLASS_VFTABLE (&cActClass_vftable)
 
 /* an action class (0x20c bytes, made by cActClassList_Create) */
 struct cActClass {
@@ -121,8 +116,6 @@ struct cActClass {
 typedef struct cActClassListVtbl {
 	struct cActClassList *(*Delete)(struct cActClassList *self, byte flags);	/* 0x00 */
 } cActClassListVtbl;
-extern const cActClassListVtbl cActClassList_vftable;
-#define CACTCLASSLIST_VFTABLE (&cActClassList_vftable)
 
 struct cActClassList {
 	const cActClassListVtbl *vftable;		/* 0x00 */
@@ -143,8 +136,6 @@ struct cActEvent {
 typedef struct cActionVtbl {
 	struct cAction *(*Delete)(struct cAction *self, byte flags);	/* 0x00 */
 } cActionVtbl;
-extern const cActionVtbl cActionMove_vftable;
-#define CACTIONMOVE_VFTABLE (&cActionMove_vftable)
 
 struct cAction {
 	const cActionVtbl *vftable;		/* 0x00 */
@@ -217,40 +208,19 @@ struct cActCtrl {
 
 /* Actions/ActClass.cpp (src/game/Actions/ActClass.c) */
 cActClass *cActClass_ctor(cActClass *self, const char *name);
-void cActClass_dtor(cActClass *self);
-cActClass *cActClass_Delete(cActClass *self, byte flags);
-cActNodeMod *cActNodeMod_ctor(cActNodeMod *self);
 cAction *cActClass_CreateAction(cActClass *cls, const char *name);
 cAction *cActClass_GetAction(cActClass *cls, const char *name);
 /* set != 0: writes the string *s, or the number *d / *i when s is NULL; set == 0: reads into all three.
    Returns the ACTVAR_ type (0 if not found). */
 int cActClass_Var(cActClass *cls, const char *name, int set, char **s, double *d, int *i);
-/* the sound of the file loaded and its name kept for FreeResources */
-void cActClass_AddSoundRes(cActClass *self, const char *file);
-/* OnFreeResources called, the sounds and the model released */
-void cActClass_FreeResources(cActClass *self);
-/* the camera variables of the class (only d is used) */
-int cActClassCam_Var(cActClassCam *self, const char *name, int set, char **s, double *d, int *i);
 /* the camera of the class into the follow camera of e, the FOV zoom of the class "Functionary" with it */
 void cActClassCam_Update(void *cam, cEntity *followCam, cEntity *e);
-/* NULL when there is no action of that name */
-cAction *cActClass_SetDefAction(cActClass *self, const char *name);
-/* a warning if the class has a model already */
-void cActClass_SetModelFile(cActClass *self, const char *file);
-/* "_Move_The_Model_" or a render node of the model; a message if it has no such node */
-void cActNodeMod_SetNode(int *node, CGameModel *model, const char *name);
 
 /* the instance of Global/DList.h with a cString (cStringList of filepak.h) */
 cStringNode *cStringList_NewNode(cStringList *list);
 void cStringList_Clear(cStringList *list);
 void cStringList_FreePool(cStringList *list);
-void cStringList_RemoveHead(cStringList *list);
-void cStringList_dtor(cStringList *list);
 
-/* Actions/ActClassList.cpp (src/game/Actions/ActClassList.c) */
-cActClassList *cActClassList_ctor(cActClassList *self);
-void cActClassList_dtor(cActClassList *self);
-cActClassList *cActClassList_Delete(cActClassList *self, byte flags);
 cActClass *cActClassList_Create(cActClassList *list, const char *name);
 cActClass *cActClassList_Get(cActClassList *list, const char *name);
 /* 0 if there is no such class or a controller uses it */
@@ -261,35 +231,19 @@ void ActClassList_Init(void);
 /* Actions/ActCtrl.cpp (src/game/Actions/ActCtrl.c). The functions the entities call take a void * like their
  * callers declared them first. */
 cActCtrl *cActCtrl_ctor(cActCtrl *self, cEntity *owner, cActClass *cls);
-void cActCtrl_dtor(cActCtrl *self);
-void *cActCtrl_Delete(cActCtrl *self, byte flags);
 /* the model command (CGameModel_AnimCmd) on the model of the owner */
 void cActCtrl_AnimCmd(cActCtrl *self, const char *cmd);
-/* the model of the class on the owner with the animations of the actions */
-void cActCtrl_InitModel(cActCtrl *self);
-/* the layers dt on: speeds, events, the end of the actions, the root motion of layer 0 */
-void cActCtrl_Update(cActCtrl *self, float dt);
-/* the events of the layer chan up to t (FLT_MAX from the end of the action on); silent skips the discardable ones
- * and logs with Con_Verbosef */
-void cActCtrl_FireEvents(cActCtrl *self, int chan, float t, byte silent);
-byte cActCtrl_VarI(cActCtrl *self, const char *name, int *i, int set);
-byte cActCtrl_VarF(cActCtrl *self, const char *name, double *d, byte set);
-byte cActCtrl_VarS(cActCtrl *self, const char *name, char **s, int set);
-byte cActCtrl_VarV(cActCtrl *self, const char *name, double *x, double *y, double *z, byte set);
 /* the name of the action of layer i, "" when it does not run */
 const char *cActCtrl_GetActionName(void *ctrl, int i);
 /* the layer i of the actions (16 bytes, the time of its action first) */
 cActLayer *cActCtrl_GetLayer(void *ctrl, int i);
 /* the name of the default loop action of the controller, "" without one */
 const char *cActCtrl_GetDefLoopName(void *ctrl);
-void cActCtrl_InitHeads(cActCtrl *self);
 /* the turned nodes of the class by ang (x, y) blended to the NodeModifier of the action of layer 0 */
 void cActCtrl_TurnHead(void *ctrl, const float *ang, float dt);
 /* the action of the controller (not when it runs already in its layer and one of priority runs); 0 if not */
 byte cActCtrl_PlayAction(void *ctrl, void *action, int arg, int set, float speed);
 byte cActCtrl_Play(void *ctrl, const char *action, int arg, float speed);
-/* PlayAction unless it runs already in its layer; 0 then or without it */
-byte cActCtrl_PlayActionNew(cActCtrl *self, cAction *action, int arg, float speed);
 /* the action, unless it runs already in its layer; 0 then or without it */
 byte cActCtrl_PlayNew(void *ctrl, const char *action, int arg, float speed);
 /* the action that runs when nothing else does; a warning if the class has no such action */
@@ -299,50 +253,14 @@ void cActCtrl_Tick(cActCtrl *self, float dt);
 /* layer i (> 0) stopped */
 void cActCtrl_StopChan(cActCtrl *self, int i);
 byte cActCtrl_IsActive(void *ctrl, const char *action);
-byte cActCtrl_IsDefLoop(cActCtrl *self, const char *action);
-/* the target of the blend set (the old one becomes the start) */
-void cActHead_Set(cActHead *self, const float *to);
-void cActHead_Blend(cActHead *self, float t);
-/* the update of DinaShip classes: the parts of the ship (Motor, Rudder, Flaps, ...) by its state */
-void cActCtrl_UpdateShip(cActCtrl *self, float dt);
-byte cActCtrl_VarFFalse(cActCtrl *self, const char *name, double *d, int set);
-byte cActCtrl_VarVFalse(cActCtrl *self, const char *name, double *x, double *y, double *z, int set);
 
 /* Actions/Actions.cpp (src/game/Actions/Actions.c) */
 cAction *cAction_ctor(cAction *self, cActClass *parent, const char *name);
-void cAction_dtor(cAction *self);
-cAction *cAction_Delete(cAction *self, byte flags);
-cActEvent *cActEvent_ctor(cActEvent *self, float time, cActEvent *next);
-/* a new event at time (after the ones before it), as the lastEvent */
-void cAction_AddEvent(cAction *self, float time);
 void cActEvent_Fire(cActEvent *self, const char *entity);
 int cAction_Var(cAction *act, const char *name, int set, char **s, double *d, int *i);
-/* the variables after "Event": of the last event */
-int cActEvent_Var(cActEvent *self, const char *name, int set, char **s, double *d, int *i);
-/* the animation of the file added to the model of the class; a warning if the action has one */
-void cAction_SetAnmFile(cAction *self, const char *file);
-
-/* Actions/Events/CharEvents.cpp and SoundEvents.cpp (src/game/Actions/Events/): the C functions ("!name") the
- * events call, named like the registry; the parameters (entity name, value string, time) come in a memory file */
-void Event_AnmChangeRandomAnm(cAbstractFile *params);	/* "base:max": base and a random number up to max */
-void Event_AnmCommand(cAbstractFile *params);
-void Event_AnmSetAction(cAbstractFile *params);
-void Event_AnmSetDefaultLoop(cAbstractFile *params);
-void Event_AnmSetDisplAng(cAbstractFile *params);
-void Event_AnmStopChan(cAbstractFile *params);
-void Event_AnmSound2DEvent(cAbstractFile *params);	/* "sound:volume[:pitch[:pan]]" */
-void Event_AnmSoundEvent(cAbstractFile *params);	/* "sound:volume[:pitch]" at the entity */
-void Event_AnmSoundLoopEvent(cAbstractFile *params);	/* "index:volume:pitch" of a sound of the entity */
-void Event_StopStreamingVoice(cAbstractFile *params);
-void Event_StreamingVoice(cAbstractFile *params);	/* "text:volume[:dist]" */
-void Event_WarningPolice(cAbstractFile *params);
 
 extern cActClassList *g_pActClassList;
 extern cActClass *g_pAuxActClass;	/* SAct's current class */
 extern cAction *g_pAuxAction;	/* SAct's current action */
-extern cGVar GVar_LogActEvents;
-#define g_LogActEvents (GVar_LogActEvents.value.i)		/* LogActEvents: the events into the console */
-extern cGVar GVar_DefInterpTime;
-#define g_DefInterpTime (GVar_DefInterpTime.value.f)	/* DefInterpTime of new actions */
 
 #endif

@@ -33,6 +33,7 @@ void CHashTable_dtor(CHashTable *self) {
 	operator_delete_array(self->slots);
 }
 
+static int CHashTable_Add(CHashTable *self, const char *key, void *value, int warn);
 int CHashTable_AddInt(CHashTable *self, int key, void *value, int warn) {
 	char text[HASHTABLE_INTKEY];
 
@@ -40,7 +41,10 @@ int CHashTable_AddInt(CHashTable *self, int key, void *value, int warn) {
 	return CHashTable_Add(self, text, value, warn);
 }
 
-int CHashTable_Add(CHashTable *self, const char *key, void *value, int warn) {
+static CHashTableNode *CHashTable_Find(CHashTable *self, const char *key, uint32_t slot);
+static CHashTableNode *CHashTable_Insert(CHashTable *self, const char *key, uint32_t slot, void *value);
+static uint32_t CHashTable_Slot(CHashTable *self, const char *key);
+static int CHashTable_Add(CHashTable *self, const char *key, void *value, int warn) {
 	CHECK(!self->lock);
 	uint32_t slot = CHashTable_Slot(self, key);
 	if (CHashTable_Find(self, key, slot)) {
@@ -53,7 +57,7 @@ int CHashTable_Add(CHashTable *self, const char *key, void *value, int warn) {
 	return 0;
 }
 
-CHashTableNode *CHashTable_Insert(CHashTable *self, const char *key, uint32_t slot, void *value) {
+static CHashTableNode *CHashTable_Insert(CHashTable *self, const char *key, uint32_t slot, void *value) {
 	CHECK(!self->lock);
 	CHashTableNode *n = operator_new(sizeof(*n));
 	n->next = self->slots[slot];
@@ -63,6 +67,7 @@ CHashTableNode *CHashTable_Insert(CHashTable *self, const char *key, uint32_t sl
 	return n;
 }
 
+static int CHashTable_Get(CHashTable *self, const char *key, void **out);
 int CHashTable_GetInt(CHashTable *self, int key, void **out) {
 	char text[HASHTABLE_INTKEY];
 
@@ -70,7 +75,7 @@ int CHashTable_GetInt(CHashTable *self, int key, void **out) {
 	return CHashTable_Get(self, text, out);
 }
 
-int CHashTable_Get(CHashTable *self, const char *key, void **out) {
+static int CHashTable_Get(CHashTable *self, const char *key, void **out) {
 	CHashTableNode *n = CHashTable_Find(self, key, CHashTable_Slot(self, key));
 
 	if (!n) {
@@ -82,7 +87,7 @@ int CHashTable_Get(CHashTable *self, const char *key, void **out) {
 	return 0;
 }
 
-CHashTableNode *CHashTable_Find(CHashTable *self, const char *key, uint32_t slot) {
+static CHashTableNode *CHashTable_Find(CHashTable *self, const char *key, uint32_t slot) {
 	for (CHashTableNode *n = self->slots[slot]; n; n = n->next) {
 		if (!strcmp(n->key, key)) {
 			return n;
@@ -99,7 +104,8 @@ int CHashTable_FreeList(CHashTable *self, CHashTableNode ***elems) {
 	return 0;
 }
 
-int CHashTable_List(CHashTable *self, CHashTableNode **out, int max) {
+/* the nodes into out (up to max, else -1) and 0, or with out NULL their number */
+static int CHashTable_List(CHashTable *self, CHashTableNode **out, int max) {
 	int count = 0;
 
 	for (int i = 0; i < self->num; i++) {
@@ -127,7 +133,7 @@ int CHashTable_GetList(CHashTable *self, CHashTableNode ***elems, int *num) {
 	return 0;
 }
 
-uint32_t CHashTable_Slot(CHashTable *self, const char *key) {
+static uint32_t CHashTable_Slot(CHashTable *self, const char *key) {
 	uint32_t h = 0;
 
 	CHECK(key);

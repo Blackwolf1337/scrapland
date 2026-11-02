@@ -54,17 +54,6 @@ typedef struct CVertList {
 	float scale;			/* 0x10 divides the positions of VERT_POS_XBOX */
 } CVertList;
 
-/* the vertex shader handles of the XBOX formats */
-extern uint32_t g_hVShader_Tex1_XBox;
-extern uint32_t g_hVShader_Tex1C_XBox;
-extern uint32_t g_hVShader_LTex1_XBox;
-extern uint32_t g_hVShader_LTex1N_XBox;
-extern uint32_t g_hVShader_LTex2_XBox;
-extern uint32_t g_hVShader_LTex2N_XBox;
-
-/* the vertex cache: vertex and age of each entry (-1 empty), the next age, hits and misses */
-extern int g_VCacheVert[16];
-extern int g_VCacheAge[20];
 #define g_VCacheCount g_VCacheAge[16]
 #define g_VCacheHits g_VCacheAge[17]
 #define g_VCacheMisses g_VCacheAge[18]
@@ -96,27 +85,10 @@ const char *VertList_FormatName(int frmt);
 uint32_t CVertList_FVF(CVertList *self);
 int CVertList_Size(CVertList *self);
 const char *CVertList_FormatName(CVertList *self);
-/* a unit vector into 11:11:10 bits (x low) and back */
-uint32_t VertList_PackNormal(const vec3_t *n);
 vec3_t *VertList_UnpackNormal(vec3_t *out, uint32_t packed);
 
 /* field f of vertex i, NULL if the format has none */
 void *CVertList_GetField(CVertList *self, int f, uint32_t i);
-/* the field of one vertex of each format */
-void *VertTex1_Field(byte *v, int f);
-void *VertTex2_Field(byte *v, int f);
-void *VertLTex1_Field(byte *v, int f);
-void *VertLTex2N_Field(byte *v, int f);
-void *VertLTex3_Field(byte *v, int f);
-void *VertLTex1N_Field(byte *v, int f);
-void *VertTLTex1_Field(byte *v, int f);
-void *VertLTex2_Field(byte *v, int f);
-void *VertTex1XBox_Field(byte *v, int f);
-void *VertTex1CXBox_Field(byte *v, int f);
-void *VertLTex1XBox_Field(byte *v, int f);
-void *VertLTex1NXBox_Field(byte *v, int f);
-void *VertLTex2XBox_Field(byte *v, int f);
-void *VertLTex2NXBox_Field(byte *v, int f);
 
 /* vertex i of the format, with checks */
 byte *CVertList_Tex1(CVertList *self, uint32_t i);
@@ -126,14 +98,10 @@ byte *CVertList_Tex1B1(CVertList *self, uint32_t i);
 byte *CVertList_LTex2N(CVertList *self, uint32_t i);
 byte *CVertList_LTex3(CVertList *self, uint32_t i);
 byte *CVertList_LTex1N(CVertList *self, uint32_t i);
-byte *CVertList_TLTex1(CVertList *self, uint32_t i);
 byte *CVertList_LTex2(CVertList *self, uint32_t i);
 void CVertList_SetTex1(CVertList *self, uint32_t i, const void *v);
 void CVertList_SetTex2(CVertList *self, uint32_t i, const void *v);
-void CVertList_SetLTex1(CVertList *self, uint32_t i, const void *v);
 void CVertList_SetTex1B1(CVertList *self, uint32_t i, const void *v);
-/* vertex i of a TEX1, TEX2 or TEX1_B1 list as a TEX1 vertex (0x20 bytes) */
-void *CVertList_GetTex1(CVertList *self, void *out, uint32_t i);
 /* the position of vertex i (rva 0x212570, in TriMesh.c) */
 vec3_t *CVertList_GetPos(CVertList *self, vec3_t *out, uint32_t i);
 
@@ -143,39 +111,5 @@ void CVertList_SetColor(CVertList *self, uint32_t and, uint32_t or);
 void CVertList_GetExtents(CVertList *self, box_t *ext, byte reset);
 /* positions and normals (TEX1, TEX2, TEX1_B1) by m, the normals made unit length if normalize */
 void CVertList_Transform(CVertList *self, const matrix_t *m, byte normalize);
-/* into frmt (TEX1_XBOX, TEX1C_XBOX or POS_XBOX) with the texture coordinates times texScale; warns about
- * positions outside +-32768 * posScale and texture coordinates outside +-32768 / texScale */
-void CVertList_Pack(CVertList *self, int frmt, float posScale, float texScale);
-/* TEX1 to TEX1_XBOX, LTEX1N to TEX1C_XBOX, others to VERT_NULL (fails) */
-void CVertList_PackTex1(CVertList *self, float posScale, float texScale);
-/* into LTEX1_XBOX or LTEX1N_XBOX (with normals), LTEX2(N)_XBOX with a second set of texture coordinates and tex2 */
-void CVertList_ToXBox(CVertList *self, float posScale, float texScale, byte tex2);
-/* LTEX1N_XBOX back to LTEX1N */
-void CVertList_FromXBox(CVertList *self, float posScale, float texScale);
-
-/* out: the vertices of in along triangle strips of the triangles, the strips colored; 1 */
-byte VertList_Strip(CVertList *out, const CVertList *in, const uint16_t *tris, int nTri);
-/* the triangle that starts the longest strip, rotated so the strip starts with its first edge; -1 if none is left */
-int Strip_FindFirst(uint16_t *tris, int nTri, int depth);
-/* the length of the strip from triangle t over the edge a b */
-int Strip_Length(int t, uint16_t *tris, int nTri, int depth, uint32_t a, uint32_t b);
-/* a triangle left that has a neighbour (rotated to it), else the first one left, -1 if none */
-int Strip_FindNew(uint16_t *tris, int nTri, int depth);
-/* the free triangle with the edge a b (b a for odd depth), *side the corner after it */
-int Strip_Next(const uint16_t *tris, int nTri, uint32_t a, uint32_t b, int depth, int *side);
-void Tri_Mark(uint16_t *tri);
-void Tri_Unmark(uint16_t *tri);
-/* the corners turned n times */
-void Tri_Rotate(uint16_t *tri, int n);
-
-/* the triangles sorted for the vertex cache, the hits before and after logged; 1 */
-byte VertCache_Optimize(uint16_t *tris, int nTri);
-void VertCache_Reset(void);
-void VertCache_Add(int v);
-/* an empty entry or the oldest */
-int VertCache_Oldest(void);
-int VertCache_Find(int v);
-/* the qsort compare of VertCache_Optimize: the triangles with their vertices in the cache first */
-int VertCache_Compare(const void *a, const void *b);
 
 #endif

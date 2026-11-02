@@ -7,7 +7,7 @@
 #include "scrap/vehicleentity.h"
 
 /* defined further down or in another file without a header */
-void DeathMatch_OnDamage(cAbstractFile *params);
+static void DeathMatch_OnDamage(cAbstractFile *params);
 
 cDeathMatch *cDeathMatch_ctor(cDeathMatch *self) {
 	self->list = NULL;
@@ -19,7 +19,7 @@ void cDeathMatch_dtor(void) {
 }
 
 /* a random ship of the list or the player (the count of the list plus one), not exclude */
-cEntity *cDeathMatch_PickTarget(cDeathMatch *self, cEntity *exclude) {
+static cEntity *cDeathMatch_PickTarget(cDeathMatch *self, cEntity *exclude) {
 	cEntity *usr = ChType_Usr0();
 	Nto1Node *n = Logic_ListFirst(self->list);
 	int num = Logic_Count(((EntityDNode *)n)->numElems);
@@ -41,7 +41,7 @@ cEntity *cDeathMatch_PickTarget(cDeathMatch *self, cEntity *exclude) {
 	return e;
 }
 
-void cDeathMatch_Think(cDeathMatch *self) {
+static void cDeathMatch_Think(cDeathMatch *self) {
 	cEntity *usr = ChType_Usr0();
 
 	for (Nto1Node *n = Logic_ListFirst(self->list); n; n = Logic_ListNext(n)) {
@@ -69,7 +69,7 @@ void cDeathMatch_Init(cDeathMatch *self) {
 }
 
 /* the native of the hits: the ship and its attacker */
-void DeathMatch_OnDamage(cAbstractFile *params) {
+static void DeathMatch_OnDamage(cAbstractFile *params) {
 	char name[0x80], attacker[0x80];
 
 	cAbstractFile_ReadString(params, name, 0x80);

@@ -8,11 +8,12 @@
 #include "scrap/material.h"
 #include "scrap/mathlib.h"
 
-float g_IllumSmooth = 0.5f;
+static float g_IllumSmooth = 0.5f;
 
 /* the weight of the smoothing of the light angle (ILLUM_SOFT) */
 
-float Illum_Smooth(float v) {
+/* v smoothed by the weight g_IllumSmooth */
+static float Illum_Smooth(float v) {
 	float k = g_IllumSmooth;
 
 	if (k != 0.0f) {

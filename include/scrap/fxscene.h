@@ -12,24 +12,6 @@
 #include "scrap/gvar.h"
 #include "scrap/fxmisc.h"
 
-/* the engine variables (Gvars): the debris system files of the scenes */
-extern cGVar GVar_FXSceneBeatPickusFile;
-#define g_FXSceneBeatingFile (GVar_FXSceneBeatPickusFile.value.s)
-extern cGVar GVar_FXSceneBillArrives_AFile;
-#define g_FXSceneBillArrivesAFile (GVar_FXSceneBillArrives_AFile.value.s)
-extern cGVar GVar_FXSceneDecontaminationFile;
-#define g_FXSceneDecontaminationFile (GVar_FXSceneDecontaminationFile.value.s)	/* also BillArrives_C */
-extern cGVar GVar_FXSceneBishopsFile;
-#define g_FXSceneBishopsFile (GVar_FXSceneBishopsFile.value.s)
-extern cGVar GVar_FXSceneEnterMatrixFile;
-#define g_FXSceneEnterMatrixFile (GVar_FXSceneEnterMatrixFile.value.s)
-extern cGVar GVar_FXSceneHumanCDFile;
-#define g_FXSceneHumanCDFile (GVar_FXSceneHumanCDFile.value.s)
-extern cGVar GVar_FXSceneTheEndBFile;
-#define g_FXSceneTheEndBFile (GVar_FXSceneTheEndBFile.value.s)
-extern cGVar GVar_FXSceneYakuzziFile;
-#define g_FXSceneYakuzziFile (GVar_FXSceneYakuzziFile.value.s)
-
 #define FXBISHOPS_TRAILS 12
 #define FXDECON_RAYS 40
 #define FXDECON_POINTS 3		/* the inner control points of the curve of a ray */
@@ -159,25 +141,8 @@ typedef struct cObjElementFXSceneYakuzzi {
 	byte started;			/* 0xd0 */
 } cObjElementFXSceneYakuzzi;
 
-/* at the start of the FXVehicle.cpp code: the target entity name and its action of the
- * rays (31 characters at most), the height */
-void cObjElementFXSceneDecontamination_SetNames(cObjElementFXSceneDecontamination *self,
-	const char *target, const char *action);
-void cObjElementFXSceneDecontamination_SetFC(cObjElementFXSceneDecontamination *self, float v);
-
 /* the scene effect of the model of e (none for other models) */
 void FXScene_Create(cEntity *e, const char *model);
-
-/* the entity the element follows: an entity with life with a model (CHECKs) */
-void cObjElementFXSceneBeatPickus_SetEntity(cObjElementFXSceneBeatPickus *self, cEntity *e);
-void cObjElementFXSceneBillArrives_A_SetEntity(cObjElementFXSceneBillArrives_A *self, cEntity *e);
-void cObjElementFXSceneBishops_SetEntity(cObjElementFXSceneBishops *self, cEntity *e);
-void cObjElementFXSceneDecontamination_SetEntity(cObjElementFXSceneDecontamination *self, cEntity *e);
-void cObjElementFXSceneEnterMatrix_SetEntity(cObjElementFXSceneEnterMatrix *self, cEntity *e);
-/* also the main mental controller effect to its start (scale 1, no last controller) */
-void cObjElementFXSceneHumanCD_SetEntity(cObjElementFXSceneHumanCD *self, cEntity *e);
-void cObjElementFXSceneTheEndB_SetEntity(cObjElementFXSceneTheEndB *self, cEntity *e);
-void cObjElementFXSceneYakuzzi_SetEntity(cObjElementFXSceneYakuzzi *self, cEntity *e);
 
 /* Attach (vf03): the particles to the dummies of the debris model, the positions of the scene dummies */
 void cObjElementFXSceneBeatPickus_Attach(cObjElementFX *base, cDebris *d);

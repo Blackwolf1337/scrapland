@@ -60,7 +60,6 @@ void *Table_GetN(CTable *t, uint32_t i, uint32_t size);
 void Table_Free(CTable *t);
 /* n elements, the old ones kept as far as they fit; n < 1 frees */
 void Table_Resize2(CTable *t, int n);
-void Table_Resize4(CTable *t, int n);
 /* n elements of size bytes (the sizeof of the element type): for the elements that hold pointers */
 void Table_AllocN(CTable *t, int num, uint32_t size);
 void Table_ResizeN(CTable *t, int n, uint32_t size);
@@ -68,6 +67,5 @@ void Table_ResizeC(CTable *t, int n);
 void Table_Resize14(CTable *t, int n);
 void Table_Resize1C(CTable *t, int n);
 void Table_Resize2C(CTable *t, int n);
-void Table_Resize38(CTable *t, int n);
 
 #endif

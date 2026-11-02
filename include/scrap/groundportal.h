@@ -10,8 +10,6 @@
 #include "scrap/gvar.h"
 #include "scrap/node3d.h"
 
-extern cGVar g_FastGetYSectorVar;
-
 #define MAX_PORTALS 32
 
 typedef struct CZone {
@@ -40,21 +38,8 @@ typedef struct SectorVis {
 #define SECTORVIS_VALID 1
 #define SECTORVIS_CACHED 2		/* pos was the same as the last time */
 
-extern CZone *g_Zones[128];
-extern int g_NumZones;
-extern cGVar GVar_R_PortalPos;
-#define g_SectorCache (GVar_R_PortalPos.value.i)	/* the cached sector is used when the position is the same */
 extern cGVar GVar_R_UsePortals;
 #define g_PortalsOn (GVar_R_UsePortals.value.i)	/* 0: everything is seen */
-extern cGVar GVar_R_PortalExt;
-#define g_PortalTest (GVar_R_PortalExt.value.i)	/* the screen rectangle test; 2: drawn */
-extern cGVar GVar_R_PortalNorm;
-#define g_PortalFront (GVar_R_PortalNorm.value.i)	/* portals the camera is in front of beyond the near distance are skipped */
-extern cGVar GVar_R_PortalEnd;
-#define g_PortalExterior (GVar_R_PortalEnd.value.i)	/* exterior sectors do not look into interior ones */
-extern cGVar GVar_R_PortalDist;
-#define g_PortalNear (GVar_R_PortalDist.value.f)	/* the near distance of the portals, times zNear / 256 * 128 */
-extern int g_PortalUnion;	/* the rectangle of all seen sectors with sky is kept */
 
 /* the sectors seen this frame (zones a pintar) and their screen rectangles */
 #define MAX_PAINT_ZONES 0x80
@@ -71,32 +56,23 @@ extern int g_NumPaintZones;
 #define g_PaintNum g_PaintAll.times
 extern PaintZone g_PaintAll;	/* the same three as one */
 
-
-CZone *CZone_ctor(CZone *self);
-void CZone_dtor(CZone *self);
 /* the sector of the cache drawn at pos for the debug output */
 void SectorVis_Draw(SectorVis *self, const vec3_t *pos, byte visible, byte cached, const char *name);
 /* whether the cached sector is seen; a new position only clears SECTORVIS_CACHED */
 byte SectorVis_Check(SectorVis *self, const vec3_t *pos, const char *name);
 /* the sector of pos (looked up again for a new position) is seen */
 byte SectorVis_Update(SectorVis *self, const vec3_t *pos, const char *name);
-/* the screen position (-1..1) of p and its w; 0 outside the view (out then the direction to p on the border) */
-byte Portal_Project(const vec3_t *p, float *out, float *w);
 /* the sphere is seen through the screen rectangle of its sector (always without the portal test) */
 byte SectorVis_Sphere(SectorVis *self, const vec3_t *pos, const vec3_t *center, float radius,
 	const char *name);
 /* the sector reached from sector by the segment from a to b through the portals; front: only through portals
  * whose front side a is not on */
 int Sector_Traverse(int sector, const vec3_t *a, const vec3_t *b, byte front);
-/* sector seen through rect, and the sectors behind its portals through their part of it */
-void Zone_Paint(uint32_t zone, const box_t *rect);
 /* the sectors seen from sector (the one of the camera) this frame */
 void Portals_Cull(uint32_t sector);
 /* the elements of g_PaintZones: the rectangle cleared */
 PaintZone *PaintZone_ctor(PaintZone *self);
 void PaintZone_dtor(PaintZone *self);
-/* the debug drawing of the seen sectors (gvRenderShowPortals 2, 3 also their rectangles as text) */
-void Portals_DebugDraw(void);
 /* the sectors (the nodes the portals join) and their portals from the floor scene */
 void Sectors_Create(CScene *scn);
 /* the projection narrowed to the screen rectangle of zp (NULL: back to the whole view); 0 when
@@ -108,12 +84,9 @@ const char *Sector_GetName(int sector);
 /* -1 is not */
 byte Sector_IsOutside(int sector);
 byte Sector_IsVisible(int sector);
-/* the sector with node among its nodes (main: as its node) */
-CZone *Zone_FindNode(CNode3D *node, byte main);
 /* the sector named like node or one of its parents, -1 */
 int Sector_OfNode(CNode3D *node);
 int Sector_Find(const char *name);
-CZone *Sector_Get(uint32_t sector);
 int Sector_Num(void);
 /* the sector with node among its nodes, -1 */
 void Sectors_FreeAll(void);
@@ -137,8 +110,5 @@ typedef struct GroundRay {
 } GroundRay;
 /* GETY_INFO_MAXY|GETY_INFO_SECTOR only; with g_RayVertSectors the top of the sector the ray starts in */
 byte CGround_RayVert(void *ground, float x, float z, GroundRay *res);
-/* the highest triangle point between minY and y with the flags of info; 1 when found */
-byte CGround_GetYInfo(void *ground, float x, float z, GroundRay *info);
-#define g_RayVertSectors (g_FastGetYSectorVar.value.i)
 
 #endif

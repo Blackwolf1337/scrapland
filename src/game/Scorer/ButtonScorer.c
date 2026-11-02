@@ -7,6 +7,9 @@
 #include "scrap/app.h"
 #include "scrap/scoreritems.h"
 
+#define CBUTTONSCORER_VFTABLE (&cButtonScorer_vftable.base)
+static const cSpriteScorerVtbl cButtonScorer_vftable;
+
 /* the frames of a Complex box: 3x3 corners, edges and middle, the second row mirrored */
 static const int s_BoxFrames[18] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 2, 1, 0, 5, 4, 3, 8, 7, 6};
 /* the four corners of the highlight frame, the second row mirrored */
@@ -19,7 +22,7 @@ static const char *const s_HighLightColors[3] = {"HighLightColorRed", "HighLight
 /* ---- Global/Table.h ---- */
 
 /* also rva 0x1613b0 */
-void StrTable_Free(cStrTable *self) {
+static void StrTable_Free(cStrTable *self) {
 	if (self->items) {
 		Delete_Objects(self->items, sizeof(cString), (void *)cString_dtor);
 		self->items = NULL;
@@ -28,7 +31,7 @@ void StrTable_Free(cStrTable *self) {
 }
 
 /* also rva 0x161430 */
-void ByteTable_Free(cByteTable *self) {
+static void ByteTable_Free(cByteTable *self) {
 	if (self->items) {
 		operator_delete_array(self->items);
 		self->items = NULL;
@@ -36,11 +39,11 @@ void ByteTable_Free(cByteTable *self) {
 	}
 }
 
-char **StrTable_At(cStrTable *self, uint32_t i) {
+static char **StrTable_At(cStrTable *self, uint32_t i) {
 	return TABLE_AT(*self, i);
 }
 
-void StrTable_Init(cStrTable *self, int num) {
+static void StrTable_Init(cStrTable *self, int num) {
 	CHECK(!self->items && num > 0);
 	self->count = num;
 	self->items = New_Objects(num, sizeof(cString), (void *)cString_ctor, (void *)cString_dtor);
@@ -106,7 +109,7 @@ static void Button_FreeImage(CPsaImage **img) {
 	}
 }
 
-void cButtonScorer_dtor(cButtonScorer *self) {
+static void cButtonScorer_dtor(cButtonScorer *self) {
 	self->base.base.vftable = CBUTTONSCORER_VFTABLE;
 	Button_FreeImage(&self->alphaImg);
 	Button_FreeImage(&self->focusImg);
@@ -115,7 +118,7 @@ void cButtonScorer_dtor(cButtonScorer *self) {
 	cSpriteScorer_dtor(&self->base);
 }
 
-cScorerItem *cButtonScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cButtonScorer_Delete(cScorerItem *base, byte flags) {
 	cButtonScorer *self = (cButtonScorer *)base;
 	cButtonScorer_dtor(self);
 	if (flags & 1) {
@@ -126,7 +129,8 @@ cScorerItem *cButtonScorer_Delete(cScorerItem *base, byte flags) {
 
 /* ---- the text ---- */
 
-int cButtonScorer_WrapLines(cButtonScorer *self, char **out, const char *text) {
+/* the text with a line break before every word past MaxLineSize + 75 pixels appended to *out; the lines */
+static int cButtonScorer_WrapLines(cButtonScorer *self, char **out, const char *text) {
 	char buf[0x500];
 	float rect[2], dim[2];
 	const char *start = text, *cur = text, *sp;
@@ -169,7 +173,8 @@ int cButtonScorer_WrapLines(cButtonScorer *self, char **out, const char *text) {
 	return count;
 }
 
-void cButtonScorer_SetFile(cButtonScorer *self, uint32_t flags, const char *name) {
+/* the sheet of the highlight and border frames */
+static void cButtonScorer_SetFile(cButtonScorer *self, uint32_t flags, const char *name) {
 	if (self->focusImg) {
 		CPsaImage_dtor(self->focusImg);
 		operator_delete_sized(self->focusImg, sizeof(CPsaImage));
@@ -191,7 +196,8 @@ static void Button_SetLine(cButtonScorer *self, uint32_t i, const char *src, siz
 	operator_delete_array(tmp);
 }
 
-int cButtonScorer_SetText(cButtonScorer *self, const char *text) {
+/* the lines of the text (and of the name:value pairs) and the widest one; the lines measured */
+static int cButtonScorer_SetText(cButtonScorer *self, const char *text) {
 	size_t len = strlen(text);
 	CHECK(len < 1024 * 5);
 	char *buf = operator_new_array(0x1400);
@@ -266,7 +272,7 @@ int cButtonScorer_SetText(cButtonScorer *self, const char *text) {
 
 /* ---- Var ---- */
 
-int cButtonScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+static int cButtonScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cButtonScorer *self = (cButtonScorer *)base;
 	cScorerItem *it = &self->base.base;
 	int r;
@@ -669,7 +675,7 @@ static uint32_t Button_PulseAlpha(const cScorer *sc) {
 	return (uint32_t)(byte)(v - 0x80) << 24;
 }
 
-void cButtonScorer_Draw(cScorerItem *base, int player) {
+static void cButtonScorer_Draw(cScorerItem *base, int player) {
 	cButtonScorer *self = (cButtonScorer *)base;
 	cSpriteScorer *sp = &self->base;
 
@@ -749,7 +755,7 @@ void cButtonScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cButtonScorer */
-const cSpriteScorerVtbl cButtonScorer_vftable = {
+static const cSpriteScorerVtbl cButtonScorer_vftable = {
 	.base.Draw = cButtonScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cButtonScorer_Var,

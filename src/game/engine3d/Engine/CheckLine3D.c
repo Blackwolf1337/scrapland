@@ -8,8 +8,9 @@
 
 #define TRACE_FLT_MAX 3.4028234663852886e+38f
 
-
-byte Heights_CellStep(CHeights *alt, int *x, int *z, const vec3_t *a, const vec3_t *b, float *t) {
+/* the cell walk of a segment from a to b through the grid: the cell x z it leaves through first (the next one into x
+ * and z, the parameter of the exit into t); 0 in the cell of b (t 1) */
+static byte Heights_CellStep(CHeights *alt, int *x, int *z, const vec3_t *a, const vec3_t *b, float *t) {
 	float x1 = (float)(*x + 1) * alt->sizeX + alt->ext.min.x;
 	float x0 = (float)*x * alt->sizeX + alt->ext.min.x;
 	float z0 = (float)*z * alt->sizeZ + alt->ext.min.z;
@@ -57,9 +58,10 @@ byte Heights_CellStep(CHeights *alt, int *x, int *z, const vec3_t *a, const vec3
 	return 0;
 }
 
-traceCell_t g_TraceCell;
+static traceCell_t g_TraceCell;
 
-byte Heights_TraceStep(CHeights *alt) {
+/* the same for CGround_Trace on its walk state (g_TraceCell) */
+static byte Heights_TraceStep(CHeights *alt) {
 	traceCell_t *tc = &g_TraceCell;
 	float x0 = (float)tc->x * alt->sizeX + alt->ext.min.x;
 	float x1 = (float)(tc->x + 1) * alt->sizeX + alt->ext.min.x;
@@ -97,7 +99,8 @@ byte Heights_TraceStep(CHeights *alt) {
 	return 1;
 }
 
-byte Ground_PointInTriIn(const vec3_t *p, const vec3_t *a, const vec3_t *b, const vec3_t *c) {
+/* p in the triangle a b c (on the side of its normal), also on its edges */
+static byte Ground_PointInTriIn(const vec3_t *p, const vec3_t *a, const vec3_t *b, const vec3_t *c) {
 	vec3_t n = Ground_EdgeCross(p, a, b);
 	vec3_t m = Ground_EdgeCross(p, b, c);
 

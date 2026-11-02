@@ -12,6 +12,9 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/slotcontroller.h"
 
+#define CAI_VFTABLE (&cAI_vftable)
+static const cAIBaseVtbl cAI_vftable;
+
 #define AI_SLOT_TIME 0.5f
 #define cAI_Fail_Entity_NULL 0		/* the CHECK of the original that always fails */
 
@@ -47,7 +50,7 @@ void cAI_dtor(cAI *self) {
 	self->vftable = CAI_VFTABLE;
 }
 
-cAI *cAI_Delete(cAI *self, byte flags) {
+static cAI *cAI_Delete(cAI *self, byte flags) {
 	self->vftable = CAI_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -217,7 +220,7 @@ void cAI_UpdateActionNop(cAI *self) {
 }
 
 /* the vtable of cAI */
-const cAIBaseVtbl cAI_vftable = {
+static const cAIBaseVtbl cAI_vftable = {
 	.Delete = cAI_Delete,
 	.Update = cAI_Update,
 	.UpdateOff = cAI_UpdateOff,

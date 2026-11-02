@@ -17,20 +17,19 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
-
-cGVar GVar_ParkingCheckRadius;
+static cGVar GVar_ParkingCheckRadius;
 
 #define g_ParkingCheckRadius (GVar_ParkingCheckRadius.value.f)
-cGVar GVar_ParkingCharCheckDistance;
+static cGVar GVar_ParkingCharCheckDistance;
 
 #define g_ParkingCharCheckDistance (GVar_ParkingCharCheckDistance.value.f)
-cGVar GVar_ParkingVehicleCheckDistance;
+static cGVar GVar_ParkingVehicleCheckDistance;
 
 #define g_ParkingVehicleCheckDistance (GVar_ParkingVehicleCheckDistance.value.f)
-cGVarFunction GVar_OnParkedOut;
+static cGVarFunction GVar_OnParkedOut;
 
 #define g_OnParkedOut (((cPy_Function *)&GVar_OnParkedOut.func))
-cGVarFunction GVar_OnParkingOccupied;
+static cGVarFunction GVar_OnParkingOccupied;
 
 #define g_OnParkingOccupied (((cPy_Function *)&GVar_OnParkingOccupied.func))
 /* what the sphere native found: a ship, else the last other entity */
@@ -49,7 +48,7 @@ cParking *Parking_ctor(cParking *self) {
 }
 
 /* a node of the free list or a new one with its cString */
-cParkingNode *Parking_NewNode(cParkingList *list) {
+static cParkingNode *Parking_NewNode(cParkingList *list) {
 	cParkingNode *n = list->freeNodes;
 
 	if (n) {
@@ -77,7 +76,7 @@ static void Parking_Release(cParkingList *list, cParkingNode *n) {
 	operator_delete_sized(n, sizeof(*n));
 }
 
-void Parking_ClearList(cParkingList *list) {
+static void Parking_ClearList(cParkingList *list) {
 	while (list->head) {
 		cParkingNode *p = list->head;
 		list->iter = NULL;
@@ -94,7 +93,7 @@ void Parking_ClearList(cParkingList *list) {
 	}
 }
 
-void Parking_FreePool(cParkingList *list) {
+static void Parking_FreePool(cParkingList *list) {
 	cParkingNode *p = list->freeNodes;
 
 	while (p) {
@@ -113,12 +112,8 @@ void Parking_dtor(cParking *self) {
 	Parking_FreePool(&self->ships);
 }
 
-void cParkingZone_dtor(cParkingZone *self) {
-	cString_dtor(&self->name);
-}
-
 /* a copy of zone in front of head, as the new head */
-void Parking_ListAdd(cParkingList *list, const cParkingZone *zone) {
+static void Parking_ListAdd(cParkingList *list, const cParkingZone *zone) {
 	list->iter = NULL;
 	cParkingNode *n = Parking_NewNode(list);
 	n->zone.pos = zone->pos;
@@ -153,10 +148,11 @@ static cParkingZone *Parking_Next(cParkingList *list) {
 	return n ? &n->zone : NULL;
 }
 
-cEntity *g_ParkingShip;
-cEntity *g_ParkingOther;
+static cEntity *g_ParkingShip;
+static cEntity *g_ParkingOther;
 
 /* the ship (ParkingShip) or other entity (ParkingOther) in the zone, of the ParkingCheckRadius sphere */
+static void Parking_Native(cAbstractFile *params);
 static void Parking_Look(const cParkingZone *z) {
 	cPy_Function_SetNative(g_LogicSphereFunc, (void *)Parking_Native);
 	g_ParkingShip = NULL;
@@ -182,7 +178,7 @@ static inline float Parking_Dist2(const cParkingZone *z, const vec3_t *p) {
 }
 
 /* one zone of each ring; 1 when the player is not in a ship */
-int Parking_Think(cParking *self) {
+static int Parking_Think(cParking *self) {
 	vec3_t tmp;
 	cEntity *usr = ChType_Usr0();
 	byte inShip = 0;
@@ -223,6 +219,8 @@ int Parking_Think(cParking *self) {
 	return inShip ^ 1;
 }
 
+static byte Parking_Farther(float d, float best);
+static byte Parking_Nearer(float d, float best);
 const char *Parking_Find(void *parking, int flag, const vec3_t *pos, vec3_t *out, int farest) {
 	cParking *self = parking;
 	cParkingList *list = (byte)flag ? &self->items : &self->ships;
@@ -271,16 +269,17 @@ const char *Parking_Find(void *parking, int flag, const vec3_t *pos, vec3_t *out
 	return name;
 }
 
-byte Parking_Farther(float d, float best) {
+/* the comparisons of Parking_Find (farest: d > best, else d <= best) */
+static byte Parking_Farther(float d, float best) {
 	return d > best;
 }
 
-byte Parking_Nearer(float d, float best) {
+static byte Parking_Nearer(float d, float best) {
 	return best >= d;
 }
 
 /* the sphere native: a ship (or the other entity) of that name */
-void Parking_Native(cAbstractFile *params) {
+static void Parking_Native(cAbstractFile *params) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(params, name, sizeof(name));

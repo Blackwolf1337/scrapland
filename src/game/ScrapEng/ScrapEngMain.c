@@ -34,6 +34,36 @@
 #include "scrap/platform.h"
 #include "scrap/staticinit.h"
 
+#define g_StartVideo (((cString *)&GVar_PlayVideo.value))
+#define g_StartVideoFlags (GVar_PlayVideo.base.flags)
+#define g_RenderLightmap (GVar_RenderLightmap.value.i)
+#define g_GvCollisionEpsilon (GVar_CollisionEpsilon.value.f)	/* CollisionEpsilon */
+#define g_FullScreen (GVar_FullScreen.value.i)
+#define g_ComputeMapTextSaving (GVar_ComputeMapTextSaving.value.i)
+#define g_ViewerCameraAnim (GVar_ViewerCameraAnim.value.i)
+#define g_ShowMapCollision (GVar_ShowMapCollision.value.i)
+#define g_ShowMapWireFrame (GVar_ShowMapWireFrame.value.i)
+#define g_RenderUseVB (GVar_RenderUseVB.value.i)
+#define g_RenderModels (GVar_RenderModels.value.i)
+#define g_ModelAmbient (GVar_ModelAmbient.value.u)	/* D3D color, 0: the one of m3d.ini */
+#define g_VideoWidth (GVar_VideoWidth.value.i)
+#define g_VideoHeight (GVar_VideoHeight.value.i)
+#define g_VideoBPP (GVar_VideoBPP.value.i)
+static cGVar GVar_ViewerCameraAnim;
+static cGVar GVar_VideoWidth;
+static cGVar GVar_VideoHeight;
+static cGVar GVar_VideoBPP;
+static cGVar GVar_ShowMapWireFrame;
+static cGVar GVar_ShowMapCollision;
+static cGVar GVar_RenderUseVB;
+static cGVar GVar_RenderModels;
+static cGVar GVar_RenderLightmap;
+static cGVar GVar_PlayVideo;
+static cGVar GVar_ModelAmbient;
+static cGVar GVar_FullScreen;
+static cGVar GVar_ComputeMapTextSaving;
+static cGVar GVar_CollisionEpsilon;
+
 extern cGVar GVar_Viewer;
 #define g_IsViewer (GVar_Viewer.value.i)
 #define D3DFMT_A8R8G8B8 21
@@ -196,11 +226,11 @@ void Engine_Close(void) {
 	Con_Printf("Engine 3D closed\n");
 }
 
-CGameCamera *g_ViewerCamera;
-CPsaImage *g_Watermark;
+static CGameCamera *g_ViewerCamera;
+static CPsaImage *g_Watermark;
 CWorld *g_World;
 
-byte Engine_FinalCleanup(void) {
+static byte Engine_FinalCleanup(void) {
 	CPsaImage *w = g_Watermark;
 	if (w) {
 		CPsaImage_dtor(w);
@@ -226,17 +256,15 @@ byte Engine_FinalCleanup(void) {
 	return 1;
 }
 
-CGameCamera *g_CamCurrent;
+/* the state of the engine glue */
+static CGameCamera *g_CamCurrent;
 
 CGameCamera *Camera_GetCurrent(void) {
 	return g_CamCurrent;
 }
 
-byte Keys_SkipPressed(void) {
-	return Plat_KeyDown(VK_ESCAPE) || Plat_KeyDown(VK_SPACE) || Plat_KeyDown(VK_RETURN);
-}
-
-int Format_Bpp(int fmt) {
+/* the bits of the color of a D3DFORMAT (32 or 16, 0 for the others) */
+static int Format_Bpp(int fmt) {
 	switch (fmt) {
 	case D3DFMT_A8R8G8B8:
 	case D3DFMT_X8R8G8B8:
@@ -248,10 +276,6 @@ int Format_Bpp(int fmt) {
 	default:
 		return 0;
 	}
-}
-
-int Engine_GetOption(int opt) {
-	return RenderMode(opt, 0, 0);
 }
 
 int Video_GetCurrentMode(void) {
@@ -276,26 +300,29 @@ int Video_GetStatus(void) {
 }
 
 int g_LightmapOff;
-float g_ClipNear;
-float g_ClipFar;
-char g_SkyPath[260];
-float g_SkyPosScaleIni;
-char g_GroundPath[260];
-float g_SkyRotationIni;
-int g_FogActiveIni;
-int g_FogTableMode;
-ColorIntens g_FogColorIni;
-ColorIntens g_ModelAmbientIni;
-int g_FogLinear = 1;
-float g_FogRangeIni = 0.5f;
-float g_FogRangeEnd = 1.0f;
-float g_FogDensityIni = 0.5f;
+static float g_ClipNear;
+static float g_ClipFar;
+static char g_SkyPath[260];
+static float g_SkyPosScaleIni;
+/* m3d.ini of the level (Engine_LoadIni) */
+static char g_GroundPath[260];
+static float g_SkyRotationIni;
+static int g_FogActiveIni;
+static int g_FogTableMode;
+static ColorIntens g_FogColorIni;
+static ColorIntens g_ModelAmbientIni;
+static int g_FogLinear = 1;
+static float g_FogRangeIni = 0.5f;
+static float g_FogRangeEnd = 1.0f;
+static float g_FogDensityIni = 0.5f;
 
-vec3_t g_GroundScale = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
+static vec3_t g_GroundScale = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
 
 int g_MaxLightmap = 2;
 
-byte Engine_OneTimeInit(void) {
+/* the three callbacks of the engine: once after the device, each frame, at the end */
+static void Engine_LoadIni(const char *name, const char *dir);
+static byte Engine_OneTimeInit(void) {
 	g_RenderFlag6e0 = g_RenderFlag6e4;
 	g_GroundTrisPerNode = 8000000;
 	g_CollisionEpsilon = g_GvCollisionEpsilon;
@@ -353,9 +380,10 @@ byte Engine_OneTimeInit(void) {
 }
 
 const int g_EngineVersion = 5624;
-byte g_MapTextSavingOn;
+static byte g_MapTextSavingOn;
 int g_TimerQPMult = 1;
 
+static byte Engine_FrameMove(void);
 void Engine_Init(void) {
 	int64_t freq;
 
@@ -427,10 +455,10 @@ void Engine_LevelEnd(void) {
 	Splash_Show(NULL, 1, 0, 0);
 }
 
-int g_VideoBufferSize;
-int g_MapTextSaving;
+static int g_VideoBufferSize;
+static int g_MapTextSaving;
 byte g_DrawProgressBar;
-void *g_MapTextDataFile;
+static void *g_MapTextDataFile;
 
 void Engine_LevelInit(void) {
 	char path[MAX_FILEPATH];
@@ -486,7 +514,7 @@ void Engine_LevelLoaded(void) {
 }
 
 /* CGameCamera: position at 0x0, angles at 0xc, target at 0x18 */
-void Camera_SaveRestore(CGameCamera *cam, byte save) {
+static void Camera_SaveRestore(CGameCamera *cam, byte save) {
 	char name[MAX_FILEPATH] = "camera.set";
 	byte *c = (byte *)cam;
 
@@ -566,54 +594,6 @@ byte Music_Play(const char *name, const char *cmd, float volume) {
 	}
 	E3D_LogBlue((&g_FileLog), "MusicPlayer: invalid command: %s", cmd);
 	return 0;
-}
-
-void Eng_Printf3D(const vec3_t *pos, const char *fmt, ...) {
-	char buf[0x400];
-	va_list ap;
-
-	if (fmt) {
-		va_start(ap, fmt);
-		VBprintf(buf, sizeof(buf), fmt, ap);
-		va_end(ap);
-		Text_Printf3D(pos, "%s", buf);
-	}
-}
-
-void Eng_PrintfRel(int dx, int dy, const char *fmt, ...) {
-	char buf[0x400];
-	va_list ap;
-
-	if (fmt) {
-		va_start(ap, fmt);
-		VBprintf(buf, sizeof(buf), fmt, ap);
-		va_end(ap);
-		Text_PrintfRel(dx, dy, "%s", buf);
-	}
-}
-
-void Eng_PrintfXY(int x, int y, const char *fmt, ...) {
-	char buf[0x400];
-	va_list ap;
-
-	if (fmt) {
-		va_start(ap, fmt);
-		VBprintf(buf, sizeof(buf), fmt, ap);
-		va_end(ap);
-		Text_Printf(x, y, "%s", buf);
-	}
-}
-
-byte Video_PlayStart(byte play) {
-	if (!*g_StartVideo || !**g_StartVideo) {
-		return 0;
-	}
-	/* differs from the original on purpose (no blocking waits): StartVideo_End after the video from
-	 * Engine_VideoResume */
-	if (play && !StartVideo_Play()) {
-		eng_wait = ENGWAIT_PLAYSTART;
-	}
-	return 1;
 }
 
 /* view times projection, called in the order of the original (projection first) */
@@ -709,7 +689,8 @@ typeof(void (*)(void)) g_EngCallbacks[4];
 
 byte g_CallbacksOn = 1;
 
-byte Engine_FrameMove(void) {
+static byte Engine_DebugKeys(void);
+static byte Engine_FrameMove(void) {
 	if (g_EngCallbacks[0] && g_CallbacksOn) {
 		g_EngCallbacks[0]();
 	}
@@ -728,8 +709,9 @@ byte Engine_FrameMove(void) {
 	return 1;
 }
 
-byte g_ResetPending;
+static byte g_ResetPending;
 
+static void Engine_ResetAll(void);
 void Engine_Render(void) {
 	CHECK(g_Engine);
 	CHECK(!g_DrawProgressBar);
@@ -750,23 +732,23 @@ static float DebugValue(uint32_t i) {
 	return TABLE_AT(TABLE_AT(g_ActionSets, 1)->actions, i)->value[0];
 }
 
-cGVar GVar_ViewerClipNear;
+static cGVar GVar_ViewerClipNear;
 
 /* the free camera of the viewer (Gvars) */
 #define g_ViewerClipNear (GVar_ViewerClipNear.value.f)
-cGVar GVar_ViewerClipFar;
+static cGVar GVar_ViewerClipFar;
 
 #define g_ViewerClipFar (GVar_ViewerClipFar.value.f)
-cGVar GVar_ViewerFOV;
+static cGVar GVar_ViewerFOV;
 
 #define g_ViewerFOV (GVar_ViewerFOV.value.f)	/* degrees, 0: the camera keeps its own */
-cGVar GVar_ViewerCameraTgt;
+static cGVar GVar_ViewerCameraTgt;
 
 #define g_ViewerCameraTgt (GVar_ViewerCameraTgt.value.i)	/* orbits around the target */
-cGVar GVar_ViewerCameraVel;
+static cGVar GVar_ViewerCameraVel;
 
 #define g_ViewerCameraVel (GVar_ViewerCameraVel.value.f)
-cGVar GVar_ViewerCameraInv;
+static cGVar GVar_ViewerCameraInv;
 
 #define g_ViewerCameraInv (GVar_ViewerCameraInv.value.i)	/* the pitch not inverted */
 #define VIEWER_MIN_DIST 20.0f
@@ -783,11 +765,11 @@ cGVar GVar_ViewerCameraInv;
 #define DBG_VIEWER_PAN 18
 
 float g_FrameMs;
-float g_ViewerSpeed = 1.0f;
+static float g_ViewerSpeed = 1.0f;
 
 /* the viewer camera by the debug actions: turned (or panned with the pan action) in free mode, orbiting the
  * target (or moved up and down with the pan action) in target mode */
-void ViewerCamera_Move(CGameCamera *cam) {
+static void ViewerCamera_Move(CGameCamera *cam) {
 	vec3_t old = cam->pos, d;
 	float speed, fwd, side, mv, r, len, k, a, b;
 	byte pan;
@@ -871,7 +853,9 @@ cGVar g_GvEnvBump;
 cGVar g_GvGlowMap;
 cGVar g_GvEnvMap;
 
-byte Engine_DebugKeys(void) {
+static void Engine_ResetTextures(void);
+static void GVar_SetIntVerbose(cGVar *v, int value);
+static byte Engine_DebugKeys(void) {
 	if (!g_ViewerCameraAnim) {
 		Camera_SetCurrent(g_ViewerCamera);
 		ViewerCamera_Move(g_ViewerCamera);
@@ -909,7 +893,7 @@ byte Engine_DebugKeys(void) {
 	return 1;
 }
 
-char g_DVFName[256];
+static char g_DVFName[256];
 
 /* Scrap.ProcessDVF: 1 starts the tiled shot; the AVI recorder of 2, 3 and 4 is gone (2 and 4 still clear the name) */
 void DVF_Process(const char *name, int arg) {
@@ -930,7 +914,7 @@ void Loading_Fade(void) {
 	Splash_Show("", 0, 3000, 1);
 }
 
-void Engine_ResetAll(void) {
+static void Engine_ResetAll(void) {
 	Con_Printf("ResetEngine3D_All\n");
 	CHECK(g_Engine->device);
 	Splash_Show("2D/Loading/00Reset.dds", 1, 500, 0);
@@ -946,7 +930,7 @@ void Engine_ResetAll(void) {
 	}
 }
 
-void Engine_ResetTextures(void) {
+static void Engine_ResetTextures(void) {
 	Con_Printf("ResetEngine3D_Textures\n");
 	CHECK(g_Engine->device);
 	Texture_ReleaseAllD3D();
@@ -1006,7 +990,7 @@ void Screenshot_Take(const char *name) {
 	Str_Copy(g_ScreenshotName, name, 0x100);
 }
 
-int g_LoadingScreen = -1;
+static int g_LoadingScreen = -1;
 
 void Loading_RandomName(char *buf, int size) {
 	char level[MAX_FILEPATH], next[MAX_FILEPATH], fmt[MAX_FILEPATH];
@@ -1050,7 +1034,7 @@ void Camera_SetCurrent(CGameCamera *cam) {
 	}
 }
 
-void GVar_SetIntVerbose(cGVar *v, int value) {
+static void GVar_SetIntVerbose(cGVar *v, int value) {
 	v->value.i = value;
 	Con_Verbosef("%s = %d\n", v->base.name, value);
 }
@@ -1070,10 +1054,6 @@ void Engine_SetCallback(void (*fn)(void), int which) {
 	default:
 		CheckFailed("0", __FILE__, __TIMESTAMP__, __LINE__);
 	}
-}
-
-int Engine_SetOption(int opt, int value) {
-	return RenderMode(opt, value, 1);
 }
 
 int Eng_RenderTargetBegin(const char *name) {
@@ -1205,12 +1185,7 @@ byte Video_Play(const char *name, const char *cmd, float arg) {
 	return 0;
 }
 
-byte Wild_MatchCase(const char *pattern, const char *name, byte ignoreCase) {
-	CHECK(!ignoreCase);
-	return Wild_Match(pattern, name) != 0;
-}
-
-void Ini_GetColor(const char *sect, const char *key, ColorIntens *color, CIniFile *ini) {
+static void Ini_GetColor(const char *sect, const char *key, ColorIntens *color, CIniFile *ini) {
 	char buf[0x40];
 	byte *c = (byte *)&color->rgba;
 
@@ -1221,7 +1196,8 @@ void Ini_GetColor(const char *sect, const char *key, ColorIntens *color, CIniFil
 	}
 }
 
-int Ini_GetPath(const char *sect, const char *key, char *dest, int size, const char *base, CIniFile *ini) {
+/* the path of key relative to the directory of base into dest; 0 or -1 */
+static int Ini_GetPath(const char *sect, const char *key, char *dest, int size, const char *base, CIniFile *ini) {
 	char dir[MAX_FILEPATH], rel[MAX_FILEPATH];
 
 	if (CIniFile_ReadText(ini, sect, key, rel, sizeof(rel))) {
@@ -1249,7 +1225,7 @@ float g_FlareSize = 200.0f;
 int g_FlareAttenDist;
 
 #define g_FlaresAttenDist g_FlareAttenDist
-float g_FlareAttenDistIni = 200.0f;
+static float g_FlareAttenDistIni = 200.0f;
 
 #define g_FlaresAttenIni g_FlareAttenDistIni
 float g_FlareAttenDistEnd = 3000.0f;
@@ -1266,16 +1242,17 @@ int g_FlareShowInfo;
 #define g_FlaresShowInfo g_FlareShowInfo
 
 int g_ShadowMapSoft;
-int g_ShadowMapWriteTemp;
+static int g_ShadowMapWriteTemp;
 float g_ShadowMapAtten;
 int g_ShadowMapNoLightAmb;
 int g_ShadowMapUseTxf;
-int g_ShadowsDestAlpha;
+static int g_ShadowsDestAlpha;
 int g_ShadowMapDlg = 1;
 int g_ShadowMapBounces = 1;
 float g_ShadowMapCoefRad = 0.1f;
 
-void Engine_LoadIni(const char *name, const char *dir) {
+/* m3d.ini: [suelo], [camara], [cielo], [niebla], [mapa_sombras], [sombras_stencil], [flares], [texturas] */
+static void Engine_LoadIni(const char *name, const char *dir) {
 	static const char *const paths[4] = { "ruta1", "ruta2", "ruta3", "ruta4" };
 	static const char *const ext[4] = { "extens1", "extens2", "extens3", "extens4" };
 	char tex[MAX_FILEPATH];
@@ -1344,22 +1321,23 @@ void Engine_LoadIni(const char *name, const char *dir) {
 }
 
 char str_M3dIni[128] = "m3d.ini";
-cGVar GVar_RenderUseVB;
+static cGVar GVar_RenderUseVB;
 cGVar GVar_ShowSplashScreen;
-cGVar GVar_ModelAmbient;
-cGVar GVar_ShowMapWireFrame;
-cGVar GVar_RenderLightmap;
-cGVar GVar_ComputeMapTextSaving;
-cGVar GVar_RenderModels;
+static cGVar GVar_ModelAmbient;
+static cGVar GVar_ShowMapWireFrame;
+/* the engine variables (Gvars) */
+static cGVar GVar_RenderLightmap;
+static cGVar GVar_ComputeMapTextSaving;
+static cGVar GVar_RenderModels;
 cGVar GVar_ProgressBar;
-cGVar GVar_PlayVideo;
-cGVar GVar_VideoHeight;
-cGVar GVar_VideoWidth;
-cGVar GVar_VideoBPP;
-cGVar GVar_CollisionEpsilon;
-cGVar GVar_ViewerCameraAnim;
-cGVar GVar_ShowMapCollision;
-cGVar GVar_FullScreen;
+static cGVar GVar_PlayVideo;
+static cGVar GVar_VideoHeight;
+static cGVar GVar_VideoWidth;
+static cGVar GVar_VideoBPP;
+static cGVar GVar_CollisionEpsilon;
+static cGVar GVar_ViewerCameraAnim;
+static cGVar GVar_ShowMapCollision;
+static cGVar GVar_FullScreen;
 cGVar GVar_VSync;
 cGVar GVar_isDemo;
 

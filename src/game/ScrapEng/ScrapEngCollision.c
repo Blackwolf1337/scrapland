@@ -9,7 +9,28 @@
 #include "scrap/groundportal.h"
 #include "scrap/staticinit.h"
 
-float g_LastCollisionEpsilon;
+#define g_CollisionSchk (GVar_c_schk.value.i)	/* c_schk: a sphere that does not move is a check */
+#define g_CollisionCaps (GVar_c_caps.value.i)	/* c_caps: a vertical test is one sweep */
+#define g_CollisionIter (GVar_c_iter.value.i)	/* c_iter: from 2 the test steps do not sweep */
+#define g_CollisionHold (GVar_c_hold.value.i)	/* c_hold: the tests keep the sphere at its start */
+#define g_CollisionSld2 (GVar_c_sld2.value.i)	/* c_sld2: the iterations of a slide 2D step */
+#define g_CollisionSldi (GVar_c_sldi.value.i)	/* c_sldi: the iterations of a slide step */
+#define g_CollisionScts (GVar_c_scts.value.i)	/* c_scts: the check sweeps (else contact) */
+#define g_CollisionSbox (GVar_c_sbox.value.i)	/* c_sbox: the box cache */
+#define g_CollisionSboxShow (GVar_c_sboxshow.value.i)	/* c_sboxshow: debug points of the box cache */
+#define g_CollisionSboxMult (GVar_c_sboxmult.value.f)	/* c_sboxmult: the box reaches this many moves ahead */
+static cGVar GVar_c_sldi;
+static cGVar GVar_c_sld2;
+static cGVar GVar_c_scts;
+static cGVar GVar_c_schk;
+static cGVar GVar_c_sboxshow;
+static cGVar GVar_c_sboxmult;
+static cGVar GVar_c_sbox;
+static cGVar GVar_c_iter;
+static cGVar GVar_c_hold;
+static cGVar GVar_c_caps;
+
+static float g_LastCollisionEpsilon;
 
 void CollisionEpsilon_Set(byte restore) {
 	if (restore) {
@@ -95,7 +116,8 @@ static byte SphereBox_Inside(const box_t *box, const vec3_t *a, const vec3_t *b,
 	return 1;
 }
 
-byte Collision_SphereBox(const vec3_t *a, const vec3_t *b, float r, CSphereBox *cache) {
+/* 1 if the move from a to b of a sphere of radius r is free by the box cache */
+static byte Collision_SphereBox(const vec3_t *a, const vec3_t *b, float r, CSphereBox *cache) {
 	if (!cache || !g_CollisionSbox) {
 		return 0;
 	}
@@ -201,7 +223,8 @@ int Collision_Sector(int sector, const vec3_t *a, const vec3_t *b, byte front) {
 	return res;
 }
 
-byte Collision_Check(const vec3_t *pos, float r) {
+/* 1 if a sphere of radius r at pos touches the floor */
+static byte Collision_Check(const vec3_t *pos, float r) {
 	byte res;
 
 	if (g_CollisionScts) {
@@ -373,16 +396,17 @@ done:
 	return res;
 }
 
-cGVar GVar_c_schk;
-cGVar GVar_c_sboxmult;
-cGVar GVar_c_sbox;
-cGVar GVar_c_iter;
-cGVar GVar_c_sld2;
-cGVar GVar_c_sldi;
-cGVar GVar_c_scts;
-cGVar GVar_c_sboxshow;
-cGVar GVar_c_caps;
-cGVar GVar_c_hold;
+/* the engine variables of the collisions (Gvars) */
+static cGVar GVar_c_schk;
+static cGVar GVar_c_sboxmult;
+static cGVar GVar_c_sbox;
+static cGVar GVar_c_iter;
+static cGVar GVar_c_sld2;
+static cGVar GVar_c_sldi;
+static cGVar GVar_c_scts;
+static cGVar GVar_c_sboxshow;
+static cGVar GVar_c_caps;
+static cGVar GVar_c_hold;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_c_iter, &GVar_c_iter, "c_iter", 0, "", 0)

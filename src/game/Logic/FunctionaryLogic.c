@@ -15,35 +15,37 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
+#define CFUNCTIONARYLOCALLOGIC_VFTABLE (&cFunctionaryLocalLogic_vftable.base.base)
+static const cFunctionaryLocalLogicVtbl cFunctionaryLocalLogic_vftable;
 
-cGVar GVar_DesktopsFunctionaryListName;
+static cGVar GVar_DesktopsFunctionaryListName;
 
 #define g_DesktopsListName (GVar_DesktopsFunctionaryListName.value.s)	/* DesktopsFunctionaryListName */
-cGVar GVar_FunctionaryAssignWorkDistance;
+static cGVar GVar_FunctionaryAssignWorkDistance;
 
 #define g_FunctionaryAssignWorkDistance (GVar_FunctionaryAssignWorkDistance.value.f)
-cGVarFunction GVar_OnFunctionaryStartsWorking;
+static cGVarFunction GVar_OnFunctionaryStartsWorking;
 
 #define g_OnFunctionaryStartsWorking (((cPy_Function *)&GVar_OnFunctionaryStartsWorking.func))
-cGVar GVar_FunctionarySpecialActionStatesTransitionTime;
+static cGVar GVar_FunctionarySpecialActionStatesTransitionTime;
 
 #define g_FunctionarySpecialActionStatesTransitionTime (GVar_FunctionarySpecialActionStatesTransitionTime.value.f)
-cGVar GVar_FunctionaryMinTimeToSitDown;
+static cGVar GVar_FunctionaryMinTimeToSitDown;
 
 #define g_FunctionaryMinTimeToSitDown (GVar_FunctionaryMinTimeToSitDown.value.f)
-cGVar GVar_FunctionaryMaxTimeToSitDown;
+static cGVar GVar_FunctionaryMaxTimeToSitDown;
 
 #define g_FunctionaryMaxTimeToSitDown (GVar_FunctionaryMaxTimeToSitDown.value.f)
-cGVar GVar_FunctionaryMintimeToStopWorking;
+static cGVar GVar_FunctionaryMintimeToStopWorking;
 
 #define g_FunctionaryMinTimeToStopWorking (GVar_FunctionaryMintimeToStopWorking.value.f)
-cGVar GVar_FunctionaryMaxtimeToStopWorking;
+static cGVar GVar_FunctionaryMaxtimeToStopWorking;
 
 #define g_FunctionaryMaxTimeToStopWorking (GVar_FunctionaryMaxtimeToStopWorking.value.f)
-cGVar GVar_FunctionaryEffectFastSound;
+static cGVar GVar_FunctionaryEffectFastSound;
 
 #define g_FunctionaryEffectFastSound (GVar_FunctionaryEffectFastSound.value.s)
-cGVar GVar_FunctionaryEffectFastSoundVol;
+static cGVar GVar_FunctionaryEffectFastSoundVol;
 
 #define g_FunctionaryEffectFastSoundVol (GVar_FunctionaryEffectFastSoundVol.value.f)
 cGVar GVar_CharProcessReduction;
@@ -65,7 +67,7 @@ static void Func_SetWorkTime(cFunctionaryLocalLogic *self) {
 	self->playTime = t * 3.0f;
 }
 
-cEntityListData *g_DesktopsList;
+static cEntityListData *g_DesktopsList;
 
 cFunctionaryLocalLogic *cFunctionaryLocalLogic_ctor(cFunctionaryLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(&self->base, parent, 0);
@@ -104,6 +106,7 @@ cFunctionaryLocalLogic *cFunctionaryLocalLogic_ctor(cFunctionaryLocalLogic *self
 	return self;
 }
 
+static void cFunctionaryLocalLogic_ReleaseDesktop(cLocalLogic *base);
 void cFunctionaryLocalLogic_dtor(cFunctionaryLocalLogic *self) {
 	self->base.base.vftable = CFUNCTIONARYLOCALLOGIC_VFTABLE;
 	cFunctionaryLocalLogic_ReleaseDesktop(&self->base.base.logic);
@@ -112,7 +115,7 @@ void cFunctionaryLocalLogic_dtor(cFunctionaryLocalLogic *self) {
 	cGenCharLocalLogic_dtor(&self->base);
 }
 
-cLocalLogic *cFunctionaryLocalLogic_Delete(cLocalLogic *base, byte flags) {
+static cLocalLogic *cFunctionaryLocalLogic_Delete(cLocalLogic *base, byte flags) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	cFunctionaryLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -142,7 +145,7 @@ void cFunctionaryLocalLogic_UpdateView(cLocalLogic *elem) {
 }
 
 /* vf40: the nearest desktop (within maxDist when above 0) taken out of the desktop list and linked */
-void cFunctionaryLocalLogic_AssignDesktop(cLocalLogic *base, float maxDist) {
+static void cFunctionaryLocalLogic_AssignDesktop(cLocalLogic *base, float maxDist) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	vec3_t tmp;
 
@@ -164,6 +167,7 @@ void cFunctionaryLocalLogic_AssignDesktop(cLocalLogic *base, float maxDist) {
 
 /* vf02: an escaping functionary runs at normal speed; another type of player than "Functionary" makes it
  * suspicious (state 3) unless it wants to talk */
+static void cFunctionaryLocalLogic_NormalSpeed(cFunctionaryLocalLogic *self, cEntity *e);
 byte cFunctionaryLocalLogic_Vf02(cLocalLogic *elem) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	if (Func_Vtbl(self)->FastEscape(&self->base.base.logic) && (self->base.base.idle || self->base.base.alwaysLock ||
@@ -210,7 +214,7 @@ void cFunctionaryLocalLogic_FreeDesktop(cFunctionaryLocalLogic *self) {
 }
 
 /* vf41: the desktop back into the desktop list and unlinked */
-void cFunctionaryLocalLogic_ReleaseDesktop(cLocalLogic *base) {
+static void cFunctionaryLocalLogic_ReleaseDesktop(cLocalLogic *base) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	if (!cFunctionaryLocalLogic_GetDesktop(self)) {
 		return;
@@ -263,6 +267,7 @@ static void Func_SitDown(cFunctionaryLocalLogic *self, cEntity *p) {
 }
 
 /* vf32: the wait before the walk to the desktop, the arrival at it, the work and the relax there */
+static void Functionary_WorkRelax(cEntity *e);
 void cFunctionaryLocalLogic_Work(cLocalLogic *elem, float dt) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	vec3_t tmp;
@@ -334,7 +339,7 @@ void cFunctionaryLocalLogic_Work(cLocalLogic *elem, float dt) {
 }
 
 /* vf39 */
-byte cFunctionaryLocalLogic_FastEscape(cLocalLogic *base) {
+static byte cFunctionaryLocalLogic_FastEscape(cLocalLogic *base) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	return self->fastEscape;
 }
@@ -418,6 +423,7 @@ static byte Func_VarFlag(byte *b, int *i, byte set) {
 }
 
 /* vf03 */
+static void cFunctionaryLocalLogic_SetKeepWorking(cFunctionaryLocalLogic *self, byte on);
 byte cFunctionaryLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, byte set) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	if (!strcmp(name, "WorkArea")) {
@@ -465,7 +471,7 @@ byte cFunctionaryLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, by
 }
 
 /* the relax at the desktop */
-void Functionary_WorkRelax(cEntity *e) {
+static void Functionary_WorkRelax(cEntity *e) {
 	if (!e || strcmp(e->vftable->GetClassName(e), TYEN_WALKCHAR)) {
 		return;
 	}
@@ -474,7 +480,7 @@ void Functionary_WorkRelax(cEntity *e) {
 }
 
 /* the fast part of the special action: the timer of the character at four times the speed and the sound */
-void Functionary_FastEffect(cEntity *e) {
+static void Functionary_FastEffect(cEntity *e) {
 	vec3_t tmp;
 
 	cTimer_SetSpeedTo(Func_Timer(e), 4.0f);
@@ -486,7 +492,7 @@ void Functionary_FastEffect(cEntity *e) {
 }
 
 /* the slow part: half the speed */
-void cFunctionaryLocalLogic_SlowEffect(cFunctionaryLocalLogic *self, cEntity *e) {
+static void cFunctionaryLocalLogic_SlowEffect(cFunctionaryLocalLogic *self, cEntity *e) {
 	(void)self;
 	cTimer_SetSpeedTo(Func_Timer(e), 0.5f);
 	cTimer_SetBlend(Func_Timer(e), 0.45f);
@@ -575,7 +581,7 @@ void cFunctionaryLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amoun
 }
 
 /* vf18: the nearest desktop within FunctionaryAssignWorkDistance instead of the origin */
-void cFunctionaryLocalLogic_SetOriginFrom(cLocalLogic *base, cEntity *e) {
+static void cFunctionaryLocalLogic_SetOriginFrom(cLocalLogic *base, cEntity *e) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	Func_Vtbl(self)->ReleaseDesktop(&self->base.base.logic);
 	Func_Vtbl(self)->AssignDesktop(&self->base.base.logic, g_FunctionaryAssignWorkDistance);
@@ -688,7 +694,7 @@ byte cFunctionaryLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 }
 
 /* "KeepWorking": on takes a desktop (any distance), off leaves it */
-void cFunctionaryLocalLogic_SetKeepWorking(cFunctionaryLocalLogic *self, byte on) {
+static void cFunctionaryLocalLogic_SetKeepWorking(cFunctionaryLocalLogic *self, byte on) {
 	self->keepWorking = on;
 	if (on) {
 		Func_Vtbl(self)->AssignDesktop(&self->base.base.logic, 0.0f);
@@ -721,7 +727,7 @@ byte cFunctionaryLocalLogic_VarS(cLocalLogic *elem, const char *name, char **s, 
 }
 
 /* the normal speed again after the special action */
-void cFunctionaryLocalLogic_NormalSpeed(cFunctionaryLocalLogic *self, cEntity *e) {
+static void cFunctionaryLocalLogic_NormalSpeed(cFunctionaryLocalLogic *self, cEntity *e) {
 	(void)self;
 	cTimer_SetSpeedChecked(Func_Timer(e), 1.0f);
 	cTimer_SetSpeedTo(Func_Timer(e), 1.0f);
@@ -729,7 +735,7 @@ void cFunctionaryLocalLogic_NormalSpeed(cFunctionaryLocalLogic *self, cEntity *e
 }
 
 /* vf36: the chance to talk of the state */
-byte cFunctionaryLocalLogic_CanTalk(cLocalLogic *elem) {
+static byte cFunctionaryLocalLogic_CanTalk(cLocalLogic *elem) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	int st = self->base.base.state;
 
@@ -746,7 +752,7 @@ byte cFunctionaryLocalLogic_CanTalk(cLocalLogic *elem) {
 }
 
 /* vf38: the angles of the desktop */
-vec3_t *cFunctionaryLocalLogic_GetWorkAng(cLocalLogic *base, vec3_t *out) {
+static vec3_t *cFunctionaryLocalLogic_GetWorkAng(cLocalLogic *base, vec3_t *out) {
 	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	CHECK(cFunctionaryLocalLogic_GetDesktop(self) && "desktopAssigned()");
 	cEntity *d = cFunctionaryLocalLogic_GetDesktop(self);
@@ -755,7 +761,7 @@ vec3_t *cFunctionaryLocalLogic_GetWorkAng(cLocalLogic *base, vec3_t *out) {
 }
 
 /* the vtable of cFunctionaryLocalLogic */
-const cFunctionaryLocalLogicVtbl cFunctionaryLocalLogic_vftable = {
+static const cFunctionaryLocalLogicVtbl cFunctionaryLocalLogic_vftable = {
 	.base.base.base.Delete = cFunctionaryLocalLogic_Delete,
 	.base.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.base.Vf02 = cFunctionaryLocalLogic_Vf02,

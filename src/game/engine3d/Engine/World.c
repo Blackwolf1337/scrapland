@@ -15,6 +15,25 @@
 #include "scrap/misc.h"
 #include "scrap/staticinit.h"
 
+#define g_RenderWorld (GVar_RenderWorld.value.i)
+#define g_RenderSky (GVar_RenderSky.value.i)
+#define g_WorldPreIllum (GVar_WorldPreIllum.value.i)	/* 0 skip, 1 normal, 2 self illumination */
+#define g_SkyRotation (GVar_SkyRotation.value.f)	/* degrees */
+#define g_SkyZBuffer (GVar_SkyZBuffer.value.i)
+#define g_SkyPosScale (GVar_SkyPosScale.value.f)
+#define g_SkyTubeTest (GVar_SkyTubeTest.value.f)	/* the far plane of the sky tube */
+#define g_ShowWorldDummies (GVar_ShowWorldDummies.value.s)	/* a pattern of the names */
+#define g_SkyInit (GVar_SkyInit.value.i)
+static cGVar GVar_WorldPreIllum;
+static cGVar GVar_SkyZBuffer;
+static cGVar GVar_SkyTubeTest;
+static cGVar GVar_SkyRotation;
+static cGVar GVar_SkyPosScale;
+static cGVar GVar_SkyInit;
+static cGVar GVar_ShowWorldDummies;
+static cGVar GVar_RenderWorld;
+static cGVar GVar_RenderSky;
+
 #define DEG2RAD_F 0.0174532924f
 
 /* the start of the own camera: 240 behind the origin, 50 up, looking at it */
@@ -43,6 +62,7 @@ CWorld *CWorld_ctor(CWorld *self) {
 	return self;
 }
 
+static void WorldDummy_FreeList(WorldDummy **list);
 void CWorld_dtor(CWorld *self) {
 	BspQ3_Free();
 	Bsp_Free();
@@ -81,7 +101,8 @@ static void Dummy_CheckName(const WorldDummy *d, const char *warn) {
 	}
 }
 
-WorldDummy *WorldDummy_ctorNode(WorldDummy *self, CNode3D *node) {
+/* a DM_ node: its name, position, rotation and user properties (taken from the node) */
+static WorldDummy *WorldDummy_ctorNode(WorldDummy *self, CNode3D *node) {
 	vec3_t rot;
 
 	Dummy_Zero(self);
@@ -98,7 +119,7 @@ WorldDummy *WorldDummy_ctorNode(WorldDummy *self, CNode3D *node) {
 	return self;
 }
 
-WorldDummy *WorldDummy_ctor(WorldDummy *self, const char *name, const vec3_t *pos, const vec3_t *rot) {
+static WorldDummy *WorldDummy_ctor(WorldDummy *self, const char *name, const vec3_t *pos, const vec3_t *rot) {
 	Dummy_Zero(self);
 	String_Set(&self->name, name);
 	self->pos = *pos;
@@ -107,17 +128,12 @@ WorldDummy *WorldDummy_ctor(WorldDummy *self, const char *name, const vec3_t *po
 	return self;
 }
 
-WorldDummy *WorldDummy_ctorEmpty(WorldDummy *self) {
+static WorldDummy *WorldDummy_ctorEmpty(WorldDummy *self) {
 	Dummy_Zero(self);
 	return self;
 }
 
-void WorldDummy_dtor(WorldDummy *self) {
-	CHECK(self->next == NULL);
-	Dummy_Free(self);
-}
-
-int WorldDummy_Count(const WorldDummy *list) {
+static int WorldDummy_Count(const WorldDummy *list) {
 	int n = 0;
 	for (; list; list = list->next) {
 		n++;
@@ -125,7 +141,7 @@ int WorldDummy_Count(const WorldDummy *list) {
 	return n;
 }
 
-void WorldDummy_FreeList(WorldDummy **list) {
+static void WorldDummy_FreeList(WorldDummy **list) {
 	while (*list) {
 		WorldDummy *d = *list;
 		*list = d->next;
@@ -135,19 +151,8 @@ void WorldDummy_FreeList(WorldDummy **list) {
 	}
 }
 
-WorldDummy *WorldDummy_Find(WorldDummy *self, const char *name, byte self_too, byte case_sens) {
-	if (!name) {
-		return NULL;
-	}
-	for (WorldDummy *d = self_too ? self : self->next; d; d = d->next) {
-		if (!(case_sens ? strcmp(name, d->name) : crt_stricmp(name, d->name))) {
-			return d;
-		}
-	}
-	return NULL;
-}
-
-void CWorld_AddDummy(CWorld *self, WorldDummy *d) {
+/* appended; a name that is in the list already is warned about */
+static void CWorld_AddDummy(CWorld *self, WorldDummy *d) {
 	CHECK(!d->next);
 	if (self->dummies && d->name) {
 		for (WorldDummy *e = self->dummies; e; e = e->next) {
@@ -199,7 +204,8 @@ void CWorld_InitD3D(CWorld *self) {
 	BspQ3_InitD3D();
 }
 
-int World_LoadDUM(const char *path, WorldDummy **list) {
+/* the .dum file of the scene path; 0, -1 when there is none */
+static int World_LoadDUM(const char *path, WorldDummy **list) {
 	char name[MAX_FILEPATH];
 
 	Path_Format(name, path, "&U&D&N.dum");
@@ -235,7 +241,7 @@ int World_LoadDUM(const char *path, WorldDummy **list) {
 	return 0;
 }
 
-int World_SaveDUM(const char *path, const WorldDummy *list) {
+static int World_SaveDUM(const char *path, const WorldDummy *list) {
 	char name[MAX_FILEPATH];
 
 	Path_Format(name, path, "&U&D&N.dum");
@@ -261,7 +267,8 @@ int World_SaveDUM(const char *path, const WorldDummy *list) {
 	return 0;
 }
 
-byte CWorld_LoadMoreDummies(CWorld *self, const char *ini) {
+/* the sections of the ini next to the floor scene (Pos, Rot in degrees) as dummies; 1 */
+static byte CWorld_LoadMoreDummies(CWorld *self, const char *ini) {
 	char name[MAX_FILEPATH];
 	char sect[0x80];
 	CIniFile f;
@@ -359,6 +366,7 @@ static void World_RenderSky(CWorld *self, void *dev) {
 	g_RenderPass = pass;
 }
 
+static void CWorld_DrawDummies(CWorld *self);
 void CWorld_Render(CWorld *self) {
 	CHECK(self->ini_D3D);
 	void *dev = g_Engine->device;
@@ -380,7 +388,7 @@ void CWorld_Render(CWorld *self) {
 	CWorld_DrawDummies(self);
 }
 
-void CWorld_DrawDummies(CWorld *self) {
+static void CWorld_DrawDummies(CWorld *self) {
 	if (!*g_ShowWorldDummies) {
 		return;
 	}
@@ -424,11 +432,12 @@ static void World_SetLights(CScene *scn, uint32_t skip, byte active) {
 	}
 }
 
-void CWorld_SetSkyLights(CWorld *self, byte active) {
+static void CWorld_SetSkyLights(CWorld *self, byte active) {
 	World_SetLights(self->SkyScale, 0, active);
 }
 
-void CWorld_SetGroundLights(CWorld *self, byte active) {
+/* the lights of the floor scene but the ones of the nodes with 0x6000000 */
+static void CWorld_SetGroundLights(CWorld *self, byte active) {
 	World_SetLights(self->GroundScale, 0x6000000, active);
 }
 
@@ -459,6 +468,7 @@ void CWorld_SetCamera(CWorld *self, CCamera *cam) {
 	CCamera_UpdateVectors(self->cam);
 }
 
+static void CWorld_LoadSkyScale(CWorld *self, const char *name, const vec3_t *scale);
 void CWorld_LoadSky(CWorld *self, const char *name) {
 	vec3_t scale = { 1.0f, 1.0f, 1.0f };
 	CWorld_LoadSkyScale(self, name, &scale);
@@ -468,7 +478,7 @@ static void World_AnimEvents(CModel *m) {
 	CModel_AddAnimEvents(m, CModel_GetAnimName(m, 0), -1.0f, -1.0f);
 }
 
-void CWorld_LoadSkyScale(CWorld *self, const char *name, const vec3_t *scale) {
+static void CWorld_LoadSkyScale(CWorld *self, const char *name, const vec3_t *scale) {
 	CHECK(!self->ini_D3D);
 	CHECK(!self->Sky);
 	if (!g_SkyInit || !name || !*name) {
@@ -636,10 +646,6 @@ CNode3D *CWorld_FindClass(CWorld *self, CNode3D *from, uint32_t class) {
 	return self->GroundScale ? CScene_FindClass(self->GroundScale, from, class) : NULL;
 }
 
-CNode3D *CWorld_FindNode(CWorld *self, const char *name) {
-	return self->Ground ? CModel_FindNode(self->Ground, name) : NULL;
-}
-
 CNode3D *CWorld_FindNodeWild(CWorld *self, const char *pat) {
 	return self->Ground ? CModel_FindNodeWild(self->Ground, pat) : NULL;
 }
@@ -651,23 +657,16 @@ typedef struct DebugPoint {
 	float type;			/* 0x10 see Debug_Point */
 } DebugPoint;
 
-
-CTable g_Points;
+static CTable g_Points;
 
 static DebugPoint *Point(int i) {
 	TABLE_CHECK(g_Points.p, i, g_Points.n);
 	return (DebugPoint *)g_Points.p + i;
 }
 
-int Debug_PointLine(const vec3_t *a, const vec3_t *b, uint32_t ca, uint32_t cb) {
-	Debug_Point(a, ca, -1.0f);
-	Debug_Point(b, cb, 1.0f);
-	return 0;
-}
-
-byte g_PointsOn;
-int g_NumPoints;
-int g_MaxPoints = 4000;
+static byte g_PointsOn;
+static int g_NumPoints;
+static int g_MaxPoints = 4000;
 
 int Debug_Point(const vec3_t *pos, uint32_t color, float type) {
 	g_PointsOn = 1;
@@ -717,15 +716,16 @@ int Debug_PointsDraw(void) {
 	return 0;
 }
 
-cGVar GVar_RenderWorld;
-cGVar GVar_RenderSky;
-cGVar GVar_WorldPreIllum;
-cGVar GVar_SkyRotation;
-cGVar GVar_SkyZBuffer;
-cGVar GVar_SkyPosScale;
-cGVar GVar_SkyTubeTest;
-cGVar GVar_ShowWorldDummies;
-cGVar GVar_SkyInit;
+/* the engine variables of the world (Gvars) */
+static cGVar GVar_RenderWorld;
+static cGVar GVar_RenderSky;
+static cGVar GVar_WorldPreIllum;
+static cGVar GVar_SkyRotation;
+static cGVar GVar_SkyZBuffer;
+static cGVar GVar_SkyPosScale;
+static cGVar GVar_SkyTubeTest;
+static cGVar GVar_ShowWorldDummies;
+static cGVar GVar_SkyInit;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_RenderWorld, &GVar_RenderWorld, "RenderWorld", 0, "Transform and render world nodes", 1)

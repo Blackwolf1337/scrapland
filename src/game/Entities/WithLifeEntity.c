@@ -20,6 +20,9 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
+#define CWITHLIFEENTITY_VFTABLE (&cWithLifeEntity_vftable.base.base)
+static const cWithLifeEntityVtbl cWithLifeEntity_vftable;
+
 #define WL_CLASSNAME "WithLife"
 #define WL_NOCTRL_WARN "WARNING: '%s' action controler doesn´t exist.\n"	/* "WARNING: '%s' action controler doesn't exist.\n" */
 #define WL_MIN_DT 1e-6f
@@ -74,6 +77,7 @@ cEntity *cWithLifeEntity_ctor(void *mem, const char *name, float x, float y, flo
 	return e;
 }
 
+static void cVehicleAttack_dtor(cVehicleAttack *self);
 void cWithLifeEntity_dtor(cEntity *self) {
 	cWithLifeEntity *w = WLife(self);
 
@@ -95,14 +99,15 @@ void cWithLifeEntity_dtor(cEntity *self) {
 }
 
 /* VehicleAttack.h, inlined into WithLifeEntity.cpp */
-void cVehicleAttack_dtor(cVehicleAttack *self) {
+static void cVehicleAttack_dtor(cVehicleAttack *self) {
 	Nto1Node_Done(&self->hitBy);
 	Nto1Node_Done(&self->last);
 	Nto1Node_Done(&self->sent);
 	Nto1Node_Done(&self->target);
 }
 
-cEntity *cWithLifeEntity_Delete(cEntity *self, uint32_t flags) {
+/* the deleting destructor (1000 bytes) */
+static cEntity *cWithLifeEntity_Delete(cEntity *self, uint32_t flags) {
 	cWithLifeEntity_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CWITHLIFEENTITY_SIZE);
@@ -117,7 +122,8 @@ void cWithLifeEntity_SetSndTime(cEntity *self, float t, int i) {
 	}
 }
 
-void cWithLifeEntity_Burn(cEntity *self, float dt) {
+/* the fire of the Napalm over dt: the fire sound, the hits of the burner and the life it takes (not on clients) */
+static void cWithLifeEntity_Burn(cEntity *self, float dt) {
 	cWithLifeEntity *w = WLife(self);
 
 	if (!(w->fireRemain > 0.0f) || !(w->fireDelay > 0.0f) || !(w->fireAtt > -1.0f)) {
@@ -217,10 +223,6 @@ int cWithLifeEntity_GetNodeSlot(cEntity *self) {
 	return c->cls->pretransformChan;
 }
 
-cEntity *cWithLifeEntity_GetBurner(cEntity *self) {
-	return WLife(self)->burner.target;
-}
-
 vec3_t *cWithLifeEntity_GetSndPos(cEntity *self, vec3_t *out) {
 	cActCtrl *c = WLife(self)->actCtrl;
 
@@ -240,7 +242,7 @@ vec3_t *cWithLifeEntity_GetSndPos(cEntity *self, vec3_t *out) {
 	return out;
 }
 
-const char *cWithLifeEntity_GetClassName(cEntity *self) {
+static const char *cWithLifeEntity_GetClassName(cEntity *self) {
 	(void)self;
 	return WL_CLASSNAME;
 }
@@ -347,7 +349,8 @@ void cWithLifeEntity_CheckLife(cEntity *self) {
 	w->prevLife = w->life;
 }
 
-void cWithLifeEntity_FadeSounds(cEntity *self, float dt) {
+/* the life sounds fade in and out by their times */
+static void cWithLifeEntity_FadeSounds(cEntity *self, float dt) {
 	cWithLifeEntity *w = WLife(self);
 
 	for (int i = 0; i < w->lifeSounds.nsnd; i++) {
@@ -636,7 +639,7 @@ void cWithLifeEntity_Vf48(cEntity *self) {
 }
 
 /* the vtable of cWithLifeEntity */
-const cWithLifeEntityVtbl cWithLifeEntity_vftable = {
+static const cWithLifeEntityVtbl cWithLifeEntity_vftable = {
 	.base.base.Update = cWithLifeEntity_Update,
 	.base.base.Render = cEntity_Render,
 	.base.base.UpdateOff = cWithLifeEntity_UpdateOff,

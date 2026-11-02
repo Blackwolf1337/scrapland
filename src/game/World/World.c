@@ -24,6 +24,40 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
+#define CWORLD_VFTABLE (&cWorld_vftable)
+#define g_MaxRadObj (GVar_Max_Rad_Obj.value.f)		/* Max_Rad_Obj, the margin of the grid queries */
+#define g_GridScaleX (GVar_GridScaleX.value.f)
+#define g_GridScaleY (GVar_GridScaleY.value.f)
+#define g_GridScaleZ (GVar_GridScaleZ.value.f)
+#define g_GameSkill (GVar_GameSkill.value.i)
+#define g_GameSkillDef (GVar_GameSkill.def.i)
+#define g_PriorityWeapon (((cString *)&GVar_PriorityWeapon.value))	/* PriorityWeapon, its default at +4 */
+#define g_MainMissionEvent (((cPy_Function *)&GVar_MainMissionEvent.func))
+#define g_EscapeEvent (((cPy_Function *)&GVar_EscapeEvent.func))
+#define g_ChatEvent (((cPy_Function *)&GVar_ChatEvent.func))
+#define g_QChatEvent1 (((cPy_Function *)&GVar_QChatEvent1.func))
+#define g_QChatEvent2 (((cPy_Function *)&GVar_QChatEvent2.func))
+#define g_QChatEvent3 (((cPy_Function *)&GVar_QChatEvent3.func))
+#define g_QChatEvent4 (((cPy_Function *)&GVar_QChatEvent4.func))
+#define g_QChatEvent5 (((cPy_Function *)&GVar_QChatEvent5.func))
+#define g_QChatEvent6 (((cPy_Function *)&GVar_QChatEvent6.func))
+static const cWorldVtbl cWorld_vftable;
+static cGVarFunction GVar_QChatEvent6;
+static cGVarFunction GVar_QChatEvent5;
+static cGVarFunction GVar_QChatEvent4;
+static cGVarFunction GVar_QChatEvent3;
+static cGVarFunction GVar_QChatEvent2;
+static cGVarFunction GVar_QChatEvent1;
+static cGVar GVar_PriorityWeapon;
+static cGVar GVar_Max_Rad_Obj;
+static cGVarFunction GVar_MainMissionEvent;
+static cGVar GVar_GridScaleZ;
+static cGVar GVar_GridScaleY;
+static cGVar GVar_GridScaleX;
+static cGVar GVar_GameSkill;
+static cGVarFunction GVar_EscapeEvent;
+static cGVarFunction GVar_ChatEvent;
+
 #define PI_F 3.14159265f
 #define FLT_MAX_F 3.40282347e+38f
 
@@ -75,15 +109,6 @@ static void World_SphereBox(const vec3_t *c, float radius, vec3_t *lo, vec3_t *h
 	lo->y = c->y - r;
 	hi->z = c->z + r;
 	lo->z = c->z - r;
-}
-
-/* v against the view direction of the angles (x pitch, y yaw): the dot product of the facing axis */
-float Vec3_DotViewDir(const vec3_t *v, float ax, float ay) {
-	float sx, cx, sy, cy;
-
-	Float_SinCos(-ax, &sx, &cx);
-	Float_SinCos(ay + PI_F, &sy, &cy);
-	return (cy * v->z + sy * v->x) * cx - sx * v->y;
 }
 
 /*
@@ -163,7 +188,7 @@ byte Team_IsEnemy(int a, int b) {
 	return a != 3 && b != 3 && (a != b || a == 4 || b == 4);
 }
 
-cAmmoInfo *cAmmoInfo_ctor(cAmmoInfo *self) {
+static cAmmoInfo *cAmmoInfo_ctor(cAmmoInfo *self) {
 	cString_ctor(&self->name);
 	cPy_Function_ctor(&self->onPress);
 	cPy_Function_ctor(&self->onRelease);
@@ -174,7 +199,7 @@ cAmmoInfo *cAmmoInfo_ctor(cAmmoInfo *self) {
 	return self;
 }
 
-cWeapInfo *cWeapInfo_ctor(cWeapInfo *self) {
+static cWeapInfo *cWeapInfo_ctor(cWeapInfo *self) {
 	cString_ctor(&self->name);
 	cPy_Function_ctor(&self->onPress);
 	cPy_Function_ctor(&self->onRelease);
@@ -191,7 +216,7 @@ cWeapInfo *cWeapInfo_ctor(cWeapInfo *self) {
 	return self;
 }
 
-void cAmmoInfo_dtor(cAmmoInfo *self) {
+static void cAmmoInfo_dtor(cAmmoInfo *self) {
 	cPy_Function_dtor(&self->onHit);
 	cPy_Function_dtor(&self->onFire);
 	cPy_Function_dtor(&self->onRelease);
@@ -199,7 +224,7 @@ void cAmmoInfo_dtor(cAmmoInfo *self) {
 	cString_dtor(&self->name);
 }
 
-void cWeapInfo_dtor(cWeapInfo *self) {
+static void cWeapInfo_dtor(cWeapInfo *self) {
 	cPy_Function_dtor(&self->setFx);
 	cPy_Function_dtor(&self->onEnd);
 	cPy_Function_dtor(&self->onStart);
@@ -208,29 +233,6 @@ void cWeapInfo_dtor(cWeapInfo *self) {
 	cPy_Function_dtor(&self->onRelease);
 	cPy_Function_dtor(&self->onPress);
 	cString_dtor(&self->name);
-}
-
-/* the vector deleting destructors */
-cAmmoInfo *cAmmoInfo_Delete(cAmmoInfo *self, uint32_t flags) {
-	if (flags & 2) {
-		return Delete_VectorPart(self, flags, sizeof(*self), (void *)cAmmoInfo_dtor);
-	}
-	cAmmoInfo_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
-}
-
-cWeapInfo *cWeapInfo_Delete(cWeapInfo *self, uint32_t flags) {
-	if (flags & 2) {
-		return Delete_VectorPart(self, flags, sizeof(*self), (void *)cWeapInfo_dtor);
-	}
-	cWeapInfo_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
 }
 
 /* the Global/Table.h Init of the two instances: new T[num] with the constructors */
@@ -516,7 +518,7 @@ cWorld *cWorld_ctor(cWorld *self) {
 	return self;
 }
 
-void AmmoTable_Free(void *table) {
+static void AmmoTable_Free(void *table) {
 	cAmmoTable *t = table;
 
 	if (t->items) {
@@ -526,7 +528,7 @@ void AmmoTable_Free(void *table) {
 	}
 }
 
-void WeapTable_Free(void *table) {
+static void WeapTable_Free(void *table) {
 	cWeapTable *t = table;
 
 	if (t->items) {
@@ -536,7 +538,7 @@ void WeapTable_Free(void *table) {
 	}
 }
 
-void cWorld_dtor(cWorld *self) {
+static void cWorld_dtor(cWorld *self) {
 	self->vftable = CWORLD_VFTABLE;
 	cWorld_Clear(self);
 	Logic_dtor(&self->logic);
@@ -553,7 +555,7 @@ void cWorld_dtor(cWorld *self) {
 	PtrTable_Clear(&self->entities);
 }
 
-cWorld *cWorld_Destroy(cWorld *self, byte flags) {
+static cWorld *cWorld_Destroy(cWorld *self, byte flags) {
 	cWorld_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CWORLD_SIZE);
@@ -571,12 +573,8 @@ void cWorld_AddIgnore(cWorld *self, cEntity *e) {
 	CHECK(0);
 }
 
-byte cWorld_IsIgnored(cWorld *self, cEntity *e) {
-	return World_IsIgnoredInline(self, e);
-}
-
 /* calls func(name, x, y, z, dist) for every entity of mask within radius of the segment, seen from it */
-byte cWorld_LineCallF(cWorld *self, uint32_t mask, const vec3_t *from, const vec3_t *to, float radius,
+static byte cWorld_LineCallF(cWorld *self, uint32_t mask, const vec3_t *from, const vec3_t *to, float radius,
 	cPy_Function *func) {
 	byte found = 0;
 	vec3_t ext, closest, pos, pos2;
@@ -617,32 +615,6 @@ byte cWorld_LineCall(cWorld *self, uint32_t mask, const vec3_t *from, const vec3
 	return r;
 }
 
-/* the first entity of mask (not exclude) within radius of the segment */
-byte cWorld_LineFirst(cWorld *self, cEntity *exclude, uint32_t mask, const vec3_t *from, const vec3_t *to,
-	float radius, cEntity **target) {
-	vec3_t ext, closest, pos;
-
-	if (target) {
-		*target = NULL;
-	}
-	self->testing = 1;
-	CHECK(Grid_IsOk(&self->grid));
-	ext.x = ext.y = ext.z = g_MaxRadObj + radius;
-	for (cEntity *e = Grid_FirstOnSegment(&self->grid, from, to, &ext); e; e = Grid_NextOnSegment(&self->grid)) {
-		if (!(Entity_Mask(e) & mask)) {
-			continue;
-		}
-		Dist2_PointSegment(from, to, e->vftable->GetPos(e, &pos), &closest);
-		if (e != exclude && e->vftable->TestSphere(e, NULL, &closest, radius, 0)) {
-			if (target) {
-				*target = e;
-			}
-			return 1;
-		}
-	}
-	return 0;
-}
-
 /* action of an action set pressed in this frame, with the index checks of Table<T>::operator[] */
 static byte Input_ActionPressed(uint32_t set, uint32_t action, int player) {
 	cActionSet *s = TABLE_AT(g_ActionSets, set);
@@ -651,7 +623,7 @@ static byte Input_ActionPressed(uint32_t set, uint32_t action, int player) {
 }
 
 /* the script events of the menu and chat keys of each player */
-void World_InputEvents(void) {
+static void World_InputEvents(void) {
 	for (int v = 0; v < 4; v++) {
 		if (v == 0) {
 			if ((Input_GetActionSet() == 1 && Input_ActionPressed(1, 0x27, 0)) ||
@@ -743,6 +715,7 @@ cEntity *cWorld_CreateEntity(cWorld *world, const char *className, float x, floa
 }
 
 /* the end of a level: scheduled functions, cameras, entities, debris systems and entity lists */
+static void cWorld_DeleteLists(cWorld *self);
 void cWorld_Clear(cWorld *self) {
 	Nto1Node *n;
 
@@ -780,7 +753,7 @@ void cWorld_Clear(cWorld *self) {
 	GameModelList_Free();
 }
 
-void cWorld_DeleteLists(cWorld *self) {
+static void cWorld_DeleteLists(cWorld *self) {
 	HashTable *t = &self->lists;
 
 	for (;;) {
@@ -922,23 +895,6 @@ cEntity *cWorld_GetFirstEntity(cWorld *world) {
 	return NULL;
 }
 
-/* the distance to the nearest camera position */
-float cWorld_GetMinCamDist(cWorld *self, const vec3_t *pos) {
-	float best = FLT_MAX_F;
-
-	for (int i = 0; i < 4; i++) {
-		if ((uintptr_t)self->camName[i]) {
-			const vec3_t *c = &self->camPos[i];
-			float dx = c->x - pos->x;
-			float dy = c->y - pos->y;
-			float dz = c->z - pos->z;
-			float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
-			best = Float_MinSS(d, best);
-		}
-	}
-	return best;
-}
-
 float cWorld_GetMinCamDistSq(cWorld *world, const vec3_t *pos) {
 	float best = FLT_MAX_F;
 
@@ -964,23 +920,6 @@ void *cWorld_GetObjData(cWorld *self, const char *name) {
 		}
 	}
 	return NULL;
-}
-
-char g_UniqueName[128];
-
-/* name, or name with a number when an entity has it, in a static buffer */
-char *cWorld_UniqueName(cWorld *self, const char *name) {
-	char *buf = g_UniqueName;
-
-	Str_Copy(buf, name, 0x80);
-	while (buf[0]) {
-		cPtrItem *it = PtrTable_Find(&self->entities, buf, HashTable_Slot(&self->entities, buf));
-		if (!it || !it->value) {
-			break;
-		}
-		Str_PrintfQuiet(buf, 0x80, "%s%i", name, self->nameCount++);
-	}
-	return buf;
 }
 
 cDebrisSys *cWorld_GetDebrisSys(cWorld *world, const char *name) {
@@ -1095,7 +1034,7 @@ int cWorld_SetCam(cWorld *world, int i, const char *name) {
 }
 
 /* the sound listener of each view at its camera; the velocity from the last position, or of the followed entity */
-void cWorld_UpdateListeners(cWorld *self, float dt) {
+static void cWorld_UpdateListeners(cWorld *self, float dt) {
 	for (int i = 0; i < 4; i++) {
 		char *key = self->camName[i];
 		vec3_t *last = &self->camPos[i];
@@ -1278,26 +1217,27 @@ byte cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, uint32_t mask, c
 }
 
 /* the vtable of cWorld */
-const cWorldVtbl cWorld_vftable = {
+static const cWorldVtbl cWorld_vftable = {
 	.Delete = cWorld_Destroy,
 };
 
 cGVar GVar_R_SplitScreenUpdate;
-cGVar GVar_PriorityWeapon;
-cGVarFunction GVar_QChatEvent2;
-cGVarFunction GVar_EscapeEvent;
-cGVarFunction GVar_QChatEvent3;
-cGVarFunction GVar_MainMissionEvent;
-cGVarFunction GVar_QChatEvent6;
-cGVar GVar_GridScaleY;
-cGVarFunction GVar_QChatEvent5;
-cGVar GVar_GridScaleZ;
-cGVar GVar_GameSkill;
-cGVar GVar_GridScaleX;
-cGVarFunction GVar_QChatEvent1;
-cGVar GVar_Max_Rad_Obj;
-cGVarFunction GVar_QChatEvent4;
-cGVarFunction GVar_ChatEvent;
+static cGVar GVar_PriorityWeapon;
+static cGVarFunction GVar_QChatEvent2;
+static cGVarFunction GVar_EscapeEvent;
+static cGVarFunction GVar_QChatEvent3;
+static cGVarFunction GVar_MainMissionEvent;
+static cGVarFunction GVar_QChatEvent6;
+static cGVar GVar_GridScaleY;
+static cGVarFunction GVar_QChatEvent5;
+static cGVar GVar_GridScaleZ;
+static cGVar GVar_GameSkill;
+static cGVar GVar_GridScaleX;
+static cGVarFunction GVar_QChatEvent1;
+/* engine variables (Gvars) */
+static cGVar GVar_Max_Rad_Obj;
+static cGVarFunction GVar_QChatEvent4;
+static cGVarFunction GVar_ChatEvent;
 cGVar GVar_FreeSpaceMagnet;
 cGVar GVar_FXVehicleFloatingFactor;
 

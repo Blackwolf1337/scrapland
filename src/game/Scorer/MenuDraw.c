@@ -185,14 +185,14 @@ static int Menu_FadeStep(cScorer *sc) {
 	return step < 1 ? 1 : step;
 }
 
-cGVar GVar_FadeOutFinalTime;
+static cGVar GVar_FadeOutFinalTime;
 
 #define g_FadeOutFinalTime (GVar_FadeOutFinalTime.value.f)	/* the time of ScorerSpriteFadeOutFinal */
 
-float g_MetroRing;
+static float g_MetroRing;
 
 /* the four rings name0..name3 (the last letter of the name replaced) growing and fading around the player mark */
-void Scorer_MetroUsrHere(cAbstractFile *params) {
+static void Scorer_MetroUsrHere(cAbstractFile *params) {
 	char name[0x14];
 	cScorer *sc;
 	double scale;
@@ -237,7 +237,7 @@ void Scorer_MetroUsrHere(cAbstractFile *params) {
 }
 
 /* the item fades in; at full alpha the OnRender is dropped and the item shown */
-void Scorer_SpriteFadeIn(cAbstractFile *params) {
+static void Scorer_SpriteFadeIn(cAbstractFile *params) {
 	char name[0x14];
 	cScorerItem *item;
 	cScorer *sc;
@@ -261,7 +261,7 @@ void Scorer_SpriteFadeIn(cAbstractFile *params) {
 }
 
 /* the item fades out; at 0 the OnRender is dropped and the item hidden */
-void Scorer_SpriteFadeOut(cAbstractFile *params) {
+static void Scorer_SpriteFadeOut(cAbstractFile *params) {
 	char name[0x14];
 	cScorerItem *item;
 	cScorer *sc;
@@ -284,10 +284,10 @@ void Scorer_SpriteFadeOut(cAbstractFile *params) {
 	}
 }
 
-float g_FadeOutFinalAcc;
+static float g_FadeOutFinalAcc;
 
 /* the item comes in over g_FadeOutFinalTime (the time summed in a global); the OnRender is dropped at full alpha */
-void Scorer_SpriteFadeOutFinal(cAbstractFile *params) {
+static void Scorer_SpriteFadeOutFinal(cAbstractFile *params) {
 	char name[0x14];
 	cScorerItem *item;
 	cScorer *sc;
@@ -315,7 +315,7 @@ void Scorer_SpriteFadeOutFinal(cAbstractFile *params) {
 }
 
 /* a short flash at the start of each 255/450 seconds */
-void Scorer_SpriteFlash(cAbstractFile *params) {
+static void Scorer_SpriteFlash(cAbstractFile *params) {
 	char name[0x14];
 	cScorerItem *item;
 	cScorer *sc;
@@ -339,7 +339,7 @@ void Scorer_SpriteFlash(cAbstractFile *params) {
 }
 
 /* the alpha swings between 128 and 255 */
-void Scorer_SpriteGlow(cAbstractFile *params) {
+static void Scorer_SpriteGlow(cAbstractFile *params) {
 	char name[0x14];
 	cScorerItem *item;
 	cScorer *sc;
@@ -355,7 +355,7 @@ void Scorer_SpriteGlow(cAbstractFile *params) {
 
 /* the boost of the ship of the camera into the status item: BoostStatus 0xff ready, 0x80/0x40 blinking while the
  * clouds are on, 0x40 in use; BoostRemaining the part left */
-void Scorer_BoostScorer(cAbstractFile *params) {
+static void Scorer_BoostScorer(cAbstractFile *params) {
 	char name[0x80];
 	cScorerItem *item;
 	cEntity *ship;
@@ -386,13 +386,13 @@ void Scorer_BoostScorer(cAbstractFile *params) {
 	MenuItem_SetFloat(item, "BoostRemaining", &rem);
 }
 
-cPy_NativeFunc NativeFunc_ScorerMetroUsrHere;
-cPy_NativeFunc NativeFunc_ScorerSpriteGlow;
-cPy_NativeFunc NativeFunc_ScorerSpriteFlash;
-cPy_NativeFunc NativeFunc_ScorerSpriteFadeIn;
-cPy_NativeFunc NativeFunc_ScorerSpriteFadeOut;
-cPy_NativeFunc NativeFunc_ScorerSpriteFadeOutFinal;
-cPy_NativeFunc NativeFunc_BoostScorer;
+static cPy_NativeFunc NativeFunc_ScorerMetroUsrHere;
+static cPy_NativeFunc NativeFunc_ScorerSpriteGlow;
+static cPy_NativeFunc NativeFunc_ScorerSpriteFlash;
+static cPy_NativeFunc NativeFunc_ScorerSpriteFadeIn;
+static cPy_NativeFunc NativeFunc_ScorerSpriteFadeOut;
+static cPy_NativeFunc NativeFunc_ScorerSpriteFadeOutFinal;
+static cPy_NativeFunc NativeFunc_BoostScorer;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_FadeOutFinalTime, &GVar_FadeOutFinalTime, "FadeOutFinalTime", 0, "Fade out final time", 5.0f)

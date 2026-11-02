@@ -10,6 +10,7 @@
 #include "scrap/scrapworld.h"
 #include "scrap/world.h"
 
+static int MapLevel_CompareY(const void *a, const void *b);
 MapFloors *Floor_ctor(MapFloors *self) {
 	WorldNodeInfo info;
 	char buf[0x100];
@@ -119,6 +120,6 @@ int MapLevel_NearestUp(const MapLevel *self, const vec3_t *p) {
 }
 
 /* qsort: by the height, -1 also for the same one */
-int MapLevel_CompareY(const void *a, const void *b) {
+static int MapLevel_CompareY(const void *a, const void *b) {
 	return ((const MapLevel *)a)->y > ((const MapLevel *)b)->y ? 1 : -1;
 }

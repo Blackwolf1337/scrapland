@@ -14,6 +14,39 @@
 #include "scrap/weaps2.h"
 #include "scrap/staticinit.h"
 
+#define g_GearMissileSoundVol (GVar_GearMissileSoundVol.value.f)
+#define g_GearLoadWeaponSound (GVar_GearLoadWeaponSound.value.s)
+#define g_GearShootDamage (GVar_GearShootDamage.value.i)
+#define g_GearMissileSound (GVar_GearMissileSound.value.s)
+#define g_GearShootPosX (GVar_GearShootPosX.value.f)
+#define g_GearShootDistance (GVar_GearShootDistance.value.f)
+#define g_GearLoadWeaponSoundVol (GVar_GearLoadWeaponSoundVol.value.f)
+#define g_GearHitSound (GVar_GearHitSound.value.s)
+#define g_GearHitSoundVol (GVar_GearHitSoundVol.value.f)
+#define g_GearShootPosZ (GVar_GearShootPosZ.value.f)
+#define g_GearShootFailAlarm (GVar_GearShootFailAlarm.value.f)
+#define g_GearShootHitAlarm (GVar_GearShootHitAlarm.value.f)
+#define g_GearMissileSpeed (GVar_GearMissileSpeed.value.f)
+#define g_GearShootSound (GVar_GearShootSound.value.s)
+#define g_GearShootSoundVol (GVar_GearShootSoundVol.value.f)
+#define g_GearShootPosY (GVar_GearShootPosY.value.f)
+static cGVar GVar_GearShootSoundVol;
+static cGVar GVar_GearShootSound;
+static cGVar GVar_GearShootPosZ;
+static cGVar GVar_GearShootPosY;
+static cGVar GVar_GearShootPosX;
+static cGVar GVar_GearShootHitAlarm;
+static cGVar GVar_GearShootFailAlarm;
+static cGVar GVar_GearShootDistance;
+static cGVar GVar_GearShootDamage;
+static cGVar GVar_GearMissileSpeed;
+static cGVar GVar_GearMissileSoundVol;
+static cGVar GVar_GearMissileSound;
+static cGVar GVar_GearLoadWeaponSoundVol;
+static cGVar GVar_GearLoadWeaponSound;
+static cGVar GVar_GearHitSoundVol;
+static cGVar GVar_GearHitSound;
+
 static inline cMissileEntity *Gear_Missile(cEntity *e) {
 	return (cMissileEntity *)e;
 }
@@ -46,12 +79,13 @@ static void Gear_Sound(cEntity *v, byte usr, char *const *name, const float *vol
 	snd->vftable->PlayAt(g_pSound, s, &pos, volume);
 }
 
-char g_GearTarget[128];
-cEntity *g_GearSw;
+/* the gear natives: the name of the shooting gear (also the one the ball does not hurt), the missile, its point */
+static char g_GearTarget[128];
+static cEntity *g_GearSw;
 
 /* the electric ball hits name (not the gear itself): it loses GearShootDamage of life (half against the AI in the
  * easy game), its logic hears of the gear unless noLogic, and a hit of the player counts (alarm, statistics) */
-void ChType_GearHitChar(const char *name, byte noLogic) {
+static void ChType_GearHitChar(const char *name, byte noLogic) {
 	cEntity *gear = NULL;
 	byte usr;
 
@@ -103,7 +137,7 @@ void ChType_GearHitChar(const char *name, byte noLogic) {
 }
 
 /* params: the gear. ActionInit, then Action as the loop once it runs (else the button counts as up) */
-void ChType_GearActionPress(cAbstractFile *params) {
+static void ChType_GearActionPress(cAbstractFile *params) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -124,7 +158,7 @@ void ChType_GearActionPress(cAbstractFile *params) {
 }
 
 /* params: the gear, an event, a float: the end when the button is up or the energy of the player too low */
-void ChType_GearEndAction(cAbstractFile *params) {
+static void ChType_GearEndAction(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -140,7 +174,7 @@ void ChType_GearEndAction(cAbstractFile *params) {
 }
 
 /* the sphere test of the ball: params a character in the sphere */
-void ChType_GearSphereHit(cAbstractFile *params) {
+static void ChType_GearSphereHit(cAbstractFile *params) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -148,12 +182,12 @@ void ChType_GearSphereHit(cAbstractFile *params) {
 }
 
 cPy_Function g_ChTypeSphereFunc;
-char g_GearSwName[128];
-vec3_t g_GearXplodePos;
+static char g_GearSwName[128];
+static vec3_t g_GearXplodePos;
 
 /* the OnHit of the missile: params the missile, the gear, the entity it hit. The hit entity, then the ones in the
  * sphere of the explosion, and the hit sound. */
-void ChType_GearHit(cAbstractFile *params) {
+static void ChType_GearHit(cAbstractFile *params) {
 	char name[0x80];
 	vec3_t tmp;
 
@@ -175,7 +209,7 @@ void ChType_GearHit(cAbstractFile *params) {
 }
 
 /* params: the gear, an event, a float: the load sound */
-void ChType_GearInitAction(cAbstractFile *params) {
+static void ChType_GearInitAction(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -185,7 +219,7 @@ void ChType_GearInitAction(cAbstractFile *params) {
 
 /* params: the gear, an event, a float. The missile "GearMissile" from the gun of the gear: aimed for an AI or a
  * character that sets its view, else straight ahead; the shot of the player calls the sentinels. */
-void ChType_GearShoot(cAbstractFile *params) {
+static void ChType_GearShoot(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 	vec3_t a, rot, off, t1, t2, t3, start, dir, ang, aim, ma;
 	cEntity *target = NULL;
@@ -329,7 +363,7 @@ static inline void Gear_Emit(CGameParticles *p, uint32_t *ramp, float dt) {
 	CGameParticles_EmitDt(p, 1, 0, dt);
 }
 
-uint32_t g_RampGearShoot[36] = {
+static uint32_t g_RampGearShoot[36] = {
 	0xff86edff, 0xff8ddbff, 0x8095c4ff, 0x9dadff, 0xa598ff, 0x40ae7eff, 0x80b765ff, 0xffb765ff, 0xffb765ff,
 	0xff5b66ff, 0x966462fe, 0x506d5dfd, 0x7812fc, 0x8551fb, 0x40964af9, 0x809b47f9, 0xc49b47f9, 0xff9b47f9,
 	0xffb9b9ed, 0x80b5b5f0, 0xb2b2f2, 0xafaff5, 0x20aaaaf9, 0x40a7a7fc, 0x80a3a3ff, 0xc0a3a3ff, 0xffa3a3ff,
@@ -357,7 +391,7 @@ static void Gear_Flash(CGameParticles *p, float y, double sizeR, double sizeA, d
 /* params: the gear, an event and the delay of the end flashes. The charge of the electric ball on the shot particles
  * of its embedded effect (visible models only): 32 sparks, 20 and 5 glows flying out, three flashes falling from the
  * gun, two end flashes and 12 glows thrown up */
-void ChType_GearShootLoad(cAbstractFile *params) {
+static void ChType_GearShootLoad(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 	float delay;
 
@@ -503,13 +537,15 @@ void ChType_GearShootLoad(cAbstractFile *params) {
 	}
 }
 
-vec3_t g_FlashPos;
-int g_FlashResult;
-int g_FlashMax;
-int g_FlashCount;
+/* Logic_Flash: the point, the most characters to flash (-1 all), the count and the result */
+static vec3_t g_FlashPos;
+static int g_FlashResult;
+static int g_FlashMax;
+static int g_FlashCount;
 
 /* the flash around pos (radius): ChType_FlashHit for each character in the sphere, at most max of them flashed (-1
  * for all); 2 when one got flashed, 1 when one was flashed already, else 0 */
+static void ChType_FlashHit(cAbstractFile *params);
 int Logic_Flash(const vec3_t *pos, float radius, int max) {
 	g_FlashResult = 0;
 	g_FlashCount = 0;
@@ -547,7 +583,7 @@ int ChType_FlashChar(cEntity *e) {
 
 /* the sphere test of Logic_Flash: params a character; an AI that looks within 90 degrees of the flash gets
  * flashed (up to the count) */
-void ChType_FlashHit(cAbstractFile *params) {
+static void ChType_FlashHit(cAbstractFile *params) {
 	char name[0x80];
 	vec3_t t1, d, r;
 
@@ -594,30 +630,30 @@ void ChType_FlashHit(cAbstractFile *params) {
 	}
 }
 
-cGVar GVar_GearMissileSoundVol;
-cGVar GVar_GearLoadWeaponSound;
-cGVar GVar_GearShootDamage;
-cGVar GVar_GearMissileSound;
-cGVar GVar_GearShootPosX;
-cGVar GVar_GearShootDistance;
-cGVar GVar_GearLoadWeaponSoundVol;
-cGVar GVar_GearHitSound;
-cGVar GVar_GearHitSoundVol;
-cGVar GVar_GearShootPosZ;
-cGVar GVar_GearShootFailAlarm;
-cGVar GVar_GearShootHitAlarm;
-cGVar GVar_GearMissileSpeed;
-cGVar GVar_GearShootSound;
-cGVar GVar_GearShootSoundVol;
-cGVar GVar_GearShootPosY;
+static cGVar GVar_GearMissileSoundVol;
+static cGVar GVar_GearLoadWeaponSound;
+static cGVar GVar_GearShootDamage;
+static cGVar GVar_GearMissileSound;
+static cGVar GVar_GearShootPosX;
+static cGVar GVar_GearShootDistance;
+static cGVar GVar_GearLoadWeaponSoundVol;
+static cGVar GVar_GearHitSound;
+static cGVar GVar_GearHitSoundVol;
+static cGVar GVar_GearShootPosZ;
+static cGVar GVar_GearShootFailAlarm;
+static cGVar GVar_GearShootHitAlarm;
+static cGVar GVar_GearMissileSpeed;
+static cGVar GVar_GearShootSound;
+static cGVar GVar_GearShootSoundVol;
+static cGVar GVar_GearShootPosY;
 cGVar GVar_GearXplodeRadius;
 cGVarFunction GVar_OnFlash;
-cPy_NativeFunc NativeFunc_GearHit;
-cPy_NativeFunc NativeFunc_GearShoot;
-cPy_NativeFunc NativeFunc_GearShootLoad;
-cPy_NativeFunc NativeFunc_GearActionPress;
-cPy_NativeFunc NativeFunc_GearInitAction;
-cPy_NativeFunc NativeFunc_GearEndAction;
+static cPy_NativeFunc NativeFunc_GearHit;
+static cPy_NativeFunc NativeFunc_GearShoot;
+static cPy_NativeFunc NativeFunc_GearShootLoad;
+static cPy_NativeFunc NativeFunc_GearActionPress;
+static cPy_NativeFunc NativeFunc_GearInitAction;
+static cPy_NativeFunc NativeFunc_GearEndAction;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_GearShootDamage, &GVar_GearShootDamage, "GearShootDamage", 0, "Damage by the Armored Gear weapon", 20)

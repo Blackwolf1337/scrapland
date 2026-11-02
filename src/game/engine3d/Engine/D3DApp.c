@@ -18,14 +18,13 @@
 #include "scrap/platform.h"
 #include "scrap/platform.h"
 
-extern const CD3DApplicationVtbl CD3DApplication_vftable;
+static const CD3DApplicationVtbl CD3DApplication_vftable;
 #define CD3DAPPLICATION_VFTABLE (&CD3DApplication_vftable)
 #define D3DAPP_TIMER_START 1
 #define D3DAPP_TIMER_STOP 2
 
-
-
-int D3DApp_SortModes(const D3DDisplayMode *a, const D3DDisplayMode *b) {
+/* qsort order of the display modes: width, height, then the format (the higher first) */
+static int D3DApp_SortModes(const D3DDisplayMode *a, const D3DDisplayMode *b) {
 	if (a->Width < b->Width) {
 		return -1;
 	}
@@ -44,9 +43,8 @@ int D3DApp_SortModes(const D3DDisplayMode *a, const D3DDisplayMode *b) {
 	return (int)a->Format < (int)b->Format;
 }
 
-
 /* IDirect3D8::CheckDeviceFormat (as D3DUSAGE_DEPTHSTENCIL of a surface) and CheckDepthStencilMatch */
-byte D3DApp_DepthFormatOk(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t ds) {
+static byte D3DApp_DepthFormatOk(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t ds) {
 	if (Rd_D3DCheckDeviceFormat(d3d, adapter, type, fmt, 2, 1, ds) < 0) {
 		return 0;
 	}
@@ -73,7 +71,7 @@ static byte D3DApp_TryDepth(CD3DApplication *self, uint32_t adapter, uint32_t ty
 }
 
 /* the depth/stencil format for m_dwMinDepthBits and m_dwMinStencilBits, then the depth alone, then D16 */
-int CD3DApp_FindDepthStencilFormat(CD3DApplication *self, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t *out) {
+static int CD3DApp_FindDepthStencilFormat(CD3DApplication *self, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t *out) {
 	uint32_t depth = self->minDepthBits, stencil = self->minStencilBits;
 
 	if (depth <= 16 && stencil == 0 && D3DApp_TryDepth(self, adapter, type, fmt, FMT_D16, out)) {
@@ -154,7 +152,7 @@ int CD3DApp_AdjustWindowForChange(CD3DApplication *self) {
 	return 0;
 }
 
-int g_AppPausedCount;
+static int g_AppPausedCount;
 
 /* vf13: pause counted over the callers, the timer stopped with the first and started with the last */
 void CD3DApp_Pause(CD3DApplication *self, int pause) {
@@ -174,9 +172,8 @@ void CD3DApp_Pause(CD3DApplication *self, int pause) {
 	}
 }
 
-
 /* the descriptions of the back buffer and the depth buffer, the aspect ratio of the back buffer */
-void CD3DApp_UpdateBackBufferDesc(CD3DApplication *self) {
+static void CD3DApp_UpdateBackBufferDesc(CD3DApplication *self) {
 	void *surf;
 	void *dev = self->device;
 
@@ -195,7 +192,6 @@ void CD3DApp_UpdateBackBufferDesc(CD3DApplication *self) {
 	Con_Printf("Aspect: %f (%dx%d)\n", (double)g_PhysicalAspectRatio, (int)self->backBufferDesc.Width, (int)self->backBufferDesc.Height);
 	self->devId++;
 }
-
 
 /* without frame moving one frame is stepped: the timer started and stopped */
 static void D3DApp_SingleStep(CD3DApplication *self) {
@@ -247,13 +243,13 @@ int CD3DApp_Reset(CD3DApplication *self) {
 }
 
 /* the default virtual methods: nothing to do, S_OK */
-int CD3DApp_Nop(CD3DApplication *self) {
+static int CD3DApp_Nop(CD3DApplication *self) {
 	(void)self;
 	return 0;
 }
 
 /* vf01 ConfirmDevice: every device is fine */
-int CD3DApp_ConfirmDevice(CD3DApplication *self, D3DCaps8 *caps, uint32_t behavior, uint32_t fmt) {
+static int CD3DApp_ConfirmDevice(CD3DApplication *self, D3DCaps8 *caps, uint32_t behavior, uint32_t fmt) {
 	(void)self;
 	(void)caps;
 	(void)behavior;
@@ -284,6 +280,7 @@ static D3DDeviceInfo *D3DApp_CurDevice(CD3DApplication *self) {
 }
 
 /* the device released and the environment made again; 0 and the result of the error shown on failures */
+static int CD3DApp_Initialize3DEnvironment(CD3DApplication *self);
 static byte D3DApp_Recreate(CD3DApplication *self, int *err) {
 	self->vftable->InvalidateDeviceObjects(self);
 	self->vftable->DeleteDeviceObjects(self);
@@ -300,7 +297,7 @@ static byte D3DApp_Recreate(CD3DApplication *self, int *err) {
 }
 
 /* windowed on the current device or the first one of all adapters that can, the environment made again */
-int CD3DApp_ForceWindowed(CD3DApplication *self) {
+static int CD3DApp_ForceWindowed(CD3DApplication *self) {
 	D3DDeviceInfo *dev = D3DApp_CurDevice(self);
 
 	if (!dev->bCanDoWindowed) {
@@ -388,8 +385,6 @@ int CD3DApp_ToggleFullscreen(CD3DApplication *self) {
 #define D3DCREATE_PUREDEVICE 0x10
 #define D3DCREATE_FPU_PRESERVE 0x2
 
-
-
 /* IDirect3D8 and IDirect3DDevice8 */
 
 /* the bounded lstrcatA of the stats strings */
@@ -400,6 +395,7 @@ static void D3DApp_Cat(char *dst, int size, const char *src) {
 	}
 }
 
+static int CD3DApp_BuildDeviceList(CD3DApplication *self);
 int CD3DApp_Create(CD3DApplication *self, void *inst) {
 	int hr;
 
@@ -479,7 +475,7 @@ int CD3DApp_DisplayErrorMsg(int hr) {
 
 /* the modes, depth formats and behaviors of the device of each adapter, then the first fullscreen one (with
  * fullscreen) or the first windowed one */
-int CD3DApp_BuildDeviceList(CD3DApplication *self) {
+static int CD3DApp_BuildDeviceList(CD3DApplication *self) {
 	D3DDisplayMode modes[100];
 	uint32_t fmts[20], behavior[20], depth[20];
 	int fmtOk[20];
@@ -676,7 +672,8 @@ int CD3DApp_BuildDeviceList(CD3DApplication *self) {
 	return (int)D3DAPPERR_NOWINDOWABLEDEVICES;
 }
 
-int CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
+/* the device of the current adapter, device and mode created and its objects made */
+static int CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 	D3DAdapterInfo *ad = &self->adapters[self->adapter];
 	D3DDeviceInfo *dev = &ad->devices[ad->dwCurrentDevice];
 	D3DModeInfo *mode = &dev->modes[dev->dwCurrentMode];
@@ -747,8 +744,8 @@ int CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 	return hr;
 }
 
-float g_D3DAppLastTime;
-uint32_t g_D3DAppFrames;
+static float g_D3DAppLastTime;
+static uint32_t g_D3DAppFrames;
 
 static void D3DApp_FrameStats(CD3DApplication *self) {
 	float t = DXUtil_Timer(DXUTIL_TIMER_GETABSOLUTETIME);
@@ -868,7 +865,7 @@ int CD3DApp_Render(CD3DApplication *self) {
 /* the message loop of the framework with the frame of CD3DApp_Render inside; until WM_QUIT */
 
 /* the vtable of CD3DApplication */
-const CD3DApplicationVtbl CD3DApplication_vftable = {
+static const CD3DApplicationVtbl CD3DApplication_vftable = {
 	.AdjustWindowForChange = CD3DApp_AdjustWindowForChange,
 	.ConfirmDevice = CD3DApp_ConfirmDevice,
 	.OneTimeSceneInit = CD3DApp_Nop,

@@ -14,11 +14,15 @@
 #include "scrap/scrapmain.h"
 #include "scrap/scrapmodel.h"
 
-
+#define NWGRID_VFTABLE (&cGridElements_InfPointVis_vftable)
+#define CNODESWORLDSUP_VFTABLE (&CNodesWorldSup_vftable)
+static const cGridElementsVtbl cGridElements_InfPointVis_vftable;
+static const CNodesWorldVtbl CNodesWorldSup_vftable;
 
 /* ---- Global/DList.h ---- */
 
-void NWPointList_FreePool(cNWPointList *list) {
+/* the free nodes of the point list deleted with their links */
+static void NWPointList_FreePool(cNWPointList *list) {
 	while (list->freeNodes) {
 		cNWPointNode *p = list->freeNodes;
 		list->freeNodes = p->next;
@@ -28,7 +32,7 @@ void NWPointList_FreePool(cNWPointList *list) {
 	list->numFree = 0;
 }
 
-void NWVisList_Add(cNWVisList *list, const cNWVis *vis) {
+static void NWVisList_Add(cNWVisList *list, const cNWVis *vis) {
 	cNWVisNode *node;
 
 	if (list->freeNodes) {
@@ -44,7 +48,8 @@ void NWVisList_Add(cNWVisList *list, const cNWVis *vis) {
 	DList_LinkFirst(list, node);
 }
 
-void NWVisList_Release(cNWVisList *list, cNWVisNode *node) {
+/* to the free list while it has room, else the points and the node deleted */
+static void NWVisList_Release(cNWVisList *list, cNWVisNode *node) {
 	if (list->numFree < list->maxFree) {
 		node->next = list->freeNodes;
 		list->numFree++;
@@ -57,7 +62,7 @@ void NWVisList_Release(cNWVisList *list, cNWVisNode *node) {
 	}
 }
 
-void NWVisList_RemoveHead(cNWVisList *list) {
+static void NWVisList_RemoveHead(cNWVisList *list) {
 	cNWVisNode *p = list->head;
 
 	list->iter = NULL;
@@ -75,7 +80,7 @@ void NWVisList_RemoveHead(cNWVisList *list) {
 	list->count--;
 }
 
-void NWVisList_RemoveIter(cNWVisList *list) {
+static void NWVisList_RemoveIter(cNWVisList *list) {
 	cNWVisNode *cur = list->iter;
 
 	if (!cur) {
@@ -97,24 +102,10 @@ void NWVisList_RemoveIter(cNWVisList *list) {
 	list->iter = next;
 }
 
-void NWVisList_Clear(cNWVisList *list) {
+static void NWVisList_Clear(cNWVisList *list) {
 	while (list->head) {
 		NWVisList_RemoveHead(list);
 	}
-}
-
-void NWVecList_AddBefore(cNWVecList *list, const vec3_t *v) {
-	cNWVecNode *head = list->head;
-
-	if (list->iter == head) {
-		NWVecList_Add(list, v);
-		return;
-	}
-	CHECK(head != NULL);
-	CHECK(list->iter != NULL);
-	list->head = list->iter;
-	NWVecList_Add(list, v);
-	list->head = head;
 }
 
 void NWVecList_Append(cNWVecList *list, const vec3_t *v) {
@@ -124,7 +115,7 @@ void NWVecList_Append(cNWVecList *list, const vec3_t *v) {
 	DList_LinkLast(list, node);
 }
 
-void NWIntList_Append(cNWIntList *list, void *const *data) {
+static void NWIntList_Append(cNWIntList *list, void *const *data) {
 	cNWIntNode *node = DList_NewNode(list, sizeof(*node));
 
 	node->data = *data;
@@ -133,21 +124,16 @@ void NWIntList_Append(cNWIntList *list, void *const *data) {
 
 /* ---- Global/GridElements.h ---- */
 
-cGridElements_InfPointVisPtr *NWGrid_ctor(cGridElements_InfPointVisPtr *self, const vec3_t *max,
+static cGridElements_InfPointVisPtr *NWGrid_ctor(cGridElements_InfPointVisPtr *self, const vec3_t *max,
 	const vec3_t *min, int nx, int ny, int nz) {
 	return cGridElements_Init(self, NWGRID_VFTABLE, max, min, nx, ny, nz);
 }
 
-void NWGrid_Free(cGridElements_InfPointVisPtr *self) {
+static void NWGrid_Free(cGridElements_InfPointVisPtr *self) {
 	cGridElements_FreeCells(self, (void(*)(void *))NWIntList_Clear, sizeof(cNWIntNode));
 }
 
-void NWGrid_dtor(cGridElements_InfPointVisPtr *self) {
-	self->vftable = NWGRID_VFTABLE;
-	NWGrid_Free(self);
-}
-
-cGridElements_InfPointVisPtr *NWGrid_Delete(cGridElements_InfPointVisPtr *self, byte flags) {
+static cGridElements_InfPointVisPtr *NWGrid_Delete(cGridElements_InfPointVisPtr *self, byte flags) {
 	self->vftable = NWGRID_VFTABLE;
 	NWGrid_Free(self);
 	if (flags & 1) {
@@ -156,7 +142,7 @@ cGridElements_InfPointVisPtr *NWGrid_Delete(cGridElements_InfPointVisPtr *self, 
 	return self;
 }
 
-byte NWGrid_Add(cGridElements_InfPointVisPtr *self, const vec3_t *p, const void *data) {
+static byte NWGrid_Add(cGridElements_InfPointVisPtr *self, const vec3_t *p, const void *data) {
 	CHECK(!((p->x > self->max.x) || (p->x < self->min.x) || (p->y > self->max.y) || (p->y < self->min.y) ||
 		(p->z > self->max.z) || (p->z < self->min.z)));
 	int i = self->vftable->CellIndex(self, p);
@@ -211,7 +197,8 @@ void CNodesWorldSup_dtor(CNodesWorld *self) {
 	NWPointList_FreePool(&self->sup.points);
 }
 
-CNodesWorld *CNodesWorldSup_Delete(CNodesWorld *self, byte flags) {
+/* CNodesWorldSup_ctor, _dtor, _FreeGraph and _LoadGraph: nodesworld.h */
+static CNodesWorld *CNodesWorldSup_Delete(CNodesWorld *self, byte flags) {
 	CNodesWorldSup_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, 0x360);
@@ -1553,7 +1540,8 @@ void NWSup_CreateRegion(CNodesWorld *self, const vec3_t *start, nwRegionReach_t 
 
 /* ---- the points of visibility between the regions ---- */
 
-void NWSup_PrintTime(const char *fmt, int32_t t1, int32_t t0) {
+/* "hh:mm:ss" of the seconds from t0 to t1 into the console with fmt */
+static void NWSup_PrintTime(const char *fmt, int32_t t1, int32_t t0) {
 	int s = (int)crt_difftime32(t1, t0);
 	int h = s / 3600, r = s % 3600;
 
@@ -1829,7 +1817,7 @@ void NWSup_DrawExtra(CNodesWorld *self, float r, uint32_t color) {
 }
 
 /* the vtable of CNodesWorldSup */
-const CNodesWorldVtbl CNodesWorldSup_vftable = {
+static const CNodesWorldVtbl CNodesWorldSup_vftable = {
 	.Delete = CNodesWorldSup_Delete,
 	.GetBox = CNodesWorldSup_GetBox,
 	.LoadFiles = CNodesWorldSup_LoadGraph,
@@ -1873,7 +1861,7 @@ const CNodesWorldVtbl CNodesWorldSup_vftable = {
 };
 
 /* the vtable of cGridElements_InfPointVis */
-const cGridElementsVtbl cGridElements_InfPointVis_vftable = {
+static const cGridElementsVtbl cGridElements_InfPointVis_vftable = {
 	.Delete = NWGrid_Delete,
 	.Add = NWGrid_Add,
 	.GetCellAt = cGridElements_GetCellAt,

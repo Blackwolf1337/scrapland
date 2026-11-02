@@ -12,26 +12,6 @@
 #include "scrap/scoreritems.h"
 #include "scrap/world.h"
 
-/* the vtables of the exe */
-extern const cSpriteScorerVtbl cSpriteScorer_vftable;
-#define CSPRITESCORER_VFTABLE (&cSpriteScorer_vftable.base)
-extern const cSpriteScorerVtbl cGradientScorer_vftable;
-#define CGRADIENTSCORER_VFTABLE (&cGradientScorer_vftable.base)
-extern const cScorerItemVtbl cStatusScorer_vftable;
-#define CSTATUSSCORER_VFTABLE (&cStatusScorer_vftable)
-extern const cScorerItemVtbl cTabScorer_vftable;
-#define CTABSCORER_VFTABLE (&cTabScorer_vftable)
-extern const cScorerItemVtbl cTargetScorer_vftable;
-#define CTARGETSCORER_VFTABLE (&cTargetScorer_vftable)
-extern const cScorerItemVtbl cTimerScorer_vftable;
-#define CTIMERSCORER_VFTABLE (&cTimerScorer_vftable)
-extern const cScorerItemVtbl cWaypointScorer_vftable;
-#define CWAYPOINTSCORER_VFTABLE (&cWaypointScorer_vftable)
-extern const cScorerItemVtbl cWeaponScorer_vftable;
-#define CWEAPONSCORER_VFTABLE (&cWeaponScorer_vftable)
-extern const cScorerItemVtbl cWindFxScorer_vftable;
-#define CWINDFXSCORER_VFTABLE (&cWindFxScorer_vftable)
-
 /* the number of frames of the sheet (CHECKs a sheet) */
 int CPsaImage_GetNumFrames(CPsaImage *self);
 
@@ -177,10 +157,6 @@ static inline float ScorerHud_ArrowAngle(float sx, float sy) {
 
 /* ---- SpriteScorer.cpp ---- */
 
-cScorerItem *cSpriteScorer_Delete(cScorerItem *base, byte flags);
-/* the image of the file with flags (the 0x40000 flag when Discardable) */
-void cSpriteScorer_SetFile(cSpriteScorer *self, uint32_t flags, const char *name);
-void cSpriteScorer_Draw(cScorerItem *base, int player);
 /* vf04 */
 
 /* a sprite filled by four colors at its corners (0xd8 bytes) */
@@ -191,10 +167,6 @@ typedef struct cGradientScorer {
 } cGradientScorer;
 
 cGradientScorer *cGradientScorer_ctor(cGradientScorer *self);
-cScorerItem *cGradientScorer_Delete(cScorerItem *base, byte flags);
-/* ColorSelected, Red, Green, Blue, Alpha of the selected corner, then the sprite variables */
-int cGradientScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cGradientScorer_Draw(cScorerItem *base, int player);
 
 /* ---- StatusScorer.cpp ---- */
 
@@ -246,18 +218,7 @@ typedef struct cStatusScorer {
 	uint32_t textBackColor;		/* 0x1f8 0xffffffff */
 } cStatusScorer;
 
-extern cGVar GVar_DangerLifeSound;
-#define g_StatusLowLifeSound (GVar_DangerLifeSound.value.s)	/* the sound of the low life */
-extern cGVar GVar_RegenerationSound;
-#define g_StatusAlarmSound (GVar_RegenerationSound.value.s)	/* the siren of the alarm */
-
 cStatusScorer *cStatusScorer_ctor(cStatusScorer *self);
-void cStatusScorer_dtor(cStatusScorer *self);
-cScorerItem *cStatusScorer_Delete(cScorerItem *base, byte flags);
-/* BoostOnRender sets the OnRender function of the item */
-int cStatusScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-/* vf00: the life, lives, money, hull and boost of the target of the camera, the low life and regeneration sounds */
-void cStatusScorer_Draw(cScorerItem *base, int player);
 
 /* ---- TabScorer.cpp ---- */
 
@@ -280,21 +241,7 @@ typedef struct cTabScorer {
 	CPsaImage *img;			/* 0xec File */
 } cTabScorer;
 
-extern float g_TabBackTextWidth;	/* the width of the back text, once */
-
 cTabScorer *cTabScorer_ctor(cTabScorer *self);
-void cTabScorer_dtor(cTabScorer *self);
-cScorerItem *cTabScorer_Delete(cScorerItem *base, byte flags);
-void cTabScorer_SetFile(cTabScorer *self, uint32_t flags, const char *name);
-int cTabScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-/* the cells of the size, the tab over all of them when none is set */
-void cTabScorer_UpdateSize(cTabScorer *self);
-/* the frame stretched over the cells x0, y0 to x1, y1 */
-void cTabScorer_DrawRect(cTabScorer *self, CPsaImage *img, int x0, int y0, int x1, int y1, int frame);
-/* the frame in the cell x, y turned by rot quarters (0..7), flip mirrored */
-void cTabScorer_DrawCell(cTabScorer *self, CPsaImage *img, int x, int y, int frame, int rot, int flip);
-/* type 4 a plain Menu_DrawFrame, else the tab of tabSpriteIndex.. over the frame (types 2, 3: the bottom kinds) */
-void cTabScorer_Draw(cScorerItem *base, int player);
 
 /* ---- TalkScorer.cpp ---- */
 
@@ -309,8 +256,6 @@ typedef struct cTalkScorerVtbl {
 	void(*DrawTalk)(struct cTalkScorer *self, int player, float *pos);		/* 0x10 */
 	void(*DrawUse)(struct cTalkScorer *self, int player, float *pos);		/* 0x14 */
 } cTalkScorerVtbl;
-extern const cTalkScorerVtbl cTalkScorer_vftable;
-#define CTALKSCORER_VFTABLE (&cTalkScorer_vftable.base)
 
 typedef struct cTalkScorer {
 	cScorerItem base;		/* 0x0000 */
@@ -332,33 +277,10 @@ typedef struct cTalkScorer {
 	int maxLines;			/* 0x1a7c 3, shown at once */
 } cTalkScorer;
 
-/* the talk of Scorer_SetSpeechText */
-extern char g_TalkText[6400];		/* TALK_TEXT_SIZE */
-extern cGVar GVar_MaxTalkLineSizePix;
-#define g_TalkWidth (GVar_MaxTalkLineSizePix.value.f)		/* the width of the lines */
-extern cGVar GVar_TimeToAbortChatText;
-#define g_TalkUseTime (GVar_TimeToAbortChatText.value.f)	/* the hold time of the use that skips a talk */
 extern cGVar GVar_RemainTalkTime;
 #define g_RemainTalkTime (GVar_RemainTalkTime.value.f)	/* RemainTalkTime */
-extern cGVar GVar_FullTalkTime;
-#define g_TalkTime (GVar_FullTalkTime.value.f)		/* the time of the whole talk */
-extern cPy_Function g_TalkCallback;
-extern int g_TalkNumLines;
-extern char * g_TalkLines[40];	/* TALK_MAX_LINES */
-extern int g_TalkColor[3];		/* r, g, b */
 
 cTalkScorer *cTalkScorer_ctor(cTalkScorer *self);
-void cTalkScorer_dtor(cTalkScorer *self);
-cScorerItem *cTalkScorer_Delete(cScorerItem *base, byte flags);
-/* the character of the player in front of its character (the use target), NULL if none */
-cEntity *Talk_GetUseTarget(int player);
-int cTalkScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-/* the use text (vf05) and the talk (vf04) up from the item position */
-void cTalkScorer_Draw(cScorerItem *base, int player);
-void cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos);
-void cTalkScorer_DrawUse(cTalkScorer *self, int player, float *pos);
-/* the items of a Python list as the parameters of the talk callback */
-void Talk_AddCallbackParams(PyObject *list);
 
 /* ---- TargetScorer.cpp ---- */
 
@@ -376,14 +298,6 @@ typedef struct cTargetScorer {
 } cTargetScorer;
 
 cTargetScorer *cTargetScorer_ctor(cTargetScorer *self);
-void cTargetScorer_dtor(cTargetScorer *self);
-cScorerItem *cTargetScorer_Delete(cScorerItem *base, byte flags);
-/* the mark of the target of the ship and the arrow to its last attacker; the marks of the enemies and friends
- * around it */
-void cTargetScorer_DrawTarget(cTargetScorer *self, cEntity *ship);
-void cTargetScorer_DrawEnemies(cTargetScorer *self, cEntity *ship);
-int cTargetScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cTargetScorer_Draw(cScorerItem *base, int player);
 
 /* ---- TextScorer.cpp ---- */
 
@@ -394,10 +308,6 @@ typedef struct cTextScorerVtbl {
 	cScorerItemVtbl base;
 	void(*DrawKeyboard)(struct cTextScorer *self, int player);			/* 0x10 the virtual keyboard */
 } cTextScorerVtbl;
-extern const cTextScorerVtbl cTextTypingScorer_vftable;
-#define CTEXTTYPINGSCORER_VFTABLE (&cTextTypingScorer_vftable.base)
-extern const cTextScorerVtbl cTextScorer_vftable;
-#define CTEXTSCORER_VFTABLE (&cTextScorer_vftable.base)
 
 typedef struct cTextScorer {
 	cAbstractTextScorer base;	/* 0x00 */
@@ -426,35 +336,10 @@ typedef struct cTextTypingScorer {
 	byte pad_f1[3];
 } cTextTypingScorer;
 
-/* the text edit of each player */
-extern cTextScorer * g_TextEditItem[4];	/* [4] */
-extern cScorerItem * g_TextEditCursor[4];	/* [4] the cursor item before the edit */
-extern cGVar GVar_TextTypingSound;
-#define g_TypingSoundName (GVar_TextTypingSound.value.s)	/* "keyboard%d" for the key sounds */
-extern cGVar GVar_TextTypingSoundVol;
-#define g_TypingSoundVol (GVar_TextTypingSoundVol.value.f)
 #define TEXTEDIT_NATIVE_FUNC 0x184120			/* the OnAccept that starts the edit */
 
 cTextScorer *cTextScorer_ctor(cTextScorer *self);
 cTextTypingScorer *cTextTypingScorer_ctor(cTextTypingScorer *self);
-void cTextScorer_dtor(cTextScorer *self);
-cScorerItem *cTextScorer_Delete(cScorerItem *base, byte flags);
-cScorerItem *cTextTypingScorer_Delete(cScorerItem *base, byte flags);
-/* EditHint, CenterEdit, IsNumeric, MaxInput (the size of that many "W"; 0 above 255), then the text variables */
-int cTextScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-/* TypingSpeed, TypingTime (return 3), CursorAtInit, CursorAtEnd, TypingSound, then cTextScorer_Var */
-int cTextTypingScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cTextScorer_Draw(cScorerItem *base, int player);
-/* vf04: the text being typed and the virtual keyboard */
-void cTextScorer_DrawKeyboard(cTextScorer *self, int player);
-void cTextTypingScorer_Draw(cScorerItem *base, int player);
-/* the edit of the text item of player ends: the cursor item back, the hint of the item */
-void TextEdit_End(int player);
-/* onDone of the player input: the typed text into the item, then TextEdit_End */
-void TextEdit_Done(int player, const char *text);
-/* the native OnAccept of an edited text (Input/ActionSet.h): params player, item name; the virtual keyboard
- * starts on the text of the item */
-void TextEdit_Start(cAbstractFile *params);
 
 /* ---- TimerScorer.cpp ---- */
 
@@ -469,38 +354,9 @@ typedef struct cTimerScorer {
 	cPy_Function onTimeWarning;	/* 0xdc */
 } cTimerScorer;
 
-/* the time engine variables of the types, by type (their flags at -4, GVAR_FLAGS) */
-extern cGVar GVar_TimeToCancelCurrentMission;
-#define g_TimeToCancel (GVar_TimeToCancelCurrentMission.value.f)
-extern cGVar GVar_TimeToFinishCurrentMission;
-#define g_TimeToFinish (GVar_TimeToFinishCurrentMission.value.f)
-extern cGVar GVar_TimeInactiveTimer;
-#define g_TimeInactive (GVar_TimeInactiveTimer.value.f)
-extern cGVar GVar_TimeSpecialUseTimer;
-#define g_TimeSpecialUse (GVar_TimeSpecialUseTimer.value.f)
-extern cGVar GVar_CounterType;
-#define g_TimerMode (GVar_CounterType.value.i)		/* 0 counts down, 1 up, else stopped */
-extern cGVar GVar_TimeWarning;
-#define g_TimerWarning (GVar_TimeWarning.value.f)	/* OnTimeWarning below this, -1 after */
-
 cTimerScorer *cTimerScorer_ctor(cTimerScorer *self);
-void cTimerScorer_dtor(cTimerScorer *self);
-cScorerItem *cTimerScorer_Delete(cScorerItem *base, byte flags);
-/* set only: OnTimeExpired, OnTimeWarning, TimerType; then the text variables */
-int cTimerScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cTimerScorer_Draw(cScorerItem *base, int player);
 
 /* ---- the menu drawing helpers (between TimerScorer.cpp and WaypointScorer.cpp) ---- */
-
-/* Menu_DrawStretch (scoreritems.h), Menu_DrawBar and Menu_DrawFrame (app.h); the native OnRender functions of the
- * menu items (params: the player, the item name) */
-void Scorer_MetroUsrHere(cAbstractFile *params);
-void Scorer_SpriteFadeIn(cAbstractFile *params);
-void Scorer_SpriteFadeOut(cAbstractFile *params);
-void Scorer_SpriteFadeOutFinal(cAbstractFile *params);
-void Scorer_SpriteFlash(cAbstractFile *params);
-void Scorer_SpriteGlow(cAbstractFile *params);
-void Scorer_BoostScorer(cAbstractFile *params);
 
 /* ---- WaypointScorer.cpp ---- */
 
@@ -517,14 +373,6 @@ typedef struct cWaypointScorer {
 } cWaypointScorer;
 
 cWaypointScorer *cWaypointScorer_ctor(cWaypointScorer *self);
-void cWaypointScorer_dtor(cWaypointScorer *self);
-cScorerItem *cWaypointScorer_Delete(cScorerItem *base, byte flags);
-int cWaypointScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-/* the mark of the waypoint object: the rectangle around it in sight (named: the current one), the blinking dot on
- * another one in sight, else the arrow towards it */
-void cWaypointScorer_DrawTarget(cWaypointScorer *self, cEntity *e, byte current);
-/* the current waypoint (CurrentWaypointName, CurrentWaypointName2 for player 1), else the nearest one */
-void cWaypointScorer_Draw(cScorerItem *base, int player);
 
 /* ---- WeaponScorer.cpp ---- */
 
@@ -575,11 +423,6 @@ typedef struct cWeaponScorer {
 } cWeaponScorer;
 
 cWeaponScorer *cWeaponScorer_ctor(cWeaponScorer *self);
-void cWeaponScorer_dtor(cWeaponScorer *self);
-cScorerItem *cWeaponScorer_Delete(cScorerItem *base, byte flags);
-int cWeaponScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-/* vf00: the weapon of the ship of the camera, its ammo and slots, the row of the weapons after a change */
-void cWeaponScorer_Draw(cScorerItem *base, int player);
 
 /* ---- WindFxScorer.cpp ---- */
 
@@ -591,14 +434,6 @@ typedef struct cWindFxScorer {
 	cSound sound;			/* 0xc0 looped */
 } cWindFxScorer;
 
-extern cGVar GVar_WindFxScorerSound;
-#define g_WindFxSound (GVar_WindFxScorerSound.value.s)
-
 cWindFxScorer *cWindFxScorer_ctor(cWindFxScorer *self);
-void cWindFxScorer_dtor(cWindFxScorer *self);
-cScorerItem *cWindFxScorer_Delete(cScorerItem *base, byte flags);
-/* vf00: the volume, pan and pitch of the wind by the free space around the ship of the camera; the debug bars with
- * WindFxScorerShow */
-void cWindFxScorer_Draw(cScorerItem *base, int player);
 
 #endif

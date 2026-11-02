@@ -41,32 +41,15 @@ typedef struct CCamera {
 CCamera *CCamera_ctor(CCamera *self);
 CCamera *CCamera_ctorCopy(CCamera *self, const CCamera *other);
 void CCamera_dtor(CCamera *self);
-IObject3D *CCamera_Delete(IObject3D *base, byte flags);
-/* the members after the copied ones cleared, the nodes forgotten (not released) */
-void CCamera_Clear(CCamera *self);
 void CCamera_SetNode(CCamera *self, CNode3D *node);
-void CCamera_SetNodeTarget(CCamera *self, CNode3D *node);
-/* the "CAM" block; ctx holds the node at 0x4 */
-byte CCamera_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
-byte CCamera_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
 /* dir and up from the angles, viewPos from pos */
 void CCamera_UpdateVectors(CCamera *self);
 /* the angles that look from pos at target */
 void CCamera_LookAtRot(CCamera *self);
-/* the rotation looking along dir with up (made orthogonal) */
-void CCamera_LookAt(CCamera *self, matrix_t *m, const vec3_t *dir, const vec3_t *up);
-void CCamera_ViewMatrix(CCamera *self, matrix_t *m);
 matrix_t *CCamera_GetView(CCamera *self, matrix_t *m);
-/* 0 for a near and far plane too close or a too narrow field of view */
-byte CCamera_ProjMatrix(CCamera *self, matrix_t *m);
 matrix_t *CCamera_GetProj(CCamera *self, matrix_t *m);
 void CCamera_Move(CCamera *self, float d);
 /* along the x axis of the angles and the up vector */
 void CCamera_Strafe(CCamera *self, float side, float rise);
-/* the IObject3D methods: Update follows the node with CamaraNodos, the others do nothing */
-void CCamera_Update(IObject3D *base, CRenderNode *r);
-void CCamera_Render(CCamera *self, void *arg, CRenderNode *r);
-void CCamera_InitD3D(CCamera *self, void *dev);
-void CCamera_ReleaseD3D(CCamera *self, void *dev);
 
 #endif

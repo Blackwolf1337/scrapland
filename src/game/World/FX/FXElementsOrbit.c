@@ -7,20 +7,15 @@
 #include "scrap/fxelements.h"
 #include "scrap/scrap.h"
 
+#define CFXELEMENTSORBITBUOY_VFTABLE (&cFXElementsOrbitBuoy_vftable)
+#define CFXELEMENTSORBITBUOYCONTROLLER_VFTABLE (&cFXElementsOrbitBuoyController_vftable)
+static const cMapElementVtbl cFXElementsOrbitBuoy_vftable;
+static const cMapElementVtbl cFXElementsOrbitBuoyController_vftable;
+
 #define ORBIT_NAME_SKIP 11	/* "DM_Element_" before the name of the element in the dummy */
 
-/* ---- construction ---- */
-
-cFXElementsOrbitBuoy *cFXElementsOrbitBuoy_ctor(cFXElementsOrbitBuoy *self, const char *name,
-	const vec3_t *pos, const vec3_t *rot) {
-	cMapElement_ctor(&self->base, name, pos, rot);
-	self->base.vftable = CFXELEMENTSORBITBUOY_VFTABLE;
-	CGameParticles_ctor(&self->light);
-	return self;
-}
-
 /* no buoys yet, the fades of a column 1/8 apart */
-cFXElementsOrbitBuoyController *cFXElementsOrbitBuoyController_ctor(cFXElementsOrbitBuoyController *self,
+static cFXElementsOrbitBuoyController *cFXElementsOrbitBuoyController_ctor(cFXElementsOrbitBuoyController *self,
 	const char *name, const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSORBITBUOYCONTROLLER_VFTABLE;
@@ -35,19 +30,19 @@ cFXElementsOrbitBuoyController *cFXElementsOrbitBuoyController_ctor(cFXElementsO
 }
 
 /* the light is released twice, by the class and by the member destructor */
-void cFXElementsOrbitBuoy_dtor(cFXElementsOrbitBuoy *self) {
+static void cFXElementsOrbitBuoy_dtor(cFXElementsOrbitBuoy *self) {
 	self->base.vftable = CFXELEMENTSORBITBUOY_VFTABLE;
 	CGameParticles_Release(&self->light);
 	CGameParticles_Release(&self->light);
 	cMapElement_dtor(&self->base);
 }
 
-void cFXElementsOrbitBuoyController_dtor(cFXElementsOrbitBuoyController *self) {
+static void cFXElementsOrbitBuoyController_dtor(cFXElementsOrbitBuoyController *self) {
 	self->base.vftable = CFXELEMENTSORBITBUOYCONTROLLER_VFTABLE;
 	cMapElement_dtor(&self->base);
 }
 
-cMapElement *cFXElementsOrbitBuoy_Delete(cMapElement *base, byte flags) {
+static cMapElement *cFXElementsOrbitBuoy_Delete(cMapElement *base, byte flags) {
 	cFXElementsOrbitBuoy *self = (cFXElementsOrbitBuoy *)base;
 	cFXElementsOrbitBuoy_dtor(self);
 	if (flags & 1) {
@@ -56,7 +51,7 @@ cMapElement *cFXElementsOrbitBuoy_Delete(cMapElement *base, byte flags) {
 	return base;
 }
 
-cMapElement *cFXElementsOrbitBuoyController_Delete(cMapElement *base, byte flags) {
+static cMapElement *cFXElementsOrbitBuoyController_Delete(cMapElement *base, byte flags) {
 	cFXElementsOrbitBuoyController *self = (cFXElementsOrbitBuoyController *)base;
 	cFXElementsOrbitBuoyController_dtor(self);
 	if (flags & 1) {
@@ -65,17 +60,9 @@ cMapElement *cFXElementsOrbitBuoyController_Delete(cMapElement *base, byte flags
 	return base;
 }
 
-void cFXElementsOrbitBuoy_ReleaseLight(cFXElementsOrbitBuoy *self) {
-	CGameParticles_Release(&self->light);
-}
-
-void cFXElementsOrbitBuoyController_Release(cFXElementsOrbitBuoyController *self) {
-	(void)self;
-}
-
 /* ---- the elements ---- */
 
-byte cFXElementsOrbitBuoy_Init(cMapElement *elem) {
+static byte cFXElementsOrbitBuoy_Init(cMapElement *elem) {
 	cFXElementsOrbitBuoy *self = (cFXElementsOrbitBuoy *)elem;
 	vec3_t tmp;
 
@@ -89,19 +76,19 @@ byte cFXElementsOrbitBuoy_Init(cMapElement *elem) {
 	return 1;
 }
 
-void cFXElementsOrbitBuoy_Update(cMapElement *elem, float dt) {
+static void cFXElementsOrbitBuoy_Update(cMapElement *elem, float dt) {
 	cFXElementsOrbitBuoy *self = (cFXElementsOrbitBuoy *)elem;
 	cMapElement_Update(&self->base, dt);
 }
 
-byte cFXElementsOrbitBuoyController_Init(cMapElement *elem) {
+static byte cFXElementsOrbitBuoyController_Init(cMapElement *elem) {
 	cFXElementsOrbitBuoyController *self = (cFXElementsOrbitBuoyController *)elem;
 	cMapElement_Init(&self->base);
 	return 1;
 }
 
 /* the lights of the buoys sized by the distance to the camera, faded by their turn */
-void cFXElementsOrbitBuoyController_Update(cMapElement *elem, float dt) {
+static void cFXElementsOrbitBuoyController_Update(cMapElement *elem, float dt) {
 	cFXElementsOrbitBuoyController *self = (cFXElementsOrbitBuoyController *)elem;
 	cMapElement_Update(&self->base, dt);
 	for (int col = 0; col < FXORBITBOYACOLUMNS; col++) {
@@ -149,14 +136,6 @@ void cFXElementsOrbitBuoyController_Update(cMapElement *elem, float dt) {
 			}
 		}
 	}
-}
-
-void cFXElementsOrbitBuoyController_SetBuoy(cFXElementsOrbitBuoyController *self, int type, int column,
-	int number, cFXElementsOrbitBuoy *buoy) {
-	CHECK(column >= 0 && column < FXORBITBOYACOLUMNS);
-	CHECK(number >= 0 && number < FXORBITBOYACOLUMNCOUNT);
-	self->type[column][number] = type;
-	self->buoy[column][number] = buoy;
 }
 
 /* the controllers first, then the buoys "OrbitBoya<type>_<column><number>" added to the last controller */
@@ -223,14 +202,14 @@ void FXElementsOrbit_Create(void) {
 }
 
 /* the vtable of cFXElementsOrbitBuoy */
-const cMapElementVtbl cFXElementsOrbitBuoy_vftable = {
+static const cMapElementVtbl cFXElementsOrbitBuoy_vftable = {
 	.Delete = cFXElementsOrbitBuoy_Delete,
 	.Init = cFXElementsOrbitBuoy_Init,
 	.Update = cFXElementsOrbitBuoy_Update,
 };
 
 /* the vtable of cFXElementsOrbitBuoyController */
-const cMapElementVtbl cFXElementsOrbitBuoyController_vftable = {
+static const cMapElementVtbl cFXElementsOrbitBuoyController_vftable = {
 	.Delete = cFXElementsOrbitBuoyController_Delete,
 	.Init = cFXElementsOrbitBuoyController_Init,
 	.Update = cFXElementsOrbitBuoyController_Update,

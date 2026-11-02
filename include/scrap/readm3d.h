@@ -17,65 +17,18 @@
 #include "scrap/node3d.h"
 #include "scrap/table.h"
 
-extern cGVar g_ShowNodesTreeVar;
-extern cGVar g_UseWSMVar;
-
 #define M3D_STRING 0x400
 
-extern byte g_M3DBinary;
-extern byte g_M3DLabels;	/* text: lines start with the label; binary: labels stored */
-extern char g_M3DString[1024];	/* M3D_STRING bytes, strings without a destination */
-extern char g_M3DName[260];	/* the file being read, for messages */
-extern char g_M3DDir[260];	/* MAX_FILEPATH, its directory */
-extern char g_M3DBaseName[260];	/* MAX_FILEPATH, its name without the extension */
-extern char g_M3DSceneMax[260];	/* MAX_FILEPATH, "Escena:" (the scene of the editor) */
-extern CIniFile *g_M3DFileINI;	/* the .ini of the file, until the scene takes it */
 /* the scene of the model while an animation of it (lee_M3D_Estatica) or a LOD model of it is read */
 extern CScene *g_SceneAnimParent;
 extern CScene *g_SceneLODParent;
 /* the binary caches of the M3D files: .CM3 of the animations, .SM3 of the models, with the version and the
  * times of the M3D and the model (CM3) or the .INI (SM3) */
 #define M3D_CACHE_VER 0x6515f8
-extern cGVar GVar_CM3_CheckTime;
-#define g_CM3CheckTime (GVar_CM3_CheckTime.value.i)		/* CM3_CheckTime */
-extern cGVar GVar_CM3_UseScenes;
-#define g_CM3UseScenes (GVar_CM3_UseScenes.value.i)		/* CM3_UseScenes 0, 1, 2 */
-extern cGVar GVar_SM3_CheckTime;
-#define g_SM3CheckTime (GVar_SM3_CheckTime.value.i)		/* SM3_CheckTime */
-extern cGVar GVar_SM3_UseScenes;
-#define g_SM3UseScenes (GVar_SM3_UseScenes.value.i)		/* SM3_UseScenes 0, 1, 2 */
-extern cGVar GVar_CM3_DeleteM3D;
-#define g_CM3DeleteM3D (GVar_CM3_DeleteM3D.value.i)		/* CM3_DeleteM3D */
-extern byte g_M3DOk;
-#define g_ShowNodesTree (g_ShowNodesTreeVar.value.i)		/* ShowNodesTree */
-/* the [Model] switches of the ini of the model being read */
-extern byte g_M3DUseOpacity;
-extern byte g_M3DUseEnvmap;
-extern byte g_M3DUseBumpmap;
-extern byte g_M3DUseGlowmap;
 
-/* the state of the reader while an M3D file is read */
-extern int g_M3DVersion;		/* 5 .. 14 */
-extern int g_M3DFirstFrame;
-extern int g_M3DLastFrame;
-extern int g_M3DFrames;		/* last - first + 1 */
-extern float g_M3DPreScaleU;	/* [Model] PreScaleU of the ini */
-extern float g_M3DPreScaleV;
 /* the materials of the file: each with its material and sub material index of the file, used by a face */
 #define M3D_MAX_MAT 0x200
-extern int g_M3DNumMat;
-extern CMaterial * g_M3DMat[512];	/* [M3D_MAX_MAT] */
-extern byte g_M3DMatUsado[512];	/* [M3D_MAX_MAT] */
-extern int g_M3DMatId[512];		/* [M3D_MAX_MAT] */
-extern int g_M3DMatSub[512];		/* [M3D_MAX_MAT] -1 for a material */
-extern CMatList *g_M3DLMat;	/* the materials read, until they go to the scene */
 #define M3D_MAX_MAT_SCENE 0x100
-extern char g_M3DTexturePath[260];	/* MAX_FILEPATH, the dir of the file or [Model] TexturePath */
-extern cGVar GVar_SharedTexuresPath;
-#define g_SharedTexturesPath (GVar_SharedTexuresPath.value.s)	/* gvar SharedTexuresPath, for "$name" maps */
-extern cGVar GVar_OptimizeNodes;
-#define g_OptimizeNodes (GVar_OptimizeNodes.value.i)	/* gvar: 1 delete unused nodes, 2 collapse to bip nodes, 4 AniMask */
-#define g_UseWSM (g_UseWSMVar.value.i)		/* gvar UseWSM */
 extern int g_UseTextures;		/* video UsarTexturas: without, maps of b8 1 become colors */
 
 /* an animation table of the file: one value a frame (CTable of int or float) */
@@ -85,7 +38,6 @@ typedef struct M3DTable {
 	byte fixed;			/* 0x8 one run over all frames: constant */
 	byte pad9[3];
 } M3DTable;
-extern M3DTable *g_M3DSceneTables;	/* 6: the animated ambient and background colors */
 
 /* the tables of a vector or rotation: x, then z and y (the files are z up), then w or the angle */
 typedef struct M3DTable4 {
@@ -132,159 +84,12 @@ typedef struct M3DNode {
 	M3DTrack track2;		/* 0x1d8 */
 	M3DTable t2a4[6];		/* 0x2a4 */
 } M3DNode;
-extern M3DNode *g_M3DNodes;	/* new[] of the objects */
 
-/* text: the line must start with the label (or just the next line without labels); binary: the stored label must
- * be name */
-void M3D_Label(const char *name);
-/* the values; tok is the label before them, NULL to go on at the same place */
-int M3D_ReadInt(const char *tok);
-float M3D_ReadFloat(const char *tok);
-byte M3D_ReadBool(const char *tok);	/* text "si" or "no" */
-/* into dest (g_M3DString when NULL); text quoted or the rest of the line */
-char *M3D_ReadString(const char *tok, char *dest, int size, byte quoted);
-/* swapYZ: the files are z up */
-void M3D_ReadVec3(const char *tok, vec3_t *v, byte swapYZ);
-void M3D_ReadVec2(const char *tok, float *v);
-/* axis and angle in the file, the axis turned around */
-void M3D_ReadQuat(const char *tok, quat_t *q, byte swapYZ);
-/* the transform named name */
-void M3D_ReadTransform(const char *name, m3dTransform_t *mt);
-/* an index line "n:", fatal if it is not expected */
-void M3D_ReadIndex(int expected);
-/* the animation scene of the .CM3 of name for g_SceneAnimParent, NULL without a valid one */
-CScene *CM3_Load(const char *name);
 /* the scene of the .SM3 of name, NULL without a valid one or with SM3_UseScenes not 1 */
 CScene *SM3_Load(const char *name);
-/* the .CM3 of the animation scene esc of name and the .SM3 of the model scene esc (with SM3_UseScenes); a
- * failed write is reported, not fatal. CM3_DeleteM3D deletes the M3D after */
-void CM3_Save(const char *name, CScene *scn);
 void SM3_Save(const char *name, CScene *scn);
-/* ok: g_M3DOk set; else the first failure after it reported */
-void M3D_SetOk(byte ok);
-/* the particle systems of the nodes with a Particles section (model_particles.ini of the scene in userProp); the
- * nodes of a LOD model point at those of the main LOD */
-void Scene_Particles(CScene *scn);
-/* the log of the other nodes named as node before it */
-void Scene_CheckDuplicates(CScene *scn, CNode3D *node);
-void Node_MarkBip(CNode3D *node);
-/* the "flare*" nodes to CFlare (size from "(tam=n)" in the name), the "sprite*" nodes to CGraphic3D, both from the
- * material of their first triangle */
-void Scene_Flares(CScene *scn);
-void Scene_Sprites(CScene *scn);
-/* the empty nodes deleted; the tree logged with ShowNodesTree */
-void Scene_Clear(CScene *scn, const char *pass);
-/* a and b equal or of the same sign within 2^-22 of each other */
-byte Float_AlmostEqual(float a, float b);
-/* ant is above node; cross: also through NODE_DELETE nodes */
-byte Node_IsAncestor(const CNode3D *node, const CNode3D *prev, byte cross);
-/* the nodes the game uses by name: DR_, DM_, DC_, DF_, D_Cam-, Actor_, Traffic_, NAVEBERTO */
-byte Node_IsOfGame(const CNode3D *node);
-/* the int of "(key=n)" or "(+key=n)" in name */
-byte Node_ParamInt(const char *name, const char *key, int *out);
-/* bytes above 127 to '_', a warning for a space at the end */
-void Node_ClearName(char *name);
-/* map mapid of the material used by the switches of the ini of the model and the video (MAT_SHADER: all) */
-byte M3D_ActiveMap(const CMaterial *mat, int mapid);
-/* the constructors and destructors of the reader data; M3DTable is freed by Table_Free */
-M3DTable *M3DTable_ctor(M3DTable *self);
-char **String_ctor(char **self);
-M3DTrack *M3DTrack_ctor(M3DTrack *self);
-M3DNode *M3DNode_ctor(M3DNode *self);
 M3DSkinVert *M3DSkinVert_ctor(M3DSkinVert *self);
 void M3DSkinVert_dtor(M3DSkinVert *self);
-void M3DTable4_dtor(M3DTable4 *self);
-void M3DTrack_dtor(M3DTrack *self);
-/* 6 tables freed, the last first */
-void M3DTable6_dtor(M3DTable *self);
-/* the delete[] of a table of M3DSkinVert */
-void M3DSkin_Free(CTable *self);
-void M3DNode_dtor(M3DNode *self);
-/* flags 2: the new[] array with the count before it; 1: freed */
-M3DNode *M3DNode_Delete(M3DNode *self, uint32_t flags);
-M3DSkinVert *M3DSkinVert_Delete(M3DSkinVert *self, uint32_t flags);
-/* the material of the file for its material index and sub material (-1: the material itself); a sub material
- * index past the end wraps around unless it is below the count */
-CMaterial *M3D_FindMat(int iMat, int iSubmat);
-/* the entries of mat in the file table marked used, CHECK of at least one */
-void M3D_MatUsado(CMaterial *mat);
-/* the materials of the table (not the multi materials) replaced by the equal ones of list */
-void M3D_ShareMats(CMatList *list);
-/* Ambient, Diffuse, Specular, Shine, ShineStrength, Transparency of a standard material */
-void M3D_ReadColors(CMaterial *mat);
-/* the transform named name as a matrix */
-void M3D_ReadMatrix(const char *name, matrix_t *out);
-void M3D_ReadVec2Next(float *v);
-vec3_t *M3D_ReadVec3Ret(vec3_t *v, const char *tok, byte swapYZ);
-void M3D_ReadVec3Next(vec3_t *v, byte swapYZ);
-char *M3D_ReadQString(const char *tok, char *dest, int size);
-/* the reader data of the object of node */
-M3DNode *M3D_NodeDat(const CNode3D *node);
-/* frame i of the tables (x, z, y order of the file: the y up result) */
-vec3_t *M3DTable4_GetVec(M3DTable4 *self, vec3_t *out, uint32_t i);
-quat_t *M3DTable4_GetQuat(M3DTable4 *self, quat_t *out, uint32_t i);
-void M3DTable4_SetVec(M3DTable4 *self, uint32_t i, const vec3_t *v);
-/* the axis and angle of frame i turned into the quaternion (the axis negated) */
-void M3DTable4_RotToQuat(M3DTable4 *self, uint32_t i);
-/* the transform of frame of the first track as a matrix */
-matrix_t *M3DNode_FrameMatrix(M3DNode *self, matrix_t *out, uint32_t frame);
-/* the table "Animacion: nombre" of g_M3DFrames values */
-void M3DTable_ReadInt(M3DTable *self, const char *name);
-void M3DTable_ReadFloat(M3DTable *self, const char *name);
-/* up to four float tables; inv23 swaps the second and third */
-void M3DTable4_Read(M3DTable4 *self, const char *n1, const char *n2, const char *n3, const char *n4,
-	byte inv23);
-void M3DTrack_Read(M3DTrack *self);
-/* flag set with on in the name, cleared with off, else taken from the parent */
-void Node_FlagName(CNode3D *node, const char *on, const char *off, uint32_t flag);
-/* the flags of the "(+x)" / "(-x)" names, the slerp and the node effects of the user properties */
-void Scene_FlagNames(CScene *scn);
-/* SlerpNodes, MorphNodes, HideNodes, UnhideNodes of the ini (version 13 on); the hidden bones of the skins shown */
-void Scene_FlagsIni(CScene *scn);
-/* the first node from node on (not NODE_DELETE) below ancestor without a NODE_DELETE node between */
-CNode3D *Node_FindDescendant(CNode3D *node, const CNode3D *ancestor);
-/* the same back from the node before node, through any node */
-CNode3D *Node_FindDescendantPrev(CNode3D *node, const CNode3D *ancestor);
-/* a plain mesh child of parent that can be joined into it (with a LOD the last one, or the first not in the main LOD) */
-CNode3D *Scene_FindCollapsible(CNode3D *node, const CNode3D *parent);
-/* the used materials of the file into the scene table and (&g_MatList), g_M3DLMat deleted */
-void Scene_UsedMats(CScene *scn);
-/* the camera, light and portal of node (with anim: the animated values of frame of an existing one) */
-void M3D_ReadCamera(CNode3D *node, byte anim, int frame);
-void M3D_ReadLight(CNode3D *node, byte anim, int frame);
-void M3D_ReadPortal(CNode3D *node, byte anim);
-/* the mesh of node ("TipoGeom: Malla"): vertices through the pivot, Physique weights, faces with their materials,
- * texture vertices and faces, normals (nothing with anim) */
-void M3D_ReadMesh(CNode3D *node, byte anim);
-/* a texture map of mat and its sub maps (type: of the parent map, the "Mapa:" class sets it; idx unused) */
-void M3D_ReadMap(CMaterial *mat, int iMat, int iSubmat, int idx, int type);
-/* a material into list and the table of the file, with its maps and sub materials (iSubmat -1 for a material) */
-void M3D_ReadMaterial(CMatList *list, int iMat, int iSubmat);
-
-/* the matrix of the transform of the object */
-matrix_t *M3DNode_CalcMatrix(M3DNode *self);
-/* Read_NextLine in text files (0 for binary ones; the original leaves eax there) */
-int M3D_NextLine(void);
-/* the world matrices: CHECK of no scale, qLook from them, mObj their inverses */
-void Scene_MatricesObj(CScene *scn);
-/* the positions and rotations relative to the parents, with anim also those of the animation frames */
-void Scene_AnimLocal(CScene *scn, byte anim);
-/* the mesh of a plain child joined into the empty Biped nodes */
-void Scene_CollapseBip(CScene *scn);
-/* with Physique weights: all visible meshes (without skin: of their node) joined into one "SkinMesh" node */
-void Scene_SkinMesh(CScene *scn);
-/* i48 of the nodes (those without NODE_NO_RENDERNODE first), the bones of the skins to it; the AnimNodes masks */
-void Scene_NodeTable(CScene *scn);
-/* a LOD model: the nodes matched with those of the main LOD by name, warnings for the differences */
-void Scene_SetupLOD(CScene *scn);
-/* the Physique weights into the skins of the meshes (version 13 on) */
-void Scene_PhysiqueSkin(CScene *scn);
-/* the nodes reordered so that the parents come first */
-void Scene_Sort(CScene *scn);
-/* the parents of an animation scene set as in the model, then reordered */
-void Scene_AnimParents(CScene *scn, CScene *staticScn);
-/* with OptimizeNodes: the nodes under deleted (NODE_DELETE) parents moved up, cleaned before and after */
-void Scene_Hierarchy(CScene *scn);
 
 /* other modules: Engine/descomp_afin.cpp (src/game/engine3d/Engine/AffineDecomp.c) */
 /* rva 0x2d6c50: the transform of a matrix */

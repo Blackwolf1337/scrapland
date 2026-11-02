@@ -42,12 +42,6 @@ void CAnimCtrl_Play(CAnimCtrl *self) {
 	self->state = ANIM_REPR;
 }
 
-void CAnimCtrl_SetCallback(CAnimCtrl *self, animCallback_t fn, int a, int b) {
-	self->callback = fn;
-	self->cbA = a;
-	self->cbB = b;
-}
-
 int CAnimCtrl_Reset(CAnimCtrl *self, float frame) {
 	self->move = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->ofs = (vec3_t){ 0.0f, 0.0f, 0.0f };
@@ -61,21 +55,6 @@ int CAnimCtrl_Reset(CAnimCtrl *self, float frame) {
 void CAnimCtrl_SetFrames(CAnimCtrl *self, int firstFrame, int frames) {
 	self->firstFrame = firstFrame;
 	self->frames = frames;
-}
-
-const char *AnimCtrl_StateName(int state) {
-	switch (state) {
-	case ANIM_REPR:
-		return "PLAY";
-	case ANIM_PAUSE:
-		return "PAUSE";
-	case ANIM_FADE_PAUSE:
-		return "FADEOUT";
-	case ANIM_END:
-		return "STOP";
-	}
-	CHECK(0);
-	return NULL;
 }
 
 void CAnimCtrl_Start(CAnimCtrl *self) {
@@ -130,7 +109,8 @@ static void AnimCtrl_Jump(float *f1p, float *f2p, float *endp, float *f1, float 
 	*f1 = f;
 }
 
-byte CAnimCtrl_Events(CAnimCtrl *self, float *f1p, float *f2p, float *endp) {
+/* the events from *f1 up to *f2 (== *fin); 1 while there is more to go to *f2, which may be cut at an event */
+static byte CAnimCtrl_Events(CAnimCtrl *self, float *f1p, float *f2p, float *endp) {
 	CHECK(*f2p == *endp);
 	float f2 = *f2p;
 	float f1 = *f1p;

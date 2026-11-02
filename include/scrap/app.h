@@ -12,44 +12,6 @@
 #include "scrap/pyfunction.h"
 #include "scrap/scrap.h"
 
-extern cGVarFunction GVar_AfterDrawCallback;
-extern cGVar GVar_DefaultServerPort;
-extern cGVar GVar_LoadMsgString;
-extern cGVar GVar_ReRunAtExitParams;
-extern cGVar GVar_ServerMapList;
-extern cGVar GVar_iMap;
-
-extern const CAppVtbl CApp_vftable;
-#define g_CAppVftable (&CApp_vftable)
-extern const CAppVtbl CWinApp_vftable;
-#define g_CWinAppVftable (&CWinApp_vftable)
-
-/* engine variables (Gvars) */
-extern cGVar GVar_iLoadMsgString;
-#define g_LoadMsgIndex (GVar_iLoadMsgString.value.i)		/* iLoadMsgString: the next loading tip */
-#define g_iMap (((cString *)&GVar_iMap.value))		/* iMap: the first level */
-#define g_iMapDefault (((cString *)&GVar_iMap.def))	/* its default value */
-#define g_ReRunAtExitParams (((cString *)&GVar_ReRunAtExitParams.value))	/* RunApp of the game with them at the end */
-#define g_AfterDrawCallback (((cPy_Function *)&GVar_AfterDrawCallback.func))
-extern cGVar GVar_DrawNextFrame;
-#define g_DrawNextFrame (GVar_DrawNextFrame.value.i)
-extern cGVar GVar_DefaultMaxPlayersOnServer;
-#define g_DefaultMaxPlayers (GVar_DefaultMaxPlayersOnServer.value.i)	/* DefaultMaxPlayersOnServer */
-extern cGVar GVar_ModFileName;
-#define g_ModFileName (GVar_ModFileName.value.s)	/* a pack opened after Pack1 */
-extern cGVar GVar_DisableSkipSlot;
-#define g_DisableSkipSlot (GVar_DisableSkipSlot.value.i)	/* frames longer than 0.1 s are not cut */
-#define g_DisableSkipSlotDefault (GVar_DisableSkipSlot.def.i)
-extern cGVar GVar_ForceReload;
-#define g_ForceReload (GVar_ForceReload.value.i)		/* reload the floor of the same level */
-extern cGVar GVar_ModPathName;
-#define g_ModPathName (GVar_ModPathName.value.s)	/* a directory of packs after "mods" */
-#define g_LoadMsgString (((cString *)&GVar_LoadMsgString.value))	/* the loading tip */
-#define g_DefaultServerPort ((uint16_t)GVar_DefaultServerPort.value.i)
-extern cGVar GVar_InactiveBackgroundApp;
-#define g_InactiveBackgroundApp (GVar_InactiveBackgroundApp.value.i)	/* the frames go on without the focus */
-#define g_ServerMapList (((cString *)&GVar_ServerMapList.value))
-#define g_PlayerName (((cString *)&GVar_PlayerName.value))
 extern cGVar GVar_SoundInit;
 #define g_SoundInit (GVar_SoundInit.value.i)
 extern cGVar GVar_LoadTextures;
@@ -62,36 +24,11 @@ extern cGVar GVar_SelectedLanguage;
 extern cGVar GVar_LogFile;
 #define g_LogName (GVar_LogFile.value.s)
 
-/* App.cpp state */
-extern int *g_AppBlock;		/* 16 bytes, [3] = 0x16 */
 extern void *g_AppPyOne;		/* Py_BuildValue("i", 1) of each level */
-/* the Xbox loading screen (Loading_Init, isXbox) */
-extern void *g_XLoadIcon;	/* CPsaImage (0x44 bytes) */
-extern int g_XLoadFrames;
-extern int g_XLoadIconFrame;
-extern float g_XLoadStart;
-extern float g_XLoadLastStep;
-extern byte g_XLoadOn;
-
-/* WinMain.cpp state */
-extern uint32_t g_TimeQPPause;	/* subtracted from the counter of GetTime */
-extern uint32_t g_TimeMsPause;	/* the same for timeGetTime */
-extern byte g_TimeInit;
-extern int g_TimeUseQP;
-extern int64_t g_TimeQPFreq;
-extern int64_t g_TimeQPStart;
-extern uint32_t g_TimeMsStart;
-extern int g_WinWidth;
-extern int g_WinHeight;
-extern int g_WideWinWidth;
-extern int g_WideWinHeight;
-extern char str_Scrapland[];
-#define g_ScrapTitle str_Scrapland	/* "Scrapland" */
 
 /* App.c */
 CApp *CApp_ctor(CApp *self, const char *cmdLine);
 void CApp_dtor(CApp *self);
-CApp *CApp_Delete(CApp *self, byte flags);
 void CApp_DoneGame(CApp *self);
 void CApp_InitGame(CApp *self, const char *level);
 void CApp_Nop(CApp *self);
@@ -110,46 +47,17 @@ void CApp_Render(CApp *self);
 byte CApp_ParseParam(CApp *self, const char *param, const char *ext);
 void CApp_ResetParams(CApp *self);
 double CApp_GetGameTime(CApp *self);
-byte CApp_RunApp(CApp *self, const char *exe, const char *cmdLine, int arg);
-byte CApp_IsDedicatedWin(CApp *self);
-void CApp_ParseCmdLine(CApp *self);
-void CApp_SFLB_0(CApp *self);
-byte App_CheckBlock(void);
 void Console_Execute(const char *cmd);
-void *App_GetObjData(const char *name);
 void CWinApp_LoadLevel(CApp *app, const char *level);
-void App_PickLoadingTip(CApp *self, const char *level);
 void Loading_Init(void);
 void Loading_End(void);
-void Loading_Start(void *unused);
-byte Loading_DrawXbox(void);
-byte Loading_Draw(void);
 
-/* WinApp.c */
-CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char *cmdLine, int nCmdShow);
-void CWinApp_dtor(CWinApp *self);
-CApp *CWinApp_Delete(CApp *base, byte flags);
-void CWinApp_ConsoleAdd(CApp *base, const char *text, uint32_t color);
-void CWinApp_ShowConsole(CApp *base, byte show);
-byte CWinApp_CreateMainWindow(CWinApp *self);
-const char *CWinApp_DebugInput(CApp *base, const char *prompt);
-void CWinApp_InitDedicated(CApp *base);
-void CWinApp_Shutdown(CApp *elem);
-void CWinApp_Exit(CApp *base);
-void CWinApp_ResetParams(CApp *elem);
-int CWinApp_HasArg(CWinApp *self, const char *name);
 /* the path of the game into buf */
 void App_GetPath(char *buf, int size);
 void *App_GetHInstance(void);
-double CWinApp_GetTime(CApp *base);
 void *App_GetHWnd(void);
-byte CWinApp_Init(CApp *elem);
-byte CWinApp_Frame(CApp *elem);
 void ConsoleWin_Add(const char *text, uint32_t color);
 void App_GetConfigDir(char *buf, int size);
-byte CWinApp_ParseParam(CApp *elem, const char *param, const char *ext);
-byte CWinApp_RunApp(CApp *base, const char *exe, const char *cmdLine, int arg);
-byte CWinApp_IsDedicatedWin(CApp *base);
 int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow);
 
 /* C functions declared only in their files */
@@ -195,7 +103,6 @@ void CPsaImage_DrawPoly(void *self, const float *pos, const float *uv, const uin
 void D3DApp_OnActivate(void);
 /* ScrapEngWin32.cpp (src/game/ScrapEng/ScrapEngWin32.c): the filter of the unhandled exceptions on or off */
 void App_SetExceptionFilter(byte on);
-int __stdcall App_ExceptionFilter(void **ep);
 /* the expiry of the test version of 2004 (not called) */
 
 #endif

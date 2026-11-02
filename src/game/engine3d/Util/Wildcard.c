@@ -12,12 +12,7 @@ enum { CRT_ENOENT = 2, CRT_ENOMEM = 12, CRT_EACCES = 13 };
 
 #define IS_SEP(c) ((c) == '\\' || (c) == '/')
 
-void Path_GetDrive(int *drive) {
-	CHECK(drive);
-	*drive = crt_getdrive();
-}
-
-int Path_MakeDir(char *path) {
+static int Path_MakeDir(char *path) {
 	char tmp[MAX_FILEPATH];
 
 	Str_Copy(tmp, path, sizeof(tmp));
@@ -47,7 +42,7 @@ int Path_MakeDir(char *path) {
 }
 
 /* the set at pattern ("[...]") against the character at s: the pattern after the set or NULL */
-const char *Wild_MatchSet(const char *pattern, const char *s) {
+static const char *Wild_MatchSet(const char *pattern, const char *s) {
 	const char *p = pattern;
 	int match = 0;
 
@@ -151,7 +146,7 @@ int Wild_Match(const char *pattern, const char *s) {
 	}
 }
 
-char *Path_Make(char *path, const char *drive, const char *dir, const char *name, const char *ext) {
+static char *Path_Make(char *path, const char *drive, const char *dir, const char *name, const char *ext) {
 	char u[8];
 
 	CHECK(path);
@@ -218,6 +213,8 @@ char *Path_Format(char *dest, const char *orig, const char *frmt) {
 	return dest;
 }
 
+static int Path_DriveNum(const char *path);
+static int Path_GetCwd(int drive, char *dest, int size);
 char *Path_IsDir(char *path) {
 	char cwd[MAX_FILEPATH];
 	char *res = NULL;
@@ -423,127 +420,6 @@ char *Path_Merge(char *dest, const char *path1, const char *path2) {
 		*ext1 ? ext1 : ext2);
 }
 
-int Path_Match(const char *pattern, const char *path) {
-	char name[256], ext[256];
-	char pname[256], pext[256];
-
-	Path_SplitDrive(path, NULL, NULL, name, ext);
-	Path_SplitDrive(pattern, NULL, NULL, pname, pext);
-	crt_strupr(name);
-	crt_strupr(pname);
-	crt_strupr(ext);
-	crt_strupr(pext);
-	if (!pname[0]) {
-		Str_Copy(pname, "*", sizeof(pname));
-	}
-	if (!pext[0]) {
-		Str_Copy(pext, ".*", sizeof(pext));
-	}
-	const char *e = ext[0] == '.' ? ext + 1 : ext;
-	const char *pe = pext[0] == '.' ? pext + 1 : pext;
-	return Wild_Match(pname, name) && Wild_Match(pe, e);
-}
-
-/* subdirs: the directory of pattern may also be a parent of the one of path */
-int Path_MatchPath(const char *pattern, const char *path, int subdirs) {
-	char pdir[256], dir[256];
-	int i = 0;
-
-	Path_Part(pdir, pattern, PATH_DRIVE | PATH_DIR);
-	Path_Part(dir, path, PATH_DRIVE | PATH_DIR);
-	crt_strupr(pdir);
-	crt_strupr(dir);
-	while (pdir[i] && dir[i] && pdir[i] == dir[i]) {
-		i++;
-	}
-	if (pdir[i] || (!subdirs && dir[i])) {
-		return 0;
-	}
-	return Path_Match(pattern, path);
-}
-
-void Path_Rename(char *dest, const char *src, const char *pattern) {
-	char name[MAX_FILEPATH];
-	char frmt[MAX_FILEPATH];
-	char ext[256];
-
-	CHECK(dest && src && pattern);
-	Path_SplitDrive(src, NULL, NULL, name, ext);
-	Path_Part(frmt, pattern, PATH_NAME | PATH_EXT);
-	Path_Part(dest, pattern, PATH_DRIVE | PATH_DIR);
-	char *out = dest + strlen(dest);
-	if (!ext[0]) {
-		Str_Copy(ext, ".", sizeof(ext));
-	}
-	int nameLen = (int)strlen(name);
-	/* kept from the last number like the stack slots of the original, which reads them also after a failed scan */
-	int v = 0, n = 1;
-	int extLen = (int)strlen(ext);
-	/* '*' and '?' copy from the same position of the name, after the first '.' of the extension */
-	const char *cur = name;
-	int curLen = nameLen;
-	int inExt = 0;
-	int o = 0;
-
-	for (const char *p = frmt; *p;) {
-		switch (*p) {
-		case '(':
-			if (p[1] == '(') {
-				out[o++] = '(';
-				p += 2;
-				continue;
-			}
-			for (p++; *p != ')';) {
-				if (crt_sscanf(p, "%d%n", &v, &n) != 1 || v == 0) {
-					Err_Printf(1, "Formato no v\xa0lido (n>0 nombre, n<0 exten.) (%s)", frmt);
-				}
-				p += n;
-				while (*p == ' ') {
-					p++;
-				}
-				if (v > 0) {
-					if (v - 1 < nameLen) {
-						out[o++] = name[v - 1];
-					}
-				} else if (-v < extLen) {
-					out[o++] = ext[-v];
-				}
-			}
-			break;
-		case '*':
-			if (o < curLen) {
-				memcpy(out + o, cur + o, curLen - o);
-				o = curLen;
-			}
-			break;
-		case '?':
-			if (o < curLen) {
-				out[o] = cur[o];
-				o++;
-			}
-			break;
-		case '.':
-			if (!inExt) {
-				out += o;
-				o = 0;
-				inExt = 1;
-				cur = ext;
-				curLen = extLen;
-			}
-			out[o++] = *p;
-			break;
-		default:
-			out[o++] = *p;
-			break;
-		}
-		p++;
-	}
-	out[o] = '\0';
-	if (out[0] == '.' && out[1] == '\0') {
-		out[0] = '\0';
-	}
-}
-
 /* rel made absolute against base (NULL: the current directory of its drive), "." and ".." resolved */
 char *Path_Full(char *dest, const char *rel, int size, const char *base) {
 	char tmp[0x20c];
@@ -653,14 +529,6 @@ char *Path_Part(char *dest, const char *orig, uint32_t mask) {
 	return Path_Make(dest, drive, dir, name, ext);
 }
 
-char *Path_PartN(char *dest, int size, const char *orig, uint32_t mask) {
-	char tmp[MAX_FILEPATH];
-
-	CHECK(size > 0);
-	Path_Part(tmp, orig, mask);
-	return String_Copy(dest, tmp, size);
-}
-
 char *Path_FileName(const char *path) {
 	CHECK(path);
 	for (int i = (int)strlen(path) - 1; i >= 0; i--) {
@@ -671,40 +539,7 @@ char *Path_FileName(const char *path) {
 	return (char *)path;
 }
 
-char *Path_FirstDir(char *dest, const char *path) {
-	char dir[256];
-
-	CHECK(dest && path);
-	Path_SplitDrive(path, NULL, dir, NULL, NULL);
-	const char *s = IS_SEP(dir[0]) ? dir + 1 : dir;
-	char *d = dest;
-	while (*s && !IS_SEP(*s)) {
-		*d++ = *s++;
-	}
-	*d = '\0';
-	return dest;
-}
-
-char *Path_LastDir(char *dest, const char *path) {
-	char dir[256];
-
-	CHECK(dest && path);
-	*dest = '\0';
-	Path_SplitDrive(path, NULL, dir, NULL, NULL);
-	int i = (int)strlen(dir) - 1;
-	if (i >= 0) {
-		if (IS_SEP(dir[i])) {
-			if ((unsigned)i >= sizeof(dir)) {
-				crt_report_rangecheckfailure();
-			}
-			dir[i] = '\0';
-		}
-		Str_Copy(dest, Path_FileName(dir), sizeof(dir));
-	}
-	return dest;
-}
-
-int Path_DriveNum(const char *path) {
+static int Path_DriveNum(const char *path) {
 	CHECK(path);
 	if (crt_isalpha(*path) && path[1] == ':') {
 		return crt_toupper(*path) - '@';
@@ -712,7 +547,7 @@ int Path_DriveNum(const char *path) {
 	return 0;
 }
 
-int Path_GetCwd(int drive, char *dest, int size) {
+static int Path_GetCwd(int drive, char *dest, int size) {
 	int old = 0;
 	int r = 0;
 

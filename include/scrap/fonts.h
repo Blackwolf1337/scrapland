@@ -84,19 +84,7 @@ extern CUnifont g_Unifont;
 extern const char *g_FontsDir;	/* "2d/fonts-drm/" */
 extern CFont3 *g_FntComic14;
 extern CFont3 *g_FntTerm8;
-/* the materials of the outline of CFont3_PrintOutline (the font and the unicode font), made again after each start
- * of the device (g_EngineInits) or for another texture */
-extern CMaterial *g_FntMatOutline;
-extern int g_FntMatOutlineInit;
-extern CMaterial *g_FntMatOutlineUni;
-extern int g_FntMatOutlineUniInit;
 extern int g_EngineInits;	/* the starts of the device objects of the engine */
-
-CFontGrid *CFontGrid_ctor(CFontGrid *self, const char *tex, const char *opac, byte first, byte last,
-	int cellWidth, int cellHeight, float space);
-void CFontGrid_Print(CFontGrid *self, float x, float y, const char *s);
-CDigits *CDigits_ctor(CDigits *self);
-void CDigits_dtor(CDigits *self);
 
 /* the font of tex (opac its opacity map), glyphs first..last. generate: no sprite of its own, the glyphs packed into a
  * new alpha texture instead; unused not read */
@@ -106,39 +94,22 @@ void CFont3_dtor(CFont3 *self);
 /* the size of s (dim) and the position of its top left corner for the corner at x, y (pos, by align) */
 void CFont3_Measure(const CFont3 *self, float x, float y, uint16_t align, const char *s, float *pos,
 	float *dim);
-float CFont3_GlyphWidth(const CFont3 *self, const FntGlyph *g);
-float CFont3_GlyphHeight(const CFont3 *self, const FntGlyph *g);
 /* the scale of the glyphs */
 void CFont3_SetScale(CFont3 *self, float x, float y);
 uint32_t Font_SetColor(CFont3 *self, uint32_t color);	/* returns 2 */
-uint32_t Font_SetFlags(CFont3 *self, uint32_t flags);	/* returns 8 */
 /* s at x, y (top left) in the color of the sprite; x, y become the end */
 void CFont3_Print(CFont3 *self, float x, float y, const char *s);
-void CFont3_PrintColor(CFont3 *self, float x, float y, uint32_t color, const char *s);
 /* flags: the alignment, FNT_WAVE, FNT_OUTLINE */
 void CFont3_PrintAlign(CFont3 *self, float x, float y, uint32_t flags, uint32_t color, const char *s);
-void CFont3_PrintWave(CFont3 *self, float x, float y, uint32_t color, float wave, const char *s);
-/* a black outline (a pixel to each corner), the text, then a glow fading out to 3 pixels in its color */
-void CFont3_PrintOutline(CFont3 *self, float x, float y, uint32_t color, const char *s);
 void Font_PrintfXY(CFont3 *font, float x, float y, const char *fmt, ...);
 /* flags FNT_PRINT_* */
 void Font_Printf(CFont3 *font, float x, float y, byte flags, const char *fmt, ...);
-/* centered at x, y with a black shadow */
-void Font_PrintfCenter(CFont3 *font, float x, float y, const char *fmt, ...);
 /* a text with a black shadow at the screen position of pos moved by x, y (2D screen pixels) */
 void Debug_Text3D(CFont3 *font, float x, float y, const vec3_t *pos, uint32_t color, const char *fmt, ...);
-/* the pixels from the left of row y in the color of the border (the alpha not compared) */
-int Bmp_RowBorder(const CBmp *b, int y, uint32_t border);
 void Fonts_Init(void);
 void Fonts_Free(void);
 
 void CUnifont_Load(CUnifont *self);
 void CUnifont_Free(CUnifont *self);
-/* the "\1XXXX" at s: 1 and the sprite in *out (0 out of the range), 0 if s is not one */
-byte CUnifont_Parse(const CUnifont *self, const char *s, uint16_t *out);
-/* the width of sprite i at the height h, 0 if there is none */
-float CUnifont_Width(const CUnifont *self, uint16_t i, float h);
-/* sprite i of size w by h on the sprite of the font, 0 if there is none */
-byte CUnifont_SetSprite(const CUnifont *self, uint16_t i, float w, float h);
 
 #endif

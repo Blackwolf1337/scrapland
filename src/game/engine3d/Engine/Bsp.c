@@ -27,24 +27,37 @@
 #include "scrap/platform.h"
 #include "scrap/staticinit.h"
 
+#define g_R_ForceLMap (GVar_R_ForceLMap.value.i)	/* gvar R_ForceLMap, -1 */
+#define g_RenderMap (GVar_RenderMap.value.i)		/* gvar RenderMap */
+#define g_LightmapPackMode (GVar_LightmapPackMode.value.i)	/* gvar */
+#define g_LightmapDxtPadding (GVar_LightmapDxtPadding.value.i)	/* gvar */
+#define g_LightmapLimitUV (GVar_LightmapLimitUV.value.i)	/* gvar */
+#define g_MapDrawBySector (GVar_MapDrawBySector.value.i)	/* gvar */
+#define g_MapDrawSector (GVar_MapDrawSector.value.i)	/* gvar, -2 all */
+#define g_MapRenderMap (GVar_MapRenderMap.value.s)	/* gvar, a wildcard of map names */
+#define g_MapRenderMat (GVar_MapRenderMat.value.s)	/* gvar, a wildcard of material names */
+#define g_MapSortByShader (GVar_MapSortByShader.value.i)	/* gvar */
+#define g_RenderSectors (GVar_RenderSectors.value.i)	/* gvar */
+#define g_ShowInfoOnSectorError (GVar_ShowInfoOnSectorError.value.i)	/* gvar */
+static cGVar GVar_ShowInfoOnSectorError;
+static cGVar GVar_RenderSectors;
+static cGVar GVar_RenderMap;
+static cGVar GVar_R_ForceLMap;
+static cGVar GVar_MapSortByShader;
+static cGVar GVar_MapRenderMat;
+static cGVar GVar_MapRenderMap;
+static cGVar GVar_MapDrawSector;
+static cGVar GVar_MapDrawBySector;
+static cGVar GVar_LightmapPackMode;
+static cGVar GVar_LightmapLimitUV;
+static cGVar GVar_LightmapDxtPadding;
 
 /* the "uint as double" conversions of the original: the int plus 2^32 for a set top bit */
 static inline float Uint_ToFloat(uint32_t u) {
 	return (float)(double)u;
 }
 
-
-/* engine3d/engine/bmp.h, bmpflt.h, bmpflt2.h */
-
-void CBmpFlt2_dtor(CBmpFlt2 *self) {
-	Img_Free(self, 0xc);
-}
-
-void CBmpFlt_dtor(CBmpFlt *self) {
-	Img_Free(self, 0x10);
-}
-
-void CBmp_Assign(CBmp *self, const CBmp *orig) {
+static void CBmp_Assign(CBmp *self, const CBmp *orig) {
 	Img_Free(self, 4);
 	CBmp_Resample(self, orig, 0xf);
 }
@@ -54,7 +67,8 @@ void CBmpFlt2_Assign(CBmpFlt2 *self, const CBmpFlt2 *orig) {
 	CBmpFlt2_Resample(self, orig, 0xf);
 }
 
-void CBmp_CreateFill(CBmp *self, int width, int height, uint32_t color) {
+/* new pixels filled with color */
+static void CBmp_CreateFill(CBmp *self, int width, int height, uint32_t color) {
 	Img_Create(self, width, height, 4);
 	CBmp_Fill(self, color);
 }
@@ -64,7 +78,7 @@ void CBmpFlt2_CreateFill(CBmpFlt2 *self, int width, int height, const float *col
 	CBmpFlt2_Fill(self, color);
 }
 
-void CBmpFlt_CreateFill(CBmpFlt *self, int width, int height, const float *color) {
+static void CBmpFlt_CreateFill(CBmpFlt *self, int width, int height, const float *color) {
 	Img_Create(self, width, height, 0x10);
 	CBmpFlt_Fill(self, color);
 }
@@ -83,16 +97,16 @@ static void Img_Rotate(CImage *self, const CImage *orig, int bytes) {
 	}
 }
 
-void CBmp_Rotate(CBmp *self, const CBmp *orig) {
+/* orig turned by 90 degrees (the size swapped) */
+static void CBmp_Rotate(CBmp *self, const CBmp *orig) {
 	CHECK(orig);
 	Img_Rotate(self, orig, 4);
 }
 
-void CBmpFlt2_Rotate(CBmpFlt2 *self, const CBmpFlt2 *orig) {
+static void CBmpFlt2_Rotate(CBmpFlt2 *self, const CBmpFlt2 *orig) {
 	CHECK(orig);
 	Img_Rotate(self, orig, 0xc);
 }
-
 
 int g_TxfMode;
 
@@ -128,11 +142,7 @@ void BspTxf_dtor(BspTxf *self) {
 	CHECK(!self->FileTXF);
 }
 
-void BspTxf_SetName(BspTxf *self, int i) {
-	Bprintf(self->name, sizeof(self->name), "%s.%05d.TXF", self->base, i + 1);
-}
-
-void BspTxf_Info(BspTxf *self) {
+static void BspTxf_Info(BspTxf *self) {
 	int secs = (int)((double)(Plat_Ticks() - self->start) / 1000.0);
 	int m = secs / 60 % 60;
 	int s = secs % 60;
@@ -151,7 +161,6 @@ void BspTxf_Info(BspTxf *self) {
 	E3D_LogPrint((&g_FileLog), " read retries: %d", self->readRetries);
 	E3D_LogPrint((&g_FileLog), " auto deleted: %d", self->deleted);
 }
-
 
 /* the lists */
 
@@ -193,6 +202,7 @@ BspTri *BspTri_ctor(BspTri *self) {
 	return self;
 }
 
+static void BspName_dtor(BspName *self);
 void BspTri_dtor(BspTri *self) {
 	if (self->next) {
 		BspTri *next = self->next;
@@ -236,7 +246,7 @@ void BspTri_dtor(BspTri *self) {
 	Img_Free(&self->light, 0xc);
 }
 
-void BspName_dtor(BspName *self) {
+static void BspName_dtor(BspName *self) {
 	if (self->next) {
 		BspName *next = self->next;
 		BspName_dtor(next);
@@ -248,7 +258,8 @@ void BspName_dtor(BspName *self) {
 	}
 }
 
-void BspNode_dtor(BspNode *self) {
+/* the rest */
+static void BspNode_dtor(BspNode *self) {
 	if (self->next) {
 		BspNode *next = self->next;
 		BspNode_dtor(next);
@@ -263,7 +274,8 @@ void BspNode_dtor(BspNode *self) {
 	CVertList_Free(&self->lv);
 }
 
-void BspLMap_dtor(BspLMap *self) {
+/* the light map pages */
+static void BspLMap_dtor(BspLMap *self) {
 	if (self->next) {
 		BspLMap *next = self->next;
 		BspLMap_dtor(next);
@@ -280,10 +292,10 @@ void BspLMap_dtor(BspLMap *self) {
 	Img_Free(&self->bmp, 4);
 }
 
-int g_LmapInfo;
-int g_LmapInfo2 = 1;
+static int g_LmapInfo;
+static int g_LmapInfo2 = 1;
 
-void BspLMap_Init(BspLMap *self, int width, int height) {
+static void BspLMap_Init(BspLMap *self, int width, int height) {
 	self->minX = width + 1;
 	self->minY = height + 1;
 	CBmp_CreateFill(&self->bmp, width, height, 0xffff0000);
@@ -292,9 +304,9 @@ void BspLMap_Init(BspLMap *self, int width, int height) {
 	}
 }
 
-int g_LmapSecond;
+static int g_LmapSecond;
 
-CMaterial *BspLMap_GetMat(const BspLMap *self) {
+static CMaterial *BspLMap_GetMat(const BspLMap *self) {
 	int second = g_R_ForceLMap;
 
 	if (second < 0) {
@@ -324,30 +336,9 @@ void BspZone_dtor(BspZone *self) {
 	}
 }
 
-/* the unwind funclets of the BspZone constructor: one CRenderVB member */
-void BspVB_Unwind(CRenderVB *self) {
-	CRenderVB_Reset(self);
-}
-
 #define BSPZONE_DTOR 0x2824b0
 
-BspZone *BspZone_Delete(BspZone *self, uint32_t flags) {
-	if (flags & 2) {
-		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(BspZone), *mem, (void *)BspZone_dtor);
-		if (flags & 1) {
-			operator_delete_array(mem);
-		}
-		return (BspZone *)mem;
-	}
-	BspZone_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(BspZone));
-	}
-	return self;
-}
-
-void Table_FreeB4(CTable *t) {
+static void Table_FreeB4(CTable *t) {
 	if (t->p) {
 		Delete_Objects(t->p, sizeof(BspZone), (void *)BspZone_dtor);
 		t->p = NULL;
@@ -355,7 +346,7 @@ void Table_FreeB4(CTable *t) {
 	}
 }
 
-CRenderVB *BspZone_GetVB(BspZone *self, int frmt) {
+static CRenderVB *BspZone_GetVB(BspZone *self, int frmt) {
 	switch (frmt) {
 	case VERT_LTEX1:
 		return &self->vb[0];
@@ -372,7 +363,7 @@ CRenderVB *BspZone_GetVB(BspZone *self, int frmt) {
 
 BspLMap *g_BspLMaps;
 
-void CBsp_dtor(CBsp *self) {
+static void CBsp_dtor(CBsp *self) {
 	if (self->lights) {
 		void *lights = self->lights;
 		BspLights_dtor(lights);
@@ -413,7 +404,6 @@ void CBsp_dtor(CBsp *self) {
 	}
 }
 
-
 /* the geometry of the lists */
 
 byte Plane_Calc(plane_t *plane, const vec3_t *v1, const vec3_t *v2, const vec3_t *v3) {
@@ -446,7 +436,7 @@ static inline float Bsp_Dist(float dx, float dy, float dz) {
 	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 }
 
-void BspTri_CalcCenter(BspTri *tri) {
+static void BspTri_CalcCenter(BspTri *tri) {
 	const vec3_t *v = tri->v;
 	float cx = (v[0].x + v[1].x + v[2].x) / 3.0f;
 	float cy = (v[0].y + v[1].y + v[2].y) / 3.0f;
@@ -550,19 +540,6 @@ void Bsp_TexelToWorld(vec3_t *out, float u, float v, int axis, float scale, cons
 	out->z = z;
 }
 
-void Bsp_WorldToTexel(float *out, const vec3_t *v, int axis, float scale) {
-	if (axis == 0) {
-		out[0] = v->y * scale;
-		out[1] = v->z * scale;
-	} else if (axis == 1) {
-		out[0] = v->x * scale;
-		out[1] = v->z * scale;
-	} else {
-		out[0] = v->x * scale;
-		out[1] = v->y * scale;
-	}
-}
-
 void BspTri_Interp(const BspTri *tri, const vec3_t *p, vec3_t *n, float *uv, byte lmap) {
 	CHECK(tri);
 	vec3_t v0 = tri->v[0], v1 = tri->v[1], v2 = tri->v[2];
@@ -611,12 +588,6 @@ static inline uint32_t Bits_Reverse(uint32_t v) {
 	return v;
 }
 
-float *Bsp_Hammersley(float *out, uint32_t i, uint32_t n) {
-	out[0] = Uint_ToFloat(i) / Uint_ToFloat(n);
-	out[1] = (float)((double)Uint_ToFloat(Bits_Reverse(i)) * 2.3283064365386963e-10);
-	return out;
-}
-
 void Bsp_ColorIntens(uint32_t *out, const float *rgb) {
 	float r = rgb[0], g = rgb[1], b = rgb[2];
 	float m = Float_MaxSS(b, Float_MaxSS(g, r));
@@ -633,32 +604,8 @@ void Bsp_ColorIntens(uint32_t *out, const float *rgb) {
 	memcpy(&out[1], &i, 4);
 }
 
-void BspTri_GetExt(const BspTri *tri, int *x0, int *y0, int *x1, int *y1) {
-	*x0 = tri->ext[0];
-	*y0 = tri->ext[1];
-	*x1 = tri->ext[2];
-	*y1 = tri->ext[3];
-}
-
-void BspTri_GetExt2(const BspTri *tri, int *x0, int *y0, int *x1, int *y1) {
-	*x0 = tri->ext2[0];
-	*y0 = tri->ext2[1];
-	*x1 = tri->ext2[2];
-	*y1 = tri->ext2[3];
-}
-
 int g_ShadowMapTexX = 256;
 int g_ShadowMapTexY = 256;
-
-byte BspTri_IsTexel(int x0, int y0, int x, int y, uint32_t color, const BspTri *tri) {
-	uint32_t dx = (uint32_t)(x - x0);
-	uint32_t dy = (uint32_t)(y - y0);
-
-	if (dx >= (uint32_t)g_ShadowMapTexX || dy >= (uint32_t)g_ShadowMapTexY) {
-		return 0;
-	}
-	return Color_SwapRB(*CBmp_Pixel(&tri->mask, dx, dy)) == color;
-}
 
 int BspTri_Zone(CNode3D *node) {
 	if (!node || node->flags >> 28 & 1) {
@@ -683,12 +630,13 @@ int BspTri_Count(const BspTri *list) {
 	return n;
 }
 
-int BspTri_CmpId(const void *a, const void *b) {
+/* the qsort order of zone-sorted lists */
+static int BspTri_CmpId(const void *a, const void *b) {
 	return ((const int *)a)[1] - ((const int *)b)[1];
 }
 
 /* a node out of the map: unlinked (release) and, when nothing else holds it, marked to be deleted */
-void Bsp_MarkNode(CNode3D *node, byte release) {
+static void Bsp_MarkNode(CNode3D *node, byte release) {
 	if (release) {
 		CNode3D_FreeObj3D(node);
 	}
@@ -696,7 +644,6 @@ void Bsp_MarkNode(CNode3D *node, byte release) {
 		node->flags |= 0x20008;
 	}
 }
-
 
 /* drawing the map */
 
@@ -708,10 +655,11 @@ static byte Bsp_MatPass(const CMaterial *m) {
 	return m->params.attrib & 0x10 ? 1 : 2;
 }
 
-int g_BspTris;
-int g_BspVerts;
+static int g_BspTris;
+static int g_BspVerts;
 
-void BspTri_Draw(BspTri *tri) {
+/* drawing */
+static void BspTri_Draw(BspTri *tri) {
 	if (tri->pVertVB && g_UseVB) {
 		Render_DrawVBIBFmt(tri->pVertVB, tri->pVertIB, tri->lv.frmt, (uint32_t)tri->lv.nVert, (uint32_t)tri->numTri,
 			(uint32_t)tri->baseVert, (uint32_t)tri->startTri);
@@ -736,7 +684,7 @@ int g_ShadowMapMultitext;
 int g_LightmapMode2;
 int g_RenderPass;
 
-void CBsp_DrawTri(CBsp *self, BspTri *tri, byte pass) {
+static void CBsp_DrawTri(CBsp *self, BspTri *tri, byte pass) {
 	CMaterial *mat = tri->Mat;
 
 	if (Bsp_MatPass(mat) != pass) {
@@ -789,7 +737,7 @@ static BspZone *CBsp_Zone(CBsp *self, int sector) {
 	return &((BspZone *)self->zones.p)[i];
 }
 
-void CBsp_DrawZone(CBsp *self, int sector, byte pass) {
+static void CBsp_DrawZone(CBsp *self, int sector, byte pass) {
 	BspTri *tri = CBsp_Zone(self, sector)->tris;
 
 	if (g_MapDrawSector >= -1 && g_MapDrawSector != sector) {
@@ -801,7 +749,7 @@ void CBsp_DrawZone(CBsp *self, int sector, byte pass) {
 	}
 }
 
-BspTri *g_TriList[1024];
+static BspTri *g_TriList[1024];
 
 /* the lists of the pass in a zone into g_TriList */
 static int CBsp_ListZone(BspTri *tri, int sector, byte pass, int n) {
@@ -817,7 +765,8 @@ static int CBsp_ListZone(BspTri *tri, int sector, byte pass, int n) {
 
 PaintZone g_PaintZones[128];
 
-void CBsp_DrawPass(CBsp *self, byte pass) {
+static int BspTri_CmpMat(const void *pa, const void *pb);
+static void CBsp_DrawPass(CBsp *self, byte pass) {
 	byte perSector = g_MapDrawBySector != 0;
 
 	Render_SetWorldMatrix((&g_MatIdentity), 0);
@@ -858,7 +807,7 @@ void CBsp_DrawPass(CBsp *self, byte pass) {
 
 int g_WireFrame;
 
-void CBsp_DrawWire(CBsp *self) {
+static void CBsp_DrawWire(CBsp *self) {
 	if (g_KeyF8 && g_KeyX) {
 		g_KeyF8 = 0;
 		g_WireFrame = (g_WireFrame + 1) % 3;
@@ -890,7 +839,7 @@ void CBsp_DrawWire(CBsp *self) {
 
 byte g_RenderOff;
 
-void CBsp_DrawFX(CBsp *self) {
+static void CBsp_DrawFX(CBsp *self) {
 	if (g_RenderOff) {
 		return;
 	}
@@ -903,9 +852,9 @@ void CBsp_DrawFX(CBsp *self) {
 	g_BspVerts = 0;
 }
 
-CBsp *g_Bsp;
+static CBsp *g_Bsp;
 
-void CBsp_Render(CBsp *self) {
+static void CBsp_Render(CBsp *self) {
 	if (g_RenderOff) {
 		return;
 	}
@@ -924,13 +873,14 @@ void CBsp_Render(CBsp *self) {
 	}
 }
 
-byte g_BspSectorOk;
-int g_BspSectorErrors;
+/* the sector of the eye: found this frame, the sector, the frames without one, the eye of the last frame */
+static byte g_BspSectorOk;
+static int g_BspSectorErrors;
 int g_BspSectorSeen;
-vec3_t g_BspEyePrev;
+static vec3_t g_BspEyePrev;
 
 /* the sector of the eye for the portals (info: the counters on the screen instead) */
-void Bsp_PortalInfo(byte info) {
+static void Bsp_PortalInfo(byte info) {
 	if (!g_PortalsOn) {
 		return;
 	}
@@ -970,7 +920,7 @@ void Bsp_PortalInfo(byte info) {
 	Portals_Cull((uint32_t)s);
 }
 
-void CBsp_ReleaseD3D(CBsp *self) {
+static void CBsp_ReleaseD3D(CBsp *self) {
 	for (int i = 0; i < self->num_lists; i++) {
 		if (self->lists[i]->pVertVB) {
 			Rd_Release(self->lists[i]->pVertVB);
@@ -1004,7 +954,6 @@ void CBsp_ReleaseD3D(CBsp *self) {
 	CModel_ReleaseD3D(self->model, g_Engine->device, 1);
 }
 
-
 int g_ShadowMapUse;
 
 /* the global functions called by mundo.cpp */
@@ -1021,7 +970,7 @@ void Bsp_Free(void) {
 	}
 }
 
-void *g_pBSP_VB;
+static void *g_pBSP_VB;
 
 void Bsp_ReleaseD3D(void) {
 	if (!g_ShadowMapUse) {
@@ -1035,6 +984,7 @@ void Bsp_ReleaseD3D(void) {
 	CBsp_ReleaseD3D(g_Bsp);
 }
 
+static void CBsp_InitD3D(CBsp *self);
 void Bsp_InitD3D(void) {
 	if (!g_ShadowMapUse) {
 		return;
@@ -1049,7 +999,7 @@ void Bsp_InitD3D(void) {
 int g_CalcLmap2;
 
 /* the floor drawn again for the stencil shadows (the callback of g_StencilRender) */
-void Bsp_RenderStencil(void) {
+static void Bsp_RenderStencil(void) {
 	CHECK(g_ShadowsStencil);
 	if (!g_CalcLmap2 && g_RenderPass == 2) {
 		return;
@@ -1096,11 +1046,10 @@ void Bsp_RenderPortals(void) {
 	}
 }
 
-
 /* the light map computation helpers */
 
 /* a direction on the unit sphere: height z, angle u turns */
-float *Bsp_DirSphere(float *out, float z, float u) {
+static float *Bsp_DirSphere(float *out, float z, float u) {
 	float r = (float)__builtin_sqrt((double)(1.0f - z * z));
 	double a = (double)(float)((double)u * M_2PI_D);
 
@@ -1183,16 +1132,6 @@ void BspTri_SetExt(BspTri *tri, int x0, int y0, int x1, int y1, byte notify) {
 	tri->ly = h;
 }
 
-/* the texel of the light map at p */
-byte BspTri_TexelOf(const BspTri *tri, const vec3_t *p, int *x, int *y) {
-	float uv[2];
-
-	BspTri_Interp(tri, p, NULL, uv, 1);
-	*x = (int)floor((double)((float)g_ShadowMapTexX * uv[0]));
-	*y = (int)floor((double)((float)g_ShadowMapTexY * uv[1]));
-	return 1;
-}
-
 #define BSP_EPS_NORMAL 9.999999747378752e-05	/* 1e-4f as double */
 
 /* vertex nv of act is a vertex of tri with the same normal */
@@ -1225,7 +1164,7 @@ byte BspTri_VertEqual(const BspTri *act, uint32_t nv, const BspTri *tri) {
 }
 
 /* the color of the texture tex at the texel (u, v) of the light map, 0..1 */
-float *Bsp_SampleTex(float *out, float u, float v, int axis, float scale, const BspTri *tri, const CBmp *tex) {
+static float *Bsp_SampleTex(float *out, float u, float v, int axis, float scale, const BspTri *tri, const CBmp *tex) {
 	vec3_t p;
 	float uv[2];
 	uint32_t c;
@@ -1247,7 +1186,7 @@ float *Bsp_SampleTex(float *out, float u, float v, int axis, float scale, const 
 }
 
 /* the average of (n + 1)^2 samples of the texel x, y */
-float *Bsp_SampleTexAA(float *out, int x, int y, int axis, float scale, const BspTri *tri, const CBmp *tex, int n) {
+static float *Bsp_SampleTexAA(float *out, int x, int y, int axis, float scale, const BspTri *tri, const CBmp *tex, int n) {
 	float r = 0.0f, g = 0.0f, b = 0.0f;
 	float tmp[3];
 
@@ -1301,77 +1240,8 @@ CTable *BspTri_GetAreas(BspTri *tri, float dist, byte big) {
 	return &tri->areas[3];
 }
 
-/* the form factor of the patch b (point, normal, area) seen from a */
-static float Bsp_FF(const vec3_t *pa, const vec3_t *na, const vec3_t *pb, const vec3_t *nb, float area) {
-	float dy = pa->y - pb->y;
-	float dx = pa->x - pb->x;
-	float dz = pa->z - pb->z;
-	float len = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
-
-	if (len == 0.0f) {
-		return 0.0f;
-	}
-	float ca = -((na->y * dy + na->x * dx + na->z * dz) / len);
-	if (0.0f >= ca) {
-		return 0.0f;
-	}
-	float cb = (nb->y * dy + nb->x * dx + nb->z * dz) / len;
-	if (0.0f >= cb) {
-		return 0.0f;
-	}
-	return (float)((double)area / ((double)len * M_PI_D * (double)len + (double)area)) * (cb * ca);
-}
-
-float Bsp_FormFactor(const vec3_t *pa, const vec3_t *na, const vec3_t *pb, const vec3_t *nb, float area) {
-	return Bsp_FF(pa, na, pb, nb, area);
-}
-
-float BspRegion_FormFactor(const BspRegion *a, const BspRegion *b) {
-	return Bsp_FF(&a->center, &a->plane.n, &b->center, &b->plane.n, b->area);
-}
-
-/* add plus the light of the links into the tree */
-void BspRegion_Accumulate(BspRegion *r, const float *add) {
-	for (; r; r = r->child[3]) {
-		float *accum = r->accum;
-		accum[0] = add[0] + accum[0];
-		accum[1] = add[1] + accum[1];
-		accum[2] = add[2] + accum[2];
-		accum[3] = add[3] + accum[3];
-		for (BspLink *l = r->links; l; l = l->next) {
-			const BspRegion *o = l->region;
-			float ff = l->ff;
-			accum[0] = o->color[0] * ff + accum[0];
-			accum[1] = accum[1] + o->color[1] * ff;
-			accum[2] = accum[2] + o->color[2] * ff;
-			accum[3] = accum[3] + o->color[3] * ff;
-		}
-		BspRegion_Accumulate(r->child[0], accum);
-		BspRegion_Accumulate(r->child[1], accum);
-		BspRegion_Accumulate(r->child[2], accum);
-		add = accum;
-	}
-}
-
-/* the light at texel x, y into acc and count it, for a texel of the list */
-void BspTri_SumTexel(const BspTri *tri, uint32_t x, uint32_t y, float *acc, int *n) {
-	if (x >= (uint32_t)tri->light.width || y >= (uint32_t)tri->light.height) {
-		return;
-	}
-	if (!*CBmp_Pixel(&tri->mask, x, y)) {
-		return;
-	}
-	const float *p = CBmpFlt2_Pixel(&tri->light, x, y);
-	float r = p[0], g = p[1], b = p[2];
-	acc[0] = acc[0] + r;
-	acc[1] = acc[1] + g;
-	acc[2] = acc[2] + b;
-	acc[3] = acc[3] + 1.0f;
-	(*n)++;
-}
-
 /* the average light of the texels of the list around x, y (5 x 5) */
-float *BspTri_Average(float *out, const BspTri *tri, int x, int y) {
+static float *BspTri_Average(float *out, const BspTri *tri, int x, int y) {
 	int n = 0;
 	float one = 1.0f;
 
@@ -1408,7 +1278,6 @@ float *BspTri_Average(float *out, const BspTri *tri, int x, int y) {
 	return out;
 }
 
-
 /* the light map pages */
 
 /* a new empty page (the inline constructor clears only these) */
@@ -1432,7 +1301,8 @@ static inline byte BspLMap_Free(const CBmp *bmp, uint32_t x, uint32_t y) {
 	return ((const byte *)CBmp_Pixel(bmp, x, y))[3] == 0xff;
 }
 
-byte BspLMap_Find(const CBmp *bmp, int w, int h, int *rx, int *ry) {
+/* a free place of w x h in the page (rounded up to the padding, maybe turned); 0 when full */
+static byte BspLMap_Find(const CBmp *bmp, int w, int h, int *rx, int *ry) {
 	CHECK(bmp);
 	CHECK(rx && ry);
 	byte rot = w > h;
@@ -1480,7 +1350,7 @@ byte BspLMap_Find(const CBmp *bmp, int w, int h, int *rx, int *ry) {
 
 /* the light orig at (ox, oy) size w x h into the page at (dx, dy), scaled down to the modulation range; the texels
  * of no list (mask 0) inverted */
-void BspLMap_Copy(CBmp *dst, int dx, int dy, const CBmpFlt2 *orig, const CBmp *mask, uint32_t ox, uint32_t oy,
+static void BspLMap_Copy(CBmp *dst, int dx, int dy, const CBmpFlt2 *orig, const CBmp *mask, uint32_t ox, uint32_t oy,
 	int w, int h) {
 	CHECK(orig);
 	CHECK(dst);
@@ -1520,7 +1390,8 @@ uint32_t g_BspColors[16] = {
 	0xffff00, 0xffffff,
 };
 
-byte BspLMap_Insert(BspTri *list, BspLMap *lm, int w, int h) {
+/* the light maps of list into the page lm (and its secondary page), the light map uv moved there */
+static byte BspLMap_Insert(BspTri *list, BspLMap *lm, int w, int h) {
 	int x, y;
 
 	if (!lm) {
@@ -1563,7 +1434,9 @@ byte BspLMap_Insert(BspTri *list, BspLMap *lm, int w, int h) {
 	return 1;
 }
 
-
+static void BspLMap_CreateMat(BspLMap *self, const char *name, byte level);
+static void BspLMap_Save(char *copy, CBmp *bmp, const char *path, int n, const char *ext);
+static void BspTri_Rotate(BspTri *list);
 void CBsp_GroupMaps(CBsp *self) {
 	char name1[0x104], name2[0x104];
 	CScene *scn = self->model->scene;
@@ -1639,10 +1512,9 @@ void CBsp_GroupMaps(CBsp *self) {
 		(int (*)(const void *, const void *))(void *)BspTri_CmpZone);
 }
 
-
 /* the lists of the map */
 
-void CBsp_CreateZones(CBsp *self) {
+static void CBsp_CreateZones(CBsp *self) {
 	int n = Sector_Num() + 1;
 
 	crt_qsort(self->lists, (size_t)self->num_lists, sizeof(BspTri *),
@@ -1665,28 +1537,6 @@ void CBsp_CreateZones(CBsp *self) {
 			}
 			t->zone_next = tri;
 		}
-	}
-}
-
-/* the transparent lists without a diffuse map take the color of the material and no light map */
-void CBsp_ColorSinLmap(CBsp *self) {
-	for (int i = 0; i < self->num_lists; i++) {
-		BspTri *list = self->lists[i];
-		const CMaterial *m = list->Mat;
-		if (!Mat_IsTransp(m) || m->map[MAP_DIFFUSE]) {
-			continue;
-		}
-		const byte *d = m->params.diffuse;
-		uint32_t c = (uint32_t)d[3] << 24 | (uint32_t)d[0] << 16 | (uint32_t)d[1] << 8 | d[2];
-		if (g_DiffuseMod4x) {
-			c = (c & 0xff000000) | (c >> 2 & 0x3f3f3f);
-		}
-		for (BspTri *t = list; t; t = t->next) {
-			t->color[0] = c;
-			t->color[1] = c;
-			t->color[2] = c;
-		}
-		list->flags |= BSPTRI_NOLMAP;
 	}
 }
 
@@ -1716,7 +1566,7 @@ void CBsp_RemoveLights(CBsp *self) {
 }
 
 /* the areas of src averaged in boxes of dim x dim texels over w x h into dst */
-void BspTri_AreasLod(CTable *dst, const CTable *src, int w, int h, int dim) {
+static void BspTri_AreasLod(CTable *dst, const CTable *src, int w, int h, int dim) {
 	CTable tmp;
 	int n = 0;
 
@@ -1775,145 +1625,10 @@ void BspTri_AreasLod(CTable *dst, const CTable *src, int w, int h, int dim) {
 	}
 }
 
-
 /* the region trees of the radiosity */
 
-/* the region of the texels (x, y) size lx x ly with the areas in it; NULL without any */
-BspRegion *BspRegion_New(int x, int y, int lx, int ly, BspRegion *parent, const CTable *areas) {
-	if (lx <= 0 || ly <= 0) {
-		return NULL;
-	}
-	BspRegion *r = operator_new(sizeof(BspRegion));
-	if (r) {
-		r = BspRegion_ctor(r, x, y, lx, ly, parent);
-	}
-	int n = 0;
-	r->center = (vec3_t){ 0.0f, 0.0f, 0.0f };
-	r->area = 0.0f;
-	for (int i = 0; i < areas->n; i++) {
-		TABLE_CHECK(areas->p, i, areas->n);
-		const BspArea *a = &((const BspArea *)areas->p)[i];
-		if (a->x >= x && a->x < x + lx && a->y >= y && a->y < y + ly) {
-			float e = g_ShadowMapScale;
-			r->area = a->weight / (e * e) + r->area;
-			r->center.x = r->center.x + a->pos.x;
-			r->center.y = a->pos.y + r->center.y;
-			r->center.z = a->pos.z + r->center.z;
-			n++;
-		}
-	}
-	if (n) {
-		float fn = (float)n;
-		r->center.x = r->center.x / fn;
-		r->center.y = r->center.y / fn;
-		r->center.z = r->center.z / fn;
-		return r;
-	}
-	BspRegion_dtor(r);
-	operator_delete_sized(r, sizeof(BspRegion));
-	return NULL;
-}
-
-void BspRegion_Split(BspRegion *r, const CTable *areas) {
-	while (r) {
-		uint32_t lx = r->lx;
-		if (lx <= 1 && r->ly <= 1) {
-			r->interior = 0;
-			Debug_Point(&r->center, 0xffff00, 1.0f);
-			return;
-		}
-		uint32_t ly = r->ly;
-		int hx = (int)(lx >> 1);
-		int hy = (int)(ly >> 1);
-		int a = (int)lx - hx;
-		int b = (int)ly - hy;
-		r->child[0] = BspRegion_New(r->x, r->y, a, b, r, areas);
-		r->child[1] = BspRegion_New(r->x + a, r->y, hx, b, r, areas);
-		r->child[2] = BspRegion_New(r->x, r->y + b, a, hy, r, areas);
-		r->child[3] = BspRegion_New(r->x + a, r->y + b, hx, hy, r, areas);
-		r->interior = r->child[0] || r->child[1] || r->child[2] || r->child[3];
-		BspRegion_Split(r->child[0], areas);
-		BspRegion_Split(r->child[1], areas);
-		BspRegion_Split(r->child[2], areas);
-		r = r->child[3];
-	}
-}
-
-/* the light of the tree (leaves: received times the material, also into the texels of the list of color), the
- * emitted color times the area into out */
-float *BspRegion_Color(float *out, BspRegion *r, BspTri *tri, uint32_t color) {
-	float t[4];
-
-	if (!r) {
-		out[2] = 0.0f;
-		out[1] = 0.0f;
-		out[0] = 0.0f;
-		out[3] = 1.0f;
-		return out;
-	}
-	if (!r->interior) {
-		float mc[17];
-		CMaterial_CalcColors(tri->Mat, mc);
-		t[0] = mc[0] * r->accum[0];
-		t[1] = r->accum[1] * mc[1];
-		t[2] = r->accum[2] * mc[2];
-		t[3] = r->accum[3] * mc[3];
-		memcpy(r->accum, t, sizeof(t));
-		CHECK(r->lx == 1);
-		CHECK(r->ly == 1);
-		for (int j = 0; j < r->ly; j++) {
-			for (int i = 0; i < r->lx; i++) {
-				int x = r->x + i;
-				int y = r->y + j;
-				if (x >= tri->rad.width || y >= tri->rad.height) {
-					continue;
-				}
-				if (Color_SwapRB(*CBmp_Pixel(&tri->mask, (uint32_t)x, (uint32_t)y)) != color) {
-					continue;
-				}
-				float *p = CBmpFlt2_Pixel(&tri->rad, (uint32_t)x, (uint32_t)y);
-				p[0] = r->accum[0] * 0.6f + p[0];
-				p[1] = r->accum[1] * 0.6f + p[1];
-				p[2] = r->accum[2] * 0.6f + p[2];
-			}
-		}
-		for (int i = 0; i < 4; i++) {
-			r->color[i] = r->accum[i] * 0.4f;
-		}
-		for (int i = 0; i < 4; i++) {
-			t[i] = r->color[i] + r->color[i];
-		}
-	} else {
-		r->color[0] = 0.0f;
-		r->color[1] = 0.0f;
-		r->color[2] = 0.0f;
-		r->color[3] = 1.0f;
-		for (int k = 0; k < 4; k++) {
-			const float *s = BspRegion_Color(t, r->child[k], tri, color);
-			for (int i = 0; i < 4; i++) {
-				r->color[i] = s[i] + r->color[i];
-			}
-		}
-		CHECK(r->area > 0.0f);
-		float inv = 1.0f / r->area;
-		for (int i = 0; i < 4; i++) {
-			t[i] = r->color[i] * inv;
-		}
-	}
-	float area = r->area;
-	memcpy(r->color, t, sizeof(t));
-	r->accum[0] = 0.0f;
-	r->accum[1] = 0.0f;
-	r->accum[2] = 0.0f;
-	r->accum[3] = 1.0f;
-	for (int i = 0; i < 4; i++) {
-		out[i] = r->color[i] * area;
-	}
-	return out;
-}
-
 /* a list taller than wide is turned for the packing (pack mode 2 and up) */
-void BspTri_Rotate(BspTri *list) {
+static void BspTri_Rotate(BspTri *list) {
 	if (g_LightmapPackMode < 2) {
 		return;
 	}
@@ -1953,7 +1668,7 @@ void BspTri_Rotate(BspTri *list) {
 }
 
 /* the qsort orders of the lists: for drawing (shader, material, page, sector) and for the sectors */
-int BspTri_CmpMat(const void *pa, const void *pb) {
+static int BspTri_CmpMat(const void *pa, const void *pb) {
 	const BspTri *a = *(BspTri *const *)pa;
 	const BspTri *b = *(BspTri *const *)pb;
 	CMaterial *ma = a->Mat;
@@ -2008,7 +1723,6 @@ int BspTri_CmpZone(const void *pa, const void *pb) {
 	return (la == NULL) - (lb == NULL);
 }
 
-
 /* the map compiler: debug output, the TXF cache, the area sums */
 
 /* the collision cache counters of suelo.cpp: hit, miss, peak */
@@ -2027,36 +1741,8 @@ void Bsp_MatInfo(CMaterial *m) {
 	Con_Verbosef("  %-20s  D:[%s]  G:[%s]  %s%s%s%s%s  %s  %04X\n", m->Name, dif, glow, d, o, e, b, g, transp, attrib);
 }
 
-int g_BspDebugCnt;
-int g_BspDebugSel = -1;
-
-/* the boxes of the regions with links (and the selected one) and their links; the regions drawn */
-int BspRegion_Debug(BspRegion *r) {
-	if (!r) {
-		return 0;
-	}
-	int n = BspRegion_Debug(r->child[0]);
-	n += BspRegion_Debug(r->child[1]);
-	n += BspRegion_Debug(r->child[2]);
-	n += BspRegion_Debug(r->child[3]);
-	if (++g_BspDebugCnt != g_BspDebugSel && !n) {
-		return 0;
-	}
-	float s = g_ShadowMapScale * g_ShadowMapRes;
-	float hx = (float)r->lx / s * 0.5f;
-	float hy = (float)r->ly / s * 0.5f;
-	vec3_t mx = { r->center.x + hx, r->center.y + hy, r->center.z + 0.0f };
-	vec3_t mn = { r->center.x - hx, r->center.y - hy, r->center.z - 0.0f };
-	Debug_DrawBox(&mn, &mx, n ? 0xc0c0c0 : 0xffffff);
-	for (BspLink *l = r->links; l; l = l->next) {
-		Debug_DrawLine(&r->center, &l->region->center, g_BspColors[n % 15 + 1]);
-	}
-	Text_PrintfRel(0, 0x10, "%d:  px py: %d %d  lx ly: %d %d", n, r->x, r->y, r->lx, r->ly);
-	return n + 1;
-}
-
 /* the material of a page from its file (level: the light map level of the map) */
-void BspLMap_CreateMat(BspLMap *self, const char *name, byte level) {
+static void BspLMap_CreateMat(BspLMap *self, const char *name, byte level) {
 	CMaterial m;
 
 	CMaterial_ctor(&m);
@@ -2076,7 +1762,7 @@ void BspLMap_CreateMat(BspLMap *self, const char *name, byte level) {
 }
 
 /* bmp saved as "<ruta>.%04d<ext>" (overwriting); the file name into copy */
-void BspLMap_Save(char *copy, CBmp *bmp, const char *path, int n, const char *ext) {
+static void BspLMap_Save(char *copy, CBmp *bmp, const char *path, int n, const char *ext) {
 	char buf[0x104];
 
 	Bprintf(buf, sizeof(buf), "&u&d&n.%04d%s", n, ext);
@@ -2141,34 +1827,6 @@ void CBsp_AreasMax(CBsp *self) {
 			list->listGlowSum[2] = t->glowSum[2] + list->listGlowSum[2];
 			list->listGlowSum[3] = t->glowSum[3] + list->listGlowSum[3];
 			list->listGlowAreas += t->glowAreas;
-		}
-	}
-}
-
-/* n passes of the light through the region links: gathered into the trees, then into the light maps */
-void CBsp_IllumRegions(CBsp *self, int n) {
-	float out[4];
-
-	for (int pass = 1; pass <= n; pass++) {
-		E3D_DebugPrintf("iluminacion_regiones (%d):\n", pass);
-		int nl = self->num_lists;
-		for (int i = 0; i < nl; nl = self->num_lists) {
-			BspTri *list = self->lists[i];
-			E3D_DebugPrintf("region: %d / %d   \r", ++i, nl);
-			if (list) {
-				float add[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-				for (BspTri *t = list; t; t = t->next) {
-					BspRegion_Accumulate(t->region, add);
-				}
-			}
-		}
-		nl = self->num_lists;
-		for (int i = 0; i < nl; nl = self->num_lists) {
-			BspTri *list = self->lists[i];
-			E3D_DebugPrintf("region: %d / %d   \r", ++i, nl);
-			for (BspTri *t = list; t; t = t->next) {
-				BspRegion_Color(out, t->region, list, (uint32_t)(uintptr_t)t);
-			}
 		}
 	}
 }
@@ -2406,10 +2064,7 @@ void Bsp_EndMessage(CBsp *self, int secs) {
 	}
 }
 
-
 /* the map: made from the floor of the world */
-
-
 
 /* the obj3D of a node as its class (the inline cast of objeto3D.h, NULL with a failed CHECK) */
 static void *Obj3D_As(CNode3D *n, uint32_t class) {
@@ -2424,7 +2079,10 @@ static void *Obj3D_As(CNode3D *n, uint32_t class) {
 
 int g_ShadowMapCalculate;
 
-CBsp *CBsp_ctor(CBsp *self, const char *name, const vec3_t *scale) {
+/* the map made from the floor: read from the .EMI (without calcular) or computed */
+static void CBsp_Prepare(CBsp *self);
+static int CBsp_ReadEMI(CBsp *self);
+static CBsp *CBsp_ctor(CBsp *self, const char *name, const vec3_t *scale) {
 	char buf[0x104];
 
 	self->name = NULL;
@@ -2591,7 +2249,7 @@ void Bsp_Create(void) {
 	}
 }
 
-cGVar GVar_LightmapDebugTex;
+static cGVar GVar_LightmapDebugTex;
 
 /* the radiosity: the areas and region trees of the lists, the links between regions */
 
@@ -2648,66 +2306,6 @@ void CBsp_AdjustGamma(CBsp *self) {
 
 static inline byte BspRegion_Children(const BspRegion *r) {
 	return r->child[0] || r->child[1] || r->child[2] || r->child[3];
-}
-
-/* the light between the regions a and b with the form factors over threshold: linked when the floor does not block
- * them, else the larger one split into its children; 1 when linked */
-int BspRegion_Link(CBsp *self, BspRegion *a, BspRegion *b, int link, float threshold) {
-	if (!a || !b) {
-		return 0;
-	}
-	CHECK(!link);
-	if (!b->parent && !b->interior) {
-		return 0;
-	}
-	if (!a->parent && !a->interior) {
-		return 0;
-	}
-	if (a->color[1] + a->color[0] + a->color[2] == 0.0f && b->color[1] + b->color[0] + b->color[2] == 0.0f) {
-		return 0;
-	}
-	float ffa = BspRegion_FormFactor(a, b);
-	float ffb = BspRegion_FormFactor(b, a);
-	if (link && threshold > ffa && threshold > ffb) {
-		return 1;
-	}
-	CHECK(a->interior == BspRegion_Children(a));
-	CHECK(b->interior == BspRegion_Children(b));
-	if (ffa > threshold && ffa >= ffb && b->interior) {
-		for (int k = 0; k < 4; k++) {
-			BspRegion_Link(self, a, b->child[k], 0, threshold);
-		}
-		return 0;
-	}
-	float d = a->center.y * b->plane.n.y + a->center.x * b->plane.n.x + a->center.z * b->plane.n.z + b->plane.d;
-	float v = ffb;
-	if (a->interior && a->area > d * d) {
-		v = threshold + threshold;
-	}
-	if (v > threshold && a->interior) {
-		for (int k = 0; k < 4; k++) {
-			BspRegion_Link(self, a->child[k], b, 0, threshold);
-		}
-		return 0;
-	}
-	CGround *ground = World_Get()->ObjGround;
-	CHECK(ground);
-	vec3_t dir = { a->center.x - b->center.x, a->center.y - b->center.y, a->center.z - b->center.z };
-	vec3_t n;
-	Vec3_Normalize(&n, &dir);
-	float k = 0.3f / g_ShadowMapScale;
-	vec3_t p1 = { b->center.x + n.x * k, b->center.y + n.y * k, b->center.z + n.z * k };
-	vec3_t p0 = { a->center.x - n.x * k, a->center.y - n.y * k, a->center.z - n.z * k };
-	if (CGround_Trace(ground, &p0, &p1, NULL, 0.0f, NULL)) {
-		return 0;
-	}
-	for (int i = 0; i < 4; i++) {
-		a->accum[i] = a->accum[i] + b->color[i] * ffa;
-	}
-	for (int i = 0; i < 4; i++) {
-		b->accum[i] = b->accum[i] + a->color[i] * v;
-	}
-	return 1;
 }
 
 int g_BspAreasTotal[4];
@@ -2793,8 +2391,7 @@ void CBsp_InitAreas(CBsp *self) {
 	E3D_DebugPrintf("memoria usada: %-5d Kb\n", g_MemStats.bytes / 1024);
 }
 
-
-cGVar GVar_LightmapGlowMult;
+static cGVar GVar_LightmapGlowMult;
 
 /* the glow of the lists and the shadows of the area lights */
 
@@ -2870,59 +2467,7 @@ float Bsp_Occlusion(const vec3_t *p, const vec3_t *n, float r, int samples, cons
 	return 1.0f - (float)hits / (float)samples;
 }
 
-
-/* the texels of no list (mask 0) take the weighted average of the neighbours of a list (sides 16, corners 1);
- * without any they are marked (4, 0, 4, 0) */
-void CBmpFlt_FillGaps(CBmpFlt *img, const CBmp *mask) {
-	static const int dx[8] = { -1, 0, 1, -1, 1, -1, 0, 1 };
-	static const int dy[8] = { -1, -1, -1, 0, 0, 1, 1, 1 };
-	static const int weight[8] = { 1, 16, 1, 16, 16, 1, 16, 1 };
-
-	if (!img->img) {
-		return;
-	}
-	uint32_t w = (uint32_t)img->width;
-	int h = img->height;
-	for (int y = 0; y < h; y++) {
-		const uint32_t *pm = CBmp_Pixel(mask, 0, (uint32_t)y);
-		float *pf = CBmpFlt_Pixel(img, 0, (uint32_t)y);
-		for (int x = 0; x < (int)w; x++, pm++, pf += 4) {
-			if (*pm) {
-				continue;
-			}
-			float sw = 0.0f, sr = 0.0f, sg = 0.0f, sb = 0.0f, sa = 0.0f;
-			for (int k = 0; k < 8; k++) {
-				uint32_t xx = (uint32_t)(dx[k] + x);
-				uint32_t yy = (uint32_t)(dy[k] + y);
-				if (xx >= w || yy >= (uint32_t)h || !*CBmp_Pixel(mask, xx, yy)) {
-					continue;
-				}
-				const float *p = CBmpFlt_Pixel(img, xx, yy);
-				float f = (float)weight[k];
-				float p0 = p[0], p1 = p[1], p2 = p[2], p3 = p[3];
-				sr = f * p0 + sr;
-				sg = f * p1 + sg;
-				sb = f * p2 + sb;
-				sw = f + sw;
-				sa = p3 * f + sa;
-			}
-			if (sw > 0.0f) {
-				pf[0] = sr / sw;
-				pf[1] = sg / sw;
-				pf[2] = sb / sw;
-				pf[3] = sa / sw;
-			} else {
-				pf[0] = 4.0f;
-				pf[1] = 0.0f;
-				pf[2] = 4.0f;
-				pf[3] = 0.0f;
-			}
-		}
-	}
-}
-
-
-int g_LmapSaveIni = 1;
+static int g_LmapSaveIni = 1;
 
 /* the light map settings back into "<map>.ini" when one changed (a backup of the old file first) */
 void CBsp_SaveIni(CBsp *self) {
@@ -2961,10 +2506,10 @@ void CBsp_SaveIni(CBsp *self) {
 	CIniFile_dtor(&ini);
 }
 
-
 /* the .EMI file of the map: the materials, the light map pages and the lists */
 
-int CBsp_ReadEMI(CBsp *self) {
+/* the .EMI file: 0 when read, -1 without the file */
+static int CBsp_ReadEMI(CBsp *self) {
 	char path[0x104], dir[0x104], texPath[0x104], buf[0x104];
 	char sector[0x80];
 	CHashTable tabMat, tabLMap;
@@ -3104,7 +2649,8 @@ static BspMatStat *BspMatStat_Get(CTable *t, int i) {
 	return &((BspMatStat *)t->p)[i];
 }
 
-void CBsp_Prepare(CBsp *self) {
+/* the triangles by sector and by material into the log, at debug level 3 */
+static void CBsp_Prepare(CBsp *self) {
 	CTable tab = { 0, NULL };
 
 	if (g_DebugLevel < 3) {
@@ -3167,7 +2713,8 @@ void CBsp_Prepare(CBsp *self) {
 	}
 }
 
-void CBsp_InitD3D(CBsp *self) {
+/* the vertex and index buffers of the sectors and lists, the materials of the debug views */
+static void CBsp_InitD3D(CBsp *self) {
 	/* the vertex size and FVF of the buffers of a sector (BspZone_GetVB: the first four) */
 	static const struct {
 		int size;
@@ -3242,19 +2789,19 @@ void Bsp_InitLights(void) {
 	}
 }
 
-cGVar GVar_LightmapDxtPadding;
-cGVar GVar_ShowInfoOnSectorError;
-cGVar GVar_MapDrawBySector;
-cGVar GVar_R_ForceLMap;
-cGVar GVar_MapRenderMat;
-cGVar GVar_RenderMap;
+static cGVar GVar_LightmapDxtPadding;
+static cGVar GVar_ShowInfoOnSectorError;
+static cGVar GVar_MapDrawBySector;
+static cGVar GVar_R_ForceLMap;
+static cGVar GVar_MapRenderMat;
+static cGVar GVar_RenderMap;
 cGVar GVar_R_UsePortals;
-cGVar GVar_MapSortByShader;
-cGVar GVar_LightmapLimitUV;
-cGVar GVar_RenderSectors;
-cGVar GVar_MapDrawSector;
-cGVar GVar_LightmapPackMode;
-cGVar GVar_MapRenderMap;
+static cGVar GVar_MapSortByShader;
+static cGVar GVar_LightmapLimitUV;
+static cGVar GVar_RenderSectors;
+static cGVar GVar_MapDrawSector;
+static cGVar GVar_LightmapPackMode;
+static cGVar GVar_MapRenderMap;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_VECTOR(Fini_PaintZones, g_PaintZones, sizeof(PaintZone), 128, PaintZone_dtor)

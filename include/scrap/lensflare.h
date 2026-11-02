@@ -44,19 +44,9 @@ typedef struct VertLensFlare {
 	float u, v;			/* 0x14 */
 } VertLensFlare;
 
-extern CMaterial *g_LensFlareMat;
-extern cGVar GVar_R_LensFlare;
-#define g_LensFlares (GVar_R_LensFlare.value.i)		/* the engine variable that draws them */
-extern CLensFlare * g_LensFlareRender[8];	/* MAX_LENSFLARE_RENDER */
-extern int g_nLensFlareRender;
-extern VertLensFlare g_LensFlareVerts[4];	/* 4 */
-
 CLensFlare *CLensFlare_ctor(CLensFlare *self);
 void CLensFlare_dtor(CLensFlare *self);
-/* into or out of the render list by on */
-void LensFlare_Update(CLensFlare *lf);
 void CLensFlare_SetOn(CLensFlare *self, byte on);
-void LensFlare_Set(CLensFlare *lf, byte on);
 /* all off, the list empty; 0 */
 int LensFlare_ClearAll(void);
 int LensFlare_Release(void);
@@ -65,13 +55,8 @@ int LensFlare_Init(void);
 int LensFlare_InitList(void);
 /* the flares of the list with the view and projection of the device, in screen space */
 void LensFlare_RenderAll(void);
-void CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj);
-/* a sprite at dist along the line through the center (0 the point, 1 the center), size and color */
-void CLensFlare_DrawSprite(CLensFlare *self, float dist, uint32_t sprite, float size, float r, float g,
-	float b, float a);
 void CLensFlare_SetIntens(CLensFlare *self, float v);
 void CLensFlare_SetTraceInterval(CLensFlare *self, float v);
-void CLensFlare_SetMargin(CLensFlare *self, float v);
 void CLensFlare_SetPos(CLensFlare *self, vec3_t pos);
 void CLensFlare_SetScale(CLensFlare *self, float v);
 void CLensFlare_SetType(CLensFlare *self, int type);

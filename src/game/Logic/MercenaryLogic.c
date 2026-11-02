@@ -4,6 +4,9 @@
  */
 #include "scrap/logic.h"
 
+#define CMERCENARYLOCALLOGIC_VFTABLE (&cMercenaryLocalLogic_vftable.base)
+static const cGenCharLocalLogicVtbl cMercenaryLocalLogic_vftable;
+
 #define CMERC_VT(self) ((self)->base.vftable)
 
 cMercenaryLocalLogic *cMercenaryLocalLogic_ctor(cMercenaryLocalLogic *self, cEntity *parent) {
@@ -12,7 +15,7 @@ cMercenaryLocalLogic *cMercenaryLocalLogic_ctor(cMercenaryLocalLogic *self, cEnt
 	return self;
 }
 
-cLocalLogic *cMercenaryLocalLogic_Delete(cLocalLogic *base, byte flags) {
+static cLocalLogic *cMercenaryLocalLogic_Delete(cLocalLogic *base, byte flags) {
 	cMercenaryLocalLogic *self = (cMercenaryLocalLogic *)base;
 	CMERC_VT(self) = CMERCENARYLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
@@ -23,7 +26,7 @@ cLocalLogic *cMercenaryLocalLogic_Delete(cLocalLogic *base, byte flags) {
 }
 
 /* the vtable of cMercenaryLocalLogic */
-const cGenCharLocalLogicVtbl cMercenaryLocalLogic_vftable = {
+static const cGenCharLocalLogicVtbl cMercenaryLocalLogic_vftable = {
 	.base.base.Delete = cMercenaryLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.Vf02 = cLocalLogic_Vf02True,

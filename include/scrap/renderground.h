@@ -17,15 +17,9 @@ typedef struct BatchMesh {
 	float z;			/* 0x8 the box center in view space */
 } BatchMesh;
 
-extern CTable g_BatchTab;	/* BATCH_MAX BatchMesh, made on the first use */
-extern BatchMesh * g_BatchOrder[512];	/* [BATCH_MAX] */
-extern uint32_t g_BatchUsed;
-
 /* the meshes of the list mesh (up to the first without vertices); dev is only passed on */
 void Batch_AddMesh(void *mesh, void *dev);
 void Batch_Flush(void *dev);
-/* qsort order of g_BatchOrder: texture, material, then z ascending */
-int Batch_Compare(const void *a, const void *b);
 /* RenderMeshD3D_AddTransp (a mesh into the list of the transparent meshes): render.h */
 
 #endif

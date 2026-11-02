@@ -102,10 +102,6 @@ typedef struct cCamControlVtbl {
 	byte(*SetTarget)(cEntity *self, const char *name);			/* 0x6c vf27 "EntityLink" */
 	void(*UpdateOff)(cEntity *self, float dt);				/* 0x70 vf28 */
 } cCamControlVtbl;
-extern const cCamControlVtbl cCamPathEntity_vftable;
-#define CCAMPATHENTITY_VFTABLE (&cCamPathEntity_vftable.base)
-extern const cCamControlVtbl cCamControl_vftable;
-#define CCAMCONTROL_VFTABLE (&cCamControl_vftable.base)
 
 /* the follow camera adds two */
 typedef struct cFollowCamVtbl {
@@ -113,36 +109,17 @@ typedef struct cFollowCamVtbl {
 	void(*GetAng2)(cEntity *self, float *ang);				/* 0x74 vf29 */
 	void(*SetAng2)(cEntity *self, const float *ang);			/* 0x78 vf30 */
 } cFollowCamVtbl;
-extern const cFollowCamVtbl cFollowCamEntity_vftable;
-#define CFOLLOWCAMENTITY_VFTABLE (&cFollowCamEntity_vftable.base.base)
 
 static inline const cCamControlVtbl *CamCtl_Vtbl(cEntity *e) {
 	return (const cCamControlVtbl *)e->vftable;
 }
 
-/* engine variables */
-extern cGVar GVar_FreeCameraCollide;
-#define g_FreeCameraCollide (GVar_FreeCameraCollide.value.i)	/* FreeCameraCollide */
-extern cGVar GVar_FullCameraTest;
-#define g_FullCameraTest (GVar_FullCameraTest.value.i)	/* FullCameraTest */
 extern cGVar GVar_WalkCameraCenter;
 #define g_WalkCameraCenter (GVar_WalkCameraCenter.value.f)	/* WalkCameraCenter */
 extern cGVar GVar_VehicleCamDist;
 #define g_VehicleCamDist (GVar_VehicleCamDist.value.f)
 extern cGVar GVar_VehicleCamDist2;
 #define g_VehicleCamDist2 (GVar_VehicleCamDist2.value.f)	/* VehicleCamDist2, of player 1 */
-extern cGVar GVar_VehicleCamNear;
-#define g_VehicleCamNear (GVar_VehicleCamNear.value.f)
-extern cGVar GVar_VehicleCamFar;
-#define g_VehicleCamFar (GVar_VehicleCamFar.value.f)
-extern cGVar GVar_WalkCamNear;
-#define g_WalkCamNear (GVar_WalkCamNear.value.f)
-extern cGVar GVar_WalkCamFar;
-#define g_WalkCamFar (GVar_WalkCamFar.value.f)
-extern cGVar GVar_OutWalkCamNear;
-#define g_OutWalkCamNear (GVar_OutWalkCamNear.value.f)
-extern cGVar GVar_OutWalkCamFar;
-#define g_OutWalkCamFar (GVar_OutWalkCamFar.value.f)
 
 /* the degrees of the script variables */
 static inline float Cam_Deg2Rad(double v) {
@@ -151,8 +128,6 @@ static inline float Cam_Deg2Rad(double v) {
 
 /* ---- CamControl.c ---- */
 void cCamControl_dtor(cEntity *self);
-cEntity *cCamControl_Delete(cEntity *self, uint32_t flags);
-const char *cCamControl_GetClassName(cEntity *self);
 byte cCamControl_IsType(cEntity *self, const char *type);
 byte cCamControl_VarI(cEntity *self, const char *name, int *i, int set);
 byte cCamControl_VarF(cEntity *self, const char *name, double *d, int set);
@@ -166,48 +141,5 @@ void cCamControl_NopF(cEntity *self, float f);
 byte cCamControl_SetTarget(cEntity *self, const char *name);
 /* the position of view slot i of the world when the camera shows that view */
 void cCamControl_SetViewPos(cEntity *self, int i, float x, float y, float z);
-
-/* ---- CamPathEntity.c ---- */
-void cCamPathEntity_dtor(cEntity *self);
-cEntity *cCamPathEntity_Delete(cEntity *self, uint32_t flags);
-cCamPathPoint *cCamPathPoint_ctor(cCamPathPoint *self);
-const char *cCamPathEntity_GetClassName(cEntity *self);
-byte cCamPathEntity_IsType(cEntity *self, const char *type);
-/* the index NN of name = prefix + two digits, -1 for none or over 32 */
-int cCamPathEntity_PointIndex(cEntity *self, const char *name, const char *prefix, uint32_t len);
-byte cCamPathEntity_VarI(cEntity *self, const char *name, int *i, int set);
-byte cCamPathEntity_VarF(cEntity *self, const char *name, double *d, int set);
-byte cCamPathEntity_VarS(cEntity *self, const char *name, char **s, int set);
-byte cCamPathEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set);
-/* the values of the "Cam" entity the point names */
-void cCamPathPoint_Refresh(cCamPathPoint *self);
-/* the camera at f (0..1) of the way from cur to next, shaken by the quake of the way */
-void cCamPathEntity_Interp(cEntity *self, cCamPathPoint *next, cCamPathPoint *cur, float f);
-void cCamPathEntity_Update(cEntity *self);
-
-/* ---- FollowCamEntity.c ---- */
-void cFollowCamEntity_dtor(cEntity *self);
-cEntity *cFollowCamEntity_Delete(cEntity *self, uint32_t flags);
-const char *cFollowCamEntity_GetClassName(cEntity *self);
-byte cFollowCamEntity_IsType(cEntity *self, const char *type);
-byte cFollowCamEntity_VarI(cEntity *self, const char *name, int *i, int set);
-byte cFollowCamEntity_VarF(cEntity *self, const char *name, double *d, int set);
-byte cFollowCamEntity_VarS(cEntity *self, const char *name, char **s, int set);
-byte cFollowCamEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set);
-void cFollowCamEntity_Update(cEntity *self);
-void cFollowCamEntity_Lerp(cEntity *self, float f);
-void cFollowCamEntity_Slot(cEntity *self, float dt);
-byte cFollowCamEntity_SetTargetName(cEntity *self, const char *name);
-void cFollowCamEntity_UpdateOff(cEntity *self, float dt);
-void cFollowCamEntity_GetAng2(cEntity *self, float *ang);
-void cFollowCamEntity_SetAng2(cEntity *self, const float *ang);
-/* the random shake of the angles while QuakeTime runs */
-void cFollowCamEntity_Quake(cEntity *self, float dt);
-/* the three angle pairs from the target (y plus AddTurn) */
-void cFollowCamEntity_ResetAngles(cEntity *self);
-/* on: no target; off: the MainTarget "Obj" again (free when there is none) */
-void cFollowCamEntity_SetFreeCam(cEntity *self, byte on);
-/* the camera moved by the input actions of its view slot (sets 1 and 3) */
-void cFollowCamEntity_FreeMove(cEntity *self);
 
 #endif

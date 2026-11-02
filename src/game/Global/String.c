@@ -40,7 +40,7 @@ cString *cString_ctor(cString *self) {
 }
 
 /* a followed by b; the lengths only size the buffer, both strings are copied whole */
-cString *cString_ctorConcat(cString *self, const char *a, int alen, const char *b, int blen) {
+static cString *cString_ctorConcat(cString *self, const char *a, int alen, const char *b, int blen) {
 	*self = alen + blen ? StrAlloc(alen + blen) : NULL;
 	if (a) {
 		memcpy(*self, a, strlen(a) + 1);
@@ -51,7 +51,8 @@ cString *cString_ctorConcat(cString *self, const char *a, int alen, const char *
 	return self;
 }
 
-void cString_SetN(cString *self, const char *s, int n) {
+/* n characters of s (s may be NULL with n 0: no string) */
+static void cString_SetN(cString *self, const char *s, int n) {
 	StrFree(self);
 	if (n || s) {
 		*self = StrAlloc(n);
@@ -94,10 +95,10 @@ void cString_Printf(cString *self, const char *fmt, ...) {
 	cString_SetN(self, buf, (int)strlen(buf));
 }
 
-char g_StrTmp[256];
+static char g_StrTmp[256];
 
 /* n characters of s at the end; a string of more than 255 characters goes through a concatenated copy */
-void cString_Append(cString *self, const char *s, int n) {
+static void cString_Append(cString *self, const char *s, int n) {
 	if (n <= 0) {
 		return;
 	}

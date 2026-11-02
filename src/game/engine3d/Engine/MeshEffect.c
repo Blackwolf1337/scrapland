@@ -20,9 +20,8 @@
 #define KEY_M 0x32
 #define KEY_CTRL 0x1d
 
-
-int g_NumScreens;
-CModel *g_Screens[10];
+static int g_NumScreens;
+static CModel *g_Screens[10];
 
 void MeshEffect_AddScreen(CModel *m) {
 	CHECK(g_NumScreens < MAX_SCREENS);
@@ -30,8 +29,8 @@ void MeshEffect_AddScreen(CModel *m) {
 	g_NumScreens++;
 }
 
-int g_NumModels;
-CModel *g_Models[10];
+static int g_NumModels;
+static CModel *g_Models[10];
 
 void MeshEffect_AddModel(CModel *m) {
 	CHECK(g_NumModels < MAX_MODELS);
@@ -49,11 +48,11 @@ static void MeshEffect_RenderList(CModel **list, int n) {
 	}
 }
 
-void MeshEffect_RenderModels(void) {
+static void MeshEffect_RenderModels(void) {
 	MeshEffect_RenderList(g_Models, g_NumModels);
 }
 
-void MeshEffect_RenderScreens(void) {
+static void MeshEffect_RenderScreens(void) {
 	MeshEffect_RenderList(g_Screens, g_NumScreens);
 }
 
@@ -62,10 +61,10 @@ static void MeshEffect_SetRS(uint32_t state, uint32_t value) {
 	Rd_DevSetRenderState(dev, state, value);
 }
 
-int g_MeshEffectOn;
-int g_MeshEffectStencil;
-CMaterial g_MeshEffectMat;
-byte g_MeshEffectMatInit;
+static int g_MeshEffectOn;
+static int g_MeshEffectStencil;
+static CMaterial g_MeshEffectMat;
+static byte g_MeshEffectMatInit;
 
 void MeshEffect_Render(void) {
 	if (g_KeyboardKeys[KEY_M] && g_KeyboardKeys[KEY_CTRL]) {

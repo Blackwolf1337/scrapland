@@ -58,7 +58,7 @@ cActClassList *g_pActClassList;
 cActClass *g_pAuxActClass;
 
 /* CreateClass(classname) : Crea una clase de objeto animado. A parse error returns None with the error set. */
-PyObject *SAct_CreateClass(PyObject *self, PyObject *args) {
+static PyObject *SAct_CreateClass(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
@@ -71,7 +71,7 @@ PyObject *SAct_CreateClass(PyObject *self, PyObject *args) {
 }
 
 /* DelClass(classname) : Borra una class de objeto animado */
-PyObject *SAct_DelClass(PyObject *self, PyObject *args) {
+static PyObject *SAct_DelClass(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
@@ -82,7 +82,7 @@ PyObject *SAct_DelClass(PyObject *self, PyObject *args) {
 }
 
 /* GetClass(classname) : Activa una clase de objeto animado. A parse error returns None with the error set. */
-PyObject *SAct_GetClass(PyObject *self, PyObject *args) {
+static PyObject *SAct_GetClass(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
@@ -95,7 +95,7 @@ PyObject *SAct_GetClass(PyObject *self, PyObject *args) {
 }
 
 /* SetCls(varname,value) : Modifica el valor de una variable de una class objeto animado */
-PyObject *SAct_SetCls(PyObject *self, PyObject *args) {
+static PyObject *SAct_SetCls(PyObject *self, PyObject *args) {
 	int parsed;
 
 	(void)self;
@@ -107,7 +107,7 @@ PyObject *SAct_SetCls(PyObject *self, PyObject *args) {
 }
 
 /* GetCls(varname) : Obtiene el valor de una variable de una class objeto animado */
-PyObject *SAct_GetCls(PyObject *self, PyObject *args) {
+static PyObject *SAct_GetCls(PyObject *self, PyObject *args) {
 	(void)self;
 	return GetVar(args, (varfunc_t)cActClass_Var, g_pAuxActClass,
 		"Caution: SAct.GetCls('%s'): AuxActClass not defined.\n",
@@ -117,7 +117,7 @@ PyObject *SAct_GetCls(PyObject *self, PyObject *args) {
 cAction *g_pAuxAction;
 
 /* CreateAction(varname) : Crea una accion en la class actual. */
-PyObject *SAct_CreateAction(PyObject *self, PyObject *args) {
+static PyObject *SAct_CreateAction(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
@@ -133,7 +133,7 @@ PyObject *SAct_CreateAction(PyObject *self, PyObject *args) {
 }
 
 /* GetAction(varname) : Obtiene una accion de la class actual. */
-PyObject *SAct_GetAction(PyObject *self, PyObject *args) {
+static PyObject *SAct_GetAction(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
@@ -152,7 +152,7 @@ PyObject *SAct_GetAction(PyObject *self, PyObject *args) {
  * SetAct(varname,value) : Modifica el valor de una variable de la accion. Without a current action, and also when
  * the arguments do not parse, the original clears the error and prints the "AuxActClass" message.
  */
-PyObject *SAct_SetAct(PyObject *self, PyObject *args) {
+static PyObject *SAct_SetAct(PyObject *self, PyObject *args) {
 	int parsed = 0;
 
 	(void)self;
@@ -168,32 +168,32 @@ PyObject *SAct_SetAct(PyObject *self, PyObject *args) {
 }
 
 /* GetAct(varname) : Obtiene el valor de una variable de la accion de una class objeto animado */
-PyObject *SAct_GetAct(PyObject *self, PyObject *args) {
+static PyObject *SAct_GetAct(PyObject *self, PyObject *args) {
 	(void)self;
 	return GetVar(args, (varfunc_t)cAction_Var, g_pAuxAction,
 		"Caution: SAct.GetAct('%s'): AuxActClass not defined.\n",
 		"Caution: SAct.GetAct('%s'): element not found.\n");
 }
 
-extern char str_PyDoc_SAct_CreateAction[];
-extern char str_PyDoc_SAct_CreateClass[];
-extern char str_PyDoc_SAct_DelClass[];
-extern char str_PyDoc_SAct_GetAct[];
-extern char str_PyDoc_SAct_GetAction[];
-extern char str_PyDoc_SAct_GetClass[];
-extern char str_PyDoc_SAct_GetCls[];
-extern char str_PyDoc_SAct_SetAct[104];
-extern char str_PyDoc_SAct_SetCls[];
-extern const char str_PyMethod_SAct_CreateAction[];
-extern const char str_PyMethod_SAct_CreateClass[];
-extern const char str_PyMethod_SAct_DelClass[];
-extern const char str_PyMethod_SAct_GetAct[];
-extern const char str_PyMethod_SAct_GetAction[];
-extern const char str_PyMethod_SAct_GetClass[];
-extern const char str_PyMethod_SAct_GetCls[];
-extern const char str_PyMethod_SAct_SetAct[];
-extern const char str_PyMethod_SAct_SetCls[];
-PyMethodDef SAct_methods[10] = {
+static char str_PyDoc_SAct_CreateAction[];
+static char str_PyDoc_SAct_CreateClass[];
+static char str_PyDoc_SAct_DelClass[];
+static char str_PyDoc_SAct_GetAct[];
+static char str_PyDoc_SAct_GetAction[];
+static char str_PyDoc_SAct_GetClass[];
+static char str_PyDoc_SAct_GetCls[];
+static char str_PyDoc_SAct_SetAct[104];
+static char str_PyDoc_SAct_SetCls[];
+static const char str_PyMethod_SAct_CreateAction[];
+static const char str_PyMethod_SAct_CreateClass[];
+static const char str_PyMethod_SAct_DelClass[];
+static const char str_PyMethod_SAct_GetAct[];
+static const char str_PyMethod_SAct_GetAction[];
+static const char str_PyMethod_SAct_GetClass[];
+static const char str_PyMethod_SAct_GetCls[];
+static const char str_PyMethod_SAct_SetAct[];
+static const char str_PyMethod_SAct_SetCls[];
+static PyMethodDef SAct_methods[10] = {
 	{
 		.ml_name = (void *)str_PyMethod_SAct_CreateClass,
 		.ml_meth = (void *)SAct_CreateClass,
@@ -252,38 +252,38 @@ PyMethodDef SAct_methods[10] = {
 
 SD_PY_MODULE(SAct, 0x429288)
 
-char str_PyDoc_SAct_CreateClass[] = "CreateClass(classname) : Crea una clase de objeto animado";
+static char str_PyDoc_SAct_CreateClass[] = "CreateClass(classname) : Crea una clase de objeto animado";
 
-char str_PyDoc_SAct_DelClass[] = "DelClass(classname) : Crea una clase de objeto animado";
+static char str_PyDoc_SAct_DelClass[] = "DelClass(classname) : Crea una clase de objeto animado";
 
-char str_PyDoc_SAct_GetClass[] = "GetClass(classname) : Activa una clase de objeto animado";
+static char str_PyDoc_SAct_GetClass[] = "GetClass(classname) : Activa una clase de objeto animado";
 
-char str_PyDoc_SAct_SetCls[] =
+static char str_PyDoc_SAct_SetCls[] =
 	"SetCls(varname,value) :  Modifica el valor de una variable de una clase objeto animado";
 
-char str_PyDoc_SAct_GetCls[] =
+static char str_PyDoc_SAct_GetCls[] =
 	"GetCls(varname) :  Obtiene el valor de una variable de una clase objeto animado";
 
-char str_PyDoc_SAct_CreateAction[] = "CreateAction(varname) :  Crea una accion en la clase actual.";
+static char str_PyDoc_SAct_CreateAction[] = "CreateAction(varname) :  Crea una accion en la clase actual.";
 
-const char str_PyMethod_SAct_CreateClass[] = "CreateClass";
+static const char str_PyMethod_SAct_CreateClass[] = "CreateClass";
 
-char str_PyDoc_SAct_GetAction[] = "GetAction(varname) :  Obtiene una accion de la clase actual.";
+static char str_PyDoc_SAct_GetAction[] = "GetAction(varname) :  Obtiene una accion de la clase actual.";
 
-const char str_PyMethod_SAct_DelClass[] = "DelClass";
-const char str_PyMethod_SAct_GetClass[] = "GetClass";
+static const char str_PyMethod_SAct_DelClass[] = "DelClass";
+static const char str_PyMethod_SAct_GetClass[] = "GetClass";
 
-char str_PyDoc_SAct_SetAct[104] =
+static char str_PyDoc_SAct_SetAct[104] =
 	"SetAct(varname,value) :  Modifica el valor de una variable de la accion de una clase objeto animado";
 
-const char str_PyMethod_SAct_SetCls[] = "SetCls";
-const char str_PyMethod_SAct_GetCls[] = "GetCls";
-const char str_PyMethod_SAct_CreateAction[] = "CreateAction";
+static const char str_PyMethod_SAct_SetCls[] = "SetCls";
+static const char str_PyMethod_SAct_GetCls[] = "GetCls";
+static const char str_PyMethod_SAct_CreateAction[] = "CreateAction";
 
-char str_PyDoc_SAct_GetAct[] =
+static char str_PyDoc_SAct_GetAct[] =
 	"GetAct(varname) :  Obtiene el valor de una variable de la accion de una clase objeto animado";
 
-const char str_PyMethod_SAct_GetAction[] = "GetAction";
-const char str_PyMethod_SAct_SetAct[] = "SetAct";
-const char str_PyMethod_SAct_GetAct[] = "GetAct";
+static const char str_PyMethod_SAct_GetAction[] = "GetAction";
+static const char str_PyMethod_SAct_SetAct[] = "SetAct";
+static const char str_PyMethod_SAct_GetAct[] = "GetAct";
 

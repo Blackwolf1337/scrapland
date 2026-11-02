@@ -9,7 +9,7 @@
 #include "scrap/staticinit.h"
 
 /* params: an event, the head entity, a float. The hair glow of the gambler goes to the head node of that model. */
-void ChType_FXCrazyGamblerSetHeadModel(cAbstractFile *params) {
+static void ChType_FXCrazyGamblerSetHeadModel(cAbstractFile *params) {
 	char event[0x80], head[0x80];
 	float unused;
 	const char *node;
@@ -36,7 +36,7 @@ void ChType_FXCrazyGamblerSetHeadModel(cAbstractFile *params) {
 	cEmbeddedFXCrazyGambler_SetHead(fx, Obj_Vtbl(h)->GetModel(h), node);
 }
 
-cPy_NativeFunc NativeFunc_FXCrazyGamblerSetHeadModel;
+static cPy_NativeFunc NativeFunc_FXCrazyGamblerSetHeadModel;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_NATIVE_FUNC(Init_NativeFunc_FXCrazyGamblerSetHeadModel, &NativeFunc_FXCrazyGamblerSetHeadModel, "FXCrazyGamblerSetHeadModel", ChType_FXCrazyGamblerSetHeadModel)

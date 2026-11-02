@@ -16,7 +16,7 @@ static const char *const shipLists[] = { "Traffic", "EnemiesTraffic", "FightingT
  * void SetCharState(entityName, state, entityTargetName) : Pone a una entidad en un estado de logica y un target
  * determinados. Any failure (no such WalkChar, no logic) returns NULL without a Python exception, as the original.
  */
-PyObject *SLogic_SetCharState(PyObject *self, PyObject *args) {
+static PyObject *SLogic_SetCharState(PyObject *self, PyObject *args) {
 	char *name, *targetName;
 	int state;
 
@@ -40,7 +40,7 @@ PyObject *SLogic_SetCharState(PyObject *self, PyObject *args) {
 }
 
 /* void SendSentinelToWatch(Pos) : Envia a un centinela a inspeccionar una posicion */
-PyObject *SLogic_SendSentinelToWatch(PyObject *self, PyObject *args) {
+static PyObject *SLogic_SendSentinelToWatch(PyObject *self, PyObject *args) {
 	vec3_t pos;
 
 	(void)self;
@@ -52,7 +52,7 @@ PyObject *SLogic_SendSentinelToWatch(PyObject *self, PyObject *args) {
 }
 
 /* void GearAttack(Entity) : Envia a un Gear a atacar a una entidad (NULL if there is none of that name) */
-PyObject *SLogic_GearAttack(PyObject *self, PyObject *args) {
+static PyObject *SLogic_GearAttack(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
@@ -64,7 +64,7 @@ PyObject *SLogic_GearAttack(PyObject *self, PyObject *args) {
 }
 
 /* int IsEnemyActive() : Indica si hay un enemigo activo, mirando la list de enemigos y el tráfico. */
-PyObject *SLogic_IsEnemyActive(PyObject *self, PyObject *args) {
+static PyObject *SLogic_IsEnemyActive(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -81,7 +81,7 @@ PyObject *SLogic_IsEnemyActive(PyObject *self, PyObject *args) {
  * As compiled: the first car of a list counts as result before any distance check, and a list entry that is
  * not a Car is used through a NULL pointer (crash in the original as here).
  */
-PyObject *SLogic_GetNearestShip(PyObject *self, PyObject *args) {
+static PyObject *SLogic_GetNearestShip(PyObject *self, PyObject *args) {
 	vec3_t pos;
 	char *exclude = "";
 
@@ -121,7 +121,7 @@ PyObject *SLogic_GetNearestShip(PyObject *self, PyObject *args) {
 }
 
 /* void SetOnFloor(Entity) : Pone una entidad en el suelo; 1 if it worked */
-PyObject *SLogic_SetOnFloor(PyObject *self, PyObject *args) {
+static PyObject *SLogic_SetOnFloor(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
@@ -132,7 +132,7 @@ PyObject *SLogic_SetOnFloor(PyObject *self, PyObject *args) {
 }
 
 /* void Flash((x,y,z),radius) : flash at a position */
-PyObject *SLogic_Flash(PyObject *self, PyObject *args) {
+static PyObject *SLogic_Flash(PyObject *self, PyObject *args) {
 	float x, y, z, radius;
 
 	(void)self;
@@ -144,7 +144,7 @@ PyObject *SLogic_Flash(PyObject *self, PyObject *args) {
 }
 
 /* void SetShipToRegenerate(shipName, regSpeed, regEndSpeed): Pone una nave a regenerarse. Not a Car: NULL ship. */
-PyObject *SLogic_SetShipToRegenerate(PyObject *self, PyObject *args) {
+static PyObject *SLogic_SetShipToRegenerate(PyObject *self, PyObject *args) {
 	char *name;
 	float speed, endSpeed;
 
@@ -160,7 +160,7 @@ PyObject *SLogic_SetShipToRegenerate(PyObject *self, PyObject *args) {
 }
 
 /* void SetDominationZones(zonesList): Establece la list de las zones de dominación (WithLife entities by name) */
-PyObject *SLogic_SetDominationZones(PyObject *self, PyObject *args) {
+static PyObject *SLogic_SetDominationZones(PyObject *self, PyObject *args) {
 	PyObject *zonesList;
 
 	(void)self;
@@ -186,7 +186,7 @@ PyObject *SLogic_SetDominationZones(PyObject *self, PyObject *args) {
 }
 
 /* void ChangeZoneState(zoneId, state): Pone el estado de una zona de dominación */
-PyObject *SLogic_ChangeZoneState(PyObject *self, PyObject *args) {
+static PyObject *SLogic_ChangeZoneState(PyObject *self, PyObject *args) {
 	int zone, state;
 
 	(void)self;
@@ -198,7 +198,7 @@ PyObject *SLogic_ChangeZoneState(PyObject *self, PyObject *args) {
 }
 
 /* void ChangeBatonState(pos, state): Actualiza el estado del testigo en el modo dominación */
-PyObject *SLogic_ChangeBatonState(PyObject *self, PyObject *args) {
+static PyObject *SLogic_ChangeBatonState(PyObject *self, PyObject *args) {
 	vec3_t pos;
 	int state;
 
@@ -211,38 +211,38 @@ PyObject *SLogic_ChangeBatonState(PyObject *self, PyObject *args) {
 }
 
 /* void UpdateTauntEndTime(time): Tiempo final del taunt. The original parses no arguments at all. */
-PyObject *SLogic_UpdateTauntEndTime(PyObject *self, PyObject *args) {
+static PyObject *SLogic_UpdateTauntEndTime(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
 	Taunts_UpdateEndTime(&g_pWorld->logic);
 	return Py_ReturnNone();
 }
 
-extern char str_PyDoc_SLogic_ChangeBatonState[];
-extern char str_PyDoc_SLogic_ChangeZoneState[];
-extern char str_PyDoc_SLogic_Flash[];
-extern char str_PyDoc_SLogic_GearAttack[72];
-extern char str_PyDoc_SLogic_GetNearestShip[];
-extern char str_PyDoc_SLogic_IsEnemyActive[];
-extern char str_PyDoc_SLogic_SendSentinelToWatch[88];
-extern char str_PyDoc_SLogic_SetCharState[];
-extern char str_PyDoc_SLogic_SetDominationZones[136];
-extern char str_PyDoc_SLogic_SetOnFloor[60];
-extern char str_PyDoc_SLogic_SetShipToRegenerate[];
-extern char str_PyDoc_SLogic_UpdateTauntEndTime[60];
-extern const char str_PyMethod_SLogic_ChangeBatonState[];
-extern const char str_PyMethod_SLogic_ChangeZoneState[];
-extern const char str_PyMethod_SLogic_Flash[];
-extern const char str_PyMethod_SLogic_GearAttack[];
-extern const char str_PyMethod_SLogic_GetNearestShip[];
-extern const char str_PyMethod_SLogic_IsEnemyActive[];
-extern const char str_PyMethod_SLogic_SendSentinelToWatch[];
-extern const char str_PyMethod_SLogic_SetCharState[];
-extern const char str_PyMethod_SLogic_SetDominationZones[];
-extern const char str_PyMethod_SLogic_SetOnFloor[];
-extern const char str_PyMethod_SLogic_SetShipToRegenerate[];
-extern const char str_PyMethod_SLogic_UpdateTauntEndTime[];
-PyMethodDef SLogic_methods[13] = {
+static char str_PyDoc_SLogic_ChangeBatonState[];
+static char str_PyDoc_SLogic_ChangeZoneState[];
+static char str_PyDoc_SLogic_Flash[];
+static char str_PyDoc_SLogic_GearAttack[72];
+static char str_PyDoc_SLogic_GetNearestShip[];
+static char str_PyDoc_SLogic_IsEnemyActive[];
+static char str_PyDoc_SLogic_SendSentinelToWatch[88];
+static char str_PyDoc_SLogic_SetCharState[];
+static char str_PyDoc_SLogic_SetDominationZones[136];
+static char str_PyDoc_SLogic_SetOnFloor[60];
+static char str_PyDoc_SLogic_SetShipToRegenerate[];
+static char str_PyDoc_SLogic_UpdateTauntEndTime[60];
+static const char str_PyMethod_SLogic_ChangeBatonState[];
+static const char str_PyMethod_SLogic_ChangeZoneState[];
+static const char str_PyMethod_SLogic_Flash[];
+static const char str_PyMethod_SLogic_GearAttack[];
+static const char str_PyMethod_SLogic_GetNearestShip[];
+static const char str_PyMethod_SLogic_IsEnemyActive[];
+static const char str_PyMethod_SLogic_SendSentinelToWatch[];
+static const char str_PyMethod_SLogic_SetCharState[];
+static const char str_PyMethod_SLogic_SetDominationZones[];
+static const char str_PyMethod_SLogic_SetOnFloor[];
+static const char str_PyMethod_SLogic_SetShipToRegenerate[];
+static const char str_PyMethod_SLogic_UpdateTauntEndTime[];
+static PyMethodDef SLogic_methods[13] = {
 	{
 		.ml_name = (void *)str_PyMethod_SLogic_SendSentinelToWatch,
 		.ml_meth = (void *)SLogic_SendSentinelToWatch,
@@ -319,53 +319,53 @@ PyMethodDef SLogic_methods[13] = {
 
 SD_PY_MODULE(SLogic, 0x42dd20)
 
-const char str_PyMethod_SLogic_SendSentinelToWatch[] = "SendSentinelToWatch";
-const char str_PyMethod_SLogic_GearAttack[] = "GearAttack";
-const char str_PyMethod_SLogic_SetCharState[] = "SetCharState";
-const char str_PyMethod_SLogic_IsEnemyActive[] = "IsEnemyActive";
-const char str_PyMethod_SLogic_GetNearestShip[] = "GetNearestShip";
-const char str_PyMethod_SLogic_SetOnFloor[] = "SetOnFloor";
-const char str_PyMethod_SLogic_Flash[] = "Flash";
-const char str_PyMethod_SLogic_SetShipToRegenerate[] = "SetShipToRegenerate";
-const char str_PyMethod_SLogic_SetDominationZones[] = "SetDominationZones";
-const char str_PyMethod_SLogic_ChangeZoneState[] = "ChangeZoneState";
-const char str_PyMethod_SLogic_ChangeBatonState[] = "ChangeBatonState";
-const char str_PyMethod_SLogic_UpdateTauntEndTime[] = "UpdateTauntEndTime";
+static const char str_PyMethod_SLogic_SendSentinelToWatch[] = "SendSentinelToWatch";
+static const char str_PyMethod_SLogic_GearAttack[] = "GearAttack";
+static const char str_PyMethod_SLogic_SetCharState[] = "SetCharState";
+static const char str_PyMethod_SLogic_IsEnemyActive[] = "IsEnemyActive";
+static const char str_PyMethod_SLogic_GetNearestShip[] = "GetNearestShip";
+static const char str_PyMethod_SLogic_SetOnFloor[] = "SetOnFloor";
+static const char str_PyMethod_SLogic_Flash[] = "Flash";
+static const char str_PyMethod_SLogic_SetShipToRegenerate[] = "SetShipToRegenerate";
+static const char str_PyMethod_SLogic_SetDominationZones[] = "SetDominationZones";
+static const char str_PyMethod_SLogic_ChangeZoneState[] = "ChangeZoneState";
+static const char str_PyMethod_SLogic_ChangeBatonState[] = "ChangeBatonState";
+static const char str_PyMethod_SLogic_UpdateTauntEndTime[] = "UpdateTauntEndTime";
 
-char str_PyDoc_SLogic_SetCharState[] =
+static char str_PyDoc_SLogic_SetCharState[] =
 	"void SetCharState(entityName, state, entityTargetName) : Pone a una entidad en un estado de logica y"
 	" un target determinados";
 
-char str_PyDoc_SLogic_Flash[] = "void Flash((x,y,z),radius) : Pone una entidad en el suelo";
+static char str_PyDoc_SLogic_Flash[] = "void Flash((x,y,z),radius) : Pone una entidad en el suelo";
 
-char str_PyDoc_SLogic_SendSentinelToWatch[88] =
+static char str_PyDoc_SLogic_SendSentinelToWatch[88] =
 	"void SendSentinelToWatch(Pos) : Envia a un centinela a inspeccionar una posicion";
 
-char str_PyDoc_SLogic_GearAttack[72] =
+static char str_PyDoc_SLogic_GearAttack[72] =
 	"void GearAttack(Entity) : Envia a un Gear a atacar a una entidad";
 
-char str_PyDoc_SLogic_IsEnemyActive[] =
+static char str_PyDoc_SLogic_IsEnemyActive[] =
 	"int IsEnemyActive() : Indica si hay un enemigo activo, mirando el contenido de la lista de enemigos "
 	"y en el tráfico.";
 
-char str_PyDoc_SLogic_GetNearestShip[] =
+static char str_PyDoc_SLogic_GetNearestShip[] =
 	"Name GetNearestShip(pos) : Cicla por varias listas y devuelve la nave más cercana a la posición indi"
 	"cada";
 
-char str_PyDoc_SLogic_SetOnFloor[60] = "void SetOnFloor(Entity) : Pone una entidad en el suelo";
+static char str_PyDoc_SLogic_SetOnFloor[60] = "void SetOnFloor(Entity) : Pone una entidad en el suelo";
 
-char str_PyDoc_SLogic_SetShipToRegenerate[] =
+static char str_PyDoc_SLogic_SetShipToRegenerate[] =
 	"void SetShipToRegenerate(shipName, regSpeed,regEndSpeed): Pone una nave a regenerarse";
 
-char str_PyDoc_SLogic_SetDominationZones[136] =
+static char str_PyDoc_SLogic_SetDominationZones[136] =
 	"void SetDominationZones(zonesList): Establece la lista de posiciones de las zonas de dominación en l"
 	"a super apuesta de dominación";
 
-char str_PyDoc_SLogic_ChangeZoneState[] =
+static char str_PyDoc_SLogic_ChangeZoneState[] =
 	"void ChangeZoneState(zoneId, state): Pone el estado de una zona de dominación";
 
-char str_PyDoc_SLogic_ChangeBatonState[] =
+static char str_PyDoc_SLogic_ChangeBatonState[] =
 	"void ChangeBatonState(pos, state): Actualiza el estado del testigo en el modo dominación";
 
-char str_PyDoc_SLogic_UpdateTauntEndTime[60] = "void UpdateTauntEndTime(time): Tiempo final del taunt";
+static char str_PyDoc_SLogic_UpdateTauntEndTime[60] = "void UpdateTauntEndTime(time): Tiempo final del taunt";
 

@@ -10,6 +10,21 @@
 #include "scrap/walkcharentity.h"
 #include "scrap/staticinit.h"
 
+#define CAIBISHOP_VFTABLE (&cAIBishop_vftable)
+#define g_ShootBishopAI (GVar_ShootBishopAI.value.i)
+#define g_ShootBishopAIDef (GVar_ShootBishopAI.def.i)
+#define g_OffsetAngShootBishopAI (GVar_OffsetAngShootBishopAI.value.f)
+#define g_OffsetAngShootBishopAIDef (GVar_OffsetAngShootBishopAI.def.f)
+#define g_TimeShootBishopAI (GVar_TimeShootBishopAI.value.f)
+#define g_TimeShootBishopAIDef (GVar_TimeShootBishopAI.def.f)
+#define g_DistMaxShootBishopAI (GVar_DistMaxShootBishopAI.value.f)
+#define g_DistMaxShootBishopAIDef (GVar_DistMaxShootBishopAI.def.f)
+static const cAICharVtbl cAIBishop_vftable;
+static cGVar GVar_TimeShootBishopAI;
+static cGVar GVar_ShootBishopAI;
+static cGVar GVar_OffsetAngShootBishopAI;
+static cGVar GVar_DistMaxShootBishopAI;
+
 #define CAIBISHOP_SIZE sizeof(cAIBishop)
 #define BISHOP_BLOCK_TIME 7.5f		/* the way to the target is tested again after it */
 
@@ -25,7 +40,8 @@ void *cAIBishop_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAI *cAIBishop_Delete(cAI *base, byte flags) {
+/* AIBishop.c */
+static cAI *cAIBishop_Delete(cAI *base, byte flags) {
 	cAIChar *self = (cAIChar *)base;
 	self->vftable = CAIBISHOP_VFTABLE;
 	cAIChar_dtor(self);
@@ -62,7 +78,8 @@ static int Ent_Life(cEntity *e) {
 	return WChar(e)->wl.life;
 }
 
-void cAIBishop_CheckAttack(cAI *elem) {
+/* vf66: the shot at the target in the cone of the view */
+static void cAIBishop_CheckAttack(cAI *elem) {
 	cAIBishop *self = (cAIBishop *)elem;
 	cAIChar *c = &self->base;
 	float f = c->standTime;
@@ -126,7 +143,7 @@ void cAIBishop_CheckAttack(cAI *elem) {
 	c->ctrl->act = 0;
 }
 
-void cAIBishop_SetRanges(cAI *elem) {
+static void cAIBishop_SetRanges(cAI *elem) {
 	cAIBishop *self = (cAIBishop *)elem;
 	cAIChar *c = &self->base;
 
@@ -141,7 +158,8 @@ void cAIBishop_SetRanges(cAI *elem) {
 	c->actMax = mx;
 }
 
-void cAIBishop_SetShoot(cAI *elem) {
+/* vf57: the shot parameters for a target with or without an AI, then the ranges */
+static void cAIBishop_SetShoot(cAI *elem) {
 	cAIBishop *self = (cAIBishop *)elem;
 	cEntity *t = self->base.base.target.target;
 
@@ -160,7 +178,7 @@ void cAIBishop_SetShoot(cAI *elem) {
 }
 
 /* the vtable of cAIBishop */
-const cAICharVtbl cAIBishop_vftable = {
+static const cAICharVtbl cAIBishop_vftable = {
 	.base.base.Delete = cAIBishop_Delete,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
@@ -262,10 +280,11 @@ const cAICharVtbl cAIBishop_vftable = {
 	.Facing = cAIChar_Facing,
 };
 
-cGVar GVar_ShootBishopAI;
-cGVar GVar_OffsetAngShootBishopAI;
-cGVar GVar_DistMaxShootBishopAI;
-cGVar GVar_TimeShootBishopAI;
+/* the shot of the bishop: the value against a target without an AI, the second one (the default) with one */
+static cGVar GVar_ShootBishopAI;
+static cGVar GVar_OffsetAngShootBishopAI;
+static cGVar GVar_DistMaxShootBishopAI;
+static cGVar GVar_TimeShootBishopAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_ShootBishopAI, &GVar_ShootBishopAI, "ShootBishopAI", 4, "Factor shoot Bishop.\n", 3)

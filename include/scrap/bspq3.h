@@ -151,40 +151,7 @@ typedef struct CBspQ3 {
 	BspQ3Meshes *MeshList;	/* 0x68 */
 } CBspQ3;
 
-extern CBspQ3 *g_BspQ3;
-/* the corners of the face being cut into triangles: for the CTriMesh and for the vertex lists */
-extern CMeshVert g_BspQ3Vert[64];	/* [BSPQ3_MAX_VERT] */
-extern byte g_BspQ3VertL[64];	/* [BSPQ3_MAX_VERT] of 0x28 bytes */
-/* D3DXATTRIBUTERANGE of pMesh, 0x14 bytes each */
-extern uint32_t g_BspQ3Attrib[640];	/* [BSPQ3_SIZE_ATTRIBTABLE * 5] */
 extern byte g_KeyboardKeys[256];
 #define g_KeyL g_KeyboardKeys[22]
-
-/* the map loaded: shaders, vertices, faces, light maps, then the meshes */
-void CBspQ3_dtor(CBspQ3 *self);
-BspQ3Meshes *BspQ3Meshes_ctor(BspQ3Meshes *self);
-void BspQ3Meshes_Free(BspQ3Meshes *self);
-BspQ3Mesh *BspQ3Mesh_ctor(BspQ3Mesh *self);
-void BspQ3Mesh_dtor(BspQ3Mesh *self);
-/* the mesh of the material and light map of face, NULL */
-BspQ3Mesh *BspQ3Meshes_Find(BspQ3Meshes *self, BspQ3Face *face);
-/* ntri more triangles for the mesh of face, a new mesh for a new pair */
-void BspQ3Meshes_Count(BspQ3Meshes *self, BspQ3Face *face, int ntri);
-/* a triangle of the corners (0x28 bytes each) into the mesh of face; the first one allocates the counted ones */
-void BspQ3Meshes_AddTri(BspQ3Meshes *self, const void *a, const void *b, const void *c, BspQ3Face *face);
-/* the x87 dot product (returned in st0, not rounded) */
-long double Vec3_DotX87(const float *a, const float *b);
-/* lump id copied into a new[] *out: the count of elements */
-int CBspQ3_ReadLump(CBspQ3 *self, int id, void **out, int elem);
-void CBspQ3_ReadShaders(CBspQ3 *self);
-void CBspQ3_ReadVerts(CBspQ3 *self);
-void CBspQ3_ReadFaces(CBspQ3 *self);
-void CBspQ3_ReadLMaps(CBspQ3 *self);
-void CBspQ3_Build(CBspQ3 *self);
-void CBspQ3_InitD3D(CBspQ3 *self);
-void CBspQ3_ReleaseD3D(CBspQ3 *self);
-void CBspQ3_Render(CBspQ3 *self);
-/* never called, returns this */
-void *BspQ3_Identity(void *self);
 
 #endif

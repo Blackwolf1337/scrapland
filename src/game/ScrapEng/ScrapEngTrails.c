@@ -76,41 +76,6 @@ void CGameTrail_BezierPoint(CGameTrail *self, int n, const vec3_t *coefs, vec3_t
 	}
 }
 
-void CGameTrail_AddBezier(CGameTrail *self, int n, const vec3_t *pts, uint32_t color) {
-	vec3_t coefs[GAMETRAIL_MAX_BEZIER];
-	vec3_t p;
-
-	CGameTrail_BezierCoefs(self, n, pts, coefs);
-	int max = self->trailsys->m_wMaxTrails;
-	int cnt = max - 1;
-	if (cnt <= 0) {
-		return;
-	}
-	float d = (float)(max - 2);
-	for (int i = 0; i < cnt; i++) {
-		CGameTrail_BezierPoint(self, n, coefs, &p, (float)i / d);
-		CTrail_AddPosColor(self->trailsys, p, color);
-	}
-}
-
-void CGameTrail_AddLine(CGameTrail *self, vec3_t from, vec3_t to) {
-	float dx = to.x - from.x;
-	float dy = to.y - from.y;
-	float dz = to.z - from.z;
-	int max = self->trailsys->m_wMaxTrails;
-	float inv = 1.0f / (float)(max - 2);
-	dx = dx * inv;
-	dy = dy * inv;
-	dz = dz * inv;
-	vec3_t cur = from;
-	for (int i = max - 1; i > 0; i--) {
-		CTrail_AddPos(self->trailsys, cur);
-		cur.x = dx + cur.x;
-		cur.y = dy + cur.y;
-		cur.z = dz + cur.z;
-	}
-}
-
 void CGameTrail_Clear(CGameTrail *self) {
 	CTrail_Clear(self->trailsys);
 }
@@ -224,6 +189,3 @@ void CGameTrail_SetPoint(CGameTrail *self, int i, const vec3_t *pos, const float
 	CTrail_SetPoint(self->trailsys, i, pos, width, color);
 }
 
-void CGameTrail_Move(CGameTrail *self, vec3_t d) {
-	CTrail_Move(self->trailsys, d);
-}

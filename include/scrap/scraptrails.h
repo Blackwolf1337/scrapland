@@ -20,10 +20,6 @@ void CGameTrail_Copy(CGameTrail *self, const CGameTrail *from);
 void CGameTrail_BezierCoefs(CGameTrail *self, int n, const vec3_t *pts, vec3_t *out);
 /* the curve of the coefficients at t (self is not used) */
 void CGameTrail_BezierPoint(CGameTrail *self, int n, const vec3_t *coefs, vec3_t *out, float t);
-/* the points of the trail along the Bezier curve of the n control points pts */
-void CGameTrail_AddBezier(CGameTrail *self, int n, const vec3_t *pts, uint32_t color);
-/* the points of the trail along the line from .. to */
-void CGameTrail_AddLine(CGameTrail *self, vec3_t from, vec3_t to);
 
 /* the CTrail methods for the trail */
 void CGameTrail_Clear(CGameTrail *self);
@@ -55,6 +51,5 @@ void CGameTrail_SetLastPos(CGameTrail *self, vec3_t pos);
 void CGameTrail_SetLastPosColor(CGameTrail *self, vec3_t pos, uint32_t color);
 void CGameTrail_SetPoint(CGameTrail *self, int i, const vec3_t *pos, const float *width,
 	const uint32_t *color);
-void CGameTrail_Move(CGameTrail *self, vec3_t d);
 
 #endif

@@ -38,8 +38,6 @@ typedef struct cNetControllerVtbl {
 	byte(*Changed)(cNetController *self, byte flags, cEntity *e);	/* 0x0c */
 	void(*Apply)(cNetController *self, cEntity *e, float dt, byte move);	/* 0x10 */
 } cNetControllerVtbl;
-extern const cNetControllerVtbl cNetController_vftable;
-#define CNETCONTROLLER_VFTABLE (&cNetController_vftable)
 
 struct cNetController {
 	const cNetControllerVtbl *vftable;	/* 0x00 */
@@ -117,8 +115,6 @@ typedef struct cObjEntityVtbl {
 	void(*SetEffectParam)(cEntity *self, int i, float v);			/* 0xb4 */
 	void(*Render)(cEntity *self);						/* 0xb8 */
 } cObjEntityVtbl;
-extern const cObjEntityVtbl cObjEntity_vftable;
-#define COBJENTITY_VFTABLE (&cObjEntity_vftable.base)
 
 static inline cObjEntity *Obj(const void *e) {
 	return (cObjEntity *)e;
@@ -131,15 +127,11 @@ static inline const cObjEntityVtbl *Obj_Vtbl(const cEntity *e) {
 /* 1 while a missile updates: cObjEntity_Update then moves the render state on by the velocity of one slot */
 extern cGVar GVar_ActiveExtrapolation;
 #define g_MissileUpdating (GVar_ActiveExtrapolation.value.i)
-extern cGVar GVar_MssnRadarBlinkTime;
-#define g_RadarShowTime (GVar_MssnRadarBlinkTime.value.f)	/* radarTime after a change of RadarShow */
 
 /* the cObjEntity functions take a cEntity like the callers of the derived classes */
 void cObjEntity_dtor(cEntity *self);
-cEntity *cObjEntity_Delete(cEntity *self, uint32_t flags);
 void cObjEntity_Update(cEntity *self);
 void cObjEntity_UpdateOff(cEntity *self);
-const char *cObjEntity_GetClassName(cEntity *self);
 byte cObjEntity_IsType(cEntity *self, const char *type);
 vec3_t *cObjEntity_GetPos(cEntity *self, vec3_t *out);
 void cObjEntity_SetPos(cEntity *self, const vec3_t *pos);
@@ -166,20 +158,13 @@ vec3_t *cObjEntity_GetRotVel(cEntity *self, vec3_t *out);
 void cObjEntity_SetRotVel(cEntity *self, const vec3_t *v);
 CGameModel *cObjEntity_GetModel(cEntity *self);
 void cObjEntity_GetCamera(cEntity *self, vec3_t *pos, vec3_t *ang);
-float cObjEntity_GetRadius(cEntity *self);
 void cObjEntity_SetEffect(cEntity *self, uint32_t fx);
 void cObjEntity_SetEffectParam(cEntity *self, int i, float v);
 void cObjEntity_Render(cEntity *self);
 /* the entity timer from the world timer */
 void cObjEntity_UpdateTimer(cEntity *self);
-/* a new slot controller (the old one is not freed) */
-void cObjEntity_NewSlot(cEntity *self);
-/* the RadarShow time of Tick on its own */
-void cObjEntity_RadarTick(cEntity *self, float dt);
-void cObjEntity_ReleaseFX(cEntity *self);
 /* the collision of the model ("MapCollision"); without a model only a warning */
 void cObjEntity_Switch(cEntity *self, byte on);
-byte cObjEntity_GetCollision(cEntity *self);
 /* "NetRes": the index of the resource of that name, kept when there is none */
 void cEntity_SetNetResource(cEntity *e, const char *name);
 

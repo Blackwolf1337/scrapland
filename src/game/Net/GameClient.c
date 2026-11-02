@@ -9,11 +9,12 @@
 #include "scrap/net.h"
 #include "scrap/staticinit.h"
 
-char g_NetClientServer[256];
-uint16_t g_NetClientPort;
-cNetClient *g_NetClient;
-void *g_NetClientData;
-void *g_NetClientCtl;
+/* GameClient */
+static char g_NetClientServer[256];
+static uint16_t g_NetClientPort;
+static cNetClient *g_NetClient;
+static void *g_NetClientData;
+static void *g_NetClientCtl;
 
 byte Net_CloseClient(void) {
 	if (!g_NetClientServer[0]) {
@@ -40,7 +41,7 @@ byte Net_CloseClient(void) {
 }
 
 /* the callbacks of the client gvars back to none (unless scripts may not write them) */
-void Net_ClientResetFuncs(void) {
+static void Net_ClientResetFuncs(void) {
 	if (!(g_ClientAddResFlags & 1)) {
 		cPy_Function_SetFunc(g_ClientAddRes, "");
 	}
@@ -67,8 +68,8 @@ static void Net_SetStatus(const char *s) {
 	}
 }
 
-int g_NetClientDataSize;
-int g_NetClientCtlSize;
+static int g_NetClientDataSize;
+static int g_NetClientCtlSize;
 
 byte Net_ClientFrame(void) {
 	int slot;
@@ -116,7 +117,7 @@ byte Net_CloseClientMsg(const char *msg) {
 }
 
 /* g_NetUserFactory of a client */
-cUserNetManager *Net_NewServerManager(cNetClient *client, int slot) {
+static cUserNetManager *Net_NewServerManager(cNetClient *client, int slot) {
 	cServerNetManager *m = operator_new(sizeof(cServerNetManager));
 
 	if (!m) {

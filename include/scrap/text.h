@@ -14,18 +14,8 @@ typedef struct TextMsg {
 	struct TextMsg *next;		/* 0x108 */
 } TextMsg;
 
-extern int g_TextX;
-extern int g_TextY;
-extern TextMsg *g_TextStack;
-
-/* the text at x, y over the next frame (64 texts at most, each cut at 119 characters) */
-void Text_Draw(int x, int y, const char *s);
 /* the texts of Text_Draw, then the first message for its time and the next ones under it */
 void Text_DrawStack(void);
-/* a new message at the end (Mem_Calloc) */
-TextMsg *Text_Push(void);
-/* the first message off */
-void Text_Pop(void);
 /* at the screen position of pos, nothing when it is not seen */
 void Text_Printf3D(const vec3_t *pos, const char *fmt, ...);
 /* the cursor moved by dx, dy, then the text there (none for NULL) */

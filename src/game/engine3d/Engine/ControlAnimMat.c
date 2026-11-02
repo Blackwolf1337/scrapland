@@ -36,50 +36,13 @@ void CAnimMat_dtor(CAnimMat *self) {
 	(void)self;
 }
 
-/* rva 0x2580d0, the same without the return */
-void CAnimMat_Init(CAnimMat *self) {
-	AnimMat_Init(self);
-}
-
-byte AnimMat_Set(CAnimMat *a, float fps, int cycle) {
-	if (!a) {
-		return 0;
-	}
-	a->cycle = cycle;
-	a->fps = fps;
-	return 1;
-}
-
-const char *AnimMat_ModeName(int mode) {
-	switch (mode) {
-	case ANIMMAT_REPR:
-		return "REPR";
-	case ANIMMAT_PAUSE:
-		return "PAUSA";
-	case ANIMMAT_FADE_PAUSE:
-		return "FUND_PAUSA";
-	case ANIMMAT_END:
-		return "FIN";
-	}
-	CHECK(0);
-	return NULL;
-}
-
+static void CAnimMat_Update(CAnimMat *self);
 int CAnimMat_GetFrame(CAnimMat *self) {
 	if (g_FrameCount != self->lastFrame) {
 		CAnimMat_Update(self);
 		self->lastFrame = g_FrameCount;
 	}
 	return self->frame;
-}
-
-void CAnimMat_Play(CAnimMat *self) {
-	self->mode = ANIMMAT_REPR;
-}
-
-void CAnimMat_SetFrameF(CAnimMat *self, float frame) {
-	self->framef = frame;
-	self->frame = (int)frame;
 }
 
 void CAnimMat_Start(CAnimMat *self) {
@@ -90,24 +53,8 @@ void CAnimMat_Start(CAnimMat *self) {
 	self->mode = ANIMMAT_REPR;
 }
 
-void CAnimMat_Stop(CAnimMat *self) {
-	self->mode = ANIMMAT_END;
-}
-
-void CAnimMat_Pause(CAnimMat *self) {
-	self->mode = ANIMMAT_PAUSE;
-}
-
-void CAnimMat_FadePause(CAnimMat *self, float ms) {
-	if (self->mode != ANIMMAT_FADE_PAUSE) {
-		return;
-	}
-	self->mode = ANIMMAT_FADE_PAUSE;
-	self->fadeK = 1.0f;
-	self->fadeRate = (float)(1000.0 / (double)ms);
-}
-
-void CAnimMat_Update(CAnimMat *self) {
+/* the step to g_TimeMs */
+static void CAnimMat_Update(CAnimMat *self) {
 	int mode = self->mode;
 
 	if (mode == ANIMMAT_END) {

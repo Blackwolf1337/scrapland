@@ -14,6 +14,49 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
+#define COBJELEMENTFXSWARMMISSILE_VFTABLE (&cObjElementFXSwarmMissile_vftable)
+#define COBJELEMENTFXLASER_VFTABLE (&cObjElementFXLaser_vftable)
+#define COBJELEMENTFXDEVASTATORSHOOT_VFTABLE (&cObjElementFXDevastatorShoot_vftable)
+#define COBJELEMENTFXTESLA_VFTABLE (&cObjElementFXTesla_vftable)
+#define COBJELEMENTFXATPC_VFTABLE (&cObjElementFXATPC_vftable)
+#define COBJELEMENTFXINFERNOMISSILE_VFTABLE (&cObjElementFXInfernoMissile_vftable)
+#define COBJELEMENTFXINFERNOEXPLOSION_VFTABLE (&cObjElementFXInfernoExplosion_vftable)
+#define g_FXTeslaFadeOutTime (GVar_FXTeslaFadeOutTime.value.f)
+#define g_FXTeslaFollowTime (GVar_FXTeslaFollowTime.value.f)
+#define g_FXLaserBeamSize (GVar_FXLaserBeamSize.value.f)
+#define g_FXLaserBeamHeight (GVar_FXLaserBeamHeight.value.f)
+#define g_FXInfernoCoreSize (GVar_FXInfernoCoreSize.value.f)
+#define g_FXInfernoRayRadius (GVar_FXInfernoRayRadius.value.f)
+#define g_FXInfernoExplosionFadeTime (GVar_FXInfernoExplosionFadeTime.value.f)
+#define g_FXInfernoRayMinSize (GVar_FXInfernoRayMinSize.value.f)
+#define g_FXInfernoRayInitSizeMin (GVar_FXInfernoRayInitSizeMin.value.f)
+#define g_FXInfernoRayInitSizeMax (GVar_FXInfernoRayInitSizeMax.value.f)
+#define g_FXInfernoRaySpeedMin (GVar_FXInfernoRaySpeedMin.value.f)
+#define g_FXInfernoRaySpeedMax (GVar_FXInfernoRaySpeedMax.value.f)
+#define g_FXInfernoRayAccMin (GVar_FXInfernoRayAccMin.value.f)
+#define g_FXInfernoRayAccMax (GVar_FXInfernoRayAccMax.value.f)
+static const cObjElementFXVtbl cObjElementFXTesla_vftable;
+static const cObjElementFXVtbl cObjElementFXSwarmMissile_vftable;
+static const cObjElementFXVtbl cObjElementFXLaser_vftable;
+static const cObjElementFXVtbl cObjElementFXInfernoMissile_vftable;
+static const cObjElementFXVtbl cObjElementFXInfernoExplosion_vftable;
+static const cObjElementFXVtbl cObjElementFXDevastatorShoot_vftable;
+static const cObjElementFXVtbl cObjElementFXATPC_vftable;
+static cGVar GVar_FXTeslaFollowTime;
+static cGVar GVar_FXTeslaFadeOutTime;
+static cGVar GVar_FXLaserBeamSize;
+static cGVar GVar_FXLaserBeamHeight;
+static cGVar GVar_FXInfernoRaySpeedMin;
+static cGVar GVar_FXInfernoRaySpeedMax;
+static cGVar GVar_FXInfernoRayRadius;
+static cGVar GVar_FXInfernoRayMinSize;
+static cGVar GVar_FXInfernoRayInitSizeMin;
+static cGVar GVar_FXInfernoRayInitSizeMax;
+static cGVar GVar_FXInfernoRayAccMin;
+static cGVar GVar_FXInfernoRayAccMax;
+static cGVar GVar_FXInfernoExplosionFadeTime;
+static cGVar GVar_FXInfernoCoreSize;
+
 #define FX_PI 3.1415927f				/* 0x40490fdb */
 
 /* rand() in [0, 1] times range, plus add (all in double) */
@@ -157,7 +200,7 @@ void *cObjElementFXTesla_ctor(void *self) {
 
 /* ---- destructors ---- */
 
-void cObjElementFXATPC_dtor(void *self) {
+static void cObjElementFXATPC_dtor(void *self) {
 	cObjElementFXATPC *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXATPC_VFTABLE);
 	CGameTrail_dtor(&s->ringsDuDv);
@@ -170,14 +213,14 @@ void cObjElementFXATPC_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void cObjElementFXDevastatorShoot_dtor(void *self) {
+static void cObjElementFXDevastatorShoot_dtor(void *self) {
 	cObjElementFXDevastatorShoot *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXDEVASTATORSHOOT_VFTABLE);
 	CGameTrail_dtor(&s->trail);
 	cObjElement_dtor(s);
 }
 
-void cObjElementFXInfernoExplosion_dtor(void *self) {
+static void cObjElementFXInfernoExplosion_dtor(void *self) {
 	cObjElementFXInfernoExplosion *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXINFERNOEXPLOSION_VFTABLE);
 	FXObj_TrailsDtor(s->trails, FXINFERNO_TRAILS);
@@ -186,7 +229,7 @@ void cObjElementFXInfernoExplosion_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void cObjElementFXInfernoMissile_dtor(void *self) {
+static void cObjElementFXInfernoMissile_dtor(void *self) {
 	cObjElementFXInfernoMissile *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXINFERNOMISSILE_VFTABLE);
 	CGameLensFlare_dtor(&s->flare);
@@ -195,7 +238,7 @@ void cObjElementFXInfernoMissile_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void cObjElementFXLaser_dtor(void *self) {
+static void cObjElementFXLaser_dtor(void *self) {
 	cObjElementFXLaser *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXLASER_VFTABLE);
 	CGameParticles_Release(&s->particles);
@@ -203,7 +246,7 @@ void cObjElementFXLaser_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void cObjElementFXSwarmMissile_dtor(void *self) {
+static void cObjElementFXSwarmMissile_dtor(void *self) {
 	cObjElementFXSwarmMissile *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXSWARMMISSILE_VFTABLE);
 	CGameParticles_Release(&s->particles);
@@ -211,7 +254,7 @@ void cObjElementFXSwarmMissile_dtor(void *self) {
 	cObjElement_dtor(s);
 }
 
-void cObjElementFXTesla_dtor(void *self) {
+static void cObjElementFXTesla_dtor(void *self) {
 	cObjElementFXTesla *s = self;
 	FXObj_SetVtbl(s, COBJELEMENTFXTESLA_VFTABLE);
 	FXObj_TrailsDtor(s->trails, FXTESLA_SLOTS * FXTESLA_TRAILS);
@@ -221,49 +264,49 @@ void cObjElementFXTesla_dtor(void *self) {
 
 /* ---- deleting destructors (vf00) ---- */
 
-cObjElementFX *cObjElementFXATPC_Delete(cObjElementFX *base, byte flags) {
+static cObjElementFX *cObjElementFXATPC_Delete(cObjElementFX *base, byte flags) {
 	void *self = (void *)base;
 	cObjElementFXATPC_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXATPC));
 }
 
-cObjElementFX *cObjElementFXDevastatorShoot_Delete(cObjElementFX *base, byte flags) {
+static cObjElementFX *cObjElementFXDevastatorShoot_Delete(cObjElementFX *base, byte flags) {
 	void *self = (void *)base;
 	cObjElementFXDevastatorShoot_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXDevastatorShoot));
 }
 
-cObjElementFX *cObjElementFXInfernoExplosion_Delete(cObjElementFX *base, byte flags) {
+static cObjElementFX *cObjElementFXInfernoExplosion_Delete(cObjElementFX *base, byte flags) {
 	void *self = (void *)base;
 	cObjElementFXInfernoExplosion_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXInfernoExplosion));
 }
 
-cObjElementFX *cObjElementFXInfernoMissile_Delete(cObjElementFX *base, byte flags) {
+static cObjElementFX *cObjElementFXInfernoMissile_Delete(cObjElementFX *base, byte flags) {
 	void *self = (void *)base;
 	cObjElementFXInfernoMissile_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXInfernoMissile));
 }
 
-cObjElementFX *cObjElementFXLaser_Delete(cObjElementFX *base, byte flags) {
+static cObjElementFX *cObjElementFXLaser_Delete(cObjElementFX *base, byte flags) {
 	void *self = (void *)base;
 	cObjElementFXLaser_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXLaser));
 }
 
-cObjElementFX *cObjElementFXSwarmMissile_Delete(cObjElementFX *base, byte flags) {
+static cObjElementFX *cObjElementFXSwarmMissile_Delete(cObjElementFX *base, byte flags) {
 	void *self = (void *)base;
 	cObjElementFXSwarmMissile_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXSwarmMissile));
 }
 
-cObjElementFX *cObjElementFXTesla_Delete(cObjElementFX *base, byte flags) {
+static cObjElementFX *cObjElementFXTesla_Delete(cObjElementFX *base, byte flags) {
 	void *self = (void *)base;
 	cObjElementFXTesla_dtor(self);
 	return FXObj_Delete(self, flags, sizeof(cObjElementFXTesla));
 }
 
-cGVar GVar_ATPCShootSize;
+static cGVar GVar_ATPCShootSize;
 
 /* ---- cObjElementFXATPC ---- */
 
@@ -294,14 +337,14 @@ static void FXW_RingPoint(vec3_t *out, float a, const vec3_t *ang) {
 	Vec3_Rotate(out, Vec3_Rotate(&o, &up, &rv), ang);
 }
 
-uint32_t cObjElementFXATPC_UpdateRamps[18] = {
+static uint32_t cObjElementFXATPC_UpdateRamps[18] = {
 	0x18c4c4ff, 0x10e1b980, 0x8ffaf40, 0x4ff7d00, 0xff5f00, 0xff4b00, 0xff4100, 0x4eb3c00, 0x8e13700, 0x10c32800,
 	0x20af2300, 0x40911e00, 0x60801900, 0x80801900, 0xa4801900, 0xe0801900, 0xff801900,
 };
 
 /* the beam: the line fades in, while the shot lasts the core, the turning rings (endRing,
  * rings and ringsDuDv for the dudv pass) and the glow particles at both ends */
-void cObjElementFXATPC_Update(cObjElementFX *base, cDebris *debris, float dt) {
+static void cObjElementFXATPC_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	cObjElementFXATPC *self = (cObjElementFXATPC *)base;
 	(void)dt;
 	cEntity *e = self->shooter;
@@ -540,7 +583,7 @@ static inline void FXW_NoRot(CGameParticles *p) {
 	p->rotVar = 0.0f;
 }
 
-uint32_t FXATPC_GLOW_RAMPS[18] = {
+static uint32_t FXATPC_GLOW_RAMPS[18] = {
 	0x80ffdca0, 0xf1be82, 0xdca573, 0xc8965a, 0x20b48748, 0x40c37d32, 0xa4d76428, 0xffe14b23, 0xffff3214,
 	0x20ffc300, 0x10ffa500, 0xff5f00, 0xff4100, 0x20e14b00, 0x40af5a00, 0xa4802800, 0xff400a00, 0xff200300,
 };
@@ -730,7 +773,7 @@ void cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, const char *ta
 	CGameParticles_SetSparksOn(p, 0);
 }
 
-void cObjElementFXATPC_Start(cObjElementFX *base, cDebris *debris) {
+static void cObjElementFXATPC_Start(cObjElementFX *base, cDebris *debris) {
 	cObjElementFXATPC *self = (cObjElementFXATPC *)base;
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
@@ -754,7 +797,7 @@ void cObjElementFXATPC_Start(cObjElementFX *base, cDebris *debris) {
 	CGameTrail_SetTexture(&self->ringsDuDv, 0x10);
 }
 
-void cObjElementFXATPC_Reset(cObjElementFX *base, cDebris *debris) {
+static void cObjElementFXATPC_Reset(cObjElementFX *base, cDebris *debris) {
 	cObjElementFXATPC *self = (cObjElementFXATPC *)base;
 	(void)debris;
 	*(uint32_t *)self->slotOn = 0;
@@ -805,7 +848,7 @@ byte cObjElementFXDevastatorShoot_IsAlive(cObjElementFX *base, cDebris *debris, 
 	return 1;
 }
 
-void cObjElementFXDevastatorShoot_Start(cObjElementFX *base, cDebris *debris) {
+static void cObjElementFXDevastatorShoot_Start(cObjElementFX *base, cDebris *debris) {
 	cObjElementFXDevastatorShoot *self = (cObjElementFXDevastatorShoot *)base;
 	(void)debris;
 	CGameTrail *t = &self->trail;
@@ -827,8 +870,7 @@ void cObjElementFXDevastatorShoot_Reset(cObjElementFX *base, cDebris *debris) {
 
 /* ---- cObjElementFXInfernoExplosion ---- */
 
-
-void cObjElementFXInfernoExplosion_Update(cObjElementFX *base, cDebris *debris, float dt) {
+static void cObjElementFXInfernoExplosion_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	cObjElementFXInfernoExplosion *self = (cObjElementFXInfernoExplosion *)base;
 	(void)debris;
 	(void)dt;
@@ -924,7 +966,7 @@ void cObjElementFXInfernoExplosion_Update(cObjElementFX *base, cDebris *debris, 
 	self->stepTime = 0.0f;
 }
 
-void cObjElementFXInfernoExplosion_Start(cObjElementFX *base, cDebris *debris) {
+static void cObjElementFXInfernoExplosion_Start(cObjElementFX *base, cDebris *debris) {
 	cObjElementFXInfernoExplosion *self = (cObjElementFXInfernoExplosion *)base;
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
@@ -938,7 +980,7 @@ void cObjElementFXInfernoExplosion_Start(cObjElementFX *base, cDebris *debris) {
 	self->numRays = 0;
 }
 
-void cObjElementFXInfernoExplosion_Reset(cObjElementFX *base, cDebris *debris) {
+static void cObjElementFXInfernoExplosion_Reset(cObjElementFX *base, cDebris *debris) {
 	cObjElementFXInfernoExplosion *self = (cObjElementFXInfernoExplosion *)base;
 	(void)debris;
 	self->time = 0.0f;
@@ -962,7 +1004,7 @@ static void FXW_RandDir(vec3_t *out) {
 	Vec3_Rotate(out, &one, &rot);
 }
 
-uint32_t g_FXInfernoRamp[10] = { 0xff565656, 0x80fff05a, 0x80969696, 0x805e5edc, 0xa444444c, 0xc00f0f38, 0xde070728, 0xff020219, 0xff000000 };
+static uint32_t g_FXInfernoRamp[10] = { 0xff565656, 0x80fff05a, 0x80969696, 0x805e5edc, 0xa444444c, 0xc00f0f38, 0xde070728, 0xff020219, 0xff000000 };
 
 /* the rays (up to the floor within range) and the core particles of an explosion at x y z; bees widens it */
 void cObjElementFXInfernoExplosion_Explode(cObjElementFXInfernoExplosion *self, float x, float y, float z,
@@ -1109,7 +1151,7 @@ void cObjElementFXInfernoExplosion_Explode(cObjElementFXInfernoExplosion *self, 
 
 /* ---- cObjElementFXInfernoMissile ---- */
 
-void cObjElementFXInfernoMissile_Update(cObjElementFX *base, cDebris *debris, float dt) {
+static void cObjElementFXInfernoMissile_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	cObjElementFXInfernoMissile *self = (cObjElementFXInfernoMissile *)base;
 	cDebris_Move(debris, dt);
 	float d = FXW_Delta();
@@ -1156,12 +1198,12 @@ void cObjElementFXInfernoMissile_Update(cObjElementFX *base, cDebris *debris, fl
 	CGameTrail_Add(&self->trail, p, FXW_Rand(10.0, 160.0), 0x80ffdc5a);
 }
 
-byte cObjElementFXInfernoMissile_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys) {
+static byte cObjElementFXInfernoMissile_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys) {
 	cObjElementFXInfernoMissile *self = (cObjElementFXInfernoMissile *)base;
 	return FXW_MissileAlive(debris, sys, &self->time, &self->fadeStart, &self->lastShrink, &self->fadeTime);
 }
 
-void cObjElementFXInfernoMissile_Start(cObjElementFX *base, cDebris *debris) {
+static void cObjElementFXInfernoMissile_Start(cObjElementFX *base, cDebris *debris) {
 	cObjElementFXInfernoMissile *self = (cObjElementFXInfernoMissile *)base;
 	CGameModel *model = Debris_Model(debris);
 	CHECK(CGameModel_IsLoaded(model));
@@ -1191,7 +1233,7 @@ void cObjElementFXInfernoMissile_Start(cObjElementFX *base, cDebris *debris) {
 	CGameLensFlare_SetType(&self->flare, 2);
 }
 
-void cObjElementFXInfernoMissile_Reset(cObjElementFX *base, cDebris *debris) {
+static void cObjElementFXInfernoMissile_Reset(cObjElementFX *base, cDebris *debris) {
 	cObjElementFXInfernoMissile *self = (cObjElementFXInfernoMissile *)base;
 	(void)debris;
 	CGameTrail_Clear(&self->trail);
@@ -1209,7 +1251,7 @@ void cObjElementFXInfernoMissile_SetFlare(cObjElementFXInfernoMissile *self, byt
 
 /* ---- cObjElementFXLaser ---- */
 
-void cObjElementFXLaser_Update(cObjElementFX *base, cDebris *debris, float dt) {
+static void cObjElementFXLaser_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	cObjElementFXLaser *self = (cObjElementFXLaser *)base;
 	(void)dt;
 	CGameModel *model = Debris_Model(debris);
@@ -1291,14 +1333,14 @@ void cObjElementFXLaser_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	self->drawn = vis;
 }
 
-byte cObjElementFXLaser_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys) {
+static byte cObjElementFXLaser_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys) {
 	cObjElementFXLaser *self = (cObjElementFXLaser *)base;
 	(void)debris;
 	(void)sys;
 	return !(self->dist > self->len);
 }
 
-void cObjElementFXLaser_Start(cObjElementFX *base, cDebris *debris) {
+static void cObjElementFXLaser_Start(cObjElementFX *base, cDebris *debris) {
 	cObjElementFXLaser *self = (cObjElementFXLaser *)base;
 	CGameModel *model = Debris_Model(debris);
 	if (CGameModel_IsLoaded(model)) {
@@ -1315,7 +1357,7 @@ void cObjElementFXLaser_Start(cObjElementFX *base, cDebris *debris) {
 	self->drawn = 0;
 }
 
-void cObjElementFXLaser_Reset(cObjElementFX *base, cDebris *debris) {
+static void cObjElementFXLaser_Reset(cObjElementFX *base, cDebris *debris) {
 	cObjElementFXLaser *self = (cObjElementFXLaser *)base;
 	(void)debris;
 	CGameTrail_Clear(&self->trail);
@@ -1368,7 +1410,7 @@ void cObjElementFXLaser_Shoot(cObjElementFXLaser *self, float x0, float y0, floa
 
 /* ---- cObjElementFXSwarmMissile ---- */
 
-void cObjElementFXSwarmMissile_Update(cObjElementFX *base, cDebris *debris, float dt) {
+static void cObjElementFXSwarmMissile_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	cObjElementFXSwarmMissile *self = (cObjElementFXSwarmMissile *)base;
 	cDebris_Move(debris, dt);
 	if (self->node == -1) {
@@ -1422,12 +1464,12 @@ void cObjElementFXSwarmMissile_Update(cObjElementFX *base, cDebris *debris, floa
 	CGameTrail_Add(&self->trail, p, FXW_Rand(10.0, 70.0), color);
 }
 
-byte cObjElementFXSwarmMissile_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys) {
+static byte cObjElementFXSwarmMissile_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys) {
 	cObjElementFXSwarmMissile *self = (cObjElementFXSwarmMissile *)base;
 	return FXW_MissileAlive(debris, sys, &self->time, &self->fadeStart, &self->lastShrink, &self->fadeTime);
 }
 
-void cObjElementFXSwarmMissile_Start(cObjElementFX *base, cDebris *debris) {
+static void cObjElementFXSwarmMissile_Start(cObjElementFX *base, cDebris *debris) {
 	cObjElementFXSwarmMissile *self = (cObjElementFXSwarmMissile *)base;
 	CGameModel *model = Debris_Model(debris);
 	CGameParticles *p = &self->particles;
@@ -1458,7 +1500,7 @@ void cObjElementFXSwarmMissile_Start(cObjElementFX *base, cDebris *debris) {
 	self->lastShrink = 0.0f;
 }
 
-void cObjElementFXSwarmMissile_Reset(cObjElementFX *base, cDebris *debris) {
+static void cObjElementFXSwarmMissile_Reset(cObjElementFX *base, cDebris *debris) {
 	cObjElementFXSwarmMissile *self = (cObjElementFXSwarmMissile *)base;
 	(void)debris;
 	CGameTrail_Clear(&self->trail);
@@ -1473,10 +1515,10 @@ cGVar GVar_TeslaRange;
 /* ---- cObjElementFXTesla ---- */
 
 #define g_TeslaRange (GVar_TeslaRange.value.f)
-cGVar GVar_FXTeslaStepTime;
+static cGVar GVar_FXTeslaStepTime;
 
 #define g_FXTeslaStepTime (GVar_FXTeslaStepTime.value.f)
-cGVar GVar_FXTeslaRandRadius;
+static cGVar GVar_FXTeslaRandRadius;
 
 #define g_FXTeslaRandRadius (GVar_FXTeslaRandRadius.value.f)
 #define FXTESLA_RAMP_SPARK 0x431930		/* [2] */
@@ -1489,14 +1531,14 @@ static void FXW_TeslaBack(vec3_t *tpos, const vec3_t *n, float r) {
 	tpos->z = s * (n->z * r) + tpos->z;
 }
 
-uint32_t cObjElementFXTesla_UpdateRamps[18] = {
+static uint32_t cObjElementFXTesla_UpdateRamps[18] = {
 	0xffb9b9ed, 0x80b5b5f0, 0xb2b2f2, 0xafaff5, 0x20aaaaf9, 0x40a7a7fc, 0x80a3a3ff, 0xc0a3a3ff, 0xffa3a3ff,
 	0xff5b5bff, 0x966464fe, 0x506d6dfd, 0x7878fc, 0x8585fb, 0x409696f9, 0x809b9bf9, 0xc49b9bf9, 0xff9b9bf9,
 };
 
 /* the ray of each mounted slot from its weapon node to the target (or the aim point), drawn as four trails through
  * the points that move to new random offsets every FXTeslaStepTime, the glow at both ends */
-void cObjElementFXTesla_Update(cObjElementFX *base, cDebris *debris, float dt) {
+static void cObjElementFXTesla_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	cObjElementFXTesla *self = (cObjElementFXTesla *)base;
 	(void)dt;
 	cEntity *e = self->emitter;
@@ -1845,7 +1887,7 @@ void cObjElementFXTesla_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	}
 }
 
-byte cObjElementFXTesla_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys) {
+static byte cObjElementFXTesla_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys) {
 	cObjElementFXTesla *self = (cObjElementFXTesla *)base;
 	(void)debris;
 	(void)sys;
@@ -1867,7 +1909,7 @@ byte cObjElementFXTesla_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys
 	return 1;
 }
 
-void cObjElementFXTesla_Start(cObjElementFX *base, cDebris *debris) {
+static void cObjElementFXTesla_Start(cObjElementFX *base, cDebris *debris) {
 	cObjElementFXTesla *self = (cObjElementFXTesla *)base;
 	CGameModel *model = Debris_Model(debris);
 	/* the original keeps the debris pointer as the node when the model has none */
@@ -1893,7 +1935,7 @@ void cObjElementFXTesla_Start(cObjElementFX *base, cDebris *debris) {
 	}
 }
 
-void cObjElementFXTesla_Reset(cObjElementFX *base, cDebris *debris) {
+static void cObjElementFXTesla_Reset(cObjElementFX *base, cDebris *debris) {
 	cObjElementFXTesla *self = (cObjElementFXTesla *)base;
 	(void)debris;
 	self->time = 0.0f;
@@ -1932,12 +1974,12 @@ void cObjElementFXTesla_SetEmitter(cObjElementFXTesla *self, cEntity *e) {
 	}
 }
 
-cGVar GVar_SwarmBeeExplosionFile;
+static cGVar GVar_SwarmBeeExplosionFile;
 
 /* ---- the Swarm emitters ---- */
 
 #define g_SwarmBeeExplosionFile (GVar_SwarmBeeExplosionFile.value.s)
-cGVar GVar_SwarmExplosionFile;
+static cGVar GVar_SwarmExplosionFile;
 
 #define g_SwarmExplosionFile (GVar_SwarmExplosionFile.value.s)
 #define FXSWARM_RAMP_BEE 0x431978
@@ -1972,18 +2014,18 @@ static void FXW_Moving(CGameParticles *p, const vec3_t *pos, const vec3_t *vel) 
 	p->initAccMax = p->initAccMin;
 }
 
-uint32_t FXSwarm_BeeDeathRamps[18] = {
+static uint32_t FXSwarm_BeeDeathRamps[18] = {
 	0xffffffff, 0xa4ffffff, 0xa4ffdc78, 0xa4dca528, 0xc4805c14, 0xd260400a, 0xeb403005, 0xff000000, 0xff000000,
 	0xff565656, 0xb4ffc86e, 0x8cef781e, 0x969a3c0e, 0xc37c260a, 0xd25e1c06, 0xeb220501, 0xff000000, 0xff000000,
 };
 
-uint32_t FXSwarm_BeeDeathRamps2[27] = {
+static uint32_t FXSwarm_BeeDeathRamps2[27] = {
 	0xff000000, 0xa01e1e1e, 0x802d2d2d, 0x80373737, 0x802d2d2d, 0x80232323, 0xc0191919, 0xff000000, 0xff000000,
 	0xff000000, 0xa0282828, 0x80373737, 0x80464646, 0x80505050, 0x80414141, 0xc0232323, 0xff000000, 0xff000000,
 	0xff000000, 0xa0323232, 0x80414141, 0x804b4b4b, 0x805f5f5f, 0x804b4b4b, 0xc02d2d2d, 0xff000000, 0xff000000,
 };
 
-uint32_t FXSWARM_FLASH_RAMPS[18] = {
+static uint32_t FXSWARM_FLASH_RAMPS[18] = {
 	0x80ffffff, 0x60ffffff, 0x60ffffff, 0x60ffffff, 0x80ffffff, 0xa4ffffff, 0xc0808080, 0xff000000, 0xff000000,
 	0x80ffe1c8, 0x6effe1c8, 0x60ffe1c8, 0x6effe1c8, 0x80ffe1c8, 0x80ffe1c8, 0xc0808080, 0xff000000, 0xff000000,
 };
@@ -2152,7 +2194,7 @@ static void FXW_HitSpark(CGameParticles *p, const vec3_t *pos, const vec3_t *o, 
 	p->initAccMax = p->initAccMin;
 }
 
-uint32_t FXSwarm_HitRamps2[54] = {
+static uint32_t FXSwarm_HitRamps2[54] = {
 	0xff000000, 0x80202020, 0x80414141, 0x8a4b4b4b, 0xa4464646, 0xc02d2d2d, 0xe4181818, 0xff000000, 0xff000000,
 	0xff000000, 0x80373737, 0x804b4b4b, 0x80555555, 0xa4505050, 0xc0373737, 0xe4202020, 0xff000000, 0xff000000,
 	0x80ffffff, 0x60ffffff, 0x80ffffff, 0x60ffffff, 0x80ffffff, 0x80ffffff, 0xc0808080, 0xff000000, 0xff000000,
@@ -2178,7 +2220,7 @@ static void FXW_HitSparkEmit(CGameParticles *p, float size, double irange, doubl
 	CGameParticles_EmitDt(p, 1, 1, FXW_Rand(trange, tadd));
 }
 
-uint32_t FXSwarm_HitRamps[18] = {
+static uint32_t FXSwarm_HitRamps[18] = {
 	0xebffad2a, 0xaafeee90, 0x82ef7d38, 0x96bc4110, 0xb97a2a0a, 0xd23f1805, 0xeb0e0801, 0xff000000, 0xff000000,
 	0xeb565656, 0xb4ffc86e, 0x8cef781e, 0x969a3c0e, 0xc37c260a, 0xd25e1c06, 0xeb220501, 0xff000000, 0xff000000,
 };
@@ -2347,7 +2389,7 @@ void FXSwarm_Hit(float x, float y, float z, float vx, float vy, float vz, float 
 }
 
 /* the vtable of cObjElementFXSwarmMissile */
-const cObjElementFXVtbl cObjElementFXSwarmMissile_vftable = {
+static const cObjElementFXVtbl cObjElementFXSwarmMissile_vftable = {
 	.Delete = cObjElementFXSwarmMissile_Delete,
 	.Update = cObjElementFXSwarmMissile_Update,
 	.IsAlive = cObjElementFXSwarmMissile_IsAlive,
@@ -2356,7 +2398,7 @@ const cObjElementFXVtbl cObjElementFXSwarmMissile_vftable = {
 };
 
 /* the vtable of cObjElementFXLaser */
-const cObjElementFXVtbl cObjElementFXLaser_vftable = {
+static const cObjElementFXVtbl cObjElementFXLaser_vftable = {
 	.Delete = cObjElementFXLaser_Delete,
 	.Update = cObjElementFXLaser_Update,
 	.IsAlive = cObjElementFXLaser_IsAlive,
@@ -2365,7 +2407,7 @@ const cObjElementFXVtbl cObjElementFXLaser_vftable = {
 };
 
 /* the vtable of cObjElementFXDevastatorShoot */
-const cObjElementFXVtbl cObjElementFXDevastatorShoot_vftable = {
+static const cObjElementFXVtbl cObjElementFXDevastatorShoot_vftable = {
 	.Delete = cObjElementFXDevastatorShoot_Delete,
 	.Update = cObjElementFXDevastatorShoot_Update,
 	.IsAlive = cObjElementFXDevastatorShoot_IsAlive,
@@ -2374,7 +2416,7 @@ const cObjElementFXVtbl cObjElementFXDevastatorShoot_vftable = {
 };
 
 /* the vtable of cObjElementFXTesla */
-const cObjElementFXVtbl cObjElementFXTesla_vftable = {
+static const cObjElementFXVtbl cObjElementFXTesla_vftable = {
 	.Delete = cObjElementFXTesla_Delete,
 	.Update = cObjElementFXTesla_Update,
 	.IsAlive = cObjElementFXTesla_IsAlive,
@@ -2383,7 +2425,7 @@ const cObjElementFXVtbl cObjElementFXTesla_vftable = {
 };
 
 /* the vtable of cObjElementFXATPC */
-const cObjElementFXVtbl cObjElementFXATPC_vftable = {
+static const cObjElementFXVtbl cObjElementFXATPC_vftable = {
 	.Delete = cObjElementFXATPC_Delete,
 	.Update = cObjElementFXATPC_Update,
 	.IsAlive = FXMisc_Alive,
@@ -2392,7 +2434,7 @@ const cObjElementFXVtbl cObjElementFXATPC_vftable = {
 };
 
 /* the vtable of cObjElementFXInfernoMissile */
-const cObjElementFXVtbl cObjElementFXInfernoMissile_vftable = {
+static const cObjElementFXVtbl cObjElementFXInfernoMissile_vftable = {
 	.Delete = cObjElementFXInfernoMissile_Delete,
 	.Update = cObjElementFXInfernoMissile_Update,
 	.IsAlive = cObjElementFXInfernoMissile_IsAlive,
@@ -2401,7 +2443,7 @@ const cObjElementFXVtbl cObjElementFXInfernoMissile_vftable = {
 };
 
 /* the vtable of cObjElementFXInfernoExplosion */
-const cObjElementFXVtbl cObjElementFXInfernoExplosion_vftable = {
+static const cObjElementFXVtbl cObjElementFXInfernoExplosion_vftable = {
 	.Delete = cObjElementFXInfernoExplosion_Delete,
 	.Update = cObjElementFXInfernoExplosion_Update,
 	.IsAlive = FXMisc_Alive,
@@ -2410,21 +2452,21 @@ const cObjElementFXVtbl cObjElementFXInfernoExplosion_vftable = {
 };
 
 cGVar GVar_ATPCTrailTime;
-cGVar GVar_FXInfernoRayInitSizeMax;
-cGVar GVar_FXInfernoCoreSize;
-cGVar GVar_FXInfernoRayRadius;
+static cGVar GVar_FXInfernoRayInitSizeMax;
+static cGVar GVar_FXInfernoCoreSize;
+static cGVar GVar_FXInfernoRayRadius;
 cGVar GVar_FXInfernoExplosionTime;
-cGVar GVar_FXInfernoRayAccMin;
-cGVar GVar_FXInfernoRaySpeedMin;
-cGVar GVar_FXInfernoExplosionFadeTime;
-cGVar GVar_FXInfernoRayInitSizeMin;
-cGVar GVar_FXInfernoRayAccMax;
-cGVar GVar_FXInfernoRayMinSize;
-cGVar GVar_FXInfernoRaySpeedMax;
-cGVar GVar_FXLaserBeamSize;
-cGVar GVar_FXLaserBeamHeight;
-cGVar GVar_FXTeslaFadeOutTime;
-cGVar GVar_FXTeslaFollowTime;
+static cGVar GVar_FXInfernoRayAccMin;
+static cGVar GVar_FXInfernoRaySpeedMin;
+static cGVar GVar_FXInfernoExplosionFadeTime;
+static cGVar GVar_FXInfernoRayInitSizeMin;
+static cGVar GVar_FXInfernoRayAccMax;
+static cGVar GVar_FXInfernoRayMinSize;
+static cGVar GVar_FXInfernoRaySpeedMax;
+static cGVar GVar_FXLaserBeamSize;
+static cGVar GVar_FXLaserBeamHeight;
+static cGVar GVar_FXTeslaFadeOutTime;
+static cGVar GVar_FXTeslaFollowTime;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_ATPCTrailTime, &GVar_ATPCTrailTime, "ATPCTrailTime", 0, "LifeTime of FadeOut Trail Effect for the ATPC", 0.8f)

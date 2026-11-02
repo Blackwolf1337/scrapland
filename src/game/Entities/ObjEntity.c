@@ -17,6 +17,13 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/staticinit.h"
 
+#define CNETCONTROLLER_VFTABLE (&cNetController_vftable)
+#define COBJENTITY_VFTABLE (&cObjEntity_vftable.base)
+#define g_RadarShowTime (GVar_MssnRadarBlinkTime.value.f)	/* radarTime after a change of RadarShow */
+static const cObjEntityVtbl cObjEntity_vftable;
+static const cNetControllerVtbl cNetController_vftable;
+static cGVar GVar_MssnRadarBlinkTime;
+
 #define OBJ_CLASSNAME "Obj"
 #define OBJ_ONENDMOVE_DESC "<ObjMove.OnEnd> function"
 #define OBJ_ONOBJSLOT_DESC "<OnObjSlot> function"
@@ -25,14 +32,14 @@
 #define OBJ_SLOT_INTERVAL 0.05f
 #define OBJ_SLOT_JUMP2 9000000.0f		/* rva 0x3b38f8: a jump of more than 3000 since the slot */
 
-cGVar GVar_ErrorMin;
+static cGVar GVar_ErrorMin;
 
 /* the smoothing of the position of a network client: no smoothing nearer than min or farther than max */
 #define g_NetSmoothMin (GVar_ErrorMin.value.f)
-cGVar GVar_ErrorMax;
+static cGVar GVar_ErrorMax;
 
 #define g_NetSmoothMax (GVar_ErrorMax.value.f)
-cGVar GVar_ErrorFix;
+static cGVar GVar_ErrorFix;
 
 #define g_NetSmoothFactor (GVar_ErrorFix.value.f)
 /* the origin of the packed positions of the network messages (32 units a step) */
@@ -115,7 +122,7 @@ cEntity *cObjEntity_ctor(void *mem, const char *name, float x, float y, float z)
 	return &self->base;
 }
 
-void cObjEntity_ReleaseFX(cEntity *self) {
+static void cObjEntity_ReleaseFX(cEntity *self) {
 	cObjEntity *o = Obj(self);
 
 	if (o->fx) {
@@ -147,7 +154,7 @@ void cObjEntity_dtor(cEntity *self) {
 	cEntity_dtor(self);
 }
 
-cEntity *cObjEntity_Delete(cEntity *self, uint32_t flags) {
+static cEntity *cObjEntity_Delete(cEntity *self, uint32_t flags) {
 	cObjEntity_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, COBJENTITY_SIZE);
@@ -184,13 +191,8 @@ void cObjEntity_UpdateTimer(cEntity *self) {
 	}
 }
 
-void cObjEntity_NewSlot(cEntity *self) {
-	cSlotController *slot = operator_new(sizeof(cSlotController));
-
-	Obj(self)->slot = slot ? cSlotController_ctor(slot, OBJ_SLOT_INTERVAL) : NULL;
-}
-
-void cObjEntity_RadarTick(cEntity *self, float dt) {
+/* the RadarShow time of Tick on its own */
+static void cObjEntity_RadarTick(cEntity *self, float dt) {
 	cObjEntity *o = Obj(self);
 
 	if (o->radarShown != o->radarShow) {
@@ -297,7 +299,7 @@ vec3_t *cObjEntity_GetSndPos(cEntity *self, vec3_t *out) {
 	return out;
 }
 
-byte cObjEntity_GetCollision(cEntity *self) {
+static byte cObjEntity_GetCollision(cEntity *self) {
 	CGameModel *m = &Obj(self)->model;
 
 	if (CGameModel_IsLoaded(m)) {
@@ -363,7 +365,7 @@ void cObjEntity_GetCamera(cEntity *self, vec3_t *pos, vec3_t *ang) {
 	ang->z = 0.0f;
 }
 
-const char *cObjEntity_GetClassName(cEntity *self) {
+static const char *cObjEntity_GetClassName(cEntity *self) {
 	(void)self;
 	return OBJ_CLASSNAME;
 }
@@ -373,7 +375,7 @@ vec3_t *cObjEntity_GetVel(cEntity *self, vec3_t *out) {
 	return out;
 }
 
-float cObjEntity_GetRadius(cEntity *self) {
+static float cObjEntity_GetRadius(cEntity *self) {
 	(void)self;
 	return 0.0f;
 }
@@ -1304,7 +1306,7 @@ void cEntity_TouchNop(cEntity *self, cEntity *e, const vec3_t *point, const vec3
 }
 
 /* the vtable of cObjEntity */
-const cObjEntityVtbl cObjEntity_vftable = {
+static const cObjEntityVtbl cObjEntity_vftable = {
 	.base.Update = cObjEntity_Update,
 	.base.Render = cEntity_Render,
 	.base.UpdateOff = cObjEntity_UpdateOff,
@@ -1355,7 +1357,7 @@ const cObjEntityVtbl cObjEntity_vftable = {
 };
 
 /* the vtable of cNetController */
-const cNetControllerVtbl cNetController_vftable = {
+static const cNetControllerVtbl cNetController_vftable = {
 	.Reset = cNetController_Reset,
 	.Read = cNetController_Read,
 	.Write = cNetController_Write,
@@ -1363,7 +1365,7 @@ const cNetControllerVtbl cNetController_vftable = {
 	.Apply = cNetController_Apply,
 };
 
-cGVar GVar_MssnRadarBlinkTime;
+static cGVar GVar_MssnRadarBlinkTime;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_MssnRadarBlinkTime, &GVar_MssnRadarBlinkTime, "MssnRadarBlinkTime", 0, "Time blinking if the new mission is assigned.", 5.0f)

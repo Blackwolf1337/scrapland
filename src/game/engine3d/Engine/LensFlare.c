@@ -14,6 +14,9 @@
 #include "scrap/texture.h"
 #include "scrap/staticinit.h"
 
+#define g_LensFlares (GVar_R_LensFlare.value.i)		/* the engine variable that draws them */
+static cGVar GVar_R_LensFlare;
+
 CLensFlare *CLensFlare_ctor(CLensFlare *self) {
 	self->hit = (CGroundHit){ 0, 0, NULL };
 	self->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
@@ -32,6 +35,7 @@ CLensFlare *CLensFlare_ctor(CLensFlare *self) {
 	return self;
 }
 
+static void LensFlare_Update(CLensFlare *lf);
 void CLensFlare_dtor(CLensFlare *self) {
 	if (self->on) {
 		self->on = 0;
@@ -39,10 +43,11 @@ void CLensFlare_dtor(CLensFlare *self) {
 	}
 }
 
-CLensFlare *g_LensFlareRender[8];
-int g_nLensFlareRender;
+static CLensFlare *g_LensFlareRender[8];
+static int g_nLensFlareRender;
 
-void LensFlare_Update(CLensFlare *lf) {
+/* into or out of the render list by on */
+static void LensFlare_Update(CLensFlare *lf) {
 	if (!lf) {
 		return;
 	}
@@ -92,16 +97,11 @@ int LensFlare_ClearAll(void) {
 	return 0;
 }
 
-void LensFlare_Set(CLensFlare *lf, byte on) {
-	lf->on = on;
-	LensFlare_Update(lf);
-}
-
 int LensFlare_Release(void) {
 	return 0;
 }
 
-CMaterial *g_LensFlareMat;
+static CMaterial *g_LensFlareMat;
 
 int LensFlare_Init(void) {
 	CMaterial m;
@@ -128,6 +128,7 @@ int LensFlare_InitList(void) {
 	return 0;
 }
 
+static void CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj);
 void LensFlare_RenderAll(void) {
 	void *dev = g_Engine->device;
 	matrix_t view, proj;
@@ -235,7 +236,8 @@ static float LF_Float(uint32_t bits) {
 	return f;
 }
 
-void CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj) {
+static void CLensFlare_DrawSprite(CLensFlare *self, float dist, uint32_t sprite, float size, float r, float g, float b, float a);
+static void CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj) {
 	CCamera *cam = World_Get()->cam;
 	matrix_t rel;
 	const matrix_t *m = &view;
@@ -328,9 +330,10 @@ void CLensFlare_Render(CLensFlare *self, matrix_t view, matrix_t proj) {
 	}
 }
 
-VertLensFlare g_LensFlareVerts[4];
+static VertLensFlare g_LensFlareVerts[4];
 
-void CLensFlare_DrawSprite(CLensFlare *self, float dist, uint32_t sprite, float size, float r, float g,
+/* a sprite at dist along the line through the center (0 the point, 1 the center), size and color */
+static void CLensFlare_DrawSprite(CLensFlare *self, float dist, uint32_t sprite, float size, float r, float g,
 	float b, float a) {
 	void *dev = g_Engine->device;
 	CCamera *cam = World_Get()->cam;
@@ -364,10 +367,6 @@ void CLensFlare_SetTraceInterval(CLensFlare *self, float v) {
 	self->traceInterval = v;
 }
 
-void CLensFlare_SetMargin(CLensFlare *self, float v) {
-	self->margin = v;
-}
-
 void CLensFlare_SetPos(CLensFlare *self, vec3_t pos) {
 	self->pos = pos;
 }
@@ -384,7 +383,7 @@ void CLensFlare_SetRelative(CLensFlare *self, byte relative) {
 	self->relative = relative;
 }
 
-cGVar GVar_R_LensFlare;
+static cGVar GVar_R_LensFlare;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_R_LensFlare, &GVar_R_LensFlare, "R_LensFlare", 0, "Render LensFlare (0/1)", 1)

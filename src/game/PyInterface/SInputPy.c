@@ -8,7 +8,7 @@
 #include "scrap/python.h"
 
 /* SetActionSet(name) : selects the action set of that name; looks at the first four entries */
-PyObject *SInput_SetActionSet(PyObject *self, PyObject *args) {
+static PyObject *SInput_SetActionSet(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
@@ -25,7 +25,7 @@ PyObject *SInput_SetActionSet(PyObject *self, PyObject *args) {
 }
 
 /* GetActionSet() : name of the current action set */
-PyObject *SInput_GetActionSet(PyObject *self, PyObject *args) {
+static PyObject *SInput_GetActionSet(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -34,7 +34,7 @@ PyObject *SInput_GetActionSet(PyObject *self, PyObject *args) {
 }
 
 /* AssingEntry(...) (sic) */
-PyObject *SInput_AssingEntry(PyObject *self, PyObject *args) {
+static PyObject *SInput_AssingEntry(PyObject *self, PyObject *args) {
 	char *a, *b, *d, *e;
 	int c;
 
@@ -46,7 +46,7 @@ PyObject *SInput_AssingEntry(PyObject *self, PyObject *args) {
 }
 
 /* GetEntry(a, b, c) : (index, name); index -1 and "" when nothing was found */
-PyObject *SInput_GetEntry(PyObject *self, PyObject *args) {
+static PyObject *SInput_GetEntry(PyObject *self, PyObject *args) {
 	char *a, *b, *c;
 	int index = -1;
 	char *name = "";
@@ -63,7 +63,7 @@ PyObject *SInput_GetEntry(PyObject *self, PyObject *args) {
 }
 
 /* ListenToDefine(player, a, b, c) : waits for the next key to define it */
-PyObject *SInput_ListenToDefine(PyObject *self, PyObject *args) {
+static PyObject *SInput_ListenToDefine(PyObject *self, PyObject *args) {
 	int player;
 	char *a, *b, *c;
 
@@ -75,7 +75,7 @@ PyObject *SInput_ListenToDefine(PyObject *self, PyObject *args) {
 }
 
 /* AbortListenToDefine() */
-PyObject *SInput_AbortListenToDefine(PyObject *self, PyObject *args) {
+static PyObject *SInput_AbortListenToDefine(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -86,7 +86,7 @@ PyObject *SInput_AbortListenToDefine(PyObject *self, PyObject *args) {
 }
 
 /* GetDefinedEntry(player, a, b, c[, flag]) */
-PyObject *SInput_GetDefinedEntry(PyObject *self, PyObject *args) {
+static PyObject *SInput_GetDefinedEntry(PyObject *self, PyObject *args) {
 	int player, flag = 0;
 	char *a, *b, *c;
 
@@ -98,7 +98,7 @@ PyObject *SInput_GetDefinedEntry(PyObject *self, PyObject *args) {
 }
 
 /* GetDefinedList(player, a, b[, flag]) : the list as a string, or the error number */
-PyObject *SInput_GetDefinedList(PyObject *self, PyObject *args) {
+static PyObject *SInput_GetDefinedList(PyObject *self, PyObject *args) {
 	int player, flag = 0;
 	char *a, *b;
 	char buf[0x800];
@@ -115,7 +115,7 @@ PyObject *SInput_GetDefinedList(PyObject *self, PyObject *args) {
 }
 
 /* ClearDefinedList(player, a, b[, flag]) */
-PyObject *SInput_ClearDefinedList(PyObject *self, PyObject *args) {
+static PyObject *SInput_ClearDefinedList(PyObject *self, PyObject *args) {
 	int player, flag = 0;
 	char *a, *b;
 
@@ -127,7 +127,7 @@ PyObject *SInput_ClearDefinedList(PyObject *self, PyObject *args) {
 }
 
 /* ResetToDefault() */
-PyObject *SInput_ResetToDefault(PyObject *self, PyObject *args) {
+static PyObject *SInput_ResetToDefault(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -138,7 +138,7 @@ PyObject *SInput_ResetToDefault(PyObject *self, PyObject *args) {
 }
 
 /* SetString(player, text) : 0 if set, 1 for a bad player */
-PyObject *SInput_SetString(PyObject *self, PyObject *args) {
+static PyObject *SInput_SetString(PyObject *self, PyObject *args) {
 	uint32_t player;
 	char *text;
 
@@ -154,7 +154,7 @@ PyObject *SInput_SetString(PyObject *self, PyObject *args) {
 }
 
 /* GetString(player) : the text input of the player, 1 for a bad player */
-PyObject *SInput_GetString(PyObject *self, PyObject *args) {
+static PyObject *SInput_GetString(PyObject *self, PyObject *args) {
 	uint32_t player;
 
 	(void)self;
@@ -168,7 +168,7 @@ PyObject *SInput_GetString(PyObject *self, PyObject *args) {
 }
 
 /* GetCursorChar(player) : (x, y, char) of the text cursor, 1 for a bad player */
-PyObject *SInput_GetCursorChar(PyObject *self, PyObject *args) {
+static PyObject *SInput_GetCursorChar(PyObject *self, PyObject *args) {
 	uint32_t player;
 
 	(void)self;
@@ -183,7 +183,7 @@ PyObject *SInput_GetCursorChar(PyObject *self, PyObject *args) {
 }
 
 /* GetVirtualKeyboard() : (a, b, text) */
-PyObject *SInput_GetVirtualKeyboard(PyObject *self, PyObject *args) {
+static PyObject *SInput_GetVirtualKeyboard(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -192,7 +192,7 @@ PyObject *SInput_GetVirtualKeyboard(PyObject *self, PyObject *args) {
 }
 
 /* SetVirtualKeyboard(text) */
-PyObject *SInput_SetVirtualKeyboard(PyObject *self, PyObject *args) {
+static PyObject *SInput_SetVirtualKeyboard(PyObject *self, PyObject *args) {
 	char *text;
 
 	(void)self;
@@ -203,7 +203,7 @@ PyObject *SInput_SetVirtualKeyboard(PyObject *self, PyObject *args) {
 }
 
 /* SetInputFunc(player, func) : 0 if set, 1 for a bad player */
-PyObject *SInput_SetInputFunc(PyObject *self, PyObject *args) {
+static PyObject *SInput_SetInputFunc(PyObject *self, PyObject *args) {
 	uint32_t player;
 	char *func;
 
@@ -219,7 +219,7 @@ PyObject *SInput_SetInputFunc(PyObject *self, PyObject *args) {
 }
 
 /* Bind(player, a, b, c) */
-PyObject *SInput_Bind(PyObject *self, PyObject *args) {
+static PyObject *SInput_Bind(PyObject *self, PyObject *args) {
 	int player;
 	char *a, *b, *c;
 
@@ -231,7 +231,7 @@ PyObject *SInput_Bind(PyObject *self, PyObject *args) {
 }
 
 /* Rumble(pad, a, b, c) : 1 if done, 0 for a bad pad */
-PyObject *SInput_Rumble(PyObject *self, PyObject *args) {
+static PyObject *SInput_Rumble(PyObject *self, PyObject *args) {
 	uint32_t pad;
 	float a, b, c;
 
@@ -247,7 +247,7 @@ PyObject *SInput_Rumble(PyObject *self, PyObject *args) {
 }
 
 /* ResetToSplit() : does nothing on PC */
-PyObject *SInput_ResetToSplit(PyObject *self, PyObject *args) {
+static PyObject *SInput_ResetToSplit(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -257,7 +257,7 @@ PyObject *SInput_ResetToSplit(PyObject *self, PyObject *args) {
 }
 
 /* CheckPadButton(pad, button) : always 0 on PC, the pad number is checked */
-PyObject *SInput_CheckPadButton(PyObject *self, PyObject *args) {
+static PyObject *SInput_CheckPadButton(PyObject *self, PyObject *args) {
 	int pad = 0, button = 0;
 
 	(void)self;
@@ -268,47 +268,47 @@ PyObject *SInput_CheckPadButton(PyObject *self, PyObject *args) {
 	return Py_BuildValue("i", 0);
 }
 
-extern char str_PyDoc_SInput_AbortListenToDefine[];
-extern char str_PyDoc_SInput_AssingEntry[];
-extern char str_PyDoc_SInput_Bind[88];
-extern char str_PyDoc_SInput_CheckPadButton[];
-extern char str_PyDoc_SInput_ClearDefinedList[];
-extern char str_PyDoc_SInput_GetActionSet[68];
-extern char str_PyDoc_SInput_GetCursorChar[];
-extern char str_PyDoc_SInput_GetDefinedEntry[];
-extern char str_PyDoc_SInput_GetDefinedList[];
-extern char str_PyDoc_SInput_GetEntry[];
-extern char str_PyDoc_SInput_GetString[];
-extern char str_PyDoc_SInput_GetVirtualKeyboard[88];
-extern char str_PyDoc_SInput_ListenToDefine[];
-extern char str_PyDoc_SInput_ResetToDefault[112];
-extern char str_PyDoc_SInput_ResetToSplit[96];
-extern char str_PyDoc_SInput_Rumble[72];
-extern char str_PyDoc_SInput_SetActionSet[];
-extern char str_PyDoc_SInput_SetInputFunc[];
-extern char str_PyDoc_SInput_SetString[];
-extern char str_PyDoc_SInput_SetVirtualKeyboard[];
-extern const char str_PyMethod_SInput_AbortListenToDefine[];
-extern const char str_PyMethod_SInput_AssingEntry[];
-extern const char str_PyMethod_SInput_Bind[];
-extern const char str_PyMethod_SInput_CheckPadButton[];
-extern const char str_PyMethod_SInput_ClearDefinedList[];
-extern const char str_PyMethod_SInput_GetActionSet[];
-extern const char str_PyMethod_SInput_GetCursorChar[];
-extern const char str_PyMethod_SInput_GetDefinedEntry[];
-extern const char str_PyMethod_SInput_GetDefinedList[];
-extern const char str_PyMethod_SInput_GetEntry[];
-extern const char str_PyMethod_SInput_GetString[];
-extern const char str_PyMethod_SInput_GetVirtualKeyboard[];
-extern const char str_PyMethod_SInput_ListenToDefine[];
-extern const char str_PyMethod_SInput_ResetToDefault[];
-extern const char str_PyMethod_SInput_ResetToSplit[];
-extern const char str_PyMethod_SInput_Rumble[];
-extern const char str_PyMethod_SInput_SetActionSet[];
-extern const char str_PyMethod_SInput_SetInputFunc[];
-extern const char str_PyMethod_SInput_SetString[];
-extern const char str_PyMethod_SInput_SetVirtualKeyboard[];
-PyMethodDef SInput_methods[21] = {
+static char str_PyDoc_SInput_AbortListenToDefine[];
+static char str_PyDoc_SInput_AssingEntry[];
+static char str_PyDoc_SInput_Bind[88];
+static char str_PyDoc_SInput_CheckPadButton[];
+static char str_PyDoc_SInput_ClearDefinedList[];
+static char str_PyDoc_SInput_GetActionSet[68];
+static char str_PyDoc_SInput_GetCursorChar[];
+static char str_PyDoc_SInput_GetDefinedEntry[];
+static char str_PyDoc_SInput_GetDefinedList[];
+static char str_PyDoc_SInput_GetEntry[];
+static char str_PyDoc_SInput_GetString[];
+static char str_PyDoc_SInput_GetVirtualKeyboard[88];
+static char str_PyDoc_SInput_ListenToDefine[];
+static char str_PyDoc_SInput_ResetToDefault[112];
+static char str_PyDoc_SInput_ResetToSplit[96];
+static char str_PyDoc_SInput_Rumble[72];
+static char str_PyDoc_SInput_SetActionSet[];
+static char str_PyDoc_SInput_SetInputFunc[];
+static char str_PyDoc_SInput_SetString[];
+static char str_PyDoc_SInput_SetVirtualKeyboard[];
+static const char str_PyMethod_SInput_AbortListenToDefine[];
+static const char str_PyMethod_SInput_AssingEntry[];
+static const char str_PyMethod_SInput_Bind[];
+static const char str_PyMethod_SInput_CheckPadButton[];
+static const char str_PyMethod_SInput_ClearDefinedList[];
+static const char str_PyMethod_SInput_GetActionSet[];
+static const char str_PyMethod_SInput_GetCursorChar[];
+static const char str_PyMethod_SInput_GetDefinedEntry[];
+static const char str_PyMethod_SInput_GetDefinedList[];
+static const char str_PyMethod_SInput_GetEntry[];
+static const char str_PyMethod_SInput_GetString[];
+static const char str_PyMethod_SInput_GetVirtualKeyboard[];
+static const char str_PyMethod_SInput_ListenToDefine[];
+static const char str_PyMethod_SInput_ResetToDefault[];
+static const char str_PyMethod_SInput_ResetToSplit[];
+static const char str_PyMethod_SInput_Rumble[];
+static const char str_PyMethod_SInput_SetActionSet[];
+static const char str_PyMethod_SInput_SetInputFunc[];
+static const char str_PyMethod_SInput_SetString[];
+static const char str_PyMethod_SInput_SetVirtualKeyboard[];
+static PyMethodDef SInput_methods[21] = {
 	{
 		.ml_name = (void *)str_PyMethod_SInput_SetActionSet,
 		.ml_meth = (void *)SInput_SetActionSet,
@@ -433,85 +433,85 @@ PyMethodDef SInput_methods[21] = {
 
 SD_PY_MODULE(SInput, 0x42d790)
 
-const char str_PyMethod_SInput_SetActionSet[] = "SetActionSet";
-const char str_PyMethod_SInput_GetActionSet[] = "GetActionSet";
-const char str_PyMethod_SInput_AssingEntry[] = "AssingEntry";
-const char str_PyMethod_SInput_GetEntry[] = "GetEntry";
-const char str_PyMethod_SInput_ListenToDefine[] = "ListenToDefine";
-const char str_PyMethod_SInput_AbortListenToDefine[] = "AbortListenToDefine";
-const char str_PyMethod_SInput_GetDefinedList[] = "GetDefinedList";
-const char str_PyMethod_SInput_GetDefinedEntry[] = "GetDefinedEntry";
-const char str_PyMethod_SInput_ClearDefinedList[] = "ClearDefinedList";
-const char str_PyMethod_SInput_ResetToDefault[] = "ResetToDefault";
-const char str_PyMethod_SInput_SetString[] = "SetString";
-const char str_PyMethod_SInput_GetString[] = "GetString";
-const char str_PyMethod_SInput_GetCursorChar[] = "GetCursorChar";
-const char str_PyMethod_SInput_GetVirtualKeyboard[] = "GetVirtualKeyboard";
-const char str_PyMethod_SInput_SetVirtualKeyboard[] = "SetVirtualKeyboard";
-const char str_PyMethod_SInput_SetInputFunc[] = "SetInputFunc";
-const char str_PyMethod_SInput_Bind[] = "Bind";
-const char str_PyMethod_SInput_Rumble[] = "Rumble";
-const char str_PyMethod_SInput_ResetToSplit[] = "ResetToSplit";
-const char str_PyMethod_SInput_CheckPadButton[] = "CheckPadButton";
+static const char str_PyMethod_SInput_SetActionSet[] = "SetActionSet";
+static const char str_PyMethod_SInput_GetActionSet[] = "GetActionSet";
+static const char str_PyMethod_SInput_AssingEntry[] = "AssingEntry";
+static const char str_PyMethod_SInput_GetEntry[] = "GetEntry";
+static const char str_PyMethod_SInput_ListenToDefine[] = "ListenToDefine";
+static const char str_PyMethod_SInput_AbortListenToDefine[] = "AbortListenToDefine";
+static const char str_PyMethod_SInput_GetDefinedList[] = "GetDefinedList";
+static const char str_PyMethod_SInput_GetDefinedEntry[] = "GetDefinedEntry";
+static const char str_PyMethod_SInput_ClearDefinedList[] = "ClearDefinedList";
+static const char str_PyMethod_SInput_ResetToDefault[] = "ResetToDefault";
+static const char str_PyMethod_SInput_SetString[] = "SetString";
+static const char str_PyMethod_SInput_GetString[] = "GetString";
+static const char str_PyMethod_SInput_GetCursorChar[] = "GetCursorChar";
+static const char str_PyMethod_SInput_GetVirtualKeyboard[] = "GetVirtualKeyboard";
+static const char str_PyMethod_SInput_SetVirtualKeyboard[] = "SetVirtualKeyboard";
+static const char str_PyMethod_SInput_SetInputFunc[] = "SetInputFunc";
+static const char str_PyMethod_SInput_Bind[] = "Bind";
+static const char str_PyMethod_SInput_Rumble[] = "Rumble";
+static const char str_PyMethod_SInput_ResetToSplit[] = "ResetToSplit";
+static const char str_PyMethod_SInput_CheckPadButton[] = "CheckPadButton";
 
-char str_PyDoc_SInput_SetActionSet[] =
+static char str_PyDoc_SInput_SetActionSet[] =
 	"SetActionSet(string name) :  Pone el set de acciones requerido...";
 
-char str_PyDoc_SInput_GetActionSet[68] =
+static char str_PyDoc_SInput_GetActionSet[68] =
 	"string GetActionSet() :  Obtiene el set de acciones Actual...";
 
-char str_PyDoc_SInput_AssingEntry[] =
+static char str_PyDoc_SInput_AssingEntry[] =
 	"int AssingEntry(Device,Entry,Player,ActionSet,Action) :  Asigna una entrada... retorna 0 o el Nro de"
 	" parametro erroneo";
 
-char str_PyDoc_SInput_GetEntry[] =
+static char str_PyDoc_SInput_GetEntry[] =
 	"(Player,Action) GetEntry(Device,Entry,ActionSet) :  Obtiene una entrada, (0,) si vacia";
 
-char str_PyDoc_SInput_ListenToDefine[] =
+static char str_PyDoc_SInput_ListenToDefine[] =
 	"ListenToDefine(iPlayer,ActionSet,Action,LaFunction) : Espera a que el usuario mueva un control y lo "
 	"redefine";
 
-char str_PyDoc_SInput_AbortListenToDefine[] = "AbortListenToDefine() : Aborta la redefinicion en curso";
+static char str_PyDoc_SInput_AbortListenToDefine[] = "AbortListenToDefine() : Aborta la redefinicion en curso";
 
-char str_PyDoc_SInput_GetDefinedEntry[] =
+static char str_PyDoc_SInput_GetDefinedEntry[] =
 	"value GetDefinedEntry(iPlayer,ActionSet,Action,Device) : obtiene una cadena con la primera definicio"
 	"n del control que encuentre";
 
-char str_PyDoc_SInput_GetDefinedList[] =
+static char str_PyDoc_SInput_GetDefinedList[] =
 	"GetDefinedList(iPlayer,ActionSet,Action) : obtiene una cadena con la definicion de controles";
 
-char str_PyDoc_SInput_ClearDefinedList[] =
+static char str_PyDoc_SInput_ClearDefinedList[] =
 	"ClearDefinedList(iPlayer,ActionSet,Action) : Elimina todas las entradas de un control.";
 
-char str_PyDoc_SInput_ResetToDefault[112] =
+static char str_PyDoc_SInput_ResetToDefault[112] =
 	"ResetToDefault(iPlayer,ActionSet,Action) : Pone todas las entradas de los controles a valores por de"
 	"fecto.";
 
-char str_PyDoc_SInput_SetString[] =
+static char str_PyDoc_SInput_SetString[] =
 	"SetString(iPlayer,String) : Modifica la cadena de entrada de texto.";
 
-char str_PyDoc_SInput_GetString[] = "GetString(iPlayer) : Obtiene la cadena de entrada de texto.";
+static char str_PyDoc_SInput_GetString[] = "GetString(iPlayer) : Obtiene la cadena de entrada de texto.";
 
-char str_PyDoc_SInput_GetCursorChar[] =
+static char str_PyDoc_SInput_GetCursorChar[] =
 	"GetCursorChar(iPlayer) : Obtiene el (x,y,caracter) que indican el estado del cursor.";
 
-char str_PyDoc_SInput_GetVirtualKeyboard[88] =
+static char str_PyDoc_SInput_GetVirtualKeyboard[88] =
 	"GetVirtualKeyboard() : Obtiene el (W,H,Board) que son datos del keyboard virtual.";
 
-char str_PyDoc_SInput_SetVirtualKeyboard[] =
+static char str_PyDoc_SInput_SetVirtualKeyboard[] =
 	"SetVirtualKeyboard(tipo de teclado) : Cambia el teclado virtual";
 
-char str_PyDoc_SInput_SetInputFunc[] =
+static char str_PyDoc_SInput_SetInputFunc[] =
 	"SetInputFunc(iPlayer,modfunc) : agrega la funcion callback de entrada modfunc(iPlayer,string)";
 
-char str_PyDoc_SInput_Bind[88] =
+static char str_PyDoc_SInput_Bind[88] =
 	"Bind(iPlayer,ActionSet,Action) : obtiene una cadena con la definicion de controles";
 
-char str_PyDoc_SInput_Rumble[72] = "Rumble(iPlayer,Left,Right,Time) : Inicializa el rumble de un pad.";
+static char str_PyDoc_SInput_Rumble[72] = "Rumble(iPlayer,Left,Right,Time) : Inicializa el rumble de un pad.";
 
-char str_PyDoc_SInput_ResetToSplit[96] =
+static char str_PyDoc_SInput_ResetToSplit[96] =
 	"ResetToSplit() : Resetea el sistema de entrada de datos para iniciar el modo split screen.";
 
-char str_PyDoc_SInput_CheckPadButton[] =
+static char str_PyDoc_SInput_CheckPadButton[] =
 	"CheckPadButton() : Chequea el estado de un determinado botón del pad.";
 

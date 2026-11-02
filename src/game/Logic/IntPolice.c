@@ -14,10 +14,19 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
+#define g_CreatePolice (((cPy_Function *)&GVar_CreatePolice.func))	/* (name, x, y, z) */
+#define g_CreateGear (((cPy_Function *)&GVar_CreateGear.func))	/* (name, x, y, z) */
+#define g_PoliceLogicBelligerant (GVar_PoliceLogicBelligerant.value.i)
+#define g_SentinelNextGotoTime (GVar_SentinelNextGotoTime.value.f)
+static cGVar GVar_SentinelNextGotoTime;
+static cGVar GVar_PoliceLogicBelligerant;
+static cGVarFunction GVar_CreatePolice;
+static cGVarFunction GVar_CreateGear;
+
 /* defined further down or in another file without a header */
-void *AICtrl_MakeGearLogic(cEntity *e);
-void *AICtrl_MakeSentinelLogic(cEntity *e);
-void AICtrl_SentinelDeath(cAbstractFile *params);
+static void *AICtrl_MakeGearLogic(cEntity *e);
+static void *AICtrl_MakeSentinelLogic(cEntity *e);
+static void AICtrl_SentinelDeath(cAbstractFile *params);
 
 #define AICTRL_MAKEGEAR 0x14fc80
 #define AICTRL_MAKESENTINEL 0x14fcf0
@@ -89,7 +98,9 @@ void AICtrl_dtor(void *ctrl) {
 
 /* two visible police of the second GenChar list fuse into gears that fight each other, else two free visible
  * gears fight */
-void AICtrl_Belligerant(void *ctrl) {
+static byte AICtrl_CanFuse(void *ctrl, cEntity *e);
+static byte AICtrl_Fuse(void *ctrl, cEntity *police, cEntity **out);
+static void AICtrl_Belligerant(void *ctrl) {
 	cAICtrl *self = ctrl;
 	cEntity *first = NULL, *second = NULL;
 	Nto1Node *n;
@@ -143,7 +154,8 @@ void AICtrl_Belligerant(void *ctrl) {
 	}
 }
 
-byte AICtrl_CanFuse(void *ctrl, cEntity *e) {
+/* the police e may become a gear (the gear "Gear" + the name after "Police" does not exist) */
+static byte AICtrl_CanFuse(void *ctrl, cEntity *e) {
 	char name[0x80];
 	vec3_t t, c;
 	cEntity *hit;
@@ -176,7 +188,7 @@ byte AICtrl_CanFuse(void *ctrl, cEntity *e) {
 }
 
 /* the gear may become a police again: no police of its number */
-byte AICtrl_CanBePolice(void *ctrl, cEntity *e) {
+static byte AICtrl_CanBePolice(void *ctrl, cEntity *e) {
 	char name[0x80];
 
 	(void)ctrl;
@@ -207,12 +219,12 @@ byte AICtrl_GearToPolice(void *ctrl, cEntity *gear) {
 	return 1;
 }
 
-void AICtrl_UpdateSentinels(void *ctrl);
-void AICtrl_UpdateGears(void *ctrl);
+static void AICtrl_UpdateSentinels(void *ctrl);
+static void AICtrl_UpdateGears(void *ctrl);
 
 /* the alarm state, the voices of the gear nearest to the player ("Chase" at random with the alarm, "Abort" after
  * it), the sentinels and the gears */
-void AICtrl_Think(void *ctrl) {
+static void AICtrl_Think(void *ctrl) {
 	cAICtrl *self = ctrl;
 	vec3_t t;
 
@@ -253,7 +265,8 @@ void AICtrl_Think(void *ctrl) {
 	self->lastUsr = self->usr;
 }
 
-byte AICtrl_Fuse(void *ctrl, cEntity *police, cEntity **out) {
+/* the police becomes a gear (into *gear, may be NULL); 0 if it may not */
+static byte AICtrl_Fuse(void *ctrl, cEntity *police, cEntity **out) {
 	char name[0x80];
 	vec3_t t;
 	cObjEntity *o = (cObjEntity *)police;
@@ -335,7 +348,7 @@ bishops:
 }
 
 /* the gears update with 0.5 s, then the ones in state 1 or 2 are counted */
-void AICtrl_UpdateGears(void *ctrl) {
+static void AICtrl_UpdateGears(void *ctrl) {
 	cAICtrl *self = ctrl;
 	Nto1Node *n;
 
@@ -362,14 +375,8 @@ void AICtrl_Init(void *ctrl) {
 	self->gears->func = (int (*)(void))(void *)AICtrl_MakeGearLogic;
 }
 
-/* a sentinel to watch pos now */
-void AICtrl_WatchNow(void *ctrl, const vec3_t *pos) {
-	((cAICtrl *)ctrl)->watchTime = 0.0f;
-	AICtrl_SendSentinelToWatch(ctrl, pos);
-}
-
 /* the script C function Police2GearEnd (name, event, float): the gear of the police is done, the police goes */
-void AICtrl_Police2GearEnd(cAbstractFile *params) {
+static void AICtrl_Police2GearEnd(cAbstractFile *params) {
 	char name[0x80], event[0x80], gname[0x80];
 	float f;
 
@@ -414,7 +421,7 @@ void AICtrl_SendSentinelToWatch(void *ctrl, const vec3_t *pos) {
 
 /* the sentinels update with 0.5 s; the watch link goes to the one in state 5, the first that accuses sends the
  * others back */
-void AICtrl_UpdateSentinels(void *ctrl) {
+static void AICtrl_UpdateSentinels(void *ctrl) {
 	cAICtrl *self = ctrl;
 	cBaseLocalLogic *found = NULL;
 	Nto1Node *n;
@@ -580,20 +587,20 @@ void AICtrl_GearsChase(void *ctrl, cEntity *e) {
 }
 
 /* the makers of the logics of the lists "Gear" and "Sentinel" (cEntityListData.func) */
-void *AICtrl_MakeGearLogic(cEntity *e) {
+static void *AICtrl_MakeGearLogic(cEntity *e) {
 	void *m = operator_new(sizeof(cGearLocalLogic));
 
 	return m ? cGearLocalLogic_ctor(m, e) : NULL;
 }
 
-void *AICtrl_MakeSentinelLogic(cEntity *e) {
+static void *AICtrl_MakeSentinelLogic(cEntity *e) {
 	void *m = operator_new(sizeof(cSentinelLocalLogic));
 
 	return m ? cSentinelLocalLogic_ctor(m, e) : NULL;
 }
 
 /* the death native of the list "Sentinel": it leaves the list, a sentinel goes to watch the place at once */
-void AICtrl_SentinelDeath(cAbstractFile *params) {
+static void AICtrl_SentinelDeath(cAbstractFile *params) {
 	char name[0x80];
 	vec3_t t;
 
@@ -605,12 +612,12 @@ void AICtrl_SentinelDeath(cAbstractFile *params) {
 	AICtrl_SendSentinelToWatch(&g_pWorld->logic.aiCtrl, p);
 }
 
-cGVarFunction GVar_CreatePolice;
-cGVar GVar_PoliceLogicBelligerant;
-cGVarFunction GVar_CreateGear;
-cGVar GVar_SentinelNextGotoTime;
+static cGVarFunction GVar_CreatePolice;
+static cGVar GVar_PoliceLogicBelligerant;
+static cGVarFunction GVar_CreateGear;
+static cGVar GVar_SentinelNextGotoTime;
 cGVar GVar_SentinelAbortyNPCAttDist;
-cPy_NativeFunc NativeFunc_Police2GearEnd;
+static cPy_NativeFunc NativeFunc_Police2GearEnd;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_CALL(Fini_GVar_CreateGear, &GVar_CreateGear.func, cPy_Function_dtor)

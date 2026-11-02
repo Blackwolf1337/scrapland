@@ -12,7 +12,7 @@ static const char *const fontNames[7] = {
 	"Terminal8", "Terminal8Fixed", "BigNumbers", "ScrapBig", "ScrapMedium", "Horatio", "HoratioSmall",
 };
 
-CFont *g_FontTerminal8Fixed;
+static CFont *g_FontTerminal8Fixed;
 CFont *g_FontBigNumbers;
 
 /* the global of the font, in the order of fontNames */

@@ -10,6 +10,11 @@
 #include "scrap/walkcharentity.h"
 #include "scrap/staticinit.h"
 
+#define CACTCTRL_VFTABLE (&cActCtrl_vftable)
+#define g_LogActEvents (GVar_LogActEvents.value.i)		/* LogActEvents: the events into the console */
+static const cActCtrlVarVtbl cActCtrl_vftable;
+static cGVar GVar_LogActEvents;
+
 static CGameModel *Ctrl_Model(cActCtrl *self) {
 	return Obj_Vtbl(self->owner)->GetModel(self->owner);
 }
@@ -27,6 +32,7 @@ static float Layer_End(const cActLayer *l) {
 	return l->action ? l->action->anmTotalTime : -1.0f;
 }
 
+static void cActCtrl_InitModel(cActCtrl *self);
 cActCtrl *cActCtrl_ctor(cActCtrl *self, cEntity *owner, cActClass *cls) {
 	self->vftable = CACTCTRL_VFTABLE;
 	for (int k = 0; k < ACT_LAYERS; k++) {
@@ -64,7 +70,7 @@ cActCtrl *cActCtrl_ctor(cActCtrl *self, cEntity *owner, cActClass *cls) {
 	return self;
 }
 
-void cActCtrl_dtor(cActCtrl *self) {
+static void cActCtrl_dtor(cActCtrl *self) {
 	self->vftable = CACTCTRL_VFTABLE;
 	self->cls->users--;
 	self->owner->vftable->SetModel(self->owner, NULL, 1.0f, 1.0f, 1.0f, 1);
@@ -73,7 +79,7 @@ void cActCtrl_dtor(cActCtrl *self) {
 	}
 }
 
-void *cActCtrl_Delete(cActCtrl *self, byte flags) {
+static void *cActCtrl_Delete(cActCtrl *self, byte flags) {
 	cActCtrl_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -85,7 +91,8 @@ void cActCtrl_AnimCmd(cActCtrl *self, const char *cmd) {
 	CGameModel_AnimCmd(Ctrl_Model(self), cmd);
 }
 
-void cActCtrl_InitModel(cActCtrl *self) {
+/* the model of the class on the owner with the animations of the actions */
+static void cActCtrl_InitModel(cActCtrl *self) {
 	self->owner->vftable->SetModel(self->owner, self->cls->modelFile, 1.0f, 1.0f, 1.0f, 0);
 	CGameModel *m = Ctrl_Model(self);
 	for (cAction *a = self->cls->first; a; a = a->next) {
@@ -100,7 +107,9 @@ void cActCtrl_InitModel(cActCtrl *self) {
 	}
 }
 
-void cActCtrl_Update(cActCtrl *self, float dt) {
+/* the layers dt on: speeds, events, the end of the actions, the root motion of layer 0 */
+static void cActCtrl_FireEvents(cActCtrl *self, int chan, float t, byte silent);
+static void cActCtrl_Update(cActCtrl *self, float dt) {
 	CGameModel *m = Ctrl_Model(self);
 	vec3_t move;
 	int jumps;
@@ -157,7 +166,9 @@ void cActCtrl_Update(cActCtrl *self, float dt) {
 	}
 }
 
-void cActCtrl_FireEvents(cActCtrl *self, int chan, float t, byte silent) {
+/* the events of the layer chan up to t (FLT_MAX from the end of the action on); silent skips the discardable ones
+ * and logs with Con_Verbosef */
+static void cActCtrl_FireEvents(cActCtrl *self, int chan, float t, byte silent) {
 	cActLayer *l = &self->layers[chan];
 
 	if (t >= Layer_End(l)) {
@@ -188,29 +199,11 @@ void cActCtrl_FireEvents(cActCtrl *self, int chan, float t, byte silent) {
 	}
 }
 
-byte cActCtrl_VarI(cActCtrl *self, const char *name, int *i, int set) {
+static byte cActCtrl_VarI(cActCtrl *self, const char *name, int *i, int set) {
 	if (set && strcmp(name, "StopSecondary") == 0) {
 		cActCtrl_StopChan(self, *i);
 		return 1;
 	}
-	return 0;
-}
-
-byte cActCtrl_VarF(cActCtrl *self, const char *name, double *d, byte set) {
-	(void)self;
-	(void)name;
-	(void)d;
-	(void)set;
-	return 0;
-}
-
-byte cActCtrl_VarV(cActCtrl *self, const char *name, double *x, double *y, double *z, byte set) {
-	(void)self;
-	(void)name;
-	(void)x;
-	(void)y;
-	(void)z;
-	(void)set;
 	return 0;
 }
 
@@ -233,7 +226,7 @@ const char *cActCtrl_GetDefLoopName(void *ctrl) {
 	return self->defLoop ? self->defLoop->name : str_Empty;
 }
 
-void cActCtrl_InitHeads(cActCtrl *self) {
+static void cActCtrl_InitHeads(cActCtrl *self) {
 	if (self->heads) {
 		return;
 	}
@@ -251,20 +244,14 @@ void cActCtrl_InitHeads(cActCtrl *self) {
 	self->heads = h;
 }
 
-void cActHead_Set(cActHead *self, const float *to) {
+/* the target of the blend set (the old one becomes the start) */
+static void cActHead_Set(cActHead *self, const float *to) {
 	self->from[0] = self->to[0];
 	self->from[1] = self->to[1];
 	self->to[0] = to[0];
 	self->to[1] = to[1];
 	self->cur[0] = self->to[0];
 	self->cur[1] = self->to[1];
-}
-
-void cActHead_Blend(cActHead *self, float t) {
-	float r = 1.0f - t;
-
-	self->cur[0] = self->from[0] * r + self->to[0] * t;
-	self->cur[1] = self->from[1] * r + self->to[1] * t;
 }
 
 void cActCtrl_TurnHead(void *ctrl, const float *ang, float dt) {
@@ -367,13 +354,6 @@ byte cActCtrl_Play(void *ctrl, const char *action, int arg, float speed) {
 	return cActCtrl_PlayAction(self, cActClass_GetAction(self->cls, action), arg, 1, speed);
 }
 
-byte cActCtrl_PlayActionNew(cActCtrl *self, cAction *action, int arg, float speed) {
-	if (action && self->layers[action->chanel].action != action) {
-		return cActCtrl_PlayAction(self, action, arg, 1, speed);
-	}
-	return 0;
-}
-
 byte cActCtrl_PlayNew(void *ctrl, const char *action, int arg, float speed) {
 	cActCtrl *self = ctrl;
 	cAction *a = cActClass_GetAction(self->cls, action);
@@ -415,7 +395,8 @@ static float Ship_AngZ(cVehicleEntity *v) {
 	return Obj_Vtbl(Veh_Ent(v))->GetViewAng(Veh_Ent(v), &ang)->z;
 }
 
-void cActCtrl_UpdateShip(cActCtrl *self, float dt) {
+/* the update of DinaShip classes: the parts of the ship (Motor, Rudder, Flaps, ...) by its state */
+static void cActCtrl_UpdateShip(cActCtrl *self, float dt) {
 	cVehicleEntity *v = (cVehicleEntity *)self->owner;
 	CGameModel *m = Ctrl_Model(self);
 
@@ -497,7 +478,7 @@ void cActCtrl_StopChan(cActCtrl *self, int i) {
 	l->event = NULL;
 }
 
-byte cActCtrl_VarS(cActCtrl *self, const char *name, char **s, int set) {
+static byte cActCtrl_VarS(cActCtrl *self, const char *name, char **s, int set) {
 	cAction *a;
 
 	if (set) {
@@ -563,12 +544,8 @@ byte cActCtrl_IsActive(void *ctrl, const char *action) {
 	return 0;
 }
 
-byte cActCtrl_IsDefLoop(cActCtrl *self, const char *action) {
-	return self->defLoop && strcmp(action, self->defLoop->name) == 0;
-}
-
 /* the slot VarF of a class that does only return 0 */
-byte cActCtrl_VarFFalse(cActCtrl *self, const char *name, double *d, int set) {
+static byte cActCtrl_VarFFalse(cActCtrl *self, const char *name, double *d, int set) {
 	(void)self;
 	(void)name;
 	(void)d;
@@ -577,7 +554,7 @@ byte cActCtrl_VarFFalse(cActCtrl *self, const char *name, double *d, int set) {
 }
 
 /* the slot VarV of a class that does only return 0 */
-byte cActCtrl_VarVFalse(cActCtrl *self, const char *name, double *x, double *y, double *z, int set) {
+static byte cActCtrl_VarVFalse(cActCtrl *self, const char *name, double *x, double *y, double *z, int set) {
 	(void)self;
 	(void)name;
 	(void)x;
@@ -588,7 +565,7 @@ byte cActCtrl_VarVFalse(cActCtrl *self, const char *name, double *x, double *y, 
 }
 
 /* the vtable of cActCtrl */
-const cActCtrlVarVtbl cActCtrl_vftable = {
+static const cActCtrlVarVtbl cActCtrl_vftable = {
 	.Delete = cActCtrl_Delete,
 	.VarI = cActCtrl_VarI,
 	.VarF = cActCtrl_VarFFalse,
@@ -596,7 +573,7 @@ const cActCtrlVarVtbl cActCtrl_vftable = {
 	.VarV = cActCtrl_VarVFalse,
 };
 
-cGVar GVar_LogActEvents;
+static cGVar GVar_LogActEvents;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_LogActEvents, &GVar_LogActEvents, "LogActEvents", 0, "Drops to the console the log events.", 0)

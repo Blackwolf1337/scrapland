@@ -4,8 +4,11 @@
 #include "scrap/chartype.h"
 #include "scrap/staticinit.h"
 
+#define g_FXSebastianFlashFile (GVar_FXSebastianFlashFile.value.s)
+static cGVar GVar_FXSebastianFlashFile;
+
 /* params: Sebastian, an event, a float: the flash effect for 2 seconds */
-void ChType_FXSebastianFlash(cAbstractFile *params) {
+static void ChType_FXSebastianFlash(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -22,8 +25,8 @@ void ChType_FXSebastianFlash(cAbstractFile *params) {
 	}
 }
 
-cGVar GVar_FXSebastianFlashFile;
-cPy_NativeFunc NativeFunc_FXSebastianFlash;
+static cGVar GVar_FXSebastianFlashFile;
+static cPy_NativeFunc NativeFunc_FXSebastianFlash;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_FXSebastianFlashFile, &GVar_FXSebastianFlashFile)

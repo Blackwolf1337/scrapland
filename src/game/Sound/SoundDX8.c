@@ -14,12 +14,23 @@
 #include "scrap/sound.h"
 #include "scrap/staticinit.h"
 
+#define CSOUNDXBOX_VFTABLE (&CSoundXBox_vftable)
+#define g_SoundMainVolume (GVar_SoundMainVolume.value.f)
+#define g_SoundSwapChannels (GVar_SoundSwapChannels.value.i)
+#define g_S_SkipPlay (GVar_S_SkipPlay.value.i)
+#define g_S_SkipUpdates (GVar_S_SkipUpdates.value.i)
+static cGVar GVar_SoundSwapChannels;
+static cGVar GVar_SoundMainVolume;
+static cGVar GVar_S_SkipUpdates;
+static cGVar GVar_S_SkipPlay;
+static const CSoundSysVtbl CSoundXBox_vftable;
+
 #define SOUND_TABLE_SLOTS 0x1c9
 #define SOUND_VOL_MIN (-6400)	/* at or below nothing plays */
 
 void Sound_Nop(void);
 
-CSoundXBox *CSoundXBox_ctor(CSoundXBox *self) {
+static CSoundXBox *CSoundXBox_ctor(CSoundXBox *self) {
 	CSoundSys_ctor(&self->sys);
 	self->sys.vftable = CSOUNDXBOX_VFTABLE;
 	self->sounds.numSlots = SOUND_TABLE_SLOTS;
@@ -32,13 +43,13 @@ CSoundXBox *CSoundXBox_ctor(CSoundXBox *self) {
 	return self;
 }
 
-void CSoundXBox_dtor(CSoundXBox *self) {
+static void CSoundXBox_dtor(CSoundXBox *self) {
 	self->sys.vftable = CSOUNDXBOX_VFTABLE;
 	SoundStrTable_Clear(&self->sounds);
 	CSoundSys_dtor(&self->sys);
 }
 
-CSoundSys *CSoundXBox_Destroy(CSoundSys *base, byte flags) {
+static CSoundSys *CSoundXBox_Destroy(CSoundSys *base, byte flags) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	CSoundXBox_dtor(self);
 	if (flags & 1) {
@@ -58,7 +69,7 @@ static cSoundStrItem *CSoundXBox_Find(CSoundXBox *self, const char *name) {
 }
 
 /* the table value of name with the parameters of d applied: volumes and pans added, frequencies multiplied */
-byte CSoundXBox_GetPlayDesc(CSoundXBox *self, const char *name, const cSoundDesc *d, cSoundTableValue *out) {
+static byte CSoundXBox_GetPlayDesc(CSoundXBox *self, const char *name, const cSoundDesc *d, cSoundTableValue *out) {
 	cSoundStrItem *it = CSoundXBox_Find(self, name);
 
 	if (!it) {
@@ -78,7 +89,7 @@ byte CSoundXBox_GetPlayDesc(CSoundXBox *self, const char *name, const cSoundDesc
 	return 1;
 }
 
-void CSoundXBox_Init(CSoundSys *base) {
+static void CSoundXBox_Init(CSoundSys *base) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	if (g_SoundInit) {
 		self->swapPan = g_SoundSwapChannels != 0;
@@ -87,16 +98,16 @@ void CSoundXBox_Init(CSoundSys *base) {
 	}
 }
 
-void CSoundXBox_Close(CSoundSys *base) {
+static void CSoundXBox_Close(CSoundSys *base) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	CSoundSys_Close(&self->sys);
 	self->sys.vftable->DeleteAllSounds(&self->sys);
 }
 
-float g_SndFreqScale = 1.0f;
+static float g_SndFreqScale = 1.0f;
 
 /* the volume offset follows SoundMainVolume (at a change everything stops), the pitch the timer */
-void CSoundXBox_Update(CSoundSys *base) {
+static void CSoundXBox_Update(CSoundSys *base) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	CSoundSys_Nop(&self->sys);
 	int mult = 1;
@@ -112,7 +123,7 @@ void CSoundXBox_Update(CSoundSys *base) {
 }
 
 /* name is a file name; loads <name without its extension>.wav once under its sound name */
-void CSoundXBox_Load(CSoundXBox *self, const char *name, int unused) {
+static void CSoundXBox_Load(CSoundXBox *self, const char *name, int unused) {
 	char sndname[SOUND_NAME_MAX_LEN];
 	char path[0x100 + 5];
 	cSoundTableValue v;
@@ -162,19 +173,19 @@ void CSoundXBox_Load(CSoundXBox *self, const char *name, int unused) {
 }
 
 /* vtable slot 0x10, not available here */
-void CSoundXBox_LoadSound2(CSoundSys *base, const char *name) {
+static void CSoundXBox_LoadSound2(CSoundSys *base, const char *name) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	(void)self;
 	(void)name;
 	CheckFailed("0", __FILE__, __TIMESTAMP__, __LINE__);
 }
 
-void CSoundXBox_LoadSound(CSoundSys *base, const char *name) {
+static void CSoundXBox_LoadSound(CSoundSys *base, const char *name) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	CSoundXBox_Load(self, name, 1);
 }
 
-void CSoundXBox_DeleteSound(CSoundSys *base, const char *name) {
+static void CSoundXBox_DeleteSound(CSoundSys *base, const char *name) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	cSoundDesc tmp;
 
@@ -186,7 +197,7 @@ void CSoundXBox_DeleteSound(CSoundSys *base, const char *name) {
 	}
 }
 
-void CSoundXBox_StopAllSounds(CSoundSys *base) {
+static void CSoundXBox_StopAllSounds(CSoundSys *base) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	(void)self;
 	Sound_Nop();
@@ -197,7 +208,7 @@ void CSoundXBox_StopAllSounds(CSoundSys *base) {
 	}
 }
 
-void CSoundXBox_DeleteAllSounds(CSoundSys *base) {
+static void CSoundXBox_DeleteAllSounds(CSoundSys *base) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	HashTable *t = &self->sounds;
 
@@ -219,7 +230,7 @@ void CSoundXBox_DeleteAllSounds(CSoundSys *base) {
 	}
 }
 
-byte CSoundXBox_GetDesc(CSoundSys *base, const char *name, cSoundDesc *out) {
+static byte CSoundXBox_GetDesc(CSoundSys *base, const char *name, cSoundDesc *out) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	cSoundDesc tmp;
 
@@ -234,7 +245,7 @@ byte CSoundXBox_GetDesc(CSoundSys *base, const char *name, cSoundDesc *out) {
 }
 
 /* vtable slot 0x28, not available here */
-byte CSoundXBox_SetDesc(CSoundSys *base, const char *name, const cSoundDesc *d) {
+static byte CSoundXBox_SetDesc(CSoundSys *base, const char *name, const cSoundDesc *d) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	(void)self;
 	(void)name;
@@ -244,7 +255,8 @@ byte CSoundXBox_SetDesc(CSoundSys *base, const char *name, const cSoundDesc *d) 
 }
 
 /* the channel or 0 */
-int CSoundXBox_PlayDesc(CSoundXBox *self, const char *name, const cSoundDesc *d) {
+static int Fmod_Play(void *sample, const cSoundDesc *d, const char *name);
+static int CSoundXBox_PlayDesc(CSoundXBox *self, const char *name, const cSoundDesc *d) {
 	cSoundTableValue v;
 
 	if (self->volume <= SOUND_VOL_MIN || d->volume <= SOUND_VOL_MIN) {
@@ -257,7 +269,7 @@ int CSoundXBox_PlayDesc(CSoundXBox *self, const char *name, const cSoundDesc *d)
 	return Fmod_Play(v.sample, &v.desc, name);
 }
 
-int CSoundXBox_PlayVPF(CSoundXBox *self, const char *name, int volume, int pan, float freq) {
+static int CSoundXBox_PlayVPF(CSoundXBox *self, const char *name, int volume, int pan, float freq) {
 	cSoundTableValue v;
 	cSoundDesc d;
 
@@ -283,7 +295,7 @@ int CSoundXBox_PlayVPF(CSoundXBox *self, const char *name, int volume, int pan, 
 	return Fmod_Play(v.sample, &d, name);
 }
 
-int CSoundXBox_PlaySound(CSoundSys *base, const char *name, const cSoundDesc *d, int *handle) {
+static int CSoundXBox_PlaySound(CSoundSys *base, const char *name, const cSoundDesc *d, int *handle) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	int ch = CSoundXBox_PlayDesc(self, name, d);
 
@@ -293,17 +305,17 @@ int CSoundXBox_PlaySound(CSoundSys *base, const char *name, const cSoundDesc *d,
 	return ch != 0;
 }
 
-int CSoundXBox_PlayName(CSoundSys *base, const char *name) {
+static int CSoundXBox_PlayName(CSoundSys *base, const char *name) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	return CSoundXBox_PlayVPF(self, name, 0, 0, 1.0f);
 }
 
-int CSoundXBox_Play(CSoundSys *base, const char *name, int volume, int pan) {
+static int CSoundXBox_Play(CSoundSys *base, const char *name, int volume, int pan) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	return CSoundXBox_PlayVPF(self, name, volume, pan, 1.0f);
 }
 
-int CSoundXBox_PlayAt(CSoundSys *base, const char *name, const vec3_t *pos, int volume) {
+static int CSoundXBox_PlayAt(CSoundSys *base, const char *name, const vec3_t *pos, int volume) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	cSoundDesc d;
 
@@ -313,7 +325,8 @@ int CSoundXBox_PlayAt(CSoundSys *base, const char *name, const vec3_t *pos, int 
 	return CSoundXBox_PlayVPF(self, name, d.volume, d.pan, 1.0f);
 }
 
-byte CSoundXBox_UpdateSound(CSoundSys *base, const char *name, const cSoundDesc *d, int handle) {
+static byte Fmod_SetChannel(int channel, const cSoundDesc *d);
+static byte CSoundXBox_UpdateSound(CSoundSys *base, const char *name, const cSoundDesc *d, int handle) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	cSoundTableValue v;
 
@@ -327,7 +340,7 @@ byte CSoundXBox_UpdateSound(CSoundSys *base, const char *name, const cSoundDesc 
 	return Fmod_SetChannel(handle, &v.desc);
 }
 
-int CSoundXBox_StopSound(CSoundSys *base, int handle) {
+static int CSoundXBox_StopSound(CSoundSys *base, int handle) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	(void)self;
 	return Snd_Stop(handle);
@@ -352,7 +365,8 @@ const char *Fmod_ErrorString(int err) {
 	return texts[err];
 }
 
-byte Fmod_SetChannel(int channel, const cSoundDesc *d) {
+/* volume, pan and frequency of a playing channel; 0 when it does not play */
+static byte Fmod_SetChannel(int channel, const cSoundDesc *d) {
 	g_SoundAutoplayVolume = -48.0f;
 	if (!Snd_IsPlaying(channel)) {
 		return 0;
@@ -384,7 +398,8 @@ byte Fmod_SetChannel(int channel, const cSoundDesc *d) {
 	return 1;
 }
 
-int Fmod_Play(void *sample, const cSoundDesc *d, const char *name) {
+/* plays a sample with the parameters, the channel or 0 */
+static int Fmod_Play(void *sample, const cSoundDesc *d, const char *name) {
 	(void)name;
 	if (!sample || g_S_SkipPlay) {
 		return 0;
@@ -405,7 +420,7 @@ cGVar GVar_S_Show;
 
 /* vf31 (DebugDraw): S_Show 3 the memory of the samples, 1 the channels with their state and the volume, pan and
  * frequency of each in two columns (the original also listed FMOD's hardware channels) */
-void CSoundXBox_DebugDraw(CSoundSys *base, int xi, int yi) {
+static void CSoundXBox_DebugDraw(CSoundSys *base, int xi, int yi) {
 	CSoundXBox *self = (CSoundXBox *)base;
 	uint32_t cur, max;
 
@@ -454,7 +469,7 @@ void CSoundXBox_DebugDraw(CSoundSys *base, int xi, int yi) {
 }
 
 /* the vtable of CSoundXBox */
-const CSoundSysVtbl CSoundXBox_vftable = {
+static const CSoundSysVtbl CSoundXBox_vftable = {
 	.Destroy = CSoundXBox_Destroy,
 	.Init = CSoundXBox_Init,
 	.Close = CSoundXBox_Close,
@@ -498,11 +513,11 @@ const CSoundSysVtbl CSoundXBox_vftable = {
 	.VoiceUnused = CSoundSys_VoiceUnused,
 };
 
-cGVar GVar_SoundMainVolume;
-cGVar GVar_S_SkipUpdates;
-cGVar GVar_SoundSwapChannels;
+static cGVar GVar_SoundMainVolume;
+static cGVar GVar_S_SkipUpdates;
+static cGVar GVar_SoundSwapChannels;
 cGVar GVar_S_PitchScale;
-cGVar GVar_S_SkipPlay;
+static cGVar GVar_S_SkipPlay;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_SoundMainVolume, &GVar_SoundMainVolume, "SoundMainVolume", 10, "Sound main volume (0..1)\n", 1.0f)

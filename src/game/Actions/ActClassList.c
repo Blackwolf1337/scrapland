@@ -5,15 +5,19 @@
 #include "scrap/console.h"
 #include "scrap/hashtable.h"
 
+#define CACTCLASSLIST_VFTABLE (&cActClassList_vftable)
+static const cActClassListVtbl cActClassList_vftable;
+
 #define ACTCLASSLIST_SLOTS 457
 
-cActClassList *cActClassList_ctor(cActClassList *self) {
+/* Actions/ActClassList.cpp (src/game/Actions/ActClassList.c) */
+static cActClassList *cActClassList_ctor(cActClassList *self) {
 	self->vftable = CACTCLASSLIST_VFTABLE;
 	HashTable_ctor(&self->classes, ACTCLASSLIST_SLOTS, 1);
 	return self;
 }
 
-void cActClassList_dtor(cActClassList *self) {
+static void cActClassList_dtor(cActClassList *self) {
 	HashTable *t = &self->classes;
 
 	self->vftable = CACTCLASSLIST_VFTABLE;
@@ -40,7 +44,7 @@ done:
 	PtrTable_Clear(t);
 }
 
-cActClassList *cActClassList_Delete(cActClassList *self, byte flags) {
+static cActClassList *cActClassList_Delete(cActClassList *self, byte flags) {
 	cActClassList_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -113,6 +117,6 @@ void ActClassList_Init(void) {
 }
 
 /* the vtable of cActClassList */
-const cActClassListVtbl cActClassList_vftable = {
+static const cActClassListVtbl cActClassList_vftable = {
 	.Delete = cActClassList_Delete,
 };

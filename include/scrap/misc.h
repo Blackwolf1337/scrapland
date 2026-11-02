@@ -26,24 +26,13 @@ enum {
 	LOG_ORANGE = 0x80,		/* from log level 3 */
 };
 
-extern uint32_t g_LogFileMask;
-extern uint32_t g_LogConMask;
-extern cGVar GVar_EngineDebugLevel;
-#define g_LogLevel (GVar_EngineDebugLevel.value.i)	/* 10: the console mask goes back to 0x91 */
 #define LOG_LEVEL_RESET 10
 #define LOG_CON_DEFAULT 0x91
 /* the log of the engine ("FILE OPEN: ...") */
 extern cLog g_FileLog;
-/* the debug console: on, as a dialog window, as a text console */
-extern int g_DbgCon;
 extern int g_DbgConWindow;
 extern int g_DbgConStd;
-/* the handler of the lines typed into the debug dialog (E3D_Command), cdecl void(char *line) */
-extern void *g_E3DCmdProc;
 
-void cLog_Open(cLog *self);
-/* text to the console printers of the bits in mask and to the file */
-void cLog_Write(cLog *self, uint32_t mask, const char *text);
 void E3D_LogPrint(cLog *log, const char *fmt, ...);
 void E3D_LogDebug(cLog *log, const char *fmt, ...);
 void E3D_LogDebug2(cLog *log, const char *fmt, ...);
@@ -56,10 +45,6 @@ void E3D_Log(cLog *log, const char *fmt, ...);	/* orange */
 void E3D_DebugPrintf(const char *fmt, ...);
 /* the debug output on with the ini settings ConsolaWnd or ConsolaTxt */
 void DbgCon_Init(void);
-void cLog_dtor(cLog *self);
-
-/* where the relative paths start: the game directory with a "\\" at the end */
-extern char g_E3DDir[264];
 
 /* a file of the packs or below the game directory */
 byte File_Exists(const char *name);
@@ -77,13 +62,8 @@ int Wild_MatchLower(const char *pat, const char *name);
 char *Path_Copy(char *dest, const char *src, int size);
 /* the path relative to the game directory without "." and "..", "\" as separator (size -1: MAX_FILEPATH) */
 void Path_Normalize(char *dest, const char *path, int size);
-/* what is between quotes at the start of src (after blanks), else all of src; NULL for nothing */
-char *String_Unquote(char *dest, const char *src);
 /* 1 / sqrt(x) from a table: the estimate and two Newton steps */
 float RSqrt_Estimate(float x);
-float RSqrt(float x);
-/* the table of RSqrt_Estimate made */
-void RSqrt_InitTable(void);
 /* the path of the exe (GetModuleFileName) */
 char *E3D_GetExePath(void);
 

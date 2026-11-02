@@ -11,8 +11,21 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
+#define CNURSELOCALLOGIC_VFTABLE (&cNurseLocalLogic_vftable)
+#define g_NurseBankerDetect (GVar_NurseBankerDetect.value.f)
+#define g_NursePoliceRefuse (GVar_NursePoliceRefuse.value.f)
+#define g_NurseEscapeTime (GVar_NurseEscapeTime.value.f)
+#define g_NurseRelaxSpeed (GVar_NurseRelaxSpeed.value.f)
+#define g_NurseAlertSpeed (GVar_NurseAlertSpeed.value.f)
+static const cBaseLocalLogicVtbl cNurseLocalLogic_vftable;
+static cGVar GVar_NurseRelaxSpeed;
+static cGVar GVar_NursePoliceRefuse;
+static cGVar GVar_NurseEscapeTime;
+static cGVar GVar_NurseBankerDetect;
+static cGVar GVar_NurseAlertSpeed;
+
 /* defined further down or in another file without a header */
-void *Nurses_MakeLogic(cEntity *e);
+static void *Nurses_MakeLogic(cEntity *e);
 
 #define NURSES_MAKELOGIC 0x154440
 #define NURSE_VT(self) ((self)->base.vftable)
@@ -27,7 +40,7 @@ void cNurses_Init(cNurses *self) {
 	self->list->func = (int (*)(void))(void *)Nurses_MakeLogic;
 }
 
-void cNurses_Think(cNurses *self) {
+static void cNurses_Think(cNurses *self) {
 	vec3_t t, t2;
 	Nto1Node *n = Logic_ListFirst(self->list);
 
@@ -71,13 +84,15 @@ void cNurses_Update(cNurses *self, float dt) {
 }
 
 /* the maker of the logics of the list */
-void *Nurses_MakeLogic(cEntity *e) {
+static void *cNurseLocalLogic_ctor(void *mem, cEntity *parent);
+static void *Nurses_MakeLogic(cEntity *e) {
 	void *m = operator_new(sizeof(cNurseLocalLogic));
 
 	return m ? cNurseLocalLogic_ctor(m, e) : NULL;
 }
 
-void *cNurseLocalLogic_ctor(void *mem, cEntity *parent) {
+static byte cNurseLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target);
+static void *cNurseLocalLogic_ctor(void *mem, cEntity *parent) {
 	cNurseLocalLogic *self = mem;
 
 	cBaseLocalLogic_ctor(&self->base, parent);
@@ -87,7 +102,7 @@ void *cNurseLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-cLocalLogic *cNurseLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static cLocalLogic *cNurseLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	NURSE_VT(self) = CNURSELOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
@@ -98,7 +113,7 @@ cLocalLogic *cNurseLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 }
 
 /* back to the relax, the alert with the alarm */
-byte cNurseLocalLogic_Relax(cNurseLocalLogic *self) {
+static byte cNurseLocalLogic_Relax(cNurseLocalLogic *self) {
 	if (g_pWorld->alarm.on) {
 		return NURSE_VT(self)->SetState(&self->base.logic, 1, NULL);
 	}
@@ -106,7 +121,7 @@ byte cNurseLocalLogic_Relax(cNurseLocalLogic *self) {
 }
 
 /* vf17 */
-void cNurseLocalLogic_Update(cLocalLogic *elem, float dt) {
+static void cNurseLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
 	cEntity *p = b->parent;
@@ -161,7 +176,7 @@ void cNurseLocalLogic_Update(cLocalLogic *elem, float dt) {
 }
 
 /* vf12: a robbery seen (NurseBankerDetect plus the amount): the escape */
-void cNurseLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
+static void cNurseLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	if (amount > 0.0f && self->base.state != 3 && Logic_Chance(&self->base, e, g_NurseBankerDetect + amount)) {
 		NURSE_VT(self)->SetState(&self->base.logic, 2, e);
@@ -173,7 +188,7 @@ static inline byte Nurse_Rand101(void) {
 }
 
 /* vf10: the escape from the attacker */
-void cNurseLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
+static void cNurseLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	if (!self->base.busy && Nurse_Rand101() && self->base.state != 3) {
 		NURSE_VT(self)->SetState(&self->base.logic, 2, attacker);
@@ -181,7 +196,7 @@ void cNurseLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 }
 
 /* vf11: the escape from the player */
-void cNurseLocalLogic_OnSeen(cLocalLogic *elem, cEntity *e) {
+static void cNurseLocalLogic_OnSeen(cLocalLogic *elem, cEntity *e) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	if (!self->base.busy && Nurse_Rand101() && e == ChType_Usr0() && self->base.state != 3) {
 		NURSE_VT(self)->SetState(&self->base.logic, 2, e);
@@ -189,7 +204,7 @@ void cNurseLocalLogic_OnSeen(cLocalLogic *elem, cEntity *e) {
 }
 
 /* vf15: 1 if it refuses the police (NursePoliceRefuse in percent), else the escape from it */
-byte cNurseLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *police) {
+static byte cNurseLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *police) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	float refuse = g_NursePoliceRefuse;
 
@@ -201,7 +216,7 @@ byte cNurseLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *police) {
 }
 
 /* vf24 */
-void cNurseLocalLogic_RestartState(cLocalLogic *base) {
+static void cNurseLocalLogic_RestartState(cLocalLogic *base) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)base;
 	NURSE_VT(self)->SetState(&self->base.logic, 0, NULL);
 }
@@ -210,7 +225,7 @@ void cNurseLocalLogic_RestartState(cLocalLogic *base) {
 
 /* vf19: the AI of the state: the walk around the origin (relaxed or in alert), the escape from target (2) or the
  * walk to the dazed character (3); always 1 */
-byte cNurseLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
+static byte cNurseLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
 	byte ok = (byte)cBaseLocalLogic_SetState(&b->logic, state, target);
@@ -247,7 +262,7 @@ byte cNurseLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 }
 
 /* the vtable of cNurseLocalLogic */
-const cBaseLocalLogicVtbl cNurseLocalLogic_vftable = {
+static const cBaseLocalLogicVtbl cNurseLocalLogic_vftable = {
 	.base.Delete = cNurseLocalLogic_Delete,
 	.base.GetName = cBaseLocalLogic_GetName,
 	.base.Vf02 = cLocalLogic_Vf02True,
@@ -275,11 +290,11 @@ const cBaseLocalLogicVtbl cNurseLocalLogic_vftable = {
 	.RestartState = cNurseLocalLogic_RestartState,
 };
 
-cGVar GVar_NurseBankerDetect;
-cGVar GVar_NursePoliceRefuse;
-cGVar GVar_NurseEscapeTime;
-cGVar GVar_NurseAlertSpeed;
-cGVar GVar_NurseRelaxSpeed;
+static cGVar GVar_NurseBankerDetect;
+static cGVar GVar_NursePoliceRefuse;
+static cGVar GVar_NurseEscapeTime;
+static cGVar GVar_NurseAlertSpeed;
+static cGVar GVar_NurseRelaxSpeed;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_NurseRelaxSpeed, &GVar_NurseRelaxSpeed, "NurseRelaxSpeed", 0, "Nurse speed (Relax)", 0.3f)

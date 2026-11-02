@@ -51,7 +51,7 @@ static void GenCharGroup_UpdateList(cEntityListData *list) {
 	}
 }
 
-void cGenCharGroup_Think(cGenCharGroup *self) {
+static void cGenCharGroup_Think(cGenCharGroup *self) {
 	self->level = -1;
 	GenCharGroup_UpdateList(self->genChars);
 	GenCharGroup_UpdateList(self->police);

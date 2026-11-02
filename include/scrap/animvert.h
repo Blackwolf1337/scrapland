@@ -21,28 +21,11 @@ typedef struct CEVA {
 	CAnimVert *AnimV;		/* 0x4 new[] of nV */
 } CEVA;
 
-CAnimVert *CAnimVert_ctor(CAnimVert *self);
 CEVA *CEVA_ctor(CEVA *self);
-void CAnimVert_dtor(CAnimVert *self);
-/* the scalar and vector deleting destructor: flags 1 delete, 2 an array */
-void *CAnimVert_Delete(CAnimVert *self, uint32_t flags);
-void CAnimVert_FreeTr(CAnimVert *self);
-void CAnimVert_FreeTr2(CAnimVert *self);
 void CAnimVert_AllocTr(CAnimVert *self, int frames);
-void CAnimVert_AllocTr2(CAnimVert *self);
 vec3_t *CAnimVert_Frame(CAnimVert *self, uint32_t frame);
-/* the position between frame and the next one: replaced from Tr, added from Tr2 */
-void CAnimVert_GetPos(CAnimVert *self, uint32_t frame, float subframe, vec3_t *pos);
 /* compressed: the position between two frames added to pos */
 void CAnimVert_AddPos(CAnimVert *self, uint32_t frame1, uint32_t frame2, float t, float *pos);
-void CAnimVert_Scale(CAnimVert *self, float x, float y, float z);
-/* Tr to Tr2 */
-void CAnimVert_Compress(CAnimVert *self);
-/* no animation if all frames are like the first one, else compressed */
-void CAnimVert_Optimize(CAnimVert *self);
-/* compressed from the file into *pAV (a flag first) */
-void AnimVert_Read(CFileIO *f, CAnimVert **pAV);
-void AnimVert_Write(CFileIO *f, CAnimVert *av);
 
 void CEVA_Free(CEVA *self);
 void CEVA_Alloc(CEVA *self, int verts);

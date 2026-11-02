@@ -17,13 +17,17 @@
 #include "scrap/nodesworld.h"
 #include "scrap/scrap.h"
 
+#define CAICHARGROUP_VFTABLE (&cAICharGroup_vftable)
+static const cAIEntityGroupVtbl cAICharGroup_vftable;
+
 #define AICG_PI2 1.5707963267948966	/* pi / 2 */
 #define AICG_POINT_CTOR 0x080770
 #define AICG_POINT_DTOR 0x080850
 
 /* ---- the points and the Nto1Links.h copies ---- */
 
-cAICGPoint *cAICGPoint_ctor(cAICGPoint *self) {
+/* the constructor and GetReposPos (SAI.GetReposPos) are declared in ai.h */
+static cAICGPoint *cAICGPoint_ctor(cAICGPoint *self) {
 	self->link.target = NULL;
 	self->link.data = NULL;
 	self->link.next = &self->link;
@@ -31,40 +35,17 @@ cAICGPoint *cAICGPoint_ctor(cAICGPoint *self) {
 	return self;
 }
 
-void cAICGPoint_dtor(cAICGPoint *self) {
+static void cAICGPoint_dtor(cAICGPoint *self) {
 	Nto1Node_Done(&self->link);
-}
-
-void *cAICGPoint_Delete(cAICGPoint *self, uint32_t flags) {
-	if (flags & 2) {
-		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(cAICGPoint), *mem, (void *)cAICGPoint_dtor);
-		if (flags & 1) {
-			operator_delete_array(mem);
-		}
-		return mem;
-	}
-	Nto1Node_Done(&self->link);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(cAICGPoint));
-	}
-	return self;
-}
-
-void Nto1Node_UnlinkOpt(Nto1Node *node) {
-	if (node) {
-		CHECK(node->data);
-		Nto1Node_Unlink(node);
-	}
 }
 
 /* ---- the lists of the dummies ---- */
 
-void cAICGPosList_Clear(cAICGPosList *list) {
+static void cAICGPosList_Clear(cAICGPosList *list) {
 	DList_Clear(list, sizeof(cAICGPosNode));
 }
 
-void cAICGZoneData_dtor(cAICGZoneData *zone) {
+static void cAICGZoneData_dtor(cAICGZoneData *zone) {
 	cAICGPosList_Clear(&zone->points);
 	DList_FreePool(&zone->points, sizeof(cAICGPosNode));
 }
@@ -85,7 +66,8 @@ static void ZoneList_Release(cAICGZoneList *list, cAICGZoneNode *node) {
 	}
 }
 
-void cAICGZoneList_Clear(cAICGZoneList *list) {
+/* the lists of the dummies: emptied (the free nodes kept), the free nodes deleted, both (the destructors) */
+static void cAICGZoneList_Clear(cAICGZoneList *list) {
 	while (list->head) {
 		cAICGZoneNode *p = list->head;
 		list->iter = NULL;
@@ -102,7 +84,7 @@ void cAICGZoneList_Clear(cAICGZoneList *list) {
 	}
 }
 
-void cAICGZoneList_FreePool(cAICGZoneList *list) {
+static void cAICGZoneList_FreePool(cAICGZoneList *list) {
 	cAICGZoneNode *node;
 
 	while ((node = list->freeNodes) != NULL) {
@@ -112,13 +94,9 @@ void cAICGZoneList_FreePool(cAICGZoneList *list) {
 	list->numFree = 0;
 }
 
-void cAICGZoneList_dtor(cAICGZoneList *list) {
-	cAICGZoneList_Clear(list);
-	cAICGZoneList_FreePool(list);
-}
-
 /* ---- the group ---- */
 
+static void cAICharGroup_Init(cAICharGroup *self);
 cAICharGroup *cAICharGroup_ctor(void *mem) {
 	cAICharGroup *self = mem;
 
@@ -130,7 +108,7 @@ cAICharGroup *cAICharGroup_ctor(void *mem) {
 	return self;
 }
 
-void cAICharGroup_dtor(cAICharGroup *self) {
+static void cAICharGroup_dtor(cAICharGroup *self) {
 	self->vftable = CAICHARGROUP_VFTABLE;
 	for (int i = 0; i < self->numZones; i++) {
 		cAICGPoint *p = self->zones[i].points;
@@ -145,21 +123,13 @@ void cAICharGroup_dtor(cAICharGroup *self) {
 	cAIEntityGroup_dtor(&self->base);
 }
 
-cAIEntityGroup *cAICharGroup_Delete(cAIEntityGroup *base, byte flags) {
+static cAIEntityGroup *cAICharGroup_Delete(cAIEntityGroup *base, byte flags) {
 	cAICharGroup *self = (cAICharGroup *)base;
 	cAICharGroup_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CAICHARGROUP_SIZE);
 	}
 	return base;
-}
-
-cAICGZone *cAICharGroup_GetZones(cAICharGroup *self) {
-	return self->zones;
-}
-
-int cAICharGroup_NumZones(cAICharGroup *self) {
-	return self->numZones;
 }
 
 static void AICG_NoMemory(void) {
@@ -210,7 +180,8 @@ static cAICGZoneData *ZoneList_Add(cAICGZoneList *list, const char *name) {
 	return &node->zone;
 }
 
-void cAICharGroup_Init(cAICharGroup *self) {
+/* the zones and their points from the dummies of the level */
+static void cAICharGroup_Init(cAICharGroup *self) {
 	cAICGZoneList list;
 	char dummy[0x64];
 	char name[100];
@@ -434,7 +405,7 @@ byte cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity *e, float m
 }
 
 /* the vtable of cAICharGroup */
-const cAIEntityGroupVtbl cAICharGroup_vftable = {
+static const cAIEntityGroupVtbl cAICharGroup_vftable = {
 	.Delete = cAICharGroup_Delete,
 	.Clear = cAIEntityGroup_Clear,
 	.Add = cAIEntityGroup_Add,

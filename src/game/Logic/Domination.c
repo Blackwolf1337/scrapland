@@ -13,6 +13,25 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/staticinit.h"
 
+#define g_DominFightingFreezeCadenceShoot (GVar_DominFightingFreezeCadenceShoot.value.i)
+#define g_DominFightingFreezeControlAim (GVar_DominFightingFreezeControlAim.value.i)
+#define g_DominMaxRangeDist (GVar_DominMaxRangeDist.value.f)
+#define g_DominMinRangeDist (GVar_DominMinRangeDist.value.f)
+#define g_DominWithinRangeDist (GVar_DominWithinRangeDist.value.f)
+#define g_MaxDominDistChase (GVar_MaxDominDistChase.value.f)
+#define g_MinDominDistChase (GVar_MinDominDistChase.value.f)
+#define CDOMINATIONLOGIC_VFTABLE (&cDominationLogic_vftable)
+#define CDOMINATIONENEMIESLOGIC_VFTABLE (&cDominationEnemiesLogic_vftable)
+static const cDominationLogicVtbl cDominationLogic_vftable;
+static const cDominationLogicVtbl cDominationEnemiesLogic_vftable;
+static cGVar GVar_MinDominDistChase;
+static cGVar GVar_MaxDominDistChase;
+static cGVar GVar_DominWithinRangeDist;
+static cGVar GVar_DominMinRangeDist;
+static cGVar GVar_DominMaxRangeDist;
+static cGVar GVar_DominFightingFreezeControlAim;
+static cGVar GVar_DominFightingFreezeCadenceShoot;
+
 int g_DominNumZones;
 DominZone g_DominZones[4];
 
@@ -39,7 +58,7 @@ void Domination_SetZoneState(int zone, int state) {
 }
 
 /* the zone the ship of ai is on its way to; one its side does not go for any more is taken away (the AI to 0) */
-cEntity *cDominationLogic_GetZone(cDominationLogic *self, cAIVehicle *ai) {
+static cEntity *cDominationLogic_GetZone(cDominationLogic *self, cAIVehicle *ai) {
 	const char *key = ((cEntity *)cAIVehicle_GetVehicle(ai))->name;
 	int going = self->vftable->GetTeam(self) != 1 ? 4 : 3;
 	cNameItem *it = NameTable_Find(&self->assigned, key, HashTable_Slot(&self->assigned, key));
@@ -66,7 +85,7 @@ static float Domin_Dist2(const vec3_t *a, const vec3_t *b) {
 }
 
 /* the nearest ship of the other side within maxDist of pos, other too */
-cEntity *cDominationLogic_FindEnemy(cDominationLogic *self, const vec3_t *pos, cEntity *other,
+static cEntity *cDominationLogic_FindEnemy(cDominationLogic *self, const vec3_t *pos, cEntity *other,
 	float maxDist) {
 	vec3_t tmp;
 	float max2 = maxDist * maxDist;
@@ -252,7 +271,7 @@ void cDominationLogic_dtor(cDominationLogic *self) {
 	NameTable_Clear(&self->assigned);
 }
 
-cDominationLogic *cDominationEnemiesLogic_Delete(cDominationLogic *base, byte flags) {
+static cDominationLogic *cDominationEnemiesLogic_Delete(cDominationLogic *base, byte flags) {
 	cDominationEnemiesLogic *self = (cDominationEnemiesLogic *)base;
 	cDominationEnemiesLogic_dtor(self);
 	if (flags & 1) {
@@ -261,7 +280,7 @@ cDominationLogic *cDominationEnemiesLogic_Delete(cDominationLogic *base, byte fl
 	return base;
 }
 
-cDominationLogic *cDominationLogic_Delete(cDominationLogic *self, byte flags) {
+static cDominationLogic *cDominationLogic_Delete(cDominationLogic *self, byte flags) {
 	cDominationLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, 0x10);
@@ -297,7 +316,7 @@ int cDominationLogic_NearestZone(cDominationLogic *self, const vec3_t *pos) {
 }
 
 /* the slot GetTeam of a class that does only return 0 */
-int cDominationLogic_GetTeamFalse(cDominationLogic *self) {
+static int cDominationLogic_GetTeamFalse(cDominationLogic *self) {
 	(void)self;
 	return 0;
 }
@@ -309,7 +328,7 @@ int cDominationLogic_GetTeamTrue(cDominationLogic *self) {
 }
 
 /* the vtable of cDominationLogic */
-const cDominationLogicVtbl cDominationLogic_vftable = {
+static const cDominationLogicVtbl cDominationLogic_vftable = {
 	.Delete = cDominationLogic_Delete,
 	.Init = (void *)crt_purecall,
 	.Update = (void *)crt_purecall,
@@ -318,7 +337,7 @@ const cDominationLogicVtbl cDominationLogic_vftable = {
 };
 
 /* the vtable of cDominationEnemiesLogic */
-const cDominationLogicVtbl cDominationEnemiesLogic_vftable = {
+static const cDominationLogicVtbl cDominationEnemiesLogic_vftable = {
 	.Delete = cDominationEnemiesLogic_Delete,
 	.Init = cDominationEnemiesLogic_Init,
 	.Update = cDominationEnemiesLogic_Update,
@@ -326,13 +345,13 @@ const cDominationLogicVtbl cDominationEnemiesLogic_vftable = {
 	.GetTeam = cDominationLogic_GetTeamFalse,
 };
 
-cGVar GVar_MaxDominDistChase;
-cGVar GVar_DominMaxRangeDist;
-cGVar GVar_MinDominDistChase;
-cGVar GVar_DominFightingFreezeControlAim;
-cGVar GVar_DominWithinRangeDist;
-cGVar GVar_DominFightingFreezeCadenceShoot;
-cGVar GVar_DominMinRangeDist;
+static cGVar GVar_MaxDominDistChase;
+static cGVar GVar_DominMaxRangeDist;
+static cGVar GVar_MinDominDistChase;
+static cGVar GVar_DominFightingFreezeControlAim;
+static cGVar GVar_DominWithinRangeDist;
+static cGVar GVar_DominFightingFreezeCadenceShoot;
+static cGVar GVar_DominMinRangeDist;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_MinDominDistChase, &GVar_MinDominDistChase, "MinDominDistChase", 4, "Min distance to zone objective in Domination mode.\n", 1500.0f)

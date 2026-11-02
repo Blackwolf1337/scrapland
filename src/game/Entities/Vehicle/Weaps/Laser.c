@@ -7,6 +7,47 @@
 #include "scrap/weaps2.h"
 #include "scrap/staticinit.h"
 
+#define g_LaserAmmoCost (GVar_LaserAmmoCost.value.f)
+#define g_LaserShootFile (GVar_LaserShootFile.value.s)
+#define g_LaserHitForce (GVar_LaserHitForce.value.f)
+#define g_LaserHitFile (GVar_LaserHitFile.value.s)
+#define g_HookEMITime (GVar_HookEMITime.value.f)
+#define g_LaserTimeDelay (GVar_LaserTimeDelay.value.f)
+#define g_LaserRicSoundVol (GVar_LaserRicSoundVol.value.f)
+#define g_LaserHookFile (GVar_LaserHookFile.value.s)
+#define g_LaserDamage (GVar_LaserDamage.value.i)
+#define g_HookAccel (GVar_HookAccel.value.f)
+#define g_LaserMinSpeed (GVar_LaserMinSpeed.value.f)
+#define g_LaserRicSound (GVar_LaserRicSound.value.s)
+#define g_SonicRechargeTime (GVar_SonicRechargeTime.value.f)
+#define g_SonicArmor (GVar_SonicArmor.value.i)
+#define g_FXSonicXpldeFile (GVar_FXSonicXpldeFile.value.s)
+#define g_SonicLifeTime (GVar_SonicLifeTime.value.f)
+#define g_SonicIDAmmo (GVar_SonicIDAmmo.value.i)
+#define g_SonicAmmoNeed (GVar_SonicAmmoNeed.value.i)
+#define g_CreateSonicFunc (((cPy_Function *)&GVar_CreateSonicFunc.func))
+#define g_SetUpSonicFunc (((cPy_Function *)&GVar_SetUpSonicFunc.func))
+static cGVar GVar_SonicRechargeTime;
+static cGVar GVar_SonicLifeTime;
+static cGVar GVar_SonicIDAmmo;
+static cGVar GVar_SonicArmor;
+static cGVar GVar_SonicAmmoNeed;
+static cGVarFunction GVar_SetUpSonicFunc;
+static cGVar GVar_LaserTimeDelay;
+static cGVar GVar_LaserShootFile;
+static cGVar GVar_LaserRicSoundVol;
+static cGVar GVar_LaserRicSound;
+static cGVar GVar_LaserMinSpeed;
+static cGVar GVar_LaserHookFile;
+static cGVar GVar_LaserHitForce;
+static cGVar GVar_LaserHitFile;
+static cGVar GVar_LaserDamage;
+static cGVar GVar_LaserAmmoCost;
+static cGVar GVar_HookEMITime;
+static cGVar GVar_HookAccel;
+static cGVar GVar_FXSonicXpldeFile;
+static cGVarFunction GVar_CreateSonicFunc;
+
 #define SND_HOOK 0x18		/* the sounds of the ship (cSndInterface at +0x144) */
 #define SND_HOOK_START 0x17
 #define SND_LASER_LOW 0x16
@@ -17,7 +58,7 @@ static inline const char *Laser_LockName(cTargetLock *lock) {
 }
 
 /* not on clients: the Hook locks on the entity with life it aims at, else on the point (none out of range) */
-void Hook_Aim(cEntity *v) {
+static void Hook_Aim(cEntity *v) {
 	vec3_t ang, out;
 	cEntity *target;
 	float dist;
@@ -45,13 +86,13 @@ void Hook_Aim(cEntity *v) {
 	cWeaponManager_LockPoint(&Veh(v)->weapons, &out);
 }
 
-void Hook_Unlock(cEntity *v) {
+static void Hook_Unlock(cEntity *v) {
 	if (!(g_pApp->flags & APPF_CLIENT)) {
 		cWeaponManager_LockPoint(&Veh(v)->weapons, NULL);
 	}
 }
 
-void Hook_AimNative(cAbstractFile *f) {
+static void Hook_AimNative(cAbstractFile *f) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(f, name, 0x80);
@@ -69,7 +110,7 @@ static void Hook_Silence(cEntity *v) {
 	}
 }
 
-void Hook_OffNative(cAbstractFile *f) {
+static void Hook_OffNative(cAbstractFile *f) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(f, name, 0x80);
@@ -118,6 +159,7 @@ static void Hook_ScaleVel(cEntity *e, float k) {
  * whether the pull is computed here for the entity: not for the ship of a network player that this machine does
  * not drive (a client computes no remote pulls)
  */
+static byte Vehicle_IsLocalPlayer(cEntity *v);
 static byte Hook_Pulls(cEntity *e, byte isClient) {
 	int idx = Net_GetPlayerIndex(e->name);
 	byte car = Entity_IsType(e, TYEN_VEHICLE);
@@ -134,7 +176,9 @@ static byte Hook_Pulls(cEntity *e, byte isClient) {
  * ship name, every frame while the Hook fires: the ammo, the lock (on an entity with life or a point), the pull of
  * the ship towards it and of the entity towards the ship by their masses, each kept under its speed
  */
-void Hook_UpdateNative(cAbstractFile *f) {
+static void Hook_StartSound(cEntity *v);
+static void Hook_StopSound(cEntity *v);
+static void Hook_UpdateNative(cAbstractFile *f) {
 	char name[0x80];
 	vec3_t tmp, hp;
 
@@ -273,7 +317,7 @@ void Hook_UpdateNative(cAbstractFile *f) {
 }
 
 /* ship name, 1 for the start: the sound, then the Hook effect at every mounted laser bay */
-void Hook_StartNative(cAbstractFile *f) {
+static void Hook_StartNative(cAbstractFile *f) {
 	char name[0x80];
 	int start;
 
@@ -315,7 +359,7 @@ void Hook_StartNative(cAbstractFile *f) {
 }
 
 /* a laser shot: whether there was ammo for it; the delay and (with ammo for two more) the sound */
-byte Laser_Shoot(cEntity *v) {
+static byte Laser_Shoot(cEntity *v) {
 	byte had = cTargetLock_GetAmmo(&Veh(v)->weapons, g_LaserIDAmmo) > g_LaserAmmoCost;
 	if (cTargetLock_GetAmmo(&Veh(v)->weapons, g_LaserIDAmmo) > 0.0f) {
 		cWeaponManager_DelayFire(&Veh(v)->weapons, g_LaserTimeDelay);
@@ -326,12 +370,12 @@ byte Laser_Shoot(cEntity *v) {
 	return had;
 }
 
-
 /*
  * ship name, hit point x y z, target name: the shot effect from every mounted laser bay to the point, then (when it
  * is seen) the hit particles at the point (on the surface of the target), the hit sound and the push
  */
-void Laser_CreateNative(cAbstractFile *f) {
+static void Laser_Push(cEntity *v, cEntity *e, int n);
+static void Laser_CreateNative(cAbstractFile *f) {
 	char name[0x80], targetName[0x80];
 	vec3_t hit, s, rel, rot, n, tmp, cam, ang;
 	matrix_t mtx;
@@ -528,7 +572,7 @@ void Laser_CreateNative(cAbstractFile *f) {
 }
 
 /* ship name, player, item name: the HUD item of the laser fades with the ammo, blinks when it is low */
-void Laser_HudNative(cAbstractFile *f) {
+static void Laser_HudNative(cAbstractFile *f) {
 	char name[0x80], itemName[0x80];
 	int player;
 
@@ -573,7 +617,7 @@ static void Laser_AimOn(cEntity *v) {
 }
 
 /* ship name: the shot (not on clients) hurts what it aims at, one LaserDamage per mounted bay */
-void Laser_FireNative(cAbstractFile *f) {
+static void Laser_FireNative(cAbstractFile *f) {
 	char name[0x80];
 	vec3_t ang, out;
 	cEntity *target;
@@ -621,30 +665,30 @@ void Laser_FireNative(cAbstractFile *f) {
 }
 
 /* the shot pushes an entity with life that walks not, away from the ship */
-void Laser_Push(cEntity *v, cEntity *e, int n) {
+static void Laser_Push(cEntity *v, cEntity *e, int n) {
 	if (!e || !Entity_IsType(e, TYEN_WITH_LIFE) || Entity_IsType(e, TYEN_WALKCHAR)) {
 		return;
 	}
 	Weap_PushAway(v, e, n, g_LaserHitForce);
 }
 
-void Laser_AimOnNative(cAbstractFile *f) {
+static void Laser_AimOnNative(cAbstractFile *f) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(f, name, 0x80);
 	Laser_AimOn(Weap_Vehicle(name));
 }
 
-void Laser_AimOffNative(cAbstractFile *f) {
+static void Laser_AimOffNative(cAbstractFile *f) {
 	Weap_SetAimMode(f, 0);
 }
 
-void Hook_StopSound(cEntity *v) {
+static void Hook_StopSound(cEntity *v) {
 	Hook_Silence(v);
 }
 
 /* the Hook sound and its start sound with a recoil, unless it plays already */
-void Hook_StartSound(cEntity *v) {
+static void Hook_StartSound(cEntity *v) {
 	cSndItem *s = PtrArray_Get(&Obj(v)->snd, SND_HOOK);
 	if (!s || s->playing) {
 		return;
@@ -661,12 +705,12 @@ void Hook_StartSound(cEntity *v) {
 	}
 }
 
-byte Vehicle_IsLocalPlayer(cEntity *v) {
+static byte Vehicle_IsLocalPlayer(cEntity *v) {
 	return Veh_Player(v) >= 0 && Veh_Player(v) < 4;
 }
 
 /* ship name: CreateSonicFunc makes the mine (not on clients), up to SonicAmmoNeed ammo go into it */
-void Sonic_FireNative(cAbstractFile *f) {
+static void Sonic_FireNative(cAbstractFile *f) {
 	char name[0x80], obj[0x80];
 	vec3_t pos, ang;
 
@@ -727,10 +771,10 @@ void Sonic_FireNative(cAbstractFile *f) {
 	cWeaponManager_SetAmmo(&Veh(v)->weapons, g_SonicIDAmmo, (float)(ammo - Missile(m)->swarmCount / 3));
 }
 
-vec3_t g_SonicHitPos;
+static vec3_t g_SonicHitPos;
 
 /* the explosion of a mine at x y z (read into g_SonicHitPos) */
-void Sonic_ExplodeNative(cAbstractFile *f) {
+static void Sonic_ExplodeNative(cAbstractFile *f) {
 	vec3_t *p = &g_SonicHitPos;
 
 	f->vftable->Read(f, &p->x, 4);
@@ -754,39 +798,39 @@ void Sonic_ExplodeNative(cAbstractFile *f) {
 	}
 }
 
-cGVar GVar_LaserAmmoCost;
+static cGVar GVar_LaserAmmoCost;
 cGVar GVar_LaserRange;
-cGVar GVar_LaserShootFile;
-cGVar GVar_LaserHitForce;
-cGVar GVar_LaserHitFile;
-cGVar GVar_HookEMITime;
-cGVar GVar_LaserTimeDelay;
-cGVar GVar_LaserRicSoundVol;
+static cGVar GVar_LaserShootFile;
+static cGVar GVar_LaserHitForce;
+static cGVar GVar_LaserHitFile;
+static cGVar GVar_HookEMITime;
+static cGVar GVar_LaserTimeDelay;
+static cGVar GVar_LaserRicSoundVol;
 cGVar GVar_LaserIDAmmo;
-cGVar GVar_LaserHookFile;
-cGVar GVar_LaserDamage;
-cGVar GVar_HookAccel;
-cGVar GVar_LaserMinSpeed;
-cGVar GVar_LaserRicSound;
-cGVar GVar_SonicRechargeTime;
-cGVar GVar_SonicArmor;
-cGVar GVar_FXSonicXpldeFile;
-cGVar GVar_SonicLifeTime;
-cGVar GVar_SonicIDAmmo;
-cGVar GVar_SonicAmmoNeed;
-cGVarFunction GVar_CreateSonicFunc;
-cGVarFunction GVar_SetUpSonicFunc;
-cPy_NativeFunc NativeFunc_LaserPress;
-cPy_NativeFunc NativeFunc_LaserRelease;
-cPy_NativeFunc NativeFunc_LaserCreate;
-cPy_NativeFunc NativeFunc_LaserFire;
-cPy_NativeFunc NativeFunc_LaserFX;
-cPy_NativeFunc NativeFunc_HookPlugFX;
-cPy_NativeFunc NativeFunc_HookFire;
-cPy_NativeFunc NativeFunc_HookActivate;
-cPy_NativeFunc NativeFunc_HookDeActivate;
-cPy_NativeFunc NativeFunc_SonicXplde;
-cPy_NativeFunc NativeFunc_SonicFire;
+static cGVar GVar_LaserHookFile;
+static cGVar GVar_LaserDamage;
+static cGVar GVar_HookAccel;
+static cGVar GVar_LaserMinSpeed;
+static cGVar GVar_LaserRicSound;
+static cGVar GVar_SonicRechargeTime;
+static cGVar GVar_SonicArmor;
+static cGVar GVar_FXSonicXpldeFile;
+static cGVar GVar_SonicLifeTime;
+static cGVar GVar_SonicIDAmmo;
+static cGVar GVar_SonicAmmoNeed;
+static cGVarFunction GVar_CreateSonicFunc;
+static cGVarFunction GVar_SetUpSonicFunc;
+static cPy_NativeFunc NativeFunc_LaserPress;
+static cPy_NativeFunc NativeFunc_LaserRelease;
+static cPy_NativeFunc NativeFunc_LaserCreate;
+static cPy_NativeFunc NativeFunc_LaserFire;
+static cPy_NativeFunc NativeFunc_LaserFX;
+static cPy_NativeFunc NativeFunc_HookPlugFX;
+static cPy_NativeFunc NativeFunc_HookFire;
+static cPy_NativeFunc NativeFunc_HookActivate;
+static cPy_NativeFunc NativeFunc_HookDeActivate;
+static cPy_NativeFunc NativeFunc_SonicXplde;
+static cPy_NativeFunc NativeFunc_SonicFire;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_LaserIDAmmo, &GVar_LaserIDAmmo, "LaserIDAmmo", 0, "The default weapon idx for the laser", 0)

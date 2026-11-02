@@ -15,6 +15,11 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
+#define g_GridUseTopLimit (GVar_GridUseTopLimit.value.i)
+#define g_ShowDummy (GVar_ShowDummy.value.s)	/* the dummies drawn (a wildcard pattern), "" for none */
+static cGVar GVar_ShowDummy;
+static cGVar GVar_GridUseTopLimit;
+
 /* defined further down or in another file without a header */
 int Stub_Zero(void);
 
@@ -34,7 +39,8 @@ static inline int Grid_Index(const cCollisionGrid *g, int x, int y, int z) {
 	return (g->ny * z + y) * g->nx + x;
 }
 
-Nto1Node *GridCell_ctor(Nto1Node *self) {
+/* a cell head: an empty ring (the constructor of new[]) */
+static Nto1Node *GridCell_ctor(Nto1Node *self) {
 	self->target = NULL;
 	self->data = NULL;
 	self->next = self;
@@ -84,7 +90,8 @@ void *Grid_ctor(void *grid) {
 	return g;
 }
 
-void Grid_Free(void *grid) {
+/* the cells freed, the box cleared */
+static void Grid_Free(void *grid) {
 	cCollisionGrid *g = grid;
 
 	if (!g->cells) {
@@ -144,7 +151,9 @@ void Grid_Set(void *grid, const vec3_t *size) {
 	Grid_Init(g, &min, &max, size);
 }
 
-cEntity *Grid_GetCell(void *grid, int x, int y, int z) {
+/* the first entity of cell x y z (outside of the box: the outside list); NULL for an empty cell or one the segment
+ * query has seen */
+static cEntity *Grid_GetCell(void *grid, int x, int y, int z) {
 	cCollisionGrid *g = grid;
 	Nto1Node *n;
 
@@ -167,14 +176,6 @@ cEntity *Grid_GetCell(void *grid, int x, int y, int z) {
 	return Grid_CurEntity(g);
 }
 
-cEntity *Grid_GetCellAt(void *grid, const vec3_t *pos) {
-	cCollisionGrid *g = grid;
-
-	CHECK(g->cells);
-	return Grid_GetCell(g, (int)((pos->x - g->min.x) / g->cell.x), (int)((pos->y - g->min.y) / g->cell.y),
-		(int)((pos->z - g->min.z) / g->cell.z));
-}
-
 void Grid_EndFrame(void *grid) {
 	((cCollisionGrid *)grid)->cur = NULL;
 }
@@ -193,10 +194,6 @@ static inline int Grid_Advance(cCollisionGrid *g) {
 	g->pos[2]++;
 	g->pos[1] = g->start[1];
 	return g->pos[2] > g->end[2];
-}
-
-byte Grid_StepCell(void *grid) {
-	return (byte)Grid_Advance(grid);
 }
 
 cEntity *Grid_FirstInBox(void *grid, const vec3_t *min, const vec3_t *max) {
@@ -230,19 +227,6 @@ cEntity *Grid_NextInBox(void *grid) {
 	return Grid_CurEntity(g);
 }
 
-cEntity *Grid_NextInCell(void *grid) {
-	cCollisionGrid *g = grid;
-
-	if (!g->cur) {
-		return NULL;
-	}
-	g->cur = Ring_First(g->cur);
-	if (g->cur && g->cur->target) {
-		return g->cur->data;
-	}
-	return NULL;
-}
-
 static inline void Grid_Stamp(cCollisionGrid *g) {
 	CHECK(g->visited);
 	if (g->stamp == 0xff) {
@@ -251,10 +235,6 @@ static inline void Grid_Stamp(cCollisionGrid *g) {
 	} else {
 		g->stamp++;
 	}
-}
-
-void Grid_NewQuery(void *grid) {
-	Grid_Stamp(grid);
 }
 
 cEntity *Grid_NextOnSegment(void *grid) {
@@ -371,7 +351,6 @@ void Grid_Draw(void *grid) {
 		}
 	}
 }
-
 
 void Dummies_Draw(void) {
 	box_t box;
@@ -576,8 +555,9 @@ int cEntityList_Var(void *list, const char *name, int set, char **s, double *d, 
 	return 0;
 }
 
-cGVar GVar_GridUseTopLimit;
-cGVar GVar_ShowDummy;
+/* the engine variables (Gvars) */
+static cGVar GVar_GridUseTopLimit;
+static cGVar GVar_ShowDummy;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_GridUseTopLimit, &GVar_GridUseTopLimit, "GridUseTopLimit", 0, "1 if the grid will be limited by the toplimit gvar (usually used in outdoors)", 0)

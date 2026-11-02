@@ -7,7 +7,7 @@
 #include "scrap/python.h"
 
 /* ModifyUsrData(arg) : modifica desde el servidor los datos locales; NULL without a server */
-PyObject *SNet_ModifyUsrData(PyObject *self, PyObject *args) {
+static PyObject *SNet_ModifyUsrData(PyObject *self, PyObject *args) {
 	int arg;
 
 	(void)self;
@@ -18,7 +18,7 @@ PyObject *SNet_ModifyUsrData(PyObject *self, PyObject *args) {
 }
 
 /* ServerChangeLevel(level) */
-PyObject *SNet_ServerChangeLevel(PyObject *self, PyObject *args) {
+static PyObject *SNet_ServerChangeLevel(PyObject *self, PyObject *args) {
 	char *level;
 
 	(void)self;
@@ -32,7 +32,7 @@ PyObject *SNet_ServerChangeLevel(PyObject *self, PyObject *args) {
 }
 
 /* AddResource(name) */
-PyObject *SNet_AddResource(PyObject *self, PyObject *args) {
+static PyObject *SNet_AddResource(PyObject *self, PyObject *args) {
 	char *name;
 
 	(void)self;
@@ -46,7 +46,7 @@ PyObject *SNet_AddResource(PyObject *self, PyObject *args) {
 }
 
 /* InitServer(name, a, b) */
-PyObject *SNet_InitServer(PyObject *self, PyObject *args) {
+static PyObject *SNet_InitServer(PyObject *self, PyObject *args) {
 	char *name;
 	int a, b;
 
@@ -58,7 +58,7 @@ PyObject *SNet_InitServer(PyObject *self, PyObject *args) {
 }
 
 /* CloseServer(msg) */
-PyObject *SNet_CloseServer(PyObject *self, PyObject *args) {
+static PyObject *SNet_CloseServer(PyObject *self, PyObject *args) {
 	char *msg;
 
 	(void)self;
@@ -69,7 +69,7 @@ PyObject *SNet_CloseServer(PyObject *self, PyObject *args) {
 }
 
 /* IsServer() : NOTA: es para depuracion, mejor use Scrap.GetNetFlags() */
-PyObject *SNet_IsServer(PyObject *self, PyObject *args) {
+static PyObject *SNet_IsServer(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -78,7 +78,7 @@ PyObject *SNet_IsServer(PyObject *self, PyObject *args) {
 }
 
 /* IsDedicated() : bit 2 of the application flags */
-PyObject *SNet_IsDedicated(PyObject *self, PyObject *args) {
+static PyObject *SNet_IsDedicated(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -87,7 +87,7 @@ PyObject *SNet_IsDedicated(PyObject *self, PyObject *args) {
 }
 
 /* GetServerData() : (name, map, port), ("", "", 0) without a server */
-PyObject *SNet_GetServerData(PyObject *self, PyObject *args) {
+static PyObject *SNet_GetServerData(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -103,7 +103,7 @@ PyObject *SNet_GetServerData(PyObject *self, PyObject *args) {
 }
 
 /* GetBotName() */
-PyObject *SNet_GetBotName(PyObject *self, PyObject *args) {
+static PyObject *SNet_GetBotName(PyObject *self, PyObject *args) {
 	char buf[128];
 
 	(void)self;
@@ -115,7 +115,7 @@ PyObject *SNet_GetBotName(PyObject *self, PyObject *args) {
 }
 
 /* GetObjName() */
-PyObject *SNet_GetObjName(PyObject *self, PyObject *args) {
+static PyObject *SNet_GetObjName(PyObject *self, PyObject *args) {
 	char buf[128];
 
 	(void)self;
@@ -127,7 +127,7 @@ PyObject *SNet_GetObjName(PyObject *self, PyObject *args) {
 }
 
 /* Kick(player) */
-PyObject *SNet_Kick(PyObject *self, PyObject *args) {
+static PyObject *SNet_Kick(PyObject *self, PyObject *args) {
 	char *player;
 
 	(void)self;
@@ -138,7 +138,7 @@ PyObject *SNet_Kick(PyObject *self, PyObject *args) {
 }
 
 /* InitBrowser([a[, address]]) : address default "255.255.255.255" */
-PyObject *SNet_InitBrowser(PyObject *self, PyObject *args) {
+static PyObject *SNet_InitBrowser(PyObject *self, PyObject *args) {
 	int a = 0;
 	char *address = "255.255.255.255";
 
@@ -150,7 +150,7 @@ PyObject *SNet_InitBrowser(PyObject *self, PyObject *args) {
 }
 
 /* DoneBrowser() */
-PyObject *SNet_DoneBrowser(PyObject *self, PyObject *args) {
+static PyObject *SNet_DoneBrowser(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -159,7 +159,7 @@ PyObject *SNet_DoneBrowser(PyObject *self, PyObject *args) {
 }
 
 /* GetMyClientShip() : name of the own ship on a client, else 0 */
-PyObject *SNet_GetMyClientShip(PyObject *self, PyObject *args) {
+static PyObject *SNet_GetMyClientShip(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -174,7 +174,7 @@ PyObject *SNet_GetMyClientShip(PyObject *self, PyObject *args) {
 }
 
 /* InitClient(address, port) */
-PyObject *SNet_InitClient(PyObject *self, PyObject *args) {
+static PyObject *SNet_InitClient(PyObject *self, PyObject *args) {
 	char *address;
 	int port;
 
@@ -186,7 +186,7 @@ PyObject *SNet_InitClient(PyObject *self, PyObject *args) {
 }
 
 /* CloseClient([msg]) */
-PyObject *SNet_CloseClient(PyObject *self, PyObject *args) {
+static PyObject *SNet_CloseClient(PyObject *self, PyObject *args) {
 	char *msg = NULL;
 
 	(void)self;
@@ -200,7 +200,7 @@ PyObject *SNet_CloseClient(PyObject *self, PyObject *args) {
 }
 
 /* IsClient() */
-PyObject *SNet_IsClient(PyObject *self, PyObject *args) {
+static PyObject *SNet_IsClient(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -209,7 +209,7 @@ PyObject *SNet_IsClient(PyObject *self, PyObject *args) {
 }
 
 /* GetClientData() : (name, port), ("", 0) without a client */
-PyObject *SNet_GetClientData(PyObject *self, PyObject *args) {
+static PyObject *SNet_GetClientData(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -222,7 +222,7 @@ PyObject *SNet_GetClientData(PyObject *self, PyObject *args) {
 }
 
 /* SendUsrString(arg, text) */
-PyObject *SNet_SendUsrString(PyObject *self, PyObject *args) {
+static PyObject *SNet_SendUsrString(PyObject *self, PyObject *args) {
 	int arg;
 	char *text;
 
@@ -234,7 +234,7 @@ PyObject *SNet_SendUsrString(PyObject *self, PyObject *args) {
 }
 
 /* SendChatString(arg, text) */
-PyObject *SNet_SendChatString(PyObject *self, PyObject *args) {
+static PyObject *SNet_SendChatString(PyObject *self, PyObject *args) {
 	int arg;
 	char *text;
 
@@ -246,7 +246,7 @@ PyObject *SNet_SendChatString(PyObject *self, PyObject *args) {
 }
 
 /* SendCtrlString(text) */
-PyObject *SNet_SendCtrlString(PyObject *self, PyObject *args) {
+static PyObject *SNet_SendCtrlString(PyObject *self, PyObject *args) {
 	char *text;
 
 	(void)self;
@@ -257,7 +257,7 @@ PyObject *SNet_SendCtrlString(PyObject *self, PyObject *args) {
 }
 
 /* SendMasterString(text) */
-PyObject *SNet_SendMasterString(PyObject *self, PyObject *args) {
+static PyObject *SNet_SendMasterString(PyObject *self, PyObject *args) {
 	char *text;
 
 	(void)self;
@@ -268,7 +268,7 @@ PyObject *SNet_SendMasterString(PyObject *self, PyObject *args) {
 }
 
 /* IsMaster() : 1 si esta activado el sistema cliente */
-PyObject *SNet_IsMaster(PyObject *self, PyObject *args) {
+static PyObject *SNet_IsMaster(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -277,7 +277,7 @@ PyObject *SNet_IsMaster(PyObject *self, PyObject *args) {
 }
 
 /* PingInetSvrs() */
-PyObject *SNet_PingInetSvrs(PyObject *self, PyObject *args) {
+static PyObject *SNet_PingInetSvrs(PyObject *self, PyObject *args) {
 	(void)self;
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
@@ -286,7 +286,7 @@ PyObject *SNet_PingInetSvrs(PyObject *self, PyObject *args) {
 }
 
 /* GetPing(player) */
-PyObject *SNet_GetPing(PyObject *self, PyObject *args) {
+static PyObject *SNet_GetPing(PyObject *self, PyObject *args) {
 	char *player;
 
 	(void)self;
@@ -296,57 +296,57 @@ PyObject *SNet_GetPing(PyObject *self, PyObject *args) {
 	return Py_BuildValue("i", Net_GetPing(player));
 }
 
-extern char str_PyDoc_SNet_AddResource[];
-extern char str_PyDoc_SNet_CloseClient[64];
-extern char str_PyDoc_SNet_CloseServer[68];
-extern char str_PyDoc_SNet_DoneBrowser[];
-extern char str_PyDoc_SNet_GetBotName[112];
-extern char str_PyDoc_SNet_GetClientData[];
-extern char str_PyDoc_SNet_GetMyClientShip[56];
-extern char str_PyDoc_SNet_GetObjName[];
-extern char str_PyDoc_SNet_GetPing[60];
-extern char str_PyDoc_SNet_GetServerData[68];
-extern char str_PyDoc_SNet_InitBrowser[];
-extern char str_PyDoc_SNet_InitClient[];
-extern char str_PyDoc_SNet_InitServer[];
-extern char str_PyDoc_SNet_IsClient[];
-extern char str_PyDoc_SNet_IsDedicated[];
-extern char str_PyDoc_SNet_IsMaster[];
-extern char str_PyDoc_SNet_IsServer[];
-extern char str_PyDoc_SNet_Kick[];
-extern char str_PyDoc_SNet_ModifyUsrData[];
-extern char str_PyDoc_SNet_PingInetSvrs[];
-extern char str_PyDoc_SNet_SendChatString[];
-extern char str_PyDoc_SNet_SendCtrlString[72];
-extern char str_PyDoc_SNet_SendMasterString[];
-extern char str_PyDoc_SNet_SendUsrString[104];
-extern char str_PyDoc_SNet_ServerChangeLevel[68];
-extern const char str_PyMethod_SNet_AddResource[];
-extern const char str_PyMethod_SNet_CloseClient[];
-extern const char str_PyMethod_SNet_CloseServer[];
-extern const char str_PyMethod_SNet_DoneBrowser[];
-extern const char str_PyMethod_SNet_GetBotName[];
-extern const char str_PyMethod_SNet_GetClientData[];
-extern const char str_PyMethod_SNet_GetMyClientShip[];
-extern const char str_PyMethod_SNet_GetObjName[];
-extern const char str_PyMethod_SNet_GetPing[];
-extern const char str_PyMethod_SNet_GetServerData[];
-extern const char str_PyMethod_SNet_InitBrowser[];
-extern const char str_PyMethod_SNet_InitClient[];
-extern const char str_PyMethod_SNet_InitServer[];
-extern const char str_PyMethod_SNet_IsClient[];
-extern const char str_PyMethod_SNet_IsDedicated[];
-extern const char str_PyMethod_SNet_IsMaster[];
-extern const char str_PyMethod_SNet_IsServer[];
-extern const char str_PyMethod_SNet_Kick[];
-extern const char str_PyMethod_SNet_ModifyUsrData[];
-extern const char str_PyMethod_SNet_PingInetSvrs[];
-extern const char str_PyMethod_SNet_SendChatString[];
-extern const char str_PyMethod_SNet_SendCtrlString[];
-extern const char str_PyMethod_SNet_SendMasterString[];
-extern const char str_PyMethod_SNet_SendUsrString[];
-extern const char str_PyMethod_SNet_ServerChangeLevel[];
-PyMethodDef SNet_methods[26] = {
+static char str_PyDoc_SNet_AddResource[];
+static char str_PyDoc_SNet_CloseClient[64];
+static char str_PyDoc_SNet_CloseServer[68];
+static char str_PyDoc_SNet_DoneBrowser[];
+static char str_PyDoc_SNet_GetBotName[112];
+static char str_PyDoc_SNet_GetClientData[];
+static char str_PyDoc_SNet_GetMyClientShip[56];
+static char str_PyDoc_SNet_GetObjName[];
+static char str_PyDoc_SNet_GetPing[60];
+static char str_PyDoc_SNet_GetServerData[68];
+static char str_PyDoc_SNet_InitBrowser[];
+static char str_PyDoc_SNet_InitClient[];
+static char str_PyDoc_SNet_InitServer[];
+static char str_PyDoc_SNet_IsClient[];
+static char str_PyDoc_SNet_IsDedicated[];
+static char str_PyDoc_SNet_IsMaster[];
+static char str_PyDoc_SNet_IsServer[];
+static char str_PyDoc_SNet_Kick[];
+static char str_PyDoc_SNet_ModifyUsrData[];
+static char str_PyDoc_SNet_PingInetSvrs[];
+static char str_PyDoc_SNet_SendChatString[];
+static char str_PyDoc_SNet_SendCtrlString[72];
+static char str_PyDoc_SNet_SendMasterString[];
+static char str_PyDoc_SNet_SendUsrString[104];
+static char str_PyDoc_SNet_ServerChangeLevel[68];
+static const char str_PyMethod_SNet_AddResource[];
+static const char str_PyMethod_SNet_CloseClient[];
+static const char str_PyMethod_SNet_CloseServer[];
+static const char str_PyMethod_SNet_DoneBrowser[];
+static const char str_PyMethod_SNet_GetBotName[];
+static const char str_PyMethod_SNet_GetClientData[];
+static const char str_PyMethod_SNet_GetMyClientShip[];
+static const char str_PyMethod_SNet_GetObjName[];
+static const char str_PyMethod_SNet_GetPing[];
+static const char str_PyMethod_SNet_GetServerData[];
+static const char str_PyMethod_SNet_InitBrowser[];
+static const char str_PyMethod_SNet_InitClient[];
+static const char str_PyMethod_SNet_InitServer[];
+static const char str_PyMethod_SNet_IsClient[];
+static const char str_PyMethod_SNet_IsDedicated[];
+static const char str_PyMethod_SNet_IsMaster[];
+static const char str_PyMethod_SNet_IsServer[];
+static const char str_PyMethod_SNet_Kick[];
+static const char str_PyMethod_SNet_ModifyUsrData[];
+static const char str_PyMethod_SNet_PingInetSvrs[];
+static const char str_PyMethod_SNet_SendChatString[];
+static const char str_PyMethod_SNet_SendCtrlString[];
+static const char str_PyMethod_SNet_SendMasterString[];
+static const char str_PyMethod_SNet_SendUsrString[];
+static const char str_PyMethod_SNet_ServerChangeLevel[];
+static PyMethodDef SNet_methods[26] = {
 	{
 		.ml_name = (void *)str_PyMethod_SNet_InitServer,
 		.ml_meth = (void *)SNet_InitServer,
@@ -501,100 +501,100 @@ PyMethodDef SNet_methods[26] = {
 
 SD_PY_MODULE(SNet, 0x42e610)
 
-const char str_PyMethod_SNet_InitServer[] = "InitServer";
-const char str_PyMethod_SNet_CloseServer[] = "CloseServer";
-const char str_PyMethod_SNet_ServerChangeLevel[] = "ServerChangeLevel";
-const char str_PyMethod_SNet_IsServer[] = "IsServer";
-const char str_PyMethod_SNet_IsDedicated[] = "IsDedicated";
-const char str_PyMethod_SNet_GetServerData[] = "GetServerData";
-const char str_PyMethod_SNet_AddResource[] = "AddResource";
-const char str_PyMethod_SNet_ModifyUsrData[] = "ModifyUsrData";
-const char str_PyMethod_SNet_GetBotName[] = "GetBotName";
-const char str_PyMethod_SNet_GetObjName[] = "GetObjName";
-const char str_PyMethod_SNet_Kick[] = "Kick";
-const char str_PyMethod_SNet_InitClient[] = "InitClient";
-const char str_PyMethod_SNet_CloseClient[] = "CloseClient";
-const char str_PyMethod_SNet_IsClient[] = "IsClient";
-const char str_PyMethod_SNet_GetClientData[] = "GetClientData";
-const char str_PyMethod_SNet_GetMyClientShip[] = "GetMyClientShip";
-const char str_PyMethod_SNet_InitBrowser[] = "InitBrowser";
-const char str_PyMethod_SNet_DoneBrowser[] = "DoneBrowser";
-const char str_PyMethod_SNet_SendUsrString[] = "SendUsrString";
-const char str_PyMethod_SNet_SendChatString[] = "SendChatString";
-const char str_PyMethod_SNet_SendCtrlString[] = "SendCtrlString";
-const char str_PyMethod_SNet_SendMasterString[] = "SendMasterString";
-const char str_PyMethod_SNet_IsMaster[] = "IsMaster";
-const char str_PyMethod_SNet_PingInetSvrs[] = "PingInetSvrs";
-const char str_PyMethod_SNet_GetPing[] = "GetPing";
+static const char str_PyMethod_SNet_InitServer[] = "InitServer";
+static const char str_PyMethod_SNet_CloseServer[] = "CloseServer";
+static const char str_PyMethod_SNet_ServerChangeLevel[] = "ServerChangeLevel";
+static const char str_PyMethod_SNet_IsServer[] = "IsServer";
+static const char str_PyMethod_SNet_IsDedicated[] = "IsDedicated";
+static const char str_PyMethod_SNet_GetServerData[] = "GetServerData";
+static const char str_PyMethod_SNet_AddResource[] = "AddResource";
+static const char str_PyMethod_SNet_ModifyUsrData[] = "ModifyUsrData";
+static const char str_PyMethod_SNet_GetBotName[] = "GetBotName";
+static const char str_PyMethod_SNet_GetObjName[] = "GetObjName";
+static const char str_PyMethod_SNet_Kick[] = "Kick";
+static const char str_PyMethod_SNet_InitClient[] = "InitClient";
+static const char str_PyMethod_SNet_CloseClient[] = "CloseClient";
+static const char str_PyMethod_SNet_IsClient[] = "IsClient";
+static const char str_PyMethod_SNet_GetClientData[] = "GetClientData";
+static const char str_PyMethod_SNet_GetMyClientShip[] = "GetMyClientShip";
+static const char str_PyMethod_SNet_InitBrowser[] = "InitBrowser";
+static const char str_PyMethod_SNet_DoneBrowser[] = "DoneBrowser";
+static const char str_PyMethod_SNet_SendUsrString[] = "SendUsrString";
+static const char str_PyMethod_SNet_SendChatString[] = "SendChatString";
+static const char str_PyMethod_SNet_SendCtrlString[] = "SendCtrlString";
+static const char str_PyMethod_SNet_SendMasterString[] = "SendMasterString";
+static const char str_PyMethod_SNet_IsMaster[] = "IsMaster";
+static const char str_PyMethod_SNet_PingInetSvrs[] = "PingInetSvrs";
+static const char str_PyMethod_SNet_GetPing[] = "GetPing";
 
-char str_PyDoc_SNet_ModifyUsrData[] =
+static char str_PyDoc_SNet_ModifyUsrData[] =
 	"ModifyUsrData(ClientId) : \n modifica desde el servidor los datos locales.";
 
-char str_PyDoc_SNet_ServerChangeLevel[68] =
+static char str_PyDoc_SNet_ServerChangeLevel[68] =
 	"ServerChangeLevel(resource name) : carga el siguiente nivel.";
 
-char str_PyDoc_SNet_AddResource[] =
+static char str_PyDoc_SNet_AddResource[] =
 	"resourceid AddResource(resource name) : intenta agregar un recurso si este no existe. -1 si el pool "
 	"esta lleno";
 
-char str_PyDoc_SNet_InitServer[] =
+static char str_PyDoc_SNet_InitServer[] =
 	"InitServer(LevelPath,MaxPlayers,ipport) : Intenta inicializar el servidor.";
 
-char str_PyDoc_SNet_CloseServer[68] = "CloseServer(LevelPath) : Acaba el servidor y carga un nivel.";
+static char str_PyDoc_SNet_CloseServer[68] = "CloseServer(LevelPath) : Acaba el servidor y carga un nivel.";
 
-char str_PyDoc_SNet_IsServer[] =
+static char str_PyDoc_SNet_IsServer[] =
 	"IsServer() : 1 si esta activado el sistema servidor \n"
 	" NOTA: es para depuracion, mejor use Scrap.GetNetFlags()";
 
-char str_PyDoc_SNet_IsDedicated[] = "IsDedicated() : 1 si ha arrancado en modo servidor dedicado";
+static char str_PyDoc_SNet_IsDedicated[] = "IsDedicated() : 1 si ha arrancado en modo servidor dedicado";
 
-char str_PyDoc_SNet_GetServerData[68] =
+static char str_PyDoc_SNet_GetServerData[68] =
 	"GetServerData() : Obtiene la tupla (Hostname,ipaddress,ipport)";
 
-char str_PyDoc_SNet_GetBotName[112] =
+static char str_PyDoc_SNet_GetBotName[112] =
 	"GetBotName() : Obtiene un nombre valido de entidad jugador manejada por el servidor (bot o jugador l"
 	"ocal)";
 
-char str_PyDoc_SNet_GetObjName[] = "GetObjName() : Obtiene un nombre valido de Objeto cualesquiera.";
+static char str_PyDoc_SNet_GetObjName[] = "GetObjName() : Obtiene un nombre valido de Objeto cualesquiera.";
 
-char str_PyDoc_SNet_Kick[] = "Kick(entityname) : saca del servidor a un usuario no deseado.";
+static char str_PyDoc_SNet_Kick[] = "Kick(entityname) : saca del servidor a un usuario no deseado.";
 
-char str_PyDoc_SNet_InitBrowser[] = "InitBrowser(port) : Inicializa el browser de red local.";
+static char str_PyDoc_SNet_InitBrowser[] = "InitBrowser(port) : Inicializa el browser de red local.";
 
-char str_PyDoc_SNet_DoneBrowser[] = "DoneBrowser() : Cierra el browser de red local.";
+static char str_PyDoc_SNet_DoneBrowser[] = "DoneBrowser() : Cierra el browser de red local.";
 
-char str_PyDoc_SNet_GetMyClientShip[56] = "GetMyClientShip() : retorna el nombre de su nave.";
+static char str_PyDoc_SNet_GetMyClientShip[56] = "GetMyClientShip() : retorna el nombre de su nave.";
 
-char str_PyDoc_SNet_InitClient[] =
+static char str_PyDoc_SNet_InitClient[] =
 	"InitClient(ipAddress,ipport) : Inicia el proceso de coneccion con el servidor.";
 
-char str_PyDoc_SNet_CloseClient[64] = "CloseClient(LevelPath) : Acaba el cliente y carga un nivel.";
+static char str_PyDoc_SNet_CloseClient[64] = "CloseClient(LevelPath) : Acaba el cliente y carga un nivel.";
 
-char str_PyDoc_SNet_IsClient[] =
+static char str_PyDoc_SNet_IsClient[] =
 	"IsClient() : 1 si esta activado el sistema cliente \n"
 	"NOTA: Scrap.GetNetFlags() tiene el flag cliente activado \nsi la coneccion se hizo efectiva";
 
-char str_PyDoc_SNet_GetClientData[] = "GetClientData() : Obtiene la tupla (ipaddress,ipport)";
+static char str_PyDoc_SNet_GetClientData[] = "GetClientData() : Obtiene la tupla (ipaddress,ipport)";
 
-char str_PyDoc_SNet_SendUsrString[104] =
+static char str_PyDoc_SNet_SendUsrString[104] =
 	"SendUsrString(id,string) : -1 significa a todo el mundo en modo servidor, para cliente id se ignora";
 
-char str_PyDoc_SNet_SendChatString[] =
+static char str_PyDoc_SNet_SendChatString[] =
 	"SendChatString(id,string) : -1 significa a todo el mundo en modo servidor, para cliente id se ignora";
 
-char str_PyDoc_SNet_SendCtrlString[72] =
+static char str_PyDoc_SNet_SendCtrlString[72] =
 	"SendCtrlString(string) : Envia una cadena de control a los usuarios";
 
-char str_PyDoc_SNet_SendMasterString[] =
+static char str_PyDoc_SNet_SendMasterString[] =
 	"SendMasterString(string) : envia una cadena al master. Si retorna cero no hay master.";
 
-char str_PyDoc_SNet_IsMaster[] =
+static char str_PyDoc_SNet_IsMaster[] =
 	"IsMaster() : 1 si esta activado el sistema cliente \n"
 	"NOTA: Scrap.GetNetFlags() tiene el flag cliente activado \nsi la coneccion se hizo efectiva";
 
-char str_PyDoc_SNet_PingInetSvrs[] =
+static char str_PyDoc_SNet_PingInetSvrs[] =
 	"PingInetSvrs() : 1 exitoso. revisa el estado de los servidores en internet. Se realiza despues de br"
 	"owse.";
 
-char str_PyDoc_SNet_GetPing[60] = "GetPing(EntityName) : Devuelve el ping de un cliente.";
+static char str_PyDoc_SNet_GetPing[60] = "GetPing(EntityName) : Devuelve el ping de un cliente.";
 

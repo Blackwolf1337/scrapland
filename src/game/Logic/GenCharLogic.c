@@ -12,6 +12,27 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
+#define CGENCHARLOCALLOGIC_VFTABLE (&cGenCharLocalLogic_vftable.base)
+#define g_OnDefStateCallback (((cPy_Function *)&GVar_OnDefStateCallback.func))	/* (name) after RestartState */
+#define g_GenCharAcuseAgainTime (GVar_GenCharAcuseAgainTime.value.f)
+#define g_GenCharRobberyDetection (GVar_GenCharRobberyDetection.value.f)
+#define g_GenCharAcuseTime (GVar_GenCharAcuseTime.value.f)
+#define g_GenCharSpecialChaseSpeed (GVar_GenCharSpecialChaseSpeed.value.f)
+#define g_GenCharAttackSpeed (GVar_GenCharAttackSpeed.value.f)
+#define g_GenCharGetAwayTime (GVar_GenCharGetAwayTime.value.f)
+#define g_GenCharAttackLimit (GVar_GenCharAttackLimit.value.f)
+#define g_GenCharPoliceRefuse (GVar_GenCharPoliceRefuse.value.f)
+static const cGenCharLocalLogicVtbl cGenCharLocalLogic_vftable;
+static cGVarFunction GVar_OnDefStateCallback;
+static cGVar GVar_GenCharSpecialChaseSpeed;
+static cGVar GVar_GenCharRobberyDetection;
+static cGVar GVar_GenCharPoliceRefuse;
+static cGVar GVar_GenCharGetAwayTime;
+static cGVar GVar_GenCharAttackSpeed;
+static cGVar GVar_GenCharAttackLimit;
+static cGVar GVar_GenCharAcuseTime;
+static cGVar GVar_GenCharAcuseAgainTime;
+
 cGenCharLocalLogic *cGenCharLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent, int noRestart) {
 	cBaseLocalLogic_ctor(&self->base, parent);
 	self->base.vftable = CGENCHARLOCALLOGIC_VFTABLE;
@@ -39,7 +60,7 @@ void cGenCharLocalLogic_dtor(cGenCharLocalLogic *self) {
 	cBaseLocalLogic_dtor(&self->base);
 }
 
-cLocalLogic *cGenCharLocalLogic_Delete(cLocalLogic *base, byte flags) {
+static cLocalLogic *cGenCharLocalLogic_Delete(cLocalLogic *base, byte flags) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)base;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -49,6 +70,7 @@ cLocalLogic *cGenCharLocalLogic_Delete(cLocalLogic *base, byte flags) {
 }
 
 /* vf26: no view flag for a player of the own suspect type, else relaxed and no alarm; team 3 */
+static byte Logic_IsSuspectType(const char *type);
 void cGenCharLocalLogic_UpdateView(cLocalLogic *elem) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
@@ -70,7 +92,7 @@ void cGenCharLocalLogic_UpdateView(cLocalLogic *elem) {
 
 /* e can discover the player: it has the action Discover, Berto and Betty only when the player is not of the type
  * UsrDefChar */
-byte cGenCharLocalLogic_CanDiscover(cGenCharLocalLogic *self, cEntity *e) {
+static byte cGenCharLocalLogic_CanDiscover(cGenCharLocalLogic *self, cEntity *e) {
 	(void)self;
 	if (!WithLife_Vtbl(e)->GetAction(e, "Discover")) {
 		return 0;
@@ -82,22 +104,10 @@ byte cGenCharLocalLogic_CanDiscover(cGenCharLocalLogic *self, cEntity *e) {
 	return cString_CmpStr(g_UsrDefChar, g_pWorld->alarm.chars) != 0;
 }
 
-void cGenCharLocalLogic_SetCanAttack(cGenCharLocalLogic *self, byte v) {
-	self->canAttack = v;
-}
-
 /* vf16: the state of the alarm against e */
 void cGenCharLocalLogic_OnAlarm(cLocalLogic *elem, cEntity *e) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	self->base.vftable->SetState(&self->base.logic, self->alarmState, e);
-}
-
-int cGenCharLocalLogic_GetDefaultState(cGenCharLocalLogic *self) {
-	return self->defaultState;
-}
-
-char *cGenCharLocalLogic_GetDefaultTarget(cGenCharLocalLogic *self) {
-	return self->defaultTarget;
 }
 
 /* vf28 and vf27: the AI walks the zone around the origin, in alert or relaxed */
@@ -138,7 +148,8 @@ byte cGenCharLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, byte s
 	return 1;
 }
 
-byte Logic_IsSuspectType(const char *type) {
+/* the type of the player draws the attention of a generic character */
+static byte Logic_IsSuspectType(const char *type) {
 	if (Alarm_IsLocked(&g_pWorld->alarm)) {
 		return 0;
 	}
@@ -148,19 +159,6 @@ byte Logic_IsSuspectType(const char *type) {
 void Logic_SetState2(cLocalLogic *base, cEntity *e) {
 	cBaseLocalLogic *self = (cBaseLocalLogic *)base;
 	self->vftable->SetState(&self->logic, GENCHAR_ACCUSE, e);
-}
-
-void Logic_Nop2(void *self, int a, int b) {
-	(void)self;
-	(void)a;
-	(void)b;
-}
-
-byte Logic_True2(void *self, int a, int b) {
-	(void)self;
-	(void)a;
-	(void)b;
-	return 1;
 }
 
 /* the random reaction of the hit slots: rand() 0..100 below 101, always */
@@ -173,6 +171,7 @@ static inline int GenChar_AISubState(cAIChar *ai) {
 }
 
 /* vf17 */
+static void cGenCharLocalLogic_ResetSpecial(cGenCharLocalLogic *self);
 void cGenCharLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
@@ -369,7 +368,8 @@ void cGenCharLocalLogic_UpdateGetIt(cLocalLogic *base, cAIChar *ai, float dt) {
 	}
 }
 
-void cGenCharLocalLogic_ResetSpecial(cGenCharLocalLogic *self) {
+/* the special action over, the next target search in a random time */
+static void cGenCharLocalLogic_ResetSpecial(cGenCharLocalLogic *self) {
 	self->specialOn = 0;
 	self->specialTime = 0.0f;
 	self->searchTime = Rand_FloatRange(g_GenCharMinSpecialActionTime, g_GenCharMaxSpecialActionTime);
@@ -510,14 +510,6 @@ byte cGenCharLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) 
 	return 1;
 }
 
-void cGenCharLocalLogic_SetDefaultState(cGenCharLocalLogic *self, int ds) {
-	GenChar_SetDefaultState(self, ds);
-}
-
-void cGenCharLocalLogic_SetDefaultTarget(cGenCharLocalLogic *self, const char *name) {
-	cString_Set(&self->defaultTarget, name);
-}
-
 /* vf05 */
 byte cGenCharLocalLogic_VarS(cLocalLogic *elem, const char *name, char **s, byte set) {
 	cGenCharLocalLogic *self = (cGenCharLocalLogic *)elem;
@@ -556,7 +548,7 @@ byte cGenCharLocalLogic_CanAttack(cLocalLogic *base, cEntity *e) {
 }
 
 /* the vtable of cGenCharLocalLogic */
-const cGenCharLocalLogicVtbl cGenCharLocalLogic_vftable = {
+static const cGenCharLocalLogicVtbl cGenCharLocalLogic_vftable = {
 	.base.base.Delete = cGenCharLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.Vf02 = cLocalLogic_Vf02True,
@@ -595,16 +587,16 @@ const cGenCharLocalLogicVtbl cGenCharLocalLogic_vftable = {
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };
 
-cGVarFunction GVar_OnDefStateCallback;
-cGVar GVar_GenCharAcuseAgainTime;
-cGVar GVar_GenCharRobberyDetection;
+static cGVarFunction GVar_OnDefStateCallback;
+static cGVar GVar_GenCharAcuseAgainTime;
+static cGVar GVar_GenCharRobberyDetection;
 cGVar GVar_GenCharAlertSpeed;
-cGVar GVar_GenCharAcuseTime;
-cGVar GVar_GenCharSpecialChaseSpeed;
-cGVar GVar_GenCharAttackSpeed;
-cGVar GVar_GenCharGetAwayTime;
-cGVar GVar_GenCharAttackLimit;
-cGVar GVar_GenCharPoliceRefuse;
+static cGVar GVar_GenCharAcuseTime;
+static cGVar GVar_GenCharSpecialChaseSpeed;
+static cGVar GVar_GenCharAttackSpeed;
+static cGVar GVar_GenCharGetAwayTime;
+static cGVar GVar_GenCharAttackLimit;
+static cGVar GVar_GenCharPoliceRefuse;
 cGVar GVar_GenCharEscapeSpeed;
 cGVar GVar_GenCharMaxSpecialActionTime;
 cGVar GVar_GenCharMinSpecialActionTime;

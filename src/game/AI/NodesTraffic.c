@@ -18,20 +18,35 @@
 #include "scrap/scrapworld.h"
 #include "scrap/staticinit.h"
 
+#define CGRIDELEMENTS_VFTABLE (&cGridElements_InfoTrafficNode_vftable)
+#define CNODESTRAFFIC_VFTABLE (&CNodesTraffic_vftable)
+#define g_DistGetPVisTrafficAI (GVar_DistGetPVisTrafficAI.value.f)	/* the searches end at this distance */
+#define g_MinDistNodeTrafficAI (GVar_MinDistNodeTrafficAI.value.f)	/* the step of the nodes Load fills in */
+#define g_ShowNumTrafficAI (GVar_ShowNumTrafficAI.value.i)		/* the track drawn, 0 for none */
+#define g_HNTrafficCapsule (GVar_HNTrafficCapsule.value.f)
+#define g_MNTrafficCapsule (GVar_MNTrafficCapsule.value.f)
+static const cGridElementsVtbl cGridElements_InfoTrafficNode_vftable;
+static cGVar GVar_ShowNumTrafficAI;
+static cGVar GVar_MinDistNodeTrafficAI;
+static cGVar GVar_MNTrafficCapsule;
+static cGVar GVar_HNTrafficCapsule;
+static cGVar GVar_DistGetPVisTrafficAI;
+static const CNodesTrafficVtbl CNodesTraffic_vftable;
 
 /* ---- Global/DList.h ---- */
 
-void TrafficCell_Add(cTrafficCell *cell, const InfoTrafficNode *info) {
+/* the DList.h instances: the cell (nodes of 0x10 bytes) and the error points of CNodesTraffic (0x18) */
+static void TrafficCell_Add(cTrafficCell *cell, const InfoTrafficNode *info) {
 	cTrafficCellNode *node = DList_NewNode(cell, sizeof(*node));
 	node->info = *info;
 	DList_LinkFirst(cell, node);
 }
 
-void TrafficCell_Clear(cTrafficCell *cell) {
+static void TrafficCell_Clear(cTrafficCell *cell) {
 	DList_Clear(cell, sizeof(cTrafficCellNode));
 }
 
-void TrafficErrors_Clear(void *list) {
+static void TrafficErrors_Clear(void *list) {
 	DList_Clear(list, sizeof(cTrafficErrorNode));
 }
 
@@ -67,7 +82,7 @@ cGridElements *cGridElements_Init(cGridElements *self, const cGridElementsVtbl *
 	return self;
 }
 
-cGridElements *cGridElements_ctor(cGridElements *self, const vec3_t *max, const vec3_t *min, int nx,
+static cGridElements *cGridElements_ctor(cGridElements *self, const vec3_t *max, const vec3_t *min, int nx,
 	int ny, int nz) {
 	return cGridElements_Init(self, CGRIDELEMENTS_VFTABLE, max, min, nx, ny, nz);
 }
@@ -90,11 +105,12 @@ void cGridElements_FreeCells(cGridElements *self, void(*clear)(void *cell), uint
 	Mem_Free(self->cells);
 }
 
-void cGridElements_Free(cGridElements *self) {
+/* the cells freed with their nodes, then the cell array */
+static void cGridElements_Free(cGridElements *self) {
 	cGridElements_FreeCells(self, (void(*)(void *))TrafficCell_Clear, sizeof(cTrafficCellNode));
 }
 
-cGridElements *cGridElements_Delete(cGridElements *self, byte flags) {
+static cGridElements *cGridElements_Delete(cGridElements *self, byte flags) {
 	self->vftable = CGRIDELEMENTS_VFTABLE;
 	cGridElements_Free(self);
 	if (flags & 1) {
@@ -103,7 +119,8 @@ cGridElements *cGridElements_Delete(cGridElements *self, byte flags) {
 	return self;
 }
 
-byte cGridElements_Add(cGridElements *self, const vec3_t *p, const void *data) {
+/* the node into the cell of p (a CHECK out of the box); 1 */
+static byte cGridElements_Add(cGridElements *self, const vec3_t *p, const void *data) {
 	const InfoTrafficNode *info = data;
 	CHECK(!((p->x > self->max.x) || (p->x < self->min.x) || (p->y > self->max.y) || (p->y < self->min.y) ||
 		(p->z > self->max.z) || (p->z < self->min.z)));
@@ -323,7 +340,7 @@ void CNodesTraffic_dtor(CNodesTraffic *self) {
 	DList_FreePool(&self->errors, sizeof(cTrafficErrorNode));
 }
 
-CNodesTraffic *CNodesTraffic_Delete(CNodesTraffic *self, byte flags) {
+static CNodesTraffic *CNodesTraffic_Delete(CNodesTraffic *self, byte flags) {
 	CNodesTraffic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -368,7 +385,7 @@ float CNodesTraffic_GetRadius(CNodesTraffic *self, int track) {
 	return self->tracks[track].radius;
 }
 
-void CNodesTraffic_Init(CNodesTraffic *self) {
+static void CNodesTraffic_Init(CNodesTraffic *self) {
 	self->vftable->Load(self, 1);
 }
 
@@ -800,7 +817,7 @@ void CNodesTraffic_DrawTrack(CNodesTraffic *self, int track) {
 	}
 }
 
-void CNodesTraffic_BuildGrid(CNodesTraffic *self) {
+static void CNodesTraffic_BuildGrid(CNodesTraffic *self) {
 	NodesWorld_GetBox(&self->min, &self->max);
 	if (g_IsMapOutDoor) {
 		char name[0x14];
@@ -863,7 +880,7 @@ void CNodesTraffic_FindNodes(CNodesTraffic *self, const vec3_t *pos, int type, I
 	}
 }
 
-float g_TrafficSearchDist = 200000.0f;
+static float g_TrafficSearchDist = 200000.0f;
 
 void CNodesTraffic_CollectCell(CNodesTraffic *self, const vec3_t *pos, int type, cTrafficCell *cell,
 	InfoTrafficNode *list, int max, int *count, float radius, float distMin, float distMax, byte vis, byte useMax) {
@@ -1242,7 +1259,7 @@ void CNodesTraffic_BuildGridNop(CNodesTraffic *self) {
 }
 
 /* the vtable of CNodesTraffic */
-const CNodesTrafficVtbl CNodesTraffic_vftable = {
+static const CNodesTrafficVtbl CNodesTraffic_vftable = {
 	.Delete = CNodesTraffic_Delete,
 	.AddVehicle = CNodesTraffic_AddVehicle,
 	.RemoveVehicle = CNodesTraffic_RemoveVehicle,
@@ -1270,7 +1287,7 @@ const CNodesTrafficVtbl CNodesTraffic_vftable = {
 };
 
 /* the vtable of cGridElements_InfoTrafficNode */
-const cGridElementsVtbl cGridElements_InfoTrafficNode_vftable = {
+static const cGridElementsVtbl cGridElements_InfoTrafficNode_vftable = {
 	.Delete = cGridElements_Delete,
 	.Add = cGridElements_Add,
 	.GetCellAt = cGridElements_GetCellAt,
@@ -1284,14 +1301,15 @@ const cGridElementsVtbl cGridElements_InfoTrafficNode_vftable = {
 	.CellIndex = cGridElements_CellIndex,
 };
 
-cGVar GVar_MinDistNodeTrafficAI;
-cGVar GVar_DistGetPVisTrafficAI;
-cGVar GVar_ShowNumTrafficAI;
+static cGVar GVar_MinDistNodeTrafficAI;
+/* the engine variables */
+static cGVar GVar_DistGetPVisTrafficAI;
+static cGVar GVar_ShowNumTrafficAI;
 cGVar GVar_ShowTrafficAI;
 cGVar GVar_HTrafficCapsule;
-cGVar GVar_MNTrafficCapsule;
+static cGVar GVar_MNTrafficCapsule;
 cGVar GVar_NTrafficCapsule;
-cGVar GVar_HNTrafficCapsule;
+static cGVar GVar_HNTrafficCapsule;
 cGVar GVar_MTrafficCapsule;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

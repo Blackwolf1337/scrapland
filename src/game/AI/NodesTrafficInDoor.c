@@ -11,6 +11,9 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/staticinit.h"
 
+#define CNODESTRAFFICINDOOR_VFTABLE (&CNodesTrafficInDoor_vftable)
+static const CNodesTrafficVtbl CNodesTrafficInDoor_vftable;
+
 /* the step through the tracks of a sector from a random start, up or down */
 static int Sector_NextTrack(int j, int up, int numT) {
 	if (up) {
@@ -22,6 +25,7 @@ static int Sector_NextTrack(int j, int up, int numT) {
 	return j - 1;
 }
 
+static byte TrafficInDoor_Frame(void);
 CNodesTraffic *CNodesTrafficInDoor_ctor(void *mem) {
 	CNodesTrafficInDoor *self = mem;
 
@@ -66,7 +70,7 @@ static void Sectors_Free(cTrafficSectorList *l) {
 	l->list = NULL;
 }
 
-void CNodesTrafficInDoor_dtor(CNodesTrafficInDoor *self) {
+static void CNodesTrafficInDoor_dtor(CNodesTrafficInDoor *self) {
 	self->base.vftable = CNODESTRAFFICINDOOR_VFTABLE;
 	Sectors_Free(&self->heavy);
 	Sectors_Free(&self->medium);
@@ -77,7 +81,7 @@ void CNodesTrafficInDoor_dtor(CNodesTrafficInDoor *self) {
 	CNodesTraffic_dtor(&self->base);
 }
 
-CNodesTraffic *CNodesTrafficInDoor_Delete(CNodesTraffic *base, byte flags) {
+static CNodesTraffic *CNodesTrafficInDoor_Delete(CNodesTraffic *base, byte flags) {
 	CNodesTrafficInDoor *self = (CNodesTrafficInDoor *)base;
 	CNodesTrafficInDoor_dtor(self);
 	if (flags & 1) {
@@ -86,12 +90,16 @@ CNodesTraffic *CNodesTrafficInDoor_Delete(CNodesTraffic *base, byte flags) {
 	return base;
 }
 
-byte TrafficInDoor_Frame(void) {
+/* the engine callback 2 of the indoor levels: UpdateVehicles of g_NodesTrafficInDoor; 1 */
+static void CNodesTrafficInDoor_UpdateVehicles(CNodesTrafficInDoor *self);
+static byte TrafficInDoor_Frame(void) {
 	CNodesTrafficInDoor_UpdateVehicles((CNodesTrafficInDoor *)g_NodesTrafficInDoor);
 	return 1;
 }
 
-void CNodesTrafficInDoor_UpdateVehicles(CNodesTrafficInDoor *self) {
+/* the vehicles waiting for a place (state 9) put on tracks of sectors that came into view */
+static void CNodesTrafficInDoor_Respawn(CNodesTrafficInDoor *self, cAIVehicle **ai, int numAI, int typeA, cTrafficSector *sectorsA, int numA, int *seenA, int *numSeenA, int *nodesA, byte updateA, int typeB, cTrafficSector *sectorsB, int numB, int *seenB, int *numSeenB, int *nodesB, byte updateB, int typeC, cTrafficSector *sectorsC, int numC, int *seenC, int *numSeenC, int *nodesC, byte updateC);
+static void CNodesTrafficInDoor_UpdateVehicles(CNodesTrafficInDoor *self) {
 	int numSeen = 0, numNodes = 0;
 
 	CNodesTrafficInDoor_Respawn(self, self->heavyAI, self->numHeavyAI, TRAFFIC_HEAVY, self->heavy.list,
@@ -124,7 +132,7 @@ static void Sectors_UpdateSeen(cTrafficSector *sectors, int num, int *seen, int 
 	}
 }
 
-void CNodesTrafficInDoor_Respawn(CNodesTrafficInDoor *self, cAIVehicle **ai, int numAI, int typeA,
+static void CNodesTrafficInDoor_Respawn(CNodesTrafficInDoor *self, cAIVehicle **ai, int numAI, int typeA,
 	cTrafficSector *sectorsA, int numA, int *seenA, int *numSeenA, int *nodesA, byte updateA, int typeB,
 	cTrafficSector *sectorsB, int numB, int *seenB, int *numSeenB, int *nodesB, byte updateB, int typeC,
 	cTrafficSector *sectorsC, int numC, int *seenC, int *numSeenC, int *nodesC, byte updateC) {
@@ -196,7 +204,8 @@ void CNodesTrafficInDoor_Respawn(CNodesTrafficInDoor *self, cAIVehicle **ai, int
 	}
 }
 
-int CNodesTrafficInDoor_HiddenNode(CNodesTrafficInDoor *self, int track) {
+/* the node before the first node of the track the camera sees (0 if that is the last one) */
+static int CNodesTrafficInDoor_HiddenNode(CNodesTrafficInDoor *self, int track) {
 	int last = 0;
 
 	for (int n = 0; n < self->base.tracks[track].numNodes; n++) {
@@ -208,7 +217,7 @@ int CNodesTrafficInDoor_HiddenNode(CNodesTrafficInDoor *self, int track) {
 	return last < self->base.tracks[track].numNodes - 1 ? last : 0;
 }
 
-void TrafficSectors_Add(cTrafficSector *list, int *num, int sector) {
+static void TrafficSectors_Add(cTrafficSector *list, int *num, int sector) {
 	for (int i = 0; i < *num; i++) {
 		if (list[i].sector == sector) {
 			list[i].numNodes++;
@@ -253,7 +262,9 @@ static cTrafficSector *Sectors_NewCount(const char *check) {
 	return list;
 }
 
-void CNodesTrafficInDoor_InitSectors(CNodesTrafficInDoor *self) {
+/* the sector lists of the tracks */
+static void TrafficSectors_SetTracks(cTrafficSector *list, int num);
+static void CNodesTrafficInDoor_InitSectors(CNodesTrafficInDoor *self) {
 	CNodesTraffic *b = &self->base;
 	int ns = 0, np = 0;
 
@@ -364,7 +375,7 @@ void CNodesTrafficInDoor_InitSectors(CNodesTrafficInDoor *self) {
 	Mem_Free(pairs);
 }
 
-void CNodesTrafficInDoor_Init(CNodesTraffic *elem) {
+static void CNodesTrafficInDoor_Init(CNodesTraffic *elem) {
 	CNodesTrafficInDoor *self = (CNodesTrafficInDoor *)elem;
 	self->base.vftable->Load(&self->base, 1);
 	if (self->base.numTracks > 0) {
@@ -372,12 +383,7 @@ void CNodesTrafficInDoor_Init(CNodesTraffic *elem) {
 	}
 }
 
-/* vtable slot 0x48: no grid indoors */
-void CNodesTrafficInDoor_BuildGrid(CNodesTrafficInDoor *self) {
-	(void)self;
-}
-
-void TrafficSectors_SetTracks(cTrafficSector *list, int num) {
+static void TrafficSectors_SetTracks(cTrafficSector *list, int num) {
 	int tracks[100];
 
 	for (int i = 0; i < num; i++) {
@@ -462,6 +468,7 @@ byte CNodesTrafficInDoor_SectorHasTrack(CNodesTrafficInDoor *self, int track, in
 	return 0;
 }
 
+static byte CNodesTrafficInDoor_PickPoint(CNodesTrafficInDoor *self, int *outType, vec3_t *out, int *outTrack, int *outNode, int typeA, cTrafficSector *sectorsA, int numA, int typeB, cTrafficSector *sectorsB, int numB, int typeC, cTrafficSector *sectorsC, int numC);
 byte CNodesTrafficInDoor_GetRespawnPoint(CNodesTrafficInDoor *self, cAIVehicle *ai, int *outType,
 	vec3_t *out, int *outTrack, int *outNode) {
 	switch (Veh(cAIVehicle_GetVehicle(ai))->traffic.type) {
@@ -495,7 +502,7 @@ static int Sectors_Visible(const cTrafficSector *sectors, int num, int *index, i
 	return n;
 }
 
-byte CNodesTrafficInDoor_PickPoint(CNodesTrafficInDoor *self, int *outType, vec3_t *out, int *outTrack,
+static byte CNodesTrafficInDoor_PickPoint(CNodesTrafficInDoor *self, int *outType, vec3_t *out, int *outTrack,
 	int *outNode, int typeA, cTrafficSector *sectorsA, int numA, int typeB, cTrafficSector *sectorsB, int numB,
 	int typeC, cTrafficSector *sectorsC, int numC) {
 	int listA[20], listB[20], listC[20], sumA, sumB, sumC;
@@ -558,7 +565,7 @@ byte CNodesTrafficInDoor_PickPoint(CNodesTrafficInDoor *self, int *outType, vec3
 }
 
 /* the vtable of CNodesTrafficInDoor */
-const CNodesTrafficVtbl CNodesTrafficInDoor_vftable = {
+static const CNodesTrafficVtbl CNodesTrafficInDoor_vftable = {
 	.Delete = CNodesTrafficInDoor_Delete,
 	.AddVehicle = CNodesTraffic_AddVehicle,
 	.RemoveVehicle = CNodesTraffic_RemoveVehicle,

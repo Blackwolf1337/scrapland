@@ -51,9 +51,5 @@ void Controls_RumbleB(cVehicleControls *self, float strength, float time);
 /* the native functions of the items a ship takes (item name, ship name): the ammo or life of the Item...Adds
  * engine variables, the item hidden for its Item...RespawnTime */
 struct cAbstractFile;
-void Controls_TakeEnerNative(struct cAbstractFile *f);	/* "TakeEner" */
-void Controls_TakeLifeNative(struct cAbstractFile *f);	/* "TakeLife", OnLifeItemTaken (ship) */
-void Controls_TakeMissNative(struct cAbstractFile *f);	/* "TakeMiss" */
-void Controls_TakePartNative(struct cAbstractFile *f);	/* "TakePart" */
 
 #endif

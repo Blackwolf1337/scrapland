@@ -25,10 +25,10 @@
 #include "scrap/model.h"
 #include "scrap/staticinit.h"
 
-extern const ObjRefVtbl CNode3D_vftable;
+static const ObjRefVtbl CNode3D_vftable;
 #define CNODO3D_VFTABLE (&CNode3D_vftable)
 
-cGVar GVar_R_Node3D_Count;
+static cGVar GVar_R_Node3D_Count;
 
 #define g_Node3DCount (GVar_R_Node3D_Count.value.i)	/* R_Nodo3D_Count */
 extern byte g_RenderOff;
@@ -37,38 +37,38 @@ extern int g_RenderCounts[10];
 #define g_NodesUpdated g_RenderCounts[5]
 /* the pass of the renderer and its filters of the nodes */
 
-cGVar GVar_R_NodeSlerp2;
+static cGVar GVar_R_NodeSlerp2;
 
 /* the engine variables of the nodes (Gvars) */
 #define g_NodeSlerp2 (GVar_R_NodeSlerp2.value.i)	/* R_NodeSlerp2 0/1/2 */
-cGVar GVar_R_ShowLocalBox;
+static cGVar GVar_R_ShowLocalBox;
 
 #define g_ShowLocalBox (GVar_R_ShowLocalBox.value.i)
-cGVar GVar_R_ShowLBoxMin;
+static cGVar GVar_R_ShowLBoxMin;
 
 #define g_ShowLBoxMin (GVar_R_ShowLBoxMin.value.i)	/* the nodes with an index from .. to (0: no limit) */
-cGVar GVar_R_ShowLBoxMax;
+static cGVar GVar_R_ShowLBoxMax;
 
 #define g_ShowLBoxMax (GVar_R_ShowLBoxMax.value.i)
-cGVar GVar_R_ShowLBoxName;
+static cGVar GVar_R_ShowLBoxName;
 
 #define g_ShowLBoxName (GVar_R_ShowLBoxName.value.s)	/* a wildcard of the names, "" for all */
-cGVar GVar_R_SkipAnim;
+static cGVar GVar_R_SkipAnim;
 
 #define g_SkipAnim (GVar_R_SkipAnim.value.i)
-cGVar GVar_R_SkipAnimVis;
+static cGVar GVar_R_SkipAnimVis;
 
 #define g_SkipAnimVis (GVar_R_SkipAnimVis.value.i)
-cGVar GVar_R_SkipNodeFX;
+static cGVar GVar_R_SkipNodeFX;
 
 #define g_SkipNodeFX (GVar_R_SkipNodeFX.value.i)
-cGVar GVar_R_SkipNodes;
+static cGVar GVar_R_SkipNodes;
 
 #define g_SkipNodes (GVar_R_SkipNodes.value.i)
-cGVar GVar_R_SkipTrans2;
+static cGVar GVar_R_SkipTrans2;
 
 #define g_SkipTrans2 (GVar_R_SkipTrans2.value.i)	/* in the passes 2..9 and 12..19 */
-cGVar GVar_R_SkipTrans;
+static cGVar GVar_R_SkipTrans;
 
 #define g_SkipTrans (GVar_R_SkipTrans.value.i)
 
@@ -76,7 +76,6 @@ cGVar GVar_R_SkipTrans;
 #define NODE_FATAL(self, expr) \
 	Con_FatalErrorf("\nFATAL ERROR: Check failed!\n\nError: %s\n\nExpression: %s\n\nFile: '%s'\nDate: %s\nLine: %d", \
 		(self)->name, expr, __FILE__, __TIMESTAMP__, __LINE__)
-
 
 /* the casts of objeto3d.h: NULL after the failed check */
 /* the track set of an animation of a channel */
@@ -159,15 +158,8 @@ void CNode3D_dtor(CNode3D *self) {
 	}
 }
 
-CNode3D *CNode3D_Delete(CNode3D *self, byte flags) {
-	CNode3D_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(*self));
-	}
-	return self;
-}
-
-IObject3D *CNode3D_GetObj3D(CNode3D *self, CRenderNode *r) {
+/* the object of the render node if it has one, else the node's */
+static IObject3D *CNode3D_GetObj3D(CNode3D *self, CRenderNode *r) {
 	if (r && r->obj3D) {
 		CHECK(r->obj3D->class == self->obj3D->class);
 		return r->obj3D;
@@ -175,6 +167,7 @@ IObject3D *CNode3D_GetObj3D(CNode3D *self, CRenderNode *r) {
 	return self->obj3D;
 }
 
+static box_t *CGround_GetBox(void *self, box_t *out);
 byte CNode3D_GetBBox(CNode3D *self, matrix_t *m, box_t *bbox, byte recalc) {
 	IObject3D *o;
 	byte skin = 0;
@@ -219,7 +212,8 @@ byte CNode3D_GetBBox(CNode3D *self, matrix_t *m, box_t *bbox, byte recalc) {
 	return 1;
 }
 
-byte CNode3D_AnimChannel(CNode3D *self, NodeAnimChannel *c, vec3_t *pos, quat_t *rot) {
+/* position and rotation of channel c (pos and rot blended with the second animation); 0 without a track */
+static byte CNode3D_AnimChannel(CNode3D *self, NodeAnimChannel *c, vec3_t *pos, quat_t *rot) {
 	void *track;
 	vec3_t p2;
 	quat_t q2, a, b, t, conj;
@@ -268,7 +262,7 @@ byte CNode3D_AnimChannel(CNode3D *self, NodeAnimChannel *c, vec3_t *pos, quat_t 
 /* R_ShowLocalBox: the line to the parent and the axes; from 2 the box (blue with a skin, other colors for a render
  * node with its own object), 3 the name and class, 4 the name in the middle of the box, from 5 the kinds of the
  * position and rotation tracks (and the camera track) of the animation, from 6 the name too */
-byte CNode3D_DebugDraw(CNode3D *self, CRenderNode *r) {
+static byte CNode3D_DebugDraw(CNode3D *self, CRenderNode *r) {
 	static const uint32_t kindColors[5] = { 0xff0000, 0xff, 0xffff00, 0x808080, 0x8000 };
 	NodeAnimChannel *c;
 	vec3_t a, b;
@@ -364,6 +358,7 @@ byte CNode3D_DebugDraw(CNode3D *self, CRenderNode *r) {
 	return 1;
 }
 
+static byte CNode3D_AnimAlpha(CNode3D *self, byte *out);
 void CNode3D_Render(CNode3D *self, void *arg, CRenderNode *r) {
 	IObject3D *o;
 	uint32_t flags;
@@ -422,6 +417,8 @@ void CNode3D_Render(CNode3D *self, void *arg, CRenderNode *r) {
 }
 
 /* the look of the render node on the world matrix m */
+static quat_t *CRotation_GetQuat(CRotation *self, quat_t *out);
+static quat_t *Rot_Combine2(quat_t *out, CRotation *a, CRotation *b);
 static void CNode3D_Look(CNode3D *self, CRenderNode *r, NodeLook *l, matrix_t *m) {
 	matrix_t mt, mr;
 	quat_t q1, q2, q3, conj;
@@ -466,6 +463,8 @@ static void CNode3D_Look(CNode3D *self, CRenderNode *r, NodeLook *l, matrix_t *m
 	}
 }
 
+static byte CNode3D_SampleAnim(CNode3D *self, vec3_t *pos, quat_t *rot);
+static quat_t *Rot_Combine(quat_t *out, CRotation *a, const quat_t *q, CRotation *b);
 void CNode3D_Update(CNode3D *self, CRenderNode *r) {
 	matrix_t *m = &self->m;
 	const matrix_t *pm = NULL;
@@ -555,10 +554,6 @@ static IObject3D *Node_FindObj(CNode3D *n, const char *name, uint32_t class) {
 
 IObject3D *CNode3D_FindCamera(CNode3D *self, const char *name) {
 	return Node_FindObj(self, name, CLASS_OBJ3D_CAMERA);
-}
-
-IObject3D *CNode3D_FindLight(CNode3D *self, const char *name) {
-	return Node_FindObj(self, name, CLASS_OBJ3D_LIGHT);
 }
 
 CNode3D *CNode3D_Find(CNode3D *self, const char *name, byte incl) {
@@ -698,7 +693,9 @@ void CNode3D_Free(CNode3D *self) {
 	self->Refs--;
 }
 
-quat_t *Rot_Combine(quat_t *out, CRotation *a, const quat_t *q, CRotation *b) {
+/* a, q and b combined (b around the result); the quaternions of a and b are made into one buffer, so with both
+ * not zero b's is lost and a's is used twice, as in the original */
+static quat_t *Rot_Combine(quat_t *out, CRotation *a, const quat_t *q, CRotation *b) {
 	quat_t t, t2, *bq, *aq;
 
 	if (a->flags & ROT_ZERO) {
@@ -719,7 +716,7 @@ quat_t *Rot_Combine(quat_t *out, CRotation *a, const quat_t *q, CRotation *b) {
 	return out;
 }
 
-quat_t *Rot_Combine2(quat_t *out, CRotation *a, CRotation *b) {
+static quat_t *Rot_Combine2(quat_t *out, CRotation *a, CRotation *b) {
 	quat_t t, *bq, *aq;
 
 	if (a->flags & ROT_ZERO) {
@@ -749,15 +746,6 @@ void *CNode3D_Track(CNode3D *self, uint32_t ch) {
 	return CAnimation_GetNodeTable(Anim_Set(c->anim->anim[0]), self->index);
 }
 
-void *CNode3D_Track2(CNode3D *self, uint32_t ch) {
-	NodeAnimChannel *c = CNode3D_ChannelAt(self, ch);
-
-	if (!c || !c->anim || !c->anim->anim[1]) {
-		return NULL;
-	}
-	return CAnimation_GetNodeTable(Anim_Set(c->anim->anim[1]), self->index);
-}
-
 byte CNode_LightColor(CNode3D *self, vec3_t *color, float *mult) {
 	NodeAnimChannel *c = CNode3D_Channel0(self);
 	void *track;
@@ -784,7 +772,8 @@ byte CNode3D_AnimFloat(CNode3D *self, float *out) {
 	return CAnimNode_GetFOV(track, out, c->frame, c->t) ? 1 : 0;
 }
 
-byte CNode3D_SampleAnim(CNode3D *self, vec3_t *pos, quat_t *rot) {
+/* position and rotation from the first channel (3 down to 0) that has the node */
+static byte CNode3D_SampleAnim(CNode3D *self, vec3_t *pos, quat_t *rot) {
 	NodeAnimChannel *c;
 
 	if (g_SkipAnim) {
@@ -803,7 +792,8 @@ byte CNode3D_SampleAnim(CNode3D *self, vec3_t *pos, quat_t *rot) {
 	return 0;
 }
 
-byte CNode3D_AnimAlpha(CNode3D *self, byte *out) {
+/* the animated visibility (0..255) from channel 0 */
+static byte CNode3D_AnimAlpha(CNode3D *self, byte *out) {
 	NodeAnimChannel *c = CNode3D_Channel0(self);
 	void *track;
 
@@ -813,7 +803,8 @@ byte CNode3D_AnimAlpha(CNode3D *self, byte *out) {
 	return CAnimNode_GetVisible(track, out, c->frame, c->t) ? 1 : 0;
 }
 
-box_t *CGround_GetBox(void *self, box_t *out) {
+/* the box of a CGround (objeto3d.h) */
+static box_t *CGround_GetBox(void *self, box_t *out) {
 	*out = ((CGround *)self)->Ext;
 	return out;
 }
@@ -827,7 +818,7 @@ NodeAnimChannel *CNode3D_Channel(CNode3D *self, uint32_t ch) {
 	return c;
 }
 
-quat_t *CRotation_GetQuat(CRotation *self, quat_t *out) {
+static quat_t *CRotation_GetQuat(CRotation *self, quat_t *out) {
 	quat_t qx, qy, qz, t, t2;
 	float s, c;
 
@@ -852,7 +843,7 @@ quat_t *CRotation_GetQuat(CRotation *self, quat_t *out) {
 }
 
 /* the vtable of CNode3D */
-const ObjRefVtbl CNode3D_vftable = {
+static const ObjRefVtbl CNode3D_vftable = {
 	.Delete = CNode3D_VecDelete,
 };
 

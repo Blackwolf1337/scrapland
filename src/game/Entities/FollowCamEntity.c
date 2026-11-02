@@ -11,6 +11,25 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/staticinit.h"
 
+#define CFOLLOWCAMENTITY_VFTABLE (&cFollowCamEntity_vftable.base.base)
+#define g_FreeCameraCollide (GVar_FreeCameraCollide.value.i)	/* FreeCameraCollide */
+#define g_FullCameraTest (GVar_FullCameraTest.value.i)	/* FullCameraTest */
+#define g_VehicleCamNear (GVar_VehicleCamNear.value.f)
+#define g_VehicleCamFar (GVar_VehicleCamFar.value.f)
+#define g_WalkCamNear (GVar_WalkCamNear.value.f)
+#define g_WalkCamFar (GVar_WalkCamFar.value.f)
+#define g_OutWalkCamNear (GVar_OutWalkCamNear.value.f)
+#define g_OutWalkCamFar (GVar_OutWalkCamFar.value.f)
+static const cFollowCamVtbl cFollowCamEntity_vftable;
+static cGVar GVar_WalkCamNear;
+static cGVar GVar_WalkCamFar;
+static cGVar GVar_VehicleCamNear;
+static cGVar GVar_VehicleCamFar;
+static cGVar GVar_OutWalkCamNear;
+static cGVar GVar_OutWalkCamFar;
+static cGVar GVar_FullCameraTest;
+static cGVar GVar_FreeCameraCollide;
+
 #define FCAM_SLOW_DT 0.06666667f		/* rva 0x3ad094: a frame slower than 15 per second */
 #define FCAM_HALF_PI 1.5707964f
 #define FCAM_NEAR_SCALE 1.65f			/* rva 0x3ad09c: the sphere radius of the camera, times clipNear */
@@ -65,7 +84,8 @@ cEntity *cFollowCamEntity_ctor(void *mem, const char *name, float x, float y, fl
 	return mem;
 }
 
-void cFollowCamEntity_dtor(cEntity *self) {
+/* ---- FollowCamEntity.c ---- */
+static void cFollowCamEntity_dtor(cEntity *self) {
 	cFollowCamEntity *fc = FCam(self);
 
 	self->vftable = CFOLLOWCAMENTITY_VFTABLE;
@@ -75,7 +95,7 @@ void cFollowCamEntity_dtor(cEntity *self) {
 	cCamControl_dtor(self);
 }
 
-cEntity *cFollowCamEntity_Delete(cEntity *self, uint32_t flags) {
+static cEntity *cFollowCamEntity_Delete(cEntity *self, uint32_t flags) {
 	cFollowCamEntity_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CFOLLOWCAMENTITY_SIZE);
@@ -85,7 +105,7 @@ cEntity *cFollowCamEntity_Delete(cEntity *self, uint32_t flags) {
 
 /* the angles turn towards the ones of the target, slower for a far camera; at once for a near one or in slow
  * frames of a fast world */
-void cFollowCamEntity_Slot(cEntity *self, float dt) {
+static void cFollowCamEntity_Slot(cEntity *self, float dt) {
 	cFollowCamEntity *fc = FCam(self);
 	vec3_t tmp;
 
@@ -118,7 +138,8 @@ void cFollowCamEntity_Slot(cEntity *self, float dt) {
 
 /* the camera between two slots: the angles lerped, the position behind the target at the camera distance, nearer
  * where the world or an entity is in the way */
-void cFollowCamEntity_Lerp(cEntity *self, float f) {
+static void cFollowCamEntity_Quake(cEntity *self, float dt);
+static void cFollowCamEntity_Lerp(cEntity *self, float f) {
 	cFollowCamEntity *fc = FCam(self);
 	CGameCamera *cam = &fc->base.cam;
 	vec3_t tmp, r, want, hit;
@@ -201,7 +222,7 @@ void cFollowCamEntity_Lerp(cEntity *self, float f) {
 	cFollowCamEntity_Quake(self, dt);
 }
 
-byte cFollowCamEntity_VarF(cEntity *self, const char *name, double *d, int set) {
+static byte cFollowCamEntity_VarF(cEntity *self, const char *name, double *d, int set) {
 	cFollowCamEntity *fc = FCam(self);
 	float *deg = NULL;
 
@@ -282,7 +303,8 @@ void cCamEntity_SetAng(cEntity *cam, vec3_t ang) {
 	CamCtl_Vtbl(cam)->Lerp(cam, 1.0f);
 }
 
-void cFollowCamEntity_FreeMove(cEntity *self) {
+/* the camera moved by the input actions of its view slot (sets 1 and 3) */
+static void cFollowCamEntity_FreeMove(cEntity *self) {
 	cCamControl *c = (cCamControl *)self;
 	vec3_t move, r, to, out;
 
@@ -338,21 +360,22 @@ cEntity *cCamEntity_GetTarget(cEntity *cam) {
 	return FCam(cam)->target;
 }
 
-void cFollowCamEntity_GetAng2(cEntity *self, float *ang) {
+static void cFollowCamEntity_GetAng2(cEntity *self, float *ang) {
 	ang[0] = FCam(self)->ang[0];
 	ang[1] = FCam(self)->ang[1];
 }
 
-const char *cFollowCamEntity_GetClassName(cEntity *self) {
+static const char *cFollowCamEntity_GetClassName(cEntity *self) {
 	(void)self;
 	return FCAM_CLASSNAME;
 }
 
-void cFollowCamEntity_UpdateOff(cEntity *self, float dt) {
+static void cFollowCamEntity_UpdateOff(cEntity *self, float dt) {
 	cFollowCamEntity_Quake(self, dt);
 }
 
-byte cFollowCamEntity_VarI(cEntity *self, const char *name, int *i, int set) {
+static void cFollowCamEntity_SetFreeCam(cEntity *self, byte on);
+static byte cFollowCamEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	if (!*name) {
 		return 0;
 	}
@@ -367,14 +390,15 @@ byte cFollowCamEntity_VarI(cEntity *self, const char *name, int *i, int set) {
 	return cCamControl_VarI(self, name, i, set);
 }
 
-byte cFollowCamEntity_IsType(cEntity *self, const char *type) {
+static byte cFollowCamEntity_IsType(cEntity *self, const char *type) {
 	if (!strcmp(type, TYEN_FCAM)) {
 		return 1;
 	}
 	return cCamControl_IsType(self, type);
 }
 
-byte cFollowCamEntity_SetTargetName(cEntity *self, const char *name) {
+static void cFollowCamEntity_ResetAngles(cEntity *self);
+static byte cFollowCamEntity_SetTargetName(cEntity *self, const char *name) {
 	byte r = cCamControl_SetTarget(self, name);
 
 	if (!r && FCam(self)->target) {
@@ -383,7 +407,8 @@ byte cFollowCamEntity_SetTargetName(cEntity *self, const char *name) {
 	return r;
 }
 
-void cFollowCamEntity_Quake(cEntity *self, float dt) {
+/* the random shake of the angles while QuakeTime runs */
+static void cFollowCamEntity_Quake(cEntity *self, float dt) {
 	cFollowCamEntity *fc = FCam(self);
 	vec3_t *rot = &fc->base.cam.rot;
 
@@ -401,7 +426,8 @@ void cFollowCamEntity_Quake(cEntity *self, float dt) {
 	}
 }
 
-void cFollowCamEntity_ResetAngles(cEntity *self) {
+/* the three angle pairs from the target (y plus AddTurn) */
+static void cFollowCamEntity_ResetAngles(cEntity *self) {
 	cFollowCamEntity *fc = FCam(self);
 	vec3_t tmp;
 
@@ -418,7 +444,8 @@ void cFollowCamEntity_ResetAngles(cEntity *self) {
 	fc->prevAng[1] = y;
 }
 
-void cFollowCamEntity_SetFreeCam(cEntity *self, byte on) {
+/* on: no target; off: the MainTarget "Obj" again (free when there is none) */
+static void cFollowCamEntity_SetFreeCam(cEntity *self, byte on) {
 	cFollowCamEntity *fc = FCam(self);
 
 	if (!on && fc->mainTarget[0]) {
@@ -474,14 +501,14 @@ void cCamEntity_SetTarget(cEntity *cam, cEntity *target) {
 	cPy_Function_Execute(&fc->onSwitch, 0);
 }
 
-void cFollowCamEntity_SetAng2(cEntity *self, const float *ang) {
+static void cFollowCamEntity_SetAng2(cEntity *self, const float *ang) {
 	FCam(self)->ang[0] = ang[0];
 	FCam(self)->ang[1] = ang[1];
 }
 
 /* the free camera: the button of the view picks the next active vehicle of an AI or of the network, or the next
  * active character, as the target; without one it flies */
-void cFollowCamEntity_Update(cEntity *self) {
+static void cFollowCamEntity_Update(cEntity *self) {
 	cFollowCamEntity *fc = FCam(self);
 	int slot;
 
@@ -511,7 +538,7 @@ void cFollowCamEntity_Update(cEntity *self) {
 	}
 }
 
-byte cFollowCamEntity_VarS(cEntity *self, const char *name, char **s, int set) {
+static byte cFollowCamEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 	cFollowCamEntity *fc = FCam(self);
 
 	if (!*name) {
@@ -545,7 +572,7 @@ byte cFollowCamEntity_VarS(cEntity *self, const char *name, char **s, int set) {
 	return cCamControl_VarS(self, name, s, set);
 }
 
-byte cFollowCamEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set) {
+static byte cFollowCamEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set) {
 	if (!*name) {
 		return 0;
 	}
@@ -553,7 +580,7 @@ byte cFollowCamEntity_VarV(cEntity *self, const char *name, double *x, double *y
 }
 
 /* the vtable of cFollowCamEntity */
-const cFollowCamVtbl cFollowCamEntity_vftable = {
+static const cFollowCamVtbl cFollowCamEntity_vftable = {
 	.base.base.Update = cFollowCamEntity_Update,
 	.base.base.Render = cEntity_Render,
 	.base.base.UpdateOff = cEntity_UpdateOff,
@@ -587,15 +614,16 @@ const cFollowCamVtbl cFollowCamEntity_vftable = {
 	.SetAng2 = cFollowCamEntity_SetAng2,
 };
 
-cGVar GVar_FullCameraTest;
-cGVar GVar_VehicleCamFar;
-cGVar GVar_FreeCameraCollide;
+static cGVar GVar_FullCameraTest;
+static cGVar GVar_VehicleCamFar;
+/* engine variables */
+static cGVar GVar_FreeCameraCollide;
 cGVar GVar_VehicleCamDist;
-cGVar GVar_VehicleCamNear;
-cGVar GVar_WalkCamFar;
-cGVar GVar_OutWalkCamFar;
-cGVar GVar_OutWalkCamNear;
-cGVar GVar_WalkCamNear;
+static cGVar GVar_VehicleCamNear;
+static cGVar GVar_WalkCamFar;
+static cGVar GVar_OutWalkCamFar;
+static cGVar GVar_OutWalkCamNear;
+static cGVar GVar_WalkCamNear;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_VehicleCamDist, &GVar_VehicleCamDist, "VehicleCamDist", 2, "Default camera distance for vehicles in cm", 1000.0f)

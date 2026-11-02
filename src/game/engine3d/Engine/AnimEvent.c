@@ -24,18 +24,8 @@ void CAnimEvent_dtor(CAnimEvent *self) {
 	}
 }
 
-CAnimEvent *CAnimEvent_Delete(CAnimEvent *self, byte flags) {
-	if (self->next) {
-		CAnimEvent_Delete(self->next, 1);
-		self->next = NULL;
-	}
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CAnimEvent));
-	}
-	return self;
-}
-
-void CAnimEvent_Insert(CAnimEvent *self, CAnimEvent **list) {
+/* into the list sorted by t, then id; CHECK it is in none yet */
+static void CAnimEvent_Insert(CAnimEvent *self, CAnimEvent **list) {
 	CHECK(list);
 	CHECK(!(self->flags & ANIMEVENT_INSERTED));
 	self->flags |= ANIMEVENT_INSERTED;

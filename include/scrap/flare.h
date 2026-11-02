@@ -11,20 +11,12 @@
 #include "scrap/graphic2d.h"
 #include "scrap/node3d.h"
 
-extern const IObject3DVtbl CFlare_vftable;
-#define CFLARE_VFTABLE (&CFlare_vftable)
-
 extern float g_FlareSize;		/* tam_def */
 extern int g_FlareAttenDist;	/* aten_dist */
-extern float g_FlareAttenDistIni;	/* aten_dist_ini */
 extern float g_FlareAttenDistEnd;	/* aten_dist_fin */
 extern float g_FlareFadeIn;	/* fundido_ent */
 extern float g_FlareFadeOut;	/* fundido_sal */
 extern int g_FlareShowInfo;		/* ver_info */
-extern cGVar GVar_R_SkipFlares;
-#define g_SkipFlares (GVar_R_SkipFlares.value.i)		/* R_SkipFlares */
-extern cGVar GVar_R_ShowFlaresInfo;
-#define g_ShowFlaresInfo (GVar_R_ShowFlaresInfo.value.i)	/* R_ShowFlaresInfo */
 extern int g_Overdraw;		/* video sobredib, the overdraw view */
 extern float g_TimeMsF;		/* the time of the engine in ms */
 
@@ -50,17 +42,10 @@ typedef struct CFlare {
 	float transp;			/* 0x38 1, the fade 0..1 */
 } CFlare;
 
-/* rva 0x297bd0, not called: 1 if the 11 floats of a and b are equal */
-byte Floats11_Equal(const float *a, const float *b);
 CFlare *CFlare_ctor(CFlare *self);
-void CFlare_dtor(CFlare *self);
-IObject3D *CFlare_Delete(IObject3D *base, byte flags);
 /* the sprite with the color and the size (the deferred draw of CFlare_Render) */
 void CFlare_Draw(CFlare *self);
-void CFlare_Render(IObject3D *base, void *dev, CRenderNode *r);
 /* a new sprite of the texture, centered, size from scale */
 void CFlare_SetTexture(CFlare *self, const char *tex, const char *opac, int src, int dst, byte alpha);
-/* additive (5, 6, 255) */
-void CFlare_SetTextureAdd(CFlare *self, const char *tex, const char *opac);
 
 #endif

@@ -12,6 +12,9 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/staticinit.h"
 
+#define CAICHARCONTROL3D_VFTABLE (&cAICharControl3D_vftable.base)
+static const cAICharControl3DVtbl cAICharControl3D_vftable;
+
 static inline float AICC3D_Len(float x, float y, float z) {
 	return (float)__builtin_sqrt((double)(y * y + x * x + z * z));
 }
@@ -37,7 +40,7 @@ void cAICharControl3D_dtor(cAICharControl3D *self) {
 	cAICharControl_dtor(self);
 }
 
-cAICharControl3D *cAICharControl3D_Delete(cAICharControl3D *self, byte flags) {
+static cAICharControl3D *cAICharControl3D_Delete(cAICharControl3D *self, byte flags) {
 	self->vftable = CAICHARCONTROL3D_VFTABLE;
 	cAICharControl_dtor(self);
 	if (flags & 1) {
@@ -915,7 +918,7 @@ byte cAICharControl3D_StrafeFwd(cAICharControl3D *self, const vec3_t *pos, const
 }
 
 /* the vtable of cAICharControl3D */
-const cAICharControl3DVtbl cAICharControl3D_vftable = {
+static const cAICharControl3DVtbl cAICharControl3D_vftable = {
 	.base.Delete = cAICharControl3D_Delete,
 	.base.Draw = cAICharControl3D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,

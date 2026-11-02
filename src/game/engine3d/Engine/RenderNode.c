@@ -18,7 +18,7 @@
 #define RNODE_UNIQUE 2
 #define RENDERNODE_ROT_NULL 0
 
-cGVar GVar_R_RenderNode_Count;
+static cGVar GVar_R_RenderNode_Count;
 
 #define g_RenderNodeCount (GVar_R_RenderNode_Count.value.i)
 
@@ -40,7 +40,7 @@ static void Rotation_Init(CRotation *r) {
 }
 
 /* both rotations zero, the type left */
-NodeLook *NodeLook_ctor(NodeLook *self) {
+static NodeLook *NodeLook_ctor(NodeLook *self) {
 	Rotation_Init(&self->r1);
 	Rotation_Init(&self->r2);
 	return self;

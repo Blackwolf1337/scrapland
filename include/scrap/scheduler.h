@@ -21,22 +21,11 @@ typedef struct cScheduledFunc {
 extern const cScheduledFuncStackVtbl cScheduledFuncStack_vftable;
 #define CSCHEDULEDFUNCSTACK_VFTABLE (&cScheduledFuncStack_vftable)
 
-void cScheduledFunc_dtor(cScheduledFunc *self);
-cScheduledFuncStack *cScheduledFuncStack_Delete(cScheduledFuncStack *self, byte flags);
 void Scheduler_Add(cScheduledFuncStack *self, float time, PyObject *func, PyObject *params, const char *name);
 /* the one named name, unless it is running */
 void Scheduler_Delete(cScheduledFuncStack *self, const char *name);
 void Scheduler_Clear(cScheduledFuncStack *self);
 /* calls and removes the functions due before now */
 void Scheduler_Run(cScheduledFuncStack *self, float now);
-void cScheduledFunc_Set(cScheduledFunc *self, float time, PyObject *func, PyObject *params, const char *name);
-
-/* the DList instance */
-void SchedList_Add(cSchedList *list, cScheduledFunc *const *f);
-/* in front of the iterator */
-void SchedList_Insert(cSchedList *list, cScheduledFunc *const *f);
-void SchedList_Clear(cSchedList *list);
-void SchedList_RemoveIter(cSchedList *list);
-void SchedList_RemoveHead(cSchedList *list);
 
 #endif

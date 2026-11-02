@@ -20,24 +20,27 @@
 #include "scrap/platform.h"
 #include "scrap/staticinit.h"
 
+#define g_MusicVoices (cMusicVoice_MusicVoices)
+static cMusicVoice cMusicVoice_MusicVoices[8];
+
 #define MUSIC_SHOW_DEBUG 2			/* S_Show */
 
-cGVar GVar_MusicMainVolume;
+static cGVar GVar_MusicMainVolume;
 
 /* engine variables */
 #define g_MusicMainVolume (GVar_MusicMainVolume.value.f)
-cGVar GVar_VoiceMainVolume;
+static cGVar GVar_VoiceMainVolume;
 
 #define g_VoiceMainVolume (GVar_VoiceMainVolume.value.f)
 extern cGVar GVar_S_Show;
 #define g_S_Show (GVar_S_Show.value.i)
-cGVar GVar_S_StreamBufferSize;
+static cGVar GVar_S_StreamBufferSize;
 
 #define g_S_StreamBufferSize (GVar_S_StreamBufferSize.value.i)	/* ms */
-cGVar GVar_S_VoiceoverFadein;
+static cGVar GVar_S_VoiceoverFadein;
 
 #define g_S_VoiceoverFadein (GVar_S_VoiceoverFadein.value.f)
-cGVar GVar_S_VoiceoverFadeout;
+static cGVar GVar_S_VoiceoverFadeout;
 
 #define g_S_VoiceoverFadeout (GVar_S_VoiceoverFadeout.value.f)
 extern cGVar GVar_S_VoiceoverVolume;
@@ -57,7 +60,7 @@ static int Time_Since(uint32_t since) {
 }
 
 /* the voices of the static array */
-cMusicVoice *cMusicVoice_ctor(cMusicVoice *self) {
+static cMusicVoice *cMusicVoice_ctor(cMusicVoice *self) {
 	self->name[0] = 0;
 	self->stream = NULL;
 	self->channel = -1;
@@ -66,11 +69,11 @@ cMusicVoice *cMusicVoice_ctor(cMusicVoice *self) {
 	return self;
 }
 
-void cMusicVoice_dtor(cMusicVoice *self) {
+static void cMusicVoice_dtor(cMusicVoice *self) {
 	(void)self;
 }
 
-int g_FmodState;
+static int g_FmodState;
 
 /* the FMOD start */
 
@@ -100,13 +103,10 @@ int Fmod_Close(void) {
 	return 1;
 }
 
-int Fmod_IsInit(void) {
-	return g_FmodState > 0;
-}
-
 /* the voices */
 
-cMusicVoice *Voice_Get(uint32_t voice) {
+/* the voices; NULL without the mixer */
+static cMusicVoice *Voice_Get(uint32_t voice) {
 	if (g_FmodState <= 0) {
 		return NULL;
 	}
@@ -114,17 +114,11 @@ cMusicVoice *Voice_Get(uint32_t voice) {
 	return &g_MusicVoices[voice];
 }
 
-/* differs from the original on purpose (no blocking waits): the voices open at once (Voice_Open), there is nothing
- * to wait for; the original polled the open state in Sleep(10) steps */
-void Voice_Wait(cMusicVoice *v, const char *what) {
-	(void)v;
-	(void)what;
-}
+static int g_NumVoices;
+static int g_NumVoiceovers;
 
-int g_NumVoices;
-int g_NumVoiceovers;
-
-void Voice_Close(cMusicVoice *v) {
+static byte Music_Voiceover(float factor, float speed);
+static void Voice_Close(cMusicVoice *v) {
 	if (v->stream) {
 		Snd_StreamClose(v->stream);
 		g_NumVoices--;
@@ -144,7 +138,7 @@ static float Volume_Clamp(float v) {
 	return 0.0f >= v ? 0.0f : Float_MinSS(1.0f, v);
 }
 
-void Voice_ApplyVolume(cMusicVoice *v, float volume) {
+static void Voice_ApplyVolume(cMusicVoice *v, float volume) {
 	if (!v->stream) {
 		return;
 	}
@@ -307,9 +301,9 @@ int Voice_SetVolume(int voice, float volume) {
 	return 1;
 }
 
-byte g_VoicesPaused;
+static byte g_VoicesPaused;
 
-void Voices_UpdatePause(void) {
+static void Voices_UpdatePause(void) {
 	byte paused = World_TimeScale() == 0.0f || !g_pApp->active;
 
 	if (g_VoicesPaused == paused) {
@@ -332,7 +326,8 @@ void D3DApp_OnActivate(void) {
 
 CFont *g_FontTerminal8;
 
-void Voices_DrawDebug(int x, int y) {
+static void Music_DrawStream(float x, float y, void *stream, int channel, byte *playing);
+static void Voices_DrawDebug(int x, int y) {
 	float yy;
 	int playingCount = 0;
 	uint32_t color;
@@ -373,18 +368,15 @@ void Voices_DrawDebug(int x, int y) {
 		memMax >> 10);
 }
 
-byte Voices_DrawDebugDefault(void) {
-	Voices_DrawDebug(10, 0xb4);
-	return 1;
-}
-
-void *g_MusicStream;
-uint32_t g_MusicOpenTime;
-int g_MusicChannel = -1;
+static void *g_MusicStream;
+static uint32_t g_MusicOpenTime;
+static int g_MusicChannel = -1;
 
 /* the music */
 
-byte Music_Ready(void) {
+/* the music */
+static byte Music_Start(void);
+static byte Music_Ready(void) {
 	if (!g_MusicStream) {
 		return 0;
 	}
@@ -399,15 +391,17 @@ byte Music_Ready(void) {
 }
 
 float g_RealFrameSecs;
-float g_MusicCurMainVolume;
-float g_MusicVolume = 1.0f;
-float g_MusicVoiceover = 1.0f;
-float g_MusicVoiceoverTarget = 1.0f;
-float g_MusicVoiceoverSpeed = 1.0f;
-float g_MusicFadeTarget = 1.0f;
-float g_MusicFadeSpeed = 1.0f;
+static float g_MusicCurMainVolume;
+static float g_MusicVolume = 1.0f;
+static float g_MusicVoiceover = 1.0f;
+static float g_MusicVoiceoverTarget = 1.0f;
+static float g_MusicVoiceoverSpeed = 1.0f;
+static float g_MusicFadeTarget = 1.0f;
+static float g_MusicFadeSpeed = 1.0f;
 
-byte Music_UpdateVolumes(void) {
+static void Music_ApplyVolume(void);
+static void Music_DrawDebug(int x, int y);
+static byte Music_UpdateVolumes(void) {
 	Music_Ready();
 	Music_DrawDebug(10, 0x8c);
 	if (g_MusicVoiceoverTarget != g_MusicVoiceover) {
@@ -426,10 +420,10 @@ byte Music_UpdateVolumes(void) {
 	return 1;
 }
 
-char g_MusicName[260];
-uint32_t g_MusicWaitTime;
+static char g_MusicName[260];
+static uint32_t g_MusicWaitTime;
 
-void Music_DrawDebug(int x, int y) {
+static void Music_DrawDebug(int x, int y) {
 	float yy;
 	uint32_t color, t;
 	byte playing;
@@ -454,13 +448,13 @@ void Music_DrawDebug(int x, int y) {
 /* differs from the original on purpose (no blocking waits): the original waited in Sleep(10) steps until FMOD had
  * opened the stream and Music_Ready had started it (one second after the open at the earliest); Music_Stop closes a
  * stream that is not ready without starting it */
-byte Music_Wait(void) {
+static byte Music_Wait(void) {
 	return Music_Ready();
 }
 
-int g_MusicPaused;
+static int g_MusicPaused;
 
-byte Music_Open(const char *name) {
+static byte Music_Open(const char *name) {
 	char pack[0x80];
 	int offset, size;
 	uint32_t t;
@@ -487,14 +481,14 @@ byte Music_Open(const char *name) {
 	return 1;
 }
 
-void Music_SetPaused(int paused) {
+static void Music_SetPaused(int paused) {
 	g_MusicPaused = paused;
 	if (Music_Ready()) {
 		Snd_SetPaused(g_MusicChannel, (byte)g_MusicPaused);
 	}
 }
 
-byte Music_Start(void) {
+static byte Music_Start(void) {
 	int freq;
 
 	if (!g_MusicStream) {
@@ -518,14 +512,14 @@ byte Music_Start(void) {
 	return 1;
 }
 
-void Music_ApplyVolume(void) {
+static void Music_ApplyVolume(void) {
 	if (Music_Ready()) {
 		Snd_SetVolume(g_MusicChannel,
 			(int)(g_MusicVolume * g_MusicCurMainVolume * g_MusicVoiceover * 255.0f));
 	}
 }
 
-byte Music_Voiceover(float factor, float speed) {
+static byte Music_Voiceover(float factor, float speed) {
 	E3D_LogDebug2((&g_FileLog), "music_voiceover: %.2f, %.2f, %.3f", (double)factor, (double)speed,
 		(double)((float)__builtin_fabs((double)(factor - g_MusicVoiceover)) / Float_MaxSS(speed, 0.001f)));
 	g_MusicVoiceoverTarget = factor;
@@ -534,7 +528,7 @@ byte Music_Voiceover(float factor, float speed) {
 	return 1;
 }
 
-void Music_DrawStream(float x, float y, void *stream, int channel, byte *playing) {
+static void Music_DrawStream(float x, float y, void *stream, int channel, byte *playing) {
 	int vol, pan, freq, len, t;
 	byte isPlaying;
 	uint32_t color;
@@ -633,11 +627,8 @@ byte Music_Update(void) {
 
 /* empty callbacks of the module */
 
-void Music_Nop(void) {
-}
-
 cGVar GVar_TimerFreqMult;
-cMusicVoice cMusicVoice_MusicVoices[8];
+static cMusicVoice cMusicVoice_MusicVoices[8];
 cGVar GVar_isDolby;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -5,6 +5,13 @@
 #include "scrap/scoreritems.h"
 #include "scrap/staticinit.h"
 
+#define CBARSCORER_VFTABLE (&cBarScorer_vftable.base)
+#define g_BarBlinkTime (GVar_BlinkTime.value.f)	/* BlinkTime */
+#define g_BarOnFinish (&GVar_OnFinishAutoUpdate.func)	/* OnFinishAutoUpdate */
+static const cSpriteScorerVtbl cBarScorer_vftable;
+static cGVarFunction GVar_OnFinishAutoUpdate;
+static cGVar GVar_BlinkTime;
+
 static const char *const s_BackColors[4] = {"BackRed", "BackGreen", "BackBlue", "BackAlpha"};
 static const char *const s_MainColors[4] = {"MainRed", "MainGreen", "MainBlue", "MainAlpha"};
 static const char *const s_BlackColors[4] = {"BlackRed", "BlackGreen", "BlackBlue", "BlackAlpha"};
@@ -33,12 +40,12 @@ cBarScorer *cBarScorer_ctor(cBarScorer *self) {
 	return self;
 }
 
-void cBarScorer_dtor(cBarScorer *self) {
+static void cBarScorer_dtor(cBarScorer *self) {
 	self->base.base.vftable = CBARSCORER_VFTABLE;
 	cSpriteScorer_dtor(&self->base);
 }
 
-cScorerItem *cBarScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cBarScorer_Delete(cScorerItem *base, byte flags) {
 	cBarScorer *self = (cBarScorer *)base;
 	cBarScorer_dtor(self);
 	if (flags & 1) {
@@ -47,7 +54,9 @@ cScorerItem *cBarScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-int cBarScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+/* MaxValue, Value, AutoUpdateStopValue, AutoUpdateSpeedFactor, MainBarIndex, BlackBarIndex, IsAutoUpdatable,
+ * Blink, BackIndex and the Red, Green, Blue, Alpha of Back, Main and Black */
+static int cBarScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cBarScorer *self = (cBarScorer *)base;
 	int r;
 
@@ -122,7 +131,7 @@ int cBarScorer_Var(cScorerItem *base, const char *name, int set, char **s, doubl
 	return cSpriteScorer_Var(&self->base.base, name, set, s, d, i);
 }
 
-void cBarScorer_Draw(cScorerItem *base, int player) {
+static void cBarScorer_Draw(cScorerItem *base, int player) {
 	cBarScorer *self = (cBarScorer *)base;
 	cSpriteScorer *sp = &self->base;
 	int mode = g_BarAutoUpdate;
@@ -177,7 +186,7 @@ void cBarScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cBarScorer */
-const cSpriteScorerVtbl cBarScorer_vftable = {
+static const cSpriteScorerVtbl cBarScorer_vftable = {
 	.base.Draw = cBarScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cBarScorer_Var,
@@ -185,8 +194,8 @@ const cSpriteScorerVtbl cBarScorer_vftable = {
 	.SetMultiSprite = cSpriteScorer_SetMultiSprite,
 };
 
-cGVarFunction GVar_OnFinishAutoUpdate;
-cGVar GVar_BlinkTime;
+static cGVarFunction GVar_OnFinishAutoUpdate;
+static cGVar GVar_BlinkTime;
 cGVar GVar_IsAutoUpdatable;
 cGVar GVar_AutoUpdateSpeedFactor;
 cGVar GVar_AutoUpdateStopValue;

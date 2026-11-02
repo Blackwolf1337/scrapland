@@ -12,15 +12,12 @@
 #include "scrap/text.h"
 #include "scrap/staticinit.h"
 
-byte Floats11_Equal(const float *a, const float *b) {
-	static const byte order[11] = { 0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 6 };
-	for (int i = 0; i < 11; i++) {
-		if (a[order[i]] != b[order[i]]) {
-			return 0;
-		}
-	}
-	return 1;
-}
+#define CFLARE_VFTABLE (&CFlare_vftable)
+#define g_SkipFlares (GVar_R_SkipFlares.value.i)		/* R_SkipFlares */
+#define g_ShowFlaresInfo (GVar_R_ShowFlaresInfo.value.i)	/* R_ShowFlaresInfo */
+static cGVar GVar_R_SkipFlares;
+static cGVar GVar_R_ShowFlaresInfo;
+static const IObject3DVtbl CFlare_vftable;
 
 CFlare *CFlare_ctor(CFlare *self) {
 	self->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
@@ -48,13 +45,13 @@ static void CFlare_FreeGraphic(CFlare *self) {
 	}
 }
 
-void CFlare_dtor(CFlare *self) {
+static void CFlare_dtor(CFlare *self) {
 	self->vftable = CFLARE_VFTABLE;
 	CFlare_FreeGraphic(self);
 	CObjBase3D_dtor((CObjBase3D *)self);
 }
 
-IObject3D *CFlare_Delete(IObject3D *base, byte flags) {
+static IObject3D *CFlare_Delete(IObject3D *base, byte flags) {
 	CFlare *self = (CFlare *)base;
 	CFlare_dtor(self);
 	if (flags & 1) {
@@ -83,7 +80,7 @@ static float CFlare_Fade(const CFlare *self, float dt) {
 	return t - k * dt * 0.2f;
 }
 
-void CFlare_Render(IObject3D *base, void *dev, CRenderNode *r) {
+static void CFlare_Render(IObject3D *base, void *dev, CRenderNode *r) {
 	CFlare *self = (CFlare *)base;
 	CHECK(self->graphic);
 	CHECK(self->node);
@@ -166,12 +163,8 @@ void CFlare_SetTexture(CFlare *self, const char *tex, const char *opac, int src,
 	self->graphic->screenSize = 1;
 }
 
-void CFlare_SetTextureAdd(CFlare *self, const char *tex, const char *opac) {
-	CFlare_SetTexture(self, tex, opac, 5, 6, 0xff);
-}
-
 /* the vtable of CFlare */
-const IObject3DVtbl CFlare_vftable = {
+static const IObject3DVtbl CFlare_vftable = {
 	.Delete = CFlare_Delete,
 	.Update = IObject3D_UpdateNop,
 	.Render = CFlare_Render,
@@ -181,8 +174,8 @@ const IObject3DVtbl CFlare_vftable = {
 	.Read = IObject3D_ReadFalse,
 };
 
-cGVar GVar_R_ShowFlaresInfo;
-cGVar GVar_R_SkipFlares;
+static cGVar GVar_R_ShowFlaresInfo;
+static cGVar GVar_R_SkipFlares;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_R_SkipFlares, &GVar_R_SkipFlares, "R_SkipFlares", 0, "Disable flares rendering (0/1)", 1)

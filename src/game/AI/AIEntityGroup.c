@@ -6,6 +6,11 @@
 #include "scrap/ai.h"
 #include "scrap/staticinit.h"
 
+#define CAIENTITYGROUP_VFTABLE (&cAIEntityGroup_vftable)
+#define g_TimeBetwChangeStateAI (GVar_TimeBetwChangeStateAI.value.f)	/* "TimeBetwChangeStateAI" */
+static const cAIEntityGroupVtbl cAIEntityGroup_vftable;
+static cGVar GVar_TimeBetwChangeStateAI;
+
 void *cAIEntityGroup_ctor(void *self) {
 	cAIEntityGroup *g = self;
 
@@ -20,7 +25,7 @@ void cAIEntityGroup_dtor(void *self) {
 	((cAIEntityGroup *)self)->vftable = CAIENTITYGROUP_VFTABLE;
 }
 
-cAIEntityGroup *cAIEntityGroup_Delete(cAIEntityGroup *self, byte flags) {
+static cAIEntityGroup *cAIEntityGroup_Delete(cAIEntityGroup *self, byte flags) {
 	self->vftable = CAIENTITYGROUP_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, CAIENTITYGROUP_SIZE);
@@ -68,7 +73,7 @@ void cAIEntityGroup_Update(cAIEntityGroup *self, float dt) {
 }
 
 /* the vtable of cAIEntityGroup */
-const cAIEntityGroupVtbl cAIEntityGroup_vftable = {
+static const cAIEntityGroupVtbl cAIEntityGroup_vftable = {
 	.Delete = cAIEntityGroup_Delete,
 	.Clear = cAIEntityGroup_Clear,
 	.Add = cAIEntityGroup_Add,
@@ -80,7 +85,7 @@ const cAIEntityGroupVtbl cAIEntityGroup_vftable = {
 	.Update = cAIEntityGroup_Update,
 };
 
-cGVar GVar_TimeBetwChangeStateAI;
+static cGVar GVar_TimeBetwChangeStateAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_TimeBetwChangeStateAI, &GVar_TimeBetwChangeStateAI, "TimeBetwChangeStateAI", 4, "Time between change state", 0.05f)

@@ -11,7 +11,7 @@
 #define ERR_FIRST_FREE 50
 #define ERR_CUSTOM -2	/* Err_Printf: no text of its own (g_ErrCustom) */
 
-char str_UnknownError2[] = "Unknown error";
+static char str_UnknownError2[] = "Unknown error";
 
 #define g_ErrUnknown str_UnknownError2	/* "Unknown error" */
 
@@ -23,51 +23,51 @@ void Debug_Line(int x0, int y0, int x1, int y1, uint32_t color, int width) {
 	}
 }
 
-extern const char str_FileNotFound[];
-extern const char str_UnknownError[];
-extern const char str_Error0[];
-extern const char str_OperationNotPermitted[];
-extern const char str_NoSuchProcess[];
-extern const char str_InterruptedFunctionCall[];
-extern const char str_InputOutputError[];
-extern const char str_NoSuchDeviceOrAddress[];
-extern const char str_ArgListTooLong[];
-extern const char str_ExecFormatError[];
-extern const char str_BadFileDescriptor[];
-extern const char str_NoChildProcesses[];
-extern const char str_ResourceTemporarilyUnavailable[];
-extern const char str_NotEnoughMemory[];
-extern const char str_PermissionDenied[];
-extern const char str_BadAddress[];
-extern const char str_ResourceDevice[];
-extern const char str_FileAlreadyExists[];
-extern const char str_ImproperLink[];
-extern const char str_NoSuchDevice[];
-extern const char str_NotADirectory[];
-extern const char str_IsADirectory[];
-extern const char str_InvalidArgument[];
-extern const char str_TooManyOpenFilesInSystem[];
-extern const char str_TooManyOpenFiles[];
-extern const char str_InappropriateIOControlOperation[];
-extern const char str_FileTooLarge[];
-extern const char str_NoSpaceLeftOnDevice[];
-extern const char str_InvalidSeek[];
-extern const char str_ReadOnlyFileSystem[];
-extern const char str_TooManyLinks[];
-extern const char str_BrokenPipe[];
-extern const char str_DomainError[];
-extern const char str_ResultTooLarge[];
-extern const char str_ResourceDeadlockAvoided[];
-extern const char str_FilenameTooLong[];
-extern const char str_NoLocksAvailable[];
-extern const char str_FunctionNotImplemented[];
-extern const char str_DirectoryNotEmpty[];
-extern const char str_IllegalByteSequence[];
-extern const char str_InvalidFileFormat[];
-extern const char str_FileHasZeroSize[];
-extern const char str_InvalidPath[];
-extern const char str_InvalidParameter[];
-const char *g_ErrTable[200] = {
+static const char str_FileNotFound[];
+static const char str_UnknownError[];
+static const char str_Error0[];
+static const char str_OperationNotPermitted[];
+static const char str_NoSuchProcess[];
+static const char str_InterruptedFunctionCall[];
+static const char str_InputOutputError[];
+static const char str_NoSuchDeviceOrAddress[];
+static const char str_ArgListTooLong[];
+static const char str_ExecFormatError[];
+static const char str_BadFileDescriptor[];
+static const char str_NoChildProcesses[];
+static const char str_ResourceTemporarilyUnavailable[];
+static const char str_NotEnoughMemory[];
+static const char str_PermissionDenied[];
+static const char str_BadAddress[];
+static const char str_ResourceDevice[];
+static const char str_FileAlreadyExists[];
+static const char str_ImproperLink[];
+static const char str_NoSuchDevice[];
+static const char str_NotADirectory[];
+static const char str_IsADirectory[];
+static const char str_InvalidArgument[];
+static const char str_TooManyOpenFilesInSystem[];
+static const char str_TooManyOpenFiles[];
+static const char str_InappropriateIOControlOperation[];
+static const char str_FileTooLarge[];
+static const char str_NoSpaceLeftOnDevice[];
+static const char str_InvalidSeek[];
+static const char str_ReadOnlyFileSystem[];
+static const char str_TooManyLinks[];
+static const char str_BrokenPipe[];
+static const char str_DomainError[];
+static const char str_ResultTooLarge[];
+static const char str_ResourceDeadlockAvoided[];
+static const char str_FilenameTooLong[];
+static const char str_NoLocksAvailable[];
+static const char str_FunctionNotImplemented[];
+static const char str_DirectoryNotEmpty[];
+static const char str_IllegalByteSequence[];
+static const char str_InvalidFileFormat[];
+static const char str_FileHasZeroSize[];
+static const char str_InvalidPath[];
+static const char str_InvalidParameter[];
+static const char *g_ErrTable[200] = {
 	(void *)str_Error0, (void *)str_OperationNotPermitted, (void *)str_FileNotFound, (void *)str_NoSuchProcess,
 	(void *)str_InterruptedFunctionCall, (void *)str_InputOutputError, (void *)str_NoSuchDeviceOrAddress, (void *)str_ArgListTooLong,
 	(void *)str_ExecFormatError, (void *)str_BadFileDescriptor, (void *)str_NoChildProcesses, (void *)str_ResourceTemporarilyUnavailable,
@@ -82,16 +82,7 @@ const char *g_ErrTable[200] = {
 	(void *)str_InvalidFileFormat, (void *)str_FileHasZeroSize, (void *)str_InvalidPath, (void *)str_InvalidParameter,
 };
 
-const char *Err_Unregister(int code) {
-	if ((unsigned)(code - ERR_FIRST_FREE) < ERR_COUNT - ERR_FIRST_FREE) {
-		const char *s = g_ErrTable[code];
-		g_ErrTable[code] = NULL;
-		return s;
-	}
-	return NULL;
-}
-
-char g_ErrCustom[4];
+static char g_ErrCustom[4];
 
 const char *Err_Str(int code) {
 	if ((unsigned)code < ERR_COUNT) {
@@ -110,6 +101,7 @@ int Err_Register(const char *text) {
 	return -1;
 }
 
+static void Err_VReport(int code, int fatal, const char *fmt, va_list ap);
 void Err_Printf(int fatal, const char *fmt, ...) {
 	va_list ap;
 
@@ -126,11 +118,11 @@ void Err_Report(int code, int fatal, const char *fmt, ...) {
 	va_end(ap);
 }
 
-int g_ErrLastCode;
-int g_ErrLastFatal;
+static int g_ErrLastCode;
+static int g_ErrLastFatal;
 
 /* the text of the code and fmt after it; fatal into the log, else a message box */
-void Err_VReport(int code, int fatal, const char *fmt, va_list ap) {
+static void Err_VReport(int code, int fatal, const char *fmt, va_list ap) {
 	char buf[0x100];
 
 	g_ErrLastCode = code;
@@ -147,48 +139,48 @@ void Err_VReport(int code, int fatal, const char *fmt, va_list ap) {
 	Plat_MessageBox(buf, "Warning", 0x11010);
 }
 
-const char str_Error0[] = "Error 0";
-const char str_OperationNotPermitted[] = "Operation not permitted";
-const char str_NoSuchProcess[] = "No such process";
-const char str_InterruptedFunctionCall[] = "Interrupted function call";
-const char str_InputOutputError[] = "Input/output error";
-const char str_NoSuchDeviceOrAddress[] = "No such device or address";
-const char str_ArgListTooLong[] = "Arg list too long";
-const char str_ExecFormatError[] = "Exec format error";
-const char str_BadFileDescriptor[] = "Bad file descriptor";
-const char str_NoChildProcesses[] = "No child processes";
-const char str_ResourceTemporarilyUnavailable[] = "Resource temporarily unavailable";
-const char str_NotEnoughMemory[] = "Not enough memory";
-const char str_PermissionDenied[] = "Permission denied";
-const char str_BadAddress[] = "Bad address";
-const char str_ResourceDevice[] = "Resource device";
-const char str_FileAlreadyExists[] = "File already exists";
-const char str_ImproperLink[] = "Improper link";
-const char str_NoSuchDevice[] = "No such device";
-const char str_NotADirectory[] = "Not a directory";
-const char str_IsADirectory[] = "Is a directory";
-const char str_InvalidArgument[] = "Invalid argument";
-const char str_TooManyOpenFilesInSystem[] = "Too many open files in system";
-const char str_TooManyOpenFiles[] = "Too many open files";
-const char str_InappropriateIOControlOperation[] = "Inappropriate I/O control operation";
-const char str_FileTooLarge[] = "File too large";
-const char str_NoSpaceLeftOnDevice[] = "No space left on device";
-const char str_InvalidSeek[] = "Invalid seek";
-const char str_ReadOnlyFileSystem[] = "Read-only file system";
-const char str_TooManyLinks[] = "Too many links";
-const char str_BrokenPipe[] = "Broken pipe";
-const char str_DomainError[] = "Domain error";
-const char str_ResultTooLarge[] = "Result too large";
-const char str_ResourceDeadlockAvoided[] = "Resource deadlock avoided";
-const char str_FilenameTooLong[] = "Filename too long";
-const char str_NoLocksAvailable[] = "No locks available";
-const char str_FunctionNotImplemented[] = "Function not implemented";
-const char str_DirectoryNotEmpty[] = "Directory not empty";
-const char str_IllegalByteSequence[] = "Illegal byte sequence";
-const char str_InvalidFileFormat[] = "Invalid file format";
-const char str_FileHasZeroSize[] = "File has zero size";
-const char str_InvalidPath[] = "Invalid path";
-const char str_InvalidParameter[] = "Invalid parameter";
-const char str_FileNotFound[] = "File not found";
-const char str_UnknownError[] = "Unknown error";
+static const char str_Error0[] = "Error 0";
+static const char str_OperationNotPermitted[] = "Operation not permitted";
+static const char str_NoSuchProcess[] = "No such process";
+static const char str_InterruptedFunctionCall[] = "Interrupted function call";
+static const char str_InputOutputError[] = "Input/output error";
+static const char str_NoSuchDeviceOrAddress[] = "No such device or address";
+static const char str_ArgListTooLong[] = "Arg list too long";
+static const char str_ExecFormatError[] = "Exec format error";
+static const char str_BadFileDescriptor[] = "Bad file descriptor";
+static const char str_NoChildProcesses[] = "No child processes";
+static const char str_ResourceTemporarilyUnavailable[] = "Resource temporarily unavailable";
+static const char str_NotEnoughMemory[] = "Not enough memory";
+static const char str_PermissionDenied[] = "Permission denied";
+static const char str_BadAddress[] = "Bad address";
+static const char str_ResourceDevice[] = "Resource device";
+static const char str_FileAlreadyExists[] = "File already exists";
+static const char str_ImproperLink[] = "Improper link";
+static const char str_NoSuchDevice[] = "No such device";
+static const char str_NotADirectory[] = "Not a directory";
+static const char str_IsADirectory[] = "Is a directory";
+static const char str_InvalidArgument[] = "Invalid argument";
+static const char str_TooManyOpenFilesInSystem[] = "Too many open files in system";
+static const char str_TooManyOpenFiles[] = "Too many open files";
+static const char str_InappropriateIOControlOperation[] = "Inappropriate I/O control operation";
+static const char str_FileTooLarge[] = "File too large";
+static const char str_NoSpaceLeftOnDevice[] = "No space left on device";
+static const char str_InvalidSeek[] = "Invalid seek";
+static const char str_ReadOnlyFileSystem[] = "Read-only file system";
+static const char str_TooManyLinks[] = "Too many links";
+static const char str_BrokenPipe[] = "Broken pipe";
+static const char str_DomainError[] = "Domain error";
+static const char str_ResultTooLarge[] = "Result too large";
+static const char str_ResourceDeadlockAvoided[] = "Resource deadlock avoided";
+static const char str_FilenameTooLong[] = "Filename too long";
+static const char str_NoLocksAvailable[] = "No locks available";
+static const char str_FunctionNotImplemented[] = "Function not implemented";
+static const char str_DirectoryNotEmpty[] = "Directory not empty";
+static const char str_IllegalByteSequence[] = "Illegal byte sequence";
+static const char str_InvalidFileFormat[] = "Invalid file format";
+static const char str_FileHasZeroSize[] = "File has zero size";
+static const char str_InvalidPath[] = "Invalid path";
+static const char str_InvalidParameter[] = "Invalid parameter";
+static const char str_FileNotFound[] = "File not found";
+static const char str_UnknownError[] = "Unknown error";
 

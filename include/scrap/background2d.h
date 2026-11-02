@@ -24,10 +24,6 @@ CGraphic2DList *CGraphic2DList_ctor(CGraphic2DList *self);
 /* the sprites deleted */
 void CGraphic2DList_DeleteAll(CGraphic2DList *self);
 void CGraphic2DList_Render(CGraphic2DList *self);
-void CGraphic2DList_Add(CGraphic2DList *self, CGraphic2D *graphic);
-/* out of the list (CHECK that it is in it) and deleted */
-void CGraphic2DList_Delete(CGraphic2DList *self, CGraphic2D *graphic);
-void CGraphic2DList_Remove(CGraphic2DList *self, CGraphic2D *graphic);
 
 #define BACKGROUND2D_PIECE 0x100
 
@@ -37,27 +33,12 @@ typedef struct CBackground2D {
 	CMaterial *Mat;			/* 0x14 shared, its map 0 gets the pieces */
 } CBackground2D;
 
-CBackground2D *CBackground2D_ctorFile(CBackground2D *self, const char *name);
-CBackground2D *CBackground2D_ctor(CBackground2D *self);
-/* the color and the material "CFondo2D" */
-void CBackground2D_Init(CBackground2D *self);
-void CBackground2D_Render(CBackground2D *self);
-
 /* the background sprite: the name set, a new sprite when it changes */
 #define BACKGROUND2D_NAME 0x108
-extern byte g_BackgroundPending;
-extern int g_BackgroundFrame;		/* uframe3d, the frame of the last draw */
-extern CGraphic2D *g_BackgroundGraphic;
-extern char g_BackgroundCurrent[264];	/* BACKGROUND2D_NAME */
-extern char g_BackgroundNew[264];	/* BACKGROUND2D_NAME */
-extern uint32_t g_BackgroundColor;
-extern uint32_t g_BackgroundColorNew;
 
 void Background2D_Reset(void);
 /* the sprite of the new name (once a frame, CHECK) */
 void Background2D_Render(void);
 void Background2D_Release(void);
-/* name NULL for none; drawn at once unless deferred */
-void Background2D_Set(const char *name, uint32_t color, byte deferred);
 
 #endif

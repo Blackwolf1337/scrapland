@@ -5,8 +5,21 @@
 #include "scrap/chartype.h"
 #include "scrap/staticinit.h"
 
+#define g_FXBertoFlashFile (GVar_FXBertoFlashFile.value.s)
+#define g_BertoFlashSound (GVar_BertoFlashSound.value.s)
+#define g_BertoFlashDist (GVar_BertoFlashDist.value.f)
+#define g_BertoFlashSoundVol (GVar_BertoFlashSoundVol.value.f)
+#define g_BertoAmmoCost (GVar_BertoAmmoCost.value.f)
+#define g_FXBertoAttackFile (GVar_FXBertoAttackFile.value.s)
+static cGVar GVar_FXBertoFlashFile;
+static cGVar GVar_FXBertoAttackFile;
+static cGVar GVar_BertoFlashSoundVol;
+static cGVar GVar_BertoFlashSound;
+static cGVar GVar_BertoFlashDist;
+static cGVar GVar_BertoAmmoCost;
+
 /* params: Berto, an event, a float */
-void ChType_BertoActionEnd(cAbstractFile *params) {
+static void ChType_BertoActionEnd(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -14,7 +27,7 @@ void ChType_BertoActionEnd(cAbstractFile *params) {
 	ChType_ActionSound(v, 0, 1);
 }
 
-void ChType_BertoActionInit(cAbstractFile *params) {
+static void ChType_BertoActionInit(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -22,15 +35,15 @@ void ChType_BertoActionInit(cAbstractFile *params) {
 	ChType_ActionSound(v, 1, 0);
 }
 
-void ChType_BertoAttack(cAbstractFile *params) {
+static void ChType_BertoAttack(cAbstractFile *params) {
 	ChType_Attack(params, g_BertoAmmoCost);
 }
 
-cEntity *g_BertoEnt;
+static cEntity *g_BertoEnt;
 
 /* the flash test of the hit (OnFlash): params a flashed character, other than Berto, with the flash effect from
  * Berto to it and the flash sound at it */
-void ChType_BertoFlashHit(cAbstractFile *params) {
+static void ChType_BertoFlashHit(cAbstractFile *params) {
 	char name[0x80];
 	vec3_t tmp;
 
@@ -61,7 +74,7 @@ void ChType_BertoFlashHit(cAbstractFile *params) {
 }
 
 /* params: Berto, an event, a float. The flash around him, ChType_BertoFlashHit for each flashed character. */
-void ChType_BertoHitEvent(cAbstractFile *params) {
+static void ChType_BertoHitEvent(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 	vec3_t tmp;
 
@@ -79,7 +92,7 @@ void ChType_BertoHitEvent(cAbstractFile *params) {
 	cPy_Function_Clear(g_OnFlash);
 }
 
-void ChType_FXBertoAttack(cAbstractFile *params) {
+static void ChType_FXBertoAttack(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -93,17 +106,17 @@ void ChType_FXBertoAttack(cAbstractFile *params) {
 	}
 }
 
-cGVar GVar_FXBertoFlashFile;
-cGVar GVar_BertoFlashSound;
-cGVar GVar_BertoFlashDist;
-cGVar GVar_BertoFlashSoundVol;
-cGVar GVar_BertoAmmoCost;
-cGVar GVar_FXBertoAttackFile;
-cPy_NativeFunc NativeFunc_BertoAttack;
-cPy_NativeFunc NativeFunc_BertoHitEvent;
-cPy_NativeFunc NativeFunc_FXBertoAttack;
-cPy_NativeFunc NativeFunc_BertoActionInit;
-cPy_NativeFunc NativeFunc_BertoActionEnd;
+static cGVar GVar_FXBertoFlashFile;
+static cGVar GVar_BertoFlashSound;
+static cGVar GVar_BertoFlashDist;
+static cGVar GVar_BertoFlashSoundVol;
+static cGVar GVar_BertoAmmoCost;
+static cGVar GVar_FXBertoAttackFile;
+static cPy_NativeFunc NativeFunc_BertoAttack;
+static cPy_NativeFunc NativeFunc_BertoHitEvent;
+static cPy_NativeFunc NativeFunc_FXBertoAttack;
+static cPy_NativeFunc NativeFunc_BertoActionInit;
+static cPy_NativeFunc NativeFunc_BertoActionEnd;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_BertoAmmoCost, &GVar_BertoAmmoCost, "BertoAmmoCost", 0, "Berto AmmoCost Per shoot", 0.03f)

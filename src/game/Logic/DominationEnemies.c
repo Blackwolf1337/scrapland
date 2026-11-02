@@ -9,15 +9,20 @@
 #include "scrap/hashtable.h"
 #include "scrap/staticinit.h"
 
+#define g_DominLeaderName (GVar_LeaderName.value.s)
+#define g_OnDominEnemyDeath (((cPy_Function *)&GVar_OnDominEnemyDeath.func))
+static cGVarFunction GVar_OnDominEnemyDeath;
+static cGVar GVar_LeaderName;
+
 /* defined further down or in another file without a header */
-void DominationEnemies_OnDeath(cAbstractFile *params);
+static void DominationEnemies_OnDeath(cAbstractFile *params);
 
 /* the arguments of the AI state GO_TO the leader gets (the constants of the original) */
 static void DominE_GoTo(cAIVehicle *ai, vec3_t pos, double dist) {
 	cAIVehicle_SetState(ai, 1, pos, dist, 1, 1.0, 20.0, 20.0, 0);
 }
 
-void cDominationSide_Think(cDominationSide *self) {
+static void cDominationSide_Think(cDominationSide *self) {
 	vec3_t tmp;
 
 	if (!Logic_ListFirst(self->list)) {
@@ -77,12 +82,6 @@ cEntity *cDominationEnemiesLogic_GetLeader(cDominationEnemiesLogic *self) {
 	return Logic_AsCar(World_FindEntity(g_DominLeaderName));
 }
 
-/* vf04 */
-int cDominationEnemiesLogic_GetTeam(cDominationEnemiesLogic *self) {
-	(void)self;
-	return 0;
-}
-
 /* vf01 */
 void cDominationEnemiesLogic_Init(cDominationLogic *base) {
 	cDominationEnemiesLogic *self = (cDominationEnemiesLogic *)base;
@@ -109,7 +108,8 @@ void Domination_OnDeath(cAbstractFile *params, cDominationLogic *side,
 }
 
 /* the native of the deaths (onDeath of the list) */
-void DominationEnemies_OnDeath(cAbstractFile *params) {
+static cEntity *cDominationEnemiesLogic_ReleaseZone(cDominationLogic *self, const char *name);
+static void DominationEnemies_OnDeath(cAbstractFile *params) {
 	Domination_OnDeath(params, &g_pWorld->logic.dominEnemies.base, cDominationEnemiesLogic_ReleaseZone,
 		g_OnDominEnemyDeath);
 }
@@ -134,7 +134,8 @@ cEntity *Domination_ReleaseZone(cDominationLogic *self, const char *name, int go
 	return zone;
 }
 
-cEntity *cDominationEnemiesLogic_ReleaseZone(cDominationLogic *self, const char *name) {
+/* the zone of the ship of that name taken from the table (a zone on the way of the side is free again) */
+static cEntity *cDominationEnemiesLogic_ReleaseZone(cDominationLogic *self, const char *name) {
 	return Domination_ReleaseZone(self, name, 4, 2);
 }
 
@@ -151,8 +152,9 @@ void cDominationEnemiesLogic_Update(cDominationLogic *base, float dt) {
 	}
 }
 
-cGVarFunction GVar_OnDominEnemyDeath;
-cGVar GVar_LeaderName;
+static cGVarFunction GVar_OnDominEnemyDeath;
+/* the engine variable LeaderName (the leader ship of the enemies) and the death callbacks of the sides */
+static cGVar GVar_LeaderName;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_CALL(Fini_GVar_OnDominEnemyDeath, &GVar_OnDominEnemyDeath.func, cPy_Function_dtor)

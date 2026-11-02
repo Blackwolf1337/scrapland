@@ -20,6 +20,9 @@
 #include "scrap/misc.h"
 #include "scrap/platform.h"
 
+#define CSCENE_VFTABLE (&CScene_vftable)
+static const ObjRefVtbl CScene_vftable;
+
 /* the time since t0 in seconds, for the debug output */
 static double Scene_Seconds(uint32_t t0) {
 	return (double)(uint32_t)(Plat_Ticks() - t0) / 1000.0;
@@ -57,7 +60,7 @@ static void Scene_DeleteIni(CIniFile **ini) {
 	}
 }
 
-void CScene_dtor(CScene *self) {
+static void CScene_dtor(CScene *self) {
 	self->vftable = CSCENE_VFTABLE;
 	E3D_DebugPrintf("\n> Escena::~Escena(): '%s' (%08Xh)", self->name, self);
 	self->anim = NULL;
@@ -103,7 +106,7 @@ void CScene_Shared(CScene *self) {
 	(void)self;
 }
 
-ObjRef *CScene_Delete(ObjRef *base, byte flags) {
+static ObjRef *CScene_Delete(ObjRef *base, byte flags) {
 	CScene *self = (CScene *)base;
 	CScene_dtor(self);
 	if (flags & 1) {
@@ -112,6 +115,7 @@ ObjRef *CScene_Delete(ObjRef *base, byte flags) {
 	return base;
 }
 
+static void CScene_CalcWeights(CScene *self);
 void CScene_Msg(CScene *self, int msg, int a, int b, int c, int d) {
 	(void)c;
 	(void)d;
@@ -519,7 +523,9 @@ void CScene_UpdateBox(CScene *self, box_t *out, byte first) {
 	Box_Merge(out, box, first);
 }
 
-void CScene_CalcWeights(CScene *self) {
+/* the skin weights of the vertex buffer meshes (calcular_pesos) */
+static int CScene_CountClass(CScene *self, uint32_t class);
+static void CScene_CalcWeights(CScene *self) {
 	if (!CScene_CountClass(self, CLASS_OBJ3D_MESHD3D)) {
 		return;
 	}
@@ -537,7 +543,7 @@ void CScene_CalcWeights(CScene *self) {
 	}
 }
 
-int CScene_CountClass(CScene *self, uint32_t class) {
+static int CScene_CountClass(CScene *self, uint32_t class) {
 	int n = 0;
 	for (CNode3D *node = self->Node3D; node; node = node->next) {
 		if (CNode3D_Class(node) == class) {
@@ -748,6 +754,6 @@ void CScene_PrecalcIllum(CScene *self, byte noLights, byte visible) {
 }
 
 /* the vtable of CScene */
-const ObjRefVtbl CScene_vftable = {
+static const ObjRefVtbl CScene_vftable = {
 	.Delete = CScene_Delete,
 };

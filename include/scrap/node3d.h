@@ -59,7 +59,6 @@ struct IObject3D {
 extern const IObject3DVtbl IObject3D_vftable;
 #define IOBJECT3D_VFTABLE (&IObject3D_vftable)
 
-
 /* a counted reference (objref.h): the head of CNode3D and CScene, the deleting destructor first */
 typedef struct ObjRef ObjRef;
 typedef struct ObjRefVtbl {
@@ -228,19 +227,13 @@ typedef struct CNode3D {
 
 CNode3D *CNode3D_ctor(CNode3D *self);
 void CNode3D_dtor(CNode3D *self);
-CNode3D *CNode3D_Delete(CNode3D *self, byte flags);
-/* the object of the render node if it has one, else the node's */
-IObject3D *CNode3D_GetObj3D(CNode3D *self, CRenderNode *r);
 /* the box of the object (and its matrix into m if not NULL); 0 for classes without one */
 byte CNode3D_GetBBox(CNode3D *self, matrix_t *m, box_t *bbox, byte recalc);
-/* position and rotation of channel c (pos and rot blended with the second animation); 0 without a track */
-byte CNode3D_AnimChannel(CNode3D *self, NodeAnimChannel *c, vec3_t *pos, quat_t *rot);
 void CNode3D_Render(CNode3D *self, void *arg, CRenderNode *r);
 /* the world matrix from the animation, the parent and the look of r; the object updated */
 void CNode3D_Update(CNode3D *self, CRenderNode *r);
 /* the first node from this one on with a camera or light object named name (NULL: any) */
 IObject3D *CNode3D_FindCamera(CNode3D *self, const char *name);
-IObject3D *CNode3D_FindLight(CNode3D *self, const char *name);
 /* along next, from this node (incl) or the next one */
 CNode3D *CNode3D_Find(CNode3D *self, const char *name, byte incl);
 /* along ant from the previous node */
@@ -259,35 +252,20 @@ void CNode3D_SetParentName(CNode3D *self, const char *name);
 void CNode3D_SetNext(CNode3D *self, CNode3D *n);
 /* the owned objects and the parent released */
 void CNode3D_Free(CNode3D *self);
-/* a, q and b combined (b around the result); the quaternions of a and b are made into one buffer, so with both
- * not zero b's is lost and a's is used twice, as in the original */
-quat_t *Rot_Combine(quat_t *out, CRotation *a, const quat_t *q, CRotation *b);
-quat_t *Rot_Combine2(quat_t *out, CRotation *a, CRotation *b);
 /* the track of the node in animation 0 or 1 of channel ch; NULL without */
 void *CNode3D_Track(CNode3D *self, uint32_t ch);
-void *CNode3D_Track2(CNode3D *self, uint32_t ch);
 /* the color of the node's animated light (color times *mult) from channel 0; 0 without one */
 byte CNode_LightColor(CNode3D *self, vec3_t *color, float *mult);
 /* the member at 0x20 of the track of channel ch */
 CEVA *CNode3D_TrackData(CNode3D *self, uint32_t ch);
 /* an animated float (the camera's fov) from channel 0 */
 byte CNode3D_AnimFloat(CNode3D *self, float *out);
-/* position and rotation from the first channel (3 down to 0) that has the node */
-byte CNode3D_SampleAnim(CNode3D *self, vec3_t *pos, quat_t *rot);
-/* the animated visibility (0..255) from channel 0 */
-byte CNode3D_AnimAlpha(CNode3D *self, byte *out);
-/* the box of a CGround (objeto3d.h) */
-box_t *CGround_GetBox(void *self, box_t *out);
 NodeAnimChannel *CNode3D_Channel(CNode3D *self, uint32_t ch);
-quat_t *CRotation_GetQuat(CRotation *self, quat_t *out);
 
 /* other modules, called from Nodo3D.cpp (src/imports.inc) */
 void CRotation_SetEuler(CRotation *self, const vec3_t *ang);
 void *CParticleSystem_Cast(IObject3D *obj);	/* rva 0x23f310, CHECK of the class */
-/* Engine/NodoR.cpp (src/game/engine3d/Engine/RenderNode.c, the rest in model.h and scrapmodel.h) */
-NodeLook *NodeLook_ctor(NodeLook *self);
 CRenderNode *CRenderNode_ctor(CRenderNode *self);
-byte CNode3D_DebugDraw(CNode3D *self, CRenderNode *r);	/* R_ShowLocalBox; 0: filtered out, not drawn */
 void CRenderNode_UpdateNode(CRenderNode *self);
 int CRenderNode_ApplyFX(CRenderNode *self, matrix_t *m);
 

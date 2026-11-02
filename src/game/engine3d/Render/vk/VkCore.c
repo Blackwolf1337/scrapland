@@ -140,7 +140,7 @@ int Vk_HasStencil(VkFormat f) {
 	return f == VK_FORMAT_D24_UNORM_S8_UINT || f == VK_FORMAT_D32_SFLOAT_S8_UINT || f == VK_FORMAT_D16_UNORM_S8_UINT;
 }
 
-int Vk_IsDepth(VkFormat f) {
+static int Vk_IsDepth(VkFormat f) {
 	return Vk_HasStencil(f) || f == VK_FORMAT_D16_UNORM || f == VK_FORMAT_X8_D24_UNORM_PACK32 || f == VK_FORMAT_D32_SFLOAT;
 }
 
@@ -500,7 +500,8 @@ void Vk_DestroyDevice(void) {
 	vk.instance = inst;
 }
 
-uint32_t Vk_MemoryType(uint32_t bits, VkMemoryPropertyFlags flags) {
+/* memory and objects */
+static uint32_t Vk_MemoryType(uint32_t bits, VkMemoryPropertyFlags flags) {
 	for (uint32_t i = 0; i < vk.memProps.memoryTypeCount; i++) {
 		if ((bits & 1u << i) && (vk.memProps.memoryTypes[i].propertyFlags & flags) == flags) {
 			return i;

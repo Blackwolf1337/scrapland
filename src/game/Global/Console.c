@@ -16,7 +16,7 @@
 cGVar GVar_LogFile;
 
 #define g_LogName (GVar_LogFile.value.s)
-cGVar GVar_AlwaysFlushLog;
+static cGVar GVar_AlwaysFlushLog;
 
 #define g_LogFlush (GVar_AlwaysFlushLog.value.i)		/* flush the logs after every text */
 
@@ -32,7 +32,7 @@ const char *Version_Get(void);
 void ConsoleWin_Add(const char *text, uint32_t color);	/* the on-screen console, rva 0x20d550 */
 
 /* one text into a log: HTML escaped, CR dropped, at most 511 characters */
-void DebugLog_Write(const char *text, uint32_t color, void *f) {
+static void DebugLog_Write(const char *text, uint32_t color, void *f) {
 	char buf[0x200];
 
 	if (!f) {
@@ -90,7 +90,7 @@ void DebugLog_Write(const char *text, uint32_t color, void *f) {
 
 cConLine g_ConLines[23];
 int g_ConLine;
-int g_ConCol;
+static int g_ConCol;
 
 /* the text into the ring of console lines; a line takes up to 127 characters, more are cut */
 static void Con_AddLines(const char *text, uint32_t color) {
@@ -115,8 +115,8 @@ static void Con_AddLines(const char *text, uint32_t color) {
 	g_ConCol += (int)strlen(rest);
 }
 
-void *g_LogFile;
-void *g_LogAIFile;
+static void *g_LogFile;
+static void *g_LogAIFile;
 
 static void Con_Output(const char *text, uint32_t color) {
 	ConsoleWin_Add(text, color);
@@ -125,7 +125,7 @@ static void Con_Output(const char *text, uint32_t color) {
 	Con_AddLines(text, color);
 }
 
-char g_ConBuf[1024];
+static char g_ConBuf[1024];
 
 /* printf into g_ConBuf and out in color */
 static void Con_VOutput(uint32_t color, const char *fmt, va_list ap) {
@@ -144,8 +144,9 @@ static void Con_VOutput(uint32_t color, const char *fmt, va_list ap) {
 	}
 
 #define LEVEL g_DebugLevel
-uint32_t g_LastError;
+static uint32_t g_LastError;
 
+static void Con_Fatal(const char *msg);
 CON_PRINTF(Con_Printf, 0, LEVEL != 0)
 CON_PRINTF(Con_Bluef, CON_COLOR_BLUE, LEVEL != 0)
 CON_PRINTF(Con_Errorf, CON_COLOR_ERROR, LEVEL != 0)
@@ -201,7 +202,7 @@ void Con_FatalErrorf(const char *fmt, ...) {
 	Con_Fatal(buf);
 }
 
-void DebugLog_Close(void *f) {
+static void DebugLog_Close(void *f) {
 	if (f) {
 		crt_fprintf(f, "</font><font color=\"#%06X\">%s", CON_COLOR_VERBOSE, "\nby Alien Duce...");
 		crt_fputs("</font></p></pre></body></html>\n", f);
@@ -216,7 +217,7 @@ void DebugLog_CloseAll(void) {
 	g_LogAIFile = NULL;
 }
 
-void DebugLog_Open(const char *name, void **f) {
+static void DebugLog_Open(const char *name, void **f) {
 	char date[0x80];
 	int32_t t;
 
@@ -249,7 +250,7 @@ void DebugLog_Init(void) {
 }
 
 /* the message box of a fatal error; with a debugger attached it offers to break into it */
-void Con_Fatal(const char *msg) {
+static void Con_Fatal(const char *msg) {
 	char text[0x420];
 	byte debugger = Plat_DebuggerPresent();
 

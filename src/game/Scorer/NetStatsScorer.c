@@ -8,6 +8,17 @@
 #include "scrap/scoreritems.h"
 #include "scrap/staticinit.h"
 
+#define CNETSTATSSCORER_VFTABLE (&cNetStatsScorer_vftable)
+#define g_ClientPingX (GVar_ClientPingX.value.f)	/* ClientPingX */
+#define g_ClientPingY (GVar_ClientPingY.value.f)	/* ClientPingY */
+#define g_ShowClientPing (GVar_ShowClientPing.value.i)	/* ShowClientPing */
+#define g_ShowNetStatus (GVar_ShowNetStatus.value.i)	/* ShowNetStatus */
+static const cScorerItemVtbl cNetStatsScorer_vftable;
+static cGVar GVar_ShowNetStatus;
+static cGVar GVar_ShowClientPing;
+static cGVar GVar_ClientPingY;
+static cGVar GVar_ClientPingX;
+
 cNetStatsScorer *cNetStatsScorer_ctor(cNetStatsScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CNETSTATSSCORER_VFTABLE;
@@ -17,7 +28,7 @@ cNetStatsScorer *cNetStatsScorer_ctor(cNetStatsScorer *self) {
 	return self;
 }
 
-void cNetStatsScorer_dtor(cNetStatsScorer *self) {
+static void cNetStatsScorer_dtor(cNetStatsScorer *self) {
 	CPsaImage *img = self->img;
 	self->base.vftable = CNETSTATSSCORER_VFTABLE;
 	if (img) {
@@ -27,7 +38,7 @@ void cNetStatsScorer_dtor(cNetStatsScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cScorerItem *cNetStatsScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cNetStatsScorer_Delete(cScorerItem *base, byte flags) {
 	cNetStatsScorer *self = (cNetStatsScorer *)base;
 	cNetStatsScorer_dtor(self);
 	if (flags & 1) {
@@ -36,7 +47,8 @@ cScorerItem *cNetStatsScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-int cNetStatsScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+/* only the base variables */
+static int cNetStatsScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cNetStatsScorer *self = (cNetStatsScorer *)base;
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
@@ -44,7 +56,7 @@ int cNetStatsScorer_Var(cScorerItem *base, const char *name, int set, char **s, 
 int g_NetStatSentSlot;
 int g_NetStatSent;
 
-void cNetStatsScorer_Draw(cScorerItem *base, int player) {
+static void cNetStatsScorer_Draw(cScorerItem *base, int player) {
 	cNetStatsScorer *self = (cNetStatsScorer *)base;
 	cScorerItem *it = &self->base;
 
@@ -123,17 +135,17 @@ void cNetStatsScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cNetStatsScorer */
-const cScorerItemVtbl cNetStatsScorer_vftable = {
+static const cScorerItemVtbl cNetStatsScorer_vftable = {
 	.Draw = cNetStatsScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cNetStatsScorer_Var,
 	.Delete = cNetStatsScorer_Delete,
 };
 
-cGVar GVar_ShowNetStatus;
-cGVar GVar_ShowClientPing;
-cGVar GVar_ClientPingY;
-cGVar GVar_ClientPingX;
+static cGVar GVar_ShowNetStatus;
+static cGVar GVar_ShowClientPing;
+static cGVar GVar_ClientPingY;
+static cGVar GVar_ClientPingX;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_ClientPingY, &GVar_ClientPingY, "ClientPingY", 2, "Y Pos of the ping label.\n", 120.0f)

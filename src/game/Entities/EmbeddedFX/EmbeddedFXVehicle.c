@@ -13,6 +13,29 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
+#define CEMBEDDEDFXVEHICLEVOTE_VFTABLE (&cEmbeddedFXVehicleVote_vftable)
+#define CEMBEDDEDFXVEHICLEPROBE_VFTABLE (&cEmbeddedFXVehicleProbe_vftable)
+#define CEMBEDDEDFXVEHICLE_VFTABLE (&cEmbeddedFXVehicle_vftable)
+#define g_FXVehicleEmbeddedFile (GVar_FXVehicleEmbeddedFile.value.s)	/* the string of the cString */
+#define g_FXTrafficEmbeddedFile (GVar_FXTrafficEmbeddedFile.value.s)
+#define g_FXVehicleSirenDistGrow (GVar_FXVehicleSiren_DistGrow.value.f)
+#define g_FXVehicleSirenSizeMin (GVar_FXVehicleSiren_SizeMin.value.f)
+#define g_FXVehicleSirenSizeMax (GVar_FXVehicleSiren_SizeMax.value.f)
+#define g_FXVehicleProbeLightDistGrow (GVar_FXVehicleProbeLight_DistGrow.value.f)
+#define g_FXVehicleProbeLightSizeMin (GVar_FXVehicleProbeLight_SizeMin.value.f)
+#define g_FXVehicleProbeLightSizeMax (GVar_FXVehicleProbeLight_SizeMax.value.f)
+static const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicle_vftable;
+static const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicleVote_vftable;
+static const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicleProbe_vftable;
+static cGVar GVar_FXVehicleSiren_SizeMin;
+static cGVar GVar_FXVehicleSiren_SizeMax;
+static cGVar GVar_FXVehicleSiren_DistGrow;
+static cGVar GVar_FXVehicleProbeLight_SizeMin;
+static cGVar GVar_FXVehicleProbeLight_SizeMax;
+static cGVar GVar_FXVehicleProbeLight_DistGrow;
+static cGVar GVar_FXVehicleEmbeddedFile;
+static cGVar GVar_FXTrafficEmbeddedFile;
+
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMEPARTICLES_DTOR 0x21d1c0
 #define CGAMETRAIL_CTOR 0x21ddb0
@@ -82,7 +105,7 @@ cEmbeddedFXVehicle *cEmbeddedFXVehicle_ctor(cEmbeddedFXVehicle *self) {
 	return self;
 }
 
-void cEmbeddedFXVehicle_dtor(cEmbeddedFXVehicle *self) {
+static void cEmbeddedFXVehicle_dtor(cEmbeddedFXVehicle *self) {
 	self->vftable = CEMBEDDEDFXVEHICLE_VFTABLE;
 	CHECK(!self->sirens);
 	CHECK(!self->other);
@@ -92,7 +115,7 @@ void cEmbeddedFXVehicle_dtor(cEmbeddedFXVehicle *self) {
 	cEmbeddedFX_dtor((cEmbeddedFX *)self);
 }
 
-cEmbeddedFXVehicleSub *cEmbeddedFXVehicle_Delete(cEmbeddedFXVehicleSub *base, byte flags) {
+static cEmbeddedFXVehicleSub *cEmbeddedFXVehicle_Delete(cEmbeddedFXVehicleSub *base, byte flags) {
 	cEmbeddedFXVehicle *self = (cEmbeddedFXVehicle *)base;
 	cEmbeddedFXVehicle_dtor(self);
 	if (flags & 1) {
@@ -101,7 +124,7 @@ cEmbeddedFXVehicleSub *cEmbeddedFXVehicle_Delete(cEmbeddedFXVehicleSub *base, by
 	return base;
 }
 
-byte cEmbeddedFXVehicle_Init(cEmbeddedFXVehicleSub *base) {
+static byte cEmbeddedFXVehicle_Init(cEmbeddedFXVehicleSub *base) {
 	cEmbeddedFXVehicle *self = (cEmbeddedFXVehicle *)base;
 	int node;
 
@@ -129,6 +152,7 @@ byte cEmbeddedFXVehicle_Init(cEmbeddedFXVehicleSub *base) {
 	return 1;
 }
 
+static void cFXVehicleSirens_dtor(cFXVehicleSirens *self);
 static void Sirens_Delete(cEmbeddedFXVehicle *self) {
 	cFXVehicleSirens_dtor(self->sirens);
 	if (self->sirens) {
@@ -147,7 +171,7 @@ static void Other_Delete(cEmbeddedFXVehicle *self) {
 	}
 }
 
-void cEmbeddedFXVehicle_Done(cEmbeddedFXVehicleSub *base) {
+static void cEmbeddedFXVehicle_Done(cEmbeddedFXVehicleSub *base) {
 	cEmbeddedFXVehicle *self = (cEmbeddedFXVehicle *)base;
 	self->attached = NULL;
 	self->traffic = 0;
@@ -160,7 +184,7 @@ void cEmbeddedFXVehicle_Done(cEmbeddedFXVehicleSub *base) {
 	Other_Delete(self);
 }
 
-void cEmbeddedFXVehicle_Configure(cEmbeddedFXVehicleSub *base, float unused) {
+static void cEmbeddedFXVehicle_Configure(cEmbeddedFXVehicleSub *base, float unused) {
 	cEmbeddedFXVehicle *self = (cEmbeddedFXVehicle *)base;
 	cEntity *pl;
 	void *ai;
@@ -194,7 +218,8 @@ void cEmbeddedFXVehicle_Configure(cEmbeddedFXVehicleSub *base, float unused) {
 	}
 }
 
-void cEmbeddedFXVehicle_Update(cEmbeddedFXVehicleSub *base) {
+static void cFXVehicleSirens_Update(cFXVehicleSirens *self);
+static void cEmbeddedFXVehicle_Update(cEmbeddedFXVehicleSub *base) {
 	cEmbeddedFXVehicle *self = (cEmbeddedFXVehicle *)base;
 	CGameModel *model;
 	vec3_t pos, rot;
@@ -275,7 +300,8 @@ void cEmbeddedFXVehicle_Update(cEmbeddedFXVehicleSub *base) {
 	}
 }
 
-void cEmbeddedFXVehicle_SetActive(cEmbeddedFXVehicleSub *base, byte on) {
+static void cEmbeddedFXVehicle_Hide(cEmbeddedFXVehicle *self);
+static void cEmbeddedFXVehicle_SetActive(cEmbeddedFXVehicleSub *base, byte on) {
 	cEmbeddedFXVehicle *self = (cEmbeddedFXVehicle *)base;
 	if (!on && self->visible) {
 		cEmbeddedFXVehicle_Hide(self);
@@ -283,7 +309,7 @@ void cEmbeddedFXVehicle_SetActive(cEmbeddedFXVehicleSub *base, byte on) {
 	}
 }
 
-void cEmbeddedFXVehicle_Hide(cEmbeddedFXVehicle *self) {
+static void cEmbeddedFXVehicle_Hide(cEmbeddedFXVehicle *self) {
 	self->attached = NULL;
 	CGameModel_Disable(&self->model);
 	self->visible = 0;
@@ -296,7 +322,8 @@ void cEmbeddedFXVehicle_Hide(cEmbeddedFXVehicle *self) {
 	}
 }
 
-CGameModel g_SirenModel;
+/* the shared siren model and particles */
+static CGameModel g_SirenModel;
 
 void cEmbeddedFXVehicle_Render(cEmbeddedFXVehicle *self) {
 	CGameParticles_SetVisible(&self->follow, 0);
@@ -319,6 +346,9 @@ void cEmbeddedFXVehicle_SetAttached(cEmbeddedFXVehicle *self, void *element) {
 	self->attached = element;
 }
 
+static cEmbeddedFXVehicleProbe *cEmbeddedFXVehicleProbe_ctor(cEmbeddedFXVehicleProbe *self, cEmbeddedFXVehicle *fx);
+static cEmbeddedFXVehicleVote *cEmbeddedFXVehicleVote_ctor(cEmbeddedFXVehicleVote *self, cEmbeddedFXVehicle *fx);
+static byte cFXVehicleSirens_Init(cFXVehicleSirens *self);
 void cEmbeddedFXVehicle_SetOwner(cEmbeddedFXVehicle *self, cEntity *owner) {
 	CGameModel *model;
 	vec3_t t;
@@ -380,22 +410,11 @@ void cEmbeddedFXVehicle_StartFade(cEmbeddedFXVehicle *self) {
 	Obj_Vtbl(self->owner)->SetEffectParam(self->owner, 0, 1.0f);
 }
 
-void cEmbeddedFXVehicle_SetAIRange(cEmbeddedFXVehicle *self, byte on) {
-	self->aiRange = on;
-}
+static int g_SirenRefs;
+static CGameParticles g_SirenParticles;
 
-/* ---- the police sirens ---- */
-
-cFXVehicleSirens *cFXVehicleSirens_ctor(cFXVehicleSirens *self, cEmbeddedFXVehicle *owner) {
-	self->owner = owner;
-	CHECK(owner);
-	return self;
-}
-
-int g_SirenRefs;
-CGameParticles g_SirenParticles;
-
-void cFXVehicleSirens_dtor(cFXVehicleSirens *self) {
+/* the shared model and particles released with the last one (self is not used) */
+static void cFXVehicleSirens_dtor(cFXVehicleSirens *self) {
 	(void)self;
 	if (--g_SirenRefs <= 0 && CGameModel_IsLoaded((&g_SirenModel))) {
 		CGameParticles_Release((&g_SirenParticles));
@@ -403,7 +422,7 @@ void cFXVehicleSirens_dtor(cFXVehicleSirens *self) {
 	}
 }
 
-byte cFXVehicleSirens_Init(cFXVehicleSirens *self) {
+static byte cFXVehicleSirens_Init(cFXVehicleSirens *self) {
 	char name[0x100];
 	vec3_t t;
 	float time = EFX_Rand(0.89999997615814209, 0.0);
@@ -468,15 +487,15 @@ static int Sirens_IsPolice(cEntity *v) {
 	return Str_EqualW(((vehicleName_t)(*(void ***)v)[0xf4 / 4])(v, 0), "P_Police");
 }
 
-uint32_t DataRamp[9] = { 0xff0000ff, 0x200000ff, 0x300000ff, 0x400000ff, 0x5c0000ff, 0x800000ff, 0xc40000ff, 0xff0000ff, 0xff0000ff };
+static uint32_t DataRamp[9] = { 0xff0000ff, 0x200000ff, 0x300000ff, 0x400000ff, 0x5c0000ff, 0x800000ff, 0xc40000ff, 0xff0000ff, 0xff0000ff };
 
-uint32_t DataRamp2[9] = { 0xff8080ff, 0x208080ff, 0x308080ff, 0x408080ff, 0x5c8080ff, 0x808080ff, 0xc48080ff, 0xff8080ff, 0xff8080ff };
+static uint32_t DataRamp2[9] = { 0xff8080ff, 0x208080ff, 0x308080ff, 0x408080ff, 0x5c8080ff, 0x808080ff, 0xc48080ff, 0xff8080ff, 0xff8080ff };
 
-uint32_t DataRamp3[9] = { 0xffff0000, 0x20ff0000, 0x30ff0000, 0x40ff0000, 0x5cff0000, 0x80ff0000, 0xc4ff0000, 0xffff0000, 0xffff0000 };
+static uint32_t DataRamp3[9] = { 0xffff0000, 0x20ff0000, 0x30ff0000, 0x40ff0000, 0x5cff0000, 0x80ff0000, 0xc4ff0000, 0xffff0000, 0xffff0000 };
 
-uint32_t DataRamp4[9] = { 0xffff8080, 0x20ff8080, 0x30ff8080, 0x40ff8080, 0x5cff8080, 0x80ff8080, 0xc4ff8080, 0xffff8080, 0xffff8080 };
+static uint32_t DataRamp4[9] = { 0xffff8080, 0x20ff8080, 0x30ff8080, 0x40ff8080, 0x5cff8080, 0x80ff8080, 0xc4ff8080, 0xffff8080, 0xffff8080 };
 
-void cFXVehicleSirens_Update(cFXVehicleSirens *self) {
+static void cFXVehicleSirens_Update(cFXVehicleSirens *self) {
 	cEntity *v = self->owner->owner;
 	vec3_t pos, rot;
 
@@ -514,7 +533,7 @@ void cFXVehicleSirens_Update(cFXVehicleSirens *self) {
 
 /* ---- cEmbeddedFXVehicleProbe ---- */
 
-cEmbeddedFXVehicleProbe *cEmbeddedFXVehicleProbe_ctor(cEmbeddedFXVehicleProbe *self,
+static cEmbeddedFXVehicleProbe *cEmbeddedFXVehicleProbe_ctor(cEmbeddedFXVehicleProbe *self,
 	cEmbeddedFXVehicle *fx) {
 	self->vftable = CEMBEDDEDFXVEHICLEPROBE_VFTABLE;
 	crt_eh_vector_ctor(self->lights, sizeof(CGameParticles), PROBE_LIGHTS, (void *)CGameParticles_ctor,
@@ -533,7 +552,7 @@ cEmbeddedFXVehicleProbe *cEmbeddedFXVehicleProbe_ctor(cEmbeddedFXVehicleProbe *s
 	return self;
 }
 
-void cEmbeddedFXVehicleProbe_dtor(cEmbeddedFXVehicleProbe *self) {
+static void cEmbeddedFXVehicleProbe_dtor(cEmbeddedFXVehicleProbe *self) {
 	self->vftable = CEMBEDDEDFXVEHICLEPROBE_VFTABLE;
 	CGameParticles_Release(&self->trans);
 	for (int i = 0; i < PROBE_LIGHTS; i++) {
@@ -545,7 +564,7 @@ void cEmbeddedFXVehicleProbe_dtor(cEmbeddedFXVehicleProbe *self) {
 	cEmbeddedFX_dtor((cEmbeddedFX *)self);
 }
 
-cEmbeddedFXVehicleSub *cEmbeddedFXVehicleProbe_Delete(cEmbeddedFXVehicleSub *base, byte flags) {
+static cEmbeddedFXVehicleSub *cEmbeddedFXVehicleProbe_Delete(cEmbeddedFXVehicleSub *base, byte flags) {
 	cEmbeddedFXVehicleProbe *self = (cEmbeddedFXVehicleProbe *)base;
 	cEmbeddedFXVehicleProbe_dtor(self);
 	if (flags & 1) {
@@ -577,7 +596,7 @@ static void Probe_InitLight(CGameParticles *p, int n, int redMod, int redBase, i
 	}
 }
 
-byte cEmbeddedFXVehicleProbe_Init(cEmbeddedFXVehicleSub *base) {
+static byte cEmbeddedFXVehicleProbe_Init(cEmbeddedFXVehicleSub *base) {
 	cEmbeddedFXVehicleProbe *self = (cEmbeddedFXVehicleProbe *)base;
 	CGameModel *model = Obj_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
 
@@ -594,15 +613,6 @@ byte cEmbeddedFXVehicleProbe_Init(cEmbeddedFXVehicleSub *base) {
 	Probe_InitLight(&self->lights[2], 5, 20, 0xe6, 20, 150.0f);
 	Probe_InitLight(&self->lights[3], 4, 30, 0xdc, 10, 125.0f);
 	return 1;
-}
-
-void cEmbeddedFXVehicleProbe_Done(cEmbeddedFXVehicleProbe *self) {
-	(void)self;
-}
-
-void cEmbeddedFXVehicleProbe_Configure(cEmbeddedFXVehicleProbe *self, int unused) {
-	(void)self;
-	(void)unused;
 }
 
 /* a light flash in frac 0..1: two particles at particle src of light p */
@@ -626,12 +636,12 @@ static void Probe_Flash(CGameParticles *p, int src, int i1, int i2, float frac, 
 		((uint32_t)c << 24) | 0xff0000, 5, 0.0f);
 }
 
-uint32_t cEmbeddedFXVehicleProbe_UpdateRamps[18] = {
+static uint32_t cEmbeddedFXVehicleProbe_UpdateRamps[18] = {
 	0x4ff4010, 0x10ff300c, 0x20ff2008, 0x40ff1806, 0x5cff1004, 0x80ff0802, 0xc4ff0000, 0xffff0000, 0xffff0000,
 	0x80ff2020, 0x40ff2020, 0x5cff2020, 0x80ff2020, 0xa4ff2020, 0xc4ff2020, 0xe1ff2020, 0xffff2020, 0xffff2020,
 };
 
-void cEmbeddedFXVehicleProbe_Update(cEmbeddedFXVehicleSub *base) {
+static void cEmbeddedFXVehicleProbe_Update(cEmbeddedFXVehicleSub *base) {
 	cEmbeddedFXVehicleProbe *self = (cEmbeddedFXVehicleProbe *)base;
 	CGameModel *model = Obj_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
 	vec3_t tmp, mrot, mpos, mrot2;
@@ -741,20 +751,16 @@ void cEmbeddedFXVehicleProbe_Update(cEmbeddedFXVehicleSub *base) {
 	}
 }
 
-void cEmbeddedFXVehicleProbe_SetActive(cEmbeddedFXVehicleSub *base, byte on) {
+static void cEmbeddedFXVehicleProbe_SetActive(cEmbeddedFXVehicleSub *base, byte on) {
 	cEmbeddedFXVehicleProbe *self = (cEmbeddedFXVehicleProbe *)base;
 	if (!on) {
 		CGameTrail_Clear(&self->trail);
 	}
 }
 
-void cEmbeddedFXVehicleProbe_ClearTrail(cEmbeddedFXVehicleProbe *self) {
-	CGameTrail_Clear(&self->trail);
-}
-
 /* ---- cEmbeddedFXVehicleVote ---- */
 
-cEmbeddedFXVehicleVote *cEmbeddedFXVehicleVote_ctor(cEmbeddedFXVehicleVote *self,
+static cEmbeddedFXVehicleVote *cEmbeddedFXVehicleVote_ctor(cEmbeddedFXVehicleVote *self,
 	cEmbeddedFXVehicle *fx) {
 	self->vftable = CEMBEDDEDFXVEHICLEVOTE_VFTABLE;
 	CGameParticles_ctor(&self->glow);
@@ -768,7 +774,7 @@ cEmbeddedFXVehicleVote *cEmbeddedFXVehicleVote_ctor(cEmbeddedFXVehicleVote *self
 	return self;
 }
 
-void cEmbeddedFXVehicleVote_dtor(cEmbeddedFXVehicleVote *self) {
+static void cEmbeddedFXVehicleVote_dtor(cEmbeddedFXVehicleVote *self) {
 	self->vftable = CEMBEDDEDFXVEHICLEVOTE_VFTABLE;
 	crt_eh_vector_dtor(self->motor, sizeof(CGameParticles), VOTE_MOTORS, (void *)CGameParticles_Release);
 	crt_eh_vector_dtor(self->trails, sizeof(CGameTrail), 2, (void *)CGameTrail_dtor);
@@ -776,7 +782,7 @@ void cEmbeddedFXVehicleVote_dtor(cEmbeddedFXVehicleVote *self) {
 	cEmbeddedFX_dtor((cEmbeddedFX *)self);
 }
 
-cEmbeddedFXVehicleSub *cEmbeddedFXVehicleVote_Delete(cEmbeddedFXVehicleSub *base, byte flags) {
+static cEmbeddedFXVehicleSub *cEmbeddedFXVehicleVote_Delete(cEmbeddedFXVehicleSub *base, byte flags) {
 	cEmbeddedFXVehicleVote *self = (cEmbeddedFXVehicleVote *)base;
 	cEmbeddedFXVehicleVote_dtor(self);
 	if (flags & 1) {
@@ -785,7 +791,7 @@ cEmbeddedFXVehicleSub *cEmbeddedFXVehicleVote_Delete(cEmbeddedFXVehicleSub *base
 	return base;
 }
 
-byte cEmbeddedFXVehicleVote_Init(cEmbeddedFXVehicleSub *base) {
+static byte cEmbeddedFXVehicleVote_Init(cEmbeddedFXVehicleSub *base) {
 	cEmbeddedFXVehicleVote *self = (cEmbeddedFXVehicleVote *)base;
 	CGameModel *model = Obj_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
 
@@ -809,7 +815,7 @@ byte cEmbeddedFXVehicleVote_Init(cEmbeddedFXVehicleSub *base) {
 	return 1;
 }
 
-void cEmbeddedFXVehicleVote_Done(cEmbeddedFXVehicleSub *base) {
+static void cEmbeddedFXVehicleVote_Done(cEmbeddedFXVehicleSub *base) {
 	cEmbeddedFXVehicleVote *self = (cEmbeddedFXVehicleVote *)base;
 	self->glowNode = -1;
 	CGameParticles_Release(&self->glow);
@@ -818,12 +824,8 @@ void cEmbeddedFXVehicleVote_Done(cEmbeddedFXVehicleSub *base) {
 	}
 }
 
-void cEmbeddedFXVehicleVote_Configure(cEmbeddedFXVehicleVote *self, int unused) {
-	(void)self;
-	(void)unused;
-}
-
-void cEmbeddedFXVehicleVote_Update(cEmbeddedFXVehicleSub *base) {
+static void cEmbeddedFXVehicleVote_ClearTrails(cEmbeddedFXVehicleVote *self);
+static void cEmbeddedFXVehicleVote_Update(cEmbeddedFXVehicleSub *base) {
 	cEmbeddedFXVehicleVote *self = (cEmbeddedFXVehicleVote *)base;
 	CGameModel *model = Obj_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
 	vec3_t pos, rot, tmp, tmp2;
@@ -958,36 +960,32 @@ void cEmbeddedFXVehicleVote_Update(cEmbeddedFXVehicleSub *base) {
 	}
 }
 
-void cEmbeddedFXVehicleVote_SetActive(cEmbeddedFXVehicleSub *base, byte on) {
+static void cEmbeddedFXVehicleVote_SetActive(cEmbeddedFXVehicleSub *base, byte on) {
 	cEmbeddedFXVehicleVote *self = (cEmbeddedFXVehicleVote *)base;
 	if (!on) {
 		cEmbeddedFXVehicleVote_ClearTrails(self);
 	}
 }
 
-void cEmbeddedFXVehicleVote_ClearTrails(cEmbeddedFXVehicleVote *self) {
+static void cEmbeddedFXVehicleVote_ClearTrails(cEmbeddedFXVehicleVote *self) {
 	for (int i = 0; i < 2; i++) {
 		CGameTrail_Clear(&self->trails[i]);
 	}
 }
 
-void cEmbeddedFXVehicleVote_SetType(cEmbeddedFXVehicleVote *self, int type) {
-	self->type = type;
-}
-
 /* the slot Done of a class that does nothing there */
-void cEmbeddedFXVehicleSub_DoneNop(cEmbeddedFXVehicleSub *self) {
+static void cEmbeddedFXVehicleSub_DoneNop(cEmbeddedFXVehicleSub *self) {
 	(void)self;
 }
 
 /* the slot Configure of a class that does nothing there */
-void cEmbeddedFXVehicleSub_ConfigureNop(cEmbeddedFXVehicleSub *self, float unused) {
+static void cEmbeddedFXVehicleSub_ConfigureNop(cEmbeddedFXVehicleSub *self, float unused) {
 	(void)self;
 	(void)unused;
 }
 
 /* the vtable of cEmbeddedFXVehicle */
-const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicle_vftable = {
+static const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicle_vftable = {
 	.Delete = cEmbeddedFXVehicle_Delete,
 	.Init = cEmbeddedFXVehicle_Init,
 	.Done = cEmbeddedFXVehicle_Done,
@@ -997,7 +995,7 @@ const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicle_vftable = {
 };
 
 /* the vtable of cEmbeddedFXVehicleProbe */
-const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicleProbe_vftable = {
+static const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicleProbe_vftable = {
 	.Delete = cEmbeddedFXVehicleProbe_Delete,
 	.Init = cEmbeddedFXVehicleProbe_Init,
 	.Done = cEmbeddedFXVehicleSub_DoneNop,
@@ -1007,7 +1005,7 @@ const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicleProbe_vftable = {
 };
 
 /* the vtable of cEmbeddedFXVehicleVote */
-const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicleVote_vftable = {
+static const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicleVote_vftable = {
 	.Delete = cEmbeddedFXVehicleVote_Delete,
 	.Init = cEmbeddedFXVehicleVote_Init,
 	.Done = cEmbeddedFXVehicleVote_Done,
@@ -1016,14 +1014,15 @@ const cEmbeddedFXVehicleVtbl cEmbeddedFXVehicleVote_vftable = {
 	.SetActive = cEmbeddedFXVehicleVote_SetActive,
 };
 
-cGVar GVar_FXVehicleSiren_DistGrow;
-cGVar GVar_FXVehicleEmbeddedFile;
-cGVar GVar_FXVehicleProbeLight_SizeMin;
-cGVar GVar_FXVehicleSiren_SizeMin;
-cGVar GVar_FXTrafficEmbeddedFile;
-cGVar GVar_FXVehicleProbeLight_SizeMax;
-cGVar GVar_FXVehicleSiren_SizeMax;
-cGVar GVar_FXVehicleProbeLight_DistGrow;
+static cGVar GVar_FXVehicleSiren_DistGrow;
+/* engine variables */
+static cGVar GVar_FXVehicleEmbeddedFile;
+static cGVar GVar_FXVehicleProbeLight_SizeMin;
+static cGVar GVar_FXVehicleSiren_SizeMin;
+static cGVar GVar_FXTrafficEmbeddedFile;
+static cGVar GVar_FXVehicleProbeLight_SizeMax;
+static cGVar GVar_FXVehicleSiren_SizeMax;
+static cGVar GVar_FXVehicleProbeLight_DistGrow;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_FXVehicleEmbeddedFile, &GVar_FXVehicleEmbeddedFile)

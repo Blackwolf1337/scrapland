@@ -12,7 +12,6 @@
 
 /* __local_stdio_printf_options of the UCRT in the exe */
 
-
 char *Str_Copy(char *dst, const char *src, int size) {
 	CHECK(dst && src && size > 0);
 	*dst = 0;
@@ -40,7 +39,7 @@ int Str_VPrintf(char *dst, int size, const char *fmt, va_list ap) {
 	return Str_Format(dst, size, fmt, ap, 0);
 }
 
-int Str_VPrintfWarn(char *dst, int size, const char *fmt, va_list ap) {
+static int Str_VPrintfWarn(char *dst, int size, const char *fmt, va_list ap) {
 	return Str_Format(dst, size, fmt, ap, 1);
 }
 
@@ -141,71 +140,7 @@ void Str_TrimBlanks(char *s) {
 	}
 }
 
-char g_Utf8Buf[1024];
-
-/*
- * UTF-8 to the 8 bit font encoding: U+0080..U+00FF as they are, Cyrillic U+0410..U+044F as the escape 0x01 '0'
- * and three hex digits, other characters as '.'. The result is in a static buffer; a longer text ends the game.
- */
-char *Str_FromUTF8(const char *s) {
-	static const char hex[] = "0123456789ABCDEF";
-	char *out = g_Utf8Buf;
-	uint32_t o = 0;
-	int i = 0;
-
-	if (*s) {
-		do {
-			byte c = s[i];
-			int n;
-			if (!(c & 0x80)) {
-				out[o] = c;
-				n = 1;
-			} else if ((c & 0xe0) == 0xc0) {
-				byte b = s[i + 1];
-				n = 2;
-				if (c == 0xc2) {
-					out[o] = b;
-				} else if (c == 0xc3) {
-					out[o] = (b & 0x3f) - 0x40;
-				} else {
-					uint32_t cp = (b & 0x3f) | (c & 0x1f) << 6;
-					if (cp - 0x410 < 0x40) {
-						/* the original writes the 5 bytes and checks the length after the loop */
-						if (o + 4 > 0x3ff) {
-							crt_report_rangecheckfailure();
-						}
-						out[o] = 1;
-						out[o + 1] = '0';
-						out[o + 2] = hex[(c & 0x1f) >> 2];
-						out[o + 3] = hex[cp >> 4 & 0xf];
-						out[o + 4] = hex[b & 0xf];
-						o += 4;
-					} else {
-						out[o] = '.';
-					}
-				}
-			} else {
-				if ((c & 0xf0) == 0xe0) {
-					n = 3;
-				} else if ((c & 0xf8) == 0xf0) {
-					n = 4;
-				} else {
-					break;
-				}
-				out[o] = '.';
-			}
-			i += n;
-			o++;
-			if (o > 0x3ff) {
-				crt_report_rangecheckfailure();
-			}
-		} while (s[i]);
-	}
-	out[o] = 0;
-	return out;
-}
-
-char g_VersionBuf[256];
+static char g_VersionBuf[256];
 
 const char *Version_Get(void) {
 	Str_Printf(g_VersionBuf, 0x100, "%d.%d%s  %s  %s", 1, 1, " (GMC3)", "Nov 24 2021", "15:24:17");

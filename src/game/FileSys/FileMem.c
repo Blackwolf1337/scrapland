@@ -6,6 +6,9 @@
 
 #include "scrap/filesys.h"
 
+#define CFILEMEM_VFTABLE (&cFileMem_vftable)
+static const cAbstractFileVtbl cFileMem_vftable;
+
 cFileMem *cFileMem_ctor(cFileMem *self, void *buffer, int maxSize, byte ownsBuffer) {
 	self->buffer = buffer;
 	self->maxSize = maxSize;
@@ -26,7 +29,7 @@ void cFileMem_dtor(cFileMem *self) {
 	cAbstractFile_dtor(&self->base);
 }
 
-cAbstractFile *cFileMem_Destroy(cAbstractFile *base, int flags) {
+static cAbstractFile *cFileMem_Destroy(cAbstractFile *base, int flags) {
 	cFileMem *self = (cFileMem *)base;
 	cFileMem_dtor(self);
 	if (flags & 1) {
@@ -51,12 +54,6 @@ int cFileMem_Open(cAbstractFile *elem, const char *name, uint32_t mode) {
 	self->pos = self->buffer;
 	self->size = (mode & FILE_MODE_CREATE) ? 0 : self->maxSize;
 	self->base.mode = mode;
-	return 1;
-}
-
-int cFileMem_Exists(cFileMem *self, const char *name) {
-	(void)self;
-	(void)name;
 	return 1;
 }
 
@@ -106,7 +103,7 @@ int cFileMem_Size(cAbstractFile *base) {
 }
 
 /* the vtable of cFileMem */
-const cAbstractFileVtbl cFileMem_vftable = {
+static const cAbstractFileVtbl cFileMem_vftable = {
 	.Open = cFileMem_Open,
 	.Exists = cAbstractFile_ExistsTrue,
 	.Close = cFileMem_Close,

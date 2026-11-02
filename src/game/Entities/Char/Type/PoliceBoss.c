@@ -8,12 +8,36 @@
 #include "scrap/fxelements.h"
 #include "scrap/staticinit.h"
 
+#define g_PoliceBossActionRadius (GVar_PoliceBossActionRadius.value.f)
+#define g_PoliceBossBrupBaseFile (GVar_PoliceBossBrupBaseFile.value.s)
+#define g_PoliceBossBrupBounce1Sound (GVar_PoliceBossBrupBounce1Sound.value.s)
+#define g_PoliceBossBrupBounce2Sound (GVar_PoliceBossBrupBounce2Sound.value.s)
+#define g_PoliceBossBrupBounceSoundVol (GVar_PoliceBossBrupBounceSoundVol.value.f)
+#define g_PoliceBossBrupDebrisMax (GVar_PoliceBossBrupDebrisMax.value.i)
+#define g_PoliceBossBrupDebrisMin (GVar_PoliceBossBrupDebrisMin.value.i)
+#define g_PoliceBossBrupDirRand (GVar_PoliceBossBrupDirRand.value.f)
+#define g_PoliceBossBrupPosX (GVar_PoliceBossBrupPosX.value.f)
+#define g_PoliceBossBrupPosY (GVar_PoliceBossBrupPosY.value.f)
+#define g_PoliceBossBrupPosZ (GVar_PoliceBossBrupPosZ.value.f)
+static cGVar GVar_PoliceBossBrupPosZ;
+static cGVar GVar_PoliceBossBrupPosY;
+static cGVar GVar_PoliceBossBrupPosX;
+static cGVar GVar_PoliceBossBrupDirRand;
+static cGVar GVar_PoliceBossBrupDebrisMin;
+static cGVar GVar_PoliceBossBrupDebrisMax;
+static cGVar GVar_PoliceBossBrupBounceSoundVol;
+static cGVar GVar_PoliceBossBrupBounce2Sound;
+static cGVar GVar_PoliceBossBrupBounce1Sound;
+static cGVar GVar_PoliceBossBrupBaseFile;
+static cGVar GVar_PoliceBossActionRadius;
+
 #define PB_SYSTEMS 5		/* the debris systems <PoliceBossBrupBaseFile>A.M3D .. E.M3D */
 #define PB_Started(el) (((FXElemHead *)(el))->started)
 
 /* params: the boss, an event and the life factor of the debris: PoliceBossBrupDebrisMin..Max debris out of the
  * mouth in random directions */
-void ChType_FXPoliceBossBrup(cAbstractFile *params) {
+static void ChType_PoliceBossBrupBounce(cDebris *d, const byte *hit);
+static void ChType_FXPoliceBossBrup(cAbstractFile *params) {
 	char name[0x80], event[0x80], file[0x100];
 	cDebrisSys *sys[PB_SYSTEMS];
 	vec3_t pos, ang, down, rot, dir, one, rot2, t1, off, t2;
@@ -110,7 +134,7 @@ void ChType_FXPoliceBossBrup(cAbstractFile *params) {
 
 /* the bounce of a debris of the burp on hit (its normal at 0x24): slower, the spin turned, the life short once it
  * is slow, a random bounce sound */
-void ChType_PoliceBossBrupBounce(cDebris *d, const byte *hit) {
+static void ChType_PoliceBossBrupBounce(cDebris *d, const byte *hit) {
 	float k = FxElem_Rand(0.15000003576278687, 0.6499999761581421);
 	vec3_t *vel = &d->drop[2];
 	float vx = -vel->x;
@@ -135,10 +159,10 @@ void ChType_PoliceBossBrupBounce(cDebris *d, const byte *hit) {
 	}
 }
 
-cEntity *g_PoliceBossEnt;
+static cEntity *g_PoliceBossEnt;
 
 /* params: the boss: Action when it does not fall and no action of priority runs */
-void ChType_PoliceBossAction(cAbstractFile *params) {
+static void ChType_PoliceBossAction(cAbstractFile *params) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -155,7 +179,8 @@ void ChType_PoliceBossTryAction(cEntity *v) {
 }
 
 /* params: the boss, an event, a float: ChType_PoliceBossSphereHit in PoliceBossActionRadius */
-void ChType_PoliceBossBrup(cAbstractFile *params) {
+static void ChType_PoliceBossSphereHit(cAbstractFile *params);
+static void ChType_PoliceBossBrup(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 	vec3_t tmp;
 
@@ -170,7 +195,7 @@ void ChType_PoliceBossBrup(cAbstractFile *params) {
 
 /* the sphere test of the burp: params a character. A police with a logic that runs no action of priority laughs
  * at the boss */
-void ChType_PoliceBossSphereHit(cAbstractFile *params) {
+static void ChType_PoliceBossSphereHit(cAbstractFile *params) {
 	char name[0x80];
 
 	CHECK(g_PoliceBossEnt);
@@ -185,20 +210,20 @@ void ChType_PoliceBossSphereHit(cAbstractFile *params) {
 	}
 }
 
-cGVar GVar_PoliceBossBrupBaseFile;
-cGVar GVar_PoliceBossBrupDebrisMax;
-cGVar GVar_PoliceBossBrupBounce1Sound;
-cGVar GVar_PoliceBossBrupDirRand;
-cGVar GVar_PoliceBossActionRadius;
-cGVar GVar_PoliceBossBrupPosY;
-cGVar GVar_PoliceBossBrupPosX;
-cGVar GVar_PoliceBossBrupBounceSoundVol;
-cGVar GVar_PoliceBossBrupBounce2Sound;
-cGVar GVar_PoliceBossBrupPosZ;
-cGVar GVar_PoliceBossBrupDebrisMin;
-cPy_NativeFunc NativeFunc_PoliceBossAction;
-cPy_NativeFunc NativeFunc_PoliceBossBrup;
-cPy_NativeFunc NativeFunc_FXPoliceBossBrup;
+static cGVar GVar_PoliceBossBrupBaseFile;
+static cGVar GVar_PoliceBossBrupDebrisMax;
+static cGVar GVar_PoliceBossBrupBounce1Sound;
+static cGVar GVar_PoliceBossBrupDirRand;
+static cGVar GVar_PoliceBossActionRadius;
+static cGVar GVar_PoliceBossBrupPosY;
+static cGVar GVar_PoliceBossBrupPosX;
+static cGVar GVar_PoliceBossBrupBounceSoundVol;
+static cGVar GVar_PoliceBossBrupBounce2Sound;
+static cGVar GVar_PoliceBossBrupPosZ;
+static cGVar GVar_PoliceBossBrupDebrisMin;
+static cPy_NativeFunc NativeFunc_PoliceBossAction;
+static cPy_NativeFunc NativeFunc_PoliceBossBrup;
+static cPy_NativeFunc NativeFunc_FXPoliceBossBrup;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_PoliceBossActionRadius, &GVar_PoliceBossActionRadius, "PoliceBossActionRadius", 0, "Radius of PoliceBoss fun FX to the polices.", 1000.0f)

@@ -31,11 +31,6 @@ int Rd_D3DCheckDeviceFormat(void *d3d, uint32_t adapter, int devType, int adapte
 	return Vk_D3DCheckDeviceFormat(d3d, adapter, devType, adapterFmt, usage, rtype, fmt);
 }
 
-int Rd_D3DCheckDeviceMultiSampleType(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, int windowed,
-	uint32_t ms) {
-	return Vk_D3DCheckDeviceMultiSampleType(d3d, adapter, type, fmt, windowed, ms);
-}
-
 int Rd_D3DCheckDeviceType(void *d3d, uint32_t adapter, uint32_t type, uint32_t dfmt, uint32_t bfmt, int windowed) {
 	return Vk_D3DCheckDeviceType(d3d, adapter, type, dfmt, bfmt, windowed);
 }
@@ -308,10 +303,6 @@ int Rd_DevSetViewport(void *dev, const uint32_t *vp) {
 	return Vk_DevSetViewport(dev, vp);
 }
 
-int Rd_DevShowCursor(void *dev, int show) {
-	return Vk_DevShowCursor(dev, show);
-}
-
 int Rd_DevTestCooperativeLevel(void *dev) {
 	return Vk_DevTestCooperativeLevel(dev);
 }
@@ -371,7 +362,6 @@ int Rd_BufLock(void *buf, uint32_t off, uint32_t size, void *data, uint32_t flag
 int Rd_BufUnlock(void *buf) {
 	return Vk_BufUnlock(buf);
 }
-
 
 int Rd_XMeshDrawSubset(void *mesh, uint32_t attrib) {
 	return Vk_XMeshDrawSubset(mesh, attrib);

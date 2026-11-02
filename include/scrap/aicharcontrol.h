@@ -22,8 +22,6 @@
 #include "scrap/slotcontroller.h"
 #include "scrap/walkcharentity.h"
 
-extern cGVar GVar_ShowCharAI;
-
 #define CAICHARCONTROL_SIZE sizeof(cAICharControl)
 
 /* the moves of cAICharControl_SetMove (mode at 0x74) */
@@ -184,15 +182,11 @@ typedef struct cAICharControl2DVtbl {
 	byte(*FloorAt)(cAICharControl *self, const vec3_t *p, vec3_t *out);		/* 0x194 */
 	byte(*TestStep)(cAICharControl *self, const vec3_t *a, const vec3_t *b, const vec3_t *c, float r);	/* 0x198 */
 } cAICharControl2DVtbl;
-extern const cAICharControl2DVtbl cAICharControl2D_vftable;
-#define CAICHARCONTROL2D_VFTABLE (&cAICharControl2D_vftable.base)
 
 typedef struct cAICharControl3DVtbl {
 	cAICharControlVtbl base;
 	byte(*TestStep)(cAICharControl *self, const vec3_t *a, const vec3_t *b, float r);	/* 0x190 */
 } cAICharControl3DVtbl;
-extern const cAICharControl3DVtbl cAICharControl3D_vftable;
-#define CAICHARCONTROL3D_VFTABLE (&cAICharControl3D_vftable.base)
 
 /* the AI of the character (cAIChar, include/scrap/ai.h): the control calls GetTarget (0x38) and Event (0x58) */
 typedef cAICharVtbl cAICharCtlOwnerVtbl;
@@ -383,10 +377,8 @@ void cAICharControl_SetHold(cAICharControl *self, byte on);
 /* construction, the frame and the slots of the first part of the file */
 cAICharControl *cAICharControl_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg);
 void cAICharControl_dtor(cAICharControl *self);
-cAICharControl *cAICharControl_Delete(cAICharControl *self, byte flags);
 /* the segment list (0x20 byte nodes) emptied, and with its free nodes deleted */
 void DListSeg_Clear(cNWSegList *list);
-void DListSeg_Free(cNWSegList *list);
 /* the components equal (cdecl, al) */
 byte Vec3_Equal(const vec3_t *a, const vec3_t *b);
 byte cAICharControl_CheckTarget(cAICharControl *self);
@@ -394,8 +386,6 @@ byte cAICharControl_CheckPathEnd(cAICharControl *self);
 byte cAICharControl_UpdatePath(cAICharControl *self);
 byte cAICharControl_UpdateRoutePath(cAICharControl *self);
 byte cAICharControl_UpdateFollowB(cAICharControl *self);
-/* the native of the sphere test of CharsNear and FindAvoid (cdecl) */
-void AICC_NearChar(cAbstractFile *params);
 byte cAICharControl_CharsNear(cAICharControl *self);
 void cAICharControl_AwayCheck(cAICharControl *self);
 void cAICharControl_DirCheck(cAICharControl *self);
@@ -448,9 +438,6 @@ byte cAICharControl_Wait(cAICharControl *self, float dt);
 /* the control of the AI of a character (0x19c of cAIChar) */
 cAICharControl *cAIChar_GetControl(cAI *base);
 
-extern const cAICharControlVtbl cAICharControl_vftable;
-#define CAICHARCONTROL_VFTABLE (&cAICharControl_vftable)
-
 /* the engine variables of the character AI */
 extern cGVar GVar_DepthPathRouteInDoorAI;
 #define g_DepthPathRouteInDoorAI (GVar_DepthPathRouteInDoorAI.value.i)	/* "DepthPathRouteInDoorAI" */
@@ -464,33 +451,8 @@ extern cGVar GVar_ShowPathAI;
 #define g_ShowPathAI (GVar_ShowPathAI.value.i)			/* "ShowPathAI" */
 extern cGVar GVar_FactorDistTestColCharAI;
 #define g_FactorDistTestColCharAI (GVar_FactorDistTestColCharAI.value.f)	/* "FactorDistTestColCharAI" */
-extern cGVar GVar_FactorDistTestColBackCharAI;
-#define g_FactorDistTestColBackCharAI (GVar_FactorDistTestColBackCharAI.value.f)	/* "FactorDistTestColBackCharAI" */
-extern cGVar GVar_MarginDetectCollCharAI;
-#define g_MarginDetectCollCharAI (GVar_MarginDetectCollCharAI.value.f)	/* "MarginDetectCollCharAI" */
-extern cGVar GVar_OffsetAngOrientCharAI;
-#define g_OffsetAngOrientCharAI (GVar_OffsetAngOrientCharAI.value.f)	/* "OffsetAngOrientCharAI" */
 extern cGVar GVar_AngAttackBackCharAI;
 #define g_AngAttackBackCharAI (GVar_AngAttackBackCharAI.value.f)	/* "AngAttackBackCharAI" */
-extern cGVar GVar_MinAngleSearchPointCharAI;
-#define g_MinAngleSearchPointCharAI (GVar_MinAngleSearchPointCharAI.value.f)	/* "MinAngleSearchPointCharAI" */
-extern cGVar GVar_DistNextPosGoTargetCharAI;
-#define g_DistNextPosGoTargetCharAI (GVar_DistNextPosGoTargetCharAI.value.f)	/* "DistNextPosGoTargetCharAI" */
-extern cGVar GVar_NumPointsSearchSegmentCharAI;
-#define g_NumPointsSearchSegmentCharAI (GVar_NumPointsSearchSegmentCharAI.value.i)	/* "NumPointsSearchSegmentCharAI" */
-extern cGVar GVar_TimeEventCollCharAI;
-#define g_TimeEventCollCharAI (GVar_TimeEventCollCharAI.value.f)	/* "TimeEventCollCharAI" */
-extern cGVar GVar_TimeStopCollCharAI;
-#define g_TimeStopCollCharAI (GVar_TimeStopCollCharAI.value.f)		/* "TimeStopCollCharAI" */
-extern cGVar GVar_TimeTestCollCharAI;
-#define g_TimeTestCollCharAI (GVar_TimeTestCollCharAI.value.f)		/* "TimeTestCollCharAI" */
-extern cGVar GVar_TimeBetweenEventCollCharAI;
-#define g_TimeBetweenEventCollCharAI (GVar_TimeBetweenEventCollCharAI.value.f)	/* "TimeBetweenEventCollCharAI" */
-extern cGVar GVar_TimeStrafeLostObjCharAI;
-#define g_TimeStrafeLostObjCharAI (GVar_TimeStrafeLostObjCharAI.value.f)	/* "TimeStrafeLostObjCharAI" */
-#define g_ShowCharAI (GVar_ShowCharAI.value.s)		/* "ShowCharAI": the name of the character shown */
-extern cGVar GVar_NameDebugShirkAI;
-#define g_NameDebugShirkAI (GVar_NameDebugShirkAI.value.s)		/* "NameDebugShirkAI" (a cString) */
 
 /* the A* search on CNodesWorld2D (AI/AStar2D.cpp, not in C): the path from pos to dest into path; noPath and
  * reach tell the AI why there is none, res the kind of the path */
@@ -503,7 +465,6 @@ void CAStar2D_GetPointsVis(void *astar, const vec3_t *pos, const vec3_t **list, 
 /* ---- AI/AICharControl2D.cpp (src/game/AI/ICharControl2D.c) ---- */
 cAICharControl *cAICharControl2D_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg);
 void cAICharControl2D_dtor(cAICharControl2D *self);
-cAICharControl2D *cAICharControl2D_Delete(cAICharControl2D *self, byte flags);
 void cAICharControl2D_Draw(cAICharControl2D *self);
 /* toE and toGoal the ways on the floor to hitEnt and to the goal (back: from the goal); 1 below 90 degrees */
 byte cAICharControl2D_Facing(cAICharControl2D *self, cEntity *hitEnt, vec3_t *toE, vec3_t *toGoal);
@@ -563,7 +524,6 @@ byte cAICharControl2D_StrafeFwd(cAICharControl2D *self, const vec3_t *pos, const
 /* ---- AI/AICharControl3D.cpp (src/game/AI/ICharControl3D.c): the slots as in 2D, in all three axes ---- */
 cAICharControl *cAICharControl3D_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg);
 void cAICharControl3D_dtor(cAICharControl3D *self);
-cAICharControl3D *cAICharControl3D_Delete(cAICharControl3D *self, byte flags);
 void cAICharControl3D_Draw(cAICharControl3D *self);
 byte cAICharControl3D_Facing(cAICharControl3D *self, cEntity *hitEnt, vec3_t *toE, vec3_t *toGoal);
 /* the segment free of the level */
@@ -603,23 +563,6 @@ byte cAICharControl3D_TryStrafe(cAICharControl3D *self, int side, cEntity *hitEn
 byte cAICharControl3D_StrafeBack(cAICharControl3D *self, const vec3_t *pos, const vec3_t *away, const vec3_t *dir, float dist, byte left, byte flag);
 byte cAICharControl3D_StrafeFwd(cAICharControl3D *self, const vec3_t *pos, const vec3_t *away, const vec3_t *dir, float dist, byte left, byte flag);
 
-/* ---- the move controls of the character classes (AI/AIControl<Class>.cpp, src/game/AI/AIControls.c): the 2D
- * control for the bank director, the bank master, the bishop and the gear, the 3D one for the messenger, the nurse and
- * the sentinel, each with some slots of its own ---- */
-extern const cAICharControl2DVtbl cAIControlBankDirector_vftable;
-#define CAICONTROLBANKDIRECTOR_VFTABLE (&cAIControlBankDirector_vftable.base)
-extern const cAICharControl2DVtbl cAIControlBankMaster_vftable;
-#define CAICONTROLBANKMASTER_VFTABLE (&cAIControlBankMaster_vftable.base)
-extern const cAICharControl2DVtbl cAIControlBishop_vftable;
-#define CAICONTROLBISHOP_VFTABLE (&cAIControlBishop_vftable.base)
-extern const cAICharControl2DVtbl cAIControlGear_vftable;
-#define CAICONTROLGEAR_VFTABLE (&cAIControlGear_vftable.base)
-extern const cAICharControl3DVtbl cAIControlMessenger_vftable;
-#define CAICONTROLMESSENGER_VFTABLE (&cAIControlMessenger_vftable.base)
-extern const cAICharControl3DVtbl cAIControlNurse_vftable;
-#define CAICONTROLNURSE_VFTABLE (&cAIControlNurse_vftable.base)
-extern const cAICharControl3DVtbl cAIControlSentinel_vftable;
-#define CAICONTROLSENTINEL_VFTABLE (&cAIControlSentinel_vftable.base)
 #define CAICONTROLSHOOT_SIZE sizeof(cAIControlShoot)		/* the bishop and the gear */
 #define CAICONTROLSENTINEL_SIZE sizeof(cAIControlSentinel)		/* without strafeTime and strafeAng */
 
@@ -655,75 +598,13 @@ typedef struct cAIControlSentinel {
 	byte pad_379[3];
 } cAIControlSentinel;
 
-/* the strafe parameters by the target (with an AI or not) */
-extern cGVar GVar_TimeStrafeUnderAttackBishopAI;
-#define g_TimeStrafeUnderAttackBishopAI (GVar_TimeStrafeUnderAttackBishopAI.value.f)
-#define g_TimeStrafeUnderAttackBishopAIDef (GVar_TimeStrafeUnderAttackBishopAI.def.f)
-extern cGVar GVar_AngleStrafeUnderAttackBishopAI;
-#define g_AngleStrafeUnderAttackBishopAI (GVar_AngleStrafeUnderAttackBishopAI.value.f)
-#define g_AngleStrafeUnderAttackBishopAIDef (GVar_AngleStrafeUnderAttackBishopAI.def.f)
-extern cGVar GVar_TimeStrafeUnderAttackGearAI;
-#define g_TimeStrafeUnderAttackGearAI (GVar_TimeStrafeUnderAttackGearAI.value.f)
-#define g_TimeStrafeUnderAttackGearAIDef (GVar_TimeStrafeUnderAttackGearAI.def.f)
-extern cGVar GVar_AngleStrafeUnderAttackGearAI;
-#define g_AngleStrafeUnderAttackGearAI (GVar_AngleStrafeUnderAttackGearAI.value.f)
-#define g_AngleStrafeUnderAttackGearAIDef (GVar_AngleStrafeUnderAttackGearAI.def.f)
-extern cGVar GVar_TimeStrafeUnderAttackSentinelAI;
-#define g_TimeStrafeUnderAttackSentinelAI (GVar_TimeStrafeUnderAttackSentinelAI.value.f)
-extern cGVar GVar_AngleStrafeUnderAttackSentinelAI;
-#define g_AngleStrafeUnderAttackSentinelAI (GVar_AngleStrafeUnderAttackSentinelAI.value.f)
-extern cGVar GVar_VelRotDynamicMessengerAI;
-#define g_VelRotDynamicMessengerAI (GVar_VelRotDynamicMessengerAI.value.f)
-extern cGVar GVar_LimVelRotDynamicMessengerAI;
-#define g_LimVelRotDynamicMessengerAI (GVar_LimVelRotDynamicMessengerAI.value.f)
-
 cAICharControl *cAIControlBankDirector_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-cAIControlBankDirector *cAIControlBankDirector_Delete(cAIControlBankDirector *self, byte flags);
-/* the Walk of the bank director and the master: forward beyond farDist, back within nearDist when the way back is
- * free */
-void cAIControlBank_Walk(cAICharControl *self);
 cAICharControl *cAIControlBankMaster_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-cAIControlBankMaster *cAIControlBankMaster_Delete(cAIControlBankMaster *self, byte flags);
-/* the Orbit of the control, but not while the action button is down or its ActionEnd plays */
-void cAIControlBankMaster_Orbit(cAIControlBankMaster *self);
 cAICharControl *cAIControlBishop_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-cAICharControl *cAIControlBishop_Delete(cAICharControl *self, byte flags);
-/* CheckWait, but not while the target plays its ActionEnd */
-byte cAIControlBishop_CheckWait(cAICharControl *self);
-void cAIControlBishop_Strafe2(cAICharControl *elem);
-void cAIControlBishop_Strafe(cAIControlBishop *self);
-/* the 2D Walk without a strafe of its own (the gear too) */
-void cAIControlShoot_Walk(cAICharControl *elem);
-/* Nop of the control: the strafe parameters by the target */
-void cAIControlBishop_SetParams(cAICharControl *elem);
 cAICharControl *cAIControlGear_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-cAICharControl *cAIControlGear_Delete(cAICharControl *self, byte flags);
-/* CheckWait, but not while the target plays its ActionInit or ActionEnd */
-byte cAIControlGear_CheckWait(cAICharControl *self);
-/* the turns stop during the PostFusion action of the gear */
-void cAIControlGear_TurnFollow(cAICharControl *self);
-void cAIControlGear_Turn(cAICharControl *self);
-void cAIControlGear_DirTurn(cAICharControl *self);
-void cAIControlGear_Strafe2(cAICharControl *elem);
-void cAIControlGear_Strafe(cAIControlGear *self);
-/* vf89: the AI of the gear saw the way to the target blocked */
-byte cAIControlGear_Vf89(cAICharControl *self);
-void cAIControlGear_SetParams(cAICharControl *elem);
-void cAIControlGear_SetTurnSpeed(cAICharControl *self, float speed);
 cAICharControl *cAIControlMessenger_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-cAIControlMessenger *cAIControlMessenger_Delete(cAIControlMessenger *self, byte flags);
-byte cAIControlMessenger_UpdateFollowMode(cAIControlMessenger *self, float dt);
-void cAIControlMessenger_SetTurnSpeed(cAIControlMessenger *self, float speed);
 cAICharControl *cAIControlNurse_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-cAIControlNurse *cAIControlNurse_Delete(cAIControlNurse *self, byte flags);
-/* forward beyond farDist only (3D) */
-void cAIControlNurse_Walk(cAIControlNurse *self);
 cAICharControl *cAIControlSentinel_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg);
-cAICharControl *cAIControlSentinel_Delete(cAICharControl *self, byte flags);
-void cAIControlSentinel_Strafe2(cAICharControl *elem);
-void cAIControlSentinel_Strafe(cAIControlShoot *self);
-/* the 3D Walk without a strafe of its own */
-void cAIControlSentinel_Walk(cAICharControl *elem);
 
 typedef cAICharControl *(*cAICharControlCtor_t)(void *mem, cEntity *e, cAIChar *ai, int *arg);
 

@@ -12,10 +12,62 @@
 #include "scrap/weaps2.h"
 #include "scrap/staticinit.h"
 
+#define g_DevastatorRechargeTime (GVar_DevastatorRechargeTime.value.f)
+#define g_DevastatorExplosionRadius (GVar_DevastatorExplosionRadius.value.f)
+#define g_DevastatorExtraDamage (GVar_DevastatorExtraDamage.value.f)
+#define g_DevastatorHitForce (GVar_DevastatorHitForce.value.f)
+#define g_DevastatorMinDamage (GVar_DevastatorMinDamage.value.f)
+#define g_DevastatorSpreadAngle (GVar_DevastatorSpreadAngle.value.f)
+#define g_DevastatorAmmoCost (GVar_DevastatorAmmoCost.value.f)
+#define g_DevastatorBulletFile (GVar_DevastatorBulletFile.value.s)
+#define g_DevastatorHitFile (GVar_DevastatorHitFile.value.s)
+#define g_DevastatorShootFile (GVar_DevastatorShootFile.value.s)
+#define g_DevastatorSparksFile (GVar_DevastatorSparksFile.value.s)
+#define g_DevastatorBoomSound (GVar_DevastatorBoomSound.value.s)
+#define g_DevastatorBoomSoundAttEnd (GVar_DevastatorBoomSoundAttEnd.value.f)
+#define g_DevastatorBoomSoundAttIni (GVar_DevastatorBoomSoundAttIni.value.f)
+#define g_DevastatorBoomSoundVol (GVar_DevastatorBoomSoundVol.value.f)
+#define g_FXDevastatorDistance (GVar_FXDevastatorDistance.value.f)
+#define g_FXDevastatorRadius (GVar_FXDevastatorRadius.value.f)
+#define g_FXDevastatorScale (GVar_FXDevastatorScale.value.f)
+#define g_DevXplosionNative (NativeFunc_DevastatorXplosionCall.func)	/* the function of "!DevastatorXplosionCall" */
+#define g_CreateEMIFunc (((cPy_Function *)&GVar_CreateEMIFunc.func))
+#define g_EMIRechargeTime (GVar_EMIRechargeTime.value.f)
+#define g_EMIAmmoNeed (GVar_EMIAmmoNeed.value.i)
+#define g_SetUpEMIFunc (((cPy_Function *)&GVar_SetUpEMIFunc.func))
+#define g_EMILifeTime (GVar_EMILifeTime.value.f)
+#define g_EMIIDAmmo (GVar_EMIIDAmmo.value.i)
+static cPy_NativeFunc NativeFunc_DevastatorXplosionCall;
+static cGVarFunction GVar_SetUpEMIFunc;
+static cGVar GVar_FXDevastatorScale;
+static cGVar GVar_FXDevastatorRadius;
+static cGVar GVar_FXDevastatorDistance;
+static cGVar GVar_EMIRechargeTime;
+static cGVar GVar_EMILifeTime;
+static cGVar GVar_EMIIDAmmo;
+static cGVar GVar_EMIAmmoNeed;
+static cGVar GVar_DevastatorSpreadAngle;
+static cGVar GVar_DevastatorSparksFile;
+static cGVar GVar_DevastatorShootFile;
+static cGVar GVar_DevastatorRechargeTime;
+static cGVar GVar_DevastatorMinDamage;
+static cGVar GVar_DevastatorHitForce;
+static cGVar GVar_DevastatorHitFile;
+static cGVar GVar_DevastatorExtraDamage;
+static cGVar GVar_DevastatorExplosionRadius;
+static cGVar GVar_DevastatorBulletFile;
+static cGVar GVar_DevastatorBoomSoundVol;
+static cGVar GVar_DevastatorBoomSoundAttIni;
+static cGVar GVar_DevastatorBoomSoundAttEnd;
+static cGVar GVar_DevastatorBoomSound;
+static cGVar GVar_DevastatorAmmoCost;
+static cGVarFunction GVar_CreateEMIFunc;
+
 #define DEV_PI 3.14159274f
 
 /* the shot sounds 0xd..0xf of the vehicle loop with the recharge time of one slot */
-void Devastator_Start(cEntity *v) {
+static void Devastator_SetUp(cEntity *v);
+static void Devastator_Start(cEntity *v) {
 	if (!(cTargetLock_GetAmmo(&Veh(v)->weapons, g_DevastatorIDAmmo) > 0.0f)) {
 		return;
 	}
@@ -52,11 +104,12 @@ static inline float Dev_RandSym(float r) {
 	return (float)(Weap_Rand01() * (double)(r - lo) + (double)lo);
 }
 
-char g_DevShooter[128];
-char g_DevVictim[128];
-vec3_t g_DevCenter;
+/* Weaps/Devastator.cpp: the Devastator and the EMI */
+static char g_DevShooter[128];
+static char g_DevVictim[128];
+static vec3_t g_DevCenter;
 
-uint32_t g_DevColorRamps[36] = {
+static uint32_t g_DevColorRamps[36] = {
 	0x60ffffff, 0x60ffffff, 0x60ffffff, 0x60ffffff, 0x80ffffff, 0x80ffffff, 0xc0808080, 0xff000000, 0xff000000,
 	0x80ffffc8, 0x80ffffc8, 0x80ffffc8, 0x80ffffc8, 0x80ffffc8, 0x80ffffc8, 0xc080805c, 0xff000000, 0xff000000,
 	0x80ffc0c0, 0x80ffc0c0, 0x80ffc0c0, 0x80ffc0c0, 0x80ffc0c0, 0x80ffc0c0, 0xc0808080, 0xff000000, 0xff000000,
@@ -66,7 +119,7 @@ uint32_t g_DevColorRamps[36] = {
 /* "!DevastatorCreate" (vehicle, hit point into (&g_DevCenter), entity hit, shot number): the shot of the next mounted
  * slot (a bullet for a player), then where the effects are visible the explosion particles on the floor at the hit,
  * the shot trail and the sparks, the damage of the sphere around the hit (not on a net client) and the boom */
-void Devastator_Create(cAbstractFile *params) {
+static void Devastator_Create(cAbstractFile *params) {
 	vec3_t c, r, in, rot, a, b, hit, n, p, origin, cam, d, u, q, e, mid;
 	matrix_t mat;
 	CCollisionTri tri;
@@ -385,7 +438,7 @@ sphere:
 
 /* "!DevastatorFX" (vehicle, player, item): the HUD item turns while the vehicle fires (the upgrade 8 keeps turning),
  * the upgrade 7 pulses */
-void Devastator_FX(cAbstractFile *params) {
+static void Devastator_FX(cAbstractFile *params) {
 	char name[128], itemName[128];
 	int player;
 
@@ -431,7 +484,7 @@ void Devastator_FX(cAbstractFile *params) {
 }
 
 /* "!DevastatorFire" (vehicle): a shot spread at random around the aim, one life of the entity hit */
-void Devastator_Fire(cAbstractFile *params) {
+static void Devastator_Fire(cAbstractFile *params) {
 	char name[128];
 	float ang[3];
 	vec3_t hit, a, b;
@@ -505,7 +558,7 @@ ammo:;
 }
 
 /* "!DevastatorPress" (vehicle) */
-void Devastator_Press(cAbstractFile *params) {
+static void Devastator_Press(cAbstractFile *params) {
 	char name[128];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -514,7 +567,7 @@ void Devastator_Press(cAbstractFile *params) {
 }
 
 /* "!DevastatorRelease" (vehicle) */
-void Devastator_Release(cAbstractFile *params) {
+static void Devastator_Release(cAbstractFile *params) {
 	char name[128];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -523,7 +576,7 @@ void Devastator_Release(cAbstractFile *params) {
 }
 
 /* the aim help of the Devastator, wider for a pad with VehicleCenterPadLock */
-void Devastator_SetUp(cEntity *v) {
+static void Devastator_SetUp(cEntity *v) {
 	Veh(v)->autoAim.status = 1;
 	float ang;
 	if (g_VehicleCenterPadLock != 0.0f && cVehicleEntity_GetOwnerSlot(v) != -1) {
@@ -538,7 +591,7 @@ void Devastator_SetUp(cEntity *v) {
 }
 
 /* "!DevastatorXplosionCall" (entity): the damage and push of the explosion at (&g_DevCenter) */
-void Devastator_XplosionCall(cAbstractFile *params) {
+static void Devastator_XplosionCall(cAbstractFile *params) {
 	vec3_t p, in, r, n;
 
 	cAbstractFile_ReadString(params, g_DevVictim, 0x80);
@@ -610,7 +663,7 @@ void Devastator_XplosionCall(cAbstractFile *params) {
 }
 
 /* "!EMIFire" (vehicle): the script makes the EMI with the ammo of the vehicle */
-void EMI_Fire(cAbstractFile *params) {
+static void EMI_Fire(cAbstractFile *params) {
 	char name[128], emiName[128];
 	vec3_t pos, ang;
 
@@ -667,7 +720,7 @@ void EMI_Fire(cAbstractFile *params) {
 
 /* "!EMIOnHit" (EMI, ?, entity): a vehicle near the EMI is out for 10 seconds, further away for a random time (or not
  * at all); a missile in the radius loses its target */
-void EMI_OnHit(cAbstractFile *params) {
+static void EMI_OnHit(cAbstractFile *params) {
 	char emiName[128], other[128], name[128];
 	vec3_t a, b;
 
@@ -712,7 +765,7 @@ void EMI_OnHit(cAbstractFile *params) {
 }
 
 /* "!InfernoClientFire" (vehicle) */
-void Inferno_ClientFireNet(cAbstractFile *params) {
+static void Inferno_ClientFireNet(cAbstractFile *params) {
 	char name[128];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -720,41 +773,41 @@ void Inferno_ClientFireNet(cAbstractFile *params) {
 }
 
 cGVar GVar_DevastatorIDWeap;
-cGVar GVar_DevastatorBulletFile;
-cGVar GVar_FXDevastatorDistance;
-cGVar GVar_DevastatorRechargeTime;
-cGVar GVar_DevastatorExplosionRadius;
-cGVar GVar_DevastatorExtraDamage;
-cGVar GVar_DevastatorHitForce;
+static cGVar GVar_DevastatorBulletFile;
+static cGVar GVar_FXDevastatorDistance;
+static cGVar GVar_DevastatorRechargeTime;
+static cGVar GVar_DevastatorExplosionRadius;
+static cGVar GVar_DevastatorExtraDamage;
+static cGVar GVar_DevastatorHitForce;
 cGVar GVar_DevastatorIDAmmo;
-cPy_NativeFunc NativeFunc_DevastatorXplosionCall;
-cGVar GVar_DevastatorShootFile;
-cGVar GVar_DevastatorBoomSoundVol;
-cGVar GVar_DevastatorMinDamage;
-cGVar GVar_DevastatorSpreadAngle;
-cGVar GVar_FXDevastatorRadius;
+static cPy_NativeFunc NativeFunc_DevastatorXplosionCall;
+static cGVar GVar_DevastatorShootFile;
+static cGVar GVar_DevastatorBoomSoundVol;
+static cGVar GVar_DevastatorMinDamage;
+static cGVar GVar_DevastatorSpreadAngle;
+static cGVar GVar_FXDevastatorRadius;
 cGVar GVar_DevastatorRange;
-cGVar GVar_DevastatorSparksFile;
-cGVar GVar_DevastatorBoomSoundAttEnd;
-cGVar GVar_DevastatorHitFile;
-cGVar GVar_DevastatorBoomSound;
-cGVar GVar_FXDevastatorScale;
-cGVar GVar_DevastatorAmmoCost;
-cGVar GVar_DevastatorBoomSoundAttIni;
-cGVarFunction GVar_CreateEMIFunc;
-cGVar GVar_EMIRechargeTime;
-cGVar GVar_EMIAmmoNeed;
-cGVarFunction GVar_SetUpEMIFunc;
-cGVar GVar_EMILifeTime;
-cGVar GVar_EMIIDAmmo;
-cPy_NativeFunc NativeFunc_DevastatorPress;
-cPy_NativeFunc NativeFunc_DevastatorRelease;
-cPy_NativeFunc NativeFunc_DevastatorCreate;
-cPy_NativeFunc NativeFunc_DevastatorFire;
-cPy_NativeFunc NativeFunc_DevastatorFX;
-cPy_NativeFunc NativeFunc_EMIOnHit;
-cPy_NativeFunc NativeFunc_EMIFire;
-cPy_NativeFunc NativeFunc_InfernoClientFire;
+static cGVar GVar_DevastatorSparksFile;
+static cGVar GVar_DevastatorBoomSoundAttEnd;
+static cGVar GVar_DevastatorHitFile;
+static cGVar GVar_DevastatorBoomSound;
+static cGVar GVar_FXDevastatorScale;
+static cGVar GVar_DevastatorAmmoCost;
+static cGVar GVar_DevastatorBoomSoundAttIni;
+static cGVarFunction GVar_CreateEMIFunc;
+static cGVar GVar_EMIRechargeTime;
+static cGVar GVar_EMIAmmoNeed;
+static cGVarFunction GVar_SetUpEMIFunc;
+static cGVar GVar_EMILifeTime;
+static cGVar GVar_EMIIDAmmo;
+static cPy_NativeFunc NativeFunc_DevastatorPress;
+static cPy_NativeFunc NativeFunc_DevastatorRelease;
+static cPy_NativeFunc NativeFunc_DevastatorCreate;
+static cPy_NativeFunc NativeFunc_DevastatorFire;
+static cPy_NativeFunc NativeFunc_DevastatorFX;
+static cPy_NativeFunc NativeFunc_EMIOnHit;
+static cPy_NativeFunc NativeFunc_EMIFire;
+static cPy_NativeFunc NativeFunc_InfernoClientFire;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_DevastatorIDWeap, &GVar_DevastatorIDWeap, "DevastatorIDWeap", 0, "The default weapon idx for the Devastator", 3)

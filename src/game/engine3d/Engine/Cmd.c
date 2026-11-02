@@ -11,7 +11,9 @@
 #include "scrap/e3dworld.h"
 #include "scrap/misc.h"
 
-void Cmd_AddAnim(void) {
+/* "AddAnim model anim": the animation added to the model and played */
+static CModel *Cmd_GetModel(void);
+static void Cmd_AddAnim(void) {
 	CmdLex_Next();
 	CModel *m = Cmd_GetModel();
 	if (m) {
@@ -24,7 +26,10 @@ void Cmd_AddAnim(void) {
 	CmdLex_Next();
 }
 
-void Cmd_Load(void) {
+/* "Load name file pos [scale] bool": a model (scale 1 when missing), its first animation played */
+static byte Cmd_GetBool(byte def);
+static int Cmd_GetVec(byte next, vec3_t *out, int unused);
+static void Cmd_Load(void) {
 	char name[0x40];
 	char file[MAX_FILEPATH];
 	vec3_t pos = { 0.0f, 0.0f, 0.0f };
@@ -51,7 +56,8 @@ void Cmd_Load(void) {
 	CModel_SetAnim(m, 0, 0);
 }
 
-void Cmd_PivotPos(void) {
+/* "PivotPos model node" */
+static void Cmd_PivotPos(void) {
 	CmdLex_Next();
 	CModel *m = Cmd_GetModel();
 	if (m) {
@@ -60,7 +66,8 @@ void Cmd_PivotPos(void) {
 	CmdLex_Next();
 }
 
-void Cmd_PlayAnim(void) {
+/* "PlayAnim model anim slot" */
+static void Cmd_PlayAnim(void) {
 	CmdLex_Next();
 	CModel *m = Cmd_GetModel();
 	if (m) {
@@ -72,7 +79,8 @@ void Cmd_PlayAnim(void) {
 	CmdLex_Next();
 }
 
-void Cmd_MeshEffect(void) {
+/* "EFEC_MALLA pantalla|modelo model" */
+static void Cmd_MeshEffect(void) {
 	char kind[0x40];
 
 	CmdLex_Next();
@@ -95,7 +103,8 @@ void Cmd_MeshEffect(void) {
 	Lex_Error(0, "comando no v\xe1lido: %s", kind);
 }
 
-void Cmd_MergeNodes(void) {
+/* "FUNDIR_NODOS model": the nodes of its scene joined */
+static void Cmd_MergeNodes(void) {
 	CmdLex_Next();
 	CModel *m = Cmd_GetModel();
 	if (m) {
@@ -103,7 +112,8 @@ void Cmd_MergeNodes(void) {
 	}
 }
 
-CModel *Cmd_GetModel(void) {
+/* the model named by the token (an identifier or a string), with an error NULL; then the next token */
+static CModel *Cmd_GetModel(void) {
 	CHECK((g_Cl.type == CLEX_IDENT) || (g_Cl.type == CLEX_STRING));
 	CModel *m = Model_FindName(g_Cl.text);
 	if (!m) {
@@ -113,7 +123,9 @@ CModel *Cmd_GetModel(void) {
 	return m;
 }
 
-int Cmd_GetVec(byte next, vec3_t *out, int unused) {
+/* "( x , y , z )" or "$node" (its world position); 0 or -1 with an error. next: the token before is skipped */
+static int Cmd_GetFloat(byte next, float *out, int end);
+static int Cmd_GetVec(byte next, vec3_t *out, int unused) {
 	(void)unused;
 	if (CmdLex_IsChar('$')) {
 		CmdLex_Next();
@@ -137,7 +149,8 @@ int Cmd_GetVec(byte next, vec3_t *out, int unused) {
 	return 0;
 }
 
-byte Cmd_GetBool(byte def) {
+/* "true" or "false", else an error and def */
+static byte Cmd_GetBool(byte def) {
 	CHECK(g_Cl.type == CLEX_IDENT);
 	if (!crt_stricmp(g_Cl.text, "false")) {
 		CmdLex_Next();
@@ -152,7 +165,8 @@ byte Cmd_GetBool(byte def) {
 	return def;
 }
 
-int Cmd_GetFloat(byte next, float *out, int end) {
+/* a number, then the character end unless 0; 0 or -1 */
+static int Cmd_GetFloat(byte next, float *out, int end) {
 	double d;
 
 	CHECK(out);
@@ -169,20 +183,16 @@ int Cmd_GetFloat(byte next, float *out, int end) {
 	return 0;
 }
 
-void Cmd_SkipToIdent(void) {
+/* the tokens up to the next identifier skipped with an error each */
+static void Cmd_SkipToIdent(void) {
 	while (g_Cl.type != CLEX_IDENT && g_Cl.type != CLEX_ERR) {
 		Lex_Error(0, "no es un comando: %s", g_Cl.text);
 		CmdLex_Next();
 	}
 }
 
-int Cmd_NextInt(void) {
-	CmdLex_Next();
-	CHECK(g_Cl.type == CLEX_INT);
-	return g_Cl.value.i;
-}
-
-void Cmd_Out(const char *text) {
+/* the lexer output into the debug log */
+static void Cmd_Out(const char *text) {
 	E3D_DebugPrintf("%s", text);
 }
 

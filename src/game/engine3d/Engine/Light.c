@@ -18,78 +18,75 @@
 #include "scrap/utild3d.h"
 #include "scrap/staticinit.h"
 
-
-extern const IObject3DVtbl CLight_vftable;
+static const IObject3DVtbl CLight_vftable;
 #define CLUZ_VFTABLE (&CLight_vftable)
 #define LIGHT_INV255 (1.0f / 255.0f)
 /* "no limit" for the range of the device light and the start of the nearest search, a float constant of the exe */
 
-
-cGVar GVar_R_LightEnaD3D;
+static cGVar GVar_R_LightEnaD3D;
 
 /* the engine variables of the lights (Gvars) */
 #define g_LightEnaD3D (GVar_R_LightEnaD3D.value.i)	/* R_LightEnaD3D: 0 always, 1 on changes, from 2 never */
-cGVar GVar_R_LightAmbient;
+static cGVar GVar_R_LightAmbient;
 
 #define g_LightAmbient (GVar_R_LightAmbient.value.f)
-cGVar GVar_R_LightMult;
+static cGVar GVar_R_LightMult;
 
 #define g_LightMult (GVar_R_LightMult.value.f)
-cGVar GVar_R_SpotlightClamp;
+static cGVar GVar_R_SpotlightClamp;
 
 #define g_SpotlightClamp (GVar_R_SpotlightClamp.value.f)
-cGVar GVar_R_LightDesat;
+static cGVar GVar_R_LightDesat;
 
 #define g_LightDesat (GVar_R_LightDesat.value.f)
-cGVar GVar_MonitorAmbient;
+static cGVar GVar_MonitorAmbient;
 
 #define g_MonitorAmbient (GVar_MonitorAmbient.value.u)
-cGVar GVar_R_LightTrace;
+static cGVar GVar_R_LightTrace;
 
 #define g_LightTrace (GVar_R_LightTrace.value.i)
-cGVar GVar_R_SpotlightAdjust;
+static cGVar GVar_R_SpotlightAdjust;
 
 #define g_SpotlightAdjust (GVar_R_SpotlightAdjust.value.i)
-cGVar GVar_R_LightAtten;
+static cGVar GVar_R_LightAtten;
 
 #define g_LightAtten (GVar_R_LightAtten.value.f)
-cGVar GVar_R_LightGamma;
+static cGVar GVar_R_LightGamma;
 
 #define g_LightGamma (GVar_R_LightGamma.value.f)
-cGVar GVar_R_SpotlightMult;
+static cGVar GVar_R_SpotlightMult;
 
 #define g_SpotlightMult (GVar_R_SpotlightMult.value.f)
-cGVar GVar_R_LightSortI;
+static cGVar GVar_R_LightSortI;
 
 #define g_LightSortI (GVar_R_LightSortI.value.f)
-cGVar GVar_R_LightAtten2;
+static cGVar GVar_R_LightAtten2;
 
 #define g_LightAtten2 (GVar_R_LightAtten2.value.i)
-cGVar GVar_R_SpotlightAng;
+static cGVar GVar_R_SpotlightAng;
 
 #define g_SpotlightAng (GVar_R_SpotlightAng.value.i)
-cGVar GVar_R_SpotlightAtten;
+static cGVar GVar_R_SpotlightAtten;
 
 #define g_SpotlightAtten (GVar_R_SpotlightAtten.value.f)
-cGVar GVar_R_LightMult2;
+static cGVar GVar_R_LightMult2;
 
 #define g_LightMult2 (GVar_R_LightMult2.value.f)
-cGVar GVar_R_LightTarget;
+static cGVar GVar_R_LightTarget;
 
 #define g_LightTarget (GVar_R_LightTarget.value.i)
-cGVar GVar_R_LightDefer;
+static cGVar GVar_R_LightDefer;
 
 #define g_LightDefer (GVar_R_LightDefer.value.i)
-cGVar GVar_R_LightSector;
+static cGVar GVar_R_LightSector;
 
 #define g_LightSector (GVar_R_LightSector.value.i)
-cGVar GVar_R_LightSort;
+static cGVar GVar_R_LightSort;
 
 #define g_LightSort (GVar_R_LightSort.value.i)
-cGVar GVar_R_LightMultName;
+static cGVar GVar_R_LightMultName;
 
 #define g_LightMultName (GVar_R_LightMultName.value.s)
-
 
 static void D3D_SetLight(uint32_t idx, const D3DLight *l) {
 	void *dev = g_pd3dDevice;
@@ -105,7 +102,6 @@ static void D3D_SetRenderState(uint32_t state, uint32_t value) {
 	void *dev = g_pd3dDevice;
 	Rd_DevSetRenderState(dev, state, value);
 }
-
 
 static void Light_Release(CNode3D **slot) {
 	if (*slot) {
@@ -135,9 +131,10 @@ static void Light_EnableD3D(CLight *l, byte enable) {
 	}
 }
 
-int g_nLights;
-CLight *g_Lights[1024];
+static int g_nLights;
+static CLight *g_Lights[1024];
 
+static void CLight_UpdateD3D(CLight *self, byte hide);
 static void Light_Add(CLight *self) {
 	self->active = 1;
 	self->index_list = g_nLights;
@@ -179,8 +176,8 @@ static float Light_DegToRad(float deg) {
 	return (float)((double)deg * M_PI_D / DEG_PER_PI);
 }
 
-uint32_t g_LightIndexD3D;
-int g_LightsTotal;
+static uint32_t g_LightIndexD3D;
+static int g_LightsTotal;
 
 CLight *CLight_ctor(CLight *self) {
 	static const byte white[4] = { 0xff, 0xff, 0xff, 0 };
@@ -217,7 +214,7 @@ CLight *CLight_ctor(CLight *self) {
 	return self;
 }
 
-void CLight_dtor(CLight *self) {
+static void CLight_dtor(CLight *self) {
 	self->vftable = CLUZ_VFTABLE;
 	Light_Release(&self->node);
 	self->node = NULL;
@@ -234,17 +231,13 @@ void CLight_dtor(CLight *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-IObject3D *CLight_Delete(IObject3D *base, byte flags) {
+static IObject3D *CLight_Delete(IObject3D *base, byte flags) {
 	CLight *self = (CLight *)base;
 	CLight_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
 	return base;
-}
-
-void IObject3D_dtor(IObject3D *self) {
-	self->vftable = IOBJECT3D_VFTABLE;
 }
 
 IObject3D *IObject3D_Delete(IObject3D *self, byte flags) {
@@ -255,22 +248,9 @@ IObject3D *IObject3D_Delete(IObject3D *self, byte flags) {
 	return self;
 }
 
-byte IObject3D_Read(IObject3D *self, CFileIO *f, void *ctx) {
-	(void)self;
-	(void)f;
-	(void)ctx;
-	return 0;
-}
+static const float LIGHT_RANGE_INF = 1.8446e+19f;
 
-byte IObject3D_Write(IObject3D *self, CFileIO *f, void *ctx) {
-	(void)self;
-	(void)f;
-	(void)ctx;
-	return 0;
-}
-
-const float LIGHT_RANGE_INF = 1.8446e+19f;
-
+static int Light_Compare(const void *a, const void *b);
 int Light_Select(const vec3_t *pos, int sector, const vec3_t *center, float radius, CLight **out, int maxOn) {
 	CHECK(g_pd3dDevice);
 	CHECK(radius > 0.0f);
@@ -340,12 +320,14 @@ int Light_Select(const vec3_t *pos, int sector, const vec3_t *center, float radi
 	return n;
 }
 
-const color4_t colorRvaColor = { .r = 0.383529f, .g = 0.430588f, .b = 0.517647f, .a = 1.0f };
+static const color4_t colorRvaColor = { .r = 0.383529f, .g = 0.430588f, .b = 0.517647f, .a = 1.0f };
 
-const color4_t colorRvaColor2 = { .r = 0.740392f, .g = 0.661961f, .b = 0.536471f, .a = 1.0f };
+static const color4_t colorRvaColor2 = { .r = 0.740392f, .g = 0.661961f, .b = 0.536471f, .a = 1.0f };
 
-const color4_t colorRvaColor3 = { .r = 0.909804f, .g = 0.882353f, .b = 0.827451f, .a = 1.0f };
+static const color4_t colorRvaColor3 = { .r = 0.909804f, .g = 0.882353f, .b = 0.827451f, .a = 1.0f };
 
+static void Light_EnableAll(byte enable);
+static void Light_SetDirLight(uint32_t idx, const color4_t *color, const vec3_t *dir);
 int Light_SetDefault(byte on) {
 	/* the directions of the three lights of EnableMonitorLights */
 	static const uint32_t dirBits[3][3] = {
@@ -382,13 +364,13 @@ int Light_SetDefault(byte on) {
 	return 0;
 }
 
-void CLight_Hide(IObject3D *base, void *arg) {
+static void CLight_Hide(IObject3D *base, void *arg) {
 	CLight *self = (CLight *)base;
 	(void)arg;
 	CLight_UpdateD3D(self, 1);
 }
 
-void CLight_Reset(IObject3D *elem, void *arg) {
+static void CLight_Reset(IObject3D *elem, void *arg) {
 	CLight *self = (CLight *)elem;
 	(void)arg;
 	CLight_FillD3D(self, &self->d3d);
@@ -396,15 +378,15 @@ void CLight_Reset(IObject3D *elem, void *arg) {
 	self->vftable->Update(&self->base, NULL);
 }
 
-cGVar GVar_R_ShowLights;
+static cGVar GVar_R_ShowLights;
 
 /* R_ShowLights and the material of the debug drawing, a static of CLight_Render */
 #define g_ShowLights (GVar_R_ShowLights.value.i)
 
-CMaterial g_LightMat;
+static CMaterial g_LightMat;
 
 /* the atexit destructor of it */
-void Light_FiniMat(void) {
+static void Light_FiniMat(void) {
 	CMaterial_dtor(&g_LightMat);
 }
 
@@ -415,12 +397,12 @@ typedef struct LightVert {
 	uint32_t color;
 } LightVert;
 
-int g_LightMatGuard;
+static int g_LightMatGuard;
 
 /* the virtual Render (dev, r not used): a light drawn only with show or R_ShowLights: a corner of the diffuse
  * color sized by the distance to the eye; from 2 the texts, from 3 the range sphere, the axes and the cone of a
  * spot light */
-void CLight_Render(IObject3D *base, void *dev, CRenderNode *r) {
+static void CLight_Render(IObject3D *base, void *dev, CRenderNode *r) {
 	CLight *self = (CLight *)base;
 	LightVert v[5];
 	matrix_t m;
@@ -510,7 +492,8 @@ void CLight_Render(IObject3D *base, void *dev, CRenderNode *r) {
 	}
 }
 
-void Light_SetDirLight(uint32_t idx, const color4_t *color, const vec3_t *dir) {
+/* a directional light without position into device light idx */
+static void Light_SetDirLight(uint32_t idx, const color4_t *color, const vec3_t *dir) {
 	D3DLight l;
 
 	memset(&l, 0, sizeof(l));
@@ -522,7 +505,7 @@ void Light_SetDirLight(uint32_t idx, const color4_t *color, const vec3_t *dir) {
 	D3D_SetLight(idx, &l);
 }
 
-void CLight_EnableD3D(CLight *self, byte enable) {
+static void CLight_EnableD3D(CLight *self, byte enable) {
 	Light_EnableD3D(self, enable);
 }
 
@@ -536,7 +519,8 @@ static const struct {
 	{ offsetof(CLight, phi), 4 }, { offsetof(CLight, mult), 4 }, { offsetof(CLight, radCoef), 4 },
 };
 
-byte CLight_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+/* the "LUZ" block; ctx holds the node at 0x4 */
+static byte CLight_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CLight *self = (CLight *)base;
 	Light_Link(&self->node, ((MeshD3D_FileCtx *)ctx)->node);
 	CFileIO_BeginBlock(f, "LUZ");
@@ -551,7 +535,7 @@ byte CLight_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	return 1;
 }
 
-int g_LightsD3D;
+static int g_LightsD3D;
 
 void Light_List(void) {
 	E3D_DebugPrintf("\nLuces:");
@@ -565,7 +549,7 @@ void Light_List(void) {
 	E3D_DebugPrintf("\n  %d luces (%d activas, %d act_d3d)", g_LightsTotal, g_nLights, g_LightsD3D);
 }
 
-byte CLight_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+static byte CLight_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CLight *self = (CLight *)base;
 	CHECK(self->node == ((MeshD3D_FileCtx *)ctx)->node);
 	CFileIO_BeginBlockWrite(f, "LUZ");
@@ -581,7 +565,8 @@ byte CLight_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	return 1;
 }
 
-void CLight_Update(IObject3D *base, CRenderNode *arg) {
+/* the virtual methods 1, 3 and 4; arg is not used */
+static void CLight_Update(IObject3D *base, CRenderNode *arg) {
 	CLight *self = (CLight *)base;
 	(void)arg;
 	if (!self->active) {
@@ -631,7 +616,8 @@ void CLight_Update(IObject3D *base, CRenderNode *arg) {
 	CLight_UpdateD3D(self, !vis);
 }
 
-void Light_EnableAll(byte enable) {
+/* all lights of the list enabled in the device as they are set (act_D3D), or disabled */
+static void Light_EnableAll(byte enable) {
 	CHECK(g_pd3dDevice);
 	if (g_LightDefer) {
 		enable = 0;
@@ -705,10 +691,6 @@ void CLight_SetNode(CLight *self, CNode3D *node) {
 	Light_Link(&self->node, node);
 }
 
-void CLight_SetNodeTarget(CLight *self, CNode3D *node) {
-	Light_Link(&self->nodeTarget, node);
-}
-
 void CLight_SetActive(CLight *self, byte active) {
 	if (active) {
 		if (!self->active) {
@@ -719,7 +701,8 @@ void CLight_SetActive(CLight *self, byte active) {
 	}
 }
 
-int Light_Compare(const void *a, const void *b) {
+/* qsort order of CLight pointers by weight, never 0 */
+static int Light_Compare(const void *a, const void *b) {
 	const CLight *la = *(CLight *const *)a, *lb = *(CLight *const *)b;
 	return lb->weight > la->weight ? -1 : 1;
 }
@@ -765,7 +748,8 @@ int Light_NumTotal(void) {
 	return g_LightsTotal;
 }
 
-void CLight_UpdateD3D(CLight *self, byte hide) {
+/* act_D3D from active (hide: off), the device light set while act_D3D */
+static void CLight_UpdateD3D(CLight *self, byte hide) {
 	if (!g_pd3dDevice) {
 		return;
 	}
@@ -832,7 +816,7 @@ byte IObject3D_WriteFalse(IObject3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 }
 
 /* the vtable of CLight */
-const IObject3DVtbl CLight_vftable = {
+static const IObject3DVtbl CLight_vftable = {
 	.Delete = CLight_Delete,
 	.Update = CLight_Update,
 	.Render = CLight_Render,

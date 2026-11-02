@@ -39,8 +39,6 @@ typedef struct cAutoAim {
 
 cAutoAim *cAutoAim_ctor(cAutoAim *self);
 byte cAutoAim_VarF(cAutoAim *self, const char *name, double *d, int set);
-/* a slot of interval with the angles ang (NULL keeps them) */
-void cAutoAim_SetSlot(cAutoAim *self, float interval, const float *ang);
 /* the aim point of owner between the slots; returns out */
 vec3_t *cAutoAim_GetAimPos(cAutoAim *self, vec3_t *out, cEntity *owner);
 /* the slot of the vehicle owner: dt its interval */

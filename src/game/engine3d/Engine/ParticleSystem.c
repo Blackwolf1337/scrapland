@@ -15,6 +15,31 @@
 #include "scrap/misc.h"
 #include "scrap/staticinit.h"
 
+#define CSISTPART_VFTABLE (&CParticleSystem_vftable)
+#define COBJBASE3D_VFTABLE (&CObjBase3D_vftable)
+#define CPARTICLEACTIVE_VFTABLE (&CParticleActive_vftable)
+#define CPARTICLESTATIC_VFTABLE (&CParticleStatic_vftable)
+#define g_ParticleSystemOn (GVar_R_Particles.value.i)
+#define g_ParticleSystemFlags (GVar_R_ParticleFlags.value.i)	/* -1, else the flags of all systems */
+#define g_ParticleSystemDebug (GVar_R_ParticleSector.value.i)	/* 1: visibility, 2: drawn, 3: with the name */
+#define g_ParticleSystemCount (GVar_R_ParticlesCount.value.i)	/* the particles of all systems */
+#define g_ParticleSystemPosScale (GVar_R_ParticleVelScale.value.f)
+#define g_ParticleSystemSizeScale (GVar_R_ParticleScale.value.f)
+#define g_ParticleSystemLifeScale (GVar_R_ParticleLife.value.f)
+#define g_ParticleSystemBirthAdd (GVar_R_ParticleRate.value.i)
+static cGVar GVar_R_ParticlesCount;
+static cGVar GVar_R_Particles;
+static cGVar GVar_R_ParticleVelScale;
+static cGVar GVar_R_ParticleSector;
+static cGVar GVar_R_ParticleScale;
+static cGVar GVar_R_ParticleRate;
+static cGVar GVar_R_ParticleLife;
+static cGVar GVar_R_ParticleFlags;
+static const IObject3DVtbl CParticleSystem_vftable;
+static const CParticleVtbl CParticleStatic_vftable;
+static const CParticleVtbl CParticleActive_vftable;
+static const IObject3DVtbl CObjBase3D_vftable;
+
 #define PARTICLESYSTEM_DEFAULT_COLOR 0xffffff
 
 #define PARTICLE_UPDATE(p, sp, dt, ms) ((p)->vftable->Update((p), (sp), (dt), (ms)))
@@ -30,24 +55,26 @@ static float ParticleSystem_Seconds(uint32_t ms) {
 	return (float)(double)ms * 0.001f;
 }
 
-CParticle *CParticleActive_ctor(CParticle *self) {
+static void CParticleActive_Init(CParticle *self);
+static CParticle *CParticleActive_ctor(CParticle *self) {
 	self->vftable = CPARTICLEACTIVE_VFTABLE;
 	CParticleActive_Init(self);
 	return self;
 }
 
-CParticleStatic *CParticleStatic_ctor(CParticleStatic *self) {
+static void CParticleStatic_Init(CParticleStatic *self);
+static CParticleStatic *CParticleStatic_ctor(CParticleStatic *self) {
 	self->vftable = CPARTICLESTATIC_VFTABLE;
 	CParticleStatic_Init(self);
 	return self;
 }
 
-int CParticleActive_Type(CParticle *self) {
+static int CParticleActive_Type(CParticle *self) {
 	(void)self;
 	return PARTICLE_ACTIVE;
 }
 
-int CParticleStatic_Type(CParticleStatic *self) {
+static int CParticleStatic_Type(CParticleStatic *self) {
 	(void)self;
 	return PARTICLE_STATIC;
 }
@@ -62,7 +89,7 @@ static void Particle_InitCommon(CParticle *p) {
 	p->scale = 1.0f;
 }
 
-void CParticleActive_Init(CParticle *self) {
+static void CParticleActive_Init(CParticle *self) {
 	CParticleActive *a = (CParticleActive *)self;
 
 	Particle_InitCommon(self);
@@ -93,7 +120,7 @@ void CParticleActive_Init(CParticle *self) {
 	a->bounce = 0;
 }
 
-void CParticleStatic_Init(CParticleStatic *self) {
+static void CParticleStatic_Init(CParticleStatic *self) {
 	Particle_InitCommon(self);
 	self->size = 1.0f;
 	self->color = PARTICLESYSTEM_DEFAULT_COLOR;
@@ -110,6 +137,9 @@ static void ParticleSystem_Clear(CParticleSystem *self) {
 	memset(&self->vis, 0, sizeof(self->vis));
 }
 
+static void CParticleSystem_CreateMat(CParticleSystem *self);
+static void CParticleSystem_CreateParticles(CParticleSystem *self);
+static void CParticleSystem_Init(CParticleSystem *self, CNode3D *node, const char *type, const ParticleSystemParams *params, CIniFile *ini);
 CParticleSystem *CParticleSystem_ctorCopy(CParticleSystem *self, const CParticleSystem *orig) {
 	ParticleSystem_Clear(self);
 	CParticleSystem_Init(self, orig->node, orig->type, &orig->params, NULL);
@@ -127,7 +157,7 @@ CParticleSystem *CParticleSystem_ctorCopy(CParticleSystem *self, const CParticle
 	return self;
 }
 
-CParticleSystem *CParticleSystem_ctorParams(CParticleSystem *self, CNode3D *node, const char *type, float scale, float alpha,
+static CParticleSystem *CParticleSystem_ctorParams(CParticleSystem *self, CNode3D *node, const char *type, float scale, float alpha,
 	const vec3_t *posList, CIniFile *ini) {
 	ParticleSystem_Clear(self);
 	CParticleSystem_Init(self, node, type, NULL, ini);
@@ -148,11 +178,11 @@ void CObjBase3D_dtor(CObjBase3D *self) {
 	self->base.vftable = IOBJECT3D_VFTABLE;
 }
 
-void ParticleSystemParams_dtor(ParticleSystemParams *self) {
+static void ParticleSystemParams_dtor(ParticleSystemParams *self) {
 	cString_dtor(&self->texture);
 }
 
-void CParticleSystem_dtor(CParticleSystem *self) {
+static void CParticleSystem_dtor(CParticleSystem *self) {
 	self->vftable = CSISTPART_VFTABLE;
 	for (int i = 0; i < self->params.nParticles; i++) {
 		if (self->Particles[i]) {
@@ -177,7 +207,7 @@ void CParticleSystem_dtor(CParticleSystem *self) {
 	CObjBase3D_dtor((CObjBase3D *)self);
 }
 
-ParticleSystemParams *ParticleSystemParams_Assign(ParticleSystemParams *self, const ParticleSystemParams *src) {
+static ParticleSystemParams *ParticleSystemParams_Assign(ParticleSystemParams *self, const ParticleSystemParams *src) {
 	/* the members one by one: the padding bytes stay */
 	memcpy(self, src, offsetof(ParticleSystemParams, spriteRand) + 1);
 	cString_Assign(&self->texture, &src->texture);
@@ -191,7 +221,7 @@ ParticleSystemParams *ParticleSystemParams_Assign(ParticleSystemParams *self, co
 	return self;
 }
 
-IObject3D *CObjBase3D_Delete(IObject3D *base, byte flags) {
+static IObject3D *CObjBase3D_Delete(IObject3D *base, byte flags) {
 	CObjBase3D *self = (CObjBase3D *)base;
 	CObjBase3D_dtor(self);
 	if (flags & 1) {
@@ -200,7 +230,7 @@ IObject3D *CObjBase3D_Delete(IObject3D *base, byte flags) {
 	return base;
 }
 
-IObject3D *CParticleSystem_Delete(IObject3D *base, byte flags) {
+static IObject3D *CParticleSystem_Delete(IObject3D *base, byte flags) {
 	CParticleSystem *self = (CParticleSystem *)base;
 	CParticleSystem_dtor(self);
 	if (flags & 1) {
@@ -209,9 +239,11 @@ IObject3D *CParticleSystem_Delete(IObject3D *base, byte flags) {
 	return base;
 }
 
-CIniFile g_ParticleSystemIni;
+static CIniFile g_ParticleSystemIni;
 
-void CParticleSystem_Init(CParticleSystem *self, CNode3D *node, const char *type, const ParticleSystemParams *params,
+/* the node, the type and its parameters (copied, or from ini, or from the particle ini) */
+static void CParticleSystem_ReadParams(CParticleSystem *self, CIniFile *ini);
+static void CParticleSystem_Init(CParticleSystem *self, CNode3D *node, const char *type, const ParticleSystemParams *params,
 	CIniFile *ini) {
 	CHECK(node);
 	CObjBase3D_SetNode((CObjBase3D *)self, node);
@@ -257,7 +289,8 @@ static void ParticleSystem_Activate(CParticleSystem *self, CParticle *p) {
 	}
 }
 
-CParticle *CParticleSystem_GetFree(CParticleSystem *self, byte force) {
+/* a free particle, made active; with force the oldest one if none is free */
+static CParticle *CParticleSystem_GetFree(CParticleSystem *self, byte force) {
 	float best = -3.4028234663852886e+38f;
 	CParticle *oldest = NULL;
 
@@ -341,24 +374,6 @@ void CParticleSystem_SetEmitPos(CParticleSystem *self, vec3_t *pos, byte n) {
 	}
 }
 
-void CParticleSystem_GetScale2(CParticleSystem *self, float *out) {
-	if (self->node) {
-		out[0] = self->node->scale.x;
-		out[1] = self->node->scale.y;
-		return;
-	}
-	out[0] = 1.0f;
-	out[1] = 1.0f;
-}
-
-void CParticleSystem_GetScale(CParticleSystem *self, vec3_t *out) {
-	if (self->node) {
-		*out = self->node->scale;
-		return;
-	}
-	*out = (vec3_t){ 1.0f, 1.0f, 1.0f };
-}
-
 /* the corner c into box, as the exe compares */
 static void ParticleSystem_BoxAdd(box_t *box, float x, float y, float z) {
 	box->min.x = x <= box->min.x ? x : box->min.x;
@@ -392,7 +407,8 @@ byte CParticleSystem_GetBox(CParticleSystem *self, box_t *box) {
 	return 1;
 }
 
-void CParticleSystem_ReadParams(CParticleSystem *self, CIniFile *ini) {
+/* the parameters from the section of the type in ini */
+static void CParticleSystem_ReadParams(CParticleSystem *self, CIniFile *ini) {
 	ParticleSystemParams *pa = &self->params;
 	const char *sect;
 	char texture[0x100], key[0x20];
@@ -482,7 +498,9 @@ static vec3_t ParticleSystem_Scaled(const vec3_t *v, float k) {
 	return (vec3_t){ v->x * k, v->y * k, v->z * k };
 }
 
-void CParticleSystem_GenParticle(CParticleSystem *self, CParticle *p) {
+/* p born with the parameters */
+static vec3_t *ParticleSystem_RandVec(vec3_t *out, const vec3_t *a, const vec3_t *b);
+static void CParticleSystem_GenParticle(CParticleSystem *self, CParticle *p) {
 	ParticleSystemParams *pa = &self->params;
 	vec3_t v;
 
@@ -571,7 +589,8 @@ void CParticleSystem_GenParticle(CParticleSystem *self, CParticle *p) {
 	a->bounce = pa->bounce;
 }
 
-void CParticleSystem_PlaceParticle(CParticleSystem *self, CParticle *p, const matrix_t *m) {
+/* the vectors of p turned by m and its position moved by m, as the flags say */
+static void CParticleSystem_PlaceParticle(CParticleSystem *self, CParticle *p, const matrix_t *m) {
 	if (PARTICLE_TYPE(p) == PARTICLE_ACTIVE && !(self->params.flags & PARTICLESYSTEM_LOCAL)) {
 		CParticleActive *a = (CParticleActive *)p;
 		Vec3_TransformDir0(&p->pos, &p->pos, m);
@@ -611,7 +630,7 @@ void CParticleSystem_EmitDt(CParticleSystem *self, int n, byte force, float dt) 
 	CParticleSystem_Emit(self, n, force, dt, (&g_MatIdentity));
 }
 
-byte CParticleSystem_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+static byte CParticleSystem_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CParticleSystem *self = (CParticleSystem *)base;
 	(void)self;
 	(void)f;
@@ -619,7 +638,7 @@ byte CParticleSystem_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	return 1;
 }
 
-byte CParticleSystem_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+static byte CParticleSystem_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CParticleSystem *self = (CParticleSystem *)base;
 	(void)self;
 	(void)f;
@@ -628,7 +647,7 @@ byte CParticleSystem_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	return 1;
 }
 
-void CParticleSystem_CreateMat(CParticleSystem *self) {
+static void CParticleSystem_CreateMat(CParticleSystem *self) {
 	ParticleSystemParams *pa = &self->params;
 
 	if (!self->mat) {
@@ -686,7 +705,8 @@ void CParticleSystem_SetActive(CParticleSystem *self, CParticle *p, byte active)
 	}
 }
 
-void CParticleSystem_CreateParticles(CParticleSystem *self) {
+static void CParticleActive_Update(CParticle *base, struct CParticleSystem *sp, float dt, void *multiSpr);
+static void CParticleSystem_CreateParticles(CParticleSystem *self) {
 	ParticleSystemParams *pa = &self->params;
 
 	CHECK(!self->Particles);
@@ -729,7 +749,8 @@ void CParticleSystem_CreateParticles(CParticleSystem *self) {
 	}
 }
 
-vec3_t *ParticleSystem_RandVec(vec3_t *out, const vec3_t *a, const vec3_t *b) {
+/* each coordinate a random value between a and b */
+static vec3_t *ParticleSystem_RandVec(vec3_t *out, const vec3_t *a, const vec3_t *b) {
 	float x = a->x, y, z;
 	if (x != b->x) {
 		x = ParticleSystem_RandLerp(x, b->x);
@@ -756,7 +777,7 @@ void ParticleSystem_LoadIni(const char *name, const char *dir) {
 	CIniFile_Load((&g_ParticleSystemIni), name, dir, 1);
 }
 
-void CParticleSystem_Render(IObject3D *base, void *dev, CRenderNode *r) {
+static void CParticleSystem_Render(IObject3D *base, void *dev, CRenderNode *r) {
 	CParticleSystem *self = (CParticleSystem *)base;
 	(void)dev;
 	if (!g_ParticleSystemOn) {
@@ -827,7 +848,8 @@ static byte Color_Mix(uint32_t c0, uint32_t c1, int k, uint32_t w) {
 	return (byte)((((c1 >> (8 * k)) & 0xff) * w + ((c0 >> (8 * k)) & 0xff) * (0x100 - w)) >> 8);
 }
 
-void CParticleActive_Update(CParticle *base, struct CParticleSystem *sp, float dt, void *multiSpr) {
+/* dt seconds on; at the end of its life the particle goes out */
+static void CParticleActive_Update(CParticle *base, struct CParticleSystem *sp, float dt, void *multiSpr) {
 	CParticleActive *self = (CParticleActive *)base;
 	if (self->delay > 0.0f) {
 		float d = self->delay - dt;
@@ -910,7 +932,7 @@ void CParticleActive_Update(CParticle *base, struct CParticleSystem *sp, float d
 	}
 }
 
-void CParticleSystem_Update(IObject3D *base, CRenderNode *r) {
+static void CParticleSystem_Update(IObject3D *base, CRenderNode *r) {
 	CParticleSystem *self = (CParticleSystem *)base;
 	if (!g_ParticleSystemOn) {
 		return;
@@ -966,7 +988,7 @@ void CParticleSystem_Update(IObject3D *base, CRenderNode *r) {
 }
 
 /* the slot Update of a class that does nothing there */
-void CParticle_UpdateNop(CParticle *self, struct CParticleSystem *sp, float dt, void *multiSpr) {
+static void CParticle_UpdateNop(CParticle *self, struct CParticleSystem *sp, float dt, void *multiSpr) {
 	(void)self;
 	(void)sp;
 	(void)dt;
@@ -985,7 +1007,7 @@ const IObject3DVtbl IObject3D_vftable = {
 };
 
 /* the vtable of CObjBase3D */
-const IObject3DVtbl CObjBase3D_vftable = {
+static const IObject3DVtbl CObjBase3D_vftable = {
 	.Delete = CObjBase3D_Delete,
 	.Update = IObject3D_UpdateNop,
 	.Render = IObject3D_RenderNop,
@@ -996,7 +1018,7 @@ const IObject3DVtbl CObjBase3D_vftable = {
 };
 
 /* the vtable of CParticleSystem */
-const IObject3DVtbl CParticleSystem_vftable = {
+static const IObject3DVtbl CParticleSystem_vftable = {
 	.Delete = CParticleSystem_Delete,
 	.Update = CParticleSystem_Update,
 	.Render = CParticleSystem_Render,
@@ -1006,35 +1028,29 @@ const IObject3DVtbl CParticleSystem_vftable = {
 	.Read = CParticleSystem_Read,
 };
 
-/* the vtable of CParticleBase */
-const CParticleVtbl CParticleBase_vftable = {
-	.Type = (void *)crt_purecall,
-	.Init = (void *)crt_purecall,
-	.Update = (void *)crt_purecall,
-};
-
 /* the vtable of CParticleStatic */
-const CParticleVtbl CParticleStatic_vftable = {
+static const CParticleVtbl CParticleStatic_vftable = {
 	.Type = CParticleStatic_Type,
 	.Init = CParticleStatic_Init,
 	.Update = CParticle_UpdateNop,
 };
 
 /* the vtable of CParticleActive */
-const CParticleVtbl CParticleActive_vftable = {
+static const CParticleVtbl CParticleActive_vftable = {
 	.Type = CParticleActive_Type,
 	.Init = CParticleActive_Init,
 	.Update = CParticleActive_Update,
 };
 
-cGVar GVar_R_Particles;
-cGVar GVar_R_ParticleScale;
-cGVar GVar_R_ParticleVelScale;
-cGVar GVar_R_ParticleFlags;
-cGVar GVar_R_ParticlesCount;
-cGVar GVar_R_ParticleSector;
-cGVar GVar_R_ParticleRate;
-cGVar GVar_R_ParticleLife;
+/* the switches of the particle systems */
+static cGVar GVar_R_Particles;
+static cGVar GVar_R_ParticleScale;
+static cGVar GVar_R_ParticleVelScale;
+static cGVar GVar_R_ParticleFlags;
+static cGVar GVar_R_ParticlesCount;
+static cGVar GVar_R_ParticleSector;
+static cGVar GVar_R_ParticleRate;
+static cGVar GVar_R_ParticleLife;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_R_Particles, &GVar_R_Particles, "R_Particles", 0, "Transform & Show Particles (0/1)", 1)

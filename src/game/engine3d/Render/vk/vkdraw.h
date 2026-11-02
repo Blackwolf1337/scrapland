@@ -22,8 +22,6 @@ int Vkd_DrawIndexedUP(VkoDev *d, int type, uint32_t primCount, uint32_t numVerti
 	const void *data, uint32_t stride);
 /* the back buffer through the gamma ramp of d into the swapchain, and the present; 0 on failure */
 int Vkd_Present(VkoDev *d);
-/* the calls from now to the next present into the log */
-void Vkd_TraceStart(void);
 /* this frame is the one of SCRAP_VK_TRACE: the calls go into the log */
 int Vkd_Tracing(void);
 /* the handle of the GLSL port of bmp/<name>.psh (shaders/ps/), 0 when there is none */

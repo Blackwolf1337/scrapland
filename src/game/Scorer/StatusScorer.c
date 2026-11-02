@@ -12,6 +12,13 @@
 #include "scrap/withlifeentity.h"
 #include "scrap/staticinit.h"
 
+#define CSTATUSSCORER_VFTABLE (&cStatusScorer_vftable)
+#define g_StatusLowLifeSound (GVar_DangerLifeSound.value.s)	/* the sound of the low life */
+#define g_StatusAlarmSound (GVar_RegenerationSound.value.s)	/* the siren of the alarm */
+static const cScorerItemVtbl cStatusScorer_vftable;
+static cGVar GVar_RegenerationSound;
+static cGVar GVar_DangerLifeSound;
+
 /* a byte of the ship regeneration state of the world (SLogic.SetShipToRegenerate): the siren plays while set */
 
 static CPsaImage *Status_NewWhite(void) {
@@ -57,7 +64,7 @@ cStatusScorer *cStatusScorer_ctor(cStatusScorer *self) {
 	return self;
 }
 
-void cStatusScorer_dtor(cStatusScorer *self) {
+static void cStatusScorer_dtor(cStatusScorer *self) {
 	self->base.vftable = CSTATUSSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	ScorerImg_Free(self->glow);
@@ -67,7 +74,7 @@ void cStatusScorer_dtor(cStatusScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cScorerItem *cStatusScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cStatusScorer_Delete(cScorerItem *base, byte flags) {
 	cStatusScorer *self = (cStatusScorer *)base;
 	cStatusScorer_dtor(self);
 	if (flags & 1) {
@@ -140,7 +147,8 @@ static const ScorerVarDef s_StatusVars6[] = {
 
 #define STATUS_TABLE(t) ScorerVar_Table(self, (t), sizeof(t) / sizeof((t)[0]), name, set, d, i)
 
-int cStatusScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+/* BoostOnRender sets the OnRender function of the item */
+static int cStatusScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cStatusScorer *self = (cStatusScorer *)base;
 	int r;
 
@@ -192,34 +200,34 @@ cGVar GVar_StdMaxLife;
 
 /* the life engine variables */
 #define g_StdMaxLife (GVar_StdMaxLife.value.i)			/* the max life of what is no ship */
-cGVar GVar_DangerLifeLevel;
+static cGVar GVar_DangerLifeLevel;
 
 #define g_DangerLifeLevel (GVar_DangerLifeLevel.value.i)		/* percent: the life blinks red below it */
 cGVar GVar_WarningLifeLevel;
 
 #define g_WarningLifeLevel (GVar_WarningLifeLevel.value.i)		/* percent: the low life sound fades in below it */
-cGVar GVar_DangerLifeSoundVol;
+static cGVar GVar_DangerLifeSoundVol;
 
 #define g_DangerLifeSoundVol (GVar_DangerLifeSoundVol.value.f)
-cGVar GVar_RegenerationSoundVol;
+static cGVar GVar_RegenerationSoundVol;
 
 #define g_RegenerationSoundVol (GVar_RegenerationSoundVol.value.f)
-cGVar GVar_RegenerationSoundPitchMax;
+static cGVar GVar_RegenerationSoundPitchMax;
 
 #define g_RegenerationSoundPitchMax (GVar_RegenerationSoundPitchMax.value.f)
-cGVar GVar_RegenerationSoundPitchMin;
+static cGVar GVar_RegenerationSoundPitchMin;
 
 #define g_RegenerationSoundPitchMin (GVar_RegenerationSoundPitchMin.value.f)
-cGVar GVar_InitRegenerationSound;
+static cGVar GVar_InitRegenerationSound;
 
 #define g_InitRegenerationSound (GVar_InitRegenerationSound.value.s)
-cGVar GVar_InitRegenerationSoundVol;
+static cGVar GVar_InitRegenerationSoundVol;
 
 #define g_InitRegenerationSoundVol (GVar_InitRegenerationSoundVol.value.f)
-cGVar GVar_EndRegenerationSound;
+static cGVar GVar_EndRegenerationSound;
 
 #define g_EndRegenerationSound (GVar_EndRegenerationSound.value.s)
-cGVar GVar_EndRegenerationSoundVol;
+static cGVar GVar_EndRegenerationSoundVol;
 
 #define g_EndRegenerationSoundVol (GVar_EndRegenerationSoundVol.value.f)
 
@@ -372,7 +380,7 @@ static void Status_DrawBoostIcon(cStatusScorer *self) {
 
 /* vf00: the life of the target of the camera (blinking when in danger), the boost segments, the money and lives,
  * the team flag, the hull of a ship; the low life warning and the regeneration siren */
-void cStatusScorer_Draw(cScorerItem *base, int player) {
+static void cStatusScorer_Draw(cScorerItem *base, int player) {
 	cStatusScorer *self = (cStatusScorer *)base;
 	cEntity *e;
 
@@ -498,15 +506,15 @@ void cStatusScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cStatusScorer */
-const cScorerItemVtbl cStatusScorer_vftable = {
+static const cScorerItemVtbl cStatusScorer_vftable = {
 	.Draw = cStatusScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cStatusScorer_Var,
 	.Delete = cStatusScorer_Delete,
 };
 
-cGVar GVar_DangerLifeSound;
-cGVar GVar_RegenerationSound;
+static cGVar GVar_DangerLifeSound;
+static cGVar GVar_RegenerationSound;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_StdMaxLife, &GVar_StdMaxLife, "StdMaxLife", 0, "Standard max life for characters and soon.", 100)

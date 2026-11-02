@@ -12,6 +12,25 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
+#define CFXELEMENTSABFAKEMETEORS_VFTABLE (&cFXElementsABFakeMeteors_vftable)
+#define CFXELEMENTSABFAKELIMIT_VFTABLE (&cFXElementsABFakeLimit_vftable)
+#define g_ABLimitRingRotSpeed (GVar_FXABFakeLimitRingRotSpeed.value.f)	/* RingRotSpeed */
+#define g_ABLimitSegmentStep (GVar_FXABFakeLimitSegmentStep.value.f)	/* SegmentStep */
+#define g_ABLimitSegmentSize (GVar_FXABFakeLimitSegmentSize.value.f)	/* SegmentSize */
+#define g_ABLimitRadius (GVar_FXABFakeLimitRadius.value.f)		/* Radius */
+#define g_ABLimitDistLighting (GVar_FXABFakeLimitDistLighting.value.f)	/* DistLighting */
+#define g_ABLimitQuakeFactor (GVar_FXABFakeLimitQuakeFactor.value.f)	/* QuakeFactor */
+#define g_ABLimitQuakeTime (GVar_FXABFakeLimitQuakeTime.value.f)		/* QuakeTime */
+static const cMapElementVtbl cFXElementsABFakeMeteors_vftable;
+static const cMapElementVtbl cFXElementsABFakeLimit_vftable;
+static cGVar GVar_FXABFakeLimitSegmentStep;
+static cGVar GVar_FXABFakeLimitSegmentSize;
+static cGVar GVar_FXABFakeLimitRingRotSpeed;
+static cGVar GVar_FXABFakeLimitRadius;
+static cGVar GVar_FXABFakeLimitQuakeTime;
+static cGVar GVar_FXABFakeLimitQuakeFactor;
+static cGVar GVar_FXABFakeLimitDistLighting;
+
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMEPARTICLES_RELEASE 0x21d1c0
 #define CGAMETRAIL_CTOR 0x21ddb0
@@ -20,7 +39,7 @@
 
 /* ---- construction ---- */
 
-cFXElementsABFakeLimit *cFXElementsABFakeLimit_ctor(cFXElementsABFakeLimit *self, const char *name,
+static cFXElementsABFakeLimit *cFXElementsABFakeLimit_ctor(cFXElementsABFakeLimit *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSABFAKELIMIT_VFTABLE;
@@ -33,7 +52,7 @@ cFXElementsABFakeLimit *cFXElementsABFakeLimit_ctor(cFXElementsABFakeLimit *self
 	return self;
 }
 
-cFXElementsABFakeMeteors *cFXElementsABFakeMeteors_ctor(cFXElementsABFakeMeteors *self, const char *name,
+static cFXElementsABFakeMeteors *cFXElementsABFakeMeteors_ctor(cFXElementsABFakeMeteors *self, const char *name,
 	const vec3_t *pos, const vec3_t *rot) {
 	cMapElement_ctor(&self->base, name, pos, rot);
 	self->base.vftable = CFXELEMENTSABFAKEMETEORS_VFTABLE;
@@ -46,7 +65,8 @@ cFXElementsABFakeMeteors *cFXElementsABFakeMeteors_ctor(cFXElementsABFakeMeteors
 	return self;
 }
 
-void cFXElementsABFakeLimit_Clear(cFXElementsABFakeLimit *self) {
+/* the bolt times cleared, every trail cleared */
+static void cFXElementsABFakeLimit_Clear(cFXElementsABFakeLimit *self) {
 	for (int i = 0; i < FXABBOLTS; i++) {
 		self->boltTime[i] = 0.0f;
 		CGameTrail_Clear(&self->bolts[i]);
@@ -58,7 +78,7 @@ void cFXElementsABFakeLimit_Clear(cFXElementsABFakeLimit *self) {
 	}
 }
 
-void cFXElementsABFakeLimit_dtor(cFXElementsABFakeLimit *self) {
+static void cFXElementsABFakeLimit_dtor(cFXElementsABFakeLimit *self) {
 	self->base.vftable = CFXELEMENTSABFAKELIMIT_VFTABLE;
 	cFXElementsABFakeLimit_Clear(self);
 	crt_eh_vector_dtor(self->rings, sizeof(CGameTrail), FXABRINGS * FXABRINGTRAILS, (void *)CGameTrail_dtor);
@@ -68,14 +88,14 @@ void cFXElementsABFakeLimit_dtor(cFXElementsABFakeLimit *self) {
 	cMapElement_dtor(&self->base);
 }
 
-void cFXElementsABFakeMeteors_dtor(cFXElementsABFakeMeteors *self) {
+static void cFXElementsABFakeMeteors_dtor(cFXElementsABFakeMeteors *self) {
 	self->base.vftable = CFXELEMENTSABFAKEMETEORS_VFTABLE;
 	CGameTrail_dtor(&self->curve);
 	crt_eh_vector_dtor(self->parts, sizeof(CGameParticles), 2, (void *)CGameParticles_Release);
 	cMapElement_dtor(&self->base);
 }
 
-cMapElement *cFXElementsABFakeLimit_Delete(cMapElement *base, byte flags) {
+static cMapElement *cFXElementsABFakeLimit_Delete(cMapElement *base, byte flags) {
 	cFXElementsABFakeLimit *self = (cFXElementsABFakeLimit *)base;
 	cFXElementsABFakeLimit_dtor(self);
 	if (flags & 1) {
@@ -84,7 +104,7 @@ cMapElement *cFXElementsABFakeLimit_Delete(cMapElement *base, byte flags) {
 	return base;
 }
 
-cMapElement *cFXElementsABFakeMeteors_Delete(cMapElement *base, byte flags) {
+static cMapElement *cFXElementsABFakeMeteors_Delete(cMapElement *base, byte flags) {
 	cFXElementsABFakeMeteors *self = (cFXElementsABFakeMeteors *)base;
 	cFXElementsABFakeMeteors_dtor(self);
 	if (flags & 1) {
@@ -111,7 +131,7 @@ static void AB_AttachParticles(cMapElement *e, CGameParticles *p1, CGameParticle
 
 /* ---- cFXElementsABFakeMeteors ---- */
 
-byte cFXElementsABFakeMeteors_Init(cMapElement *elem) {
+static byte cFXElementsABFakeMeteors_Init(cMapElement *elem) {
 	cFXElementsABFakeMeteors *self = (cFXElementsABFakeMeteors *)elem;
 	AB_AttachParticles(&self->base, &self->parts[0], &self->parts[1]);
 	CGameModel_SetSortZ(&self->base.Mod, 500000.0f, 0.0f);
@@ -124,7 +144,7 @@ static inline float AB_RandSign(void) {
 }
 
 /* every meteor moved along the curve, a new one at the start of its way */
-void cFXElementsABFakeMeteors_Update(cMapElement *elem, float dt) {
+static void cFXElementsABFakeMeteors_Update(cMapElement *elem, float dt) {
 	cFXElementsABFakeMeteors *self = (cFXElementsABFakeMeteors *)elem;
 	vec3_t pts[3] = {{380000.0f, 25000.0f, 0.0f}, {0.0f, 25000.0f, 0.0f}, {-380000.0f, 25000.0f, 0.0f}};
 	vec3_t coefs[GAMETRAIL_MAX_BEZIER];
@@ -192,7 +212,7 @@ void cFXElementsABFakeMeteors_Update(cMapElement *elem, float dt) {
 
 /* ---- cFXElementsABFakeLimit ---- */
 
-byte cFXElementsABFakeLimit_Init(cMapElement *elem) {
+static byte cFXElementsABFakeLimit_Init(cMapElement *elem) {
 	cFXElementsABFakeLimit *self = (cFXElementsABFakeLimit *)elem;
 	char buf[0x80];
 	vec3_t pos;
@@ -309,7 +329,6 @@ static void Limit_Rings(cFXElementsABFakeLimit *self, float dt) {
 		}
 	}
 }
-
 
 /* the follow camera of a car (of a player) and its shaking */
 #define Car_Data(e) ((cFollowCamEntity *)Obj(e)->cam)
@@ -533,7 +552,7 @@ static void Limit_Car(cFXElementsABFakeLimit *self, cEntity *e, float dt) {
 	}
 }
 
-void cFXElementsABFakeLimit_Update(cMapElement *elem, float dt) {
+static void cFXElementsABFakeLimit_Update(cMapElement *elem, float dt) {
 	cFXElementsABFakeLimit *self = (cFXElementsABFakeLimit *)elem;
 	cMapElement_Update(&self->base, dt);
 	Limit_Rings(self, dt);
@@ -601,26 +620,27 @@ void FXElementsAB_Create(void) {
 }
 
 /* the vtable of cFXElementsABFakeMeteors */
-const cMapElementVtbl cFXElementsABFakeMeteors_vftable = {
+static const cMapElementVtbl cFXElementsABFakeMeteors_vftable = {
 	.Delete = cFXElementsABFakeMeteors_Delete,
 	.Init = cFXElementsABFakeMeteors_Init,
 	.Update = cFXElementsABFakeMeteors_Update,
 };
 
 /* the vtable of cFXElementsABFakeLimit */
-const cMapElementVtbl cFXElementsABFakeLimit_vftable = {
+static const cMapElementVtbl cFXElementsABFakeLimit_vftable = {
 	.Delete = cFXElementsABFakeLimit_Delete,
 	.Init = cFXElementsABFakeLimit_Init,
 	.Update = cFXElementsABFakeLimit_Update,
 };
 
-cGVar GVar_FXABFakeLimitSegmentStep;
-cGVar GVar_FXABFakeLimitRingRotSpeed;
-cGVar GVar_FXABFakeLimitRadius;
-cGVar GVar_FXABFakeLimitDistLighting;
-cGVar GVar_FXABFakeLimitSegmentSize;
-cGVar GVar_FXABFakeLimitQuakeFactor;
-cGVar GVar_FXABFakeLimitQuakeTime;
+static cGVar GVar_FXABFakeLimitSegmentStep;
+/* the engine variables FXABFakeLimit* */
+static cGVar GVar_FXABFakeLimitRingRotSpeed;
+static cGVar GVar_FXABFakeLimitRadius;
+static cGVar GVar_FXABFakeLimitDistLighting;
+static cGVar GVar_FXABFakeLimitSegmentSize;
+static cGVar GVar_FXABFakeLimitQuakeFactor;
+static cGVar GVar_FXABFakeLimitQuakeTime;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_FXABFakeLimitRadius, &GVar_FXABFakeLimitRadius, "FXABFakeLimitRadius", 0, "", 96000.0f)

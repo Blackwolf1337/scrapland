@@ -16,9 +16,14 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
+#define g_ExtPoliceChasing (GVar_DoResetOutPolice.value.i)		/* the cars were sent after the player */
+#define g_PoliceWaveEliminated (((cPy_Function *)&GVar_PoliceWaveEliminated.func))	/* no police car left */
+static cGVarFunction GVar_PoliceWaveEliminated;
+static cGVar GVar_DoResetOutPolice;
+
 /* defined further down or in another file without a header */
-void ExtPolice_OnDamage(cAbstractFile *params);
-void ExtPolice_OnDeath(cAbstractFile *params);
+static void ExtPolice_OnDamage(cAbstractFile *params);
+static void ExtPolice_OnDeath(cAbstractFile *params);
 
 cGVar GVar_MaxDistReposAI;
 
@@ -71,7 +76,7 @@ cEntity *ExtPolice_CallCop(cEntity *e) {
 }
 
 /* the cop name hit (died: killed) by attacker */
-void ExtPolice_CopDamage(const char *name, const char *attacker, byte died) {
+static void ExtPolice_CopDamage(const char *name, const char *attacker, byte died) {
 	cEntity *cop = World_FindEntity(name);
 
 	if (!cop || !cop->vftable->IsType(cop, TYEN_CAR)) {
@@ -134,7 +139,7 @@ static void ExtPolice_Taunt(cExtPolice *self) {
 	}
 }
 
-void cExtPolice_Think(cExtPolice *self) {
+static void cExtPolice_Think(cExtPolice *self) {
 	vec3_t tmp;
 	Nto1Node *n = Logic_ListFirst(self->list);
 	byte alarm = g_pWorld->alarm.on;
@@ -270,11 +275,11 @@ static void ExtPolice_ReadCopDamage(cAbstractFile *params, byte died) {
 	ExtPolice_CopDamage(name, attacker, died);
 }
 
-void ExtPolice_OnDamage(cAbstractFile *params) {
+static void ExtPolice_OnDamage(cAbstractFile *params) {
 	ExtPolice_ReadCopDamage(params, 0);
 }
 
-void ExtPolice_OnDeath(cAbstractFile *params) {
+static void ExtPolice_OnDeath(cAbstractFile *params) {
 	ExtPolice_ReadCopDamage(params, 1);
 }
 
@@ -290,8 +295,8 @@ void cExtPolice_Update(cExtPolice *self, float dt) {
 	}
 }
 
-cGVarFunction GVar_PoliceWaveEliminated;
-cGVar GVar_DoResetOutPolice;
+static cGVarFunction GVar_PoliceWaveEliminated;
+static cGVar GVar_DoResetOutPolice;
 cGVar GVar_TrafficFightingMaxDist;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

@@ -34,7 +34,6 @@ typedef void (*SndPcmCallback)(void *buf, int bytes, void *user);
 /* the output (the null device when there is none, so the channels still run); 0 on failure */
 int Snd_Init(void);
 void Snd_Close(void);
-int Snd_IsInit(void);
 int Snd_GetError(void);
 /* the name of the output backend and device, for the log */
 const char *Snd_DeviceName(void);
@@ -44,7 +43,6 @@ SndSample *Snd_SampleLoad(const void *wav, int size);
 void Snd_SampleFree(SndSample *s);
 byte Snd_SampleStereo(const SndSample *s);
 int Snd_SampleRate(const SndSample *s);
-uint32_t Snd_SampleBytes(const SndSample *s);
 
 /* channels: Snd_Play returns the lowest free channel that is not reserved, or -1 */
 int Snd_Play(SndSample *s, byte paused);
@@ -73,7 +71,6 @@ SndStream *Snd_StreamOpen(const char *path, uint32_t offset, uint32_t size, byte
 SndStream *Snd_StreamPcm(int rate, int channels, SndPcmCallback cb, void *user);
 /* plays the stream on a free channel (from its start), the channel or -1 */
 int Snd_StreamPlay(SndStream *s, byte paused);
-void Snd_StreamStop(SndStream *s);
 void Snd_StreamClose(SndStream *s);
 int Snd_StreamRate(const SndStream *s);
 /* the length of a file stream and how much of it has played, ms */

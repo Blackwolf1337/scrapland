@@ -12,31 +12,13 @@
 /* teclado.cpp */
 #define KEYBOARD_BUF 32
 extern byte g_KeyboardKeys[256];		/* 256, 1 while held */
-extern uint16_t g_KeyboardBuf[32];	/* KEYBOARD_BUF characters */
-extern int g_KeyboardBufStart;
-extern int g_KeyboardBufCount;
-/* the time of the engine without the pauses (next to teclado.cpp, its source is not known) */
-extern uint32_t g_TimePaused;	/* the sum of the pauses */
-extern int g_TimeResumed;	/* set when a pause ended */
-extern uint32_t g_TimePause;	/* timeGetTime at the start of the pause, 0 without */
 
 uint32_t Time_Get(void);
-/* on: the pause starts (once), off: it ends */
-void Time_Pause(int on);
 void Keyboard_Clear(void);
-/* the last n (up to 32) characters of the ring into dest, the count */
-int Keyboard_GetChars(uint16_t *dest, int n);
 /* WM_KEYDOWN and WM_KEYUP: the scan code of lparam (right shift as left, extended Ctrl and Alt as normal), the
  * character of a first press into the ring */
 void Keyboard_KeyDown(uint16_t ch, uint32_t lparam);
 void Keyboard_KeyUp(uint32_t wparam, uint32_t lparam);
-
-/* entrada.cpp */
-extern byte g_InputInit;
-/* the mouse axes inverted */
-extern int g_InputInvX;
-extern int g_InputInvY;
-extern int g_InputInvZ;
 
 typedef struct IInput IInput;
 
@@ -51,8 +33,6 @@ typedef struct IInputVtbl {
 	int(*AcquireKeys)(IInput *self, byte on);						/* 0x18 */
 	void(*WndProc)(IInput *self, void *hwnd, uint32_t msg, uint32_t wparam, uint32_t lparam);	/* 0x1c */
 } IInputVtbl;
-extern const IInputVtbl IInput_vftable;
-#define IINPUT_VFTABLE (&IInput_vftable)
 
 struct IInput {
 	const IInputVtbl *vftable;	/* 0x000 */
@@ -66,7 +46,6 @@ typedef IInput CNullInput;
 
 IInput *IInput_ctor(IInput *self);
 void IInput_dtor(IInput *self);
-IInput *IInput_Delete(IInput *self, byte flags);
 int IInput_AcquireKeysFalse(IInput *self, byte on);
 int IInput_AcquireMouseFalse(IInput *self, byte on);
 int IInput_InitFalse(IInput *self, void *hwnd, void *hinst, byte exclusive);

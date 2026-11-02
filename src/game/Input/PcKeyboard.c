@@ -14,6 +14,9 @@
 #include "scrap/video.h"
 #include "scrap/staticinit.h"
 
+#define CPCKEYBOARD_VFTABLE (&cPcKeyboard_vftable)
+static const cAbstractIDeviceVtbl cPcKeyboard_vftable;
+
 #define KB_NAME "Kb"
 
 /* the DIK_ names of the config file (the jump table of the original) */
@@ -67,7 +70,8 @@ static const byte kb_gameDefaults[][3] = {
 	{ 0x20, 3, 9 }, { 0x2a, 3, 15 }, { 0x52, 3, 16 }, { 0x10, 3, 22 }, { 0x12, 3, 21 }, { 0x39, 3, 19 },
 };
 
-cPcKeyboard *cPcKeyboard_ctor(cPcKeyboard *self) {
+static void cPcKeyboard_SetGameDefaults(cPcKeyboard *self);
+static cPcKeyboard *cPcKeyboard_ctor(cPcKeyboard *self) {
 	cAbstractIDevice_ctor(self);
 	self->vftable = CPCKEYBOARD_VFTABLE;
 	cAbstractIDevice_InitEntries(self, 0x100);
@@ -77,7 +81,7 @@ cPcKeyboard *cPcKeyboard_ctor(cPcKeyboard *self) {
 	return self;
 }
 
-cPcKeyboard *cPcKeyboard_Delete(cPcKeyboard *self, byte flags) {
+static cPcKeyboard *cPcKeyboard_Delete(cPcKeyboard *self, byte flags) {
 	cAbstractIDevice_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -86,7 +90,7 @@ cPcKeyboard *cPcKeyboard_Delete(cPcKeyboard *self, byte flags) {
 }
 
 /* ESCAPE, GRAVE and F1 keep their bindings; check spares the reserved keys too */
-byte cPcKeyboard_SetEntry(cPcKeyboard *self, int entry, int set, int player, int action, byte check) {
+static byte cPcKeyboard_SetEntry(cPcKeyboard *self, int entry, int set, int player, int action, byte check) {
 	if (entry == 0x01 || entry == 0x29 || entry == 0x3b) {
 		return 0;
 	}
@@ -108,15 +112,15 @@ void Input_OnChar(int c) {
 	}
 }
 
-const char *cPcKeyboard_GetName(cPcKeyboard *self) {
+static const char *cPcKeyboard_GetName(cPcKeyboard *self) {
 	(void)self;
 	return KB_NAME;
 }
 
-char g_KeyNameBuf[40];
+static char g_KeyNameBuf[40];
 
 /* the DIK_ name; another code is its hex digits and "Code" */
-const char *cPcKeyboard_GetEntryName(cPcKeyboard *self, int entry) {
+static const char *cPcKeyboard_GetEntryName(cPcKeyboard *self, int entry) {
 	(void)self;
 	if ((uint32_t)(entry - 1) < 0xed && kb_names[entry]) {
 		return kb_names[entry];
@@ -126,16 +130,17 @@ const char *cPcKeyboard_GetEntryName(cPcKeyboard *self, int entry) {
 }
 
 /* the name of the key in the keyboard layout (the original asked DirectInput, the names differ) */
-const char *cPcKeyboard_GetEntryLabel(cPcKeyboard *self, int entry) {
+static const char *cPcKeyboard_GetEntryLabel(cPcKeyboard *self, int entry) {
 	(void)self;
 	return Plat_KeyLabel(entry);
 }
 
-void cPcKeyboard_SetDefaults(cPcKeyboard *self) {
+static void cPcKeyboard_SetDefaults(cPcKeyboard *self) {
 	Device_SetEntries(self, kb_defaults, sizeof(kb_defaults) / sizeof(kb_defaults[0]));
 }
 
-cPcKeyboard g_Keyboard;
+/* Input/PcKeyboard.cpp */
+static cPcKeyboard g_Keyboard;
 
 void Keyboard_Init(void) {
 	Con_Printf("Input device: %s initialized.\n", KB_NAME);
@@ -144,9 +149,10 @@ void Keyboard_Init(void) {
 	InputDevices_Add(&g_InputDevices, &d);
 }
 
-char g_KeyState[256];
+static char g_KeyState[256];
 
-void cPcKeyboard_Update(cPcKeyboard *self, float dt) {
+static int32_t Keyboard_Poll(void);
+static void cPcKeyboard_Update(cPcKeyboard *self, float dt) {
 	(void)dt;
 	Keyboard_Poll();
 	for (int i = 0; i < 0x100; i++) {
@@ -154,12 +160,12 @@ void cPcKeyboard_Update(cPcKeyboard *self, float dt) {
 	}
 }
 
-void cPcKeyboard_SetGameDefaults(cPcKeyboard *self) {
+static void cPcKeyboard_SetGameDefaults(cPcKeyboard *self) {
 	Device_SetEntries(self, kb_gameDefaults, sizeof(kb_gameDefaults) / sizeof(kb_gameDefaults[0]));
 }
 
 /* the key states */
-int32_t Keyboard_Poll(void) {
+static int32_t Keyboard_Poll(void) {
 	if (!g_InputOpen) {
 		return 0;
 	}
@@ -171,13 +177,13 @@ int32_t Keyboard_Poll(void) {
 }
 
 /* ESCAPE, GRAVE, F1 and APPS */
-byte cPcKeyboard_IsReserved(cPcKeyboard *self, int entry) {
+static byte cPcKeyboard_IsReserved(cPcKeyboard *self, int entry) {
 	(void)self;
 	return entry == 0x01 || entry == 0x29 || entry == 0x3b || entry == 0xdd;
 }
 
 /* the vtable of cPcKeyboard */
-const cAbstractIDeviceVtbl cPcKeyboard_vftable = {
+static const cAbstractIDeviceVtbl cPcKeyboard_vftable = {
 	.Delete = cPcKeyboard_Delete,
 	.SetDefaults = cPcKeyboard_SetDefaults,
 	.SetGameDefaults = cPcKeyboard_SetGameDefaults,

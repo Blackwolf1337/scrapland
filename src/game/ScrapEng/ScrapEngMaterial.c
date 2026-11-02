@@ -3,7 +3,7 @@
  */
 #include "scrap/scrapmaterial.h"
 
-BlendModeEntry g_BlendModeTable[7] = {
+static BlendModeEntry g_BlendModeTable[7] = {
 	{ .src = 2, .dst = 1 },
 	{ .mode = 1, .src = 2, .dst = 2 },
 	{ .mode = 2, .src = 5, .dst = 2 },

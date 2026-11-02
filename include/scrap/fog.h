@@ -33,12 +33,6 @@ typedef struct CFog {
 /* the engine variables of the fog (Gvars) */
 extern cGVar GVar_R_FogEnable;
 #define g_FogEnable (GVar_R_FogEnable.value.i)
-extern cGVar GVar_R_FogColor;
-#define g_FogColor (GVar_R_FogColor.value.i)	/* 0xRRGGBB forced, -1 none */
-extern cGVar GVar_R_FogAbsDist;
-#define g_FogAbsDist (GVar_R_FogAbsDist.value.i)
-extern cGVar GVar_R_FogDensity;
-#define g_FogDensity (GVar_R_FogDensity.value.f)	/* forced, 0 none */
 
 CFog *CFog_ctor(CFog *self);
 /* rva 0x278390, empty */

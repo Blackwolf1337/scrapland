@@ -10,9 +10,36 @@
 #include "scrap/vehicleattack.h"
 #include "scrap/staticinit.h"
 
+#define g_BishopHitSound (GVar_BishopHitSound.value.s)
+#define g_BishopAngleVariation (GVar_BishopAngleVariation.value.f)
+#define g_BishopHitSoundVol (GVar_BishopHitSoundVol.value.f)
+#define g_BishopWeaponDamage (GVar_BishopWeaponDamage.value.i)
+#define g_BishopAttackPosZ (GVar_BishopAttackPosZ.value.f)
+#define g_FXBishopSellLifeFile (GVar_FXBishopSellLifeFile.value.s)
+#define g_FXBishopAttackFile (GVar_FXBishopAttackFile.value.s)
+#define g_BishopAttackPosX (GVar_BishopAttackPosX.value.f)
+#define g_BishopAttackPosY (GVar_BishopAttackPosY.value.f)
+#define g_BishopAmmoCost (GVar_BishopAmmoCost.value.f)
+#define g_BishopAttackRandOff (GVar_BishopAttackRandOff.value.f)
+#define g_BishopShootSoundVol (GVar_BishopShootSoundVol.value.f)
+#define g_BishopShootSound (GVar_BishopShootSound.value.s)
+static cGVar GVar_FXBishopSellLifeFile;
+static cGVar GVar_FXBishopAttackFile;
+static cGVar GVar_BishopWeaponDamage;
+static cGVar GVar_BishopShootSoundVol;
+static cGVar GVar_BishopShootSound;
+static cGVar GVar_BishopHitSoundVol;
+static cGVar GVar_BishopHitSound;
+static cGVar GVar_BishopAttackRandOff;
+static cGVar GVar_BishopAttackPosZ;
+static cGVar GVar_BishopAttackPosY;
+static cGVar GVar_BishopAttackPosX;
+static cGVar GVar_BishopAngleVariation;
+static cGVar GVar_BishopAmmoCost;
+
 /* params: the bishop, an event, a float: the action again while the button is down and the energy lasts (always
  * for an AI) */
-void ChType_EndActionEnd(cAbstractFile *params) {
+static void ChType_EndActionEnd(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -33,7 +60,7 @@ static byte Bishop_AlarmClass(const char *cls) {
 
 /* params: the bishop. The shot: a random push back, the aim (ahead, at the GearTargetName of the player or the
  * targeting of the character), the damage, the alarm of a hit of the player, the green ray and the sounds. */
-void ChType_BishopAttack(cAbstractFile *params) {
+static void ChType_BishopAttack(cAbstractFile *params) {
 	char name[0x80];
 	vec3_t t1, t2, t3, rot, imp, nv, aim, hit, d, mp, mr, rot2, up, q, w, aoff, from, to, to2, from2;
 	cEntity *target = NULL;
@@ -186,7 +213,7 @@ void ChType_BishopAttack(cAbstractFile *params) {
 }
 
 /* params: the attacker (none: the life ring only) and the attacked */
-void ChType_FXBishopSellLife(cAbstractFile *params) {
+static void ChType_FXBishopSellLife(cAbstractFile *params) {
 	char a[0x80], b[0x80];
 
 	cAbstractFile_ReadString(params, a, 0x80);
@@ -212,24 +239,24 @@ void FX_BishopSellLife(cEntity *attacker, cEntity *attacked) {
 	}
 }
 
-cGVar GVar_BishopHitSound;
-cGVar GVar_BishopAngleVariation;
-cGVar GVar_BishopHitSoundVol;
-cGVar GVar_BishopWeaponDamage;
-cGVar GVar_BishopAttackPosZ;
-cGVar GVar_FXBishopSellLifeFile;
-cGVar GVar_FXBishopAttackFile;
-cGVar GVar_BishopAttackPosX;
-cGVar GVar_BishopAttackPosY;
-cGVar GVar_BishopAmmoCost;
-cGVar GVar_BishopAttackRandOff;
-cGVar GVar_BishopShootSoundVol;
-cGVar GVar_BishopShootSound;
-cPy_NativeFunc NativeFunc_BishopAttack;
-cPy_NativeFunc NativeFunc_BishopEndActionEnd;
-cPy_NativeFunc NativeFunc_FXBishopSellLife;
-cPy_NativeFunc NativeFunc_GearEndActionEnd;
-cPy_NativeFunc NativeFunc_MessengerEndActionEnd;
+static cGVar GVar_BishopHitSound;
+static cGVar GVar_BishopAngleVariation;
+static cGVar GVar_BishopHitSoundVol;
+static cGVar GVar_BishopWeaponDamage;
+static cGVar GVar_BishopAttackPosZ;
+static cGVar GVar_FXBishopSellLifeFile;
+static cGVar GVar_FXBishopAttackFile;
+static cGVar GVar_BishopAttackPosX;
+static cGVar GVar_BishopAttackPosY;
+static cGVar GVar_BishopAmmoCost;
+static cGVar GVar_BishopAttackRandOff;
+static cGVar GVar_BishopShootSoundVol;
+static cGVar GVar_BishopShootSound;
+static cPy_NativeFunc NativeFunc_BishopAttack;
+static cPy_NativeFunc NativeFunc_BishopEndActionEnd;
+static cPy_NativeFunc NativeFunc_FXBishopSellLife;
+static cPy_NativeFunc NativeFunc_GearEndActionEnd;
+static cPy_NativeFunc NativeFunc_MessengerEndActionEnd;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_BishopWeaponDamage, &GVar_BishopWeaponDamage, "BishopWeaponDamage", 0, "Bishop damage per hit that make the bishop", 4)

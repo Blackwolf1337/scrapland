@@ -18,6 +18,9 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
+#define CRADARSCORER_VFTABLE (&cRadarScorer_vftable)
+static const cScorerItemVtbl cRadarScorer_vftable;
+
 /* the turn of the camera of the radar (FCam) */
 #define CamEntity_AngY(e) (((cCamControl *)(e))->cam.rot.y)
 /* the center of an entity (slot 0x74) */
@@ -88,7 +91,7 @@ cRadarScorer *cRadarScorer_ctor(cRadarScorer *self) {
 	return self;
 }
 
-void cRadarScorer_dtor(cRadarScorer *self) {
+static void cRadarScorer_dtor(cRadarScorer *self) {
 	CPsaImage *img = self->radar;
 	self->base.vftable = CRADARSCORER_VFTABLE;
 	Radar_FreeImage(img);
@@ -110,7 +113,7 @@ cActionSet *ActionSetTable_At(void *table, uint32_t i) {
 	return TABLE_AT(*(TABLE(cActionSet) *)table, i);
 }
 
-cScorerItem *cRadarScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cRadarScorer_Delete(cScorerItem *base, byte flags) {
 	cRadarScorer *self = (cRadarScorer *)base;
 	cRadarScorer_dtor(self);
 	if (flags & 1) {
@@ -119,7 +122,8 @@ cScorerItem *cRadarScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-void cRadarScorer_UpdateFloor(cRadarScorer *self, float y) {
+/* the floor of height y; the fade starts when it changed */
+static void cRadarScorer_UpdateFloor(cRadarScorer *self, float y) {
 	int old = self->floor;
 	int n = g_pWorld->floor.count;
 	int k = 1;
@@ -134,12 +138,15 @@ void cRadarScorer_UpdateFloor(cRadarScorer *self, float y) {
 	}
 }
 
-float g_RadarScale;
-float g_RadarAngle;
-float g_RadarCenterX;
-float g_RadarCenterZ;
+static float g_RadarScale;
+/* the view of the radar: the turn and center of the map, its scale */
+static float g_RadarAngle;
+/* a floor of the world (0x18c bytes from world + 0x2f4, their count at 0x2f0): its lowest height first */
+static float g_RadarCenterX;
+static float g_RadarCenterZ;
 
-void cRadarScorer_DrawCone(cRadarScorer *self, const vec3_t *pos, float ang, float spread, float range,
+/* a view cone at pos to the angle, spread wide, range long, mode 1..3 the color */
+static void cRadarScorer_DrawCone(cRadarScorer *self, const vec3_t *pos, float ang, float spread, float range,
 	int mode) {
 	float verts[3][2];
 	uint32_t colors[3];
@@ -234,7 +241,8 @@ static void Radar_IconCorner(float *out, float x, float y, float ang, float size
  * out of it, flags RADAR_ICON_OUT_HIDE aside, outIcon with outColor on the border: turned to the center
  * (RADAR_ICON_OUT_POINT), by ang (RADAR_ICON_OUT_ANG) or not, doubled (RADAR_ICON_OUT_BIG), fading with the
  * distance (RADAR_ICON_OUT_FADE). An entity on another floor fades like the floors unless always */
-void cRadarScorer_DrawIcon(cRadarScorer *self, const vec3_t *pos, int icon, float ang, int outIcon,
+static byte cRadarScorer_OnPrevFloor(cRadarScorer *self, float y);
+static void cRadarScorer_DrawIcon(cRadarScorer *self, const vec3_t *pos, int icon, float ang, int outIcon,
 	uint32_t flags, uint32_t color, uint32_t outColor, byte always) {
 	float c[2], uv0[2], uv1[2], uv[4][2], verts[4][2];
 	float y = pos->y;
@@ -364,7 +372,7 @@ static void Radar_DrawMapImage(cRadarScorer *self, CPsaImage *img, uint32_t alph
 /* the view of the radar (scale by the speed of a car, the turn of the camera, the center at the target) and its
  * map: the floor map of the target fading in over the one before; the noise at random coordinates while the target
  * is EMIed */
-void cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntity *cam) {
+static void cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntity *cam) {
 	vec3_t c;
 	float verts[4][2], uv[4][2];
 	float cu, cv;
@@ -440,12 +448,12 @@ void cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntity *cam) {
 	Radar_DrawMapImage(self, img, alpha, &verts[0][0], &uv[0][0]);
 }
 
-cGVar GVar_RadarShowAll;
+static cGVar GVar_RadarShowAll;
 
 /* ---- the radar ---- */
 
 #define g_RadarShowAll (GVar_RadarShowAll.value.i)		/* RadarShowAll: the neutral vehicles and characters too */
-cGVar GVar_IsSecondMission;
+static cGVar GVar_IsSecondMission;
 
 #define g_IsSecondMission (GVar_IsSecondMission.value.i)	/* IsSecondMission */
 
@@ -587,6 +595,7 @@ static float Radar_FloorWay(cRadarScorer *self, cEntity *target, byte up, vec3_t
 
 /* the mark of a mission object (RadarShow 1 the main missions, 2 and 3 the others): on another floor the way
  * there, blinking while its RadarShow changed; flags 9 for the nearest main mission */
+static int cRadarScorer_FloorSide(cRadarScorer *self, float y);
 static void Radar_DrawMission(cRadarScorer *self, cEntity *target, cEntity *e, cEntity *nearest) {
 	vec3_t p, a;
 	cObjEntity *o = (cObjEntity *)e;
@@ -647,7 +656,9 @@ static void Radar_DrawMission(cRadarScorer *self, cEntity *target, cEntity *e, c
 	cRadarScorer_DrawIcon(self, &p, icon, ang, outIcon, 1, c, c, 0);
 }
 
-void cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEntity *cam) {
+/* the radar: its map, the view cones, the places, doors, characters and vehicles, the target and the mission
+ * objects */
+static void cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEntity *cam) {
 	vec3_t t, a;
 
 	byte isCar = Entity_IsType(target, TYEN_CAR);
@@ -731,7 +742,8 @@ void cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEntity *cam) {
 	cRadarScorer_DrawIcon(self, Obj_Vtbl(target)->GetViewPos(target, &t), 5, y, 4, 8, c, c, 1);
 }
 
-byte cRadarScorer_OnPrevFloor(cRadarScorer *self, float y) {
+/* y is on the floor shown before */
+static byte cRadarScorer_OnPrevFloor(cRadarScorer *self, float y) {
 	int p = self->prevFloor;
 
 	if (g_pWorld->floor.levels[p].y > y) {
@@ -743,7 +755,8 @@ byte cRadarScorer_OnPrevFloor(cRadarScorer *self, float y) {
 	return g_pWorld->floor.levels[p + 1].y >= y;
 }
 
-int cRadarScorer_FloorSide(cRadarScorer *self, float y) {
+/* y below the floor (-1), on it (0) or above it (1) */
+static int cRadarScorer_FloorSide(cRadarScorer *self, float y) {
 	int f = self->floor;
 
 	if (g_pWorld->floor.levels[f].y > y) {
@@ -755,7 +768,7 @@ int cRadarScorer_FloorSide(cRadarScorer *self, float y) {
 	return !(g_pWorld->floor.levels[f + 1].y >= y);
 }
 
-int cRadarScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+static int cRadarScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cRadarScorer *self = (cRadarScorer *)base;
 	if (d) {
 		if (!crt_stricmp(name, "MenuScaleSpeed")) {
@@ -865,7 +878,7 @@ static float Radar_ClampScroll(cRadarScorer *self, float a, float b, float half,
 	return Float_MinSS(big - m, scroll);
 }
 
-void cRadarScorer_Draw(cScorerItem *base, int player) {
+static void cRadarScorer_Draw(cScorerItem *base, int player) {
 	cRadarScorer *self = (cRadarScorer *)base;
 	const char *camName = cWorld_GetCamName(g_pWorld, player);
 	cEntity *cam = World_FindEntity(camName);
@@ -925,7 +938,7 @@ void cRadarScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cRadarScorer */
-const cScorerItemVtbl cRadarScorer_vftable = {
+static const cScorerItemVtbl cRadarScorer_vftable = {
 	.Draw = cRadarScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cRadarScorer_Var,

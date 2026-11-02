@@ -19,8 +19,6 @@ uint32_t Rd_Release(void *obj);
 int Rd_D3DCheckDepthStencilMatch(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t rt, uint32_t ds);
 int Rd_D3DCheckDeviceFormat(void *d3d, uint32_t adapter, int devType, int adapterFmt, uint32_t usage, int rtype,
 	int fmt);
-int Rd_D3DCheckDeviceMultiSampleType(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, int windowed,
-	uint32_t ms);
 int Rd_D3DCheckDeviceType(void *d3d, uint32_t adapter, uint32_t type, uint32_t dfmt, uint32_t bfmt, int windowed);
 int Rd_D3DCreateDevice(void *d3d, uint32_t adapter, uint32_t type, void *hwnd, uint32_t behavior, void *pp, void **dev);
 int Rd_D3DEnumAdapterModes(void *d3d, uint32_t adapter, uint32_t mode, void *out);
@@ -78,7 +76,6 @@ int Rd_DevSetTextureStageState(void *dev, uint32_t stage, uint32_t type, uint32_
 int Rd_DevSetTransform(void *dev, uint32_t state, const void *m);
 int Rd_DevSetVertexShader(void *dev, uint32_t fvf);
 int Rd_DevSetViewport(void *dev, const uint32_t *vp);
-int Rd_DevShowCursor(void *dev, int show);
 int Rd_DevTestCooperativeLevel(void *dev);
 int Rd_DevUpdateTexture(void *dev, void *src, void *dst);
 int Rd_TexGetDevice(void *tex, void **dev);

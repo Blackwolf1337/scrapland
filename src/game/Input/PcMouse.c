@@ -15,6 +15,15 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
+#define CPCMOUSE_VFTABLE (&cPcMouse_vftable)
+#define g_MouseSensH (GVar_MouseSensitivityH.value.f)		/* MouseSensitivityH */
+#define g_MouseSensV (GVar_MouseSensitivityV.value.f)		/* MouseSensitivityV */
+#define g_InvertMouse (GVar_InvertMouse.value.i)		/* InvertMouse */
+static const cAbstractIDeviceVtbl cPcMouse_vftable;
+static cGVar GVar_MouseSensitivityV;
+static cGVar GVar_MouseSensitivityH;
+static cGVar GVar_InvertMouse;
+
 #define MOUSE_NAME "Mouse"
 
 static const char *const mouse_names[6] = { "Right", "Left", "Down", "Up", "WheelUp", "WheelDown" };
@@ -34,7 +43,8 @@ static const byte mouse_gameDefaults[][3] = {
 	{ 0x04, 3, 5 }, { 0x00, 3, 17 }, { 0x01, 3, 18 }, { 0x02, 3, 19 }, { 0x08, 3, 21 }, { 0x09, 3, 22 },
 };
 
-cPcMouse *cPcMouse_ctor(cPcMouse *self) {
+static void cPcMouse_SetGameDefaults(cAbstractIDevice *self);
+static cPcMouse *cPcMouse_ctor(cPcMouse *self) {
 	cAbstractIDevice_ctor(&self->base);
 	self->base.vftable = CPCMOUSE_VFTABLE;
 	cAbstractIDevice_InitEntries(&self->base, 10);
@@ -49,7 +59,7 @@ cPcMouse *cPcMouse_ctor(cPcMouse *self) {
 	return self;
 }
 
-cAbstractIDevice *cPcMouse_Delete(cAbstractIDevice *elem, byte flags) {
+static cAbstractIDevice *cPcMouse_Delete(cAbstractIDevice *elem, byte flags) {
 	cPcMouse *self = (cPcMouse *)elem;
 	cAbstractIDevice_dtor(&self->base);
 	if (flags & 1) {
@@ -62,22 +72,22 @@ void Mouse_Acquire(byte on) {
 	Plat_GrabMouse(on);
 }
 
-byte cPcMouse_SetEntry(cAbstractIDevice *self, int entry, int set, int player, int action, byte check) {
+static byte cPcMouse_SetEntry(cAbstractIDevice *self, int entry, int set, int player, int action, byte check) {
 	if (self->vftable->IsReserved(self, entry) && check) {
 		return 0;
 	}
 	return cAbstractIDevice_SetEntry(self, entry, set, player, action, 0);
 }
 
-const char *cPcMouse_GetName(cAbstractIDevice *self) {
+static const char *cPcMouse_GetName(cAbstractIDevice *self) {
 	(void)self;
 	return MOUSE_NAME;
 }
 
-char g_MouseNameBuf[32];
+static char g_MouseNameBuf[32];
 
 /* "Right" .. "WheelDown", "But1" .. "But4" for the buttons, "Unknow" else */
-const char *cPcMouse_GetEntryName(cAbstractIDevice *self, int entry) {
+static const char *cPcMouse_GetEntryName(cAbstractIDevice *self, int entry) {
 	(void)self;
 	CHECK(entry >= 0);
 	if ((uint32_t)(entry - 4) <= 5) {
@@ -91,9 +101,9 @@ const char *cPcMouse_GetEntryName(cAbstractIDevice *self, int entry) {
 	return g_MouseNameBuf;
 }
 
-char g_MouseLabelBuf[32];
+static char g_MouseLabelBuf[32];
 
-const char *cPcMouse_GetEntryLabel(cAbstractIDevice *self, int entry) {
+static const char *cPcMouse_GetEntryLabel(cAbstractIDevice *self, int entry) {
 	(void)self;
 	CHECK(entry >= 0);
 	if ((uint32_t)(entry - 4) <= 5) {
@@ -107,11 +117,11 @@ const char *cPcMouse_GetEntryLabel(cAbstractIDevice *self, int entry) {
 	return Lang_GetStr(g_MouseLabelBuf);
 }
 
-void cPcMouse_SetDefaults(cAbstractIDevice *self) {
+static void cPcMouse_SetDefaults(cAbstractIDevice *self) {
 	Device_SetEntries(self, mouse_defaults, sizeof(mouse_defaults) / sizeof(mouse_defaults[0]));
 }
 
-cPcMouse g_Mouse;
+static cPcMouse g_Mouse;
 
 void Mouse_Init(void) {
 	Con_Printf("Input device: %s initialized.\n", MOUSE_NAME);
@@ -120,13 +130,14 @@ void Mouse_Init(void) {
 	InputDevices_Add(&g_InputDevices, &d);
 }
 
-exe_mouse_state g_MouseState;
+static exe_mouse_state g_MouseState;
 
 /*
  * The speed is the movement of the last 1/30 second (every frame in the menu); the sensitivity counts in the
  * character and vehicle sets only. The text cursor of player 0 moves twice per frame, as the original.
  */
-void cPcMouse_Update(cAbstractIDevice *elem, float dt) {
+static int32_t Mouse_Poll(void);
+static void cPcMouse_Update(cAbstractIDevice *elem, float dt) {
 	cPcMouse *self = (cPcMouse *)elem;
 	g_MouseState.x = 0;
 	Mouse_Poll();
@@ -175,13 +186,13 @@ void cPcMouse_Update(cAbstractIDevice *elem, float dt) {
 	}
 }
 
-void cPcMouse_SetGameDefaults(cAbstractIDevice *self) {
+static void cPcMouse_SetGameDefaults(cAbstractIDevice *self) {
 	Device_SetEntries(self, mouse_gameDefaults, sizeof(mouse_gameDefaults) / sizeof(mouse_gameDefaults[0]));
 }
 
 /* the state; a mouse let go is held again (DirectInput acquired it again); a moved mouse switches the pad helpers
  * of the cameras off */
-int32_t Mouse_Poll(void) {
+static int32_t Mouse_Poll(void) {
 	if (!g_InputOpen) {
 		return 0;
 	}
@@ -198,13 +209,13 @@ int32_t Mouse_Poll(void) {
 }
 
 /* the axes */
-byte cPcMouse_IsReserved(cAbstractIDevice *self, int entry) {
+static byte cPcMouse_IsReserved(cAbstractIDevice *self, int entry) {
 	(void)self;
 	return (uint32_t)(entry - 4) <= 3;
 }
 
 /* the vtable of cPcMouse */
-const cAbstractIDeviceVtbl cPcMouse_vftable = {
+static const cAbstractIDeviceVtbl cPcMouse_vftable = {
 	.Delete = cPcMouse_Delete,
 	.SetDefaults = cPcMouse_SetDefaults,
 	.SetGameDefaults = cPcMouse_SetGameDefaults,
@@ -216,9 +227,10 @@ const cAbstractIDeviceVtbl cPcMouse_vftable = {
 	.SetEntry = cPcMouse_SetEntry,
 };
 
-cGVar GVar_MouseSensitivityV;
-cGVar GVar_MouseSensitivityH;
-cGVar GVar_InvertMouse;
+static cGVar GVar_MouseSensitivityV;
+/* Input/PcMouse.cpp */
+static cGVar GVar_MouseSensitivityH;
+static cGVar GVar_InvertMouse;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_MouseSensitivityH, &GVar_MouseSensitivityH, "MouseSensitivityH", 2, "Horizontal Mouse Sensitivity", 1.0f)

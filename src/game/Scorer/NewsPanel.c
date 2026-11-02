@@ -11,6 +11,39 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
+#define g_NewsPanelActive (GVar_NewsPanelActive.value.i)		/* NewsPanelActive */
+#define g_NewsPanelActiveDef (GVar_NewsPanelActive.def.i)	/* its default */
+#define g_NewsPanelShowHead (GVar_NewsPanelShowHead.value.i)	/* NewsPanelShowHead */
+#define g_NewsPanelShowHeadDef (GVar_NewsPanelShowHead.def.i)
+#define g_NewsPanelOpenSpeed (GVar_NewsPanelOpenSpeed.value.f)	/* NewsPanelOpenSpeed */
+#define g_NewsPanelCloseSpeed (GVar_NewsPanelCloseSpeed.value.f)	/* NewsPanelCloseSpeed */
+#define g_NewsHead (&(*(char * *)&GVar_NewsHead.value))		/* NewsHead, a string variable */
+#define g_NewsLogoBmp (&(*(char * *)&GVar_NewsLogoBmp.value))		/* NewsLogoBmp */
+#define g_BackNewsBmp (&(*(char * *)&GVar_BackNewsBmp.value))		/* BackNewsBmp */
+#define g_NewsPanelAspect (GVar_NewsPanelAspect.value.f)	/* NewsPanelAspect */
+#define g_NewsPanelMove (GVar_NewsPanelMove.value.f)		/* NewsPanelMove */
+#define g_NewsPanelDisplacement (GVar_NewsPanelDisplacement.value.f)	/* NewsPanelDisplacement */
+#define g_NewsPanelDistance (GVar_NewsPanelDistance.value.f)	/* NewsPanelDistance */
+#define g_NewsPanelW (GVar_NewsPanelW.value.f)		/* NewsPanelW */
+#define g_NewsPanelH (GVar_NewsPanelH.value.f)		/* NewsPanelH */
+#define g_NewsPanelX (GVar_NewsPanelX.value.f)		/* NewsPanelX */
+#define g_NewsPanelY (GVar_NewsPanelY.value.f)		/* NewsPanelY */
+static cGVar GVar_NewsPanelY;
+static cGVar GVar_NewsPanelX;
+static cGVar GVar_NewsPanelW;
+static cGVar GVar_NewsPanelShowHead;
+static cGVar GVar_NewsPanelOpenSpeed;
+static cGVar GVar_NewsPanelMove;
+static cGVar GVar_NewsPanelH;
+static cGVar GVar_NewsPanelDistance;
+static cGVar GVar_NewsPanelDisplacement;
+static cGVar GVar_NewsPanelCloseSpeed;
+static cGVar GVar_NewsPanelAspect;
+static cGVar GVar_NewsPanelActive;
+static cGVar GVar_NewsLogoBmp;
+static cGVar GVar_NewsHead;
+static cGVar GVar_BackNewsBmp;
+
 #define NEWS_FOV 0.87266463f				/* 50 degrees */
 extern const double g_HeadRandRange;
 #define g_NewsRandRange g_HeadRandRange	/* 2 pi as a float */
@@ -53,7 +86,8 @@ void cNewsPanel_dtor(cNewsPanel *self) {
 	cString_dtor(&self->head);
 }
 
-cEntity *cNewsPanel_GetWatched(cNewsPanel *self, int list) {
+/* the first entity of the watched list 0, 1 or 2 of the world */
+static cEntity *cNewsPanel_GetWatched(cNewsPanel *self, int list) {
 	(void)self;
 	switch (list) {
 	case 0:
@@ -88,6 +122,8 @@ void cNewsPanel_Reset(cNewsPanel *self) {
 	cString_Set(&self->back, "");
 }
 
+static void cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e);
+static void cNewsPanel_DrawNews(cNewsPanel *self, float dt);
 void cNewsPanel_Update(cNewsPanel *self) {
 	float t = Scorer_Get(0)->time;
 	float dt = t - self->lastTime;
@@ -125,9 +161,10 @@ void cNewsPanel_Update(cNewsPanel *self) {
 	self->lastTime = t;
 }
 
-const double g_NewsRandOfs = 3.1415927410125732;
+static const double g_NewsRandOfs = 3.1415927410125732;
 
-void cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e) {
+/* the view of an entity from a point around it */
+static void cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e) {
 	vec3_t tmp;
 
 	if (!e || !e->vftable->IsType(e, TYEN_WITH_LIFE) || !Obj_Vtbl(e)->GetModel(e)) {
@@ -165,7 +202,8 @@ void cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e) {
 	Camera_SetCurrent(cur);
 }
 
-void cNewsPanel_DrawNews(cNewsPanel *self, float dt) {
+/* the news: the head opening between the background and the logo */
+static void cNewsPanel_DrawNews(cNewsPanel *self, float dt) {
 	vec3_t tmp;
 	float v;
 
@@ -277,21 +315,21 @@ void cNewsPanel_DrawNews(cNewsPanel *self, float dt) {
 	}
 }
 
-cGVar GVar_NewsPanelCloseSpeed;
-cGVar GVar_NewsLogoBmp;
-cGVar GVar_NewsPanelShowHead;
-cGVar GVar_NewsPanelW;
-cGVar GVar_NewsPanelX;
-cGVar GVar_NewsPanelOpenSpeed;
-cGVar GVar_NewsPanelDisplacement;
-cGVar GVar_NewsPanelH;
-cGVar GVar_BackNewsBmp;
-cGVar GVar_NewsPanelY;
-cGVar GVar_NewsPanelDistance;
-cGVar GVar_NewsHead;
-cGVar GVar_NewsPanelActive;
-cGVar GVar_NewsPanelMove;
-cGVar GVar_NewsPanelAspect;
+static cGVar GVar_NewsPanelCloseSpeed;
+static cGVar GVar_NewsLogoBmp;
+static cGVar GVar_NewsPanelShowHead;
+static cGVar GVar_NewsPanelW;
+static cGVar GVar_NewsPanelX;
+static cGVar GVar_NewsPanelOpenSpeed;
+static cGVar GVar_NewsPanelDisplacement;
+static cGVar GVar_NewsPanelH;
+static cGVar GVar_BackNewsBmp;
+static cGVar GVar_NewsPanelY;
+static cGVar GVar_NewsPanelDistance;
+static cGVar GVar_NewsHead;
+static cGVar GVar_NewsPanelActive;
+static cGVar GVar_NewsPanelMove;
+static cGVar GVar_NewsPanelAspect;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_NewsPanelActive, &GVar_NewsPanelActive, "NewsPanelActive", 0, "render the News Panel in the texture.", 0)

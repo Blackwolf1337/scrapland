@@ -82,15 +82,10 @@ typedef struct cMissileEntityVtbl {
 	void(*SetSwarm)(cEntity *self, int n);			/* 0x104 */
 	void(*Explode)(cEntity *self, const vec3_t *at);		/* 0x108 */
 } cMissileEntityVtbl;
-extern const cMissileEntityVtbl cMissileEntity_vftable;
-#define CMISSILEENTITY_VFTABLE (&cMissileEntity_vftable.base.base.base)
 
 static inline const cMissileEntityVtbl *Missile_Vtbl(cMissileEntity *e) {
 	return (const cMissileEntityVtbl *)e->wl.obj.base.vftable;
 }
-
-/* the WithLife entities the missiles touched, by name (4 of 0x80) */
-extern char g_MissileHits[4][0x80];
 
 /* the base class (src/game/Entities/WithLifeEntity.c) */
 void cWithLifeEntity_dtor(cEntity *self);
@@ -108,43 +103,10 @@ byte cWithLifeEntity_VarV(cEntity *self, const char *name, double *x, double *y,
 void cDebris_Step(struct cDebris *self, float dt);
 void cDebrisSys_Release(struct cDebrisSys *sys, struct cDebris *d);
 
-void cMissileEntity_dtor(cMissileEntity *self);
-/* vf12: the model, its debris system of the bees has the same name */
-void cMissileEntity_SetModel(cEntity *elem, const char *file, float sx, float sy, float sz, int flag);
-/* vf15: the fire effects DumbMotor, GearMissile, Cloud and EMI (a debris element of the life time) */
-void cMissileEntity_SetEmbeddedFX(cEntity *elem, const char *name);
-/* vf23 (every slot): the flight, the turn to the target and the hits of the world and the entities */
-void cMissileEntity_Tick(cEntity *base, float dt);
-/* vf41, vf43: the parent or target and the bees in the network state */
-void cMissileEntity_NetWrite(cEntity *elem, float dist2, void *msg, int full);
-void cMissileEntity_NetRead(cEntity *base, void *msg, int isNew);
-/* vf59: the bees fly around the missile within the radius */
-void cMissileEntity_Swarm(cEntity *base, float dt);
-/* vf64: n new bees */
-void cMissileEntity_AddToSwarm(cEntity *base, int n);
-/* vf66: the bees fly to at (beesGather) or die where they are */
-void cMissileEntity_Explode(cEntity *elem, const vec3_t *at);
-cEntity *cMissileEntity_Delete(cEntity *base, uint32_t flags);
-void cMissileEntity_RotStep(cEntity *base, float dt);
-void cMissileEntity_Touch(cEntity *base, cEntity *other, const vec3_t *point, const vec3_t *dir);
-void cMissileEntity_LifeTick(cEntity *elem);
-void cMissileEntity_Wobble(cEntity *base, float k);
-void cMissileEntity_Fall(cEntity *base, float dt);
-byte cMissileEntity_VarF(cEntity *base, const char *name, double *d, int set);
 int cMissileEntity_GetSwarmCount(cMissileEntity *self);
-const char *cMissileEntity_GetClassName(cEntity *base);
-void cMissileEntity_UpdateOff(cEntity *base);
-byte cMissileEntity_VarI(cEntity *base, const char *name, int *i, int set);
-byte cMissileEntity_IsType(cEntity *base, const char *type);
-/* n bees die (hidden swarm: only counted), or the missile explodes when there are not that many; 1 if it did */
-byte cMissileEntity_Hit(cEntity *elem, int n, float unused);
-void cMissileEntity_OnDeath(cEntity *base);
-void cMissileEntity_SetActive(cEntity *base, byte on);
-void cMissileEntity_SetAng(cEntity *base, const vec3_t *ang);
 void cMissileEntity_SetBeesHit(cMissileEntity *self, byte v);
 void cMissileEntity_SetHiddenSwarm(cMissileEntity *self, byte on);
 void cMissileEntity_SetHideMain(cMissileEntity *self, byte on);
-void cMissileEntity_SetHitType(cMissileEntity *self, int type);
 void cMissileEntity_SetLifeTime(cMissileEntity *self, float t);
 void cMissileEntity_SetType(cMissileEntity *self, int type);
 void cMissileEntity_SetCount(cMissileEntity *self, int n);
@@ -154,20 +116,10 @@ void cMissileEntity_SetRadius(cMissileEntity *self, float r);
 void cMissileEntity_SetRadiusGrow(cMissileEntity *self, float r);
 void cMissileEntity_SetSpeed(cMissileEntity *self, float speed);
 void cMissileEntity_SetSwDthTime(cMissileEntity *self, float t);
-/* more bees are added, fewer go back to the debris system */
-void cMissileEntity_SetSwarm(cEntity *base, int n);
 void cMissileEntity_SetBeesGather(cMissileEntity *self, byte v);
 void cMissileEntity_SetSwarmSpeed(cMissileEntity *self, float speed);
 void cMissileEntity_SetTarget(cMissileEntity *self, const char *name);
 void cMissileEntity_SetTopRadius(cMissileEntity *self, float r);
 void cMissileEntity_SetTurnSpeed(cMissileEntity *self, float speed);
-/* the velocity from the angles and the speed */
-void cMissileEntity_UpdateVel(cEntity *base);
-void cMissileEntity_SetVel(cEntity *base, const vec3_t *vel);
-void cMissileEntity_Update(cEntity *base);
-/* the volume of the first sound scaled with the bees */
-void cMissileEntity_ScaleSwarmSound(cEntity *base, float unused);
-byte cMissileEntity_VarS(cEntity *base, const char *name, char **s, int set);
-byte cMissileEntity_VarV(cEntity *base, const char *name, double *x, double *y, double *z, int set);
 
 #endif

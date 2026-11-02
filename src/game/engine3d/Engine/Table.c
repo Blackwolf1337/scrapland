@@ -172,10 +172,6 @@ void Table_Resize2(CTable *t, int n) {
 	Table_Resize(t, n, 2, Table_Alloc2);
 }
 
-void Table_Resize4(CTable *t, int n) {
-	Table_Resize(t, n, 4, Table_Alloc4);
-}
-
 void Table_ResizeC(CTable *t, int n) {
 	Table_Resize(t, n, 0xc, Table_AllocC);
 }
@@ -192,6 +188,3 @@ void Table_Resize2C(CTable *t, int n) {
 	Table_Resize(t, n, 0x2c, Table_Alloc2C);
 }
 
-void Table_Resize38(CTable *t, int n) {
-	Table_Resize(t, n, 0x38, Table_Alloc38);
-}

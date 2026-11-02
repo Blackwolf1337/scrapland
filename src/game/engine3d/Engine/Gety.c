@@ -6,6 +6,9 @@
 #include "scrap/ground.h"
 #include "scrap/groundportal.h"
 
+#define g_RayVertSectors (g_FastGetYSectorVar.value.i)
+static cGVar g_FastGetYSectorVar;
+
 #define GETY_FLT_MAX 3.4028234663852886e+38f
 
 static CCollideQuad *Gety_Cell(CGround *self, float x, float z) {
@@ -37,84 +40,6 @@ static byte Gety_InTri(const CCollideMesh *mesh, const CCollideTri *t, float x, 
 static byte Gety_QuadInRange(const CCollideQuad *q, float minY, float maxY) {
 	CHECK(minY <= maxY);
 	return !(q->minY > maxY) && !(minY > q->maxY);
-}
-
-float CGround_GetY(CGround *self, float x, float z, float maxY, byte all) {
-	float best = -GETY_FLT_MAX;
-
-	CGround_NewQuery(self);
-	for (CCollideQuad *q = Gety_Cell(self, x, z); q; q = q->next) {
-		if (!all && (q->Mesh->flags & TRI_ALT_NO_COLLISIONS)) {
-			continue;
-		}
-		if (!(maxY >= q->minY)) {
-			continue;
-		}
-		CCollideMesh *mesh = q->Mesh;
-		for (int i = 0; i < q->nTri; i++) {
-			const CCollideTri *t = &mesh->pTri[q->pTri[i]];
-			if (!all && (t->flags & TRI_ALT_NO_COLLISIONS)) {
-				continue;
-			}
-			if (!(t->plane.n.y != 0.0f)) {
-				continue;
-			}
-			float y = Gety_PlaneY(t, x, z);
-			if (maxY > y && y > best && Gety_InTri(mesh, t, x, z)) {
-				best = y;
-			}
-		}
-	}
-	return best;
-}
-
-byte CGround_GetYInfo(void *ground, float x, float z, GroundRay *info) {
-	CGround *self = ground;
-	byte hit = 0;
-
-	CHECK(info);
-	CGround_NewQuery(self);
-	uint32_t flags = info->flags;
-	float minY = flags & GETY_INFO_MINY ? info->minY : -GETY_FLT_MAX;
-	float maxY = flags & GETY_INFO_MAXY ? info->y : GETY_FLT_MAX;
-	float minB = flags & GETY_INFO_MINB ? info->minB : -1.0f;
-	float maxB = flags & GETY_INFO_MAXB ? info->maxB : 1.0f;
-	uint32_t mask = ~(flags >> 8) & TRI_ALT_NO_COLLISIONS;
-	if (flags & GETY_INFO_SECTOR) {
-		mask |= TRI_ALT_MESH;
-	}
-	float best = minY;
-	for (CCollideQuad *q = Gety_Cell(self, x, z); q; q = q->next) {
-		if (mask & q->Mesh->flags) {
-			continue;
-		}
-		if (!Gety_QuadInRange(q, minY, maxY)) {
-			continue;
-		}
-		for (int i = 0; i < q->nTri; i++) {
-			const CCollideTri *t = &q->Mesh->pTri[q->pTri[i]];
-			if (mask & t->flags) {
-				continue;
-			}
-			if (flags & (GETY_INFO_MINB | GETY_INFO_MAXB)) {
-				if (minB > t->plane.n.y || t->plane.n.y > maxB) {
-					continue;
-				}
-			}
-			if (!(t->plane.n.y != 0.0f)) {
-				continue;
-			}
-			float y = Gety_PlaneY(t, x, z);
-			if (y >= minY && maxY > y && y > best && Gety_InTri(q->Mesh, t, x, z)) {
-				hit = 1;
-				best = y;
-				info->hitY = y;
-				info->tri = (CCollideTri *)t;
-				info->sector = q->Mesh->sector - 1;
-			}
-		}
-	}
-	return hit;
 }
 
 byte CGround_RayVert(void *ground, float x, float z, GroundRay *info) {
@@ -205,69 +130,7 @@ byte CGround_RayVert(void *ground, float x, float z, GroundRay *info) {
 	return hit;
 }
 
-float CGround_GetYRange(CGround *self, float x, float z, float maxY, float minY, byte all) {
-	float best = -GETY_FLT_MAX;
-
-	CGround_NewQuery(self);
-	for (CCollideQuad *q = Gety_Cell(self, x, z); q; q = q->next) {
-		if (!all && (q->Mesh->flags & TRI_ALT_NO_COLLISIONS)) {
-			continue;
-		}
-		if (!Gety_QuadInRange(q, minY, maxY)) {
-			continue;
-		}
-		CCollideMesh *mesh = q->Mesh;
-		for (int i = 0; i < q->nTri; i++) {
-			const CCollideTri *t = &mesh->pTri[q->pTri[i]];
-			if (0.6f > t->plane.n.y) {
-				continue;
-			}
-			if (!all && (t->flags & TRI_ALT_NO_COLLISIONS)) {
-				continue;
-			}
-			if (!(t->plane.n.y != 0.0f)) {
-				continue;
-			}
-			float y = Gety_PlaneY(t, x, z);
-			if (y > minY && maxY > y && y > best && Gety_InTri(mesh, t, x, z)) {
-				best = y;
-			}
-		}
-	}
-	return best;
-}
-
-byte CGround_GetYBelow(CGround *self, float x, float z, float maxY, float *out) {
-	CCollideQuad *q = Gety_Cell(self, x, z);
-
-	if (!q) {
-		return 0;
-	}
-	CGround_NewQuery(self);
-	float best = -GETY_FLT_MAX;
-	for (; q; q = q->next) {
-		CCollideMesh *mesh = q->Mesh;
-		for (int i = 0; i < q->nTri; i++) {
-			const CCollideTri *t = &mesh->pTri[q->pTri[i]];
-			if (!(t->plane.n.y != 0.0f)) {
-				continue;
-			}
-			float y = Gety_PlaneY(t, x, z);
-			if (maxY > y && y > best && Gety_InTri(mesh, t, x, z)) {
-				best = y;
-			}
-		}
-	}
-	if (best != -GETY_FLT_MAX) {
-		if (out) {
-			*out = best;
-		}
-		return 1;
-	}
-	return 0;
-}
-
-cGVar g_FastGetYSectorVar;
+static cGVar g_FastGetYSectorVar;
 
 /* the static initializer: "FastGetYSector", "Fast GetYSector (0/1)", on */
 

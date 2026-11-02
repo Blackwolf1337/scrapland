@@ -12,9 +12,16 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/staticinit.h"
 
+#define CCTFENEMIESLOCALLOGIC_VFTABLE (&cCTFEnemiesLocalLogic_vftable)
+#define g_LeaderFlag (GVar_LeaderFlag.value.s)
+#define g_PercEnemiesAttackPlayerWhenWinning (GVar_PercEnemiesAttackPlayerWhenWinning.value.f)
+static const cLocalLogicVtbl cCTFEnemiesLocalLogic_vftable;
+static cGVar GVar_PercEnemiesAttackPlayerWhenWinning;
+static cGVar GVar_LeaderFlag;
+
 /* defined further down or in another file without a header */
-cLocalLogic *CTFEnemies_MakeLogic(cEntity *e);
-void CTFEnemies_OnDamage(cAbstractFile *params);
+static cLocalLogic *CTFEnemies_MakeLogic(cEntity *e);
+static void CTFEnemies_OnDamage(cAbstractFile *params);
 
 cEntity *Logic_AsCar(cEntity *e) {
 	if (e && !e->vftable->IsType(e, TYEN_CAR)) {
@@ -48,7 +55,7 @@ void cCTFEnemies_dtor(cCTFEnemies *self) {
 	}
 }
 
-cCTFEnemiesLocalLogic *cCTFEnemiesLocalLogic_Delete(cCTFEnemiesLocalLogic *self, byte flags) {
+static cCTFEnemiesLocalLogic *cCTFEnemiesLocalLogic_Delete(cCTFEnemiesLocalLogic *self, byte flags) {
 	self->vftable = CCTFENEMIESLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -58,7 +65,7 @@ cCTFEnemiesLocalLogic *cCTFEnemiesLocalLogic_Delete(cCTFEnemiesLocalLogic *self,
 }
 
 /* the ships after the flag: the AI state 6 to the flag of that name */
-void cCTFEnemiesData_GoToFlag(cCTFEnemiesData *self, const char *name, cAIVehicle *ai) {
+static void cCTFEnemiesData_GoToFlag(cCTFEnemiesData *self, const char *name, cAIVehicle *ai) {
 	vec3_t tmp;
 
 	(void)self;
@@ -73,7 +80,7 @@ void cCTFEnemiesData_GoToFlag(cCTFEnemiesData *self, const char *name, cAIVehicl
 }
 
 /* a random friend ship, or the player (once while no ship attacks it) if attackUsr */
-cEntity *cCTFEnemiesData_PickTarget(cCTFEnemiesData *self, cEntity *e, byte attackUsr) {
+static cEntity *cCTFEnemiesData_PickTarget(cCTFEnemiesData *self, cEntity *e, byte attackUsr) {
 	(void)e;
 	cEntity *usr = ChType_Usr0();
 	cEntityListData *friends = cCTFFriends_GetList((&g_pWorld->logic.ctfFriends));
@@ -101,7 +108,7 @@ static void CTF_Patrol(cAIVehicle *ai) {
 	cAIVehicle_SetState(ai, 3, NULL, 5.0, 2.0);
 }
 
-char g_CTFFlagName[128];
+static char g_CTFFlagName[128];
 
 /* the flag name copied for the leader (the strcpy of the original, the buffer has 0x80 bytes) */
 static void CTF_SetFlagName(const char *flag) {
@@ -111,7 +118,7 @@ static void CTF_SetFlagName(const char *flag) {
 	g_CTFFlagName[n] = 0;
 }
 
-void cCTFEnemiesData_Think(cCTFEnemiesData *self) {
+static void cCTFEnemiesData_Think(cCTFEnemiesData *self) {
 	Nto1Node *n = Logic_ListFirst(self->list);
 
 	if (!n) {
@@ -202,7 +209,7 @@ cEntityListData *cCTFEnemies_Init(cCTFEnemies *self) {
 }
 
 /* "IsLeader": 1 if the ship is the leader; set 1 makes it the leader, 0 of the leader none */
-byte cCTFEnemiesLocalLogic_VarI(cCTFEnemiesLocalLogic *self, const char *name, int *i, byte set) {
+static byte cCTFEnemiesLocalLogic_VarI(cCTFEnemiesLocalLogic *self, const char *name, int *i, byte set) {
 	if (strcmp(name, "IsLeader")) {
 		return 0;
 	}
@@ -220,7 +227,7 @@ byte cCTFEnemiesLocalLogic_VarI(cCTFEnemiesLocalLogic *self, const char *name, i
 }
 
 /* the native of the hits (cPy_Function onDamage of the list): the ship and its attacker */
-void CTFEnemies_OnDamage(cAbstractFile *params) {
+static void CTFEnemies_OnDamage(cAbstractFile *params) {
 	char name[0x80], attacker[0x80];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -256,14 +263,6 @@ void CTFEnemies_OnDamage(cAbstractFile *params) {
 	cAIVehicle_SetState(ai, AIV_STATE_ATTACK, a);
 }
 
-void cCTFEnemies_SetBonus(cCTFEnemies *self, float t) {
-	self->d->bonus = t;
-}
-
-void cCTFEnemies_SetLeader(cCTFEnemies *self, const char *name) {
-	cString_Set(&self->d->leader, name);
-}
-
 void cCTFEnemies_Update(cCTFEnemies *self, float dt) {
 	cCTFEnemiesData *d = self->d;
 	float b = d->bonus;
@@ -280,7 +279,7 @@ void cCTFEnemies_Update(cCTFEnemies *self, float dt) {
 }
 
 /* the logic of a ship of the list (cEntityListData.func) */
-cLocalLogic *CTFEnemies_MakeLogic(cEntity *e) {
+static cLocalLogic *CTFEnemies_MakeLogic(cEntity *e) {
 	CHECK(e && e->vftable->IsType(e, TYEN_CAR) && e->vftable->IsType(e, TYEN_CAR));
 	cLocalLogic *l = operator_new(sizeof(*l));
 	if (l) {
@@ -292,7 +291,7 @@ cLocalLogic *CTFEnemies_MakeLogic(cEntity *e) {
 }
 
 /* the vtable of cCTFEnemiesLocalLogic */
-const cLocalLogicVtbl cCTFEnemiesLocalLogic_vftable = {
+static const cLocalLogicVtbl cCTFEnemiesLocalLogic_vftable = {
 	.Delete = cCTFEnemiesLocalLogic_Delete,
 	.GetName = cLocalLogic_GetName,
 	.Vf02 = cLocalLogic_Vf02True,
@@ -302,9 +301,9 @@ const cLocalLogicVtbl cCTFEnemiesLocalLogic_vftable = {
 	.VarV = cLocalLogic_VarVNone,
 };
 
-cGVar GVar_LeaderFlag;
+static cGVar GVar_LeaderFlag;
 cGVar GVar_PlayerCTFTeamIsWinning;
-cGVar GVar_PercEnemiesAttackPlayerWhenWinning;
+static cGVar GVar_PercEnemiesAttackPlayerWhenWinning;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_PlayerCTFTeamIsWinning, &GVar_PlayerCTFTeamIsWinning, "PlayerCTFTeamIsWinning", 0, "Is player's team winning the CTF?", 0)

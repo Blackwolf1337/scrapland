@@ -26,7 +26,6 @@
 #include "scrap/platform.h"
 #include "scrap/staticinit.h"
 
-
 #define VK_ESCAPE 0x1b
 #define VK_SPACE 0x20
 #define VK_RETURN 0xd
@@ -36,17 +35,17 @@
 #define DIK_NUMPADENTER 0x9c
 #define XINPUT_GAMEPAD_A_B 0x3000
 
-
 #define VIDEO_PACKETS 32		/* packets read per Video_Step at most */
 #define VIDEO_RING (1u << 20)		/* bytes of decoded sound ahead of the mixer, about 6 s of 44.1 kHz stereo */
 
-cGVar GVar_PlayVideoFX;
+static cGVar GVar_PlayVideoFX;
 
 #define g_VideoMirror (GVar_PlayVideoFX.value.u)	/* 1: up-down, 2: left-right */
 
-int g_VideoPadHeld;
+static int g_VideoPadHeld;
 
-byte Video_PadPressed(void) {
+/* 1 once A or B of the first pad is let go */
+static byte Video_PadPressed(void) {
 	uint32_t state[4] = { 0, 0, 0, 0 };
 
 	if (Plat_PadState(0, state)) {
@@ -69,7 +68,8 @@ byte Video_PadPressed(void) {
 static byte video_hold;
 static uint32_t video_holdEnd;
 
-byte Video_KeysHeld(void) {
+/* 1 while the hold of Video_WaitKeysUp is on (Escape, Space or Enter still held and its time not over) */
+static byte Video_KeysHeld(void) {
 	if (video_hold && (Plat_Ticks() >= video_holdEnd || (!Plat_KeyDown(VK_ESCAPE)
 		&& !Plat_KeyDown(VK_SPACE) && !Plat_KeyDown(VK_RETURN)))) {
 		video_hold = 0;
@@ -77,7 +77,9 @@ byte Video_KeysHeld(void) {
 	return video_hold;
 }
 
-void Video_WaitKeysUp(int ms) {
+/* the keys that ended or started a video do not count for up to ms: the original waited that long while Escape,
+ * Space or Enter was held, the C starts a hold that Video_KeysHeld ends (no blocking wait) */
+static void Video_WaitKeysUp(int ms) {
 	video_holdEnd = Plat_Ticks() + (uint32_t)ms;
 	video_hold = 1;
 	Video_KeysHeld();
@@ -375,6 +377,7 @@ static void Video_StreamStep(void) {
 }
 
 /* name in the language directory of dir, else as it is (with the warning when neither is found) */
+static int Video_PlayPath(const char *name, const char *dir, byte warn);
 static int Video_PlayName(const char *name, const char *dir) {
 	char buf[MAX_FILEPATH];
 
@@ -410,7 +413,8 @@ int Video_PlayFile(const char *name, const char *dir) {
 	return Video_PlayName(name, dir);
 }
 
-int Video_PlayPath(const char *name, const char *dir, byte warn) {
+/* dir + name, else the .vds of it; warn: a console warning when neither is found; the results of Video_PlayFile */
+static int Video_PlayPath(const char *name, const char *dir, byte warn) {
 	char path[MAX_FILEPATH];
 
 	Bprintf(path, sizeof(path), "%s%s", dir ? dir : "", name);

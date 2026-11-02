@@ -7,25 +7,11 @@
 #include "scrap/e3dinput.h"
 #include "scrap/platform.h"
 
-uint32_t g_TimePaused;
+/* the time of the engine without the pauses (next to teclado.cpp, its source is not known) */
+static uint32_t g_TimePaused;
 
 uint32_t Time_Get(void) {
 	return Plat_Ticks() - g_TimePaused;
-}
-
-int g_TimeResumed;
-uint32_t g_TimePause;
-
-void Time_Pause(int on) {
-	if (on) {
-		if (!g_TimePause) {
-			g_TimePause = Plat_Ticks();
-		}
-	} else if (g_TimePause) {
-		g_TimeResumed = 1;
-		g_TimePaused += Plat_Ticks() - g_TimePause;
-		g_TimePause = 0;
-	}
 }
 
 byte g_KeyboardKeys[256];
@@ -34,23 +20,9 @@ void Keyboard_Clear(void) {
 	memset(g_KeyboardKeys, 0, 256);
 }
 
-uint16_t g_KeyboardBuf[32];
-int g_KeyboardBufStart;
-int g_KeyboardBufCount;
-
-int Keyboard_GetChars(uint16_t *dest, int n) {
-	CHECK(dest);
-	if (n <= 0) {
-		return 0;
-	}
-	if (n >= KEYBOARD_BUF) {
-		n = KEYBOARD_BUF;
-	}
-	for (int i = 0; i < n; i++) {
-		dest[i] = g_KeyboardBuf[(g_KeyboardBufCount - n + g_KeyboardBufStart + i) & (KEYBOARD_BUF - 1)];
-	}
-	return n;
-}
+static uint16_t g_KeyboardBuf[32];
+static int g_KeyboardBufStart;
+static int g_KeyboardBufCount;
 
 /* the scan code in bits 16..23 of lparam with the extended bit 24 as bit 23; the right shift (0x36) becomes the
  * left one, the extended Ctrl (0x9d) and Alt (0x9c) the normal ones */

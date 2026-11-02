@@ -7,8 +7,11 @@
 
 #include "scrap/chartype.h"
 
+#define CMAYORLOCALLOGIC_VFTABLE (&cMayorLocalLogic_vftable.base)
+static const cGenCharLocalLogicVtbl cMayorLocalLogic_vftable;
+
 /* defined further down or in another file without a header */
-void Mayor_SphereFunc(cAbstractFile *params);
+static void Mayor_SphereFunc(cAbstractFile *params);
 
 #define MAYOR_VT(self) ((self)->base.base.vftable)
 #define MAYOR_SPHEREFUNC 0x152e60
@@ -22,7 +25,7 @@ void *cMayorLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-cLocalLogic *cMayorLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static cLocalLogic *cMayorLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 	cMayorLocalLogic *self = (cMayorLocalLogic *)elem;
 	MAYOR_VT(self) = CMAYORLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(&self->base);
@@ -33,17 +36,18 @@ cLocalLogic *cMayorLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 }
 
 /* vf31: the special action is over after GenCharSpecialActionTime */
-byte cMayorLocalLogic_TargetDone(cLocalLogic *elem) {
+static byte cMayorLocalLogic_TargetDone(cLocalLogic *elem) {
 	cMayorLocalLogic *self = (cMayorLocalLogic *)elem;
 	return self->base.specialTime > g_GenCharSpecialActionTime;
 }
 
-cEntity *g_MayorTarget;
-cEntity *g_MayorSearchEnt;
-float g_MayorTargetDist = 3.4028235e+38f;
+static cEntity *g_MayorTarget;
+/* the search of the sphere native: the mayor, the nearest dazed character in its view and the square distance */
+static cEntity *g_MayorSearchEnt;
+static float g_MayorTargetDist = 3.4028235e+38f;
 
 /* vf30: at the search time the nearest dazed character in view in the sphere of MayorBlabliblaRadius */
-cEntity *cMayorLocalLogic_FindTarget(cLocalLogic *elem) {
+static cEntity *cMayorLocalLogic_FindTarget(cLocalLogic *elem) {
 	cMayorLocalLogic *self = (cMayorLocalLogic *)elem;
 	vec3_t t;
 
@@ -61,20 +65,20 @@ cEntity *cMayorLocalLogic_FindTarget(cLocalLogic *elem) {
 }
 
 /* vf28 and vf27: the AI walks in alert or relaxed */
-void cMayorLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
+static void cMayorLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
 	cMayorLocalLogic *self = (cMayorLocalLogic *)base;
 	(void)self;
 	ai->vftable->SetState(&ai->base.base, 1, (double)g_GenCharAlertSpeed, 0);
 }
 
-void cMayorLocalLogic_ToRelax(cLocalLogic *base, cAIChar *ai) {
+static void cMayorLocalLogic_ToRelax(cLocalLogic *base, cAIChar *ai) {
 	cMayorLocalLogic *self = (cMayorLocalLogic *)base;
 	(void)self;
 	ai->vftable->SetState(&ai->base.base, 1, (double)g_GenCharRelaxSpeed, 0);
 }
 
 /* vf17: during the special action the AI listens to the listener once */
-void cMayorLocalLogic_Update(cLocalLogic *elem, float dt) {
+static void cMayorLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cMayorLocalLogic *self = (cMayorLocalLogic *)elem;
 	if (self->base.specialOn) {
 		self->base.specialTime = dt + self->base.specialTime;
@@ -93,7 +97,7 @@ void cMayorLocalLogic_Update(cLocalLogic *elem, float dt) {
 
 /* the C function of the sphere: a dazed character (not the player, not the mayor) in the view of the mayor, the
  * nearest is kept */
-void Mayor_SphereFunc(cAbstractFile *params) {
+static void Mayor_SphereFunc(cAbstractFile *params) {
 	char name[0x80];
 	vec3_t pos, t;
 
@@ -132,7 +136,7 @@ void cMayorLocalLogic_SetListener(cLocalLogic *l, cEntity *e) {
 }
 
 /* the vtable of cMayorLocalLogic */
-const cGenCharLocalLogicVtbl cMayorLocalLogic_vftable = {
+static const cGenCharLocalLogicVtbl cMayorLocalLogic_vftable = {
 	.base.base.Delete = cMayorLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.Vf02 = cLocalLogic_Vf02True,

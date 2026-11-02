@@ -10,11 +10,20 @@
 #include "scrap/primitive.h"
 #include "scrap/staticinit.h"
 
-char g_NurseName[128];
-cEntity *g_NurseTarget;
+#define g_FXHammerHitFile (GVar_FXHammerHitFile.value.s)
+#define g_NurseAlarmHit (GVar_NurseAlarmHit.value.f)
+#define g_NurseDispDist (GVar_NurseDispDist.value.f)
+#define g_NurseDispRad (GVar_NurseDispRad.value.f)
+static cGVar GVar_NurseDispRad;
+static cGVar GVar_NurseDispDist;
+static cGVar GVar_NurseAlarmHit;
+static cGVar GVar_FXHammerHitFile;
+
+static char g_NurseName[128];
+static cEntity *g_NurseTarget;
 
 /* the sphere test of the hit: params a character, not the nurse; the player is never the target */
-void ChType_NurseSphereHit(cAbstractFile *params) {
+static void ChType_NurseSphereHit(cAbstractFile *params) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -53,19 +62,20 @@ static void Nurse_Start(CGameParticles *p, float rotVar, uint16_t sprites) {
 	CGameParticles_SetColorRampOn(p, 1);
 }
 
-uint32_t NURSE_RAMPS_STARS[18] = {
+static uint32_t NURSE_RAMPS_STARS[18] = {
 	0xff000000, 0x5a202020, 0x20303030, 0x20303030, 0x20303030, 0x80303030, 0xbe202020, 0xff000000, 0xff000000,
 	0xff000000, 0x5a404040, 0x20606060, 0x20606060, 0x20606060, 0x80606060, 0xbe404040, 0xff000000, 0xff000000,
 };
 
-uint32_t NURSE_RAMPS_SPARKS[18] = {
+static uint32_t NURSE_RAMPS_SPARKS[18] = {
 	0xffb9b9ed, 0x80b5b5f0, 0xb2b2f2, 0xafaff5, 0x20aaaaf9, 0x40a7a7fc, 0x80a3a3ff, 0xc0a3a3ff, 0xffa3a3ff,
 	0xff9191ed, 0x808d8df0, 0x8a8af2, 0x8787f5, 0x208282f9, 0x407f7ffc, 0x807b7bff, 0xc07b7bff, 0xff7b7bff,
 };
 
-uint32_t NURSE_RAMP_GLOW[9] = { 0xff565656, 0xb4fff06e, 0x8cefa01e, 0x969a500e, 0xc3604b1e, 0xd2404040, 0xeb202020, 0xff000000, 0xff000000 };
+static uint32_t NURSE_RAMP_GLOW[9] = { 0xff565656, 0xb4fff06e, 0x8cefa01e, 0x969a500e, 0xc3604b1e, 0xd2404040, 0xeb202020, 0xff000000, 0xff000000 };
 
-void Nurse_HammerFX(cEntity *v) {
+/* the hammer hit effect at the nurse v: a glow, a ring of stars and sparks (the debris at the camera) */
+static void Nurse_HammerFX(cEntity *v) {
 	vec3_t off, mr, t, pos, up, one, rot, dir, x1, t2, cam;
 
 	CHECK(v);
@@ -262,7 +272,7 @@ cPad g_Pads[4];
 /* the hit of the hammer of the nurse g_NurseName at the end of ActionLoop: the character in front (the sphere test
  * for the player, the target of the AI when it sleeps near it) is blocked by a gatekeeper, a gear or another nurse,
  * else it falls asleep, wakes up (it slept) or dies (a desktop). The hit of the player raises the alarm. */
-void ChType_NurseHit(void) {
+static void ChType_NurseHit(void) {
 	vec3_t t1, t2, t3, rot, off, hit, d, r;
 
 	cEntity *v = World_FindEntity(g_NurseName);
@@ -397,7 +407,7 @@ fail:
 }
 
 /* params: the nurse. ActionInit unless an Action runs */
-void ChType_NurseActionPress(cAbstractFile *params) {
+static void ChType_NurseActionPress(cAbstractFile *params) {
 	cAbstractFile_ReadString(params, g_NurseName, 0x80);
 	cEntity *v = World_FindEntity(g_NurseName);
 	CHECK(v);
@@ -408,13 +418,13 @@ void ChType_NurseActionPress(cAbstractFile *params) {
 }
 
 /* params: the nurse: the hit if the hammer is up */
-void ChType_NurseActionRelease(cAbstractFile *params) {
+static void ChType_NurseActionRelease(cAbstractFile *params) {
 	cAbstractFile_ReadString(params, g_NurseName, 0x80);
 	ChType_NurseHit();
 }
 
 /* params: the nurse, an event, a float: its displacement angle off */
-void ChType_NurseBackHitControl(cAbstractFile *params) {
+static void ChType_NurseBackHitControl(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -423,7 +433,7 @@ void ChType_NurseBackHitControl(cAbstractFile *params) {
 }
 
 /* params: the nurse, an event, a float: the hammer effect and a shake of the camera */
-void ChType_NurseDoHammerHit(cAbstractFile *params) {
+static void ChType_NurseDoHammerHit(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -438,7 +448,7 @@ void ChType_NurseDoHammerHit(cAbstractFile *params) {
 }
 
 /* params: the nurse, an event, a float: ActionLoop, the hit at once when the button is up */
-void ChType_NurseInitHammerLoop(cAbstractFile *params) {
+static void ChType_NurseInitHammerLoop(cAbstractFile *params) {
 	char event[0x80];
 	float unused;
 
@@ -453,7 +463,7 @@ void ChType_NurseInitHammerLoop(cAbstractFile *params) {
 }
 
 /* params: the nurse, an event, a float: ActionInit again while the button is down */
-void ChType_NurseTryHammerAgain(cAbstractFile *params) {
+static void ChType_NurseTryHammerAgain(cAbstractFile *params) {
 	char event[0x80];
 	float unused;
 
@@ -467,16 +477,16 @@ void ChType_NurseTryHammerAgain(cAbstractFile *params) {
 }
 
 cGVarFunction GVar_OnSleep;
-cGVar GVar_NurseAlarmHit;
-cGVar GVar_NurseDispDist;
-cGVar GVar_FXHammerHitFile;
-cGVar GVar_NurseDispRad;
-cPy_NativeFunc NativeFunc_NurseActionRelease;
-cPy_NativeFunc NativeFunc_NurseDoHammerHit;
-cPy_NativeFunc NativeFunc_NurseBackHitControl;
-cPy_NativeFunc NativeFunc_NurseInitHammerLoop;
-cPy_NativeFunc NativeFunc_NurseTryHammerAgain;
-cPy_NativeFunc NativeFunc_NurseActionPress;
+static cGVar GVar_NurseAlarmHit;
+static cGVar GVar_NurseDispDist;
+static cGVar GVar_FXHammerHitFile;
+static cGVar GVar_NurseDispRad;
+static cPy_NativeFunc NativeFunc_NurseActionRelease;
+static cPy_NativeFunc NativeFunc_NurseDoHammerHit;
+static cPy_NativeFunc NativeFunc_NurseBackHitControl;
+static cPy_NativeFunc NativeFunc_NurseInitHammerLoop;
+static cPy_NativeFunc NativeFunc_NurseTryHammerAgain;
+static cPy_NativeFunc NativeFunc_NurseActionPress;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_CALL(Fini_GVar_OnSleep, &GVar_OnSleep.func, cPy_Function_dtor)

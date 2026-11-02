@@ -20,8 +20,6 @@
 #include "scrap/aicharcontrol.h"
 #include "scrap/dlist.h"
 
-extern const cAICharVtbl cAIChar_vftable;
-#define CAICHAR_VFTABLE (&cAIChar_vftable)
 #define CAICHAR_SIZE sizeof(cAIChar)
 
 /* the external states (SAI.SetStateChar, the names of cAIChar_StateName) */
@@ -40,12 +38,6 @@ enum {
 	AICI_TALK_TO, AICI_NONE
 };
 
-/* ---- the character group (AI/AICharGroup.cpp, src/game/AI/ICharGroup.c, g_CharGroup): a cAIEntityGroup (a change to
- * a group state waits until the time reached the limit) with the points of the repositioning out of view, the dummies
- * "DM_NPC_Repos_<zone>_..." of the level by zone. The zone is the name of the action class of a character, a point
- * is taken by linking it to the head at 0x4bc of the character ---- */
-extern const cAIEntityGroupVtbl cAICharGroup_vftable;
-#define CAICHARGROUP_VFTABLE (&cAICharGroup_vftable)
 #define CAICHARGROUP_SIZE sizeof(cAICharGroup)
 
 /* a point of a zone (0x1c bytes, new[] of the exe with the count before it) */
@@ -90,30 +82,11 @@ struct cAICharGroup {
 	int numZones;			/* 0x64 */
 };
 
-/* the constructor and GetReposPos (SAI.GetReposPos) are declared in ai.h */
-cAICGPoint *cAICGPoint_ctor(cAICGPoint *self);
-void cAICGPoint_dtor(cAICGPoint *self);
-/* the deleting destructor of a point or (flags 2) of the new[] array it starts */
-void *cAICGPoint_Delete(cAICGPoint *self, uint32_t flags);
-/* the out of line Nto1Node_Unlink with the CHECK of Node for a node that may be NULL (stdcall) */
-void Nto1Node_UnlinkOpt(Nto1Node *node);
-void cAICharGroup_dtor(cAICharGroup *self);
-cAIEntityGroup *cAICharGroup_Delete(cAIEntityGroup *base, byte flags);
-/* the zones and their points from the dummies of the level */
-void cAICharGroup_Init(cAICharGroup *self);
-cAICGZone *cAICharGroup_GetZones(cAICharGroup *self);
-int cAICharGroup_NumZones(cAICharGroup *self);
 /* a point for the repositioning of e out of view between minDist and maxDist from the camera into out; with flag 0 a
  * free point beyond maxDist is taken too, with flag 1 only one the graph does not see from the camera (or in front of
  * it beyond minDist). The point e held before is given up */
 byte cAICharGroup_FindRepos(cAICharGroup *self, vec3_t *out, cEntity *e, float minDist, float maxDist,
 	byte flag);
-/* the lists of the dummies: emptied (the free nodes kept), the free nodes deleted, both (the destructors) */
-void cAICGZoneList_Clear(cAICGZoneList *list);
-void cAICGZoneList_FreePool(cAICGZoneList *list);
-void cAICGZoneList_dtor(cAICGZoneList *list);
-void cAICGPosList_Clear(cAICGPosList *list);
-void cAICGZoneData_dtor(cAICGZoneData *zone);
 /* the action of layer 0 of a character and its name, as the AIs read them (one GetActCtrl each) */
 static inline cAction *AIChar_Action0(cEntity *e) {
 	return ((cActCtrl *)WithLife_Vtbl(e)->GetActCtrl(e))->layers[0].action;
@@ -156,34 +129,11 @@ static inline void AIChar_DebugState(cAIChar *c, const char *fmt, int state) {
 	c->vftable->base.base.Debugf(&c->base.base, fmt, name);
 }
 
-/* the engine variables of the character AI */
-extern cGVar GVar_DistMaxCheckPauseAI;
-#define g_DistMaxCheckPauseAI (GVar_DistMaxCheckPauseAI.value.f)	/* "DistMaxCheckPauseAI" */
-extern cGVar GVar_DistMinCheckPauseAI;
-#define g_DistMinCheckPauseAI (GVar_DistMinCheckPauseAI.value.f)	/* "DistMinCheckPauseAI" */
-extern cGVar GVar_DistRadPauseCharAI;
-#define g_DistRadPauseCharAI (GVar_DistRadPauseCharAI.value.f)		/* "DistRadPauseCharAI" */
-extern cGVar GVar_DistMaxCheckReposAI;
-#define g_DistMaxCheckReposAI (GVar_DistMaxCheckReposAI.value.f)	/* "DistMaxCheckReposAI" */
-extern cGVar GVar_DistMinCheckReposAI;
-#define g_DistMinCheckReposAI (GVar_DistMinCheckReposAI.value.f)	/* "DistMinCheckReposAI" */
-extern cGVar GVar_MinTalkCharAI;
-#define g_MinTalkCharAI (GVar_MinTalkCharAI.value.f)		/* "MinTalkCharAI": the height difference */
-extern cGVar GVar_MinNumTalksCharAI;
-#define g_MinNumTalksCharAI (GVar_MinNumTalksCharAI.value.i)		/* "MinNumTalksCharAI" */
-extern cGVar GVar_MinTimeStoppedCharAI;
-#define g_MinTimeStoppedCharAI (GVar_MinTimeStoppedCharAI.value.f)	/* "MinTimeStoppedCharAI" */
-extern cGVar GVar_MinTimeStopTempCharAI;
-#define g_MinTimeStopTempCharAI (GVar_MinTimeStopTempCharAI.value.f)	/* "MinTimeStopTempCharAI" */
-
 /* ---- AI/AIChar.cpp (src/game/AI/IChar.c); the constructor is declared in walkcharentity.h, GetControl in
  * aicharcontrol.h ---- */
 void cAIChar_dtor(cAIChar *self);
-cAI *cAIChar_Delete(cAI *base, byte flags);
 /* 1 if the vectors differ in a component (or one is NaN) */
 int Vec3_Differ(const float *a, const float *b);
-void cAIChar_Nop(cAIChar *self);
-byte cAIChar_EventNone(cAIChar *self, int ev);
 void cAIChar_Update(cAI *elem, float dt);
 void cAIChar_UpdateOff(cAI *elem, float dt);
 void cAIChar_Draw(cAI *base);

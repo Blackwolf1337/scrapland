@@ -10,6 +10,11 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/staticinit.h"
 
+#define CWINDFXSCORER_VFTABLE (&cWindFxScorer_vftable)
+#define g_WindFxSound (GVar_WindFxScorerSound.value.s)
+static const cScorerItemVtbl cWindFxScorer_vftable;
+static cGVar GVar_WindFxScorerSound;
+
 cWindFxScorer *cWindFxScorer_ctor(cWindFxScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CWINDFXSCORER_VFTABLE;
@@ -26,14 +31,14 @@ cWindFxScorer *cWindFxScorer_ctor(cWindFxScorer *self) {
 	return self;
 }
 
-void cWindFxScorer_dtor(cWindFxScorer *self) {
+static void cWindFxScorer_dtor(cWindFxScorer *self) {
 	self->base.vftable = CWINDFXSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	cSound_Stop(&self->sound);
 	cScorerItem_dtor(&self->base);
 }
 
-cScorerItem *cWindFxScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cWindFxScorer_Delete(cScorerItem *base, byte flags) {
 	cWindFxScorer *self = (cWindFxScorer *)base;
 	cWindFxScorer_dtor(self);
 	if (flags & 1) {
@@ -42,29 +47,29 @@ cScorerItem *cWindFxScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-cGVar GVar_WindFxScorerFadeFactor;
+static cGVar GVar_WindFxScorerFadeFactor;
 
 /* the engine variables of the wind (WindFxScorer*) */
 #define g_WindFxFadeFactor (GVar_WindFxScorerFadeFactor.value.f)
-cGVar GVar_WindFxScorerFwAngle;
+static cGVar GVar_WindFxScorerFwAngle;
 
 #define g_WindFxFwAngle (GVar_WindFxScorerFwAngle.value.f)	/* degrees, the side tests turned by it */
-cGVar GVar_WindFxScorerHorizontal;
+static cGVar GVar_WindFxScorerHorizontal;
 
 #define g_WindFxHorizontal (GVar_WindFxScorerHorizontal.value.f)	/* the length of the side tests at full speed */
-cGVar GVar_WindFxScorerVertical;
+static cGVar GVar_WindFxScorerVertical;
 
 #define g_WindFxVertical (GVar_WindFxScorerVertical.value.f)
-cGVar GVar_WindFxScorerShow;
+static cGVar GVar_WindFxScorerShow;
 
 #define g_WindFxShow (GVar_WindFxScorerShow.value.i)
-cGVar GVar_WindFxScorerSoundVol;
+static cGVar GVar_WindFxScorerSoundVol;
 
 #define g_WindFxSoundVol (GVar_WindFxScorerSoundVol.value.f)
-cGVar GVar_WindFxScorerSpeedPitch;
+static cGVar GVar_WindFxScorerSpeedPitch;
 
 #define g_WindFxSpeedPitch (GVar_WindFxScorerSpeedPitch.value.f)
-cGVar GVar_WindFxScorerSpeedVol;
+static cGVar GVar_WindFxScorerSpeedVol;
 
 #define g_WindFxSpeedVol (GVar_WindFxScorerSpeedVol.value.f)
 
@@ -105,7 +110,7 @@ static void WindFx_Bar(CPsaImage *img, float sx, float sy, float x, float y) {
 
 /* vf00: the free space around the ship of the camera (four line tests ahead to the sides, up and down) sets the
  * volume, pan and pitch of the wind */
-void cWindFxScorer_Draw(cScorerItem *base, int player) {
+static void cWindFxScorer_Draw(cScorerItem *base, int player) {
 	cWindFxScorer *self = (cWindFxScorer *)base;
 	cEntity *ship;
 	vec3_t pos;
@@ -168,14 +173,14 @@ void cWindFxScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cWindFxScorer */
-const cScorerItemVtbl cWindFxScorer_vftable = {
+static const cScorerItemVtbl cWindFxScorer_vftable = {
 	.Draw = cWindFxScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cScorerItem_Var,
 	.Delete = cWindFxScorer_Delete,
 };
 
-cGVar GVar_WindFxScorerSound;
+static cGVar GVar_WindFxScorerSound;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_WindFxScorerSound, &GVar_WindFxScorerSound)

@@ -51,7 +51,8 @@ void DList_LinkLast(void *list, void *node) {
 	l->count++;
 }
 
-void DList_Release(void *list, void *node, uint32_t size) {
+/* to the free list while it has room, else deleted */
+static void DList_Release(void *list, void *node, uint32_t size) {
 	cDList *l = list;
 	cDListNode *n = node;
 

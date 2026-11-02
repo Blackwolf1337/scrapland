@@ -17,39 +17,6 @@
 
 #define TYEN_OBJECT "Obj"
 
-extern const cEmbeddedFXVtbl cEmbeddedFXDataPack_vftable;
-#define VT_EFX_DATAPACK (&cEmbeddedFXDataPack_vftable)
-extern const cEmbeddedFXVtbl cEmbeddedFXDataCube_vftable;
-#define VT_EFX_DATACUBE (&cEmbeddedFXDataCube_vftable)
-extern const cEmbeddedFXVtbl cEmbeddedFXCapsule_vftable;
-#define VT_EFX_CAPSULE (&cEmbeddedFXCapsule_vftable)
-extern const cEmbeddedFXVtbl cEmbeddedFXMatrix_vftable;
-#define VT_EFX_MATRIX (&cEmbeddedFXMatrix_vftable)
-extern const cEmbeddedFXVtbl cEmbeddedFXAmplifier_vftable;
-#define VT_EFX_AMPLIFIER (&cEmbeddedFXAmplifier_vftable)
-extern const cEmbeddedFXVtbl cEmbeddedFXMeetingPoint_vftable;
-#define VT_EFX_MEETINGPOINT (&cEmbeddedFXMeetingPoint_vftable)
-extern const cEmbeddedFXVtbl cEmbeddedFXExtraLife_vftable;
-#define VT_EFX_EXTRALIFE (&cEmbeddedFXExtraLife_vftable)
-extern const cEmbeddedFXVtbl cEmbeddedFXBattery_vftable;
-#define VT_EFX_BATTERY (&cEmbeddedFXBattery_vftable)
-extern const cEmbeddedFXVtbl cEmbeddedFXTreasure_vftable;
-#define VT_EFX_TREASURE (&cEmbeddedFXTreasure_vftable)
-extern const cEmbeddedFXVtbl cEmbeddedFXFlag_vftable;
-#define VT_EFX_FLAG (&cEmbeddedFXFlag_vftable)
-extern const cEmbeddedFXVtbl cEmbeddedFXDTritusDesktop_vftable;
-#define VT_EFX_DTRITUSDESKTOP (&cEmbeddedFXDTritusDesktop_vftable)
-extern const cEmbeddedFXVtbl cEmbeddedFXBike_vftable;
-#define VT_EFX_BIKE (&cEmbeddedFXBike_vftable)
-extern const cEmbeddedFXVtbl cEmbeddedFXBossShield_vftable;
-#define VT_EFX_BOSSSHIELD (&cEmbeddedFXBossShield_vftable)
-extern const cEmbeddedFXVtbl cEmbeddedFXConversor_vftable;
-#define VT_EFX_CONVERSOR (&cEmbeddedFXConversor_vftable)
-extern const cEmbeddedFXVtbl cEmbeddedFXCoin_vftable;
-#define VT_EFX_COIN (&cEmbeddedFXCoin_vftable)
-extern const cEmbeddedFXVtbl cEmbeddedFXItem_vftable;
-#define VT_EFX_ITEM (&cEmbeddedFXItem_vftable)
-
 typedef struct cEmbeddedFXAmplifier {
 	cEmbeddedFX base;
 	byte visible;			/* 0x08 */
@@ -266,12 +233,6 @@ typedef struct cEmbeddedFXTreasure {
 
 /* the effect of the object model replaces *fx; other models leave *fx as it is */
 void EmbeddedFXMisc_Create(cEntity *obj, const char *model, cEmbeddedFX **fx);
-/* the handlers registered at rva 0x444f80..: the shield of the entity BossShield hit, the network messages of the
- * shield mode and of the count down of a meeting point */
-void EmbeddedFXMisc_BossShieldHit(void);
-void EmbeddedFXMisc_BossShieldMsg(cAbstractFile *f);
-void EmbeddedFXMisc_MeetingPointMsg(cAbstractFile *f);
-void cEmbeddedFXMeetingPoint_SetCountDown(cEmbeddedFXMeetingPoint *self, float a, float b);
 vec3_t *cEmbeddedFXBike_EnginePos(cEmbeddedFXBike *self, vec3_t *out);
 void cEmbeddedFXBike_SetThrottle(cEmbeddedFXBike *self, float a, float b);
 void cEmbeddedFXDataPack_SetOn(cEmbeddedFXDataPack *self, byte on);

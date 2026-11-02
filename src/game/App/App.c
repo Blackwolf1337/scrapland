@@ -23,10 +23,42 @@
 #include "scrap/scoreritems.h"
 #include "scrap/staticinit.h"
 
+#define g_CAppVftable (&CApp_vftable)
+#define g_LoadMsgIndex (GVar_iLoadMsgString.value.i)		/* iLoadMsgString: the next loading tip */
+#define g_iMap (((cString *)&GVar_iMap.value))		/* iMap: the first level */
+#define g_iMapDefault (((cString *)&GVar_iMap.def))	/* its default value */
+#define g_ReRunAtExitParams (((cString *)&GVar_ReRunAtExitParams.value))	/* RunApp of the game with them at the end */
+#define g_AfterDrawCallback (((cPy_Function *)&GVar_AfterDrawCallback.func))
+#define g_DrawNextFrame (GVar_DrawNextFrame.value.i)
+#define g_DefaultMaxPlayers (GVar_DefaultMaxPlayersOnServer.value.i)	/* DefaultMaxPlayersOnServer */
+#define g_ModFileName (GVar_ModFileName.value.s)	/* a pack opened after Pack1 */
+#define g_DisableSkipSlot (GVar_DisableSkipSlot.value.i)	/* frames longer than 0.1 s are not cut */
+#define g_DisableSkipSlotDefault (GVar_DisableSkipSlot.def.i)
+#define g_ForceReload (GVar_ForceReload.value.i)		/* reload the floor of the same level */
+#define g_ModPathName (GVar_ModPathName.value.s)	/* a directory of packs after "mods" */
+#define g_LoadMsgString (((cString *)&GVar_LoadMsgString.value))	/* the loading tip */
+#define g_DefaultServerPort ((uint16_t)GVar_DefaultServerPort.value.i)
+#define g_ServerMapList (((cString *)&GVar_ServerMapList.value))
+static cGVar GVar_iMap;
+static cGVar GVar_iLoadMsgString;
+static cGVar GVar_ServerMapList;
+static cGVar GVar_ReRunAtExitParams;
+static cGVar GVar_ModPathName;
+static cGVar GVar_ModFileName;
+static cGVar GVar_LoadMsgString;
+static cGVar GVar_ForceReload;
+static cGVar GVar_DrawNextFrame;
+static cGVar GVar_DisableSkipSlot;
+static cGVar GVar_DefaultServerPort;
+static cGVar GVar_DefaultMaxPlayersOnServer;
+static cGVarFunction GVar_AfterDrawCallback;
+static const CAppVtbl CApp_vftable;
 
 /* the engine callbacks of the exe (Engine_SetCallback) */
 #define APP_CB_WORLDFRAME ((void (*)(void))(void *)Scorer_Render)
+static byte Loading_DrawXbox(void);
 #define APP_CB_LOADINGXBOX ((void (*)(void))(void *)Loading_DrawXbox)
+static byte Loading_Draw(void);
 #define APP_CB_LOADING ((void (*)(void))(void *)Loading_Draw)
 
 #define PSAIMAGE_SIZE sizeof(CPsaImage)
@@ -52,7 +84,8 @@ static void App_CopyStr(char *dst, const char *src, size_t size) {
 	dst[n] = 0;
 }
 
-int *g_AppBlock;
+/* App.cpp state */
+static int *g_AppBlock;
 
 CApp *CApp_ctor(CApp *self, const char *cmdLine) {
 	self->vftable = g_CAppVftable;
@@ -97,7 +130,7 @@ void CApp_dtor(CApp *self) {
 }
 
 /* vf03 */
-CApp *CApp_Delete(CApp *self, byte flags) {
+static CApp *CApp_Delete(CApp *self, byte flags) {
 	CApp_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, 0x48);
@@ -206,11 +239,6 @@ void Console_Execute(const char *cmd) {
 	PyRun_ScrapString(code);
 }
 
-/* rva 0x20acd0, no callers: the block of the constructor still intact */
-byte App_CheckBlock(void) {
-	return g_AppBlock[3] == 0x16;
-}
-
 /* vf11 (CWinApp vf11 jumps here too) */
 void CApp_Render(CApp *self) {
 	(void)self;
@@ -244,8 +272,9 @@ void CApp_Shutdown(CApp *self) {
 	}
 }
 
-void *g_XLoadIcon;
-byte g_XLoadOn;
+/* the Xbox loading screen (Loading_Init, isXbox) */
+static void *g_XLoadIcon;
+static byte g_XLoadOn;
 
 static void Loading_Stop(void) {
 	Engine_SetCallback(NULL, 4);
@@ -274,11 +303,6 @@ double CApp_GetGameTime(CApp *self) {
 	return self->gameTime;
 }
 
-void *App_GetObjData(const char *name) {
-	CHECK(g_pWorld);
-	return cWorld_GetObjData(g_pWorld, name);
-}
-
 float World_TimeScale(void) {
 	if (g_pWorld) {
 		return cTimer_GetSpeed(&g_pWorld->timer);
@@ -305,6 +329,7 @@ static byte CApp_InitEnd(CApp *self) {
 }
 
 /* vf04: the debug logs, Scrap.cfg, the command line, the packs, the input, the engine and the first level */
+static void CApp_ParseCmdLine(CApp *self);
 byte CApp_Init(CApp *self) {
 	vec3_t one;
 
@@ -365,6 +390,7 @@ byte CApp_InitResume(CApp *self) {
 }
 
 /* vf01: the level path, the network flags, the world and Python */
+static void CApp_SFLB_0(CApp *self);
 void CApp_InitGame(CApp *self, const char *level) {
 	cString_Set(&self->levelPath, level);
 	if (cString_CmpStr(&self->newLevelPath, level)) {
@@ -381,6 +407,7 @@ void CApp_InitGame(CApp *self, const char *level) {
 	Con_Print(0, "Python script subsystem initialized.\n", 0);
 }
 
+static void Loading_Start(void *unused);
 static void Loading_Begin(void) {
 	if (g_IsXbox) {
 		Loading_Start(NULL);
@@ -395,13 +422,13 @@ void Loading_Init(void) {
 	Loading_Begin();
 }
 
-int g_XLoadFrames;
-int g_XLoadIconFrame;
-float g_XLoadStart;
-float g_XLoadLastStep;
+static int g_XLoadFrames;
+static int g_XLoadIconFrame;
+static float g_XLoadStart;
+static float g_XLoadLastStep;
 
 /* the loading icon of the Xbox loading screen; the original has an unused ecx */
-void Loading_Start(void *unused) {
+static void Loading_Start(void *unused) {
 	(void)unused;
 	Render_CopyBackBuffer();
 	g_XLoadIcon = NULL;
@@ -485,7 +512,7 @@ void CApp_LoadLevelNow(CApp *self, const char *level) {
 CFont *g_FontHoratio;
 
 /* engine callback 3 with isXbox: the loading tip in a frame */
-byte Loading_DrawXbox(void) {
+static byte Loading_DrawXbox(void) {
 	byte white[PSAIMAGE_SIZE] __attribute__((aligned(4)));
 	byte tabs[PSAIMAGE_SIZE] __attribute__((aligned(4)));
 	char *lines[16];
@@ -511,7 +538,7 @@ byte Loading_DrawXbox(void) {
 
 /* the loading tip of the level into g_LoadMsgString: LoadingTips_Ind_n inside, LoadingTips_Out_n outside, their
  * [set.action] replaced by the key of Pad1 */
-void App_PickLoadingTip(CApp *self, const char *level) {
+static void App_PickLoadingTip(CApp *self, const char *level) {
 	static const char *const indoor[] = { "ABIndoor", "Orbit", "Bank", "Police", "Press", "Temple", "TownHall" };
 	static const char *const mixed[] = { "ShipEdit", "Menu", "Junkyard", "Fake", "GamblinDen" };
 	const char *ind = "LoadingTips_Ind_%d", *out = "LoadingTips_Out_%d";
@@ -772,7 +799,7 @@ byte CApp_ParseParam(CApp *self, const char *param, const char *ext) {
 }
 
 /* the command line: -param[:ext] items to ParseParam, quotes keep spaces */
-void CApp_ParseCmdLine(CApp *self) {
+static void CApp_ParseCmdLine(CApp *self) {
 	char param[0x100], ext[0x100];
 	int state = 0;
 	uint32_t np = 0, ne = 0;
@@ -866,7 +893,7 @@ void CApp_ParseCmdLine(CApp *self) {
 }
 
 /* engine callback 4 with isXbox: the "Loading..." text with its dots and the turning icon */
-byte Loading_Draw(void) {
+static byte Loading_Draw(void) {
 	byte tabs[PSAIMAGE_SIZE] __attribute__((aligned(4)));
 	char text[0x20];
 	float dim[2], uv[8], pos[8], in[2], out[2];
@@ -933,7 +960,7 @@ byte Loading_Draw(void) {
 }
 
 /* vf19 */
-byte CApp_RunApp(CApp *self, const char *exe, const char *cmdLine, int arg) {
+static byte CApp_RunApp(CApp *self, const char *exe, const char *cmdLine, int arg) {
 	(void)self;
 	(void)exe;
 	(void)cmdLine;
@@ -950,7 +977,7 @@ static void App_NewWorld(void) {
 }
 
 /* the action classes, the world and the scorer (cdecl member, this on the stack) */
-void CApp_SFLB_0(CApp *self) {
+static void CApp_SFLB_0(CApp *self) {
 	(void)self;
 	ActClassList_Init();
 	Con_Print(0, "Action class list initialized.\n", 0);
@@ -966,13 +993,13 @@ void CApp_Update(CApp *self, float dt) {
 }
 
 /* vf20 */
-byte CApp_IsDedicatedWin(CApp *self) {
+static byte CApp_IsDedicatedWin(CApp *self) {
 	(void)self;
 	return 0;
 }
 
 /* the vtable of CApp */
-const CAppVtbl CApp_vftable = {
+static const CAppVtbl CApp_vftable = {
 	.DoneGame = CApp_DoneGame,
 	.InitGame = CApp_InitGame,
 	.InitDebug = CApp_Nop,
@@ -996,20 +1023,21 @@ const CAppVtbl CApp_vftable = {
 	.IsDedicatedWin = CApp_IsDedicatedWin,
 };
 
-cGVar GVar_ServerMapList;
-cGVar GVar_iLoadMsgString;
-cGVar GVar_iMap;
-cGVar GVar_ReRunAtExitParams;
-cGVarFunction GVar_AfterDrawCallback;
-cGVar GVar_DrawNextFrame;
-cGVar GVar_DefaultMaxPlayersOnServer;
-cGVar GVar_ModFileName;
-cGVar GVar_DisableSkipSlot;
-cGVar GVar_ForceReload;
+static cGVar GVar_ServerMapList;
+/* engine variables (Gvars) */
+static cGVar GVar_iLoadMsgString;
+static cGVar GVar_iMap;
+static cGVar GVar_ReRunAtExitParams;
+static cGVarFunction GVar_AfterDrawCallback;
+static cGVar GVar_DrawNextFrame;
+static cGVar GVar_DefaultMaxPlayersOnServer;
+static cGVar GVar_ModFileName;
+static cGVar GVar_DisableSkipSlot;
+static cGVar GVar_ForceReload;
 cGVar GVar_isXbox;
-cGVar GVar_ModPathName;
-cGVar GVar_LoadMsgString;
-cGVar GVar_DefaultServerPort;
+static cGVar GVar_ModPathName;
+static cGVar GVar_LoadMsgString;
+static cGVar GVar_DefaultServerPort;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_MasterServerPort, &g_GVarMasterServerPort, "MasterServerPort", 4, "Master server port for internet. (0 = No master) \n", 5000)

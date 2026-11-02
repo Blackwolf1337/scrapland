@@ -10,8 +10,11 @@
 #include "scrap/input.h"
 #include "scrap/world.h"
 
+#define CENEMIESLOCALLOGIC_VFTABLE (&cEnemiesLocalLogic_vftable)
+static const cLocalLogicVtbl cEnemiesLocalLogic_vftable;
+
 /* defined further down or in another file without a header */
-cLocalLogic *Enemies_MakeLogic(cEntity *e);
+static cLocalLogic *Enemies_MakeLogic(cEntity *e);
 
 cEnemies *cEnemies_ctor(cEnemies *self) {
 	self->usr = NULL;
@@ -31,12 +34,7 @@ void Logic_NativeNop(cAbstractFile *params) {
 	(void)params;
 }
 
-void cEnemiesLocalLogic_dtor(cEnemiesLocalLogic *self) {
-	self->vftable = CENEMIESLOCALLOGIC_VFTABLE;
-	cLocalLogic_dtor(self);
-}
-
-cEnemiesLocalLogic *cEnemiesLocalLogic_Delete(cEnemiesLocalLogic *self, byte flags) {
+static cEnemiesLocalLogic *cEnemiesLocalLogic_Delete(cEnemiesLocalLogic *self, byte flags) {
 	self->vftable = CENEMIESLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -58,7 +56,7 @@ static void Enemies_AttackFriend(cAIVehicle *ai, cEntityListData *friends) {
 }
 
 /* the targets of the ships: usr (the car of the player, NULL without one) or the friends */
-void cEnemies_Attack(cEnemies *self, cEntity *usr) {
+static void cEnemies_Attack(cEnemies *self, cEntity *usr) {
 	Nto1Node *n = Logic_ListFirst(self->list);
 	cEntityListData *friends = (cEntityListData *)cWorld_GetList(g_pWorld, "Friends");
 	byte hasFriends = friends && friends->numElems && *friends->numElems > 0;
@@ -112,7 +110,8 @@ keep:;
 }
 
 /* the attack starts once the player has a car; before that the ships may relax once */
-void cEnemies_Think(cEnemies *self) {
+static void cEnemies_Relax(cEnemies *self);
+static void cEnemies_Think(cEnemies *self) {
 	int *num = self->list->numElems;
 
 	if (num && *num == 0) {
@@ -147,7 +146,7 @@ void cEnemies_Init(cEnemies *self) {
 }
 
 /* "IgnoreFriends", a flag of the world (+0x2174, the field of World_Enemies) for every ship */
-byte cEnemiesLocalLogic_VarI(cEnemiesLocalLogic *self, const char *name, int *i, byte set) {
+static byte cEnemiesLocalLogic_VarI(cEnemiesLocalLogic *self, const char *name, int *i, byte set) {
 	(void)self;
 	if (strcmp(name, "IgnoreFriends")) {
 		return 0;
@@ -161,7 +160,7 @@ byte cEnemiesLocalLogic_VarI(cEnemiesLocalLogic *self, const char *name, int *i,
 }
 
 /* every ship to the AI state 3 */
-void cEnemies_Relax(cEnemies *self) {
+static void cEnemies_Relax(cEnemies *self) {
 	for (Nto1Node *n = Logic_ListFirst(self->list); n; n = Logic_ListNext(n)) {
 		cEntity *e = Logic_AsCar(n->data);
 		CHECK(e->vftable->IsType(e, TYEN_CAR) && "wle->IsType(TYEN_VEHICLE)");
@@ -184,7 +183,7 @@ void cEnemies_Update(cEnemies *self, float dt) {
 }
 
 /* the logic of a ship of the list (cEntityListData.func) */
-cLocalLogic *Enemies_MakeLogic(cEntity *e) {
+static cLocalLogic *Enemies_MakeLogic(cEntity *e) {
 	CHECK(e && e->vftable->IsType(e, TYEN_CAR) && e->vftable->IsType(e, TYEN_CAR));
 	cLocalLogic *l = operator_new(sizeof(*l));
 	if (l) {
@@ -196,7 +195,7 @@ cLocalLogic *Enemies_MakeLogic(cEntity *e) {
 }
 
 /* the vtable of cEnemiesLocalLogic */
-const cLocalLogicVtbl cEnemiesLocalLogic_vftable = {
+static const cLocalLogicVtbl cEnemiesLocalLogic_vftable = {
 	.Delete = cEnemiesLocalLogic_Delete,
 	.GetName = cLocalLogic_GetName,
 	.Vf02 = cLocalLogic_Vf02True,

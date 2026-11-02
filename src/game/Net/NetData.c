@@ -16,6 +16,15 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
+#define g_NetMaxPlayersInitSend (GVar_NetMaxPlayersInitSend.value.i)
+#define g_ClientRemotePassword (GVar_ClientRemotePassword.value.s)
+#define g_ClientSetConfig (((cPy_Function *)&GVar_ClientSetConfig.func))
+#define g_MasterCommandFunc (((cPy_Function *)&GVar_MasterCommandFunc.func))
+static cGVar GVar_NetMaxPlayersInitSend;
+static cGVarFunction GVar_MasterCommandFunc;
+static cGVarFunction GVar_ClientSetConfig;
+static cGVar GVar_ClientRemotePassword;
+
 /* "net<n>" with a name of more than 3 characters */
 static inline int Net_IsNetName(const char *name) {
 	return strlen(name) > 3 && name[0] == 'n' && name[1] == 'e' && name[2] == 't';
@@ -27,7 +36,7 @@ static char *Net_StrDup(const char *s) {
 	return p;
 }
 
-char *g_NetResources[256];
+static char *g_NetResources[256];
 
 int Net_AddResource(const char *name) {
 	if (!g_pApp->flags) {
@@ -75,7 +84,7 @@ void Net_Done(void) {
 	cGVar_SetFlag((&g_GVarServerType), 1, 0);
 }
 
-int g_NetBotCounter;
+static int g_NetBotCounter;
 
 void Net_GetBotName(char *buf) {
 	do {
@@ -94,7 +103,8 @@ int Net_GetPlayerIndex(const char *name) {
 	return -1;
 }
 
-int g_NetObjCounter;
+/* NetData.cpp */
+static int g_NetObjCounter;
 
 void Net_GetObjName(char *buf) {
 	do {
@@ -121,8 +131,9 @@ int Net_GetPing(const char *player) {
 	return Net_GetClientPing((uint32_t)Net_GetPlayerIndex(player));
 }
 
-byte g_NetResInit;
+static byte g_NetResInit;
 
+static void NetData_OnMasterCommand(const char *cmd);
 void Net_Init(void) {
 	for (int i = 0; i < NET_RESOURCES; i++) {
 		if (g_NetResInit && g_NetResources[i]) {
@@ -162,6 +173,7 @@ void NetData_ReadResources(cAbstractFile *f) {
 	}
 }
 
+static void NetData_ReadUsrDescriptor(cAbstractFile *f, cEntity *e);
 void NetData_ReadUsrDescriptors(cAbstractFile *f) {
 	uint16_t count = 0, id = 0;
 	char name[0x80];
@@ -190,7 +202,7 @@ void NetData_ReadUsrDescriptors(cAbstractFile *f) {
 	}
 }
 
-void NetData_ReadUsrDescriptor(cAbstractFile *f, cEntity *e) {
+static void NetData_ReadUsrDescriptor(cAbstractFile *f, cEntity *e) {
 	char s[0x80];
 	uint16_t maxLife = 0;
 	int team;
@@ -232,6 +244,7 @@ void NetData_WriteResources(cAbstractFile *f, uint16_t first, byte count) {
 	}
 }
 
+static byte Net_SendString(const char *text, int slot, byte chat);
 byte Net_SendChatString(const char *text, int arg) {
 	return Net_SendString(text, arg, 1);
 }
@@ -256,7 +269,8 @@ byte Net_SendCtrlString(const char *text) {
 	return 1;
 }
 
-byte Net_SendString(const char *text, int slot, byte chat) {
+/* a chat (chat) or user string to client slot (-1 all) or to the server */
+static byte Net_SendString(const char *text, int slot, byte chat) {
 	char s[0x80];
 	byte ok = 1, msg;
 	cNetClient *c;
@@ -304,11 +318,12 @@ byte Net_SendUsrString(const char *text, int arg) {
 	return Net_SendString(text, arg, 0);
 }
 
-void NetData_OnMasterCommand(const char *cmd) {
+static void NetData_OnMasterCommand(const char *cmd) {
 	cPy_Function_AddParamS(g_MasterCommandFunc, cmd);
 	cPy_Function_Execute(g_MasterCommandFunc, 0);
 }
 
+static void NetData_WriteUsrDescriptor(cAbstractFile *f, cEntity *e);
 void NetData_WriteUsr(cAbstractFile *f, uint16_t slot) {
 	char name[0x80];
 	uint32_t v = 1;
@@ -322,7 +337,7 @@ void NetData_WriteUsr(cAbstractFile *f, uint16_t slot) {
 	NetData_WriteUsrDescriptor(f, e);
 }
 
-void NetData_WriteUsrDescriptor(cAbstractFile *f, cEntity *e) {
+static void NetData_WriteUsrDescriptor(cAbstractFile *f, cEntity *e) {
 	uint32_t v;
 
 	cAbstractFile_WriteString8(f, WLife(e)->usrName ? WLife(e)->usrName : "");
@@ -360,14 +375,6 @@ cEntity *NetData_WriteUsrDescriptors(cAbstractFile *f, cEntity *e) {
 	return e;
 }
 
-byte Net_GetNetIndex(const char *name, int *n) {
-	if (Net_IsNetName(name)) {
-		*n = crt_atoi(name + 3);
-		return 1;
-	}
-	return 0;
-}
-
 byte Net_IsNetEntity(cEntity *e) {
 	const char *name = e->name;
 
@@ -388,7 +395,7 @@ int Net_DoneBrowser(void) {
 	return Transport_CloseBrowser();
 }
 
-int g_NetBrowserPort;
+static int g_NetBrowserPort;
 
 int Net_InitBrowser(int a, const char *address) {
 	if (!a) {
@@ -433,11 +440,11 @@ void NetData_OnBrowse(const char *ip, int port, const NetServerInfo *info, int p
 	cPy_Function_Execute(g_OnNetBrowseCallback, 0);
 }
 
-cGVar GVar_NetMaxPlayersInitSend;
-cGVarFunction GVar_ClientSetConfig;
-cGVarFunction GVar_MasterCommandFunc;
+static cGVar GVar_NetMaxPlayersInitSend;
+static cGVarFunction GVar_ClientSetConfig;
+static cGVarFunction GVar_MasterCommandFunc;
 cGVarFunction GVar_ClientAddRes;
-cGVar GVar_ClientRemotePassword;
+static cGVar GVar_ClientRemotePassword;
 cGVarFunction GVar_OnNetBrowseCallback;
 cGVarFunction GVar_ClientDelRes;
 

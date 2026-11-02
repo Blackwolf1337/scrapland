@@ -8,6 +8,19 @@
 #include "scrap/scoreritems.h"
 #include "scrap/staticinit.h"
 
+#define CMISSIONSCORER_VFTABLE (&cMissionScorer_vftable.base)
+#define g_ScorerMarginH (GVar_ScorerMarginH.value.i)		/* ScorerMarginH */
+#define g_NextMissionLine1XBox (GVar_NextMissionFirstLineOffsetXBox.value.f)	/* NextMissionFirstLineOffsetXBox */
+#define g_NextMissionLine2XBox (GVar_NextMissionSecondLineOffsetXBox.value.f)	/* NextMissionSecondLineOffsetXBox */
+#define g_NextMissionLine1PC (GVar_NextMissionFirstLineOffsetPC.value.f)	/* NextMissionFirstLineOffsetPC */
+#define g_NextMissionLine2PC (GVar_NextMissionSecondLineOffsetPC.value.f)	/* NextMissionSecondLineOffsetPC */
+static const cSpriteScorerVtbl cMissionScorer_vftable;
+static cGVar GVar_ScorerMarginH;
+static cGVar GVar_NextMissionSecondLineOffsetXBox;
+static cGVar GVar_NextMissionSecondLineOffsetPC;
+static cGVar GVar_NextMissionFirstLineOffsetXBox;
+static cGVar GVar_NextMissionFirstLineOffsetPC;
+
 static const char *const s_TabColors[4] = {"TabRed", "TabGreen", "TabBlue", "TabAlpha"};
 static const char *const s_TextColors[3] = {"TextRed", "TextGreen", "TextBlue"};
 
@@ -24,7 +37,7 @@ cMissionScorer *cMissionScorer_ctor(cMissionScorer *self) {
 	return self;
 }
 
-void cMissionScorer_dtor(cMissionScorer *self) {
+static void cMissionScorer_dtor(cMissionScorer *self) {
 	CPsaImage *img = self->tab;
 	self->base.base.vftable = CMISSIONSCORER_VFTABLE;
 	if (img) {
@@ -35,7 +48,7 @@ void cMissionScorer_dtor(cMissionScorer *self) {
 	cSpriteScorer_dtor(&self->base);
 }
 
-cScorerItem *cMissionScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cMissionScorer_Delete(cScorerItem *base, byte flags) {
 	cMissionScorer *self = (cMissionScorer *)base;
 	cMissionScorer_dtor(self);
 	if (flags & 1) {
@@ -44,7 +57,7 @@ cScorerItem *cMissionScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-const char *g_MissionMapName;
+static const char *g_MissionMapName;
 
 /* Status0 of the scripts: the station text of the mission map, if it is not this level or the orbit */
 static void Mission_SetStation(cMissionScorer *self) {
@@ -67,8 +80,8 @@ static void Mission_SetStation(cMissionScorer *self) {
 	g_MissionMapName = Lang_GetStr(buf);
 }
 
-int g_MissionStatus[3];
-float g_MissionStatusTime[3];
+static int g_MissionStatus[3];
+static float g_MissionStatusTime[3];
 
 /* Status0..2: the scorer time is taken on every set */
 static int Mission_VarStatus(cMissionScorer *self, int k, byte set, int *i) {
@@ -88,12 +101,14 @@ static int Mission_VarStatus(cMissionScorer *self, int k, byte set, int *i) {
 	return 3;
 }
 
-int g_MissionBlinkOn;
-float g_MissionBlinkTime;
-float g_MissionBlinkLast;
+static int g_MissionBlinkOn;
+static float g_MissionBlinkTime;
+static float g_MissionBlinkLast;
 float g_MissionSolidTime;
 
-int cMissionScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+/* ForceMap (set), BackIndex, PrimaryIndex, SecondaryIndex, BlinkTime, SolidTime, Status0..2, LastStatus (get),
+ * StatusClear (set), TabSprite (set), TabBlendingMode, TabSpriteIndex, TabRed/Green/Blue/Alpha, TextRed/Green/Blue */
+static int cMissionScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cMissionScorer *self = (cMissionScorer *)base;
 	int r;
 
@@ -200,11 +215,11 @@ int cMissionScorer_Var(cScorerItem *base, const char *name, int set, char **s, d
 	return cSpriteScorer_Var(&self->base.base, name, set, s, d, i);
 }
 
-uint32_t g_MissionStatusColors[3] = { 0xffff20, 0xff4020, 0x2577ff };
+static uint32_t g_MissionStatusColors[3] = { 0xffff20, 0xff4020, 0x2577ff };
 
-float g_MissionStatusOfs[3][2] = { { 23.5f, 40.0f }, { 17.0f, 32.5f }, { 31.0f, 32.5f } };
+static float g_MissionStatusOfs[3][2] = { { 23.5f, 40.0f }, { 17.0f, 32.5f }, { 31.0f, 32.5f } };
 
-void cMissionScorer_Draw(cScorerItem *base, int player) {
+static void cMissionScorer_Draw(cScorerItem *base, int player) {
 	cMissionScorer *self = (cMissionScorer *)base;
 	cScorerItem *it = &self->base.base;
 	float ft = Scorer_Get(player)->frameTime;
@@ -291,7 +306,7 @@ void cMissionScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cMissionScorer */
-const cSpriteScorerVtbl cMissionScorer_vftable = {
+static const cSpriteScorerVtbl cMissionScorer_vftable = {
 	.base.Draw = cMissionScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cMissionScorer_Var,
@@ -299,11 +314,11 @@ const cSpriteScorerVtbl cMissionScorer_vftable = {
 	.SetMultiSprite = cSpriteScorer_SetMultiSprite,
 };
 
-cGVar GVar_NextMissionSecondLineOffsetXBox;
-cGVar GVar_NextMissionSecondLineOffsetPC;
-cGVar GVar_NextMissionFirstLineOffsetXBox;
-cGVar GVar_NextMissionFirstLineOffsetPC;
-cGVar GVar_ScorerMarginH;
+static cGVar GVar_NextMissionSecondLineOffsetXBox;
+static cGVar GVar_NextMissionSecondLineOffsetPC;
+static cGVar GVar_NextMissionFirstLineOffsetXBox;
+static cGVar GVar_NextMissionFirstLineOffsetPC;
+static cGVar GVar_ScorerMarginH;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_NextMissionFirstLineOffsetPC, &GVar_NextMissionFirstLineOffsetPC, "NextMissionFirstLineOffsetPC", 0, "Next mission first line offset PC", 60.0f)

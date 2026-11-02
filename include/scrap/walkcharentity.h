@@ -98,26 +98,13 @@ typedef struct cWalkCharVtbl {
 	void(*SetViewAng)(cEntity *self, const vec3_t *ang);			/* 0x10c vf67 */
 	void(*SetYModelDisp)(cEntity *self, float y);			/* 0x110 vf68 */
 } cWalkCharVtbl;
-extern const cWalkCharVtbl cWalkCharEntity_vftable;
-#define CWALKCHARENTITY_VFTABLE (&cWalkCharEntity_vftable.base.base.base)
 
 static inline const cWalkCharVtbl *WChar_Vtbl(const cEntity *e) {
 	return (const cWalkCharVtbl *)e->vftable;
 }
 
-/* engine variables (Gvars) */
-extern cGVar GVar_CharUsrPushSpeed;
-#define g_CharUsrPushSpeed (GVar_CharUsrPushSpeed.value.f)		/* the push of an AI the player runs into */
-extern cGVar GVar_TimeToAbortSelectChar;
-#define g_TimeToAbortSelectChar (GVar_TimeToAbortSelectChar.value.f)
-extern cGVar GVar_AbortSelectDistance;
-#define g_AbortSelectDistance (GVar_AbortSelectDistance.value.f)
 extern cGVar GVar_CharProcessReduction;
 #define g_CharProcessReduction (GVar_CharProcessReduction.value.f)	/* nearer to a camera the AI slots are faster */
-extern cGVar GVar_SndLoopCharNPCMul;
-#define g_SndLoopCharNPCMul (GVar_SndLoopCharNPCMul.value.f)
-extern cGVar GVar_CharGrav;
-#define g_CharGrav (GVar_CharGrav.value.f)
 extern cGVar GVar_ArrowDeactivationRadius;
 #define g_ArrowDeactivationRadius (GVar_ArrowDeactivationRadius.value.f)
 extern cGVar GVar_ActiveExtrapolation;
@@ -140,111 +127,28 @@ void *cAIChar_ctor(void *mem, cEntity *e, int *arg);		/* 0x380, every other clas
 /* engine side */
 void cWithLifeEntity_SetEmbeddedFX(cEntity *self, const char *fxType);
 
-/* WalkCharEntity.c (the functions declared in chartype.h, ai.h and scoreritems.h too) */
-void cWalkCharEntity_dtor(cEntity *self);
-cEntity *cWalkCharEntity_Delete(cEntity *self, uint32_t flags);
-/* vf63: the press and release callbacks of the class, the talk with the victim or listener, the energy over dt */
-void cWalkCharEntity_ActionTick(cEntity *self, float dt);
-/* vf24 (UpdateModel): the model at the render position and angles, the head turned to the view (blended by the view
- * lock) */
-void cWalkCharEntity_UpdateModel(cEntity *self);
-/* the view lock of the class (and the blend towards it in dt) */
-void cWalkCharEntity_UpdateViewLock(cEntity *self, float dt);
 /* the energy is full and the victim a WalkChar and no action of priority runs; with checkClass its class must
  * allow it */
 byte cWalkCharEntity_CanPossess(cEntity *self, byte checkClass);
-/* the link node at 0x3e8 unlinked */
-void cWalkCharEntity_UnlinkCollide(cEntity *self);
 
-/* vf11: e (with life) pushes the character out of its collision sphere, in x and z unless it falls or flies */
-void cWalkCharEntity_Touch(cEntity *self, cEntity *e, const vec3_t *point, const vec3_t *normal);
-/* the walk of a slot: the view, the actions, the velocity, the slides along the map and the other entities */
-void cWalkCharEntity_Walk(cEntity *self, float dt);
-/* vf58: the view turned by the control (clamped up and down) */
-void cWalkCharEntity_Turn(cEntity *self, float dt);
-/* the walk action loop with init (or loop at once) unless one of them runs; end is the action of the stop */
-void cWalkCharEntity_PlayWalk(cEntity *self, const char *init, const char *loop, const char *end);
-/* the flash of the model after a hit (life below the maximum) */
-void cWalkCharEntity_UpdateHitFlash(cEntity *self, float dt);
-/* vf56: the AI of the class made (on, unless there is one) or deleted */
-void cWalkCharEntity_EnableAI(cEntity *self, byte on, int *arg);
-byte cWalkCharEntity_VarF(cEntity *self, const char *name, double *d, int set);
-/* vf60: the gravity, the steps and the floor */
-void cWalkCharEntity_Fall(cEntity *self, float dt);
-/* vf64: the flight of a class that can fly */
-void cWalkCharEntity_Fly(cEntity *self, float dt);
 cActCtrl *cWithLifeEntity_GetActCtrl(cEntity *self);
 /* the fraction of the weapon energy above the full batteries */
 float cWalkCharEntity_GetEnergyFrac(cEntity *e);
-vec3_t *cWalkCharEntity_GetRenderAng(cEntity *self, vec3_t *out);
-vec3_t *cWalkCharEntity_GetSndAng(cEntity *self, vec3_t *out);
-/* "RelaxAlarm" while the alarm is on for a class with alarm actions, else "Relax" */
-const char *cWalkCharEntity_RelaxName(cEntity *self);
-void cWalkCharEntity_GetCamera(cEntity *self, vec3_t *pos, vec3_t *ang);
-const char *cWalkCharEntity_GetClassName(cEntity *self);
 /* < 0 when no player controls the entity (assumed from SAI.EnableAI*) */
 int cWalkCharEntity_GetOwnerSlot(cEntity *e);
-float cWalkCharEntity_GetRadius(cEntity *self);
 /* the count of the full batteries */
 int cWalkCharEntity_GetBatteries(cEntity *e);
-byte cWalkCharEntity_VarI(cEntity *self, const char *name, int *i, int set);
-byte cWalkCharEntity_IsType(cEntity *self, const char *type);
 /* WithLifeEntity.h vf09 and vf10: the tests of the collision sphere */
 byte cWithLifeEntity_TestLine(cEntity *self, const vec3_t *from, vec3_t *hit);
 byte cWithLifeEntity_TestSphere(cEntity *self, cEntity *exclude, const vec3_t *center, float radius,
 	const vec3_t *prev);
-/* ObjEntity.h vf41 and vf43 (nothing) and vf42 (1) */
-void cObjEntity_Vf41(cEntity *self, int a, int b, int c);
-byte cObjEntity_Vf42(cEntity *self, int a);
-void cObjEntity_Vf43(cEntity *self, int a, int b);
-/* vf23 */
-void cWalkCharEntity_Tick(cEntity *self, float dt);
-/* vf48: the listener unlinked */
-void cWalkCharEntity_UnlinkListen(cEntity *self);
-/* vf59: the body turned to the view, the relax and turn actions, the view to the listener */
-void cWalkCharEntity_Idle(cEntity *self, float dt);
-/* vf57: the selection of the player and the callbacks of a lost one */
-void cWalkCharEntity_UpdateSelect(cEntity *self, float dt);
-void cWalkCharEntity_SetActive(cEntity *self, byte on);
-void cWalkCharEntity_SetAng(cEntity *self, const vec3_t *ang);
 /* the weapon energy of a character, 0 or more */
 void cWalkCharEntity_SetEnergy(cEntity *self, float energy);
-/* the used energy, at most 1 */
-void cWalkCharEntity_SetEnergyUsed(cEntity *self, float used);
-void cWalkCharEntity_SetEmbeddedFX(cEntity *self, const char *fxType);
 /* the falling state of a character (0x464), with what goes with it */
 void cWalkCharEntity_SetFalling(cEntity *self, byte on);
 /* WithLifeEntity.h vf51 */
 void cWithLifeEntity_SetMass(cEntity *self, float mass);
-/* vf12: also the floor distance and the camera node of the model */
-void cWalkCharEntity_SetModel(cEntity *self, const char *file, float sx, float sy, float sz, int flag);
-/* an AI slows its slots down unless it is seen or near a camera */
-void cWalkCharEntity_UpdateSlotRate(cEntity *self, float dt);
-/* the push of an AI, once a slot: 1 if it was taken */
-byte cWalkCharEntity_SetPush(cEntity *self, const vec3_t *push);
-void cWalkCharEntity_ApplyPush(cEntity *self, float dt);
-/* "UsrControl": the player slot (-1 the AI) */
-void cWalkCharEntity_SetUsrControl(cEntity *self, int slot);
-void cWalkCharEntity_SetVel(cEntity *self, const vec3_t *vel);
-void cWalkCharEntity_SetViewAng(cEntity *self, const vec3_t *ang);
 /* the view of a character set to the direction from pos to it */
 void cWalkCharEntity_SetViewFrom(cEntity *self, const vec3_t *pos);
-void cWalkCharEntity_SetYModelDisp(cEntity *self, float y);
-/* vf61: the walk acceleration of the control, the friction and the speed limit */
-void cWalkCharEntity_Accel(cEntity *self, float dt);
-void cWalkCharEntity_Update(cEntity *self);
-/* vf65 and vf66: the pitch and volume of the loop sound 0 by the speed */
-void cWalkCharEntity_FlySound(cEntity *self, float dt);
-void cWalkCharEntity_WalkSound(cEntity *self, float dt);
-byte cWalkCharEntity_VarS(cEntity *self, const char *name, char **s, int set);
-byte cWalkCharEntity_VarV(cEntity *self, const char *name, double *x, double *y, double *z, int set);
-/* vf62: the walk, run, strafe and back actions by the control and the velocity they give */
-void cWalkCharEntity_WalkAnim(cEntity *self, float dt);
-/* the action of layer 0 is Run, Walk or Sprint...; with Back...; StrRight or StrLeft... */
-byte cWalkCharEntity_IsMoveAnim(cEntity *self);
-byte cWalkCharEntity_IsBackOrMoveAnim(cEntity *self);
-byte cWalkCharEntity_IsStrafeAnim(cEntity *self);
-/* the class has alarm actions and the alarm is on */
-byte cWalkCharEntity_IsAlarm(cEntity *self);
 
 #endif

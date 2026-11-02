@@ -13,6 +13,17 @@
 #include "scrap/actions.h"
 #include "scrap/staticinit.h"
 
+#define g_PackExclude (GVar_BuildPackExclude.value.s)	/* ';' separated patterns not to pack */
+#define g_PackInclude (GVar_BuildPackInclude.value.s)	/* ';' separated patterns to pack, all if empty */
+#define g_PackBuildAsk (GVar_BuildPackPrompt.value.i)	/* ask before quitting after Pack_Build */
+#define CFILE2_VFTABLE (&cFile2_vftable)
+#define CFILEPACK_VFTABLE (&cFilePack_vftable)
+static const cAbstractFileVtbl cFilePack_vftable;
+static const cAbstractFileVtbl cFile2_vftable;
+static cGVar GVar_BuildPackPrompt;
+static cGVar GVar_BuildPackInclude;
+static cGVar GVar_BuildPackExclude;
+
 cStringNode *cStringList_NewNode(cStringList *list);
 
 void Loading_Step(int percent);				/* -1: one step of the loading bar */
@@ -32,7 +43,7 @@ static void PackName_Normalize(char *s) {
 
 /* cFile2: a pack file on disk with its position */
 
-cFile2 *cFile2_ctor(cFile2 *self) {
+static cFile2 *cFile2_ctor(cFile2 *self) {
 	self->file.base.name = NULL;
 	self->file.base.mode = 0;
 	self->file.f = NULL;
@@ -41,12 +52,12 @@ cFile2 *cFile2_ctor(cFile2 *self) {
 	return self;
 }
 
-void cFile2_dtor(cFile2 *self) {
+static void cFile2_dtor(cFile2 *self) {
 	self->file.base.vftable = CFILE2_VFTABLE;
 	cFile_dtor(&self->file);
 }
 
-cAbstractFile *cFile2_Destroy(cAbstractFile *elem, int flags) {
+static cAbstractFile *cFile2_Destroy(cAbstractFile *elem, int flags) {
 	cFile2 *self = (cFile2 *)elem;
 	self->file.base.vftable = CFILE2_VFTABLE;
 	cFile_dtor(&self->file);
@@ -56,41 +67,41 @@ cAbstractFile *cFile2_Destroy(cAbstractFile *elem, int flags) {
 	return elem;
 }
 
-int cFile2_Open(cAbstractFile *base, const char *name, uint32_t mode) {
+static int cFile2_Open(cAbstractFile *base, const char *name, uint32_t mode) {
 	cFile2 *self = (cFile2 *)base;
 	self->curPos = 0;
 	return cFile_Open(&self->file.base, name, mode);
 }
 
-int cFile2_Read(cAbstractFile *base, void *dst, int size) {
+static int cFile2_Read(cAbstractFile *base, void *dst, int size) {
 	cFile2 *self = (cFile2 *)base;
 	int n = cFile_Read(&self->file.base, dst, size);
 	self->curPos += n;
 	return n;
 }
 
-int cFile2_Write(cAbstractFile *base, const void *src, int size) {
+static int cFile2_Write(cAbstractFile *base, const void *src, int size) {
 	cFile2 *self = (cFile2 *)base;
 	int n = cFile_Write(&self->file.base, src, size);
 	self->curPos += n;
 	return n;
 }
 
-int cFile2_Seek(cAbstractFile *base, int pos) {
+static int cFile2_Seek(cAbstractFile *base, int pos) {
 	cFile2 *self = (cFile2 *)base;
 	self->curPos = cFile_Seek(&self->file.base, pos);
 	CHECK(self->curPos != -1);
 	return self->curPos;
 }
 
-int cFile2_Tell(cAbstractFile *base) {
+static int cFile2_Tell(cAbstractFile *base) {
 	cFile2 *self = (cFile2 *)base;
 	CHECK(self->curPos == cFile_Tell(&self->file.base));
 	return self->curPos;
 }
 
 /* reads up to pos when it is close (32 bytes), else seeks */
-void cFile2_SkipTo(cFile2 *self, int pos, const char *name) {
+static void cFile2_SkipTo(cFile2 *self, int pos, const char *name) {
 	byte skip[0x20];
 	uint32_t d = (uint32_t)(pos - self->curPos);
 
@@ -104,9 +115,9 @@ void cFile2_SkipTo(cFile2 *self, int pos, const char *name) {
 	}
 }
 
-cPackLocation g_PackFound;
+static cPackLocation g_PackFound;
 
-HashTable g_PackIndex = { .numSlots = 457 };
+static HashTable g_PackIndex = { .numSlots = 457 };
 
 /* the instance of cNameItem (value int), the HashTable.h parts in src/game/Global/HashTable.c */
 
@@ -116,7 +127,7 @@ HASHTABLE_STR(NameTable, cNameItem)
 HASHTABLE_STR(PackIndexTable, cPackIndexItem)
 
 /* the location of a file in the packs (in g_PackFound, valid until the next call), NULL if not there */
-cPackLocation *PackIndex_Find(const char *name) {
+static cPackLocation *PackIndex_Find(const char *name) {
 	char key[0x104];
 
 	Str_Copy(key, name, sizeof(key));
@@ -137,27 +148,27 @@ byte Pack_FileExists(const char *name) {
 
 /* Global/DList.h instances: new nodes go in front of head, the callers step head on to append */
 
-void PackEntries_Add(cPackEntryList *list, const cPackEntry *e) {
+static void PackEntries_Add(cPackEntryList *list, const cPackEntry *e) {
 	cPackEntryNode *node = DList_NewNode(list, sizeof(*node));
 	node->e = *e;
 	DList_LinkFirst(list, node);
 }
 
-void PackEntries_Clear(cPackEntryList *list) {
+static void PackEntries_Clear(cPackEntryList *list) {
 	DList_Clear(list, sizeof(cPackEntryNode));
 }
 
-void PackNames_Add(cStringList *list, const cString *str) {
+static void PackNames_Add(cStringList *list, const cString *str) {
 	list->iter = NULL;
 	cStringNode *node = cStringList_NewNode(list);
 	cString_Assign(&node->str, str);
 	DList_LinkFirst(list, node);
 }
 
-cStringList g_PackNames;
+static cStringList g_PackNames;
 
 /* the cString of the pack being recorded with that name */
-char **PackNames_Find(const char *name) {
+static char **PackNames_Find(const char *name) {
 	cStringList *list = (&g_PackNames);
 	list->iter = list->head;
 	if (!list->head) {
@@ -175,11 +186,11 @@ char **PackNames_Find(const char *name) {
 	}
 }
 
-cPackEntryList g_PackEntries;
-uint32_t g_PackNumEntries;
+static cPackEntryList g_PackEntries;
+static uint32_t g_PackNumEntries;
 
 /* the entry of the build list with that name; the iterator of the list stays on it */
-cPackEntry *PackEntry_Find(const char *name) {
+static cPackEntry *PackEntry_Find(const char *name) {
 	char key[0x104];
 	cPackEntryList *list = (&g_PackEntries);
 
@@ -214,7 +225,7 @@ static void PackEntries_Append(const cPackEntry *e) {
 }
 
 /* the exclusion and inclusion lists of the build */
-byte Pack_IsIncluded(const char *name) {
+static byte Pack_IsIncluded(const char *name) {
 	if (g_PackExclude && *g_PackExclude && StrList_Match(g_PackExclude, name, ";")) {
 		Con_Debugf("Excluded  :'%s'  <file in exclusion list>\n", name);
 		return 0;
@@ -241,7 +252,7 @@ void cFilePack_dtor(cFilePack *self) {
 	cFile_dtor(&self->file);
 }
 
-cAbstractFile *cFilePack_Destroy(cAbstractFile *elem, int flags) {
+static cAbstractFile *cFilePack_Destroy(cAbstractFile *elem, int flags) {
 	cFilePack *self = (cFilePack *)elem;
 	self->file.base.vftable = CFILEPACK_VFTABLE;
 	cFile_dtor(&self->file);
@@ -251,10 +262,10 @@ cAbstractFile *cFilePack_Destroy(cAbstractFile *elem, int flags) {
 	return elem;
 }
 
-int g_NumPackFiles;
-cFile2 g_PackFiles[128];
-int g_PackLocked;
-void *g_LstFile;
+static int g_NumPackFiles;
+static cFile2 g_PackFiles[128];
+static int g_PackLocked;
+static void *g_LstFile;
 
 /*
  * name is relative to the open pack (g_PackName). A name in the index is read from its pack, else from disk; while
@@ -338,7 +349,7 @@ int cFilePack_Write(cAbstractFile *base, const void *src, int size) {
 	return cFile_Write(&self->file.base, src, size);
 }
 
-int cFilePack_Seek(cAbstractFile *base, int pos) {
+static int cFilePack_Seek(cAbstractFile *base, int pos) {
 	cFilePack *self = (cFilePack *)base;
 	if (!self->start) {
 		return cFile_Seek(&self->file.base, pos);
@@ -349,7 +360,7 @@ int cFilePack_Seek(cAbstractFile *base, int pos) {
 	return pf->curPos;
 }
 
-int cFilePack_Tell(cAbstractFile *base) {
+static int cFilePack_Tell(cAbstractFile *base) {
 	cFilePack *self = (cFilePack *)base;
 	if (!self->start) {
 		return cFile_Tell(&self->file.base);
@@ -522,7 +533,7 @@ void Pack_CloseAll(void) {
 }
 
 /* a .packed file found by Pack_OpenDir */
-void Pack_OpenFound(const char *file) {
+static void Pack_OpenFound(const char *file) {
 	char name[0x104];
 
 	Str_Printf(name, sizeof(name), "%s", file);
@@ -623,15 +634,15 @@ int Pack_Extract(const char *dir) {
 
 /* building a pack: the files of filelist.2Bpack, then by mode files found below the directory */
 
-int g_PackDirLen;
-int g_PackBuildMode;
+static int g_PackDirLen;
+static int g_PackBuildMode;
 
 /*
  * a file of the walk for Pack_Build. Mode 2 adds everything (2D/ also as .dds), 3 Python files, 2D/Loading/,
  * Sounds/Stream/ and Music/, 4 Sounds/Voices/; other modes everything but .dds. Saves, models, ini, scc, html and
  * packs are never added.
  */
-void Pack_BuildAddFile(const char *path) {
+static void Pack_BuildAddFile(const char *path) {
 	/* a whole cPackEntry: PackEntries_Add copies offset and size too, uninitialized like in the original */
 	char name[sizeof(cPackEntry)];
 	int special = 0;
@@ -815,48 +826,8 @@ void Pack_Build(const char *dir, const char *outName, int mode) {
 	cFile_dtor(&in);
 }
 
-HashTable *g_NameTable;
-
-/* the duplicate check of Pack_CheckDuplicates: base names without extension */
-void Pack_AddFileName(const char *path) {
-	char name[0x100];
-	intptr_t value = 0;
-	HashTable *t = g_NameTable;
-
-	Path_Split(path + g_PackDirLen, name, NULL, NULL);
-	crt_strlwr(name);
-	CHECK(!t->locked);
-	uint32_t slot = HashTable_Slot(t, name);
-	if (!NameTable_Find(t, name, slot)) {
-		NameTable_Insert(t, name, slot, &value);
-	} else {
-		Con_Warnf("Duplicated file name: '%s'\n", path + g_PackDirLen);
-	}
-}
-
-/* warns about files below the game directory with the same base name (extension ext) */
-void Pack_CheckDuplicates(const char *ext) {
-	HashTable *t = operator_new(sizeof(*t));
-	if (t) {
-		t->numSlots = 0x1c9;
-		t->slots = operator_new_array(0x1c9 * sizeof(*t->slots));
-		memset(t->slots, 0, 0x1c9 * sizeof(*t->slots));
-		t->locked = 0;
-		t->caseSensitive = 1;
-	}
-	g_PackDirLen = 2;
-	g_NameTable = t;
-	Dir_Walk("./", ext, Pack_AddFileName);
-	t = g_NameTable;
-	if (t) {
-		NameTable_Clear(t);
-		operator_delete_sized(t, sizeof(*t));
-		g_NameTable = NULL;
-	}
-}
-
 /* compiles one Python file with its time stamp through PyCompile.py */
-void Python_CompileFile(const char *path) {
+static void Python_CompileFile(const char *path) {
 	byte st[0x24];		/* struct _stat32, st_mtime at 0x1c */
 	char cmd[0x100];
 
@@ -887,7 +858,7 @@ const cAbstractFileVtbl cFile_vftable = {
 };
 
 /* the vtable of cFile2 */
-const cAbstractFileVtbl cFile2_vftable = {
+static const cAbstractFileVtbl cFile2_vftable = {
 	.Open = cFile2_Open,
 	.Exists = cFile_Exists,
 	.Close = cFile_Close,
@@ -900,7 +871,7 @@ const cAbstractFileVtbl cFile2_vftable = {
 };
 
 /* the vtable of cFilePack */
-const cAbstractFileVtbl cFilePack_vftable = {
+static const cAbstractFileVtbl cFilePack_vftable = {
 	.Open = cFilePack_Open,
 	.Exists = cFilePack_Exists,
 	.Close = cFilePack_Close,
@@ -913,9 +884,9 @@ const cAbstractFileVtbl cFilePack_vftable = {
 };
 
 cGVar GVar_PathInPackFile;
-cGVar GVar_BuildPackPrompt;
-cGVar GVar_BuildPackExclude;
-cGVar GVar_BuildPackInclude;
+static cGVar GVar_BuildPackPrompt;
+static cGVar GVar_BuildPackExclude;
+static cGVar GVar_BuildPackInclude;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_PathInPackFile, &GVar_PathInPackFile)

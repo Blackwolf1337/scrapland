@@ -36,15 +36,6 @@ static inline void FXObj_SetVtbl(void *self, const cObjElementFXVtbl *vt) {
 	((cObjElementFX *)self)->vftable = vt;
 }
 
-extern const cObjElementFXVtbl cObjElementFXHook_vftable;
-#define COBJELEMENTFXHOOK_VFTABLE (&cObjElementFXHook_vftable)
-extern const cObjElementFXVtbl cObjElementFXEMI_vftable;
-#define COBJELEMENTFXEMI_VFTABLE (&cObjElementFXEMI_vftable)
-extern const cObjElementFXVtbl cObjElementFXSonicExplosion_vftable;
-#define COBJELEMENTFXSONICEXPLOSION_VFTABLE (&cObjElementFXSonicExplosion_vftable)
-extern const cObjElementFXVtbl cObjElementFXDebrisCloud_vftable;
-#define COBJELEMENTFXDEBRISCLOUD_VFTABLE (&cObjElementFXDebrisCloud_vftable)
-
 #define FXHOOK_POINTS 10
 #define FXEMI_TRAILS 8
 #define FXEMI_CTRL 10
@@ -175,75 +166,30 @@ char *cTargetLock_GetEntity(cTargetLock *self);
 /* rva 0x1a26e0: item i of an array of pointers (count at +4, items at +8), NULL out of range */
 void *PtrArray_Get(void *self, int i);
 
-/* the engine variables */
-extern cGVar GVar_FXHookFadeTime;
-#define g_FXHookFadeTime (GVar_FXHookFadeTime.value.f)
 extern cGVar GVar_HookRange;
 #define g_HookRange (GVar_HookRange.value.f)
 extern cGVar GVar_LaserIDAmmo;
 #define g_LaserIDAmmo (GVar_LaserIDAmmo.value.i)
-extern cGVar GVar_FXHookSize;
-#define g_FXHookSize (GVar_FXHookSize.value.f)
-extern cGVar GVar_FXHookTensor;
-#define g_FXHookTensor (GVar_FXHookTensor.value.f)
-extern cGVar GVar_LaserHookSparksFile;
-#define g_LaserHookSparksFile (GVar_LaserHookSparksFile.value.s)
 extern cGVar GVar_FXSonicRadius;
 #define g_FXSonicRadius (GVar_FXSonicRadius.value.f)
 extern cGVar GVar_R_SceneDuDvRTarget;
 #define g_SceneDuDvRTarget (GVar_R_SceneDuDvRTarget.value.i)		/* R_SceneDuDvRTarget */
 
-/* cWorld: the position of the camera of the current view into out */
-vec3_t *cWorld_GetCamPos(cWorld *self, vec3_t *out);
-
-/* the hook laser: with target a curve from the weapon node over the points pulled to the line, glows at both ends and
- * sparks for the player; without target a straight line out of the weapon node */
-void cObjElementFXHook_Update(cObjElementFX *base, cDebris *debris, float dt);
-void cObjElementFXHook_StopTrails(cObjElementFXHook *self);
 void cObjElementFXHook_StartTarget(cObjElementFXHook *self, cEntity *emitter, cEntity *target, int slot);
 void cObjElementFXHook_StartPoint(cObjElementFXHook *self, cEntity *emitter, int slot);
-byte cObjElementFXHook_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys);
-void cObjElementFXHook_Start(cObjElementFX *base, cDebris *debris);
-void cObjElementFXHook_Reset(cObjElementFX *base, cDebris *debris);
 
-/* the bolts (while the missile is seen), new ones from a life of 0.8 on and the glows at the center */
-void cObjElementFXEMI_Update(cObjElementFX *base, cDebris *debris, float dt);
-byte cObjElementFXEMI_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys);
-void cObjElementFXEMI_Start(cObjElementFX *base, cDebris *debris);
-void cObjElementFXEMI_Reset(cObjElementFX *base, cDebris *debris);
 void cObjElementFXEMI_SetEntity(cObjElementFXEMI *self, cEntity *e);
 
-void cObjElementFXSonicExplosion_Update(cObjElementFX *base, cDebris *debris, float dt);
-byte cObjElementFXSonicExplosion_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys);
-void cObjElementFXSonicExplosion_Start(cObjElementFX *base, cDebris *debris);
-void cObjElementFXSonicExplosion_Reset(cObjElementFX *base, cDebris *debris);
 /* the rings and the particles of an explosion at x y z */
 void cObjElementFXSonicExplosion_Explode(cObjElementFXSonicExplosion *self, float x, float y, float z);
 
-/* the cloud around the missile (the countermeasure entity): a ring of particles that pulses, puffs of debris */
-void cObjElementFXDebrisCloud_Update(cObjElementFX *base, cDebris *debris, float dt);
-byte cObjElementFXDebrisCloud_IsAlive(cObjElementFX *base, cDebris *debris, cDebrisSys *sys);
-void cObjElementFXDebrisCloud_Start(cObjElementFX *base, cDebris *debris);
-void cObjElementFXDebrisCloud_Reset(cObjElementFX *base, cDebris *debris);
 void cObjElementFXDebrisCloud_SetEntity(cObjElementFXDebrisCloud *self, cEntity *e);
 /* four Updates with dt 0 */
 void cObjElementFXDebrisCloud_Warm(cObjElementFXDebrisCloud *self, cDebris *debris);
 
-/* the constructors and destructors (rva 0x1c9610..0x1c99c4, after World/FX/FXCharActions.cpp); the node of the
- * links of the EMI as array member */
-Nto1Node *FXCountermeasures_NodeCtor(Nto1Node *self);
 void *cObjElementFXDebrisCloud_ctor(void *self);
 void *cObjElementFXEMI_ctor(void *self);
 void *cObjElementFXHook_ctor(void *self);
 void *cObjElementFXSonicExplosion_ctor(void *self);
-void cObjElementFXDebrisCloud_dtor(void *self);
-void cObjElementFXEMI_dtor(void *self);
-void cObjElementFXHook_dtor(void *self);
-void cObjElementFXSonicExplosion_dtor(void *self);
-/* the deleting destructors */
-cObjElementFX *cObjElementFXDebrisCloud_Delete(cObjElementFX *self, byte flags);
-cObjElementFX *cObjElementFXEMI_Delete(cObjElementFX *self, byte flags);
-cObjElementFX *cObjElementFXHook_Delete(cObjElementFX *self, byte flags);
-cObjElementFX *cObjElementFXSonicExplosion_Delete(cObjElementFX *self, byte flags);
 
 #endif

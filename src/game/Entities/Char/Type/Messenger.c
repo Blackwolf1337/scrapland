@@ -11,12 +11,35 @@
 #include "scrap/modmove.h"
 #include "scrap/staticinit.h"
 
+#define g_FXMessengerAttackFile (GVar_FXMessengerAttackFile.value.s)
+#define g_FXMessengerTakeDataPackFile (GVar_FXMessengerTakeDataPackFile.value.s)
+#define g_MessengerAmmoCost (GVar_MessengerAmmoCost.value.f)
+#define g_MessengerAttackPosX (GVar_MessengerAttackPosX.value.f)
+#define g_MessengerAttackPosY (GVar_MessengerAttackPosY.value.f)
+#define g_MessengerAttackPosZ (GVar_MessengerAttackPosZ.value.f)
+#define g_MessengerShootSound (GVar_MessengerShootSound.value.s)
+#define g_MessengerShootSoundVol (GVar_MessengerShootSoundVol.value.f)
+#define g_MessengerTakeDataPackSound (GVar_MessengerTakeDataPackSound.value.s)
+#define g_MessengerTakeDataPackSoundVol (GVar_MessengerTakeDataPackSoundVol.value.f)
+#define g_MessengerTakenCallback (((cPy_Function *)&GVar_MessengerTakenCallback.func))	/* "MessengerTakenCallback" */
+static cGVarFunction GVar_MessengerTakenCallback;
+static cGVar GVar_MessengerTakeDataPackSoundVol;
+static cGVar GVar_MessengerTakeDataPackSound;
+static cGVar GVar_MessengerShootSoundVol;
+static cGVar GVar_MessengerShootSound;
+static cGVar GVar_MessengerAttackPosZ;
+static cGVar GVar_MessengerAttackPosY;
+static cGVar GVar_MessengerAttackPosX;
+static cGVar GVar_MessengerAmmoCost;
+static cGVar GVar_FXMessengerTakeDataPackFile;
+static cGVar GVar_FXMessengerAttackFile;
+
 #define ITEM_TYPE "item"
 
 /* params: the messenger. The shot: the energy, the aim (ahead, at the GearTargetName of the player or the
  * targeting of the character), the flash of the character hit (a messenger drops the data pack it carries) and the
  * lightning with its sound */
-void ChType_MessengerAttack(cAbstractFile *params) {
+static void ChType_MessengerAttack(cAbstractFile *params) {
 	char name[0x80];
 	vec3_t t1, t2, t3, ang, d, hit, p, a, off, from, to, nv, vel;
 	cEntity *target = NULL;
@@ -178,20 +201,20 @@ void ChType_MessengerTakeDataPack(cAbstractFile *params) {
 	}
 }
 
-cGVar GVar_MessengerAttackPosZ;
-cGVar GVar_MessengerAmmoCost;
-cGVar GVar_MessengerAttackPosX;
-cGVar GVar_FXMessengerAttackFile;
-cGVar GVar_MessengerTakeDataPackSound;
-cGVar GVar_FXMessengerTakeDataPackFile;
-cGVar GVar_MessengerAttackPosY;
-cGVar GVar_MessengerShootSoundVol;
-cGVar GVar_MessengerShootSound;
-cGVar GVar_MessengerTakeDataPackSoundVol;
-cGVarFunction GVar_MessengerTakenCallback;
+static cGVar GVar_MessengerAttackPosZ;
+static cGVar GVar_MessengerAmmoCost;
+static cGVar GVar_MessengerAttackPosX;
+static cGVar GVar_FXMessengerAttackFile;
+static cGVar GVar_MessengerTakeDataPackSound;
+static cGVar GVar_FXMessengerTakeDataPackFile;
+static cGVar GVar_MessengerAttackPosY;
+static cGVar GVar_MessengerShootSoundVol;
+static cGVar GVar_MessengerShootSound;
+static cGVar GVar_MessengerTakeDataPackSoundVol;
+static cGVarFunction GVar_MessengerTakenCallback;
 cGVar GVar_MessengerDataPack;
-cPy_NativeFunc NativeFunc_MessengerTakeDataPack;
-cPy_NativeFunc NativeFunc_MessengerAttack;
+static cPy_NativeFunc NativeFunc_MessengerTakeDataPack;
+static cPy_NativeFunc NativeFunc_MessengerAttack;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_MessengerAmmoCost, &GVar_MessengerAmmoCost, "MessengerAmmoCost", 0, "Messenger AmmoCost Per shoot", 0.05f)

@@ -7,6 +7,9 @@
 #include "scrap/chartype.h"
 #include "scrap/staticinit.h"
 
+#define CBANKDIRECTORLOCALLOGIC_VFTABLE (&cBankDirectorLocalLogic_vftable.base)
+static const cGenCharLocalLogicVtbl cBankDirectorLocalLogic_vftable;
+
 cBankDirectorLocalLogic *cBankDirectorLocalLogic_ctor(cBankDirectorLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
 	self->base.vftable = CBANKDIRECTORLOCALLOGIC_VFTABLE;
@@ -14,7 +17,7 @@ cBankDirectorLocalLogic *cBankDirectorLocalLogic_ctor(cBankDirectorLocalLogic *s
 	return self;
 }
 
-cLocalLogic *cBankDirectorLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static cLocalLogic *cBankDirectorLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 	cBankDirectorLocalLogic *self = (cBankDirectorLocalLogic *)elem;
 	self->base.vftable = CBANKDIRECTORLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
@@ -70,7 +73,7 @@ byte cBankDirectorLocalLogic_LoseTarget(cLocalLogic *elem) {
 }
 
 /* vf30: the next target when the search time ran out */
-cEntity *cBankDirectorLocalLogic_FindTarget(cLocalLogic *elem) {
+static cEntity *cBankDirectorLocalLogic_FindTarget(cLocalLogic *elem) {
 	cBankDirectorLocalLogic *self = (cBankDirectorLocalLogic *)elem;
 	if (!(0.0f > self->searchTime)) {
 		return NULL;
@@ -106,7 +109,7 @@ void cBankDirectorLocalLogic_Update(cLocalLogic *base, float dt) {
 }
 
 /* the vtable of cBankDirectorLocalLogic */
-const cGenCharLocalLogicVtbl cBankDirectorLocalLogic_vftable = {
+static const cGenCharLocalLogicVtbl cBankDirectorLocalLogic_vftable = {
 	.base.base.Delete = cBankDirectorLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.Vf02 = cLocalLogic_Vf02True,

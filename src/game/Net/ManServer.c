@@ -16,6 +16,14 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
+#define g_ClientNetManagerVftable (&cClientNetManager_vftable)
+#define g_NetMaxResourcesSend (GVar_NetMaxResourcesSend.value.i)
+#define g_ServerRemotePassword (((cString *)&GVar_ServerRemotePassword.value))
+#define g_OnClientModify (((cPy_Function *)&GVar_OnClientModify.func))
+static const cUserNetManagerVtbl cClientNetManager_vftable;
+static cGVar GVar_ServerRemotePassword;
+static cGVarFunction GVar_OnClientModify;
+static cGVar GVar_NetMaxResourcesSend;
 
 static void ClientNet_ClearConfig(cClientNetManager *self) {
 	self->usrName[0] = 0;
@@ -35,6 +43,7 @@ static void *ClientNet_Begin(int size) {
 	return buf;
 }
 
+static void cClientNetManager_InitClient(cClientNetManager *self);
 cClientNetManager *cClientNetManager_ctor(cClientNetManager *self, cNetClient *client, int slot) {
 	cUserNetManager_ctor(&self->base, client, slot);
 	self->base.vftable = g_ClientNetManagerVftable;
@@ -45,7 +54,7 @@ cClientNetManager *cClientNetManager_ctor(cClientNetManager *self, cNetClient *c
 	return self;
 }
 
-void cClientNetManager_dtor(cClientNetManager *self) {
+static void cClientNetManager_dtor(cClientNetManager *self) {
 	self->base.vftable = g_ClientNetManagerVftable;
 	cEntity *e = World_FindEntity(self->name);
 	cPy_Function_AddParamS(g_OnClientExit, self->name);
@@ -65,7 +74,7 @@ void cClientNetManager_dtor(cClientNetManager *self) {
 	cUserNetManager_dtor(&self->base);
 }
 
-cUserNetManager *cClientNetManager_Delete(cUserNetManager *base, byte flags) {
+static cUserNetManager *cClientNetManager_Delete(cUserNetManager *base, byte flags) {
 	cClientNetManager *self = (cClientNetManager *)base;
 	cClientNetManager_dtor(self);
 	if (flags & 1) {
@@ -97,7 +106,8 @@ static void ClientNet_ReadHello(cClientNetManager *self) {
 	cFileMem_Close(&g_NetMsg.base);
 }
 
-void cClientNetManager_OnReceive(cUserNetManager *elem, void *data, int size, void *ctl, int ctlSize) {
+static void cClientNetManager_SendUsers(cClientNetManager *self, byte local);
+static void cClientNetManager_OnReceive(cUserNetManager *elem, void *data, int size, void *ctl, int ctlSize) {
 	cClientNetManager *self = (cClientNetManager *)elem;
 	char s[0x80];
 	byte kind;
@@ -179,7 +189,9 @@ void cClientNetManager_OnReceive(cUserNetManager *elem, void *data, int size, vo
 	}
 }
 
-void cClientNetManager_InitClient(cClientNetManager *self) {
+/* creates the ship "net<slot>", sends the level and the resources */
+static void cClientNetManager_SendResources(cClientNetManager *self);
+static void cClientNetManager_InitClient(cClientNetManager *self) {
 	self->fullSends = 0;
 	crt_sprintf(self->name, "net%d", self->base.slot);
 	cEntity *e = World_FindEntity(self->name);
@@ -221,7 +233,7 @@ void ManServer_SendUsrData(int slot, byte toAll) {
 }
 
 /* runs of resource names, NetMaxResourcesSend at most and gaps of up to 16 unused numbers in one message */
-void cClientNetManager_SendResources(cClientNetManager *self) {
+static void cClientNetManager_SendResources(cClientNetManager *self) {
 	void *buf = ClientNet_Begin(24000);
 	int i = 0;
 
@@ -268,10 +280,10 @@ static byte ClientNet_PingByte(cNetClient *c) {
 	return (byte)v;
 }
 
-const float g_NetMaxDist2 = 1.21e+10f;
+static const float g_NetMaxDist2 = 1.21e+10f;
 vec3_t g_NetOrigin;
 
-void cClientNetManager_Send(cUserNetManager *elem, uint32_t time) {
+static void cClientNetManager_Send(cUserNetManager *elem, uint32_t time) {
 	cClientNetManager *self = (cClientNetManager *)elem;
 	byte b[2];
 	uint32_t v;
@@ -392,7 +404,8 @@ void cClientNetManager_Send(cUserNetManager *elem, uint32_t time) {
 	cStaticBuffer_Unlock(g_NetStaticBuffer);
 }
 
-void cClientNetManager_SendUsers(cClientNetManager *self, byte local) {
+/* the descriptors of all players to this client (unless local), then this one's to the others */
+static void cClientNetManager_SendUsers(cClientNetManager *self, byte local) {
 	void *buf = ClientNet_Begin(24000);
 	cEntity *e = cWorld_GetFirstEntity(g_pWorld);
 
@@ -410,7 +423,7 @@ void cClientNetManager_SendUsers(cClientNetManager *self, byte local) {
 	ManServer_SendUsrData(self->base.slot, local);
 }
 
-void cClientNetManager_SetLocalData(cUserNetManager *elem) {
+static void cClientNetManager_SetLocalData(cUserNetManager *elem) {
 	cClientNetManager *self = (cClientNetManager *)elem;
 	cEntity *e = World_FindEntity(self->name);
 
@@ -429,16 +442,17 @@ void cClientNetManager_SetLocalData(cUserNetManager *elem) {
 }
 
 /* the vtable of cClientNetManager */
-const cUserNetManagerVtbl cClientNetManager_vftable = {
+static const cUserNetManagerVtbl cClientNetManager_vftable = {
 	.Delete = cClientNetManager_Delete,
 	.OnReceive = cClientNetManager_OnReceive,
 	.Send = cClientNetManager_Send,
 	.SetLocalData = cClientNetManager_SetLocalData,
 };
 
-cGVar GVar_NetMaxResourcesSend;
-cGVarFunction GVar_OnClientModify;
-cGVar GVar_ServerRemotePassword;
+/* the engine variables (gvars) of Net/: values and their flags byte (bit 0: scripts may not write) */
+static cGVar GVar_NetMaxResourcesSend;
+static cGVarFunction GVar_OnClientModify;
+static cGVar GVar_ServerRemotePassword;
 cGVarFunction GVar_OnClientExit;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

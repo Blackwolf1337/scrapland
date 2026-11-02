@@ -15,11 +15,27 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
+#define g_FXSceneBeatingFile (GVar_FXSceneBeatPickusFile.value.s)
+#define g_FXSceneBillArrivesAFile (GVar_FXSceneBillArrives_AFile.value.s)
+#define g_FXSceneDecontaminationFile (GVar_FXSceneDecontaminationFile.value.s)	/* also BillArrives_C */
+#define g_FXSceneBishopsFile (GVar_FXSceneBishopsFile.value.s)
+#define g_FXSceneEnterMatrixFile (GVar_FXSceneEnterMatrixFile.value.s)
+#define g_FXSceneHumanCDFile (GVar_FXSceneHumanCDFile.value.s)
+#define g_FXSceneTheEndBFile (GVar_FXSceneTheEndBFile.value.s)
+#define g_FXSceneYakuzziFile (GVar_FXSceneYakuzziFile.value.s)
+static cGVar GVar_FXSceneYakuzziFile;
+static cGVar GVar_FXSceneTheEndBFile;
+static cGVar GVar_FXSceneHumanCDFile;
+static cGVar GVar_FXSceneEnterMatrixFile;
+static cGVar GVar_FXSceneDecontaminationFile;
+static cGVar GVar_FXSceneBishopsFile;
+static cGVar GVar_FXSceneBillArrives_AFile;
+static cGVar GVar_FXSceneBeatPickusFile;
+
 /* the color ramps (9 colors) of the particles */
 #define FXS_RAMP(ramps, i) ((ramps) + (i) * 9)
 #define FXS_RAMP_HUMANCD 0x430c48	/* [2] */
 #define FXS_RAMP_YAKUZZI 0x430dd8	/* [2] */
-
 
 static inline float FXS_Delta(void) {
 	return cTimer_GetDelta(&g_pWorld->timer);
@@ -92,6 +108,15 @@ static cDebris *FXS_Drop(const char *file, float life) {
 	return d;
 }
 
+static void cObjElementFXSceneBeatPickus_SetEntity(cObjElementFXSceneBeatPickus *self, cEntity *e);
+static void cObjElementFXSceneBillArrives_A_SetEntity(cObjElementFXSceneBillArrives_A *self, cEntity *e);
+static void cObjElementFXSceneBishops_SetEntity(cObjElementFXSceneBishops *self, cEntity *e);
+static void cObjElementFXSceneDecontamination_SetEntity(cObjElementFXSceneDecontamination *self, cEntity *e);
+static void cObjElementFXSceneDecontamination_SetNames(cObjElementFXSceneDecontamination *self, const char *target, const char *action);
+static void cObjElementFXSceneEnterMatrix_SetEntity(cObjElementFXSceneEnterMatrix *self, cEntity *e);
+static void cObjElementFXSceneHumanCD_SetEntity(cObjElementFXSceneHumanCD *self, cEntity *e);
+static void cObjElementFXSceneTheEndB_SetEntity(cObjElementFXSceneTheEndB *self, cEntity *e);
+static void cObjElementFXSceneYakuzzi_SetEntity(cObjElementFXSceneYakuzzi *self, cEntity *e);
 void FXScene_Create(cEntity *e, const char *model) {
 	cDebris *d;
 
@@ -212,40 +237,42 @@ void FXScene_Create(cEntity *e, const char *model) {
 
 /* SetEntity */
 
-void cObjElementFXSceneBeatPickus_SetEntity(cObjElementFXSceneBeatPickus *self, cEntity *e) {
+/* the entity the element follows: an entity with life with a model (CHECKs) */
+static void cObjElementFXSceneBeatPickus_SetEntity(cObjElementFXSceneBeatPickus *self, cEntity *e) {
 	FXS_SetEntity(&self->ent, e);
 }
 
-void cObjElementFXSceneBillArrives_A_SetEntity(cObjElementFXSceneBillArrives_A *self, cEntity *e) {
+static void cObjElementFXSceneBillArrives_A_SetEntity(cObjElementFXSceneBillArrives_A *self, cEntity *e) {
 	FXS_SetEntity(&self->ent, e);
 }
 
-void cObjElementFXSceneBishops_SetEntity(cObjElementFXSceneBishops *self, cEntity *e) {
+static void cObjElementFXSceneBishops_SetEntity(cObjElementFXSceneBishops *self, cEntity *e) {
 	FXS_SetEntity(&self->ent, e);
 }
 
-void cObjElementFXSceneDecontamination_SetEntity(cObjElementFXSceneDecontamination *self, cEntity *e) {
+static void cObjElementFXSceneDecontamination_SetEntity(cObjElementFXSceneDecontamination *self, cEntity *e) {
 	FXS_SetEntity(&self->ent, e);
 }
 
-void cObjElementFXSceneEnterMatrix_SetEntity(cObjElementFXSceneEnterMatrix *self, cEntity *e) {
+static void cObjElementFXSceneEnterMatrix_SetEntity(cObjElementFXSceneEnterMatrix *self, cEntity *e) {
 	FXS_SetEntity(&self->ent, e);
 }
 
 cFXElementsMentalControllerMainFX *g_MentalMainFX;
 
-void cObjElementFXSceneHumanCD_SetEntity(cObjElementFXSceneHumanCD *self, cEntity *e) {
+/* also the main mental controller effect to its start (scale 1, no last controller) */
+static void cObjElementFXSceneHumanCD_SetEntity(cObjElementFXSceneHumanCD *self, cEntity *e) {
 	FXS_SetEntity(&self->ent, e);
 	CHECK(g_MentalMainFX);
 	g_MentalMainFX->last = -2;
 	g_MentalMainFX->scale = 1.0f;
 }
 
-void cObjElementFXSceneTheEndB_SetEntity(cObjElementFXSceneTheEndB *self, cEntity *e) {
+static void cObjElementFXSceneTheEndB_SetEntity(cObjElementFXSceneTheEndB *self, cEntity *e) {
 	FXS_SetEntity(&self->ent, e);
 }
 
-void cObjElementFXSceneYakuzzi_SetEntity(cObjElementFXSceneYakuzzi *self, cEntity *e) {
+static void cObjElementFXSceneYakuzzi_SetEntity(cObjElementFXSceneYakuzzi *self, cEntity *e) {
 	FXS_SetEntity(&self->ent, e);
 }
 
@@ -444,7 +471,7 @@ void cObjElementFXSceneYakuzzi_Reset(cObjElementFX *base, cDebris *arg) {
 
 /* Update */
 
-uint32_t FXS_HumanCDSparksRamps[18] = {
+static uint32_t FXS_HumanCDSparksRamps[18] = {
 	0x40ffffff, 0x4bffffff, 0x60ffffff, 0x70ffffff, 0x80ffffff, 0xa4ffffff, 0xc0808080, 0xff000000, 0xff000000,
 	0x40fff0e6, 0x4bffc0c0, 0x60ffc0c0, 0x70ffc0c0, 0x80ffc0c0, 0xa4ffc0c0, 0xc0805c40, 0xff000000, 0xff000000,
 };
@@ -603,7 +630,7 @@ void cObjElementFXSceneTheEndB_Update(cObjElementFX *base, cDebris *d, float dt)
 	self->tPrev = self->t;
 }
 
-uint32_t cObjElementFXSceneYakuzzi_UpdateRamps[18] = {
+static uint32_t cObjElementFXSceneYakuzzi_UpdateRamps[18] = {
 	0xff000000, 0xaa3c2c1c, 0x966e503b, 0x966e503b, 0x966e503b, 0xaa6e503b, 0xdc3c2c26, 0xff000000, 0xff000000,
 	0xff000000, 0xbe322b1e, 0xa05c5248, 0xa05c5248, 0xa05c5248, 0xb44b4637, 0xdc221e16, 0xff000000, 0xff000000,
 };
@@ -677,9 +704,9 @@ void cObjElementFXSceneYakuzzi_Update(cObjElementFX *base, cDebris *d, float dt)
 #define FXBISHOPS_VERTS 0x100
 
 /* a glow and a data codec particle at vertex v of the detritus, the codec one up at y0 */
-uint32_t cObjElementFXSceneBishops_UpdateRamp[9] = { 0x405aff5a, 0x4b4bff4b, 0x603ce63c, 0x7023ab23, 0x80264b26, 0xa40d380d, 0xc0051e05, 0xff000000, 0xff000000 };
+static uint32_t cObjElementFXSceneBishops_UpdateRamp[9] = { 0x405aff5a, 0x4b4bff4b, 0x603ce63c, 0x7023ab23, 0x80264b26, 0xa40d380d, 0xc0051e05, 0xff000000, 0xff000000 };
 
-uint32_t cObjElementFXSceneBishops_UpdateTable[19] = {
+static uint32_t cObjElementFXSceneBishops_UpdateTable[19] = {
 	0x4080ff80, 0x4b6eff6e, 0x605ae65a, 0x703cab3c, 0x80234b23, 0xa40a380a, 0xc0051e05, 0xff000000, 0xff000000,
 	0x4040ff40, 0x4b32ff32, 0x6028e628, 0x701eab1e, 0x80144b14, 0xa40a380a, 0xc0051e05, 0xff000000, 0xff000000,
 };
@@ -1083,7 +1110,7 @@ static inline void FXS_Sprites(CGameParticles *sp, byte ini, byte end) {
 	sp->spriteEnd = end;
 }
 
-uint32_t cObjElementFXSceneBeatPickus_UpdateRamps[18] = {
+static uint32_t cObjElementFXSceneBeatPickus_UpdateRamps[18] = {
 	0xff000000, 0xbe404040, 0xa0696969, 0xa0696969, 0xa0696969, 0xbe555555, 0xdc303030, 0xff000000, 0xff000000,
 	0xff000000, 0xbe363636, 0xa05f5f5f, 0xa05f5f5f, 0xa05f5f5f, 0xbe4b4b4b, 0xdc262626, 0xff000000, 0xff000000,
 };
@@ -1134,7 +1161,7 @@ static void FXS_BeatDust(cObjElementFXSceneBeatPickus *self) {
 	}
 }
 
-uint32_t cObjElementFXSceneBeatPickus_UpdateRamps2[18] = {
+static uint32_t cObjElementFXSceneBeatPickus_UpdateRamps2[18] = {
 	0x80fff696, 0x20ffb45a, 0x40e68211, 0x80ab5e0d, 0x964c4408, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 	0x80ffebd2, 0x20ffd75a, 0x40e6c811, 0x80ab8c0d, 0x964c3a08, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 };
@@ -1227,7 +1254,7 @@ static const vec3_t *FXS_BeatTurn(vec3_t *out, const vec3_t *dir, double range, 
 	return Vec3_Rotate(out, dir, &ang);
 }
 
-uint32_t cObjElementFXSceneBeatPickus_UpdateRamps3[18] = {
+static uint32_t cObjElementFXSceneBeatPickus_UpdateRamps3[18] = {
 	0x80fff696, 0x20ffb45a, 0x40e68211, 0x80ab5e0d, 0x964c4408, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 	0x80ffebd2, 0x20ffd75a, 0x40e6c811, 0x80ab8c0d, 0x964c3a08, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 };
@@ -1281,9 +1308,9 @@ static void FXS_BeatSparks(cObjElementFXSceneBeatPickus *self) {
 }
 
 /* a hit: two flashes and 8 to 13 sparks falling down */
-uint32_t cObjElementFXSceneBeatPickus_UpdateRamp[9] = { 0x10f5f5ff, 0x20e1e1ff, 0x30b4b4e6, 0x409b9bbe, 0x607d7d96, 0x805f5f78, 0xc055556e, 0xff282832, 0xff000000 };
+static uint32_t cObjElementFXSceneBeatPickus_UpdateRamp[9] = { 0x10f5f5ff, 0x20e1e1ff, 0x30b4b4e6, 0x409b9bbe, 0x607d7d96, 0x805f5f78, 0xc055556e, 0xff282832, 0xff000000 };
 
-uint32_t cObjElementFXSceneBeatPickus_UpdateTable[19] = {
+static uint32_t cObjElementFXSceneBeatPickus_UpdateTable[19] = {
 	0x10d2d2ff, 0x209696ff, 0x306464e1, 0x403232b4, 0x601e1e55, 0x800a0a2d, 0xc0050519, 0xff00000a, 0xff000000,
 	0x10d2d2ff, 0x20b4b4ff, 0x309393e6, 0x405353ab, 0x602d2d4c, 0x80141438, 0xc005051e, 0xff00000a, 0xff000000,
 };
@@ -1543,7 +1570,7 @@ static void FXS_BillJetsFlame(cObjElementFXSceneBillArrives_A *self, void *efx) 
 	}
 }
 
-uint32_t FXS_BILL_JETA_RAMPS[18] = {
+static uint32_t FXS_BILL_JETA_RAMPS[18] = {
 	0xc0fff03c, 0xa4ffbe28, 0xafde8214, 0xb9c04b0c, 0xbea41e06, 0xdc881905, 0xf5801404, 0xff000000, 0xff000000,
 	0xc0ff5a0a, 0xa4ff3c09, 0xafde3208, 0xb9c02807, 0xbea41e06, 0xdc881905, 0xf5801404, 0xff000000, 0xff000000,
 };
@@ -1614,7 +1641,7 @@ static void FXS_BillJetsBlast(void *efx) {
 	}
 }
 
-uint32_t cObjElementFXSceneBillArrives_A_UpdateRamps2[18] = {
+static uint32_t cObjElementFXSceneBillArrives_A_UpdateRamps2[18] = {
 	0xff000000, 0xeb202020, 0xdc303030, 0xdc303030, 0xdc303030, 0xdc303030, 0xeb262626, 0xff000000, 0xff000000,
 	0xff000000, 0xeb181818, 0xdc202020, 0xdc202020, 0xdc202020, 0xdc202020, 0xeb1a1a1a, 0xff000000, 0xff000000,
 };
@@ -1667,7 +1694,7 @@ static const vec3_t *FXS_RingDir(vec3_t *out, float f, double jitRange, double j
 	return Vec3_Rotate(out, &fxs_xAxis, &ang);
 }
 
-uint32_t cObjElementFXSceneBillArrives_A_UpdateRamps[18] = {
+static uint32_t cObjElementFXSceneBillArrives_A_UpdateRamps[18] = {
 	0xff000000, 0xbe404040, 0xa0696969, 0xa0696969, 0xa0696969, 0xbe555555, 0xdc303030, 0xff000000, 0xff000000,
 	0xff000000, 0xbe363636, 0xa05f5f5f, 0xa05f5f5f, 0xa05f5f5f, 0xbe4b4b4b, 0xdc262626, 0xff000000, 0xff000000,
 };
@@ -2098,7 +2125,7 @@ static void FXS_MatrixRays1(cObjElementFXSceneEnterMatrix *self, float delta) {
 	}
 }
 
-vec3_t cObjElementFXSceneEnterMatrix_UpdatePos[32] = {
+static vec3_t cObjElementFXSceneEnterMatrix_UpdatePos[32] = {
 	{ .x = 65697.5f, .y = 22634.8f, .z = -3495.2f },
 	{ .x = 65689.1f, .y = 22790.0f, .z = -17752.5f },
 	{ .x = 68660.5f, .y = 67162.7f, .z = -6468.6f },
@@ -2318,24 +2345,23 @@ void cObjElementFXSceneEnterMatrix_Update(cObjElementFX *base, cDebris *d, float
 	self->tPrev = self->t;
 }
 
-void cObjElementFXSceneDecontamination_SetNames(cObjElementFXSceneDecontamination *self,
+/* at the start of the FXVehicle.cpp code: the target entity name and its action of the
+ * rays (31 characters at most), the height */
+static void cObjElementFXSceneDecontamination_SetNames(cObjElementFXSceneDecontamination *self,
 	const char *target, const char *action) {
 	Str_Copy(self->targetName, target, sizeof(self->targetName));
 	Str_Copy(self->action, action, sizeof(self->action));
 }
 
-void cObjElementFXSceneDecontamination_SetFC(cObjElementFXSceneDecontamination *self, float v) {
-	self->height = v;
-}
-
-cGVar GVar_FXSceneHumanCDFile;
-cGVar GVar_FXSceneEnterMatrixFile;
-cGVar GVar_FXSceneYakuzziFile;
-cGVar GVar_FXSceneDecontaminationFile;
-cGVar GVar_FXSceneBillArrives_AFile;
-cGVar GVar_FXSceneBeatPickusFile;
-cGVar GVar_FXSceneTheEndBFile;
-cGVar GVar_FXSceneBishopsFile;
+static cGVar GVar_FXSceneHumanCDFile;
+static cGVar GVar_FXSceneEnterMatrixFile;
+static cGVar GVar_FXSceneYakuzziFile;
+static cGVar GVar_FXSceneDecontaminationFile;
+static cGVar GVar_FXSceneBillArrives_AFile;
+/* the engine variables (Gvars): the debris system files of the scenes */
+static cGVar GVar_FXSceneBeatPickusFile;
+static cGVar GVar_FXSceneTheEndBFile;
+static cGVar GVar_FXSceneBishopsFile;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_FXSceneDecontaminationFile, &GVar_FXSceneDecontaminationFile)

@@ -19,7 +19,6 @@
 #define VM_MOTORS 4
 #define VM_SIDES 2
 
-
 typedef struct cVehicleMotor cVehicleMotor;
 typedef struct cVehicleMotors cVehicleMotors;
 
@@ -80,8 +79,6 @@ typedef struct cVehicleMotorsVtbl {
 	byte(*VarS)(struct cVehicleMotors *self, const char *name, char **s, int set);		/* 0x08 */
 	byte(*VarV)(struct cVehicleMotors *self, const char *name, double *x, double *y, double *z, int set); /* 0x0c */
 } cVehicleMotorsVtbl;
-extern const cVehicleMotorsVtbl cVehicleMotors_vftable;
-#define CVEHICLEMOTORS_VFTABLE (&cVehicleMotors_vftable)
 
 struct cVehicleMotors {
 	const cVehicleMotorsVtbl *vftable;	/* 0x00 */
@@ -99,108 +96,33 @@ struct cVehicleMotors {
 /* the vehicle fields the motors read */
 #define VM_Team(e) ((void *)&WLife(e)->arrow)	/* for cArrowIndicator_GetColor */
 
-/* the emit positions of the Calima particles of all motors (8) */
-extern vec3_t g_HazePos[8];
-
-/* the engine variables */
-extern cGVar GVar_EnginePathFmt;
-#define g_EnginePathFmt (GVar_EnginePathFmt.value.s)		/* EnginePathFmt */
-extern cGVar GVar_FXEngineTrailOffset;
-#define g_FXEngineTrailOffset (GVar_FXEngineTrailOffset.value.f)
-extern cGVar GVar_FXVehicleDeathTrailFile;
-#define g_FXVehicleDeathTrailFile (GVar_FXVehicleDeathTrailFile.value.s)
-extern cGVar GVar_FXMotorSmokeFile;
-#define g_FXMotorSmokeFile (GVar_FXMotorSmokeFile.value.s)
-extern cGVar GVar_FXMotorHazeOffset;
-#define g_FXMotorHazeOffset (GVar_FXMotorHazeOffset.value.f)
-extern cGVar GVar_FXEngineTrailHideTime;
-#define g_FXEngineTrailHideTime (GVar_FXEngineTrailHideTime.value.f)
-extern cGVar GVar_FXEngineTrailSize;
-#define g_FXEngineTrailSize (GVar_FXEngineTrailSize.value.f)
 extern cGVar GVar_FXEngineGlowDistFadeMid;
 #define g_FXEngineGlowDistFadeMid (GVar_FXEngineGlowDistFadeMid.value.f)
-extern cGVar GVar_FXEngineTrailDist;
-#define g_FXEngineTrailDist (GVar_FXEngineTrailDist.value.f)
-extern cGVar GVar_FXEngineGlowSizeAtt;
-#define g_FXEngineGlowSizeAtt (GVar_FXEngineGlowSizeAtt.value.f)
-extern cGVar GVar_FXMotorHaze;
-#define g_FXMotorHaze (GVar_FXMotorHaze.value.i)
-extern cGVar GVar_FXMotorHazeFile;
-#define g_FXMotorHazeFile (GVar_FXMotorHazeFile.value.s)
 extern cGVar GVar_FXEngineGlowDistFadeMult;
 #define g_FXEngineGlowDistFadeMult (GVar_FXEngineGlowDistFadeMult.value.f)
-extern cGVar GVar_FXEngineGlowDistFadeFrom;
-#define g_FXEngineGlowDistFadeFrom (GVar_FXEngineGlowDistFadeFrom.value.f)
 extern cGVar GVar_FXEngineGlowDistFadeTo;
 #define g_FXEngineGlowDistFadeTo (GVar_FXEngineGlowDistFadeTo.value.f)
-extern cGVar GVar_FXEngineBirthRate;
-#define g_FXEngineBirthRate (GVar_FXEngineBirthRate.value.i)	/* of the exhaust at thrust 0, 100 at full thrust */
-extern cGVar GVar_FXEngineGlowSize;
-#define g_FXEngineGlowSize (GVar_FXEngineGlowSize.value.f)
-extern cGVar GVar_FXEngineGlowSizeMax;
-#define g_FXEngineGlowSizeMax (GVar_FXEngineGlowSizeMax.value.f)
-extern cGVar GVar_FXEngineTrailDistSpeedFactor;
-#define g_FXEngineTrailDistSpeedFactor (GVar_FXEngineTrailDistSpeedFactor.value.f)
 
-/* VehicleEntity.cpp */
-cVehicleMotor *cVehicleMotor_ctor(cVehicleMotor *self);
-void cVehicleMotor_dtor(cVehicleMotor *self);
 /* rva 0xf6b20 (Entities/ObjEntity range): the trail color of the team at +0x74 of the team info (0..3, else
  * white) */
 
 /* VehicleMotors.cpp */
 void cVehicleMotors_Update(cVehicleMotors *self);
-/* the models disabled, the nodes and the animations off, the effects cleared */
-void cVehicleMotor_Reset(cVehicleMotor *self);
 void cVehicleMotors_Reset(cVehicleMotors *self);
 void cVehicleMotors_ClearEffects(cVehicleMotors *self);
 void cVehicleMotors_InitEffects(cVehicleMotors *self);
-byte cVehicleMotors_VarF(struct cVehicleMotors *base, const char *name, double *v, int set);
-/* the position and the angles (radians) of the node of motor, side, in the ship model */
-byte cVehicleMotors_GetExhaust(cVehicleMotors *self, uint32_t motor, uint32_t side, vec3_t *pos,
-	vec3_t *ang);
-/* the same for the slot DC_Engine<A + motor>_0<1 + side> */
-byte cVehicleMotors_GetSlot(cVehicleMotors *self, uint32_t motor, uint32_t side, vec3_t *pos,
-	vec3_t *ang);
 /* the file of motor ("" for none), the number of its nodes into count */
 const char *cVehicleMotors_GetMotorName(cVehicleMotors *self, uint32_t motor, int *count);
-/* the slots DC_Engine<A + motor>_01, _02 of the ship model (0..2) */
-int cVehicleMotors_NumSlots(cVehicleMotors *self, byte motor);
 cEntity *cVehicleMotors_GetOwner(cVehicleMotors *self);
-byte cVehicleMotors_VarI(struct cVehicleMotors *base, const char *name, int *v, int set);
-void cVehicleMotor_Render(cVehicleMotor *self);
 void cVehicleMotors_Render(cVehicleMotors *self);
-void cVehicleMotor_SetEnabled(cVehicleMotor *self, byte on);
 void cVehicleMotors_SetEnabled(cVehicleMotors *self, byte on);
-void cVehicleMotors_StartAnimF(cVehicleMotors *self, uint32_t motor, const char *anim);
-void cVehicleMotors_StartAnimM(cVehicleMotors *self, uint32_t motor, const char *anim);
-/* the models of file at the nodes of motor kind motor of owner; the number of nodes */
-int cVehicleMotor_Load(cVehicleMotor *self, cEntity *owner, byte motor, const char *file,
-	const vec3_t *scale);
 int cVehicleMotors_SetMotor(cVehicleMotors *self, uint32_t motor, const char *file, float sx, float sy,
 	float sz);
-/* the animation anim (EnginePathFmt of the motor file) of channel 0, once */
-void cVehicleMotor_StartAnimF(cVehicleMotor *self, const char *anim);
-/* channel 0 at k (-1..1) of its length */
-void cVehicleMotor_SetAnimF(cVehicleMotor *self, float k);
-/* the animation of channel 1, looped by cVehicleMotor_UpdateAnimM */
-void cVehicleMotor_StartAnimM(cVehicleMotor *self, const char *anim);
-void cVehicleMotor_UpdateAnimM(cVehicleMotor *self, float dt);
 void cVehicleMotors_SetOwner(cVehicleMotors *self, cEntity *owner);
-void cVehicleMotor_SetEffect(cVehicleMotor *self, uint32_t fx);
 void cVehicleMotors_SetEffect(cVehicleMotors *self, uint32_t fx);
-void cVehicleMotor_SetEffectParam(cVehicleMotor *self, int i, float v);
 void cVehicleMotors_SetEffectParam(cVehicleMotors *self, int i, float v);
-byte cVehicleMotors_VarS(struct cVehicleMotors *base, const char *name, char **v, int set);
-byte cVehicleMotors_VarV(struct cVehicleMotors *base, const char *name, double *x, double *y, double *z, int set);
-cVehicleMotorsEffects *cVehicleMotorsEffects_ctor(cVehicleMotorsEffects *self);
-void cVehicleMotorsEffects_dtor(cVehicleMotorsEffects *self);
-vec3_t *Vec3_Assign(vec3_t *self, const vec3_t *v);
-/* the particles and trails freed, the nodes and owners cleared */
-void cVehicleMotorsEffects_Clear(cVehicleMotorsEffects *self);
 /* the particles off; a trail of a dead ship goes on as a death trail debris */
 void cVehicleMotorsEffects_Stop(cVehicleMotorsEffects *self);
-void cVehicleMotorsEffects_HideTrails(cVehicleMotorsEffects *self);
 /* the model of the nodes of side */
 CGameModel *cVehicleMotorsEffects_GetModel(cVehicleMotorsEffects *self, int side);
 

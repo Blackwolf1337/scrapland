@@ -84,7 +84,6 @@ extern VkCore vk;
 int Vk_Init(void);
 /* depth formats: whether one has stencil, whether the GPU renders into it */
 int Vk_HasStencil(VkFormat f);
-int Vk_IsDepth(VkFormat f);
 int Vk_DepthSupported(VkFormat f);
 /* the properties of the GPU Vk_CreateDevice will take (after Vk_Init); 0 when there is none */
 int Vk_GpuProperties(VkPhysicalDeviceProperties *out);
@@ -102,8 +101,6 @@ int Vk_QueuePresent(uint32_t index);
 /* submits what is recorded and waits until the GPU is done (for a readback) */
 void Vk_Flush(void);
 
-/* memory and objects */
-uint32_t Vk_MemoryType(uint32_t bits, VkMemoryPropertyFlags flags);
 int Vk_CreateBuffer(VkBuf *b, VkDeviceSize size, VkBufferUsageFlags usage, int hostVisible);
 void Vk_DestroyBuffer(VkBuf *b);
 int Vk_CreateImage(VkImg *im, VkFormat format, uint32_t w, uint32_t h, uint32_t levels, VkImageUsageFlags usage,

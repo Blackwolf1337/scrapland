@@ -12,6 +12,15 @@
 #include "scrap/walkcharentity.h"
 #include "scrap/staticinit.h"
 
+#define CAIGEAR_VFTABLE (&cAIGear_vftable)
+#define g_ShootGearAI (GVar_ShootGearAI.value.i)
+#define g_ShootGearAIDef (GVar_ShootGearAI.def.i)
+#define g_OffsetAngShootGearAI (GVar_OffsetAngShootGearAI.value.f)
+#define g_OffsetAngShootGearAIDef (GVar_OffsetAngShootGearAI.def.f)
+static const cAICharVtbl cAIGear_vftable;
+static cGVar GVar_ShootGearAI;
+static cGVar GVar_OffsetAngShootGearAI;
+
 #define CAIGEAR_SIZE sizeof(cAIGear)
 #define GEAR_BLOCK_TIME 7.5f		/* the way to the target is tested again after it */
 
@@ -28,7 +37,8 @@ void *cAIGear_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAI *cAIGear_Delete(cAI *base, byte flags) {
+/* AIGear.c */
+static cAI *cAIGear_Delete(cAI *base, byte flags) {
 	cAIChar *self = (cAIChar *)base;
 	self->vftable = CAIGEAR_VFTABLE;
 	cAIChar_dtor(self);
@@ -38,7 +48,8 @@ cAI *cAIGear_Delete(cAI *base, byte flags) {
 	return base;
 }
 
-void cAIGear_UpdateAction(cAI *elem) {
+/* vf65: blocked by a paused AI it ran into (not the gate keeper, Sebastian): the action button */
+static void cAIGear_UpdateAction(cAI *elem) {
 	cAIGear *self = (cAIGear *)elem;
 	cAIChar *c = &self->base;
 
@@ -58,7 +69,7 @@ void cAIGear_UpdateAction(cAI *elem) {
 	}
 }
 
-void cAIGear_CheckActDist(cAI *elem) {
+static void cAIGear_CheckActDist(cAI *elem) {
 	cAIGear *self = (cAIGear *)elem;
 	cAIChar *c = &self->base;
 	float f = c->standTime;
@@ -115,7 +126,7 @@ void cAIGear_CheckActDist(cAI *elem) {
 	c->ctrl->act = 1;
 }
 
-void cAIGear_SetDists(cAI *elem) {
+static void cAIGear_SetDists(cAI *elem) {
 	cAIGear *self = (cAIGear *)elem;
 	cAIChar *c = &self->base;
 
@@ -134,7 +145,7 @@ void cAIGear_SetDists(cAI *elem) {
 	c->chaseNear = 400.0f;
 }
 
-void cAIGear_SetShoot(cAI *elem) {
+static void cAIGear_SetShoot(cAI *elem) {
 	cAIGear *self = (cAIGear *)elem;
 	cEntity *t = self->base.base.target.target;
 
@@ -153,7 +164,7 @@ byte cAIGear_IsBlocked(cAIGear *self) {
 }
 
 /* the vtable of cAIGear */
-const cAICharVtbl cAIGear_vftable = {
+static const cAICharVtbl cAIGear_vftable = {
 	.base.base.Delete = cAIGear_Delete,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
@@ -255,8 +266,9 @@ const cAICharVtbl cAIGear_vftable = {
 	.Facing = cAIChar_Facing,
 };
 
-cGVar GVar_ShootGearAI;
-cGVar GVar_OffsetAngShootGearAI;
+/* the same pairs of the gear */
+static cGVar GVar_ShootGearAI;
+static cGVar GVar_OffsetAngShootGearAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_ShootGearAI, &GVar_ShootGearAI, "ShootGearAI", 4, "Factor shoot Gear.\n", 3)

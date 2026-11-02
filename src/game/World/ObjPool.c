@@ -35,12 +35,12 @@ void *cObjElementFXSceneTheEndB_ctor(void *self);
 void *cObjElementFXSceneYakuzzi_ctor(void *self);
 void *cObjElementFXSputnik_ctor(void *self);
 
-extern const cObjElementFXVtbl cObjElementAbstract_vftable;
+static const cObjElementFXVtbl cObjElementAbstract_vftable;
 #define COBJELEMENTABSTRACT_VFTABLE (&cObjElementAbstract_vftable)
 #define DEBRIS_STEP 0.05f
 #define DEBRIS_MAXSTEP 0.1f
 
-cGVar GVar_O_Show;
+static cGVar GVar_O_Show;
 
 #define g_OShow (GVar_O_Show.value.i)	/* O_Show, the debug text of the pools */
 
@@ -48,7 +48,7 @@ cGVar GVar_O_Show;
 typedef cObjElementFX *(*ObjElementFXCtor_t)(void *mem);
 
 /* the effect of type for the debris (the old one deleted) and its Start; 0 without one */
-byte cDebris_SetFX(int type, cDebris *d) {
+static byte cDebris_SetFX(int type, cDebris *d) {
 	/* the effects by type: the size and the constructor of the class */
 	const struct {
 		int type;
@@ -445,7 +445,7 @@ void cDebrisSys_ShowInfo(cDebrisSys *sys, int x, int y, float *line) {
 }
 
 /* the step of the debris: by its effect or the own move */
-byte cDebris_IsAlive(cDebris *d, cDebrisSys *sys) {
+static byte cDebris_IsAlive(cDebris *d, cDebrisSys *sys) {
 	if (d->fx) {
 		return d->fx->vftable->IsAlive(d->fx, d, sys);
 	}
@@ -465,12 +465,6 @@ void cDebrisSys_Release(cDebrisSys *sys, cDebris *d) {
 	if (d->fx) {
 		d->fx->vftable->Reset(d->fx, d);
 	}
-}
-
-/* the free debris freed, at most n kept from now */
-void cDebrisSys_SetMaxIdle(cDebrisSys *sys, int n) {
-	cDebrisSys_FreeActive(sys);
-	sys->maxIdle = n;
 }
 
 void cDebrisSys_SetName(cDebrisSys *sys, const char *name) {
@@ -505,7 +499,7 @@ void cDebrisSys_Update(cDebrisSys *sys, float dt) {
 }
 
 /* the vtable of cObjElementAbstract */
-const cObjElementFXVtbl cObjElementAbstract_vftable = {
+static const cObjElementFXVtbl cObjElementAbstract_vftable = {
 	.Delete = cObjElementAbstract_Delete,
 	.Update = (void *)crt_purecall,
 	.IsAlive = (void *)crt_purecall,

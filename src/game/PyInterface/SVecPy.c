@@ -27,7 +27,7 @@ static vec3_t Vec3_Normalized(vec3_t v) {
 }
 
 /* res Add(v1,v2) : suma dos vectores 3D */
-PyObject *SVec_Add(PyObject *self, PyObject *args) {
+static PyObject *SVec_Add(PyObject *self, PyObject *args) {
 	double x1, y1, z1, x2, y2, z2;
 
 	(void)self;
@@ -38,7 +38,7 @@ PyObject *SVec_Add(PyObject *self, PyObject *args) {
 }
 
 /* res Sub(v1,v2) : Resta dos vectores 3D */
-PyObject *SVec_Sub(PyObject *self, PyObject *args) {
+static PyObject *SVec_Sub(PyObject *self, PyObject *args) {
 	double x1, y1, z1, x2, y2, z2;
 
 	(void)self;
@@ -49,7 +49,7 @@ PyObject *SVec_Sub(PyObject *self, PyObject *args) {
 }
 
 /* res Mod(v1) : Devuelve el modulo de un vector */
-PyObject *SVec_Mod(PyObject *self, PyObject *args) {
+static PyObject *SVec_Mod(PyObject *self, PyObject *args) {
 	double x, y, z;
 
 	(void)self;
@@ -60,7 +60,7 @@ PyObject *SVec_Mod(PyObject *self, PyObject *args) {
 }
 
 /* res ModSqr(v1) : Devuelve el modulo (al cuadrado) de un vector */
-PyObject *SVec_ModSqr(PyObject *self, PyObject *args) {
+static PyObject *SVec_ModSqr(PyObject *self, PyObject *args) {
 	double x, y, z;
 
 	(void)self;
@@ -71,7 +71,7 @@ PyObject *SVec_ModSqr(PyObject *self, PyObject *args) {
 }
 
 /* res Norm(v1) : Normaliza un vector. Below a length of 1e-6 the result is (0, 1, 0). */
-PyObject *SVec_Norm(PyObject *self, PyObject *args) {
+static PyObject *SVec_Norm(PyObject *self, PyObject *args) {
 	double x, y, z;
 
 	(void)self;
@@ -86,7 +86,7 @@ PyObject *SVec_Norm(PyObject *self, PyObject *args) {
 }
 
 /* res Prod(v1,f) : multiplica un vector por un numero */
-PyObject *SVec_Prod(PyObject *self, PyObject *args) {
+static PyObject *SVec_Prod(PyObject *self, PyObject *args) {
 	double x, y, z, f;
 
 	(void)self;
@@ -97,7 +97,7 @@ PyObject *SVec_Prod(PyObject *self, PyObject *args) {
 }
 
 /* res DProd(v1,v2) : Calcula el producto escalar de dos vectores */
-PyObject *SVec_DProd(PyObject *self, PyObject *args) {
+static PyObject *SVec_DProd(PyObject *self, PyObject *args) {
 	vec3_t a, b;
 
 	(void)self;
@@ -108,7 +108,7 @@ PyObject *SVec_DProd(PyObject *self, PyObject *args) {
 }
 
 /* vRes CProd(v1,v2) : Calcula el producto vectorial de dos vectores */
-PyObject *SVec_CProd(PyObject *self, PyObject *args) {
+static PyObject *SVec_CProd(PyObject *self, PyObject *args) {
 	vec3_t v1, v2;
 	PyObject *tuple;
 
@@ -129,7 +129,7 @@ PyObject *SVec_CProd(PyObject *self, PyObject *args) {
 }
 
 /* res Rotate3D(src,rot) : Rota un vector. rot in degrees. */
-PyObject *SVec_Rotate3D(PyObject *self, PyObject *args) {
+static PyObject *SVec_Rotate3D(PyObject *self, PyObject *args) {
 	double sx, sy, sz, rx, ry, rz;
 
 	(void)self;
@@ -144,7 +144,7 @@ PyObject *SVec_Rotate3D(PyObject *self, PyObject *args) {
 }
 
 /* Ang GetAngle(vec) : Obtiene el ángulo entre dos vectores, in degrees */
-PyObject *SVec_GetAngle(PyObject *self, PyObject *args) {
+static PyObject *SVec_GetAngle(PyObject *self, PyObject *args) {
 	vec3_t a, b;
 
 	(void)self;
@@ -165,7 +165,7 @@ PyObject *SVec_GetAngle(PyObject *self, PyObject *args) {
 }
 
 /* AngX,AngY GetRotAng(vec) : Obtiene la rotacion de un vector. Takes x, y, z or a tuple; degrees. */
-PyObject *SVec_GetRotAng(PyObject *self, PyObject *args) {
+static PyObject *SVec_GetRotAng(PyObject *self, PyObject *args) {
 	double x, y, z;
 
 	(void)self;
@@ -182,7 +182,7 @@ PyObject *SVec_GetRotAng(PyObject *self, PyObject *args) {
 }
 
 /* rAng NormAng(Ang) : Normaliza un angulo, in degrees */
-PyObject *SVec_NormAng(PyObject *self, PyObject *args) {
+static PyObject *SVec_NormAng(PyObject *self, PyObject *args) {
 	double ang;
 
 	(void)self;
@@ -192,31 +192,31 @@ PyObject *SVec_NormAng(PyObject *self, PyObject *args) {
 	return Py_BuildValue("d", Rad2Deg((double)NormAng((float)Deg2Rad(ang))));
 }
 
-extern char str_PyDoc_SVec_Add[];
-extern char str_PyDoc_SVec_CProd[];
-extern char str_PyDoc_SVec_DProd[];
-extern char str_PyDoc_SVec_GetAngle[];
-extern char str_PyDoc_SVec_GetRotAng[];
-extern char str_PyDoc_SVec_Mod[];
-extern char str_PyDoc_SVec_ModSqr[];
-extern char str_PyDoc_SVec_Norm[];
-extern char str_PyDoc_SVec_NormAng[44];
-extern char str_PyDoc_SVec_Prod[];
-extern char str_PyDoc_SVec_Rotate3D[];
-extern char str_PyDoc_SVec_Sub[];
+static char str_PyDoc_SVec_Add[];
+static char str_PyDoc_SVec_CProd[];
+static char str_PyDoc_SVec_DProd[];
+static char str_PyDoc_SVec_GetAngle[];
+static char str_PyDoc_SVec_GetRotAng[];
+static char str_PyDoc_SVec_Mod[];
+static char str_PyDoc_SVec_ModSqr[];
+static char str_PyDoc_SVec_Norm[];
+static char str_PyDoc_SVec_NormAng[44];
+static char str_PyDoc_SVec_Prod[];
+static char str_PyDoc_SVec_Rotate3D[];
+static char str_PyDoc_SVec_Sub[];
 extern const char str_PyMethod_SScorer_Add[];
-extern const char str_PyMethod_SVec_CProd[];
-extern const char str_PyMethod_SVec_DProd[];
-extern const char str_PyMethod_SVec_GetAngle[];
-extern const char str_PyMethod_SVec_GetRotAng[];
-extern const char str_PyMethod_SVec_Mod[];
-extern const char str_PyMethod_SVec_ModSqr[];
-extern const char str_PyMethod_SVec_Norm[];
-extern const char str_PyMethod_SVec_NormAng[];
-extern const char str_PyMethod_SVec_Prod[];
-extern const char str_PyMethod_SVec_Rotate3D[];
-extern const char str_PyMethod_SVec_Sub[];
-PyMethodDef SVec_methods[13] = {
+static const char str_PyMethod_SVec_CProd[];
+static const char str_PyMethod_SVec_DProd[];
+static const char str_PyMethod_SVec_GetAngle[];
+static const char str_PyMethod_SVec_GetRotAng[];
+static const char str_PyMethod_SVec_Mod[];
+static const char str_PyMethod_SVec_ModSqr[];
+static const char str_PyMethod_SVec_Norm[];
+static const char str_PyMethod_SVec_NormAng[];
+static const char str_PyMethod_SVec_Prod[];
+static const char str_PyMethod_SVec_Rotate3D[];
+static const char str_PyMethod_SVec_Sub[];
+static PyMethodDef SVec_methods[13] = {
 	{
 		.ml_name = (void *)str_PyMethod_SScorer_Add,
 		.ml_meth = (void *)SVec_Add,
@@ -293,39 +293,39 @@ PyMethodDef SVec_methods[13] = {
 
 SD_PY_MODULE(SVec, 0x42fc80)
 
-const char str_PyMethod_SVec_Sub[] = "Sub";
-const char str_PyMethod_SVec_Mod[] = "Mod";
-const char str_PyMethod_SVec_ModSqr[] = "ModSqr";
-const char str_PyMethod_SVec_Norm[] = "Norm";
-const char str_PyMethod_SVec_Prod[] = "Prod";
-const char str_PyMethod_SVec_DProd[] = "DProd";
-const char str_PyMethod_SVec_CProd[] = "CProd";
-const char str_PyMethod_SVec_Rotate3D[] = "Rotate3D";
-const char str_PyMethod_SVec_GetAngle[] = "GetAngle";
-const char str_PyMethod_SVec_GetRotAng[] = "GetRotAng";
-const char str_PyMethod_SVec_NormAng[] = "NormAng";
+static const char str_PyMethod_SVec_Sub[] = "Sub";
+static const char str_PyMethod_SVec_Mod[] = "Mod";
+static const char str_PyMethod_SVec_ModSqr[] = "ModSqr";
+static const char str_PyMethod_SVec_Norm[] = "Norm";
+static const char str_PyMethod_SVec_Prod[] = "Prod";
+static const char str_PyMethod_SVec_DProd[] = "DProd";
+static const char str_PyMethod_SVec_CProd[] = "CProd";
+static const char str_PyMethod_SVec_Rotate3D[] = "Rotate3D";
+static const char str_PyMethod_SVec_GetAngle[] = "GetAngle";
+static const char str_PyMethod_SVec_GetRotAng[] = "GetRotAng";
+static const char str_PyMethod_SVec_NormAng[] = "NormAng";
 
-char str_PyDoc_SVec_Add[] = "res Add(v1,v2) : suma dos vectores 3D";
+static char str_PyDoc_SVec_Add[] = "res Add(v1,v2) : suma dos vectores 3D";
 
-char str_PyDoc_SVec_Sub[] = "res Sub(v1,v2) : Resta dos vectores 3D";
+static char str_PyDoc_SVec_Sub[] = "res Sub(v1,v2) : Resta dos vectores 3D";
 
-char str_PyDoc_SVec_Mod[] = "res Mod(v1) : Devuelve el modulo de un vector";
+static char str_PyDoc_SVec_Mod[] = "res Mod(v1) : Devuelve el modulo de un vector";
 
-char str_PyDoc_SVec_ModSqr[] = "res ModSqr(v1) : Devuelve el modulo (al cuadrado) de un vector";
+static char str_PyDoc_SVec_ModSqr[] = "res ModSqr(v1) : Devuelve el modulo (al cuadrado) de un vector";
 
-char str_PyDoc_SVec_Norm[] = "res Norm(v1) : Normaliza un vector";
+static char str_PyDoc_SVec_Norm[] = "res Norm(v1) : Normaliza un vector";
 
-char str_PyDoc_SVec_Prod[] = "res Prod(v1,f) : multiplica un vector por un numero";
+static char str_PyDoc_SVec_Prod[] = "res Prod(v1,f) : multiplica un vector por un numero";
 
-char str_PyDoc_SVec_DProd[] = "res DProd(v1,v2) : Calcula el producto escalar de dos vectores";
+static char str_PyDoc_SVec_DProd[] = "res DProd(v1,v2) : Calcula el producto escalar de dos vectores";
 
-char str_PyDoc_SVec_CProd[] = "vRes CProd(v1,v2) : Calcula el producto vectorial de dos vectores";
+static char str_PyDoc_SVec_CProd[] = "vRes CProd(v1,v2) : Calcula el producto vectorial de dos vectores";
 
-char str_PyDoc_SVec_Rotate3D[] = "res Rotate3D(src,rot) : Rota un vector";
+static char str_PyDoc_SVec_Rotate3D[] = "res Rotate3D(src,rot) : Rota un vector";
 
-char str_PyDoc_SVec_GetAngle[] = "Ang GetAngle(vec) : Obtiene el ángulo entre dos vectores";
+static char str_PyDoc_SVec_GetAngle[] = "Ang GetAngle(vec) : Obtiene el ángulo entre dos vectores";
 
-char str_PyDoc_SVec_GetRotAng[] = "AngX,AngY GetRotAng(vec) : Obtiene la rotacion de un vector";
+static char str_PyDoc_SVec_GetRotAng[] = "AngX,AngY GetRotAng(vec) : Obtiene la rotacion de un vector";
 
-char str_PyDoc_SVec_NormAng[44] = "rAng NormAng(Ang) : Normaliza un angulo";
+static char str_PyDoc_SVec_NormAng[44] = "rAng NormAng(Ang) : Normaliza un angulo";
 

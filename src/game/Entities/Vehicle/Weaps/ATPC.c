@@ -13,10 +13,67 @@
 
 #include <string.h>
 
+#define g_ATPCDelay (GVar_ATPCDelay.value.f)
+#define g_ATPCUpgradeDelay (GVar_ATPCUpgradeDelay.value.f)
+#define g_ATPCAmmoCost (GVar_ATPCAmmoCost.value.f)
+#define g_ATPCExtraDamage (GVar_ATPCExtraDamage.value.i)
+#define g_ATPCExplosionRadius (GVar_ATPCExplosionRadius.value.f)
+#define g_ATPCMainDamage (GVar_ATPCMainDamage.value.i)
+#define g_ATPCHitForce (GVar_ATPCHitForce.value.f)
+#define g_ATPCConvDist (GVar_ATPCConvDist.value.f)
+#define g_ATPCCapsuleSoundAttEnd (GVar_ATPCCapsuleSoundAttEnd.value.f)
+#define g_ATPCCapsuleSoundAttIni (GVar_ATPCCapsuleSoundAttIni.value.f)
+#define g_ATPCCapsuleSound (GVar_ATPCCapsuleSound.value.s)
+#define g_ATPCCapsuleSoundRadius (GVar_ATPCCapsuleSoundRadius.value.f)
+#define g_ATPCCapsuleExtendedSound (GVar_ATPCCapsuleExtendedSound.value.s)
+#define g_ATPCHitSound (GVar_ATPCHitSound.value.s)
+#define g_ATPCHitSoundAttEnd (GVar_ATPCHitSoundAttEnd.value.f)
+#define g_ATPCHitSoundAttIni (GVar_ATPCHitSoundAttIni.value.f)
+#define g_ATPCHitSoundVol (GVar_ATPCHitSoundVol.value.f)
+#define g_ATPCCapsuleSoundVol (GVar_ATPCCapsuleSoundVol.value.f)
+#define g_ATPCShootFile (GVar_ATPCShootFile.value.s)
+#define g_ATPCCapsuleExtendedSoundAttIni (GVar_ATPCCapsuleExtendedSoundAttIni.value.f)
+#define g_ATPCCapsuleExtendedSoundAttEnd (GVar_ATPCCapsuleExtendedSoundAttEnd.value.f)
+#define g_ATPCCapsuleExtendedSoundVol (GVar_ATPCCapsuleExtendedSoundVol.value.f)
+#define g_CreateCloudFunc (((cPy_Function *)&GVar_CreateCloudFunc.func))
+#define g_CloudLifeTime (GVar_CloudLifeTime.value.f)
+#define g_CloudAmmoNeed (GVar_CloudAmmoNeed.value.i)
+#define g_CloudIDAmmo (GVar_CloudIDAmmo.value.i)
+#define g_CloudRechargeTime (GVar_CloudRechargeTime.value.f)
+#define g_SetUpCloudFunc (((cPy_Function *)&GVar_SetUpCloudFunc.func))
+static cGVarFunction GVar_SetUpCloudFunc;
+static cGVarFunction GVar_CreateCloudFunc;
+static cGVar GVar_CloudRechargeTime;
+static cGVar GVar_CloudLifeTime;
+static cGVar GVar_CloudIDAmmo;
+static cGVar GVar_CloudAmmoNeed;
+static cGVar GVar_ATPCUpgradeDelay;
+static cGVar GVar_ATPCShootFile;
+static cGVar GVar_ATPCMainDamage;
+static cGVar GVar_ATPCHitSoundVol;
+static cGVar GVar_ATPCHitSoundAttIni;
+static cGVar GVar_ATPCHitSoundAttEnd;
+static cGVar GVar_ATPCHitSound;
+static cGVar GVar_ATPCHitForce;
+static cGVar GVar_ATPCExtraDamage;
+static cGVar GVar_ATPCExplosionRadius;
+static cGVar GVar_ATPCDelay;
+static cGVar GVar_ATPCConvDist;
+static cGVar GVar_ATPCCapsuleSoundVol;
+static cGVar GVar_ATPCCapsuleSoundRadius;
+static cGVar GVar_ATPCCapsuleSoundAttIni;
+static cGVar GVar_ATPCCapsuleSoundAttEnd;
+static cGVar GVar_ATPCCapsuleSound;
+static cGVar GVar_ATPCCapsuleExtendedSoundVol;
+static cGVar GVar_ATPCCapsuleExtendedSoundAttIni;
+static cGVar GVar_ATPCCapsuleExtendedSoundAttEnd;
+static cGVar GVar_ATPCCapsuleExtendedSound;
+static cGVar GVar_ATPCAmmoCost;
+
 #define ATPC_PI 3.14159274f
 
 /* the recharge of the next shot (the upgrade 9 is faster) and the start sound of the upgrade */
-void ATPC_SetRecharge(cEntity *v) {
+static void ATPC_SetRecharge(cEntity *v) {
 	int up = cWeaponManager_GetUpgrade(&Veh(v)->weapons, g_ATPCIDWeap);
 	float ammo = cTargetLock_GetAmmo(&Veh(v)->weapons, g_ATPCIDAmmo);
 	int snd;
@@ -51,12 +108,13 @@ void ATPC_PlaySound(const char *name, const vec3_t *pos, float attIni, float att
 	g_pSound->vftable->PlaySound(g_pSound, name, &desc, NULL);
 }
 
-char g_ATPCShooter[128];
-char g_ATPCVictim[128];
+/* Weaps/ATPC.cpp: the shot of the ATPC (a charge per mounted slot), its HUD item and the debris cloud */
+static char g_ATPCShooter[128];
+static char g_ATPCVictim[128];
 
 /* "!ATPCCreate" (vehicle, hit point, target): the shot effect from the mounted slots (beyond the convergence distance
  * from their middle) to the hit, the hit sound and the capsule sound and shake for the player near the shot */
-void ATPC_Create(cAbstractFile *params) {
+static void ATPC_Create(cAbstractFile *params) {
 	vec3_t hit, a, p, avg, in, rot, out, origin, mid, c, dir, near;
 	matrix_t mat;
 
@@ -219,7 +277,7 @@ void ATPC_Create(cAbstractFile *params) {
 }
 
 /* "!ATPCFX" (vehicle, player, item): the HUD item turns and grows while the ATPC recharges */
-void ATPC_FX(cAbstractFile *params) {
+static void ATPC_FX(cAbstractFile *params) {
 	char name[128], itemName[128];
 	int player;
 
@@ -267,10 +325,10 @@ void ATPC_FX(cAbstractFile *params) {
 	item->angle = 0.0f;
 }
 
-float g_ATPCNumSlots;
+static float g_ATPCNumSlots;
 
 /* "!ATPCFire" (vehicle): the ammo of the shot, the aim and the line of the hit */
-void ATPC_Fire(cAbstractFile *params) {
+static void ATPC_Fire(cAbstractFile *params) {
 	char name[128];
 	float ang[3];
 	vec3_t hit, a, b, c, t, from;
@@ -359,7 +417,7 @@ upgrade:;
 }
 
 /* "!ATPCOnEnd" (vehicle) */
-void ATPC_OnEnd(cAbstractFile *params) {
+static void ATPC_OnEnd(cAbstractFile *params) {
 	char name[128];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -368,7 +426,7 @@ void ATPC_OnEnd(cAbstractFile *params) {
 }
 
 /* "!ATPCOnStart" (vehicle): the aim help of the ATPC, wider for a pad with VehicleCenterPadLock */
-void ATPC_OnStart(cAbstractFile *params) {
+static void ATPC_OnStart(cAbstractFile *params) {
 	char name[128];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -385,7 +443,7 @@ void ATPC_OnStart(cAbstractFile *params) {
 }
 
 /* "!ATPCXplosionCall" (entity, center, distance): the damage and push of the shot of g_ATPCShooter */
-void ATPC_XplosionCall(cAbstractFile *params) {
+static void ATPC_XplosionCall(cAbstractFile *params) {
 	vec3_t center, p, r, n;
 	float dist;
 
@@ -465,7 +523,7 @@ void ATPC_XplosionCall(cAbstractFile *params) {
 }
 
 /* "!CloudFire" (vehicle): the script makes the debris cloud with the ammo of the vehicle */
-void Cloud_Fire(cAbstractFile *params) {
+static void Cloud_Fire(cAbstractFile *params) {
 	char name[128], cloudName[128];
 	vec3_t pos, ang;
 
@@ -519,7 +577,7 @@ void Cloud_Fire(cAbstractFile *params) {
 }
 
 /* "!CloudOnHit" (cloud, ?, entity, strong): a vehicle in the cloud for 100 or 5 seconds, a missile slowed */
-void Cloud_OnHit(cAbstractFile *params) {
+static void Cloud_OnHit(cAbstractFile *params) {
 	char cloud[128], other[128], name[128];
 	int strong = 0;
 
@@ -543,44 +601,44 @@ void Cloud_OnHit(cAbstractFile *params) {
 
 cGVarFunction GVar_RestoreUpgradeFunc;
 cGVar GVar_ATPCIDWeap;
-cGVar GVar_ATPCCapsuleSoundAttEnd;
-cGVar GVar_ATPCCapsuleSoundAttIni;
-cGVar GVar_ATPCUpgradeDelay;
-cGVar GVar_ATPCCapsuleSound;
-cGVar GVar_ATPCCapsuleSoundRadius;
-cGVar GVar_ATPCAmmoCost;
-cGVar GVar_ATPCExtraDamage;
-cGVar GVar_ATPCExplosionRadius;
-cGVar GVar_ATPCCapsuleExtendedSound;
-cGVar GVar_ATPCHitSound;
-cGVar GVar_ATPCMainDamage;
-cGVar GVar_ATPCHitSoundAttEnd;
-cGVar GVar_ATPCHitSoundAttIni;
-cGVar GVar_ATPCHitSoundVol;
-cGVar GVar_ATPCDelay;
-cGVar GVar_ATPCHitForce;
-cGVar GVar_ATPCCapsuleSoundVol;
+static cGVar GVar_ATPCCapsuleSoundAttEnd;
+static cGVar GVar_ATPCCapsuleSoundAttIni;
+static cGVar GVar_ATPCUpgradeDelay;
+static cGVar GVar_ATPCCapsuleSound;
+static cGVar GVar_ATPCCapsuleSoundRadius;
+static cGVar GVar_ATPCAmmoCost;
+static cGVar GVar_ATPCExtraDamage;
+static cGVar GVar_ATPCExplosionRadius;
+static cGVar GVar_ATPCCapsuleExtendedSound;
+static cGVar GVar_ATPCHitSound;
+static cGVar GVar_ATPCMainDamage;
+static cGVar GVar_ATPCHitSoundAttEnd;
+static cGVar GVar_ATPCHitSoundAttIni;
+static cGVar GVar_ATPCHitSoundVol;
+static cGVar GVar_ATPCDelay;
+static cGVar GVar_ATPCHitForce;
+static cGVar GVar_ATPCCapsuleSoundVol;
 cGVar GVar_ATPCRange;
-cGVar GVar_ATPCConvDist;
-cGVar GVar_ATPCShootFile;
-cGVar GVar_ATPCCapsuleExtendedSoundAttIni;
-cGVar GVar_ATPCCapsuleExtendedSoundAttEnd;
-cGVar GVar_ATPCCapsuleExtendedSoundVol;
+static cGVar GVar_ATPCConvDist;
+static cGVar GVar_ATPCShootFile;
+static cGVar GVar_ATPCCapsuleExtendedSoundAttIni;
+static cGVar GVar_ATPCCapsuleExtendedSoundAttEnd;
+static cGVar GVar_ATPCCapsuleExtendedSoundVol;
 cGVar GVar_ATPCIDAmmo;
-cGVarFunction GVar_CreateCloudFunc;
-cGVar GVar_CloudLifeTime;
-cGVar GVar_CloudAmmoNeed;
-cGVar GVar_CloudIDAmmo;
-cGVar GVar_CloudRechargeTime;
-cGVarFunction GVar_SetUpCloudFunc;
-cPy_NativeFunc NativeFunc_ATPCOnEnd;
-cPy_NativeFunc NativeFunc_ATPCOnStart;
-cPy_NativeFunc NativeFunc_ATPCXplosionCall;
-cPy_NativeFunc NativeFunc_ATPCCreate;
-cPy_NativeFunc NativeFunc_ATPCFire;
-cPy_NativeFunc NativeFunc_ATPCFX;
-cPy_NativeFunc NativeFunc_CloudOnHit;
-cPy_NativeFunc NativeFunc_CloudFire;
+static cGVarFunction GVar_CreateCloudFunc;
+static cGVar GVar_CloudLifeTime;
+static cGVar GVar_CloudAmmoNeed;
+static cGVar GVar_CloudIDAmmo;
+static cGVar GVar_CloudRechargeTime;
+static cGVarFunction GVar_SetUpCloudFunc;
+static cPy_NativeFunc NativeFunc_ATPCOnEnd;
+static cPy_NativeFunc NativeFunc_ATPCOnStart;
+static cPy_NativeFunc NativeFunc_ATPCXplosionCall;
+static cPy_NativeFunc NativeFunc_ATPCCreate;
+static cPy_NativeFunc NativeFunc_ATPCFire;
+static cPy_NativeFunc NativeFunc_ATPCFX;
+static cPy_NativeFunc NativeFunc_CloudOnHit;
+static cPy_NativeFunc NativeFunc_CloudFire;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_CALL(Fini_GVar_RestoreUpgradeFunc, &GVar_RestoreUpgradeFunc.func, cPy_Function_dtor)

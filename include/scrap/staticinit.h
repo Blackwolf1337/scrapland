@@ -53,7 +53,7 @@
 		crt_atexit(fini); \
 	}
 #define FINI_GVAR_STRING(fn, obj) \
-	void fn(void) { \
+	static void fn(void) { \
 		GVar_FiniString(SI_GVAR(obj)); \
 	}
 /* func NULL: no function */
@@ -141,26 +141,26 @@
 /* ---- destructors ---- */
 
 #define FINI_CALL(fn, obj, dtor) \
-	void fn(void) { \
+	static void fn(void) { \
 		dtor((obj)); \
 	}
 #define FINI_CALL2(fn, obj1, dtor1, obj2, dtor2) \
-	void fn(void) { \
+	static void fn(void) { \
 		dtor1((obj1)); \
 		dtor2((obj2)); \
 	}
 #define FINI_VECTOR(fn, obj, size, count, dtor) \
-	void fn(void) { \
+	static void fn(void) { \
 		crt_eh_vector_dtor((obj), size, count, (void *)dtor); \
 	}
 /* a DList: its nodes by its own function, then the free list */
 #define FINI_DLIST(fn, obj, clear, size) \
-	void fn(void) { \
+	static void fn(void) { \
 		clear((obj)); \
 		DList_FreePool((obj), size); \
 	}
 #define FINI_TABLE(fn, obj) \
-	void fn(void) { \
+	static void fn(void) { \
 		Table_Free((obj)); \
 	}
 

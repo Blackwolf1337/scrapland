@@ -13,8 +13,6 @@
 #include "scrap/gvar.h"
 #include "scrap/e3dworld.h"
 
-extern cGVar GVar_SplashScreenFade;
-
 /* what the world node info functions give for one dummy or node */
 typedef struct WorldNodeInfo {
 	char Name[64];			/* 0x00 */
@@ -25,10 +23,6 @@ typedef struct WorldNodeInfo {
 
 /* the state of the walk */
 extern int g_CountSprite2D;
-extern CNode3D *g_WorldInfoNode;
-extern WorldDummy *g_WorldInfoDummy;	/* DummyInfo */
-extern byte g_WorldInfoWild;
-extern char g_WorldInfoPattern[260];	/* 0x104, "" for all */
 
 /* RenderMode */
 #define RENDERMODE_PROFILER 0x10	/* cycles the profiler mode 0..2 */
@@ -44,12 +38,7 @@ extern int g_ShadowsStencil;	/* [sombras_stencil] use */
 /* the splash screens and the loading bar */
 extern cGVar GVar_ShowSplashScreen;
 #define g_SplashOn (GVar_ShowSplashScreen.value.i)
-#define g_SplashFade (GVar_SplashScreenFade.value.u)	/* ms */
-extern uint32_t g_SplashTime;	/* timeGetTime at the end of the last one */
-extern char g_SplashLast[260];	/* 0x104, the last one shown */
 #define g_LoadingOn g_DrawProgressBar
-extern cGVar GVar_ShowProgressBar;
-#define g_LoadingBar (GVar_ShowProgressBar.value.i)
 extern int g_LoadingCount;		/* the steps of Loading_Step(-1) */
 extern cGVar GVar_ProgressBar;
 #define g_LoadingTotal (GVar_ProgressBar.value.i)
@@ -58,35 +47,24 @@ typedef void (*loadingDraw_t)(void);
 #define g_LoadingDraw (*(loadingDraw_t *)&g_EngCallbacks[3])	/* draws the loading screen without the bar */
 #define g_LoadingDraw2 (*(loadingDraw_t *)&g_EngCallbacks[2])
 
-/* the world node info */
-void WorldInfo_FromDummy(WorldNodeInfo *info, const WorldDummy *dummy);
-void WorldInfo_FromNode(WorldNodeInfo *info, CNode3D *node);
 /* the walk from the start: the names that match pattern (NULL for all), lowercase wildcards with wild */
 void WorldInfo_Begin(const char *pattern, byte wild);
 void WorldInfo_Reset(void);
 /* the next dummy (0 at the end); the next node is a CHECK */
 byte WorldInfo_Next(WorldNodeInfo *info);
-byte WorldInfo_NextDummy(WorldNodeInfo *info);
-byte WorldInfo_NextNode(WorldNodeInfo *info);
 /* the user properties of the current dummy */
 byte WorldInfo_HasUserProp(void);
 byte WorldInfo_GetBool(const char *sect, const char *key, byte def);
 float WorldInfo_GetFloat(const char *sect, const char *key, float def);
-int WorldInfo_GetInt(const char *sect, const char *key, int def);
 char *WorldInfo_GetText(const char *sect, const char *key, char *dest, int size, const char *def);
-vec3_t *WorldInfo_GetVec3(vec3_t *out, const char *sect, const char *key, const vec3_t *def);
 
 /* the box of the floor scene, of the collision of the floor */
 box_t *World_GetBox(box_t *out);
 box_t *World_GetCollideBox(box_t *out);
-/* the inline of ground.h */
-box_t *CGround_GetCollideExt(const CGround *self, box_t *out);
 byte Sector_Visible(int sector);
 /* returns m (an inline of the matrix header, not optimized away) */
 matrix_t *Matrix_Self(matrix_t *m);
 
-/* the old value of *flag, set to value with set */
-int Bool_GetSet(byte *flag, int value, byte set);
 /* RENDERMODE_*: the value after the change of set, 0 for an unknown mode */
 int RenderMode(int mode, int value, byte set);
 /* the first n (0..99, 99 also when all exist) with the file fmt % n missing */
@@ -99,16 +77,9 @@ void Render_CopyBackBuffer(void);
 /* a splash screen ("" the last one, NULL the one of the level), faded in and out in g_SplashFade ms with fadeIn and
  * fadeOut, shown waitMs ms ("": waitMs after the last one) or until Esc, space or enter */
 void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut);
-/* one frame with the texture over the screen in color */
-void Splash_Draw(const box_t *rect, uint32_t color, void *tex);
-void Splash_Black(void);
-void Splash_Promos(void);
-void Splash_Logos(void);
 void Splash_Reset(void);
 /* the loading bar at percent (-1: one step of g_LoadingTotal), else the loading screen */
 void Loading_Step(int percent);
-void Loading_DrawBack(void);
-void Loading_DrawBack2(void);
 
 /* other modules (src/imports.inc) */
 /* rva 0x2178e0 (ScrapEngMain.cpp): the splash screen name of the level */

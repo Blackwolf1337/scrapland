@@ -16,27 +16,29 @@
 #include "scrap/platform.h"
 #include "scrap/staticinit.h"
 
+#define CMATERIAL_VFTABLE (&CMaterial_vftable)
+static const CMaterialVtbl CMaterial_vftable;
+
 #define TEXTSTATIC_CTOR 0x233990
 #define TEXTSTATIC_DTOR 0x233c70
 
 int Vec3_Differ(const float *a, const float *b);
 
-
 /* set while a material is deleted: the textures without references go too */
-cGVar GVar_DDS_MarkSource;
+static cGVar GVar_DDS_MarkSource;
 
 /* engine variables DDS_MarkSource, LoadTextures, DDS_CheckMark, MatEmissive, DDS_UseTextures */
 #define g_DDSMarkSource (GVar_DDS_MarkSource.value.i)
 cGVar GVar_LoadTextures;
 
 #define g_LoadTextures (GVar_LoadTextures.value.i)
-cGVar GVar_DDS_CheckMark;
+static cGVar GVar_DDS_CheckMark;
 
 #define g_DDSCheckMark (GVar_DDS_CheckMark.value.i)
-cGVar GVar_MatEmissive;
+static cGVar GVar_MatEmissive;
 
 #define g_MatEmissive (GVar_MatEmissive.value.f)
-cGVar GVar_DDS_UseTextures;
+static cGVar GVar_DDS_UseTextures;
 
 #define g_DDSUseTextures (GVar_DDS_UseTextures.value.i)
 extern int g_ShadowsStencil;
@@ -53,6 +55,7 @@ static int Mat_IsShareable(const CMaterial *m) {
 	return !(m->params.attrib & MAT_NOSHARE);
 }
 
+static void CMap_dtor(CMap *self);
 static void Mat_DeleteMap(CMap **slot) {
 	CMap *m = *slot;
 
@@ -63,12 +66,14 @@ static void Mat_DeleteMap(CMap **slot) {
 	}
 }
 
+static CMap *CMap_ctor(CMap *self);
 static CMap *Mat_NewMap(void) {
 	CMap *m = operator_new(sizeof(CMap));
 
 	return m ? CMap_ctor(m) : NULL;
 }
 
+static void CMap_Assign(CMap *self, const CMap *orig);
 static CMap *Mat_SetMapCopy(CMaterial *self, uint32_t mapid, const CMap *orig) {
 	CHECK(mapid < MAP_TOTAL);
 	CHECK(orig != self->map[mapid] || orig == NULL);
@@ -87,19 +92,19 @@ static int Mat_StrSign(const char *a, const char *b) {
 	return r < 0 ? -1 : r > 0;
 }
 
-void CObjRef_dtor(CObjRef *self) {
+static void CObjRef_dtor(CObjRef *self) {
 	CHECK(!self->Refs);
 }
 
-CTextStatic *CTextStatic_ctor(CTextStatic *self) {
+static CTextStatic *CTextStatic_ctor(CTextStatic *self) {
 	self->tex = NULL;
 	self->Hint = NULL;
 	return self;
 }
 
-int g_TexDeleteUnused;
+static int g_TexDeleteUnused;
 
-void CTextStatic_dtor(CTextStatic *self) {
+static void CTextStatic_dtor(CTextStatic *self) {
 	if (!Texture_Release(self->Hint) && g_TexDeleteUnused) {
 		Texture_Delete(self->Hint);
 	}
@@ -107,24 +112,8 @@ void CTextStatic_dtor(CTextStatic *self) {
 	self->Hint = NULL;
 }
 
-/* the vector deleting destructor (flags 2: an array of new[]) */
-CTextStatic *CTextStatic_Delete(CTextStatic *self, byte flags) {
-	if (flags & 2) {
-		uint32_t *mem = (uint32_t *)self - 1;
-		crt_eh_vector_dtor(self, sizeof(CTextStatic), *mem, (void *)CTextStatic_dtor);
-		if (flags & 1) {
-			operator_delete_array(mem);
-		}
-		return (CTextStatic *)mem;
-	}
-	CTextStatic_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CTextStatic));
-	}
-	return self;
-}
-
-void CMap_Assign(CMap *self, const CMap *orig) {
+/* name and parameters, not the textures */
+static void CMap_Assign(CMap *self, const CMap *orig) {
 	String_Set(&self->Name, orig->Name);
 	self->filter = orig->filter;
 	self->lightmap = orig->lightmap;
@@ -147,12 +136,12 @@ void CMaterial_Assign(CMaterial *self, const CMaterial *orig) {
 	}
 }
 
-byte Color_Equal(const byte *a, const byte *b) {
+static byte Color_Equal(const byte *a, const byte *b) {
 	return a[0] == b[0] && a[1] == b[1] && a[2] == b[2] && a[3] == b[3];
 }
 
 /* the 0x18 bytes from params.i2c */
-byte MatParams_Equal(const uint32_t *self, const uint32_t *other) {
+static byte MatParams_Equal(const uint32_t *self, const uint32_t *other) {
 	for (int i = 0; i < 6; i++) {
 		if (self[i] != other[i]) {
 			return 0;
@@ -161,11 +150,11 @@ byte MatParams_Equal(const uint32_t *self, const uint32_t *other) {
 	return 1;
 }
 
-int Vec2_Differ(const float *a, const float *b) {
+static int Vec2_Differ(const float *a, const float *b) {
 	return !(a[0] == b[0] && a[1] == b[1]);
 }
 
-CMaterial *CMaterial_Delete(CMaterial *self, byte flags) {
+static CMaterial *CMaterial_Delete(CMaterial *self, byte flags) {
 	CMaterial_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CMaterial));
@@ -174,31 +163,6 @@ CMaterial *CMaterial_Delete(CMaterial *self, byte flags) {
 }
 
 CMatList g_MatList = { .vftable = &CMatList_vftable };
-
-uint32_t g_BlendTable[6] = { 1, 2, 3, 4, 5, 6 };
-
-void Mat_ConvertBlend(uint32_t *mode, byte toFile, byte legacy) {
-	if (legacy) {
-		CHECK(*mode - 1 < BLEND_MODES);
-		/* the original reads the word at 0x431d30 + 4 * mode: g_BlendTable[mode - 1], for 0 (after the CHECK) the last
-		 * word of (&g_MatList) before it, a separate C object since stage 3c2 */
-		*mode = *mode ? g_BlendTable[*mode - 1] : (uint32_t)(uintptr_t)g_MatList.last;	/* the word after the table: the last material of the list, as in the original */
-		return;
-	}
-	if (toFile) {
-		uint32_t i;
-		for (i = 0; i < BLEND_MODES; i++) {
-			if (g_BlendTable[i] == *mode) {
-				break;
-			}
-		}
-		*mode = i;
-		CHECK(i < BLEND_MODES);
-		return;
-	}
-	CHECK(*mode < BLEND_MODES);
-	*mode = g_BlendTable[*mode];
-}
 
 byte CMap_BuildMultiSprite(CMap *self) {
 	if (!self->MultiSprite) {
@@ -222,7 +186,7 @@ void *CMaterial_GetMultiSprite(CMaterial *self, uint32_t mapid) {
 	return NULL;
 }
 
-int CMap_Read(CMap *self, CFileIO *f) {
+static int CMap_Read(CMap *self, CFileIO *f) {
 	char buf[MAX_FILEPATH];
 
 	CFileIO_BeginBlock(f, "MAP");
@@ -281,7 +245,7 @@ int CMaterial_Read(CMaterial *self, CFileIO *f) {
 }
 
 /* SetFileAttributes with exactly attr, if the file has none of its bits */
-void DDS_Hide(const char *name, uint32_t attr) {
+static void DDS_Hide(const char *name, uint32_t attr) {
 	uint32_t a = Plat_FileAttributes(name);
 
 	if (a == 0xffffffff || (attr & a)) {
@@ -294,7 +258,7 @@ void DDS_Hide(const char *name, uint32_t attr) {
 	E3D_LogWhite((&g_FileLog), "DDS: Hide: %s", name);
 }
 
-void DDS_Unhide(const char *name, uint32_t attr) {
+static void DDS_Unhide(const char *name, uint32_t attr) {
 	uint32_t a = Plat_FileAttributes(name);
 
 	if (a == 0xffffffff || !(attr & a)) {
@@ -368,13 +332,6 @@ int CMaterial_GetId(CMaterial *self, CMatId **out) {
 	return self->id.id;
 }
 
-int CMaterial_Id(CMaterial *self) {
-	if (self->id.id == -1) {
-		CMatId_Register(&self->id, self);
-	}
-	return self->id.id;
-}
-
 char *CMaterial_GetShaderName(CMaterial *self, char *str, uint32_t nbytes) {
 	CHECK(str);
 	if (!self->Name || !(self->params.attrib & MAT_SHADER)) {
@@ -402,7 +359,7 @@ char *CMaterial_GetShaderName(CMaterial *self, char *str, uint32_t nbytes) {
 	return str;
 }
 
-int CMap_Write(CMap *self, CFileIO *f) {
+static int CMap_Write(CMap *self, CFileIO *f) {
 	char buf[MAX_FILEPATH];
 
 	CFileIO_BeginBlockWrite(f, "MAP");
@@ -447,7 +404,7 @@ int CMaterial_Write(CMaterial *self, CFileIO *f) {
 	return CFileIO_EndBlockWrite(f, "MAT");
 }
 
-byte Mat_CompareNames(const CMaterial *a, const CMaterial *b) {
+static byte Mat_CompareNames(const CMaterial *a, const CMaterial *b) {
 	CHECK((a->params.attrib & MAT_NAMED) == (b->params.attrib & MAT_NAMED));
 	if ((a->params.attrib & MAT_NAMED) || (b->params.attrib & MAT_NAMED)) {
 		CHECK(a->Name && b->Name);
@@ -457,17 +414,6 @@ byte Mat_CompareNames(const CMaterial *a, const CMaterial *b) {
 		}
 	}
 	return 1;
-}
-
-char g_MatStr[256];
-
-const char *Mat_Str(const CMaterial *m) {
-	if (m) {
-		Bprintf(g_MatStr, 0x100, "%s [%s]", m->Name, m->map[0] ? m->map[0]->Name : NULL);
-		return g_MatStr;
-	}
-	Bprintf(g_MatStr, 0x100, "(null material)");
-	return g_MatStr;
 }
 
 void CMatList_Add(CMatList *self, CMaterial *mat) {
@@ -491,7 +437,7 @@ void CMatList_Add(CMatList *self, CMaterial *mat) {
 	mat->Refs++;
 }
 
-char g_TextureExts[10][MAX_FILEPATH];
+static char g_TextureExts[10][MAX_FILEPATH];
 
 void Tex_AddExtension(const char *ext) {
 	char tmp[0x114];
@@ -543,7 +489,7 @@ void Tex_AddExtension(const char *ext) {
 	E3D_LogDebug((&g_FileLog), "DBG: ExtensTexturas%d: '%s'", i + 1, d);
 }
 
-char g_TexturePaths[10][MAX_FILEPATH];
+static char g_TexturePaths[10][MAX_FILEPATH];
 
 void Tex_AddPath(const char *path) {
 	int i;
@@ -573,6 +519,7 @@ void Tex_ClearPaths(void) {
 	}
 }
 
+static byte CMap_Equal(const CMap *a, const CMap *b);
 CMaterial *CMatList_Find(CMatList *self, const CMaterial *mat) {
 	CHECK(!self->first || !self->first->prev);
 	CHECK(Mat_IsShareable(mat));
@@ -602,7 +549,7 @@ CMaterial *CMatList_Find(CMatList *self, const CMaterial *mat) {
 	return NULL;
 }
 
-byte Tex_TryFormat(const char *frmt, const char *name, char *out, int alpha) {
+static byte Tex_TryFormat(const char *frmt, const char *name, char *out, int alpha) {
 	char tmp[MAX_FILEPATH];
 
 	Path_Format(tmp, name, frmt);
@@ -616,7 +563,8 @@ byte Tex_TryFormat(const char *frmt, const char *name, char *out, int alpha) {
 	return 0;
 }
 
-int Tex_FindDDS(const char *name, char *out, int alpha) {
+/* 0 with the file in out, -1 */
+static int Tex_FindDDS(const char *name, char *out, int alpha) {
 	char ext[MAX_FILEPATH];
 
 	Path_SplitDrive(name, NULL, NULL, NULL, ext);
@@ -639,7 +587,7 @@ int Tex_FindDDS(const char *name, char *out, int alpha) {
 	return -1;
 }
 
-int Tex_FindInPaths(const char *name, char *out) {
+static int Tex_FindInPaths(const char *name, char *out) {
 	char file[MAX_FILEPATH];
 	char tmp[MAX_FILEPATH];
 
@@ -663,7 +611,8 @@ static void Mat_LogOlder(const char *dds, const char *orig) {
 	}
 }
 
-char *CMap_ResolvePath(CMap *self, byte load, CMap *alpha) {
+/* the file of the map: a DDS version, the bmp/ directory, the texture paths, numbered frames; path or NULL */
+static char *CMap_ResolvePath(CMap *self, byte load, CMap *alpha) {
 	char path[MAX_FILEPATH];
 	char found[MAX_FILEPATH];
 	char drive[4], dir[0x100], name[0x100], ext[0x100];
@@ -726,10 +675,12 @@ char *CMap_ResolvePath(CMap *self, byte load, CMap *alpha) {
 	return self->path;
 }
 
-int g_AnimCycleDefault;
-float g_AnimFpsDefault = 25.0f;
+static int g_AnimCycleDefault;
+static float g_AnimFpsDefault = 25.0f;
 
-void CMap_LoadTexture(CMap *self, void *dev, CMap *alpha, int kind) {
+static char *CMap_FramePath(CMap *self, int frame, char *buf, int size);
+static void CMap_Release(CMap *self);
+static void CMap_LoadTexture(CMap *self, void *dev, CMap *alpha, int kind) {
 	char buf[MAX_FILEPATH];
 	char abuf[MAX_FILEPATH];
 	char ini_name[MAX_FILEPATH];
@@ -872,7 +823,7 @@ void CMatList_Prepare(CMatList *self, void *dev) {
 	}
 }
 
-byte CMap_Equal(const CMap *a, const CMap *b) {
+static byte CMap_Equal(const CMap *a, const CMap *b) {
 	if (a == b) {
 		return 1;
 	}
@@ -1046,7 +997,7 @@ void CMaterial_CalcColors(CMaterial *self, float *out) {
 	out[3] = (float)p->diffuse[3] / 255.0f;
 }
 
-void CMap_Release(CMap *self) {
+static void CMap_Release(CMap *self) {
 	self->cur = NULL;
 	CTextStatic_dtor(&self->staticTex);
 	self->state = 0;
@@ -1067,7 +1018,7 @@ void CMap_Release(CMap *self) {
 	}
 }
 
-void CMaterial_Release(CMaterial *self) {
+static void CMaterial_Release(CMaterial *self) {
 	if (self->sub) {
 		CMatList_Release(self->sub);
 	}
@@ -1136,7 +1087,7 @@ void CMaterial_MapToColor(CMaterial *self) {
 	Mat_DeleteMap(&self->map[0]);
 }
 
-byte CMap_GetSize(CMap *self, int *w, int *h) {
+static byte CMap_GetSize(CMap *self, int *w, int *h) {
 	int info[5];
 
 	if (self->cur && !Texture_GetInfo(self->cur->Hint, info)) {
@@ -1176,7 +1127,7 @@ byte CMaterial_GetMapSize(CMaterial *self, uint32_t mapid, int *w, int *h) {
 	return self->map[mapid] ? CMap_GetSize(self->map[mapid], w, h) : 0;
 }
 
-char *CMap_FramePath(CMap *self, int frame, char *buf, int size) {
+static char *CMap_FramePath(CMap *self, int frame, char *buf, int size) {
 	if (self->animated) {
 		CHECK(self->pathAni);
 		Bprintf(buf, size, self->pathAni, frame);
@@ -1198,7 +1149,9 @@ void CMatList_Delete(CMatList *self, CMaterial *mat) {
 
 /* ---- the constructors and destructors of material.h and objref.h (rva 0x2336f0..) ---- */
 
-CMatList *CMatList_DeleteObj(CMatList *self, byte flags) {
+/* the constructors and destructors of material.h */
+static void CMatList_dtor(CMatList *self);
+static CMatList *CMatList_DeleteObj(CMatList *self, byte flags) {
 	CMatList_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -1206,7 +1159,7 @@ CMatList *CMatList_DeleteObj(CMatList *self, byte flags) {
 	return self;
 }
 
-CMap *CMap_ctor(CMap *self) {
+static CMap *CMap_ctor(CMap *self) {
 	self->Name = NULL;
 	self->path = NULL;
 	self->staticTex.tex = NULL;
@@ -1280,7 +1233,7 @@ CMaterial *CMaterial_ctor(CMaterial *self) {
 }
 
 /* a CBmp of the stack freed (the pixels with the sized delete of one pixel) */
-void CMatList_dtor(CMatList *self) {
+static void CMatList_dtor(CMatList *self) {
 	self->vftable = CMATLIST_VFTABLE;
 	CMatList_DeleteAll(self);
 	if (self->Name) {
@@ -1289,11 +1242,11 @@ void CMatList_dtor(CMatList *self) {
 }
 
 /* the atexit destructor of (&g_MatList) (rva 0x38ec70, the destructor inlined) */
-void Material_FiniMatList(void) {
+static void Material_FiniMatList(void) {
 	CMatList_dtor((&g_MatList));
 }
 
-void CMap_dtor(CMap *self) {
+static void CMap_dtor(CMap *self) {
 	CMap_Release(self);
 	if (self->pathAni) {
 		String_Set(&self->pathAni, NULL);
@@ -1335,10 +1288,6 @@ void String_dtor(char **self) {
 	if (*self) {
 		String_Set(self, NULL);
 	}
-}
-
-byte CMap_HasAlpha(const CMap *self) {
-	return self->hasAlpha;
 }
 
 void CMaterial_ScaleColors(CMaterial *self, float k) {
@@ -1419,7 +1368,7 @@ const CMatListVtbl CMatList_vftable = {
 };
 
 /* the vtable of CMaterial */
-const CMaterialVtbl CMaterial_vftable = {
+static const CMaterialVtbl CMaterial_vftable = {
 	.Delete = CMaterial_Delete,
 };
 

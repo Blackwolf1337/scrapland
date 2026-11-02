@@ -7,6 +7,9 @@
 #include "scrap/chartype.h"
 #include "scrap/staticinit.h"
 
+#define g_FXBankerStealFile (GVar_FXBankerStealFile.value.s)
+static cGVar GVar_FXBankerStealFile;
+
 void ChType_ReadParams(cAbstractFile *f, char *name, char *event) {
 	float unused;
 
@@ -24,7 +27,7 @@ cEntity *ChType_CheckChar(const char *name) {
 }
 
 /* params: the bank director */
-void ChType_BankDirectorActionPress(cAbstractFile *params) {
+static void ChType_BankDirectorActionPress(cAbstractFile *params) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -37,7 +40,7 @@ void ChType_BankDirectorActionPress(cAbstractFile *params) {
 	}
 }
 
-void ChType_BankDirectorActionRelease(cAbstractFile *params) {
+static void ChType_BankDirectorActionRelease(cAbstractFile *params) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -50,7 +53,7 @@ void ChType_BankDirectorActionRelease(cAbstractFile *params) {
 	}
 }
 
-void ChType_BankDirectorEndActionInit(cAbstractFile *params) {
+static void ChType_BankDirectorEndActionInit(cAbstractFile *params) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -65,7 +68,7 @@ void ChType_BankDirectorEndActionInit(cAbstractFile *params) {
 
 /* params: the banker, an event, a float. The player steals from its victim, an AI banker from the victim of its
  * logic, which gets told by how much the victim looks away (0 face to face, 100 from behind). */
-void ChType_BankerAttack(cAbstractFile *params) {
+static void ChType_BankerAttack(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 	cEntity *victim = NULL;
 
@@ -115,7 +118,8 @@ cEntity *ChType_BankerVictim(cEntity *v) {
 	return e;
 }
 
-byte ChType_CanRob(cEntity *thief, cEntity *v) {
+/* thief may rob v (unused first argument): v is a character with money */
+static byte ChType_CanRob(cEntity *thief, cEntity *v) {
 	(void)thief;
 	if (!v || !v->vftable->IsType(v, TYEN_WALKCHAR)) {
 		return 0;
@@ -192,11 +196,12 @@ byte ChType_Steal(cEntity **thief, cEntity **victim, int amount, const char *sta
 	return n != 0;
 }
 
-cGVar GVar_FXBankerStealFile;
-cPy_NativeFunc NativeFunc_BankerAttack;
-cPy_NativeFunc NativeFunc_BankDirectorActionPress;
-cPy_NativeFunc NativeFunc_BankDirectorActionRelease;
-cPy_NativeFunc NativeFunc_BankDirectorEndActionInit;
+/* engine variables (Gvars) */
+static cGVar GVar_FXBankerStealFile;
+static cPy_NativeFunc NativeFunc_BankerAttack;
+static cPy_NativeFunc NativeFunc_BankDirectorActionPress;
+static cPy_NativeFunc NativeFunc_BankDirectorActionRelease;
+static cPy_NativeFunc NativeFunc_BankDirectorEndActionInit;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_FXBankerStealFile, &GVar_FXBankerStealFile)

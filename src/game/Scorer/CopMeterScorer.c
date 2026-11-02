@@ -5,6 +5,9 @@
 #include "scrap/app.h"
 #include "scrap/scoreritems.h"
 
+#define CCOPMETERSCORER_VFTABLE (&cCopMeterScorer_vftable)
+static const cScorerItemVtbl cCopMeterScorer_vftable;
+
 static CPsaImage *CopMeter_NewImage(const char *name, int flagsOnly) {
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	if (img) {
@@ -43,7 +46,7 @@ cCopMeterScorer *cCopMeterScorer_ctor(cCopMeterScorer *self) {
 	return self;
 }
 
-void cCopMeterScorer_dtor(cCopMeterScorer *self) {
+static void cCopMeterScorer_dtor(cCopMeterScorer *self) {
 	CPsaImage *img = self->img;
 	self->base.vftable = CCOPMETERSCORER_VFTABLE;
 	CopMeter_FreeImage(img);
@@ -51,7 +54,7 @@ void cCopMeterScorer_dtor(cCopMeterScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cScorerItem *cCopMeterScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cCopMeterScorer_Delete(cScorerItem *base, byte flags) {
 	cCopMeterScorer *self = (cCopMeterScorer *)base;
 	cCopMeterScorer_dtor(self);
 	if (flags & 1) {
@@ -70,7 +73,8 @@ static int CopMeter_VarPercent(float *v, byte set, double *d) {
 	return 2;
 }
 
-int cCopMeterScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+/* Sprite (set), Percent, Target (0..100), BackIndex, BackOffX/Y, LightIndex, LightOffX/Y, BarOffX/Y, BarIndex */
+static int cCopMeterScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cCopMeterScorer *self = (cCopMeterScorer *)base;
 	if (s && !crt_stricmp(name, "Sprite") && set) {
 		CopMeter_FreeImage(self->img);
@@ -128,7 +132,7 @@ static void CopMeter_Flash(cCopMeterScorer *self, float t, int frame, float x) {
 	CPsaImage_DrawFrame(self->flash, frame, x, (self->lightOffY + self->base.y) + 0.0f);
 }
 
-void cCopMeterScorer_Draw(cScorerItem *base, int player) {
+static void cCopMeterScorer_Draw(cScorerItem *base, int player) {
 	cCopMeterScorer *self = (cCopMeterScorer *)base;
 	float level = g_pWorld->alarm.value;
 	float v;
@@ -226,7 +230,7 @@ void cCopMeterScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cCopMeterScorer */
-const cScorerItemVtbl cCopMeterScorer_vftable = {
+static const cScorerItemVtbl cCopMeterScorer_vftable = {
 	.Draw = cCopMeterScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cCopMeterScorer_Var,

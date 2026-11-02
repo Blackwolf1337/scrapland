@@ -7,8 +7,12 @@
 #include "scrap/graphic2d.h"
 #include "scrap/staticinit.h"
 
+#define g_SpriteScaleWidth (GVar_SpriteScaleWidth.value.f)
+static cGVar GVar_SpriteScaleWidth;
+
 /* the corner of the texture of each corner of the rectangle (u0 v0, u1 v0, u0 v1, u1 v1) by rot */
 
+static void CGraphic2D_Init(CGraphic2D *self);
 CGraphic2D *CGraphic2D_ctorTex(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags) {
 	CGraphic2D_Init(self);
 	CGraphic2D_CreateMat(self, tex, opac, 5, 6, 0, flags);
@@ -60,17 +64,18 @@ static void Draw_Verts(void *dev, int type, uint32_t nPrim, const Vert2D *v, uin
 	g_RenderVerts += (int)nVert;
 }
 
-Vert2D g_Verts2D[64];
-double g_Screen2DInvW = 0.00125;
-double g_Screen2DInvH = 0.0016666666666666668;
+static Vert2D g_Verts2D[64];
+static double g_Screen2DInvW = 0.00125;
+static double g_Screen2DInvH = 0.0016666666666666668;
 
-int g_Graphic2DRot[4][4] = {
+static int g_Graphic2DRot[4][4] = {
 	{ 0, 1, 2, 3 },
 	{ 2, 0, 3, 1 },
 	{ 3, 2, 1 },
 	{ 1, 3, 0, 2 },
 };
 
+static uint32_t Graphic2D_NumPrims(int type, uint32_t nVert);
 void CGraphic2D_Draw(CGraphic2D *self, const float *pos, const float *uv, const uint32_t *colors,
 	uint32_t nVert, int type) {
 	if (g_RenderOff) {
@@ -162,8 +167,9 @@ void CGraphic2D_Draw(CGraphic2D *self, const float *pos, const float *uv, const 
 	Draw_Verts(dev, D3DPT_TRIANGLESTRIP, 2, v, 4);
 }
 
-int g_Screen2DW = 800;
-int g_Screen2DH = 600;
+/* the 2D screen size and its inverses */
+static int g_Screen2DW = 800;
+static int g_Screen2DH = 600;
 
 void Graphic2D_SetScreen(int w, int h) {
 	g_Screen2DW = w;
@@ -224,7 +230,7 @@ void CGraphic2D_CreateMat(CGraphic2D *self, const char *tex, const char *opac, i
 	CMaterial_dtor(&m);
 }
 
-void CGraphic2D_Init(CGraphic2D *self) {
+static void CGraphic2D_Init(CGraphic2D *self) {
 	self->x = 0.0f;
 	self->y = 0.0f;
 	self->alignX = 0.0f;
@@ -248,7 +254,8 @@ void CGraphic2D_Init(CGraphic2D *self) {
 	self->rot = 0;
 }
 
-uint32_t Graphic2D_NumPrims(int type, uint32_t nVert) {
+/* the primitives of nVert vertices (4: triangle list, 5: strip, 6: fan) */
+static uint32_t Graphic2D_NumPrims(int type, uint32_t nVert) {
 	CHECK(nVert > 0);
 	if (type == 4) {
 		CHECK((nVert % 3) == 0);
@@ -274,7 +281,7 @@ void Graphic2D_GetScreen(int *w, int *h) {
 	}
 }
 
-cGVar GVar_SpriteScaleWidth;
+static cGVar GVar_SpriteScaleWidth;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_SpriteScaleWidth, &GVar_SpriteScaleWidth, "SpriteScaleWidth", 0, "", 1.0f)

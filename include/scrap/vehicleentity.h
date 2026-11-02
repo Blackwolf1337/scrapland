@@ -176,8 +176,6 @@ typedef struct cVehicleEntityVtbl {
 	byte(*GetPilotPos)(cEntity *self, int slot, vec3_t *pos, vec3_t *ang);	/* 0x100 vf64 */
 	void(*Crash)(cEntity *self, const vec3_t *acc, float force);	/* 0x104 vf65 */
 } cVehicleEntityVtbl;
-extern const cVehicleEntityVtbl cVehicleEntity_vftable;
-#define CVEHICLEENTITY_VFTABLE (&cVehicleEntity_vftable.base.base.base)
 
 static inline const cVehicleEntityVtbl *Veh_Vtbl(cVehicleEntity *v) {
 	return (const cVehicleEntityVtbl *)v->wl.obj.base.vftable;
@@ -197,11 +195,6 @@ extern cGVar GVar_TopLimit;
 
 /* the parts of other files (not decompiled yet; VehicleMotors, VehicleTraffic and WeaponManager in their headers);
  * the objects inside the vehicle by their offset */
-/* the flight of dt: thrust, turn, boost, friction, the fall above the atmosphere and the free space magnet */
-void cVehicleEntity_Step(cVehicleEntity *self, float dt);
-/* vf24: the model of the slot (the wobble above the atmosphere, the floating, the tilt), the player camera, the
- * pilot, the motors and the effects */
-void cVehicleEntity_UpdateModel(cEntity *elem);
 void *cVehicleMotors_ctor(void *motors);
 void cVehicleMotors_dtor(void *motors);
 void cVehicleControls_Tick(cVehicleControls *c, cEntity *v, float dt);
@@ -212,22 +205,11 @@ void cVehicleControls_Tick(cVehicleControls *c, cEntity *v, float dt);
  * cycle through, made new when the selected one is gone or the list is older than TgtRegenerationTime.
  */
 
-extern cGVar GVar_TgtRegenerationTime;
-#define g_TgtRegenerationTime (GVar_TgtRegenerationTime.value.f)
-
 /* the functions take the o648 bytes of the vehicle */
 void *cVehicleO648_ctor(void *o);
 void cVehicleO648_dtor(void *o);
-/* 1 while the target can not change: an EMIed ship (not a player one with VehicleCenterPadLock) */
-byte cVehicleO648_IsBlocked(void *o);
-/* the list made new from the attacker and the enemies by distance, the target its first */
-void cVehicleO648_Rebuild(void *o);
 /* the list for a player slot, none for -1 */
 void cVehicleO648_SetSlot(void *o, int slot);
-/* the next (or previous) of the list */
-void cVehicleO648_Cycle(void *o, byte next);
-/* the entity in the view of the owner (cos > 0.95 within 50000) */
-void cVehicleO648_PickInView(void *o);
 /* the target dropped when it is gone, a new one after the wait */
 void cVehicleO648_Update(void *o, float dt);
 /* 1 when the list is too old or the target is not active in it */
@@ -242,87 +224,18 @@ void cWithLifeEntity_SetMass(cEntity *self, float mass);
 cActCtrl *cWithLifeEntity_GetActCtrl(cEntity *self);
 void *cAIVehicle_ctor(void *mem, cEntity *v, void *p1, void *p2, void *p3);
 cNetVController *cNetVController_ctor(void *mem, cEntity *v);
-/* NetVController.c */
-byte cNetVController_Changed(cNetController *elem, byte flags, cEntity *e);
-void cNetVController_Reset(cNetController *elem);
-void cNetVController_Read(cNetController *elem, void *m);
-void cNetVController_Write(cNetController *elem, int flags, cEntity *e, void *m, int force);
 
-/* VehicleEntity.c; the constructor is declared in world.h */
-void cVehicleEntity_dtor(cVehicleEntity *self);
-cEntity *cVehicleEntity_Delete(cEntity *base, uint32_t flags);
-/* the push of two vehicles that touch: bounced by their masses, pushed apart when they are inside each other */
-void cVehicleEntity_Touch(cEntity *elem, cEntity *e, const vec3_t *point, const vec3_t *normal);
-/* the destructor of the cAutoAim at 0x6d0 (only its target link) */
-void cAutoAim_dtor(void *self);
-/* MaxSpeed, Fric, AcMass and the trusts from the mass, life, engine and style */
-void cVehicleEntity_UpdateTrust(cVehicleEntity *self);
 /* the speed history restarted from the velocity (AvoidCrash) */
 void cVehicleEntity_UpdateSpeed(cEntity *self);
-void cVehicleEntity_BoostTick(cVehicleEntity *self, float dt);
-byte cVehicleEntity_GetLaunchTaunts(cEntity *base);
-/* the boost sound and the speed history restarted */
-void cVehicleEntity_StartBoost(cVehicleEntity *self);
-void cVehicleEntity_EMITick(cVehicleEntity *self, float dt);
-void cVehicleEntity_CloudTick(cVehicleEntity *self, float dt);
-void cVehicleEntity_NoFireTick(cVehicleEntity *self, float dt);
-void cVehicleEntity_PushTick(cVehicleEntity *self, float dt);
-void cVehicleEntity_SetMass(cEntity *base, float mass);
 /* the debris cloud on a vehicle for time */
 void cVehicleEntity_SetCloud(cEntity *self, float time, byte on);
 /* a state flag for the network game */
 void cVehicleEntity_SetNetFlag(cEntity *self, byte on);
-byte cVehicleEntity_IsBoostReady(cVehicleEntity *self);
-byte cVehicleEntity_IsEMIed(cEntity *base);
 int cVehicleEntity_CanFire(cVehicleEntity *self);
-void cVehicleEntity_UpdateHistory(cEntity *base);
-void cVehicleEntity_Crash(cEntity *base, const vec3_t *acc, float force);
-/* the smooth values of the flight for the effects, the camera and the sounds */
-void cVehicleEntity_Smooth(cVehicleEntity *self, float dt);
-/* from (the position before the step) to the position: collisions with the world and the entities */
-void cVehicleEntity_Collide(cVehicleEntity *self, vec3_t *from, float dt);
-/* the moves of a ship of a client player, of a client copy, on the server and of the others */
-void cVehicleEntity_NetMove(cVehicleEntity *self, float dt);
-void cVehicleEntity_ClientMove(cVehicleEntity *self, float dt);
-void cVehicleEntity_ServerMove(cVehicleEntity *self, float dt);
-void cVehicleEntity_Move(cVehicleEntity *self, float dt);
-void cVehicleEntity_Tick(cEntity *elem, float dt);
-void cVehicleEntity_Update(cEntity *base);
-void cVehicleEntity_SetVel(cEntity *base, const vec3_t *vel);
-/* the cross fade of the motor sound a into b */
-void Vehicle_SndCrossFade(cSndItem *a, cSndItem *b);
-void cVehicleEntity_UpdateSounds(cEntity *elem, float dt);
 void cVehicleEntity_NetCreate(cVehicleEntity *self);
-void cVehicleEntity_NetDelete(cVehicleEntity *self);
-void cVehicleEntity_NetRead(cEntity *elem, void *msg, int unused);
-void cVehicleEntity_NetWrite(cEntity *elem, float dist2, void *msg, int full);
-void cVehicleEntity_SetUsrControl(cVehicleEntity *self, int slot);
-void cVehicleEntity_EnableAI(cEntity *elem, byte enable, void *p1, void *p2, void *p3);
-const char *cVehicleEntity_GetPilot(cEntity *base, int slot);
-byte cVehicleEntity_GetPilotPos(cEntity *base, int slot, vec3_t *pos, vec3_t *ang);
-byte cVehicleEntity_SetPilot(cEntity *elem, int slot, const char *name, float sx, float sy, float sz);
-byte cVehicleEntity_SetPilotAnim(cEntity *base, int slot, int anim);
-void cVehicleEntity_UpdatePilot(cEntity *base, int slot, float dt);
 void cVehicleEntity_UpdatePilotPos(cVehicleEntity *self, byte on);
-void cVehicleEntity_SetModel(cEntity *base, const char *file, float sx, float sy, float sz, int inDir);
-void cVehicleEntity_SetEmbeddedFX(cEntity *base, const char *fxType);
 void cVehicleEntity_StartFade(cVehicleEntity *self);
-void cVehicleEntity_SetFX(cEntity *base, uint32_t fx);
-void cVehicleEntity_SetFXParam(cEntity *base, int i, float v);
-void cVehicleEntity_SetActive(cEntity *elem, byte on);
-void cVehicleEntity_RenderNow(cEntity *base);
-void cVehicleEntity_GetCamPoint(cEntity *elem, vec3_t *pos, vec3_t *ang);
-const char *cVehicleEntity_GetClassName(cEntity *base);
 /* < 0 when no player controls the entity (assumed from SAI.EnableAI*) */
 int cVehicleEntity_GetOwnerSlot(cEntity *e);
-float cVehicleEntity_GetWRadius(cEntity *base);
-void cVehicleEntity_UpdateOff(cEntity *base);
-byte cVehicleEntity_IsType(cEntity *base, const char *type);
-/* the turn input curve: |x| <= 1 kept, else sqrt(|x| - 0.75) + 0.5 with the sign of x */
-float Vehicle_TurnCurve(float x);
-byte cVehicleEntity_VarF(cEntity *base, const char *name, double *d, int set);
-byte cVehicleEntity_VarI(cEntity *base, const char *name, int *i, int set);
-byte cVehicleEntity_VarS(cEntity *base, const char *name, char **s, int set);
-byte cVehicleEntity_VarV(cEntity *base, const char *name, double *x, double *y, double *z, int set);
 
 #endif

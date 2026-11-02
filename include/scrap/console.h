@@ -33,8 +33,6 @@ void Con_Errorf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 void Con_Warnf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 /* printf into the console lines, while the debug level is not 0 */
 void Con_Printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
-/* the "Scrap Fatal Error" message box, then the end of the process */
-void Con_Fatal(const char *msg);
 /* like Con_Printf in color 0xff, keeps GetLastError for the log, then Con_Fatal ends the game */
 void Con_FatalErrorf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 /* like Con_Printf in color 0x707000, only above debug level 1 */

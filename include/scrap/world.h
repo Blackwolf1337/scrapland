@@ -12,19 +12,9 @@
 #include "scrap/pyfunction.h"
 #include "scrap/scrap.h"
 
-extern cGVarFunction GVar_ChatEvent;
-extern cGVarFunction GVar_EscapeEvent;
-extern cGVarFunction GVar_MainMissionEvent;
 extern cGVarFunction GVar_OnGeneralDamage;
 extern cGVarFunction GVar_OnLifeItemTaken;
 extern cGVarFunction GVar_OnSleep;
-extern cGVar GVar_PriorityWeapon;
-extern cGVarFunction GVar_QChatEvent1;
-extern cGVarFunction GVar_QChatEvent2;
-extern cGVarFunction GVar_QChatEvent3;
-extern cGVarFunction GVar_QChatEvent4;
-extern cGVarFunction GVar_QChatEvent5;
-extern cGVarFunction GVar_QChatEvent6;
 
 /* a weapon of g_pWorld->weapons (SWeap.InitWeap) */
 struct cWeapInfo {
@@ -60,8 +50,6 @@ struct cAmmoInfo {
 #define CAMMOINFO_CTOR 0x206360
 #define CWEAPINFO_CTOR 0x2063f0
 
-extern const cWorldVtbl cWorld_vftable;
-#define CWORLD_VFTABLE (&cWorld_vftable)
 #define CWORLD_SIZE sizeof(cWorld)
 
 /* the fields of entities the world reads */
@@ -71,16 +59,11 @@ extern const cWorldVtbl cWorld_vftable;
 #define CamEntity_Slot(e) (((cCamControl *)(e))->slot)		/* the view it shows, -1 for none */
 
 int MapLevel_NearestUp(const MapLevel *self, const vec3_t *p);
-int MapLevel_CompareY(const void *a, const void *b);
 
 /* the objects embedded in cWorld, only known by their methods */
 void *Elements_ctor(void *elements);
 void Elements_dtor(void *elements);
 void Elements_Update(void *elements, float dt);
-/* World/MapElements.cpp: the first element of the model name within maxDist of pos, NULL */
-struct cMapElement *Elements_Find(void *elements, const char *name, vec3_t pos, float maxDist);
-/* an element of a saved game: name, position, radius of the search, on or off */
-void Elements_Load(cAbstractFile *f);
 void *cStrMoney_ctor(void *obj);
 void cStrMoney_Update(void *obj, float dt);
 void *Logic_ctor(void *logic);
@@ -97,10 +80,6 @@ void cDebrisSys_SetName(cDebrisSys *sys, const char *name);
 void cDebrisSys_FreeActive(cDebrisSys *sys);
 void cDebrisSys_FreeIdle(cDebrisSys *sys);
 void cDebrisSys_Update(cDebrisSys *sys, float dt);
-/* World/ObjPool.cpp, the rest (src/game/World/ObjPool.c; more in fxmisc.h and missileentity.h) */
-byte cDebris_SetFX(int type, cDebris *d);
-byte cDebris_IsAlive(cDebris *d, cDebrisSys *sys);
-void cDebrisSys_SetMaxIdle(cDebrisSys *sys, int n);
 /* the debug text of the object pool (O_Show) at x, y; *line goes on to the next line */
 void cDebrisSys_ShowInfo(cDebrisSys *sys, int x, int y, float *line);
 
@@ -136,20 +115,8 @@ int Talk_IsShown(void);
 void cPy_Function_Clear(cPy_Function *self);
 void Str_TrimBlanks(char *s);
 
-/* engine variables (Gvars) */
-extern cGVar GVar_Max_Rad_Obj;
-#define g_MaxRadObj (GVar_Max_Rad_Obj.value.f)		/* Max_Rad_Obj, the margin of the grid queries */
-extern cGVar GVar_GridScaleX;
-#define g_GridScaleX (GVar_GridScaleX.value.f)
-extern cGVar GVar_GridScaleY;
-#define g_GridScaleY (GVar_GridScaleY.value.f)
-extern cGVar GVar_GridScaleZ;
-#define g_GridScaleZ (GVar_GridScaleZ.value.f)
 extern cGVar GVar_SplitScreen;
 #define g_SplitScreenGame (GVar_SplitScreen.value.i)		/* SplitScreen */
-extern cGVar GVar_GameSkill;
-#define g_GameSkill (GVar_GameSkill.value.i)
-#define g_GameSkillDef (GVar_GameSkill.def.i)
 extern cGVar GVar_VehicleEditingMode;
 #define g_VehicleEditingMode (GVar_VehicleEditingMode.value.i)
 extern cGVar GVar_MaxChasingShips;
@@ -170,61 +137,28 @@ extern cGVar GVar_NotShootAI;
 #define g_NotShootAIDef (GVar_NotShootAI.def.i)
 extern cGVar GVar_RemainTalkTime;
 #define g_RemainTalkTime (GVar_RemainTalkTime.value.f)
-#define g_PriorityWeapon (((cString *)&GVar_PriorityWeapon.value))	/* PriorityWeapon, its default at +4 */
 extern cGVar GVar_R_SplitScreenCamera;
 #define g_SplitScreenCamera (GVar_R_SplitScreenCamera.value.i)		/* R_SplitScreenCamera */
 extern cGVar GVar_R_SplitScreenUpdate;
 #define g_SplitScreenUpdate (GVar_R_SplitScreenUpdate.value.i)		/* R_SplitScreenUpdate */
-extern char g_UniqueName[128];		/* 0x80 bytes, the result of cWorld_UniqueName */
 /* script callbacks (cPy_Function of the GVAR_SCRIPT_FUNCTION variables) */
 #define g_OnSleep (((cPy_Function *)&GVar_OnSleep.func))
 #define g_OnLifeItemTaken (((cPy_Function *)&GVar_OnLifeItemTaken.func))
 #define g_OnGeneralDamage (((cPy_Function *)&GVar_OnGeneralDamage.func))
-#define g_MainMissionEvent (((cPy_Function *)&GVar_MainMissionEvent.func))
-#define g_EscapeEvent (((cPy_Function *)&GVar_EscapeEvent.func))
-#define g_ChatEvent (((cPy_Function *)&GVar_ChatEvent.func))
-#define g_QChatEvent1 (((cPy_Function *)&GVar_QChatEvent1.func))
-#define g_QChatEvent2 (((cPy_Function *)&GVar_QChatEvent2.func))
-#define g_QChatEvent3 (((cPy_Function *)&GVar_QChatEvent3.func))
-#define g_QChatEvent4 (((cPy_Function *)&GVar_QChatEvent4.func))
-#define g_QChatEvent5 (((cPy_Function *)&GVar_QChatEvent5.func))
-#define g_QChatEvent6 (((cPy_Function *)&GVar_QChatEvent6.func))
 
-/* World/World.cpp (the rest is in scrap.h, entity.h and game.h) */
-float Vec3_DotViewDir(const vec3_t *v, float ax, float ay);
 cEntity *Entity_FindInView(cEntity *self, float range, float *outDot, float *outDist, int mode, float minDot);
 byte Team_IsFriend(int a, int b);
 byte Team_IsEnemy(int a, int b);
-cAmmoInfo *cAmmoInfo_ctor(cAmmoInfo *self);
-cWeapInfo *cWeapInfo_ctor(cWeapInfo *self);
-void cAmmoInfo_dtor(cAmmoInfo *self);
-void cWeapInfo_dtor(cWeapInfo *self);
-cAmmoInfo *cAmmoInfo_Delete(cAmmoInfo *self, uint32_t flags);
-cWeapInfo *cWeapInfo_Delete(cWeapInfo *self, uint32_t flags);
 cWorld *cWorld_ctor(cWorld *self);
-void AmmoTable_Free(void *table);
-void WeapTable_Free(void *table);
-void cWorld_dtor(cWorld *self);
-cWorld *cWorld_Destroy(cWorld *self, byte flags);
 void cWorld_AddIgnore(cWorld *self, cEntity *e);
-byte cWorld_IsIgnored(cWorld *self, cEntity *e);
-byte cWorld_LineCallF(cWorld *self, uint32_t mask, const vec3_t *from, const vec3_t *to, float radius,
-	cPy_Function *func);
 byte cWorld_LineCall(cWorld *self, uint32_t mask, const vec3_t *from, const vec3_t *to, float radius,
 	const char *func);
-byte cWorld_LineFirst(cWorld *self, cEntity *exclude, uint32_t mask, const vec3_t *from, const vec3_t *to,
-	float radius, cEntity **target);
-void World_InputEvents(void);
 void cWorld_Clear(cWorld *self);
-void cWorld_DeleteLists(cWorld *self);
-float cWorld_GetMinCamDist(cWorld *self, const vec3_t *pos);
 void *cWorld_GetObjData(cWorld *self, const char *name);
-char *cWorld_UniqueName(cWorld *self, const char *name);
 void cWorld_ResetLogic(cWorld *self);
 byte World_IsEasySingle(void);
 byte World_IsHardSingle(void);
 void cWorld_ShowDebrisInfo(cWorld *self, int x, int y);
-void cWorld_UpdateListeners(cWorld *self, float dt);
 void cWorld_Update(cWorld *self, float dt);
 byte cWorld_SphereCallF(cWorld *self, uint32_t mask, const vec3_t *center, float radius,
 	cPy_Function *func, int noWall);

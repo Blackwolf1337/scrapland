@@ -9,7 +9,7 @@
 #include "scrap/e3dutil.h"
 #include "scrap/trimesh.h"
 
-extern const IObject3DVtbl CTriMesh_vftable;
+static const IObject3DVtbl CTriMesh_vftable;
 #define CTRIMESH_VFTABLE (&CTriMesh_vftable)
 #define TRIMESH_SKIN 16
 /* the box before the first vertex, rva 0x3a3a38 and 0x3a512c */
@@ -17,7 +17,6 @@ extern const IObject3DVtbl CTriMesh_vftable;
 
 /* draw the meshes through their D3D mesh */
 /* statistics of the frame */
-
 
 /* the counts as the add functions take them: 0 without the array */
 static int Mesh_NumVert(const CTriMesh *m) {
@@ -32,7 +31,7 @@ static int Mesh_NumTri(const CTriMesh *m) {
 	return m->pTri ? m->nTri : 0;
 }
 
-CMeshTri *CMeshTri_ctor(CMeshTri *self) {
+static CMeshTri *CMeshTri_ctor(CMeshTri *self) {
 	self->mat = NULL;
 	self->flags = 0;
 	return self;
@@ -72,7 +71,8 @@ static void *Mesh_Free(void *p) {
 	return NULL;
 }
 
-void CTriMesh_Init(CTriMesh *self) {
+/* the members after the vftable cleared, except the box */
+static void CTriMesh_Init(CTriMesh *self) {
 	self->class = CLASS_OBJ3D_TRIMESH;
 	self->nTri = 0;
 	self->nTVert = 0;
@@ -100,12 +100,6 @@ CTriMesh *CTriMesh_ctorCopy(CTriMesh *self, const CTriMesh *orig) {
 	return self;
 }
 
-CTriMesh *CTriMesh_ctorD3D(CTriMesh *self, CMeshD3D *src, byte all) {
-	CTriMesh_ctor(self);
-	CTriMesh_AddD3D(self, src, all);
-	return self;
-}
-
 void CTriMesh_Clear(CTriMesh *self) {
 	self->pVert = Mesh_Free(self->pVert);
 	self->pTVert = Mesh_Free(self->pTVert);
@@ -130,20 +124,13 @@ void CTriMesh_dtor(CTriMesh *self) {
 	self->vftable = IOBJECT3D_VFTABLE;
 }
 
-IObject3D *CTriMesh_Delete(IObject3D *base, byte flags) {
+static IObject3D *CTriMesh_Delete(IObject3D *base, byte flags) {
 	CTriMesh *self = (CTriMesh *)base;
 	CTriMesh_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
 	return base;
-}
-
-byte CTriMesh_NoFile(CTriMesh *self, void *f, void *ctx) {
-	(void)self;
-	(void)f;
-	(void)ctx;
-	return 0;
 }
 
 void CTriMesh_SetNumVert(CTriMesh *self, int n, byte realloc) {
@@ -168,19 +155,20 @@ void CTriMesh_SetNumTri(CTriMesh *self, int n, byte realloc) {
 	Mesh_Resize((void **)&self->pTri, &self->nTri, &self->maxTri, n, sizeof(CMeshTri), 1);
 }
 
-int CTriMesh_AddVert(CTriMesh *self) {
+/* one more: the index of the new one */
+static int CTriMesh_AddVert(CTriMesh *self) {
 	int n = Mesh_NumVert(self);
 	CTriMesh_SetNumVert(self, n + 1, 1);
 	return n;
 }
 
-int CTriMesh_AddTVert(CTriMesh *self) {
+static int CTriMesh_AddTVert(CTriMesh *self) {
 	int n = Mesh_NumTVert(self);
 	CTriMesh_SetNumTVert(self, n + 1, 1);
 	return n;
 }
 
-int CTriMesh_AddTri(CTriMesh *self) {
+static int CTriMesh_AddTri(CTriMesh *self) {
 	int n = Mesh_NumTri(self);
 	CTriMesh_SetNumTri(self, n + 1, 1);
 	return n;
@@ -254,17 +242,10 @@ void CTriMesh_SetTriNormals(CTriMesh *self, uint32_t i, const vec3_t *a, const v
 	self->pTri[i].n[2] = *c;
 }
 
-void CTriMesh_SetTriFlags(CTriMesh *self, uint32_t i, uint32_t flags) {
+static void CTriMesh_SetTriFlags(CTriMesh *self, uint32_t i, uint32_t flags) {
 	CHECK(i < (uint32_t)self->nTri);
 	CHECK(self->pTri);
 	self->pTri[i].flags = flags;
-}
-
-void CTriMesh_RemoveTri(CTriMesh *self, uint32_t i) {
-	CHECK(i < (uint32_t)self->nTri);
-	CHECK(self->pTri);
-	self->pTri[i] = self->pTri[self->nTri - 1];
-	self->nTri--;
 }
 
 void CTriMesh_GetTriVert(CTriMesh *self, CMeshVert *out, uint32_t tri, uint32_t vert) {
@@ -317,7 +298,8 @@ void CTriMesh_AddTriVerts(CTriMesh *self, const CMeshVert *a, const CMeshVert *b
 	CTriMesh_SetTriFlags(self, nt, flags);
 }
 
-void CTriMesh_CreateTVert(CTriMesh *self) {
+/* texture vertex 0 at (0, 0) for all triangles, when there are triangles but no texture vertices */
+static void CTriMesh_CreateTVert(CTriMesh *self) {
 	if (!self->pTri || self->pTVert) {
 		return;
 	}
@@ -497,9 +479,10 @@ void CTriMesh_Transform(CTriMesh *self, const matrix_t *m) {
 	}
 }
 
-byte g_MeshD3DOn = 1;
+static byte g_MeshD3DOn = 1;
 
-void CTriMesh_Draw(IObject3D *elem, void *dev, CRenderNode *unused) {
+/* through the D3D mesh when there is one and g_MeshD3DOn, else each triangle with DrawPrimitiveUP */
+static void CTriMesh_Draw(IObject3D *elem, void *dev, CRenderNode *unused) {
 	CTriMesh *self = (CTriMesh *)elem;
 	(void)unused;
 	/* the meshes draw through their D3D mesh, this path is not meant to run */
@@ -632,7 +615,7 @@ uv_t *CVertList_GetUV(CVertList *self, uv_t *out, uint32_t i) {
 }
 
 /* the vtable of CTriMesh */
-const IObject3DVtbl CTriMesh_vftable = {
+static const IObject3DVtbl CTriMesh_vftable = {
 	.Delete = CTriMesh_Delete,
 	.Update = IObject3D_UpdateNop,
 	.Render = CTriMesh_Draw,

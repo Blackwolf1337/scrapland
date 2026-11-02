@@ -17,12 +17,19 @@
 #include "scrap/scrapworld.h"
 #include "scrap/staticinit.h"
 
+#define CNODESWORLD2D_VFTABLE (&CNodesWorld2D_vftable)
+#define g_NW2DShowNode (GVar_ShowInfoRegAI.value.i)	/* the node the debug view shows, -1 none */
+#define g_NW2DGroundDist (GVar_AltPerpFloorAI.value.f)	/* the length of the floor probes */
+static cGVar GVar_ShowInfoRegAI;
+static cGVar GVar_AltPerpFloorAI;
+static const CNodesWorldVtbl CNodesWorld2D_vftable;
 
 int crt_chmod(const char *path, int mode);
 
 /* ---- Global/DList.h ---- */
 
-void NW2DRegion_dtor(cNW2DRegion *r) {
+/* the destructor of a region: its points emptied and their free nodes deleted (on the region) */
+static void NW2DRegion_dtor(cNW2DRegion *r) {
 	DListVec3_Clear(&r->points);
 	DList_FreePool(&r->points, sizeof(cNWVecNode));
 }
@@ -43,7 +50,8 @@ void NW2DRegionList_Add(cNW2DRegionList *list, const cNW2DRegion *r) {
 	DList_LinkFirst(list, node);
 }
 
-void NW2DRegionList_Release(cNW2DRegionList *list, cNW2DRegionNode *node) {
+/* to the free list while it has room, else the points and the node deleted */
+static void NW2DRegionList_Release(cNW2DRegionList *list, cNW2DRegionNode *node) {
 	if (list->numFree < list->maxFree) {
 		node->next = list->freeNodes;
 		list->numFree++;
@@ -56,7 +64,7 @@ void NW2DRegionList_Release(cNW2DRegionList *list, cNW2DRegionNode *node) {
 	}
 }
 
-void NW2DRegionList_Clear(cNW2DRegionList *list) {
+static void NW2DRegionList_Clear(cNW2DRegionList *list) {
 	while (list->head) {
 		cNW2DRegionNode *p = list->head;
 		list->iter = NULL;
@@ -73,7 +81,7 @@ void NW2DRegionList_Clear(cNW2DRegionList *list) {
 	}
 }
 
-void NW2DRegionList_FreePool(cNW2DRegionList *list) {
+static void NW2DRegionList_FreePool(cNW2DRegionList *list) {
 	while (list->freeNodes) {
 		cNW2DRegionNode *p = list->freeNodes;
 		list->freeNodes = p->next;
@@ -100,7 +108,8 @@ CNodesWorld2D *CNodesWorld2D_ctor(void *mem) {
 	return self;
 }
 
-void CNodesWorld2D_dtor(CNodesWorld2D *self) {
+/* CNodesWorld2D_ctor: ai.h */
+static void CNodesWorld2D_dtor(CNodesWorld2D *self) {
 	CNodesWorld *w = NW2D_SUP(self);
 
 	w->sup.vftable = CNODESWORLD2D_VFTABLE;
@@ -110,7 +119,7 @@ void CNodesWorld2D_dtor(CNodesWorld2D *self) {
 	CNodesWorldSup_dtor(w);
 }
 
-CNodesWorld *CNodesWorld2D_Delete(CNodesWorld *base, byte flags) {
+static CNodesWorld *CNodesWorld2D_Delete(CNodesWorld *base, byte flags) {
 	CNodesWorld2D *self = (CNodesWorld2D *)base;
 	CNodesWorld2D_dtor(self);
 	if (flags & 1) {
@@ -119,7 +128,8 @@ CNodesWorld *CNodesWorld2D_Delete(CNodesWorld *base, byte flags) {
 	return base;
 }
 
-byte CNodesWorld2D_LoadGraph(CNodesWorld *base) {
+/* <name>/AI/Path2DAI of the base class */
+static byte CNodesWorld2D_LoadGraph(CNodesWorld *base) {
 	CNodesWorld2D *self = (CNodesWorld2D *)base;
 	char path[0x100];
 
@@ -128,7 +138,8 @@ byte CNodesWorld2D_LoadGraph(CNodesWorld *base) {
 	return CNodesWorldSup_LoadGraph(NW2D_SUP(self), path) != 0;
 }
 
-byte CNodesWorld2D_SaveInfPath(CNodesWorld2D *self) {
+/* <name>/AI/InfPath2DAI.pth of the base class (writes a file) */
+static byte CNodesWorld2D_SaveInfPath(CNodesWorld2D *self) {
 	char path[0x100];
 
 	NW_LevelPath(path, NW2D_SUP(self), "/AI/InfPath2DAI.pth");
@@ -140,6 +151,7 @@ byte CNodesWorld2D_SaveInfPath(CNodesWorld2D *self) {
 }
 
 /* the floor point of p into the file; a fatal error without floor */
+static byte CNodesWorld2D_Ground(CNodesWorld2D *self, const vec3_t *p, vec3_t *hit, float height);
 static void NW2D_WriteGround(CNodesWorld2D *self, cFilePack *f, const vec3_t *p) {
 	vec3_t g;
 
@@ -150,7 +162,8 @@ static void NW2D_WriteGround(CNodesWorld2D *self, cFilePack *f, const vec3_t *p)
 	cFilePack_Write(&f->file.base, &g, sizeof(g));
 }
 
-byte CNodesWorld2D_SavePath(CNodesWorld *base) {
+/* the floor points of the points and their links into <name>/AI/Path2DAI.pth (writes a file) */
+static byte CNodesWorld2D_SavePath(CNodesWorld *base) {
 	CNodesWorld2D *self = (CNodesWorld2D *)base;
 	CNodesWorld *w = NW2D_SUP(self);
 	char path[0x100];
@@ -205,7 +218,7 @@ byte CNodesWorld2D_SavePath(CNodesWorld *base) {
 	return ok;
 }
 
-void CNodesWorld2D_ClearLists(CNodesWorld *base) {
+static void CNodesWorld2D_ClearLists(CNodesWorld *base) {
 	CNodesWorld2D *self = (CNodesWorld2D *)base;
 	CNodesWorld *w = NW2D_SUP(self);
 
@@ -259,7 +272,9 @@ int NW2D_Probe(const vec3_t *p, vec3_t *hit) {
 	return Engine_TestLine(&a, &q, hit, NULL) != 0;
 }
 
-byte CNodesWorld2D_Ground(CNodesWorld2D *self, const vec3_t *p, vec3_t *hit, float height) {
+/* the floor below p (three probes of g_NW2DGroundDist: at p, again, 15 higher) raised by height: 1; else hit = p,
+ * 0; self not used */
+static byte CNodesWorld2D_Ground(CNodesWorld2D *self, const vec3_t *p, vec3_t *hit, float height) {
 	(void)self;
 	if (!NW2D_Probe(p, hit)) {
 		*hit = *p;
@@ -269,7 +284,8 @@ byte CNodesWorld2D_Ground(CNodesWorld2D *self, const vec3_t *p, vec3_t *hit, flo
 	return 1;
 }
 
-byte CNodesWorld2D_GroundSees(CNodesWorld2D *self, const vec3_t *p, const vec3_t *b, float height) {
+/* the floor below p raised by height sees b; self not used */
+static byte CNodesWorld2D_GroundSees(CNodesWorld2D *self, const vec3_t *p, const vec3_t *b, float height) {
 	vec3_t hit;
 
 	(void)self;
@@ -278,19 +294,6 @@ byte CNodesWorld2D_GroundSees(CNodesWorld2D *self, const vec3_t *p, const vec3_t
 	}
 	hit.y = hit.y + height;
 	return Engine_TestLine(&hit, b, NULL, NULL) == 0;
-}
-
-byte CNodesWorld2D_GroundLine(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, int u0, int u1,
-	int u2) {
-	vec3_t ga, gb;
-
-	(void)u0;
-	(void)u1;
-	(void)u2;
-	if (!CNodesWorld2D_Ground(self, a, &ga, g_NW2DHeight) || !CNodesWorld2D_Ground(self, b, &gb, g_NW2DHeight)) {
-		return 0;
-	}
-	return Engine_TestLine(&ga, &gb, NULL, NULL) == 0;
 }
 
 /* the foot of radius foot down from p onto the floor, then the capsule of radius r from h1 to h2 above it free;
@@ -318,15 +321,8 @@ static int NW2D_FitDown(const vec3_t *p, vec3_t *out, float down, float foot, fl
 	return !hit;
 }
 
-byte CNodesWorld2D_FitAt(CNodesWorld2D *self, float x, float y, float z, vec3_t *out, float down, float foot,
-	float r, float h2, float h1) {
-	vec3_t p = { x, y, z };
-
-	(void)self;
-	return NW2D_FitDown(&p, out, down, foot, r, h2, h1);
-}
-
-byte CNodesWorld2D_Walk(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float up, float foot,
+/* the body walks from a towards b in steps of 30 on the floor (climbs at most up); self not used */
+static byte CNodesWorld2D_Walk(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float up, float foot,
 	float r, float h2, float h1) {
 	vec3_t c = *a, dir, next, hit, d;
 
@@ -387,23 +383,9 @@ byte CNodesWorld2D_Walk(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, f
 	}
 }
 
-byte CNodesWorld2D_WalkFit(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float up, float foot,
-	float r, float h2, float h1) {
-	vec3_t ha, hb;
-
-	if (!NW2D_FitDown(a, &ha, 500.0f, foot, r, h2, h1)) {
-		return 0;
-	}
-	if (!CNodesWorld2D_FitAt(self, b->x, b->y, b->z, &hb, 500.0f, foot, r, h2, h1)) {
-		return 0;
-	}
-	if (!CNodesWorld2D_Walk(self, &ha, &hb, up, foot, r, h2, h1)) {
-		return 0;
-	}
-	return CNodesWorld2D_Walk(self, &hb, &ha, up, foot, r, h2, h1);
-}
-
-byte CNodesWorld2D_TestStep(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float r, float h) {
+/* the body of radius r at the foot height of a walks straight towards b (y kept), or what it hits leaves room 20
+ * (at most half the way) before it for a sphere of r on the floor there */
+static byte CNodesWorld2D_TestStep(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float r, float h) {
 	vec3_t s = *a, f, q, hit, p, g;
 
 	s.y = s.y - r;
@@ -584,9 +566,10 @@ byte CNodesWorld2D_TestCorner(CNodesWorld2D *self, const vec3_t *a, const vec3_t
 	return NW2D_CornerSides(&B, &n1, &n0, r, debug);
 }
 
-cNW2DBody g_NW2DBodies[3];
+static cNW2DBody g_NW2DBodies[3];
 
-byte CNodesWorld2D_TestWalk(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float shrink) {
+/* the three bodies (radius less shrink) fit at a and b and walk both ways */
+static byte CNodesWorld2D_TestWalk(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float shrink) {
 	for (int i = 0; i < 3; i++) {
 		const cNW2DBody *body = &g_NW2DBodies[i];
 		float r = body->r - shrink;
@@ -680,7 +663,8 @@ void CNodesWorld2D_AnalyzeGraph(CNodesWorld2D *self) {
 	Con_Bluef("%s", str_Empty);
 }
 
-void CNodesWorld2D_GetPairs(CNodesWorld2D *self, cNWPairList *list) {
+/* the pairs of points nearer than 2 * f40 that are not linked, into list sorted by the distance on the floor */
+static void CNodesWorld2D_GetPairs(CNodesWorld2D *self, cNWPairList *list) {
 	CNodesWorld *w = NW2D_SUP(self);
 
 	Con_Printf("Getting Pairs Points Visibility No Linked...\n");
@@ -714,7 +698,8 @@ void CNodesWorld2D_GetPairs(CNodesWorld2D *self, cNWPairList *list) {
 	Con_Printf("Num Pairs Points Visibility No Linked: %ld\n", (long)list->count);
 }
 
-void CNodesWorld2D_LinkExtra(CNodesWorld2D *self) {
+/* the extra points into the points, linked to the points they walk to */
+static void CNodesWorld2D_LinkExtra(CNodesWorld2D *self) {
 	CNodesWorld *w = NW2D_SUP(self);
 
 	Con_Printf("Linking Points of Visibility Extra...\n");
@@ -754,7 +739,8 @@ void CNodesWorld2D_LinkExtra(CNodesWorld2D *self) {
 	w->sup.extraPoints.iter = esaved;
 }
 
-void CNodesWorld2D_AddExtraPoints(CNodesWorld2D *self) {
+/* the dummies DM_PointGraph2DAI* into extraPoints (a fatal error for one that does not fit) */
+static void CNodesWorld2D_AddExtraPoints(CNodesWorld2D *self) {
 	CNodesWorld *w = NW2D_SUP(self);
 	char buf[20];
 	vec3_t p;
@@ -770,7 +756,8 @@ void CNodesWorld2D_AddExtraPoints(CNodesWorld2D *self) {
 	}
 }
 
-float CNodesWorld2D_NearestVisDist(CNodesWorld2D *self, const vec3_t *pos) {
+/* the floor distance from pos to the nearest point of the set of its buffer cell, FLT_MAX without one */
+static float CNodesWorld2D_NearestVisDist(CNodesWorld2D *self, const vec3_t *pos) {
 	CNodesWorld *w = NW2D_SUP(self);
 	float best = 3.4028234663852886e+38f;
 	int i = w->sup.vftable->BufferIndex(w, pos);
@@ -796,7 +783,9 @@ float CNodesWorld2D_NearestVisDist(CNodesWorld2D *self, const vec3_t *pos) {
 	return best;
 }
 
-void CNodesWorld2D_CollectCell(CNodesWorld2D *self, const vec3_t *pos, cNWIntList *cell,
+/* the points of visibility of the cell between distMin and the visibility distance (and distMax with useMax):
+ * mode 0 TestPath, 1 GroundSees, 2 indoors on the same floor */
+static void CNodesWorld2D_CollectCell(CNodesWorld2D *self, const vec3_t *pos, cNWIntList *cell,
 	const vec3_t **list, int max, int *count, float r, float h1, float h2, float distMin, float distMax, int mode,
 	byte useMax) {
 	CNodesWorld *w = NW2D_SUP(self);
@@ -873,7 +862,7 @@ static int NW2DRings_Grow(const nw2dRings *s, int inGrid, float e) {
 	return 1;
 }
 
-void CNodesWorld2D_SearchRings(CNodesWorld2D *self, const vec3_t *pos, const vec3_t **list, int max,
+static void CNodesWorld2D_SearchRings(CNodesWorld2D *self, const vec3_t *pos, const vec3_t **list, int max,
 	int *count, float r, float h1, float h2, float distMin, float distMax, byte soft, int mode) {
 	CNodesWorld *w = NW2D_SUP(self);
 	nw2dRings s = { self, pos, list, max, count, r, h1, h2, distMin, distMax, soft, mode };
@@ -1195,6 +1184,7 @@ static void NW2D_SetNodeSize(CNodesWorld *w) {
 	w->sup.halfNode.x = w->sup.nodeSize.x * 0.5f;
 }
 
+static byte CNodesWorld2D_Generate(CNodesWorld2D *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
 void CNodesWorld2D_Load(CNodesWorld2D *self, int arg, const char *name, const vec3_t *pos) {
 	static const cNW2DBody bodies[3] = {
 		{ 155.0f, 221.445999f, 189.220001f, 40.0f },
@@ -1309,12 +1299,14 @@ end:
 
 /* ---- the generation of the graph ---- */
 
-byte CNodesWorld2D_FindLinkBox(CNodesWorld2D *self, const vec3_t *const *pair, const cNWBox *box,
+/* the cell to link the pair of points through (NWSup_FindLinkBox, NWSup_FindLinkCell); Free: the cells of reachedCells
+ * whose center sees both points on the floor and walks to them */
+static byte CNodesWorld2D_FindLinkBox(CNodesWorld2D *self, const vec3_t *const *pair, const cNWBox *box,
 	int *out) {
 	return NWSup_FindLinkBox(NW2D_SUP(self), pair, box, out, 1);
 }
 
-byte CNodesWorld2D_FindLinkCell(CNodesWorld2D *self, const vec3_t *const *pair, int *out) {
+static byte CNodesWorld2D_FindLinkCell(CNodesWorld2D *self, const vec3_t *const *pair, int *out) {
 	return NWSup_FindLinkCell(NW2D_SUP(self), pair, out, 1);
 }
 
@@ -1324,42 +1316,6 @@ static int NW2D_GroundsSee(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b
 
 	return CNodesWorld2D_Ground(self, a, &ga, g_NW2DHeight) && CNodesWorld2D_Ground(self, b, &gb, g_NW2DHeight) &&
 		!Engine_TestLine(&ga, &gb, NULL, NULL);
-}
-
-byte CNodesWorld2D_FindLinkFree(CNodesWorld2D *self, const vec3_t *const *pair, int *out) {
-	CNodesWorld *w = NW2D_SUP(self);
-	int best[3];
-	float bestDist = 3.4028234663852886e+38f;
-	byte found = 0;
-	const int *cells = w->sup.reachedCells;
-
-	for (int k = 0; k < w->sup.numReachedCells; k++) {
-		vec3_t c, c2;
-		int idx = cells[k];
-		if (w->sup.buffer[idx].state == 5) {
-			continue;
-		}
-		w->sup.vftable->BufferPos(w, &c, idx);
-		if (!NWSup_Near(w, &c, pair) || !NW2D_GroundsSee(self, &c, pair[0]) || !NW2D_GroundsSee(self, &c, pair[1]) ||
-			!CNodesWorld2D_TestWalk(self, &c, pair[0], 0.0f) || !CNodesWorld2D_TestWalk(self, &c, pair[1], 0.0f) ||
-			!w->sup.vftable->Unreachable(w, pair[0], pair[1], idx)) {
-			continue;
-		}
-		w->sup.vftable->BufferPos(w, &c2, idx);
-		float d = NWSup_PairDist(&c2, pair, 1);
-		if (bestDist > d) {
-			bestDist = d;
-			found = 1;
-			best[0] = idx;
-			*out = idx;
-			best[1] = (int)(uintptr_t)pair[0];
-			best[2] = (int)(uintptr_t)pair[1];
-		}
-	}
-	if (found) {
-		NWSup_LinkFound(w, best, g_NW2DDrawMode);
-	}
-	return found;
 }
 
 static int NW2D_InitFree(CNodesWorld *w, const vec3_t *n, const vec3_t *c) {
@@ -1372,7 +1328,8 @@ static float NW2D_InitDist(CNodesWorld *w, const vec3_t *n) {
 	return CNodesWorld2D_NearestVisDist((CNodesWorld2D *)w, n);
 }
 
-byte CNodesWorld2D_NextInit(CNodesWorld2D *self, vec3_t *out) {
+/* the next start of the generation (NWSup_NextInit), the floor points see each other and the bodies walk */
+static byte CNodesWorld2D_NextInit(CNodesWorld2D *self, vec3_t *out) {
 	return NWSup_NextInit(NW2D_SUP(self), out, NW2D_InitFree, NW2D_InitDist);
 }
 
@@ -1385,7 +1342,8 @@ static void NW2D_FloodStep(CNodesWorld *w, cNWVecList *queue, const vec3_t *c, c
 	}
 }
 
-byte CNodesWorld2D_IniBuffer(CNodesWorld2D *self, const vec3_t *init, const vec3_t *min,
+/* the buffer of the box (NWSup_IniBuffer): the cells the bodies walk to on the floor */
+static byte CNodesWorld2D_IniBuffer(CNodesWorld2D *self, const vec3_t *init, const vec3_t *min,
 	const vec3_t *max) {
 	return NWSup_IniBuffer(NW2D_SUP(self), init, min, max, NW2D_FloodStep, 0);
 }
@@ -1400,7 +1358,8 @@ static int NW2D_RegionReach(CNodesWorld *w, const vec3_t *start, const vec3_t *n
 	return !(d >= w->sup.pairRange) && NW2D_GroundsSee(self, start, n) && CNodesWorld2D_TestWalk(self, start, n, 0.0f);
 }
 
-void CNodesWorld2D_CreateRegion(CNodesWorld2D *self, const vec3_t *start) {
+/* the region of the new point of visibility (NWSup_CreateRegion): the cells the bodies walk to */
+static void CNodesWorld2D_CreateRegion(CNodesWorld2D *self, const vec3_t *start) {
 	NWSup_CreateRegion(NW2D_SUP(self), start, NW2D_RegionReach, 1);
 }
 
@@ -1433,6 +1392,7 @@ static byte NW2D_OpNextInit(CNodesWorld *w, vec3_t *out) {
 	return CNodesWorld2D_NextInit((CNodesWorld2D *)w, out);
 }
 
+static void CNodesWorld2D_InterRegion(CNodesWorld2D *self);
 static void NW2D_OpInterRegion(CNodesWorld *w) {
 	CNodesWorld2D_InterRegion((CNodesWorld2D *)w);
 }
@@ -1444,11 +1404,13 @@ static void NW2D_OpLinkExtra(CNodesWorld *w) {
 static const nwGenOps nw2d_ops = { NW2D_OpPairs, NW2D_OpFindBox, NW2D_OpFindCell, NW2D_OpRegion, NW2D_OpInitOk,
 	NW2D_OpIniBuffer, NW2D_OpNextInit, NW2D_OpInterRegion, NW2D_OpLinkExtra, 1 };
 
-void CNodesWorld2D_InterRegion(CNodesWorld2D *self) {
+/* the points of visibility between the regions (NWSup_InterRegion) */
+static void CNodesWorld2D_InterRegion(CNodesWorld2D *self) {
 	NWSup_InterRegion(NW2D_SUP(self), &nw2d_ops);
 }
 
-byte CNodesWorld2D_Generate(CNodesWorld2D *self, const vec3_t *init, const vec3_t *min, const vec3_t *max) {
+/* the generation of the graph (NWSup_Generate): the bodies walk at the start */
+static byte CNodesWorld2D_Generate(CNodesWorld2D *self, const vec3_t *init, const vec3_t *min, const vec3_t *max) {
 	return NWSup_Generate(NW2D_SUP(self), init, min, max, &nw2d_ops);
 }
 
@@ -1529,21 +1491,8 @@ void CNodesWorld2D_Draw(CNodesWorld2D *self) {
 	}
 }
 
-/* the link to q counts when the bodies walk from q to the center of the cell on the floor */
-static int NW2D_LinkFree(CNodesWorld *w, const vec3_t *q, int index) {
-	CNodesWorld2D *self = (CNodesWorld2D *)w;
-	vec3_t c;
-
-	w->sup.vftable->BufferPos(w, &c, index);
-	return NW2D_GroundsSee(self, q, &c) && CNodesWorld2D_TestWalk(self, q, &c, 0.0f);
-}
-
-byte CNodesWorld2D_UnreachableFree(CNodesWorld2D *self, const vec3_t *from, const vec3_t *to, int index) {
-	return NWSup_UnreachableBy(NW2D_SUP(self), from, to, index, NW2D_LinkFree);
-}
-
 /* the vtable of CNodesWorld2D */
-const CNodesWorldVtbl CNodesWorld2D_vftable = {
+static const CNodesWorldVtbl CNodesWorld2D_vftable = {
 	.Delete = CNodesWorld2D_Delete,
 	.GetBox = CNodesWorldSup_GetBox,
 	.LoadFiles = CNodesWorldSup_LoadGraph,
@@ -1587,9 +1536,9 @@ const CNodesWorldVtbl CNodesWorld2D_vftable = {
 };
 
 cGVar GVar_ShowNodes2DAI;
-cGVar GVar_AltPerpFloorAI;
+static cGVar GVar_AltPerpFloorAI;
 cGVar GVar_AltMinTestWalkAI;
-cGVar GVar_ShowInfoRegAI;
+static cGVar GVar_ShowInfoRegAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_AltMinTestWalkAI, &GVar_AltMinTestWalkAI, "AltMinTestWalkAI", 4, "Alt. min. to test walk.\n", 25.0f)

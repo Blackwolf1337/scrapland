@@ -8,6 +8,11 @@
 #include "scrap/walkcharentity.h"
 #include "scrap/staticinit.h"
 
+#define CAIBANKDIRECTOR_VFTABLE (&cAIBankDirector_vftable)
+#define g_MaxHeightChaseCharAI (GVar_MaxHeightChaseCharAI.value.f)
+static const cAICharVtbl cAIBankDirector_vftable;
+static cGVar GVar_MaxHeightChaseCharAI;
+
 void *cAIBankDirector_ctor(void *mem, cEntity *e, int *arg) {
 	cAIBankDirector *self = mem;
 
@@ -17,7 +22,8 @@ void *cAIBankDirector_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAI *cAIBankDirector_Delete(cAI *elem, byte flags) {
+/* AIBankDirector.c, AIBankMaster.c */
+static cAI *cAIBankDirector_Delete(cAI *elem, byte flags) {
 	cAIBankDirector *self = (cAIBankDirector *)elem;
 	self->base.vftable = CAIBANKDIRECTOR_VFTABLE;
 	cAIChar_dtor(&self->base);
@@ -60,7 +66,8 @@ void cAIBank_CheckAttack(cAI *elem) {
 	c->ctrl->act = 0;
 }
 
-void cAIBankDirector_SetRanges(cAI *elem) {
+/* vf56 */
+static void cAIBankDirector_SetRanges(cAI *elem) {
 	cAIBankDirector *self = (cAIBankDirector *)elem;
 	cAIChar *c = &self->base;
 
@@ -116,7 +123,7 @@ byte cAIBank_SetStateIntern(cAI *elem, int state, ...) {
 }
 
 /* the vtable of cAIBankDirector */
-const cAICharVtbl cAIBankDirector_vftable = {
+static const cAICharVtbl cAIBankDirector_vftable = {
 	.base.base.Delete = cAIBankDirector_Delete,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
@@ -218,7 +225,7 @@ const cAICharVtbl cAIBankDirector_vftable = {
 	.Facing = cAIChar_Facing,
 };
 
-cGVar GVar_MaxHeightChaseCharAI;
+static cGVar GVar_MaxHeightChaseCharAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_MaxHeightChaseCharAI, &GVar_MaxHeightChaseCharAI, "MaxHeightChaseCharAI", 4, "Max height to chase.\n", 300.0f)

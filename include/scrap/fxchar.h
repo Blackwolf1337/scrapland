@@ -22,49 +22,8 @@
 #define FXDEATH_TRAILPOINTS 15
 #define FXDEATH_POINTS (FXDEATH_TRAILS * FXDEATH_TRAILPOINTS)
 
-/* the engine variables (Gvars) */
-extern cGVar GVar_FXCharacterConversionFile;
-#define g_FXCharacterConversionFile (GVar_FXCharacterConversionFile.value.s)
-extern cGVar GVar_FXCharacterConversorFile;
-#define g_FXCharacterConversorFile (GVar_FXCharacterConversorFile.value.s)
-extern cGVar GVar_FXCharacterBlaBliBlaFile;
-#define g_FXCharacterBlaBliBlaFile (GVar_FXCharacterBlaBliBlaFile.value.s)
-extern cGVar GVar_FXCharacterDazedFile;
-#define g_FXCharacterDazedFile (GVar_FXCharacterDazedFile.value.s)
-extern cGVar GVar_FXCharacterDeathFile;
-#define g_FXCharacterDeathFile (GVar_FXCharacterDeathFile.value.s)
-extern cGVar GVar_FXCharacterTeleportFile;
-#define g_FXCharacterTeleportFile (GVar_FXCharacterTeleportFile.value.s)
-extern cGVar GVar_FXMoneyTransferFile;
-#define g_FXMoneyTransferFile (GVar_FXMoneyTransferFile.value.s)
-extern cGVar GVar_FXFunctionarySpecialActionFile;
-#define g_FXFunctionarySpecialActionFile (GVar_FXFunctionarySpecialActionFile.value.s)
 extern cGVar GVar_FunctionarySpecialActionTime;
 #define g_FunctionarySpecialActionTime (GVar_FunctionarySpecialActionTime.value.f)
-extern cGVar GVar_FXCharacterDeathMinDist;
-#define g_FXCharacterDeathMinDist (GVar_FXCharacterDeathMinDist.value.f)
-extern cGVar GVar_CharacterDeathSound;
-#define g_CharacterDeathSound (GVar_CharacterDeathSound.value.s)
-extern cGVar GVar_CharacterDeathSoundVol;
-#define g_CharacterDeathSoundVol (GVar_CharacterDeathSoundVol.value.f)
-extern cGVar GVar_CharacterConversionSound;
-#define g_CharacterConversionSound (GVar_CharacterConversionSound.value.s)
-extern cGVar GVar_CharacterConversionSoundVol;
-#define g_CharacterConversionSoundVol (GVar_CharacterConversionSoundVol.value.f)
-extern cGVar GVar_CharacterTeleportUpSound;
-#define g_CharacterTeleportUpSound (GVar_CharacterTeleportUpSound.value.s)
-extern cGVar GVar_CharacterTeleportDownSound;
-#define g_CharacterTeleportDownSound (GVar_CharacterTeleportDownSound.value.s)
-extern cGVar GVar_CharacterTeleportSoundVol;
-#define g_CharacterTeleportSoundVol (GVar_CharacterTeleportSoundVol.value.f)
-extern cGVar GVar_MaintenanceWorkSound;
-#define g_MaintenanceWorkSound (GVar_MaintenanceWorkSound.value.s)
-extern cGVar GVar_MaintenanceWorkSoundVol;
-#define g_MaintenanceWorkSoundVol (GVar_MaintenanceWorkSoundVol.value.f)
-extern cGVar GVar_MaintenanceWorkSoundAttIni;
-#define g_MaintenanceWorkSoundAttIni (GVar_MaintenanceWorkSoundAttIni.value.f)
-extern cGVar GVar_MaintenanceWorkSoundAttEnd;
-#define g_MaintenanceWorkSoundAttEnd (GVar_MaintenanceWorkSoundAttEnd.value.f)
 
 /* a character in the conversion: its byte at 0x48c is set while the effect runs */
 #define Entity_InConversion(e) (WChar(e)->disableControl)
@@ -193,24 +152,16 @@ void cObjElementFXCharacterConversion_Update(cObjElementFX *base, cDebris *d, fl
 byte cObjElementFXCharacterConversion_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys);
 void cObjElementFXCharacterConversion_Attach(cObjElementFX *base, cDebris *d);
 void cObjElementFXCharacterConversion_Reset(cObjElementFX *base, cDebris *arg);
-void cObjElementFXCharacterConversion_SetAttacker(cObjElementFXCharacterConversion *self, cEntity *e);
-void cObjElementFXCharacterConversion_SetAttacked(cObjElementFXCharacterConversion *self, cEntity *e);
-/* the particles of the start between the two characters */
-void cObjElementFXCharacterConversion_Emit(cObjElementFXCharacterConversion *self);
 byte cObjElementFXCharacterConversor_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys);
 /* the conversor machine: the character fades in or out, light from the nodes of the conversor, lightnings from its
  * walls to the exits, glows over the vertices of the character; at the end of the animation the particles go */
 void cObjElementFXCharacterConversor_Update(cObjElementFX *base, cDebris *d, float dt);
 void cObjElementFXCharacterConversor_Attach(cObjElementFX *base, cDebris *d);
 void cObjElementFXCharacterConversor_Reset(cObjElementFX *base, cDebris *arg);
-void cObjElementFXCharacterConversor_SetCharacter(cObjElementFXCharacterConversor *self, cEntity *e);
-/* the conversor and the nodes of its model */
-void cObjElementFXCharacterConversor_SetConversor(cObjElementFXCharacterConversor *self, cEntity *e);
 /* the character dies: it slows down and fades, trails and smoke go up from its vertices, flashes and sparks */
 void cObjElementFXCharacterDeath_Update(cObjElementFX *base, cDebris *d, float dt);
 void cObjElementFXCharacterDeath_Attach(cObjElementFX *base, cDebris *d);
 void cObjElementFXCharacterDeath_Reset(cObjElementFX *base, cDebris *arg);
-void cObjElementFXCharacterDeath_SetEntity(cObjElementFXCharacterDeath *self, cEntity *e);
 /* the light column and the fade of the character, glows over its vertices, sparks and smoke */
 void cObjElementFXCharacterTeleport_Update(cObjElementFX *base, cDebris *d, float dt);
 byte cObjElementFXCharacterTeleport_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys);
@@ -227,7 +178,6 @@ void cObjElementFXMaintenanceWork_Start(cObjElementFXMaintenanceWork *self, cDeb
 void cObjElementFXMoneyTransfer_Update(cObjElementFX *base, cDebris *d, float dt);
 void cObjElementFXMoneyTransfer_Attach(cObjElementFX *base, cDebris *d);
 void cObjElementFXMoneyTransfer_Reset(cObjElementFX *base, cDebris *arg);
-void cObjElementFXMoneyTransfer_SetEntities(cObjElementFXMoneyTransfer *self, cEntity *from, cEntity *to);
 void cObjElementFXSputnik_Update(cObjElementFX *base, cDebris *d, float dt);
 byte cObjElementFXSputnik_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys);
 void cObjElementFXSputnik_Attach(cObjElementFX *base, cDebris *d);
@@ -242,9 +192,5 @@ void FXSputnik_SetB(cObjElementFXSputnik *self, float v);	/* minMove */
 /* the effects of a character by name: CharacterDeath, CharacterSputnikHello, Bye, Interface and Junkyard,
  * FunctionarySpecialAction */
 void FX_Character(cEntity *e, const char *name);
-/* the native functions (the character name, a second name and an int from the parameter file) */
-void FX_CharacterBlaBliBla(cAbstractFile *params);
-void FX_CharacterDazed(cAbstractFile *params);
-void FX_CharacterTeleport(cAbstractFile *params);
 
 #endif

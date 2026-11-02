@@ -32,9 +32,6 @@ struct CNodesWorld2D {
 /* the CNodesWorldSup part */
 #define NW2D_SUP(self) ((CNodesWorld *)(self))
 
-extern const CNodesWorldVtbl CNodesWorld2D_vftable;
-#define CNODESWORLD2D_VFTABLE (&CNodesWorld2D_vftable)
-
 /* a body that walks the graph: a capsule of radius r - shrink between the heights h1 and h2 above a foot sphere of
  * radius foot */
 typedef struct cNW2DBody {
@@ -44,13 +41,8 @@ typedef struct cNW2DBody {
 	float foot;			/* 0xc */
 } cNW2DBody;
 
-extern cNW2DBody g_NW2DBodies[3];
 extern cGVar GVar_ShowNodes2DAI;
 #define g_NW2DDrawMode (GVar_ShowNodes2DAI.value.i)	/* what the debug view of the graph draws */
-extern cGVar GVar_ShowInfoRegAI;
-#define g_NW2DShowNode (GVar_ShowInfoRegAI.value.i)	/* the node the debug view shows, -1 none */
-extern cGVar GVar_AltPerpFloorAI;
-#define g_NW2DGroundDist (GVar_AltPerpFloorAI.value.f)	/* the length of the floor probes */
 extern cGVar GVar_AltMinTestWalkAI;
 #define g_NW2DHeight (GVar_AltMinTestWalkAI.value.f)	/* the height of the points over the floor */
 extern cGVar GVar_ShowTestCanGoAI;
@@ -58,50 +50,13 @@ extern cGVar GVar_ShowTestCanGoAI;
 
 /* ---- Global/DList.h instances ---- */
 
-/* the destructor of a region: its points emptied and their free nodes deleted (on the region) */
-void NW2DRegion_dtor(cNW2DRegion *r);
 void NW2DRegionList_Add(cNW2DRegionList *list, const cNW2DRegion *r);
-/* to the free list while it has room, else the points and the node deleted */
-void NW2DRegionList_Release(cNW2DRegionList *list, cNW2DRegionNode *node);
-void NW2DRegionList_Clear(cNW2DRegionList *list);
-void NW2DRegionList_FreePool(cNW2DRegionList *list);
 
 /* ---- CNodesWorld2D ---- */
 
-/* CNodesWorld2D_ctor: ai.h */
-void CNodesWorld2D_dtor(CNodesWorld2D *self);
-CNodesWorld *CNodesWorld2D_Delete(CNodesWorld *base, byte flags);
-/* <name>/AI/Path2DAI of the base class */
-byte CNodesWorld2D_LoadGraph(CNodesWorld *base);
-/* the floor points of the points and their links into <name>/AI/Path2DAI.pth (writes a file) */
-byte CNodesWorld2D_SavePath(CNodesWorld *base);
-/* <name>/AI/InfPath2DAI.pth of the base class (writes a file) */
-byte CNodesWorld2D_SaveInfPath(CNodesWorld2D *self);
-void CNodesWorld2D_ClearLists(CNodesWorld *base);
 /* the floor below p: at p, again at p + 0, then 15 higher, each g_NW2DGroundDist down; 1 with hit set (the probes
  * the callers inline, also AI/AICharControl2D.cpp) */
 int NW2D_Probe(const vec3_t *p, vec3_t *hit);
-/* the floor below p (three probes of g_NW2DGroundDist: at p, again, 15 higher) raised by height: 1; else hit = p,
- * 0; self not used */
-byte CNodesWorld2D_Ground(CNodesWorld2D *self, const vec3_t *p, vec3_t *hit, float height);
-/* the floor below p raised by height sees b; self not used */
-byte CNodesWorld2D_GroundSees(CNodesWorld2D *self, const vec3_t *p, const vec3_t *b, float height);
-/* the floor points of a and b see each other; the last three arguments not used */
-byte CNodesWorld2D_GroundLine(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, int u0, int u1, int u2);
-/* the body at x y z stands on the floor down below it: out its position on the floor; self not used */
-byte CNodesWorld2D_FitAt(CNodesWorld2D *self, float x, float y, float z, vec3_t *out, float down, float foot,
-	float r, float h2, float h1);
-/* the body walks from a towards b in steps of 30 on the floor (climbs at most up); self not used */
-byte CNodesWorld2D_Walk(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float up, float foot,
-	float r, float h2, float h1);
-/* the body fits at a and b and walks both ways */
-byte CNodesWorld2D_WalkFit(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float up, float foot,
-	float r, float h2, float h1);
-/* the three bodies (radius less shrink) fit at a and b and walk both ways */
-byte CNodesWorld2D_TestWalk(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float shrink);
-/* the body of radius r at the foot height of a walks straight towards b (y kept), or what it hits leaves room 20
- * (at most half the way) before it for a sphere of r on the floor there */
-byte CNodesWorld2D_TestStep(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, float r, float h);
 /* the floor points of a and b (raised by max(h - r, g_NW2DHeight)) see each other, the segments at radius r around
  * the path at height h are free (the side, up, and the two between), and TestStep both ways; r2 and h2 not used,
  * debug as in CNodesWorld_TestPath */
@@ -111,42 +66,8 @@ byte CNodesWorld2D_TestPath(CNodesWorld2D *self, const vec3_t *a, const vec3_t *
  * turned up and down (not flat: the other side); r2 and h2 not used, debug as in CNodesWorld_TestPath */
 byte CNodesWorld2D_TestCorner(CNodesWorld2D *self, const vec3_t *a, const vec3_t *b, const vec3_t *c,
 	float r, float r2, float h, float h2, byte flat, cNWSegList *debug);
-/* the generation of the graph (NWSup_Generate): the bodies walk at the start */
-byte CNodesWorld2D_Generate(CNodesWorld2D *self, const vec3_t *init, const vec3_t *min, const vec3_t *max);
 /* the debug view of g_NW2DDrawMode, then the node g_NW2DShowNode with the cells of its region */
 void CNodesWorld2D_Draw(CNodesWorld2D *self);
-/* not called in the exe: Unreachable over the links whose point the bodies walk from to the center of the cell */
-byte CNodesWorld2D_UnreachableFree(CNodesWorld2D *self, const vec3_t *from, const vec3_t *to, int index);
-/* the cell to link the pair of points through (NWSup_FindLinkBox, NWSup_FindLinkCell); Free: the cells of reachedCells
- * whose center sees both points on the floor and walks to them */
-byte CNodesWorld2D_FindLinkBox(CNodesWorld2D *self, const vec3_t *const *pair, const cNWBox *box,
-	int *out);
-byte CNodesWorld2D_FindLinkCell(CNodesWorld2D *self, const vec3_t *const *pair, int *out);
-byte CNodesWorld2D_FindLinkFree(CNodesWorld2D *self, const vec3_t *const *pair, int *out);
-/* the next start of the generation (NWSup_NextInit), the floor points see each other and the bodies walk */
-byte CNodesWorld2D_NextInit(CNodesWorld2D *self, vec3_t *out);
-/* the buffer of the box (NWSup_IniBuffer): the cells the bodies walk to on the floor */
-byte CNodesWorld2D_IniBuffer(CNodesWorld2D *self, const vec3_t *init, const vec3_t *min,
-	const vec3_t *max);
-/* the region of the new point of visibility (NWSup_CreateRegion): the cells the bodies walk to */
-void CNodesWorld2D_CreateRegion(CNodesWorld2D *self, const vec3_t *start);
-/* the points of visibility between the regions (NWSup_InterRegion) */
-void CNodesWorld2D_InterRegion(CNodesWorld2D *self);
-/* the pairs of points nearer than 2 * f40 that are not linked, into list sorted by the distance on the floor */
-void CNodesWorld2D_GetPairs(CNodesWorld2D *self, cNWPairList *list);
-/* the extra points into the points, linked to the points they walk to */
-void CNodesWorld2D_LinkExtra(CNodesWorld2D *self);
-/* the dummies DM_PointGraph2DAI* into extraPoints (a fatal error for one that does not fit) */
-void CNodesWorld2D_AddExtraPoints(CNodesWorld2D *self);
-/* the floor distance from pos to the nearest point of the set of its buffer cell, FLT_MAX without one */
-float CNodesWorld2D_NearestVisDist(CNodesWorld2D *self, const vec3_t *pos);
-/* the points of visibility of the cell between distMin and the visibility distance (and distMax with useMax):
- * mode 0 TestPath, 1 GroundSees, 2 indoors on the same floor */
-void CNodesWorld2D_CollectCell(CNodesWorld2D *self, const vec3_t *pos, cNWIntList *cell,
-	const vec3_t **list, int max, int *count, float r, float h1, float h2, float distMin, float distMax, int mode,
-	byte useMax);
-void CNodesWorld2D_SearchRings(CNodesWorld2D *self, const vec3_t *pos, const vec3_t **list, int max,
-	int *count, float r, float h1, float h2, float distMin, float distMax, byte soft, int mode);
 void CNodesWorld2D_GetPointsVis(CNodesWorld2D *self, const vec3_t *pos, const vec3_t **list, int max,
 	int *count, float r, float h1, float h2, float distMin, float distMax, byte soft, int mode);
 /* a point of visibility at most 2500 away that TestPath sees */

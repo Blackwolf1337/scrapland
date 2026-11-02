@@ -47,8 +47,6 @@ typedef struct CMultiSprite {
 } CMultiSprite;
 
 #define MST_VER 100
-extern cGVar GVar_BuildMST;
-#define g_BuildMST (GVar_BuildMST.value.i)	/* BuildMST: load the .mst files */
 
 typedef struct CTexture {
 	int Refs;			/* 0x000 */
@@ -80,14 +78,10 @@ typedef struct CTexture {
 	CMultiSprite multi;		/* 0x248 */
 } CTexture;
 
-extern CTexture *g_TexList;
-
 CMultiSprite *CMultiSprite_ctor(CMultiSprite *self);
 void CMultiSprite_dtor(CMultiSprite *self);
 /* the table from the .mst of the texture name (when not older), else built and saved; 0 if it could not be saved */
 byte CMultiSprite_Build(CMultiSprite *self, const char *name);
-/* the table from the &U&D&N.index.bmp of the texture name */
-byte CMultiSprite_BuildTable(CMultiSprite *self, const char *name);
 /* the size of sprite i in pixels, the texture's for 0 or without sprites (then 0) */
 byte CMultiSprite_GetSize(const CMultiSprite *self, uint32_t i, uint32_t *cx, uint32_t *cy);
 /* the texture coordinates of sprite i, 0..1 for 0 or without sprites (then 0) */
@@ -95,58 +89,22 @@ byte CMultiSprite_GetUV(const CMultiSprite *self, uint32_t i, float *texMin, flo
 byte CMultiSprite_Load(CMultiSprite *self, const char *name);
 byte CMultiSprite_Save(const CMultiSprite *self, const char *name);
 
-CTexture *CTexture_ctor(CTexture *self, const char *name, const char *opac, int kind, uint32_t flags);
-void CTexture_dtor(CTexture *self);
-/* the file: its kind from the name, a CBmp (pixels only with load) or the raw file */
-int CTexture_LoadFile(CTexture *self, byte load);
-/* the device texture, its old one released */
-int CTexture_CreateD3D(CTexture *self, void *dev);
-/* src scaled into mipmap level and the levels below */
-int CTexture_UploadLevel(CTexture *self, CBmp *src, int level);
-/* the developer tool: orig as a DDS file next to the texture, through bmp/nvdxt.exe and bmp/stitch.exe */
-int CTexture_SaveDDS(CTexture *self, CBmp *orig, int level, byte keepExt);
-
-/* the entry of name with opacity map opac (NULL or "" for none) */
-CTexture *Texture_Lookup(const char *name, const char *opac);
 /* a new entry unless there is one; the file is checked, not loaded */
 int Texture_Add(const char *name, const char *opac, int kind, uint32_t flags);
 /* Lookup with a reference */
 CTexture *Texture_Find(const char *name, const char *opac);
-/* the references now, -1 for NULL */
-int Texture_AddRef(CTexture *t);
 int Texture_Release(CTexture *t);
 void Texture_Delete(CTexture *t);
-int Texture_Remove(const char *name, const char *opac);
 int Texture_DeleteAll(void);
 /* the device texture, created when missing (not for the raw files) */
 void *Texture_GetD3D(CTexture *t, void *dev);
-void *Texture_GetD3DByName(const char *name, const char *opac);
 /* GetD3D for every entry, also the raw files; frees one of the device textures of those when too many are cached */
 void *Texture_Load(CTexture *t, void *dev);
-/* the least recently used raw file texture when more than g_CachedTex have a device texture */
-CTexture *Texture_FindPurge(void);
 CMultiSprite *Texture_GetMultiSprite(CTexture *t, const char *name);
 /* info[0] width, [1] alto, [2] flags, [3] alpha, [4] compressed */
 int Texture_GetInfo(CTexture *t, int *info);
-int Texture_ReleaseD3D(const char *name, const char *opac);
 int Texture_ReleaseAllD3D(void);
-int Texture_Recreate(const char *name, const char *opac, void *dev);
-int Texture_RecreateAll(void *dev);
 
-/* the D3DFORMAT for a texture file */
-int Tex_Format(int bpp, byte alpha, byte palette, byte bump, byte compressed, byte unused);
 const char *D3DFmt_Name(int fmt);
-byte Tex_IsPower2(int n);
-/* name ends in ext before its last extension ("a.alpha.tga") */
-byte Path_HasSubExt(const char *name, const char *ext);
-void Path_ToBackslash(char *path);
-/* R and G to signed offsets around 0 (V8U8 style) */
-void Bmp_ToBump(CBmp *bmp);
-/* R and G to the DUDV pair, the smaller part in A */
-void Bmp_ToDudv(CBmp *bmp);
-/* the average color: 8 x 1 pixels, 4 darker, 3 as it is, 1 brighter */
-void Bmp_ToRamp(CBmp *bmp);
-/* bmp into a locked A8R8G8B8 IDirect3DSurface8 of the same size */
-int Surface_FromBmp(void *surf, const CBmp *bmp);
 
 #endif

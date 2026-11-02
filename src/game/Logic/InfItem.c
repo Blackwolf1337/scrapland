@@ -9,6 +9,9 @@
 #include "scrap/cstring.h"
 #include "scrap/logic.h"
 
+#define CINFITEM_VFTABLE (&cInfItem_vftable)
+static const cInfItemVtbl cInfItem_vftable;
+
 cInfItem *cInfItem_ctor(cInfItem *self) {
 	self->vftable = CINFITEM_VFTABLE;
 	memset(&self->life, 0, sizeof(*self) - 4);
@@ -16,7 +19,7 @@ cInfItem *cInfItem_ctor(cInfItem *self) {
 }
 
 /* a node of the free list or a new one with its string */
-cInfItemNode *InfItemList_NewNode(cInfItemList *list) {
+static cInfItemNode *InfItemList_NewNode(cInfItemList *list) {
 	cInfItemNode *n = list->freeNodes;
 
 	if (n) {
@@ -44,7 +47,7 @@ static void InfItemList_Release(cInfItemList *list, cInfItemNode *n) {
 	operator_delete_sized(n, sizeof(*n));
 }
 
-void InfItemList_Clear(cInfItemList *list) {
+static void InfItemList_Clear(cInfItemList *list) {
 	while (list->head) {
 		cInfItemNode *p = list->head;
 		list->iter = NULL;
@@ -61,7 +64,7 @@ void InfItemList_Clear(cInfItemList *list) {
 	}
 }
 
-void InfItemList_FreePool(cInfItemList *list) {
+static void InfItemList_FreePool(cInfItemList *list) {
 	cInfItemNode *p;
 
 	while ((p = list->freeNodes) != NULL) {
@@ -73,7 +76,7 @@ void InfItemList_FreePool(cInfItemList *list) {
 }
 
 /* a copy of the item as the new head */
-void InfItemList_Add(cInfItemList *list, cItemDesc *item) {
+static void InfItemList_Add(cInfItemList *list, cItemDesc *item) {
 	list->iter = NULL;
 	cInfItemNode *n = InfItemList_NewNode(list);
 	cString_Assign(&n->item.name, &item->name);
@@ -93,7 +96,7 @@ void cInfItem_dtor(cInfItem *self) {
 	InfItemList_FreePool(&self->life);
 }
 
-cInfItem *cInfItem_Delete(cInfItem *self, byte flags) {
+static cInfItem *cInfItem_Delete(cInfItem *self, byte flags) {
 	cInfItem_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -129,7 +132,7 @@ static cItemDesc *InfItemList_Next(cInfItemList *list, void **iter) {
 }
 
 /* vf01 */
-void cInfItem_AddLife(cInfItem *self, cItemDesc *item) {
+static void cInfItem_AddLife(cInfItem *self, cItemDesc *item) {
 	cInfItemNode *save = self->life.iter;
 
 	InfItemList_Add(&self->life, item);
@@ -137,17 +140,17 @@ void cInfItem_AddLife(cInfItem *self, cItemDesc *item) {
 }
 
 /* vf02 */
-cItemDesc *cInfItem_FirstLife(cInfItem *self, void **iter) {
+static cItemDesc *cInfItem_FirstLife(cInfItem *self, void **iter) {
 	return InfItemList_First(&self->life, iter);
 }
 
 /* vf03 */
-cItemDesc *cInfItem_NextLife(cInfItem *self, void **iter) {
+static cItemDesc *cInfItem_NextLife(cInfItem *self, void **iter) {
 	return InfItemList_Next(&self->life, iter);
 }
 
 /* vf04 */
-void cInfItem_AddAmmo(cInfItem *self, int kind, cItemDesc *item) {
+static void cInfItem_AddAmmo(cInfItem *self, int kind, cItemDesc *item) {
 	cInfItemList *l;
 
 	switch (kind) {
@@ -172,17 +175,17 @@ void cInfItem_AddAmmo(cInfItem *self, int kind, cItemDesc *item) {
 }
 
 /* vf05 */
-cItemDesc *cInfItem_FirstAmmo(cInfItem *self, int kind, void **iter) {
+static cItemDesc *cInfItem_FirstAmmo(cInfItem *self, int kind, void **iter) {
 	return InfItemList_First(InfItem_AmmoList(self, kind), iter);
 }
 
 /* vf06 */
-cItemDesc *cInfItem_NextAmmo(cInfItem *self, int kind, void **iter) {
+static cItemDesc *cInfItem_NextAmmo(cInfItem *self, int kind, void **iter) {
 	return InfItemList_Next(InfItem_AmmoList(self, kind), iter);
 }
 
 /* the vtable of cInfItem */
-const cInfItemVtbl cInfItem_vftable = {
+static const cInfItemVtbl cInfItem_vftable = {
 	.Delete = cInfItem_Delete,
 	.AddLife = cInfItem_AddLife,
 	.FirstLife = cInfItem_FirstLife,

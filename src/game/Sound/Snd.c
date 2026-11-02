@@ -257,10 +257,6 @@ void Snd_Close(void) {
 	snd.ctxInit = 0;
 }
 
-int Snd_IsInit(void) {
-	return snd.init;
-}
-
 int Snd_GetError(void) {
 	return snd.error;
 }
@@ -275,6 +271,7 @@ static uint32_t Snd_U32(const byte *p) {
 	return (uint32_t)p[0] | (uint32_t)p[1] << 8 | (uint32_t)p[2] << 16 | (uint32_t)p[3] << 24;
 }
 
+static uint32_t Snd_SampleBytes(const SndSample *s);
 SndSample *Snd_SampleLoad(const void *wav, int size) {
 	const byte *p = wav, *end = p + (size > 0 ? size : 0);
 	const byte *fmt = NULL, *data = NULL;
@@ -346,7 +343,7 @@ int Snd_SampleRate(const SndSample *s) {
 	return s ? s->rate : SND_RATE;
 }
 
-uint32_t Snd_SampleBytes(const SndSample *s) {
+static uint32_t Snd_SampleBytes(const SndSample *s) {
 	return s ? s->frames * (uint32_t)s->channels * 2 : 0;
 }
 
@@ -565,6 +562,7 @@ SndStream *Snd_StreamPcm(int rate, int channels, SndPcmCallback cb, void *user) 
 	return s;
 }
 
+static void Snd_StreamStop(SndStream *s);
 int Snd_StreamPlay(SndStream *s, byte paused) {
 	if (!s) {
 		snd.error = SND_ERR_INVALID_PARAM;
@@ -587,7 +585,7 @@ int Snd_StreamPlay(SndStream *s, byte paused) {
 	return ch;
 }
 
-void Snd_StreamStop(SndStream *s) {
+static void Snd_StreamStop(SndStream *s) {
 	if (s && s->channel >= 0) {
 		Snd_Stop(s->channel);
 	}

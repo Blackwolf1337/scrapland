@@ -7,7 +7,7 @@
 #include "scrap/e3dutil.h"
 #include "scrap/lex.h"
 
-cLexFile *g_Lex;
+static cLexFile *g_Lex;
 
 /* the inlined read of the next character */
 static int Lex_Getc(void) {
@@ -15,7 +15,7 @@ static int Lex_Getc(void) {
 	return crt_fgetc(g_Lex->f);
 }
 
-int g_LexCh = -1;
+static int g_LexCh = -1;
 
 /* closes the current file and goes on with the including one */
 static void Lex_Pop(void) {
@@ -35,7 +35,11 @@ static void Lex_Pop(void) {
 	}
 }
 
-void Lex_String(void) {
+/* Util/Lex.cpp */
+static void Lex_Add(int ch);
+static void Lex_Hex(void);
+static void Lex_Octal(void);
+static void Lex_String(void) {
 	CHECK(g_LexCh == '"');
 	g_LexCh = Lex_Getc();
 	for (;;) {
@@ -86,10 +90,14 @@ void Lex_String(void) {
 }
 
 char g_LexToken[1024];
-int g_LexTokenLen;
+static int g_LexTokenLen;
 
 /* "#inc "file"" */
-void Lex_Directive(void) {
+static void Lex_Ident(void);
+static void Lex_ReadUntil(int end);
+static void Lex_SkipBlanks(void);
+static void Lex_SkipLine(void);
+static void Lex_Directive(void) {
 	CHECK(g_LexCh == '#');
 	g_LexCh = Lex_Getc();
 	if (crt_isalpha(g_LexCh) || g_LexCh == '_') {
@@ -117,7 +125,7 @@ void Lex_Directive(void) {
 }
 
 /* "\x" with up to 2 hex digits; "x" alone without digits */
-void Lex_Hex(void) {
+static void Lex_Hex(void) {
 	int v = 0;
 	int n = 1;
 
@@ -144,7 +152,7 @@ void Lex_Hex(void) {
 	Lex_Add(v);
 }
 
-void Lex_Ident(void) {
+static void Lex_Ident(void) {
 	CHECK(crt_isalpha(g_LexCh) || g_LexCh == '_');
 	/* the end of the file (byte 0xff) does not end it either, the original then stops on the CHECK of Lex_Add */
 	do {
@@ -153,7 +161,7 @@ void Lex_Ident(void) {
 	} while (crt_isalnum(g_LexCh) || g_LexCh == '_' || g_LexCh == '#' || (byte)g_LexCh >= 0x80);
 }
 
-void Lex_ReadUntil(int end) {
+static void Lex_ReadUntil(int end) {
 	while (g_LexCh != end && g_LexCh != -1 && g_LexCh != '\r' && g_LexCh != '\n') {
 		Lex_Add(g_LexCh);
 		g_LexCh = Lex_Getc();
@@ -168,7 +176,7 @@ static void Lex_AddDigits(void) {
 	}
 }
 
-int Lex_Number(void) {
+static int Lex_Number(void) {
 	int type = CLEX_INT;
 
 	if (g_LexCh == '0') {
@@ -211,7 +219,7 @@ int Lex_Number(void) {
 }
 
 /* "\0".."\377": up to 3 octal digits, '8' and '9' give 0 */
-void Lex_Octal(void) {
+static void Lex_Octal(void) {
 	int v = 0;
 	int n = 0;
 
@@ -231,7 +239,9 @@ void Lex_Octal(void) {
 	Lex_Add(v);
 }
 
-void Lex_Print(const char *fmt, ...) {
+/* printf to g_LexOut; without one the original calls itself until the stack ends */
+static void Lex_VPrint(const char *fmt, va_list ap);
+static void Lex_Print(const char *fmt, ...) {
 	va_list ap;
 
 	va_start(ap, fmt);
@@ -239,9 +249,9 @@ void Lex_Print(const char *fmt, ...) {
 	va_end(ap);
 }
 
-lexout_t g_LexOut;
+static lexout_t g_LexOut;
 
-void Lex_VPrint(const char *fmt, va_list ap) {
+static void Lex_VPrint(const char *fmt, va_list ap) {
 	char buf[0x400];
 
 	VBprintf(buf, sizeof(buf), fmt, ap);
@@ -253,7 +263,7 @@ void Lex_VPrint(const char *fmt, va_list ap) {
 }
 
 /* CR LF and LF CR count as one line end */
-void Lex_NewLine(void) {
+static void Lex_NewLine(void) {
 	int other = g_LexCh == '\r' ? '\n' : '\r';
 
 	g_Lex->line++;
@@ -264,7 +274,7 @@ void Lex_NewLine(void) {
 	}
 }
 
-void Lex_Comment(void) {
+static void Lex_Comment(void) {
 	int start = g_Lex->line;
 	int depth = 1;
 
@@ -302,31 +312,31 @@ void Lex_Comment(void) {
 	} while (depth > 0);
 }
 
-void Lex_SkipBlanks(void) {
+static void Lex_SkipBlanks(void) {
 	while (g_LexCh == '\t' || g_LexCh == ' ') {
 		g_LexCh = Lex_Getc();
 	}
 }
 
-void Lex_SkipLine(void) {
+static void Lex_SkipLine(void) {
 	while (g_LexCh != -1 && g_LexCh != '\n' && g_LexCh != '\r') {
 		g_LexCh = Lex_Getc();
 	}
 }
 
-void Lex_NextCh(void) {
+static void Lex_NextCh(void) {
 	g_LexCh = Lex_Getc();
 }
 
 /* the character and a terminator after it */
-void Lex_Add(int ch) {
+static void Lex_Add(int ch) {
 	CHECK(ch >= 0 && ch <= 255);
 	CHECK(g_LexTokenLen < MAX_LAST_CLEX - 1);
 	*(uint16_t *)(g_LexToken + g_LexTokenLen++) = (uint16_t)ch;
 }
 
 /* the character after g_LexCh */
-int Lex_Peek(void) {
+static int Lex_Peek(void) {
 	CHECK(g_Lex);
 	int ch = crt_fgetc(g_Lex->f);
 	int ch2 = crt_ungetc(ch, g_Lex->f);
@@ -335,8 +345,8 @@ int Lex_Peek(void) {
 }
 
 int g_LexErrors;
-int g_LexWarnings;
-char g_LexDir[260];
+static int g_LexWarnings;
+static char g_LexDir[260];
 
 /* relative to the current file first, then to g_LexDir */
 int Lex_Open(const char *name, int escapes) {
@@ -379,6 +389,7 @@ int Lex_Open(const char *name, int escapes) {
 	return 0;
 }
 
+static void Lex_Summary(void);
 void Lex_Close(int summary) {
 	CHECK(g_Lex);
 	if (summary == 2 || (summary == 1 && (g_LexErrors || g_LexWarnings))) {
@@ -428,7 +439,7 @@ void Lex_Error(int level, const char *fmt, ...) {
 	}
 }
 
-void Lex_Summary(void) {
+static void Lex_Summary(void) {
 	CHECK(g_Lex);
 	Lex_Print("\n%s: ", g_Lex->name);
 	Lex_Print("%d line%s", g_Lex->line, g_Lex->line == 1 ? "" : "s");

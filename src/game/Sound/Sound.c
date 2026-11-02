@@ -11,6 +11,17 @@
 #include "scrap/sound.h"
 #include "scrap/staticinit.h"
 
+#define CSOUNDSYS_VFTABLE (&CSoundSys_vftable)
+#define g_SoundDistAttenuation (GVar_SoundDistAttenuation.value.f)
+#define g_SoundDopplerLevel (GVar_SoundDopplerLevel.value.f)
+#define g_SoundPanningFactor (GVar_SoundPanningFactor.value.f)
+#define g_SoundShowSetMode (GVar_SoundShowSetMode.value.i)		/* Compute3D and SetListener print their input */
+static cGVar GVar_SoundShowSetMode;
+static cGVar GVar_SoundPanningFactor;
+static cGVar GVar_SoundDopplerLevel;
+static cGVar GVar_SoundDistAttenuation;
+static const CSoundSysVtbl CSoundSys_vftable;
+
 CSoundSys *g_pSound;
 
 /* the start and the end of the sound system */
@@ -53,18 +64,6 @@ void cSoundDesc_Init(cSoundDesc *desc) {
 	desc->param3 = 1.0f;
 	desc->param1 = 0.0f;
 	desc->param2 = 0.0f;
-}
-
-void cSoundDesc_Copy(cSoundDesc *desc, const cSoundDesc *src) {
-	*desc = *src;
-}
-
-void cSoundDesc_Set(cSoundDesc *desc, int volume, int pan, float freq, byte loop, byte prio) {
-	desc->volume = volume;
-	desc->pan = pan;
-	desc->loop = loop;
-	desc->freq = freq;
-	desc->prio = prio;
 }
 
 void cSoundDesc_SetPos(cSoundDesc *desc, const vec3_t *pos) {
@@ -137,22 +136,6 @@ byte cSound_Play(cSound *self) {
 	return (byte)g_pSound->vftable->PlaySound(g_pSound, self->name, &self->desc, &self->handle);
 }
 
-byte cSound_PlayAt(cSound *self, const vec3_t *pos, int volume) {
-	vec3_t vel;
-
-	CHECK(g_pSound);
-	vel.x = vel.y = vel.z = 0.0f;
-	g_pSound->vftable->Compute3D(g_pSound, &self->desc, pos, &vel, 0);
-	self->desc.volume += volume;
-	return cSound_Play(self);
-}
-
-byte cSound_PlayVP(cSound *self, int volume, int pan) {
-	self->desc.volume = volume;
-	self->desc.pan = pan;
-	return cSound_Play(self);
-}
-
 void cSound_SetPosVel(cSound *self, const vec3_t *pos, const vec3_t *vel) {
 	CHECK(g_pSound);
 	g_pSound->vftable->Compute3D(g_pSound, &self->desc, pos, vel, 1);
@@ -178,29 +161,6 @@ byte cSound_Update(cSound *self) {
 	return 0;
 }
 
-byte cSound_UpdateAt(cSound *self, const vec3_t *pos, int volume) {
-	vec3_t vel;
-
-	CHECK(g_pSound);
-	vel.x = vel.y = vel.z = 0.0f;
-	g_pSound->vftable->Compute3D(g_pSound, &self->desc, pos, &vel, 0);
-	self->desc.volume += volume;
-	return cSound_Update(self);
-}
-
-byte cSound_UpdatePosVel(cSound *self, const vec3_t *pos, const vec3_t *vel, int volume) {
-	CHECK(g_pSound);
-	g_pSound->vftable->Compute3D(g_pSound, &self->desc, pos, vel, 1);
-	self->desc.volume += volume;
-	return cSound_Update(self);
-}
-
-byte cSound_UpdateVP(cSound *self, int volume, int pan) {
-	self->desc.volume = volume;
-	self->desc.pan = pan;
-	return cSound_Update(self);
-}
-
 /* CSoundSys */
 
 CSoundSys *CSoundSys_ctor(CSoundSys *self) {
@@ -219,7 +179,7 @@ void CSoundSys_dtor(CSoundSys *self) {
 	self->vftable = CSOUNDSYS_VFTABLE;
 }
 
-CSoundSys *CSoundSys_Destroy(CSoundSys *self, byte flags) {
+static CSoundSys *CSoundSys_Destroy(CSoundSys *self, byte flags) {
 	self->vftable = CSOUNDSYS_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CSoundSys));
@@ -235,7 +195,7 @@ void CSoundSys_Nop(CSoundSys *self) {
 	(void)self;
 }
 
-void CSoundSys_Nop2(CSoundSys *self, int a, int b) {
+static void CSoundSys_Nop2(CSoundSys *self, int a, int b) {
 	(void)self;
 	(void)a;
 	(void)b;
@@ -515,7 +475,7 @@ int CSoundSys_VoiceUnused(CSoundSys *self, int voice) {
 }
 
 /* the vtable of CSoundSys */
-const CSoundSysVtbl CSoundSys_vftable = {
+static const CSoundSysVtbl CSoundSys_vftable = {
 	.Destroy = CSoundSys_Destroy,
 	.Init = CSoundSys_InitFmod,
 	.Close = CSoundSys_Close,
@@ -559,10 +519,10 @@ const CSoundSysVtbl CSoundSys_vftable = {
 	.VoiceUnused = CSoundSys_VoiceUnused,
 };
 
-cGVar GVar_SoundDopplerLevel;
-cGVar GVar_SoundShowSetMode;
-cGVar GVar_SoundPanningFactor;
-cGVar GVar_SoundDistAttenuation;
+static cGVar GVar_SoundDopplerLevel;
+static cGVar GVar_SoundShowSetMode;
+static cGVar GVar_SoundPanningFactor;
+static cGVar GVar_SoundDistAttenuation;
 cGVar GVar_SoundAutoplayVolume;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

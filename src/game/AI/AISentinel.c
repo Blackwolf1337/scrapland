@@ -6,6 +6,9 @@
 #include "scrap/aichar.h"
 #include "scrap/walkcharentity.h"
 
+#define CAISENTINEL_VFTABLE (&cAISentinel_vftable)
+static const cAICharVtbl cAISentinel_vftable;
+
 #define CAISENTINEL_SIZE sizeof(cAISentinel)
 
 void *cAISentinel_ctor(void *mem, cEntity *e, int *arg) {
@@ -18,7 +21,8 @@ void *cAISentinel_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAI *cAISentinel_Delete(cAI *base, byte flags) {
+/* AISentinel.c */
+static cAI *cAISentinel_Delete(cAI *base, byte flags) {
 	cAISentinel *self = (cAISentinel *)base;
 	self->vftable = CAISENTINEL_VFTABLE;
 	cAIChar_dtor(self);
@@ -28,7 +32,7 @@ cAI *cAISentinel_Delete(cAI *base, byte flags) {
 	return base;
 }
 
-void cAISentinel_CheckActDist(cAI *base) {
+static void cAISentinel_CheckActDist(cAI *base) {
 	cAISentinel *self = (cAISentinel *)base;
 	float dist = AIChar_TargetDist(self);
 
@@ -36,7 +40,7 @@ void cAISentinel_CheckActDist(cAI *base) {
 		dist > self->actMin && self->actMax > dist;
 }
 
-void cAISentinel_SetDists(cAI *elem) {
+static void cAISentinel_SetDists(cAI *elem) {
 	cAISentinel *self = (cAISentinel *)elem;
 	float d;
 
@@ -58,7 +62,7 @@ void cAISentinel_SetDists(cAI *elem) {
 }
 
 /* the vtable of cAISentinel */
-const cAICharVtbl cAISentinel_vftable = {
+static const cAICharVtbl cAISentinel_vftable = {
 	.base.base.Delete = cAISentinel_Delete,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,

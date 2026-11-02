@@ -8,6 +8,13 @@
 #include "scrap/walkcharentity.h"
 #include "scrap/staticinit.h"
 
+#define CAINURSE_VFTABLE (&cAINurse_vftable)
+#define g_DistActionNurseAI (GVar_DistActionNurseAI.value.f)
+#define g_OffsetMoveNurseAI (GVar_OffsetMoveNurseAI.value.f)
+static const cAICharVtbl cAINurse_vftable;
+static cGVar GVar_OffsetMoveNurseAI;
+static cGVar GVar_DistActionNurseAI;
+
 #define CAINURSE_SIZE sizeof(cAINurse)
 
 void *cAINurse_ctor(void *mem, cEntity *e, int *arg) {
@@ -22,7 +29,8 @@ void *cAINurse_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAI *cAINurse_Delete(cAI *base, byte flags) {
+/* AINurse.c */
+static cAI *cAINurse_Delete(cAI *base, byte flags) {
 	cAIChar *self = (cAIChar *)base;
 	self->vftable = CAINURSE_VFTABLE;
 	cAIChar_dtor(self);
@@ -32,7 +40,8 @@ cAI *cAINurse_Delete(cAI *base, byte flags) {
 	return base;
 }
 
-void cAINurse_CheckActDist(cAI *elem) {
+/* the action at a dazed target */
+static void cAINurse_CheckActDist(cAI *elem) {
 	cAINurse *self = (cAINurse *)elem;
 	cAIChar *c = &self->base;
 	float dist = AIChar_TargetDist(c);
@@ -47,7 +56,7 @@ void cAINurse_CheckActDist(cAI *elem) {
 	c->ctrl->act = 0;
 }
 
-void cAINurse_SetDists(cAI *elem) {
+static void cAINurse_SetDists(cAI *elem) {
 	cAINurse *self = (cAINurse *)elem;
 	cAIChar *c = &self->base;
 
@@ -63,7 +72,8 @@ void cAINurse_SetDists(cAI *elem) {
 	c->actMax = c->chaseFar;
 }
 
-byte cAINurse_SetState(cAI *elem, int state, ...) {
+/* vf27 and vf50: the state from outside and from inside, the start of state 2 marked */
+static byte cAINurse_SetState(cAI *elem, int state, ...) {
 	cAINurse *self = (cAINurse *)elem;
 	cAIChar *c = &self->base;
 	va_list ap;
@@ -81,7 +91,7 @@ byte cAINurse_SetState(cAI *elem, int state, ...) {
 	return r;
 }
 
-byte cAINurse_SetStateIntern(cAI *elem, int state, ...) {
+static byte cAINurse_SetStateIntern(cAI *elem, int state, ...) {
 	cAINurse *self = (cAINurse *)elem;
 	cAIChar *c = &self->base;
 	va_list ap;
@@ -101,7 +111,7 @@ byte cAINurse_SetStateIntern(cAI *elem, int state, ...) {
 }
 
 /* the vtable of cAINurse */
-const cAICharVtbl cAINurse_vftable = {
+static const cAICharVtbl cAINurse_vftable = {
 	.base.base.Delete = cAINurse_Delete,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
@@ -203,8 +213,8 @@ const cAICharVtbl cAINurse_vftable = {
 	.Facing = cAIChar_Facing,
 };
 
-cGVar GVar_DistActionNurseAI;
-cGVar GVar_OffsetMoveNurseAI;
+static cGVar GVar_DistActionNurseAI;
+static cGVar GVar_OffsetMoveNurseAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_DistActionNurseAI, &GVar_DistActionNurseAI, "DistActionNurseAI", 4, "Distance to action the Nurse.\n", 1600.0f)

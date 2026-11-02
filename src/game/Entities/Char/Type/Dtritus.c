@@ -8,6 +8,15 @@
 #include "scrap/vehicleattack.h"
 #include "scrap/staticinit.h"
 
+#define g_DTritusHitTimeFader (GVar_DTritusHitTimeFader.value.f)
+#define g_FXDTritusAttackFile (GVar_FXDTritusAttackFile.value.s)
+#define g_DTritusHitTimeSpeed (GVar_DTritusHitTimeSpeed.value.f)
+#define g_FXDTritusKillFile (GVar_FXDTritusKillFile.value.s)
+static cGVar GVar_FXDTritusKillFile;
+static cGVar GVar_FXDTritusAttackFile;
+static cGVar GVar_DTritusHitTimeSpeed;
+static cGVar GVar_DTritusHitTimeFader;
+
 static inline cFollowCamEntity *Dtritus_Cam(cEntity *v) {
 	return (cFollowCamEntity *)WChar(v)->wl.obj.cam;
 }
@@ -22,7 +31,7 @@ static const char *Dtritus_Relax(cEntity *v) {
 }
 
 /* params: D-Tritus. With 0.9 of energy or more the punch, ActionFail as the loop, the energy all used */
-void ChType_DtritusActionPress(cAbstractFile *params) {
+static void ChType_DtritusActionPress(cAbstractFile *params) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -43,11 +52,11 @@ void ChType_DtritusActionPress(cAbstractFile *params) {
 	}
 }
 
-cEntity *g_DtritusEnt;
+static cEntity *g_DtritusEnt;
 
 /* the sphere test of the punch: params the hit character, killed; D-Tritus turns by 45 degrees away from it, the
  * world in slow motion, the kill effect */
-void ChType_DtritusKill(cAbstractFile *params) {
+static void ChType_DtritusKill(cAbstractFile *params) {
 	char name[0x80];
 	vec3_t t1, t2, t3, t4, ang;
 
@@ -109,7 +118,7 @@ void ChType_DtritusKill(cAbstractFile *params) {
 }
 
 /* params: D-Tritus, an event, a float: he stops, the world speed and his view back */
-void ChType_DtritusEndEvent(cAbstractFile *params) {
+static void ChType_DtritusEndEvent(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 	vec3_t v;
 
@@ -142,7 +151,7 @@ void ChType_DtritusEndEvent(cAbstractFile *params) {
 }
 
 /* params: D-Tritus, an event, a float: the punch, ChType_DtritusKill in a sphere 50 ahead along his velocity */
-void ChType_DtritusHitEvent(cAbstractFile *params) {
+static void ChType_DtritusHitEvent(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 	vec3_t tmp, n, c;
 
@@ -172,7 +181,7 @@ void ChType_DtritusHitEvent(cAbstractFile *params) {
 }
 
 /* params: D-Tritus, an event, a float: the relax loop again */
-void ChType_DtritusRestartEvent(cAbstractFile *params) {
+static void ChType_DtritusRestartEvent(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -183,7 +192,7 @@ void ChType_DtritusRestartEvent(cAbstractFile *params) {
 	cActCtrl_SetDefLoop(ChType_ActCtrl(g_DtritusEnt), relax, 1);
 }
 
-void ChType_FXDTritusAttack(cAbstractFile *params) {
+static void ChType_FXDTritusAttack(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 
 	ChType_ReadParams(params, name, event);
@@ -198,15 +207,15 @@ void ChType_FXDTritusAttack(cAbstractFile *params) {
 	}
 }
 
-cGVar GVar_DTritusHitTimeFader;
-cGVar GVar_FXDTritusAttackFile;
-cGVar GVar_DTritusHitTimeSpeed;
-cGVar GVar_FXDTritusKillFile;
-cPy_NativeFunc NativeFunc_DtritusActionPress;
-cPy_NativeFunc NativeFunc_DtritusHitEvent;
-cPy_NativeFunc NativeFunc_DtritusEndEvent;
-cPy_NativeFunc NativeFunc_DtritusRestartEvent;
-cPy_NativeFunc NativeFunc_FXDTritusAttack;
+static cGVar GVar_DTritusHitTimeFader;
+static cGVar GVar_FXDTritusAttackFile;
+static cGVar GVar_DTritusHitTimeSpeed;
+static cGVar GVar_FXDTritusKillFile;
+static cPy_NativeFunc NativeFunc_DtritusActionPress;
+static cPy_NativeFunc NativeFunc_DtritusHitEvent;
+static cPy_NativeFunc NativeFunc_DtritusEndEvent;
+static cPy_NativeFunc NativeFunc_DtritusRestartEvent;
+static cPy_NativeFunc NativeFunc_FXDTritusAttack;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_FXDTritusAttackFile, &GVar_FXDTritusAttackFile)

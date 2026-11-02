@@ -8,7 +8,7 @@
 #include "scrap/staticinit.h"
 
 /* params: the sentinel: ActionInit unless it runs */
-void ChType_SentinelActionPress(cAbstractFile *params) {
+static void ChType_SentinelActionPress(cAbstractFile *params) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -19,7 +19,7 @@ void ChType_SentinelActionPress(cAbstractFile *params) {
 }
 
 /* params: the sentinel: Relax when ActionInit or Action runs */
-void ChType_SentinelActionRelease(cAbstractFile *params) {
+static void ChType_SentinelActionRelease(cAbstractFile *params) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -46,7 +46,7 @@ cEntity *ChType_SentinelTarget(cEntity *e) {
 	return t;
 }
 
-byte ChType_SentinelCanCall(void) {
+static byte ChType_SentinelCanCall(void) {
 	cWorld *w = g_pWorld;
 
 	if (w->alarm.on && World_AlarmChase(w)) {
@@ -58,7 +58,7 @@ byte ChType_SentinelCanCall(void) {
 /* params: the sentinel of the player, an event, a float. The character it points at raises the alarm (a sentinel,
  * gear or police at once), else the others are called on it; the view of the player turns to it and its logic
  * hears of it. Gatekeepers and Sebastian do not count. */
-void ChType_SentinelPoint(cAbstractFile *params) {
+static void ChType_SentinelPoint(cAbstractFile *params) {
 	char name[0x80], event[0x80];
 	vec3_t tmp;
 
@@ -95,9 +95,9 @@ void ChType_SentinelPoint(cAbstractFile *params) {
 	}
 }
 
-cPy_NativeFunc NativeFunc_SentinelPoint;
-cPy_NativeFunc NativeFunc_SentinelActionPress;
-cPy_NativeFunc NativeFunc_SentinelActionRelease;
+static cPy_NativeFunc NativeFunc_SentinelPoint;
+static cPy_NativeFunc NativeFunc_SentinelActionPress;
+static cPy_NativeFunc NativeFunc_SentinelActionRelease;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_NATIVE_FUNC(Init_NativeFunc_SentinelPoint, &NativeFunc_SentinelPoint, "SentinelPoint", ChType_SentinelPoint)

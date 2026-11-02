@@ -28,12 +28,14 @@
 
 static const vec3_t sp_zero = { 0.0f, 0.0f, 0.0f };
 
+static void CGameParticles_Init(CGameParticles *self);
 CGameParticles *CGameParticles_ctor(CGameParticles *self) {
 	CGameParticles_Init(self);
 	return self;
 }
 
-void CGameParticles_Init(CGameParticles *self) {
+/* no node, the default parameters */
+static void CGameParticles_Init(CGameParticles *self) {
 	self->Node = NULL;
 	self->ParticleSystem = NULL;
 	self->colorIni = 0xffffff;
@@ -220,18 +222,9 @@ int CGameParticles_NumParticles(const CGameParticles *self) {
 	return self->ParticleSystem->params.nParticles;
 }
 
-float CGameParticles_GetAlpha(const CGameParticles *self) {
-	SP_CHECK(self);
-	return self->ParticleSystem->alpha;
-}
-
 void CGameParticles_SetAlpha(CGameParticles *self, float alpha) {
 	SP_CHECK(self);
 	CParticleSystem_SetAlpha(self->ParticleSystem, alpha);
-}
-
-byte CGameParticles_IsEnabled(const CGameParticles *self) {
-	return self->ParticleSystem->enabled;
 }
 
 void CGameParticles_SetEnabled(CGameParticles *self, byte on) {

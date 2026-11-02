@@ -7,6 +7,11 @@
 #include "scrap/arrowindicator.h"
 #include "scrap/staticinit.h"
 
+#define g_AlwaysRun (GVar_AlwaysRun.value.i)		/* "AlwaysRun" */
+#define g_PadTurnSpeed (GVar_PadTurnSpeed.value.f)	/* "PadTurnSpeed" */
+static cGVar GVar_PadTurnSpeed;
+static cGVar GVar_AlwaysRun;
+
 /* the input actions of the character set the control reads */
 #define WCC_SET 3
 enum {
@@ -72,10 +77,6 @@ void cWalkCharControl_Clear(cWalkCharControl *self) {
 	self->lockStart = 0;
 	self->lock = 0;
 	self->target.data = self;
-}
-
-void cWalkCharControl_dtor(cWalkCharControl *self) {
-	Nto1Node_Done(&self->target);
 }
 
 void cWalkCharControl_SetTarget(cWalkCharControl *self, cEntity *e) {
@@ -248,9 +249,9 @@ void cWalkCharControl_Update(cWalkCharControl *self, cEntity *wle, float dt) {
 	}
 }
 
-cGVar GVar_AlwaysRun;
+static cGVar GVar_AlwaysRun;
 cGVar GVar_WalkCameraCenter;
-cGVar GVar_PadTurnSpeed;
+static cGVar GVar_PadTurnSpeed;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_PadTurnSpeed, &GVar_PadTurnSpeed, "PadTurnSpeed", 2, "Aditional rotation for pad controllers.\n", 1.0f)

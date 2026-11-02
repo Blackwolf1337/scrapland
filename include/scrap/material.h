@@ -21,7 +21,6 @@ enum {
 #define MAX_TEXTURE_PATHS 10
 #define MAX_TEXTURE_EXTS 10
 
-
 /* params.attrib */
 #define MAT_NOCOLLIDE 0x1		/* "(nc)", "(+no_collide)": the triangles get TRI_ALT_NO_COLLISIONS */
 #define MAT_LOADTEX 0x40		/* textures loaded also with LoadTextures 2 */
@@ -119,8 +118,6 @@ typedef struct CMatList CMatList;
 typedef struct CMaterialVtbl {
 	struct CMaterial *(*Delete)(struct CMaterial *self, byte flags);	/* 0x00 */
 } CMaterialVtbl;
-extern const CMaterialVtbl CMaterial_vftable;
-#define CMATERIAL_VFTABLE (&CMaterial_vftable)
 
 typedef struct CMaterial {
 	const CMaterialVtbl *vftable;			/* 0x00 [0] the deleting destructor */
@@ -151,15 +148,10 @@ struct CMatList {
 /* the materials of the engine */
 extern CMatList g_MatList;
 
-/* the constructors and destructors of material.h */
-CMatList *CMatList_DeleteObj(CMatList *self, byte flags);
-void CMatList_dtor(CMatList *self);
 /* the string freed if set (the destructor of the string members) */
 void String_dtor(char **self);
 CMatId *CMatId_ctor(CMatId *self);		/* rva 0x2a79e0, id -1 */
 void CMatId_dtor(CMatId *self);
-CMap *CMap_ctor(CMap *self);
-void CMap_dtor(CMap *self);
 CMaterial *CMaterial_ctor(CMaterial *self);
 /* rva 0x237020: the D3D colors (CMaterial_CalcColors) times k unless k is 1, the alpha of colors from diffuse[3] */
 void CMaterial_ScaleColors(CMaterial *self, float k);
@@ -191,15 +183,6 @@ void CAnimMat_dtor(CAnimMat *self);
 void CAnimMat_Start(CAnimMat *self);
 /* rva 0x258060: the frame of now (updated once each frame) */
 int CAnimMat_GetFrame(CAnimMat *self);
-/* the step to g_TimeMs */
-void CAnimMat_Update(CAnimMat *self);
-void CAnimMat_SetFrameF(CAnimMat *self, float frame);
-/* only while already FUND_PAUSA: the slow down restarted over ms */
-void CAnimMat_FadePause(CAnimMat *self, float ms);
-/* fps and cycle of a, 0 for a NULL a (al only) */
-byte AnimMat_Set(CAnimMat *a, float fps, int cycle);
-/* "REPR", "PAUSA", "FUND_PAUSA", "FIN" (strings of the exe), CHECK and NULL for others */
-const char *AnimMat_ModeName(int mode);
 void String_Set(char **self, const char *s);
 /* rva 0x2a1970: *self a String_Dup of the printf of fmt, NULL (freed) for fmt NULL */
 void String_Printf(char **self, const char *fmt, ...);
@@ -207,30 +190,13 @@ void String_Printf(char **self, const char *fmt, ...);
 void String_Read(char **self, CFileIO *f);
 void String_Write(char **self, CFileIO *f);
 
-void CObjRef_dtor(CObjRef *self);
-CTextStatic *CTextStatic_ctor(CTextStatic *self);
-void CTextStatic_dtor(CTextStatic *self);
-CTextStatic *CTextStatic_Delete(CTextStatic *self, byte flags);
-/* name and parameters, not the textures */
-void CMap_Assign(CMap *self, const CMap *orig);
-byte CMap_Equal(const CMap *a, const CMap *b);
-int CMap_Read(CMap *self, CFileIO *f);
-int CMap_Write(CMap *self, CFileIO *f);
 byte CMap_BuildMultiSprite(CMap *self);
-/* the file of the map: a DDS version, the bmp/ directory, the texture paths, numbered frames; path or NULL */
-char *CMap_ResolvePath(CMap *self, byte load, CMap *alpha);
-void CMap_LoadTexture(CMap *self, void *dev, CMap *alpha, int flags);
-void CMap_Release(CMap *self);
-byte CMap_GetSize(CMap *self, int *w, int *h);
-byte CMap_HasAlpha(const CMap *self);
 void *CMap_GetTexture(CMap *self, byte load);
 struct CImage;
 /* the w x h pixels of bmp at (sx, sy) into the texture at (dx, dy); 0 when not done */
 byte CMap_CopyBmp(CMap *self, int dx, int dy, const struct CImage *bmp, int sx, int sy, int w, int h);
-char *CMap_FramePath(CMap *self, int frame, char *buf, int size);
 /* FXTexture_Kind (the kind of FXTexture of a map name): fxtexture.h */
 
-CMaterial *CMaterial_Delete(CMaterial *self, byte flags);
 /* name, parameters and copies of the maps */
 void CMaterial_Assign(CMaterial *self, const CMaterial *orig);
 void *CMaterial_GetMultiSprite(CMaterial *self, uint32_t mapid);
@@ -241,14 +207,12 @@ int CMaterial_GetId(CMaterial *self, CMatId **out);
 byte CMatId_Check(CMatId *self, CMaterial *mat);
 /* the mode of the maps and flags of mat, CHECK(id == -1) */
 void CMatId_Register(CMatId *self, CMaterial *mat);
-int CMaterial_Id(CMaterial *self);
 char *CMaterial_GetShaderName(CMaterial *self, char *str, uint32_t nbytes);
 void CMaterial_Prepare(CMaterial *self, void *dev);
 CMap *CMaterial_SetMap(CMaterial *self, uint32_t mapid, const char *name);
 CMap *CMaterial_SetMapCopy(CMaterial *self, uint32_t mapid, const CMap *orig);
 /* colors as a D3DMATERIAL9 */
 void CMaterial_CalcColors(CMaterial *self, float *out);
-void CMaterial_Release(CMaterial *self);
 /* the average color of map 0 as the diffuse color, the map deleted */
 void CMaterial_MapToColor(CMaterial *self);
 char *CMaterial_GetMapName(CMaterial *self, uint32_t mapid);
@@ -264,11 +228,6 @@ void CMatList_Release(CMatList *self);
 void CMatList_DeleteAll(CMatList *self);
 void CMatList_Delete(CMatList *self, CMaterial *mat);
 
-byte Color_Equal(const byte *a, const byte *b);
-byte MatParams_Equal(const uint32_t *self, const uint32_t *other);
-int Vec2_Differ(const float *a, const float *b);
-/* blend modes between the file values and the engine (legacy: the files of version 1) */
-void Mat_ConvertBlend(uint32_t *mode, byte toFile, byte legacy);
 /* a copy of orig in (&g_MatList), prepared; with share an equal material of the list instead */
 CMaterial *Mat_New(const CMaterial *orig, byte share);
 /* a copy of orig added to (&g_MatList), not prepared */
@@ -278,8 +237,6 @@ void AnimMat_Free(CAnimMat **slot);
 void AnimMat_FromMap(CAnimMat **slot, const CMap *map);
 /* Render_SetMaterial of pass 0 with anim (if set) in place of the animation of the first map */
 void Render_SetMaterialAnim(CMaterial *m, CAnimMat *anim);
-byte Mat_CompareNames(const CMaterial *a, const CMaterial *b);
-const char *Mat_Str(const CMaterial *m);
 /* sort order for drawing */
 int Mat_Compare(const CMaterial *a, const CMaterial *b);
 /* with an opacity: transparent flag or map 1 without b3b (inline in the exe) */
@@ -289,16 +246,10 @@ static inline byte Mat_IsTransp(const CMaterial *m) {
 	}
 	return m->params.transp || (m->map[1] && !m->params.reflection);
 }
-void DDS_Hide(const char *name, uint32_t attr);
-void DDS_Unhide(const char *name, uint32_t attr);
 /* an extension: a Path_Format format, "<x>" for &x; without one "&u&d&n." is put before it */
 void Tex_AddExtension(const char *ext);
 void Tex_AddPath(const char *path);
 void Tex_ClearExtensions(void);
 void Tex_ClearPaths(void);
-/* 0 with the file in out, -1 */
-int Tex_FindDDS(const char *name, char *out, int alpha);
-int Tex_FindInPaths(const char *name, char *out);
-byte Tex_TryFormat(const char *frmt, const char *name, char *out, int alpha);
 
 #endif

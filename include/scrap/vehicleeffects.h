@@ -67,64 +67,19 @@ typedef struct cVehicleEffects {
 	cVehicleTubes *tubes;		/* 0x20 NULL for none */
 } cVehicleEffects;
 
-/* the engine variables of the effects */
-extern cGVar GVar_FXVehicleDamageFile;
-#define g_FXVehicleDamageFile (GVar_FXVehicleDamageFile.value.s)
-extern cGVar GVar_FXVehicleEMIFile;
-#define g_FXVehicleEMIFile (GVar_FXVehicleEMIFile.value.s)
-extern cGVar GVar_FXVehicleSputnikFile;
-#define g_FXVehicleSputnikFile (GVar_FXVehicleSputnikFile.value.s)
-extern cGVar GVar_FXVehicleFireFile;
-#define g_FXVehicleFireFile (GVar_FXVehicleFireFile.value.s)
-extern cGVar GVar_FXVehicleSpeedTrailDist;
-#define g_FXVehicleSpeedTrailDist (GVar_FXVehicleSpeedTrailDist.value.f)
-extern cGVar GVar_FXVehicleSpeedTrailFadeOutH;
-#define g_FXVehicleSpeedTrailFadeOutH (GVar_FXVehicleSpeedTrailFadeOutH.value.f)
-extern cGVar GVar_FXVehicleSpeedTrailSize;
-#define g_FXVehicleSpeedTrailSize (GVar_FXVehicleSpeedTrailSize.value.f)
-extern cGVar GVar_WindFxSmoke;
-#define g_WindFxSmoke (GVar_WindFxSmoke.value.i)
-extern cGVar GVar_WindFxSmokeFile;
-#define g_WindFxSmokeFile (GVar_WindFxSmokeFile.value.s)
-extern cGVar GVar_WindFXSmokeMaxDist;
-#define g_WindFXSmokeMaxDist (GVar_WindFXSmokeMaxDist.value.f)
-extern cGVar GVar_WindFXSmokeMinVel;
-#define g_WindFXSmokeMinVel (GVar_WindFXSmokeMinVel.value.f)
-extern cGVar GVar_WindFXSmokeTimeStep;
-#define g_WindFXSmokeTimeStep (GVar_WindFXSmokeTimeStep.value.f)
-extern cGVar GVar_WindFXSmokeSizeDiv;
-#define g_WindFXSmokeSizeDiv (GVar_WindFXSmokeSizeDiv.value.f)
-extern float g_WindFXSmokeLast;	/* the world time of the last wind smoke */
-
 /* the parts before the range of the file in the exe */
 cVehicleEffects *cVehicleEffects_ctor(cVehicleEffects *self);
-/* the constructors of the optional parts (Init inlines them) */
-cVehicleTubes *cVehicleTubes_ctor(cVehicleTubes *self);
-cVehicleTrails *cVehicleTrails_ctor(cVehicleTrails *self);
 void cVehicleEffects_dtor(cVehicleEffects *self);
 /* the trails and tubes that found their nodes */
 void cVehicleEffects_Update(cVehicleEffects *self, float dt);
-/* the smoke puffs of the escape tubes every 0.025 s, stronger with the sink speed */
-void cVehicleTubes_Update(cVehicleTubes *self, float dt);
 
 void cVehicleEffects_Reset(cVehicleEffects *self);
-void cVehicleTubes_Reset(cVehicleTubes *self);
-void cVehicleTrails_Clear(cVehicleTrails *self);
 /* the trails and tubes made or deleted for the model of the owner */
 void cVehicleEffects_Init(cVehicleEffects *self);
-void cVehicleTubes_Init(cVehicleTubes *self);
-void cVehicleTrails_Init(cVehicleTrails *self);
 void cVehicleEffects_SetActive(cVehicleEffects *self, byte on);
 /* the effect of that name: VehicleDamage, VehicleEMI, VehicleSputnik(Make, Suck), VehicleFire, VehicleSpawn */
 void cVehicleEffects_Start(cVehicleEffects *self, const char *name);
 void cVehicleEffects_SetOwner(cVehicleEffects *self, cEntity *e);
-void cVehicleTubes_SetOwner(cVehicleTubes *self, cEntity *e);
-void cVehicleTrails_SetOwner(cVehicleTrails *self, cEntity *e);
-/* the speed trails of a fast ship that sinks: a point every segment, the last point follows the nodes, faded
- * with the horizontal speed */
-void cVehicleTrails_Update(cVehicleTrails *self, float dt);
-/* the smoke the wind of a fast ship blows off the ground at x y z */
-void cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float y, float z);
 /* the damage, EMI, fire and wind smoke effects started and stopped */
 void cVehicleEffects_UpdateState(cVehicleEffects *self, float dt);
 

@@ -8,13 +8,29 @@
 #include "scrap/weaps2.h"
 #include "scrap/staticinit.h"
 
+#define g_TeslaTrackForce (GVar_TeslaTrackForce.value.f)
+#define g_TeslaShootFile (GVar_TeslaShootFile.value.s)
+#define g_TeslaMaxAngRangePad (GVar_TeslaMaxAngRangePad.value.f)
+#define g_TeslaUpRangeTime (GVar_TeslaUpRangeTime.value.f)
+#define g_TeslaHitForce (GVar_TeslaHitForce.value.f)
+#define g_TeslaAmmoCost (GVar_TeslaAmmoCost.value.f)
+#define g_TeslaMaxAngRange (GVar_TeslaMaxAngRange.value.f)
+static cGVar GVar_TeslaUpRangeTime;
+static cGVar GVar_TeslaTrackForce;
+static cGVar GVar_TeslaShootFile;
+static cGVar GVar_TeslaMaxAngRangePad;
+static cGVar GVar_TeslaMaxAngRange;
+static cGVar GVar_TeslaHitForce;
+static cGVar GVar_TeslaAmmoCost;
+
 #define TESLA_UPG_TRACK 5		/* the upgrade that pushes a ship against its flight */
 #define TESLA_UPG_WIDE 6		/* the upgrade that keeps the HUD item a quarter open */
 #define TESLA_CONE 0x1.80406ep-1f	/* the cone of the aim help */
 
 /* ship name, hit point x y z (unused), target name: the ray effect (once per shot) and the push of the target; a
  * hit opens the aim cone again */
-void Tesla_CreateNative(cAbstractFile *f) {
+static void Tesla_Push(cEntity *v, cEntity *e, int n);
+static void Tesla_CreateNative(cAbstractFile *f) {
 	char name[0x80], targetName[0x80];
 	vec3_t hit;
 
@@ -61,7 +77,7 @@ void Tesla_CreateNative(cAbstractFile *f) {
 
 /* ship name, player, item name: the HUD item of the Tesla grows and turns with the open part of the cone, else it
  * turns back */
-void Tesla_HudNative(cAbstractFile *f) {
+static void Tesla_HudNative(cAbstractFile *f) {
 	char name[0x80], itemName[0x80];
 	int player;
 
@@ -100,7 +116,7 @@ void Tesla_HudNative(cAbstractFile *f) {
 }
 
 /* ship name: the shot (a client only aims, unless the ship hit something), one life per mounted bay */
-void Tesla_FireNative(cAbstractFile *f) {
+static void Tesla_FireNative(cAbstractFile *f) {
 	char name[0x80];
 	vec3_t ang, out;
 	cEntity *target;
@@ -162,7 +178,7 @@ void Tesla_FireNative(cAbstractFile *f) {
 }
 
 /* the push of n bays on e; the upgrade 5 pushes a ship against its flight instead */
-void Tesla_Push(cEntity *v, cEntity *e, int n) {
+static void Tesla_Push(cEntity *v, cEntity *e, int n) {
 	vec3_t tmp, nd;
 
 	if (!e || !Entity_IsType(e, TYEN_WITH_LIFE)) {
@@ -187,7 +203,8 @@ void Tesla_Push(cEntity *v, cEntity *e, int n) {
 	Weap_PushAway(v, e, n, g_TeslaHitForce);
 }
 
-void Tesla_AimOnNative(cAbstractFile *f) {
+static void Tesla_AimOn(cEntity *v);
+static void Tesla_AimOnNative(cAbstractFile *f) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(f, name, 0x80);
@@ -196,7 +213,7 @@ void Tesla_AimOnNative(cAbstractFile *f) {
 	cWeaponManager_SetTeslaFiring(&Veh(v)->weapons, 0);
 }
 
-void Tesla_AimOffNative(cAbstractFile *f) {
+static void Tesla_AimOffNative(cAbstractFile *f) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(f, name, 0x80);
@@ -207,7 +224,7 @@ void Tesla_AimOffNative(cAbstractFile *f) {
 }
 
 /* the aim help of the Tesla: the cone opens wide (wider with a pad and VehicleCenterPadLock) */
-void Tesla_AimOn(cEntity *v) {
+static void Tesla_AimOn(cEntity *v) {
 	Veh(v)->autoAim.status = 2;
 	Veh(v)->autoAim.speed = TESLA_CONE;
 	float min = (float)(((double)g_TeslaMinAngRange * WEAP_PI) / 180.0);
@@ -223,19 +240,19 @@ void Tesla_AimOn(cEntity *v) {
 }
 
 cGVar GVar_TeslaIDWeap;
-cGVar GVar_TeslaTrackForce;
-cGVar GVar_TeslaShootFile;
-cGVar GVar_TeslaMaxAngRangePad;
-cGVar GVar_TeslaUpRangeTime;
-cGVar GVar_TeslaHitForce;
+static cGVar GVar_TeslaTrackForce;
+static cGVar GVar_TeslaShootFile;
+static cGVar GVar_TeslaMaxAngRangePad;
+static cGVar GVar_TeslaUpRangeTime;
+static cGVar GVar_TeslaHitForce;
 cGVar GVar_TeslaIDAmmo;
-cGVar GVar_TeslaAmmoCost;
-cGVar GVar_TeslaMaxAngRange;
-cPy_NativeFunc NativeFunc_TeslaPress;
-cPy_NativeFunc NativeFunc_TeslaRelease;
-cPy_NativeFunc NativeFunc_TeslaCreate;
-cPy_NativeFunc NativeFunc_TeslaFire;
-cPy_NativeFunc NativeFunc_TeslaFX;
+static cGVar GVar_TeslaAmmoCost;
+static cGVar GVar_TeslaMaxAngRange;
+static cPy_NativeFunc NativeFunc_TeslaPress;
+static cPy_NativeFunc NativeFunc_TeslaRelease;
+static cPy_NativeFunc NativeFunc_TeslaCreate;
+static cPy_NativeFunc NativeFunc_TeslaFire;
+static cPy_NativeFunc NativeFunc_TeslaFX;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_TeslaIDWeap, &GVar_TeslaIDWeap, "TeslaIDWeap", 0, "The default weapon idx for the tesla", 5)

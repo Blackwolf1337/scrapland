@@ -12,6 +12,12 @@
 
 #include <string.h>
 
+#define CWEAPONMANAGER_VFTABLE (&cWeaponManager_vftable)
+#define g_HookPlugFunc (((cPy_Function *)&GVar_HookPlugFunc.func))
+#define CWEAPONMANAGER_VFTABLE (&cWeaponManager_vftable)
+static const cTargetLockVtbl cWeaponManager_vftable;
+static cGVarFunction GVar_HookPlugFunc;
+
 cWorld *g_pWorld;
 
 #define WEAPS (g_pWorld->weapons)
@@ -154,7 +160,7 @@ vec3_t *cTargetLock_GetPoint(cTargetLock *self) {
 	return NULL;
 }
 
-int cWeaponManager_NumAmmoSlots(cWeaponManager *self, int ammo) {
+static int cWeaponManager_NumAmmoSlots(cWeaponManager *self, int ammo) {
 	if (ammo >= g_pWorld->ammo.count) {
 		return 0;
 	}
@@ -197,7 +203,7 @@ uint32_t cWeaponManager_GetSlots(cWeaponManager *self, int w) {
 	return self->weaps[w].slots;
 }
 
-char g_WeapListBuf[512];
+static char g_WeapListBuf[512];
 
 /* the slot masks of all weapons as "m0,m1,..." in a static buffer */
 char *cWeaponManager_GetWeapList(cWeaponManager *self) {
@@ -277,6 +283,9 @@ static inline int WM_Name7(const char *name, size_t len, const char *prefix) {
 	return len == 7 && WM_IsDigit(name[5]) && WM_IsDigit(name[6]) && !memcmp(name, prefix, 5);
 }
 
+static byte cWeaponManager_SetSlot(cWeaponManager *self, int w, int slot, byte on);
+static uint32_t cWeaponManager_SetSlots(cWeaponManager *self, int w, int mask);
+static int cWeaponManager_WeaponNeed(cWeaponManager *self);
 byte cWeaponManager_VarI(cWeaponManager *self, const char *name, int *v, byte set) {
 	size_t len = strlen(name);
 	int i;
@@ -446,7 +455,7 @@ void cWeaponManager_SetTeslaFiring(cWeaponManager *self, byte v) {
 }
 
 /* the slots of weapon w from the bits of mask, up to the first slot without node; the new slots */
-uint32_t cWeaponManager_SetSlots(cWeaponManager *self, int w, int mask) {
+static uint32_t cWeaponManager_SetSlots(cWeaponManager *self, int w, int mask) {
 	if (w >= g_pWorld->weapons.count) {
 		return 0;
 	}
@@ -508,7 +517,7 @@ void cWeaponManager_SetWeapList(cWeaponManager *self, const char *list) {
 	cWeaponManager_SetSlots(self, g_LaserIDWeap, 1);
 }
 
-byte cWeaponManager_SetSlot(cWeaponManager *self, int w, int slot, byte on) {
+static byte cWeaponManager_SetSlot(cWeaponManager *self, int w, int slot, byte on) {
 	if (slot > 4 || w >= g_pWorld->weapons.count) {
 		return 0;
 	}
@@ -788,14 +797,10 @@ byte cWeaponManager_VarV(cWeaponManager *self, const char *name, double *x, doub
 	return 1;
 }
 
-void cWeaponManager_PlayStartSnd(cWeaponManager *self) {
-	Vehicle_StartSnd(self->owner, 0x14);
-}
-
-int g_WeaponNeedOrder[3][6] = { { 0, 3, 1, 5, 2, 4 }, { 1, 5, 2, 4, 0, 3 }, { 2, 4, 0, 3, 1, 5 } };
+static int g_WeaponNeedOrder[3][6] = { { 0, 3, 1, 5, 2, 4 }, { 1, 5, 2, 4, 0, 3 }, { 2, 4, 0, 3, 1, 5 } };
 
 /* the ammo kind of a mounted weapon below its maximum, in one of three random orders; 0 for none */
-int cWeaponManager_WeaponNeed(cWeaponManager *self) {
+static int cWeaponManager_WeaponNeed(cWeaponManager *self) {
 	if (g_pWorld->weapons.count <= 6) {
 		return 0;
 	}
@@ -836,12 +841,7 @@ void cWeaponManager_dtor(cWeaponManager *self) {
 	Nto1Node_Done(&self->lock);
 }
 
-/* Table<cWeapInfo>::operator[] (the world weapons) */
-cWeapInfo *WeapTable_At(void *table, uint32_t i) {
-	return TABLE_AT(*(TABLE(cWeapInfo) *)table, i);
-}
-
-cWeaponManager *cWeaponManager_Delete(cWeaponManager *self, byte flags) {
+static cWeaponManager *cWeaponManager_Delete(cWeaponManager *self, byte flags) {
 	cWeaponManager_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(cWeaponManager));
@@ -874,12 +874,12 @@ void cWeaponManager_ClearWeaps(cWeaponManager *self) {
 }
 
 /* the vtable of cWeaponManager */
-const cTargetLockVtbl cWeaponManager_vftable = {
+static const cTargetLockVtbl cWeaponManager_vftable = {
 	.Delete = cWeaponManager_Delete,
 };
 
 cGVar GVar_LaserIDWeap;
-cGVarFunction GVar_HookPlugFunc;
+static cGVarFunction GVar_HookPlugFunc;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_CALL(Fini_GVar_HookPlugFunc, &GVar_HookPlugFunc.func, cPy_Function_dtor)

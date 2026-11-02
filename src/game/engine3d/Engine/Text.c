@@ -23,7 +23,7 @@ static struct {
 static int text_queued;
 
 /* the original wrote the text with GDI on the window at once; it waits for the 2D pass of the frame now */
-void Text_Draw(int x, int y, const char *s) {
+static void Text_Draw(int x, int y, const char *s) {
 	if (text_queued < TEXT_QUEUE) {
 		text_queue[text_queued].x = x;
 		text_queue[text_queued].y = y;
@@ -32,9 +32,10 @@ void Text_Draw(int x, int y, const char *s) {
 	}
 }
 
-TextMsg *g_TextStack;
+static TextMsg *g_TextStack;
 
 /* the texts of Text_Draw (yellow with a shadow in the font of the messages), then the message stack */
+static void Text_Pop(void);
 void Text_DrawStack(void) {
 	for (int i = 0; i < text_queued; i++) {
 		Eng_Printf(2, (float)text_queue[i].x, (float)text_queue[i].y, 1, 0xffff00, "%s", text_queue[i].text);
@@ -63,7 +64,8 @@ void Text_DrawStack(void) {
 	}
 }
 
-TextMsg *Text_Push(void) {
+/* a new message at the end (Mem_Calloc) */
+static TextMsg *Text_Push(void) {
 	TextMsg **slot = &g_TextStack;
 	while (*slot) {
 		slot = &(*slot)->next;
@@ -72,15 +74,16 @@ TextMsg *Text_Push(void) {
 	return *slot;
 }
 
-void Text_Pop(void) {
+/* the first message off */
+static void Text_Pop(void) {
 	CHECK(g_TextStack);
 	TextMsg *m = g_TextStack;
 	g_TextStack = m->next;
 	Mem_Free(m);
 }
 
-int g_TextX;
-int g_TextY;
+static int g_TextX;
+static int g_TextY;
 
 void Text_Printf3D(const vec3_t *pos, const char *fmt, ...) {
 	char buf[TEXT_BUF];

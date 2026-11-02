@@ -17,8 +17,6 @@
 #include "scrap/scorer.h"
 #include "scrap/scrapmodel.h"
 
-/* the function of Scrap.SetCallFunc with its parameters (AddParamX) for Scrap.Execute */
-extern cPy_Function g_CallFunc;
 #define g_PackName (((cString *)&GVar_PathInPackFile.value))	/* string object, the open pack */
 extern cGVar GVar_SuperDealAvaliable;
 #define g_SuperDealAvaliable (GVar_SuperDealAvaliable.value.i)	/* SuperDealAvaliable, all three crazy deals done */
@@ -72,9 +70,6 @@ typedef struct cGVarFunction {
 	};
 } cGVarFunction;
 
-extern cGVar *g_GVars;		/* every variable, newest first */
-extern HashTable *g_GVarTable;	/* by name after GVars_Init */
-
 byte SaveVar_Create(const char *name, const char *value);
 void SaveVars_Delete(const char *prefix);
 const char *SaveVar_Get(const char *name);
@@ -84,8 +79,6 @@ PyObject *SaveGames_GetList(const char *path);
 PyObject *Lang_GetEntries(const char *name, int n);
 const char *Lang_GetStr(const char *name);
 const char *Lang_GetLanguage(void);
-/* the string table of the language (src/game/Global/Language.c) */
-void LangTable_Clear(HashTable *self);
 
 /* Global/StaticBuffer.h: a buffer that grows and is locked while in use */
 typedef struct cStaticBuffer {

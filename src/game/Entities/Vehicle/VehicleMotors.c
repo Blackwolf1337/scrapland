@@ -12,6 +12,22 @@
 #include "scrap/weaps2.h"
 #include "scrap/staticinit.h"
 
+#define CVEHICLEMOTORS_VFTABLE (&cVehicleMotors_vftable)
+#define g_EnginePathFmt (GVar_EnginePathFmt.value.s)		/* EnginePathFmt */
+#define g_FXVehicleDeathTrailFile (GVar_FXVehicleDeathTrailFile.value.s)
+#define g_FXMotorSmokeFile (GVar_FXMotorSmokeFile.value.s)
+#define g_FXMotorHazeOffset (GVar_FXMotorHazeOffset.value.f)
+#define g_FXEngineTrailHideTime (GVar_FXEngineTrailHideTime.value.f)
+#define g_FXMotorHaze (GVar_FXMotorHaze.value.i)
+#define g_FXMotorHazeFile (GVar_FXMotorHazeFile.value.s)
+static const cVehicleMotorsVtbl cVehicleMotors_vftable;
+static cGVar GVar_FXVehicleDeathTrailFile;
+static cGVar GVar_FXMotorSmokeFile;
+static cGVar GVar_FXMotorHazeOffset;
+static cGVar GVar_FXMotorHazeFile;
+static cGVar GVar_FXMotorHaze;
+static cGVar GVar_FXEngineTrailHideTime;
+static cGVar GVar_EnginePathFmt;
 
 /* "DC_EngineA_01": the slot of motor (A..D) and side (1, 2) */
 static inline void VM_SlotName(char *buf, int motor, int side) {
@@ -57,7 +73,6 @@ static inline int VM_Digit(char c) {
 	return c >= '0' && c <= '3';
 }
 
-
 /* the values of cVehicleMotors_Update the effects of every motor and of the ship use */
 typedef struct VMUpdate {
 	float dt;
@@ -79,6 +94,7 @@ typedef struct VMUpdate {
 	CGameParticles *smokePs;
 } VMUpdate;
 
+static void cVehicleMotorsEffects_HideTrails(cVehicleMotorsEffects *self);
 static void VM_UpdateEffects(cVehicleMotors *self, cVehicleMotorsEffects *eff, VMUpdate *u) {
 	vec3_t a, c;
 
@@ -117,7 +133,8 @@ static void VM_UpdateEffects(cVehicleMotors *self, cVehicleMotorsEffects *eff, V
 	cVehicleMotorsEffects_Trails(eff, u->dt, *pc, *pa, vel, u->thrust * u->alpha, u->k4c8, color);
 }
 
-vec3_t g_HazePos[8];
+/* the emit positions of the Calima particles of all motors (8) */
+static vec3_t g_HazePos[8];
 
 /* the Calima particles (the hot air under the exhausts) of the motors of a player ship */
 static void VM_Haze(cVehicleMotors *self, VMUpdate *u) {
@@ -160,6 +177,8 @@ static void VM_Haze(cVehicleMotors *self, VMUpdate *u) {
 	}
 }
 
+static void cVehicleMotor_SetAnimF(cVehicleMotor *self, float k);
+static void cVehicleMotor_UpdateAnimM(cVehicleMotor *self, float dt);
 void cVehicleMotors_Update(cVehicleMotors *self) {
 	VMUpdate u;
 	cEntity *owner = self->owner;
@@ -274,7 +293,9 @@ void cVehicleMotors_Update(cVehicleMotors *self) {
 	self->lastVisible = u.visible;
 }
 
-void cVehicleMotor_Reset(cVehicleMotor *self) {
+/* the models disabled, the nodes and the animations off, the effects cleared */
+static void cVehicleMotorsEffects_Clear(cVehicleMotorsEffects *self);
+static void cVehicleMotor_Reset(cVehicleMotor *self) {
 	int i;
 
 	self->name[0] = 0;
@@ -312,7 +333,7 @@ void cVehicleMotors_InitEffects(cVehicleMotors *self) {
 }
 
 /* ShipMotorScale and ShipMotorOffset, compared without the terminator like the original */
-byte cVehicleMotors_VarF(struct cVehicleMotors *base, const char *name, double *v, int set) {
+static byte cVehicleMotors_VarF(struct cVehicleMotors *base, const char *name, double *v, int set) {
 	cVehicleMotors *self = (cVehicleMotors *)base;
 	if (!memcmp(name, "ShipMotorScale", 14)) {
 		if (set) {
@@ -333,7 +354,8 @@ byte cVehicleMotors_VarF(struct cVehicleMotors *base, const char *name, double *
 	return 0;
 }
 
-byte cVehicleMotors_GetExhaust(cVehicleMotors *self, uint32_t motor, uint32_t side, vec3_t *pos,
+/* the position and the angles (radians) of the node of motor, side, in the ship model */
+static byte cVehicleMotors_GetExhaust(cVehicleMotors *self, uint32_t motor, uint32_t side, vec3_t *pos,
 	vec3_t *ang) {
 	if (motor > 3 || side > 1 || !self->motor[motor] || self->motor[motor]->node[side] == -1) {
 		return 0;
@@ -341,7 +363,8 @@ byte cVehicleMotors_GetExhaust(cVehicleMotors *self, uint32_t motor, uint32_t si
 	return VM_NodeInfo(self, self->motor[motor]->node[side], pos, ang);
 }
 
-byte cVehicleMotors_GetSlot(cVehicleMotors *self, uint32_t motor, uint32_t side, vec3_t *pos,
+/* the same for the slot DC_Engine<A + motor>_0<1 + side> */
+static byte cVehicleMotors_GetSlot(cVehicleMotors *self, uint32_t motor, uint32_t side, vec3_t *pos,
 	vec3_t *ang) {
 	char name[16];
 
@@ -370,7 +393,8 @@ const char *cVehicleMotors_GetMotorName(cVehicleMotors *self, uint32_t motor, in
 	return n > 0 ? self->motor[motor]->name : str_Empty;
 }
 
-int cVehicleMotors_NumSlots(cVehicleMotors *self, byte motor) {
+/* the slots DC_Engine<A + motor>_01, _02 of the ship model (0..2) */
+static int cVehicleMotors_NumSlots(cVehicleMotors *self, byte motor) {
 	char name[16];
 	int i;
 
@@ -388,7 +412,7 @@ cEntity *cVehicleMotors_GetOwner(cVehicleMotors *self) {
 }
 
 /* get: NEng0..3 (the node count), nEng0..3 (the slot count); set: EngFxClass0..3, FxClass, ShipMotorColorR/G/B */
-byte cVehicleMotors_VarI(struct cVehicleMotors *base, const char *name, int *v, int set) {
+static byte cVehicleMotors_VarI(struct cVehicleMotors *base, const char *name, int *v, int set) {
 	cVehicleMotors *self = (cVehicleMotors *)base;
 	size_t len = strlen(name);
 	uint32_t c;
@@ -439,7 +463,7 @@ byte cVehicleMotors_VarI(struct cVehicleMotors *base, const char *name, int *v, 
 	return 1;
 }
 
-void cVehicleMotor_Render(cVehicleMotor *self) {
+static void cVehicleMotor_Render(cVehicleMotor *self) {
 	int i;
 
 	for (i = 0; i < VM_SIDES; i++) {
@@ -459,7 +483,7 @@ void cVehicleMotors_Render(cVehicleMotors *self) {
 	}
 }
 
-void cVehicleMotor_SetEnabled(cVehicleMotor *self, byte on) {
+static void cVehicleMotor_SetEnabled(cVehicleMotor *self, byte on) {
 	int i;
 
 	for (i = 0; i < VM_SIDES; i++) {
@@ -492,19 +516,22 @@ void cVehicleMotors_SetEnabled(cVehicleMotors *self, byte on) {
 	}
 }
 
-void cVehicleMotors_StartAnimF(cVehicleMotors *self, uint32_t motor, const char *anim) {
+static void cVehicleMotor_StartAnimF(cVehicleMotor *self, const char *anim);
+static void cVehicleMotors_StartAnimF(cVehicleMotors *self, uint32_t motor, const char *anim) {
 	if (motor < VM_MOTORS && self->motor[motor]) {
 		cVehicleMotor_StartAnimF(self->motor[motor], anim);
 	}
 }
 
-void cVehicleMotors_StartAnimM(cVehicleMotors *self, uint32_t motor, const char *anim) {
+static void cVehicleMotor_StartAnimM(cVehicleMotor *self, const char *anim);
+static void cVehicleMotors_StartAnimM(cVehicleMotors *self, uint32_t motor, const char *anim) {
 	if (motor < VM_MOTORS && self->motor[motor]) {
 		cVehicleMotor_StartAnimM(self->motor[motor], anim);
 	}
 }
 
-int cVehicleMotor_Load(cVehicleMotor *self, cEntity *owner, byte motor, const char *file,
+/* the models of file at the nodes of motor kind motor of owner; the number of nodes */
+static int cVehicleMotor_Load(cVehicleMotor *self, cEntity *owner, byte motor, const char *file,
 	const vec3_t *scale) {
 	char path[0x200], name[16];
 	vec3_t v;
@@ -538,6 +565,7 @@ int cVehicleMotor_Load(cVehicleMotor *self, cEntity *owner, byte motor, const ch
 	return i;
 }
 
+static cVehicleMotor *cVehicleMotor_ctor(cVehicleMotor *self);
 int cVehicleMotors_SetMotor(cVehicleMotors *self, uint32_t motor, const char *file, float sx, float sy,
 	float sz) {
 	if (motor > 3) {
@@ -568,14 +596,16 @@ static void VM_StartAnim(cVehicleMotor *self, const char *anim, uint32_t chan, f
 	}
 }
 
-void cVehicleMotor_StartAnimF(cVehicleMotor *self, const char *anim) {
+/* the animation anim (EnginePathFmt of the motor file) of channel 0, once */
+static void cVehicleMotor_StartAnimF(cVehicleMotor *self, const char *anim) {
 	if (!self->animFOn) {
 		self->animFOn = 1;
 		VM_StartAnim(self, anim, 0, &self->durF);
 	}
 }
 
-void cVehicleMotor_SetAnimF(cVehicleMotor *self, float k) {
+/* channel 0 at k (-1..1) of its length */
+static void cVehicleMotor_SetAnimF(cVehicleMotor *self, float k) {
 	int i;
 
 	if (!self->animFOn) {
@@ -589,14 +619,15 @@ void cVehicleMotor_SetAnimF(cVehicleMotor *self, float k) {
 	}
 }
 
-void cVehicleMotor_StartAnimM(cVehicleMotor *self, const char *anim) {
+/* the animation of channel 1, looped by cVehicleMotor_UpdateAnimM */
+static void cVehicleMotor_StartAnimM(cVehicleMotor *self, const char *anim) {
 	if (!self->animMOn) {
 		self->animMOn = 1;
 		VM_StartAnim(self, anim, 1, &self->durM);
 	}
 }
 
-void cVehicleMotor_UpdateAnimM(cVehicleMotor *self, float dt) {
+static void cVehicleMotor_UpdateAnimM(cVehicleMotor *self, float dt) {
 	int i;
 
 	if (!self->animMOn) {
@@ -615,7 +646,7 @@ void cVehicleMotors_SetOwner(cVehicleMotors *self, cEntity *owner) {
 	self->owner = owner;
 }
 
-void cVehicleMotor_SetEffect(cVehicleMotor *self, uint32_t fx) {
+static void cVehicleMotor_SetEffect(cVehicleMotor *self, uint32_t fx) {
 	int i;
 
 	for (i = 0; i < VM_SIDES; i++) {
@@ -635,7 +666,7 @@ void cVehicleMotors_SetEffect(cVehicleMotors *self, uint32_t fx) {
 	}
 }
 
-void cVehicleMotor_SetEffectParam(cVehicleMotor *self, int i, float v) {
+static void cVehicleMotor_SetEffectParam(cVehicleMotor *self, int i, float v) {
 	uint32_t bits;
 	int j;
 
@@ -658,7 +689,7 @@ void cVehicleMotors_SetEffectParam(cVehicleMotors *self, int i, float v) {
 }
 
 /* MEng0..3: the file of the motor (set: loaded at scale 1); set only: EngAnmM0..3, EngAnmF0..3 */
-byte cVehicleMotors_VarS(struct cVehicleMotors *base, const char *name, char **v, int set) {
+static byte cVehicleMotors_VarS(struct cVehicleMotors *base, const char *name, char **v, int set) {
 	cVehicleMotors *self = (cVehicleMotors *)base;
 	size_t len = strlen(name);
 
@@ -688,7 +719,7 @@ static inline int VM_Side(char c) {
 }
 
 /* get only: PEng0A (position), AEng0A (angles in degrees) of the exhausts, PEngSlot0A of the slots */
-byte cVehicleMotors_VarV(struct cVehicleMotors *base, const char *name, double *x, double *y, double *z, int set) {
+static byte cVehicleMotors_VarV(struct cVehicleMotors *base, const char *name, double *x, double *y, double *z, int set) {
 	cVehicleMotors *self = (cVehicleMotors *)base;
 	size_t len = strlen(name);
 	vec3_t pos, ang;
@@ -727,7 +758,7 @@ byte cVehicleMotors_VarV(struct cVehicleMotors *base, const char *name, double *
 	return r;
 }
 
-cVehicleMotorsEffects *cVehicleMotorsEffects_ctor(cVehicleMotorsEffects *self) {
+static cVehicleMotorsEffects *cVehicleMotorsEffects_ctor(cVehicleMotorsEffects *self) {
 	self->owner = NULL;
 	self->motors = NULL;
 	self->motor = NULL;
@@ -752,15 +783,8 @@ cVehicleMotorsEffects *cVehicleMotorsEffects_ctor(cVehicleMotorsEffects *self) {
 	return self;
 }
 
-void cVehicleMotorsEffects_dtor(cVehicleMotorsEffects *self) {
+static void cVehicleMotorsEffects_dtor(cVehicleMotorsEffects *self) {
 	cVehicleMotorsEffects_Clear(self);
-}
-
-vec3_t *Vec3_Assign(vec3_t *self, const vec3_t *v) {
-	self->x = v->x;
-	self->y = v->y;
-	self->z = v->z;
-	return self;
 }
 
 /* the particles of a node killed, released and freed */
@@ -776,7 +800,8 @@ static void VM_FreeParticles(CGameParticles **slot) {
 	}
 }
 
-void cVehicleMotorsEffects_Clear(cVehicleMotorsEffects *self) {
+/* the particles and trails freed, the nodes and owners cleared */
+static void cVehicleMotorsEffects_Clear(cVehicleMotorsEffects *self) {
 	int i;
 
 	self->owner = NULL;
@@ -844,7 +869,7 @@ void cVehicleMotorsEffects_Stop(cVehicleMotorsEffects *self) {
 	self->trailsOn = 0;
 }
 
-void cVehicleMotorsEffects_HideTrails(cVehicleMotorsEffects *self) {
+static void cVehicleMotorsEffects_HideTrails(cVehicleMotorsEffects *self) {
 	int i;
 
 	if (!self->trailsOn) {
@@ -873,7 +898,8 @@ CGameModel *cVehicleMotorsEffects_GetModel(cVehicleMotorsEffects *self, int side
 
 #define CGAMEMODEL_DTOR 0x20ec10		/* CGameModel_Reset */
 
-cVehicleMotor *cVehicleMotor_ctor(cVehicleMotor *self) {
+/* VehicleEntity.cpp */
+static cVehicleMotor *cVehicleMotor_ctor(cVehicleMotor *self) {
 	crt_eh_vector_ctor(self->model, sizeof(CGameModel), VM_SIDES, (void *)CGameModel_ctorDefault,
 		(void *)CGameModel_Reset);
 	cVehicleMotorsEffects_ctor(&self->effects);
@@ -904,7 +930,7 @@ void *cVehicleMotors_ctor(void *motors) {
 	return self;
 }
 
-void cVehicleMotor_dtor(cVehicleMotor *self) {
+static void cVehicleMotor_dtor(cVehicleMotor *self) {
 	cVehicleMotorsEffects_Stop(&self->effects);
 	cVehicleMotorsEffects_dtor(&self->effects);
 	crt_eh_vector_dtor(self->model, sizeof(CGameModel), VM_SIDES, (void *)CGameModel_Reset);
@@ -927,21 +953,22 @@ void cVehicleMotors_dtor(void *motors) {
 }
 
 /* the vtable of cVehicleMotors */
-const cVehicleMotorsVtbl cVehicleMotors_vftable = {
+static const cVehicleMotorsVtbl cVehicleMotors_vftable = {
 	.VarI = cVehicleMotors_VarI,
 	.VarF = cVehicleMotors_VarF,
 	.VarS = cVehicleMotors_VarS,
 	.VarV = cVehicleMotors_VarV,
 };
 
-cGVar GVar_EnginePathFmt;
-cGVar GVar_FXVehicleDeathTrailFile;
-cGVar GVar_FXMotorSmokeFile;
-cGVar GVar_FXMotorHazeOffset;
-cGVar GVar_FXEngineTrailHideTime;
+/* the engine variables */
+static cGVar GVar_EnginePathFmt;
+static cGVar GVar_FXVehicleDeathTrailFile;
+static cGVar GVar_FXMotorSmokeFile;
+static cGVar GVar_FXMotorHazeOffset;
+static cGVar GVar_FXEngineTrailHideTime;
 cGVar GVar_FXEngineGlowDistFadeMid;
-cGVar GVar_FXMotorHaze;
-cGVar GVar_FXMotorHazeFile;
+static cGVar GVar_FXMotorHaze;
+static cGVar GVar_FXMotorHazeFile;
 cGVar GVar_FXEngineGlowDistFadeMult;
 cGVar GVar_FXEngineGlowDistFadeTo;
 

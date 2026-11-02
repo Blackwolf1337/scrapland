@@ -10,6 +10,13 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
+#define g_OnMoneyReachCallback (((cPy_Function *)&GVar_OnMoneyReachCallback.func))
+#define g_OnMoneyReachValue (GVar_OnMoneyReachValue.value.i)
+#define g_StrMoneyUpdate (GVar_StrMoneyUpdate.value.f)
+static cGVar GVar_StrMoneyUpdate;
+static cGVar GVar_OnMoneyReachValue;
+static cGVarFunction GVar_OnMoneyReachCallback;
+
 void *cStrMoney_ctor(void *obj) {
 	cStrMoney *self = obj;
 
@@ -31,7 +38,7 @@ const char *cStrMoney_GetStr(cStrMoney *self) {
 }
 
 /* the lowest digit that differs from the money takes its value */
-void cStrMoney_UpdateDigits(cStrMoney *self) {
+static void cStrMoney_UpdateDigits(cStrMoney *self) {
 	byte first = 1;
 	int v = self->money;
 	char *p = &self->digits[15];
@@ -69,9 +76,9 @@ void cStrMoney_Update(void *obj, float dt) {
 	}
 }
 
-cGVarFunction GVar_OnMoneyReachCallback;
-cGVar GVar_OnMoneyReachValue;
-cGVar GVar_StrMoneyUpdate;
+static cGVarFunction GVar_OnMoneyReachCallback;
+static cGVar GVar_OnMoneyReachValue;
+static cGVar GVar_StrMoneyUpdate;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_StrMoneyUpdate, &GVar_StrMoneyUpdate, "StrMoneyUpdate", 0, "Time to update the Money Scorer", 0.1f)

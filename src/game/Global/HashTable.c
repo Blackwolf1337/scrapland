@@ -36,9 +36,9 @@ int HashTable_KeyEq(HashTable *self, const char *a, const char *b) {
 	return self->caseSensitive ? strcmp(a, b) == 0 : crt_stricmp(a, b) == 0;
 }
 
-cMemPool *g_HashItemPool;
-int g_HashItemRefs;
-uint32_t g_HashItemValues[32];
+static cMemPool *g_HashItemPool;
+static int g_HashItemRefs;
+static uint32_t g_HashItemValues[32];
 
 void *HashItem_Alloc(uint32_t size) {
 	if (!g_HashItemPool) {
@@ -104,7 +104,7 @@ void *PtrTable_Value(HashTable *self, const char *key) {
 }
 
 /* takes the item of key out of its slot, NULL if there is none */
-cPtrItem *PtrTable_Unlink(HashTable *self, const char *key, uint32_t slot) {
+static cPtrItem *PtrTable_Unlink(HashTable *self, const char *key, uint32_t slot) {
 	cPtrItem **link = (cPtrItem **)&self->slots[slot];
 	CHECK(!self->locked);
 	for (; *link; link = &(*link)->next) {

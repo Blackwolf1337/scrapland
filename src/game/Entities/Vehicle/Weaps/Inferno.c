@@ -9,6 +9,59 @@
 #include "scrap/weaps2.h"
 #include "scrap/staticinit.h"
 
+#define g_InfernoEngineSoundVol (GVar_InfernoEngineSoundVol.value.f)
+#define g_InfernoTimeDelay (GVar_InfernoTimeDelay.value.f)
+#define g_InfernoUpTopSpeed (GVar_InfernoUpTopSpeed.value.f)
+#define g_InfernoLifeTime (GVar_InfernoLifeTime.value.f)
+#define g_InfernoEngineSoundAttIni (GVar_InfernoEngineSoundAttIni.value.f)
+#define g_InfernoTurnSpeed (GVar_InfernoTurnSpeed.value.f)
+#define g_InfernoMaxDamage (GVar_InfernoMaxDamage.value.f)
+#define g_InfernoHitSoundVol (GVar_InfernoHitSoundVol.value.f)
+#define g_InfernoHitSoundAttEndRadius (GVar_InfernoHitSoundAttEndRadius.value.f)
+#define g_InfernoEngineSoundDoppler (GVar_InfernoEngineSoundDoppler.value.f)
+#define g_InfernoBeesSpeed (GVar_InfernoBeesSpeed.value.f)
+#define g_InfernoUpgFireFactor (GVar_InfernoUpgFireFactor.value.f)
+#define g_InfernoInvUpgExtraDamage (GVar_InfernoInvUpgExtraDamage.value.f)
+#define g_InfernoHitForce (GVar_InfernoHitForce.value.f)
+#define g_InfernoArmor (GVar_InfernoArmor.value.i)
+#define g_InfernoUpgFireTime (GVar_InfernoUpgFireTime.value.f)
+#define g_InfernoHitSound (GVar_InfernoHitSound.value.s)
+#define g_InfernoMinDamage (GVar_InfernoMinDamage.value.f)
+#define g_InfernoEngineSound (GVar_InfernoEngineSound.value.s)
+#define g_InfernoNormSpeed (GVar_InfernoNormSpeed.value.f)
+#define g_InfernoXplosionCall (NativeFunc_InfernoXplosionCall.func)	/* the function of the native "InfernoXplosionCall" */
+#define g_InfernoMissileFile (GVar_InfernoMissileFile.value.s)
+#define g_FXInfernoExplosionMaxDist (GVar_FXInfernoExplosionMaxDist.value.f)
+#define g_InfernoHitSoundAttIniRadius (GVar_InfernoHitSoundAttIniRadius.value.f)
+#define g_InfernoEngineSoundAttEnd (GVar_InfernoEngineSoundAttEnd.value.f)
+#define g_InfernoExplosionFile (GVar_InfernoExplosionFile.value.s)
+static cPy_NativeFunc NativeFunc_InfernoXplosionCall;
+static cGVar GVar_InfernoUpgFireTime;
+static cGVar GVar_InfernoUpgFireFactor;
+static cGVar GVar_InfernoUpTopSpeed;
+static cGVar GVar_InfernoTurnSpeed;
+static cGVar GVar_InfernoTimeDelay;
+static cGVar GVar_InfernoNormSpeed;
+static cGVar GVar_InfernoMissileFile;
+static cGVar GVar_InfernoMinDamage;
+static cGVar GVar_InfernoMaxDamage;
+static cGVar GVar_InfernoLifeTime;
+static cGVar GVar_InfernoInvUpgExtraDamage;
+static cGVar GVar_InfernoHitSoundVol;
+static cGVar GVar_InfernoHitSoundAttIniRadius;
+static cGVar GVar_InfernoHitSoundAttEndRadius;
+static cGVar GVar_InfernoHitSound;
+static cGVar GVar_InfernoHitForce;
+static cGVar GVar_InfernoExplosionFile;
+static cGVar GVar_InfernoEngineSoundVol;
+static cGVar GVar_InfernoEngineSoundDoppler;
+static cGVar GVar_InfernoEngineSoundAttIni;
+static cGVar GVar_InfernoEngineSoundAttEnd;
+static cGVar GVar_InfernoEngineSound;
+static cGVar GVar_InfernoBeesSpeed;
+static cGVar GVar_InfernoArmor;
+static cGVar GVar_FXInfernoExplosionMaxDist;
+
 static const char *const inferno_types[] = {
 	"Misil Inferno Uranio\n", "Misil Inferno Hidrogeno\n", "Misil Inferno Napalm\n"
 };
@@ -28,7 +81,7 @@ void Inferno_Shoot(const char *name) {
 }
 
 /* name, position, orientation */
-void Inferno_NetCreateNative(cAbstractFile *f) {
+static void Inferno_NetCreateNative(cAbstractFile *f) {
 	char name[0x80];
 	vec3_t pos, dir;
 
@@ -38,6 +91,7 @@ void Inferno_NetCreateNative(cAbstractFile *f) {
 	Inferno_NetCreate(name, pos, dir);
 }
 
+static void Inferno_HitNative(cAbstractFile *f);
 cEntity *Inferno_NetCreate(const char *name, vec3_t pos, vec3_t dir) {
 	cEntity *m = cWorld_CreateEntity(g_pWorld, name, pos.x, pos.y, pos.z, TYEN_MISSILE);
 	CHECK(m);
@@ -115,15 +169,18 @@ void Weap_UpdateHud(cAbstractFile *f, char (*targets)[0x80], float *times, int l
 		g_CannonScorerColorBlue;
 }
 
-char g_InfernoHudTarget[4][0x80];
-float g_InfernoHudTime[4];
+static char g_InfernoHudTarget[4][0x80];
+static float g_InfernoHudTime[4];
 
-void Inferno_HudNative(cAbstractFile *f) {
+static void Inferno_HudNative(cAbstractFile *f) {
 	Weap_UpdateHud(f, g_InfernoHudTarget, g_InfernoHudTime, 11, 12);
 }
 
 /* the ship shoots: a missile with one bee per Inferno ammo cost (up to the bays) */
-void Inferno_FireNative(cAbstractFile *f) {
+static void Inferno_OnDamageNative(cAbstractFile *f);
+static void Inferno_OnDeathNative(cAbstractFile *f);
+static void Inferno_ServerHitNative(cAbstractFile *f);
+static void Inferno_FireNative(cAbstractFile *f) {
 	char name[0x80], obj[0x80];
 	vec3_t pos, ang, vel;
 
@@ -169,7 +226,8 @@ void Inferno_FireNative(cAbstractFile *f) {
 }
 
 /* missile name, two names not used */
-void Inferno_HitNative(cAbstractFile *f) {
+static cEntity *Inferno_Hit(const char *name);
+static void Inferno_HitNative(cAbstractFile *f) {
 	char name[0x80], a[0x80], b[0x80];
 
 	cAbstractFile_ReadString(f, name, 0x80);
@@ -179,7 +237,7 @@ void Inferno_HitNative(cAbstractFile *f) {
 }
 
 /* the explosion effect, the camera shake and flash of the players in range, the hit sound; returns the missile */
-cEntity *Inferno_Hit(const char *name) {
+static cEntity *Inferno_Hit(const char *name) {
 	vec3_t pos, op, tmp, rnd, nrm;
 
 	cEntity *m = Weap_Missile(name);
@@ -269,7 +327,7 @@ cEntity *Inferno_Hit(const char *name) {
 }
 
 /* missile name, attacker name, damage: one bee lost per InfernoArmor */
-void Inferno_OnDamageNative(cAbstractFile *f) {
+static void Inferno_OnDamageNative(cAbstractFile *f) {
 	char name[0x80], other[0x80];
 	int damage;
 
@@ -287,7 +345,8 @@ void Inferno_OnDamageNative(cAbstractFile *f) {
 	}
 }
 
-void Inferno_OnDeathNative(cAbstractFile *f) {
+static void Inferno_Explode(const char *name);
+static void Inferno_OnDeathNative(cAbstractFile *f) {
 	char name[0x80], other[0x80];
 
 	cAbstractFile_ReadString(f, name, 0x80);
@@ -300,12 +359,12 @@ void Inferno_OnDeathNative(cAbstractFile *f) {
 	}
 }
 
-void Inferno_AimOffNative(cAbstractFile *f) {
+static void Inferno_AimOffNative(cAbstractFile *f) {
 	Weap_SetAimMode(f, 0);
 }
 
 /* missile name, a number not used: the speed back towards InfernoNormSpeed */
-void Inferno_SlowNative(cAbstractFile *f) {
+static void Inferno_SlowNative(cAbstractFile *f) {
 	char name[0x80];
 	int unused;
 
@@ -319,34 +378,34 @@ void Inferno_SlowNative(cAbstractFile *f) {
 	}
 }
 
-void Inferno_AimOnNative(cAbstractFile *f) {
+static void Inferno_AimOnNative(cAbstractFile *f) {
 	cEntity *v = Weap_SetAimMode(f, 2);
 	cAutoAim_SetRange(Veh_Aim(v), g_InfernoDistLimit);
 	cAutoAim_SetAngle(Veh_Aim(v), 0x1.1df46ap-3f);
 }
 
-void Inferno_AimMode3Native(cAbstractFile *f) {
+static void Inferno_AimMode3Native(cAbstractFile *f) {
 	Weap_SetAimMode(f, 3);
 }
 
-void Inferno_AimMode2Native(cAbstractFile *f) {
+static void Inferno_AimMode2Native(cAbstractFile *f) {
 	Weap_SetAimMode(f, 2);
 }
 
-void Inferno_ServerHitNative(cAbstractFile *f) {
+static void Inferno_ServerHitNative(cAbstractFile *f) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(f, name, 0x80);
 	Inferno_Explode(name);
 }
 
-cEntity *g_InfernoOwner;
-float g_InfernoRange;
-cEntity *g_InfernoMissile;
-vec3_t g_InfernoPos;
+static cEntity *g_InfernoOwner;
+static float g_InfernoRange;
+static cEntity *g_InfernoMissile;
+static vec3_t g_InfernoPos;
 
 /* the explosion: the effect, then (not on clients) InfernoXplosionCall on the entities in the sphere */
-void Inferno_Explode(const char *name) {
+static void Inferno_Explode(const char *name) {
 	vec3_t tmp;
 
 	cEntity *m = g_InfernoMissile = Inferno_Hit(name);
@@ -377,7 +436,7 @@ void Inferno_Explode(const char *name) {
 	}
 }
 
-void Inferno_NetSetUpNative(cAbstractFile *f) {
+static void Inferno_NetSetUpNative(cAbstractFile *f) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(f, name, 0x80);
@@ -436,10 +495,11 @@ void Inferno_NetSetUp(const char *name) {
 		g_InfernoEngineSoundAttEnd, g_InfernoEngineSoundDoppler);
 }
 
-char g_InfernoHitName[128];
+/* the state of the module */
+static char g_InfernoHitName[128];
 
 /* InfernoXplosionCall, for each entity in the sphere of the explosion: damage, push and burn by the distance */
-void Inferno_SphereHit(cAbstractFile *f) {
+static void Inferno_SphereHit(cAbstractFile *f) {
 	vec3_t tmp, rnd, nrm, vel;
 
 	cAbstractFile_ReadString(f, g_InfernoHitName, 0x80);
@@ -529,47 +589,47 @@ void Inferno_SphereHit(cAbstractFile *f) {
 cGVar GVar_CannonScorerColorRed;
 cGVar GVar_CannonScorerColorBlue;
 cGVar GVar_CannonScorerColorGreen;
-cGVar GVar_InfernoEngineSoundVol;
+static cGVar GVar_InfernoEngineSoundVol;
 cGVar GVar_InfernoRangeMin;
-cGVar GVar_InfernoTimeDelay;
+static cGVar GVar_InfernoTimeDelay;
 cGVar GVar_InfernoAmmoCost;
-cGVar GVar_InfernoUpTopSpeed;
+static cGVar GVar_InfernoUpTopSpeed;
 cGVar GVar_InfernoIDAmmo;
-cGVar GVar_InfernoLifeTime;
-cGVar GVar_InfernoEngineSoundAttIni;
-cGVar GVar_InfernoTurnSpeed;
-cGVar GVar_InfernoMaxDamage;
-cGVar GVar_InfernoHitSoundVol;
-cGVar GVar_InfernoHitSoundAttEndRadius;
-cGVar GVar_InfernoEngineSoundDoppler;
-cGVar GVar_InfernoBeesSpeed;
-cGVar GVar_InfernoUpgFireFactor;
-cGVar GVar_InfernoInvUpgExtraDamage;
-cGVar GVar_InfernoHitForce;
+static cGVar GVar_InfernoLifeTime;
+static cGVar GVar_InfernoEngineSoundAttIni;
+static cGVar GVar_InfernoTurnSpeed;
+static cGVar GVar_InfernoMaxDamage;
+static cGVar GVar_InfernoHitSoundVol;
+static cGVar GVar_InfernoHitSoundAttEndRadius;
+static cGVar GVar_InfernoEngineSoundDoppler;
+static cGVar GVar_InfernoBeesSpeed;
+static cGVar GVar_InfernoUpgFireFactor;
+static cGVar GVar_InfernoInvUpgExtraDamage;
+static cGVar GVar_InfernoHitForce;
 cGVar GVar_InfernoRangeBay;
-cGVar GVar_InfernoArmor;
-cGVar GVar_InfernoUpgFireTime;
-cGVar GVar_InfernoHitSound;
-cGVar GVar_InfernoMinDamage;
-cGVar GVar_InfernoEngineSound;
-cGVar GVar_InfernoNormSpeed;
-cPy_NativeFunc NativeFunc_InfernoXplosionCall;
-cGVar GVar_InfernoMissileFile;
-cGVar GVar_FXInfernoExplosionMaxDist;
-cGVar GVar_InfernoHitSoundAttIniRadius;
-cGVar GVar_InfernoEngineSoundAttEnd;
-cGVar GVar_InfernoExplosionFile;
-cPy_NativeFunc NativeFunc_InfernoPress;
-cPy_NativeFunc NativeFunc_InfernoRelease;
-cPy_NativeFunc NativeFunc_InfernoOnEnd;
-cPy_NativeFunc NativeFunc_InfernoOnStart;
-cPy_NativeFunc NativeFunc_InfernoHit;
-cPy_NativeFunc NativeFunc_InfernoServerHit;
-cPy_NativeFunc NativeFunc_InfernoOnObjSlot;
-cPy_NativeFunc NativeFunc_InfernoCreate;
-cPy_NativeFunc NativeFunc_InfernoSetUp;
-cPy_NativeFunc NativeFunc_InfernoFire;
-cPy_NativeFunc NativeFunc_InfernoFX;
+static cGVar GVar_InfernoArmor;
+static cGVar GVar_InfernoUpgFireTime;
+static cGVar GVar_InfernoHitSound;
+static cGVar GVar_InfernoMinDamage;
+static cGVar GVar_InfernoEngineSound;
+static cGVar GVar_InfernoNormSpeed;
+static cPy_NativeFunc NativeFunc_InfernoXplosionCall;
+static cGVar GVar_InfernoMissileFile;
+static cGVar GVar_FXInfernoExplosionMaxDist;
+static cGVar GVar_InfernoHitSoundAttIniRadius;
+static cGVar GVar_InfernoEngineSoundAttEnd;
+static cGVar GVar_InfernoExplosionFile;
+static cPy_NativeFunc NativeFunc_InfernoPress;
+static cPy_NativeFunc NativeFunc_InfernoRelease;
+static cPy_NativeFunc NativeFunc_InfernoOnEnd;
+static cPy_NativeFunc NativeFunc_InfernoOnStart;
+static cPy_NativeFunc NativeFunc_InfernoHit;
+static cPy_NativeFunc NativeFunc_InfernoServerHit;
+static cPy_NativeFunc NativeFunc_InfernoOnObjSlot;
+static cPy_NativeFunc NativeFunc_InfernoCreate;
+static cPy_NativeFunc NativeFunc_InfernoSetUp;
+static cPy_NativeFunc NativeFunc_InfernoFire;
+static cPy_NativeFunc NativeFunc_InfernoFX;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_InfernoIDAmmo, &GVar_InfernoIDAmmo, "InfernoIDAmmo", 0, "The default ammo idx for the Inferno", 1)

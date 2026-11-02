@@ -52,15 +52,6 @@ typedef struct Vert2D {
 	float u, v;			/* 0x18 */
 } Vert2D;
 
-/* the 2D screen size and its inverses */
-extern int g_Screen2DW;
-extern int g_Screen2DH;
-extern double g_Screen2DInvW;
-extern double g_Screen2DInvH;
-extern cGVar GVar_SpriteScaleWidth;
-#define g_SpriteScaleWidth (GVar_SpriteScaleWidth.value.f)
-extern Vert2D g_Verts2D[64];	/* MAX_VERT_2D, the polygon of the last draw */
-
 CGraphic2D *CGraphic2D_ctorTex(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags);
 CGraphic2D *CGraphic2D_ctor(CGraphic2D *self);
 void CGraphic2D_dtor(CGraphic2D *self);
@@ -73,9 +64,6 @@ void Graphic2D_SetScreen(int w, int h);
 void CGraphic2D_SetTexture(CGraphic2D *self, const char *tex, const char *opac, uint32_t flags);
 void CGraphic2D_CreateMat(CGraphic2D *self, const char *tex, const char *opac, int src, int dst, byte alpha,
 	uint32_t flags);
-void CGraphic2D_Init(CGraphic2D *self);
-/* the primitives of nVert vertices (4: triangle list, 5: strip, 6: fan) */
-uint32_t Graphic2D_NumPrims(int type, uint32_t nVert);
 void Graphic2D_GetScreen(int *w, int *h);
 
 #endif

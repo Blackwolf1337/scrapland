@@ -6,6 +6,9 @@
 #include "scrap/aichar.h"
 #include "scrap/walkcharentity.h"
 
+#define CAIPOLICE_VFTABLE (&cAIPolice_vftable)
+static const cAICharVtbl cAIPolice_vftable;
+
 #define CAIPOLICE_SIZE sizeof(cAIPolice)
 
 void *cAIPolice_ctor(void *mem, cEntity *e, int *arg) {
@@ -16,7 +19,8 @@ void *cAIPolice_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAI *cAIPolice_Delete(cAI *base, byte flags) {
+/* AIPolice.c */
+static cAI *cAIPolice_Delete(cAI *base, byte flags) {
 	cAIPolice *self = (cAIPolice *)base;
 	self->vftable = CAIPOLICE_VFTABLE;
 	cAIChar_dtor(self);
@@ -26,14 +30,14 @@ cAI *cAIPolice_Delete(cAI *base, byte flags) {
 	return base;
 }
 
-void cAIPolice_CheckActDist(cAI *base) {
+static void cAIPolice_CheckActDist(cAI *base) {
 	cAIPolice *self = (cAIPolice *)base;
 	float dist = AIChar_TargetDistFlat(self);
 
 	self->ctrl->act = AIChar_Action0(self->ent)->priority <= 0x65 && self->actMax > dist && dist > self->actMin;
 }
 
-void cAIPolice_SetDists(cAI *elem) {
+static void cAIPolice_SetDists(cAI *elem) {
 	cAIPolice *self = (cAIPolice *)elem;
 	float d;
 
@@ -56,7 +60,7 @@ void cAIPolice_SetDists(cAI *elem) {
 }
 
 /* the vtable of cAIPolice */
-const cAICharVtbl cAIPolice_vftable = {
+static const cAICharVtbl cAIPolice_vftable = {
 	.base.base.Delete = cAIPolice_Delete,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,

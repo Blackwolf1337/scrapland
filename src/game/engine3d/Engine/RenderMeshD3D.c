@@ -12,6 +12,13 @@
 #include "scrap/misc.h"
 #include "scrap/staticinit.h"
 
+#define g_MeshCache (GVar_R_MeshCache.value.i)		/* R_MeshCache, 10 logs the batches */
+#define g_ShowTranspBox (GVar_R_ShowTranspBox.value.i)	/* R_ShowTranspBox */
+#define g_TranspZBias (GVar_R_TranspZBias.value.f)	/* R_TranspZBias */
+static cGVar GVar_R_TranspZBias;
+static cGVar GVar_R_ShowTranspBox;
+static cGVar GVar_R_MeshCache;
+
 /* the table made on first use (table.h, inline in the original) */
 static void Batch_Alloc(CTable *t, uint32_t size) {
 	if (!t->n) {
@@ -22,9 +29,9 @@ static void Batch_Alloc(CTable *t, uint32_t size) {
 	}
 }
 
-CTable g_TabMesh;
-RenderMeshEntry *g_MeshList[1024];
-int g_UsedMesh;
+static CTable g_TabMesh;
+static RenderMeshEntry *g_MeshList[1024];
+static int g_UsedMesh;
 
 int MeshD3D_Render(CMeshD3D *self, void *ctx) {
 	CRenderNode *r = ctx;
@@ -72,6 +79,7 @@ int MeshD3D_Render(CMeshD3D *self, void *ctx) {
 	return 0;
 }
 
+static int RenderMesh_Compare(const void *a, const void *b);
 int RenderMeshD3D_Flush(void) {
 	if (!g_pd3dDevice) {
 		return E_FAIL;
@@ -105,7 +113,8 @@ int RenderMeshD3D_Flush(void) {
 	return 0;
 }
 
-int RenderMesh_Compare(const void *a, const void *b) {
+/* the qsort orders: texture, material, then the skinned ones last; the transparent ones and the objects far first */
+static int RenderMesh_Compare(const void *a, const void *b) {
 	const RenderMeshEntry *ea = *(RenderMeshEntry *const *)a, *eb = *(RenderMeshEntry *const *)b;
 	int d = (int)(ea->tex - eb->tex);
 
@@ -119,10 +128,10 @@ int RenderMesh_Compare(const void *a, const void *b) {
 	return (eb->mesh->pSkin == NULL) - (ea->mesh->pSkin == NULL);
 }
 
-CTable g_TabTransp;
-RenderTranspEntry *g_TranspList[1024];
-int g_UsedTransp;
-int g_TranspGroup = 1;
+static CTable g_TabTransp;
+static RenderTranspEntry *g_TranspList[1024];
+static int g_UsedTransp;
+static int g_TranspGroup = 1;
 
 int RenderMeshD3D_AddTransp(CMeshD3D *m, const matrix_t *world, byte cont, CRenderNode *r) {
 	if (!g_Engine->device) {
@@ -156,6 +165,7 @@ int RenderMeshD3D_AddTransp(CMeshD3D *m, const matrix_t *world, byte cont, CRend
 	return 0;
 }
 
+static int RenderTransp_Compare(const void *a, const void *b);
 int RenderMeshD3D_Flush2(void) {
 	if (!g_pd3dDevice) {
 		return E_FAIL;
@@ -207,14 +217,14 @@ int RenderMeshD3D_Flush2(void) {
 	return 0;
 }
 
-int RenderTransp_Compare(const void *a, const void *b) {
+static int RenderTransp_Compare(const void *a, const void *b) {
 	const RenderTranspEntry *ea = *(RenderTranspEntry *const *)a, *eb = *(RenderTranspEntry *const *)b;
 	return eb->dist2 > ea->dist2 ? 1 : -1;
 }
 
-CTable g_TabObj;
-RenderObjEntry *g_ObjList[1024];
-int g_UsedObj;
+static CTable g_TabObj;
+static RenderObjEntry *g_ObjList[1024];
+static int g_UsedObj;
 
 int ParticleSystem_Draw(CParticleSystem *sp, CRenderNode *r) {
 	if (!g_pd3dDevice) {
@@ -237,6 +247,7 @@ int ParticleSystem_Draw(CParticleSystem *sp, CRenderNode *r) {
 	return 0;
 }
 
+static int RenderObj_Compare(const void *a, const void *b);
 int RenderObjBase3D_Flush(void) {
 	if (!g_pd3dDevice) {
 		return E_FAIL;
@@ -268,14 +279,14 @@ int RenderObjBase3D_Flush(void) {
 	return 0;
 }
 
-int RenderObj_Compare(const void *a, const void *b) {
+static int RenderObj_Compare(const void *a, const void *b) {
 	const RenderObjEntry *ea = *(RenderObjEntry *const *)a, *eb = *(RenderObjEntry *const *)b;
 	return eb->dist2 > ea->dist2 ? 1 : -1;
 }
 
-cGVar GVar_R_MeshCache;
-cGVar GVar_R_TranspZBias;
-cGVar GVar_R_ShowTranspBox;
+static cGVar GVar_R_MeshCache;
+static cGVar GVar_R_TranspZBias;
+static cGVar GVar_R_ShowTranspBox;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_R_MeshCache, &GVar_R_MeshCache, "R_MeshCache", 0, "Use mesh cache for non-transparent nodes (0/1, 10=info)", 1)

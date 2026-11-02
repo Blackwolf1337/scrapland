@@ -11,17 +11,44 @@
 #include "scrap/e3dutil.h"
 #include "scrap/staticinit.h"
 
+#define CNODEFX_SPRING_VFTABLE (&CNodeFX_Spring_vftable)
+#define CNODEFX_WHEEL_VFTABLE (&CNodeFX_Wheel_vftable)
+#define INODEFX_VFTABLE (&INodeFX_vftable)
+#define g_NodeFXSpringDamp1 (GVar_NodeFXSpringDamp1.value.f)	/* NodeFXSpringDamp1 */
+#define g_NodeFXSpringDamp2 (GVar_NodeFXSpringDamp2.value.f)	/* NodeFXSpringDamp2 */
+#define g_NodeFXSpringDebug (GVar_NodeFXSpringDebug.value.i)	/* NodeFXSpringDebug: the variables instead of the members */
+#define g_NodeFXSpringMSec (GVar_NodeFXSpringMSec.value.u)	/* NodeFXSpringMSec, the step */
+#define g_NodeFXSpringMidP (GVar_NodeFXSpringMidP.value.f)	/* NodeFXSpringMidP */
+#define g_NodeFXSpringRot (GVar_NodeFXSpringRot.value.f)	/* NodeFXSpringRot */
+#define g_NodeFXSpringRotX (GVar_NodeFXSpringRotX.value.f)	/* NodeFXSpringRotX, degrees */
+#define g_NodeFXSpringShow (GVar_NodeFXSpringShow.value.i)	/* NodeFXSpringShow */
+#define g_NodeFXSpringSprng (GVar_NodeFXSpringSprng.value.f)	/* NodeFXSpringSprng */
+#define g_NodeFXWheelRadius (GVar_NodeFXWheelRadius.value.f)	/* NodeFXWheelRadius */
+#define g_NodeFXWheelShow (GVar_NodeFXWheelShow.value.i)	/* NodeFXWheelShow */
+#define g_NodeFXWheelSlide (GVar_NodeFXWheelSlide.value.f)	/* NodeFXWheelSlide */
+static const INodeFXVtbl INodeFX_vftable;
+static cGVar GVar_NodeFXWheelSlide;
+static cGVar GVar_NodeFXWheelShow;
+static cGVar GVar_NodeFXWheelRadius;
+static cGVar GVar_NodeFXSpringSprng;
+static cGVar GVar_NodeFXSpringShow;
+static cGVar GVar_NodeFXSpringRotX;
+static cGVar GVar_NodeFXSpringRot;
+static cGVar GVar_NodeFXSpringMidP;
+static cGVar GVar_NodeFXSpringMSec;
+static cGVar GVar_NodeFXSpringDebug;
+static cGVar GVar_NodeFXSpringDamp2;
+static cGVar GVar_NodeFXSpringDamp1;
+static const INodeFXVtbl CNodeFX_Wheel_vftable;
+static const INodeFXVtbl CNodeFX_Spring_vftable;
+
 /* the distance of a and b */
 static float Vec3_Dist(const vec3_t *a, const vec3_t *b) {
 	float dx = a->x - b->x, dy = a->y - b->y, dz = a->z - b->z;
 	return (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 }
 
-void INodeFX_ctor(INodeFX *self) {
-	self->vftable = INODEFX_VFTABLE;
-}
-
-INodeFX *INodeFX_Delete(INodeFX *self, byte flags) {
+static INodeFX *INodeFX_Delete(INodeFX *self, byte flags) {
 	self->vftable = INODEFX_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(INodeFX));
@@ -29,18 +56,20 @@ INodeFX *INodeFX_Delete(INodeFX *self, byte flags) {
 	return self;
 }
 
-byte INodeFX_Type(INodeFX *self) {
+static byte INodeFX_Type(INodeFX *self) {
 	(void)self;
 	return NODEFX_NONE;
 }
 
 uint32_t g_TimeMs;
-extern const char str_NodeEffect[];
-const char *g_NodeEffectSect = (void *)str_NodeEffect;
+static const char str_NodeEffect[];
+/* the section "NodeEffect" of the user properties */
+static const char *g_NodeEffectSect = (void *)str_NodeEffect;
 
 /* ---- CNodeFX_Wheel ---- */
 
-CNodeFX_Wheel *CNodeFX_Wheel_ctor(CNodeFX_Wheel *self, CNode3D *node, int type) {
+/* type 0 Wheel, 1 Roll: the defaults of the properties */
+static CNodeFX_Wheel *CNodeFX_Wheel_ctor(CNodeFX_Wheel *self, CNode3D *node, int type) {
 	static const vec3_t zero = { 0.0f, 0.0f, 0.0f }, one = { 1.0f, 1.0f, 1.0f };
 	vec3_t tmp;
 
@@ -72,7 +101,7 @@ CNodeFX_Wheel *CNodeFX_Wheel_ctor(CNodeFX_Wheel *self, CNode3D *node, int type) 
 	return self;
 }
 
-CNodeFX_Wheel *CNodeFX_Wheel_ctorCopy(CNodeFX_Wheel *self, const CNodeFX_Wheel *src) {
+static CNodeFX_Wheel *CNodeFX_Wheel_ctorCopy(CNodeFX_Wheel *self, const CNodeFX_Wheel *src) {
 	self->vftable = CNODEFX_WHEEL_VFTABLE;
 	self->radius = src->radius;
 	self->rot = src->rot;
@@ -85,7 +114,8 @@ CNodeFX_Wheel *CNodeFX_Wheel_ctorCopy(CNodeFX_Wheel *self, const CNodeFX_Wheel *
 	return self;
 }
 
-INodeFX *CNodeFX_Wheel_Delete(INodeFX *base, byte flags) {
+/* not to be used: CHECK(0) */
+static INodeFX *CNodeFX_Wheel_Delete(INodeFX *base, byte flags) {
 	CNodeFX_Wheel *self = (CNodeFX_Wheel *)base;
 	self->vftable = INODEFX_VFTABLE;
 	if (flags & 1) {
@@ -94,13 +124,13 @@ INodeFX *CNodeFX_Wheel_Delete(INodeFX *base, byte flags) {
 	return base;
 }
 
-byte CNodeFX_Wheel_Type(INodeFX *base) {
+static byte CNodeFX_Wheel_Type(INodeFX *base) {
 	CNodeFX_Wheel *self = (CNodeFX_Wheel *)base;
 	(void)self;
 	return NODEFX_WHEEL;
 }
 
-int CNodeFX_Wheel_Apply(INodeFX *base, matrix_t *m, CNode3D *node, CRenderNode *r) {
+static int CNodeFX_Wheel_Apply(INodeFX *base, matrix_t *m, CNode3D *node, CRenderNode *r) {
 	CNodeFX_Wheel *self = (CNodeFX_Wheel *)base;
 	CHECK(r && node && node->parent);
 	if (r->frame == g_FrameCount) {
@@ -174,13 +204,6 @@ int CNodeFX_Wheel_Apply(INodeFX *base, matrix_t *m, CNode3D *node, CRenderNode *
 	return 0;
 }
 
-int CNodeFX_Wheel_Reset(CNodeFX_Wheel *self) {
-	self->ang = (vec3_t){ 0.0f, 0.0f, 0.0f };
-	int r = crt_rand();
-	self->noiseBase = (uint32_t)(r % 20000) + g_TimeMs;
-	return r / 20000;
-}
-
 /* ---- CNodeFX_Spring ---- */
 
 /* the positions and the times cleared */
@@ -192,7 +215,8 @@ static void Spring_Clear(CNodeFX_Spring *self) {
 	self->nextMSec = 0;
 }
 
-CNodeFX_Spring *CNodeFX_Spring_ctor(CNodeFX_Spring *self, CNode3D *node, int type) {
+/* type 0 Spring, 1 Cloth, 2 Hair, 3 Bust */
+static CNodeFX_Spring *CNodeFX_Spring_ctor(CNodeFX_Spring *self, CNode3D *node, int type) {
 	self->vftable = CNODEFX_SPRING_VFTABLE;
 	CHECK(node && node->ini);
 	self->damp2 = 1.0f;
@@ -233,7 +257,7 @@ CNodeFX_Spring *CNodeFX_Spring_ctor(CNodeFX_Spring *self, CNode3D *node, int typ
 	return self;
 }
 
-CNodeFX_Spring *CNodeFX_Spring_ctorCopy(CNodeFX_Spring *self, const CNodeFX_Spring *src) {
+static CNodeFX_Spring *CNodeFX_Spring_ctorCopy(CNodeFX_Spring *self, const CNodeFX_Spring *src) {
 	self->vftable = CNODEFX_SPRING_VFTABLE;
 	self->damping = src->damping;
 	self->spring = src->spring;
@@ -243,7 +267,7 @@ CNodeFX_Spring *CNodeFX_Spring_ctorCopy(CNodeFX_Spring *self, const CNodeFX_Spri
 	return self;
 }
 
-INodeFX *CNodeFX_Spring_Delete(INodeFX *base, byte flags) {
+static INodeFX *CNodeFX_Spring_Delete(INodeFX *base, byte flags) {
 	CNodeFX_Spring *self = (CNodeFX_Spring *)base;
 	self->vftable = INODEFX_VFTABLE;
 	if (flags & 1) {
@@ -252,13 +276,13 @@ INodeFX *CNodeFX_Spring_Delete(INodeFX *base, byte flags) {
 	return base;
 }
 
-byte CNodeFX_Spring_Type(INodeFX *base) {
+static byte CNodeFX_Spring_Type(INodeFX *base) {
 	CNodeFX_Spring *self = (CNodeFX_Spring *)base;
 	(void)self;
 	return NODEFX_SPRING;
 }
 
-int CNodeFX_Spring_Apply(INodeFX *base, matrix_t *m, CNode3D *node, CRenderNode *r) {
+static int CNodeFX_Spring_Apply(INodeFX *base, matrix_t *m, CNode3D *node, CRenderNode *r) {
 	CNodeFX_Spring *self = (CNodeFX_Spring *)base;
 	CNode3D *parent = node->parent;
 	float damping, spring, torsion, damp2;
@@ -360,10 +384,6 @@ int CNodeFX_Spring_Apply(INodeFX *base, matrix_t *m, CNode3D *node, CRenderNode 
 	return 0;
 }
 
-void CNodeFX_Spring_Reset(CNodeFX_Spring *self) {
-	Spring_Clear(self);
-}
-
 /* ---- the factory ---- */
 
 void *NodeFX_New(const char *type, CNode3D *node) {
@@ -423,39 +443,40 @@ void *NodeFX_Clone(INodeFX *fx) {
 }
 
 /* the vtable of INodeFX */
-const INodeFXVtbl INodeFX_vftable = {
+static const INodeFXVtbl INodeFX_vftable = {
 	.Delete = INodeFX_Delete,
 	.Type = INodeFX_Type,
 	.Apply = (void *)crt_purecall,
 };
 
 /* the vtable of CNodeFX_Wheel */
-const INodeFXVtbl CNodeFX_Wheel_vftable = {
+static const INodeFXVtbl CNodeFX_Wheel_vftable = {
 	.Delete = CNodeFX_Wheel_Delete,
 	.Type = CNodeFX_Wheel_Type,
 	.Apply = CNodeFX_Wheel_Apply,
 };
 
 /* the vtable of CNodeFX_Spring */
-const INodeFXVtbl CNodeFX_Spring_vftable = {
+static const INodeFXVtbl CNodeFX_Spring_vftable = {
 	.Delete = CNodeFX_Spring_Delete,
 	.Type = CNodeFX_Spring_Type,
 	.Apply = CNodeFX_Spring_Apply,
 };
 
-const char str_NodeEffect[] = "NodeEffect";
-cGVar GVar_NodeFXSpringMidP;
-cGVar GVar_NodeFXSpringDamp2;
-cGVar GVar_NodeFXWheelShow;
-cGVar GVar_NodeFXSpringMSec;
-cGVar GVar_NodeFXWheelRadius;
-cGVar GVar_NodeFXSpringDebug;
-cGVar GVar_NodeFXSpringRotX;
-cGVar GVar_NodeFXSpringShow;
-cGVar GVar_NodeFXSpringDamp1;
-cGVar GVar_NodeFXSpringRot;
-cGVar GVar_NodeFXWheelSlide;
-cGVar GVar_NodeFXSpringSprng;
+static const char str_NodeEffect[] = "NodeEffect";
+static cGVar GVar_NodeFXSpringMidP;
+static cGVar GVar_NodeFXSpringDamp2;
+static cGVar GVar_NodeFXWheelShow;
+static cGVar GVar_NodeFXSpringMSec;
+static cGVar GVar_NodeFXWheelRadius;
+static cGVar GVar_NodeFXSpringDebug;
+static cGVar GVar_NodeFXSpringRotX;
+static cGVar GVar_NodeFXSpringShow;
+/* the engine variables of the effects */
+static cGVar GVar_NodeFXSpringDamp1;
+static cGVar GVar_NodeFXSpringRot;
+static cGVar GVar_NodeFXWheelSlide;
+static cGVar GVar_NodeFXSpringSprng;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_NodeFXWheelRadius, &GVar_NodeFXWheelRadius, "NodeFXWheelRadius", 0, "NodeFX Wheel radius multiplier", 1.0f)

@@ -68,26 +68,10 @@ typedef struct cArrowIndicator {
 
 /* the arrow and the collision sphere of an entity with life */
 
-/* the globals of ArrowIndicator.cpp */
-extern cArrowModel *g_ArrowPool;
-extern int g_ArrowPoolCount;
 extern cGVar GVar_ArrowActiveRadius;
 #define g_ArrowMaxDist (GVar_ArrowActiveRadius.value.f)	/* of the selection */
-extern cGVar GVar_ArrowViewRadius;
-#define g_ArrowNearDist (GVar_ArrowViewRadius.value.f)	/* shown nearer */
-extern cGVar GVar_ArrowActiveHorizontal;
-#define g_ArrowYMargin (GVar_ArrowActiveHorizontal.value.f)	/* the height difference allowed over both radii */
 #define g_MissionArrowOn (&GVar_ArrowMissionFile.value.s)	/* the models of MissionArrows_Switch */
 #define g_MissionArrowOff (&GVar_ArrowTargetFile.value.s)
-extern cGVar GVar_ArrowUseFile;
-#define g_ArrowUseModel (GVar_ArrowUseFile.value.s)
-extern cGVar GVar_FXArrowIndicatorFlash_DistGrow;
-#define g_ArrowGlowDist (GVar_FXArrowIndicatorFlash_DistGrow.value.f)
-extern cGVar GVar_FXArrowIndicatorFlash_SizeMin;
-#define g_ArrowGlowMin (GVar_FXArrowIndicatorFlash_SizeMin.value.f)
-extern cGVar GVar_FXArrowIndicatorFlash_SizeMax;
-#define g_ArrowGlowMax (GVar_FXArrowIndicatorFlash_SizeMax.value.f)
-extern uint32_t g_ArrowGlowRamps[2][9];
 
 /* in / |in| (in itself for a length 0), returns out */
 float *Vec2_Normalize(float *out, const float *in);
@@ -108,32 +92,17 @@ void cArrowIndicator_ClearOpts(cArrowIndicator *self);
 /* the nearest visible entity with an arrow is selected and returned (NULL for none) */
 cEntity *ArrowIndicator_FindSel(cEntity *self, float ang);
 byte cArrowIndicator_VarF(cArrowIndicator *self, const char *name, double *d, int set);
-/* a model of the pool or a new one (*fresh then) */
-cArrowModel *ArrowPool_Get(byte *fresh);
 const char *cArrowIndicator_GetOpt(cArrowIndicator *self, int i);
 uint32_t cArrowIndicator_GetColor(cArrowIndicator *self);
 byte cArrowIndicator_VarI(cArrowIndicator *self, const char *name, int *i, int set);
 void cArrowIndicator_NextOpt(cArrowIndicator *self);
 void cArrowIndicator_PrevOpt(cArrowIndicator *self);
-void cArrowIndicator_ReleaseMission(cArrowIndicator *self);
-/* the arrow model back to the pool (6 at most) */
-void cArrowIndicator_ReleaseArrow(cArrowIndicator *self);
 /* the model of the kind of arrow is made, the other released; on 0 (or faded out) both go */
 void cArrowIndicator_SetModels(cArrowIndicator *self, byte on);
-void cArrowIndicator_SetShown(cArrowIndicator *self, byte on);
 void cArrowIndicator_LoadMission(cArrowIndicator *self, const char *name);
-void cArrowIndicator_LoadArrow(cArrowIndicator *self, const char *name);
-/* <name>.M3D with the animation <name>.anim.M3D running */
-void cArrowIndicator_LoadModel(cArrowIndicator *self, CGameModel *model, const char *name);
-void cArrowIndicator_SetUseFunc(cArrowIndicator *self, const char *name);
-void cArrowIndicator_SetViewFunc(cArrowIndicator *self, const char *name);
-byte cArrowIndicator_SetOpt(cArrowIndicator *self, int i, const char *s);
 void cArrowIndicator_SetParent(cArrowIndicator *self, cEntity *parent);
 void cArrowGlow_SetVisible(cArrowGlow *self, byte on);
-void cArrowGlow_Attach(cArrowGlow *self, CGameModel *model, const char *name);
-byte cArrowIndicator_SetIOpt(cArrowIndicator *self, int i);
 void cArrowIndicator_Update(cArrowIndicator *self);
-void cArrowGlow_Update(cArrowGlow *self, CGameModel *model);
 byte cArrowIndicator_VarS(cArrowIndicator *self, const char *name, char **s, int set);
 
 #endif

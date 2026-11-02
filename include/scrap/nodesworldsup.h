@@ -14,26 +14,10 @@
 /* the cNWPointNode of a point pos (the data of the point lists and links) */
 #define NW_POINT(v) ((cNWPointNode *)((byte *)(v) - offsetof(cNWPointNode, pos)))
 
-extern const cGridElementsVtbl cGridElements_InfPointVis_vftable;
-#define NWGRID_VFTABLE (&cGridElements_InfPointVis_vftable)
-extern const CNodesWorldVtbl CNodesWorldSup_vftable;
-#define CNODESWORLDSUP_VFTABLE (&CNodesWorldSup_vftable)
-
 /* ---- Global/DList.h instances ---- */
 
-/* the free nodes of the point list deleted with their links */
-void NWPointList_FreePool(cNWPointList *list);
-void NWVisList_Add(cNWVisList *list, const cNWVis *vis);
-/* to the free list while it has room, else the points and the node deleted */
-void NWVisList_Release(cNWVisList *list, cNWVisNode *node);
-void NWVisList_RemoveHead(cNWVisList *list);
-void NWVisList_RemoveIter(cNWVisList *list);
-void NWVisList_Clear(cNWVisList *list);
-/* in front of the iterator, the head kept (Add when the iterator is the head) */
-void NWVecList_AddBefore(cNWVecList *list, const vec3_t *v);
 /* at the end, head stays */
 void NWVecList_Append(cNWVecList *list, const vec3_t *v);
-void NWIntList_Append(cNWIntList *list, void *const *data);
 /* v added in front of head, the iterator kept */
 void NWIntList_AddKeepIter(cNWIntList *list, const void *v);
 
@@ -42,17 +26,8 @@ void NWIntList_AddKeepIter(cNWIntList *list, const void *v);
 /* the layout of cGridElements, the cells are cNWIntList (0x3c bytes, CNodesWorldSup_BuildGrid) */
 typedef cGridElements cGridElements_InfPointVisPtr;
 
-cGridElements_InfPointVisPtr *NWGrid_ctor(cGridElements_InfPointVisPtr *self, const vec3_t *max,
-	const vec3_t *min, int nx, int ny, int nz);
-void NWGrid_dtor(cGridElements_InfPointVisPtr *self);
-cGridElements_InfPointVisPtr *NWGrid_Delete(cGridElements_InfPointVisPtr *self, byte flags);
-void NWGrid_Free(cGridElements_InfPointVisPtr *self);
-byte NWGrid_Add(cGridElements_InfPointVisPtr *self, const vec3_t *p, const void *data);
-
 /* ---- CNodesWorldSup (on the CNodesWorld layout; vtable slots in CNodesWorldVtbl) ---- */
 
-/* CNodesWorldSup_ctor, _dtor, _FreeGraph and _LoadGraph: nodesworld.h */
-CNodesWorld *CNodesWorldSup_Delete(CNodesWorld *self, byte flags);
 void CNodesWorldSup_GetBox(CNodesWorld *self, vec3_t *min, vec3_t *max);
 byte CNodesWorldSup_Create(CNodesWorld *self);
 int CNodesWorldSup_FileOf(CNodesWorld *self, const cNWNode *node);
@@ -146,8 +121,6 @@ typedef struct nwGenOps {
 	void (*linkExtra)(CNodesWorld *self);
 	byte is2D;
 } nwGenOps;
-/* "hh:mm:ss" of the seconds from t0 to t1 into the console with fmt */
-void NWSup_PrintTime(const char *fmt, int32_t t1, int32_t t0);
 /* the pairs of points not linked: a new point of visibility with its region in the cell that links them, until no
  * pair has such a cell */
 void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops);

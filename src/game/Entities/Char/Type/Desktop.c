@@ -11,18 +11,29 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
+#define g_DesktopJumpPrice (GVar_DesktopJumpPrice.value.i)
+#define g_DesktopJumpSlideTime (GVar_DesktopJumpSlideTime.value.f)
+#define g_DesktopJumpSpeed (GVar_DesktopJumpSpeed.value.f)
+#define g_FXDesktopFallEndDist (GVar_FXDesktopFallEndDist.value.f)
+#define g_FXDesktopFallEndFile (GVar_FXDesktopFallEndFile.value.s)
+static cGVar GVar_FXDesktopFallEndFile;
+static cGVar GVar_FXDesktopFallEndDist;
+static cGVar GVar_DesktopJumpSpeed;
+static cGVar GVar_DesktopJumpSlideTime;
+static cGVar GVar_DesktopJumpPrice;
+
 #define DESKTOP_TWO_PI 6.2831854820251465	/* rva 0x3a5d00, (double)6.2831855f */
 
 /* params: the desktop. A fast landing seen from near enough: four puffs around the point it lands on and a ring of
  * dust thrown out of it. */
-uint32_t ChType_FXDesktopFallEndRamps[18] = {
+static uint32_t ChType_FXDesktopFallEndRamps[18] = {
 	0xff000000, 0x80303030, 0x60304040, 0x60404040, 0x60404040, 0x80404040, 0xbe303030, 0xff000000, 0xff000000,
 	0xff000000, 0x80404040, 0x60606060, 0x60606060, 0x60606060, 0x80606060, 0xbe404040, 0xff000000, 0xff000000,
 };
 
-uint32_t ChType_FXDesktopFallEndTable[10] = { 0xff565656, 0xb4fff06e, 0x8cefa01e, 0x969a500e, 0xc3604b1e, 0xd2404040, 0xeb202020, 0xff000000, 0xff000000 };
+static uint32_t ChType_FXDesktopFallEndTable[10] = { 0xff565656, 0xb4fff06e, 0x8cefa01e, 0x969a500e, 0xc3604b1e, 0xd2404040, 0xeb202020, 0xff000000, 0xff000000 };
 
-void ChType_FXDesktopFallEnd(cAbstractFile *params) {
+static void ChType_FXDesktopFallEnd(cAbstractFile *params) {
 	char name[0x80];
 	vec3_t tmp, one, rot, d, xaxis;
 
@@ -184,7 +195,7 @@ static byte Desktop_BonusClass(cEntity *t) {
 /* params: the desktop. On the ground the jump of the direction it walks (ActUpB/F/L/R) with the speed of its
  * walk; in the air from a jump the fall (ActMoreB/F, the view turned for a side), and a landing on a character
  * pays DesktopJumpPrice. */
-void ChType_DesktopActionPress(cAbstractFile *params) {
+static void ChType_DesktopActionPress(cAbstractFile *params) {
 	char name[0x80];
 	vec3_t t1, t2, t3, v3, c, up;
 	cEntity *target;
@@ -261,14 +272,14 @@ void ChType_DesktopActionPress(cAbstractFile *params) {
 	}
 }
 
-cGVar GVar_DesktopJumpPrice;
-cGVar GVar_DesktopJumpSlideTime;
-cGVar GVar_FXDesktopFallEndDist;
-cGVar GVar_DesktopJumpSpeed;
-cGVar GVar_FXDesktopFallEndFile;
+static cGVar GVar_DesktopJumpPrice;
+static cGVar GVar_DesktopJumpSlideTime;
+static cGVar GVar_FXDesktopFallEndDist;
+static cGVar GVar_DesktopJumpSpeed;
+static cGVar GVar_FXDesktopFallEndFile;
 cGVar GVar_FallSoundVel;
-cPy_NativeFunc NativeFunc_DesktopActionPress;
-cPy_NativeFunc NativeFunc_FXDesktopFallEnd;
+static cPy_NativeFunc NativeFunc_DesktopActionPress;
+static cPy_NativeFunc NativeFunc_FXDesktopFallEnd;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_DesktopJumpSpeed, &GVar_DesktopJumpSpeed, "DesktopJumpSpeed", 0, "Jump speed in cm/sec", 1000.0f)

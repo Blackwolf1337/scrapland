@@ -9,12 +9,24 @@
 #include "scrap/net.h"
 #include "scrap/staticinit.h"
 
+#define g_UseServerPassword (GVar_UseServerPassword.value.i)
+#define g_ForceServerVehicle (GVar_ForceServerVehicle.value.i)
+#define g_ServerPassword (((cString *)&GVar_ServerPassword.value))
+#define g_ServerName (GVar_ServerName.value.s)
+#define g_ServerDataRateLimit (GVar_ServerDataRateLimit.value.i)
+static cGVar GVar_UseServerPassword;
+static cGVar GVar_ServerPassword;
+static cGVar GVar_ServerName;
+static cGVar GVar_ServerDataRateLimit;
+static cGVar GVar_ForceServerVehicle;
+
 static void NetServer_Free(cNetClient *c) {
 	cNetClient_dtor(c);
 	operator_delete_sized(c, sizeof(*c));
 }
 
-cNetClient **g_NetClients;
+/* the server side client table */
+static cNetClient **g_NetClients;
 
 void NetServer_SendAll(const void *data, uint16_t size) {
 	for (int i = 0; i < Transport_GetMaxClients(); i++) {
@@ -34,7 +46,7 @@ void NetServer_SendAllBut(const void *data, uint16_t size, int slot) {
 	}
 }
 
-uint32_t g_NetNextSend;
+static uint32_t g_NetNextSend;
 
 int NetServer_SendTo(uint32_t time, int slot, int size, const void *data) {
 	if (Transport_GetMaxClients() <= slot || !g_NetClients[slot]) {
@@ -101,22 +113,6 @@ cNetClient *NetServer_GetClient(int slot) {
 		return g_NetClients[slot];
 	}
 	return NULL;
-}
-
-int NetServer_GetIndexOfSlot(int slot) {
-	if (Transport_GetMaxClients() <= slot) {
-		return -1;
-	}
-	int k = -1;
-	for (int i = 0; i <= slot; i++) {
-		if (g_NetClients[i]) {
-			k++;
-			if (i == slot) {
-				return k;
-			}
-		}
-	}
-	return -1;
 }
 
 int NetServer_NextToSend(uint32_t time) {
@@ -251,11 +247,11 @@ int NetServer_Receive(uint32_t time, void *data, int *dataSize, void *ctl, int *
 	return slot;
 }
 
-cGVar GVar_UseServerPassword;
-cGVar GVar_ForceServerVehicle;
-cGVar GVar_ServerPassword;
-cGVar GVar_ServerName;
-cGVar GVar_ServerDataRateLimit;
+static cGVar GVar_UseServerPassword;
+static cGVar GVar_ForceServerVehicle;
+static cGVar GVar_ServerPassword;
+static cGVar GVar_ServerName;
+static cGVar GVar_ServerDataRateLimit;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_ForceServerVehicle, &GVar_ForceServerVehicle, "ForceServerVehicle", 6, "All the ships will use the server's one\n", 0)

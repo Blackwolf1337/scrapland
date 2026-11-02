@@ -20,6 +20,11 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
+#define CMONITORSCORER_VFTABLE (&cMonitorScorer_vftable.base)
+#define g_FirstPhotoMessage (GVar_FirstPhotoMessage.value.s)	/* FirstPhotoMessage */
+static const cHeadScorerVtbl cMonitorScorer_vftable;
+static cGVar GVar_FirstPhotoMessage;
+
 static CPsaImage *Monitor_NewImage(const char *name, int blend, uint32_t flags, uint32_t color) {
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	if (img) {
@@ -77,7 +82,7 @@ cMonitorScorer *cMonitorScorer_ctor(cMonitorScorer *self) {
 	return self;
 }
 
-void cMonitorScorer_dtor(cMonitorScorer *self) {
+static void cMonitorScorer_dtor(cMonitorScorer *self) {
 	CPsaImage *img = self->panel;
 	self->base.vftable = CMONITORSCORER_VFTABLE;
 	Monitor_FreeImage(img);
@@ -95,7 +100,7 @@ void cMonitorScorer_dtor(cMonitorScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cScorerItem *cMonitorScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cMonitorScorer_Delete(cScorerItem *base, byte flags) {
 	cMonitorScorer *self = (cMonitorScorer *)base;
 	cMonitorScorer_dtor(self);
 	if (flags & 1) {
@@ -104,7 +109,8 @@ cScorerItem *cMonitorScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-void cMonitorScorer_SetParam(cScorerItem *base, const char *name, const char *value) {
+/* vf01: TargetView=1 */
+static void cMonitorScorer_SetParam(cScorerItem *base, const char *name, const char *value) {
 	cMonitorScorer *self = (cMonitorScorer *)base;
 	if (!crt_stricmp(name, "TargetView")) {
 		self->targetView = *value == '1';
@@ -118,7 +124,7 @@ static int Monitor_VarSprite(CPsaImage **img, const char *name, int blend, uint3
 	return 1;
 }
 
-int cMonitorScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+static int cMonitorScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cMonitorScorer *self = (cMonitorScorer *)base;
 	if (s && !crt_stricmp(name, "PanelSprite") && set) {
 		return Monitor_VarSprite(&self->panel, *s, -1, 0x10040, 0xffffffff);
@@ -320,7 +326,8 @@ static cEntity *Monitor_FindLooked(cEntity *target, byte isCar, byte isWalk) {
 	return e && Entity_IsType(e, TYEN_WITH_LIFE) ? e : NULL;
 }
 
-char g_HeadMonitorName[128];
+/* the head and text of Scorer_SetHeadMonitor */
+static char g_HeadMonitorName[128];
 
 /* the head of e in the monitor when no talk shows one, its descriptor as the text */
 static void Monitor_SetHead(cMonitorScorer *self, cEntity *e) {
@@ -628,6 +635,7 @@ static void Monitor_DrawOpening(cMonitorScorer *self, float tt) {
 
 /* the objective mark of a character: the four corners around the entity that can be photographed (or the place
  * of NO SIGNAL), moving there smoothly when it changes */
+static void Monitor_RepeatPhotoMessage(void);
 static void Monitor_DrawObjective(cMonitorScorer *self, cEntity *e, float time, float frameTime) {
 	vec3_t t;
 	const char *name;
@@ -690,7 +698,9 @@ static void Monitor_DrawObjective(cMonitorScorer *self, cEntity *e, float time, 
 	self->objective->scaleY = 1.0f;
 }
 
-void cMonitorScorer_DrawMonitor(cMonitorScorer *self, int player, cEntity *target) {
+/* the monitor of the target of the camera of player: the head of the talk or the view of the entity it looks at
+ * with its text, the noise, the objective mark of a character */
+static void cMonitorScorer_DrawMonitor(cMonitorScorer *self, int player, cEntity *target) {
 	float frameTime = Scorer_Get(player)->frameTime;
 	uint32_t textColor = 0xaeffae;
 	float time = Scorer_Get(player)->time;
@@ -754,10 +764,10 @@ void cMonitorScorer_DrawMonitor(cMonitorScorer *self, int player, cEntity *targe
 	}
 }
 
-char g_HeadMonitorText[128];
-int g_HeadMonitorAnim = 1;
+static char g_HeadMonitorText[128];
+static int g_HeadMonitorAnim = 1;
 
-void cMonitorScorer_Draw(cScorerItem *base, int player) {
+static void cMonitorScorer_Draw(cScorerItem *base, int player) {
 	cMonitorScorer *self = (cMonitorScorer *)base;
 	if (!(byte)Talk_IsShown() || !g_HeadMonitorName[0]) {
 		self->model = NULL;
@@ -795,7 +805,7 @@ void cMonitorScorer_Draw(cScorerItem *base, int player) {
 	}
 }
 
-byte cMonitorScorer_SetModel(cScorerItem *base, const char *name) {
+static byte cMonitorScorer_SetModel(cScorerItem *base, const char *name) {
 	cMonitorScorer *self = (cMonitorScorer *)base;
 	cScorerModel *m = cScorer_FindModel(Scorer_Get(self->base.player), name);
 
@@ -817,7 +827,7 @@ byte cMonitorScorer_SetModel(cScorerItem *base, const char *name) {
 	return self->model != NULL;
 }
 
-void cMonitorScorer_SetAnim(cScorerItem *base, int anim) {
+static void cMonitorScorer_SetAnim(cScorerItem *base, int anim) {
 	cMonitorScorer *self = (cMonitorScorer *)base;
 	cScorerModel *m = self->model;
 
@@ -842,7 +852,8 @@ void Scorer_SetHeadMonitor(const char *a, const char *b, int c) {
 	g_HeadMonitorAnim = c;
 }
 
-void Monitor_RepeatPhotoMessage(void) {
+/* the message FirstPhotoMessage again when the message text ended */
+static void Monitor_RepeatPhotoMessage(void) {
 	const char *msg = g_FirstPhotoMessage;
 
 	if (!msg || !*msg) {
@@ -855,7 +866,7 @@ void Monitor_RepeatPhotoMessage(void) {
 }
 
 /* the vtable of cMonitorScorer */
-const cHeadScorerVtbl cMonitorScorer_vftable = {
+static const cHeadScorerVtbl cMonitorScorer_vftable = {
 	.base.Draw = cMonitorScorer_Draw,
 	.base.SetParam = cMonitorScorer_SetParam,
 	.base.Var = cMonitorScorer_Var,
@@ -864,7 +875,7 @@ const cHeadScorerVtbl cMonitorScorer_vftable = {
 	.SetModel = cMonitorScorer_SetModel,
 };
 
-cGVar GVar_FirstPhotoMessage;
+static cGVar GVar_FirstPhotoMessage;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_FirstPhotoMessage, &GVar_FirstPhotoMessage)

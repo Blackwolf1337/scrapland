@@ -17,6 +17,47 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
+#define g_FXCharacterConversionFile (GVar_FXCharacterConversionFile.value.s)
+#define g_FXCharacterConversorFile (GVar_FXCharacterConversorFile.value.s)
+#define g_FXCharacterBlaBliBlaFile (GVar_FXCharacterBlaBliBlaFile.value.s)
+#define g_FXCharacterDazedFile (GVar_FXCharacterDazedFile.value.s)
+#define g_FXCharacterDeathFile (GVar_FXCharacterDeathFile.value.s)
+#define g_FXCharacterTeleportFile (GVar_FXCharacterTeleportFile.value.s)
+#define g_FXMoneyTransferFile (GVar_FXMoneyTransferFile.value.s)
+#define g_FXFunctionarySpecialActionFile (GVar_FXFunctionarySpecialActionFile.value.s)
+#define g_FXCharacterDeathMinDist (GVar_FXCharacterDeathMinDist.value.f)
+#define g_CharacterDeathSound (GVar_CharacterDeathSound.value.s)
+#define g_CharacterDeathSoundVol (GVar_CharacterDeathSoundVol.value.f)
+#define g_CharacterConversionSound (GVar_CharacterConversionSound.value.s)
+#define g_CharacterConversionSoundVol (GVar_CharacterConversionSoundVol.value.f)
+#define g_CharacterTeleportUpSound (GVar_CharacterTeleportUpSound.value.s)
+#define g_CharacterTeleportDownSound (GVar_CharacterTeleportDownSound.value.s)
+#define g_CharacterTeleportSoundVol (GVar_CharacterTeleportSoundVol.value.f)
+#define g_MaintenanceWorkSound (GVar_MaintenanceWorkSound.value.s)
+#define g_MaintenanceWorkSoundVol (GVar_MaintenanceWorkSoundVol.value.f)
+#define g_MaintenanceWorkSoundAttIni (GVar_MaintenanceWorkSoundAttIni.value.f)
+#define g_MaintenanceWorkSoundAttEnd (GVar_MaintenanceWorkSoundAttEnd.value.f)
+static cGVar GVar_MaintenanceWorkSoundVol;
+static cGVar GVar_MaintenanceWorkSoundAttIni;
+static cGVar GVar_MaintenanceWorkSoundAttEnd;
+static cGVar GVar_MaintenanceWorkSound;
+static cGVar GVar_FXMoneyTransferFile;
+static cGVar GVar_FXFunctionarySpecialActionFile;
+static cGVar GVar_FXCharacterTeleportFile;
+static cGVar GVar_FXCharacterDeathMinDist;
+static cGVar GVar_FXCharacterDeathFile;
+static cGVar GVar_FXCharacterDazedFile;
+static cGVar GVar_FXCharacterConversorFile;
+static cGVar GVar_FXCharacterConversionFile;
+static cGVar GVar_FXCharacterBlaBliBlaFile;
+static cGVar GVar_CharacterTeleportUpSound;
+static cGVar GVar_CharacterTeleportSoundVol;
+static cGVar GVar_CharacterTeleportDownSound;
+static cGVar GVar_CharacterDeathSoundVol;
+static cGVar GVar_CharacterDeathSound;
+static cGVar GVar_CharacterConversionSoundVol;
+static cGVar GVar_CharacterConversionSound;
+
 /* the color ramps (9 colors) of the particles */
 #define FXC_RAMP_MONEY 0x430240
 
@@ -72,14 +113,14 @@ static inline vec3_t FXC_CamPos(void) {
 
 /* ---- the setters ---- */
 
-void cObjElementFXMoneyTransfer_SetEntities(cObjElementFXMoneyTransfer *self, cEntity *from, cEntity *to) {
+static void cObjElementFXMoneyTransfer_SetEntities(cObjElementFXMoneyTransfer *self, cEntity *from, cEntity *to) {
 	self->from = from;
 	CHECK(from->vftable->IsType(from, TYEN_WITH_LIFE));
 	self->to = to;
 	CHECK(to->vftable->IsType(to, TYEN_WITH_LIFE));
 }
 
-void cObjElementFXCharacterDeath_SetEntity(cObjElementFXCharacterDeath *self, cEntity *e) {
+static void cObjElementFXCharacterDeath_SetEntity(cObjElementFXCharacterDeath *self, cEntity *e) {
 	self->ent = e;
 	FXC_Model(e);
 }
@@ -95,14 +136,14 @@ void FXSputnik_Start(cObjElementFXSputnik *self, cEntity *e) {
 	self->node = CGameModel_FindRenderNode(m, "Bip Spootnick MASTER");
 }
 
-void cObjElementFXCharacterConversion_SetAttacked(cObjElementFXCharacterConversion *self, cEntity *e) {
+static void cObjElementFXCharacterConversion_SetAttacked(cObjElementFXCharacterConversion *self, cEntity *e) {
 	self->attacked = e;
 	if (e) {
 		FXC_Model(e);
 	}
 }
 
-void cObjElementFXCharacterConversion_SetAttacker(cObjElementFXCharacterConversion *self, cEntity *e) {
+static void cObjElementFXCharacterConversion_SetAttacker(cObjElementFXCharacterConversion *self, cEntity *e) {
 	self->attacker = e;
 	if (e) {
 		FXC_Model(e);
@@ -110,7 +151,7 @@ void cObjElementFXCharacterConversion_SetAttacker(cObjElementFXCharacterConversi
 	}
 }
 
-void cObjElementFXCharacterConversor_SetCharacter(cObjElementFXCharacterConversor *self, cEntity *e) {
+static void cObjElementFXCharacterConversor_SetCharacter(cObjElementFXCharacterConversor *self, cEntity *e) {
 	self->character = e;
 	if (!e) {
 		return;
@@ -126,7 +167,8 @@ void cObjElementFXCharacterConversor_SetCharacter(cObjElementFXCharacterConverso
 	}
 }
 
-void cObjElementFXCharacterConversor_SetConversor(cObjElementFXCharacterConversor *self, cEntity *e) {
+/* the conversor and the nodes of its model */
+static void cObjElementFXCharacterConversor_SetConversor(cObjElementFXCharacterConversor *self, cEntity *e) {
 	char buf[256];
 
 	self->conversor = e;
@@ -441,7 +483,7 @@ byte cObjElementFXSputnik_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys
 	return cDebris_Update(d, sys);
 }
 
-uint32_t cObjElementFXMoneyTransfer_UpdateRamp[9] = { 0xff000000, 0x80808080, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0x80808080, 0xff000000, 0xff000000 };
+static uint32_t cObjElementFXMoneyTransfer_UpdateRamp[9] = { 0xff000000, 0x80808080, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0xc4c4c4, 0x80808080, 0xff000000, 0xff000000 };
 
 /* ---- Update (vf01) ---- */
 
@@ -541,12 +583,12 @@ static void FXConversion_Spark(CGameParticles *sp, const vec3_t *v, double range
 #define FXCONVERSION_SPARK_T 0.005000000353902578f
 #define FXCONVERSION_SPARK_VERTS 12
 
-uint32_t cObjElementFXCharacterConversion_EmitRamps[18] = {
+static uint32_t cObjElementFXCharacterConversion_EmitRamps[18] = {
 	0x85ae6ff, 0x104bbeff, 0x203c87e6, 0x40233fab, 0x8010264b, 0xa4050d38, 0xc0000518, 0xff000000, 0xff000000,
 	0x85ab4ff, 0x104b96ff, 0x203c55e6, 0x40232dab, 0x8010184b, 0xa402053c, 0xc0000012, 0xff000000, 0xff000000,
 };
 
-uint32_t cObjElementFXCharacterConversion_EmitTable[19] = {
+static uint32_t cObjElementFXCharacterConversion_EmitTable[19] = {
 	0x85affe6, 0x104bffbe, 0x203ce687, 0x4023ab3f, 0x80104b26, 0xa4053838, 0xc0001805, 0xff000000, 0xff000000,
 	0x85affb4, 0x104bff96, 0x203ce655, 0x4023ab2d, 0x80104b18, 0xa4023c05, 0xc0001200, 0xff000000, 0xff000000,
 };
@@ -732,12 +774,12 @@ static void FXC_SetStill(CGameParticles *sp, const vec3_t *p) {
 	sp->initAccMax = sp->initAccMin;
 }
 
-uint32_t cObjElementFXMaintenanceWork_UpdateRamps[18] = {
+static uint32_t cObjElementFXMaintenanceWork_UpdateRamps[18] = {
 	0x809696ff, 0x10d2d2ff, 0x306e6ee6, 0x603737be, 0x8c191996, 0xa4030378, 0xc000006e, 0xff000032, 0xff000000,
 	0x80d2d2ff, 0x109696ff, 0x306411e1, 0x603232b4, 0x8c1e1e55, 0xa40a0a2d, 0xc0050519, 0xff00000a, 0xff000000,
 };
 
-uint32_t cObjElementFXMaintenanceWork_UpdateTable[28] = {
+static uint32_t cObjElementFXMaintenanceWork_UpdateTable[28] = {
 	0x8ffe65a, 0x10ffbe4b, 0x20e6873c, 0x40ab3f23, 0x804b2610, 0xa4380d05, 0xc01e0500, 0xff0a0000, 0xff000000, 0,
 	0xff000000, 0xbe404040, 0xa0696969, 0xa0696969, 0xa0696969, 0xbe555555, 0xdc303030, 0xff000000, 0xff000000,
 	0xff000000, 0xbe363636, 0xa05f5f5f, 0xa05f5f5f, 0xa05f5f5f, 0xbe4b4b4b, 0xdc262626, 0xff000000, 0xff000000,
@@ -914,7 +956,7 @@ static void FXC_VelY(CGameParticles *sp, float vy, float ay) {
 	sp->initAccMax = sp->initAccMin;
 }
 
-uint32_t FXC_TELEPORT_RAMPS[27] = {
+static uint32_t FXC_TELEPORT_RAMPS[27] = {
 	0xff43696d, 0xdc436972, 0x80436976, 0x42687b, 0x42687f, 0x80426885, 0xc0426886, 0xff426886, 0xff426886,
 	0xff000000, 0xdc000000, 0x80002534, 18129, 23295, 0x800048ff, 0xc0004489, 0xff000000, 0xff000000, 0xffc8c8ff,
 	0x40f0f0ff, 0x20c4c4c4, 0x808080ff, 0xa44040ff, 0xc02020ff, 0xe10000ff, 0xff0000ff, 0xff0000ff,
@@ -1253,7 +1295,7 @@ static void FXDeath_Dust(CGameParticles *sp, const vec3_t *v, float ox, float oy
 	sp->sizeLife = 1.0f;
 }
 
-uint32_t FXDeath_GlowRamps[36] = {
+static uint32_t FXDeath_GlowRamps[36] = {
 	0x8fff078, 0x8f8d25f, 0x10ebaa50, 0x20e17d3c, 0x40be5f28, 0x809c4114, 0xc06e230f, 0xff4c0a05, 0xff000000,
 	0x20ffe66e, 0x30ffbe4b, 0x38e6873c, 0x40ab692d, 0x607d4b23, 0x80563219, 0xc0321914, 0xff1e0a05, 0xff000000,
 	0x40ffdc5a, 0x55f5aa46, 0x60be7337, 0x7697501e, 0x807d3c14, 0xa438190a, 0xc01e0a05, 0xff0a0500, 0xff000000,
@@ -1543,7 +1585,7 @@ static inline int FXC_Clamp(int v, int lo) {
 	return v > 0xff ? 0xff : v;
 }
 
-uint32_t FXConversor_GlowTable[28] = {
+static uint32_t FXConversor_GlowTable[28] = {
 	0xff43696d, 0xdc436972, 0x80436976, 0x42687b, 0x42687f, 0x80426885, 0xc0426886, 0xff426886, 0xff426886,
 	0xff000000, 0xdc000000, 0x80002534, 18129, 23295, 0x800048ff, 0xc0004489, 0xff000000, 0xff000000, 0xffc8c8ff,
 	0x40f0f0ff, 0x20c4c4c4, 0x808080ff, 0xa44040ff, 0xc02020ff, 0xe10000ff, 0xff0000ff, 0xff0000ff,
@@ -1928,9 +1970,9 @@ static void FXSputnik_SetAcc(CGameParticles *sp) {
 	sp->initAccMax = sp->initAccMin;
 }
 
-uint32_t cObjElementFXSputnik_UpdateRamp[9] = { 0xff2dff4e, 0x1057fe50, 0x1082fd52, 0x10adfb54, 0x20d6fa55, 0x80fdf957, 0xc053511c, 0xff000000, 0xff000000 };
+static uint32_t cObjElementFXSputnik_UpdateRamp[9] = { 0xff2dff4e, 0x1057fe50, 0x1082fd52, 0x10adfb54, 0x20d6fa55, 0x80fdf957, 0xc053511c, 0xff000000, 0xff000000 };
 
-uint32_t cObjElementFXSputnik_UpdateRamp2[9] = { 0xff47e2e2, 0x403bb9ff, 0x103ea4ff, 0x104296ff, 0x204787ff, 0x804a7eff, 0xc04165db, 0xff000000, 0xff000000 };
+static uint32_t cObjElementFXSputnik_UpdateRamp2[9] = { 0xff47e2e2, 0x403bb9ff, 0x103ea4ff, 0x104296ff, 0x204787ff, 0x804a7eff, 0xc04165db, 0xff000000, 0xff000000 };
 
 void cObjElementFXSputnik_Update(cObjElementFX *base, cDebris *d, float dt) {
 	cObjElementFXSputnik *self = (cObjElementFXSputnik *)base;
@@ -2078,9 +2120,10 @@ static void FXC_EmitRamp(CGameParticles *sp, uint32_t *ramp, float dt) {
 
 #define FXC_EMIT_VERTS 128
 
-uint32_t cObjElementFXCharacterConversion_EmitRamp[9] = { 0x40bebeff, 0x108787ff, 0x205555e6, 0x402323ab, 0x8016164b, 0xa4080838, 0xc0040420, 0xff000000, 0xff000000 };
+static uint32_t cObjElementFXCharacterConversion_EmitRamp[9] = { 0x40bebeff, 0x108787ff, 0x205555e6, 0x402323ab, 0x8016164b, 0xa4080838, 0xc0040420, 0xff000000, 0xff000000 };
 
-void cObjElementFXCharacterConversion_Emit(cObjElementFXCharacterConversion *self) {
+/* the particles of the start between the two characters */
+static void cObjElementFXCharacterConversion_Emit(cObjElementFXCharacterConversion *self) {
 	vec3_t verts[FXC_EMIT_VERTS], pa, pb;
 
 	CGameModel *ma = Obj_Vtbl(self->attacker)->GetModel(self->attacker);
@@ -2379,9 +2422,10 @@ static cDebris *FXC_IdleDebris(cDebrisSys *sys, const vec3_t *pos, float life) {
 	return d;
 }
 
-uint32_t FX_CharacterBlaBliBlaTable[10] = { 0xff000000, 0x80808080, 0x40ffffff, 0x20ffffff, 0x20ffffff, 0x40ffffff, 0x80808080, 0xff000000, 0xff000000 };
+static uint32_t FX_CharacterBlaBliBlaTable[10] = { 0xff000000, 0x80808080, 0x40ffffff, 0x20ffffff, 0x20ffffff, 0x40ffffff, 0x80808080, 0xff000000, 0xff000000 };
 
-void FX_CharacterBlaBliBla(cAbstractFile *params) {
+/* the native functions (the character name, a second name and an int from the parameter file) */
+static void FX_CharacterBlaBliBla(cAbstractFile *params) {
 	char name[128], name2[128];
 	int unused;
 	vec3_t tmp, rot, in, p, n;
@@ -2454,9 +2498,9 @@ void FX_CharacterBlaBliBla(cAbstractFile *params) {
 	CGameParticles_EmitN(sp, 1, 0);
 }
 
-uint32_t FX_CharacterDazedRamp[9] = { 0xff000000, 0x80808080, 0x40ffffff, 0x20ffffff, 0x20ffffff, 0x40ffffff, 0x80808080, 0xff000000, 0xff000000 };
+static uint32_t FX_CharacterDazedRamp[9] = { 0xff000000, 0x80808080, 0x40ffffff, 0x20ffffff, 0x20ffffff, 0x40ffffff, 0x80808080, 0xff000000, 0xff000000 };
 
-void FX_CharacterDazed(cAbstractFile *params) {
+static void FX_CharacterDazed(cAbstractFile *params) {
 	char name[128], name2[128];
 	float time;
 	vec3_t tmp, rot, in, off;
@@ -2521,7 +2565,7 @@ void FX_CharacterDazed(cAbstractFile *params) {
 	}
 }
 
-void FX_CharacterTeleport(cAbstractFile *params) {
+static void FX_CharacterTeleport(cAbstractFile *params) {
 	char name[128], name2[128];
 	int mode;
 	vec3_t tmp;
@@ -2572,30 +2616,31 @@ void FX_CharacterTeleport(cAbstractFile *params) {
 	s->vftable->PlayAt(s, snd, ch->vftable->GetPos(ch, &tmp), vol);
 }
 
-cGVar GVar_CharacterTeleportSoundVol;
+static cGVar GVar_CharacterTeleportSoundVol;
 cGVar GVar_FXCharacterSputnikFile;
-cGVar GVar_FXCharacterConversorFile;
-cGVar GVar_FXCharacterConversionFile;
-cGVar GVar_CharacterDeathSound;
-cGVar GVar_FXCharacterDeathMinDist;
-cGVar GVar_FXCharacterBlaBliBlaFile;
-cGVar GVar_CharacterConversionSound;
-cGVar GVar_FXCharacterDazedFile;
-cGVar GVar_FXMoneyTransferFile;
-cGVar GVar_CharacterDeathSoundVol;
-cGVar GVar_CharacterTeleportUpSound;
-cGVar GVar_CharacterTeleportDownSound;
-cGVar GVar_FXCharacterDeathFile;
-cGVar GVar_CharacterConversionSoundVol;
-cGVar GVar_FXCharacterTeleportFile;
-cGVar GVar_FXFunctionarySpecialActionFile;
-cGVar GVar_MaintenanceWorkSoundVol;
-cGVar GVar_MaintenanceWorkSound;
-cGVar GVar_MaintenanceWorkSoundAttIni;
-cGVar GVar_MaintenanceWorkSoundAttEnd;
-cPy_NativeFunc NativeFunc_FXCharacterDazed;
-cPy_NativeFunc NativeFunc_FXCharacterBlaBliBla;
-cPy_NativeFunc NativeFunc_FXCharacterTeleport;
+static cGVar GVar_FXCharacterConversorFile;
+/* the engine variables (Gvars) */
+static cGVar GVar_FXCharacterConversionFile;
+static cGVar GVar_CharacterDeathSound;
+static cGVar GVar_FXCharacterDeathMinDist;
+static cGVar GVar_FXCharacterBlaBliBlaFile;
+static cGVar GVar_CharacterConversionSound;
+static cGVar GVar_FXCharacterDazedFile;
+static cGVar GVar_FXMoneyTransferFile;
+static cGVar GVar_CharacterDeathSoundVol;
+static cGVar GVar_CharacterTeleportUpSound;
+static cGVar GVar_CharacterTeleportDownSound;
+static cGVar GVar_FXCharacterDeathFile;
+static cGVar GVar_CharacterConversionSoundVol;
+static cGVar GVar_FXCharacterTeleportFile;
+static cGVar GVar_FXFunctionarySpecialActionFile;
+static cGVar GVar_MaintenanceWorkSoundVol;
+static cGVar GVar_MaintenanceWorkSound;
+static cGVar GVar_MaintenanceWorkSoundAttIni;
+static cGVar GVar_MaintenanceWorkSoundAttEnd;
+static cPy_NativeFunc NativeFunc_FXCharacterDazed;
+static cPy_NativeFunc NativeFunc_FXCharacterBlaBliBla;
+static cPy_NativeFunc NativeFunc_FXCharacterTeleport;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_MaintenanceWorkSound, &GVar_MaintenanceWorkSound)

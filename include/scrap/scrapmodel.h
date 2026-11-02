@@ -27,33 +27,12 @@ typedef struct CGameModel {
 #define MAX_VALID 256
 #define MAT_SINVERTICES 0x4000		/* the meshes of the material give no vertices to the effects */
 
-/* the engine variables (Gvars) */
-extern cGVar GVar_R_GetModelVertex;
-#define g_GetModelVertex (GVar_R_GetModelVertex.value.i)		/* R_GetModelVertex, else the model position */
-extern cGVar GVar_R_ForcePreRenderTransform;
-#define g_ForcePreRenderTransform (GVar_R_ForcePreRenderTransform.value.i)	/* R_ForcePreRenderTransform */
 extern cGVar GVar_R_SplitScreen;
 #define g_SplitScreen (GVar_R_SplitScreen.value.i)		/* R_SplitScreen: every model visible */
-extern cGVar GVar_R_CoefMLODShips;
-#define g_CoefMLODShips (GVar_R_CoefMLODShips.value.f)
-extern cGVar GVar_R_CoefMLODPilots;
-#define g_CoefMLODPilots (GVar_R_CoefMLODPilots.value.f)
-extern cGVar GVar_R_CoefMLODEngines;
-#define g_CoefMLODEngines (GVar_R_CoefMLODEngines.value.f)
-extern cGVar GVar_R_CoefMLODTraffic;
-#define g_CoefMLODTraffic (GVar_R_CoefMLODTraffic.value.f)
-extern cGVar GVar_R_CoefMLODCharacters;
-#define g_CoefMLODCharacters (GVar_R_CoefMLODCharacters.value.f)
-extern cGVar GVar_R_CoefMLODOutElement;
-#define g_CoefMLODOutElement (GVar_R_CoefMLODOutElement.value.f)
-extern cGVar GVar_R_CoefMLODMenuElement;
-#define g_CoefMLODMenuElement (GVar_R_CoefMLODMenuElement.value.f)
 
 CGameModel *CGameModel_ctor(CGameModel *self, const char *name);
 /* the default constructor for the arrays: without a model */
 CGameModel *CGameModel_ctorDefault(CGameModel *self);
-/* the model of name (the .sm3 if the name is .m3d and the other way with the app flag 4) at the scale */
-void CGameModel_Load(CGameModel *self, const char *name, const char *name2, const vec3_t *scale);
 void CGameModel_LoadName(CGameModel *self, const char *name);
 void CGameModel_LoadScaled(CGameModel *self, const char *name, const vec3_t *scale);
 /* the model freed (Load with NULL) */
@@ -62,7 +41,6 @@ void CGameModel_Reset(CGameModel *self);
 void CGameModel_Release(CGameModel *self, byte free);
 byte CGameModel_IsLoaded(const CGameModel *self);
 const char *CGameModel_Name(const CGameModel *self);
-const char *CGameModel_SceneName(const CGameModel *self);
 void CGameModel_Enable(CGameModel *self);
 void CGameModel_Disable(CGameModel *self);
 byte CGameModel_IsEnabled(const CGameModel *self);
@@ -74,8 +52,6 @@ void CGameModel_SetPos(CGameModel *self, const vec3_t *v);
 vec3_t *CGameModel_GetRot(const CGameModel *self, vec3_t *out);
 void CGameModel_SetRot(CGameModel *self, const vec3_t *v);
 void CGameModel_SetRot2(CGameModel *self, const vec3_t *v);
-/* d along z turned by rot2 and rot */
-void CGameModel_MoveForward(CGameModel *self, float d);
 void CGameModel_SetPivot(CGameModel *self, const vec3_t *v, byte rel, byte recalcBB);
 void CGameModel_SetPivotNode(CGameModel *self, const char *name);
 void CGameModel_SetSortZ(CGameModel *self, float bias, float mult);
@@ -91,7 +67,6 @@ int CGameModel_AddAnim(CGameModel *self, const char *name);
 int CGameModel_FindAnim(CGameModel *self, const char *name);
 const char *CGameModel_AnimName(CGameModel *self, int i);
 byte CGameModel_AnimInfo(CGameModel *self, int i, float *dur, float *fps);
-byte CGameModel_SetAnimVel(CGameModel *self, int i, float vel);
 byte CGameModel_SetAnimFactor(CGameModel *self, int i, float factor);
 byte CGameModel_SetAnimSpeed(CGameModel *self, int i, float speed);
 byte CGameModel_SetAnimLoop(CGameModel *self, int i, byte loop);
@@ -100,9 +75,7 @@ void CGameModel_AnimCmd(CGameModel *self, const char *cmd);
 /* the time of frame of animation i (scaled from animBaseFPS); 0 out of its frames */
 byte CGameModel_AnimTime(CGameModel *self, int i, float frame, float *time);
 void CGameModel_SetAnim(CGameModel *self, int i, uint32_t chan, int unused);
-void CGameModel_StopAnims(CGameModel *self);
 void CGameModel_StopAnim(CGameModel *self, uint32_t chan);
-CAnimGroup *CGameModel_ChanAnim(CGameModel *self, uint32_t chan);
 byte CGameModel_ChanEnd(CGameModel *self, uint32_t chan);
 byte CGameModel_ChanInfo(CGameModel *self, uint32_t chan, int *mode, int *anim);
 byte CGameModel_ChanTime(CGameModel *self, uint32_t chan, float *t);
@@ -133,11 +106,7 @@ uint32_t CGameModel_NodeIniColor(CGameModel *self, uint32_t i, const char *sect,
 	uint32_t def);
 vec3_t *CGameModel_NodeIniVec3(CGameModel *self, vec3_t *out, uint32_t i, const char *sect, const char *key,
 	const vec3_t *def);
-/* the frame of the animated texture named name in the meshes */
-byte CGameModel_SetTexFrame(CGameModel *self, const char *name, int frame);
 
-/* vertices for the effects (R_GetModelVertex, else the position of the model) */
-int CGameModel_VertexCounts(CGameModel *self, int *out, int max);
 void CGameModel_RandomVertices(CGameModel *self, vec3_t *pos, void *normal, void *area, int count,
 	uint32_t node);
 void CGameModel_Vertices(CGameModel *self, vec3_t *pos, void *normal, void *area, int count, int first,
@@ -145,14 +114,9 @@ void CGameModel_Vertices(CGameModel *self, vec3_t *pos, void *normal, void *area
 void CGameModel_ClosestVertex(CGameModel *self, float x, float y, float z, vec3_t *pos, int *index,
 	uint32_t node);
 
-/* the collision mesh */
-void CGameModel_FreeCollision(CGameModel *self);
 void CGameModel_EnableCollision(CGameModel *self, byte on, byte create);
-byte CGameModel_CreateCollision(CGameModel *self, byte all);
 byte CGameModel_CollideOn(const CGameModel *self);
 
-/* inline methods of the engine3d instantiated here */
-void CAnimMat_SetFrame(CAnimMat *self, int frame);
 /* the sector of the floor at pos, -2 for none (ScrapEngWorld.c) */
 int Sector_At(const vec3_t *pos);
 /* rva 0x23f7f0 (NodoR.cpp): the look type of the node */

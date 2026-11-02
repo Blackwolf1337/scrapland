@@ -49,12 +49,8 @@ typedef struct cFileMem {
 	byte pad_1d[3];
 } cFileMem;
 
-extern const cAbstractFileVtbl cAbstractFile_vftable;
-#define CABSTRACTFILE_VFTABLE (&cAbstractFile_vftable)
 extern const cAbstractFileVtbl cFile_vftable;
 #define CFILE_VFTABLE (&cFile_vftable)
-extern const cAbstractFileVtbl cFileMem_vftable;
-#define CFILEMEM_VFTABLE (&cFileMem_vftable)
 
 void cAbstractFile_dtor(cAbstractFile *self);
 int cAbstractFile_Open(cAbstractFile *self, const char *name, uint32_t mode);
@@ -141,7 +137,6 @@ void Path_MakeDirs(const char *path);			/* the directories of path */
 void Dir_Walk(const char *dir, const char *ext, void (*cb)(const char *path));
 /* chdir to the directory of path and then sub */
 byte Dir_Change(const char *path, const char *sub);
-byte Str_MatchNoCase(const char *pattern, const char *name);
 /* 1 if name matches one of the sep separated patterns of list */
 byte StrList_Match(const char *list, const char *name, const char *sep);
 

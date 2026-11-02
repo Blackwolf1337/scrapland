@@ -12,9 +12,8 @@
 #include "scrap/video.h"
 #include "scrap/platform.h"
 
-#define APP_EXCEPTIONFILTER 0x233410
-
-
+#ifdef _WIN32
+#include <windows.h>
 
 #define EXC_ACCESS_VIOLATION 0xc0000005u
 
@@ -64,40 +63,38 @@ static const char *Exception_Name(uint32_t code) {
 	return NULL;
 }
 
-/* EXCEPTION_POINTERS: the record (code, flags, next, address, nparams, params) and the CONTEXT */
-int __stdcall App_ExceptionFilter(void **ep) {
-	const uint32_t *rec = ep[0];
-	const uint32_t *ctx = ep[1];
-	const char *name = Exception_Name(rec[0]);
-	char info[0x40], regs[0x40];
+/* the exception, its address and the fault, the stack and frame pointers */
+static LONG WINAPI App_ExceptionFilter(EXCEPTION_POINTERS *ep) {
+	const EXCEPTION_RECORD *rec = ep->ExceptionRecord;
+	const CONTEXT *ctx = ep->ContextRecord;
+	const char *name = Exception_Name(rec->ExceptionCode);
+	char info[0x60], regs[0x60];
 
 	info[0] = '-';
 	info[1] = 0;
-	if (rec[0] == EXC_ACCESS_VIOLATION && rec[4] == 2) {
-		Bprintf(info, sizeof(info), "%s fault on address 0x%08X", rec[5] ? "Write" : "Read", rec[6]);
+	if (rec->ExceptionCode == EXC_ACCESS_VIOLATION && rec->NumberParameters == 2) {
+		Bprintf(info, sizeof(info), "%s fault on address 0x%p", rec->ExceptionInformation[0] ? "Write" : "Read",
+			(void *)rec->ExceptionInformation[1]);
 	}
 	regs[0] = '-';
 	regs[1] = 0;
-	/* CONTEXT_CONTROL: Esp at 0xc4, Ebp at 0xb4 */
-	if (ctx && (ctx[0] & 0x10001)) {
-		Bprintf(regs, sizeof(regs), "ESP: 0x%08X\nEBP: 0x%08X", ctx[0x31], ctx[0x2d]);
+	if (ctx && (ctx->ContextFlags & CONTEXT_CONTROL) == CONTEXT_CONTROL) {
+		Bprintf(regs, sizeof(regs), "RSP: 0x%p\nRBP: 0x%p", (void *)ctx->Rsp, (void *)ctx->Rbp);
 	}
-	Con_FatalErrorf("\nUnhandled exception: %s\t\n\nAddress: 0x%08X\n\nInfo: %s\n\n%s\n", name, rec[3], info, regs);
-	return -1;
+	Con_FatalErrorf("\nUnhandled exception: %s\t\n\nAddress: 0x%p\n\nInfo: %s\n\n%s\n", name, rec->ExceptionAddress, info,
+		regs);
+	return EXCEPTION_EXECUTE_HANDLER;
 }
 
-#ifdef _WIN32
-void *__stdcall SetUnhandledExceptionFilter(void *filter);
+static LPTOP_LEVEL_EXCEPTION_FILTER g_PrevExceptionFilter;
 #endif
-
-void *g_PrevExceptionFilter;
 
 /* the filter on Windows only; elsewhere a crash ends the process the normal way of the system */
 void App_SetExceptionFilter(byte on) {
 #ifdef _WIN32
 	if (on) {
 		CHECK(!g_PrevExceptionFilter);
-		g_PrevExceptionFilter = SetUnhandledExceptionFilter((void *)App_ExceptionFilter);
+		g_PrevExceptionFilter = SetUnhandledExceptionFilter(App_ExceptionFilter);
 		return;
 	}
 	SetUnhandledExceptionFilter(g_PrevExceptionFilter);

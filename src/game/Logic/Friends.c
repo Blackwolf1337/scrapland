@@ -28,7 +28,7 @@ static byte Friends_IsEnemyCar(cEntity *v, cEntity *t) {
 		WLife(v)->arrow.tgType);
 }
 
-void cFriends_Attack(cFriends *self, cEntity *usr) {
+static void cFriends_Attack(cFriends *self, cEntity *usr) {
 	Nto1Node *n = Logic_ListFirst(self->list);
 	cEntity *cur = cWorld_GetFirstEntity(g_pWorld);
 
@@ -96,12 +96,7 @@ void cFriends_Attack(cFriends *self, cEntity *usr) {
 	}
 }
 
-/* t is an active enemy car of v (no caller in the exe) */
-byte Friends_IsEnemyTarget(cEntity *v, cEntity *t) {
-	return t && Friends_IsEnemyCar(v, t);
-}
-
-void cFriends_Think(cFriends *self) {
+static void cFriends_Think(cFriends *self) {
 	int *num = self->list->numElems;
 
 	if (num && *num == 0) {

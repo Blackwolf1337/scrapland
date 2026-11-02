@@ -19,6 +19,9 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
+#define g_TgtRegenerationTime (GVar_TgtRegenerationTime.value.f)
+static cGVar GVar_TgtRegenerationTime;
+
 #define CONTROLS_MIN_FADE 0.01f
 
 cVehicleControls *Controls_ctor(cVehicleControls *self) {
@@ -144,29 +147,29 @@ void Controls_RumbleB(cVehicleControls *self, float strength, float time) {
 
 /* ---- the items a ship takes (native functions "TakeEner", "TakeLife", "TakeMiss", "TakePart") ---- */
 
-cGVar GVar_ItemEnerAdds;
+static cGVar GVar_ItemEnerAdds;
 
 /* the engine variables of the items: the ammo or life they add and the time until they come back */
 #define g_ItemEnerAdds (GVar_ItemEnerAdds.value.i)
-cGVar GVar_ItemEnerRespawnTime;
+static cGVar GVar_ItemEnerRespawnTime;
 
 #define g_ItemEnerRespawnTime (GVar_ItemEnerRespawnTime.value.f)
-cGVar GVar_ItemLifeAdds;
+static cGVar GVar_ItemLifeAdds;
 
 #define g_ItemLifeAdds (GVar_ItemLifeAdds.value.i)
-cGVar GVar_ItemLifeRespawnTime;
+static cGVar GVar_ItemLifeRespawnTime;
 
 #define g_ItemLifeRespawnTime (GVar_ItemLifeRespawnTime.value.f)
-cGVar GVar_ItemMissAdds;
+static cGVar GVar_ItemMissAdds;
 
 #define g_ItemMissAdds (GVar_ItemMissAdds.value.i)
-cGVar GVar_ItemMissRespawnTime;
+static cGVar GVar_ItemMissRespawnTime;
 
 #define g_ItemMissRespawnTime (GVar_ItemMissRespawnTime.value.f)
-cGVar GVar_ItemPartAdds;
+static cGVar GVar_ItemPartAdds;
 
 #define g_ItemPartAdds (GVar_ItemPartAdds.value.i)
-cGVar GVar_ItemPartRespawnTime;
+static cGVar GVar_ItemPartRespawnTime;
 
 #define g_ItemPartRespawnTime (GVar_ItemPartRespawnTime.value.f)
 
@@ -201,11 +204,11 @@ static void Ctl_TakeAmmo(cAbstractFile *f, int kind, int alt, int adds, const fl
 	cItemEntity_SetRespawn((cItemEntity *)World_FindEntity(item), *respawn);
 }
 
-void Controls_TakeEnerNative(cAbstractFile *f) {
+static void Controls_TakeEnerNative(cAbstractFile *f) {
 	Ctl_TakeAmmo(f, 2, 4, g_ItemEnerAdds, &g_ItemEnerRespawnTime);
 }
 
-void Controls_TakeLifeNative(cAbstractFile *f) {
+static void Controls_TakeLifeNative(cAbstractFile *f) {
 	char item[0x80], name[0x80];
 	cEntity *v = Ctl_TakeArgs(f, item, name);
 
@@ -231,11 +234,11 @@ void Controls_TakeLifeNative(cAbstractFile *f) {
 	cItemEntity_SetRespawn((cItemEntity *)World_FindEntity(item), g_ItemLifeRespawnTime);
 }
 
-void Controls_TakeMissNative(cAbstractFile *f) {
+static void Controls_TakeMissNative(cAbstractFile *f) {
 	Ctl_TakeAmmo(f, 1, 5, g_ItemMissAdds, &g_ItemMissRespawnTime);
 }
 
-void Controls_TakePartNative(cAbstractFile *f) {
+static void Controls_TakePartNative(cAbstractFile *f) {
 	Ctl_TakeAmmo(f, 0, 3, g_ItemPartAdds, &g_ItemPartRespawnTime);
 }
 
@@ -281,11 +284,13 @@ void cVehicleO648_dtor(void *o) {
 	}
 }
 
-byte cVehicleO648_IsBlocked(void *o) {
+/* 1 while the target can not change: an EMIed ship (not a player one with VehicleCenterPadLock) */
+static byte cVehicleO648_IsBlocked(void *o) {
 	return Tgt_Blocked(Tgt(o));
 }
 
-void cVehicleO648_Rebuild(void *o) {
+/* the list made new from the attacker and the enemies by distance, the target its first */
+static void cVehicleO648_Rebuild(void *o) {
 	cVehicleTargets *t = o;
 	float dist[VEH_TARGETS];
 	vec3_t a, b;
@@ -378,7 +383,8 @@ void cVehicleO648_SetSlot(void *o, int slot) {
 	t->list = l;
 }
 
-void cVehicleO648_Cycle(void *o, byte next) {
+/* the next (or previous) of the list */
+static void cVehicleO648_Cycle(void *o, byte next) {
 	cVehicleTargets *t = o;
 
 	if (!t->list) {
@@ -415,7 +421,8 @@ void cVehicleO648_Cycle(void *o, byte next) {
 	t->list->time = Timer_GetTime(&g_pWorld->timer);
 }
 
-void cVehicleO648_PickInView(void *o) {
+/* the entity in the view of the owner (cos > 0.95 within 50000) */
+static void cVehicleO648_PickInView(void *o) {
 	cVehicleTargets *t = o;
 
 	if (!t->list) {
@@ -494,24 +501,24 @@ byte cVehicleO648_IsStale(void *o) {
 	return 1;
 }
 
-cGVar GVar_VehicleBlockSwitchAdvance;
+static cGVar GVar_VehicleBlockSwitchAdvance;
 
 /* ---- the controls of a player ship from the input actions ---- */
 
 #define g_VehicleBlockSwitchAdvance (GVar_VehicleBlockSwitchAdvance.value.i)
-cGVar GVar_VehicleCenterPadBounce;
+static cGVar GVar_VehicleCenterPadBounce;
 
 #define g_VehicleCenterPadBounce (GVar_VehicleCenterPadBounce.value.f)
-cGVar GVar_VehicleAttackModeMinDist;
+static cGVar GVar_VehicleAttackModeMinDist;
 
 #define g_VehicleAttackModeMinDist (GVar_VehicleAttackModeMinDist.value.f)
-cGVar GVar_VehicleAttackModeMaxDist;
+static cGVar GVar_VehicleAttackModeMaxDist;
 
 #define g_VehicleAttackModeMaxDist (GVar_VehicleAttackModeMaxDist.value.f)
-cGVar GVar_TimeWSwitchNo;
+static cGVar GVar_TimeWSwitchNo;
 
 #define g_TimeWSwitchNo (GVar_TimeWSwitchNo.value.f)
-cGVar GVar_XtrTimeWSwitchNo;
+static cGVar GVar_XtrTimeWSwitchNo;
 
 #define g_XtrTimeWSwitchNo (GVar_XtrTimeWSwitchNo.value.f)
 cGVar GVar_AttackerMarkTime;
@@ -833,12 +840,12 @@ cGVar GVar_CurrentWaypointName2;
 cGVar GVar_CurrentWaypointName;
 cGVar GVar_VehicleCamDist2;
 cGVarFunction GVar_OnLifeItemTaken;
-cGVar GVar_TgtRegenerationTime;
+static cGVar GVar_TgtRegenerationTime;
 cGVar GVar_VehicleCenterPadLock;
-cPy_NativeFunc NativeFunc_TakeLife;
-cPy_NativeFunc NativeFunc_TakePart;
-cPy_NativeFunc NativeFunc_TakeEner;
-cPy_NativeFunc NativeFunc_TakeMiss;
+static cPy_NativeFunc NativeFunc_TakeLife;
+static cPy_NativeFunc NativeFunc_TakePart;
+static cPy_NativeFunc NativeFunc_TakeEner;
+static cPy_NativeFunc NativeFunc_TakeMiss;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_VehicleCamDist2, &GVar_VehicleCamDist2, "VehicleCamDist2", 2, "Default camera distance for vehicles in cm", 1000.0f)

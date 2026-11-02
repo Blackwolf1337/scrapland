@@ -5,6 +5,9 @@
 
 #include "scrap/camcontrol.h"
 
+#define CCAMCONTROL_VFTABLE (&cCamControl_vftable.base)
+static const cCamControlVtbl cCamControl_vftable;
+
 static inline cCamControl *Cam(cEntity *e) {
 	return (cCamControl *)e;
 }
@@ -37,7 +40,7 @@ void cCamControl_dtor(cEntity *self) {
 	cEntity_dtor(self);
 }
 
-cEntity *cCamControl_Delete(cEntity *self, uint32_t flags) {
+static cEntity *cCamControl_Delete(cEntity *self, uint32_t flags) {
 	cCamControl_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, CCAMCONTROL_SIZE);
@@ -91,7 +94,7 @@ void cCamControl_GetCamPos(cEntity *self, float *x, float *y, float *z) {
 	*z = cam->pos.z;
 }
 
-const char *cCamControl_GetClassName(cEntity *self) {
+static const char *cCamControl_GetClassName(cEntity *self) {
 	(void)self;
 	return CAM_CLASSNAME;
 }
@@ -205,7 +208,7 @@ byte cCamControl_VarV(cEntity *self, const char *name, double *x, double *y, dou
 }
 
 /* the vtable of cCamControl */
-const cCamControlVtbl cCamControl_vftable = {
+static const cCamControlVtbl cCamControl_vftable = {
 	.base.Update = cEntity_Update,
 	.base.Render = cEntity_Render,
 	.base.UpdateOff = cEntity_UpdateOff,

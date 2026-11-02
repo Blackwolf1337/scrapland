@@ -8,8 +8,14 @@
 #include "scrap/net.h"
 #include "scrap/staticinit.h"
 
-uint32_t g_NetWaitTime = 5000;
-uint32_t g_NetCloseTime = 2000;
+#define g_UserNetManagerVftable (&cUserNetManager_vftable)
+#define g_NetTimeOut (GVar_NetTimeOut.value.i)		/* NetTimeOut, < 0 never */
+static const cUserNetManagerVtbl cUserNetManager_vftable;
+static cGVar GVar_NetTimeOut;
+
+/* msgman.cpp */
+static uint32_t g_NetWaitTime = 5000;
+static uint32_t g_NetCloseTime = 2000;
 
 /* the time out of the state, the same code is inlined in Send */
 static int NetClient_CheckTime(cNetClient *self, uint32_t time) {
@@ -38,7 +44,7 @@ static void NetClient_PopHead(cNetClient *self) {
 	Mem_Free(n);
 }
 
-netuserfactory_t g_NetUserFactory;
+static netuserfactory_t g_NetUserFactory;
 
 cNetClient *cNetClient_ctor(cNetClient *self, int slot) {
 	netuserfactory_t f = g_NetUserFactory;
@@ -79,7 +85,7 @@ void cUserNetManager_dtor(cUserNetManager *self) {
 	self->client->user = NULL;
 }
 
-cUserNetManager *cUserNetManager_Delete(cUserNetManager *self, byte flags) {
+static cUserNetManager *cUserNetManager_Delete(cUserNetManager *self, byte flags) {
 	cUserNetManager_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -87,7 +93,7 @@ cUserNetManager *cUserNetManager_Delete(cUserNetManager *self, byte flags) {
 	return self;
 }
 
-cNetMsgNode *cNetClient_NewMsg(cNetClient *self, const void *data, uint16_t size) {
+static cNetMsgNode *cNetClient_NewMsg(cNetClient *self, const void *data, uint16_t size) {
 	cNetMsgNode *n = Mem_Alloc(sizeof(*n));
 
 	n->size = size + 1;
@@ -111,11 +117,7 @@ void cNetClient_Push(cNetClient *self, const void *data, uint16_t size) {
 	self->tail = n;
 }
 
-int cNetClient_UpdateState(cNetClient *self, uint32_t time) {
-	return NetClient_CheckTime(self, time);
-}
-
-uint32_t g_NetSendDelay = 100;
+static uint32_t g_NetSendDelay = 100;
 
 int cNetClient_Flush(cNetClient *self, uint32_t time, int slot) {
 	if (time > self->lastSend + g_NetSendDelay) {
@@ -135,11 +137,6 @@ void cNetClient_RequestFull(cNetClient *self) {
 	byte msg = NETMSG_USR_DATA;
 	cNetClient_Push(self, &msg, 1);
 	Con_Print(0x606060, "I need full data brother!\n", 0);
-}
-
-void cNetClient_GetSeq(cNetClient *self, int *head, int *in) {
-	*head = self->head ? self->head->data[0] : -1;
-	*in = self->seqIn & 0x7f;
 }
 
 uint32_t cNetClient_TimeToSend(cNetClient *self, uint32_t time) {
@@ -255,10 +252,6 @@ int cNetClient_Receive(cNetClient *self, uint32_t time, const byte *pkt, int len
 	return 1;
 }
 
-void MsgMan_SetCloseTime(uint32_t ms) {
-	g_NetCloseTime = ms;
-}
-
 void MsgMan_SetUserFactory(netuserfactory_t f) {
 	g_NetUserFactory = f;
 }
@@ -267,19 +260,15 @@ void MsgMan_SetSendDelay(uint32_t ms) {
 	g_NetSendDelay = ms;
 }
 
-void MsgMan_SetWaitTime(uint32_t ms) {
-	g_NetWaitTime = ms;
-}
-
 /* the vtable of cUserNetManager */
-const cUserNetManagerVtbl cUserNetManager_vftable = {
+static const cUserNetManagerVtbl cUserNetManager_vftable = {
 	.Delete = cUserNetManager_Delete,
 	.OnReceive = (void *)crt_purecall,
 	.Send = (void *)crt_purecall,
 	.SetLocalData = cUserNetManager_Nop,
 };
 
-cGVar GVar_NetTimeOut;
+static cGVar GVar_NetTimeOut;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_NetTimeOut, &GVar_NetTimeOut, "NetTimeOut", 2, "# Time out for desconection...", 240000)

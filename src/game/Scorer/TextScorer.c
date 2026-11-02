@@ -15,7 +15,17 @@
 #include "scrap/scrap.h"
 #include "scrap/staticinit.h"
 
+#define CTEXTTYPINGSCORER_VFTABLE (&cTextTypingScorer_vftable.base)
+#define CTEXTSCORER_VFTABLE (&cTextScorer_vftable.base)
+#define g_TypingSoundName (GVar_TextTypingSound.value.s)	/* "keyboard%d" for the key sounds */
+#define g_TypingSoundVol (GVar_TextTypingSoundVol.value.f)
+static const cTextScorerVtbl cTextTypingScorer_vftable;
+static const cTextScorerVtbl cTextScorer_vftable;
+static cGVar GVar_TextTypingSoundVol;
+static cGVar GVar_TextTypingSound;
+
 /* the OnAccept of the item is the native edit start */
+static void TextEdit_Start(cAbstractFile *params);
 static byte Text_IsEdit(cTextScorer *self) {
 	cPy_Function *f = &self->base.base.onAccept;
 	void *func = f->flags & PYF_NATIVE ? f->func : NULL;
@@ -62,14 +72,14 @@ cTextTypingScorer *cTextTypingScorer_ctor(cTextTypingScorer *self) {
 }
 
 /* also the destructor of cTextTypingScorer (rva 0x182bf0, the same code) */
-void cTextScorer_dtor(cTextScorer *self) {
+static void cTextScorer_dtor(cTextScorer *self) {
 	self->base.base.vftable = CTEXTSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	cString_dtor(&self->editHint);
 	cAbstractTextScorer_dtor(&self->base);
 }
 
-cScorerItem *cTextScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cTextScorer_Delete(cScorerItem *base, byte flags) {
 	cTextScorer *self = (cTextScorer *)base;
 	cTextScorer_dtor(self);
 	if (flags & 1) {
@@ -78,7 +88,7 @@ cScorerItem *cTextScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-cScorerItem *cTextTypingScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cTextTypingScorer_Delete(cScorerItem *base, byte flags) {
 	cTextTypingScorer *self = (cTextTypingScorer *)base;
 	cTextScorer_dtor(&self->base);
 	if (flags & 1) {
@@ -87,10 +97,12 @@ cScorerItem *cTextTypingScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-cTextScorer *g_TextEditItem[4];
-cScorerItem *g_TextEditCursor[4];
+/* the text edit of each player */
+static cTextScorer *g_TextEditItem[4];
+static cScorerItem *g_TextEditCursor[4];
 
-void TextEdit_End(int player) {
+/* the edit of the text item of player ends: the cursor item back, the hint of the item */
+static void TextEdit_End(int player) {
 	cTextScorer *item;
 
 	g_TextEditItem[player]->editing = 0;
@@ -101,13 +113,16 @@ void TextEdit_End(int player) {
 	cString_Assign(&Scorer_Get(player)->hint, &item->base.base.hint);
 }
 
-void TextEdit_Done(int player, const char *text) {
+/* onDone of the player input: the typed text into the item, then TextEdit_End */
+static void TextEdit_Done(int player, const char *text) {
 	(void)text;
 	cString_Set(&g_TextEditItem[player]->base.text, g_PlayerInput[player].text);
 	TextEdit_End(player);
 }
 
-void TextEdit_Start(cAbstractFile *params) {
+/* the native OnAccept of an edited text (Input/ActionSet.h): params player, item name; the virtual keyboard
+ * starts on the text of the item */
+static void TextEdit_Start(cAbstractFile *params) {
 	cTextScorer *item;
 	cScorerItem *cursor;
 	char name[0x80];
@@ -137,7 +152,8 @@ void TextEdit_Start(cAbstractFile *params) {
 	cString_Assign(&Scorer_Get(player)->hint, &g_TextEditItem[player]->editHint);
 }
 
-int cTextScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+/* EditHint, CenterEdit, IsNumeric, MaxInput (the size of that many "W"; 0 above 255), then the text variables */
+static int cTextScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cTextScorer *self = (cTextScorer *)base;
 	if (s && !crt_stricmp(name, "EditHint")) {
 		if (set) {
@@ -185,7 +201,8 @@ int cTextScorer_Var(cScorerItem *base, const char *name, int set, char **s, doub
 	return cAbstractTextScorer_Var(&self->base.base, name, set, s, d, i);
 }
 
-int cTextTypingScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+/* TypingSpeed, TypingTime (return 3), CursorAtInit, CursorAtEnd, TypingSound, then cTextScorer_Var */
+static int cTextTypingScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cTextTypingScorer *self = (cTextTypingScorer *)base;
 	if (d) {
 		/* the floats return 3 here */
@@ -231,7 +248,7 @@ CPsaImage *g_ScorerTabs;
 
 /* vf04: the text being typed with a blinking cursor; with the virtual keyboard active the grid of its keys (the one
  * under the cursor lit), the button hints and the cursor item on the key */
-void cTextScorer_DrawKeyboard(cTextScorer *self, int player) {
+static void cTextScorer_DrawKeyboard(cTextScorer *self, int player) {
 	cAbstractTextScorer *t = &self->base;
 	cScorerItem *it = &t->base;
 	cPlayerInput *in = &g_PlayerInput[player];
@@ -319,7 +336,7 @@ void cTextScorer_DrawKeyboard(cTextScorer *self, int player) {
 	}
 }
 
-void cTextScorer_Draw(cScorerItem *base, int player) {
+static void cTextScorer_Draw(cScorerItem *base, int player) {
 	cTextScorer *self = (cTextScorer *)base;
 	cAbstractTextScorer *t = &self->base;
 	char buf[0x200];
@@ -365,7 +382,7 @@ void cTextScorer_Draw(cScorerItem *base, int player) {
 	}
 }
 
-void cTextTypingScorer_Draw(cScorerItem *base, int player) {
+static void cTextTypingScorer_Draw(cScorerItem *base, int player) {
 	cTextTypingScorer *self = (cTextTypingScorer *)base;
 	cAbstractTextScorer *t = &self->base.base;
 	char buf[0x280];
@@ -431,7 +448,7 @@ void cTextTypingScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cTextScorer */
-const cTextScorerVtbl cTextScorer_vftable = {
+static const cTextScorerVtbl cTextScorer_vftable = {
 	.base.Draw = cTextScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cTextScorer_Var,
@@ -440,7 +457,7 @@ const cTextScorerVtbl cTextScorer_vftable = {
 };
 
 /* the vtable of cTextTypingScorer */
-const cTextScorerVtbl cTextTypingScorer_vftable = {
+static const cTextScorerVtbl cTextTypingScorer_vftable = {
 	.base.Draw = cTextTypingScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cTextTypingScorer_Var,
@@ -448,9 +465,9 @@ const cTextScorerVtbl cTextTypingScorer_vftable = {
 	.DrawKeyboard = cTextScorer_DrawKeyboard,
 };
 
-cGVar GVar_TextTypingSound;
-cGVar GVar_TextTypingSoundVol;
-cPy_NativeFunc NativeFunc_EditText;
+static cGVar GVar_TextTypingSound;
+static cGVar GVar_TextTypingSoundVol;
+static cPy_NativeFunc NativeFunc_EditText;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_TextTypingSound, &GVar_TextTypingSound)

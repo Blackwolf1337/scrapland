@@ -6,6 +6,21 @@
 #include "scrap/timer.h"
 #include "scrap/staticinit.h"
 
+#define CTIMERSCORER_VFTABLE (&cTimerScorer_vftable)
+#define g_TimeToCancel (GVar_TimeToCancelCurrentMission.value.f)
+#define g_TimeToFinish (GVar_TimeToFinishCurrentMission.value.f)
+#define g_TimeInactive (GVar_TimeInactiveTimer.value.f)
+#define g_TimeSpecialUse (GVar_TimeSpecialUseTimer.value.f)
+#define g_TimerMode (GVar_CounterType.value.i)		/* 0 counts down, 1 up, else stopped */
+#define g_TimerWarning (GVar_TimeWarning.value.f)	/* OnTimeWarning below this, -1 after */
+static const cScorerItemVtbl cTimerScorer_vftable;
+static cGVar GVar_TimeWarning;
+static cGVar GVar_TimeToFinishCurrentMission;
+static cGVar GVar_TimeToCancelCurrentMission;
+static cGVar GVar_TimeSpecialUseTimer;
+static cGVar GVar_TimeInactiveTimer;
+static cGVar GVar_CounterType;
+
 cTimerScorer *cTimerScorer_ctor(cTimerScorer *self) {
 	cAbstractTextScorer_ctor(&self->base);
 	self->base.base.vftable = CTIMERSCORER_VFTABLE;
@@ -15,14 +30,14 @@ cTimerScorer *cTimerScorer_ctor(cTimerScorer *self) {
 	return self;
 }
 
-void cTimerScorer_dtor(cTimerScorer *self) {
+static void cTimerScorer_dtor(cTimerScorer *self) {
 	self->base.base.vftable = CTIMERSCORER_VFTABLE;
 	cPy_Function_dtor(&self->onTimeWarning);
 	cPy_Function_dtor(&self->onTimeExpired);
 	cAbstractTextScorer_dtor(&self->base);
 }
 
-cScorerItem *cTimerScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cTimerScorer_Delete(cScorerItem *base, byte flags) {
 	cTimerScorer *self = (cTimerScorer *)base;
 	cTimerScorer_dtor(self);
 	if (flags & 1) {
@@ -31,7 +46,8 @@ cScorerItem *cTimerScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-int cTimerScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+/* set only: OnTimeExpired, OnTimeWarning, TimerType; then the text variables */
+static int cTimerScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cTimerScorer *self = (cTimerScorer *)base;
 	static const char *const types[TIMER_TYPES] = {"TimeToCancel", "TimeToFinish", "TimeInactive",
 		"TimeSpecialUse"};
@@ -59,7 +75,7 @@ int cTimerScorer_Var(cScorerItem *base, const char *name, int set, char **s, dou
 	return cAbstractTextScorer_Var(&self->base.base, name, set, s, d, i);
 }
 
-void cTimerScorer_Draw(cScorerItem *base, int player) {
+static void cTimerScorer_Draw(cScorerItem *base, int player) {
 	cTimerScorer *self = (cTimerScorer *)base;
 	cAbstractTextScorer *t = &self->base;
 	float *var = NULL;
@@ -114,19 +130,20 @@ void cTimerScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cTimerScorer */
-const cScorerItemVtbl cTimerScorer_vftable = {
+static const cScorerItemVtbl cTimerScorer_vftable = {
 	.Draw = cTimerScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cTimerScorer_Var,
 	.Delete = cTimerScorer_Delete,
 };
 
-cGVar GVar_TimeToFinishCurrentMission;
-cGVar GVar_TimeToCancelCurrentMission;
-cGVar GVar_CounterType;
-cGVar GVar_TimeInactiveTimer;
-cGVar GVar_TimeSpecialUseTimer;
-cGVar GVar_TimeWarning;
+static cGVar GVar_TimeToFinishCurrentMission;
+/* the time engine variables of the types, by type (their flags at -4, GVAR_FLAGS) */
+static cGVar GVar_TimeToCancelCurrentMission;
+static cGVar GVar_CounterType;
+static cGVar GVar_TimeInactiveTimer;
+static cGVar GVar_TimeSpecialUseTimer;
+static cGVar GVar_TimeWarning;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_TimeWarning, &GVar_TimeWarning, "TimeWarning", 0, "Cuando quede esta cantidad de tiempo se avisa al usuario de que se de prisa o se cancelará la apuesta loca (en segundos)", 31.0f)

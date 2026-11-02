@@ -15,9 +15,6 @@
 #include "scrap/material.h"
 #include "scrap/render.h"
 
-extern cGVar GVar_R_StencilRefModels;
-extern cGVar GVar_R_StencilRefWorld;
-
 #define STENCIL_MAX_GROUPS 0x400
 
 /* a group of volumes of one light */
@@ -37,46 +34,10 @@ typedef struct StencilBlock {
 	int utri;			/* 0x7c the cap triangles end here */
 } StencilBlock;
 
-extern StencilBlock *g_StencilBlock;	/* new[] of STENCIL_MAX_GROUPS */
-extern int g_StencilGroups;
-extern vec3_t *g_StencilSegments;	/* new[] 0x30000: two points a segment */
-extern int g_StencilSegs;
-extern vec3_t *g_StencilTriInv;	/* new[] 0x6c000: three points a triangle */
-extern int g_StencilInv;
-extern int g_StencilCapture;	/* bSombrasStencilCapturar */
-extern void *g_StencilVB;	/* pVB_Stencil */
-extern void *g_StencilIB;	/* pIB_Stencil, quads of 4 vertices */
-extern void *g_StencilVB2;
-extern void *g_StencilVB3;
-extern CMaterial g_StencilMat;	/* the material of the volumes */
-
-/* the light of the shadows (E3D_SetShadowLight) */
-extern CLight *g_ShadowLight;
-extern int g_ShadowLightType;
-extern vec3_t g_ShadowLightPos;	/* far away against the direction of a directional one */
-extern vec3_t g_ShadowLightDir;
-extern float g_ShadowRange;
-extern float g_ShadowCos;	/* of half the cone angle */
-
-/* engine variables */
-extern cGVar GVar_R_ShowStencil;
-#define g_ShowStencil (GVar_R_ShowStencil.value.i)	/* R_ShowStencil, 2: the volumes drawn */
-extern cGVar GVar_R_StencilMult;
-#define g_StencilMult (GVar_R_StencilMult.value.f)	/* R_StencilMult */
 extern float g_StencilMultFrame;
-#define g_StencilRefWorld (GVar_R_StencilRefWorld.value.u)	/* R_StencilRefWorld */
-#define g_StencilRefModels (GVar_R_StencilRefModels.value.u)	/* R_StencilRefModels */
-extern cGVar GVar_R_StencilSelf;
-#define g_StencilSelf (GVar_R_StencilSelf.value.i)	/* R_StencilSelf */
-extern cGVar GVar_R_StencilTog;
-#define g_StencilTog (GVar_R_StencilTog.value.i)	/* R_StencilTog: switched once */
 
 #define g_KeyV g_KeyboardKeys[31]	/* with X held: the shadows switched */
 
-/* the lights of all groups on or off */
-void StencilBlock_SetLights(byte on);
-/* a debug line, the world matrix kept */
-void Stencil_DebugLine(const vec3_t *a, const vec3_t *b, uint32_t color);
 /* the frame is captured (on), the multiplier of the frame taken */
 void ShadowsStencil_Capture(byte on);
 void Stencil_Free(void);
@@ -84,9 +45,5 @@ void Stencil_Free(void);
 void Stencil_Init(void);
 /* the frame pass of the shadows */
 void ShadowsStencil_Render(void);
-
-/* the volumes of the segments and of the triangles, pass 0 (the front faces) fills the vertex buffers */
-void Stencil_DrawSegs(int pass);
-void Stencil_DrawTris(int pass);
 
 #endif

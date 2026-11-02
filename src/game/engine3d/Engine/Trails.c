@@ -11,6 +11,9 @@
 #include "scrap/trails.h"
 #include "scrap/staticinit.h"
 
+#define g_TrailsOn (GVar_R_Trails.value.i)
+static cGVar GVar_R_Trails;
+
 #define TRAILS_FVF 0x1c2
 #define TRAILS_PI4 0.78539819f		/* 0x3f490fdb */
 
@@ -55,11 +58,12 @@ void CTrail_dtor(CTrail *self) {
 	CTrail_Clear(self);
 }
 
-CTrail *g_TrailsRender[17][MAX_TRAILS_RENDER];
-int g_nTrails;
-int g_nTrailsRender[17];
+static CTrail *g_TrailsRender[17][MAX_TRAILS_RENDER];
+static int g_nTrails;
+static int g_nTrailsRender[17];
 
-void Trails_UpdateRender(CTrail *t) {
+/* into or out of gTrailsRender as render says; the last of the list takes the free slot */
+static void Trails_UpdateRender(CTrail *t) {
 	if (!t) {
 		return;
 	}
@@ -151,13 +155,6 @@ void CTrail_Shrink(CTrail *self) {
 	}
 }
 
-void CTrail_SetActive(CTrail *self, byte on) {
-	if (self->render != on) {
-		self->render = on;
-		Trails_UpdateRender(self);
-	}
-}
-
 void CTrail_AddPos(CTrail *self, vec3_t pos) {
 	CTrail_Add(self, pos, self->width, self->color);
 }
@@ -186,7 +183,12 @@ void CTrail_Add(CTrail *self, vec3_t pos, float width, uint32_t color) {
 	}
 }
 
-int CTrail_Build(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
+/* the geometry of the trail into the locked buffers, the pointers moved on; S_OK or E_FAIL for an unknown type */
+static int CTrail_BuildCross(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
+static int CTrail_BuildFan(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
+static int CTrail_BuildQuads(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
+static int CTrail_BuildRibbon(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex);
+static int CTrail_Build(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
 	CHECK(self->m_pTrails);
 	switch (self->type) {
 	case TRAIL_RIBBON:
@@ -337,11 +339,11 @@ static void Trail_FadeLevels(const CTrail *t, int cnt, int i, uint32_t *a0, uint
 	}
 }
 
-int g_TrailsVertex;
-int g_TrailsPrims;
-int g_TrailsIndex;
+static int g_TrailsVertex;
+static int g_TrailsPrims;
+static int g_TrailsIndex;
 
-int CTrail_BuildRibbon(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
+static int CTrail_BuildRibbon(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
 	if (self->numTrails <= 1 || !self->segments) {
 		return 0;
 	}
@@ -418,7 +420,7 @@ static int Trail_CrossBack(int k) {
 	return k == 1 ? 4 : k == 2 ? 8 : 6;
 }
 
-int CTrail_BuildCross(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
+static int CTrail_BuildCross(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
 	if (self->numTrails <= 1 || !self->segments) {
 		return 0;
 	}
@@ -488,7 +490,7 @@ int CTrail_BuildCross(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
 	return 0;
 }
 
-int CTrail_BuildQuads(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
+static int CTrail_BuildQuads(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
 	if (self->numTrails <= 1 || !self->segments) {
 		return 0;
 	}
@@ -532,7 +534,7 @@ int CTrail_BuildQuads(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
 	return 0;
 }
 
-int CTrail_BuildFan(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
+static int CTrail_BuildFan(CTrail *self, TrailVertex **pVertex, uint16_t **pIndex) {
 	if (self->numTrails <= 1 || !self->segments) {
 		return 0;
 	}
@@ -662,11 +664,6 @@ void CTrail_SetULen(CTrail *self, float uLen, float f50) {
 	self->unused_50 = f50;
 }
 
-void Trail_SetRender(CTrail *t, byte on) {
-	t->render = on;
-	Trails_UpdateRender(t);
-}
-
 int Trails_ResetAll(void) {
 	for (int tex = 0; tex < MAX_TRAILS_TEXTURES; tex++) {
 		/* the clear moves the last trail of the list into the slot, which the loop then skips (as the original) */
@@ -679,8 +676,8 @@ int Trails_ResetAll(void) {
 	return 0;
 }
 
-void *g_TrailsVB;
-void *g_TrailsIB;
+static void *g_TrailsVB;
+static void *g_TrailsIB;
 
 int Trails_Release(void) {
 	if (!(g_pApp->flags >> 2 & 1)) {
@@ -723,7 +720,8 @@ static const struct {
 	{ "2d/gfx/NOISETRAIL.DUDV.BMP", 2, 2, 1 },
 };
 
-struct CMaterial *g_TrailsMat[17];
+/* the lists of the active trails and the shared buffers (IDirect3DVertexBuffer8, IDirect3DIndexBuffer8) */
+static struct CMaterial *g_TrailsMat[17];
 
 int Trails_Init(void) {
 	void *dev = g_Engine->device;
@@ -911,7 +909,7 @@ void CTrail_Move(CTrail *self, vec3_t d) {
 	}
 }
 
-cGVar GVar_R_Trails;
+static cGVar GVar_R_Trails;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_R_Trails, &GVar_R_Trails, "R_Trails", 0, "Render Trails (0/1)", 1)

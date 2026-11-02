@@ -15,25 +15,6 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/sound.h"
 
-extern cGVar GVar_BackNewsBmp;
-extern cGVarFunction GVar_FullScreenConsoleCallback;
-extern cGVar GVar_NewsHead;
-extern cGVar GVar_NewsLogoBmp;
-extern cGVarFunction GVar_OnFinishAutoUpdate;
-extern cGVar GVar_ScorerMarkerColor;
-
-/* the vtables of the exe */
-extern const cScorerItemVtbl cAbstractTextScorer_vftable;
-#define CABSTRACTTEXTSCORER_VFTABLE (&cAbstractTextScorer_vftable)
-extern const cScorerItemVtbl cMsgScorer_vftable;
-#define CMSGSCORER_VFTABLE (&cMsgScorer_vftable)
-extern const cScorerItemVtbl cLabelScorer_vftable;
-#define CLABELSCORER_VFTABLE (&cLabelScorer_vftable)
-extern const cScorerItemVtbl cHintScorer_vftable;
-#define CHINTSCORER_VFTABLE (&cHintScorer_vftable)
-extern const cScorerItemVtbl cCreditsScorer_vftable;
-#define CCREDITSSCORER_VFTABLE (&cCreditsScorer_vftable)
-
 /* the abs of the originals (cdq, xor, sub): INT_MIN stays */
 static inline int Scorer_Abs(int v) {
 	uint32_t s = (uint32_t)(v >> 31);
@@ -89,8 +70,6 @@ typedef struct cSpriteScorerVtbl {
 	cScorerItemVtbl base;
 	void(*SetMultiSprite)(struct cSpriteScorer *self, byte on);			/* 0x10 */
 } cSpriteScorerVtbl;
-extern const cSpriteScorerVtbl cBarScorer_vftable;
-#define CBARSCORER_VFTABLE (&cBarScorer_vftable.base)
 
 typedef struct cSpriteScorer {
 	cScorerItem base;		/* 0x00 */
@@ -179,24 +158,10 @@ extern cGVar GVar_R_CreditsClear;
 #define g_CreditsClear (GVar_R_CreditsClear.value.i)		/* R_CreditsClear */
 extern cGVar GVar_R_CreditsPhase;
 #define g_CreditsPhase (GVar_R_CreditsPhase.value.i)		/* R_CreditsPhase */
-extern cGVar GVar_HintAppearsTime;
-#define g_HintAppearsTime (GVar_HintAppearsTime.value.f)	/* HintAppearsTime */
-extern cGVar GVar_MissionScorerName;
-#define g_MissionScorerName (GVar_MissionScorerName.value.s)	/* MissionScorerName, the item hiding the label */
 extern float g_MissionSolidTime;	/* cMissionScorer SolidTime */
-/* the label (Scorer_SetLabelText) */
-extern char g_LabelText[250];	/* 0xfa */
-extern float g_LabelTime;		/* shown until this world time, always if <= 0 */
-/* the message (Scorer_SetMsgText): the text and its lines */
-extern char g_MsgText[62500];		/* 0xf424 */
-extern int g_MsgNumLines;
-extern char * g_MsgLines[20];		/* MSG_LINES */
 #define MSG_LINES 20	/* the slots up to g_LabelText at 0x45d190 */
 extern cGVar GVar_TimeToMsg;
 #define g_MsgTime (GVar_TimeToMsg.value.f)
-/* the hint text and its two lines */
-extern char * g_HintLines[2];
-extern char g_HintText[1280];		/* 0x500 */
 
 cAbstractTextScorer *cAbstractTextScorer_ctor(cAbstractTextScorer *self);
 cCreditsScorer *cCreditsScorer_ctor(cCreditsScorer *self);
@@ -204,27 +169,9 @@ cHintScorer *cHintScorer_ctor(cHintScorer *self);
 cLabelScorer *cLabelScorer_ctor(cLabelScorer *self);
 cMsgScorer *cMsgScorer_ctor(cMsgScorer *self);
 void cAbstractTextScorer_dtor(cAbstractTextScorer *self);
-void cCreditsScorer_dtor(cCreditsScorer *self);
-void cHintScorer_dtor(cHintScorer *self);
-void cLabelScorer_dtor(cLabelScorer *self);
-cScorerItem *cAbstractTextScorer_Delete(cScorerItem *base, byte flags);
-cScorerItem *cCreditsScorer_Delete(cScorerItem *base, byte flags);
-cScorerItem *cHintScorer_Delete(cScorerItem *base, byte flags);
-cScorerItem *cLabelScorer_Delete(cScorerItem *base, byte flags);
-cScorerItem *cMsgScorer_Delete(cScorerItem *base, byte flags);
-/* the 20 lines at the position of the phase: fade 0 the scorer, 1 the render target */
-void cCreditsScorer_DrawLines(cCreditsScorer *self, byte fade, uint32_t color);
 void cScorerItem_SetParam(cScorerItem *self, const char *name, const char *value);
 /* Text, Red, Green, Blue, Alpha; set only: Font, CentralText, GetExtens (1: the size of the text); Align, Effect */
 int cAbstractTextScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-/* Time, Life, FadeIn, FadeOut; set only: Text0..Text19 */
-int cCreditsScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-/* TabSprite (set), TabBlendingMode, TabSpriteIndex, TabRed, TabGreen, TabBlue, TabAlpha (also cLabelScorer) */
-int cHintScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cCreditsScorer_Draw(cScorerItem *base, int player);
-void cHintScorer_Draw(cScorerItem *base, int player);
-void cLabelScorer_Draw(cScorerItem *base, int player);
-void cMsgScorer_Draw(cScorerItem *base, int player);
 
 /* ---- BarScorer.cpp ---- */
 
@@ -256,22 +203,11 @@ extern cGVar GVar_AutoUpdateSpeedFactor;
 #define g_BarSpeedFactor (GVar_AutoUpdateSpeedFactor.value.f)	/* AutoUpdateSpeedFactor */
 extern cGVar GVar_IsAutoUpdatable;
 #define g_BarAutoUpdate (GVar_IsAutoUpdatable.value.i)	/* IsAutoUpdatable */
-extern cGVar GVar_BlinkTime;
-#define g_BarBlinkTime (GVar_BlinkTime.value.f)	/* BlinkTime */
-#define g_BarOnFinish (&GVar_OnFinishAutoUpdate.func)	/* OnFinishAutoUpdate */
 
 cBarScorer *cBarScorer_ctor(cBarScorer *self);
-void cBarScorer_dtor(cBarScorer *self);
-cScorerItem *cBarScorer_Delete(cScorerItem *base, byte flags);
-/* MaxValue, Value, AutoUpdateStopValue, AutoUpdateSpeedFactor, MainBarIndex, BlackBarIndex, IsAutoUpdatable,
- * Blink, BackIndex and the Red, Green, Blue, Alpha of Back, Main and Black */
-int cBarScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cBarScorer_Draw(cScorerItem *base, int player);
 
 /* ---- ButtonScorer.cpp ---- */
 
-extern const cSpriteScorerVtbl cButtonScorer_vftable;
-#define CBUTTONSCORER_VFTABLE (&cButtonScorer_vftable.base)
 #define CSTRING_DTOR 0x133990
 #define CSTRING_CTOR 0x133980
 
@@ -326,23 +262,7 @@ typedef struct cButtonScorer {
 	int highLightBlend;		/* 0x164 3 */
 } cButtonScorer;
 
-/* the Global/Table.h functions of cString and byte tables compiled here */
-void StrTable_Free(cStrTable *self);
-void ByteTable_Free(cByteTable *self);
-char **StrTable_At(cStrTable *self, uint32_t i);
-void StrTable_Init(cStrTable *self, int num);
-
 cButtonScorer *cButtonScorer_ctor(cButtonScorer *self);
-void cButtonScorer_dtor(cButtonScorer *self);
-cScorerItem *cButtonScorer_Delete(cScorerItem *base, byte flags);
-/* the text with a line break before every word past MaxLineSize + 75 pixels appended to *out; the lines */
-int cButtonScorer_WrapLines(cButtonScorer *self, char **out, const char *text);
-/* the sheet of the highlight and border frames */
-void cButtonScorer_SetFile(cButtonScorer *self, uint32_t flags, const char *name);
-/* the lines of the text (and of the name:value pairs) and the widest one; the lines measured */
-int cButtonScorer_SetText(cButtonScorer *self, const char *text);
-int cButtonScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cButtonScorer_Draw(cScorerItem *base, int player);
 
 /* ---- CannonScorer.cpp ---- */
 
@@ -356,8 +276,6 @@ typedef struct cCannonScorerVtbl {
 	/* the lock text at pos */
 	void(*DrawLock)(struct cCannonScorer *self, int player, const float *pos);	/* 0x10 */
 } cCannonScorerVtbl;
-extern const cCannonScorerVtbl cCannonScorer_vftable;
-#define CCANNONSCORER_VFTABLE (&cCannonScorer_vftable.base)
 
 typedef struct cCannonScorer {
 	cScorerItem base;		/* 0x00 */
@@ -373,33 +291,13 @@ typedef struct cCannonScorer {
 	int aimAc;			/* 0xe8 the weapon of AimIndex */
 } cCannonScorer;
 
-extern cGVar GVar_CannonScorerNoAmmoSound;
-#define g_CannonNoAmmoSound (GVar_CannonScorerNoAmmoSound.value.s)	/* CannonScorerNoAmmoSound */
-extern cGVar GVar_CannonScorerNoAmmoSoundVol;
-#define g_CannonNoAmmoSoundVol (GVar_CannonScorerNoAmmoSoundVol.value.f)	/* CannonScorerNoAmmoSoundVol */
 extern cGVar GVar_WarningLifeLevel;
 #define g_WarningLifeLevel (GVar_WarningLifeLevel.value.i)	/* WarningLifeLevel, percent */
 
 cCannonScorer *cCannonScorer_ctor(cCannonScorer *self);
-void cCannonScorer_dtor(cCannonScorer *self);
-cScorerItem *cCannonScorer_Delete(cScorerItem *base, byte flags);
-/* the aim frame of weapon three times around pos, turned by angle */
-void cCannonScorer_DrawAim(cCannonScorer *self, int weapon, const float *pos, const float *scale,
-	const float *unused, float angle, uint32_t color);
-/* the aim of the weapon of the ship at the screen point of its auto aim */
-void cCannonScorer_DrawShipAim(cCannonScorer *self, int player, cEntity *ship);
-/* the center sprite, the lock text and DANGER under the warning life */
-void cCannonScorer_DrawCenter(cCannonScorer *self, int player, cEntity *ship);
-/* Sprite (set), CrossHairIndex, AimAc, AimIndex */
-int cCannonScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cCannonScorer_Draw(cScorerItem *base, int player);
-/* vf04: "Searching..." or "Target Lock" above pos for the lock of the ship of the player */
-void cCannonScorer_DrawLock(cCannonScorer *self, int player, const float *pos);
 
 /* ---- ChatScorer.cpp ---- */
 
-extern const cScorerItemVtbl cChatScorer_vftable;
-#define CCHATSCORER_VFTABLE (&cChatScorer_vftable)
 #define CHAT_MSGS 16
 
 /* the chat lines of Scorer_AddChatMsg (0xbc bytes) */
@@ -417,22 +315,10 @@ typedef struct cChatMsg {
 	uint32_t color;			/* 0x50 */
 } cChatMsg;
 
-extern cChatMsg g_ChatMsgs[16];	/* CHAT_MSGS */
-extern float g_ChatTime;		/* of the last scroll */
-extern cGVar GVar_ChatMsgPersistence;
-#define g_ChatScrollTime (GVar_ChatMsgPersistence.value.f)	/* an empty line comes in after this */
-
 cChatScorer *cChatScorer_ctor(cChatScorer *self);
-void cChatScorer_dtor(cChatScorer *self);
-cScorerItem *cChatScorer_Delete(cScorerItem *base, byte flags);
-/* NumMsg */
-int cChatScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cChatScorer_Draw(cScorerItem *base, int player);
 
 /* ---- CircuitScorer.cpp ---- */
 
-extern const cScorerItemVtbl cCircuitScorer_vftable;
-#define CCIRCUITSCORER_VFTABLE (&cCircuitScorer_vftable)
 #define CIRCUIT_PATHS 9
 #define CIRCUIT_FLARES 4
 #define CIRCUIT_TRAIL 24
@@ -470,28 +356,9 @@ typedef struct cCircuitFlare {
 	int unused_14;			/* 0x14 */
 } cCircuitFlare;
 
-extern cCircuitFlare g_CircuitFlares[4];	/* CIRCUIT_FLARES */
-#define g_CircuitInit (*(byte *)&g_CircuitFlares[3].unused_14)
-extern cCircuitPath g_CircuitPaths[9];	/* CIRCUIT_PATHS */
-
-/* the constructor of a path in the static array: nothing */
-cCircuitPath *cCircuitPath_ctor(cCircuitPath *self);
 cCircuitScorer *cCircuitScorer_ctor(cCircuitScorer *self);
-void cCircuitScorer_dtor(cCircuitScorer *self);
-cScorerItem *cCircuitScorer_Delete(cScorerItem *base, byte flags);
-/* the points of the paths, their lengths, the flares stopped with their first delays (once) */
-void CircuitScorer_InitPaths(void);
-void cCircuitScorer_SetCircuitFile(cCircuitScorer *self, uint32_t flags, const char *name);
-/* the flare sheet; the white default without the 0x40 flag */
-void cCircuitScorer_SetFlareFile(cCircuitScorer *self, uint32_t flags, const char *name);
-/* ScaleX, ScaleY, FileCircuit and FileFlare (set), HighRes, BlendingMode, AlphaCircuit, AlphaFlare */
-int cCircuitScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cCircuitScorer_Draw(cScorerItem *base, int player);
 
 /* ---- CopMeterScorer.cpp ---- */
-
-extern const cScorerItemVtbl cCopMeterScorer_vftable;
-#define CCOPMETERSCORER_VFTABLE (&cCopMeterScorer_vftable)
 
 /* the police alarm meter: a back frame, a bar to the alarm level of the world, two blinking lights while the
  * alarm is on; fades in with the alarm (0xf0 bytes) */
@@ -515,16 +382,8 @@ typedef struct cCopMeterScorer {
 } cCopMeterScorer;
 
 cCopMeterScorer *cCopMeterScorer_ctor(cCopMeterScorer *self);
-void cCopMeterScorer_dtor(cCopMeterScorer *self);
-cScorerItem *cCopMeterScorer_Delete(cScorerItem *base, byte flags);
-/* Sprite (set), Percent, Target (0..100), BackIndex, BackOffX/Y, LightIndex, LightOffX/Y, BarOffX/Y, BarIndex */
-int cCopMeterScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cCopMeterScorer_Draw(cScorerItem *base, int player);
 
 /* ---- HangarShipScorer.cpp ---- */
-
-extern const cSpriteScorerVtbl cHangarShipScorer_vftable;
-#define CHANGARSHIPSCORER_VFTABLE (&cHangarShipScorer_vftable.base)
 
 /* a ship of the world turning in a view of its own over a grid frame (0xf0 bytes) */
 typedef struct cHangarShipScorer {
@@ -542,11 +401,6 @@ typedef struct cHangarShipScorer {
 } cHangarShipScorer;
 
 cHangarShipScorer *cHangarShipScorer_ctor(cHangarShipScorer *self);
-void cHangarShipScorer_dtor(cHangarShipScorer *self);
-cScorerItem *cHangarShipScorer_Delete(cScorerItem *base, byte flags);
-/* GridSpriteIndex, GridColorRed/Green/Blue/Alpha, TargetName, CamDist, CamFov */
-int cHangarShipScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cHangarShipScorer_Draw(cScorerItem *base, int player);
 
 /* ---- the models of the scorer (Scorer.cpp, SScorer.AddModel) ---- */
 
@@ -566,7 +420,6 @@ cScorerModel *cScorer_FindModel(cScorer *scorer, const char *name);
 
 /* ---- HeadScorer.cpp ---- */
 
-
 /* a talking head: a scorer model in a view of its own, the camera swaying (0xc4 bytes) */
 /* the vtable of cHeadScorer, also the one of cMonitorScorer (the same two slots, its own functions) */
 typedef struct cHeadScorerVtbl {
@@ -574,8 +427,6 @@ typedef struct cHeadScorerVtbl {
 	void(*SetAnim)(cScorerItem *self, int anim);					/* 0x10 */
 	byte(*SetModel)(cScorerItem *self, const char *name);			/* 0x14 */
 } cHeadScorerVtbl;
-extern const cHeadScorerVtbl cHeadScorer_vftable;
-#define CHEADSCORER_VFTABLE (&cHeadScorer_vftable.base)
 
 typedef struct cHeadScorer {
 	cScorerItem base;		/* 0x00 */
@@ -593,20 +444,9 @@ typedef struct cHeadScorer {
 	((const cHeadScorerVtbl *)(self)->base.vftable)->SetModel(&(self)->base, (name))
 
 cHeadScorer *cHeadScorer_ctor(cHeadScorer *self);
-void cHeadScorer_dtor(cHeadScorer *self);
-cScorerItem *cHeadScorer_Delete(cScorerItem *base, byte flags);
-/* HeadModel (set), HeadAnimIndex, VW, VH */
-int cHeadScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cHeadScorer_Draw(cScorerItem *base, int player);
-/* vf05: the model of that name of the scorer of the item, its animation set again; 1 if found */
-byte cHeadScorer_SetModel(cScorerItem *base, const char *name);
-/* vf04: the animation (an index of the model's list) from its start, looped */
-void cHeadScorer_SetAnim(cScorerItem *base, int anim);
 
 /* ---- MissionScorer.cpp ---- */
 
-extern const cSpriteScorerVtbl cMissionScorer_vftable;
-#define CMISSIONSCORER_VFTABLE (&cMissionScorer_vftable.base)
 #define MISSION_STATUS 3
 
 /* the mission icons (three status lamps) and the text of the next mission's map (0xec bytes); the status and
@@ -625,37 +465,10 @@ typedef struct cMissionScorer {
 	int tabBlend;			/* 0xe8 0..6 */
 } cMissionScorer;
 
-extern int g_MissionBlinkOn;
-extern float g_MissionBlinkTime;	/* BlinkTime: the icons blink until 0 */
-extern float g_MissionBlinkLast;	/* the blink time of the last toggle */
-extern int g_MissionStatus[3];		/* Status0..2 */
-extern float g_MissionStatusTime[3];	/* the scorer time each was set */
-extern const char *g_MissionMapName;	/* the language text of the station (the word after the times in the original) */
-extern cGVar GVar_ScorerMarginH;
-#define g_ScorerMarginH (GVar_ScorerMarginH.value.i)		/* ScorerMarginH */
-extern cGVar GVar_NextMissionFirstLineOffsetXBox;
-#define g_NextMissionLine1XBox (GVar_NextMissionFirstLineOffsetXBox.value.f)	/* NextMissionFirstLineOffsetXBox */
-extern cGVar GVar_NextMissionSecondLineOffsetXBox;
-#define g_NextMissionLine2XBox (GVar_NextMissionSecondLineOffsetXBox.value.f)	/* NextMissionSecondLineOffsetXBox */
-extern cGVar GVar_NextMissionFirstLineOffsetPC;
-#define g_NextMissionLine1PC (GVar_NextMissionFirstLineOffsetPC.value.f)	/* NextMissionFirstLineOffsetPC */
-extern cGVar GVar_NextMissionSecondLineOffsetPC;
-#define g_NextMissionLine2PC (GVar_NextMissionSecondLineOffsetPC.value.f)	/* NextMissionSecondLineOffsetPC */
-extern uint32_t g_MissionStatusColors[3];
-extern float g_MissionStatusOfs[3][2];
-
 cMissionScorer *cMissionScorer_ctor(cMissionScorer *self);
-void cMissionScorer_dtor(cMissionScorer *self);
-cScorerItem *cMissionScorer_Delete(cScorerItem *base, byte flags);
-/* ForceMap (set), BackIndex, PrimaryIndex, SecondaryIndex, BlinkTime, SolidTime, Status0..2, LastStatus (get),
- * StatusClear (set), TabSprite (set), TabBlendingMode, TabSpriteIndex, TabRed/Green/Blue/Alpha, TextRed/Green/Blue */
-int cMissionScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cMissionScorer_Draw(cScorerItem *base, int player);
 
 /* ---- MonitorScorer.cpp ---- */
 
-extern const cHeadScorerVtbl cMonitorScorer_vftable;
-#define CMONITORSCORER_VFTABLE (&cMonitorScorer_vftable.base)
 #define MONITOR_WEAPONS 7
 #define MONITOR_UPGRADES 13
 
@@ -706,32 +519,10 @@ typedef struct cMonitorScorer {
 	CPsaImage *img350;		/* 0x350 white */
 } cMonitorScorer;
 
-/* the head and text of Scorer_SetHeadMonitor */
-extern char g_HeadMonitorName[128];	/* 0x80, the scorer model */
-extern char g_HeadMonitorText[128];	/* 0x80 */
-extern int g_HeadMonitorAnim;	/* the animation, negative: with noise */
-extern cGVar GVar_FirstPhotoMessage;
-#define g_FirstPhotoMessage (GVar_FirstPhotoMessage.value.s)	/* FirstPhotoMessage */
-
 cMonitorScorer *cMonitorScorer_ctor(cMonitorScorer *self);
-void cMonitorScorer_dtor(cMonitorScorer *self);
-cScorerItem *cMonitorScorer_Delete(cScorerItem *base, byte flags);
-/* the monitor of the target of the camera of player: the head of the talk or the view of the entity it looks at
- * with its text, the noise, the objective mark of a character */
-void cMonitorScorer_DrawMonitor(cMonitorScorer *self, int player, cEntity *target);
-/* vf01: TargetView=1 */
-void cMonitorScorer_SetParam(cScorerItem *base, const char *name, const char *value);
-int cMonitorScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cMonitorScorer_Draw(cScorerItem *base, int player);
-byte cMonitorScorer_SetModel(cScorerItem *base, const char *name);
-void cMonitorScorer_SetAnim(cScorerItem *base, int anim);
-/* the message FirstPhotoMessage again when the message text ended */
-void Monitor_RepeatPhotoMessage(void);
 
 /* ---- NetStatsScorer.cpp ---- */
 
-extern const cScorerItemVtbl cNetStatsScorer_vftable;
-#define CNETSTATSSCORER_VFTABLE (&cNetStatsScorer_vftable)
 #define NETSTATS_SLOTS 16
 
 /* the ping and the bars of the net traffic of the client (0x230 bytes) */
@@ -746,14 +537,6 @@ typedef struct cNetStatsScorer {
 	CPsaImage *img;			/* 0x22c white */
 } cNetStatsScorer;
 
-extern cGVar GVar_ClientPingX;
-#define g_ClientPingX (GVar_ClientPingX.value.f)	/* ClientPingX */
-extern cGVar GVar_ClientPingY;
-#define g_ClientPingY (GVar_ClientPingY.value.f)	/* ClientPingY */
-extern cGVar GVar_ShowClientPing;
-#define g_ShowClientPing (GVar_ShowClientPing.value.i)	/* ShowClientPing */
-extern cGVar GVar_ShowNetStatus;
-#define g_ShowNetStatus (GVar_ShowNetStatus.value.i)	/* ShowNetStatus */
 /* the counters of the net (Net/) for the stats: bytes and slot of the last send and receive */
 extern int g_NetStatSent;
 extern int g_NetStatSentSlot;
@@ -761,11 +544,6 @@ extern int g_NetStatRecv;
 extern int g_NetStatRecvSlot;
 
 cNetStatsScorer *cNetStatsScorer_ctor(cNetStatsScorer *self);
-void cNetStatsScorer_dtor(cNetStatsScorer *self);
-cScorerItem *cNetStatsScorer_Delete(cScorerItem *base, byte flags);
-/* only the base variables */
-int cNetStatsScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cNetStatsScorer_Draw(cScorerItem *base, int player);
 
 /* ---- the news panel of the scorer (between NetStatsScorer.cpp and RadarScorer.cpp, no CHECK) ---- */
 
@@ -787,53 +565,15 @@ typedef struct cNewsPanel {
 	byte pad_35[3];
 } cNewsPanel;
 
-extern cGVar GVar_NewsPanelActive;
-#define g_NewsPanelActive (GVar_NewsPanelActive.value.i)		/* NewsPanelActive */
-#define g_NewsPanelActiveDef (GVar_NewsPanelActive.def.i)	/* its default */
-extern cGVar GVar_NewsPanelShowHead;
-#define g_NewsPanelShowHead (GVar_NewsPanelShowHead.value.i)	/* NewsPanelShowHead */
-#define g_NewsPanelShowHeadDef (GVar_NewsPanelShowHead.def.i)
-extern cGVar GVar_NewsPanelOpenSpeed;
-#define g_NewsPanelOpenSpeed (GVar_NewsPanelOpenSpeed.value.f)	/* NewsPanelOpenSpeed */
-extern cGVar GVar_NewsPanelCloseSpeed;
-#define g_NewsPanelCloseSpeed (GVar_NewsPanelCloseSpeed.value.f)	/* NewsPanelCloseSpeed */
-#define g_NewsHead (&(*(char * *)&GVar_NewsHead.value))		/* NewsHead, a string variable */
-#define g_NewsLogoBmp (&(*(char * *)&GVar_NewsLogoBmp.value))		/* NewsLogoBmp */
-#define g_BackNewsBmp (&(*(char * *)&GVar_BackNewsBmp.value))		/* BackNewsBmp */
-extern cGVar GVar_NewsPanelAspect;
-#define g_NewsPanelAspect (GVar_NewsPanelAspect.value.f)	/* NewsPanelAspect */
-extern cGVar GVar_NewsPanelMove;
-#define g_NewsPanelMove (GVar_NewsPanelMove.value.f)		/* NewsPanelMove */
-extern cGVar GVar_NewsPanelDisplacement;
-#define g_NewsPanelDisplacement (GVar_NewsPanelDisplacement.value.f)	/* NewsPanelDisplacement */
-extern cGVar GVar_NewsPanelDistance;
-#define g_NewsPanelDistance (GVar_NewsPanelDistance.value.f)	/* NewsPanelDistance */
-extern cGVar GVar_NewsPanelW;
-#define g_NewsPanelW (GVar_NewsPanelW.value.f)		/* NewsPanelW */
-extern cGVar GVar_NewsPanelH;
-#define g_NewsPanelH (GVar_NewsPanelH.value.f)		/* NewsPanelH */
-extern cGVar GVar_NewsPanelX;
-#define g_NewsPanelX (GVar_NewsPanelX.value.f)		/* NewsPanelX */
-extern cGVar GVar_NewsPanelY;
-#define g_NewsPanelY (GVar_NewsPanelY.value.f)		/* NewsPanelY */
-
 cNewsPanel *cNewsPanel_ctor(cNewsPanel *self);
 void cNewsPanel_dtor(cNewsPanel *self);
-/* the first entity of the watched list 0, 1 or 2 of the world */
-cEntity *cNewsPanel_GetWatched(cNewsPanel *self, int list);
 /* the switches back to their defaults, the images and the head dropped */
 void cNewsPanel_Reset(cNewsPanel *self);
 /* the texture of the frame, when the scorer time moved */
 void cNewsPanel_Update(cNewsPanel *self);
-/* the view of an entity from a point around it */
-void cNewsPanel_DrawEntity(cNewsPanel *self, cEntity *e);
-/* the news: the head opening between the background and the logo */
-void cNewsPanel_DrawNews(cNewsPanel *self, float dt);
 
 /* ---- RadarScorer.cpp ---- */
 
-extern const cScorerItemVtbl cRadarScorer_vftable;
-#define CRADARSCORER_VFTABLE (&cRadarScorer_vftable)
 #define RADAR_FLOORS 16
 #define RADAR_ICONS 254		/* the icon frames, then their colors */
 /* the flags of cRadarScorer_DrawIcon for an entity out of the radar */
@@ -874,41 +614,13 @@ typedef struct cRadarScorer {
 	float scrollX, scrollY;		/* 0x944 of the menu map */
 } cRadarScorer;
 
-/* a floor of the world (0x18c bytes from world + 0x2f4, their count at 0x2f0): its lowest height first */
-/* the view of the radar: the turn and center of the map, its scale */
-extern float g_RadarAngle;
-extern float g_RadarCenterX;
-extern float g_RadarCenterZ;
-extern float g_RadarScale;
 extern cGVar GVar_FileNameMap2D;
 #define g_FileNameMap2D (GVar_FileNameMap2D.value.s)	/* FileNameMap2D, a printf format of the floor */
 
 cRadarScorer *cRadarScorer_ctor(cRadarScorer *self);
-void cRadarScorer_dtor(cRadarScorer *self);
 /* the Global/Table.h lookups of the input actions compiled here */
 cInputAction *InputActionTable_At(void *table, uint32_t i);
 cActionSet *ActionSetTable_At(void *table, uint32_t i);
-cScorerItem *cRadarScorer_Delete(cScorerItem *base, byte flags);
-/* the floor of height y; the fade starts when it changed */
-void cRadarScorer_UpdateFloor(cRadarScorer *self, float y);
-/* the radar: its map, the view cones, the places, doors, characters and vehicles, the target and the mission
- * objects */
-void cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEntity *cam);
-/* the view of the radar at the target and its map (the start of DrawRadar) */
-void cRadarScorer_DrawMap(cRadarScorer *self, cEntity *target, cEntity *cam);
-/* the icon of an entity at pos (flags RADAR_ICON_OUT_*) */
-void cRadarScorer_DrawIcon(cRadarScorer *self, const vec3_t *pos, int icon, float ang, int outIcon,
-	uint32_t flags, uint32_t color, uint32_t outColor, byte always);
-/* a view cone at pos to the angle, spread wide, range long, mode 1..3 the color */
-void cRadarScorer_DrawCone(cRadarScorer *self, const vec3_t *pos, float ang, float spread, float range,
-	int mode);
-/* y is on the floor shown before */
-byte cRadarScorer_OnPrevFloor(cRadarScorer *self, float y);
-/* y below the floor (-1), on it (0) or above it (1) */
-int cRadarScorer_FloorSide(cRadarScorer *self, float y);
-int cRadarScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cRadarScorer_Draw(cScorerItem *base, int player);
-
 
 /* ---- Scorer.cpp (src/game/Scorer/Scorer.c) ---- */
 
@@ -919,27 +631,12 @@ void cRadarScorer_Draw(cScorerItem *base, int player);
 #define GVAR_FLAGS(v) (GVAR_OF_VALUE(v)->base.flags)
 #define GVAR_DEF(type, v) (*(type *)&GVAR_OF_VALUE(v)->def)
 
-extern cScorer *g_Scorers;		/* new cScorer[4] */
-extern CPsaImage *g_ScorerWhite;	/* 2D/white.tga */
-extern CPsaImage *g_ScorerNoise;	/* 2D/Noise.tga */
-extern CPsaImage *g_ScorerMarker;	/* the focus marker (SScorer.SetMarkerSprite) */
 extern CPsaImage *g_ScorerTabs;	/* 2D/Menu/Tabs.alpha.tga */
-extern cNewsPanel *g_NewsPanel;
 /* the engine variables of Scorer.cpp */
 extern cGVar GVar_RadarMMSelect;
 #define g_RadarMMSelect (GVar_RadarMMSelect.value.i)		/* RadarMMSelect */
 extern cGVar GVar_NumEnemiesInRadar;
 #define g_NumEnemiesInRadar (GVar_NumEnemiesInRadar.value.i)
-extern cGVar GVar_CinemaBlackBandHeight;
-#define g_CinemaBlackBandHeight (GVar_CinemaBlackBandHeight.value.f)	/* CinemaBlackBandHeight */
-extern cGVar GVar_NoiseFactor;
-#define g_NoiseFactor (GVar_NoiseFactor.value.i)		/* NoiseFactor */
-extern cGVar GVar_NoiseFactorBegin;
-#define g_NoiseFactorBegin (GVar_NoiseFactorBegin.value.i)	/* NoiseFactorBegin */
-extern cGVar GVar_NoiseTime;
-#define g_NoiseTime (GVar_NoiseTime.value.f)		/* NoiseTime */
-extern cGVar GVar_NoiseEndTime;
-#define g_NoiseEndTime (GVar_NoiseEndTime.value.f)		/* NoiseEndTime */
 extern cGVar GVar_MotionBlurFactorBegin;
 #define g_MotionBlurFactorBegin (GVar_MotionBlurFactorBegin.value.f)	/* MotionBlurFactorBegin */
 extern cGVar GVar_MotionBlurFactorEnd;
@@ -950,52 +647,10 @@ extern cGVar GVar_MotionBlurEndTime;
 #define g_MotionBlurEndTime (GVar_MotionBlurEndTime.value.f)	/* MotionBlurEndTime */
 extern cGVar GVar_MotionBlurOffVar;
 #define g_MotionBlurOffVar (GVar_MotionBlurOffVar.value.f)	/* MotionBlurOffVar */
-#define g_FullScreenConsoleCallback (&GVar_FullScreenConsoleCallback.func)	/* FullScreenConsoleCallback */
 extern cGVar GVar_CurrentWaypointName;
 #define g_CurrentWaypointName (GVar_CurrentWaypointName.value.s)	/* CurrentWaypointName */
 extern cGVar GVar_CurrentWaypointName2;
 #define g_CurrentWaypointName2 (GVar_CurrentWaypointName2.value.s)	/* CurrentWaypointName2 */
-extern cGVar GVar_CameraCloudDistance;
-#define g_CameraCloudDistance (GVar_CameraCloudDistance.value.f)	/* CameraCloudDistance */
-extern cGVar GVar_CameraCloudPlaneSize;
-#define g_CameraCloudPlaneSize (GVar_CameraCloudPlaneSize.value.f)	/* CameraCloudPlaneSize */
-extern cGVar GVar_CameraCloudThickness;
-#define g_CameraCloudThickness (GVar_CameraCloudThickness.value.f)	/* CameraCloudThickness */
-extern cGVar GVar_CameraCloudAlpha;
-#define g_CameraCloudAlpha (GVar_CameraCloudAlpha.value.i)	/* CameraCloudAlpha */
-extern cGVar GVar_CameraCloudRed;
-#define g_CameraCloudRed (GVar_CameraCloudRed.value.i)		/* CameraCloudRed */
-extern cGVar GVar_CameraCloudGreen;
-#define g_CameraCloudGreen (GVar_CameraCloudGreen.value.i)	/* CameraCloudGreen */
-extern cGVar GVar_CameraCloudBlue;
-#define g_CameraCloudBlue (GVar_CameraCloudBlue.value.i)		/* CameraCloudBlue */
-extern cGVar GVar_OnAcceptSound;
-#define g_OnAcceptSound (GVar_OnAcceptSound.value.s)	/* OnAcceptSound */
-extern cGVar GVar_OnAcceptSoundVol;
-#define g_OnAcceptSoundVol (GVar_OnAcceptSoundVol.value.f)	/* OnAcceptSoundVol */
-extern cGVar GVar_OnFocusSound;
-#define g_OnFocusSound (GVar_OnFocusSound.value.s)		/* OnFocusSound */
-extern cGVar GVar_OnFocusSoundVol;
-#define g_OnFocusSoundVol (GVar_OnFocusSoundVol.value.f)	/* OnFocusSoundVol */
-extern cGVar GVar_ScorerMarker;
-#define g_ScorerMarkerOn (GVar_ScorerMarker.value.i)		/* ScorerMarker */
-#define g_ScorerMarkerColor (GVar_ScorerMarkerColor.value.u)	/* ScorerMarkerColor */
-extern cGVar GVar_ScorerMarkerSpeed;
-#define g_ScorerMarkerSpeed (GVar_ScorerMarkerSpeed.value.f)	/* ScorerMarkerSpeed */
-extern cGVar GVar_CShow;
-#define g_CShow (GVar_CShow.value.i)			/* CShow */
-extern cGVar GVar_XboxNoPadMsg;
-#define g_XboxNoPadMsg (GVar_XboxNoPadMsg.value.i)		/* XboxNoPadMsg */
-extern cGVar GVar_XboxNoPadMsgP;
-#define g_XboxNoPadMsgP (GVar_XboxNoPadMsgP.value.i)		/* XboxNoPadMsgP */
-extern cGVar GVar_XboxNoPadMsgPBig;
-#define g_XboxNoPadMsgPBig (GVar_XboxNoPadMsgPBig.value.i)	/* XboxNoPadMsgPBig */
-extern cGVar GVar_XboxSavingMsg;
-#define g_XboxSavingMsg (GVar_XboxSavingMsg.value.f)		/* XboxSavingMsg */
-extern cGVar GVar_XboxSavingMsgStr;
-#define g_XboxSavingMsgStr (GVar_XboxSavingMsgStr.value.s)	/* XboxSavingMsgStr */
-extern cGVar GVar_ShowConsoleLog;
-#define g_ShowConsoleLog (GVar_ShowConsoleLog.value.i)		/* ShowConsoleLog */
 
 /* a bool variable of an item: 1 or 0 */
 static inline int ScorerVar_Bool(byte *v, byte set, int *i) {
@@ -1013,47 +668,11 @@ static inline void Scorer_PlaySound(const char *snd, float vol) {
 	s->vftable->Play(s, snd, Snd_Volume(vol), 0);
 }
 
-ScorerCinema *ScorerCinema_ctor(ScorerCinema *self);
-ScorerFade *ScorerFade_ctor(ScorerFade *self);
-void *ScorerFx_ctor(void *self);
-cScorer *cScorer_ctor(cScorer *self);
-void cScorer_dtor(cScorer *self);
-cScorer *cScorer_Delete(cScorer *self, byte flags);
-cScorerItem *cScorerItem_Delete(cScorerItem *self, byte flags);
-/* the scorer model of that name: its game model, NULL if none */
-CGameModel *cScorer_FindModelModel(cScorer *scorer, const char *name);
-void cScorer_Free(cScorer *scorer);
 void cScorer_SetParam(cScorer *scorer, const char *name, const char *value);
-void cScorer_RemoveDeleted(cScorer *scorer, int player);
-void cScorer_SetCursorItem(cScorer *scorer, int player, const char *from, const char *to);
 void Scorer_SetInputState(int state);
-CPsaImage *Scorer_GetWhite(void);
-CPsaImage *Scorer_GetMarker(void);
-CPsaImage *Scorer_GetNoise(void);
 void Scorer_GetCamVarStr(int player, char *buf, const char *name, int size);
-int Scorer_GetCamVarInt(int player, const char *name);
-void Scorer_DrawPyMemStats(void);
 uint32_t Scorer_ColorLerp(uint32_t a, uint32_t b, float t);
-void ScorerFade_Draw(ScorerFade *fade, int player, float dt);
-void ScorerCinema_Draw(ScorerCinema *cinema, int player, float dt);
-void ScorerFx_Draw(void *fx, int player, float dt);
-void cScorer_UpdateMP(cScorer *scorer, float dt);
-void cScorer_UpdateCursor(cScorer *scorer, int player);
-void cScorer_Draw(cScorer *scorer, int player);
-void cScorer_DrawClouds(cScorer *scorer, int player);
-/* the big message: the start text; else the pad text of player index (pad the player number in split screen) */
-void cScorer_DrawNoPadMsg(cScorer *scorer, int index, float y, byte big, int pad);
-void cScorer_DrawXboxMsgs(cScorer *scorer, int player);
 byte Scorer_Render(void);
-/* the full screen console (the ring of the console lines sliding in and out, the input line), else the console
- * log of ShowConsoleLog and the console key: 1 while it is shown (instead of the scorer) */
-byte Scorer_DrawConsole(void);
-/* CShow (1 the grid, 2 the entities, 3 the sounds, 4 and 6 the AI, 5 the Python memory, 7 the ships), the dummies
- * and the AI drawings of NWAnalizeOn */
-void Scorer_DrawDebug(void);
-void Console_OnInput(int player, const char *text);
-void Console_HistoryUp(void);
-void Console_HistoryDown(void);
 
 /* the image slots of the items below: the old image deleted, the new one made with flags, color white */
 static inline CPsaImage *ScorerImg_Replace(CPsaImage *old, const char *name, int blend, uint32_t flags) {
@@ -1088,11 +707,6 @@ static inline void ScorerImg_Free(CPsaImage *img) {
 
 /* ---- ScraplandScorer.cpp: the animated logos of the main menu and of the sub menus ---- */
 
-extern const cScorerItemVtbl cScraplandMainMenuScorer_vftable;
-#define CSCRAPLANDMAINMENUSCORER_VFTABLE (&cScraplandMainMenuScorer_vftable)
-extern const cScorerItemVtbl cScraplandSubMenuScorer_vftable;
-#define CSCRAPLANDSUBMENUSCORER_VFTABLE (&cScraplandSubMenuScorer_vftable)
-
 /* the logo of the main menu with its glow, neon and lighting (200 bytes); the animation state is global */
 typedef struct cScraplandMainMenuScorer {
 	cScorerItem base;		/* 0x00 */
@@ -1121,62 +735,10 @@ typedef struct cScraplandSubMenuScorer {
 	float scale;			/* 0xd4 Scale 1 */
 } cScraplandSubMenuScorer;
 
-/* the global animation state, set up once by the first constructor (random times) */
-extern byte g_MainMenuAnimInit;
-extern byte g_SubMenuAnimInit;
-extern float g_MainMenuWait[9];		/* [9] */
-extern float g_MainMenuTime[9];		/* [9] */
-extern float g_MainMenuLength[9];	/* [9] */
-extern byte g_MainMenuSparkDir[19];	/* [19] */
-extern float g_MainMenuSparkWait[19];	/* [19] */
-extern float g_MainMenuSparkTime[19];	/* [19] */
-extern float g_MainMenuSparkLength[19];	/* [19] */
-extern int g_MainMenuSparkFrame[19];	/* [19] */
-extern float g_MainMenuNeonNext;
-extern float g_MainMenuNeonGroup[3];	/* [3] */
-extern float g_MainMenuNeonWait[21];	/* [21] */
-extern float g_SubMenuWait;
-extern float g_SubMenuRingTime;
-extern float g_SubMenuRingWait;
-extern int g_SubMenuRingDir;		/* 1: the ring frames run backwards */
-extern int g_SubMenuRingFrame;	/* the first frame of the ring */
-
 cScraplandMainMenuScorer *cScraplandMainMenuScorer_ctor(cScraplandMainMenuScorer *self);
 cScraplandSubMenuScorer *cScraplandSubMenuScorer_ctor(cScraplandSubMenuScorer *self);
-void cScraplandMainMenuScorer_dtor(cScraplandMainMenuScorer *self);
-void cScraplandSubMenuScorer_dtor(cScraplandSubMenuScorer *self);
-cScorerItem *cScraplandMainMenuScorer_Delete(cScorerItem *base, byte flags);
-cScorerItem *cScraplandSubMenuScorer_Delete(cScorerItem *base, byte flags);
-/* the time of the item and, once, the random animation state */
-void cScraplandMainMenuScorer_Init(cScraplandMainMenuScorer *self);
-void cScraplandSubMenuScorer_Init(cScraplandSubMenuScorer *self);
-/* the image setters (flags, file) */
-void cScraplandMainMenuScorer_SetGlow(cScraplandMainMenuScorer *self, uint32_t flags, const char *file);
-void cScraplandSubMenuScorer_SetGlow(cScraplandSubMenuScorer *self, uint32_t flags, const char *file);
-void cScraplandSubMenuScorer_Draw(cScorerItem *base, int player);
-/* vf00: the logo, the neon tubes, the letters with their lighting, the sparks and "Remastered" */
-void cScraplandMainMenuScorer_Draw(cScorerItem *base, int player);
-/* 2D/white.tga loads without the flag 0x40, any other file with it */
-void cScraplandMainMenuScorer_SetLighting(cScraplandMainMenuScorer *self, uint32_t flags,
-	const char *file);
-void cScraplandSubMenuScorer_SetLighting(cScraplandSubMenuScorer *self, uint32_t flags, const char *file);
-void cScraplandMainMenuScorer_SetLogo(cScraplandMainMenuScorer *self, uint32_t flags, const char *file);
-void cScraplandSubMenuScorer_SetLogo(cScraplandSubMenuScorer *self, uint32_t flags, const char *file);
-void cScraplandMainMenuScorer_SetNeon(cScraplandMainMenuScorer *self, uint32_t flags, const char *file);
-void cScraplandSubMenuScorer_SetRingBorder(cScraplandSubMenuScorer *self, uint32_t flags,
-	const char *file);
-void cScraplandSubMenuScorer_SetRingMask(cScraplandSubMenuScorer *self, uint32_t flags, const char *file);
-void cScraplandSubMenuScorer_SetRingReflection(cScraplandSubMenuScorer *self, uint32_t flags,
-	const char *file);
-/* HighRes; set only: FileLogo, FileGlow, FileNeon, FileLighting */
-int cScraplandMainMenuScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-/* set only: FileLogo, FileGlow, FileLighting, FileRingMask, FileRingReflection, FileRingBorder; HighRes, Scale */
-int cScraplandSubMenuScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
 
 /* ---- SliderScorer.cpp ---- */
-
-extern const cScorerItemVtbl cSliderScorer_vftable;
-#define CSLIDERSCORER_VFTABLE (&cSliderScorer_vftable)
 
 /* a slider of a sprite sheet: the back frame and the knob moved by the cursor (0xf8 bytes) */
 typedef struct cSliderScorer {
@@ -1202,16 +764,9 @@ typedef struct cSliderScorer {
 } cSliderScorer;
 
 cSliderScorer *cSliderScorer_ctor(cSliderScorer *self);
-void cSliderScorer_dtor(cSliderScorer *self);
-cScorerItem *cSliderScorer_Delete(cScorerItem *base, byte flags);
-void cSliderScorer_SetFile(cSliderScorer *self, uint32_t flags, const char *file);
-int cSliderScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cSliderScorer_Draw(cScorerItem *base, int player);
 
 /* ---- SpecialActionScorer.cpp ---- */
 
-extern const cScorerItemVtbl cSpecialActionScorer_vftable;
-#define CSPECIALACTIONSCORER_VFTABLE (&cSpecialActionScorer_vftable)
 #define SPECIALACTION_MAX_ACTIONS 15
 
 /* the special action of the character: its icon, energy and battery bars, the cannon aim (0x138 bytes) */
@@ -1250,35 +805,9 @@ extern cGVar GVar_SpecialActionActive;
 #define g_SpecialActionActive (GVar_SpecialActionActive.value.i)	/* SpecialActionActive 0 off, 1 blink, 2 on */
 
 cSpecialActionScorer *cSpecialActionScorer_ctor(cSpecialActionScorer *self);
-void cSpecialActionScorer_dtor(cSpecialActionScorer *self);
-cScorerItem *cSpecialActionScorer_Delete(cScorerItem *base, byte flags);
-/* TextFont returns 0 when the font exists (and 1 when not), the original does so */
-int cSpecialActionScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i);
-void cSpecialActionScorer_Draw(cScorerItem *base, int player);
-void cSpecialActionScorer_DrawIcon(cSpecialActionScorer *self, int player, int state);
-void cSpecialActionScorer_DrawEnergy(cSpecialActionScorer *self);
-void cSpecialActionScorer_DrawCrossHair(cSpecialActionScorer *self, int player);
-void cSpecialActionScorer_DrawCannon(cSpecialActionScorer *self, int player, const float *pos,
-	const float *size, float ang, uint32_t color);
-/* the target search of the gear and its aim, the sphere callback of the search */
-void cSpecialActionScorer_DrawGearAim(cSpecialActionScorer *self, int player);
-void GearAim_SphereFunc(cAbstractFile *params);
-void SpecialAction_DrawDefault(cSpecialActionScorer *self, int player);
-void SpecialAction_DrawBanker(cSpecialActionScorer *self, int player);
-void SpecialAction_DrawTarget(cSpecialActionScorer *self, int player);
-void SpecialAction_DrawGear(cSpecialActionScorer *self, int player);
-void SpecialAction_DrawGear2(cSpecialActionScorer *self, int player);
-void SpecialAction_DrawGear3(cSpecialActionScorer *self, int player);
-void SpecialAction_DrawVictim(cSpecialActionScorer *self, int player);
-void SpecialAction_DrawOn(cSpecialActionScorer *self, int player);
-void SpecialAction_DrawLowEnergy(cSpecialActionScorer *self, int player);
-void SpecialAction_DrawFunctionary(cSpecialActionScorer *self, int player);
-void SpecialAction_DrawEnergyOnly(cSpecialActionScorer *self, int player);
 
 extern cGVar GVar_EnergyBarActive;
 #define g_EnergyBarActive (GVar_EnergyBarActive.value.i)		/* EnergyBarActive */
-extern cGVar GVar_FunctionarySpecialActionLow;
-#define g_FunctionarySpecialActionLow (GVar_FunctionarySpecialActionLow.value.f)	/* FunctionarySpecialActionLow */
 
 /* the exe functions the special action draws use (other modules) */
 /* frame + 1 stretched to the width w, frame at both ends (the right one mirrored), h the y scale */

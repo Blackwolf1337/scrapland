@@ -8,17 +8,24 @@
 #include "scrap/scoreritems.h"
 #include "scrap/staticinit.h"
 
-
+#define CCIRCUITSCORER_VFTABLE (&cCircuitScorer_vftable)
+#define g_CircuitInit (*(byte *)&g_CircuitFlares[3].unused_14)
+static cCircuitFlare g_CircuitFlares[4];
+static const cScorerItemVtbl cCircuitScorer_vftable;
 
 /* rand() / 32767 * scale + ofs in double, as the original */
 static float Circuit_Rand(double scale, double ofs) {
 	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * scale + ofs);
 }
 
-cCircuitPath *cCircuitPath_ctor(cCircuitPath *self) {
+/* the constructor of a path in the static array: nothing */
+static cCircuitPath *cCircuitPath_ctor(cCircuitPath *self) {
 	return self;
 }
 
+static void CircuitScorer_InitPaths(void);
+static void cCircuitScorer_SetCircuitFile(cCircuitScorer *self, uint32_t flags, const char *name);
+static void cCircuitScorer_SetFlareFile(cCircuitScorer *self, uint32_t flags, const char *name);
 cCircuitScorer *cCircuitScorer_ctor(cCircuitScorer *self) {
 	cScorerItem_ctor(&self->base);
 	self->base.vftable = CCIRCUITSCORER_VFTABLE;
@@ -48,7 +55,7 @@ static void Circuit_FreeImage(CPsaImage **img) {
 	}
 }
 
-void cCircuitScorer_dtor(cCircuitScorer *self) {
+static void cCircuitScorer_dtor(cCircuitScorer *self) {
 	self->base.vftable = CCIRCUITSCORER_VFTABLE;
 	Circuit_FreeImage(&self->circuit);
 	Circuit_FreeImage(&self->flare);
@@ -56,7 +63,7 @@ void cCircuitScorer_dtor(cCircuitScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cScorerItem *cCircuitScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cCircuitScorer_Delete(cScorerItem *base, byte flags) {
 	cCircuitScorer *self = (cCircuitScorer *)base;
 	cCircuitScorer_dtor(self);
 	if (flags & 1) {
@@ -112,9 +119,10 @@ static const struct {
 	} },
 };
 
-cCircuitPath g_CircuitPaths[9];
+static cCircuitPath g_CircuitPaths[9];
 
-void CircuitScorer_InitPaths(void) {
+/* the points of the paths, their lengths, the flares stopped with their first delays (once) */
+static void CircuitScorer_InitPaths(void) {
 	for (int p = 0; p < 9; p++) {
 		g_CircuitPaths[p].numPoints = s_CircuitPoints[p].numPoints;
 		memcpy(g_CircuitPaths[p].pts, s_CircuitPoints[p].pts, sizeof(g_CircuitPaths[p].pts[0]) * (size_t)s_CircuitPoints[p].numPoints);
@@ -132,11 +140,12 @@ static CPsaImage *Circuit_NewImage(CPsaImage *old, const char *name, int blend, 
 	return img;
 }
 
-void cCircuitScorer_SetCircuitFile(cCircuitScorer *self, uint32_t flags, const char *name) {
+static void cCircuitScorer_SetCircuitFile(cCircuitScorer *self, uint32_t flags, const char *name) {
 	self->circuit = Circuit_NewImage(self->circuit, name, self->blend, flags | 0x40000);
 }
 
-void cCircuitScorer_SetFlareFile(cCircuitScorer *self, uint32_t flags, const char *name) {
+/* the flare sheet; the white default without the 0x40 flag */
+static void cCircuitScorer_SetFlareFile(cCircuitScorer *self, uint32_t flags, const char *name) {
 	if (self->flare) {
 		CPsaImage_dtor(self->flare);
 		operator_delete_sized(self->flare, sizeof(CPsaImage));
@@ -149,7 +158,8 @@ void cCircuitScorer_SetFlareFile(cCircuitScorer *self, uint32_t flags, const cha
 	self->flare = Circuit_NewImage(NULL, name, self->blend, flags | 0x40000);
 }
 
-int cCircuitScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+/* ScaleX, ScaleY, FileCircuit and FileFlare (set), HighRes, BlendingMode, AlphaCircuit, AlphaFlare */
+static int cCircuitScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cCircuitScorer *self = (cCircuitScorer *)base;
 	if (d) {
 		if (!crt_stricmp(name, "ScaleX")) {
@@ -197,7 +207,7 @@ int cCircuitScorer_Var(cScorerItem *base, const char *name, int set, char **s, d
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-cCircuitFlare g_CircuitFlares[4];
+static cCircuitFlare g_CircuitFlares[4];
 
 /* a flare at its end: a path no other flare runs, a pause, the duration by the path length, a direction */
 static void Circuit_Respawn(int k) {
@@ -224,7 +234,7 @@ static void Circuit_Respawn(int k) {
 	f->reverse = crt_rand() & 1;
 }
 
-void cCircuitScorer_Draw(cScorerItem *base, int player) {
+static void cCircuitScorer_Draw(cScorerItem *base, int player) {
 	cCircuitScorer *self = (cCircuitScorer *)base;
 	(void)player;
 	CPsaImage_Draw(self->circuit, self->base.x, self->base.y);
@@ -291,7 +301,7 @@ void cCircuitScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cCircuitScorer */
-const cScorerItemVtbl cCircuitScorer_vftable = {
+static const cScorerItemVtbl cCircuitScorer_vftable = {
 	.Draw = cCircuitScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cCircuitScorer_Var,

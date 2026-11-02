@@ -10,7 +10,6 @@
 #include "scrap/scrap.h"
 #include "scrap/staticinit.h"
 
-
 void App_GetConfigDir(char *buf, int size);
 
 /* an entry of the save list of SaveGames_GetList */
@@ -23,21 +22,21 @@ typedef struct cSaveGameInfo {
 #define SAVE_MAGIC "Scrapland savegame"
 #define SAVE_SLOTS 7
 
-cGVar GVar_LastSaveGameName;
+static cGVar GVar_LastSaveGameName;
 
 #define g_SaveDesc (((cString *)&GVar_LastSaveGameName.value))	/* the description of the save loaded last */
-cGVarFunction GVar_OnCrazyDealTarget;
+static cGVarFunction GVar_OnCrazyDealTarget;
 
 /* called when the number of finished crazy deals changes: one deal, and all three (with g_SuperDealAvaliable) */
 #define g_OnCrazyDeal (((cPy_Function *)&GVar_OnCrazyDealTarget.func))
-cGVarFunction GVar_OnCrazyDealFinished;
+static cGVarFunction GVar_OnCrazyDealFinished;
 
 #define g_OnAllCrazyDeals (((cPy_Function *)&GVar_OnCrazyDealFinished.func))
 
-cSaveVar *g_SaveVars;
-int g_SaveVarCount;
+static cSaveVar *g_SaveVars;
+static int g_SaveVarCount;
 
-cSaveVar *cSaveVar_ctor(cSaveVar *self, const char *name, const char *value) {
+static cSaveVar *cSaveVar_ctor(cSaveVar *self, const char *name, const char *value) {
 	cString_ctor(&self->name);
 	cString_ctor(&self->value);
 	self->next = g_SaveVars;
@@ -48,7 +47,7 @@ cSaveVar *cSaveVar_ctor(cSaveVar *self, const char *name, const char *value) {
 	return self;
 }
 
-HashTable g_SaveVarTable = { .numSlots = 457 };
+static HashTable g_SaveVarTable = { .numSlots = 457 };
 
 static cSaveVar *SaveVar_Find(const char *name) {
 	return PtrTable_Value((&g_SaveVarTable), name);
@@ -122,7 +121,7 @@ void SaveVars_Delete(const char *prefix) {
  * the crazy deals done: with JackInTheBox.Active "1", deal N counts when CrazyDeal.N.Var names a variable whose
  * value reaches CrazyDeal.N.Tgt
  */
-int CrazyDeals_Count(void) {
+static int CrazyDeals_Count(void) {
 	static const char *const deals[3][2] = {
 		{ "CrazyDeal.1.Var", "CrazyDeal.1.Tgt" },
 		{ "CrazyDeal.2.Var", "CrazyDeal.2.Tgt" },
@@ -192,7 +191,7 @@ int SaveVar_Inc(const char *name, int n) {
 }
 
 /* the description of a save game into desc (64 bytes, like strncpy) */
-byte SaveGame_ReadDesc(const char *path, char *desc) {
+static byte SaveGame_ReadDesc(const char *path, char *desc) {
 	char buf[0x200];
 	byte ok;
 	cFile f = { { CFILE_VFTABLE, NULL, 0 }, NULL };
@@ -216,7 +215,7 @@ byte SaveGame_ReadDesc(const char *path, char *desc) {
 }
 
 /* qsort order of the saves: by time, as a "less than" like the original (not a real compare) */
-int SaveGame_CmpTime(const void *a, const void *b) {
+static int SaveGame_CmpTime(const void *a, const void *b) {
 	return ((const cSaveGameInfo *)a)->time < ((const cSaveGameInfo *)b)->time;
 }
 
@@ -274,7 +273,7 @@ PyObject *SaveGames_GetList(const char *path) {
 }
 
 /* the variables of a save game file, after deleting all; 1 if the count matches */
-int SaveGame_ReadVars(cAbstractFile *f) {
+static int SaveGame_ReadVars(cAbstractFile *f) {
 	char name[0x200];
 	char value[0x1000];
 	int count;
@@ -301,7 +300,7 @@ int SaveGame_ReadVars(cAbstractFile *f) {
 }
 
 /* desc NULL: the time of now (asctime without its newline) */
-byte SaveGame_WriteVars(cAbstractFile *f, const char *desc) {
+static byte SaveGame_WriteVars(cAbstractFile *f, const char *desc) {
 	cSaveVar *v = g_SaveVars;
 
 	cAbstractFile_WriteString(f, SAVE_MAGIC);

@@ -31,7 +31,7 @@
 #define P_WAIT 0
 
 /* the frame counter of the engine */
-cGVar GVar_R_Tex_Count;
+static cGVar GVar_R_Tex_Count;
 
 /* entries alive (engine variable R_Tex_Count) */
 #define g_TexCount (GVar_R_Tex_Count.value.i)
@@ -47,23 +47,23 @@ extern int g_Sharpen;
 #define g_TexSharpen g_Sharpen
 extern int g_TexErrDif;
 extern int g_TextBPP;
-cGVar GVar_SharpenMore;
+static cGVar GVar_SharpenMore;
 
 /* engine variables */
 #define g_SharpenMore (GVar_SharpenMore.value.i)
-cGVar GVar_MipmapFade;
+static cGVar GVar_MipmapFade;
 
 #define g_MipmapFade (GVar_MipmapFade.value.i)
-cGVar GVar_MipmapColor;
+static cGVar GVar_MipmapColor;
 
 #define g_MipmapColor (GVar_MipmapColor.value.i)
-cGVar GVar_CachedTex;
+static cGVar GVar_CachedTex;
 
 #define g_CachedTex (GVar_CachedTex.value.i)
-cGVar GVar_BumpMipmap;
+static cGVar GVar_BumpMipmap;
 
 #define g_BumpMipmap (GVar_BumpMipmap.value.i)
-cGVar GVar_DUDVMipmap;
+static cGVar GVar_DUDVMipmap;
 
 #define g_DUDVMipmap (GVar_DUDVMipmap.value.i)
 cGVar GVar_R_PShaders;
@@ -73,16 +73,16 @@ extern cGVar GVar_LoadTextures;
 #define g_LoadTextures (GVar_LoadTextures.value.i)
 extern cGVar GVar_TexturePool;
 #define g_TexturePool (GVar_TexturePool.value.i)
-cGVar GVar_BuildDDS;
+static cGVar GVar_BuildDDS;
 
 #define g_BuildDDS (GVar_BuildDDS.value.i)
-cGVar GVar_TextureLOD;
+static cGVar GVar_TextureLOD;
 
 #define g_TextureLOD (GVar_TextureLOD.value.i)
-cGVar GVar_BumpDDS;
+static cGVar GVar_BumpDDS;
 
 #define g_BumpDDS (GVar_BumpDDS.value.i)
-cGVar GVar_SaveDXT5;
+static cGVar GVar_SaveDXT5;
 
 #define g_SaveDXT5 (GVar_SaveDXT5.value.i)
 
@@ -114,7 +114,7 @@ static int Tex_FormatRGB(int bpp, int alpha, int bump) {
 	return alpha ? 0x1a : 0x17;
 }
 
-int g_TexFixedBPP = 24;
+static int g_TexFixedBPP = 24;
 
 static int Tex_BPP(const CTexture *t) {
 	return t->flags & TEXF_FIXEDBPP ? g_TexFixedBPP : t->bpp;
@@ -130,7 +130,7 @@ static const char *Tex_OpacName(const CTexture *t) {
 }
 
 /* bmp.h */
-CBmp *CBmp_ctor(CBmp *self, int width, int height) {
+static CBmp *CBmp_ctor(CBmp *self, int width, int height) {
 	self->width = width;
 	self->height = height;
 	self->img = NULL;
@@ -138,7 +138,7 @@ CBmp *CBmp_ctor(CBmp *self, int width, int height) {
 	return self;
 }
 
-CBmp *CBmp_Delete(CBmp *self, byte flags) {
+static CBmp *CBmp_Delete(CBmp *self, byte flags) {
 	Img_Free(self, BMP_PIXEL);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CBmp));
@@ -146,9 +146,9 @@ CBmp *CBmp_Delete(CBmp *self, byte flags) {
 	return self;
 }
 
-CTexture *g_TexList;
+static CTexture *g_TexList;
 
-CTexture *CTexture_ctor(CTexture *self, const char *name, const char *opac, int kind, uint32_t flags) {
+static CTexture *CTexture_ctor(CTexture *self, const char *name, const char *opac, int kind, uint32_t flags) {
 	CMultiSprite_ctor(&self->multi);
 	g_TexCount++;
 	self->Refs = 0;
@@ -191,7 +191,7 @@ CTexture *CTexture_ctor(CTexture *self, const char *name, const char *opac, int 
 	return self;
 }
 
-void CTexture_dtor(CTexture *self) {
+static void CTexture_dtor(CTexture *self) {
 	g_TexCount--;
 	CHECK(!self->Refs);
 	Tex_ReleaseD3D(self);
@@ -217,7 +217,8 @@ static void Texture_Free(CTexture *t) {
 	operator_delete_sized(t, sizeof(CTexture));
 }
 
-CTexture *Texture_FindPurge(void) {
+/* the least recently used raw file texture when more than g_CachedTex have a device texture */
+static CTexture *Texture_FindPurge(void) {
 	CTexture *best = NULL;
 	int n = 0;
 	int frame = g_FrameCount;
@@ -245,9 +246,11 @@ CTexture *Texture_FindPurge(void) {
 	return NULL;
 }
 
-int g_TexMipFadeOn = 1;
+static int g_TexMipFadeOn = 1;
 
-int CTexture_UploadLevel(CTexture *self, CBmp *src, int level) {
+/* src scaled into mipmap level and the levels below */
+static int Surface_FromBmp(void *surf, const CBmp *bmp);
+static int CTexture_UploadLevel(CTexture *self, CBmp *src, int level) {
 	void *dev = NULL;
 	void *surf = NULL;
 	void *dst;
@@ -328,15 +331,8 @@ out:
 	return hr;
 }
 
-int Texture_AddRef(CTexture *t) {
-	if (!t) {
-		return -1;
-	}
-	t->Refs++;
-	CHECK(t->Refs > 0);
-	return t->Refs;
-}
-
+static int CTexture_LoadFile(CTexture *self, byte load);
+static CTexture *Texture_Lookup(const char *name, const char *opac);
 int Texture_Add(const char *name, const char *opac, int kind, uint32_t flags) {
 	CTexture *t;
 
@@ -383,17 +379,9 @@ void Texture_Delete(CTexture *t) {
 	}
 }
 
-int Texture_Remove(const char *name, const char *opac) {
-	CTexture *t = Texture_Lookup(name, opac);
+static int g_TexPurgeFrame;
 
-	if (t) {
-		Texture_Free(t);
-	}
-	return 0;
-}
-
-int g_TexPurgeFrame;
-
+static int CTexture_CreateD3D(CTexture *self, void *dev);
 void *Texture_Load(CTexture *t, void *dev) {
 	if (t->PngData) {
 		if (g_TexPurgeFrame != g_FrameCount) {
@@ -436,12 +424,6 @@ CMultiSprite *Texture_GetMultiSprite(CTexture *t, const char *name) {
 	return NULL;
 }
 
-void *Texture_GetD3DByName(const char *name, const char *opac) {
-	CTexture *t = Texture_Lookup(name, opac);
-
-	return t ? t->tex : NULL;
-}
-
 CTexture *Texture_Find(const char *name, const char *opac) {
 	CTexture *t = Texture_Lookup(name, opac);
 
@@ -466,41 +448,9 @@ int Texture_GetInfo(CTexture *t, int *info) {
 	return 0;
 }
 
-int Texture_ReleaseD3D(const char *name, const char *opac) {
-	CTexture *t = Texture_Lookup(name, opac);
-
-	if (!t) {
-		return TEX_E_NOTFOUND;
-	}
-	Tex_ReleaseD3D(t);
-	return 0;
-}
-
 int Texture_ReleaseAllD3D(void) {
 	for (CTexture *t = g_TexList; t; t = t->next) {
 		Tex_ReleaseD3D(t);
-	}
-	return 0;
-}
-
-int Texture_Recreate(const char *name, const char *opac, void *dev) {
-	CTexture *t = Texture_Lookup(name, opac);
-
-	if (!t) {
-		return TEX_E_NOTFOUND;
-	}
-	if (t->PngData) {
-		return TEX_E_NOTAVAILABLE;
-	}
-	return CTexture_CreateD3D(t, dev);
-}
-
-int Texture_RecreateAll(void *dev) {
-	for (CTexture *e = g_TexList; e; e = e->next) {
-		CTexture *t = Texture_Lookup(e->Name, e->Opac);
-		if (t && !t->PngData) {
-			CTexture_CreateD3D(t, dev);
-		}
 	}
 	return 0;
 }
@@ -518,7 +468,8 @@ void *Texture_GetD3D(CTexture *t, void *dev) {
 	return t->tex;
 }
 
-CTexture *Texture_Lookup(const char *name, const char *opac) {
+/* the entry of name with opacity map opac (NULL or "" for none) */
+static CTexture *Texture_Lookup(const char *name, const char *opac) {
 	for (CTexture *t = g_TexList; t; t = t->next) {
 		if (crt_stricmp(name, t->Name)) {
 			continue;
@@ -536,7 +487,7 @@ CTexture *Texture_Lookup(const char *name, const char *opac) {
 	return NULL;
 }
 
-byte Tex_IsPower2(int n) {
+static byte Tex_IsPower2(int n) {
 	if (n < 1) {
 		return 0;
 	}
@@ -545,7 +496,10 @@ byte Tex_IsPower2(int n) {
 
 int g_TextOpBPP = 32;
 
-int CTexture_LoadFile(CTexture *self, byte load) {
+/* the file: its kind from the name, a CBmp (pixels only with load) or the raw file */
+static void Bmp_ToDudv(CBmp *bmp);
+static byte Path_HasSubExt(const char *name, const char *ext);
+static int CTexture_LoadFile(CTexture *self, byte load) {
 	char *name = self->Name;
 	char *ext;
 	byte isBmp, isTga, isTex, isPng, isDdc, isDds;
@@ -658,9 +612,12 @@ static void Tex_LogCreated(CTexture *self, const char *line, const char *formatL
 	}
 }
 
-int g_TexKeepBitmaps;
+static int g_TexKeepBitmaps;
 
-int CTexture_CreateD3D(CTexture *self, void *dev) {
+/* the device texture, its old one released */
+static int CTexture_SaveDDS(CTexture *self, CBmp *orig, int level, byte keepExt);
+static int Tex_Format(int bpp, byte alpha, byte palette, byte bump, byte compressed, byte unused);
+static int CTexture_CreateD3D(CTexture *self, void *dev) {
 	d3dSurfaceDesc_t desc = { 0 };
 	int fmt, bpp, hr;
 
@@ -758,7 +715,10 @@ int CTexture_CreateD3D(CTexture *self, void *dev) {
 	return 0;
 }
 
-int CTexture_SaveDDS(CTexture *self, CBmp *orig, int level, byte keepExt) {
+/* the developer tool: orig as a DDS file next to the texture, through bmp/nvdxt.exe and bmp/stitch.exe */
+static void Bmp_ToBump(CBmp *bmp);
+static void Path_ToBackslash(char *path);
+static int CTexture_SaveDDS(CTexture *self, CBmp *orig, int level, byte keepExt) {
 	char path[MAX_FILEPATH];
 	char tmp[MAX_FILEPATH];
 	char dir[MAX_FILEPATH];
@@ -852,7 +812,8 @@ int CTexture_SaveDDS(CTexture *self, CBmp *orig, int level, byte keepExt) {
 	return 0;
 }
 
-int Tex_Format(int bpp, byte alpha, byte palette, byte bump, byte compressed, byte unused) {
+/* the D3DFORMAT for a texture file */
+static int Tex_Format(int bpp, byte alpha, byte palette, byte bump, byte compressed, byte unused) {
 	(void)unused;
 	if (bump) {
 		if (compressed && bpp == 16) {
@@ -869,7 +830,7 @@ int Tex_Format(int bpp, byte alpha, byte palette, byte bump, byte compressed, by
 	return Tex_FormatRGB(bpp, alpha, 0);
 }
 
-void Path_ToBackslash(char *path) {
+static void Path_ToBackslash(char *path) {
 	for (; *path; path++) {
 		if (*path == '/') {
 			*path = '\\';
@@ -877,7 +838,8 @@ void Path_ToBackslash(char *path) {
 	}
 }
 
-byte Path_HasSubExt(const char *name, const char *ext) {
+/* name ends in ext before its last extension ("a.alpha.tga") */
+static byte Path_HasSubExt(const char *name, const char *ext) {
 	size_t len = strlen(ext);
 	const char *dot = crt_mbsrchr(name, '.');
 
@@ -898,7 +860,8 @@ static byte Bump_Channel(uint32_t c) {
 	return c - 0x40;
 }
 
-void Bmp_ToBump(CBmp *bmp) {
+/* R and G to signed offsets around 0 (V8U8 style) */
+static void Bmp_ToBump(CBmp *bmp) {
 	CHECK(bmp);
 	for (int y = 0; y < bmp->height; y++) {
 		for (int x = 0; x < bmp->width; x++) {
@@ -910,7 +873,8 @@ void Bmp_ToBump(CBmp *bmp) {
 	}
 }
 
-void Bmp_ToDudv(CBmp *bmp) {
+/* R and G to the DUDV pair, the smaller part in A */
+static void Bmp_ToDudv(CBmp *bmp) {
 	CBmp tmp;
 
 	CHECK(bmp);
@@ -940,46 +904,8 @@ void Bmp_ToDudv(CBmp *bmp) {
 	Img_Free(&tmp, BMP_PIXEL);
 }
 
-/* R G B times k, alpha kept; clamp limits to 255 */
-static uint32_t Ramp_Scale(uint32_t p, double k, int clamp) {
-	uint32_t r = p & 0xff000000;
-
-	for (int s = 0; s < 24; s += 8) {
-		int c = (int)((double)(p >> s & 0xff) * k);
-		if (clamp && c > 0xff) {
-			c = 0xff;
-		}
-		r |= (uint32_t)(byte)c << s;
-	}
-	return r;
-}
-
-void Bmp_ToRamp(CBmp *bmp) {
-	CBmp avg, ramp;
-	uint32_t p;
-
-	CHECK(bmp);
-	avg.width = 1;
-	avg.height = 1;
-	avg.img = New_Array(1, BMP_PIXEL);
-	ramp.width = 8;
-	ramp.height = 1;
-	ramp.img = New_Array(8, BMP_PIXEL);
-	CBmp_Resample(&avg, bmp, 0xf);
-	CBmp_Resample(&ramp, &avg, 0xf);
-	/* the doubles 0.5 and 1.2 of the exe */
-	p = Ramp_Scale(*CBmp_Pixel(&avg, 0, 0), 0.5, 0);
-	for (int i = 0; i < 4; i++) {
-		*CBmp_Pixel(&ramp, i, 0) = p;
-	}
-	*CBmp_Pixel(&ramp, 7, 0) = Ramp_Scale(*CBmp_Pixel(&avg, 0, 0), 1.2, 1);
-	Img_Create(bmp, 8, 1, BMP_PIXEL);
-	CBmp_Resample(bmp, &ramp, 0xf);
-	Img_Free(&ramp, BMP_PIXEL);
-	Img_Free(&avg, BMP_PIXEL);
-}
-
-int Surface_FromBmp(void *surf, const CBmp *bmp) {
+/* bmp into a locked A8R8G8B8 IDirect3DSurface8 of the same size */
+static int Surface_FromBmp(void *surf, const CBmp *bmp) {
 	d3dSurfaceDesc_t desc;
 	d3dLockedRect_t lr;
 	byte *row;
@@ -1061,7 +987,7 @@ const char *D3DFmt_Name(int fmt) {
 }
 
 /* the atexit destructor of g_TexList: the first texture of the list deleted */
-void Texture_FiniTexList(void) {
+static void Texture_FiniTexList(void) {
 	CTexture *t = g_TexList;
 
 	if (t) {

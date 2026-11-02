@@ -27,6 +27,9 @@
 #include "scrap/scrapworld.h"
 #include "scrap/staticinit.h"
 
+#define g_InactiveBackgroundApp (GVar_InactiveBackgroundApp.value.i)	/* the frames go on without the focus */
+static cGVar GVar_InactiveBackgroundApp;
+
 #define PLAT_PADS 4
 #define PLAT_NOTCONNECTED 0x48f		/* ERROR_DEVICE_NOT_CONNECTED of XInputGetState */
 
@@ -136,10 +139,6 @@ int Plat_CreateWindow(const char *title, int w, int h, byte fixed) {
 void Plat_ShowWindow(void) {
 	SDL_ShowWindow(plat.window);
 	SDL_RaiseWindow(plat.window);
-}
-
-void *Plat_Window(void) {
-	return plat.window;
 }
 
 void *Plat_NativeWindow(void) {
@@ -769,7 +768,7 @@ int Plat_VulkanSurface(void *instance, void *surface) {
 	return 1;
 }
 
-cGVar GVar_InactiveBackgroundApp;
+static cGVar GVar_InactiveBackgroundApp;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_InactiveBackgroundApp, &GVar_InactiveBackgroundApp, "InactiveBackgroundApp", 4, "1=application inactive in background", 1)

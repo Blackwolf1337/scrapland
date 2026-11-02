@@ -19,7 +19,7 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
-extern const cLocalLogicVtbl cScrapyardLocalLogic_vftable;
+static const cLocalLogicVtbl cScrapyardLocalLogic_vftable;
 #define CSCRAPYARDLOCALLOGIC_VFTABLE (&cScrapyardLocalLogic_vftable)
 #define SHIPGROUP_SPHERE_NATIVE 0x157f10
 #define SHIPGROUP_DEATH_NATIVE 0x158020
@@ -27,41 +27,42 @@ extern const cLocalLogicVtbl cScrapyardLocalLogic_vftable;
 #define SHIPGROUP_ONAIEND 0x157e60
 #define SHIPGROUP_MAX_FOUND 10
 
-cGVar GVar_MaxMosquitosDist;
+static cGVar GVar_MaxMosquitosDist;
 
 #define g_MaxMosquitosDist (GVar_MaxMosquitosDist.value.f)
-cGVar GVar_MaxMosquitos;
+static cGVar GVar_MaxMosquitos;
 
 #define g_MaxMosquitos (GVar_MaxMosquitos.value.i)
-cGVar GVar_MinPercMosquitosAttackingIntruder;
+static cGVar GVar_MinPercMosquitosAttackingIntruder;
 
 #define g_MinPercMosquitosAttackingIntruder (GVar_MinPercMosquitosAttackingIntruder.value.f)
-cGVar GVar_MosquitosTriggeredShipName;
+static cGVar GVar_MosquitosTriggeredShipName;
 
 #define g_MosquitosTriggeredShipName (GVar_MosquitosTriggeredShipName.value.s)
-cGVar GVar_MaxMadHuntersDist;
+static cGVar GVar_MaxMadHuntersDist;
 
 #define g_MaxMadHuntersDist (GVar_MaxMadHuntersDist.value.f)
-cGVar GVar_MaxMadHunters;
+static cGVar GVar_MaxMadHunters;
 
 #define g_MaxMadHunters (GVar_MaxMadHunters.value.i)
-cGVar GVar_MinPercMadHuntersAttackingIntruder;
+static cGVar GVar_MinPercMadHuntersAttackingIntruder;
 
 #define g_MinPercMadHuntersAttackingIntruder (GVar_MinPercMadHuntersAttackingIntruder.value.f)
-cGVar GVar_MadHuntersTriggeredShipName;
+static cGVar GVar_MadHuntersTriggeredShipName;
 
 #define g_MadHuntersTriggeredShipName (GVar_MadHuntersTriggeredShipName.value.s)
-cGVar GVar_OnMosquitoDeathMoney;
+static cGVar GVar_OnMosquitoDeathMoney;
 
 #define g_OnMosquitoDeathMoney (GVar_OnMosquitoDeathMoney.value.i)
-cGVar GVar_OnMadHunterDeathMoney;
+static cGVar GVar_OnMadHunterDeathMoney;
 
 #define g_OnMadHunterDeathMoney (GVar_OnMadHunterDeathMoney.value.i)
 /* the ships the sphere native found around a lair */
 /* the callback of the AI when the move ends (rva 0x15c of the AI) */
 #define AIV_OnEnd(ai) (((cAIVehicle *)(ai))->onArrive)
 
-cShipGroupData *cShipGroupData_ctor(cShipGroupData *self, const char *list) {
+static void ShipGroup_SphereNative(cAbstractFile *params);
+static cShipGroupData *cShipGroupData_ctor(cShipGroupData *self, const char *list) {
 	cPy_Function_ctor(&self->onSphere);
 	self->lairs.numSlots = 0x1c9;
 	self->lairs.slots = New_Array(0x1c9, sizeof(*self->lairs.slots));
@@ -92,7 +93,7 @@ void cShipGroup_dtor(cShipGroup *self) {
 	}
 }
 
-cScrapyardLocalLogic *cScrapyardLocalLogic_Delete(cScrapyardLocalLogic *self, byte flags) {
+static cScrapyardLocalLogic *cScrapyardLocalLogic_Delete(cScrapyardLocalLogic *self, byte flags) {
 	self->vftable = CSCRAPYARDLOCALLOGIC_VFTABLE;
 	cLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -102,7 +103,7 @@ cScrapyardLocalLogic *cScrapyardLocalLogic_Delete(cScrapyardLocalLogic *self, by
 }
 
 /* the lair of the ship of that name, added or changed (the inlined Add without the warning) */
-void cShipGroupData_SetLair(cShipGroupData *self, const char *name, const vec3_t *pos) {
+static void cShipGroupData_SetLair(cShipGroupData *self, const char *name, const vec3_t *pos) {
 	HashTable *t = &self->lairs;
 
 	if (WorldStrTable_Find(t, name, HashTable_Slot(t, name))) {
@@ -116,23 +117,6 @@ void cShipGroupData_SetLair(cShipGroupData *self, const char *name, const vec3_t
 	}
 }
 
-void cShipGroup_SetLair(cShipGroup *self, const char *name, const vec3_t *pos) {
-	cShipGroupData_SetLair(self->d, name, pos);
-}
-
-byte cShipGroup_DeleteLair(cShipGroup *self, const char *name) {
-	return WorldStrTable_Delete(&self->d->lairs, name);
-}
-
-void cShipGroup_GetLair(cShipGroup *self, const char *name, vec3_t *out) {
-	HashTable *t = &self->d->lairs;
-	cWorldStrItem *it = WorldStrTable_Find(t, name, HashTable_Slot(t, name));
-
-	if (it) {
-		memcpy(out, &it->value, sizeof(*out));
-	}
-}
-
 /* the group of a ship: the mosquitos for the list "Mosquitos", else the mad hunters */
 static cShipGroup *ShipGroup_Of(cEntity *e) {
 	if (cEntity_GetListName(e) && !strcmp(cEntity_GetListName(e), "Mosquitos")) {
@@ -141,10 +125,11 @@ static cShipGroup *ShipGroup_Of(cEntity *e) {
 	return &g_pWorld->logic.madHunters;
 }
 
-int g_ShipGroupFound;
-cEntity *g_ShipGroupShips[10];
+static int g_ShipGroupFound;
+static cEntity *g_ShipGroupShips[10];
 
-void cShipGroupData_Think(cShipGroupData *self) {
+static byte ShipGroup_OnAIEnd(cAIVehicle *ai);
+static void cShipGroupData_Think(cShipGroupData *self) {
 	vec3_t tmp;
 	Nto1Node *n = Logic_ListFirst(self->list);
 	float maxDist;
@@ -220,6 +205,8 @@ void cShipGroupData_Think(cShipGroupData *self) {
 	} while (n);
 }
 
+static void ShipGroup_DeathNative(cAbstractFile *params);
+static cLocalLogic *ShipGroup_MakeLogic(cEntity *e);
 void cShipGroup_Init(cShipGroup *self) {
 	cShipGroupData *d = self->d;
 
@@ -229,7 +216,7 @@ void cShipGroup_Init(cShipGroup *self) {
 }
 
 /* the AI callback of a ship back at its lair: the ship goes */
-byte ShipGroup_OnAIEnd(cAIVehicle *ai) {
+static byte ShipGroup_OnAIEnd(cAIVehicle *ai) {
 	if (!ai) {
 		return 0;
 	}
@@ -240,7 +227,7 @@ byte ShipGroup_OnAIEnd(cAIVehicle *ai) {
 }
 
 /* the sphere native: a ship with an AI or the player (not a mosquito) the ships may attack */
-void ShipGroup_SphereNative(cAbstractFile *params) {
+static void ShipGroup_SphereNative(cAbstractFile *params) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(params, name, sizeof(name));
@@ -264,7 +251,7 @@ void ShipGroup_SphereNative(cAbstractFile *params) {
 }
 
 /* the death native of the lists: the money reward, the lair goes */
-void ShipGroup_DeathNative(cAbstractFile *params) {
+static void ShipGroup_DeathNative(cAbstractFile *params) {
 	char name[0x80];
 	cShipGroup *g;
 	int money;
@@ -296,7 +283,7 @@ void cShipGroup_Update(cShipGroup *self, float dt) {
 }
 
 /* vf06: "LairPos", the lair of the ship */
-byte cScrapyardLocalLogic_VarV(cScrapyardLocalLogic *self, const char *name, double *x, double *y, double *z,
+static byte cScrapyardLocalLogic_VarV(cScrapyardLocalLogic *self, const char *name, double *x, double *y, double *z,
 	byte set) {
 	if (strcmp(name, "LairPos")) {
 		return cLocalLogic_VarVNone(self, name, x, y, z, set);
@@ -325,7 +312,7 @@ byte cScrapyardLocalLogic_VarV(cScrapyardLocalLogic *self, const char *name, dou
 }
 
 /* the maker of the logics of the lists (cEntityListData.func) */
-cLocalLogic *ShipGroup_MakeLogic(cEntity *e) {
+static cLocalLogic *ShipGroup_MakeLogic(cEntity *e) {
 	if (!e || !e->vftable->IsType(e, TYEN_CAR) || !e->vftable->IsType(e, TYEN_CAR)) {
 		CHECK(!"e && e->IsType(TYEN_VEHICLE)");
 	}
@@ -339,7 +326,7 @@ cLocalLogic *ShipGroup_MakeLogic(cEntity *e) {
 }
 
 /* the vtable of cScrapyardLocalLogic */
-const cLocalLogicVtbl cScrapyardLocalLogic_vftable = {
+static const cLocalLogicVtbl cScrapyardLocalLogic_vftable = {
 	.Delete = cScrapyardLocalLogic_Delete,
 	.GetName = cLocalLogic_GetName,
 	.Vf02 = cLocalLogic_Vf02True,

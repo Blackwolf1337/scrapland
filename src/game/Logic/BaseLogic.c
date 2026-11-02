@@ -15,6 +15,17 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/staticinit.h"
 
+#define CLOCALLOGIC_VFTABLE (&cLocalLogic_vftable)
+#define CBASELOCALLOGIC_VFTABLE (&cBaseLocalLogic_vftable)
+#define g_DefActionRadius (GVar_DefActionRadius.value.f)
+#define g_GearRageMaxTime (GVar_GearRageMaxTime.value.f)
+#define g_LogicAwakeTime (GVar_LogicAwakeTime.value.f)
+static const cLocalLogicVtbl cLocalLogic_vftable;
+static const cBaseLocalLogicVtbl cBaseLocalLogic_vftable;
+static cGVar GVar_LogicAwakeTime;
+static cGVar GVar_GearRageMaxTime;
+static cGVar GVar_DefActionRadius;
+
 /* the state names of the debug texts (pointer tables of the exe) */
 
 cBaseLocalLogic *cBaseLocalLogic_ctor(cBaseLocalLogic *self, cEntity *parent) {
@@ -53,7 +64,7 @@ void cLocalLogic_dtor(cLocalLogic *self) {
 	self->vftable = CLOCALLOGIC_VFTABLE;
 }
 
-cLocalLogic *cBaseLocalLogic_Delete(cLocalLogic *base, byte flags) {
+static cLocalLogic *cBaseLocalLogic_Delete(cLocalLogic *base, byte flags) {
 	cBaseLocalLogic *self = (cBaseLocalLogic *)base;
 	cBaseLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -62,7 +73,7 @@ cLocalLogic *cBaseLocalLogic_Delete(cLocalLogic *base, byte flags) {
 	return base;
 }
 
-cLocalLogic *cLocalLogic_Delete(cLocalLogic *self, byte flags) {
+static cLocalLogic *cLocalLogic_Delete(cLocalLogic *self, byte flags) {
 	self->vftable = CLOCALLOGIC_VFTABLE;
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -150,7 +161,7 @@ byte cBaseLocalLogic_UpdateBusy(cLocalLogic *base) {
 /* ---- the debug texts (ShowAI) ---- */
 /* the character of the node: a line to its target (or the goal of AI state 4), the logic state and the name, the
  * AI states */
-void Logic_ShowChar(Nto1Node *node, const char **names) {
+static void Logic_ShowChar(Nto1Node *node, const char **names) {
 	char state[0x100], sub[0x100];
 	cAICharSaved goal;
 	vec3_t p, lp, tmp;
@@ -193,7 +204,7 @@ void Logic_ShowChar(Nto1Node *node, const char **names) {
 }
 
 /* the characters from node on, only those with a visible model if visible */
-void Logic_ShowChars(Nto1Node *node, const char **names, byte visible) {
+static void Logic_ShowChars(Nto1Node *node, const char **names, byte visible) {
 	for (; node; node = Logic_ListNext(node)) {
 		cEntity *e = node->data;
 		if (!visible || CGameModel_IsVisible(Obj_Vtbl(e)->GetModel(e))) {
@@ -203,7 +214,7 @@ void Logic_ShowChars(Nto1Node *node, const char **names, byte visible) {
 }
 
 /* a ship: a line to its target in the attack and chase states, the list and the name, the AI states */
-void Logic_ShowShip(cEntity *e) {
+static void Logic_ShowShip(cEntity *e) {
 	char state[0x100], sub[0x100];
 	vec3_t p, lp;
 
@@ -245,7 +256,7 @@ void Logic_ShowShips(void) {
 }
 
 /* the ships of the list of that name */
-void Logic_ShowShipList(const char *name, byte visible) {
+static void Logic_ShowShipList(const char *name, byte visible) {
 	cEntityListData *list = (cEntityListData *)cWorld_GetList(g_pWorld, name);
 
 	for (Nto1Node *n = Logic_ListFirst(list); n; n = Logic_ListNext(n)) {
@@ -257,43 +268,43 @@ void Logic_ShowShipList(const char *name, byte visible) {
 	}
 }
 
-extern const char str_GEARRELAX[];
-extern const char str_GEARCHASE[];
-extern const char str_GEARATTACK[];
-extern const char str_GEARSTAYINPLACE[];
-extern const char str_GEARSCORT[];
-const char *LOGIC_GEARSTATES[5] = { (void *)str_GEARRELAX, (void *)str_GEARCHASE, (void *)str_GEARATTACK, (void *)str_GEARSTAYINPLACE, (void *)str_GEARSCORT };
+static const char str_GEARRELAX[];
+static const char str_GEARCHASE[];
+static const char str_GEARATTACK[];
+static const char str_GEARSTAYINPLACE[];
+static const char str_GEARSCORT[];
+static const char *LOGIC_GEARSTATES[5] = { (void *)str_GEARRELAX, (void *)str_GEARCHASE, (void *)str_GEARATTACK, (void *)str_GEARSTAYINPLACE, (void *)str_GEARSCORT };
 
-extern const char str_SENTINELRELAX[];
-extern const char str_SENTINELSEARCH[];
-extern const char str_SENTINELACUSE[];
-extern const char str_SENTINELINSPECT[];
-extern const char str_SENTINELSUSPECT[];
-extern const char str_SENTINELGOTOWATCH[];
-extern const char str_SENTINELATTACKNPC[];
-const char *LOGIC_SENTINELSTATES[7] = {
+static const char str_SENTINELRELAX[];
+static const char str_SENTINELSEARCH[];
+static const char str_SENTINELACUSE[];
+static const char str_SENTINELINSPECT[];
+static const char str_SENTINELSUSPECT[];
+static const char str_SENTINELGOTOWATCH[];
+static const char str_SENTINELATTACKNPC[];
+static const char *LOGIC_SENTINELSTATES[7] = {
 	(void *)str_SENTINELRELAX, (void *)str_SENTINELSEARCH, (void *)str_SENTINELACUSE, (void *)str_SENTINELINSPECT,
 	(void *)str_SENTINELSUSPECT, (void *)str_SENTINELGOTOWATCH, (void *)str_SENTINELATTACKNPC,
 };
 
-extern const char str_NURSERELAX[];
-extern const char str_NURSEALERT[];
-extern const char str_NURSEESCAPE[];
-extern const char str_NURSEATTACK[];
-const char *LOGIC_NURSESTATES[4] = { (void *)str_NURSERELAX, (void *)str_NURSEALERT, (void *)str_NURSEESCAPE, (void *)str_NURSEATTACK };
+static const char str_NURSERELAX[];
+static const char str_NURSEALERT[];
+static const char str_NURSEESCAPE[];
+static const char str_NURSEATTACK[];
+static const char *LOGIC_NURSESTATES[4] = { (void *)str_NURSERELAX, (void *)str_NURSEALERT, (void *)str_NURSEESCAPE, (void *)str_NURSEATTACK };
 
-extern const char str_GENCHARRELAX[];
-extern const char str_GENCHARALERT[];
-extern const char str_GENCHARACUSE[];
-extern const char str_GENCHARESCAPE[];
-extern const char str_GENCHARATTACK[];
-extern const char str_GENCHARCHASE[];
-extern const char str_GENCHARSTAY[];
-extern const char str_GENCHARSPECIALBEHAVIOUR1[];
-extern const char str_GENCHARSPECIALBEHAVIOUR2[];
-extern const char str_GENCHARSPECIALBEHAVIOUR3[];
-extern const char str_GENCHARGETIT[];
-const char *LOGIC_GENCHARSTATES[11] = {
+static const char str_GENCHARRELAX[];
+static const char str_GENCHARALERT[];
+static const char str_GENCHARACUSE[];
+static const char str_GENCHARESCAPE[];
+static const char str_GENCHARATTACK[];
+static const char str_GENCHARCHASE[];
+static const char str_GENCHARSTAY[];
+static const char str_GENCHARSPECIALBEHAVIOUR1[];
+static const char str_GENCHARSPECIALBEHAVIOUR2[];
+static const char str_GENCHARSPECIALBEHAVIOUR3[];
+static const char str_GENCHARGETIT[];
+static const char *LOGIC_GENCHARSTATES[11] = {
 	(void *)str_GENCHARRELAX, (void *)str_GENCHARALERT, (void *)str_GENCHARACUSE, (void *)str_GENCHARESCAPE,
 	(void *)str_GENCHARATTACK, (void *)str_GENCHARCHASE, (void *)str_GENCHARSTAY, (void *)str_GENCHARSPECIALBEHAVIOUR1,
 	(void *)str_GENCHARSPECIALBEHAVIOUR2, (void *)str_GENCHARSPECIALBEHAVIOUR3, (void *)str_GENCHARGETIT,
@@ -335,14 +346,6 @@ byte cBaseLocalLogic_VarF(cLocalLogic *base, const char *name, double *d, byte s
 	}
 	*d = (double)self->actionRadius;
 	return 1;
-}
-
-byte cLocalLogic_VarNone(cLocalLogic *self, const char *name, void *v, byte set) {
-	(void)self;
-	(void)name;
-	(void)v;
-	(void)set;
-	return 0;
 }
 
 byte cLocalLogic_VarVNone(cLocalLogic *self, const char *name, double *x, double *y, double *z, byte set) {
@@ -606,34 +609,6 @@ byte cBaseLocalLogic_VarV(cLocalLogic *base, const char *name, double *x, double
 	return 0;
 }
 
-/* ---- the small slots shared by the logic classes ---- */
-byte Logic_True(void *self) {
-	(void)self;
-	return 1;
-}
-
-byte Logic_False(void *self) {
-	(void)self;
-	return 0;
-}
-
-/* vf30 of the logics that search no target */
-cEntity *Logic_NoTarget(void *self) {
-	(void)self;
-	return NULL;
-}
-
-void Logic_Nop1(void *self, int arg) {
-	(void)self;
-	(void)arg;
-}
-
-byte Logic_False1(void *self, int arg) {
-	(void)self;
-	(void)arg;
-	return 0;
-}
-
 /* the slot CanTalk of a class that does only return 1 */
 byte cLocalLogic_CanTalkTrue(cLocalLogic *self) {
 	(void)self;
@@ -793,7 +768,7 @@ void cLocalLogic_WorkNop(cLocalLogic *self, float dt) {
 }
 
 /* the vtable of cLocalLogic */
-const cLocalLogicVtbl cLocalLogic_vftable = {
+static const cLocalLogicVtbl cLocalLogic_vftable = {
 	.Delete = cLocalLogic_Delete,
 	.GetName = cLocalLogic_GetName,
 	.Vf02 = cLocalLogic_Vf02True,
@@ -804,7 +779,7 @@ const cLocalLogicVtbl cLocalLogic_vftable = {
 };
 
 /* the vtable of cBaseLocalLogic */
-const cBaseLocalLogicVtbl cBaseLocalLogic_vftable = {
+static const cBaseLocalLogicVtbl cBaseLocalLogic_vftable = {
 	.base.Delete = cBaseLocalLogic_Delete,
 	.base.GetName = cBaseLocalLogic_GetName,
 	.base.Vf02 = cLocalLogic_Vf02True,
@@ -832,36 +807,37 @@ const cBaseLocalLogicVtbl cBaseLocalLogic_vftable = {
 	.RestartState = cBaseLocalLogic_RestartState,
 };
 
-const char str_GEARRELAX[] = "GEAR_RELAX";
-const char str_GEARCHASE[] = "GEAR_CHASE";
-const char str_GEARATTACK[] = "GEAR_ATTACK";
-const char str_GEARSTAYINPLACE[] = "GEAR_STAY_IN_PLACE";
-const char str_GEARSCORT[] = "GEAR_SCORT";
-const char str_SENTINELRELAX[] = "SENTINEL_RELAX";
-const char str_SENTINELSEARCH[] = "SENTINEL_SEARCH";
-const char str_SENTINELACUSE[] = "SENTINEL_ACUSE";
-const char str_SENTINELINSPECT[] = "SENTINEL_INSPECT";
-const char str_SENTINELSUSPECT[] = "SENTINEL_SUSPECT";
-const char str_SENTINELGOTOWATCH[] = "SENTINEL_GOTO_WATCH";
-const char str_SENTINELATTACKNPC[] = "SENTINEL_ATTACK_NPC";
-const char str_NURSERELAX[] = "NURSE_RELAX";
-const char str_NURSEALERT[] = "NURSE_ALERT";
-const char str_NURSEESCAPE[] = "NURSE_ESCAPE";
-const char str_NURSEATTACK[] = "NURSE_ATTACK";
-const char str_GENCHARRELAX[] = "GENCHAR_RELAX";
-const char str_GENCHARALERT[] = "GENCHAR_ALERT";
-const char str_GENCHARACUSE[] = "GENCHAR_ACUSE";
-const char str_GENCHARESCAPE[] = "GENCHAR_ESCAPE";
-const char str_GENCHARATTACK[] = "GENCHAR_ATTACK";
-const char str_GENCHARCHASE[] = "GENCHAR_CHASE";
-const char str_GENCHARSTAY[] = "GENCHAR_STAY";
-const char str_GENCHARSPECIALBEHAVIOUR1[] = "GENCHAR_SPECIAL_BEHAVIOUR_1";
-const char str_GENCHARSPECIALBEHAVIOUR2[] = "GENCHAR_SPECIAL_BEHAVIOUR_2";
-const char str_GENCHARSPECIALBEHAVIOUR3[] = "GENCHAR_SPECIAL_BEHAVIOUR_3";
-const char str_GENCHARGETIT[] = "GENCHAR_GET_IT";
-cGVar GVar_LogicAwakeTime;
-cGVar GVar_DefActionRadius;
-cGVar GVar_GearRageMaxTime;
+static const char str_GEARRELAX[] = "GEAR_RELAX";
+static const char str_GEARCHASE[] = "GEAR_CHASE";
+static const char str_GEARATTACK[] = "GEAR_ATTACK";
+static const char str_GEARSTAYINPLACE[] = "GEAR_STAY_IN_PLACE";
+static const char str_GEARSCORT[] = "GEAR_SCORT";
+static const char str_SENTINELRELAX[] = "SENTINEL_RELAX";
+static const char str_SENTINELSEARCH[] = "SENTINEL_SEARCH";
+static const char str_SENTINELACUSE[] = "SENTINEL_ACUSE";
+static const char str_SENTINELINSPECT[] = "SENTINEL_INSPECT";
+static const char str_SENTINELSUSPECT[] = "SENTINEL_SUSPECT";
+static const char str_SENTINELGOTOWATCH[] = "SENTINEL_GOTO_WATCH";
+static const char str_SENTINELATTACKNPC[] = "SENTINEL_ATTACK_NPC";
+static const char str_NURSERELAX[] = "NURSE_RELAX";
+static const char str_NURSEALERT[] = "NURSE_ALERT";
+static const char str_NURSEESCAPE[] = "NURSE_ESCAPE";
+static const char str_NURSEATTACK[] = "NURSE_ATTACK";
+static const char str_GENCHARRELAX[] = "GENCHAR_RELAX";
+static const char str_GENCHARALERT[] = "GENCHAR_ALERT";
+static const char str_GENCHARACUSE[] = "GENCHAR_ACUSE";
+static const char str_GENCHARESCAPE[] = "GENCHAR_ESCAPE";
+static const char str_GENCHARATTACK[] = "GENCHAR_ATTACK";
+static const char str_GENCHARCHASE[] = "GENCHAR_CHASE";
+static const char str_GENCHARSTAY[] = "GENCHAR_STAY";
+static const char str_GENCHARSPECIALBEHAVIOUR1[] = "GENCHAR_SPECIAL_BEHAVIOUR_1";
+static const char str_GENCHARSPECIALBEHAVIOUR2[] = "GENCHAR_SPECIAL_BEHAVIOUR_2";
+static const char str_GENCHARSPECIALBEHAVIOUR3[] = "GENCHAR_SPECIAL_BEHAVIOUR_3";
+static const char str_GENCHARGETIT[] = "GENCHAR_GET_IT";
+static cGVar GVar_LogicAwakeTime;
+/* engine variables of the logics */
+static cGVar GVar_DefActionRadius;
+static cGVar GVar_GearRageMaxTime;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_LogicAwakeTime, &GVar_LogicAwakeTime, "LogicAwakeTime", 0, "Max time dazed for the logical managed characters.", 90.0f)

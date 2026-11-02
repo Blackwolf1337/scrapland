@@ -25,10 +25,6 @@
 #define ANIM_VERT 0x1000		/* CAnimNode_GetFlags: vertex animation */
 #define ANIMEVENT_END 0xd		/* the event a group puts at its last frame */
 
-
-
-
-
 typedef struct MorphData {
 	char Tag[2];			/* 0x0 */
 	byte Target;			/* 0x2 */
@@ -66,13 +62,8 @@ typedef struct CAnimGroups {
 /* the groups destroyed and their slots cleared */
 CAnimGroups *CAnimGroups_ctor(CAnimGroups *self);
 void CAnimGroups_Clear(CAnimGroups *self);
-void CAnimGroup_dtor(CAnimGroup *self);
-/* the events of the list deleted */
-void AnimEvents_Free(CAnimEvent **list);
 /* the step with the 2 character tag, -1 none */
 int MorphData_Find(const MorphData *md, const char *tag);
-/* "<i>_Data" (6 bytes from Target on) and "<i>_Tag" of the section; 0 without the data */
-byte MorphData_Read(CIniFile *ini, const char *sect, int i, MorphData *d, int targets);
 /* into the first free slot, its index */
 int CAnimGroups_Add(CAnimGroups *self, CAnimGroup *g);
 CAnimGroup *CAnimGroups_Get(CAnimGroups *self, uint32_t i);

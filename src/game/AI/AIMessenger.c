@@ -10,6 +10,17 @@
 #include "scrap/walkcharentity.h"
 #include "scrap/staticinit.h"
 
+#define CAIMESSENGER_VFTABLE (&cAIMessenger_vftable)
+#define g_ShootMessengerAI (GVar_ShootMessengerAI.value.i)
+#define g_OffsetAngShootMessengerAI (GVar_OffsetAngShootMessengerAI.value.f)
+#define g_TimeShootMessengerAI (GVar_TimeShootMessengerAI.value.f)
+#define g_DistMaxShootMessengerAI (GVar_DistMaxShootMessengerAI.value.f)
+static const cAICharVtbl cAIMessenger_vftable;
+static cGVar GVar_TimeShootMessengerAI;
+static cGVar GVar_ShootMessengerAI;
+static cGVar GVar_OffsetAngShootMessengerAI;
+static cGVar GVar_DistMaxShootMessengerAI;
+
 #define CAIMESSENGER_SIZE sizeof(cAIMessenger)
 
 void *cAIMessenger_ctor(void *mem, cEntity *e, int *arg) {
@@ -22,7 +33,8 @@ void *cAIMessenger_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAI *cAIMessenger_Delete(cAI *base, byte flags) {
+/* AIMessenger.c */
+static cAI *cAIMessenger_Delete(cAI *base, byte flags) {
 	cAIChar *self = (cAIChar *)base;
 	self->vftable = CAIMESSENGER_VFTABLE;
 	cAIChar_dtor(self);
@@ -32,7 +44,7 @@ cAI *cAIMessenger_Delete(cAI *base, byte flags) {
 	return base;
 }
 
-void cAIMessenger_CheckActDist(cAI *elem) {
+static void cAIMessenger_CheckActDist(cAI *elem) {
 	cAIMessenger *self = (cAIMessenger *)elem;
 	cAIChar *c = &self->base;
 	byte act = 0;
@@ -74,7 +86,7 @@ done:
 	c->ctrl->act = act;
 }
 
-void cAIMessenger_SetDists(cAI *elem) {
+static void cAIMessenger_SetDists(cAI *elem) {
 	cAIMessenger *self = (cAIMessenger *)elem;
 	cAIChar *c = &self->base;
 
@@ -89,7 +101,7 @@ void cAIMessenger_SetDists(cAI *elem) {
 	c->chaseNear = 129.0f;
 }
 
-void cAIMessenger_SetShoot(cAI *elem) {
+static void cAIMessenger_SetShoot(cAI *elem) {
 	cAIMessenger *self = (cAIMessenger *)elem;
 	self->shootFactor = g_ShootMessengerAI;
 	self->shootAng = g_OffsetAngShootMessengerAI;
@@ -99,7 +111,7 @@ void cAIMessenger_SetShoot(cAI *elem) {
 }
 
 /* the vtable of cAIMessenger */
-const cAICharVtbl cAIMessenger_vftable = {
+static const cAICharVtbl cAIMessenger_vftable = {
 	.base.base.Delete = cAIMessenger_Delete,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,
@@ -201,10 +213,10 @@ const cAICharVtbl cAIMessenger_vftable = {
 	.Facing = cAIChar_Facing,
 };
 
-cGVar GVar_OffsetAngShootMessengerAI;
-cGVar GVar_ShootMessengerAI;
-cGVar GVar_TimeShootMessengerAI;
-cGVar GVar_DistMaxShootMessengerAI;
+static cGVar GVar_OffsetAngShootMessengerAI;
+static cGVar GVar_ShootMessengerAI;
+static cGVar GVar_TimeShootMessengerAI;
+static cGVar GVar_DistMaxShootMessengerAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_ShootMessengerAI, &GVar_ShootMessengerAI, "ShootMessengerAI", 4, "Factor shoot Messenger.\n", 3)

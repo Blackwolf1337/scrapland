@@ -12,6 +12,15 @@
 #include "scrap/scrapmain.h"
 #include "scrap/staticinit.h"
 
+#define CTALKSCORER_VFTABLE (&cTalkScorer_vftable.base)
+#define g_TalkWidth (GVar_MaxTalkLineSizePix.value.f)		/* the width of the lines */
+#define g_TalkUseTime (GVar_TimeToAbortChatText.value.f)	/* the hold time of the use that skips a talk */
+#define g_TalkTime (GVar_FullTalkTime.value.f)		/* the time of the whole talk */
+static const cTalkScorerVtbl cTalkScorer_vftable;
+static cGVar GVar_TimeToAbortChatText;
+static cGVar GVar_MaxTalkLineSizePix;
+static cGVar GVar_FullTalkTime;
+
 /* the use action of the walk action set (3) */
 #define TALK_ACTION_SET 3
 #define TALK_ACTION_USE 0x11
@@ -20,9 +29,10 @@ static int Talk_Wrap(char *text, char **lines) {
 	return Str_WrapText(text, lines, g_TalkWidth, TALK_MAX_LINES, "Horatio");
 }
 
-char g_TalkText[6400];
-int g_TalkNumLines;
-char *g_TalkLines[40];
+/* the talk of Scorer_SetSpeechText */
+static char g_TalkText[6400];
+static int g_TalkNumLines;
+static char *g_TalkLines[40];
 
 cTalkScorer *cTalkScorer_ctor(cTalkScorer *self) {
 	float dim[2];
@@ -64,14 +74,14 @@ cTalkScorer *cTalkScorer_ctor(cTalkScorer *self) {
 	return self;
 }
 
-void cTalkScorer_dtor(cTalkScorer *self) {
+static void cTalkScorer_dtor(cTalkScorer *self) {
 	self->base.vftable = CTALKSCORER_VFTABLE;
 	ScorerImg_Free(self->sprite);
 	ScorerImg_Free(self->tab);
 	cScorerItem_dtor(&self->base);
 }
 
-cScorerItem *cTalkScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cTalkScorer_Delete(cScorerItem *base, byte flags) {
 	cTalkScorer *self = (cTalkScorer *)base;
 	cTalkScorer_dtor(self);
 	if (flags & 1) {
@@ -80,7 +90,8 @@ cScorerItem *cTalkScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-cEntity *Talk_GetUseTarget(int player) {
+/* the character of the player in front of its character (the use target), NULL if none */
+static cEntity *Talk_GetUseTarget(int player) {
 	if (Input_GetActionSet() != TALK_ACTION_SET) {
 		return NULL;
 	}
@@ -99,7 +110,7 @@ cEntity *Talk_GetUseTarget(int player) {
 	return WChar(t)->wl.arrow.canUse ? t : NULL;
 }
 
-int cTalkScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+static int cTalkScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cTalkScorer *self = (cTalkScorer *)base;
 	static const char *const colors[4] = {"TabRed", "TabGreen", "TabBlue", "TabAlpha"};
 	int r;
@@ -148,8 +159,8 @@ int cTalkScorer_Var(cScorerItem *base, const char *name, int set, char **s, doub
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-
-void cTalkScorer_Draw(cScorerItem *base, int player) {
+/* the use text (vf05) and the talk (vf04) up from the item position */
+static void cTalkScorer_Draw(cScorerItem *base, int player) {
 	cTalkScorer *self = (cTalkScorer *)base;
 	const cTalkScorerVtbl *vt = (const cTalkScorerVtbl *)self->base.vftable;
 	float pos[2];
@@ -160,11 +171,11 @@ void cTalkScorer_Draw(cScorerItem *base, int player) {
 	vt->DrawTalk(self, player, pos);
 }
 
-cPy_Function g_TalkCallback;
+static cPy_Function g_TalkCallback;
 
-int g_TalkColor[3] = { 174, 229, 251 };
+static int g_TalkColor[3] = { 174, 229, 251 };
 
-void cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos) {
+static void cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos) {
 	float dt, scroll, w, lh, x, y, hgt;
 	int n, maxLines;
 
@@ -220,7 +231,7 @@ void cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos) {
 	self->useTime = g_TalkUseTime;
 }
 
-void cTalkScorer_DrawUse(cTalkScorer *self, int player, float *pos) {
+static void cTalkScorer_DrawUse(cTalkScorer *self, int player, float *pos) {
 	cEntity *t = Talk_GetUseTarget(player);
 	cArrowIndicator *arrow;
 	const char *opt, *p;
@@ -282,6 +293,7 @@ void Scorer_CancelSpeech(float time) {
 	g_RemainTalkTime = time;
 }
 
+static void Talk_AddCallbackParams(PyObject *list);
 void Scorer_SetSpeechCallback(const char *func, PyObject *arg) {
 	cPy_Function_SetFunc((&g_TalkCallback), func);
 	if (arg && arg->ob_type == &PyList_Type) {
@@ -289,7 +301,8 @@ void Scorer_SetSpeechCallback(const char *func, PyObject *arg) {
 	}
 }
 
-void Talk_AddCallbackParams(PyObject *list) {
+/* the items of a Python list as the parameters of the talk callback */
+static void Talk_AddCallbackParams(PyObject *list) {
 	for (int k = 0; k < PyList_Size(list); k++) {
 		PyObject *item = PyList_GetItem(list, k);
 		PyTypeObject *type = item->ob_type;
@@ -321,7 +334,7 @@ int Talk_IsShown(void) {
 }
 
 /* the vtable of cTalkScorer */
-const cTalkScorerVtbl cTalkScorer_vftable = {
+static const cTalkScorerVtbl cTalkScorer_vftable = {
 	.base.Draw = cTalkScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cTalkScorer_Var,
@@ -330,10 +343,10 @@ const cTalkScorerVtbl cTalkScorer_vftable = {
 	.DrawUse = cTalkScorer_DrawUse,
 };
 
-cGVar GVar_MaxTalkLineSizePix;
-cGVar GVar_TimeToAbortChatText;
+static cGVar GVar_MaxTalkLineSizePix;
+static cGVar GVar_TimeToAbortChatText;
 cGVar GVar_RemainTalkTime;
-cGVar GVar_FullTalkTime;
+static cGVar GVar_FullTalkTime;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_TimeToAbortChatText, &GVar_TimeToAbortChatText, "TimeToAbortChatText", 0, "This time must be keeped press the action button to abort the current chat.", 0.5f)

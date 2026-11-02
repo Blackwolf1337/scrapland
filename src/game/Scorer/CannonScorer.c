@@ -8,6 +8,13 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
+#define CCANNONSCORER_VFTABLE (&cCannonScorer_vftable.base)
+#define g_CannonNoAmmoSound (GVar_CannonScorerNoAmmoSound.value.s)	/* CannonScorerNoAmmoSound */
+#define g_CannonNoAmmoSoundVol (GVar_CannonScorerNoAmmoSoundVol.value.f)	/* CannonScorerNoAmmoSoundVol */
+static const cCannonScorerVtbl cCannonScorer_vftable;
+static cGVar GVar_CannonScorerNoAmmoSoundVol;
+static cGVar GVar_CannonScorerNoAmmoSound;
+
 /* the lock of the target of a ship: on, and the time of the lock (0 while searching) */
 
 cCannonScorer *cCannonScorer_ctor(cCannonScorer *self) {
@@ -28,7 +35,7 @@ cCannonScorer *cCannonScorer_ctor(cCannonScorer *self) {
 	return self;
 }
 
-void cCannonScorer_dtor(cCannonScorer *self) {
+static void cCannonScorer_dtor(cCannonScorer *self) {
 	CPsaImage *img = self->img;
 	self->base.vftable = CCANNONSCORER_VFTABLE;
 	if (img) {
@@ -38,7 +45,7 @@ void cCannonScorer_dtor(cCannonScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cScorerItem *cCannonScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cCannonScorer_Delete(cScorerItem *base, byte flags) {
 	cCannonScorer *self = (cCannonScorer *)base;
 	cCannonScorer_dtor(self);
 	if (flags & 1) {
@@ -62,7 +69,8 @@ static void Cannon_FrameQuad(CPsaImage *img, int frame, float *uv) {
 	uv[7] = uv1[1];
 }
 
-void cCannonScorer_DrawAim(cCannonScorer *self, int weapon, const float *pos, const float *scale,
+/* the aim frame of weapon three times around pos, turned by angle */
+static void cCannonScorer_DrawAim(cCannonScorer *self, int weapon, const float *pos, const float *scale,
 	const float *unused, float angle, uint32_t color) {
 	static const float corners[4][2] = {{-0.5f, -0.375f}, {0.5f, -0.375f}, {0.5f, 0.375f}, {-0.5f, 0.375f}};
 	float uv0[2], uv1[2], quad[4][2], uv[8], ofs[2], tmp[2];
@@ -107,7 +115,8 @@ void cCannonScorer_DrawAim(cCannonScorer *self, int weapon, const float *pos, co
 	}
 }
 
-void cCannonScorer_DrawShipAim(cCannonScorer *self, int player, cEntity *ship) {
+/* the aim of the weapon of the ship at the screen point of its auto aim */
+static void cCannonScorer_DrawShipAim(cCannonScorer *self, int player, cEntity *ship) {
 	vec3_t aim;
 	float screen[2];
 	byte shown;
@@ -140,7 +149,8 @@ void cCannonScorer_DrawShipAim(cCannonScorer *self, int player, cEntity *ship) {
 	self->shown = shown;
 }
 
-void cCannonScorer_DrawCenter(cCannonScorer *self, int player, cEntity *ship) {
+/* the center sprite, the lock text and DANGER under the warning life */
+static void cCannonScorer_DrawCenter(cCannonScorer *self, int player, cEntity *ship) {
 	static const float corners[8] = {-0.25f, -0.25f, 0.25f, -0.25f, 0.25f, 0.25f, -0.25f, 0.25f};
 	float uv[8], y;
 
@@ -173,7 +183,8 @@ void cCannonScorer_DrawCenter(cCannonScorer *self, int player, cEntity *ship) {
 	}
 }
 
-int cCannonScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+/* Sprite (set), CrossHairIndex, AimAc, AimIndex */
+static int cCannonScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cCannonScorer *self = (cCannonScorer *)base;
 	if (s && !crt_stricmp(name, "Sprite") && set) {
 		if (self->img) {
@@ -200,7 +211,7 @@ int cCannonScorer_Var(cScorerItem *base, const char *name, int set, char **s, do
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-void cCannonScorer_Draw(cScorerItem *base, int player) {
+static void cCannonScorer_Draw(cScorerItem *base, int player) {
 	cCannonScorer *self = (cCannonScorer *)base;
 	const char *camName = cWorld_GetCamName(g_pWorld, player);
 	cEntity *ship = NULL;
@@ -228,7 +239,8 @@ void cCannonScorer_Draw(cScorerItem *base, int player) {
 	}
 }
 
-void cCannonScorer_DrawLock(cCannonScorer *self, int player, const float *pos) {
+/* vf04: "Searching..." or "Target Lock" above pos for the lock of the ship of the player */
+static void cCannonScorer_DrawLock(cCannonScorer *self, int player, const float *pos) {
 	cEntity *e = g_pWorld->owners[player];
 	const char *text;
 	uint32_t color;
@@ -257,7 +269,7 @@ void cCannonScorer_DrawLock(cCannonScorer *self, int player, const float *pos) {
 }
 
 /* the vtable of cCannonScorer */
-const cCannonScorerVtbl cCannonScorer_vftable = {
+static const cCannonScorerVtbl cCannonScorer_vftable = {
 	.base.Draw = cCannonScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cCannonScorer_Var,
@@ -265,8 +277,8 @@ const cCannonScorerVtbl cCannonScorer_vftable = {
 	.DrawLock = cCannonScorer_DrawLock,
 };
 
-cGVar GVar_CannonScorerNoAmmoSound;
-cGVar GVar_CannonScorerNoAmmoSoundVol;
+static cGVar GVar_CannonScorerNoAmmoSound;
+static cGVar GVar_CannonScorerNoAmmoSoundVol;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_CannonScorerNoAmmoSound, &GVar_CannonScorerNoAmmoSound)

@@ -8,8 +8,11 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/staticinit.h"
 
+#define g_PercFriendsAttackLeaderWhenWinning (GVar_PercFriendsAttackLeaderWhenWinning.value.f)
+static cGVar GVar_PercFriendsAttackLeaderWhenWinning;
+
 /* defined further down or in another file without a header */
-void CTFFriends_OnDamage(cAbstractFile *params);
+static void CTFFriends_OnDamage(cAbstractFile *params);
 
 cEntity *Logic_FindCar(const char *name) {
 	return Logic_AsCar(World_FindEntity(name));
@@ -39,7 +42,7 @@ cEntityListData *cCTFFriends_GetList(cCTFFriends *self) {
 }
 
 /* a random enemy ship, or the enemy leader (once while no ship attacks it) if attackLeader */
-cEntity *cCTFFriendsData_PickTarget(cCTFFriendsData *self, cEntity *e, byte attackLeader) {
+static cEntity *cCTFFriendsData_PickTarget(cCTFFriendsData *self, cEntity *e, byte attackLeader) {
 	(void)e;
 	cEntityListData *enemies = cCTFEnemies_GetList((&g_pWorld->logic.ctfEnemies));
 	Nto1Node *n = Logic_ListFirst(enemies);
@@ -61,7 +64,7 @@ cEntity *cCTFFriendsData_PickTarget(cCTFFriendsData *self, cEntity *e, byte atta
 	return NULL;
 }
 
-void cCTFFriendsData_Think(cCTFFriendsData *self) {
+static void cCTFFriendsData_Think(cCTFFriendsData *self) {
 	Nto1Node *n = Logic_ListFirst(self->list);
 
 	if (!n) {
@@ -109,7 +112,7 @@ void cCTFFriends_Init(cCTFFriends *self) {
 }
 
 /* the native of the hits: the ship and its attacker */
-void CTFFriends_OnDamage(cAbstractFile *params) {
+static void CTFFriends_OnDamage(cAbstractFile *params) {
 	char name[0x80], attacker[0x80];
 
 	cAbstractFile_ReadString(params, name, 0x80);
@@ -151,7 +154,7 @@ void cCTFFriends_Update(cCTFFriends *self, float dt) {
 	}
 }
 
-cGVar GVar_PercFriendsAttackLeaderWhenWinning;
+static cGVar GVar_PercFriendsAttackLeaderWhenWinning;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_PercFriendsAttackLeaderWhenWinning, &GVar_PercFriendsAttackLeaderWhenWinning, "PercFriendsAttackLeaderWhenWinning", 0, "CTFFriends percentage attacking leader when he's winning", 0.5f)

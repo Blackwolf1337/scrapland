@@ -15,6 +15,31 @@
 #include "scrap/particlesystem.h"
 #include "scrap/staticinit.h"
 
+#define g_MaxSparkSize (GVar_R_MaxSparkSize.value.f)	/* R_MaxSparkSize */
+#define g_MinSparkDist (GVar_R_MinSparkDist.value.f)	/* R_MinSparkDist */
+#define g_ParticlesAlphaDist (GVar_R_ParticlesAlphaDist.value.i)	/* R_ParticlesAlphaDist */
+#define g_ParticlesDraw (GVar_R_ParticlesDraw.value.i)	/* R_ParticlesDraw */
+#define g_ParticlesLock (GVar_R_ParticlesLock.value.i)	/* R_ParticlesLock: 1 always discard, 2 the size too */
+#define g_ParticlesOne (GVar_R_ParticlesOne.value.i)		/* R_ParticlesOne */
+#define g_ParticlesZBias (GVar_R_ParticlesZBias.value.i)	/* R_ParticlesZBias */
+#define g_ShowEVA (GVar_R_ShowEVA.value.i)		/* R_ShowEVA */
+#define g_ShowSkin (GVar_R_ShowSkin.value.i)		/* R_ShowSkin */
+#define g_SkinNodeSpace (GVar_R_SkinNodeSpace.value.i)	/* R_SkinNodeSpace */
+#define g_UseEVA (GVar_R_UseEVA.value.i)		/* R_UseEVA */
+#define g_UseSkin (GVar_R_UseSkin.value.i)		/* R_UseSkin */
+static cGVar GVar_R_UseSkin;
+static cGVar GVar_R_UseEVA;
+static cGVar GVar_R_SkinNodeSpace;
+static cGVar GVar_R_ShowSkin;
+static cGVar GVar_R_ShowEVA;
+static cGVar GVar_R_ParticlesZBias;
+static cGVar GVar_R_ParticlesOne;
+static cGVar GVar_R_ParticlesLock;
+static cGVar GVar_R_ParticlesDraw;
+static cGVar GVar_R_ParticlesAlphaDist;
+static cGVar GVar_R_MinSparkDist;
+static cGVar GVar_R_MaxSparkSize;
+
 #define D3DFVF_TEX1 0x112		/* XYZ | NORMAL | TEX1 */
 #define D3DFVF_PART 0x1c2		/* XYZ | DIFFUSE | SPECULAR | TEX1 */
 #define NODE_NO_CASTSHADOWS (1u << 5)
@@ -51,9 +76,11 @@ static void Buf_Unlock(void *buf) {
 	Rd_BufUnlock(buf);
 }
 
-void *g_EVAVB;
-int g_EVAVBUsed;
+static void *g_EVAVB;
+static int g_EVAVBUsed;
 
+static int RenderEVA_CreateParticles(void);
+static int RenderEVA_FreeParticles(void);
 int RenderEVA_InitD3D(void) {
 	CHECK(g_Engine);
 	CHECK(g_pd3dDevice);
@@ -68,13 +95,13 @@ int RenderEVA_InitD3D(void) {
 	return RenderEVA_CreateParticles() < 0 ? E_FAIL : 0;
 }
 
-void *g_PartVB;
-void *g_PartIB;
-int g_PartVBUsed;
-uint16_t *g_PartTri;
-int g_PartNumTri;
+static void *g_PartVB;
+static void *g_PartIB;
+static int g_PartVBUsed;
+static uint16_t *g_PartTri;
+static int g_PartNumTri;
 
-int RenderEVA_CreateParticles(void) {
+static int RenderEVA_CreateParticles(void) {
 	CHECK(!g_PartTri);
 	g_PartNumTri = VB_PARTICLES * 2;
 	uint16_t *t = New_Array(VB_PARTICLES * 6, sizeof(uint16_t));
@@ -100,7 +127,8 @@ int RenderEVA_CreateParticles(void) {
 	return 0;
 }
 
-int RenderEVA_FreeParticles(void) {
+/* the buffers of the particles released; 0 */
+static int RenderEVA_FreeParticles(void) {
 	if (g_PartTri) {
 		/* a scalar delete of the array in the original */
 		operator_delete_sized(g_PartTri, sizeof(uint16_t));
@@ -117,7 +145,9 @@ int RenderEVA_ReleaseD3D(void) {
 	return 0;
 }
 
-int RenderEVA_LockParticles(int nvert, void **data) {
+/* nvert vertices of the particle (skin) buffer locked after the used ones, from the start (discarded) when they do
+ * not fit; HRESULT */
+static int RenderEVA_LockParticles(int nvert, void **data) {
 	CHECK(nvert < VB_PARTICLES * 4);
 	if (g_ParticlesLock) {
 		g_PartVBUsed = 0;
@@ -132,7 +162,7 @@ int RenderEVA_LockParticles(int nvert, void **data) {
 		data, D3DLOCK_NOOVERWRITE);
 }
 
-int RenderEVA_LockSkin(int nvert, void **data) {
+static int RenderEVA_LockSkin(int nvert, void **data) {
 	CHECK(nvert < MAX_VERT_VB);
 	if (g_EVAVBUsed + nvert > MAX_VERT_VB) {
 		g_EVAVBUsed = 0;
@@ -346,7 +376,10 @@ int RenderEVA_DrawSkin(CMeshD3D *m, CRenderNode *r) {
 	return 0;
 }
 
-void Particle_Quad(CParticle *p, const matrix_t *bill, const matrix_t *view, Graphic3DVert *out, float alpha,
+/* the four corners of a particle: a square of its size turned by rot facing the camera (bill: the billboard
+ * matrix in the space of the particles, view: the view matrix of it), sparks stretched along their screen motion;
+ * alpha (below 1) scales the inverted alpha of the color, zbias moves it to the camera */
+static void Particle_Quad(CParticle *p, const matrix_t *bill, const matrix_t *view, Graphic3DVert *out, float alpha,
 	float zbias) {
 	float hw = p->size * 0.5f * p->scale;
 	float hl = hw;
@@ -535,18 +568,19 @@ int ParticleSystem_Draw2(CParticleSystem *sp, CRenderNode *r) {
 	return 0;
 }
 
-cGVar GVar_R_ParticlesOne;
-cGVar GVar_R_UseSkin;
-cGVar GVar_R_MaxSparkSize;
-cGVar GVar_R_ShowSkin;
-cGVar GVar_R_ShowEVA;
-cGVar GVar_R_MinSparkDist;
-cGVar GVar_R_ParticlesDraw;
-cGVar GVar_R_ParticlesZBias;
-cGVar GVar_R_ParticlesAlphaDist;
-cGVar GVar_R_UseEVA;
-cGVar GVar_R_ParticlesLock;
-cGVar GVar_R_SkinNodeSpace;
+static cGVar GVar_R_ParticlesOne;
+static cGVar GVar_R_UseSkin;
+/* the engine variables */
+static cGVar GVar_R_MaxSparkSize;
+static cGVar GVar_R_ShowSkin;
+static cGVar GVar_R_ShowEVA;
+static cGVar GVar_R_MinSparkDist;
+static cGVar GVar_R_ParticlesDraw;
+static cGVar GVar_R_ParticlesZBias;
+static cGVar GVar_R_ParticlesAlphaDist;
+static cGVar GVar_R_UseEVA;
+static cGVar GVar_R_ParticlesLock;
+static cGVar GVar_R_SkinNodeSpace;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_R_UseSkin, &GVar_R_UseSkin, "R_UseSkin", 0, "Use skinning (0/1)", 1)

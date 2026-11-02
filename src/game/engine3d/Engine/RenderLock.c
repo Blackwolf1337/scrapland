@@ -17,17 +17,17 @@
 #define D3DFMT_R5G6B5 23
 #define D3DBACKBUFFER_TYPE_MONO 0
 
-cGVar GVar_R_VideoLockMode;
+static cGVar GVar_R_VideoLockMode;
 
 /* the engine variables: RenderLock (the mode), RenderLockFrames (1..3) and RenderLockNoise */
 #define g_RenderLock (GVar_R_VideoLockMode.value.i)
-cGVar GVar_R_VideoLockBuf;
+static cGVar GVar_R_VideoLockBuf;
 
 #define g_RenderLockFrames (GVar_R_VideoLockBuf.value.i)
-cGVar GVar_R_VideoLockShow;
+static cGVar GVar_R_VideoLockShow;
 
 #define g_RenderLockNoise (GVar_R_VideoLockShow.value.i)
-void *g_TextLock[7];
+static void *g_TextLock[7];
 
 #define g_TextMem (g_TextLock[3])		/* system memory */
 #define g_TextBack (g_TextLock[4])		/* in the format of the back buffer */
@@ -73,10 +73,10 @@ void RenderLock_InitD3D(void) {
 	RenderLock_Create(0, fmt, D3DPOOL_SYSTEMMEM, &g_TextBack);
 }
 
-const int32_t g_RenderLockRect[4] = { 0, 0, 4, 4 };
+static const int32_t g_RenderLockRect[4] = { 0, 0, 4, 4 };
 
 /* mode 1: a part of the back buffer into the system texture */
-void RenderLock_CopyBack(void) {
+static void RenderLock_CopyBack(void) {
 	if (!g_TextBack) {
 		return;
 	}
@@ -104,7 +104,8 @@ static int RenderLock_Ready(void) {
 }
 
 /* mode 2: the system texture into the next target, drawn with the GPU */
-void RenderLock_DrawMem(void) {
+static box_t *Box_Set(box_t *self, const vec3_t *min, const vec3_t *max);
+static void RenderLock_DrawMem(void) {
 	LockedRect lr;
 
 	if (!RenderLock_Ready()) {
@@ -156,7 +157,7 @@ void RenderLock_DrawMem(void) {
 }
 
 /* mode 3: the next target cleared as the render target, then copied into the system texture */
-void RenderLock_Clear(void) {
+static void RenderLock_Clear(void) {
 	if (!RenderLock_Ready()) {
 		return;
 	}
@@ -222,7 +223,8 @@ void RenderLock_Frame(void) {
 	}
 }
 
-box_t *Box_Set(box_t *self, const vec3_t *min, const vec3_t *max) {
+/* the box constructor of two corners (rva 0x2a4830, src/game/engine3d/Engine/RenderLock.c) */
+static box_t *Box_Set(box_t *self, const vec3_t *min, const vec3_t *max) {
 	self->min = *min;
 	self->max = *max;
 	return self;

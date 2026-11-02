@@ -63,13 +63,10 @@ typedef struct cWithLifeEntityVtbl {
 	void(*SetActCtrl)(cEntity *self, const char *cls);				/* 0xd8 vf54 */
 	byte(*IsEMIed)(cEntity *self);						/* 0xdc vf55 */
 } cWithLifeEntityVtbl;
-extern const cWithLifeEntityVtbl cWithLifeEntity_vftable;
-#define CWITHLIFEENTITY_VFTABLE (&cWithLifeEntity_vftable.base.base)
 
 static inline cWithLifeEntity *WLife(const void *e) {
 	return (cWithLifeEntity *)e;
 }
-
 
 static inline const cWithLifeEntityVtbl *WithLife_Vtbl(const cEntity *e) {
 	return (const cWithLifeEntityVtbl *)e->vftable;
@@ -81,9 +78,6 @@ static inline const cActCtrlVarVtbl *ActCtrl_Vtbl(const cActCtrl *c) {
 	return (const cActCtrlVarVtbl *)c->vftable;
 }
 
-/* the deleting destructor (1000 bytes) */
-cEntity *cWithLifeEntity_Delete(cEntity *self, uint32_t flags);
-const char *cWithLifeEntity_GetClassName(cEntity *self);
 void cWithLifeEntity_SetPos(cEntity *self, const vec3_t *pos);
 /* vf25: the PretransformChan of the action class */
 int cWithLifeEntity_GetNodeSlot(cEntity *self);
@@ -102,11 +96,5 @@ void cWithLifeEntity_SetActCtrl(cEntity *self, const char *cls);
 byte cWithLifeEntity_IsEMIed(cEntity *self);
 /* vf48: nothing (the characters unlink their listeners here) */
 void cWithLifeEntity_Vf48(cEntity *self);
-/* the fire of the Napalm over dt: the fire sound, the hits of the burner and the life it takes (not on clients) */
-void cWithLifeEntity_Burn(cEntity *self, float dt);
-/* the life sounds fade in and out by their times */
-void cWithLifeEntity_FadeSounds(cEntity *self, float dt);
-/* the entity that set it on fire (an unused inline of WithLifeEntity.h) */
-cEntity *cWithLifeEntity_GetBurner(cEntity *self);
 
 #endif

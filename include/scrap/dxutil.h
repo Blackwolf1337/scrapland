@@ -135,42 +135,21 @@ int Timer_FixedStep(float fps);
 #define DXUTIL_TIMER_GETAPPTIME 5
 #define DXUTIL_TIMER_GETELAPSEDTIME 6
 float DXUtil_Timer(int cmd);
-/* the distinct values of timeGetTime during ms (the original busy waited, the C answers ms) */
-int Timer_CountTicks(int ms);
-/* the performance counter ticks during ms (the original busy waited from the start of a timeGetTime tick on, the C
- * takes them from the frequency) */
-int64_t Timer_MeasureQP(int ms);
 
 /* d3dapp.cpp */
-/* qsort order of the display modes: width, height, then the format (the higher first) */
-int D3DApp_SortModes(const D3DDisplayMode *a, const D3DDisplayMode *b);
-/* ds is a depth/stencil format the adapter supports with the format fmt (IDirect3D8 d3d) */
-byte D3DApp_DepthFormatOk(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t ds);
-/* the depth/stencil format (D3DFMT_*) of a device for the minimum bits of g_Engine; 0 for none */
-int CD3DApp_FindDepthStencilFormat(CD3DApplication *self, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t *out);
 /* the defaults, g_Engine set (cleared by the destructor) */
 CD3DApplication *CD3DApp_ctor(CD3DApplication *self);
 void CD3DApp_dtor(CD3DApplication *self);
 int CD3DApp_AdjustWindowForChange(CD3DApplication *self);
 void CD3DApp_Pause(CD3DApplication *self, int pause);
-/* the back buffer and depth buffer descriptions and the aspect ratio, a new device id */
-void CD3DApp_UpdateBackBufferDesc(CD3DApplication *self);
-/* the default virtual methods (seven copies), S_OK */
-int CD3DApp_Nop(CD3DApplication *self);
-int CD3DApp_ConfirmDevice(CD3DApplication *self, D3DCaps8 *caps, uint32_t behavior, uint32_t fmt);
-/* windowed on a device that can, the environment made again */
-int CD3DApp_ForceWindowed(CD3DApplication *self);
 int CD3DApp_ToggleFullscreen(CD3DApplication *self);
 /* the window messages of the framework */
 /* CD3DApp_Cleanup, CD3DApp_ResetDevice and CD3DApp_Reset: scrapmain.h */
 
 /* the error text of hr reported as fatal, hr */
 int CD3DApp_DisplayErrorMsg(int hr);
-/* the device of the current adapter, device and mode created and its objects made */
-int CD3DApp_Initialize3DEnvironment(CD3DApplication *self);
 /* Direct3D, the device list, the window (if there is none yet) and the environment; the error shown */
 int CD3DApp_Create(CD3DApplication *self, void *inst);
-int CD3DApp_BuildDeviceList(CD3DApplication *self);
 /* the message loop with the frames, the wParam of WM_QUIT */
 
 #endif

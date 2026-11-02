@@ -16,7 +16,7 @@
 #include "scrap/utild3d.h"
 #include "scrap/staticinit.h"
 
-cGVar GVar_R_ShowPreIllumVtx;
+static cGVar GVar_R_ShowPreIllumVtx;
 
 #define g_ShowPreIllumVtx (GVar_R_ShowPreIllumVtx.value.i)	/* R_ShowPreIllumVtx: 1 no light colors, 2 no emissive ones */
 

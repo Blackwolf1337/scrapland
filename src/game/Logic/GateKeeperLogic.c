@@ -9,21 +9,26 @@
 #include "scrap/objentity.h"
 #include "scrap/staticinit.h"
 
+#define CGATEKEEPERLOCALLOGIC_VFTABLE (&cGateKeeperLocalLogic_vftable)
+#define g_GateKeeperStdFar (GVar_GateKeeperStdFar.value.f)
+#define g_GateKeeperStdFovY (GVar_GateKeeperStdFovY.value.f)
+#define g_GateKeeperStdFovX (GVar_GateKeeperStdFovX.value.f)
+#define g_GateKeeperHiddenTime (GVar_GateKeeperHiddenTime.value.f)
+static const cBaseLocalLogicVtbl cGateKeeperLocalLogic_vftable;
+static cGVar GVar_GateKeeperStdFovY;
+static cGVar GVar_GateKeeperStdFovX;
+static cGVar GVar_GateKeeperStdFar;
+static cGVar GVar_GateKeeperHiddenTime;
+
 /* defined further down or in another file without a header */
-cGateKeeperLocalLogic *GateKeepers_MakeLogic(cEntity *e);
+static cGateKeeperLocalLogic *GateKeepers_MakeLogic(cEntity *e);
 
 cGateKeepers *cGateKeepers_ctor(cGateKeepers *self) {
 	self->timer = 0.0f;
 	return self;
 }
 
-byte Logic_True1(void *self, int arg) {
-	(void)self;
-	(void)arg;
-	return 1;
-}
-
-void cGateKeepers_Think(cGateKeepers *self) {
+static void cGateKeepers_Think(cGateKeepers *self) {
 	for (Nto1Node *n = Logic_ListFirst(self->list); n; n = Logic_ListNext(n)) {
 		cLocalLogic *l = Logic_GetLocalLogic(n->data);
 		Logic_Vtbl(l)->Update(l, 1.41421354f);
@@ -48,7 +53,8 @@ void cGateKeepers_Update(cGateKeepers *self, float dt) {
 }
 
 /* the logic of a character of the list (cEntityListData.func) */
-cGateKeeperLocalLogic *GateKeepers_MakeLogic(cEntity *e) {
+static cGateKeeperLocalLogic *cGateKeeperLocalLogic_ctor(cGateKeeperLocalLogic *self, cEntity *parent);
+static cGateKeeperLocalLogic *GateKeepers_MakeLogic(cEntity *e) {
 	cGateKeeperLocalLogic *l = operator_new(sizeof(*l));
 
 	if (l) {
@@ -57,7 +63,8 @@ cGateKeeperLocalLogic *GateKeepers_MakeLogic(cEntity *e) {
 	return NULL;
 }
 
-cGateKeeperLocalLogic *cGateKeeperLocalLogic_ctor(cGateKeeperLocalLogic *self, cEntity *parent) {
+static byte cGateKeeperLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target);
+static cGateKeeperLocalLogic *cGateKeeperLocalLogic_ctor(cGateKeeperLocalLogic *self, cEntity *parent) {
 	cBaseLocalLogic_ctor(&self->base, parent);
 	self->base.vftable = CGATEKEEPERLOCALLOGIC_VFTABLE;
 	self->hiddenTime = 0.0f;
@@ -65,12 +72,12 @@ cGateKeeperLocalLogic *cGateKeeperLocalLogic_ctor(cGateKeeperLocalLogic *self, c
 	return self;
 }
 
-void cGateKeeperLocalLogic_dtor(cGateKeeperLocalLogic *self) {
+static void cGateKeeperLocalLogic_dtor(cGateKeeperLocalLogic *self) {
 	self->base.vftable = CGATEKEEPERLOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
 }
 
-cLocalLogic *cGateKeeperLocalLogic_Delete(cLocalLogic *base, byte flags) {
+static cLocalLogic *cGateKeeperLocalLogic_Delete(cLocalLogic *base, byte flags) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)base;
 	cGateKeeperLocalLogic_dtor(self);
 	if (flags & 1) {
@@ -80,14 +87,14 @@ cLocalLogic *cGateKeeperLocalLogic_Delete(cLocalLogic *base, byte flags) {
 }
 
 /* the view flag of the character: relaxed and no alarm */
-void cGateKeeperLocalLogic_UpdateView(cGateKeeperLocalLogic *self) {
+static void cGateKeeperLocalLogic_UpdateView(cGateKeeperLocalLogic *self) {
 	cEntity *p = self->base.parent;
 
 	WChar(p)->wl.arrow.canUse = !self->base.busy && !g_pWorld->alarm.on && self->base.state != 1;
 }
 
 /* vf16 of the gatekeepers and the gears: they never run from the police */
-void cGateKeeperLocalLogic_Vf16(cLocalLogic *base, cEntity *arg) {
+static void cGateKeeperLocalLogic_Vf16(cLocalLogic *base, cEntity *arg) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)base;
 	(void)self;
 	(void)arg;
@@ -95,7 +102,7 @@ void cGateKeeperLocalLogic_Vf16(cLocalLogic *base, cEntity *arg) {
 }
 
 /* vf17 */
-void cGateKeeperLocalLogic_Update(cLocalLogic *elem, float dt) {
+static void cGateKeeperLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	vec3_t tmp;
 	cBaseLocalLogic *b = &self->base;
@@ -153,7 +160,7 @@ alarm:
 }
 
 /* vf12 (a robbery seen) and vf11: hide unless idle */
-void cGateKeeperLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
+static void cGateKeeperLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	(void)e;
 	(void)amount;
@@ -163,14 +170,14 @@ void cGateKeeperLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount
 }
 
 /* vf10 */
-void cGateKeeperLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
+static void cGateKeeperLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	(void)attacker;
 	self->base.vftable->SetState(&self->base.logic, 1, NULL);
 }
 
 /* vf14: hidden at once when the action Hide runs */
-void cGateKeeperLocalLogic_Vf14(cLocalLogic *elem, cEntity *e) {
+static void cGateKeeperLocalLogic_Vf14(cLocalLogic *elem, cEntity *e) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	cEntity *p = self->base.parent;
 
@@ -181,7 +188,7 @@ void cGateKeeperLocalLogic_Vf14(cLocalLogic *elem, cEntity *e) {
 	}
 }
 
-void cGateKeeperLocalLogic_Vf11(cLocalLogic *elem, cEntity *e) {
+static void cGateKeeperLocalLogic_Vf11(cLocalLogic *elem, cEntity *e) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	(void)e;
 	if (!self->base.idle && !self->base.alwaysLock) {
@@ -190,13 +197,13 @@ void cGateKeeperLocalLogic_Vf11(cLocalLogic *elem, cEntity *e) {
 }
 
 /* vf24: hidden while the alarm is on */
-void cGateKeeperLocalLogic_RestartState(cLocalLogic *elem) {
+static void cGateKeeperLocalLogic_RestartState(cLocalLogic *elem) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	self->base.vftable->SetState(&self->base.logic, g_pWorld->alarm.on != 0, NULL);
 }
 
 /* vf19: state 1 needs the action Hide */
-byte cGateKeeperLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
+static byte cGateKeeperLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	void *act = NULL;
 	cEntity *p = self->base.parent;
@@ -228,7 +235,7 @@ byte cGateKeeperLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targe
 }
 
 /* the vtable of cGateKeeperLocalLogic */
-const cBaseLocalLogicVtbl cGateKeeperLocalLogic_vftable = {
+static const cBaseLocalLogicVtbl cGateKeeperLocalLogic_vftable = {
 	.base.Delete = cGateKeeperLocalLogic_Delete,
 	.base.GetName = cBaseLocalLogic_GetName,
 	.base.Vf02 = cLocalLogic_Vf02True,
@@ -256,10 +263,10 @@ const cBaseLocalLogicVtbl cGateKeeperLocalLogic_vftable = {
 	.RestartState = cGateKeeperLocalLogic_RestartState,
 };
 
-cGVar GVar_GateKeeperStdFar;
-cGVar GVar_GateKeeperStdFovY;
-cGVar GVar_GateKeeperHiddenTime;
-cGVar GVar_GateKeeperStdFovX;
+static cGVar GVar_GateKeeperStdFar;
+static cGVar GVar_GateKeeperStdFovY;
+static cGVar GVar_GateKeeperHiddenTime;
+static cGVar GVar_GateKeeperStdFovX;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_GateKeeperHiddenTime, &GVar_GateKeeperHiddenTime, "GateKeeperHiddenTime", 0, "Time iniside the shell of the gatekeeper when attacked", 5.0f)

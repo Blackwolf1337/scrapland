@@ -7,7 +7,7 @@
 #include "scrap/python.h"
 
 /* ShipExplosion(V3D Pos, V3D Vel, float scale, float time, float nflames, bool bcolision) : Explosión de la nave */
-PyObject *SFX_ShipExplosion(PyObject *self, PyObject *args) {
+static PyObject *SFX_ShipExplosion(PyObject *self, PyObject *args) {
 	vec3_t pos, vel;
 	float scale = 1.0f, time = 1.0f;
 	int numFlames = 0, collision = 0;
@@ -22,7 +22,7 @@ PyObject *SFX_ShipExplosion(PyObject *self, PyObject *args) {
 }
 
 /* FXCharacterConversor(CharacterName, ConversorName, phase) : Conversor de Personajes */
-PyObject *SFX_CharacterConversor(PyObject *self, PyObject *args) {
+static PyObject *SFX_CharacterConversor(PyObject *self, PyObject *args) {
 	char *characterName, *conversorName;
 	int phase = 1;
 
@@ -41,7 +41,7 @@ PyObject *SFX_CharacterConversor(PyObject *self, PyObject *args) {
 }
 
 /* FXCharacterConversion(AttackerName, AttackedName, time) : Conversión de Personajes */
-PyObject *SFX_CharacterConversion(PyObject *self, PyObject *args) {
+static PyObject *SFX_CharacterConversion(PyObject *self, PyObject *args) {
 	char *attackerName, *attackedName;
 	float time = 1.0f;
 
@@ -60,7 +60,7 @@ PyObject *SFX_CharacterConversion(PyObject *self, PyObject *args) {
 }
 
 /* FXBishopSellLife(AttackerName, AttackedName) : Efecto de dar vida (de Attacker [Bishop ó NULL] a Attacked) */
-PyObject *SFX_BishopSellLife(PyObject *self, PyObject *args) {
+static PyObject *SFX_BishopSellLife(PyObject *self, PyObject *args) {
 	char *attackerName, *attackedName;
 
 	(void)self;
@@ -79,7 +79,7 @@ PyObject *SFX_BishopSellLife(PyObject *self, PyObject *args) {
 }
 
 /* FXMoneyTransfer(EntityFrom, EntityTo, Time) : Transferencia de dinero */
-PyObject *SFX_MoneyTransfer(PyObject *self, PyObject *args) {
+static PyObject *SFX_MoneyTransfer(PyObject *self, PyObject *args) {
 	char *fromName, *toName;
 	float time;
 
@@ -98,7 +98,7 @@ PyObject *SFX_MoneyTransfer(PyObject *self, PyObject *args) {
 }
 
 /* FXEmbeddedSet(EntityName, FXType) : Asigna el controlador de effects embedidos */
-PyObject *SFX_EmbeddedSet(PyObject *self, PyObject *args) {
+static PyObject *SFX_EmbeddedSet(PyObject *self, PyObject *args) {
 	char *entityName, *fxType;
 
 	(void)self;
@@ -111,19 +111,19 @@ PyObject *SFX_EmbeddedSet(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
-extern char str_PyDoc_SFX_BishopSellLife[];
-extern char str_PyDoc_SFX_CharacterConversion[88];
-extern char str_PyDoc_SFX_CharacterConversor[];
-extern char str_PyDoc_SFX_EmbeddedSet[];
-extern char str_PyDoc_SFX_MoneyTransfer[];
-extern char str_PyDoc_SFX_ShipExplosion[];
-extern const char str_PyMethod_SFX_BishopSellLife[];
-extern const char str_PyMethod_SFX_CharacterConversion[];
-extern const char str_PyMethod_SFX_CharacterConversor[];
-extern const char str_PyMethod_SFX_EmbeddedSet[];
-extern const char str_PyMethod_SFX_MoneyTransfer[];
-extern const char str_PyMethod_SFX_ShipExplosion[];
-PyMethodDef SFX_methods[7] = {
+static char str_PyDoc_SFX_BishopSellLife[];
+static char str_PyDoc_SFX_CharacterConversion[88];
+static char str_PyDoc_SFX_CharacterConversor[];
+static char str_PyDoc_SFX_EmbeddedSet[];
+static char str_PyDoc_SFX_MoneyTransfer[];
+static char str_PyDoc_SFX_ShipExplosion[];
+static const char str_PyMethod_SFX_BishopSellLife[];
+static const char str_PyMethod_SFX_CharacterConversion[];
+static const char str_PyMethod_SFX_CharacterConversor[];
+static const char str_PyMethod_SFX_EmbeddedSet[];
+static const char str_PyMethod_SFX_MoneyTransfer[];
+static const char str_PyMethod_SFX_ShipExplosion[];
+static PyMethodDef SFX_methods[7] = {
 	{
 		.ml_name = (void *)str_PyMethod_SFX_ShipExplosion,
 		.ml_meth = (void *)SFX_ShipExplosion,
@@ -164,30 +164,30 @@ PyMethodDef SFX_methods[7] = {
 
 SD_PY_MODULE(SFX, 0x42d060)
 
-const char str_PyMethod_SFX_ShipExplosion[] = "ShipExplosion";
-const char str_PyMethod_SFX_CharacterConversor[] = "CharacterConversor";
-const char str_PyMethod_SFX_CharacterConversion[] = "CharacterConversion";
-const char str_PyMethod_SFX_BishopSellLife[] = "BishopSellLife";
-const char str_PyMethod_SFX_MoneyTransfer[] = "MoneyTransfer";
-const char str_PyMethod_SFX_EmbeddedSet[] = "EmbeddedSet";
+static const char str_PyMethod_SFX_ShipExplosion[] = "ShipExplosion";
+static const char str_PyMethod_SFX_CharacterConversor[] = "CharacterConversor";
+static const char str_PyMethod_SFX_CharacterConversion[] = "CharacterConversion";
+static const char str_PyMethod_SFX_BishopSellLife[] = "BishopSellLife";
+static const char str_PyMethod_SFX_MoneyTransfer[] = "MoneyTransfer";
+static const char str_PyMethod_SFX_EmbeddedSet[] = "EmbeddedSet";
 
-char str_PyDoc_SFX_ShipExplosion[] =
+static char str_PyDoc_SFX_ShipExplosion[] =
 	"ShipExplosion(V3D Pos, V3D Vel, float scale, float time, float nflames, bool bcolision) : Explosión "
 	"de la nave.";
 
-char str_PyDoc_SFX_CharacterConversor[] =
+static char str_PyDoc_SFX_CharacterConversor[] =
 	"FXCharacterConversor(CharacterName, ConversorName, phase) : Conversor de Personajes.";
 
-char str_PyDoc_SFX_CharacterConversion[88] =
+static char str_PyDoc_SFX_CharacterConversion[88] =
 	"FXCharacterConversion(AttackerName, AttackedName, time) : Conversión de Personajes.";
 
-char str_PyDoc_SFX_BishopSellLife[] =
+static char str_PyDoc_SFX_BishopSellLife[] =
 	"FXBishopSellLife(AttackerName, AttackedName) : Efecto de dar vida (de Attacker [Bishop ó NULL] a Att"
 	"acked[Usuario]).";
 
-char str_PyDoc_SFX_MoneyTransfer[] =
+static char str_PyDoc_SFX_MoneyTransfer[] =
 	"FXMoneyTransfer(EntityFrom, EntityTo, Time) : Transferencia de dinero";
 
-char str_PyDoc_SFX_EmbeddedSet[] =
+static char str_PyDoc_SFX_EmbeddedSet[] =
 	"FXEmbeddedSet(EntityName, FXType) : Asigna el controlador de efectos embedidos.";
 

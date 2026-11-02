@@ -23,21 +23,9 @@ typedef struct cMusicVoice {
 	uint32_t playTime;		/* 0x198 */
 } cMusicVoice;
 
-extern int g_FmodState;		/* > 0 running, < 0 failed */
-extern cMusicVoice cMusicVoice_MusicVoices[8];
-#define g_MusicVoices (cMusicVoice_MusicVoices)
-
 int Fmod_Init(void);
-cMusicVoice *cMusicVoice_ctor(cMusicVoice *self);
-void cMusicVoice_dtor(cMusicVoice *self);
 int Fmod_Close(void);
-int Fmod_IsInit(void);
 
-/* the voices; NULL without the mixer */
-cMusicVoice *Voice_Get(uint32_t voice);
-void Voice_Wait(cMusicVoice *v, const char *what);	/* nothing: the voices open at once (Voice_Open) */
-void Voice_Close(cMusicVoice *v);
-void Voice_ApplyVolume(cMusicVoice *v, float volume);
 int Voice_GetString(int voice, char *buf, int size);
 int Voice_Unused(int voice);			/* CHECK(0), then whether it plays */
 int Voice_Open(const char *name, int voice, int voiceover);
@@ -47,21 +35,7 @@ int Voice_Remain(int voice, float *remain);	/* in s */
 int Voice_SetString(int voice, const char *text);
 int Voice_Stop(int voice);
 int Voice_SetVolume(int voice, float volume);
-void Voices_UpdatePause(void);			/* paused with the time scale 0 or the window inactive */
-void Voices_DrawDebug(int x, int y);
-byte Voices_DrawDebugDefault(void);
 
-/* the music */
-byte Music_Ready(void);				/* started one second after the open */
-byte Music_UpdateVolumes(void);
-void Music_DrawDebug(int x, int y);
-byte Music_Wait(void);					/* Music_Ready, the original waited for the open */
-byte Music_Open(const char *name);
-void Music_SetPaused(int paused);
-byte Music_Start(void);
-void Music_ApplyVolume(void);
-byte Music_Voiceover(float factor, float speed);
-void Music_DrawStream(float x, float y, void *stream, int channel, byte *playing);
 byte Music_PlayFile(const char *name, const char *dir);
 byte Music_Pause(void);
 byte Music_Stop(void);
@@ -69,8 +43,5 @@ byte Music_SetVolume(float v);
 byte Music_SetMainVolume(float v);
 byte Music_FadeOut(float a, float vol);
 byte Music_Update(void);
-
-/* an empty callback of the module */
-void Music_Nop(void);
 
 #endif

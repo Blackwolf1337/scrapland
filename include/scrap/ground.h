@@ -154,25 +154,15 @@ typedef struct CollideVert {
 	uint32_t color;			/* 0x0c */
 	float u, v;			/* 0x10 */
 } CollideVert;
-/* the three vertices of a triangle, shaded by its normal with the texture projected along its main axis in the
- * solid view (ShowMapSolid) */
-void Collide_TriVerts(CollideVert *out, const vec3_t *a, const vec3_t *b, const vec3_t *c, uint32_t color);
-void CCollideMesh_DrawDebug(CCollideMesh *self, int nested);
-/* the debug view of the collision (c_show, ShowMapQuads, AnalizeQuads) */
-void CGround_DrawDebug(CGround *self);
 /* rva 0x261580: in / |in| into out (the length through double, 1 / len rounded to float), a copy for length 0 */
 vec3_t *Vec3_Normalize(vec3_t *out, const vec3_t *in);
 
 extern float g_CollisionEpsilon;
-extern cGVar GVar_MapCollisionBalance;
-#define g_CollisionBalance (GVar_MapCollisionBalance.value.f)
 extern int g_QuadTriCacheID;
 extern uint32_t g_CollisionNComp;
 extern uint32_t g_BspCacheStats[3];	/* the hits, the misses and the most tests */
 #define g_CollisionTestsMax g_BspCacheStats[2]
 extern uint32_t g_CollisionTests;
-extern uint32_t g_CollisionTestsTotal;
-extern int g_CollisionQuadCount;
 
 /* the triangle not tested yet in this query: marked as tested (counted in g_CollisionTests) */
 static inline int CCollideTri_Mark(CCollideTri *tri) {
@@ -185,73 +175,18 @@ static inline int CCollideTri_Mark(CCollideTri *tri) {
 	return 1;
 }
 
-/* engine3d/engine/table.h: count, sizeof(T) and the elements */
-void Table_Write2(CFileIO *f, CTable *t);
-void Table_Write1C(CFileIO *f, CTable *t);
-void Table_WriteC(CFileIO *f, CTable *t);
-/* elements with a vector deleting destructor (vftable[0]) or plain new[]; the table empty after */
-void Table_FreeObjs(CTable *t);
-
 /* the vector deleting destructor of CNode3D (0xfc bytes) as the floor nodes use it */
 ObjRef *CNode3D_VecDelete(ObjRef *base, byte flags);
-
-CCollideMesh *CCollideMesh_ctor(CCollideMesh *self);
-/* the plane of triangle i (unit normal, unchanged when it has length 0) */
-plane_t *CCollideMesh_TriPlane(CCollideMesh *self, plane_t *out, uint32_t i);
-/* a copy of triangle i with a new plane, ncomp 0 */
-void CCollideMesh_TriWithPlane(CCollideMesh *self, CCollideTri *out, int i);
-/* triangle i and its corners, each output may be NULL */
-void CCollideMesh_GetTri(CCollideMesh *self, int i, CCollideTri *tri, vec3_t *v0, vec3_t *v1, vec3_t *v2);
-/* the "CMSH" block; the mesh is entered in the load list by its Param */
-void CCollideMesh_Read(CCollideMesh *self, CFileIO *f);
-void CCollideMesh_Write(CCollideMesh *self, CFileIO *f);
 
 CCollideQuad *CCollideQuad_ctor(CCollideQuad *self);
 /* the next quads freed, the mesh released */
 void CCollideQuad_dtor(CCollideQuad *self);
-CCollideQuad *CCollideQuad_Delete(CCollideQuad *self, uint32_t flags);
-/* the highest and the lowest corner of a triangle of the mesh */
-float CCollideQuad_TriMaxY(CCollideQuad *self, const CCollideTri *tri);
-float CCollideQuad_TriMinY(CCollideQuad *self, const CCollideTri *tri);
-/* the index (in pTri) of the colliding triangle with the lowest lowest corner below maxY, -1 for none */
-int CCollideQuad_LowestTri(CCollideQuad *self);
-/* the "QUAD" block and the next ones */
-void CCollideQuad_Read(CCollideQuad *self, CFileIO *f);
-void CCollideQuad_Write(CCollideQuad *self, CFileIO *f);
-/* the largest vertical gap between the triangles into gapTop and gapBottom */
-void CCollideQuad_CalcGap(CCollideQuad *self);
 
 /* the quads of cell x z, NULL outside the grid (table.h) */
 CCollideQuad *CHeights_GetCell(CHeights *self, uint32_t x, uint32_t z);
-CHeights *CHeights_ctor(CHeights *self);
-void CHeights_dtor(CHeights *self);
-/* the Param of all meshes of the quads */
-void CHeights_SetParam(CHeights *self, byte param);
 /* the quad functions below take the CHeights without using it */
-/* minY and maxY from the triangles (widened by the epsilon), then the gap */
-void CCollideQuad_CalcExt(CHeights *self, CCollideQuad *q);
-/* all triangles of the mesh */
-void CCollideQuad_AddAllTris(CHeights *self, CCollideQuad *q);
-/* the quad of mesh (with that MeshID) in the chain of quad, a new one at the end */
-CCollideQuad *CCollideQuad_Find(CHeights *self, CCollideQuad *quad, uint32_t id, CCollideMesh *mesh);
-/* the grid over box for about numTri triangles (and the balance) per cell */
-void CHeights_QuadInit(CHeights *self, int unused, const box_t *box, int numTri);
-/* the triangles of mesh from initTri (0) into the quads of the cells they touch */
-void CHeights_QuadAddMesh(CHeights *self, CCollideMesh *mesh, int initTri);
 
 CGround *CGround_ctor(CGround *self);
-void CGround_dtor(CGround *self);
-IObject3D *CGround_Delete(IObject3D *base, byte flags);
-void CGround_Nop(CGround *self, void *arg);
-void CGround_NodesVf3(IObject3D *base, void *arg);
-void CGround_NodesVf4(IObject3D *base, void *arg);
-/* the "SUEL" block: 1 */
-byte CGround_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
-byte CGround_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
-/* the .amc file of the scene name: 0 loaded, 1 older than the scene, -1 failed */
-int CGround_LoadCollision(CGround *self, const char *name);
-/* 0 written, -1 failed */
-int CGround_SaveCollision(CGround *self, const char *name);
 /* a new query number: the tested marks of all triangles cleared when it wraps */
 void CGround_NewQuery(CGround *self);
 /* the sphere of radius r at b against the floor: the contact that is most a floor (normal nearest to the
@@ -267,14 +202,6 @@ byte CGround_SweepSphere(CGround *self, const vec3_t *a, const vec3_t *b, float 
 	vec3_t *hit, vec3_t *n);
 struct CTriMesh;
 
-/* Engine/gety.cpp (Gety.c): the highest triangle point below maxY at x, z, -FLT_MAX for none; all: also the
- * triangles and meshes without collisions */
-float CGround_GetY(CGround *self, float x, float z, float maxY, byte all);
-/* the same between minY and maxY, of the triangles whose normal has a y of 0.6 or more */
-float CGround_GetYRange(CGround *self, float x, float z, float maxY, float minY, byte all);
-/* the highest point below maxY of all triangles of the cell into out (may be NULL); 0 for none */
-byte CGround_GetYBelow(CGround *self, float x, float z, float maxY, float *out);
-
 /* the triangles of tm added to mesh (a mesh added at run time: outID and outIni get its MeshID and first triangle),
  * then into the quads */
 void CGround_AddMesh(CGround *self, CCollideMesh *mesh, struct CTriMesh *tm, uint32_t *outID, int *outIni);
@@ -282,12 +209,6 @@ void CGround_AddMesh(CGround *self, CCollideMesh *mesh, struct CTriMesh *tm, uin
 void CGround_RemoveMesh(CGround *self, CCollideMesh *mesh, int a2, int a3);
 /* collisions of a mesh added at run time on or off */
 void CGround_SetMeshCollide(CGround *self, CCollideMesh *mesh, byte on, int MeshID, int IniTri);
-void CGround_CalcGaps(CGround *self);
-/* the triangles of the floor nodes in sector - 1 (all for -1) into mesh: mode 1 the colliding ones, mode 2 the
- * others (the mesh then gets TRI_ALT_NO_COLLISIONS) */
-void CGround_BuildSectorMesh(CGround *self, CCollideMesh *mesh, int mode, uint32_t sector);
-/* the grid and the meshes of all sectors from the floor nodes; empty cells get CollideMesh1 */
-void CGround_CreateQuadCollision(CGround *self);
 
 /* the floor of a scene (CScene): from its .amc file when the scene was loaded with one, else the triangles of its
  * meshes into a grid of floor nodes (one CTriMesh each) and the collision data from the .amc file or built and
@@ -295,10 +216,6 @@ void CGround_CreateQuadCollision(CGround *self);
 void CGround_Build(CGround *self, CScene *scn);
 /* the floor nodes to vertex buffer meshes */
 void CGround_NodesToD3D(CGround *self, int fvf);
-/* the vertex buffer meshes of the floor nodes */
-void CGround_Draw(IObject3D *base, void *dev, CRenderNode *unused);
-/* a debug box of half size r around c */
-void Ground_DrawBox(const vec3_t *c, float r, uint32_t color);
 /* the collision debug drawing of the floor of gMundo */
 void Ground_DrawDebug(void);
 
@@ -311,15 +228,7 @@ static inline vec3_t Ground_EdgeCross(const vec3_t *p, const vec3_t *a, const ve
 
 /* point p in the triangle a b c (on the side of its normal), also on its edges */
 byte Ground_PointInTri(const vec3_t *p, const vec3_t *a, const vec3_t *b, const vec3_t *c);
-/* distance of p to the segment a b, the nearest point into out (may be NULL) */
-float Ground_DistPointSeg(const vec3_t *a, const vec3_t *b, const vec3_t *p, vec3_t *out);
 float Ground_Dist2PointSeg(const vec3_t *a, const vec3_t *b, const vec3_t *p, vec3_t *out);
-/* the parameter t at which the segment a b comes within r of the plane; 0 if it stays farther away on one side */
-byte Ground_SegPlane(const vec3_t *a, const vec3_t *b, float r, const plane_t *pl, float *t);
-/* the first t in [0, 1] at which the segment p q comes within r of the edge a b (or of its end a); 0 for none */
-byte Ground_SegEdge(const vec3_t *a, const vec3_t *b, const vec3_t *p, const vec3_t *q, float r, float *t);
-/* the point of the triangle nearest to the sphere center c, if it is within r */
-byte Ground_SphereTri(const vec3_t *c, float r, const CCollideTri *tri, const CCollideMesh *mesh, vec3_t *res);
 /* the query of checkbbox.cpp ("colis"): the box min/max (use_minmax 1) or min2/max2 (2), moved by pos */
 typedef struct CCollisionBBox {
 	byte pad_0[0x18];
@@ -350,28 +259,8 @@ byte CGround_CheckBBox(CGround *self, CCollisionBBox *collision);
 /* checkbbox.cpp */
 /* the triangle (its verts in v) touches the box */
 byte BoxTri(const vec3_t *bmin, const vec3_t *bmax, const CCollideTri *tri, const vec3_t *v);
-/* the convex polygon of count points clipped to the side n.p >= d (a little more, by the collision epsilon) */
-void Poly_ClipPlane(const vec3_t *n, float d, int *count, vec3_t *pts);
-/* the triangle tri clipped by the box of matrix m and half sizes half: 1 and the center of what is left in it */
-int Box_ClipTri(const matrix_t *m, const float *half, const vec3_t *tri, vec3_t *center);
-/* how deep p is in that box (the smallest distance to its six sides, < 0 outside) */
-float Box_PointDepth(const matrix_t *m, const float *half, const vec3_t *p);
-/* the box of matrix m and half sizes half against the floor (drawn as a debug box): the triangle nearest to its
- * center, outPos the center of its part in the box and outN its normal; without outputs the first one ends it */
-byte CGround_CollideOBB(CGround *self, const matrix_t *m, const vec3_t *half, vec3_t *outPos, vec3_t *outN);
 
 /* checkline3d.cpp */
-/* the cell walk of a segment from a to b through the grid: the cell x z it leaves through first (the next one into x
- * and z, the parameter of the exit into t); 0 in the cell of b (t 1) */
-byte Heights_CellStep(CHeights *alt, int *x, int *z, const vec3_t *a, const vec3_t *b, float *t);
-/* the same for CGround_Trace on its walk state (g_TraceCell) */
-byte Heights_TraceStep(CHeights *alt);
-/* p in the triangle a b c (on the side of its normal), also on its edges */
-byte Ground_PointInTriIn(const vec3_t *p, const vec3_t *a, const vec3_t *b, const vec3_t *c);
-
-/* the position where a sphere of radius r moving from a to b first touches the triangle */
-byte Ground_SweepTri(const vec3_t *a, const vec3_t *b, float r, const CCollideTri *tri, const CCollideMesh *mesh,
-	vec3_t *res);
 
 /* the walk state of CGround_Trace */
 typedef struct {

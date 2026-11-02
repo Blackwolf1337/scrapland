@@ -59,8 +59,6 @@ typedef struct IllumLight {
 	float rangeIni;			/* 0x68 */
 } IllumLight;
 #define ILLUM_SOFT 0x1		/* smooth fades instead of the D3D attenuation */
-/* v smoothed by the weight g_IllumSmooth */
-float Illum_Smooth(float v);
 struct CVertList;
 struct CMaterial;
 struct CLight;
@@ -106,13 +104,7 @@ typedef struct CLight {
 } CLight;
 
 CLight *CLight_ctor(CLight *self);
-void CLight_dtor(CLight *self);
-IObject3D *CLight_Delete(IObject3D *base, byte flags);
-void IObject3D_dtor(IObject3D *self);
 IObject3D *IObject3D_Delete(IObject3D *self, byte flags);
-/* the virtual Read and Write of IObject3D: nothing, 0 */
-byte IObject3D_Read(IObject3D *self, CFileIO *f, void *ctx);
-byte IObject3D_Write(IObject3D *self, CFileIO *f, void *ctx);
 void IObject3D_InitD3DNop(IObject3D *self, void *dev);
 byte IObject3D_ReadFalse(IObject3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
 void IObject3D_ReleaseD3DNop(IObject3D *self, void *dev);
@@ -124,36 +116,17 @@ byte IObject3D_WriteFalse(IObject3D *self, CFileIO *f, MeshD3D_FileCtx *ctx);
 int Light_Select(const vec3_t *pos, int sector, const vec3_t *center, float radius, CLight **out, int maxOn);
 /* on: three fixed directional lights (0..2) and the ambient of EnableMonitorLights instead of the scene lights; 0 */
 int Light_SetDefault(byte on);
-/* the virtual methods 1, 3 and 4; arg is not used */
-void CLight_Update(IObject3D *base, CRenderNode *arg);
-void CLight_Reset(IObject3D *elem, void *arg);
-void CLight_Hide(IObject3D *base, void *arg);
-/* the virtual Render: the debug drawing of the light (R_ShowLights) */
-void CLight_Render(IObject3D *base, void *dev, CRenderNode *r);
-/* a directional light without position into device light idx */
-void Light_SetDirLight(uint32_t idx, const color4_t *color, const vec3_t *dir);
-void CLight_EnableD3D(CLight *self, byte enable);
-/* the "LUZ" block; ctx holds the node at 0x4 */
-byte CLight_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
-byte CLight_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx);
 /* the list of the lights to the debug console */
 void Light_List(void);
-/* all lights of the list enabled in the device as they are set (act_D3D), or disabled */
-void Light_EnableAll(byte enable);
 /* the D3D light with the engine variables (multipliers, attenuation, gamma, desaturation, clamp) applied */
 void CLight_AdjustD3D(CLight *self, D3DLight *l);
 void CLight_SetNode(CLight *self, CNode3D *node);
-void CLight_SetNodeTarget(CLight *self, CNode3D *node);
 /* into the global list or out of it */
 void CLight_SetActive(CLight *self, byte active);
-/* qsort order of CLight pointers by weight, never 0 */
-int Light_Compare(const void *a, const void *b);
 void CLight_FillD3D(CLight *self, D3DLight *l);
 int Light_NumD3D(void);
 int Light_NumActive(void);
 int Light_NumTotal(void);
-/* act_D3D from active (hide: off), the device light set while act_D3D */
-void CLight_UpdateD3D(CLight *self, byte hide);
 /* a box of zeros (in the range of luz.cpp, used by the scene nodes) */
 box_t *Box_Zero(box_t *self);
 

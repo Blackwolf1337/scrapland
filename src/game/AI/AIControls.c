@@ -15,6 +15,41 @@
 #include "scrap/fxmisc.h"
 #include "scrap/staticinit.h"
 
+#define CAICONTROLBANKDIRECTOR_VFTABLE (&cAIControlBankDirector_vftable.base)
+#define CAICONTROLBANKMASTER_VFTABLE (&cAIControlBankMaster_vftable.base)
+#define CAICONTROLBISHOP_VFTABLE (&cAIControlBishop_vftable.base)
+#define CAICONTROLGEAR_VFTABLE (&cAIControlGear_vftable.base)
+#define CAICONTROLMESSENGER_VFTABLE (&cAIControlMessenger_vftable.base)
+#define CAICONTROLNURSE_VFTABLE (&cAIControlNurse_vftable.base)
+#define CAICONTROLSENTINEL_VFTABLE (&cAIControlSentinel_vftable.base)
+#define g_TimeStrafeUnderAttackBishopAI (GVar_TimeStrafeUnderAttackBishopAI.value.f)
+#define g_TimeStrafeUnderAttackBishopAIDef (GVar_TimeStrafeUnderAttackBishopAI.def.f)
+#define g_AngleStrafeUnderAttackBishopAI (GVar_AngleStrafeUnderAttackBishopAI.value.f)
+#define g_AngleStrafeUnderAttackBishopAIDef (GVar_AngleStrafeUnderAttackBishopAI.def.f)
+#define g_TimeStrafeUnderAttackGearAI (GVar_TimeStrafeUnderAttackGearAI.value.f)
+#define g_TimeStrafeUnderAttackGearAIDef (GVar_TimeStrafeUnderAttackGearAI.def.f)
+#define g_AngleStrafeUnderAttackGearAI (GVar_AngleStrafeUnderAttackGearAI.value.f)
+#define g_AngleStrafeUnderAttackGearAIDef (GVar_AngleStrafeUnderAttackGearAI.def.f)
+#define g_TimeStrafeUnderAttackSentinelAI (GVar_TimeStrafeUnderAttackSentinelAI.value.f)
+#define g_AngleStrafeUnderAttackSentinelAI (GVar_AngleStrafeUnderAttackSentinelAI.value.f)
+#define g_VelRotDynamicMessengerAI (GVar_VelRotDynamicMessengerAI.value.f)
+#define g_LimVelRotDynamicMessengerAI (GVar_LimVelRotDynamicMessengerAI.value.f)
+static const cAICharControl3DVtbl cAIControlSentinel_vftable;
+static const cAICharControl3DVtbl cAIControlNurse_vftable;
+static const cAICharControl3DVtbl cAIControlMessenger_vftable;
+static const cAICharControl2DVtbl cAIControlGear_vftable;
+static const cAICharControl2DVtbl cAIControlBishop_vftable;
+static const cAICharControl2DVtbl cAIControlBankMaster_vftable;
+static const cAICharControl2DVtbl cAIControlBankDirector_vftable;
+static cGVar GVar_VelRotDynamicMessengerAI;
+static cGVar GVar_TimeStrafeUnderAttackSentinelAI;
+static cGVar GVar_TimeStrafeUnderAttackGearAI;
+static cGVar GVar_TimeStrafeUnderAttackBishopAI;
+static cGVar GVar_LimVelRotDynamicMessengerAI;
+static cGVar GVar_AngleStrafeUnderAttackSentinelAI;
+static cGVar GVar_AngleStrafeUnderAttackGearAI;
+static cGVar GVar_AngleStrafeUnderAttackBishopAI;
+
 /* ---- helpers ---- */
 
 static inline float ACtl_FlatDist(float dx, float dz) {
@@ -111,7 +146,7 @@ cAICharControl *cAIControlBankDirector_ctor(void *mem, cEntity *e, cAIChar *ai, 
 	return self;
 }
 
-cAIControlBankDirector *cAIControlBankDirector_Delete(cAIControlBankDirector *self, byte flags) {
+static cAIControlBankDirector *cAIControlBankDirector_Delete(cAIControlBankDirector *self, byte flags) {
 	self->vftable = CAICONTROLBANKDIRECTOR_VFTABLE;
 	cAICharControl2D_dtor(self);
 	if (flags & 1) {
@@ -120,7 +155,9 @@ cAIControlBankDirector *cAIControlBankDirector_Delete(cAIControlBankDirector *se
 	return self;
 }
 
-void cAIControlBank_Walk(cAICharControl *self) {
+/* the Walk of the bank director and the master: forward beyond farDist, back within nearDist when the way back is
+ * free */
+static void cAIControlBank_Walk(cAICharControl *self) {
 	cEntity *te = AICC_TargetEnt(self);
 	vec3_t b1, b2;
 	float f;
@@ -179,7 +216,7 @@ cAICharControl *cAIControlBankMaster_ctor(void *mem, cEntity *e, cAIChar *ai, in
 	return self;
 }
 
-cAIControlBankMaster *cAIControlBankMaster_Delete(cAIControlBankMaster *self, byte flags) {
+static cAIControlBankMaster *cAIControlBankMaster_Delete(cAIControlBankMaster *self, byte flags) {
 	self->vftable = CAICONTROLBANKMASTER_VFTABLE;
 	cAICharControl2D_dtor(self);
 	if (flags & 1) {
@@ -188,7 +225,8 @@ cAIControlBankMaster *cAIControlBankMaster_Delete(cAIControlBankMaster *self, by
 	return self;
 }
 
-void cAIControlBankMaster_Orbit(cAIControlBankMaster *self) {
+/* the Orbit of the control, but not while the action button is down or its ActionEnd plays */
+static void cAIControlBankMaster_Orbit(cAIControlBankMaster *self) {
 	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 	vec3_t d, w, out, b1, b2;
 	vec3_t fwd = {0.0f, 0.0f, -1.0f};
@@ -345,7 +383,8 @@ static int ACtl_FreeToStrafe(cAICharControl *c) {
 	return c->side == 0 && !c->blocked && !c->avoidFound && !c->link.target;
 }
 
-void cAIControlShoot_Walk(cAICharControl *elem) {
+/* the 2D Walk without a strafe of its own (the gear too) */
+static void cAIControlShoot_Walk(cAICharControl *elem) {
 	cAIControlShoot *self = (cAIControlShoot *)elem;
 	if (self->side == 0) {
 		cAICharControl2D_Walk(&self->base);
@@ -361,7 +400,7 @@ cAICharControl *cAIControlBishop_ctor(void *mem, cEntity *e, cAIChar *ai, int *a
 	return ACtl_ShootInit(mem, CAICONTROLBISHOP_VFTABLE);
 }
 
-cAICharControl *cAIControlBishop_Delete(cAICharControl *self, byte flags) {
+static cAICharControl *cAIControlBishop_Delete(cAICharControl *self, byte flags) {
 	self->vftable = CAICONTROLBISHOP_VFTABLE;
 	cAICharControl2D_dtor(self);
 	if (flags & 1) {
@@ -370,7 +409,8 @@ cAICharControl *cAIControlBishop_Delete(cAICharControl *self, byte flags) {
 	return self;
 }
 
-byte cAIControlBishop_CheckWait(cAICharControl *self) {
+/* CheckWait, but not while the target plays its ActionEnd */
+static byte cAIControlBishop_CheckWait(cAICharControl *self) {
 	byte r = cAICharControl_CheckWait(self);
 
 	if (r && AIChar_ActionIs(AICC_TargetEnt(self), "ActionEnd")) {
@@ -380,18 +420,20 @@ byte cAIControlBishop_CheckWait(cAICharControl *self) {
 	return r;
 }
 
-void cAIControlBishop_Strafe2(cAICharControl *elem) {
+static void cAIControlBishop_Strafe(cAIControlBishop *self);
+static void cAIControlBishop_Strafe2(cAICharControl *elem) {
 	cAIControlBishop *self = (cAIControlBishop *)elem;
 	if (ACtl_FreeToStrafe(&self->base)) {
 		cAIControlBishop_Strafe(self);
 	}
 }
 
-void cAIControlBishop_Strafe(cAIControlBishop *self) {
+static void cAIControlBishop_Strafe(cAIControlBishop *self) {
 	ACtl_ShootStrafe(self, 0);
 }
 
-void cAIControlBishop_SetParams(cAICharControl *elem) {
+/* Nop of the control: the strafe parameters by the target */
+static void cAIControlBishop_SetParams(cAICharControl *elem) {
 	cAIControlBishop *self = (cAIControlBishop *)elem;
 	if (!self->base.target) {
 		return;
@@ -413,7 +455,7 @@ cAICharControl *cAIControlGear_ctor(void *mem, cEntity *e, cAIChar *ai, int *arg
 	return ACtl_ShootInit(mem, CAICONTROLGEAR_VFTABLE);
 }
 
-cAICharControl *cAIControlGear_Delete(cAICharControl *self, byte flags) {
+static cAICharControl *cAIControlGear_Delete(cAICharControl *self, byte flags) {
 	self->vftable = CAICONTROLGEAR_VFTABLE;
 	cAICharControl2D_dtor(self);
 	if (flags & 1) {
@@ -422,7 +464,8 @@ cAICharControl *cAIControlGear_Delete(cAICharControl *self, byte flags) {
 	return self;
 }
 
-byte cAIControlGear_CheckWait(cAICharControl *self) {
+/* CheckWait, but not while the target plays its ActionInit or ActionEnd */
+static byte cAIControlGear_CheckWait(cAICharControl *self) {
 	byte r = cAICharControl_CheckWait(self);
 
 	if (!r) {
@@ -445,40 +488,43 @@ static int ACtl_GearFusion(cAICharControl *self) {
 	return 1;
 }
 
-void cAIControlGear_TurnFollow(cAICharControl *self) {
+/* the turns stop during the PostFusion action of the gear */
+static void cAIControlGear_TurnFollow(cAICharControl *self) {
 	if (!ACtl_GearFusion(self)) {
 		cAICharControl_TurnFollow(self);
 	}
 }
 
-void cAIControlGear_Turn(cAICharControl *self) {
+static void cAIControlGear_Turn(cAICharControl *self) {
 	if (!ACtl_GearFusion(self)) {
 		cAICharControl2D_Turn(self);
 	}
 }
 
-void cAIControlGear_DirTurn(cAICharControl *self) {
+static void cAIControlGear_DirTurn(cAICharControl *self) {
 	if (!ACtl_GearFusion(self)) {
 		cAICharControl_DirTurn(self);
 	}
 }
 
-void cAIControlGear_Strafe2(cAICharControl *elem) {
+static void cAIControlGear_Strafe(cAIControlGear *self);
+static void cAIControlGear_Strafe2(cAICharControl *elem) {
 	cAIControlGear *self = (cAIControlGear *)elem;
 	if (ACtl_FreeToStrafe(&self->base)) {
 		cAIControlGear_Strafe(self);
 	}
 }
 
-void cAIControlGear_Strafe(cAIControlGear *self) {
+static void cAIControlGear_Strafe(cAIControlGear *self) {
 	ACtl_ShootStrafe(self, 1);
 }
 
-byte cAIControlGear_Vf89(cAICharControl *self) {
+/* vf89: the AI of the gear saw the way to the target blocked */
+static byte cAIControlGear_Vf89(cAICharControl *self) {
 	return cAIGear_IsBlocked((cAIGear *)self->ai);
 }
 
-void cAIControlGear_SetParams(cAICharControl *elem) {
+static void cAIControlGear_SetParams(cAICharControl *elem) {
 	cAIControlGear *self = (cAIControlGear *)elem;
 	if (!self->base.target || !self->base.target->target) {
 		return;
@@ -493,7 +539,7 @@ void cAIControlGear_SetParams(cAICharControl *elem) {
 	self->strafeAng = g_AngleStrafeUnderAttackGearAI;
 }
 
-void cAIControlGear_SetTurnSpeed(cAICharControl *self, float speed) {
+static void cAIControlGear_SetTurnSpeed(cAICharControl *self, float speed) {
 	if (0.55f >= speed) {
 		self->turnGain = 5.0f;
 		self->turnStep = 1.0f;
@@ -518,7 +564,7 @@ cAICharControl *cAIControlMessenger_ctor(void *mem, cEntity *e, cAIChar *ai, int
 	return self;
 }
 
-cAIControlMessenger *cAIControlMessenger_Delete(cAIControlMessenger *self, byte flags) {
+static cAIControlMessenger *cAIControlMessenger_Delete(cAIControlMessenger *self, byte flags) {
 	self->vftable = CAICONTROLMESSENGER_VFTABLE;
 	cAICharControl3D_dtor(self);
 	if (flags & 1) {
@@ -527,7 +573,7 @@ cAIControlMessenger *cAIControlMessenger_Delete(cAIControlMessenger *self, byte 
 	return self;
 }
 
-byte cAIControlMessenger_UpdateFollowMode(cAIControlMessenger *self, float dt) {
+static byte cAIControlMessenger_UpdateFollowMode(cAIControlMessenger *self, float dt) {
 	const cAICharControlVtbl *vt = AICC_Vtbl(self);
 
 	(void)dt;
@@ -561,7 +607,7 @@ byte cAIControlMessenger_UpdateFollowMode(cAIControlMessenger *self, float dt) {
 	return 1;
 }
 
-void cAIControlMessenger_SetTurnSpeed(cAIControlMessenger *self, float speed) {
+static void cAIControlMessenger_SetTurnSpeed(cAIControlMessenger *self, float speed) {
 	if (0.55f >= speed) {
 		self->turnGain = 5.0f;
 		self->turnStep = 1.0f;
@@ -583,7 +629,7 @@ cAICharControl *cAIControlNurse_ctor(void *mem, cEntity *e, cAIChar *ai, int *ar
 	return self;
 }
 
-cAIControlNurse *cAIControlNurse_Delete(cAIControlNurse *self, byte flags) {
+static cAIControlNurse *cAIControlNurse_Delete(cAIControlNurse *self, byte flags) {
 	self->vftable = CAICONTROLNURSE_VFTABLE;
 	cAICharControl3D_dtor(self);
 	if (flags & 1) {
@@ -592,7 +638,8 @@ cAIControlNurse *cAIControlNurse_Delete(cAIControlNurse *self, byte flags) {
 	return self;
 }
 
-void cAIControlNurse_Walk(cAIControlNurse *self) {
+/* forward beyond farDist only (3D) */
+static void cAIControlNurse_Walk(cAIControlNurse *self) {
 	cEntity *te = AICC_TargetEnt(self);
 	vec3_t b1, b2;
 
@@ -618,7 +665,7 @@ cAICharControl *cAIControlSentinel_ctor(void *mem, cEntity *e, cAIChar *ai, int 
 	return ACtl_ShootInit(mem, CAICONTROLSENTINEL_VFTABLE);
 }
 
-cAICharControl *cAIControlSentinel_Delete(cAICharControl *self, byte flags) {
+static cAICharControl *cAIControlSentinel_Delete(cAICharControl *self, byte flags) {
 	self->vftable = CAICONTROLSENTINEL_VFTABLE;
 	cAICharControl3D_dtor(self);
 	if (flags & 1) {
@@ -627,14 +674,15 @@ cAICharControl *cAIControlSentinel_Delete(cAICharControl *self, byte flags) {
 	return self;
 }
 
-void cAIControlSentinel_Strafe2(cAICharControl *elem) {
+static void cAIControlSentinel_Strafe(cAIControlShoot *self);
+static void cAIControlSentinel_Strafe2(cAICharControl *elem) {
 	cAIControlShoot *self = (cAIControlShoot *)elem;
 	if (ACtl_FreeToStrafe(&self->base)) {
 		cAIControlSentinel_Strafe(self);
 	}
 }
 
-void cAIControlSentinel_Strafe(cAIControlShoot *self) {
+static void cAIControlSentinel_Strafe(cAIControlShoot *self) {
 	cAICharControl *c = &self->base;
 	vec3_t b1, b2, d;
 	float f;
@@ -702,7 +750,8 @@ hit:
 	}
 }
 
-void cAIControlSentinel_Walk(cAICharControl *elem) {
+/* the 3D Walk without a strafe of its own */
+static void cAIControlSentinel_Walk(cAICharControl *elem) {
 	cAIControlShoot *self = (cAIControlShoot *)elem;
 	if (self->side == 0) {
 		cAICharControl3D_Walk(&self->base);
@@ -712,7 +761,7 @@ void cAIControlSentinel_Walk(cAICharControl *elem) {
 }
 
 /* the vtable of cAIControlBankDirector */
-const cAICharControl2DVtbl cAIControlBankDirector_vftable = {
+static const cAICharControl2DVtbl cAIControlBankDirector_vftable = {
 	.base.Delete = cAIControlBankDirector_Delete,
 	.base.Draw = cAICharControl2D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,
@@ -819,7 +868,7 @@ const cAICharControl2DVtbl cAIControlBankDirector_vftable = {
 };
 
 /* the vtable of cAIControlBankMaster */
-const cAICharControl2DVtbl cAIControlBankMaster_vftable = {
+static const cAICharControl2DVtbl cAIControlBankMaster_vftable = {
 	.base.Delete = cAIControlBankMaster_Delete,
 	.base.Draw = cAICharControl2D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,
@@ -926,7 +975,7 @@ const cAICharControl2DVtbl cAIControlBankMaster_vftable = {
 };
 
 /* the vtable of cAIControlBishop */
-const cAICharControl2DVtbl cAIControlBishop_vftable = {
+static const cAICharControl2DVtbl cAIControlBishop_vftable = {
 	.base.Delete = cAIControlBishop_Delete,
 	.base.Draw = cAICharControl2D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,
@@ -1033,7 +1082,7 @@ const cAICharControl2DVtbl cAIControlBishop_vftable = {
 };
 
 /* the vtable of cAIControlGear */
-const cAICharControl2DVtbl cAIControlGear_vftable = {
+static const cAICharControl2DVtbl cAIControlGear_vftable = {
 	.base.Delete = cAIControlGear_Delete,
 	.base.Draw = cAICharControl2D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,
@@ -1140,7 +1189,7 @@ const cAICharControl2DVtbl cAIControlGear_vftable = {
 };
 
 /* the vtable of cAIControlMessenger */
-const cAICharControl3DVtbl cAIControlMessenger_vftable = {
+static const cAICharControl3DVtbl cAIControlMessenger_vftable = {
 	.base.Delete = cAIControlMessenger_Delete,
 	.base.Draw = cAICharControl3D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,
@@ -1245,7 +1294,7 @@ const cAICharControl3DVtbl cAIControlMessenger_vftable = {
 };
 
 /* the vtable of cAIControlNurse */
-const cAICharControl3DVtbl cAIControlNurse_vftable = {
+static const cAICharControl3DVtbl cAIControlNurse_vftable = {
 	.base.Delete = cAIControlNurse_Delete,
 	.base.Draw = cAICharControl3D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,
@@ -1350,7 +1399,7 @@ const cAICharControl3DVtbl cAIControlNurse_vftable = {
 };
 
 /* the vtable of cAIControlSentinel */
-const cAICharControl3DVtbl cAIControlSentinel_vftable = {
+static const cAICharControl3DVtbl cAIControlSentinel_vftable = {
 	.base.Delete = cAIControlSentinel_Delete,
 	.base.Draw = cAICharControl3D_Draw,
 	.base.GetWalkDir = cAICharControl_GetWalkDir,
@@ -1454,14 +1503,15 @@ const cAICharControl3DVtbl cAIControlSentinel_vftable = {
 	.TestStep = cAICharControl3D_TestStep,
 };
 
-cGVar GVar_TimeStrafeUnderAttackBishopAI;
-cGVar GVar_AngleStrafeUnderAttackBishopAI;
-cGVar GVar_TimeStrafeUnderAttackGearAI;
-cGVar GVar_AngleStrafeUnderAttackGearAI;
-cGVar GVar_LimVelRotDynamicMessengerAI;
-cGVar GVar_VelRotDynamicMessengerAI;
-cGVar GVar_TimeStrafeUnderAttackSentinelAI;
-cGVar GVar_AngleStrafeUnderAttackSentinelAI;
+/* the strafe parameters by the target (with an AI or not) */
+static cGVar GVar_TimeStrafeUnderAttackBishopAI;
+static cGVar GVar_AngleStrafeUnderAttackBishopAI;
+static cGVar GVar_TimeStrafeUnderAttackGearAI;
+static cGVar GVar_AngleStrafeUnderAttackGearAI;
+static cGVar GVar_LimVelRotDynamicMessengerAI;
+static cGVar GVar_VelRotDynamicMessengerAI;
+static cGVar GVar_TimeStrafeUnderAttackSentinelAI;
+static cGVar GVar_AngleStrafeUnderAttackSentinelAI;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_AngleStrafeUnderAttackBishopAI, &GVar_AngleStrafeUnderAttackBishopAI, "AngleStrafeUnderAttackBishopAI", 4, "Angle of the opponent to strafe under attack.\n", 1.5707964f)

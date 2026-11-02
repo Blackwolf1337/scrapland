@@ -10,6 +10,13 @@
 #include "scrap/misc.h"
 #include "scrap/staticinit.h"
 
+#define g_FogColor (GVar_R_FogColor.value.i)	/* 0xRRGGBB forced, -1 none */
+#define g_FogAbsDist (GVar_R_FogAbsDist.value.i)
+#define g_FogDensity (GVar_R_FogDensity.value.f)	/* forced, 0 none */
+static cGVar GVar_R_FogDensity;
+static cGVar GVar_R_FogColor;
+static cGVar GVar_R_FogAbsDist;
+
 #define D3DRS_FOGCOLOR 34
 #define D3DRS_FOGTABLEMODE 35
 #define D3DRS_FOGSTART 36
@@ -134,10 +141,10 @@ void CFog_SetRange(CFog *self, float start, float end) {
 	self->end = end;
 }
 
-cGVar GVar_R_FogDensity;
+static cGVar GVar_R_FogDensity;
 cGVar GVar_R_FogEnable;
-cGVar GVar_R_FogAbsDist;
-cGVar GVar_R_FogColor;
+static cGVar GVar_R_FogAbsDist;
+static cGVar GVar_R_FogColor;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_R_FogEnable, &GVar_R_FogEnable, "R_FogEnable", 2, "Allow/disable fog (def. 1)", 1)

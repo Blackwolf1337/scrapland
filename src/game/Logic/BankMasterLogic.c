@@ -4,6 +4,9 @@
  */
 #include "scrap/chartype.h"
 
+#define CBANKMASTERLOCALLOGIC_VFTABLE (&cBankMasterLocalLogic_vftable.base)
+static const cGenCharLocalLogicVtbl cBankMasterLocalLogic_vftable;
+
 cBankMasterLocalLogic *cBankMasterLocalLogic_ctor(cBankMasterLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
 	self->base.vftable = CBANKMASTERLOCALLOGIC_VFTABLE;
@@ -11,7 +14,7 @@ cBankMasterLocalLogic *cBankMasterLocalLogic_ctor(cBankMasterLocalLogic *self, c
 	return self;
 }
 
-cLocalLogic *cBankMasterLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static cLocalLogic *cBankMasterLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 	cBankMasterLocalLogic *self = (cBankMasterLocalLogic *)elem;
 	self->base.vftable = CBANKMASTERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
@@ -33,7 +36,7 @@ byte Logic_Chance(cBaseLocalLogic *l, cEntity *attacker, float chance) {
 }
 
 /* vf30 */
-cEntity *cBankMasterLocalLogic_FindTarget(cLocalLogic *elem) {
+static cEntity *cBankMasterLocalLogic_FindTarget(cLocalLogic *elem) {
 	cBankMasterLocalLogic *self = (cBankMasterLocalLogic *)elem;
 	if (!(0.0f > self->searchTime)) {
 		return NULL;
@@ -51,7 +54,7 @@ cEntity *cBankMasterLocalLogic_FindTarget(cLocalLogic *elem) {
 }
 
 /* vf12 (0x30), the attack of a character: state 4 against it */
-void cBankMasterLocalLogic_OnAttack(cLocalLogic *elem, cEntity *attacker, float value) {
+static void cBankMasterLocalLogic_OnAttack(cLocalLogic *elem, cEntity *attacker, float value) {
 	cBankMasterLocalLogic *self = (cBankMasterLocalLogic *)elem;
 	(void)value;
 	if (Logic_Chance(&self->base, attacker, 100.0f)) {
@@ -60,7 +63,7 @@ void cBankMasterLocalLogic_OnAttack(cLocalLogic *elem, cEntity *attacker, float 
 }
 
 /* the vtable of cBankMasterLocalLogic */
-const cGenCharLocalLogicVtbl cBankMasterLocalLogic_vftable = {
+static const cGenCharLocalLogicVtbl cBankMasterLocalLogic_vftable = {
 	.base.base.Delete = cBankMasterLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.Vf02 = cLocalLogic_Vf02True,

@@ -8,6 +8,9 @@
 #include "scrap/weapons.h"
 #include "scrap/staticinit.h"
 
+#define CWEAPONSCORER_VFTABLE (&cWeaponScorer_vftable)
+static const cScorerItemVtbl cWeaponScorer_vftable;
+
 static CPsaImage *Weapon_NewWhite(byte color) {
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	img = img ? CPsaImage_ctor(img, "2D/white.tga", 0x20) : NULL;
@@ -39,7 +42,7 @@ cWeaponScorer *cWeaponScorer_ctor(cWeaponScorer *self) {
 	return self;
 }
 
-void cWeaponScorer_dtor(cWeaponScorer *self) {
+static void cWeaponScorer_dtor(cWeaponScorer *self) {
 	self->base.vftable = CWEAPONSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	ScorerImg_Free(self->img3D);
@@ -47,7 +50,7 @@ void cWeaponScorer_dtor(cWeaponScorer *self) {
 	cScorerItem_dtor(&self->base);
 }
 
-cScorerItem *cWeaponScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cWeaponScorer_Delete(cScorerItem *base, byte flags) {
 	cWeaponScorer *self = (cWeaponScorer *)base;
 	cWeaponScorer_dtor(self);
 	if (flags & 1) {
@@ -115,7 +118,7 @@ static int Weapon_IconVar(int *icons, int ac, byte set, int *i) {
 	return ScorerVar_Int(icons + ac, set, i);
 }
 
-int cWeaponScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+static int cWeaponScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cWeaponScorer *self = (cWeaponScorer *)base;
 	static const char *const tabColors[4] = {"TabRed", "TabGreen", "TabBlue", "TabAlpha"};
 	int r;
@@ -183,10 +186,10 @@ int cWeaponScorer_Var(cScorerItem *base, const char *name, int set, char **s, do
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-cGVar GVar_WeaponChangeFadeTime;
+static cGVar GVar_WeaponChangeFadeTime;
 
 #define g_WeaponChangeFadeTime (GVar_WeaponChangeFadeTime.value.f)	/* WeaponChangeFadeTime */
-cGVar GVar_WeaponChangeShowTime;
+static cGVar GVar_WeaponChangeShowTime;
 
 #define g_WeaponChangeShowTime (GVar_WeaponChangeShowTime.value.f)	/* WeaponChangeShowTime: the slots after a change */
 /* the slot row of the weapons, shared by all items: per weapon 0 none, 1 with ammo, 2 without; its place in the row */
@@ -257,9 +260,9 @@ static void Weapon_DrawAmmo(cWeaponScorer *self, cWeaponManager *wm, int w, int 
 	}
 }
 
-int g_WeaponSlotState[7];
-int g_WeaponSlotPlace[7];
-int g_WeaponSlotCount;
+static int g_WeaponSlotState[7];
+static int g_WeaponSlotPlace[7];
+static int g_WeaponSlotCount;
 
 /* the row of the weapon slots after a change: the weapons of the ship in their order, the selected one framed */
 static void Weapon_DrawSlots(cWeaponScorer *self, cWeaponManager *wm, int player, int sel, float frameTime) {
@@ -323,7 +326,7 @@ static void Weapon_DrawSlots(cWeaponScorer *self, cWeaponManager *wm, int player
 
 /* vf00: the weapon of the ship of the camera with its upgrade bar, its ammo, the slots mounted, the row of the
  * weapons after a change and the fade between the old and the new weapon icon */
-void cWeaponScorer_Draw(cScorerItem *base, int player) {
+static void cWeaponScorer_Draw(cScorerItem *base, int player) {
 	cWeaponScorer *self = (cWeaponScorer *)base;
 	float uv0[2], uv1[2], sv0[2], sv1[2];
 	cEntity *ship;
@@ -445,7 +448,7 @@ void cWeaponScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cWeaponScorer */
-const cScorerItemVtbl cWeaponScorer_vftable = {
+static const cScorerItemVtbl cWeaponScorer_vftable = {
 	.Draw = cWeaponScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cWeaponScorer_Var,

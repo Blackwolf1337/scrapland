@@ -39,6 +39,7 @@ void CIniFile_dtor(CIniFile *self) {
 }
 
 /* a flag, then the block if it is set */
+static void CIniFile_ReadBlock(CIniFile *self, CFileIO *f);
 void IniFile_Read(CFileIO *f, CIniFile **ini) {
 	CHECK(ini && !*ini);
 	if (CFileIO_ReadInt(f) == 0) {
@@ -52,15 +53,12 @@ void IniFile_Read(CFileIO *f, CIniFile **ini) {
 	CIniFile_ReadBlock(p, f);
 }
 
+static void CIniFile_WriteBlock(CIniFile *self, CFileIO *f);
 void IniFile_Write(CFileIO *f, CIniFile *ini) {
 	CFileIO_WriteInt(f, ini != NULL);
 	if (ini) {
 		CIniFile_WriteBlock(ini, f);
 	}
-}
-
-int CIniFile_FindKey(CIniFile *self, const char *key, char *value, int size, int from) {
-	return DataFile_FindKey(self->dat, key, from, value, size);
 }
 
 int CIniFile_FindSection(CIniFile *self, const char *name, int from) {
@@ -168,7 +166,7 @@ vec3_t *CIniFile_GetVec3(CIniFile *self, vec3_t *out, const char *sect, const ch
 	return out;
 }
 
-void CIniFile_ReadBlock(CIniFile *self, CFileIO *f) {
+static void CIniFile_ReadBlock(CIniFile *self, CFileIO *f) {
 	char line[INI_LOADSAVE_MAXLINE];
 
 	CHECK(!DataFile_Count(self->dat));
@@ -187,7 +185,7 @@ void CIniFile_Clear(CIniFile *self) {
 	self->dat = DataFile_New();
 }
 
-void CIniFile_WriteBlock(CIniFile *self, CFileIO *f) {
+static void CIniFile_WriteBlock(CIniFile *self, CFileIO *f) {
 	CHECK(DataFile_Count(self->dat));
 	CFileIO_BeginBlockWrite(f, "INI");
 	CFileIO_WriteInt(f, 1);
@@ -202,10 +200,6 @@ void CIniFile_WriteBlock(CIniFile *self, CFileIO *f) {
 	CFileIO_EndBlockWrite(f, "INI");
 }
 
-int CIniFile_SetYesNo(CIniFile *self, const char *sect, const char *key, byte v) {
-	return Dat_SetStr(self->dat, sect, key, v ? "YES" : "NO");
-}
-
 /* prec digits after the point */
 int CIniFile_SetFloat(CIniFile *self, const char *sect, const char *key, float v, int prec) {
 	char text[0x40];
@@ -216,10 +210,6 @@ int CIniFile_SetFloat(CIniFile *self, const char *sect, const char *key, float v
 
 int CIniFile_SetInt(CIniFile *self, const char *sect, const char *key, int v) {
 	return Dat_SetInt(self->dat, sect, key, v);
-}
-
-int CIniFile_SetStr(CIniFile *self, const char *sect, const char *key, const char *v) {
-	return Dat_SetStr(self->dat, sect, key, v);
 }
 
 /* the lines of a file after the ones there are; verbose logs a missing file once more */
@@ -241,10 +231,6 @@ void CIniFile_AddLine(CIniFile *self, const char *text, int idx) {
 		idx = DataFile_Count(self->dat);
 	}
 	DataFile_InsertAt(self->dat, text, idx);
-}
-
-void CIniFile_DeleteLine(CIniFile *self, int idx) {
-	DataFile_Delete(self->dat, idx);
 }
 
 /* "SI" / "NO" */
@@ -283,11 +269,3 @@ int CIniFile_ReadText(CIniFile *self, const char *sect, const char *key, char *d
 	return Dat_GetText(self->dat, sect, key, dest, size);
 }
 
-const char *CIniFile_LineText(CIniFile *self, int idx) {
-	cDatLine *lin = DataFile_Line(self->dat, idx);
-	return lin ? lin->text : NULL;
-}
-
-int CIniFile_LineType(CIniFile *self, int idx) {
-	return DataFile_LineType(self->dat, idx);
-}

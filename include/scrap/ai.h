@@ -92,8 +92,6 @@ typedef struct cAIBaseVtbl {
 	void(*GetEventName)(cAI *self, int ev, char *out);				/* 0x30 */
 	void(*OnEvent)(cAI *self, int ev);						/* 0x34 */
 } cAIBaseVtbl;
-extern const cAIBaseVtbl cAI_vftable;
-#define CAI_VFTABLE (&cAI_vftable)
 
 /* the events of the AI (GetEventName) */
 enum {
@@ -130,7 +128,6 @@ static inline void AI_Debugf(void *ai, const char *text) {
 cAI *cAI_ctor(cAI *self, cEntity *e);
 cAI *cAI_ctorDefault(cAI *self);
 void cAI_dtor(cAI *self);
-cAI *cAI_Delete(cAI *self, byte flags);
 void cAI_Update(cAI *self, float dt);
 void cAI_UpdateOff(cAI *self, float dt);
 void cAI_Draw(cAI *self);
@@ -180,8 +177,6 @@ typedef struct cAIMoveVtbl {
 	byte(*IsMoving)(cAI *self);						/* 0x5c */
 	byte(*CanTarget)(cAI *self, cEntity *e);					/* 0x60 */
 } cAIMoveVtbl;
-extern const cAIMoveVtbl cAIMove_vftable;
-#define CAIMOVE_VFTABLE (&cAIMove_vftable)
 
 struct cAIMove {
 	union {
@@ -213,9 +208,7 @@ struct cAIMove {
 };
 
 cAIMove *cAIMove_ctor(cAIMove *self, cEntity *e);
-cAIMove *cAIMove_ctorDefault(cAIMove *self);
 void cAIMove_dtor(cAIMove *self);
-cAI *cAIMove_Delete(cAI *base, byte flags);
 void cAIMove_Draw(cAI *elem);
 void cAIMove_Update(cAI *elem, float dt);
 void cAIMove_UpdateOff(cAI *elem, float dt);
@@ -230,7 +223,6 @@ Nto1Node *cAIMove_GetTarget(cAI *base);
 byte cAIMove_GetStopped(cAI *base);
 byte cAIMove_GetArrived(cAI *base);
 byte cAIMove_IsPaused(cAI *base);
-byte cAIMove_Event(cAIMove *self, int ev);
 /* e there and active, else a warning */
 byte cAIMove_CanTarget(cAI *base, cEntity *e);
 vec3_t *cAIMove_RandomPoint(cAI *elem, vec3_t *out, const vec3_t *p, float r);
@@ -463,8 +455,6 @@ cEntity *cAIVehicle_GetNearestItemLife(cAIVehicle *ai);
 void cAIVehicle_SetRotStatic(cAIVehicle *ai, float a, float b);
 void cAIVehicle_SetInertia(cAIVehicle *ai, int on);
 
-
-
 /* the state of the vehicle AI, arguments by state (see SAIPy.c); 0 if it was not taken */
 byte cAIVehicle_SetState(cAIVehicle *ai, int state, ...);
 
@@ -479,18 +469,9 @@ extern cGVar GVar_MaxDistChaseAI;
  * one when the time reached TimeBetwChangeStateAI ---- */
 #define CAIENTITYGROUP_SIZE sizeof(cAIEntityGroup)
 
-
-extern const cAIEntityGroupVtbl cAIEntityGroup_vftable;
-#define CAIENTITYGROUP_VFTABLE (&cAIEntityGroup_vftable)
-
-
-extern cGVar GVar_TimeBetwChangeStateAI;
-#define g_TimeBetwChangeStateAI (GVar_TimeBetwChangeStateAI.value.f)	/* "TimeBetwChangeStateAI" */
-
 /* ctor and dtor run on the memory of the subclasses */
 void *cAIEntityGroup_ctor(void *self);
 void cAIEntityGroup_dtor(void *self);
-cAIEntityGroup *cAIEntityGroup_Delete(cAIEntityGroup *self, byte flags);
 void cAIEntityGroup_Clear(cAIEntityGroup *self);
 byte cAIEntityGroup_Add(cAIEntityGroup *self, cEntity *e);
 cEntity *cAIEntityGroup_Get(cAIEntityGroup *self, int i);
@@ -499,33 +480,6 @@ byte cAIEntityGroup_CanChange(cAIEntityGroup *self);
 void cAIEntityGroup_ResetChange(cAIEntityGroup *self);
 void cAIEntityGroup_AllowChange(cAIEntityGroup *self);
 void cAIEntityGroup_Update(cAIEntityGroup *self, float dt);
-
-/* ---- the AIs of the character classes (AI/AIBankDirector.cpp .. AISentinel.cpp, src/game/AI/AI<Class>.c): a cAIChar
- * with its own slots and its own move control (cAIControl<Class>, aicharcontrol.h). The constructors are declared in
- * walkcharentity.h. Most of them replace the action check (CheckActDist, the action button at the target) and the
- * distances of the states (SetDists); the ones that shoot take their parameters in SetDists2 ---- */
-extern const cAICharVtbl cAIBankDirector_vftable;
-#define CAIBANKDIRECTOR_VFTABLE (&cAIBankDirector_vftable)
-extern const cAICharVtbl cAIBankMaster_vftable;
-#define CAIBANKMASTER_VFTABLE (&cAIBankMaster_vftable)
-extern const cAICharVtbl cAIBishop_vftable;
-#define CAIBISHOP_VFTABLE (&cAIBishop_vftable)
-extern const cAICharVtbl cAIDesktop_vftable;
-#define CAIDESKTOP_VFTABLE (&cAIDesktop_vftable)
-extern const cAICharVtbl cAIGear_vftable;
-#define CAIGEAR_VFTABLE (&cAIGear_vftable)
-extern const cAICharVtbl cAIHuman_vftable;
-#define CAIHUMAN_VFTABLE (&cAIHuman_vftable)
-extern const cAICharVtbl cAIMayor_vftable;
-#define CAIMAYOR_VFTABLE (&cAIMayor_vftable)
-extern const cAICharVtbl cAIMessenger_vftable;
-#define CAIMESSENGER_VFTABLE (&cAIMessenger_vftable)
-extern const cAICharVtbl cAINurse_vftable;
-#define CAINURSE_VFTABLE (&cAINurse_vftable)
-extern const cAICharVtbl cAIPolice_vftable;
-#define CAIPOLICE_VFTABLE (&cAIPolice_vftable)
-extern const cAICharVtbl cAISentinel_vftable;
-#define CAISENTINEL_VFTABLE (&cAISentinel_vftable)
 
 /* the director and the master (0x384 bytes) */
 typedef struct cAIBank {
@@ -580,105 +534,18 @@ typedef struct cAINurse {
 	byte pad_381[3];
 } cAINurse;
 
-/* AIBankDirector.c, AIBankMaster.c */
-cAI *cAIBankDirector_Delete(cAI *elem, byte flags);
-cAI *cAIBankMaster_Delete(cAI *elem, byte flags);
 /* vf66 of the director and the master: the attack when the character got money or the control is idle */
 void cAIBank_CheckAttack(cAI *elem);
-/* vf56 */
-void cAIBankDirector_SetRanges(cAI *elem);
-void cAIBankMaster_SetRanges(cAI *elem);
 /* vf27 and vf50 of both: the state from outside and from inside (ATTACK, 2, becomes 7 with the money noted) */
 byte cAIBank_SetState(cAI *elem, int state, ...);
 byte cAIBank_SetStateIntern(cAI *elem, int state, ...);
-/* AIBishop.c */
-cAI *cAIBishop_Delete(cAI *base, byte flags);
-/* vf66: the shot at the target in the cone of the view */
-void cAIBishop_CheckAttack(cAI *elem);
-void cAIBishop_SetRanges(cAI *elem);
-/* vf57: the shot parameters for a target with or without an AI, then the ranges */
-void cAIBishop_SetShoot(cAI *elem);
-/* AIDesktop.c: the action button while it flees or patrols (the alarm on) without a strafe, but not in a fall or
- * the ActMore and ActUp actions */
-void cAIDesktop_dtor(cAIDesktop *self);
-cAI *cAIDesktop_Delete(cAI *base, byte flags);
-void cAIDesktop_UpdateAction0(cAI *base);
-/* AIGear.c */
-cAI *cAIGear_Delete(cAI *base, byte flags);
-/* vf65: blocked by a paused AI it ran into (not the gate keeper, Sebastian): the action button */
-void cAIGear_UpdateAction(cAI *elem);
-void cAIGear_CheckActDist(cAI *elem);
-void cAIGear_SetDists(cAI *elem);
-void cAIGear_SetShoot(cAI *elem);
 /* the way to the target was not free (vf89 of the move control asks it) */
 byte cAIGear_IsBlocked(cAIGear *self);
-/* AIHuman.c */
-cAI *cAIHuman_Delete(cAI *base, byte flags);
-void cAIHuman_SetDists(cAI *base);
-/* AIMayor.c */
-cAI *cAIMayor_Delete(cAI *base, byte flags);
-void cAIMayor_CheckActDist(cAI *base);
-void cAIMayor_SetDists(cAI *base);
-/* AIMessenger.c */
-cAI *cAIMessenger_Delete(cAI *base, byte flags);
-void cAIMessenger_CheckActDist(cAI *elem);
-void cAIMessenger_SetDists(cAI *elem);
-void cAIMessenger_SetShoot(cAI *elem);
-/* AINurse.c */
-cAI *cAINurse_Delete(cAI *base, byte flags);
-/* the action at a dazed target */
-void cAINurse_CheckActDist(cAI *elem);
-void cAINurse_SetDists(cAI *elem);
-/* vf27 and vf50: the state from outside and from inside, the start of state 2 marked */
-byte cAINurse_SetState(cAI *elem, int state, ...);
-byte cAINurse_SetStateIntern(cAI *elem, int state, ...);
-/* AIPolice.c */
-cAI *cAIPolice_Delete(cAI *base, byte flags);
-void cAIPolice_CheckActDist(cAI *base);
-void cAIPolice_SetDists(cAI *elem);
-/* AISentinel.c */
-cAI *cAISentinel_Delete(cAI *base, byte flags);
-void cAISentinel_CheckActDist(cAI *base);
-void cAISentinel_SetDists(cAI *elem);
 
 /* cAIChar_dtor, cAIChar_SetDists (vf56) and cAIChar_ChangeState (vf26): aichar.h; the move controls:
  * aicharcontrol.h */
 
-extern cGVar GVar_MaxHeightChaseCharAI;
-#define g_MaxHeightChaseCharAI (GVar_MaxHeightChaseCharAI.value.f)
 extern cGVar GVar_BankMasterVacumDist;
 #define g_BankMasterVacumDist (GVar_BankMasterVacumDist.value.f)
-/* the shot of the bishop: the value against a target without an AI, the second one (the default) with one */
-extern cGVar GVar_ShootBishopAI;
-#define g_ShootBishopAI (GVar_ShootBishopAI.value.i)
-#define g_ShootBishopAIDef (GVar_ShootBishopAI.def.i)
-extern cGVar GVar_OffsetAngShootBishopAI;
-#define g_OffsetAngShootBishopAI (GVar_OffsetAngShootBishopAI.value.f)
-#define g_OffsetAngShootBishopAIDef (GVar_OffsetAngShootBishopAI.def.f)
-extern cGVar GVar_TimeShootBishopAI;
-#define g_TimeShootBishopAI (GVar_TimeShootBishopAI.value.f)
-#define g_TimeShootBishopAIDef (GVar_TimeShootBishopAI.def.f)
-extern cGVar GVar_DistMaxShootBishopAI;
-#define g_DistMaxShootBishopAI (GVar_DistMaxShootBishopAI.value.f)
-#define g_DistMaxShootBishopAIDef (GVar_DistMaxShootBishopAI.def.f)
-/* the same pairs of the gear */
-extern cGVar GVar_ShootGearAI;
-#define g_ShootGearAI (GVar_ShootGearAI.value.i)
-#define g_ShootGearAIDef (GVar_ShootGearAI.def.i)
-extern cGVar GVar_OffsetAngShootGearAI;
-#define g_OffsetAngShootGearAI (GVar_OffsetAngShootGearAI.value.f)
-#define g_OffsetAngShootGearAIDef (GVar_OffsetAngShootGearAI.def.f)
-extern cGVar GVar_ShootMessengerAI;
-#define g_ShootMessengerAI (GVar_ShootMessengerAI.value.i)
-extern cGVar GVar_OffsetAngShootMessengerAI;
-#define g_OffsetAngShootMessengerAI (GVar_OffsetAngShootMessengerAI.value.f)
-extern cGVar GVar_TimeShootMessengerAI;
-#define g_TimeShootMessengerAI (GVar_TimeShootMessengerAI.value.f)
-extern cGVar GVar_DistMaxShootMessengerAI;
-#define g_DistMaxShootMessengerAI (GVar_DistMaxShootMessengerAI.value.f)
-extern cGVar GVar_DistActionNurseAI;
-#define g_DistActionNurseAI (GVar_DistActionNurseAI.value.f)
-extern cGVar GVar_OffsetMoveNurseAI;
-#define g_OffsetMoveNurseAI (GVar_OffsetMoveNurseAI.value.f)
 
 #endif

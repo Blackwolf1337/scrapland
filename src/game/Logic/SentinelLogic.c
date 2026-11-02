@@ -18,49 +18,49 @@
 #include "scrap/world.h"
 #include "scrap/staticinit.h"
 
-extern const cSentinelLocalLogicVtbl cSentinelLocalLogic_vftable;
+static const cSentinelLocalLogicVtbl cSentinelLocalLogic_vftable;
 #define CSENTINELLOCALLOGIC_VFTABLE (&cSentinelLocalLogic_vftable.base)
-cGVar GVar_SentinelInspectTime;
+static cGVar GVar_SentinelInspectTime;
 
 #define g_SentinelInspectTime (GVar_SentinelInspectTime.value.f)
-cGVar GVar_SentinelSuspectTime;
+static cGVar GVar_SentinelSuspectTime;
 
 #define g_SentinelSuspectTime (GVar_SentinelSuspectTime.value.f)
-cGVar GVar_SentinelBankerNPCDetect;
+static cGVar GVar_SentinelBankerNPCDetect;
 
 #define g_SentinelBankerNPCDetect (GVar_SentinelBankerNPCDetect.value.f)
-cGVar GVar_SentinelGotoSpeed;
+static cGVar GVar_SentinelGotoSpeed;
 
 #define g_SentinelGotoSpeed (GVar_SentinelGotoSpeed.value.f)
-cGVar GVar_SentinelAcuseTime;
+static cGVar GVar_SentinelAcuseTime;
 
 #define g_SentinelAcuseTime (GVar_SentinelAcuseTime.value.f)
-cGVar GVar_SentinelGotoTime;
+static cGVar GVar_SentinelGotoTime;
 
 #define g_SentinelGotoTime (GVar_SentinelGotoTime.value.f)
-cGVar GVar_SentinelAcuseSpeed;
+static cGVar GVar_SentinelAcuseSpeed;
 
 #define g_SentinelAcuseSpeed (GVar_SentinelAcuseSpeed.value.f)
-cGVar GVar_SentinelSearchSpeed;
+static cGVar GVar_SentinelSearchSpeed;
 
 #define g_SentinelSearchSpeed (GVar_SentinelSearchSpeed.value.f)
-cGVar GVar_SentinelSuspectSpeed;
+static cGVar GVar_SentinelSuspectSpeed;
 
 #define g_SentinelSuspectSpeed (GVar_SentinelSuspectSpeed.value.f)
-cGVar GVar_SentinelGotoRadius;
+static cGVar GVar_SentinelGotoRadius;
 
 #define g_SentinelGotoRadius (GVar_SentinelGotoRadius.value.f)
 extern cGVar GVar_SentinelStdFar;
 #define g_SentinelStdFar (GVar_SentinelStdFar.value.f)
 extern cGVar GVar_SentinelStdFovY;
 #define g_SentinelStdFovY (GVar_SentinelStdFovY.value.f)
-cGVar GVar_SentinelInspectSpeed;
+static cGVar GVar_SentinelInspectSpeed;
 
 #define g_SentinelInspectSpeed (GVar_SentinelInspectSpeed.value.f)
-cGVar GVar_SentinelBankerDetect;
+static cGVar GVar_SentinelBankerDetect;
 
 #define g_SentinelBankerDetect (GVar_SentinelBankerDetect.value.f)
-cGVar GVar_SentinelRelaxSpeed;
+static cGVar GVar_SentinelRelaxSpeed;
 
 #define g_SentinelRelaxSpeed (GVar_SentinelRelaxSpeed.value.f)
 extern cGVar GVar_SentinelStdFovX;
@@ -68,6 +68,7 @@ extern cGVar GVar_SentinelStdFovX;
 
 #define SENT_VT(self) ((self)->base.vftable)
 
+static byte cSentinelLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target);
 void *cSentinelLocalLogic_ctor(void *mem, cEntity *parent) {
 	cSentinelLocalLogic *self = mem;
 
@@ -78,7 +79,7 @@ void *cSentinelLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-cLocalLogic *cSentinelLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static cLocalLogic *cSentinelLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
 	SENT_VT(self) = CSENTINELLOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
@@ -89,7 +90,7 @@ cLocalLogic *cSentinelLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 }
 
 /* vf16: a sentinel never runs from the alarm */
-void cSentinelLocalLogic_OnAlarm(cLocalLogic *base, cEntity *e) {
+static void cSentinelLocalLogic_OnAlarm(cLocalLogic *base, cEntity *e) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)base;
 	(void)self;
 	(void)e;
@@ -97,7 +98,7 @@ void cSentinelLocalLogic_OnAlarm(cLocalLogic *base, cEntity *e) {
 }
 
 /* vf25: the player was in view at the last think */
-byte cSentinelLocalLogic_Seen(cLocalLogic *base) {
+static byte cSentinelLocalLogic_Seen(cLocalLogic *base) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)base;
 	return self->seen;
 }
@@ -126,7 +127,8 @@ void cSentinelLocalLogic_Watch(void *sentinel, const vec3_t *pos) {
 }
 
 /* vf26: the view of the player (unless quiet) and the state */
-void cSentinelLocalLogic_Think(cLocalLogic *elem, float dt, byte quiet) {
+static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *p, float dt);
+static void cSentinelLocalLogic_Think(cLocalLogic *elem, float dt, byte quiet) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
 	cEntity *p = b->parent;
@@ -178,7 +180,7 @@ void cSentinelLocalLogic_Think(cLocalLogic *elem, float dt, byte quiet) {
 
 /* vf12: a robbery seen: the player is accused at SentinelBankerDetect percent (plus the amount), a character goes
  * to state 6 at SentinelBankerNPCDetect */
-void cSentinelLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
+static void cSentinelLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
 	if (self->base.busy) {
 		return;
@@ -196,7 +198,7 @@ void cSentinelLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) 
 }
 
 /* vf13: the player is accused with the alarm, another character goes to state 6 */
-void cSentinelLocalLogic_OnAttack(cLocalLogic *elem, cEntity *e) {
+static void cSentinelLocalLogic_OnAttack(cLocalLogic *elem, cEntity *e) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
 	if (self->base.busy) {
 		return;
@@ -210,7 +212,7 @@ void cSentinelLocalLogic_OnAttack(cLocalLogic *elem, cEntity *e) {
 }
 
 /* vf10 and vf11: the player is accused with the alarm */
-void cSentinelLocalLogic_OnUsr(cLocalLogic *elem, cEntity *e) {
+static void cSentinelLocalLogic_OnUsr(cLocalLogic *elem, cEntity *e) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
 	if (self->base.busy) {
 		return;
@@ -222,7 +224,7 @@ void cSentinelLocalLogic_OnUsr(cLocalLogic *elem, cEntity *e) {
 }
 
 /* vf15: the police asks for money: accused (the alarm for the player); always 0 */
-byte cSentinelLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *e) {
+static byte cSentinelLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *e) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
 	if (!self->base.busy) {
 		if (e == ChType_Usr0()) {
@@ -248,7 +250,7 @@ static void Sentinel_Relax(cEntity *s) {
 }
 
 /* the view and the look of the character p (the parent) by the state; dt is not used */
-void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *p, float dt) {
+static void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *p, float dt) {
 	cBaseLocalLogic *b = &self->base;
 	cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 	cEntity *s = b->parent;
@@ -343,7 +345,7 @@ void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *p, floa
 }
 
 /* vf24 */
-void cSentinelLocalLogic_RestartState(cLocalLogic *base) {
+static void cSentinelLocalLogic_RestartState(cLocalLogic *base) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)base;
 	SENT_VT(self)->SetState(&self->base.logic, 0, NULL);
 }
@@ -362,7 +364,7 @@ void cSentinelLocalLogic_Return(void *sentinel) {
 }
 
 /* vf19: the AI of the state; the result of the base */
-byte cSentinelLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
+static byte cSentinelLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cSentinelLocalLogic *self = (cSentinelLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
 	vec3_t tmp;
@@ -421,7 +423,7 @@ byte cSentinelLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target)
 }
 
 /* the vtable of cSentinelLocalLogic */
-const cSentinelLocalLogicVtbl cSentinelLocalLogic_vftable = {
+static const cSentinelLocalLogicVtbl cSentinelLocalLogic_vftable = {
 	.base.base.Delete = cSentinelLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.Vf02 = cLocalLogic_Vf02True,

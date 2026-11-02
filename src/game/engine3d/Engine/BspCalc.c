@@ -25,16 +25,25 @@
 #include "scrap/platform.h"
 #include "scrap/staticinit.h"
 
+#define g_RadSkipBySectors (GVar_RadSkipBySectors.value.i)	/* gvar: only the lists of the same sector */
+#define g_RadiosityPortals (GVar_RadiosityPortals.value.i)	/* gvar: other sectors only through the portals */
+#define g_RadiosityMinDist (GVar_RadiosityMinDist.value.f)	/* gvar: g_BspRadMinD2 in texels */
+#define g_TxfCheckFiles (GVar_TXF_CheckFiles.value.i)	/* gvar TXF_CheckFiles: the TXF mode asked for */
+static cGVar GVar_TXF_CheckFiles;
+static cGVar GVar_RadiosityPortals;
+static cGVar GVar_RadiosityMinDist;
+static cGVar GVar_RadSkipBySectors;
+
 /* 1/255 of the color bytes (0x3b808081) */
 #define BSP_INV255 0x1.010102p-8f
 
-
-int g_BspNumLights;
+static int g_BspNumLights;
 BspLight g_BspLights[512];
 
 /* the lights of the scene */
 
-void Bsp_TakeLights(CScene *scn) {
+/* the active lights of the scene into g_BspLights, all of them switched off; the ambient of [mapa_sombras] */
+static void Bsp_TakeLights(CScene *scn) {
 	static const vec3_t omniDir = { 2.0f, -1.0f, 1.0f };
 
 	g_BspNumLights = 0;
@@ -116,13 +125,14 @@ void Bsp_TakeLights(CScene *scn) {
 	}
 }
 
-
 float g_ShadowMapScale = 1.0f;
 float g_ShadowMapRes = 0.5f;
 
 /* the texels of the lists */
 
-void BspTri_Mask(BspTri *list, CBmp *cob) {
+/* the texels of the triangles of list: the coverage into the low byte of cob (0xff when the texel is inside, else the
+ * weight of its samples) where it is larger, the triangle into the masks; the texel box of each into ext2 */
+static void BspTri_Mask(BspTri *list, CBmp *cob) {
 	int x0 = list->ext[0], y0 = list->ext[1], x1 = list->ext[2], y1 = list->ext[3];
 	int axis = list->axis;
 
@@ -203,7 +213,8 @@ static inline float Bsp_Quantize(float v) {
 	return (float)(int32_t)llrint((double)v * 1000.0) * 0.001f;
 }
 
-void CBsp_CreateBuffers(CBsp *self) {
+/* the lists of the same material, page and sector joined (below 4096 triangles), sorted, their vertex lists */
+static void CBsp_CreateBuffers(CBsp *self) {
 	/* the lists of the same material, page and sector joined while they stay below 4096 triangles */
 	for (int i = 0; i < self->num_lists; i++) {
 		BspTri *a = self->lists[i];
@@ -334,8 +345,7 @@ void CBsp_CreateBuffers(CBsp *self) {
 	E3D_DebugPrintf("\ncrear_buffers():   listas: %d   caras: %d   vert: %d\n", self->num_lists, faces, verts);
 }
 
-
-cGVar GVar_LightmapLinearAtten;
+static cGVar GVar_LightmapLinearAtten;
 
 /* the direct light of the lights of g_BspLights */
 
@@ -515,7 +525,8 @@ static void BspTri_DirectLight(BspTri *list, CScene *scn, CGround *ground, float
 	}
 }
 
-void CBsp_DirectLight(CBsp *self) {
+/* the light maps light, light2 and rad2 of each list from the lights (shadows by tracing the floor), with the TXF caches */
+static void CBsp_DirectLight(CBsp *self) {
 	CScene *scn = self->model->scene;
 	CGround *ground = World_Ground();
 	vec3_t dim = ground->Dim;
@@ -560,10 +571,10 @@ void CBsp_DirectLight(CBsp *self) {
 	BspTxf_dtor(&txf[0]);
 }
 
-
 /* the .EMI file of the map, the counterpart of CBsp_ReadEMI (version 105) */
 
-int CBsp_SaveEMI(CBsp *self) {
+/* the .EMI file written: 0, -1 on a write error */
+static int CBsp_SaveEMI(CBsp *self) {
 	char path[0x104], buf[0x104];
 	CHashTable tabMat;
 	CHashTableNode **elems;
@@ -643,7 +654,6 @@ int CBsp_SaveEMI(CBsp *self) {
 	return -1;
 }
 
-
 /* the radiosity */
 
 /* the area light of the material of a list, read into the list (0x134..0x153) */
@@ -702,7 +712,7 @@ typedef struct BspRadRay {
 	float ca, cb, d2, k, den;
 } BspRadRay;
 
-float g_BspRadMinD2;
+static float g_BspRadMinD2;
 
 static int BspRad_Ray(BspRadRay *r, const vec3_t *e, const vec3_t *pos, const vec3_t *n, const BspTri *s) {
 	r->d.x = e->x - pos->x;
@@ -776,7 +786,7 @@ float g_BspLodDist[6] = { 20.0f, 5.0f, 40.0f, 10.0f, 80.0f, 20.0f };
 /* the global light: per bounce, every texel of the lists gathers the light of the areas of all other lists (rad2, the
  * last bounce) in front of it that the floor (and the portals) do not hide; the result into rad, with the TXF cache.
  * At the end the statistics and rad added to the light maps (light) */
-void CBsp_RadGlobal(CBsp *self) {
+static void CBsp_RadGlobal(CBsp *self) {
 	CGround *ground = World_Ground();
 	float mc[17];
 	vec3_t p, n, e, a, b;
@@ -952,7 +962,7 @@ static void BspRad_ReadColor(const char *buf, byte *c, float *intens) {
  * mats_luces_rad and maps_luces_rad of the ini of the scene) and the lists with a glow map (lglow, scaled by the
  * lglow_mult of the ini) light the texels of all lists in front of them that the floor does not hide; into rad, with
  * the TXF cache. The area lights themselves get twice their color */
-void CBsp_RadAreas(CBsp *self) {
+static void CBsp_RadAreas(CBsp *self) {
 	CGround *ground = World_Ground();
 	char buf[0x80];
 	float mc[17];
@@ -1208,7 +1218,6 @@ void CBsp_RadAreas(CBsp *self) {
 	CRadiosity_dtor(&rad);
 }
 
-
 /* the compiler */
 
 /* the point cx, cz is inside the triangle p seen from above (the same side of its three edges) */
@@ -1349,7 +1358,8 @@ static void BspTri_UvLmap(BspTri *list, int x0, int y0) {
 	}
 }
 
-int g_LmapOption58;
+/* the compiler */
+static int g_LmapOption58;
 
 /* the triangles of the meshes of the scene into the pool g_BspTriTmp (the two sided ones again turned) */
 static void Bsp_TakeTriangles(CScene *scn, byte allow) {
@@ -1573,11 +1583,11 @@ void CBsp_Calculate(CBsp *self) {
 	Bsp_EndMessage(self, s);
 }
 
-cGVar GVar_RadSkipBySectors;
-cGVar GVar_RadiosityPortals;
-cGVar GVar_RadiosityMinDist;
+static cGVar GVar_RadSkipBySectors;
+static cGVar GVar_RadiosityPortals;
+static cGVar GVar_RadiosityMinDist;
 cGVar GVar_TXF_Helper;
-cGVar GVar_TXF_CheckFiles;
+static cGVar GVar_TXF_CheckFiles;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_LightmapLinearAtten, &GVar_LightmapLinearAtten, "LightmapLinealAtten", 0, "Use lineal attenuation for lightmap lights (0/1)", 1)

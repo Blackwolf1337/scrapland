@@ -7,7 +7,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/slotcontroller.h"
 
-extern const cSlotControllerVtbl cSlotController_vftable;
+static const cSlotControllerVtbl cSlotController_vftable;
 #define CSLOTCONTROLLER_VFTABLE (&cSlotController_vftable)
 
 /* rand() of the exe as a double in [0, 1] times range */
@@ -30,17 +30,10 @@ cSlotController *cSlotController_ctor(cSlotController *self, float interval) {
 	return self;
 }
 
-void cSlotController_Next(cSlotController *self) {
+static void cSlotController_Next(cSlotController *self) {
 	float t = self->interval;
 	self->interval = self->minDiff;
 	self->time += t;
-}
-
-void cRndSlotController_Next(cSlotController *elem) {
-	cRndSlotController *self = (cRndSlotController *)elem;
-	self->base.time += self->base.interval;
-	float lo = self->base.minDiff, hi = self->maxDiff;
-	self->base.interval = (float)(RandRange(hi - lo) + (double)lo);
 }
 
 /* counts dt down; 1 when the slot came */
@@ -49,7 +42,7 @@ int cSlotController_Tick(cSlotController *self, float dt) {
 	return self->time <= 0.0f;
 }
 
-const float g_SlotEpsilon = 0.001f;
+static const float g_SlotEpsilon = 0.001f;
 
 /* a slot that is still more than 1 ms ahead starts now, its interval shortened by the time left */
 void cSlotController_Restart(cSlotController *self) {
@@ -82,11 +75,7 @@ byte cSlotController_FireReset(cSlotController *self, float *out) {
 }
 
 /* the vtable of cSlotController */
-const cSlotControllerVtbl cSlotController_vftable = {
+static const cSlotControllerVtbl cSlotController_vftable = {
 	.Next = cSlotController_Next,
 };
 
-/* the vtable of cRndSlotController */
-const cSlotControllerVtbl cRndSlotController_vftable = {
-	.Next = cRndSlotController_Next,
-};

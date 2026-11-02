@@ -21,6 +21,82 @@
 #include "scrap/misc.h"
 #include "scrap/staticinit.h"
 
+#define g_MipFilter (GVar_R_MipFilter.value.i)		/* R_MipFilter 0 point, 1 linear */
+#define g_Anisotropy (GVar_R_Anisotropy.value.u)	/* R_Anisotropy */
+#define g_MipmapBias (GVar_R_MipmapBias.value.f)		/* R_MipmapBias */
+#define g_VBIBTriLimit (GVar_R_VBIBTriLimit.value.u)	/* R_VBIBTriLimit */
+#define g_MaterialLog (GVar_R_MaterialLog.value.i)		/* R_MaterialLog */
+#define g_DecalZBias (GVar_R_DecalZBias.value.u)	/* R_DecalZBias */
+#define g_AlphaFog (GVar_R_AlphaFog.value.i)		/* R_AlphaFog 0, 1 (only add blending), 2 */
+#define g_UseDefMaterial (GVar_R_UseDefMaterial.value.i)	/* R_UseDefMaterial 0, 1, 2 */
+#define g_UseDefTexture (GVar_R_UseDefTexture.value.i)	/* R_UseDefTexture 0..4 */
+#define g_EnvBumpBias (GVar_R_EnvBumpBias.value.i)		/* R_EnvBumpBias, DXT1 bump textures */
+#define g_EnvBumpScale (GVar_R_EnvBumpScale.value.f)	/* R_EnvBumpScale */
+#define g_EnvMapOffset (GVar_R_EnvMapOffset.value.f)	/* R_EnvMapOffset */
+#define g_EnvMapScale (GVar_R_EnvMapScale.value.f)	/* R_EnvMapScale */
+#define g_EnvMapViewDep (GVar_R_EnvMapViewDep.value.i)	/* R_EnvMapViewDep 0, 1, 2 */
+#define g_EnvBlend (GVar_R_EnvBlend.value.i)		/* R_EnvBlend */
+#define g_CloudR (GVar_R_CloudR.value.f)
+#define g_CloudG (GVar_R_CloudG.value.f)
+#define g_CloudB (GVar_R_CloudB.value.f)
+#define g_CloudA (GVar_R_CloudA.value.f)
+#define g_CloudEmi (GVar_R_CloudEmi.value.f)
+#define g_CloudVel1x (GVar_R_CloudVel1x.value.f)
+#define g_CloudVel1y (GVar_R_CloudVel1y.value.f)
+#define g_CloudScale1 (GVar_R_CloudScale1.value.f)
+#define g_CloudVel2x (GVar_R_CloudVel2x.value.f)
+#define g_CloudVel2y (GVar_R_CloudVel2y.value.f)
+#define g_CloudScale2 (GVar_R_CloudScale2.value.f)
+#define g_GlowFlickTile (GVar_R_GlowFlickTile.value.f)
+#define g_GlowFlickRot (GVar_R_GlowFlickRot.value.f)
+#define g_GlowFlickBump (GVar_R_GlowFlickBump.value.f)
+#define g_GlowFlickBRot (GVar_R_GlowFlickBRot.value.f)
+#define g_GlowFlickMod (GVar_R_GlowFlickMod.value.f)
+#define g_PS (g_PSHandles + PS_POST)
+#define g_PSOff (GVar_R_PSMask.value.u)
+#define g_PShaderCount (GVar_R_PShaderCount.value.i)	/* R_PShaderCount, the changes of the frame */
+#define g_CullMode (GVar_R_CullMode.value.i)	/* R_CullMode, 1 two-sided */
+#define g_MatDefault ((void *)&CMaterial_MatDefault)
+#define g_MatLine ((void *)&CMaterial_MatLine)	/* the material of the debug lines */
+#define g_ShowSphereVis (GVar_R_ShowSphereVis.value.i)	/* R_ShowSphereVis 0, 1, 2 */
+static cGVar GVar_R_VBIBTriLimit;
+static cGVar GVar_R_UseDefTexture;
+static cGVar GVar_R_UseDefMaterial;
+static cGVar GVar_R_ShowSphereVis;
+static cGVar GVar_R_PShaderCount;
+static cGVar GVar_R_PSMask;
+static cGVar GVar_R_MipmapBias;
+static cGVar GVar_R_MipFilter;
+static cGVar GVar_R_MaterialLog;
+static cGVar GVar_R_GlowFlickTile;
+static cGVar GVar_R_GlowFlickRot;
+static cGVar GVar_R_GlowFlickMod;
+static cGVar GVar_R_GlowFlickBump;
+static cGVar GVar_R_GlowFlickBRot;
+static cGVar GVar_R_EnvMapViewDep;
+static cGVar GVar_R_EnvMapScale;
+static cGVar GVar_R_EnvMapOffset;
+static cGVar GVar_R_EnvBumpScale;
+static cGVar GVar_R_EnvBumpBias;
+static cGVar GVar_R_EnvBlend;
+static cGVar GVar_R_DecalZBias;
+static cGVar GVar_R_CullMode;
+static cGVar GVar_R_CloudVel2y;
+static cGVar GVar_R_CloudVel2x;
+static cGVar GVar_R_CloudVel1y;
+static cGVar GVar_R_CloudVel1x;
+static cGVar GVar_R_CloudScale2;
+static cGVar GVar_R_CloudScale1;
+static cGVar GVar_R_CloudR;
+static cGVar GVar_R_CloudG;
+static cGVar GVar_R_CloudEmi;
+static cGVar GVar_R_CloudB;
+static cGVar GVar_R_CloudA;
+static cGVar GVar_R_Anisotropy;
+static cGVar GVar_R_AlphaFog;
+static CMaterial CMaterial_MatLine;
+static CMaterial CMaterial_MatDefault;
+
 void *g_pd3dDevice;
 
 static void Render_TSS(uint32_t stage, uint32_t type, uint32_t value) {
@@ -33,7 +109,7 @@ static void Render_State(uint32_t state, uint32_t value) {
 	Rd_DevSetRenderState(dev, state, value);
 }
 
-uint32_t g_PSHandles[32];
+static uint32_t g_PSHandles[32];
 
 /* pixel shader i of g_PSNames when the device has it and it is not switched off in g_PSOff, else 0 */
 static uint32_t Render_PSHandle(int i) {
@@ -158,7 +234,8 @@ void Render_PSFixed(void *arg, byte flags) {
 	}
 }
 
-CMaterial *g_LightmapMat;
+/* RenderLightmapMat, the lightmap material of the draw (counted); with one the shader modes have 0x100 */
+static CMaterial *g_LightmapMat;
 
 /* the shader modes (g_ShaderTab, g_ShaderTab2 with the lightmap): a pixel shader with its constants, the fixed
  * texture stages without one. Flags 1 begin, 4 the next material of the same mode, 2 end; the end takes the
@@ -175,9 +252,10 @@ void Shader_DiffuseNoLit(CMaterial *mat, uint32_t flags) {
 	}
 }
 
-uint32_t g_LightmapOp = 4;
+/* the D3DTOP of the lightmap stage */
+static uint32_t g_LightmapOp = 4;
 
-void Shader_DiffuseLightmap(CMaterial *mat, uint32_t flags) {
+static void Shader_DiffuseLightmap(CMaterial *mat, uint32_t flags) {
 	(void)mat;
 	if (flags & 1) {
 		Stage_Base();
@@ -195,6 +273,7 @@ void Shader_DiffuseLightmap(CMaterial *mat, uint32_t flags) {
 
 /* Envmap, MaskEnvmap: the reflection in stage 1 (added, or blended by R_EnvBlend), the diffuse and the lightmap
  * after it */
+static void Mat_StageEnvMap(CMaterial *mat, uint32_t flags, uint32_t stage, float bias);
 static void Shader_Env(CMaterial *mat, uint32_t flags, int ps, byte mask, byte lightmap) {
 	uint32_t h = Render_PSHandle(ps);
 	Mat_StageEnvMap(mat, flags, 1, 0.0f);
@@ -256,7 +335,7 @@ void Shader_Envmap(CMaterial *mat, uint32_t flags) {
 	Shader_Env(mat, flags, PS_ENVMAP, 0, 0);
 }
 
-void Shader_EnvmapLightmap(CMaterial *mat, uint32_t flags) {
+static void Shader_EnvmapLightmap(CMaterial *mat, uint32_t flags) {
 	Shader_Env(mat, flags, PS_ENVMAP_LM, 0, 1);
 }
 
@@ -264,11 +343,12 @@ void Shader_MaskEnvmap(CMaterial *mat, uint32_t flags) {
 	Shader_Env(mat, flags, PS_MASKENVMAP, 1, 0);
 }
 
-void Shader_MaskEnvmapLightmap(CMaterial *mat, uint32_t flags) {
+static void Shader_MaskEnvmapLightmap(CMaterial *mat, uint32_t flags) {
 	Shader_Env(mat, flags, PS_MASKENVMAP_LM, 1, 1);
 }
 
 /* MaskEnvBump: the bump map (map 3) in stage 1 moves the reflection of stage 2 */
+static void Mat_StageEnvBump(CMaterial *mat, uint32_t flags, uint32_t stageEnv, uint32_t stageBump);
 static void Shader_EnvBump(CMaterial *mat, uint32_t flags, int ps, byte lightmap) {
 	uint32_t h = Render_PSHandle(ps);
 	Mat_StageEnvBump(mat, flags, 2, h ? 2 : 1);
@@ -325,11 +405,12 @@ void Shader_MaskEnvBump(CMaterial *mat, uint32_t flags) {
 	Shader_EnvBump(mat, flags, PS_MASKENVBUMP, 0);
 }
 
-void Shader_MaskEnvBumpLightmap(CMaterial *mat, uint32_t flags) {
+static void Shader_MaskEnvBumpLightmap(CMaterial *mat, uint32_t flags) {
 	Shader_EnvBump(mat, flags, PS_MASKENVBUMP_LM, 1);
 }
 
 /* Glowmap: the glow map (map 4) added in the last stage; the pixel shaders take the alpha constant */
+static void Render_PSConstAlpha(const CMaterial *mat, uint32_t reg);
 void Shader_Glowmap(CMaterial *mat, uint32_t flags) {
 	uint32_t h = Render_PSHandle(PS_GLOWMAP);
 	if (flags & 1) {
@@ -362,7 +443,7 @@ void Shader_Glowmap(CMaterial *mat, uint32_t flags) {
 }
 
 /* without the pixel shader the glow is left out */
-void Shader_GlowmapLightmap(CMaterial *mat, uint32_t flags) {
+static void Shader_GlowmapLightmap(CMaterial *mat, uint32_t flags) {
 	uint32_t h = Render_PSHandle(PS_GLOWMAP_LM);
 	if (!h) {
 		Shader_DiffuseLightmap(mat, flags);
@@ -432,7 +513,7 @@ void Shader_GlowmapMaskEnvmap(CMaterial *mat, uint32_t flags) {
 	}
 }
 
-void Shader_GlowmapMaskEnvmapLightmap(CMaterial *mat, uint32_t flags) {
+static void Shader_GlowmapMaskEnvmapLightmap(CMaterial *mat, uint32_t flags) {
 	uint32_t h = Render_PSHandle(PS_GLOWMAPMASKENVMAP_LM);
 	Mat_StageEnvMap(mat, flags, 1, 0.0f);
 	if (flags & 1) {
@@ -539,6 +620,7 @@ void Shader_Glass(CMaterial *mat, uint32_t flags) {
 }
 
 /* Glowmap with the scroll of map 0 and of the glow map */
+static void Mat_StageScroll(CMaterial *mat, uint32_t mapid, uint32_t flags, uint32_t stage, float k);
 static void Shader_ScrollGlow(CMaterial *mat, uint32_t flags, uint32_t glowStage) {
 	if (mat && mat->map[MAP_ENVIRONMENT]) {
 		CheckFailed("!mat || !mat->obt_mapa(MAPA_ENTORNO)", __FILE__, __TIMESTAMP__, __LINE__);
@@ -552,12 +634,12 @@ void Shader_Scroll(CMaterial *mat, uint32_t flags) {
 	Shader_Glowmap(mat, flags);
 }
 
-void Shader_ScrollLightmap(CMaterial *mat, uint32_t flags) {
+static void Shader_ScrollLightmap(CMaterial *mat, uint32_t flags) {
 	Shader_ScrollGlow(mat, flags, 2);
 	Shader_GlowmapLightmap(mat, flags);
 }
 
-plane_t g_Frustum[6];
+static plane_t g_Frustum[6];
 
 /* the distance of p to frustum plane i */
 static float Frustum_Dist(int i, const vec3_t *p) {
@@ -565,7 +647,9 @@ static float Frustum_Dist(int i, const vec3_t *p) {
 	return pl->n.x * p->x + pl->n.y * p->y + pl->n.z * p->z + pl->d;
 }
 
-int Frustum_TestSeg(const vec3_t *a, const vec3_t *b) {
+/* the segment ab against the frustum: 0 seen, 1..6 both ends outside that plane, 10 not seen */
+static int Frustum_PlaneOutside(const vec3_t *p, uint32_t skip);
+static int Frustum_TestSeg(const vec3_t *a, const vec3_t *b) {
 	float da[MAX_PLANES_FRUSTUM], db[MAX_PLANES_FRUSTUM];
 	uint32_t outA = 0, outB = 0;
 
@@ -602,7 +686,8 @@ int Frustum_TestSeg(const vec3_t *a, const vec3_t *b) {
 	return 10;
 }
 
-int Frustum_PlaneOutside(const vec3_t *p, uint32_t skip) {
+/* the first plane (1..6) p is outside of, the planes in skip not tried; 0 inside */
+static int Frustum_PlaneOutside(const vec3_t *p, uint32_t skip) {
 	for (int i = 0; i < MAX_PLANES_FRUSTUM; i++) {
 		if (!(skip & 1u << i) && Frustum_Dist(i, p) > 0.0f) {
 			return i + 1;
@@ -611,7 +696,8 @@ int Frustum_PlaneOutside(const vec3_t *p, uint32_t skip) {
 	return 0;
 }
 
-void Frustum_TestSpheres(const vec3_t *centers, const float *radius, int n, int *out) {
+/* for n spheres the first plane each one is outside of (as Frustum_PlaneOutside), 0 seen */
+static void Frustum_TestSpheres(const vec3_t *centers, const float *radius, int n, int *out) {
 	for (int k = 0; k < n; k++) {
 		out[k] = 0;
 		for (int i = 0; i < MAX_PLANES_FRUSTUM; i++) {
@@ -719,13 +805,6 @@ byte Render_Clear(const box_t *rect, uint32_t flags, uint32_t color, float z, ui
 	return Rd_DevClear(dev, rect != NULL, rect ? r : NULL, flags, color, z, stencil) == 0;
 }
 
-void Render_GetViewportSize(int *width, int *height) {
-	CHECK(g_ViewportW && g_ViewportH);
-	CHECK(width && height);
-	*width = g_ViewportW;
-	*height = g_ViewportH;
-}
-
 /* the time of the engine in ms as a float (unsigned through double) */
 static float Time_Float(void) {
 	return (float)(double)g_TimeMs;
@@ -749,7 +828,9 @@ static void Render_PSConst(uint32_t reg, const float *c) {
 
 const CMaterial *g_MatForced;
 
-void Render_PSConstAlpha(const CMaterial *mat, uint32_t reg) {
+/* the alpha constant of the pixel shaders in reg: 1 1 1 0, 0 for transparent materials (not MAT_1000) and with a
+ * forced material */
+static void Render_PSConstAlpha(const CMaterial *mat, uint32_t reg) {
 	static const float one[4] = { 1.0f, 1.0f, 1.0f, 0.0f };
 	float c[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	if ((!mat->params.transp || mat->params.attrib & MAT_1000) && !g_MatForced) {
@@ -758,7 +839,9 @@ void Render_PSConstAlpha(const CMaterial *mat, uint32_t reg) {
 	Render_PSConst(reg, c);
 }
 
-void Mat_StageEnvBump(CMaterial *mat, uint32_t flags, uint32_t stageEnv, uint32_t stageBump) {
+/* the texture stages of the reflection map (map 2) and the bump map before it (map 3, its scale and turn) */
+static void Mat_StageBumpMat(CMaterial *mat, uint32_t flags, uint32_t stage, float k, float s, float rot);
+static void Mat_StageEnvBump(CMaterial *mat, uint32_t flags, uint32_t stageEnv, uint32_t stageBump) {
 	float bias = 0.0f;
 	if (flags & 5) {
 		const CMap *bump = mat->map[3];
@@ -776,10 +859,11 @@ void Mat_StageEnvBump(CMaterial *mat, uint32_t flags, uint32_t stageEnv, uint32_
 	Mat_StageEnvMap(mat, flags, stageEnv, bias);
 }
 
-matrix_t g_MatBillboard;
+static matrix_t g_MatBillboard;
 int g_UseHWEnvMap = 1;
 
-void Mat_StageEnvMap(CMaterial *mat, uint32_t flags, uint32_t stage, float bias) {
+/* the camera space reflection coordinates of map 2 scaled by R_EnvMapScale (R_EnvMapViewDep) */
+static void Mat_StageEnvMap(CMaterial *mat, uint32_t flags, uint32_t stage, float bias) {
 	CHECK(g_UseHWEnvMap);
 	if (flags & 1) {
 		Render_TSS(stage, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_COUNT2);
@@ -823,13 +907,13 @@ void Mat_StageEnvMap(CMaterial *mat, uint32_t flags, uint32_t stage, float bias)
 
 extern const char str_Fire[];
 extern const char str_Noise[];
-extern const char str_BmpGlowmapMaskEnvmapLightmapPsh[];
-extern const char str_BmpMaskEnvBumpLightmapPsh[];
-extern const char str_BmpMaskEnvmapLightmapPsh[];
-extern const char str_BmpEnvmapLightmapPsh[];
-extern const char str_BmpGlowmapLightmapPsh[];
+static const char str_BmpGlowmapMaskEnvmapLightmapPsh[];
+static const char str_BmpMaskEnvBumpLightmapPsh[];
+static const char str_BmpMaskEnvmapLightmapPsh[];
+static const char str_BmpEnvmapLightmapPsh[];
+static const char str_BmpGlowmapLightmapPsh[];
 extern const char str_BmpHologramPsh[];
-extern const char str_BmpGlowFlickLightmapPsh[];
+static const char str_BmpGlowFlickLightmapPsh[];
 extern const char str_BmpElectricPsh[];
 extern const char str_BmpFirePsh[];
 extern const char str_BmpGlassPsh[];
@@ -859,7 +943,8 @@ extern const char str_DUDVFilter[];
 extern const char str_DUDVTarget[];
 extern const char str_RadialBlurTarget[];
 extern const char str_DiffuseNoLit[];
-ShaderTab g_ShaderTab2[32] = {
+static void Shader_GlowFlickLightmap(CMaterial *mat, uint32_t flags);
+static ShaderTab g_ShaderTab2[32] = {
 	{ .Name = (void *)str_Diffuse, .flags = 257, .fnRender = (void *)Shader_DiffuseLightmap },
 	{
 		.Index = 1,
@@ -966,7 +1051,8 @@ ShaderTab g_ShaderTab2[32] = {
 	{ .Index = 25, .Name = (void *)str_DiffuseNoLit, .flags = 257, .fnRender = (void *)Shader_DiffuseNoLit },
 };
 
-void Render_Shader(uint32_t mode, void *a, void *b) {
+/* the render function of shader mode mode */
+static void Render_Shader(uint32_t mode, void *a, void *b) {
 	CHECK((byte)mode < MAX_SHADER_TAB);
 	const ShaderTab *sh = mode < 0x100 ? &g_ShaderTab[mode] : &g_ShaderTab2[mode & 0xff];
 	CHECK(sh->Index == (byte)mode);
@@ -983,7 +1069,8 @@ static float Rand_Range(float r) {
 	return Rand_Between(-r, r);
 }
 
-void Tex_StageJitter(void *unused, uint32_t flags, uint32_t stage, float ju, float jv, float scale) {
+/* texture coordinates of stage moved by a random part of +-ju, +-jv and scaled */
+static void Tex_StageJitter(void *unused, uint32_t flags, uint32_t stage, float ju, float jv, float scale) {
 	(void)unused;
 	if (flags & 1) {
 		matrix_t m;
@@ -1000,7 +1087,9 @@ void Tex_StageJitter(void *unused, uint32_t flags, uint32_t stage, float ju, flo
 	}
 }
 
-void Mat_StageScroll(CMaterial *mat, uint32_t mapid, uint32_t flags, uint32_t stage, float k) {
+/* the scroll (f10) and turn (v20[2] * k) of map mapid */
+static void Tex_StageTransform(void *unused, uint32_t flags, uint32_t stage, float su, float sv, float scale, float rot);
+static void Mat_StageScroll(CMaterial *mat, uint32_t mapid, uint32_t flags, uint32_t stage, float k) {
 	if (flags & 5) {
 		CHECK(mapid < MAP_TOTAL);
 		const CMap *map = mat->map[mapid];
@@ -1016,7 +1105,8 @@ void Mat_StageScroll(CMaterial *mat, uint32_t mapid, uint32_t flags, uint32_t st
 	}
 }
 
-void Tex_StageTransform(void *unused, uint32_t flags, uint32_t stage, float su, float sv, float scale, float rot) {
+/* texture coordinates of stage scrolled by su, sv per second, scaled and turned by rot per second */
+static void Tex_StageTransform(void *unused, uint32_t flags, uint32_t stage, float su, float sv, float scale, float rot) {
 	(void)unused;
 	if (flags & 5) {
 		matrix_t m;
@@ -1044,7 +1134,8 @@ void Tex_StageTransform(void *unused, uint32_t flags, uint32_t stage, float su, 
 	}
 }
 
-void Mat_StageBumpMat(CMaterial *mat, uint32_t flags, uint32_t stage, float k, float s, float rot) {
+/* the bump env matrix of stage: scale s (plus the f2c of map 3 times k) turned by rot */
+static void Mat_StageBumpMat(CMaterial *mat, uint32_t flags, uint32_t stage, float k, float s, float rot) {
 	if (!(flags & 5)) {
 		return;
 	}
@@ -1164,11 +1255,11 @@ void Shader_Hologram(CMaterial *mat, uint32_t flags) {
 	}
 }
 
-CMaterial *g_MatBump;
+static CMaterial *g_MatBump;
 
 /* the glow flickers (R_GlowFlickMod..1 squared, two slow waves of the time), moved by the bump noise map; Glowmap
  * without the pixel shader */
-void Shader_GlowFlickLightmap(CMaterial *mat, uint32_t flags) {
+static void Shader_GlowFlickLightmap(CMaterial *mat, uint32_t flags) {
 	uint32_t h = Render_PSHandle(PS_GLOWFLICK_LM);
 	if (!h) {
 		Shader_GlowmapLightmap(mat, flags);
@@ -1318,7 +1409,9 @@ void Shader_Noise(CMaterial *mat, uint32_t flags) {
 	}
 }
 
-void Render_D3DMaterial(const CMaterial *mat, const float *colors) {
+/* the D3DMATERIAL8 of colors (diffuse, ambient, specular, emissive, power): with DiffuseMod4x the colors but the
+ * specular a fourth, with a forced material its alpha */
+static void Render_D3DMaterial(const CMaterial *mat, const float *colors) {
 	float m[17];
 	const float *p = colors;
 	if (g_MatForced || g_DiffuseMod4x) {
@@ -1337,13 +1430,14 @@ void Render_D3DMaterial(const CMaterial *mat, const float *colors) {
 	Rd_DevSetMaterial(dev, p);
 }
 
-matrix_t g_MatProj;
+/* the matrices of the frame: projection, view, the camera turn of the sprites, the world of the last draw; the eye */
+static matrix_t g_MatProj;
 
 const matrix_t *Render_GetProj(void) {
 	return &g_MatProj;
 }
 
-matrix_t g_MatView;
+static matrix_t g_MatView;
 
 const matrix_t *Render_GetView(void) {
 	return &g_MatView;
@@ -1353,7 +1447,7 @@ const matrix_t *Render_GetBillboard(void) {
 	return &g_MatBillboard;
 }
 
-vec3_t g_EyePos;
+static vec3_t g_EyePos;
 
 const vec3_t *Render_GetEyePos(void) {
 	return &g_EyePos;
@@ -1405,8 +1499,8 @@ void Render_DrawTexRect(const box_t *rect, uint32_t cLeft, uint32_t cRight, void
 }
 
 byte g_D3DOn;
-extern const char str_BmpLightmapPsh[];
-extern const char str_BmpSpecularPsh[];
+static const char str_BmpLightmapPsh[];
+static const char str_BmpSpecularPsh[];
 extern const char str_BmpGlowmapMaskEnvBumpPsh[];
 extern const char str_BmpMaskEnvBumpPsh[];
 extern const char str_BmpMaskEnvmapPsh[];
@@ -1423,7 +1517,8 @@ extern const char str_BmpBlurTargetPsh[];
 extern const char str_BmpDUDVFilterPsh[];
 extern const char str_BmpDUDVTargetPsh[];
 extern const char str_BmpRadialBlurTargetPsh[];
-const char *g_PSNames[32] = {
+/* all pixel shaders made from their files (the names end with NULL) */
+static const char *g_PSNames[32] = {
 	(void *)str_BmpLightmapPsh, (void *)str_BmpSpecularPsh, (void *)str_BmpGlowmapMaskEnvBumpPsh, (void *)str_BmpMaskEnvBumpPsh,
 	(void *)str_BmpMaskEnvmapPsh, (void *)str_BmpGlowmapMaskEnvmapPsh, (void *)str_BmpGlowmapMaskEnvmapLightmapPsh, (void *)str_BmpMaskEnvBumpLightmapPsh,
 	(void *)str_BmpMaskEnvmapLightmapPsh, (void *)str_BmpCloudTestPsh, (void *)str_BmpEnvmapPsh, (void *)str_BmpEnvmapLightmapPsh,
@@ -1475,8 +1570,8 @@ void Render_EndView(void) {
 }
 
 CMaterial *g_MatFX2;
-const CMaterial *g_MatFX3;
-const CMaterial *g_MatCurrent;
+static const CMaterial *g_MatFX3;
+static const CMaterial *g_MatCurrent;
 
 void Render_ClearForced(void) {
 	E3D_FlushBatch();
@@ -1487,13 +1582,13 @@ void Render_ClearForced(void) {
 	g_MatCurrent = NULL;
 }
 
-char g_DriverStr[256];
+static char g_DriverStr[256];
 
 const char *Render_GetDriver(void) {
 	return g_DriverStr;
 }
 
-char g_VersionStr[64];
+static char g_VersionStr[64];
 
 static void Render_LogVersion(const char *fmt, uint32_t ver) {
 	char *buf = g_VersionStr;
@@ -1501,8 +1596,10 @@ static void Render_LogVersion(const char *fmt, uint32_t ver) {
 	E3D_LogPrint((&g_FileLog), fmt, buf);
 }
 
-D3DAdapterId g_Adapter;
-char g_DeviceStr[256];
+/* the D3DADAPTER_IDENTIFIER8 of the device, its texts "driver [description]  version" and the ids, and the device
+ * of the last log of them */
+static D3DAdapterId g_Adapter;
+static char g_DeviceStr[256];
 
 static void Render_LogDevice(const D3DCaps8 *caps, const d3dSurfaceDesc_t *mode, const d3dSurfaceDesc_t *zbuf) {
 	E3D_LogPrint((&g_FileLog), "%s", g_Engine->deviceStats);
@@ -1528,7 +1625,8 @@ static void Render_LoadPS(int i) {
 	}
 }
 
-matrix_t g_MatBias;
+/* the identity scaled by 1/2048 */
+static matrix_t g_MatBias;
 
 /* the identity and the bias matrix */
 static void Render_SetMatrices(void) {
@@ -1539,7 +1637,7 @@ static void Render_SetMatrices(void) {
 	g_MatBias.m[10] = 1.0f / 2048;
 }
 
-byte g_UseShaders = 1;
+static byte g_UseShaders = 1;
 
 /* the static initializer: the shaders on with the hardware environment maps, and the two matrices */
 void Render_InitMatrices(void) {
@@ -1550,14 +1648,15 @@ void Render_InitMatrices(void) {
 }
 
 int g_FrameCount;
-CMaterial *g_MatWhite;
-CMaterial *g_MatCheckerboard;
-CMaterial *g_MatGray;
-CMaterial *g_MatInvis;
-byte g_MipmapsOn;
+/* the default materials RenderIniD3D makes, in this order: white, checkerboard, grey, invisible, bump noise, ground */
+static CMaterial *g_MatWhite;
+static CMaterial *g_MatCheckerboard;
+static CMaterial *g_MatGray;
+static CMaterial *g_MatInvis;
+static byte g_MipmapsOn;
 byte g_TexPow2;
-int g_DeviceLogged;
-byte g_UseShaders2;
+static int g_DeviceLogged;
+static byte g_UseShaders2;
 
 void Render_IniD3D(void) {
 	static const struct {
@@ -1663,7 +1762,7 @@ void Render_IniD3D(void) {
 	E3D_DebugPrintf("\n< RenderIniD3D()");
 }
 
-int g_RenderI1F4;
+static int g_RenderI1F4;
 
 void Render_BeginFrame(void) {
 	g_pd3dDevice = g_Engine->device;
@@ -1700,8 +1799,9 @@ static int Render_WorldToDevice(const matrix_t *m) {
 	return Rd_DevSetTransform(dev, D3DTS_WORLD, m);
 }
 
-matrix_t g_MatWorld;
-int g_WorldSet = 1;
+static matrix_t g_MatWorld;
+/* the world matrix was given to the device */
+static int g_WorldSet = 1;
 
 int Render_SetWorldMatrix(const matrix_t *m, byte defer) {
 	g_WorldSet = 0;
@@ -1744,12 +1844,14 @@ int Render_SetWorld(void) {
 	return 0;
 }
 
-byte g_StageMip[8];
-byte g_StageTile[8];
+/* the address modes of the stages as Render_SetMap last set them */
+static byte g_StageMip[8];
+static byte g_StageTile[8];
 uint32_t g_FilterMip = 1;
-uint32_t g_AnisotropyCur = 2;
-uint32_t g_FilterMin = 2;
-uint32_t g_FilterMag = 2;
+static uint32_t g_AnisotropyCur = 2;
+/* the texture filters of the stages (Render_ResetState from the variables below): min, mag, mip, anisotropy */
+static uint32_t g_FilterMin = 2;
+static uint32_t g_FilterMag = 2;
 
 void Render_ResetState(void) {
 	uint32_t filter = g_TexFilter == 2 ? 3 : (uint32_t)(g_TexFilter != 0) + 1;
@@ -1776,7 +1878,7 @@ void Render_ResetState(void) {
 	}
 }
 
-uint32_t g_ShaderCurrent;
+static uint32_t g_ShaderCurrent;
 
 /* the shader mode of the material through its id (pass 0 only); the alpha test, the blending and its value from
  * the bytes 4, 5, 6 of the id */
@@ -1857,9 +1959,10 @@ static void Mat_Pass1(void *dev) {
 	Rd_DevSetRenderState(dev, D3DRS_DESTBLEND, 2);
 }
 
-CMaterial *g_MatCtx;
-int g_MatPass;
-int g_MatFrame;
+static CMaterial *g_MatCtx;
+/* Render_SetMaterial: the last material, pass, frame and context (it is skipped for the same ones), the shader mode */
+static int g_MatPass;
+static int g_MatFrame;
 
 int Render_SetMaterial(void *m, int pass) {
 	if (!m) {
@@ -1955,58 +2058,6 @@ static void Proj_Sub(matrix_t *out, const matrix_t *proj, float x0, float x1, fl
 	*out = m;
 }
 
-int g_TileState;
-int g_TileX;
-int g_TileY;
-int g_Tiles = 4;
-
-byte Render_ProjTile(const matrix_t *proj) {
-	byte on = g_TileOn;
-	if (g_TileState < 2) {
-		if (!g_TileState && !on) {
-			return 0;
-		}
-		g_TileState = 1;
-		if (on) {
-			return 0;
-		}
-		g_TileOn = on = 1;
-	}
-	int n = g_Tiles;
-	g_TileState = 2;
-	if (!on) {
-		if (++g_TileX == n) {
-			g_TileX = 0;
-			if (++g_TileY == n) {
-				g_TileY = 0;
-				g_TileState = 0;
-				return 0;
-			}
-		}
-		g_TileOn = 1;
-	}
-	float fn = (float)n;
-	float x0 = (float)g_TileX / fn - 0.5f;
-	float x1 = (float)(g_TileX + 1) / fn - 0.5f;
-	float y0 = Float_Keep(-((float)g_TileY / fn - 0.5f));
-	float y1 = Float_Keep(-((float)(g_TileY + 1) / fn - 0.5f));
-	Proj_Sub(&g_MatProj, proj, x0, x1, y0, y1);
-	CHECK(g_pd3dDevice);
-	void *dev = g_pd3dDevice;
-	Rd_DevSetTransform(dev, D3DTS_PROJECTION, &g_MatProj);
-	return 1;
-}
-
-int Render_SetProj(const matrix_t *m) {
-	g_MatProj = *m;
-	if (!g_pd3dDevice) {
-		return E_FAIL;
-	}
-	void *dev = g_pd3dDevice;
-	Rd_DevSetTransform(dev, D3DTS_PROJECTION, &g_MatProj);
-	return 0;
-}
-
 void Render_SetCull(uint32_t mode) {
 	if (g_CullMode && mode == D3DCULL_CCW) {
 		mode = D3DCULL_NONE;
@@ -2037,8 +2088,9 @@ void Render_SetLightmapMat(CMaterial *mat, int mode) {
 typedef void(*fxTexUpdate_t)(void *fx, CMap *map);
 typedef void *(*fxTexGet_t)(void *fx);
 
-void *g_StageTex[8];
-int g_StageTexFrame[8];
+/* the texture of each stage and the frame it was set in */
+static void *g_StageTex[8];
+static int g_StageTexFrame[8];
 
 int Render_SetMap(uint32_t stage, CMap *map) {
 	CHECK(g_pd3dDevice);
@@ -2138,7 +2190,8 @@ int Render_DrawVBIB(void *vb, void *ib, const CVertList *v, uint32_t ntri) {
 	return 0;
 }
 
-int Render_SetView(const matrix_t *m) {
+/* the view matrix, its inverse as the billboard matrix and the eye */
+static int Render_SetView(const matrix_t *m) {
 	matrix_t inv;
 	g_MatView = *m;
 	CHECK(Matrix_Invert(&inv, &g_MatView) == 0);
@@ -2242,11 +2295,7 @@ int Render_CreateVB(void **vb, CVertList *vert, byte dynamic) {
 	return Buf_Fill(*vb, vert->pVert, 0, (uint32_t)(CVertList_Size(vert) * vert->nVert));
 }
 
-const char *Render_VersionStr(uint32_t v) {
-	Bprintf(g_VersionStr, 0x40, "%d.%d", v >> 8 & 0xff, v & 0xff);
-	return g_VersionStr;
-}
-
+static void Frustum_Calc(const matrix_t *view, const matrix_t *proj);
 void Render_SetCamera(CCamera *cam) {
 	matrix_t m;
 	Render_SetView(CCamera_GetView(cam, &m));
@@ -2283,10 +2332,6 @@ byte Render_ClipRect(int *out, const uint32_t *vp, const box_t *rect) {
 	out[1] = y0;
 	out[3] = y0;
 	return 0;
-}
-
-void Render_NoIndexedBlend(void *dev) {
-	Rd_DevSetRenderState(dev, D3DRS_INDEXEDVERTEXBLENDENABLE, 0);
 }
 
 byte Render_SetViewRect(const box_t *rect, byte proj) {
@@ -2412,7 +2457,8 @@ static void Plane_From3(plane_t *out, const vec3_t *a, const vec3_t *b, const ve
 	out->d = -(n.y * a->y + n.x * a->x + n.z * a->z);
 }
 
-void Frustum_Calc(const matrix_t *view, const matrix_t *proj) {
+/* the planes of the frustum of view and proj (UpdateVisibilityPlanes) */
+static void Frustum_Calc(const matrix_t *view, const matrix_t *proj) {
 	/* the corners of the clip space: near (z 0) then far, each from top left on */
 	vec3_t c[8] = {
 		{ -1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 0.0f }, { 1.0f, -1.0f, 0.0f }, { -1.0f, -1.0f, 0.0f },
@@ -2436,7 +2482,8 @@ void Frustum_Calc(const matrix_t *view, const matrix_t *proj) {
 	}
 }
 
-byte g_RenderOnlyB38;
+/* only the meshes whose material has b38 are drawn */
+static byte g_RenderOnlyB38;
 
 int Render_MeshD3D(CMeshD3D *m, CRenderNode *r) {
 	CHECK(m);
@@ -2496,22 +2543,22 @@ int Render_MeshD3D(CMeshD3D *m, CRenderNode *r) {
 	return 0;
 }
 
-const char str_BmpLightmapPsh[] = "bmp/lightmap.psh";
-const char str_BmpSpecularPsh[] = "bmp/specular.psh";
+static const char str_BmpLightmapPsh[] = "bmp/lightmap.psh";
+static const char str_BmpSpecularPsh[] = "bmp/specular.psh";
 const char str_BmpGlowmapMaskEnvBumpPsh[] = "bmp/GlowmapMaskEnvBump.psh";
 const char str_BmpMaskEnvBumpPsh[] = "bmp/MaskEnvBump.psh";
 const char str_BmpMaskEnvmapPsh[] = "bmp/MaskEnvmap.psh";
 const char str_BmpGlowmapMaskEnvmapPsh[] = "bmp/GlowmapMaskEnvmap.psh";
-const char str_BmpGlowmapMaskEnvmapLightmapPsh[] = "bmp/GlowmapMaskEnvmapLightmap.psh";
-const char str_BmpMaskEnvBumpLightmapPsh[] = "bmp/MaskEnvBumpLightmap.psh";
-const char str_BmpMaskEnvmapLightmapPsh[] = "bmp/MaskEnvmapLightmap.psh";
+static const char str_BmpGlowmapMaskEnvmapLightmapPsh[] = "bmp/GlowmapMaskEnvmapLightmap.psh";
+static const char str_BmpMaskEnvBumpLightmapPsh[] = "bmp/MaskEnvBumpLightmap.psh";
+static const char str_BmpMaskEnvmapLightmapPsh[] = "bmp/MaskEnvmapLightmap.psh";
 const char str_BmpCloudTestPsh[] = "bmp/CloudTest.psh";
 const char str_BmpEnvmapPsh[] = "bmp/Envmap.psh";
-const char str_BmpEnvmapLightmapPsh[] = "bmp/EnvmapLightmap.psh";
+static const char str_BmpEnvmapLightmapPsh[] = "bmp/EnvmapLightmap.psh";
 const char str_BmpGlowmapPsh[] = "bmp/Glowmap.psh";
-const char str_BmpGlowmapLightmapPsh[] = "bmp/GlowmapLightmap.psh";
+static const char str_BmpGlowmapLightmapPsh[] = "bmp/GlowmapLightmap.psh";
 const char str_BmpHologramPsh[] = "bmp/Hologram.psh";
-const char str_BmpGlowFlickLightmapPsh[] = "bmp/GlowFlickLightmap.psh";
+static const char str_BmpGlowFlickLightmapPsh[] = "bmp/GlowFlickLightmap.psh";
 const char str_BmpElectricPsh[] = "bmp/Electric.psh";
 const char str_BmpFirePsh[] = "bmp/Fire.psh";
 const char str_BmpGlassPsh[] = "bmp/Glass.psh";
@@ -2526,44 +2573,46 @@ const char str_BmpBlurTargetPsh[] = "bmp/BlurTarget.psh";
 const char str_BmpDUDVFilterPsh[] = "bmp/DUDVFilter.psh";
 const char str_BmpDUDVTargetPsh[] = "bmp/DUDVTarget.psh";
 const char str_BmpRadialBlurTargetPsh[] = "bmp/RadialBlurTarget.psh";
-cGVar GVar_R_VBIBTriLimit;
-cGVar GVar_R_CloudB;
-cGVar GVar_R_UseDefTexture;
-cGVar GVar_R_CloudScale1;
-cGVar GVar_R_GlowFlickMod;
-cGVar GVar_R_CloudEmi;
+static cGVar GVar_R_VBIBTriLimit;
+static cGVar GVar_R_CloudB;
+static cGVar GVar_R_UseDefTexture;
+static cGVar GVar_R_CloudScale1;
+static cGVar GVar_R_GlowFlickMod;
+static cGVar GVar_R_CloudEmi;
 cGVar GVar_R_LastDevice;
-cGVar GVar_R_UseDefMaterial;
-cGVar GVar_R_MipFilter;
-cGVar GVar_R_CullMode;
-CMaterial CMaterial_MatLine;
-cGVar GVar_R_EnvBlend;
-cGVar GVar_R_CloudG;
-cGVar GVar_R_EnvBumpScale;
-cGVar GVar_R_GlowFlickBump;
-cGVar GVar_R_CloudVel2x;
-cGVar GVar_R_MipmapBias;
-cGVar GVar_R_AlphaFog;
-cGVar GVar_R_PSMask;
-cGVar GVar_R_EnvMapOffset;
-cGVar GVar_R_CloudVel1y;
-cGVar GVar_R_CloudVel1x;
-cGVar GVar_R_CloudR;
-cGVar GVar_R_CloudVel2y;
-cGVar GVar_R_EnvMapScale;
-cGVar GVar_R_EnvMapViewDep;
-cGVar GVar_R_GlowFlickTile;
-cGVar GVar_R_CloudA;
-cGVar GVar_R_Anisotropy;
-cGVar GVar_R_EnvBumpBias;
-cGVar GVar_R_ShowSphereVis;
-cGVar GVar_R_MaterialLog;
-cGVar GVar_R_GlowFlickBRot;
-cGVar GVar_R_CloudScale2;
-cGVar GVar_R_GlowFlickRot;
-CMaterial CMaterial_MatDefault;
-cGVar GVar_R_PShaderCount;
-cGVar GVar_R_DecalZBias;
+static cGVar GVar_R_UseDefMaterial;
+static cGVar GVar_R_MipFilter;
+static cGVar GVar_R_CullMode;
+static CMaterial CMaterial_MatLine;
+static cGVar GVar_R_EnvBlend;
+static cGVar GVar_R_CloudG;
+static cGVar GVar_R_EnvBumpScale;
+static cGVar GVar_R_GlowFlickBump;
+static cGVar GVar_R_CloudVel2x;
+static cGVar GVar_R_MipmapBias;
+static cGVar GVar_R_AlphaFog;
+static cGVar GVar_R_PSMask;
+static cGVar GVar_R_EnvMapOffset;
+static cGVar GVar_R_CloudVel1y;
+static cGVar GVar_R_CloudVel1x;
+/* the engine variables of the Clouds and GlowFlick shader modes (R_CloudR and so on) */
+static cGVar GVar_R_CloudR;
+static cGVar GVar_R_CloudVel2y;
+static cGVar GVar_R_EnvMapScale;
+static cGVar GVar_R_EnvMapViewDep;
+static cGVar GVar_R_GlowFlickTile;
+static cGVar GVar_R_CloudA;
+static cGVar GVar_R_Anisotropy;
+/* the engine variables of the environment and bump maps (Gvars) */
+static cGVar GVar_R_EnvBumpBias;
+static cGVar GVar_R_ShowSphereVis;
+static cGVar GVar_R_MaterialLog;
+static cGVar GVar_R_GlowFlickBRot;
+static cGVar GVar_R_CloudScale2;
+static cGVar GVar_R_GlowFlickRot;
+static CMaterial CMaterial_MatDefault;
+static cGVar GVar_R_PShaderCount;
+static cGVar GVar_R_DecalZBias;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_R_EnvBlend, &GVar_R_EnvBlend, "R_EnvBlend", 0, "MaskEnvMap blend mode (0=Add,1=Blend)", 0)

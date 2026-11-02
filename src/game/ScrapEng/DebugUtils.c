@@ -7,18 +7,14 @@
 #include "scrap/scrapmain.h"
 #include "scrap/utild3d.h"
 
-
-void DebugUtils_DrawAxes(const matrix_t *m, const vec3_t *pos, float size) {
+/* DebugUtils.cpp (src/game/ScrapEng/DebugUtils.c): util_d3d.cpp lines with the identity of 0x431b10 */
+static void DebugUtils_DrawAxes(const matrix_t *m, const vec3_t *pos, float size) {
 	static const uint32_t colors[3] = { 0xff0000, 0xff00, 0xff };
 	Render_SetWorldMatrix(m, 0);
 	Debug_CrossLines(pos, size, colors);
 }
 
-matrix_t g_DebugIdentity = { .m = { 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f } };
-
-void DebugUtils_DrawPoint(const vec3_t *pos, float size, uint32_t color) {
-	Debug_DrawPointM((&g_DebugIdentity), pos, size, color);
-}
+static matrix_t g_DebugIdentity = { .m = { 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f } };
 
 void DebugUtils_DrawBox(const vec3_t *mn, const vec3_t *mx, uint32_t color) {
 	Debug_DrawBoxM((&g_DebugIdentity), mn, mx, color);
@@ -32,7 +28,8 @@ void DebugUtils_DrawTri(const vec3_t *a, const vec3_t *b, const vec3_t *c, uint3
 	Debug_DrawTriM((&g_DebugIdentity), a, b, c, color);
 }
 
-void DebugUtils_DrawSphereM(const matrix_t *m, const vec3_t *c, float r, uint32_t color, int divV, int divH) {
+/* divV meridians, divH (0: divV) parts of each, the axes at the center */
+static void DebugUtils_DrawSphereM(const matrix_t *m, const vec3_t *c, float r, uint32_t color, int divV, int divH) {
 	if (0.0f >= r) {
 		return;
 	}

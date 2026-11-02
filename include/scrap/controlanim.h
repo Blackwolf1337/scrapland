@@ -37,9 +37,6 @@ typedef struct CAnimEvent {
 CAnimEvent *CAnimEvent_ctor(CAnimEvent *self, float t, int id, intptr_t arg);
 /* the rest of the chain deleted */
 void CAnimEvent_dtor(CAnimEvent *self);
-CAnimEvent *CAnimEvent_Delete(CAnimEvent *self, byte flags);
-/* into the list sorted by t, then id; CHECK it is in none yet */
-void CAnimEvent_Insert(CAnimEvent *self, CAnimEvent **list);
 CAnimEvent *AnimEvents_Add(CAnimEvent **list, CAnimEvent *ev);
 
 /* called at each event before its default handling, which a return of 1 skips */
@@ -81,11 +78,9 @@ CAnimCtrl *CAnimCtrl_ctor(CAnimCtrl *self);
 /* rva 0x250f10, empty */
 void CAnimCtrl_dtor(CAnimCtrl *self);
 void CAnimCtrl_Play(CAnimCtrl *self);
-void CAnimCtrl_SetCallback(CAnimCtrl *self, animCallback_t fn, int a, int b);
 /* stopped at frame, no event; 1 */
 int CAnimCtrl_Reset(CAnimCtrl *self, float frame);
 void CAnimCtrl_SetFrames(CAnimCtrl *self, int firstFrame, int frames);
-const char *AnimCtrl_StateName(int state);
 /* playing from the first frame and the first event */
 void CAnimCtrl_Start(CAnimCtrl *self);
 /* the root position and rotation at frame (0 and the identity without them) */
@@ -94,10 +89,7 @@ void CAnimCtrl_Stop(CAnimCtrl *self);
 void CAnimCtrl_Pause(CAnimCtrl *self);
 /* a fade out over t seconds, only while fading */
 void CAnimCtrl_Fade(CAnimCtrl *self, float t);
-/* the events from *f1 up to *f2 (== *fin); 1 while there is more to go to *f2, which may be cut at an event */
-byte CAnimCtrl_Events(CAnimCtrl *self, float *f1, float *f2, float *end);
 /* t seconds on (t < 0: the time since the last update, at most 0.1), the root motion rotated by rot; 0 when stopped */
 byte CAnimCtrl_Update(CAnimCtrl *self, const vec3_t *rot, float t);
-
 
 #endif

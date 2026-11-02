@@ -7,6 +7,9 @@
 
 #include "scrap/chartype.h"
 
+#define CBISHOPLOCALLOGIC_VFTABLE (&cBishopLocalLogic_vftable.base)
+static const cGenCharLocalLogicVtbl cBishopLocalLogic_vftable;
+
 /* the AI slot the bishop asks */
 typedef struct cLogicBishopAIVtbl {
 	void *vf00_24[37];
@@ -20,7 +23,7 @@ cBishopLocalLogic *cBishopLocalLogic_ctor(cBishopLocalLogic *self, cEntity *pare
 	return self;
 }
 
-cLocalLogic *cBishopLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static cLocalLogic *cBishopLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
 	self->base.vftable = CBISHOPLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
@@ -31,7 +34,7 @@ cLocalLogic *cBishopLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 }
 
 /* vf31: 0 to keep a character target that is idle when the AI asks */
-byte cBishopLocalLogic_LoseTarget(cLocalLogic *elem) {
+static byte cBishopLocalLogic_LoseTarget(cLocalLogic *elem) {
 	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
 	cEntity *t = self->base.target.target;
 
@@ -51,7 +54,7 @@ byte cBishopLocalLogic_LoseTarget(cLocalLogic *elem) {
 }
 
 /* vf07 */
-byte cBishopLocalLogic_UpdateBusy(cLocalLogic *elem) {
+static byte cBishopLocalLogic_UpdateBusy(cLocalLogic *elem) {
 	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
 	if (!strncmp(cActCtrl_GetActionName(ChType_ActCtrl(self->base.parent), 0), "SellLife", 8)) {
 		self->base.busy = 1;
@@ -63,7 +66,7 @@ byte cBishopLocalLogic_UpdateBusy(cLocalLogic *elem) {
 }
 
 /* vf30: with the special action on (energy bar active, SpecialActionActive 2) */
-cEntity *cBishopLocalLogic_FindTarget(cLocalLogic *elem) {
+static cEntity *cBishopLocalLogic_FindTarget(cLocalLogic *elem) {
 	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
 	cEntityListData **const lists[] = { &g_pWorld->logic.nurses.list, &g_pWorld->logic.aiCtrl.sentinels, &g_pWorld->logic.aiCtrl.gears };
 
@@ -94,7 +97,7 @@ cEntity *cBishopLocalLogic_FindTarget(cLocalLogic *elem) {
 }
 
 /* vf29 (0x74), the alarm: its alarm state or 2 against target */
-void cBishopLocalLogic_OnAlarm(cLocalLogic *elem, cEntity *target) {
+static void cBishopLocalLogic_OnAlarm(cLocalLogic *elem, cEntity *target) {
 	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
 	if (g_BishopAttackOnAlarm) {
 		self->base.vftable->SetState(&self->base.logic, self->alarmState, target);
@@ -104,7 +107,7 @@ void cBishopLocalLogic_OnAlarm(cLocalLogic *elem, cEntity *target) {
 }
 
 /* the vtable of cBishopLocalLogic */
-const cGenCharLocalLogicVtbl cBishopLocalLogic_vftable = {
+static const cGenCharLocalLogicVtbl cBishopLocalLogic_vftable = {
 	.base.base.Delete = cBishopLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.Vf02 = cLocalLogic_Vf02True,

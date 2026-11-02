@@ -134,141 +134,6 @@ byte BoxTri(const vec3_t *bmin, const vec3_t *bmax, const CCollideTri *tri, cons
 		BoxTri_Diagonal(s110, s001, &c110, &c001, v) || BoxTri_Diagonal(s010, s101, &c010, &c101, v);
 }
 
-/* the point where the edge from pts[prev] to pts[i] crosses the plane */
-static vec3_t Clip_Edge(const vec3_t *pts, const float *dist, int i, int prev) {
-	float t = dist[i] / (dist[i] - dist[prev]);
-	return (vec3_t){ pts[i].x + (pts[prev].x - pts[i].x) * t, pts[i].y + (pts[prev].y - pts[i].y) * t,
-		pts[i].z + (pts[prev].z - pts[i].z) * t };
-}
-
-void Poly_ClipPlane(const vec3_t *n, float d, int *count, vec3_t *pts) {
-	vec3_t out[CLIP_MAX];
-	float dist[CLIP_MAX];
-	int num = *count, first = -1, nIn = 0, nOut = 0, k = 0, i;
-
-	if (num > 0) {
-		float bias = (float)__builtin_fabs((double)d) * (g_CollisionEpsilon * 1e-5f);
-		for (i = 0; i < num; i++) {
-			dist[i] = pts[i].x * n->x + pts[i].y * n->y + pts[i].z * n->z - d + bias;
-			if (dist[i] >= 0.0f) {
-				nIn++;
-				if (first < 0) {
-					first = i;
-				}
-			} else {
-				nOut++;
-			}
-		}
-	}
-	if (nIn <= 0) {
-		*count = 0;
-		return;
-	}
-	if (num == 2) {
-		if (nOut > 0) {
-			int o = first == 0;
-			pts[o] = Clip_Edge(pts, dist, first, o);
-		}
-		return;
-	}
-	if (nOut <= 0) {
-		*count = num;
-		return;
-	}
-	if (first > 0) {
-		/* in from first - 1 to first, the points inside, out after them */
-		out[k++] = Clip_Edge(pts, dist, first, first - 1);
-		for (i = first; i < num && dist[i] >= 0.0f; i++) {
-			out[k++] = pts[i];
-		}
-		out[k++] = i >= num ? Clip_Edge(pts, dist, 0, num - 1) : Clip_Edge(pts, dist, i, i - 1);
-	} else {
-		/* the points inside from 0, out, the ones outside, in, the rest inside */
-		for (i = 0; i < num && dist[i] >= 0.0f; i++) {
-			out[k++] = pts[i];
-		}
-		out[k++] = Clip_Edge(pts, dist, i, i - 1);
-		while (i < num && 0.0f > dist[i]) {
-			i++;
-		}
-		if (i >= num) {
-			out[k++] = Clip_Edge(pts, dist, 0, num - 1);
-		} else {
-			out[k++] = Clip_Edge(pts, dist, i, i - 1);
-			for (; i < num && dist[i] >= 0.0f; i++) {
-				out[k++] = pts[i];
-			}
-		}
-	}
-	memcpy(pts, out, k * sizeof(vec3_t));
-	*count = k;
-}
-
-/* the axes of the box: the rows of its rotation, in the order the original makes them */
-static void Box_Axes(const matrix_t *m, vec3_t ax[3]) {
-	vec3_t u = { 1.0f, 0.0f, 0.0f };
-
-	Vec3_TransformDir0(&ax[0], &u, m);
-	u = (vec3_t){ 0.0f, 1.0f, 0.0f };
-	Vec3_TransformDir0(&ax[1], &u, m);
-	u = (vec3_t){ 0.0f, 0.0f, 1.0f };
-	Vec3_TransformDir0(&ax[2], &u, m);
-}
-
-static vec3_t Vec3_Times(const vec3_t *v, float s) {
-	return (vec3_t){ v->x * s, v->y * s, v->z * s };
-}
-
-int Box_ClipTri(const matrix_t *m, const float *half, const vec3_t *tri, vec3_t *center) {
-	vec3_t pos = { m->m[12], m->m[13], m->m[14] };
-	vec3_t ax[3], poly[CLIP_MAX];
-	int count = 3, side, i;
-
-	Box_Axes(m, ax);
-	poly[0] = tri[0];
-	poly[1] = tri[1];
-	poly[2] = tri[2];
-	for (side = -1; side <= 1; side += 2) {
-		float s = (float)side;
-		for (i = 0; i < 3; i++) {
-			vec3_t n = { ax[i].x * s, ax[i].y * s, s * ax[i].z };
-			Poly_ClipPlane(&n, n.y * pos.y + n.x * pos.x + n.z * pos.z - half[i], &count, poly);
-		}
-	}
-	if (count) {
-		float sx = 0.0f, sy = 0.0f, sz = 0.0f;
-		for (i = 0; i < count; i++) {
-			sx += poly[i].x;
-			sy += poly[i].y;
-			sz += poly[i].z;
-		}
-		float fn = (float)count;
-		center->x = sx / fn;
-		center->y = sy / fn;
-		center->z = sz / fn;
-	}
-	return count > 0;
-}
-
-float Box_PointDepth(const matrix_t *m, const float *half, const vec3_t *p) {
-	vec3_t pos = { m->m[12], m->m[13], m->m[14] };
-	vec3_t ax[3];
-	float best = BBOX_FLT_MAX;
-
-	Box_Axes(m, ax);
-	for (int side = -1; side <= 1; side += 2) {
-		float s = (float)side;
-		for (int i = 0; i < 3; i++) {
-			vec3_t n = Vec3_Times(&ax[i], s);
-			float v = (p->x * n.x + p->y * n.y + p->z * n.z) - (n.y * pos.y + n.x * pos.x + n.z * pos.z - half[i]);
-			if (!(v > best)) {
-				best = v;
-			}
-		}
-	}
-	return best;
-}
-
 static int Int_Max0(int v) {
 	return v > 0 ? v : 0;
 }
@@ -282,83 +147,8 @@ static int BBox_SkipQuad(const CCollideQuad *q, float loY, float hiY) {
 	return q->minY > hiY || loY > q->maxY || (q->gapTop > hiY && loY > q->gapBottom);
 }
 
-byte CGround_CollideOBB(CGround *self, const matrix_t *m, const vec3_t *half, vec3_t *outPos, vec3_t *outN) {
-	CHeights *alt = &self->heights;
-	vec3_t pos = { m->m[12], m->m[13], m->m[14] };
-	float r = (float)__builtin_sqrt((double)(half->x * half->x + half->y * half->y + half->z * half->z));
-	vec3_t neg = { -half->x, -half->y, -half->z };
-	vec3_t bestPos, bestN, c;
-	CCollideTri *bestTri = NULL;
-	float bestDist;
-
-	Debug_DrawBoxM(m, &neg, half, 0xff00);
-	int x0 = (int)(((pos.x - r) - alt->ext.min.x) * alt->invX);
-	int z0 = (int)(((pos.z - r) - alt->ext.min.z) * alt->invZ);
-	int x1 = (int)(((pos.x + r) - alt->ext.min.x) * alt->invX);
-	int z1 = (int)(((pos.z + r) - alt->ext.min.z) * alt->invZ);
-	float loY = pos.y - r, hiY = pos.y + r;
-	x0 = Int_Max0(x0);
-	z0 = Int_Max0(z0);
-	x1 = Int_MinLast(x1, alt->nx);
-	z1 = Int_MinLast(z1, alt->nz);
-	if (x1 < x0) {
-		return 0;
-	}
-	CGround_NewQuery(self);
-	bestDist = BBOX_FLT_MAX;
-	for (int z = z0; z <= z1; z++) {
-		for (int x = x0; x <= x1; x++) {
-			CCollideQuad *q = Heights_Cell(alt, x, z);
-			CHECK(q);
-			for (; q; q = q->next) {
-				if (q->Mesh->flags & TRI_ALT_NO_COLLISIONS) {
-					continue;
-				}
-				CHECK(loY <= hiY);
-				if (BBox_SkipQuad(q, loY, hiY)) {
-					continue;
-				}
-				for (int k = 0; k < q->nTri; k++) {
-					CCollideMesh *mesh = q->Mesh;
-					CCollideTri *tri = &mesh->pTri[q->pTri[k]];
-					if ((tri->flags & TRI_ALT_NO_COLLISIONS) || !CCollideTri_Mark(tri)) {
-						continue;
-					}
-					vec3_t v[3] = { mesh->pVert[tri->v[0]], mesh->pVert[tri->v[1]], mesh->pVert[tri->v[2]] };
-					if (!Box_ClipTri(m, &half->x, v, &c)) {
-						continue;
-					}
-					float dy = c.y - pos.y, dx = c.x - pos.x, dz = c.z - pos.z;
-					float d = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
-					if (bestDist > d) {
-						bestDist = d;
-						bestPos = c;
-						bestN = tri->plane.n;
-						bestTri = tri;
-					}
-					if (!outPos && !outN) {
-						bestTri->flags |= TRI_ALT_HIT;
-						return 1;
-					}
-				}
-			}
-		}
-	}
-	if (!bestTri) {
-		return 0;
-	}
-	bestTri->flags |= TRI_ALT_HIT;
-	if (outPos) {
-		*outPos = bestPos;
-	}
-	if (outN) {
-		*outN = bestN;
-	}
-	return 1;
-}
-
-int g_NTortas;
-int g_NResponseFaces;
+static int g_NTortas;
+static int g_NResponseFaces;
 
 /* with colis->calc_respuesta (a fatal CHECK) the original also collects the contact points and faces of the box
  * into a response; that code can not run and is left out */
@@ -409,7 +199,7 @@ byte CGround_CheckBBox(CGround *self, CCollisionBBox *collision) {
 	return 0;
 }
 
-int g_ResponseFaces[64][3];
+static int g_ResponseFaces[64][3];
 
 /* the static initializer: the faces of the response cleared */
 void CheckBBox_InitResponseFaces(void) {

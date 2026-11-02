@@ -23,7 +23,9 @@ static void *Event_Ctrl(cEntity *ent) {
 	return WithLife_Vtbl(ent)->GetActCtrl(ent);
 }
 
-void Event_AnmChangeRandomAnm(cAbstractFile *params) {
+/* Actions/Events/CharEvents.cpp and SoundEvents.cpp (src/game/Actions/Events/): the C functions ("!name") the
+ * events call, named like the registry; the parameters (entity name, value string, time) come in a memory file */
+static void Event_AnmChangeRandomAnm(cAbstractFile *params) {
 	char name[EVENT_STR], str[EVENT_STR], anim[EVENT_STR];
 	float t;
 
@@ -47,7 +49,7 @@ void Event_AnmChangeRandomAnm(cAbstractFile *params) {
 	cActCtrl_Play(WithLife_Vtbl(ent)->GetActCtrl(ent), anim, 0, 1.0f);
 }
 
-void Event_AnmCommand(cAbstractFile *params) {
+static void Event_AnmCommand(cAbstractFile *params) {
 	char name[EVENT_STR], str[EVENT_STR];
 
 	Event_Read(params, name, str);
@@ -56,7 +58,7 @@ void Event_AnmCommand(cAbstractFile *params) {
 	cActCtrl_AnimCmd(Event_Ctrl(ent), str);
 }
 
-void Event_AnmSetAction(cAbstractFile *params) {
+static void Event_AnmSetAction(cAbstractFile *params) {
 	char name[EVENT_STR], str[EVENT_STR];
 
 	Event_Read(params, name, str);
@@ -65,7 +67,7 @@ void Event_AnmSetAction(cAbstractFile *params) {
 	cActCtrl_Play(Event_Ctrl(ent), str, 0, 1.0f);
 }
 
-void Event_AnmSetDefaultLoop(cAbstractFile *params) {
+static void Event_AnmSetDefaultLoop(cAbstractFile *params) {
 	char name[EVENT_STR], str[EVENT_STR];
 
 	Event_Read(params, name, str);
@@ -74,7 +76,7 @@ void Event_AnmSetDefaultLoop(cAbstractFile *params) {
 	cActCtrl_SetDefLoop(Event_Ctrl(ent), str, 0);
 }
 
-void Event_AnmSetDisplAng(cAbstractFile *params) {
+static void Event_AnmSetDisplAng(cAbstractFile *params) {
 	char name[EVENT_STR], str[EVENT_STR];
 
 	Event_Read(params, name, str);
@@ -84,7 +86,7 @@ void Event_AnmSetDisplAng(cAbstractFile *params) {
 	WChar(ent)->displAng = (float)crt_atof(str);
 }
 
-void Event_AnmStopChan(cAbstractFile *params) {
+static void Event_AnmStopChan(cAbstractFile *params) {
 	char name[EVENT_STR], str[EVENT_STR];
 
 	Event_Read(params, name, str);
@@ -95,12 +97,12 @@ void Event_AnmStopChan(cAbstractFile *params) {
 	cActCtrl_StopChan(WithLife_Vtbl(ent)->GetActCtrl(ent), i);
 }
 
-cPy_NativeFunc NativeFunc_AnmChangeRandomAnm;
-cPy_NativeFunc NativeFunc_AnmSetDefaultLoop;
-cPy_NativeFunc NativeFunc_AnmSetAction;
-cPy_NativeFunc NativeFunc_AnmStopChan;
-cPy_NativeFunc NativeFunc_AnmCommand;
-cPy_NativeFunc NativeFunc_AnmSetDisplAng;
+static cPy_NativeFunc NativeFunc_AnmChangeRandomAnm;
+static cPy_NativeFunc NativeFunc_AnmSetDefaultLoop;
+static cPy_NativeFunc NativeFunc_AnmSetAction;
+static cPy_NativeFunc NativeFunc_AnmStopChan;
+static cPy_NativeFunc NativeFunc_AnmCommand;
+static cPy_NativeFunc NativeFunc_AnmSetDisplAng;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_NATIVE_FUNC(Init_NativeFunc_AnmChangeRandomAnm, &NativeFunc_AnmChangeRandomAnm, "AnmChangeRandomAnm", Event_AnmChangeRandomAnm)

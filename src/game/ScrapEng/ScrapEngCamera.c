@@ -11,6 +11,11 @@
 #include "scrap/misc.h"
 #include "scrap/staticinit.h"
 
+#define g_CameraDefViewAspect (GVar_CameraDefViewAspect.value.f)	/* CameraDefViewAspect */
+#define g_ShowSceneCamera (GVar_ShowSceneCamera.value.i)		/* ShowSceneCamera */
+static cGVar GVar_ShowSceneCamera;
+static cGVar GVar_CameraDefViewAspect;
+
 #define CAM_CHECK(self) \
 	do { \
 		if (!(self)->Camera) { \
@@ -22,7 +27,6 @@
 #define CAM_ROLL_EPS 0x1.6e05a695f8191p-13	/* 0.01 degrees in radians: smaller rolls are dropped */
 #define CAM_ASPECT_WIDE 0x1.c71c71c71c71cp+0	/* 16 / 9 */
 #define CAM_ASPECT_4_3 0x1.5555555555555p+0
-
 
 CGameCamera *CGameCamera_ctor(CGameCamera *self) {
 	CCamera *c = operator_new(sizeof(CCamera));
@@ -57,6 +61,7 @@ void CGameCamera_Move(CGameCamera *self, float d) {
 	self->pos = self->Camera->pos;
 }
 
+static byte CGameCamera_IsLookAt(const CGameCamera *self);
 void CGameCamera_Copy(CGameCamera *self, const CGameCamera *other) {
 	if (self->Node) {
 		CheckFailed("!Node", __FILE__, __TIMESTAMP__, __LINE__);
@@ -73,7 +78,7 @@ void CGameCamera_FromCamera(CGameCamera *self, const CCamera *c) {
 	CGameCamera_SetLookAt(self, c->mode == CAMERA_LOOKAT);
 }
 
-byte CGameCamera_IsLookAt(const CGameCamera *self) {
+static byte CGameCamera_IsLookAt(const CGameCamera *self) {
 	CAM_CHECK(self);
 	return self->Camera->mode == CAMERA_LOOKAT;
 }
@@ -99,16 +104,13 @@ byte CGameCamera_SetNodeModel(CGameCamera *self, CGameModel *model, int i) {
 	return 1;
 }
 
-void CGameCamera_SetNode(CGameCamera *self, CRenderNode *node) {
-	RenderNode_Unref(&self->Node);
-	self->Node = node;
-}
+/* what CamComposite_Find found last, for ShowSceneCamera */
+static int g_CamCompositeIdx;
+static float g_CamCompositeFrame;
+static float g_CamCompositeFPS = 1.0f;
 
-int g_CamCompositeIdx;
-float g_CamCompositeFrame;
-float g_CamCompositeFPS = 1.0f;
-
-CNode3D *CamComposite_Find(CModel *model, CIniFile *ini) {
+/* the camera node of the [Cam-Composite] section ini of a node of model, NULL with a log line for none */
+static CNode3D *CamComposite_Find(CModel *model, CIniFile *ini) {
 	char key[32], name[128];
 	int idx = -1;
 
@@ -143,7 +145,7 @@ CNode3D *CamComposite_Find(CModel *model, CIniFile *ini) {
 }
 
 CFont *g_FontHoratioSmall;
-char g_CamCompositeName[128];
+static char g_CamCompositeName[128];
 
 void CamComposite_DrawDebug(void) {
 	if (!g_ShowSceneCamera) {
@@ -227,18 +229,9 @@ CCamera *CGameCamera_Update(CGameCamera *self) {
 	return self->Camera;
 }
 
-vec3_t *CGameCamera_ToLocal(const CGameCamera *self, vec3_t *out, const vec3_t *in) {
-	vec3_t t;
-
-	out->x = in->x - self->pos.x;
-	out->y = in->y - self->pos.y;
-	out->z = in->z - self->pos.z;
-	*out = *Vec3_RotateInv(&t, out, &self->rot);
-	return out;
-}
-
-cGVar GVar_CameraDefViewAspect;
-cGVar GVar_ShowSceneCamera;
+/* the engine variables (Gvars) */
+static cGVar GVar_CameraDefViewAspect;
+static cGVar GVar_ShowSceneCamera;
 cGVar GVar_PhysicalAspectRatio;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */

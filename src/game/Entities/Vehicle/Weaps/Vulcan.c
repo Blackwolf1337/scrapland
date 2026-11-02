@@ -7,10 +7,46 @@
 #include "scrap/weaps2.h"
 #include "scrap/staticinit.h"
 
+#define g_FXVulcanHitDistance (GVar_FXVulcanHitDistance.value.f)
+#define g_VulcanTimeDelay (GVar_VulcanTimeDelay.value.f)
+#define g_VulcanRic2Sound (GVar_VulcanRic2Sound.value.s)
+#define g_VulcanRicSoundAttIni (GVar_VulcanRicSoundAttIni.value.f)
+#define g_VulcanTimeDelayUPG (GVar_VulcanTimeDelayUPG.value.f)
+#define g_VulcanHitForce (GVar_VulcanHitForce.value.f)
+#define g_VulcanDamageEasy (GVar_VulcanDamageEasy.value.i)
+#define g_VulcanHitFile (GVar_VulcanHitFile.value.s)
+#define g_VulcanRic1Sound (GVar_VulcanRic1Sound.value.s)
+#define g_VulcanRic0Sound (GVar_VulcanRic0Sound.value.s)
+#define g_VulcanAmmoCost (GVar_VulcanAmmoCost.value.f)
+#define g_VulcanBulletFile (GVar_VulcanBulletFile.value.s)
+#define g_VulcanDamage (GVar_VulcanDamage.value.i)
+#define g_VulcanHitUseNormal (GVar_VulcanHitUseNormal.value.i)
+#define g_VulcanRic0SoundVol (GVar_VulcanRic0SoundVol.value.f)
+#define g_VulcanRic2SoundVol (GVar_VulcanRic2SoundVol.value.f)
+#define g_VulcanRic1SoundVol (GVar_VulcanRic1SoundVol.value.f)
+#define g_VulcanRicSoundAttEnd (GVar_VulcanRicSoundAttEnd.value.f)
+static cGVar GVar_VulcanTimeDelayUPG;
+static cGVar GVar_VulcanTimeDelay;
+static cGVar GVar_VulcanRicSoundAttIni;
+static cGVar GVar_VulcanRicSoundAttEnd;
+static cGVar GVar_VulcanRic2SoundVol;
+static cGVar GVar_VulcanRic2Sound;
+static cGVar GVar_VulcanRic1SoundVol;
+static cGVar GVar_VulcanRic1Sound;
+static cGVar GVar_VulcanRic0SoundVol;
+static cGVar GVar_VulcanRic0Sound;
+static cGVar GVar_VulcanHitUseNormal;
+static cGVar GVar_VulcanHitForce;
+static cGVar GVar_VulcanHitFile;
+static cGVar GVar_VulcanDamageEasy;
+static cGVar GVar_VulcanDamage;
+static cGVar GVar_VulcanBulletFile;
+static cGVar GVar_VulcanAmmoCost;
+static cGVar GVar_FXVulcanHitDistance;
+
 #define VULCAN_UPG_FAST 1
 #define VULCAN_UPG_WIDE 2
 #define VULCAN_SND_SHOT 5		/* the shot sounds 5..7 of the ship */
-
 
 /* a random float of the effects: rand() in [0, 1] times mul plus add, in double */
 static inline float Vul_Rand(double mul, double add) {
@@ -83,7 +119,7 @@ static void Vul_PosOnly(CGameParticles *p, const vec3_t *off) {
 	p->initAccMax.z = 0.0f;
 }
 
-uint32_t g_VulcanRamps[3][9] = {
+static uint32_t g_VulcanRamps[3][9] = {
 	{ 0x80fff696, 0x20ffb45a, 0x40e68211, 0x80ab5e0d, 0x964c4408, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000 },
 	{ 0x80ffebd2, 0x20ffd75a, 0x40e6c811, 0x80ab8c0d, 0x964c3a08, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000 },
 	{ 0xff808080, 0x80808080, 0x5c808080, 0x80808080, 0xa4808080, 0xc0808080, 0xde808080, 0xff000000, 0xff000000 },
@@ -201,7 +237,7 @@ static void Vul_Puff(CGameParticles *p, float size, double ini, double iniAdd, d
 }
 
 /* the reload of a shot (with ammo): the recoil, the sound times and the delay of the next shot */
-void Vulcan_Shoot(cEntity *v) {
+static void Vulcan_Shoot(cEntity *v) {
 	cTargetLock *wm = &Veh(v)->weapons;
 	float ammo = cTargetLock_GetAmmo(wm, g_VulcanIDAmmo);
 	if (!(ammo > 0.0f)) {
@@ -274,7 +310,8 @@ static void Vul_Ricochet(const vec3_t *hit) {
  * seen) the hit particles (on the surface of the target, or along the normal of the floor with VulcanHitUseNormal),
  * the hit sound and a push of the target, or the ricochet sound
  */
-void Vulcan_CreateNative(cAbstractFile *f) {
+static void Vulcan_Push(cEntity *v, cEntity *e, int n);
+static void Vulcan_CreateNative(cAbstractFile *f) {
 	char name[0x80], targetName[0x80];
 	vec3_t hit, tmp, n, ang, from, to, out, cam, off;
 	CCollisionTri tri;
@@ -439,7 +476,7 @@ sound:
 }
 
 /* ship name, player, item name: the HUD item spins while the upgrade 2 fires, else it turns back */
-void Vulcan_HudNative(cAbstractFile *f) {
+static void Vulcan_HudNative(cAbstractFile *f) {
 	char name[0x80], itemName[0x80];
 	int player;
 
@@ -464,7 +501,8 @@ void Vulcan_HudNative(cAbstractFile *f) {
 }
 
 /* ship name: the shot (not on clients) hurts what it aims at */
-void Vulcan_FireNative(cAbstractFile *f) {
+static void Vulcan_AimOn(cEntity *v);
+static void Vulcan_FireNative(cAbstractFile *f) {
 	char name[0x80];
 	vec3_t ang, out;
 	cEntity *target;
@@ -521,26 +559,26 @@ void Vulcan_FireNative(cAbstractFile *f) {
 	cWeaponManager_SetAmmo(wm, g_VulcanIDAmmo, Float_MaxSS(0.0f, rest));
 }
 
-void Vulcan_Push(cEntity *v, cEntity *e, int n) {
+static void Vulcan_Push(cEntity *v, cEntity *e, int n) {
 	if (!e || !Entity_IsType(e, TYEN_WITH_LIFE) || Entity_IsType(e, TYEN_WALKCHAR)) {
 		return;
 	}
 	Weap_PushAway(v, e, n, g_VulcanHitForce);
 }
 
-void Vulcan_AimOnNative(cAbstractFile *f) {
+static void Vulcan_AimOnNative(cAbstractFile *f) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(f, name, 0x80);
 	Vulcan_AimOn(Weap_Vehicle(name));
 }
 
-void Vulcan_AimOffNative(cAbstractFile *f) {
+static void Vulcan_AimOffNative(cAbstractFile *f) {
 	Weap_SetAimMode(f, 0);
 }
 
 /* the aim help of the Vulcan: wider with the upgrade 2 and for a pad with VehicleCenterPadLock */
-void Vulcan_AimOn(cEntity *v) {
+static void Vulcan_AimOn(cEntity *v) {
 	Veh(v)->autoAim.status = 1;
 	if (g_VehicleCenterPadLock != 0.0f && cVehicleEntity_GetOwnerSlot(v) != -1) {
 		if (cWeaponManager_GetUpgrade(&Veh(v)->weapons, g_VulcanIDWeap) == VULCAN_UPG_WIDE) {
@@ -565,30 +603,30 @@ void Vulcan_AimOn(cEntity *v) {
 }
 
 cGVar GVar_VulcanIDAmmo;
-cGVar GVar_FXVulcanHitDistance;
-cGVar GVar_VulcanTimeDelay;
-cGVar GVar_VulcanRic2Sound;
-cGVar GVar_VulcanRicSoundAttIni;
-cGVar GVar_VulcanTimeDelayUPG;
-cGVar GVar_VulcanHitForce;
-cGVar GVar_VulcanDamageEasy;
-cGVar GVar_VulcanHitFile;
-cGVar GVar_VulcanRic1Sound;
-cGVar GVar_VulcanRic0Sound;
-cGVar GVar_VulcanAmmoCost;
-cGVar GVar_VulcanBulletFile;
-cGVar GVar_VulcanDamage;
-cGVar GVar_VulcanHitUseNormal;
-cGVar GVar_VulcanRic0SoundVol;
-cGVar GVar_VulcanRic2SoundVol;
-cGVar GVar_VulcanRic1SoundVol;
+static cGVar GVar_FXVulcanHitDistance;
+static cGVar GVar_VulcanTimeDelay;
+static cGVar GVar_VulcanRic2Sound;
+static cGVar GVar_VulcanRicSoundAttIni;
+static cGVar GVar_VulcanTimeDelayUPG;
+static cGVar GVar_VulcanHitForce;
+static cGVar GVar_VulcanDamageEasy;
+static cGVar GVar_VulcanHitFile;
+static cGVar GVar_VulcanRic1Sound;
+static cGVar GVar_VulcanRic0Sound;
+static cGVar GVar_VulcanAmmoCost;
+static cGVar GVar_VulcanBulletFile;
+static cGVar GVar_VulcanDamage;
+static cGVar GVar_VulcanHitUseNormal;
+static cGVar GVar_VulcanRic0SoundVol;
+static cGVar GVar_VulcanRic2SoundVol;
+static cGVar GVar_VulcanRic1SoundVol;
 cGVar GVar_VulcanRange;
-cGVar GVar_VulcanRicSoundAttEnd;
-cPy_NativeFunc NativeFunc_VulcanPress;
-cPy_NativeFunc NativeFunc_VulcanRelease;
-cPy_NativeFunc NativeFunc_VulcanCreate;
-cPy_NativeFunc NativeFunc_VulcanFire;
-cPy_NativeFunc NativeFunc_VulcanFX;
+static cGVar GVar_VulcanRicSoundAttEnd;
+static cPy_NativeFunc NativeFunc_VulcanPress;
+static cPy_NativeFunc NativeFunc_VulcanRelease;
+static cPy_NativeFunc NativeFunc_VulcanCreate;
+static cPy_NativeFunc NativeFunc_VulcanFire;
+static cPy_NativeFunc NativeFunc_VulcanFX;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_VulcanIDAmmo, &GVar_VulcanIDAmmo, "VulcanIDAmmo", 0, "The default weapon idx for the vulcan", 0)

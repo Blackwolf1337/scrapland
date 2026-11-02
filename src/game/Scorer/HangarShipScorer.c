@@ -9,6 +9,9 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
 
+#define CHANGARSHIPSCORER_VFTABLE (&cHangarShipScorer_vftable.base)
+static const cSpriteScorerVtbl cHangarShipScorer_vftable;
+
 static const char *const s_GridColors[4] = {"GridColorRed", "GridColorGreen", "GridColorBlue", "GridColorAlpha"};
 
 cHangarShipScorer *cHangarShipScorer_ctor(cHangarShipScorer *self) {
@@ -26,7 +29,7 @@ cHangarShipScorer *cHangarShipScorer_ctor(cHangarShipScorer *self) {
 	return self;
 }
 
-void cHangarShipScorer_dtor(cHangarShipScorer *self) {
+static void cHangarShipScorer_dtor(cHangarShipScorer *self) {
 	CGameCamera *cam = self->cam;
 	self->base.base.vftable = CHANGARSHIPSCORER_VFTABLE;
 	if (cam) {
@@ -41,7 +44,7 @@ void cHangarShipScorer_dtor(cHangarShipScorer *self) {
 	cSpriteScorer_dtor(&self->base);
 }
 
-cScorerItem *cHangarShipScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cHangarShipScorer_Delete(cScorerItem *base, byte flags) {
 	cHangarShipScorer *self = (cHangarShipScorer *)base;
 	cHangarShipScorer_dtor(self);
 	if (flags & 1) {
@@ -50,7 +53,8 @@ cScorerItem *cHangarShipScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-int cHangarShipScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+/* GridSpriteIndex, GridColorRed/Green/Blue/Alpha, TargetName, CamDist, CamFov */
+static int cHangarShipScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cHangarShipScorer *self = (cHangarShipScorer *)base;
 	int r;
 
@@ -94,7 +98,7 @@ int cHangarShipScorer_Var(cScorerItem *base, const char *name, int set, char **s
 	return cSpriteScorer_Var(&self->base.base, name, set, s, d, i);
 }
 
-void cHangarShipScorer_Draw(cScorerItem *base, int player) {
+static void cHangarShipScorer_Draw(cScorerItem *base, int player) {
 	cHangarShipScorer *self = (cHangarShipScorer *)base;
 	cScorerItem *it = &self->base.base;
 	vec3_t tmp, ang;
@@ -157,7 +161,7 @@ void cHangarShipScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cHangarShipScorer */
-const cSpriteScorerVtbl cHangarShipScorer_vftable = {
+static const cSpriteScorerVtbl cHangarShipScorer_vftable = {
 	.base.Draw = cHangarShipScorer_Draw,
 	.base.SetParam = cScorerItem_SetParam,
 	.base.Var = cHangarShipScorer_Var,

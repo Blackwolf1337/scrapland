@@ -23,7 +23,7 @@ static const char *FileName(cFileBlock *self) {
 }
 
 /* "File access error" with the name of the file; always 0 */
-int cFileBlock_Error(cFileBlock *self, const char *msg) {
+static int cFileBlock_Error(cFileBlock *self, const char *msg) {
 	Con_FatalErrorf("File access error: CFileBlock: '%s' %s\n", FileName(self), msg ? msg : "");
 	return 0;
 }
@@ -39,7 +39,7 @@ void cFileBlock_dtor(cFileBlock *self) {
 }
 
 /* the file object for the mode: a pack reader for reading only, else a file on disk */
-void cFileBlock_CreateFile(cFileBlock *self, uint32_t mode, byte flags) {
+static void cFileBlock_CreateFile(cFileBlock *self, uint32_t mode, byte flags) {
 	if (self->f) {
 		CHECK(!self->f);
 		if (self->f) {
@@ -68,7 +68,7 @@ void cFileBlock_CreateFile(cFileBlock *self, uint32_t mode, byte flags) {
 	self->f = NULL;
 }
 
-void cFileBlock_DeleteFile(cFileBlock *self) {
+static void cFileBlock_DeleteFile(cFileBlock *self) {
 	if (self->f) {
 		self->f->vftable->Destroy(self->f, 1);
 		self->f = NULL;
@@ -97,7 +97,7 @@ int cFileBlock_Close(cFileBlock *self) {
 	return res;
 }
 
-void cFileBlock_PushBlock(cFileBlock *self, const char *id, int pos) {
+static void cFileBlock_PushBlock(cFileBlock *self, const char *id, int pos) {
 	cFileBlockNode *node = operator_new(sizeof(*node));
 	node->id = ID_to_DWORD(id);
 	node->pos = pos;
@@ -105,7 +105,7 @@ void cFileBlock_PushBlock(cFileBlock *self, const char *id, int pos) {
 	self->block = node;
 }
 
-void cFileBlock_PopBlock(cFileBlock *self, const char *id) {
+static void cFileBlock_PopBlock(cFileBlock *self, const char *id) {
 	CHECK(self->block);
 	CHECK(self->block->id == ID_to_DWORD(id));
 	cFileBlockNode *prev = self->block->prev;

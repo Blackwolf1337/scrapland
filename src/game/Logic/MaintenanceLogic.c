@@ -11,11 +11,18 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/staticinit.h"
 
+#define CMAINTENANCELOCALLOGIC_VFTABLE (&cMaintenanceLocalLogic_vftable.base)
+#define g_MaintenanceTimeToNextPos (GVar_MaintenanceTimeToNextPos.value.f)
+#define g_MaintenanceSphereRadiusFactor (GVar_MaintenanceSphereRadiusFactor.value.f)
+static const cGenCharLocalLogicVtbl cMaintenanceLocalLogic_vftable;
+static cGVar GVar_MaintenanceTimeToNextPos;
+static cGVar GVar_MaintenanceSphereRadiusFactor;
+
 #define MAINT_VT(self) ((self)->base.base.vftable)
 #define MAINT_BASE(self) (&(self)->base.base)
 
-cEntity *g_MaintenanceShip;
-cEntity *g_MaintenanceFirstShip;
+static cEntity *g_MaintenanceShip;
+static cEntity *g_MaintenanceFirstShip;
 
 void *cMaintenanceLocalLogic_ctor(void *mem, cEntity *parent) {
 	cMaintenanceLocalLogic *self = mem;
@@ -34,7 +41,7 @@ void *cMaintenanceLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-cLocalLogic *cMaintenanceLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static cLocalLogic *cMaintenanceLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 	cMaintenanceLocalLogic *self = (cMaintenanceLocalLogic *)elem;
 	MAINT_VT(self) = CMAINTENANCELOCALLOGIC_VFTABLE;
 	g_MaintenanceShip = NULL;
@@ -48,7 +55,7 @@ cLocalLogic *cMaintenanceLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 
 /* the corners of the box of half size radius * MaintenanceSphereRadiusFactor around (x, y, z); the lower ones
  * not below the platform (its y, the radius of the robot and 100) */
-void cMaintenanceLocalLogic_SetPlatform(cMaintenanceLocalLogic *self, float x, float y, float z,
+static void cMaintenanceLocalLogic_SetPlatform(cMaintenanceLocalLogic *self, float x, float y, float z,
 	float radius) {
 	vec3_t t;
 	float r = g_MaintenanceSphereRadiusFactor * radius;
@@ -78,7 +85,7 @@ void cMaintenanceLocalLogic_SetPlatform(cMaintenanceLocalLogic *self, float x, f
 }
 
 /* the first active ship of the world, NULL while it has an effect */
-cEntity *Maintenance_FindShip(void) {
+static cEntity *Maintenance_FindShip(void) {
 	cEntity *e = cWorld_GetFirstEntity(g_pWorld);
 
 	while (e && !(e->active && e->vftable->IsType(e, TYEN_CAR))) {
@@ -96,10 +103,10 @@ cEntity *Maintenance_FindShip(void) {
 	return e;
 }
 
-void cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self);
+static void cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self);
 
 /* vf17: 7 waits for the editor and a ship, 8 works at the corners while it is the same ship */
-void cMaintenanceLocalLogic_Update(cLocalLogic *elem, float dt) {
+static void cMaintenanceLocalLogic_Update(cLocalLogic *elem, float dt) {
 	cMaintenanceLocalLogic *self = (cMaintenanceLocalLogic *)elem;
 	vec3_t t;
 	cBaseLocalLogic *b = MAINT_BASE(self);
@@ -151,7 +158,7 @@ void cMaintenanceLocalLogic_Update(cLocalLogic *elem, float dt) {
 /* the first time the nearest of the corners 0..6, then a neighbour: the next or the third next of the level, or
  * the same corner of the other level; the AI walks there faced to the ship, RepositionPoint the point of the ship
  * radii from it towards the corner */
-void cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self) {
+static void cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self) {
 	vec3_t t, sp;
 	cEntity *p = MAINT_BASE(self)->parent;
 	cAIChar *ai = p->vftable->GetAI(p);
@@ -213,7 +220,7 @@ void cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self) {
 }
 
 /* vf19: 7 walks relaxed, 8 begins the work at the next corner */
-byte cMaintenanceLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
+static byte cMaintenanceLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
 	cMaintenanceLocalLogic *self = (cMaintenanceLocalLogic *)elem;
 	cBaseLocalLogic *b = MAINT_BASE(self);
 
@@ -236,7 +243,7 @@ byte cMaintenanceLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *targ
 }
 
 /* vf06: "RepositionPoint" (read only, y positive) */
-byte cMaintenanceLocalLogic_VarV(cLocalLogic *base, const char *name, double *x, double *y, double *z, byte set) {
+static byte cMaintenanceLocalLogic_VarV(cLocalLogic *base, const char *name, double *x, double *y, double *z, byte set) {
 	cMaintenanceLocalLogic *self = (cMaintenanceLocalLogic *)base;
 	if (!set && !strcmp(name, "RepositionPoint")) {
 		*x = (double)self->reposition.x;
@@ -248,7 +255,7 @@ byte cMaintenanceLocalLogic_VarV(cLocalLogic *base, const char *name, double *x,
 }
 
 /* the vtable of cMaintenanceLocalLogic */
-const cGenCharLocalLogicVtbl cMaintenanceLocalLogic_vftable = {
+static const cGenCharLocalLogicVtbl cMaintenanceLocalLogic_vftable = {
 	.base.base.Delete = cMaintenanceLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.Vf02 = cLocalLogic_Vf02True,
@@ -287,8 +294,8 @@ const cGenCharLocalLogicVtbl cMaintenanceLocalLogic_vftable = {
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };
 
-cGVar GVar_MaintenanceTimeToNextPos;
-cGVar GVar_MaintenanceSphereRadiusFactor;
+static cGVar GVar_MaintenanceTimeToNextPos;
+static cGVar GVar_MaintenanceSphereRadiusFactor;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_FLOAT(Init_GVar_MaintenanceTimeToNextPos, &GVar_MaintenanceTimeToNextPos, "MaintenanceTimeToNextPos", 0, "Maintenance time to next pos in cube", 8.0f)

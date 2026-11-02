@@ -4,13 +4,16 @@
  */
 #include "scrap/logic.h"
 
+#define CDESKTOPLOCALLOGIC_VFTABLE (&cDesktopLocalLogic_vftable.base)
+static const cGenCharLocalLogicVtbl cDesktopLocalLogic_vftable;
+
 cDesktopLocalLogic *cDesktopLocalLogic_ctor(cDesktopLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
 	self->base.vftable = CDESKTOPLOCALLOGIC_VFTABLE;
 	return self;
 }
 
-cLocalLogic *cDesktopLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+static cLocalLogic *cDesktopLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 	cDesktopLocalLogic *self = (cDesktopLocalLogic *)elem;
 	self->base.vftable = CDESKTOPLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
@@ -21,7 +24,7 @@ cLocalLogic *cDesktopLocalLogic_Delete(cLocalLogic *elem, byte flags) {
 }
 
 /* the vtable of cDesktopLocalLogic */
-const cGenCharLocalLogicVtbl cDesktopLocalLogic_vftable = {
+static const cGenCharLocalLogicVtbl cDesktopLocalLogic_vftable = {
 	.base.base.Delete = cDesktopLocalLogic_Delete,
 	.base.base.GetName = cBaseLocalLogic_GetName,
 	.base.base.Vf02 = cLocalLogic_Vf02True,

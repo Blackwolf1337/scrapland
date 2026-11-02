@@ -36,10 +36,6 @@ void CFont_dtor(CFont *self) {
 	}
 }
 
-void CFont_ResetX(CFont *self) {
-	self->x = 0.0f;
-}
-
 byte CFont_Build(CFont *self, const char *name, int size) {
 	(void)self;
 	CFont3 *f = operator_new(sizeof(CFont3));
@@ -53,6 +49,7 @@ byte CFont_Build(CFont *self, const char *name, int size) {
 	return 1;
 }
 
+static void CFont_MeasureV(CFont *self, float *pos, float *dim, float x, float y, byte flags, const char *fmt, va_list ap);
 void Font_TextSize(CFont *font, float *pos, float *dim, float x, float y, const char *fmt, ...) {
 	va_list ap;
 
@@ -122,7 +119,8 @@ void CFont_Load(CFont *self, const char *name, void *unused, CIniFile *ini) {
 	self->Font->uniOffset[1] = off[1];
 }
 
-void CFont_Print(CFont *self, const char *txt) {
+/* txt at the cursor, the cursor after it */
+static void CFont_Print(CFont *self, const char *txt) {
 	if (!self->Font) {
 		CheckFailed("Font", __FILE__, __TIMESTAMP__, __LINE__);
 	}
@@ -135,13 +133,7 @@ void CFont_Print(CFont *self, const char *txt) {
 	self->y = self->Font->y;
 }
 
-void CFont_PrintXY(CFont *self, float x, float y, const char *txt) {
-	self->x = x;
-	self->y = y;
-	CFont_Print(self, txt);
-}
-
-void CFont_PrintfVA(CFont *self, const char *fmt, va_list ap) {
+static void CFont_PrintfVA(CFont *self, const char *fmt, va_list ap) {
 	char buf[CFONT_BUF];
 
 	if (!fmt) {
@@ -149,14 +141,6 @@ void CFont_PrintfVA(CFont *self, const char *fmt, va_list ap) {
 	}
 	Str_VPrintf(buf, sizeof(buf), fmt, ap);
 	CFont_Print(self, buf);
-}
-
-void CFont_Printf(CFont *font, const char *fmt, ...) {
-	va_list ap;
-
-	va_start(ap, fmt);
-	CFont_PrintfVA(font, fmt, ap);
-	va_end(ap);
 }
 
 void CFont_PrintfXY(CFont *font, float x, float y, const char *fmt, ...) {
@@ -169,7 +153,8 @@ void CFont_PrintfXY(CFont *font, float x, float y, const char *fmt, ...) {
 	va_end(ap);
 }
 
-void CFont_MeasureV(CFont *self, float *pos, float *dim, float x, float y, byte flags, const char *fmt,
+/* the size and the aligned position of a printf text (CFont3_Measure) */
+static void CFont_MeasureV(CFont *self, float *pos, float *dim, float x, float y, byte flags, const char *fmt,
 	va_list ap) {
 	char buf[CFONT_BUF];
 
@@ -184,7 +169,8 @@ void CFont_MeasureV(CFont *self, float *pos, float *dim, float x, float y, byte 
 	CFont3_Measure(self->Font, x, y, (uint16_t)(flags & CFONT_ALIGN ? self->align : 0), buf, pos, dim);
 }
 
-void CFont_PrintfV(CFont *self, float x, float y, uint32_t flags, const char *fmt, va_list ap) {
+/* flags CFONT_*, the cursor at the end after */
+static void CFont_PrintfV(CFont *self, float x, float y, uint32_t flags, const char *fmt, va_list ap) {
 	char buf[CFONT_BUF];
 
 	if (!self->Font) {

@@ -18,7 +18,8 @@ static void Read_SkipBlanks(void) {
 	}
 }
 
-void Read_String(char *dest, int size) {
+/* "text" at g_ReadString */
+static void Read_String(char *dest, int size) {
 	char *p = g_ReadString;
 
 	CHECK(dest);
@@ -40,9 +41,9 @@ void Read_String(char *dest, int size) {
 	g_ReadString = p + 1;
 }
 
-cReadStack *g_ReadStack;
+static cReadStack *g_ReadStack;
 
-void Read_Pop(void) {
+static void Read_Pop(void) {
 	CHECK(g_ReadStack);
 	cReadStack *p = g_ReadStack;
 	g_ReadString = p->string;
@@ -148,12 +149,6 @@ void Read_Error(const char *fmt, ...) {
 	VBprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
 	Err_Printf(1, "error: %s: %s", g_ReadStack->name, buf);
-}
-
-void Read_Float(const char *tok, float *dest) {
-	CHECK(dest);
-	Read_Expect(tok);
-	CHECK(crt_sscanf(g_ReadString, "%f", dest) == 1);
 }
 
 void Read_Bytes(void *dest, int n) {

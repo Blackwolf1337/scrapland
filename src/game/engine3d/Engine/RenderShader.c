@@ -25,7 +25,7 @@ void CMatId_dtor(CMatId *self) {
 	(void)self;
 }
 
-uint32_t g_ShaderModeMask;
+static uint32_t g_ShaderModeMask;
 
 byte CMatId_Check(CMatId *self, CMaterial *mat) {
 	if (self->id == -1) {
@@ -251,7 +251,7 @@ ShaderTab g_ShaderTab[32] = {
 	{ .Index = 25, .Name = (void *)str_DiffuseNoLit, .flags = 257, .fnRender = (void *)Shader_DiffuseNoLit },
 };
 
-int Shader_Find(const char *name) {
+static int Shader_Find(const char *name) {
 	for (int i = 0; g_ShaderTab[i].Name; i++) {
 		if (!crt_stricmp(g_ShaderTab[i].Name, name)) {
 			return i;

@@ -13,8 +13,15 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/staticinit.h"
 
+#define CLOGICCONTROL_VFTABLE (&cLogicControl_vftable)
+#define g_TimeBetweeenTaunts (GVar_TimeBetweeenTaunts.value.f)
+#define g_TimeBetweeenWarnings (GVar_TimeBetweeenWarnings.value.f)
+static const cLogicControlVtbl cLogicControl_vftable;
+static cGVar GVar_TimeBetweeenWarnings;
+static cGVar GVar_TimeBetweeenTaunts;
+
 /* defined further down or in another file without a header */
-byte Logic_SetOriginCallback(cEntity *e);
+static byte Logic_SetOriginCallback(cEntity *e);
 
 #define LOGIC_SETORIGINFUNC 0x151ce0
 cGVar GVar_NotCleanableByGear;
@@ -77,7 +84,7 @@ void Logic_dtor(void *logic) {
 	Parking_dtor(&self->parking);
 }
 
-cLogicControl *Logic_Delete(cLogicControl *self, byte flags) {
+static cLogicControl *Logic_Delete(cLogicControl *self, byte flags) {
 	Logic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
@@ -87,7 +94,7 @@ cLogicControl *Logic_Delete(cLogicControl *self, byte flags) {
 
 /* every 0.5 s: the taunts (outdoor maps, TimeBetweeenTaunts), the warnings (the first at once, then after
  * TimeBetweeenWarnings); the talk ends when the player sits in a car */
-void Logic_UpdateTaunts(cLogicControl *self, float dt) {
+static void Logic_UpdateTaunts(cLogicControl *self, float dt) {
 	float t0 = dt + self->timer;
 	float t1 = dt + self->tauntTime;
 	float t2 = dt + self->warnTime;
@@ -119,7 +126,7 @@ void Logic_UpdateTaunts(cLogicControl *self, float dt) {
 }
 
 /* g_SetOriginFunc: the logic of a new entity takes its position as the origin */
-byte Logic_SetOriginCallback(cEntity *e) {
+static byte Logic_SetOriginCallback(cEntity *e) {
 	cLocalLogic *l = Logic_GetLocalLogic(e);
 
 	if (l) {
@@ -209,7 +216,7 @@ byte Logic_CharOnFloor(cEntity *e) {
 }
 
 /* a parked ship on the floor below it (its radius above the hit) with only its y angle */
-byte Logic_CarOnFloor(cEntity *e) {
+static byte Logic_CarOnFloor(cEntity *e) {
 	vec3_t t1, t2, to, hit;
 	const vec3_t *p = e->vftable->GetPos(e, &t1);
 
@@ -254,12 +261,12 @@ byte Logic_SetOnFloor(cEntity *e) {
 }
 
 /* the vtable of cLogicControl */
-const cLogicControlVtbl cLogicControl_vftable = {
+static const cLogicControlVtbl cLogicControl_vftable = {
 	.Delete = Logic_Delete,
 };
 
-cGVar GVar_TimeBetweeenTaunts;
-cGVar GVar_TimeBetweeenWarnings;
+static cGVar GVar_TimeBetweeenTaunts;
+static cGVar GVar_TimeBetweeenWarnings;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 FINI_GVAR_STRING(Fini_GVar_NotCleanableByGear, &GVar_NotCleanableByGear)

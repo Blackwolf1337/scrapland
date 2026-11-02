@@ -11,6 +11,9 @@
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
 
+#define CPORTAL_VFTABLE (&CPortal_vftable)
+static const IObject3DVtbl CPortal_vftable;
+
 CPortal *CPortal_ctor(CPortal *self) {
 	self->node = NULL;
 	self->vftable = CPORTAL_VFTABLE;
@@ -25,7 +28,7 @@ CPortal *CPortal_ctor(CPortal *self) {
 	return self;
 }
 
-void CPortal_dtor(CPortal *self) {
+static void CPortal_dtor(CPortal *self) {
 	self->vftable = CPORTAL_VFTABLE;
 	for (int i = 0; i < 2; i++) {
 		ObjRef_Drop(&self->zones[i]);
@@ -34,7 +37,7 @@ void CPortal_dtor(CPortal *self) {
 	CObjBase3D_dtor((CObjBase3D *)self);
 }
 
-IObject3D *CPortal_Delete(IObject3D *base, byte flags) {
+static IObject3D *CPortal_Delete(IObject3D *base, byte flags) {
 	CPortal *self = (CPortal *)base;
 	CPortal_dtor(self);
 	if (flags & 1) {
@@ -61,7 +64,7 @@ void CPortal_LinkZones(CPortal *self) {
 	}
 }
 
-byte CPortal_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+static byte CPortal_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CPortal *self = (CPortal *)base;
 	CObjBase3D_SetNode((CObjBase3D *)self, ctx->node);
 	CFileIO_BeginBlock(f, "PORT");
@@ -75,7 +78,7 @@ byte CPortal_Read(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	return 1;
 }
 
-byte CPortal_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
+static byte CPortal_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	CPortal *self = (CPortal *)base;
 	CHECK(self->node == ctx->node);
 	CFileIO_BeginBlockWrite(f, "PORT");
@@ -88,7 +91,7 @@ byte CPortal_Write(IObject3D *base, CFileIO *f, MeshD3D_FileCtx *ctx) {
 	return 1;
 }
 
-void CPortal_Render(IObject3D *base, void *dev, CRenderNode *r) {
+static void CPortal_Render(IObject3D *base, void *dev, CRenderNode *r) {
 	CPortal *self = (CPortal *)base;
 	(void)dev;
 	CHECK(!r);
@@ -100,14 +103,14 @@ void CPortal_Render(IObject3D *base, void *dev, CRenderNode *r) {
 
 /* the material of the debug drawing, a static of CPortal_DrawDebug */
 
-CMaterial g_PortalMat;
+static CMaterial g_PortalMat;
 
 /* the atexit destructor of it */
-void Portal_FiniMat(void) {
+static void Portal_FiniMat(void) {
 	CMaterial_dtor(&g_PortalMat);
 }
 
-int g_PortalMatGuard[2];
+static int g_PortalMatGuard[2];
 
 void CPortal_DrawDebug(CPortal *self, uint32_t color) {
 	CHECK(g_ShowPortals);
@@ -140,6 +143,7 @@ static byte Portal_Inside(const CPortal *self, const vec3_t *p) {
 	return Ground_PointInTri(p, &c[0], &c[1], &c[2]) || Ground_PointInTri(p, &c[0], &c[2], &c[3]);
 }
 
+static void CPortal_UpdateCache(CPortal *self, const matrix_t *unused);
 float CPortal_PlaneDist(CPortal *self, const vec3_t *p) {
 	CPortal_UpdateCache(self, &self->node->m);
 	const plane_t *pl = &self->cache_plane;
@@ -193,7 +197,8 @@ void CPortal_SetZone(CPortal *self, uint32_t i, CNode3D *zone) {
 	*slot = zone;
 }
 
-void CPortal_UpdateCache(CPortal *self, const matrix_t *unused) {
+/* m: the matrix of the node, passed but not used */
+static void CPortal_UpdateCache(CPortal *self, const matrix_t *unused) {
 	(void)unused;
 	if (self->calculated) {
 		return;
@@ -224,7 +229,8 @@ static int Portal_Clamp(int v, int n) {
 	return n - 1 <= v ? n - 1 : v;
 }
 
-void Portal_DrawRect(const int *vp, const float *rect, uint32_t color) {
+/* a screen rectangle (-1..1) drawn in the viewport vp (x, y, w, h) for the debug output */
+static void Portal_DrawRect(const int *vp, const float *rect, uint32_t color) {
 	int w = vp[2], h = vp[3];
 	int x0 = Portal_Pixel(rect[0] + 1.0f, (uint32_t)w, (uint32_t)vp[0]);
 	int y0 = Portal_Pixel(1.0f - rect[1], (uint32_t)h, (uint32_t)vp[1]) - 1;
@@ -321,7 +327,7 @@ byte CPortal_ClipRect(CPortal *self, box_t *rect) {
 }
 
 /* the vtable of CPortal */
-const IObject3DVtbl CPortal_vftable = {
+static const IObject3DVtbl CPortal_vftable = {
 	.Delete = CPortal_Delete,
 	.Update = IObject3D_UpdateNop,
 	.Render = CPortal_Render,

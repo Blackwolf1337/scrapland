@@ -13,10 +13,11 @@ byte Py_IsReady(void) {
 	return g_PythonReady;
 }
 
-cFileMem *g_FreeParamFiles;
+/* memory files of C function parameters for reuse; the first dword of the buffer links them */
+static cFileMem *g_FreeParamFiles;
 
 /* a parameter file from the free list or a new one with a 0x200 byte buffer */
-cFileMem *ParamFile_Get(void) {
+static cFileMem *ParamFile_Get(void) {
 	cFileMem *f = g_FreeParamFiles;
 	if (f) {
 		g_FreeParamFiles = *(cFileMem **)f->buffer;
@@ -42,11 +43,11 @@ static void ParamFile_Free(cFileMem *f) {
 extern cPy_Function g_ChTypeSphereFunc;
 #define g_SphereFunc ((&g_ChTypeSphereFunc))
 
-void PyFunction_FiniSphereFunc(void) {
+static void PyFunction_FiniSphereFunc(void) {
 	cPy_Function_dtor(g_SphereFunc);
 }
 
-cPy_Function *g_PyFunctions;
+static cPy_Function *g_PyFunctions;
 
 void PyFunction_InitSphereFunc(void) {
 	cPy_Function *head = g_PyFunctions, *self = g_SphereFunc;
@@ -84,7 +85,7 @@ cPy_Function *cPy_Function_ctor(cPy_Function *self) {
 }
 
 /* creates the parameter file of a C function; 1 if it made one */
-byte cPy_Function_NativeParams(cPy_Function *self) {
+static byte cPy_Function_NativeParams(cPy_Function *self) {
 	if (!(self->flags & PYF_NATIVE) || self->params) {
 		return 0;
 	}
@@ -96,7 +97,7 @@ byte cPy_Function_NativeParams(cPy_Function *self) {
 }
 
 /* creates the parameter list of a Python function */
-void cPy_Function_PyParams(cPy_Function *self) {
+static void cPy_Function_PyParams(cPy_Function *self) {
 	if ((self->flags & PYF_PYTHON) && !self->params) {
 		self->params = PyList_New(0);
 		CHECK(self->params);
@@ -104,7 +105,7 @@ void cPy_Function_PyParams(cPy_Function *self) {
 }
 
 /* drops the parameters: the list, or the file goes back to the free list */
-void cPy_Function_ReleaseParams(cPy_Function *self) {
+static void cPy_Function_ReleaseParams(cPy_Function *self) {
 	if (self->flags & PYF_PYTHON) {
 		PyObject *list = self->params;
 		if (!list) {
@@ -122,7 +123,7 @@ void cPy_Function_ReleaseParams(cPy_Function *self) {
 	self->params = NULL;
 }
 
-void cPy_Function_ReleasePyParams(cPy_Function *self) {
+static void cPy_Function_ReleasePyParams(cPy_Function *self) {
 	if ((self->flags & PYF_PYTHON) && self->params) {
 		PyObject *list = self->params;
 		Py_DECREF(list);
@@ -131,7 +132,7 @@ void cPy_Function_ReleasePyParams(cPy_Function *self) {
 }
 
 /* the function of a Python binding is borrowed, only the parameter list is released */
-void cPy_Function_ClearPython(cPy_Function *self) {
+static void cPy_Function_ClearPython(cPy_Function *self) {
 	if (self->flags & PYF_PYTHON) {
 		self->func = NULL;
 		cPy_Function_ReleasePyParams(self);
@@ -183,7 +184,7 @@ byte cPy_Function_SetNative(cPy_Function *self, nativefunc_t func) {
 }
 
 /* binds module.func; only a Python binding is cleared before */
-byte cPy_Function_SetPython(cPy_Function *self, const char *module, const char *func) {
+static byte cPy_Function_SetPython(cPy_Function *self, const char *module, const char *func) {
 	cPy_Function_ClearPython(self);
 	if (!module || !func) {
 		return 0;
@@ -207,7 +208,7 @@ byte cPy_Function_SetPython(cPy_Function *self, const char *module, const char *
 	return 0;
 }
 
-cPy_NativeFunc *g_NativeFuncs;
+static cPy_NativeFunc *g_NativeFuncs;
 
 byte cPy_Function_SetFunc(cPy_Function *self, const char *name) {
 	char module[0x100];
@@ -359,7 +360,7 @@ void cPy_Function_ClearAll(void) {
 }
 
 /* registry of C functions: inserted into the tree on construction (static objects) */
-void cPy_NativeFunc_Insert(cPy_NativeFunc *root, cPy_NativeFunc *node) {
+static void cPy_NativeFunc_Insert(cPy_NativeFunc *root, cPy_NativeFunc *node) {
 	cPy_NativeFunc **link = &root;
 	do {
 		int res = strcmp(node->name, (*link)->name);

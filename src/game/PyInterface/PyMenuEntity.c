@@ -8,6 +8,7 @@
 #include "scrap/console.h"
 #include "scrap/scorer.h"
 
+static PyTypeObject cPyMenuEntity_Type;
 PyObject *ScorerItem_PyNew(int player, const char *name) {
 	cScorer *scorer = Scorer_Get(player);
 	if (!scorer || !cScorer_FindItem(scorer, name)) {
@@ -25,13 +26,13 @@ PyObject *ScorerItem_PyNew(int player, const char *name) {
 }
 
 /* tp_dealloc */
-void PyMenuEntity_Dealloc(PyObject *self) {
+static void PyMenuEntity_Dealloc(PyObject *self) {
 	Mem_Free(((cPyMenuEntity *)self)->name);
 	PyPool_Free(self);
 }
 
 /* tp_print: the text goes to fprintf as the format, like in the original */
-int PyMenuEntity_Print(PyObject *self, FILE *fp, int flags) {
+static int PyMenuEntity_Print(PyObject *self, FILE *fp, int flags) {
 	static char buf[0x100];
 	cPyMenuEntity *m = (cPyMenuEntity *)self;
 	cScorer *scorer = Scorer_Get(m->player);
@@ -60,7 +61,7 @@ static cScorerItem *PyMenuEntity_Item(cPyMenuEntity *m, const char *attr) {
 }
 
 /* tp_getattr */
-PyObject *PyMenuEntity_GetAttr(PyObject *self, char *name) {
+static PyObject *PyMenuEntity_GetAttr(PyObject *self, char *name) {
 	cPyMenuEntity *m = (cPyMenuEntity *)self;
 	cScorerItem *item = PyMenuEntity_Item(m, name);
 	char *s;
@@ -87,7 +88,7 @@ PyObject *PyMenuEntity_GetAttr(PyObject *self, char *name) {
  * variable has that type. A missing scorer or item returns 0 (no error) like in the original. The original
  * passes the other two values uninitialized; they are 0 here.
  */
-int PyMenuEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
+static int PyMenuEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
 	cPyMenuEntity *m = (cPyMenuEntity *)self;
 	cScorerItem *item = PyMenuEntity_Item(m, name);
 	int parsed = 0;
@@ -129,9 +130,9 @@ int PyMenuEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
 	return -1;
 }
 
-const char str_CPyMenuEntity[] = "cPyMenuEntity";
+static const char str_CPyMenuEntity[] = "cPyMenuEntity";
 extern const char str_CPyMenuEntity[];
-PyTypeObject cPyMenuEntity_Type = {
+static PyTypeObject cPyMenuEntity_Type = {
 	.ob_refcnt = 1,
 	.ob_type = &PyType_Type,
 	.tp_name = (void *)str_CPyMenuEntity,

@@ -12,6 +12,9 @@
 #include "scrap/timer.h"
 #include "scrap/world.h"
 
+#define CWAYPOINTSCORER_VFTABLE (&cWaypointScorer_vftable)
+static const cScorerItemVtbl cWaypointScorer_vftable;
+
 /* the waypoint kind of an object (1..3 the color of the mark), 0 for none */
 #define Waypoint_Kind(e) (Obj(e)->radarShow)
 
@@ -28,13 +31,13 @@ cWaypointScorer *cWaypointScorer_ctor(cWaypointScorer *self) {
 	return self;
 }
 
-void cWaypointScorer_dtor(cWaypointScorer *self) {
+static void cWaypointScorer_dtor(cWaypointScorer *self) {
 	self->base.vftable = CWAYPOINTSCORER_VFTABLE;
 	ScorerImg_Free(self->img);
 	cScorerItem_dtor(&self->base);
 }
 
-cScorerItem *cWaypointScorer_Delete(cScorerItem *base, byte flags) {
+static cScorerItem *cWaypointScorer_Delete(cScorerItem *base, byte flags) {
 	cWaypointScorer *self = (cWaypointScorer *)base;
 	cWaypointScorer_dtor(self);
 	if (flags & 1) {
@@ -43,7 +46,7 @@ cScorerItem *cWaypointScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-int cWaypointScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
+static int cWaypointScorer_Var(cScorerItem *base, const char *name, int set, char **s, double *d, int *i) {
 	cWaypointScorer *self = (cWaypointScorer *)base;
 	if (s && !crt_stricmp(name, "Sprite") && set) {
 		self->img = ScorerImg_Replace(self->img, *s, 2, 0x10060);
@@ -156,7 +159,9 @@ static void Waypoint_DrawArrow(cWaypointScorer *self, const vec3_t *p, byte curr
 	ScorerHud_DrawArrow(img, self->arrowIndex, a, x, y, 0);
 }
 
-void cWaypointScorer_DrawTarget(cWaypointScorer *self, cEntity *e, byte current) {
+/* the mark of the waypoint object: the rectangle around it in sight (named: the current one), the blinking dot on
+ * another one in sight, else the arrow towards it */
+static void cWaypointScorer_DrawTarget(cWaypointScorer *self, cEntity *e, byte current) {
 	float scr[2], depth, cx, cy, cz;
 	vec3_t p;
 
@@ -188,7 +193,8 @@ void cWaypointScorer_DrawTarget(cWaypointScorer *self, cEntity *e, byte current)
 	}
 }
 
-void cWaypointScorer_Draw(cScorerItem *base, int player) {
+/* the current waypoint (CurrentWaypointName, CurrentWaypointName2 for player 1), else the nearest one */
+static void cWaypointScorer_Draw(cScorerItem *base, int player) {
 	cWaypointScorer *self = (cWaypointScorer *)base;
 	static const vec3_t zero = {0.0f, 0.0f, 0.0f};
 	const vec3_t *p;
@@ -243,7 +249,7 @@ void cWaypointScorer_Draw(cScorerItem *base, int player) {
 }
 
 /* the vtable of cWaypointScorer */
-const cScorerItemVtbl cWaypointScorer_vftable = {
+static const cScorerItemVtbl cWaypointScorer_vftable = {
 	.Draw = cWaypointScorer_Draw,
 	.SetParam = cScorerItem_SetParam,
 	.Var = cWaypointScorer_Var,

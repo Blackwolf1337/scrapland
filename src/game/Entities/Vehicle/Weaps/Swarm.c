@@ -7,8 +7,80 @@
 #include "scrap/weaps2.h"
 #include "scrap/staticinit.h"
 
+#define g_SwarmHitSoundVol (GVar_SwarmHitSoundVol.value.f)
+#define g_SwarmMissileFile (GVar_SwarmMissileFile.value.s)
+#define g_SwarmUpTopSpeed (GVar_SwarmUpTopSpeed.value.f)
+#define g_SwarmEngineSoundAttIni (GVar_SwarmEngineSoundAttIni.value.f)
+#define g_SwarmBeeSoundAttEnd (GVar_SwarmBeeSoundAttEnd.value.f)
+#define g_SwarmDeathTime (GVar_SwarmDeathTime.value.f)
+#define g_SwarmBeeRadius (GVar_SwarmBeeRadius.value.f)
+#define g_SwarmMinRadius (GVar_SwarmMinRadius.value.f)
+#define g_SwarmBeesSpeed (GVar_SwarmBeesSpeed.value.f)
+#define g_SwarmHitSound (GVar_SwarmHitSound.value.s)
+#define g_SwarmHitSoundAttIni (GVar_SwarmHitSoundAttIni.value.f)
+#define g_SwarmNormSpeed (GVar_SwarmNormSpeed.value.f)
+#define g_SwarmLifeTime (GVar_SwarmLifeTime.value.f)
+#define g_SwarmHitForce (GVar_SwarmHitForce.value.f)
+#define g_SwarmTurnSpeedUPG (GVar_SwarmTurnSpeedUPG.value.f)
+#define g_SwarmFastSpeed (GVar_SwarmFastSpeed.value.f)
+#define g_SwarmTurnSpeed (GVar_SwarmTurnSpeed.value.f)
+#define g_SwarmArmor (GVar_SwarmArmor.value.i)
+#define g_SwarmEngineSound (GVar_SwarmEngineSound.value.s)
+#define g_SwarmBeeSoundVol (GVar_SwarmBeeSoundVol.value.f)
+#define g_SwarmEngineSoundVol (GVar_SwarmEngineSoundVol.value.f)
+#define g_SwarmTimeDelay (GVar_SwarmTimeDelay.value.f)
+#define g_SwarmBeeSoundAttIni (GVar_SwarmBeeSoundAttIni.value.f)
+#define g_SwarmHitSoundAttEnd (GVar_SwarmHitSoundAttEnd.value.f)
+#define g_SwarmBeeSound (GVar_SwarmBeeSound.value.s)
+#define g_SwarmNumber1 (GVar_SwarmNumber1.value.i)
+#define g_SwarmEngineSoundAttEnd (GVar_SwarmEngineSoundAttEnd.value.f)
+#define g_SwarmEngineSoundDoppler (GVar_SwarmEngineSoundDoppler.value.f)
+#define g_SwarmAmmoCost1 (GVar_SwarmAmmoCost1.value.i)
+#define g_SwarmAmmoCost2 (GVar_SwarmAmmoCost2.value.i)
+#define g_SwarmAmmoCost3 (GVar_SwarmAmmoCost3.value.i)
+#define g_SwarmAmmoCost4 (GVar_SwarmAmmoCost4.value.i)
+#define g_TeslaMinAngRangePad (GVar_TeslaMinAngRangePad.value.f)
+#define g_TeslaMinAngRangeUpg (GVar_TeslaMinAngRangeUpg.value.f)
+#define g_TeslaMinAngRangeUpgPad (GVar_TeslaMinAngRangeUpgPad.value.f)
+static cGVar GVar_TeslaMinAngRangeUpgPad;
+static cGVar GVar_TeslaMinAngRangeUpg;
+static cGVar GVar_TeslaMinAngRangePad;
+static cGVar GVar_SwarmUpTopSpeed;
+static cGVar GVar_SwarmTurnSpeedUPG;
+static cGVar GVar_SwarmTurnSpeed;
+static cGVar GVar_SwarmTimeDelay;
+static cGVar GVar_SwarmNumber1;
+static cGVar GVar_SwarmNormSpeed;
+static cGVar GVar_SwarmMissileFile;
+static cGVar GVar_SwarmMinRadius;
+static cGVar GVar_SwarmLifeTime;
+static cGVar GVar_SwarmHitSoundVol;
+static cGVar GVar_SwarmHitSoundAttIni;
+static cGVar GVar_SwarmHitSoundAttEnd;
+static cGVar GVar_SwarmHitSound;
+static cGVar GVar_SwarmHitForce;
+static cGVar GVar_SwarmFastSpeed;
+static cGVar GVar_SwarmEngineSoundVol;
+static cGVar GVar_SwarmEngineSoundDoppler;
+static cGVar GVar_SwarmEngineSoundAttIni;
+static cGVar GVar_SwarmEngineSoundAttEnd;
+static cGVar GVar_SwarmEngineSound;
+static cGVar GVar_SwarmDeathTime;
+static cGVar GVar_SwarmBeesSpeed;
+static cGVar GVar_SwarmBeeSoundVol;
+static cGVar GVar_SwarmBeeSoundAttIni;
+static cGVar GVar_SwarmBeeSoundAttEnd;
+static cGVar GVar_SwarmBeeSound;
+static cGVar GVar_SwarmBeeRadius;
+static cGVar GVar_SwarmArmor;
+static cGVar GVar_SwarmAmmoCost4;
+static cGVar GVar_SwarmAmmoCost3;
+static cGVar GVar_SwarmAmmoCost2;
+static cGVar GVar_SwarmAmmoCost1;
+
 /* missile name, position x y z: a bee died there */
-void Swarm_OnBeeHitNative(cAbstractFile *f) {
+static void Swarm_BeeDeath(cEntity *sw, float x, float y, float z, byte sound);
+static void Swarm_OnBeeHitNative(cAbstractFile *f) {
 	char name[0x80];
 	float x, y, z;
 
@@ -24,7 +96,7 @@ void Swarm_OnBeeHitNative(cAbstractFile *f) {
 }
 
 /* the death effect of a bee (fewer particles far from the camera) and its sound */
-void Swarm_BeeDeath(cEntity *sw, float x, float y, float z, byte sound) {
+static void Swarm_BeeDeath(cEntity *sw, float x, float y, float z, byte sound) {
 	vec3_t rd;
 
 	CHECK(sw);
@@ -64,7 +136,8 @@ void Swarm_BeeDeath(cEntity *sw, float x, float y, float z, byte sound) {
 	}
 }
 
-void Swarm_ShootNative(cAbstractFile *f) {
+static void Swarm_Shoot(const char *name);
+static void Swarm_ShootNative(cAbstractFile *f) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(f, name, 0x80);
@@ -72,7 +145,7 @@ void Swarm_ShootNative(cAbstractFile *f) {
 }
 
 /* the reload sound, the delay of the next shot and the shoot effect at every mounted bay */
-void Swarm_Shoot(const char *name) {
+static void Swarm_Shoot(const char *name) {
 	cEntity *v = Weap_Vehicle(name);
 	if (cTargetLock_GetAmmo(&Veh(v)->weapons, g_SwarmIDAmmo) >= 1.0f) {
 		Weap_PlaySound(v, 9);
@@ -86,7 +159,7 @@ void Swarm_Shoot(const char *name) {
 }
 
 /* name, position, orientation */
-void Swarm_NetCreateNative(cAbstractFile *f) {
+static void Swarm_NetCreateNative(cAbstractFile *f) {
 	char name[0x80];
 	vec3_t pos, dir;
 
@@ -96,6 +169,7 @@ void Swarm_NetCreateNative(cAbstractFile *f) {
 	Swarm_NetCreate(name, pos, dir);
 }
 
+static void Swarm_HitFXNative(cAbstractFile *f);
 cEntity *Swarm_NetCreate(const char *name, vec3_t pos, vec3_t dir) {
 	cEntity *m = cWorld_CreateEntity(g_pWorld, name, pos.x, pos.y, pos.z, TYEN_MISSILE);
 	CHECK(m);
@@ -111,15 +185,18 @@ cEntity *Swarm_NetCreate(const char *name, vec3_t pos, vec3_t dir) {
 	return m;
 }
 
-char g_SwarmHudTarget[4][0x80];
-float g_SwarmHudTime[4];
+static char g_SwarmHudTarget[4][0x80];
+static float g_SwarmHudTime[4];
 
-void Swarm_HudNative(cAbstractFile *f) {
+static void Swarm_HudNative(cAbstractFile *f) {
 	Weap_UpdateHud(f, g_SwarmHudTarget, g_SwarmHudTime, 4, 3);
 }
 
 /* the ship shoots: a missile with one bee per ammo (up to the bays) */
-void Swarm_FireNative(cAbstractFile *f) {
+static void Swarm_OnDamageNative(cAbstractFile *f);
+static void Swarm_OnDeathNative(cAbstractFile *f);
+static void Swarm_ServerHitNative(cAbstractFile *f);
+static void Swarm_FireNative(cAbstractFile *f) {
 	char name[0x80], obj[0x80];
 	vec3_t pos, ang, vel;
 
@@ -163,7 +240,8 @@ void Swarm_FireNative(cAbstractFile *f) {
 }
 
 /* missile name, ship, target */
-void Swarm_HitFXNative(cAbstractFile *f) {
+static cEntity *Swarm_HitFX(const char *name, const char *ship, const char *target);
+static void Swarm_HitFXNative(cAbstractFile *f) {
 	char name[0x80], ship[0x80], target[0x80];
 
 	cAbstractFile_ReadString(f, name, 0x80);
@@ -173,7 +251,7 @@ void Swarm_HitFXNative(cAbstractFile *f) {
 }
 
 /* the hit effect at the missile (more particles with more bees) and its sound; returns the missile */
-cEntity *Swarm_HitFX(const char *name, const char *ship, const char *target) {
+static cEntity *Swarm_HitFX(const char *name, const char *ship, const char *target) {
 	vec3_t c, vel, dir, rd;
 
 	(void)ship;
@@ -210,7 +288,7 @@ cEntity *Swarm_HitFX(const char *name, const char *ship, const char *target) {
 }
 
 /* missile name, attacker name, damage: one bee lost per SwarmArmor; the target goes when all would die */
-void Swarm_OnDamageNative(cAbstractFile *f) {
+static void Swarm_OnDamageNative(cAbstractFile *f) {
 	char name[0x80], other[0x80];
 	int damage;
 
@@ -233,7 +311,8 @@ void Swarm_OnDamageNative(cAbstractFile *f) {
 	}
 }
 
-void Swarm_OnDeathNative(cAbstractFile *f) {
+static void Swarm_Hit(const char *name, const char *ship, const char *target);
+static void Swarm_OnDeathNative(cAbstractFile *f) {
 	char name[0x80], other[0x80];
 
 	cAbstractFile_ReadString(f, name, 0x80);
@@ -246,26 +325,26 @@ void Swarm_OnDeathNative(cAbstractFile *f) {
 	}
 }
 
-void Swarm_AimOffNative(cAbstractFile *f) {
+static void Swarm_AimOffNative(cAbstractFile *f) {
 	Weap_SetAimMode(f, 0);
 }
 
-void Swarm_AimOnNative(cAbstractFile *f) {
+static void Swarm_AimOnNative(cAbstractFile *f) {
 	cEntity *v = Weap_SetAimMode(f, 2);
 	cAutoAim_SetRange(Veh_Aim(v), 40000.0f);
 	cAutoAim_SetAngle(Veh_Aim(v), 0x1.aceeap-2f);
 }
 
-void Swarm_AimMode3Native(cAbstractFile *f) {
+static void Swarm_AimMode3Native(cAbstractFile *f) {
 	Weap_SetAimMode(f, 3);
 }
 
-void Swarm_AimMode2Native(cAbstractFile *f) {
+static void Swarm_AimMode2Native(cAbstractFile *f) {
 	Weap_SetAimMode(f, 2);
 }
 
 /* missile name, ship, target */
-void Swarm_ServerHitNative(cAbstractFile *f) {
+static void Swarm_ServerHitNative(cAbstractFile *f) {
 	char name[0x80], ship[0x80], target[0x80];
 
 	name[0] = 0;
@@ -282,7 +361,7 @@ void Swarm_ServerHitNative(cAbstractFile *f) {
  * life) is hurt and pushed by the bees; the hit info of the ship (the one named, a vehicle) gets the target or the
  * point of the missile
  */
-void Swarm_Hit(const char *name, const char *ship, const char *target) {
+static void Swarm_Hit(const char *name, const char *ship, const char *target) {
 	vec3_t t1, t2, t3, nd, vel;
 
 	cEntity *sw = Swarm_HitFX(name, ship, target);
@@ -361,7 +440,7 @@ void Swarm_Hit(const char *name, const char *ship, const char *target) {
 	}
 }
 
-void Swarm_NetSetUpNative(cAbstractFile *f) {
+static void Swarm_NetSetUpNative(cAbstractFile *f) {
 	char name[0x80];
 
 	cAbstractFile_ReadString(f, name, 0x80);
@@ -371,7 +450,8 @@ void Swarm_NetSetUpNative(cAbstractFile *f) {
 extern cGVar GVar_SwarmNumber2;
 extern cGVar GVar_SwarmNumber3;
 extern cGVar GVar_SwarmNumber4;
-int *g_SwarmSlotData[4] = {
+static cGVar GVar_SwarmNumber1;
+static int *g_SwarmSlotData[4] = {
 	&(&GVar_SwarmNumber1)->value.i, &(&GVar_SwarmNumber2)->value.i,
 	&(&GVar_SwarmNumber3)->value.i, &(&GVar_SwarmNumber4)->value.i,
 };
@@ -467,7 +547,7 @@ byte Tesla_Shoot(cEntity *v) {
 	return 1;
 }
 
-int g_SwarmAmmoCosts[6];
+static int g_SwarmAmmoCosts[6];
 
 /* the static initializer: the table of the costs from the variables, which are made before it */
 void Swarm_InitAmmoCosts(void) {
@@ -480,56 +560,56 @@ void Swarm_InitAmmoCosts(void) {
 }
 
 cGVar GVar_SwarmIDWeap;
-cGVar GVar_SwarmHitSoundVol;
-cGVar GVar_SwarmMissileFile;
-cGVar GVar_SwarmUpTopSpeed;
-cGVar GVar_SwarmEngineSoundAttIni;
-cGVar GVar_SwarmBeeSoundAttEnd;
-cGVar GVar_SwarmDeathTime;
-cGVar GVar_SwarmBeeRadius;
-cGVar GVar_SwarmMinRadius;
-cGVar GVar_SwarmAmmoCost2;
-cGVar GVar_SwarmBeesSpeed;
-cGVar GVar_SwarmHitSound;
-cGVar GVar_SwarmHitSoundAttIni;
-cGVar GVar_SwarmNormSpeed;
-cGVar GVar_SwarmAmmoCost1;
-cGVar GVar_SwarmLifeTime;
-cGVar GVar_SwarmHitForce;
-cGVar GVar_SwarmTurnSpeedUPG;
-cGVar GVar_SwarmFastSpeed;
-cGVar GVar_SwarmTurnSpeed;
-cGVar GVar_SwarmAmmoCost3;
-cGVar GVar_SwarmArmor;
-cGVar GVar_SwarmAmmoCost4;
-cGVar GVar_SwarmEngineSound;
-cGVar GVar_SwarmBeeSoundVol;
+static cGVar GVar_SwarmHitSoundVol;
+static cGVar GVar_SwarmMissileFile;
+static cGVar GVar_SwarmUpTopSpeed;
+static cGVar GVar_SwarmEngineSoundAttIni;
+static cGVar GVar_SwarmBeeSoundAttEnd;
+static cGVar GVar_SwarmDeathTime;
+static cGVar GVar_SwarmBeeRadius;
+static cGVar GVar_SwarmMinRadius;
+static cGVar GVar_SwarmAmmoCost2;
+static cGVar GVar_SwarmBeesSpeed;
+static cGVar GVar_SwarmHitSound;
+static cGVar GVar_SwarmHitSoundAttIni;
+static cGVar GVar_SwarmNormSpeed;
+static cGVar GVar_SwarmAmmoCost1;
+static cGVar GVar_SwarmLifeTime;
+static cGVar GVar_SwarmHitForce;
+static cGVar GVar_SwarmTurnSpeedUPG;
+static cGVar GVar_SwarmFastSpeed;
+static cGVar GVar_SwarmTurnSpeed;
+static cGVar GVar_SwarmAmmoCost3;
+static cGVar GVar_SwarmArmor;
+static cGVar GVar_SwarmAmmoCost4;
+static cGVar GVar_SwarmEngineSound;
+static cGVar GVar_SwarmBeeSoundVol;
 cGVar GVar_SwarmIDAmmo;
-cGVar GVar_SwarmEngineSoundVol;
-cGVar GVar_SwarmTimeDelay;
-cGVar GVar_SwarmBeeSoundAttIni;
-cGVar GVar_SwarmHitSoundAttEnd;
-cGVar GVar_SwarmBeeSound;
-cGVar GVar_SwarmNumber1;
-cGVar GVar_SwarmEngineSoundAttEnd;
-cGVar GVar_SwarmEngineSoundDoppler;
+static cGVar GVar_SwarmEngineSoundVol;
+static cGVar GVar_SwarmTimeDelay;
+static cGVar GVar_SwarmBeeSoundAttIni;
+static cGVar GVar_SwarmHitSoundAttEnd;
+static cGVar GVar_SwarmBeeSound;
+static cGVar GVar_SwarmNumber1;
+static cGVar GVar_SwarmEngineSoundAttEnd;
+static cGVar GVar_SwarmEngineSoundDoppler;
 cGVar GVar_TeslaDownRangeTimePad;
-cGVar GVar_TeslaMinAngRangePad;
+static cGVar GVar_TeslaMinAngRangePad;
 cGVar GVar_TeslaDownRangeTime;
-cGVar GVar_TeslaMinAngRangeUpg;
-cGVar GVar_TeslaMinAngRangeUpgPad;
+static cGVar GVar_TeslaMinAngRangeUpg;
+static cGVar GVar_TeslaMinAngRangeUpgPad;
 cGVar GVar_TeslaMinAngRange;
-cPy_NativeFunc NativeFunc_SwarmPress;
-cPy_NativeFunc NativeFunc_SwarmRelease;
-cPy_NativeFunc NativeFunc_SwarmOnEnd;
-cPy_NativeFunc NativeFunc_SwarmOnStart;
-cPy_NativeFunc NativeFunc_SwarmHit;
-cPy_NativeFunc NativeFunc_SwarmServerHit;
-cPy_NativeFunc NativeFunc_SwarmCreate;
-cPy_NativeFunc NativeFunc_SwarmSetUp;
-cPy_NativeFunc NativeFunc_SwarmClientFire;
-cPy_NativeFunc NativeFunc_SwarmFire;
-cPy_NativeFunc NativeFunc_SwarmFX;
+static cPy_NativeFunc NativeFunc_SwarmPress;
+static cPy_NativeFunc NativeFunc_SwarmRelease;
+static cPy_NativeFunc NativeFunc_SwarmOnEnd;
+static cPy_NativeFunc NativeFunc_SwarmOnStart;
+static cPy_NativeFunc NativeFunc_SwarmHit;
+static cPy_NativeFunc NativeFunc_SwarmServerHit;
+static cPy_NativeFunc NativeFunc_SwarmCreate;
+static cPy_NativeFunc NativeFunc_SwarmSetUp;
+static cPy_NativeFunc NativeFunc_SwarmClientFire;
+static cPy_NativeFunc NativeFunc_SwarmFire;
+static cPy_NativeFunc NativeFunc_SwarmFX;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_SwarmIDWeap, &GVar_SwarmIDWeap, "SwarmIDWeap", 0, "The default weapon idx for the Swarm", 6)

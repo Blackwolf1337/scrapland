@@ -7,6 +7,9 @@
 #include "scrap/walkcharentity.h"
 #include "scrap/staticinit.h"
 
+#define CAIBANKMASTER_VFTABLE (&cAIBankMaster_vftable)
+static const cAICharVtbl cAIBankMaster_vftable;
+
 void *cAIBankMaster_ctor(void *mem, cEntity *e, int *arg) {
 	cAIBankMaster *self = mem;
 
@@ -16,7 +19,7 @@ void *cAIBankMaster_ctor(void *mem, cEntity *e, int *arg) {
 	return self;
 }
 
-cAI *cAIBankMaster_Delete(cAI *elem, byte flags) {
+static cAI *cAIBankMaster_Delete(cAI *elem, byte flags) {
 	cAIBankMaster *self = (cAIBankMaster *)elem;
 	self->base.vftable = CAIBANKMASTER_VFTABLE;
 	cAIChar_dtor(&self->base);
@@ -26,7 +29,7 @@ cAI *cAIBankMaster_Delete(cAI *elem, byte flags) {
 	return elem;
 }
 
-void cAIBankMaster_SetRanges(cAI *elem) {
+static void cAIBankMaster_SetRanges(cAI *elem) {
 	cAIBankMaster *self = (cAIBankMaster *)elem;
 	cAIChar *c = &self->base;
 
@@ -46,7 +49,7 @@ void cAIBankMaster_SetRanges(cAI *elem) {
 }
 
 /* the vtable of cAIBankMaster */
-const cAICharVtbl cAIBankMaster_vftable = {
+static const cAICharVtbl cAIBankMaster_vftable = {
 	.base.base.Delete = cAIBankMaster_Delete,
 	.base.base.Update = cAIChar_Update,
 	.base.base.UpdateOff = cAIChar_UpdateOff,

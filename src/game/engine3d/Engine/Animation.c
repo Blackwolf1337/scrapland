@@ -8,6 +8,17 @@
 #include "scrap/material.h"
 #include "scrap/staticinit.h"
 
+#define g_AnimNodeCount (GVar_R_AnimNode_Count.value.i)
+#define g_OptimizeAnims (GVar_OptimizeAnims.value.i)
+#define g_OptAnimPosErr (GVar_OptAnimPosErr.value.f)
+#define g_OptAnimRotErr (GVar_OptAnimRotErr.value.f)	/* degrees */
+#define g_OptAnimFovErr (GVar_OptAnimFovErr.value.f)	/* degrees */
+static cGVar GVar_R_AnimNode_Count;
+static cGVar GVar_OptimizeAnims;
+static cGVar GVar_OptAnimRotErr;
+static cGVar GVar_OptAnimPosErr;
+static cGVar GVar_OptAnimFovErr;
+
 #define ANIMNODE_CTOR 0x2ab6a0
 #define ANIMNODE_DTOR 0x2ab8f0
 /* the flags a file may have */
@@ -61,7 +72,8 @@ static float Stream_Float(const void *s, int k, int size, int i) {
 	return f;
 }
 
-CAnimBlock *g_ActAnimBlock;
+/* the block the tracks of the nodes are read into, set while an animation reads or deletes its nodes */
+static CAnimBlock *g_ActAnimBlock;
 
 static int AnimBlock_Inside(const void *ptr) {
 	const CAnimBlock *b = g_ActAnimBlock;
@@ -69,7 +81,8 @@ static int AnimBlock_Inside(const void *ptr) {
 	return b && b->MemBlock && (const byte *)ptr >= b->MemBlock && (const byte *)ptr < b->MemBlock + b->SizeBlock;
 }
 
-void AnimBlock_Free(void *ptr, uint32_t flags) {
+/* a track: Mem_Free unless it is in the active block; CHECK that it is when flags has OPT_INBLOCK */
+static void AnimBlock_Free(void *ptr, uint32_t flags) {
 	if (flags & OPT_INBLOCK) {
 		CHECK(AnimBlock_Inside(ptr));
 	}
@@ -207,6 +220,8 @@ CAnimNode *CAnimation_GetNodeTable(CAnimation *self, uint32_t i) {
 	return NULL;
 }
 
+static CAnimNode *CAnimNode_ctor(CAnimNode *self);
+static void CAnimNode_dtor(CAnimNode *self);
 void CAnimation_Init(CAnimation *self, int numObjects, int nframes, int first) {
 	CHECK(numObjects >= 0);
 	self->first_frame = first;
@@ -232,37 +247,21 @@ void CAnimation_Init(CAnimation *self, int numObjects, int nframes, int first) {
 }
 
 /* the parts of the constructors of the node: the count of the live nodes, no tracks, pos and rot tracks of nframes */
-CAnimNode *CAnimNode_ctorFrames(CAnimNode *self, uint32_t nframes, uint32_t first) {
+static CAnimNode *CAnimNode_ctorFrames(CAnimNode *self, uint32_t nframes, uint32_t first) {
 	g_AnimNodeCount++;
 	memset(&self->Pos, 0, sizeof(*self) - offsetof(CAnimNode, Pos));
 	CAnimNode_Init(self, nframes, first, ANIM_POS | ANIM_ROT);
 	return self;
 }
 
-CAnimNode *CAnimNode_ctor(CAnimNode *self) {
+/* the constructors and destructors (inline in the headers of the original) */
+static CAnimNode *CAnimNode_ctor(CAnimNode *self) {
 	return CAnimNode_ctorFrames(self, 0, 0);
 }
 
-void CAnimNode_dtor(CAnimNode *self) {
+static void CAnimNode_dtor(CAnimNode *self) {
 	g_AnimNodeCount--;
 	CAnimNode_Init(self, 0, 0, ANIM_POS | ANIM_ROT);
-}
-
-CAnimNode *CAnimNode_Delete(CAnimNode *self, uint32_t flags) {
-	if (flags & 2) {
-		uint32_t *mem = (uint32_t *)self - 1;
-		if (flags & 1) {
-			Delete_Objects(self, sizeof(CAnimNode), (void *)CAnimNode_dtor);
-		} else {
-			crt_eh_vector_dtor(self, sizeof(CAnimNode), *mem, (void *)CAnimNode_dtor);
-		}
-		return (CAnimNode *)mem;
-	}
-	CAnimNode_dtor(self);
-	if (flags & 1) {
-		operator_delete_sized(self, sizeof(CAnimNode));
-	}
-	return self;
 }
 
 CAnimation *CAnimation_ctor(CAnimation *self) {
@@ -277,12 +276,9 @@ CAnimation *CAnimation_ctor(CAnimation *self) {
 	return self;
 }
 
-void AnimBlock_dtor(CAnimBlock *self) {
+/* CHECK(!MemBlock) */
+static void AnimBlock_dtor(CAnimBlock *self) {
 	CHECK(!self->MemBlock);
-}
-
-void AnimStream_dtor(CAnimStream *self) {
-	Mem_Free(self->p);
 }
 
 void CAnimation_dtor(CAnimation *self) {
@@ -295,7 +291,8 @@ void CAnimation_dtor(CAnimation *self) {
 	}
 }
 
-void CAnimNode_ReadTrack(CAnimNode *self, CFileIO *f, uint32_t flag, void **ptr, int size) {
+/* the place of a track in the active block; size is read from the file for a stream */
+static void CAnimNode_ReadTrack(CAnimNode *self, CFileIO *f, uint32_t flag, void **ptr, int size) {
 	if (!flag) {
 		return;
 	}
@@ -312,7 +309,7 @@ void CAnimNode_ReadTrack(CAnimNode *self, CFileIO *f, uint32_t flag, void **ptr,
 	*ptr = b->MemBlock - n * size + b->UsedBlock;
 }
 
-void CAnimNode_Read(CAnimNode *self, CFileIO *f) {
+static void CAnimNode_Read(CAnimNode *self, CFileIO *f) {
 	CFileIO_BeginBlock(f, "NAM");
 	CHECK(CFileIO_ReadInt(f) == 1);
 	int first = CFileIO_ReadInt(f);
@@ -335,7 +332,8 @@ void CAnimNode_Read(CAnimNode *self, CFileIO *f) {
 	CFileIO_Error(f, "NAM");
 }
 
-cMemStats g_AnimMemStats;
+/* the memory statistics of the animations */
+static cMemStats g_AnimMemStats;
 
 void CAnimation_Read(CAnimation *self, CFileIO *f) {
 	g_MemStatsContext = (&g_AnimMemStats);
@@ -388,6 +386,8 @@ static void AnimNode_ToConst(CAnimNode *self, int t, const void *v0) {
 
 /* track t of n values becomes a stream without the first lead - 1 and the last trail - 1 values, which equal their
  * ends; with ends the first and the last value are put at the ends of the kept range first */
+static void AnimStream_AddBytes(CAnimStream *self, const void *data, int n);
+static void AnimStream_AddHeader(CAnimStream *self, int start, int keys);
 static void AnimNode_ToStream(CAnimNode *self, int t, int n, int lead, int trail, int ends) {
 	void **track = AnimNode_Track(self, t);
 	int size = animTracks[t].size;
@@ -428,6 +428,7 @@ static int Anim_PosNear(const vec3_t *a, const vec3_t *b, float eps) {
 		(double)eps > __builtin_fabs((double)(a->z - b->z));
 }
 
+static byte Quat_Similar(const quat_t *a, const quat_t *b);
 static int Anim_RotNear(const quat_t *a, const quat_t *b, float cosErr) {
 	return !(cosErr > Quat_DotAbs(a, b)) || Quat_Similar(a, b);
 }
@@ -529,7 +530,9 @@ static void AnimNode_OptimizeFov(CAnimNode *self) {
 	}
 }
 
-void CAnimNode_Optimize(CAnimNode *self) {
+/* before writing, with OptimizeAnims: pos, rot and fov tracks that do not change become one value, those that change
+ * only in the middle a stream of the middle keys */
+static void CAnimNode_Optimize(CAnimNode *self) {
 	CHECK(self->num_frames > 0);
 	CHECK(!self->OptFlags);
 	CHECK(!self->StmFlags);
@@ -547,17 +550,6 @@ void CAnimNode_Optimize(CAnimNode *self) {
 	}
 }
 
-uint32_t Vec3_Pack(const vec3_t *v) {
-	int z = (int)v->z + 0x200;
-	int x = 0x400 - (int)(v->x * ANIM_PACK_SCALE);
-	int y = 0x400 - (int)(v->y * ANIM_PACK_SCALE);
-
-	CHECK(x >= 0 && x <= 2047);
-	CHECK(y >= 0 && y <= 2047);
-	CHECK(z >= 0 && z <= 1023);
-	return (((uint32_t)y & 0x7ff) | (uint32_t)x << 11) << 10 | ((uint32_t)z & 0x3ff);
-}
-
 /* n more bytes at the end, their place */
 static byte *AnimStream_Grow(CAnimStream *self, int n) {
 	self->len += n;
@@ -572,43 +564,22 @@ static void AnimStream_Word(CAnimStream *self, int w) {
 	CHECK(self->len <= STREAM_MAXLEN);
 }
 
-void AnimStream_AddByte(CAnimStream *self, int data) {
-	CHECK(data >= -128 && data <= 127);
-	*AnimStream_Grow(self, 1) = data;
-	CHECK(self->len <= STREAM_MAXLEN);
-}
-
-void AnimStream_AddBytes(CAnimStream *self, const void *data, int n) {
+static void AnimStream_AddBytes(CAnimStream *self, const void *data, int n) {
 	CHECK(n != 0);
 	memcpy(AnimStream_Grow(self, n), data, n);
 	CHECK(self->len <= STREAM_MAXLEN);
 }
 
-void AnimStream_AddHeader(CAnimStream *self, int start, int keys) {
+/* the header of a stream: start twice (the first is the size later), then the number of keys */
+static void AnimStream_AddHeader(CAnimStream *self, int start, int keys) {
 	CHECK(start <= 0x7fff);
 	AnimStream_Word(self, start);
 	AnimStream_Word(self, start);
 	AnimStream_Word(self, keys);
 }
 
-void AnimStream_AddShort(CAnimStream *self, int data) {
-	CHECK(data >= -32768 && data <= 32767);
-	AnimStream_Word(self, data);
-}
-
-vec3_t *Quat_ToEulerNeg(vec3_t *out, const quat_t *q) {
-	matrix_t m;
-	vec3_t e;
-
-	Quat_ToMatrixD3D(&m, q);
-	Matrix_ToEuler(&e, &m);
-	out->x = -e.x;
-	out->y = -e.y;
-	out->z = -e.z;
-	return out;
-}
-
-void CAnimNode_WriteTrack(CAnimNode *self, CFileIO *f, uint32_t flag, const void *ptr, int size, byte header) {
+/* the size of a stream (header) or the data of a track */
+static void CAnimNode_WriteTrack(CAnimNode *self, CFileIO *f, uint32_t flag, const void *ptr, int size, byte header) {
 	if (!flag) {
 		return;
 	}
@@ -640,11 +611,11 @@ static void AnimNode_WriteTracks(CAnimNode *self, CFileIO *f, uint32_t flags, by
 	}
 }
 
-void CAnimNode_WriteData(CAnimNode *self, CFileIO *f) {
+static void CAnimNode_WriteData(CAnimNode *self, CFileIO *f) {
 	AnimNode_WriteTracks(self, f, CAnimNode_GetFlags(self), 0);
 }
 
-void CAnimNode_WriteHeader(CAnimNode *self, CFileIO *f) {
+static void CAnimNode_WriteHeader(CAnimNode *self, CFileIO *f) {
 	CFileIO_BeginBlockWrite(f, "NAM");
 	CFileIO_WriteInt(f, 1);
 	uint32_t flags = CAnimNode_GetFlags(self);
@@ -678,31 +649,6 @@ void CAnimation_Write(CAnimation *self, CFileIO *f) {
 		CAnimNode_WriteHeader(CAnimation_GetNode(self, i), f);
 	}
 	CFileIO_EndBlockWrite(f, "ANI");
-}
-
-/* d folded once into -pi..pi */
-static void AnimAng_Fold(float *out, float d) {
-	if ((double)d > M_PI_D) {
-		*out = d - M_2PI_F;
-	}
-	float e = *out;
-	if ((double)e < -M_PI_D) {
-		*out = e + M_2PI_F;
-	}
-}
-
-vec3_t *Vec3_AngDiff(vec3_t *out, const vec3_t *a, const vec3_t *b) {
-	float x = b->x - a->x;
-	float y = b->y - a->y;
-	float z = b->z - a->z;
-
-	out->x = x;
-	out->y = y;
-	out->z = z;
-	AnimAng_Fold(&out->x, x);
-	AnimAng_Fold(&out->y, y);
-	AnimAng_Fold(&out->z, z);
-	return out;
 }
 
 int CAnimNode_FrameIndex(CAnimNode *self, int frame, const void *ptr, uint32_t flag) {
@@ -761,21 +707,6 @@ byte CAnimNode_Translate(CAnimNode *self, const vec3_t *d) {
 	return 1;
 }
 
-void CAnimNode_FreeTracks(CAnimNode *self, uint32_t flags) {
-	CHECK(0);
-	CHECK((flags & ~(ANIM_POS | ANIM_ROT)) == 0);
-	self->OptFlags &= ~flags;
-	self->StmFlags &= ~flags;
-	if ((flags & ANIM_POS) && self->Pos) {
-		AnimBlock_Free(self->Pos, self->OptFlags);
-		self->Pos = NULL;
-	}
-	if ((flags & ANIM_ROT) && self->Rot) {
-		AnimBlock_Free(self->Rot, self->OptFlags);
-		self->Rot = NULL;
-	}
-}
-
 static int Anim_SimilarFloat(float a, float b) {
 	if (a == b) {
 		return 1;
@@ -793,12 +724,13 @@ static int Anim_SimilarFloat(float a, float b) {
 	return !(r > ANIM_RATIO_MAX) && !(ANIM_RATIO_MIN > r);
 }
 
-byte Quat_Similar(const quat_t *a, const quat_t *b) {
+/* each component equal or of the same sign with a ratio within 1 +- 2^-22 */
+static byte Quat_Similar(const quat_t *a, const quat_t *b) {
 	return Anim_SimilarFloat(a->x, b->x) && Anim_SimilarFloat(a->y, b->y) && Anim_SimilarFloat(a->z, b->z) &&
 		Anim_SimilarFloat(a->w, b->w);
 }
 
-void CAnimNode_Scale(CAnimNode *self, const vec3_t *s) {
+static void CAnimNode_Scale(CAnimNode *self, const vec3_t *s) {
 	if (self->EVA) {
 		CEVA_Scale(self->EVA, s->x, s->y, s->z);
 	}
@@ -895,20 +827,6 @@ byte CAnimNode_GetFOV(CAnimNode *self, float *fov, int frame, float subframe) {
 	} else {
 		*fov = Stream_Float(s, keys - 1, sizeof(float), 0);
 	}
-	return 1;
-}
-
-byte CAnimNode_GetPosRotFrame(CAnimNode *self, vec3_t *pos, quat_t *rot, int frame) {
-	uint32_t rel = frame - self->first_frame;
-
-	CHECK(pos && rot);
-	CHECK(!(self->OptFlags & (ANIM_POS | ANIM_ROT)));
-	if (rel >= self->num_frames) {
-		return 0;
-	}
-	CHECK(self->Pos && self->Rot);
-	*pos = self->Pos[rel];
-	*rot = self->Rot[rel];
 	return 1;
 }
 
@@ -1030,11 +948,13 @@ void CAnimation_SwapNodes(CAnimation *self, uint32_t i, uint32_t j) {
 	CAnimNode_Init(&tmp, 0, 0, ANIM_POS | ANIM_ROT);
 }
 
-cGVar GVar_OptAnimPosErr;
-cGVar GVar_OptimizeAnims;
-cGVar GVar_OptAnimFovErr;
-cGVar GVar_R_AnimNode_Count;
-cGVar GVar_OptAnimRotErr;
+static cGVar GVar_OptAnimPosErr;
+static cGVar GVar_OptimizeAnims;
+static cGVar GVar_OptAnimFovErr;
+/* the engine variables of the animations (the values of their cGVar objects): R_AnimNodo_Count the live CAnimNode
+ * objects; OptimizeAnims (0 none, 1 compact the tracks before writing) and the errors that still count as equal */
+static cGVar GVar_R_AnimNode_Count;
+static cGVar GVar_OptAnimRotErr;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_OptimizeAnims, &GVar_OptimizeAnims, "OptimizeAnims", 0, "0=none, 1=Compact anims", 1)

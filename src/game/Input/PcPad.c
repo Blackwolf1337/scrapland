@@ -18,6 +18,33 @@
 #include "scrap/platform.h"
 #include "scrap/staticinit.h"
 
+#define CPCPAD_VFTABLE (&cPcPad_vftable)
+#define g_MainPcPad (GVar_MainPcPad.value.i)		/* MainPcPad: the pad of player 0, -1 all */
+#define g_PadDeadZone (GVar_PCPadDeadZone.value.f)	/* PCPadDeadZone */
+#define g_PCPadConnected (GVar_PCPadConnected.value.i)	/* PCPadConnected */
+#define g_PadForeground (GVar_PCPadForeground.value.i)	/* PCPadForeground: read only while the window is in front */
+#define g_XBCDigitalAsAnalog (GVar_XBCDigitalAsAnalog.value.i)
+#define g_XBCameraAutoPad (GVar_XBCameraAutoPad.value.i)
+#define g_XBInvertCharYPad (GVar_XBInvertCharYPad.value.i)
+#define g_XBInvertLRChar (GVar_XBInvertLRChar.value.i)
+#define g_XBInvertLRVehicle (GVar_XBInvertLRVehicle.value.i)
+#define g_XBInvertVehicleYPad (GVar_XBInvertVehicleYPad.value.i)
+#define g_XBVDigitalAsAnalog (GVar_XBVDigitalAsAnalog.value.i)
+#define g_XBVehicleAsFPS (GVar_XBVehicleAsFPS.value.i)
+static const cAbstractIDeviceVtbl cPcPad_vftable;
+static cGVar GVar_XBVehicleAsFPS;
+static cGVar GVar_XBVDigitalAsAnalog;
+static cGVar GVar_XBInvertVehicleYPad;
+static cGVar GVar_XBInvertLRVehicle;
+static cGVar GVar_XBInvertLRChar;
+static cGVar GVar_XBInvertCharYPad;
+static cGVar GVar_XBCameraAutoPad;
+static cGVar GVar_XBCDigitalAsAnalog;
+static cGVar GVar_PCPadForeground;
+static cGVar GVar_PCPadDeadZone;
+static cGVar GVar_PCPadConnected;
+static cGVar GVar_MainPcPad;
+
 #define PAD_ERROR "ERROR"
 
 static const char *const pad_labels[0x34] = {
@@ -38,13 +65,14 @@ static const byte pad_defaults[][3] = {
 	{ 7, 2, 5 }, { 22, 2, 5 }, { 10, 2, 6 }, { 13, 2, 7 }, { 11, 2, 8 },
 };
 
-int g_PadCodes[24] = { 35, 34, 33, 32, 8, 41, 40, 39, 38, 9, 0, 1, 2, 3, 4, 10, 5, 11, 7, 6, 50, 51, 49, 48 };
+/* the XInput entries of the pad buttons and half axes in the order of the defaults */
+static int g_PadCodes[24] = { 35, 34, 33, 32, 8, 41, 40, 39, 38, 9, 0, 1, 2, 3, 4, 10, 5, 11, 7, 6, 50, 51, 49, 48 };
 
 static void Pad_Bind(cPcPad *pad, int code, int set, int action) {
 	cAbstractIDevice_SetEntry(&pad->base, g_PadCodes[code], set, pad->index, action, 0);
 }
 
-cPcPad *cPcPad_ctor(cPcPad *self, int index) {
+static cPcPad *cPcPad_ctor(cPcPad *self, int index) {
 	cAbstractIDevice_ctor(&self->base);
 	self->base.vftable = CPCPAD_VFTABLE;
 	self->index = index;
@@ -55,11 +83,11 @@ cPcPad *cPcPad_ctor(cPcPad *self, int index) {
 	return self;
 }
 
-cPcPad g_PcPads[4];
+static cPcPad g_PcPads[4];
 
 /* the atexit destructor and the static initializer of the four pads; the original has
  * the constructor inlined */
-void PcPad_FiniPads(void) {
+static void PcPad_FiniPads(void) {
 	crt_eh_vector_dtor(g_PcPads, sizeof(cPcPad), 4, (void *)cAbstractIDevice_dtor);
 }
 
@@ -70,7 +98,7 @@ void PcPad_InitPads(void) {
 	crt_atexit(PcPad_FiniPads);
 }
 
-cAbstractIDevice *cPcPad_Delete(cAbstractIDevice *elem, byte flags) {
+static cAbstractIDevice *cPcPad_Delete(cAbstractIDevice *elem, byte flags) {
 	cPcPad *self = (cPcPad *)elem;
 	cAbstractIDevice_dtor(&self->base);
 	if (flags & 1) {
@@ -80,7 +108,7 @@ cAbstractIDevice *cPcPad_Delete(cAbstractIDevice *elem, byte flags) {
 }
 
 /* the stick inside the dead zone is 0; outside, the length from the dead zone to 1 scaled to 0..1 */
-void Pad_DeadZone(float *x, float *y, float dz) {
+static void Pad_DeadZone(float *x, float *y, float dz) {
 	float len = (float)__builtin_sqrt((double)(*x * *x + *y * *y));
 
 	if (dz > len) {
@@ -97,7 +125,7 @@ void Pad_DeadZone(float *x, float *y, float dz) {
 }
 
 /* only the bindings of its own player (or none) */
-byte cPcPad_SetEntry(cAbstractIDevice *elem, int entry, int set, int player, int action, byte check) {
+static byte cPcPad_SetEntry(cAbstractIDevice *elem, int entry, int set, int player, int action, byte check) {
 	cPcPad *self = (cPcPad *)elem;
 	if (player != self->index && player != -1) {
 		return 0;
@@ -105,7 +133,7 @@ byte cPcPad_SetEntry(cAbstractIDevice *elem, int entry, int set, int player, int
 	return cAbstractIDevice_SetEntry(&self->base, entry, set, player, action, check);
 }
 
-void cPcPad_SetVehicleDefaults(cPcPad *self) {
+static void cPcPad_SetVehicleDefaults(cPcPad *self) {
 	int a, b;
 
 	if (g_XBCameraAutoPad) {
@@ -145,7 +173,7 @@ void cPcPad_SetVehicleDefaults(cPcPad *self) {
 	cAbstractIDevice_SetEntry(&self->base, r, 3, self->index, g_XBCameraAutoPad ? 14 : 19, 0);
 }
 
-void cPcPad_SetCharDefaults(cPcPad *self) {
+static void cPcPad_SetCharDefaults(cPcPad *self) {
 	int inv = g_XBInvertVehicleYPad != 0;
 	int right, left, down, up, rright, rleft, rdown, rup;
 
@@ -217,7 +245,7 @@ void cPcPad_SetCharDefaults(cPcPad *self) {
 	Pad_Bind(self, 9, 1, 31);
 }
 
-const char *cPcPad_GetName(cAbstractIDevice *base) {
+static const char *cPcPad_GetName(cAbstractIDevice *base) {
 	cPcPad *self = (cPcPad *)base;
 	switch (self->index) {
 	case 0:
@@ -234,15 +262,15 @@ const char *cPcPad_GetName(cAbstractIDevice *base) {
 	}
 }
 
-const char *cPcPad_GetEntryName(cAbstractIDevice *elem, int entry) {
+static const char *cPcPad_GetEntryName(cAbstractIDevice *elem, int entry) {
 	cPcPad *self = (cPcPad *)elem;
 	return self->base.vftable->GetEntryLabel(&self->base, entry);
 }
 
-char g_PadLabelBuf[32];
+static char g_PadLabelBuf[32];
 
 /* "A" .. "DOWN"; "But13" .. "But32" for the buttons without a name, "Unknow" above */
-const char *cPcPad_GetEntryLabel(cAbstractIDevice *base, int entry) {
+static const char *cPcPad_GetEntryLabel(cAbstractIDevice *base, int entry) {
 	cPcPad *self = (cPcPad *)base;
 	(void)self;
 	CHECK(entry >= 0);
@@ -257,9 +285,10 @@ const char *cPcPad_GetEntryLabel(cAbstractIDevice *base, int entry) {
 	return g_PadLabelBuf;
 }
 
-int g_NumPcPads;
+static int g_NumPcPads;
 
 /* the four pads into the device list (the static objects, no device check) */
+static void cPcPad_SetDefaults(cAbstractIDevice *base);
 int Pad_Init(void) {
 	g_NumPcPads = 4;
 	for (int i = 0; i < g_NumPcPads; i++) {
@@ -275,7 +304,7 @@ int Pad_Init(void) {
 	return 0;
 }
 
-void cPcPad_SetDefaults(cAbstractIDevice *base) {
+static void cPcPad_SetDefaults(cAbstractIDevice *base) {
 	cPcPad *self = (cPcPad *)base;
 	for (uint32_t i = 0; i < sizeof(pad_defaults) / sizeof(pad_defaults[0]); i++) {
 		Pad_Bind(self, pad_defaults[i][0], pad_defaults[i][1], pad_defaults[i][2]);
@@ -288,7 +317,8 @@ void cPcPad_SetDefaults(cAbstractIDevice *base) {
  * A frame of the pad: the sticks, A types the character under the cursor, X deletes, Y ends the line. Pad input
  * switches the mouse camera helpers back on.
  */
-void cPcPad_Update(cAbstractIDevice *elem, float dt) {
+static uint32_t Pad_Poll(int index);
+static void cPcPad_Update(cAbstractIDevice *elem, float dt) {
 	cPcPad *self = (cPcPad *)elem;
 	Pad_Poll(self->index);
 	float lx = (float)self->state.thumbLX / 32767.0f;
@@ -357,12 +387,8 @@ void cPcPad_Update(cAbstractIDevice *elem, float dt) {
 	}
 }
 
-void cPcPad_SetGameDefaults(cPcPad *self) {
-	(void)self;
-}
-
 /* the state of the pad (MainPcPad >= 0: only that one, as pad 0); 0, else not connected */
-uint32_t Pad_Poll(int index) {
+static uint32_t Pad_Poll(int index) {
 	int i = index;
 
 	if (g_MainPcPad >= 0) {
@@ -383,14 +409,8 @@ uint32_t Pad_Poll(int index) {
 	return r;
 }
 
-byte cPcPad_IsReserved(cPcPad *self, int entry) {
-	(void)self;
-	(void)entry;
-	return 1;
-}
-
 /* the vtable of cPcPad */
-const cAbstractIDeviceVtbl cPcPad_vftable = {
+static const cAbstractIDeviceVtbl cPcPad_vftable = {
 	.Delete = cPcPad_Delete,
 	.SetDefaults = cPcPad_SetDefaults,
 	.SetGameDefaults = cAbstractIDevice_SetGameDefaultsNop,
@@ -402,19 +422,20 @@ const cAbstractIDeviceVtbl cPcPad_vftable = {
 	.SetEntry = cPcPad_SetEntry,
 };
 
-cGVar GVar_XBInvertCharYPad;
-cGVar GVar_XBInvertLRChar;
-cGVar GVar_XBCDigitalAsAnalog;
-cGVar GVar_XBVDigitalAsAnalog;
-cGVar GVar_XBInvertLRVehicle;
-cGVar GVar_XBInvertVehicleYPad;
-cGVar GVar_XBCameraAutoPad;
-cGVar GVar_XBVehicleAsFPS;
+static cGVar GVar_XBInvertCharYPad;
+static cGVar GVar_XBInvertLRChar;
+static cGVar GVar_XBCDigitalAsAnalog;
+static cGVar GVar_XBVDigitalAsAnalog;
+static cGVar GVar_XBInvertLRVehicle;
+static cGVar GVar_XBInvertVehicleYPad;
+static cGVar GVar_XBCameraAutoPad;
+static cGVar GVar_XBVehicleAsFPS;
 cGVar GVar_IsUsingMouse;
-cGVar GVar_MainPcPad;
-cGVar GVar_PCPadDeadZone;
-cGVar GVar_PCPadConnected;
-cGVar GVar_PCPadForeground;
+/* Input/PcPad.cpp: XInput pads */
+static cGVar GVar_MainPcPad;
+static cGVar GVar_PCPadDeadZone;
+static cGVar GVar_PCPadConnected;
+static cGVar GVar_PCPadForeground;
 
 /* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
 INIT_GVAR_INT(Init_GVar_PCPadConnected, &GVar_PCPadConnected, "PCPadConnected", 0, "", 0)

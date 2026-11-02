@@ -42,8 +42,6 @@ typedef struct CGameParticles {
 } CGameParticles;
 
 CGameParticles *CGameParticles_ctor(CGameParticles *self);
-/* no node, the default parameters */
-void CGameParticles_Init(CGameParticles *self);
 /* the node released (also the destructor) */
 void CGameParticles_Release(CGameParticles *self);
 /* the particle system of render node i of model */
@@ -63,9 +61,7 @@ byte CGameParticles_GetParticle(CGameParticles *self, int i, vec3_t *pos, vec3_t
 	uint32_t *color, float *size);
 int CGameParticles_NumActive(const CGameParticles *self);
 int CGameParticles_NumParticles(const CGameParticles *self);
-float CGameParticles_GetAlpha(const CGameParticles *self);
 void CGameParticles_SetAlpha(CGameParticles *self, float alpha);
-byte CGameParticles_IsEnabled(const CGameParticles *self);
 void CGameParticles_SetEnabled(CGameParticles *self, byte on);
 byte CGameParticles_IsVisible(const CGameParticles *self);
 void CGameParticles_SetVisible(CGameParticles *self, byte on);

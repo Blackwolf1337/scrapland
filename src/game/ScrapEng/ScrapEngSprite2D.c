@@ -22,9 +22,10 @@ static CMultiSprite *Sprite_MultiSprite(const CPsaImage *self) {
 
 int g_CountSprite2D;
 
-float g_Sprite2DScale[2] = { 1.0f, 1.0f };
+static float g_Sprite2DScale[2] = { 1.0f, 1.0f };
 
-void CPsaImage_Init(CPsaImage *self) {
+/* ScrapEngSprite2D.cpp, the rest (src/game/ScrapEng/ScrapEngSprite2D.c) */
+static void CPsaImage_Init(CPsaImage *self) {
 	g_CountSprite2D++;
 	self->x = 0.0f;
 	self->y = 0.0f;
@@ -47,6 +48,7 @@ void CPsaImage_Init(CPsaImage *self) {
 	self->flip = 0;
 }
 
+static void CPsaImage_Load(CPsaImage *self, const char *name, const char *opac, int blend, uint32_t flags);
 void *CPsaImage_ctorTex(void *self, const char *name, const char *a, int b) {
 	CPsaImage_Init(self);
 	CPsaImage_Load(self, name, a, 3, (uint32_t)b);
@@ -62,11 +64,6 @@ void *CPsaImage_ctorFlags(void *self, const char *name, const char *a, int b, in
 CPsaImage *CPsaImage_ctor(CPsaImage *self, const char *name, int flags) {
 	CPsaImage_Init(self);
 	CPsaImage_Load(self, name, NULL, 3, (uint32_t)flags);
-	return self;
-}
-
-CPsaImage *CPsaImage_ctorEmpty(CPsaImage *self) {
-	CPsaImage_Init(self);
 	return self;
 }
 
@@ -115,14 +112,6 @@ byte CPsaImage_GetFrameUV(CPsaImage *self, int frame, float *uv0, float *uv1) {
 void CPsaImage_Draw(CPsaImage *self, float x, float y) {
 	self->x = x;
 	self->y = y;
-	CPsaImage_DrawPoly(self, NULL, NULL, NULL, 0, 0);
-}
-
-void CPsaImage_DrawScaled(CPsaImage *self, float x, float y, float scale) {
-	self->x = x;
-	self->y = y;
-	self->scaleX = scale;
-	self->scaleY = scale;
 	CPsaImage_DrawPoly(self, NULL, NULL, NULL, 0, 0);
 }
 
@@ -205,12 +194,12 @@ void CPsaImage_DrawPoly(void *img, const float *pos, const float *uv, const uint
 	CGraphic2D_Draw(self->sprite, pos, uv, colors, (uint32_t)n, mode);
 }
 
-float g_Sprite2DScaleA[2] = { 0.5f, 0.5f };
+static float g_Sprite2DScaleA[2] = { 0.5f, 0.5f };
 
-float g_Sprite2DScaleB[2] = { 1.0f, 1.0f };
+static float g_Sprite2DScaleB[2] = { 1.0f, 1.0f };
 
 /* the CGraphic2D of the sheet name (opac: the opacity map) with the blend mode and the SPR2D flags */
-void CPsaImage_Load(CPsaImage *self, const char *name, const char *opac, int blend, uint32_t flags) {
+static void CPsaImage_Load(CPsaImage *self, const char *name, const char *opac, int blend, uint32_t flags) {
 	void *mem;
 	uint32_t gflags, alpha;
 	int src, dst;
@@ -250,6 +239,3 @@ void CPsaImage_Load(CPsaImage *self, const char *name, const char *opac, int ble
 	}
 }
 
-void CPsaImage_LoadName(CPsaImage *self, const char *name, uint32_t flags) {
-	CPsaImage_Load(self, name, NULL, 3, flags);
-}
