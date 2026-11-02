@@ -10,6 +10,7 @@
 #include "scrap/e3dutil.h"
 #include "scrap/render.h"
 #include "scrap/misc.h"
+#include "scrap/staticinit.h"
 
 #define GAMMA_RAMP 256
 cGVar GVar_VideoGammaRGB;
@@ -112,3 +113,10 @@ void RenderGamma_ReleaseD3D(void) {
 	g_GammaLastGreen = 1.0f;
 	g_GammaLastBlue = 1.0f;
 }
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_VideoGammaRGB, &GVar_VideoGammaRGB, "VideoGammaRGB", 2, "Video color gamma (def. 1.0)", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_VideoScaleRGB, &GVar_VideoScaleRGB, "VideoScaleRGB", 0, "Video color scale (def. 1.0)", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_VideoScaleRed, &GVar_VideoScaleRed, "VideoScaleRed", 0, "Video red color scale (def. 1.0)", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_VideoScaleGreen, &GVar_VideoScaleGreen, "VideoScaleGreen", 0, "Video green color scale (def. 1.0)", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_VideoScaleBlue, &GVar_VideoScaleBlue, "VideoScaleBlue", 0, "Video blue color scale (def. 1.0)", 1.0f)

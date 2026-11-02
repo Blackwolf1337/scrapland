@@ -10,6 +10,7 @@
 #include "scrap/doors.h"
 #include "scrap/embeddedfxvehicle.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/staticinit.h"
 
 #define TYEN_OBJECT "Obj"
 
@@ -251,3 +252,22 @@ void Doors_Usr0AutoDoorSlot(cAbstractFile *params) {
 		cPy_Function_SetNative(&Obj(door)->onObjSlot, NULL);
 	}
 }
+
+cPy_NativeFunc NativeFunc_AcceleratorOnEnter;
+cPy_NativeFunc NativeFunc_AutoDoorSlot;
+cPy_NativeFunc NativeFunc_AutoDoorUsrSlot;
+cPy_NativeFunc NativeFunc_CloseDoorSlot;
+cPy_NativeFunc NativeFunc_FrontDoorSlot;
+cPy_NativeFunc NativeFunc_BackDoorSlot;
+cPy_NativeFunc NativeFunc_Usr0AutoDoorSlot;
+cPy_NativeFunc NativeFunc_ChangeDoorState;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_NATIVE_FUNC(Init_NativeFunc_AcceleratorOnEnter, &NativeFunc_AcceleratorOnEnter, "AcceleratorOnEnter", Doors_AcceleratorOnEnter)
+INIT_NATIVE_FUNC(Init_NativeFunc_AutoDoorSlot, &NativeFunc_AutoDoorSlot, "AutoDoorSlot", Doors_AutoDoorSlot)
+INIT_NATIVE_FUNC(Init_NativeFunc_AutoDoorUsrSlot, &NativeFunc_AutoDoorUsrSlot, "AutoDoorUsrSlot", Doors_AutoDoorUsrSlot)
+INIT_NATIVE_FUNC(Init_NativeFunc_CloseDoorSlot, &NativeFunc_CloseDoorSlot, "CloseDoorSlot", Doors_CloseDoorSlot)
+INIT_NATIVE_FUNC(Init_NativeFunc_FrontDoorSlot, &NativeFunc_FrontDoorSlot, "FrontDoorSlot", Doors_FrontDoorSlot)
+INIT_NATIVE_FUNC(Init_NativeFunc_BackDoorSlot, &NativeFunc_BackDoorSlot, "BackDoorSlot", Doors_BackDoorSlot)
+INIT_NATIVE_FUNC(Init_NativeFunc_Usr0AutoDoorSlot, &NativeFunc_Usr0AutoDoorSlot, "Usr0AutoDoorSlot", Doors_Usr0AutoDoorSlot)
+INIT_NATIVE_FUNC(Init_NativeFunc_ChangeDoorState, &NativeFunc_ChangeDoorState, "ChangeDoorState", Doors_ChangeDoorState)

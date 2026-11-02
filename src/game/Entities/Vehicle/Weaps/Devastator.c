@@ -10,6 +10,7 @@
 #include "scrap/scorer.h"
 #include "scrap/weapons.h"
 #include "scrap/weaps2.h"
+#include "scrap/staticinit.h"
 
 #define DEV_PI 3.14159274f
 
@@ -776,3 +777,56 @@ cGVar GVar_EMILifeTime;
 
 cGVar GVar_EMIIDAmmo;
 
+cPy_NativeFunc NativeFunc_DevastatorPress;
+cPy_NativeFunc NativeFunc_DevastatorRelease;
+cPy_NativeFunc NativeFunc_DevastatorCreate;
+cPy_NativeFunc NativeFunc_DevastatorFire;
+cPy_NativeFunc NativeFunc_DevastatorFX;
+cPy_NativeFunc NativeFunc_EMIOnHit;
+cPy_NativeFunc NativeFunc_EMIFire;
+cPy_NativeFunc NativeFunc_InfernoClientFire;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_DevastatorIDWeap, &GVar_DevastatorIDWeap, "DevastatorIDWeap", 0, "The default weapon idx for the Devastator", 3)
+INIT_GVAR_INT(Init_GVar_DevastatorIDAmmo, &GVar_DevastatorIDAmmo, "DevastatorIDAmmo", 0, "The default weapon idx for the Devastator", 0)
+FINI_GVAR_STRING(Fini_GVar_DevastatorBulletFile, &GVar_DevastatorBulletFile)
+INIT_GVAR_STRING(Init_GVar_DevastatorBulletFile, Fini_GVar_DevastatorBulletFile, &GVar_DevastatorBulletFile, "DevastatorBulletFile", 0, "default bullet model for the Devastator", "Models/Weapons/Debris/Bullet/Bullet.M3D")
+FINI_GVAR_STRING(Fini_GVar_DevastatorHitFile, &GVar_DevastatorHitFile)
+INIT_GVAR_STRING(Init_GVar_DevastatorHitFile, Fini_GVar_DevastatorHitFile, &GVar_DevastatorHitFile, "DevastatorHitFile", 0, "default hit model for the Devastator", "Models/Weapons/Devastator/Hit.M3D")
+FINI_GVAR_STRING(Fini_GVar_DevastatorShootFile, &GVar_DevastatorShootFile)
+INIT_GVAR_STRING(Init_GVar_DevastatorShootFile, Fini_GVar_DevastatorShootFile, &GVar_DevastatorShootFile, "DevastatorShootFile", 0, "default shoot model for the Devastator", "Models/Weapons/Devastator/Shoot.M3D")
+FINI_GVAR_STRING(Fini_GVar_DevastatorSparksFile, &GVar_DevastatorSparksFile)
+INIT_GVAR_STRING(Init_GVar_DevastatorSparksFile, Fini_GVar_DevastatorSparksFile, &GVar_DevastatorSparksFile, "DevastatorSparksFile", 0, "default sparks model for the Devastator", "Models/Weapons/Devastator/Sparks.M3D")
+FINI_GVAR_STRING(Fini_GVar_DevastatorBoomSound, &GVar_DevastatorBoomSound)
+INIT_GVAR_STRING(Init_GVar_DevastatorBoomSound, Fini_GVar_DevastatorBoomSound, &GVar_DevastatorBoomSound, "DevastatorBoomSound", 0, "Explosion sound for devastator", "DevastatorBoom")
+INIT_GVAR_FLOAT(Init_GVar_DevastatorBoomSoundVol, &GVar_DevastatorBoomSoundVol, "DevastatorBoomSoundVol", 0, "Explosion sound volume for devastator", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_DevastatorBoomSoundAttIni, &GVar_DevastatorBoomSoundAttIni, "DevastatorBoomSoundAttIni", 0, "Explosion sound attenuation ini for devastator", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_DevastatorBoomSoundAttEnd, &GVar_DevastatorBoomSoundAttEnd, "DevastatorBoomSoundAttEnd", 0, "Explosion sound attenuation end for devastator", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_DevastatorRange, &GVar_DevastatorRange, "DevastatorRange", 0, "The maximun range that have the Devastator", 40000.0f)
+INIT_GVAR_FLOAT(Init_GVar_DevastatorAmmoCost, &GVar_DevastatorAmmoCost, "DevastatorAmmoCost", 0, "Cost Per hit at Devastator", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_DevastatorSpreadAngle, &GVar_DevastatorSpreadAngle, "DevastatorSpreadAngle", 0, "angle of random values used by Devastator", 4.0f)
+INIT_GVAR_FLOAT(Init_GVar_DevastatorExplosionRadius, &GVar_DevastatorExplosionRadius, "DevastatorExplosionRadius", 0, "Explosion radius by a Single Devastator shoot", 500.0f)
+INIT_GVAR_FLOAT(Init_GVar_DevastatorHitForce, &GVar_DevastatorHitForce, "DevastatorHitForce", 0, "The force that have a single Devastator shoot cm*TN/sec", 12000.0f)
+INIT_GVAR_FLOAT(Init_GVar_DevastatorRechargeTime, &GVar_DevastatorRechargeTime, "DevastatorRechargeTime", 0, "Time between a single vulcan shoot.", 0.25f)
+INIT_GVAR_FLOAT(Init_GVar_DevastatorMinDamage, &GVar_DevastatorMinDamage, "DevastatorMinDamage", 0, "The base of the minimal damage of Devastator", 2.0f)
+INIT_GVAR_FLOAT(Init_GVar_DevastatorExtraDamage, &GVar_DevastatorExtraDamage, "DevastatorExtraDamage", 0, "Aditional damage about the distance", 5.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXDevastatorDistance, &GVar_FXDevastatorDistance, "FXDevastatorDistance", 0, "Distance of Devastator Explosion Effect", 95000.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXDevastatorRadius, &GVar_FXDevastatorRadius, "FXDevastatorRadius", 0, "Radius of Devastator Explosion Effect", 600.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXDevastatorScale, &GVar_FXDevastatorScale, "FXDevastatorScale", 0, "Scale of Devastator Explosion Effect", 1.2f)
+INIT_NATIVE_FUNC(Init_NativeFunc_DevastatorXplosionCall, &NativeFunc_DevastatorXplosionCall, "DevastatorXplosionCall", Devastator_XplosionCall)
+FINI_CALL(Fini_GVar_CreateEMIFunc, &GVar_CreateEMIFunc.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_CreateEMIFunc, Fini_GVar_CreateEMIFunc, &GVar_CreateEMIFunc, "CreateEMIFunc", 0, "Function to be called to create the EMI", "")
+FINI_CALL(Fini_GVar_SetUpEMIFunc, &GVar_SetUpEMIFunc.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_SetUpEMIFunc, Fini_GVar_SetUpEMIFunc, &GVar_SetUpEMIFunc, "SetUpEMIFunc", 0, "Function to be called to set up the EMI properties", "")
+INIT_GVAR_INT(Init_GVar_EMIIDAmmo, &GVar_EMIIDAmmo, "EMIIDAmmo", 0, "EMI Ammo ID", 0)
+INIT_GVAR_INT(Init_GVar_EMIAmmoNeed, &GVar_EMIAmmoNeed, "EMIAmmoNeed", 0, "The deault cost ammunition for the EMI", 5)
+INIT_GVAR_FLOAT(Init_GVar_EMIRechargeTime, &GVar_EMIRechargeTime, "EMIRechargeTime", 0, "EMI Recharge Time", 1.5f)
+INIT_GVAR_FLOAT(Init_GVar_EMILifeTime, &GVar_EMILifeTime, "EMILifeTime", 0, "EMI Life Time", 10.0f)
+INIT_NATIVE_FUNC(Init_NativeFunc_DevastatorPress, &NativeFunc_DevastatorPress, "DevastatorPress", Devastator_Press)
+INIT_NATIVE_FUNC(Init_NativeFunc_DevastatorRelease, &NativeFunc_DevastatorRelease, "DevastatorRelease", Devastator_Release)
+INIT_NATIVE_FUNC(Init_NativeFunc_DevastatorCreate, &NativeFunc_DevastatorCreate, "DevastatorCreate", Devastator_Create)
+INIT_NATIVE_FUNC(Init_NativeFunc_DevastatorFire, &NativeFunc_DevastatorFire, "DevastatorFire", Devastator_Fire)
+INIT_NATIVE_FUNC(Init_NativeFunc_DevastatorFX, &NativeFunc_DevastatorFX, "DevastatorFX", Devastator_FX)
+INIT_NATIVE_FUNC(Init_NativeFunc_EMIOnHit, &NativeFunc_EMIOnHit, "EMIOnHit", EMI_OnHit)
+INIT_NATIVE_FUNC(Init_NativeFunc_EMIFire, &NativeFunc_EMIFire, "EMIFire", EMI_Fire)
+INIT_NATIVE_FUNC(Init_NativeFunc_InfernoClientFire, &NativeFunc_InfernoClientFire, "InfernoClientFire", Inferno_ClientFireNet)

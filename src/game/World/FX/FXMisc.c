@@ -14,6 +14,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 /* the trail array members: CGameTrail by new[] style construction (rva) */
 #define CGAMETRAIL_CTOR 0x21ddb0
@@ -2087,3 +2088,12 @@ cGVar GVar_FXItemBlinkFile;
 
 cGVar GVar_FXShipEditBuildFile;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_FXShipEditBuildFile, &GVar_FXShipEditBuildFile)
+INIT_GVAR_STRING(Init_GVar_FXShipEditBuildFile, Fini_GVar_FXShipEditBuildFile, &GVar_FXShipEditBuildFile, "FXShipEditBuildFile", 0, "Default Model for ShipEdit Build Effects", "Models/GFX/Sputnik/ShipEditBuild.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXItemFadeFile, &GVar_FXItemFadeFile)
+INIT_GVAR_STRING(Init_GVar_FXItemFadeFile, Fini_GVar_FXItemFadeFile, &GVar_FXItemFadeFile, "FXItemFadeFile", 0, "Default Model for Item Fade In/Out Effect", "Models/GFX/ItemFade.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXItemTakeFile, &GVar_FXItemTakeFile)
+INIT_GVAR_STRING(Init_GVar_FXItemTakeFile, Fini_GVar_FXItemTakeFile, &GVar_FXItemTakeFile, "FXItemTakeFile", 0, "Default Model for Item Take Effect", "Models/GFX/ItemTake.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXItemBlinkFile, &GVar_FXItemBlinkFile)
+INIT_GVAR_STRING(Init_GVar_FXItemBlinkFile, Fini_GVar_FXItemBlinkFile, &GVar_FXItemBlinkFile, "FXItemBlinkFile", 0, "Item Blink FX Model File", "Models/GFX/ItemBlink.M3D")

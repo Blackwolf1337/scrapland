@@ -5,6 +5,7 @@
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/graphic2d.h"
+#include "scrap/staticinit.h"
 
 /* the corner of the texture of each corner of the rectangle (u0 v0, u1 v0, u0 v1, u1 v1) by rot */
 
@@ -278,3 +279,5 @@ void Graphic2D_GetScreen(int *w, int *h) {
 
 cGVar GVar_SpriteScaleWidth;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_SpriteScaleWidth, &GVar_SpriteScaleWidth, "SpriteScaleWidth", 0, "", 1.0f)

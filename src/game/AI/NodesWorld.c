@@ -21,6 +21,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapworld.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 /* ---- Global/DList.h ---- */
 
@@ -1882,3 +1883,7 @@ cGVar GVar_ShowNodesAI;
 
 cGVar GVar_IsMapOutDoor;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_ShowAI, &GVar_ShowAI, "ShowAI", 4, "0 = No Show, 1 = Show Inf. AI", 1)
+INIT_GVAR_INT(Init_GVar_ShowNodesAI, &GVar_ShowNodesAI, "ShowNodesAI", 4, "Show info graph.\n", 0)
+INIT_GVAR_INT(Init_GVar_IsMapOutDoor, &GVar_IsMapOutDoor, "IsMapOutDoor", 4, "Is map outdoor?", 1)

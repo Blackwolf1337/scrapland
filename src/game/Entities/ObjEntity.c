@@ -15,6 +15,7 @@
 #include "scrap/net.h"
 #include "scrap/objentity.h"
 #include "scrap/scrapcollision.h"
+#include "scrap/staticinit.h"
 
 #define OBJ_CLASSNAME "Obj"
 #define OBJ_ONENDMOVE_DESC "<ObjMove.OnEnd> function"
@@ -1364,3 +1365,8 @@ const cNetControllerVtbl cNetController_vftable = {
 
 cGVar GVar_MssnRadarBlinkTime;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_MssnRadarBlinkTime, &GVar_MssnRadarBlinkTime, "MssnRadarBlinkTime", 0, "Time blinking if the new mission is assigned.", 5.0f)
+INIT_GVAR_FLOAT(Init_GVar_ErrorMin, &GVar_ErrorMin, "ErrorMin", 0, "", 50.0f)
+INIT_GVAR_FLOAT(Init_GVar_ErrorMax, &GVar_ErrorMax, "ErrorMax", 0, "", 10000.0f)
+INIT_GVAR_FLOAT(Init_GVar_ErrorFix, &GVar_ErrorFix, "ErrorFix", 0, "", 1.0f)

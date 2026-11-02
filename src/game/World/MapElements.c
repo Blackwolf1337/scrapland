@@ -11,6 +11,7 @@
 #include "scrap/pyfunction.h"
 #include "scrap/scrap.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 extern const cMapElementVtbl cMapElement_vftable;
 #define CMAPELEMENT_VFTABLE (&cMapElement_vftable)
@@ -244,3 +245,10 @@ const cMapElementVtbl cMapElement_vftable = {
 	.Init = cMapElement_Init,
 	.Update = cMapElement_Update,
 };
+
+cPy_NativeFunc NativeFunc_MapElementsActivate;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_ElementModelPath, &GVar_ElementModelPath)
+INIT_GVAR_STRING(Init_GVar_ElementModelPath, Fini_GVar_ElementModelPath, &GVar_ElementModelPath, "ElementModelPath", 0, "Path for the element list\n", "Models/Elements/")
+INIT_NATIVE_FUNC(Init_NativeFunc_MapElementsActivate, &NativeFunc_MapElementsActivate, "MapElementsActivate", Elements_Load)

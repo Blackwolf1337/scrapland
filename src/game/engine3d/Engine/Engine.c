@@ -45,6 +45,7 @@
 #include "scrap/text.h"
 #include "scrap/misc.h"
 #include "scrap/platform.h"
+#include "scrap/staticinit.h"
 
 
 extern const CD3DApplicationVtbl CEngineApp_vftable;
@@ -1052,3 +1053,10 @@ cGVar GVar_R_ShowInfo;
 
 byte g_Engine4af7d4;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_ShowInfo, &GVar_R_ShowInfo, "R_ShowInfo", 0, "Show rendering info (0..3)", 0)
+INIT_GVAR_FLOAT(Init_GVar_R_LimitFPS, &GVar_R_LimitFPS, "R_LimitFPS", 0, "FPS limit (def. 0.0)", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_ForceFPS, &GVar_R_ForceFPS, "R_ForceFPS", 0, "FPS force (def. 0.0)", 0.0f)
+INIT_GVAR_INT(Init_GVar_AutoScreenShot, &GVar_AutoScreenShot, "AutoScreenShot", 0, "Auto ScreenShot (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_R_StencilRefClear, &GVar_R_StencilRefClear, "R_StencilRefClear", 0, "", 1)
+INIT_GVAR_INT(Init_GVar_TexturePool, &GVar_TexturePool, "TexturePool", 2, "0=pool_default, 1=pool_managed", 0)

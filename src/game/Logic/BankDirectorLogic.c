@@ -5,6 +5,7 @@
  * bank master and the bishop.
  */
 #include "scrap/chartype.h"
+#include "scrap/staticinit.h"
 
 cBankDirectorLocalLogic *cBankDirectorLocalLogic_ctor(cBankDirectorLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
@@ -146,3 +147,5 @@ const cGenCharLocalLogicVtbl cBankDirectorLocalLogic_vftable = {
 
 cGVar GVar_GenCharSpecialActionTime;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_GenCharSpecialActionTime, &GVar_GenCharSpecialActionTime, "GenCharSpecialActionTime", 0, "GenChar special action time", 15.0f)

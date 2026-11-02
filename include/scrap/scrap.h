@@ -61,7 +61,7 @@ SD_SIZE(cFuncGvar, 0x14);
 #define GVar_ListObj(v) ((void *)((byte *)(v) - offsetof(cFuncGvar, gvar)))
 #define GVar_ListVtbl(v) (*(const cGVarListVtbl **)GVar_ListObj(v))
 
-/* the object of a GVAR_SCRIPT_FUNCTION variable (INIT_GVAR_FUNCTION of StaticInit.inc): its function in place of value
+/* the object of a GVAR_SCRIPT_FUNCTION variable (INIT_GVAR_FUNCTION of scrap/staticinit.h): its function in place of value
  * and def */
 typedef struct cGVarFunction {
 	union {

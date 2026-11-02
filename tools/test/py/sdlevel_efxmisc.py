@@ -190,7 +190,7 @@ check('cEmbeddedFXDataPack_On', lambda: (SDTest.Call('cEmbeddedFXDataPack_SetOn'
 for name, s in (('YellowS', 1), ('Yellow', 1), ('Green', 1), ('Red', 1), ('RED', 1), ('Blue', 1)):
 	efmset(efms + 0xc4, (0.0, 0.0, 0.0))
 	check('cEmbeddedFXFlag_SetColor' + fmt((name,)), lambda name=name: (SDTest.Call('cEmbeddedFXFlag_SetColor', 'tvis', efms, name),
-		efmints(efms, (0xc4, 0xc8, 0xcc))))
+		plain(efmints(efms, (0xc4, 0xc8, 0xcc)))))
 efmfree(efms)
 
 # the fake entity: the vtable of cObjEntity, GetModel at this + 0xb8
@@ -316,7 +316,10 @@ def efmfields(name, fx, extra):
 	trails = []
 	for o, n in f[3]:
 		trails.append(efmtrails(fx + o, n))
-	return (efmints(fx, f[0] + extra[0]), efmbytes(fx, f[1] + extra[1]), tuple(parts), tuple(trails))
+	ints = efmints(fx, f[0] + extra[0])
+	if name == 'Flag':	# the colors of the flag can be the address of a C object
+		ints = plain(ints)
+	return (ints, efmbytes(fx, f[1] + extra[1]), tuple(parts), tuple(trails))
 # the fields an Update writes on top (visible and the ones only set while it runs)
 efmupdated = {
 	'DataPack': ((), (8,)), 'Matrix': ((0x184, 0x188, 0x18c) + tuple(range(0x190, 0x1b4, 4)), (8,)),

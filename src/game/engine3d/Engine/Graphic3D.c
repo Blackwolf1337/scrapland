@@ -10,6 +10,7 @@
 #include "scrap/graphic3d.h"
 #include "scrap/trimesh.h"
 #include "scrap/particlesystem.h"
+#include "scrap/staticinit.h"
 
 #define D3DFVF_SPRITE 0x1c2		/* XYZ | DIFFUSE | SPECULAR | TEX1 */
 
@@ -215,3 +216,5 @@ const IObject3DVtbl CGraphic3D_vftable = {
 
 cGVar GVar_R_SpriteSector;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_SpriteSector, &GVar_R_SpriteSector, "R_SpriteSector", 0, "Use sector visibility for sprites", 1)

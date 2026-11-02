@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/staticinit.h"
 
 /* params: the sentinel: ActionInit unless it runs */
 void ChType_SentinelActionPress(cAbstractFile *params) {
@@ -93,3 +94,12 @@ void ChType_SentinelPoint(cAbstractFile *params) {
 		Logic_Vtbl(l)->OnSeen(l, v);
 	}
 }
+
+cPy_NativeFunc NativeFunc_SentinelPoint;
+cPy_NativeFunc NativeFunc_SentinelActionPress;
+cPy_NativeFunc NativeFunc_SentinelActionRelease;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_NATIVE_FUNC(Init_NativeFunc_SentinelPoint, &NativeFunc_SentinelPoint, "SentinelPoint", ChType_SentinelPoint)
+INIT_NATIVE_FUNC(Init_NativeFunc_SentinelActionPress, &NativeFunc_SentinelActionPress, "SentinelActionPress", ChType_SentinelActionPress)
+INIT_NATIVE_FUNC(Init_NativeFunc_SentinelActionRelease, &NativeFunc_SentinelActionRelease, "SentinelActionRelease", ChType_SentinelActionRelease)

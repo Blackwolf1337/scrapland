@@ -17,6 +17,7 @@
 #include "scrap/weaps2.h"
 #include "scrap/withlifeentity.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 #define CONTROLS_MIN_FADE 0.01f
 
@@ -840,3 +841,37 @@ cGVar GVar_TgtRegenerationTime;
 
 cGVar GVar_VehicleCenterPadLock;
 
+cPy_NativeFunc NativeFunc_TakeLife;
+cPy_NativeFunc NativeFunc_TakePart;
+cPy_NativeFunc NativeFunc_TakeEner;
+cPy_NativeFunc NativeFunc_TakeMiss;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_VehicleCamDist2, &GVar_VehicleCamDist2, "VehicleCamDist2", 2, "Default camera distance for vehicles in cm", 1000.0f)
+INIT_GVAR_INT(Init_GVar_ItemLifeAdds, &GVar_ItemLifeAdds, "ItemLifeAdds", 0, "Default Increment to the Item -> Life", 50)
+INIT_GVAR_FLOAT(Init_GVar_ItemLifeRespawnTime, &GVar_ItemLifeRespawnTime, "ItemLifeRespawnTime", 0, "Time to respawn the Item -> Life", 20.0f)
+FINI_CALL(Fini_GVar_OnLifeItemTaken, &GVar_OnLifeItemTaken.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnLifeItemTaken, Fini_GVar_OnLifeItemTaken, &GVar_OnLifeItemTaken, "OnLifeItemTaken", 0, "Function to be called when an item is taken", "")
+INIT_GVAR_INT(Init_GVar_ItemPartAdds, &GVar_ItemPartAdds, "ItemPartAdds", 0, "Default Increment to the Item -> Particle Ammo", 250)
+INIT_GVAR_FLOAT(Init_GVar_ItemPartRespawnTime, &GVar_ItemPartRespawnTime, "ItemPartRespawnTime", 0, "Time to respawn the Item -> Particle Ammo", 20.0f)
+INIT_GVAR_INT(Init_GVar_ItemEnerAdds, &GVar_ItemEnerAdds, "ItemEnerAdds", 0, "Default Increment to the Item -> Energy Ammo", 375)
+INIT_GVAR_FLOAT(Init_GVar_ItemEnerRespawnTime, &GVar_ItemEnerRespawnTime, "ItemEnerRespawnTime", 0, "Time to respawn the Item -> Energy Ammo", 20.0f)
+INIT_GVAR_INT(Init_GVar_ItemMissAdds, &GVar_ItemMissAdds, "ItemMissAdds", 0, "Default Increment to the Item -> Missile Ammo", 200)
+INIT_GVAR_FLOAT(Init_GVar_ItemMissRespawnTime, &GVar_ItemMissRespawnTime, "ItemMissRespawnTime", 0, "Time to respawn the Item -> Missile Ammo", 20.0f)
+INIT_GVAR_FLOAT(Init_GVar_TgtRegenerationTime, &GVar_TgtRegenerationTime, "TgtRegenerationTime", 2, "After this time, the cycling list will be regenerated", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_AttackerMarkTime, &GVar_AttackerMarkTime, "AttackerMarkTime", 2, "Before this time the attacker will be included in second place at the list\n", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_TimeWSwitchNo, &GVar_TimeWSwitchNo, "TimeWSwitchNo", 2, "time to auto switch the weapon if the fire button is pressed when no ammo.\n", 2.0f)
+INIT_GVAR_FLOAT(Init_GVar_XtrTimeWSwitchNo, &GVar_XtrTimeWSwitchNo, "XtrTimeWSwitchNo", 2, "Additonal time to switch the weapon if no ammo when press fire event.", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_VehicleCenterPadLock, &GVar_VehicleCenterPadLock, "VehicleCenterPadLock", 0, "Vehicle control for pad controllers.", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_VehicleCenterPadBounce, &GVar_VehicleCenterPadBounce, "VehicleCenterPadBounce", 2, "Vehicle control for pad controllers.", 0.75f)
+INIT_GVAR_FLOAT(Init_GVar_VehicleAttackModeMinDist, &GVar_VehicleAttackModeMinDist, "VehicleAttackModeMinDist", 2, "If attack mode in the pad controller is pressed, minimal distance from objective (auto backwards)", 15000.0f)
+INIT_GVAR_FLOAT(Init_GVar_VehicleAttackModeMaxDist, &GVar_VehicleAttackModeMaxDist, "VehicleAttackModeMaxDist", 2, "If attack mode in the pad controller is pressed, minimal distance from objective (auto forwards)", 20000.0f)
+INIT_GVAR_INT(Init_GVar_VehicleBlockSwitchAdvance, &GVar_VehicleBlockSwitchAdvance, "VehicleBlockSwitchAdvance", 2, "1 minds that blockstrafe switchs forward and backwards to strafe up and strafe down", 0)
+FINI_GVAR_STRING(Fini_GVar_CurrentWaypointName, &GVar_CurrentWaypointName)
+INIT_GVAR_STRING(Init_GVar_CurrentWaypointName, Fini_GVar_CurrentWaypointName, &GVar_CurrentWaypointName, "CurrentWaypointName", 0, "Nombre de la siguiente boya en una carrera", "")
+FINI_GVAR_STRING(Fini_GVar_CurrentWaypointName2, &GVar_CurrentWaypointName2)
+INIT_GVAR_STRING(Init_GVar_CurrentWaypointName2, Fini_GVar_CurrentWaypointName2, &GVar_CurrentWaypointName2, "CurrentWaypointName2", 0, "Nombre de la siguiente boya en una carrera (Para el player 2)", "")
+INIT_NATIVE_FUNC(Init_NativeFunc_TakeLife, &NativeFunc_TakeLife, "TakeLife", Controls_TakeLifeNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_TakePart, &NativeFunc_TakePart, "TakePart", Controls_TakePartNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_TakeEner, &NativeFunc_TakeEner, "TakeEner", Controls_TakeEnerNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_TakeMiss, &NativeFunc_TakeMiss, "TakeMiss", Controls_TakeMissNative)

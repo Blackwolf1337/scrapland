@@ -13,6 +13,7 @@
 #include "scrap/scrap.h"
 #include "scrap/scrapmain.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 #define MOUSE_NAME "Mouse"
 
@@ -221,3 +222,9 @@ cGVar GVar_MouseSensitivityH;
 
 cGVar GVar_InvertMouse;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_MouseSensitivityH, &GVar_MouseSensitivityH, "MouseSensitivityH", 2, "Horizontal Mouse Sensitivity", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_MouseSensitivityV, &GVar_MouseSensitivityV, "MouseSensitivityV", 2, "Vertical Mouse Sensitivity", 1.0f)
+INIT_GVAR_INT(Init_GVar_InvertMouse, &GVar_InvertMouse, "InvertMouse", 2, "0 = Mouse normal... 1 = Mouse inverted.", 0)
+FINI_CALL(Fini_cPcMouse_Mouse, &g_Mouse.base, cAbstractIDevice_dtor)
+INIT_OBJECT(Init_cPcMouse_Mouse, Fini_cPcMouse_Mouse, &g_Mouse, cPcMouse_ctor)

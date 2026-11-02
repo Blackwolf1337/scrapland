@@ -11,6 +11,7 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/sound.h"
 #include "scrap/withlifeentity.h"
+#include "scrap/staticinit.h"
 
 #define ITEM_CLASSNAME "item"
 
@@ -699,3 +700,6 @@ cGVar GVar_FXItemFadeMaxDist;
 
 cGVar GVar_NetItemDistAct;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_FXItemFadeMaxDist, &GVar_FXItemFadeMaxDist, "FXItemFadeMaxDist", 0, "Maximun Distance to show the Item Fade Effect", 60000.0f)
+INIT_GVAR_FLOAT(Init_GVar_NetItemDistAct, &GVar_NetItemDistAct, "NetItemDistAct", 0, "Distance in cm to actualize the item data.", 8000.0f)

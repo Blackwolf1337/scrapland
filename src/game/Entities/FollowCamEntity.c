@@ -9,6 +9,7 @@
 #include "scrap/fxelements.h"
 #include "scrap/input.h"
 #include "scrap/scrapcollision.h"
+#include "scrap/staticinit.h"
 
 #define FCAM_SLOW_DT 0.06666667f		/* rva 0x3ad094: a frame slower than 15 per second */
 #define FCAM_HALF_PI 1.5707964f
@@ -604,3 +605,13 @@ cGVar GVar_OutWalkCamNear;
 
 cGVar GVar_WalkCamNear;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_VehicleCamDist, &GVar_VehicleCamDist, "VehicleCamDist", 2, "Default camera distance for vehicles in cm", 1000.0f)
+INIT_GVAR_INT(Init_GVar_FreeCameraCollide, &GVar_FreeCameraCollide, "FreeCameraCollide", 0, "If the camera can collide with the world.", 1)
+INIT_GVAR_FLOAT(Init_GVar_VehicleCamNear, &GVar_VehicleCamNear, "VehicleCamNear", 0, "default clip near distance for vehicles", 50.0f)
+INIT_GVAR_FLOAT(Init_GVar_VehicleCamFar, &GVar_VehicleCamFar, "VehicleCamFar", 0, "default clip far  distance for vehicles", 500000.0f)
+INIT_GVAR_FLOAT(Init_GVar_WalkCamNear, &GVar_WalkCamNear, "WalkCamNear", 0, "default clip near distance for characters (indoor)", 10.0f)
+INIT_GVAR_FLOAT(Init_GVar_WalkCamFar, &GVar_WalkCamFar, "WalkCamFar", 0, "default clip far  distance for characters (indoor)", 100000.0f)
+INIT_GVAR_FLOAT(Init_GVar_OutWalkCamNear, &GVar_OutWalkCamNear, "OutWalkCamNear", 0, "default clip near distance for characters (outdoor)", 20.0f)
+INIT_GVAR_FLOAT(Init_GVar_OutWalkCamFar, &GVar_OutWalkCamFar, "OutWalkCamFar", 0, "default clip far  distance for characters (outdoor)", 400000.0f)
+INIT_GVAR_INT(Init_GVar_FullCameraTest, &GVar_FullCameraTest, "FullCameraTest", 0, "Activates/deactivates de camera test.", 0)

@@ -14,6 +14,7 @@
 #include "scrap/model.h"
 #include "scrap/flare.h"
 #include "scrap/render.h"
+#include "scrap/staticinit.h"
 
 /* the parameter of the effect, 0..1 */
 static float ModelFX_Param(const CModel *m) {
@@ -397,3 +398,13 @@ void ModelFX_InitD3D(void) {
 	g_MatNoise = Mat_New(&m, 1);
 	CMaterial_dtor(&m);
 }
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_CALL(Fini_CMaterial_FXMat, &g_FXMat, CMaterial_dtor)
+INIT_OBJECT(Init_CMaterial_FXMat, Fini_CMaterial_FXMat, &g_FXMat, CMaterial_ctor)
+FINI_CALL(Fini_CGraphic2D_FXGraphicNoise1, &g_FXGraphicNoise1, CGraphic2D_dtor)
+INIT_OBJECT(Init_CGraphic2D_FXGraphicNoise1, Fini_CGraphic2D_FXGraphicNoise1, &g_FXGraphicNoise1, CGraphic2D_ctor)
+FINI_CALL(Fini_CGraphic2D_FXGraphicNoise2, &g_FXGraphicNoise2, CGraphic2D_dtor)
+INIT_OBJECT(Init_CGraphic2D_FXGraphicNoise2, Fini_CGraphic2D_FXGraphicNoise2, &g_FXGraphicNoise2, CGraphic2D_ctor)
+FINI_CALL(Fini_CGraphic2D_FXGraphicStatic, &g_FXGraphicStatic, CGraphic2D_dtor)
+INIT_OBJECT(Init_CGraphic2D_FXGraphicStatic, Fini_CGraphic2D_FXGraphicStatic, &g_FXGraphicStatic, CGraphic2D_ctor)

@@ -12,6 +12,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/vehiclemotors.h"
 #include "scrap/weaps2.h"
+#include "scrap/staticinit.h"
 
 
 /* (rand() & 0x7fff) / 32767 * mul + add, the double expression of the original */
@@ -1945,3 +1946,13 @@ cGVar GVar_FXEngineGlowSizeMax;
 
 cGVar GVar_FXEngineTrailDistSpeedFactor;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_FXEngineBirthRate, &GVar_FXEngineBirthRate, "FXEngineBirthRate", 0, "BirthRate at Trust 0, (always 100 at Max Trust)", 20)
+INIT_GVAR_FLOAT(Init_GVar_FXEngineTrailSize, &GVar_FXEngineTrailSize, "FXEngineTrailSize", 0, "Size of Engine trail", 80.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXEngineTrailDist, &GVar_FXEngineTrailDist, "FXEngineTrailDist", 0, "Distance of Engine trail segments at Max Trust", 400.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXEngineTrailDistSpeedFactor, &GVar_FXEngineTrailDistSpeedFactor, "FXEngineTrailDistSpeedFactor", 0, "Speed Factor for add to Engine Trail Dist", 0.028f)
+INIT_GVAR_FLOAT(Init_GVar_FXEngineTrailOffset, &GVar_FXEngineTrailOffset, "FXEngineTrailOffset", 0, "Offset Z of Engine trail", 850.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXEngineGlowDistFadeFrom, &GVar_FXEngineGlowDistFadeFrom, "FXEngineGlowDistFadeFrom", 0, "FX Engine Distance to Glow Fade From", 5000.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXEngineGlowSize, &GVar_FXEngineGlowSize, "FXEngineGlowSize", 0, "FX Engine Glow Size at Distance", 450.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXEngineGlowSizeMax, &GVar_FXEngineGlowSizeMax, "FXEngineGlowSizeMax", 0, "FX Engine Glow Size Maximun", 1200.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXEngineGlowSizeAtt, &GVar_FXEngineGlowSizeAtt, "FXEngineGlowSizeAtt", 0, "FX Engine Glow Size Attenuation Factor", 0.05f)

@@ -6,6 +6,7 @@
 #include "scrap/ai.h"
 #include "scrap/aichar.h"
 #include "scrap/walkcharentity.h"
+#include "scrap/staticinit.h"
 
 #define CAINURSE_SIZE sizeof(cAINurse)
 
@@ -206,3 +207,6 @@ cGVar GVar_DistActionNurseAI;
 
 cGVar GVar_OffsetMoveNurseAI;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_DistActionNurseAI, &GVar_DistActionNurseAI, "DistActionNurseAI", 4, "Distance to action the Nurse.\n", 1600.0f)
+INIT_GVAR_FLOAT(Init_GVar_OffsetMoveNurseAI, &GVar_OffsetMoveNurseAI, "OffsetMoveNurseAI", 4, "Offset to move Nurse.\n", 25.0f)

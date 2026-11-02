@@ -13,6 +13,7 @@
 #include "scrap/timer.h"
 #include "scrap/weapons.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 /* the color ramps (9 colors) of the particles */
 #define FXS_RAMP(ramps, i) ((ramps) + (i) * 9)
@@ -2343,3 +2344,20 @@ cGVar GVar_FXSceneTheEndBFile;
 
 cGVar GVar_FXSceneBishopsFile;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_FXSceneDecontaminationFile, &GVar_FXSceneDecontaminationFile)
+INIT_GVAR_STRING(Init_GVar_FXSceneDecontaminationFile, Fini_GVar_FXSceneDecontaminationFile, &GVar_FXSceneDecontaminationFile, "FXSceneDecontaminationFile", 0, "Default Model for Decontamination Scene Effects", "Models/GFX/Scenes/Decontamination.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXSceneBishopsFile, &GVar_FXSceneBishopsFile)
+INIT_GVAR_STRING(Init_GVar_FXSceneBishopsFile, Fini_GVar_FXSceneBishopsFile, &GVar_FXSceneBishopsFile, "FXSceneBishopsFile", 0, "Default Model for Bishops Scene Effects", "Models/GFX/Scenes/Bishops.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXSceneBillArrives_AFile, &GVar_FXSceneBillArrives_AFile)
+INIT_GVAR_STRING(Init_GVar_FXSceneBillArrives_AFile, Fini_GVar_FXSceneBillArrives_AFile, &GVar_FXSceneBillArrives_AFile, "FXSceneBillArrives_AFile", 0, "Default Model for Bill Arrives A Scene Effects", "Models/GFX/Scenes/BillArrives_A.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXSceneYakuzziFile, &GVar_FXSceneYakuzziFile)
+INIT_GVAR_STRING(Init_GVar_FXSceneYakuzziFile, Fini_GVar_FXSceneYakuzziFile, &GVar_FXSceneYakuzziFile, "FXSceneYakuzziFile", 0, "Default Model for Yakuzzi Scene Effects", "Models/GFX/Scenes/Yakuzzi.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXSceneBeatPickusFile, &GVar_FXSceneBeatPickusFile)
+INIT_GVAR_STRING(Init_GVar_FXSceneBeatPickusFile, Fini_GVar_FXSceneBeatPickusFile, &GVar_FXSceneBeatPickusFile, "FXSceneBeatPickusFile", 0, "Default Model for BeatPickus Scene Effects", "Models/GFX/Scenes/BeatPickus.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXSceneHumanCDFile, &GVar_FXSceneHumanCDFile)
+INIT_GVAR_STRING(Init_GVar_FXSceneHumanCDFile, Fini_GVar_FXSceneHumanCDFile, &GVar_FXSceneHumanCDFile, "FXSceneHumanCDFile", 0, "Default Model for HumanCD Scene Effects", "Models/GFX/Scenes/HumanCD.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXSceneEnterMatrixFile, &GVar_FXSceneEnterMatrixFile)
+INIT_GVAR_STRING(Init_GVar_FXSceneEnterMatrixFile, Fini_GVar_FXSceneEnterMatrixFile, &GVar_FXSceneEnterMatrixFile, "FXSceneEnterMatrixFile", 0, "Default Model for EnterMatrix Scene Effects", "Models/GFX/Scenes/EnterMatrix.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXSceneTheEndBFile, &GVar_FXSceneTheEndBFile)
+INIT_GVAR_STRING(Init_GVar_FXSceneTheEndBFile, Fini_GVar_FXSceneTheEndBFile, &GVar_FXSceneTheEndBFile, "FXSceneTheEndBFile", 0, "Default Model for TheEndB Scene Effects", "Models/GFX/Scenes/TheEndB.M3D")

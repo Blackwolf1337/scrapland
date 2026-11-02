@@ -6,6 +6,7 @@
 #include "scrap/scorerhud.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 static CPsaImage *Weapon_NewWhite(byte color) {
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
@@ -452,3 +453,7 @@ const cScorerItemVtbl cWeaponScorer_vftable = {
 	.Var = cWeaponScorer_Var,
 	.Delete = cWeaponScorer_Delete,
 };
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_WeaponChangeShowTime, &GVar_WeaponChangeShowTime, "WeaponChangeShowTime", 0, "Time to show the fade Weapon Change Scorer", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_WeaponChangeFadeTime, &GVar_WeaponChangeFadeTime, "WeaponChangeFadeTime", 0, "Time to fade the fade Weapon Change Scorer", 0.1f)

@@ -8,6 +8,7 @@
 #include "scrap/console.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
+#include "scrap/staticinit.h"
 
 static CGameModel *Ctrl_Model(cActCtrl *self) {
 	return Obj_Vtbl(self->owner)->GetModel(self->owner);
@@ -597,3 +598,5 @@ const cActCtrlVarVtbl cActCtrl_vftable = {
 
 cGVar GVar_LogActEvents;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_LogActEvents, &GVar_LogActEvents, "LogActEvents", 0, "Drops to the console the log events.", 0)

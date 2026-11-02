@@ -7,6 +7,7 @@
 #include "scrap/app.h"
 #include "scrap/net.h"
 #include "scrap/scoreritems.h"
+#include "scrap/staticinit.h"
 
 /* the strings Var returns (those of the exe) */
 #define STR_LEFT "Left"
@@ -629,3 +630,12 @@ cGVar GVar_R_CreditsClear;
 
 cGVar GVar_R_CreditsAlpha;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_TimeToMsg, &GVar_TimeToMsg, "TimeToMsg", 1, "Tiempo restante hasta que desaparezca el mensaje", 0.0f)
+FINI_GVAR_STRING(Fini_GVar_MissionScorerName, &GVar_MissionScorerName)
+INIT_GVAR_STRING(Init_GVar_MissionScorerName, Fini_GVar_MissionScorerName, &GVar_MissionScorerName, "MissionScorerName", 1, "Mission scorer name", "Mission")
+INIT_GVAR_FLOAT(Init_GVar_HintAppearsTime, &GVar_HintAppearsTime, "HintAppearsTime", 0, "Time to show the hint in the menu", 0.5f)
+INIT_GVAR_INT(Init_GVar_R_CreditsX, &GVar_R_CreditsX, "R_CreditsX", 0, "Position X of Credits render target", 0)
+INIT_GVAR_INT(Init_GVar_R_CreditsY, &GVar_R_CreditsY, "R_CreditsY", 0, "Position Y of Credits render target", 0)
+INIT_GVAR_INT(Init_GVar_R_CreditsClear, &GVar_R_CreditsClear, "R_CreditsClear", 0, "Credits render target clear", 1)
+INIT_GVAR_INT(Init_GVar_R_CreditsAlpha, &GVar_R_CreditsAlpha, "R_CreditsAlpha", 0, "Credits render target alpha", 0)

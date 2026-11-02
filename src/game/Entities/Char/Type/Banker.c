@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/staticinit.h"
 
 void ChType_ReadParams(cAbstractFile *f, char *name, char *event) {
 	float unused;
@@ -193,3 +194,15 @@ byte ChType_Steal(cEntity **thief, cEntity **victim, int amount, const char *sta
 
 cGVar GVar_FXBankerStealFile;
 
+cPy_NativeFunc NativeFunc_BankerAttack;
+cPy_NativeFunc NativeFunc_BankDirectorActionPress;
+cPy_NativeFunc NativeFunc_BankDirectorActionRelease;
+cPy_NativeFunc NativeFunc_BankDirectorEndActionInit;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_FXBankerStealFile, &GVar_FXBankerStealFile)
+INIT_GVAR_STRING(Init_GVar_FXBankerStealFile, Fini_GVar_FXBankerStealFile, &GVar_FXBankerStealFile, "FXBankerStealFile", 0, "Default Model for Banker Steal Effect", "Models/GFX/BankDirector/BankerSteal.M3D")
+INIT_NATIVE_FUNC(Init_NativeFunc_BankerAttack, &NativeFunc_BankerAttack, "BankerAttack", ChType_BankerAttack)
+INIT_NATIVE_FUNC(Init_NativeFunc_BankDirectorActionPress, &NativeFunc_BankDirectorActionPress, "BankDirectorActionPress", ChType_BankDirectorActionPress)
+INIT_NATIVE_FUNC(Init_NativeFunc_BankDirectorActionRelease, &NativeFunc_BankDirectorActionRelease, "BankDirectorActionRelease", ChType_BankDirectorActionRelease)
+INIT_NATIVE_FUNC(Init_NativeFunc_BankDirectorEndActionInit, &NativeFunc_BankDirectorEndActionInit, "BankDirectorEndActionInit", ChType_BankDirectorEndActionInit)

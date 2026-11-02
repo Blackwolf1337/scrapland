@@ -6,6 +6,7 @@
 #include "scrap/ai.h"
 #include "scrap/aichar.h"
 #include "scrap/walkcharentity.h"
+#include "scrap/staticinit.h"
 
 void *cAIBankDirector_ctor(void *mem, cEntity *e, int *arg) {
 	cAIBankDirector *self = mem;
@@ -219,3 +220,5 @@ const cAICharVtbl cAIBankDirector_vftable = {
 
 cGVar GVar_MaxHeightChaseCharAI;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_MaxHeightChaseCharAI, &GVar_MaxHeightChaseCharAI, "MaxHeightChaseCharAI", 4, "Max height to chase.\n", 300.0f)

@@ -6,6 +6,7 @@
 
 #include "scrap/net.h"
 #include "scrap/scoreritems.h"
+#include "scrap/staticinit.h"
 
 cNetStatsScorer *cNetStatsScorer_ctor(cNetStatsScorer *self) {
 	cScorerItem_ctor(&self->base);
@@ -138,3 +139,8 @@ cGVar GVar_ClientPingY;
 
 cGVar GVar_ClientPingX;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_ClientPingY, &GVar_ClientPingY, "ClientPingY", 2, "Y Pos of the ping label.\n", 120.0f)
+INIT_GVAR_FLOAT(Init_GVar_ClientPingX, &GVar_ClientPingX, "ClientPingX", 2, "X Pos of the ping label", 20.0f)
+INIT_GVAR_INT(Init_GVar_ShowClientPing, &GVar_ShowClientPing, "ShowClientPing", 2, "true if show the ping label", 0)
+INIT_GVAR_INT(Init_GVar_ShowNetStatus, &GVar_ShowNetStatus, "ShowNetStatus", 6, "true if show the networking status.\n", 0)

@@ -14,6 +14,7 @@
 #include "scrap/scorer.h"
 #include "scrap/timer.h"
 #include "scrap/withlifeentity.h"
+#include "scrap/staticinit.h"
 
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMEPARTICLES_DTOR 0x21d1c0
@@ -2704,3 +2705,19 @@ const cEmbeddedFXVtbl cEmbeddedFXItem_vftable = {
 	.Tick = cEmbeddedFX_TickNop,
 	.Stop = cEmbeddedFX_StopNop,
 };
+
+cPy_NativeFunc NativeFunc_FXMeetingPointCountDown;
+cPy_NativeFunc NativeFunc_FXBossShieldSet;
+cPy_NativeFunc NativeFunc_FXBossOnDamage;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_DataPackLaserSize, &GVar_DataPackLaserSize, "DataPackLaserSize", 0, "DataPack Size of the Laser", 8.0f)
+INIT_GVAR_FLOAT(Init_GVar_DataPackLaserLong, &GVar_DataPackLaserLong, "DataPackLaserLong", 0, "DataPack Long of the Laser", 225.0f)
+INIT_GVAR_FLOAT(Init_GVar_DataPackInterTime, &GVar_DataPackInterTime, "DataPackInterTime", 0, "DataPack Interpolate Status Time", 0.6f)
+INIT_GVAR_FLOAT(Init_GVar_FXBossShieldRadius, &GVar_FXBossShieldRadius, "FXBossShieldRadius", 0, "", 600.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXBossShieldScale, &GVar_FXBossShieldScale, "FXBossShieldScale", 0, "", 1.5f)
+INIT_GVAR_FLOAT(Init_GVar_FXBossShieldAspect, &GVar_FXBossShieldAspect, "FXBossShieldAspect", 0, "", 0.5f)
+INIT_GVAR_INT(Init_GVar_MessengerTubeState, &GVar_MessengerTubeState, "MessengerTubeState", 0, "State of the tube : 0:Empty or 1:filled", 1)
+INIT_NATIVE_FUNC(Init_NativeFunc_FXMeetingPointCountDown, &NativeFunc_FXMeetingPointCountDown, "FXMeetingPointCountDown", EmbeddedFXMisc_MeetingPointMsg)
+INIT_NATIVE_FUNC(Init_NativeFunc_FXBossShieldSet, &NativeFunc_FXBossShieldSet, "FXBossShieldSet", EmbeddedFXMisc_BossShieldMsg)
+INIT_NATIVE_FUNC(Init_NativeFunc_FXBossOnDamage, &NativeFunc_FXBossOnDamage, "FXBossOnDamage", EmbeddedFXMisc_BossShieldHit)

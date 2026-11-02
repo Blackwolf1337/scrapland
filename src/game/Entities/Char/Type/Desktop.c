@@ -9,6 +9,7 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/scrapparticles.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 #define DESKTOP_TWO_PI 6.2831854820251465	/* rva 0x3a5d00, (double)6.2831855f */
 
@@ -272,3 +273,16 @@ cGVar GVar_FXDesktopFallEndFile;
 
 cGVar GVar_FallSoundVel;
 
+cPy_NativeFunc NativeFunc_DesktopActionPress;
+cPy_NativeFunc NativeFunc_FXDesktopFallEnd;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_DesktopJumpSpeed, &GVar_DesktopJumpSpeed, "DesktopJumpSpeed", 0, "Jump speed in cm/sec", 1000.0f)
+INIT_GVAR_INT(Init_GVar_DesktopJumpPrice, &GVar_DesktopJumpPrice, "DesktopJumpPrice", 0, "if desktop jump over any character, the price of money is...", 5)
+INIT_GVAR_FLOAT(Init_GVar_DesktopJumpSlideTime, &GVar_DesktopJumpSlideTime, "DesktopJumpSlideTime", 0, "Sliding time to jump again.", 0.5f)
+FINI_GVAR_STRING(Fini_GVar_FXDesktopFallEndFile, &GVar_FXDesktopFallEndFile)
+INIT_GVAR_STRING(Init_GVar_FXDesktopFallEndFile, Fini_GVar_FXDesktopFallEndFile, &GVar_FXDesktopFallEndFile, "FXDesktopFallEndFile", 0, "Default Model for Desktop Fall End Effect", "Models/GFX/Desktop/FallEnd.M3D")
+INIT_GVAR_FLOAT(Init_GVar_FXDesktopFallEndDist, &GVar_FXDesktopFallEndDist, "FXDesktopFallEndDist", 0, "Max Distance to show Desktop Fall End Effect", 10000.0f)
+INIT_GVAR_FLOAT(Init_GVar_FallSoundVel, &GVar_FallSoundVel, "FallSoundVel", 0, "Beyond this fallspeed, the fallsound will run...", 600.0f)
+INIT_NATIVE_FUNC(Init_NativeFunc_DesktopActionPress, &NativeFunc_DesktopActionPress, "DesktopActionPress", ChType_DesktopActionPress)
+INIT_NATIVE_FUNC(Init_NativeFunc_FXDesktopFallEnd, &NativeFunc_FXDesktopFallEnd, "FXDesktopFallEnd", ChType_FXDesktopFallEnd)

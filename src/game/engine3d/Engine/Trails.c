@@ -9,6 +9,7 @@
 #include "scrap/node3d.h"
 #include "scrap/material.h"
 #include "scrap/trails.h"
+#include "scrap/staticinit.h"
 
 #define TRAILS_FVF 0x1c2
 #define TRAILS_PI4 0.78539819f		/* 0x3f490fdb */
@@ -917,3 +918,5 @@ void CTrail_Move(CTrail *self, vec3_t d) {
 
 cGVar GVar_R_Trails;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_Trails, &GVar_R_Trails, "R_Trails", 0, "Render Trails (0/1)", 1)

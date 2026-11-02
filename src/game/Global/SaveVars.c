@@ -8,6 +8,7 @@
 #include "scrap/console.h"
 #include "scrap/hashtable.h"
 #include "scrap/scrap.h"
+#include "scrap/staticinit.h"
 
 
 void App_GetConfigDir(char *buf, int size);
@@ -356,3 +357,13 @@ byte SaveGame_Save(const char *name, const char *desc) {
 	cFile_dtor(&f);
 	return 1;
 }
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_LastSaveGameName, &GVar_LastSaveGameName)
+INIT_GVAR_STRING(Init_GVar_LastSaveGameName, Fini_GVar_LastSaveGameName, &GVar_LastSaveGameName, "LastSaveGameName", 0, "Last SaveGame Name", "")
+FINI_CALL(Fini_SaveVarTable, &g_SaveVarTable, PtrTable_Clear)
+INIT_HASHTABLE(Init_SaveVarTable, Fini_SaveVarTable, &g_SaveVarTable, 0x1c9, 4, 0x724, 0, 1)
+FINI_CALL(Fini_GVar_OnCrazyDealFinished, &GVar_OnCrazyDealFinished.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnCrazyDealFinished, Fini_GVar_OnCrazyDealFinished, &GVar_OnCrazyDealFinished, "OnCrazyDealFinished", 0, "Function to be called when a taunt is to be launched", "")
+FINI_CALL(Fini_GVar_OnCrazyDealTarget, &GVar_OnCrazyDealTarget.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnCrazyDealTarget, Fini_GVar_OnCrazyDealTarget, &GVar_OnCrazyDealTarget, "OnCrazyDealTarget", 0, "Function to be called when a crazy deal target is reached", "")

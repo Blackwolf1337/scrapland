@@ -5,6 +5,7 @@
 #include "scrap/ai.h"
 #include "scrap/aichar.h"
 #include "scrap/walkcharentity.h"
+#include "scrap/staticinit.h"
 
 void *cAIBankMaster_ctor(void *mem, cEntity *e, int *arg) {
 	cAIBankMaster *self = mem;
@@ -149,3 +150,5 @@ const cAICharVtbl cAIBankMaster_vftable = {
 
 cGVar GVar_BankMasterVacumDist;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_BankMasterVacumDist, &GVar_BankMasterVacumDist, "BankMasterVacumDist", 0, "BankMaster Flash Max Distance", 1000.0f)

@@ -10,6 +10,7 @@
 #include "scrap/objentity.h"
 #include "scrap/scrap.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMEPARTICLES_RELEASE 0x21d1c0
@@ -627,3 +628,11 @@ cGVar GVar_FXABFakeLimitQuakeFactor;
 
 cGVar GVar_FXABFakeLimitQuakeTime;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_FXABFakeLimitRadius, &GVar_FXABFakeLimitRadius, "FXABFakeLimitRadius", 0, "", 96000.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXABFakeLimitDistLighting, &GVar_FXABFakeLimitDistLighting, "FXABFakeLimitDistLighting", 0, "", 20000.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXABFakeLimitRingRotSpeed, &GVar_FXABFakeLimitRingRotSpeed, "FXABFakeLimitRingRotSpeed", 0, "", 2.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXABFakeLimitSegmentSize, &GVar_FXABFakeLimitSegmentSize, "FXABFakeLimitSegmentSize", 0, "", 15000.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXABFakeLimitSegmentStep, &GVar_FXABFakeLimitSegmentStep, "FXABFakeLimitSegmentStep", 0, "", 0.038f)
+INIT_GVAR_FLOAT(Init_GVar_FXABFakeLimitQuakeFactor, &GVar_FXABFakeLimitQuakeFactor, "FXABFakeLimitQuakeFactor", 0, "", 0.015f)
+INIT_GVAR_FLOAT(Init_GVar_FXABFakeLimitQuakeTime, &GVar_FXABFakeLimitQuakeTime, "FXABFakeLimitQuakeTime", 0, "", 0.1f)

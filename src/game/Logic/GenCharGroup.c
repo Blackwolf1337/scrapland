@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/staticinit.h"
 
 /* defined further down or in another file without a header */
 void *GenCharGroup_MakeLogic(cEntity *e);
@@ -143,3 +144,8 @@ void *GenCharGroup_MakeLogic(cEntity *e) {
 	CHECK(0);
 	return NULL;
 }
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_BankDirectorAgressive, &GVar_BankDirectorAgressive, "BankDirectorAgressive", 0, "The bank director becomes more agressive (indoors)", 0)
+INIT_GVAR_INT(Init_GVar_BishopAttackOnAlarm, &GVar_BishopAttackOnAlarm, "BishopAttackOnAlarm", 0, "1 if the bishop attack the player entity on alarm", 0)
+INIT_GVAR_INT(Init_GVar_GenCharAttackActive, &GVar_GenCharAttackActive, "GenCharAttackActive", 0, "if 1, the characters can attack.", 1)

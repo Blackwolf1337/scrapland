@@ -8,6 +8,7 @@
 #include "scrap/chartype.h"
 #include "scrap/actions.h"
 #include "scrap/modmove.h"
+#include "scrap/staticinit.h"
 
 /* params: the police, an event, a float: the effect of the conversion into a gear for 5 seconds */
 void ChType_FXPoliceGearConversion(cAbstractFile *params) {
@@ -270,3 +271,23 @@ cGVar GVar_PoliceAlarmStepSTM;
 
 cGVar GVar_PoliceStealAmount;
 
+cPy_NativeFunc NativeFunc_PoliceActionPress;
+cPy_NativeFunc NativeFunc_PoliceRestoreFreeTurn;
+cPy_NativeFunc NativeFunc_PoliceEndActionMoney;
+cPy_NativeFunc NativeFunc_ListeningPolice;
+cPy_NativeFunc NativeFunc_FXPoliceSteal;
+cPy_NativeFunc NativeFunc_FXPoliceGearConversion;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_PoliceStealAmount, &GVar_PoliceStealAmount, "PoliceStealQuanto", 0, "Money stealed by the banker to the main player", 10)
+INIT_GVAR_FLOAT(Init_GVar_PoliceAlarmStepSTM, &GVar_PoliceAlarmStepSTM, "PoliceAlarmStepSTM", 0, "Police Alarm Step in any Show Me The Money Action.", 0.1f)
+FINI_GVAR_STRING(Fini_GVar_FXPoliceStealFile, &GVar_FXPoliceStealFile)
+INIT_GVAR_STRING(Init_GVar_FXPoliceStealFile, Fini_GVar_FXPoliceStealFile, &GVar_FXPoliceStealFile, "FXPoliceStealFile", 0, "Default Model for Police Steal Effect", "Models/GFX/Police/PoliceSteal.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXPoliceGearConversionFile, &GVar_FXPoliceGearConversionFile)
+INIT_GVAR_STRING(Init_GVar_FXPoliceGearConversionFile, Fini_GVar_FXPoliceGearConversionFile, &GVar_FXPoliceGearConversionFile, "FXPoliceGearConversionFile", 0, "Default Model for Police Gear Conversion Effect", "Models/GFX/Police/Conversion.M3D")
+INIT_NATIVE_FUNC(Init_NativeFunc_PoliceActionPress, &NativeFunc_PoliceActionPress, "PoliceActionPress", ChType_PoliceActionPress)
+INIT_NATIVE_FUNC(Init_NativeFunc_PoliceRestoreFreeTurn, &NativeFunc_PoliceRestoreFreeTurn, "PoliceRestoreFreeTurn", ChType_PoliceRestoreFreeTurn)
+INIT_NATIVE_FUNC(Init_NativeFunc_PoliceEndActionMoney, &NativeFunc_PoliceEndActionMoney, "PoliceEndActionMoney", ChType_PoliceEndActionMoney)
+INIT_NATIVE_FUNC(Init_NativeFunc_ListeningPolice, &NativeFunc_ListeningPolice, "ListeningPolice", ChType_ListeningPolice)
+INIT_NATIVE_FUNC(Init_NativeFunc_FXPoliceSteal, &NativeFunc_FXPoliceSteal, "FXPoliceSteal", ChType_FXPoliceSteal)
+INIT_NATIVE_FUNC(Init_NativeFunc_FXPoliceGearConversion, &NativeFunc_FXPoliceGearConversion, "FXPoliceGearConversion", ChType_FXPoliceGearConversion)

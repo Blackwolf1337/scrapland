@@ -8,6 +8,7 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/sound.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/staticinit.h"
 
 cWindFxScorer *cWindFxScorer_ctor(cWindFxScorer *self) {
 	cScorerItem_ctor(&self->base);
@@ -176,3 +177,14 @@ const cScorerItemVtbl cWindFxScorer_vftable = {
 
 cGVar GVar_WindFxScorerSound;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_WindFxScorerSound, &GVar_WindFxScorerSound)
+INIT_GVAR_STRING(Init_GVar_WindFxScorerSound, Fini_GVar_WindFxScorerSound, &GVar_WindFxScorerSound, "WindFxScorerSound", 0, "Sound name for Wind FX", "FastFXWind")
+INIT_GVAR_FLOAT(Init_GVar_WindFxScorerSoundVol, &GVar_WindFxScorerSoundVol, "WindFxScorerSoundVol", 0, "Sound Volume for Wind FX", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_WindFxScorerSpeedVol, &GVar_WindFxScorerSpeedVol, "WindFxScorerSpeedVol", 0, "Sound Volume allways if speed factor", 3.0f)
+INIT_GVAR_FLOAT(Init_GVar_WindFxScorerSpeedPitch, &GVar_WindFxScorerSpeedPitch, "WindFxScorerSpeedPitch", 0, "semitones for speed", 5.0f)
+INIT_GVAR_FLOAT(Init_GVar_WindFxScorerHorizontal, &GVar_WindFxScorerHorizontal, "WindFxScorerHorizontal", 0, "Horizontal check for Wind FX", 10000.0f)
+INIT_GVAR_FLOAT(Init_GVar_WindFxScorerVertical, &GVar_WindFxScorerVertical, "WindFxScorerVertical", 0, "Vertical   check for Wind FX", 5000.0f)
+INIT_GVAR_FLOAT(Init_GVar_WindFxScorerFadeFactor, &GVar_WindFxScorerFadeFactor, "WindFxScorerFadeFactor", 0, "Fade in and out for Wind FX", 5.0f)
+INIT_GVAR_FLOAT(Init_GVar_WindFxScorerFwAngle, &GVar_WindFxScorerFwAngle, "WindFxScorerFwAngle", 0, "Foward angle Wind FX tests", 45.0f)
+INIT_GVAR_INT(Init_GVar_WindFxScorerShow, &GVar_WindFxScorerShow, "WindFxScorerShow", 0, "Shows Wind FX info", 0)

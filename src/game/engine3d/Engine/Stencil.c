@@ -24,6 +24,7 @@
 #include "scrap/utild3d.h"
 #include "scrap/bsp.h"
 #include "scrap/misc.h"
+#include "scrap/staticinit.h"
 
 
 #define LIGHT_DIRECTIONAL 0x138a
@@ -750,3 +751,20 @@ cGVar GVar_R_StencilRefWorld;
 
 cGVar GVar_R_StencilShadows;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_StencilShadows, &GVar_R_StencilShadows, "R_StencilShadows", 6, "Enable stencil shadows (req. reset3d) (-1/0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_ShowStencil, &GVar_R_ShowStencil, "R_ShowStencil", 0, "Show stencil shadows (0/1/2/3/4)", 0)
+INIT_GVAR_INT(Init_GVar_R_StencilSelf, &GVar_R_StencilSelf, "R_StencilSelf", 2, "Self-proyected stencil shadows (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_StencilTog, &GVar_R_StencilTog, "R_StencilTog", 0, "Toggle stencil shadows", 0)
+INIT_GVAR_FLOAT(Init_GVar_R_StencilMult, &GVar_R_StencilMult, "R_StencilMult", 2, "Stencil shadows distance mult", 1.0f)
+INIT_GVAR_INT(Init_GVar_R_StencilBBox, &GVar_R_StencilBBox, "R_StencilBBox", 0, "Discard by approx. object bbox (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_StencilFisq, &GVar_R_StencilFisq, "R_StencilFisq", 0, "Use fast inverse sqrt (0/1)", 0)
+INIT_GVAR_FLOAT(Init_GVar_R_StencilLDir, &GVar_R_StencilLDir, "R_StencilLDir", 0, "Dir light shadow distance", 2000.0f)
+INIT_GVAR_INT(Init_GVar_R_StencilDraw, &GVar_R_StencilDraw, "R_StencilDraw", 0, "Draw Stencil Shadows", 1)
+INIT_GVAR_INT(Init_GVar_R_StencilRefWorld, &GVar_R_StencilRefWorld, "R_StencilRefWorld", 0, "", 2)
+INIT_GVAR_INT(Init_GVar_R_StencilRefModels, &GVar_R_StencilRefModels, "R_StencilRefModels", 0, "", 2)
+INIT_GVAR_FLOAT(Init_GVar_R_StencilViewDisp, &GVar_R_StencilViewDisp, "R_StencilViewDisp", 0, "", 0.0f)
+INIT_VECTOR3(Init_ShadowLightPos, &g_ShadowLightPos, 200.0f, 200.0f, 0.0f)
+INIT_VECTOR3(Init_ShadowLightDir, &g_ShadowLightDir, 0.0f, -1.0f, 0.0f)
+FINI_CALL(Fini_CMaterial_StencilMat, &g_StencilMat, CMaterial_dtor)
+INIT_OBJECT(Init_CMaterial_StencilMat, Fini_CMaterial_StencilMat, &g_StencilMat, CMaterial_ctor)

@@ -13,6 +13,7 @@
 #include "scrap/scorer.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapcollision.h"
+#include "scrap/staticinit.h"
 
 /* levelpath GetLevelPath() : Obtiene el path del level actual */
 PyObject *Scrap_GetLevelPath(PyObject *self, PyObject *args) {
@@ -3027,3 +3028,6 @@ char str_PyDoc_Scrap_EntityListSet[] =
 	"EntityListSet(listName, varName, value) :  Modifica el valor de una variable de una lista de entidad"
 	"es";
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_CALL(Fini_cPy_Function_CallFunc, &g_CallFunc, cPy_Function_dtor)
+INIT_OBJECT(Init_cPy_Function_CallFunc, Fini_cPy_Function_CallFunc, &g_CallFunc, cPy_Function_ctor)

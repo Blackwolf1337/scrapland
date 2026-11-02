@@ -3,6 +3,7 @@
  */
 #include "scrap/app.h"
 #include "scrap/scoreritems.h"
+#include "scrap/staticinit.h"
 
 static const char *const s_BackColors[4] = {"BackRed", "BackGreen", "BackBlue", "BackAlpha"};
 static const char *const s_MainColors[4] = {"MainRed", "MainGreen", "MainBlue", "MainAlpha"};
@@ -196,3 +197,11 @@ cGVar GVar_AutoUpdateStopValue;
 
 cGVar GVar_BarValue;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_CALL(Fini_GVar_OnFinishAutoUpdate, &GVar_OnFinishAutoUpdate.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnFinishAutoUpdate, Fini_GVar_OnFinishAutoUpdate, &GVar_OnFinishAutoUpdate, "OnFinishAutoUpdate", 0, "Called on finished auto update", "")
+INIT_GVAR_FLOAT(Init_GVar_BlinkTime, &GVar_BlinkTime, "BlinkTime", 0, "Blink time", 0.1f)
+INIT_GVAR_FLOAT(Init_GVar_BarValue, &GVar_BarValue, "BarValue", 0, "", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_AutoUpdateStopValue, &GVar_AutoUpdateStopValue, "AutoUpdateStopValue", 0, "", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_AutoUpdateSpeedFactor, &GVar_AutoUpdateSpeedFactor, "AutoUpdateSpeedFactor", 0, "", 1.0f)
+INIT_GVAR_INT(Init_GVar_IsAutoUpdatable, &GVar_IsAutoUpdatable, "IsAutoUpdatable", 0, "", 0)

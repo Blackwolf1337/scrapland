@@ -13,6 +13,7 @@
 #include "scrap/particlesystem.h"
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
+#include "scrap/staticinit.h"
 
 #define DEG2RAD_F 0.0174532924f
 
@@ -737,3 +738,16 @@ cGVar GVar_ShowWorldDummies;
 
 cGVar GVar_SkyInit;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_RenderWorld, &GVar_RenderWorld, "RenderWorld", 0, "Transform and render world nodes", 1)
+INIT_GVAR_INT(Init_GVar_RenderSky, &GVar_RenderSky, "RenderSky", 0, "Transform and render sky nodes", 1)
+INIT_GVAR_INT(Init_GVar_SkyInit, &GVar_SkyInit, "SkyInit", 0, "Sky initialization", 1)
+INIT_GVAR_INT(Init_GVar_SkyZBuffer, &GVar_SkyZBuffer, "SkyZBuffer", 0, "Sky requires ZBuffer", 0)
+INIT_GVAR_FLOAT(Init_GVar_SkyPosScale, &GVar_SkyPosScale, "SkyPosScale", 0, "Sky position scale", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_SkyRotation, &GVar_SkyRotation, "SkyRotation", 0, "Sky rotation in degrees (Y-axis)", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_SkyTubeTest, &GVar_SkyTubeTest, "SkyTubeTest", 0, "Sky tube test far plane", 20000000.0f)
+INIT_GVAR_INT(Init_GVar_WorldPreIllum, &GVar_WorldPreIllum, "WorldPreIllum", 0, "World static illum. (0=skip,1=normal,2=selfillum)", 2)
+FINI_GVAR_STRING(Fini_GVar_ShowWorldDummies, &GVar_ShowWorldDummies)
+INIT_GVAR_STRING(Init_GVar_ShowWorldDummies, Fini_GVar_ShowWorldDummies, &GVar_ShowWorldDummies, "ShowWorldDummies", 0, "Show the specified world dummies (ie: DM_*)", "")
+FINI_TABLE(Fini_Points, &g_Points)
+INIT_ATEXIT(Init_Points, Fini_Points)

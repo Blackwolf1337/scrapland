@@ -16,6 +16,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapworld.h"
 #include "scrap/misc.h"
+#include "scrap/staticinit.h"
 
 #define GM_CHECK(self) \
 	do { \
@@ -1219,3 +1220,13 @@ cGVar GVar_R_ForcePreRenderTransform;
 
 cGVar GVar_R_GetModelVertex;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_R_CoefMLODShips, &GVar_R_CoefMLODShips, "R_CoefMLODShips", 0, "Ships LOD coef.", 8000.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_CoefMLODPilots, &GVar_R_CoefMLODPilots, "R_CoefMLODPilots", 0, "Pilots LOD coef.", 4500.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_CoefMLODEngines, &GVar_R_CoefMLODEngines, "R_CoefMLODEngines", 0, "Engines LOD coef.", 8000.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_CoefMLODTraffic, &GVar_R_CoefMLODTraffic, "R_CoefMLODTraffic", 0, "Traffic LOD coef.", 12000.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_CoefMLODCharacters, &GVar_R_CoefMLODCharacters, "R_CoefMLODCharacters", 0, "Characters LOD coef.", 1500.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_CoefMLODOutElement, &GVar_R_CoefMLODOutElement, "R_CoefMLODOutElement", 0, "OutElement LOD coef.", 80000.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_CoefMLODMenuElement, &GVar_R_CoefMLODMenuElement, "R_CoefMLODMenuElement", 0, "MenuElement LOD coef.", 11700.0f)
+INIT_GVAR_INT(Init_GVar_R_GetModelVertex, &GVar_R_GetModelVertex, "R_GetModelVertex", 0, "Model GetVertex Active", 1)
+INIT_GVAR_INT(Init_GVar_R_ForcePreRenderTransform, &GVar_R_ForcePreRenderTransform, "R_ForcePreRenderTransform", 0, "Force PreRender Transforms", 0)

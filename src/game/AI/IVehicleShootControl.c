@@ -17,6 +17,7 @@
 #include "scrap/weapons.h"
 #include "scrap/weaps2.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 
 cGVar GVar_ShowVehWeapAI;
@@ -1010,3 +1011,23 @@ cGVar GVar_InfernoDistLimit;
 
 cGVar GVar_LaserDistLimit;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_NotShootAI, &GVar_NotShootAI, "NotShootAI", 4, "0 = Shoot AI, 1 = Not Shoot AI", 0)
+FINI_GVAR_STRING(Fini_GVar_ShowVehWeapAI, &GVar_ShowVehWeapAI)
+INIT_GVAR_STRING(Init_GVar_ShowVehWeapAI, Fini_GVar_ShowVehWeapAI, &GVar_ShowVehWeapAI, "ShowVehWeapAI", 4, "Show Features Weapon vehicle.\n", "")
+INIT_GVAR_FLOAT(Init_GVar_OffsetAngShootAI, &GVar_OffsetAngShootAI, "OffsetAngShootAI", 4, "Offset angle to shoot.\n", 0.19634955f)
+INIT_GVAR_FLOAT(Init_GVar_MinDistCMAI, &GVar_MinDistCMAI, "MinDistCMAI", 4, "Distance min. use contrameasure.\n", 30000.0f)
+INIT_GVAR_FLOAT(Init_GVar_ShortDistShootAI, &GVar_ShortDistShootAI, "ShortDistShootAI", 4, "Short Distance for weapons short distance.\n", 20000.0f)
+INIT_GVAR_FLOAT(Init_GVar_TimeShootAI, &GVar_TimeShootAI, "TimeShootAI", 4, "Time Continue Shooting.\n", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_TimeShootCMAI, &GVar_TimeShootCMAI, "TimeShootCMAI", 4, "Time Continue Shooting CM.\n", 0.5f)
+INIT_GVAR_FLOAT(Init_GVar_TimeChangeWeapAI, &GVar_TimeChangeWeapAI, "TimeChangeWeapAI", 4, "Time to change weapon.\n", 10.0f)
+INIT_GVAR_FLOAT(Init_GVar_TimeChangeWeapCMAI, &GVar_TimeChangeWeapCMAI, "TimeChangeWeapCMAI", 4, "Time to change weapon CM.\n", 1.0f)
+INIT_GVAR_INT(Init_GVar_VulcanIDWeap, &GVar_VulcanIDWeap, "VulcanIDWeap", 0, "The default weapon idx for the vulcan", 2)
+INIT_GVAR_INT(Init_GVar_InfernoIDWeap, &GVar_InfernoIDWeap, "InfernoIDWeap", 0, "The default weapon idx for the Inferno", 7)
+INIT_GVAR_FLOAT_DATA(Init_GVar_DevastatorDistLimit, &GVar_DevastatorDistLimit, "DevastatorDistLimit", 0, "Distance limit shoots", &GVar_DevastatorRange.value.f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoDistLimit, &GVar_InfernoDistLimit, "InfernoDistLimit", 0, "Distance limit shoots", 40000.0f)
+INIT_GVAR_FLOAT_MULDIV(Init_GVar_LaserDistLimit, &GVar_LaserDistLimit, "LaserDistLimit", 0, "Distance limit shoots", &GVar_LaserRange.value.f, &(const float){ 2.0f }, &(const float){ 3.0f })
+INIT_GVAR_FLOAT(Init_GVar_SwarmDistLimit, &GVar_SwarmDistLimit, "SwarmDistLimit", 0, "Distance limit shoots", 40000.0f)
+INIT_GVAR_FLOAT_DATA(Init_GVar_TeslaDistLimit, &GVar_TeslaDistLimit, "TeslaDistLimit", 0, "Distance limit shoots", &GVar_TeslaRange.value.f)
+INIT_GVAR_FLOAT_MULDIV(Init_GVar_VulcanDistLimit, &GVar_VulcanDistLimit, "VulcanDistLimit", 0, "Distance limit shoots", &GVar_VulcanRange.value.f, &(const float){ 2.0f }, &(const float){ 3.0f })
+INIT_GVAR_FLOAT_DATA(Init_GVar_VulcanDistLimitUPG, &GVar_VulcanDistLimitUPG, "VulcanDistLimitUPG", 0, "Distance limit shoots(UPGRADE)", &GVar_VulcanRange.value.f)

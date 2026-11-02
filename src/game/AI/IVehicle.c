@@ -19,6 +19,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/vehicletraffic.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 cGVar GVar_RADIUS_OBJECTIVE_TRAFFIC;
 
@@ -3329,3 +3330,29 @@ cGVarFunction GVar_OnItemTakenAI;
 
 cGVar GVar_HookRange;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_DepthPathRouteOutDoorAI, &GVar_DepthPathRouteOutDoorAI, "DepthPathRouteOutDoorAI", 4, "Depth Path in Route.\n", 6)
+INIT_GVAR_FLOAT(Init_GVar_MaxDistReposNotVisAI, &GVar_MaxDistReposNotVisAI, "MaxDistReposNotVisAI", 4, "Distance max. to reposition the agent not visible.\n", 75000.0f)
+INIT_GVAR_FLOAT(Init_GVar_MinDistReposNotVisAI, &GVar_MinDistReposNotVisAI, "MinDistReposNotVisAI", 4, "Distance min. to reposition the agent not visible.\n", 37500.0f)
+INIT_GVAR_FLOAT(Init_GVar_MaxDistReposStopAI, &GVar_MaxDistReposStopAI, "MaxDistReposStopAI", 4, "Distance max. to reposition the agent when camera stopped.\n", 150000.0f)
+INIT_GVAR_FLOAT(Init_GVar_MinDistReposStopAI, &GVar_MinDistReposStopAI, "MinDistReposStopAI", 4, "Distance min. to reposition the agent when camera stopped.\n", 125000.0f)
+INIT_GVAR_FLOAT(Init_GVar_MinDistReposAI, &GVar_MinDistReposAI, "MinDistReposAI", 4, "Distance min. to reposition the agent.\n", 75000.0f)
+INIT_GVAR_FLOAT(Init_GVar_DistNotGetAwayAI, &GVar_DistNotGetAwayAI, "DistNotGetAwayAI", 4, "Distance not get away from enemy.", 45000.0f)
+INIT_GVAR_FLOAT(Init_GVar_DistGetAwayBoostAI, &GVar_DistGetAwayBoostAI, "DistGetAwayBoostAI", 4, "Distance min. get away with boost.", 5000.0f)
+INIT_GVAR_FLOAT(Init_GVar_TimeDamageAI, &GVar_TimeDamageAI, "TimeDamageAI", 4, "Time in sec. control damage.", 3.0f)
+INIT_GVAR_FLOAT(Init_GVar_MaxDistElevatorAI, &GVar_MaxDistElevatorAI, "MaxDistElevatorAI", 4, "Distance Max. to detect elevator near.\n", 10000.0f)
+INIT_GVAR_FLOAT_DATA(Init_GVar_MinDistChaseElevatorAI, &GVar_MinDistChaseElevatorAI, "MinDistChaseElevatorAI", 4, "Distance Min. to objective Chase AI inside hangar.\n", &GVar_MaxDistElevatorAI.value.f)
+INIT_GVAR_FLOAT_ADD(Init_GVar_MaxDistChaseElevatorAI, &GVar_MaxDistChaseElevatorAI, "MaxDistChaseElevatorAI", 4, "Distance Max. to objective Chase AI inside hangar.\n", &GVar_MinDistChaseElevatorAI.value.f, &(const float){ 10000.0f })
+INIT_GVAR_FLOAT(Init_GVar_MinDistChaseAI, &GVar_MinDistChaseAI, "MinDistChaseAI", 4, "Distance Min. to objective Chase AI.\n", 5000.0f)
+INIT_GVAR_FLOAT(Init_GVar_MaxDistChaseAI, &GVar_MaxDistChaseAI, "MaxDistChaseAI", 4, "Distance Max. to objective Chase AI.\n", 15000.0f)
+INIT_GVAR_FLOAT(Init_GVar_MaxDistAroundReposAI, &GVar_MaxDistAroundReposAI, "MaxDistAroundReposAI", 4, "Distance max. to reposition the agent around point of reposition.\n", 20000.0f)
+INIT_GVAR_FLOAT(Init_GVar_RADIUS_OBJECTIVE_TRAFFIC, &GVar_RADIUS_OBJECTIVE_TRAFFIC, "RADIUS_OBJECTIVE_TRAFFIC", 4, "Radius Points Traffic.\n", 4000.0f)
+INIT_GVAR_FLOAT(Init_GVar_RADIUS_OBJECTIVE_TRAFFIC_INDOOR, &GVar_RADIUS_OBJECTIVE_TRAFFIC_INDOOR, "RADIUS_OBJECTIVE_TRAFFIC_INDOOR", 4, "Radius Points Traffic InDoor.\n", 4000.0f)
+INIT_GVAR_FLOAT(Init_GVar_VelReposBackAI, &GVar_VelReposBackAI, "VelReposBackAI", 4, "Vel. to repos agent back to camera.\n", 3000.0f)
+INIT_GVAR_FLOAT(Init_GVar_VelReposStopAI, &GVar_VelReposStopAI, "VelReposStopAI", 4, "Vel. to repos agent back to camera.\n", 7000.0f)
+INIT_GVAR_FLOAT(Init_GVar_VelTrafficLightRotAI, &GVar_VelTrafficLightRotAI, "VelTrafficLightRotAI", 4, "Vel. traffic light to rotate.\n", 5556.0f)
+FINI_CALL(Fini_GVar_OnItemTakenAI, &GVar_OnItemTakenAI.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnItemTakenAI, Fini_GVar_OnItemTakenAI, &GVar_OnItemTakenAI, "OnItemTakenAI", 0, "Execute function in Python to take item", "")
+FINI_CALL(Fini_GVar_OnObjectiveNullAI, &GVar_OnObjectiveNullAI.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnObjectiveNullAI, Fini_GVar_OnObjectiveNullAI, &GVar_OnObjectiveNullAI, "OnObjectiveNullAI", 0, "Execute function in Python if objective is null", "")
+INIT_GVAR_FLOAT(Init_GVar_HookRange, &GVar_HookRange, "HookRange", 0, "The maximun range that have the Hook", 20000.0f)

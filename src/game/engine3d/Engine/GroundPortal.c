@@ -18,6 +18,7 @@
 #include "scrap/groundportal.h"
 #include "scrap/text.h"
 #include "scrap/misc.h"
+#include "scrap/staticinit.h"
 
 #define PORTAL_ASPECT 1.33f			/* the screen height of a sphere */
 #define PORTAL_EPS 8.0e-6f			/* the step out of a portal, times the distance to the origin */
@@ -751,3 +752,12 @@ cGVar GVar_R_PortalEnd;
 
 cGVar GVar_R_ShowPortals;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_R_PortalDist, &GVar_R_PortalDist, "R_PortalDist", 0, "Portal min. distance factor", 20.0f)
+INIT_GVAR_INT(Init_GVar_R_PortalNorm, &GVar_R_PortalNorm, "R_PortalNorm", 0, "Use portal plane normal (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_PortalPos, &GVar_R_PortalPos, "R_PortalPos", 0, "Use sector position cache (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_PortalExt, &GVar_R_PortalExt, "R_PortalExt", 0, "Use sector visibility extension (0/1/2)", 1)
+INIT_GVAR_INT(Init_GVar_R_PortalEnd, &GVar_R_PortalEnd, "R_PortalEnd", 0, "Use end sectors (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_PortalClip, &GVar_R_PortalClip, "R_PortalClip", 0, "Use portal viewport for clipping (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_PortalBand, &GVar_R_PortalBand, "R_PortalBand", 0, "Portal clipping viewport margin", 0)
+INIT_GVAR_INT(Init_GVar_R_ShowPortals, &GVar_R_ShowPortals, "R_ShowPortals", 0, "Show portals (0/1/2/3)", 0)

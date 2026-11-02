@@ -4,6 +4,7 @@
  * take one once the time reached TimeBetwChangeStateAI.
  */
 #include "scrap/ai.h"
+#include "scrap/staticinit.h"
 
 void *cAIEntityGroup_ctor(void *self) {
 	cAIEntityGroup *g = self;
@@ -81,3 +82,5 @@ const cAIEntityGroupVtbl cAIEntityGroup_vftable = {
 
 cGVar GVar_TimeBetwChangeStateAI;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_TimeBetwChangeStateAI, &GVar_TimeBetwChangeStateAI, "TimeBetwChangeStateAI", 4, "Time between change state", 0.05f)

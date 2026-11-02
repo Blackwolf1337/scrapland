@@ -13,6 +13,7 @@
 #include "scrap/global.h"
 #include "scrap/scoreritems.h"
 #include "scrap/scrap.h"
+#include "scrap/staticinit.h"
 
 /* the OnAccept of the item is the native edit start */
 static byte Text_IsEdit(cTextScorer *self) {
@@ -452,3 +453,10 @@ cGVar GVar_TextTypingSound;
 
 cGVar GVar_TextTypingSoundVol;
 
+cPy_NativeFunc NativeFunc_EditText;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_TextTypingSound, &GVar_TextTypingSound)
+INIT_GVAR_STRING(Init_GVar_TextTypingSound, Fini_GVar_TextTypingSound, &GVar_TextTypingSound, "TextTypingSound", 0, "Set the Text Typing Sound", "keyboard%d")
+INIT_GVAR_FLOAT(Init_GVar_TextTypingSoundVol, &GVar_TextTypingSoundVol, "TextTypingSoundVol", 0, "Set the Text Typing Sound Volume", 1.0f)
+INIT_NATIVE_FUNC(Init_NativeFunc_EditText, &NativeFunc_EditText, "EditText", TextEdit_Start)

@@ -16,6 +16,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/withlifeentity.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 /* the turn of the camera of the radar (FCam) */
 #define CamEntity_AngY(e) (((cCamControl *)(e))->cam.rot.y)
@@ -938,3 +939,8 @@ cGVar GVar_SuperDealAvaliable;
 
 cGVar GVar_RadarMMSelect;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_RadarShowAll, &GVar_RadarShowAll, "RadarShowAll", 0, "Show all the vehicles and chars at the radar", 0)
+INIT_GVAR_INT(Init_GVar_RadarMMSelect, &GVar_RadarMMSelect, "RadarMMSelect", 0, "1 if Show only one main mission target (nearest)", 1)
+INIT_GVAR_INT(Init_GVar_SuperDealAvaliable, &GVar_SuperDealAvaliable, "SuperDealAvaliable", 0, "1 if superdeal is avaliable", 0)
+INIT_GVAR_INT(Init_GVar_IsSecondMission, &GVar_IsSecondMission, "IsSecondMission", 0, "Is active any secondary mission?", 0)

@@ -6,6 +6,7 @@
  */
 #include "scrap/vehicleentity.h"
 #include "scrap/weaps2.h"
+#include "scrap/staticinit.h"
 
 #define TESLA_UPG_TRACK 5		/* the upgrade that pushes a ship against its flight */
 #define TESLA_UPG_WIDE 6		/* the upgrade that keeps the HUD item a quarter open */
@@ -239,3 +240,25 @@ cGVar GVar_TeslaAmmoCost;
 
 cGVar GVar_TeslaMaxAngRange;
 
+cPy_NativeFunc NativeFunc_TeslaPress;
+cPy_NativeFunc NativeFunc_TeslaRelease;
+cPy_NativeFunc NativeFunc_TeslaCreate;
+cPy_NativeFunc NativeFunc_TeslaFire;
+cPy_NativeFunc NativeFunc_TeslaFX;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_TeslaIDWeap, &GVar_TeslaIDWeap, "TeslaIDWeap", 0, "The default weapon idx for the tesla", 5)
+INIT_GVAR_INT(Init_GVar_TeslaIDAmmo, &GVar_TeslaIDAmmo, "TeslaIDAmmo", 0, "The default weapon idx for the tesla", 2)
+INIT_GVAR_FLOAT(Init_GVar_TeslaHitForce, &GVar_TeslaHitForce, "TeslaHitForce", 0, "The force that have a single tesla shoot", 500000.0f)
+INIT_GVAR_FLOAT(Init_GVar_TeslaMaxAngRange, &GVar_TeslaMaxAngRange, "TeslaMaxAngRange", 0, "The maximun angle range (hit case at tesla)", 20.0f)
+INIT_GVAR_FLOAT(Init_GVar_TeslaMaxAngRangePad, &GVar_TeslaMaxAngRangePad, "TeslaMaxAngRangePad", 0, "The maximun angle range (hit case at tesla) Pad Controller", 40.0f)
+INIT_GVAR_FLOAT(Init_GVar_TeslaAmmoCost, &GVar_TeslaAmmoCost, "TeslaAmmoCost", 0, "Cost Per hit at tesla", 0.5f)
+INIT_GVAR_FLOAT(Init_GVar_TeslaUpRangeTime, &GVar_TeslaUpRangeTime, "TeslaUpRangeTime", 0, "Time to the min to the max ang range if not hit (tesla)", 0.25f)
+FINI_GVAR_STRING(Fini_GVar_TeslaShootFile, &GVar_TeslaShootFile)
+INIT_GVAR_STRING(Init_GVar_TeslaShootFile, Fini_GVar_TeslaShootFile, &GVar_TeslaShootFile, "TeslaShootFile", 0, "default shoot model for the Tesla", "Models/Weapons/Tesla/Shoot.M3D")
+INIT_GVAR_FLOAT(Init_GVar_TeslaTrackForce, &GVar_TeslaTrackForce, "TeslaTrackForce", 0, "Traking force that have a single tesla shoot with upgrade (TN/Seg)", 10000.0f)
+INIT_NATIVE_FUNC(Init_NativeFunc_TeslaPress, &NativeFunc_TeslaPress, "TeslaPress", Tesla_AimOnNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_TeslaRelease, &NativeFunc_TeslaRelease, "TeslaRelease", Tesla_AimOffNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_TeslaCreate, &NativeFunc_TeslaCreate, "TeslaCreate", Tesla_CreateNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_TeslaFire, &NativeFunc_TeslaFire, "TeslaFire", Tesla_FireNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_TeslaFX, &NativeFunc_TeslaFX, "TeslaFX", Tesla_HudNative)

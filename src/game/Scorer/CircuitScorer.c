@@ -6,6 +6,7 @@
 
 #include "scrap/app.h"
 #include "scrap/scoreritems.h"
+#include "scrap/staticinit.h"
 
 
 
@@ -296,3 +297,6 @@ const cScorerItemVtbl cCircuitScorer_vftable = {
 	.Var = cCircuitScorer_Var,
 	.Delete = cCircuitScorer_Delete,
 };
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_ARRAY(Init_cCircuitPath_CircuitPaths, g_CircuitPaths, sizeof(cCircuitPath), 9, cCircuitPath_ctor)

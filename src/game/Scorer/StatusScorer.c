@@ -10,6 +10,7 @@
 #include "scrap/sound.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/withlifeentity.h"
+#include "scrap/staticinit.h"
 
 /* a byte of the ship regeneration state of the world (SLogic.SetShipToRegenerate): the siren plays while set */
 
@@ -508,3 +509,21 @@ cGVar GVar_DangerLifeSound;
 
 cGVar GVar_RegenerationSound;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_StdMaxLife, &GVar_StdMaxLife, "StdMaxLife", 0, "Standard max life for characters and soon.", 100)
+INIT_GVAR_INT(Init_GVar_WarningLifeLevel, &GVar_WarningLifeLevel, "WarningLifeLevel", 2, "Percentage of life to show Warning...", 25)
+INIT_GVAR_INT(Init_GVar_DangerLifeLevel, &GVar_DangerLifeLevel, "DangerLifeLevel", 2, "Percentage of life to show Danger...", 10)
+FINI_GVAR_STRING(Fini_GVar_DangerLifeSound, &GVar_DangerLifeSound)
+INIT_GVAR_STRING(Init_GVar_DangerLifeSound, Fini_GVar_DangerLifeSound, &GVar_DangerLifeSound, "DangerLifeSound", 0, "Sound loop for life danger", "LifeDanger")
+INIT_GVAR_FLOAT(Init_GVar_DangerLifeSoundVol, &GVar_DangerLifeSoundVol, "DangerLifeSoundVol", 0, "Sound Volume for life danger", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_RegenerationSound, &GVar_RegenerationSound)
+INIT_GVAR_STRING(Init_GVar_RegenerationSound, Fini_GVar_RegenerationSound, &GVar_RegenerationSound, "RegenerationSound", 0, "Sound loop for life Regeneration", "Regeneration")
+INIT_GVAR_FLOAT(Init_GVar_RegenerationSoundVol, &GVar_RegenerationSoundVol, "RegenerationSoundVol", 0, "Sound Volume for life Regeneration", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_RegenerationSoundPitchMin, &GVar_RegenerationSoundPitchMin, "RegenerationSoundPitchMin", 0, "0 life pitch for life Regeneration", -10.0f)
+INIT_GVAR_FLOAT(Init_GVar_RegenerationSoundPitchMax, &GVar_RegenerationSoundPitchMax, "RegenerationSoundPitchMax", 0, "Full life pitch for life Regeneration", 10.0f)
+FINI_GVAR_STRING(Fini_GVar_InitRegenerationSound, &GVar_InitRegenerationSound)
+INIT_GVAR_STRING(Init_GVar_InitRegenerationSound, Fini_GVar_InitRegenerationSound, &GVar_InitRegenerationSound, "InitRegenerationSound", 0, "Sound for life initilaize Regeneration", "InitRegeneration")
+INIT_GVAR_FLOAT(Init_GVar_InitRegenerationSoundVol, &GVar_InitRegenerationSoundVol, "InitRegenerationSoundVol", 0, "Sound Volume for life initilaize Regeneration", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_EndRegenerationSound, &GVar_EndRegenerationSound)
+INIT_GVAR_STRING(Init_GVar_EndRegenerationSound, Fini_GVar_EndRegenerationSound, &GVar_EndRegenerationSound, "EndRegenerationSound", 0, "Sound for life end Regeneration", "EndRegeneration")
+INIT_GVAR_FLOAT(Init_GVar_EndRegenerationSoundVol, &GVar_EndRegenerationSoundVol, "EndRegenerationSoundVol", 0, "Sound Volume for life end Regeneration", 1.0f)

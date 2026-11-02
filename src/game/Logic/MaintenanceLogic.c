@@ -9,6 +9,7 @@
 
 #include "scrap/chartype.h"
 #include "scrap/scrapmodel.h"
+#include "scrap/staticinit.h"
 
 #define MAINT_VT(self) ((self)->base.base.vftable)
 #define MAINT_BASE(self) (&(self)->base.base)
@@ -291,3 +292,6 @@ cGVar GVar_MaintenanceTimeToNextPos;
 
 cGVar GVar_MaintenanceSphereRadiusFactor;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_MaintenanceTimeToNextPos, &GVar_MaintenanceTimeToNextPos, "MaintenanceTimeToNextPos", 0, "Maintenance time to next pos in cube", 8.0f)
+INIT_GVAR_FLOAT(Init_GVar_MaintenanceSphereRadiusFactor, &GVar_MaintenanceSphereRadiusFactor, "MaintenanceSphereRadiusFactor", 0, "Maintenance sphere radius factor", 1.0f)

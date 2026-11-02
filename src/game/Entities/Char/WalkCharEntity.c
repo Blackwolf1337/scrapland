@@ -9,6 +9,7 @@
 #include "scrap/missileentity.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
+#include "scrap/staticinit.h"
 
 static inline cActClass *WCE_Class(const cWalkCharEntity *w) {
 	return w->wl.actCtrl->cls;
@@ -1946,3 +1947,11 @@ cGVar GVar_CharGrav;
 
 cGVar GVar_TimeToAbortSelectChar;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_CharGrav, &GVar_CharGrav, "CharGrav", 0, "Characters Gravity.", 1960.0f)
+INIT_GVAR_FLOAT(Init_GVar_EnergyRechargeTime, &GVar_EnergyRechargeTime, "EnergyRechargeTime", 0, "Time to recharge the full energy...", 15.0f)
+INIT_GVAR_FLOAT(Init_GVar_AbortSelectDistance, &GVar_AbortSelectDistance, "AbortSelectDistance", 0, "At this distance (from the center), the selection must be reseted.", 1500.0f)
+INIT_GVAR_FLOAT(Init_GVar_CharUsrPushSpeed, &GVar_CharUsrPushSpeed, "CharUsrPushSpeed", 0, "Speed in cm/seg used to push characters....", 100.0f)
+INIT_GVAR_INT(Init_GVar_EnergyBarActive, &GVar_EnergyBarActive, "EnergyBarActive", 0, "if 0, the energy bar action is disable.", 1)
+INIT_GVAR_FLOAT(Init_GVar_TimeToAbortSelectChar, &GVar_TimeToAbortSelectChar, "TimeToAbortSelectChar", 0, "Time to call AbortSelectFunc in chars if inactive.", 30.0f)
+INIT_GVAR_FLOAT(Init_GVar_SndLoopCharNPCMul, &GVar_SndLoopCharNPCMul, "SndLoopCharNPCMul", 0, "Multiplicador de volumen para los loops de los npcs", 1.0f)

@@ -13,6 +13,7 @@
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
 #include "scrap/scrapmodel.h"
+#include "scrap/staticinit.h"
 
 /* the state names of the debug texts (pointer tables of the exe) */
 
@@ -891,3 +892,7 @@ cGVar GVar_DefActionRadius;
 
 cGVar GVar_GearRageMaxTime;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_LogicAwakeTime, &GVar_LogicAwakeTime, "LogicAwakeTime", 0, "Max time dazed for the logical managed characters.", 90.0f)
+INIT_GVAR_FLOAT(Init_GVar_GearRageMaxTime, &GVar_GearRageMaxTime, "GearRageMaxTime", 0, "Time to get te rage and attack the stupid guys!", 10.0f)
+INIT_GVAR_FLOAT(Init_GVar_DefActionRadius, &GVar_DefActionRadius, "DefActionRadius", 0, "Default action radius for characters logic", 5000.0f)

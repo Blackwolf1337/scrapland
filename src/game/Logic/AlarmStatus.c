@@ -11,6 +11,7 @@
 #include "scrap/cstring.h"
 #include "scrap/input.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/staticinit.h"
 
 /* the alarm takes changes */
 static int Alarm_Open(const cAlarm *self) {
@@ -226,3 +227,16 @@ cGVar GVar_UsrDefChar;
 
 cGVar GVar_GuaranteedChars;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_EasyAlarmFallFactor, &GVar_EasyAlarmFallFactor, "EasyAlarmFallFactor", 0, "The alarm status go down multiplier for easy mode.", 1.2f)
+INIT_GVAR_FLOAT(Init_GVar_AlarmFallDelta, &GVar_AlarmFallDelta, "AlarmFallDelta", 0, "The alarm status go down.", -0.05f)
+INIT_GVAR_FLOAT(Init_GVar_AlarmFallMission, &GVar_AlarmFallMission, "AlarmFallMission", 0, "The alarm status go down. (if outdoormap and mission)", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_AlarmGrowDelta, &GVar_AlarmGrowDelta, "AlarmGrowDelta", 0, "The alarm status go up.", 0.1f)
+FINI_CALL(Fini_GVar_AlarmCallback, &GVar_AlarmCallback.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_AlarmCallback, Fini_GVar_AlarmCallback, &GVar_AlarmCallback, "AlarmCallback", 0, "The alarm Callback function.", "")
+FINI_GVAR_STRING(Fini_GVar_UsrDefChar, &GVar_UsrDefChar)
+INIT_GVAR_STRING(Init_GVar_UsrDefChar, Fini_GVar_UsrDefChar, &GVar_UsrDefChar, "UsrDefChar", 0, "Standard main character type", "Dtritus")
+FINI_GVAR_STRING(Fini_GVar_GuaranteedChars, &GVar_GuaranteedChars)
+INIT_GVAR_STRING(Init_GVar_GuaranteedChars, Fini_GVar_GuaranteedChars, &GVar_GuaranteedChars, "GuaranteedChars", 0, "List of not Forbidden  characters in a map.\n ','+char1+','+char2+','", "")
+FINI_GVAR_STRING(Fini_GVar_PoliceTauntRace, &GVar_PoliceTauntRace)
+INIT_GVAR_STRING(Init_GVar_PoliceTauntRace, Fini_GVar_PoliceTauntRace, &GVar_PoliceTauntRace, "PoliceTauntRace", 0, "Taunting race (police, exept in GDB)", "Police")

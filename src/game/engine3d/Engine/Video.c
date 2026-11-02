@@ -24,6 +24,7 @@
 #include "scrap/snd.h"
 #include "scrap/video.h"
 #include "scrap/platform.h"
+#include "scrap/staticinit.h"
 
 
 #define VK_ESCAPE 0x1b
@@ -464,3 +465,6 @@ byte Video_Busy(void) {
 int Video_Result(void) {
 	return video.result;
 }
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_PlayVideoFX, &GVar_PlayVideoFX, "PlayVideoFX", 2, "Video playback image fx (1=MirrorY,2=MirrorX)", 0)

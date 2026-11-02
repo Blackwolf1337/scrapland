@@ -10,6 +10,7 @@
 #include "scrap/logic.h"
 #include "scrap/scorerhud.h"
 #include "scrap/scrapmain.h"
+#include "scrap/staticinit.h"
 
 /* the use action of the walk action set (3) */
 #define TALK_ACTION_SET 3
@@ -339,3 +340,10 @@ cGVar GVar_RemainTalkTime;
 
 cGVar GVar_FullTalkTime;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_TimeToAbortChatText, &GVar_TimeToAbortChatText, "TimeToAbortChatText", 0, "This time must be keeped press the action button to abort the current chat.", 0.5f)
+INIT_GVAR_FLOAT(Init_GVar_MaxTalkLineSizePix, &GVar_MaxTalkLineSizePix, "MaxTalkLineSizePix", 0, "Size at chat window with the text....", 300.0f)
+INIT_GVAR_FLOAT(Init_GVar_RemainTalkTime, &GVar_RemainTalkTime, "RemainTalkTime", 0, "Time remain to dispear the tex showed...", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_FullTalkTime, &GVar_FullTalkTime, "FullTalkTime", 0, "Time remain to dispear the tex showed...", 0.0f)
+FINI_CALL(Fini_cPy_Function_TalkCallback, &g_TalkCallback, cPy_Function_dtor)
+INIT_OBJECT(Init_cPy_Function_TalkCallback, Fini_cPy_Function_TalkCallback, &g_TalkCallback, cPy_Function_ctor)

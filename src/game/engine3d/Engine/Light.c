@@ -16,6 +16,7 @@
 #include "scrap/render.h"
 #include "scrap/groundportal.h"
 #include "scrap/utild3d.h"
+#include "scrap/staticinit.h"
 
 
 extern const IObject3DVtbl CLight_vftable;
@@ -842,3 +843,28 @@ const IObject3DVtbl CLight_vftable = {
 	.Write = CLight_Write,
 	.Read = CLight_Read,
 };
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_ShowLights, &GVar_R_ShowLights, "R_ShowLights", 0, "Show lights (0/1)", 0)
+INIT_GVAR_FLOAT(Init_GVar_R_LightAtten, &GVar_R_LightAtten, "R_LightAtten", 0, "Vertex lighting atten. factor (def. 5.0)", 5.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_LightMult, &GVar_R_LightMult, "R_LightMult", 0, "Vertex lighting multiplier (def. 1.0)", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_LightGamma, &GVar_R_LightGamma, "R_LightGamma", 0, "Vertex lighting gamma (def. 1.0)", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_LightDesat, &GVar_R_LightDesat, "R_LightDesat", 0, "Vertex lighting desaturation (def. 0.0)", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_LightAmbient, &GVar_R_LightAmbient, "R_LightAmbient", 0, "Vertex lighting ambient amount (def. 0.0)", 0.0f)
+INIT_GVAR_INT(Init_GVar_R_LightSort, &GVar_R_LightSort, "R_LightSort", 0, "Max. sorted lights (0..16)", 12)
+INIT_GVAR_FLOAT(Init_GVar_R_LightSortI, &GVar_R_LightSortI, "R_LightSortI", 0, "Light sorting intensity weight (def. 1.0)", 1.0f)
+INIT_GVAR_INT(Init_GVar_R_SpotlightAng, &GVar_R_SpotlightAng, "R_SpotlightAng", 0, "Discard spotlights by falloff angle (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_LightTarget, &GVar_R_LightTarget, "R_LightTarget", 0, "Use target nodes (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_LightDefer, &GVar_R_LightDefer, "R_LightDefer", 0, "Use deferred light activation (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_LightTrace, &GVar_R_LightTrace, "R_LightTrace", 0, "Use model to light raytracing (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_R_LightEnaD3D, &GVar_R_LightEnaD3D, "R_LightEnaD3D", 0, "Use light enable cache (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_LightSector, &GVar_R_LightSector, "R_LightSector", 0, "Use light sector (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_LightAtten2, &GVar_R_LightAtten2, "R_LightAtten2", 0, "Use alternate attenuation mode (0/1)", 0)
+INIT_GVAR_FLOAT(Init_GVar_R_LightMult2, &GVar_R_LightMult2, "R_LightMult2", 0, "Vertex lighting multiplier in atten2 mode (def. 1.0)", 1.0f)
+INIT_GVAR_INT(Init_GVar_MonitorAmbient, &GVar_MonitorAmbient, "MonitorAmbient", 0, "Ambient light for EnableMonitorLights (def. 0)", 0)
+INIT_GVAR_INT(Init_GVar_R_SpotlightAdjust, &GVar_R_SpotlightAdjust, "R_SpotlightAdjust", 0, "use spotlight specific atten/clamp/mult", 1)
+INIT_GVAR_FLOAT(Init_GVar_R_SpotlightAtten, &GVar_R_SpotlightAtten, "R_SpotlightAtten", 0, "Vertex lighting atten. factor (def. 5.0)", 15.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_SpotlightClamp, &GVar_R_SpotlightClamp, "R_SpotlightClamp", 0, "Vertex lighting clamp (def. 0.0)", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_SpotlightMult, &GVar_R_SpotlightMult, "R_SpotlightMult", 0, "Vertex lighting multiplier (def. 1.0)", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_R_LightMultName, &GVar_R_LightMultName)
+INIT_GVAR_STRING(Init_GVar_R_LightMultName, Fini_GVar_R_LightMultName, &GVar_R_LightMultName, "R_LightMultName", 0, "Use lightmult only in specified lights (ie: Omni02*)", "")

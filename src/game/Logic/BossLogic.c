@@ -6,6 +6,7 @@
 #include "scrap/chartype.h"
 #include "scrap/modmove.h"
 #include "scrap/objentity.h"
+#include "scrap/staticinit.h"
 
 /* the AI slot the boss asks */
 typedef struct cLogicBossAIVtbl {
@@ -187,3 +188,8 @@ cGVar GVar_BossWorkPlace;
 
 cGVar GVar_BossWorkingTime;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_BossWorkPlace, &GVar_BossWorkPlace)
+INIT_GVAR_STRING(Init_GVar_BossWorkPlace, Fini_GVar_BossWorkPlace, &GVar_BossWorkPlace, "BossWorkPlace", 0, "Boss' work place dummy name", "")
+INIT_GVAR_FLOAT(Init_GVar_BossWorkingTime, &GVar_BossWorkingTime, "BossWorkingTime", 0, "Boss working time", 60.0f)
+INIT_GVAR_FLOAT(Init_GVar_BossWalkingTime, &GVar_BossWalkingTime, "BossWalkingTime", 0, "Boss walking time", 30.0f)

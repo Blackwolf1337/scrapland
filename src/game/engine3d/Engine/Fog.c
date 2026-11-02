@@ -8,6 +8,7 @@
 #include "scrap/e3dutil.h"
 #include "scrap/e3dworld.h"
 #include "scrap/misc.h"
+#include "scrap/staticinit.h"
 
 #define D3DRS_FOGCOLOR 34
 #define D3DRS_FOGTABLEMODE 35
@@ -141,3 +142,8 @@ cGVar GVar_R_FogAbsDist;
 
 cGVar GVar_R_FogColor;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_FogEnable, &GVar_R_FogEnable, "R_FogEnable", 2, "Allow/disable fog (def. 1)", 1)
+INIT_GVAR_INT(Init_GVar_R_FogColor, &GVar_R_FogColor, "R_FogColor", 0, "Force fog color (def. -1)", -1)
+INIT_GVAR_FLOAT(Init_GVar_R_FogDensity, &GVar_R_FogDensity, "R_FogDensity", 0, "Force fog density (def. 0)", 0.0f)
+INIT_GVAR_INT(Init_GVar_R_FogAbsDist, &GVar_R_FogAbsDist, "R_FogAbsDist", 0, "Fog range is in world coords (0/1)", 0)

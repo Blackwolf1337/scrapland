@@ -16,6 +16,7 @@
 #include "scrap/fxcharactions.h"
 #include "scrap/fxvehicle.h"
 #include "scrap/fxweapons.h"
+#include "scrap/staticinit.h"
 
 /* defined further down or in another file without a header */
 void *cObjElementFXCharacterConversion_ctor(void *self);
@@ -511,3 +512,6 @@ const cObjElementFXVtbl cObjElementAbstract_vftable = {
 	.Start = (void *)crt_purecall,
 	.Reset = (void *)crt_purecall,
 };
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_O_Show, &GVar_O_Show, "O_Show", 0, "Show Object Pool debug info on screen", 0)

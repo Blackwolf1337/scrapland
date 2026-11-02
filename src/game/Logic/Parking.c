@@ -15,6 +15,7 @@
 #include "scrap/logic.h"
 #include "scrap/world.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 
 cGVar GVar_ParkingCheckRadius;
@@ -309,3 +310,12 @@ void Parking_Update(cParking *self, float dt) {
 	}
 	self->timer = (float)(Weap_Rand01() + 1.0);
 }
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_ParkingCharCheckDistance, &GVar_ParkingCharCheckDistance, "ParkingCharCheckDistance", 0, "At this distance, the parking will be check.", 20000.0f)
+INIT_GVAR_FLOAT(Init_GVar_ParkingVehicleCheckDistance, &GVar_ParkingVehicleCheckDistance, "ParkingVehiCheckDistance", 0, "At this distance, the parking will be check.", 100000.0f)
+INIT_GVAR_FLOAT(Init_GVar_ParkingCheckRadius, &GVar_ParkingCheckRadius, "ParkingCheckRadius", 0, "Spere to check the position of the item or ship.", 200.0f)
+FINI_CALL(Fini_GVar_OnParkingOccupied, &GVar_OnParkingOccupied.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnParkingOccupied, Fini_GVar_OnParkingOccupied, &GVar_OnParkingOccupied, "OnParkingOccupied", 0, "Callback when a parking zone is occupied.", "")
+FINI_CALL(Fini_GVar_OnParkedOut, &GVar_OnParkedOut.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnParkedOut, Fini_GVar_OnParkedOut, &GVar_OnParkedOut, "OnParkedOut", 0, "Callback when a occupied parking zone is free.", "")

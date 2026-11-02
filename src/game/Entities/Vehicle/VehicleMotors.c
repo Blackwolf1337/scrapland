@@ -10,6 +10,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/vehiclemotors.h"
 #include "scrap/weaps2.h"
+#include "scrap/staticinit.h"
 
 
 /* "DC_EngineA_01": the slot of motor (A..D) and side (1, 2) */
@@ -953,3 +954,18 @@ cGVar GVar_FXEngineGlowDistFadeMult;
 
 cGVar GVar_FXEngineGlowDistFadeTo;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_EnginePathFmt, &GVar_EnginePathFmt)
+INIT_GVAR_STRING(Init_GVar_EnginePathFmt, Fini_GVar_EnginePathFmt, &GVar_EnginePathFmt, "EnginePathFmt", 0, "The full path of the Vehicle Engines.", "Models/Vehicles/Engines/%s/%s.m3d")
+INIT_GVAR_FLOAT(Init_GVar_FXEngineTrailHideTime, &GVar_FXEngineTrailHideTime, "FXEngineTrailHideTime", 0, "Time to Hide the trail of a Hidden Engine", 5.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXEngineGlowDistFadeMult, &GVar_FXEngineGlowDistFadeMult, "FXEngineGlowDistFadeMult", 0, "FX Engine Distance to Glow Fade Mult", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXEngineGlowDistFadeMid, &GVar_FXEngineGlowDistFadeMid, "FXEngineGlowDistFadeMid", 0, "FX Engine Distance to Glow Fade Middle", 6000.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXEngineGlowDistFadeTo, &GVar_FXEngineGlowDistFadeTo, "FXEngineGlowDistFadeTo", 0, "FX Engine Distance to Glow Fade To", 7000.0f)
+FINI_GVAR_STRING(Fini_GVar_FXVehicleDeathTrailFile, &GVar_FXVehicleDeathTrailFile)
+INIT_GVAR_STRING(Init_GVar_FXVehicleDeathTrailFile, Fini_GVar_FXVehicleDeathTrailFile, &GVar_FXVehicleDeathTrailFile, "FXVehicleDeathTrailFile", 0, "Default Model for Remaining Vehicle Trails after Death", "Models/GFX/VehicleDeathTrail.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXMotorSmokeFile, &GVar_FXMotorSmokeFile)
+INIT_GVAR_STRING(Init_GVar_FXMotorSmokeFile, Fini_GVar_FXMotorSmokeFile, &GVar_FXMotorSmokeFile, "FXMotorSmokeFile", 0, "Default Model for Motor Smoke Effect", "Models/GFX/MotorSmoke.M3D")
+INIT_GVAR_INT(Init_GVar_FXMotorHaze, &GVar_FXMotorHaze, "FXMotorCalima", 0, "Motor Calima DUDV Deformation Effect", 1)
+FINI_GVAR_STRING(Fini_GVar_FXMotorHazeFile, &GVar_FXMotorHazeFile)
+INIT_GVAR_STRING(Init_GVar_FXMotorHazeFile, Fini_GVar_FXMotorHazeFile, &GVar_FXMotorHazeFile, "FXMotorCalimaFile", 0, "Default Model for Motor Calima Effect", "Models/GFX/MotorCalima.M3D")
+INIT_GVAR_FLOAT(Init_GVar_FXMotorHazeOffset, &GVar_FXMotorHazeOffset, "FXMotorCalimaOffset", 0, "FX Motor Calima Offset", -95.0f)

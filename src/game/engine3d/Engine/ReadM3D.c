@@ -25,6 +25,7 @@
 #include "scrap/particlesystem.h"
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
+#include "scrap/staticinit.h"
 
 /* the constructors and destructors of the reader data, passed to the new[] and delete[] loops of the CRT */
 #define M3DTABLE_CTOR 0x2bba90
@@ -3420,3 +3421,12 @@ cGVar GVar_CM3_CheckTime;
 
 cGVar GVar_SM3_UseScenes;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_OptimizeNodes, &GVar_OptimizeNodes, "OptimizeNodes", 0, "0=none, 1=delete unused nodes, 2=colapse to bip nodes, 4=AniMask, 7=all", 7)
+INIT_GVAR_INT(Init_GVar_CM3_UseScenes, &GVar_CM3_UseScenes, "CM3_UseScenes", 0, "Read/Write CM3 files (0/1/2)", 1)
+INIT_GVAR_INT(Init_GVar_CM3_CheckTime, &GVar_CM3_CheckTime, "CM3_CheckTime", 0, "Check filetime of CM3 files (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_CM3_DeleteM3D, &GVar_CM3_DeleteM3D, "CM3_DeleteM3D", 0, "Delete M3D file after CM3 creation (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_SM3_UseScenes, &GVar_SM3_UseScenes, "SM3_UseScenes", 0, "Read/Write SM3 files (0/1/2)", 1)
+INIT_GVAR_INT(Init_GVar_SM3_CheckTime, &GVar_SM3_CheckTime, "SM3_CheckTime", 0, "Check filetime of SM3 files (0/1)", 1)
+FINI_GVAR_STRING(Fini_GVar_SharedTexuresPath, &GVar_SharedTexuresPath)
+INIT_GVAR_STRING(Init_GVar_SharedTexuresPath, Fini_GVar_SharedTexuresPath, &GVar_SharedTexuresPath, "SharedTexuresPath", 0, "Default path for shared textures ($name.bmp)", "2D/Textures/Shared/")

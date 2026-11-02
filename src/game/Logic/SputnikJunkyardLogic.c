@@ -10,6 +10,7 @@
 #include "scrap/chartype.h"
 #include "scrap/fxmisc.h"
 #include "scrap/logic.h"
+#include "scrap/staticinit.h"
 
 extern const cGenCharLocalLogicVtbl cSputnikJunkyardLocalLogic_vftable;
 #define CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE (&cSputnikJunkyardLocalLogic_vftable.base)
@@ -177,3 +178,9 @@ const cGenCharLocalLogicVtbl cSputnikJunkyardLocalLogic_vftable = {
 	.GoTo = cGenCharLocalLogic_GoTo,
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };
+
+cPy_NativeFunc NativeFunc_EndOfLaugh;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_SputnikJunyardTimeToPissPlayer, &GVar_SputnikJunyardTimeToPissPlayer, "SputnikJunyardTimeToPissPlayer", 0, "SputnikJunyard time to piss player", 60.0f)
+INIT_NATIVE_FUNC(Init_NativeFunc_EndOfLaugh, &NativeFunc_EndOfLaugh, "EndOfLaugh", Sputnik_LaughDone)

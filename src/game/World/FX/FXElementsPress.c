@@ -10,6 +10,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/scrap.h"
 #include "scrap/sound.h"
+#include "scrap/staticinit.h"
 
 #define PRESS_NAME_SKIP 11			/* "DM_Element_" before the name of the element in the dummy */
 #define CGAMETRAIL_CTOR 0x21ddb0
@@ -1032,3 +1033,9 @@ const cMapElementVtbl cFXElementsMentalControllerMainFX_vftable = {
 
 cGVar GVar_FXElementsMentalControllerMaxDist;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_FXElementsMentalControllerMaxDist, &GVar_FXElementsMentalControllerMaxDist, "FXElementsMentalControllerMaxDist", 0, "Maximun Distance to show the Elements Mental Controller Effect", 5000.0f)
+FINI_GVAR_STRING(Fini_GVar_FXElementsMentalControllerDamageSound, &GVar_FXElementsMentalControllerDamageSound)
+INIT_GVAR_STRING(Init_GVar_FXElementsMentalControllerDamageSound, Fini_GVar_FXElementsMentalControllerDamageSound, &GVar_FXElementsMentalControllerDamageSound, "FXElementsMentalControllerDamageSound", 0, "MentalController Damage Lighting sound name", "FXChispas")
+INIT_GVAR_FLOAT(Init_GVar_FXElementsMentalControllerDamageSoundVol, &GVar_FXElementsMentalControllerDamageSoundVol, "FXElementsMentalControllerDamageSoundVol", 0, "MentalController Damage Lighting sound volume", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXElementsMentalControllerDamageFXMaxDist, &GVar_FXElementsMentalControllerDamageFXMaxDist, "FXElementsMentalControllerDamageFXMaxDist", 0, "Maximun Distance to show the Elements Mental Controller Damage Effect", 5000.0f)

@@ -15,6 +15,7 @@
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
+#include "scrap/staticinit.h"
 
 
 int crt_chmod(const char *path, int mode);
@@ -1593,3 +1594,8 @@ cGVar GVar_AltMinTestWalkAI;
 
 cGVar GVar_ShowInfoRegAI;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_AltMinTestWalkAI, &GVar_AltMinTestWalkAI, "AltMinTestWalkAI", 4, "Alt. min. to test walk.\n", 25.0f)
+INIT_GVAR_INT(Init_GVar_ShowNodes2DAI, &GVar_ShowNodes2DAI, "ShowNodes2DAI", 4, "0 = No Show, 1 = Show Regions, 2 = Show Portals, 3 = Show Link's Portals, 4 = Show Portals + Links.", 0)
+INIT_GVAR_FLOAT(Init_GVar_AltPerpFloorAI, &GVar_AltPerpFloorAI, "AltPerpFloorAI", 4, "Alt. máx. to get point perp.\n", 20000.0f)
+INIT_GVAR_INT(Init_GVar_ShowInfoRegAI, &GVar_ShowInfoRegAI, "ShowInfoRegAI", 4, "Show info region when creation graph.\n", -1)

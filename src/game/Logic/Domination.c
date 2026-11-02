@@ -11,6 +11,7 @@
 #include "scrap/logic.h"
 #include "scrap/nodestraffic.h"
 #include "scrap/scrapcollision.h"
+#include "scrap/staticinit.h"
 
 int g_DominNumZones;
 
@@ -341,3 +342,12 @@ cGVar GVar_DominFightingFreezeCadenceShoot;
 
 cGVar GVar_DominMinRangeDist;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_MinDominDistChase, &GVar_MinDominDistChase, "MinDominDistChase", 4, "Min distance to zone objective in Domination mode.\n", 1500.0f)
+INIT_GVAR_FLOAT(Init_GVar_MaxDominDistChase, &GVar_MaxDominDistChase, "MaxDominDistChase", 4, "Max distance to zone objective in Domination mode.\n", 5000.0f)
+INIT_GVAR_FLOAT(Init_GVar_DominMaxRangeDist, &GVar_DominMaxRangeDist, "DominMaxRangeDist", 0, "Domination max range dist", 100000.0f)
+INIT_GVAR_FLOAT(Init_GVar_DominMinRangeDist, &GVar_DominMinRangeDist, "DominMinRangeDist", 0, "Domination min range dist", 10000.0f)
+INIT_GVAR_FLOAT(Init_GVar_DominWithinRangeDist, &GVar_DominWithinRangeDist, "DominWithinRangeDist", 0, "Domination within range dist", 20000.0f)
+INIT_GVAR_INT(Init_GVar_DominFightingFreezeCadenceShoot, &GVar_DominFightingFreezeCadenceShoot, "DominFightingFreezeCadenceShoot", 0, "Domin fighting freeze cadence shoot", 2)
+INIT_GVAR_INT(Init_GVar_DominFightingFreezeControlAim, &GVar_DominFightingFreezeControlAim, "DominFightingFreezeControlAim", 0, "Domin fighting freeze control aim", 6)
+INIT_CALL(Init_DominBatonPos, &g_DominBatonPos, Stub_ReturnSelf)

@@ -9,6 +9,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapworld.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 #define NEWS_FOV 0.87266463f				/* 50 degrees */
 extern const double g_HeadRandRange;
@@ -306,3 +307,22 @@ cGVar GVar_NewsPanelMove;
 
 cGVar GVar_NewsPanelAspect;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_NewsPanelActive, &GVar_NewsPanelActive, "NewsPanelActive", 0, "render the News Panel in the texture.", 0)
+INIT_GVAR_INT(Init_GVar_NewsPanelShowHead, &GVar_NewsPanelShowHead, "NewsPanelShowHead", 0, "render the News Panel Head.", 0)
+INIT_GVAR_FLOAT(Init_GVar_NewsPanelAspect, &GVar_NewsPanelAspect, "NewsPanelAspect", 0, "News Panel aspect ratio", 1.33f)
+FINI_GVAR_STRING(Fini_GVar_NewsLogoBmp, &GVar_NewsLogoBmp)
+INIT_GVAR_STRING(Init_GVar_NewsLogoBmp, Fini_GVar_NewsLogoBmp, &GVar_NewsLogoBmp, "NewsLogoBmp", 0, "render the News Logo", "2D/News/LogoNews.bmp")
+FINI_GVAR_STRING(Fini_GVar_BackNewsBmp, &GVar_BackNewsBmp)
+INIT_GVAR_STRING(Init_GVar_BackNewsBmp, Fini_GVar_BackNewsBmp, &GVar_BackNewsBmp, "BackNewsBmp", 0, "render the News Background", "2D/News/BackNews.bmp")
+FINI_GVAR_STRING(Fini_GVar_NewsHead, &GVar_NewsHead)
+INIT_GVAR_STRING(Init_GVar_NewsHead, Fini_GVar_NewsHead, &GVar_NewsHead, "NewsHead", 0, "Render the News Head", "Betty")
+INIT_GVAR_FLOAT(Init_GVar_NewsPanelDistance, &GVar_NewsPanelDistance, "NewsPanelDistance", 0, "render the News Panel Head distance.", 70.0f)
+INIT_GVAR_FLOAT(Init_GVar_NewsPanelDisplacement, &GVar_NewsPanelDisplacement, "NewsPanelDisplacement", 0, "render the News Panel Head displacement.", 2.0f)
+INIT_GVAR_FLOAT(Init_GVar_NewsPanelMove, &GVar_NewsPanelMove, "NewsPanelMove", 0, "render the News Panel Head movement.", 12.0f)
+INIT_GVAR_FLOAT(Init_GVar_NewsPanelX, &GVar_NewsPanelX, "NewsPanelX", 0, "render the News Logo Pos.", 300.0f)
+INIT_GVAR_FLOAT(Init_GVar_NewsPanelY, &GVar_NewsPanelY, "NewsPanelY", 0, "render the News Logo Pos", 20.0f)
+INIT_GVAR_FLOAT(Init_GVar_NewsPanelW, &GVar_NewsPanelW, "NewsPanelW", 0, "render the News Logo Size", 200.0f)
+INIT_GVAR_FLOAT(Init_GVar_NewsPanelH, &GVar_NewsPanelH, "NewsPanelH", 0, "render the News Logo Size", 133.0f)
+INIT_GVAR_FLOAT(Init_GVar_NewsPanelOpenSpeed, &GVar_NewsPanelOpenSpeed, "NewsPanelOpenSpeed", 0, "Speed of init of scene", 3.0f)
+INIT_GVAR_FLOAT(Init_GVar_NewsPanelCloseSpeed, &GVar_NewsPanelCloseSpeed, "NewsPanelCloseSpeed", 0, "Speed of close of scene", 4.0f)

@@ -8,6 +8,7 @@
 #include "scrap/crt.h"
 #include "scrap/fxmisc.h"
 #include "scrap/walkcharentity.h"
+#include "scrap/staticinit.h"
 
 #define CAIMESSENGER_SIZE sizeof(cAIMessenger)
 
@@ -208,3 +209,8 @@ cGVar GVar_TimeShootMessengerAI;
 
 cGVar GVar_DistMaxShootMessengerAI;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_ShootMessengerAI, &GVar_ShootMessengerAI, "ShootMessengerAI", 4, "Factor shoot Messenger.\n", 3)
+INIT_GVAR_FLOAT(Init_GVar_OffsetAngShootMessengerAI, &GVar_OffsetAngShootMessengerAI, "OffsetAngShootMessengerAI", 4, "Offset angle to shoot the Messenger.\n", 1.5707964f)
+INIT_GVAR_FLOAT(Init_GVar_TimeShootMessengerAI, &GVar_TimeShootMessengerAI, "TimeShootMessengerAI", 4, "Time shooting Messenger.\n", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_DistMaxShootMessengerAI, &GVar_DistMaxShootMessengerAI, "DistMaxShootMessengerAI", 4, "Dist. Max. shooting Messenger.\n", 4000.0f)

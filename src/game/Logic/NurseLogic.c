@@ -9,6 +9,7 @@
 
 #include "scrap/chartype.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 /* defined further down or in another file without a header */
 void *Nurses_MakeLogic(cEntity *e);
@@ -284,3 +285,9 @@ cGVar GVar_NurseAlertSpeed;
 
 cGVar GVar_NurseRelaxSpeed;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_NurseRelaxSpeed, &GVar_NurseRelaxSpeed, "NurseRelaxSpeed", 0, "Nurse speed (Relax)", 0.3f)
+INIT_GVAR_FLOAT(Init_GVar_NurseAlertSpeed, &GVar_NurseAlertSpeed, "NurseAlertSpeed", 0, "Nurse speed (Alarm)", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_NurseEscapeTime, &GVar_NurseEscapeTime, "NurseEscapeTime", 0, "Nurse Escape Time", 8.0f)
+INIT_GVAR_FLOAT(Init_GVar_NurseBankerDetect, &GVar_NurseBankerDetect, "NurseBankerDetect", 0, "percentage of times when the Nurse escapes from the banker", 30.0f)
+INIT_GVAR_FLOAT(Init_GVar_NursePoliceRefuse, &GVar_NursePoliceRefuse, "NursePoliceRefuse", 0, "percentage of times when the Nurse escapes from the police", 50.0f)

@@ -13,6 +13,7 @@
 #include "scrap/e3dworld.h"
 #include "scrap/particlesystem.h"
 #include "scrap/misc.h"
+#include "scrap/staticinit.h"
 
 #define PARTICLESYSTEM_DEFAULT_COLOR 0xffffff
 
@@ -1042,3 +1043,14 @@ cGVar GVar_R_ParticleRate;
 
 cGVar GVar_R_ParticleLife;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_Particles, &GVar_R_Particles, "R_Particles", 0, "Transform & Show Particles (0/1)", 1)
+INIT_GVAR_FLOAT(Init_GVar_R_ParticleVelScale, &GVar_R_ParticleVelScale, "R_ParticleVelScale", 0, "Particle velocity scale 1", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_ParticleLife, &GVar_R_ParticleLife, "R_ParticleLife", 0, "Particle life", 1.0f)
+INIT_GVAR_INT(Init_GVar_R_ParticleRate, &GVar_R_ParticleRate, "R_ParticleRate", 0, "Particle rate", 0)
+INIT_GVAR_FLOAT(Init_GVar_R_ParticleScale, &GVar_R_ParticleScale, "R_ParticleScale", 0, "Particle scale", 1.0f)
+INIT_GVAR_INT(Init_GVar_R_ParticleFlags, &GVar_R_ParticleFlags, "R_ParticleFlags", 0, "Particle flags", -1)
+INIT_GVAR_INT(Init_GVar_R_ParticleSector, &GVar_R_ParticleSector, "R_ParticleSector", 0, "Use sector visibility", 1)
+INIT_GVAR_INT(Init_GVar_R_ParticlesCount, &GVar_R_ParticlesCount, "R_ParticlesCount", 0, "Particles Count", 0)
+FINI_CALL(Fini_CIniFile_ParticleSystemIni, &g_ParticleSystemIni, CIniFile_dtor)
+INIT_OBJECT(Init_CIniFile_ParticleSystemIni, Fini_CIniFile_ParticleSystemIni, &g_ParticleSystemIni, CIniFile_ctor)

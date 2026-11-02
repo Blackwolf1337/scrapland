@@ -6,6 +6,7 @@
 #include "scrap/pyfunction.h"
 #include "scrap/pymempool.h"
 #include "scrap/scrap.h"
+#include "scrap/staticinit.h"
 
 #include <marshal.h>
 
@@ -126,3 +127,10 @@ void Pack_PreloadLibrary(const char *name, const char *file) {
 	}
 	cFilePack_dtor(&f);
 }
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_VECTOR(Fini_cStaticBuffer_PyStaticBuffer, cStaticBuffer_PyStaticBuffer, sizeof(cStaticBuffer), 2, cStaticBuffer_dtor)
+INIT_VECTOR(Init_cStaticBuffer_PyStaticBuffer, Fini_cStaticBuffer_PyStaticBuffer, cStaticBuffer_PyStaticBuffer, sizeof(cStaticBuffer), 2, cStaticBuffer_ctor, cStaticBuffer_dtor)
+FINI_GVAR_STRING(Fini_GVar_PythonExecute, &GVar_PythonExecute)
+INIT_GVAR_STRING(Init_GVar_PythonExecute, Fini_GVar_PythonExecute, &GVar_PythonExecute, "PythonExecute", 4, "This will run a pyhon command.", "print 'No PythonExecute'")
+INIT_GVAR_INT(Init_GVar_Viewer, &GVar_Viewer, "Viewer", 4, " 0(default) : Normal game,  1 : Init Viewer", 0)

@@ -9,6 +9,7 @@
 #include "scrap/primitive.h"
 #include "scrap/scorer.h"
 #include "scrap/vehicleattack.h"
+#include "scrap/staticinit.h"
 
 static inline cFollowCamEntity *Betty_Cam(cEntity *v) {
 	return (cFollowCamEntity *)WChar(v)->wl.obj.cam;
@@ -254,3 +255,30 @@ cGVar GVar_BettyHitTimeSpeed;
 
 cGVar GVar_BettyHitPosZ;
 
+cPy_NativeFunc NativeFunc_BettyActionPress;
+cPy_NativeFunc NativeFunc_BettyHitEvent;
+cPy_NativeFunc NativeFunc_BettyRestoreTime;
+cPy_NativeFunc NativeFunc_BettyEndEvent;
+cPy_NativeFunc NativeFunc_BettyCameraSet;
+cPy_NativeFunc NativeFunc_FXBettyAttack;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_BettyHitTimeSpeed, &GVar_BettyHitTimeSpeed, "BettyHitTimeSpeed", 0, "Betty Effect Time", 0.35f)
+INIT_GVAR_FLOAT(Init_GVar_BettyHitTimeFader, &GVar_BettyHitTimeFader, "BettyHitTimeFader", 0, "Betty Effect Time", 0.25f)
+INIT_GVAR_FLOAT(Init_GVar_BettyHitRadius, &GVar_BettyHitRadius, "BettyHitRadius", 0, "Betty Hit Radius", 1000.0f)
+INIT_GVAR_FLOAT(Init_GVar_BettyHitTopLimit, &GVar_BettyHitTopLimit, "BettyHitTopLimit", 0, "Betty Hit Top Limit (Y)", 300.0f)
+FINI_GVAR_STRING(Fini_GVar_FXBettyAttackFile, &GVar_FXBettyAttackFile)
+INIT_GVAR_STRING(Init_GVar_FXBettyAttackFile, Fini_GVar_FXBettyAttackFile, &GVar_FXBettyAttackFile, "FXBettyAttackFile", 0, "Default Model for Betty Attack Effect", "Models/GFX/Betty/Attack.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXBettyKillFile, &GVar_FXBettyKillFile)
+INIT_GVAR_STRING(Init_GVar_FXBettyKillFile, Fini_GVar_FXBettyKillFile, &GVar_FXBettyKillFile, "FXBettyKillFile", 0, "Default Model for Betty Kill Effect", "Models/GFX/Betty/Kill.M3D")
+INIT_GVAR_FLOAT(Init_GVar_BettyHitPosX, &GVar_BettyHitPosX, "BettyHitPosX", 0, "Betty Hit Displacement from center", 20.0f)
+INIT_GVAR_FLOAT(Init_GVar_BettyHitPosY, &GVar_BettyHitPosY, "BettyHitPosY", 0, "Betty Hit Displacement from center", -120.0f)
+INIT_GVAR_FLOAT(Init_GVar_BettyHitPosZ, &GVar_BettyHitPosZ, "BettyHitPosZ", 0, "Betty Hit Displacement from center", -65.0f)
+INIT_GVAR_FLOAT(Init_GVar_BettyVSpeed, &GVar_BettyVSpeed, "BettyVSpeed", 0, "Betty Speed Rotation (Vertical)", 1.1f)
+INIT_GVAR_FLOAT(Init_GVar_BettyHSpeed, &GVar_BettyHSpeed, "BettyHSpeed", 0, "Betty Speed Rotation (Horizontal)", 1.1f)
+INIT_NATIVE_FUNC(Init_NativeFunc_BettyActionPress, &NativeFunc_BettyActionPress, "BettyActionPress", ChType_BettyActionPress)
+INIT_NATIVE_FUNC(Init_NativeFunc_BettyHitEvent, &NativeFunc_BettyHitEvent, "BettyHitEvent", ChType_BettyHitEvent)
+INIT_NATIVE_FUNC(Init_NativeFunc_BettyRestoreTime, &NativeFunc_BettyRestoreTime, "BettyRestoreTime", ChType_BettyRestoreTime)
+INIT_NATIVE_FUNC(Init_NativeFunc_BettyEndEvent, &NativeFunc_BettyEndEvent, "BettyEndEvent", ChType_BettyEndEvent)
+INIT_NATIVE_FUNC(Init_NativeFunc_BettyCameraSet, &NativeFunc_BettyCameraSet, "BettyCameraSet", ChType_BettyCameraSet)
+INIT_NATIVE_FUNC(Init_NativeFunc_FXBettyAttack, &NativeFunc_FXBettyAttack, "FXBettyAttack", ChType_FXBettyAttack)

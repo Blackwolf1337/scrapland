@@ -10,6 +10,7 @@
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/render.h"
+#include "scrap/staticinit.h"
 
 #define RENDERLOCK_MAX 3
 #define RENDERLOCK_SIZE 4
@@ -226,3 +227,8 @@ box_t *Box_Set(box_t *self, const vec3_t *min, const vec3_t *max) {
 	self->max = *max;
 	return self;
 }
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_VideoLockMode, &GVar_R_VideoLockMode, "R_VideoLockMode", 2, "Video frame lock mode (0/1/2/3)", 2)
+INIT_GVAR_INT(Init_GVar_R_VideoLockBuf, &GVar_R_VideoLockBuf, "R_VideoLockBuf", 2, "Video frame lock buffers (1/2/3)", 1)
+INIT_GVAR_INT(Init_GVar_R_VideoLockShow, &GVar_R_VideoLockShow, "R_VideoLockShow", 0, "Video frame lock show quad", 0)

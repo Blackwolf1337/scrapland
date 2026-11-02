@@ -13,6 +13,7 @@
 #include "scrap/aicharcontrol.h"
 #include "scrap/crt.h"
 #include "scrap/fxmisc.h"
+#include "scrap/staticinit.h"
 
 /* ---- helpers ---- */
 
@@ -1469,3 +1470,12 @@ cGVar GVar_TimeStrafeUnderAttackSentinelAI;
 
 cGVar GVar_AngleStrafeUnderAttackSentinelAI;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_AngleStrafeUnderAttackBishopAI, &GVar_AngleStrafeUnderAttackBishopAI, "AngleStrafeUnderAttackBishopAI", 4, "Angle of the opponent to strafe under attack.\n", 1.5707964f)
+INIT_GVAR_FLOAT(Init_GVar_TimeStrafeUnderAttackBishopAI, &GVar_TimeStrafeUnderAttackBishopAI, "TimeStrafeUnderAttackBishopAI", 4, "Angle of the opponent to strafe under attack.\n", 3.0f)
+INIT_GVAR_FLOAT(Init_GVar_AngleStrafeUnderAttackGearAI, &GVar_AngleStrafeUnderAttackGearAI, "AngleStrafeUnderAttackGearAI", 4, "Angle of the opponent to strafe under attack.\n", 1.5707964f)
+INIT_GVAR_FLOAT(Init_GVar_TimeStrafeUnderAttackGearAI, &GVar_TimeStrafeUnderAttackGearAI, "TimeStrafeUnderAttackGearAI", 4, "Angle of the opponent to strafe under attack.\n", 3.0f)
+INIT_GVAR_FLOAT(Init_GVar_VelRotDynamicMessengerAI, &GVar_VelRotDynamicMessengerAI, "VelRotDinamicMessengerAI", 4, "Vel. Rot. Dinamic Messenger.\n", 3.0f)
+INIT_GVAR_FLOAT(Init_GVar_LimVelRotDynamicMessengerAI, &GVar_LimVelRotDynamicMessengerAI, "LimVelRotDinamicMessengerAI", 4, "Lim. Vel. Rot. Dinamic Messenger.\n", 0.3f)
+INIT_GVAR_FLOAT(Init_GVar_TimeStrafeUnderAttackSentinelAI, &GVar_TimeStrafeUnderAttackSentinelAI, "TimeStrafeUnderAttackSentinelAI", 4, "Angle of the opponent to strafe under attack sentinel.\n", 2.0f)
+INIT_GVAR_FLOAT(Init_GVar_AngleStrafeUnderAttackSentinelAI, &GVar_AngleStrafeUnderAttackSentinelAI, "AngleStrafeUnderAttackSentinelAI", 4, "Angle of the opponent to strafe under attack.\n", 1.5707964f)

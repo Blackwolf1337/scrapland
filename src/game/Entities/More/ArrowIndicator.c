@@ -10,6 +10,7 @@
 #include "scrap/objentity.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/withlifeentity.h"
+#include "scrap/staticinit.h"
 
 #define ARROW_POOL_MAX 5			/* more free models are deleted */
 #define ARROW_FADE_SPEED 4.0f
@@ -847,3 +848,15 @@ cGVar GVar_FXArrowIndicatorFlash_DistGrow;
 
 cGVar GVar_FXArrowIndicatorFlash_SizeMin;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_ArrowUseFile, &GVar_ArrowUseFile)
+INIT_GVAR_STRING(Init_GVar_ArrowUseFile, Fini_GVar_ArrowUseFile, &GVar_ArrowUseFile, "ArrowUseFile", 0, "This file is the floating use arrow.", "Models/Misc/Action/Action")
+FINI_GVAR_STRING(Fini_GVar_ArrowMissionFile, &GVar_ArrowMissionFile)
+INIT_GVAR_STRING(Init_GVar_ArrowMissionFile, Fini_GVar_ArrowMissionFile, &GVar_ArrowMissionFile, "ArrowMissionFile", 0, "This file is the floating arrow.", "Models/Misc/MMission/MMission")
+FINI_GVAR_STRING(Fini_GVar_ArrowTargetFile, &GVar_ArrowTargetFile)
+INIT_GVAR_STRING(Init_GVar_ArrowTargetFile, Fini_GVar_ArrowTargetFile, &GVar_ArrowTargetFile, "ArrowTargetFile", 0, "This file is the floating arrow.", "Models/Misc/SMission/SMission")
+INIT_GVAR_FLOAT(Init_GVar_ArrowViewRadius, &GVar_ArrowViewRadius, "ArrowViewRadius", 0, "Indicates the radius between entities to view the indicator", 500.0f)
+INIT_GVAR_FLOAT(Init_GVar_ArrowActiveHorizontal, &GVar_ArrowActiveHorizontal, "ArrowActiveHorizontal", 0, "The Horizontal distance betweem the both spheres", 100.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXArrowIndicatorFlash_DistGrow, &GVar_FXArrowIndicatorFlash_DistGrow, "FXArrowIndicatorFlash_DistGrow", 0, "Arrow Indicator Flash FX Distance for Grow", 6500.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXArrowIndicatorFlash_SizeMin, &GVar_FXArrowIndicatorFlash_SizeMin, "FXArrowIndicatorFlash_SizeMin", 0, "Arrow Indicator Flash FX Min Size (Mult)", 2.5f)
+INIT_GVAR_FLOAT(Init_GVar_FXArrowIndicatorFlash_SizeMax, &GVar_FXArrowIndicatorFlash_SizeMax, "FXArrowIndicatorFlash_SizeMax", 0, "Arrow Indicator Flash FX Max Size (Mult)", 6.0f)

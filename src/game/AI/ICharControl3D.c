@@ -10,6 +10,7 @@
 #include "scrap/fxelements.h"
 #include "scrap/fxmisc.h"
 #include "scrap/scrapcollision.h"
+#include "scrap/staticinit.h"
 
 static inline float AICC3D_Len(float x, float y, float z) {
 	return (float)__builtin_sqrt((double)(y * y + x * x + z * z));
@@ -1020,3 +1021,5 @@ const cAICharControl3DVtbl cAICharControl3D_vftable = {
 
 cGVar GVar_ShowShirkAI;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_ShowShirkAI, &GVar_ShowShirkAI, "ShowShirkAI", 4, "Show info shirk.\n", 0)

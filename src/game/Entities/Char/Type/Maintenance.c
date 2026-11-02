@@ -5,6 +5,7 @@
 #include "scrap/chartype.h"
 #include "scrap/fxchar.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 /* params: the robot, the ship, the time of the effect */
 void ChType_FXMaintenanceWork(cAbstractFile *params) {
@@ -43,3 +44,9 @@ byte cAIChar_TestFlags(const void *self) {
 
 cGVar GVar_FXMaintenanceWorkFile;
 
+cPy_NativeFunc NativeFunc_FXMaintenanceWork;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_FXMaintenanceWorkFile, &GVar_FXMaintenanceWorkFile)
+INIT_GVAR_STRING(Init_GVar_FXMaintenanceWorkFile, Fini_GVar_FXMaintenanceWorkFile, &GVar_FXMaintenanceWorkFile, "FXMaintenanceWorkFile", 0, "Default Model for Maintenance Robot Work Effects", "Models/GFX/Maintenance/Work.M3D")
+INIT_NATIVE_FUNC(Init_NativeFunc_FXMaintenanceWork, &NativeFunc_FXMaintenanceWork, "FXMaintenanceWork", ChType_FXMaintenanceWork)

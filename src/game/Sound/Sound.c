@@ -9,6 +9,7 @@
 #include "scrap/musicfmod.h"
 #include "scrap/scrap.h"
 #include "scrap/sound.h"
+#include "scrap/staticinit.h"
 
 CSoundSys *g_pSound;
 
@@ -568,3 +569,9 @@ cGVar GVar_SoundDistAttenuation;
 
 cGVar GVar_SoundAutoplayVolume;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_SoundAutoplayVolume, &GVar_SoundAutoplayVolume, "SoundAutoplayVolume", 0, "Sound autoplay volume (dB)\n", -60.0f)
+INIT_GVAR_FLOAT(Init_GVar_SoundDopplerLevel, &GVar_SoundDopplerLevel, "SoundDopplerLevel", 0, "Sound doppler effect level", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_SoundDistAttenuation, &GVar_SoundDistAttenuation, "SoundDistAttenuation", 0, "Sound distance attenuation factor", 0.5f)
+INIT_GVAR_FLOAT(Init_GVar_SoundPanningFactor, &GVar_SoundPanningFactor, "SoundPanningFactor", 0, "Sound panning factor (dB)", 12.0f)
+INIT_GVAR_INT(Init_GVar_SoundShowSetMode, &GVar_SoundShowSetMode, "SoundShowSetMode", 0, "Sound show SetMode info", 0)

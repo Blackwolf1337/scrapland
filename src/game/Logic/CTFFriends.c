@@ -6,6 +6,7 @@
  */
 #include "scrap/chartype.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/staticinit.h"
 
 /* defined further down or in another file without a header */
 void CTFFriends_OnDamage(cAbstractFile *params);
@@ -152,3 +153,5 @@ void cCTFFriends_Update(cCTFFriends *self, float dt) {
 
 cGVar GVar_PercFriendsAttackLeaderWhenWinning;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_PercFriendsAttackLeaderWhenWinning, &GVar_PercFriendsAttackLeaderWhenWinning, "PercFriendsAttackLeaderWhenWinning", 0, "CTFFriends percentage attacking leader when he's winning", 0.5f)

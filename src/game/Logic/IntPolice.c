@@ -12,6 +12,7 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 /* defined further down or in another file without a header */
 void *AICtrl_MakeGearLogic(cEntity *e);
@@ -614,3 +615,14 @@ cGVar GVar_SentinelNextGotoTime;
 
 cGVar GVar_SentinelAbortyNPCAttDist;
 
+cPy_NativeFunc NativeFunc_Police2GearEnd;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_CALL(Fini_GVar_CreateGear, &GVar_CreateGear.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_CreateGear, Fini_GVar_CreateGear, &GVar_CreateGear, "CreateGear", 0, "This function is called if we need a Gear", "")
+FINI_CALL(Fini_GVar_CreatePolice, &GVar_CreatePolice.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_CreatePolice, Fini_GVar_CreatePolice, &GVar_CreatePolice, "CreatePolice", 0, "This function is called if we need a Police", "")
+INIT_GVAR_INT(Init_GVar_PoliceLogicBelligerant, &GVar_PoliceLogicBelligerant, "PoliceLogicBelligerant", 0, "Must Be Initialized as 1 if Police Map", 0)
+INIT_GVAR_FLOAT(Init_GVar_SentinelNextGotoTime, &GVar_SentinelNextGotoTime, "SentinelNextGotoTime", 0, "Sentinel time between goto orders.", 5.0f)
+INIT_GVAR_FLOAT(Init_GVar_SentinelAbortyNPCAttDist, &GVar_SentinelAbortyNPCAttDist, "SentinelAbortyNPCAttDist", 0, "At this distance, if not seen will abort the NPC attack", 4000.0f)
+INIT_NATIVE_FUNC(Init_NativeFunc_Police2GearEnd, &NativeFunc_Police2GearEnd, "Police2GearEnd", AICtrl_Police2GearEnd)

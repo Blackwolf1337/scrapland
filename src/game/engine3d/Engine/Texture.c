@@ -12,6 +12,7 @@
 #include "scrap/d3d8.h"
 #include "scrap/e3dutil.h"
 #include "scrap/texture.h"
+#include "scrap/staticinit.h"
 
 #define BMP_PIXEL 4
 
@@ -1068,3 +1069,18 @@ void Texture_FiniTexList(void) {
 		operator_delete_sized(t, sizeof(CTexture));
 	}
 }
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_PShaders, &GVar_R_PShaders, "R_PShaders", 0, "Use pixel shaders (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_BuildDDS, &GVar_BuildDDS, "BuildDDS", 0, "Build DDS Textures (0/1)\n", 0)
+INIT_GVAR_INT(Init_GVar_BumpMipmap, &GVar_BumpMipmap, "BumpMipmap", 0, "Allow mipmapping for bump textures (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_DUDVMipmap, &GVar_DUDVMipmap, "DUDVMipmap", 0, "Allow mipmapping for DUDV textures (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_TextureLOD, &GVar_TextureLOD, "TextureLOD", 2, "Most detailed mipmap level used (0=disable)", 0)
+INIT_GVAR_INT(Init_GVar_SharpenMore, &GVar_SharpenMore, "SharpenMore", 0, "Extra sharpen for each mipmap level (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_MipmapFade, &GVar_MipmapFade, "MipmapFade", 0, "Fadeout each mipmap level (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_MipmapColor, &GVar_MipmapColor, "MipmapColor", 0, "Colorize each mipmap level (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_CachedTex, &GVar_CachedTex, "CachedTex", 0, "Max. cached textures", 20)
+INIT_GVAR_INT(Init_GVar_BumpDDS, &GVar_BumpDDS, "BumpDDS", 0, "Allow compression of bump textures (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_SaveDXT5, &GVar_SaveDXT5, "SaveDXT5", 0, "Save DXT5 textures (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_Tex_Count, &GVar_R_Tex_Count, "R_Tex_Count", 0, "Texture counter", 0)
+INIT_ATEXIT(Init_TexList, Texture_FiniTexList)

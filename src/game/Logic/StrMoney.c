@@ -8,6 +8,7 @@
 
 #include "scrap/logic.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 void *cStrMoney_ctor(void *obj) {
 	cStrMoney *self = obj;
@@ -74,3 +75,8 @@ cGVar GVar_OnMoneyReachValue;
 
 cGVar GVar_StrMoneyUpdate;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_StrMoneyUpdate, &GVar_StrMoneyUpdate, "StrMoneyUpdate", 0, "Time to update the Money Scorer", 0.1f)
+FINI_CALL(Fini_GVar_OnMoneyReachCallback, &GVar_OnMoneyReachCallback.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnMoneyReachCallback, Fini_GVar_OnMoneyReachCallback, &GVar_OnMoneyReachCallback, "OnMoneyReachCallback", 0, "Function to be called when money reach 'OnMoneyReachValue'", "")
+INIT_GVAR_INT(Init_GVar_OnMoneyReachValue, &GVar_OnMoneyReachValue, "OnMoneyReachValue", 0, "if money reach these vaule, the call OnMoneyReachCallback", 0)

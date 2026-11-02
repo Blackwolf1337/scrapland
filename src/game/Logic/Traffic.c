@@ -26,6 +26,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 
 #define TRAFFIC_DAMAGE_NATIVE 0x15af10
@@ -558,3 +559,19 @@ void cEnemiesTraffic_Update(cEnemiesTraffic *self, float dt) {
 
 cGVar GVar_MaxChasingShips;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_CALL(Fini_GVar_OnNeedMoreTraffic, &GVar_OnNeedMoreTraffic.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnNeedMoreTraffic, Fini_GVar_OnNeedMoreTraffic, &GVar_OnNeedMoreTraffic, "OnNeedMoreTraffic", 0, "Called if the traffic is not enough", "")
+FINI_CALL(Fini_GVar_OnNeedMoreChasingTraffic, &GVar_OnNeedMoreChasingTraffic.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnNeedMoreChasingTraffic, Fini_GVar_OnNeedMoreChasingTraffic, &GVar_OnNeedMoreChasingTraffic, "OnNeedMoreChasingTraffic", 0, "Called if the chasing traffic is not enough", "")
+FINI_CALL(Fini_GVar_OnPlayerHelpedPolice, &GVar_OnPlayerHelpedPolice.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnPlayerHelpedPolice, Fini_GVar_OnPlayerHelpedPolice, &GVar_OnPlayerHelpedPolice, "OnPlayerHelpedPolice", 0, "Called if player helped police", "")
+INIT_GVAR_INT(Init_GVar_iTrafficNumber, &GVar_iTrafficNumber, "iTrafficNumber", 0, "Sets the traffic on the sky", 0)
+INIT_GVAR_INT(Init_GVar_TrafficDamageTolerance, &GVar_TrafficDamageTolerance, "TrafficDamageTolerance", 0, "Life Points to be your enemy", 10)
+INIT_GVAR_FLOAT(Init_GVar_TrafficRemovalDist, &GVar_TrafficRemovalDist, "TrafficRemovalDist", 0, "Traffic removal dist", 100000.0f)
+INIT_GVAR_FLOAT(Init_GVar_ProbTrafficFighting, &GVar_ProbTrafficFighting, "ProbTrafficFighting", 0, "Prob traffic fighting", 100.0f)
+INIT_GVAR_FLOAT(Init_GVar_MaxFightingTrafficSize, &GVar_MaxFightingTrafficSize, "MaxFightingTrafficSize", 0, "Max fighting traffic size", 4.0f)
+INIT_GVAR_FLOAT(Init_GVar_MaxTrafficEnemyTime, &GVar_MaxTrafficEnemyTime, "MaxTrafficEnemyTime", 0, "Max Time attacking of traffic", 10.0f)
+INIT_GVAR_FLOAT(Init_GVar_MinTrafficEnemyTime, &GVar_MinTrafficEnemyTime, "MinTrafficEnemyTime", 0, "Min Time attacking of traffic", 1.0f)
+INIT_GVAR_INT(Init_GVar_MaxTrafficEnemy, &GVar_MaxTrafficEnemy, "MaxTrafficEnemy", 0, "Maximun number of attaking traffic.", 5)
+INIT_GVAR_INT(Init_GVar_MaxChasingShips, &GVar_MaxChasingShips, "MaxChasingShips", 0, "Maximun number of chasing ships.", -1)

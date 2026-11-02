@@ -23,6 +23,7 @@
 #include "scrap/ground.h"
 #include "scrap/misc.h"
 #include "scrap/model.h"
+#include "scrap/staticinit.h"
 
 extern const ObjRefVtbl CNode3D_vftable;
 #define CNODO3D_VFTABLE (&CNode3D_vftable)
@@ -854,3 +855,18 @@ quat_t *CRotation_GetQuat(CRotation *self, quat_t *out) {
 const ObjRefVtbl CNode3D_vftable = {
 	.Delete = CNode3D_VecDelete,
 };
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_ShowLocalBox, &GVar_R_ShowLocalBox, "R_ShowLocalBox", 0, "Show nodes hierarchy and bbox (0/1)\n", 0)
+INIT_GVAR_INT(Init_GVar_R_ShowLBoxMin, &GVar_R_ShowLBoxMin, "R_ShowLBoxMin", 0, "Show nodes hierarchy and bbox (min. node)", 0)
+INIT_GVAR_INT(Init_GVar_R_ShowLBoxMax, &GVar_R_ShowLBoxMax, "R_ShowLBoxMax", 0, "Show nodes hierarchy and bbox (max. node)", 0)
+FINI_GVAR_STRING(Fini_GVar_R_ShowLBoxName, &GVar_R_ShowLBoxName)
+INIT_GVAR_STRING(Init_GVar_R_ShowLBoxName, Fini_GVar_R_ShowLBoxName, &GVar_R_ShowLBoxName, "R_ShowLBoxName", 0, "Show nodes hierarchy and bbox (filter)", "")
+INIT_GVAR_INT(Init_GVar_R_SkipNodes, &GVar_R_SkipNodes, "R_SkipNodes", 0, "Disable node rendering (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_R_SkipTrans, &GVar_R_SkipTrans, "R_SkipTrans", 0, "Disable node transform (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_R_SkipTrans2, &GVar_R_SkipTrans2, "R_SkipTrans2", 0, "Disable stencil node transform (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_SkipAnim, &GVar_R_SkipAnim, "R_SkipAnim", 0, "Disable node animation (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_R_SkipAnimVis, &GVar_R_SkipAnimVis, "R_SkipAnimVis", 0, "Disable node visibility anim (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_R_SkipNodeFX, &GVar_R_SkipNodeFX, "R_SkipNodeFX", 0, "Disable node effects (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_R_NodeSlerp2, &GVar_R_NodeSlerp2, "R_NodeSlerp2", 0, "Slerp2 mode for nodes (0/1/2)", 1)
+INIT_GVAR_INT(Init_GVar_R_Node3D_Count, &GVar_R_Node3D_Count, "R_Nodo3D_Count", 0, "Node3D counter", 0)

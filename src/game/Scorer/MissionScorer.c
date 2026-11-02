@@ -6,6 +6,7 @@
 
 #include "scrap/app.h"
 #include "scrap/scoreritems.h"
+#include "scrap/staticinit.h"
 
 static const char *const s_TabColors[4] = {"TabRed", "TabGreen", "TabBlue", "TabAlpha"};
 static const char *const s_TextColors[3] = {"TextRed", "TextGreen", "TextBlue"};
@@ -312,3 +313,9 @@ cGVar GVar_NextMissionFirstLineOffsetPC;
 
 cGVar GVar_ScorerMarginH;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_NextMissionFirstLineOffsetPC, &GVar_NextMissionFirstLineOffsetPC, "NextMissionFirstLineOffsetPC", 0, "Next mission first line offset PC", 60.0f)
+INIT_GVAR_FLOAT(Init_GVar_NextMissionSecondLineOffsetPC, &GVar_NextMissionSecondLineOffsetPC, "NextMissionSecondLineOffsetPC", 0, "Next mission second line offset PC", 80.0f)
+INIT_GVAR_FLOAT(Init_GVar_NextMissionFirstLineOffsetXBox, &GVar_NextMissionFirstLineOffsetXBox, "NextMissionFirstLineOffsetXBox", 0, "Next mission first line offset XBox", 4.0f)
+INIT_GVAR_FLOAT(Init_GVar_NextMissionSecondLineOffsetXBox, &GVar_NextMissionSecondLineOffsetXBox, "NextMissionSecondLineOffsetXBox", 0, "Next mission second line offset XBox", 24.0f)
+INIT_GVAR_INT(Init_GVar_ScorerMarginH, &GVar_ScorerMarginH, "ScorerMarginH", 0, "Horizontal Margin for Scorer", 48)

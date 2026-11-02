@@ -15,6 +15,7 @@
 #include "scrap/walkcharentity.h"
 #include "scrap/weapons.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 /* the color ramps (9 colors) of the particles */
 #define FXC_RAMP_MONEY 0x430240
@@ -2613,3 +2614,46 @@ cGVar GVar_MaintenanceWorkSoundAttIni;
 
 cGVar GVar_MaintenanceWorkSoundAttEnd;
 
+cPy_NativeFunc NativeFunc_FXCharacterDazed;
+cPy_NativeFunc NativeFunc_FXCharacterBlaBliBla;
+cPy_NativeFunc NativeFunc_FXCharacterTeleport;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_MaintenanceWorkSound, &GVar_MaintenanceWorkSound)
+INIT_GVAR_STRING(Init_GVar_MaintenanceWorkSound, Fini_GVar_MaintenanceWorkSound, &GVar_MaintenanceWorkSound, "MaintenanceWorkSound", 0, "Maintenance Work sound name", "MaintenanceWorkSound")
+INIT_GVAR_FLOAT(Init_GVar_MaintenanceWorkSoundVol, &GVar_MaintenanceWorkSoundVol, "MaintenanceWorkSoundVol", 0, "Maintenance Work sound volume", 0.8f)
+INIT_GVAR_FLOAT(Init_GVar_MaintenanceWorkSoundAttIni, &GVar_MaintenanceWorkSoundAttIni, "MaintenanceWorkSoundAttIni", 0, "Maintenance Work sound attini", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_MaintenanceWorkSoundAttEnd, &GVar_MaintenanceWorkSoundAttEnd, "MaintenanceWorkSoundAttEnd", 0, "Maintenance Work sound attend", 0.0f)
+FINI_GVAR_STRING(Fini_GVar_FXMoneyTransferFile, &GVar_FXMoneyTransferFile)
+INIT_GVAR_STRING(Init_GVar_FXMoneyTransferFile, Fini_GVar_FXMoneyTransferFile, &GVar_FXMoneyTransferFile, "FXMoneyTransferFile", 0, "Default Model for Money Transfer Effects", "Models/GFX/MoneyTransfer.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXCharacterDazedFile, &GVar_FXCharacterDazedFile)
+INIT_GVAR_STRING(Init_GVar_FXCharacterDazedFile, Fini_GVar_FXCharacterDazedFile, &GVar_FXCharacterDazedFile, "FXCharacterDazedFile", 0, "Default Model for Dazed Characters Effect", "Models/GFX/CharacterDazed.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXCharacterBlaBliBlaFile, &GVar_FXCharacterBlaBliBlaFile)
+INIT_GVAR_STRING(Init_GVar_FXCharacterBlaBliBlaFile, Fini_GVar_FXCharacterBlaBliBlaFile, &GVar_FXCharacterBlaBliBlaFile, "FXCharacterBlaBliBlaFile", 0, "Default Model for BlaBliBla Characters Effect", "Models/GFX/CharacterBlaBliBla.M3D")
+FINI_GVAR_STRING(Fini_GVar_CharacterTeleportUpSound, &GVar_CharacterTeleportUpSound)
+INIT_GVAR_STRING(Init_GVar_CharacterTeleportUpSound, Fini_GVar_CharacterTeleportUpSound, &GVar_CharacterTeleportUpSound, "CharacterTeleportUpSound", 0, "Character Teleport Up sound name", "CharacterTeleport")
+FINI_GVAR_STRING(Fini_GVar_CharacterTeleportDownSound, &GVar_CharacterTeleportDownSound)
+INIT_GVAR_STRING(Init_GVar_CharacterTeleportDownSound, Fini_GVar_CharacterTeleportDownSound, &GVar_CharacterTeleportDownSound, "CharacterTeleportDownSound", 0, "Character Teleport Down sound name", "CharacterTeleport")
+INIT_GVAR_FLOAT(Init_GVar_CharacterTeleportSoundVol, &GVar_CharacterTeleportSoundVol, "CharacterTeleportSoundVol", 0, "Character Teleport sound volume", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_FXCharacterTeleportFile, &GVar_FXCharacterTeleportFile)
+INIT_GVAR_STRING(Init_GVar_FXCharacterTeleportFile, Fini_GVar_FXCharacterTeleportFile, &GVar_FXCharacterTeleportFile, "FXCharacterTeleportFile", 0, "Default Model for Character Teleport Effect", "Models/GFX/CharacterTeleport.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXCharacterConversorFile, &GVar_FXCharacterConversorFile)
+INIT_GVAR_STRING(Init_GVar_FXCharacterConversorFile, Fini_GVar_FXCharacterConversorFile, &GVar_FXCharacterConversorFile, "FXCharacterConversorFile", 0, "Default Model for Character Conversor Effect", "Models/GFX/CharacterConversor.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXCharacterDeathFile, &GVar_FXCharacterDeathFile)
+INIT_GVAR_STRING(Init_GVar_FXCharacterDeathFile, Fini_GVar_FXCharacterDeathFile, &GVar_FXCharacterDeathFile, "FXCharacterDeathFile", 0, "Default Model for Character Death Effect", "Models/GFX/CharacterDeath.M3D")
+INIT_GVAR_FLOAT(Init_GVar_FXCharacterDeathMinDist, &GVar_FXCharacterDeathMinDist, "FXCharacterDeathMinDist", 0, "Minimun Distance to Camera for Show Character Death Effect", 1500.0f)
+FINI_GVAR_STRING(Fini_GVar_CharacterDeathSound, &GVar_CharacterDeathSound)
+INIT_GVAR_STRING(Init_GVar_CharacterDeathSound, Fini_GVar_CharacterDeathSound, &GVar_CharacterDeathSound, "CharacterDeathSound", 0, "Character Death Sound name", "CharacterDeath")
+INIT_GVAR_FLOAT(Init_GVar_CharacterDeathSoundVol, &GVar_CharacterDeathSoundVol, "CharacterDeathSoundVol", 0, "Character Death Sound volume", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_FXCharacterSputnikFile, &GVar_FXCharacterSputnikFile)
+INIT_GVAR_STRING(Init_GVar_FXCharacterSputnikFile, Fini_GVar_FXCharacterSputnikFile, &GVar_FXCharacterSputnikFile, "FXCharacterSputnikFile", 0, "Default Model for Sputnik Effects", "Models/GFX/Sputnik/Sputnik.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXCharacterConversionFile, &GVar_FXCharacterConversionFile)
+INIT_GVAR_STRING(Init_GVar_FXCharacterConversionFile, Fini_GVar_FXCharacterConversionFile, &GVar_FXCharacterConversionFile, "FXCharacterConversionFile", 0, "Default Model for Character Conversion Effect", "Models/GFX/CharacterConversion.M3D")
+FINI_GVAR_STRING(Fini_GVar_CharacterConversionSound, &GVar_CharacterConversionSound)
+INIT_GVAR_STRING(Init_GVar_CharacterConversionSound, Fini_GVar_CharacterConversionSound, &GVar_CharacterConversionSound, "CharacterConversionSound", 0, "Character Conversion Sound Name", "CharacterConversionSound")
+INIT_GVAR_FLOAT(Init_GVar_CharacterConversionSoundVol, &GVar_CharacterConversionSoundVol, "CharacterConversionSoundVol", 0, "Character Conversion Sound Volume", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_FXFunctionarySpecialActionFile, &GVar_FXFunctionarySpecialActionFile)
+INIT_GVAR_STRING(Init_GVar_FXFunctionarySpecialActionFile, Fini_GVar_FXFunctionarySpecialActionFile, &GVar_FXFunctionarySpecialActionFile, "FXFunctionarySpecialActionFile", 0, "Default Model for Functionary Special Action Effects", "Models/GFX/Functionary/SpecialAction.M3D")
+INIT_NATIVE_FUNC(Init_NativeFunc_FXCharacterDazed, &NativeFunc_FXCharacterDazed, "FXCharacterDazed", FX_CharacterDazed)
+INIT_NATIVE_FUNC(Init_NativeFunc_FXCharacterBlaBliBla, &NativeFunc_FXCharacterBlaBliBla, "FXCharacterBlaBliBla", FX_CharacterBlaBliBla)
+INIT_NATIVE_FUNC(Init_NativeFunc_FXCharacterTeleport, &NativeFunc_FXCharacterTeleport, "FXCharacterTeleport", FX_CharacterTeleport)

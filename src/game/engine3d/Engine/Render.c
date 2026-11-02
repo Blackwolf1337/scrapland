@@ -19,6 +19,7 @@
 #include "scrap/texture.h"
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
+#include "scrap/staticinit.h"
 
 void *g_pd3dDevice;
 
@@ -2656,3 +2657,46 @@ cGVar GVar_R_PShaderCount;
 
 cGVar GVar_R_DecalZBias;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_EnvBlend, &GVar_R_EnvBlend, "R_EnvBlend", 0, "MaskEnvMap blend mode (0=Add,1=Blend)", 0)
+INIT_GVAR_INT(Init_GVar_R_PSMask, &GVar_R_PSMask, "R_PSMask", 0, "Pixel shader mask (def. 0)", 0)
+INIT_GVAR_INT(Init_GVar_R_PShaderCount, &GVar_R_PShaderCount, "R_PShaderCount", 0, "Count of pixel shader changes (readonly)", 0)
+INIT_GVAR_INT(Init_GVar_R_VBIBTriLimit, &GVar_R_VBIBTriLimit, "R_VBIBTriLimit", 0, "RenderVBIB triangle limit (def. -1)", -1)
+INIT_GVAR_INT(Init_GVar_R_EnvMapViewDep, &GVar_R_EnvMapViewDep, "R_EnvMapViewDep", 0, "View-dependent Environment map (0/1/2)", 2)
+INIT_GVAR_FLOAT(Init_GVar_R_EnvMapScale, &GVar_R_EnvMapScale, "R_EnvMapScale", 0, "Environment map scale", 0.25f)
+INIT_GVAR_FLOAT(Init_GVar_R_EnvMapOffset, &GVar_R_EnvMapOffset, "R_EnvMapOffset", 0, "Environment map offset", 0.5f)
+INIT_GVAR_INT(Init_GVar_R_EnvBumpBias, &GVar_R_EnvBumpBias, "R_EnvBumpBias", 0, "Adjust bias for DXT1 bump textures (0/1)", 1)
+INIT_GVAR_FLOAT(Init_GVar_R_EnvBumpScale, &GVar_R_EnvBumpScale, "R_EnvBumpScale", 0, "Environment bump mapping scale", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_MipmapBias, &GVar_R_MipmapBias, "R_MipmapBias", 0, "Mipmapping bias (def. 0.0)", 0.0f)
+INIT_GVAR_INT(Init_GVar_R_Anisotropy, &GVar_R_Anisotropy, "R_Anisotropy", 2, "Max. anisotropic texture filter level", 8)
+INIT_GVAR_INT(Init_GVar_R_MipFilter, &GVar_R_MipFilter, "R_MipFilter", 2, "MipMap filter (0=point,1=linear)", 1)
+INIT_GVAR_INT(Init_GVar_R_UseDefTexture, &GVar_R_UseDefTexture, "R_UseDefTexture", 0, "Use default white texture (0/1/2)", 1)
+INIT_GVAR_INT(Init_GVar_R_UseDefMaterial, &GVar_R_UseDefMaterial, "R_UseDefMaterial", 0, "Use default white material (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_R_ShowSphereVis, &GVar_R_ShowSphereVis, "R_ShowSphereVis", 0, "Show sphere visibility tests (0/1/2)", 0)
+INIT_GVAR_INT(Init_GVar_R_MaterialLog, &GVar_R_MaterialLog, "R_MaterialLog", 0, "Log material usage (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_R_CullMode, &GVar_R_CullMode, "R_CullMode", 0, "Triangle culling mode (0=normal, 1=force two-sided)", 0)
+INIT_GVAR_INT(Init_GVar_R_DecalZBias, &GVar_R_DecalZBias, "R_DecalZBias", 0, "Z-Bias for decals (0..16)", 10)
+INIT_GVAR_INT(Init_GVar_R_AlphaFog, &GVar_R_AlphaFog, "R_AlphaFog", 0, "Allow fog with alpha blending (0/1/2)", 1)
+INIT_GVAR_FLOAT(Init_GVar_R_CloudVel1x, &GVar_R_CloudVel1x, "R_CloudVel1x", 0, "Cloud vx1", 0.005f)
+INIT_GVAR_FLOAT(Init_GVar_R_CloudVel1y, &GVar_R_CloudVel1y, "R_CloudVel1y", 0, "Cloud vy1", 0.015f)
+INIT_GVAR_FLOAT(Init_GVar_R_CloudVel2x, &GVar_R_CloudVel2x, "R_CloudVel2x", 0, "Cloud vx2", 0.02f)
+INIT_GVAR_FLOAT(Init_GVar_R_CloudVel2y, &GVar_R_CloudVel2y, "R_CloudVel2y", 0, "Cloud vy2", 0.003f)
+INIT_GVAR_FLOAT(Init_GVar_R_CloudScale1, &GVar_R_CloudScale1, "R_CloudScale1", 0, "Cloud scale 1", 7.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_CloudScale2, &GVar_R_CloudScale2, "R_CloudScale2", 0, "Cloud scale 2", 3.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_CloudR, &GVar_R_CloudR, "R_CloudR", 0, "Cloud red factor", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_CloudG, &GVar_R_CloudG, "R_CloudG", 0, "Cloud green factor", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_CloudB, &GVar_R_CloudB, "R_CloudB", 0, "Cloud blue factor", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_CloudA, &GVar_R_CloudA, "R_CloudA", 0, "Cloud alpha factor", 0.3f)
+INIT_GVAR_FLOAT(Init_GVar_R_CloudEmi, &GVar_R_CloudEmi, "R_CloudEmi", 0, "Cloud emissive factor", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_GlowFlickMod, &GVar_R_GlowFlickMod, "R_GlowFlickMod", 0, "GlowFlick mod coef", 0.98f)
+INIT_GVAR_FLOAT(Init_GVar_R_GlowFlickTile, &GVar_R_GlowFlickTile, "R_GlowFlickTile", 0, "GlowFlick tiling", 6.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_GlowFlickRot, &GVar_R_GlowFlickRot, "R_GlowFlickRot", 0, "GlowFlick rot", 0.1f)
+INIT_GVAR_FLOAT(Init_GVar_R_GlowFlickBump, &GVar_R_GlowFlickBump, "R_GlowFlickBump", 0, "GlowFlick bump scale", 0.0015f)
+INIT_GVAR_FLOAT(Init_GVar_R_GlowFlickBRot, &GVar_R_GlowFlickBRot, "R_GlowFlickBRot", 0, "GlowFlick bump rot", 0.0f)
+FINI_GVAR_STRING(Fini_GVar_R_LastDevice, &GVar_R_LastDevice)
+INIT_GVAR_STRING(Init_GVar_R_LastDevice, Fini_GVar_R_LastDevice, &GVar_R_LastDevice, "R_LastDevice", 2, "Render Last Device name", "")
+FINI_CALL(Fini_CMaterial_MatLine, &CMaterial_MatLine, CMaterial_dtor)
+INIT_OBJECT(Init_CMaterial_MatLine, Fini_CMaterial_MatLine, &CMaterial_MatLine, CMaterial_ctor)
+FINI_CALL(Fini_CMaterial_MatDefault, &CMaterial_MatDefault, CMaterial_dtor)
+INIT_OBJECT(Init_CMaterial_MatDefault, Fini_CMaterial_MatDefault, &CMaterial_MatDefault, CMaterial_ctor)
+INIT_ARRAY(Init_Frustum, g_Frustum, 16, 6, Stub_ReturnSelf)

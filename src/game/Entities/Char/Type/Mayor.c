@@ -7,6 +7,7 @@
 #include "scrap/chartype.h"
 #include "scrap/fxelements.h"
 #include "scrap/scrapcollision.h"
+#include "scrap/staticinit.h"
 
 cEntity *g_MayorEnt;
 
@@ -128,3 +129,12 @@ cGVar GVar_MayorSleepPercent;
 
 cGVar GVar_MayorBlabliblaRadius;
 
+cPy_NativeFunc NativeFunc_MayorEndAction;
+cPy_NativeFunc NativeFunc_ListeningMayor;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_MayorBlabliblaRadius, &GVar_MayorBlabliblaRadius, "MayorBlabliblaRadius", 0, "Radius of Mayor´s Bla-Blas.", 1000.0f)
+INIT_GVAR_FLOAT(Init_GVar_MayorListenPercent, &GVar_MayorListenPercent, "MayorListenPercent", 0, "Listen percent probability", 50.0f)
+INIT_GVAR_FLOAT(Init_GVar_MayorSleepPercent, &GVar_MayorSleepPercent, "MayorSleepPercent", 0, "Sleep when listen probability", 20.0f)
+INIT_NATIVE_FUNC(Init_NativeFunc_MayorEndAction, &NativeFunc_MayorEndAction, "MayorEndAction", ChType_MayorEndAction)
+INIT_NATIVE_FUNC(Init_NativeFunc_ListeningMayor, &NativeFunc_ListeningMayor, "ListeningMayor", ChType_ListeningMayor)

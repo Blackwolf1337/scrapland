@@ -8,6 +8,7 @@
 #include "scrap/console.h"
 #include "scrap/pymempool.h"
 #include "scrap/python.h"
+#include "scrap/staticinit.h"
 
 /* class of a size: words of 4 bytes, 1 to 32; 0 or larger sizes have none */
 static inline uint32_t SizeWords(uint32_t size) {
@@ -237,3 +238,8 @@ void PyPool_Free(void *p) {
 	PyPool_FreeImpl(p);
 	g_MemStatsContext = NULL;
 }
+
+cPy_NativeFunc NativeFunc_PrintMemBlockData;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_NATIVE_FUNC(Init_NativeFunc_PrintMemBlockData, &NativeFunc_PrintMemBlockData, "PrintMemBlockData", MemPools_PrintAll)

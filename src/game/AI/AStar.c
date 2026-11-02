@@ -12,6 +12,7 @@
 #include "scrap/hashtable.h"
 #include "scrap/nodesworld2d.h"
 #include "scrap/scrapmain.h"
+#include "scrap/staticinit.h"
 
 extern const cBinaryHeapVtbl cBinaryHeap_ElemAStar_vftable;
 #define CBINARYHEAP_VFTABLE (&cBinaryHeap_ElemAStar_vftable)
@@ -1038,3 +1039,5 @@ const cBinaryHeapVtbl cBinaryHeap_ElemAStar_vftable = {
 
 cGVar GVar_ShowAStarAI;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_ShowAStarAI, &GVar_ShowAStarAI, "ShowAStarAI", 4, "Show info AStar.\n", 0)

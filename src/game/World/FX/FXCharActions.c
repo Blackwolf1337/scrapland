@@ -18,6 +18,7 @@
 #include "scrap/sound.h"
 #include "scrap/weapons.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 /* the trail array members: CGameTrail by new[] style construction (rva) */
 #define CGAMETRAIL_CTOR 0x21ddb0
@@ -4489,3 +4490,22 @@ cGVar GVar_BankMasterBatonPosY;
 
 cGVar GVar_BankMasterBatonPosX;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_BankerStealPosX, &GVar_BankerStealPosX, "BankerStealPosX", 0, "Banker Steal Displacement from center", -50.0f)
+INIT_GVAR_FLOAT(Init_GVar_BankerStealPosY, &GVar_BankerStealPosY, "BankerStealPosY", 0, "Banker Steal Displacement from center", 10.0f)
+INIT_GVAR_FLOAT(Init_GVar_BankerStealPosZ, &GVar_BankerStealPosZ, "BankerStealPosZ", 0, "Banker Steal Displacement from center", -60.0f)
+FINI_GVAR_STRING(Fini_GVar_BankerSteal1Sound, &GVar_BankerSteal1Sound)
+INIT_GVAR_STRING(Init_GVar_BankerSteal1Sound, Fini_GVar_BankerSteal1Sound, &GVar_BankerSteal1Sound, "BankerSteal1Sound", 0, "Banker Steal sound name", "BankerSteal")
+FINI_GVAR_STRING(Fini_GVar_BankerSteal2Sound, &GVar_BankerSteal2Sound)
+INIT_GVAR_STRING(Init_GVar_BankerSteal2Sound, Fini_GVar_BankerSteal2Sound, &GVar_BankerSteal2Sound, "BankerSteal2Sound", 0, "Banker Steal sound name", "BankerSteal")
+FINI_GVAR_STRING(Fini_GVar_BankerSteal3Sound, &GVar_BankerSteal3Sound)
+INIT_GVAR_STRING(Init_GVar_BankerSteal3Sound, Fini_GVar_BankerSteal3Sound, &GVar_BankerSteal3Sound, "BankerSteal3Sound", 0, "Banker Steal sound name", "BankerSteal")
+INIT_GVAR_FLOAT(Init_GVar_BankerStealSoundVol, &GVar_BankerStealSoundVol, "BankerStealSoundVol", 0, "Banker Steal sound volume", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_BankMasterBatonPosX, &GVar_BankMasterBatonPosX, "BankMasterBatonPosX", 0, "BankMaster Baton Displacement from center", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_BankMasterBatonPosY, &GVar_BankMasterBatonPosY, "BankMasterBatonPosY", 0, "BankMaster Baton Displacement from center", 35.0f)
+INIT_GVAR_FLOAT(Init_GVar_BankMasterBatonPosZ, &GVar_BankMasterBatonPosZ, "BankMasterBatonPosZ", 0, "BankMaster Baton Displacement from center", -85.0f)
+FINI_GVAR_STRING(Fini_GVar_GearMissileThunder1Sound, &GVar_GearMissileThunder1Sound)
+INIT_GVAR_STRING(Init_GVar_GearMissileThunder1Sound, Fini_GVar_GearMissileThunder1Sound, &GVar_GearMissileThunder1Sound, "GearMissileThunder1Sound", 0, "Gear missile thunder 1 sound name", "GearMissileThunder1")
+FINI_GVAR_STRING(Fini_GVar_GearMissileThunder2Sound, &GVar_GearMissileThunder2Sound)
+INIT_GVAR_STRING(Init_GVar_GearMissileThunder2Sound, Fini_GVar_GearMissileThunder2Sound, &GVar_GearMissileThunder2Sound, "GearMissileThunder2Sound", 0, "Gear missile thunder 2 sound name", "GearMissileThunder2")
+INIT_GVAR_FLOAT(Init_GVar_GearMissileThunderSoundVol, &GVar_GearMissileThunderSoundVol, "GearMissileThunderSoundVol", 0, "Gear missile thunder sound volume", 1.0f)

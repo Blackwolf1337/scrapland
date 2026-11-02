@@ -11,6 +11,7 @@
 #include "scrap/fonts.h"
 #include "scrap/render.h"
 #include "scrap/misc.h"
+#include "scrap/staticinit.h"
 
 CFontGrid *CFontGrid_ctor(CFontGrid *self, const char *tex, const char *opac, byte first, byte last,
 	int cellWidth, int cellHeight, float space) {
@@ -905,3 +906,6 @@ byte CUnifont_SetSprite(const CUnifont *self, uint16_t i, float w, float h) {
 
 const char str_2dFontsDrm[] = "2d/fonts-drm/";
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_CALL(Fini_CUnifont_Unifont, &g_Unifont, CUnifont_Free)
+INIT_ATEXIT(Init_CUnifont_Unifont, Fini_CUnifont_Unifont)

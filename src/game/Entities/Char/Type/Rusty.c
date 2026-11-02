@@ -3,6 +3,7 @@
  */
 #include "scrap/chartype.h"
 #include "scrap/fxelements.h"
+#include "scrap/staticinit.h"
 
 uint32_t RUSTY_RAMPS[18] = {
 	0x80fff696, 0x20ffb45a, 0x40e68211, 0x80ab5e0d, 0x964c4408, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
@@ -226,3 +227,12 @@ cGVar GVar_RustyHitPosY;
 
 cGVar GVar_FXRustyHitFile;
 
+cPy_NativeFunc NativeFunc_FXRustyHit;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_FXRustyHitFile, &GVar_FXRustyHitFile)
+INIT_GVAR_STRING(Init_GVar_FXRustyHitFile, Fini_GVar_FXRustyHitFile, &GVar_FXRustyHitFile, "FXRustyHitFile", 0, "Default Model for Rusty Hit Effect", "Models/GFX/Rusty/Hit.M3D")
+INIT_GVAR_FLOAT(Init_GVar_RustyHitPosX, &GVar_RustyHitPosX, "RustyHitPosX", 0, "Rusty Hit Displacement from center", -50.0f)
+INIT_GVAR_FLOAT(Init_GVar_RustyHitPosY, &GVar_RustyHitPosY, "RustyHitPosY", 0, "Rusty Hit Displacement from center", -65.0f)
+INIT_GVAR_FLOAT(Init_GVar_RustyHitPosZ, &GVar_RustyHitPosZ, "RustyHitPosZ", 0, "Rusty Hit Displacement from center", -135.0f)
+INIT_NATIVE_FUNC(Init_NativeFunc_FXRustyHit, &NativeFunc_FXRustyHit, "FXRustyHit", ChType_FXRustyHit)

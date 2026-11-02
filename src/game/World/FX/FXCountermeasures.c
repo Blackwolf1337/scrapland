@@ -14,6 +14,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 #define FX_PI 3.1415927f
 #define FX_PI_3 1.0471976f
@@ -1536,3 +1537,21 @@ cGVar GVar_FXHookTensor;
 
 cGVar GVar_FXSonicRadius;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_EMILowRadiusFactor, &GVar_EMILowRadiusFactor, "EMILowRadiusFactor", 0, "Radius Low Factor that have the EMI", 0.2f)
+INIT_GVAR_FLOAT(Init_GVar_FXEMIFollowTime, &GVar_FXEMIFollowTime, "FXEMIFollowTime", 0, "Time that use the EMI Lighting to follow the curve", 0.025f)
+INIT_GVAR_FLOAT(Init_GVar_FXEMIStepTime, &GVar_FXEMIStepTime, "FXEMIStepTime", 0, "Time step to change the follow curve for the EMI Lighting", 0.04f)
+INIT_GVAR_FLOAT(Init_GVar_FXEMIRandRadius, &GVar_FXEMIRandRadius, "FXEMIRandRadius", 0, "Random Radius that have the EMI Lighting", 850.0f)
+FINI_GVAR_STRING(Fini_GVar_EMIThunder1Sound, &GVar_EMIThunder1Sound)
+INIT_GVAR_STRING(Init_GVar_EMIThunder1Sound, Fini_GVar_EMIThunder1Sound, &GVar_EMIThunder1Sound, "EMIThunder1Sound", 0, "EMI thunder 1 sound name", "EMIThunder1Sound")
+FINI_GVAR_STRING(Fini_GVar_EMIThunder2Sound, &GVar_EMIThunder2Sound)
+INIT_GVAR_STRING(Init_GVar_EMIThunder2Sound, Fini_GVar_EMIThunder2Sound, &GVar_EMIThunder2Sound, "EMIThunder2Sound", 0, "EMI thunder 2 sound name", "EMIThunder2Sound")
+INIT_GVAR_FLOAT(Init_GVar_EMIThunderSoundVol, &GVar_EMIThunderSoundVol, "EMIThunderSoundVol", 0, "EMI thunder sound volume", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_EMIThunderSoundAttIni, &GVar_EMIThunderSoundAttIni, "EMIThunderSoundAttIni", 0, "EMI thunder sound attenuation ini", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_EMIThunderSoundAttEnd, &GVar_EMIThunderSoundAttEnd, "EMIThunderSoundAttEnd", 0, "EMI thunder sound attenuation end", 0.0f)
+FINI_GVAR_STRING(Fini_GVar_LaserHookSparksFile, &GVar_LaserHookSparksFile)
+INIT_GVAR_STRING(Init_GVar_LaserHookSparksFile, Fini_GVar_LaserHookSparksFile, &GVar_LaserHookSparksFile, "LaserHookSparksFile", 0, "default model for the hook sparks", "Models/Weapons/Laser/HookSparks.M3D")
+INIT_GVAR_FLOAT(Init_GVar_FXHookFadeTime, &GVar_FXHookFadeTime, "FXHookFadeTime", 0, "Time of Hook Release Fade", 0.2f)
+INIT_GVAR_FLOAT(Init_GVar_FXHookTensor, &GVar_FXHookTensor, "FXHookTensor", 0, "Tensor Power of Hook (0...1)", 7.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXHookSize, &GVar_FXHookSize, "FXHookSize", 0, "Size of Hook", 40.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXSonicRadius, &GVar_FXSonicRadius, "FXSonicRadius", 0, "Radius of Sonic Mine Explosion Effect", 15000.0f)

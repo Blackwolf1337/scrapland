@@ -12,6 +12,7 @@
 #include "scrap/weapons.h"
 #include "scrap/weaps2.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 #define FX_PI 3.1415927f				/* 0x40490fdb */
 
@@ -2445,3 +2446,28 @@ cGVar GVar_FXTeslaFadeOutTime;
 
 cGVar GVar_FXTeslaFollowTime;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_ATPCTrailTime, &GVar_ATPCTrailTime, "ATPCTrailTime", 0, "LifeTime of FadeOut Trail Effect for the ATPC", 0.8f)
+INIT_GVAR_FLOAT(Init_GVar_ATPCShootSize, &GVar_ATPCShootSize, "ATPCShootSize", 0, "Max Size of the ATPC Shoot", 950.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXInfernoRayRadius, &GVar_FXInfernoRayRadius, "FXInfernoRayRadius", 0, "Ray Radius of Inferno Explosion Effect", 0.3f)
+INIT_GVAR_FLOAT(Init_GVar_FXInfernoRayMinSize, &GVar_FXInfernoRayMinSize, "FXInfernoRayMinSize", 0, "Min Ray Size of Inferno Explosion Effect", 150.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXInfernoRaySpeedMin, &GVar_FXInfernoRaySpeedMin, "FXInfernoRaySpeedMin", 0, "Minimun Speed of a Ray in the Inferno Explosion Effect", 14000.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXInfernoRaySpeedMax, &GVar_FXInfernoRaySpeedMax, "FXInfernoRaySpeedMax", 0, "Maximun Speed of a Ray in the Inferno Explosion Effect", 19000.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXInfernoRayAccMin, &GVar_FXInfernoRayAccMin, "FXInfernoRayAccMin", 0, "Minimun Acceleration of a Ray in the Inferno Explosion Effect", 450.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXInfernoRayAccMax, &GVar_FXInfernoRayAccMax, "FXInfernoRayAccMax", 0, "Maximun Acceleration of a Ray in the Inferno Explosion Effect", 950.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXInfernoRayInitSizeMin, &GVar_FXInfernoRayInitSizeMin, "FXInfernoRayInitSizeMin", 0, "Minimun Initial Size of a Ray in the Inferno Explosion Effect", 20.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXInfernoRayInitSizeMax, &GVar_FXInfernoRayInitSizeMax, "FXInfernoRayInitSizeMax", 0, "Maximun Initial Size of a Ray in the Inferno Explosion Effect", 250.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXInfernoCoreSize, &GVar_FXInfernoCoreSize, "FXInfernoCoreSize", 0, "Core Size of the Inferno Explosion Effect", 1250.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXInfernoExplosionTime, &GVar_FXInfernoExplosionTime, "FXInfernoExplosionTime", 0, "Life Time of the Inferno Explosion Effect", 2.5f)
+INIT_GVAR_FLOAT(Init_GVar_FXInfernoExplosionFadeTime, &GVar_FXInfernoExplosionFadeTime, "FXInfernoExplosionFadeTime", 0, "Fade Off Time of the Inferno Explosion Effect", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXLaserBeamSize, &GVar_FXLaserBeamSize, "FXLaserBeamSize", 0, "The size of the laser beam", 2200.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXLaserBeamHeight, &GVar_FXLaserBeamHeight, "FXLaserBeamHeight", 0, "The height of the laser beam", 120.0f)
+FINI_GVAR_STRING(Fini_GVar_SwarmExplosionFile, &GVar_SwarmExplosionFile)
+INIT_GVAR_STRING(Init_GVar_SwarmExplosionFile, Fini_GVar_SwarmExplosionFile, &GVar_SwarmExplosionFile, "SwarmExplosionFile", 0, "Default Model for Swarm Explosion", "Models/Weapons/Swarm/Explosion.M3D")
+FINI_GVAR_STRING(Fini_GVar_SwarmBeeExplosionFile, &GVar_SwarmBeeExplosionFile)
+INIT_GVAR_STRING(Init_GVar_SwarmBeeExplosionFile, Fini_GVar_SwarmBeeExplosionFile, &GVar_SwarmBeeExplosionFile, "SwarmBeeExplosionFile", 0, "Default Model for Swarm Bee Explosion", "Models/Weapons/Swarm/BeeExplosion.M3D")
+INIT_GVAR_FLOAT(Init_GVar_TeslaRange, &GVar_TeslaRange, "TeslaRange", 0, "The maximun range that have the tesla", 15000.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXTeslaFadeOutTime, &GVar_FXTeslaFadeOutTime, "FXTeslaFadeOutTime", 0, "Time that use the Tesla to fade out", 0.1f)
+INIT_GVAR_FLOAT(Init_GVar_FXTeslaFollowTime, &GVar_FXTeslaFollowTime, "FXTeslaFollowTime", 0, "Time that use the Tesla to follow the curve", 0.025f)
+INIT_GVAR_FLOAT(Init_GVar_FXTeslaStepTime, &GVar_FXTeslaStepTime, "FXTeslaStepTime", 0, "Time step to change the follow curve for the Tesla", 0.06f)
+INIT_GVAR_FLOAT(Init_GVar_FXTeslaRandRadius, &GVar_FXTeslaRandRadius, "FXTeslaRandRadius", 0, "Random Radius that have the Tesla", 500.0f)

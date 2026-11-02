@@ -8,6 +8,7 @@
 #include "scrap/gvar.h"
 #include "scrap/scorerhud.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/staticinit.h"
 
 void Menu_DrawStretch(CPsaImage *img, int frame, float x, float y, float w, float h) {
 	img->scaleX = (w - 18.0f) / 9.0f;
@@ -384,3 +385,21 @@ void Scorer_BoostScorer(cAbstractFile *params) {
 	MenuItem_SetInt(item, "BoostStatus", &status);
 	MenuItem_SetFloat(item, "BoostRemaining", &rem);
 }
+
+cPy_NativeFunc NativeFunc_ScorerMetroUsrHere;
+cPy_NativeFunc NativeFunc_ScorerSpriteGlow;
+cPy_NativeFunc NativeFunc_ScorerSpriteFlash;
+cPy_NativeFunc NativeFunc_ScorerSpriteFadeIn;
+cPy_NativeFunc NativeFunc_ScorerSpriteFadeOut;
+cPy_NativeFunc NativeFunc_ScorerSpriteFadeOutFinal;
+cPy_NativeFunc NativeFunc_BoostScorer;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_FadeOutFinalTime, &GVar_FadeOutFinalTime, "FadeOutFinalTime", 0, "Fade out final time", 5.0f)
+INIT_NATIVE_FUNC(Init_NativeFunc_ScorerMetroUsrHere, &NativeFunc_ScorerMetroUsrHere, "ScorerMetroUsrHere", Scorer_MetroUsrHere)
+INIT_NATIVE_FUNC(Init_NativeFunc_ScorerSpriteGlow, &NativeFunc_ScorerSpriteGlow, "ScorerSpriteGlow", Scorer_SpriteGlow)
+INIT_NATIVE_FUNC(Init_NativeFunc_ScorerSpriteFlash, &NativeFunc_ScorerSpriteFlash, "ScorerSpriteFlash", Scorer_SpriteFlash)
+INIT_NATIVE_FUNC(Init_NativeFunc_ScorerSpriteFadeIn, &NativeFunc_ScorerSpriteFadeIn, "ScorerSpriteFadeIn", Scorer_SpriteFadeIn)
+INIT_NATIVE_FUNC(Init_NativeFunc_ScorerSpriteFadeOut, &NativeFunc_ScorerSpriteFadeOut, "ScorerSpriteFadeOut", Scorer_SpriteFadeOut)
+INIT_NATIVE_FUNC(Init_NativeFunc_ScorerSpriteFadeOutFinal, &NativeFunc_ScorerSpriteFadeOutFinal, "ScorerSpriteFadeOutFinal", Scorer_SpriteFadeOutFinal)
+INIT_NATIVE_FUNC(Init_NativeFunc_BoostScorer, &NativeFunc_BoostScorer, "BoostScorer", Scorer_BoostScorer)

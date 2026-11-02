@@ -13,6 +13,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/particlesystem.h"
 #include "scrap/misc.h"
+#include "scrap/staticinit.h"
 
 #define RNODE_UNIQUE 2
 #define RENDERNODE_ROT_NULL 0
@@ -232,3 +233,6 @@ void RenderCtx_SetChannel(NodeAnimChannel *self, CAnimSlot *slot) {
 	/* smoothstep */
 	self->blend = (3.0f - (b + b)) * (b * b);
 }
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_RenderNode_Count, &GVar_R_RenderNode_Count, "R_NodoR_Count", 0, "NodoR counter", 0)

@@ -16,6 +16,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
 #include "scrap/withlifeentity.h"
+#include "scrap/staticinit.h"
 
 /* defined further down or in another file without a header */
 void *GenCharGroup_MakeLogic(cEntity *e);
@@ -436,3 +437,11 @@ cGVar GVar_MessengerDataPackMissionArrow;
 
 cGVar GVar_MessengerGotoSpeed;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_MessengerDataPackMissionArrow, &GVar_MessengerDataPackMissionArrow, "MessengerDataPackMissionArrow", 0, "Type of indication of the 'Game of the messengers' mission.", 2)
+INIT_GVAR_FLOAT(Init_GVar_MessengerObjectiveDistance, &GVar_MessengerObjectiveDistance, "MessengerObjetiveDistance", 0, "Distance to the objetive to drop...", 300.0f)
+INIT_GVAR_FLOAT(Init_GVar_MessengerPrepareDistance, &GVar_MessengerPrepareDistance, "MessengerPrepareDistance", 0, "Distance to the objetive to prepare drop", 1200.0f)
+FINI_CALL(Fini_GVar_MessengerDropCallback, &GVar_MessengerDropCallback.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_MessengerDropCallback, Fini_GVar_MessengerDropCallback, &GVar_MessengerDropCallback, "MessengerDropCallback", 0, "Called if a messager drop a datapack", "")
+INIT_GVAR_INT(Init_GVar_MessengerDropPrice, &GVar_MessengerDropPrice, "MessengerDropPrice", 0, "The price if a messager drop the tube...", 500)
+INIT_GVAR_FLOAT(Init_GVar_MessengerGotoSpeed, &GVar_MessengerGotoSpeed, "MessengerGotoSpeed", 0, "Messenger speed when carry a tube or go for it.", 1.0f)

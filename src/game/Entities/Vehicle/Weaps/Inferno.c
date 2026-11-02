@@ -7,6 +7,7 @@
 
 #include "scrap/crt.h"
 #include "scrap/weaps2.h"
+#include "scrap/staticinit.h"
 
 static const char *const inferno_types[] = {
 	"Misil Inferno Uranio\n", "Misil Inferno Hidrogeno\n", "Misil Inferno Napalm\n"
@@ -595,3 +596,64 @@ cGVar GVar_InfernoEngineSoundAttEnd;
 
 cGVar GVar_InfernoExplosionFile;
 
+cPy_NativeFunc NativeFunc_InfernoPress;
+cPy_NativeFunc NativeFunc_InfernoRelease;
+cPy_NativeFunc NativeFunc_InfernoOnEnd;
+cPy_NativeFunc NativeFunc_InfernoOnStart;
+cPy_NativeFunc NativeFunc_InfernoHit;
+cPy_NativeFunc NativeFunc_InfernoServerHit;
+cPy_NativeFunc NativeFunc_InfernoOnObjSlot;
+cPy_NativeFunc NativeFunc_InfernoCreate;
+cPy_NativeFunc NativeFunc_InfernoSetUp;
+cPy_NativeFunc NativeFunc_InfernoFire;
+cPy_NativeFunc NativeFunc_InfernoFX;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_InfernoIDAmmo, &GVar_InfernoIDAmmo, "InfernoIDAmmo", 0, "The default ammo idx for the Inferno", 1)
+INIT_GVAR_FLOAT(Init_GVar_InfernoLifeTime, &GVar_InfernoLifeTime, "InfernoLifeTime", 0, "The maximun lifetime that have the Inferno", 6.5f)
+INIT_GVAR_INT(Init_GVar_InfernoArmor, &GVar_InfernoArmor, "InfernoArmor", 0, "The default armor for one swarm missile", 4)
+FINI_GVAR_STRING(Fini_GVar_InfernoMissileFile, &GVar_InfernoMissileFile)
+INIT_GVAR_STRING(Init_GVar_InfernoMissileFile, Fini_GVar_InfernoMissileFile, &GVar_InfernoMissileFile, "InfernoMissileFile", 0, "Default Model for Inferno Missile", "Models/Weapons/Inferno/Inferno.M3D")
+FINI_GVAR_STRING(Fini_GVar_InfernoExplosionFile, &GVar_InfernoExplosionFile)
+INIT_GVAR_STRING(Init_GVar_InfernoExplosionFile, Fini_GVar_InfernoExplosionFile, &GVar_InfernoExplosionFile, "InfernoExplosionFile", 0, "Default Model for Inferno Explosion", "Models/Weapons/Inferno/Explosion.M3D")
+INIT_GVAR_FLOAT(Init_GVar_InfernoNormSpeed, &GVar_InfernoNormSpeed, "InfernoNormSpeed", 0, "The Formal Speed that have the Inferno", 12000.0f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoBeesSpeed, &GVar_InfernoBeesSpeed, "InfernoBeesSpeed", 0, "The Internal Bees Speed that have the Inferno", 2000.0f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoUpTopSpeed, &GVar_InfernoUpTopSpeed, "InfernoUpTopSpeed", 0, "The Up Speed (Vehicle) that have the Inferno", 4000.0f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoTurnSpeed, &GVar_InfernoTurnSpeed, "InfernoTurnSpeed", 0, "The Turn Speed that have the Inferno", 20.0f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoTimeDelay, &GVar_InfernoTimeDelay, "InfernoTimeDelay", 0, "Time in seconds between the mis. shoots", 3.0f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoHitForce, &GVar_InfernoHitForce, "InfernoHitForce", 0, "The Hit Force Energy that have the Inferno cm*TN/sec", 75000.0f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoRangeMin, &GVar_InfernoRangeMin, "InfernoRangeMin", 0, "Range without bays that have the Inferno", 10000.0f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoRangeBay, &GVar_InfernoRangeBay, "InfernoRangeBay", 0, "Range add per bay that have the Inferno", 10000.0f)
+INIT_GVAR_INT(Init_GVar_InfernoAmmoCost, &GVar_InfernoAmmoCost, "InfernoAmmoCost", 0, "Inferno Ammo Cost", 125)
+FINI_GVAR_STRING(Fini_GVar_InfernoEngineSound, &GVar_InfernoEngineSound)
+INIT_GVAR_STRING(Init_GVar_InfernoEngineSound, Fini_GVar_InfernoEngineSound, &GVar_InfernoEngineSound, "InfernoEngineSound", 0, "Inferno Engine sound name", "InfernoEngine")
+INIT_GVAR_FLOAT(Init_GVar_InfernoEngineSoundVol, &GVar_InfernoEngineSoundVol, "InfernoEngineSoundVol", 0, "Inferno Engine sound volume", 0.75f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoEngineSoundAttIni, &GVar_InfernoEngineSoundAttIni, "InfernoEngineSoundAttIni", 0, "Inferno Engine sound attenuation ini", 5000.0f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoEngineSoundAttEnd, &GVar_InfernoEngineSoundAttEnd, "InfernoEngineSoundAttEnd", 0, "Inferno Engine sound attenuation end", 45000.0f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoEngineSoundDoppler, &GVar_InfernoEngineSoundDoppler, "InfernoEngineSoundDoppler", 0, "Inferno Engine sound doppler", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_InfernoHitSound, &GVar_InfernoHitSound)
+INIT_GVAR_STRING(Init_GVar_InfernoHitSound, Fini_GVar_InfernoHitSound, &GVar_InfernoHitSound, "InfernoHitSound", 0, "Inferno Hit sound name", "InfernoBoom")
+INIT_GVAR_FLOAT(Init_GVar_InfernoHitSoundVol, &GVar_InfernoHitSoundVol, "InfernoHitSoundVol", 0, "Inferno Hit sound volume", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoHitSoundAttIniRadius, &GVar_InfernoHitSoundAttIniRadius, "InfernoHitSoundAttIniRadius", 0, "Inferno Hit sound attenuation ini by radius", 0.8f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoHitSoundAttEndRadius, &GVar_InfernoHitSoundAttEndRadius, "InfernoHitSoundAttEndRadius", 0, "Inferno Hit sound attenuation end by radius", 1.8f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoMinDamage, &GVar_InfernoMinDamage, "InfernoMinDamage", 0, "Minimal damage of Inferno", 5.0f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoMaxDamage, &GVar_InfernoMaxDamage, "InfernoMaxDamage", 0, "Maximun damage of Inferno", 225.0f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoUpgFireTime, &GVar_InfernoUpgFireTime, "InfernoUpgFireTime", 0, "Inferno Upgrade Fire Time", 20.0f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoUpgFireFactor, &GVar_InfernoUpgFireFactor, "InfernoUpgFireFactor", 0, "Inferno Upgrade Fire Factor", 4.0f)
+INIT_GVAR_FLOAT(Init_GVar_InfernoInvUpgExtraDamage, &GVar_InfernoInvUpgExtraDamage, "InfernoInvUpgExtraDamage", 0, "Inferno Upgrade (inversed extended damage factor)", 0.9f)
+INIT_GVAR_FLOAT(Init_GVar_FXInfernoExplosionMaxDist, &GVar_FXInfernoExplosionMaxDist, "FXInfernoExplosionMaxDist", 0, "Maximun Distance to show the Inferno Explosion Effect", 400000.0f)
+INIT_NATIVE_FUNC(Init_NativeFunc_InfernoXplosionCall, &NativeFunc_InfernoXplosionCall, "InfernoXplosionCall", Inferno_SphereHit)
+INIT_GVAR_INT(Init_GVar_CannonScorerColorRed, &GVar_CannonScorerColorRed, "CannonScorerColorRed", 0, "Cannon Color Red", 251)
+INIT_GVAR_INT(Init_GVar_CannonScorerColorGreen, &GVar_CannonScorerColorGreen, "CannonScorerColorGreen", 0, "Cannon Color Green", 241)
+INIT_GVAR_INT(Init_GVar_CannonScorerColorBlue, &GVar_CannonScorerColorBlue, "CannonScorerColorBlue", 0, "Cannon Color Blue", 174)
+INIT_NATIVE_FUNC(Init_NativeFunc_InfernoPress, &NativeFunc_InfernoPress, "InfernoPress", Inferno_AimMode3Native)
+INIT_NATIVE_FUNC(Init_NativeFunc_InfernoRelease, &NativeFunc_InfernoRelease, "InfernoRelease", Inferno_AimMode2Native)
+INIT_NATIVE_FUNC(Init_NativeFunc_InfernoOnEnd, &NativeFunc_InfernoOnEnd, "InfernoOnEnd", Inferno_AimOffNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_InfernoOnStart, &NativeFunc_InfernoOnStart, "InfernoOnStart", Inferno_AimOnNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_InfernoHit, &NativeFunc_InfernoHit, "InfernoHit", Inferno_HitNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_InfernoServerHit, &NativeFunc_InfernoServerHit, "InfernoServerHit", Inferno_ServerHitNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_InfernoOnObjSlot, &NativeFunc_InfernoOnObjSlot, "InfernoOnObjSlot", Inferno_SlowNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_InfernoCreate, &NativeFunc_InfernoCreate, "InfernoCreate", Inferno_NetCreateNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_InfernoSetUp, &NativeFunc_InfernoSetUp, "InfernoSetUp", Inferno_NetSetUpNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_InfernoFire, &NativeFunc_InfernoFire, "InfernoFire", Inferno_FireNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_InfernoFX, &NativeFunc_InfernoFX, "InfernoFX", Inferno_HudNative)

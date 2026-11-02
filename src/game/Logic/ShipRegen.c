@@ -13,6 +13,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 
 cGVar GVar_RegenerationStartTime;
@@ -177,3 +178,14 @@ void ShipRegen_Update(cShipRegen *self, float dt) {
 	}
 	self->life = WLife(usr)->life;
 }
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_RegenerationStartTime, &GVar_RegenerationStartTime, "RegenerationStartTime", 0, "after this time, life´s regeneration starts.(ship)", 3.0f)
+INIT_GVAR_FLOAT(Init_GVar_RegenerationTimeRate, &GVar_RegenerationTimeRate, "RegenerationTimeRate", 0, "between RegenerationTimeRate sec, 1 point regenerates.(ship)", 0.1f)
+INIT_GVAR_FLOAT(Init_GVar_RegenerationCharStartTime, &GVar_RegenerationCharStartTime, "RegenerationCharStartTime", 0, "after this time, life´s regeneration starts.(char)", 10.0f)
+INIT_GVAR_FLOAT(Init_GVar_RegenerationCharTimeRate, &GVar_RegenerationCharTimeRate, "RegenerationCharTimeRate", 0, "between RegenerationTimeRate sec, 1 point regenerates.(char)", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_RegenerationItem, &GVar_RegenerationItem)
+INIT_GVAR_STRING(Init_GVar_RegenerationItem, Fini_GVar_RegenerationItem, &GVar_RegenerationItem, "RegenerationItem", 0, "Name of the bar item to make the regeneration", "RegenerationBar")
+INIT_GVAR_INT(Init_GVar_LifeToLaunchCallback, &GVar_LifeToLaunchCallback, "LifeToLaunchCallback", 0, "Life to launch callback", 30)
+FINI_CALL(Fini_GVar_LifeReachedCallback, &GVar_LifeReachedCallback.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_LifeReachedCallback, Fini_GVar_LifeReachedCallback, &GVar_LifeReachedCallback, "LifeReachedCallback", 0, "Life reached callback", "")

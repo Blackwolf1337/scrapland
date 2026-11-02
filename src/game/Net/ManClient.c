@@ -9,6 +9,7 @@
 #include "scrap/crt.h"
 #include "scrap/net.h"
 #include "scrap/objentity.h"
+#include "scrap/staticinit.h"
 
 cServerNetManager *cServerNetManager_ctor(cServerNetManager *self, cNetClient *client, int slot) {
 	cUserNetManager_ctor(&self->base, client, slot);
@@ -274,3 +275,31 @@ cGVar GVar_PlayerTeamID;
 
 cGVar GVar_PlayerModel;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_WeaponBayList, &GVar_WeaponBayList)
+INIT_GVAR_STRING(Init_GVar_WeaponBayList, Fini_GVar_WeaponBayList, &GVar_WeaponBayList, "WeaponBayList", 2, "List of mounted weapons(codified) A bits,B bits....\n", "1,1,0,1,3,0")
+FINI_GVAR_STRING(Fini_GVar_Motor3Model, &GVar_Motor3Model)
+INIT_GVAR_STRING(Init_GVar_Motor3Model, Fini_GVar_Motor3Model, &GVar_Motor3Model, "Motor3Model", 2, "The Fourth motor kind", "")
+FINI_GVAR_STRING(Fini_GVar_Motor2Model, &GVar_Motor2Model)
+INIT_GVAR_STRING(Init_GVar_Motor2Model, Fini_GVar_Motor2Model, &GVar_Motor2Model, "Motor2Model", 2, "The Third motor kind", "")
+FINI_GVAR_STRING(Fini_GVar_Motor1Model, &GVar_Motor1Model)
+INIT_GVAR_STRING(Init_GVar_Motor1Model, Fini_GVar_Motor1Model, &GVar_Motor1Model, "Motor1Model", 2, "The Second motor kind", "")
+FINI_GVAR_STRING(Fini_GVar_Motor0Model, &GVar_Motor0Model)
+INIT_GVAR_STRING(Init_GVar_Motor0Model, Fini_GVar_Motor0Model, &GVar_Motor0Model, "Motor0Model", 2, "The first motor kind", "MBetty1")
+FINI_GVAR_STRING(Fini_GVar_PilotModel, &GVar_PilotModel)
+INIT_GVAR_STRING(Init_GVar_PilotModel, Fini_GVar_PilotModel, &GVar_PilotModel, "PilotModel", 2, "Player resource", "P_Betty")
+FINI_GVAR_STRING(Fini_GVar_PlayerModel, &GVar_PlayerModel)
+INIT_GVAR_STRING(Init_GVar_PlayerModel, Fini_GVar_PlayerModel, &GVar_PlayerModel, "PlayerModel", 2, "Model resource", "SBetty1")
+INIT_GVAR_INT(Init_GVar_PlayerMaxLife, &GVar_PlayerMaxLife, "PlayerMaxLife", 2, "The max life for the normal ship configuration...", 80)
+FINI_GVAR_STRING(Fini_GVar_PlayerName, &GVar_PlayerName)
+INIT_GVAR_STRING(Init_GVar_PlayerName, Fini_GVar_PlayerName, &GVar_PlayerName, "PlayerName", 2, "user's nickname", "Unnamed Player")
+INIT_GVAR_INT(Init_GVar_PlayerTeamID, &GVar_PlayerTeamID, "PlayerTeamID", 6, "0:red, 2:green, 4:Killer", 0)
+INIT_GVAR_INT(Init_GVar_LogNetData, &GVar_LogNetData, "LogNetData", 4, "Log client network data for debuging.\n", 0)
+FINI_CALL(Fini_cFileMem_NetMsg, &g_NetMsg, cFileMem_dtor)
+INIT_OBJECT_ARGS(Init_cFileMem_NetMsg, Fini_cFileMem_NetMsg, &g_NetMsg, cFileMem_ctor, 0, 0, 0)
+FINI_CALL(Fini_GVar_ClientCreate, &GVar_ClientCreate.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_ClientCreate, Fini_GVar_ClientCreate, &GVar_ClientCreate, "ClientCreate", 0, "ClientCreate(EntityName,ResoruceName)", "")
+FINI_CALL(Fini_GVar_ClientAfterCreate, &GVar_ClientAfterCreate.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_ClientAfterCreate, Fini_GVar_ClientAfterCreate, &GVar_ClientAfterCreate, "ClientAfterCreate", 0, "ClientAfterCreate(EntityName,ResoruceName)", "")
+FINI_GVAR_STRING(Fini_GVar_ClientPassword, &GVar_ClientPassword)
+INIT_GVAR_STRING(Init_GVar_ClientPassword, Fini_GVar_ClientPassword, &GVar_ClientPassword, "ClientPassword", 6, "The password needed to join to the server's match.\n", "sesame")

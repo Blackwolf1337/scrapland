@@ -13,6 +13,7 @@
 #include "scrap/objentity.h"
 #include "scrap/scrap.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 extern const cGenCharLocalLogicVtbl cRustyLocalLogic_vftable;
 #define CRUSTYLOCALLOGIC_VFTABLE (&cRustyLocalLogic_vftable.base)
@@ -260,3 +261,12 @@ const cGenCharLocalLogicVtbl cRustyLocalLogic_vftable = {
 	.GoTo = cGenCharLocalLogic_GoTo,
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };
+
+cPy_NativeFunc NativeFunc_IncrementHits;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_JunkPointsListName, &GVar_JunkPointsListName)
+INIT_GVAR_STRING(Init_GVar_JunkPointsListName, Fini_GVar_JunkPointsListName, &GVar_JunkPointsListName, "JunkPointsListName", 1, "Junk points list name", "JunkPoints")
+INIT_GVAR_INT(Init_GVar_NumWorkingLoops, &GVar_NumWorkingLoops, "NumWorkingLoops", 0, "Num working loops", 3)
+INIT_GVAR_INT(Init_GVar_PlatformRadiusSqr, &GVar_PlatformRadiusSqr, "PlatformRadiusSqr", 0, "Platform radius squared", 1575025)
+INIT_NATIVE_FUNC(Init_NativeFunc_IncrementHits, &NativeFunc_IncrementHits, "IncrementHits", Rusty_LoopDone)

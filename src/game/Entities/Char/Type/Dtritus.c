@@ -6,6 +6,7 @@
 #include "scrap/fxelements.h"
 #include "scrap/primitive.h"
 #include "scrap/vehicleattack.h"
+#include "scrap/staticinit.h"
 
 static inline cFollowCamEntity *Dtritus_Cam(cEntity *v) {
 	return (cFollowCamEntity *)WChar(v)->wl.obj.cam;
@@ -205,3 +206,21 @@ cGVar GVar_DTritusHitTimeSpeed;
 
 cGVar GVar_FXDTritusKillFile;
 
+cPy_NativeFunc NativeFunc_DtritusActionPress;
+cPy_NativeFunc NativeFunc_DtritusHitEvent;
+cPy_NativeFunc NativeFunc_DtritusEndEvent;
+cPy_NativeFunc NativeFunc_DtritusRestartEvent;
+cPy_NativeFunc NativeFunc_FXDTritusAttack;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_FXDTritusAttackFile, &GVar_FXDTritusAttackFile)
+INIT_GVAR_STRING(Init_GVar_FXDTritusAttackFile, Fini_GVar_FXDTritusAttackFile, &GVar_FXDTritusAttackFile, "FXDTritusAttackFile", 0, "Default Model for DTritus Attack Effect", "Models/GFX/DTritus/Attack.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXDTritusKillFile, &GVar_FXDTritusKillFile)
+INIT_GVAR_STRING(Init_GVar_FXDTritusKillFile, Fini_GVar_FXDTritusKillFile, &GVar_FXDTritusKillFile, "FXDTritusKillFile", 0, "Default Model for DTritus Kill Effect", "Models/GFX/DTritus/Kill.M3D")
+INIT_GVAR_FLOAT(Init_GVar_DTritusHitTimeSpeed, &GVar_DTritusHitTimeSpeed, "DTritusHitTimeSpeed", 0, "DTritus Effect Time", 0.05f)
+INIT_GVAR_FLOAT(Init_GVar_DTritusHitTimeFader, &GVar_DTritusHitTimeFader, "DTritusHitTimeFader", 0, "DTritus Effect Time", 0.2f)
+INIT_NATIVE_FUNC(Init_NativeFunc_DtritusActionPress, &NativeFunc_DtritusActionPress, "DtritusActionPress", ChType_DtritusActionPress)
+INIT_NATIVE_FUNC(Init_NativeFunc_DtritusHitEvent, &NativeFunc_DtritusHitEvent, "DtritusHitEvent", ChType_DtritusHitEvent)
+INIT_NATIVE_FUNC(Init_NativeFunc_DtritusEndEvent, &NativeFunc_DtritusEndEvent, "DtritusEndEvent", ChType_DtritusEndEvent)
+INIT_NATIVE_FUNC(Init_NativeFunc_DtritusRestartEvent, &NativeFunc_DtritusRestartEvent, "DtritusRestartEvent", ChType_DtritusRestartEvent)
+INIT_NATIVE_FUNC(Init_NativeFunc_FXDTritusAttack, &NativeFunc_FXDTritusAttack, "FXDTritusAttack", ChType_FXDTritusAttack)

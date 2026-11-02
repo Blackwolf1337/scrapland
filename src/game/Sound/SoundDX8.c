@@ -12,6 +12,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/snd.h"
 #include "scrap/sound.h"
+#include "scrap/staticinit.h"
 
 #define SOUND_TABLE_SLOTS 0x1c9
 #define SOUND_VOL_MIN (-6400)	/* at or below nothing plays */
@@ -507,3 +508,10 @@ cGVar GVar_S_PitchScale;
 
 cGVar GVar_S_SkipPlay;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_SoundMainVolume, &GVar_SoundMainVolume, "SoundMainVolume", 10, "Sound main volume (0..1)\n", 1.0f)
+INIT_GVAR_INT(Init_GVar_SoundSwapChannels, &GVar_SoundSwapChannels, "SoundSwapChannels", 2, "0 = Normal, 1 = Swap left/right channels", 0)
+INIT_GVAR_INT(Init_GVar_S_Show, &GVar_S_Show, "S_Show", 0, "Show sound debug info on screen (0/1/2)", 0)
+INIT_GVAR_INT(Init_GVar_S_SkipPlay, &GVar_S_SkipPlay, "S_SkipPlay", 0, "Disable sound playing (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_S_SkipUpdates, &GVar_S_SkipUpdates, "S_SkipUpdates", 0, "Disable sound updates (0/1)", 0)
+INIT_GVAR_FLOAT(Init_GVar_S_PitchScale, &GVar_S_PitchScale, "S_PitchScale", 0, "Pitch scale (def. 1.0)", 1.0f)

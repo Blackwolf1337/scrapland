@@ -22,6 +22,7 @@
 #include "scrap/utild3d.h"
 #include "scrap/scrapmain.h"
 #include "scrap/platform.h"
+#include "scrap/staticinit.h"
 
 extern const IObject3DVtbl CGround_vftable;
 #define CGROUND_VFTABLE (&CGround_vftable)
@@ -2356,3 +2357,10 @@ const IObject3DVtbl CGround_vftable = {
 
 cGVar GVar_MapCollisionBalance;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_MapCollisionBalance, &GVar_MapCollisionBalance, "MapCollisionBalance", 0, "Faces per quad balance", 12.0f)
+INIT_GVAR_INT(Init_GVar_ShowMapSolid, &GVar_ShowMapSolid, "ShowMapSolid", 0, "Show map collision solid mode (0/1/2)", 0)
+INIT_GVAR_INT(Init_GVar_ShowMapQuads, &GVar_ShowMapQuads, "ShowMapQuads", 0, "Show map collision quads (0/1)", 0)
+INIT_GVAR_FLOAT(Init_GVar_ShowMapQDist, &GVar_ShowMapQDist, "ShowMapQDist", 0, "Show map collision quads distance", 0.0f)
+INIT_GVAR_INT(Init_GVar_AnalyzeQuads, &GVar_AnalyzeQuads, "AnalizeQuads", 0, "Analize problems in quads.", 0)
+INIT_CALL(Init_CollisionStats, g_CollisionStats, Stub_ReturnSelf)

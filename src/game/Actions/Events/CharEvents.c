@@ -7,6 +7,7 @@
 #include "scrap/actions.h"
 #include "scrap/ai.h"
 #include "scrap/walkcharentity.h"
+#include "scrap/staticinit.h"
 
 #define EVENT_STR 0x80
 
@@ -93,3 +94,18 @@ void Event_AnmStopChan(cAbstractFile *params) {
 	int i = crt_atoi(str);
 	cActCtrl_StopChan(WithLife_Vtbl(ent)->GetActCtrl(ent), i);
 }
+
+cPy_NativeFunc NativeFunc_AnmChangeRandomAnm;
+cPy_NativeFunc NativeFunc_AnmSetDefaultLoop;
+cPy_NativeFunc NativeFunc_AnmSetAction;
+cPy_NativeFunc NativeFunc_AnmStopChan;
+cPy_NativeFunc NativeFunc_AnmCommand;
+cPy_NativeFunc NativeFunc_AnmSetDisplAng;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_NATIVE_FUNC(Init_NativeFunc_AnmChangeRandomAnm, &NativeFunc_AnmChangeRandomAnm, "AnmChangeRandomAnm", Event_AnmChangeRandomAnm)
+INIT_NATIVE_FUNC(Init_NativeFunc_AnmSetDefaultLoop, &NativeFunc_AnmSetDefaultLoop, "AnmSetDefaultLoop", Event_AnmSetDefaultLoop)
+INIT_NATIVE_FUNC(Init_NativeFunc_AnmSetAction, &NativeFunc_AnmSetAction, "AnmSetAction", Event_AnmSetAction)
+INIT_NATIVE_FUNC(Init_NativeFunc_AnmStopChan, &NativeFunc_AnmStopChan, "AnmStopChan", Event_AnmStopChan)
+INIT_NATIVE_FUNC(Init_NativeFunc_AnmCommand, &NativeFunc_AnmCommand, "AnmCommand", Event_AnmCommand)
+INIT_NATIVE_FUNC(Init_NativeFunc_AnmSetDisplAng, &NativeFunc_AnmSetDisplAng, "AnmSetDisplAng", Event_AnmSetDisplAng)

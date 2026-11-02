@@ -10,6 +10,8 @@
 #include "scrap/pymempool.h"
 #include "scrap/scrap.h"
 #include "scrap/platform.h"
+#include "scrap/actions.h"
+#include "scrap/staticinit.h"
 
 cStringNode *cStringList_NewNode(cStringList *list);
 
@@ -923,3 +925,19 @@ cGVar GVar_BuildPackExclude;
 
 cGVar GVar_BuildPackInclude;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_PathInPackFile, &GVar_PathInPackFile)
+INIT_GVAR_STRING(Init_GVar_PathInPackFile, Fini_GVar_PathInPackFile, &GVar_PathInPackFile, "PathInPackFile", 1, "Used to convert the system to the new pack system...", "")
+FINI_GVAR_STRING(Fini_GVar_BuildPackInclude, &GVar_BuildPackInclude)
+INIT_GVAR_STRING(Init_GVar_BuildPackInclude, Fini_GVar_BuildPackInclude, &GVar_BuildPackInclude, "BuildPackInclude", 4, "Pack build filelist inclusion pattern", "")
+FINI_GVAR_STRING(Fini_GVar_BuildPackExclude, &GVar_BuildPackExclude)
+INIT_GVAR_STRING(Init_GVar_BuildPackExclude, Fini_GVar_BuildPackExclude, &GVar_BuildPackExclude, "BuildPackExclude", 4, "Pack build filelist exclusion pattern", "")
+INIT_GVAR_INT(Init_GVar_BuildPackPrompt, &GVar_BuildPackPrompt, "BuildPackPrompt", 4, "disgusting final message", 1)
+FINI_VECTOR(Fini_cFile2_PackFiles, g_PackFiles, sizeof(cFile2), 128, cFile2_dtor)
+INIT_VECTOR(Init_cFile2_PackFiles, Fini_cFile2_PackFiles, g_PackFiles, sizeof(cFile2), 128, cFile2_ctor, cFile2_dtor)
+FINI_DLIST(Fini_PackEntries, &g_PackEntries, PackEntries_Clear, 276)
+INIT_ATEXIT(Init_PackEntries, Fini_PackEntries)
+FINI_CALL2(Fini_cStringList_PackNames, &g_PackNames, cStringList_Clear, &g_PackNames, cStringList_FreePool)
+INIT_ATEXIT(Init_cStringList_PackNames, Fini_cStringList_PackNames)
+FINI_CALL(Fini_PackIndex, &g_PackIndex, PackIndexTable_Clear)
+INIT_HASHTABLE(Init_PackIndex, Fini_PackIndex, &g_PackIndex, 0x1c9, 4, 0x724, 0, 1)

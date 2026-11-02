@@ -13,6 +13,7 @@
 #include "scrap/model.h"
 #include "scrap/render.h"
 #include "scrap/scrapworld.h"
+#include "scrap/staticinit.h"
 
 #define MAX_SCREENS 10
 #define MAX_MODELS 10
@@ -136,3 +137,7 @@ void MeshEffect_Render(void) {
 	E3D_FlushBatch();
 	MeshEffect_RenderModels();
 }
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_CALL(Fini_CMaterial_MeshEffectMat, &g_MeshEffectMat, CMaterial_dtor)
+INIT_OBJECT(Init_CMaterial_MeshEffectMat, Fini_CMaterial_MeshEffectMat, &g_MeshEffectMat, CMaterial_ctor)

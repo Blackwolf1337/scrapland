@@ -5,6 +5,7 @@
  */
 #include "scrap/vehicleentity.h"
 #include "scrap/weaps2.h"
+#include "scrap/staticinit.h"
 
 #define VULCAN_UPG_FAST 1
 #define VULCAN_UPG_WIDE 2
@@ -603,3 +604,40 @@ cGVar GVar_VulcanRange;
 
 cGVar GVar_VulcanRicSoundAttEnd;
 
+cPy_NativeFunc NativeFunc_VulcanPress;
+cPy_NativeFunc NativeFunc_VulcanRelease;
+cPy_NativeFunc NativeFunc_VulcanCreate;
+cPy_NativeFunc NativeFunc_VulcanFire;
+cPy_NativeFunc NativeFunc_VulcanFX;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_VulcanIDAmmo, &GVar_VulcanIDAmmo, "VulcanIDAmmo", 0, "The default weapon idx for the vulcan", 0)
+FINI_GVAR_STRING(Fini_GVar_VulcanBulletFile, &GVar_VulcanBulletFile)
+INIT_GVAR_STRING(Init_GVar_VulcanBulletFile, Fini_GVar_VulcanBulletFile, &GVar_VulcanBulletFile, "VulcanBulletFile", 0, "default bullet model for the vulcan", "Models/Weapons/Debris/Bullet/Bullet.M3D")
+FINI_GVAR_STRING(Fini_GVar_VulcanHitFile, &GVar_VulcanHitFile)
+INIT_GVAR_STRING(Init_GVar_VulcanHitFile, Fini_GVar_VulcanHitFile, &GVar_VulcanHitFile, "VulcanHitFile", 0, "default hit model for the vulcan", "Models/Weapons/Vulcan/Hit.M3D")
+INIT_GVAR_FLOAT(Init_GVar_VulcanHitForce, &GVar_VulcanHitForce, "VulcanHitForce", 0, "The force that have a single vulcan shoot", 2000000.0f)
+INIT_GVAR_FLOAT(Init_GVar_VulcanRange, &GVar_VulcanRange, "VulcanRange", 0, "The maximun range that have the vulcan", 40000.0f)
+INIT_GVAR_FLOAT(Init_GVar_VulcanAmmoCost, &GVar_VulcanAmmoCost, "VulcanAmmoCost", 0, "Cost Per hit at vulcan", 0.5f)
+INIT_GVAR_FLOAT(Init_GVar_VulcanTimeDelay, &GVar_VulcanTimeDelay, "VulcanTimeDelay", 0, "Time between vulcan shoots", 0.1f)
+INIT_GVAR_FLOAT(Init_GVar_VulcanTimeDelayUPG, &GVar_VulcanTimeDelayUPG, "VulcanTimeDelayUPG", 0, "Time between vulcan shoots (UPGRADE)", 0.075f)
+INIT_GVAR_INT(Init_GVar_VulcanDamage, &GVar_VulcanDamage, "VulcanDamage", 0, "Vulcan damage per slot", 2)
+INIT_GVAR_INT(Init_GVar_VulcanDamageEasy, &GVar_VulcanDamageEasy, "VulcanDamageEasy", 0, "Vulcan damage per slot (easy Set)", 1)
+FINI_GVAR_STRING(Fini_GVar_VulcanRic0Sound, &GVar_VulcanRic0Sound)
+INIT_GVAR_STRING(Init_GVar_VulcanRic0Sound, Fini_GVar_VulcanRic0Sound, &GVar_VulcanRic0Sound, "VulcanRic0Sound", 0, "First Vulcan puchuing sound name", "VulcanRic0")
+INIT_GVAR_FLOAT(Init_GVar_VulcanRic0SoundVol, &GVar_VulcanRic0SoundVol, "VulcanRic0SoundVol", 0, "First Vulcan puchuing sound volume", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_VulcanRic1Sound, &GVar_VulcanRic1Sound)
+INIT_GVAR_STRING(Init_GVar_VulcanRic1Sound, Fini_GVar_VulcanRic1Sound, &GVar_VulcanRic1Sound, "VulcanRic1Sound", 0, "Second Vulcan puchuing sound name", "VulcanRic1")
+INIT_GVAR_FLOAT(Init_GVar_VulcanRic1SoundVol, &GVar_VulcanRic1SoundVol, "VulcanRic1SoundVol", 0, "Second Vulcan puchuing sound volume", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_VulcanRic2Sound, &GVar_VulcanRic2Sound)
+INIT_GVAR_STRING(Init_GVar_VulcanRic2Sound, Fini_GVar_VulcanRic2Sound, &GVar_VulcanRic2Sound, "VulcanRic2Sound", 0, "Third Vulcan puchuing sound name", "VulcanRic2")
+INIT_GVAR_FLOAT(Init_GVar_VulcanRic2SoundVol, &GVar_VulcanRic2SoundVol, "VulcanRic2SoundVol", 0, "Third Vulcan puchuing sound volume", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_VulcanRicSoundAttIni, &GVar_VulcanRicSoundAttIni, "VulcanRicSoundAttIni", 0, "Vulcan puchuing sound att ini", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_VulcanRicSoundAttEnd, &GVar_VulcanRicSoundAttEnd, "VulcanRicSoundAttEnd", 0, "Vulcan puchuing sound att end", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXVulcanHitDistance, &GVar_FXVulcanHitDistance, "FXVulcanHitDistance", 0, "Distance of Vulcan Sparks Effect", 80000.0f)
+INIT_GVAR_INT(Init_GVar_VulcanHitUseNormal, &GVar_VulcanHitUseNormal, "VulcanHitUseNormal", 0, "Use the Normal of Hitted point at Vulcan Hit", 1)
+INIT_NATIVE_FUNC(Init_NativeFunc_VulcanPress, &NativeFunc_VulcanPress, "VulcanPress", Vulcan_AimOnNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_VulcanRelease, &NativeFunc_VulcanRelease, "VulcanRelease", Vulcan_AimOffNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_VulcanCreate, &NativeFunc_VulcanCreate, "VulcanCreate", Vulcan_CreateNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_VulcanFire, &NativeFunc_VulcanFire, "VulcanFire", Vulcan_FireNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_VulcanFX, &NativeFunc_VulcanFX, "VulcanFX", Vulcan_HudNative)

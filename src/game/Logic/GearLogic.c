@@ -11,6 +11,7 @@
 #include "scrap/objentity.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 cGVar GVar_GearStdFar;
 
@@ -522,3 +523,16 @@ const cBaseLocalLogicVtbl cGearLocalLogic_vftable = {
 	.SetOriginAng = cBaseLocalLogic_SetOriginAng,
 	.RestartState = cGearLocalLogic_RestartState,
 };
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_GearStdFovX, &GVar_GearStdFovX, "GearStdFovX", 0, "Standard Gear FieldOfView", 1.5707964f)
+INIT_GVAR_FLOAT(Init_GVar_GearStdFovY, &GVar_GearStdFovY, "GearStdFovY", 0, "Standard Gear FieldOfView", 1.5707964f)
+INIT_GVAR_FLOAT(Init_GVar_GearStdFar, &GVar_GearStdFar, "GearStdFar", 0, "Standard Gear Distance of View", 1500.0f)
+INIT_GVAR_FLOAT(Init_GVar_GearRelaxSpeed, &GVar_GearRelaxSpeed, "GearRelaxSpeed", 0, "Gear speed (Relax)", 0.5f)
+INIT_GVAR_FLOAT(Init_GVar_GearChaseSpeed, &GVar_GearChaseSpeed, "GearChaseSpeed", 0, "Gear speed (Chase)", 0.75f)
+INIT_GVAR_FLOAT(Init_GVar_GearAttackSpeed, &GVar_GearAttackSpeed, "GearAttackSpeed", 0, "Gear speed (Attack)", 0.25f)
+INIT_GVAR_FLOAT(Init_GVar_GearScortSpeed, &GVar_GearScortSpeed, "GearScortSpeed", 0, "Gear speed (Scort)", 0.5f)
+INIT_GVAR_FLOAT(Init_GVar_GearLostTargetTime, &GVar_GearLostTargetTime, "GearLostTargetTime", 0, "Time since the target got lost", 5.0f)
+INIT_GVAR_FLOAT(Init_GVar_GearAttackNPCTime, &GVar_GearAttackNPCTime, "GearAttackNPCTime", 0, "Time attacking an npc character", 10.0f)
+INIT_GVAR_FLOAT(Init_GVar_GearRobberyDetection, &GVar_GearRobberyDetection, "GearRobberyDetection", 0, "Gear robery detection percentage", 30.0f)
+INIT_GVAR_INT(Init_GVar_Gear2PoliceAlways, &GVar_Gear2PoliceAlways, "Gear2PoliceAlways", 0, "if 0 Gears will become polices only if no alarm", 1)

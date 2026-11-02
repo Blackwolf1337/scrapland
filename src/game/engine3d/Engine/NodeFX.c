@@ -9,6 +9,7 @@
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
 #include "scrap/e3dutil.h"
+#include "scrap/staticinit.h"
 
 /* the distance of a and b */
 static float Vec3_Dist(const vec3_t *a, const vec3_t *b) {
@@ -469,3 +470,16 @@ cGVar GVar_NodeFXWheelSlide;
 
 cGVar GVar_NodeFXSpringSprng;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_NodeFXWheelRadius, &GVar_NodeFXWheelRadius, "NodeFXWheelRadius", 0, "NodeFX Wheel radius multiplier", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_NodeFXWheelSlide, &GVar_NodeFXWheelSlide, "NodeFXWheelSlide", 0, "NodeFX Wheel sliding factor", 1.0f)
+INIT_GVAR_INT(Init_GVar_NodeFXWheelShow, &GVar_NodeFXWheelShow, "NodeFXWheelShow", 0, "NodeFX Wheel debug info", 0)
+INIT_GVAR_FLOAT(Init_GVar_NodeFXSpringDamp2, &GVar_NodeFXSpringDamp2, "NodeFXSpringDamp2", 0, "NodeFX Spring damp 2 (global damp)", 0.6f)
+INIT_GVAR_FLOAT(Init_GVar_NodeFXSpringDamp1, &GVar_NodeFXSpringDamp1, "NodeFXSpringDamp1", 0, "NodeFX Spring damp 1 (spring damp)", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_NodeFXSpringSprng, &GVar_NodeFXSpringSprng, "NodeFXSpringSprng", 0, "NodeFX Spring coef 1 (spring coef)", 0.3f)
+INIT_GVAR_FLOAT(Init_GVar_NodeFXSpringRot, &GVar_NodeFXSpringRot, "NodeFXSpringRot", 0, "NodeFX Spring rotation coef.", 0.5f)
+INIT_GVAR_FLOAT(Init_GVar_NodeFXSpringRotX, &GVar_NodeFXSpringRotX, "NodeFXSpringRotX", 0, "NodeFX Spring rotation x (deg)", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_NodeFXSpringMidP, &GVar_NodeFXSpringMidP, "NodeFXSpringMidP", 0, "NodeFX Spring mid-point", 0.5f)
+INIT_GVAR_INT(Init_GVar_NodeFXSpringMSec, &GVar_NodeFXSpringMSec, "NodeFXSpringMSec", 0, "NodeFX Spring calc. period (msec)", 50)
+INIT_GVAR_INT(Init_GVar_NodeFXSpringShow, &GVar_NodeFXSpringShow, "NodeFXSpringShow", 0, "NodeFX Spring debug info", 0)
+INIT_GVAR_INT(Init_GVar_NodeFXSpringDebug, &GVar_NodeFXSpringDebug, "NodeFXSpringDebug", 0, "NodeFX Spring override (0/1)", 0)

@@ -10,6 +10,7 @@
 #include "scrap/scrapfont.h"
 #include "scrap/timer.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 /* the draw handler of each character action: (item, player) */
 
@@ -807,3 +808,11 @@ cGVar GVar_FunctionarySpecialActionLow;
 
 cGVar GVar_GearLowWeaponEnergy;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_FunctionarySpecialActionLow, &GVar_FunctionarySpecialActionLow, "FunctionarySpecialActionLow", 0, "Functionary special action low value (between 0 and 1)", 0.15f)
+INIT_GVAR_FLOAT(Init_GVar_GearLowWeaponEnergy, &GVar_GearLowWeaponEnergy, "GearLowWeaponEnergy", 0, "Gear low weapon energy value (between 0 and 1)", 0.13f)
+INIT_GVAR_FLOAT(Init_GVar_GearTargetCrossBlinkTime, &GVar_GearTargetCrossBlinkTime, "GearTargetCrossBlinkTime", 0, "Gear target cross blink time", 0.1f)
+INIT_GVAR_FLOAT(Init_GVar_GearTargetSphereRadius, &GVar_GearTargetSphereRadius, "GearTargetSphereRadius", 0, "Gear target sphere radius", 3000.0f)
+FINI_GVAR_STRING(Fini_GVar_GearTargetName, &GVar_GearTargetName)
+INIT_GVAR_STRING(Init_GVar_GearTargetName, Fini_GVar_GearTargetName, &GVar_GearTargetName, "GearTargetName", 1, "Gear target entity name", "")
+INIT_GVAR_INT(Init_GVar_SpecialActionActive, &GVar_SpecialActionActive, "SpecialActionActive", 0, "the special action status. 0-Disable 1-Blink 2-Enable", 2)

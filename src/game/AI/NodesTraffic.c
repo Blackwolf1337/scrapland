@@ -16,6 +16,7 @@
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
+#include "scrap/staticinit.h"
 
 
 /* ---- Global/DList.h ---- */
@@ -1301,3 +1302,13 @@ cGVar GVar_HNTrafficCapsule;
 
 cGVar GVar_MTrafficCapsule;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_ShowTrafficAI, &GVar_ShowTrafficAI, "ShowTrafficAI", 4, "Show info traffic.\n", 0)
+INIT_GVAR_INT(Init_GVar_ShowNumTrafficAI, &GVar_ShowNumTrafficAI, "ShowNumTrafficAI", 4, "Show info traffic num.\n", 0)
+INIT_GVAR_FLOAT(Init_GVar_MinDistNodeTrafficAI, &GVar_MinDistNodeTrafficAI, "MinDistNodeTrafficAI", 4, "Min. distance between nodes of traffic.\n", 15000.0f)
+INIT_GVAR_FLOAT(Init_GVar_DistGetPVisTrafficAI, &GVar_DistGetPVisTrafficAI, "DistGetPVisTrafficAI", 4, "Distance máx. to repos traffic.\n", 200000.0f)
+INIT_GVAR_FLOAT(Init_GVar_HTrafficCapsule, &GVar_HTrafficCapsule, "HTrafficCapsule", 0, "Heavy Radius of the Traffic Segment", 6000.0f)
+INIT_GVAR_FLOAT(Init_GVar_MTrafficCapsule, &GVar_MTrafficCapsule, "MTrafficCapsule", 0, "Medium Radius of the Traffic Segment", 4000.0f)
+INIT_GVAR_FLOAT(Init_GVar_HNTrafficCapsule, &GVar_HNTrafficCapsule, "HNTrafficCapsule", 0, "Mixed Heavy/Normal Radius of the Traffic Segment", 3500.0f)
+INIT_GVAR_FLOAT(Init_GVar_MNTrafficCapsule, &GVar_MNTrafficCapsule, "MNTrafficCapsule", 0, "Mixed Medium/Normal Radius of the Traffic Segment", 2500.0f)
+INIT_GVAR_FLOAT(Init_GVar_NTrafficCapsule, &GVar_NTrafficCapsule, "NTrafficCapsule", 0, "Normal Radius of the Traffic Segment", 2500.0f)

@@ -5,6 +5,7 @@
 #include "scrap/ai.h"
 #include "scrap/crt.h"
 #include "scrap/weaps2.h"
+#include "scrap/staticinit.h"
 
 /* missile name, position x y z: a bee died there */
 void Swarm_OnBeeHitNative(cAbstractFile *f) {
@@ -559,3 +560,71 @@ cGVar GVar_TeslaMinAngRangeUpgPad;
 
 cGVar GVar_TeslaMinAngRange;
 
+cPy_NativeFunc NativeFunc_SwarmPress;
+cPy_NativeFunc NativeFunc_SwarmRelease;
+cPy_NativeFunc NativeFunc_SwarmOnEnd;
+cPy_NativeFunc NativeFunc_SwarmOnStart;
+cPy_NativeFunc NativeFunc_SwarmHit;
+cPy_NativeFunc NativeFunc_SwarmServerHit;
+cPy_NativeFunc NativeFunc_SwarmCreate;
+cPy_NativeFunc NativeFunc_SwarmSetUp;
+cPy_NativeFunc NativeFunc_SwarmClientFire;
+cPy_NativeFunc NativeFunc_SwarmFire;
+cPy_NativeFunc NativeFunc_SwarmFX;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_SwarmIDWeap, &GVar_SwarmIDWeap, "SwarmIDWeap", 0, "The default weapon idx for the Swarm", 6)
+INIT_GVAR_INT(Init_GVar_SwarmIDAmmo, &GVar_SwarmIDAmmo, "SwarmIDAmmo", 0, "The default ammo idx for the swarm", 1)
+INIT_GVAR_FLOAT(Init_GVar_SwarmLifeTime, &GVar_SwarmLifeTime, "SwarmLifeTime", 0, "The maximun lifetime that have the swarm", 4.5f)
+INIT_GVAR_FLOAT(Init_GVar_SwarmDeathTime, &GVar_SwarmDeathTime, "SwarmDeathTime", 0, "The time for bee death that have the swarm", 0.5f)
+INIT_GVAR_INT(Init_GVar_SwarmArmor, &GVar_SwarmArmor, "SwarmArmor", 0, "The default armor for one swarm missile", 2)
+FINI_GVAR_STRING(Fini_GVar_SwarmMissileFile, &GVar_SwarmMissileFile)
+INIT_GVAR_STRING(Init_GVar_SwarmMissileFile, Fini_GVar_SwarmMissileFile, &GVar_SwarmMissileFile, "SwarmMissileFile", 0, "Default Model for Swarm Missile", "Models/Weapons/Swarm/Swarm.M3D")
+INIT_GVAR_FLOAT(Init_GVar_SwarmNormSpeed, &GVar_SwarmNormSpeed, "SwarmNormSpeed", 0, "The Formal Speed that have the swarm", 20000.0f)
+INIT_GVAR_FLOAT(Init_GVar_SwarmFastSpeed, &GVar_SwarmFastSpeed, "SwarmFastSpeed", 0, "The Fast Speed that have the swarm", 40000.0f)
+INIT_GVAR_FLOAT(Init_GVar_SwarmBeesSpeed, &GVar_SwarmBeesSpeed, "SwarmBeesSpeed", 0, "The Internal Bees Speed that have the swarm", 20000.0f)
+INIT_GVAR_FLOAT(Init_GVar_SwarmUpTopSpeed, &GVar_SwarmUpTopSpeed, "SwarmUpTopSpeed", 0, "The Up Speed (Vehicle) that have the swarm", 4000.0f)
+INIT_GVAR_FLOAT(Init_GVar_SwarmTurnSpeed, &GVar_SwarmTurnSpeed, "SwarmTurnSpeed", 0, "The Turn Speed that have the swarm", 60.0f)
+INIT_GVAR_FLOAT(Init_GVar_SwarmTurnSpeedUPG, &GVar_SwarmTurnSpeedUPG, "SwarmTurnSpeedUPG", 0, "The Turn Speed that have the swarm with Upgrade", 100.0f)
+INIT_GVAR_FLOAT(Init_GVar_SwarmHitForce, &GVar_SwarmHitForce, "SwarmHitForce", 0, "The Hit Force Energy that have the swarm", 200.0f)
+INIT_GVAR_FLOAT(Init_GVar_SwarmTimeDelay, &GVar_SwarmTimeDelay, "SwarmTimeDelay", 0, "Time in seconds between the mis. shoots", 1.5f)
+INIT_GVAR_FLOAT(Init_GVar_SwarmMinRadius, &GVar_SwarmMinRadius, "SwarmMinRadius", 0, "The Minimun Radius that have the swarm", 250.0f)
+INIT_GVAR_FLOAT(Init_GVar_SwarmBeeRadius, &GVar_SwarmBeeRadius, "SwarmBeeRadius", 0, "The Radius add per Bee that have the swarm", 24.0f)
+INIT_GVAR_INT(Init_GVar_SwarmAmmoCost1, &GVar_SwarmAmmoCost1, "SwarmAmmoCost1", 0, " Swarm Ammo Cost 1 ", 7)
+INIT_GVAR_INT(Init_GVar_SwarmAmmoCost2, &GVar_SwarmAmmoCost2, "SwarmAmmoCost2", 0, " Swarm Ammo Cost 2 ", 13)
+INIT_GVAR_INT(Init_GVar_SwarmAmmoCost3, &GVar_SwarmAmmoCost3, "SwarmAmmoCost3", 0, " Swarm Ammo Cost 3 ", 18)
+INIT_GVAR_INT(Init_GVar_SwarmAmmoCost4, &GVar_SwarmAmmoCost4, "SwarmAmmoCost4", 0, " Swarm Ammo Cost 4 ", 22)
+INIT_GVAR_INT(Init_GVar_SwarmNumber1, &GVar_SwarmNumber1, "SwarmNumber1", 0, " Swarm Number 1 ", 7)
+FINI_GVAR_STRING(Fini_GVar_SwarmEngineSound, &GVar_SwarmEngineSound)
+INIT_GVAR_STRING(Init_GVar_SwarmEngineSound, Fini_GVar_SwarmEngineSound, &GVar_SwarmEngineSound, "SwarmEngineSound", 0, "Swarm Engine sound name", "SwarmEngine")
+INIT_GVAR_FLOAT(Init_GVar_SwarmEngineSoundVol, &GVar_SwarmEngineSoundVol, "SwarmEngineSoundVol", 0, "Swarm Engine sound volume", 0.75f)
+INIT_GVAR_FLOAT(Init_GVar_SwarmEngineSoundAttIni, &GVar_SwarmEngineSoundAttIni, "SwarmEngineSoundAttIni", 0, "Swarm Engine sound attenuation ini", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_SwarmEngineSoundAttEnd, &GVar_SwarmEngineSoundAttEnd, "SwarmEngineSoundAttEnd", 0, "Swarm Engine sound attenuation end", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_SwarmEngineSoundDoppler, &GVar_SwarmEngineSoundDoppler, "SwarmEngineSoundDoppler", 0, "Swarm Engine sound doppler", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_SwarmBeeSound, &GVar_SwarmBeeSound)
+INIT_GVAR_STRING(Init_GVar_SwarmBeeSound, Fini_GVar_SwarmBeeSound, &GVar_SwarmBeeSound, "SwarmBeeSound", 0, "Swarm Bee Death sound name", "SwarmBang")
+INIT_GVAR_FLOAT(Init_GVar_SwarmBeeSoundVol, &GVar_SwarmBeeSoundVol, "SwarmBeeSoundVol", 0, "Swarm Bee Death sound volume", 0.5f)
+INIT_GVAR_FLOAT(Init_GVar_SwarmBeeSoundAttIni, &GVar_SwarmBeeSoundAttIni, "SwarmBeeSoundAttIni", 0, "Swarm Bee sound attenuation ini", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_SwarmBeeSoundAttEnd, &GVar_SwarmBeeSoundAttEnd, "SwarmBeeSoundAttEnd", 0, "Swarm Bee sound attenuation end", 0.0f)
+FINI_GVAR_STRING(Fini_GVar_SwarmHitSound, &GVar_SwarmHitSound)
+INIT_GVAR_STRING(Init_GVar_SwarmHitSound, Fini_GVar_SwarmHitSound, &GVar_SwarmHitSound, "SwarmHitSound", 0, "Swarm Hit sound name", "SwarmBoom")
+INIT_GVAR_FLOAT(Init_GVar_SwarmHitSoundVol, &GVar_SwarmHitSoundVol, "SwarmHitSoundVol", 0, "Swarm Hit sound volume", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_SwarmHitSoundAttIni, &GVar_SwarmHitSoundAttIni, "SwarmHitSoundAttIni", 0, "Swarm Hit sound attenuation ini", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_SwarmHitSoundAttEnd, &GVar_SwarmHitSoundAttEnd, "SwarmHitSoundAttEnd", 0, "Swarm Hit sound attenuation end", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_TeslaMinAngRange, &GVar_TeslaMinAngRange, "TeslaMinAngRange", 0, "The minimun angle range (no hit case at tesla)", 3.0f)
+INIT_GVAR_FLOAT(Init_GVar_TeslaMinAngRangePad, &GVar_TeslaMinAngRangePad, "TeslaMinAngRangePad", 0, "The minimun angle range (no hit case at tesla)  Pad Controller", 10.0f)
+INIT_GVAR_FLOAT(Init_GVar_TeslaDownRangeTime, &GVar_TeslaDownRangeTime, "TeslaDownRangeTime", 0, "Time to the max to the min ang range if not hit (tesla)", 0.5f)
+INIT_GVAR_FLOAT(Init_GVar_TeslaDownRangeTimePad, &GVar_TeslaDownRangeTimePad, "TeslaDownRangeTimePad", 0, "Time to the max to the min ang range if not hit (tesla) Pad Controller", 2.0f)
+INIT_GVAR_FLOAT(Init_GVar_TeslaMinAngRangeUpg, &GVar_TeslaMinAngRangeUpg, "TeslaMinAngRangeUpg", 0, "The minimun angle range with upgrade (no hit case at tesla)", 10.0f)
+INIT_GVAR_FLOAT(Init_GVar_TeslaMinAngRangeUpgPad, &GVar_TeslaMinAngRangeUpgPad, "TeslaMinAngRangeUpgPad", 0, "The minimun angle range with upgrade (no hit case at tesla) Pad Controller", 17.0f)
+INIT_NATIVE_FUNC(Init_NativeFunc_SwarmPress, &NativeFunc_SwarmPress, "SwarmPress", Swarm_AimMode3Native)
+INIT_NATIVE_FUNC(Init_NativeFunc_SwarmRelease, &NativeFunc_SwarmRelease, "SwarmRelease", Swarm_AimMode2Native)
+INIT_NATIVE_FUNC(Init_NativeFunc_SwarmOnEnd, &NativeFunc_SwarmOnEnd, "SwarmOnEnd", Swarm_AimOffNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_SwarmOnStart, &NativeFunc_SwarmOnStart, "SwarmOnStart", Swarm_AimOnNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_SwarmHit, &NativeFunc_SwarmHit, "SwarmHit", Swarm_HitFXNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_SwarmServerHit, &NativeFunc_SwarmServerHit, "SwarmServerHit", Swarm_ServerHitNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_SwarmCreate, &NativeFunc_SwarmCreate, "SwarmCreate", Swarm_NetCreateNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_SwarmSetUp, &NativeFunc_SwarmSetUp, "SwarmSetUp", Swarm_NetSetUpNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_SwarmClientFire, &NativeFunc_SwarmClientFire, "SwarmClientFire", Swarm_ShootNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_SwarmFire, &NativeFunc_SwarmFire, "SwarmFire", Swarm_FireNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_SwarmFX, &NativeFunc_SwarmFX, "SwarmFX", Swarm_HudNative)

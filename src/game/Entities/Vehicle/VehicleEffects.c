@@ -14,6 +14,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
 #include "scrap/weaps2.h"
+#include "scrap/staticinit.h"
 
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMEPARTICLES_DTOR 0x21d1c0
@@ -1330,3 +1331,27 @@ cGVar GVar_WindFXSmokeMaxDist;
 
 cGVar GVar_FXVehicleEMIFile;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_FXVehicleSpeedTrailDist, &GVar_FXVehicleSpeedTrailDist, "FXVehicleSpeedTrailDist", 0, "Distance of Vehicle Speed Trails segments at Max Speed", 200.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXVehicleSpeedTrailSize, &GVar_FXVehicleSpeedTrailSize, "FXVehicleSpeedTrailSize", 0, "Size of Vehicle Speed Trails segments", 12.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXVehicleSpeedTrailFadeOutH, &GVar_FXVehicleSpeedTrailFadeOutH, "FXVehicleSpeedTrailFadeOutH", 0, "Fade Off Speed Trails by Horizontal Speed", 10000.0f)
+INIT_GVAR_INT(Init_GVar_FXSetOnFireLifePercent, &GVar_FXSetOnFireLifePercent, "FXSetOnFireLifePercent", 0, "Percent of Life to Set On Fire", 25)
+FINI_GVAR_STRING(Fini_GVar_FXVehicleDamageFile, &GVar_FXVehicleDamageFile)
+INIT_GVAR_STRING(Init_GVar_FXVehicleDamageFile, Fini_GVar_FXVehicleDamageFile, &GVar_FXVehicleDamageFile, "FXVehicleDamageFile", 0, "Default Model for Vehicle Damage Effect", "Models/GFX/VehicleDamage.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXVehicleEMIFile, &GVar_FXVehicleEMIFile)
+INIT_GVAR_STRING(Init_GVar_FXVehicleEMIFile, Fini_GVar_FXVehicleEMIFile, &GVar_FXVehicleEMIFile, "FXVehicleEMIFile", 0, "Default Model for Vehicle EMI Effect", "Models/GFX/VehicleEMI.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXVehicleSputnikFile, &GVar_FXVehicleSputnikFile)
+INIT_GVAR_STRING(Init_GVar_FXVehicleSputnikFile, Fini_GVar_FXVehicleSputnikFile, &GVar_FXVehicleSputnikFile, "FXVehicleSputnikFile", 0, "Default Model for Vehicle Sputnik Effects", "Models/GFX/Sputnik/VehicleSputnik.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXVehicleFireFile, &GVar_FXVehicleFireFile)
+INIT_GVAR_STRING(Init_GVar_FXVehicleFireFile, Fini_GVar_FXVehicleFireFile, &GVar_FXVehicleFireFile, "FXVehicleFireFile", 0, "Default Model for Vehicle Fire Effect", "Models/GFX/VehicleFire.M3D")
+FINI_GVAR_STRING(Fini_GVar_WindFxSmokeFile, &GVar_WindFxSmokeFile)
+INIT_GVAR_STRING(Init_GVar_WindFxSmokeFile, Fini_GVar_WindFxSmokeFile, &GVar_WindFxSmokeFile, "WindFxSmokeFile", 0, "Default Model for WindFX Smoke Effect", "Models/GFX/WindFX.M3D")
+INIT_GVAR_INT(Init_GVar_WindFxSmoke, &GVar_WindFxSmoke, "WindFxSmoke", 0, "Wind FX Smoke", 1)
+INIT_GVAR_FLOAT(Init_GVar_WindFXSmokeTimeStep, &GVar_WindFXSmokeTimeStep, "WindFXSmokeTimeStep", 0, "Wind FX Smoke Minimun Time Step", 0.025f)
+INIT_GVAR_FLOAT(Init_GVar_WindFXSmokeMinVel, &GVar_WindFXSmokeMinVel, "WindFXSmokeMinVel", 0, "Wind FX Smoke Minimun Vehicle Speed", 7000.0f)
+INIT_GVAR_FLOAT(Init_GVar_WindFXSmokeMaxDist, &GVar_WindFXSmokeMaxDist, "WindFXSmokeMaxDist", 0, "Wind FX Smoke Maximun Distance", 3000.0f)
+INIT_GVAR_FLOAT(Init_GVar_WindFXSmokeSizeDiv, &GVar_WindFXSmokeSizeDiv, "WindFXSmokeSizeDiv", 0, "Wind FX Smoke Size Divisor", 850.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXVulcanFireScale, &GVar_FXVulcanFireScale, "FXVulcanFireScale", 0, "Vulcan Fire Scale", 1.3f)
+INIT_GVAR_FLOAT(Init_GVar_FXVulcanFireTime, &GVar_FXVulcanFireTime, "FXVulcanFireTime", 0, "Vulcan Fire Time", 0.1f)
+INIT_GVAR_FLOAT(Init_GVar_FXDevastatorFireScale, &GVar_FXDevastatorFireScale, "FXDevastatorFireScale", 0, "Devastator Fire Scale", 1.5f)
+INIT_GVAR_FLOAT(Init_GVar_FXDevastatorFireTime, &GVar_FXDevastatorFireTime, "FXDevastatorFireTime", 0, "Devastator Fire Time", 0.22f)

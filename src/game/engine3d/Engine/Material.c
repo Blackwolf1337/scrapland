@@ -14,6 +14,7 @@
 #include "scrap/material.h"
 #include "scrap/texture.h"
 #include "scrap/platform.h"
+#include "scrap/staticinit.h"
 
 #define TEXTSTATIC_CTOR 0x233990
 #define TEXTSTATIC_DTOR 0x233c70
@@ -1422,3 +1423,11 @@ const CMatListVtbl CMatList_vftable = {
 const CMaterialVtbl CMaterial_vftable = {
 	.Delete = CMaterial_Delete,
 };
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_ATEXIT(Init_MatList, Material_FiniMatList)
+INIT_GVAR_INT(Init_GVar_DDS_UseTextures, &GVar_DDS_UseTextures, "DDS_UseTextures", 0, "Read DDS Textures (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_DDS_MarkSource, &GVar_DDS_MarkSource, "DDS_MarkSource", 0, "Mark original texture (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_DDS_CheckMark, &GVar_DDS_CheckMark, "DDS_CheckMark", 0, "Check that used textures are not marked (0/1)", 0)
+INIT_GVAR_FLOAT(Init_GVar_MatEmissive, &GVar_MatEmissive, "MatEmissive", 0, "Extra amount of emissive lighting", 0.0f)
+INIT_GVAR_INT(Init_GVar_LoadTextures, &GVar_LoadTextures, "LoadTextures", 0, "Load textures (except Sprite2D ones) (0/1)", 1)

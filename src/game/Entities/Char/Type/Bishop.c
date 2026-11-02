@@ -8,6 +8,7 @@
 #include "scrap/fx.h"
 #include "scrap/fxelements.h"
 #include "scrap/vehicleattack.h"
+#include "scrap/staticinit.h"
 
 /* params: the bishop, an event, a float: the action again while the button is down and the energy lasts (always
  * for an AI) */
@@ -237,3 +238,32 @@ cGVar GVar_BishopShootSoundVol;
 
 cGVar GVar_BishopShootSound;
 
+cPy_NativeFunc NativeFunc_BishopAttack;
+cPy_NativeFunc NativeFunc_BishopEndActionEnd;
+cPy_NativeFunc NativeFunc_FXBishopSellLife;
+cPy_NativeFunc NativeFunc_GearEndActionEnd;
+cPy_NativeFunc NativeFunc_MessengerEndActionEnd;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_BishopWeaponDamage, &GVar_BishopWeaponDamage, "BishopWeaponDamage", 0, "Bishop damage per hit that make the bishop", 4)
+INIT_GVAR_FLOAT(Init_GVar_BishopAmmoCost, &GVar_BishopAmmoCost, "BishopAmmoCost", 0, "Bishop AmmoCost Per shoot", 0.025f)
+INIT_GVAR_FLOAT(Init_GVar_BishopAngleVariation, &GVar_BishopAngleVariation, "BishopAngleVariation", 0, "Angle of Randominzation of the shoot impulse", 60.0f)
+FINI_GVAR_STRING(Fini_GVar_FXBishopSellLifeFile, &GVar_FXBishopSellLifeFile)
+INIT_GVAR_STRING(Init_GVar_FXBishopSellLifeFile, Fini_GVar_FXBishopSellLifeFile, &GVar_FXBishopSellLifeFile, "FXBishopSellLifeFile", 0, "Default Model for Bishop Sell Life Effects", "Models/GFX/Bishop/SellLife.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXBishopAttackFile, &GVar_FXBishopAttackFile)
+INIT_GVAR_STRING(Init_GVar_FXBishopAttackFile, Fini_GVar_FXBishopAttackFile, &GVar_FXBishopAttackFile, "FXBishopAttackFile", 0, "Default Model for Bishop Attack Effects", "Models/GFX/Bishop/Attack.M3D")
+INIT_GVAR_FLOAT(Init_GVar_BishopAttackPosX, &GVar_BishopAttackPosX, "BishopAttackPosX", 0, "Bishop Attack Displacement from center", -15.0f)
+INIT_GVAR_FLOAT(Init_GVar_BishopAttackPosY, &GVar_BishopAttackPosY, "BishopAttackPosY", 0, "Bishop Attack Displacement from center", 25.0f)
+INIT_GVAR_FLOAT(Init_GVar_BishopAttackPosZ, &GVar_BishopAttackPosZ, "BishopAttackPosZ", 0, "Bishop Attack Displacement from center", -135.0f)
+INIT_GVAR_FLOAT(Init_GVar_BishopAttackRandOff, &GVar_BishopAttackRandOff, "BishopAttackRandOff", 0, "Bishop Attack Random Offset from center", 50.0f)
+FINI_GVAR_STRING(Fini_GVar_BishopShootSound, &GVar_BishopShootSound)
+INIT_GVAR_STRING(Init_GVar_BishopShootSound, Fini_GVar_BishopShootSound, &GVar_BishopShootSound, "BishopShootSound", 0, "Bishop shoot impact sound name", "BishopShoot")
+INIT_GVAR_FLOAT(Init_GVar_BishopShootSoundVol, &GVar_BishopShootSoundVol, "BishopShootSoundVol", 0, "Bishop shoot impact sound volume", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_BishopHitSound, &GVar_BishopHitSound)
+INIT_GVAR_STRING(Init_GVar_BishopHitSound, Fini_GVar_BishopHitSound, &GVar_BishopHitSound, "BishopHitSound", 0, "Bishop hit impact sound name", "BishopHit")
+INIT_GVAR_FLOAT(Init_GVar_BishopHitSoundVol, &GVar_BishopHitSoundVol, "BishopHitSoundVol", 0, "Bishop hit impact sound volume", 1.0f)
+INIT_NATIVE_FUNC(Init_NativeFunc_BishopAttack, &NativeFunc_BishopAttack, "BishopAttack", ChType_BishopAttack)
+INIT_NATIVE_FUNC(Init_NativeFunc_BishopEndActionEnd, &NativeFunc_BishopEndActionEnd, "BishopEndActionEnd", ChType_EndActionEnd)
+INIT_NATIVE_FUNC(Init_NativeFunc_FXBishopSellLife, &NativeFunc_FXBishopSellLife, "FXBishopSellLife", ChType_FXBishopSellLife)
+INIT_NATIVE_FUNC(Init_NativeFunc_GearEndActionEnd, &NativeFunc_GearEndActionEnd, "GearEndActionEnd", ChType_EndActionEnd)
+INIT_NATIVE_FUNC(Init_NativeFunc_MessengerEndActionEnd, &NativeFunc_MessengerEndActionEnd, "MessengerEndActionEnd", ChType_EndActionEnd)

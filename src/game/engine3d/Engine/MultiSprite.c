@@ -11,6 +11,7 @@
 #include "scrap/table.h"
 #include "scrap/texture.h"
 #include "scrap/misc.h"
+#include "scrap/staticinit.h"
 
 #define MAX_SPRITES 256
 
@@ -193,3 +194,5 @@ byte CMultiSprite_Save(const CMultiSprite *self, const char *name) {
 
 cGVar GVar_BuildMST;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_BuildMST, &GVar_BuildMST, "BuildMST", 0, "Build and load MultiSprite MST files (0/1)", 1)

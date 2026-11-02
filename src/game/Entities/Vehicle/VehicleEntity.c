@@ -23,6 +23,7 @@
 #include "scrap/weapons.h"
 #include "scrap/weaps2.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 #define VEH_CLASSNAME "Car"
 #define CGAMEMODEL_CTOR 0x105e60	/* CGameModel_ctor(self, NULL) */
@@ -2186,3 +2187,35 @@ cGVar GVar_TopLimit;
 
 cGVar GVar_AtmosphereLimit;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_AmorPieceWeight, &GVar_AmorPieceWeight, "AmorPieceWeight", 0, "Weight that minds 1 armor value", 10.0f)
+INIT_GVAR_FLOAT(Init_GVar_MotorDownFactor, &GVar_MotorDownFactor, "MotorDownFactor", 0, "When the ship engines are hacked, factor used to replace de real engine values", 0.25f)
+INIT_GVAR_FLOAT(Init_GVar_LoRacerFov, &GVar_LoRacerFov, "LoRacerFov", 2, "Camera Field of view in racing conditions. (stoped)", 80.0f)
+INIT_GVAR_FLOAT(Init_GVar_HiRacerFov, &GVar_HiRacerFov, "HiRacerFov", 2, "Camera Field of view in racing conditions. (terminal velocity)", 105.0f)
+INIT_GVAR_FLOAT(Init_GVar_NPCSndMotorVolFactor, &GVar_NPCSndMotorVolFactor, "NPCSndMotorVolFactor", 0, "Indicates the extra factor for NPC ship motor engines", 3.0f)
+INIT_GVAR_INT(Init_GVar_VehicleEditingMode, &GVar_VehicleEditingMode, "VehicleEditingMode", 0, "1 to set the vehicle entities in editing mode.", 0)
+FINI_GVAR_STRING(Fini_GVar_ShipPathFmt, &GVar_ShipPathFmt)
+INIT_GVAR_STRING(Init_GVar_ShipPathFmt, Fini_GVar_ShipPathFmt, &GVar_ShipPathFmt, "ShipPathFmt", 0, "The full path of the Ships", "Models/Vehicles/Ships/%s/%s.m3d")
+FINI_GVAR_STRING(Fini_GVar_VeCharsPathFmt, &GVar_VeCharsPathFmt)
+INIT_GVAR_STRING(Init_GVar_VeCharsPathFmt, Fini_GVar_VeCharsPathFmt, &GVar_VeCharsPathFmt, "VeCharsPathFmt", 0, "The full path of the Vehicle Characters.", "Models/Vehicles/Characters/%s/%s.m3d")
+INIT_GVAR_FLOAT(Init_GVar_FreeSpaceMagnetLoRadius, &GVar_FreeSpaceMagnetLoRadius, "FreeSpaceMagnetLoRadius", 0, "Small radius for the freespacemagnet", 90000.0f)
+INIT_GVAR_FLOAT(Init_GVar_FreeSpaceMagnetHiRadius, &GVar_FreeSpaceMagnetHiRadius, "FreeSpaceMagnetHiRadius", 0, "Big   radius for the freespacemagnet", 95000.0f)
+INIT_GVAR_FLOAT(Init_GVar_FreeSpaceMagnetAccel, &GVar_FreeSpaceMagnetAccel, "FreeSpaceMagnetAccel", 0, "Big   radius for the freespacemagnet", 56000.0f)
+INIT_GVAR_FLOAT(Init_GVar_FreeSpaceMagnetCenterX, &GVar_FreeSpaceMagnetCenterX, "FreeSpaceMagnetCenterX", 0, "Center of the sphere freespacemagnet", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_FreeSpaceMagnetCenterY, &GVar_FreeSpaceMagnetCenterY, "FreeSpaceMagnetCenterY", 0, "Center of the sphere freespacemagnet", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_FreeSpaceMagnetCenterZ, &GVar_FreeSpaceMagnetCenterZ, "FreeSpaceMagnetCenterZ", 0, "Center of the sphere freespacemagnet", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_VehicleCrashAccLo, &GVar_VehicleCrashAccLo, "VehicleCrashAccLo", 0, "Maximun SpeedChange to detect crash in cm/seg^2", 168000.0f)
+INIT_GVAR_FLOAT(Init_GVar_VehicleCrashAccMed, &GVar_VehicleCrashAccMed, "VehicleCrashAccMed", 0, "Beyond this value, is a medium crash cm/seg^2", 336000.0f)
+INIT_GVAR_FLOAT(Init_GVar_VehicleCrashAccHi, &GVar_VehicleCrashAccHi, "VehicleCrashAccHi", 0, "Beyond this value, is a serious crash cm/seg^2", 504000.0f)
+INIT_GVAR_FLOAT(Init_GVar_VehicleCrashAccHev, &GVar_VehicleCrashAccHev, "VehicleCrashAccHev", 0, "Beyond this value, is a Heavy crash cm/seg^2", 672000.0f)
+INIT_GVAR_FLOAT(Init_GVar_VehicleCrashMinTime, &GVar_VehicleCrashMinTime, "VehicleCrashMinTime", 0, "Safe Last crash time detector.", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_FxSpeedVariation, &GVar_FxSpeedVariation, "FxSpeedVariation", 0, "Speed of variation of Speed FX", 4.0f)
+INIT_GVAR_FLOAT(Init_GVar_FxAngVariation, &GVar_FxAngVariation, "FxAngVariation", 0, "Speed of variation of Angle FX", 4.0f)
+INIT_GVAR_FLOAT(Init_GVar_FxVelVariation, &GVar_FxVelVariation, "FxVelVariation", 0, "Speed of variation of Velocity FX", 6.0f)
+INIT_GVAR_FLOAT(Init_GVar_FxAccVariation, &GVar_FxAccVariation, "FxAccVariation", 0, "Speed of variation of Acceleration FX", 6.0f)
+INIT_GVAR_FLOAT(Init_GVar_FxBoostTimeDuration, &GVar_FxBoostTimeDuration, "FxBoostTimeDuration", 0, "Time of the boost FX", 2.0f)
+INIT_GVAR_FLOAT(Init_GVar_MotorTrustRotationX, &GVar_MotorTrustRotationX, "MotorTrustRotationX", 0, "Rotation X Speed produced by the motor trust", 0.25f)
+INIT_GVAR_FLOAT(Init_GVar_MotorTrustRotationY, &GVar_MotorTrustRotationY, "MotorTrustRotationY", 0, "Rotation Y Speed produced by the motor trust", 0.25f)
+INIT_GVAR_FLOAT(Init_GVar_PilotViewDist, &GVar_PilotViewDist, "PilotViewDist", 0, "Maximun Distance for show the Ship Pilot", 22000.0f)
+INIT_GVAR_FLOAT(Init_GVar_AtmosphereLimit, &GVar_AtmosphereLimit, "AtmosphereLimit", 0, "The atmosphere end", 6726.0f)
+INIT_GVAR_FLOAT(Init_GVar_TopLimit, &GVar_TopLimit, "TopLimit", 0, "The hi map limit, after the atmosphere", 9000.0f)

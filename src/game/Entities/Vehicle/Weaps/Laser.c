@@ -5,6 +5,7 @@
  */
 #include "scrap/crt.h"
 #include "scrap/weaps2.h"
+#include "scrap/staticinit.h"
 
 #define SND_HOOK 0x18		/* the sounds of the ship (cSndInterface at +0x144) */
 #define SND_HOOK_START 0x17
@@ -797,3 +798,56 @@ cGVarFunction GVar_CreateSonicFunc;
 
 cGVarFunction GVar_SetUpSonicFunc;
 
+cPy_NativeFunc NativeFunc_LaserPress;
+cPy_NativeFunc NativeFunc_LaserRelease;
+cPy_NativeFunc NativeFunc_LaserCreate;
+cPy_NativeFunc NativeFunc_LaserFire;
+cPy_NativeFunc NativeFunc_LaserFX;
+cPy_NativeFunc NativeFunc_HookPlugFX;
+cPy_NativeFunc NativeFunc_HookFire;
+cPy_NativeFunc NativeFunc_HookActivate;
+cPy_NativeFunc NativeFunc_HookDeActivate;
+cPy_NativeFunc NativeFunc_SonicXplde;
+cPy_NativeFunc NativeFunc_SonicFire;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_LaserIDAmmo, &GVar_LaserIDAmmo, "LaserIDAmmo", 0, "The default weapon idx for the laser", 0)
+FINI_GVAR_STRING(Fini_GVar_LaserHitFile, &GVar_LaserHitFile)
+INIT_GVAR_STRING(Init_GVar_LaserHitFile, Fini_GVar_LaserHitFile, &GVar_LaserHitFile, "LaserHitFile", 0, "default hit model for the laser", "Models/Weapons/Laser/Hit.M3D")
+FINI_GVAR_STRING(Fini_GVar_LaserShootFile, &GVar_LaserShootFile)
+INIT_GVAR_STRING(Init_GVar_LaserShootFile, Fini_GVar_LaserShootFile, &GVar_LaserShootFile, "LaserShootFile", 0, "default shoot model for the laser", "Models/Weapons/Laser/Shoot.M3D")
+FINI_GVAR_STRING(Fini_GVar_LaserHookFile, &GVar_LaserHookFile)
+INIT_GVAR_STRING(Init_GVar_LaserHookFile, Fini_GVar_LaserHookFile, &GVar_LaserHookFile, "LaserHookFile", 0, "default model for the hook", "Models/Weapons/Laser/Hook.M3D")
+INIT_GVAR_FLOAT(Init_GVar_LaserHitForce, &GVar_LaserHitForce, "LaserHitForce", 0, "The force that have a single laser shoot", 2000000.0f)
+INIT_GVAR_FLOAT(Init_GVar_LaserRange, &GVar_LaserRange, "LaserRange", 0, "The maximun range that have the laser", 30000.0f)
+INIT_GVAR_FLOAT(Init_GVar_LaserAmmoCost, &GVar_LaserAmmoCost, "LaserAmmoCost", 0, "Cost Per hit at laser", 10.0f)
+INIT_GVAR_FLOAT(Init_GVar_LaserTimeDelay, &GVar_LaserTimeDelay, "LaserTimeDelay", 0, "Time in seconds between the laser shoots", 0.2f)
+INIT_GVAR_INT(Init_GVar_LaserDamage, &GVar_LaserDamage, "LaserDamage", 0, "Damage per shoot", 3)
+INIT_GVAR_FLOAT(Init_GVar_LaserMinSpeed, &GVar_LaserMinSpeed, "LaserMinSpeed", 0, "The minimun Speed of the laser shoots", 50000.0f)
+FINI_GVAR_STRING(Fini_GVar_LaserRicSound, &GVar_LaserRicSound)
+INIT_GVAR_STRING(Init_GVar_LaserRicSound, Fini_GVar_LaserRicSound, &GVar_LaserRicSound, "LaserRicSound", 0, "First Laser puchuing sound name", "VulcanRic0")
+INIT_GVAR_FLOAT(Init_GVar_LaserRicSoundVol, &GVar_LaserRicSoundVol, "LaserRicSoundVol", 0, "First Laser puchuing sound volume", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_HookEMITime, &GVar_HookEMITime, "HookEMITime", 0, "Time of electromagetic interference of the Hook", 3.0f)
+INIT_GVAR_FLOAT(Init_GVar_HookAccel, &GVar_HookAccel, "HookAccel", 0, "Acceleration when the hook is plugged at the world.", 20000.0f)
+FINI_CALL(Fini_GVar_CreateSonicFunc, &GVar_CreateSonicFunc.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_CreateSonicFunc, Fini_GVar_CreateSonicFunc, &GVar_CreateSonicFunc, "CreateSonicFunc", 0, "Function to be called to create the mine", "")
+FINI_CALL(Fini_GVar_SetUpSonicFunc, &GVar_SetUpSonicFunc.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_SetUpSonicFunc, Fini_GVar_SetUpSonicFunc, &GVar_SetUpSonicFunc, "SetUpSonicFunc", 0, "Function to be called to set up the mine properties", "")
+INIT_GVAR_INT(Init_GVar_SonicIDAmmo, &GVar_SonicIDAmmo, "SonicIDAmmo", 0, "Sonic Ammo ID", 0)
+INIT_GVAR_INT(Init_GVar_SonicAmmoNeed, &GVar_SonicAmmoNeed, "SonicAmmoNeed", 0, "Sonic Ammo Need", 0)
+INIT_GVAR_INT(Init_GVar_SonicArmor, &GVar_SonicArmor, "SonicArmor", 0, "Sonic Armor", 0)
+INIT_GVAR_FLOAT(Init_GVar_SonicRechargeTime, &GVar_SonicRechargeTime, "SonicRechargeTime", 0, "Sonic Recharge Time", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_SonicLifeTime, &GVar_SonicLifeTime, "SonicLifeTime", 0, "Sonic Life Time", 0.0f)
+FINI_GVAR_STRING(Fini_GVar_FXSonicXpldeFile, &GVar_FXSonicXpldeFile)
+INIT_GVAR_STRING(Init_GVar_FXSonicXpldeFile, Fini_GVar_FXSonicXpldeFile, &GVar_FXSonicXpldeFile, "FXSonicXpldeFile", 0, "default Xplode model for the Sonic", "Models/Weapons/Sonic/Xplde.M3D")
+INIT_NATIVE_FUNC(Init_NativeFunc_LaserPress, &NativeFunc_LaserPress, "LaserPress", Laser_AimOnNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_LaserRelease, &NativeFunc_LaserRelease, "LaserRelease", Laser_AimOffNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_LaserCreate, &NativeFunc_LaserCreate, "LaserCreate", Laser_CreateNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_LaserFire, &NativeFunc_LaserFire, "LaserFire", Laser_FireNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_LaserFX, &NativeFunc_LaserFX, "LaserFX", Laser_HudNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_HookPlugFX, &NativeFunc_HookPlugFX, "HookPlugFX", Hook_StartNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_HookFire, &NativeFunc_HookFire, "HookFire", Hook_UpdateNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_HookActivate, &NativeFunc_HookActivate, "HookActivate", Hook_AimNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_HookDeActivate, &NativeFunc_HookDeActivate, "HookDeActivate", Hook_OffNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_SonicXplde, &NativeFunc_SonicXplde, "SonicXplde", Sonic_ExplodeNative)
+INIT_NATIVE_FUNC(Init_NativeFunc_SonicFire, &NativeFunc_SonicFire, "SonicFire", Sonic_FireNative)

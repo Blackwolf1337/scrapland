@@ -19,6 +19,7 @@
 #include "scrap/groundportal.h"
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
+#include "scrap/staticinit.h"
 
 
 #define CLOD_DTOR 0x252d80
@@ -1252,3 +1253,22 @@ void CModel_Render(CModel *self) {
 const CModelVtbl CModel_vftable = {
 	.Delete = CModel_Delete,
 };
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_ShowModelBox, &GVar_R_ShowModelBox, "R_ShowModelBox", 0, "Show model bounding box (0/1/2/3)\n", 0)
+INIT_GVAR_INT(Init_GVar_R_ShowModelPos, &GVar_R_ShowModelPos, "R_ShowModelPos", 0, "Show model position (0/1/2)", 0)
+INIT_GVAR_INT(Init_GVar_R_ShowModelLights, &GVar_R_ShowModelLights, "R_ShowModelLights", 0, "Show model lights (0/1/2)", 0)
+INIT_GVAR_INT(Init_GVar_R_ShowModelSector, &GVar_R_ShowModelSector, "R_ShowModelSector", 0, "Show model sector (0/1/2)", 0)
+INIT_GVAR_INT(Init_GVar_R_ModelPortalVis, &GVar_R_ModelPortalVis, "R_ModelPortalVis", 0, "Use portals for model visibility test (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_ModelFastIsVis, &GVar_R_ModelFastIsVis, "R_ModelFastIsVis", 0, "Use FastIsVisible for model visibility pre-test (0/1/2)", 1)
+INIT_GVAR_INT(Init_GVar_R_SkipUpdateVis, &GVar_R_SkipUpdateVis, "R_SkipUpdateVis", 0, "Skip model visibility test (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_R_SkipAnimInterp, &GVar_R_SkipAnimInterp, "R_SkipAnimInterp", 0, "Disable interpolation between animations (0/1)", 0)
+INIT_GVAR_FLOAT(Init_GVar_R_AnimInterpMult, &GVar_R_AnimInterpMult, "R_AnimInterpMult", 0, "Multiplier of interpolation between animations", 1.0f)
+INIT_GVAR_INT(Init_GVar_R_LightLimit, &GVar_R_LightLimit, "R_LightLimit", 0, "Max. enabled lights per model (0..6)", 4)
+INIT_GVAR_INT(Init_GVar_R_UseMLOD, &GVar_R_UseMLOD, "R_UseMLOD", 0, "Use model LODs", 1)
+INIT_GVAR_INT(Init_GVar_R_DrawMLODMask, &GVar_R_DrawMLODMask, "R_DrawMLODMask", 0, "Draw model LOD Mask", 0)
+INIT_GVAR_INT(Init_GVar_R_DrawMLODPart, &GVar_R_DrawMLODPart, "R_DrawMLODPart", 0, "Draw model LOD particles (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_DrawMLODMin, &GVar_R_DrawMLODMin, "R_DrawMLODMin", 0, "Set most detailed LOD to draw (1..n)", 0)
+INIT_GVAR_FLOAT(Init_GVar_R_DistMLOD1, &GVar_R_DistMLOD1, "R_DistMLOD1", 0, "Model LOD 1 distance coef.", 3.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_DistMStencil, &GVar_R_DistMStencil, "R_DistMStencil", 0, "Model Stencil distance when not visible", 2500.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_SphereVisMult, &GVar_R_SphereVisMult, "R_SphereVisMult", 0, "Multiplier for models visibility sphere radius", 1.25f)

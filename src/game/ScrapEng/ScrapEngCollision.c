@@ -7,6 +7,7 @@
 #include "scrap/e3dworld.h"
 #include "scrap/scrapcollision.h"
 #include "scrap/groundportal.h"
+#include "scrap/staticinit.h"
 
 float g_LastCollisionEpsilon;
 
@@ -392,3 +393,14 @@ cGVar GVar_c_caps;
 
 cGVar GVar_c_hold;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_c_iter, &GVar_c_iter, "c_iter", 0, "", 0)
+INIT_GVAR_INT(Init_GVar_c_hold, &GVar_c_hold, "c_hold", 0, "Freeze WorldSphereCollisionTest calls", 0)
+INIT_GVAR_INT(Init_GVar_c_caps, &GVar_c_caps, "c_caps", 0, "Detect vertical WorldSphereCollisionTest cases", 1)
+INIT_GVAR_INT(Init_GVar_c_schk, &GVar_c_schk, "c_schk", 0, "Detect WorldSphereCollisionCheck cases", 1)
+INIT_GVAR_INT(Init_GVar_c_scts, &GVar_c_scts, "c_scts", 0, "WorldSphereCollisionCheck use: 0=slide, 1=test", 0)
+INIT_GVAR_INT(Init_GVar_c_sldi, &GVar_c_sldi, "c_sldi", 0, "WorldSphereCollisionSlide max. iter.", 10)
+INIT_GVAR_INT(Init_GVar_c_sld2, &GVar_c_sld2, "c_sld2", 0, "WorldSphereCollisionSlide2D max. iter.", 10)
+INIT_GVAR_INT(Init_GVar_c_sbox, &GVar_c_sbox, "c_sbox", 0, "WorldSphereCollision box cache enable", 1)
+INIT_GVAR_INT(Init_GVar_c_sboxshow, &GVar_c_sboxshow, "c_sboxshow", 0, "WorldSphereCollision box info", 0)
+INIT_GVAR_FLOAT(Init_GVar_c_sboxmult, &GVar_c_sboxmult, "c_sboxmult", 0, "WorldSphereCollision box mult", 20.0f)

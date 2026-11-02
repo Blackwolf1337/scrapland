@@ -6,6 +6,7 @@
 
 #include "scrap/animation.h"
 #include "scrap/material.h"
+#include "scrap/staticinit.h"
 
 #define ANIMNODE_CTOR 0x2ab6a0
 #define ANIMNODE_DTOR 0x2ab8f0
@@ -1039,3 +1040,9 @@ cGVar GVar_R_AnimNode_Count;
 
 cGVar GVar_OptAnimRotErr;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_OptimizeAnims, &GVar_OptimizeAnims, "OptimizeAnims", 0, "0=none, 1=Compact anims", 1)
+INIT_GVAR_FLOAT(Init_GVar_OptAnimPosErr, &GVar_OptAnimPosErr, "OptAnimPosErr", 0, "AnimPos optimization epsilon", 0.01f)
+INIT_GVAR_FLOAT(Init_GVar_OptAnimRotErr, &GVar_OptAnimRotErr, "OptAnimRotErr", 0, "AnimRot optimization epsilon (deg)", 0.03f)
+INIT_GVAR_FLOAT(Init_GVar_OptAnimFovErr, &GVar_OptAnimFovErr, "OptAnimFovErr", 0, "AnimFOV optimization epsilon (deg)", 0.01f)
+INIT_GVAR_INT(Init_GVar_R_AnimNode_Count, &GVar_R_AnimNode_Count, "R_AnimNodo_Count", 0, "AnimNodo counter", 0)

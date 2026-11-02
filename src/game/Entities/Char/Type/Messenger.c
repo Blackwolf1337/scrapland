@@ -9,6 +9,7 @@
 #include "scrap/fxelements.h"
 #include "scrap/itementity.h"
 #include "scrap/modmove.h"
+#include "scrap/staticinit.h"
 
 #define ITEM_TYPE "item"
 
@@ -201,3 +202,27 @@ cGVarFunction GVar_MessengerTakenCallback;
 
 cGVar GVar_MessengerDataPack;
 
+cPy_NativeFunc NativeFunc_MessengerTakeDataPack;
+cPy_NativeFunc NativeFunc_MessengerAttack;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_MessengerAmmoCost, &GVar_MessengerAmmoCost, "MessengerAmmoCost", 0, "Messenger AmmoCost Per shoot", 0.05f)
+FINI_GVAR_STRING(Fini_GVar_FXMessengerAttackFile, &GVar_FXMessengerAttackFile)
+INIT_GVAR_STRING(Init_GVar_FXMessengerAttackFile, Fini_GVar_FXMessengerAttackFile, &GVar_FXMessengerAttackFile, "FXMessengerAttackFile", 0, "Default Model for Messenger Attack Effects", "Models/GFX/Messenger/Attack.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXMessengerTakeDataPackFile, &GVar_FXMessengerTakeDataPackFile)
+INIT_GVAR_STRING(Init_GVar_FXMessengerTakeDataPackFile, Fini_GVar_FXMessengerTakeDataPackFile, &GVar_FXMessengerTakeDataPackFile, "FXMessengerTakeDataPackFile", 0, "Default Model for Messenger Take DataPack Effects", "Models/GFX/Messenger/TakeDataPack.M3D")
+INIT_GVAR_FLOAT(Init_GVar_MessengerAttackPosX, &GVar_MessengerAttackPosX, "MessengerAttackPosX", 0, "Messenger Attack Displacement from center", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_MessengerAttackPosY, &GVar_MessengerAttackPosY, "MessengerAttackPosY", 0, "Messenger Attack Displacement from center", -25.0f)
+INIT_GVAR_FLOAT(Init_GVar_MessengerAttackPosZ, &GVar_MessengerAttackPosZ, "MessengerAttackPosZ", 0, "Messenger Attack Displacement from center", -40.0f)
+FINI_GVAR_STRING(Fini_GVar_MessengerShootSound, &GVar_MessengerShootSound)
+INIT_GVAR_STRING(Init_GVar_MessengerShootSound, Fini_GVar_MessengerShootSound, &GVar_MessengerShootSound, "MessengerShootSound", 0, "Messenger shoot impact sound name", "MessengerShoot")
+INIT_GVAR_FLOAT(Init_GVar_MessengerShootSoundVol, &GVar_MessengerShootSoundVol, "MessengerShootSoundVol", 0, "Messenger shoot impact sound volume", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_MessengerTakeDataPackSound, &GVar_MessengerTakeDataPackSound)
+INIT_GVAR_STRING(Init_GVar_MessengerTakeDataPackSound, Fini_GVar_MessengerTakeDataPackSound, &GVar_MessengerTakeDataPackSound, "MessengerTakeDataPackSound", 0, "Messenger Take DataPack sound name", "MessengerTakeDataPack")
+INIT_GVAR_FLOAT(Init_GVar_MessengerTakeDataPackSoundVol, &GVar_MessengerTakeDataPackSoundVol, "MessengerTakeDataPackSoundVol", 0, "Messenger Take DataPack sound volume", 1.0f)
+FINI_CALL(Fini_GVar_MessengerTakenCallback, &GVar_MessengerTakenCallback.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_MessengerTakenCallback, Fini_GVar_MessengerTakenCallback, &GVar_MessengerTakenCallback, "MessengerTakenCallback", 0, "Called if a messager takes a datapack", "")
+FINI_GVAR_STRING(Fini_GVar_MessengerDataPack, &GVar_MessengerDataPack)
+INIT_GVAR_STRING(Init_GVar_MessengerDataPack, Fini_GVar_MessengerDataPack, &GVar_MessengerDataPack, "MessengerDataPack", 0, "Desktops functionary list name", "MessengerDataPack")
+INIT_NATIVE_FUNC(Init_NativeFunc_MessengerTakeDataPack, &NativeFunc_MessengerTakeDataPack, "MessengerTakeDataPack", ChType_MessengerTakeDataPack)
+INIT_NATIVE_FUNC(Init_NativeFunc_MessengerAttack, &NativeFunc_MessengerAttack, "MessengerAttack", ChType_MessengerAttack)

@@ -9,6 +9,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/scrapfont.h"
 #include "scrap/misc.h"
+#include "scrap/staticinit.h"
 
 #define CAM_CHECK(self) \
 	do { \
@@ -245,3 +246,7 @@ cGVar GVar_ShowSceneCamera;
 
 cGVar GVar_PhysicalAspectRatio;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_PhysicalAspectRatio, &GVar_PhysicalAspectRatio, "PhysicalAspectRatio", 0, "Physical aspect ratio\n", 1.3333334f)
+INIT_GVAR_FLOAT(Init_GVar_CameraDefViewAspect, &GVar_CameraDefViewAspect, "CameraDefViewAspect", 0, "Default logical viewport aspect ratio", 1.3333334f)
+INIT_GVAR_INT(Init_GVar_ShowSceneCamera, &GVar_ShowSceneCamera, "ShowSceneCamera", 0, "Show cutscene camera name and frame number", 0)

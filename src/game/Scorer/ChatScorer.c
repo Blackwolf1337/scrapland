@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "scrap/scoreritems.h"
+#include "scrap/staticinit.h"
 
 float g_ChatTime;
 
@@ -102,3 +103,5 @@ const cScorerItemVtbl cChatScorer_vftable = {
 
 cGVar GVar_ChatMsgPersistence;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_ChatMsgPersistence, &GVar_ChatMsgPersistence, "ChatMsgPersistence", 2, "Time that will be printed the chat message", 1.0f)

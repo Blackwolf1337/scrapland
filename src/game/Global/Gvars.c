@@ -36,7 +36,7 @@ cGVar *GVar_InitInt(cGVar *v, const char *name, byte flags, const char *descript
 	return v;
 }
 
-/* the other variable classes of the static initializers (src/game/Global/StaticInit.c), in their order of writes */
+/* the other variable classes of the static initializers (scrap/staticinit.h), in their order of writes */
 cGVar *GVar_InitFloat(cGVar *v, const char *name, byte flags, const char *description, float value) {
 	cGVar_ctor(v, name, flags, description);
 	v->value.f = value;

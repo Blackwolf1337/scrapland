@@ -22,6 +22,7 @@
 #include "scrap/walkcharentity.h"
 #include "scrap/withlifeentity.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 #define PI_F 3.14159265f
 #define FLT_MAX_F 3.40282347e+38f
@@ -1317,3 +1318,32 @@ cGVar GVar_FreeSpaceMagnet;
 
 cGVar GVar_FXVehicleFloatingFactor;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_FXVehicleFloatingFactor, &GVar_FXVehicleFloatingFactor, "FXVehicleFloatingFactor", 0, "Factor of floating Movement of the ship.", 1.0f)
+INIT_GVAR_INT(Init_GVar_FreeSpaceMagnet, &GVar_FreeSpaceMagnet, "FreeSpaceMagnet", 0, "1 to activate the freespace sphere", 0)
+FINI_GVAR_STRING(Fini_GVar_PriorityWeapon, &GVar_PriorityWeapon)
+INIT_GVAR_STRING(Init_GVar_PriorityWeapon, Fini_GVar_PriorityWeapon, &GVar_PriorityWeapon, "PriorityWeapon", 2, "The Seventh Weapon\n", "Laser, Vulcan, Devastator, Tesla, ATPC, Swarm, Inferno")
+FINI_CALL(Fini_GVar_EscapeEvent, &GVar_EscapeEvent.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_EscapeEvent, Fini_GVar_EscapeEvent, &GVar_EscapeEvent, "EscapeEvent", 0, "EscapeEvent(id) <MainMenu> event when input is not in ´menu´ mode.", NULL)
+FINI_CALL(Fini_GVar_MainMissionEvent, &GVar_MainMissionEvent.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_MainMissionEvent, Fini_GVar_MainMissionEvent, &GVar_MainMissionEvent, "MainMissionEvent", 0, "MainMissionEvent(id) <Mission menu> event when input is not in ´menu´ mode.", NULL)
+FINI_CALL(Fini_GVar_QChatEvent6, &GVar_QChatEvent6.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_QChatEvent6, Fini_GVar_QChatEvent6, &GVar_QChatEvent6, "QChatEvent6", 0, "QChatEvent6(id) only for racer input modes. The quick chat message has been pressed.\n", NULL)
+FINI_CALL(Fini_GVar_QChatEvent5, &GVar_QChatEvent5.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_QChatEvent5, Fini_GVar_QChatEvent5, &GVar_QChatEvent5, "QChatEvent5", 0, "QChatEvent5(id) only for racer input modes. The quick chat message has been pressed.", NULL)
+FINI_CALL(Fini_GVar_QChatEvent4, &GVar_QChatEvent4.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_QChatEvent4, Fini_GVar_QChatEvent4, &GVar_QChatEvent4, "QChatEvent4", 0, "QChatEvent4(id) only for racer input modes. The quick chat message has been pressed.", NULL)
+FINI_CALL(Fini_GVar_QChatEvent3, &GVar_QChatEvent3.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_QChatEvent3, Fini_GVar_QChatEvent3, &GVar_QChatEvent3, "QChatEvent3", 0, "QChatEvent3(id) only for racer input modes. The quick chat message has been pressed.", NULL)
+FINI_CALL(Fini_GVar_QChatEvent2, &GVar_QChatEvent2.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_QChatEvent2, Fini_GVar_QChatEvent2, &GVar_QChatEvent2, "QChatEvent2", 0, "QChatEvent2(id) only for racer input modes. The quick chat message has been pressed.", NULL)
+FINI_CALL(Fini_GVar_QChatEvent1, &GVar_QChatEvent1.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_QChatEvent1, Fini_GVar_QChatEvent1, &GVar_QChatEvent1, "QChatEvent1", 0, "QChatEvent1(id) only for racer input modes. The quick chat message has been pressed.", NULL)
+FINI_CALL(Fini_GVar_ChatEvent, &GVar_ChatEvent.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_ChatEvent, Fini_GVar_ChatEvent, &GVar_ChatEvent, "ChatEvent", 0, "ChatEvent(id) only for racer input modes.   The chat key has been pressed.", NULL)
+INIT_GVAR_INT(Init_GVar_GameSkill, &GVar_GameSkill, "GameSkill", 0, "Game Skill. (0 = Easy,1 = Normal,2 = Hard).\n", 1)
+INIT_GVAR_FLOAT(Init_GVar_GridScaleZ, &GVar_GridScaleZ, "GridScaleZ", 0, "Z Scale of the entity grid cell\n", 20000.0f)
+INIT_GVAR_FLOAT(Init_GVar_GridScaleX, &GVar_GridScaleX, "GridScaleX", 0, "X Scale of the entity grid cell", 20000.0f)
+INIT_GVAR_FLOAT(Init_GVar_GridScaleY, &GVar_GridScaleY, "GridScaleY", 0, "Y Scale of the entity grid cell", 20000.0f)
+INIT_GVAR_FLOAT(Init_GVar_Max_Rad_Obj, &GVar_Max_Rad_Obj, "Max_Rad_Obj", 0, "Min radius of the obj scale\n", 10000.0f)
+INIT_GVAR_INT(Init_GVar_R_SplitScreenUpdate, &GVar_R_SplitScreenUpdate, "R_SplitScreenUpdate", 0, "Split Screen Update Target", 0)

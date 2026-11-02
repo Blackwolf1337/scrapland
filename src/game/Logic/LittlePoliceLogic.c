@@ -10,6 +10,7 @@
 #include "scrap/chartype.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 
 static inline const cLittlePoliceLocalLogicVtbl *LP_VT(const void *l) {
@@ -642,3 +643,12 @@ cGVar GVar_LittlePoliceChasingTime;
 
 cGVar GVar_MainMissionStopDist;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_GenCharStdFovX, &GVar_GenCharStdFovX, "GenCharStdFovX", 0, "Standard GenChar FieldOfViewX", 1.5707964f)
+INIT_GVAR_FLOAT(Init_GVar_GenCharStdFovY, &GVar_GenCharStdFovY, "GenCharStdFovY", 0, "Standard GenChar FieldOfViewY", 1.5707964f)
+INIT_GVAR_FLOAT(Init_GVar_GenCharStdFar, &GVar_GenCharStdFar, "GenCharStdFar", 0, "Standard GenChar Distance of View", 800.0f)
+INIT_GVAR_INT(Init_GVar_LittlePoliceAsksForMoney, &GVar_LittlePoliceAsksForMoney, "LittlePoliceAsksForMoney", 0, "Little police asks for money", 1)
+INIT_GVAR_FLOAT(Init_GVar_LittlePoliceMaxDistFar, &GVar_LittlePoliceMaxDistFar, "LittlePoliceMaxDistFar", 0, "Little police max distance of view acusing", 1500.0f)
+INIT_GVAR_FLOAT(Init_GVar_LittlePoliceStopAcusingMaxDistFromUser, &GVar_LittlePoliceStopAcusingMaxDistFromUser, "LittlePoliceStopAcusingMaxDistFromUser", 0, "Little police stop acusing max dist from user", 4000.0f)
+INIT_GVAR_FLOAT(Init_GVar_LittlePoliceChasingTime, &GVar_LittlePoliceChasingTime, "LittlePoliceChasingTime", 0, "Little police chasing time", 3.0f)
+INIT_GVAR_FLOAT(Init_GVar_MainMissionStopDist, &GVar_MainMissionStopDist, "MainMissionStopDist", 0, "Main mission stop dist", 1500.0f)

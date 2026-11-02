@@ -14,6 +14,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/vehiclemotors.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 
 static void ClientNet_ClearConfig(cClientNetManager *self) {
@@ -444,3 +445,11 @@ cGVar GVar_ServerRemotePassword;
 
 cGVarFunction GVar_OnClientExit;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_NetMaxResourcesSend, &GVar_NetMaxResourcesSend, "NetMaxResourcesSend", 0, "Maximun number of net resourses send per packet at the startup.", 8)
+FINI_GVAR_STRING(Fini_GVar_ServerRemotePassword, &GVar_ServerRemotePassword)
+INIT_GVAR_STRING(Init_GVar_ServerRemotePassword, Fini_GVar_ServerRemotePassword, &GVar_ServerRemotePassword, "ServerRemotePassword", 6, "Password for client remote control(server). If empty, no remote control allowed.", "")
+FINI_CALL(Fini_GVar_OnClientExit, &GVar_OnClientExit.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnClientExit, Fini_GVar_OnClientExit, &GVar_OnClientExit, "OnClientExit", 0, "OnClientExit(entityname,ModelName,UsrName) player ship will be deleted", "")
+FINI_CALL(Fini_GVar_OnClientModify, &GVar_OnClientModify.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnClientModify, Fini_GVar_OnClientModify, &GVar_OnClientModify, "OnClientModify", 0, "OnClientModify(entityname,ModelName,MaxLife,UsrName,PilotName,Motor0,Motor1,Motor2,Motor3,WeaponBay,tgtype) player ship modified", "")

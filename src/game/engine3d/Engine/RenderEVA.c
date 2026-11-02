@@ -13,6 +13,7 @@
 #include "scrap/model.h"
 #include "scrap/render.h"
 #include "scrap/particlesystem.h"
+#include "scrap/staticinit.h"
 
 #define D3DFVF_TEX1 0x112		/* XYZ | NORMAL | TEX1 */
 #define D3DFVF_PART 0x1c2		/* XYZ | DIFFUSE | SPECULAR | TEX1 */
@@ -563,3 +564,16 @@ cGVar GVar_R_ParticlesLock;
 
 cGVar GVar_R_SkinNodeSpace;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_UseSkin, &GVar_R_UseSkin, "R_UseSkin", 0, "Use skinning (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_ShowSkin, &GVar_R_ShowSkin, "R_ShowSkin", 0, "Show skinning (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_R_UseEVA, &GVar_R_UseEVA, "R_UseEVA", 0, "Use vertex anim. (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_ShowEVA, &GVar_R_ShowEVA, "R_ShowEVA", 0, "Show vertex anim. (0/1)", 0)
+INIT_GVAR_FLOAT(Init_GVar_R_MinSparkDist, &GVar_R_MinSparkDist, "R_MinSparkDist", 0, "Min spark distance to camera", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_MaxSparkSize, &GVar_R_MaxSparkSize, "R_MaxSparkSize", 0, "Max spark size", 20.0f)
+INIT_GVAR_INT(Init_GVar_R_ParticlesOne, &GVar_R_ParticlesOne, "R_ParticlesOne", 0, "Render only first particle on the Vertex Buffer", 0)
+INIT_GVAR_INT(Init_GVar_R_ParticlesDraw, &GVar_R_ParticlesDraw, "R_ParticlesDraw", 0, "Render Particle Primitives", 1)
+INIT_GVAR_INT(Init_GVar_R_ParticlesLock, &GVar_R_ParticlesLock, "R_ParticlesLock", 0, "Particle Lock mode (1=always discard)", 0)
+INIT_GVAR_INT(Init_GVar_R_ParticlesAlphaDist, &GVar_R_ParticlesAlphaDist, "R_ParticlesAlphaDist", 0, "Particle Alpha Dist Attenuation", 1)
+INIT_GVAR_INT(Init_GVar_R_ParticlesZBias, &GVar_R_ParticlesZBias, "R_ParticlesZBias", 0, "Particle ZBias (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_SkinNodeSpace, &GVar_R_SkinNodeSpace, "R_SkinNodeSpace", 0, "Calculate skinning in node space (pos)", 1)

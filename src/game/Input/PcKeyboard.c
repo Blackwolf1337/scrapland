@@ -12,6 +12,7 @@
 #include "scrap/platform.h"
 #include "scrap/scrapmain.h"
 #include "scrap/video.h"
+#include "scrap/staticinit.h"
 
 #define KB_NAME "Kb"
 
@@ -187,3 +188,7 @@ const cAbstractIDeviceVtbl cPcKeyboard_vftable = {
 	.IsReserved = cPcKeyboard_IsReserved,
 	.SetEntry = cPcKeyboard_SetEntry,
 };
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_CALL(Fini_cPcKeyboard_Keyboard, &g_Keyboard, cAbstractIDevice_dtor)
+INIT_OBJECT(Init_cPcKeyboard_Keyboard, Fini_cPcKeyboard_Keyboard, &g_Keyboard, cPcKeyboard_ctor)

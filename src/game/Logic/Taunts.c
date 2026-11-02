@@ -19,6 +19,7 @@
 #include "scrap/timer.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 extern const char str_SBi[];
 extern const char str_SBa[];
@@ -325,3 +326,8 @@ cGVar GVar_TimeBetweeenTaunts2;
 
 cGVarFunction GVar_OnTaunt;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_CALL(Fini_GVar_OnTaunt, &GVar_OnTaunt.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnTaunt, Fini_GVar_OnTaunt, &GVar_OnTaunt, "OnTaunt", 0, "Function to be called when a taunt is to be launched", "")
+INIT_GVAR_FLOAT(Init_GVar_TimeBetweeenTaunts2, &GVar_TimeBetweeenTaunts2, "TimeBetweeenTaunts2", 0, "Time betweeen taunts when the Boss controls all the robots.", 15.0f)
+INIT_GVAR_FLOAT(Init_GVar_PhoneCabWarningDist, &GVar_PhoneCabWarningDist, "PhoneCabWarningDist", 0, "PhoneCab warning dist (in meters).", 7000.0f)

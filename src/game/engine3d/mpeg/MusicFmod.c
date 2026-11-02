@@ -18,6 +18,7 @@
 #include "scrap/sound.h"
 #include "scrap/misc.h"
 #include "scrap/platform.h"
+#include "scrap/staticinit.h"
 
 #define MUSIC_SHOW_DEBUG 2			/* S_Show */
 
@@ -652,3 +653,13 @@ cMusicVoice cMusicVoice_MusicVoices[8];
 
 cGVar GVar_isDolby;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_MusicMainVolume, &GVar_MusicMainVolume, "MusicMainVolume", 10, "Music main volume (0..1)", 0.4f)
+INIT_GVAR_FLOAT(Init_GVar_VoiceMainVolume, &GVar_VoiceMainVolume, "VoiceMainVolume", 10, "Voice main volume (0..1)", 1.0f)
+INIT_GVAR_INT(Init_GVar_isDolby, &GVar_isDolby, "isDolby", 0, "true if Dolby 5.1 is supported", 0)
+INIT_GVAR_INT(Init_GVar_TimerFreqMult, &GVar_TimerFreqMult, "TimerFreqMult", 4, "Timer frequency multiplier (def. 1, disable QPF=0)", 1)
+INIT_GVAR_FLOAT(Init_GVar_S_VoiceoverFadein, &GVar_S_VoiceoverFadein, "S_VoiceoverFadein", 0, "Voiceover fadein speed", 4.0f)
+INIT_GVAR_FLOAT(Init_GVar_S_VoiceoverFadeout, &GVar_S_VoiceoverFadeout, "S_VoiceoverFadeout", 0, "Voiceover fadeout speed", 2.0f)
+INIT_GVAR_INT(Init_GVar_S_StreamBufferSize, &GVar_S_StreamBufferSize, "S_StreamBufferSize", 0, "Buffer size for streaming (ms)", 200)
+FINI_VECTOR(Fini_cMusicVoice_MusicVoices, cMusicVoice_MusicVoices, sizeof(cMusicVoice), 8, cMusicVoice_dtor)
+INIT_VECTOR(Init_cMusicVoice_MusicVoices, Fini_cMusicVoice_MusicVoices, cMusicVoice_MusicVoices, sizeof(cMusicVoice), 8, cMusicVoice_ctor, cMusicVoice_dtor)

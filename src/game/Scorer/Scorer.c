@@ -37,6 +37,7 @@
 #include "scrap/utild3d.h"
 #include "scrap/weapons.h"
 #include "scrap/scorerhud.h"
+#include "scrap/staticinit.h"
 
 extern const cScorerVtbl cScorer_vftable;
 #define CSCORER_VFTABLE (&cScorer_vftable)
@@ -1938,3 +1939,52 @@ cGVar GVar_R_SceneMotionBlurOff;
 
 cGVar GVar_SplitScreen;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_VECTOR(Fini_cPlayerInput_PlayerInput, g_PlayerInput, sizeof(cPlayerInput), 4, cPlayerInput_dtor)
+INIT_VECTOR(Init_cPlayerInput_PlayerInput, Fini_cPlayerInput_PlayerInput, g_PlayerInput, sizeof(cPlayerInput), 4, cPlayerInput_ctor, cPlayerInput_dtor)
+FINI_GVAR_STRING(Fini_GVar_FileNameMap2D, &GVar_FileNameMap2D)
+INIT_GVAR_STRING(Init_GVar_FileNameMap2D, Fini_GVar_FileNameMap2D, &GVar_FileNameMap2D, "FileNameMap2D", 0, "2DMap bitmap file", "2D/Black.tga")
+INIT_GVAR_INT(Init_GVar_CShow, &GVar_CShow, "CShow", 4, "Shows the colission areas", 0)
+FINI_GVAR_STRING(Fini_GVar_OnFocusSound, &GVar_OnFocusSound)
+INIT_GVAR_STRING(Init_GVar_OnFocusSound, Fini_GVar_OnFocusSound, &GVar_OnFocusSound, "OnFocusSound", 0, "Set the Focus Sound", "menufocus")
+INIT_GVAR_FLOAT(Init_GVar_OnFocusSoundVol, &GVar_OnFocusSoundVol, "OnFocusSoundVol", 0, "Set Volume in the focus of sound", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_OnAcceptSound, &GVar_OnAcceptSound)
+INIT_GVAR_STRING(Init_GVar_OnAcceptSound, Fini_GVar_OnAcceptSound, &GVar_OnAcceptSound, "OnAcceptSound", 0, "Set the Accept Sound", "menuclik")
+INIT_GVAR_FLOAT(Init_GVar_OnAcceptSoundVol, &GVar_OnAcceptSoundVol, "OnAcceptSoundVol", 0, "Set the Accept sound Volume", 1.0f)
+INIT_GVAR_INT(Init_GVar_ScorerMarker, &GVar_ScorerMarker, "ScorerMarker", 0, "Show Scorer Focus Marker", 1)
+INIT_GVAR_INT(Init_GVar_ScorerMarkerColor, &GVar_ScorerMarkerColor, "ScorerMarkerColor", 0, "Scorer Focus Marker Color", 11853055)
+INIT_GVAR_FLOAT(Init_GVar_ScorerMarkerSpeed, &GVar_ScorerMarkerSpeed, "ScorerMarkerSpeed", 0, "Scorer Focus Marker Speed", 6.0f)
+INIT_GVAR_INT(Init_GVar_CameraScene, &GVar_CameraScene, "CameraScene", 0, "Camera Scene mode active", 0)
+INIT_GVAR_FLOAT(Init_GVar_CinemaBlackBandHeight, &GVar_CinemaBlackBandHeight, "CinemaBlackBandHeight", 0, "Modifies the cinema format", 60.0f)
+INIT_GVAR_INT(Init_GVar_NoiseFactorBegin, &GVar_NoiseFactorBegin, "NoiseFactorBegin", 0, "factor of noise fx", 0)
+INIT_GVAR_INT(Init_GVar_NoiseFactor, &GVar_NoiseFactor, "NoiseFactor", 0, "factor of noise fx", 0)
+INIT_GVAR_FLOAT(Init_GVar_NoiseTime, &GVar_NoiseTime, "NoiseTime", 0, "factor of noise fx", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_NoiseEndTime, &GVar_NoiseEndTime, "NoiseEndTime", 0, "factor of noise fx", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_MotionBlurFactorBegin, &GVar_MotionBlurFactorBegin, "MotionBlurFactorBegin", 0, "factor of motion blur fx", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_MotionBlurFactorEnd, &GVar_MotionBlurFactorEnd, "MotionBlurFactorEnd", 0, "factor of motion blur fx", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_MotionBlurTime, &GVar_MotionBlurTime, "MotionBlurTime", 0, "factor of motion blur fx", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_MotionBlurEndTime, &GVar_MotionBlurEndTime, "MotionBlurEndTime", 0, "factor of motion blur fx", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_MotionBlurOffVar, &GVar_MotionBlurOffVar, "MotionBlurOffVar", 0, "factor of motion blur fx", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_CameraCloudDistance, &GVar_CameraCloudDistance, "CameraCloudDistance", 0, "here start the white fade for de clouds", 4000.0f)
+INIT_GVAR_FLOAT(Init_GVar_CameraCloudPlaneSize, &GVar_CameraCloudPlaneSize, "CameraCloudPlaneSize", 0, "The size of de gradient of the fade for de clouds", 1000.0f)
+INIT_GVAR_FLOAT(Init_GVar_CameraCloudThickness, &GVar_CameraCloudThickness, "CameraCloudThickness", 0, "The thickness of the cloud fade for de clouds", 500.0f)
+INIT_GVAR_INT(Init_GVar_CameraCloudAlpha, &GVar_CameraCloudAlpha, "CameraCloudAlpha", 0, "Aplha falue for the clouds", 240)
+INIT_GVAR_INT(Init_GVar_CameraCloudRed, &GVar_CameraCloudRed, "CameraCloudRed", 0, "Red falue for the clouds", 255)
+INIT_GVAR_INT(Init_GVar_CameraCloudGreen, &GVar_CameraCloudGreen, "CameraCloudGreen", 0, "Green falue for the clouds", 255)
+INIT_GVAR_INT(Init_GVar_CameraCloudBlue, &GVar_CameraCloudBlue, "CameraCloudBlue", 0, "Blue falue for the clouds", 255)
+INIT_GVAR_INT(Init_GVar_XboxNoPadMsgPBig, &GVar_XboxNoPadMsgPBig, "XboxNoPadMsgPBig", 0, "if 1 shows the 'please insert the pad' big (to start game).", 0)
+INIT_GVAR_INT(Init_GVar_XboxNoPadMsg, &GVar_XboxNoPadMsg, "XboxNoPadMsg", 0, "if 1 shows the 'please insert the pad'.", 0)
+INIT_GVAR_INT(Init_GVar_XboxNoPadMsgP, &GVar_XboxNoPadMsgP, "XboxNoPadMsgP", 0, "if 1 shows the 'please insert the pad' for player 2.", 0)
+INIT_GVAR_FLOAT(Init_GVar_XboxSavingMsg, &GVar_XboxSavingMsg, "XboxSavingMsg", 0, "the remain time to hide de 'Saving...' message.", 0.0f)
+FINI_GVAR_STRING(Fini_GVar_XboxSavingMsgStr, &GVar_XboxSavingMsgStr)
+INIT_GVAR_STRING(Init_GVar_XboxSavingMsgStr, Fini_GVar_XboxSavingMsgStr, &GVar_XboxSavingMsgStr, "XboxSavingMsgStr", 0, "the remain 'Saving...' text message in language table.", "XBox_Saving_Msg_")
+FINI_CALL(Fini_GVar_FullScreenConsoleCallback, &GVar_FullScreenConsoleCallback.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_FullScreenConsoleCallback, Fini_GVar_FullScreenConsoleCallback, &GVar_FullScreenConsoleCallback, "FullScreenConsoleCallback", 0, "This function is called when imput an string on fullscreen console.", "")
+INIT_GVAR_INT(Init_GVar_ShowConsoleLog, &GVar_ShowConsoleLog, "ShowConsoleLog", 0, "1 to show allways the console", 0)
+INIT_CALL(Init_cVirtualKeyboard_ConsoleSavedKeyboard, &g_ConsoleSavedKeyboard, cVirtualKeyboard_ctor)
+FINI_CALL(Fini_cPlayerInput_ConsoleSavedInput, &((cPlayerInput *)&g_ConsoleSavedInput)->func, cPy_Function_dtor)
+INIT_OBJECT(Init_cPlayerInput_ConsoleSavedInput, Fini_cPlayerInput_ConsoleSavedInput, &g_ConsoleSavedInput, cPlayerInput_ctor)
+FINI_VECTOR(Fini_cString_ConsoleHistory, g_ConsoleHistory, sizeof(cString), 16, cString_dtor)
+INIT_VECTOR(Init_cString_ConsoleHistory, Fini_cString_ConsoleHistory, g_ConsoleHistory, sizeof(cString), 16, cString_ctor, cString_dtor)
+INIT_GVAR_INT(Init_GVar_SplitScreen, &GVar_SplitScreen, "SplitScreen", 0, "Is split Screen", 0)
+INIT_GVAR_FLOAT(Init_GVar_R_SceneMotionBlurOff, &GVar_R_SceneMotionBlurOff, "R_SceneMotionBlurOff", 0, "Scene Motion Blur OffScreen", 0.005f)

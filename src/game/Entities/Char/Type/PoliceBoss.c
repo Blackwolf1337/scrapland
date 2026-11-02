@@ -6,6 +6,7 @@
 
 #include "scrap/chartype.h"
 #include "scrap/fxelements.h"
+#include "scrap/staticinit.h"
 
 #define PB_SYSTEMS 5		/* the debris systems <PoliceBossBrupBaseFile>A.M3D .. E.M3D */
 #define PB_Started(el) (((FXElemHead *)(el))->started)
@@ -206,3 +207,25 @@ cGVar GVar_PoliceBossBrupPosZ;
 
 cGVar GVar_PoliceBossBrupDebrisMin;
 
+cPy_NativeFunc NativeFunc_PoliceBossAction;
+cPy_NativeFunc NativeFunc_PoliceBossBrup;
+cPy_NativeFunc NativeFunc_FXPoliceBossBrup;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_PoliceBossActionRadius, &GVar_PoliceBossActionRadius, "PoliceBossActionRadius", 0, "Radius of PoliceBoss fun FX to the polices.", 1000.0f)
+FINI_GVAR_STRING(Fini_GVar_PoliceBossBrupBaseFile, &GVar_PoliceBossBrupBaseFile)
+INIT_GVAR_STRING(Init_GVar_PoliceBossBrupBaseFile, Fini_GVar_PoliceBossBrupBaseFile, &GVar_PoliceBossBrupBaseFile, "PoliceBossBrupBaseFile", 0, "Default Model for Police Boss Brup Effect", "Models/Misc/NutsAndScrew/NutsAndScrew")
+INIT_GVAR_FLOAT(Init_GVar_PoliceBossBrupPosX, &GVar_PoliceBossBrupPosX, "PoliceBossBrupPosX", 0, "Police Boss Brup Displacement from center", 5.0f)
+INIT_GVAR_FLOAT(Init_GVar_PoliceBossBrupPosY, &GVar_PoliceBossBrupPosY, "PoliceBossBrupPosY", 0, "Police Boss Brup Displacement from center", 5.0f)
+INIT_GVAR_FLOAT(Init_GVar_PoliceBossBrupPosZ, &GVar_PoliceBossBrupPosZ, "PoliceBossBrupPosZ", 0, "Police Boss Brup Displacement from center", -100.0f)
+INIT_GVAR_FLOAT(Init_GVar_PoliceBossBrupDirRand, &GVar_PoliceBossBrupDirRand, "PoliceBossBrupDirRand", 0, "Police Boss Brup Random Direction factor", 0.15f)
+INIT_GVAR_INT(Init_GVar_PoliceBossBrupDebrisMin, &GVar_PoliceBossBrupDebrisMin, "PoliceBossBrupDebrisMin", 0, "Police Boss Brup Min debris number", 4)
+INIT_GVAR_INT(Init_GVar_PoliceBossBrupDebrisMax, &GVar_PoliceBossBrupDebrisMax, "PoliceBossBrupDebrisMax", 0, "Police Boss Brup Max debris number", 8)
+FINI_GVAR_STRING(Fini_GVar_PoliceBossBrupBounce1Sound, &GVar_PoliceBossBrupBounce1Sound)
+INIT_GVAR_STRING(Init_GVar_PoliceBossBrupBounce1Sound, Fini_GVar_PoliceBossBrupBounce1Sound, &GVar_PoliceBossBrupBounce1Sound, "PoliceBossBrupBounce1Sound", 0, "Police Boss Brup debris bounce sound1 name", "PoliceBossBrupBounce1Sound")
+FINI_GVAR_STRING(Fini_GVar_PoliceBossBrupBounce2Sound, &GVar_PoliceBossBrupBounce2Sound)
+INIT_GVAR_STRING(Init_GVar_PoliceBossBrupBounce2Sound, Fini_GVar_PoliceBossBrupBounce2Sound, &GVar_PoliceBossBrupBounce2Sound, "PoliceBossBrupBounce2Sound", 0, "Police Boss Brup debris bounce sound2 name", "PoliceBossBrupBounce2Sound")
+INIT_GVAR_FLOAT(Init_GVar_PoliceBossBrupBounceSoundVol, &GVar_PoliceBossBrupBounceSoundVol, "PoliceBossBrupBounceSoundVol", 0, "Police Boss Brup debris bounce sound volume", 0.0f)
+INIT_NATIVE_FUNC(Init_NativeFunc_PoliceBossAction, &NativeFunc_PoliceBossAction, "PoliceBossAction", ChType_PoliceBossAction)
+INIT_NATIVE_FUNC(Init_NativeFunc_PoliceBossBrup, &NativeFunc_PoliceBossBrup, "PoliceBossBrup", ChType_PoliceBossBrup)
+INIT_NATIVE_FUNC(Init_NativeFunc_FXPoliceBossBrup, &NativeFunc_FXPoliceBossBrup, "FXPoliceBossBrup", ChType_FXPoliceBossBrup)

@@ -9,6 +9,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/scrapworld.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/staticinit.h"
 
 /* the step through the tracks of a sector from a random start, up or down */
 static int Sector_NextTrack(int j, int up, int numT) {
@@ -588,3 +589,6 @@ cGVar GVar_MaxNumTrackLowDensityAI;
 
 cGVar GVar_MaxNumTrackNormalDensityAI;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_MaxNumTrackLowDensityAI, &GVar_MaxNumTrackLowDensityAI, "MaxNumTrackLowDensityAI", 4, "Max. number of ships in track with low density.\n", 7)
+INIT_GVAR_INT(Init_GVar_MaxNumTrackNormalDensityAI, &GVar_MaxNumTrackNormalDensityAI, "MaxNumTrackNormalDensityAI", 4, "Max. number of ships in track with normal density.\n", 15)

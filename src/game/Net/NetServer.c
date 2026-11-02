@@ -7,6 +7,7 @@
 
 #include "scrap/console.h"
 #include "scrap/net.h"
+#include "scrap/staticinit.h"
 
 static void NetServer_Free(cNetClient *c) {
 	cNetClient_dtor(c);
@@ -260,3 +261,11 @@ cGVar GVar_ServerName;
 
 cGVar GVar_ServerDataRateLimit;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_ForceServerVehicle, &GVar_ForceServerVehicle, "ForceServerVehicle", 6, "All the ships will use the server's one\n", 0)
+FINI_GVAR_STRING(Fini_GVar_ServerPassword, &GVar_ServerPassword)
+INIT_GVAR_STRING(Init_GVar_ServerPassword, Fini_GVar_ServerPassword, &GVar_ServerPassword, "ServerPassword", 6, "The server's password.\n", "dtritus")
+INIT_GVAR_INT(Init_GVar_UseServerPassword, &GVar_UseServerPassword, "UseServerPassword", 6, "if the server needs password to join, set to true.", 0)
+FINI_GVAR_STRING(Fini_GVar_ServerName, &GVar_ServerName)
+INIT_GVAR_STRING(Init_GVar_ServerName, Fini_GVar_ServerName, &GVar_ServerName, "ServerName", 6, "Name of the network server\n", "Unnamed Server")
+INIT_GVAR_INT(Init_GVar_ServerDataRateLimit, &GVar_ServerDataRateLimit, "ServerDataRateLimit", 2, "Rate Limit in bytes per second\n", 8192)

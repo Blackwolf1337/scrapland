@@ -7,6 +7,7 @@
 #include "scrap/chartype.h"
 #include "scrap/filepak.h"
 #include "scrap/hashtable.h"
+#include "scrap/staticinit.h"
 
 /* defined further down or in another file without a header */
 void DominationEnemies_OnDeath(cAbstractFile *params);
@@ -154,3 +155,8 @@ cGVarFunction GVar_OnDominEnemyDeath;
 
 cGVar GVar_LeaderName;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_CALL(Fini_GVar_OnDominEnemyDeath, &GVar_OnDominEnemyDeath.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnDominEnemyDeath, Fini_GVar_OnDominEnemyDeath, &GVar_OnDominEnemyDeath, "OnDominEnemyDeath", 0, "Called when an enemy dies", "")
+FINI_GVAR_STRING(Fini_GVar_LeaderName, &GVar_LeaderName)
+INIT_GVAR_STRING(Init_GVar_LeaderName, Fini_GVar_LeaderName, &GVar_LeaderName, "LeaderName", 0, "Leader name", "")

@@ -6,6 +6,7 @@
 #include "scrap/scoreritems.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 /* the lock of the target of a ship: on, and the time of the lock (0 while searching) */
 
@@ -268,3 +269,7 @@ cGVar GVar_CannonScorerNoAmmoSound;
 
 cGVar GVar_CannonScorerNoAmmoSoundVol;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_CannonScorerNoAmmoSound, &GVar_CannonScorerNoAmmoSound)
+INIT_GVAR_STRING(Init_GVar_CannonScorerNoAmmoSound, Fini_GVar_CannonScorerNoAmmoSound, &GVar_CannonScorerNoAmmoSound, "CannonScorerNoAmmoSound", 0, "Sound name for No Ammo Signal", "NoAmmo")
+INIT_GVAR_FLOAT(Init_GVar_CannonScorerNoAmmoSoundVol, &GVar_CannonScorerNoAmmoSoundVol, "CannonScorerNoAmmoSoundVol", 0, "Sound Volume for No Ammo Signal", 1.0f)

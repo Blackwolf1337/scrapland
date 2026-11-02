@@ -8,6 +8,7 @@
 #include "scrap/chartype.h"
 #include "scrap/fxelements.h"
 #include "scrap/primitive.h"
+#include "scrap/staticinit.h"
 
 char g_NurseName[128];
 
@@ -476,3 +477,24 @@ cGVar GVar_FXHammerHitFile;
 
 cGVar GVar_NurseDispRad;
 
+cPy_NativeFunc NativeFunc_NurseActionRelease;
+cPy_NativeFunc NativeFunc_NurseDoHammerHit;
+cPy_NativeFunc NativeFunc_NurseBackHitControl;
+cPy_NativeFunc NativeFunc_NurseInitHammerLoop;
+cPy_NativeFunc NativeFunc_NurseTryHammerAgain;
+cPy_NativeFunc NativeFunc_NurseActionPress;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_CALL(Fini_GVar_OnSleep, &GVar_OnSleep.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnSleep, Fini_GVar_OnSleep, &GVar_OnSleep, "OnSleep", 0, "Function to be called when the the player, as a nurse, sleeps someone", "")
+FINI_GVAR_STRING(Fini_GVar_FXHammerHitFile, &GVar_FXHammerHitFile)
+INIT_GVAR_STRING(Init_GVar_FXHammerHitFile, Fini_GVar_FXHammerHitFile, &GVar_FXHammerHitFile, "FXHammerHitFile", 0, "Default Model for Nurse Hammer Hit Effect", "Models/GFX/Nurse/HammerHit.M3D")
+INIT_GVAR_FLOAT(Init_GVar_NurseDispDist, &GVar_NurseDispDist, "NurseDispDist", 0, "Nurse hit detector displacement distance", 120.0f)
+INIT_GVAR_FLOAT(Init_GVar_NurseDispRad, &GVar_NurseDispRad, "NurseDispRad", 0, "Nurse hit detector Radius", 75.0f)
+INIT_GVAR_FLOAT(Init_GVar_NurseAlarmHit, &GVar_NurseAlarmHit, "NurseAlarmHit", 0, "How values must increment when nurse hits", 0.25f)
+INIT_NATIVE_FUNC(Init_NativeFunc_NurseActionRelease, &NativeFunc_NurseActionRelease, "NurseActionRelease", ChType_NurseActionRelease)
+INIT_NATIVE_FUNC(Init_NativeFunc_NurseDoHammerHit, &NativeFunc_NurseDoHammerHit, "NurseDoHammerHit", ChType_NurseDoHammerHit)
+INIT_NATIVE_FUNC(Init_NativeFunc_NurseBackHitControl, &NativeFunc_NurseBackHitControl, "NurseBackHitControl", ChType_NurseBackHitControl)
+INIT_NATIVE_FUNC(Init_NativeFunc_NurseInitHammerLoop, &NativeFunc_NurseInitHammerLoop, "NurseInitHammerLoop", ChType_NurseInitHammerLoop)
+INIT_NATIVE_FUNC(Init_NativeFunc_NurseTryHammerAgain, &NativeFunc_NurseTryHammerAgain, "NurseTryHammerAgain", ChType_NurseTryHammerAgain)
+INIT_NATIVE_FUNC(Init_NativeFunc_NurseActionPress, &NativeFunc_NurseActionPress, "NurseActionPress", ChType_NurseActionPress)

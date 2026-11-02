@@ -11,6 +11,7 @@
 #include "scrap/console.h"
 #include "scrap/game.h"
 #include "scrap/platform.h"
+#include "scrap/staticinit.h"
 
 cGVar GVar_LogFile;
 
@@ -291,3 +292,8 @@ void CheckFailed(const char *expr, const char *file, const char *date, int line)
 
 cGVar GVar_debug;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_debug, &GVar_debug, "debug", 4, "0 = Nothing, 1 = Something, 2 = Everything, 3 = Everything and much more", 1)
+FINI_GVAR_STRING(Fini_GVar_LogFile, &GVar_LogFile)
+INIT_GVAR_STRING(Init_GVar_LogFile, Fini_GVar_LogFile, &GVar_LogFile, "LogFile", 1, "Log File to write the console debug log. ONLY works as argument in command line.", "log.html")
+INIT_GVAR_INT(Init_GVar_AlwaysFlushLog, &GVar_AlwaysFlushLog, "AlwaysFlushLog", 0, "Always flush log file (0/1)", 0)

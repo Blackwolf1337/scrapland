@@ -13,6 +13,7 @@
 #include "scrap/python.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/withlifeentity.h"
+#include "scrap/staticinit.h"
 
 /* the script callbacks of the server gvars back to none (unless scripts may not write them) */
 void Net_ServerResetFuncs(void) {
@@ -288,3 +289,10 @@ cGVar GVar_HeartbeatTime;
 
 cGVar GVar_ServerMinSendDelay;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_BrowserCode, &GVar_BrowserCode)
+INIT_GVAR_STRING(Init_GVar_BrowserCode, Fini_GVar_BrowserCode, &GVar_BrowserCode, "BrowserCode", 4, "", "")
+FINI_CALL(Fini_GVar_OnClientJoin, &GVar_OnClientJoin.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnClientJoin, Fini_GVar_OnClientJoin, &GVar_OnClientJoin, "OnClientJoin", 0, "OnClientJoin(entityname,ModelName,MaxLife,UsrName,PilotName,Motor0,Motor1,Motor2,Motor3,WeaponBay,tgtype) player ship created", "")
+INIT_GVAR_INT(Init_GVar_ServerMinSendDelay, &GVar_ServerMinSendDelay, "ServerMinSendDelay", 6, "Mininimal delay between packets (in seconds).", 5)
+INIT_GVAR_FLOAT(Init_GVar_HeartbeatTime, &GVar_HeartbeatTime, "HeartbeatTime", 6, "Heartbeat to the master server.\n", 30.0f)

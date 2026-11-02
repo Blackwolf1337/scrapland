@@ -12,6 +12,7 @@
 #include "scrap/material.h"
 #include "scrap/model.h"
 #include "scrap/misc.h"
+#include "scrap/staticinit.h"
 
 cGVar GVar_R_SortModels;
 
@@ -636,3 +637,8 @@ int ModelList_CompareKey(const void *a, const void *b) {
 
 	return lb->sortKey > la->sortKey ? 1 : -1;
 }
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_SortModels, &GVar_R_SortModels, "R_SortModels", 0, "Sort models by distance", 1)
+INIT_GVAR_INT(Init_GVar_R_SortShow, &GVar_R_SortShow, "R_SortShow", 0, "Show sorting info (0/1/2)", 0)
+INIT_GVAR_INT(Init_GVar_R_SortInvert, &GVar_R_SortInvert, "R_SortInvert", 0, "Invert models sorting (0/1)", 0)

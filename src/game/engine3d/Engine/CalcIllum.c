@@ -14,6 +14,7 @@
 #include "scrap/trimesh.h"
 #include "scrap/material.h"
 #include "scrap/utild3d.h"
+#include "scrap/staticinit.h"
 
 cGVar GVar_R_ShowPreIllumVtx;
 
@@ -119,3 +120,6 @@ void CMeshD3D_CalcIllum(CMeshD3D *self, CNode3D *node, CScene *scn) {
 	self->mat->params.lighting = 0;
 	CVertList_Free(&lv);
 }
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_ShowPreIllumVtx, &GVar_R_ShowPreIllumVtx, "R_ShowPreIllumVtx", 0, "Show preilluminated vertex objects (0|1|2)", 0)

@@ -5,6 +5,7 @@
 
 #include "scrap/chartype.h"
 #include "scrap/arrowindicator.h"
+#include "scrap/staticinit.h"
 
 /* the input actions of the character set the control reads */
 #define WCC_SET 3
@@ -253,3 +254,7 @@ cGVar GVar_WalkCameraCenter;
 
 cGVar GVar_PadTurnSpeed;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_PadTurnSpeed, &GVar_PadTurnSpeed, "PadTurnSpeed", 2, "Aditional rotation for pad controllers.\n", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_WalkCameraCenter, &GVar_WalkCameraCenter, "WalkCameraCenter", 0, "0 is none else is the time to back to the standard view.\n", 0.0f)
+INIT_GVAR_INT(Init_GVar_AlwaysRun, &GVar_AlwaysRun, "AlwaysRun", 2, "1 allways run, 0 allways walk.", 1)

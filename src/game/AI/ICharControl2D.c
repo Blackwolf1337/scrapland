@@ -11,6 +11,7 @@
 #include "scrap/fxmisc.h"
 #include "scrap/nodesworld2d.h"
 #include "scrap/scrapcollision.h"
+#include "scrap/staticinit.h"
 
 /* the distance on the floor (x and z), the sum of the squares from z */
 static inline float AICC2D_FlatDist(float dx, float dz) {
@@ -1235,3 +1236,9 @@ cGVar GVar_FactorDistTestColBackCharAI;
 
 cGVar GVar_MarginCollCharAI;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_DepthPathRouteInDoorAI, &GVar_DepthPathRouteInDoorAI, "DepthPathRouteInDoorAI", 4, "Depth Path in Route.\n", 6)
+INIT_GVAR_FLOAT(Init_GVar_DistShirkCharAI, &GVar_DistShirkCharAI, "DistShirkCharAI", 4, "Factor distance change shirk to move.\n", 0.1f)
+INIT_GVAR_FLOAT(Init_GVar_MarginCollCharAI, &GVar_MarginCollCharAI, "MarginCollCharAI", 4, "Margin to test collision with characters.\n", 5.0f)
+INIT_GVAR_FLOAT(Init_GVar_FactorDistTestColCharAI, &GVar_FactorDistTestColCharAI, "FactorDistTestColCharAI", 4, "Factor distance to check collision.\n", 6.0f)
+INIT_GVAR_FLOAT(Init_GVar_FactorDistTestColBackCharAI, &GVar_FactorDistTestColBackCharAI, "FactorDistTestColBackCharAI", 4, "Factor distance to check collision while backward.\n", 1.5f)

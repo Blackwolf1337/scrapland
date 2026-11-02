@@ -11,6 +11,7 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/timer.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/staticinit.h"
 
 /* defined further down or in another file without a header */
 byte Logic_SetOriginCallback(cEntity *e);
@@ -261,3 +262,8 @@ cGVar GVar_TimeBetweeenTaunts;
 
 cGVar GVar_TimeBetweeenWarnings;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_NotCleanableByGear, &GVar_NotCleanableByGear)
+INIT_GVAR_STRING(Init_GVar_NotCleanableByGear, Fini_GVar_NotCleanableByGear, &GVar_NotCleanableByGear, "NotCleanableByGear", 0, "Gear do not try to atack this", "")
+INIT_GVAR_FLOAT(Init_GVar_TimeBetweeenTaunts, &GVar_TimeBetweeenTaunts, "TimeBetweeenTaunts", 0, "Time betweeen general taunts.", 22.0f)
+INIT_GVAR_FLOAT(Init_GVar_TimeBetweeenWarnings, &GVar_TimeBetweeenWarnings, "TimeBetweeenWarnings", 0, "Time betweeen warnings.", 90.0f)

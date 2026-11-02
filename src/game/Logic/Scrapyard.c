@@ -17,6 +17,7 @@
 #include "scrap/nodestraffic.h"
 #include "scrap/scrap.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 extern const cLocalLogicVtbl cScrapyardLocalLogic_vftable;
 #define CSCRAPYARDLOCALLOGIC_VFTABLE (&cScrapyardLocalLogic_vftable)
@@ -348,3 +349,17 @@ const cLocalLogicVtbl cScrapyardLocalLogic_vftable = {
 	.VarS = cLocalLogic_VarSFalse,
 	.VarV = cScrapyardLocalLogic_VarV,
 };
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_OnMosquitoDeathMoney, &GVar_OnMosquitoDeathMoney, "OnMosquitoDeathMoney", 0, "Mosquito death money reward", 100)
+INIT_GVAR_INT(Init_GVar_OnMadHunterDeathMoney, &GVar_OnMadHunterDeathMoney, "OnMadHunterDeathMoney", 0, "Mad hunter death money reward", 300)
+INIT_GVAR_FLOAT(Init_GVar_MinPercMosquitosAttackingIntruder, &GVar_MinPercMosquitosAttackingIntruder, "MinPercMosquitosAttackingIntruder", 0, "Min perc mosquitos attacking intruder", 0.3f)
+INIT_GVAR_FLOAT(Init_GVar_MinPercMadHuntersAttackingIntruder, &GVar_MinPercMadHuntersAttackingIntruder, "MinPercMadHuntersAttackingIntruder", 0, "Min perc mad hunters attacking intruder", 0.5f)
+INIT_GVAR_INT(Init_GVar_MaxMosquitos, &GVar_MaxMosquitos, "MaxMosquitos", 0, "Max mosquitos", 10)
+INIT_GVAR_FLOAT(Init_GVar_MaxMosquitosDist, &GVar_MaxMosquitosDist, "MaxMosquitosDist", 0, "Max mosquitos dist", 30000.0f)
+INIT_GVAR_INT(Init_GVar_MaxMadHunters, &GVar_MaxMadHunters, "MaxMadHunters", 0, "Max mad hunters", 2)
+INIT_GVAR_FLOAT(Init_GVar_MaxMadHuntersDist, &GVar_MaxMadHuntersDist, "MaxMadHuntersDist", 0, "Max mad hunters dist", 70000.0f)
+FINI_GVAR_STRING(Fini_GVar_MosquitosTriggeredShipName, &GVar_MosquitosTriggeredShipName)
+INIT_GVAR_STRING(Init_GVar_MosquitosTriggeredShipName, Fini_GVar_MosquitosTriggeredShipName, &GVar_MosquitosTriggeredShipName, "MosquitosTriggeredShipName", 0, "Ship name that triggers mosquitos appearance", "")
+FINI_GVAR_STRING(Fini_GVar_MadHuntersTriggeredShipName, &GVar_MadHuntersTriggeredShipName)
+INIT_GVAR_STRING(Init_GVar_MadHuntersTriggeredShipName, Fini_GVar_MadHuntersTriggeredShipName, &GVar_MadHuntersTriggeredShipName, "MadHuntersTriggeredShipName", 0, "Ship name that triggers mad hunters appearance", "")

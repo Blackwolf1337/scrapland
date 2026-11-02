@@ -12,6 +12,7 @@
 #include "scrap/primitive.h"
 #include "scrap/vehicleattack.h"
 #include "scrap/weaps2.h"
+#include "scrap/staticinit.h"
 
 static inline cMissileEntity *Gear_Missile(cEntity *e) {
 	return (cMissileEntity *)e;
@@ -635,3 +636,40 @@ cGVar GVar_GearXplodeRadius;
 
 cGVarFunction GVar_OnFlash;
 
+cPy_NativeFunc NativeFunc_GearHit;
+cPy_NativeFunc NativeFunc_GearShoot;
+cPy_NativeFunc NativeFunc_GearShootLoad;
+cPy_NativeFunc NativeFunc_GearActionPress;
+cPy_NativeFunc NativeFunc_GearInitAction;
+cPy_NativeFunc NativeFunc_GearEndAction;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_GearShootDamage, &GVar_GearShootDamage, "GearShootDamage", 0, "Damage by the Armored Gear weapon", 20)
+INIT_GVAR_FLOAT(Init_GVar_GearShootDistance, &GVar_GearShootDistance, "GearShootDistance", 0, "Range in the Armored Gear weapon", 20000.0f)
+INIT_GVAR_FLOAT(Init_GVar_GearShootFailAlarm, &GVar_GearShootFailAlarm, "GearShootFailAlarm", 0, "The amount that will grow up if a shoot fails...", 0.1f)
+INIT_GVAR_FLOAT(Init_GVar_GearShootHitAlarm, &GVar_GearShootHitAlarm, "GearShootHitAlarm", 0, "The amount that will grow up if a shoot hits...", 0.2f)
+FINI_GVAR_STRING(Fini_GVar_GearLoadWeaponSound, &GVar_GearLoadWeaponSound)
+INIT_GVAR_STRING(Init_GVar_GearLoadWeaponSound, Fini_GVar_GearLoadWeaponSound, &GVar_GearLoadWeaponSound, "GearLoadWeaponSound", 0, "Gear Load Weapon sound name", "GearLoadWeapon")
+INIT_GVAR_FLOAT(Init_GVar_GearLoadWeaponSoundVol, &GVar_GearLoadWeaponSoundVol, "GearLoadWeaponSoundVol", 0, "Gear Load Weapon sound volume", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_GearShootSound, &GVar_GearShootSound)
+INIT_GVAR_STRING(Init_GVar_GearShootSound, Fini_GVar_GearShootSound, &GVar_GearShootSound, "GearShootSound", 0, "Gear Shoot impact sound name", "GearBoom")
+INIT_GVAR_FLOAT(Init_GVar_GearShootSoundVol, &GVar_GearShootSoundVol, "GearShootSoundVol", 0, "Gear Shoot impact sound volume", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_GearHitSound, &GVar_GearHitSound)
+INIT_GVAR_STRING(Init_GVar_GearHitSound, Fini_GVar_GearHitSound, &GVar_GearHitSound, "GearHitSound", 0, "Gear hit impact sound name", "GearHit")
+INIT_GVAR_FLOAT(Init_GVar_GearHitSoundVol, &GVar_GearHitSoundVol, "GearHitSoundVol", 0, "Gear hit impact sound volume", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_GearMissileSound, &GVar_GearMissileSound)
+INIT_GVAR_STRING(Init_GVar_GearMissileSound, Fini_GVar_GearMissileSound, &GVar_GearMissileSound, "GearMissileSound", 0, "Gear missile loop name", "GearMissile")
+INIT_GVAR_FLOAT(Init_GVar_GearMissileSoundVol, &GVar_GearMissileSoundVol, "GearMissileSoundVol", 0, "Gear missile loop volume", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_GearShootPosX, &GVar_GearShootPosX, "GearShootPosX", 0, "Gear shoot Displacement from center", -50.0f)
+INIT_GVAR_FLOAT(Init_GVar_GearShootPosY, &GVar_GearShootPosY, "GearShootPosY", 0, "Gear shoot Displacement from center", -45.0f)
+INIT_GVAR_FLOAT(Init_GVar_GearShootPosZ, &GVar_GearShootPosZ, "GearShootPosZ", 0, "Gear shoot Displacement from center", -180.0f)
+INIT_GVAR_FLOAT(Init_GVar_GearXplodeRadius, &GVar_GearXplodeRadius, "GearXplodeRadius", 0, "Radius of Gear's electric ball explosion.", 250.0f)
+INIT_GVAR_FLOAT(Init_GVar_GearMissileSpeed, &GVar_GearMissileSpeed, "GearMissileSpeed", 0, "Gear missile speed", 2500.0f)
+FINI_CALL(Fini_GVar_OnFlash, &GVar_OnFlash.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnFlash, Fini_GVar_OnFlash, &GVar_OnFlash, "OnFlash", 0, "Function to be called when the the player, flash someone", "")
+INIT_NATIVE_FUNC(Init_NativeFunc_GearHit, &NativeFunc_GearHit, "GearHit", ChType_GearHit)
+INIT_NATIVE_FUNC(Init_NativeFunc_GearShoot, &NativeFunc_GearShoot, "GearShoot", ChType_GearShoot)
+INIT_NATIVE_FUNC(Init_NativeFunc_GearShootLoad, &NativeFunc_GearShootLoad, "GearShootLoad", ChType_GearShootLoad)
+INIT_NATIVE_FUNC(Init_NativeFunc_GearActionPress, &NativeFunc_GearActionPress, "GearActionPress", ChType_GearActionPress)
+INIT_NATIVE_FUNC(Init_NativeFunc_GearInitAction, &NativeFunc_GearInitAction, "GearInitAction", ChType_GearInitAction)
+INIT_NATIVE_FUNC(Init_NativeFunc_GearEndAction, &NativeFunc_GearEndAction, "GearEndAction", ChType_GearEndAction)

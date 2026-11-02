@@ -14,6 +14,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 /* defined further down or in another file without a header */
 void ExtPolice_OnDamage(cAbstractFile *params);
@@ -295,3 +296,9 @@ cGVar GVar_DoResetOutPolice;
 
 cGVar GVar_TrafficFightingMaxDist;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_MaxDistReposAI, &GVar_MaxDistReposAI, "MaxDistReposAI", 4, "Distance max. to reposition the agent.\n", 100000.0f)
+FINI_CALL(Fini_GVar_PoliceWaveEliminated, &GVar_PoliceWaveEliminated.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_PoliceWaveEliminated, Fini_GVar_PoliceWaveEliminated, &GVar_PoliceWaveEliminated, "PoliceWaveEliminated", 0, "Called if no police active in game.", "")
+INIT_GVAR_INT(Init_GVar_DoResetOutPolice, &GVar_DoResetOutPolice, "DoResetOutPolice", 0, "if true, the police will be reset.", 0)
+INIT_GVAR_FLOAT(Init_GVar_TrafficFightingMaxDist, &GVar_TrafficFightingMaxDist, "TrafficFightingMaxDist", 0, "Traffic fighting max dist", 50000.0f)

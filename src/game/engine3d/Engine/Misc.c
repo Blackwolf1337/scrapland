@@ -14,6 +14,7 @@
 #include "scrap/filepak.h"
 #include "scrap/nodefx.h"
 #include "scrap/platform.h"
+#include "scrap/staticinit.h"
 
 #define LOG_LINE 0x400
 #define LOG_NAME "engine.log"
@@ -375,3 +376,7 @@ void DbgCon_Init(void) {
 
 cGVar GVar_EngineDebugLevel;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_EngineDebugLevel, &GVar_EngineDebugLevel, "EngineDebugLevel", 0, "Extra engine debug info (0/1/2)", 0)
+INIT_ATEXIT(Init_FileLog, Misc_FiniFileLog)
+INIT_JUMP(Init_RSqrtTable, RSqrt_InitTable)

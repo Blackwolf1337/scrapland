@@ -12,6 +12,7 @@
 #include "scrap/e3dworld.h"
 #include "scrap/render.h"
 #include "scrap/texture.h"
+#include "scrap/staticinit.h"
 
 CLensFlare *CLensFlare_ctor(CLensFlare *self) {
 	self->hit = (CGroundHit){ 0, 0, NULL };
@@ -386,3 +387,5 @@ void CLensFlare_SetRelative(CLensFlare *self, byte relative) {
 
 cGVar GVar_R_LensFlare;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_LensFlare, &GVar_R_LensFlare, "R_LensFlare", 0, "Render LensFlare (0/1)", 1)

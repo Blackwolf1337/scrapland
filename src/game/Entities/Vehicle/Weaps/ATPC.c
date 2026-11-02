@@ -9,6 +9,7 @@
 #include "scrap/net.h"
 #include "scrap/scorer.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 #include <string.h>
 
@@ -605,3 +606,60 @@ cGVar GVar_CloudRechargeTime;
 
 cGVarFunction GVar_SetUpCloudFunc;
 
+cPy_NativeFunc NativeFunc_ATPCOnEnd;
+cPy_NativeFunc NativeFunc_ATPCOnStart;
+cPy_NativeFunc NativeFunc_ATPCXplosionCall;
+cPy_NativeFunc NativeFunc_ATPCCreate;
+cPy_NativeFunc NativeFunc_ATPCFire;
+cPy_NativeFunc NativeFunc_ATPCFX;
+cPy_NativeFunc NativeFunc_CloudOnHit;
+cPy_NativeFunc NativeFunc_CloudFire;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_CALL(Fini_GVar_RestoreUpgradeFunc, &GVar_RestoreUpgradeFunc.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_RestoreUpgradeFunc, Fini_GVar_RestoreUpgradeFunc, &GVar_RestoreUpgradeFunc, "RestoreUpgradeFunc", 0, "Function to be called when an upgrade is restored", "Items.RestoreUpgrade")
+INIT_GVAR_INT(Init_GVar_ATPCIDWeap, &GVar_ATPCIDWeap, "ATPCIDWeap", 0, "The default weapon idx for the ATPC", 4)
+INIT_GVAR_INT(Init_GVar_ATPCIDAmmo, &GVar_ATPCIDAmmo, "ATPCIDAmmo", 0, "The default weapon idx for the ATPC", 0)
+FINI_GVAR_STRING(Fini_GVar_ATPCShootFile, &GVar_ATPCShootFile)
+INIT_GVAR_STRING(Init_GVar_ATPCShootFile, Fini_GVar_ATPCShootFile, &GVar_ATPCShootFile, "ATPCShootFile", 0, "default shoot model for the ATPC", "Models/Weapons/ATPC/Shoot.M3D")
+INIT_GVAR_FLOAT(Init_GVar_ATPCHitForce, &GVar_ATPCHitForce, "ATPCHitForce", 0, "The force that have a single ATPC shoot", 10000.0f)
+INIT_GVAR_FLOAT(Init_GVar_ATPCRange, &GVar_ATPCRange, "ATPCRange", 0, "The maximun range that have the ATPC", 100000.0f)
+INIT_GVAR_FLOAT(Init_GVar_ATPCAmmoCost, &GVar_ATPCAmmoCost, "ATPCAmmoCost", 0, "Cost Per hit at ATPC", 10.0f)
+INIT_GVAR_FLOAT(Init_GVar_ATPCDelay, &GVar_ATPCDelay, "ATPCDelay", 0, "Recharge time ATPC", 2.5f)
+INIT_GVAR_FLOAT(Init_GVar_ATPCUpgradeDelay, &GVar_ATPCUpgradeDelay, "ATPCUpgradeDelay", 0, "Recharge time ATPC (with upgrade)", 1.75f)
+INIT_GVAR_FLOAT(Init_GVar_ATPCConvDist, &GVar_ATPCConvDist, "ATPCConvDist", 0, "Convergence distance (and Start event)", 2000.5f)
+INIT_GVAR_FLOAT(Init_GVar_ATPCExplosionRadius, &GVar_ATPCExplosionRadius, "ATPCExplosionRadius", 0, "Radius for the capsule hit for ATPC", 1000.0f)
+INIT_GVAR_FLOAT(Init_GVar_ATPCCapsuleSoundRadius, &GVar_ATPCCapsuleSoundRadius, "ATPCCapsuleSoundRadius", 0, "Radius for the Sound Capsule for ATPC", 6000.0f)
+INIT_GVAR_INT(Init_GVar_ATPCMainDamage, &GVar_ATPCMainDamage, "ATPCMainDamage", 0, "The hit damage for ATPC", 20)
+INIT_GVAR_INT(Init_GVar_ATPCExtraDamage, &GVar_ATPCExtraDamage, "ATPCExtraDamage", 0, "The xplosion damage for ATPC", 10)
+FINI_GVAR_STRING(Fini_GVar_ATPCHitSound, &GVar_ATPCHitSound)
+INIT_GVAR_STRING(Init_GVar_ATPCHitSound, Fini_GVar_ATPCHitSound, &GVar_ATPCHitSound, "ATPCHitSound", 0, "First ATPC puchuing sound name", "ATPCImpact")
+INIT_GVAR_FLOAT(Init_GVar_ATPCHitSoundVol, &GVar_ATPCHitSoundVol, "ATPCHitSoundVol", 0, "First ATPC puchuing sound volume", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_ATPCHitSoundAttIni, &GVar_ATPCHitSoundAttIni, "ATPCHitSoundAttIni", 0, "First ATPC puchuing att ini", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_ATPCHitSoundAttEnd, &GVar_ATPCHitSoundAttEnd, "ATPCHitSoundAttEnd", 0, "First ATPC puchuing att end", 0.0f)
+FINI_GVAR_STRING(Fini_GVar_ATPCCapsuleSound, &GVar_ATPCCapsuleSound)
+INIT_GVAR_STRING(Init_GVar_ATPCCapsuleSound, Fini_GVar_ATPCCapsuleSound, &GVar_ATPCCapsuleSound, "ATPCCapsuleSound", 0, "ATPC capsule sound name", "ATPCCapsule")
+INIT_GVAR_FLOAT(Init_GVar_ATPCCapsuleSoundVol, &GVar_ATPCCapsuleSoundVol, "ATPCCapsuleSoundVol", 0, "ATPC capsule sound volume", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_ATPCCapsuleSoundAttIni, &GVar_ATPCCapsuleSoundAttIni, "ATPCCapsuleSoundAttIni", 0, "ATPC capsule sound att ini", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_ATPCCapsuleSoundAttEnd, &GVar_ATPCCapsuleSoundAttEnd, "ATPCCapsuleSoundAttEnd", 0, "ATPC capsule sound att end", 0.0f)
+FINI_GVAR_STRING(Fini_GVar_ATPCCapsuleExtendedSound, &GVar_ATPCCapsuleExtendedSound)
+INIT_GVAR_STRING(Init_GVar_ATPCCapsuleExtendedSound, Fini_GVar_ATPCCapsuleExtendedSound, &GVar_ATPCCapsuleExtendedSound, "ATPCCapsuleExtendedSound", 0, "ATPC capsule extended sound name", "ATPCCapsuleExtended")
+INIT_GVAR_FLOAT(Init_GVar_ATPCCapsuleExtendedSoundVol, &GVar_ATPCCapsuleExtendedSoundVol, "ATPCCapsuleExtendedSoundVol", 0, "ATPC capsule extended sound volume", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_ATPCCapsuleExtendedSoundAttIni, &GVar_ATPCCapsuleExtendedSoundAttIni, "ATPCCapsuleExtendedSoundAttIni", 0, "ATPC capsule Extended sound att ini", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_ATPCCapsuleExtendedSoundAttEnd, &GVar_ATPCCapsuleExtendedSoundAttEnd, "ATPCCapsuleExtendedSoundAttEnd", 0, "ATPC capsule Extended sound att end", 0.0f)
+FINI_CALL(Fini_GVar_CreateCloudFunc, &GVar_CreateCloudFunc.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_CreateCloudFunc, Fini_GVar_CreateCloudFunc, &GVar_CreateCloudFunc, "CreateCloudFunc", 0, "Function to be called to create the cloud", "")
+FINI_CALL(Fini_GVar_SetUpCloudFunc, &GVar_SetUpCloudFunc.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_SetUpCloudFunc, Fini_GVar_SetUpCloudFunc, &GVar_SetUpCloudFunc, "SetUpCloudFunc", 0, "Function to be called to set up the cloud properties", "")
+INIT_GVAR_INT(Init_GVar_CloudAmmoNeed, &GVar_CloudAmmoNeed, "CloudAmmoNeed", 0, "The default cost ammunition for the cloud", 20)
+INIT_GVAR_INT(Init_GVar_CloudIDAmmo, &GVar_CloudIDAmmo, "CloudIDAmmo", 0, "Cloud Ammo ID", 0)
+INIT_GVAR_FLOAT(Init_GVar_CloudRechargeTime, &GVar_CloudRechargeTime, "CloudRechargeTime", 0, "Cloud Recharge Time", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_CloudLifeTime, &GVar_CloudLifeTime, "CloudLifeTime", 0, "Cloud Life Time", 0.0f)
+INIT_NATIVE_FUNC(Init_NativeFunc_ATPCOnEnd, &NativeFunc_ATPCOnEnd, "ATPCOnEnd", ATPC_OnEnd)
+INIT_NATIVE_FUNC(Init_NativeFunc_ATPCOnStart, &NativeFunc_ATPCOnStart, "ATPCOnStart", ATPC_OnStart)
+INIT_NATIVE_FUNC(Init_NativeFunc_ATPCXplosionCall, &NativeFunc_ATPCXplosionCall, "ATPCXplosionCall", ATPC_XplosionCall)
+INIT_NATIVE_FUNC(Init_NativeFunc_ATPCCreate, &NativeFunc_ATPCCreate, "ATPCCreate", ATPC_Create)
+INIT_NATIVE_FUNC(Init_NativeFunc_ATPCFire, &NativeFunc_ATPCFire, "ATPCFire", ATPC_Fire)
+INIT_NATIVE_FUNC(Init_NativeFunc_ATPCFX, &NativeFunc_ATPCFX, "ATPCFX", ATPC_FX)
+INIT_NATIVE_FUNC(Init_NativeFunc_CloudOnHit, &NativeFunc_CloudOnHit, "CloudOnHit", Cloud_OnHit)
+INIT_NATIVE_FUNC(Init_NativeFunc_CloudFire, &NativeFunc_CloudFire, "CloudFire", Cloud_Fire)

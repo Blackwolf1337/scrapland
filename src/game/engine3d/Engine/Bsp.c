@@ -25,6 +25,7 @@
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
 #include "scrap/platform.h"
+#include "scrap/staticinit.h"
 
 
 /* the "uint as double" conversions of the original: the int plus 2^32 for a set top bit */
@@ -3279,3 +3280,23 @@ cGVar GVar_LightmapPackMode;
 
 cGVar GVar_MapRenderMap;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_VECTOR(Fini_PaintZones, g_PaintZones, sizeof(PaintZone), 128, PaintZone_dtor)
+INIT_VECTOR(Init_PaintZones, Fini_PaintZones, g_PaintZones, sizeof(PaintZone), 128, PaintZone_ctor, PaintZone_dtor)
+INIT_GVAR_INT(Init_GVar_R_ForceLMap, &GVar_R_ForceLMap, "R_ForceLMap", 0, "Force primary/secondary lightmap (def. -1)", -1)
+INIT_GVAR_INT(Init_GVar_RenderMap, &GVar_RenderMap, "RenderMap", 0, "Render map (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_RenderSectors, &GVar_RenderSectors, "RenderSectors", 0, "Render sectors (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_MapDrawSector, &GVar_MapDrawSector, "MapDrawSector", 0, "Draw only the specified sector (def. -2)", -2)
+INIT_GVAR_INT(Init_GVar_MapDrawBySector, &GVar_MapDrawBySector, "MapDrawBySector", 0, "Draw map by sector (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_MapSortByShader, &GVar_MapSortByShader, "MapSortByShader", 0, "Sort by mat&shader (0/1)", 0)
+FINI_GVAR_STRING(Fini_GVar_MapRenderMat, &GVar_MapRenderMat)
+INIT_GVAR_STRING(Init_GVar_MapRenderMat, Fini_GVar_MapRenderMat, &GVar_MapRenderMat, "MapRenderMat", 0, "Render only the specified materials (ie: wall*)", "")
+FINI_GVAR_STRING(Fini_GVar_MapRenderMap, &GVar_MapRenderMap)
+INIT_GVAR_STRING(Init_GVar_MapRenderMap, Fini_GVar_MapRenderMap, &GVar_MapRenderMap, "MapRenderMap", 0, "Render only the specified materials (ie: wall*)", "")
+INIT_GVAR_INT(Init_GVar_ShowInfoOnSectorError, &GVar_ShowInfoOnSectorError, "ShowInfoOnSectorError", 0, "show debug info on sector errors (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_LightmapDxtPadding, &GVar_LightmapDxtPadding, "LightmapDxtPadding", 4, "", 0)
+INIT_GVAR_INT(Init_GVar_LightmapLimitUV, &GVar_LightmapLimitUV, "LightmapLimitUV", 4, "", 1)
+INIT_GVAR_INT(Init_GVar_LightmapPackMode, &GVar_LightmapPackMode, "LightmapPackMode", 4, "", 2)
+INIT_GVAR_INT(Init_GVar_LightmapDebugTex, &GVar_LightmapDebugTex, "LightmapDebugTex", 4, "", 0)
+INIT_GVAR_FLOAT(Init_GVar_LightmapGlowMult, &GVar_LightmapGlowMult, "LightmapGlowMult", 4, "", 1.0f)
+INIT_GVAR_INT(Init_GVar_R_UsePortals, &GVar_R_UsePortals, "R_UsePortals", 0, "Use portals (0/1)", 1)

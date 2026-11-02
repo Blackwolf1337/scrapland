@@ -23,6 +23,7 @@
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
 #include "scrap/platform.h"
+#include "scrap/staticinit.h"
 
 /* 1/255 of the color bytes (0x3b808081) */
 #define BSP_INV255 0x1.010102p-8f
@@ -1586,3 +1587,10 @@ cGVar GVar_TXF_Helper;
 
 cGVar GVar_TXF_CheckFiles;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_LightmapLinearAtten, &GVar_LightmapLinearAtten, "LightmapLinealAtten", 0, "Use lineal attenuation for lightmap lights (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_RadSkipBySectors, &GVar_RadSkipBySectors, "RadSkipBySectors", 0, "Use sectors for radiosity (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_RadiosityPortals, &GVar_RadiosityPortals, "RadiosityPortals", 0, "Use portals for radiosity (0/1)", 0)
+INIT_GVAR_FLOAT(Init_GVar_RadiosityMinDist, &GVar_RadiosityMinDist, "RadiosityMinDist", 0, "Min. distance between patches coef", 0.6f)
+INIT_GVAR_INT(Init_GVar_TXF_CheckFiles, &GVar_TXF_CheckFiles, "TXF_CheckFiles", 4, "check .TXF files (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_TXF_Helper, &GVar_TXF_Helper, "TXF_Helper", 4, "TXF helper (exits before write .EMI file) (0/1)", 0)

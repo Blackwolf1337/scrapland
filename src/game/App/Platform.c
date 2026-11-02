@@ -25,6 +25,7 @@
 #include "scrap/rdev.h"
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
+#include "scrap/staticinit.h"
 
 #define PLAT_PADS 4
 #define PLAT_NOTCONNECTED 0x48f		/* ERROR_DEVICE_NOT_CONNECTED of XInputGetState */
@@ -770,3 +771,5 @@ int Plat_VulkanSurface(void *instance, void *surface) {
 
 cGVar GVar_InactiveBackgroundApp;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_InactiveBackgroundApp, &GVar_InactiveBackgroundApp, "InactiveBackgroundApp", 4, "1=application inactive in background", 1)

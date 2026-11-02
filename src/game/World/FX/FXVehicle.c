@@ -14,6 +14,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 
 /* the ship of an effect */
@@ -3456,3 +3457,13 @@ cGVar GVar_FXFiredDebrisFile;
 
 cGVar GVar_FXSmokeDebrisFile;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_FXVehicleDamageSmokeStep, &GVar_FXVehicleDamageSmokeStep, "FXVehicleDamageSmokeStep", 0, "Vehicle Damage Smoke Effect Step", 350.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXFiredEntitySmokeStep, &GVar_FXFiredEntitySmokeStep, "FXFiredEntitySmokeStep", 0, "Fired Entity Smoke Effect Step", 1000.0f)
+FINI_GVAR_STRING(Fini_GVar_FXFiredDebrisFile, &GVar_FXFiredDebrisFile)
+INIT_GVAR_STRING(Init_GVar_FXFiredDebrisFile, Fini_GVar_FXFiredDebrisFile, &GVar_FXFiredDebrisFile, "FXFiredDebrisFile", 0, "Default Model for Fired Debris Effect", "Models/GFX/FiredDebris.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXSmokeDebrisFile, &GVar_FXSmokeDebrisFile)
+INIT_GVAR_STRING(Init_GVar_FXSmokeDebrisFile, Fini_GVar_FXSmokeDebrisFile, &GVar_FXSmokeDebrisFile, "FXSmokeDebrisFile", 0, "Default Model for Smoke Debris Effect", "Models/GFX/SmokeDebris.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXShipExplosionFile, &GVar_FXShipExplosionFile)
+INIT_GVAR_STRING(Init_GVar_FXShipExplosionFile, Fini_GVar_FXShipExplosionFile, &GVar_FXShipExplosionFile, "FXShipExplosionFile", 0, "Default Model for Ship Explosion", "Models/GFX/ShipExplosion.M3D")
+INIT_GVAR_FLOAT(Init_GVar_ShipExplosionMaxDist, &GVar_ShipExplosionMaxDist, "ShipExplosionMaxDist", 0, "Maximun Distance to show the Ship Explosion Effect", 250000.0f)

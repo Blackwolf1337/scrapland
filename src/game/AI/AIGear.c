@@ -10,6 +10,7 @@
 #include "scrap/crt.h"
 #include "scrap/fxmisc.h"
 #include "scrap/walkcharentity.h"
+#include "scrap/staticinit.h"
 
 #define CAIGEAR_SIZE sizeof(cAIGear)
 #define GEAR_BLOCK_TIME 7.5f		/* the way to the target is tested again after it */
@@ -258,3 +259,6 @@ cGVar GVar_ShootGearAI;
 
 cGVar GVar_OffsetAngShootGearAI;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_ShootGearAI, &GVar_ShootGearAI, "ShootGearAI", 4, "Factor shoot Gear.\n", 3)
+INIT_GVAR_FLOAT(Init_GVar_OffsetAngShootGearAI, &GVar_OffsetAngShootGearAI, "OffsetAngShootGearAI", 4, "Offset angle to shoot the Gear.\n", 0.19634955f)

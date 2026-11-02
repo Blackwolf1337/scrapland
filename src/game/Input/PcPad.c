@@ -16,6 +16,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/weapons.h"
 #include "scrap/platform.h"
+#include "scrap/staticinit.h"
 
 #define PAD_ERROR "ERROR"
 
@@ -427,3 +428,17 @@ cGVar GVar_PCPadConnected;
 
 cGVar GVar_PCPadForeground;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_PCPadConnected, &GVar_PCPadConnected, "PCPadConnected", 0, "", 0)
+INIT_GVAR_INT(Init_GVar_MainPcPad, &GVar_MainPcPad, "MainPcPad", 0, "-1= all", -1)
+INIT_GVAR_INT(Init_GVar_IsUsingMouse, &GVar_IsUsingMouse, "IsUsingMouse", 0, "", 1)
+INIT_GVAR_INT(Init_GVar_PCPadForeground, &GVar_PCPadForeground, "PCPadForeground", 4, "", 1)
+INIT_GVAR_FLOAT(Init_GVar_PCPadDeadZone, &GVar_PCPadDeadZone, "PCPadDeadZone", 2, "Dead zone for analog controllers.", 0.2f)
+INIT_GVAR_INT(Init_GVar_XBInvertCharYPad, &GVar_XBInvertCharYPad, "XBInvertCharYPad", 10, "Invert Y Axis in pad (character)", 0)
+INIT_GVAR_INT(Init_GVar_XBCDigitalAsAnalog, &GVar_XBCDigitalAsAnalog, "XBCDigitalAsAnalog", 10, "if true, the cross is digital (character)", 0)
+INIT_GVAR_INT(Init_GVar_XBCameraAutoPad, &GVar_XBCameraAutoPad, "XBCameraAutoPad", 10, "if true, the camera automaticaly turns (character)", 0)
+INIT_GVAR_INT(Init_GVar_XBInvertLRChar, &GVar_XBInvertLRChar, "XBInvertLRChar", 10, "if true, invert the L&R buttons (character)", 0)
+INIT_GVAR_INT(Init_GVar_XBInvertVehicleYPad, &GVar_XBInvertVehicleYPad, "XBInvertVehicleYPad", 10, "Invert Y Axis in pad (vehicle)", 1)
+INIT_GVAR_INT(Init_GVar_XBVDigitalAsAnalog, &GVar_XBVDigitalAsAnalog, "XBVDigitalAsAnalog", 10, "if true, the cross is digital (vehicle)", 0)
+INIT_GVAR_INT(Init_GVar_XBVehicleAsFPS, &GVar_XBVehicleAsFPS, "XBVehicleAsFPS", 10, "if true, controlled as FPS (vehicle)", 0)
+INIT_GVAR_INT(Init_GVar_XBInvertLRVehicle, &GVar_XBInvertLRVehicle, "XBInvertLRVehicle", 10, "if true, invert the L&R buttons (vehicle)", 0)

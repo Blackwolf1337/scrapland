@@ -3,6 +3,7 @@
  * (include/scrap/chartype.h). BertoActionPress is ChType_ActionPress, BertoAttack ChType_Attack.
  */
 #include "scrap/chartype.h"
+#include "scrap/staticinit.h"
 
 /* params: Berto, an event, a float */
 void ChType_BertoActionEnd(cAbstractFile *params) {
@@ -104,3 +105,24 @@ cGVar GVar_BertoAmmoCost;
 
 cGVar GVar_FXBertoAttackFile;
 
+cPy_NativeFunc NativeFunc_BertoAttack;
+cPy_NativeFunc NativeFunc_BertoHitEvent;
+cPy_NativeFunc NativeFunc_FXBertoAttack;
+cPy_NativeFunc NativeFunc_BertoActionInit;
+cPy_NativeFunc NativeFunc_BertoActionEnd;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_BertoAmmoCost, &GVar_BertoAmmoCost, "BertoAmmoCost", 0, "Berto AmmoCost Per shoot", 0.03f)
+INIT_GVAR_FLOAT(Init_GVar_BertoFlashDist, &GVar_BertoFlashDist, "BertoFlashDist", 0, "Berto Flash Max Distance", 400.0f)
+FINI_GVAR_STRING(Fini_GVar_FXBertoAttackFile, &GVar_FXBertoAttackFile)
+INIT_GVAR_STRING(Init_GVar_FXBertoAttackFile, Fini_GVar_FXBertoAttackFile, &GVar_FXBertoAttackFile, "FXBertoAttackFile", 0, "Default Model for Berto Attack Effect", "Models/GFX/Berto/Attack.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXBertoFlashFile, &GVar_FXBertoFlashFile)
+INIT_GVAR_STRING(Init_GVar_FXBertoFlashFile, Fini_GVar_FXBertoFlashFile, &GVar_FXBertoFlashFile, "FXBertoFlashFile", 0, "Default Model for Berto Flash Effect", "Models/GFX/Berto/Flash.M3D")
+FINI_GVAR_STRING(Fini_GVar_BertoFlashSound, &GVar_BertoFlashSound)
+INIT_GVAR_STRING(Init_GVar_BertoFlashSound, Fini_GVar_BertoFlashSound, &GVar_BertoFlashSound, "BertoFlashSound", 0, "Berto Flash sound name", "BertoFlash")
+INIT_GVAR_FLOAT(Init_GVar_BertoFlashSoundVol, &GVar_BertoFlashSoundVol, "BertoFlashSoundVol", 0, "Berto Flash sound volume", 1.0f)
+INIT_NATIVE_FUNC(Init_NativeFunc_BertoAttack, &NativeFunc_BertoAttack, "BertoAttack", ChType_BertoAttack)
+INIT_NATIVE_FUNC(Init_NativeFunc_BertoHitEvent, &NativeFunc_BertoHitEvent, "BertoHitEvent", ChType_BertoHitEvent)
+INIT_NATIVE_FUNC(Init_NativeFunc_FXBertoAttack, &NativeFunc_FXBertoAttack, "FXBertoAttack", ChType_FXBertoAttack)
+INIT_NATIVE_FUNC(Init_NativeFunc_BertoActionInit, &NativeFunc_BertoActionInit, "BertoActionInit", ChType_BertoActionInit)
+INIT_NATIVE_FUNC(Init_NativeFunc_BertoActionEnd, &NativeFunc_BertoActionEnd, "BertoActionEnd", ChType_BertoActionEnd)

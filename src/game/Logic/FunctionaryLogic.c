@@ -13,6 +13,7 @@
 #include "scrap/objentity.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 
 cGVar GVar_DesktopsFunctionaryListName;
@@ -803,3 +804,20 @@ cGVar GVar_FunctionarySpecialActionTime;
 
 cGVar GVar_GenCharRelaxSpeed;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_FunctionaryEffectFastSound, &GVar_FunctionaryEffectFastSound)
+INIT_GVAR_STRING(Init_GVar_FunctionaryEffectFastSound, Fini_GVar_FunctionaryEffectFastSound, &GVar_FunctionaryEffectFastSound, "FunctionaryEffectFastSound", 0, "Functionary Fast Effect sound name", "FunctionaryEffectFastSound")
+INIT_GVAR_FLOAT(Init_GVar_FunctionaryEffectFastSoundVol, &GVar_FunctionaryEffectFastSoundVol, "FunctionaryEffectFastSoundVol", 0, "Functionary Fast Effect sound volume", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_CharProcessReduction, &GVar_CharProcessReduction, "CharProcessReduction", 0, "Beyon this distance, the processing speed will be reduced if no visible.", 2000.0f)
+FINI_GVAR_STRING(Fini_GVar_DesktopsFunctionaryListName, &GVar_DesktopsFunctionaryListName)
+INIT_GVAR_STRING(Init_GVar_DesktopsFunctionaryListName, Fini_GVar_DesktopsFunctionaryListName, &GVar_DesktopsFunctionaryListName, "DesktopsFunctionaryListName", 1, "Desktops functionary list name", "DesktopsFunctionary")
+INIT_GVAR_FLOAT(Init_GVar_FunctionaryMinTimeToSitDown, &GVar_FunctionaryMinTimeToSitDown, "FunctionaryMinTimeToSitDown", 0, "Functionary min time to sit down", 15.0f)
+INIT_GVAR_FLOAT(Init_GVar_FunctionaryMaxTimeToSitDown, &GVar_FunctionaryMaxTimeToSitDown, "FunctionaryMaxTimeToSitDown", 0, "Functionary max time to sit down", 30.0f)
+INIT_GVAR_FLOAT(Init_GVar_FunctionaryMintimeToStopWorking, &GVar_FunctionaryMintimeToStopWorking, "FunctionaryMintimeToStopWorking", 0, "Functionary min time to get up", 30.0f)
+INIT_GVAR_FLOAT(Init_GVar_FunctionaryMaxtimeToStopWorking, &GVar_FunctionaryMaxtimeToStopWorking, "FunctionaryMaxtimeToStopWorking", 0, "Functionary max time to get up", 50.0f)
+INIT_GVAR_FLOAT(Init_GVar_FunctionarySpecialActionStatesTransitionTime, &GVar_FunctionarySpecialActionStatesTransitionTime, "FunctionarySpecialActionStatesTransitionTime", 0, "Functionary special action states transition time", 0.5f)
+INIT_GVAR_FLOAT(Init_GVar_FunctionarySpecialActionTime, &GVar_FunctionarySpecialActionTime, "FunctionarySpecialActionTime", 0, "Functionary special action time", 1.5f)
+INIT_GVAR_FLOAT(Init_GVar_FunctionaryAssignWorkDistance, &GVar_FunctionaryAssignWorkDistance, "FunctionaryAssignWorkDistance", 0, "Distance from the chair to reposisionate the functionary", 600.0f)
+FINI_CALL(Fini_GVar_OnFunctionaryStartsWorking, &GVar_OnFunctionaryStartsWorking.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnFunctionaryStartsWorking, Fini_GVar_OnFunctionaryStartsWorking, &GVar_OnFunctionaryStartsWorking, "OnFunctionaryStartsWorking", 0, "Function to be called when a functionary sits down and starts working", "")
+INIT_GVAR_FLOAT(Init_GVar_GenCharRelaxSpeed, &GVar_GenCharRelaxSpeed, "GenCharRelaxSpeed", 0, "GenChar speed (Relax)", 0.4f)

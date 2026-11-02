@@ -10,6 +10,7 @@
 #include "scrap/input.h"
 #include "scrap/scorer.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 #define INPUTACTION_CTOR 0x139240
 #define INPUTACTION_DTOR 0x139430
@@ -639,3 +640,6 @@ byte cActionSet_AnyActive(cActionSet *s) {
 
 cGVar GVar_LogRumble;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_LogRumble, &GVar_LogRumble, "LogRumble", 0, "Log the input and output to the rumble interface.", 0)
+INIT_CALL_ARGS(Init_cVirtualKeyboard_VirtualKeyboard, &g_VirtualKeyboard, cVirtualKeyboard_Set, "Standard")

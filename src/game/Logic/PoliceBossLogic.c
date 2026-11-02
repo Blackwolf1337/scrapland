@@ -9,6 +9,7 @@
 #include "scrap/logic.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 extern const cGenCharLocalLogicVtbl cPoliceBossLocalLogic_vftable;
 #define CPOLICEBOSSLOCALLOGIC_VFTABLE (&cPoliceBossLocalLogic_vftable.base)
@@ -117,3 +118,7 @@ const cGenCharLocalLogicVtbl cPoliceBossLocalLogic_vftable = {
 	.GoTo = cGenCharLocalLogic_GoTo,
 	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
 };
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_PoliceBossMinSpecialActionTime, &GVar_PoliceBossMinSpecialActionTime, "PoliceBossMinSpecialActionTime", 0, "PoliceBoss min special action time", 12.0f)
+INIT_GVAR_FLOAT(Init_GVar_PoliceBossMaxSpecialActionTime, &GVar_PoliceBossMaxSpecialActionTime, "PoliceBossMaxSpecialActionTime", 0, "PoliceBoss max special action time", 24.0f)

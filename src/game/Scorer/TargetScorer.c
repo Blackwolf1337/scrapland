@@ -14,6 +14,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
 #include "scrap/withlifeentity.h"
+#include "scrap/staticinit.h"
 
 cGVar GVar_LittlePointingArrowSize;
 
@@ -331,3 +332,10 @@ const cScorerItemVtbl cTargetScorer_vftable = {
 	.Var = cTargetScorer_Var,
 	.Delete = cTargetScorer_Delete,
 };
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_TargetScorerSwitchSound, &GVar_TargetScorerSwitchSound)
+INIT_GVAR_STRING(Init_GVar_TargetScorerSwitchSound, Fini_GVar_TargetScorerSwitchSound, &GVar_TargetScorerSwitchSound, "TargetScorerSwitchSound", 0, "Sound name for switching target", "SwitchTarget")
+INIT_GVAR_FLOAT(Init_GVar_TargetScorerSwitchSoundVol, &GVar_TargetScorerSwitchSoundVol, "TargetScorerSwitchSoundVol", 0, "Sound Volume for switching target", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_LittlePointingArrowSize, &GVar_LittlePointingArrowSize, "LittlePointingArrowSize", 2, "The little pointing arrow 0 : no arrow -> 1: normal -> oo", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_EnemyFireSize, &GVar_EnemyFireSize, "EnemyFireSize", 0, "The enemy fire indicator size", 2.0f)

@@ -18,6 +18,7 @@
 #include "scrap/weaps2.h"
 #include "scrap/withlifeentity.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 #define WL_CLASSNAME "WithLife"
 #define WL_NOCTRL_WARN "WARNING: '%s' action controler doesn´t exist.\n"	/* "WARNING: '%s' action controler doesn't exist.\n" */
@@ -696,3 +697,6 @@ const cWithLifeEntityVtbl cWithLifeEntity_vftable = {
 
 cGVarFunction GVar_OnGeneralDamage;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_CALL(Fini_GVar_OnGeneralDamage, &GVar_OnGeneralDamage.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnGeneralDamage, Fini_GVar_OnGeneralDamage, &GVar_OnGeneralDamage, "OnGeneralDamage", 0, "Función callback de daño de propósito general", "")

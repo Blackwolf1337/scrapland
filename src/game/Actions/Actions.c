@@ -8,6 +8,7 @@
 #include "scrap/actions.h"
 #include "scrap/console.h"
 #include "scrap/cstring.h"
+#include "scrap/staticinit.h"
 
 cAction *cAction_ctor(cAction *self, cActClass *parent, const char *name) {
 	self->vftable = CACTIONMOVE_VFTABLE;
@@ -349,3 +350,5 @@ const cActionVtbl cActionMove_vftable = {
 
 cGVar GVar_DefInterpTime;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_DefInterpTime, &GVar_DefInterpTime, "DefInterpTime", 0, "Interpolation value by default.", 0.12f)

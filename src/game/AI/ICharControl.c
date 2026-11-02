@@ -14,6 +14,7 @@
 #include "scrap/fxmisc.h"
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
+#include "scrap/staticinit.h"
 
 /* the characters near the control (CharsNear, FindAvoid): the sphere test collects them here */
 #define g_AICCNearFunc ((&g_ChTypeSphereFunc))
@@ -2156,3 +2157,20 @@ cGVar GVar_TimeStrafeLostObjCharAI;
 
 cGVar GVar_ShowTestCanGoAI;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_AngAttackBackCharAI, &GVar_AngAttackBackCharAI, "AngAttackBackCharAI", 4, "Angle to attack back.\n", 0.7853982f)
+FINI_GVAR_STRING(Fini_GVar_ShowCharAI, &GVar_ShowCharAI)
+INIT_GVAR_STRING(Init_GVar_ShowCharAI, Fini_GVar_ShowCharAI, &GVar_ShowCharAI, "ShowCharAI", 4, "Show Features character.\n", "")
+FINI_GVAR_STRING(Fini_GVar_NameDebugShirkAI, &GVar_NameDebugShirkAI)
+INIT_GVAR_STRING(Init_GVar_NameDebugShirkAI, Fini_GVar_NameDebugShirkAI, &GVar_NameDebugShirkAI, "NameDebugShirkAI", 4, "Show info shirk agent.\n", "")
+INIT_GVAR_FLOAT(Init_GVar_OffsetAngOrientCharAI, &GVar_OffsetAngOrientCharAI, "OffsetAngOrientCharAI", 4, "Offset angle to final orient.\n", 0.049087387f)
+INIT_GVAR_INT(Init_GVar_NumPointsSearchSegmentCharAI, &GVar_NumPointsSearchSegmentCharAI, "NumPointsSearchSegmentCharAI", 4, "Num. Points to search point in segment.\n", 3)
+INIT_GVAR_FLOAT(Init_GVar_DistNextPosGoTargetCharAI, &GVar_DistNextPosGoTargetCharAI, "DistNextPosGoTargetCharAI", 4, "Dist. to check new position to go.\n", 305.0f)
+INIT_GVAR_FLOAT(Init_GVar_MinAngleSearchPointCharAI, &GVar_MinAngleSearchPointCharAI, "MinAngleSearchPointCharAI", 4, "Angle to search point route.\n", 0.1308997f)
+INIT_GVAR_FLOAT(Init_GVar_MarginDetectCollCharAI, &GVar_MarginDetectCollCharAI, "MarginDetectCollCharAI", 4, "Margin to detect collision with characters.\n", 20.0f)
+INIT_GVAR_FLOAT(Init_GVar_TimeEventCollCharAI, &GVar_TimeEventCollCharAI, "TimeEventCollCharAI", 4, "Time to control event collision between agents.\n", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_TimeStopCollCharAI, &GVar_TimeStopCollCharAI, "TimeStopCollCharAI", 4, "Time to control time between tests collision between agents when stopped.\n", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_TimeTestCollCharAI, &GVar_TimeTestCollCharAI, "TimeTestCollCharAI", 4, "Time to control time between tests collision between agents.\n", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_TimeBetweenEventCollCharAI, &GVar_TimeBetweenEventCollCharAI, "TimeBetweenEventCollCharAI", 4, "Time between events  collision between agents.\n", 5.0f)
+INIT_GVAR_FLOAT(Init_GVar_TimeStrafeLostObjCharAI, &GVar_TimeStrafeLostObjCharAI, "TimeStrafeLostObjCharAI", 4, "Time to do strafe when lost objective.\n", 1.5f)
+INIT_GVAR_INT(Init_GVar_ShowTestCanGoAI, &GVar_ShowTestCanGoAI, "ShowTestCanGoAI", 4, "Show points to test can go to point.\n", 0)

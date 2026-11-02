@@ -10,6 +10,7 @@
 #include "scrap/chartype.h"
 #include "scrap/itementity.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/staticinit.h"
 
 /* defined further down or in another file without a header */
 cLocalLogic *CTFEnemies_MakeLogic(cEntity *e);
@@ -307,3 +308,8 @@ cGVar GVar_PlayerCTFTeamIsWinning;
 
 cGVar GVar_PercEnemiesAttackPlayerWhenWinning;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_PlayerCTFTeamIsWinning, &GVar_PlayerCTFTeamIsWinning, "PlayerCTFTeamIsWinning", 0, "Is player's team winning the CTF?", 0)
+INIT_GVAR_FLOAT(Init_GVar_PercEnemiesAttackPlayerWhenWinning, &GVar_PercEnemiesAttackPlayerWhenWinning, "PercEnemiesAttackPlayerWhenWinning", 0, "CTFEnemies percentage attacking player when he's winning", 0.7f)
+FINI_GVAR_STRING(Fini_GVar_LeaderFlag, &GVar_LeaderFlag)
+INIT_GVAR_STRING(Init_GVar_LeaderFlag, Fini_GVar_LeaderFlag, &GVar_LeaderFlag, "LeaderFlag", 0, "Leader flag", "")

@@ -32,6 +32,7 @@
 #include "scrap/misc.h"
 #include "scrap/video.h"
 #include "scrap/platform.h"
+#include "scrap/staticinit.h"
 
 extern cGVar GVar_Viewer;
 #define g_IsViewer (GVar_Viewer.value.i)
@@ -1414,3 +1415,32 @@ cGVar GVar_VSync;
 
 cGVar GVar_isDemo;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_isDemo, &GVar_isDemo, "isDemo", 1, "Retail version", 0)
+INIT_GVAR_INT(Init_GVar_ComputeMapTextSaving, &GVar_ComputeMapTextSaving, "ComputeMapTextSaving", 0, "if 1 writes the map text saving info", 0)
+INIT_GVAR_INT(Init_GVar_ViewerCameraAnim, &GVar_ViewerCameraAnim, "ViewerCameraAnim", 0, "Viewer camera anim (0/1)", 0)
+INIT_GVAR_FLOAT(Init_GVar_ViewerCameraVel, &GVar_ViewerCameraVel, "ViewerCameraVel", 0, "Viewer camera velocity (m/s)\n", 1.0f)
+INIT_GVAR_INT(Init_GVar_ViewerCameraTgt, &GVar_ViewerCameraTgt, "ViewerCameraTgt", 0, "Viewer camera mode: 0 = free, 1 = target", 0)
+INIT_GVAR_INT(Init_GVar_ViewerCameraInv, &GVar_ViewerCameraInv, "ViewerCameraInv", 0, "Viewer camera rotation: 0 = normal, 1 = inverted", 1)
+INIT_GVAR_FLOAT(Init_GVar_ViewerClipNear, &GVar_ViewerClipNear, "ViewerClipNear", 0, "Viewer camera near clip plane", 5.0f)
+INIT_GVAR_FLOAT(Init_GVar_ViewerClipFar, &GVar_ViewerClipFar, "ViewerClipFar", 0, "Viewer camera far clip plane", 800000.0f)
+INIT_GVAR_FLOAT(Init_GVar_ViewerFOV, &GVar_ViewerFOV, "ViewerFOV", 0, "Viewer camera fov (0.0 = original fov)", 0.0f)
+INIT_GVAR_INT(Init_GVar_ShowMapWireFrame, &GVar_ShowMapWireFrame, "ShowMapWireFrame", 0, "Show map wireframe mode (0/1/2)\n", 0)
+INIT_GVAR_INT(Init_GVar_RenderLightmap, &GVar_RenderLightmap, "RenderLightmap", 0, "Render lightmap mode (0/1/2)", 1)
+INIT_GVAR_INT(Init_GVar_ShowMapCollision, &GVar_ShowMapCollision, "ShowMapCollision", 0, "Show map collision planes (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_RenderModels, &GVar_RenderModels, "RenderModels", 0, "Render models (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_RenderUseVB, &GVar_RenderUseVB, "RenderUseVB", 0, "Use Vertex Buffers (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_ModelAmbient, &GVar_ModelAmbient, "ModelAmbient", 0, "Extra ambient light for models (def. 0)", 0)
+INIT_GVAR_FLOAT(Init_GVar_CollisionEpsilon, &GVar_CollisionEpsilon, "CollisionEpsilon", 0, "Collision epsilon\n", 1.0f)
+INIT_GVAR_INT(Init_GVar_VideoBPP, &GVar_VideoBPP, "VideoBPP", 6, "Bits per pixel\n", 32)
+INIT_GVAR_INT(Init_GVar_VideoHeight, &GVar_VideoHeight, "VideoHeight", 6, "Screen height", 1080)
+INIT_GVAR_INT(Init_GVar_VideoWidth, &GVar_VideoWidth, "VideoWidth", 6, "Screen width", 1920)
+INIT_GVAR_INT(Init_GVar_FullScreen, &GVar_FullScreen, "FullScreen", 6, "0 = Windowed mode, 1 = Fullscreen mode", 1)
+FINI_GVAR_STRING(Fini_GVar_PlayVideo, &GVar_PlayVideo)
+INIT_GVAR_STRING(Init_GVar_PlayVideo, Fini_GVar_PlayVideo, &GVar_PlayVideo, "PlayVideo", 4, "Video played at init.", "")
+INIT_GVAR_INT(Init_GVar_ShowSplashScreen, &GVar_ShowSplashScreen, "ShowSplashScreen", 0, "Show loading screen (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_ProgressBar, &GVar_ProgressBar, "ProgressBar", 0, "Progress bar reference value (def. 1000)", 1000)
+INIT_GVAR_INT(Init_GVar_VSync, &GVar_VSync, "VSync", 2, "Fullscreen Vertical Sync (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_R_EnvMap, &g_GvEnvMap, "R_EnvMap", 0, "Use EnvMap (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_EnvBump, &g_GvEnvBump, "R_EnvBump", 0, "Use EnvBump (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_GlowMap, &g_GvGlowMap, "R_GlowMap", 0, "Use GlowMap (0/1)", 1)

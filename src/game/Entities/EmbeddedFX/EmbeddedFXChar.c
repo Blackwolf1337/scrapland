@@ -15,6 +15,7 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/timer.h"
 #include "scrap/withlifeentity.h"
+#include "scrap/staticinit.h"
 
 #define CGAMETRAIL_CTOR 0x21ddb0
 #define CGAMETRAIL_DTOR 0x21de40
@@ -2302,3 +2303,20 @@ const cEmbeddedFXVtbl cEmbeddedFXMercenary_vftable = {
 	.Tick = cEmbeddedFX_TickNop,
 	.Stop = cEmbeddedFX_StopNop,
 };
+
+cPy_NativeFunc NativeFunc_FXPoliceAlarmInit;
+cPy_NativeFunc NativeFunc_FXPoliceAlarmEnd;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_FXMercenaryDrinkSmokeFile, &GVar_FXMercenaryDrinkSmokeFile)
+INIT_GVAR_STRING(Init_GVar_FXMercenaryDrinkSmokeFile, Fini_GVar_FXMercenaryDrinkSmokeFile, &GVar_FXMercenaryDrinkSmokeFile, "FXMercenaryDrinkSmokeFile", 0, "Default Model for Mercenary Drink Smoke Effects", "Models/GFX/Mercenary/DrinkSmoke.M3D")
+INIT_GVAR_FLOAT(Init_GVar_SentinelLaserScanerDist, &GVar_SentinelLaserScanerDist, "SentinelLaserScanerDist", 0, "Max Distance to show Sentinel Laser Scaner", 4500.0f)
+FINI_GVAR_STRING(Fini_GVar_FXRustySparksSound, &GVar_FXRustySparksSound)
+INIT_GVAR_STRING(Init_GVar_FXRustySparksSound, Fini_GVar_FXRustySparksSound, &GVar_FXRustySparksSound, "FXRustyChispasSound", 0, "Rusty efecto de chispas sound name", "FXRustyChispasSound")
+INIT_GVAR_FLOAT(Init_GVar_FXRustySparksSoundVol, &GVar_FXRustySparksSoundVol, "FXRustyChispasSoundVol", 0, "Rusty efecto de chispas sound volume", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_MessengerLightingDist, &GVar_MessengerLightingDist, "MessengerLightingDist", 0, "Max Distance to show Messenger Lighting Effects", 2000.0f)
+INIT_GVAR_FLOAT(Init_GVar_SentinelStdFovX, &GVar_SentinelStdFovX, "SentinelStdFovX", 0, "Standard Sentinel FieldOfView", 2.3561945f)
+INIT_GVAR_FLOAT(Init_GVar_SentinelStdFovY, &GVar_SentinelStdFovY, "SentinelStdFovY", 0, "Standard Sentinel FieldOfView", 1.5707964f)
+INIT_GVAR_FLOAT(Init_GVar_SentinelStdFar, &GVar_SentinelStdFar, "SentinelStdFar", 0, "Standard Sentinel Distance of View", 1000.0f)
+INIT_NATIVE_FUNC(Init_NativeFunc_FXPoliceAlarmInit, &NativeFunc_FXPoliceAlarmInit, "FXPoliceAlarmInit", EmbeddedFXChar_AlarmOn)
+INIT_NATIVE_FUNC(Init_NativeFunc_FXPoliceAlarmEnd, &NativeFunc_FXPoliceAlarmEnd, "FXPoliceAlarmEnd", EmbeddedFXChar_AlarmOff)

@@ -7,6 +7,7 @@
 #include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/net.h"
+#include "scrap/staticinit.h"
 
 char g_NetClientServer[256];
 
@@ -202,3 +203,11 @@ cGVarFunction GVar_OnUsrString;
 
 cGVarFunction GVar_ClientSetPlayer;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_CALL(Fini_GVar_ClientSetPlayer, &GVar_ClientSetPlayer.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_ClientSetPlayer, Fini_GVar_ClientSetPlayer, &GVar_ClientSetPlayer, "ClientSetPlayer", 0, "ClientSetPlayer(EntityName)", "")
+INIT_GVAR_INT(Init_GVar_ClientPPS, &GVar_ClientPPS, "ClientPPS", 6, "Number of packets per second that will be send/request to the server [1..20]\n", 20)
+FINI_CALL(Fini_GVar_OnUsrString, &GVar_OnUsrString.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnUsrString, Fini_GVar_OnUsrString, &GVar_OnUsrString, "OnUsrString", 0, "OnUsrString(UsrId,UsrString) UsrId is the number id ('net'UsrId)", "")
+FINI_CALL(Fini_GVar_OnChatString, &GVar_OnChatString.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnChatString, Fini_GVar_OnChatString, &GVar_OnChatString, "OnChatString", 0, "OnChatString(UsrId,UsrString) UsrId is the number id ('net'UsrId)", "")

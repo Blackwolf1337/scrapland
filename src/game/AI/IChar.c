@@ -16,6 +16,7 @@
 #include "scrap/nodesworld2d.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapmodel.h"
+#include "scrap/staticinit.h"
 
 cGVar GVar_RADIUS_OBJECTIVE_IN_ROUTE;
 
@@ -2067,3 +2068,14 @@ cGVar GVar_DistMinCheckReposAI;
 
 cGVar GVar_DistMaxCheckReposAI;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_DistMinCheckPauseAI, &GVar_DistMinCheckPauseAI, "DistMinCheckPauseAI", 4, "Distance to check pause.\n", 2000.0f)
+INIT_GVAR_FLOAT(Init_GVar_DistMaxCheckPauseAI, &GVar_DistMaxCheckPauseAI, "DistMaxCheckPauseAI", 4, "Distance max. to check pause.\n", 15000.0f)
+INIT_GVAR_FLOAT(Init_GVar_DistMinCheckReposAI, &GVar_DistMinCheckReposAI, "DistMinCheckReposAI", 4, "Distance to check repos.\n", 1000.0f)
+INIT_GVAR_FLOAT(Init_GVar_DistMaxCheckReposAI, &GVar_DistMaxCheckReposAI, "DistMaxCheckReposAI", 4, "Distance max. to check repos.\n", 5000.0f)
+INIT_GVAR_FLOAT(Init_GVar_DistRadPauseCharAI, &GVar_DistRadPauseCharAI, "DistRadPauseCharAI", 4, "Distance to radius of patrol to determine pause.\n", 1000.0f)
+INIT_GVAR_FLOAT(Init_GVar_MinTimeStopTempCharAI, &GVar_MinTimeStopTempCharAI, "MinTimeStopTempCharAI", 4, "Time min. duration state intern.\n", 30.0f)
+INIT_GVAR_FLOAT(Init_GVar_MinTimeStoppedCharAI, &GVar_MinTimeStoppedCharAI, "MinTimeStoppedCharAI", 4, "Time min. duration state intern stopped char.\n", 10.0f)
+INIT_GVAR_INT(Init_GVar_MinNumTalksCharAI, &GVar_MinNumTalksCharAI, "MinNumTalksCharAI", 4, "Time num. talks char.\n", 7)
+INIT_GVAR_FLOAT(Init_GVar_MinTalkCharAI, &GVar_MinTalkCharAI, "MinTalkCharAI", 4, "Min. diff. alt. to talk between two chars.\n", 100.0f)
+INIT_GVAR_FLOAT(Init_GVar_RADIUS_OBJECTIVE_IN_ROUTE, &GVar_RADIUS_OBJECTIVE_IN_ROUTE, "RADIUS_OBJECTIVE_IN_ROUTE", 4, "Radius Points Route.\n", 0.0f)

@@ -10,6 +10,7 @@
 #include "scrap/particlesystem.h"
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
+#include "scrap/staticinit.h"
 
 /* the table made on first use (table.h, inline in the original) */
 static void Batch_Alloc(CTable *t, uint32_t size) {
@@ -286,3 +287,13 @@ cGVar GVar_R_TranspZBias;
 
 cGVar GVar_R_ShowTranspBox;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_MeshCache, &GVar_R_MeshCache, "R_MeshCache", 0, "Use mesh cache for non-transparent nodes (0/1, 10=info)", 1)
+FINI_TABLE(Fini_TabMesh, &g_TabMesh)
+INIT_ATEXIT(Init_TabMesh, Fini_TabMesh)
+INIT_GVAR_INT(Init_GVar_R_ShowTranspBox, &GVar_R_ShowTranspBox, "R_ShowTranspBox", 0, "Show transparent nodes (0/1)", 0)
+INIT_GVAR_FLOAT(Init_GVar_R_TranspZBias, &GVar_R_TranspZBias, "R_TranspZBias", 0, "Transp. sort z-bias (def. 200.0)", 200.0f)
+FINI_TABLE(Fini_TabTransp, &g_TabTransp)
+INIT_ATEXIT(Init_TabTransp, Fini_TabTransp)
+FINI_TABLE(Fini_TabObj, &g_TabObj)
+INIT_ATEXIT(Init_TabObj, Fini_TabObj)

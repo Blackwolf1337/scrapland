@@ -10,6 +10,7 @@
 #include "scrap/particlesystem.h"
 #include "scrap/crt.h"
 #include "scrap/text.h"
+#include "scrap/staticinit.h"
 
 byte Floats11_Equal(const float *a, const float *b) {
 	static const byte order[11] = { 0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 6 };
@@ -184,3 +185,6 @@ cGVar GVar_R_ShowFlaresInfo;
 
 cGVar GVar_R_SkipFlares;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_SkipFlares, &GVar_R_SkipFlares, "R_SkipFlares", 0, "Disable flares rendering (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_ShowFlaresInfo, &GVar_R_ShowFlaresInfo, "R_ShowFlaresInfo", 0, "Show flares debug info (0/1)", 0)

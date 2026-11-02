@@ -7,6 +7,7 @@
 
 #include "scrap/chartype.h"
 #include "scrap/objentity.h"
+#include "scrap/staticinit.h"
 
 /* defined further down or in another file without a header */
 cGateKeeperLocalLogic *GateKeepers_MakeLogic(cEntity *e);
@@ -263,3 +264,8 @@ cGVar GVar_GateKeeperHiddenTime;
 
 cGVar GVar_GateKeeperStdFovX;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_GateKeeperHiddenTime, &GVar_GateKeeperHiddenTime, "GateKeeperHiddenTime", 0, "Time iniside the shell of the gatekeeper when attacked", 5.0f)
+INIT_GVAR_FLOAT(Init_GVar_GateKeeperStdFovX, &GVar_GateKeeperStdFovX, "GateKeeperStdFovX", 0, "Standard GateKeeper FieldOfView", 2.3561945f)
+INIT_GVAR_FLOAT(Init_GVar_GateKeeperStdFovY, &GVar_GateKeeperStdFovY, "GateKeeperStdFovY", 0, "Standard GateKeeper FieldOfView", 1.5707964f)
+INIT_GVAR_FLOAT(Init_GVar_GateKeeperStdFar, &GVar_GateKeeperStdFar, "GateKeeperStdFar", 0, "Standard GateKeeper Distance of View", 1000.0f)

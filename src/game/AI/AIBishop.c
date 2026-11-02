@@ -8,6 +8,7 @@
 #include "scrap/aichar.h"
 #include "scrap/fxmisc.h"
 #include "scrap/walkcharentity.h"
+#include "scrap/staticinit.h"
 
 #define CAIBISHOP_SIZE sizeof(cAIBishop)
 #define BISHOP_BLOCK_TIME 7.5f		/* the way to the target is tested again after it */
@@ -269,3 +270,8 @@ cGVar GVar_DistMaxShootBishopAI;
 
 cGVar GVar_TimeShootBishopAI;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_ShootBishopAI, &GVar_ShootBishopAI, "ShootBishopAI", 4, "Factor shoot Bishop.\n", 3)
+INIT_GVAR_FLOAT(Init_GVar_OffsetAngShootBishopAI, &GVar_OffsetAngShootBishopAI, "OffsetAngShootBishopAI", 4, "Offset angle to shoot the Bishop.\n", 0.19634955f)
+INIT_GVAR_FLOAT(Init_GVar_TimeShootBishopAI, &GVar_TimeShootBishopAI, "TimeShootBishopAI", 4, "Time shooting Bishop.\n", 2.0f)
+INIT_GVAR_FLOAT(Init_GVar_DistMaxShootBishopAI, &GVar_DistMaxShootBishopAI, "DistMaxShootBishopAI", 4, "Dist. Max. shooting Bishop.\n", 4000.0f)

@@ -4,6 +4,7 @@
  */
 #include "scrap/scorerhud.h"
 #include "scrap/timer.h"
+#include "scrap/staticinit.h"
 
 cTimerScorer *cTimerScorer_ctor(cTimerScorer *self) {
 	cAbstractTextScorer_ctor(&self->base);
@@ -132,3 +133,10 @@ cGVar GVar_TimeSpecialUseTimer;
 
 cGVar GVar_TimeWarning;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_TimeWarning, &GVar_TimeWarning, "TimeWarning", 0, "Cuando quede esta cantidad de tiempo se avisa al usuario de que se de prisa o se cancelará la apuesta loca (en segundos)", 31.0f)
+INIT_GVAR_FLOAT(Init_GVar_TimeInactiveTimer, &GVar_TimeInactiveTimer, "TimeInactiveTimer", 0, "Tiempo actual para que se cancele la misión por inactividad (en segundos)", 121.0f)
+INIT_GVAR_FLOAT(Init_GVar_TimeSpecialUseTimer, &GVar_TimeSpecialUseTimer, "TimeSpecialUseTimer", 0, "Temporizador definido por el usuario para usos varios.", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_TimeToCancelCurrentMission, &GVar_TimeToCancelCurrentMission, "TimeToCancelCurrentMission", 0, "Tiempo actual para cancelar la misión (en segundos)", 21.0f)
+INIT_GVAR_FLOAT(Init_GVar_TimeToFinishCurrentMission, &GVar_TimeToFinishCurrentMission, "TimeToFinishCurrentMission", 0, "Tiempo actual para que acabe la misión (en segundos)", 0.0f)
+INIT_GVAR_INT(Init_GVar_CounterType, &GVar_CounterType, "CounterType", 0, "Indica si se incrementa, se decrementa o se para el contador (0:decrementa, 1:incrementa, 2:se para)", 0)

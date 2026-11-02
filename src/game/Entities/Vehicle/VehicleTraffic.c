@@ -6,6 +6,7 @@
 #include "scrap/ai.h"
 #include "scrap/crt.h"
 #include "scrap/vehicletraffic.h"
+#include "scrap/staticinit.h"
 
 /* the type names of the exe */
 #define VT_HEAVY "Heavy"
@@ -187,3 +188,6 @@ cGVar GVar_UseTrafficCollisionSkip;
 
 cGVar GVar_TrafficSpeed;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_TrafficSpeed, &GVar_TrafficSpeed, "TrafficSpeed", 0, "Terminal speed for the traffic", 5600.0f)
+INIT_GVAR_INT(Init_GVar_UseTrafficCollisionSkip, &GVar_UseTrafficCollisionSkip, "UseTrafficCollisionSkip", 0, "1 if uses 0 if not", 1)

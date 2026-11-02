@@ -13,6 +13,7 @@
 #include "scrap/scrapworld.h"
 #include "scrap/render.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 /* defined further down or in another file without a header */
 int Stub_Zero(void);
@@ -579,3 +580,7 @@ cGVar GVar_GridUseTopLimit;
 
 cGVar GVar_ShowDummy;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_GridUseTopLimit, &GVar_GridUseTopLimit, "GridUseTopLimit", 0, "1 if the grid will be limited by the toplimit gvar (usually used in outdoors)", 0)
+FINI_GVAR_STRING(Fini_GVar_ShowDummy, &GVar_ShowDummy)
+INIT_GVAR_STRING(Init_GVar_ShowDummy, Fini_GVar_ShowDummy, &GVar_ShowDummy, "ShowDummy", 4, "Show dummys in map.\n", "")

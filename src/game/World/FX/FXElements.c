@@ -10,6 +10,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/scrap.h"
 #include "scrap/sound.h"
+#include "scrap/staticinit.h"
 
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMETRAIL_CTOR 0x21ddb0
@@ -833,3 +834,11 @@ cGVar GVar_FXElementsFireDropRateAtt;
 
 cGVar GVar_FXElementsFireDropSound;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_FXElementsFireDropMaxDist, &GVar_FXElementsFireDropMaxDist, "FXElementsFireDropMaxDist", 0, "Maximun Distance to show the Elements Fire Drop Effect", 200000.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXElementsFireDropRateAtt, &GVar_FXElementsFireDropRateAtt, "FXElementsFireDropRateAtt", 0, "Rate Attenuation Factor by Distance at Elements Fire Drop Effect", 1.25f)
+FINI_GVAR_STRING(Fini_GVar_FXElementsFireDropSound, &GVar_FXElementsFireDropSound)
+INIT_GVAR_STRING(Init_GVar_FXElementsFireDropSound, Fini_GVar_FXElementsFireDropSound, &GVar_FXElementsFireDropSound, "FXElementsFireDropSound", 0, "Element FireDrop Sound name", "FXElementsFireDropSound")
+INIT_GVAR_FLOAT(Init_GVar_FXElementsFireDropSoundVol, &GVar_FXElementsFireDropSoundVol, "FXElementsFireDropSoundVol", 0, "Element FireDrop Sound volume", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXElementsFireDropSoundAttIni, &GVar_FXElementsFireDropSoundAttIni, "FXElementsFireDropSoundAttIni", 0, "Element FireDrop sound attenuation ini", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXElementsFireDropSoundAttEnd, &GVar_FXElementsFireDropSoundAttEnd, "FXElementsFireDropSoundAttEnd", 0, "Element FireDrop sound attenuation end", 0.0f)

@@ -10,6 +10,7 @@
 
 #include "scrap/chartype.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 cGenCharLocalLogic *cGenCharLocalLogic_ctor(cGenCharLocalLogic *self, cEntity *parent, int noRestart) {
 	cBaseLocalLogic_ctor(&self->base, parent);
@@ -620,3 +621,18 @@ cGVar GVar_GenCharMaxSpecialActionTime;
 
 cGVar GVar_GenCharMinSpecialActionTime;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_GenCharAlertSpeed, &GVar_GenCharAlertSpeed, "GenCharAlertSpeed", 0, "GenChar speed (Alert)", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_GenCharEscapeSpeed, &GVar_GenCharEscapeSpeed, "GenCharEscapeSpeed", 0, "GenChar speed (Escape)", 0.85f)
+INIT_GVAR_FLOAT(Init_GVar_GenCharAttackSpeed, &GVar_GenCharAttackSpeed, "GenCharAttackSpeed", 0, "GenChar speed (Attack)", 0.8f)
+INIT_GVAR_FLOAT(Init_GVar_GenCharMinSpecialActionTime, &GVar_GenCharMinSpecialActionTime, "GenCharMinSpecialActionTime", 0, "GenChar min special action time", 6.0f)
+INIT_GVAR_FLOAT(Init_GVar_GenCharMaxSpecialActionTime, &GVar_GenCharMaxSpecialActionTime, "GenCharMaxSpecialActionTime", 0, "GenChar max special action time", 12.0f)
+INIT_GVAR_FLOAT(Init_GVar_GenCharGetAwayTime, &GVar_GenCharGetAwayTime, "GenCharGetAwayTime", 0, "GenChar get away time", 4.0f)
+INIT_GVAR_FLOAT(Init_GVar_GenCharRobberyDetection, &GVar_GenCharRobberyDetection, "GenCharRobberyDetection", 0, "GenChar robery detection percentage", 20.0f)
+INIT_GVAR_FLOAT(Init_GVar_GenCharAttackLimit, &GVar_GenCharAttackLimit, "GenCharAttackLimit", 0, "Beyond this distance the generic logic does not attack randomly!", 2000.0f)
+INIT_GVAR_FLOAT(Init_GVar_GenCharAcuseTime, &GVar_GenCharAcuseTime, "GenCharAcuseTime", 0, "Minimal time pointing the main character", 2.0f)
+INIT_GVAR_FLOAT(Init_GVar_GenCharAcuseAgainTime, &GVar_GenCharAcuseAgainTime, "GenCharAcuseAgainTime", 0, "Time to acuse again after having received damage from the Gear (being acusing the main char)", 4.0f)
+INIT_GVAR_FLOAT(Init_GVar_GenCharPoliceRefuse, &GVar_GenCharPoliceRefuse, "GenCharPoliceRefuse", 0, "Percentage of times when the generic char escapes from the police", 50.0f)
+INIT_GVAR_FLOAT(Init_GVar_GenCharSpecialChaseSpeed, &GVar_GenCharSpecialChaseSpeed, "GenCharSpecialChaseSpeed", 0, "Gen char special chase speed", -1.0f)
+FINI_CALL(Fini_GVar_OnDefStateCallback, &GVar_OnDefStateCallback.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnDefStateCallback, Fini_GVar_OnDefStateCallback, &GVar_OnDefStateCallback, "OnDefStateCallback", 0, "Python function to be called when the NPC is forced to have the default state", "")

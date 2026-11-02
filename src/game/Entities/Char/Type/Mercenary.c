@@ -3,6 +3,7 @@
  * (include/scrap/chartype.h).
  */
 #include "scrap/chartype.h"
+#include "scrap/staticinit.h"
 
 /* params: the mercenary, an event, a float: the drink effect for 2 seconds */
 void ChType_FXMercenaryDrink(cAbstractFile *params) {
@@ -36,3 +37,12 @@ cGVar GVar_MercenaryDrinkPosX;
 
 cGVar GVar_MercenaryDrinkPosZ;
 
+cPy_NativeFunc NativeFunc_FXMercenaryDrink;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_MercenaryDrinkPosX, &GVar_MercenaryDrinkPosX, "MercenaryDrinkPosX", 0, "Mercenary Drink Displacement X from center", 14.0f)
+INIT_GVAR_FLOAT(Init_GVar_MercenaryDrinkPosY, &GVar_MercenaryDrinkPosY, "MercenaryDrinkPosY", 0, "Mercenary Drink Displacement Y from center", 2.0f)
+INIT_GVAR_FLOAT(Init_GVar_MercenaryDrinkPosZ, &GVar_MercenaryDrinkPosZ, "MercenaryDrinkPosZ", 0, "Mercenary Drink Displacement Z from center", 28.0f)
+FINI_GVAR_STRING(Fini_GVar_FXMercenaryDrinkFile, &GVar_FXMercenaryDrinkFile)
+INIT_GVAR_STRING(Init_GVar_FXMercenaryDrinkFile, Fini_GVar_FXMercenaryDrinkFile, &GVar_FXMercenaryDrinkFile, "FXMercenaryDrinkFile", 0, "Default Model for Mercenary Drink Effects", "Models/GFX/Mercenary/Drink.M3D")
+INIT_NATIVE_FUNC(Init_NativeFunc_FXMercenaryDrink, &NativeFunc_FXMercenaryDrink, "FXMercenaryDrink", ChType_FXMercenaryDrink)

@@ -14,6 +14,7 @@
 #include "scrap/scrapcollision.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/withlifeentity.h"
+#include "scrap/staticinit.h"
 
 #define MISSILE_CLASSNAME "Missile"
 
@@ -1436,3 +1437,14 @@ cGVar GVar_Gravity;
 
 cGVar GVar_ActiveExtrapolation;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_FXGearMissileFile, &GVar_FXGearMissileFile)
+INIT_GVAR_STRING(Init_GVar_FXGearMissileFile, Fini_GVar_FXGearMissileFile, &GVar_FXGearMissileFile, "FXGearMissileFile", 0, "Default Model for Gear Missile Effect", "Models/GFX/Gear/Missile.M3D")
+INIT_GVAR_INT(Init_GVar_ActiveExtrapolation, &GVar_ActiveExtrapolation, "ActiveExtrapolation", 0, "1 Uses Extrapolation if possible, 0 Uses Interpolation allways", 0)
+FINI_GVAR_STRING(Fini_GVar_FXDumbMotorFile, &GVar_FXDumbMotorFile)
+INIT_GVAR_STRING(Init_GVar_FXDumbMotorFile, Fini_GVar_FXDumbMotorFile, &GVar_FXDumbMotorFile, "FXDumbMotorFile", 0, "Default Model for Dumb Motor Effect", "Models/GFX/DumbMotor.M3D")
+FINI_GVAR_STRING(Fini_GVar_CloudFile, &GVar_CloudFile)
+INIT_GVAR_STRING(Init_GVar_CloudFile, Fini_GVar_CloudFile, &GVar_CloudFile, "CloudFile", 0, "Default Model for Debris Cloud", "Models/Weapons/Cloud/Cloud.M3D")
+FINI_GVAR_STRING(Fini_GVar_EMIFile, &GVar_EMIFile)
+INIT_GVAR_STRING(Init_GVar_EMIFile, Fini_GVar_EMIFile, &GVar_EMIFile, "EMIFile", 0, "Default Model for Electro Magnetic Interference", "Models/Weapons/EMI/EMI.M3D")
+INIT_GVAR_FLOAT(Init_GVar_Gravity, &GVar_Gravity, "Gravity", 0, "Global Gravity\n", 4900.0f)

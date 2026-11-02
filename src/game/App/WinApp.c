@@ -16,6 +16,7 @@
 #include "scrap/video.h"
 #include "scrap/platform.h"
 #include "scrap/platform.h"
+#include "scrap/staticinit.h"
 
 CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char *cmdLine, int nCmdShow) {
 	char path[0x104];
@@ -396,3 +397,5 @@ char str_Scrapland[] = "Scrapland";
 
 cGVar GVar_SoundInit;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_SoundInit, &GVar_SoundInit, "SoundInit", 0, "Initialize sound system", 1)

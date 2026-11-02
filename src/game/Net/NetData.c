@@ -14,6 +14,7 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/vehiclemotors.h"
 #include "scrap/weapons.h"
+#include "scrap/staticinit.h"
 
 /* "net<n>" with a name of more than 3 characters */
 static inline int Net_IsNetName(const char *name) {
@@ -446,3 +447,19 @@ cGVarFunction GVar_OnNetBrowseCallback;
 
 cGVarFunction GVar_ClientDelRes;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_NetMaxPlayersInitSend, &GVar_NetMaxPlayersInitSend, "NetMaxPlayersInitSend", 0, "Maximun number of net players send per packet at the startup.", 4)
+FINI_CALL(Fini_GVar_ClientAddRes, &GVar_ClientAddRes.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_ClientAddRes, Fini_GVar_ClientAddRes, &GVar_ClientAddRes, "ClientAddRes", 0, "ClientAddRes(Num,Descriptor)", "")
+FINI_CALL(Fini_GVar_ClientDelRes, &GVar_ClientDelRes.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_ClientDelRes, Fini_GVar_ClientDelRes, &GVar_ClientDelRes, "ClientDelRes", 0, "ClientDelRes(Num,Descriptor)", "")
+FINI_CALL(Fini_GVar_ClientSetConfig, &GVar_ClientSetConfig.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_ClientSetConfig, Fini_GVar_ClientSetConfig, &GVar_ClientSetConfig, "ClientSetConfig", 0, "ClientSetConfig(entityname,ModelName,MaxLife,UsrName,PilotName,Motor0,Motor1,Motor2,Motor3,WeaponBay,tgtype) player ship modifed", "")
+FINI_GVAR_STRING(Fini_GVar_ClientRemotePassword, &GVar_ClientRemotePassword)
+INIT_GVAR_STRING(Init_GVar_ClientRemotePassword, Fini_GVar_ClientRemotePassword, &GVar_ClientRemotePassword, "ClientRemotePassword", 6, "Password for client remote control(client). If empty, no remote control allowed.", "")
+FINI_CALL(Fini_GVar_OnNetBrowseCallback, &GVar_OnNetBrowseCallback.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnNetBrowseCallback, Fini_GVar_OnNetBrowseCallback, &GVar_OnNetBrowseCallback, "OnNetBrowseCallback", 0, "Called every time that server is found in a browsing operation.", "")
+FINI_CALL(Fini_GVar_MasterCommandFunc, &GVar_MasterCommandFunc.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_MasterCommandFunc, Fini_GVar_MasterCommandFunc, &GVar_MasterCommandFunc, "MasterCommandFunc", 0, "MasterCommandFunc(string) (master server sends data)", "")
+FINI_GVAR_STRING(Fini_GVar_ServerType, &g_GVarServerType)
+INIT_GVAR_STRING(Init_GVar_ServerType, Fini_GVar_ServerType, &g_GVarServerType, "ServerType", 14, "Type of server game.\n", "DeathMatch")

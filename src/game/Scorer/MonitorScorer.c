@@ -18,6 +18,7 @@
 #include "scrap/weapons.h"
 #include "scrap/withlifeentity.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 static CPsaImage *Monitor_NewImage(const char *name, int blend, uint32_t flags, uint32_t color) {
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
@@ -866,3 +867,6 @@ const cHeadScorerVtbl cMonitorScorer_vftable = {
 
 cGVar GVar_FirstPhotoMessage;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_FirstPhotoMessage, &GVar_FirstPhotoMessage)
+INIT_GVAR_STRING(Init_GVar_FirstPhotoMessage, Fini_GVar_FirstPhotoMessage, &GVar_FirstPhotoMessage, "FirstPhotoMessage", 0, "Message that appears every time you must to use the camere", "")

@@ -6,6 +6,7 @@
 #include "scrap/chartype.h"
 #include "scrap/filepak.h"
 #include "scrap/hashtable.h"
+#include "scrap/staticinit.h"
 
 /* defined further down or in another file without a header */
 void DominationFriends_OnDeath(cAbstractFile *params);
@@ -130,3 +131,6 @@ const cDominationLogicVtbl cDominationFriendsLogic_vftable = {
 
 cGVarFunction GVar_OnDominFriendDeath;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_CALL(Fini_GVar_OnDominFriendDeath, &GVar_OnDominFriendDeath.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_OnDominFriendDeath, Fini_GVar_OnDominFriendDeath, &GVar_OnDominFriendDeath, "OnDominFriendDeath", 0, "Called when a friend dies", "")

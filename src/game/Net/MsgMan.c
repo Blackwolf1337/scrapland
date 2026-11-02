@@ -6,6 +6,7 @@
 
 #include "scrap/console.h"
 #include "scrap/net.h"
+#include "scrap/staticinit.h"
 
 uint32_t g_NetWaitTime = 5000;
 
@@ -281,3 +282,5 @@ const cUserNetManagerVtbl cUserNetManager_vftable = {
 
 cGVar GVar_NetTimeOut;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_NetTimeOut, &GVar_NetTimeOut, "NetTimeOut", 2, "# Time out for desconection...", 240000)

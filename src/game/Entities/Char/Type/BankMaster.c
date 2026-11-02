@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "scrap/chartype.h"
+#include "scrap/staticinit.h"
 
 #define BANKMASTER_SUCTION_ANG 1.0471975511965976	/* rva 0x3ad5f8, 60 degrees */
 
@@ -168,3 +169,29 @@ cGVar GVar_BankMasterAmmoCost;
 
 cGVar GVar_FXBankMasterSuctionFile;
 
+cPy_NativeFunc NativeFunc_BankMasterAttack;
+cPy_NativeFunc NativeFunc_BankMasterActionPress;
+cPy_NativeFunc NativeFunc_BankMasterHitEvent;
+cPy_NativeFunc NativeFunc_BankMasterActionInit;
+cPy_NativeFunc NativeFunc_BankMasterActionEnd;
+cPy_NativeFunc NativeFunc_FXBankMasterAttack;
+cPy_NativeFunc NativeFunc_BertoActionPress;
+cPy_NativeFunc NativeFunc_BishopActionPress;
+cPy_NativeFunc NativeFunc_MessengerActionPress;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_BankerStealAmount, &GVar_BankerStealAmount, "BankerStealQuanto", 0, "Money stealed by the banker to the main player", 30)
+INIT_GVAR_FLOAT(Init_GVar_BankMasterAmmoCost, &GVar_BankMasterAmmoCost, "BankMasterAmmoCost", 0, "BankMaster AmmoCost Per shoot", 0.05f)
+FINI_GVAR_STRING(Fini_GVar_FXBankMasterAttackFile, &GVar_FXBankMasterAttackFile)
+INIT_GVAR_STRING(Init_GVar_FXBankMasterAttackFile, Fini_GVar_FXBankMasterAttackFile, &GVar_FXBankMasterAttackFile, "FXBankMasterAttackFile", 0, "Default Model for BankMaster Attack Effect", "Models/GFX/BankMaster/Attack.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXBankMasterSuctionFile, &GVar_FXBankMasterSuctionFile)
+INIT_GVAR_STRING(Init_GVar_FXBankMasterSuctionFile, Fini_GVar_FXBankMasterSuctionFile, &GVar_FXBankMasterSuctionFile, "FXBankMasterSuctionFile", 0, "Default Model for BankMaster Suction Effect", "Models/GFX/BankMaster/Suction.M3D")
+INIT_NATIVE_FUNC(Init_NativeFunc_BankMasterAttack, &NativeFunc_BankMasterAttack, "BankMasterAttack", ChType_BankMasterAttack)
+INIT_NATIVE_FUNC(Init_NativeFunc_BankMasterActionPress, &NativeFunc_BankMasterActionPress, "BankMasterActionPress", ChType_ActionPress)
+INIT_NATIVE_FUNC(Init_NativeFunc_BankMasterHitEvent, &NativeFunc_BankMasterHitEvent, "BankMasterHitEvent", ChType_BankMasterHitEvent)
+INIT_NATIVE_FUNC(Init_NativeFunc_BankMasterActionInit, &NativeFunc_BankMasterActionInit, "BankMasterActionInit", ChType_BankMasterActionInit)
+INIT_NATIVE_FUNC(Init_NativeFunc_BankMasterActionEnd, &NativeFunc_BankMasterActionEnd, "BankMasterActionEnd", ChType_BankMasterActionEnd)
+INIT_NATIVE_FUNC(Init_NativeFunc_FXBankMasterAttack, &NativeFunc_FXBankMasterAttack, "FXBankMasterAttack", ChType_FXBankMasterAttack)
+INIT_NATIVE_FUNC(Init_NativeFunc_BertoActionPress, &NativeFunc_BertoActionPress, "BertoActionPress", ChType_ActionPress)
+INIT_NATIVE_FUNC(Init_NativeFunc_BishopActionPress, &NativeFunc_BishopActionPress, "BishopActionPress", ChType_ActionPress)
+INIT_NATIVE_FUNC(Init_NativeFunc_MessengerActionPress, &NativeFunc_MessengerActionPress, "MessengerActionPress", ChType_ActionPress)

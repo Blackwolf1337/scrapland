@@ -15,6 +15,7 @@
 #include "scrap/rendertarget.h"
 #include "scrap/scrapmodel.h"
 #include "scrap/trails.h"
+#include "scrap/staticinit.h"
 
 /* IDirect3DDevice8, IDirect3DTexture8 and IDirect3DSurface8 methods not in d3d8.h */
 typedef struct RTLockedRect {
@@ -2179,3 +2180,37 @@ cGVar GVar_R_CreditsSizeY;
 
 cGVar GVar_R_SceneDuDvForced;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_R_NewsPanelRTarget, &GVar_R_NewsPanelRTarget, "R_NewsPanelRTarget", 0, "Init NewsPanel render target (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_NewsPanelSize, &GVar_R_NewsPanelSize, "R_NewsPanelSize", 0, "Size of NewsPanel render target (pow2)", 128)
+INIT_GVAR_INT(Init_GVar_R_NewsPanelWire, &GVar_R_NewsPanelWire, "R_NewsPanelWire", 0, "Show the NewsPanel in wireframe mode (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_R_SceneRTarget, &GVar_R_SceneRTarget, "R_SceneRTarget", 2, "Init Scene render target (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_SceneRTargetSwap, &GVar_R_SceneRTargetSwap, "R_SceneRTargetSwap", 0, "Scene render target Swapping (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_SceneForceLinPow2, &GVar_R_SceneForceLinPow2, "R_SceneForceLinPow2", 0, "Force Linear Pow2 Render Target (-1/0/1)", -1)
+INIT_GVAR_INT(Init_GVar_R_SceneForceLinNonPow2, &GVar_R_SceneForceLinNonPow2, "R_SceneForceLinNonPow2", 0, "Force Linear NonPow2 Render Target (-1/0/1)", -1)
+INIT_GVAR_INT(Init_GVar_R_SceneCheckPixels, &GVar_R_SceneCheckPixels, "R_SceneCheckPixels", 0, "Scene RenderTarget Caps Maximun different Pixels", 512)
+INIT_GVAR_INT(Init_GVar_R_SceneDuDvRTarget, &GVar_R_SceneDuDvRTarget, "R_SceneDuDvRTarget", 2, "Init Scene DuDv render target (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_SceneDuDvFilter, &GVar_R_SceneDuDvFilter, "R_SceneDuDvFilter", 0, "Scene DuDv Target Filter (0=point, 1=linear)", 1)
+INIT_GVAR_FLOAT(Init_GVar_R_SceneDuDvScale, &GVar_R_SceneDuDvScale, "R_SceneDuDvScale", 0, "Scene DuDv Target Scale", 0.15f)
+INIT_GVAR_INT(Init_GVar_R_SceneDuDvForced, &GVar_R_SceneDuDvForced, "R_SceneDuDvForced", 0, "Scene DuDv Target Forced (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_R_SceneDuDvCheckPixels, &GVar_R_SceneDuDvCheckPixels, "R_SceneDuDvCheckPixels", 0, "Scene DuDv Check Caps Maximun different Pixels", 6553)
+INIT_GVAR_INT(Init_GVar_R_SceneBloomRTarget, &GVar_R_SceneBloomRTarget, "R_SceneBloomRTarget", 2, "Init Scene Bloom render target (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_SceneBloomBlurPasses, &GVar_R_SceneBloomBlurPasses, "R_SceneBloomBlurPasses", 0, "Scene Bloom Blur Passes", 2)
+INIT_GVAR_FLOAT(Init_GVar_R_SceneBloomBlurOffset, &GVar_R_SceneBloomBlurOffset, "R_SceneBloomBlurOffset", 0, "Scene Bloom Blur Offset in Texels", 0.75f)
+INIT_GVAR_FLOAT(Init_GVar_R_SceneBloomBlurSize, &GVar_R_SceneBloomBlurSize, "R_SceneBloomBlurSize", 0, "Scene Bloom Blur Target Size (Scene Size Proportional)", 0.4f)
+INIT_GVAR_INT(Init_GVar_R_SceneMotionBlurRTarget, &GVar_R_SceneMotionBlurRTarget, "R_SceneMotionBlurRTarget", 2, "Init Scene Motion Blur render target (0/1)", 1)
+INIT_GVAR_FLOAT(Init_GVar_R_SceneMotionBlurValue, &GVar_R_SceneMotionBlurValue, "R_SceneMotionBlurValue", 0, "Scene Motion Blur Value", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_SceneMotionBlurOffset, &GVar_R_SceneMotionBlurOffset, "R_SceneMotionBlurOffset", 0, "Scene Motion Blur Offset in Texels", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_SceneMotionBlurSize, &GVar_R_SceneMotionBlurSize, "R_SceneMotionBlurSize", 0, "Scene Motion Blur Target Size (Scene Size Proportional)", 0.5f)
+INIT_GVAR_INT(Init_GVar_R_SceneRadialBlurRTarget, &GVar_R_SceneRadialBlurRTarget, "R_SceneRadialBlurRTarget", 0, "Init Scene Radial Blur render target (0/1)", 1)
+INIT_GVAR_FLOAT(Init_GVar_R_SceneRadialBlurValue, &GVar_R_SceneRadialBlurValue, "R_SceneRadialBlurValue", 0, "Scene Radial Blur Value", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_SceneRadialBlurOffset, &GVar_R_SceneRadialBlurOffset, "R_SceneRadialBlurOffset", 0, "Scene Radial Blur Offset", 5.0f)
+INIT_GVAR_INT(Init_GVar_R_SceneBlurRTarget, &GVar_R_SceneBlurRTarget, "R_SceneBlurRTarget", 0, "Init Scene Blur render target (0/1)", 1)
+INIT_GVAR_FLOAT(Init_GVar_R_SceneBlurValue, &GVar_R_SceneBlurValue, "R_SceneBlurValue", 0, "Scene Blur Value", 0.0f)
+INIT_GVAR_FLOAT(Init_GVar_R_SceneBlurOffset, &GVar_R_SceneBlurOffset, "R_SceneBlurOffset", 0, "Scene Blur Offset in Texels", 1.5f)
+INIT_GVAR_INT(Init_GVar_R_CreditsRTarget, &GVar_R_CreditsRTarget, "R_CreditsRTarget", 0, "Init Credits render target (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_R_CreditsSizeX, &GVar_R_CreditsSizeX, "R_CreditsSizeX", 0, "Size X of Credits render target (pow2)", 512)
+INIT_GVAR_INT(Init_GVar_R_CreditsSizeY, &GVar_R_CreditsSizeY, "R_CreditsSizeY", 0, "Size Y of Credits render target (pow2)", 256)
+INIT_GVAR_INT(Init_GVar_R_CreditsPhase, &GVar_R_CreditsPhase, "R_CreditsPhase", 0, "Credits render target phase", 0)
+INIT_GVAR_INT(Init_GVar_R_SplitScreen, &GVar_R_SplitScreen, "R_SplitScreen", 0, "Split Screen", 0)
+INIT_GVAR_INT(Init_GVar_R_SplitScreenCamera, &GVar_R_SplitScreenCamera, "R_SplitScreenCamera", 0, "Split Screen Camera Index", 0)

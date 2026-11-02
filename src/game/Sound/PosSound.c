@@ -19,6 +19,7 @@
 #include "scrap/walkcharentity.h"
 #include "scrap/withlifeentity.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 cGVar GVar_isActionMusic;
 
@@ -606,3 +607,32 @@ cGVar GVar_ArrowDeactivationRadius;
 
 cGVar GVar_ArrowActiveRadius;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_ArrowActiveRadius, &GVar_ArrowActiveRadius, "ArrowActiveRadius", 0, "Indicates the radius between entities to start actions", 200.0f)
+INIT_GVAR_FLOAT(Init_GVar_ArrowDeactivationRadius, &GVar_ArrowDeactivationRadius, "ArrowDeactivationRadius", 0, "Indicates the radius between entities to start actions", 400.0f)
+INIT_GVAR_INT(Init_GVar_NumEnemiesInRadar, &GVar_NumEnemiesInRadar, "NumEnemiesInRadar", 1, "Number of enemies in the radar", 0)
+INIT_GVAR_FLOAT(Init_GVar_VoicePlayDelay, &GVar_VoicePlayDelay, "VoicePlayDelay", 0, "Delay to play an specific voice.\n", 0.5f)
+FINI_GVAR_STRING(Fini_GVar_OutRelaxMusic, &GVar_OutRelaxMusic)
+INIT_GVAR_STRING(Init_GVar_OutRelaxMusic, Fini_GVar_OutRelaxMusic, &GVar_OutRelaxMusic, "OutRelaxMusic", 0, "Relax Music path for outdoors.\n", "Music/Track%d.ogg")
+INIT_GVAR_INT(Init_GVar_iOutRelaxMusic, &GVar_iOutRelaxMusic, "iOutRelaxMusic", 0, "Num of Relax Music path for outdoors.\n", 3)
+INIT_GVAR_FLOAT(Init_GVar_OutRelaxMusicVolume, &GVar_OutRelaxMusicVolume, "OutRelaxMusicVolume", 0, "Volume of Relax Music path for outdoors.\n", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_OutActionMusic, &GVar_OutActionMusic)
+INIT_GVAR_STRING(Init_GVar_OutActionMusic, Fini_GVar_OutActionMusic, &GVar_OutActionMusic, "OutActionMusic", 0, "Action Music path for outdoors.\n", "Music/Outdoor%d.ogg")
+INIT_GVAR_INT(Init_GVar_iOutActionMusic, &GVar_iOutActionMusic, "iOutActionMusic", 0, "Num of Action Music path for outdoors.\n", 7)
+INIT_GVAR_FLOAT(Init_GVar_OutActionMusicVolume, &GVar_OutActionMusicVolume, "OutActionMusicVolume", 0, "Volume of Action Music path for outdoors.\n", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_ActionMusicTimeFade, &GVar_ActionMusicTimeFade, "ActionMusicTimeFade", 0, "Time to fade off the action musics.\n", 5.0f)
+INIT_GVAR_FLOAT(Init_GVar_MusicTimeChange, &GVar_MusicTimeChange, "MusicTimeChange", 0, "minimun time of musicplay after the fade.\n", 15.0f)
+INIT_GVAR_INT(Init_GVar_isActionMusic, &GVar_isActionMusic, "isActionMusic", 0, "Modify this value to start/end the action!\n", 0)
+INIT_GVAR_INT(Init_GVar_isActionIndoor, &GVar_isActionIndoor, "isActionIndoor", 0, "True if the indoormap uses DinaMusic.\n", 0)
+INIT_GVAR_INT(Init_GVar_useDynamicMusic, &GVar_useDynamicMusic, "useDynamicMusic", 0, "Uses dynamic music when set to true.\n", 1)
+INIT_GVAR_INT(Init_GVar_ForceNoActionMusic, &GVar_ForceNoActionMusic, "ForceNoActionMusic", 0, "Deactivates the action music.\n", 0)
+FINI_CALL(Fini_SndPSTable, &g_SndPSTable, PtrTable_Clear)
+INIT_HASHTABLE(Init_SndPSTable, Fini_SndPSTable, &g_SndPSTable, 0x1c9, 4, 0x724, 0, 1)
+INIT_GVAR_FLOAT(Init_GVar_MinVoiceVolumeChat, &GVar_MinVoiceVolumeChat, "MinVoiceVolumeChat", 0, "voice minimal volume of thrd person speacher.\n", 0.2f)
+INIT_GVAR_FLOAT(Init_GVar_MaxPoliceWarnDist, &GVar_MaxPoliceWarnDist, "MaxPoliceWarnDist", 0, "Distance of warnning police messages.\n", 3000.0f)
+INIT_GVAR_FLOAT(Init_GVar_WarnVoiceVolume, &GVar_WarnVoiceVolume, "WarnVoiceVolume", 0, "Voice maximal volume of police messages.\n", 1.0f)
+FINI_GVAR_STRING(Fini_GVar_VoicePath, &GVar_VoicePath)
+INIT_GVAR_STRING(Init_GVar_VoicePath, Fini_GVar_VoicePath, &GVar_VoicePath, "VoicePath", 0, "Voice default path", "Sounds/Voices/")
+FINI_GVAR_STRING(Fini_GVar_StreamPath, &GVar_StreamPath)
+INIT_GVAR_STRING(Init_GVar_StreamPath, Fini_GVar_StreamPath, &GVar_StreamPath, "StreamPath", 0, "Stream default path", "Sounds/Stream/")
+INIT_GVAR_FLOAT(Init_GVar_S_VoiceoverVolume, &GVar_S_VoiceoverVolume, "S_VoiceoverVolume", 0, "Voiceover relative volume", 0.6f)

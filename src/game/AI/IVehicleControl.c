@@ -21,6 +21,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/timer.h"
 #include "scrap/vehicleentity.h"
+#include "scrap/staticinit.h"
 
 
 cGVar GVar_ShowPathAI;
@@ -2105,3 +2106,19 @@ const cAIEntityGroupVtbl cAIVehicleGroup_vftable = {
 const cAIVehicleControlVtbl cAIVehicleControl_vftable = {
 	.Delete = cAIVehicleControl_Delete,
 };
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_ShowPathAI, &GVar_ShowPathAI, "ShowPathAI", 4, "0 = No Show, 1 = Show\n", 0)
+FINI_GVAR_STRING(Fini_GVar_ShowVehAI, &GVar_ShowVehAI)
+INIT_GVAR_STRING(Init_GVar_ShowVehAI, Fini_GVar_ShowVehAI, &GVar_ShowVehAI, "ShowVehAI", 4, "Show Features vehicle.\n", "")
+INIT_GVAR_FLOAT(Init_GVar_TimeMaxReachBoostAI, &GVar_TimeMaxReachBoostAI, "TimeMaxReachBoostAI", 4, "Time Max. to reach the objective to activate boost.\n", 4.0f)
+INIT_GVAR_FLOAT(Init_GVar_DistBoostAI, &GVar_DistBoostAI, "DistBoostAI", 4, "Distance Min. to reactivate the Boost.\n", 30000.0f)
+INIT_GVAR_FLOAT(Init_GVar_VelTurnAI, &GVar_VelTurnAI, "VelTurnAI", 4, "Velocity Min. to turn curves (cm/s).\n", 1400.0f)
+INIT_GVAR_FLOAT(Init_GVar_DistBrakeObjAI, &GVar_DistBrakeObjAI, "DistBrakeObjAI", 4, "Distance brake to objective.\n", 10000.0f)
+INIT_GVAR_FLOAT(Init_GVar_TimeReactTurnAI, &GVar_TimeReactTurnAI, "TimeReactTurnAI", 4, "Time reaction turn AI (in sec.).\n", 2.0f)
+INIT_GVAR_FLOAT(Init_GVar_LimVelTurnObjectiveAI, &GVar_LimVelTurnObjectiveAI, "LimVelTurnObjectiveAI", 4, "Limit velocity to turn.\n", 1.0f)
+INIT_GVAR_INT(Init_GVar_DepthSearchPosGoAI, &GVar_DepthSearchPosGoAI, "DepthSearchPosGoAI", 4, "Depth to search inside segment fo path.\n", 1)
+INIT_GVAR_FLOAT(Init_GVar_MinAngleSearchPointAI, &GVar_MinAngleSearchPointAI, "MinAngleSearchPointAI", 4, "Angle to search point route.\n", 0.01f)
+INIT_GVAR_FLOAT(Init_GVar_DecVelBrakeAI, &GVar_DecVelBrakeAI, "DecVelBrakeAI", 4, "Dec. of velocity to brake.\n", 0.1f)
+INIT_GVAR_FLOAT(Init_GVar_MinTimeReposAI, &GVar_MinTimeReposAI, "MinTimeReposAI", 4, "Min. time to repos vehicle.\n", 0.05f)
+INIT_GVAR_INT(Init_GVar_ShowStopShipAI, &GVar_ShowStopShipAI, "ShowStopShipAI", 4, "Info of agents stopped.", 0)

@@ -21,6 +21,7 @@
 #include "scrap/platform.h"
 #include "scrap/world.h"
 #include "scrap/scoreritems.h"
+#include "scrap/staticinit.h"
 
 
 /* the engine callbacks of the exe (Engine_SetCallback) */
@@ -1028,3 +1029,28 @@ cGVar GVar_LoadMsgString;
 
 cGVar GVar_DefaultServerPort;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_MasterServerPort, &g_GVarMasterServerPort, "MasterServerPort", 4, "Master server port for internet. (0 = No master) \n", 5000)
+FINI_GVAR_STRING(Fini_GVar_MasterServerAddress, &g_GVarMasterServerAddress)
+INIT_GVAR_STRING(Init_GVar_MasterServerAddress, Fini_GVar_MasterServerAddress, &g_GVarMasterServerAddress, "MasterServerAddress", 4, "Master server address for internet.", "scrapland.mercurysteam.com")
+FINI_GVAR_STRING(Fini_GVar_ServerMapList, &GVar_ServerMapList)
+INIT_GVAR_STRING(Init_GVar_ServerMapList, Fini_GVar_ServerMapList, &GVar_ServerMapList, "ServerMapList", 14, "List of maps to play the game.", "[]")
+FINI_GVAR_STRING(Fini_GVar_ModFileName, &GVar_ModFileName)
+INIT_GVAR_STRING(Init_GVar_ModFileName, Fini_GVar_ModFileName, &GVar_ModFileName, "ModFileName", 4, "Modification file name.", "")
+FINI_GVAR_STRING(Fini_GVar_ModPathName, &GVar_ModPathName)
+INIT_GVAR_STRING(Init_GVar_ModPathName, Fini_GVar_ModPathName, &GVar_ModPathName, "ModPathName", 4, "Modification path name.", "")
+FINI_GVAR_STRING(Fini_GVar_iMap, &GVar_iMap)
+INIT_GVAR_STRING(Init_GVar_iMap, Fini_GVar_iMap, &GVar_iMap, "iMap", 4, "The first map that will be loaded", "Levels/Menu")
+INIT_GVAR_INT(Init_GVar_DisableSkipSlot, &GVar_DisableSkipSlot, "DisableSkipSlot", 0, "Don't skip slots in low framerates (0/1)", 0)
+INIT_GVAR_INT(Init_GVar_ForceReload, &GVar_ForceReload, "ForceReload", 0, " if set to 1, the nex level will be fully reloaded.", 0)
+INIT_GVAR_INT(Init_GVar_DrawNextFrame, &GVar_DrawNextFrame, "DrawNextFrame", 0, "If the next frame will be drawed....", 0)
+FINI_CALL(Fini_GVar_AfterDrawCallback, &GVar_AfterDrawCallback.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_AfterDrawCallback, Fini_GVar_AfterDrawCallback, &GVar_AfterDrawCallback, "AfterDrawCallback", 0, "This function will be called after draw and reseted.", "")
+INIT_GVAR_INT(Init_GVar_DefaultServerPort, &GVar_DefaultServerPort, "DefaultServerPort", 6, "Default conection port.\n", 28086)
+INIT_GVAR_INT(Init_GVar_DefaultMaxPlayersOnServer, &GVar_DefaultMaxPlayersOnServer, "DefaultMaxPlayersOnServer", 6, "Max number of clients conected to a server.\n", 16)
+INIT_GVAR_INT(Init_GVar_iLoadMsgString, &GVar_iLoadMsgString, "iLoadMsgString", 8, "Loading Message Counter\n", 0)
+FINI_GVAR_STRING(Fini_GVar_LoadMsgString, &GVar_LoadMsgString)
+INIT_GVAR_STRING(Init_GVar_LoadMsgString, Fini_GVar_LoadMsgString, &GVar_LoadMsgString, "LoadMsgString", 0, "Message that is show while loading", "")
+INIT_GVAR_INT(Init_GVar_isXbox, &GVar_isXbox, "isXbox", 0, "true if console case", 0)
+FINI_GVAR_STRING(Fini_GVar_ReRunAtExitParams, &GVar_ReRunAtExitParams)
+INIT_GVAR_STRING(Init_GVar_ReRunAtExitParams, Fini_GVar_ReRunAtExitParams, &GVar_ReRunAtExitParams, "ReRunAtExitParams", 0, "empty string is not rerun. else... the parameters.", "")

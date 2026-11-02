@@ -10,6 +10,7 @@
 #include "scrap/crt.h"
 #include "scrap/net.h"
 #include "scrap/platform.h"
+#include "scrap/staticinit.h"
 
 #define NET_AF_INET 2
 #define NET_PKT_MAX 0x800
@@ -642,3 +643,9 @@ cGVar GVar_ClientConectionStatus;
 
 cGVar GVar_LastMasterCommandSent;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_ClientConectionStatus, &GVar_ClientConectionStatus)
+INIT_GVAR_STRING(Init_GVar_ClientConectionStatus, Fini_GVar_ClientConectionStatus, &GVar_ClientConectionStatus, "ClientConectionStatus", 1, "String with conection information\n", "")
+INIT_CALL(Init_cNetRandom_NetRandom, &g_NetRandom, cNetRandom_ctorSeeded)
+FINI_GVAR_STRING(Fini_GVar_LastMasterCommandSent, &GVar_LastMasterCommandSent)
+INIT_GVAR_STRING(Init_GVar_LastMasterCommandSent, Fini_GVar_LastMasterCommandSent, &GVar_LastMasterCommandSent, "LastMasterCommandSent", 0, "", "")

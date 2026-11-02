@@ -19,6 +19,7 @@
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
 #include "scrap/platform.h"
+#include "scrap/staticinit.h"
 
 /* the methods of IDirect3DDevice8, IDirect3DSurface8 and IDirect3D8 only this file calls */
 #define D3DDEVTYPE_HAL 1
@@ -547,3 +548,7 @@ cGVar GVar_SplashScreenFade;
 
 cGVar GVar_R_TexFilter;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_INT(Init_GVar_SplashScreenFade, &GVar_SplashScreenFade, "SplashScreenFade", 0, "Splash screens fade time", 400)
+INIT_GVAR_INT(Init_GVar_ShowProgressBar, &GVar_ShowProgressBar, "ShowProgressBar", 0, "Show loading progress bar (0/1)", 1)
+INIT_GVAR_INT(Init_GVar_R_TexFilter, &GVar_R_TexFilter, "R_TexFilter", 2, "Texture filter (0=point,1=linear,2=anisotropic)", 2)

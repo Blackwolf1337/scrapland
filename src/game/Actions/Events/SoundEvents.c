@@ -10,6 +10,7 @@
 #include "scrap/logic.h"
 #include "scrap/sound.h"
 #include "scrap/weaps2.h"
+#include "scrap/staticinit.h"
 
 #define EVENT_STR 0x80
 
@@ -161,3 +162,18 @@ void Event_WarningPolice(cAbstractFile *params) {
 	Event_Read(params, name, str, &t);
 	Sound_PlayVoice(name, str, NULL, 1);
 }
+
+cPy_NativeFunc NativeFunc_AnmSoundLoopEvent;
+cPy_NativeFunc NativeFunc_AnmSoundEvent;
+cPy_NativeFunc NativeFunc_AnmSound2DEvent;
+cPy_NativeFunc NativeFunc_WarningPolice;
+cPy_NativeFunc NativeFunc_StreamingVoice;
+cPy_NativeFunc NativeFunc_StopStreamingVoice;
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_NATIVE_FUNC(Init_NativeFunc_AnmSoundLoopEvent, &NativeFunc_AnmSoundLoopEvent, "AnmSoundLoopEvent", Event_AnmSoundLoopEvent)
+INIT_NATIVE_FUNC(Init_NativeFunc_AnmSoundEvent, &NativeFunc_AnmSoundEvent, "AnmSoundEvent", Event_AnmSoundEvent)
+INIT_NATIVE_FUNC(Init_NativeFunc_AnmSound2DEvent, &NativeFunc_AnmSound2DEvent, "AnmSound2DEvent", Event_AnmSound2DEvent)
+INIT_NATIVE_FUNC(Init_NativeFunc_WarningPolice, &NativeFunc_WarningPolice, "WarningPolice", Event_WarningPolice)
+INIT_NATIVE_FUNC(Init_NativeFunc_StreamingVoice, &NativeFunc_StreamingVoice, "StreamingVoice", Event_StreamingVoice)
+INIT_NATIVE_FUNC(Init_NativeFunc_StopStreamingVoice, &NativeFunc_StopStreamingVoice, "StopStreamingVoice", Event_StopStreamingVoice)

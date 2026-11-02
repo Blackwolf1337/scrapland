@@ -9,6 +9,7 @@
 #include "scrap/console.h"
 #include "scrap/hashtable.h"
 #include "scrap/scrap.h"
+#include "scrap/staticinit.h"
 
 typedef struct cLangText {
 	char *text;			/* 0x0 */
@@ -281,3 +282,9 @@ byte Lang_Set(const char *lang, byte force) {
 	cFile_dtor(&f);
 	return 1;
 }
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_SelectedLanguage, &GVar_SelectedLanguage)
+INIT_GVAR_STRING(Init_GVar_SelectedLanguage, Fini_GVar_SelectedLanguage, &GVar_SelectedLanguage, "SelectedLanguage", 1, "Actual language.\n", "French")
+FINI_CALL(Fini_LangTable, &g_LangTable, LangTable_Clear)
+INIT_HASHTABLE(Init_LangTable, Fini_LangTable, &g_LangTable, 0x1c9, 4, 0x724, 0, 1)

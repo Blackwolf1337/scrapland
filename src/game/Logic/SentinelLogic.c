@@ -16,6 +16,7 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 extern const cSentinelLocalLogicVtbl cSentinelLocalLogic_vftable;
 #define CSENTINELLOCALLOGIC_VFTABLE (&cSentinelLocalLogic_vftable.base)
@@ -449,3 +450,18 @@ const cSentinelLocalLogicVtbl cSentinelLocalLogic_vftable = {
 	.Seen = cSentinelLocalLogic_Seen,
 	.Think = cSentinelLocalLogic_Think,
 };
+
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_GVAR_FLOAT(Init_GVar_SentinelAcuseTime, &GVar_SentinelAcuseTime, "SentinelAcuseTime", 0, "Time following the main after out of viewrange (Acuse)", 3.0f)
+INIT_GVAR_FLOAT(Init_GVar_SentinelSuspectTime, &GVar_SentinelSuspectTime, "SentinelSuspectTime", 0, "Time following the main after out of viewrange (Suspect)", 3.0f)
+INIT_GVAR_FLOAT(Init_GVar_SentinelInspectTime, &GVar_SentinelInspectTime, "SentinelInspectTime", 0, "Time following the main after out of viewrange (Inspect)", 3.0f)
+INIT_GVAR_FLOAT(Init_GVar_SentinelGotoTime, &GVar_SentinelGotoTime, "SentinelGotoTime", 0, "Time following the xtrange viewpoint (Goto)", 5.0f)
+INIT_GVAR_FLOAT(Init_GVar_SentinelGotoRadius, &GVar_SentinelGotoRadius, "SentinelGotoRadius", 0, "Radius to the viewpoint (Goto)", 300.0f)
+INIT_GVAR_FLOAT(Init_GVar_SentinelRelaxSpeed, &GVar_SentinelRelaxSpeed, "SentinelRelaxSpeed", 0, "Sentinel speed (Relax)", 0.25f)
+INIT_GVAR_FLOAT(Init_GVar_SentinelSearchSpeed, &GVar_SentinelSearchSpeed, "SentinelSearchSpeed", 0, "Sentinel speed (Search)", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_SentinelAcuseSpeed, &GVar_SentinelAcuseSpeed, "SentinelAcuseSpeed", 0, "Sentinel speed (Acuse)", 0.6f)
+INIT_GVAR_FLOAT(Init_GVar_SentinelSuspectSpeed, &GVar_SentinelSuspectSpeed, "SentinelSuspectSpeed", 0, "Sentinel speed (Suspect)", 0.5f)
+INIT_GVAR_FLOAT(Init_GVar_SentinelInspectSpeed, &GVar_SentinelInspectSpeed, "SentinelInspectSpeed", 0, "Sentinel speed (Inspect)", 0.25f)
+INIT_GVAR_FLOAT(Init_GVar_SentinelGotoSpeed, &GVar_SentinelGotoSpeed, "SentinelGotoSpeed", 0, "Sentinel speed (Goto order)", 1.0f)
+INIT_GVAR_FLOAT(Init_GVar_SentinelBankerDetect, &GVar_SentinelBankerDetect, "SentinelBankerDetect", 0, "percentage of times when the eye acuse the banker", 30.0f)
+INIT_GVAR_FLOAT(Init_GVar_SentinelBankerNPCDetect, &GVar_SentinelBankerNPCDetect, "SentinelBankerNPCDetect", 0, "percentage of times when the eye acuse the banker (for npcs)", 50.0f)

@@ -13,6 +13,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/platform.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 #define DEV_NODE_SIZE sizeof(cInputDevNode)
 
@@ -662,3 +663,13 @@ cGVarFunction GVar_CheckInactivityFunc;
 
 cGVar GVar_PauseInactivityTime;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+INIT_OBJECT(Init_ActionSets, ActionSet_FiniActionSets, &g_ActionSets, ActionSets_ctor)
+FINI_CALL(Fini_cPy_Function_DefineFunc, &g_DefineFunc, cPy_Function_dtor)
+INIT_OBJECT(Init_cPy_Function_DefineFunc, Fini_cPy_Function_DefineFunc, &g_DefineFunc, cPy_Function_ctor)
+FINI_DLIST(Fini_InputDevices, &g_InputDevices, InputDevices_Clear, 12)
+INIT_ATEXIT(Init_InputDevices, Fini_InputDevices)
+FINI_CALL(Fini_GVar_CheckInactivityFunc, &GVar_CheckInactivityFunc.func, cPy_Function_dtor)
+INIT_GVAR_FUNCTION(Init_GVar_CheckInactivityFunc, Fini_GVar_CheckInactivityFunc, &GVar_CheckInactivityFunc, "CheckInactivityFunc", 0, "Inactivity time function to launch.\n", "")
+INIT_GVAR_FLOAT(Init_GVar_CheckInactivityTime, &GVar_CheckInactivityTime, "CheckInactivityTime", 0, "Inactivity time in seconds to launch the Function.", 120.0f)
+INIT_GVAR_INT(Init_GVar_PauseInactivityTime, &GVar_PauseInactivityTime, "PauseInactivityTime", 0, "Pause Inactivity time if need.", 0)

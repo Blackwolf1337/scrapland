@@ -11,6 +11,7 @@
 #include "scrap/mathlib.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/world.h"
+#include "scrap/staticinit.h"
 
 #define CGAMEPARTICLES_CTOR 0x21d1b0
 #define CGAMEPARTICLES_DTOR 0x21d1c0
@@ -1032,3 +1033,18 @@ cGVar GVar_FXVehicleSiren_SizeMax;
 
 cGVar GVar_FXVehicleProbeLight_DistGrow;
 
+/* the dynamic initializers of the globals here, run in the order of src/standalone/crtxc.inc */
+FINI_GVAR_STRING(Fini_GVar_FXVehicleEmbeddedFile, &GVar_FXVehicleEmbeddedFile)
+INIT_GVAR_STRING(Init_GVar_FXVehicleEmbeddedFile, Fini_GVar_FXVehicleEmbeddedFile, &GVar_FXVehicleEmbeddedFile, "FXVehicleEmbeddedFile", 0, "Default Model for Vehicle Embedded Effects", "Models/GFX/VehicleEmbeddedFX.M3D")
+FINI_GVAR_STRING(Fini_GVar_FXTrafficEmbeddedFile, &GVar_FXTrafficEmbeddedFile)
+INIT_GVAR_STRING(Init_GVar_FXTrafficEmbeddedFile, Fini_GVar_FXTrafficEmbeddedFile, &GVar_FXTrafficEmbeddedFile, "FXTrafficEmbeddedFile", 0, "Default Model for Traffic Embedded Effects", "Models/GFX/TrafficEmbeddedFX.M3D")
+FINI_CALL(Fini_CGameModel_SirenModel, &g_SirenModel, CGameModel_Reset)
+INIT_OBJECT_ARGS(Init_CGameModel_SirenModel, Fini_CGameModel_SirenModel, &g_SirenModel, CGameModel_ctor, 0)
+FINI_CALL(Fini_CGameParticles_SirenParticles, &g_SirenParticles, CGameParticles_Release)
+INIT_OBJECT(Init_CGameParticles_SirenParticles, Fini_CGameParticles_SirenParticles, &g_SirenParticles, CGameParticles_ctor)
+INIT_GVAR_FLOAT(Init_GVar_FXVehicleSiren_DistGrow, &GVar_FXVehicleSiren_DistGrow, "FXVehicleSiren_DistGrow", 0, "Vehicle Police Siren FX Distance for Grow", 1500.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXVehicleSiren_SizeMin, &GVar_FXVehicleSiren_SizeMin, "FXVehicleSiren_SizeMin", 0, "Vehicle Police Siren FX Min Size (Mult)", 3.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXVehicleSiren_SizeMax, &GVar_FXVehicleSiren_SizeMax, "FXVehicleSiren_SizeMax", 0, "Vehicle Police Siren FX Max Size (Mult)", 30.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXVehicleProbeLight_DistGrow, &GVar_FXVehicleProbeLight_DistGrow, "FXVehicleProbeLight_DistGrow", 0, "Vehicle Police Siren FX Distance for Grow", 4000.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXVehicleProbeLight_SizeMin, &GVar_FXVehicleProbeLight_SizeMin, "FXVehicleProbeLight_SizeMin", 0, "Vehicle Police Siren FX Min Size (Mult)", 2.0f)
+INIT_GVAR_FLOAT(Init_GVar_FXVehicleProbeLight_SizeMax, &GVar_FXVehicleProbeLight_SizeMax, "FXVehicleProbeLight_SizeMax", 0, "Vehicle Police Siren FX Max Size (Mult)", 8.0f)
