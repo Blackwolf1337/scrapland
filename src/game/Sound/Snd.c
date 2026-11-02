@@ -212,8 +212,10 @@ int Snd_Init(void) {
 		snd.error = SND_ERR_INIT;
 		return 0;
 	}
-	/* the device of the system, else the null device: no sound, but the channels play on as with a card */
-	int ok = ma_context_init(NULL, 0, NULL, &snd.ctx) == MA_SUCCESS;
+	/* the device of the system, else the null device: no sound, but the channels play on as with a card. The tests
+	 * ask for the null device with SCRAP_SND_NULL=1, so a run never reaches the speakers */
+	const char *quiet = getenv("SCRAP_SND_NULL");
+	int ok = !(quiet && *quiet == '1') && ma_context_init(NULL, 0, NULL, &snd.ctx) == MA_SUCCESS;
 	if (ok && ma_device_init(&snd.ctx, &cfg, &snd.device) != MA_SUCCESS) {
 		ma_context_uninit(&snd.ctx);
 		ok = 0;

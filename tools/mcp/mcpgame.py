@@ -41,6 +41,8 @@ def mcpPoll():
 		f.close()
 	except IOError:
 		data = ''
+	# the line ends of the file as written: no text mode translation on Linux
+	data = string.replace(data, '\r', '')
 	nl = string.find(data, '\n')
 	if nl > 0:
 		try:

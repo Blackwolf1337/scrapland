@@ -7,8 +7,16 @@
 #
 # usage: tools/test/mkgame.sh [main checkout]   (run inside the worktree; default /home/claude/projects/scrapland)
 #        tools/test/mkgame.sh --into <dir> [main checkout]   (<dir>/game and <dir>/prefix)
+#        tools/test/mkgame.sh --native <game dir> [main checkout]   (a game folder for the native Linux build: no
+#                   prefix, and none of the Windows files of Bin)
 root=$(cd "$(dirname "$0")/../.." && pwd)
-if [ "$1" = --into ]; then
+native=
+if [ "$1" = --native ]; then
+	native=$2
+	mkdir -p "$native" && native=$(cd "$native" && pwd) || exit 1
+	root=$native
+	shift 2
+elif [ "$1" = --into ]; then
 	mkdir -p "$2" && root=$(cd "$2" && pwd) || exit 1
 	shift 2
 fi
@@ -19,17 +27,23 @@ if [ "$root" = "$main" ]; then
 fi
 [ -d "$main/game/Bin" ] && [ -d "$main/prefix" ] || { echo "mkgame.sh: no game/ or prefix/ in $main" >&2; exit 1; }
 
-mkdir -p "$root/game/Bin" || exit 1
+g=$root/game
+[ -n "$native" ] && g=$native
+mkdir -p "$g/Bin" || exit 1
 for f in "$main"/game/*; do
 	n=$(basename "$f")
 	case $n in
 	Bin | Scrap.cfg | commonappdata | log.html | logAI.html | sd*) ;;
-	*) ln -sfn "$f" "$root/game/$n" ;;
+	*) ln -sfn "$f" "$g/$n" ;;
 	esac
 done
-cp -a "$main/game/Scrap.cfg" "$root/game/"
-rm -rf "$root/game/commonappdata"
-cp -a "$main/game/commonappdata" "$root/game/"
+cp -a "$main/game/Scrap.cfg" "$g/"
+rm -rf "$g/commonappdata"
+cp -a "$main/game/commonappdata" "$g/"
+if [ -n "$native" ]; then
+	echo "mkgame.sh: native game folder ready in $g"
+	exit 0
+fi
 for f in "$main"/game/Bin/*; do
 	n=$(basename "$f")
 	case $n in
