@@ -2,7 +2,8 @@
 # Runs the native Linux ScrapC (build-linux64/ScrapC) hidden and muted through headless.sh, in a game folder made by
 # tools/test/mkgame.sh --native (default build-linux64/game, the Bin there gets the binary and its FFmpeg libraries
 # fresh from the build at every run). The configuration and the saves go to <game>/xdg-data. Sound: the null device
-# of the mixer (SCRAP_SND_NULL=1) and PulseAudio and PipeWire pointed at sockets that do not exist. The working directory is game/Bin, as for the Windows exe.
+# of the mixer (SCRAP_SND_NULL=1) and PulseAudio and PipeWire pointed at sockets that do not exist. The working
+# directory is game/Bin, as for the Windows exe.
 #
 # usage: tools/test/native.sh [arguments of the game]
 #        NATIVE_LOG   file for the output of the program, default nowhere
