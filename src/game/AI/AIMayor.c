@@ -6,7 +6,7 @@
 #include "scrap/aichar.h"
 #include "scrap/walkcharentity.h"
 
-#define CAIMAYOR_SIZE 0x380
+#define CAIMAYOR_SIZE sizeof(cAIMayor)
 
 void *cAIMayor_ctor(void *mem, cEntity *e, int *arg) {
 	cAIMayor *self = mem;

@@ -28,7 +28,7 @@
 #define VEH_EMPTY GAME_STR(str_Empty)		/* "" */
 #define CGAMEMODEL_CTOR 0x105e60	/* CGameModel_ctor(self, NULL) */
 #define CGAMEMODEL_DTOR 0x20ec10
-#define CAIVEHICLE_SIZE 0x3b0
+#define CAIVEHICLE_SIZE sizeof(cAIVehicle)
 #define CEMBEDDEDFXVEHICLE_SIZE 0x1b0
 
 #define VEH_DEG_PER_RAD_NUM 180.0				/* the doubles at rva 0x3a3718, 0x3a3700 */

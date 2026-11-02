@@ -21,9 +21,9 @@
 #include "scrap/slotcontroller.h"
 
 #define CAIVEHICLE_VFTABLE GAME_VFTABLE(cAIVehicle_vftable)
-#define CAIVEHICLE_SIZE 0x3b0
-#define CAIVEHICLECONTROL_SIZE 0x2b8
-#define CAIVEHICLESHOOT_SIZE 0x184
+#define CAIVEHICLE_SIZE sizeof(cAIVehicle)
+#define CAIVEHICLECONTROL_SIZE sizeof(cAIVehicleControl)
+#define CAIVEHICLESHOOT_SIZE sizeof(cAIVehicleShoot)
 
 /* the external states (SAI.SetStateVehicle, the names of cAIVehicle_StateName) */
 enum {
@@ -174,7 +174,7 @@ SD_OFFSET(cAIVehicle, itemLife, 0x344);
 SD_OFFSET(cAIVehicle, itemAmmo, 0x358);
 SD_OFFSET(cAIVehicle, itemAmmoBest, 0x38c);
 SD_OFFSET(cAIVehicle, unused_3a8, 0x3a8);
-SD_SIZE(cAIVehicle, CAIVEHICLE_SIZE);
+SD_SIZE(cAIVehicle, 0x3b0);
 
 static inline cEntity *AIV_Target(const cAIVehicle *ai) {
 	return ai->base.target.target;

@@ -21,7 +21,7 @@
 #define TYEN_OBJECT "Obj"
 #define COBJENTITY_VFTABLE GAME_VFTABLE(cObjEntity_vftable)
 #define CNETCONTROLLER_VFTABLE GAME_VFTABLE(cNetController_vftable)
-#define COBJENTITY_SIZE 0x228
+#define COBJENTITY_SIZE sizeof(cObjEntity)
 
 /* the flags of the network state */
 #define NETC_FULL 0x01			/* full precision (floats), else packed */
@@ -103,7 +103,7 @@ SD_OFFSET(cObjEntity, onObjSlot, 0x160);
 SD_OFFSET(cObjEntity, move, 0x174);
 SD_OFFSET(cObjEntity, mod, 0x1e4);
 SD_OFFSET(cObjEntity, fx, 0x224);
-SD_SIZE(cObjEntity, COBJENTITY_SIZE);
+SD_SIZE(cObjEntity, 0x228);
 
 /* the sound interface of an object (the weapon and effect sounds by index) */
 

@@ -8,7 +8,7 @@
 #include "scrap/scrap.h"
 #include "scrap/walkcharentity.h"
 
-#define CAIDESKTOP_SIZE 0x380
+#define CAIDESKTOP_SIZE sizeof(cAIDesktop)
 
 void *cAIDesktop_ctor(void *mem, cEntity *e, int *arg) {
 	cAIDesktop *self = mem;

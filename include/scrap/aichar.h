@@ -21,7 +21,7 @@
 #include "scrap/dlist.h"
 
 #define CAICHAR_VFTABLE GAME_VFTABLE(cAIChar_vftable)
-#define CAICHAR_SIZE 0x380
+#define CAICHAR_SIZE sizeof(cAIChar)
 
 /* the external states (SAI.SetStateChar, the names of cAIChar_StateName) */
 enum {
@@ -44,7 +44,7 @@ enum {
  * "DM_NPC_Repos_<zone>_..." of the level by zone. The zone is the name of the action class of a character, a point
  * is taken by linking it to the head at 0x4bc of the character ---- */
 #define CAICHARGROUP_VFTABLE GAME_VFTABLE(cAICharGroup_vftable)
-#define CAICHARGROUP_SIZE 0x68
+#define CAICHARGROUP_SIZE sizeof(cAICharGroup)
 
 /* a point of a zone (0x1c bytes, new[] of the exe with the count before it) */
 typedef struct cAICGPoint {
@@ -103,7 +103,7 @@ struct cAICharGroup {
 	int numZones;			/* 0x64 */
 };
 SD_OFFSET(cAICharGroup, zones, 0x60);
-SD_SIZE(cAICharGroup, CAICHARGROUP_SIZE);
+SD_SIZE(cAICharGroup, 0x68);
 
 /* the constructor and GetReposPos (SAI.GetReposPos) are declared in ai.h */
 cAICGPoint *cAICGPoint_ctor(cAICGPoint *self);

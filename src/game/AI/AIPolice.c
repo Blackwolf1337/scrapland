@@ -6,7 +6,7 @@
 #include "scrap/aichar.h"
 #include "scrap/walkcharentity.h"
 
-#define CAIPOLICE_SIZE 0x380
+#define CAIPOLICE_SIZE sizeof(cAIPolice)
 
 void *cAIPolice_ctor(void *mem, cEntity *e, int *arg) {
 	cAIPolice *self = mem;

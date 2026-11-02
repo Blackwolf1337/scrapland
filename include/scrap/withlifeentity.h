@@ -22,7 +22,7 @@
 #include "scrap/vehicleattack.h"
 
 #define CWITHLIFEENTITY_VFTABLE GAME_VFTABLE(cWithLifeEntity_vftable)
-#define CWITHLIFEENTITY_SIZE 0x3e8
+#define CWITHLIFEENTITY_SIZE sizeof(cWithLifeEntity)
 
 typedef struct cWithLifeEntity {
 	cObjEntity obj;			/* 0x000 */
@@ -60,7 +60,7 @@ SD_OFFSET(cWithLifeEntity, prim, 0x39c);
 SD_OFFSET(cWithLifeEntity, hitSounds, 0x3a8);
 SD_OFFSET(cWithLifeEntity, lifeSounds, 0x3c4);
 SD_OFFSET(cWithLifeEntity, headAnim, 0x3e4);
-SD_SIZE(cWithLifeEntity, CWITHLIFEENTITY_SIZE);
+SD_SIZE(cWithLifeEntity, 0x3e8);
 
 /* cWithLifeEntity::vftable continues the one of cObjEntity; characters, vehicles and missiles continue it */
 typedef struct cWithLifeEntityVtbl {

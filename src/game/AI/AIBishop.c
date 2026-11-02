@@ -9,7 +9,7 @@
 #include "scrap/fxmisc.h"
 #include "scrap/walkcharentity.h"
 
-#define CAIBISHOP_SIZE 0x398
+#define CAIBISHOP_SIZE sizeof(cAIBishop)
 #define BISHOP_BLOCK_TIME 7.5f		/* the way to the target is tested again after it */
 
 void *cAIBishop_ctor(void *mem, cEntity *e, int *arg) {

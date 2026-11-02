@@ -21,7 +21,7 @@ struct cSlotController {
 };
 SD_SIZE(cSlotController, 0x10);
 /* new allocates 0x10 bytes for a cSlotController, 0x14 for a cRndSlotController */
-#define CSLOTCONTROLLER_SIZE 0x10
+#define CSLOTCONTROLLER_SIZE sizeof(cSlotController)
 
 typedef struct cRndSlotController {
 	cSlotController base;			/* 0x00 */

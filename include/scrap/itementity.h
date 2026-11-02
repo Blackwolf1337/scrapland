@@ -14,7 +14,7 @@
 #include "scrap/world.h"
 
 #define CITEMENTITY_VFTABLE GAME_VFTABLE(cItemEntity_vftable)
-#define CITEMENTITY_SIZE 0x398
+#define CITEMENTITY_SIZE sizeof(cItemEntity)
 
 typedef struct cItemEntity {
 	union {
@@ -51,7 +51,7 @@ SD_OFFSET(cItemEntity, takeSound, 0x2c8);
 SD_OFFSET(cItemEntity, taker, 0x34c);
 SD_OFFSET(cItemEntity, radius, 0x360);
 SD_OFFSET(cItemEntity, onTake, 0x370);
-SD_SIZE(cItemEntity, CITEMENTITY_SIZE);
+SD_SIZE(cItemEntity, 0x398);
 
 extern cGVar GVar_FXItemFadeMaxDist;
 #define g_ItemFxDist (GVar_FXItemFadeMaxDist.value.f)		/* the fade effects only nearer (60000) */

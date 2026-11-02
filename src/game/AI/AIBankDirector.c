@@ -7,8 +7,6 @@
 #include "scrap/aichar.h"
 #include "scrap/walkcharentity.h"
 
-#define CAIBANK_SIZE 0x384
-
 void *cAIBankDirector_ctor(void *mem, cEntity *e, int *arg) {
 	cAIBankDirector *self = mem;
 
@@ -22,7 +20,7 @@ cAIBankDirector *cAIBankDirector_Delete(cAIBankDirector *self, byte flags) {
 	self->base.vftable = CAIBANKDIRECTOR_VFTABLE;
 	cAIChar_dtor(&self->base);
 	if (flags & 1) {
-		operator_delete_sized(self, CAIBANK_SIZE);
+		operator_delete_sized(self, sizeof(cAIBankDirector));
 	}
 	return self;
 }

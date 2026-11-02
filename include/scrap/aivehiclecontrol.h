@@ -18,7 +18,7 @@
 #define CAIVEHICLECONTROL_VFTABLE GAME_VFTABLE(cAIVehicleControl_vftable)
 #define CAIVEHICLESHOOT_VFTABLE GAME_VFTABLE(cAIVehicleShootControl_vftable)
 #define CAIVEHICLEGROUP_VFTABLE GAME_VFTABLE(cAIVehicleGroup_vftable)
-#define CAIVEHICLEGROUP_SIZE 0xf4
+#define CAIVEHICLEGROUP_SIZE sizeof(cAIVehicleGroup)
 
 /* the one slot of both controllers */
 typedef struct cAIObjVtbl {

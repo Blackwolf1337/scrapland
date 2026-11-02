@@ -9,7 +9,7 @@
 #include "scrap/fxmisc.h"
 #include "scrap/walkcharentity.h"
 
-#define CAIMESSENGER_SIZE 0x390
+#define CAIMESSENGER_SIZE sizeof(cAIMessenger)
 
 void *cAIMessenger_ctor(void *mem, cEntity *e, int *arg) {
 	cAIChar *self = mem;

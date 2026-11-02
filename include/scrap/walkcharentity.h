@@ -17,7 +17,7 @@
 #include "scrap/withlifeentity.h"
 
 #define CWALKCHARENTITY_VFTABLE GAME_VFTABLE(cWalkCharEntity_vftable)
-#define CWALKCHARENTITY_SIZE 0x574
+#define CWALKCHARENTITY_SIZE sizeof(cWalkCharEntity)
 
 typedef struct cWalkCharEntity {
 	cWithLifeEntity wl;		/* 0x000 */
@@ -86,7 +86,7 @@ SD_OFFSET(cWalkCharEntity, control, 0x4ec);
 SD_OFFSET(cWalkCharEntity, listen, 0x520);
 SD_OFFSET(cWalkCharEntity, victim, 0x534);
 SD_OFFSET(cWalkCharEntity, abortSelect, 0x558);
-SD_SIZE(cWalkCharEntity, CWALKCHARENTITY_SIZE);
+SD_SIZE(cWalkCharEntity, 0x574);
 
 static inline cWalkCharEntity *WChar(const void *e) {
 	return (cWalkCharEntity *)e;

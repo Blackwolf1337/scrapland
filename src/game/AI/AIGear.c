@@ -11,7 +11,7 @@
 #include "scrap/fxmisc.h"
 #include "scrap/walkcharentity.h"
 
-#define CAIGEAR_SIZE 0x390
+#define CAIGEAR_SIZE sizeof(cAIGear)
 #define GEAR_BLOCK_TIME 7.5f		/* the way to the target is tested again after it */
 
 void *cAIGear_ctor(void *mem, cEntity *e, int *arg) {

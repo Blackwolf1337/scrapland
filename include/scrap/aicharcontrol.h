@@ -22,7 +22,7 @@
 #include "scrap/slotcontroller.h"
 #include "scrap/walkcharentity.h"
 
-#define CAICHARCONTROL_SIZE 0x360
+#define CAICHARCONTROL_SIZE sizeof(cAICharControl)
 #define CAICHARCONTROL2D_VFTABLE GAME_VFTABLE(cAICharControl2D_vftable)
 #define CAICHARCONTROL3D_VFTABLE GAME_VFTABLE(cAICharControl3D_vftable)
 
@@ -368,7 +368,7 @@ SD_OFFSET(cAICharControl, routePoint, 0x230);
 SD_OFFSET(cAICharControl, debugSegs, 0x240);
 SD_OFFSET(cAICharControl, debugStrafe, 0x318);
 SD_OFFSET(cAICharControl, debugPath, 0x348);
-SD_SIZE(cAICharControl, CAICHARCONTROL_SIZE);
+SD_SIZE(cAICharControl, 0x360);
 /* the 2D and the 3D control add only vtable slots (both 0x360 bytes, the constructor of cAIChar) */
 typedef cAICharControl cAICharControl2D;
 typedef cAICharControl cAICharControl3D;
@@ -673,8 +673,8 @@ byte cAICharControl3D_TryStrafe(cAICharControl3D *self, int side, cEntity *hitEn
 #define CAICONTROLMESSENGER_VFTABLE GAME_VFTABLE(cAIControlMessenger_vftable)
 #define CAICONTROLNURSE_VFTABLE GAME_VFTABLE(cAIControlNurse_vftable)
 #define CAICONTROLSENTINEL_VFTABLE GAME_VFTABLE(cAIControlSentinel_vftable)
-#define CAICONTROLSHOOT_SIZE 0x384		/* the bishop and the gear */
-#define CAICONTROLSENTINEL_SIZE 0x37c		/* without strafeTime and strafeAng */
+#define CAICONTROLSHOOT_SIZE sizeof(cAIControlShoot)		/* the bishop and the gear */
+#define CAICONTROLSENTINEL_SIZE sizeof(cAIControlSentinel)		/* without strafeTime and strafeAng */
 
 /* the bishop, the gear and the sentinel strafe while a Bishop, a Gear (or a Dtritus) aims at them, or (the sentinel)
  * when they were hit */
@@ -690,7 +690,7 @@ typedef struct cAIControlShoot {
 } cAIControlShoot;
 SD_OFFSET(cAIControlShoot, side, 0x370);
 SD_OFFSET(cAIControlShoot, strafeTime, 0x37c);
-SD_SIZE(cAIControlShoot, CAICONTROLSHOOT_SIZE);
+SD_SIZE(cAIControlShoot, 0x384);
 typedef cAIControlShoot cAIControlBishop;
 typedef cAIControlShoot cAIControlGear;
 
@@ -711,7 +711,7 @@ typedef struct cAIControlSentinel {
 	byte pad_379[3];
 } cAIControlSentinel;
 SD_OFFSET(cAIControlSentinel, side, 0x370);
-SD_SIZE(cAIControlSentinel, CAICONTROLSENTINEL_SIZE);
+SD_SIZE(cAIControlSentinel, 0x37c);
 
 /* the strafe parameters by the target (with an AI or not) */
 extern cGVar GVar_TimeStrafeUnderAttackBishopAI;

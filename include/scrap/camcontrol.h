@@ -22,9 +22,9 @@
 #define CCAMCONTROL_VFTABLE GAME_VFTABLE(cCamControl_vftable)
 #define CCAMPATHENTITY_VFTABLE GAME_VFTABLE(cCamPathEntity_vftable)
 #define CFOLLOWCAMENTITY_VFTABLE GAME_VFTABLE(cFollowCamEntity_vftable)
-#define CCAMCONTROL_SIZE 0x13c
-#define CCAMPATHENTITY_SIZE 0x1758
-#define CFOLLOWCAMENTITY_SIZE 0x244
+#define CCAMCONTROL_SIZE sizeof(cCamControl)
+#define CCAMPATHENTITY_SIZE sizeof(cCamPathEntity)
+#define CFOLLOWCAMENTITY_SIZE sizeof(cFollowCamEntity)
 
 /* the strings of the exe the camera functions hand out or compare */
 #define CAM_CLASSNAME "Cam"
@@ -42,7 +42,7 @@ typedef struct cCamControl {
 SD_OFFSET(cCamControl, cam, 0x7c);
 SD_OFFSET(cCamControl, slot, 0xb8);
 SD_OFFSET(cCamControl, link, 0xbc);
-SD_SIZE(cCamControl, CCAMCONTROL_SIZE);
+SD_SIZE(cCamControl, 0x13c);
 
 /* a point of the path ("NameNN" variables of the CamPath, NN 00 to 32: the index 32 is past the array) */
 typedef struct cCamPathPoint {
@@ -73,7 +73,7 @@ typedef struct cCamPathEntity {
 } cCamPathEntity;
 SD_OFFSET(cCamPathEntity, onEnd, 0x13c);
 SD_OFFSET(cCamPathEntity, points, 0x158);
-SD_SIZE(cCamPathEntity, CCAMPATHENTITY_SIZE);
+SD_SIZE(cCamPathEntity, 0x1758);
 
 typedef struct cFollowCamEntity {
 	cCamControl base;		/* 0x000 */
@@ -113,7 +113,7 @@ SD_OFFSET(cFollowCamEntity, slowFrames, 0x200);
 SD_OFFSET(cFollowCamEntity, camDist, 0x214);
 SD_OFFSET(cFollowCamEntity, vSpeed, 0x22c);
 SD_OFFSET(cFollowCamEntity, onSwitch, 0x230);
-SD_SIZE(cFollowCamEntity, CFOLLOWCAMENTITY_SIZE);
+SD_SIZE(cFollowCamEntity, 0x244);
 
 /* the slots of the camera vtables after the 23 of cEntity */
 typedef struct cCamControlVtbl {

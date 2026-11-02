@@ -29,7 +29,7 @@
 #define APP_CB_LOADINGXBOX ((void (*)(void))(void *)Loading_DrawXbox)
 #define APP_CB_LOADING ((void (*)(void))(void *)Loading_Draw)
 
-#define PSAIMAGE_SIZE 0x44
+#define PSAIMAGE_SIZE sizeof(CPsaImage)
 
 static const vec3_t app_one = { 1.0f, 1.0f, 1.0f };
 

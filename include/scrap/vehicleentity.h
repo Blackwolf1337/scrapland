@@ -20,7 +20,7 @@
 #include "scrap/withlifeentity.h"
 
 #define CVEHICLEENTITY_VFTABLE GAME_VFTABLE(cVehicleEntity_vftable)
-#define CVEHICLEENTITY_SIZE 0x814
+#define CVEHICLEENTITY_SIZE sizeof(cVehicleEntity)
 #define CNETVCONTROLLER_SIZE 0x78	/* allocated with this size, freed with 0x5c (the base class) */
 
 #define VEH_PILOT_ANIMS 5
@@ -141,7 +141,7 @@ SD_OFFSET(cVehicleEntity, target, 0x650);
 SD_OFFSET(cVehicleEntity, autoAim, 0x6d0);
 SD_OFFSET(cVehicleEntity, motors, 0x720);
 SD_OFFSET(cVehicleEntity, effects, 0x7f0);
-SD_SIZE(cVehicleEntity, CVEHICLEENTITY_SIZE);
+SD_SIZE(cVehicleEntity, 0x814);
 
 static inline cVehicleEntity *Veh(cEntity *e) {
 	return (cVehicleEntity *)e;

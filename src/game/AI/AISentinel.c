@@ -6,7 +6,7 @@
 #include "scrap/aichar.h"
 #include "scrap/walkcharentity.h"
 
-#define CAISENTINEL_SIZE 0x380
+#define CAISENTINEL_SIZE sizeof(cAISentinel)
 
 void *cAISentinel_ctor(void *mem, cEntity *e, int *arg) {
 	cAISentinel *self = mem;

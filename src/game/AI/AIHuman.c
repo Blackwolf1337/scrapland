@@ -6,7 +6,7 @@
 #include "scrap/aichar.h"
 #include "scrap/walkcharentity.h"
 
-#define CAIHUMAN_SIZE 0x380
+#define CAIHUMAN_SIZE sizeof(cAIHuman)
 
 void *cAIHuman_ctor(void *mem, cEntity *e, int *arg) {
 	cAIHuman *self = mem;

@@ -15,7 +15,7 @@
 #include "scrap/world.h"
 
 #define CMISSILEENTITY_VFTABLE GAME_VFTABLE(cMissileEntity_vftable)
-#define CMISSILEENTITY_SIZE 0x7e8
+#define CMISSILEENTITY_SIZE sizeof(cMissileEntity)
 
 #define MISSILE_HIT_NONE 0
 #define MISSILE_HIT_HIT 1			/* OnHit when it hits */
@@ -97,7 +97,7 @@ SD_OFFSET(cMissileEntityVtbl, Explode, 0x108);
 static inline const cMissileEntityVtbl *Missile_Vtbl(cMissileEntity *e) {
 	return (const cMissileEntityVtbl *)e->wl.obj.base.vftable;
 }
-SD_SIZE(cMissileEntity, CMISSILEENTITY_SIZE);
+SD_SIZE(cMissileEntity, 0x7e8);
 
 /* the WithLife entities the missiles touched, by name (4 of 0x80) */
 #define g_MissileHits (GAME_ARRAY(char[0x80], g_MissileHits))

@@ -7,7 +7,7 @@
 #include "scrap/aichar.h"
 #include "scrap/walkcharentity.h"
 
-#define CAINURSE_SIZE 0x384
+#define CAINURSE_SIZE sizeof(cAINurse)
 
 void *cAINurse_ctor(void *mem, cEntity *e, int *arg) {
 	cAINurse *self = mem;

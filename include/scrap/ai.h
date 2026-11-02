@@ -141,7 +141,7 @@ void cAI_OnEvent(cAI *self, int ev);
 /* ---- cAIMove (AI/AIMove.cpp, src/game/AI/AIMove.c): the base of cAIChar and cAIVehicle (0x90 bytes, a cAI): the
  * target link, the move of the state, the check of an AI that should move but does not ---- */
 #define CAIMOVE_VFTABLE GAME_VFTABLE(cAIMove_vftable)
-#define CAIMOVE_SIZE 0x90
+#define CAIMOVE_SIZE sizeof(cAIMove)
 
 typedef struct cAIMove cAIMove;
 
@@ -199,7 +199,7 @@ SD_OFFSET(cAIMove, dest, 0x4c);
 SD_OFFSET(cAIMove, center, 0x70);
 SD_OFFSET(cAIMove, trafficPlaced, 0x88);
 SD_OFFSET(cAIMove, stopTime, 0x8c);
-SD_SIZE(cAIMove, CAIMOVE_SIZE);
+SD_SIZE(cAIMove, 0x90);
 
 cAIMove *cAIMove_ctor(cAIMove *self, cEntity *e);
 cAIMove *cAIMove_ctorDefault(cAIMove *self);
@@ -523,7 +523,7 @@ extern cGVar GVar_MaxDistChaseAI;
  * groups, up to 20 entities (a race) and the time since an AI of the group took a group state; the next one may take
  * one when the time reached TimeBetwChangeStateAI ---- */
 #define CAIENTITYGROUP_VFTABLE GAME_VFTABLE(cAIEntityGroup_vftable)
-#define CAIENTITYGROUP_SIZE 0x60
+#define CAIENTITYGROUP_SIZE sizeof(cAIEntityGroup)
 #define CAIENTITYGROUP_MAX 20
 
 typedef struct cAIEntityGroup cAIEntityGroup;
@@ -551,7 +551,7 @@ struct cAIEntityGroup {
 };
 SD_OFFSET(cAIEntityGroup, num, 0x54);
 SD_OFFSET(cAIEntityGroup, changeTime, 0x5c);
-SD_SIZE(cAIEntityGroup, CAIENTITYGROUP_SIZE);
+SD_SIZE(cAIEntityGroup, 0x60);
 
 extern cGVar GVar_TimeBetwChangeStateAI;
 #define g_TimeBetwChangeStateAI (GVar_TimeBetwChangeStateAI.value.f)	/* "TimeBetwChangeStateAI" */
