@@ -134,10 +134,8 @@ typedef int(__stdcall *wsock_wsacleanup_t)(void);
 /* winmm */
 #define exe_timeGetTime Plat_Ticks			/* through SDL */
 
-/* user32: the key state (negative while held) and a modeless dialog */
-typedef int16_t(__stdcall *getasynckeystate_t)(int vk);
+/* user32: a modeless dialog */
 typedef void *(__stdcall *createdialogparam_t)(void *inst, const char *tmpl, void *parent, void *proc, intptr_t param);
-#define exe_GetAsyncKeyState GAME_IMPORT(getasynckeystate_t, GetAsyncKeyState, 4)
 #define exe_CreateDialogParamA GAME_IMPORT(createdialogparam_t, CreateDialogParamA, 20)
 
 /* the application window, the message loop and the console window (src/game/App/) */
@@ -278,13 +276,5 @@ typedef int(__stdcall *getsavefilename_t)(void *ofn);
 #define exe_RegCloseKey GAME_IMPORT(regclosekey_t, RegCloseKey, 4)
 #define exe_SHGetFolderPathA GAME_IMPORT(shgetfolderpath_t, SHGetFolderPathA, 20)
 #define exe_GetSaveFileNameA GAME_IMPORT(getsavefilename_t, GetSaveFileNameA, 4)
-
-/*
- * dinput8: in ScrapC.exe the one of the system folder, which main.c loads at start. ScrapC.exe runs in game/Bin, where
- * dinput8.dll is the hook DLL, which an import of the exe would load.
- */
-typedef int32_t(__stdcall *dinput8create_t)(void *hinst, uint32_t version, const void *iid, void **out, void *outer);
-extern dinput8create_t sd_DirectInput8Create;
-#define exe_DirectInput8Create sd_DirectInput8Create
 
 #endif

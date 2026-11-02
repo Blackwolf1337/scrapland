@@ -1,5 +1,6 @@
 /*
- * Input/PcKeyboard.cpp of the game: the DirectInput keyboard, 256 entries by DIK_ code. See include/scrap/input.h.
+ * Input/PcKeyboard.cpp of the game: the keyboard, 256 entries by DirectInput code (DIK_), the states from the
+ * platform layer. See include/scrap/input.h.
  */
 #include <stdio.h>
 #include <string.h>
@@ -8,13 +9,11 @@
 #include "scrap/console.h"
 #include "scrap/global.h"
 #include "scrap/input.h"
+#include "scrap/platform.h"
 #include "scrap/scrapmain.h"
 #include "scrap/video.h"
 
-#define GUID_SYSKEYBOARD ((const void *)GAME_PTR(GUID_SYSKEYBOARD, 0))
 #define KB_NAME "Kb"
-/* DIDEVICEOBJECTINSTANCEA of the last label, its tszName at 0x20 */
-extern byte g_KeyObjInfo[316];
 extern char g_KeyNameBuf[40];	/* 0x28 bytes */
 
 /* the DIK_ names of the config file (the jump table of the original) */
@@ -86,16 +85,6 @@ cPcKeyboard *cPcKeyboard_Delete(cPcKeyboard *self, byte flags) {
 	return self;
 }
 
-void Keyboard_Acquire(byte on) {
-	exe_IDirectInputDevice8 *d = g_KeyboardDev;
-
-	if (on) {
-		d->lpVtbl->Acquire(d);
-	} else {
-		d->lpVtbl->Unacquire(d);
-	}
-}
-
 /* ESCAPE, GRAVE and F1 keep their bindings; check spares the reserved keys too */
 byte cPcKeyboard_SetEntry(cPcKeyboard *self, int entry, int set, int player, int action, byte check) {
 	if (entry == 0x01 || entry == 0x29 || entry == 0x3b) {
@@ -109,24 +98,13 @@ byte cPcKeyboard_SetEntry(cPcKeyboard *self, int entry, int set, int player, int
 
 /* WM_CHAR: the character moves the cursor of player 0 and is typed */
 void Input_OnChar(int c) {
-	if (!g_KeyboardDev) {
+	if (!g_InputOpen) {
 		return;
 	}
 	char ch = (char)c == '\r' ? '\n' : (char)c;
 	if (cPlayerInput_SetCursorChar(&g_PlayerInput[0], ch)) {
 		cPlayerInput_PressKey(&g_PlayerInput[0], 0);
 		g_PlayerInput[0].active = g_IsXbox != 0;
-	}
-}
-
-void Keyboard_Close(void) {
-	exe_IDirectInputDevice8 *d = g_KeyboardDev;
-
-	if (d) {
-		d->lpVtbl->Unacquire(d);
-		d = g_KeyboardDev;
-		d->lpVtbl->Release(d);
-		g_KeyboardDev = NULL;
 	}
 }
 
@@ -145,35 +123,10 @@ const char *cPcKeyboard_GetEntryName(cPcKeyboard *self, int entry) {
 	return g_KeyNameBuf;
 }
 
-/* the name DirectInput gives the key (keyboard layout and language) */
+/* the name of the key in the keyboard layout (the original asked DirectInput, the names differ) */
 const char *cPcKeyboard_GetEntryLabel(cPcKeyboard *self, int entry) {
-	exe_IDirectInputDevice8 *d = g_KeyboardDev;
-
 	(void)self;
-	*(uint32_t *)g_KeyObjInfo = 0x13c;
-	d->lpVtbl->GetObjectInfo(d, g_KeyObjInfo, entry, 1);	/* DIPH_BYOFFSET */
-	return (const char *)g_KeyObjInfo + 0x20;
-}
-
-int32_t Keyboard_Create(void) {
-	exe_IDirectInput8 *di = g_DInput;
-	int32_t hr = di->lpVtbl->CreateDevice(di, GUID_SYSKEYBOARD, &g_KeyboardDev, NULL);
-
-	if (hr < 0) {
-		return hr;
-	}
-	exe_IDirectInputDevice8 *d = g_KeyboardDev;
-	hr = d->lpVtbl->SetDataFormat(d, GAME_DF_KEYBOARD);
-	if (hr >= 0) {
-		const exe_IDirectInputDevice8Vtbl *vt = g_KeyboardDev->lpVtbl;
-		void *hwnd = App_GetHWnd();
-		hr = vt->SetCooperativeLevel(g_KeyboardDev, hwnd, 0x16);	/* DISCL_NONEXCLUSIVE | FOREGROUND | NOWINKEY */
-		if (hr >= 0) {
-			return 0;
-		}
-	}
-	g_KeyboardDev = NULL;
-	return hr;
+	return Plat_KeyLabel(entry);
 }
 
 void cPcKeyboard_SetDefaults(cPcKeyboard *self) {
@@ -181,11 +134,6 @@ void cPcKeyboard_SetDefaults(cPcKeyboard *self) {
 }
 
 void Keyboard_Init(void) {
-	if (Keyboard_Create() < 0) {
-		Con_Print(0xff, "ERROR: Keyboard not found.", 0);
-		CHECK(0);
-		return;
-	}
 	Con_Printf("Input device: %s initialized.\n", KB_NAME);
 	cPcKeyboard_SetDefaults(g_Keyboard);
 	cAbstractIDevice *d = g_Keyboard;
@@ -204,28 +152,12 @@ void cPcKeyboard_SetGameDefaults(cPcKeyboard *self) {
 	Device_SetEntries(self, kb_gameDefaults, sizeof(kb_gameDefaults) / sizeof(kb_gameDefaults[0]));
 }
 
-/* the key states; a lost device is acquired again */
+/* the key states */
 int32_t Keyboard_Poll(void) {
-	exe_IDirectInputDevice8 *d = g_KeyboardDev;
-	int32_t hr;
-
-	if (!d) {
+	if (!g_InputOpen) {
 		return 0;
 	}
-	do {
-		hr = d->lpVtbl->GetDeviceState(d, 0x100, g_KeyState);
-		if (hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED) {
-			d = g_KeyboardDev;
-			hr = d->lpVtbl->Acquire(d);
-			if (hr < 0) {
-				return hr;
-			}
-		}
-		d = g_KeyboardDev;
-	} while (hr == DIERR_INPUTLOST);
-	if (hr < 0) {
-		return hr;
-	}
+	Plat_KeyStates((byte *)g_KeyState);
 	/* differs from the original on purpose (no blocking waits): the keys of a video are ignored here, not waited out
 	 * in Video_WaitKeysUp */
 	Video_MaskHeldKeys(g_KeyState);

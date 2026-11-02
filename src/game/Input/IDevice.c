@@ -16,7 +16,6 @@
 
 #define EXE_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
 #define DEV_NODE_SIZE sizeof(cInputDevNode)
-#define IID_IDIRECTINPUT8A ((const void *)GAME_PTR(IID_IDIRECTINPUT8A, 0))
 
 /* the scorer state the definition of a key switches to (rva 0x1710f0, Scorer/) */
 void Scorer_SetInputState(int state);
@@ -556,51 +555,37 @@ byte cAbstractIDevice_IsReserved(cAbstractIDevice *self, int entry) {
 	return 0;
 }
 
+byte g_InputOpen;
+
+/* the mouse held (1) or let go (0); the keyboard and the pads need no acquire */
 void Input_ReleaseAll(int arg) {
-	if (g_DInput) {
-		Keyboard_Acquire((byte)arg);
-		Pad_Acquire((byte)arg);
+	if (g_InputOpen) {
 		Mouse_Acquire((byte)arg);
-	}
-}
-
-void DInput_Release(void) {
-	exe_IDirectInput8 *di = g_DInput;
-
-	if (di) {
-		di->lpVtbl->Release(di);
-		g_DInput = NULL;
 	}
 }
 
 void Input_CloseDevices(void) {
 	if (g_pApp->flags & APPF_DEDICATED) {
-		g_DInput = NULL;
+		g_InputOpen = 0;
 		return;
 	}
-	Keyboard_Close();
-	Pad_Close();
-	Mouse_Close();
-	DInput_Release();
+	if (g_InputOpen) {
+		Mouse_Acquire(0);
+	}
+	g_InputOpen = 0;
 	InputDevices_Clear(&g_InputDevices);
 }
 
 void Input_OpenDevices(void) {
 	if (g_pApp->flags & APPF_DEDICATED) {
-		g_DInput = NULL;
+		g_InputOpen = 0;
 		return;
 	}
-	if (!g_DInput) {
-		exe_DirectInput8Create(App_GetHInstance(), 0x800, IID_IDIRECTINPUT8A, (void **)&g_DInput, NULL);
-	}
+	g_InputOpen = 1;
 	Mouse_Init();
 	Pad_Init();
 	Keyboard_Init();
-	if (g_DInput) {
-		Keyboard_Acquire(1);
-		Pad_Acquire(1);
-		Mouse_Acquire(1);
-	}
+	Mouse_Acquire(1);
 }
 
 void InputDevices_Add(cInputDevList *list, cAbstractIDevice **dev) {

@@ -178,8 +178,14 @@ while inpk < 0x100:
 for inpk in (-1, 0x100, 0x12345, -0x7fffffff):
 	check('cPcKeyboard names' + fmt((inpk,)), lambda inpk=inpk: (SDTest.Call('cPcKeyboard_GetEntryName', 'tsii', inpkb, inpk)[0],
 		SDTest.Call('cPcKeyboard_IsReserved', 'tbii', inpkb, inpk)[0]))
+# the labels are the names of the keyboard layout: Wine's DirectInput ones in the reference, SDL's in the current
+# build; only that there is one is printed, and the label of NUMPAD8 in the binding lists is masked
 for inpk in (0x1e, 0x39, 0x01, 0xc8):
-	check('cPcKeyboard_GetEntryLabel' + fmt((inpk,)), lambda inpk=inpk: SDTest.Call('cPcKeyboard_GetEntryLabel', 'tsii', inpkb, inpk)[0])
+	check('cPcKeyboard_GetEntryLabel' + fmt((inpk,)), lambda inpk=inpk: SDTest.Call('cPcKeyboard_GetEntryLabel', 'tsii', inpkb, inpk)[0] != '')
+inpkp8 = SDTest.Call('cPcKeyboard_GetEntryLabel', 'tsii', inpkb, 0x48)[0]
+def inpmasklabel(v):
+	import string
+	return string.replace(repr(v), inpkp8, 'NUMPAD8')
 for inpk in range(14):
 	check('cPcMouse names' + fmt((inpk,)), lambda inpk=inpk: (SDTest.Call('cPcMouse_GetEntryName', 'tsii', inpms, inpk)[0],
 		SDTest.Call('cPcMouse_GetEntryLabel', 'tsii', inpms, inpk)[0], SDTest.Call('cPcMouse_IsReserved', 'tiii', inpms, inpk)[0]))
@@ -258,11 +264,11 @@ for inpv in (('Kb', 'W', inps1), ('Kb', 'W', 'NoSet'), ('Mouse', 'Left', inps0),
 for inpp in (0, 1, 3, 4, -1):
 	for inpv in ((inps0, inpa0), (inps1, inpa1), ('NoSet', inpa0), (inps0, 'NoAct')):
 		for inpc in (0, 1):
-			check('Input_GetDefinedEntry' + fmt((inpp,) + inpv + (inpc,)), lambda inpp=inpp, inpv=inpv, inpc=inpc: (
+			check('Input_GetDefinedEntry' + fmt((inpp,) + inpv + (inpc,)), lambda inpp=inpp, inpv=inpv, inpc=inpc: inpmasklabel((
 				SDTest.Call('Input_GetDefinedEntry', 'sisssi', inpp, inpv[0], inpv[1], 'Kb', inpc)[0],
 				SDTest.Call('Input_GetDefinedEntry', 'sisssi', inpp, inpv[0], inpv[1], 'Pad2', inpc)[0],
 				SDTest.Call('Input_GetDefinedEntry', 'sisssi', inpp, inpv[0], inpv[1], 'None', inpc)[0],
-				SDTest.Call('Input_GetDefinedList', 'iissbii', inpp, inpv[0], inpv[1], '', 0x200, inpc)))
+				SDTest.Call('Input_GetDefinedList', 'iissbii', inpp, inpv[0], inpv[1], '', 0x200, inpc))))
 for inpv in ((0, 0, 9), (0, 1, 2), (1, 1, 5), (5, 0, 0), (0, 3, 2)):
 	check('Input_FindBinding' + fmt(inpv), lambda inpv=inpv: (SDTest.Call('Input_FindBinding', 'siiisi', inpv[0], inpv[1], inpv[2],
 		'Mouse', 0)[0], SDTest.Call('Input_ListBindings', 'iiiibii', inpv[0], inpv[1], inpv[2], '', 0x100, 1)))

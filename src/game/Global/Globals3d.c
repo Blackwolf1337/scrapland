@@ -11,16 +11,10 @@
 #include "scrap/dxutil.h"
 #include "scrap/light.h"
 
-#undef GUID_SYSKEYBOARD
-#undef GUID_SYSMOUSE
-#undef IID_IDIRECTINPUT8A
 #undef LIGHT_RANGE_INF
 #undef g_EngineVersion
 #undef g_ErrPcxFormat
 
-const D3DGuid GUID_SYSKEYBOARD = { .Data1 = 0x6f1d2b61, .Data2 = 54688, .Data3 = 4559, .Data4 = { 191, 199, 68, 69, 83, 84 } };
-const D3DGuid GUID_SYSMOUSE = { .Data1 = 0x6f1d2b60, .Data2 = 54688, .Data3 = 4559, .Data4 = { 191, 199, 68, 69, 83, 84 } };
-const D3DGuid IID_IDIRECTINPUT8A = { .Data1 = 0xbf798030, .Data2 = 18490, .Data3 = 19874, .Data4 = { 170, 153, 93, 100, 237, 54, 151 } };
 const int g_EngineVersion = 5624;
 const uint32_t CD3DApp_DisplayErrorMsg_3d69f8[9] = { 0x6c756f43, 0x6f6e2064, 0x65722074, 0x20746573, 0x20656874, 0x65726944, 0x44337463, 0x76656420, 0x2e656369 };
 const float LIGHT_RANGE_INF = 1.8446e+19f;

@@ -411,16 +411,9 @@ void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut) {
 	}
 	g_SplashTime = exe_timeGetTime();
 	if (wait) {
-		/* the presses before the splash screen do not count */
-		exe_GetAsyncKeyState(VK_ESCAPE);
-		exe_GetAsyncKeyState(VK_SPACE);
-		exe_GetAsyncKeyState(VK_RETURN);
 		uint32_t end = wait + exe_timeGetTime();
 		while (exe_timeGetTime() < end) {
-			short esc = exe_GetAsyncKeyState(VK_ESCAPE);
-			short space = exe_GetAsyncKeyState(VK_SPACE);
-			short enter = exe_GetAsyncKeyState(VK_RETURN);
-			if (enter < 0 || esc < 0 || space < 0) {
+			if (Plat_KeyDown(VK_RETURN) || Plat_KeyDown(VK_ESCAPE) || Plat_KeyDown(VK_SPACE)) {
 				break;
 			}
 			/* differs from the original on purpose (no sleeps): the picture again instead of Sleep(10). The loop

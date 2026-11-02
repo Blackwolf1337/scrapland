@@ -1,8 +1,8 @@
 /*
  * Engine/teclado.cpp and Engine/entrada.cpp of the engine3d: the keyboard state the window messages feed (a byte per
- * scan code, extended keys with bit 7, and a ring of the last 32 characters), and IInput, the mouse and keyboard of
- * the engine through DirectInput (CInputDInput) or the window messages and the cursor (CInputWindows). Only one
- * IInput may exist at a time.
+ * scan code, extended keys with bit 7, and a ring of the last 32 characters), and IInput, the base of the mouse and
+ * keyboard of the engine, of which only the input that reads nothing is made (CEntradaNula). Only one IInput may exist
+ * at a time.
  */
 #ifndef SCRAP_E3DINPUT_H
 #define SCRAP_E3DINPUT_H
@@ -33,16 +33,11 @@ void Keyboard_KeyUp(uint32_t wparam, uint32_t lparam);
 
 /* entrada.cpp */
 #define IINPUT_VFTABLE GAME_VFTABLE(IInput_vftable)
-#define CINPUTDINPUT_VFTABLE GAME_VFTABLE(CInputDInput_vftable)
-#define CINPUTWINDOWS_VFTABLE GAME_VFTABLE(CInputWindows_vftable)
 extern byte g_InputInit;
 /* the mouse axes inverted */
 extern int g_InputInvX;
 extern int g_InputInvY;
 extern int g_InputInvZ;
-/* the cursor position while CInputWindows holds the mouse */
-extern int32_t g_InputCursor[2];	/* [2], the POINT of GetCursorPos */
-#define INPUT_CURSOR_CENTER 100
 
 /* the vftable of IInput */
 enum {
@@ -67,48 +62,8 @@ SD_SIZE(IInput, 0x114);
 /* CEntradaNula: the input that reads nothing (g_Input before the real one), no members of its own */
 typedef IInput CNullInput;
 
-typedef struct CInputDInput {
-	IInput base;
-	void *di;			/* 0x114 IDirectInput8 */
-	void *mouse;			/* 0x118 IDirectInputDevice8 */
-	void *keyboard;			/* 0x11c */
-} CInputDInput;
-SD_SIZE(CInputDInput, 0x120);
-
-typedef struct CInputWindows {
-	IInput base;
-	byte acquired;			/* 0x114 the mouse is held at the center */
-	byte pad_115[3];
-	uint32_t buttons;		/* 0x118 1 left, 2 right, 4 middle from the messages */
-} CInputWindows;
-SD_SIZE(CInputWindows, 0x11c);
-
 IInput *IInput_ctor(IInput *self);
 void IInput_dtor(IInput *self);
 IInput *IInput_Delete(IInput *self, byte flags);
-/* WM_ACTIVATE, the menu loops and the size moves acquire or release the mouse */
-void IInput_WndProc(IInput *self, void *hwnd, uint32_t msg, uint32_t wparam, uint32_t lparam);
-
-CInputDInput *CInputDInput_ctor(CInputDInput *self);
-CInputDInput *CInputDInput_Delete(CInputDInput *self, byte flags);
-int CInputDInput_Init(CInputDInput *self, void *hwnd, void *hinst, byte exclusive);
-int CInputDInput_Release(CInputDInput *self);
-int CInputDInput_ReadMouse(CInputDInput *self, int32_t *out);
-int CInputDInput_ReadKeys(CInputDInput *self);
-int CInputDInput_AcquireMouse(CInputDInput *self, byte on);
-int CInputDInput_AcquireKeys(CInputDInput *self, byte on);
-void CInputDInput_WndProc(CInputDInput *self, void *hwnd, uint32_t msg, uint32_t wparam,
-	uint32_t lparam);
-
-CInputWindows *CInputWindows_ctor(CInputWindows *self);
-CInputWindows *CInputWindows_Delete(CInputWindows *self, byte flags);
-int CInputWindows_Init(CInputWindows *self, void *hwnd, void *hinst, byte exclusive);
-int CInputWindows_Release(CInputWindows *self);
-int CInputWindows_ReadMouse(CInputWindows *self, int32_t *out);
-int CInputWindows_ReadKeys(CInputWindows *self);
-int CInputWindows_AcquireMouse(CInputWindows *self, byte on);
-int CInputWindows_AcquireKeys(CInputWindows *self, byte on);
-void CInputWindows_WndProc(CInputWindows *self, void *hwnd, uint32_t msg, uint32_t wparam,
-	uint32_t lparam);
 
 #endif

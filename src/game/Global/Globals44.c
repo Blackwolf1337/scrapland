@@ -47,7 +47,6 @@
 #undef g_ConCol
 #undef g_ConLine
 #undef g_ConLines
-#undef g_DInput
 #undef g_DefineFunc
 #undef g_DesktopsList
 #undef g_DevCenter
@@ -91,10 +90,8 @@
 #undef g_ItemSyncCount
 #undef g_JunkPointsList
 #undef g_KeyNameBuf
-#undef g_KeyObjInfo
 #undef g_KeyState
 #undef g_Keyboard
-#undef g_KeyboardDev
 #undef g_LangBuffer
 #undef g_LastError
 #undef g_LittlePoliceArrived
@@ -110,7 +107,6 @@
 #undef g_MemStatsContext
 #undef g_MissileHits
 #undef g_Mouse
-#undef g_MouseDev
 #undef g_MouseLabelBuf
 #undef g_MouseNameBuf
 #undef g_MouseState
@@ -1144,16 +1140,12 @@ cInputDevList g_InputDevices;
 cGVar GVar_PauseInactivityTime;
 input_cb_t g_OnDefined;
 float g_InactivityTimer;
-exe_IDirectInput8 *g_DInput;
-exe_IDirectInputDevice8 *g_KeyboardDev;
 cPcKeyboard g_Keyboard;
 char g_KeyState[256];
-byte g_KeyObjInfo[316];
 char g_KeyNameBuf[40];
 cPcMouse g_Mouse;
 cGVar GVar_MouseSensitivityH;
 cGVar GVar_InvertMouse;
-exe_IDirectInputDevice8 *g_MouseDev;
 exe_mouse_state g_MouseState;
 char g_MouseLabelBuf[32];
 char g_MouseNameBuf[32];

@@ -288,63 +288,19 @@ void Input_UpdateDevices(float dt);
 void Input_ResetInactivity(void);
 void Input_SetDefineCallback(void (*f)(void));
 void Input_SetDefineFunc(const char *func);
-void DInput_Release(void);
 void Device_SetEntries(cAbstractIDevice *d, const byte (*t)[3], int n);
 
-/* DirectInput 8 through the vtables, as the exe */
-typedef struct exe_IDirectInputDevice8 exe_IDirectInputDevice8;
-typedef struct exe_IDirectInputDevice8Vtbl {
-	void *QueryInterface;							/* 0x00 */
-	void *AddRef;								/* 0x04 */
-	uint32_t(__stdcall *Release)(exe_IDirectInputDevice8 *self);		/* 0x08 */
-	void *GetCapabilities;							/* 0x0c */
-	void *EnumObjects;							/* 0x10 */
-	void *GetProperty;							/* 0x14 */
-	void *SetProperty;							/* 0x18 */
-	int32_t(__stdcall *Acquire)(exe_IDirectInputDevice8 *self);		/* 0x1c */
-	int32_t(__stdcall *Unacquire)(exe_IDirectInputDevice8 *self);		/* 0x20 */
-	int32_t(__stdcall *GetDeviceState)(exe_IDirectInputDevice8 *self, uint32_t size, void *data);	/* 0x24 */
-	void *GetDeviceData;							/* 0x28 */
-	int32_t(__stdcall *SetDataFormat)(exe_IDirectInputDevice8 *self, const void *format);	/* 0x2c */
-	void *SetEventNotification;						/* 0x30 */
-	int32_t(__stdcall *SetCooperativeLevel)(exe_IDirectInputDevice8 *self, void *hwnd, uint32_t flags);	/* 0x34 */
-	int32_t(__stdcall *GetObjectInfo)(exe_IDirectInputDevice8 *self, void *info, uint32_t obj, uint32_t how);	/* 0x38 */
-} exe_IDirectInputDevice8Vtbl;
-SD_OFFSET(exe_IDirectInputDevice8Vtbl, GetObjectInfo, 0x38);
-struct exe_IDirectInputDevice8 {
-	const exe_IDirectInputDevice8Vtbl *lpVtbl;
-};
-
-typedef struct exe_IDirectInput8 exe_IDirectInput8;
-typedef struct exe_IDirectInput8Vtbl {
-	void *QueryInterface;							/* 0x00 */
-	void *AddRef;								/* 0x04 */
-	uint32_t(__stdcall *Release)(exe_IDirectInput8 *self);			/* 0x08 */
-	int32_t(__stdcall *CreateDevice)(exe_IDirectInput8 *self, const void *guid, exe_IDirectInputDevice8 **dev,
-		void *outer);							/* 0x0c */
-} exe_IDirectInput8Vtbl;
-struct exe_IDirectInput8 {
-	const exe_IDirectInput8Vtbl *lpVtbl;
-};
-
-#define DIERR_INPUTLOST ((int32_t)0x8007001e)
-#define DIERR_NOTACQUIRED ((int32_t)0x8007000c)
-
-extern exe_IDirectInput8 *g_DInput;
+extern byte g_InputOpen;		/* the devices are open (Input_OpenDevices, not on a dedicated server) */
 
 /* Input/PcKeyboard.cpp */
-extern exe_IDirectInputDevice8 *g_KeyboardDev;
 #define g_Keyboard (GAME_ARRAY(cPcKeyboard, g_Keyboard))
 extern char g_KeyState[256];		/* [256] DIK_ */
 cPcKeyboard *cPcKeyboard_ctor(cPcKeyboard *self);
 cPcKeyboard *cPcKeyboard_Delete(cPcKeyboard *self, byte flags);
-void Keyboard_Acquire(byte on);
 byte cPcKeyboard_SetEntry(cPcKeyboard *self, int entry, int set, int player, int action, byte check);
-void Keyboard_Close(void);
 const char *cPcKeyboard_GetName(cPcKeyboard *self);
 const char *cPcKeyboard_GetEntryName(cPcKeyboard *self, int entry);
 const char *cPcKeyboard_GetEntryLabel(cPcKeyboard *self, int entry);
-int32_t Keyboard_Create(void);
 void cPcKeyboard_SetDefaults(cPcKeyboard *self);
 void Keyboard_Init(void);
 void cPcKeyboard_Update(cPcKeyboard *self, float dt);
@@ -359,7 +315,6 @@ extern cGVar GVar_MouseSensitivityH;
 extern cGVar GVar_InvertMouse;
 #define g_InvertMouse (GVar_InvertMouse.value.i)		/* InvertMouse */
 #define g_Mouse (GAME_ARRAY(cPcMouse, g_Mouse))
-extern exe_IDirectInputDevice8 *g_MouseDev;
 /* DIMOUSESTATE */
 typedef struct exe_mouse_state {
 	int32_t x, y, z;		/* 0x0 */
@@ -372,11 +327,9 @@ cPcMouse *cPcMouse_ctor(cPcMouse *self);
 cPcMouse *cPcMouse_Delete(cPcMouse *self, byte flags);
 void Mouse_Acquire(byte on);
 byte cPcMouse_SetEntry(cAbstractIDevice *self, int entry, int set, int player, int action, byte check);
-void Mouse_Close(void);
 const char *cPcMouse_GetName(cAbstractIDevice *self);
 const char *cPcMouse_GetEntryName(cAbstractIDevice *self, int entry);
 const char *cPcMouse_GetEntryLabel(cAbstractIDevice *self, int entry);
-int32_t Mouse_Create(void);
 void cPcMouse_SetDefaults(cAbstractIDevice *self);
 void Mouse_Init(void);
 void cPcMouse_Update(cPcMouse *self, float dt);
@@ -415,10 +368,8 @@ extern cGVar GVar_XBVehicleAsFPS;
 #define g_XBVehicleAsFPS (GVar_XBVehicleAsFPS.value.i)
 cPcPad *cPcPad_ctor(cPcPad *self, int index);
 cPcPad *cPcPad_Delete(cPcPad *self, byte flags);
-void Pad_Acquire(byte on);
 void Pad_DeadZone(float *x, float *y, float dz);
 byte cPcPad_SetEntry(cPcPad *self, int entry, int set, int player, int action, byte check);
-void Pad_Close(void);
 void cPcPad_SetVehicleDefaults(cPcPad *self);
 void cPcPad_SetCharDefaults(cPcPad *self);
 const char *cPcPad_GetName(cPcPad *self);

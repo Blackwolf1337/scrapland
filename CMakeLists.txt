@@ -189,7 +189,7 @@ add_executable(ScrapC WIN32 src/standalone/main.c src/standalone/crt.c src/stand
 	 $<TARGET_OBJECTS:scrapres>)
 # stage 3c1a: the DLLs of the original are imports of ScrapC.exe itself (GAME_IMPORT of include/scrap/game.h). fmod
 # (in game/Bin, next to ScrapC.exe) through an import library made from its .def file in src/standalone, the others
-# through the ones of mingw-w64; dinput8 is no import (main.c loads the system one). Galaxy.dll and steam_api.dll of
+# through the ones of mingw-w64. Galaxy.dll and steam_api.dll of
 # the original are no imports: the C has no GOG or Steam code.
 # ld sorts the import directory by the path of the import library, so the libraries of the game's DLLs are linked as
 # build/implib/<n>-lib<name>.a (dlltool output or a link to the mingw-w64 one), numbered in the order of the
@@ -200,7 +200,7 @@ set(IMPLIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/implib)
 file(MAKE_DIRECTORY ${IMPLIB_DIR})
 set(IMPLIBS)
 set(n 10)
-foreach(dll xinput9_1_0 winmm wsock32 comctl32)
+foreach(dll winmm wsock32 comctl32)
 	string(TOLOWER ${dll} lib)
 	set(implib ${IMPLIB_DIR}/${n}-lib${lib}.a)
 	if(EXISTS ${CMAKE_SOURCE_DIR}/src/standalone/${dll}.def)
@@ -220,8 +220,5 @@ add_custom_target(implibs DEPENDS ${IMPLIBS})
 add_dependencies(ScrapC implibs)
 target_link_libraries(ScrapC PRIVATE scrapcode python152 ${IMPLIBS} ${FFMPEG_LIBS} ${SDL3_DIR}/lib/libSDL3.dll.a kernel32 user32 gdi32 advapi32 shell32 comdlg32
 	ole32)
-# stage 3c1b: the data formats c_dfDIKeyboard and c_dfDIMouse of mingw's libdinput8 and their GUIDs, static data
-# (no import of dinput8.dll), as -l flags
-target_link_libraries(ScrapC PRIVATE -ldinput8 -ldxguid)
 # stage 3c2: the default base of ld with dynamic base (ASLR)
 target_link_options(ScrapC PRIVATE -Wl,--dynamicbase)

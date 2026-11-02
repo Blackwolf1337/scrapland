@@ -1,5 +1,5 @@
 /*
- * Input/PcMouse.cpp of the game: the DirectInput mouse. Entries 0..3 the buttons, 4..7 the two axes (right,
+ * Input/PcMouse.cpp of the game: the mouse, held by the game as DirectInput's exclusive mouse. Entries 0..3 the buttons, 4..7 the two axes (right,
  * left, down, up), 8 and 9 the wheel. See include/scrap/input.h.
  */
 #include <stdio.h>
@@ -9,11 +9,11 @@
 #include "scrap/console.h"
 #include "scrap/global.h"
 #include "scrap/input.h"
+#include "scrap/platform.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapmain.h"
 #include "scrap/weapons.h"
 
-#define GUID_SYSMOUSE ((const void *)GAME_PTR(GUID_SYSMOUSE, 0))
 #define MOUSE_NAME "Mouse"
 extern char g_MouseLabelBuf[32];	/* 0x20 bytes */
 extern char g_MouseNameBuf[32];	/* 0x20 bytes */
@@ -59,13 +59,7 @@ cPcMouse *cPcMouse_Delete(cPcMouse *self, byte flags) {
 }
 
 void Mouse_Acquire(byte on) {
-	exe_IDirectInputDevice8 *d = g_MouseDev;
-
-	if (on) {
-		d->lpVtbl->Acquire(d);
-	} else {
-		d->lpVtbl->Unacquire(d);
-	}
+	Plat_GrabMouse(on);
 }
 
 byte cPcMouse_SetEntry(cAbstractIDevice *self, int entry, int set, int player, int action, byte check) {
@@ -73,17 +67,6 @@ byte cPcMouse_SetEntry(cAbstractIDevice *self, int entry, int set, int player, i
 		return 0;
 	}
 	return cAbstractIDevice_SetEntry(self, entry, set, player, action, 0);
-}
-
-void Mouse_Close(void) {
-	exe_IDirectInputDevice8 *d = g_MouseDev;
-
-	if (d) {
-		d->lpVtbl->Unacquire(d);
-		d = g_MouseDev;
-		d->lpVtbl->Release(d);
-		g_MouseDev = NULL;
-	}
 }
 
 const char *cPcMouse_GetName(cAbstractIDevice *self) {
@@ -120,37 +103,11 @@ const char *cPcMouse_GetEntryLabel(cAbstractIDevice *self, int entry) {
 	return Lang_GetStr(g_MouseLabelBuf);
 }
 
-int32_t Mouse_Create(void) {
-	exe_IDirectInput8 *di = g_DInput;
-	int32_t hr = di->lpVtbl->CreateDevice(di, GUID_SYSMOUSE, &g_MouseDev, NULL);
-
-	if (hr < 0) {
-		return hr;
-	}
-	exe_IDirectInputDevice8 *d = g_MouseDev;
-	hr = d->lpVtbl->SetDataFormat(d, GAME_DF_MOUSE);
-	if (hr >= 0) {
-		const exe_IDirectInputDevice8Vtbl *vt = g_MouseDev->lpVtbl;
-		void *hwnd = App_GetHWnd();
-		hr = vt->SetCooperativeLevel(g_MouseDev, hwnd, 5);	/* DISCL_EXCLUSIVE | DISCL_FOREGROUND */
-		if (hr >= 0) {
-			return 0;
-		}
-	}
-	g_MouseDev = NULL;
-	return hr;
-}
-
 void cPcMouse_SetDefaults(cAbstractIDevice *self) {
 	Device_SetEntries(self, mouse_defaults, sizeof(mouse_defaults) / sizeof(mouse_defaults[0]));
 }
 
 void Mouse_Init(void) {
-	if (Mouse_Create() < 0) {
-		Con_Print(0xff, "ERROR: Mouse not found.", 0);
-		CHECK(0);
-		return;
-	}
 	Con_Printf("Input device: %s initialized.\n", MOUSE_NAME);
 	cPcMouse_SetDefaults(&g_Mouse->base);
 	cAbstractIDevice *d = &g_Mouse->base;
@@ -213,30 +170,22 @@ void cPcMouse_SetGameDefaults(cAbstractIDevice *self) {
 	Device_SetEntries(self, mouse_gameDefaults, sizeof(mouse_gameDefaults) / sizeof(mouse_gameDefaults[0]));
 }
 
-/* the state; a lost device is acquired again; a moved mouse switches the pad helpers of the cameras off */
+/* the state; a mouse let go is held again (DirectInput acquired it again); a moved mouse switches the pad helpers
+ * of the cameras off */
 int32_t Mouse_Poll(void) {
-	exe_IDirectInputDevice8 *d = g_MouseDev;
-	int32_t hr;
-
-	if (!d) {
+	if (!g_InputOpen) {
 		return 0;
 	}
-	do {
-		hr = d->lpVtbl->GetDeviceState(d, sizeof(exe_mouse_state), &g_MouseState);
-		if (hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED) {
-			d = g_MouseDev;
-			hr = d->lpVtbl->Acquire(d);
-			if (hr < 0) {
-				return hr;
-			}
-		} else if (g_MouseState.x || g_MouseState.y || g_MouseState.z) {
-			g_IsUsingMouse = 1;
-			g_VehicleCenterPadLock = 0.0f;
-			g_WalkCameraCenter = 0.0f;
-		}
-		d = g_MouseDev;
-	} while (hr == DIERR_INPUTLOST);
-	return hr < 0 ? hr : 0;
+	if (!Plat_MouseGrabbed()) {
+		Plat_GrabMouse(1);
+	}
+	Plat_MouseState(&g_MouseState.x, &g_MouseState.y, &g_MouseState.z, (byte *)g_MouseState.buttons);
+	if (g_MouseState.x || g_MouseState.y || g_MouseState.z) {
+		g_IsUsingMouse = 1;
+		g_VehicleCenterPadLock = 0.0f;
+		g_WalkCameraCenter = 0.0f;
+	}
+	return 0;
 }
 
 /* the axes */

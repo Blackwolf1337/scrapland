@@ -24,9 +24,6 @@
 #include "scrap/video.h"
 #include "scrap/win32.h"
 
-typedef uint32_t(__stdcall *xinputGetState_t)(uint32_t user, void *state);
-#define exe_XInputGetState GAME_IMPORT(xinputGetState_t, XInputGetState, 8)
-
 #define VK_ESCAPE 0x1b
 #define VK_SPACE 0x20
 #define VK_RETURN 0xd
@@ -46,7 +43,7 @@ extern int g_VideoPadHeld;
 byte Video_PadPressed(void) {
 	uint32_t state[4] = { 0, 0, 0, 0 };
 
-	if (exe_XInputGetState(0, state)) {
+	if (Plat_PadState(0, state)) {
 		return 0;
 	}
 	if (state[1] & XINPUT_GAMEPAD_A_B) {
@@ -67,8 +64,8 @@ static byte video_hold;
 static uint32_t video_holdEnd;
 
 byte Video_KeysHeld(void) {
-	if (video_hold && (exe_timeGetTime() >= video_holdEnd || (exe_GetAsyncKeyState(VK_ESCAPE) >= 0
-		&& exe_GetAsyncKeyState(VK_SPACE) >= 0 && exe_GetAsyncKeyState(VK_RETURN) >= 0))) {
+	if (video_hold && (exe_timeGetTime() >= video_holdEnd || (!Plat_KeyDown(VK_ESCAPE)
+		&& !Plat_KeyDown(VK_SPACE) && !Plat_KeyDown(VK_RETURN)))) {
 		video_hold = 0;
 	}
 	return video_hold;
@@ -332,8 +329,7 @@ static void Video_StreamStop(byte skipped) {
 
 /* one pass: the keys and the pad, the pictures that are due decoded, the last of them drawn */
 static void Video_StreamStep(void) {
-	if (!Video_KeysHeld() && (exe_GetAsyncKeyState(VK_ESCAPE) || exe_GetAsyncKeyState(VK_SPACE)
-		|| exe_GetAsyncKeyState(VK_RETURN))) {
+	if (!Video_KeysHeld() && (Plat_KeyDown(VK_ESCAPE) || Plat_KeyDown(VK_SPACE) || Plat_KeyDown(VK_RETURN))) {
 		Video_StreamStop(1);
 		return;
 	}

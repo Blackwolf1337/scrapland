@@ -1,5 +1,5 @@
 /*
- * Input/PcPad.cpp of the game: four XInput pads, 0x34 entries each. Entries 0..11 the buttons and triggers,
+ * Input/PcPad.cpp of the game: four pads in the layout of XInput (from the platform layer), 0x34 entries each. Entries 0..11 the buttons and triggers,
  * 0x20..0x2f the half axes of the sticks, 0x30..0x33 the cross. The default bindings use the entry codes of
  * g_PadCodes and the XB* variables of the pad options. See include/scrap/input.h.
  */
@@ -12,15 +12,13 @@
 #include "scrap/global.h"
 #include "scrap/input.h"
 #include "scrap/mathlib.h"
+#include "scrap/platform.h"
 #include "scrap/scrapmain.h"
 #include "scrap/weapons.h"
 #include "scrap/win32.h"
 
 #define PAD_ERROR "ERROR"
 extern char g_PadLabelBuf[32];	/* 0x20 bytes */
-
-typedef uint32_t(__stdcall *xinputgetstate_t)(uint32_t index, exe_xinput_state *state);
-#define exe_XInputGetState GAME_IMPORT(xinputgetstate_t, XInputGetState, 8)
 
 static const char *const pad_labels[0x34] = {
 	[0x00] = "A", [0x01] = "B", [0x02] = "X", [0x03] = "Y", [0x04] = "BLACK", [0x05] = "WHITE", [0x06] = "BACK",
@@ -76,11 +74,6 @@ cPcPad *cPcPad_Delete(cPcPad *self, byte flags) {
 	return self;
 }
 
-/* nothing to acquire with XInput */
-void Pad_Acquire(byte on) {
-	(void)on;
-}
-
 /* the stick inside the dead zone is 0; outside, the length from the dead zone to 1 scaled to 0..1 */
 void Pad_DeadZone(float *x, float *y, float dz) {
 	float len = (float)__builtin_sqrt((double)(*x * *x + *y * *y));
@@ -104,9 +97,6 @@ byte cPcPad_SetEntry(cPcPad *self, int entry, int set, int player, int action, b
 		return 0;
 	}
 	return cAbstractIDevice_SetEntry(&self->base, entry, set, player, action, check);
-}
-
-void Pad_Close(void) {
 }
 
 void cPcPad_SetVehicleDefaults(cPcPad *self) {
@@ -356,7 +346,7 @@ void cPcPad_SetGameDefaults(cPcPad *self) {
 	(void)self;
 }
 
-/* the state of the pad (MainPcPad >= 0: only that one, as pad 0); the XInput result */
+/* the state of the pad (MainPcPad >= 0: only that one, as pad 0); 0, else not connected */
 uint32_t Pad_Poll(int index) {
 	int i = index;
 
@@ -368,10 +358,10 @@ uint32_t Pad_Poll(int index) {
 	}
 	exe_xinput_state *st = &g_PcPads[i].state;
 	memset(st, 0, sizeof(*st));
-	if (g_PadForeground && exe_GetForegroundWindow() != App_GetHWnd()) {
+	if (g_PadForeground && !Plat_HasFocus()) {
 		return 0;
 	}
-	uint32_t r = exe_XInputGetState(index, st);
+	uint32_t r = Plat_PadState(index, st);
 	if (i == 0 && r) {
 		g_PCPadConnected = 0;
 	}

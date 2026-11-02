@@ -224,17 +224,7 @@ CGameCamera *Camera_GetCurrent(void) {
 }
 
 byte Keys_SkipPressed(void) {
-	byte any = 0;
-	if (exe_GetAsyncKeyState(VK_ESCAPE) < 0) {
-		any = 1;
-	}
-	if (exe_GetAsyncKeyState(VK_SPACE) < 0) {
-		any = 1;
-	}
-	if (exe_GetAsyncKeyState(VK_RETURN) < 0) {
-		any = 1;
-	}
-	return any;
+	return Plat_KeyDown(VK_ESCAPE) || Plat_KeyDown(VK_SPACE) || Plat_KeyDown(VK_RETURN);
 }
 
 int Format_Bpp(int fmt) {
@@ -830,11 +820,11 @@ byte Engine_DebugKeys(void) {
 		Camera_SetCurrent(g_ViewerCamera);
 		ViewerCamera_Move(g_ViewerCamera);
 	}
-	if (exe_GetAsyncKeyState(VK_CONTROL) < 0) {
+	if (Plat_KeyDown(VK_CONTROL)) {
 		return 1;
 	}
-	byte shift = exe_GetAsyncKeyState(VK_SHIFT) < 0;
-	if (shift && exe_GetAsyncKeyState(VK_F8) < 0) {
+	byte shift = Plat_KeyDown(VK_SHIFT);
+	if (shift && Plat_KeyDown(VK_F8)) {
 		Engine_ResetTextures();
 		Con_Verbosef("Textures reloaded\n");
 	}

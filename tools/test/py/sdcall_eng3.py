@@ -1,5 +1,5 @@
 # engine3d leftovers 0x29c000..0x2b2000 (execfile'd at the end of sdcall.py, Python 1.5.2): the string members, the
-# blend table, the keyboard state and the IInput classes on objects made here, the frame lock, the 2D lists and
+# blend table, the keyboard state and the IInput base on an object made here, the frame lock, the 2D lists and
 # backgrounds, the mesh view, the lens flare list, the gamma ramp and the shader modes through the D3D log, the texture
 # effects on a 128x128 bitmap of the packs, the animation constructors and the camera methods. Every engine variable
 # that is changed is put back. Pointers are printed as == or != 0, never as addresses.
@@ -153,46 +153,6 @@ def en3ent(e, size):
 	return (en3ri(e) - 0x400000, en3hash(e + 4, 0x110 / 4, 1), en3bytes(e + 0x10, 4), en3ints(e + 4, 3),
 		SDTest.Peek('g_InputInit', 'b'))
 if 1:
-	en3w = en3new(0x11c)
-	check('CInputWindows_ctor', lambda w=en3w: (SDTest.Call('CInputWindows_ctor', 'tii', w)[0] == w, en3ent(w, 0x11c),
-		en3rb(w + 0x114), en3ri(w + 0x118)))
-	for en3msg in ((0x201, 0), (0x204, 0), (0x207, 0), (0x202, 0), (0x203, 0), (0x206, 5), (0x205, 0), (0x208, 0),
-			(0x204, 1), (0x100, 0)):
-		check('CInputWindows_WndProc' + fmt(en3msg), lambda w=en3w, m=en3msg: (SDTest.Call('CInputWindows_WndProc', 'tviiiii', w,
-			0, m[0], m[1], 0), en3ri(w + 0x118)))
-	en3wi(en3w + 0x118, 7)
-	check('CInputWindows_ReadMouse off', lambda w=en3w: (SDTest.Call('CInputWindows_ReadMouse', 'tiii', w, 0)[0], en3ints(w + 4, 4)))
-	check('CInputWindows_ReadKeys off', lambda w=en3w: SDTest.Call('CInputWindows_ReadKeys', 'tii', w)[0])
-	en3k6 = en3ints(symva('g_KeyboardKeys'), 64)
-	for en3i in range(64):
-		en3gs(sym('g_KeyboardKeys') + 4 * en3i, (en3i * 0x01020304) & 0x01010001)
-	en3wb(en3w + 0x114, 1)
-	check('CInputWindows_ReadKeys', lambda w=en3w: (SDTest.Call('CInputWindows_ReadKeys', 'tii', w)[0], en3hash(w + 0x14, 64, 1),
-		en3bytes(w + 0x14, 8)))
-	for en3i in range(64):
-		en3gs(sym('g_KeyboardKeys') + 4 * en3i, en3k6[en3i])
-	en3wb(en3w + 0x114, 0)
-	check('CInputWindows_AcquireKeys', lambda w=en3w: (SDTest.Call('CInputWindows_AcquireKeys', 'tiii', w, 1)[0],
-		SDTest.Call('CInputWindows_AcquireKeys', 'tiii', w, 0)[0]))
-	check('CInputWindows_Init', lambda w=en3w: SDTest.Call('CInputWindows_Init', 'tiiiii', w, 0, 0, 1)[0])
-	check('CInputWindows_Release', lambda w=en3w: SDTest.Call('CInputWindows_Release', 'tii', w)[0])
-	check('CInputWindows_Delete', lambda w=en3w: (SDTest.Call('CInputWindows_Delete', 'tiii', w, 1)[0] == w,
-		SDTest.Peek('g_InputInit', 'b')))
-	en3d = en3new(0x120)
-	check('CInputDInput_ctor', lambda d=en3d: (SDTest.Call('CInputDInput_ctor', 'tii', d)[0] == d, en3ent(d, 0x120),
-		en3ints(d + 0x114, 3)))
-	check('CInputDInput_AcquireMouse', lambda d=en3d: (SDTest.Call('CInputDInput_AcquireMouse', 'tiii', d, 1)[0],
-		SDTest.Call('CInputDInput_AcquireMouse', 'tiii', d, 0)[0]))
-	check('CInputDInput_AcquireKeys', lambda d=en3d: (SDTest.Call('CInputDInput_AcquireKeys', 'tiii', d, 1)[0],
-		SDTest.Call('CInputDInput_AcquireKeys', 'tiii', d, 0)[0]))
-	check('CInputDInput_ReadMouse', lambda d=en3d: (SDTest.Call('CInputDInput_ReadMouse', 'tiii', d, 0)[0], en3ints(d + 4, 4)))
-	check('CInputDInput_ReadKeys', lambda d=en3d: SDTest.Call('CInputDInput_ReadKeys', 'tii', d)[0])
-	for en3msg in ((6, 1), (6, 0x10001), (6, 0), (0x211, 0), (0x212, 0), (0x231, 0), (0x232, 0), (0x210, 0), (0x201, 0)):
-		check('CInputDInput_WndProc' + fmt(en3msg), lambda d=en3d, m=en3msg: (SDTest.Call('CInputDInput_WndProc', 'tviiiii', d,
-			0, m[0], m[1], 0), en3ints(d + 0x114, 3)))
-	check('CInputDInput_Release', lambda d=en3d: (SDTest.Call('CInputDInput_Release', 'tii', d)[0], en3ints(d + 0x114, 3)))
-	check('CInputDInput_Delete', lambda d=en3d: (SDTest.Call('CInputDInput_Delete', 'tiii', d, 1)[0] == d,
-		SDTest.Peek('g_InputInit', 'b')))
 	en3e = en3new(0x114)
 	check('IInput_ctor', lambda e=en3e: (SDTest.Call('IInput_ctor', 'tii', e)[0] == e, en3ent(e, 0x114)))
 	check('IInput_dtor', lambda e=en3e: (SDTest.Call('IInput_dtor', 'tvi', e), en3ri(e) - 0x400000,

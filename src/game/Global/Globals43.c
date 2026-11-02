@@ -305,7 +305,6 @@ SD_SYM(str_PyMethod_SWeap_SetSWeap);
 #undef g_GroundScale
 #undef g_GroundTrisPerNode
 #undef g_IllumSmooth
-#undef g_InputCursor
 #undef g_LexCh
 #undef g_LightmapOp
 #undef g_LmapInfo2
@@ -1223,7 +1222,6 @@ BlendModeEntry g_BlendModeTable[7] = {
 	{ .mode = 6, .src = 2, .dst = 6 },
 };
 int g_FileErr = -1;
-int32_t g_InputCursor[2] = { 100, 100 };
 uint32_t g_BackgroundColor = 0xffffff;
 uint32_t g_BackgroundColorNew = 0xffffff;
 float g_GammaLastRGB = 1.0f;

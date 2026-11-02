@@ -90,22 +90,6 @@ void CGround_NodesVf4(void);
 void CGround_Nop(void);
 void CGround_Read(void);
 void CGround_Write(void);
-void CInputDInput_AcquireKeys(void);
-void CInputDInput_AcquireMouse(void);
-void CInputDInput_Delete(void);
-void CInputDInput_Init(void);
-void CInputDInput_ReadKeys(void);
-void CInputDInput_ReadMouse(void);
-void CInputDInput_Release(void);
-void CInputDInput_WndProc(void);
-void CInputWindows_AcquireKeys(void);
-void CInputWindows_AcquireMouse(void);
-void CInputWindows_Delete(void);
-void CInputWindows_Init(void);
-void CInputWindows_ReadKeys(void);
-void CInputWindows_ReadMouse(void);
-void CInputWindows_Release(void);
-void CInputWindows_WndProc(void);
 void CLight_Delete(void);
 void CLight_Hide(void);
 void CLight_Read(void);
@@ -294,7 +278,6 @@ void FXMisc_Nop(void);
 void IFXTexture_Delete(void);
 void IFXTexture_GetTexture(void);
 void IInput_Delete(void);
-void IInput_WndProc(void);
 void INodeFX_Delete(void);
 void INodeFX_Type(void);
 void IObject3D_Delete(void);
@@ -7856,31 +7839,7 @@ void (*const IInput_vftable[8])(void) = {
 	crt_purecall,	/* 0x10 0x31951a */
 	crt_purecall,	/* 0x14 0x31951a */
 	crt_purecall,	/* 0x18 0x31951a */
-	IInput_WndProc,	/* 0x1c 0x2a3b90 */
-};
-
-/* .?AVCEntradaDInput@@ */
-void (*const CInputDInput_vftable[8])(void) = {
-	CInputDInput_Delete,	/* 0x00 0x2a3a50 */
-	CInputDInput_Init,	/* 0x04 0x2a3cf0 */
-	CInputDInput_Release,	/* 0x08 0x2a3fc0 */
-	CInputDInput_ReadMouse,	/* 0x0c 0x2a3dc0 */
-	CInputDInput_ReadKeys,	/* 0x10 0x2a3f30 */
-	CInputDInput_AcquireMouse,	/* 0x14 0x2a3c30 */
-	CInputDInput_AcquireKeys,	/* 0x18 0x2a3cb0 */
-	CInputDInput_WndProc,	/* 0x1c 0x2a3ae0 */
-};
-
-/* .?AVCEntradaWindows@@ */
-void (*const CInputWindows_vftable[8])(void) = {
-	CInputWindows_Delete,	/* 0x00 0x2a3a80 */
-	CInputWindows_Init,	/* 0x04 0x2a3db0 */
-	CInputWindows_Release,	/* 0x08 0x2a4030 */
-	CInputWindows_ReadMouse,	/* 0x0c 0x2a3e90 */
-	CInputWindows_ReadKeys,	/* 0x10 0x2a3f90 */
-	CInputWindows_AcquireMouse,	/* 0x14 0x2a3c60 */
-	CInputWindows_AcquireKeys,	/* 0x18 0x2a3ce0 */
-	CInputWindows_WndProc,	/* 0x1c 0x2a3af0 */
+	crt_purecall,	/* 0x1c 0x2a3b90 */
 };
 
 /* .?AVIFXTextura@@ */

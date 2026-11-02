@@ -2,8 +2,7 @@
  * The platform layer on SDL3, see include/scrap/platform.h. The events go straight to the game: the window events to
  * the application and the engine (what WM_ACTIVATEAPP, WM_ACTIVATE, WM_SIZE and WM_EXITSIZEMOVE did in the window
  * procedures), the keys and the text to the keyboard of the engine and the console (WM_KEYDOWN, WM_KEYUP, WM_CHAR),
- * and the activation and the mouse buttons to the input as the messages it still reads (until the input is on SDL
- * too). The hotkeys of the accelerator table of the original stay: Shift+Esc quits, F12 starts the tiled screenshot,
+ * and the mouse motion and the pads to the input state the devices of the game read. The hotkeys of the accelerator table of the original stay: Shift+Esc quits, F12 starts the tiled screenshot,
  * Ctrl+Shift+Alt+Enter switches fullscreen.
  */
 #include <string.h>
@@ -14,30 +13,23 @@
 #include "scrap/app.h"
 #include "scrap/console.h"
 #include "scrap/dxutil.h"
-#include "scrap/e3dinput.h"
+#include "scrap/input.h"
 #include "scrap/platform.h"
 #include "scrap/rdev.h"
 #include "scrap/scrapmain.h"
 #include "scrap/scrapworld.h"
 
-/* the messages the input classes still read (their WndProc, vtable slot 7 of g_Input) */
-#define WM_ACTIVATE 0x6
-#define WM_LBUTTONDOWN 0x201
-#define WM_LBUTTONUP 0x202
-#define WM_RBUTTONDOWN 0x204
-#define WM_RBUTTONUP 0x205
-#define WM_MBUTTONDOWN 0x207
-#define WM_MBUTTONUP 0x208
-#define WM_ENTERSIZEMOVE 0x231
-#define WM_EXITSIZEMOVE 0x232
-
-extern void *g_Input;
+#define PLAT_PADS 4
+#define PLAT_NOTCONNECTED 0x48f		/* ERROR_DEVICE_NOT_CONNECTED of XInputGetState */
 
 static struct {
 	SDL_Window *window;
 	byte fullscreen;
 	uint64_t start;
 	int clientW, clientH;		/* of the last resize handled */
+	float mouseX, mouseY, wheel;	/* the motion not read yet */
+	SDL_Gamepad *pads[PLAT_PADS];
+	exe_xinput_state padLast[PLAT_PADS];	/* for the packet number */
 } plat;
 
 /* ---- the keys: SDL scancode to the DirectInput code (the scan code, bit 7 for the extended keys) and the VK ---- */
@@ -106,6 +98,12 @@ int Plat_Init(void) {
 }
 
 void Plat_Shutdown(void) {
+	for (int i = 0; i < PLAT_PADS; i++) {
+		if (plat.pads[i]) {
+			SDL_CloseGamepad(plat.pads[i]);
+			plat.pads[i] = NULL;
+		}
+	}
 	if (plat.window) {
 		SDL_DestroyWindow(plat.window);
 		plat.window = NULL;
@@ -187,15 +185,142 @@ void Plat_ShowCursor(byte on) {
 	}
 }
 
-/* ---- the events ---- */
+/* ---- the input ---- */
 
-/* a message for the input (its WndProc, vtable slot 7) */
-static void Plat_InputMessage(uint32_t msg, uint32_t wparam) {
-	if (g_Input) {
-		((void (*)(void *, void *, uint32_t, uintptr_t, intptr_t))(*(void ***)g_Input)[7])(g_Input,
-			Plat_NativeWindow(), msg, wparam, 0);
+void Plat_KeyStates(byte *keys) {
+	int n = 0;
+	const bool *down = SDL_GetKeyboardState(&n);
+
+	memset(keys, 0, 256);
+	for (int sc = 0; sc < n && sc < SDL_SCANCODE_COUNT; sc++) {
+		if (down[sc] && plat_keys[sc].dik) {
+			keys[plat_keys[sc].dik] = 0x80;
+		}
 	}
 }
+
+const char *Plat_KeyLabel(int dik) {
+	static char label[64];
+
+	label[0] = 0;
+	for (int sc = 0; sc < SDL_SCANCODE_COUNT; sc++) {
+		if (dik && plat_keys[sc].dik == dik) {
+			SDL_strlcpy(label, SDL_GetKeyName(SDL_GetKeyFromScancode((SDL_Scancode)sc, SDL_KMOD_NONE, false)),
+				sizeof(label));
+			break;
+		}
+	}
+	return label;
+}
+
+byte Plat_KeyDown(int vk) {
+	int n = 0;
+
+	SDL_PumpEvents();
+	const bool *down = SDL_GetKeyboardState(&n);
+	for (int sc = 0; sc < n && sc < SDL_SCANCODE_COUNT; sc++) {
+		if (down[sc] && plat_keys[sc].vk == vk) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+void Plat_GrabMouse(byte on) {
+	if (plat.window) {
+		SDL_SetWindowRelativeMouseMode(plat.window, on && Plat_HasFocus());
+	}
+}
+
+byte Plat_MouseGrabbed(void) {
+	return plat.window && SDL_GetWindowRelativeMouseMode(plat.window);
+}
+
+void Plat_MouseState(int32_t *dx, int32_t *dy, int32_t *dz, byte *buttons) {
+	SDL_MouseButtonFlags b = SDL_GetMouseState(NULL, NULL);
+
+	*dx = (int32_t)plat.mouseX;
+	*dy = (int32_t)plat.mouseY;
+	*dz = (int32_t)(plat.wheel * 120.0f);
+	plat.mouseX -= (float)*dx;
+	plat.mouseY -= (float)*dy;
+	plat.wheel -= (float)*dz / 120.0f;
+	buttons[0] = b & SDL_BUTTON_LMASK ? 0x80 : 0;
+	buttons[1] = b & SDL_BUTTON_RMASK ? 0x80 : 0;
+	buttons[2] = b & SDL_BUTTON_MMASK ? 0x80 : 0;
+	buttons[3] = b & SDL_BUTTON_X1MASK ? 0x80 : 0;
+}
+
+/* a stick axis of SDL (down positive) as XInput's (up positive) */
+static int16_t Plat_AxisUp(Sint16 v) {
+	return (int16_t)(v == -32768 ? 32767 : -v);
+}
+
+uint32_t Plat_PadState(int i, void *state) {
+	static const struct {
+		SDL_GamepadButton b;
+		uint16_t x;
+	} map[] = {
+		{ SDL_GAMEPAD_BUTTON_DPAD_UP, 0x1 }, { SDL_GAMEPAD_BUTTON_DPAD_DOWN, 0x2 },
+		{ SDL_GAMEPAD_BUTTON_DPAD_LEFT, 0x4 }, { SDL_GAMEPAD_BUTTON_DPAD_RIGHT, 0x8 },
+		{ SDL_GAMEPAD_BUTTON_START, 0x10 }, { SDL_GAMEPAD_BUTTON_BACK, 0x20 },
+		{ SDL_GAMEPAD_BUTTON_LEFT_STICK, 0x40 }, { SDL_GAMEPAD_BUTTON_RIGHT_STICK, 0x80 },
+		{ SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, 0x100 }, { SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, 0x200 },
+		{ SDL_GAMEPAD_BUTTON_SOUTH, 0x1000 }, { SDL_GAMEPAD_BUTTON_EAST, 0x2000 },
+		{ SDL_GAMEPAD_BUTTON_WEST, 0x4000 }, { SDL_GAMEPAD_BUTTON_NORTH, 0x8000 },
+	};
+	exe_xinput_state *st = state;
+	SDL_Gamepad *g = i >= 0 && i < PLAT_PADS ? plat.pads[i] : NULL;
+
+	memset(st, 0, sizeof(*st));
+	if (!g) {
+		return PLAT_NOTCONNECTED;
+	}
+	for (size_t k = 0; k < sizeof(map) / sizeof(map[0]); k++) {
+		if (SDL_GetGamepadButton(g, map[k].b)) {
+			st->buttons |= map[k].x;
+		}
+	}
+	st->leftTrigger = (byte)(SDL_GetGamepadAxis(g, SDL_GAMEPAD_AXIS_LEFT_TRIGGER) * 255 / 32767);
+	st->rightTrigger = (byte)(SDL_GetGamepadAxis(g, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) * 255 / 32767);
+	st->thumbLX = SDL_GetGamepadAxis(g, SDL_GAMEPAD_AXIS_LEFTX);
+	st->thumbLY = Plat_AxisUp(SDL_GetGamepadAxis(g, SDL_GAMEPAD_AXIS_LEFTY));
+	st->thumbRX = SDL_GetGamepadAxis(g, SDL_GAMEPAD_AXIS_RIGHTX);
+	st->thumbRY = Plat_AxisUp(SDL_GetGamepadAxis(g, SDL_GAMEPAD_AXIS_RIGHTY));
+	/* the packet number changes with the state, as XInput's */
+	exe_xinput_state *last = &plat.padLast[i];
+	st->packet = last->packet;
+	if (memcmp(st, last, sizeof(*st))) {
+		st->packet++;
+		*last = *st;
+	}
+	return 0;
+}
+
+byte Plat_HasFocus(void) {
+	return plat.window && (SDL_GetWindowFlags(plat.window) & SDL_WINDOW_INPUT_FOCUS);
+}
+
+/* a pad connected: the first free slot; one removed: its slot free */
+static void Plat_PadAdded(SDL_JoystickID id) {
+	for (int i = 0; i < PLAT_PADS; i++) {
+		if (!plat.pads[i]) {
+			plat.pads[i] = SDL_OpenGamepad(id);
+			return;
+		}
+	}
+}
+
+static void Plat_PadRemoved(SDL_JoystickID id) {
+	for (int i = 0; i < PLAT_PADS; i++) {
+		if (plat.pads[i] && SDL_GetGamepadID(plat.pads[i]) == id) {
+			SDL_CloseGamepad(plat.pads[i]);
+			plat.pads[i] = NULL;
+		}
+	}
+}
+
+/* ---- the events ---- */
 
 /* the focus: the input released, the app (in)active (without the focus only with InactiveBackgroundApp), the
  * engine told (WM_ACTIVATE and WM_ACTIVATEAPP of the original) */
@@ -203,7 +328,6 @@ static void Plat_Focus(byte on) {
 	if (on) {
 		Input_ReleaseAll(0);
 	}
-	Plat_InputMessage(WM_ACTIVATE, on);
 	if (g_pApp && (g_InactiveBackgroundApp || on)) {
 		g_pApp->active = on;
 	}
@@ -348,17 +472,18 @@ static void Plat_Event(const SDL_Event *ev, byte *quit) {
 	case SDL_EVENT_TEXT_INPUT:
 		Plat_Text(ev->text.text);
 		break;
-	case SDL_EVENT_MOUSE_BUTTON_DOWN:
-	case SDL_EVENT_MOUSE_BUTTON_UP: {
-		static const uint32_t down[3] = { WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN };
-		static const uint32_t up[3] = { WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP };
-		int b = ev->button.button - SDL_BUTTON_LEFT;
-		if (b >= 0 && b < 3) {
-			Plat_InputMessage(ev->type == SDL_EVENT_MOUSE_BUTTON_DOWN ? down[b] : up[b], 0);
-		}
+	case SDL_EVENT_MOUSE_WHEEL:
+		plat.wheel += ev->wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -ev->wheel.y : ev->wheel.y;
 		break;
-	}
+	case SDL_EVENT_GAMEPAD_ADDED:
+		Plat_PadAdded(ev->gdevice.which);
+		break;
+	case SDL_EVENT_GAMEPAD_REMOVED:
+		Plat_PadRemoved(ev->gdevice.which);
+		break;
 	case SDL_EVENT_MOUSE_MOTION:
+		plat.mouseX += ev->motion.xrel;
+		plat.mouseY += ev->motion.yrel;
 		if (g_Engine && g_Engine->active && g_Engine->ready && g_Engine->device) {
 			Rd_DevSetCursorPosition(g_Engine->device, (int)ev->motion.x, (int)ev->motion.y, 0);
 		}

@@ -2208,7 +2208,7 @@ byte BspTxf_Check(BspTxf *self, int i, byte def, byte nl) {
 	char buf[0x104];
 	const char *lf = nl ? "\n" : "";
 
-	if (exe_GetAsyncKeyState(0x1b) < 0 && exe_GetAsyncKeyState(0x10) < 0 &&
+	if (Plat_KeyDown(0x1b) && Plat_KeyDown(0x10) &&
 		exe_MessageBoxA(NULL, "Cancel map compilation?", "Message", 0x2034) == 6) {
 		crt_exit(-1);
 	}

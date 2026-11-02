@@ -1574,7 +1574,7 @@ byte Scorer_DrawConsole(void) {
 		if ((Input_GetActionSet() == 0 && cInputAction_Released(Console_Action(0, CONSOLE_ACT_KEY), 0))
 			|| (Input_GetActionSet() == 3 && cInputAction_Released(Console_Action(3, CONSOLE_ACT_KEY), 0))
 			|| (Input_GetActionSet() == 1 && cInputAction_Released(Console_Action(1, CONSOLE_ACT_KEY), 0))) {
-			if (exe_GetAsyncKeyState(CONSOLE_VK_CONTROL) < 0) {
+			if (Plat_KeyDown(CONSOLE_VK_CONTROL)) {
 				Scorer_SetConsole(1);
 			}
 		}

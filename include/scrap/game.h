@@ -51,12 +51,6 @@
 		(char *)name; \
 	})
 
-/* the data formats of dinput8.lib that the game passes to SetDataFormat (const void *): c_dfDIKeyboard and c_dfDIMouse
- * of mingw's libdinput8, the same objects as the ones the original linked */
-extern const byte c_dfDIKeyboard[], c_dfDIMouse[];
-#define GAME_DF_KEYBOARD ((const void *)c_dfDIKeyboard)
-#define GAME_DF_MOUSE ((const void *)c_dfDIMouse)
-
 /*
  * A function of a DLL the game imports, as a pointer of type (an lvalue that is read only): the cell of the import
  * address table, which the import library names __imp_<symbol> (the mingw-w64 ones, and for fmod the one of
