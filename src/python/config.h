@@ -40,7 +40,7 @@
 #define COMPILER "[MSC 32 bit (Intel)]"
 #define PYTHONPATH ".\\DLLs;.\\lib;.\\lib\\plat-win;.\\lib\\lib-tk"
 #ifdef _WIN32
-typedef int pid_t;
+#include <sys/types.h>	/* pid_t of mingw-w64 (int on i686, long long on x86_64) */
 #endif
 #define WORD_BIT 32
 #define HAVE_CLOCK

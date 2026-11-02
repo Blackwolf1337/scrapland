@@ -21,9 +21,11 @@ typedef uint8_t byte;
 #define SD_32BIT 0
 #endif
 
-/* the prefix of C symbols in the assembler: an underscore on 32 bit Windows, none in ELF */
-#ifdef _WIN32
+/* the prefix of C symbols in the assembler: an underscore on 32 bit Windows, none on x64 Windows and in ELF */
+#if defined(_WIN32) && defined(__i386__)
 #define SD_CPFX "_"
+#elif defined(_WIN32)
+#define SD_CPFX ""
 #else
 #define SD_CPFX ""
 /* the calling conventions of the Windows build (the callbacks of Windows, COM and the tests' stdcall table); x86_64

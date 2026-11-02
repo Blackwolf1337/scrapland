@@ -52,6 +52,8 @@ def sockets(since=0.0):
 
 
 # the native Linux builds by their exe name
+# the Windows builds by their exe name (the DLLs of FFmpeg and SDL3 from the same folder)
+WIN_BUILDS = {'c': 'build', 'c64': 'build-win64'}
 NATIVE_BUILDS = {'native': 'build-linux', 'native64': 'build-linux64', 'native64asan': 'build-linux64-asan'}
 
 
@@ -113,11 +115,12 @@ class Game:
             if r.returncode:
                 raise RuntimeError('mkgame.sh failed: %s' % (r.stderr or r.stdout))
         binDir = os.path.join(self.game, 'Bin')
-        src = os.path.join(ROOT, 'build', 'ScrapC.exe') if exe == 'c' else REF_EXE
+        build = WIN_BUILDS.get(exe, 'build')
+        src = os.path.join(ROOT, build, 'ScrapC.exe') if exe in WIN_BUILDS else REF_EXE
         if not os.path.isfile(src):
             raise RuntimeError('%s is missing (build first)' % src)
-        shutil.copy2(src, os.path.join(binDir, 'ScrapC.exe' if exe == 'c' else 'ScrapRef.exe'))
-        for d in (os.path.join(ROOT, 'build', 'ffmpeg', 'install', 'bin'), os.path.join(ROOT, 'build', 'sdl3', 'install', 'bin')):
+        shutil.copy2(src, os.path.join(binDir, 'ScrapC.exe' if exe in WIN_BUILDS else 'ScrapRef.exe'))
+        for d in (os.path.join(ROOT, build, 'ffmpeg', 'install', 'bin'), os.path.join(ROOT, build, 'sdl3', 'install', 'bin')):
             if os.path.isdir(d):
                 for n in os.listdir(d):
                     if n.endswith('.dll'):
@@ -134,8 +137,8 @@ class Game:
         if self.running():
             raise RuntimeError('game %s runs already; quit it first' % self.name)
         exe = a.get('exe', 'c')
-        if exe not in ('c', 'ref') and exe not in NATIVE_BUILDS:
-            raise RuntimeError("exe is 'c', 'ref', 'native' or 'native64'")
+        if exe != 'ref' and exe not in WIN_BUILDS and exe not in NATIVE_BUILDS:
+            raise RuntimeError("exe is one of: ref, %s" % ', '.join(list(WIN_BUILDS) + list(NATIVE_BUILDS)))
         self.prepare(exe)
         self.opts = dict(a)
         env = dict(os.environ)
@@ -150,7 +153,7 @@ class Game:
             env['SCRAP_VK_TRACE'] = str(a['trace'])
         env.update({k: str(v) for k, v in (a.get('env') or {}).items()})
         script = 'mcpgame.py'
-        args = [] if exe in NATIVE_BUILDS else ['ScrapC.exe' if exe == 'c' else 'ScrapRef.exe']
+        args = [] if exe in NATIVE_BUILDS else ['ScrapC.exe' if exe in WIN_BUILDS else 'ScrapRef.exe']
         args.append('-fullscreen:0')
         if a.get('map'):
             m = a['map']
@@ -395,7 +398,7 @@ TOOLS = [
     {'name': 'launch', 'description': 'Start a game in its own slot (no window, muted, AMD 610M). Returns at once; '
      'then wait kind=ready.', 'inputSchema': schema({
          'name': NAME,
-         'exe': {'type': 'string', 'enum': ['c', 'ref', 'native', 'native64', 'native64asan'], 'description': 'c: build/ScrapC.exe '
+         'exe': {'type': 'string', 'enum': ['c', 'c64', 'ref', 'native', 'native64', 'native64asan'], 'description': 'c: build/ScrapC.exe, c64: build-win64/ScrapC.exe (x64) '
                  '(default), ref: the frozen reference build-ref-noexact/ScrapC.exe (Direct3D 8 through Wine), native: '
                  'the Linux build build-linux/ScrapC (i686), native64: build-linux64/ScrapC (x86_64), native64asan: '
                  'build-linux64-asan/ScrapC (AddressSanitizer, its report in the log, which=wine)'},
