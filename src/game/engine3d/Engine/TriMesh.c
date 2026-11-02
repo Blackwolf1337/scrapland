@@ -16,7 +16,7 @@ extern const IObject3DVtbl CTriMesh_vftable;
 #define TRIMESH_FLT_MAX 3.4028234663852886e+38f
 
 /* draw the meshes through their D3D mesh */
-#define g_MeshD3DOn GAME_GLOBAL_IN(byte, group_431bac, 1)
+extern byte g_MeshD3DOn;
 /* statistics of the frame */
 
 

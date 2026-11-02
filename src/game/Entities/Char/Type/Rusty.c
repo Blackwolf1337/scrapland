@@ -5,7 +5,7 @@
 #include "scrap/fxelements.h"
 
 extern uint32_t RUSTY_RAMPS[18];		/* [2 * 9], the flash, the smoke */
-#define RUSTY_RAMP_SMOKE (GAME_ARRAY_IN(uint32_t, RUSTY_RAMPS, 36))	/* the second of RUSTY_RAMPS */
+#define RUSTY_RAMP_SMOKE ((&RUSTY_RAMPS[9]))	/* the second of RUSTY_RAMPS */
 extern uint32_t RUSTY_RAMP_DEBRIS[9];	/* [9] */
 #define RUSTY_TWO_PI 6.2831854820251465
 

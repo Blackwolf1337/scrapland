@@ -1963,7 +1963,7 @@ int BspTri_CmpZone(const void *pa, const void *pb) {
 extern int g_BspDebugCnt;
 extern int g_BspDebugSel;		/* the region drawn without links */
 /* the collision cache counters of suelo.cpp: hit, miss, peak */
-extern int g_BspCacheStats[3];	/* [3], the hits, the misses and g_CollisionTestsMax */
+extern uint32_t g_BspCacheStats[3];	/* [3], the hits, the misses and g_CollisionTestsMax */
 
 void Bsp_MatInfo(CMaterial *m) {
 	uint32_t attrib = m->params.attrib;
@@ -2356,7 +2356,7 @@ void Bsp_EndMessage(CBsp *self, int secs) {
 
 /* the map: made from the floor of the world */
 
-#define g_LmapSaveIni GAME_GLOBAL_IN(int, g_BspLodDist, 24)	/* the settings back into the .ini of the map */
+extern int g_LmapSaveIni;	/* the settings back into the .ini of the map */
 
 
 /* the obj3D of a node as its class (the inline cast of objeto3D.h, NULL with a failed CHECK) */

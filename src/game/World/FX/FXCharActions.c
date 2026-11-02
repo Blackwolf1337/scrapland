@@ -4247,7 +4247,7 @@ void cObjElementFXBishopSellLife_Update(cObjElementFX *base, cDebris *d, float d
 			code->spriteIni = sprite;
 			code->spriteEnd = sprite;
 			CGameParticles_SetColorRampOn(code, 1);
-			CGameParticles_SetColorRamp(code, GAME_ARRAY_IN(uint32_t, FXA_SELLLIFE_RAMPS, 36) + (crt_rand() & 1) * 9);
+			CGameParticles_SetColorRamp(code, (&FXA_SELLLIFE_RAMPS[9]) + (crt_rand() & 1) * 9);
 			CGameParticles_Apply(code);
 			CGameParticles_EmitN(code, 1, 0);
 			if (++count > 5) {

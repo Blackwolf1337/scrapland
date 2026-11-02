@@ -286,8 +286,8 @@ extern cGVar GVar_ShowInfoOnSectorError;
 #define g_ShowInfoOnSectorError (GVar_ShowInfoOnSectorError.value.i)	/* gvar */
 extern int g_Gamma2x;		/* the gamma2x of the video settings */
 /* the keys that switch the wire frame: F8 (cleared) with X held */
-#define g_KeyF8 GAME_GLOBAL_IN(byte, g_KeyboardKeys, 50)
-#define g_KeyX GAME_GLOBAL_IN(byte, g_KeyboardKeys, 29)
+#define g_KeyF8 g_KeyboardKeys[50]
+#define g_KeyX g_KeyboardKeys[29]
 extern void *g_StencilRender;	/* the floor drawn again by the stencil shadows */
 extern int g_BspTris;		/* drawn this frame */
 extern int g_BspVerts;
@@ -299,7 +299,7 @@ extern int g_BspSectorErrors;
 extern vec3_t g_BspEyePrev;
 extern float g_BspLodLevel;
 /* the distances of the level of detail of the areas, plain and for large lists */
-extern float g_BspLodDist[7];
+extern float g_BspLodDist[6];
 extern int g_BspLodCount[4];
 extern uint32_t g_BspColors[16];	/* [16], debug colors */
 /* the globals of m3d.ini ([mapa_sombras], read in ScrapEngMain.c, the same definitions) */

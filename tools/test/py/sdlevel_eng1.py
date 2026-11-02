@@ -291,14 +291,14 @@ def en1st():
 		en1fl(symva('g_ShadowLightPos'), 3), en1fl(symva('g_ShadowLightDir'), 3), en1fl(symva('g_ShadowRange'), 1), en1fl(symva('g_ShadowCos'), 1), en1i(symva('g_StencilRender')),
 		en1i(symva('g_RenderClassMask')), en1i(symva('g_RenderFlagMask')), SDTest.Peek('g_RenderFlagNeg', 'b'), en1i(symva('g_RenderPass')), en1i(symva('g_StencilSegs')), en1i(symva('g_StencilInv')),
 		en1i(symva('g_StencilGroups')))
-en1roff = SDTest.Peek('g_RenderOff', 'i')
+en1roff = SDTest.PeekSpan('g_RenderOff', 0, 4)
 for en1v in ((0, 0), (1, 0), (1, 1), (0, 1)):
-	en1poke(symva('g_RenderOff'), (en1roff & ~0xff) | en1v[0])
+	SDTest.PokeSpan('g_RenderOff', 0, (en1roff & ~0xff) | en1v[0], 4)
 	en1poke(symva('g_ShadowsStencil'), en1v[1])
 	for en1on in (0, 1, 7):
 		check('en1 ShadowsStencil_Capture' + fmt((en1v, en1on)), lambda on=en1on: (SDTest.Call('ShadowsStencil_Capture', 'vi', on),
 			en1i(symva('g_StencilCapture')), en1fl(symva('g_StencilMultFrame'), 1)))
-en1poke(symva('g_RenderOff'), en1roff)
+SDTest.PokeSpan('g_RenderOff', 0, en1roff, 4)
 en1luz = en1z(0xcc)
 for en1t in (0x138a, 2, 3):
 	for en1dir in ((0.0, -1.0, 0.0), (3.0, -4.0, 12.0), (0.0, 0.0, 0.0)):

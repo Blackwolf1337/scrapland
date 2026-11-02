@@ -804,10 +804,11 @@ PyObject *SAI_SetInertia(PyObject *self, PyObject *args) {
 }
 
 /* GetOD() : returns the object at rva 0x46797c without a new reference (a folded stub in the original) */
+extern void *g_AppPyOne;
 PyObject *SAI_GetOD(PyObject *self, PyObject *args) {
 	(void)self;
 	(void)args;
-	return GAME_GLOBAL_IN(PyObject *, g_AppPyOne, 0);
+	return (PyObject *)g_AppPyOne;
 }
 
 SD_PY_MODULE(SAI, 0x42a488)

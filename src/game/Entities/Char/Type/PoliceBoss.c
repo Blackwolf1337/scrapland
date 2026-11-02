@@ -160,9 +160,9 @@ void ChType_PoliceBossBrup(cAbstractFile *params) {
 	g_PoliceBossEnt = World_FindEntity(name);
 	CHECK(g_PoliceBossEnt);
 	CHECK(Entity_IsType(g_PoliceBossEnt, TYEN_WALKCHAR));
-	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)ChType_PoliceBossSphereHit);
+	cPy_Function_SetNative(&g_ChTypeSphereFunc, (nativefunc_t)ChType_PoliceBossSphereHit);
 	cWorld_SphereCallF(g_pWorld, 0x10, g_PoliceBossEnt->vftable->GetPos(g_PoliceBossEnt, &tmp),
-		g_PoliceBossActionRadius, g_ChTypeSphereFunc, 0);
+		g_PoliceBossActionRadius, &g_ChTypeSphereFunc, 0);
 }
 
 /* the sphere test of the burp: params a character. A police with a logic that runs no action of priority laughs

@@ -1166,7 +1166,7 @@ extern cGVar GVar_NurseAlertSpeed;
 /* ---- part 4: the taunts, parking zones, ship regeneration, Rusty, the scrapyards, sentinels, Sputnik and the
  * traffic ---- */
 /* the native function of the sphere tests (cWorld_SphereCallF) of the logics */
-#define g_LogicSphereFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0))
+#define g_LogicSphereFunc ((&g_ChTypeSphereFunc))
 
 /* Taunts (between NurseLogic.cpp and Parking.cpp): OnTaunt(ship, race, kind) */
 #define g_OnTaunt (((cPy_Function *)&GVar_OnTaunt.func))

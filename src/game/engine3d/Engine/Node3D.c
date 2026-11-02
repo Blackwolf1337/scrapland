@@ -29,9 +29,10 @@ extern const ObjRefVtbl CNode3D_vftable;
 
 extern cGVar GVar_R_Node3D_Count;
 #define g_Node3DCount (GVar_R_Node3D_Count.value.i)	/* R_Nodo3D_Count */
-#define g_RenderOff GAME_GLOBAL_IN(byte, group_4a8ef8, 0)
-#define g_NodesRendered GAME_GLOBAL_IN(int, g_RenderCounts, 16)
-#define g_NodesUpdated GAME_GLOBAL_IN(int, g_RenderCounts, 20)
+extern byte g_RenderOff;
+extern int g_RenderCounts[10];
+#define g_NodesRendered g_RenderCounts[4]
+#define g_NodesUpdated g_RenderCounts[5]
 /* the pass of the renderer and its filters of the nodes */
 
 /* the engine variables of the nodes (Gvars) */

@@ -164,8 +164,8 @@ void ChType_DtritusHitEvent(cAbstractFile *params) {
 	c.x = p->x + ox;
 	c.y = p->y + oy;
 	c.z = p->z + oz;
-	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)ChType_DtritusKill);
-	cWorld_SphereCallF(g_pWorld, 0x10, &c, 100.0f, g_ChTypeSphereFunc, 0);
+	cPy_Function_SetNative(&g_ChTypeSphereFunc, (nativefunc_t)ChType_DtritusKill);
+	cWorld_SphereCallF(g_pWorld, 0x10, &c, 100.0f, &g_ChTypeSphereFunc, 0);
 }
 
 /* params: D-Tritus, an event, a float: the relax loop again */

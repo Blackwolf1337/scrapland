@@ -182,9 +182,9 @@ void ChType_BettyHitEvent(cAbstractFile *params) {
 	/* x87: 1 - charge / 16 */
 	float k = (float)(1.0L - (long double)charge * 0.0625L);
 	float radius = (1.0f - k * k * (2.0f - k)) * g_BettyHitRadius;
-	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)ChType_BettyKill);
+	cPy_Function_SetNative(&g_ChTypeSphereFunc, (nativefunc_t)ChType_BettyKill);
 	const vec3_t *pos = g_BettyEnt->vftable->GetPos(g_BettyEnt, &tmp);
-	cWorld_SphereCallF(g_pWorld, 0x10, pos, radius, g_ChTypeSphereFunc, 0);
+	cWorld_SphereCallF(g_pWorld, 0x10, pos, radius, &g_ChTypeSphereFunc, 0);
 	if (WChar(g_BettyEnt)->wl.obj.cam) {
 		cPad_Rumble(&g_Pads[0], k, 0.3f, 0.35f);
 	}

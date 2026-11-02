@@ -69,9 +69,9 @@ SD_SIZE(PaintZone, 0x20);
 extern PaintZone g_PaintZones[128];
 extern int g_NumPaintZones;
 /* the union of the rectangles of the seen sectors with sky */
-#define g_PaintI148 GAME_GLOBAL_IN(int, g_PaintAll, 0)
-#define g_PaintRect (GAME_GLOBAL_IN(box_t, g_PaintAll, 4))
-#define g_PaintNum GAME_GLOBAL_IN(int, g_PaintAll, 28)
+#define g_PaintI148 g_PaintAll.zone
+#define g_PaintRect g_PaintAll.rect
+#define g_PaintNum g_PaintAll.times
 extern PaintZone g_PaintAll;	/* the same three as one */
 
 

@@ -37,7 +37,8 @@ static void ParamFile_Free(cFileMem *f) {
  * initializer has the constructor inlined without the fields that are 0 in the data, it only links it
  * into the ring. The atexit destructor is rva 0x38e3a0.
  */
-#define g_SphereFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0))
+extern cPy_Function g_ChTypeSphereFunc;
+#define g_SphereFunc ((&g_ChTypeSphereFunc))
 
 void PyFunction_FiniSphereFunc(void) {
 	cPy_Function_dtor(g_SphereFunc);

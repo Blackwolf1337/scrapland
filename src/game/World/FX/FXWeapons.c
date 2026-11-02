@@ -589,7 +589,7 @@ void cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, const char *ta
 			FXW_NoRot(p);
 			CGameParticles_Apply(p);
 			CGameParticles_SetColorRampOn(p, 1);
-			CGameParticles_SetColorRamp(p, GAME_ARRAY_IN(uint32_t, FXATPC_GLOW_RAMPS, 36));
+			CGameParticles_SetColorRamp(p, (&FXATPC_GLOW_RAMPS[9]));
 			CGameParticles_EmitDt(p, 1, 0, g_ATPCTrailTime * 0.2f / 14.0f * (float)k);
 		}
 	}
@@ -636,7 +636,7 @@ void cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, const char *ta
 		p->sizeEnd = (self->width + self->width) - (float)__builtin_fabs((double)((float)(k - 2) * 400.0f));
 		CGameParticles_Apply(p);
 		CGameParticles_SetColorRampOn(p, 1);
-		CGameParticles_SetColorRamp(p, GAME_ARRAY_IN(uint32_t, FXATPC_GLOW_RAMPS, 36));
+		CGameParticles_SetColorRamp(p, (&FXATPC_GLOW_RAMPS[9]));
 		CGameParticles_EmitN(p, 1, 0);
 	}
 
@@ -669,7 +669,7 @@ void cObjElementFXATPC_Shoot(cObjElementFXATPC *self, cEntity *v, const char *ta
 	p->rotVar = FXW_Rand(0.7853981852531433, 0.0);
 	CGameParticles_Apply(p);
 	CGameParticles_SetColorRampOn(p, 1);
-	CGameParticles_SetColorRamp(p, GAME_ARRAY_IN(uint32_t, FXATPC_GLOW_RAMPS, 36));
+	CGameParticles_SetColorRamp(p, (&FXATPC_GLOW_RAMPS[9]));
 	CGameParticles_EmitN(p, 1, 0);
 
 	/* the sparks from the hit towards the shooter */
@@ -2094,7 +2094,7 @@ void FXSwarm_BeeDeath(float x, float y, float z, float vx, float vy, float vz, f
 		CGameParticles_Apply(p);
 #if SD_32BIT
 		/* ramp 1 or the 9 words after the table (the original reads the window sizes and fog values there) */
-		CGameParticles_SetColorRamp(p, GAME_ARRAY_IN(uint32_t, FXSWARM_FLASH_RAMPS, 36) + 9 * (crt_rand() & 1));
+		CGameParticles_SetColorRamp(p, (&FXSWARM_FLASH_RAMPS[9]) + 9 * (crt_rand() & 1));
 #else
 		CGameParticles_SetColorRamp(p, FXSWARM_FLASH_RAMPS + 9 * (crt_rand() & 1));
 #endif

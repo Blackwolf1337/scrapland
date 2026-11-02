@@ -72,7 +72,7 @@ extern cGVar GVar_R_StencilSelf;
 extern cGVar GVar_R_StencilTog;
 #define g_StencilTog (GVar_R_StencilTog.value.i)	/* R_StencilTog: switched once */
 
-#define g_KeyV GAME_GLOBAL_IN(byte, g_KeyboardKeys, 31)	/* with X held: the shadows switched */
+#define g_KeyV g_KeyboardKeys[31]	/* with X held: the shadows switched */
 
 /* the lights of all groups on or off */
 void StencilBlock_SetLights(byte on);

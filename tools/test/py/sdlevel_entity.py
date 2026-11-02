@@ -458,16 +458,16 @@ ntnative('!AcceleratorOnEnter', ['Player0', 'Parked'])
 check('Scrap.SetCallFunc() clear', lambda: Scrap.SetCallFunc(''))
 
 # the sphere callback of the door slots (Doors_SphereEntity) on a cPy_Function in calloc memory
-ntdoor = (ntpeek(symva('g_DoorFront')), ntfl(symva('g_DoorAngY'), 1), ntfl(symva('g_DoorPos'), 3))
+ntdoor = (SDTest.PeekSpan('g_DoorFront', 0, 4), ntfl(symva('g_DoorAngY'), 1), ntfl(symva('g_DoorPos'), 3))
 ntf = ntcalloc(0x14)
 check('door func', lambda: (SDTest.Call('cPy_Function_ctor', 'tii', ntf)[0] == ntf, SDTest.Call('cPy_Function_SetNative', 'tbii', ntf, symva('Doors_SphereEntity'))[0]))
 def ntsphere(name, pos, ang):
-	ntpoke(symva('g_DoorFront'), 0)
+	SDTest.PokeSpan('g_DoorFront', 0, 0, 4)
 	ntsetfl(symva('g_DoorAngY'), (ang,))
 	ntsetfl(symva('g_DoorPos'), pos)
 	SDTest.Call('cPy_Function_AddParamS', 'tvis', ntf, name)
 	r = SDTest.Call('cPy_Function_Execute', 'tiii', ntf, 0)[0]
-	return (r, map(lambda i: SDTest.Peek(symva('g_DoorFront') + i, '@b'), range(4)))
+	return (r, map(lambda i: SDTest.PeekSpan('g_DoorFront', i, 1), range(4)))
 for name in ('Player0', 'SDEnt', 'SDNoEntity', ''):
 	for d in ((100.0, 0.0, 0.0), (-100.0, 0.0, 0.0), (0.0, 0.0, 100.0), (0.0, 50.0, -100.0), (0.0, 0.0, 0.0), (70.0, -9.0, -70.0)):
 		for ang in (0.0, 1.0, -2.0, 3.1, 7.0):
@@ -475,7 +475,7 @@ for name in ('Player0', 'SDEnt', 'SDNoEntity', ''):
 			check('Doors_SphereEntity' + fmt((name, d, ang)), lambda name=name, p=p, ang=ang: ntsphere(name, p, ang))
 SDTest.Call('cPy_Function_dtor', 'tvi', ntf)
 ntfree(ntf)
-ntpoke(symva('g_DoorFront'), ntdoor[0])
+SDTest.PokeSpan('g_DoorFront', 0, ntdoor[0], 4)
 ntsetfl(symva('g_DoorAngY'), ntdoor[1])
 ntsetfl(symva('g_DoorPos'), ntdoor[2])
-check('door globals restored', lambda: (ntpeek(symva('g_DoorFront')), ntfl(symva('g_DoorAngY'), 1), ntfl(symva('g_DoorPos'), 3)) == ntdoor)
+check('door globals restored', lambda: (SDTest.PeekSpan('g_DoorFront', 0, 4), ntfl(symva('g_DoorAngY'), 1), ntfl(symva('g_DoorPos'), 3)) == ntdoor)

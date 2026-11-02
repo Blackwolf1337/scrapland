@@ -168,7 +168,8 @@ extern CMeshVert g_BspQ3Vert[64];	/* [BSPQ3_MAX_VERT] */
 extern byte g_BspQ3VertL[64];	/* [BSPQ3_MAX_VERT] of 0x28 bytes */
 /* D3DXATTRIBUTERANGE of pMesh, 0x14 bytes each */
 extern uint32_t g_BspQ3Attrib[640];	/* [BSPQ3_SIZE_ATTRIBTABLE * 5] */
-#define g_KeyL GAME_GLOBAL_IN(byte, g_KeyboardKeys, 22)
+extern byte g_KeyboardKeys[256];
+#define g_KeyL g_KeyboardKeys[22]
 
 /* the map loaded: shaders, vertices, faces, light maps, then the meshes */
 void CBspQ3_dtor(CBspQ3 *self);

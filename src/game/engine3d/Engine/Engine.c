@@ -66,7 +66,6 @@ extern int g_EngineIni80;
 extern int g_EngineIni84;
 extern int g_EngineIni88;
 extern int g_EngineDef1cf4;
-#define g_EngineMode GAME_GLOBAL_IN(int, g_FilterMip, 0)		/* 1 or 2 */
 extern char g_ColorStr[64];	/* 0x40 */
 
 
@@ -114,7 +113,7 @@ CEngineApp *CEngineApp_ctor(CEngineApp *self) {
 	g_VertexSpecular = g_EngineIni80 != 0;
 	self->base.minStencilBits = g_EngineIni84;
 	self->base.minDepthBits = g_EngineDef1cf4;
-	g_EngineMode = (g_EngineIni88 != 0) + 1;
+	g_FilterMip = (uint32_t)(g_EngineIni88 != 0) + 1;
 	DbgCon_Init();
 	return self;
 }
@@ -225,7 +224,7 @@ int CEngineApp_FrameMove(CD3DApplication *elem) {
 }
 
 extern int g_RenderCounts[10];	/* [10], 8 counts (g_RenderTris and g_RenderVerts first), the frame clears 10 */
-#define g_Engine431bae GAME_GLOBAL_IN(byte, group_431bac, 2)
+extern byte g_Engine431bae;
 extern int g_Dither;		/* [video] Tramas: dithering */
 /* the frame limiter: [video] limitaFPS of m3d.ini and the console variable R_LimitFPS, the larger counts */
 extern float g_LimitFps;
@@ -239,8 +238,8 @@ extern int g_TimeScaled;	/* Time_Get() * g_TimeMult / 1000 */
 extern cGVar GVar_AutoScreenShot;
 #define g_AutoShot (GVar_AutoScreenShot.value.i)		/* the console variable AutoScreenShot */
 #define g_StencilClear (*(uint32_t *)&GVar_R_StencilRefClear.value)
-#define g_ResetDev GAME_GLOBAL_IN(byte, group_4a8efc, 2)		/* the device objects made again at the next frame */
-#define g_ResetDevOnly GAME_GLOBAL_IN(byte, group_431bac, 3)	/* 1: without the world, 0: the game callbacks too */
+extern byte g_ResetDev;	/* the device objects made again at the next frame */
+extern byte g_ResetDevOnly;	/* 1: without the world, 0: the game callbacks too */
 /* the callbacks of the game the reset puts in place */
 extern void *g_EngineInitNext;
 extern void *g_EngineFrameNext;
@@ -699,9 +698,9 @@ void Engine_LoadVarsIni(const char *name, const char *dir) {
 extern char g_FpsText[64];	/* 0x40, "frame: fps fps  ms" when the fps jumped */
 extern float g_FpsTextTime;
 extern float g_FpsGraph[120];	/* FPS_GRAPH bars of 2 vertices (x, 0) (x, frame ms) */
-extern float g_FpsGraphPeak[122];	/* the same with the falling peak */
-#define g_FpsGraphPos GAME_GLOBAL_IN(int, g_FpsGraphPeak, 480)
-#define g_FpsScaleTime GAME_GLOBAL_IN(float, g_FpsGraphPeak, 484)
+extern float g_FpsGraphPeak[120];	/* the same with the falling peak */
+extern int g_FpsGraphPos;
+extern float g_FpsScaleTime;
 extern float g_FpsScale;	/* the height of the graph: 200 ms per 200 fps */
 #define FPS_GRAPH 30
 
@@ -774,7 +773,7 @@ void Scene_LogTree(CScene *scn, CNode3D *node, int indent) {
 }
 
 /* the commands of the debug console of the engine (g_E3DCmdProc) */
-#define g_ShowJoins GAME_GLOBAL_IN(byte, group_4ad6f0, 0)	/* the joints of the meshes drawn */
+extern byte g_ShowJoins;	/* the joints of the meshes drawn */
 void E3D_Command(char *cmd) {
 	char *s;
 	CScene *e;

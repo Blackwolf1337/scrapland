@@ -255,7 +255,7 @@ void ChType_NurseHit(void) {
 	if (!cActCtrl_IsActive(ChType_ActCtrl(v), "ActionLoop")) {
 		return;
 	}
-	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)ChType_NurseSphereHit);
+	cPy_Function_SetNative(&g_ChTypeSphereFunc, (nativefunc_t)ChType_NurseSphereHit);
 	cActCtrl_SetDefLoop(ChType_ActCtrl(v), "Relax", 1);
 	float ay = Obj_Vtbl(v)->GetAng(v, &t1)->y;
 	rot.x = 0.0f;
@@ -271,7 +271,7 @@ void ChType_NurseHit(void) {
 	hit.y = p->y + rp->y;
 	hit.z = p->z + rp->z;
 	if (!v->vftable->GetAI(v)) {
-		cWorld_SphereCallF(g_pWorld, 0x10, &hit, g_NurseDispRad, g_ChTypeSphereFunc, 0);
+		cWorld_SphereCallF(g_pWorld, 0x10, &hit, g_NurseDispRad, &g_ChTypeSphereFunc, 0);
 	} else {
 		cAIChar *ai = v->vftable->GetAI(v);
 		if (ai->vftable->base.GetTarget(&ai->base.base)) {

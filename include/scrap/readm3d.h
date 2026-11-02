@@ -22,8 +22,8 @@ extern cGVar g_UseWSMVar;
 
 #define M3D_STRING 0x400
 
-#define g_M3DBinary GAME_GLOBAL_IN(byte, group_4e1fa4, 0)
-#define g_M3DLabels GAME_GLOBAL_IN(byte, group_4e1fa4, 1)	/* text: lines start with the label; binary: labels stored */
+extern byte g_M3DBinary;
+extern byte g_M3DLabels;	/* text: lines start with the label; binary: labels stored */
 extern char g_M3DString[1024];	/* M3D_STRING bytes, strings without a destination */
 extern char g_M3DName[260];	/* the file being read, for messages */
 extern char g_M3DDir[260];	/* MAX_FILEPATH, its directory */
@@ -46,13 +46,13 @@ extern cGVar GVar_SM3_UseScenes;
 #define g_SM3UseScenes (GVar_SM3_UseScenes.value.i)		/* SM3_UseScenes 0, 1, 2 */
 extern cGVar GVar_CM3_DeleteM3D;
 #define g_CM3DeleteM3D (GVar_CM3_DeleteM3D.value.i)		/* CM3_DeleteM3D */
-#define g_M3DOk GAME_GLOBAL_IN(byte, group_432a7c, 0)
+extern byte g_M3DOk;
 #define g_ShowNodesTree (*(int *)&g_ShowNodesTreeVar.value)		/* ShowNodesTree */
 /* the [Model] switches of the ini of the model being read */
-#define g_M3DUseOpacity GAME_GLOBAL_IN(byte, group_4e1fa4, 2)
-#define g_M3DUseEnvmap GAME_GLOBAL_IN(byte, group_4e1fa4, 3)
-#define g_M3DUseBumpmap GAME_GLOBAL_IN(byte, group_4e1fb4, 0)
-#define g_M3DUseGlowmap GAME_GLOBAL_IN(byte, group_4e1fb4, 1)
+extern byte g_M3DUseOpacity;
+extern byte g_M3DUseEnvmap;
+extern byte g_M3DUseBumpmap;
+extern byte g_M3DUseGlowmap;
 
 /* the state of the reader while an M3D file is read */
 extern int g_M3DVersion;		/* 5 .. 14 */

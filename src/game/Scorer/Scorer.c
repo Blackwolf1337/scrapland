@@ -1419,10 +1419,10 @@ byte Scorer_Render(void) {
 
 /* ---- the full screen console ---- */
 
-#define g_ConsoleOn GAME_GLOBAL_IN(byte, group_4601fc, 0)
-#define g_ConsoleCheckInput GAME_GLOBAL_IN(byte, group_4601fc, 1)	/* g_pWorld->checkInput while the console is open */
-#define g_ConsoleClosing GAME_GLOBAL_IN(byte, group_4601fc, 2)
-#define g_ConsoleBusy GAME_GLOBAL_IN(byte, group_4601fc, 3)
+extern byte g_ConsoleOn;
+extern byte g_ConsoleCheckInput;	/* g_pWorld->checkInput while the console is open */
+extern byte g_ConsoleClosing;
+extern byte g_ConsoleBusy;
 extern cVirtualKeyboard g_ConsoleSavedKeyboard;
 extern uint32_t g_ConsoleSavedSet;
 extern cPlayerInput g_ConsoleSavedInput;

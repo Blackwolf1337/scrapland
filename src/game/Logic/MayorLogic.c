@@ -49,10 +49,10 @@ cEntity *cMayorLocalLogic_FindTarget(cLocalLogic *elem) {
 	g_MayorTargetDist = 3.4028235e38f;
 	g_MayorTarget = NULL;
 	g_MayorSearchEnt = self->base.base.parent;
-	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)Mayor_SphereFunc);
+	cPy_Function_SetNative(&g_ChTypeSphereFunc, (nativefunc_t)Mayor_SphereFunc);
 	float radius = g_MayorBlabliblaRadius;
 	cEntity *m = g_MayorSearchEnt;
-	cWorld_SphereCallF(g_pWorld, 0x10, m->vftable->GetPos(m, &t), radius, g_ChTypeSphereFunc, 1);
+	cWorld_SphereCallF(g_pWorld, 0x10, m->vftable->GetPos(m, &t), radius, &g_ChTypeSphereFunc, 1);
 	return g_MayorTarget;
 }
 

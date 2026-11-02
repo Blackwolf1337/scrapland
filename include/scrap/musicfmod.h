@@ -25,7 +25,8 @@ typedef struct cMusicVoice {
 SD_SIZE(cMusicVoice, 0x19c);
 
 extern int g_FmodState;		/* > 0 running, < 0 failed */
-#define g_MusicVoices (GAME_ARRAY_IN(cMusicVoice, cMusicVoice_MusicVoices, 0))
+extern cMusicVoice cMusicVoice_MusicVoices[8];
+#define g_MusicVoices (cMusicVoice_MusicVoices)
 
 int Fmod_Init(void);
 cMusicVoice *cMusicVoice_ctor(cMusicVoice *self);

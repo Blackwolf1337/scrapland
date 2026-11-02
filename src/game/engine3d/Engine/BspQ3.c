@@ -17,7 +17,7 @@
 #include "scrap/misc.h"
 
 /* 1 in the exe: the light map materials keep the blend of CMaterial_Prepare */
-#define g_BspQ3LMapNoBlend GAME_GLOBAL_IN(byte, group_432a7c, 1)
+extern byte g_BspQ3LMapNoBlend;
 
 /* ID3DXBaseMesh */
 

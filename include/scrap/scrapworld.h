@@ -40,8 +40,8 @@ extern char g_WorldInfoPattern[260];	/* 0x104, "" for all */
 #define RENDERMODE_SPECULAR 0x101	/* toggles the vertex specular */
 #define RENDERMODE_TEXFILTER 0x102	/* cycles point, linear, anisotropic */
 #define RENDERMODE_SHADOWS 0x103	/* toggles the stencil shadows */
-#define g_RenderMode100 GAME_GLOBAL_IN(byte, group_4a8efc, 1)
-#define g_VertexSpecular GAME_GLOBAL_IN(byte, group_4a8efc, 0)
+extern byte g_RenderMode100;
+extern byte g_VertexSpecular;
 extern int g_ShadowsStencil;	/* [sombras_stencil] use */
 
 /* the splash screens and the loading bar */
@@ -50,7 +50,7 @@ extern cGVar GVar_ShowSplashScreen;
 #define g_SplashFade (*(uint32_t *)&GVar_SplashScreenFade.value)	/* ms */
 extern uint32_t g_SplashTime;	/* timeGetTime at the end of the last one */
 extern char g_SplashLast[260];	/* 0x104, the last one shown */
-#define g_LoadingOn GAME_GLOBAL_IN(byte, group_4a8324, 0)
+#define g_LoadingOn g_DrawProgressBar
 extern cGVar GVar_ShowProgressBar;
 #define g_LoadingBar (GVar_ShowProgressBar.value.i)
 extern int g_LoadingCount;		/* the steps of Loading_Step(-1) */

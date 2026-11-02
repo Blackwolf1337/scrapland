@@ -19,7 +19,7 @@
 extern cEntity * g_AICCNear[20];	/* 20 */
 extern int g_AICCNumNear;
 extern cEntity *g_AICCNearSelf;	/* the character itself, left out */
-#define g_AICCNearFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0))
+#define g_AICCNearFunc ((&g_ChTypeSphereFunc))
 #define AICC_NEAR_NATIVE ((nativefunc_t)AICC_NearChar)	/* AICC_NearChar (its C version behind the hook) */
 #define AICC_MAX_NEAR 20
 

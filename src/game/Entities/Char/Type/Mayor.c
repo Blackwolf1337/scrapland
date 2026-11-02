@@ -58,9 +58,9 @@ void ChType_MayorEndAction(cAbstractFile *params) {
 	g_MayorEnt = World_FindEntity(name);
 	CHECK(g_MayorEnt);
 	CHECK(Entity_IsType(g_MayorEnt, TYEN_WALKCHAR));
-	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)ChType_MayorSphereHit);
+	cPy_Function_SetNative(&g_ChTypeSphereFunc, (nativefunc_t)ChType_MayorSphereHit);
 	cWorld_SphereCallF(g_pWorld, 0x10, g_MayorEnt->vftable->GetPos(g_MayorEnt, &tmp), g_MayorBlabliblaRadius,
-		g_ChTypeSphereFunc, 0);
+		&g_ChTypeSphereFunc, 0);
 	if (!WChar(g_MayorEnt)->control.act) {
 		cActCtrl_Play(ChType_ActCtrl(g_MayorEnt), "ActionEnd", 1, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(g_MayorEnt), "Relax", 1);

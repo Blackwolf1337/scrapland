@@ -36,7 +36,7 @@ for base, anim in ((models[0], 'models/elements/antenaa/anm/loop.m3d'), (models[
 	SDTest.Poke('g_SceneAnimParent', 0)
 # CM3_Save and SM3_Save are not tested: an open for writing is a fatal CHECK in the test setup
 for ok in (0, 1, 0, 0):
-	check('M3D_SetOk' + fmt((ok,)), lambda ok=ok: (SDTest.Call('M3D_SetOk', 'vi', ok), SDTest.Peek('g_M3DOk', 'i') & 0xff))
+	check('M3D_SetOk' + fmt((ok,)), lambda ok=ok: (SDTest.Call('M3D_SetOk', 'vi', ok), SDTest.PeekSpan('g_M3DOk', 0, 4) & 0xff))
 
 # the node and name utilities
 for a, b in ((1.0, 1.0), (1.0, 1.0000001), (1.0, 1.001), (-2.0, -2.0000002), (2.0, -2.0), (0.0, 1e-30), (0.0, -0.0),

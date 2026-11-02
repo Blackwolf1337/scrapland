@@ -84,8 +84,8 @@ extern CGameCamera *g_ViewerCamera;	/* gViewerCamera, made with the engine */
 extern CPsaImage *g_Watermark;
 /* the callbacks of Engine_SetCallback (1..4): before each frame, after the frame setup, two more */
 extern typeof(void (*)(void)) g_EngCallbacks[4];	/* [4], 2 and 3 are g_LoadingDraw2 and g_LoadingDraw */
-#define g_DrawProgressBar GAME_GLOBAL_IN(byte, group_4a8324, 0)
-#define g_ResetPending GAME_GLOBAL_IN(byte, group_4a8324, 1)	/* Video_SetCurrentMode: reset the device at the next frame */
+extern byte g_DrawProgressBar;
+extern byte g_ResetPending;	/* Video_SetCurrentMode: reset the device at the next frame */
 #define g_ProgressBarCount g_LoadingCount
 extern void *g_MapTextDataFile;	/* FILE of the exe's CRT */
 extern int g_MapTextSaving;
@@ -173,7 +173,7 @@ extern int g_CalcLmap2;		/* [mapa_sombras] calc_lmap2 */
 extern int g_MaxLightmap;
 extern int g_TimerQPMult;
 extern byte g_MapTextSavingOn;
-#define g_VertexSpecular GAME_GLOBAL_IN(byte, group_4a8efc, 0)
+extern byte g_VertexSpecular;
 extern cGVar GVar_R_UseMLOD;
 #define g_RenderFlag6e0 (GVar_R_UseMLOD.value.i)	/* taken from 0x4ae6e4 at the start */
 #define g_RenderFlag6e4 (GVar_R_UseMLOD.def.i)

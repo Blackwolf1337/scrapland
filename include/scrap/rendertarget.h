@@ -124,8 +124,8 @@ extern uint32_t g_RTSavedViewport[6];
 extern uint32_t g_RTSavedViewportFull[6];
 /* the pixel texture coordinates: the device needs them on pow2 textures (the Credits, NewsPanel and bloom sizes)
  * and on the other ones (the scene size) */
-#define g_RTLinPow2 GAME_GLOBAL_IN(byte, group_4a8e1c, 1)
-#define g_RTLinNonPow2 GAME_GLOBAL_IN(byte, group_4a8e1c, 0)
+extern byte g_RTLinPow2;
+extern byte g_RTLinNonPow2;
 
 /* NewsPanel: the texture and its depth buffer */
 extern void *g_NewsPanelTarget;
@@ -140,7 +140,7 @@ extern int g_CreditsSavedH;
 extern uint32_t g_CreditsBlurTime;
 
 /* Scene: on, the size of the textures, the textures (the third one in split screen), the copy material */
-#define g_SceneOn GAME_GLOBAL_IN(byte, group_4a8e1c, 3)
+extern byte g_SceneOn;
 extern float g_SceneW;
 extern float g_SceneH;
 extern void *g_SceneRT1;
@@ -154,9 +154,9 @@ extern void *g_SceneTargetSurface;
 extern void *g_SceneSourceTexture;
 extern void *g_SceneTargetTexture;
 /* the next swap is skipped (the DuDv effect kept its target) */
-#define g_SceneNoSwap GAME_GLOBAL_IN(byte, group_4a8e1c, 2)
+extern byte g_SceneNoSwap;
 /* the effects on in this frame and the last one of them, -1 none */
-#define g_SceneFxOn (GAME_ARRAY_IN(byte, group_4a8e40, 0))
+extern byte g_SceneFxOn[5];
 extern int g_SceneFxLast;
 /* the full viewport of before the split screen halved it */
 extern uint32_t g_SceneViewport[6];
@@ -197,7 +197,7 @@ extern float g_MotionBlurH;
 extern void *g_MotionBlurTarget;
 extern CMaterial *g_MotionBlurMatTarget;
 extern CMaterial *g_MotionBlurMatAdd;
-#define g_MotionBlurFilled GAME_GLOBAL_IN(byte, group_4a8e40, 5)
+extern byte g_MotionBlurFilled;
 
 /* Blur and radial blur: the materials */
 extern CMaterial *g_BlurMatTarget;

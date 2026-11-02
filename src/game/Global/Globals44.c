@@ -605,12 +605,10 @@ CGameParticles g_SirenParticles;
 cGVar GVar_FXVehicleSiren_SizeMax;
 cGVar GVar_FXVehicleProbeLight_DistGrow;
 cPy_NativeFunc NativeFunc_AcceleratorOnEnter;
-struct {
-	byte g_DoorFront;	/* 0x0 */
-	byte g_DoorBack;	/* 0x1 */
-	byte g_DoorUsrFront;	/* 0x2 */
-	byte g_DoorUsrBack;	/* 0x3 */
-} group_447600;
+byte g_DoorFront;
+byte g_DoorBack;
+byte g_DoorUsrFront;
+byte g_DoorUsrBack;
 float g_DoorAngY;
 cPy_NativeFunc NativeFunc_ChangeDoorState;
 cPy_NativeFunc NativeFunc_AutoDoorSlot;

@@ -1572,7 +1572,7 @@ static void FXS_BillJetsBlast(void *efx) {
 		FXS_Sprites(sp, 0x37, 0x37);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, GAME_ARRAY_IN(uint32_t, FXS_BILL_JETA_RAMPS, 36));
+		CGameParticles_SetColorRamp(sp, (&FXS_BILL_JETA_RAMPS[9]));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.035f, 0.0));
 	}
 }

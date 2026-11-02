@@ -146,7 +146,7 @@ SDTest.Poke('g_ViewportH', 480)
 sc2animsize = 0x224
 sc2anim = sc2new(sc2animsize)
 SDTest.Call('crt_memcpy', 'iiii', sc2anim, sym('g_MainMenuAnimInit') + 0x400000, sc2animsize)
-SDTest.Poke('g_MainMenuAnimInit', SDTest.Peek('g_MainMenuAnimInit', 'i') & ~0xffff)
+SDTest.PokeSpan('g_MainMenuAnimInit', 0, SDTest.PeekSpan('g_MainMenuAnimInit', 0, 4) & ~0xffff, 4)
 sc2types = (('sc2Slider', 'Slider', 0), ('sc2Special', 'SpecialAction', 0), ('sc2Main', 'ScraplandMainMenu', 1),
 	('sc2Sub', 'ScraplandSubMenu', 1), ('sc2Sprite', 'Sprite', 1), ('sc2Slider', 'Slider', 0), ('sc2Bad',
 	'NoType', 0))

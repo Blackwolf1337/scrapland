@@ -47,12 +47,12 @@ for rtxy in ((0, 0), (5, 3), (2, 7), (9, 9), (15, 15), (4, 1)):
 			'biiiiiiii', 64, rta, 80, rtb, rtxy[0], 4, rtxy[1], rttol)[0])
 
 # the swap of source and target (texture and surface pointers set to numbers here, never used as objects)
-rtscene = (sym('g_SceneSourceSurface'), sym('g_SceneTargetSurface'), sym('g_SceneSourceTexture'), sym('g_SceneTargetTexture'), sym('g_SceneRTargetSwap'), sym('g_RTLinNonPow2'))
-rtsaved = rtsave(rtscene)
+rtscene = (sym('g_SceneSourceSurface'), sym('g_SceneTargetSurface'), sym('g_SceneSourceTexture'), sym('g_SceneTargetTexture'), sym('g_SceneRTargetSwap'))
+rtsaved = tuple(rtsave(rtscene)) + (SDTest.PeekSpan('g_RTLinNonPow2', 0, 4),)
 for rtswap in (0, 1):
 	for rtnoswap in (0, 1):
-		rtrestore(rtscene[:5], (0x1111, 0x2222, 0x3333, 0x4444, rtswap))
-		SDTest.Poke('g_RTLinNonPow2', (rtsaved[5] & ~0x00ff0000) | rtnoswap << 16)
+		rtrestore(rtscene, (0x1111, 0x2222, 0x3333, 0x4444, rtswap))
+		SDTest.PokeSpan('g_RTLinNonPow2', 0, (rtsaved[5] & ~0x00ff0000) | rtnoswap << 16, 4)
 		check('Scene_Swap' + fmt((rtswap, rtnoswap)), lambda: (SDTest.Call('Scene_Swap', 'v')[0:0],
 			rtsave(rtscene[:4]), SDTest.Peek('g_SceneNoSwap', 'b')))
 # the target is the back buffer: a target surface equal to it is not released
@@ -60,7 +60,8 @@ rtback = rtsave((sym('g_RTBackBuffer'),))
 rtrestore((sym('g_SceneTargetSurface'), sym('g_SceneTargetTexture')), (rtback[0], 0x5555))
 check('Scene_TargetBackBuffer', lambda: (SDTest.Call('Scene_TargetBackBuffer', 'v')[0:0], SDTest.Peek('g_SceneTargetSurface', 'i') == rtback[0],
 	SDTest.Peek('g_SceneTargetTexture', 'i')))
-rtrestore(rtscene, rtsaved)
+rtrestore(rtscene, rtsaved[:5])
+SDTest.PokeSpan('g_RTLinNonPow2', 0, rtsaved[5], 4)
 
 # the effects on as the device has them, and the targets of the device (only whether they were made)
 for rtfx, rtrva in (('DuDv', sym('DuDv_IsOn')), ('Bloom', sym('Bloom_IsOn')), ('MotionBlur', sym('MotionBlur_IsOn')), ('RadialBlur', sym('RadialBlur_IsOn')),

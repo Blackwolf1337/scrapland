@@ -72,9 +72,9 @@ def m3dS(s):
 	m3dI(len(s))
 	for c in s:
 		m3dst.append(ord(c))
-m3dsave = (SDTest.Peek('g_ReadStack', 'i'), SDTest.Peek('g_M3DBinary', 'i'), SDTest.Peek('g_M3DVersion', 'i'),
+m3dsave = (SDTest.Peek('g_ReadStack', 'i'), SDTest.PeekSpan('g_M3DBinary', 0, 4), SDTest.Peek('g_M3DVersion', 'i'),
 	SDTest.Peek('g_M3DFrames', 'i'), SDTest.Peek('g_M3DNodes', 'i'), SDTest.Peek('g_M3DNumMat', 'i'), SDTest.Peek('g_M3DLMat', 'i'),
-	SDTest.Peek('g_M3DFirstFrame', 'i'), SDTest.Peek('g_M3DLastFrame', 'i'), SDTest.Peek('g_M3DOk', 'i'))
+	SDTest.Peek('g_M3DFirstFrame', 'i'), SDTest.Peek('g_M3DLastFrame', 'i'), SDTest.PeekSpan('g_M3DOk', 0, 4))
 # the stream of m3dst into a memory file on the Lee stack, binary without labels
 def m3dopen():
 	n = 0
@@ -98,7 +98,7 @@ def m3dopen():
 	pila = m3dz(0x514)
 	m3dpk(pila + 0x104, fm)
 	SDTest.Poke('g_ReadStack', pila)
-	SDTest.Poke('g_M3DBinary', (m3dsave[1] & -65536) | 1)
+	SDTest.PokeSpan('g_M3DBinary', 0, (m3dsave[1] & -65536) | 1, 4)
 	del m3dst[:]
 	return fm
 def m3dpos(fm):
@@ -528,7 +528,7 @@ check('Table_Free', lambda m3dtb=m3dtb: (SDTest.Call('Table_Free@2bbcf0', 'tvi',
 	m3dtb + 0x54), m3dints(m3dtb + 0x48, 6)))
 check('M3DSkin_Free', lambda m3dnodos=m3dnodos: (SDTest.Call('M3DSkin_Free', 'tvi', m3dnodos + 0x2ec * 3 + 0x104),
 	m3dints(m3dnodos + 0x2ec * 3 + 0x104, 2)))
-SDTest.Poke('g_M3DBinary', m3dsave[1])
+SDTest.PokeSpan('g_M3DBinary', 0, m3dsave[1], 4)
 
 # the scene passes on scenes built here
 def m3descena(name, nodes):
@@ -613,7 +613,7 @@ SDTest.Poke('g_M3DVersion', m3dsave[2])
 SDTest.Poke('g_M3DFrames', m3dsave[3])
 SDTest.Poke('g_M3DFirstFrame', m3dsave[7])
 SDTest.Poke('g_M3DLastFrame', m3dsave[8])
-SDTest.Poke('g_M3DOk', m3dsave[9])
+SDTest.PokeSpan('g_M3DOk', 0, m3dsave[9], 4)
 
 # BspQ3.c: a map in memory without polygons, the mesh lists, the dot product
 check('Vec3_DotX87', lambda: SDTest.Call('Vec3_DotX87', 'fFF', (1.5, -2.0, 3.0), (0.25, 4.0, 1e-3))[0])

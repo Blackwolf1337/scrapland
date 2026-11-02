@@ -180,7 +180,8 @@ extern cGVar GVar_MapCollisionBalance;
 #define g_CollisionBalance (GVar_MapCollisionBalance.value.f)
 extern int g_QuadTriCacheID;
 extern uint32_t g_CollisionNComp;
-#define g_CollisionTestsMax GAME_GLOBAL_IN(uint32_t, g_BspCacheStats, 8)
+extern uint32_t g_BspCacheStats[3];	/* the hits, the misses and the most tests */
+#define g_CollisionTestsMax g_BspCacheStats[2]
 extern uint32_t g_CollisionTests;
 extern uint32_t g_CollisionTestsTotal;
 extern int g_CollisionQuadCount;

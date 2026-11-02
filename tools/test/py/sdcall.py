@@ -947,11 +947,11 @@ bfree(cs)
 
 # engine3d Engine/ReadM3D.c: the M3D values in text (an ini of the packs) and binary (a bmp, the ini read as binary)
 def m3dmode(binary, labels):
-	v = SDTest.Peek('g_M3DBinary', 'i')
-	SDTest.Poke('g_M3DBinary', (v & -0x10000) + binary + (labels << 8))
+	v = SDTest.PeekSpan('g_M3DBinary', 0, 4)
+	SDTest.PokeSpan('g_M3DBinary', 0, (v & -0x10000) + binary + (labels << 8), 4)
 def mstep(name, rva, sig, *args):
 	check(name + fmt(args), lambda rva=rva, sig=sig, args=args: (apply(SDTest.Call, (rva, sig) + args), SDTest.Peek('g_ReadString', 'p')))
-m3dsaved = SDTest.Peek('g_M3DBinary', 'i')
+m3dsaved = SDTest.PeekSpan('g_M3DBinary', 0, 4)
 m3dmode(0, 1)
 SDTest.Call('Read_Open', 'vzsi', None, 'levels/menu/map/map3d.ini', 1)
 mstep('M3D_Label', sym('M3D_Label'), 'vs', '[suelo]')
@@ -1029,7 +1029,7 @@ mstep('M3D_Label bin', sym('M3D_Label'), 'vs', '\n\r\n[Model]\r\nT')
 check('M3D_Label bin cad', lambda: SDTest.Peek('g_M3DString', 's'))
 mstep('M3D_ReadIndex bin', sym('M3D_ReadIndex'), 'vi', -38)
 SDTest.Call('Read_Close', 'i')
-SDTest.Poke('g_M3DBinary', m3dsaved)
+SDTest.PokeSpan('g_M3DBinary', 0, m3dsaved, 4)
 
 # engine3d Engine/Table.c: the array template instances; the readers on .sm3 files of the packs at offsets where a
 # count and an element size follow

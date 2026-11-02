@@ -802,12 +802,10 @@ float g_Sprite2DScale[2] = { 1.0f, 1.0f };
 float g_Sprite2DScaleA[2] = { 0.5f, 0.5f };
 float g_Sprite2DScaleB[2] = { 1.0f, 1.0f };
 float g_Fps = 30.0f;
-struct {
-	byte g_UseVB;	/* 0x0 */
-	byte g_MeshD3DOn;	/* 0x1 */
-	byte g_Engine431bae;	/* 0x2 */
-	byte g_ResetDevOnly;	/* 0x3 */
-} group_431bac = { .g_UseVB = 1, .g_MeshD3DOn = 1, .g_Engine431bae = 1, .g_ResetDevOnly = 1 };
+byte g_UseVB = 1;
+byte g_MeshD3DOn = 1;
+byte g_Engine431bae = 1;
+byte g_ResetDevOnly = 1;
 float engineIni_431bb0 = 0.35f;
 uint32_t engineIni_431bb4 = 0x7fffffff;
 uint32_t engineIni_431bb8 = 1;
@@ -1121,11 +1119,8 @@ ShaderTab g_ShaderTab2[32] = {
 	{ .Index = 25, .Name = (void *)sd_str_3d9220, .flags = 257, .fnRender = (void *)sd_Shader_DiffuseNoLit },
 };
 uint32_t g_LightmapOp = 4;
-struct {
-	byte g_UseShaders2;	/* 0x0 */
-	byte g_UseShaders;	/* 0x1 */
-	byte pad_2[2];
-} group_43240c = { .g_UseShaders = 1 };
+byte g_UseShaders2;
+byte g_UseShaders = 1;
 int g_WorldSet = 1;
 int g_Tiles = 4;
 byte g_ModelsOn = 1;
@@ -1200,7 +1195,8 @@ float g_ShadowMapBrightness = 1.0f;
 int g_ShadowMapBounces = 1;
 float g_ShadowMapCoefRad = 0.1f;
 int g_MaxLightmap = 2;
-float g_BspLodDist[7] = { 20.0f, 5.0f, 40.0f, 10.0f, 80.0f, 20.0f, 1e-45f };
+float g_BspLodDist[6] = { 20.0f, 5.0f, 40.0f, 10.0f, 80.0f, 20.0f };
+int g_LmapSaveIni = 1;
 int g_LmapInfo2 = 1;
 int g_BspDebugSel = -1;
 float g_FlareSize = 200.0f;
@@ -1232,11 +1228,8 @@ uint32_t g_BspColors[16] = {
 int g_MaxTriGroup = 2048;
 const char *g_NodeEffectSect = (void *)sd_str_3e3bc8;
 int g_TranspGroup = 1;
-struct {
-	byte g_M3DOk;	/* 0x0 */
-	byte g_BspQ3LMapNoBlend;	/* 0x1 */
-	byte pad_2[2];
-} group_432a7c = { .g_M3DOk = 1, .g_BspQ3LMapNoBlend = 1 };
+byte g_M3DOk = 1;
+byte g_BspQ3LMapNoBlend = 1;
 int g_LexCh = -1;
 float g_IllumSmooth = 0.5f;
 

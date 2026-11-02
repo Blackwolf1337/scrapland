@@ -157,8 +157,8 @@ void ChType_GearHit(cAbstractFile *params) {
 	CHECK(Entity_IsType(g_GearSw, TYEN_MISSILE));
 	g_GearXplodePos = *g_GearSw->vftable->GetPos(g_GearSw, &tmp);
 	ChType_GearHitChar(name, 1);
-	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)ChType_GearSphereHit);
-	cWorld_SphereCallF(g_pWorld, 0x11, &g_GearXplodePos, g_GearXplodeRadius, g_ChTypeSphereFunc, 1);
+	cPy_Function_SetNative(&g_ChTypeSphereFunc, (nativefunc_t)ChType_GearSphereHit);
+	cWorld_SphereCallF(g_pWorld, 0x11, &g_GearXplodePos, g_GearXplodeRadius, &g_ChTypeSphereFunc, 1);
 	CSoundSys *snd = g_pSound;
 	const char *s = g_GearHitSound;
 	int volume = Snd_Volume(g_GearHitSoundVol);
@@ -496,8 +496,8 @@ int Logic_Flash(const vec3_t *pos, float radius, int max) {
 	g_FlashCount = 0;
 	g_FlashPos = *pos;
 	g_FlashMax = max;
-	cPy_Function_SetNative(g_ChTypeSphereFunc, (nativefunc_t)ChType_FlashHit);
-	cWorld_SphereCallF(g_pWorld, 0x10, &g_FlashPos, radius, g_ChTypeSphereFunc, 1);
+	cPy_Function_SetNative(&g_ChTypeSphereFunc, (nativefunc_t)ChType_FlashHit);
+	cWorld_SphereCallF(g_pWorld, 0x10, &g_FlashPos, radius, &g_ChTypeSphereFunc, 1);
 	return g_FlashResult;
 }
 

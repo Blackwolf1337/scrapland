@@ -58,7 +58,7 @@ static inline int ChType_ActPriority(void *ctrl) {
 #define ChType_Action0(ctrl) ((void *)((cActCtrl *)(ctrl))->layers[0].action)
 
 /* the C function of the sphere tests of the natives (also g_DoorSphereFunc, g_InfernoSphereFunc) */
-#define g_ChTypeSphereFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0))
+extern cPy_Function g_ChTypeSphereFunc;
 #define g_OnFlash (((cPy_Function *)&GVar_OnFlash.func))		/* OnFlash, the C function of the flashes */
 
 /* the natives one native calls through a sphere or flash test (rva, the same pointer as the original) */

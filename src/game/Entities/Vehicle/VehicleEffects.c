@@ -830,7 +830,7 @@ void cVehicleEffects_WindSmoke(cVehicleEffects *self, float x, float y, float z)
 
 /* the color ramps of the shots (9 colors each) */
 extern uint32_t VS_RAMP_FIRE[18];	/* [2 * 9], 2 ramps */
-#define VS_RAMP_FIRE2 (GAME_ARRAY_IN(uint32_t, VS_RAMP_FIRE, 36))
+#define VS_RAMP_FIRE2 ((&VS_RAMP_FIRE[9]))
 extern uint32_t VS_RAMP_SMOKE[9];
 extern uint32_t VS_RAMP_ATPC[19];
 

@@ -128,20 +128,15 @@ cGVar GVar_CM3_CheckTime;
 cGVar g_UseWSMVar;
 cGVar GVar_SM3_UseScenes;
 int g_M3DVersion;
-struct {
-	byte g_M3DBinary;	/* 0x0 */
-	byte g_M3DLabels;	/* 0x1 */
-	byte g_M3DUseOpacity;	/* 0x2 */
-	byte g_M3DUseEnvmap;	/* 0x3 */
-} group_4e1fa4;
+byte g_M3DBinary;
+byte g_M3DLabels;
+byte g_M3DUseOpacity;
+byte g_M3DUseEnvmap;
 int g_M3DFirstFrame;
 int g_M3DLastFrame;
 int g_M3DFrames;
-struct {
-	byte g_M3DUseBumpmap;	/* 0x0 */
-	byte g_M3DUseGlowmap;	/* 0x1 */
-	byte pad_2[2];
-} group_4e1fb4;
+byte g_M3DUseBumpmap;
+byte g_M3DUseGlowmap;
 float g_M3DPreScaleU;
 float g_M3DPreScaleV;
 char g_M3DString[1024];

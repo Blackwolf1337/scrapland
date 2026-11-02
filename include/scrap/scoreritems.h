@@ -486,7 +486,7 @@ typedef struct cCircuitFlare {
 SD_SIZE(cCircuitFlare, 0x18);
 
 extern cCircuitFlare g_CircuitFlares[4];	/* CIRCUIT_FLARES */
-#define g_CircuitInit GAME_GLOBAL_IN(byte, g_CircuitFlares, 92)
+#define g_CircuitInit (*(byte *)&g_CircuitFlares[3].unused_14)
 extern cCircuitPath g_CircuitPaths[9];	/* CIRCUIT_PATHS */
 
 /* the constructor of a path in the static array: nothing */
@@ -1154,8 +1154,8 @@ typedef struct cScraplandSubMenuScorer {
 SD_SIZE(cScraplandSubMenuScorer, 0xd8);
 
 /* the global animation state, set up once by the first constructor (random times) */
-#define g_MainMenuAnimInit GAME_GLOBAL_IN(byte, group_460428, 0)
-#define g_SubMenuAnimInit GAME_GLOBAL_IN(byte, group_460428, 1)
+extern byte g_MainMenuAnimInit;
+extern byte g_SubMenuAnimInit;
 extern float g_MainMenuWait[9];		/* [9] */
 extern float g_MainMenuTime[9];		/* [9] */
 extern float g_MainMenuLength[9];	/* [9] */

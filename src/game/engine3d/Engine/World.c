@@ -653,7 +653,7 @@ SD_SIZE(DebugPoint, 0x14);
 
 extern CTable g_Points;	/* DebugPoint[], grown by a quarter */
 extern int g_NumPoints;
-#define g_PointsOn GAME_GLOBAL_IN(byte, group_4a8ef8, 2)	/* set by the first point */
+extern byte g_PointsOn;	/* set by the first point */
 extern int g_MaxPoints;	/* 4000: all cleared at that count, 0 no limit */
 
 static DebugPoint *Point(int i) {

@@ -333,11 +333,8 @@ CGameCamera *g_CamCurrent;
 CGameCamera *g_ViewerCamera;
 CPsaImage *g_Watermark;
 typeof(void (*)(void)) g_EngCallbacks[4];
-struct {
-	byte g_DrawProgressBar;	/* 0x0 */
-	byte g_ResetPending;	/* 0x1 */
-	byte pad_2[2];
-} group_4a8324;
+byte g_DrawProgressBar;
+byte g_ResetPending;
 int g_LoadingCount;
 void *g_MapTextDataFile;
 float g_ClipNear;
@@ -448,12 +445,10 @@ void *g_RTBackBuffer;
 void *g_RTZBuffer;
 void *g_NewsPanelTarget;
 void *g_NewsPanelZ;
-struct {
-	byte g_RTLinNonPow2;	/* 0x0 */
-	byte g_RTLinPow2;	/* 0x1 */
-	byte g_SceneNoSwap;	/* 0x2 */
-	byte g_SceneOn;	/* 0x3 */
-} group_4a8e1c;
+byte g_RTLinNonPow2;
+byte g_RTLinPow2;
+byte g_SceneNoSwap;
+byte g_SceneOn;
 void *g_SceneSourceSurface;
 void *g_SceneTargetSurface;
 void *g_SceneSourceTexture;
@@ -462,11 +457,8 @@ void *g_SceneRT1;
 void *g_SceneRT2;
 CMaterial *g_SceneMatCopy;
 void *g_SceneRT3;
-struct {
-	byte g_SceneFxOn[5];	/* 0x0 */
-	byte g_MotionBlurFilled;	/* 0x5 */
-	byte pad_6[2];
-} group_4a8e40;
+byte g_SceneFxOn[5];
+byte g_MotionBlurFilled;
 int g_SceneFxLast;
 void *g_SceneDuDvTarget;
 int g_SceneDuDvFrame;
@@ -505,18 +497,13 @@ float g_RealFrameSecs;
 double g_GameTimeD;
 uint32_t g_TimeMs;
 float g_FrameSec;
-struct {
-	byte g_RenderOff;	/* 0x0 */
-	byte g_RenderOnlyB38;	/* 0x1 */
-	byte g_PointsOn;	/* 0x2 */
-	byte g_TileOn;	/* 0x3 */
-} group_4a8ef8;
-struct {
-	byte g_VertexSpecular;	/* 0x0 */
-	byte g_RenderMode100;	/* 0x1 */
-	byte g_ResetDev;	/* 0x2 */
-	byte pad_3[1];
-} group_4a8efc;
+byte g_RenderOff;
+byte g_RenderOnlyB38;
+byte g_PointsOn;
+byte g_TileOn;
+byte g_VertexSpecular;
+byte g_RenderMode100;
+byte g_ResetDev;
 int g_RenderCounts[10];
 uint32_t engineIni_4a8f28;
 int g_Overdraw;
@@ -550,7 +537,9 @@ char g_ColorStr[64];
 char g_FpsText[64];
 float g_FpsTextTime;
 float g_FpsGraph[120];
-float g_FpsGraphPeak[122];
+float g_FpsGraphPeak[120];
+int g_FpsGraphPos;
+float g_FpsScaleTime;
 float g_MusicCurMainVolume;
 cGVar GVar_S_VoiceoverFadein;
 cGVar GVar_S_VoiceoverFadeout;
@@ -648,19 +637,14 @@ CMaterial *g_MatGray;
 CMaterial *g_MatInvis;
 CMaterial *g_MatBump;
 CMaterial *g_MatGround;
-struct {
-	byte g_ShowJoins;	/* 0x0 */
-	byte g_D3DOn;	/* 0x1 */
-	byte g_MipmapsOn;	/* 0x2 */
-	byte g_TexRepeat;	/* 0x3 */
-} group_4ad6f0;
+byte g_ShowJoins;
+byte g_D3DOn;
+byte g_MipmapsOn;
+byte g_TexRepeat;
 void *g_pd3dDevice;
 matrix_t g_MatIdentity;
-struct {
-	byte g_TexNoPow2;	/* 0x0 */
-	byte g_TexPow2;	/* 0x1 */
-	byte pad_2[2];
-} group_4ad738;
+byte g_TexNoPow2;
+byte g_TexPow2;
 float g_MipmapBias2;
 uint32_t g_ZEnable;
 int g_FogActive;
@@ -768,7 +752,7 @@ uint32_t g_CollisionCache;
 byte g_Engine4af7d4;
 int g_QuadTriCacheID;
 uint32_t g_CollisionNComp;
-int g_BspCacheStats[3];
+uint32_t g_BspCacheStats[3];
 uint32_t g_CollisionTests;
 uint32_t g_CollisionTestsTotal;
 int g_CollisionQuadCount;

@@ -27,7 +27,8 @@ static inline cEntity *PyEntity_Get(PyObject *self) {
 }
 
 extern PyTypeObject cPyEntity_Type;
-#define cPyEntity_methods (&GAME_GLOBAL_IN(PyMethodDef, cPyEntity_methods, 0))
+extern PyMethodDef cPyEntity_methods[7];
+#define cPyEntity_methods (&cPyEntity_methods[0])
 
 /* the handle of the entity with that name, NULL without one (no Python error set) */
 PyObject *PyEntity_New(const char *name);

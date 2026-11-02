@@ -350,7 +350,7 @@ extern cFileMem g_NetMsg;
 #define g_NetMsg (&g_NetMsg)	/* the memory file messages are built and read in */
 extern cStaticBuffer cStaticBuffer_PyStaticBuffer[2];
 #define g_NetStaticBuffer (&cStaticBuffer_PyStaticBuffer[1])
-#define g_PyStaticBuffer (&GAME_GLOBAL_IN(cStaticBuffer, cStaticBuffer_PyStaticBuffer, 0))
+#define g_PyStaticBuffer (&cStaticBuffer_PyStaticBuffer[0])
 extern vec3_t g_NetOrigin;
 extern const float g_NetMaxDist2;	/* the distance (squared) of the near entities */
 /* NetData.cpp */

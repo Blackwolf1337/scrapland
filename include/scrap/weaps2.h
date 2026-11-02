@@ -309,7 +309,7 @@ extern vec3_t g_InfernoPos;
 extern vec3_t g_SonicHitPos;
 extern char g_SwarmHudTarget[4][0x80];
 extern float g_SwarmHudTime[4];
-#define g_InfernoSphereFunc (GAME_ARRAY_IN(cPy_Function, g_ChTypeSphereFunc, 0))
+#define g_InfernoSphereFunc ((&g_ChTypeSphereFunc))
 extern int * g_SwarmSlotData[4];	/* per slot: a pointer to the int AddBees takes */
 
 /* the exe functions of other modules */

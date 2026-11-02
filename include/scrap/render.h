@@ -30,14 +30,15 @@ extern void *g_pd3dDevice;
 /* the identity matrix */
 extern matrix_t g_MatIdentity;
 /* the triangles and vertices drawn in the frame (statistics) */
-#define g_RenderTris GAME_GLOBAL_IN(int, g_RenderCounts, 0)
-#define g_RenderVerts GAME_GLOBAL_IN(int, g_RenderCounts, 4)
+extern int g_RenderCounts[10];
+#define g_RenderTris g_RenderCounts[0]
+#define g_RenderVerts g_RenderCounts[1]
 /* nothing is drawn */
-#define g_RenderOff GAME_GLOBAL_IN(byte, group_4a8ef8, 0)
+extern byte g_RenderOff;
 /* only the meshes whose material has b38 are drawn */
-#define g_RenderOnlyB38 GAME_GLOBAL_IN(byte, group_4a8ef8, 1)
+extern byte g_RenderOnlyB38;
 /* the meshes are drawn from their vertex buffers */
-#define g_UseVB GAME_GLOBAL_IN(byte, group_431bac, 0)
+extern byte g_UseVB;
 extern int g_RenderPass;
 /* the D3DRS_ZENABLE value of the frame and whether the fog is on */
 extern uint32_t g_ZEnable;
@@ -45,9 +46,9 @@ extern int g_FogActive;
 /* the D3DRS_AMBIENT of the scenes */
 extern uint32_t g_AmbientD3D;
 /* the viewport: its size, and all of it (x, y, w, h, minZ, maxZ) */
-#define g_ViewportW GAME_GLOBAL_IN(int, g_Viewport, 8)
-#define g_ViewportH GAME_GLOBAL_IN(int, g_Viewport, 12)
-extern uint32_t g_Viewport[6];
+extern uint32_t g_Viewport[6];	/* X, Y, Width, Height, MinZ, MaxZ */
+#define g_ViewportW ((int)g_Viewport[2])
+#define g_ViewportH ((int)g_Viewport[3])
 /* the planes of the view frustum (normal, d; outside where the distance is positive) */
 #define MAX_PLANES_FRUSTUM 6
 extern plane_t g_Frustum[6];
@@ -64,21 +65,21 @@ extern cGVar GVar_R_MipFilter;
 extern cGVar GVar_R_MipmapBias;
 #define g_MipmapBias (GVar_R_MipmapBias.value.f)		/* R_MipmapBias */
 extern float g_MipmapBias2;
-#define g_MipmapsOn GAME_GLOBAL_IN(byte, group_4ad6f0, 2)
+extern byte g_MipmapsOn;
 /* the address modes of the stages as Render_SetMap last set them */
 extern byte g_StageMip[8];	/* the b8 (mipmaps) of the map */
 extern byte g_StageTile[8];	/* the bc of the map: bit 0 wraps u, bit 1 v */
 /* the texture of each stage and the frame it was set in */
 extern void * g_StageTex[8];	/* [8] */
 extern int g_StageTexFrame[8];	/* [8] */
-#define g_TexChanges GAME_GLOBAL_IN(int, g_RenderCounts, 8)
+#define g_TexChanges g_RenderCounts[2]
 #define g_VBIBTriLimit (*(uint32_t *)&GVar_R_VBIBTriLimit.value)	/* R_VBIBTriLimit */
 /* the projection split into g_Tiles x g_Tiles parts (screenshots larger than the screen), one per frame */
 extern int g_Tiles;
 extern int g_TileState;
 extern int g_TileX;
 extern int g_TileY;
-#define g_TileOn GAME_GLOBAL_IN(byte, group_4a8ef8, 3)
+extern byte g_TileOn;
 /* the D3DTOP of the lightmap stage */
 extern uint32_t g_LightmapOp;
 /* Render_SetMaterial: the last material, pass, frame and context (it is skipped for the same ones), the shader mode */
@@ -86,10 +87,10 @@ extern int g_MatPass;
 extern int g_MatFrame;
 extern CMaterial *g_MatCtx;
 extern uint32_t g_ShaderCurrent;
-#define g_MatChanges GAME_GLOBAL_IN(int, g_RenderCounts, 12)
+#define g_MatChanges g_RenderCounts[3]
 /* RenderLightmapMat, the lightmap material of the draw (counted); with one the shader modes have 0x100 */
 extern CMaterial *g_LightmapMat;
-#define g_UseShaders GAME_GLOBAL_IN(byte, group_43240c, 1)
+extern byte g_UseShaders;
 extern cGVar GVar_R_MaterialLog;
 #define g_MaterialLog (GVar_R_MaterialLog.value.i)		/* R_MaterialLog */
 #define g_DecalZBias (*(uint32_t *)&GVar_R_DecalZBias.value)	/* R_DecalZBias */
@@ -226,7 +227,7 @@ extern cGVar GVar_R_CullMode;
 extern int g_WorldSet;
 /* the whole viewport (g_Viewport is the one of the current view) */
 extern uint32_t g_ViewportFull[6];
-#define g_D3DOn GAME_GLOBAL_IN(byte, group_4ad6f0, 1)
+extern byte g_D3DOn;
 #define g_MatDefault ((void *)GAME_PTR(CMaterial_MatDefault, 0))
 #define g_MatLine ((void *)GAME_PTR(CMaterial_MatLine, 0))	/* the material of the debug lines */
 extern cGVar GVar_R_ShowSphereVis;
@@ -247,10 +248,10 @@ extern char g_DeviceStr[256];	/* 0x100 */
 extern int g_DeviceLogged;
 /* the identity scaled by 1/2048 */
 extern matrix_t g_MatBias;
-#define g_TexNoPow2 GAME_GLOBAL_IN(byte, group_4ad738, 0)	/* D3DPTEXTURECAPS_NONPOW2CONDITIONAL */
-#define g_TexPow2 GAME_GLOBAL_IN(byte, group_4ad738, 1)	/* D3DPTEXTURECAPS_POW2 */
-#define g_TexRepeat GAME_GLOBAL_IN(byte, group_4ad6f0, 3)	/* D3DPTEXTURECAPS_TEXREPEATNOTSCALEDBYSIZE */
-#define g_UseShaders2 GAME_GLOBAL_IN(byte, group_43240c, 0)
+extern byte g_TexNoPow2;	/* D3DPTEXTURECAPS_NONPOW2CONDITIONAL */
+extern byte g_TexPow2;	/* D3DPTEXTURECAPS_POW2 */
+extern byte g_TexRepeat;	/* D3DPTEXTURECAPS_TEXREPEATNOTSCALEDBYSIZE */
+extern byte g_UseShaders2;
 extern int g_RenderI1F4;
 
 /* a dynamic index buffer of triangles (16 bit indices) */
@@ -454,7 +455,7 @@ extern int g_PartVBUsed;
 extern uint16_t *g_PartTri;	/* pTriParticles, new[] */
 extern int g_PartNumTri;
 /* the particles drawn in the frame (statistics) */
-#define g_RenderParts GAME_GLOBAL_IN(int, g_RenderCounts, 24)
+#define g_RenderParts g_RenderCounts[6]
 /* the engine variables */
 extern cGVar GVar_R_MaxSparkSize;
 #define g_MaxSparkSize (GVar_R_MaxSparkSize.value.f)	/* R_MaxSparkSize */

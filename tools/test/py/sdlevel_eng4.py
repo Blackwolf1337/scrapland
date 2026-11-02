@@ -169,9 +169,9 @@ check('e4 Anm_Preload', lambda: SDTest.Call('Anm_Preload', 'vss', 'Models/Elemen
 # ---- Motor.cpp ----
 check('e4 World_GetChecked', lambda: SDTest.Call('World_GetChecked', 'i')[0] == SDTest.Peek('g_World', 'i'))
 # the commands of the debug console of the engine (the output goes to the debug console, off)
-e4vu = SDTest.Peek('g_ShowJoins', 'i')
+e4vu = SDTest.PeekSpan('g_ShowJoins', 0, 4)
 for c in ('listar luces', 'LISTAR', 'mem', 'ver uniones', 'ver uniones', 'nada', 'arbo', 'imbecil', 'Idiota', 'capullo'):
 	e4srand(55)
-	check('e4 E3D_Command' + fmt((c,)), lambda c=c: (SDTest.Call('E3D_Command', 'vs', c), SDTest.Peek('g_ShowJoins', 'i') & 0xff,
+	check('e4 E3D_Command' + fmt((c,)), lambda c=c: (SDTest.Call('E3D_Command', 'vs', c), SDTest.PeekSpan('g_ShowJoins', 0, 4) & 0xff,
 		SDTest.Call('crt_rand', 'i')[0]))
-SDTest.Poke('g_ShowJoins', e4vu)
+SDTest.PokeSpan('g_ShowJoins', 0, e4vu, 4)

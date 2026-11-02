@@ -404,7 +404,7 @@ def rsastr(a):
 	return r
 def rsacon():
 	w = rsaI(0x400000 + sym('g_ConsoleWhite'))
-	r = (rsaI(0x400000 + sym('g_ConsoleOn')), rsastr(0x400000 + sym('g_PlayerInput') + 0x8))
+	r = (SDTest.PeekSpan('g_ConsoleOn', 0, 4), rsastr(0x400000 + sym('g_PlayerInput') + 0x8))
 	if w:
 		r = r + (rsaF(w, 2), rsaF(w + 0x10, 2), rsaI(w + 0x34))
 	return r
@@ -415,16 +415,16 @@ if SDTest.Peek('g_ScorerWhite', 'i'):
 SDTest.Poke('g_ShowConsoleLog', rsaShowLog)
 check('Scorer_DrawConsole off', lambda: (rsaloglen(lambda: SDTest.Call('Scorer_DrawConsole', 'b')[0]), rsacon()))
 SDTest.Call('Scorer_SetConsole', 'vi', 1)
-if SDTest.Peek('g_ConsoleOn', 'i') & 0xff:
+if SDTest.PeekSpan('g_ConsoleOn', 0, 4) & 0xff:
 	rsaSet(0x400000 + sym('g_ConsoleTime'), (-1.0e9,))
 	SDTest.Call('cPlayerInput_SetString', 'tvis', 0x400000 + sym('g_PlayerInput'), ':ShowConsoleL\t')
 	check('Scorer_DrawConsole open', lambda: (rsaloglen(lambda: SDTest.Call('Scorer_DrawConsole', 'b')[0]), rsacon()))
 	check('Scorer_DrawConsole open 2', lambda: (rsaloglen(lambda: SDTest.Call('Scorer_DrawConsole', 'b')[0]), rsacon()))
-	rsaConFlags = SDTest.Peek('g_ConsoleOn', 'i')
-	SDTest.Poke('g_ConsoleOn', rsaConFlags | 0x10000)
+	rsaConFlags = SDTest.PeekSpan('g_ConsoleOn', 0, 4)
+	SDTest.PokeSpan('g_ConsoleOn', 0, rsaConFlags | 0x10000, 4)
 	check('Scorer_DrawConsole closing', lambda: (rsaloglen(lambda: SDTest.Call('Scorer_DrawConsole', 'b')[0]), rsacon()))
 SDTest.Call('Scorer_SetConsole', 'vi', 0)
-SDTest.Poke('g_ConsoleOn', SDTest.Peek('g_ConsoleOn', 'i') & ~0xff0000)
+SDTest.PokeSpan('g_ConsoleOn', 0, SDTest.PeekSpan('g_ConsoleOn', 0, 4) & ~0xff0000, 4)
 
 # ---- the debug drawings of CShow (not the AI views 4 and 6, they change the AI) and of NWAnalizeOn ----
 rsaCShow = SDTest.Peek('g_CShow', 'i')

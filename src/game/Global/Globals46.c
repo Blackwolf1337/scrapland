@@ -185,12 +185,10 @@ CPsaImage *g_ScorerNoise;
 CPsaImage *g_ScorerMarker;
 cScorer *g_Scorers;
 cGVarFunction GVar_FullScreenConsoleCallback;
-struct {
-	byte g_ConsoleOn;	/* 0x0 */
-	byte g_ConsoleCheckInput;	/* 0x1 */
-	byte g_ConsoleClosing;	/* 0x2 */
-	byte g_ConsoleBusy;	/* 0x3 */
-} group_4601fc;
+byte g_ConsoleOn;
+byte g_ConsoleCheckInput;
+byte g_ConsoleClosing;
+byte g_ConsoleBusy;
 cVirtualKeyboard g_ConsoleSavedKeyboard;
 uint32_t g_ConsoleSavedSet;
 cPlayerInput g_ConsoleSavedInput;
@@ -199,11 +197,8 @@ char *g_ConsoleHistory[16];
 cGVar GVar_ShowConsoleLog;
 float g_ConsoleTime;
 int g_ConsoleHistoryPos;
-struct {
-	byte g_MainMenuAnimInit;	/* 0x0 */
-	byte g_SubMenuAnimInit;	/* 0x1 */
-	byte pad_2[2];
-} group_460428;
+byte g_MainMenuAnimInit;
+byte g_SubMenuAnimInit;
 float g_MainMenuWait[9];
 float g_MainMenuTime[9];
 float g_MainMenuLength[9];

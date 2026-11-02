@@ -35,7 +35,6 @@ extern const IObject3DVtbl CGround_vftable;
 extern uint32_t g_CollisionStats[6];	/* 6 */
 extern uint32_t g_CollisionStats2;
 extern uint32_t g_CollisionCache;
-#define g_CollisionCache2 (GAME_ARRAY_IN(uint32_t, g_BspCacheStats, 0))	/* 2 */
 /* while a .amc file is read: the meshes by their Param (256), while one is written the next Param */
 extern CCollideMesh ** g_LoadMeshList;
 extern int g_SaveCollideMeshParam;
@@ -274,7 +273,7 @@ CGround *CGround_ctor(CGround *self) {
 	memset(&self->cache, 0, sizeof(self->cache));
 	memset(g_CollisionStats, 0, 6 * sizeof(uint32_t));
 	g_CollisionNComp = 0;
-	memset(g_CollisionCache2, 0, 2 * sizeof(uint32_t));
+	memset(g_BspCacheStats, 0, 2 * sizeof(uint32_t));
 	g_CollisionTestsMax = 0;
 	g_CollisionTests = 0;
 	g_CollisionTestsTotal = 0;
@@ -1958,7 +1957,7 @@ extern cGVar GVar_ShowMapSolid;
 #define g_ShowMapSolid (GVar_ShowMapSolid.value.i)		/* 0 wireframe, 1 solid, 2 solid with fog */
 extern float g_CollideAddColor[4];	/* added to the shaded colors, rgba */
 extern CollideVert g_CollideVerts[3];	/* the triangle drawn */
-#define g_SectorColors (GAME_ARRAY_IN(const uint32_t, g_BspColors, 4))
+#define g_SectorColors ((&g_BspColors[1]))
 
 /* the shading of the solid view: (0 < s) ? min(1, s) : 0 the way the original branches (NaN to the minss) */
 static float Collide_Clamp01(float s) {
@@ -2126,7 +2125,7 @@ void Ground_FiniCollideMat(void) {
 	CMaterial_dtor(&g_CollideMat);
 }
 
-#define g_QuadColors (GAME_ARRAY_IN(const uint32_t, g_BspColors, 4))
+#define g_QuadColors ((&g_BspColors[1]))
 
 /* the box of a quad with its cell from x z of the grid */
 static void Ground_QuadBox(const CHeights *alt, const CCollideQuad *q, float x0, float x1, float z0, float z1,

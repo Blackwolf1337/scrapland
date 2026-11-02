@@ -20,10 +20,10 @@
 #define DOOR_USR 0x8		/* open for player 0 on either side */
 
 /* the state of the last sphere test of Doors_Slot */
-#define g_DoorFront GAME_GLOBAL_IN(byte, group_447600, 0)		/* an entity in front of the door */
-#define g_DoorBack GAME_GLOBAL_IN(byte, group_447600, 1)
-#define g_DoorUsrFront GAME_GLOBAL_IN(byte, group_447600, 2)	/* player 0 in front */
-#define g_DoorUsrBack GAME_GLOBAL_IN(byte, group_447600, 3)
+extern byte g_DoorFront;	/* an entity in front of the door */
+extern byte g_DoorBack;
+extern byte g_DoorUsrFront;	/* player 0 in front */
+extern byte g_DoorUsrBack;
 extern float g_DoorAngY;		/* the y angle of the door */
 extern vec3_t g_DoorPos;
 extern cPy_Function g_ChTypeSphereFunc;

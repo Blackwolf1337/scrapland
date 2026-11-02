@@ -56,15 +56,15 @@ SDTest.Poke('g_MusicMainVolume', smvoli[2])
 # the options of Engine_Option: get all, set and toggle the harmless ones (0x20 is the screenshot flag)
 for o in (0x10, 0x20, 0x100, 0x101, 0x102, 0x103, 0x30):
 	check('Engine_GetOption' + fmt((o,)), lambda o=o: SDTest.Call('Engine_GetOption', 'ii', o)[0])
-smopt = (SDTest.Peek('g_ProfMode', 'i'), SDTest.Peek('g_VertexSpecular', 'i'))
+smopt = (SDTest.Peek('g_ProfMode', 'i'), SDTest.PeekSpan('g_VertexSpecular', 0, 4))
 for o in (0x10, 0x100, 0x101):
 	for v in (0, 1):
 		check('Engine_SetOption' + fmt((o, v)), lambda o=o, v=v: (SDTest.Call('Engine_SetOption', 'iii', o, v)[0],
-			SDTest.Peek('g_ProfMode', 'i'), SDTest.Peek('g_VertexSpecular', 'i') & 0xffff))
+			SDTest.Peek('g_ProfMode', 'i'), SDTest.PeekSpan('g_VertexSpecular', 0, 4) & 0xffff))
 	check('Engine_ToggleOption' + fmt((o,)), lambda o=o: (SDTest.Call('Engine_ToggleOption', 'ii', o)[0], SDTest.Peek('g_ProfMode', 'i'),
-		SDTest.Peek('g_VertexSpecular', 'i') & 0xffff))
+		SDTest.PeekSpan('g_VertexSpecular', 0, 4) & 0xffff))
 SDTest.Poke('g_ProfMode', smopt[0])
-SDTest.Poke('g_VertexSpecular', smopt[1])
+SDTest.PokeSpan('g_VertexSpecular', 0, smopt[1], 4)
 
 smcb = smints(sym('g_EngCallbacks'), 4)
 for i in range(4):

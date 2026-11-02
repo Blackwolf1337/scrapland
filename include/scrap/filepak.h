@@ -98,7 +98,8 @@ extern cPackEntryList g_PackEntries;
 extern cStringList g_PackNames;
 #define g_PackNames (&g_PackNames)	/* packs being recorded */
 extern int g_NumPackFiles;
-#define g_PackFiles (&GAME_GLOBAL_IN(cFile2, g_PackFiles, 0))		/* PACK_MAX_FILES */
+extern cFile2 g_PackFiles[128];
+#define g_PackFiles (&g_PackFiles[0])		/* PACK_MAX_FILES */
 extern HashTable *g_NameTable;	/* of cNameItem, while Python_CompileAll collects */
 extern cGVar GVar_BuildPackExclude;
 #define g_PackExclude (GVar_BuildPackExclude.value.s)	/* ';' separated patterns not to pack */
