@@ -135,7 +135,6 @@ check('cObjElementFXBankerSteal_SetEntity', lambda: (SDTest.Call('cObjElementFXB
 check('FXMisc_SetI8 BankerSteal', lambda: (SDTest.Call('FXMisc_SetI8@1c6f00', 'tvii', fxap, 77), fxai(fxap + 8)))
 fxadel(fxap, 'BankerSteal')
 fxap = fxanew('GearMissile')
-check('FXChar_SetI4 GearMissile', lambda: (SDTest.Call('FXChar_SetI4@1c6fb0', 'tvii', fxap, -5), fxai(fxap + 4)))
 fxadel(fxap, 'GearMissile')
 fxap = fxanew('BishopSellLife')
 check('cObjElementFXBishopSellLife_SetAttacked', lambda: (SDTest.Call('cObjElementFXBishopSellLife_SetAttacked', 'tvii', fxap, fxaplayer),

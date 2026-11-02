@@ -173,7 +173,7 @@ int SaveVar_Inc(const char *name, int n) {
 			cPy_Function_Execute(g_OnCrazyDeal, 0);
 		}
 		if (now > 2 && cPy_Function_IsValid(g_OnAllCrazyDeals)) {
-			*(byte *)&g_SuperDealAvaliable = 1;	/* a byte store in the original */
+			g_SuperDealAvaliable = (g_SuperDealAvaliable & ~0xff) | 1;	/* the original stores the low byte */
 			cPy_Function_Execute(g_OnAllCrazyDeals, 1);
 		}
 	}
@@ -186,7 +186,7 @@ int SaveVar_Inc(const char *name, int n) {
 			item->vftable->Var(item, "Status2", 1, NULL, NULL, &on);
 			item->vftable->Var(item, "BlinkTime", 1, NULL, &blink, NULL);
 			item->vftable->Var(item, "SolidTime", 1, NULL, &solid, NULL);
-			((byte *)item)[0x29] = 1;
+			item->visible = 1;
 		}
 	}
 	return value;

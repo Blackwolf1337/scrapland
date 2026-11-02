@@ -100,7 +100,7 @@ extern char str_M3dIni[128];
 #define g_M3dIni str_M3dIni		/* "m3d.ini" */
 /* the video to play at the start and after a level ("" when played, unless bit 0 of its flags) */
 #define g_StartVideo (((cString *)&GVar_PlayVideo.value))
-#define g_StartVideoFlags (*(uint32_t *)&GVar_PlayVideo.base.flags)
+#define g_StartVideoFlags (GVar_PlayVideo.base.flags)
 extern cGVar GVar_isDemo;
 #define g_IsDemo (GVar_isDemo.value.i)
 extern cGVar GVar_isXbox;
@@ -144,7 +144,7 @@ extern cGVar GVar_RenderUseVB;
 #define g_RenderUseVB (GVar_RenderUseVB.value.i)
 extern cGVar GVar_RenderModels;
 #define g_RenderModels (GVar_RenderModels.value.i)
-#define g_ModelAmbient (*(uint32_t *)&GVar_ModelAmbient.value)	/* D3D color, 0: the one of m3d.ini */
+#define g_ModelAmbient (GVar_ModelAmbient.value.u)	/* D3D color, 0: the one of m3d.ini */
 extern cGVar GVar_TimerFreqMult;
 #define g_TimerFreqMult (GVar_TimerFreqMult.value.i)
 extern cGVar GVar_VideoWidth;

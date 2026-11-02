@@ -41,9 +41,8 @@ void CCollideMesh_dtor(CCollideMesh *self) {
 }
 
 void CAnimMat_SetFrame(CAnimMat *self, int frame) {
-	int *p = (int *)self;
-	p[4] = frame;
-	((float *)p)[5] = (float)frame;
+	self->frame = frame;
+	self->framef = (float)frame;
 }
 
 CGameModel *CGameModel_ctor(CGameModel *self, const char *name) {

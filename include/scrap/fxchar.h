@@ -260,7 +260,6 @@ void FXSputnik_Start(cObjElementFXSputnik *self, cEntity *e);
 void FXSputnik_SetA(cObjElementFXSputnik *self, float v);	/* the duration */
 void FXSputnik_SetB(cObjElementFXSputnik *self, float v);	/* minMove */
 /* dead code: the int at 0x4 */
-void FXChar_SetI4(void *self, int v);
 
 /* the free functions */
 /* the effects of a character by name: CharacterDeath, CharacterSputnikHello, Bye, Interface and Junkyard,

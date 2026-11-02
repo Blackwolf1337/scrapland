@@ -1009,7 +1009,7 @@ extern cGVar GVar_OnFocusSoundVol;
 #define g_OnFocusSoundVol (GVar_OnFocusSoundVol.value.f)	/* OnFocusSoundVol */
 extern cGVar GVar_ScorerMarker;
 #define g_ScorerMarkerOn (GVar_ScorerMarker.value.i)		/* ScorerMarker */
-#define g_ScorerMarkerColor (*(uint32_t *)&GVar_ScorerMarkerColor.value)	/* ScorerMarkerColor */
+#define g_ScorerMarkerColor (GVar_ScorerMarkerColor.value.u)	/* ScorerMarkerColor */
 extern cGVar GVar_ScorerMarkerSpeed;
 #define g_ScorerMarkerSpeed (GVar_ScorerMarkerSpeed.value.f)	/* ScorerMarkerSpeed */
 extern cGVar GVar_CShow;

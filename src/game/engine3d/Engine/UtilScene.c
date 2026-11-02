@@ -103,7 +103,9 @@ void CModelList_dtor(CModelList *self) {
 	}
 }
 
-CModelList *g_ModelsRender[1026];
+CModelList *g_ModelsRender[1024];
+int g_NumModelsRender;
+int g_MaxModelsRender;
 
 void Model_UpdateRender(CModel *m) {
 	CModelList *lm = m->list;

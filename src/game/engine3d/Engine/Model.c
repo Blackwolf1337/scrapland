@@ -873,7 +873,7 @@ cGVar GVar_R_DistMLOD1;
 #define g_DistMLOD1 (GVar_R_DistMLOD1.value.f)		/* R_DistMLOD1, the distance of LOD i is i times it */
 cGVar GVar_R_DrawMLODMask;
 
-#define g_DrawMLODMask (*(uint32_t *)&GVar_R_DrawMLODMask.value)	/* R_DrawMLODMask: the LODs drawn as the main model */
+#define g_DrawMLODMask (GVar_R_DrawMLODMask.value.u)	/* R_DrawMLODMask: the LODs drawn as the main model */
 cGVar GVar_R_DrawMLODMin;
 
 #define g_DrawMLODMin (GVar_R_DrawMLODMin.value.i)		/* R_DrawMLODMin */

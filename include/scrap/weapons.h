@@ -83,9 +83,9 @@ extern char g_WeapListBuf[512];		/* 0x200 bytes, GetWeapList */
 extern int g_WeaponNeedOrder[3][6];	/* three orders of six weapons */
 extern cGVar GVar_VehicleCenterPadLock;
 #define g_VehicleCenterPadLock (GVar_VehicleCenterPadLock.value.f)
-#define g_CannonScorerColorRed (*(uint32_t *)&GVar_CannonScorerColorRed.value)
-#define g_CannonScorerColorGreen (*(uint32_t *)&GVar_CannonScorerColorGreen.value)
-#define g_CannonScorerColorBlue (*(uint32_t *)&GVar_CannonScorerColorBlue.value)
+#define g_CannonScorerColorRed (GVar_CannonScorerColorRed.value.u)
+#define g_CannonScorerColorGreen (GVar_CannonScorerColorGreen.value.u)
+#define g_CannonScorerColorBlue (GVar_CannonScorerColorBlue.value.u)
 
 /* the vehicle of that name, CHECKed (the start of every native function of a weapon) */
 static inline cEntity *Weap_GetVehicle(const char *name) {

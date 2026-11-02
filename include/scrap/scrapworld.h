@@ -47,7 +47,7 @@ extern int g_ShadowsStencil;	/* [sombras_stencil] use */
 /* the splash screens and the loading bar */
 extern cGVar GVar_ShowSplashScreen;
 #define g_SplashOn (GVar_ShowSplashScreen.value.i)
-#define g_SplashFade (*(uint32_t *)&GVar_SplashScreenFade.value)	/* ms */
+#define g_SplashFade (GVar_SplashScreenFade.value.u)	/* ms */
 extern uint32_t g_SplashTime;	/* timeGetTime at the end of the last one */
 extern char g_SplashLast[260];	/* 0x104, the last one shown */
 #define g_LoadingOn g_DrawProgressBar

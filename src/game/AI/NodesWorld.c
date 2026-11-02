@@ -22,8 +22,6 @@
 #include "scrap/scrapworld.h"
 #include "scrap/world.h"
 
-
-
 /* ---- Global/DList.h ---- */
 
 void NWIntList_Clear(cNWIntList *list) {
@@ -46,10 +44,6 @@ void NWIntList_Free(cNWIntList *list) {
 void NWVecList_Free(cNWVecList *list) {
 	NWVecList_Clear(list);
 	DList_FreePool(list, sizeof(cNWVecNode));
-}
-
-void NWIntList_FreeAt0c(void *owner) {
-	NWIntList_Free((cNWIntList *)((byte *)owner + 0xc));
 }
 
 void NWIntList_Add(cNWIntList *list, void *const *data) {

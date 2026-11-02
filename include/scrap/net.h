@@ -277,8 +277,8 @@ extern cGVar GVar_ServerMinSendDelay;
 extern cGVar GVar_UseServerPassword;
 #define g_UseServerPassword (GVar_UseServerPassword.value.i)
 #define g_MasterServerAddress (*(char * *)&g_GVarMasterServerAddress.value)
-#define g_MasterServerPortFlags (*(byte *)&g_GVarMasterServerPort.base.flags)
-#define g_MasterServerPort (*(int *)&g_GVarMasterServerPort.value)
+#define g_MasterServerPortFlags (g_GVarMasterServerPort.base.flags)
+#define g_MasterServerPort (g_GVarMasterServerPort.value.i)
 extern cGVar GVar_ClientPassword;
 #define g_ClientPassword (GVar_ClientPassword.value.s)
 extern cGVar GVar_ClientRemotePassword;
@@ -291,7 +291,7 @@ extern cGVar GVar_ServerName;
 #define g_ServerName (GVar_ServerName.value.s)
 extern cGVar g_GVarServerType;
 #define g_ServerType (*(char * *)&g_GVarServerType.value)	/* ServerType (cString) */
-#define g_LastMasterCommandFlags (*(byte *)&GVar_LastMasterCommandSent.base.flags)
+#define g_LastMasterCommandFlags (GVar_LastMasterCommandSent.base.flags)
 #define g_LastMasterCommand (((cString *)&GVar_LastMasterCommandSent.value))	/* LastMasterCommandSent */
 extern cGVar GVar_ServerDataRateLimit;
 #define g_ServerDataRateLimit (GVar_ServerDataRateLimit.value.i)

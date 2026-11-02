@@ -41,7 +41,7 @@
 
 cGVar GVar_PlayVideoFX;
 
-#define g_VideoMirror (*(uint32_t *)&GVar_PlayVideoFX.value)	/* 1: up-down, 2: left-right */
+#define g_VideoMirror (GVar_PlayVideoFX.value.u)	/* 1: up-down, 2: left-right */
 
 int g_VideoPadHeld;
 

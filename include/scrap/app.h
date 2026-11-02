@@ -45,7 +45,7 @@ extern cGVar GVar_ForceReload;
 extern cGVar GVar_ModPathName;
 #define g_ModPathName (GVar_ModPathName.value.s)	/* a directory of packs after "mods" */
 #define g_LoadMsgString (((cString *)&GVar_LoadMsgString.value))	/* the loading tip */
-#define g_DefaultServerPort (*(uint16_t *)&GVar_DefaultServerPort.value)
+#define g_DefaultServerPort ((uint16_t)GVar_DefaultServerPort.value.i)
 extern cGVar GVar_InactiveBackgroundApp;
 #define g_InactiveBackgroundApp (GVar_InactiveBackgroundApp.value.i)	/* the frames go on without the focus */
 #define g_ServerMapList (((cString *)&GVar_ServerMapList.value))

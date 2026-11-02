@@ -23,11 +23,13 @@
 #define PORTAL_EPS 8.0e-6f			/* the step out of a portal, times the distance to the origin */
 #define MAX_ZONES 0x80
 
-CZone *g_Zones[132];
+CZone *g_Zones[128];
+int g_NumZones;
+int g_PortalUnion;
+int g_NumEndSectors;
+int g_NumOutSectors;
 
 /* the sector counts by their name tags (the sky ones are g_PortalUnion) */
-#define g_NumEndSectors (*(int *)&((void * *)g_Zones)[130])
-#define g_NumOutSectors (*(int *)&((void * *)g_Zones)[131])
 cGVar GVar_R_PortalClip;
 
 /* the projection and the viewport narrowed to the rectangle of each seen sector */

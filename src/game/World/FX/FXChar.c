@@ -145,10 +145,6 @@ void cObjElementFXCharacterConversor_SetConversor(cObjElementFXCharacterConverso
 	}
 }
 
-void FXChar_SetI4(void *self, int v) {
-	*(int *)((byte *)self + 4) = v;
-}
-
 void cObjElementFXMaintenanceWork_SetMaintenance(cObjElementFXMaintenanceWork *self, cEntity *e) {
 	self->maintenance = e;
 	CGameModel *m = FXC_Model(e);

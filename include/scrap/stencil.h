@@ -65,8 +65,8 @@ extern cGVar GVar_R_ShowStencil;
 extern cGVar GVar_R_StencilMult;
 #define g_StencilMult (GVar_R_StencilMult.value.f)	/* R_StencilMult */
 extern float g_StencilMultFrame;
-#define g_StencilRefWorld (*(uint32_t *)&GVar_R_StencilRefWorld.value)	/* R_StencilRefWorld */
-#define g_StencilRefModels (*(uint32_t *)&GVar_R_StencilRefModels.value)	/* R_StencilRefModels */
+#define g_StencilRefWorld (GVar_R_StencilRefWorld.value.u)	/* R_StencilRefWorld */
+#define g_StencilRefModels (GVar_R_StencilRefModels.value.u)	/* R_StencilRefModels */
 extern cGVar GVar_R_StencilSelf;
 #define g_StencilSelf (GVar_R_StencilSelf.value.i)	/* R_StencilSelf */
 extern cGVar GVar_R_StencilTog;

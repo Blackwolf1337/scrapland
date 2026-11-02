@@ -47,7 +47,7 @@ extern cGVar GVar_SM3_UseScenes;
 extern cGVar GVar_CM3_DeleteM3D;
 #define g_CM3DeleteM3D (GVar_CM3_DeleteM3D.value.i)		/* CM3_DeleteM3D */
 extern byte g_M3DOk;
-#define g_ShowNodesTree (*(int *)&g_ShowNodesTreeVar.value)		/* ShowNodesTree */
+#define g_ShowNodesTree (g_ShowNodesTreeVar.value.i)		/* ShowNodesTree */
 /* the [Model] switches of the ini of the model being read */
 extern byte g_M3DUseOpacity;
 extern byte g_M3DUseEnvmap;
@@ -75,7 +75,7 @@ extern cGVar GVar_SharedTexuresPath;
 #define g_SharedTexturesPath (GVar_SharedTexuresPath.value.s)	/* gvar SharedTexuresPath, for "$name" maps */
 extern cGVar GVar_OptimizeNodes;
 #define g_OptimizeNodes (GVar_OptimizeNodes.value.i)	/* gvar: 1 delete unused nodes, 2 collapse to bip nodes, 4 AniMask */
-#define g_UseWSM (*(int *)&g_UseWSMVar.value)		/* gvar UseWSM */
+#define g_UseWSM (g_UseWSMVar.value.i)		/* gvar UseWSM */
 extern int g_UseTextures;		/* video UsarTexturas: without, maps of b8 1 become colors */
 
 /* an animation table of the file: one value a frame (CTable of int or float) */

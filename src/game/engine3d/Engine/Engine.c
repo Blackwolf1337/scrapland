@@ -255,7 +255,7 @@ cGVar GVar_AutoScreenShot;
 #define g_AutoShot (GVar_AutoScreenShot.value.i)		/* the console variable AutoScreenShot */
 cGVar GVar_R_StencilRefClear;
 
-#define g_StencilClear (*(uint32_t *)&GVar_R_StencilRefClear.value)
+#define g_StencilClear (GVar_R_StencilRefClear.value.u)
 /* the callbacks of the game the reset puts in place */
 #define D3DRS_SHADEMODE 9
 #define D3DRS_DITHERENABLE 0x1a

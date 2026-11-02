@@ -12,7 +12,7 @@
 
 extern cGVar g_GvGlowMap;
 
-#define g_GlowMap (*(int *)&g_GvGlowMap.value)		/* R_GlowMap */
+#define g_GlowMap (g_GvGlowMap.value.i)		/* R_GlowMap */
 #define SHADER_NAME 0x40
 
 CMatId *CMatId_ctor(CMatId *self) {

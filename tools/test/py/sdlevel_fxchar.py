@@ -71,7 +71,6 @@ check('cObjElementFXMaintenanceWork_SetShip', lambda: (SDTest.Call('cObjElementF
 	fxci(fxce + 8) == fxcplayer))
 fxcdel(fxce, fxcMAINT)
 fxce = fxcz(0x10)
-check('FXChar_SetI4', lambda: (SDTest.Call('FXChar_SetI4', 'tvii', fxce, -77), fxcints(fxce, (0, 4, 8))))
 check('FXChar_SetI8', lambda: (SDTest.Call('FXMisc_SetI8@1b43c0', 'tvii', fxce, 1234), fxcints(fxce, (0, 4, 8))))
 fxcfree(fxce)
 

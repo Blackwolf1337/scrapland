@@ -42,8 +42,8 @@ typedef struct SectorVis {
 #define SECTORVIS_VALID 1
 #define SECTORVIS_CACHED 2		/* pos was the same as the last time */
 
-extern CZone * g_Zones[132];
-#define g_NumZones (*(int *)&((void * *)g_Zones)[128])
+extern CZone *g_Zones[128];
+extern int g_NumZones;
 extern cGVar GVar_R_PortalPos;
 #define g_SectorCache (GVar_R_PortalPos.value.i)	/* the cached sector is used when the position is the same */
 extern cGVar GVar_R_UsePortals;
@@ -56,7 +56,7 @@ extern cGVar GVar_R_PortalEnd;
 #define g_PortalExterior (GVar_R_PortalEnd.value.i)	/* exterior sectors do not look into interior ones */
 extern cGVar GVar_R_PortalDist;
 #define g_PortalNear (GVar_R_PortalDist.value.f)	/* the near distance of the portals, times zNear / 256 * 128 */
-#define g_PortalUnion (*(int *)&((void * *)g_Zones)[129])	/* the rectangle of all seen sectors with sky is kept */
+extern int g_PortalUnion;	/* the rectangle of all seen sectors with sky is kept */
 
 /* the sectors seen this frame (zones a pintar) and their screen rectangles */
 #define MAX_PAINT_ZONES 0x80
@@ -143,6 +143,6 @@ SD_SIZE(GroundRay, 0x20);
 byte CGround_RayVert(void *ground, float x, float z, GroundRay *res);
 /* the highest triangle point between minY and y with the flags of info; 1 when found */
 byte CGround_GetYInfo(void *ground, float x, float z, GroundRay *info);
-#define g_RayVertSectors (*(int *)&g_FastGetYSectorVar.value)
+#define g_RayVertSectors (g_FastGetYSectorVar.value.i)
 
 #endif

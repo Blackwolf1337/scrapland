@@ -248,7 +248,6 @@ def nwoLists():
 	SDTest.Call('NWIntList_Add', 'tvip', l, 90)
 	check('IntList_Free 2', lambda l=l: (SDTest.Call('NWIntList_Free@a22e0', 'tvi', l), nwoIntRing(l)))
 	SDTest.Call('NWIntList_Add', 'tvip', l, 91)
-	check('IntList_FreeAt0c', lambda l=l: (SDTest.Call('NWIntList_FreeAt0c', 'tvi', l - 0xc), nwoIntRing(l)))
 	# the vec3 lists
 	for v, f in (((1.0, 2.0, 3.0), sym('NWVecList_Add')), ((4.5, -5.0, 6.25), sym('NWVecList_Add')), ((7.0, 8.0, -9.5), sym('NWVecList_Add'))):
 		check('VecList_Add%s' % fmt(v), lambda l=l, v=v, f=f: (SDTest.Call(f, 'tviF', l, v)[0], nwoVecRing(l, 10)))

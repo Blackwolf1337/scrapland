@@ -42,7 +42,7 @@ cGVar GVar_R_LightDesat;
 #define g_LightDesat (GVar_R_LightDesat.value.f)
 cGVar GVar_MonitorAmbient;
 
-#define g_MonitorAmbient (*(uint32_t *)&GVar_MonitorAmbient.value)
+#define g_MonitorAmbient (GVar_MonitorAmbient.value.u)
 cGVar GVar_R_LightTrace;
 
 #define g_LightTrace (GVar_R_LightTrace.value.i)

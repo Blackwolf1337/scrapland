@@ -299,7 +299,7 @@ SD_SIZE(cObjElementFXFunctionarySpecialAction, 0x1ac);
 /* the electric ball of Gear: lightning bolts to the world or to entities near it, puffs, sparks and a tail */
 typedef struct cObjElementFXGearMissile {
 	const cObjElementFXVtbl *vftable;	/* 0x00 */
-	cEntity *entity;		/* 0x004 the missile (FXChar_SetI4) */
+	cEntity *entity;		/* 0x004 the missile */
 	int node;			/* 0x008 Dummy01 */
 	CGameParticles particles;	/* 0x00c on Dummy01: the ball, 0..3 the glows */
 	int nodeSparks;			/* 0x0bc Dummy02 */
@@ -547,8 +547,7 @@ void cObjElementFXPoliceSteal_Reset(cObjElementFX *base, cDebris *arg);
 void cObjElementFXSebastianFlash_Reset(cObjElementFX *base, cDebris *arg);
 
 /* the setters and starts; the entity at 0x4 of PoliceSteal, BankMasterSuction, BertoFlash, BettyAttack,
- * BishopAttack, MessengerAttack and SebastianFlash is FXMisc_SetEntity, the int at 0x8 of BankerSteal FXMisc_SetI8,
- * the one at 0x4 of GearMissile FXChar_SetI4 */
+ * BishopAttack, MessengerAttack and SebastianFlash is FXMisc_SetEntity, the int at 0x8 of BankerSteal FXMisc_SetI8 */
 /* the entity at 0x8 (PoliceSteal, BankMasterSuction, BertoFlash), its model a CHECK */
 void FXCharActions_SetEntity8(void *self, cEntity *e);
 void cObjElementFXBankerSteal_SetEntity(cObjElementFXBankerSteal *self, cEntity *e);

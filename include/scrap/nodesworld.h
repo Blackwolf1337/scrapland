@@ -301,7 +301,6 @@ void DListVec3_Add(cNWVecList *list, const vec3_t *v);
 void NWIntList_Free(cNWIntList *list);
 void NWVecList_Free(cNWVecList *list);
 /* the list of a struct at +0xc */
-void NWIntList_FreeAt0c(void *owner);
 void NWIntList_Add(cNWIntList *list, void *const *data);
 void NWVecList_Add(cNWVecList *list, const vec3_t *v);
 void NWTriList_Add(cNWTriList *list, const float *data);

@@ -23,7 +23,8 @@ static void Batch_Alloc(CTable *t, uint32_t size) {
 
 CTable g_TabMesh;
 
-RenderMeshEntry *g_MeshList[1026];
+RenderMeshEntry *g_MeshList[1024];
+int g_UsedMesh;
 
 int MeshD3D_Render(CMeshD3D *self, void *ctx) {
 	CRenderNode *r = ctx;
@@ -124,7 +125,8 @@ int RenderMesh_Compare(const void *a, const void *b) {
 
 CTable g_TabTransp;
 
-RenderTranspEntry *g_TranspList[1026];
+RenderTranspEntry *g_TranspList[1024];
+int g_UsedTransp;
 
 int g_TranspGroup = 1;
 
@@ -218,7 +220,8 @@ int RenderTransp_Compare(const void *a, const void *b) {
 
 CTable g_TabObj;
 
-RenderObjEntry *g_ObjList[1026];
+RenderObjEntry *g_ObjList[1024];
+int g_UsedObj;
 
 int ParticleSystem_Draw(CParticleSystem *sp, CRenderNode *r) {
 	if (!g_pd3dDevice) {

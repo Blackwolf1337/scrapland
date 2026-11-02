@@ -61,7 +61,7 @@ extern cGVar GVar_R_TexFilter;
 #define g_TexFilter (GVar_R_TexFilter.value.i)		/* R_TexFilter 0 point, 1 linear, 2 anisotropic */
 extern cGVar GVar_R_MipFilter;
 #define g_MipFilter (GVar_R_MipFilter.value.i)		/* R_MipFilter 0 point, 1 linear */
-#define g_Anisotropy (*(uint32_t *)&GVar_R_Anisotropy.value)	/* R_Anisotropy */
+#define g_Anisotropy (GVar_R_Anisotropy.value.u)	/* R_Anisotropy */
 extern cGVar GVar_R_MipmapBias;
 #define g_MipmapBias (GVar_R_MipmapBias.value.f)		/* R_MipmapBias */
 extern float g_MipmapBias2;
@@ -73,7 +73,7 @@ extern byte g_StageTile[8];	/* the bc of the map: bit 0 wraps u, bit 1 v */
 extern void * g_StageTex[8];	/* [8] */
 extern int g_StageTexFrame[8];	/* [8] */
 #define g_TexChanges g_RenderCounts[2]
-#define g_VBIBTriLimit (*(uint32_t *)&GVar_R_VBIBTriLimit.value)	/* R_VBIBTriLimit */
+#define g_VBIBTriLimit (GVar_R_VBIBTriLimit.value.u)	/* R_VBIBTriLimit */
 /* the projection split into g_Tiles x g_Tiles parts (screenshots larger than the screen), one per frame */
 extern int g_Tiles;
 extern int g_TileState;
@@ -93,7 +93,7 @@ extern CMaterial *g_LightmapMat;
 extern byte g_UseShaders;
 extern cGVar GVar_R_MaterialLog;
 #define g_MaterialLog (GVar_R_MaterialLog.value.i)		/* R_MaterialLog */
-#define g_DecalZBias (*(uint32_t *)&GVar_R_DecalZBias.value)	/* R_DecalZBias */
+#define g_DecalZBias (GVar_R_DecalZBias.value.u)	/* R_DecalZBias */
 extern cGVar GVar_R_AlphaFog;
 #define g_AlphaFog (GVar_R_AlphaFog.value.i)		/* R_AlphaFog 0, 1 (only add blending), 2 */
 extern cGVar GVar_R_UseDefMaterial;
@@ -136,8 +136,8 @@ extern cGVar GVar_R_EnvMapScale;
 #define g_EnvMapScale (GVar_R_EnvMapScale.value.f)	/* R_EnvMapScale */
 extern cGVar GVar_R_EnvMapViewDep;
 #define g_EnvMapViewDep (GVar_R_EnvMapViewDep.value.i)	/* R_EnvMapViewDep 0, 1, 2 */
-#define g_EnvBump (*(int *)&g_GvEnvBump.value)		/* R_EnvBump */
-#define g_EnvMap (*(int *)&g_GvEnvMap.value)		/* R_EnvMap */
+#define g_EnvBump (g_GvEnvBump.value.i)		/* R_EnvBump */
+#define g_EnvMap (g_GvEnvMap.value.i)		/* R_EnvMap */
 extern cGVar GVar_R_EnvBlend;
 #define g_EnvBlend (GVar_R_EnvBlend.value.i)		/* R_EnvBlend */
 /* the engine variables of the Clouds and GlowFlick shader modes (R_CloudR and so on) */
@@ -215,7 +215,7 @@ enum {
 	PS_WAVES = 19,
 	PS_NOISE = 20,
 };
-#define g_PSOff (*(uint32_t *)&GVar_R_PSMask.value)
+#define g_PSOff (GVar_R_PSMask.value.u)
 /* all pixel shaders made from their files (the names end with NULL) */
 extern const char *g_PSNames[32];
 extern uint32_t g_PSHandles[32];	/* [32], one per slot of g_PSNames */
@@ -535,15 +535,15 @@ typedef struct RenderObjEntry {
 } RenderObjEntry;
 SD_SIZE(RenderObjEntry, 0x4c);
 extern CTable g_TabMesh;		/* TabMallaD3D: RenderMeshEntry */
-extern RenderMeshEntry * g_MeshList[1026];
-#define g_UsedMesh (*(int *)&((void * *)g_MeshList)[1024])
+extern RenderMeshEntry *g_MeshList[1024];
+extern int g_UsedMesh;
 extern CTable g_TabTransp;		/* RenderTranspEntry */
-extern RenderTranspEntry * g_TranspList[1026];
-#define g_UsedTransp (*(int *)&((void * *)g_TranspList)[1024])
+extern RenderTranspEntry *g_TranspList[1024];
+extern int g_UsedTransp;
 extern int g_TranspGroup;		/* counted up for each mesh list, 1 after a flush */
 extern CTable g_TabObj;		/* TabObjBase3D: RenderObjEntry */
-extern RenderObjEntry * g_ObjList[1026];
-#define g_UsedObj (*(int *)&((void * *)g_ObjList)[1024])
+extern RenderObjEntry *g_ObjList[1024];
+extern int g_UsedObj;
 extern cGVar GVar_R_MeshCache;
 #define g_MeshCache (GVar_R_MeshCache.value.i)		/* R_MeshCache, 10 logs the batches */
 extern cGVar GVar_R_ShowTranspBox;

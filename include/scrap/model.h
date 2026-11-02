@@ -146,9 +146,9 @@ static inline void Scene_Unref(CScene **slot) {
 
 extern CModelList *g_ModelList;
 extern CSceneList *g_SceneList;
-extern CModelList * g_ModelsRender[1026];
-#define g_NumModelsRender (*(int *)&((void * *)g_ModelsRender)[1024])
-#define g_MaxModelsRender (*(int *)&((void * *)g_ModelsRender)[1025])	/* the most there were */
+extern CModelList *g_ModelsRender[1024];
+extern int g_NumModelsRender;
+extern int g_MaxModelsRender;	/* the most there were */
 
 /* Engine/Modelo.cpp (src/game/engine3d/Engine/Model.c) */
 CModel *CModel_ctor(CModel *self);

@@ -30,11 +30,13 @@ typedef struct cGVar {
 	union {				/* 0x10 current value */
 		char *s;		/* GVAR_STRING: first member of a string object, cString_Set writes it */
 		int i;
+		uint32_t u;		/* colors, masks, times in ms */
 		float f;
 	} value;
 	union {				/* 0x14 default value */
 		char *s;
 		int i;
+		uint32_t u;
 		float f;
 	} def;
 } cGVar;

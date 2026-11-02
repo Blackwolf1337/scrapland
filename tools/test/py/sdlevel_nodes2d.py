@@ -630,7 +630,6 @@ def n2dLists():
 			0)))
 	n2dPoke(l + 0x14, 3)
 	check('n2d IntList_Clear', lambda l=l: (SDTest.Call('NWIntList_Clear@b8f80', 'tvi', l), n2dI(l), n2dI(l + 8), n2dI(l + 0x10)))
-	check('n2d IntList_FreeAt0c', lambda l=l: (SDTest.Call('NWIntList_FreeAt0c@b8950', 'tvi', l - 0xc), n2dI(l + 0xc), n2dI(l + 0x10)))
 	check('n2d FindSorted empty', lambda l=l: SDTest.Call('CNodesWorldSup_FindSorted', 'tbiiip', 0, l, 1, 5)[0:2])
 	n2dPoke(l + 0x14, 0)
 	# the free points of the generation deleted with their links
