@@ -127,13 +127,13 @@ int Rd_DevCreateIndexBuffer(void *dev, uint32_t len, uint32_t usage, int fmt, in
 	return Vk_DevCreateIndexBuffer(dev, len, usage, fmt, pool, ib);
 }
 
-int Rd_DevCreatePixelShader(void *dev, const char *name, const void *code, uint32_t *handle) {
+int Rd_DevCreatePixelShader(void *dev, const char *name, uint32_t *handle) {
 	if (rd_logDevice && dev == rd_logDevice) {
-		const uint32_t a[] = { (uint32_t)(uintptr_t)code, (uint32_t)(uintptr_t)handle };
+		const uint32_t a[] = { (uint32_t)(uintptr_t)name, (uint32_t)(uintptr_t)handle };
 		RdLog_Call(0x15c / 4, a);
 		dev = rd_logReal;
 	}
-	return Vk_DevCreatePixelShader(dev, name, code, handle);
+	return Vk_DevCreatePixelShader(dev, name, handle);
 }
 
 int Rd_DevCreateTexture(void *dev, uint32_t w, uint32_t h, uint32_t levels, uint32_t usage, int fmt, int pool,
@@ -612,9 +612,6 @@ int Rd_BufUnlock(void *buf) {
 	return Vk_BufUnlock(buf);
 }
 
-void *Rd_XBufGetBufferPointer(void *buf) {
-	return Vk_XBufGetBufferPointer(buf);
-}
 
 int Rd_XMeshDrawSubset(void *mesh, uint32_t attrib) {
 	return Vk_XMeshDrawSubset(mesh, attrib);

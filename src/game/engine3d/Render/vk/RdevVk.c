@@ -2,7 +2,7 @@
  * The Vulkan backend of the render device (include/scrap/rdev.h): the objects of Direct3D 8 that the game uses,
  * kept as the C objects of vkobj.h on Vulkan resources. One adapter; the device keeps the states of Direct3D 8 and
  * VkDraw.c draws with them. Textures are images that a lock fills from system memory; the back buffer is an image of
- * its own that Present blits to the swapchain.
+ * its own that Present draws into the swapchain through the gamma ramp (Vkd_Present).
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -458,7 +458,7 @@ int Vk_D3DCheckDeviceMultiSampleType(void *d3d, uint32_t adapter, uint32_t type,
 	return ms == 0 ? D3D_OK : D3DERR_NOTAVAILABLE;
 }
 
-/* the caps of a D3D8 card of its time with what the game asks for: pixel shaders 1.1, stencil, 8 lights */
+/* the caps of a D3D8 card of its time with what the game asks for: pixel shaders 1.4, stencil, 8 lights */
 static void Vk_Caps(D3DCaps8 *c) {
 	memset(c, 0, sizeof(*c));
 	c->DeviceType = 1;
@@ -902,8 +902,8 @@ int Vk_DevSetIndices(void *dev, void *ib, uint32_t baseVertex) {
 	return D3D_OK;
 }
 
-int Vk_DevCreatePixelShader(void *dev, const char *name, const void *code, uint32_t *handle) {
-	(void)dev, (void)code;
+int Vk_DevCreatePixelShader(void *dev, const char *name, uint32_t *handle) {
+	(void)dev;
 	*handle = Vkd_CreatePixelShader(name);
 	return *handle ? D3D_OK : D3DERR_INVALIDCALL;
 }
@@ -1466,10 +1466,6 @@ int Vk_BufUnlock(void *buf) {
 }
 
 /* ---- D3DX objects: their own vtables (the C of src/lib/d3dx8) ---- */
-
-void *Vk_XBufGetBufferPointer(void *buf) {
-	return ((void *(__stdcall *)(void *))(*(void ***)buf)[0xc / 4])(buf);
-}
 
 int Vk_XMeshDrawSubset(void *mesh, uint32_t attrib) {
 	(void)mesh, (void)attrib;

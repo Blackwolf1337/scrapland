@@ -1307,30 +1307,10 @@ static void Render_LogDevice(const D3DCaps8 *caps, const d3dSurfaceDesc_t *mode,
 }
 
 static void Render_LoadPS(int i) {
-	const char *name = g_PSNames[i];
-	void *data, *code = NULL, *errors = NULL;
-	uint32_t size;
-
-	FileIO_ReadAll(name, &data, &size);
-	int hr = D3DX_AssembleShader(data, size, 0, NULL, &code, &errors);
-	if (errors || hr < 0) {
-		const char *msg = errors ? Rd_XBufGetBufferPointer(errors)
-					 : "Could not open file";
-		Err_Printf(0, "Pixel Shader Errors (%s):\n%s", name, msg);
-	} else {
-		void *dev = g_pd3dDevice;
-		const void *p = Rd_XBufGetBufferPointer(code);
-		if (Rd_DevCreatePixelShader(dev, name, p, &g_PSHandles[i]) < 0) {
-			g_PSHandles[i] = 0;
-			E3D_LogVerbose(g_FileLog, "WARN: CreatePixelShader failed: %s", name);
-		}
-	}
-	Ptr_Delete(&data);
-	if (code) {
-		Rd_Release(code);
-	}
-	if (errors) {
-		Rd_Release(errors);
+	void *dev = g_pd3dDevice;
+	if (Rd_DevCreatePixelShader(dev, g_PSNames[i], &g_PSHandles[i]) < 0) {
+		g_PSHandles[i] = 0;
+		E3D_LogVerbose(g_FileLog, "WARN: CreatePixelShader failed: %s", g_PSNames[i]);
 	}
 }
 

@@ -77,7 +77,7 @@ typedef struct VkCore {
 	uint64_t serial;			/* frames begun */
 	uint64_t completed;			/* the last serial known to be done on the GPU */
 	byte recording;
-	VkFormat depthFormat;			/* D24S8 or D32S8, what the GPU has */
+	VkFormat depthFormat;			/* the D24S8 of the game: D24S8, else D32S8 */
 	void *hwnd;
 	void (*endPass)(void);			/* ends an open render pass before a submit */
 } VkCore;

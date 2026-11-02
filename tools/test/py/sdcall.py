@@ -1382,7 +1382,7 @@ for part in ('sdcall_vertlist.py', 'sdcall_trimesh.py', 'sdcall_material.py', 's
 		'sdcall_trails.py', 'sdcall_model.py', 'sdcall_scene.py', 'sdcall_particlesystem.py', 'sdcall_rendertarget.py',
 		'sdcall_controlanim.py', 'sdcall_portal.py', 'sdcall_graphic3d.py', 'sdcall_utild3d.py', 'sdcall_text.py', 'sdcall_graphic2d.py', 'sdcall_render.py',
 		'sdcall_multisprite.py', 'sdcall_flare.py', 'sdcall_fonts.py',
-		'sdcall_scrapfont.py', 'sdcall_readm3d.py', 'sdcall_m3d.py', 'sdcall_scrapmodel.py', 'sdcall_scrapcam.py', 'sdcall_scrapworld.py', 'sdcall_scrapmain.py', 'sdcall_app.py', 'sdcall_sound.py', 'sdcall_music.py', 'sdcall_bsp.py', 'sdcall_input.py', 'sdcall_render2.py', 'sdcall_eng2.py', 'sdcall_eng3.py', 'sdcall_eng4.py', 'sdcall_restb.py', 'sdcall_resta.py', 'sdcall_engmisc.py', 'sdcall_sa1b.py', 'sdcall_nosleep.py', 'sdcall_nosleep2.py', 'sdcall_nowait.py', 'sdcall_d3dx.py', 'sdcall_d3dxasm.py', 'sdcall_affinedecomp.py', 'sdcall_d3dxtex.py', 'sdcall_rsrc.py'):
+		'sdcall_scrapfont.py', 'sdcall_readm3d.py', 'sdcall_m3d.py', 'sdcall_scrapmodel.py', 'sdcall_scrapcam.py', 'sdcall_scrapworld.py', 'sdcall_scrapmain.py', 'sdcall_app.py', 'sdcall_sound.py', 'sdcall_music.py', 'sdcall_bsp.py', 'sdcall_input.py', 'sdcall_render2.py', 'sdcall_eng2.py', 'sdcall_eng3.py', 'sdcall_eng4.py', 'sdcall_restb.py', 'sdcall_resta.py', 'sdcall_engmisc.py', 'sdcall_sa1b.py', 'sdcall_nosleep.py', 'sdcall_nosleep2.py', 'sdcall_nowait.py', 'sdcall_d3dx.py', 'sdcall_affinedecomp.py', 'sdcall_d3dxtex.py', 'sdcall_rsrc.py'):
 	try:
 		f = open(part)
 	except IOError:

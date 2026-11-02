@@ -351,10 +351,6 @@ matrix_t *__stdcall D3DX_MatrixRotationQuaternion(matrix_t *out, const quat_t *q
 quat_t *__stdcall D3DX_QuaternionRotationYPR(quat_t *out, float yaw, float pitch, float roll);
 /* NULL when m has no inverse */
 matrix_t *__stdcall D3DX_MatrixInverse(matrix_t *out, float *det, const matrix_t *m);
-/* ID3DXBuffer objects for the code and the errors */
-int __stdcall D3DX_AssembleShader(const void *src, uint32_t len, uint32_t flags, void **constants, void **code,
-	void **errors);
-#define D3DXBUF_GETPOINTER 0xc
 
 /* the D3DX texture functions (stdcall; src/lib/d3dx8/D3dxTex.c, DDS files only) */
 int __stdcall D3DX_CheckTextureRequirements(void *dev, uint32_t *w, uint32_t *h, uint32_t *levels, uint32_t usage,

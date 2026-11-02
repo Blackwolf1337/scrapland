@@ -30,7 +30,7 @@ int Vk_DevCopyRects(void *dev, void *src, const void *rects, uint32_t n, void *d
 int Vk_DevCreateDepthStencilSurface(void *dev, uint32_t w, uint32_t h, int fmt, int multisample, void **surf);
 int Vk_DevCreateImageSurface(void *dev, uint32_t w, uint32_t h, int fmt, void **surf);
 int Vk_DevCreateIndexBuffer(void *dev, uint32_t len, uint32_t usage, int fmt, int pool, void **ib);
-int Vk_DevCreatePixelShader(void *dev, const char *name, const void *code, uint32_t *handle);
+int Vk_DevCreatePixelShader(void *dev, const char *name, uint32_t *handle);
 int Vk_DevCreateTexture(void *dev, uint32_t w, uint32_t h, uint32_t levels, uint32_t usage, int fmt, int pool,
 	void **tex);
 int Vk_DevCreateVertexBuffer(void *dev, uint32_t len, uint32_t usage, uint32_t fvf, int pool, void **vb);
@@ -87,7 +87,6 @@ int Vk_SurfLockRect(void *surf, void *lr, const void *rect, uint32_t flags);
 int Vk_SurfUnlockRect(void *surf);
 int Vk_BufLock(void *buf, uint32_t off, uint32_t size, void *data, uint32_t flags);
 int Vk_BufUnlock(void *buf);
-void *Vk_XBufGetBufferPointer(void *buf);
 int Vk_XMeshDrawSubset(void *mesh, uint32_t attrib);
 int Vk_XMeshGetAttributeTable(void *mesh, void *table, uint32_t *size);
 uint32_t Vk_XMeshGetNumFaces(void *mesh);

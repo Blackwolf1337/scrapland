@@ -696,12 +696,6 @@ static void Vkd_FillFF(VkdFF *f, VkoDev *d, uint32_t lflags, const uint32_t *tex
 	memcpy(f->matEmissive, &d->material[12], 16);
 	f->misc[0] = d->material[16];
 	f->misc[1] = (rs[24] & 255) / 255.0f;
-	static int dbg = -1;
-	if (dbg < 0) {
-		const char *e = getenv("SCRAP_VK_DEBUG");
-		dbg = e ? atoi(e) : 0;
-	}
-	f->misc[2] = (float)dbg;
 	Vkd_Color(f->ambient, rs[139]);
 	Vkd_Color(f->fogColor, rs[34]);
 	float fs = Vkd_Float(rs[36]), fe = Vkd_Float(rs[37]);

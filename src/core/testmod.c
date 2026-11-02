@@ -135,10 +135,10 @@ static float Call_StdFloat(void *fn, const uint32_t *a, int n) {
 #define TEST_STDCALL(name) extern char sds_##name[] __asm__("_" #name);
 #define TEST_STDCALLS \
 	TEST_STDCALL(App_ExceptionFilter) TEST_STDCALL(App_WinMain) TEST_STDCALL(App_WndProc) TEST_STDCALL(Bsp_DlgProc) \
-	TEST_STDCALL(Buffer_AddRef) TEST_STDCALL(Buffer_GetBufferPointer) TEST_STDCALL(Buffer_GetBufferSize) \
-	TEST_STDCALL(Buffer_QueryInterface) TEST_STDCALL(Buffer_Release) TEST_STDCALL(crt_eh_vector_ctor) \
+	\
+	TEST_STDCALL(crt_eh_vector_ctor) \
 	TEST_STDCALL(crt_eh_vector_dtor) TEST_STDCALL(D3DApp_WndProc) \
-	TEST_STDCALL(D3DX_AssembleShader) TEST_STDCALL(D3DX_CheckTextureRequirements) \
+	TEST_STDCALL(D3DX_CheckTextureRequirements) \
 	TEST_STDCALL(D3DX_CreateTextureFromFileInMemoryEx) TEST_STDCALL(D3DX_LoadSurfaceFromSurface) \
 	TEST_STDCALL(D3DX_MatrixInverse) TEST_STDCALL(D3DX_MatrixMultiply) TEST_STDCALL(D3DX_MatrixRotationQuaternion) \
 	TEST_STDCALL(D3DX_MatrixRotationX) TEST_STDCALL(D3DX_MatrixRotationY) TEST_STDCALL(D3DX_MatrixRotationYPR) \

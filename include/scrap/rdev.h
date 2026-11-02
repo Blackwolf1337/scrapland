@@ -36,8 +36,8 @@ int Rd_DevCopyRects(void *dev, void *src, const void *rects, uint32_t n, void *d
 int Rd_DevCreateDepthStencilSurface(void *dev, uint32_t w, uint32_t h, int fmt, int multisample, void **surf);
 int Rd_DevCreateImageSurface(void *dev, uint32_t w, uint32_t h, int fmt, void **surf);
 int Rd_DevCreateIndexBuffer(void *dev, uint32_t len, uint32_t usage, int fmt, int pool, void **ib);
-/* name: the file of the shader (bmp/<name>.psh), which picks the GLSL port under Vulkan; code: its D3D8 tokens */
-int Rd_DevCreatePixelShader(void *dev, const char *name, const void *code, uint32_t *handle);
+/* the handle of the pixel shader of the file name (bmp/<name>.psh): its GLSL port in shaders/ps */
+int Rd_DevCreatePixelShader(void *dev, const char *name, uint32_t *handle);
 int Rd_DevCreateTexture(void *dev, uint32_t w, uint32_t h, uint32_t levels, uint32_t usage, int fmt, int pool,
 	void **tex);
 int Rd_DevCreateVertexBuffer(void *dev, uint32_t len, uint32_t usage, uint32_t fvf, int pool, void **vb);
@@ -94,7 +94,6 @@ int Rd_SurfLockRect(void *surf, void *lr, const void *rect, uint32_t flags);
 int Rd_SurfUnlockRect(void *surf);
 int Rd_BufLock(void *buf, uint32_t off, uint32_t size, void *data, uint32_t flags);
 int Rd_BufUnlock(void *buf);
-void *Rd_XBufGetBufferPointer(void *buf);
 int Rd_XMeshDrawSubset(void *mesh, uint32_t attrib);
 int Rd_XMeshGetAttributeTable(void *mesh, void *table, uint32_t *size);
 uint32_t Rd_XMeshGetNumFaces(void *mesh);
