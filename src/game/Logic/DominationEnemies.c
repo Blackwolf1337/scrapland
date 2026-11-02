@@ -65,7 +65,8 @@ void cDominationSide_Think(cDominationSide *self) {
 }
 
 /* vf03 */
-cEntityListData *cDominationEnemiesLogic_GetList(cDominationEnemiesLogic *self) {
+cEntityListData *cDominationEnemiesLogic_GetList(cDominationLogic *base) {
+	cDominationEnemiesLogic *self = (cDominationEnemiesLogic *)base;
 	return self->side->list;
 }
 
@@ -82,7 +83,8 @@ int cDominationEnemiesLogic_GetTeam(cDominationEnemiesLogic *self) {
 }
 
 /* vf01 */
-void cDominationEnemiesLogic_Init(cDominationEnemiesLogic *self) {
+void cDominationEnemiesLogic_Init(cDominationLogic *base) {
+	cDominationEnemiesLogic *self = (cDominationEnemiesLogic *)base;
 	cDominationSide *s = self->side;
 
 	CHECK(s->owner && "el");
@@ -136,7 +138,8 @@ cEntity *cDominationEnemiesLogic_ReleaseZone(cDominationLogic *self, const char 
 }
 
 /* vf02 */
-void cDominationEnemiesLogic_Update(cDominationEnemiesLogic *self, float dt) {
+void cDominationEnemiesLogic_Update(cDominationLogic *base, float dt) {
+	cDominationEnemiesLogic *self = (cDominationEnemiesLogic *)base;
 	cDominationSide *s = self->side;
 	float t = s->timer + dt;
 

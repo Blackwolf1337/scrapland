@@ -27,17 +27,19 @@ cBossLocalLogic *cBossLocalLogic_ctor(cBossLocalLogic *self, cEntity *parent) {
 	return self;
 }
 
-cBossLocalLogic *cBossLocalLogic_Delete(cBossLocalLogic *self, byte flags) {
+cLocalLogic *cBossLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+	cBossLocalLogic *self = (cBossLocalLogic *)elem;
 	self->base.base.vftable = CBOSSLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return elem;
 }
 
 /* vf33 (0x84): at work, the end of the work */
-void cBossLocalLogic_Vf33(cBossLocalLogic *self, byte on) {
+void cBossLocalLogic_Vf33(cLocalLogic *elem, byte on) {
+	cBossLocalLogic *self = (cBossLocalLogic *)elem;
 	if (self->base.base.state != 8 || !on) {
 		return;
 	}
@@ -45,17 +47,18 @@ void cBossLocalLogic_Vf33(cBossLocalLogic *self, byte on) {
 	if (p && Obj(p)->move.active) {
 		cObjMove_SetTime(&Obj(p)->move, 0.0f);
 	}
-	self->base.base.vftable->SetState(self, 0, NULL);
+	self->base.base.vftable->SetState(&self->base.base.logic, 0, NULL);
 }
 
 /* vf17 */
-void cBossLocalLogic_Update(cBossLocalLogic *self, float dt) {
-	cGenCharLocalLogic_Update(&self->base, dt);
+void cBossLocalLogic_Update(cLocalLogic *elem, float dt) {
+	cBossLocalLogic *self = (cBossLocalLogic *)elem;
+	cGenCharLocalLogic_Update(&self->base.base.logic, dt);
 	int st = self->base.base.state;
 	if (st == 0 || st == 6) {
 		self->time = dt + self->time;
 		if (self->time >= g_BossWalkingTime) {
-			self->base.base.vftable->SetState(self, 7, NULL);
+			self->base.base.vftable->SetState(&self->base.base.logic, 7, NULL);
 		}
 		return;
 	}
@@ -79,7 +82,7 @@ void cBossLocalLogic_Update(cBossLocalLogic *self, float dt) {
 		m->movePos = self->workPos;
 		cObjMove_SetTime(m, 0.5f);
 		m->fade = 3;
-		self->base.base.vftable->SetState(self, 8, NULL);
+		self->base.base.vftable->SetState(&self->base.base.logic, 8, NULL);
 		return;
 	}
 	if (st != 8) {
@@ -100,16 +103,17 @@ void cBossLocalLogic_Update(cBossLocalLogic *self, float dt) {
 		void *ctrl = ChType_ActCtrl(p);
 		cActCtrl_Play(ctrl, "WorkEnd", 1, 1.0f);
 		cActCtrl_SetDefLoop(ctrl, "Walk", 1);
-		self->base.base.vftable->SetState(self, 0, NULL);
+		self->base.base.vftable->SetState(&self->base.base.logic, 0, NULL);
 	}
 }
 
 /* vf19: 7 the way to the work place (AI state 4 with the place and the direction of its angle), 8 the work */
-int cBossLocalLogic_SetState(cBossLocalLogic *self, int state, cEntity *target) {
+byte cBossLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
+	cBossLocalLogic *self = (cBossLocalLogic *)elem;
 	vec3_t out;
 
 	if (state == 7) {
-		if (cBaseLocalLogic_SetState(&self->base.base, 7, target)) {
+		if (cBaseLocalLogic_SetState(&self->base.base.logic, 7, target)) {
 			cEntity *p = self->base.base.parent;
 			cAIChar *ai = p->vftable->GetAI(p);
 			vec3_t rot = { 0.0f, self->workAng[1], 0.0f };
@@ -120,7 +124,7 @@ int cBossLocalLogic_SetState(cBossLocalLogic *self, int state, cEntity *target) 
 		return 1;
 	}
 	if (state == 8) {
-		if (cBaseLocalLogic_SetState(&self->base.base, 8, target)) {
+		if (cBaseLocalLogic_SetState(&self->base.base.logic, 8, target)) {
 			self->time = 0.0f;
 			void *ctrl = ChType_ActCtrl(self->base.base.parent);
 			cActCtrl_Play(ctrl, "WorkInit", 1, 1.0f);
@@ -132,5 +136,45 @@ int cBossLocalLogic_SetState(cBossLocalLogic *self, int state, cEntity *target) 
 	if (p && Obj(p)->move.active) {
 		cObjMove_SetTime(&Obj(p)->move, 0.0f);
 	}
-	return cGenCharLocalLogic_SetState(&self->base, state, target);
+	return cGenCharLocalLogic_SetState(&self->base.base.logic, state, target);
 }
+
+/* the vtable of cBossLocalLogic */
+const cGenCharLocalLogicVtbl cBossLocalLogic_vftable = {
+	.base.base.Delete = cBossLocalLogic_Delete,
+	.base.base.GetName = cBaseLocalLogic_GetName,
+	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.VarI = cGenCharLocalLogic_VarI,
+	.base.base.VarF = cBaseLocalLogic_VarF,
+	.base.base.VarS = cGenCharLocalLogic_VarS,
+	.base.base.VarV = cBaseLocalLogic_VarV,
+	.base.UpdateBusy = cBaseLocalLogic_UpdateBusy,
+	.base.Refresh = cBaseLocalLogic_Refresh,
+	.base.Listens = cLocalLogic_ListensTrue,
+	.base.OnHit = cGenCharLocalLogic_OnHit,
+	.base.OnSeen = cGenCharLocalLogic_OnSeen,
+	.base.OnAttack = cGenCharLocalLogic_OnRobbery,
+	.base.OnShot = cBaseLocalLogic_OnShot,
+	.base.OnHammer = cLocalLogic_OnHammerNop,
+	.base.GivesMoney = cGenCharLocalLogic_GivesMoney,
+	.base.OnAlarm = cGenCharLocalLogic_OnAlarm,
+	.base.Update = cBossLocalLogic_Update,
+	.base.SetOriginFrom = cBaseLocalLogic_SetOriginFrom,
+	.base.SetState = cBossLocalLogic_SetState,
+	.base.SetIdle = cBaseLocalLogic_SetIdle,
+	.base.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.base.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.base.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.base.RestartState = cGenCharLocalLogic_RestartState,
+	.CanAttack = cGenCharLocalLogic_CanAttack,
+	.UpdateView = cGenCharLocalLogic_UpdateView,
+	.ToRelax = cGenCharLocalLogic_ToRelax,
+	.ToAlert = cGenCharLocalLogic_ToAlert,
+	.Accuse = Logic_SetState2,
+	.FindTarget = cLocalLogic_FindTargetNull,
+	.TargetDone = cLocalLogic_TargetDoneTrue,
+	.Work = cLocalLogic_WorkNop,
+	.Vf33 = cBossLocalLogic_Vf33,
+	.GoTo = cGenCharLocalLogic_GoTo,
+	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
+};

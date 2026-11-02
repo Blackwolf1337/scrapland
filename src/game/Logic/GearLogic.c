@@ -60,7 +60,7 @@ cGearLocalLogic *cGearLocalLogic_ctor(cGearLocalLogic *self, cEntity *parent) {
 	self->defaultState = 0;
 	cString_ctorStr(&self->defaultTarget, LOGIC_EMPTY);
 	self->base.state = 0;
-	cBaseLocalLogic_SetIdle(&self->base, 0);
+	cBaseLocalLogic_SetIdle(&self->base.logic, 0);
 	self->sirenTime = (float)(Weap_Rand01() * (double)0.2f + 0.0);
 	return self;
 }
@@ -71,12 +71,13 @@ void cGearLocalLogic_dtor(cGearLocalLogic *self) {
 	cBaseLocalLogic_dtor(&self->base);
 }
 
-cGearLocalLogic *cGearLocalLogic_Delete(cGearLocalLogic *self, byte flags) {
+cLocalLogic *cGearLocalLogic_Delete(cLocalLogic *base, byte flags) {
+	cGearLocalLogic *self = (cGearLocalLogic *)base;
 	cGearLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 /* the patrol walk ends in Relax */
@@ -89,7 +90,8 @@ void cGearLocalLogic_Relax(cGearLocalLogic *self) {
 }
 
 /* vf16 */
-void cGearLocalLogic_Vf16(cGearLocalLogic *self, int arg) {
+void cGearLocalLogic_Vf16(cLocalLogic *base, cEntity *arg) {
+	cGearLocalLogic *self = (cGearLocalLogic *)base;
 	(void)self;
 	(void)arg;
 	Con_Print(0x8f008f, "El Gear intenta huir de un poli pequeño. Esto no debe pasar nunca", 0);
@@ -109,9 +111,10 @@ void cGearLocalLogic_SetDefaultState(cGearLocalLogic *self, int v) {
 }
 
 /* vf03 */
-byte cGearLocalLogic_VarI(cGearLocalLogic *self, const char *name, int *i, byte set) {
+byte cGearLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, byte set) {
+	cGearLocalLogic *self = (cGearLocalLogic *)elem;
 	if (strcmp(name, "DefaultState")) {
-		return cBaseLocalLogic_VarI(&self->base, name, i, set);
+		return cBaseLocalLogic_VarI(&self->base.logic, name, i, set);
 	}
 	if (set) {
 		cGearLocalLogic_SetDefaultState(self, *i);
@@ -125,7 +128,7 @@ byte cGearLocalLogic_VarI(cGearLocalLogic *self, const char *name, int *i, byte 
 static void Gear_ToDefault(cGearLocalLogic *self) {
 	cEntity *t = World_FindEntity(self->defaultTarget);
 
-	Gear_Vtbl(self)->SetState(self, self->defaultState, t);
+	Gear_Vtbl(self)->SetState(&self->base.logic, self->defaultState, t);
 }
 
 /* the view of the AI and the actions of the state */
@@ -180,7 +183,8 @@ void cGearLocalLogic_UpdateAnim(cGearLocalLogic *self, cEntity *p, float dt) {
 }
 
 /* vf17 */
-void cGearLocalLogic_Update(cGearLocalLogic *self, float dt) {
+void cGearLocalLogic_Update(cLocalLogic *elem, float dt) {
+	cGearLocalLogic *self = (cGearLocalLogic *)elem;
 	vec3_t tp, op;
 	cBaseLocalLogic *b = &self->base;
 	byte alarm = g_pWorld->alarm.on;
@@ -201,7 +205,7 @@ void cGearLocalLogic_Update(cGearLocalLogic *self, float dt) {
 		strcmp(cActCtrl_GetActionName(ChType_ActCtrl(p), 1), "SirenEnd")) {
 		cActCtrl_Play(ChType_ActCtrl(p), "SirenEnd", 0, 1.0f);
 	}
-	cBaseLocalLogic_Update(b, dt);
+	cBaseLocalLogic_Update(&b->logic, dt);
 	WChar(p)->wl.arrow.canUse = 0;
 	WLife(p)->arrow.tgType = alarm ? 0 : 2;
 	if (b->busy) {
@@ -235,13 +239,13 @@ attack:
 		if (!seen) {
 			goto anim;
 		}
-		Gear_Vtbl(self)->SetState(self, 2, usr);
+		Gear_Vtbl(self)->SetState(&self->base.logic, 2, usr);
 		goto check;
 	case 3: {
 		b->parent->vftable->GetPos(b->parent, &tp);
 		vec3_t o = b->origin;
 		if (!locked && alarm && same && seen) {
-			Gear_Vtbl(self)->SetState(self, 2, usr);
+			Gear_Vtbl(self)->SetState(&self->base.logic, 2, usr);
 			goto check;
 		}
 		if ((byte)Vec3_Differ(&tp.x, &o.x) && !locked) {
@@ -262,7 +266,7 @@ attack:
 			if (!alarm) {
 				goto deflt;
 			}
-			Gear_Vtbl(self)->SetState(self, 0, NULL);
+			Gear_Vtbl(self)->SetState(&self->base.logic, 0, NULL);
 			goto check;
 		}
 		if (!alarm && t == cWorld_GetUsrEntity(g_pWorld, 0)) {
@@ -271,9 +275,9 @@ attack:
 		if (Gear_AIHasTarget(Gear_AI(self))) {
 			self->lostTime = 0.0f;
 			if (!self->called) {
-				Gear_Vtbl(self)->SetState(self, 2, usr);
+				Gear_Vtbl(self)->SetState(&self->base.logic, 2, usr);
 			} else if (b->target.target) {
-				Gear_Vtbl(self)->SetState(self, 2, b->target.target);
+				Gear_Vtbl(self)->SetState(&self->base.logic, 2, b->target.target);
 			}
 			goto check;
 		}
@@ -283,7 +287,7 @@ attack:
 			if (!alarm) {
 				goto deflt;
 			}
-			Gear_Vtbl(self)->SetState(self, 0, NULL);
+			Gear_Vtbl(self)->SetState(&self->base.logic, 0, NULL);
 		}
 		goto check;
 	}
@@ -302,7 +306,7 @@ attack:
 				goto check;
 			}
 			Alarm_SetOn(&g_pWorld->alarm, 1);
-			Gear_Vtbl(self)->SetState(self, 2, usr);
+			Gear_Vtbl(self)->SetState(&self->base.logic, 2, usr);
 			goto check;
 		}
 		if (!Gear_AIHasTarget(ai)) {
@@ -316,7 +320,7 @@ attack:
 				if (!alarm) {
 					goto deflt;
 				}
-				Gear_Vtbl(self)->SetState(self, 0, NULL);
+				Gear_Vtbl(self)->SetState(&self->base.logic, 0, NULL);
 			}
 			goto check;
 		}
@@ -334,19 +338,20 @@ deflt:
 check:
 	if (seen && st != 2 && g_pWorld->alarm.notGuaranteed) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
-		Gear_Vtbl(self)->SetState(self, 2, usr);
+		Gear_Vtbl(self)->SetState(&self->base.logic, 2, usr);
 	}
 anim:
 	cGearLocalLogic_UpdateAnim(self, p, dt);
 }
 
 /* vf12: a robbery seen, with the chance GearRobberyDetection plus the amount */
-void cGearLocalLogic_OnRobbery(cGearLocalLogic *self, cEntity *e, float amount) {
+void cGearLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
+	cGearLocalLogic *self = (cGearLocalLogic *)elem;
 	if (amount > 0.0f && Logic_Chance(&self->base, e, g_GearRobberyDetection + amount)) {
 		if (e == cWorld_GetUsrEntity(g_pWorld, 0)) {
 			Alarm_Set(&g_pWorld->alarm, 1.0f);
 		}
-		Gear_Vtbl(self)->SetState(self, 2, e);
+		Gear_Vtbl(self)->SetState(&self->base.logic, 2, e);
 	}
 }
 
@@ -362,32 +367,36 @@ static byte Gear_React(cGearLocalLogic *self, cEntity *e) {
 }
 
 /* vf10: the attacker, unless the gear already attacks the player */
-void cGearLocalLogic_OnHit(cGearLocalLogic *self, cEntity *attacker) {
+void cGearLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
+	cGearLocalLogic *self = (cGearLocalLogic *)elem;
 	if (!Gear_React(self, attacker)) {
 		return;
 	}
 	if (self->base.state != 2 || self->base.target.target != cWorld_GetUsrEntity(g_pWorld, 0)) {
-		Gear_Vtbl(self)->SetState(self, 2, attacker);
+		Gear_Vtbl(self)->SetState(&self->base.logic, 2, attacker);
 	}
 }
 
 /* vf14 and vf11 */
-void cGearLocalLogic_Vf14(cGearLocalLogic *self, cEntity *e) {
+void cGearLocalLogic_Vf14(cLocalLogic *base, cEntity *e) {
+	cGearLocalLogic *self = (cGearLocalLogic *)base;
 	if (Gear_React(self, e)) {
-		Gear_Vtbl(self)->SetState(self, 2, e);
+		Gear_Vtbl(self)->SetState(&self->base.logic, 2, e);
 	}
 }
 
 /* vf15: the same, returns 0 */
-byte cGearLocalLogic_Vf15(cGearLocalLogic *self, cEntity *e) {
+byte cGearLocalLogic_Vf15(cLocalLogic *base, cEntity *e) {
+	cGearLocalLogic *self = (cGearLocalLogic *)base;
 	if (Gear_React(self, e)) {
-		Gear_Vtbl(self)->SetState(self, 2, e);
+		Gear_Vtbl(self)->SetState(&self->base.logic, 2, e);
 	}
 	return 0;
 }
 
 /* vf18: the gear becomes a police, during an alarm only with Gear2PoliceAlways */
-void cGearLocalLogic_ToPolice(cGearLocalLogic *self, cEntity *e) {
+void cGearLocalLogic_ToPolice(cLocalLogic *base, cEntity *e) {
+	cGearLocalLogic *self = (cGearLocalLogic *)base;
 	(void)self;
 	if (!g_Gear2PoliceAlways && g_pWorld->alarm.on) {
 		return;
@@ -401,11 +410,12 @@ byte cGearLocalLogic_Call(cGearLocalLogic *self, cEntity *e) {
 	if (self->base.state == 2 && e == self->base.target.target && Gear_AIHasTarget(Gear_AI(self))) {
 		return 0;
 	}
-	return Gear_Vtbl(self)->SetState(self, 1, e);
+	return Gear_Vtbl(self)->SetState(&self->base.logic, 1, e);
 }
 
 /* vf24 */
-void cGearLocalLogic_RestartState(cGearLocalLogic *self) {
+void cGearLocalLogic_RestartState(cLocalLogic *base) {
+	cGearLocalLogic *self = (cGearLocalLogic *)base;
 	Gear_ToDefault(self);
 }
 
@@ -414,10 +424,11 @@ void cGearLocalLogic_SetDefaultTarget(cGearLocalLogic *self, const char *name) {
 }
 
 /* vf19: the AI state of the logic state with the gear speeds */
-byte cGearLocalLogic_SetState(cGearLocalLogic *self, int state, cEntity *target) {
+byte cGearLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
+	cGearLocalLogic *self = (cGearLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
 	cAIChar *ai = Gear_AI(self);
-	byte ok = (byte)cBaseLocalLogic_SetState(b, state, target);
+	byte ok = (byte)cBaseLocalLogic_SetState(&b->logic, state, target);
 	cEntity *usr = ChType_Usr0();
 
 	switch (b->state) {
@@ -450,7 +461,7 @@ byte cGearLocalLogic_SetState(cGearLocalLogic *self, int state, cEntity *target)
 			if (target) {
 				ai->vftable->SetState(ai, 3, target, (double)g_GearScortSpeed);
 			} else {
-				Gear_Vtbl(self)->SetState(self, 0, NULL);
+				Gear_Vtbl(self)->SetState(&self->base.logic, 0, NULL);
 			}
 		}
 		break;
@@ -459,9 +470,10 @@ byte cGearLocalLogic_SetState(cGearLocalLogic *self, int state, cEntity *target)
 }
 
 /* vf05 */
-byte cGearLocalLogic_VarS(cGearLocalLogic *self, const char *name, char **s, byte set) {
+byte cGearLocalLogic_VarS(cLocalLogic *elem, const char *name, char **s, byte set) {
+	cGearLocalLogic *self = (cGearLocalLogic *)elem;
 	if (strcmp(name, "DefaultTarget")) {
-		return cBaseLocalLogic_VarS(&self->base, name, s, set);
+		return cBaseLocalLogic_VarS(&self->base.logic, name, s, set);
 	}
 	if (set) {
 		cString_Set(&self->defaultTarget, *s);
@@ -470,3 +482,32 @@ byte cGearLocalLogic_VarS(cGearLocalLogic *self, const char *name, char **s, byt
 	*s = self->defaultTarget;
 	return 1;
 }
+
+/* the vtable of cGearLocalLogic */
+const cBaseLocalLogicVtbl cGearLocalLogic_vftable = {
+	.base.Delete = cGearLocalLogic_Delete,
+	.base.GetName = cBaseLocalLogic_GetName,
+	.base.Vf02 = cLocalLogic_Vf02True,
+	.base.VarI = cGearLocalLogic_VarI,
+	.base.VarF = cBaseLocalLogic_VarF,
+	.base.VarS = cGearLocalLogic_VarS,
+	.base.VarV = cBaseLocalLogic_VarV,
+	.UpdateBusy = cBaseLocalLogic_UpdateBusy,
+	.Refresh = cBaseLocalLogic_Refresh,
+	.Listens = cLocalLogic_ListensFalse,
+	.OnHit = cGearLocalLogic_OnHit,
+	.OnSeen = cGearLocalLogic_Vf14,
+	.OnAttack = cGearLocalLogic_OnRobbery,
+	.OnShot = cBaseLocalLogic_OnShot,
+	.OnHammer = cGearLocalLogic_Vf14,
+	.GivesMoney = cGearLocalLogic_Vf15,
+	.OnAlarm = cGearLocalLogic_Vf16,
+	.Update = cGearLocalLogic_Update,
+	.SetOriginFrom = cGearLocalLogic_ToPolice,
+	.SetState = cGearLocalLogic_SetState,
+	.SetIdle = cBaseLocalLogic_SetIdle,
+	.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.RestartState = cGearLocalLogic_RestartState,
+};

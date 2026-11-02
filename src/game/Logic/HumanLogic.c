@@ -46,10 +46,40 @@ void cHumanLocalLogic_dtor(cHumanLocalLogic *self) {
 	cBaseLocalLogic_dtor(&self->base);
 }
 
-cHumanLocalLogic *cHumanLocalLogic_Delete(cHumanLocalLogic *self, byte flags) {
+cLocalLogic *cHumanLocalLogic_Delete(cLocalLogic *base, byte flags) {
+	cHumanLocalLogic *self = (cHumanLocalLogic *)base;
 	cHumanLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
+
+/* the vtable of cHumanLocalLogic */
+const cBaseLocalLogicVtbl cHumanLocalLogic_vftable = {
+	.base.Delete = cHumanLocalLogic_Delete,
+	.base.GetName = cBaseLocalLogic_GetName,
+	.base.Vf02 = cLocalLogic_Vf02True,
+	.base.VarI = cBaseLocalLogic_VarI,
+	.base.VarF = cBaseLocalLogic_VarF,
+	.base.VarS = cBaseLocalLogic_VarS,
+	.base.VarV = cBaseLocalLogic_VarV,
+	.UpdateBusy = cBaseLocalLogic_UpdateBusy,
+	.Refresh = cBaseLocalLogic_Refresh,
+	.Listens = cLocalLogic_ListensFalse,
+	.OnHit = cLocalLogic_OnHitNop,
+	.OnSeen = cLocalLogic_OnSeenNop,
+	.OnAttack = cLocalLogic_OnAttackNop,
+	.OnShot = cBaseLocalLogic_OnShot,
+	.OnHammer = cLocalLogic_OnHammerNop,
+	.GivesMoney = cBaseLocalLogic_Vf15,
+	.OnAlarm = cLocalLogic_OnAlarmNop,
+	.Update = cLocalLogic_UpdateNop,
+	.SetOriginFrom = cBaseLocalLogic_SetOriginFrom,
+	.SetState = cLocalLogic_SetStateTrue,
+	.SetIdle = cBaseLocalLogic_SetIdle,
+	.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.RestartState = cBaseLocalLogic_RestartState,
+};

@@ -194,3 +194,14 @@ cLocalLogic *Enemies_MakeLogic(cEntity *e) {
 	}
 	return NULL;
 }
+
+/* the vtable of cEnemiesLocalLogic */
+const cLocalLogicVtbl cEnemiesLocalLogic_vftable = {
+	.Delete = cEnemiesLocalLogic_Delete,
+	.GetName = cLocalLogic_GetName,
+	.Vf02 = cLocalLogic_Vf02True,
+	.VarI = cEnemiesLocalLogic_VarI,
+	.VarF = cLocalLogic_VarFFalse,
+	.VarS = cLocalLogic_VarSFalse,
+	.VarV = cLocalLogic_VarVNone,
+};

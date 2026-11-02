@@ -84,6 +84,12 @@ def structs():
                     depth -= 1
                 i += 1
             out.setdefault(m.group(1), s[m.end():i - 1])
+    # typedef aliases of struct types (typedef cGenCharLocalLogic cCrazyDealerLocalLogic;): the body of the struct
+    for f in sources():
+        s = strip_comments(open(f, errors='replace').read())
+        for m in re.finditer(r'^typedef\s+(?:struct\s+)?(\w+)\s+(\w+)\s*;', s, re.M):
+            if m.group(1) in out and m.group(2) not in out:
+                out[m.group(2)] = out[m.group(1)]
     return out
 
 
@@ -102,7 +108,7 @@ def first_members(body):
             i += 1
         inner = b[mu.end():i - 1]
         res = []
-        for d in re.finditer(r'(struct\s*\{[^}]*\}|[^;]+);', inner):
+        for d in re.finditer(r'\s*(struct\s*\{[^}]*\}|[^;]+);', inner):
             t = d.group(1).strip()
             if t.startswith('struct') and '{' in t:
                 res += first_members(t[t.index('{') + 1:t.rindex('}')])

@@ -22,7 +22,7 @@ void *cMaintenanceLocalLogic_ctor(void *mem, cEntity *parent) {
 	self->point = -1;
 	g_MaintenanceShip = NULL;
 	g_MaintenanceFirstShip = NULL;
-	if ((byte)cBaseLocalLogic_SetState(MAINT_BASE(self), 7, NULL)) {
+	if ((byte)cBaseLocalLogic_SetState(&(MAINT_BASE(self))->logic, 7, NULL)) {
 		cEntity *p = MAINT_BASE(self)->parent;
 		cAIChar *ai = p->vftable->GetAI(p);
 		ai->vftable->SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
@@ -30,7 +30,8 @@ void *cMaintenanceLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-cMaintenanceLocalLogic *cMaintenanceLocalLogic_Delete(cMaintenanceLocalLogic *self, byte flags) {
+cLocalLogic *cMaintenanceLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+	cMaintenanceLocalLogic *self = (cMaintenanceLocalLogic *)elem;
 	MAINT_VT(self) = CMAINTENANCELOCALLOGIC_VFTABLE;
 	g_MaintenanceShip = NULL;
 	g_MaintenanceFirstShip = NULL;
@@ -38,7 +39,7 @@ cMaintenanceLocalLogic *cMaintenanceLocalLogic_Delete(cMaintenanceLocalLogic *se
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return elem;
 }
 
 /* the corners of the box of half size radius * MaintenanceSphereRadiusFactor around (x, y, z); the lower ones
@@ -94,7 +95,8 @@ cEntity *Maintenance_FindShip(void) {
 void cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self);
 
 /* vf17: 7 waits for the editor and a ship, 8 works at the corners while it is the same ship */
-void cMaintenanceLocalLogic_Update(cMaintenanceLocalLogic *self, float dt) {
+void cMaintenanceLocalLogic_Update(cLocalLogic *elem, float dt) {
+	cMaintenanceLocalLogic *self = (cMaintenanceLocalLogic *)elem;
 	vec3_t t;
 	cBaseLocalLogic *b = MAINT_BASE(self);
 	cEntity *p = b->parent;
@@ -113,17 +115,17 @@ void cMaintenanceLocalLogic_Update(cMaintenanceLocalLogic *self, float dt) {
 		const vec3_t *sp = s->vftable->GetPos(s, &t);
 		float r = Obj_Vtbl(g_MaintenanceShip)->GetRadius(g_MaintenanceShip);
 		cMaintenanceLocalLogic_SetPlatform(self, sp->x, sp->y, sp->z, r);
-		MAINT_VT(self)->SetState(self, 8, NULL);
+		MAINT_VT(self)->SetState(&self->base.base.logic, 8, NULL);
 		return;
 	}
 	if (b->state != 8) {
-		cGenCharLocalLogic_Update(&self->base, dt);
+		cGenCharLocalLogic_Update(&self->base.base.logic, dt);
 		return;
 	}
 	g_MaintenanceShip = Maintenance_FindShip();
 	if (!g_MaintenanceShip || !World_FindEntity("EditCamera") || g_MaintenanceFirstShip != g_MaintenanceShip) {
 		self->point = -1;
-		MAINT_VT(self)->SetState(self, 7, NULL);
+		MAINT_VT(self)->SetState(&self->base.base.logic, 7, NULL);
 		return;
 	}
 	void *ctrl = ChType_ActCtrl(p);
@@ -207,20 +209,21 @@ void cMaintenanceLocalLogic_NextPoint(cMaintenanceLocalLogic *self) {
 }
 
 /* vf19: 7 walks relaxed, 8 begins the work at the next corner */
-byte cMaintenanceLocalLogic_SetState(cMaintenanceLocalLogic *self, int state, cEntity *target) {
+byte cMaintenanceLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
+	cMaintenanceLocalLogic *self = (cMaintenanceLocalLogic *)elem;
 	cBaseLocalLogic *b = MAINT_BASE(self);
 
 	if (state == 7) {
-		if ((byte)cBaseLocalLogic_SetState(b, 7, target)) {
+		if ((byte)cBaseLocalLogic_SetState(&b->logic, 7, target)) {
 			cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 			ai->vftable->SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
 		}
 		return 1;
 	}
 	if (state != 8) {
-		return cGenCharLocalLogic_SetState(&self->base, state, target);
+		return cGenCharLocalLogic_SetState(&self->base.base.logic, state, target);
 	}
-	cBaseLocalLogic_SetState(b, 8, target);
+	cBaseLocalLogic_SetState(&b->logic, 8, target);
 	void *ctrl = ChType_ActCtrl(b->parent);
 	cMaintenanceLocalLogic_NextPoint(self);
 	cActCtrl_Play(ctrl, "WorkEnd", 1, 1.0f);
@@ -229,13 +232,53 @@ byte cMaintenanceLocalLogic_SetState(cMaintenanceLocalLogic *self, int state, cE
 }
 
 /* vf06: "RepositionPoint" (read only, y positive) */
-byte cMaintenanceLocalLogic_VarV(cMaintenanceLocalLogic *self, const char *name, double *x, double *y,
-	double *z, byte set) {
+byte cMaintenanceLocalLogic_VarV(cLocalLogic *base, const char *name, double *x, double *y, double *z, byte set) {
+	cMaintenanceLocalLogic *self = (cMaintenanceLocalLogic *)base;
 	if (!set && !strcmp(name, "RepositionPoint")) {
 		*x = (double)self->reposition.x;
 		*y = __builtin_fabs((double)self->reposition.y);
 		*z = (double)self->reposition.z;
 		return 1;
 	}
-	return cBaseLocalLogic_VarV(MAINT_BASE(self), name, x, y, z, set);
+	return cBaseLocalLogic_VarV(&(MAINT_BASE(self))->logic, name, x, y, z, set);
 }
+
+/* the vtable of cMaintenanceLocalLogic */
+const cGenCharLocalLogicVtbl cMaintenanceLocalLogic_vftable = {
+	.base.base.Delete = cMaintenanceLocalLogic_Delete,
+	.base.base.GetName = cBaseLocalLogic_GetName,
+	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.VarI = cGenCharLocalLogic_VarI,
+	.base.base.VarF = cBaseLocalLogic_VarF,
+	.base.base.VarS = cGenCharLocalLogic_VarS,
+	.base.base.VarV = cMaintenanceLocalLogic_VarV,
+	.base.UpdateBusy = cBaseLocalLogic_UpdateBusy,
+	.base.Refresh = cBaseLocalLogic_Refresh,
+	.base.Listens = cLocalLogic_ListensTrue,
+	.base.OnHit = cGenCharLocalLogic_OnHit,
+	.base.OnSeen = cGenCharLocalLogic_OnSeen,
+	.base.OnAttack = cGenCharLocalLogic_OnRobbery,
+	.base.OnShot = cBaseLocalLogic_OnShot,
+	.base.OnHammer = cLocalLogic_OnHammerNop,
+	.base.GivesMoney = cGenCharLocalLogic_GivesMoney,
+	.base.OnAlarm = cGenCharLocalLogic_OnAlarm,
+	.base.Update = cMaintenanceLocalLogic_Update,
+	.base.SetOriginFrom = cBaseLocalLogic_SetOriginFrom,
+	.base.SetState = cMaintenanceLocalLogic_SetState,
+	.base.SetIdle = cBaseLocalLogic_SetIdle,
+	.base.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.base.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.base.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.base.RestartState = cGenCharLocalLogic_RestartState,
+	.CanAttack = cGenCharLocalLogic_CanAttack,
+	.UpdateView = cGenCharLocalLogic_UpdateView,
+	.ToRelax = cGenCharLocalLogic_ToRelax,
+	.ToAlert = cGenCharLocalLogic_ToAlert,
+	.Accuse = Logic_SetState2,
+	.FindTarget = cLocalLogic_FindTargetNull,
+	.TargetDone = cLocalLogic_TargetDoneTrue,
+	.Work = cLocalLogic_WorkNop,
+	.Vf33 = cLocalLogic_Vf33Nop,
+	.GoTo = cGenCharLocalLogic_GoTo,
+	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
+};

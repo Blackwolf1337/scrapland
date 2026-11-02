@@ -11,7 +11,8 @@
 #include "scrap/fxmisc.h"
 #include "scrap/logic.h"
 
-#define CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE GAME_VFTABLE(cSputnikJunkyardLocalLogic_vftable)
+extern const cGenCharLocalLogicVtbl cSputnikJunkyardLocalLogic_vftable;
+#define CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE (&cSputnikJunkyardLocalLogic_vftable.base)
 extern cGVar GVar_SputnikJunyardTimeToPissPlayer;
 #define g_SputnikJunyardTimeToPissPlayer (GVar_SputnikJunyardTimeToPissPlayer.value.f)
 extern cEntity *g_SputnikPisser;	/* the Sputnik that laughs at the player */
@@ -33,20 +34,21 @@ cSputnikJunkyardLocalLogic *cSputnikJunkyardLocalLogic_ctor(cSputnikJunkyardLoca
 	cGenCharLocalLogic_ctor(self, parent, 1);
 	SPUTNIK_VT(self) = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
 	g_SputnikTime = 0.0f;
-	if ((byte)cBaseLocalLogic_SetState(&self->base, 7, NULL)) {
+	if ((byte)cBaseLocalLogic_SetState(&self->base.logic, 7, NULL)) {
 		Sputnik_Walk(self);
 	}
 	return self;
 }
 
-cSputnikJunkyardLocalLogic *cSputnikJunkyardLocalLogic_Delete(cSputnikJunkyardLocalLogic *self, byte flags) {
+cLocalLogic *cSputnikJunkyardLocalLogic_Delete(cLocalLogic *base, byte flags) {
+	cSputnikJunkyardLocalLogic *self = (cSputnikJunkyardLocalLogic *)base;
 	SPUTNIK_VT(self) = CSPUTNIKJUNKYARDLOCALLOGIC_VFTABLE;
 	g_SputnikPisser = NULL;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 /* the native at the end of the laugh of the character of that name: back to the walk */
@@ -57,11 +59,12 @@ void Sputnik_LaughDone(cAbstractFile *params) {
 	cLocalLogic *l = Logic_GetLocalLogic(World_FindEntity(name));
 	g_SputnikPisser = NULL;
 	g_SputnikTime = 0.0f;
-	l->vftable->SetState(l, 7, NULL);
+	Logic_Vtbl(l)->SetState(l, 7, NULL);
 }
 
 /* vf17 */
-void cSputnikJunkyardLocalLogic_Update(cSputnikJunkyardLocalLogic *self, float dt) {
+void cSputnikJunkyardLocalLogic_Update(cLocalLogic *elem, float dt) {
+	cSputnikJunkyardLocalLogic *self = (cSputnikJunkyardLocalLogic *)elem;
 	cEntity *p = self->base.parent;
 
 	p->vftable->GetAI(p);
@@ -76,12 +79,12 @@ void cSputnikJunkyardLocalLogic_Update(cSputnikJunkyardLocalLogic *self, float d
 		g_SputnikTime = g_SputnikTime + dt;
 		if (g_SputnikTime >= g_SputnikJunyardTimeToPissPlayer) {
 			g_SputnikPisser = p;
-			SPUTNIK_VT(self)->SetState(self, 8, NULL);
+			SPUTNIK_VT(self)->SetState(&self->base.logic, 8, NULL);
 		}
 		return;
 	}
 	if (self->base.state != 8) {
-		cGenCharLocalLogic_Update(self, dt);
+		cGenCharLocalLogic_Update(&self->base.logic, dt);
 		return;
 	}
 	cAIChar *ai = p->vftable->GetAI(p);
@@ -97,17 +100,18 @@ void cSputnikJunkyardLocalLogic_Update(cSputnikJunkyardLocalLogic *self, float d
 }
 
 /* vf19: 7 the walk, 8 to the point 200 in front of the camera, facing it; always 1 */
-byte cSputnikJunkyardLocalLogic_SetState(cSputnikJunkyardLocalLogic *self, int state, cEntity *target) {
+byte cSputnikJunkyardLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
+	cSputnikJunkyardLocalLogic *self = (cSputnikJunkyardLocalLogic *)elem;
 	if (state == 7) {
-		if ((byte)cBaseLocalLogic_SetState(&self->base, 7, target)) {
+		if ((byte)cBaseLocalLogic_SetState(&self->base.logic, 7, target)) {
 			Sputnik_Walk(self);
 		}
 		return 1;
 	}
 	if (state != 8) {
-		return cGenCharLocalLogic_SetState(self, state, target);
+		return cGenCharLocalLogic_SetState(&self->base.logic, state, target);
 	}
-	if (!(byte)cBaseLocalLogic_SetState(&self->base, 8, target)) {
+	if (!(byte)cBaseLocalLogic_SetState(&self->base.logic, 8, target)) {
 		return 1;
 	}
 	cEntity *p = self->base.parent;
@@ -130,3 +134,43 @@ byte cSputnikJunkyardLocalLogic_SetState(cSputnikJunkyardLocalLogic *self, int s
 	ai->vftable->SetState(ai, 4, pos, dir, 100.0, 0.25);
 	return 1;
 }
+
+/* the vtable of cSputnikJunkyardLocalLogic */
+const cGenCharLocalLogicVtbl cSputnikJunkyardLocalLogic_vftable = {
+	.base.base.Delete = cSputnikJunkyardLocalLogic_Delete,
+	.base.base.GetName = cBaseLocalLogic_GetName,
+	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.VarI = cGenCharLocalLogic_VarI,
+	.base.base.VarF = cBaseLocalLogic_VarF,
+	.base.base.VarS = cGenCharLocalLogic_VarS,
+	.base.base.VarV = cBaseLocalLogic_VarV,
+	.base.UpdateBusy = cBaseLocalLogic_UpdateBusy,
+	.base.Refresh = cBaseLocalLogic_Refresh,
+	.base.Listens = cLocalLogic_ListensTrue,
+	.base.OnHit = cGenCharLocalLogic_OnHit,
+	.base.OnSeen = cGenCharLocalLogic_OnSeen,
+	.base.OnAttack = cGenCharLocalLogic_OnRobbery,
+	.base.OnShot = cBaseLocalLogic_OnShot,
+	.base.OnHammer = cLocalLogic_OnHammerNop,
+	.base.GivesMoney = cGenCharLocalLogic_GivesMoney,
+	.base.OnAlarm = cGenCharLocalLogic_OnAlarm,
+	.base.Update = cSputnikJunkyardLocalLogic_Update,
+	.base.SetOriginFrom = cBaseLocalLogic_SetOriginFrom,
+	.base.SetState = cSputnikJunkyardLocalLogic_SetState,
+	.base.SetIdle = cBaseLocalLogic_SetIdle,
+	.base.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.base.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.base.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.base.RestartState = cGenCharLocalLogic_RestartState,
+	.CanAttack = cGenCharLocalLogic_CanAttack,
+	.UpdateView = cGenCharLocalLogic_UpdateView,
+	.ToRelax = cGenCharLocalLogic_ToRelax,
+	.ToAlert = cGenCharLocalLogic_ToAlert,
+	.Accuse = Logic_SetState2,
+	.FindTarget = cLocalLogic_FindTargetNull,
+	.TargetDone = cLocalLogic_TargetDoneTrue,
+	.Work = cLocalLogic_WorkNop,
+	.Vf33 = cLocalLogic_Vf33Nop,
+	.GoTo = cGenCharLocalLogic_GoTo,
+	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
+};

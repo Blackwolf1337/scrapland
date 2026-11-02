@@ -13,13 +13,14 @@ cBankDirectorLocalLogic *cBankDirectorLocalLogic_ctor(cBankDirectorLocalLogic *s
 	return self;
 }
 
-cBankDirectorLocalLogic *cBankDirectorLocalLogic_Delete(cBankDirectorLocalLogic *self, byte flags) {
+cLocalLogic *cBankDirectorLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+	cBankDirectorLocalLogic *self = (cBankDirectorLocalLogic *)elem;
 	self->base.vftable = CBANKDIRECTORLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return elem;
 }
 
 cEntity *Logic_RichUsrInView(cGenCharLocalLogic *self, cEntity *usr) {
@@ -48,7 +49,8 @@ cEntity *Logic_FindInCharLists(cEntity *p) {
 
 /* vf31: 0 while the target has more than 25 of money, the special time has not run out and it is in view (also of
  * the bank master) */
-int cBankDirectorLocalLogic_LoseTarget(cBankDirectorLocalLogic *self) {
+byte cBankDirectorLocalLogic_LoseTarget(cLocalLogic *elem) {
+	cBankDirectorLocalLogic *self = (cBankDirectorLocalLogic *)elem;
 	vec3_t tmp;
 
 	cEntity *t = self->base.target.target;
@@ -67,7 +69,8 @@ int cBankDirectorLocalLogic_LoseTarget(cBankDirectorLocalLogic *self) {
 }
 
 /* vf30: the next target when the search time ran out */
-cEntity *cBankDirectorLocalLogic_FindTarget(cBankDirectorLocalLogic *self) {
+cEntity *cBankDirectorLocalLogic_FindTarget(cLocalLogic *elem) {
+	cBankDirectorLocalLogic *self = (cBankDirectorLocalLogic *)elem;
 	if (!(0.0f > self->searchTime)) {
 		return NULL;
 	}
@@ -93,9 +96,50 @@ cEntity *cBankDirectorLocalLogic_FindTarget(cBankDirectorLocalLogic *self) {
 }
 
 /* vf17 (also of the bank master and the bishop) */
-void cBankDirectorLocalLogic_Update(cBankDirectorLocalLogic *self, float dt) {
+void cBankDirectorLocalLogic_Update(cLocalLogic *base, float dt) {
+	cBankDirectorLocalLogic *self = (cBankDirectorLocalLogic *)base;
 	if (self->specialOn) {
 		self->specialTime = dt + self->specialTime;
 	}
-	cGenCharLocalLogic_Update(self, dt);
+	cGenCharLocalLogic_Update(&self->base.logic, dt);
 }
+
+/* the vtable of cBankDirectorLocalLogic */
+const cGenCharLocalLogicVtbl cBankDirectorLocalLogic_vftable = {
+	.base.base.Delete = cBankDirectorLocalLogic_Delete,
+	.base.base.GetName = cBaseLocalLogic_GetName,
+	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.VarI = cGenCharLocalLogic_VarI,
+	.base.base.VarF = cBaseLocalLogic_VarF,
+	.base.base.VarS = cGenCharLocalLogic_VarS,
+	.base.base.VarV = cBaseLocalLogic_VarV,
+	.base.UpdateBusy = cBaseLocalLogic_UpdateBusy,
+	.base.Refresh = cBaseLocalLogic_Refresh,
+	.base.Listens = cLocalLogic_ListensTrue,
+	.base.OnHit = cGenCharLocalLogic_OnHit,
+	.base.OnSeen = cGenCharLocalLogic_OnSeen,
+	.base.OnAttack = cGenCharLocalLogic_OnRobbery,
+	.base.OnShot = cBaseLocalLogic_OnShot,
+	.base.OnHammer = cLocalLogic_OnHammerNop,
+	.base.GivesMoney = cGenCharLocalLogic_GivesMoney,
+	.base.OnAlarm = cGenCharLocalLogic_OnAlarm,
+	.base.Update = cBankDirectorLocalLogic_Update,
+	.base.SetOriginFrom = cBaseLocalLogic_SetOriginFrom,
+	.base.SetState = cGenCharLocalLogic_SetState,
+	.base.SetIdle = cBaseLocalLogic_SetIdle,
+	.base.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.base.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.base.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.base.RestartState = cGenCharLocalLogic_RestartState,
+	.CanAttack = cGenCharLocalLogic_CanAttack,
+	.UpdateView = cGenCharLocalLogic_UpdateView,
+	.ToRelax = cGenCharLocalLogic_ToRelax,
+	.ToAlert = cGenCharLocalLogic_ToAlert,
+	.Accuse = Logic_SetState2,
+	.FindTarget = cBankDirectorLocalLogic_FindTarget,
+	.TargetDone = cBankDirectorLocalLogic_LoseTarget,
+	.Work = cLocalLogic_WorkNop,
+	.Vf33 = cLocalLogic_Vf33Nop,
+	.GoTo = cGenCharLocalLogic_GoTo,
+	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
+};

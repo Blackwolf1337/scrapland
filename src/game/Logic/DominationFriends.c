@@ -33,12 +33,13 @@ void cDominationFriendsLogic_dtor(cDominationFriendsLogic *self) {
 	cDominationLogic_dtor(&self->base);
 }
 
-cDominationFriendsLogic *cDominationFriendsLogic_Delete(cDominationFriendsLogic *self, byte flags) {
+cDominationLogic *cDominationFriendsLogic_Delete(cDominationLogic *base, byte flags) {
+	cDominationFriendsLogic *self = (cDominationFriendsLogic *)base;
 	cDominationFriendsLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 void cDominationFriendsSide_Think(cDominationFriendsSide *self) {
@@ -61,7 +62,8 @@ void cDominationFriendsSide_Think(cDominationFriendsSide *self) {
 }
 
 /* vf03 */
-cEntityListData *cDominationFriendsLogic_GetList(cDominationFriendsLogic *self) {
+cEntityListData *cDominationFriendsLogic_GetList(cDominationLogic *base) {
+	cDominationFriendsLogic *self = (cDominationFriendsLogic *)base;
 	return self->side->list;
 }
 
@@ -85,7 +87,8 @@ cEntity *cDominationFriendsLogic_FindShipOfZone(cDominationFriendsLogic *self, c
 }
 
 /* vf01 */
-void cDominationFriendsLogic_Init(cDominationFriendsLogic *self) {
+void cDominationFriendsLogic_Init(cDominationLogic *base) {
+	cDominationFriendsLogic *self = (cDominationFriendsLogic *)base;
 	cDominationFriendsSide *s = self->side;
 
 	CHECK(s->owner && "fl");
@@ -104,7 +107,8 @@ cEntity *cDominationFriendsLogic_ReleaseZone(cDominationLogic *self, const char 
 }
 
 /* vf02 */
-void cDominationFriendsLogic_Update(cDominationFriendsLogic *self, float dt) {
+void cDominationFriendsLogic_Update(cDominationLogic *base, float dt) {
+	cDominationFriendsLogic *self = (cDominationFriendsLogic *)base;
 	cDominationFriendsSide *s = self->side;
 	float t = s->timer + dt;
 
@@ -114,3 +118,12 @@ void cDominationFriendsLogic_Update(cDominationFriendsLogic *self, float dt) {
 		cDominationFriendsSide_Think(s);
 	}
 }
+
+/* the vtable of cDominationFriendsLogic */
+const cDominationLogicVtbl cDominationFriendsLogic_vftable = {
+	.Delete = cDominationFriendsLogic_Delete,
+	.Init = cDominationFriendsLogic_Init,
+	.Update = cDominationFriendsLogic_Update,
+	.GetList = cDominationFriendsLogic_GetList,
+	.GetTeam = cDominationLogic_GetTeamTrue,
+};

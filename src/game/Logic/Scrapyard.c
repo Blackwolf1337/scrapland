@@ -18,7 +18,8 @@
 #include "scrap/scrap.h"
 #include "scrap/world.h"
 
-#define CSCRAPYARDLOCALLOGIC_VFTABLE GAME_VFTABLE(cScrapyardLocalLogic_vftable)
+extern const cLocalLogicVtbl cScrapyardLocalLogic_vftable;
+#define CSCRAPYARDLOCALLOGIC_VFTABLE (&cScrapyardLocalLogic_vftable)
 #define SHIPGROUP_SPHERE_NATIVE 0x157f10
 #define SHIPGROUP_DEATH_NATIVE 0x158020
 #define SHIPGROUP_MAKELOGIC 0x158400
@@ -324,3 +325,14 @@ cLocalLogic *ShipGroup_MakeLogic(cEntity *e) {
 	l->vftable = CSCRAPYARDLOCALLOGIC_VFTABLE;
 	return l;
 }
+
+/* the vtable of cScrapyardLocalLogic */
+const cLocalLogicVtbl cScrapyardLocalLogic_vftable = {
+	.Delete = cScrapyardLocalLogic_Delete,
+	.GetName = cLocalLogic_GetName,
+	.Vf02 = cLocalLogic_Vf02True,
+	.VarI = cLocalLogic_VarIFalse,
+	.VarF = cLocalLogic_VarFFalse,
+	.VarS = cLocalLogic_VarSFalse,
+	.VarV = cScrapyardLocalLogic_VarV,
+};

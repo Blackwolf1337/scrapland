@@ -42,7 +42,7 @@ byte cGenCharGroup_TakeAttack(cGenCharGroup *self) {
 static void GenCharGroup_UpdateList(cEntityListData *list) {
 	for (Nto1Node *n = Logic_ListFirst(list); n; n = Logic_ListNext(n)) {
 		cLocalLogic *l = Logic_GetLocalLogic(n->data);
-		l->vftable->Update(l, 0.13f);
+		Logic_Vtbl(l)->Update(l, 0.13f);
 	}
 }
 

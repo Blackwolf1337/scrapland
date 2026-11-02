@@ -91,22 +91,24 @@ cFunctionaryLocalLogic *cFunctionaryLocalLogic_ctor(cFunctionaryLocalLogic *self
 
 void cFunctionaryLocalLogic_dtor(cFunctionaryLocalLogic *self) {
 	self->base.base.vftable = CFUNCTIONARYLOCALLOGIC_VFTABLE;
-	cFunctionaryLocalLogic_ReleaseDesktop(self);
+	cFunctionaryLocalLogic_ReleaseDesktop(&self->base.base.logic);
 	g_DesktopsList = NULL;
 	Nto1Node_Done(&self->desktop);
 	cGenCharLocalLogic_dtor(&self->base);
 }
 
-cFunctionaryLocalLogic *cFunctionaryLocalLogic_Delete(cFunctionaryLocalLogic *self, byte flags) {
+cLocalLogic *cFunctionaryLocalLogic_Delete(cLocalLogic *base, byte flags) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	cFunctionaryLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, 0xb8);
 	}
-	return self;
+	return base;
 }
 
 /* vf26: the view flag of the character and its team */
-void cFunctionaryLocalLogic_UpdateView(cFunctionaryLocalLogic *self) {
+void cFunctionaryLocalLogic_UpdateView(cLocalLogic *elem) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	cEntity *p = Func_Parent(self);
 
 	ChType_ActCtrl(p);
@@ -125,7 +127,8 @@ void cFunctionaryLocalLogic_UpdateView(cFunctionaryLocalLogic *self) {
 }
 
 /* vf40: the nearest desktop (within maxDist when above 0) taken out of the desktop list and linked */
-void cFunctionaryLocalLogic_AssignDesktop(cFunctionaryLocalLogic *self, float maxDist) {
+void cFunctionaryLocalLogic_AssignDesktop(cLocalLogic *base, float maxDist) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	vec3_t tmp;
 
 	if (self->forced || self->desktop.target) {
@@ -146,28 +149,30 @@ void cFunctionaryLocalLogic_AssignDesktop(cFunctionaryLocalLogic *self, float ma
 
 /* vf02: an escaping functionary runs at normal speed; another type of player than "Functionary" makes it
  * suspicious (state 3) unless it wants to talk */
-byte cFunctionaryLocalLogic_Vf02(cFunctionaryLocalLogic *self) {
-	if (Func_Vtbl(self)->FastEscape(self) && (self->base.base.idle || self->base.base.alwaysLock ||
+byte cFunctionaryLocalLogic_Vf02(cLocalLogic *elem) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
+	if (Func_Vtbl(self)->FastEscape(&self->base.base.logic) && (self->base.base.idle || self->base.base.alwaysLock ||
 		self->escapeInRadius)) {
 		cFunctionaryLocalLogic_NormalSpeed(self, Func_Parent(self));
 		return 1;
 	}
 	cEntity *usr = ChType_Usr0();
 	if (strcmp(ChType_ActClass(ChType_ActCtrl(usr))->name, "Functionary") &&
-		!Func_Vtbl(self)->CanTalk(self)) {
-		Logic_Vtbl(self)->SetState(self, 3, usr);
+		!Func_Vtbl(self)->CanTalk(&self->base.base.logic)) {
+		Logic_Vtbl(self)->SetState(&self->base.base.logic, 3, usr);
 		return 0;
 	}
 	return 1;
 }
 
 /* vf33: back to the start while working with time left */
-void cFunctionaryLocalLogic_Vf33(cFunctionaryLocalLogic *self, byte restart) {
+void cFunctionaryLocalLogic_Vf33(cLocalLogic *elem, byte restart) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	if (self->base.base.state != 8) {
 		return;
 	}
 	if (self->working ? self->workTime > 0.0f : self->playTime > 0.0f) {
-		Func_Vtbl(self)->StopWork(self, restart);
+		Func_Vtbl(self)->StopWork(&self->base.base.logic, restart);
 	}
 }
 
@@ -190,7 +195,8 @@ void cFunctionaryLocalLogic_FreeDesktop(cFunctionaryLocalLogic *self) {
 }
 
 /* vf41: the desktop back into the desktop list and unlinked */
-void cFunctionaryLocalLogic_ReleaseDesktop(cFunctionaryLocalLogic *self) {
+void cFunctionaryLocalLogic_ReleaseDesktop(cLocalLogic *base) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	if (!cFunctionaryLocalLogic_GetDesktop(self)) {
 		return;
 	}
@@ -209,7 +215,7 @@ static void Func_SitDown(cFunctionaryLocalLogic *self, cEntity *p) {
 	if (self->working && cFunctionaryLocalLogic_GetDesktop(self)) {
 		cEntity *d = cFunctionaryLocalLogic_GetDesktop(self);
 		d->vftable->VarV(d, "NT_NodePos_DC_Sit", &x, &y, &z, 0);
-		o->move.moveAng = *Func_Vtbl(self)->GetWorkAng(self, &tmp);
+		o->move.moveAng = *Func_Vtbl(self)->GetWorkAng(&self->base.base.logic, &tmp);
 	}
 	pos.x = (float)x;
 	pos.y = (float)y;
@@ -238,11 +244,12 @@ static void Func_SitDown(cFunctionaryLocalLogic *self, cEntity *p) {
 		}
 	}
 	Func_SetWorkTime(self);
-	Logic_Vtbl(self)->SetState(self, 8, NULL);
+	Logic_Vtbl(self)->SetState(&self->base.base.logic, 8, NULL);
 }
 
 /* vf32: the wait before the walk to the desktop, the arrival at it, the work and the relax there */
-void cFunctionaryLocalLogic_Work(cFunctionaryLocalLogic *self, float dt) {
+void cFunctionaryLocalLogic_Work(cLocalLogic *elem, float dt) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	vec3_t tmp;
 
 	if (!cFunctionaryLocalLogic_GetDesktop(self)) {
@@ -258,7 +265,7 @@ void cFunctionaryLocalLogic_Work(cFunctionaryLocalLogic *self, float dt) {
 		float t = self->sitTime - dt;
 		self->sitTime = t;
 		if (0.0f >= t) {
-			Logic_Vtbl(self)->SetState(self, 7, NULL);
+			Logic_Vtbl(self)->SetState(&self->base.base.logic, 7, NULL);
 		}
 		return;
 	}
@@ -297,7 +304,7 @@ void cFunctionaryLocalLogic_Work(cFunctionaryLocalLogic *self, float dt) {
 		cObjMove_SetTime(&Obj(p)->move, 0.0f);
 		cActCtrl_Play(ChType_ActCtrl(p), "GetUp", 0, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(p), "Relax", 1);
-		Func_Vtbl(self)->StopWork(self, 1);
+		Func_Vtbl(self)->StopWork(&self->base.base.logic, 1);
 		return;
 	}
 	if (st != 7) {
@@ -312,7 +319,8 @@ void cFunctionaryLocalLogic_Work(cFunctionaryLocalLogic *self, float dt) {
 }
 
 /* vf39 */
-byte cFunctionaryLocalLogic_FastEscape(cFunctionaryLocalLogic *self) {
+byte cFunctionaryLocalLogic_FastEscape(cLocalLogic *base) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	return self->fastEscape;
 }
 
@@ -340,7 +348,8 @@ static byte Func_VarFloat(float *f, double *d, byte set) {
 }
 
 /* vf04 */
-byte cFunctionaryLocalLogic_VarF(cFunctionaryLocalLogic *self, const char *name, double *d, byte set) {
+byte cFunctionaryLocalLogic_VarF(cLocalLogic *elem, const char *name, double *d, byte set) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	if (!strcmp(name, "ProbTalkWhenWorking")) {
 		return Func_VarProb(&self->probWorking, d, set,
 			"probTalkWhenWorking >= 0.0f && probTalkWhenWorking <= 1.0f");
@@ -365,11 +374,12 @@ byte cFunctionaryLocalLogic_VarF(cFunctionaryLocalLogic *self, const char *name,
 	if (!strcmp(name, "TimeToStopWorking")) {
 		return Func_VarFloat(&self->workTime, d, set);
 	}
-	return cBaseLocalLogic_VarF(&self->base.base, name, d, set);
+	return cBaseLocalLogic_VarF(&self->base.base.logic, name, d, set);
 }
 
 /* vf37: the work stops, a new wait before the walk to the desktop (none with a forced desktop) */
-void cFunctionaryLocalLogic_StopWork(cFunctionaryLocalLogic *self, byte restart) {
+void cFunctionaryLocalLogic_StopWork(cLocalLogic *base, byte restart) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	if (self->working && cFunctionaryLocalLogic_GetDesktop(self)) {
 		cFunctionaryLocalLogic_FreeDesktop(self);
 	}
@@ -378,7 +388,7 @@ void cFunctionaryLocalLogic_StopWork(cFunctionaryLocalLogic *self, byte restart)
 		self->sitTime = Rand_FloatRange(g_FunctionaryMinTimeToSitDown, g_FunctionaryMaxTimeToSitDown);
 	}
 	if (restart) {
-		Logic_Vtbl(self)->SetState(self, 0, NULL);
+		Logic_Vtbl(self)->SetState(&self->base.base.logic, 0, NULL);
 	}
 }
 
@@ -393,16 +403,17 @@ static byte Func_VarFlag(byte *b, int *i, byte set) {
 }
 
 /* vf03 */
-byte cFunctionaryLocalLogic_VarI(cFunctionaryLocalLogic *self, const char *name, int *i, byte set) {
+byte cFunctionaryLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, byte set) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	if (!strcmp(name, "WorkArea")) {
 		if (!set) {
 			*i = cFunctionaryLocalLogic_GetDesktop(self) != NULL;
 			return 1;
 		}
 		if (*i) {
-			Func_Vtbl(self)->AssignDesktop(self, 0.0f);
+			Func_Vtbl(self)->AssignDesktop(&self->base.base.logic, 0.0f);
 		} else {
-			Func_Vtbl(self)->ReleaseDesktop(self);
+			Func_Vtbl(self)->ReleaseDesktop(&self->base.base.logic);
 		}
 		return 1;
 	}
@@ -435,7 +446,7 @@ byte cFunctionaryLocalLogic_VarI(cFunctionaryLocalLogic *self, const char *name,
 	if (!strcmp(name, "StopInRelax")) {
 		return Func_VarFlag(&self->stopInRelax, i, set);
 	}
-	return cGenCharLocalLogic_VarI(&self->base, name, i, set);
+	return cGenCharLocalLogic_VarI(&self->base.base.logic, name, i, set);
 }
 
 /* the relax at the desktop */
@@ -467,23 +478,24 @@ void cFunctionaryLocalLogic_SlowEffect(cFunctionaryLocalLogic *self, cEntity *e)
 }
 
 /* vf17 */
-void cFunctionaryLocalLogic_Update(cFunctionaryLocalLogic *self, float dt) {
+void cFunctionaryLocalLogic_Update(cLocalLogic *elem, float dt) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	vec3_t t1, t2;
 
 	if (self->forceSpecial) {
-		GenChar_Vtbl(self)->Work(self, dt);
+		GenChar_Vtbl(self)->Work(&self->base.base.logic, dt);
 		self->forceSpecial = 0;
-		GenChar_Vtbl(self)->UpdateView(self);
+		GenChar_Vtbl(self)->UpdateView(&self->base.base.logic);
 		return;
 	}
 	if (self->forceCancel) {
-		Func_Vtbl(self)->StopWork(self, 1);
+		Func_Vtbl(self)->StopWork(&self->base.base.logic, 1);
 		self->forceCancel = 0;
-		GenChar_Vtbl(self)->UpdateView(self);
+		GenChar_Vtbl(self)->UpdateView(&self->base.base.logic);
 		return;
 	}
 	if (self->special) {
-		cBaseLocalLogic_Update(&self->base.base, dt);
+		cBaseLocalLogic_Update(&self->base.base.logic, dt);
 		cEntity *p = Func_Parent(self);
 		self->transTime = self->transTime + dt;
 		float st = self->specialTime + dt;
@@ -492,7 +504,7 @@ void cFunctionaryLocalLogic_Update(cFunctionaryLocalLogic *self, float dt) {
 		if (!self->base.base.idle && !self->base.base.alwaysLock) {
 			idle = 0;
 			if (!(st >= g_FunctionarySpecialActionTime)) {
-				if (Func_Vtbl(self)->FastEscape(self) &&
+				if (Func_Vtbl(self)->FastEscape(&self->base.base.logic) &&
 					self->transTime >= g_FunctionarySpecialActionStatesTransitionTime) {
 					byte was = self->fast;
 					self->transTime = 0.0f;
@@ -503,7 +515,7 @@ void cFunctionaryLocalLogic_Update(cFunctionaryLocalLogic *self, float dt) {
 						cFunctionaryLocalLogic_SlowEffect(self, p);
 					}
 				}
-				GenChar_Vtbl(self)->UpdateView(self);
+				GenChar_Vtbl(self)->UpdateView(&self->base.base.logic);
 				return;
 			}
 		}
@@ -511,18 +523,18 @@ void cFunctionaryLocalLogic_Update(cFunctionaryLocalLogic *self, float dt) {
 		self->fast = 0;
 		self->transTime = 0.0f;
 		self->specialTime = 0.0f;
-		if (Func_Vtbl(self)->FastEscape(self)) {
+		if (Func_Vtbl(self)->FastEscape(&self->base.base.logic)) {
 			cFunctionaryLocalLogic_NormalSpeed(self, p);
 		}
-		Logic_Vtbl(self)->SetState(self, self->prevState == 3 ? 0 : self->prevState, NULL);
+		Logic_Vtbl(self)->SetState(&self->base.base.logic, self->prevState == 3 ? 0 : self->prevState, NULL);
 		if (idle) {
-			Logic_Vtbl(self)->SetIdle(self, 1);
+			Logic_Vtbl(self)->SetIdle(&self->base.base.logic, 1);
 		}
-		GenChar_Vtbl(self)->UpdateView(self);
+		GenChar_Vtbl(self)->UpdateView(&self->base.base.logic);
 		return;
 	}
 	if (self->escapeInRadius) {
-		cBaseLocalLogic_Update(&self->base.base, dt);
+		cBaseLocalLogic_Update(&self->base.base.logic, dt);
 		cEntity *usr = cWorld_GetUsrEntity(g_pWorld, 0);
 		if (!self->base.base.idle && !self->base.base.alwaysLock && usr) {
 			const vec3_t *up = usr->vftable->GetPos(usr, &t1);
@@ -530,27 +542,29 @@ void cFunctionaryLocalLogic_Update(cFunctionaryLocalLogic *self, float dt) {
 			const vec3_t *pp = p->vftable->GetPos(p, &t2);
 			float dy = pp->y - up->y, dx = pp->x - up->x, dz = pp->z - up->z;
 			if (self->escapeRadiusSqr >= dy * dy + dx * dx + dz * dz) {
-				Logic_Vtbl(self)->SetState(self, 3, usr);
+				Logic_Vtbl(self)->SetState(&self->base.base.logic, 3, usr);
 			}
 		}
-		GenChar_Vtbl(self)->UpdateView(self);
+		GenChar_Vtbl(self)->UpdateView(&self->base.base.logic);
 		return;
 	}
-	cGenCharLocalLogic_Update(&self->base, dt);
+	cGenCharLocalLogic_Update(&self->base.base.logic, dt);
 }
 
 /* vf12: not when IgnoreBankerAttack */
-void cFunctionaryLocalLogic_OnRobbery(cFunctionaryLocalLogic *self, cEntity *e, float amount) {
+void cFunctionaryLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	if (!self->ignoreBanker) {
-		cGenCharLocalLogic_OnRobbery(&self->base, e, amount);
+		cGenCharLocalLogic_OnRobbery(&self->base.base.logic, e, amount);
 	}
 }
 
 /* vf18: the nearest desktop within FunctionaryAssignWorkDistance instead of the origin */
-void cFunctionaryLocalLogic_SetOriginFrom(cFunctionaryLocalLogic *self, cEntity *e) {
-	Func_Vtbl(self)->ReleaseDesktop(self);
-	Func_Vtbl(self)->AssignDesktop(self, g_FunctionaryAssignWorkDistance);
-	Logic_Vtbl(self)->SetState(self, 0, NULL);
+void cFunctionaryLocalLogic_SetOriginFrom(cLocalLogic *base, cEntity *e) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
+	Func_Vtbl(self)->ReleaseDesktop(&self->base.base.logic);
+	Func_Vtbl(self)->AssignDesktop(&self->base.base.logic, g_FunctionaryAssignWorkDistance);
+	Logic_Vtbl(self)->SetState(&self->base.base.logic, 0, NULL);
 	self->sitTime = 0.1f;
 	cEntity *d = cFunctionaryLocalLogic_GetDesktop(self);
 	if (d) {
@@ -561,15 +575,16 @@ void cFunctionaryLocalLogic_SetOriginFrom(cFunctionaryLocalLogic *self, cEntity 
 }
 
 /* vf20: not idle from the work state goes on with the walk to the desktop */
-void cFunctionaryLocalLogic_SetIdle(cFunctionaryLocalLogic *self, byte idle) {
+void cFunctionaryLocalLogic_SetIdle(cLocalLogic *elem, byte idle) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	if (!idle && !self->base.base.busy) {
 		if (self->base.base.state == 8) {
 			self->base.base.state = 7;
 		}
-		Logic_Vtbl(self)->SetState(self, self->base.base.state, self->base.base.target.target);
+		Logic_Vtbl(self)->SetState(&self->base.base.logic, self->base.base.state, self->base.base.target.target);
 		return;
 	}
-	cBaseLocalLogic_SetIdle(&self->base.base, idle);
+	cBaseLocalLogic_SetIdle(&self->base.base.logic, idle);
 }
 
 /* the walk to the chair of the desktop (node DC_Sit of its model), looking along the work angles */
@@ -587,7 +602,7 @@ static void Func_GoToWork(cFunctionaryLocalLogic *self, cAIChar *ai) {
 			pos.x = mm->m[12];
 			pos.y = mm->m[13];
 			pos.z = mm->m[14];
-			ang = *Func_Vtbl(self)->GetWorkAng(self, &dir);
+			ang = *Func_Vtbl(self)->GetWorkAng(&self->base.base.logic, &dir);
 		} else {
 			CHECK(false && "Aqui no debe de llegar nunca");
 		}
@@ -598,17 +613,18 @@ static void Func_GoToWork(cFunctionaryLocalLogic *self, cAIChar *ai) {
 }
 
 /* vf19 */
-int cFunctionaryLocalLogic_SetState(cFunctionaryLocalLogic *self, int state, cEntity *target) {
+byte cFunctionaryLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base.base;
 
 	if (state == 0) {
 		if (self->stopInRelax) {
-			return cGenCharLocalLogic_SetState(&self->base, 0, target);
+			return cGenCharLocalLogic_SetState(&self->base.base.logic, 0, target);
 		}
-		byte ok = (byte)cBaseLocalLogic_SetState(b, 0, target);
+		byte ok = (byte)cBaseLocalLogic_SetState(&b->logic, 0, target);
 		cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 		if (ok) {
-			GenChar_Vtbl(self)->UpdateView(self);
+			GenChar_Vtbl(self)->UpdateView(&self->base.base.logic);
 		}
 		if (b->state == 0 && ok) {
 			ai->vftable->SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_GenCharRelaxSpeed, 0);
@@ -617,7 +633,7 @@ int cFunctionaryLocalLogic_SetState(cFunctionaryLocalLogic *self, int state, cEn
 	}
 	if (state == 3) {
 		self->prevState = b->state == 2 || b->state == 8 ? 0 : b->state;
-		if ((byte)cBaseLocalLogic_SetState(b, 3, target)) {
+		if ((byte)cBaseLocalLogic_SetState(&b->logic, 3, target)) {
 			cEntity *p = b->parent;
 			cAIChar *ai = p->vftable->GetAI(p);
 			ai->vftable->SetState(ai, 5, target, (double)g_GenCharAlertSpeed);
@@ -626,7 +642,7 @@ int cFunctionaryLocalLogic_SetState(cFunctionaryLocalLogic *self, int state, cEn
 			self->special = 1;
 			cObjMove_SetTime(&Obj(p)->move, 0.0f);
 			cFunctionaryLocalLogic_FreeDesktop(self);
-			if (Func_Vtbl(self)->FastEscape(self)) {
+			if (Func_Vtbl(self)->FastEscape(&self->base.base.logic)) {
 				if (!was) {
 					p->vftable->SetEmbeddedFX(p, "FunctionarySpecialAction");
 				}
@@ -636,8 +652,8 @@ int cFunctionaryLocalLogic_SetState(cFunctionaryLocalLogic *self, int state, cEn
 		return 1;
 	}
 	if (state == 7) {
-		if ((byte)cBaseLocalLogic_SetState(b, 7, target)) {
-			GenChar_Vtbl(self)->UpdateView(self);
+		if ((byte)cBaseLocalLogic_SetState(&b->logic, 7, target)) {
+			GenChar_Vtbl(self)->UpdateView(&self->base.base.logic);
 			Func_GoToWork(self, b->parent->vftable->GetAI(b->parent));
 		}
 		return 1;
@@ -653,23 +669,24 @@ int cFunctionaryLocalLogic_SetState(cFunctionaryLocalLogic *self, int state, cEn
 			self->sitTime = Rand_FloatRange(g_FunctionaryMinTimeToSitDown, g_FunctionaryMaxTimeToSitDown);
 		}
 	}
-	return cGenCharLocalLogic_SetState(&self->base, state, target);
+	return cGenCharLocalLogic_SetState(&self->base.base.logic, state, target);
 }
 
 /* "KeepWorking": on takes a desktop (any distance), off leaves it */
 void cFunctionaryLocalLogic_SetKeepWorking(cFunctionaryLocalLogic *self, byte on) {
 	self->keepWorking = on;
 	if (on) {
-		Func_Vtbl(self)->AssignDesktop(self, 0.0f);
+		Func_Vtbl(self)->AssignDesktop(&self->base.base.logic, 0.0f);
 		return;
 	}
-	Func_Vtbl(self)->ReleaseDesktop(self);
+	Func_Vtbl(self)->ReleaseDesktop(&self->base.base.logic);
 }
 
 /* vf05 */
-byte cFunctionaryLocalLogic_VarS(cFunctionaryLocalLogic *self, const char *name, char **s, byte set) {
+byte cFunctionaryLocalLogic_VarS(cLocalLogic *elem, const char *name, char **s, byte set) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	if (strcmp(name, "ForcedDesktopAssigned")) {
-		return cGenCharLocalLogic_VarS(&self->base, name, s, set);
+		return cGenCharLocalLogic_VarS(&self->base.base.logic, name, s, set);
 	}
 	if (!set) {
 		if (self->forced) {
@@ -697,7 +714,8 @@ void cFunctionaryLocalLogic_NormalSpeed(cFunctionaryLocalLogic *self, cEntity *e
 }
 
 /* vf36: the chance to talk of the state */
-byte cFunctionaryLocalLogic_CanTalk(cFunctionaryLocalLogic *self) {
+byte cFunctionaryLocalLogic_CanTalk(cLocalLogic *elem) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)elem;
 	int st = self->base.base.state;
 
 	if (st == 8) {
@@ -713,9 +731,56 @@ byte cFunctionaryLocalLogic_CanTalk(cFunctionaryLocalLogic *self) {
 }
 
 /* vf38: the angles of the desktop */
-vec3_t *cFunctionaryLocalLogic_GetWorkAng(cFunctionaryLocalLogic *self, vec3_t *out) {
+vec3_t *cFunctionaryLocalLogic_GetWorkAng(cLocalLogic *base, vec3_t *out) {
+	cFunctionaryLocalLogic *self = (cFunctionaryLocalLogic *)base;
 	CHECK(cFunctionaryLocalLogic_GetDesktop(self) && "desktopAssigned()");
 	cEntity *d = cFunctionaryLocalLogic_GetDesktop(self);
 	Obj_Vtbl(d)->GetAng(d, out);
 	return out;
 }
+
+/* the vtable of cFunctionaryLocalLogic */
+const cFunctionaryLocalLogicVtbl cFunctionaryLocalLogic_vftable = {
+	.base.base.base.Delete = cFunctionaryLocalLogic_Delete,
+	.base.base.base.GetName = cBaseLocalLogic_GetName,
+	.base.base.base.Vf02 = cFunctionaryLocalLogic_Vf02,
+	.base.base.base.VarI = cFunctionaryLocalLogic_VarI,
+	.base.base.base.VarF = cFunctionaryLocalLogic_VarF,
+	.base.base.base.VarS = cFunctionaryLocalLogic_VarS,
+	.base.base.base.VarV = cBaseLocalLogic_VarV,
+	.base.base.UpdateBusy = cBaseLocalLogic_UpdateBusy,
+	.base.base.Refresh = cBaseLocalLogic_Refresh,
+	.base.base.Listens = cLocalLogic_ListensTrue,
+	.base.base.OnHit = cGenCharLocalLogic_OnHit,
+	.base.base.OnSeen = cGenCharLocalLogic_OnSeen,
+	.base.base.OnAttack = cFunctionaryLocalLogic_OnRobbery,
+	.base.base.OnShot = cBaseLocalLogic_OnShot,
+	.base.base.OnHammer = cLocalLogic_OnHammerNop,
+	.base.base.GivesMoney = cGenCharLocalLogic_GivesMoney,
+	.base.base.OnAlarm = cGenCharLocalLogic_OnAlarm,
+	.base.base.Update = cFunctionaryLocalLogic_Update,
+	.base.base.SetOriginFrom = cFunctionaryLocalLogic_SetOriginFrom,
+	.base.base.SetState = cFunctionaryLocalLogic_SetState,
+	.base.base.SetIdle = cFunctionaryLocalLogic_SetIdle,
+	.base.base.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.base.base.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.base.base.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.base.base.RestartState = cGenCharLocalLogic_RestartState,
+	.base.CanAttack = cGenCharLocalLogic_CanAttack,
+	.base.UpdateView = cFunctionaryLocalLogic_UpdateView,
+	.base.ToRelax = cGenCharLocalLogic_ToRelax,
+	.base.ToAlert = cGenCharLocalLogic_ToAlert,
+	.base.Accuse = Logic_SetState2,
+	.base.FindTarget = cLocalLogic_FindTargetNull,
+	.base.TargetDone = cLocalLogic_TargetDoneTrue,
+	.base.Work = cFunctionaryLocalLogic_Work,
+	.base.Vf33 = cFunctionaryLocalLogic_Vf33,
+	.base.GoTo = cGenCharLocalLogic_GoTo,
+	.base.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
+	.CanTalk = cFunctionaryLocalLogic_CanTalk,
+	.StopWork = cFunctionaryLocalLogic_StopWork,
+	.GetWorkAng = cFunctionaryLocalLogic_GetWorkAng,
+	.FastEscape = cFunctionaryLocalLogic_FastEscape,
+	.AssignDesktop = cFunctionaryLocalLogic_AssignDesktop,
+	.ReleaseDesktop = cFunctionaryLocalLogic_ReleaseDesktop,
+};

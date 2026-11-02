@@ -14,7 +14,8 @@
 #include "scrap/scrap.h"
 #include "scrap/weapons.h"
 
-#define CRUSTYLOCALLOGIC_VFTABLE GAME_VFTABLE(cRustyLocalLogic_vftable)
+extern const cGenCharLocalLogicVtbl cRustyLocalLogic_vftable;
+#define CRUSTYLOCALLOGIC_VFTABLE (&cRustyLocalLogic_vftable.base)
 extern cEntityListData *g_JunkPointsList;
 extern cGVar GVar_JunkPointsListName;
 #define g_JunkPointsListName (GVar_JunkPointsListName.value.s)	/* cString "JunkPointsListName" */
@@ -37,14 +38,15 @@ void *cRustyLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-cRustyLocalLogic *cRustyLocalLogic_Delete(cRustyLocalLogic *self, byte flags) {
+cLocalLogic *cRustyLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+	cRustyLocalLogic *self = (cRustyLocalLogic *)elem;
 	self->base.base.vftable = CRUSTYLOCALLOGIC_VFTABLE;
 	g_JunkPointsList = NULL;
 	cGenCharLocalLogic_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return elem;
 }
 
 /* the native at the end of a working loop of the character of that name: after the last one it relaxes */
@@ -61,12 +63,14 @@ void Rusty_LoopDone(cAbstractFile *params) {
 }
 
 /* vf03 and vf05 */
-byte cRustyLocalLogic_VarI(cRustyLocalLogic *self, const char *name, int *i, byte set) {
-	return cBaseLocalLogic_VarI(&self->base.base, name, i, set);
+byte cRustyLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, byte set) {
+	cRustyLocalLogic *self = (cRustyLocalLogic *)elem;
+	return cBaseLocalLogic_VarI(&self->base.base.logic, name, i, set);
 }
 
-byte cRustyLocalLogic_VarS(cRustyLocalLogic *self, const char *name, char **s, byte set) {
-	return cBaseLocalLogic_VarS(&self->base.base, name, s, set);
+byte cRustyLocalLogic_VarS(cLocalLogic *elem, const char *name, char **s, byte set) {
+	cRustyLocalLogic *self = (cRustyLocalLogic *)elem;
+	return cBaseLocalLogic_VarS(&self->base.base.logic, name, s, set);
 }
 
 /* the character moves onto the junk point in t seconds and plays its work */
@@ -97,7 +101,8 @@ static void Rusty_GoToJunk(cRustyLocalLogic *self, cAIChar *ai, double speed) {
 }
 
 /* vf17 */
-void cRustyLocalLogic_Update(cRustyLocalLogic *self, float dt) {
+void cRustyLocalLogic_Update(cLocalLogic *elem, float dt) {
+	cRustyLocalLogic *self = (cRustyLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base.base;
 	int st = b->state;
 	cEntity *p = b->parent;
@@ -105,7 +110,7 @@ void cRustyLocalLogic_Update(cRustyLocalLogic *self, float dt) {
 
 	if (st == 0 || st == 6) {
 		cRustyLocalLogic_NextJunk(self);
-		b->vftable->SetState(self, 7, NULL);
+		b->vftable->SetState(&self->base.base.logic, 7, NULL);
 	}
 	if (st == 7) {
 		cAIChar *ai = p->vftable->GetAI(p);
@@ -123,7 +128,7 @@ void cRustyLocalLogic_Update(cRustyLocalLogic *self, float dt) {
 			return;
 		}
 		Rusty_StartWork(p, self->junk, 0.25f);
-		b->vftable->SetState(self, 8, NULL);
+		b->vftable->SetState(&self->base.base.logic, 8, NULL);
 		return;
 	}
 	if (st == 8) {
@@ -146,11 +151,11 @@ void cRustyLocalLogic_Update(cRustyLocalLogic *self, float dt) {
 		cActCtrl_Play(ChType_ActCtrl(p), "Walk", 1, 1.0f);
 		cActCtrl_SetDefLoop(ChType_ActCtrl(p), "Walk", 1);
 		cRustyLocalLogic_NextJunk(self);
-		b->vftable->SetState(self, 7, NULL);
+		b->vftable->SetState(&self->base.base.logic, 7, NULL);
 		return;
 	}
 	if (st != 9) {
-		cGenCharLocalLogic_Update(&self->base, dt);
+		cGenCharLocalLogic_Update(&self->base.base.logic, dt);
 		return;
 	}
 	p->vftable->GetAI(p);
@@ -166,7 +171,7 @@ void cRustyLocalLogic_Update(cRustyLocalLogic *self, float dt) {
 	float dy = mp->y - pp->y;
 	float dz = mp->z - pp->z;
 	if (dy * dy + dx * dx + dz * dz > (float)(g_PlatformRadiusSqr + 90000)) {
-		b->vftable->SetState(self, 7, NULL);
+		b->vftable->SetState(&self->base.base.logic, 7, NULL);
 	}
 }
 
@@ -192,19 +197,60 @@ void cRustyLocalLogic_NextJunk(cRustyLocalLogic *self) {
 }
 
 /* vf19: 7 the walk to the junk point, 9 pissed; the others of the GenChar logic */
-byte cRustyLocalLogic_SetState(cRustyLocalLogic *self, int state, cEntity *target) {
+byte cRustyLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
+	cRustyLocalLogic *self = (cRustyLocalLogic *)elem;
 	if (state == 7) {
-		if ((byte)cBaseLocalLogic_SetState(&self->base.base, 7, target)) {
+		if ((byte)cBaseLocalLogic_SetState(&self->base.base.logic, 7, target)) {
 			cEntity *p = self->base.base.parent;
 			Rusty_GoToJunk(self, p->vftable->GetAI(p), (double)g_GenCharRelaxSpeed);
 		}
 		return 1;
 	}
 	if (state != 9) {
-		return cGenCharLocalLogic_SetState(&self->base, state, target);
+		return cGenCharLocalLogic_SetState(&self->base.base.logic, state, target);
 	}
 	cEntity *p = self->base.base.parent;
 	cActCtrl_Play(ChType_ActCtrl(p), "Pissed", 1, 1.0f);
 	cActCtrl_SetDefLoop(ChType_ActCtrl(p), "Relax", 1);
 	return 1;
 }
+
+/* the vtable of cRustyLocalLogic */
+const cGenCharLocalLogicVtbl cRustyLocalLogic_vftable = {
+	.base.base.Delete = cRustyLocalLogic_Delete,
+	.base.base.GetName = cBaseLocalLogic_GetName,
+	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.VarI = cRustyLocalLogic_VarI,
+	.base.base.VarF = cBaseLocalLogic_VarF,
+	.base.base.VarS = cRustyLocalLogic_VarS,
+	.base.base.VarV = cBaseLocalLogic_VarV,
+	.base.UpdateBusy = cBaseLocalLogic_UpdateBusy,
+	.base.Refresh = cBaseLocalLogic_Refresh,
+	.base.Listens = cLocalLogic_ListensTrue,
+	.base.OnHit = cGenCharLocalLogic_OnHit,
+	.base.OnSeen = cGenCharLocalLogic_OnSeen,
+	.base.OnAttack = cGenCharLocalLogic_OnRobbery,
+	.base.OnShot = cBaseLocalLogic_OnShot,
+	.base.OnHammer = cLocalLogic_OnHammerNop,
+	.base.GivesMoney = cGenCharLocalLogic_GivesMoney,
+	.base.OnAlarm = cGenCharLocalLogic_OnAlarm,
+	.base.Update = cRustyLocalLogic_Update,
+	.base.SetOriginFrom = cBaseLocalLogic_SetOriginFrom,
+	.base.SetState = cRustyLocalLogic_SetState,
+	.base.SetIdle = cBaseLocalLogic_SetIdle,
+	.base.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.base.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.base.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.base.RestartState = cGenCharLocalLogic_RestartState,
+	.CanAttack = cGenCharLocalLogic_CanAttack,
+	.UpdateView = cGenCharLocalLogic_UpdateView,
+	.ToRelax = cGenCharLocalLogic_ToRelax,
+	.ToAlert = cGenCharLocalLogic_ToAlert,
+	.Accuse = Logic_SetState2,
+	.FindTarget = cLocalLogic_FindTargetNull,
+	.TargetDone = cLocalLogic_TargetDoneTrue,
+	.Work = cLocalLogic_WorkNop,
+	.Vf33 = cLocalLogic_Vf33Nop,
+	.GoTo = cGenCharLocalLogic_GoTo,
+	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
+};

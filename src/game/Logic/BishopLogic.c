@@ -21,17 +21,19 @@ cBishopLocalLogic *cBishopLocalLogic_ctor(cBishopLocalLogic *self, cEntity *pare
 	return self;
 }
 
-cBishopLocalLogic *cBishopLocalLogic_Delete(cBishopLocalLogic *self, byte flags) {
+cLocalLogic *cBishopLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
 	self->base.vftable = CBISHOPLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return elem;
 }
 
 /* vf31: 0 to keep a character target that is idle when the AI asks */
-byte cBishopLocalLogic_LoseTarget(cBishopLocalLogic *self) {
+byte cBishopLocalLogic_LoseTarget(cLocalLogic *elem) {
+	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
 	cEntity *t = self->base.target.target;
 
 	if (!t || !t->vftable->IsType(t, TYEN_WALKCHAR)) {
@@ -50,18 +52,20 @@ byte cBishopLocalLogic_LoseTarget(cBishopLocalLogic *self) {
 }
 
 /* vf07 */
-byte cBishopLocalLogic_UpdateBusy(cBishopLocalLogic *self) {
+byte cBishopLocalLogic_UpdateBusy(cLocalLogic *elem) {
+	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
 	if (!strncmp(cActCtrl_GetActionName(ChType_ActCtrl(self->base.parent), 0), "SellLife", 8)) {
 		self->base.busy = 1;
 		return self->base.busy;
 	}
-	byte r = cBaseLocalLogic_UpdateBusy(&self->base);
+	byte r = cBaseLocalLogic_UpdateBusy(&self->base.logic);
 	self->base.busy = r;
 	return r;
 }
 
 /* vf30: with the special action on (energy bar active, SpecialActionActive 2) */
-cEntity *cBishopLocalLogic_FindTarget(cBishopLocalLogic *self) {
+cEntity *cBishopLocalLogic_FindTarget(cLocalLogic *elem) {
+	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
 	cEntityListData **const lists[] = { &g_pWorld->logic.nurses.list, &g_pWorld->logic.aiCtrl.sentinels, &g_pWorld->logic.aiCtrl.gears };
 
 	if (g_EnergyBarActive != 1 || g_SpecialActionActive != 2) {
@@ -91,10 +95,51 @@ cEntity *cBishopLocalLogic_FindTarget(cBishopLocalLogic *self) {
 }
 
 /* vf29 (0x74), the alarm: its alarm state or 2 against target */
-void cBishopLocalLogic_OnAlarm(cBishopLocalLogic *self, cEntity *target) {
+void cBishopLocalLogic_OnAlarm(cLocalLogic *elem, cEntity *target) {
+	cBishopLocalLogic *self = (cBishopLocalLogic *)elem;
 	if (g_BishopAttackOnAlarm) {
-		self->base.vftable->SetState(self, self->alarmState, target);
+		self->base.vftable->SetState(&self->base.logic, self->alarmState, target);
 		return;
 	}
-	self->base.vftable->SetState(self, 2, target);
+	self->base.vftable->SetState(&self->base.logic, 2, target);
 }
+
+/* the vtable of cBishopLocalLogic */
+const cGenCharLocalLogicVtbl cBishopLocalLogic_vftable = {
+	.base.base.Delete = cBishopLocalLogic_Delete,
+	.base.base.GetName = cBaseLocalLogic_GetName,
+	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.VarI = cGenCharLocalLogic_VarI,
+	.base.base.VarF = cBaseLocalLogic_VarF,
+	.base.base.VarS = cGenCharLocalLogic_VarS,
+	.base.base.VarV = cBaseLocalLogic_VarV,
+	.base.UpdateBusy = cBishopLocalLogic_UpdateBusy,
+	.base.Refresh = cBaseLocalLogic_Refresh,
+	.base.Listens = cLocalLogic_ListensTrue,
+	.base.OnHit = cGenCharLocalLogic_OnHit,
+	.base.OnSeen = cGenCharLocalLogic_OnSeen,
+	.base.OnAttack = cGenCharLocalLogic_OnRobbery,
+	.base.OnShot = cBaseLocalLogic_OnShot,
+	.base.OnHammer = cLocalLogic_OnHammerNop,
+	.base.GivesMoney = cGenCharLocalLogic_GivesMoney,
+	.base.OnAlarm = cGenCharLocalLogic_OnAlarm,
+	.base.Update = cBankDirectorLocalLogic_Update,
+	.base.SetOriginFrom = cBaseLocalLogic_SetOriginFrom,
+	.base.SetState = cGenCharLocalLogic_SetState,
+	.base.SetIdle = cBaseLocalLogic_SetIdle,
+	.base.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.base.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.base.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.base.RestartState = cGenCharLocalLogic_RestartState,
+	.CanAttack = cGenCharLocalLogic_CanAttack,
+	.UpdateView = cGenCharLocalLogic_UpdateView,
+	.ToRelax = cGenCharLocalLogic_ToRelax,
+	.ToAlert = cGenCharLocalLogic_ToAlert,
+	.Accuse = cBishopLocalLogic_OnAlarm,
+	.FindTarget = cBishopLocalLogic_FindTarget,
+	.TargetDone = cBishopLocalLogic_LoseTarget,
+	.Work = cLocalLogic_WorkNop,
+	.Vf33 = cLocalLogic_Vf33Nop,
+	.GoTo = cGenCharLocalLogic_GoTo,
+	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
+};

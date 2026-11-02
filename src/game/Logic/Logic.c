@@ -120,7 +120,7 @@ byte Logic_SetOriginCallback(cEntity *e) {
 	cLocalLogic *l = Logic_GetLocalLogic(e);
 
 	if (l) {
-		l->vftable->SetOriginFrom(l, e);
+		Logic_Vtbl(l)->SetOriginFrom(l, e);
 	}
 	return 0;
 }

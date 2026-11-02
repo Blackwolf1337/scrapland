@@ -35,7 +35,7 @@ void cNurses_Think(cNurses *self) {
 	}
 	for (; n; n = Logic_ListNext(n)) {
 		cLocalLogic *l = Logic_GetLocalLogic(n->data);
-		l->vftable->Update(l, 0.73f);
+		Logic_Vtbl(l)->Update(l, 0.73f);
 	}
 	for (cEntity *e = cWorld_GetFirstEntity(g_pWorld); e; e = cEntity_Next(e)) {
 		if (!e->active || !e->vftable->IsType(e, TYEN_WALKCHAR) || !ChType_ActCtrl(e) ||
@@ -51,11 +51,11 @@ void cNurses_Think(cNurses *self) {
 			cEntity *other = cEntityList_Nearest(self->list, e->vftable->GetPos(e, &t2), nurse, NULL);
 			if (other) {
 				cBaseLocalLogic *lo = other->lLogic;
-				lo->vftable->SetState(lo, 3, e);
+				lo->vftable->SetState(&lo->logic, 3, e);
 				continue;
 			}
 		}
-		l->vftable->SetState(l, 3, e);
+		l->vftable->SetState(&l->logic, 3, e);
 	}
 }
 
@@ -82,33 +82,35 @@ void *cNurseLocalLogic_ctor(void *mem, cEntity *parent) {
 	cBaseLocalLogic_ctor(&self->base, parent);
 	NURSE_VT(self) = CNURSELOCALLOGIC_VFTABLE;
 	self->time = 0.0f;
-	cNurseLocalLogic_SetState(self, 0, NULL);
+	cNurseLocalLogic_SetState(&self->base.logic, 0, NULL);
 	return self;
 }
 
-cNurseLocalLogic *cNurseLocalLogic_Delete(cNurseLocalLogic *self, byte flags) {
+cLocalLogic *cNurseLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	NURSE_VT(self) = CNURSELOCALLOGIC_VFTABLE;
 	cBaseLocalLogic_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return elem;
 }
 
 /* back to the relax, the alert with the alarm */
 byte cNurseLocalLogic_Relax(cNurseLocalLogic *self) {
 	if (g_pWorld->alarm.on) {
-		return NURSE_VT(self)->SetState(self, 1, NULL);
+		return NURSE_VT(self)->SetState(&self->base.logic, 1, NULL);
 	}
-	return NURSE_VT(self)->SetState(self, 0, NULL);
+	return NURSE_VT(self)->SetState(&self->base.logic, 0, NULL);
 }
 
 /* vf17 */
-void cNurseLocalLogic_Update(cNurseLocalLogic *self, float dt) {
+void cNurseLocalLogic_Update(cLocalLogic *elem, float dt) {
+	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
 	cEntity *p = b->parent;
 
-	cBaseLocalLogic_Update(b, dt);
+	cBaseLocalLogic_Update(&b->logic, dt);
 	WChar(b->parent)->wl.arrow.canUse = !b->busy && !g_pWorld->alarm.on && b->state != 3 && b->state != 2;
 	if (b->busy) {
 		return;
@@ -116,12 +118,12 @@ void cNurseLocalLogic_Update(cNurseLocalLogic *self, float dt) {
 	switch (b->state) {
 	case 0:
 		if (g_pWorld->alarm.on) {
-			NURSE_VT(self)->SetState(self, 1, NULL);
+			NURSE_VT(self)->SetState(&self->base.logic, 1, NULL);
 		}
 		return;
 	case 1:
 		if (!g_pWorld->alarm.on) {
-			NURSE_VT(self)->SetState(self, 0, NULL);
+			NURSE_VT(self)->SetState(&self->base.logic, 0, NULL);
 		}
 		return;
 	case 2:
@@ -158,9 +160,10 @@ void cNurseLocalLogic_Update(cNurseLocalLogic *self, float dt) {
 }
 
 /* vf12: a robbery seen (NurseBankerDetect plus the amount): the escape */
-void cNurseLocalLogic_OnRobbery(cNurseLocalLogic *self, cEntity *e, float amount) {
+void cNurseLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
+	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	if (amount > 0.0f && self->base.state != 3 && Logic_Chance(&self->base, e, g_NurseBankerDetect + amount)) {
-		NURSE_VT(self)->SetState(self, 2, e);
+		NURSE_VT(self)->SetState(&self->base.logic, 2, e);
 	}
 }
 
@@ -169,42 +172,47 @@ static inline byte Nurse_Rand101(void) {
 }
 
 /* vf10: the escape from the attacker */
-void cNurseLocalLogic_OnHit(cNurseLocalLogic *self, cEntity *attacker) {
+void cNurseLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
+	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	if (!self->base.busy && Nurse_Rand101() && self->base.state != 3) {
-		NURSE_VT(self)->SetState(self, 2, attacker);
+		NURSE_VT(self)->SetState(&self->base.logic, 2, attacker);
 	}
 }
 
 /* vf11: the escape from the player */
-void cNurseLocalLogic_OnSeen(cNurseLocalLogic *self, cEntity *e) {
+void cNurseLocalLogic_OnSeen(cLocalLogic *elem, cEntity *e) {
+	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	if (!self->base.busy && Nurse_Rand101() && e == ChType_Usr0() && self->base.state != 3) {
-		NURSE_VT(self)->SetState(self, 2, e);
+		NURSE_VT(self)->SetState(&self->base.logic, 2, e);
 	}
 }
 
 /* vf15: 1 if it refuses the police (NursePoliceRefuse in percent), else the escape from it */
-byte cNurseLocalLogic_GivesMoney(cNurseLocalLogic *self, cEntity *police) {
+byte cNurseLocalLogic_GivesMoney(cLocalLogic *elem, cEntity *police) {
+	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	float refuse = g_NursePoliceRefuse;
 
 	if (!self->base.busy && refuse > (float)(Weap_Rand01() * 100.0 + 0.0)) {
 		return 1;
 	}
-	NURSE_VT(self)->SetState(self, 2, police);
+	NURSE_VT(self)->SetState(&self->base.logic, 2, police);
 	return 0;
 }
 
 /* vf24 */
-byte cNurseLocalLogic_RestartState(cNurseLocalLogic *self) {
-	return NURSE_VT(self)->SetState(self, 0, NULL);
+void cNurseLocalLogic_RestartState(cLocalLogic *base) {
+	cNurseLocalLogic *self = (cNurseLocalLogic *)base;
+	NURSE_VT(self)->SetState(&self->base.logic, 0, NULL);
 }
 
 /* ---- part 2 ---- */
 
 /* vf19: the AI of the state: the walk around the origin (relaxed or in alert), the escape from target (2) or the
  * walk to the dazed character (3); always 1 */
-byte cNurseLocalLogic_SetState(cNurseLocalLogic *self, int state, cEntity *target) {
+byte cNurseLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
+	cNurseLocalLogic *self = (cNurseLocalLogic *)elem;
 	cBaseLocalLogic *b = &self->base;
-	byte ok = (byte)cBaseLocalLogic_SetState(b, state, target);
+	byte ok = (byte)cBaseLocalLogic_SetState(&b->logic, state, target);
 	cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 
 	if (ok) {
@@ -236,3 +244,32 @@ byte cNurseLocalLogic_SetState(cNurseLocalLogic *self, int state, cEntity *targe
 	}
 	return 1;
 }
+
+/* the vtable of cNurseLocalLogic */
+const cBaseLocalLogicVtbl cNurseLocalLogic_vftable = {
+	.base.Delete = cNurseLocalLogic_Delete,
+	.base.GetName = cBaseLocalLogic_GetName,
+	.base.Vf02 = cLocalLogic_Vf02True,
+	.base.VarI = cBaseLocalLogic_VarI,
+	.base.VarF = cBaseLocalLogic_VarF,
+	.base.VarS = cBaseLocalLogic_VarS,
+	.base.VarV = cBaseLocalLogic_VarV,
+	.UpdateBusy = cBaseLocalLogic_UpdateBusy,
+	.Refresh = cBaseLocalLogic_Refresh,
+	.Listens = cLocalLogic_ListensTrue,
+	.OnHit = cNurseLocalLogic_OnHit,
+	.OnSeen = cNurseLocalLogic_OnSeen,
+	.OnAttack = cNurseLocalLogic_OnRobbery,
+	.OnShot = cBaseLocalLogic_OnShot,
+	.OnHammer = cLocalLogic_OnHammerNop,
+	.GivesMoney = cNurseLocalLogic_GivesMoney,
+	.OnAlarm = Logic_SetState2,
+	.Update = cNurseLocalLogic_Update,
+	.SetOriginFrom = cBaseLocalLogic_SetOriginFrom,
+	.SetState = cNurseLocalLogic_SetState,
+	.SetIdle = cBaseLocalLogic_SetIdle,
+	.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.RestartState = cNurseLocalLogic_RestartState,
+};

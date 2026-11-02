@@ -29,11 +29,11 @@ static inline byte AICtrl_AIActive(cAIChar *ai) {
 
 /* the sentinel logic: the accuse (no other sentinel accuses) and the think */
 static inline byte AICtrl_SentinelAccuses(cBaseLocalLogic *l) {
-	return Sentinel_Vtbl(l)->Seen(l);
+	return Sentinel_Vtbl(l)->Seen(&l->logic);
 }
 
 static inline void AICtrl_SentinelUpdate(cBaseLocalLogic *l, float dt, byte other) {
-	Sentinel_Vtbl(l)->Think(l, dt, other);
+	Sentinel_Vtbl(l)->Think(&l->logic, dt, other);
 }
 
 /* prefix and the rest of a name, like "Gear" and the number of "Police01" (the original copies unbounded) */
@@ -110,8 +110,8 @@ void AICtrl_Belligerant(void *ctrl) {
 		if (g1 && g2) {
 			cLocalLogic *l1 = g1->lLogic, *l2 = g2->lLogic;
 			if (l1 && l2) {
-				l1->vftable->SetState(l1, 2, g2);
-				l2->vftable->SetState(l2, 2, g1);
+				Logic_Vtbl(l1)->SetState(l1, 2, g2);
+				Logic_Vtbl(l2)->SetState(l2, 2, g1);
 				return;
 			}
 		}
@@ -137,8 +137,8 @@ void AICtrl_Belligerant(void *ctrl) {
 		}
 	}
 	if (first && second) {
-		fl->vftable->SetState(fl, 2, second);
-		sl->vftable->SetState(sl, 2, first);
+		fl->vftable->SetState(&fl->logic, 2, second);
+		sl->vftable->SetState(&sl->logic, 2, first);
 	}
 }
 
@@ -328,7 +328,7 @@ bishops:
 			target, &d);
 		cBaseLocalLogic *l;
 		if (b && (l = (cBaseLocalLogic *)Logic_GetLocalLogic(b)) && l->state != 4 && 3000.0f > d) {
-			l->vftable->SetState(l, 4, target);
+			l->vftable->SetState(&l->logic, 4, target);
 		}
 	}
 }
@@ -340,7 +340,7 @@ void AICtrl_UpdateGears(void *ctrl) {
 
 	for (n = Logic_ListFirst(self->gears); n; n = Logic_ListNext(n)) {
 		cLocalLogic *l = Logic_GetLocalLogic(n->data);
-		l->vftable->Update(l, 0.5f);
+		Logic_Vtbl(l)->Update(l, 0.5f);
 	}
 	self->attacking = 0;
 	for (n = Logic_ListFirst(self->gears); n; n = Logic_ListNext(n)) {
@@ -494,7 +494,7 @@ byte AICtrl_SendAccuser(void *ctrl, byte check) {
 		return 0;
 	}
 	Con_Debugf("Sending %s to acuse the main character.\n", l->parent->name);
-	l->vftable->SetState(l, 2, usr);
+	l->vftable->SetState(&l->logic, 2, usr);
 	return 1;
 }
 
@@ -524,7 +524,7 @@ void AICtrl_SendSentinelToNPC(void *ctrl, cEntity *e) {
 	cEntity *sp = s->parent;
 	const vec3_t *ep = e->vftable->GetPos(e, &t2);
 	if (!Engine_TestLine(sp->vftable->GetPos(sp, &t3), ep, NULL, NULL)) {
-		s->vftable->SetState(s, 6, e);
+		s->vftable->SetState(&s->logic, 6, e);
 	}
 }
 
@@ -569,7 +569,7 @@ void AICtrl_GearsChase(void *ctrl, cEntity *e) {
 		}
 		cEntity *t = l->target.target;
 		if (t == ChType_Usr0()) {
-			l->vftable->SetState(l, l->state, e);
+			l->vftable->SetState(&l->logic, l->state, e);
 			found = 1;
 		}
 	}

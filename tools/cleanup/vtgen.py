@@ -249,7 +249,7 @@ if __name__ == '__main__' and sys.argv[1] == 'fixsig':
 # ---- fixcall: "passing argument N of 'F' from incompatible pointer type" with "expected 'B *' but argument is of
 # type 'D *'": the argument becomes the address of the base part (&x->a.b), found from the struct layout
 
-CALL_RE = re.compile(r"^(.+?):(\d+):(\d+): error: passing argument (\d+) of ‘(\w+)’ from incompatible pointer type")
+CALL_RE = re.compile(r"^(.+?):(\d+):(\d+): error: passing argument (\d+) of ‘(.+?)’ from incompatible pointer type")
 NOTE_RE = re.compile(r"note: expected ‘(?:const )?(?:struct )?(\w+) \*’ but argument is of type ‘(?:const )?(?:struct )?(\w+) \*’")
 
 
@@ -283,12 +283,24 @@ def fixcall(logfile):
         base, derived = note.group(1), note.group(2)
         path = v.upcast_path(st, derived, base)
         if path is None:
-            print('report: %s:%s %s -> %s no path' % (m.group(1), m.group(2), derived, base))
-            continue
-        edits.setdefault(v.ROOT + m.group(1), []).append((int(m.group(2)), int(m.group(3)), path, m.group(5)))
+            if v.upcast_path(st, base, derived) is not None:
+                # the code holds the base pointer of a class that derives: a downcast
+                path = ('CAST', base)
+            else:
+                print('report: %s:%s %s -> %s no path' % (m.group(1), m.group(2), derived, base))
+                continue
+        loc = (m.group(1), int(m.group(2)), int(m.group(3)))
+        if open(v.ROOT + m.group(1)).read().split('\n')[loc[1] - 1].lstrip().startswith('#define'):
+            ex = next((re.match(r'^(.+?):(\d+):(\d+): note: in expansion of macro', x) for x in lines[k + 1:k + 20]
+                       if re.match(r'^(.+?):(\d+):(\d+): note: in expansion of macro', x)), None)
+            if not ex:
+                print('report: %s:%s inside a macro' % loc[:2])
+                continue
+            loc = (ex.group(1), int(ex.group(2)), int(ex.group(3)))
+        edits.setdefault(v.ROOT + loc[0], []).append((loc[1], loc[2], path, m.group(5)))
     for f, es in edits.items():
         src = open(f).read().split('\n')
-        for ln, col, path, fn in sorted(set(es), key=lambda e: (e[0], -e[1])):
+        for ln, col, path, fn in sorted(set(es), key=lambda e: (e[0], -e[1])):  # noqa
             line = src[ln - 1]
             # the display column of gcc (tabs to 8) to an index
             i, d = 0, 1
@@ -300,7 +312,9 @@ def fixcall(logfile):
             if not arg:
                 print('report: %s:%d empty argument' % (v.rel(f), ln))
                 continue
-            if arg.startswith('&') and re.match(r'&[\w>.\[\]-]+$', arg):
+            if isinstance(path, tuple):
+                new = '(%s *)%s' % (path[1], arg if re.match(r'[\w>.\[\]-]+$', arg) else '(%s)' % arg)
+            elif arg.startswith('&') and re.match(r'&[\w>.\[\]-]+$', arg):
                 new = '%s.%s' % (arg, path)
             elif re.match(r'[\w>.\[\]-]+$', arg):
                 new = '&%s->%s' % (arg, path)
@@ -313,3 +327,227 @@ def fixcall(logfile):
 
 if __name__ == '__main__' and sys.argv[1] == 'fixcall':
     fixcall(sys.argv[2])
+
+
+# ---- stubs: a trivial function (empty, or returning a constant or its first argument) in a slot whose signature
+# differs gets a typed default of that slot, <Class>_<Field><Kind>, defined next to the other functions of the class
+# that has the field (the old stub stays for the tests)
+
+def field_sigs(st, name):
+    """designator -> (field, return text, params text) of a struct, through the embedded bases"""
+    out = {}
+    body = st[name]
+    first = True
+    for decl in re.finditer(r'[^;{}]+;', body):
+        d = decl.group(0).strip()
+        mb = re.match(r'(?:const\s+)?(\w+Vtbl\w*)\s+(\w+)\s*;$', d)
+        if first and mb:
+            for k, val in field_sigs(st, mb.group(1)).items():
+                out[mb.group(2) + '.' + k] = val
+            first = False
+            continue
+        first = False
+        m = re.match(r'(.*?)\(\s*\*\s*(\w+)\s*\)\s*\((.*)\)\s*;$', d, re.S)
+        if m:
+            out[m.group(2)] = (m.group(2), re.sub(r'\s+', ' ', m.group(1)).strip(), re.sub(r'\s+', ' ', m.group(3)).strip())
+    return out
+
+
+def stub_kind(fn, defs):
+    if fn not in defs:
+        return None
+    f, off, ret, params = defs[fn]
+    s = v.strip_comments(open(f).read())
+    m = re.compile(r'\b%s\([^;{]*\)\s*\{' % fn).search(s, off)
+    if not m:
+        return None
+    i, depth = m.end(), 1
+    while depth:
+        depth += {'{': 1, '}': -1}.get(s[i], 0)
+        i += 1
+    body = re.sub(r'\(void\)\s*\w+\s*;', '', s[m.end():i - 1]).strip()
+    names = [ptype(p)[1] for p in params]
+    if body == '':
+        return ('Nop', None)
+    mm = re.match(r'return\s+(.+?)\s*;$', body)
+    if not mm:
+        return None
+    e = mm.group(1)
+    if e in ('1', 'true'):
+        return ('True', '1')
+    if e in ('0', 'false'):
+        return ('False', '0')
+    if e == 'NULL':
+        return ('Null', 'NULL')
+    if names and e == names[0]:
+        return ('Self', 'SELF')
+    if re.match(r'-?\d+$|0x[0-9a-fA-F]+$', e):
+        return ('Ret%s' % e.replace('-', 'M'), e)
+    return None
+
+
+def stubs(files):
+    st = v.structs()
+    defs = v.definitions()
+    made = {}
+    for f in files:
+        f = v.ROOT + f if not f.startswith('/') else f
+        src = open(f).read()
+        out = src
+        for vm in re.finditer(r'const (\w+) (\w+_vftable) = \{\n(.*?)\n\};', src, re.S):
+            struct = vm.group(1)
+            sigs = field_sigs(st, struct)
+            body = vm.group(3)
+            newbody = body
+            for lm in re.finditer(r'^\t\.([\w.]+) = (\w+),$', body, re.M):
+                des, fn = lm.group(1), lm.group(2)
+                if des not in sigs or fn == 'crt_purecall':
+                    continue
+                field, wret, wparams = sigs[des]
+                if fn not in defs:
+                    continue
+                f2, off, ret, params = defs[fn]
+                wp = v.split_params(wparams)
+                same = len(params) == len(wp) and all(norm(ptype(a)[0]) == norm(ptype(b)[0]) for a, b in zip(params, wp)) \
+                    and norm(ret.replace('static', '').replace('inline', '').strip()) == norm(wret)
+                if same:
+                    continue
+                kind = stub_kind(fn, defs)
+                if not kind:
+                    continue
+                cls = ptype(wp[0])[0].replace('const ', '').replace('*', '').strip() if wp else 'Vtbl'
+                name = '%s_%s%s' % (cls, field, kind[0])
+                if name not in made:
+                    made[name] = (cls, field, wret, wp, kind)
+                newbody = re.sub(r'^\t\.%s = %s,$' % (re.escape(des), fn), '\t.%s = %s,' % (des, name), newbody, flags=re.M)
+            out = out.replace(body, newbody)
+        if out != src:
+            open(f, 'w').write(out)
+    # the defaults next to the functions of their class, the prototypes next to the class's prototypes
+    for name, (cls, field, wret, wp, kind) in sorted(made.items()):
+        if name in defs:
+            continue
+        names = [ptype(p)[1] or 'arg%d' % i for i, p in enumerate(wp)]
+        params = ', '.join(p if ptype(p)[1] else '%s arg%d' % (p, i) for i, p in enumerate(wp))
+        lines = ['/* the slot %s of a class that does %s */' % (field, {'Nop': 'nothing there', 'True': 'only return 1',
+                 'False': 'only return 0', 'Null': 'only return NULL', 'Self': 'only return itself'}.get(kind[0], 'only return ' + str(kind[1])))]
+        lines.append('%s%s%s(%s) {' % (wret, '' if wret.endswith('*') else ' ', name, params))
+        unused = names[1:] if kind[0] == 'Self' else names
+        for n in unused:
+            lines.append('\t(void)%s;' % n)
+        if kind[1] is not None:
+            lines.append('\treturn %s;' % (names[0] if kind[1] == 'SELF' else kind[1]))
+        lines.append('}')
+        fn_text = '\n'.join(lines) + '\n'
+        home = next((d[0] for n, d in defs.items() if n.startswith(cls + '_')), None)
+        if not home:
+            print('report: no module for', name)
+            continue
+        t = open(home).read()
+        i = t.find('\n/* the vtable of ')
+        t = (t[:i + 1] + fn_text + t[i:]) if i >= 0 else (t.rstrip('\n') + '\n\n' + fn_text)
+        open(home, 'w').write(t)
+        proto = '%s%s%s(%s);' % (wret, '' if wret.endswith('*') else ' ', name, params)
+        hdr = None
+        for g in v.sources():
+            if g.endswith('.h') and re.search(r'^[\w \*]*\b%s_\w+\(' % cls, open(g, errors='replace').read(), re.M):
+                hdr = g
+                break
+        if hdr:
+            t = open(hdr).read()
+            ms = list(re.finditer(r'^[\w \*]*\b%s_\w+\([^;{]*\);\n' % cls, t, re.M))
+            t = t[:ms[-1].end()] + proto + '\n' + t[ms[-1].end():]
+            open(hdr, 'w').write(t)
+        print('%-48s %s %s' % (name, v.rel(home), v.rel(hdr) if hdr else '(no header)'))
+
+
+if __name__ == '__main__' and sys.argv[1] == 'stubs':
+    stubs(sys.argv[2:])
+
+
+# ---- protos: "'F' undeclared here (not in a function)" in a vtable: the prototype of F (its definition as it is)
+# next to the prototypes of its class in a header
+
+UNDECL_RE = re.compile(r"^(.+?):(\d+):\d+: error: ‘(\w+)’ undeclared here \(not in a function\)")
+
+
+def add_proto(fn, defs):
+    f, off, ret, params = defs[fn]
+    cls = fn.rsplit('_', 1)[0]
+    proto = '%s%s%s(%s);' % (ret.replace('static ', '').replace('inline ', '').strip(),
+                             '' if ret.strip().endswith('*') else ' ', fn, ', '.join(params))
+    for g in v.sources():
+        if not g.endswith('.h'):
+            continue
+        t = open(g, errors='replace').read()
+        ms = list(re.finditer(r'^[\w \*]*\b%s_\w+\([^;{]*\);\n' % re.escape(cls), t, re.M))
+        if ms:
+            t = t[:ms[-1].end()] + proto + '\n' + t[ms[-1].end():]
+            open(g, 'w').write(t)
+            return v.rel(g)
+    return None
+
+
+def protos(logfile):
+    defs = v.definitions()
+    done = set()
+    for line in open(logfile):
+        m = UNDECL_RE.match(line)
+        if not m or m.group(3) in done:
+            continue
+        fn = m.group(3)
+        done.add(fn)
+        if fn not in defs:
+            print('report: %s has no definition' % fn)
+            continue
+        h = add_proto(fn, defs)
+        print('%-44s %s' % (fn, h or 'report: no header'))
+
+
+# ---- fixvt: "assignment to 'const T *' from incompatible pointer type 'const U *'" where the right side is a
+# CX_VFTABLE macro: the macro points at the part of type T of its vtable
+
+ASG_RE = re.compile(r"^(.+?):(\d+):\d+: error: assignment to ‘const (\w+) \*’ from incompatible pointer type ‘const (\w+) \*’")
+
+
+def vt_path(st, struct, target, prefix=''):
+    if struct == target:
+        return prefix.rstrip('.')
+    body = st.get(struct, '').strip()
+    mb = re.match(r'(?:const\s+)?(\w+Vtbl\w*)\s+(\w+)\s*;', body)
+    if not mb:
+        return None
+    return vt_path(st, mb.group(1), target, prefix + mb.group(2) + '.')
+
+
+def fixvt(logfile):
+    st = v.structs()
+    for line in open(logfile):
+        m = ASG_RE.match(line)
+        if not m:
+            continue
+        src = open(v.ROOT + m.group(1)).read().split('\n')[int(m.group(2)) - 1]
+        mm = re.search(r'=\s*(C\w+_VFTABLE)\s*;', src)
+        if not mm:
+            print('report: %s:%s %s' % (m.group(1), m.group(2), src.strip()))
+            continue
+        macro, target = mm.group(1), m.group(3)
+        for g in v.sources():
+            t = open(g, errors='replace').read()
+            dm = re.search(r'extern const (\w+) (\w+);\n#define %s \(&[\w.]+\)' % macro, t)
+            if not dm:
+                continue
+            path = vt_path(st, dm.group(1), target)
+            if path is None:
+                print('report: %s: %s has no part %s' % (macro, dm.group(1), target))
+                break
+            ref = '&%s%s' % (dm.group(2), '.' + path if path else '')
+            t2 = re.sub(r'(#define %s )\(&[\w.]+\)' % macro, lambda x: x.group(1) + '(%s)' % ref, t)
+            if t2 != t:
+                open(g, 'w').write(t2)
+                print('%-36s -> %s' % (macro, ref))
+            break
+
+
+if __name__ == '__main__' and sys.argv[1] in ('protos', 'fixvt'):
+    {'protos': protos, 'fixvt': fixvt}[sys.argv[1]](sys.argv[2])

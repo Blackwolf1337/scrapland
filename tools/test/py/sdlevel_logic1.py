@@ -189,7 +189,7 @@ check('LG1 cBaseLocalLogic_Refresh', lambda: (SDTest.Call('cBaseLocalLogic_Refre
 check('LG1 cBaseLocalLogic_UpdateBusy', lambda: (SDTest.Call('cBaseLocalLogic_UpdateBusy', 'tbi', lg1l)[0], lg1base(lg1l)))
 check('LG1 cBishopLocalLogic_UpdateBusy', lambda: (SDTest.Call('cBishopLocalLogic_UpdateBusy', 'tbi', lg1l)[0], lg1base(lg1l)))
 lg1srand(5)
-check('LG1 cBaseLocalLogic_Vf15', lambda: map(lambda i, l=lg1l: SDTest.Call('cBaseLocalLogic_Vf15', 'tiii', l, i)[0], range(12)))
+check('LG1 cBaseLocalLogic_Vf15', lambda: map(lambda i, l=lg1l: SDTest.Call('cBaseLocalLogic_Vf15', 'tiii', l, i)[0] & 0xff, range(12)))
 for lg1v in (0.25, 0.5):
 	if lg1quiet:
 		check('LG1 cBaseLocalLogic_Update %s' % fmt(lg1v), lambda v=lg1v: (SDTest.Call('cBaseLocalLogic_Update', 'tvif', lg1l, v)[0],

@@ -11,13 +11,14 @@ cBankMasterLocalLogic *cBankMasterLocalLogic_ctor(cBankMasterLocalLogic *self, c
 	return self;
 }
 
-cBankMasterLocalLogic *cBankMasterLocalLogic_Delete(cBankMasterLocalLogic *self, byte flags) {
+cLocalLogic *cBankMasterLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+	cBankMasterLocalLogic *self = (cBankMasterLocalLogic *)elem;
 	self->base.vftable = CBANKMASTERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return elem;
 }
 
 byte Logic_Chance(cBaseLocalLogic *l, cEntity *attacker, float chance) {
@@ -32,7 +33,8 @@ byte Logic_Chance(cBaseLocalLogic *l, cEntity *attacker, float chance) {
 }
 
 /* vf30 */
-cEntity *cBankMasterLocalLogic_FindTarget(cBankMasterLocalLogic *self) {
+cEntity *cBankMasterLocalLogic_FindTarget(cLocalLogic *elem) {
+	cBankMasterLocalLogic *self = (cBankMasterLocalLogic *)elem;
 	if (!(0.0f > self->searchTime)) {
 		return NULL;
 	}
@@ -49,9 +51,50 @@ cEntity *cBankMasterLocalLogic_FindTarget(cBankMasterLocalLogic *self) {
 }
 
 /* vf12 (0x30), the attack of a character: state 4 against it */
-void cBankMasterLocalLogic_OnAttack(cBankMasterLocalLogic *self, cEntity *attacker, float value) {
+void cBankMasterLocalLogic_OnAttack(cLocalLogic *elem, cEntity *attacker, float value) {
+	cBankMasterLocalLogic *self = (cBankMasterLocalLogic *)elem;
 	(void)value;
 	if (Logic_Chance(&self->base, attacker, 100.0f)) {
-		self->base.vftable->SetState(self, 4, attacker);
+		self->base.vftable->SetState(&self->base.logic, 4, attacker);
 	}
 }
+
+/* the vtable of cBankMasterLocalLogic */
+const cGenCharLocalLogicVtbl cBankMasterLocalLogic_vftable = {
+	.base.base.Delete = cBankMasterLocalLogic_Delete,
+	.base.base.GetName = cBaseLocalLogic_GetName,
+	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.VarI = cGenCharLocalLogic_VarI,
+	.base.base.VarF = cBaseLocalLogic_VarF,
+	.base.base.VarS = cGenCharLocalLogic_VarS,
+	.base.base.VarV = cBaseLocalLogic_VarV,
+	.base.UpdateBusy = cBaseLocalLogic_UpdateBusy,
+	.base.Refresh = cBaseLocalLogic_Refresh,
+	.base.Listens = cLocalLogic_ListensTrue,
+	.base.OnHit = cGenCharLocalLogic_OnHit,
+	.base.OnSeen = cGenCharLocalLogic_OnSeen,
+	.base.OnAttack = cBankMasterLocalLogic_OnAttack,
+	.base.OnShot = cBaseLocalLogic_OnShot,
+	.base.OnHammer = cLocalLogic_OnHammerNop,
+	.base.GivesMoney = cGenCharLocalLogic_GivesMoney,
+	.base.OnAlarm = cGenCharLocalLogic_OnAlarm,
+	.base.Update = cBankDirectorLocalLogic_Update,
+	.base.SetOriginFrom = cBaseLocalLogic_SetOriginFrom,
+	.base.SetState = cGenCharLocalLogic_SetState,
+	.base.SetIdle = cBaseLocalLogic_SetIdle,
+	.base.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.base.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.base.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.base.RestartState = cGenCharLocalLogic_RestartState,
+	.CanAttack = cGenCharLocalLogic_CanAttack,
+	.UpdateView = cGenCharLocalLogic_UpdateView,
+	.ToRelax = cGenCharLocalLogic_ToRelax,
+	.ToAlert = cGenCharLocalLogic_ToAlert,
+	.Accuse = Logic_SetState2,
+	.FindTarget = cBankMasterLocalLogic_FindTarget,
+	.TargetDone = cBankDirectorLocalLogic_LoseTarget,
+	.Work = cLocalLogic_WorkNop,
+	.Vf33 = cLocalLogic_Vf33Nop,
+	.GoTo = cGenCharLocalLogic_GoTo,
+	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
+};

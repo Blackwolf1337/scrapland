@@ -245,12 +245,13 @@ void cDominationLogic_dtor(cDominationLogic *self) {
 	NameTable_Clear(&self->assigned);
 }
 
-cDominationEnemiesLogic *cDominationEnemiesLogic_Delete(cDominationEnemiesLogic *self, byte flags) {
+cDominationLogic *cDominationEnemiesLogic_Delete(cDominationLogic *base, byte flags) {
+	cDominationEnemiesLogic *self = (cDominationEnemiesLogic *)base;
 	cDominationEnemiesLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 cDominationLogic *cDominationLogic_Delete(cDominationLogic *self, byte flags) {
@@ -287,3 +288,33 @@ int cDominationLogic_NearestZone(cDominationLogic *self, const vec3_t *pos) {
 	}
 	return bestHeld > bestFree ? free : held;
 }
+
+/* the slot GetTeam of a class that does only return 0 */
+int cDominationLogic_GetTeamFalse(cDominationLogic *self) {
+	(void)self;
+	return 0;
+}
+
+/* the slot GetTeam of a class that does only return 1 */
+int cDominationLogic_GetTeamTrue(cDominationLogic *self) {
+	(void)self;
+	return 1;
+}
+
+/* the vtable of cDominationLogic */
+const cDominationLogicVtbl cDominationLogic_vftable = {
+	.Delete = cDominationLogic_Delete,
+	.Init = (void *)crt_purecall,
+	.Update = (void *)crt_purecall,
+	.GetList = (void *)crt_purecall,
+	.GetTeam = (void *)crt_purecall,
+};
+
+/* the vtable of cDominationEnemiesLogic */
+const cDominationLogicVtbl cDominationEnemiesLogic_vftable = {
+	.Delete = cDominationEnemiesLogic_Delete,
+	.Init = cDominationEnemiesLogic_Init,
+	.Update = cDominationEnemiesLogic_Update,
+	.GetList = cDominationEnemiesLogic_GetList,
+	.GetTeam = cDominationLogic_GetTeamFalse,
+};

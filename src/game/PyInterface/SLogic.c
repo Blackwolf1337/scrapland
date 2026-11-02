@@ -35,7 +35,7 @@ PyObject *SLogic_SetCharState(PyObject *self, PyObject *args) {
 	if (!logic) {
 		return NULL;
 	}
-	logic->vftable->SetState(logic, state, target);
+	Logic_Vtbl(logic)->SetState(logic, state, target);
 	return Py_ReturnNone();
 }
 

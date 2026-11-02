@@ -11,12 +11,6 @@
 #include "scrap/scrapmodel.h"
 #include "scrap/weapons.h"
 
-/* the vtable of the little police: the GenChar slots and one of its own */
-typedef struct cLittlePoliceLocalLogicVtbl {
-	cGenCharLocalLogicVtbl base;
-	void(*UpdateLook)(void *self);			/* 0x90 vf36 */
-} cLittlePoliceLocalLogicVtbl;
-SD_OFFSET(cLittlePoliceLocalLogicVtbl, UpdateLook, 0x90);
 
 static inline const cLittlePoliceLocalLogicVtbl *LP_VT(const void *l) {
 	return *(const cLittlePoliceLocalLogicVtbl *const *)l;
@@ -46,17 +40,19 @@ void *cLittlePoliceLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-cLittlePoliceLocalLogic *cLittlePoliceLocalLogic_Delete(cLittlePoliceLocalLogic *self, byte flags) {
+cLocalLogic *cLittlePoliceLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)elem;
 	self->base.base.vftable = CLITTLEPOLICELOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return elem;
 }
 
 /* vf26: the view flag without the alarm (in state 4 only with the bribe), team 2 (0 with the alarm) */
-void cLittlePoliceLocalLogic_UpdateView(cLittlePoliceLocalLogic *self) {
+void cLittlePoliceLocalLogic_UpdateView(cLocalLogic *base) {
+	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)base;
 	cEntity *p = LP_BASE(self)->parent;
 
 	WChar(p)->wl.arrow.canUse = !LP_BASE(self)->busy && !g_pWorld->alarm.on && (self->bribe ||
@@ -77,7 +73,7 @@ void cLittlePoliceLocalLogic_UpdateBribe(cLittlePoliceLocalLogic *self) {
 		if (t == ChType_Usr0()) {
 			usrAttack = 1;
 			if (!cGenCharGroup_TakeAttack((&g_pWorld->logic.genChars))) {
-				Logic_Vtbl(self)->RestartState(self);
+				Logic_Vtbl(self)->RestartState(&self->base.base.logic);
 				return;
 			}
 		} else {
@@ -86,7 +82,7 @@ void cLittlePoliceLocalLogic_UpdateBribe(cLittlePoliceLocalLogic *self) {
 			if (lt && (((lt->idle || lt->alwaysLock) && WChar_Listen(te) != p) ||
 				!WChar(te)->wl.arrow.canUse)) {
 				self->base.searchTime = g_GenCharMaxSpecialActionTime;
-				Logic_Vtbl(self)->SetState(self, 0, NULL);
+				Logic_Vtbl(self)->SetState(&self->base.base.logic, 0, NULL);
 				return;
 			}
 		}
@@ -120,7 +116,8 @@ void cLittlePoliceLocalLogic_UpdateBribe(cLittlePoliceLocalLogic *self) {
 
 /* vf31: the special attack ends without a target, or when the AI lost it and it is out of view for longer than
  * LittlePoliceChasingTime */
-byte cLittlePoliceLocalLogic_TargetDone(cLittlePoliceLocalLogic *self) {
+byte cLittlePoliceLocalLogic_TargetDone(cLocalLogic *elem) {
+	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)elem;
 	vec3_t t;
 	cBaseLocalLogic *b = LP_BASE(self);
 
@@ -145,7 +142,8 @@ byte cLittlePoliceLocalLogic_TargetDone(cLittlePoliceLocalLogic *self) {
 }
 
 /* vf07: busy too while it fuses or laughs */
-byte cLittlePoliceLocalLogic_UpdateBusy(cLittlePoliceLocalLogic *self) {
+byte cLittlePoliceLocalLogic_UpdateBusy(cLocalLogic *base) {
+	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)base;
 	cBaseLocalLogic *b = LP_BASE(self);
 
 	b->dazed = 0;
@@ -154,12 +152,13 @@ byte cLittlePoliceLocalLogic_UpdateBusy(cLittlePoliceLocalLogic *self) {
 		b->busy = 1;
 		return 1;
 	}
-	return cBaseLocalLogic_UpdateBusy(b);
+	return cBaseLocalLogic_UpdateBusy(&b->logic);
 }
 
 /* vf30: with LittlePoliceAsksForMoney at the search time a character of the first or third GenChar list in view,
  * else the player in view unless it is a police, gear or sentinel */
-cEntity *cLittlePoliceLocalLogic_FindTarget(cLittlePoliceLocalLogic *self) {
+cEntity *cLittlePoliceLocalLogic_FindTarget(cLocalLogic *elem) {
+	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)elem;
 	vec3_t t;
 
 	if (!g_LittlePoliceAsksForMoney || !(0.0f > self->base.searchTime)) {
@@ -209,25 +208,27 @@ byte cLittlePoliceLocalLogic_GoMainMission(cLittlePoliceLocalLogic *self) {
 	if (g_MainMissionStopDist * g_MainMissionStopDist > LP_DistSq(ep, pp)) {
 		g_LittlePoliceArrived = 0;
 	} else {
-		Logic_Vtbl(self)->SetState(self, GENCHAR_GET_IT, e);
+		Logic_Vtbl(self)->SetState(&self->base.base.logic, GENCHAR_GET_IT, e);
 		if (g_LittlePoliceArrived) {
 			self->policeResult = 1;
 			return 1;
 		}
 	}
-	Logic_Vtbl(self)->RestartState(self);
+	Logic_Vtbl(self)->RestartState(&self->base.base.logic);
 	return 0;
 }
 
 /* vf28 */
-void cLittlePoliceLocalLogic_ToAlert(cLittlePoliceLocalLogic *self, cAIChar *ai) {
+void cLittlePoliceLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
+	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)base;
 	cBaseLocalLogic *b = LP_BASE(self);
 
 	ai->vftable->SetState(ai, 6, b->origin, (double)b->actionRadius, (double)g_GenCharAlertSpeed, 1);
 }
 
 /* vf03 */
-byte cLittlePoliceLocalLogic_VarI(cLittlePoliceLocalLogic *self, const char *name, int *i, byte set) {
+byte cLittlePoliceLocalLogic_VarI(cLocalLogic *elem, const char *name, int *i, byte set) {
+	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)elem;
 	if (!strcmp(name, "PoliceResult")) {
 		if (!set) {
 			*i = self->policeResult;
@@ -240,7 +241,7 @@ byte cLittlePoliceLocalLogic_VarI(cLittlePoliceLocalLogic *self, const char *nam
 		cLittlePoliceLocalLogic_GoMainMission(self);
 		return 1;
 	}
-	return cGenCharLocalLogic_VarI(&self->base, name, i, set);
+	return cGenCharLocalLogic_VarI(&self->base.base.logic, name, i, set);
 }
 
 /* the sirens: with the alarm or in the states 7 and 8 */
@@ -263,11 +264,12 @@ static void LP_Siren(cLittlePoliceLocalLogic *self, int st, byte alarm, cEntity 
 }
 
 /* vf17 */
-void cLittlePoliceLocalLogic_Update(cLittlePoliceLocalLogic *self, float dt) {
+void cLittlePoliceLocalLogic_Update(cLocalLogic *elem, float dt) {
+	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)elem;
 	cBaseLocalLogic *b = LP_BASE(self);
 	vec3_t t1, t2;
 
-	LP_VT(self)->UpdateLook(self);
+	LP_VT(self)->UpdateLook(&self->base.base.logic);
 	cLittlePoliceLocalLogic_UpdateBribe(self);
 	int st = b->state;
 	byte alarm = g_pWorld->alarm.on;
@@ -287,8 +289,8 @@ void cLittlePoliceLocalLogic_Update(cLittlePoliceLocalLogic *self, float dt) {
 			WChar_Vtbl(p)->SetViewAng(p, &a);
 		}
 	} else if (st == 2 || st == 7 || st == 8) {
-		cBaseLocalLogic_Update(b, dt);
-		LP_VT(self)->base.UpdateView(self);
+		cBaseLocalLogic_Update(&b->logic, dt);
+		LP_VT(self)->base.UpdateView(&self->base.base.logic);
 		cEntity *usr = ChType_Usr0();
 		if (!usr || b->busy) {
 			return;
@@ -299,7 +301,7 @@ void cLittlePoliceLocalLogic_Update(cLittlePoliceLocalLogic *self, float dt) {
 		case 2: {
 			if (ai->vftable->GetState(ai) != 3) {
 				if (!accuse) {
-					Logic_Vtbl(self)->SetState(self, 1, NULL);
+					Logic_Vtbl(self)->SetState(&self->base.base.logic, 1, NULL);
 					return;
 				}
 				if (!Logic_InView(p, usr->vftable->GetPos(usr, &t1), g_LittlePoliceMaxDistFar, g_GenCharStdFovY,
@@ -314,7 +316,7 @@ void cLittlePoliceLocalLogic_Update(cLittlePoliceLocalLogic *self, float dt) {
 				return;
 			}
 			if (!alarm) {
-				Logic_Vtbl(self)->RestartState(self);
+				Logic_Vtbl(self)->RestartState(&self->base.base.logic);
 				self->lostTime = 0.0f;
 				return;
 			}
@@ -339,7 +341,7 @@ void cLittlePoliceLocalLogic_Update(cLittlePoliceLocalLogic *self, float dt) {
 			}
 			return;
 alert:
-			Logic_Vtbl(self)->SetState(self, 1, NULL);
+			Logic_Vtbl(self)->SetState(&self->base.base.logic, 1, NULL);
 			self->lostTime = 0.0f;
 			return;
 		}
@@ -347,15 +349,15 @@ alert:
 			cEntity *te = b->target.target;
 			cLocalLogic *lt;
 			if (!te || !(lt = Logic_GetLocalLogic(te))) {
-				Logic_Vtbl(self)->RestartState(self);
+				Logic_Vtbl(self)->RestartState(&self->base.base.logic);
 				return;
 			}
 			if (!CGameModel_IsVisible(Obj_Vtbl(p)->GetModel(p))) {
 				const vec3_t *up = usr->vftable->GetPos(usr, &t1);
 				if (LP_DistSq(p->vftable->GetPos(p, &t2), up) >
 					g_LittlePoliceStopAcusingMaxDistFromUser * g_LittlePoliceStopAcusingMaxDistFromUser) {
-					Logic_Vtbl(self)->RestartState(self);
-					lt->vftable->RestartState(lt);
+					Logic_Vtbl(self)->RestartState(&self->base.base.logic);
+					Logic_Vtbl(lt)->RestartState(lt);
 					return;
 				}
 			}
@@ -366,26 +368,26 @@ alert:
 			if (far * far >= dy * dy + dx * dx + dz * dz &&
 				Logic_InView(p, te->vftable->GetPos(te, &t1), far, g_GenCharStdFovY, g_GenCharStdFovX, 1)) {
 				cGenCharLocalLogic_Discover(&self->base);
-				lt->vftable->OnAlarm(lt, p);
+				Logic_Vtbl(lt)->OnAlarm(lt, p);
 				return;
 			}
-			Logic_Vtbl(self)->SetState(self, 8, te);
-			lt->vftable->OnAlarm(lt, p);
+			Logic_Vtbl(self)->SetState(&self->base.base.logic, 8, te);
+			Logic_Vtbl(lt)->OnAlarm(lt, p);
 			return;
 		}
 		case 8: {
 			cEntity *te = b->target.target;
 			cLocalLogic *lt;
 			if (!te || !(lt = Logic_GetLocalLogic(te))) {
-				Logic_Vtbl(self)->RestartState(self);
+				Logic_Vtbl(self)->RestartState(&self->base.base.logic);
 				return;
 			}
 			if (!CGameModel_IsVisible(Obj_Vtbl(p)->GetModel(p))) {
 				const vec3_t *up = usr->vftable->GetPos(usr, &t1);
 				if (LP_DistSq(p->vftable->GetPos(p, &t2), up) >
 					g_LittlePoliceStopAcusingMaxDistFromUser * g_LittlePoliceStopAcusingMaxDistFromUser) {
-					Logic_Vtbl(self)->RestartState(self);
-					lt->vftable->RestartState(lt);
+					Logic_Vtbl(self)->RestartState(&self->base.base.logic);
+					Logic_Vtbl(lt)->RestartState(lt);
 					return;
 				}
 			}
@@ -393,14 +395,14 @@ alert:
 			if (LP_DistSq(p->vftable->GetPos(p, &t1), &o) > b->actionRadius * b->actionRadius) {
 				cActCtrl_Play(ChType_ActCtrl(p), "ActionBad", 1, 1.0f);
 				cActCtrl_SetDefLoop(ChType_ActCtrl(p), "Relax", 1);
-				Logic_Vtbl(self)->RestartState(self);
-				lt->vftable->RestartState(lt);
+				Logic_Vtbl(self)->RestartState(&self->base.base.logic);
+				Logic_Vtbl(lt)->RestartState(lt);
 				return;
 			}
 			if (Logic_InView(p, te->vftable->GetPos(te, &t1), g_GenCharStdFar, g_GenCharStdFovY, g_GenCharStdFovX, 1)) {
-				Logic_Vtbl(self)->SetState(self, 7, te);
+				Logic_Vtbl(self)->SetState(&self->base.base.logic, 7, te);
 			}
-			lt->vftable->SetState(lt, 3, p);
+			Logic_Vtbl(lt)->SetState(lt, 3, p);
 			return;
 		}
 		}
@@ -408,36 +410,40 @@ alert:
 	} else if (st == 4) {
 		self->base.specialTime = self->base.specialTime + dt;
 	}
-	cGenCharLocalLogic_Update(&self->base, dt);
+	cGenCharLocalLogic_Update(&self->base.base.logic, dt);
 }
 
 /* vf10: the alarm when the player hits it */
-void cLittlePoliceLocalLogic_OnHit(cLittlePoliceLocalLogic *self, cEntity *attacker) {
+void cLittlePoliceLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
+	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)elem;
 	if (attacker == ChType_Usr0()) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
 	}
-	cGenCharLocalLogic_OnHit(&self->base, attacker);
+	cGenCharLocalLogic_OnHit(&self->base.base.logic, attacker);
 }
 
 /* vf11: the player seen: the alarm and the accuse */
-void cLittlePoliceLocalLogic_OnSeen(cLittlePoliceLocalLogic *self, cEntity *e) {
+void cLittlePoliceLocalLogic_OnSeen(cLocalLogic *base, cEntity *e) {
+	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)base;
 	if (LP_BASE(self)->busy) {
 		return;
 	}
 	if (e == ChType_Usr0()) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
-		Logic_Vtbl(self)->SetState(self, 2, e);
+		Logic_Vtbl(self)->SetState(&self->base.base.logic, 2, e);
 	}
 }
 
 /* vf15: the same, returns 0 */
-byte cLittlePoliceLocalLogic_GivesMoney(cLittlePoliceLocalLogic *self, cEntity *e) {
-	cLittlePoliceLocalLogic_OnSeen(self, e);
+byte cLittlePoliceLocalLogic_GivesMoney(cLocalLogic *base, cEntity *e) {
+	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)base;
+	cLittlePoliceLocalLogic_OnSeen(&self->base.base.logic, e);
 	return 0;
 }
 
 /* vf36: the view of the AI; not guaranteed it sees the player in its far view: the alarm and the accuse */
-void cLittlePoliceLocalLogic_UpdateLook(cLittlePoliceLocalLogic *self) {
+void cLittlePoliceLocalLogic_UpdateLook(cLocalLogic *base) {
+	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)base;
 	vec3_t t;
 	cBaseLocalLogic *b = LP_BASE(self);
 	cEntity *p = b->parent;
@@ -466,13 +472,14 @@ void cLittlePoliceLocalLogic_UpdateLook(cLittlePoliceLocalLogic *self) {
 	if (usr && Logic_InView(p, usr->vftable->GetPos(usr, &t), g_LittlePoliceMaxDistFar, g_GenCharStdFovY,
 		g_GenCharStdFovX, 1)) {
 		Alarm_Set(&g_pWorld->alarm, 1.0f);
-		Logic_Vtbl(self)->SetState(self, 2, usr);
+		Logic_Vtbl(self)->SetState(&self->base.base.logic, 2, usr);
 	}
 }
 
 /* vf35: state 10, the walk to the player that asks for money: the special attack when the AI is near it, back to
  * the default state after 5 s at more than 2000 */
-void cLittlePoliceLocalLogic_UpdateGetIt(cLittlePoliceLocalLogic *self, cAIChar *ai, float dt) {
+void cLittlePoliceLocalLogic_UpdateGetIt(cLocalLogic *base, cAIChar *ai, float dt) {
+	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)base;
 	vec3_t t1, t2;
 	cBaseLocalLogic *b = LP_BASE(self);
 
@@ -495,13 +502,13 @@ void cLittlePoliceLocalLogic_UpdateGetIt(cLittlePoliceLocalLogic *self, cAIChar 
 				return;
 			}
 			if (g_EnergyBarActive != 1 || g_SpecialActionActive != 2) {
-				Logic_Vtbl(self)->SetState(self, 0, usr);
+				Logic_Vtbl(self)->SetState(&self->base.base.logic, 0, usr);
 				return;
 			}
 			if (!(500.0f > d) || !ChType_ActCtrl(usr) || !strcmp(Logic_TypeName(usr), "Police")) {
 				return;
 			}
-			Logic_Vtbl(self)->SetState(self, 4, usr);
+			Logic_Vtbl(self)->SetState(&self->base.base.logic, 4, usr);
 			return;
 		}
 		float lt = self->lostTime - dt;
@@ -510,11 +517,12 @@ void cLittlePoliceLocalLogic_UpdateGetIt(cLittlePoliceLocalLogic *self, cAIChar 
 			return;
 		}
 	}
-	Logic_Vtbl(self)->RestartState(self);
+	Logic_Vtbl(self)->RestartState(&self->base.base.logic);
 }
 
 /* vf34: the AI walks to e and stops at MainMissionStopDist */
-void cLittlePoliceLocalLogic_GoTo(cLittlePoliceLocalLogic *self, cAIChar *ai, cEntity *e) {
+void cLittlePoliceLocalLogic_GoTo(cLocalLogic *base, cAIChar *ai, cEntity *e) {
+	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)base;
 	vec3_t t1, t2, t3, d, dir;
 	cEntity *p = LP_BASE(self)->parent;
 
@@ -539,36 +547,79 @@ void cLittlePoliceLocalLogic_GoTo(cLittlePoliceLocalLogic *self, cAIChar *ai, cE
 }
 
 /* vf20: a change of the idle restarts the search time (not in state 4) */
-void cLittlePoliceLocalLogic_SetIdle(cLittlePoliceLocalLogic *self, byte idle) {
+void cLittlePoliceLocalLogic_SetIdle(cLocalLogic *elem, byte idle) {
+	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)elem;
 	cBaseLocalLogic *b = LP_BASE(self);
 	byte cur = b->idle || b->alwaysLock;
 
 	if (idle != cur && b->state != 4) {
 		self->base.searchTime = g_GenCharMaxSpecialActionTime;
 	}
-	cBaseLocalLogic_SetIdle(b, idle);
+	cBaseLocalLogic_SetIdle(&b->logic, idle);
 }
 
 /* vf19: 8 the AI chases the target in alert, 7 the AI takes it */
-byte cLittlePoliceLocalLogic_SetState(cLittlePoliceLocalLogic *self, int state, cEntity *target) {
+byte cLittlePoliceLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
+	cLittlePoliceLocalLogic *self = (cLittlePoliceLocalLogic *)elem;
 	cBaseLocalLogic *b = LP_BASE(self);
 
 	if (state == 8) {
-		if ((byte)cBaseLocalLogic_SetState(b, 8, target)) {
-			LP_VT(self)->base.UpdateView(self);
+		if ((byte)cBaseLocalLogic_SetState(&b->logic, 8, target)) {
+			LP_VT(self)->base.UpdateView(&self->base.base.logic);
 			cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 			ai->vftable->SetState(ai, 3, target, (double)g_GenCharAlertSpeed);
 		}
 		return 1;
 	}
 	if (state == 7) {
-		if ((byte)cBaseLocalLogic_SetState(b, 7, target)) {
-			LP_VT(self)->base.UpdateView(self);
+		if ((byte)cBaseLocalLogic_SetState(&b->logic, 7, target)) {
+			LP_VT(self)->base.UpdateView(&self->base.base.logic);
 			cAIChar *ai = b->parent->vftable->GetAI(b->parent);
 			ai->vftable->SetState(ai, 8, target, 1);
 			cGenCharLocalLogic_Discover(&self->base);
 		}
 		return 1;
 	}
-	return cGenCharLocalLogic_SetState(&self->base, state, target);
+	return cGenCharLocalLogic_SetState(&self->base.base.logic, state, target);
 }
+
+/* the vtable of cLittlePoliceLocalLogic */
+const cLittlePoliceLocalLogicVtbl cLittlePoliceLocalLogic_vftable = {
+	.base.base.base.Delete = cLittlePoliceLocalLogic_Delete,
+	.base.base.base.GetName = cBaseLocalLogic_GetName,
+	.base.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.base.VarI = cLittlePoliceLocalLogic_VarI,
+	.base.base.base.VarF = cBaseLocalLogic_VarF,
+	.base.base.base.VarS = cGenCharLocalLogic_VarS,
+	.base.base.base.VarV = cBaseLocalLogic_VarV,
+	.base.base.UpdateBusy = cLittlePoliceLocalLogic_UpdateBusy,
+	.base.base.Refresh = cBaseLocalLogic_Refresh,
+	.base.base.Listens = cLocalLogic_ListensTrue,
+	.base.base.OnHit = cLittlePoliceLocalLogic_OnHit,
+	.base.base.OnSeen = cLittlePoliceLocalLogic_OnSeen,
+	.base.base.OnAttack = cGenCharLocalLogic_OnRobbery,
+	.base.base.OnShot = cBaseLocalLogic_OnShot,
+	.base.base.OnHammer = cLocalLogic_OnHammerNop,
+	.base.base.GivesMoney = cLittlePoliceLocalLogic_GivesMoney,
+	.base.base.OnAlarm = cGenCharLocalLogic_OnAlarm,
+	.base.base.Update = cLittlePoliceLocalLogic_Update,
+	.base.base.SetOriginFrom = cBaseLocalLogic_SetOriginFrom,
+	.base.base.SetState = cLittlePoliceLocalLogic_SetState,
+	.base.base.SetIdle = cLittlePoliceLocalLogic_SetIdle,
+	.base.base.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.base.base.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.base.base.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.base.base.RestartState = cGenCharLocalLogic_RestartState,
+	.base.CanAttack = cGenCharLocalLogic_CanAttack,
+	.base.UpdateView = cLittlePoliceLocalLogic_UpdateView,
+	.base.ToRelax = cGenCharLocalLogic_ToRelax,
+	.base.ToAlert = cLittlePoliceLocalLogic_ToAlert,
+	.base.Accuse = Logic_SetState2,
+	.base.FindTarget = cLittlePoliceLocalLogic_FindTarget,
+	.base.TargetDone = cLittlePoliceLocalLogic_TargetDone,
+	.base.Work = cLocalLogic_WorkNop,
+	.base.Vf33 = cLocalLogic_Vf33Nop,
+	.base.GoTo = cLittlePoliceLocalLogic_GoTo,
+	.base.UpdateGetIt = cLittlePoliceLocalLogic_UpdateGetIt,
+	.UpdateLook = cLittlePoliceLocalLogic_UpdateLook,
+};

@@ -25,7 +25,7 @@ byte Logic_True1(void *self, int arg) {
 void cGateKeepers_Think(cGateKeepers *self) {
 	for (Nto1Node *n = Logic_ListFirst(self->list); n; n = Logic_ListNext(n)) {
 		cLocalLogic *l = Logic_GetLocalLogic(n->data);
-		l->vftable->Update(l, 1.41421354f);
+		Logic_Vtbl(l)->Update(l, 1.41421354f);
 	}
 }
 
@@ -60,7 +60,7 @@ cGateKeeperLocalLogic *cGateKeeperLocalLogic_ctor(cGateKeeperLocalLogic *self, c
 	cBaseLocalLogic_ctor(&self->base, parent);
 	self->base.vftable = CGATEKEEPERLOCALLOGIC_VFTABLE;
 	self->hiddenTime = 0.0f;
-	cGateKeeperLocalLogic_SetState(self, 0, NULL);
+	cGateKeeperLocalLogic_SetState(&self->base.logic, 0, NULL);
 	return self;
 }
 
@@ -69,12 +69,13 @@ void cGateKeeperLocalLogic_dtor(cGateKeeperLocalLogic *self) {
 	cBaseLocalLogic_dtor(&self->base);
 }
 
-cGateKeeperLocalLogic *cGateKeeperLocalLogic_Delete(cGateKeeperLocalLogic *self, byte flags) {
+cLocalLogic *cGateKeeperLocalLogic_Delete(cLocalLogic *base, byte flags) {
+	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)base;
 	cGateKeeperLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 /* the view flag of the character: relaxed and no alarm */
@@ -85,14 +86,16 @@ void cGateKeeperLocalLogic_UpdateView(cGateKeeperLocalLogic *self) {
 }
 
 /* vf16 of the gatekeepers and the gears: they never run from the police */
-void cGateKeeperLocalLogic_Vf16(cGateKeeperLocalLogic *self, int arg) {
+void cGateKeeperLocalLogic_Vf16(cLocalLogic *base, cEntity *arg) {
+	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)base;
 	(void)self;
 	(void)arg;
 	Con_Print(0x8f008f, "Ojito de pared intenta huir de un poli pequeño. Esto no debe pasar nunca", 0);
 }
 
 /* vf17 */
-void cGateKeeperLocalLogic_Update(cGateKeeperLocalLogic *self, float dt) {
+void cGateKeeperLocalLogic_Update(cLocalLogic *elem, float dt) {
+	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	vec3_t tmp;
 	cBaseLocalLogic *b = &self->base;
 	cEntity *p = b->parent;
@@ -102,7 +105,7 @@ void cGateKeeperLocalLogic_Update(cGateKeeperLocalLogic *self, float dt) {
 	}
 	WChar(p)->money = 0;
 	WChar(p)->moneyReward = 0;
-	cBaseLocalLogic_Update(b, dt);
+	cBaseLocalLogic_Update(&b->logic, dt);
 	cGateKeeperLocalLogic_UpdateView(self);
 	if (b->busy) {
 		return;
@@ -113,7 +116,7 @@ void cGateKeeperLocalLogic_Update(cGateKeeperLocalLogic *self, float dt) {
 			return;
 		}
 		if (!g_pWorld->alarm.on) {
-			b->vftable->SetState(self, 0, NULL);
+			b->vftable->SetState(&self->base.logic, 0, NULL);
 		}
 		return;
 	}
@@ -144,50 +147,56 @@ void cGateKeeperLocalLogic_Update(cGateKeeperLocalLogic *self, float dt) {
 	}
 alarm:
 	if (g_pWorld->alarm.on) {
-		b->vftable->SetState(self, 1, NULL);
+		b->vftable->SetState(&self->base.logic, 1, NULL);
 	}
 }
 
 /* vf12 (a robbery seen) and vf11: hide unless idle */
-void cGateKeeperLocalLogic_OnRobbery(cGateKeeperLocalLogic *self, cEntity *e, float amount) {
+void cGateKeeperLocalLogic_OnRobbery(cLocalLogic *elem, cEntity *e, float amount) {
+	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	(void)e;
 	(void)amount;
 	if (!self->base.idle && !self->base.alwaysLock) {
-		self->base.vftable->SetState(self, 1, NULL);
+		self->base.vftable->SetState(&self->base.logic, 1, NULL);
 	}
 }
 
 /* vf10 */
-void cGateKeeperLocalLogic_OnHit(cGateKeeperLocalLogic *self, cEntity *attacker) {
+void cGateKeeperLocalLogic_OnHit(cLocalLogic *elem, cEntity *attacker) {
+	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	(void)attacker;
-	self->base.vftable->SetState(self, 1, NULL);
+	self->base.vftable->SetState(&self->base.logic, 1, NULL);
 }
 
 /* vf14: hidden at once when the action Hide runs */
-void cGateKeeperLocalLogic_Vf14(cGateKeeperLocalLogic *self, cEntity *e) {
+void cGateKeeperLocalLogic_Vf14(cLocalLogic *elem, cEntity *e) {
+	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	cEntity *p = self->base.parent;
 
 	(void)e;
-	self->base.vftable->SetState(self, 1, NULL);
+	self->base.vftable->SetState(&self->base.logic, 1, NULL);
 	if (cActCtrl_IsActive(ChType_ActCtrl(p), "Hide")) {
 		cActCtrl_Play(ChType_ActCtrl(p), "Hidden", 1, 1.0f);
 	}
 }
 
-void cGateKeeperLocalLogic_Vf11(cGateKeeperLocalLogic *self, cEntity *e) {
+void cGateKeeperLocalLogic_Vf11(cLocalLogic *elem, cEntity *e) {
+	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	(void)e;
 	if (!self->base.idle && !self->base.alwaysLock) {
-		self->base.vftable->SetState(self, 1, NULL);
+		self->base.vftable->SetState(&self->base.logic, 1, NULL);
 	}
 }
 
 /* vf24: hidden while the alarm is on */
-void cGateKeeperLocalLogic_RestartState(cGateKeeperLocalLogic *self) {
-	self->base.vftable->SetState(self, g_pWorld->alarm.on != 0, NULL);
+void cGateKeeperLocalLogic_RestartState(cLocalLogic *elem) {
+	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
+	self->base.vftable->SetState(&self->base.logic, g_pWorld->alarm.on != 0, NULL);
 }
 
 /* vf19: state 1 needs the action Hide */
-byte cGateKeeperLocalLogic_SetState(cGateKeeperLocalLogic *self, int state, cEntity *target) {
+byte cGateKeeperLocalLogic_SetState(cLocalLogic *elem, int state, cEntity *target) {
+	cGateKeeperLocalLogic *self = (cGateKeeperLocalLogic *)elem;
 	void *act = NULL;
 	cEntity *p = self->base.parent;
 
@@ -197,7 +206,7 @@ byte cGateKeeperLocalLogic_SetState(cGateKeeperLocalLogic *self, int state, cEnt
 			return 0;
 		}
 	}
-	byte ok = (byte)cBaseLocalLogic_SetState(&self->base, state, target);
+	byte ok = (byte)cBaseLocalLogic_SetState(&self->base.logic, state, target);
 	if (ok) {
 		cGateKeeperLocalLogic_UpdateView(self);
 	}
@@ -216,3 +225,32 @@ byte cGateKeeperLocalLogic_SetState(cGateKeeperLocalLogic *self, int state, cEnt
 	}
 	return 1;
 }
+
+/* the vtable of cGateKeeperLocalLogic */
+const cBaseLocalLogicVtbl cGateKeeperLocalLogic_vftable = {
+	.base.Delete = cGateKeeperLocalLogic_Delete,
+	.base.GetName = cBaseLocalLogic_GetName,
+	.base.Vf02 = cLocalLogic_Vf02True,
+	.base.VarI = cBaseLocalLogic_VarI,
+	.base.VarF = cBaseLocalLogic_VarF,
+	.base.VarS = cBaseLocalLogic_VarS,
+	.base.VarV = cBaseLocalLogic_VarV,
+	.UpdateBusy = cBaseLocalLogic_UpdateBusy,
+	.Refresh = cBaseLocalLogic_Refresh,
+	.Listens = cLocalLogic_ListensFalse,
+	.OnHit = cGateKeeperLocalLogic_OnHit,
+	.OnSeen = cGateKeeperLocalLogic_Vf11,
+	.OnAttack = cGateKeeperLocalLogic_OnRobbery,
+	.OnShot = cBaseLocalLogic_OnShot,
+	.OnHammer = cGateKeeperLocalLogic_Vf14,
+	.GivesMoney = cBaseLocalLogic_Vf15,
+	.OnAlarm = cGateKeeperLocalLogic_Vf16,
+	.Update = cGateKeeperLocalLogic_Update,
+	.SetOriginFrom = cBaseLocalLogic_SetOriginFrom,
+	.SetState = cGateKeeperLocalLogic_SetState,
+	.SetIdle = cBaseLocalLogic_SetIdle,
+	.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.RestartState = cGateKeeperLocalLogic_RestartState,
+};

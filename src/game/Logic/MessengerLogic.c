@@ -256,9 +256,9 @@ void cMessengers_Think(void *obj) {
 				cEntity *t = cMessengers_FindDesk(self);
 				self->target = t;
 				if (t) {
-					l->vftable->SetState(l, GENCHAR_GET_IT, t);
+					l->vftable->SetState(&l->logic, GENCHAR_GET_IT, t);
 				} else {
-					l->vftable->RestartState(l);
+					l->vftable->RestartState(&l->logic);
 				}
 			} else if (l->state == GENCHAR_ATTACK) {
 				self->target = NULL;
@@ -276,7 +276,7 @@ void cMessengers_Think(void *obj) {
 update:
 	for (Nto1Node *n = Logic_ListFirst(self->list); n; n = Logic_ListNext(n)) {
 		cLocalLogic *l = Logic_GetLocalLogic(n->data);
-		l->vftable->Update(l, MSG_THINK_STEP);
+		Logic_Vtbl(l)->Update(l, MSG_THINK_STEP);
 	}
 }
 
@@ -304,10 +304,10 @@ void cMessengers_SetStateAll(cMessengers *self, int state, cEntity *e) {
 		}
 		if (state == -1) {
 			if (!l->idle && !l->alwaysLock) {
-				l->vftable->RestartState(l);
+				l->vftable->RestartState(&l->logic);
 			}
 		} else {
-			l->vftable->SetState(l, state, e);
+			l->vftable->SetState(&l->logic, state, e);
 		}
 	}
 }
@@ -315,29 +315,32 @@ void cMessengers_SetStateAll(cMessengers *self, int state, cEntity *e) {
 cMessengerLocalLogic *cMessengerLocalLogic_ctor(cMessengerLocalLogic *self, cEntity *parent) {
 	cGenCharLocalLogic_ctor(self, parent, 0);
 	MSG_VT(self) = CMESSENGERLOCALLOGIC_VFTABLE;
-	cGenCharLocalLogic_SetState(self, GENCHAR_RELAX, NULL);
+	cGenCharLocalLogic_SetState(&self->base.logic, GENCHAR_RELAX, NULL);
 	self->ignoreAlarm = 1;
 	return self;
 }
 
-cMessengerLocalLogic *cMessengerLocalLogic_Delete(cMessengerLocalLogic *self, byte flags) {
+cLocalLogic *cMessengerLocalLogic_Delete(cLocalLogic *base, byte flags) {
+	cMessengerLocalLogic *self = (cMessengerLocalLogic *)base;
 	MSG_VT(self) = CMESSENGERLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 /* vf28 and vf27: the same walk in alert and relaxed */
-void cMessengerLocalLogic_ToAlert(cMessengerLocalLogic *self, cAIChar *ai) {
+void cMessengerLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
+	cMessengerLocalLogic *self = (cMessengerLocalLogic *)base;
 	(void)self;
 	ai->vftable->SetState(ai, 1, 1.0, 0);
 }
 
 /* vf17: team 3, 0 while it attacks a player */
-void cMessengerLocalLogic_Update(cMessengerLocalLogic *self, float dt) {
-	cGenCharLocalLogic_Update(self, dt);
+void cMessengerLocalLogic_Update(cLocalLogic *elem, float dt) {
+	cMessengerLocalLogic *self = (cMessengerLocalLogic *)elem;
+	cGenCharLocalLogic_Update(&self->base.logic, dt);
 	WLife(self->base.parent)->arrow.tgType = 3;
 	if (self->base.state == GENCHAR_ATTACK) {
 		cEntity *t = self->base.target.target;
@@ -349,17 +352,18 @@ void cMessengerLocalLogic_Update(cMessengerLocalLogic *self, float dt) {
 
 /* vf34: to the node DC_DataPack of e when it has one (MessengerGotoSpeed, 0.25 in the easy single game), else the
  * walk of the GenChars */
-void cMessengerLocalLogic_GoTo(cMessengerLocalLogic *self, cAIChar *ai, cEntity *e) {
+void cMessengerLocalLogic_GoTo(cLocalLogic *elem, cAIChar *ai, cEntity *e) {
+	cMessengerLocalLogic *self = (cMessengerLocalLogic *)elem;
 	vec3_t t1, t2, d, dir;
 	matrix_t m;
 
 	if (!e->vftable->IsType(e, TYEN_WITH_LIFE) || !Obj_Vtbl(e)->GetModel(e)) {
-		cGenCharLocalLogic_GoTo(self, ai, e);
+		cGenCharLocalLogic_GoTo(&self->base.logic, ai, e);
 		return;
 	}
 	int node = CGameModel_FindRenderNode(Obj_Vtbl(e)->GetModel(e), "DC_DataPack");
 	if (node == -1) {
-		cGenCharLocalLogic_GoTo(self, ai, e);
+		cGenCharLocalLogic_GoTo(&self->base.logic, ai, e);
 		return;
 	}
 	float speed = World_IsEasySingle() ? 0.25f : g_MessengerGotoSpeed;
@@ -382,3 +386,43 @@ void cMessengerLocalLogic_GoTo(cMessengerLocalLogic *self, cAIChar *ai, cEntity 
 	vec3_t np = { mm->m[12], mm->m[13], mm->m[14] };
 	ai->vftable->SetState(ai, 4, np, dir, 70.0, (double)speed);
 }
+
+/* the vtable of cMessengerLocalLogic */
+const cGenCharLocalLogicVtbl cMessengerLocalLogic_vftable = {
+	.base.base.Delete = cMessengerLocalLogic_Delete,
+	.base.base.GetName = cBaseLocalLogic_GetName,
+	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.VarI = cGenCharLocalLogic_VarI,
+	.base.base.VarF = cBaseLocalLogic_VarF,
+	.base.base.VarS = cGenCharLocalLogic_VarS,
+	.base.base.VarV = cBaseLocalLogic_VarV,
+	.base.UpdateBusy = cBaseLocalLogic_UpdateBusy,
+	.base.Refresh = cBaseLocalLogic_Refresh,
+	.base.Listens = cLocalLogic_ListensTrue,
+	.base.OnHit = cGenCharLocalLogic_OnHit,
+	.base.OnSeen = cGenCharLocalLogic_OnSeen,
+	.base.OnAttack = cGenCharLocalLogic_OnRobbery,
+	.base.OnShot = cBaseLocalLogic_OnShot,
+	.base.OnHammer = cLocalLogic_OnHammerNop,
+	.base.GivesMoney = cGenCharLocalLogic_GivesMoney,
+	.base.OnAlarm = cGenCharLocalLogic_OnAlarm,
+	.base.Update = cMessengerLocalLogic_Update,
+	.base.SetOriginFrom = cBaseLocalLogic_SetOriginFrom,
+	.base.SetState = cGenCharLocalLogic_SetState,
+	.base.SetIdle = cBaseLocalLogic_SetIdle,
+	.base.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.base.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.base.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.base.RestartState = cGenCharLocalLogic_RestartState,
+	.CanAttack = cGenCharLocalLogic_CanAttack,
+	.UpdateView = cGenCharLocalLogic_UpdateView,
+	.ToRelax = cMessengerLocalLogic_ToAlert,
+	.ToAlert = cMessengerLocalLogic_ToAlert,
+	.Accuse = Logic_SetState2,
+	.FindTarget = cLocalLogic_FindTargetNull,
+	.TargetDone = cLocalLogic_TargetDoneFalse,
+	.Work = cLocalLogic_WorkNop,
+	.Vf33 = cLocalLogic_Vf33Nop,
+	.GoTo = cMessengerLocalLogic_GoTo,
+	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
+};

@@ -9,7 +9,9 @@ for i in 1 2 3 4 5 6; do
 	[ "$n" = 0 ] && break
 	a=$(python3 tools/cleanup/vtgen.py fixsig "$log" | grep -vc '^report')
 	b=$(python3 tools/cleanup/vtgen.py fixcall "$log" | grep -vc '^report')
-	echo "  fixsig $a, fixcall $b"
-	[ "$a" = 0 ] && [ "$b" = 0 ] && break
+	c=$(python3 tools/cleanup/vtgen.py protos "$log" | grep -vc '^report')
+	d=$(python3 tools/cleanup/vtgen.py fixvt "$log" | grep -vc '^report')
+	echo "  fixsig $a, fixcall $b, protos $c, fixvt $d"
+	[ "$a" = 0 ] && [ "$b" = 0 ] && [ "$c" = 0 ] && [ "$d" = 0 ] && break
 done
 grep -E "error:" "$log" | sort -u | head -40

@@ -22,22 +22,25 @@ void *cMayorLocalLogic_ctor(void *mem, cEntity *parent) {
 	return self;
 }
 
-cMayorLocalLogic *cMayorLocalLogic_Delete(cMayorLocalLogic *self, byte flags) {
+cLocalLogic *cMayorLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+	cMayorLocalLogic *self = (cMayorLocalLogic *)elem;
 	MAYOR_VT(self) = CMAYORLOCALLOGIC_VFTABLE;
 	cGenCharLocalLogic_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return elem;
 }
 
 /* vf31: the special action is over after GenCharSpecialActionTime */
-byte cMayorLocalLogic_TargetDone(cMayorLocalLogic *self) {
+byte cMayorLocalLogic_TargetDone(cLocalLogic *elem) {
+	cMayorLocalLogic *self = (cMayorLocalLogic *)elem;
 	return self->base.specialTime > g_GenCharSpecialActionTime;
 }
 
 /* vf30: at the search time the nearest dazed character in view in the sphere of MayorBlabliblaRadius */
-cEntity *cMayorLocalLogic_FindTarget(cMayorLocalLogic *self) {
+cEntity *cMayorLocalLogic_FindTarget(cLocalLogic *elem) {
+	cMayorLocalLogic *self = (cMayorLocalLogic *)elem;
 	vec3_t t;
 
 	if (!(0.0f > self->base.searchTime)) {
@@ -54,18 +57,21 @@ cEntity *cMayorLocalLogic_FindTarget(cMayorLocalLogic *self) {
 }
 
 /* vf28 and vf27: the AI walks in alert or relaxed */
-void cMayorLocalLogic_ToAlert(cMayorLocalLogic *self, cAIChar *ai) {
+void cMayorLocalLogic_ToAlert(cLocalLogic *base, cAIChar *ai) {
+	cMayorLocalLogic *self = (cMayorLocalLogic *)base;
 	(void)self;
 	ai->vftable->SetState(ai, 1, (double)g_GenCharAlertSpeed, 0);
 }
 
-void cMayorLocalLogic_ToRelax(cMayorLocalLogic *self, cAIChar *ai) {
+void cMayorLocalLogic_ToRelax(cLocalLogic *base, cAIChar *ai) {
+	cMayorLocalLogic *self = (cMayorLocalLogic *)base;
 	(void)self;
 	ai->vftable->SetState(ai, 1, (double)g_GenCharRelaxSpeed, 0);
 }
 
 /* vf17: during the special action the AI listens to the listener once */
-void cMayorLocalLogic_Update(cMayorLocalLogic *self, float dt) {
+void cMayorLocalLogic_Update(cLocalLogic *elem, float dt) {
+	cMayorLocalLogic *self = (cMayorLocalLogic *)elem;
 	if (self->base.specialOn) {
 		self->base.specialTime = dt + self->base.specialTime;
 		if (self->listener[0]) {
@@ -78,7 +84,7 @@ void cMayorLocalLogic_Update(cMayorLocalLogic *self, float dt) {
 			self->listener[0] = 0;
 		}
 	}
-	cGenCharLocalLogic_Update(&self->base, dt);
+	cGenCharLocalLogic_Update(&self->base.base.logic, dt);
 }
 
 /* the C function of the sphere: a dazed character (not the player, not the mayor) in the view of the mayor, the
@@ -120,3 +126,43 @@ void cMayorLocalLogic_SetListener(cLocalLogic *l, cEntity *e) {
 	}
 	self->listener[0] = 0;
 }
+
+/* the vtable of cMayorLocalLogic */
+const cGenCharLocalLogicVtbl cMayorLocalLogic_vftable = {
+	.base.base.Delete = cMayorLocalLogic_Delete,
+	.base.base.GetName = cBaseLocalLogic_GetName,
+	.base.base.Vf02 = cLocalLogic_Vf02True,
+	.base.base.VarI = cGenCharLocalLogic_VarI,
+	.base.base.VarF = cBaseLocalLogic_VarF,
+	.base.base.VarS = cGenCharLocalLogic_VarS,
+	.base.base.VarV = cBaseLocalLogic_VarV,
+	.base.UpdateBusy = cBaseLocalLogic_UpdateBusy,
+	.base.Refresh = cBaseLocalLogic_Refresh,
+	.base.Listens = cLocalLogic_ListensTrue,
+	.base.OnHit = cGenCharLocalLogic_OnHit,
+	.base.OnSeen = cGenCharLocalLogic_OnSeen,
+	.base.OnAttack = cGenCharLocalLogic_OnRobbery,
+	.base.OnShot = cBaseLocalLogic_OnShot,
+	.base.OnHammer = cLocalLogic_OnHammerNop,
+	.base.GivesMoney = cGenCharLocalLogic_GivesMoney,
+	.base.OnAlarm = cGenCharLocalLogic_OnAlarm,
+	.base.Update = cMayorLocalLogic_Update,
+	.base.SetOriginFrom = cBaseLocalLogic_SetOriginFrom,
+	.base.SetState = cGenCharLocalLogic_SetState,
+	.base.SetIdle = cBaseLocalLogic_SetIdle,
+	.base.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.base.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.base.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.base.RestartState = cGenCharLocalLogic_RestartState,
+	.CanAttack = cGenCharLocalLogic_CanAttack,
+	.UpdateView = cGenCharLocalLogic_UpdateView,
+	.ToRelax = cMayorLocalLogic_ToRelax,
+	.ToAlert = cMayorLocalLogic_ToAlert,
+	.Accuse = Logic_SetState2,
+	.FindTarget = cMayorLocalLogic_FindTarget,
+	.TargetDone = cMayorLocalLogic_TargetDone,
+	.Work = cLocalLogic_WorkNop,
+	.Vf33 = cLocalLogic_Vf33Nop,
+	.GoTo = cGenCharLocalLogic_GoTo,
+	.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
+};

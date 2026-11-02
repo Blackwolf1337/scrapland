@@ -14,23 +14,26 @@ cBettyLocalLogic *cBettyLocalLogic_ctor(cBettyLocalLogic *self, cEntity *parent)
 	return self;
 }
 
-cBettyLocalLogic *cBettyLocalLogic_Delete(cBettyLocalLogic *self, byte flags) {
+cLocalLogic *cBettyLocalLogic_Delete(cLocalLogic *elem, byte flags) {
+	cBettyLocalLogic *self = (cBettyLocalLogic *)elem;
 	self->base.base.base.vftable = CBETTYLOCALLOGIC_VFTABLE;
 	cFunctionaryLocalLogic_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return elem;
 }
 
 /* vf40 */
-void cBettyLocalLogic_AssignDesktop(cBettyLocalLogic *self, float maxDist) {
+void cBettyLocalLogic_AssignDesktop(cLocalLogic *elem, float maxDist) {
+	cBettyLocalLogic *self = (cBettyLocalLogic *)elem;
 	(void)maxDist;
 	Logic_LinkDesktop(&self->base, "BettyDesktop");
 }
 
 /* vf38 (the callers use the returned out): the angles at the desktop, turned by a quarter the other way */
-vec3_t *cBettyLocalLogic_GetWorkAng(cBettyLocalLogic *self, vec3_t *out) {
+vec3_t *cBettyLocalLogic_GetWorkAng(cLocalLogic *elem, vec3_t *out) {
+	cBettyLocalLogic *self = (cBettyLocalLogic *)elem;
 	vec3_t tmp;
 
 	CHECK(cFunctionaryLocalLogic_GetDesktop(&self->base));
@@ -41,3 +44,49 @@ vec3_t *cBettyLocalLogic_GetWorkAng(cBettyLocalLogic *self, vec3_t *out) {
 	out->z = a->z + 0.0f;
 	return out;
 }
+
+/* the vtable of cBettyLocalLogic */
+const cFunctionaryLocalLogicVtbl cBettyLocalLogic_vftable = {
+	.base.base.base.Delete = cBettyLocalLogic_Delete,
+	.base.base.base.GetName = cBaseLocalLogic_GetName,
+	.base.base.base.Vf02 = cFunctionaryLocalLogic_Vf02,
+	.base.base.base.VarI = cFunctionaryLocalLogic_VarI,
+	.base.base.base.VarF = cFunctionaryLocalLogic_VarF,
+	.base.base.base.VarS = cFunctionaryLocalLogic_VarS,
+	.base.base.base.VarV = cBaseLocalLogic_VarV,
+	.base.base.UpdateBusy = cBaseLocalLogic_UpdateBusy,
+	.base.base.Refresh = cBaseLocalLogic_Refresh,
+	.base.base.Listens = cLocalLogic_ListensTrue,
+	.base.base.OnHit = cGenCharLocalLogic_OnHit,
+	.base.base.OnSeen = cGenCharLocalLogic_OnSeen,
+	.base.base.OnAttack = cFunctionaryLocalLogic_OnRobbery,
+	.base.base.OnShot = cBaseLocalLogic_OnShot,
+	.base.base.OnHammer = cLocalLogic_OnHammerNop,
+	.base.base.GivesMoney = cGenCharLocalLogic_GivesMoney,
+	.base.base.OnAlarm = cGenCharLocalLogic_OnAlarm,
+	.base.base.Update = cBertoLocalLogic_Update,
+	.base.base.SetOriginFrom = cLocalLogic_SetOriginFromNop,
+	.base.base.SetState = cFunctionaryLocalLogic_SetState,
+	.base.base.SetIdle = cFunctionaryLocalLogic_SetIdle,
+	.base.base.SetActionRadius = cBaseLocalLogic_SetActionRadius,
+	.base.base.SetOrigin = cBaseLocalLogic_SetOrigin,
+	.base.base.SetOriginAng = cBaseLocalLogic_SetOriginAng,
+	.base.base.RestartState = cGenCharLocalLogic_RestartState,
+	.base.CanAttack = cGenCharLocalLogic_CanAttack,
+	.base.UpdateView = cFunctionaryLocalLogic_UpdateView,
+	.base.ToRelax = cGenCharLocalLogic_ToRelax,
+	.base.ToAlert = cGenCharLocalLogic_ToAlert,
+	.base.Accuse = Logic_SetState2,
+	.base.FindTarget = cLocalLogic_FindTargetNull,
+	.base.TargetDone = cLocalLogic_TargetDoneTrue,
+	.base.Work = cFunctionaryLocalLogic_Work,
+	.base.Vf33 = cFunctionaryLocalLogic_Vf33,
+	.base.GoTo = cGenCharLocalLogic_GoTo,
+	.base.UpdateGetIt = cGenCharLocalLogic_UpdateGetIt,
+	.CanTalk = cLocalLogic_CanTalkTrue,
+	.StopWork = cFunctionaryLocalLogic_StopWork,
+	.GetWorkAng = cBettyLocalLogic_GetWorkAng,
+	.FastEscape = cLocalLogic_FastEscapeFalse,
+	.AssignDesktop = cBettyLocalLogic_AssignDesktop,
+	.ReleaseDesktop = cBertoLocalLogic_ReleaseDesktop,
+};
