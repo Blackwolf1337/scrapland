@@ -264,7 +264,7 @@ void CGameParticles_SetSparksOn(CGameParticles *self, byte on) {
 	CGameParticles_SetFlag(self->ParticleSystem, 3, on);
 }
 
-void CGameParticles_SetColorRamp(CGameParticles *self, uint32_t *ramp) {
+void CGameParticles_SetColorRamp(CGameParticles *self, const uint32_t *ramp) {
 	SP_CHECK(self);
 	CParticleSystem_SetColorRamp(self->ParticleSystem, ramp);
 }

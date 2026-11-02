@@ -296,4 +296,5 @@ PyObject *SNet_GetPing(PyObject *self, PyObject *args) {
 	return Py_BuildValue("i", Net_GetPing(player));
 }
 
+extern PyMethodDef SNet_methods[26];
 SD_PY_MODULE(SNet, 0x42e610)

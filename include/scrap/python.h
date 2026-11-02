@@ -32,7 +32,7 @@ void PyPool_Free(void *p);
  * ScrapC.exe the C object <name>_methods (src/game/Global/Globals*.c) */
 #define SD_PY_MODULE(name, rva) \
 	void init##name(void) { \
-		Py_InitModule(#name, GAME_ARRAY(PyMethodDef, name##_methods)); \
+		Py_InitModule(#name, name##_methods); \
 	}
 
 /* None with a new reference, the result of a method that returns nothing */

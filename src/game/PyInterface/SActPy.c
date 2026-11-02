@@ -170,4 +170,5 @@ PyObject *SAct_GetAct(PyObject *self, PyObject *args) {
 		"Caution: SAct.GetAct('%s'): element not found.\n");
 }
 
+extern PyMethodDef SAct_methods[10];
 SD_PY_MODULE(SAct, 0x429288)

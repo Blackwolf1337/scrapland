@@ -6,6 +6,7 @@ import datalib as d
 
 objs = d.objects()
 need = {}
+lines_of = {}
 for line in open(sys.argv[1], errors='replace'):
     m = re.match(r"^(.+?):(\d+):\d+: error: ‘(\w+)’ undeclared", line)
     if not m or m.group(3) not in objs:
@@ -13,6 +14,7 @@ for line in open(sys.argv[1], errors='replace'):
     f = os.path.realpath(d.ROOT + m.group(1))
     # an error inside a header's macro shows at the header line: the declaration goes to that header
     need.setdefault(f, set()).add(m.group(3))
+    lines_of.setdefault(f, {}).setdefault(m.group(3), int(m.group(2)))
 for f, names in need.items():
     s = open(f).read()
     names = [n for n in sorted(names) if not re.search(r'^extern [^;]*\b%s\b' % n, s, re.M)]
@@ -23,9 +25,10 @@ for f, names in need.items():
     c = d.strip_comments(s)
     for n in names:
         m = re.search(r'\b%s\b' % n, c)
-        if not m:
-            continue
-        at = m.start()
+        at = m.start() if m else None
+        if at is None:	# a pasted name (SD_PY_MODULE): before the line of the error
+            ln = lines_of[f][n]
+            at = sum(len(x) + 1 for x in s.split('\n')[:ln - 1])
         top = next((a for a, b, t in decls if a <= at < b), None)
         if top is None:
             top = c.rfind('\n', 0, at) + 1

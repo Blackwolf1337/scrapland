@@ -449,10 +449,10 @@ int CD3DApp_DisplayErrorMsg(int hr) {
 		s = "Could not initialize Direct3D. You may\nwant to check that DirectX 8.1 or better\nis correctly installed on your system.\n";
 		break;
 	case 0x8007000e:		/* E_OUTOFMEMORY */
-		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd84c, 0);
+		s = "Not enough memory.";
 		break;
 	case 0x8876017c:		/* D3DERR_OUTOFVIDEOMEMORY */
-		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd860, 0);
+		s = "Not enough video memory.";
 		break;
 	case D3DAPPERR_NOCOMPATIBLEDEVICES:
 		s = "Could not find any compatible Direct3D\ndevices.";
@@ -464,13 +464,13 @@ int CD3DApp_DisplayErrorMsg(int hr) {
 		s = "A D3D object has a non-zero reference\ncount (meaning things were not properly\ncleaned up).";
 		break;
 	case 0x8200000b:		/* D3DAPPERR_MEDIANOTFOUND */
-		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd7cc, 0);
+		s = "Could not load required media.";
 		break;
 	case D3DAPPERR_RESIZEFAILED:
-		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3d69f8, 0);
+		s = "Could not reset the Direct3D device.";
 		break;
 	default:
-		s = GAME_PTR(CD3DApp_DisplayErrorMsg_3dd87c, 0);	/* "Generic application error." */
+		s = "Generic application error.";
 		break;
 	}
 	Str_Copy(msg, s, sizeof(msg));

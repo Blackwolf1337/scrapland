@@ -1589,4 +1589,5 @@ PyObject *Scrap_AddItem(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
+extern PyMethodDef Scrap_methods[115];
 SD_PY_MODULE(Scrap, 0x42c610)

@@ -94,7 +94,7 @@ typedef struct CParticleActive {
 	byte pad_7f;
 	float sparkVelScale;		/* 0x80 */
 	float sparkMaxSize;		/* 0x84 */
-	uint32_t *colorRamp;		/* 0x88 9 colors, NULL without */
+	const uint32_t *colorRamp;	/* 0x88 9 colors, NULL without */
 	byte bounce;			/* 0x8c on the floor */
 	byte pad_8d[3];
 } CParticleActive;
@@ -172,7 +172,7 @@ typedef struct CParticleSystem {
 	byte visible;			/* 0x141 */
 	byte inView;			/* 0x142 */
 	byte pad_143;
-	uint32_t *colorRamp;		/* 0x144 instead of params.colorRamp */
+	const uint32_t *colorRamp;	/* 0x144 instead of params.colorRamp */
 	vec3_t *emitPos;		/* 0x148 the positions new particles take in turn */
 	byte nEmitPos;			/* 0x14c */
 	byte emitIdx;			/* 0x14d */
@@ -227,7 +227,7 @@ CParticle *CParticleSystem_GetFree(CParticleSystem *self, byte force);
 /* the system of the [Particles] section of the user properties of node, with the ini of the scene; NULL without a
  * type */
 CParticleSystem *ParticleSystem_FromNode(CNode3D *node, CIniFile *ini);
-void CParticleSystem_SetColorRamp(CParticleSystem *self, uint32_t *ramp);
+void CParticleSystem_SetColorRamp(CParticleSystem *self, const uint32_t *ramp);
 void CParticleSystem_SetEmitPos(CParticleSystem *self, vec3_t *pos, byte n);
 void CParticleSystem_GetScale2(CParticleSystem *self, float *out);
 void CParticleSystem_GetScale(CParticleSystem *self, vec3_t *out);

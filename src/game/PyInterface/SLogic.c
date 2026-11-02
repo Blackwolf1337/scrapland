@@ -218,4 +218,5 @@ PyObject *SLogic_UpdateTauntEndTime(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
+extern PyMethodDef SLogic_methods[13];
 SD_PY_MODULE(SLogic, 0x42dd20)

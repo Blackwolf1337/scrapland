@@ -111,4 +111,5 @@ PyObject *SFX_EmbeddedSet(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
+extern PyMethodDef SFX_methods[7];
 SD_PY_MODULE(SFX, 0x42d060)

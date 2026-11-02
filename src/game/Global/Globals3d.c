@@ -16,14 +16,9 @@
 #undef g_ErrPcxFormat
 
 const int g_EngineVersion = 5624;
-const uint32_t CD3DApp_DisplayErrorMsg_3d69f8[9] = { 0x6c756f43, 0x6f6e2064, 0x65722074, 0x20746573, 0x20656874, 0x65726944, 0x44337463, 0x76656420, 0x2e656369 };
 const float LIGHT_RANGE_INF = 1.8446e+19f;
 const color4_t colorRva_3d7bf0 = { .r = 0.383529f, .g = 0.430588f, .b = 0.517647f, .a = 1.0f };
 const color4_t colorRva_3d7c00 = { .r = 0.740392f, .g = 0.661961f, .b = 0.536471f, .a = 1.0f };
 const color4_t colorRva_3d7c10 = { .r = 0.909804f, .g = 0.882353f, .b = 0.827451f, .a = 1.0f };
-const char CD3DApp_DisplayErrorMsg_3dd7cc[32] = "Could not load required media.";
-const char CD3DApp_DisplayErrorMsg_3dd84c[20] = "Not enough memory.";
-const uint32_t CD3DApp_DisplayErrorMsg_3dd860[6] = { 0x20746f4e, 0x756f6e65, 0x76206867, 0x6f656469, 0x6d656d20, 0x2e79726f };
-const char CD3DApp_DisplayErrorMsg_3dd87c[28] = "Generic application error.";
 const int g_ErrPcxFormat = 50;
 

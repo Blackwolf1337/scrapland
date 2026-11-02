@@ -142,6 +142,7 @@ byte FX_IsVisible(float x, float y, float z, float radius, float maxDist, const 
 	return 1;
 }
 
+extern uint32_t FX_ItemBlink_430b44[9];
 void FX_ItemBlink(cEntity *e) {
 	CGameModel *m = Obj_Vtbl(e)->GetModel(e);
 
@@ -165,7 +166,7 @@ void FX_ItemBlink(cEntity *e) {
 	float r = CGameModel_Radius(m) * 4.0f;
 	sp->birthRate = 0;
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_PTR(FX_ItemBlink_430b44, 0));
+	CGameParticles_SetColorRamp(sp, FX_ItemBlink_430b44);
 	float life = cTimer_GetSpeed(&g_pWorld->timer) * 0.12f;
 	sp->sizeLife = 0.4f;
 	sp->sizeEnd = r;

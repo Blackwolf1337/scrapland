@@ -75,7 +75,7 @@ byte CGameParticles_IsVisible(const CGameParticles *self);
 void CGameParticles_SetVisible(CGameParticles *self, byte on);
 void CGameParticles_SetColorRampOn(CGameParticles *self, byte on);
 void CGameParticles_SetSparksOn(CGameParticles *self, byte on);
-void CGameParticles_SetColorRamp(CGameParticles *self, uint32_t *ramp);
+void CGameParticles_SetColorRamp(CGameParticles *self, const uint32_t *ramp);
 void CGameParticles_SetEmitPos(CGameParticles *self, vec3_t *pos, byte n);
 void CGameParticles_EmitN(CGameParticles *self, int n, byte force);
 void CGameParticles_EmitM(CGameParticles *self, int n, byte force, const matrix_t *m);

@@ -534,4 +534,5 @@ PyObject *SScorer_PreloadTexture(PyObject *self, PyObject *args) {
 	return Py_ReturnNone();
 }
 
+extern PyMethodDef SScorer_methods[34];
 SD_PY_MODULE(SScorer, 0x42ec68)

@@ -192,4 +192,5 @@ PyObject *SVec_NormAng(PyObject *self, PyObject *args) {
 	return Py_BuildValue("d", Rad2Deg((double)NormAng((float)Deg2Rad(ang))));
 }
 
+extern PyMethodDef SVec_methods[13];
 SD_PY_MODULE(SVec, 0x42fc80)

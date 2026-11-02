@@ -13,33 +13,6 @@
 #include "scrap/worldlogic.h"
 #include "scrap/worldparts.h"
 
-/*
- * The globals and tables of src/game/Global/Globals*.c, declared inside the macro, so no header lists them. Each
- * define that uses them is named like the object; the names are pasted, never expanded.
- *	GAME_GLOBAL(type, name)			the object name of type (an lvalue)
- *	GAME_ARRAY(type, name)			the first element of the array name of type (type *)
- *	GAME_GLOBAL_IN(type, owner, off)	a view of type at off in the object owner: a field of a struct, an
- *						element of a table, another type at the same place (an lvalue)
- *	GAME_ARRAY_IN(type, owner, off)		the same as a pointer (type *)
- *	GAME_PTR(owner, off)			the address off in the object owner (void *)
- */
-#define SD_REF_(id, label) \
-	({ \
-		extern char id[] __asm__(label); \
-		(void *)id; \
-	})
-/* a cGVar or cGVarFunction object by its name, without a declaration */
-#define GAME_GVAR(name) ((cGVar *)SD_REF_(sd_##name, SD_CPFX #name))
-#define GAME_GVARFUNC(name) ((cGVarFunction *)SD_REF_(sd_##name, SD_CPFX #name))
-#define GAME_GLOBAL(type, name) \
-	(*({ \
-		extern typeof(type) sd_obj_##name __asm__(SD_CPFX #name); \
-		&sd_obj_##name; \
-	}))
-#define GAME_ARRAY(type, name) ((typeof(type) *)SD_REF_(sd_##name, SD_CPFX #name))
-#define GAME_GLOBAL_IN(type, owner, off) (*(typeof(type) *)((char *)SD_REF_(sd_##owner, SD_CPFX #owner) + (off)))
-#define GAME_ARRAY_IN(type, owner, off) ((typeof(type) *)((char *)SD_REF_(sd_##owner, SD_CPFX #owner) + (off)))
-#define GAME_PTR(owner, off) ((void *)((char *)SD_REF_(sd_##owner, SD_CPFX #owner) + (off)))
 
 
 /* the one "" of the game: char * fields hold it for "no string", the code compares with it by address (never

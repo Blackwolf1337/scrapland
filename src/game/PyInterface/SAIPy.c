@@ -811,4 +811,5 @@ PyObject *SAI_GetOD(PyObject *self, PyObject *args) {
 	return (PyObject *)g_AppPyOne;
 }
 
+extern PyMethodDef SAI_methods[23];
 SD_PY_MODULE(SAI, 0x42a488)

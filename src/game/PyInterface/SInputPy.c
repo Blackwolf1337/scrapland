@@ -268,4 +268,5 @@ PyObject *SInput_CheckPadButton(PyObject *self, PyObject *args) {
 	return Py_BuildValue("i", 0);
 }
 
+extern PyMethodDef SInput_methods[21];
 SD_PY_MODULE(SInput, 0x42d790)

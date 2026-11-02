@@ -318,7 +318,7 @@ CParticleSystem *ParticleSystem_FromNode(CNode3D *node, CIniFile *ini) {
 	return CParticleSystem_ctorParams(p, node, type, scale, alpha, posList ? pos : NULL, ini);
 }
 
-void CParticleSystem_SetColorRamp(CParticleSystem *self, uint32_t *ramp) {
+void CParticleSystem_SetColorRamp(CParticleSystem *self, const uint32_t *ramp) {
 	self->colorRamp = ramp;
 }
 

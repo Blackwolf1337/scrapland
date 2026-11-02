@@ -205,7 +205,12 @@ void MemPools_PrintAll(void);
 
 /* the objects of the lines: SI_REF(name) its address,
  * through the assembler name, so a header macro of the same name does not get in the way */
-#define SI_REF(name) SD_REF_(sd_##name, SD_CPFX #name)
+/* an object by its name, without a declaration */
+#define SI_REF(name) \
+	({ \
+		extern char sd_##name[] __asm__(SD_CPFX #name); \
+		(void *)sd_##name; \
+	})
 #define SI_OBJ(p) (p)
 #define SI_GVAR(p) ((cGVar *)(p))
 #define SI_STR(s) (s)

@@ -1493,6 +1493,7 @@ static void GM_NewBolt(cObjElementFXGearMissile *self, int i, const vec3_t *pos,
 }
 
 /* the puffs of the ball and the sparks behind it */
+extern uint32_t GM_Puff_430788[9];
 static void GM_Puffs(cObjElementFXGearMissile *self, const vec3_t *pos) {
 	CGameParticles *p = &self->particles;
 	CGameParticles *sp = &self->sparks;
@@ -1511,7 +1512,7 @@ static void GM_Puffs(cObjElementFXGearMissile *self, const vec3_t *pos) {
 	p->sizeEnd = FXA_Rand(15.0, 80.0);
 	CGameParticles_Apply(p);
 	CGameParticles_SetColorRampOn(p, 1);
-	CGameParticles_SetColorRamp(p, GAME_PTR(FXGEAR_PUFF_RAMPS, 36));
+	CGameParticles_SetColorRamp(p, &FXGEAR_PUFF_RAMPS[9]);
 	CGameParticles_EmitN(p, 1, 0);
 
 	p->birthRate = 0;
@@ -1576,7 +1577,7 @@ static void GM_Puffs(cObjElementFXGearMissile *self, const vec3_t *pos) {
 		sp->bounce = 1;
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, GAME_PTR(GM_Puff_430788, 0));
+		CGameParticles_SetColorRamp(sp, GM_Puff_430788);
 		CGameParticles_EmitN(sp, 1, 0);
 	}
 	CGameParticles_SetSparksOn(sp, 0);
@@ -1627,6 +1628,7 @@ static void GM_Fade(cObjElementFXGearMissile *self, float q) {
 }
 
 /* the sparks of the ball while it fades */
+extern uint32_t cObjElementFXGearMissile_Update_4306b0[9];
 static void GM_FadeSparks(cObjElementFXGearMissile *self, cDebris *debris, float dt) {
 	CGameParticles *p = &self->particles;
 	vec3_t d;
@@ -1634,7 +1636,7 @@ static void GM_FadeSparks(cObjElementFXGearMissile *self, cDebris *debris, float
 	self->emitTime = 0.0f;
 	CGameParticles_SetSparksOn(p, 1);
 	CGameParticles_SetColorRampOn(p, 1);
-	CGameParticles_SetColorRamp(p, GAME_PTR(cObjElementFXGearMissile_Update_4306b0, 0));
+	CGameParticles_SetColorRamp(p, cObjElementFXGearMissile_Update_4306b0);
 	for (int it = 0; it < 8; it++) {
 		FX_RandomDir(&d);
 		p->birthRate = 0;
@@ -1921,7 +1923,7 @@ void cObjElementFXBettyAttack_Emit(cObjElementFXBettyAttack *self, float x, floa
 	sp->spriteEnd = 5;
 	sp->lifeTime = life;
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXBettyAttack_Emit_4307d0, 0));
+	CGameParticles_SetColorRamp(sp, cObjElementFXBettyAttack_Emit_4307d0);
 	float a = -3.14159274f;
 	do {
 		float b = -3.14159274f;
@@ -2218,6 +2220,7 @@ static void FXA_Brake(CGameParticles *sp, float k) {
 }
 
 extern uint32_t cObjElementFXPoliceGearConversion_Start_4305d8[27];
+extern uint32_t cObjElementFXPoliceGearConversion_Start_430644[9];
 void cObjElementFXPoliceGearConversion_Update(cObjElementFX *base, cDebris *d, float dt) {
 	cObjElementFXPoliceGearConversion *self = (cObjElementFXPoliceGearConversion *)base;
 	vec3_t p, rot, v, dir, o, ang, tmp, verts[6];
@@ -2482,7 +2485,7 @@ void cObjElementFXPoliceGearConversion_Update(cObjElementFX *base, cDebris *d, f
 					float len = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 					rad = (len + rad) * 0.5f;
 				}
-				CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXPoliceGearConversion_Start_430644, 0));
+				CGameParticles_SetColorRamp(sp, cObjElementFXPoliceGearConversion_Start_430644);
 				FXA_StillAt(sp, c.x, c.y, c.z);
 				sp->sizeIni = FXA_Rand(0.19999998807907104, 0.69999998807907104) * rad;
 				sp->sizeEnd = FXA_Rand(1.5, 7.5) * rad;
@@ -2951,6 +2954,7 @@ void cObjElementFXDTritusAttack_Update(cObjElementFX *base, cDebris *d, float dt
 
 #define FXA_RAMP_POLICESTEAL 0x4307ac
 
+extern uint32_t cObjElementFXBankerSteal_Update_4307ac[9];
 void cObjElementFXPoliceSteal_Update(cObjElementFX *base, cDebris *d, float dt) {
 	cObjElementFXPoliceSteal *self = (cObjElementFXPoliceSteal *)base;
 	vec3_t tmp, a, b, v, ang, dir;
@@ -3015,7 +3019,7 @@ void cObjElementFXPoliceSteal_Update(cObjElementFX *base, cDebris *d, float dt) 
 	sp->spriteEnd = sprite + 8;
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXBankerSteal_Update_4307ac, 0));
+	CGameParticles_SetColorRamp(sp, cObjElementFXBankerSteal_Update_4307ac);
 	CGameParticles_EmitN(sp, 1, 0);
 }
 
@@ -3302,7 +3306,7 @@ void cObjElementFXBankerSteal_Update(cObjElementFX *base, cDebris *d, float dt) 
 	sp->spriteEnd = sprite + 8;
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXBankerSteal_Update_4307ac, 0));
+	CGameParticles_SetColorRamp(sp, cObjElementFXBankerSteal_Update_4307ac);
 	CGameParticles_EmitN(sp, 1, 0);
 	self->toggle ^= 1;
 	if (self->toggle) {
@@ -4026,7 +4030,7 @@ static void FXSellLife_Glow(CGameParticles *sp) {
 	sp->spriteIni = sprite;
 	sp->spriteEnd = sprite;
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_PTR(FXA_SELLLIFE_RAMPS, 0));
+	CGameParticles_SetColorRamp(sp, FXA_SELLLIFE_RAMPS);
 	CGameParticles_Apply(sp);
 	CGameParticles_EmitN(sp, 1, 0);
 }
@@ -4220,7 +4224,7 @@ void cObjElementFXBishopSellLife_Update(cObjElementFX *base, cDebris *d, float d
 			glow->spriteEnd = 5;
 			glow->rotVar = rv;
 			CGameParticles_SetColorRampOn(glow, 1);
-			CGameParticles_SetColorRamp(glow, GAME_PTR(FXA_SELLLIFE_RAMPS, 0));
+			CGameParticles_SetColorRamp(glow, FXA_SELLLIFE_RAMPS);
 			CGameParticles_Apply(glow);
 			CGameParticles_EmitN(glow, 1, 0);
 			code->birthRate = 0;

@@ -446,6 +446,7 @@ byte cObjElementFXSputnik_Alive(cObjElementFX *base, cDebris *d, cDebrisSys *sys
 
 /* ---- Update (vf01) ---- */
 
+extern uint32_t cObjElementFXMoneyTransfer_Update_430240[9];
 void cObjElementFXMoneyTransfer_Update(cObjElementFX *base, cDebris *d, float dt) {
 	cObjElementFXMoneyTransfer *self = (cObjElementFXMoneyTransfer *)base;
 	vec3_t a, b, mid, dir;
@@ -504,7 +505,7 @@ void cObjElementFXMoneyTransfer_Update(cObjElementFX *base, cDebris *d, float dt
 	sp->spriteEnd = sprite + 8;
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXMoneyTransfer_Update_430240, 0));
+	CGameParticles_SetColorRamp(sp, cObjElementFXMoneyTransfer_Update_430240);
 	CGameParticles_EmitN(sp, 1, 0);
 }
 
@@ -681,7 +682,7 @@ void cObjElementFXCharacterConversion_Update(cObjElementFX *base, cDebris *d, fl
 				sp2->spriteEnd = sprite;
 				CGameParticles_Apply(sp2);
 				CGameParticles_SetColorRampOn(sp2, 1);
-				CGameParticles_SetColorRamp(sp2, GAME_PTR(cObjElementFXCharacterConversion_Emit_430464, 0));
+				CGameParticles_SetColorRamp(sp2, cObjElementFXCharacterConversion_Emit_430464);
 				CGameParticles_EmitDt(sp2, 1, 0, FXC_Rand(0.10000000149011612, 0.0));
 				sp->birthRate = 0;
 				FXConversion_Spark(sp, &verts[j], 4.0, 2.0, q, 1.2999999523162842);
@@ -725,6 +726,8 @@ static void FXC_SetStill(CGameParticles *sp, const vec3_t *p) {
 	sp->initAccMax = sp->initAccMin;
 }
 
+extern uint32_t cObjElementFXMaintenanceWork_Update_430520[18];
+extern uint32_t cObjElementFXMaintenanceWork_Update_430568[28];
 void cObjElementFXMaintenanceWork_Update(cObjElementFX *base, cDebris *d, float dt) {
 	cObjElementFXMaintenanceWork *self = (cObjElementFXMaintenanceWork *)base;
 	vec3_t laserPos, c, diff, n, dir, rot;
@@ -796,7 +799,7 @@ void cObjElementFXMaintenanceWork_Update(cObjElementFX *base, cDebris *d, float 
 	/* the flashes and sparks at the ship */
 	sp->birthRate = 0;
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXMaintenanceWork_Update_430520, 0));
+	CGameParticles_SetColorRamp(sp, cObjElementFXMaintenanceWork_Update_430520);
 	FXC_SetStill(sp, &c);
 	sp->sizeIni = FXC_Rand(10.0, 30.0);
 	sp->sizeEnd = FXC_Rand(20.0, 240.0);
@@ -807,7 +810,7 @@ void cObjElementFXMaintenanceWork_Update(cObjElementFX *base, cDebris *d, float 
 	sp->lifeTime = Float_MinSS(d->life - dt, lt);
 	CGameParticles_Apply(sp);
 	CGameParticles_EmitN(sp, 1, 1);
-	CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXMaintenanceWork_Update_430520, 0));
+	CGameParticles_SetColorRamp(sp, cObjElementFXMaintenanceWork_Update_430520);
 	FXC_SetStill(sp, &c);
 	sp->sizeIni = FXC_Rand(2.0, 4.0);
 	sp->sizeEnd = FXC_Rand(5.0, 45.0);
@@ -821,7 +824,7 @@ void cObjElementFXMaintenanceWork_Update(cObjElementFX *base, cDebris *d, float 
 	int sparks = (int)FXC_Rand(5.0, 3.0);
 	CGameParticles_SetSparksOn(sp, 1);
 	for (; sparks > 0; sparks--) {
-		CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXMaintenanceWork_Update_430568, 0));
+		CGameParticles_SetColorRamp(sp, cObjElementFXMaintenanceWork_Update_430568);
 		float r1 = (float)(FXC_Rnd() * 1.2566370964050293 - 0.6283185482025146);
 		float r2 = (float)(FXC_Rnd() * 1.2566370964050293 - 0.6283185482025146);
 		rot.x = (float)(FXC_Rnd() * 1.2566370964050293 - 0.6283185482025146);
@@ -1187,7 +1190,7 @@ void cObjElementFXCharacterTeleport_Update(cObjElementFX *base, cDebris *d, floa
 			sp->spriteIni = 5;
 			sp->spriteEnd = 5;
 			CGameParticles_SetColorRampOn(sp, 1);
-			CGameParticles_SetColorRamp(sp, GAME_PTR(FXC_TELEPORT_RAMPS, 72));
+			CGameParticles_SetColorRamp(sp, &FXC_TELEPORT_RAMPS[18]);
 			CGameParticles_Apply(sp);
 			CGameParticles_EmitDt(sp, 1, 0, lt);
 		}
@@ -1894,6 +1897,8 @@ static void FXSputnik_SetAcc(CGameParticles *sp) {
 	sp->initAccMax = sp->initAccMin;
 }
 
+extern uint32_t cObjElementFXSputnik_Update_4303b0[9];
+extern uint32_t cObjElementFXSputnik_Update_4303d4[9];
 void cObjElementFXSputnik_Update(cObjElementFX *base, cDebris *d, float dt) {
 	cObjElementFXSputnik *self = (cObjElementFXSputnik *)base;
 	vec3_t pos, rot, dir;
@@ -1967,7 +1972,7 @@ void cObjElementFXSputnik_Update(cObjElementFX *base, cDebris *d, float dt) {
 	sp->spriteIni = 5;
 	sp->spriteEnd = 5;
 	sp->rotEnd = r;
-	CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXSputnik_Update_4303d4, 0));
+	CGameParticles_SetColorRamp(sp, cObjElementFXSputnik_Update_4303d4);
 	CGameParticles_Apply(sp);
 	CGameParticles_EmitN(sp, 1, 0);
 	/* three sparks */
@@ -1995,7 +2000,7 @@ void cObjElementFXSputnik_Update(cObjElementFX *base, cDebris *d, float dt) {
 		byte sprite = (crt_rand() & 1) ? 9 : 15;
 		sp->spriteIni = sprite;
 		sp->spriteEnd = sprite;
-		CGameParticles_SetColorRamp(sp, GAME_PTR(cObjElementFXSputnik_Update_4303b0, 0));
+		CGameParticles_SetColorRamp(sp, cObjElementFXSputnik_Update_4303b0);
 		CGameParticles_Apply(sp);
 		CGameParticles_EmitN(sp, 1, 0);
 	}
@@ -2340,6 +2345,7 @@ static cDebris *FXC_IdleDebris(cDebrisSys *sys, const vec3_t *pos, float life) {
 	return d;
 }
 
+extern uint32_t FX_CharacterBlaBliBla_430318[10];
 void FX_CharacterBlaBliBla(cAbstractFile *params) {
 	char name[128], name2[128];
 	int unused;
@@ -2409,10 +2415,11 @@ void FX_CharacterBlaBliBla(cAbstractFile *params) {
 	sp->spriteEnd = sp->spriteIni;
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_PTR(FX_CharacterBlaBliBla_430318, 0));
+	CGameParticles_SetColorRamp(sp, FX_CharacterBlaBliBla_430318);
 	CGameParticles_EmitN(sp, 1, 0);
 }
 
+extern uint32_t FX_CharacterDazed_430264[9];
 void FX_CharacterDazed(cAbstractFile *params) {
 	char name[128], name2[128];
 	float time;
@@ -2473,7 +2480,7 @@ void FX_CharacterDazed(cAbstractFile *params) {
 		sp->rotVar = FXC_Rand(0.39269909262657166, 0.0);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, GAME_PTR(FX_CharacterDazed_430264, 0));
+		CGameParticles_SetColorRamp(sp, FX_CharacterDazed_430264);
 		CGameParticles_EmitDt(sp, 1, 0, (time / (float)n) * (float)k);
 	}
 }

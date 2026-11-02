@@ -228,8 +228,10 @@ extern int g_WorldSet;
 /* the whole viewport (g_Viewport is the one of the current view) */
 extern uint32_t g_ViewportFull[6];
 extern byte g_D3DOn;
-#define g_MatDefault ((void *)GAME_PTR(CMaterial_MatDefault, 0))
-#define g_MatLine ((void *)GAME_PTR(CMaterial_MatLine, 0))	/* the material of the debug lines */
+extern CMaterial CMaterial_MatDefault;
+#define g_MatDefault ((void *)&CMaterial_MatDefault)
+extern CMaterial CMaterial_MatLine;
+#define g_MatLine ((void *)&CMaterial_MatLine)	/* the material of the debug lines */
 extern cGVar GVar_R_ShowSphereVis;
 #define g_ShowSphereVis (GVar_R_ShowSphereVis.value.i)	/* R_ShowSphereVis 0, 1, 2 */
 extern char g_VersionStr[64];	/* 0x40 */

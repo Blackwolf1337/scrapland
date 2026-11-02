@@ -611,7 +611,23 @@ void Engine_GetScene(CEngineApp *self) {
 enum { INI_BOOL, INI_LONG, INI_FLOAT, INI_TEXT };
 #define INI_TEXT_SIZE 0x40
 
+extern int g_MouseExcl;		/* [dinput] raton_excl */
+extern int g_Sharpen;		/* [video] Sharpen of m3d.ini */
 /* the ini name (in dir, NULL for the game directory) into the variables */
+extern float engineIni_431bb0;
+extern uint32_t engineIni_431bb4;
+extern uint32_t engineIni_431bb8;
+extern uint32_t engineIni_431bbc;
+extern uint32_t engineIni_431bc8;
+extern uint32_t engineIni_431bd0;
+extern uint32_t engineIni_431cf8;
+extern uint32_t engineIni_431d74;
+extern uint32_t engineIni_4a8f28;
+extern uint32_t engineIni_4a8f30[16];
+extern int g_TexErrDif;
+extern int g_TextBPP;
+extern int g_TextOpBPP;
+extern int g_UseTextures;
 void Engine_LoadVarsIni(const char *name, const char *dir) {
 	const struct {
 		byte kind;
@@ -619,44 +635,44 @@ void Engine_LoadVarsIni(const char *name, const char *dir) {
 		const char *key;
 		void *var;
 	} engineIni[] = {
-		{ INI_BOOL, "video", "TexPersp", GAME_PTR(engineIni_431bd0, 0) },
-		{ INI_BOOL, "video", "Tramas", GAME_PTR(g_Dither, 0) },
-		{ INI_BOOL, "video", "Filtrado", GAME_PTR(engineIni_431bc8, 0) },
-		{ INI_BOOL, "video", "UsarTexturas", GAME_PTR(g_UseTextures, 0) },
-		{ INI_BOOL, "video", "UsarEnvMap", GAME_PTR(g_UseEnvMap, 0) },
-		{ INI_BOOL, "video", "UsarHWEnvMap", GAME_PTR(g_UseHWEnvMap, 0) },
-		{ INI_BOOL, "video", "UsarBumpMap", GAME_PTR(g_UseBumpMap, 0) },
-		{ INI_BOOL, "video", "UsarGlowMap", GAME_PTR(g_UseGlowMap, 0) },
-		{ INI_BOOL, "video", "DiffuseMod4x", GAME_PTR(g_DiffuseMod4x, 0) },
-		{ INI_BOOL, "video", "Sharpen", GAME_PTR(g_Sharpen, 0) },
-		{ INI_BOOL, "video", "ErrDif", GAME_PTR(g_TexErrDif, 0) },
-		{ INI_LONG, "video", "TextBPP", GAME_PTR(g_TextBPP, 0) },
-		{ INI_LONG, "video", "TextOpBPP", GAME_PTR(g_TextOpBPP, 0) },
-		{ INI_BOOL, "video", "gamma2x", GAME_PTR(g_Gamma2x, 0) },
-		{ INI_BOOL, "video", "sobredib", GAME_PTR(g_Overdraw, 0) },
-		{ INI_BOOL, "video", "tricolis", GAME_PTR(g_ShowCollision, 0) },
-		{ INI_BOOL, "video", "bufferw", GAME_PTR(g_EngineIni7c, 0) },
-		{ INI_FLOAT, "video", "limitaFPS", GAME_PTR(g_LimitFps, 0) },
-		{ INI_FLOAT, "video", "despMipmap", GAME_PTR(g_MipmapBias2, 0) },
-		{ INI_BOOL, "video", "LinearMipmap", GAME_PTR(g_EngineIni88, 0) },
-		{ INI_LONG, "video", "MaxAnisoFlt", GAME_PTR(engineIni_431d74, 0) },
-		{ INI_BOOL, "video", "ConsolaWnd", GAME_PTR(g_DbgConWindow, 0) },
-		{ INI_BOOL, "video", "ConsolaTxt", GAME_PTR(g_DbgConStd, 0) },
-		{ INI_BOOL, "video", "IlumSpec", GAME_PTR(g_EngineIni80, 0) },
-		{ INI_LONG, "video", "Stencil", GAME_PTR(g_EngineIni84, 0) },
-		{ INI_LONG, "video", "Depth", GAME_PTR(g_EngineDef1cf4, 0) },
-		{ INI_FLOAT, "sombras", "sombras", GAME_PTR(engineIni_431bb0, 0) },
-		{ INI_LONG, "sombras", "objeto_ini", GAME_PTR(engineIni_4a8f28, 0) },
-		{ INI_LONG, "sombras", "objeto_fin", GAME_PTR(engineIni_431bb4, 0) },
-		{ INI_BOOL, "sombras", "modif_vnorm", GAME_PTR(engineIni_431bb8, 0) },
-		{ INI_BOOL, "sombras", "proc_objetos", GAME_PTR(engineIni_431bbc, 0) },
-		{ INI_TEXT, "sombras", "nombre_luz", GAME_PTR(engineIni_4a8f30, 0) },
-		{ INI_BOOL, "dinput", "raton_excl", GAME_PTR(g_MouseExcl, 0) },
-		{ INI_BOOL, "dinput", "usar_di", GAME_PTR(engineIni_431cf8, 0) },
-		{ INI_BOOL, "dinput", "raton_inv_x", GAME_PTR(g_InputInvX, 0) },
-		{ INI_BOOL, "dinput", "raton_inv_y", GAME_PTR(g_InputInvY, 0) },
-		{ INI_BOOL, "dinput", "raton_inv_z", GAME_PTR(g_InputInvZ, 0) },
-		{ INI_LONG, "suelo", "suelo_caras_cuadr", GAME_PTR(g_GroundTrisPerNode, 0) },
+		{ INI_BOOL, "video", "TexPersp", &engineIni_431bd0 },
+		{ INI_BOOL, "video", "Tramas", &g_Dither },
+		{ INI_BOOL, "video", "Filtrado", &engineIni_431bc8 },
+		{ INI_BOOL, "video", "UsarTexturas", &g_UseTextures },
+		{ INI_BOOL, "video", "UsarEnvMap", &g_UseEnvMap },
+		{ INI_BOOL, "video", "UsarHWEnvMap", &g_UseHWEnvMap },
+		{ INI_BOOL, "video", "UsarBumpMap", &g_UseBumpMap },
+		{ INI_BOOL, "video", "UsarGlowMap", &g_UseGlowMap },
+		{ INI_BOOL, "video", "DiffuseMod4x", &g_DiffuseMod4x },
+		{ INI_BOOL, "video", "Sharpen", &g_Sharpen },
+		{ INI_BOOL, "video", "ErrDif", &g_TexErrDif },
+		{ INI_LONG, "video", "TextBPP", &g_TextBPP },
+		{ INI_LONG, "video", "TextOpBPP", &g_TextOpBPP },
+		{ INI_BOOL, "video", "gamma2x", &g_Gamma2x },
+		{ INI_BOOL, "video", "sobredib", &g_Overdraw },
+		{ INI_BOOL, "video", "tricolis", &g_ShowCollision },
+		{ INI_BOOL, "video", "bufferw", &g_EngineIni7c },
+		{ INI_FLOAT, "video", "limitaFPS", &g_LimitFps },
+		{ INI_FLOAT, "video", "despMipmap", &g_MipmapBias2 },
+		{ INI_BOOL, "video", "LinearMipmap", &g_EngineIni88 },
+		{ INI_LONG, "video", "MaxAnisoFlt", &engineIni_431d74 },
+		{ INI_BOOL, "video", "ConsolaWnd", &g_DbgConWindow },
+		{ INI_BOOL, "video", "ConsolaTxt", &g_DbgConStd },
+		{ INI_BOOL, "video", "IlumSpec", &g_EngineIni80 },
+		{ INI_LONG, "video", "Stencil", &g_EngineIni84 },
+		{ INI_LONG, "video", "Depth", &g_EngineDef1cf4 },
+		{ INI_FLOAT, "sombras", "sombras", &engineIni_431bb0 },
+		{ INI_LONG, "sombras", "objeto_ini", &engineIni_4a8f28 },
+		{ INI_LONG, "sombras", "objeto_fin", &engineIni_431bb4 },
+		{ INI_BOOL, "sombras", "modif_vnorm", &engineIni_431bb8 },
+		{ INI_BOOL, "sombras", "proc_objetos", &engineIni_431bbc },
+		{ INI_TEXT, "sombras", "nombre_luz", engineIni_4a8f30 },
+		{ INI_BOOL, "dinput", "raton_excl", &g_MouseExcl },
+		{ INI_BOOL, "dinput", "usar_di", &engineIni_431cf8 },
+		{ INI_BOOL, "dinput", "raton_inv_x", &g_InputInvX },
+		{ INI_BOOL, "dinput", "raton_inv_y", &g_InputInvY },
+		{ INI_BOOL, "dinput", "raton_inv_z", &g_InputInvZ },
+		{ INI_LONG, "suelo", "suelo_caras_cuadr", &g_GroundTrisPerNode },
 	};
 	char path[MAX_FILEPATH];
 	cDataFile *dat;
@@ -815,8 +831,6 @@ void E3D_Command(char *cmd) {
 }
 
 extern byte g_Engine4af7d4;
-extern int g_Sharpen;		/* [video] Sharpen of m3d.ini */
-extern int g_MouseExcl;		/* [dinput] raton_excl */
 #define ENGINE_MAXCAMERAS 0x14
 #define D3DRS_88 0x88
 #define D3DRS_89 0x89
