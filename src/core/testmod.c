@@ -398,6 +398,12 @@ static PyObject *SDTest_Call(PyObject *self, PyObject *args) {
 	char outKind[MAX_OUT];
 	int nOut = 0;
 
+#if !SD_32BIT
+	/* the arguments go as 32-bit words (floats too): only the i386 calling conventions take them */
+	PyErr_SetString(PyExc_RuntimeError, "SDTest.Call: 32-bit builds only");
+	return NULL;
+#endif
+
 	if (!TestMod_ParseRva(PyTuple_GetItem(args, 0), &rva) || !PyArg_Parse(PyTuple_GetItem(args, 1), "s", &sig)) {
 		return NULL;
 	}
@@ -705,6 +711,11 @@ static PyObject *SDTest_D3DLog(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "i", &on)) {
 		return NULL;
 	}
+#if !SD_32BIT
+	/* the logged calls keep their pointers as 32-bit words */
+	PyErr_SetString(PyExc_RuntimeError, "SDTest.D3DLog: 32-bit builds only");
+	return NULL;
+#endif
 	D3DLog_Set(on ? SDTest_Collect : NULL);
 	Py_INCREF(Py_None);
 	return Py_None;
