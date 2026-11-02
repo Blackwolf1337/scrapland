@@ -105,9 +105,12 @@ void Table_WriteC(CFileIO *f, CTable *t) {
 	Table_Write(f, t, 0xc);
 }
 
-static void Table_DeleteObjs(void **p) {
+/* the floor nodes: an array of CNode3D after its count */
+static void Table_DeleteObjs(void *p) {
+	ObjRef *first = p;
+
 	if (((int *)p)[-1]) {
-		((objDelete_t)(*(void ***)p)[0])(p, 3);
+		first->vftable->Delete(first, 3);
 	} else {
 		operator_delete_array((int *)p - 1);
 	}
@@ -186,20 +189,21 @@ CCollideQuad *CCollideQuad_Delete(CCollideQuad *self, uint32_t flags) {
 }
 
 /* the vector deleting destructor of the floor nodes (CNode3D, 0xfc bytes) */
-void *CNode3D_VecDelete(void *self, uint32_t flags) {
+ObjRef *CNode3D_VecDelete(ObjRef *base, byte flags) {
+	void *self = (void *)base;
 	if (flags & 2) {
 		uint32_t *mem = (uint32_t *)self - 1;
 		crt_eh_vector_dtor(self, sizeof(CNode3D), *mem, (void *)CNode3D_dtor);
 		if (flags & 1) {
 			operator_delete_array(mem);
 		}
-		return mem;
+		return (ObjRef *)mem;
 	}
 	CNode3D_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CNode3D));
 	}
-	return self;
+	return base;
 }
 
 CHeights *CHeights_ctor(CHeights *self) {
@@ -1650,7 +1654,7 @@ void CGround_BuildSectorMesh(CGround *self, CCollideMesh *mesh, int mode, uint32
 			d3d->vftable->Delete(&d3d->base, 1);
 		}
 	}
-	((objDelete_t)(*(void ***)m)[0])(m, 1);
+	m->vftable->Delete(&m->base, 1);
 }
 
 void CGround_CreateQuadCollision(CGround *self) {

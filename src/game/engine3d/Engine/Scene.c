@@ -103,12 +103,13 @@ void CScene_Shared(CScene *self) {
 	(void)self;
 }
 
-CScene *CScene_Delete(CScene *self, byte flags) {
+ObjRef *CScene_Delete(ObjRef *base, byte flags) {
+	CScene *self = (CScene *)base;
 	CScene_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(CScene));
 	}
-	return self;
+	return base;
 }
 
 void CScene_Msg(CScene *self, int msg, int a, int b, int c, int d) {
@@ -455,7 +456,7 @@ void CScene_DeleteNodes(CScene *self) {
 	while (self->Node3D) {
 		CNode3D *n = self->Node3D;
 		CScene_RemoveNode(self, n);
-		((objDelete_t)n->vftable[0])(n, 1);
+		n->vftable->Delete(&n->ref, 1);
 	}
 }
 
@@ -612,7 +613,7 @@ void CScene_DeleteEmpty(CScene *self, uint32_t class, byte bRefs, byte flagged) 
 							n->parent->name, n->flags);
 						deleted = 1;
 						CScene_RemoveNode(self, n);
-						((objDelete_t)n->vftable[0])(n, 1);
+						n->vftable->Delete(&n->ref, 1);
 					} else {
 						E3D_LogInfo(g_FileLog, "DEL_NODE: Node NOT deleted [Bone]: %s [parent: %s] [f:%08X]",
 							n->name, n->parent->name, n->flags);
@@ -745,3 +746,8 @@ void CScene_PrecalcIllum(CScene *self, byte noLights, byte visible) {
 	}
 	E3D_DebugPrintf("  [%.2f seg.]", Scene_Seconds(t0));
 }
+
+/* the vtable of CScene */
+const ObjRefVtbl CScene_vftable = {
+	.Delete = CScene_Delete,
+};

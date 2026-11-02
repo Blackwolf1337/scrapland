@@ -1024,7 +1024,8 @@ cShipGroupData *cShipGroupData_ctor(cShipGroupData *self, const char *list);
 void cShipGroupData_SetLair(cShipGroupData *self, const char *name, const vec3_t *pos);
 void cShipGroupData_Think(cShipGroupData *self);
 
-#define CLOGICCONTROL_VFTABLE GAME_VFTABLE(cLogicControl_vftable)
+extern const cLogicControlVtbl cLogicControl_vftable;
+#define CLOGICCONTROL_VFTABLE (&cLogicControl_vftable)
 extern cGVar GVar_RemainTalkTime;
 #define g_RemainTalkTime (GVar_RemainTalkTime.value.f)
 extern cGVar GVar_TimeBetweeenTaunts;

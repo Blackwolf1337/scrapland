@@ -523,7 +523,7 @@ void CNodesWorldSup_BuildGrid(CNodesWorld *self) {
 	if (grid) {
 		grid = NWGrid_ctor(grid, &top, &self->sup.min, nx, (int)ny, (int)nz);
 	}
-	self->sup.grid = (cNWGrid *)grid;
+	self->sup.grid = grid;
 	CHECK(self->sup.grid != NULL);
 	for (int i = 0; i < self->sup.numNodes; i++) {
 		cNWNode *node = &self->sup.nodes[i];

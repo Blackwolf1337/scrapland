@@ -88,14 +88,13 @@ static void D3D_SetRenderState(uint32_t state, uint32_t value) {
 	Rd_DevSetRenderState(dev, state, value);
 }
 
-typedef void(*nodeDelete_t)(CNode3D *self, int flags);
 
 static void Light_Release(CNode3D **slot) {
 	if (*slot) {
 		CNode3D *old = *slot;
 		old->Refs--;
 		if (!old->Refs && old) {
-			((nodeDelete_t)old->vftable[0])(old, 1);
+			old->vftable->Delete(&old->ref, 1);
 		}
 		*slot = NULL;
 	}

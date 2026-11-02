@@ -519,7 +519,7 @@ static void World_TakeDummies(CWorld *self) {
 				void *p = operator_new(sizeof(WorldDummy));
 				CWorld_AddDummy(self, p ? WorldDummy_ctorNode(p, n) : NULL);
 				CScene_RemoveNode(self->GroundScale, n);
-				((objDelete_t)n->vftable[0])(n, 1);
+				n->vftable->Delete(&n->ref, 1);
 			} else {
 				Con_FatalErrorf("Only non-ref dummies can be named DM_*\n\nNode: %s\n", n->name);
 			}

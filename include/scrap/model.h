@@ -16,7 +16,6 @@
 #include "scrap/groundportal.h"
 #include "scrap/table.h"
 
-#define CMODEL_VFTABLE GAME_VFTABLE(CModel_vftable)
 #define MAX_MODELS_RENDER 1024
 extern byte g_ModelsOn;	/* RenderModels: the models are drawn */
 
@@ -53,8 +52,14 @@ SD_SIZE(CLod, 8);
 /* called before (after 0) and after (1) the model is drawn */
 typedef void (*modelCallback_t)(struct CModel *m, int after, void *arg, void *arg2);
 
+typedef struct CModelVtbl {
+	struct CModel *(*Delete)(struct CModel *self, byte flags);	/* 0x00 */
+} CModelVtbl;
+extern const CModelVtbl CModel_vftable;
+#define CMODEL_VFTABLE (&CModel_vftable)
+
 typedef struct CModel {
-	void *vftable;			/* 0x000 [0] the deleting destructor */
+	const CModelVtbl *vftable;			/* 0x000 [0] the deleting destructor */
 	char *name;			/* 0x004 Cad */
 	vec3_t pos;			/* 0x008 */
 	vec3_t rot;			/* 0x014 */
@@ -128,15 +133,13 @@ typedef struct CModelList {
 SD_SIZE(CModelList, 0x1c);
 
 
-typedef void(*sceneDelete_t)(CScene *self, int flags);
-typedef void(*modelDelete_t)(CModel *self, int flags);
 
 /* a reference to a scene dropped, the scene deleted with the last one */
 static inline void Scene_Unref(CScene **slot) {
 	(*slot)->Refs--;
 	CScene *e = *slot;
 	if (!e->Refs && e) {
-		((sceneDelete_t)e->vftable[0])(e, 1);
+		e->vftable->Delete(&e->ref, 1);
 	}
 	*slot = NULL;
 }

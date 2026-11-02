@@ -4,7 +4,7 @@ import re, subprocess, sys
 files = subprocess.run(['git', 'diff', '--name-only', 'HEAD'], capture_output=True, text=True).stdout.split()
 bad = 0
 for f in files:
-    if not f.endswith('.c'):
+    if not f.endswith('.c') or not __import__('os').path.exists(f):
         continue
     depth = 0
     for i, l in enumerate(open(f).read().split('\n')):

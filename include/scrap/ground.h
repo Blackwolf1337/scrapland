@@ -204,7 +204,7 @@ void Table_WriteC(CFileIO *f, CTable *t);
 void Table_FreeObjs(CTable *t);
 
 /* the vector deleting destructor of CNode3D (0xfc bytes) as the floor nodes use it */
-void *CNode3D_VecDelete(void *self, uint32_t flags);
+ObjRef *CNode3D_VecDelete(ObjRef *base, byte flags);
 
 CCollideMesh *CCollideMesh_ctor(CCollideMesh *self);
 /* the plane of triangle i (unit normal, unchanged when it has length 0) */

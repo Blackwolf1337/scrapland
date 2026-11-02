@@ -8,7 +8,8 @@
 
 #include "scrap/node3d.h"
 
-#define CSCENE_VFTABLE GAME_VFTABLE(CScene_vftable)
+extern const ObjRefVtbl CScene_vftable;
+#define CSCENE_VFTABLE (&CScene_vftable)
 
 /* node flags read here */
 #define NODE_JOIN1 (1u << 0)		/* CScene_Join with sel */
@@ -29,7 +30,7 @@ enum {
 
 CScene *CScene_ctor(CScene *self);
 void CScene_dtor(CScene *self);
-CScene *CScene_Delete(CScene *self, byte flags);
+ObjRef *CScene_Delete(ObjRef *base, byte flags);
 void CScene_Msg(CScene *self, int msg, int a, int b, int c, int d);
 /* ReleaseD3D and InitD3D of the objects of all nodes */
 void CScene_ReleaseD3D(CScene *self, void *dev);

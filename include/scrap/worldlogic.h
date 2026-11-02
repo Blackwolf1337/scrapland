@@ -217,8 +217,12 @@ typedef struct cNurses {
 } cNurses;
 SD_SIZE(cNurses, 8);
 
+typedef struct cLogicControlVtbl {
+	struct cLogicControl *(*Delete)(struct cLogicControl *self, byte flags);	/* 0x00 */
+} cLogicControlVtbl;
+
 typedef struct cLogicControl {
-	void *vftable;			/* 0x000 */
+	const cLogicControlVtbl *vftable;			/* 0x000 */
 	byte warned;			/* 0x004 the last warning think played one */
 	byte pad_5[3];
 	float warnTime;			/* 0x008 */

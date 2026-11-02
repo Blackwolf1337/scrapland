@@ -168,8 +168,12 @@ typedef int ammoNodes_t[4];
 
 /* the weapons of a ship and its lock on an entity or a point: the cWeaponManager of the RTTI (0x48 bytes,
  * vftable rva 0x3b664c), src/game/Entities/Vehicle/WeaponManager.c */
+typedef struct cTargetLockVtbl {
+	struct cTargetLock *(*Delete)(struct cTargetLock *self, byte flags);	/* 0x00 */
+} cTargetLockVtbl;
+
 typedef struct cTargetLock {
-	const void *vftable;		/* 0x00 */
+	const cTargetLockVtbl *vftable;		/* 0x00 */
 	cEntity *owner;			/* 0x04 the vehicle */
 	int prevWeap;			/* 0x08 */
 	int curWeap;			/* 0x0c */

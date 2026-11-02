@@ -77,8 +77,12 @@ typedef struct ScorerFade {
 } ScorerFade;
 SD_SIZE(ScorerFade, 0x28);
 
+typedef struct cScorerVtbl {
+	struct cScorer *(*Delete)(struct cScorer *self, byte flags);	/* 0x00 */
+} cScorerVtbl;
+
 typedef struct cScorer {
-	void *vftable;			/* 0x00 rva 0x3c3bb4, only the deleting destructor */
+	const cScorerVtbl *vftable;			/* 0x00 rva 0x3c3bb4, only the deleting destructor */
 	cScorerItem *found;		/* 0x04 the last item of FindItem */
 	byte cleared;			/* 0x08 Clear ran in this frame: only items marked DelMe are drawn */
 	byte pad_09[3];

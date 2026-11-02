@@ -84,7 +84,7 @@ extern cGVar GVar_FXShipExplosionFile;
 /* the elements */
 
 typedef struct cObjElementFXItemFade {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x04 */
 	CGameParticles particles;	/* 0x08 */
 	int mode;			/* 0xb8 1 fade out (disabled at the end), 2 fade in */
@@ -98,7 +98,7 @@ SD_OFFSET(cObjElementFXItemFade, mode, 0xb8);
 SD_OFFSET(cObjElementFXItemFade, started, 0xc9);
 
 typedef struct cObjElementFXItemTake {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x004 the item */
 	cEntity *target;		/* 0x008 the one that takes it */
 	CGameParticles particles;	/* 0x00c */
@@ -123,7 +123,7 @@ SD_OFFSET(cObjElementFXItemTake, started, 0x645);
 /* the start of the effect classes that the setters by name reach (FXMisc_SetEntity, SetF8, SetFC, SetI8): the
  * vtable, the entity, two words and the started flag */
 typedef struct FXElemHead {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x04 */
 	union {
 		float f;
@@ -135,7 +135,7 @@ typedef struct FXElemHead {
 SD_OFFSET(FXElemHead, started, 0x10);
 
 typedef struct cObjElementFXModelFade {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	float t;			/* 0x04 */
 	float duration;			/* 0x08 */
 	float fadeOut;			/* 0x0c the life of the debris over which it fades out */
@@ -145,7 +145,7 @@ typedef struct cObjElementFXModelFade {
 SD_SIZE(cObjElementFXModelFade, 0x14);
 
 typedef struct cObjElementFXModelNoise {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x04 */
 	float t;			/* 0x08 */
 	float duration;			/* 0x0c */
@@ -155,7 +155,7 @@ typedef struct cObjElementFXModelNoise {
 SD_SIZE(cObjElementFXModelNoise, 0x14);
 
 typedef struct cObjElementFXParticleSystem {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	CGameParticles particles;	/* 0x04 */
 	byte move;			/* 0xb4 the debris moves */
 	byte on;			/* 0xb5 */
@@ -165,7 +165,7 @@ SD_OFFSET(cObjElementFXParticleSystem, move, 0xb4);
 typedef cObjElementFXParticleSystem cObjElementFXParticleSystemDuDv;
 
 typedef struct cObjElementFXSparks {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	float time;			/* 0x004 */
 	float dt;			/* 0x008 the time of the frame */
 	byte pad_0c[4];
@@ -199,7 +199,7 @@ SD_OFFSET(cObjElementFXSparks, trails, 0xb3c);
 SD_OFFSET(cObjElementFXSparks, particles, 0xbbc);
 
 typedef struct cObjElementFXTrail {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	CGameTrail trail;		/* 0x04 */
 	vec3_t last;			/* 0x08 the last point added */
 	float minDist;			/* 0x14 */
@@ -211,7 +211,7 @@ typedef struct cObjElementFXTrail {
 SD_OFFSET(cObjElementFXTrail, on, 0x19);
 
 typedef struct cObjElementFXFadeOutTrail {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	CGameTrail trail;		/* 0x04 */
 	float duration;			/* 0x08 */
 	float t;			/* 0x0c */

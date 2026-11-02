@@ -583,7 +583,7 @@ void Engine_ReleaseScene(CEngineApp *self) {
 		self->scene->Refs--;
 		e = self->scene;
 		if (!e->Refs && e) {
-			((void *(*)(CScene *, int))e->vftable[0])(e, 1);
+			e->vftable->Delete(&e->ref, 1);
 		}
 		self->scene = NULL;
 	}

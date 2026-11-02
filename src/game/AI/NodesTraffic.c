@@ -118,7 +118,8 @@ byte cGridElements_Add(cGridElements *self, const vec3_t *p, const void *data) {
 	return 1;
 }
 
-byte cGridElements_GetCellAt(cGridElements *self, const vec3_t *p, cTrafficCell **out) {
+byte cGridElements_GetCellAt(cGridElements *self, const vec3_t *p, void *cell) {
+	cTrafficCell **out = cell;
 	if (Grid_Outside(self, p)) {
 		CHECK(!"!((point.x > PMax.x) || (point.x < PMin.x) || (point.y > PMax.y) || (point.y < PMin.y) || "
 			"(point.z > PMax.z) || (point.z < PMin.z))");
@@ -128,7 +129,8 @@ byte cGridElements_GetCellAt(cGridElements *self, const vec3_t *p, cTrafficCell 
 }
 
 byte cGridElements_GetCell(cGridElements *self, const int *x, const int *y, const int *z,
-	cTrafficCell **out) {
+	void *cell) {
+	cTrafficCell **out = cell;
 	CHECK(!((*x >= self->nx) || (*y >= self->ny) || (*z >= self->nz)));
 	*out = self->cells[(self->ny * *x + *y) * self->nz + *z];
 	return 1;
@@ -256,9 +258,8 @@ static void Traffic_SearchDir(vec3_t *out, const vec3_t *pos) {
 
 /* the box of the visibility graph (vtable slot 1 of CNodesWorld) */
 static void NodesWorld_GetBox(vec3_t *min, vec3_t *max) {
-	typedef void(* getBox_t)(CNodesWorld * self, vec3_t * min, vec3_t * max);
 	CNodesWorld *w = g_NodesWorld;
-	((getBox_t)((void *const *)w->sup.vftable)[1])(w, min, max);
+	w->sup.vftable->GetBox(w, min, max);
 }
 
 CNodesTraffic *CNodesTraffic_ctor(void *mem) {

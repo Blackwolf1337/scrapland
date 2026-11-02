@@ -626,3 +626,8 @@ int cActClass_Var(cActClass *cls, const char *name, int set, char **s, double *d
 	}
 	return 0;
 }
+
+/* the vtable of cActClass */
+const cActClassVtbl cActClass_vftable = {
+	.Delete = cActClass_Delete,
+};

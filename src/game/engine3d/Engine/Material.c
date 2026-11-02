@@ -20,7 +20,6 @@
 
 int Vec3_Differ(const float *a, const float *b);
 
-typedef void *(*deleteObj_t)(void *self, int flags);
 
 /* set while a material is deleted: the textures without references go too */
 extern int g_TexDeleteUnused;
@@ -1048,7 +1047,7 @@ void CMap_Release(CMap *self) {
 		self->AnimMat = NULL;
 	}
 	if (self->FXTexture) {
-		((deleteObj_t)(*(void ***)self->FXTexture)[0])(self->FXTexture, 1);
+		self->FXTexture->vftable->Delete(self->FXTexture, 1);
 		self->FXTexture = NULL;
 	}
 }
@@ -1079,7 +1078,7 @@ void CMatList_DeleteAll(CMatList *self) {
 		CMaterial *next = self->first->next;
 		self->first->Refs--;
 		if (self->first) {
-			((deleteObj_t)self->first->vftable[0])(self->first, 1);
+			self->first->vftable->Delete(self->first, 1);
 		}
 		n++;
 		self->first = next;
@@ -1178,7 +1177,7 @@ void CMatList_Delete(CMatList *self, CMaterial *mat) {
 	CHECK(!Mat_IsShareable(mat));
 	CMaterial *m = CMatList_Extract(self, mat, 0);
 	CHECK(m);
-	((deleteObj_t)mat->vftable[0])(mat, 1);
+	mat->vftable->Delete(mat, 1);
 	g_TexDeleteUnused = 0;
 }
 
@@ -1307,7 +1306,7 @@ void CMaterial_dtor(CMaterial *self) {
 		Mat_DeleteMap(&self->map[i]);
 	}
 	if (self->sub) {
-		((deleteObj_t)self->sub->vftable[0])(self->sub, 1);
+		self->sub->vftable->Delete(self->sub, 1);
 		self->sub = NULL;
 	}
 	CMatId_dtor(&self->id);
@@ -1398,3 +1397,13 @@ byte CMap_CopyBmp(CMap *self, int dx, int dy, const CImage *bmp, int sx, int sy,
 	Rd_TexUnlockRect(tex, 0);
 	return 1;
 }
+
+/* the vtable of CMatList */
+const CMatListVtbl CMatList_vftable = {
+	.Delete = CMatList_DeleteObj,
+};
+
+/* the vtable of CMaterial */
+const CMaterialVtbl CMaterial_vftable = {
+	.Delete = CMaterial_Delete,
+};

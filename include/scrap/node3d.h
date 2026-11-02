@@ -60,11 +60,15 @@ extern const IObject3DVtbl IObject3D_vftable;
 #define IOBJECT3D_VFTABLE (&IObject3D_vftable)
 SD_SIZE(IObject3D, 8);
 
-typedef void *(*objDelete_t)(void *self, int flags);	/* the deleting destructor of any object */
 
 /* a counted reference (objref.h): the head of CNode3D and CScene, the deleting destructor first */
+typedef struct ObjRef ObjRef;
+typedef struct ObjRefVtbl {
+	ObjRef *(*Delete)(ObjRef *self, byte flags);	/* 0x0 */
+} ObjRefVtbl;
+
 typedef struct ObjRef {
-	void **vftable;			/* 0x0 */
+	const ObjRefVtbl *vftable;	/* 0x0 */
 	char *name;			/* 0x4 */
 	int Refs;			/* 0x8 */
 } ObjRef;
@@ -78,7 +82,7 @@ static inline void ObjRef_Release(void *slot) {
 		(*dst)->Refs--;
 		ObjRef *o = *dst;
 		if (!o->Refs && o) {
-			((objDelete_t)o->vftable[0])(o, 1);
+			o->vftable->Delete(o, 1);
 		}
 		*dst = NULL;
 	}
@@ -91,7 +95,7 @@ static inline void ObjRef_Drop(void *slot) {
 		(*dst)->Refs--;
 		ObjRef *o = *dst;
 		if (!o->Refs && o) {
-			((objDelete_t)o->vftable[0])(o, 1);
+			o->vftable->Delete(o, 1);
 		}
 		*dst = NULL;
 	}
@@ -147,9 +151,14 @@ typedef struct ColorIntens {
 SD_SIZE(ColorIntens, 8);
 
 typedef struct CScene {
-	void **vftable;			/* 0x00 [0] the deleting destructor */
-	char *name;			/* 0x04 */
-	int Refs;			/* 0x08 */
+	union {
+		ObjRef ref;
+		struct {
+			const ObjRefVtbl *vftable;	/* 0x00 */
+			char *name;			/* 0x04 */
+			int Refs;			/* 0x08 */
+		};
+	};
 	struct CNode3D *Node3D;		/* 0x0c the first node */
 	NodeAnimCtx *anim;		/* 0x10 the render context during CScene_Render and CScene_Update */
 	ColorIntens ambient;		/* 0x14 0x0b0b0b, 1 */
@@ -206,9 +215,14 @@ SD_OFFSET(CRenderNode, node, 0xa4);
 SD_SIZE(CRenderNode, 0xa8);
 
 typedef struct CNode3D {
-	void **vftable;			/* 0x00 [0] the deleting destructor */
-	char *name;			/* 0x04 */
-	int Refs;			/* 0x08 */
+	union {
+		ObjRef ref;
+		struct {
+			const ObjRefVtbl *vftable;	/* 0x00 */
+			char *name;			/* 0x04 */
+			int Refs;			/* 0x08 */
+		};
+	};
 	struct CNode3D *next;		/* 0x0c */
 	struct CNode3D *prev;		/* 0x10 */
 	struct CNode3D *parent;		/* 0x14 */

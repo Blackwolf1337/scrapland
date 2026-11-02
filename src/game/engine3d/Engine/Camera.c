@@ -12,7 +12,6 @@ extern const IObject3DVtbl CCamera_vftable;
 /* the limit of the projection, a float constant widened */
 #define CAMERA_EPS ((double)0.01f)
 
-typedef void(*nodeDelete_t)(CNode3D *self, int flags);
 
 /* the reference to n in *slot, the old one released */
 static void Camera_Link(CNode3D **slot, CNode3D *n) {
@@ -24,7 +23,7 @@ static void Camera_Link(CNode3D **slot, CNode3D *n) {
 		CNode3D *old = *slot;
 		old->Refs--;
 		if (!old->Refs && old) {
-			((nodeDelete_t)old->vftable[0])(old, 1);
+			old->vftable->Delete(&old->ref, 1);
 		}
 		*slot = NULL;
 	}

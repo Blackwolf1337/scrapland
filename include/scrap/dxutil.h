@@ -65,7 +65,7 @@ SD_SIZE(D3DAdapterInfo, 0x438c);
 
 typedef struct CD3DApplication CD3DApplication;
 
-/* the virtual methods of CD3DApplication (the HRESULT unless noted; the slot tables of Vtables.c) */
+/* the virtual methods of CD3DApplication (the HRESULT unless noted) */
 typedef struct CD3DApplicationVtbl {
 	int(*AdjustWindowForChange)(CD3DApplication *self);	/* 0x00 */
 	int(*ConfirmDevice)(CD3DApplication *self, D3DCaps8 *caps, uint32_t behavior, uint32_t fmt);	/* 0x04 */

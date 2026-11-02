@@ -89,7 +89,7 @@ void CModelList_dtor(CModelList *self) {
 		Model_UpdateRender(m);
 	}
 	if (self->model) {
-		((modelDelete_t)((void **)self->model->vftable)[0])(self->model, 1);
+		self->model->vftable->Delete(self->model, 1);
 		self->model = NULL;
 	}
 	if (self->name2) {
@@ -218,7 +218,7 @@ void Model_Destroy(CModel **pm, byte force) {
 		}
 	}
 	if (*pm) {
-		((modelDelete_t)((void **)(*pm)->vftable)[0])(*pm, 1);
+		(*pm)->vftable->Delete(*pm, 1);
 		*pm = NULL;
 	}
 }

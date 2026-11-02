@@ -15,24 +15,23 @@
 #include "scrap/nodesworld.h"
 #include "scrap/slotcontroller.h"
 
-#define CAIVEHICLECONTROL_VFTABLE GAME_VFTABLE(cAIVehicleControl_vftable)
-#define CAIVEHICLESHOOT_VFTABLE GAME_VFTABLE(cAIVehicleShootControl_vftable)
 extern const cAIEntityGroupVtbl cAIVehicleGroup_vftable;
 #define CAIVEHICLEGROUP_VFTABLE (&cAIVehicleGroup_vftable)
 #define CAIVEHICLEGROUP_SIZE sizeof(cAIVehicleGroup)
-
-/* the one slot of both controllers */
-typedef struct cAIObjVtbl {
-	void *(*Delete)(void *self, byte flags);	/* 0x00 */
-} cAIObjVtbl;
 
 /* the moves of SetMove (cAIVehicleControl.mode) */
 enum {
 	AIVC_STOP = 0, AIVC_POINT = 1, AIVC_DIRECT = 2, AIVC_CHASE = 3, AIVC_ORIENT = 6, AIVC_PATH = 7
 };
 
+typedef struct cAIVehicleControlVtbl {
+	struct cAIVehicleControl *(*Delete)(struct cAIVehicleControl *self, byte flags);	/* 0x00 */
+} cAIVehicleControlVtbl;
+extern const cAIVehicleControlVtbl cAIVehicleControl_vftable;
+#define CAIVEHICLECONTROL_VFTABLE (&cAIVehicleControl_vftable)
+
 typedef struct cAIVehicleControl {
-	const cAIObjVtbl *vftable;	/* 0x000 */
+	const cAIVehicleControlVtbl *vftable;	/* 0x000 */
 	byte boost;			/* 0x004 the boost of the vehicle on */
 	byte pad_5[3];
 	cSlotController slotStrafe;	/* 0x008 0.2 s */
@@ -140,8 +139,14 @@ typedef struct cAIVSWeap {
 } cAIVSWeap;
 SD_SIZE(cAIVSWeap, 0x18);
 
+typedef struct cAIVehicleShootVtbl {
+	struct cAIVehicleShoot *(*Delete)(struct cAIVehicleShoot *self, byte flags);	/* 0x00 */
+} cAIVehicleShootVtbl;
+extern const cAIVehicleShootVtbl cAIVehicleShootControl_vftable;
+#define CAIVEHICLESHOOT_VFTABLE (&cAIVehicleShootControl_vftable)
+
 typedef struct cAIVehicleShoot {
-	const cAIObjVtbl *vftable;	/* 0x000 */
+	const cAIVehicleShootVtbl *vftable;	/* 0x000 */
 	int cadenceMul;			/* 0x004 1 */
 	int cadenceMulCM;		/* 0x008 2 */
 	cAIVehicle *ai;			/* 0x00c */

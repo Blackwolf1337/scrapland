@@ -167,3 +167,8 @@ cScheduledFuncStack *cScheduledFuncStack_Delete(cScheduledFuncStack *self, byte 
 	}
 	return self;
 }
+
+/* the vtable of cScheduledFuncStack */
+const cScheduledFuncStackVtbl cScheduledFuncStack_vftable = {
+	.Delete = cScheduledFuncStack_Delete,
+};

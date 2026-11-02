@@ -41,12 +41,6 @@
 #define GAME_ARRAY_IN(type, owner, off) ((typeof(type) *)((char *)SD_REF_(sd_##owner, SD_CPFX #owner) + (off)))
 #define GAME_PTR(owner, off) ((void *)((char *)SD_REF_(sd_##owner, SD_CPFX #owner) + (off)))
 
-/* a vtable of a game class (void *), the C object of src/game/Global/Vtables.c */
-#define GAME_VFTABLE(name) \
-	({ \
-		extern void (*const name[])(void); \
-		(void *)name; \
-	})
 
 /* a string of src/game/Global/Strings*.c (char *) */
 #define GAME_STR(name) \
@@ -78,8 +72,12 @@ typedef struct cAmmoInfo cAmmoInfo;
 	})
 
 /* the world: created by cWorld's constructor, owns the game state of the running level */
+typedef struct cWorldVtbl {
+	struct cWorld *(*Delete)(struct cWorld *self, byte flags);	/* 0x00 */
+} cWorldVtbl;
+
 typedef struct cWorld {
-	void *vftable;			/* 0x0000 cWorld::vftable */
+	const cWorldVtbl *vftable;			/* 0x0000 cWorld::vftable */
 	HashTable entities;		/* 0x0004 every entity by name (cEntity *) */
 	Nto1Node entityList;		/* 0x0010 head of the entities (their node at +8), target the world */
 	Nto1Node deadList;		/* 0x0020 entities to delete after the frame */

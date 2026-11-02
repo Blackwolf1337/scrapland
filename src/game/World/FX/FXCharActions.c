@@ -1141,7 +1141,7 @@ void cObjElementFXSebastianFlash_Reset(cObjElementFX *base, cDebris *arg) {
 
 /* the effects that start with the vtable, their entity and a target entity (BankerSteal, PoliceSteal, ...) */
 typedef struct FXElemTarget {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x04 */
 	cEntity *target;		/* 0x08 */
 } FXElemTarget;

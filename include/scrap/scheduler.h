@@ -19,7 +19,8 @@ typedef struct cScheduledFunc {
 } cScheduledFunc;
 SD_SIZE(cScheduledFunc, 0x90);
 
-#define CSCHEDULEDFUNCSTACK_VFTABLE GAME_VFTABLE(cScheduledFuncStack_vftable)
+extern const cScheduledFuncStackVtbl cScheduledFuncStack_vftable;
+#define CSCHEDULEDFUNCSTACK_VFTABLE (&cScheduledFuncStack_vftable)
 
 void cScheduledFunc_dtor(cScheduledFunc *self);
 cScheduledFuncStack *cScheduledFuncStack_Delete(cScheduledFuncStack *self, byte flags);

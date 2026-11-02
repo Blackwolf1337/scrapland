@@ -109,7 +109,7 @@ extern cGVar GVar_BankMasterBatonPosZ;
 /* a float of the Police character: its center is this much above the feet */
 
 typedef struct cObjElementFXBankMasterAttack {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x04 */
 	CGameParticles particles;	/* 0x08 on Dummy01 */
 	float emitTime;		/* 0xb8 the particles are emitted every 0.04 s of it */
@@ -125,7 +125,7 @@ SD_OFFSET(cObjElementFXBankMasterAttack, started, 0xd0);
 SD_SIZE(cObjElementFXBankMasterAttack, 0xd4);
 
 typedef struct cObjElementFXBankMasterSuction {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x004 */
 	cEntity *target;		/* 0x008 */
 	CGameParticles particles;	/* 0x00c on Dummy01 */
@@ -144,7 +144,7 @@ SD_OFFSET(cObjElementFXBankMasterSuction, trail, 0x1dc);
 SD_SIZE(cObjElementFXBankMasterSuction, 0x1ec);
 
 typedef struct cObjElementFXBankerSteal {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x04 */
 	cEntity *target;		/* 0x08 set by FXMisc_SetI8 */
 	CGameParticles particles;	/* 0x0c on Dummy01 */
@@ -158,7 +158,7 @@ SD_OFFSET(cObjElementFXBankerSteal, node, 0xbc);
 SD_SIZE(cObjElementFXBankerSteal, 0xd0);
 
 typedef struct cObjElementFXBertoAttack {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x04 */
 	CGameParticles particles;	/* 0x08 on Dummy01 */
 	float emitTime;		/* 0xb8 the particles are emitted every 0.04 s of it */
@@ -171,7 +171,7 @@ SD_OFFSET(cObjElementFXBertoAttack, nodeGlass, 0xc4);
 SD_SIZE(cObjElementFXBertoAttack, 0xcc);
 
 typedef struct cObjElementFXBertoFlash {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x004 */
 	cEntity *target;		/* 0x008 */
 	CGameParticles particles;	/* 0x00c on Dummy01 */
@@ -187,7 +187,7 @@ SD_OFFSET(cObjElementFXBertoFlash, trails, 0x664);
 SD_SIZE(cObjElementFXBertoFlash, 0x678);
 
 typedef struct cObjElementFXBettyAttack {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x004 */
 	CGameParticles particles;	/* 0x008 on Dummy01 */
 	CGameParticles particles2;	/* 0x0b8 on "Dummy02 (+dudv_pass)" if the model has it */
@@ -208,7 +208,7 @@ SD_SIZE(cObjElementFXBettyAttack, 0x1a8);
 
 /* BettyKill and DTritusKill */
 typedef struct cObjElementFXKill {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x004 */
 	CGameParticles particles;	/* 0x008 on Dummy01 */
 	float emitTime;		/* 0x0b8 the particles are emitted every 0.04 s of it */
@@ -230,7 +230,7 @@ typedef cObjElementFXKill cObjElementFXBettyKill;
 typedef cObjElementFXKill cObjElementFXDTritusKill;
 
 typedef struct cObjElementFXBishopAttack {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x04 */
 	byte pad_08[4];
 	float emitTime;		/* 0x0c the particles are emitted every 0.02 s of it */
@@ -247,7 +247,7 @@ SD_OFFSET(cObjElementFXBishopAttack, dir, 0xec);
 SD_SIZE(cObjElementFXBishopAttack, 0xfc);
 
 typedef struct cObjElementFXBishopSellLife {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *attacker;		/* 0x004 */
 	cEntity *attacked;		/* 0x008 */
 	CGameParticles glow;		/* 0x00c on Dummy01 */
@@ -261,7 +261,7 @@ SD_OFFSET(cObjElementFXBishopSellLife, nodeHand, 0x174);
 SD_SIZE(cObjElementFXBishopSellLife, 0x180);
 
 typedef struct cObjElementFXDTritusAttack {
-	void *vftable;			/* 0x0000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x0004 */
 	CGameParticles particles;	/* 0x0008 on Dummy01 */
 	float emitTime;		/* 0x00b8 the particles are emitted every 0.04 s of it */
@@ -281,7 +281,7 @@ SD_OFFSET(cObjElementFXDTritusAttack, trails, 0x112c);
 SD_SIZE(cObjElementFXDTritusAttack, 0x1158);
 
 typedef struct cObjElementFXFunctionarySpecialAction {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x004 a WalkChar */
 	CGameParticles particles;	/* 0x008 on Dummy01 */
 	float emitTime;		/* 0x0b8 the particles are emitted every 0.04 s of it */
@@ -298,7 +298,7 @@ SD_SIZE(cObjElementFXFunctionarySpecialAction, 0x1ac);
 
 /* the electric ball of Gear: lightning bolts to the world or to entities near it, puffs, sparks and a tail */
 typedef struct cObjElementFXGearMissile {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *entity;		/* 0x004 the missile (FXChar_SetI4) */
 	int node;			/* 0x008 Dummy01 */
 	CGameParticles particles;	/* 0x00c on Dummy01: the ball, 0..3 the glows */
@@ -324,7 +324,7 @@ SD_OFFSET(cObjElementFXGearMissile, boltScale, 0x690);
 SD_SIZE(cObjElementFXGearMissile, 0x6bc);
 
 typedef struct cObjElementFXMercenaryDrink {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x04 */
 	CGameParticles particles;	/* 0x08 on Dummy01 */
 	float emitTime;		/* 0xb8 the particles are emitted every 0.04 s of it */
@@ -337,7 +337,7 @@ SD_OFFSET(cObjElementFXMercenaryDrink, nodeJar, 0xcc);
 SD_SIZE(cObjElementFXMercenaryDrink, 0xd4);
 
 typedef struct cObjElementFXMessengerAttack {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x004 */
 	byte pad_08[4];
 	float emitTime;		/* 0x00c the particles are emitted every 0.02 s of it */
@@ -358,7 +358,7 @@ SD_OFFSET(cObjElementFXMessengerAttack, width, 0x3d0);
 SD_SIZE(cObjElementFXMessengerAttack, 0x3ec);
 
 typedef struct cObjElementFXMessengerTakeDataPack {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *owner;			/* 0x004 a WalkChar */
 	cEntity *item;			/* 0x008 an Obj */
 	float time;			/* 0x00c since the start */
@@ -373,7 +373,7 @@ SD_OFFSET(cObjElementFXMessengerTakeDataPack, width, 0x160);
 SD_SIZE(cObjElementFXMessengerTakeDataPack, 0x174);
 
 typedef struct cObjElementFXPoliceGearConversion {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x004 */
 	float t2;			/* 0x008 since the start (not read) */
 	float time;			/* 0x00c since the start */
@@ -413,7 +413,7 @@ SD_OFFSET(cObjElementFXPoliceGearConversion, pieceOff, 0x96c);
 SD_SIZE(cObjElementFXPoliceGearConversion, 0xa54);
 
 typedef struct cObjElementFXPoliceSteal {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x04 */
 	cEntity *target;		/* 0x08 */
 	CGameParticles particles;	/* 0x0c on Dummy01 */
@@ -425,7 +425,7 @@ typedef struct cObjElementFXPoliceSteal {
 SD_SIZE(cObjElementFXPoliceSteal, 0xcc);
 
 typedef struct cObjElementFXSebastianFlash {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x004 */
 	CGameParticles particles;	/* 0x008 on Dummy01 */
 	float emitTime;		/* 0x0b8 the particles are emitted every 0.04 s of it */

@@ -1226,3 +1226,8 @@ void CModel_Render(CModel *self) {
 		self->callback(self, 1, self->cbArg, self->cbArg2);
 	}
 }
+
+/* the vtable of CModel */
+const CModelVtbl CModel_vftable = {
+	.Delete = CModel_Delete,
+};

@@ -24,7 +24,8 @@
 #include "scrap/misc.h"
 #include "scrap/model.h"
 
-#define CNODO3D_VFTABLE GAME_VFTABLE(CNode3D_vftable)
+extern const ObjRefVtbl CNode3D_vftable;
+#define CNODO3D_VFTABLE (&CNode3D_vftable)
 
 extern cGVar GVar_R_Node3D_Count;
 #define g_Node3DCount (GVar_R_Node3D_Count.value.i)	/* R_Nodo3D_Count */
@@ -835,3 +836,8 @@ quat_t *CRotation_GetQuat(CRotation *self, quat_t *out) {
 	*out = self->q;
 	return out;
 }
+
+/* the vtable of CNode3D */
+const ObjRefVtbl CNode3D_vftable = {
+	.Delete = CNode3D_VecDelete,
+};

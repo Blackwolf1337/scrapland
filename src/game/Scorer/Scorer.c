@@ -38,7 +38,8 @@
 #include "scrap/weapons.h"
 #include "scrap/scorerhud.h"
 
-#define CSCORER_VFTABLE GAME_VFTABLE(cScorer_vftable)
+extern const cScorerVtbl cScorer_vftable;
+#define CSCORER_VFTABLE (&cScorer_vftable)
 extern const cScorerItemVtbl cScorerItem_vftable;
 #define CSCORERITEM_VFTABLE (&cScorerItem_vftable)
 #define EXE_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
@@ -694,7 +695,7 @@ void Scorer_Done(void) {
 	}
 	if (sc) {
 		if (((uint32_t *)sc)[-1]) {
-			((cScorer * (*)(cScorer *, uint32_t))(*(void **)sc->vftable))(sc, 3);
+			sc->vftable->Delete(sc, 3);
 		} else {
 			operator_delete_array((uint32_t *)sc - 1);
 		}
@@ -1832,4 +1833,9 @@ const cScorerItemVtbl cScorerItem_vftable = {
 	.SetParam = cScorerItem_SetParam,
 	.Var = cScorerItem_Var,
 	.Delete = cScorerItem_Delete,
+};
+
+/* the vtable of cScorer */
+const cScorerVtbl cScorer_vftable = {
+	.Delete = cScorer_Delete,
 };

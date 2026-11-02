@@ -341,3 +341,8 @@ ints:
 	}
 	return 0;
 }
+
+/* the vtable of cActionMove */
+const cActionVtbl cActionMove_vftable = {
+	.Delete = cAction_Delete,
+};

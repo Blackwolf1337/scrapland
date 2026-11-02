@@ -51,7 +51,8 @@ SD_SIZE(cAmmoInfo, 0x5c);
 #define CAMMOINFO_CTOR 0x206360
 #define CWEAPINFO_CTOR 0x2063f0
 
-#define CWORLD_VFTABLE GAME_VFTABLE(cWorld_vftable)
+extern const cWorldVtbl cWorld_vftable;
+#define CWORLD_VFTABLE (&cWorld_vftable)
 #define CWORLD_SIZE sizeof(cWorld)
 
 /* the fields of entities the world reads */

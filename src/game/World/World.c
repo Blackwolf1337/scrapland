@@ -1273,3 +1273,8 @@ byte cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, uint32_t mask, c
 	memset(world->ignore, 0, sizeof(world->ignore));
 	return found;
 }
+
+/* the vtable of cWorld */
+const cWorldVtbl cWorld_vftable = {
+	.Delete = cWorld_Destroy,
+};

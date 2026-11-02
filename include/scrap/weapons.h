@@ -25,7 +25,8 @@
 
 typedef cTargetLock cWeaponManager;
 
-#define CWEAPONMANAGER_VFTABLE GAME_VFTABLE(cWeaponManager_vftable)
+extern const cTargetLockVtbl cWeaponManager_vftable;
+#define CWEAPONMANAGER_VFTABLE (&cWeaponManager_vftable)
 #define TYEN_VEHICLE "Car"			/* the string at rva 0x3a77b8 */
 
 /* the fields of the vehicles (cVehicleEntity) and other entities the weapons use */
@@ -257,7 +258,8 @@ extern cGVar GVar_EMIIDAmmo;
 #define g_EMIIDAmmo (GVar_EMIIDAmmo.value.i)
 /* WeaponManager.cpp before rva 0x11a0f0: the fire stamp delayed by t (to -t when it is beyond t) */
 void cWeaponManager_DelayFire(cWeaponManager *self, float t);
-#define CWEAPONMANAGER_VFTABLE GAME_VFTABLE(cWeaponManager_vftable)
+extern const cTargetLockVtbl cWeaponManager_vftable;
+#define CWEAPONMANAGER_VFTABLE (&cWeaponManager_vftable)
 cWeaponManager *cWeaponManager_ctor(cWeaponManager *self);
 void cWeaponManager_dtor(cWeaponManager *self);
 cWeaponManager *cWeaponManager_Delete(cWeaponManager *self, byte flags);

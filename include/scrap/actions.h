@@ -26,13 +26,6 @@ enum { ACTVAR_NONE = 0, ACTVAR_STRING = 1, ACTVAR_DOUBLE = 2, ACTVAR_INT = 3 };
 
 #define ACT_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */
 
-/* the first slot of the vftables of the classes here: the deleting destructor */
-typedef struct cActVtbl {
-	void *(*Delete)(void *self, byte flags);	/* 0x00 */
-} cActVtbl;
-
-#define CACTCLASS_VFTABLE GAME_VFTABLE(cActClass_vftable)
-#define CACTCLASSLIST_VFTABLE GAME_VFTABLE(cActClassList_vftable)
 typedef struct cActCtrlVarVtbl {
 	void *(*Delete)(cActCtrl *self, byte flags);				/* 0x00 */
 	byte(*VarI)(cActCtrl *self, const char *name, int *i, int set);		/* 0x04 */
@@ -42,7 +35,6 @@ typedef struct cActCtrlVarVtbl {
 } cActCtrlVarVtbl;
 extern const cActCtrlVarVtbl cActCtrl_vftable;
 #define CACTCTRL_VFTABLE (&cActCtrl_vftable)
-#define CACTIONMOVE_VFTABLE GAME_VFTABLE(cActionMove_vftable)
 
 #define ACT_LAYERS 4			/* the layers of a controller, the channels of the model */
 #define ACT_NODEMODS 3			/* the turned nodes of a class ("NodeN_...") */
@@ -72,9 +64,15 @@ typedef struct cActClassCam {
 } cActClassCam;
 SD_SIZE(cActClassCam, 0x28);
 
+typedef struct cActClassVtbl {
+	struct cActClass *(*Delete)(struct cActClass *self, byte flags);	/* 0x00 */
+} cActClassVtbl;
+extern const cActClassVtbl cActClass_vftable;
+#define CACTCLASS_VFTABLE (&cActClass_vftable)
+
 /* an action class (0x20c bytes, made by cActClassList_Create) */
 struct cActClass {
-	const cActVtbl *vftable;		/* 0x000 */
+	const cActClassVtbl *vftable;		/* 0x000 */
 	char *name;			/* 0x004 cString */
 	HashTable actions;		/* 0x008 the actions by name, 457 slots */
 	cAction *first;			/* 0x014 the actions in a list (cAction.next) */
@@ -131,8 +129,14 @@ SD_OFFSET(cActClass, onFreeResources, 0x1f4);
 SD_SIZE(cActClass, 0x20c);
 
 /* the classes by name (0x10 bytes, g_pActClassList) */
+typedef struct cActClassListVtbl {
+	struct cActClassList *(*Delete)(struct cActClassList *self, byte flags);	/* 0x00 */
+} cActClassListVtbl;
+extern const cActClassListVtbl cActClassList_vftable;
+#define CACTCLASSLIST_VFTABLE (&cActClassList_vftable)
+
 struct cActClassList {
-	const cActVtbl *vftable;		/* 0x00 */
+	const cActClassListVtbl *vftable;		/* 0x00 */
 	HashTable classes;		/* 0x04 457 slots */
 };
 SD_SIZE(cActClassList, 0x10);
@@ -149,8 +153,14 @@ struct cActEvent {
 SD_SIZE(cActEvent, 0x24);
 
 /* an action (cActionMove, 0x6c bytes) */
+typedef struct cActionVtbl {
+	struct cAction *(*Delete)(struct cAction *self, byte flags);	/* 0x00 */
+} cActionVtbl;
+extern const cActionVtbl cActionMove_vftable;
+#define CACTIONMOVE_VFTABLE (&cActionMove_vftable)
+
 struct cAction {
-	const cActVtbl *vftable;		/* 0x00 */
+	const cActionVtbl *vftable;		/* 0x00 */
 	int anim;			/* 0x04 the animation of the class model, -1 none */
 	char *name;			/* 0x08 cString */
 	char *anmFile;			/* 0x0c "AnmFilePath", Mem_Alloc copy */

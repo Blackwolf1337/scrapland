@@ -36,8 +36,9 @@ typedef struct cGridElementsVtbl {
 	cGridElements *(*Delete)(cGridElements *self, byte flags);			/* 0x00 */
 	/* the element: an InfoTrafficNode, a pointer to the pos of a point of visibility in the grid of CNodesWorldSup */
 	byte(*Add)(cGridElements *self, const vec3_t *p, const void *data);		/* 0x04 */
-	byte(*GetCellAt)(cGridElements *self, const vec3_t *p, cTrafficCell **out);	/* 0x08 */
-	byte(*GetCell)(cGridElements *self, const int *x, const int *y, const int *z, cTrafficCell **out);
+	/* out: the cell pointer (cTrafficCell *, cNWIntList * in the grid of CNodesWorldSup) */
+	byte(*GetCellAt)(cGridElements *self, const vec3_t *p, void *out);	/* 0x08 */
+	byte(*GetCell)(cGridElements *self, const int *x, const int *y, const int *z, void *out);
 	byte(*Draw)(cGridElements *self, uint32_t color);				/* 0x10 */
 	byte(*CellCoords)(cGridElements *self, const vec3_t *p, int *x, int *y, int *z);	/* 0x14 */
 	void(*GetDivs)(cGridElements *self, int *nx, int *ny, int *nz);		/* 0x18 */
@@ -76,9 +77,8 @@ cGridElements *cGridElements_Delete(cGridElements *self, byte flags);
 void cGridElements_Free(cGridElements *self);
 /* the node into the cell of p (a CHECK out of the box); 1 */
 byte cGridElements_Add(cGridElements *self, const vec3_t *p, const void *data);
-byte cGridElements_GetCellAt(cGridElements *self, const vec3_t *p, cTrafficCell **out);
-byte cGridElements_GetCell(cGridElements *self, const int *x, const int *y, const int *z,
-	cTrafficCell **out);
+byte cGridElements_GetCellAt(cGridElements *self, const vec3_t *p, void *out);
+byte cGridElements_GetCell(cGridElements *self, const int *x, const int *y, const int *z, void *out);
 /* the lines of the cells; 0 without cells */
 byte cGridElements_Draw(cGridElements *self, uint32_t color);
 /* the cell of p, each clamped to the last one (a CHECK out of the box); 1 */

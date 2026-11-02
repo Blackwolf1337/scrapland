@@ -2085,3 +2085,8 @@ const cAIEntityGroupVtbl cAIVehicleGroup_vftable = {
 	.AllowChange = cAIEntityGroup_AllowChange,
 	.Update = cAIEntityGroup_Update,
 };
+
+/* the vtable of cAIVehicleControl */
+const cAIVehicleControlVtbl cAIVehicleControl_vftable = {
+	.Delete = cAIVehicleControl_Delete,
+};

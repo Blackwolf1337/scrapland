@@ -19,7 +19,6 @@
 #define FXS_RAMP_HUMANCD 0x430c48	/* [2] */
 #define FXS_RAMP_YAKUZZI 0x430dd8	/* [2] */
 
-typedef void(*FXSUpdate_t)(void *self, cDebris *d, float dt);
 
 static inline float FXS_Delta(void) {
 	return cTimer_GetDelta(&g_pWorld->timer);
@@ -158,7 +157,7 @@ void FXScene_Create(cEntity *e, const char *model) {
 		}
 		cObjElementFXSceneYakuzzi_SetEntity(el, e);
 		/* the first frame at once (through the vtable, as the original) */
-		((FXSUpdate_t *)el->vftable)[1](el, d, 0.0f);
+		el->vftable->Update((cObjElementFX *)el, d, 0.0f);
 		return;
 	}
 	if (!strcmp(model, "Beating.m3d")) {

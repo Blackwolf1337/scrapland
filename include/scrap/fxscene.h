@@ -36,7 +36,7 @@ extern cGVar GVar_FXSceneYakuzziFile;
 #define FXMATRIX_TRAILS 16
 
 typedef struct cObjElementFXSceneBeatPickus {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	float t;			/* 0x004 */
 	float tPrev;			/* 0x008 */
 	cEntity *ent;			/* 0x00c */
@@ -54,7 +54,7 @@ SD_OFFSET(cObjElementFXSceneBeatPickus, sparks, 0x184);
 SD_OFFSET(cObjElementFXSceneBeatPickus, started, 0x23c);
 
 typedef struct cObjElementFXSceneBillArrives_A {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	float t;			/* 0x04 */
 	float tPrev;			/* 0x08 */
 	cEntity *ent;			/* 0x0c */
@@ -71,7 +71,7 @@ SD_OFFSET(cObjElementFXSceneBillArrives_A, dummy2, 0xdc);
 SD_OFFSET(cObjElementFXSceneBillArrives_A, started, 0xe8);
 
 typedef struct cObjElementFXSceneBishops {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x004 */
 	cEntity *detritus;		/* 0x008 BishopsDtritus */
 	CGameParticles dataCodec;	/* 0x00c Dummy01 */
@@ -88,7 +88,7 @@ SD_OFFSET(cObjElementFXSceneBishops, trails, 0x184);
 SD_OFFSET(cObjElementFXSceneBishops, started, 0x1b4);
 
 typedef struct cObjElementFXSceneDecontamination {
-	void *vftable;			/* 0x0000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	CGameParticles particles;	/* 0x0004 Dummy01 */
 	cEntity *ent;			/* 0x00b4 */
 	cEntity *target;		/* 0x00b8 the entity of targetName */
@@ -115,7 +115,7 @@ SD_OFFSET(cObjElementFXSceneDecontamination, vel, 0xc48);
 SD_OFFSET(cObjElementFXSceneDecontamination, started, 0x11e8);
 
 typedef struct cObjElementFXSceneEnterMatrix {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	float t;			/* 0x004 */
 	float tPrev;			/* 0x008 */
 	cEntity *ent;			/* 0x00c */
@@ -143,7 +143,7 @@ SD_OFFSET(cObjElementFXSceneEnterMatrix, lastKind, 0x78c);
 SD_OFFSET(cObjElementFXSceneEnterMatrix, started, 0x794);
 
 typedef struct cObjElementFXSceneHumanCD {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	float t;			/* 0x004 */
 	float tPrev;			/* 0x008 */
 	cEntity *ent;			/* 0x00c */
@@ -157,7 +157,7 @@ SD_OFFSET(cObjElementFXSceneHumanCD, sparks, 0xc0);
 SD_OFFSET(cObjElementFXSceneHumanCD, started, 0x180);
 
 typedef struct cObjElementFXSceneTheEndB {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	float t;			/* 0x04 */
 	float tPrev;			/* 0x08 */
 	cEntity *ent;			/* 0x0c */
@@ -170,7 +170,7 @@ SD_OFFSET(cObjElementFXSceneTheEndB, flare, 0xc4);
 SD_OFFSET(cObjElementFXSceneTheEndB, started, 0xc8);
 
 typedef struct cObjElementFXSceneYakuzzi {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	float t;			/* 0x04 */
 	float tPrev;			/* 0x08 */
 	cEntity *ent;			/* 0x0c */

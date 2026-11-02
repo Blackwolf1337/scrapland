@@ -72,7 +72,7 @@ extern cGVar GVar_MaintenanceWorkSoundAttEnd;
 /* the elements */
 
 typedef struct cObjElementFXCharacterConversion {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *attacker;		/* 0x004 */
 	cEntity *attacked;		/* 0x008 */
 	CGameParticles particles;	/* 0x00c on Dummy01 */
@@ -94,7 +94,7 @@ SD_OFFSET(cObjElementFXCharacterConversion, started, 0x898);
 SD_SIZE(cObjElementFXCharacterConversion, 0x89c);
 
 typedef struct cObjElementFXCharacterConversor {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *conversor;		/* 0x004 */
 	cEntity *character;		/* 0x008 */
 	CGameParticles particles;	/* 0x00c on Dummy01 */
@@ -123,7 +123,7 @@ SD_OFFSET(cObjElementFXCharacterConversor, width, 0x284);
 SD_SIZE(cObjElementFXCharacterConversor, 0x298);
 
 typedef struct cObjElementFXCharacterDeath {
-	void *vftable;			/* 0x000 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x004 */
 	CGameParticles particles;	/* 0x008 on Dummy01 */
 	CGameParticles particles2;	/* 0x0b8 on Dummy02 */
@@ -145,7 +145,7 @@ SD_OFFSET(cObjElementFXCharacterDeath, color, 0xd84);
 SD_SIZE(cObjElementFXCharacterDeath, 0xf68);
 
 typedef struct cObjElementFXCharacterTeleport {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *teleport;		/* 0x04 */
 	cEntity *character;		/* 0x08 */
 	CGameParticles particles;	/* 0x0c on Dummy01 */
@@ -161,7 +161,7 @@ SD_OFFSET(cObjElementFXCharacterTeleport, mode, 0xbc);
 SD_SIZE(cObjElementFXCharacterTeleport, 0xd8);
 
 typedef struct cObjElementFXMaintenanceWork {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *maintenance;		/* 0x04 the robot */
 	cEntity *ship;			/* 0x08 */
 	CGameParticles particles;	/* 0x0c on Dummy01 */
@@ -179,7 +179,7 @@ SD_OFFSET(cObjElementFXMaintenanceWork, sound, 0xd8);
 SD_SIZE(cObjElementFXMaintenanceWork, 0xe0);
 
 typedef struct cObjElementFXMoneyTransfer {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *from;			/* 0x04 */
 	cEntity *to;			/* 0x08 */
 	CGameParticles particles;	/* 0x0c on Dummy01 */
@@ -192,7 +192,7 @@ SD_OFFSET(cObjElementFXMoneyTransfer, emitT, 0xbc);
 SD_SIZE(cObjElementFXMoneyTransfer, 0xcc);
 
 typedef struct cObjElementFXSputnik {
-	void *vftable;			/* 0x00 */
+	const cObjElementFXVtbl *vftable;	/* 0x00 */
 	cEntity *ent;			/* 0x04 */
 	CGameParticles particles;	/* 0x08 on Dummy01 */
 	float emitT;			/* 0xb8 the time since the last emission */

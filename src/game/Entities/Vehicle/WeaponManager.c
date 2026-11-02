@@ -865,3 +865,8 @@ void cWeaponManager_ClearAmmo(cWeaponManager *self) {
 void cWeaponManager_ClearWeaps(cWeaponManager *self) {
 	memset(self->weaps, 0, g_pWorld->weapons.count * sizeof(cWeaponSlot));
 }
+
+/* the vtable of cWeaponManager */
+const cTargetLockVtbl cWeaponManager_vftable = {
+	.Delete = cWeaponManager_Delete,
+};

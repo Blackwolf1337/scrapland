@@ -97,25 +97,6 @@ typedef struct cNWNode {
 } cNWNode;
 SD_SIZE(cNWNode, 0x14);
 
-/* the cells of the points of visibility (Global/GridElements.h with the pos pointers of the points) */
-typedef struct cNWGrid cNWGrid;
-typedef struct cNWGridVtbl {
-	cNWGrid *(*Delete)(cNWGrid *self, byte flags);						/* 0x00 */
-	byte(*Add)(cNWGrid *self, const vec3_t *p, void *const *data);				/* 0x04 */
-	byte(*GetCellAt)(cNWGrid *self, const vec3_t *p, cNWIntList **out);			/* 0x08 */
-	byte(*GetCell)(cNWGrid *self, const int *x, const int *y, const int *z, cNWIntList **out);	/* 0x0c */
-	byte(*Draw)(cNWGrid *self, uint32_t color);						/* 0x10 */
-	byte(*CellCoords)(cNWGrid *self, const vec3_t *p, int *x, int *y, int *z);		/* 0x14 */
-	void(*GetDivs)(cNWGrid *self, int *nx, int *ny, int *nz);				/* 0x18 */
-	vec3_t *(*GetCellSize)(cNWGrid *self, vec3_t *out);					/* 0x1c */
-	byte(*IsInside)(cNWGrid *self, const vec3_t *p);						/* 0x20 */
-} cNWGridVtbl;
-SD_OFFSET(cNWGridVtbl, GetCellSize, 0x1c);
-
-struct cNWGrid {
-	const cNWGridVtbl *vftable;
-};
-
 /* the set of points of visibility seen from cells of the generation buffer (InfPointVis), shared by the cells with
  * the same set: refs counts them; the sets are kept in the hash lists sets[hash] (0x24 bytes) */
 typedef struct cNWVis {
@@ -225,7 +206,7 @@ typedef struct CNodesWorldSup {
 	vec3_t max;			/* 0x080 */
 	char name[0xff];		/* 0x08c the level, the folder of the graph files */
 	byte nodeInitDummy;		/* 0x18b */
-	cNWGrid *grid;			/* 0x18c the points of visibility by cell */
+	struct cGridElements *grid;	/* 0x18c the points of visibility by cell (cGridElements_InfPointVisPtr) */
 	cNWPointList points;		/* 0x190 the points of the generation */
 	cNWNode *nodes;			/* 0x1a8 */
 	int numNodes;			/* 0x1ac */

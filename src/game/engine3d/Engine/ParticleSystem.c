@@ -16,7 +16,6 @@
 
 #define PARTICLESYSTEM_DEFAULT_COLOR 0xffffff
 
-typedef void(*partUpdate_t)(CParticle *self, CParticleSystem *sp, float dt, void *multiSpr);
 #define PARTICLE_UPDATE(p, sp, dt, ms) ((p)->vftable->Update((p), (sp), (dt), (ms)))
 
 /* a random value between a and b, the way the exe computes it */

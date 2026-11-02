@@ -111,3 +111,8 @@ void ActClassList_Init(void) {
 	g_pAuxActClass = NULL;
 	g_pAuxAction = NULL;
 }
+
+/* the vtable of cActClassList */
+const cActClassListVtbl cActClassList_vftable = {
+	.Delete = cActClassList_Delete,
+};

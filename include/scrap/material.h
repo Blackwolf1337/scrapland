@@ -21,8 +21,6 @@ enum {
 #define MAX_TEXTURE_PATHS 10
 #define MAX_TEXTURE_EXTS 10
 
-#define CMATLIST_VFTABLE GAME_VFTABLE(CMatList_vftable)
-#define CMATERIAL_VFTABLE GAME_VFTABLE(CMaterial_vftable)
 
 /* params.attrib */
 #define MAT_NOCOLLIDE 0x1		/* "(nc)", "(+no_collide)": the triangles get TRI_ALT_NO_COLLISIONS */
@@ -65,7 +63,7 @@ typedef struct CMap {
 	char *pathAni;			/* 0x44 printf format of the frame files */
 	CTextStatic *TextAni;		/* 0x48 new[] of frames */
 	void *AnimMat;			/* 0x4c 0x2c bytes */
-	void *FXTexture;		/* 0x50 object with a virtual deleting destructor at [0] */
+	struct IFXTexture *FXTexture;	/* 0x50 */
 	byte hasAlpha;			/* 0x54 */
 	byte compressed;		/* 0x55 the texture is compressed */
 	byte pad_56[2];
@@ -126,8 +124,14 @@ SD_SIZE(CObjRef, 4);
 
 typedef struct CMatList CMatList;
 
+typedef struct CMaterialVtbl {
+	struct CMaterial *(*Delete)(struct CMaterial *self, byte flags);	/* 0x00 */
+} CMaterialVtbl;
+extern const CMaterialVtbl CMaterial_vftable;
+#define CMATERIAL_VFTABLE (&CMaterial_vftable)
+
 typedef struct CMaterial {
-	void **vftable;			/* 0x00 [0] the deleting destructor */
+	const CMaterialVtbl *vftable;			/* 0x00 [0] the deleting destructor */
 	char *Name;			/* 0x04 */
 	int Refs;			/* 0x08 the lists holding it */
 	CMatList *sub;			/* 0x0c */
@@ -142,8 +146,14 @@ SD_SIZE(CMaterial, 0xb0);
 SD_OFFSET(CMaterial, next, 0x44);
 SD_OFFSET(CMaterial, map, 0x9c);
 
+typedef struct CMatListVtbl {
+	struct CMatList *(*Delete)(struct CMatList *self, byte flags);	/* 0x00 */
+} CMatListVtbl;
+extern const CMatListVtbl CMatList_vftable;
+#define CMATLIST_VFTABLE (&CMatList_vftable)
+
 struct CMatList {
-	void **vftable;			/* 0x0 */
+	const CMatListVtbl *vftable;			/* 0x0 */
 	char *Name;			/* 0x4 */
 	CMaterial *first;			/* 0x8 */
 	CMaterial *last;			/* 0xc */

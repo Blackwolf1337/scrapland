@@ -249,3 +249,8 @@ byte Logic_SetOnFloor(cEntity *e) {
 	}
 	return 0;
 }
+
+/* the vtable of cLogicControl */
+const cLogicControlVtbl cLogicControl_vftable = {
+	.Delete = Logic_Delete,
+};

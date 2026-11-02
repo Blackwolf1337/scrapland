@@ -1263,7 +1263,7 @@ void Scene_UsedMats(CScene *scn) {
 	if (g_M3DLMat) {
 		E3D_LogWhite(g_FileLog, "Scene materials: %d included, %d deleted", included, CMatList_Count(g_M3DLMat, 1));
 		if (g_M3DLMat) {
-			((objDelete_t)g_M3DLMat->vftable[0])(g_M3DLMat, 1);
+			g_M3DLMat->vftable->Delete(g_M3DLMat, 1);
 			g_M3DLMat = NULL;
 		}
 	}
@@ -1610,7 +1610,7 @@ void Scene_SkinMesh(CScene *scn) {
 		CScene_AddNode(scn, node);
 		return;
 	}
-	((objDelete_t)((void **)all->vftable)[0])(all, 1);
+	all->vftable->Delete(&all->base, 1);
 }
 
 void Scene_NodeTable(CScene *scn) {
@@ -2055,7 +2055,7 @@ static CMaterial *M3D_MatColorMesh(const vec3_t *c) {
 		mat->params.diffuse[2]);
 	CMaterial *found = CMatList_Find(g_MatList, mat);
 	if (found) {
-		((objDelete_t)mat->vftable[0])(mat, 1);
+		mat->vftable->Delete(mat, 1);
 		return found;
 	}
 	CMatList_Add(g_MatList, mat);
@@ -3225,7 +3225,7 @@ CScene *Scene_Load(const char *name, int arg, const char *name2) {
 	}
 	if (!bStatic) {
 		if (g_M3DLMat) {
-			((CMatList *(*)(CMatList *, byte))g_M3DLMat->vftable[0])(g_M3DLMat, 1);
+			g_M3DLMat->vftable->Delete(g_M3DLMat, 1);
 			g_M3DLMat = NULL;
 		}
 		g_M3DNumMat = 0;

@@ -20,7 +20,6 @@
 /* params.attrib: no back faces for two sided materials */
 #define MAT_ONESIDED 0x4000
 
-typedef void(*nodeDelete_t)(CNode3D *self, int flags);
 
 /* IUnknown::Release of a COM object, the pointer cleared */
 static void MeshD3D_Release(void **p) {
@@ -709,7 +708,7 @@ void CMeshD3D_SetNode(CMeshD3D *self, CNode3D *node) {
 			m->node->Refs--;
 			CNode3D *old = m->node;
 			if (old->Refs == 0 && old) {
-				((nodeDelete_t)old->vftable[0])(old, 1);
+				old->vftable->Delete(&old->ref, 1);
 			}
 			m->node = NULL;
 		}

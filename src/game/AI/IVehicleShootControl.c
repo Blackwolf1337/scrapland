@@ -979,3 +979,8 @@ void cAIVehicleShoot_WeapListChanged(cAIVehicleShoot *self) {
 		cAIVehicleShoot_SelectCM(self);
 	}
 }
+
+/* the vtable of cAIVehicleShootControl */
+const cAIVehicleShootVtbl cAIVehicleShootControl_vftable = {
+	.Delete = cAIVehicleShoot_Delete,
+};
