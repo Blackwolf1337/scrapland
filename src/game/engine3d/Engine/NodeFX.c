@@ -35,8 +35,8 @@ byte INodeFX_Type(INodeFX *self) {
 
 uint32_t g_TimeMs;
 
-extern const char str_3e3bc8[];
-const char *g_NodeEffectSect = (void *)str_3e3bc8;
+extern const char str_NodeEffect[];
+const char *g_NodeEffectSect = (void *)str_NodeEffect;
 
 /* ---- CNodeFX_Wheel ---- */
 
@@ -443,7 +443,7 @@ const INodeFXVtbl CNodeFX_Spring_vftable = {
 	.Apply = CNodeFX_Spring_Apply,
 };
 
-const char str_3e3bc8[] = "NodeEffect";
+const char str_NodeEffect[] = "NodeEffect";
 
 cGVar GVar_NodeFXSpringMidP;
 

@@ -129,13 +129,13 @@ int PyMenuEntity_SetAttr(PyObject *self, char *name, PyObject *v) {
 	return -1;
 }
 
-const char str_3c75a8[] = "cPyMenuEntity";
+const char str_CPyMenuEntity[] = "cPyMenuEntity";
 
-extern const char str_3c75a8[];
+extern const char str_CPyMenuEntity[];
 PyTypeObject cPyMenuEntity_Type = {
 	.ob_refcnt = 1,
 	.ob_type = &PyType_Type,
-	.tp_name = (void *)str_3c75a8,
+	.tp_name = (void *)str_CPyMenuEntity,
 	.tp_basicsize = sizeof(cPyMenuEntity),
 	.tp_dealloc = (void *)PyMenuEntity_Dealloc,
 	.tp_print = (void *)PyMenuEntity_Print,

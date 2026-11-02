@@ -29,8 +29,6 @@ static inline vec3_t *AICC_ViewDir(vec3_t *out, cEntity *e) {
 	return Vec3_Rotate(out, &fwd, &ang);
 }
 
-const int cAICharControl_ctor_3a9a2c = 50;
-
 /* ---- construction ---- */
 
 cAICharControl *cAICharControl_ctor(void *mem, cEntity *ent, cAIChar *ai, int *arg) {
@@ -73,7 +71,7 @@ cAICharControl *cAICharControl_ctor(void *mem, cEntity *ent, cAIChar *ai, int *a
 	self->waitTargetPos.x = self->waitTargetPos.y = self->waitTargetPos.z = 0.0f;
 	self->waitPos.x = self->waitPos.y = self->waitPos.z = 0.0f;
 	self->unused_140 = 1;
-	self->path.maxFree = cAICharControl_ctor_3a9a2c;
+	self->path.maxFree = 50;
 	self->stopped = 0;
 	self->orbitSide = 0;
 	self->strafeDir = 0;

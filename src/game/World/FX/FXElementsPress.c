@@ -275,7 +275,7 @@ static inline uint32_t *Press_Ramp(uint32_t *ramps, int i) {
 	return ramps + i * 9;
 }
 
-uint32_t DamageFX_Glow_430a68[28] = {
+uint32_t DamageFX_GlowTable[28] = {
 	0x10f0f0ff, 0x20d2d2ff, 0x306e6ee6, 0x405555be, 0x60414196, 0x802d2d78, 0xc019196e, 0xff0a0a32, 0xff000000,
 	0x10d2d2ff, 0x209696ff, 0x306464e1, 0x403232b4, 0x601e1e55, 0x800a0a2d, 0xc0050519, 0xff00000a, 0xff000000,
 	0x10d2d2ff, 0x20b4b4ff, 0x309393e6, 0x405353ab, 0x602d2d4c, 0x80141438, 0xc005051e, 0xff00000a, 0xff000000,
@@ -284,7 +284,7 @@ uint32_t DamageFX_Glow_430a68[28] = {
 /* one flash glow at the emitter: sizes and life random, scaled by s */
 static void DamageFX_Glow(CGameParticles *p, float s, double iniRange, double iniAdd, double endRange, double endAdd,
 	byte sprite, double lifeRange, double lifeAdd) {
-	CGameParticles_SetColorRamp(p, Press_Ramp(DamageFX_Glow_430a68, 0));
+	CGameParticles_SetColorRamp(p, Press_Ramp(DamageFX_GlowTable, 0));
 	p->sizeIni = FxElem_Rand(iniRange, iniAdd) * s;
 	p->sizeEnd = FxElem_Rand(endRange, endAdd) * s;
 	float lt = FxElem_Rand(lifeRange, lifeAdd);
@@ -296,7 +296,7 @@ static void DamageFX_Glow(CGameParticles *p, float s, double iniRange, double in
 	CGameParticles_EmitN(p, 1, 1);
 }
 
-uint32_t cFXElementsMentalControllerDamageFX_Update_4309f8[28] = {
+uint32_t cFXElementsMentalControllerDamageFX_UpdateTable[28] = {
 	0xff000000, 0x94191919, 0x78232323, 0x782d2d2d, 0x782d2d2d, 0x78232323, 0xc4191919, 0xff000000, 0xff000000,
 	0xff000000, 0xa4232323, 0x7d2d2d2d, 0x7d373737, 0x7d373737, 0x7d282828, 0xd2191919, 0xff000000, 0xff000000,
 	0xff000000, 0xc02d2d2d, 0x843c3c3c, 0x84414141, 0x84373737, 0xa42d2d2d, 0xdc1e1e1e, 0xff000000, 0xff000000,
@@ -334,7 +334,7 @@ void cFXElementsMentalControllerDamageFX_Update(cMapElement *elem, float dt) {
 		CGameParticles *sm = &self->smoke;
 		sm->birthRate = 0;
 		CGameParticles_SetColorRampOn(sm, 1);
-		CGameParticles_SetColorRamp(sm, Press_Ramp(cFXElementsMentalControllerDamageFX_Update_4309f8, crt_rand() % 3));
+		CGameParticles_SetColorRamp(sm, Press_Ramp(cFXElementsMentalControllerDamageFX_UpdateTable, crt_rand() % 3));
 		for (int k = 0; k < FXMENTALDAMAGEEMITTERS; k++) {
 			if (self->smokeNode[k] <= -1) {
 				break;
@@ -414,7 +414,7 @@ void cFXElementsMentalControllerDamageFX_Update(cMapElement *elem, float dt) {
 		int n = lo2 + crt_rand() % (self->flashSparksMax[k] - lo2);
 		CGameParticles_SetSparksOn(fl, 1);
 		for (; n > 0; n--) {
-			CGameParticles_SetColorRamp(fl, Press_Ramp(DamageFX_Glow_430a68, crt_rand() % 3));
+			CGameParticles_SetColorRamp(fl, Press_Ramp(DamageFX_GlowTable, crt_rand() % 3));
 			float az = FxElem_Rand(3.1415927410125732, -1.5707963705062866);
 			float ay = FxElem_Rand(3.1415927410125732, -1.5707963705062866);
 			ang.x = 0.0f;

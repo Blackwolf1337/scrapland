@@ -85,8 +85,8 @@ extern int g_WinWidth;
 extern int g_WinHeight;
 extern int g_WideWinWidth;
 extern int g_WideWinHeight;
-extern char str_431a98[];
-#define g_ScrapTitle str_431a98	/* "Scrapland" */
+extern char str_Scrapland[];
+#define g_ScrapTitle str_Scrapland	/* "Scrapland" */
 
 /* App.c */
 CApp *CApp_ctor(CApp *self, const char *cmdLine);

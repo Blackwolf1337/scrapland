@@ -1376,7 +1376,7 @@ void Engine_LoadIni(const char *name, const char *dir) {
 	CIniFile_dtor(&ini);
 }
 
-char str_431bf0[128] = "m3d.ini";
+char str_M3dIni[128] = "m3d.ini";
 
 cGVar GVar_RenderUseVB;
 

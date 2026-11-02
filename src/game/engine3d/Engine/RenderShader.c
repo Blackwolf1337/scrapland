@@ -42,213 +42,213 @@ byte CMatId_Check(CMatId *self, CMaterial *mat) {
 	return 1;
 }
 
-extern const char str_3bbe9c[];
-extern const char str_3c2ddc[];
-extern const char str_3d8e98[];
-extern const char str_3d8eb4[];
-extern const char str_3d8ec8[];
-extern const char str_3d8edc[];
-extern const char str_3d8f54[];
-extern const char str_3d8f68[];
-extern const char str_3d8f90[];
-extern const char str_3d8fb8[];
-extern const char str_3d8fe8[];
-extern const char str_3d8ffc[];
-extern const char str_3d900c[];
-extern const char str_3d901c[];
-extern const char str_3d902c[];
-extern const char str_3d903c[];
-extern const char str_3d9050[];
-extern const char str_3d9064[];
-extern const char str_3d9078[];
-extern const char str_3d9090[];
-extern const char str_3d90ac[];
-extern const char str_3d90c0[];
-extern const char str_3d90d4[];
-extern const char str_3d90e8[];
-extern const char str_3d9104[];
-extern const char str_3d910c[];
-extern const char str_3d9114[];
-extern const char str_3d9120[];
-extern const char str_3d912c[];
-extern const char str_3d9134[];
-extern const char str_3d9148[];
-extern const char str_3d915c[];
-extern const char str_3d9164[];
-extern const char str_3d9170[];
-extern const char str_3d917c[];
-extern const char str_3d9188[];
-extern const char str_3d9190[];
-extern const char str_3d9198[];
-extern const char str_3d91a0[];
-extern const char str_3d91ac[];
-extern const char str_3d91b8[];
-extern const char str_3d91c4[];
-extern const char str_3d91d4[];
-extern const char str_3d91e8[];
-extern const char str_3d91f4[];
-extern const char str_3d9200[];
-extern const char str_3d920c[];
-extern const char str_3d9220[];
+extern const char str_Fire[];
+extern const char str_Noise[];
+extern const char str_BmpGlowmapMaskEnvBumpPsh[];
+extern const char str_BmpMaskEnvBumpPsh[];
+extern const char str_BmpMaskEnvmapPsh[];
+extern const char str_BmpGlowmapMaskEnvmapPsh[];
+extern const char str_BmpCloudTestPsh[];
+extern const char str_BmpEnvmapPsh[];
+extern const char str_BmpGlowmapPsh[];
+extern const char str_BmpHologramPsh[];
+extern const char str_BmpElectricPsh[];
+extern const char str_BmpFirePsh[];
+extern const char str_BmpGlassPsh[];
+extern const char str_BmpWavesPsh[];
+extern const char str_BmpNoisePsh[];
+extern const char str_BmpBloomFilterPsh[];
+extern const char str_BmpBloomBlurPsh[];
+extern const char str_BmpBloomTargetPsh[];
+extern const char str_BmpMotionBlurAddPsh[];
+extern const char str_BmpMotionBlurTargetPsh[];
+extern const char str_BmpBlurTargetPsh[];
+extern const char str_BmpDUDVFilterPsh[];
+extern const char str_BmpDUDVTargetPsh[];
+extern const char str_BmpRadialBlurTargetPsh[];
+extern const char str_Diffuse[];
+extern const char str_Envmap[];
+extern const char str_MaskEnvmap[];
+extern const char str_MaskEnvBump[];
+extern const char str_Glowmap[];
+extern const char str_GlowmapMaskEnvmap[];
+extern const char str_GlowmapMaskEnvBump[];
+extern const char str_Clouds[];
+extern const char str_Hologram[];
+extern const char str_GlowFlick[];
+extern const char str_Electric[];
+extern const char str_Glass[];
+extern const char str_Waves[];
+extern const char str_Scroll[];
+extern const char str_BloomFilter[];
+extern const char str_BloomBlur[];
+extern const char str_BloomTarget[];
+extern const char str_MotionBlurAdd[];
+extern const char str_MotionBlurTarget[];
+extern const char str_BlurTarget[];
+extern const char str_DUDVFilter[];
+extern const char str_DUDVTarget[];
+extern const char str_RadialBlurTarget[];
+extern const char str_DiffuseNoLit[];
 ShaderTab g_ShaderTab[32] = {
-	{ .Name = (void *)str_3d9104, .flags = 257, .fnRender = (void *)Render_PSFixed },
+	{ .Name = (void *)str_Diffuse, .flags = 257, .fnRender = (void *)Render_PSFixed },
 	{
 		.Index = 1,
-		.Name = (void *)str_3d910c,
-		.File = (void *)str_3d8f68,
+		.Name = (void *)str_Envmap,
+		.File = (void *)str_BmpEnvmapPsh,
 		.flags = 257,
 		.fnRender = (void *)Shader_Envmap,
 	},
 	{
 		.Index = 2,
-		.Name = (void *)str_3d9114,
-		.File = (void *)str_3d8ec8,
+		.Name = (void *)str_MaskEnvmap,
+		.File = (void *)str_BmpMaskEnvmapPsh,
 		.flags = 256,
 		.fnRender = (void *)Shader_MaskEnvmap,
 	},
 	{
 		.Index = 3,
-		.Name = (void *)str_3d9120,
-		.File = (void *)str_3d8eb4,
+		.Name = (void *)str_MaskEnvBump,
+		.File = (void *)str_BmpMaskEnvBumpPsh,
 		.flags = 256,
 		.fnRender = (void *)Shader_MaskEnvBump,
 	},
 	{
 		.Index = 4,
-		.Name = (void *)str_3d912c,
-		.File = (void *)str_3d8f90,
+		.Name = (void *)str_Glowmap,
+		.File = (void *)str_BmpGlowmapPsh,
 		.flags = 257,
 		.fnRender = (void *)Shader_Glowmap,
 	},
 	{
 		.Index = 5,
-		.Name = (void *)str_3d9134,
-		.File = (void *)str_3d8edc,
+		.Name = (void *)str_GlowmapMaskEnvmap,
+		.File = (void *)str_BmpGlowmapMaskEnvmapPsh,
 		.flags = 256,
 		.fnRender = (void *)Shader_GlowmapMaskEnvmap,
 	},
 	{
 		.Index = 6,
-		.Name = (void *)str_3d9148,
-		.File = (void *)str_3d8e98,
+		.Name = (void *)str_GlowmapMaskEnvBump,
+		.File = (void *)str_BmpGlowmapMaskEnvBumpPsh,
 		.flags = 256,
 		.fnRender = (void *)Shader_GlowmapMaskEnvBump,
 	},
 	{
 		.Index = 7,
-		.Name = (void *)str_3d915c,
-		.File = (void *)str_3d8f54,
+		.Name = (void *)str_Clouds,
+		.File = (void *)str_BmpCloudTestPsh,
 		.flags = 257,
 		.fnRender = (void *)Shader_Clouds,
 	},
 	{
 		.Index = 8,
-		.Name = (void *)str_3d9164,
-		.File = (void *)str_3d8fb8,
+		.Name = (void *)str_Hologram,
+		.File = (void *)str_BmpHologramPsh,
 		.flags = 257,
 		.fnRender = (void *)Shader_Hologram,
 	},
-	{ .Index = 9, .Name = (void *)str_3d9170, .flags = 257, .fnRender = (void *)Shader_Glowmap },
+	{ .Index = 9, .Name = (void *)str_GlowFlick, .flags = 257, .fnRender = (void *)Shader_Glowmap },
 	{
 		.Index = 10,
-		.Name = (void *)str_3d917c,
-		.File = (void *)str_3d8fe8,
+		.Name = (void *)str_Electric,
+		.File = (void *)str_BmpElectricPsh,
 		.flags = 257,
 		.fnRender = (void *)Shader_Electric,
 	},
 	{
 		.Index = 11,
-		.Name = (void *)str_3bbe9c,
-		.File = (void *)str_3d8ffc,
+		.Name = (void *)str_Fire,
+		.File = (void *)str_BmpFirePsh,
 		.flags = 257,
 		.fnRender = (void *)Shader_Fire,
 	},
 	{
 		.Index = 12,
-		.Name = (void *)str_3d9188,
-		.File = (void *)str_3d900c,
+		.Name = (void *)str_Glass,
+		.File = (void *)str_BmpGlassPsh,
 		.flags = 257,
 		.fnRender = (void *)Shader_Glass,
 	},
 	{
 		.Index = 13,
-		.Name = (void *)str_3d9190,
-		.File = (void *)str_3d901c,
+		.Name = (void *)str_Waves,
+		.File = (void *)str_BmpWavesPsh,
 		.flags = 257,
 		.fnRender = (void *)Shader_Waves,
 	},
-	{ .Index = 14, .Name = (void *)str_3d9198, .flags = 257, .fnRender = (void *)Shader_Scroll },
+	{ .Index = 14, .Name = (void *)str_Scroll, .flags = 257, .fnRender = (void *)Shader_Scroll },
 	{
 		.Index = 15,
-		.Name = (void *)str_3c2ddc,
-		.File = (void *)str_3d902c,
+		.Name = (void *)str_Noise,
+		.File = (void *)str_BmpNoisePsh,
 		.flags = 257,
 		.fnRender = (void *)Shader_Noise,
 	},
 	{
 		.Index = 16,
-		.Name = (void *)str_3d91a0,
-		.File = (void *)str_3d903c,
+		.Name = (void *)str_BloomFilter,
+		.File = (void *)str_BmpBloomFilterPsh,
 		.flags = 257,
 		.fnRender = (void *)Render_PS0,
 	},
 	{
 		.Index = 17,
-		.Name = (void *)str_3d91ac,
-		.File = (void *)str_3d9050,
+		.Name = (void *)str_BloomBlur,
+		.File = (void *)str_BmpBloomBlurPsh,
 		.flags = 257,
 		.fnRender = (void *)Render_PS1,
 	},
 	{
 		.Index = 18,
-		.Name = (void *)str_3d91b8,
-		.File = (void *)str_3d9064,
+		.Name = (void *)str_BloomTarget,
+		.File = (void *)str_BmpBloomTargetPsh,
 		.flags = 257,
 		.fnRender = (void *)Render_PS2,
 	},
 	{
 		.Index = 19,
-		.Name = (void *)str_3d91c4,
-		.File = (void *)str_3d9078,
+		.Name = (void *)str_MotionBlurAdd,
+		.File = (void *)str_BmpMotionBlurAddPsh,
 		.flags = 257,
 		.fnRender = (void *)Render_PS3,
 	},
 	{
 		.Index = 20,
-		.Name = (void *)str_3d91d4,
-		.File = (void *)str_3d9090,
+		.Name = (void *)str_MotionBlurTarget,
+		.File = (void *)str_BmpMotionBlurTargetPsh,
 		.flags = 257,
 		.fnRender = (void *)Render_PS4,
 	},
 	{
 		.Index = 21,
-		.Name = (void *)str_3d91e8,
-		.File = (void *)str_3d90ac,
+		.Name = (void *)str_BlurTarget,
+		.File = (void *)str_BmpBlurTargetPsh,
 		.flags = 257,
 		.fnRender = (void *)Render_PS5,
 	},
 	{
 		.Index = 22,
-		.Name = (void *)str_3d91f4,
-		.File = (void *)str_3d90c0,
+		.Name = (void *)str_DUDVFilter,
+		.File = (void *)str_BmpDUDVFilterPsh,
 		.flags = 257,
 		.fnRender = (void *)Render_PS6,
 	},
 	{
 		.Index = 23,
-		.Name = (void *)str_3d9200,
-		.File = (void *)str_3d90d4,
+		.Name = (void *)str_DUDVTarget,
+		.File = (void *)str_BmpDUDVTargetPsh,
 		.flags = 257,
 		.fnRender = (void *)Render_PS7,
 	},
 	{
 		.Index = 24,
-		.Name = (void *)str_3d920c,
-		.File = (void *)str_3d90e8,
+		.Name = (void *)str_RadialBlurTarget,
+		.File = (void *)str_BmpRadialBlurTargetPsh,
 		.flags = 257,
 		.fnRender = (void *)Render_PS8,
 	},
-	{ .Index = 25, .Name = (void *)str_3d9220, .flags = 257, .fnRender = (void *)Shader_DiffuseNoLit },
+	{ .Index = 25, .Name = (void *)str_DiffuseNoLit, .flags = 257, .fnRender = (void *)Shader_DiffuseNoLit },
 };
 
 int Shader_Find(const char *name) {
@@ -314,55 +314,55 @@ void RenderGamma_LogShaderMask(void) {
 	}
 }
 
-const char str_3bbe9c[] = "Fire";
+const char str_Fire[] = "Fire";
 
-const char str_3c2ddc[] = "Noise";
+const char str_Noise[] = "Noise";
 
-const char str_3d9104[] = "Diffuse";
+const char str_Diffuse[] = "Diffuse";
 
-const char str_3d910c[] = "Envmap";
+const char str_Envmap[] = "Envmap";
 
-const char str_3d9114[] = "MaskEnvmap";
+const char str_MaskEnvmap[] = "MaskEnvmap";
 
-const char str_3d9120[] = "MaskEnvBump";
+const char str_MaskEnvBump[] = "MaskEnvBump";
 
-const char str_3d912c[] = "Glowmap";
+const char str_Glowmap[] = "Glowmap";
 
-const char str_3d9134[] = "GlowmapMaskEnvmap";
+const char str_GlowmapMaskEnvmap[] = "GlowmapMaskEnvmap";
 
-const char str_3d9148[] = "GlowmapMaskEnvBump";
+const char str_GlowmapMaskEnvBump[] = "GlowmapMaskEnvBump";
 
-const char str_3d915c[] = "Clouds";
+const char str_Clouds[] = "Clouds";
 
-const char str_3d9164[] = "Hologram";
+const char str_Hologram[] = "Hologram";
 
-const char str_3d9170[] = "GlowFlick";
+const char str_GlowFlick[] = "GlowFlick";
 
-const char str_3d917c[] = "Electric";
+const char str_Electric[] = "Electric";
 
-const char str_3d9188[] = "Glass";
+const char str_Glass[] = "Glass";
 
-const char str_3d9190[] = "Waves";
+const char str_Waves[] = "Waves";
 
-const char str_3d9198[] = "Scroll";
+const char str_Scroll[] = "Scroll";
 
-const char str_3d91a0[] = "BloomFilter";
+const char str_BloomFilter[] = "BloomFilter";
 
-const char str_3d91ac[] = "BloomBlur";
+const char str_BloomBlur[] = "BloomBlur";
 
-const char str_3d91b8[] = "BloomTarget";
+const char str_BloomTarget[] = "BloomTarget";
 
-const char str_3d91c4[] = "MotionBlurAdd";
+const char str_MotionBlurAdd[] = "MotionBlurAdd";
 
-const char str_3d91d4[] = "MotionBlurTarget";
+const char str_MotionBlurTarget[] = "MotionBlurTarget";
 
-const char str_3d91e8[] = "BlurTarget";
+const char str_BlurTarget[] = "BlurTarget";
 
-const char str_3d91f4[] = "DUDVFilter";
+const char str_DUDVFilter[] = "DUDVFilter";
 
-const char str_3d9200[] = "DUDVTarget";
+const char str_DUDVTarget[] = "DUDVTarget";
 
-const char str_3d920c[] = "RadialBlurTarget";
+const char str_RadialBlurTarget[] = "RadialBlurTarget";
 
-const char str_3d9220[] = "DiffuseNoLit";
+const char str_DiffuseNoLit[] = "DiffuseNoLit";
 

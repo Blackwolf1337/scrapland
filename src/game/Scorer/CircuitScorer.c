@@ -196,8 +196,6 @@ int cCircuitScorer_Var(cScorerItem *base, const char *name, int set, char **s, d
 	return cScorerItem_Var(&self->base, name, set, s, d, i);
 }
 
-const double cCircuitScorer_Draw_3c2608 = 0.5000000596046448;
-
 cCircuitFlare g_CircuitFlares[4];
 
 /* a flare at its end: a path no other flare runs, a pause, the duration by the path length, a direction */
@@ -219,7 +217,7 @@ static void Circuit_Respawn(int k) {
 	f->delay = Circuit_Rand((double)0.2f, (double)0.2f);
 	int r = crt_rand() & 0x7fff;
 	float len = g_CircuitPaths[f->path].total / 550.0f;
-	float t = len * (float)((double)r * RAND_SCALE * cCircuitScorer_Draw_3c2608 + (double)0.7f);
+	float t = len * (float)((double)r * RAND_SCALE * (double)0.50000006f + (double)0.7f);
 	f->duration = t;
 	f->time = t;
 	f->reverse = crt_rand() & 1;

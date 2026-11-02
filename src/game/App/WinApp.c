@@ -392,7 +392,7 @@ const CAppVtbl CWinApp_vftable = {
 	.IsDedicatedWin = CWinApp_IsDedicatedWin,
 };
 
-char str_431a98[] = "Scrapland";
+char str_Scrapland[] = "Scrapland";
 
 cGVar GVar_SoundInit;
 

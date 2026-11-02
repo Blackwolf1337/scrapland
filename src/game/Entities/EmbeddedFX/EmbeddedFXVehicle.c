@@ -468,13 +468,13 @@ static int Sirens_IsPolice(cEntity *v) {
 	return Str_EqualW(((vehicleName_t)(*(void ***)v)[0xf4 / 4])(v, 0), "P_Police");
 }
 
-uint32_t data_428550[9] = { 0xff0000ff, 0x200000ff, 0x300000ff, 0x400000ff, 0x5c0000ff, 0x800000ff, 0xc40000ff, 0xff0000ff, 0xff0000ff };
+uint32_t DataRamp[9] = { 0xff0000ff, 0x200000ff, 0x300000ff, 0x400000ff, 0x5c0000ff, 0x800000ff, 0xc40000ff, 0xff0000ff, 0xff0000ff };
 
-uint32_t data_428574[9] = { 0xff8080ff, 0x208080ff, 0x308080ff, 0x408080ff, 0x5c8080ff, 0x808080ff, 0xc48080ff, 0xff8080ff, 0xff8080ff };
+uint32_t DataRamp2[9] = { 0xff8080ff, 0x208080ff, 0x308080ff, 0x408080ff, 0x5c8080ff, 0x808080ff, 0xc48080ff, 0xff8080ff, 0xff8080ff };
 
-uint32_t data_428598[9] = { 0xffff0000, 0x20ff0000, 0x30ff0000, 0x40ff0000, 0x5cff0000, 0x80ff0000, 0xc4ff0000, 0xffff0000, 0xffff0000 };
+uint32_t DataRamp3[9] = { 0xffff0000, 0x20ff0000, 0x30ff0000, 0x40ff0000, 0x5cff0000, 0x80ff0000, 0xc4ff0000, 0xffff0000, 0xffff0000 };
 
-uint32_t data_4285bc[9] = { 0xffff8080, 0x20ff8080, 0x30ff8080, 0x40ff8080, 0x5cff8080, 0x80ff8080, 0xc4ff8080, 0xffff8080, 0xffff8080 };
+uint32_t DataRamp4[9] = { 0xffff8080, 0x20ff8080, 0x30ff8080, 0x40ff8080, 0x5cff8080, 0x80ff8080, 0xc4ff8080, 0xffff8080, 0xffff8080 };
 
 void cFXVehicleSirens_Update(cFXVehicleSirens *self) {
 	cEntity *v = self->owner->owner;
@@ -503,11 +503,11 @@ void cFXVehicleSirens_Update(cFXVehicleSirens *self) {
 	}
 	if (((0.1f > self->lastTime && self->time > 0.1f) || (0.2f > self->lastTime && self->time > 0.2f)) &&
 		Sirens_IsPolice(v)) {
-		Sirens_Flash(self, &self->pos[0], alarm, data_428574, data_428550);
+		Sirens_Flash(self, &self->pos[0], alarm, DataRamp2, DataRamp);
 	}
 	if (((0.6f > self->lastTime && self->time > 0.6f) || (0.7f > self->lastTime && self->time > 0.7f)) &&
 		Sirens_IsPolice(v)) {
-		Sirens_Flash(self, &self->pos[1], alarm, data_4285bc, data_428598);
+		Sirens_Flash(self, &self->pos[1], alarm, DataRamp4, DataRamp3);
 	}
 	self->lastTime = self->time;
 }
@@ -626,7 +626,7 @@ static void Probe_Flash(CGameParticles *p, int src, int i1, int i2, float frac, 
 		((uint32_t)c << 24) | 0xff0000, 5, 0.0f);
 }
 
-uint32_t cEmbeddedFXVehicleProbe_Update_4285e0[18] = {
+uint32_t cEmbeddedFXVehicleProbe_UpdateRamps[18] = {
 	0x4ff4010, 0x10ff300c, 0x20ff2008, 0x40ff1806, 0x5cff1004, 0x80ff0802, 0xc4ff0000, 0xffff0000, 0xffff0000,
 	0x80ff2020, 0x40ff2020, 0x5cff2020, 0x80ff2020, 0xa4ff2020, 0xc4ff2020, 0xe1ff2020, 0xffff2020, 0xffff2020,
 };
@@ -689,7 +689,7 @@ void cEmbeddedFXVehicleProbe_Update(cEmbeddedFXVehicleSub *base) {
 				p->spriteIni = 2;
 				p->spriteEnd = 2;
 				CGameParticles_SetColorRampOn(p, 1);
-				CGameParticles_SetColorRamp(p, cEmbeddedFXVehicleProbe_Update_4285e0);
+				CGameParticles_SetColorRamp(p, cEmbeddedFXVehicleProbe_UpdateRamps);
 				CGameParticles_Apply(p);
 				CGameParticles_EmitDt(p, 1, 0, (float)j / 3.0f);
 			}

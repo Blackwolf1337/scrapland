@@ -44,7 +44,7 @@ RadAreaLight *RadAreaLight_ctor(RadAreaLight *self) {
 	return self;
 }
 
-char str_432a88[16] = "luces.rad";
+char str_LucesRad[16] = "luces.rad";
 
 CRadiosity *CRadiosity_ctor(CRadiosity *self, const char *dir) {
 	char name[MAX_FILEPATH];
@@ -59,7 +59,7 @@ CRadiosity *CRadiosity_ctor(CRadiosity *self, const char *dir) {
 		E3D_DebugPrintf("\n%s: %s", name, r ? "no encontrado" : "ok");
 	}
 	/* the global file, a string of the exe's data */
-	Path_Copy(name, str_432a88, MAX_FILEPATH);
+	Path_Copy(name, str_LucesRad, MAX_FILEPATH);
 	int r = CIniFile_Load(&self->ini, name, NULL, 0);
 	E3D_DebugPrintf("\n%s: %s", name, r ? "no encontrado" : "ok");
 	CHashTable *t = operator_new(sizeof(CHashTable));

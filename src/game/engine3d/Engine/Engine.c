@@ -673,11 +673,11 @@ int g_InputInvY;
 
 int g_InputInvZ;
 
-uint32_t engineIni_4a8f28;
+uint32_t g_IniShadowObjFirst;
 
 int g_Overdraw;
 
-uint32_t engineIni_4a8f30[16];
+uint32_t g_IniShadowLight[16];
 
 int g_DbgConWindow;
 
@@ -685,25 +685,25 @@ int g_DbgConStd;
 
 float g_MipmapBias2;
 
-float engineIni_431bb0 = 0.35f;
+float g_IniShadowLevel = 0.35f;
 
-uint32_t engineIni_431bb4 = 0x7fffffff;
+uint32_t g_IniShadowObjLast = 0x7fffffff;
 
-uint32_t engineIni_431bb8 = 1;
+uint32_t g_IniShadowFixNormals = 1;
 
-uint32_t engineIni_431bbc = 1;
+uint32_t g_IniShadowProcObjects = 1;
 
-uint32_t engineIni_431bc8 = 1;
+uint32_t g_IniFilter = 1;
 
 int g_UseTextures = 1;
 
-uint32_t engineIni_431bd0 = 1;
+uint32_t g_IniTexPersp = 1;
 
-uint32_t engineIni_431cf8 = 1;
+uint32_t g_IniUseDInput = 1;
 
 int g_MouseExcl = 1;
 
-uint32_t engineIni_431d74 = 2;
+uint32_t g_IniMaxAniso = 2;
 
 int g_TextBPP = 16;
 
@@ -714,9 +714,9 @@ void Engine_LoadVarsIni(const char *name, const char *dir) {
 		const char *key;
 		void *var;
 	} engineIni[] = {
-		{ INI_BOOL, "video", "TexPersp", &engineIni_431bd0 },
+		{ INI_BOOL, "video", "TexPersp", &g_IniTexPersp },
 		{ INI_BOOL, "video", "Tramas", &g_Dither },
-		{ INI_BOOL, "video", "Filtrado", &engineIni_431bc8 },
+		{ INI_BOOL, "video", "Filtrado", &g_IniFilter },
 		{ INI_BOOL, "video", "UsarTexturas", &g_UseTextures },
 		{ INI_BOOL, "video", "UsarEnvMap", &g_UseEnvMap },
 		{ INI_BOOL, "video", "UsarHWEnvMap", &g_UseHWEnvMap },
@@ -734,20 +734,20 @@ void Engine_LoadVarsIni(const char *name, const char *dir) {
 		{ INI_FLOAT, "video", "limitaFPS", &g_LimitFps },
 		{ INI_FLOAT, "video", "despMipmap", &g_MipmapBias2 },
 		{ INI_BOOL, "video", "LinearMipmap", &g_EngineIni88 },
-		{ INI_LONG, "video", "MaxAnisoFlt", &engineIni_431d74 },
+		{ INI_LONG, "video", "MaxAnisoFlt", &g_IniMaxAniso },
 		{ INI_BOOL, "video", "ConsolaWnd", &g_DbgConWindow },
 		{ INI_BOOL, "video", "ConsolaTxt", &g_DbgConStd },
 		{ INI_BOOL, "video", "IlumSpec", &g_EngineIni80 },
 		{ INI_LONG, "video", "Stencil", &g_EngineIni84 },
 		{ INI_LONG, "video", "Depth", &g_EngineDef1cf4 },
-		{ INI_FLOAT, "sombras", "sombras", &engineIni_431bb0 },
-		{ INI_LONG, "sombras", "objeto_ini", &engineIni_4a8f28 },
-		{ INI_LONG, "sombras", "objeto_fin", &engineIni_431bb4 },
-		{ INI_BOOL, "sombras", "modif_vnorm", &engineIni_431bb8 },
-		{ INI_BOOL, "sombras", "proc_objetos", &engineIni_431bbc },
-		{ INI_TEXT, "sombras", "nombre_luz", engineIni_4a8f30 },
+		{ INI_FLOAT, "sombras", "sombras", &g_IniShadowLevel },
+		{ INI_LONG, "sombras", "objeto_ini", &g_IniShadowObjFirst },
+		{ INI_LONG, "sombras", "objeto_fin", &g_IniShadowObjLast },
+		{ INI_BOOL, "sombras", "modif_vnorm", &g_IniShadowFixNormals },
+		{ INI_BOOL, "sombras", "proc_objetos", &g_IniShadowProcObjects },
+		{ INI_TEXT, "sombras", "nombre_luz", g_IniShadowLight },
 		{ INI_BOOL, "dinput", "raton_excl", &g_MouseExcl },
-		{ INI_BOOL, "dinput", "usar_di", &engineIni_431cf8 },
+		{ INI_BOOL, "dinput", "usar_di", &g_IniUseDInput },
 		{ INI_BOOL, "dinput", "raton_inv_x", &g_InputInvX },
 		{ INI_BOOL, "dinput", "raton_inv_y", &g_InputInvY },
 		{ INI_BOOL, "dinput", "raton_inv_z", &g_InputInvZ },

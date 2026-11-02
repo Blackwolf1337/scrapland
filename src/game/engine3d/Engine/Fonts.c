@@ -785,8 +785,8 @@ void Fonts_Init(void) {
 	g_FntTerm8->round = 1;
 }
 
-extern const char str_3d3e38[];
-const char *g_FontsDir = (void *)str_3d3e38;
+extern const char str_2dFontsDrm[];
+const char *g_FontsDir = (void *)str_2dFontsDrm;
 
 void CUnifont_Load(CUnifont *self) {
 	cFilePack f;
@@ -903,5 +903,5 @@ byte CUnifont_SetSprite(const CUnifont *self, uint16_t i, float w, float h) {
 	return 1;
 }
 
-const char str_3d3e38[] = "2d/fonts-drm/";
+const char str_2dFontsDrm[] = "2d/fonts-drm/";
 

@@ -103,34 +103,6 @@ cScorerItem *cScraplandSubMenuScorer_Delete(cScorerItem *base, byte flags) {
 	return base;
 }
 
-const double cScraplandMainMenuScorer_Draw_3b11a0 = 12.0;
-
-const double cScraplandMainMenuScorer_Init_3c40b8 = 0.07999998331069946;
-
-const double cScraplandMainMenuScorer_Init_3b1f08 = 45.0;
-
-const double SubMenu_RandWait_3abbc0 = 0.10000000149011612;
-
-const double cScraplandMainMenuScorer_Draw_3c40e8 = 0.6399999856948853;
-
-const double SubMenu_RandWait_3ae240 = 0.30000001192092896;
-
-const double cScraplandMainMenuScorer_Draw_3c4108 = 3.4000000953674316;
-
-const double cScraplandMainMenuScorer_Init_3ae260 = 30.0;
-
-const double cScraplandMainMenuScorer_Init_3ae440 = 0.25;
-
-const double cScraplandMainMenuScorer_Draw_3c4118 = 14.600000381469727;
-
-const double cScraplandMainMenuScorer_Init_3aeb60 = 0.18000000715255737;
-
-const double cScraplandMainMenuScorer_Init_3aeba0 = 15.0;
-
-const double cScraplandMainMenuScorer_Draw_3afd68 = 8.0;
-
-const double cScraplandMainMenuScorer_Draw_3b9748 = 0.13999998569488525;
-
 byte g_MainMenuAnimInit;
 
 float g_MainMenuWait[9];
@@ -162,8 +134,8 @@ void cScraplandMainMenuScorer_Init(cScraplandMainMenuScorer *self) {
 	}
 	g_MainMenuAnimInit = 1;
 	for (int k = 0; k < 9; k++) {
-		g_MainMenuWait[k] = ScraplandScorer_Rand(cScraplandMainMenuScorer_Draw_3c4118, cScraplandMainMenuScorer_Draw_3c4108);
-		float len = ScraplandScorer_Rand(cScraplandMainMenuScorer_Init_3c40b8, cScraplandMainMenuScorer_Init_3aeb60);
+		g_MainMenuWait[k] = ScraplandScorer_Rand((double)14.6f, (double)3.4f);
+		float len = ScraplandScorer_Rand((double)0.07999998f, (double)0.18f);
 		g_MainMenuLength[k] = len;
 		switch (k) {
 		case 0:
@@ -188,59 +160,43 @@ void cScraplandMainMenuScorer_Init(cScraplandMainMenuScorer *self) {
 		g_MainMenuTime[k] = 0.0f;
 	}
 	for (int k = 0; k < 19; k++) {
-		g_MainMenuSparkWait[k] = ScraplandScorer_Rand(cScraplandMainMenuScorer_Draw_3b11a0, 0.0);
+		g_MainMenuSparkWait[k] = ScraplandScorer_Rand(12.0, 0.0);
 		int r = crt_rand() & 0x7fff;
 		g_MainMenuSparkTime[k] = 0.0f;
-		g_MainMenuSparkLength[k] = (float)((double)r * RAND_SCALE * cScraplandMainMenuScorer_Draw_3b9748 + cScraplandMainMenuScorer_Draw_3c40e8);
+		g_MainMenuSparkLength[k] = (float)((double)r * RAND_SCALE * (double)0.13999999f + (double)0.64f);
 		g_MainMenuSparkFrame[k] = crt_rand() % 14;
 		g_MainMenuSparkDir[k] = (byte)crt_rand() & 1;
 	}
 	for (int k = 0; k < 21; k++) {
 		if (crt_rand() & 1) {
-			g_MainMenuNeonWait[k] = ScraplandScorer_Rand(SubMenu_RandWait_3ae240, cScraplandMainMenuScorer_Init_3ae440);
+			g_MainMenuNeonWait[k] = ScraplandScorer_Rand((double)0.3f, 0.25);
 		} else {
-			g_MainMenuNeonWait[k] = ScraplandScorer_Rand(cScraplandMainMenuScorer_Init_3ae440, SubMenu_RandWait_3abbc0);
+			g_MainMenuNeonWait[k] = ScraplandScorer_Rand(0.25, (double)0.1f);
 		}
 	}
-	g_MainMenuNeonGroup[0] = ScraplandScorer_Rand(cScraplandMainMenuScorer_Init_3b1f08, cScraplandMainMenuScorer_Init_3aeba0);
-	g_MainMenuNeonGroup[1] = ScraplandScorer_Rand(cScraplandMainMenuScorer_Init_3b1f08, cScraplandMainMenuScorer_Init_3ae260);
-	g_MainMenuNeonGroup[2] = ScraplandScorer_Rand(cScraplandMainMenuScorer_Init_3b1f08, cScraplandMainMenuScorer_Init_3b1f08);
-	g_MainMenuNeonNext = ScraplandScorer_Rand(cScraplandMainMenuScorer_Draw_3b11a0, cScraplandMainMenuScorer_Draw_3afd68);
+	g_MainMenuNeonGroup[0] = ScraplandScorer_Rand(45.0, 15.0);
+	g_MainMenuNeonGroup[1] = ScraplandScorer_Rand(45.0, 3e+01);
+	g_MainMenuNeonGroup[2] = ScraplandScorer_Rand(45.0, 45.0);
+	g_MainMenuNeonNext = ScraplandScorer_Rand(12.0, 8.0);
 }
 
 /* the random wait of the sub menu logo until its next ring: short, middle or (mostly) long */
-const double SubMenu_RandWait_3c40f0 = 1.1999999284744263;
-
-const double SubMenu_RandWait_3c4100 = 1.7000000476837158;
-
-const double SubMenu_RandWait_3aeb68 = 0.20000000298023224;
-
-const double SubMenu_RandWait_3aeb88 = 0.800000011920929;
-
 static float SubMenu_RandWait(void) {
 	if (crt_rand() % 4 == 0) {
-		return ScraplandScorer_Rand(SubMenu_RandWait_3c4100, SubMenu_RandWait_3aeb88);
+		return ScraplandScorer_Rand((double)1.7f, (double)0.8f);
 	}
 	if (crt_rand() % 4 == 0) {
-		return ScraplandScorer_Rand(SubMenu_RandWait_3ae240, SubMenu_RandWait_3abbc0);
+		return ScraplandScorer_Rand((double)0.3f, (double)0.1f);
 	}
-	return ScraplandScorer_Rand(SubMenu_RandWait_3c40f0, SubMenu_RandWait_3aeb68);
+	return ScraplandScorer_Rand((double)1.1999999f, (double)0.2f);
 }
 
 /* the random length of a ring */
-const double SubMenu_RandRing_3c40c0 = 0.07999999821186066;
-
-const double SubMenu_RandRing_3c40d8 = 0.23999999463558197;
-
-const double SubMenu_RandRing_3c40e0 = 0.3400000035762787;
-
-const double SubMenu_RandRing_3aeb50 = 0.1599999964237213;
-
 static float SubMenu_RandRing(void) {
 	if (crt_rand() & 1) {
-		return ScraplandScorer_Rand(SubMenu_RandRing_3aeb50, SubMenu_RandRing_3c40e0);
+		return ScraplandScorer_Rand((double)0.16f, (double)0.34f);
 	}
-	return ScraplandScorer_Rand(SubMenu_RandRing_3c40c0, SubMenu_RandRing_3c40d8);
+	return ScraplandScorer_Rand((double)0.08f, (double)0.24f);
 }
 
 byte g_SubMenuAnimInit;
@@ -421,8 +377,6 @@ static void SubMenu_Draw(CPsaImage *img, float scale, uint32_t color, byte setCo
 	CPsaImage_Draw(img, x, y);
 }
 
-const double cScraplandSubMenuScorer_Draw_3ae448 = -3.141592653589793;
-
 int g_SubMenuRingDir;
 
 int g_SubMenuRingFrame;
@@ -445,7 +399,7 @@ void cScraplandSubMenuScorer_Draw(cScorerItem *base, int player) {
 	SubMenu_Draw(self->logo, self->scale, 0, 0, x, y);
 	SubMenu_Draw(self->ringMask, self->scale, 0xffffffff, 1, x, y);
 	self->ringReflection->color = 0x80ffffff;
-	double c = cos((double)(self->now * SUBMENU_REFLECTION_SPEED)) * cScraplandSubMenuScorer_Draw_3ae448;	/* -pi */
+	double c = cos((double)(self->now * SUBMENU_REFLECTION_SPEED)) * -3.141592653589793;	/* -pi */
 	float a = (float)(c + c);
 	for (int k = 0; k < 4; k++) {
 		float r[2];
@@ -549,16 +503,6 @@ static void MainMenu_DrawNeon(cScraplandMainMenuScorer *self, int frame) {
 }
 
 /* the neon tubes: each flickers while its wait runs, else it is nearly full on */
-const double cScraplandMainMenuScorer_Draw_3c40c8 = 0.10000000894069672;
-
-const double cScraplandMainMenuScorer_Draw_3ae218 = 0.09999999403953552;
-
-const double cScraplandMainMenuScorer_Draw_3ae228 = 0.15000000596046448;
-
-const double cScraplandMainMenuScorer_Draw_3aeb38 = 0.05000000074505806;
-
-const double cScraplandMainMenuScorer_Draw_3aeba8 = 60.0;
-
 static void MainMenu_Neons(cScraplandMainMenuScorer *self, float dt) {
 	for (int k = 0; k < MAINMENU_NEONS; k++) {
 		float *w = &g_MainMenuNeonWait[k];
@@ -579,9 +523,9 @@ static void MainMenu_Neons(cScraplandMainMenuScorer *self, float dt) {
 	if (g_MainMenuNeonNext > 0.0f) {
 		g_MainMenuNeonNext = g_MainMenuNeonNext - dt;
 	} else {
-		g_MainMenuNeonNext = ScraplandScorer_Rand(cScraplandMainMenuScorer_Draw_3b11a0, cScraplandMainMenuScorer_Draw_3afd68);
+		g_MainMenuNeonNext = ScraplandScorer_Rand(12.0, 8.0);
 		int k = crt_rand() % MAINMENU_NEONS;
-		g_MainMenuNeonWait[k] = ScraplandScorer_Rand(cScraplandMainMenuScorer_Draw_3c40c8, cScraplandMainMenuScorer_Draw_3aeb38);
+		g_MainMenuNeonWait[k] = ScraplandScorer_Rand((double)0.10000001f, (double)0.05f);
 	}
 	/* the three groups of tubes flicker together */
 	static const int groups[3][2] = {{0, 7}, {8, 12}, {13, 20}};
@@ -590,9 +534,9 @@ static void MainMenu_Neons(cScraplandMainMenuScorer *self, float dt) {
 			g_MainMenuNeonGroup[g] = g_MainMenuNeonGroup[g] - dt;
 			continue;
 		}
-		g_MainMenuNeonGroup[g] = ScraplandScorer_Rand(cScraplandMainMenuScorer_Draw_3aeba8, 0.0);
+		g_MainMenuNeonGroup[g] = ScraplandScorer_Rand(6e+01, 0.0);
 		for (int k = groups[g][0]; k <= groups[g][1]; k++) {
-			g_MainMenuNeonWait[k] = ScraplandScorer_Rand(cScraplandMainMenuScorer_Draw_3ae218, cScraplandMainMenuScorer_Draw_3ae228);
+			g_MainMenuNeonWait[k] = ScraplandScorer_Rand((double)0.099999994f, (double)0.15f);
 		}
 	}
 }
@@ -605,8 +549,8 @@ static int MainMenu_Letter(cScraplandMainMenuScorer *self, int k, float dt) {
 		float w = g_MainMenuWait[k] - dt;
 		g_MainMenuWait[k] = w;
 		if (0.0f >= w) {
-			g_MainMenuWait[k] = ScraplandScorer_Rand(cScraplandMainMenuScorer_Draw_3c4118, cScraplandMainMenuScorer_Draw_3c4108);
-			float len = ScraplandScorer_Rand(SubMenu_RandRing_3c40c0, SubMenu_RandWait_3aeb68);
+			g_MainMenuWait[k] = ScraplandScorer_Rand((double)14.6f, (double)3.4f);
+			float len = ScraplandScorer_Rand((double)0.08f, (double)0.2f);
 			g_MainMenuLength[k] = len;
 			switch (k) {
 			case 7:
@@ -649,10 +593,6 @@ static int MainMenu_Letter(cScraplandMainMenuScorer *self, int k, float dt) {
 }
 
 /* the sparks: each one runs its frames after a random wait */
-const double cScraplandMainMenuScorer_Draw_3c40f8 = 1.399999976158142;
-
-const double cScraplandMainMenuScorer_Draw_3c4110 = 10.600000381469727;
-
 float g_MainMenuSparkPos[19][2] = {
 	{ 116.0f, 104.0f },
 	{ 104.0f, 169.0f },
@@ -681,12 +621,12 @@ static void MainMenu_Sparks(cScraplandMainMenuScorer *self, float dt) {
 			float w = g_MainMenuSparkWait[k] - dt;
 			g_MainMenuSparkWait[k] = w;
 			if (0.0f >= w) {
-				g_MainMenuSparkWait[k] = ScraplandScorer_Rand(cScraplandMainMenuScorer_Draw_3c4110, cScraplandMainMenuScorer_Draw_3c40f8);
+				g_MainMenuSparkWait[k] = ScraplandScorer_Rand((double)10.6f, (double)1.4f);
 				int r = crt_rand() & 0x7fff;
 				/* the original reads the letter lengths by the spark index, past them for k >= 9 into the spark waits
 				 * that follow them there (a separate C object since stage 3c2) */
 				g_MainMenuSparkTime[k] = k < 9 ? g_MainMenuLength[k] : g_MainMenuSparkWait[k - 9];
-				g_MainMenuSparkLength[k] = (float)((double)r * RAND_SCALE * cScraplandMainMenuScorer_Draw_3b9748 + cScraplandMainMenuScorer_Draw_3c40e8);
+				g_MainMenuSparkLength[k] = (float)((double)r * RAND_SCALE * (double)0.13999999f + (double)0.64f);
 				g_MainMenuSparkFrame[k] = crt_rand() % 14;
 				g_MainMenuSparkDir[k] = (byte)crt_rand() & 1;
 			}
@@ -707,8 +647,6 @@ static void MainMenu_Sparks(cScraplandMainMenuScorer *self, float dt) {
 		}
 	}
 }
-
-const double cScraplandMainMenuScorer_Draw_3ae270 = 75.0;
 
 CFont *g_FontScrapMedium;
 
@@ -757,7 +695,7 @@ void cScraplandMainMenuScorer_Draw(cScorerItem *base, int player) {
 	MainMenu_Sparks(self, dt);
 	CFont *font = g_FontScrapMedium;
 	for (int i = 0; i < 10; i++) {
-		float r = ScraplandScorer_Rand(cScraplandMainMenuScorer_Draw_3ae270, 0.0);
+		float r = ScraplandScorer_Rand(75.0, 0.0);
 		double s = sin((double)(self->now * 8.0f - (float)i)) + 1.0;
 		font->effects = 0x40000;
 		font->align = 0;

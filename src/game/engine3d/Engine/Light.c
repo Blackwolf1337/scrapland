@@ -341,11 +341,11 @@ int Light_Select(const vec3_t *pos, int sector, const vec3_t *center, float radi
 	return n;
 }
 
-const color4_t colorRva_3d7bf0 = { .r = 0.383529f, .g = 0.430588f, .b = 0.517647f, .a = 1.0f };
+const color4_t colorRvaColor = { .r = 0.383529f, .g = 0.430588f, .b = 0.517647f, .a = 1.0f };
 
-const color4_t colorRva_3d7c00 = { .r = 0.740392f, .g = 0.661961f, .b = 0.536471f, .a = 1.0f };
+const color4_t colorRvaColor2 = { .r = 0.740392f, .g = 0.661961f, .b = 0.536471f, .a = 1.0f };
 
-const color4_t colorRva_3d7c10 = { .r = 0.909804f, .g = 0.882353f, .b = 0.827451f, .a = 1.0f };
+const color4_t colorRvaColor3 = { .r = 0.909804f, .g = 0.882353f, .b = 0.827451f, .a = 1.0f };
 
 int Light_SetDefault(byte on) {
 	/* the directions of the three lights of EnableMonitorLights */
@@ -355,8 +355,8 @@ int Light_SetDefault(byte on) {
 		{ 0xb99a05ae, 0xbe807faa, 0xbf77ce74 },
 	};
 	/* their colors, constants of the exe */
-	const color4_t *colors[3] = { (&colorRva_3d7c10), (&colorRva_3d7c00),
-		(&colorRva_3d7bf0) };
+	const color4_t *colors[3] = { (&colorRvaColor3), (&colorRvaColor2),
+		(&colorRvaColor) };
 
 	E3D_FlushBatch();
 	E3D_SetShadowLight(NULL, 0);

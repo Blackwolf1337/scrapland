@@ -142,7 +142,7 @@ byte FX_IsVisible(float x, float y, float z, float radius, float maxDist, const 
 	return 1;
 }
 
-uint32_t FX_ItemBlink_430b44[9] = { 0x80669eff, 0x84669eff, 0x94669eff, 0xa4669eff, 0xb9669eff, 0xcd669eff, 0xe8669eff, 0xff669eff, 0xff669eff };
+uint32_t FX_ItemBlinkRamp[9] = { 0x80669eff, 0x84669eff, 0x94669eff, 0xa4669eff, 0xb9669eff, 0xcd669eff, 0xe8669eff, 0xff669eff, 0xff669eff };
 
 void FX_ItemBlink(cEntity *e) {
 	CGameModel *m = Obj_Vtbl(e)->GetModel(e);
@@ -167,7 +167,7 @@ void FX_ItemBlink(cEntity *e) {
 	float r = CGameModel_Radius(m) * 4.0f;
 	sp->birthRate = 0;
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, FX_ItemBlink_430b44);
+	CGameParticles_SetColorRamp(sp, FX_ItemBlinkRamp);
 	float life = cTimer_GetSpeed(&g_pWorld->timer) * 0.12f;
 	sp->sizeLife = 0.4f;
 	sp->sizeEnd = r;
@@ -660,7 +660,7 @@ static void FX_StillAt(CGameParticles *sp, const vec3_t *pos) {
 	sp->rotIni = sp->rotEnd = FX_RandF((double)6.28318548f, 0.0);
 }
 
-uint32_t FX_EmitFade_430ad8[27] = {
+uint32_t FX_EmitFadeRamps[27] = {
 	0x2043696d, 0x30436972, 0x40436976, 0x5c42687b, 0x8042687f, 0xa4426885, 0xc0426886, 0xff426886, 0xff426886,
 	0x20000000, 0x30000000, 0x40102534, 0x5c2046d1, 0x80205aff, 0xa42048ff, 0xc0104489, 0xff000000, 0xff000000,
 	0x30c8c8ff, 0x40f0f0ff, 0x20c4c4c4, 0x808080ff, 0xa44040ff, 0xc02020ff, 0xe10000ff, 0xff0000ff, 0xff0000ff,
@@ -670,7 +670,7 @@ uint32_t FX_EmitFade_430ad8[27] = {
 static void FX_EmitFade(CGameParticles *sp) {
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, FX_EmitFade_430ad8 + crt_rand() % 3 * 9);
+	CGameParticles_SetColorRamp(sp, FX_EmitFadeRamps + crt_rand() % 3 * 9);
 	CGameParticles_EmitN(sp, 1, 1);
 }
 
@@ -770,7 +770,7 @@ void cObjElementFXItemTake_Start(cObjElementFXItemTake *self, cEntity *e) {
 	}
 }
 
-uint32_t cObjElementFXItemTake_Update_430b68[56] = {
+uint32_t cObjElementFXItemTake_UpdateTable[56] = {
 	0x2040406d, 0x30404072, 0x40273476, 0x5c23307b, 0x801c2a7f, 0xa4162285, 0xc0101986, 0xff0c1086, 0xff080886,
 	0x20050540, 0x30101080, 0x402020b4, 0x5c3030d1, 0x804040ff, 0xa44040ff, 0xc0202089, 0xff000000, 0xff000000,
 	0x306464ff, 0x405050ff, 0x204242c4, 0x803030ff, 0xa41818ff, 0xc00606ff, 0xe10000ff, 0xff0000ff, 0xff0000ff, 0,
@@ -942,7 +942,7 @@ void cObjElementFXItemTake_Update(cObjElementFX *base, cDebris *d, float dt) {
 		sp->spriteEnd = sp->spriteIni;
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, cObjElementFXItemTake_Update_430b68 + crt_rand() % 3 * 9);
+		CGameParticles_SetColorRamp(sp, cObjElementFXItemTake_UpdateTable + crt_rand() % 3 * 9);
 		CGameParticles_EmitDt(sp, 1, 1, FX_RandF((double)0.100000001f, 0.0));
 	}
 }

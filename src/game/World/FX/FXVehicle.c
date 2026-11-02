@@ -373,12 +373,12 @@ static void FXV_FireSprites(CGameParticles *p) {
 #define FXV_RAMP_SMOKE 0x43119c		/* [2] */
 #define FXV_RAMP_SMOKE2 0x431178
 
-uint32_t cObjElementFXFiredDebris_Update_4310e8[18] = {
+uint32_t cObjElementFXFiredDebris_UpdateRamps[18] = {
 	0xff565656, 0xe2fff696, 0xc4e68211, 0xc4ab5e0d, 0xc49c3a08, 0xc46a2617, 0xe640190e, 0xff000000, 0xff000000,
 	0xff565656, 0xaaffec82, 0xa0ef8228, 0xaa9a260f, 0xbb7c1f0c, 0xcc5e170a, 0xe1400f05, 0xff000000, 0xff000000,
 };
 
-uint32_t cObjElementFXFiredDebris_Update_431130[18] = {
+uint32_t cObjElementFXFiredDebris_UpdateRamps2[18] = {
 	0xff000000, 0x5a0f0f0f, 0x40141414, 0x401e1e1e, 0x5a191919, 0x800f0f0f, 0xc0050505, 0xff000000, 0xff000000,
 	0xff000000, 0x5a141414, 0x5a282828, 0x46323232, 0x503c3c3c, 0x802d2d2d, 0xc00f0f0f, 0xff000000, 0xff000000,
 };
@@ -463,7 +463,7 @@ void cObjElementFXFiredDebris_Update(cObjElementFX *base, cDebris *debris, float
 		} else {
 			FXV_SetSprite(p, (byte)(crt_rand() % 4 + 0x21));
 		}
-		CGameParticles_SetColorRamp(p, FXV_RandRamp(cObjElementFXFiredDebris_Update_431130));
+		CGameParticles_SetColorRamp(p, FXV_RandRamp(cObjElementFXFiredDebris_UpdateRamps2));
 		CGameParticles_Apply(p);
 		CGameParticles_EmitN(p, 1, 1);
 
@@ -479,7 +479,7 @@ void cObjElementFXFiredDebris_Update(cObjElementFX *base, cDebris *debris, float
 		p->rotEnd = FXV_Rand(1.5707963705062866, -0.7853981852531433) + p->rotIni;
 		p->sizeLife = FXV_Rand(0.10000002384185791, 0.8999999761581421);
 		FXV_FireSprites(p);
-		CGameParticles_SetColorRamp(p, FXV_RandRamp(cObjElementFXFiredDebris_Update_431130));
+		CGameParticles_SetColorRamp(p, FXV_RandRamp(cObjElementFXFiredDebris_UpdateRamps2));
 		CGameParticles_Apply(p);
 		CGameParticles_EmitN(p, 1, 1);
 
@@ -495,7 +495,7 @@ void cObjElementFXFiredDebris_Update(cObjElementFX *base, cDebris *debris, float
 		p->rotEnd = FXV_Rand(3.1415927410125732, -1.5707963705062866) + p->rotIni;
 		p->sizeLife = FXV_Rand(0.09999999403953552, 0.3499999940395355);
 		FXV_FireSprites(p);
-		CGameParticles_SetColorRamp(p, FXV_RandRamp(cObjElementFXFiredDebris_Update_4310e8));
+		CGameParticles_SetColorRamp(p, FXV_RandRamp(cObjElementFXFiredDebris_UpdateRamps));
 		CGameParticles_Apply(p);
 		CGameParticles_EmitDt(p, 1, 1, self->time * 0.25f);
 
@@ -505,9 +505,9 @@ void cObjElementFXFiredDebris_Update(cObjElementFX *base, cDebris *debris, float
 	}
 }
 
-uint32_t cObjElementFXSmokeDebris_Update_431178[9] = { 0xffffffff, 0xc4ffc680, 0xc4ffc680, 0xc4dea460, 0xc4c48040, 0xc4804020, 0xe6402010, 0xff000000, 0xff000000 };
+uint32_t cObjElementFXSmokeDebris_UpdateRamp[9] = { 0xffffffff, 0xc4ffc680, 0xc4ffc680, 0xc4dea460, 0xc4c48040, 0xc4804020, 0xe6402010, 0xff000000, 0xff000000 };
 
-uint32_t cObjElementFXSmokeDebris_Update_43119c[19] = {
+uint32_t cObjElementFXSmokeDebris_UpdateTable[19] = {
 	0xff000000, 0x80202020, 0x80414141, 0x8a4b4b4b, 0xa4464646, 0xc02d2d2d, 0xe4181818, 0xff000000, 0xff000000,
 	0xff000000, 0x80373737, 0x804b4b4b, 0x80555555, 0xa4505050, 0xc0373737, 0xe4202020, 0xff000000, 0xff000000,
 };
@@ -564,7 +564,7 @@ void cObjElementFXSmokeDebris_Update(cObjElementFX *base, cDebris *debris, float
 				p->rotVar = FXV_Rand(0.5235987901687622, -0.2617993950843811);
 				p->sizeLife = FXV_Rand(0.10000002384185791, 0.8999999761581421);
 				FXV_SetSprite(p, (byte)((crt_rand() & 1) + 0x11));
-				CGameParticles_SetColorRamp(p, FXV_RandRamp(cObjElementFXSmokeDebris_Update_43119c));
+				CGameParticles_SetColorRamp(p, FXV_RandRamp(cObjElementFXSmokeDebris_UpdateTable));
 				CGameParticles_Apply(p);
 				CGameParticles_EmitDt(p, 1, 1, 0.04f);
 			}
@@ -580,7 +580,7 @@ void cObjElementFXSmokeDebris_Update(cObjElementFX *base, cDebris *debris, float
 			p->rotVar = FXV_Rand(0.5235987901687622, -0.2617993950843811);
 			p->sizeLife = FXV_Rand(0.09999999403953552, 0.3499999940395355);
 			FXV_SetSprite(p, (byte)((crt_rand() & 1) + 0x1c));
-			CGameParticles_SetColorRamp(p, FXV_Ramp(cObjElementFXSmokeDebris_Update_431178));
+			CGameParticles_SetColorRamp(p, FXV_Ramp(cObjElementFXSmokeDebris_UpdateRamp));
 			CGameParticles_Apply(p);
 			CGameParticles_EmitDt(p, 1, 1, 0.0f);
 			x = x - dx;
@@ -717,12 +717,12 @@ static vec3_t *FXV_TurnZ(vec3_t *out, float z, const vec3_t *rot) {
 }
 
 /* the smoke and fire behind a burning entity, one emission per step of the way since the last one */
-uint32_t cObjElementFXFiredEntity_Update_4315e8[18] = {
+uint32_t cObjElementFXFiredEntity_UpdateRamps[18] = {
 	0xfffff696, 0xa4fff08c, 0xafe6b411, 0xb9ab720d, 0xc89c4408, 0xd76a2603, 0xe6401400, 0xff000000, 0xff000000,
 	0xffffe65a, 0xa4ffe150, 0xafef8228, 0xb99a440f, 0xc87c1f0c, 0xd75e170a, 0xe1400f05, 0xff000000, 0xff000000,
 };
 
-uint32_t cObjElementFXFiredEntity_Update_431630[74] = {
+uint32_t cObjElementFXFiredEntity_UpdateTable[74] = {
 	0xff000000, 0x40141414, 0x40141414, 0x40141414, 0x60141414, 0x800a0a0a, 0xc0050505, 0xff000000, 0xff000000,
 	0xff000000, 0x40191919, 0x40191919, 0x40191919, 0x60191919, 0x800d0d0d, 0xc0060606, 0xff000000, 0xff000000,
 	0xff000000, 0x401e1e1e, 0x401e1e1e, 0x401e1e1e, 0x601e1e1e, 0x800f0f0f, 0xc0070707, 0xff000000, 0xff000000,
@@ -869,7 +869,7 @@ void cObjElementFXFiredEntity_Update(cObjElementFX *base, cDebris *debris, float
 				FXV_SetSprite(p, 0x37);
 				break;
 			}
-			CGameParticles_SetColorRamp(p, FXV_RandRamp(cObjElementFXFiredEntity_Update_4315e8));
+			CGameParticles_SetColorRamp(p, FXV_RandRamp(cObjElementFXFiredEntity_UpdateRamps));
 			CGameParticles_Apply(p);
 			CGameParticles_EmitN(p, 1, 1);
 		}
@@ -921,7 +921,7 @@ void cObjElementFXFiredEntity_Update(cObjElementFX *base, cDebris *debris, float
 		} else {
 			FXV_SetSprite(p, (byte)((crt_rand() & 1) + 0x11));
 		}
-		CGameParticles_SetColorRamp(p, FXV_Ramp(cObjElementFXFiredEntity_Update_431630 + 9 * (crt_rand() % 5)));
+		CGameParticles_SetColorRamp(p, FXV_Ramp(cObjElementFXFiredEntity_UpdateTable + 9 * (crt_rand() % 5)));
 		CGameParticles_Apply(p);
 		CGameParticles_EmitN(p, 1, 1);
 		k = k + g_FXFiredEntitySmokeStep / dist;
@@ -1223,7 +1223,7 @@ uint32_t FXV_FIRE_RAMPS[27] = {
 	0x20ff7d32, 0x40b48250, 0x80877732, 0xc45e4022, 0xff000000,
 };
 
-uint32_t cObjElementFXVehicleFire_Update_43159c[19] = {
+uint32_t cObjElementFXVehicleFire_UpdateTable[19] = {
 	0xff3c3c3c, 0xc0333333, 0x802c2c2c, 0x40232323, 0x401a1a1a, 0x80101010, 0xc0070707, 0xff000000, 0xff000000,
 	0xff464646, 0x80373737, 0x60282828, 0x40323232, 0x603c3c3c, 0x802d2d2d, 0xc00f0f0f, 0xff000000, 0xff000000,
 };
@@ -1456,7 +1456,7 @@ void cObjElementFXVehicleFire_Update(cObjElementFX *base, cDebris *debris, float
 		} else {
 			FXV_SetSprite(po, (byte)((crt_rand() & 1) + 0x11));
 		}
-		CGameParticles_SetColorRamp(po, FXV_RandRamp(cObjElementFXVehicleFire_Update_43159c));
+		CGameParticles_SetColorRamp(po, FXV_RandRamp(cObjElementFXVehicleFire_UpdateTable));
 		CGameParticles_Apply(po);
 		CGameParticles_EmitDt(po, 1, 1, Rand_FloatRange(0.0f, self->emitTime / 3.0f));
 	}
@@ -1491,7 +1491,7 @@ static void FXV_VelBrake(CGameParticles *p, const vec3_t *vel, double range, dou
 	p->initAccMax = p->initAccMin;
 }
 
-uint32_t FXV_DamageDebris_431254[9] = { 0x80dcdcff, 0x84d2d2ff, 0x8c8282e6, 0x965e5eab, 0xa444444c, 0xc00f0f38, 0xde050519, 0xff000000, 0xff000000 };
+uint32_t FXV_DamageDebrisRamp[9] = { 0x80dcdcff, 0x84d2d2ff, 0x8c8282e6, 0x965e5eab, 0xa444444c, 0xc00f0f38, 0xde050519, 0xff000000, 0xff000000 };
 
 /* a still piece of debris at r, lifeTime scaled by k, its rotation at the end turned by up to +-90 degrees */
 static void FXV_DamageDebris(CGameParticles *p, const vec3_t *r, double iniRange, double iniAdd, double endRange,
@@ -1509,12 +1509,12 @@ static void FXV_DamageDebris(CGameParticles *p, const vec3_t *r, double iniRange
 	p->rotEnd = FXV_Rand(3.1415927410125732, -1.5707963705062866) + p->rotIni;
 	FXV_SetSprite(p, sprite);
 	p->sizeLife = FXV_Rand(0.039999991655349731, 0.2199999988079071);
-	CGameParticles_SetColorRamp(p, FXV_Ramp(FXV_DamageDebris_431254));
+	CGameParticles_SetColorRamp(p, FXV_Ramp(FXV_DamageDebrisRamp));
 	CGameParticles_Apply(p);
 	CGameParticles_EmitN(p, 1, 0);
 }
 
-uint32_t FXV_DamageDebris_4312e8[46] = {
+uint32_t FXV_DamageDebrisTable[46] = {
 	0xff000000, 0x40141414, 0x40141414, 0x40141414, 0x60141414, 0x800a0a0a, 0xc0050505, 0xff000000, 0xff000000,
 	0xff000000, 0x40191919, 0x40191919, 0x40191919, 0x60191919, 0x800d0d0d, 0xc0060606, 0xff000000, 0xff000000,
 	0xff000000, 0x401e1e1e, 0x401e1e1e, 0x401e1e1e, 0x601e1e1e, 0x800f0f0f, 0xc0070707, 0xff000000, 0xff000000,
@@ -1537,7 +1537,7 @@ static void FXV_DamageSmoke(CGameParticles *p, const vec3_t *r, const vec3_t *ve
 	p->rotVar = FXV_Rand(rotRange, rotAdd);
 	p->sizeLife = FXV_Rand(0.10000002384185791, 0.89999997615814209);
 	FXV_SetSprite(p, (byte)((crt_rand() & 1) + 0x11));
-	CGameParticles_SetColorRamp(p, FXV_RampN(FXV_DamageDebris_4312e8, 5));
+	CGameParticles_SetColorRamp(p, FXV_RampN(FXV_DamageDebrisTable, 5));
 	CGameParticles_Apply(p);
 	CGameParticles_EmitN(p, 1, 1);
 }
@@ -1622,7 +1622,7 @@ static void FXV_DamageFlame(cObjElementFXVehicleDamage *self, cDebris *debris, c
 	}
 }
 
-uint32_t cObjElementFXVehicleDamage_Update_4311e8[27] = {
+uint32_t cObjElementFXVehicleDamage_UpdateRamps[27] = {
 	0xfffff696, 0xa4fff08c, 0xafe6b411, 0xb9ab720d, 0xc89c4408, 0xd76a2603, 0xe6401400, 0xff000000, 0xff000000,
 	0xffffe65a, 0xa4ffe150, 0xafef8228, 0xb99a440f, 0xc87c1f0c, 0xd75e170a, 0xe1400f05, 0xff000000, 0xff000000,
 	0xffffa032, 0xa4ff7832, 0xafef3c19, 0xb99a230f, 0xc87c0f0a, 0xd75e0a05, 0xe1400502, 0xff000000, 0xff000000,
@@ -1697,7 +1697,7 @@ static void FXV_TrailPuff(CGameParticles *p, const vec3_t *pt, const vec3_t *pos
 		FXV_SetSprite(p, 0x37);
 		break;
 	}
-	CGameParticles_SetColorRamp(p, FXV_RandRamp(cObjElementFXVehicleDamage_Update_4311e8));
+	CGameParticles_SetColorRamp(p, FXV_RandRamp(cObjElementFXVehicleDamage_UpdateRamps));
 	CGameParticles_Apply(p);
 	CGameParticles_EmitN(p, 1, 1);
 }
@@ -1749,7 +1749,7 @@ static void FXV_TrailBigPuff(CGameParticles *p, const vec3_t *p0, const vec3_t *
 	} else {
 		FXV_SetSprite(p, (byte)((crt_rand() & 1) + 0x11));
 	}
-	CGameParticles_SetColorRamp(p, FXV_RampN(FXV_DamageDebris_4312e8, 5));
+	CGameParticles_SetColorRamp(p, FXV_RampN(FXV_DamageDebrisTable, 5));
 	CGameParticles_Apply(p);
 	CGameParticles_EmitN(p, 1, 1);
 }
@@ -1829,7 +1829,7 @@ static void FXV_DamageVertices(cObjElementFXVehicleDamage *self, cDebris *debris
 			p2->spriteIni = 0x41;
 			p2->spriteEnd = 0x45;
 			p2->lifeTime = lt * 0.75f * k;
-			CGameParticles_SetColorRamp(p2, FXV_Ramp(FXV_DamageDebris_431254));
+			CGameParticles_SetColorRamp(p2, FXV_Ramp(FXV_DamageDebrisRamp));
 			p2->sparkMaxSize = 1.0f;
 			CGameParticles_Apply(p2);
 			CGameParticles_EmitDt(p2, 1, 0, FXV_Rand(0.10000000149011612, 0.0));
@@ -2103,7 +2103,7 @@ static void FXV_ShipDebris(cDebrisSys *sys, int n, const vec3_t *pos, float scal
 	}
 }
 
-uint32_t FX_ShipExplosion_4313a0[18] = {
+uint32_t FX_ShipExplosionRamps[18] = {
 	0xff000000, 0x80ffffff, 0x40ffffff, 0x40ffffff, 0x40ffffff, 0x80c4c4c4, 0xc4808080, 0xff000000, 0xff000000,
 	0xff000000, 0x80ffe8e8, 0x40ffe8e8, 0x40ffe8e8, 0x40ffe8e8, 0x80c4a0a0, 0xc4806464, 0xff000000, 0xff000000,
 };
@@ -2190,16 +2190,16 @@ static void FXV_ShipFlames(CGameParticles *p, int numFlames, const vec3_t *pos, 
 			p->spriteEnd = 0x21;
 			p->spriteIni = (byte)((byte)(int)FXV_Rand(6.0, 0.0) + 1 + k);
 			CGameParticles_Apply(p);
-			CGameParticles_SetColorRamp(p, FXV_RandRamp(FX_ShipExplosion_4313a0));
+			CGameParticles_SetColorRamp(p, FXV_RandRamp(FX_ShipExplosionRamps));
 			CGameParticles_EmitDt(p, 1, 1, et);
 		}
 	}
 }
 
 /* the puffs on a sphere around the explosion: 4 x 4 directions, each with up to four kinds by chance */
-uint32_t FX_ShipExplosion_4313e8[9] = { 0xff000000, 0xaafeee90, 0x82ef7d38, 0x96bc4110, 0xb97a2a0a, 0xd23f1805, 0xeb0e0801, 0xff000000, 0xff000000 };
+uint32_t FX_ShipExplosionRamp[9] = { 0xff000000, 0xaafeee90, 0x82ef7d38, 0x96bc4110, 0xb97a2a0a, 0xd23f1805, 0xeb0e0801, 0xff000000, 0xff000000 };
 
-uint32_t FX_ShipExplosion_43140c[18] = {
+uint32_t FX_ShipExplosionRamps2[18] = {
 	0xff000000, 0xa4feee90, 0x60efa438, 0x40bc6410, 0x607a500a, 0x803f2805, 0xc40e0801, 0xff000000, 0xff000000,
 	0xff565656, 0xaaffec82, 0xa0ef8228, 0xaa9a260f, 0xbb7c1f0c, 0xcc5e1706, 0xe1320a01, 0xff000000, 0xff000000,
 };
@@ -2274,7 +2274,7 @@ static void FXV_ShipSphere(CGameParticles *p, const vec3_t *pos, const vec3_t *v
 				p->spriteIni = (byte)(r + 0x21);
 				p->spriteEnd = (byte)(r + 0x21 + 0xa);
 				CGameParticles_Apply(p);
-				CGameParticles_SetColorRamp(p, FXV_Ramp(FX_ShipExplosion_43140c));
+				CGameParticles_SetColorRamp(p, FXV_Ramp(FX_ShipExplosionRamps2));
 				CGameParticles_EmitDt(p, 1, 1, FXV_Rand(0.25, 0.05000000074505806));
 			}
 			if (crt_rand() & 1) {
@@ -2304,7 +2304,7 @@ static void FXV_ShipSphere(CGameParticles *p, const vec3_t *pos, const vec3_t *v
 				p->sparkMaxSize = 1.0f;
 				p->sizeLife = FXV_Rand(0.099999994039535522, 0.25);
 				CGameParticles_Apply(p);
-				CGameParticles_SetColorRamp(p, FXV_Ramp(FX_ShipExplosion_4313e8));
+				CGameParticles_SetColorRamp(p, FXV_Ramp(FX_ShipExplosionRamp));
 				CGameParticles_SetSparksOn(p, 1);
 				CGameParticles_EmitDt(p, 1, 1, FXV_Rand(0.15000000596046448, 0.0));
 				CGameParticles_SetSparksOn(p, 0);
@@ -2332,7 +2332,7 @@ static void FXV_ShipSphere(CGameParticles *p, const vec3_t *pos, const vec3_t *v
 				p->spriteEnd = 0x21;
 				p->spriteIni = (byte)(crt_rand() % 4 + 1);
 				CGameParticles_Apply(p);
-				CGameParticles_SetColorRamp(p, FXV_RandRamp(FX_ShipExplosion_4313a0));
+				CGameParticles_SetColorRamp(p, FXV_RandRamp(FX_ShipExplosionRamps));
 				CGameParticles_EmitDt(p, 1, 1, FXV_Rand(0.30000001192092896, 0.0));
 			}
 			b = b + FXV_PI_2;
@@ -2341,7 +2341,7 @@ static void FXV_ShipSphere(CGameParticles *p, const vec3_t *pos, const vec3_t *v
 	} while (6.2831853071795862 > (double)a);
 }
 
-uint32_t FX_ShipExplosion_4314c0[28] = {
+uint32_t FX_ShipExplosionTable[28] = {
 	0xff000000, 0x80ffffff, 0x40ffffff, 0x40ffffff, 0x40ffffff, 0x80c4c4c4, 0xc4808080, 0xff000000, 0xff000000,
 	0xff000000, 0x80ffc0c0, 0x40ffc0c0, 0x40ffc0c0, 0x40ffc0c0, 0x80c48c8c, 0xc4805050, 0xff000000, 0xff000000,
 	0xff000000, 0x80ffe8c0, 0x40ffe8c0, 0x40ffe8c0, 0x40ffe8c0, 0x80c4a58c, 0xc4806450, 0xff000000, 0xff000000,
@@ -2433,7 +2433,7 @@ void FX_ShipExplosion(vec3_t pos, vec3_t vel, float scale, float time, int numFl
 	p->rotVar = 0.39269909f;
 	p->rotIni = t;
 	p->rotEnd = t;
-	CGameParticles_SetColorRamp(p, FXV_RampN(FX_ShipExplosion_4314c0, 3));
+	CGameParticles_SetColorRamp(p, FXV_RampN(FX_ShipExplosionTable, 3));
 	FXV_SetSprite(p, 0x72);
 	CGameParticles_Apply(p);
 	CGameParticles_EmitN(p, 1, 1);
@@ -2459,7 +2459,7 @@ void FX_ShipExplosion(vec3_t pos, vec3_t vel, float scale, float time, int numFl
 		p->spriteEnd = 0x21;
 		p->sizeLife = FXV_Rand(0.070000000298023224, 0.10000000149011612);
 		CGameParticles_Apply(p);
-		CGameParticles_SetColorRamp(p, FXV_Ramp(FX_ShipExplosion_4313a0));
+		CGameParticles_SetColorRamp(p, FXV_Ramp(FX_ShipExplosionRamps));
 		CGameParticles_EmitDt(p, 1, 1, FXV_Rand(0.10000000149011612, 0.0) * time);
 
 		dir = *FX_RandomDir(&tmp);
@@ -2499,7 +2499,7 @@ void FX_ShipExplosion(vec3_t pos, vec3_t vel, float scale, float time, int numFl
 		p->rotIni = t;
 		p->rotEnd = t;
 		p->rotVar = 0.39269909f;
-		CGameParticles_SetColorRamp(p, FXV_RampN(FX_ShipExplosion_4314c0, 3));
+		CGameParticles_SetColorRamp(p, FXV_RampN(FX_ShipExplosionTable, 3));
 		FXV_SetSprite(p, 0x72);
 		CGameParticles_Apply(p);
 		CGameParticles_EmitN(p, 1, 1);

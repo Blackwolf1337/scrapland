@@ -295,7 +295,7 @@ void cEntity_AddLink(cEntity *self, Nto1Node *node) {
 	self->links.next = node;
 }
 
-const char str_3c7284[] = "cPyEntity";
+const char str_CPyEntity[] = "cPyEntity";
 
 const char str_PyMethod_cPyEntity_Del[] = "Del";
 
@@ -309,11 +309,11 @@ const char str_PyMethod_cPyEntity_DrawWeap[] = "DrawWeap";
 
 const char str_PyMethod_cPyEntity_IsType[] = "IsType";
 
-extern const char str_3c7284[];
+extern const char str_CPyEntity[];
 PyTypeObject cPyEntity_Type = {
 	.ob_refcnt = 1,
 	.ob_type = &PyType_Type,
-	.tp_name = (void *)str_3c7284,
+	.tp_name = (void *)str_CPyEntity,
 	.tp_basicsize = sizeof(cPyEntity),
 	.tp_dealloc = (void *)PyEntity_Dealloc,
 	.tp_print = (void *)PyEntity_Print,

@@ -2174,12 +2174,12 @@ static void EFXM_SparkPos(CGameParticles *p, float s, const vec3_t *c) {
 	p->initPosMax = p->initPosMin;
 }
 
-uint32_t EFXM_SparkFlash_428450[9] = { 0x10f5f5ff, 0x20e1e1ff, 0x30b4b4e6, 0x409b9bbe, 0x607d7d96, 0x805f5f78, 0xc055556e, 0xff282832, 0xff000000 };
+uint32_t EFXM_SparkFlashRamp[9] = { 0x10f5f5ff, 0x20e1e1ff, 0x30b4b4e6, 0x409b9bbe, 0x607d7d96, 0x805f5f78, 0xc055556e, 0xff282832, 0xff000000 };
 
 /* a flash of the sparks: the sizes and the life from the random ranges */
 static void EFXM_SparkFlash(CGameParticles *p, double ini, double iniAdd, double endAdd, byte sprite, double life,
 	double lifeAdd) {
-	CGameParticles_SetColorRamp(p, EFXM_SparkFlash_428450);
+	CGameParticles_SetColorRamp(p, EFXM_SparkFlashRamp);
 	p->sizeIni = (float)(EFXM_Rnd() * ini + iniAdd);
 	p->sizeEnd = (float)(EFXM_Rnd() * 15.0 + endAdd);
 	int r = crt_rand() & 0x7fff;
@@ -2191,7 +2191,7 @@ static void EFXM_SparkFlash(CGameParticles *p, double ini, double iniAdd, double
 	CGameParticles_EmitN(p, 1, 1);
 }
 
-uint32_t EFXM_SparkFlash_428474[19] = {
+uint32_t EFXM_SparkFlashTable[19] = {
 	0x10d2d2ff, 0x209696ff, 0x306464e1, 0x403232b4, 0x601e1e55, 0x800a0a2d, 0xc0050519, 0xff00000a, 0xff000000,
 	0x10d2d2ff, 0x20b4b4ff, 0x309393e6, 0x405353ab, 0x602d2d4c, 0x80141438, 0xc005051e, 0xff00000a, 0xff000000,
 };
@@ -2362,7 +2362,7 @@ void cEmbeddedFXBattery_Update(cEmbeddedFX *elem, float dt) {
 		p->spriteEnd = 0x44;
 		CGameParticles_Apply(p);
 		CGameParticles_SetColorRampOn(p, 1);
-		CGameParticles_SetColorRamp(p, EFXM_SparkFlash_428474 + 9 * (crt_rand() & 1));
+		CGameParticles_SetColorRamp(p, EFXM_SparkFlashTable + 9 * (crt_rand() & 1));
 		CGameParticles_EmitDt(p, 1, 0, (float)(EFXM_Rnd() * 0.10000000149011612 + 0.0));
 	}
 }

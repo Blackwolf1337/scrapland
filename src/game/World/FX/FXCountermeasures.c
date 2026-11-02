@@ -515,14 +515,14 @@ cGVar GVar_EMIThunderSoundVol;
 #define FXEMI_RAMPS 0x430888		/* 3 color ramps of 9 colors: 0..1 for most, 1..2 for the last glow */
 #define FXEMI_ENTITIES 0x13		/* the entity lists the bolts hit */
 
-uint32_t EMI_Emit_430888[28] = {
+uint32_t EMI_EmitTable[28] = {
 	0xffb9b9ed, 0xa4b5b5f0, 0x80b2b2f2, 0x60afaff5, 0x80aaaaf9, 0xa4a7a7fc, 0xc0a3a3ff, 0xffa3a3ff, 0xffa3a3ff,
 	0xff7d73ed, 0xa47979f0, 0x807676f2, 0x607373f5, 0x806e6ef9, 0xa46b6bfc, 0xc06767ff, 0xff6767ff, 0xff6767ff,
 	0xff47e2e2, 0x803bb9ff, 0x603ea4ff, 0x404296ff, 0x604787ff, 0x804a7eff, 0xc04165db, 0xff000000, 0xff000000,
 };
 
 static uint32_t *EMI_Ramp(int first) {
-	return EMI_Emit_430888 + (first + (crt_rand() & 1)) * 9;
+	return EMI_EmitTable + (first + (crt_rand() & 1)) * 9;
 }
 
 /* one still particle at pos: the rotation random (rnd) or 0, the life and the sizes random, sizeEnd from lo to hi */
@@ -1183,7 +1183,7 @@ static inline float FXCM_Smooth(float f) {
 	return (3.0f - (f + f)) * (f * f);
 }
 
-uint32_t FXDebrisCloud_Puff_4308f8[28] = {
+uint32_t FXDebrisCloud_PuffTable[28] = {
 	0xff000000, 0xd0110f0d, 0xb4252321, 0xb4252321, 0xb4252321, 0xb4252321, 0xd0110f0d, 0xff000000, 0xff000000,
 	0xff000000, 0xd7171411, 0xbe302d2a, 0xbe302d2a, 0xbe302d2a, 0xbe302d2a, 0xd7171411, 0xff000000, 0xff000000,
 	0xff000000, 0xe11d1915, 0xc83b3733, 0xc83b3733, 0xc83b3733, 0xc83b3733, 0xe11d1915, 0xff000000, 0xff000000,
@@ -1229,7 +1229,7 @@ static void FXDebrisCloud_Puff(cObjElementFXDebrisCloud *self, float size, doubl
 	}
 	p->sizeEnd = p->sizeIni * e;
 	CGameParticles_SetColorRampOn(p, 1);
-	CGameParticles_SetColorRamp(p, FXDebrisCloud_Puff_4308f8 + (crt_rand() % 3) * 9);
+	CGameParticles_SetColorRamp(p, FXDebrisCloud_PuffTable + (crt_rand() % 3) * 9);
 	CGameParticles_Apply(p);
 	CGameParticles_EmitN(p, 1, 0);
 }

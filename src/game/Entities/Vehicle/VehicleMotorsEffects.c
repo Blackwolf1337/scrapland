@@ -170,7 +170,7 @@ float Rand_FloatRange(float lo, float hi) {
 	return (float)((double)(crt_rand() & 0x7fff) * RAND_SCALE * (double)d + (double)lo);
 }
 
-const uint32_t VMEffects_SetupHaze_3b57d8[9] = { 0xbf404040, 0x7f808080, 0x7f808080, 0x7f808080, 0xa35c5c5c, 0xbf404040, 0xdf202020, 0xff000000, 0xff000000 };
+const uint32_t VMEffects_SetupHazeRamp[9] = { 0xbf404040, 0x7f808080, 0x7f808080, 0x7f808080, 0xa35c5c5c, 0xbf404040, 0xdf202020, 0xff000000, 0xff000000 };
 
 void VMEffects_SetupHaze(float thrust, float speed, vec3_t *pos, int n, CGameParticles *ps) {
 	float t = Float_MaxSS(0.3f, thrust);
@@ -196,7 +196,7 @@ void VMEffects_SetupHaze(float thrust, float speed, vec3_t *pos, int n, CGamePar
 	ps->colorEnd = 0xffffff;
 	ps->sizeEnd = (speed * 1.5f + t) * 140.0f + 210.0f;
 	CGameParticles_SetColorRampOn(ps, 0);
-	CGameParticles_SetColorRamp(ps, VMEffects_SetupHaze_3b57d8);
+	CGameParticles_SetColorRamp(ps, VMEffects_SetupHazeRamp);
 	ps->spriteIni = 1;
 	ps->spriteEnd = 1;
 	float rot = (float)VME_Rand(0x1.921fb6p+2, 0.0);
@@ -392,7 +392,7 @@ void cVehicleMotorsEffects_SetVisible(cVehicleMotorsEffects *self, byte on) {
 	self->visible = on;
 }
 
-uint32_t cVehicleMotorsEffects_Smoke_4287f8[18] = {
+uint32_t cVehicleMotorsEffects_SmokeRamps[18] = {
 	0xff000000, 0x60191919, 0x60232323, 0x602d2d2d, 0x60282828, 0xa41e1e1e, 0xd40f0f0f, 0xff000000, 0xff000000,
 	0xff000000, 0x80232323, 0x60323232, 0x60414141, 0x60373737, 0xa4282828, 0xd4141414, 0xff000000, 0xff000000,
 };
@@ -476,7 +476,7 @@ void cVehicleMotorsEffects_Smoke(cVehicleMotorsEffects *self, float dt, CGamePar
 			break;
 		}
 		CGameParticles_SetColorRampOn(ps, 1);
-		CGameParticles_SetColorRamp(ps, cVehicleMotorsEffects_Smoke_4287f8 + 9 * (crt_rand() & 1));
+		CGameParticles_SetColorRamp(ps, cVehicleMotorsEffects_SmokeRamps + 9 * (crt_rand() & 1));
 		CGameParticles_Apply(ps);
 		CGameParticles_EmitN(ps, 1, 0);
 	}
@@ -928,19 +928,19 @@ static void VME_Exhaust6(const VMExhaust *x) {
 }
 
 /* 10: the emitted smoke, two pairs beside the z axis and a flare */
-const uint32_t VME_Exhaust10_3b57fc[10] = {
+const uint32_t VME_Exhaust10Table[10] = {
 	0x320a280f, 0x30191919, 0x2d0f2332, 0x2c0a3264, 0x2a143796, 0x282850fa, 0x283264fa, 0x23466efb, 0x1e5a82fd,
 	0x146496ff,
 };
 
-vec3_t VME_Exhaust10_4484e0[4];
+vec3_t VME_Exhaust10Pos[4];
 
-int VME_Exhaust10_448510[2];
+int VME_Exhaust10Table20[2];
 
 static void VME_Exhaust10(const VMExhaust *x) {
 	static const float xz[] = { -30.0f, 0.0f, 30.0f, 0.0f, -10.0f, 0.0f, 10.0f, 0.0f };
 	CGameParticles *ps = x->ps;
-	vec3_t *pos = VME_Exhaust10_4484e0;
+	vec3_t *pos = VME_Exhaust10Pos;
 	float t = x->t, k = x->k;
 
 	ps->birthRate = VME_Birth(t, x->speed, g_FXEngineBirthRate);
@@ -948,15 +948,15 @@ static void VME_Exhaust10(const VMExhaust *x) {
 		ps->birthRate = VME_CloudBirthD(ps->birthRate, (double)0.15f);
 	}
 	float r = (float)VME_Rand(10.0, 25.0);
-	if (VME_StaticBegin(VME_Exhaust10_448510)) {
+	if (VME_StaticBegin(VME_Exhaust10Table20)) {
 		VME_SetPos(pos, xz, 4, r + 0.0f);
-		VME_StaticEnd(VME_Exhaust10_448510);
+		VME_StaticEnd(VME_Exhaust10Table20);
 	}
 	CGameParticles_SetEmitPos(ps, pos, 4);
 	float s = k + k + t;
 	ps->sizeIni = s * 80.0f + 120.0f;
 	ps->sizeEnd = (t + k) * 40.0f + 70.0f;
-	VME_Colors(ps, VME_Exhaust10_3b57fc, t, k);
+	VME_Colors(ps, VME_Exhaust10Table, t, k);
 	if (t > 0.0f) {
 		ps->initVelMin = (vec3_t){ -30.0f, s * 300.0f + 900.0f, -30.0f };
 		ps->initVelMax = (vec3_t){ 30.0f, s * 600.0f + 1200.0f, 30.0f };
@@ -983,7 +983,7 @@ static void VME_Exhaust10(const VMExhaust *x) {
 	VME_Flare(ps, n - 5, k, 750.0f, 0x1e32d2, 7);
 }
 
-const uint32_t VME_Exhaust10_3b5824[10] = {
+const uint32_t VME_Exhaust10Table2[10] = {
 	0x320f0f28, 0x30191919, 0x2d32230f, 0x2c64320a, 0x2ac85500, 0x28fa6419, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
 	0x14ff9664,
 };
@@ -1004,7 +1004,7 @@ static void VME_Exhaust11(const VMExhaust *x) {
 	float s = k * 3.5f + t;
 	ps->sizeIni = s * 80.0f + 145.0f;
 	ps->sizeEnd = (k + k + t) * 30.0f + 60.0f;
-	VME_Colors(ps, VME_Exhaust10_3b5824, t, k);
+	VME_Colors(ps, VME_Exhaust10Table2, t, k);
 	if (t > 0.0f) {
 		float a = k * 150.0f;
 		ps->initVelMin = (vec3_t){ -200.0f - a, (t + k) * 250.0f + 1125.0f, -200.0f - a };
@@ -1036,19 +1036,19 @@ static void VME_Exhaust11(const VMExhaust *x) {
 }
 
 /* 12: the emitted smoke at six positions, a particle at each and a flare */
-const uint32_t VME_Exhaust10_3b584c[10] = {
+const uint32_t VME_Exhaust10Table3[10] = {
 	0x321e1e0f, 0x30191919, 0x2d0f2332, 0x2c0a3264, 0x32143796, 0x640a50fa, 0x643264fa, 0x37466efb, 0x1e5a82fd,
 	0x646496ff,
 };
 
-vec3_t VME_Exhaust10_448518[6];
+vec3_t VME_Exhaust10Pos2[6];
 
-int VME_Exhaust10_448560;
+int VME_Exhaust10Count;
 
 static void VME_Exhaust12(const VMExhaust *x) {
 	static const float xz[] = { -26.0f, -26.0f, 26.0f, 26.0f, 26.0f, -26.0f, -26.0f, 26.0f, 0.0f, -26.0f, 0.0f, 26.0f };
 	CGameParticles *ps = x->ps;
-	vec3_t *pos = VME_Exhaust10_448518;
+	vec3_t *pos = VME_Exhaust10Pos2;
 	float t = x->t, k = x->k;
 
 	ps->birthRate = VME_Birth(t, x->speed, 0) * 2;
@@ -1056,15 +1056,15 @@ static void VME_Exhaust12(const VMExhaust *x) {
 		ps->birthRate = VME_CloudBirthD(ps->birthRate, (double)0.35f) * 2;
 	}
 	float r = (float)VME_Rand(10.0, 15.0) + k * 35.0f;
-	if (VME_StaticBegin((&VME_Exhaust10_448560))) {
+	if (VME_StaticBegin((&VME_Exhaust10Count))) {
 		VME_SetPos(pos, xz, 6, r + 0.0f);
-		VME_StaticEnd((&VME_Exhaust10_448560));
+		VME_StaticEnd((&VME_Exhaust10Count));
 	}
 	CGameParticles_SetEmitPos(ps, pos, 4);
 	float k5 = k * 5.0f;
 	ps->sizeIni = (k * 4.0f + t) * 65.0f + 75.0f;
 	ps->sizeEnd = (k * 2.5f + t) * 45.0f + 40.0f;
-	VME_Colors(ps, VME_Exhaust10_3b584c, t, k);
+	VME_Colors(ps, VME_Exhaust10Table3, t, k);
 	ps->initVelMin = (vec3_t){ -6.0f - k5, (k * 3.0f + t) * 250.0f + 800.0f, -6.0f - k5 };
 	ps->initVelMax = (vec3_t){ k5 + 6.0f, (k * 6.0f + t) * 600.0f + 1250.0f, k5 + 6.0f };
 	ps->spriteIni = 0xd;
@@ -1087,18 +1087,18 @@ static void VME_Exhaust12(const VMExhaust *x) {
 }
 
 /* 13: the emitted smoke at two random positions, two pairs and two flares */
-const uint32_t VME_Exhaust10_3b5874[10] = {
+const uint32_t VME_Exhaust10Table4[10] = {
 	0x32280f0f, 0x30191919, 0x2d0f2332, 0x2c0a2d80, 0x2a0f41e1, 0x28194beb, 0x282855f8, 0x23325ffa, 0x1e3c69fd,
 	0x144678ff,
 };
 
-vec3_t VME_Exhaust10_448564[2];
+vec3_t VME_Exhaust10Pos3[2];
 
-int VME_Exhaust10_44857c;
+int VME_Exhaust10Count2;
 
 static void VME_Exhaust13(const VMExhaust *x) {
 	CGameParticles *ps = x->ps;
-	vec3_t *pos = VME_Exhaust10_448564;
+	vec3_t *pos = VME_Exhaust10Pos3;
 	float t = x->t, k = x->k;
 
 	ps->birthRate = VME_Birth(t, x->speed, 0) * 3;
@@ -1109,16 +1109,16 @@ static void VME_Exhaust13(const VMExhaust *x) {
 	float py = (float)VME_Rand(5.0, 30.0);
 	float px = (float)VME_Rand(6.0, -3.0);
 	py = k * 50.0f + py;
-	if (VME_StaticBegin((&VME_Exhaust10_44857c))) {
+	if (VME_StaticBegin((&VME_Exhaust10Count2))) {
 		pos[0] = (vec3_t){ px + 0.0f, py + 0.0f, pz - 40.0f };
 		pos[1] = (vec3_t){ px + 0.0f, py + 0.0f, pz + 40.0f };
-		VME_StaticEnd((&VME_Exhaust10_44857c));
+		VME_StaticEnd((&VME_Exhaust10Count2));
 	}
 	CGameParticles_SetEmitPos(ps, pos, 2);
 	float k4 = k * 4.0f;
 	ps->sizeIni = (k4 + t) * 50.0f + 65.0f;
 	ps->sizeEnd = (k * 1.5f + t) * 20.0f + 40.0f;
-	VME_Colors(ps, VME_Exhaust10_3b5874, t, k);
+	VME_Colors(ps, VME_Exhaust10Table4, t, k);
 	float a = k * 150.0f;
 	ps->initVelMin = (vec3_t){ -200.0f - a, (t + k) * 330.0f + 1100.0f, -200.0f - a };
 	ps->initVelMax = (vec3_t){ a + 200.0f, (k + k + t) * 600.0f + 1600.0f, a + 200.0f };
@@ -1143,19 +1143,19 @@ static void VME_Exhaust13(const VMExhaust *x) {
 }
 
 /* 14: the emitted smoke at four positions, two quads and a flare */
-const uint32_t VME_Exhaust10_3b589c[10] = {
+const uint32_t VME_Exhaust10Table5[10] = {
 	0x320f0f19, 0x30191923, 0x2d23233c, 0x2c2d2d80, 0x2a4141e1, 0x284b4beb, 0x285555f8, 0x235f5ffa, 0x1e6969fd,
 	0x147878ff,
 };
 
-vec3_t VME_Exhaust10_448580[4];
+vec3_t VME_Exhaust10Pos4[4];
 
-int VME_Exhaust10_4485b0[2];
+int VME_Exhaust10Table21[2];
 
 static void VME_Exhaust14(const VMExhaust *x) {
 	static const float xz[] = { 0.0f, -65.0f, 0.0f, 65.0f, -65.0f, 0.0f, 65.0f, 0.0f };
 	CGameParticles *ps = x->ps;
-	vec3_t *pos = VME_Exhaust10_448580;
+	vec3_t *pos = VME_Exhaust10Pos4;
 	float t = x->t, k = x->k;
 
 	ps->birthRate = VME_Birth(t, x->speed, 0) * 3;
@@ -1163,15 +1163,15 @@ static void VME_Exhaust14(const VMExhaust *x) {
 		ps->birthRate = VME_CloudBirth(ps->birthRate) * 3;
 	}
 	float r = Rand_FloatRange(15.0f, 20.0f) + k * 50.0f;
-	if (VME_StaticBegin(VME_Exhaust10_4485b0)) {
+	if (VME_StaticBegin(VME_Exhaust10Table21)) {
 		VME_SetPos(pos, xz, 4, r + 0.0f);
-		VME_StaticEnd(VME_Exhaust10_4485b0);
+		VME_StaticEnd(VME_Exhaust10Table21);
 	}
 	CGameParticles_SetEmitPos(ps, pos, 4);
 	float s = k * 4.0f + t;
 	ps->sizeIni = s * 50.0f + 60.0f;
 	ps->sizeEnd = (k * 1.5f + t) * 40.0f + 35.0f;
-	VME_Colors(ps, VME_Exhaust10_3b589c, t, k);
+	VME_Colors(ps, VME_Exhaust10Table5, t, k);
 	float a = k * 30.0f;
 	ps->initVelMin = (vec3_t){ -20.0f - a, (t + k) * 120.0f + 800.0f, -20.0f - a };
 	ps->initVelMax = (vec3_t){ a + 20.0f, (k * 3.0f + t) * 650.0f + 1700.0f, a + 20.0f };
@@ -1196,16 +1196,16 @@ static void VME_Exhaust14(const VMExhaust *x) {
 }
 
 /* 15: the emitted smoke on a circle of eight positions, a particle at each and a flare */
-const uint32_t VME_Exhaust10_3b58c4[10] = {
+const uint32_t VME_Exhaust10Table6[10] = {
 	0x320f0f19, 0x30191923, 0x2d23233c, 0x2c2d2d80, 0x2a4141e1, 0x284b4beb, 0x285555f8, 0x235f5ffa, 0x1e6969fd,
 	0x147878ff,
 };
 
-vec3_t VME_Exhaust10_4485b8[8];
+vec3_t VME_Exhaust10Pos5[8];
 
 static void VME_Exhaust15(const VMExhaust *x) {
 	CGameParticles *ps = x->ps;
-	vec3_t *pos = VME_Exhaust10_4485b8;
+	vec3_t *pos = VME_Exhaust10Pos5;
 	float t = x->t, k = x->k;
 	vec3_t ang, v, r;
 	int i;
@@ -1235,7 +1235,7 @@ static void VME_Exhaust15(const VMExhaust *x) {
 	float s = k * 3.0f + t;
 	ps->sizeIni = s * 45.0f + 45.0f;
 	ps->sizeEnd = (k * 1.5f + t) * 30.0f + 35.0f;
-	VME_Colors(ps, VME_Exhaust10_3b58c4, t, k);
+	VME_Colors(ps, VME_Exhaust10Table6, t, k);
 	if (t > 0.0f) {
 		float b = k * 20.0f;
 		ps->initVelMin = (vec3_t){ -15.0f - b, (t + k) * 150.0f + 1200.0f, -15.0f - b };
@@ -1262,7 +1262,7 @@ static void VME_Exhaust15(const VMExhaust *x) {
 	VME_FlareDir(ps, x->model, n - 9, k, 40.0f, 700.0f, 0x1e3cd2, 5);
 }
 
-const uint32_t VME_Exhaust10_3b58ec[10] = {
+const uint32_t VME_Exhaust10Table7[10] = {
 	0x320f0f28, 0x30191919, 0x2d23320f, 0x2c2d800a, 0x2a50e100, 0x285feb19, 0x2864f832, 0x236efa46, 0x1e82fd5a,
 	0x1496ff64,
 };
@@ -1282,7 +1282,7 @@ static void VME_Exhaust20(const VMExhaust *x) {
 	ps->initPosMax = (vec3_t){ 8.0f, t25 + 20.0f + k50, 8.0f };
 	ps->sizeIni = (k + k + t) * 60.0f + 140.0f;
 	ps->sizeEnd = (k * 1.5f + t) * 20.0f + 75.0f;
-	VME_Colors(ps, VME_Exhaust10_3b58ec, t, k);
+	VME_Colors(ps, VME_Exhaust10Table7, t, k);
 	if (t > 0.0f) {
 		float a = k * 150.0f;
 		ps->initVelMin = (vec3_t){ -200.0f - a, (t + k) * 500.0f + 1150.0f, -200.0f - a };
@@ -1307,7 +1307,7 @@ static void VME_Exhaust20(const VMExhaust *x) {
 	VME_Flare(ps, n - 5, k, 700.0f, 0x64e614, 7);
 }
 
-const uint32_t VME_Exhaust10_3b5914[10] = {
+const uint32_t VME_Exhaust10Table8[10] = {
 	0x32030f0a, 0x30071914, 0x2d0a321e, 0x2c0f8028, 0x2a14e137, 0x2819d741, 0x2828f855, 0x2332fa5f, 0x1e41fd6e,
 	0x1450ff7d,
 };
@@ -1330,7 +1330,7 @@ static void VME_Exhaust21(const VMExhaust *x) {
 	ps->sizeIni = s2 * 80.0f + 75.0f;
 	float s15 = k * 1.5f + t;
 	ps->sizeEnd = s15 * 60.0f + 55.0f;
-	const uint32_t *tab = VME_Exhaust10_3b5914;
+	const uint32_t *tab = VME_Exhaust10Table8;
 	int c = (int)(__builtin_fabs((double)tk) * 4.0);
 	ps->colorIni = tab[c];
 	ps->colorEnd = tab[c + 1];
@@ -1534,19 +1534,19 @@ static void VME_ExhaustLine4(const VMExhaust *x, const VMExhaustLine4 *l, const 
 }
 
 /* 27: the emitted smoke at four positions, two quads around the z axis and a flare */
-const uint32_t VME_Exhaust10_3b598c[10] = {
+const uint32_t VME_Exhaust10Table11[10] = {
 	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
 	0x14ff9664,
 };
 
-vec3_t VME_Exhaust10_448618[4];
+vec3_t VME_Exhaust10Pos6[4];
 
-int VME_Exhaust10_448648[2];
+int VME_Exhaust10Table22[2];
 
 static void VME_Exhaust27(const VMExhaust *x) {
 	static const float xz[] = { -36.0f, 36.0f, 36.0f, 36.0f, -36.0f, -36.0f, 36.0f, -36.0f };
 	CGameParticles *ps = x->ps;
-	vec3_t *pos = VME_Exhaust10_448618;
+	vec3_t *pos = VME_Exhaust10Pos6;
 	float t = x->t, k = x->k;
 	int c;
 
@@ -1556,15 +1556,15 @@ static void VME_Exhaust27(const VMExhaust *x) {
 	}
 	float k15 = k * 15.0f;
 	float r = Rand_FloatRange(0.0f, 5.0f) + k15;
-	if (VME_StaticBegin(VME_Exhaust10_448648)) {
+	if (VME_StaticBegin(VME_Exhaust10Table22)) {
 		VME_SetPos(pos, xz, 4, r + 0.0f);
-		VME_StaticEnd(VME_Exhaust10_448648);
+		VME_StaticEnd(VME_Exhaust10Table22);
 	}
 	CGameParticles_SetEmitPos(ps, pos, 4);
 	float s = k * 4.0f + t;
 	ps->sizeIni = s * 60.0f + 60.0f;
 	ps->sizeEnd = (k * 1.5f + t) * 40.0f + 35.0f;
-	VME_Colors(ps, VME_Exhaust10_3b598c, t, k);
+	VME_Colors(ps, VME_Exhaust10Table11, t, k);
 	ps->initVelMin = (vec3_t){ -10.0f - k15, (t + k) * 120.0f + 700.0f, -15.0f - k15 };
 	ps->initVelMax = (vec3_t){ k15 + 10.0f, (k * 3.0f + t) * 600.0f + 1400.0f, k15 + 15.0f };
 	ps->spriteIni = 0xd;
@@ -1602,7 +1602,7 @@ static void VME_Exhaust27(const VMExhaust *x) {
 	VME_FlareDir(ps, x->model, n - 9, k, 40.0f, 1200.0f, 0xfff05a, 7);
 }
 
-const uint32_t VME_Exhaust10_3b5a04[10] = {
+const uint32_t VME_Exhaust10Table14[10] = {
 	0x320f030f, 0x30190719, 0x2d320d23, 0x2c80122d, 0x2ae11750, 0x28eb1e5f, 0x28f82864, 0x23fa2d6e, 0x1efd3282,
 	0x14ff3296,
 };
@@ -1621,7 +1621,7 @@ static void VME_Exhaust36(const VMExhaust *x) {
 	ps->initPosMax = (vec3_t){ 5.0f, k60 + 45.0f, 5.0f };
 	ps->sizeIni = (k * 4.0f + t) * 70.0f + 95.0f;
 	ps->sizeEnd = (k * 2.5f + t) * 50.0f + 75.0f;
-	VME_Colors(ps, VME_Exhaust10_3b5a04, t, k);
+	VME_Colors(ps, VME_Exhaust10Table14, t, k);
 	if (t > 0.0f) {
 		float a = k * 150.0f;
 		ps->initVelMin = (vec3_t){ -150.0f - a, (k * 1.5f + t) * 150.0f + 1500.0f, -150.0f - a };
@@ -1646,7 +1646,7 @@ static void VME_Exhaust36(const VMExhaust *x) {
 	VME_FlareDir(ps, x->model, n - 6, k, 40.0f, 800.0f, 0xe678be, 1);
 }
 
-const uint32_t VME_Exhaust10_3b5a54[10] = {
+const uint32_t VME_Exhaust10Table16[10] = {
 	0x320a140f, 0x300c1919, 0x2d0f2332, 0x2c0a3264, 0x2a143796, 0x282850fa, 0x283264fa, 0x23466efb, 0x1e5a82fd,
 	0x146496ff,
 };
@@ -1665,7 +1665,7 @@ static void VME_Exhaust45(const VMExhaust *x) {
 	ps->initPosMax = (vec3_t){ 15.0f, k60 + 20.0f, 15.0f };
 	ps->sizeIni = (k * 4.0f + t) * 95.0f + 125.0f;
 	ps->sizeEnd = (k * 1.5f + t) * 35.0f + 60.0f;
-	VME_Colors(ps, VME_Exhaust10_3b5a54, t, k);
+	VME_Colors(ps, VME_Exhaust10Table16, t, k);
 	if (t > 0.0f) {
 		float a = k * 150.0f;
 		ps->initVelMin = (vec3_t){ -200.0f - a, (t + k) * 150.0f + 1400.0f, -200.0f - a };
@@ -1692,14 +1692,14 @@ static void VME_Exhaust45(const VMExhaust *x) {
 }
 
 /* 50: the emitted smoke at eight positions, a particle at each and a flare */
-const uint32_t VME_Exhaust10_3b5a7c[10] = {
+const uint32_t VME_Exhaust10Table17[10] = {
 	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
 	0x14ff9664,
 };
 
-vec3_t VME_Exhaust10_448650[8];
+vec3_t VME_Exhaust10Pos7[8];
 
-int VME_Exhaust10_4486b0;
+int VME_Exhaust10Count3;
 
 static void VME_Exhaust50(const VMExhaust *x) {
 	static const float xz[] = {
@@ -1707,7 +1707,7 @@ static void VME_Exhaust50(const VMExhaust *x) {
 		-50.0f, 54.0f
 	};
 	CGameParticles *ps = x->ps;
-	vec3_t *pos = VME_Exhaust10_448650;
+	vec3_t *pos = VME_Exhaust10Pos7;
 	float t = x->t, k = x->k;
 
 	ps->birthRate = VME_Birth(t, x->speed, 0) * 4;
@@ -1715,15 +1715,15 @@ static void VME_Exhaust50(const VMExhaust *x) {
 		ps->birthRate = VME_CloudBirth(ps->birthRate) * 4;
 	}
 	float r = Rand_FloatRange(10.0f, 15.0f) + k * 35.0f;
-	if (VME_StaticBegin((&VME_Exhaust10_4486b0))) {
+	if (VME_StaticBegin((&VME_Exhaust10Count3))) {
 		VME_SetPos(pos, xz, 8, r + 0.0f);
-		VME_StaticEnd((&VME_Exhaust10_4486b0));
+		VME_StaticEnd((&VME_Exhaust10Count3));
 	}
 	CGameParticles_SetEmitPos(ps, pos, 8);
 	float s = k * 3.0f + t;
 	ps->sizeIni = s * 65.0f + 50.0f;
 	ps->sizeEnd = (k * 1.5f + t) * 35.0f + 50.0f;
-	VME_Colors(ps, VME_Exhaust10_3b5a7c, t, k);
+	VME_Colors(ps, VME_Exhaust10Table17, t, k);
 	float k10 = k * 10.0f;
 	ps->initVelMin = (vec3_t){ -10.0f - k10, (k + k + t) * 100.0f + 600.0f, -10.0f - k10 };
 	ps->initVelMax = (vec3_t){ k10 + 10.0f, s * 500.0f + 1300.0f, k10 + 10.0f };
@@ -1745,19 +1745,19 @@ static void VME_Exhaust50(const VMExhaust *x) {
 }
 
 /* 60: the emitted smoke at three positions, two pairs and two flares */
-const uint32_t VME_Exhaust10_3b5acc[10] = {
+const uint32_t VME_Exhaust10Table19[10] = {
 	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
 	0x14ff9664,
 };
 
-vec3_t VME_Exhaust10_4486b4[3];
+vec3_t VME_Exhaust10Pos8[3];
 
-int VME_Exhaust10_4486d8;
+int VME_Exhaust10Count4;
 
 static void VME_Exhaust60(const VMExhaust *x) {
 	static const float xz[] = { 0.0f, 0.0f, 0.0f, -40.0f, 0.0f, 40.0f };
 	CGameParticles *ps = x->ps;
-	vec3_t *pos = VME_Exhaust10_4486b4;
+	vec3_t *pos = VME_Exhaust10Pos8;
 	float t = x->t, k = x->k;
 
 	ps->birthRate = VME_Birth(t, x->speed, 0) * 2;
@@ -1767,14 +1767,14 @@ static void VME_Exhaust60(const VMExhaust *x) {
 	float t20 = t * 20.0f;
 	float r = Rand_FloatRange(10.0f, 15.0f);
 	r = (float)(r + t20 + (k * 35.0f));
-	if (VME_StaticBegin((&VME_Exhaust10_4486d8))) {
+	if (VME_StaticBegin((&VME_Exhaust10Count4))) {
 		VME_SetPos(pos, xz, 3, r + 0.0f);
-		VME_StaticEnd((&VME_Exhaust10_4486d8));
+		VME_StaticEnd((&VME_Exhaust10Count4));
 	}
 	CGameParticles_SetEmitPos(ps, pos, 3);
 	ps->sizeIni = (k * 3.0f + t) * 70.0f + 85.0f;
 	ps->sizeEnd = (k * 1.5f + t) * 50.0f + 45.0f;
-	VME_Colors(ps, VME_Exhaust10_3b5acc, t, k);
+	VME_Colors(ps, VME_Exhaust10Table19, t, k);
 	float k10 = k * 10.0f;
 	float s = k + k + t;
 	ps->initVelMin = (vec3_t){ -10.0f - k10, s * 350.0f + 950.0f, -10.0f - k10 };
@@ -1796,32 +1796,32 @@ static void VME_Exhaust60(const VMExhaust *x) {
 	VME_FlarePair(ps, x->model, n - 6, k, 0.0f, 1.0f, 0.0f, 30.0f, 1000.0f, 0xe6963c);
 }
 
-const uint32_t VME_Exhaust10_3b593c[10] = {
+const uint32_t VME_Exhaust10Table9[10] = {
 	0x320f0503, 0x30190f07, 0x2d32230d, 0x2c802d12, 0x2ae15017, 0x28eb5f1e, 0x28f86428, 0x23fa6e2d, 0x1efd8232,
 	0x14ff9632,
 };
 
-const uint32_t VME_Exhaust10_3b5964[10] = {
+const uint32_t VME_Exhaust10Table10[10] = {
 	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
 	0x14ff9664,
 };
 
-const uint32_t VME_Exhaust10_3b59b4[10] = {
+const uint32_t VME_Exhaust10Table12[10] = {
 	0x320f0503, 0x30190f07, 0x2d32230d, 0x2c802d12, 0x2ae15017, 0x28eb5f1e, 0x28f86428, 0x23fa6e2d, 0x1efd8232,
 	0x14ff9632,
 };
 
-const uint32_t VME_Exhaust10_3b59dc[10] = {
+const uint32_t VME_Exhaust10Table13[10] = {
 	0x320f030f, 0x30190719, 0x2d320d23, 0x2c80122d, 0x2ae11750, 0x28eb1e5f, 0x28f82864, 0x23fa2d6e, 0x1efd3282,
 	0x14ff3296,
 };
 
-const uint32_t VME_Exhaust10_3b5a2c[10] = {
+const uint32_t VME_Exhaust10Table15[10] = {
 	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
 	0x14ff9664,
 };
 
-const uint32_t VME_Exhaust10_3b5aa4[10] = {
+const uint32_t VME_Exhaust10Table18[10] = {
 	0x32320f0a, 0x303c190f, 0x2d4b2314, 0x2c64371e, 0x2ac84b23, 0x28fa5a28, 0x28fa6432, 0x23fb6e46, 0x1efd825a,
 	0x14ff9664,
 };
@@ -1891,25 +1891,25 @@ void cVehicleMotorsEffects_Exhaust(cVehicleMotorsEffects *self, float thrust, fl
 			VME_Exhaust21(&x);
 			break;
 		case 25:
-			VME_ExhaustLine(&x, &vme_Line25, x.t > 0.0f ? g_FXEngineBirthRate : 0, VME_Exhaust10_3b593c);
+			VME_ExhaustLine(&x, &vme_Line25, x.t > 0.0f ? g_FXEngineBirthRate : 0, VME_Exhaust10Table9);
 			break;
 		case 26:
-			VME_ExhaustLine4(&x, &vme_Line26, VME_Exhaust10_3b5964);
+			VME_ExhaustLine4(&x, &vme_Line26, VME_Exhaust10Table10);
 			break;
 		case 27:
 			VME_Exhaust27(&x);
 			break;
 		case 30:
-			VME_ExhaustLine(&x, &vme_Line30, g_FXEngineBirthRate, VME_Exhaust10_3b59b4);
+			VME_ExhaustLine(&x, &vme_Line30, g_FXEngineBirthRate, VME_Exhaust10Table12);
 			break;
 		case 35:
-			VME_ExhaustLine(&x, &vme_Line35, g_FXEngineBirthRate, VME_Exhaust10_3b59dc);
+			VME_ExhaustLine(&x, &vme_Line35, g_FXEngineBirthRate, VME_Exhaust10Table13);
 			break;
 		case 36:
 			VME_Exhaust36(&x);
 			break;
 		case 40:
-			VME_ExhaustLine4(&x, &vme_Line40, VME_Exhaust10_3b5a2c);
+			VME_ExhaustLine4(&x, &vme_Line40, VME_Exhaust10Table15);
 			break;
 		case 45:
 			VME_Exhaust45(&x);
@@ -1918,7 +1918,7 @@ void cVehicleMotorsEffects_Exhaust(cVehicleMotorsEffects *self, float thrust, fl
 			VME_Exhaust50(&x);
 			break;
 		case 55:
-			VME_ExhaustLine4(&x, &vme_Line55, VME_Exhaust10_3b5aa4);
+			VME_ExhaustLine4(&x, &vme_Line55, VME_Exhaust10Table18);
 			break;
 		case 60:
 			VME_Exhaust60(&x);

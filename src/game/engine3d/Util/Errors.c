@@ -11,9 +11,9 @@
 #define ERR_FIRST_FREE 50
 #define ERR_CUSTOM -2	/* Err_Printf: no text of its own (g_ErrCustom) */
 
-char str_432608[] = "Unknown error";
+char str_UnknownError2[] = "Unknown error";
 
-#define g_ErrUnknown str_432608	/* "Unknown error" */
+#define g_ErrUnknown str_UnknownError2	/* "Unknown error" */
 
 /* a line in pixels over the frame (the original drew it with GDI on the window), color 0xRRGGBB */
 void Debug_Line(int x0, int y0, int x1, int y1, uint32_t color, int width) {
@@ -23,63 +23,63 @@ void Debug_Line(int x0, int y0, int x1, int y1, uint32_t color, int width) {
 	}
 }
 
-extern const char str_3ca58c[];
-extern const char str_3ca704[];
-extern const char str_3de0c4[];
-extern const char str_3de0cc[];
-extern const char str_3de0e4[];
-extern const char str_3de0f4[];
-extern const char str_3de110[];
-extern const char str_3de124[];
-extern const char str_3de140[];
-extern const char str_3de154[];
-extern const char str_3de168[];
-extern const char str_3de17c[];
-extern const char str_3de190[];
-extern const char str_3de1b4[];
-extern const char str_3de1c8[];
-extern const char str_3de1dc[];
-extern const char str_3de1e8[];
-extern const char str_3de1f8[];
-extern const char str_3de20c[];
-extern const char str_3de21c[];
-extern const char str_3de22c[];
-extern const char str_3de23c[];
-extern const char str_3de24c[];
-extern const char str_3de260[];
-extern const char str_3de280[];
-extern const char str_3de294[];
-extern const char str_3de2b8[];
-extern const char str_3de2c8[];
-extern const char str_3de2e0[];
-extern const char str_3de2f0[];
-extern const char str_3de308[];
-extern const char str_3de318[];
-extern const char str_3de324[];
-extern const char str_3de334[];
-extern const char str_3de348[];
-extern const char str_3de364[];
-extern const char str_3de378[];
-extern const char str_3de38c[];
-extern const char str_3de3a8[];
-extern const char str_3de3bc[];
-extern const char str_3de3d4[];
-extern const char str_3de3e8[];
-extern const char str_3de3fc[];
-extern const char str_3de40c[];
+extern const char str_FileNotFound[];
+extern const char str_UnknownError[];
+extern const char str_Error0[];
+extern const char str_OperationNotPermitted[];
+extern const char str_NoSuchProcess[];
+extern const char str_InterruptedFunctionCall[];
+extern const char str_InputOutputError[];
+extern const char str_NoSuchDeviceOrAddress[];
+extern const char str_ArgListTooLong[];
+extern const char str_ExecFormatError[];
+extern const char str_BadFileDescriptor[];
+extern const char str_NoChildProcesses[];
+extern const char str_ResourceTemporarilyUnavailable[];
+extern const char str_NotEnoughMemory[];
+extern const char str_PermissionDenied[];
+extern const char str_BadAddress[];
+extern const char str_ResourceDevice[];
+extern const char str_FileAlreadyExists[];
+extern const char str_ImproperLink[];
+extern const char str_NoSuchDevice[];
+extern const char str_NotADirectory[];
+extern const char str_IsADirectory[];
+extern const char str_InvalidArgument[];
+extern const char str_TooManyOpenFilesInSystem[];
+extern const char str_TooManyOpenFiles[];
+extern const char str_InappropriateIOControlOperation[];
+extern const char str_FileTooLarge[];
+extern const char str_NoSpaceLeftOnDevice[];
+extern const char str_InvalidSeek[];
+extern const char str_ReadOnlyFileSystem[];
+extern const char str_TooManyLinks[];
+extern const char str_BrokenPipe[];
+extern const char str_DomainError[];
+extern const char str_ResultTooLarge[];
+extern const char str_ResourceDeadlockAvoided[];
+extern const char str_FilenameTooLong[];
+extern const char str_NoLocksAvailable[];
+extern const char str_FunctionNotImplemented[];
+extern const char str_DirectoryNotEmpty[];
+extern const char str_IllegalByteSequence[];
+extern const char str_InvalidFileFormat[];
+extern const char str_FileHasZeroSize[];
+extern const char str_InvalidPath[];
+extern const char str_InvalidParameter[];
 const char *g_ErrTable[200] = {
-	(void *)str_3de0c4, (void *)str_3de0cc, (void *)str_3ca58c, (void *)str_3de0e4,
-	(void *)str_3de0f4, (void *)str_3de110, (void *)str_3de124, (void *)str_3de140,
-	(void *)str_3de154, (void *)str_3de168, (void *)str_3de17c, (void *)str_3de190,
-	(void *)str_3de1b4, (void *)str_3de1c8, (void *)str_3de1dc, (void *)str_3ca704,
-	(void *)str_3de1e8, (void *)str_3de1f8, (void *)str_3de20c, (void *)str_3de21c,
-	(void *)str_3de22c, (void *)str_3de23c, (void *)str_3de24c, (void *)str_3de260,
-	(void *)str_3de280, (void *)str_3de294, (void *)str_3ca704, (void *)str_3de2b8,
-	(void *)str_3de2c8, (void *)str_3de2e0, (void *)str_3de2f0, (void *)str_3de308,
-	(void *)str_3de318, (void *)str_3de324, (void *)str_3de334, (void *)str_3ca704,
-	(void *)str_3de348, (void *)str_3ca704, (void *)str_3de364, (void *)str_3de378,
-	(void *)str_3de38c, (void *)str_3de3a8, (void *)str_3de3bc, (void *)str_3ca704, 0, 0, 0, 0, 0, 0,
-	(void *)str_3de3d4, (void *)str_3de3e8, (void *)str_3de3fc, (void *)str_3de40c,
+	(void *)str_Error0, (void *)str_OperationNotPermitted, (void *)str_FileNotFound, (void *)str_NoSuchProcess,
+	(void *)str_InterruptedFunctionCall, (void *)str_InputOutputError, (void *)str_NoSuchDeviceOrAddress, (void *)str_ArgListTooLong,
+	(void *)str_ExecFormatError, (void *)str_BadFileDescriptor, (void *)str_NoChildProcesses, (void *)str_ResourceTemporarilyUnavailable,
+	(void *)str_NotEnoughMemory, (void *)str_PermissionDenied, (void *)str_BadAddress, (void *)str_UnknownError,
+	(void *)str_ResourceDevice, (void *)str_FileAlreadyExists, (void *)str_ImproperLink, (void *)str_NoSuchDevice,
+	(void *)str_NotADirectory, (void *)str_IsADirectory, (void *)str_InvalidArgument, (void *)str_TooManyOpenFilesInSystem,
+	(void *)str_TooManyOpenFiles, (void *)str_InappropriateIOControlOperation, (void *)str_UnknownError, (void *)str_FileTooLarge,
+	(void *)str_NoSpaceLeftOnDevice, (void *)str_InvalidSeek, (void *)str_ReadOnlyFileSystem, (void *)str_TooManyLinks,
+	(void *)str_BrokenPipe, (void *)str_DomainError, (void *)str_ResultTooLarge, (void *)str_UnknownError,
+	(void *)str_ResourceDeadlockAvoided, (void *)str_UnknownError, (void *)str_FilenameTooLong, (void *)str_NoLocksAvailable,
+	(void *)str_FunctionNotImplemented, (void *)str_DirectoryNotEmpty, (void *)str_IllegalByteSequence, (void *)str_UnknownError, 0, 0, 0, 0, 0, 0,
+	(void *)str_InvalidFileFormat, (void *)str_FileHasZeroSize, (void *)str_InvalidPath, (void *)str_InvalidParameter,
 };
 
 const char *Err_Unregister(int code) {
@@ -148,91 +148,91 @@ void Err_VReport(int code, int fatal, const char *fmt, va_list ap) {
 	Plat_MessageBox(buf, "Warning", 0x11010);
 }
 
-const char str_3de0c4[] = "Error 0";
+const char str_Error0[] = "Error 0";
 
-const char str_3de0cc[] = "Operation not permitted";
+const char str_OperationNotPermitted[] = "Operation not permitted";
 
-const char str_3de0e4[] = "No such process";
+const char str_NoSuchProcess[] = "No such process";
 
-const char str_3de0f4[] = "Interrupted function call";
+const char str_InterruptedFunctionCall[] = "Interrupted function call";
 
-const char str_3de110[] = "Input/output error";
+const char str_InputOutputError[] = "Input/output error";
 
-const char str_3de124[] = "No such device or address";
+const char str_NoSuchDeviceOrAddress[] = "No such device or address";
 
-const char str_3de140[] = "Arg list too long";
+const char str_ArgListTooLong[] = "Arg list too long";
 
-const char str_3de154[] = "Exec format error";
+const char str_ExecFormatError[] = "Exec format error";
 
-const char str_3de168[] = "Bad file descriptor";
+const char str_BadFileDescriptor[] = "Bad file descriptor";
 
-const char str_3de17c[] = "No child processes";
+const char str_NoChildProcesses[] = "No child processes";
 
-const char str_3de190[] = "Resource temporarily unavailable";
+const char str_ResourceTemporarilyUnavailable[] = "Resource temporarily unavailable";
 
-const char str_3de1b4[] = "Not enough memory";
+const char str_NotEnoughMemory[] = "Not enough memory";
 
-const char str_3de1c8[] = "Permission denied";
+const char str_PermissionDenied[] = "Permission denied";
 
-const char str_3de1dc[] = "Bad address";
+const char str_BadAddress[] = "Bad address";
 
-const char str_3de1e8[] = "Resource device";
+const char str_ResourceDevice[] = "Resource device";
 
-const char str_3de1f8[] = "File already exists";
+const char str_FileAlreadyExists[] = "File already exists";
 
-const char str_3de20c[] = "Improper link";
+const char str_ImproperLink[] = "Improper link";
 
-const char str_3de21c[] = "No such device";
+const char str_NoSuchDevice[] = "No such device";
 
-const char str_3de22c[] = "Not a directory";
+const char str_NotADirectory[] = "Not a directory";
 
-const char str_3de23c[] = "Is a directory";
+const char str_IsADirectory[] = "Is a directory";
 
-const char str_3de24c[] = "Invalid argument";
+const char str_InvalidArgument[] = "Invalid argument";
 
-const char str_3de260[] = "Too many open files in system";
+const char str_TooManyOpenFilesInSystem[] = "Too many open files in system";
 
-const char str_3de280[] = "Too many open files";
+const char str_TooManyOpenFiles[] = "Too many open files";
 
-const char str_3de294[] = "Inappropriate I/O control operation";
+const char str_InappropriateIOControlOperation[] = "Inappropriate I/O control operation";
 
-const char str_3de2b8[] = "File too large";
+const char str_FileTooLarge[] = "File too large";
 
-const char str_3de2c8[] = "No space left on device";
+const char str_NoSpaceLeftOnDevice[] = "No space left on device";
 
-const char str_3de2e0[] = "Invalid seek";
+const char str_InvalidSeek[] = "Invalid seek";
 
-const char str_3de2f0[] = "Read-only file system";
+const char str_ReadOnlyFileSystem[] = "Read-only file system";
 
-const char str_3de308[] = "Too many links";
+const char str_TooManyLinks[] = "Too many links";
 
-const char str_3de318[] = "Broken pipe";
+const char str_BrokenPipe[] = "Broken pipe";
 
-const char str_3de324[] = "Domain error";
+const char str_DomainError[] = "Domain error";
 
-const char str_3de334[] = "Result too large";
+const char str_ResultTooLarge[] = "Result too large";
 
-const char str_3de348[] = "Resource deadlock avoided";
+const char str_ResourceDeadlockAvoided[] = "Resource deadlock avoided";
 
-const char str_3de364[] = "Filename too long";
+const char str_FilenameTooLong[] = "Filename too long";
 
-const char str_3de378[] = "No locks available";
+const char str_NoLocksAvailable[] = "No locks available";
 
-const char str_3de38c[] = "Function not implemented";
+const char str_FunctionNotImplemented[] = "Function not implemented";
 
-const char str_3de3a8[] = "Directory not empty";
+const char str_DirectoryNotEmpty[] = "Directory not empty";
 
-const char str_3de3bc[] = "Illegal byte sequence";
+const char str_IllegalByteSequence[] = "Illegal byte sequence";
 
-const char str_3de3d4[] = "Invalid file format";
+const char str_InvalidFileFormat[] = "Invalid file format";
 
-const char str_3de3e8[] = "File has zero size";
+const char str_FileHasZeroSize[] = "File has zero size";
 
-const char str_3de3fc[] = "Invalid path";
+const char str_InvalidPath[] = "Invalid path";
 
-const char str_3de40c[] = "Invalid parameter";
+const char str_InvalidParameter[] = "Invalid parameter";
 
-const char str_3ca58c[] = "File not found";
+const char str_FileNotFound[] = "File not found";
 
-const char str_3ca704[] = "Unknown error";
+const char str_UnknownError[] = "Unknown error";
 

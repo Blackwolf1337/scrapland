@@ -256,46 +256,46 @@ void Logic_ShowShipList(const char *name, byte visible) {
 	}
 }
 
-extern const char str_3bd078[];
-extern const char str_3bd084[];
-extern const char str_3bd090[];
-extern const char str_3bd09c[];
-extern const char str_3bd0b0[];
-const char *LOGIC_GEARSTATES[5] = { (void *)str_3bd078, (void *)str_3bd084, (void *)str_3bd090, (void *)str_3bd09c, (void *)str_3bd0b0 };
+extern const char str_GEARRELAX[];
+extern const char str_GEARCHASE[];
+extern const char str_GEARATTACK[];
+extern const char str_GEARSTAYINPLACE[];
+extern const char str_GEARSCORT[];
+const char *LOGIC_GEARSTATES[5] = { (void *)str_GEARRELAX, (void *)str_GEARCHASE, (void *)str_GEARATTACK, (void *)str_GEARSTAYINPLACE, (void *)str_GEARSCORT };
 
-extern const char str_3bd0bc[];
-extern const char str_3bd0cc[];
-extern const char str_3bd0dc[];
-extern const char str_3bd0ec[];
-extern const char str_3bd100[];
-extern const char str_3bd114[];
-extern const char str_3bd128[];
+extern const char str_SENTINELRELAX[];
+extern const char str_SENTINELSEARCH[];
+extern const char str_SENTINELACUSE[];
+extern const char str_SENTINELINSPECT[];
+extern const char str_SENTINELSUSPECT[];
+extern const char str_SENTINELGOTOWATCH[];
+extern const char str_SENTINELATTACKNPC[];
 const char *LOGIC_SENTINELSTATES[7] = {
-	(void *)str_3bd0bc, (void *)str_3bd0cc, (void *)str_3bd0dc, (void *)str_3bd0ec,
-	(void *)str_3bd100, (void *)str_3bd114, (void *)str_3bd128,
+	(void *)str_SENTINELRELAX, (void *)str_SENTINELSEARCH, (void *)str_SENTINELACUSE, (void *)str_SENTINELINSPECT,
+	(void *)str_SENTINELSUSPECT, (void *)str_SENTINELGOTOWATCH, (void *)str_SENTINELATTACKNPC,
 };
 
-extern const char str_3bd13c[];
-extern const char str_3bd148[];
-extern const char str_3bd154[];
-extern const char str_3bd164[];
-const char *LOGIC_NURSESTATES[4] = { (void *)str_3bd13c, (void *)str_3bd148, (void *)str_3bd154, (void *)str_3bd164 };
+extern const char str_NURSERELAX[];
+extern const char str_NURSEALERT[];
+extern const char str_NURSEESCAPE[];
+extern const char str_NURSEATTACK[];
+const char *LOGIC_NURSESTATES[4] = { (void *)str_NURSERELAX, (void *)str_NURSEALERT, (void *)str_NURSEESCAPE, (void *)str_NURSEATTACK };
 
-extern const char str_3bd174[];
-extern const char str_3bd184[];
-extern const char str_3bd194[];
-extern const char str_3bd1a4[];
-extern const char str_3bd1b4[];
-extern const char str_3bd1c4[];
-extern const char str_3bd1d4[];
-extern const char str_3bd1e4[];
-extern const char str_3bd200[];
-extern const char str_3bd21c[];
-extern const char str_3bd238[];
+extern const char str_GENCHARRELAX[];
+extern const char str_GENCHARALERT[];
+extern const char str_GENCHARACUSE[];
+extern const char str_GENCHARESCAPE[];
+extern const char str_GENCHARATTACK[];
+extern const char str_GENCHARCHASE[];
+extern const char str_GENCHARSTAY[];
+extern const char str_GENCHARSPECIALBEHAVIOUR1[];
+extern const char str_GENCHARSPECIALBEHAVIOUR2[];
+extern const char str_GENCHARSPECIALBEHAVIOUR3[];
+extern const char str_GENCHARGETIT[];
 const char *LOGIC_GENCHARSTATES[11] = {
-	(void *)str_3bd174, (void *)str_3bd184, (void *)str_3bd194, (void *)str_3bd1a4,
-	(void *)str_3bd1b4, (void *)str_3bd1c4, (void *)str_3bd1d4, (void *)str_3bd1e4,
-	(void *)str_3bd200, (void *)str_3bd21c, (void *)str_3bd238,
+	(void *)str_GENCHARRELAX, (void *)str_GENCHARALERT, (void *)str_GENCHARACUSE, (void *)str_GENCHARESCAPE,
+	(void *)str_GENCHARATTACK, (void *)str_GENCHARCHASE, (void *)str_GENCHARSTAY, (void *)str_GENCHARSPECIALBEHAVIOUR1,
+	(void *)str_GENCHARSPECIALBEHAVIOUR2, (void *)str_GENCHARSPECIALBEHAVIOUR3, (void *)str_GENCHARGETIT,
 };
 
 /* ShowAI: the ship lists of an outdoor map, else the character lists */
@@ -831,59 +831,59 @@ const cBaseLocalLogicVtbl cBaseLocalLogic_vftable = {
 	.RestartState = cBaseLocalLogic_RestartState,
 };
 
-const char str_3bd078[] = "GEAR_RELAX";
+const char str_GEARRELAX[] = "GEAR_RELAX";
 
-const char str_3bd084[] = "GEAR_CHASE";
+const char str_GEARCHASE[] = "GEAR_CHASE";
 
-const char str_3bd090[] = "GEAR_ATTACK";
+const char str_GEARATTACK[] = "GEAR_ATTACK";
 
-const char str_3bd09c[] = "GEAR_STAY_IN_PLACE";
+const char str_GEARSTAYINPLACE[] = "GEAR_STAY_IN_PLACE";
 
-const char str_3bd0b0[] = "GEAR_SCORT";
+const char str_GEARSCORT[] = "GEAR_SCORT";
 
-const char str_3bd0bc[] = "SENTINEL_RELAX";
+const char str_SENTINELRELAX[] = "SENTINEL_RELAX";
 
-const char str_3bd0cc[] = "SENTINEL_SEARCH";
+const char str_SENTINELSEARCH[] = "SENTINEL_SEARCH";
 
-const char str_3bd0dc[] = "SENTINEL_ACUSE";
+const char str_SENTINELACUSE[] = "SENTINEL_ACUSE";
 
-const char str_3bd0ec[] = "SENTINEL_INSPECT";
+const char str_SENTINELINSPECT[] = "SENTINEL_INSPECT";
 
-const char str_3bd100[] = "SENTINEL_SUSPECT";
+const char str_SENTINELSUSPECT[] = "SENTINEL_SUSPECT";
 
-const char str_3bd114[] = "SENTINEL_GOTO_WATCH";
+const char str_SENTINELGOTOWATCH[] = "SENTINEL_GOTO_WATCH";
 
-const char str_3bd128[] = "SENTINEL_ATTACK_NPC";
+const char str_SENTINELATTACKNPC[] = "SENTINEL_ATTACK_NPC";
 
-const char str_3bd13c[] = "NURSE_RELAX";
+const char str_NURSERELAX[] = "NURSE_RELAX";
 
-const char str_3bd148[] = "NURSE_ALERT";
+const char str_NURSEALERT[] = "NURSE_ALERT";
 
-const char str_3bd154[] = "NURSE_ESCAPE";
+const char str_NURSEESCAPE[] = "NURSE_ESCAPE";
 
-const char str_3bd164[] = "NURSE_ATTACK";
+const char str_NURSEATTACK[] = "NURSE_ATTACK";
 
-const char str_3bd174[] = "GENCHAR_RELAX";
+const char str_GENCHARRELAX[] = "GENCHAR_RELAX";
 
-const char str_3bd184[] = "GENCHAR_ALERT";
+const char str_GENCHARALERT[] = "GENCHAR_ALERT";
 
-const char str_3bd194[] = "GENCHAR_ACUSE";
+const char str_GENCHARACUSE[] = "GENCHAR_ACUSE";
 
-const char str_3bd1a4[] = "GENCHAR_ESCAPE";
+const char str_GENCHARESCAPE[] = "GENCHAR_ESCAPE";
 
-const char str_3bd1b4[] = "GENCHAR_ATTACK";
+const char str_GENCHARATTACK[] = "GENCHAR_ATTACK";
 
-const char str_3bd1c4[] = "GENCHAR_CHASE";
+const char str_GENCHARCHASE[] = "GENCHAR_CHASE";
 
-const char str_3bd1d4[] = "GENCHAR_STAY";
+const char str_GENCHARSTAY[] = "GENCHAR_STAY";
 
-const char str_3bd1e4[] = "GENCHAR_SPECIAL_BEHAVIOUR_1";
+const char str_GENCHARSPECIALBEHAVIOUR1[] = "GENCHAR_SPECIAL_BEHAVIOUR_1";
 
-const char str_3bd200[] = "GENCHAR_SPECIAL_BEHAVIOUR_2";
+const char str_GENCHARSPECIALBEHAVIOUR2[] = "GENCHAR_SPECIAL_BEHAVIOUR_2";
 
-const char str_3bd21c[] = "GENCHAR_SPECIAL_BEHAVIOUR_3";
+const char str_GENCHARSPECIALBEHAVIOUR3[] = "GENCHAR_SPECIAL_BEHAVIOUR_3";
 
-const char str_3bd238[] = "GENCHAR_GET_IT";
+const char str_GENCHARGETIT[] = "GENCHAR_GET_IT";
 
 cGVar GVar_LogicAwakeTime;
 

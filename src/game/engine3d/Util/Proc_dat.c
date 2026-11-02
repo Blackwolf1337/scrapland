@@ -77,21 +77,21 @@ procrange_t g_ProcRangeShort = { .lo = -32768, .hi = 32767 };
 
 procrange_t g_ProcRangeWord = { .hi = 65535 };
 
-extern void *data_432450[8];
-extern void *data_432470[4];
-extern void *data_432480[7];
-extern void *data_43249c[7];
-extern const char str_3dbf48[];
-extern const char str_3dbf54[];
-extern const char str_3dbf60[];
-extern const char str_3dbf6c[];
-extern const char str_3dbf80[];
+extern void *ProcDat_YesNoNames[8];
+extern void *ProcDat_LoopNames[4];
+extern void *ProcDat_SignNames[7];
+extern void *ProcDat_MonoStereoNames[7];
+extern const char str_TipoSiNo[];
+extern const char str_TipoBucle[];
+extern const char str_TipoNota[];
+extern const char str_TipoSampleSigno[];
+extern const char str_TipoSampleMnst[];
 cProcType g_ProcTypes[16] = {
-	{ .name = (void *)str_3dbf48, .data = (void *)data_432450 },
-	{ .name = (void *)str_3dbf54, .data = (void *)data_432470 },
-	{ .name = (void *)str_3dbf60, .convert = (void *)Proc_Note },
-	{ .name = (void *)str_3dbf6c, .data = (void *)data_432480 },
-	{ .name = (void *)str_3dbf80, .data = (void *)data_43249c },
+	{ .name = (void *)str_TipoSiNo, .data = (void *)ProcDat_YesNoNames },
+	{ .name = (void *)str_TipoBucle, .data = (void *)ProcDat_LoopNames },
+	{ .name = (void *)str_TipoNota, .convert = (void *)Proc_Note },
+	{ .name = (void *)str_TipoSampleSigno, .data = (void *)ProcDat_SignNames },
+	{ .name = (void *)str_TipoSampleMnst, .data = (void *)ProcDat_MonoStereoNames },
 };
 
 /* one "&" field: *pfmt is at the '&'; both pointers move past what was read */
@@ -383,67 +383,67 @@ done:
 	return count;
 }
 
-const char str_3dbe94[] = "NO 0";
+const char str_NO0[] = "NO 0";
 
-const char str_3dbe9c[] = "OFF 0";
+const char str_OFF0[] = "OFF 0";
 
-const char str_3dbea4[] = "FALSE 0";
+const char str_FALSE0[] = "FALSE 0";
 
-const char str_3dbeac[] = "SI 1";
+const char str_SI1[] = "SI 1";
 
-const char str_3dbeb4[] = "ON 1";
+const char str_ON1[] = "ON 1";
 
-const char str_3dbebc[] = "YES 1";
+const char str_YES1[] = "YES 1";
 
-const char str_3dbec4[] = "TRUE 1";
+const char str_TRUE1[] = "TRUE 1";
 
-const char str_3dbecc[] = "LOCAL 1";
+const char str_LOCAL1[] = "LOCAL 1";
 
-const char str_3dbed4[] = "GLOBAL 2";
+const char str_GLOBAL2[] = "GLOBAL 2";
 
-const char str_3dbee0[] = "U 0";
+const char str_U0[] = "U 0";
 
-const char str_3dbee4[] = "SIN_SIGNO 0";
+const char str_SINSIGNO0[] = "SIN_SIGNO 0";
 
-const char str_3dbef0[] = "UNSIGNED 0";
+const char str_UNSIGNED0[] = "UNSIGNED 0";
 
-const char str_3dbefc[] = "S 1";
+const char str_S1[] = "S 1";
 
-const char str_3dbf00[] = "CON_SIGNO 1";
+const char str_CONSIGNO1[] = "CON_SIGNO 1";
 
-const char str_3dbf0c[] = "SIGNED 1";
+const char str_SIGNED1[] = "SIGNED 1";
 
-const char str_3dbf18[] = "MN 0";
+const char str_MN0[] = "MN 0";
 
-const char str_3dbf20[] = "MONO 0";
+const char str_MONO0[] = "MONO 0";
 
-const char str_3dbf28[] = "ST 1";
+const char str_ST1[] = "ST 1";
 
-const char str_3dbf30[] = "ESTEREO 1";
+const char str_ESTEREO1[] = "ESTEREO 1";
 
-const char str_3dbf3c[] = "STEREO 1";
+const char str_STEREO1[] = "STEREO 1";
 
-const char str_3dbf48[] = "tipo_si_no";
+const char str_TipoSiNo[] = "tipo_si_no";
 
-const char str_3dbf54[] = "tipo_bucle";
+const char str_TipoBucle[] = "tipo_bucle";
 
-const char str_3dbf60[] = "tipo_nota";
+const char str_TipoNota[] = "tipo_nota";
 
-const char str_3dbf6c[] = "tipo_sample_signo";
+const char str_TipoSampleSigno[] = "tipo_sample_signo";
 
-const char str_3dbf80[] = "tipo_sample_mnst";
+const char str_TipoSampleMnst[] = "tipo_sample_mnst";
 
-void *data_432450[8] = {
-	(void *)str_3dbe94, (void *)str_3dbe9c, (void *)str_3dbea4, (void *)str_3dbeac,
-	(void *)str_3dbeb4, (void *)str_3dbebc, (void *)str_3dbec4,
+void *ProcDat_YesNoNames[8] = {
+	(void *)str_NO0, (void *)str_OFF0, (void *)str_FALSE0, (void *)str_SI1,
+	(void *)str_ON1, (void *)str_YES1, (void *)str_TRUE1,
 };
 
-void *data_432470[4] = { (void *)str_3dbe94, (void *)str_3dbecc, (void *)str_3dbed4 };
+void *ProcDat_LoopNames[4] = { (void *)str_NO0, (void *)str_LOCAL1, (void *)str_GLOBAL2 };
 
-void *data_432480[7] = {
-	(void *)str_3dbee0, (void *)str_3dbee4, (void *)str_3dbef0, (void *)str_3dbefc,
-	(void *)str_3dbf00, (void *)str_3dbf0c,
+void *ProcDat_SignNames[7] = {
+	(void *)str_U0, (void *)str_SINSIGNO0, (void *)str_UNSIGNED0, (void *)str_S1,
+	(void *)str_CONSIGNO1, (void *)str_SIGNED1,
 };
 
-void *data_43249c[7] = { (void *)str_3dbf18, (void *)str_3dbf20, (void *)str_3dbf28, (void *)str_3dbf30, (void *)str_3dbf3c };
+void *ProcDat_MonoStereoNames[7] = { (void *)str_MN0, (void *)str_MONO0, (void *)str_ST1, (void *)str_ESTEREO1, (void *)str_STEREO1 };
 

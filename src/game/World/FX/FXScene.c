@@ -443,7 +443,7 @@ void cObjElementFXSceneYakuzzi_Reset(cObjElementFX *base, cDebris *arg) {
 
 /* Update */
 
-uint32_t FXS_HumanCDSparks_430c48[18] = {
+uint32_t FXS_HumanCDSparksRamps[18] = {
 	0x40ffffff, 0x4bffffff, 0x60ffffff, 0x70ffffff, 0x80ffffff, 0xa4ffffff, 0xc0808080, 0xff000000, 0xff000000,
 	0x40fff0e6, 0x4bffc0c0, 0x60ffc0c0, 0x70ffc0c0, 0x80ffc0c0, 0xa4ffc0c0, 0xc0805c40, 0xff000000, 0xff000000,
 };
@@ -494,7 +494,7 @@ static void FXS_HumanCDSparks(cObjElementFXSceneHumanCD *self, double scaleRange
 		memcpy(&sp->spriteIni, &sprites, 2);
 	}
 	CGameParticles_Apply(sp);
-	CGameParticles_SetColorRamp(sp, FXS_RAMP(FXS_HumanCDSparks_430c48, crt_rand() & 1));
+	CGameParticles_SetColorRamp(sp, FXS_RAMP(FXS_HumanCDSparksRamps, crt_rand() & 1));
 	CGameParticles_EmitDt(sp, 1, 1, FxElem_Rand(0.1f, 0.0));
 }
 
@@ -602,7 +602,7 @@ void cObjElementFXSceneTheEndB_Update(cObjElementFX *base, cDebris *d, float dt)
 	self->tPrev = self->t;
 }
 
-uint32_t cObjElementFXSceneYakuzzi_Update_430dd8[18] = {
+uint32_t cObjElementFXSceneYakuzzi_UpdateRamps[18] = {
 	0xff000000, 0xaa3c2c1c, 0x966e503b, 0x966e503b, 0x966e503b, 0xaa6e503b, 0xdc3c2c26, 0xff000000, 0xff000000,
 	0xff000000, 0xbe322b1e, 0xa05c5248, 0xa05c5248, 0xa05c5248, 0xb44b4637, 0xdc221e16, 0xff000000, 0xff000000,
 };
@@ -665,7 +665,7 @@ void cObjElementFXSceneYakuzzi_Update(cObjElementFX *base, cDebris *d, float dt)
 		sp->spriteEnd = sprite;
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneYakuzzi_Update_430dd8, crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneYakuzzi_UpdateRamps, crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.05f, 0.0));
 	}
 	self->tPrev = self->t;
@@ -676,9 +676,9 @@ void cObjElementFXSceneYakuzzi_Update(cObjElementFX *base, cDebris *d, float dt)
 #define FXBISHOPS_VERTS 0x100
 
 /* a glow and a data codec particle at vertex v of the detritus, the codec one up at y0 */
-uint32_t cObjElementFXSceneBishops_Update_430c90[9] = { 0x405aff5a, 0x4b4bff4b, 0x603ce63c, 0x7023ab23, 0x80264b26, 0xa40d380d, 0xc0051e05, 0xff000000, 0xff000000 };
+uint32_t cObjElementFXSceneBishops_UpdateRamp[9] = { 0x405aff5a, 0x4b4bff4b, 0x603ce63c, 0x7023ab23, 0x80264b26, 0xa40d380d, 0xc0051e05, 0xff000000, 0xff000000 };
 
-uint32_t cObjElementFXSceneBishops_Update_430cb4[19] = {
+uint32_t cObjElementFXSceneBishops_UpdateTable[19] = {
 	0x4080ff80, 0x4b6eff6e, 0x605ae65a, 0x703cab3c, 0x80234b23, 0xa40a380a, 0xc0051e05, 0xff000000, 0xff000000,
 	0x4040ff40, 0x4b32ff32, 0x6028e628, 0x701eab1e, 0x80144b14, 0xa40a380a, 0xc0051e05, 0xff000000, 0xff000000,
 };
@@ -709,7 +709,7 @@ static void FXS_BishopsEmit(cObjElementFXSceneBishops *self, const vec3_t *v, fl
 	sp->spriteEnd = 5;
 	sp->rotVar = FxElem_Rand(1.5707964f, -0.7853982f);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, cObjElementFXSceneBishops_Update_430c90);
+	CGameParticles_SetColorRamp(sp, cObjElementFXSceneBishops_UpdateRamp);
 	CGameParticles_Apply(sp);
 	CGameParticles_EmitN(sp, 1, 0);
 
@@ -738,7 +738,7 @@ static void FXS_BishopsEmit(cObjElementFXSceneBishops *self, const vec3_t *v, fl
 	sp->spriteIni = sprite;
 	sp->spriteEnd = sprite;
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBishops_Update_430cb4, crt_rand() & 1));
+	CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBishops_UpdateTable, crt_rand() & 1));
 	CGameParticles_Apply(sp);
 	CGameParticles_EmitN(sp, 1, 0);
 }
@@ -1082,7 +1082,7 @@ static inline void FXS_Sprites(CGameParticles *sp, byte ini, byte end) {
 	sp->spriteEnd = end;
 }
 
-uint32_t cObjElementFXSceneBeatPickus_Update_430e20[18] = {
+uint32_t cObjElementFXSceneBeatPickus_UpdateRamps[18] = {
 	0xff000000, 0xbe404040, 0xa0696969, 0xa0696969, 0xa0696969, 0xbe555555, 0xdc303030, 0xff000000, 0xff000000,
 	0xff000000, 0xbe363636, 0xa05f5f5f, 0xa05f5f5f, 0xa05f5f5f, 0xbe4b4b4b, 0xdc262626, 0xff000000, 0xff000000,
 };
@@ -1128,12 +1128,12 @@ static void FXS_BeatDust(cObjElementFXSceneBeatPickus *self) {
 		FXS_Sprites(sp, spr, spr);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBeatPickus_Update_430e20, crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBeatPickus_UpdateRamps, crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.05f, 0.0));
 	}
 }
 
-uint32_t cObjElementFXSceneBeatPickus_Update_430e68[18] = {
+uint32_t cObjElementFXSceneBeatPickus_UpdateRamps2[18] = {
 	0x80fff696, 0x20ffb45a, 0x40e68211, 0x80ab5e0d, 0x964c4408, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 	0x80ffebd2, 0x20ffd75a, 0x40e6c811, 0x80ab8c0d, 0x964c3a08, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 };
@@ -1184,7 +1184,7 @@ static void FXS_BeatDebris(cObjElementFXSceneBeatPickus *self) {
 		FXS_Sprites(sp, spr, spr);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBeatPickus_Update_430e68, crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBeatPickus_UpdateRamps2, crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.05f, 0.0));
 		i++;
 	} while (i < crt_rand() % 8 + 2);
@@ -1226,7 +1226,7 @@ static const vec3_t *FXS_BeatTurn(vec3_t *out, const vec3_t *dir, double range, 
 	return Vec3_Rotate(out, dir, &ang);
 }
 
-uint32_t cObjElementFXSceneBeatPickus_Update_430eb0[18] = {
+uint32_t cObjElementFXSceneBeatPickus_UpdateRamps3[18] = {
 	0x80fff696, 0x20ffb45a, 0x40e68211, 0x80ab5e0d, 0x964c4408, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 	0x80ffebd2, 0x20ffd75a, 0x40e6c811, 0x80ab8c0d, 0x964c3a08, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000,
 };
@@ -1273,16 +1273,16 @@ static void FXS_BeatSparks(cObjElementFXSceneBeatPickus *self) {
 		FXS_Sprites(sp, (byte)((crt_rand() & 1) + 0x41), 0x44);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBeatPickus_Update_430eb0, crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBeatPickus_UpdateRamps3, crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.1f, 0.0));
 		i++;
 	} while (i < crt_rand() % 6 + 8);
 }
 
 /* a hit: two flashes and 8 to 13 sparks falling down */
-uint32_t cObjElementFXSceneBeatPickus_Update_430ef8[9] = { 0x10f5f5ff, 0x20e1e1ff, 0x30b4b4e6, 0x409b9bbe, 0x607d7d96, 0x805f5f78, 0xc055556e, 0xff282832, 0xff000000 };
+uint32_t cObjElementFXSceneBeatPickus_UpdateRamp[9] = { 0x10f5f5ff, 0x20e1e1ff, 0x30b4b4e6, 0x409b9bbe, 0x607d7d96, 0x805f5f78, 0xc055556e, 0xff282832, 0xff000000 };
 
-uint32_t cObjElementFXSceneBeatPickus_Update_430f1c[19] = {
+uint32_t cObjElementFXSceneBeatPickus_UpdateTable[19] = {
 	0x10d2d2ff, 0x209696ff, 0x306464e1, 0x403232b4, 0x601e1e55, 0x800a0a2d, 0xc0050519, 0xff00000a, 0xff000000,
 	0x10d2d2ff, 0x20b4b4ff, 0x309393e6, 0x405353ab, 0x602d2d4c, 0x80141438, 0xc005051e, 0xff00000a, 0xff000000,
 };
@@ -1316,7 +1316,7 @@ static void FXS_BeatHit(cObjElementFXSceneBeatPickus *self) {
 	FXS_Pos(sp, p.x, p.y, p.z);
 	FXS_Vel(sp, 0.0f, 0.0f, 0.0f);
 	FXS_Acc(sp, 0.0f, 0.0f, 0.0f);
-	CGameParticles_SetColorRamp(sp, cObjElementFXSceneBeatPickus_Update_430ef8);
+	CGameParticles_SetColorRamp(sp, cObjElementFXSceneBeatPickus_UpdateRamp);
 	sp->sizeIni = FxElem_Rand(10.0f, 10.0f);
 	sp->sizeEnd = FxElem_Rand(15.0f, 95.0f);
 	sp->sizeLife = 0.15f;
@@ -1324,7 +1324,7 @@ static void FXS_BeatHit(cObjElementFXSceneBeatPickus *self) {
 	sp->lifeTime = FxElem_Rand(0.019999996f, 0.18f);
 	CGameParticles_Apply(sp);
 	CGameParticles_EmitN(sp, 1, 1);
-	CGameParticles_SetColorRamp(sp, cObjElementFXSceneBeatPickus_Update_430ef8);
+	CGameParticles_SetColorRamp(sp, cObjElementFXSceneBeatPickus_UpdateRamp);
 	double rr = FXS_Rnd();
 	sp->sizeIni = (float)(rr + rr + 4.0);
 	sp->sizeEnd = FxElem_Rand(15.0f, 55.0f);
@@ -1359,7 +1359,7 @@ static void FXS_BeatHit(cObjElementFXSceneBeatPickus *self) {
 		FXS_Sprites(sp, (byte)((crt_rand() & 1) + 0x41), 0x44);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBeatPickus_Update_430f1c, crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBeatPickus_UpdateTable, crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.1f, 0.0));
 		i++;
 	} while (i < crt_rand() % 6 + 8);
@@ -1403,7 +1403,7 @@ static void FXS_BeatPuffs(cObjElementFXSceneBeatPickus *self) {
 			FXS_Sprites(sp, spr, spr);
 			CGameParticles_Apply(sp);
 			CGameParticles_SetColorRampOn(sp, 1);
-			CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBeatPickus_Update_430e20, crt_rand() & 1));
+			CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBeatPickus_UpdateRamps, crt_rand() & 1));
 			CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.05f, 0.0));
 		}
 	}
@@ -1613,7 +1613,7 @@ static void FXS_BillJetsBlast(void *efx) {
 	}
 }
 
-uint32_t cObjElementFXSceneBillArrives_A_Update_430d48[18] = {
+uint32_t cObjElementFXSceneBillArrives_A_UpdateRamps2[18] = {
 	0xff000000, 0xeb202020, 0xdc303030, 0xdc303030, 0xdc303030, 0xdc303030, 0xeb262626, 0xff000000, 0xff000000,
 	0xff000000, 0xeb181818, 0xdc202020, 0xdc202020, 0xdc202020, 0xdc202020, 0xeb1a1a1a, 0xff000000, 0xff000000,
 };
@@ -1648,7 +1648,7 @@ static void FXS_BillCapsuleSmoke(cObjElementFXSceneBillArrives_A *self, const ve
 		FXS_Sprites(sp, spr, spr);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBillArrives_A_Update_430d48, crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBillArrives_A_UpdateRamps2, crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.04f, 0.0));
 	}
 }
@@ -1666,7 +1666,7 @@ static const vec3_t *FXS_RingDir(vec3_t *out, float f, double jitRange, double j
 	return Vec3_Rotate(out, &fxs_xAxis, &ang);
 }
 
-uint32_t cObjElementFXSceneBillArrives_A_Update_430d00[18] = {
+uint32_t cObjElementFXSceneBillArrives_A_UpdateRamps[18] = {
 	0xff000000, 0xbe404040, 0xa0696969, 0xa0696969, 0xa0696969, 0xbe555555, 0xdc303030, 0xff000000, 0xff000000,
 	0xff000000, 0xbe363636, 0xa05f5f5f, 0xa05f5f5f, 0xa05f5f5f, 0xbe4b4b4b, 0xdc262626, 0xff000000, 0xff000000,
 };
@@ -1701,7 +1701,7 @@ static void FXS_BillDust(cObjElementFXSceneBillArrives_A *self) {
 		FXS_Sprites(sp, spr, spr);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBillArrives_A_Update_430d00, crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBillArrives_A_UpdateRamps, crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.05f, 0.0));
 		f = f + 0.31415927f;
 	} while (6.2831855f > f);
@@ -1756,7 +1756,7 @@ static void FXS_BillSteam(cObjElementFXSceneBillArrives_A *self, const vec3_t *c
 		FXS_Sprites(sp, spr, spr);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBillArrives_A_Update_430d48, crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBillArrives_A_UpdateRamps2, crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.1f, 0.0));
 		k = k + 2.0f;
 	} while (22.0f > k);
@@ -1794,7 +1794,7 @@ static void FXS_BillPuff(cObjElementFXSceneBillArrives_A *self, const vec3_t *of
 		FXS_Sprites(sp, spr, spr);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBillArrives_A_Update_430d00, crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, FXS_RAMP(cObjElementFXSceneBillArrives_A_UpdateRamps, crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, FxElem_Rand(0.1f, 0.0));
 		f = f + 0.62831855f;
 	} while (6.2831855f > f);
@@ -2097,7 +2097,7 @@ static void FXS_MatrixRays1(cObjElementFXSceneEnterMatrix *self, float delta) {
 	}
 }
 
-vec3_t cObjElementFXSceneEnterMatrix_Update_430f68[32] = {
+vec3_t cObjElementFXSceneEnterMatrix_UpdatePos[32] = {
 	{ .x = 65697.5f, .y = 22634.8f, .z = -3495.2f },
 	{ .x = 65689.1f, .y = 22790.0f, .z = -17752.5f },
 	{ .x = 68660.5f, .y = 67162.7f, .z = -6468.6f },
@@ -2137,7 +2137,7 @@ static void FXS_MatrixPath(cObjElementFXSceneEnterMatrix *self, int k) {
 	vec3_t *P = self->pts[k];
 	vec3_t N, v, tmp, dir;
 
-	const vec3_t *tab = cObjElementFXSceneEnterMatrix_Update_430f68 + self->kind[k] * 4;
+	const vec3_t *tab = cObjElementFXSceneEnterMatrix_UpdatePos + self->kind[k] * 4;
 	float e1x = tab[2].x - tab[0].x, e2x = tab[3].x - tab[1].x;
 	float e1y = tab[2].y - tab[0].y, e1z = tab[2].z - tab[0].z;
 	float e2y = tab[3].y - tab[1].y, e2z = tab[3].z - tab[1].z;

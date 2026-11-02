@@ -293,7 +293,7 @@ static void FXW_RingPoint(vec3_t *out, float a, const vec3_t *ang) {
 	Vec3_Rotate(out, Vec3_Rotate(&o, &up, &rv), ang);
 }
 
-uint32_t cObjElementFXATPC_Update_4317a0[18] = {
+uint32_t cObjElementFXATPC_UpdateRamps[18] = {
 	0x18c4c4ff, 0x10e1b980, 0x8ffaf40, 0x4ff7d00, 0xff5f00, 0xff4b00, 0xff4100, 0x4eb3c00, 0x8e13700, 0x10c32800,
 	0x20af2300, 0x40911e00, 0x60801900, 0x80801900, 0xa4801900, 0xe0801900, 0xff801900,
 };
@@ -399,7 +399,7 @@ void cObjElementFXATPC_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	int a = (int)(s1 * 255.0f);
 	CGameTrail_SetTransp(&self->core, (byte)a);
 	float k16 = u * -16.0f;
-	const uint32_t *ramp = cObjElementFXATPC_Update_4317a0 - (int)k16;
+	const uint32_t *ramp = cObjElementFXATPC_UpdateRamps - (int)k16;
 	float rs2 = 0.75f;
 	float w = w0 * 0.75f;
 	CGameTrail_Add(&self->core, self->from, w, *ramp);
@@ -1488,7 +1488,7 @@ static void FXW_TeslaBack(vec3_t *tpos, const vec3_t *n, float r) {
 	tpos->z = s * (n->z * r) + tpos->z;
 }
 
-uint32_t cObjElementFXTesla_Update_431930[18] = {
+uint32_t cObjElementFXTesla_UpdateRamps[18] = {
 	0xffb9b9ed, 0x80b5b5f0, 0xb2b2f2, 0xafaff5, 0x20aaaaf9, 0x40a7a7fc, 0x80a3a3ff, 0xc0a3a3ff, 0xffa3a3ff,
 	0xff5b5bff, 0x966464fe, 0x506d6dfd, 0x7878fc, 0x8585fb, 0x409696f9, 0x809b9bf9, 0xc49b9bf9, 0xff9b9bf9,
 };
@@ -1697,7 +1697,7 @@ void cObjElementFXTesla_Update(cObjElementFX *base, cDebris *debris, float dt) {
 					CGameParticles_Apply(p);
 					CGameParticles_SetColorRampOn(p, 1);
 					CGameParticles_SetColorRamp(p,
-						cObjElementFXTesla_Update_431930 + 9 * (crt_rand() % 2));
+						cObjElementFXTesla_UpdateRamps + 9 * (crt_rand() % 2));
 					CGameParticles_EmitDt(p, 1, 0, FXW_Rand(0.05000000074505806, 0.0));
 					CGameParticles_SetSparksOn(p, 0);
 				}
@@ -1971,12 +1971,12 @@ static void FXW_Moving(CGameParticles *p, const vec3_t *pos, const vec3_t *vel) 
 	p->initAccMax = p->initAccMin;
 }
 
-uint32_t FXSwarm_BeeDeath_431978[18] = {
+uint32_t FXSwarm_BeeDeathRamps[18] = {
 	0xffffffff, 0xa4ffffff, 0xa4ffdc78, 0xa4dca528, 0xc4805c14, 0xd260400a, 0xeb403005, 0xff000000, 0xff000000,
 	0xff565656, 0xb4ffc86e, 0x8cef781e, 0x969a3c0e, 0xc37c260a, 0xd25e1c06, 0xeb220501, 0xff000000, 0xff000000,
 };
 
-uint32_t FXSwarm_BeeDeath_4319c0[27] = {
+uint32_t FXSwarm_BeeDeathRamps2[27] = {
 	0xff000000, 0xa01e1e1e, 0x802d2d2d, 0x80373737, 0x802d2d2d, 0x80232323, 0xc0191919, 0xff000000, 0xff000000,
 	0xff000000, 0xa0282828, 0x80373737, 0x80464646, 0x80505050, 0x80414141, 0xc0232323, 0xff000000, 0xff000000,
 	0xff000000, 0xa0323232, 0x80414141, 0x804b4b4b, 0x805f5f5f, 0x804b4b4b, 0xc02d2d2d, 0xff000000, 0xff000000,
@@ -2021,7 +2021,7 @@ void FXSwarm_BeeDeath(float x, float y, float z, float vx, float vy, float vz, f
 	p->rotIni = r;
 	p->rotEnd = r;
 	p->rotVar = FXW_Rand(1.5707963705062866, -0.7853981852531433);
-	CGameParticles_SetColorRamp(p, FXSwarm_BeeDeath_431978);
+	CGameParticles_SetColorRamp(p, FXSwarm_BeeDeathRamps);
 	FXW_SetSprite(p, 0x72);
 	CGameParticles_Apply(p);
 	CGameParticles_EmitN(p, 1, 1);
@@ -2085,7 +2085,7 @@ void FXSwarm_BeeDeath(float x, float y, float z, float vx, float vy, float vz, f
 		p->rotVar = FXW_Rand(1.0471975803375244, -0.5235987901687622);
 		FXW_SetSprite(p, (byte)((crt_rand() & 1) + 0x7b));
 		CGameParticles_Apply(p);
-		CGameParticles_SetColorRamp(p, FXSwarm_BeeDeath_4319c0 + 9 * (crt_rand() % 3));
+		CGameParticles_SetColorRamp(p, FXSwarm_BeeDeathRamps2 + 9 * (crt_rand() % 3));
 		float t = FXW_Rand(0.10000000149011612, 0.0);
 		CGameParticles_EmitDt(p, 1, 1, FXW_Rand(0.25, 0.10000000149011612) * time + t);
 
@@ -2156,7 +2156,7 @@ static void FXW_HitSpark(CGameParticles *p, const vec3_t *pos, const vec3_t *o, 
 	p->initAccMax = p->initAccMin;
 }
 
-uint32_t FXSwarm_Hit_431858[54] = {
+uint32_t FXSwarm_HitRamps2[54] = {
 	0xff000000, 0x80202020, 0x80414141, 0x8a4b4b4b, 0xa4464646, 0xc02d2d2d, 0xe4181818, 0xff000000, 0xff000000,
 	0xff000000, 0x80373737, 0x804b4b4b, 0x80555555, 0xa4505050, 0xc0373737, 0xe4202020, 0xff000000, 0xff000000,
 	0x80ffffff, 0x60ffffff, 0x80ffffff, 0x60ffffff, 0x80ffffff, 0x80ffffff, 0xc0808080, 0xff000000, 0xff000000,
@@ -2178,11 +2178,11 @@ static void FXW_HitSparkEmit(CGameParticles *p, float size, double irange, doubl
 	p->rotEnd = r;
 	CGameParticles_Apply(p);
 	CGameParticles_SetColorRampOn(p, 1);
-	CGameParticles_SetColorRamp(p, FXSwarm_Hit_431858 + 9 * (crt_rand() & 1));
+	CGameParticles_SetColorRamp(p, FXSwarm_HitRamps2 + 9 * (crt_rand() & 1));
 	CGameParticles_EmitDt(p, 1, 1, FXW_Rand(trange, tadd));
 }
 
-uint32_t FXSwarm_Hit_431810[18] = {
+uint32_t FXSwarm_HitRamps[18] = {
 	0xebffad2a, 0xaafeee90, 0x82ef7d38, 0x96bc4110, 0xb97a2a0a, 0xd23f1805, 0xeb0e0801, 0xff000000, 0xff000000,
 	0xeb565656, 0xb4ffc86e, 0x8cef781e, 0x969a3c0e, 0xc37c260a, 0xd25e1c06, 0xeb220501, 0xff000000, 0xff000000,
 };
@@ -2313,7 +2313,7 @@ void FXSwarm_Hit(float x, float y, float z, float vx, float vy, float vz, float 
 	p->rotIni = rr;
 	p->rotEnd = rr;
 	p->rotVar = FXW_Rand(1.5707963705062866, -0.7853981852531433);
-	CGameParticles_SetColorRamp(p, FXSwarm_Hit_431810 + 9 * (crt_rand() & 1));
+	CGameParticles_SetColorRamp(p, FXSwarm_HitRamps + 9 * (crt_rand() & 1));
 	FXW_SetSprite(p, 5);
 	CGameParticles_Apply(p);
 	CGameParticles_EmitN(p, 1, 1);

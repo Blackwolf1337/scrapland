@@ -1069,12 +1069,12 @@ byte cVehicleEntity_SetPilot(cEntity *elem, int slot, const char *name, float sx
 	return 1;
 }
 
-extern const char str_3a3954[];
-extern const char str_3a395c[];
-extern const char str_3ad2f4[];
-extern const char str_3ae0f4[];
-extern const char str_3b53f4[];
-const char *g_PilotAnimNames[6] = { (void *)str_3a3954, (void *)str_3a395c, (void *)str_3b53f4, (void *)str_3ae0f4, (void *)str_3ad2f4 };
+extern const char str_Left[];
+extern const char str_Right[];
+extern const char str_Relax[];
+extern const char str_Back[];
+extern const char str_Go[];
+const char *g_PilotAnimNames[6] = { (void *)str_Left, (void *)str_Right, (void *)str_Go, (void *)str_Back, (void *)str_Relax };
 
 byte cVehicleEntity_SetPilotAnim(cEntity *base, int slot, int anim) {
 	cVehicleEntity *self = (cVehicleEntity *)base;
@@ -2172,15 +2172,15 @@ const cVehicleEntityVtbl cVehicleEntity_vftable = {
 	.Crash = cVehicleEntity_Crash,
 };
 
-const char str_3b53f4[] = "Go";
+const char str_Go[] = "Go";
 
-const char str_3a3954[] = "Left";
+const char str_Left[] = "Left";
 
-const char str_3a395c[] = "Right";
+const char str_Right[] = "Right";
 
-const char str_3ad2f4[] = "Relax";
+const char str_Relax[] = "Relax";
 
-const char str_3ae0f4[] = "Back";
+const char str_Back[] = "Back";
 
 cGVar GVar_TopLimit;
 

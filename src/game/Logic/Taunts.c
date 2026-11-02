@@ -20,11 +20,11 @@
 #include "scrap/vehicleentity.h"
 #include "scrap/weapons.h"
 
-extern const char str_3c082c[];
-extern const char str_3c0830[];
-extern const char str_3c0834[];
-extern const char str_3c0838[];
-char *s_TauntRaces[5] = { (void *)str_3c082c, (void *)str_3c0830, (void *)str_3c0834, (void *)str_3c0838, (void *)str_Empty };
+extern const char str_SBi[];
+extern const char str_SBa[];
+extern const char str_SFu[];
+extern const char str_SPo[];
+char *s_TauntRaces[5] = { (void *)str_SBi, (void *)str_SBa, (void *)str_SFu, (void *)str_SPo, (void *)str_Empty };
 
 /* the statics of the police taunts: the count per race, the races, the last race and the time */
 #define s_TauntLastRace (s_TauntRaces[4])
@@ -311,13 +311,13 @@ byte Taunts_Warnings(float dt) {
 	return 0;
 }
 
-const char str_3c082c[] = "SBi";
+const char str_SBi[] = "SBi";
 
-const char str_3c0830[] = "SBa";
+const char str_SBa[] = "SBa";
 
-const char str_3c0834[] = "SFu";
+const char str_SFu[] = "SFu";
 
-const char str_3c0838[] = "SPo";
+const char str_SPo[] = "SPo";
 
 cGVar GVar_PhoneCabWarningDist;
 

@@ -539,7 +539,7 @@ int Transport_Wait(int ms) {
 	return 1;
 }
 
-const uint16_t Transport_Crc16_3c6c68[256] = {
+const uint16_t Transport_Crc16Data[256] = {
 	0, 4129, 8258, 12387, 16516, 20645, 24774, 28903, 33032, 37161, 41290, 45419, 49548, 53677, 57806, 61935, 4657,
 	528, 12915, 8786, 21173, 17044, 29431, 25302, 37689, 33560, 45947, 41818, 54205, 50076, 62463, 58334, 9314,
 	13379, 1056, 5121, 25830, 29895, 17572, 21637, 42346, 46411, 34088, 38153, 58862, 62927, 50604, 54669, 13907,
@@ -559,7 +559,7 @@ const uint16_t Transport_Crc16_3c6c68[256] = {
 };
 
 uint16_t Transport_Crc16(const byte *data, int size) {
-	const uint16_t *table = Transport_Crc16_3c6c68;
+	const uint16_t *table = Transport_Crc16Data;
 	uint32_t crc = 0;
 
 	for (int i = 0; i < size; i++) {

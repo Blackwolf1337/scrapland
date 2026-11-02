@@ -362,13 +362,8 @@ void MemPools_PrintAll(void);
 
 #include "StaticInit.inc"
 
-const float Init_GVar_LaserDistLimit_3a3710 = 3.0f;
-
-const float Init_GVar_MaxDistChaseElevatorAI_3a5ac0 = 10000.0f;
-
-const float Init_GVar_LaserDistLimit_3a8e38 = 2.0f;
-
-CMaterial CMaterial_390078;
+/* a material the original constructs at the start and never uses */
+CMaterial g_UnusedMaterial;
 
 cGVar GVar_QuickMessageString4;
 
@@ -472,7 +467,8 @@ cGVar GVar_MinRotAI;
 
 cGVar GVar_ASEPublic;
 
-cNetRandom cNetRandom_4628a8;
+/* two random generators the original seeds at the start and never uses */
+cNetRandom g_UnusedNetRandom1;
 
 cGVar GVar_ViewerModel;
 
@@ -486,7 +482,7 @@ cGVar GVar_ViewerIniAI;
 
 cGVar GVar_BatchBuildGraph2DAI;
 
-cNetRandom cNetRandom_464358;
+cNetRandom g_UnusedNetRandom2;
 
 cPy_NativeFunc NativeFunc_BankDirectorActionPress;
 

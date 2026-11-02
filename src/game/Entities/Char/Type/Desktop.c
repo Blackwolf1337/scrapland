@@ -14,12 +14,12 @@
 
 /* params: the desktop. A fast landing seen from near enough: four puffs around the point it lands on and a ring of
  * dust thrown out of it. */
-uint32_t ChType_FXDesktopFallEnd_428008[18] = {
+uint32_t ChType_FXDesktopFallEndRamps[18] = {
 	0xff000000, 0x80303030, 0x60304040, 0x60404040, 0x60404040, 0x80404040, 0xbe303030, 0xff000000, 0xff000000,
 	0xff000000, 0x80404040, 0x60606060, 0x60606060, 0x60606060, 0x80606060, 0xbe404040, 0xff000000, 0xff000000,
 };
 
-uint32_t ChType_FXDesktopFallEnd_428050[10] = { 0xff565656, 0xb4fff06e, 0x8cefa01e, 0x969a500e, 0xc3604b1e, 0xd2404040, 0xeb202020, 0xff000000, 0xff000000 };
+uint32_t ChType_FXDesktopFallEndTable[10] = { 0xff565656, 0xb4fff06e, 0x8cefa01e, 0x969a500e, 0xc3604b1e, 0xd2404040, 0xeb202020, 0xff000000, 0xff000000 };
 
 void ChType_FXDesktopFallEnd(cAbstractFile *params) {
 	char name[0x80];
@@ -115,7 +115,7 @@ void ChType_FXDesktopFallEnd(cAbstractFile *params) {
 		pt->rotEnd = a;
 		CGameParticles_Apply(pt);
 		CGameParticles_SetColorRampOn(pt, 1);
-		CGameParticles_SetColorRamp(pt, ChType_FXDesktopFallEnd_428050);
+		CGameParticles_SetColorRamp(pt, ChType_FXDesktopFallEndTable);
 		CGameParticles_EmitN(pt, 1, 1);
 	}
 	/* the ring: every 6 degrees a particle thrown out and up */
@@ -158,7 +158,7 @@ void ChType_FXDesktopFallEnd(cAbstractFile *params) {
 		CGameParticles_Apply(pt);
 		CGameParticles_SetColorRampOn(pt, 1);
 		int ramp = crt_rand() % 2;
-		CGameParticles_SetColorRamp(pt, ChType_FXDesktopFallEnd_428008 + 9 * ramp);
+		CGameParticles_SetColorRamp(pt, ChType_FXDesktopFallEndRamps + 9 * ramp);
 		float dt = FxElem_Rand(0.15000000596046448, 0.0) + 0.0500000007f;
 		CGameParticles_EmitDt(pt, 1, 1, dt);
 		ang = ang + 0.104719758f;
