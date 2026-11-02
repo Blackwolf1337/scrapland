@@ -1,5 +1,5 @@
 # game App/App.c + WinApp.c (execfile'd by sdcall.py after its other checks, Python 1.5.2): the getters of the
-# application in the main menu: the paths, the command line switches, the registry, the handles, the dedicated
+# application in the main menu: the paths, the command line switches, the handles, the dedicated
 # flags, the console window without a window (it is closed in the test setup) and the console commands on one engine
 # variable. Not called: everything that makes windows, loads levels or runs the frame (the message loop runs them
 # all the time anyway).
@@ -14,8 +14,6 @@ check('App_GetPath', lambda: appdir(SDTest.Call('App_GetPath', 'vbi', '', 0x104)
 check('App_GetConfigDir', lambda: SDTest.Call('App_GetConfigDir', 'vbi', '', 0x200)[1])
 for name in ('pythonexecute', 'console', 'dedicated', 'widewindow', 'txf_helper', 'python', 'execute', ''):
 	check('CWinApp_HasArg' + fmt((name,)), lambda name=name: SDTest.Call('CWinApp_HasArg', 'tbis', app, name)[0])
-for name in ('LANGUAGE', 'SDTestNone'):
-	check('App_RegGetString' + fmt((name,)), lambda name=name: SDTest.Call('App_RegGetString', 'tsis', app, name)[0])
 check('App_GetHInstance', lambda: SDTest.Call('App_GetHInstance', 'i')[0] == SDTest.Peek(app + 0x48, '@i'))
 check('App_GetHWnd', lambda: SDTest.Call('App_GetHWnd', 'i')[0] == SDTest.Peek(app + 0x7c, '@i'))
 check('CWinApp_IsDedicatedWin', lambda: SDTest.Call('CWinApp_IsDedicatedWin', 'tbi', app)[0])

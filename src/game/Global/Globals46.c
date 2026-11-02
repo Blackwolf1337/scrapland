@@ -120,7 +120,6 @@
 #undef g_PyMemStats
 #undef g_PyPool
 #undef g_PythonReady
-#undef g_RegValue
 #undef g_ScorerMarker
 #undef g_ScorerNoise
 #undef g_ScorerWhite
@@ -579,7 +578,6 @@ CWinApp *g_pApp;
 cGVar GVar_InactiveBackgroundApp;
 uint32_t g_TimeQPPause;
 uint32_t g_TimeMsPause;
-char g_RegValue[512];
 byte g_TimeInit;
 int g_TimeUseQP;
 int64_t g_TimeQPFreq;

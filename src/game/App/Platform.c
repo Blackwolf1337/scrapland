@@ -6,6 +6,11 @@
  * Ctrl+Shift+Alt+Enter switches fullscreen.
  */
 #include <string.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
@@ -554,6 +559,60 @@ int Plat_MessageBox(const char *text, const char *title, uint32_t flags) {
 
 void Plat_SetThreadPriority(int prio) {
 	SDL_SetCurrentThreadPriority(prio < 0 ? SDL_THREAD_PRIORITY_LOW : SDL_THREAD_PRIORITY_NORMAL);
+}
+
+/* ---- paths ---- */
+
+void Plat_ExePath(char *buf, int size) {
+	buf[0] = 0;
+#ifdef _WIN32
+	DWORD n = GetModuleFileNameA(NULL, buf, (DWORD)size);
+	if (n >= (DWORD)size) {
+		buf[0] = 0;
+	}
+#else
+	ssize_t n = readlink("/proc/self/exe", buf, (size_t)size - 1);
+	buf[n > 0 ? n : 0] = 0;
+#endif
+}
+
+void Plat_ConfigDir(char *buf, int size) {
+	buf[0] = 0;
+#ifdef _WIN32
+	const char *docs = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS);
+	if (docs) {
+		SDL_snprintf(buf, (size_t)size, "%sMercurySteam\\Scrapland\\", docs);
+		SDL_CreateDirectory(buf);
+	}
+#else
+	char *pref = SDL_GetPrefPath("MercurySteam", "Scrapland");
+	if (pref) {
+		SDL_strlcpy(buf, pref, (size_t)size);
+		SDL_free(pref);
+	}
+#endif
+}
+
+const char *Plat_InstallLanguage(void) {
+#ifdef _WIN32
+	static char lang[0x200];
+	HKEY key;
+	DWORD type = 0, n = sizeof(lang) - 1;
+
+	lang[0] = 0;
+	if (RegOpenKeyA(HKEY_LOCAL_MACHINE, "Software\\MercurySteam Entertainment\\Scrapland", &key)) {
+		return NULL;
+	}
+	LONG r = RegQueryValueExA(key, "LANGUAGE", NULL, &type, (BYTE *)lang, &n);
+	RegCloseKey(key);
+	if (r || type != REG_SZ) {
+		return NULL;
+	}
+	lang[n < sizeof(lang) ? n : sizeof(lang) - 1] = 0;
+	return lang[0] ? lang : NULL;
+#else
+	return NULL;
+#endif
 }
 
 /* ---- the timers ---- */

@@ -67,7 +67,6 @@ extern byte g_XLoadOn;
 /* WinMain.cpp state */
 extern uint32_t g_TimeQPPause;	/* subtracted from the counter of GetTime */
 extern uint32_t g_TimeMsPause;	/* the same for timeGetTime */
-extern char g_RegValue[512];		/* 0x200, App_RegGetString */
 extern byte g_TimeInit;
 extern int g_TimeUseQP;
 extern int64_t g_TimeQPFreq;
@@ -132,7 +131,6 @@ void CWinApp_ResetParams(CWinApp *self);
 int CWinApp_HasArg(CWinApp *self, const char *name);
 /* the path of the game into buf */
 void App_GetPath(char *buf, int size);
-const char *App_RegGetString(CWinApp *self, const char *name);
 void *App_GetHInstance(void);
 double CWinApp_GetTime(CWinApp *self);
 void *App_GetHWnd(void);

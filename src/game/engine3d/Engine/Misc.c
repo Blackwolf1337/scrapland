@@ -306,7 +306,7 @@ char *E3D_GetExePath(void) {
 
 /* the static initializer: the path of the exe, g_E3DDir from its directory and "../" */
 void Misc_InitE3DDir(void) {
-	exe_GetModuleFileNameA(NULL, g_ExePath, 0x103);
+	Plat_ExePath(g_ExePath, sizeof(g_ExePath));
 	Path_Part(g_E3DDir, g_ExePath, PATH_DRIVE | PATH_DIR);
 	Path_Normalize(g_E3DDir, "../", -1);	/* "../" */
 }

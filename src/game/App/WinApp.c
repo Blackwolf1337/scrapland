@@ -26,7 +26,7 @@ CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char *cmdLi
 	self->hPrevInstance = hPrev;
 	self->nCmdShow = nCmdShow;
 	self->dedicatedWin = 0;
-	exe_GetModuleFileNameA(NULL, path, 0x103);
+	Plat_ExePath(path, sizeof(path));
 	Dir_Change(path, "../");
 	if ((byte)CWinApp_HasArg(self, "txf_helper")) {
 		cString_Set((cString *)&g_LogName, "logtxf.html");
@@ -127,26 +127,7 @@ int CWinApp_HasArg(CWinApp *self, const char *name) {
 }
 
 void App_GetPath(char *buf, int size) {
-	exe_GetModuleFileNameA(NULL, buf, (uint32_t)(size - 1));
-}
-
-/* a string value of HKEY_LOCAL_MACHINE\Software\MercurySteam Entertainment\Scrapland, NULL when missing or empty */
-const char *App_RegGetString(CWinApp *self, const char *name) {
-	void *key;
-	uint32_t type, size;
-
-	(void)self;
-	g_RegValue[0] = 0;
-	if (exe_RegOpenKeyA(0x80000002, "Software\\MercurySteam Entertainment\\Scrapland", &key)) {
-		return NULL;
-	}
-	size = 0x200;
-	exe_RegQueryValueExA(key, name, NULL, &type, g_RegValue, &size);
-	exe_RegCloseKey(key);
-	if (type != 1) {
-		return NULL;
-	}
-	return g_RegValue[0] ? g_RegValue : NULL;
+	Plat_ExePath(buf, size);
 }
 
 void *App_GetHInstance(void) {
@@ -210,7 +191,7 @@ byte CWinApp_Init(CWinApp *self) {
 	}
 	/* differs from the original on purpose: without the registry LANGUAGE it is english (the original took the one of
 	 * GOG later, english in a normal install), not the "French" default of SelectedLanguage */
-	const char *lang = App_RegGetString(self, "LANGUAGE");
+	const char *lang = Plat_InstallLanguage();
 	cString_Set(g_LangName, lang ? lang : "english");
 	Font_SetLanguage(*g_LangName);
 	self->console = (byte)CWinApp_HasArg(self, "console");
@@ -237,34 +218,21 @@ byte CWinApp_Frame(CWinApp *self) {
 	return CApp_Frame(&self->base);
 }
 
-/* the console output besides the log: OutputDebugString (the console window of the original is gone) */
+/* the console output besides the log: stdout (the console window of the original is gone) */
 void ConsoleWin_Add(const char *text, uint32_t color) {
 	(void)color;
-	exe_OutputDebugStringA(text);
+	fputs(text, stdout);
+	fflush(stdout);
 }
 
-/* strcat of the original, cut at size */
-static void App_StrCat(char *buf, int size, const char *s) {
-	size_t n = strlen(buf);
-	while (*s && (int)n + 1 < size) {
-		buf[n++] = *s++;
-	}
-	buf[n] = 0;
-}
-
-/* My Documents\MercurySteam\Scrapland\ (made if missing), "" with the dedicated window; differs from the original on
+/* the folder of the configuration (Plat_ConfigDir), "" with the dedicated window; differs from the original on
  * purpose (no store features): no subfolder of the GOG id */
 void App_GetConfigDir(char *buf, int size) {
 	if (g_pApp->vftable->IsDedicatedWin(g_pApp)) {
 		*buf = 0;
 		return;
 	}
-	exe_SHGetFolderPathA(NULL, 0x8005, NULL, 0, buf);
-	App_StrCat(buf, size, "\\MercurySteam");
-	crt_mkdir(buf);
-	App_StrCat(buf, size, "\\Scrapland");
-	crt_mkdir(buf);
-	App_StrCat(buf, size, "\\");
+	Plat_ConfigDir(buf, size);
 }
 
 /* vf12: -console, -inifile:name, else CApp_ParseParam */
@@ -286,7 +254,7 @@ byte CWinApp_RunApp(CWinApp *self, const char *exe, const char *cmdLine, int arg
 
 	(void)self;
 	(void)arg;
-	exe_GetModuleFileNameA(NULL, path, 0x103);
+	Plat_ExePath(path, sizeof(path));
 	Dir_Change(path, ".");
 	snprintf(cmd, sizeof(cmd), "%s", exe);
 	snprintf(args, sizeof(args), "%s %s", exe, cmdLine);

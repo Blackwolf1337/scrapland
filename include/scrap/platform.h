@@ -60,6 +60,16 @@ int Plat_MessageBox(const char *text, const char *title, uint32_t flags);
 /* the priority of the calling thread: below normal (-1) or normal (0) */
 void Plat_SetThreadPriority(int prio);
 
+/* the full path of the exe file */
+void Plat_ExePath(char *buf, int size);
+/*
+ * The folder of the configuration and the saves with a separator at the end, made when missing: on Windows the one of
+ * the original (Documents\MercurySteam\Scrapland\), elsewhere the data folder of the user (XDG, through SDL)
+ */
+void Plat_ConfigDir(char *buf, int size);
+/* the language the installer wrote (the registry value LANGUAGE on Windows), NULL when there is none */
+const char *Plat_InstallLanguage(void);
+
 /* ms since the start (timeGetTime), the performance counter and its frequency (QueryPerformanceCounter/Frequency) */
 uint32_t Plat_Ticks(void);
 int Plat_Counter(int64_t *out);
