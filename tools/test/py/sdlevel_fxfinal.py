@@ -50,6 +50,9 @@ def ffnints(a, n):
 	for ffnk in range(n):
 		r.append(ffni(a + 4 * ffnk))
 	return tuple(r)
+# colors as hex: a plain int that equals a C object's address would print as the original's address
+def ffnhex(a, n):
+	return tuple(map(hex, ffnints(a, n)))
 def ffnbytes(a, n):
 	r = []
 	for ffnk in range(n):
@@ -84,7 +87,7 @@ def ffnparts(p, lo, hi):
 	for ffnk in range(lo, hi):
 		x = SDTest.Call('CGameParticles_GetParticle', 'tbiiFiipF', p, ffnk, (9.0, 9.0, 9.0), 0, 0, 6, (5.0,))
 		if x[0]:
-			r = r + ((x[1], x[2], x[3]),)
+			r = r + ((x[1], hex(x[2]), x[3]),)
 		else:
 			r = r + (0,)
 	return r
@@ -162,10 +165,10 @@ for ffnk in range(9):
 check('FFN controllers', lambda: ffnctrlok)
 def ffnmainfx(m):
 	return (ffnb(m + 0x3c), ffni(m + 0x40), ffnfl(m + 0x74, 8), ffnfl(m + 0x2ac4, 40), ffnfl(m + 0x2e48, 40),
-		ffnfl(m + 0x31cc, 40), ffnints(m + 0x3550, 40), ffnints(m + 0x38d4, 40), ffnbytes(m + 0x3d80, 64),
+		ffnfl(m + 0x31cc, 40), ffnints(m + 0x3550, 40), ffnhex(m + 0x38d4, 40), ffnbytes(m + 0x3d80, 64),
 		ffnfls(m + 0x94, 60), ffnfls(m + 0xb20, 60), ffnfls(m + 0x15ac, 60), ffnfls(m + 0x2038, 60),
 		ffnfl(m + 0x3f14, 3), ffnfl(m + 0x3f20, 30), ffnfl(m + 0x3f98, 30), ffnfls(m + 0x4010, 90),
-		ffnints(m + 0x4180, 30), ffnints(m + 0x41f8, 30), ffnfl(m + 0x4270, 1), ffni(m + 0x4274))
+		ffnints(m + 0x4180, 30), ffnhex(m + 0x41f8, 30), ffnfl(m + 0x4270, 1), ffni(m + 0x4274))
 def ffnmainfx2(m):
 	return (ffnparts(m + 0x3c94, 0, 40), ffnparts(m + 0x3e64, 0, 80), ffntrail(m + 0x3c58), ffntrail(m + 0x3c5c),
 		ffntrail(m + 0x3d44), ffntrail(m + 0x3d48), ffntrail(m + 0x4178), ffntrail(m + 0x417c))

@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <windows.h>
 
+#include "scrap/platform.h"
 #include "vkcore.h"
 
 #define VKF_GLOBAL(name) PFN_##name name;
@@ -43,12 +43,8 @@ int Vk_Init(void) {
 	if (vk.instance) {
 		return 1;
 	}
-	HMODULE lib = LoadLibraryA("vulkan-1.dll");
-	if (!lib) {
-		Com_Printf("vulkan: no vulkan-1.dll\n");
-		return 0;
-	}
-	vk_getInstanceProcAddr = (PFN_vkGetInstanceProcAddr)(void *)GetProcAddress(lib, "vkGetInstanceProcAddr");
+	/* the loader of the system through SDL */
+	vk_getInstanceProcAddr = (PFN_vkGetInstanceProcAddr)Plat_VulkanGetInstanceProcAddr();
 	if (!vk_getInstanceProcAddr) {
 		return 0;
 	}
@@ -68,7 +64,9 @@ int Vk_Init(void) {
 			VK_API_VERSION_MINOR(version));
 		return 0;
 	}
-	const char *exts[] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_SURFACE_EXTENSION_NAME };
+	/* the extensions of the window surface, as SDL needs them on this system */
+	uint32_t nexts = 0;
+	const char *const *exts = Plat_VulkanExtensions(&nexts);
 	const char *layers[] = { "VK_LAYER_KHRONOS_validation" };
 	const char *val = getenv("SCRAP_VK_VALIDATION");
 	VkApplicationInfo app = {
@@ -80,7 +78,7 @@ int Vk_Init(void) {
 	VkInstanceCreateInfo ci = {
 		.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
 		.pApplicationInfo = &app,
-		.enabledExtensionCount = 2,
+		.enabledExtensionCount = nexts,
 		.ppEnabledExtensionNames = exts,
 		.enabledLayerCount = val && *val == '1',
 		.ppEnabledLayerNames = layers,
@@ -165,17 +163,8 @@ static VkFormat Vk_PickDepth(void) {
 	return VK_FORMAT_D32_SFLOAT_S8_UINT;
 }
 
-int Vk_CreateDevice(void *hwnd, uint32_t width, uint32_t height, byte vsync) {
-	if (!Vk_Init()) {
-		return 0;
-	}
-	vk.hwnd = hwnd;
-	VkWin32SurfaceCreateInfoKHR sci = {
-		.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
-		.hinstance = GetModuleHandleA(NULL),
-		.hwnd = hwnd,
-	};
-	if (!Vk_Check(vkCreateWin32SurfaceKHR(vk.instance, &sci, NULL, &vk.surface), "vkCreateWin32SurfaceKHR")) {
+int Vk_CreateDevice(uint32_t width, uint32_t height, byte vsync) {
+	if (!Vk_Init() || !Plat_VulkanSurface(vk.instance, &vk.surface)) {
 		return 0;
 	}
 	vk.gpu = Vk_PickGpu();

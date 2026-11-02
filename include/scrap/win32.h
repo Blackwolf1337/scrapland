@@ -7,6 +7,7 @@
 #define SCRAP_WIN32_H
 
 #include "scrap/game.h"
+#include "scrap/platform.h"
 
 typedef struct exe_rect {
 	int32_t left, top, right, bottom;
@@ -71,8 +72,7 @@ typedef int(__stdcall *widechartomultibyte_t)(uint32_t cp, uint32_t flags, const
 	const char *defChar, int *usedDef);
 #define exe_MultiByteToWideChar GAME_IMPORT(multibytetowidechar_t, MultiByteToWideChar, 24)
 #define exe_WideCharToMultiByte GAME_IMPORT(widechartomultibyte_t, WideCharToMultiByte, 32)
-typedef int(__stdcall *queryperformancecounter_t)(int64_t *count);
-#define exe_QueryPerformanceCounter GAME_IMPORT(queryperformancecounter_t, QueryPerformanceCounter, 4)
+#define exe_QueryPerformanceCounter Plat_Counter		/* through SDL */
 /* the text console of the debug output, the unhandled exceptions, the local time */
 typedef void *(__stdcall *getstdhandle_t)(uint32_t which);
 typedef int(__stdcall *writeconsole_t)(void *h, const void *buf, uint32_t n, uint32_t *written, void *reserved);
@@ -98,7 +98,7 @@ typedef int(__stdcall *setthreadpriority_t)(void *thread, int priority);
 	GAME_IMPORT(setunhandledexceptionfilter_t, SetUnhandledExceptionFilter, 4)
 #define exe_GetLocalTime GAME_IMPORT(getlocaltime_t, GetLocalTime, 4)
 #define STD_OUTPUT (-11)
-#define exe_QueryPerformanceFrequency GAME_IMPORT(queryperformancecounter_t, QueryPerformanceFrequency, 4)
+#define exe_QueryPerformanceFrequency Plat_Frequency
 
 /* wsock32 (Winsock 1.1 by ordinal) */
 typedef int(__stdcall *wsock_bind_t)(uint32_t s, const void *addr, int len);
@@ -132,8 +132,7 @@ typedef int(__stdcall *wsock_wsacleanup_t)(void);
 #define exe_WSACleanup GAME_IMPORT(wsock_wsacleanup_t, WSACleanup, 0)	/* 116 */
 
 /* winmm */
-typedef uint32_t(__stdcall *timegettime_t)(void);
-#define exe_timeGetTime GAME_IMPORT(timegettime_t, timeGetTime, 0)
+#define exe_timeGetTime Plat_Ticks			/* through SDL */
 
 /* user32: the key state (negative while held) and a modeless dialog */
 typedef int16_t(__stdcall *getasynckeystate_t)(int vk);
@@ -241,11 +240,8 @@ typedef int(__stdcall *setdlgitemtext_t)(void *hdlg, int id, const char *text);
 /* gdi32, winmm */
 typedef void *(__stdcall *getstockobject_t)(int i);
 typedef void *(__stdcall *createfontindirect_t)(const void *logfont);
-typedef uint32_t(__stdcall *timeperiod_t)(uint32_t ms);
 #define exe_GetStockObject GAME_IMPORT(getstockobject_t, GetStockObject, 4)
 #define exe_CreateFontIndirectA GAME_IMPORT(createfontindirect_t, CreateFontIndirectA, 4)
-#define exe_timeBeginPeriod GAME_IMPORT(timeperiod_t, timeBeginPeriod, 4)
-#define exe_timeEndPeriod GAME_IMPORT(timeperiod_t, timeEndPeriod, 4)
 
 /* kernel32 */
 typedef void *(__stdcall *virtualalloc_t)(void *addr, uint32_t size, uint32_t type, uint32_t protect);

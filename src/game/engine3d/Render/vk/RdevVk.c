@@ -9,6 +9,7 @@
 #include <string.h>
 #include <windows.h>
 
+#include "scrap/platform.h"
 #include "../rdevbackend.h"
 #include "vkdraw.h"
 #include "vkobj.h"
@@ -542,10 +543,10 @@ static VkoSurf *Vko_NewTargetSurf(uint32_t format, uint32_t w, uint32_t h, int d
 static int Vk_MakeTargets(VkoDev *d) {
 	D3DPresentParams *pp = &d->pp;
 	if (!pp->BackBufferWidth || !pp->BackBufferHeight) {
-		RECT r;
-		GetClientRect(d->hwnd, &r);
-		pp->BackBufferWidth = (uint32_t)(r.right - r.left);
-		pp->BackBufferHeight = (uint32_t)(r.bottom - r.top);
+		int w, h;
+		Plat_ClientSize(&w, &h);
+		pp->BackBufferWidth = (uint32_t)w;
+		pp->BackBufferHeight = (uint32_t)h;
 	}
 	if (!pp->BackBufferFormat) {
 		pp->BackBufferFormat = D3DFMT_X8R8G8B8;
@@ -636,9 +637,9 @@ int Vk_D3DCreateDevice(void *d3d, uint32_t adapter, uint32_t type, void *hwnd, u
 	d->pp = *(const D3DPresentParams *)pp;
 	d->hwnd = d->pp.hDeviceWindow ? d->pp.hDeviceWindow : hwnd;
 	byte vsync = d->pp.FullScreen_PresentationInterval != D3DPRESENT_INTERVAL_IMMEDIATE;
-	RECT r;
-	GetClientRect(d->hwnd, &r);
-	if (!Vk_CreateDevice(d->hwnd, (uint32_t)(r.right - r.left), (uint32_t)(r.bottom - r.top), vsync)
+	int w, h;
+	Plat_ClientSize(&w, &h);
+	if (!Vk_CreateDevice((uint32_t)w, (uint32_t)h, vsync)
 		|| !Vk_MakeTargets(d) || !Vkd_Init(d)) {
 		Com_Printf("vulkan: no device\n");
 		free(d);
@@ -660,10 +661,10 @@ int Vk_DevReset(void *dev, void *pp) {
 	}
 	d->backBuffer = d->depth = NULL;
 	d->pp = *(const D3DPresentParams *)pp;
-	RECT r;
-	GetClientRect(d->hwnd, &r);
+	int w, h;
+	Plat_ClientSize(&w, &h);
 	byte vsync = d->pp.FullScreen_PresentationInterval != D3DPRESENT_INTERVAL_IMMEDIATE;
-	if (!Vk_ResizeSwapchain((uint32_t)(r.right - r.left), (uint32_t)(r.bottom - r.top), vsync) || !Vk_MakeTargets(d)) {
+	if (!Vk_ResizeSwapchain((uint32_t)w, (uint32_t)h, vsync) || !Vk_MakeTargets(d)) {
 		return D3DERR_NOTAVAILABLE;
 	}
 	Vk_DefaultState(d);

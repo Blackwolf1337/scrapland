@@ -14,35 +14,8 @@
 #include "scrap/mathlib.h"
 #include "scrap/scrapmain.h"
 #include "scrap/video.h"
+#include "scrap/platform.h"
 #include "scrap/win32.h"
-
-#define WM_ACTIVATE 0x0006
-#define WM_CLOSE 0x0010
-#define WM_QUIT 0x0012
-#define WM_ACTIVATEAPP 0x001c
-#define WM_HELP 0x0053
-#define WM_CONTEXTMENU 0x007b
-#define WM_NCHITTEST 0x0084
-#define WM_KEYFIRST 0x0100
-#define WM_CHAR 0x0102
-#define WM_KEYLAST 0x0109
-#define WM_COMMAND 0x0111
-#define WM_SYSCOMMAND 0x0112
-#define WM_MOUSEFIRST 0x0200
-#define WM_MOUSELAST 0x020e
-#define WM_ENTERMENULOOP 0x0211
-#define WM_EXITMENULOOP 0x0212
-#define WM_SIZING 0x0214
-#define WM_MOVING 0x0216
-#define WM_ENTERSIZEMOVE 0x0231
-#define WM_EXITSIZEMOVE 0x0232
-#define SC_SIZE 0xf000
-#define SC_MOVE 0xf010
-#define SC_MAXIMIZE 0xf030
-#define SC_KEYMENU 0xf100
-#define SC_MONITORPOWER 0xf170
-
-#define APP_WNDPROC (void *)App_WndProc
 
 CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char *cmdLine, int nCmdShow) {
 	char path[0x104];
@@ -75,81 +48,6 @@ CWinApp *CWinApp_Delete(CWinApp *self, byte flags) {
 	return self;
 }
 
-/* the window procedure of "ScrapClass" (App_WndProc with g_pApp); the rest goes to the D3D application */
-intptr_t CWinApp_WndProc(CWinApp *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam) {
-	char title[0x40];
-
-	switch (msg) {
-	case WM_ACTIVATE:
-		if ((uint16_t)wParam && !(wParam >> 16)) {
-			Input_ReleaseAll(0);
-		}
-		break;
-	case WM_CLOSE:
-		exe_PostMessageA(hwnd, WM_QUIT, 0, 0);
-		return 0;
-	case WM_ACTIVATEAPP:
-		if (g_InactiveBackgroundApp || wParam) {
-			g_pApp->active = wParam != 0;
-		}
-		D3DApp_OnActivate();
-		return 0;
-	case WM_HELP:
-		return 0;
-	case WM_CONTEXTMENU:
-		if ((byte)Engine_IsFullScreen()) {
-			return 0;
-		}
-		break;
-	case WM_NCHITTEST:
-		if ((byte)Engine_IsFullScreen()) {
-			return 1;
-		}
-		break;
-	case WM_CHAR:
-		Input_OnChar((int)wParam);
-		return 0;
-	case WM_COMMAND:
-		if ((uint16_t)wParam == 0x9c46) {
-			exe_SendMessageA(hwnd, WM_CLOSE, 0, 0);
-			return 0;
-		}
-		break;
-	case WM_SYSCOMMAND:
-		switch (wParam) {
-		case SC_SIZE:
-		case SC_MOVE:
-		case SC_MAXIMIZE:
-		case SC_KEYMENU:
-		case SC_MONITORPOWER:
-			if ((byte)Engine_IsFullScreen()) {
-				return 0;
-			}
-			break;
-		}
-		break;
-	case WM_ENTERMENULOOP:
-	case WM_ENTERSIZEMOVE:
-		Input_ReleaseAll(0);
-		break;
-	case WM_EXITMENULOOP:
-	case WM_EXITSIZEMOVE:
-		if (exe_GetActiveWindow() != hwnd || exe_IsIconic(hwnd)) {
-			Input_ReleaseAll(0);
-		}
-		break;
-	case WM_SIZING: {
-		const exe_rect *r = (const exe_rect *)lParam;
-		Str_Printf(title, sizeof(title), "Size %dx%d", r->right - r->left, r->bottom - r->top);
-		exe_SetWindowTextA(self->hwnd, title);
-		return 1;
-	}
-	case WM_MOVING:
-		return 1;
-	}
-	return D3DApp_MsgProc(hwnd, msg, wParam, lParam);
-}
-
 /* vf17: the console window is gone */
 int CWinApp_ConsoleAdd(CWinApp *self, const char *text, uint32_t color) {
 	(void)self, (void)text, (void)color;
@@ -162,49 +60,20 @@ int CWinApp_ShowConsole(CWinApp *self, byte show) {
 	return 0;
 }
 
-/* the class "ScrapClass" and the main window */
+/* the main window through SDL: 640 x 480 (-widewindow 640 x 360), -dedicated 350 x 1 and not resizable */
 byte CWinApp_CreateMainWindow(CWinApp *self) {
-	self->wc.hCursor = exe_LoadCursorA(NULL, (const char *)0x7f00);
-	self->wc.hIcon = exe_LoadIconA(self->hInstance, (const char *)0x65);
-	self->wc.menuName = NULL;
-	self->wc.className = g_ScrapClass;
-	self->wc.hbrBackground = exe_GetStockObject(4);
-	self->wc.hInstance = self->hInstance;
-	self->wc.style = 0x20;
-	self->wc.wndProc = APP_WNDPROC;
-	self->wc.clsExtra = 0;
-	self->wc.wndExtra = 0;
-	if (!exe_RegisterClassA(&self->wc)) {
+	byte wide = (byte)CWinApp_HasArg(self, "widewindow");
+	self->dedicatedWin = (byte)CWinApp_HasArg(self, "dedicated");
+	int w = wide ? g_WideWinWidth : g_WinWidth, h = wide ? g_WideWinHeight : g_WinHeight;
+	if (self->dedicatedWin) {
+		w = 0x15e;
+		h = 1;
+	}
+	if (!Plat_Init() || !Plat_CreateWindow(g_ScrapTitle, w, h, self->dedicatedWin)) {
 		return 0;
 	}
-	self->hwnd = CWinApp_CreateWindow(self);
-	return self->hwnd != NULL;
-}
-
-/* 640 x 480 (-widewindow 640 x 360), -dedicated a 350 x 1 window without the maximize box */
-void *CWinApp_CreateWindow(CWinApp *self) {
-	exe_rect r;
-	int w, h;
-
-	byte wide = (byte)CWinApp_HasArg(self, "widewindow");
-	r.right = wide ? g_WideWinWidth : g_WinWidth;
-	r.bottom = wide ? g_WideWinHeight : g_WinHeight;
-	r.left = 0;
-	r.top = 0;
-	self->dedicatedWin = (byte)CWinApp_HasArg(self, "dedicated");
-	if (self->dedicatedWin) {
-		r.right = 0x15e;
-		r.bottom = 1;
-	}
-	if (exe_AdjustWindowRectEx(&r, 0x80cc0000, 0, 0)) {
-		w = r.right - r.left;
-		h = r.bottom - r.top;
-	} else {
-		w = g_WinWidth;
-		h = g_WinHeight;
-	}
-	return exe_CreateWindowExA(0, g_ScrapClass, g_ScrapTitle, self->dedicatedWin ? 0x80ca0000 : 0x80ce0000, 0, 0, w,
-		h, NULL, NULL, self->hInstance, NULL);
+	self->hwnd = Plat_NativeWindow();
+	return 1;
 }
 
 /* vf18: the original asked in a modal dialog of the console window, which is gone: no text (None for Python) */
@@ -223,14 +92,14 @@ void CWinApp_InitDedicated(CWinApp *self) {
 /* vf06 */
 void CWinApp_Shutdown(CWinApp *self) {
 	CApp_Shutdown(&self->base);
-	exe_DestroyWindow(self->hwnd);
-	exe_timeEndPeriod(1);
+	Plat_Shutdown();
 	App_SetExceptionFilter(0);
 }
 
 /* vf09 */
 void CWinApp_Exit(CWinApp *self) {
-	exe_PostMessageA(self->hwnd, WM_QUIT, 0, 0);
+	(void)self;
+	Plat_Quit();
 }
 
 /* vf13 */
@@ -319,7 +188,8 @@ static int app_init;
 /* the end of the init. Differs from the original on purpose (no store features): the player name stays the one of the
  * config, the original took the GOG or Steam name */
 static void CWinApp_InitEnd(CWinApp *self) {
-	exe_SetForegroundWindow(self->hwnd);
+	(void)self;
+	Plat_ShowWindow();
 	Con_Print(0, "Scrap engine initialized!\n\n", 0);
 }
 
@@ -335,7 +205,6 @@ static void CWinApp_InitStep(CWinApp *self) {
  * (CWinApp_InitStep) */
 byte CWinApp_Init(CWinApp *self) {
 	App_SetExceptionFilter(1);
-	exe_timeBeginPeriod(1);
 	if (!CWinApp_CreateMainWindow(self)) {
 		CheckFailed("CreateMainWindow()", __FILE__, __TIMESTAMP__, __LINE__);
 	}
@@ -346,13 +215,8 @@ byte CWinApp_Init(CWinApp *self) {
 	Font_SetLanguage(*g_LangName);
 	self->console = (byte)CWinApp_HasArg(self, "console");
 	self->dedicatedWin = (byte)CWinApp_HasArg(self, "dedicated");
-	byte shown = 0;
 	if (self->console || self->dedicatedWin) {
-		shown = 1;
-		exe_ShowWindow(self->hwnd, 5);
-	}
-	if (shown) {
-		exe_BringWindowToTop(self->hwnd);
+		Plat_ShowWindow();
 	}
 	/* differs from the original on purpose (no store features): no Steam or GOG init and no sign-in */
 	if (!CApp_Init(&self->base)) {
@@ -435,13 +299,6 @@ byte CWinApp_RunApp(CWinApp *self, const char *exe, const char *cmdLine, int arg
 	return 1;
 }
 
-intptr_t __stdcall App_WndProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam) {
-	if (g_pApp) {
-		return CWinApp_WndProc(g_pWinApp, hwnd, msg, wParam, lParam);
-	}
-	return exe_DefWindowProcA(hwnd, msg, wParam, lParam);
-}
-
 /* vf20 */
 byte CWinApp_IsDedicatedWin(CWinApp *self) {
 	return self->dedicatedWin;
@@ -453,26 +310,14 @@ static byte App_Waiting(void) {
 }
 
 /*
- * differs from the original on purpose (no blocking waits): while the app waits, the keyboard and mouse input stays
- * in the queue (the original handled no message while it waited, so the input came after the wait); the other
- * messages are handled, so the window answers and can be moved or closed
+ * The main loop: the events, then a frame (or one pass of what the original waited for). Differs from the original on
+ * purpose (no blocking waits): while the app waits, the keyboard and mouse input stays queued (the original handled no
+ * message while it waited, so the input came after the wait), the window events are handled, so the window answers
+ * and can be moved or closed; closed while it waits, the quit comes after the wait.
  */
-static int App_PeekMessage(exe_msg *msg, byte waiting) {
-	if (!waiting) {
-		return exe_PeekMessageA(msg, NULL, 0, 0, 1);
-	}
-	return exe_PeekMessageA(msg, NULL, 0, WM_KEYFIRST - 1, 1)
-		|| exe_PeekMessageA(msg, NULL, WM_KEYLAST + 1, WM_MOUSEFIRST - 1, 1)
-		|| exe_PeekMessageA(msg, NULL, WM_MOUSELAST + 1, 0xffffffffu, 1);
-}
-
-/* the message loop: a frame whenever no message waits */
 int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow) {
-	exe_msg msg;
 	byte quitLater = 0;
-	uintptr_t quitCode = 0;
 
-	void *acc = exe_LoadAcceleratorsA(NULL, (const char *)0xc8);
 	CWinApp *app = operator_new(sizeof(CWinApp));
 	g_pApp = app ? &CWinApp_ctor(app, hInst, hPrev, cmdLine, nCmdShow)->base : NULL;
 	if (!g_pApp->vftable->Init(g_pApp)) {
@@ -480,46 +325,34 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 	}
 	for (;;) {
 		byte waiting = App_Waiting();
-		if (!App_PeekMessage(&msg, waiting)) {
-			if (waiting) {
-				/* differs from the original on purpose (no blocking waits): one pass of what the original waited
-				 * for: the video, the rest of the init or of the level load after a video */
-				if (Video_Busy()) {
-					Video_Step();
-				} else if (app_init != APPINIT_DONE) {
-					CWinApp_InitStep(g_pWinApp);
-				} else {
-					CApp_FrameResume();
-				}
-				continue;
-			}
-			if (quitLater) {
-				msg.wParam = quitCode;
-				break;
-			}
-			/* the rest of a dedicated server frame that waits for a packet (the original blocked in Transport_Wait) */
-			if (CApp_FrameResume()) {
-				continue;
-			}
-			/* differs from the original on purpose (no sleeps): no frame while the frame limiter holds it back, the
-			 * original slept in CEngineApp_Render */
-			if (!g_Engine || Engine_FrameDue(g_Engine)) {
-				g_pApp->vftable->Frame(g_pApp);
-			}
-			continue;
-		}
-		if (msg.message == WM_QUIT) {
+		if (Plat_PumpEvents(waiting)) {
 			if (!waiting) {
 				break;
 			}
-			/* closed while it waits: the quit comes after the wait */
 			quitLater = 1;
-			quitCode = msg.wParam;
+		}
+		if (waiting) {
+			/* one pass of what the original waited for: the video, the rest of the init or of the level load */
+			if (Video_Busy()) {
+				Video_Step();
+			} else if (app_init != APPINIT_DONE) {
+				CWinApp_InitStep(g_pWinApp);
+			} else {
+				CApp_FrameResume();
+			}
 			continue;
 		}
-		if (!exe_TranslateAcceleratorA(g_pWinApp->hwnd, acc, &msg)) {
-			exe_TranslateMessage(&msg);
-			exe_DispatchMessageA(&msg);
+		if (quitLater) {
+			break;
+		}
+		/* the rest of a dedicated server frame that waits for a packet (the original blocked in Transport_Wait) */
+		if (CApp_FrameResume()) {
+			continue;
+		}
+		/* differs from the original on purpose (no sleeps): no frame while the frame limiter holds it back, the
+		 * original slept in CEngineApp_Render */
+		if (!g_Engine || Engine_FrameDue(g_Engine)) {
+			g_pApp->vftable->Frame(g_pApp);
 		}
 	}
 	g_pApp->vftable->Shutdown(g_pApp);
@@ -527,5 +360,5 @@ int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow)
 		g_pApp->vftable->Delete(g_pApp, 1);
 	}
 	g_pApp = NULL;
-	return (int)msg.wParam;
+	return 0;
 }

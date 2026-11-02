@@ -121,11 +121,9 @@ byte Loading_Draw(void);
 CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char *cmdLine, int nCmdShow);
 void CWinApp_dtor(CWinApp *self);
 CWinApp *CWinApp_Delete(CWinApp *self, byte flags);
-intptr_t CWinApp_WndProc(CWinApp *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 int CWinApp_ConsoleAdd(CWinApp *self, const char *text, uint32_t color);
 int CWinApp_ShowConsole(CWinApp *self, byte show);
 byte CWinApp_CreateMainWindow(CWinApp *self);
-void *CWinApp_CreateWindow(CWinApp *self);
 const char *CWinApp_DebugInput(CWinApp *self, const char *prompt);
 void CWinApp_InitDedicated(CWinApp *self);
 void CWinApp_Shutdown(CWinApp *self);
@@ -144,7 +142,6 @@ void ConsoleWin_Add(const char *text, uint32_t color);
 void App_GetConfigDir(char *buf, int size);
 byte CWinApp_ParseParam(CWinApp *self, const char *param, const char *ext);
 byte CWinApp_RunApp(CWinApp *self, const char *exe, const char *cmdLine, int arg);
-intptr_t __stdcall App_WndProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 byte CWinApp_IsDedicatedWin(CWinApp *self);
 int __stdcall App_WinMain(void *hInst, void *hPrev, char *cmdLine, int nCmdShow);
 
@@ -189,7 +186,6 @@ void *CPsaImage_ctorFlags(void *self, const char *name, int a, int b, int flags)
 void CPsaImage_DrawPoly(void *self, const float *pos, const float *uv, const uint32_t *colors, int n,
 	int mode);
 void D3DApp_OnActivate(void);
-intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 /* ScrapEngWin32.cpp (src/game/ScrapEng/ScrapEngWin32.c): the filter of the unhandled exceptions on or off */
 void App_SetExceptionFilter(byte on);
 int __stdcall App_ExceptionFilter(void **ep);

@@ -77,11 +77,11 @@ class Game:
         if not os.path.isfile(src):
             raise RuntimeError('%s is missing (build first)' % src)
         shutil.copy2(src, os.path.join(binDir, 'ScrapC.exe' if exe == 'c' else 'ScrapRef.exe'))
-        ff = os.path.join(ROOT, 'build', 'ffmpeg', 'install', 'bin')
-        if os.path.isdir(ff):
-            for n in os.listdir(ff):
-                if n.endswith('.dll'):
-                    shutil.copy2(os.path.join(ff, n), binDir)
+        for d in (os.path.join(ROOT, 'build', 'ffmpeg', 'install', 'bin'), os.path.join(ROOT, 'build', 'sdl3', 'install', 'bin')):
+            if os.path.isdir(d):
+                for n in os.listdir(d):
+                    if n.endswith('.dll'):
+                        shutil.copy2(os.path.join(d, n), binDir)
         with open(os.path.join(binDir, 'scrapdecomp.ini'), 'w') as f:
             f.write('[general]\ntestmod=1\n')
         shutil.copy2(os.path.join(ROOT, 'tools', 'mcp', 'mcpgame.py'), self.game)

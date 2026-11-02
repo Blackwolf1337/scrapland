@@ -22,7 +22,6 @@ VKF_INSTANCE(vkGetPhysicalDeviceSurfaceSupportKHR)
 VKF_INSTANCE(vkGetPhysicalDeviceSurfaceCapabilitiesKHR)
 VKF_INSTANCE(vkGetPhysicalDeviceSurfaceFormatsKHR)
 VKF_INSTANCE(vkGetPhysicalDeviceSurfacePresentModesKHR)
-VKF_INSTANCE(vkCreateWin32SurfaceKHR)
 
 VKF_DEVICE(vkDestroyDevice)
 VKF_DEVICE(vkGetDeviceQueue)

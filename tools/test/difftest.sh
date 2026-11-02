@@ -47,7 +47,8 @@ slot_prepare() {
 	if [ ! -d "$dir/game/Bin" ] || [ ! -d "$dir/prefix" ]; then
 		"$root/tools/test/mkgame.sh" --into "$dir" "$root" > /dev/null || return 1
 	fi
-	cp "$root/game/Bin/ScrapC.exe" "$root"/game/Bin/av*.dll "$root"/game/Bin/swscale*.dll "$dir/game/Bin/" || return 1
+	cp "$root/game/Bin/ScrapC.exe" "$root"/game/Bin/av*.dll "$root"/game/Bin/swscale*.dll "$root"/game/Bin/SDL3.dll \
+		"$dir/game/Bin/" || return 1
 	cp "$ref" "$dir/game/Bin/ScrapRef.exe" || return 1
 	rm -f "$dir"/game/sd*.py "$dir"/game/sd*.out
 	cp "$root"/tools/test/py/*.py "$dir/game/" || return 1

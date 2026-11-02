@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copies the built ScrapC.exe and the FFmpeg DLLs into game/Bin. Refuses while the game of this checkout runs (one
+# Copies the built ScrapC.exe and the DLLs of FFmpeg and SDL3 into game/Bin. Refuses while the game of this checkout runs (one
 # started with its prefix; worktrees made by mkgame.sh have their own); copies to .new and renames, so a reader
 # never sees a half written file.
 root=$(cd "$(dirname "$0")/../.." && pwd)
@@ -15,8 +15,8 @@ for f in ScrapC.exe; do
 	[ -f "$src" ] || { echo "install.sh: $src missing, build first" >&2; exit 1; }
 	cp "$src" "$dst.new" && mv "$dst.new" "$dst" && echo "installed $dst" || exit 1
 done
-# the DLLs of FFmpeg (tools/ffmpeg.sh) when they changed
-for src in "$root"/build/ffmpeg/install/bin/*.dll; do
+# the DLLs of FFmpeg and SDL3 (tools/ffmpeg.sh, tools/sdl3.sh) when they changed
+for src in "$root"/build/ffmpeg/install/bin/*.dll "$root"/build/sdl3/install/bin/SDL3.dll; do
 	dst=$root/game/Bin/$(basename "$src")
 	cmp -s "$src" "$dst" || { cp "$src" "$dst.new" && mv "$dst.new" "$dst" && echo "installed $dst"; } || exit 1
 done

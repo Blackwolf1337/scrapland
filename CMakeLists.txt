@@ -83,8 +83,14 @@ set(FFMPEG_LIBS)
 foreach(l avformat avcodec avutil swscale)
 	list(APPEND FFMPEG_LIBS ${FFMPEG_DIR}/bin/${l}.lib)
 endforeach()
+
+# SDL3 for the window, the input, the timers and the Vulkan surface, built by tools/sdl3.sh
+set(SDL3_DIR ${CMAKE_CURRENT_BINARY_DIR}/sdl3/install CACHE PATH "the SDL3 of tools/sdl3.sh")
+if(NOT EXISTS ${SDL3_DIR}/include/SDL3/SDL.h)
+	message(FATAL_ERROR "no SDL3 in ${SDL3_DIR}: run tools/sdl3.sh first")
+endif()
 add_dependencies(scrapcode shaders)
-target_include_directories(scrapcode PRIVATE ${SHADER_DIR} ${FFMPEG_DIR}/include)
+target_include_directories(scrapcode PRIVATE ${SHADER_DIR} ${FFMPEG_DIR}/include ${SDL3_DIR}/include)
 
 # Python 1.5.2 for ScrapC.exe from third_party/python-1.5.2 (unchanged), configured like the one in Scrap.exe: our
 # config.h and inittab, pyshim.h for its libc (the exe's C runtime and the engine's Python pool) and the files of
@@ -212,7 +218,7 @@ foreach(dll xinput9_1_0 winmm wsock32 comctl32)
 endforeach()
 add_custom_target(implibs DEPENDS ${IMPLIBS})
 add_dependencies(ScrapC implibs)
-target_link_libraries(ScrapC PRIVATE scrapcode python152 ${IMPLIBS} ${FFMPEG_LIBS} kernel32 user32 gdi32 advapi32 shell32 comdlg32
+target_link_libraries(ScrapC PRIVATE scrapcode python152 ${IMPLIBS} ${FFMPEG_LIBS} ${SDL3_DIR}/lib/libSDL3.dll.a kernel32 user32 gdi32 advapi32 shell32 comdlg32
 	ole32)
 # stage 3c1b: the data formats c_dfDIKeyboard and c_dfDIMouse of mingw's libdinput8 and their GUIDs, static data
 # (no import of dinput8.dll), as -l flags

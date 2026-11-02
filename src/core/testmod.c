@@ -134,9 +134,9 @@ static float Call_StdFloat(void *fn, const uint32_t *a, int n) {
  * --enable-stdcall-fixup): the callbacks of Windows, COM and FMOD, the import thunks and D3DX */
 #define TEST_STDCALL(name) extern char sds_##name[] __asm__("_" #name);
 #define TEST_STDCALLS \
-	TEST_STDCALL(App_ExceptionFilter) TEST_STDCALL(App_WinMain) TEST_STDCALL(App_WndProc) TEST_STDCALL(Bsp_DlgProc) \
+	TEST_STDCALL(App_ExceptionFilter) TEST_STDCALL(App_WinMain) TEST_STDCALL(Bsp_DlgProc) \
 	TEST_STDCALL(crt_eh_vector_ctor) \
-	TEST_STDCALL(crt_eh_vector_dtor) TEST_STDCALL(D3DApp_WndProc) \
+	TEST_STDCALL(crt_eh_vector_dtor) \
 	TEST_STDCALL(D3DX_CheckTextureRequirements) \
 	TEST_STDCALL(D3DX_CreateTextureFromFileInMemoryEx) TEST_STDCALL(D3DX_LoadSurfaceFromSurface) \
 	TEST_STDCALL(D3DX_MatrixInverse) TEST_STDCALL(D3DX_MatrixMultiply) TEST_STDCALL(D3DX_MatrixRotationQuaternion) \

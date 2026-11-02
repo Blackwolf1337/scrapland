@@ -7,9 +7,6 @@
 #define VKCORE_H
 
 #define VK_NO_PROTOTYPES
-#ifdef _WIN32
-#define VK_USE_PLATFORM_WIN32_KHR
-#endif
 #include <vulkan/vulkan.h>
 
 #include "scrap/shared.h"
@@ -78,7 +75,6 @@ typedef struct VkCore {
 	uint64_t completed;			/* the last serial known to be done on the GPU */
 	byte recording;
 	VkFormat depthFormat;			/* the D24S8 of the game: D24S8, else D32S8 */
-	void *hwnd;
 	void (*endPass)(void);			/* ends an open render pass before a submit */
 } VkCore;
 
@@ -92,8 +88,8 @@ int Vk_IsDepth(VkFormat f);
 int Vk_DepthSupported(VkFormat f);
 /* the properties of the GPU Vk_CreateDevice will take (after Vk_Init); 0 when there is none */
 int Vk_GpuProperties(VkPhysicalDeviceProperties *out);
-/* the device and the swapchain on the window */
-int Vk_CreateDevice(void *hwnd, uint32_t width, uint32_t height, byte vsync);
+/* the device and the swapchain on the window of the platform layer */
+int Vk_CreateDevice(uint32_t width, uint32_t height, byte vsync);
 void Vk_DestroyDevice(void);
 int Vk_ResizeSwapchain(uint32_t width, uint32_t height, byte vsync);
 

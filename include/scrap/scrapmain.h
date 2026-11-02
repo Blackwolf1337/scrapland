@@ -267,7 +267,6 @@ void Scene_LogTree(CScene *scn, CNode3D *node, int indent);
 void E3D_Command(char *cmd);
 void CEngineApp_UpdateMenu(CEngineApp *self);
 int CEngineApp_InitDeviceObjects(CEngineApp *self);
-intptr_t CEngineApp_MsgProc(CEngineApp *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 int CEngineApp_ConfirmDevice(CEngineApp *self, D3DCaps8 *caps, uint32_t behavior, int format);
 int CEngineApp_RestoreDeviceObjects(CEngineApp *self);
 int CEngineApp_OneTimeSceneInit(CEngineApp *self);

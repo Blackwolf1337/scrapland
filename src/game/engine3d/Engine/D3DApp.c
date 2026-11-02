@@ -15,6 +15,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/texture.h"
 #include "scrap/misc.h"
+#include "scrap/platform.h"
 #include "scrap/win32.h"
 
 #define CD3DAPPLICATION_VFTABLE GAME_VFTABLE(CD3DApplication_vftable)
@@ -41,11 +42,6 @@ int D3DApp_SortModes(const D3DDisplayMode *a, const D3DDisplayMode *b) {
 		return -1;
 	}
 	return (int)a->Format < (int)b->Format;
-}
-
-intptr_t __stdcall D3DApp_WndProc(void *hwnd, uint32_t msg, uintptr_t w, intptr_t l) {
-	CD3DApplication *app = g_Engine;
-	return app->vftable->MsgProc(app, hwnd, msg, w, l);
 }
 
 
@@ -151,19 +147,10 @@ void CD3DApp_dtor(CD3DApplication *self) {
 }
 
 /* vf00: the window style (and in fullscreen the size of the mode) after a change */
+/* the window over the screen for fullscreen (the present scales the back buffer to it), the cursor only in a window */
 int CD3DApp_AdjustWindowForChange(CD3DApplication *self) {
-	if (self->windowed) {
-		exe_SetWindowLongA(self->hWnd, -16, (int32_t)self->windowStyle);
-	} else {
-		exe_SetWindowLongA(self->hWnd, -16, (int32_t)0x90080000);	/* WS_POPUP | WS_SYSMENU | WS_VISIBLE */
-		D3DAdapterInfo *ad = &self->adapters[self->adapter];
-		D3DDeviceInfo *dev = &ad->devices[ad->dwCurrentDevice];
-		D3DModeInfo *mode = &dev->modes[dev->dwCurrentMode];
-		exe_SetWindowPos(self->hWnd, (void *)-1, 0, 0, (int)mode->Width, (int)mode->Height, 0);
-	}
-	if (!self->windowed) {
-		exe_SetCursor(NULL);
-	}
+	Plat_SetFullscreen(!self->windowed);
+	Plat_ShowCursor(self->windowed || self->showCursorWhenFullscreen);
 	return 0;
 }
 
@@ -374,12 +361,6 @@ int CD3DApp_ToggleFullscreen(CD3DApplication *self) {
 	if (CD3DApp_Reset(self) < 0) {
 		return CD3DApp_DisplayErrorMsg(0x8200000c);	/* D3DAPPERR_RESIZEFAILED */
 	}
-	if (self->windowed) {
-		/* the window rectangle, not topmost */
-		int x = self->windowBounds.left, y = self->windowBounds.top;
-		exe_SetWindowPos(self->hWnd, (void *)-2, x, y, self->windowBounds.right - x,
-			self->windowBounds.bottom - y, 0x40);
-	}
 	self->ready = 1;
 	return 0;
 }
@@ -408,22 +389,6 @@ int CD3DApp_ToggleFullscreen(CD3DApplication *self) {
 extern uint32_t g_D3DAppFrames;
 extern float g_D3DAppLastTime;
 
-typedef int(__stdcall *adjustwindowrect_t)(exe_rect *r, uint32_t style, int menu);
-typedef void *(__stdcall *loadmenu_t)(void *inst, const char *name);
-typedef int(__stdcall *setrect_t)(exe_rect *r, int left, int top, int right, int bottom);
-typedef int(__stdcall *destroymenu_t)(void *menu);
-typedef void(__stdcall *postquitmessage_t)(int code);
-typedef int(__stdcall *getcursorpos_t)(exe_point *pt);
-typedef int(__stdcall *screentoclient_t)(void *hwnd, exe_point *pt);
-typedef int(__stdcall *enablewindow_t)(void *hwnd, int on);
-#define exe_AdjustWindowRect GAME_IMPORT(adjustwindowrect_t, AdjustWindowRect, 12)
-#define exe_LoadMenuA GAME_IMPORT(loadmenu_t, LoadMenuA, 8)
-#define exe_SetRect GAME_IMPORT(setrect_t, SetRect, 20)
-#define exe_DestroyMenu GAME_IMPORT(destroymenu_t, DestroyMenu, 4)
-#define exe_PostQuitMessage GAME_IMPORT(postquitmessage_t, PostQuitMessage, 4)
-#define exe_GetCursorPos GAME_IMPORT(getcursorpos_t, GetCursorPos, 4)
-#define exe_ScreenToClient GAME_IMPORT(screentoclient_t, ScreenToClient, 8)
-#define exe_EnableWindow GAME_IMPORT(enablewindow_t, EnableWindow, 8)
 
 /* IDirect3D8 and IDirect3DDevice8 */
 
@@ -436,9 +401,9 @@ static void D3DApp_Cat(char *dst, int size, const char *src) {
 }
 
 int CD3DApp_Create(CD3DApplication *self, void *inst) {
-	exe_wndclass wc;
-	exe_rect r;
 	int hr;
+
+	(void)inst;
 
 	self->d3d = Rd_Direct3DCreate8(0xdc);	/* D3D_SDK_VERSION */
 	if (!self->d3d) {
@@ -448,31 +413,14 @@ int CD3DApp_Create(CD3DApplication *self, void *inst) {
 	if (hr < 0) {
 		goto fail;
 	}
-	if (!self->hWnd) {
-		wc.style = 0;
-		wc.wndProc = (void *)D3DApp_WndProc;	/* WndProc */
-		wc.clsExtra = 0;
-		wc.wndExtra = 0;
-		wc.hInstance = inst;
-		wc.hIcon = exe_LoadIconA(inst, (const char *)0x7f00);
-		wc.hCursor = exe_LoadCursorA(NULL, (const char *)0x7f00);
-		wc.hbrBackground = exe_GetStockObject(0);
-		wc.menuName = NULL;
-		wc.className = "Class_Engine3D_DX8";
-		exe_RegisterClassA(&wc);
-		self->windowStyle = 0x90ce0000;	/* WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | ... */
-		exe_SetRect(&r, 0, 0, (int)self->creationWidth, (int)self->creationHeight);
-		exe_AdjustWindowRect(&r, self->windowStyle, 1);
-		void *menu = exe_LoadMenuA(inst, (const char *)0x8d);
-		self->hWnd = exe_CreateWindowExA(0, "Class_Engine3D_DX8", self->windowTitle, self->windowStyle,
-			(int)0x80000000, (int)0x80000000, r.right - r.left, r.bottom - r.top, NULL, menu, inst, NULL);
-	}
 	if (!self->hWndFocus) {
 		self->hWndFocus = self->hWnd;
 	}
-	self->windowStyle = (uint32_t)exe_GetWindowLongA(self->hWnd, -16);	/* GWL_STYLE */
-	exe_GetWindowRect(self->hWnd, &self->windowBounds);
-	exe_GetClientRect(self->hWnd, &self->windowClient);
+	int wr[4], cw, ch;
+	Plat_WindowRect(wr);
+	Plat_ClientSize(&cw, &ch);
+	self->windowBounds = (exe_rect) { wr[0], wr[1], wr[2], wr[3] };
+	self->windowClient = (exe_rect) { 0, 0, cw, ch };
 	hr = self->vftable->OneTimeSceneInit(self);
 	if (hr >= 0) {
 		hr = CD3DApp_Initialize3DEnvironment(self);
@@ -761,11 +709,7 @@ int CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 	hr = Rd_D3DCreateDevice(d3d, self->adapter, dev->DeviceType,
 		self->hWndFocus, mode->dwBehavior | D3DCREATE_FPU_PRESERVE, pp, &self->device);
 	if (hr >= 0) {
-		if (self->windowed) {
-			exe_rect *r = &self->windowBounds;
-			exe_SetWindowPos(self->hWnd, (void *)-2, r->left, r->top, r->right - r->left, r->bottom - r->top,
-				0x40);
-		}
+		Plat_ShowWindow();
 		void *d = self->device;
 		Rd_DevGetDeviceCaps(d, &self->caps);
 		self->createFlags = mode->dwBehavior;
@@ -803,128 +747,6 @@ int CD3DApp_Initialize3DEnvironment(CD3DApplication *self) {
 	return hr;
 }
 
-intptr_t CD3DApp_MsgProc(CD3DApplication *self, void *hwnd, uint32_t msg, uintptr_t w, intptr_t l) {
-	switch (msg) {
-	case 0x5:			/* WM_SIZE */
-		self->active = !(w == 4 || w == 1);	/* SIZE_MAXHIDE, SIZE_MINIMIZED */
-		break;
-	case 0xf:			/* WM_PAINT */
-		if (self->device && !self->ready && self->windowed) {
-			void *d = self->device;
-			Rd_DevPresent(d, NULL, NULL, NULL, NULL);
-		}
-		break;
-	case 0x10:			/* WM_CLOSE */
-		CD3DApp_Cleanup(self);
-		exe_DestroyMenu(exe_GetMenu(hwnd));
-		exe_DestroyWindow(hwnd);
-		exe_PostQuitMessage(0);
-		return 0;
-	case 0x20:			/* WM_SETCURSOR */
-		if (self->active && self->ready && !self->windowed) {
-			exe_SetCursor(NULL);
-			if (self->showCursorWhenFullscreen) {
-				void *d = self->device;
-				Rd_DevShowCursor(d, 1);
-			}
-			return 1;
-		}
-		break;
-	case 0x24:			/* WM_GETMINMAXINFO: ptMinTrackSize 100 x 100 */
-		((int *)l)[6] = 100;
-		((int *)l)[7] = 100;
-		return exe_DefWindowProcA(hwnd, msg, w, l);
-	case 0x84:			/* WM_NCHITTEST */
-		if (!self->windowed) {
-			return 1;
-		}
-		break;
-	case 0x111:			/* WM_COMMAND */
-		switch (w & 0xffff) {
-		case 0x9c43:		/* IDM_TOGGLEFULLSCREEN */
-			if (!self->active || !self->ready) {
-				return 0;
-			}
-			if (CD3DApp_ToggleFullscreen(self) < 0) {
-				CD3DApp_DisplayErrorMsg((int)D3DAPPERR_RESIZEFAILED);
-			}
-			return 0;
-		case 0x9c44: {		/* IDM_TOGGLESTART */
-			int moving = self->frameMoving;
-			self->frameMoving = !moving;
-			DXUtil_Timer(moving ? DXUTIL_TIMER_STOP : DXUTIL_TIMER_START);
-			break;
-		}
-		case 0x9c45:		/* IDM_SINGLESTEP */
-			DXUtil_Timer(self->frameMoving ? DXUTIL_TIMER_STOP : DXUTIL_TIMER_ADVANCE);
-			self->frameMoving = 0;
-			self->singleStep = 1;
-			break;
-		case 0x9c46:		/* IDM_EXIT */
-			exe_SendMessageA(hwnd, 0x10, 0, 0);
-			return 0;
-		}
-		break;
-	case 0x112:			/* WM_SYSCOMMAND: no moving, sizing, maximizing, menu and power off when fullscreen */
-		if ((w == 0xf010 || w == 0xf000 || w == 0xf030 || w == 0xf100 || w == 0xf170) && !self->windowed) {
-			return 1;
-		}
-		break;
-	case 0x200:			/* WM_MOUSEMOVE */
-		if (self->active && self->ready && self->device) {
-			exe_point pt;
-			exe_GetCursorPos(&pt);
-			exe_ScreenToClient(self->hWnd, &pt);
-			void *d = self->device;
-			Rd_DevSetCursorPosition(d, pt.x, pt.y, 0);
-		}
-		break;
-	case 0x211:			/* WM_ENTERMENULOOP */
-		self->vftable->Pause(self, 1);
-		break;
-	case 0x212:			/* WM_EXITMENULOOP */
-		self->vftable->Pause(self, 0);
-		break;
-	case 0x218:			/* WM_POWERBROADCAST */
-		if (w == 0) {		/* PBT_APMQUERYSUSPEND */
-			return 0x424d5144;	/* BROADCAST_QUERY_DENY */
-		}
-		if (w == 7) {		/* PBT_APMRESUMESUSPEND */
-			return 1;
-		}
-		break;
-	case 0x231:			/* WM_ENTERSIZEMOVE */
-		if (self->frameMoving) {
-			DXUtil_Timer(DXUTIL_TIMER_STOP);
-		}
-		break;
-	case 0x232:			/* WM_EXITSIZEMOVE: the back buffer of a new client size */
-		if (self->frameMoving) {
-			DXUtil_Timer(DXUTIL_TIMER_START);
-		}
-		if (self->active && self->windowed) {
-			exe_rect old = self->windowClient;
-			exe_GetWindowRect(self->hWnd, &self->windowBounds);
-			exe_GetClientRect(self->hWnd, &self->windowClient);
-			exe_rect *c = &self->windowClient;
-			int nw = c->right - c->left;
-			if (old.right - old.left != nw || old.bottom - old.top != c->bottom - c->top) {
-				self->ready = 0;
-				self->presentParams.BackBufferWidth = (uint32_t)nw;
-				self->presentParams.BackBufferHeight = (uint32_t)(c->bottom - c->top);
-				if (CD3DApp_Reset(self) < 0) {
-					CD3DApp_DisplayErrorMsg((int)D3DAPPERR_RESIZEFAILED);
-					return 0;
-				}
-				self->ready = 1;
-			}
-		}
-		break;
-	}
-	return exe_DefWindowProcA(hwnd, msg, w, l);
-}
-
-/* the frames per second (each second) and the frame statistics with the mode and the depth format */
 static void D3DApp_FrameStats(CD3DApplication *self) {
 	float t = DXUtil_Timer(DXUTIL_TIMER_GETABSOLUTETIME);
 	uint32_t frames = ++g_D3DAppFrames;
@@ -1029,7 +851,7 @@ int CD3DApp_Render(CD3DApplication *self) {
 		}
 	}
 	if (hr == 1) {
-		exe_SendMessageA(self->hWnd, 0x10, 0, 0);
+		Plat_Quit();
 		return 0;
 	}
 	D3DApp_FrameStats(self);
@@ -1041,94 +863,3 @@ int CD3DApp_Render(CD3DApplication *self) {
 }
 
 /* the message loop of the framework with the frame of CD3DApp_Render inside; until WM_QUIT */
-int CD3DApp_Run(CD3DApplication *self) {
-	exe_msg msg;
-	void *acc = exe_LoadAcceleratorsA(NULL, (const char *)0x71);
-	int hr = 0;
-
-	exe_PeekMessageA(&msg, NULL, 0, 0, 0);
-	while (msg.message != 0x12) {	/* WM_QUIT */
-		/* differs from the original on purpose (no blocking waits): PeekMessage also while inactive, where the original
-		 * waited in GetMessage; without a message the inactive app goes round again */
-		int got = exe_PeekMessageA(&msg, NULL, 0, 0, 1);
-		if (got) {
-			if (!exe_TranslateAcceleratorA(self->hWnd, acc, &msg)) {
-				exe_TranslateMessage(&msg);
-				exe_DispatchMessageA(&msg);
-			}
-			continue;
-		}
-		if (!self->active || !self->ready) {
-			continue;
-		}
-		/* differs from the original on purpose (no sleeps): the frame limiter of CEngineApp_Render holds the frame
-		 * back here, before the clock and FrameMove, instead of sleeping inside Render */
-		if (!(g_pApp->flags & APPF_DEDICATED) && !Engine_FrameDue(self)) {
-			continue;
-		}
-		int r = 0;
-		if (!(g_pApp->flags & APPF_DEDICATED)) {
-			void *d = self->device;
-			hr = Rd_DevTestCooperativeLevel(d);
-			if (hr < 0) {
-				if (hr == D3DERR_DEVICELOST) {
-					continue;
-				}
-				r = hr;
-				if (hr == D3DERR_DEVICENOTRESET) {
-					if (self->windowed) {
-						D3DAdapterInfo *ad = &self->adapters[self->adapter];
-						void *d3d = self->d3d;
-						Rd_D3DGetAdapterDisplayMode(d3d,
-							self->adapter, &ad->desktopMode);
-						self->presentParams.BackBufferFormat = ad->desktopMode.Format;
-					}
-					r = CD3DApp_Reset(self);
-					hr = r;
-					if (r < 0) {
-						CD3DApp_DisplayErrorMsg((int)D3DAPPERR_RESIZEFAILED);
-					}
-				}
-				goto failed;
-			}
-		}
-		float appTime = DXUtil_Timer(DXUTIL_TIMER_GETAPPTIME);
-		float elapsed = DXUtil_Timer(DXUTIL_TIMER_GETELAPSEDTIME);
-		if (elapsed == 0.0f && self->frameMoving) {
-			continue;
-		}
-		if (self->frameMoving || self->singleStep) {
-			self->time = appTime;
-			self->elapsedTime = elapsed;
-			hr = self->vftable->FrameMove(self);
-			r = hr;
-			if (hr < 0) {
-				goto failed;
-			}
-			self->singleStep = 0;
-		}
-		if (!(g_pApp->flags & APPF_DEDICATED)) {
-			hr = self->vftable->Render(self);
-			r = hr;
-			if (hr < 0) {
-				goto failed;
-			}
-		}
-		if (hr == 1) {
-			exe_SendMessageA(self->hWnd, 0x10, 0, 0);
-			continue;
-		}
-		D3DApp_FrameStats(self);
-		if (!(g_pApp->flags & APPF_DEDICATED)) {
-			void *d = self->device;
-			Rd_DevPresent(d, NULL, NULL, NULL, NULL);
-		}
-		continue;
-failed:
-		/* the first error ends the loop through WM_CLOSE */
-		if (r < 0) {
-			exe_SendMessageA(self->hWnd, 0x10, 0, 0);
-		}
-	}
-	return (int)msg.wParam;
-}

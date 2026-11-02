@@ -1073,75 +1073,15 @@ void E3D_Command(char *cmd) {
 	E3D_DebugPrintf(crt_rand() & 1 ? "\nque te zurzan" : "\npirate");
 }
 
-/* ---- the menu of the D3D window ---- */
-
-#define MF_GRAYED 1
-#define MF_CHECKED 8
-#define IDM_MODE0 0x9c4b
-#define IDM_MODE1 0x9c4c
-#define IDM_MODE2 0x9c4d
-#define IDM_SPECULAR 0x9c54
-#define IDM_RENDERMODE100 0x9c56
-#define IDM_9C57 0x9c57
-#define IDM_USARVB 0x9c59
-#define IDM_9C5A 0x9c5a
-#define IDM_9C5B 0x9c5b
-#define IDM_9C5C 0x9c5c
-#define IDM_9C5D 0x9c5d
-#define IDM_LIGHTS 0x9c5e
-#define IDM_SOLOB38 0x9c5f
-#define IDM_WORLD0 0x9c62
-#define IDM_TILE 0x9c63
-#define IDM_9C64 0x9c64
-#define IDM_SHARPEN 0x9c65
-#define IDM_RELOADMATS 0x9c66
-#define IDM_CAMERA 50000		/* the cameras of the global scene from here */
 extern byte g_Engine4af7d4;
 extern int g_Sharpen;		/* [video] Sharpen of m3d.ini */
 extern int g_MouseExcl;		/* [dinput] raton_excl */
-
-static uint32_t Menu_Check(int on) {
-	return on ? MF_CHECKED : 0;
-}
-
-/* the menu items greyed and checked by the state */
-void CEngineApp_UpdateMenu(CEngineApp *self) {
-	void *menu = self->menu;
-
-	if (!menu) {
-		return;
-	}
-	exe_EnableMenuItem(menu, IDM_MODE0, g_MipmapsOn == 0);
-	exe_EnableMenuItem(self->menu, IDM_MODE1, g_MipmapsOn == 0);
-	exe_EnableMenuItem(self->menu, IDM_MODE2, g_MipmapsOn == 0);
-	exe_CheckMenuItem(self->menu, IDM_MODE0, Menu_Check(g_EngineMode == 0));
-	exe_CheckMenuItem(self->menu, IDM_MODE1, Menu_Check(g_EngineMode == 1));
-	exe_CheckMenuItem(self->menu, IDM_MODE2, Menu_Check(g_EngineMode == 2));
-	exe_EnableMenuItem(self->menu, IDM_9C5B, !self->canMenu9c5d && !self->canMenu9c5c ? MF_GRAYED : 0);
-	exe_EnableMenuItem(self->menu, IDM_9C5D, self->canMenu9c5d == 0);
-	exe_EnableMenuItem(self->menu, IDM_9C5C, self->canMenu9c5c == 0);
-	exe_CheckMenuItem(self->menu, IDM_9C5B, Menu_Check(self->menuMode == 0));
-	exe_CheckMenuItem(self->menu, IDM_9C5D, Menu_Check(self->menuMode == 1));
-	exe_CheckMenuItem(self->menu, IDM_9C5C, Menu_Check(self->menuMode == 1));
-	exe_EnableMenuItem(self->menu, IDM_9C5A, self->canWBuffer == 0);
-	exe_CheckMenuItem(self->menu, IDM_9C5A, Menu_Check(self->useWBuffer != 0));
-	exe_CheckMenuItem(self->menu, IDM_SPECULAR, Menu_Check(g_VertexSpecular != 0));
-	exe_CheckMenuItem(self->menu, IDM_RENDERMODE100, Menu_Check(g_RenderMode100 != 0));
-	exe_CheckMenuItem(self->menu, IDM_9C57, Menu_Check(g_Engine431bae != 0));
-	exe_CheckMenuItem(self->menu, IDM_USARVB, Menu_Check(g_UseVB != 0));
-	exe_CheckMenuItem(self->menu, IDM_WORLD0, Menu_Check(*(byte *)World_Get() != 0));
-	exe_CheckMenuItem(self->menu, IDM_SOLOB38, Menu_Check(g_RenderOnlyB38 != 0));
-	exe_CheckMenuItem(self->menu, IDM_9C64, Menu_Check(g_Engine4af7d4 != 0));
-	exe_CheckMenuItem(self->menu, IDM_SHARPEN, Menu_Check(g_Sharpen != 0));
-}
-
 #define ENGINE_MAXCAMERAS 0x14
-#define MF_BYPOSITION 0x400
 #define D3DRS_88 0x88
 #define D3DRS_89 0x89
 #define ENGINE_BUILD 0x15f8
 
-/* InitDeviceObjects: the device objects of the engine, the cameras menu, the title, the input on the window */
+/* InitDeviceObjects: the device objects of the engine, the cameras of the scene, the title, the input on the window */
 int CEngineApp_InitDeviceObjects(CEngineApp *self) {
 	void *dev = self->base.device;
 	char title[0x100];
@@ -1162,43 +1102,26 @@ int CEngineApp_InitDeviceObjects(CEngineApp *self) {
 	CScene_FindClass(self->scene, NULL, CLASS_OBJ3D_LIGHT);
 	Rd_DevSetRenderState(dev, D3DRS_88, 1);
 	Rd_DevSetRenderState(dev, D3DRS_89, 1);
-	self->menu = exe_GetMenu(self->base.hWnd);
-	CEngineApp_UpdateMenu(self);
 	CHECK(!self->table.p);
 	self->table.n = ENGINE_MAXCAMERAS;
 	self->table.p = operator_new_array(ENGINE_MAXCAMERAS * sizeof(void *));
 	CHECK(self->table.p);
 	CHECK(self->table.p);
 	memset(self->table.p, 0, (uint32_t)self->table.n * sizeof(void *));
-	self->cameraMenu = exe_GetSubMenu(self->menu, 2);
-	if (self->cameraMenu) {
-		CNode3D *n;
+	/* the cameras of the scene (the original listed them in the debug menu of the window, which is gone) */
+	{
 		uint32_t i = 0;
 
-		while (exe_DeleteMenu(self->cameraMenu, 0, MF_BYPOSITION)) {
-		}
-		for (n = CScene_FindClass(self->scene, NULL, CLASS_OBJ3D_CAMERA); n;
+		for (CNode3D *n = CScene_FindClass(self->scene, NULL, CLASS_OBJ3D_CAMERA); n && i < (uint32_t)self->table.n;
 			n = CScene_FindClass(self->scene, n, CLASS_OBJ3D_CAMERA)) {
-			CCamera *cam;
-
-			if (i == (uint32_t)self->table.n) {
-				exe_AppendMenuA(self->cameraMenu, 0, i + IDM_CAMERA, "...");
-				break;
-			}
-			cam = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_CAMERA);
-			if (!self->table.p || i >= (uint32_t)self->table.n) {
-				CHECK(0);
-			}
-			((CCamera **)self->table.p)[i] = cam;
-			exe_AppendMenuA(self->cameraMenu, 0, i + IDM_CAMERA, n->name);
-			i++;
+			((CCamera **)self->table.p)[i++] = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_CAMERA);
 		}
 	}
 	Bprintf(title, sizeof(title), "%s (%d)%s - [%s]", self->base.windowTitle, ENGINE_BUILD, "", self->scene->name);
 	if (!self->base.windowed) {
 		Bprintf(title, sizeof(title), "Scrapland (%d)%s", ENGINE_BUILD, "");
 	}
-	exe_SetWindowTextA(self->base.hWnd, title);
+	Plat_SetTitle(title);
 	{
 		typedef int(* create_t)(void *, void *, void *, int);
 		void **vt = *(void ***)g_Input;
@@ -1212,99 +1135,6 @@ int CEngineApp_InitDeviceObjects(CEngineApp *self) {
 	}
 	((void(*)(void *, int))(*(void ***)g_Input)[5])(g_Input, 1);
 	return 0;
-}
-
-/* MsgProc: the input first, the keys, the menu commands of the window, then the one of CD3DApplication */
-intptr_t CEngineApp_MsgProc(CEngineApp *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam) {
-	if (g_Input) {
-		((void(*)(void *, void *, uint32_t, uintptr_t, intptr_t))(*(void ***)g_Input)[7])(g_Input, hwnd,
-			msg, wParam, lParam);
-	}
-	if (msg == WM_KEYDOWN) {
-		Keyboard_KeyDown((uint16_t)wParam, lParam);
-	} else if (msg == WM_KEYUP) {
-		Keyboard_KeyUp((uint16_t)wParam, lParam);
-	} else if (msg == WM_COMMAND) {
-		uint32_t id = (uint16_t)wParam;
-
-		switch (id) {
-		case IDM_MODE0:
-		case IDM_MODE1:
-		case IDM_MODE2:
-			g_EngineMode = (int)(id - IDM_MODE0);
-			break;
-		case IDM_SPECULAR:
-			g_VertexSpecular = g_VertexSpecular == 0;
-			break;
-		case IDM_RENDERMODE100:
-			g_RenderMode100 = g_RenderMode100 == 0;
-			break;
-		case IDM_9C57:
-			g_Engine431bae = g_Engine431bae == 0;
-			break;
-		case IDM_USARVB:
-			g_UseVB = g_UseVB == 0;
-			break;
-		case IDM_9C5A:
-			self->useWBuffer = self->useWBuffer == 0;
-			break;
-		case IDM_9C5B:
-			self->menuMode = 0;
-			break;
-		case IDM_9C5C:
-		case IDM_9C5D:
-			self->menuMode = 1;
-			break;
-		case IDM_LIGHTS:
-			CEngineApp_LightsDialog(self, hwnd, (void *)exe_GetWindowLongA(hwnd, GWL_HINSTANCE));
-			break;
-		case IDM_SOLOB38:
-			g_RenderOnlyB38 = g_RenderOnlyB38 == 0;
-			break;
-		case IDM_WORLD0: {
-			byte off = *(byte *)World_GetChecked() == 0;
-
-			*(byte *)World_GetChecked() = off;
-			break;
-		}
-		case IDM_TILE:
-			g_TileOn = 1;
-			break;
-		case IDM_9C64:
-			g_Engine4af7d4 = g_Engine4af7d4 == 0;
-			break;
-		case IDM_SHARPEN:
-			g_Sharpen = g_Sharpen == 0;
-			[[fallthrough]];
-		case IDM_RELOADMATS:
-			/* the textures and materials made again */
-			Texture_ReleaseAllD3D();
-			CMatList_Release(g_MatList);
-			CMatList_Prepare(g_MatList, self->base.device);
-			break;
-		default: {
-			/* a camera of the global scene into the world, the menu item checked */
-			int i = (int)id - IDM_CAMERA;
-
-			if (i >= 0 && i < self->table.n) {
-				CCamera **cams;
-				int k;
-
-				for (k = 0; k < self->table.n; k++) {
-					exe_CheckMenuItem(self->menu, (uint32_t)(k + IDM_CAMERA), i == k ? MF_CHECKED : 0);
-				}
-				if (!self->table.p || (uint32_t)i >= (uint32_t)self->table.n) {
-					CHECK(0);
-				}
-				cams = self->table.p;
-				CWorld_SetCamera(World_Get(), cams[i]);
-			}
-			break;
-		}
-		}
-		CEngineApp_UpdateMenu(self);
-	}
-	return CD3DApp_MsgProc(&self->base, hwnd, msg, wParam, lParam);
 }
 
 /* ---- CEntradaNula: every method of the input does nothing ---- */

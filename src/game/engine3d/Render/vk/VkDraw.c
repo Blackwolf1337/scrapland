@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "scrap/platform.h"
 #include "vkdraw.h"
 
 static const uint32_t vkd_ffVert[] = {
@@ -104,7 +105,7 @@ static struct {
 	uint16_t rampData[3][256];	/* what ramp holds */
 } vkd_pr;
 static int vkd_traceState;		/* 0 not yet, 1 this frame, 2 done */
-static DWORD vkd_traceAt;
+static uint32_t vkd_traceAt;
 
 /* ---- set up ---- */
 
@@ -174,7 +175,7 @@ int Vkd_Init(VkoDev *d) {
 	vk.endPass = Vkd_End;
 	const char *trace = getenv("SCRAP_VK_TRACE");
 	if (trace && !vkd_traceAt) {
-		vkd_traceAt = GetTickCount() + (DWORD)(atof(trace) * 1000.0);
+		vkd_traceAt = Plat_Ticks() + (uint32_t)(atof(trace) * 1000.0);
 	}
 	if (vkd_layout) {
 		return 1;
@@ -624,7 +625,7 @@ static VkSampler Vkd_Sampler(const uint32_t *tss) {
 static void Vkd_FrameDone(void) {
 	if (vkd_traceState == 1) {
 		vkd_traceState = 2;
-	} else if (!vkd_traceState && vkd_traceAt && GetTickCount() >= vkd_traceAt) {
+	} else if (!vkd_traceState && vkd_traceAt && Plat_Ticks() >= vkd_traceAt) {
 		vkd_traceState = 1;
 	}
 }

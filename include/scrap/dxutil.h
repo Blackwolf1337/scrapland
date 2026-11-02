@@ -74,7 +74,7 @@ typedef struct CD3DApplicationVtbl {
 	int(*FinalCleanup)(CD3DApplication *self);		/* 0x24 */
 	int(*Create)(CD3DApplication *self, void *hInstance);	/* 0x28 */
 	int(*Run)(CD3DApplication *self);			/* 0x2c the wParam of WM_QUIT */
-	intptr_t(*MsgProc)(CD3DApplication *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);	/* 0x30 */
+	void *msgProc;				/* 0x30 the window procedure, gone (src/game/App/Platform.c) */
 	void(*Pause)(CD3DApplication *self, int pause);	/* 0x34 */
 } CD3DApplicationVtbl;
 
@@ -167,8 +167,6 @@ int64_t Timer_MeasureQP(int ms);
 /* d3dapp.cpp */
 /* qsort order of the display modes: width, height, then the format (the higher first) */
 int D3DApp_SortModes(const D3DDisplayMode *a, const D3DDisplayMode *b);
-/* the window procedure of the application window: the MsgProc of g_Engine (vtable 0x30) */
-intptr_t __stdcall D3DApp_WndProc(void *hwnd, uint32_t msg, uintptr_t w, intptr_t l);
 /* ds is a depth/stencil format the adapter supports with the format fmt (IDirect3D8 d3d) */
 byte D3DApp_DepthFormatOk(void *d3d, uint32_t adapter, uint32_t type, uint32_t fmt, uint32_t ds);
 /* the depth/stencil format (D3DFMT_*) of a device for the minimum bits of g_Engine; 0 for none */
@@ -187,7 +185,6 @@ int CD3DApp_ConfirmDevice(CD3DApplication *self, D3DCaps8 *caps, uint32_t behavi
 int CD3DApp_ForceWindowed(CD3DApplication *self);
 int CD3DApp_ToggleFullscreen(CD3DApplication *self);
 /* the window messages of the framework */
-intptr_t CD3DApp_MsgProc(CD3DApplication *self, void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 /* CD3DApp_Cleanup, CD3DApp_ResetDevice and CD3DApp_Reset: scrapmain.h */
 
 /* the error text of hr reported as fatal, hr */
@@ -198,6 +195,5 @@ int CD3DApp_Initialize3DEnvironment(CD3DApplication *self);
 int CD3DApp_Create(CD3DApplication *self, void *inst);
 int CD3DApp_BuildDeviceList(CD3DApplication *self);
 /* the message loop with the frames, the wParam of WM_QUIT */
-int CD3DApp_Run(CD3DApplication *self);
 
 #endif

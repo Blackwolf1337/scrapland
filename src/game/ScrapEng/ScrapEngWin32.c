@@ -1,8 +1,7 @@
 /*
- * ScrapEngWin32.cpp of the game: the window procedure of the engine (the menu commands of the D3D window, the
- * cursor, the paint while paused, the power messages) and the unhandled exceptions: the filter shows the exception,
- * its address and the fault as a fatal error (Con_FatalErrorf). Of the menu commands only the device, full screen
- * and tiled shot are left; the debug toggles and profiler modes of the original are gone.
+ * ScrapEngWin32.cpp of the game: the unhandled exceptions, the filter shows the exception, its address and the fault
+ * as a fatal error (Con_FatalErrorf). The window procedure of the engine is gone: src/game/App/Platform.c handles the
+ * events (its hotkeys are the full screen and tiled shot commands that were left of the menu).
  */
 #include "scrap/rdev.h"
 #include "scrap/app.h"
@@ -16,78 +15,6 @@
 #define APP_EXCEPTIONFILTER 0x233410
 
 
-#define WM_PAINT 0x0f
-#define WM_SETCURSOR 0x20
-#define WM_COMMAND 0x111
-#define WM_POWERBROADCAST 0x218
-#define WM_EXITSIZEMOVE 0x232
-#define PBT_APMQUERYSUSPEND 0
-#define PBT_APMRESUMESUSPEND 7
-#define BROADCAST_QUERY_DENY 0x424d5144
-/* the commands of the menu of the D3D window */
-#define IDM_TOGGLEFULLSCREEN 0x9c43
-#define IDM_TILE 0x9ca5
-
-intptr_t D3DApp_MsgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam) {
-	CD3DApplication *m = g_Engine;
-
-	switch (msg) {
-	case WM_SETCURSOR:
-		if (m && m->active && m->ready && !m->windowed) {
-			exe_SetCursor(NULL);
-			if (g_Engine->showCursorWhenFullscreen) {
-				void *dev = g_Engine->device;
-
-				Rd_DevShowCursor(dev, 1);
-			}
-			return 1;
-		}
-		break;
-	case WM_PAINT:
-		/* differs from the original on purpose (no blocking waits): no Present over a video, which plays from the
-		 * message loop now (the original handled no message while it played) */
-		if (m && m->device && !m->ready && m->windowed && !Video_Busy()) {
-			void *dev = m->device;
-
-			Rd_DevPresent(dev, NULL, NULL, NULL, NULL);
-			return exe_DefWindowProcA(hwnd, msg, wParam, lParam);
-		}
-		break;
-	case WM_COMMAND:
-		switch ((uint16_t)wParam) {
-		case IDM_TOGGLEFULLSCREEN: {
-			void *fg = exe_GetForegroundWindow();
-
-			if (fg == App_GetHWnd() && g_Engine->active && g_Engine->ready) {
-				if (CD3DApp_ToggleFullscreen(g_Engine) < 0) {
-					Con_FatalErrorf("Could not reset the Direct3D device.");
-				}
-			}
-			return 0;
-		}
-		case IDM_TILE:
-			Engine_ToggleOption(0x20);
-			return 0;
-		}
-		break;
-	case WM_POWERBROADCAST:
-		if (wParam == PBT_APMQUERYSUSPEND) {
-			return BROADCAST_QUERY_DENY;
-		}
-		if (wParam == PBT_APMRESUMESUSPEND) {
-			return 1;
-		}
-		break;
-	case WM_EXITSIZEMOVE:
-		if (m) {
-			exe_GetWindowRect(hwnd, &m->windowBounds);
-			exe_GetClientRect(hwnd, &g_Engine->windowClient);
-			return exe_DefWindowProcA(hwnd, msg, wParam, lParam);
-		}
-		break;
-	}
-	return exe_DefWindowProcA(hwnd, msg, wParam, lParam);
-}
 extern void *g_PrevExceptionFilter;
 
 #define EXC_ACCESS_VIOLATION 0xc0000005u

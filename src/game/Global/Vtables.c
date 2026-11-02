@@ -59,17 +59,14 @@ void CCamera_Write(void);
 void CD3DApp_AdjustWindowForChange(void);
 void CD3DApp_ConfirmDevice(void);
 void CD3DApp_Create(void);
-void CD3DApp_MsgProc(void);
 void CD3DApp_Nop(void);
 void CD3DApp_Pause(void);
-void CD3DApp_Run(void);
 void CD3DApplication_Nothing(void);
 void CEngineApp_ConfirmDevice(void);
 void CEngineApp_DeleteDeviceObjects(void);
 void CEngineApp_FinalCleanup(void);
 void CEngineApp_FrameMove(void);
 void CEngineApp_InitDeviceObjects(void);
-void CEngineApp_MsgProc(void);
 void CEngineApp_OneTimeSceneInit(void);
 void CEngineApp_Render(void);
 void CEngineApp_RestoreDeviceObjects(void);
@@ -7693,8 +7690,8 @@ void (*const CEngineApp_vftable[14])(void) = {
 	CEngineApp_DeleteDeviceObjects,	/* 0x20 0x22db70 */
 	CEngineApp_FinalCleanup,	/* 0x24 0x22ec80 */
 	CD3DApp_Create,	/* 0x28 0x273e20 */
-	CD3DApp_Run,	/* 0x2c 0x275570 */
-	CEngineApp_MsgProc,	/* 0x30 0x22f440 */
+	NULL,	/* 0x2c 0x275570 */
+	NULL,	/* 0x30 0x22f440 */
 	CD3DApp_Pause,	/* 0x34 0x2750b0 */
 };
 
@@ -7780,8 +7777,8 @@ void (*const CD3DApplication_vftable[14])(void) = {
 	CD3DApp_Nop,	/* 0x20 0x274030 */
 	CD3DApp_Nop,	/* 0x24 0x2743a0 */
 	CD3DApp_Create,	/* 0x28 0x273e20 */
-	CD3DApp_Run,	/* 0x2c 0x275570 */
-	CD3DApp_MsgProc,	/* 0x30 0x274b60 */
+	NULL,	/* 0x2c 0x275570 */
+	NULL,	/* 0x30 0x274b60 */
 	CD3DApp_Pause,	/* 0x34 0x2750b0 */
 };
 
