@@ -65,8 +65,6 @@ extern int g_EngineDef1cf4;
 #define g_EngineMode GAME_GLOBAL_IN(int, g_FilterMip, 0)		/* 1 or 2 */
 extern char g_ColorStr[64];	/* 0x40 */
 
-typedef void(__stdcall *initcommoncontrols_t)(void);
-#define exe_InitCommonControls GAME_IMPORT(initcommoncontrols_t, InitCommonControls, 0)
 
 /* the console command handler of the engine (E3D_Command) */
 #define ENGINE_CMDPROC 0x22eda0
@@ -113,7 +111,7 @@ CEngineApp *CEngineApp_ctor(CEngineApp *self) {
 	self->base.minStencilBits = g_EngineIni84;
 	self->base.minDepthBits = g_EngineDef1cf4;
 	g_EngineMode = (g_EngineIni88 != 0) + 1;
-	DbgWin_Init(NULL);
+	DbgCon_Init();
 	return self;
 }
 
@@ -138,7 +136,6 @@ void Engine3D_Create(void *hInst, void *hWnd, void *init, void *frame, void *rel
 		g_EngineFrame = frame;
 		g_Engine3D = m;
 		g_EngineRelease = release;
-		exe_InitCommonControls();
 		return;
 	}
 	if (!g_Engine3D) {
@@ -215,7 +212,7 @@ int CEngineApp_FrameMove(CEngineApp *self) {
 		g_Fps = (float)(n - g_FpsFrames) / d;
 		g_FpsFrames = n;
 		if (g_RenderOff) {
-			Win_SetTextf(self->base.hWnd, "Scrapland dedicated server");
+			Plat_SetTitle("Scrapland dedicated server");
 		}
 	}
 	return 0;
@@ -691,249 +688,6 @@ void Engine_LoadVarsIni(const char *name, const char *dir) {
 	DataFile_Free(dat);
 }
 
-/* ---- the lights dialog and the scene tree ---- */
-
-#define GWL_HINSTANCE (-6)
-#define ENGINE_LIGHTSPROC 0x22dcf0	/* Engine_SceneDlgProc */
-#define ENGINE_LIGHTSDIALOG 0x99
-#define TVM_INSERTITEM 0x1100
-
-/* the modal dialog of the lights of the global scene, the application paused meanwhile */
-void CEngineApp_LightsDialog(CEngineApp *self, void *hwnd, void *inst) {
-	self->base.vftable->Pause(&self->base, 1);
-	exe_DialogBoxParamA(inst, (const char *)ENGINE_LIGHTSDIALOG, hwnd, (void *)Engine_SceneDlgProc,
-		(intptr_t)self->scene);
-	self->base.vftable->Pause(&self->base, 0);
-}
-
-/* TVINSERTSTRUCT of the tree view of the scene dialog */
-typedef struct TvInsert {
-	intptr_t hParent;		/* 0x00 */
-	intptr_t hInsertAfter;		/* 0x04 */
-	uint32_t mask;			/* 0x08 TVITEM */
-	intptr_t hItem;			/* 0x0c */
-	uint32_t state;			/* 0x10 */
-	uint32_t stateMask;		/* 0x14 */
-	char *pszText;			/* 0x18 TreeView_InsertItemf */
-	int cchTextMax;			/* 0x1c */
-	int iImage;			/* 0x20 */
-	int iSelectedImage;		/* 0x24 */
-	int cChildren;			/* 0x28 */
-	intptr_t lParam;		/* 0x2c the node */
-} TvInsert;
-SD_SIZE(TvInsert, 0x30);
-
-#define WM_CLOSE 0x10
-#define WM_NOTIFY 0x4e
-#define WM_INITDIALOG 0x110
-#define GWL_USERDATA (-21)
-#define TVN_SELCHANGED (-402)
-#define TVI_ROOT ((intptr_t)0xffff0000)
-#define TVI_LAST ((intptr_t)0xffff0002)
-#define TVIF_TEXT 0x1
-#define TVIF_STATE 0x8
-#define TVIF_PARAM 0x4
-#define TVIS_EXPANDED 0x20
-#define IDC_SCENE_INFO 0x3fc
-#define IDC_SCENE_TREE 0x3f7
-#define CAMERA_TARGET 0x463
-#define RAD_TO_DEG 57.29578f
-
-/* the names of the flags of the nodes (NODO_*), from bit 0 */
-static const struct {
-	uint32_t bit;
-	const char *name;
-} g_NodeFlagNames[] = {
-	{ 0, " RAIZ" }, { 1, " GRUPO" }, { 2, " SELEC" }, { 3, " OCULTO" }, { 4, " HVISIBLE" },
-	{ 5, " NO_CASTSHADOWS" }, { 6, " NO_RCVSHADOWS" }, { 7, " NO_RENDER" }, { 8, " BOXMODE" }, { 12, " COLLIDE" },
-	{ 13, " NO_COLLIDE" }, { 16, " NO_ANIMPOS" }, { 17, " NO_TRANS" }, { 18, " SLERP2" }, { 19, " EFFECT" },
-	{ 20, " BONE" }, { 21, " BIPED" }, { 22, " NO_TABNODOR" }, { 24, " 2LADOS" }, { 25, " RT_LIGHTING" },
-	{ 26, " RT_SHADOWS" }, { 27, " NO_LIGHTMAP" }, { 28, " NO_SECTOR" }, { 29, " AREA_LIGHT" }, { 30, " DUDV_PASS" },
-};
-
-static const char *Node_RefName(const void *node) {
-	return node ? ((const CNode3D *)node)->name : "(null)";
-}
-
-/* the items of a node under its own item: flags, position, rotation, object and the data of its class */
-static void Engine_SceneTreeNode(void *tree, TvInsert *tv, CNode3D *n) {
-	const char *f[25];
-	vec3_t axis, out, tmp, v;
-	const vec3_t *ang;
-	matrix_t m;
-	float a, rz, rx, ry;
-	uint32_t i;
-
-	for (i = 0; i < 25; i++) {
-		f[i] = (n->flags >> g_NodeFlagNames[i].bit) & 1 ? g_NodeFlagNames[i].name : "";
-	}
-	TreeView_InsertItemf(tree, tv, "Flags:%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s", f[0], f[1], f[2], f[3],
-		f[4], f[5], f[6], f[7], f[8], f[9], f[10], f[11], f[12], f[13], f[14], f[15], f[16], f[17], f[18], f[19],
-		f[20], f[21], f[22], f[23], f[24]);
-	TreeView_InsertItemf(tree, tv, "iObjeto: %d", n->index);
-	TreeView_InsertItemf(tree, tv, "Pos: %s", Vec3_Str(&n->pos, 0, 6));
-	Quat_ToAxisAngle(&axis, &a, &n->rot);
-	Quat_ToMatrixD3D(&m, &n->rot);
-	v.x = 0.0f;
-	v.y = 0.0f;
-	v.z = 1.0f;
-	Vec3_TransformH(&out, &v, &m);
-	ang = Vec3_GetRotAng(&tmp, &out);
-	rx = ang->x * RAD_TO_DEG;
-	ry = ang->y * RAD_TO_DEG;
-	rz = ang->z * RAD_TO_DEG;
-	TreeView_InsertItemf(tree, tv, "Rot:  eje: %s  ang: %f", Vec3_Str(&axis, 0, 6), (double)a * 180.0 / 3.141592653589793);
-	TreeView_InsertItemf(tree, tv, "Rot:  z: %f  x: %f  y: %f", (double)rz, (double)rx, (double)ry);
-	tv->hParent = TreeView_InsertItemf(tree, tv, "obj3D: %s", Obj3D_ClassName(CNode3D_Class(n)));
-	tv->hInsertAfter = TVI_LAST;
-	tv->mask = TVIF_TEXT | TVIF_PARAM;
-	tv->lParam = (intptr_t)n;
-	if (CNode3D_Class(n) == CLASS_OBJ3D_CAMERA) {
-		CCamera *cam = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_CAMERA);
-
-		TreeView_InsertItemf(tree, tv, "Tipo: %s", cam->mode == CAMERA_TARGET ? "Target" : "Free");
-		TreeView_InsertItemf(tree, tv, "Pos: %s", Vec3_Str(&cam->pos, 0, 6));
-		TreeView_InsertItemf(tree, tv, "Rot: %s", Vec3_StrDeg(&cam->rot, 0, 2));
-		TreeView_InsertItemf(tree, tv, "FOV: %f", (double)cam->fov * 180.0 / 3.141592653589793);
-		TreeView_InsertItemf(tree, tv, "Clip: %f %f", (double)cam->zNear, (double)cam->zFar);
-		TreeView_InsertItemf(tree, tv, "Range: %f %f", (double)cam->rangeNear, (double)cam->rangeFar);
-		TreeView_InsertItemf(tree, tv, "Target: %s", Node_RefName(cam->nodeTarget));
-		TreeView_InsertItemf(tree, tv, "LookAt: %s", Vec3_Str(&cam->target, 0, 6));
-		TreeView_InsertItemf(tree, tv, "PhysAspect: %f", (double)cam->aspect);
-		TreeView_InsertItemf(tree, tv, "ViewAspect: %f", (double)cam->aspectScreen);
-	}
-	if (CNode3D_Class(n) == CLASS_OBJ3D_LIGHT) {
-		CLight *l = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_LIGHT);
-
-		TreeView_InsertItemf(tree, tv, "Tipo: %s", Light_TypeStr(l->type));
-		TreeView_InsertItemf(tree, tv, "Activa: %s", l->active ? "si" : "no");
-		TreeView_InsertItemf(tree, tv, "Sombras: %s", l->shadow ? "si" : "no");
-		v = l->d3d.Position;
-		TreeView_InsertItemf(tree, tv, "PosRender: %s", Vec3_Str(&v, 0, 6));
-		v = l->d3d.Direction;
-		TreeView_InsertItemf(tree, tv, "DirRender: %s", Vec3_Str(&v, 0, 6));
-		TreeView_InsertItemf(tree, tv, "Color: %s", Engine_ColorStr(l->color));
-		TreeView_InsertItemf(tree, tv, "Rango: %f %f", (double)l->rangeStart, (double)l->range);
-		TreeView_InsertItemf(tree, tv, "Objetivo: %s", Node_RefName(l->nodeTarget));
-	}
-	if (CNode3D_Class(n) == CLASS_OBJ3D_MESHD3D) {
-		CMeshD3D *mesh = Obj3D_Cast(n->obj3D, CLASS_OBJ3D_MESHD3D);
-		int count = 0, tris = 0, verts = 0;
-
-		TreeView_InsertItemf(tree, tv, "nTri  nVert  Mat");
-		for (; mesh; mesh = mesh->next) {
-			count++;
-			tris += (int)mesh->nTri;
-			verts += mesh->vert.nVert;
-			TreeView_InsertItemf(tree, tv, "%-4d    %-4d    [%s]  (%p)", mesh->nTri, mesh->vert.nVert,
-				mesh->mat ? mesh->mat->Name : "NULL", (void *)mesh->mat);
-		}
-		TreeView_InsertItemf(tree, tv, "Total: %d  (%d tri, %d vert)", count, tris, verts);
-	}
-}
-
-intptr_t __stdcall Engine_SceneDlgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam) {
-	char buf[0x104];
-	CScene *scn = (CScene *)(intptr_t)exe_GetWindowLongA(hwnd, GWL_USERDATA);
-	CNode3D *n;
-	TvInsert tv;
-	vec3_t d;
-	void *tree;
-	const char *s0, *s1;
-	int c[11];
-	float len;
-
-	switch (msg) {
-	case WM_NOTIFY:
-		if (*(int *)(lParam + 8) != TVN_SELCHANGED) {
-			return 0;
-		}
-		/* NMTREEVIEW itemNew.lParam */
-		n = *(CNode3D **)(lParam + 0x5c);
-		if (n) {
-			Bprintf(buf, 0x100, "%s\niObjeto: %d\niNodeTab: %d\niNodeXRef: %d\nAniMask: %04X\nRefs: %d\nant: %s\nsig: %s",
-				n->name, n->index, n->slot, n->renderNode, (uint16_t)n->aniLocked, n->Refs, Node_RefName(n->prev),
-				Node_RefName(n->next));
-		} else {
-			Bprintf(buf, 0x100, "AnimM3D: %s\nFileINI: %s\nCollideMesh: %s\nNodeTab: %s", Engine_BoolStr(scn->AnimM3D != NULL),
-				Engine_BoolStr(scn->ini != NULL), Engine_BoolStr(scn->CollideMesh != NULL), "false");
-		}
-		exe_SetDlgItemTextA(hwnd, IDC_SCENE_INFO, buf);
-		return 1;
-	case WM_CLOSE:
-		exe_EndDialog(hwnd, 1);
-		return 1;
-	case WM_COMMAND:
-		/* IDOK, IDCANCEL */
-		if (wParam - 1 <= 1) {
-			exe_PostMessageA(hwnd, WM_CLOSE, 0, 0);
-			return 1;
-		}
-		return 0;
-	case WM_INITDIALOG:
-		break;
-	default:
-		return 0;
-	}
-	scn = (CScene *)lParam;
-	exe_SetWindowLongA(hwnd, GWL_USERDATA, (int32_t)lParam);
-	Bprintf(buf, 0x100, "Escena: \"%s\"", scn ? scn->name : "(null)");
-	exe_SetWindowTextA(hwnd, buf);
-	if (!scn) {
-		return 1;
-	}
-	c[10] = CScene_CountClass(scn, CLASS_OBJ3D_PORTAL);
-	c[9] = CScene_CountClass(scn, CLASS_OBJ3D_FLARE);
-	c[8] = CScene_CountClass(scn, CLASS_OBJ3D_GRAPHIC3D);
-	c[7] = CScene_CountClass(scn, CLASS_OBJ3D_PARTICLESYSTEM);
-	c[6] = CScene_CountClass(scn, CLASS_OBJ3D_GROUND);
-	c[5] = CScene_CountClass(scn, CLASS_OBJ3D_LIGHT);
-	c[4] = CScene_CountClass(scn, CLASS_OBJ3D_CAMERA);
-	c[3] = CScene_CountClass(scn, CLASS_OBJ3D_MESHD3D);
-	c[2] = CScene_CountClass(scn, CLASS_OBJ3D_TRIMESH);
-	c[1] = CScene_CountClass(scn, 0);
-	c[0] = CScene_NumNodes(scn);
-	Bprintf(buf, 0x100,
-		"%d Nodes:\n  %d Dummies\n  %d TriMesh\n  %d D3DMesh\n  %d Cameras\n  %d Lights\n  %d World\n  %d Particle\n"
-		"  %d Sprite3D\n  %d Flares\n  %d Portals",
-		c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8], c[9], c[10]);
-	exe_SetDlgItemTextA(hwnd, IDC_SCENE_INFO, buf);
-	tree = exe_GetDlgItem(hwnd, IDC_SCENE_TREE);
-	tv.hParent = TVI_ROOT;
-	tv.hInsertAfter = TVI_LAST;
-	tv.mask = TVIF_TEXT | TVIF_PARAM;
-	tv.lParam = 0;
-	tv.hParent = TreeView_InsertItemf(tree, &tv, "-- Scene Info --");
-	TreeView_InsertItemf(tree, &tv, "Ambient: %s", Engine_ColorStr((const byte *)&scn->ambient));
-	TreeView_InsertItemf(tree, &tv, "Backgnd: %s", Engine_ColorStr((const byte *)&scn->fog));
-	s1 = Vec3_Str(&scn->box.max, 1, 0);
-	s0 = Vec3_Str(&scn->box.min, 0, 0);
-	TreeView_InsertItemf(tree, &tv, "Extens: [%s] - [%s]", s0, s1);
-	d.x = scn->box.max.x - scn->box.min.x;
-	d.y = scn->box.max.y - scn->box.min.y;
-	d.z = scn->box.max.z - scn->box.min.z;
-	len = (float)__builtin_sqrt((double)(d.y * d.y + d.x * d.x + d.z * d.z)) * 0.5f;
-	TreeView_InsertItemf(tree, &tv, "Dimens: [%s]  %.1f", Vec3_Str(&d, 0, 0), (double)len);
-	TreeView_InsertItemf(tree, &tv, "Root: %s", scn->node);
-	TreeView_InsertItemf(tree, &tv, "MainLOD: %s", scn->mainLOD);
-	CScene_SetMarks(scn, 0);
-	for (n = scn->Node3D; n; n = n->next) {
-		tv.hParent = n->parent ? n->parent->mark : TVI_ROOT;
-		tv.hInsertAfter = TVI_LAST;
-		tv.mask = TVIF_TEXT | TVIF_STATE | TVIF_PARAM;
-		tv.stateMask = TVIS_EXPANDED;
-		tv.state = n == scn->Node3D ? TVIS_EXPANDED : 0;
-		tv.lParam = (intptr_t)n;
-		n->mark = (int)TreeView_InsertItemf(tree, &tv, "%s", n->name);
-		tv.hParent = n->mark;
-		tv.hInsertAfter = TVI_LAST;
-		tv.mask = TVIF_TEXT | TVIF_PARAM;
-		tv.lParam = (intptr_t)n;
-		Engine_SceneTreeNode(tree, &tv, n);
-	}
-	return 1;
-}
-
 /* the frame time graph of R_Profiler 4 (Engine_DrawStats) */
 extern char g_FpsText[64];	/* 0x40, "frame: fps fps  ms" when the fps jumped */
 extern float g_FpsTextTime;
@@ -991,21 +745,6 @@ void Engine_DrawFpsGraph(float y) {
 	CGraphic2D_dtor(&g);
 }
 
-/* a tree view item with the printf text (TVINSERTSTRUCT, its pszText at 0x18); the new item */
-intptr_t TreeView_InsertItemf(void *hwnd, void *item, const char *fmt, ...) {
-	char buf[0x400];
-	intptr_t r;
-	va_list ap;
-
-	va_start(ap, fmt);
-	VBprintf(buf, sizeof(buf), fmt, ap);
-	va_end(ap);
-	*(char **)((byte *)item + 0x18) = buf;
-	r = exe_SendMessageA(hwnd, TVM_INSERTITEM, 0, (intptr_t)item);
-	*(char **)((byte *)item + 0x18) = NULL;
-	return r;
-}
-
 /* the nodes of the scene into the log, the children indented by 4 */
 void Scene_LogTree(CScene *scn, CNode3D *node, int indent) {
 	CNode3D *n;
@@ -1032,7 +771,6 @@ void Scene_LogTree(CScene *scn, CNode3D *node, int indent) {
 void E3D_Command(char *cmd) {
 	char *s;
 	CScene *e;
-	void *hwnd;
 
 	E3D_DebugPrintf("\n> cmd: %s", cmd);
 	if (!crt_stricmp(cmd, "listar luces")) {
@@ -1044,7 +782,7 @@ void E3D_Command(char *cmd) {
 		return;
 	}
 	if (!crt_strnicmp(cmd, "arbol ", 6)) {
-		/* the tree of the first scene whose file name matches, in the log and in the lights dialog */
+		/* the tree of the first scene whose file name matches, in the log */
 		for (s = cmd + 5; *s == ' '; s++) {
 		}
 		for (e = Scene_Next(NULL); e; e = Scene_Next(e)) {
@@ -1053,9 +791,6 @@ void E3D_Command(char *cmd) {
 			}
 		}
 		Scene_LogTree(e, NULL, 0);
-		hwnd = g_Engine->hWnd;
-		exe_CreateDialogParamA((void *)exe_GetWindowLongA(hwnd, GWL_HINSTANCE), (const char *)ENGINE_LIGHTSDIALOG, hwnd,
-			(void *)Engine_SceneDlgProc, (intptr_t)e);
 		return;
 	}
 	if (!crt_stricmp(cmd, "mem")) {
@@ -1128,7 +863,7 @@ int CEngineApp_InitDeviceObjects(CEngineApp *self) {
 		int excl = g_MouseExcl != 0;
 
 		hr = ((create_t)vt[1])(g_Input, self->base.hWnd,
-			(void *)exe_GetWindowLongA(self->base.hWnd, GWL_HINSTANCE), excl);
+			NULL, excl);
 	}
 	if (hr < 0) {
 		return hr;

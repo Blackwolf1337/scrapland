@@ -248,7 +248,7 @@ void Con_Fatal(const char *msg) {
 
 	if (isDebugger && isDebugger()) {
 		Str_PrintfQuiet(text, sizeof(text), "%s\n\nDebug the program?", msg);
-		if (exe_MessageBoxA(NULL, text, "Scrap Fatal Error", 0x11114) != IDYES) {
+		if (Plat_MessageBox(text, "Scrap Fatal Error", 0x11114) != IDYES) {
 			DebugLog_CloseAll();
 			crt_exit_now(-1);
 		}
@@ -256,7 +256,7 @@ void Con_Fatal(const char *msg) {
 		return;
 	}
 	Str_PrintfQuiet(text, sizeof(text), "%s\n\nPress the button to exit.", msg);
-	exe_MessageBoxA(NULL, text, "Scrap Fatal Error", 0x11010);
+	Plat_MessageBox(text, "Scrap Fatal Error", 0x11010);
 	if (isDebugger && isDebugger()) {
 		return;
 	}

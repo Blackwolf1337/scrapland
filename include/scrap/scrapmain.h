@@ -260,8 +260,6 @@ void Engine3D_Shutdown(void);
 CEngineApp *CEngineApp_ctor(CEngineApp *self);
 /* the ini name (in dir, NULL for the game directory) into the variables of the engine */
 void Engine_LoadVarsIni(const char *name, const char *dir);
-void CEngineApp_LightsDialog(CEngineApp *self, void *hwnd, void *inst);
-intptr_t TreeView_InsertItemf(void *hwnd, void *item, const char *fmt, ...);
 void Scene_LogTree(CScene *scn, CNode3D *node, int indent);
 /* a command of the debug console of the engine: listar, listar lights, arbol <scene>, ver uniones */
 void E3D_Command(char *cmd);
@@ -288,7 +286,6 @@ void Engine_DrawStats(void);
 /* the frame time graph at the bottom, the fps text at y */
 void Engine_DrawFpsGraph(float y);
 /* the modal dialog of the global scene: its counts and a tree of the nodes, the node selected in the tree */
-intptr_t __stdcall Engine_SceneDlgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 void Engine_ReleaseScene(CEngineApp *self);
 void Engine_GetScene(CEngineApp *self);
 CNullInput *CNullInput_Delete(CNullInput *self, byte flags);

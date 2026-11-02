@@ -195,8 +195,6 @@ call('Err_Unregister', sym('Err_Unregister'), 'si', code)
 call('Err_Unregister again', sym('Err_Unregister'), 'si', code)
 call('Err_Unregister 10', sym('Err_Unregister'), 'si', 10)
 call('Err_Unregister 200', sym('Err_Unregister'), 'si', 200)
-call('Dbg_FrameRect', sym('Dbg_FrameRect'), 'viiiii', 1, 2, 30, 40, 0x123456)
-call('Dbg_FillRect', sym('Dbg_FillRect'), 'viiiii', 1, 2, 30, 40, 0x654321)
 
 # engine3d Util/DynList.c: elements of 8 bytes written with String_Copy; addresses differ between the runs, so only
 # offsets and contents are compared

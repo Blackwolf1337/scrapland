@@ -52,20 +52,11 @@ void E3D_LogBlue(cLog *log, const char *fmt, ...);
 void E3D_LogWhite(cLog *log, const char *fmt, ...);
 void E3D_LogInfo(cLog *log, const char *fmt, ...);
 void E3D_Log(cLog *log, const char *fmt, ...);	/* orange */
-/* to the debug console (rva 0x237950 window, 0x237830 text console) */
+/* to the debug console: stdout (the original had a dialog with a list box and a text console) */
 void E3D_DebugPrintf(const char *fmt, ...);
-void DbgWin_Printf(const char *fmt, ...);
-void DbgStd_Printf(const char *fmt, ...);
-void DbgStd_Open(void *hwnd);
-void DbgWin_AddLine(char *line, int len, int size);
-void DbgWin_Open(void *hwnd);
-/* the debug output of the ini settings (DbgConWindow, DbgConStd) */
-void DbgWin_Init(void *hwnd);
+/* the debug output on with the ini settings ConsolaWnd or ConsolaTxt */
+void DbgCon_Init(void);
 void cLog_dtor(cLog *self);
-int Window_MoveRel(void *hwnd, const int32_t *rect, int x, int y, int w, int h);
-void Window_GetNormalRect(void *hwnd, int32_t *rect);
-/* the window procedure of the debug dialog: a list box, a command line and its button, resized with the dialog */
-intptr_t __stdcall DbgWin_DlgProc(void *hwnd, uint32_t msg, uintptr_t wParam, intptr_t lParam);
 
 /* where the relative paths start: the game directory with a "\\" at the end */
 extern char g_E3DDir[264];
@@ -91,8 +82,6 @@ char *String_Unquote(char *dest, const char *src);
 /* 1 / sqrt(x) from a table: the estimate and two Newton steps */
 float RSqrt_Estimate(float x);
 float RSqrt(float x);
-/* SetWindowTextA of a VBprintf (1 KB): 1 when set */
-int Win_SetTextf(void *hwnd, const char *fmt, ...);
 /* the table of RSqrt_Estimate made */
 void RSqrt_InitTable(void);
 /* the path of the exe (GetModuleFileName) */

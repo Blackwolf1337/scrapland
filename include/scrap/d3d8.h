@@ -223,6 +223,7 @@ typedef uint32_t(__stdcall *d3dAddRef_t)(void *obj);
 #define D3DFMT_D24S8 75
 #define D3DFMT_D24X4S4 79
 #define D3DFVF_XYZ 0x2
+#define D3DFVF_XYZRHW 0x4
 #define D3DFVF_DIFFUSE 0x40
 #define D3DLOCK_NOOVERWRITE 0x1000
 #define D3DLOCK_DISCARD 0x2000

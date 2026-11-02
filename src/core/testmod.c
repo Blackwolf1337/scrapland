@@ -134,7 +134,7 @@ static float Call_StdFloat(void *fn, const uint32_t *a, int n) {
  * --enable-stdcall-fixup): the callbacks of Windows, COM and FMOD, the import thunks and D3DX */
 #define TEST_STDCALL(name) extern char sds_##name[] __asm__("_" #name);
 #define TEST_STDCALLS \
-	TEST_STDCALL(App_ExceptionFilter) TEST_STDCALL(App_WinMain) TEST_STDCALL(Bsp_DlgProc) \
+	TEST_STDCALL(App_ExceptionFilter) TEST_STDCALL(App_WinMain) \
 	TEST_STDCALL(crt_eh_vector_ctor) \
 	TEST_STDCALL(crt_eh_vector_dtor) \
 	TEST_STDCALL(D3DX_CheckTextureRequirements) \
@@ -142,8 +142,7 @@ static float Call_StdFloat(void *fn, const uint32_t *a, int n) {
 	TEST_STDCALL(D3DX_MatrixInverse) TEST_STDCALL(D3DX_MatrixMultiply) TEST_STDCALL(D3DX_MatrixRotationQuaternion) \
 	TEST_STDCALL(D3DX_MatrixRotationX) TEST_STDCALL(D3DX_MatrixRotationY) TEST_STDCALL(D3DX_MatrixRotationYPR) \
 	TEST_STDCALL(D3DX_MatrixRotationZ) TEST_STDCALL(D3DX_MatrixTranspose) TEST_STDCALL(D3DX_QuaternionRotationYPR) \
-	TEST_STDCALL(D3DX_Vec3Normalize) TEST_STDCALL(D3DX_Vec3Transform) TEST_STDCALL(DbgWin_DlgProc) \
-	TEST_STDCALL(Engine_SceneDlgProc) \
+	TEST_STDCALL(D3DX_Vec3Normalize) TEST_STDCALL(D3DX_Vec3Transform) \
 	TEST_STDCALL(Wsock_bind) \
 	TEST_STDCALL(Wsock_closesocket) TEST_STDCALL(Wsock_gethostbyaddr) TEST_STDCALL(Wsock_gethostbyname) \
 	TEST_STDCALL(Wsock_htonl) TEST_STDCALL(Wsock_htons) TEST_STDCALL(Wsock_ioctlsocket) TEST_STDCALL(Wsock_ntohs) \

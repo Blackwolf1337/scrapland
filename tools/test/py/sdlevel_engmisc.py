@@ -212,23 +212,6 @@ for emcm in emcmesh:
 			'tbii', m[0], m[1])[0]))
 emcrestore(emcdv, emcdvs)
 
-# ---- Engine_SceneDlgProc (rva 0x22dcf0, stdcall) without a dialog: the scene of a mesh node, a fake selection ----
-def emcdlg(msg, wp, lp):
-	return SDTest.Call('Engine_SceneDlgProc', 'tiiiiii', 0, 0, msg, wp, lp)[0]
-check('emc Engine_SceneDlgProc other', lambda: (emcdlg(0x999, 0, 0), emcdlg(0x111, 3, 0), emcdlg(0x111, 0, 0),
-	emcdlg(0x10, 0, 0)))
-check('emc Engine_SceneDlgProc init NULL', lambda: emcdlg(0x110, 0, 0))
-if len(emcmesh):
-	emcesc = emcri(emcmesh[0][0] + 0x40)
-	check('emc Engine_SceneDlgProc init', lambda: (emcdlg(0x110, 0, emcesc), SDTest.Peek('g_ColorStr', 's')))
-	emcnm = emcz(0x60)
-	emcwi(emcnm + 8, -402)
-	emcwi(emcnm + 0x5c, emcmesh[0][0])
-	check('emc Engine_SceneDlgProc notify', lambda: emcdlg(0x4e, 0, emcnm))
-	emcwi(emcnm + 8, -401)
-	check('emc Engine_SceneDlgProc notify other', lambda: emcdlg(0x4e, 0, emcnm))
-	emcfree(emcnm)
-
 # ---- Engine_DrawStats (rva 0x2308c0) page 2: the camera of the world and the light counts ----
 emcpm = emcgi(sym('g_ProfMode'))
 if emcgi(sym('g_World')):

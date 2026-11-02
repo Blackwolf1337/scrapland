@@ -472,8 +472,6 @@ void Bsp_RenderPortals(void);
 /* the map made from the floor: read from the .EMI (without calcular) or computed */
 CBsp *CBsp_ctor(CBsp *self, const char *name, const vec3_t *scale);
 /* the map compiler dialog */
-void Bsp_DlgEnable(void *hwnd);
-intptr_t __stdcall Bsp_DlgProc(void *hwnd, uint32_t msg, uintptr_t wparam, intptr_t lparam);
 
 /* the .EMI file: 0 when read, -1 without the file */
 int CBsp_ReadEMI(CBsp *self);
@@ -503,8 +501,6 @@ void CBsp_RadAreas(CBsp *self);
 void CBsp_Calculate(CBsp *self);
 
 /* the float edits of the dialogs (src/game/engine3d/Engine/Misc.c): set returns 1, get 1 for a number */
-byte Dlg_SetFloat(void *hwnd, int id, float v, int prec);
-byte Dlg_GetFloat(void *hwnd, int id, float *out);
 
 /*
  * Engine/bsp2.cpp (Bsp2.c): the BSP tree of the triangles that cast shadows (CBsp.lights), split along the axis

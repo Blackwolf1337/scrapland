@@ -52,27 +52,6 @@ emcvecs = (((0.0, 0.0, 1.0), (0.0, 0.0, 1.0)), ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0)
 for emcv in emcvecs:
 	check('emc Matrix3_RotFromTo' + fmt(emcv), lambda v=emcv: SDTest.Call('Matrix3_RotFromTo', 'iFFF', v[0], v[1], (9.0,) * 9)[3])
 
-# ---- DbgWin_DlgProc (rva 0x2373d0, stdcall: called as thiscall with a dummy this) ----
-emcdbg = [sym('g_DbgWnd'), sym('g_DbgList'), sym('g_DbgEdit'), sym('g_DbgButton')] + range(sym('g_DbgClient'),
-	sym('g_DbgClient') + 16, 4) + range(sym('g_DbgListRect'), sym('g_DbgListRect') + 16, 4) + range(sym('g_DbgEditRect'),
-	sym('g_DbgEditRect') + 16, 4) + range(sym('g_DbgButtonRect'), sym('g_DbgButtonRect') + 16, 4)
-emcdbgs = emcsave(emcdbg) + [emcgi(sym('g_E3DCmdProc'))]
-def emcproc(msg, wp, lp):
-	return SDTest.Call('DbgWin_DlgProc', 'tiiiiii', 0, 0, msg, wp, lp)[0]
-check('emc DbgWin state', lambda: (emcdbgs[0] != 0, emcdbgs[1] != 0, emcdbgs[2] != 0, emcdbgs[3] != 0))
-check('emc DbgWin_DlgProc other', lambda: emcproc(0x999, 1, 2))
-check('emc DbgWin_DlgProc command 0', lambda: emcproc(0x111, 0, 0))
-check('emc DbgWin_DlgProc command 3', lambda: emcproc(0x111, 3, 0))
-check('emc DbgWin_DlgProc ctlcolor other', lambda: (emcproc(0x133, 0, 12345), emcproc(0x134, 0, 12345)))
-check('emc DbgWin_DlgProc ctlcolor list', lambda: (emcproc(0x133, 0, emcdbgs[1]) != 0, emcproc(0x134, 0, emcdbgs[2]) != 0))
-SDTest.Poke('g_E3DCmdProc', 0)
-check('emc DbgWin_DlgProc enter', lambda: emcproc(0x111, 0x5010406, 0))
-SDTest.Poke('g_E3DCmdProc', emcdbgs[-1])
-if emcdbgs[0] == 0 and emcdbgs[1] == 0 and emcdbgs[2] == 0 and emcdbgs[3] == 0:
-	check('emc DbgWin_DlgProc size', lambda: (emcproc(5, 0, (100 << 16) | 200), emcproc(5, 0, 0)))
-	check('emc DbgWin_DlgProc close', lambda: (emcproc(0x10, 0, 0), emcgi(sym('g_DbgWnd'))))
-emcrestore(emcdbg, emcdbgs)
-
 # ---- CMap_CopyBmp (rva 0x2370a0) into textures made here through the device, read back through LockRect ----
 emcvp = emcsave((sym('g_ViewportW'), sym('g_ViewportH')))
 SDTest.Poke('g_ViewportW', 640)

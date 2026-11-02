@@ -301,9 +301,6 @@ for en3i in range(10):
 en3restore(en3em, en3ems)
 
 # ---- the window helpers ----
-check('Win_SetTextf', lambda: SDTest.Call('Win_SetTextf', 'iisi', 0, 'x%d', 5)[0])
-check('Dlg_SetFloat', lambda: SDTest.Call('Dlg_SetFloat', 'biifi', 0, 1000, 1.5, 2)[0])
-check('Dlg_GetFloat', lambda: SDTest.Call('Dlg_GetFloat', 'biiF', 0, 1000, (2.5,)))
 
 # ---- LensFlare.cpp: the list and the members ----
 en3lfl = en3ints(symva('g_LensFlareRender'), 8)

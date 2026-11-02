@@ -19,8 +19,9 @@ extern int g_TextX;
 extern int g_TextY;
 extern TextMsg *g_TextStack;
 
+/* the text at x, y over the next frame (64 texts at most, each cut at 119 characters) */
 void Text_Draw(int x, int y, const char *s);
-/* the first message for its time, then the next ones under it */
+/* the texts of Text_Draw, then the first message for its time and the next ones under it */
 void Text_DrawStack(void);
 /* a new message at the end (Mem_Calloc) */
 TextMsg *Text_Push(void);

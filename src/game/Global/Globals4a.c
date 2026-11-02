@@ -66,22 +66,11 @@
 #undef g_CreditsSavedW
 #undef g_CreditsTarget
 #undef g_D3DOn
-#undef g_DbgButton
-#undef g_DbgButtonRect
-#undef g_DbgClient
 #undef g_DbgCon
 #undef g_DbgConStd
 #undef g_DbgConWindow
-#undef g_DbgEdit
-#undef g_DbgEditRect
-#undef g_DbgLine
-#undef g_DbgLineLen
-#undef g_DbgLinePos
-#undef g_DbgList
-#undef g_DbgListRect
 #undef g_DbgStdOpen
 #undef g_DbgWinOpen
-#undef g_DbgWnd
 #undef g_DeviceLogged
 #undef g_DeviceStr
 #undef g_DrawProgressBar
@@ -595,22 +584,6 @@ int g_DbgConStd;
 void *g_E3DCmdProc;
 cGVar GVar_EngineDebugLevel;
 cLog g_FileLog;
-struct {
-	byte g_DbgStdOpen;	/* 0x0 */
-	byte g_DbgWinOpen;	/* 0x1 */
-	byte pad_2[2];
-} group_4ab91c;
-void *g_DbgWnd;
-void *g_DbgList;
-void *g_DbgEdit;
-void *g_DbgButton;
-int32_t g_DbgClient[4];
-int32_t g_DbgListRect[4];
-int32_t g_DbgEditRect[4];
-int32_t g_DbgButtonRect[4];
-char g_DbgLine[1024];
-int g_DbgLinePos;
-int g_DbgLineLen;
 char g_ExePath[264];
 char g_E3DDir[264];
 byte g_RSqrtTable[144];

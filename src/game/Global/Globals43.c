@@ -271,7 +271,6 @@ SD_SYM(str_PyMethod_SWeap_SetSWeap);
 #undef g_CollideAddColor
 #undef g_CollisionEpsilon
 #undef g_DXTimerStopped
-#undef g_DbgCharMap
 #undef g_DebugIdentity
 #undef g_DiffuseMod4x
 #undef g_Dither
@@ -828,7 +827,6 @@ int g_UseBumpMap = 1;
 int g_UseGlowMap = 1;
 int g_DiffuseMod4x = 1;
 int g_TimeMult = 25;
-char g_DbgCharMap[132];
 int g_EngineDef1cf4 = 16;
 uint32_t engineIni_431cf8 = 1;
 int g_MouseExcl = 1;

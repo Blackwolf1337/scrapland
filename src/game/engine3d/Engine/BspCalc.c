@@ -1441,21 +1441,20 @@ void CBsp_Calculate(CBsp *self) {
 	CHECK(!World_Get()->GroundScale->fromAmc);
 	CHECK(!scn->fromAmc);
 	Err_Printf(0, "USE_NO_COLLIDE_TRIS not defined, (+no_collide) objects will not cast shadows");
-	Win_SetTextf(g_Engine->hWnd, "Compiling Map [%s] - Version %d", self->name, g_EngineVersion);
-	exe_SetConsoleTitleA(self->name);
-	if (g_TXF_Helper) {
-		CHECK(g_ShadowMapUseTxf);
-		exe_SetConsoleTitleA("TXF_Helper");
-		exe_SetConsoleTextAttribute(exe_GetStdHandle(STD_OUTPUT), 0x73);
+	{
+		char title[0x400];
+		Bprintf(title, sizeof(title), "Compiling Map [%s] - Version %d", self->name, g_EngineVersion);
+		Plat_SetTitle(title);
 	}
+	CHECK(!g_TXF_Helper || g_ShadowMapUseTxf);
 	if (g_TxfCheckFiles) {
-		if (exe_MessageBoxA(NULL, "Generate .EMI from valid .TXF files?", "Message", 0x2024) == 6) {
+		if (Plat_MessageBox("Generate .EMI from valid .TXF files?", "Message", 0x2024) == 6) {
 			g_TxfMode = 3;
 		} else {
-			g_TxfMode = exe_MessageBoxA(NULL, "Delete invalid .TXF files?", "Message", 0x2024) == 6 ? 2 : 1;
+			g_TxfMode = Plat_MessageBox("Delete invalid .TXF files?", "Message", 0x2024) == 6 ? 2 : 1;
 		}
 	}
-	exe_SetThreadPriority(exe_GetCurrentThread(), -1);
+	Plat_SetThreadPriority(-1);
 	if (g_BspTriTmp) {
 		BspTri *t = g_BspTriTmp;
 		BspTri_dtor(t);
@@ -1531,7 +1530,7 @@ void CBsp_Calculate(CBsp *self) {
 	}
 	if (g_TXF_Helper) {
 		if (g_ShadowMapDlg) {
-			exe_MessageBoxA(NULL, "TXF helper finished", "Message", 0x2040);
+			Plat_MessageBox("TXF helper finished", "Message", 0x2040);
 		}
 		crt_fflush(NULL);
 		crt_exit_now(-1);
@@ -1551,6 +1550,6 @@ void CBsp_Calculate(CBsp *self) {
 	CBsp_CreateBuffers(self);
 	CBsp_SaveEMI(self);
 	CBsp_SaveIni(self);
-	exe_SetThreadPriority(exe_GetCurrentThread(), 0);
+	Plat_SetThreadPriority(0);
 	Bsp_EndMessage(self, s);
 }

@@ -356,21 +356,13 @@ for b in (0, 1, -1, 2):
 en4mv = en4z(0x19c)
 en4set(en4mv, (3.0,) * 64)
 en4set(en4mv + 0x100, (3.0,) * 39)
+# 0x10d as hex: an int equal to a C object's address would print as the original's address
 check('en4 cMusicVoice_ctor', lambda: (SDTest.Call('cMusicVoice_ctor', 'tii', en4mv)[0] == en4mv, en4b(en4mv), en4words(en4mv + 0x104, 3),
-	en4b(en4mv + 0x10c), en4i(en4mv + 0x10d), en4i(en4mv + 0x18c), en4words(en4mv + 0x190, 3)))
+	en4b(en4mv + 0x10c), hex(en4i(en4mv + 0x10d)), en4i(en4mv + 0x18c), en4words(en4mv + 0x190, 3)))
 check('en4 cMusicVoice_dtor', lambda: SDTest.Call('cMusicVoice_dtor', 'tvi', en4mv)[0:0])
 en4free(en4mv)
 
-# ---- varios.cpp: the debug consoles (off in the tests), the log end ----
-check('en4 Dbg state', lambda: (SDTest.Peek('g_DbgCon', 'i'), SDTest.Peek('g_DbgStdOpen', 'b'), SDTest.Peek('g_DbgWinOpen', 'b'),
-	SDTest.Peek('g_DbgWnd', 'i')))
-check('en4 DbgStd_Printf', lambda: SDTest.Call('DbgStd_Printf', 'vsi', 'x %d', 5)[0:0])
-check('en4 DbgWin_Printf', lambda: SDTest.Call('DbgWin_Printf', 'vsi', 'x %d', 5)[0:0])
-check('en4 DbgStd_Open', lambda: SDTest.Call('DbgStd_Open', 'vi', 0)[0:0])
-check('en4 DbgWin_Open', lambda: SDTest.Call('DbgWin_Open', 'vi', 0)[0:0])
-for n, sz in ((3, 10), (10, 10), (12, 10), (0, 4)):
-	check('en4 DbgWin_AddLine' + fmt((n, sz)), lambda n=n, sz=sz: SDTest.Call('DbgWin_AddLine', 'vbii', 'abcdefghijklmnop', n, sz)[1][0:17])
-check('en4 Window_GetNormalRect NULL', lambda: SDTest.Call('Window_GetNormalRect', 'vii', 0, 0)[0:0])
+# ---- varios.cpp: the log end ----
 en4lg = en4z(8)
 check('en4 cLog_dtor', lambda: (SDTest.Call('cLog_dtor', 'tvi', en4lg), en4words(en4lg, 2)))
 en4free(en4lg)

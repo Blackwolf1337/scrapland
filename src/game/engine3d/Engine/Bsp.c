@@ -1122,7 +1122,7 @@ void BspTri_SetExt(BspTri *tri, int x0, int y0, int x1, int y1, byte notify) {
 			crt_exit_now(-1);
 		}
 		Bprintf(buf, sizeof(buf), "EXTENS_UV: %dx%d", w, h);
-		exe_MessageBoxA(NULL, buf, "Info", 0x2040);
+		Plat_MessageBox(buf, "Info", 0x2040);
 	}
 	if (w < 1) {
 		w = 0;
@@ -2209,7 +2209,7 @@ byte BspTxf_Check(BspTxf *self, int i, byte def, byte nl) {
 	const char *lf = nl ? "\n" : "";
 
 	if (Plat_KeyDown(0x1b) && Plat_KeyDown(0x10) &&
-		exe_MessageBoxA(NULL, "Cancel map compilation?", "Message", 0x2034) == 6) {
+		Plat_MessageBox("Cancel map compilation?", "Message", 0x2034) == 6) {
 		crt_exit(-1);
 	}
 	if (!self->on) {
@@ -2346,7 +2346,7 @@ void Bsp_EndMessage(CBsp *self, int secs) {
 		Bprintf(buf, sizeof(buf), "TFX loading finished (%d)\n\n%s\n\npath: %s\n\nExit now?", g_TxfMode,
 			"written .EMI .TGA and .INI files", self->name);
 	}
-	if (exe_MessageBoxA(NULL, buf, "Message", 0x2024) == 6) {
+	if (Plat_MessageBox(buf, "Message", 0x2024) == 6) {
 		crt_fflush(NULL);
 		crt_exit_now(-1);
 	}
@@ -2356,14 +2356,7 @@ void Bsp_EndMessage(CBsp *self, int secs) {
 /* the map: made from the floor of the world */
 
 #define g_LmapSaveIni GAME_GLOBAL_IN(int, g_BspLodDist, 24)	/* the settings back into the .ini of the map */
-#define g_ShadowMapDlgCalc ((void *)Bsp_DlgProc)	/* Bsp_DlgProc */
 
-typedef int(__stdcall *isdlgbuttonchecked_t)(void *hwnd, int id);
-typedef int(__stdcall *checkdlgbutton_t)(void *hwnd, int id, unsigned check);
-typedef int(__stdcall *enablewindow_t)(void *hwnd, int enable);
-#define exe_IsDlgButtonChecked GAME_IMPORT(isdlgbuttonchecked_t, IsDlgButtonChecked, 8)
-#define exe_CheckDlgButton GAME_IMPORT(checkdlgbutton_t, CheckDlgButton, 12)
-#define exe_EnableWindow GAME_IMPORT(enablewindow_t, EnableWindow, 8)
 
 /* the obj3D of a node as its class (the inline cast of objeto3D.h, NULL with a failed CHECK) */
 static void *Obj3D_As(CNode3D *n, uint32_t class) {
@@ -2450,10 +2443,14 @@ void Bsp_Create(void) {
 	if (!g_ShadowMapUse) {
 		return;
 	}
+	/* the original showed a dialog to change the switches of the ini; now the ini settings are shown and confirmed */
 	if (g_ShadowMapDlg) {
-		void *hwnd = g_Engine->hWnd;
-		void *inst = (void *)exe_GetWindowLongA(hwnd, -6);
-		if (!exe_DialogBoxParamA(inst, (const char *)0xa2, hwnd, g_ShadowMapDlgCalc, 0)) {
+		Bprintf(buf, sizeof(buf), "Compile the light maps?\n\n calculate = %d\n scale = %.3f\n resolution = %.3f\n"
+			" brightness = %.2f\n gamma = %.2f\n textures = %d x %d\n bounces = %d\n radiosity = %d\n",
+			g_ShadowMapCalculate, (double)g_ShadowMapScale, (double)g_ShadowMapRes,
+			(double)GAME_GLOBAL(float, g_ShadowMapBrightness), (double)GAME_GLOBAL(float, g_ShadowMapGamma),
+			g_ShadowMapTexX, g_ShadowMapTexY, GAME_GLOBAL(int, g_ShadowMapBounces), g_ShadowMapRadiosity);
+		if (Plat_MessageBox(buf, "Light maps", 0x24) != 6) {
 			g_ShadowMapUse = 0;
 			return;
 		}
@@ -2535,82 +2532,6 @@ void Bsp_Create(void) {
 		SM3_Save(buf, g_Bsp->model->scene);
 	}
 }
-
-/* the switches of the map compiler dialog */
-void Bsp_DlgEnable(void *hwnd) {
-	static const int ids[] = { 0x412, 0x413, 0x40f, 0x410, 0x411, 0x414, 0x41f, 0x41e };
-	int on = exe_IsDlgButtonChecked(hwnd, 0x409);
-
-	for (int i = 0; i < 8; i++) {
-		exe_EnableWindow(exe_GetDlgItem(hwnd, ids[i]), on);
-	}
-}
-
-intptr_t __stdcall Bsp_DlgProc(void *hwnd, uint32_t msg, uintptr_t wparam, intptr_t lparam) {
-	/* the checkboxes of the dialog and their switches */
-	const struct {
-		int id;
-		int *var;
-	} checks[] = {
-		{ 0x40a, &GAME_GLOBAL(int, g_ShadowMapUse) },
-		{ 0x409, &GAME_GLOBAL(int, g_ShadowMapCalculate) },
-		{ 0x40d, &GAME_GLOBAL(int, g_LmapOption58) },
-		{ 0x40e, &GAME_GLOBAL(int, g_LmapInfo) },
-		{ 0x411, &GAME_GLOBAL_IN(int, g_BspLodDist, 24) },
-		{ 0x414, &GAME_GLOBAL(int, g_ShadowMapSoft) },
-		{ 0x417, &GAME_GLOBAL(int, g_ShadowMapRadiosity) },
-		{ 0x41a, &GAME_GLOBAL(int, g_ShadowMapIllumGlobal) },
-		{ 0x418, &GAME_GLOBAL(int, g_ShadowMapNoLightAmb) },
-		{ 0x41b, &GAME_GLOBAL(int, g_ShadowMapModulate4x) },
-		{ 0x420, &GAME_GLOBAL(int, g_CalcLmap2) },
-		{ 0x419, &GAME_GLOBAL(int, g_ShadowMapUseTxf) },
-	};
-	char buf[0x100];
-
-	(void)lparam;
-	switch (msg) {
-	case 0x10:	/* WM_CLOSE */
-		break;
-	case 0x110:	/* WM_INITDIALOG */
-		Bprintf(buf, sizeof(buf),
-			" brillo = %.2f\n gamma = %.2f\n texturas = %d x %d\n rebotes = %d\n coef. rad = %.2f\n",
-			(double)GAME_GLOBAL(float, g_ShadowMapBrightness), (double)GAME_GLOBAL(float, g_ShadowMapGamma), g_ShadowMapTexX,
-			g_ShadowMapTexY, GAME_GLOBAL(int, g_ShadowMapBounces), (double)GAME_GLOBAL(float, g_ShadowMapCoefRad));
-		exe_SetDlgItemTextA(hwnd, 0x40b, buf);
-		for (int i = 0; i < 12; i++) {
-			exe_CheckDlgButton(hwnd, checks[i].id, (unsigned)*checks[i].var);
-		}
-		Dlg_SetFloat(hwnd, 0x410, g_ShadowMapScale, 3);
-		Dlg_SetFloat(hwnd, 0x40f, g_ShadowMapRes, 3);
-		Dlg_SetFloat(hwnd, 0x41e, GAME_GLOBAL(float, g_ShadowMapGamma), 2);
-		Bsp_DlgEnable(hwnd);
-		return 1;
-	case 0x111:	/* WM_COMMAND */
-		if (wparam == 1) {
-			for (int i = 0; i < 12; i++) {
-				*checks[i].var = exe_IsDlgButtonChecked(hwnd, checks[i].id);
-			}
-			if (Dlg_GetFloat(hwnd, 0x410, &g_ShadowMapScale) && Dlg_GetFloat(hwnd, 0x40f, &g_ShadowMapRes) &&
-				Dlg_GetFloat(hwnd, 0x41e, &GAME_GLOBAL(float, g_ShadowMapGamma)) && (double)g_ShadowMapScale > 0.001 &&
-				(double)g_ShadowMapRes > 0.001) {
-				exe_EndDialog(hwnd, 1);
-				return 1;
-			}
-			Err_Printf(0, "N\xfamero no v\xe1lido");
-			return 1;
-		}
-		if (wparam == 2) {
-			break;
-		}
-		Bsp_DlgEnable(hwnd);
-		return 0;
-	default:
-		return 0;
-	}
-	exe_EndDialog(hwnd, 0);
-	return 1;
-}
-
 
 /* the radiosity: the areas and region trees of the lists, the links between regions */
 

@@ -1,9 +1,10 @@
 /*
  * Error codes and reports of the engine3d, original source Util/Errores.cpp (include/scrap/e3dutil.h): a table of
- * 200 texts, 50 and up free for Err_Register. The debug rectangles draw on the window of the engine.
+ * 200 texts, 50 and up free for Err_Register, and the debug lines over the frame.
  */
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
+#include "scrap/render.h"
 #include "scrap/win32.h"
 
 #define ERR_COUNT 200
@@ -16,49 +17,12 @@ extern const char * g_ErrTable[200];
 extern int g_ErrLastCode;
 extern int g_ErrLastFatal;
 
-/* color 0xRRGGBB, the GDI wants 0xBBGGRR */
-static void Dbg_Rect(int x, int y, int w, int h, uint32_t color, rectbrush_t draw) {
-	if (!g_Engine) {
-		return;
-	}
-	void *dc = exe_GetDC(g_Engine->hWnd);
-	if (!dc) {
-		return;
-	}
-	void *brush = exe_CreateSolidBrush((color >> 16 & 0xff) | (color & 0xff00) | (color & 0xff) << 16);
-	if (brush) {
-		exe_rect r = { x, y, x + w, y + h };
-		draw(dc, &r, brush);
-		exe_DeleteObject(brush);
-	}
-	exe_ReleaseDC(g_Engine->hWnd, dc);
-}
-
-void Dbg_FrameRect(int x, int y, int w, int h, uint32_t color) {
-	Dbg_Rect(x, y, w, h, color, exe_FrameRect);
-}
-
-void Dbg_FillRect(int x, int y, int w, int h, uint32_t color) {
-	Dbg_Rect(x, y, w, h, color, exe_FillRect);
-}
-
+/* a line in pixels over the frame (the original drew it with GDI on the window), color 0xRRGGBB */
 void Debug_Line(int x0, int y0, int x1, int y1, uint32_t color, int width) {
-	if (!g_Engine) {
-		return;
+	(void)width;
+	if (g_Engine && g_Engine->device) {
+		Render_Line2D((float)x0, (float)y0, (float)x1, (float)y1, color | 0xff000000);
 	}
-	void *dc = exe_GetDC(g_Engine->hWnd);
-	if (!dc) {
-		return;
-	}
-	void *pen = exe_CreatePen(0, width, ((color >> 8 & 0xff) | (color & 0xff) << 8) << 8 | (color >> 16 & 0xff));
-	if (pen) {
-		void *old = exe_SelectObject(dc, pen);
-		exe_MoveToEx(dc, x0, y0, NULL);
-		exe_LineTo(dc, x1, y1);
-		exe_SelectObject(dc, old);
-		exe_DeleteObject(pen);
-	}
-	exe_ReleaseDC(g_Engine->hWnd, dc);
 }
 
 const char *Err_Unregister(int code) {
@@ -118,7 +82,5 @@ void Err_VReport(int code, int fatal, const char *fmt, va_list ap) {
 		return;
 	}
 	Con_Warnf("WARN: %s\n", buf);
-	exe_ShowCursor(1);
-	exe_MessageBoxA(NULL, buf, "Warning", 0x11010);
-	exe_ShowCursor(0);
+	Plat_MessageBox(buf, "Warning", 0x11010);
 }

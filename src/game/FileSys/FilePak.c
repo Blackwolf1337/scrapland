@@ -775,7 +775,7 @@ void Pack_Build(const char *dir, const char *outName, int mode) {
 		crt_exit(-1);
 	}
 	/* MB_YESNO | MB_ICONQUESTION | MB_TASKMODAL through the exe's import of MessageBoxA */
-	if (exe_MessageBoxA(NULL, msg, "Message", 0x2024) == 6) {
+	if (Plat_MessageBox(msg, "Message", 0x2024) == 6) {
 		crt_exit(-1);
 	}
 	cFile_dtor(&in);

@@ -399,6 +399,8 @@ const vec3_t *Render_GetEyePos(void);
 
 /* a line in the current world matrix (the line material); an error without a device */
 int Render_Line(const vec3_t *a, const vec3_t *b, uint32_t color);
+/* a line in pixels of the viewport (pretransformed, the line material); an error without a device */
+int Render_Line2D(float x0, float y0, float x1, float y1, uint32_t color);
 /* the viewport size, CHECK that it is set */
 int Render_GetViewportW(void);
 int Render_GetViewportH(void);

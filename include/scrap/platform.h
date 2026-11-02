@@ -52,6 +52,14 @@ void Plat_MouseState(int32_t *dx, int32_t *dy, int32_t *dz, byte *buttons);
 uint32_t Plat_PadState(int i, void *state);
 byte Plat_HasFocus(void);
 
+/*
+ * A message box over the window with the flags of MessageBoxA (the icon 0x10 error, 0x20 question, 0x30 warning, 0x40
+ * information; the buttons 0 OK, 4 Yes and No); its answer as MessageBoxA's: 1 OK, 6 Yes, 7 No.
+ */
+int Plat_MessageBox(const char *text, const char *title, uint32_t flags);
+/* the priority of the calling thread: below normal (-1) or normal (0) */
+void Plat_SetThreadPriority(int prio);
+
 /* ms since the start (timeGetTime), the performance counter and its frequency (QueryPerformanceCounter/Frequency) */
 uint32_t Plat_Ticks(void);
 int Plat_Counter(int64_t *out);

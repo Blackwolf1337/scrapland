@@ -1,7 +1,7 @@
 # The resources of the exe's module (execfile'd at the end of sdcall.py, Python 1.5.2): in ScrapC.exe its own of
-# src/standalone/scrap.rc (docs/standalone.md, stage 3b3), in the original its .rsrc. Each one found by type and id as
-# the game finds them, with its size and a sum of its bytes; the menus, accelerators and icons loaded; each dialog
-# created from its template (no dialog procedure) with its caption and the texts of its controls, then destroyed.
+# src/standalone/scrap.rc (docs/standalone.md, stage 3b3), in the original its .rsrc. The ones ScrapC.exe keeps (the
+# icons and the manifest; the menus, dialogs, accelerators and the bitmap went with the Win32 window code) found by
+# type and id, with their size and a sum of their bytes, and the icons loaded.
 # The Win32 functions come from SDTest.Proc (stdcall: as thiscall with a dummy this). Since stage 3c1a ScrapC.exe has
 # its own import table, the one of the original is no longer built in.
 rsfns = {}
@@ -27,58 +27,19 @@ def rssum(p, n):
 		i = i + 1
 	return s
 
-def rstext(buf):
-	k = strop.find(buf, '\0')
-	if k >= 0:
-		return buf[:k]
-	return buf
-
 rsmod = rsw('GetModuleHandleA', 'iz', (None,))[0]
 check('rs GetModuleHandleA', lambda: rsmod == 0x400000)
 
-# (type, id): RT_BITMAP, RT_ICON, RT_MENU, RT_DIALOG, RT_ACCELERATOR, RT_GROUP_ICON, RT_MANIFEST
-rsres = ((2, 148), (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (4, 141), (4, 142), (4, 210), (5, 143),
-	(5, 153), (5, 154), (5, 162), (5, 163), (5, 211), (9, 113), (9, 200), (9, 214), (14, 101), (14, 106), (24, 1))
+# (type, id): RT_ICON, RT_GROUP_ICON, RT_MANIFEST
+rsres = ((3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (14, 101), (14, 106), (24, 1))
 def rsfind(k):
 	h = rsw('FindResourceA', 'iiii', (rsmod, k[1], k[0]))[0]
 	if not h:
 		return 0
 	n = rsw('SizeofResource', 'iii', (rsmod, h))[0]
 	p = rsw('LockResource', 'ii', (rsw('LoadResource', 'iii', (rsmod, h))[0],))[0]
-	if k == (5, 153):
-		return 1, n	# windres writes the class name SysTreeView32 of a control in capitals
-	if k in ((4, 141), (4, 142), (4, 210), (9, 113), (9, 200), (9, 214)):
-		return 1	# the "change device" entries and keys are gone with the device dialog (Vulkan only)
 	return 1, n, rssum(p, n)
 for rsk in rsres:
 	check('rs FindResourceA' + fmt(rsk), lambda k=rsk: rsfind(k))
-
-def rsmenu(mid):
-	m = rsw('LoadMenuA', 'iii', (rsmod, mid))[0]
-	if m:
-		rsw('DestroyMenu', 'ii', (m,))
-	return m != 0
-for rsk in (141, 142, 210):
-	check('rs LoadMenuA' + fmt((rsk,)), lambda k=rsk: rsmenu(k))
-for rsk in ((rsmod, 113), (rsmod, 200), (rsmod, 214), (0, 200)):
-	check('rs LoadAcceleratorsA' + fmt((rsk[0] != 0, rsk[1])), lambda k=rsk: rsw('LoadAcceleratorsA', 'iii', k)[0] != 0)
 for rsk in (101, 106):
 	check('rs LoadIconA' + fmt((rsk,)), lambda k=rsk: rsw('LoadIconA', 'iii', (rsmod, k))[0] != 0)
-
-# the dialogs with the ids of their controls (not the IDC_STATIC ones)
-# (144, the device dialog, is gone with Direct3D 8)
-rsdlgs = ((143, (1,)), (153, (1, 2, 1015, 1020)),
-	(154, (1022, 1030, 1031)), (162, (1034, 1033, 1037, 1038, 1042, 1039, 1043, 1040, 1055, 1054, 1044, 1041, 1, 2,
-	1035, 1036, 1047, 1048, 1056, 1050, 1051, 1049)), (163, (1030, 1031, 1022)), (211, (1000, 1)))
-def rsdialog(did, ids):
-	d = rsw('CreateDialogParamA', 'iiiiii', (rsmod, did, 0, 0, 0))[0]
-	if not d:
-		return 0
-	r = [rstext(rsw('GetWindowTextA', 'iibi', (d, '', 1024))[1])]
-	for i in ids:
-		c = rsw('GetDlgItem', 'iii', (d, i))[0]
-		r.append((i, c != 0, rstext(rsw('GetDlgItemTextA', 'iiibi', (d, i, '', 1024))[1])))
-	rsw('DestroyWindow', 'ii', (d,))
-	return tuple(r)
-for rsk in rsdlgs:
-	check('rs CreateDialogParamA' + fmt((rsk[0],)), lambda k=rsk: rsdialog(k[0], k[1]))

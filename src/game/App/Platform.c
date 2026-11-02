@@ -515,6 +515,47 @@ void Plat_Quit(void) {
 	SDL_PushEvent(&q);
 }
 
+/* ---- message boxes and threads ---- */
+
+int Plat_MessageBox(const char *text, const char *title, uint32_t flags) {
+	static const SDL_MessageBoxButtonData ok[] = {
+		{ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT | SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 1, "OK" },
+	};
+	static const SDL_MessageBoxButtonData yesNo[] = {
+		{ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 6, "Yes" },
+		{ SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 7, "No" },
+	};
+	byte yn = (flags & 0xf) == 4;
+	uint32_t icon = flags & 0xf0;
+	SDL_MessageBoxData box = {
+		.flags = icon == 0x10 ? SDL_MESSAGEBOX_ERROR : icon == 0x30 ? SDL_MESSAGEBOX_WARNING
+			: SDL_MESSAGEBOX_INFORMATION,
+		.window = plat.window,
+		.title = title,
+		.message = text,
+		.numbuttons = yn ? 2 : 1,
+		.buttons = yn ? yesNo : ok,
+	};
+	int id = -1;
+	byte grabbed = Plat_MouseGrabbed(), shown = SDL_CursorVisible();
+
+	/* the box needs the cursor (ShowCursor(1) around it in the original) */
+	Plat_GrabMouse(0);
+	SDL_ShowCursor();
+	if (!SDL_ShowMessageBox(&box, &id)) {
+		Com_Printf("%s: %s\n", title, text);
+	}
+	if (!shown) {
+		SDL_HideCursor();
+	}
+	Plat_GrabMouse(grabbed);
+	return id < 0 ? (yn ? 7 : 1) : id;
+}
+
+void Plat_SetThreadPriority(int prio) {
+	SDL_SetCurrentThreadPriority(prio < 0 ? SDL_THREAD_PRIORITY_LOW : SDL_THREAD_PRIORITY_NORMAL);
+}
+
 /* ---- the timers ---- */
 
 uint32_t Plat_Ticks(void) {

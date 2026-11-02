@@ -1072,9 +1072,6 @@ void Model_Info(const char *name, int n) {
 	Con_Verbosef("\nEscena: %s\n", e->name);
 	Scene_ShowTree(e, NULL, 0);
 	Con_Verbosef("\n");
-	void *hInst = App_GetHInstance();
-	void *hWnd = App_GetHWnd();
-	exe_CreateDialogParamA(hInst, (const char *)0x99, hWnd, (void *)Engine_SceneDlgProc, (intptr_t)e);
 }
 
 void Models_List(void) {

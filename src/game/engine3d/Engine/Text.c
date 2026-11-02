@@ -12,17 +12,32 @@
 #define TEXT_BUF 0x400
 #define TEXT_STACK_MAX 5
 
+#define TEXT_QUEUE 64
+#define TEXT_QUEUE_LEN 120
+
+/* the texts of Text_Draw until the frame draws them */
+static struct {
+	int x, y;
+	char text[TEXT_QUEUE_LEN];
+} text_queue[TEXT_QUEUE];
+static int text_queued;
+
+/* the original wrote the text with GDI on the window at once; it waits for the 2D pass of the frame now */
 void Text_Draw(int x, int y, const char *s) {
-	void *dc = exe_GetDC(g_Engine->hWnd);
-	if (dc) {
-		exe_SetTextColor(dc, 0xffff);
-		exe_SetBkMode(dc, 1);
-		exe_ExtTextOutA(dc, x, y, 0, NULL, s, (unsigned)exe_lstrlenA(s), NULL);
-		exe_ReleaseDC(g_Engine->hWnd, dc);
+	if (text_queued < TEXT_QUEUE) {
+		text_queue[text_queued].x = x;
+		text_queue[text_queued].y = y;
+		Str_Copy(text_queue[text_queued].text, s, TEXT_QUEUE_LEN);
+		text_queued++;
 	}
 }
 
+/* the texts of Text_Draw (yellow with a shadow in the font of the messages), then the message stack */
 void Text_DrawStack(void) {
+	for (int i = 0; i < text_queued; i++) {
+		Eng_Printf(2, (float)text_queue[i].x, (float)text_queue[i].y, 1, 0xffff00, "%s", text_queue[i].text);
+	}
+	text_queued = 0;
 	if (!g_TextStack) {
 		return;
 	}

@@ -71,9 +71,7 @@ int VBprintf(char *buf, int size, const char *fmt, va_list ap);
 
 /* Util/Errores.cpp: error codes 0..199 with texts (50 and up for Err_Register); a report goes to the log when
  * fatal, else into a message box */
-void Dbg_FrameRect(int x, int y, int w, int h, uint32_t color);	/* color 0xRRGGBB, on the engine window */
-void Dbg_FillRect(int x, int y, int w, int h, uint32_t color);
-/* a GDI line of width pixels on the engine window, color 0xRRGGBB */
+/* a line in pixels over the frame, color 0xRRGGBB (width is not used: the original's GDI pen width) */
 void Debug_Line(int x0, int y0, int x1, int y1, uint32_t color, int width);
 const char *Err_Unregister(int code);
 const char *Err_Str(int code);

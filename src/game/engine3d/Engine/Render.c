@@ -2109,6 +2109,22 @@ int Render_Line(const vec3_t *a, const vec3_t *b, uint32_t color) {
 	return 0;
 }
 
+int Render_Line2D(float x0, float y0, float x1, float y1, uint32_t color) {
+	if (!g_Engine->device) {
+		return E_FAIL;
+	}
+	const struct {
+		float x, y, z, rhw;
+		uint32_t color;
+	} v[2] = { { x0, y0, 0.0f, 1.0f, color }, { x1, y1, 0.0f, 1.0f, color } };
+	Render_SetMaterial(g_MatLine, 0);
+	void *dev = g_pd3dDevice;
+	Rd_DevSetVertexShader(dev, D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
+	dev = g_pd3dDevice;
+	Rd_DevDrawPrimitiveUP(dev, D3DPT_LINELIST, 1, v, sizeof(v[0]));
+	return 0;
+}
+
 int Render_ToScreen(const vec3_t *pos, float *xy) {
 	CHECK(g_pd3dDevice);
 	CHECK(xy);
