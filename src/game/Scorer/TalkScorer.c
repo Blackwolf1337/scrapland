@@ -162,8 +162,8 @@ void cTalkScorer_DrawTalk(cTalkScorer *self, int player, float *pos) {
 	if (!(g_RemainTalkTime > 0.01f)) {
 		g_RemainTalkTime = 0.0f;
 		self->useTime = g_TalkUseTime;
-		if (cPy_Function_IsValid(g_TalkCallback)) {
-			cPy_Function_Execute(g_TalkCallback, 1);
+		if (cPy_Function_IsValid((&g_TalkCallback))) {
+			cPy_Function_Execute((&g_TalkCallback), 1);
 		}
 		return;
 	}
@@ -274,7 +274,7 @@ void Scorer_CancelSpeech(float time) {
 }
 
 void Scorer_SetSpeechCallback(const char *func, PyObject *arg) {
-	cPy_Function_SetFunc(g_TalkCallback, func);
+	cPy_Function_SetFunc((&g_TalkCallback), func);
 	if (arg && arg->ob_type == &PyList_Type) {
 		Talk_AddCallbackParams(arg);
 	}
@@ -286,11 +286,11 @@ void Talk_AddCallbackParams(PyObject *list) {
 		PyTypeObject *type = item->ob_type;
 
 		if (type == &PyString_Type) {
-			cPy_Function_AddParamS(g_TalkCallback, PyString_AsString(item));
+			cPy_Function_AddParamS((&g_TalkCallback), PyString_AsString(item));
 		} else if (type == &PyFloat_Type) {
-			cPy_Function_AddParamF(g_TalkCallback, (float)PyFloat_AsDouble(item));
+			cPy_Function_AddParamF((&g_TalkCallback), (float)PyFloat_AsDouble(item));
 		} else if (type == &PyInt_Type) {
-			cPy_Function_AddParamI(g_TalkCallback, (int)PyInt_AsLong(item));
+			cPy_Function_AddParamI((&g_TalkCallback), (int)PyInt_AsLong(item));
 		}
 	}
 }

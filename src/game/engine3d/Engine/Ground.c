@@ -1541,12 +1541,12 @@ void CGround_AddMesh(CGround *self, CCollideMesh *mesh, CTriMesh *tm, uint32_t *
 		b->max.z = b->max.z > v->z ? b->max.z : v->z;
 	}
 	CHECK(b->max.x >= b->min.x && b->max.y >= b->min.y && b->max.z >= b->min.z);
-	int mem = g_MemStats->bytes;
+	int mem = g_MemStats.bytes;
 	uint32_t t0 = Plat_Ticks();
 	CHeights_QuadAddMesh(&self->heights, mesh, nt);
 	uint32_t t1 = Plat_Ticks();
 	E3D_LogWhite((&g_FileLog), "QuadAddMesh: %d Kb  [%d tri, %d vtx]  [sector: %d]  [%.2f sec.]",
-		(g_MemStats->bytes - mem) / 1024, tm->nTri, tm->nVert, mesh->sector - 1, (double)(t1 - t0) / 1000.0);
+		(g_MemStats.bytes - mem) / 1024, tm->nTri, tm->nVert, mesh->sector - 1, (double)(t1 - t0) / 1000.0);
 }
 
 void CGround_RemoveMesh(CGround *self, CCollideMesh *mesh, int a2, int a3) {
@@ -1751,7 +1751,7 @@ static CTriMesh *Ground_NodeMesh(CNode3D *node) {
 
 static void Ground_LogMemory(int mem, uint32_t t0) {
 	uint32_t t1 = Plat_Ticks();
-	Con_Verbosef("Map collision memory: %d Kb  [Quads: %d]  [%.2f sec.]\n", (g_MemStats->bytes - mem) / 1024,
+	Con_Verbosef("Map collision memory: %d Kb  [Quads: %d]  [%.2f sec.]\n", (g_MemStats.bytes - mem) / 1024,
 		g_CollisionQuadCount, (double)(t1 - t0) / 1000.0);
 }
 
@@ -1811,7 +1811,7 @@ void CGround_Build(CGround *self, CScene *scn) {
 	char nodeName[128];
 
 	if (scn->fromAmc) {
-		int mem = g_MemStats->bytes;
+		int mem = g_MemStats.bytes;
 		uint32_t t0 = Plat_Ticks();
 		if (CGround_LoadCollision(self, name)) {
 			CheckFailed("!LoadCollision( Escena->Nombre )", __FILE__, __TIMESTAMP__, __LINE__);
@@ -1912,7 +1912,7 @@ void CGround_Build(CGround *self, CScene *scn) {
 	box_t *ce = &self->CollideExt;
 	CHECK(ce->max.x >= ce->min.x && ce->max.y >= ce->min.y && ce->max.z >= ce->min.z);
 	Box_Widen(ce, g_CollisionEpsilon * 10.0f);
-	int mem = g_MemStats->bytes;
+	int mem = g_MemStats.bytes;
 	uint32_t t0 = Plat_Ticks();
 	if (CGround_LoadCollision(self, name)) {
 		CGround_CreateQuadCollision(self);

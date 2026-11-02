@@ -23,7 +23,6 @@ typedef struct cLangItem {
 SD_SIZE(cLangItem, 0x10);
 
 extern HashTable g_LangTable;
-#define g_LangTable (&g_LangTable)	/* 457 slots, case-insensitive */
 #define g_LangName (((cString *)&GVar_SelectedLanguage.value))		/* the language asked for */
 extern cGVar GVar_SelectedLanguage;
 #define g_LangDefault (GVar_SelectedLanguage.def.s)	/* the language when that file is missing */
@@ -96,7 +95,7 @@ void LangTable_Clear(HashTable *self) {
 }
 
 void Lang_Free(void) {
-	HashTable *t = g_LangTable;
+	HashTable *t = (&g_LangTable);
 
 	for (;;) {
 		int i = 0;
@@ -126,7 +125,7 @@ done:
 }
 
 const char *Lang_GetStr(const char *id) {
-	cLangItem *it = LangTable_Find(g_LangTable, id, HashTable_Slot(g_LangTable, id));
+	cLangItem *it = LangTable_Find((&g_LangTable), id, HashTable_Slot((&g_LangTable), id));
 	return it ? it->value.text : NULL;
 }
 
@@ -155,7 +154,7 @@ PyObject *Lang_GetEntries(const char *name, int n) {
 	}
 	prefix[pre] = 0;
 	for (;;) {
-		cLangItem *it = LangTable_Find(g_LangTable, key, HashTable_Slot(g_LangTable, key));
+		cLangItem *it = LangTable_Find((&g_LangTable), key, HashTable_Slot((&g_LangTable), key));
 		if (!it) {
 			break;
 		}
@@ -191,9 +190,9 @@ void Lang_Load(const char *lang, cAbstractFile *f) {
 	Lang_Free();
 	CHECK(g_LangBuffer == NULL);
 	CHECK(g_IdLang == NULL);
-	for (int i = 0; i < (int)g_LangTable->numSlots; i++) {
-		if (g_LangTable->slots[i]) {
-			CHECK(g_LangTable->slots[i] == NULL);
+	for (int i = 0; i < (int)g_LangTable.numSlots; i++) {
+		if (g_LangTable.slots[i]) {
+			CHECK(g_LangTable.slots[i] == NULL);
 			break;
 		}
 	}
@@ -228,10 +227,10 @@ void Lang_Load(const char *lang, cAbstractFile *f) {
 		value.text = text;
 		value.nextId = next;
 		if (valid) {
-			CHECK(!g_LangTable->locked);
-			uint32_t slot = HashTable_Slot(g_LangTable, id);
-			if (!LangTable_Find(g_LangTable, id, slot)) {
-				LangTable_Insert(g_LangTable, id, slot, &value);
+			CHECK(!g_LangTable.locked);
+			uint32_t slot = HashTable_Slot((&g_LangTable), id);
+			if (!LangTable_Find((&g_LangTable), id, slot)) {
+				LangTable_Insert((&g_LangTable), id, slot, &value);
 			} else {
 				Con_Bluef("ERROR in language (%s):\n\tCan't be included '%s':'%s' \n", g_IdLang, id, text);
 			}

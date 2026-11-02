@@ -529,7 +529,7 @@ void CBsp_DirectLight(CBsp *self) {
 				break;
 			}
 			E3D_DebugPrintf("direct: %d / %d   ", i + 1, self->num_lists);
-			E3D_DebugPrintf("%.1f Mb   ", (double)g_MemStats->bytes * 0.0009765625 * 0.0009765625);
+			E3D_DebugPrintf("%.1f Mb   ", (double)g_MemStats.bytes * 0.0009765625 * 0.0009765625);
 			byte c0 = BspTxf_Check(&txf[0], i, 1, 0);
 			byte c1 = BspTxf_Check(&txf[1], i, 0, 0);
 			byte c2 = BspTxf_Check(&txf[2], i, 0, 0);
@@ -773,7 +773,7 @@ void CBsp_RadGlobal(CBsp *self) {
 		for (int bounce = 0; bounce < g_ShadowMapBounces; bounce++) {
 			E3D_DebugPrintf("total areas: %d %d %d %d\n", g_BspAreasTotal[0], g_BspAreasTotal[1], g_BspAreasTotal[2],
 				g_BspAreasTotal[3]);
-			E3D_DebugPrintf("memoria usada: %-5d Kb\n", g_MemStats->bytes / 1024);
+			E3D_DebugPrintf("memoria usada: %-5d Kb\n", g_MemStats.bytes / 1024);
 			/* rad2 is the light the areas send: the direct light, then the last bounce */
 			for (int i = 0; i < self->num_lists; i++) {
 				BspTri *tri = self->lists[i];
@@ -898,7 +898,7 @@ void CBsp_RadGlobal(CBsp *self) {
 	}
 	E3D_DebugPrintf("\ntotal areas: %d %d %d %d", g_BspAreasTotal[0], g_BspAreasTotal[1], g_BspAreasTotal[2],
 		g_BspAreasTotal[3]);
-	E3D_DebugPrintf("\nmemoria usada: %-5d Kb", g_MemStats->bytes / 1024);
+	E3D_DebugPrintf("\nmemoria usada: %-5d Kb", g_MemStats.bytes / 1024);
 	double pot = (double)(uint64_t)sumAreas;
 	E3D_DebugPrintf("\npotenciales: %.1f  descartados: %d %d %d %d %d %d", pot, 0, nNoArea, nBehind, nNo, nShadow,
 		nSector);

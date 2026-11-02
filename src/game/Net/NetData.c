@@ -41,12 +41,12 @@ int Net_AddResource(const char *name) {
 			if (g_pApp->flags & APPF_SERVER) {
 				byte msg = NETMSG_RESOURCES;
 				void *buf = cStaticBuffer_Get(g_NetStaticBuffer, 0x80);
-				cFileMem_SetBuffer(g_NetMsg, buf, 0x60, 0, 0);
-				cFileMem_Open(&g_NetMsg->base, "", 6);
-				g_NetMsg->base.vftable->Write(&g_NetMsg->base, &msg, 1);
-				NetData_WriteResources(&g_NetMsg->base, (uint16_t)i, 1);
-				NetServer_SendAll(buf, (uint16_t)cFileMem_Size(&g_NetMsg->base));
-				cFileMem_Close(&g_NetMsg->base);
+				cFileMem_SetBuffer((&g_NetMsg), buf, 0x60, 0, 0);
+				cFileMem_Open(&g_NetMsg.base, "", 6);
+				g_NetMsg.base.vftable->Write(&g_NetMsg.base, &msg, 1);
+				NetData_WriteResources(&g_NetMsg.base, (uint16_t)i, 1);
+				NetServer_SendAll(buf, (uint16_t)cFileMem_Size(&g_NetMsg.base));
+				cFileMem_Close(&g_NetMsg.base);
 				cStaticBuffer_Unlock(g_NetStaticBuffer);
 				Con_Debugf("Send resource (%d)'%s' to all.\n", i, name);
 			}
@@ -231,16 +231,16 @@ byte Net_SendCtrlString(const char *text) {
 	}
 	byte msg = NETMSG_CONSOLE;
 	void *buf = cStaticBuffer_Get(g_NetStaticBuffer, 24000);
-	cFileMem_SetBuffer(g_NetMsg, buf, 24000, 0, 0);
-	cFileMem_Open(&g_NetMsg->base, "", 6);
-	g_NetMsg->base.vftable->Write(&g_NetMsg->base, &msg, 1);
-	cAbstractFile_WriteString8(&g_NetMsg->base, g_ClientRemotePassword);
-	cAbstractFile_WriteString8(&g_NetMsg->base, text);
+	cFileMem_SetBuffer((&g_NetMsg), buf, 24000, 0, 0);
+	cFileMem_Open(&g_NetMsg.base, "", 6);
+	g_NetMsg.base.vftable->Write(&g_NetMsg.base, &msg, 1);
+	cAbstractFile_WriteString8(&g_NetMsg.base, g_ClientRemotePassword);
+	cAbstractFile_WriteString8(&g_NetMsg.base, text);
 	cNetClient *c = Net_GetClient();
 	if (c) {
-		cNetClient_Push(c, buf, (uint16_t)cFileMem_Size(&g_NetMsg->base));
+		cNetClient_Push(c, buf, (uint16_t)cFileMem_Size(&g_NetMsg.base));
 	}
-	cFileMem_Close(&g_NetMsg->base);
+	cFileMem_Close(&g_NetMsg.base);
 	cStaticBuffer_Unlock(g_NetStaticBuffer);
 	return 1;
 }
@@ -251,16 +251,16 @@ byte Net_SendString(const char *text, int slot, byte chat) {
 	cNetClient *c;
 
 	void *buf = cStaticBuffer_Get(g_NetStaticBuffer, 24000);
-	cFileMem_SetBuffer(g_NetMsg, buf, 24000, 0, 0);
-	cFileMem_Open(&g_NetMsg->base, "", 6);
+	cFileMem_SetBuffer((&g_NetMsg), buf, 24000, 0, 0);
+	cFileMem_Open(&g_NetMsg.base, "", 6);
 	Str_Copy(s, text, sizeof(s));
 	switch (Transport_GetMode()) {
 	case NETMODE_SERVER:
 		msg = chat ? NETMSG_CHAT : NETMSG_USR_STRING;
-		g_NetMsg->base.vftable->Write(&g_NetMsg->base, &msg, 1);
-		cAbstractFile_WriteString8(&g_NetMsg->base, s);
+		g_NetMsg.base.vftable->Write(&g_NetMsg.base, &msg, 1);
+		cAbstractFile_WriteString8(&g_NetMsg.base, s);
 		if (slot == -1) {
-			NetServer_SendAll(buf, (uint16_t)cFileMem_Size(&g_NetMsg->base));
+			NetServer_SendAll(buf, (uint16_t)cFileMem_Size(&g_NetMsg.base));
 			break;
 		}
 		c = NetServer_GetClient(slot);
@@ -268,23 +268,23 @@ byte Net_SendString(const char *text, int slot, byte chat) {
 			ok = 0;
 			break;
 		}
-		cNetClient_Push(c, buf, (uint16_t)cFileMem_Size(&g_NetMsg->base));
+		cNetClient_Push(c, buf, (uint16_t)cFileMem_Size(&g_NetMsg.base));
 		break;
 	case NETMODE_CLIENT:
 		msg = chat ? NETMSG_CHAT : NETMSG_USR_STRING;
-		g_NetMsg->base.vftable->Write(&g_NetMsg->base, &msg, 1);
-		cAbstractFile_WriteString8(&g_NetMsg->base, s);
+		g_NetMsg.base.vftable->Write(&g_NetMsg.base, &msg, 1);
+		cAbstractFile_WriteString8(&g_NetMsg.base, s);
 		/* a client without connection still answers 1 */
 		c = Net_GetClient();
 		if (c) {
-			cNetClient_Push(c, buf, (uint16_t)cFileMem_Size(&g_NetMsg->base));
+			cNetClient_Push(c, buf, (uint16_t)cFileMem_Size(&g_NetMsg.base));
 		}
 		break;
 	default:
 		ok = 0;
 		break;
 	}
-	cFileMem_Close(&g_NetMsg->base);
+	cFileMem_Close(&g_NetMsg.base);
 	cStaticBuffer_Unlock(g_NetStaticBuffer);
 	return ok;
 }

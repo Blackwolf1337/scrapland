@@ -27,7 +27,6 @@ SD_SIZE(cSaveGameInfo, 0x48);
 #define SAVE_SLOTS 7
 
 extern HashTable g_SaveVarTable;
-#define g_SaveVarTable (&g_SaveVarTable)	/* of cPtrItem, 457 slots */
 extern cSaveVar *g_SaveVars;
 extern int g_SaveVarCount;
 #define g_SaveDesc (((cString *)&GVar_LastSaveGameName.value))	/* the description of the save loaded last */
@@ -47,7 +46,7 @@ cSaveVar *cSaveVar_ctor(cSaveVar *self, const char *name, const char *value) {
 }
 
 static cSaveVar *SaveVar_Find(const char *name) {
-	return PtrTable_Value(g_SaveVarTable, name);
+	return PtrTable_Value((&g_SaveVarTable), name);
 }
 
 /* the value of a variable as int, 0 if it is missing or has no value */
@@ -63,10 +62,10 @@ static cSaveVar *SaveVar_New(const char *name, const char *value) {
 		v = cSaveVar_ctor(v, name, value);
 	}
 	const char *key = v->name;
-	CHECK(!g_SaveVarTable->locked);
-	uint32_t slot = HashTable_Slot(g_SaveVarTable, key);
-	if (!PtrTable_Find(g_SaveVarTable, key, slot)) {
-		PtrTable_Insert(g_SaveVarTable, key, slot, (void *const *)&v);
+	CHECK(!g_SaveVarTable.locked);
+	uint32_t slot = HashTable_Slot((&g_SaveVarTable), key);
+	if (!PtrTable_Find((&g_SaveVarTable), key, slot)) {
+		PtrTable_Insert((&g_SaveVarTable), key, slot, (void *const *)&v);
 	}
 	return v;
 }
@@ -103,7 +102,7 @@ void SaveVars_Delete(const char *prefix) {
 		if (!crt_strncmp(prefix, (*link)->name, len)) {
 			cSaveVar *v = *link;
 			*link = v->next;
-			PtrTable_Delete(g_SaveVarTable, v->name);
+			PtrTable_Delete((&g_SaveVarTable), v->name);
 			g_SaveVarCount--;
 			cString_dtor(&v->value);
 			cString_dtor(&v->name);

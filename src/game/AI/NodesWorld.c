@@ -1223,7 +1223,7 @@ void CNodesWorld_Load(CNodesWorld *self, int arg, const char *name, const vec3_t
 		}
 	}
 	if (!self->analyzing) {
-		Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+		Con_Printf("Mem. used: %d bytes\n", g_MemStats.bytes);
 		if (arg == 0) {
 			CNodesWorld_AddExtraPoints(self);
 		}
@@ -1242,7 +1242,7 @@ void CNodesWorld_Load(CNodesWorld *self, int arg, const char *name, const vec3_t
 				self->sup.vftable->BuildGrid(self);
 			}
 			self->sup.created = 1;
-			Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+			Con_Printf("Mem. used: %d bytes\n", g_MemStats.bytes);
 			Con_Printf("NODES 3D AI LEVEL LOADED.\n");
 			Con_Bluef("%s", str_Empty);
 			goto end;
@@ -1399,7 +1399,7 @@ void CNodesWorld_GetPairs(CNodesWorld *self, cNWPairList *list) {
 	}
 	self->sup.points.iter = saved;
 	Con_Printf("Num Pairs Points Visibility No Linked: %ld\n", (long)list->count);
-	Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+	Con_Printf("Mem. used: %d bytes\n", g_MemStats.bytes);
 }
 
 void CNodesWorld_LinkExtra(CNodesWorld *self) {

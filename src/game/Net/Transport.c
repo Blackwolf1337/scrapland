@@ -229,18 +229,18 @@ int Transport_PingTime(const NetAddr *addr) {
 }
 
 uint16_t Transport_GetLocalPort(void) {
-	return Net_Htons(g_NetLocalAddr->port);
+	return Net_Htons(g_NetLocalAddr.port);
 }
 
 int Transport_SetMaster(const char *address, uint16_t port) {
 	if (!*address || !port || !Transport_Startup() || !Transport_Resolve(address, NULL, NULL)) {
 		return 0;
 	}
-	memset(g_NetMasterAddr, 0, sizeof(NetAddr));
-	g_NetMasterAddr->family = NET_AF_INET;
-	g_NetMasterAddr->port = Net_Htons(port);
+	memset((&g_NetMasterAddr), 0, sizeof(NetAddr));
+	g_NetMasterAddr.family = NET_AF_INET;
+	g_NetMasterAddr.port = Net_Htons(port);
 	g_NetMasterOn = 1;
-	g_NetMasterAddr->addr = net_hostAddr;
+	g_NetMasterAddr.addr = net_hostAddr;
 	return 1;
 }
 
@@ -248,7 +248,7 @@ int Transport_InitBrowser(const char *address, uint16_t port) {
 	if (g_NetMode != NETMODE_NONE || !Transport_Startup() || !Transport_Resolve(address, NULL, NULL)) {
 		return 0;
 	}
-	Transport_SetAddr(g_NetServerAddr, port);
+	Transport_SetAddr((&g_NetServerAddr), port);
 	g_NetMode = NETMODE_BROWSER;
 	CHECK(g_NetPingServers == NULL);
 	g_NetPingServers = Mem_Alloc(NET_PING_SERVERS * sizeof(NetPingServer));
@@ -262,7 +262,7 @@ int Transport_InitClient(const char *address, uint16_t port) {
 	if (!Transport_Startup() || !Transport_Resolve(address, NULL, NULL)) {
 		return 0;
 	}
-	Transport_SetAddr(g_NetServerAddr, port);
+	Transport_SetAddr((&g_NetServerAddr), port);
 	g_NetMode = NETMODE_CLIENT;
 	return 1;
 }
@@ -271,12 +271,12 @@ int Transport_InitServer(int maxClients, uint16_t port) {
 	if (!Transport_Startup()) {
 		return 0;
 	}
-	memset(g_NetLocalAddr, 0, sizeof(NetAddr));
-	g_NetLocalAddr->family = NET_AF_INET;
-	memset(g_NetServerAddr, 0, sizeof(NetAddr));
-	g_NetLocalAddr->port = Net_Htons(port);
-	g_NetLocalAddr->addr = 0;
-	if (Sock_Bind(g_NetSocket, g_NetLocalAddr)) {
+	memset((&g_NetLocalAddr), 0, sizeof(NetAddr));
+	g_NetLocalAddr.family = NET_AF_INET;
+	memset((&g_NetServerAddr), 0, sizeof(NetAddr));
+	g_NetLocalAddr.port = Net_Htons(port);
+	g_NetLocalAddr.addr = 0;
+	if (Sock_Bind(g_NetSocket, (&g_NetLocalAddr))) {
 		return 0;
 	}
 	g_NetMaxClients = maxClients;
@@ -436,7 +436,7 @@ const char *Transport_Resolve(const char *address, char *ip, uint32_t *addr) {
 
 int Transport_PingMaster(void) {
 	g_NetBrowseStart = Plat_Ticks();
-	return Transport_PingServer(g_NetServerAddr);
+	return Transport_PingServer((&g_NetServerAddr));
 }
 
 int Transport_SendToClient(const void *data, int size, int slot) {
@@ -452,7 +452,7 @@ int Transport_SendToClient(const void *data, int size, int slot) {
 }
 
 void Transport_SendToServer(const void *data, int size) {
-	Transport_SendTo(g_NetSocket, data, size, 0, g_NetServerAddr, sizeof(NetAddr));
+	Transport_SendTo(g_NetSocket, data, size, 0, (&g_NetServerAddr), sizeof(NetAddr));
 	g_NetStatRecv = size;
 	g_NetStatRecvSlot = 0;
 }
@@ -468,7 +468,7 @@ int Net_SendMasterString(const char *text) {
 	if (!*s) {
 		return 0;
 	}
-	Transport_SendTo(g_NetSocket, s, (int)strlen(s) + 1, 0, g_NetMasterAddr, sizeof(NetAddr));
+	Transport_SendTo(g_NetSocket, s, (int)strlen(s) + 1, 0, (&g_NetMasterAddr), sizeof(NetAddr));
 	if (!text && !(g_LastMasterCommandFlags & 1)) {
 		cString_Set(g_LastMasterCommand, "");
 	}
@@ -568,9 +568,9 @@ int Transport_SendTo(uint32_t s, const void *data, int len, int flags, const Net
 	memset(mac, 0, sizeof(mac));
 	Transport_Key(key);
 	Transport_Key(polyKey);
-	uint64_t r = cNetRandom_Next(g_NetRandom);
+	uint64_t r = cNetRandom_Next((&g_NetRandom));
 	memcpy(nonce, &r, 8);
-	r = cNetRandom_Next(g_NetRandom);
+	r = cNetRandom_Next((&g_NetRandom));
 	memcpy(nonce + 8, &r, 4);
 	cChaCha_Crypt(&ctx, key, 0, nonce, polyKey, polyKey, sizeof(polyKey));
 	cNetBuffer_AppendPad16(&nb, nonce, sizeof(nonce));

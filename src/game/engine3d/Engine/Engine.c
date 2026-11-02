@@ -533,7 +533,7 @@ void Engine_DrawStats(void) {
 			g_RenderCounts[2], g_RenderCounts[3], g_RenderCounts[4], g_RenderCounts[5], g_RenderCounts[6],
 			g_RenderCounts[7]);
 		Font_Printf(g_FntComic14, 10.0f, 0.0f, 2, "fps: %.2f (%.2f ms)", (double)g_Fps, 1000.0 / (double)g_Fps);
-		Font_Printf(g_FntComic14, 10.0f, 64.0f, 2, "mem: %d %d %d %d", g_MemStats->bytes, g_MemStats->allocs,
+		Font_Printf(g_FntComic14, 10.0f, 64.0f, 2, "mem: %d %d %d %d", g_MemStats.bytes, g_MemStats.allocs,
 			g_EngineFrameCount, g_EngineInits);
 		mode = g_ProfMode;
 	}

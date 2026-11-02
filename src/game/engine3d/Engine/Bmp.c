@@ -23,13 +23,9 @@
 #define TGA_PACKET_MAX 128
 
 extern bmpFileCab_t g_BmpFileHeader;
-#define g_BmpFileHeader (&g_BmpFileHeader)
 extern bmpInfoCab_t g_BmpInfoCab;
-#define g_BmpInfoCab (&g_BmpInfoCab)
 extern texCab_t g_TexHeader;
-#define g_TexHeader (&g_TexHeader)
 extern tgaCab_t g_TgaCab;
-#define g_TgaCab (&g_TgaCab)
 
 void *Img_Pixel(const CImage *b, uint32_t x, uint32_t y, int bytes) {
 	CHECK(b->img);
@@ -434,8 +430,8 @@ static int Img_SaveRefused(const char *name, uint32_t flags) {
 }
 
 int BMP_Save(const char *name, const CBmp *orig, uint32_t flags) {
-	bmpFileCab_t *fc = g_BmpFileHeader;
-	bmpInfoCab_t *ic = g_BmpInfoCab;
+	bmpFileCab_t *fc = (&g_BmpFileHeader);
+	bmpInfoCab_t *ic = (&g_BmpInfoCab);
 
 	CHECK(name && orig && orig->img);
 	if (Img_SaveRefused(name, flags)) {
@@ -485,7 +481,7 @@ fail:
 }
 
 int TEX_Save(const char *name, const CBmp *orig, uint32_t flags) {
-	texCab_t *c = g_TexHeader;
+	texCab_t *c = (&g_TexHeader);
 
 	CHECK(name && orig && orig->img);
 	if (Img_SaveRefused(name, flags)) {
@@ -556,7 +552,7 @@ static void Tga_PutRow(const uint32_t *row, int w, uint32_t mask, int alpha, voi
 }
 
 int TGA_Save(const char *name, const CBmp *orig, uint32_t flags) {
-	tgaCab_t *c = g_TgaCab;
+	tgaCab_t *c = (&g_TgaCab);
 
 	CHECK(name && orig && orig->img);
 	if (Img_SaveRefused(name, flags)) {
@@ -606,8 +602,8 @@ static int Img_LoadFailed(void *f, const char *fmt, const char *name) {
 
 int BMP_Load(const char *name, CBmp *dest, uint32_t flags) {
 	static const char bad[] = "leer_BMP_24(): Formato no v\xe1lido: '%s'";
-	bmpFileCab_t *fc = g_BmpFileHeader;
-	bmpInfoCab_t *ic = g_BmpInfoCab;
+	bmpFileCab_t *fc = (&g_BmpFileHeader);
+	bmpInfoCab_t *ic = (&g_BmpInfoCab);
 	byte pal[256 * 4];
 
 	CHECK(name && dest);
@@ -665,7 +661,7 @@ int BMP_Load(const char *name, CBmp *dest, uint32_t flags) {
 }
 
 int TEX_Load(const char *name, CBmp *dest, uint32_t flags) {
-	texCab_t *c = g_TexHeader;
+	texCab_t *c = (&g_TexHeader);
 
 	(void)flags;
 	CHECK(name && dest);
@@ -693,7 +689,7 @@ static void Tga_GetPixel(byte *d, int alpha, void *f) {
 }
 
 int TGA_Load(const char *name, CBmp *dest, uint32_t flags) {
-	tgaCab_t *c = g_TgaCab;
+	tgaCab_t *c = (&g_TgaCab);
 
 	(void)flags;
 	CHECK(name && dest);

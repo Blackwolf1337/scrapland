@@ -248,13 +248,12 @@ typedef struct cSoundPS {
 	float timer;			/* 0x5c until the next play */
 	float maxInterval;		/* 0x60 "MaxInterval" */
 	float minInterval;		/* 0x64 "MinInterval" */
-	char *name;			/* 0x68 cString, the key in g_SndPSTable */
+	char *name;			/* 0x68 cString, the key in (&g_SndPSTable) */
 } cSoundPS;
 SD_SIZE(cSoundPS, 0x6c);
 SD_OFFSET(cSoundPS, loop, 0x58);
 
 extern HashTable g_SndPSTable;
-#define g_SndPSTable (&g_SndPSTable)	/* cPtrItem of cSoundPS by name */
 extern byte g_SndPSEnabled;
 extern cSoundPS *g_SndPSList;
 

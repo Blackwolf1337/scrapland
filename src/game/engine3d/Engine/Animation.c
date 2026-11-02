@@ -333,7 +333,7 @@ void CAnimNode_Read(CAnimNode *self, CFileIO *f) {
 }
 
 void CAnimation_Read(CAnimation *self, CFileIO *f) {
-	g_MemStatsContext = g_AnimMemStats;
+	g_MemStatsContext = (&g_AnimMemStats);
 	CFileIO_BeginBlock(f, "ANI");
 	CHECK(CFileIO_ReadInt(f) == 2);
 	CFileIO_Read4(f, &self->fps);

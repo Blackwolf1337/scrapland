@@ -28,9 +28,9 @@ static void MemStats_Free(cMemStats *st, int size) {
 /* counts an allocation (freed 0) or a free of size bytes made elsewhere */
 void Mem_Count(int freed, int size) {
 	if (!freed) {
-		MemStats_Alloc(g_MemStats, size);
+		MemStats_Alloc((&g_MemStats), size);
 	} else {
-		MemStats_Free(g_MemStats, size);
+		MemStats_Free((&g_MemStats), size);
 	}
 	if (g_MemStatsContext) {
 		if (!freed) {
@@ -42,7 +42,7 @@ void Mem_Count(int freed, int size) {
 }
 
 void Mem_OutOfMemory(uint32_t size) {
-	Con_FatalErrorf("Not enough memory (queried: %d, used: %d)", size, g_MemStats->bytes);
+	Con_FatalErrorf("Not enough memory (queried: %d, used: %d)", size, g_MemStats.bytes);
 }
 
 /* NULL and "Not enough memory" in the log if the heap has no room */

@@ -1,6 +1,6 @@
 /*
  * The random numbers of the packet nonces (Net/, between msgman.cpp and NetData.cpp, no CHECK in it): MT19937-64
- * with a shuffle table of 256 outputs, one instance g_NetRandom seeded from GetTickCount64 through ChaCha20.
+ * with a shuffle table of 256 outputs, one instance (&g_NetRandom) seeded from GetTickCount64 through ChaCha20.
  */
 #include <string.h>
 

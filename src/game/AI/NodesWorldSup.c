@@ -1105,12 +1105,12 @@ void CNodesWorldSup_FreeGraph(CNodesWorld *self) {
 
 void CNodesWorldSup_FreeTemp(CNodesWorld *self) {
 	Con_Printf("Restoring Memory Temp...\n");
-	int mem = g_MemStats->bytes;
+	int mem = g_MemStats.bytes;
 	if (self->sup.buffer) {
 		Mem_Free(self->sup.buffer);
 		self->sup.buffer = NULL;
 	}
-	Con_Printf("Restoring Memory Buffer Nodes: %d bytes\n", mem - g_MemStats->bytes);
+	Con_Printf("Restoring Memory Buffer Nodes: %d bytes\n", mem - g_MemStats.bytes);
 	Con_Printf("Restoring Memory Set Points Visibility: %d bytes\n", 0);
 	if (self->sup.reachedCells) {
 		Mem_Free(self->sup.reachedCells);
@@ -1124,7 +1124,7 @@ void CNodesWorldSup_FreeTemp(CNodesWorld *self) {
 		Mem_Free(self->sup.sets);
 		self->sup.sets = NULL;
 	}
-	Con_Printf("Memory Restored: %d bytes\n", mem - g_MemStats->bytes);
+	Con_Printf("Memory Restored: %d bytes\n", mem - g_MemStats.bytes);
 }
 
 byte CNodesWorldSup_InList(CNodesWorld *self, cNWNode *const *list, int n, const cNWNode *node) {
@@ -1437,7 +1437,7 @@ byte NWSup_IniBuffer(CNodesWorld *self, const vec3_t *init, const vec3_t *min, c
 	Con_Printf("Num. Nodes Trans.: %ld\n", (long)self->sup.numReachedCells);
 	Con_Printf("Num. Nodes No Trans.: %ld\n", (long)(self->sup.dimBuffer - self->sup.numReachedCells));
 	if (is3D) {
-		Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+		Con_Printf("Mem. used: %d bytes\n", g_MemStats.bytes);
 	}
 	ok = 1;
 end:
@@ -1567,7 +1567,7 @@ void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops) {
 
 	Con_Printf("\nGenerating Points Visibility Inter-Region No Linked Mem. Din...\n");
 	if (!ops->is2D) {
-		Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+		Con_Printf("Mem. used: %d bytes\n", g_MemStats.bytes);
 	}
 	NWVecList_Clear(&self->sup.foundNodes[0]);
 	crt_time32(&t0);
@@ -1601,7 +1601,7 @@ void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops) {
 			DList_RemoveHead(&pairs, sizeof(cNWPairNode));
 			Con_Printf("Num. Total Pairs PVis Remain: %d of %d\n", pairs.count, total);
 			if (!ops->is2D) {
-				Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+				Con_Printf("Mem. used: %d bytes\n", g_MemStats.bytes);
 			}
 			continue;
 		}
@@ -1617,7 +1617,7 @@ void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops) {
 		Con_Bluef("%s", str_Empty);
 		Con_Printf("Creating Region...\n");
 		if (!ops->is2D) {
-			Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+			Con_Printf("Mem. used: %d bytes\n", g_MemStats.bytes);
 		}
 		cNWPointNode *pn = self->sup.points.iter = self->sup.points.head;
 		const vec3_t *P = pn ? &pn->pos : NULL;
@@ -1625,7 +1625,7 @@ void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops) {
 		if (!ops->is2D) {
 			NWIntList_Clear(&self->sup.edgeCells);
 			Con_Printf("Point of Visibility created...\n");
-			Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+			Con_Printf("Mem. used: %d bytes\n", g_MemStats.bytes);
 			self->sup.vftable->LinkPoint(self, P);
 		} else {
 			self->sup.vftable->LinkPoint(self, P);
@@ -1636,7 +1636,7 @@ void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops) {
 		NWSup_PrintTime("Time Creating Point Inter Reg. No Link: %02ld:%02ld:%02ld\n", t1, t0);
 		Con_Printf("\nTime Act: %s\n", crt_ctime32(&t1));
 		if (!ops->is2D) {
-			Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+			Con_Printf("Mem. used: %d bytes\n", g_MemStats.bytes);
 		}
 		Con_Printf("Searching New Point Visibility No Linked...\n");
 		crt_time32(&t0);
@@ -1684,7 +1684,7 @@ byte NWSup_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, co
 		Con_Printf("Creating Region...\n");
 		ops->createRegion(self, &p);
 		if (!ops->is2D) {
-			Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+			Con_Printf("Mem. used: %d bytes\n", g_MemStats.bytes);
 		}
 		more = ops->nextInit(self, &p);
 		Con_Printf(more ? "New Node Init Selected.\n" : "Last Node Init.\n");
@@ -1703,7 +1703,7 @@ byte NWSup_Generate(CNodesWorld *self, const vec3_t *init, const vec3_t *min, co
 	NWSup_PrintTime(ops->is2D ? "Time Creating Graph 2D: %02ld:%02ld:%02ld\n" : "Time Creating Graph: %02ld:%02ld:%02ld\n",
 		t1, t0);
 	if (!ops->is2D) {
-		Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
+		Con_Printf("Mem. used: %d bytes\n", g_MemStats.bytes);
 	}
 	if (ops->is2D ? g_NW2DDrawMode : g_NWDrawMode) {
 		self->sup.vftable->GetInfoNodes(self);

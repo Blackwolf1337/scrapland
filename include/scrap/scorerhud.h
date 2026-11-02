@@ -353,7 +353,6 @@ extern cGVar GVar_RemainTalkTime;
 extern cGVar GVar_FullTalkTime;
 #define g_TalkTime (GVar_FullTalkTime.value.f)		/* the time of the whole talk */
 extern cPy_Function g_TalkCallback;
-#define g_TalkCallback (&g_TalkCallback)	/* run at the end of the talk */
 extern int g_TalkNumLines;
 extern char * g_TalkLines[40];	/* TALK_MAX_LINES */
 extern int g_TalkColor[3];		/* r, g, b */

@@ -49,7 +49,6 @@ typedef struct cNW2DBody {
 SD_SIZE(cNW2DBody, 0x10);
 
 extern cNW2DBody g_NW2DBodies[3];
-#define g_NW2DBodies (&g_NW2DBodies[0])	/* 3 bodies */
 extern cGVar GVar_ShowNodes2DAI;
 #define g_NW2DDrawMode (GVar_ShowNodes2DAI.value.i)	/* what the debug view of the graph draws */
 extern cGVar GVar_ShowInfoRegAI;

@@ -347,7 +347,6 @@ extern uint32_t g_NetCloseTime;	/* 2000: after the goodbye */
 extern uint32_t g_NetSendDelay;	/* 100 */
 extern netuserfactory_t g_NetUserFactory;
 extern cFileMem g_NetMsg;
-#define g_NetMsg (&g_NetMsg)	/* the memory file messages are built and read in */
 extern cStaticBuffer cStaticBuffer_PyStaticBuffer[2];
 #define g_NetStaticBuffer (&cStaticBuffer_PyStaticBuffer[1])
 #define g_PyStaticBuffer (&cStaticBuffer_PyStaticBuffer[0])
@@ -373,11 +372,8 @@ extern int g_NetStatRecvSlot;
 /* transport.cpp */
 extern uint32_t g_NetSocket;
 extern cNetRandom g_NetRandom;
-#define g_NetRandom (&g_NetRandom)
 extern NetAddr g_NetLocalAddr;
-#define g_NetLocalAddr (&g_NetLocalAddr)
 extern NetAddr g_NetServerAddr;
-#define g_NetServerAddr (&g_NetServerAddr)
 extern int g_NetMode;		/* NETMODE_ */
 extern int g_NetMasterOn;
 extern int g_NetMaxClients;
@@ -386,7 +382,6 @@ extern NetAddr *g_NetClientAddrs;	/* [g_NetMaxClients], family 0: free */
 extern NetPingServer *g_NetPingServers;
 extern uint32_t g_NetBrowseStart;
 extern NetAddr g_NetMasterAddr;
-#define g_NetMasterAddr (&g_NetMasterAddr)
 extern byte g_NetServerFullPkt[5];	/* 5 bytes: 0, 0, 0, 0, 8 */
 extern byte g_NetNeedPasswordPkt[5];	/* 5 bytes: 0, 0, 0, 0, 9 */
 

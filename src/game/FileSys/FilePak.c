@@ -106,7 +106,7 @@ void cFile2_SkipTo(cFile2 *self, int pos, const char *name) {
 
 HASHTABLE_STR(NameTable, cNameItem)
 
-/* the instance of cPackIndexItem (value cPackLocation), g_PackIndex */
+/* the instance of cPackIndexItem (value cPackLocation), (&g_PackIndex) */
 HASHTABLE_STR(PackIndexTable, cPackIndexItem)
 
 /* the location of a file in the packs (in g_PackFound, valid until the next call), NULL if not there */
@@ -115,7 +115,7 @@ cPackLocation *PackIndex_Find(const char *name) {
 
 	Str_Copy(key, name, sizeof(key));
 	PackName_Normalize(key);
-	cPackIndexItem *it = PackIndexTable_Find(g_PackIndex, key, HashTable_Slot(g_PackIndex, key));
+	cPackIndexItem *it = PackIndexTable_Find((&g_PackIndex), key, HashTable_Slot((&g_PackIndex), key));
 	if (!it) {
 		return NULL;
 	}
@@ -150,7 +150,7 @@ void PackNames_Add(cStringList *list, const cString *str) {
 
 /* the cString of the pack being recorded with that name */
 char **PackNames_Find(const char *name) {
-	cStringList *list = g_PackNames;
+	cStringList *list = (&g_PackNames);
 	list->iter = list->head;
 	if (!list->head) {
 		return NULL;
@@ -170,7 +170,7 @@ char **PackNames_Find(const char *name) {
 /* the entry of the build list with that name; the iterator of the list stays on it */
 cPackEntry *PackEntry_Find(const char *name) {
 	char key[0x104];
-	cPackEntryList *list = g_PackEntries;
+	cPackEntryList *list = (&g_PackEntries);
 
 	list->iter = list->head;
 	cPackEntry *pf = list->head ? &list->head->e : NULL;
@@ -195,9 +195,9 @@ static cPackEntry *PackEntries_Next(cPackEntryList *list) {
 
 /* the build list in front of the walk: appends behind the last entry */
 static void PackEntries_Append(const cPackEntry *e) {
-	PackEntries_Add(g_PackEntries, e);
-	if (g_PackEntries->head) {
-		g_PackEntries->head = g_PackEntries->head->next;
+	PackEntries_Add((&g_PackEntries), e);
+	if (g_PackEntries.head) {
+		g_PackEntries.head = g_PackEntries.head->next;
 	}
 	g_PackNumEntries++;
 }
@@ -401,12 +401,12 @@ byte Pack_Open(const char *name, const char *dir, size_t bufSize) {
 	}
 	CHECK(g_PackFiles[g_NumPackFiles].file.base.name == NULL);
 	if (g_NumPackFiles < 1) {
-		g_PackEntries->iter = g_PackEntries->head;
-		CHECK(g_NumPackFiles > 0 || g_PackEntries->head == NULL);
+		g_PackEntries.iter = g_PackEntries.head;
+		CHECK(g_NumPackFiles > 0 || g_PackEntries.head == NULL);
 		if (g_NumPackFiles < 1) {
-			for (int i = 0; i < (int)g_PackIndex->numSlots; i++) {
-				if (g_PackIndex->slots[i]) {
-					CHECK(g_NumPackFiles > 0 || g_PackIndex->slots[i] == NULL);
+			for (int i = 0; i < (int)g_PackIndex.numSlots; i++) {
+				if (g_PackIndex.slots[i]) {
+					CHECK(g_NumPackFiles > 0 || g_PackIndex.slots[i] == NULL);
 					break;
 				}
 			}
@@ -432,7 +432,7 @@ byte Pack_Open(const char *name, const char *dir, size_t bufSize) {
 			g_LstFile = File_OpenRel(path, "wt");
 			char *str;
 			cString_ctorStr(&str, name);
-			PackNames_Add(g_PackNames, &str);
+			PackNames_Add((&g_PackNames), &str);
 			cString_dtor(&str);
 		} else {
 			Con_Verbosef("Pack not found: appending '%s'\n", path);
@@ -476,12 +476,12 @@ byte Pack_Open(const char *name, const char *dir, size_t bufSize) {
 		f->vftable->Read(f, &offset, 4);
 		cPackLocation loc = { offset, size, (byte)g_NumPackFiles, { 0 } };
 		/* the index takes the name as it is in the pack; a later pack replaces the location */
-		CHECK(!g_PackIndex->locked);
-		uint32_t slot = HashTable_Slot(g_PackIndex, fname);
-		if (!PackIndexTable_Find(g_PackIndex, fname, slot)) {
-			PackIndexTable_Insert(g_PackIndex, fname, slot, &loc);
+		CHECK(!g_PackIndex.locked);
+		uint32_t slot = HashTable_Slot((&g_PackIndex), fname);
+		if (!PackIndexTable_Find((&g_PackIndex), fname, slot)) {
+			PackIndexTable_Insert((&g_PackIndex), fname, slot, &loc);
 		} else {
-			PackIndexTable_Set(g_PackIndex, fname, &loc);
+			PackIndexTable_Set((&g_PackIndex), fname, &loc);
 		}
 	}
 	g_NumPackFiles++;
@@ -492,8 +492,8 @@ byte Pack_Open(const char *name, const char *dir, size_t bufSize) {
 void Pack_CloseAll(void) {
 	CHECK(g_PackLocked == 0);
 	if (g_NumPackFiles) {
-		PackEntries_Clear(g_PackEntries);
-		PackIndexTable_Clear(g_PackIndex);
+		PackEntries_Clear((&g_PackEntries));
+		PackIndexTable_Clear((&g_PackIndex));
 		for (int i = 0; i < g_NumPackFiles; i++) {
 			cFile_Close(&g_PackFiles[i].file.base);
 		}
@@ -538,7 +538,7 @@ int Pack_Extract(const char *dir) {
 	char pack[0x104];
 	char out[0x104];
 	int errors = 0;
-	cPackEntryList *list = g_PackEntries;
+	cPackEntryList *list = (&g_PackEntries);
 
 	Str_Printf(pack, sizeof(pack), "%s%s", dir, "Data");
 	Pack_CloseAll();
@@ -665,7 +665,7 @@ void Pack_BuildAddFile(const char *path) {
 /* names, sizes and offsets of the build list; the entry after the last (NULL if the count is right) */
 static cPackEntry *Pack_WriteEntries(cAbstractFile *out) {
 	uint32_t v;
-	cPackEntryList *list = g_PackEntries;
+	cPackEntryList *list = (&g_PackEntries);
 
 	list->iter = list->head;
 	cPackEntry *pf = list->head ? &list->head->e : NULL;
@@ -690,7 +690,7 @@ void Pack_Build(const char *dir, const char *outName, int mode) {
 	char base[0x104];
 	char path[0x104];
 	int onList = 0, added = 0, notFound = 0;
-	cPackEntryList *list = g_PackEntries;
+	cPackEntryList *list = (&g_PackEntries);
 	cFile2 *out = &g_PackFiles[0];
 	uint32_t v;
 

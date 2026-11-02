@@ -1538,7 +1538,7 @@ void CBsp_GroupMaps(CBsp *self) {
 		(int (*)(const void *, const void *))(void *)BspTri_CmpZone);
 	for (int i = 0; i < self->num_lists; i++) {
 		BspTri *list = self->lists[i];
-		E3D_DebugPrintf("agrupar mapas:  %d / %d   mem: %d Kb  \r", i + 1, self->num_lists, g_MemStats->bytes / 1024);
+		E3D_DebugPrintf("agrupar mapas:  %d / %d   mem: %d Kb  \r", i + 1, self->num_lists, g_MemStats.bytes / 1024);
 		if (list->flags & BSPTRI_NOLMAP) {
 			CHECK(list->LMap == NULL);
 			Img_Free(&list->light, 0xc);
@@ -2731,7 +2731,7 @@ void CBsp_InitAreas(CBsp *self) {
 	}
 	E3D_DebugPrintf("total areas: %d %d %d %d   \n", g_BspAreasTotal[0], g_BspAreasTotal[1], g_BspAreasTotal[2],
 		g_BspAreasTotal[3]);
-	E3D_DebugPrintf("memoria usada: %-5d Kb\n", g_MemStats->bytes / 1024);
+	E3D_DebugPrintf("memoria usada: %-5d Kb\n", g_MemStats.bytes / 1024);
 }
 
 

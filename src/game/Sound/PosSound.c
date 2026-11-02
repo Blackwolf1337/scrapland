@@ -188,17 +188,17 @@ int cSoundPS_Var(cSoundPS *ps, const char *name, int set, char **s, double *d, i
 /* the property sets */
 
 cSoundPS *SndPS_Get(const char *name) {
-	return PtrTable_Value(g_SndPSTable, name);
+	return PtrTable_Value((&g_SndPSTable), name);
 }
 
 cSoundPS *SndPS_Create(const char *name) {
-	if (PtrTable_Find(g_SndPSTable, name, HashTable_Slot(g_SndPSTable, name))) {
+	if (PtrTable_Find((&g_SndPSTable), name, HashTable_Slot((&g_SndPSTable), name))) {
 		return NULL;
 	}
 	cSoundPS *ps = operator_new(sizeof(cSoundPS));
 	ps = ps ? cSoundPS_ctor(ps) : NULL;
 	cString_Set(&ps->name, name);
-	PtrTable_Add(g_SndPSTable, ps->name, (void *const *)&ps, 1);
+	PtrTable_Add((&g_SndPSTable), ps->name, (void *const *)&ps, 1);
 	return ps;
 }
 
@@ -217,7 +217,7 @@ byte SndPS_Use(byte use) {
 }
 
 void Sound_ResetVolumes(void) {
-	HashTable *t = g_SndPSTable;
+	HashTable *t = (&g_SndPSTable);
 
 	g_isActionMusic = g_isActionMusicDef;
 	g_WarnVoiceVolume = g_WarnVoiceVolumeDef;

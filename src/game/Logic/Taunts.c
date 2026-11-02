@@ -27,9 +27,7 @@ extern char * s_TauntRaces[5];		/* "SBi", "SBa", "SFu", "SPo" */
 extern int s_TauntPoliceCount;		/* -1 at the start */
 extern float s_TauntLastTime;
 extern int s_TauntCountsGuard;
-#define s_TauntCountsGuard (&s_TauntCountsGuard)
 extern int s_TauntTimeGuard;
-#define s_TauntTimeGuard (&s_TauntTimeGuard)
 
 /* the atexit destructor of the count table */
 void Taunts_FiniCounts(void) {
@@ -66,22 +64,22 @@ cEntity *Logic_RandomCar(cEntityListData *list) {
 int Taunts_PoliceKind(cEntity *ship) {
 	int epoch = crt_InitEpoch();
 
-	if (*s_TauntCountsGuard > epoch) {
-		crt_Init_thread_header(s_TauntCountsGuard);
-		if (*s_TauntCountsGuard == -1) {
+	if (s_TauntCountsGuard > epoch) {
+		crt_Init_thread_header((&s_TauntCountsGuard));
+		if (s_TauntCountsGuard == -1) {
 			s_TauntRaceCounts.slots = New_Array(0x1c9, sizeof(*s_TauntRaceCounts.slots));
 			memset(s_TauntRaceCounts.slots, 0, 0x1c9 * sizeof(*s_TauntRaceCounts.slots));
 			s_TauntRaceCounts.locked = 0;
 			s_TauntRaceCounts.caseSensitive = 1;
 			crt_atexit(Taunts_FiniCounts);
-			crt_Init_thread_footer(s_TauntCountsGuard);
+			crt_Init_thread_footer((&s_TauntCountsGuard));
 		}
 	}
-	if (*s_TauntTimeGuard > epoch) {
-		crt_Init_thread_header(s_TauntTimeGuard);
-		if (*s_TauntTimeGuard == -1) {
+	if (s_TauntTimeGuard > epoch) {
+		crt_Init_thread_header((&s_TauntTimeGuard));
+		if (s_TauntTimeGuard == -1) {
 			s_TauntLastTime = Timer_GetTime(&g_pWorld->timer);
-			crt_Init_thread_footer(s_TauntTimeGuard);
+			crt_Init_thread_footer((&s_TauntTimeGuard));
 		}
 	}
 	const char *race = CGameModel_Name(Obj_Vtbl(ship)->GetModel(ship));

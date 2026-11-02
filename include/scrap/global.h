@@ -26,7 +26,7 @@ void CheckFailed(const char *expr, const char *file, const char *date, int line)
 		} \
 	} while (0)
 
-/* memory statistics: of the whole game (g_MemStats) and of the context set in g_MemStatsContext */
+/* memory statistics: of the whole game ((&g_MemStats)) and of the context set in g_MemStatsContext */
 typedef struct cMemStats {
 	int bytes;			/* 0x00 */
 	int peakBytes;			/* 0x04 */
@@ -38,7 +38,6 @@ typedef struct cMemStats {
 SD_SIZE(cMemStats, 0x18);
 
 extern cMemStats g_MemStats;
-#define g_MemStats (&g_MemStats)
 extern cMemStats *g_MemStatsContext;
 
 /* the engine's operator new and sized delete (rva 0x1334d0, 0x313634; the plain delete is 0x1334e0), with its memory statistics */
