@@ -44,7 +44,7 @@
 #include "scrap/table.h"
 #include "scrap/text.h"
 #include "scrap/misc.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 #define CMOTORAPP_VFTABLE GAME_VFTABLE(CEngineApp_vftable)
 #define CNULLINPUT_VFTABLE GAME_VFTABLE(CNullInput_vftable)
@@ -263,7 +263,7 @@ byte Engine_FrameDue(CD3DApplication *self) {
 	if (!((double)fps > 0.1) || Engine_PresentVSync(self)) {
 		return 1;
 	}
-	return exe_timeGetTime() * 3 >= g_LimitNext;
+	return Plat_Ticks() * 3 >= g_LimitNext;
 }
 
 /* a pending reset of the device objects (g_ResetDev): with g_ResetDevOnly 0 also the world through the release
@@ -394,14 +394,14 @@ int CEngineApp_Render(CEngineApp *self) {
 			int frame = (int)(3000.0 / (double)fps);
 
 			if (!g_LimitNext) {
-				g_LimitNext = exe_timeGetTime() * 3;
+				g_LimitNext = Plat_Ticks() * 3;
 			}
-			if (exe_timeGetTime() * 3 >= g_LimitNext + frame) {
+			if (Plat_Ticks() * 3 >= g_LimitNext + frame) {
 				E3D_LogVerbose(g_FileLog, "WARN: LimitFPS: Framerate below fps limit by %d ms",
-					(exe_timeGetTime() * 3 - g_LimitNext - frame) / 3);
+					(Plat_Ticks() * 3 - g_LimitNext - frame) / 3);
 			}
-			if (exe_timeGetTime() * 3 - g_LimitNext > 15000) {
-				g_LimitNext = exe_timeGetTime() * 3;
+			if (Plat_Ticks() * 3 - g_LimitNext > 15000) {
+				g_LimitNext = Plat_Ticks() * 3;
 				E3D_LogBlue(g_FileLog, "ERROR: LimitFPS: Out of sync (frame exceeded 5 sec)");
 			}
 			/* differs from the original on purpose (no sleeps): the wait for g_LimitNext is Engine_FrameDue */

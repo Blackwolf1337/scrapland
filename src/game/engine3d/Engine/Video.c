@@ -22,7 +22,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/snd.h"
 #include "scrap/video.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 #define VK_ESCAPE 0x1b
 #define VK_SPACE 0x20
@@ -64,7 +64,7 @@ static byte video_hold;
 static uint32_t video_holdEnd;
 
 byte Video_KeysHeld(void) {
-	if (video_hold && (exe_timeGetTime() >= video_holdEnd || (!Plat_KeyDown(VK_ESCAPE)
+	if (video_hold && (Plat_Ticks() >= video_holdEnd || (!Plat_KeyDown(VK_ESCAPE)
 		&& !Plat_KeyDown(VK_SPACE) && !Plat_KeyDown(VK_RETURN)))) {
 		video_hold = 0;
 	}
@@ -72,7 +72,7 @@ byte Video_KeysHeld(void) {
 }
 
 void Video_WaitKeysUp(int ms) {
-	video_holdEnd = exe_timeGetTime() + (uint32_t)ms;
+	video_holdEnd = Plat_Ticks() + (uint32_t)ms;
 	video_hold = 1;
 	Video_KeysHeld();
 }
@@ -344,13 +344,13 @@ static void Video_StreamStep(void) {
 		}
 		if (!video.started) {
 			/* the clock and the sound start with the first picture */
-			video.t0 = exe_timeGetTime() - (uint32_t)(video.pts * 1000.0);
+			video.t0 = Plat_Ticks() - (uint32_t)(video.pts * 1000.0);
 			video.started = 1;
 			if (video.sound) {
 				Snd_StreamPlay(video.sound, 0);
 			}
 		}
-		if (video.pts * 1000.0 > (double)(exe_timeGetTime() - video.t0)) {
+		if (video.pts * 1000.0 > (double)(Plat_Ticks() - video.t0)) {
 			break;			/* not due yet */
 		}
 		/* due: only the last due picture of this pass is drawn */

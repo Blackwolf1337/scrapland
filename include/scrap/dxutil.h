@@ -7,7 +7,12 @@
 
 #include "scrap/d3d8.h"
 #include "scrap/game.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
+
+/* a RECT of Windows */
+typedef struct exe_rect {
+	int32_t left, top, right, bottom;
+} exe_rect;
 
 typedef struct D3DGuid {
 	uint32_t Data1;

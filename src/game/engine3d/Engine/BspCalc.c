@@ -22,7 +22,7 @@
 #include "scrap/groundportal.h"
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 /* 1/255 of the color bytes (0x3b808081) */
 #define BSP_INV255 0x1.010102p-8f
@@ -1420,7 +1420,7 @@ void CBsp_Calculate(CBsp *self) {
 	box_t box, box3;
 	float mc[17], amb[3];
 	CBmp cob;
-	uint32_t t0 = exe_timeGetTime();
+	uint32_t t0 = Plat_Ticks();
 	CScene *scn = self->model->scene;
 
 	CHECK(scn);
@@ -1538,7 +1538,7 @@ void CBsp_Calculate(CBsp *self) {
 	CBsp_RemoveLights(self);
 	CBsp_AdjustGamma(self);
 	CBsp_GroupMaps(self);
-	float secs = (float)((double)(exe_timeGetTime() - t0) / 1000.0);
+	float secs = (float)((double)(Plat_Ticks() - t0) / 1000.0);
 	int s = (int)secs;
 	E3D_DebugPrintf("\ncalcular_mapas(): %.2f seg. (%d:%02d:%02d hms)\n", (double)secs, s / 3600, s / 60 % 60, s % 60);
 	E3D_LogPrint(g_FileLog, "calcular_mapas(): %.2f seg. (%d:%02d:%02d hms)", (double)secs, s / 3600, s / 60 % 60,

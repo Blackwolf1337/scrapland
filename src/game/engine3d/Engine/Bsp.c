@@ -24,7 +24,7 @@
 #include "scrap/text.h"
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 
 /* the "uint as double" conversions of the original: the int plus 2^32 for a set top bit */
@@ -108,7 +108,7 @@ BspTxf *BspTxf_ctor(BspTxf *self, const char *map, const char *name, int n, int 
 	self->readRetries = 0;
 	self->deleted = 0;
 	self->rebuild = 1;
-	self->start = exe_timeGetTime();
+	self->start = Plat_Ticks();
 	CHECK(map && name);
 	Bprintf(self->base, sizeof(self->base), "&u&d_TXF/&n.%s.%d", name, n);
 	Path_Format(self->base, map, self->base);
@@ -130,7 +130,7 @@ void BspTxf_SetName(BspTxf *self, int i) {
 }
 
 void BspTxf_Info(BspTxf *self) {
-	int secs = (int)((double)(exe_timeGetTime() - self->start) / 1000.0);
+	int secs = (int)((double)(Plat_Ticks() - self->start) / 1000.0);
 	int m = secs / 60 % 60;
 	int s = secs % 60;
 

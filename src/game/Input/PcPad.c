@@ -15,7 +15,7 @@
 #include "scrap/platform.h"
 #include "scrap/scrapmain.h"
 #include "scrap/weapons.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 #define PAD_ERROR "ERROR"
 extern char g_PadLabelBuf[32];	/* 0x20 bytes */

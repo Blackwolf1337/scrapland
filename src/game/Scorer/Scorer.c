@@ -26,7 +26,7 @@
 #include "scrap/withlifeentity.h"
 #include "scrap/world.h"
 #include "scrap/global.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 #include "scrap/actions.h"
 #include "scrap/ai.h"
 #include "scrap/aivehiclecontrol.h"

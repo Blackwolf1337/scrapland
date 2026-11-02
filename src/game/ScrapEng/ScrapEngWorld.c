@@ -18,7 +18,7 @@
 #include "scrap/groundportal.h"
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 /* the methods of IDirect3DDevice8, IDirect3DSurface8 and IDirect3D8 only this file calls */
 #define D3DDEVTYPE_HAL 1
@@ -392,13 +392,13 @@ void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut) {
 	const box_t rect = { { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 0.0f } };
 	uint32_t fade = g_SplashFade;
 	if (fadeIn) {
-		uint32_t start = exe_timeGetTime();
+		uint32_t start = Plat_Ticks();
 		uint32_t end = start + fade;
-		if (exe_timeGetTime() < start + fade) {
+		if (Plat_Ticks() < start + fade) {
 			float fadeF = (float)(double)fade;
 			do {
-				Splash_Draw(&rect, Splash_Color(Splash_Gray(exe_timeGetTime() - start, fadeF)), tex);
-			} while (exe_timeGetTime() < end);
+				Splash_Draw(&rect, Splash_Color(Splash_Gray(Plat_Ticks() - start, fadeF)), tex);
+			} while (Plat_Ticks() < end);
 		}
 	}
 	for (int i = 4; i != 0; i--) {
@@ -406,13 +406,13 @@ void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut) {
 	}
 	uint32_t wait = waitMs;
 	if (name && !*name) {
-		int left = (int)(g_SplashTime + waitMs - exe_timeGetTime());
+		int left = (int)(g_SplashTime + waitMs - Plat_Ticks());
 		wait = left < 0 ? 0 : (uint32_t)left;
 	}
-	g_SplashTime = exe_timeGetTime();
+	g_SplashTime = Plat_Ticks();
 	if (wait) {
-		uint32_t end = wait + exe_timeGetTime();
-		while (exe_timeGetTime() < end) {
+		uint32_t end = wait + Plat_Ticks();
+		while (Plat_Ticks() < end) {
 			if (Plat_KeyDown(VK_RETURN) || Plat_KeyDown(VK_ESCAPE) || Plat_KeyDown(VK_SPACE)) {
 				break;
 			}
@@ -423,13 +423,13 @@ void Splash_Show(const char *name, byte fadeIn, uint32_t waitMs, byte fadeOut) {
 		}
 	}
 	if (fadeOut) {
-		uint32_t start = exe_timeGetTime();
+		uint32_t start = Plat_Ticks();
 		uint32_t end = start + fade;
-		if (exe_timeGetTime() < end) {
+		if (Plat_Ticks() < end) {
 			float fadeF = (float)(double)fade;
 			do {
-				Splash_Draw(&rect, Splash_Color(0xff - Splash_Gray(exe_timeGetTime() - start, fadeF)), tex);
-			} while (exe_timeGetTime() < end);
+				Splash_Draw(&rect, Splash_Color(0xff - Splash_Gray(Plat_Ticks() - start, fadeF)), tex);
+			} while (Plat_Ticks() < end);
 		}
 		Splash_Draw(&rect, 0, tex);
 	}

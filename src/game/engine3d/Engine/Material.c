@@ -13,7 +13,7 @@
 #include "scrap/fxtexture.h"
 #include "scrap/material.h"
 #include "scrap/texture.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 #define TEXTSTATIC_CTOR 0x233990
 #define TEXTSTATIC_DTOR 0x233c70

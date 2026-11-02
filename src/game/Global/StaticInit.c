@@ -205,7 +205,7 @@ void MemPools_PrintAll(void);
 
 /* the objects of the lines: SI_REF(name) its address, SI_AT(name, off) an address inside it (the value of a cGVar at
  * 16); through the assembler name, so a header macro of the same name does not get in the way */
-#define SI_REF(name) SD_REF_(sd_##name, "_" #name)
+#define SI_REF(name) SD_REF_(sd_##name, SD_CPFX #name)
 #define SI_AT(name, off) ((void *)((char *)SI_REF(name) + (off)))
 #define SI_OBJ(p) (p)
 #define SI_GVAR(p) ((cGVar *)(p))

@@ -9,7 +9,7 @@
 #include "scrap/global.h"
 #include "scrap/mathlib.h"
 #include "scrap/scrapmain.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 /* the performance counter of the engine: since g_TimerBase, or the fixed time while one is set */
 extern int64_t g_TimerFixed;
@@ -26,7 +26,7 @@ int Timer_GetFreq(int64_t *out) {
 		*out = g_TimerFixed;
 		return 1;
 	}
-	int r = exe_QueryPerformanceCounter(out);
+	int r = Plat_Counter(out);
 	*out -= g_TimerBase;
 	return r;
 }
@@ -37,14 +37,14 @@ int Timer_FixedStep(float fps) {
 	if (fps == 0.0f) {
 		/* back to the counter, from the fixed time on */
 		if (g_TimerFixed) {
-			exe_QueryPerformanceCounter(&t);
+			Plat_Counter(&t);
 			g_TimerBase = t - g_TimerFixed;
 		}
 		g_TimerFixed = 0;
 		return 1;
 	}
 	if (!g_TimerFixed) {
-		exe_QueryPerformanceCounter(&t);
+		Plat_Counter(&t);
 		t -= g_TimerBase;
 		g_TimerFixed = t;
 	}
@@ -60,7 +60,7 @@ int Timer_GetQPFreq(int64_t *out) {
 	if (((uint32_t)g_TimerQPFreq & (uint32_t)((uint64_t)g_TimerQPFreq >> 32)) == 0xffffffff) {
 		/* differs from the original on purpose (no busy waits): the original also measured the counter over 100 ms
 		 * of timeGetTime, up to 10 times, and took 0 (timeGetTime) when it was not 1/10 of the frequency */
-		g_TimerQPFreq = exe_QueryPerformanceFrequency(out) ? *out : 0;
+		g_TimerQPFreq = Plat_Frequency(out) ? *out : 0;
 		g_TimerQPFreq = (int64_t)((uint64_t)(uint32_t)g_TimerQPMult * (uint64_t)g_TimerQPFreq);
 	}
 	*out = g_TimerQPFreq;
@@ -72,7 +72,7 @@ int Timer_GetQPFreq(int64_t *out) {
 int64_t Timer_MeasureQP(int ms) {
 	int64_t freq;
 
-	if (ms <= 0 || !exe_QueryPerformanceFrequency(&freq)) {
+	if (ms <= 0 || !Plat_Frequency(&freq)) {
 		return 0;
 	}
 	return freq * ms / 1000;
@@ -116,7 +116,7 @@ float DXUtil_Timer(int cmd) {
 	} else if (g_TimerFixed) {
 		t = g_TimerFixed;
 	} else {
-		exe_QueryPerformanceCounter(&t);
+		Plat_Counter(&t);
 		t -= g_TimerBase;
 	}
 	switch (cmd) {
@@ -158,7 +158,7 @@ noqp:;
 	double stop = g_DXTimerStopD;
 	double time;
 	if (stop == 0.0 || cmd == DXUTIL_TIMER_START || cmd == DXUTIL_TIMER_GETABSOLUTETIME) {
-		time = (double)exe_timeGetTime() * 0.001;
+		time = (double)Plat_Ticks() * 0.001;
 		stop = g_DXTimerStopD;
 	} else {
 		time = stop;

@@ -15,7 +15,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/video.h"
 #include "scrap/platform.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 CWinApp *CWinApp_ctor(CWinApp *self, void *hInst, void *hPrev, const char *cmdLine, int nCmdShow) {
 	char path[0x104];
@@ -141,7 +141,7 @@ double CWinApp_GetTime(CWinApp *self) {
 		g_TimeInit = 1;
 		g_TimeUseQP = (byte)Timer_GetQPFreq64(&g_TimeQPFreq);
 		Timer_GetFreq64(&g_TimeQPStart);
-		g_TimeMsStart = exe_timeGetTime();
+		g_TimeMsStart = Plat_Ticks();
 	}
 	if (g_TimeUseQP) {
 		int64_t now;
@@ -150,7 +150,7 @@ double CWinApp_GetTime(CWinApp *self) {
 		double t = Int64_ToDouble((int64_t)c);
 		return t / Int64_ToDouble(g_TimeQPFreq);
 	}
-	uint32_t ms = exe_timeGetTime() - g_TimeMsPause - g_TimeMsStart;
+	uint32_t ms = Plat_Ticks() - g_TimeMsPause - g_TimeMsStart;
 	double d = (double)(int32_t)ms + ((int32_t)ms < 0 ? 4294967296.0 : 0.0);
 	return d / 1000.0;
 }

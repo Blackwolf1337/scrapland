@@ -9,7 +9,7 @@
 #include "scrap/hashtable.h"
 #include "scrap/pymempool.h"
 #include "scrap/scrap.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 cStringNode *cStringList_NewNode(cStringList *list);
 

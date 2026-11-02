@@ -18,7 +18,7 @@
 #include "scrap/scrapfont.h"
 #include "scrap/scrapmain.h"
 #include "scrap/sound.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 #include "scrap/world.h"
 #include "scrap/scoreritems.h"
 

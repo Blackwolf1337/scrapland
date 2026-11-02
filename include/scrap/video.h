@@ -4,7 +4,7 @@
 #ifndef SCRAP_VIDEO_H
 #define SCRAP_VIDEO_H
 
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 /* Video_PlayFile and Video_PlayPath: the video plays on from the message loop (Video_Step); the result is
  * Video_Result once Video_Busy is 0. The original waited for the end of the video in them. */

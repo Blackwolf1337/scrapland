@@ -15,8 +15,11 @@
 #include <limits.h>
 #include <math.h>
 #include <stdlib.h>
+#include <unistd.h>
+#ifdef _WIN32
 #include <windows.h>
 #include <corecrt_startup.h>
+#endif
 
 #include "scrap/app.h"
 #include "scrap/crt.h"
@@ -108,9 +111,11 @@ void operator_delete_sized(void *p, uint32_t size) {
 
 /* ---- the start ---- */
 
-/* what the CRT initializers of the __xi table set that the game sees */
+/* what the CRT initializers of the __xi table set that the game sees (the matherr hook exists on Windows only) */
 static void Crt_InitState(void) {
+#ifdef _WIN32
 	__setusermatherr((int (*)(struct _exception *))E3D_MathErr);
+#endif
 }
 
 /* the dynamic initializers of the game's globals, in the order of the __xc table of the original (crtxc.c) */
@@ -124,17 +129,9 @@ static void Crt_InitGlobals(void) {
 	Com_Printf("crt: %d initializers of the game run\n", crt_xc_count);
 }
 
-/* __scrt_get_show_window_mode */
-static int Crt_ShowMode(void) {
-	STARTUPINFOW si;
-
-	GetStartupInfoW(&si);
-	return si.dwFlags & STARTF_USESHOWWINDOW ? si.wShowWindow : SW_SHOWDEFAULT;
-}
-
-/* __scrt_common_main_seh without the CRT: returns only through exit */
-[[noreturn]] void Crt_Main(void) {
+/* __scrt_common_main_seh without the CRT, with the command line after the program name: returns only through exit */
+[[noreturn]] void Crt_Main(char *cmdLine) {
 	Crt_InitState();
 	Crt_InitGlobals();
-	crt_exit(App_WinMain(GetModuleHandleA(NULL), NULL, _get_narrow_winmain_command_line(), Crt_ShowMode()));
+	crt_exit(App_WinMain(NULL, NULL, cmdLine, 10));	/* SW_SHOWDEFAULT, the window is SDL's */
 }

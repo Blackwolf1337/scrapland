@@ -18,11 +18,11 @@
 #include "scrap/model.h"
 #include "scrap/ground.h"
 #include "scrap/misc.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 /* the time since t0 in seconds, for the debug output */
 static double Scene_Seconds(uint32_t t0) {
-	return (double)(uint32_t)(exe_timeGetTime() - t0) / 1000.0;
+	return (double)(uint32_t)(Plat_Ticks() - t0) / 1000.0;
 }
 
 CScene *CScene_ctor(CScene *self) {
@@ -523,7 +523,7 @@ void CScene_CalcWeights(CScene *self) {
 		return;
 	}
 	int n = 0;
-	uint32_t t0 = exe_timeGetTime();
+	uint32_t t0 = Plat_Ticks();
 	CScene_UpdateNodes(self);
 	for (CNode3D *node = self->Node3D; node; node = node->next) {
 		if (CNode3D_Class(node) == CLASS_OBJ3D_MESHD3D) {
@@ -726,7 +726,7 @@ void CScene_SetMarks(CScene *self, int v) {
 
 void CScene_PrecalcIllum(CScene *self, byte noLights, byte visible) {
 	E3D_DebugPrintf("\n CEscena::precalc_ilum(): %s (%08Xh)", Path_FileName(self->name), self);
-	uint32_t t0 = exe_timeGetTime();
+	uint32_t t0 = Plat_Ticks();
 	for (CNode3D *n = self->Node3D; n; n = n->next) {
 		if (visible && (n->flags & NODE_HIDDEN)) {
 			continue;

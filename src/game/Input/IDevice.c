@@ -11,7 +11,7 @@
 #include "scrap/input.h"
 #include "scrap/scrap.h"
 #include "scrap/scrapmain.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 #include "scrap/world.h"
 
 #define EXE_EMPTY GAME_STR(str_Empty)	/* the one "" the code compares by address */

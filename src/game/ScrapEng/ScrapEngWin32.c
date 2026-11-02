@@ -10,7 +10,7 @@
 #include "scrap/scrapmain.h"
 #include "scrap/e3dutil.h"
 #include "scrap/video.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 #define APP_EXCEPTIONFILTER 0x233410
 
@@ -87,12 +87,21 @@ int __stdcall App_ExceptionFilter(void **ep) {
 	return -1;
 }
 
+#ifdef _WIN32
+void *__stdcall SetUnhandledExceptionFilter(void *filter);
+#endif
+
+/* the filter on Windows only; elsewhere a crash ends the process the normal way of the system */
 void App_SetExceptionFilter(byte on) {
+#ifdef _WIN32
 	if (on) {
 		CHECK(!g_PrevExceptionFilter);
-		g_PrevExceptionFilter = exe_SetUnhandledExceptionFilter((void *)App_ExceptionFilter);
+		g_PrevExceptionFilter = SetUnhandledExceptionFilter((void *)App_ExceptionFilter);
 		return;
 	}
-	exe_SetUnhandledExceptionFilter(g_PrevExceptionFilter);
+	SetUnhandledExceptionFilter(g_PrevExceptionFilter);
 	g_PrevExceptionFilter = NULL;
+#else
+	(void)on;
+#endif
 }

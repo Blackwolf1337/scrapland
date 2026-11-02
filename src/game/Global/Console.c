@@ -10,7 +10,7 @@
 #include "scrap/gvar.h"
 #include "scrap/console.h"
 #include "scrap/game.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 extern void *g_LogFile;
 extern void *g_LogAIFile;

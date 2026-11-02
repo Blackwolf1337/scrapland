@@ -12,7 +12,7 @@
 #include "scrap/e3dutil.h"
 #include "scrap/filepak.h"
 #include "scrap/nodefx.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 #define LOG_LINE 0x400
 #define LOG_NAME "engine.log"

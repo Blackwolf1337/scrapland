@@ -1,35 +1,52 @@
 /*
- * ScrapC.exe, the standalone exe of docs/standalone.md: a normal exe of the C code of src/ and real libraries, with no
- * byte of Scrap.exe in it. It needs only the game files, not the original exe (stage 3c2). Its data are the C objects
- * of src/game/Global (stage 3b), placed by the linker like any other global, its resources the ones of
- * src/standalone/scrap.rc (stage 3b3). The DLLs of the original are imports of this exe (stage 3c1a, GAME_IMPORT of
- * game.h), which the loader binds before the start, as it did for the original. It has the default base and dynamic base (ASLR), nothing depends on the base 0x400000 of the
- * original.
- *
- * Stage 2a: the Python is the real library of src/python, linked into this exe. Stage 2b: the CRT functions are the
- * UCRT of this exe or C (src/standalone/crt.c and crtinit.c), the MSVC math is Microsoft's ucrtbase (crtmath.c,
- * crtvec.c). The process starts in Crt_Main of crtinit.c.
+ * ScrapC, the standalone game: a normal program of the C code of src/ and real libraries, with no byte of Scrap.exe in
+ * it, only the game files. Windows (mingw-w64) and Linux start here; the process goes on in Crt_Main of crtinit.c
+ * with the command line after the program name, as WinMain had it.
  */
 #include <stdio.h>
 #include <string.h>
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
 #include "scrap/game.h"
-#include "scrap/win32.h"
 
 int Game_Dir(char *dir, size_t size);
 int Game_Start(uintptr_t base, const char *dir);
-[[noreturn]] void Crt_Main(void);
+[[noreturn]] void Crt_Main(char *cmdLine);
 void Log_Open(const char *dir);
 
-int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
-	char dir[MAX_PATH];
+static int Main_Start(char *cmdLine, uintptr_t base) {
+	char dir[1024];
 
-	(void)prev, (void)cmd, (void)show;
 	if (!Game_Dir(dir, sizeof(dir))) {
 		return 1;
 	}
 	Log_Open(dir);
-	Game_Start((uintptr_t)inst, dir);
-	Crt_Main();
+	Game_Start(base, dir);
+	Crt_Main(cmdLine);
 }
+
+#ifdef _WIN32
+int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
+	(void)prev, (void)show;
+	return Main_Start(cmd, (uintptr_t)inst);
+}
+#else
+/* the arguments joined with spaces, the ones with a space quoted: the command line the game parses */
+int main(int argc, char **argv) {
+	static char cmd[4096];
+	size_t n = 0;
+
+	for (int i = 1; i < argc; i++) {
+		byte quote = strchr(argv[i], ' ') != NULL;
+		int w = snprintf(cmd + n, sizeof(cmd) - n, "%s%s%s%s", i > 1 ? " " : "", quote ? "\"" : "", argv[i],
+			quote ? "\"" : "");
+		if (w < 0 || (size_t)w >= sizeof(cmd) - n) {
+			break;
+		}
+		n += (size_t)w;
+	}
+	return Main_Start(cmd, 0);
+}
+#endif

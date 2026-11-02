@@ -132,7 +132,7 @@ static float Call_StdFloat(void *fn, const uint32_t *a, int n) {
 
 /* the __stdcall functions of the exe (its decorated names _name@n; the label without the decoration resolves through
  * --enable-stdcall-fixup): the callbacks of Windows, COM and FMOD, the import thunks and D3DX */
-#define TEST_STDCALL(name) extern char sds_##name[] __asm__("_" #name);
+#define TEST_STDCALL(name) extern char sds_##name[] __asm__(SD_CPFX #name);
 #define TEST_STDCALLS \
 	TEST_STDCALL(App_ExceptionFilter) TEST_STDCALL(App_WinMain) \
 	TEST_STDCALL(crt_eh_vector_ctor) \
@@ -188,10 +188,10 @@ typedef struct {
 	uint32_t rva;		/* of the original */
 } testsym_t;
 
-#define SD_TEST_FUNC(key, name, rva) extern char sdt_##name[] __asm__("_" #name);
-#define SD_TEST_CRT(key, name, rva) extern char sdt_##name[] __asm__("_" #name);
-#define SD_TEST_OBJ(key, name, rva) extern char sdt_##name[] __asm__("_" #name);
-#define SD_TEST_DATA(key, owner, off, rva) extern char sdt_##owner[] __asm__("_" #owner);
+#define SD_TEST_FUNC(key, name, rva) extern char sdt_##name[] __asm__(SD_CPFX #name);
+#define SD_TEST_CRT(key, name, rva) extern char sdt_##name[] __asm__(SD_CPFX #name);
+#define SD_TEST_OBJ(key, name, rva) extern char sdt_##name[] __asm__(SD_CPFX #name);
+#define SD_TEST_DATA(key, owner, off, rva) extern char sdt_##owner[] __asm__(SD_CPFX #owner);
 #include "testsyms.inc"
 #undef SD_TEST_FUNC
 #undef SD_TEST_CRT
@@ -226,10 +226,10 @@ typedef struct {
 	uint32_t rva;
 } testaddr_t;
 
-#define SD_TEST_ADDR(name, rva, size) extern char sda_##name[] __asm__("_" #name);
+#define SD_TEST_ADDR(name, rva, size) extern char sda_##name[] __asm__(SD_CPFX #name);
 #include "testaddrs.inc"
 #undef SD_TEST_ADDR
-#define SD_TEST_FADDR(name, rva) extern char sda_##name[] __asm__("_" #name);
+#define SD_TEST_FADDR(name, rva) extern char sda_##name[] __asm__(SD_CPFX #name);
 #include "testfuncs.inc"
 #undef SD_TEST_FADDR
 

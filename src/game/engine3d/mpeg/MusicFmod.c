@@ -17,7 +17,7 @@
 #include "scrap/snd.h"
 #include "scrap/sound.h"
 #include "scrap/misc.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 #define MUSIC_SHOW_DEBUG 2			/* S_Show */
 
@@ -61,7 +61,7 @@ extern byte g_VoicesPaused;
 
 /* |now - since| as the original computes it (cdq, xor, sub) */
 static int Time_Since(uint32_t since) {
-	uint32_t d = exe_timeGetTime() - since;
+	uint32_t d = Plat_Ticks() - since;
 	uint32_t m = (uint32_t)((int32_t)d >> 31);
 
 	return (int)((d ^ m) - m);
@@ -210,7 +210,7 @@ int Voice_Open(const char *name, int voice, int voiceover) {
 		E3D_LogBlue(g_FileLog, "Error: %s", Fmod_ErrorString(Snd_GetError()));
 		return 0;
 	}
-	t = exe_timeGetTime();
+	t = Plat_Ticks();
 	v->openTime = t;
 	v->waitTime = t;
 	v->playTime = t;
@@ -260,7 +260,7 @@ int Voice_Play(int voice) {
 		}
 		Voice_ApplyVolume(v, 1.0f);
 		Snd_SetPaused(v->channel, 0);
-		v->playTime = exe_timeGetTime();
+		v->playTime = Plat_Ticks();
 	}
 	return 1;
 }
@@ -464,7 +464,7 @@ byte Music_Open(const char *name) {
 	}
 	g_MusicChannel = -1;
 	g_MusicPaused = 0;
-	t = exe_timeGetTime();
+	t = Plat_Ticks();
 	g_MusicOpenTime = t;
 	g_MusicWaitTime = t;
 	Bprintf(g_MusicName, 0x104, "%s", name);

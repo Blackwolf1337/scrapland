@@ -31,7 +31,7 @@
 #include "scrap/utild3d.h"
 #include "scrap/misc.h"
 #include "scrap/video.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 extern cGVar GVar_Viewer;
 #define g_IsViewer (GVar_Viewer.value.i)

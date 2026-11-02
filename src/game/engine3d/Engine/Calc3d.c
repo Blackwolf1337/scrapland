@@ -171,10 +171,17 @@ char *Vec3_Str(const vec3_t *v, uint32_t slot, int prec) {
 	return Vec3_Format(g_Vec3Str, slot, prec, (double)v->x, (double)v->y, (double)v->z);
 }
 
+/* the matherr record of the Windows runtime (struct _exception) */
+typedef struct E3DMathExc {
+	int type;
+	char *name;
+	double arg1, arg2, retval;
+} E3DMathExc;
+
 int E3D_MathErr(void *exc) {
 	static const char *const msgs[] = { "argument domain error", "argument singularity", "overflow range error",
 		"underflow range error", "total loss of precision", "partial loss of precision" };
-	const struct _exception *e = exc;	/* the matherr record of the Windows runtime */
+	const E3DMathExc *e = exc;
 
 	if (!e) {
 		return 0;

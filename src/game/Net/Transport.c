@@ -9,7 +9,7 @@
 #include "scrap/console.h"
 #include "scrap/crt.h"
 #include "scrap/net.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 #define NET_AF_INET 2
 #define NET_PKT_MAX 0x800
@@ -52,7 +52,7 @@ int Transport_PingServer(const NetAddr *addr) {
 	CHECK(g_NetPingServers != NULL);
 	int i = Transport_PingFreeSlot();
 	g_NetPingServers[i].addr = *addr;
-	g_NetPingServers[i].time = exe_timeGetTime();
+	g_NetPingServers[i].time = Plat_Ticks();
 	return 1;
 }
 
@@ -220,12 +220,12 @@ int Transport_PingTime(const NetAddr *addr) {
 		NetPingServer *p = &g_NetPingServers[i];
 		if (!memcmp(p, addr, sizeof(NetAddr))) {
 			uint32_t t = p->time;
-			int d = (int)(exe_timeGetTime() - t);
+			int d = (int)(Plat_Ticks() - t);
 			p->time = t + d;
 			return d;
 		}
 	}
-	return (int)(exe_timeGetTime() - g_NetBrowseStart);
+	return (int)(Plat_Ticks() - g_NetBrowseStart);
 }
 
 uint16_t Transport_GetLocalPort(void) {
@@ -435,7 +435,7 @@ const char *Transport_Resolve(const char *address, char *ip, uint32_t *addr) {
 }
 
 int Transport_PingMaster(void) {
-	g_NetBrowseStart = exe_timeGetTime();
+	g_NetBrowseStart = Plat_Ticks();
 	return Transport_PingServer(g_NetServerAddr);
 }
 
@@ -495,7 +495,7 @@ int Transport_Wait(int ms) {
 	if (g_NetMode != NETMODE_SERVER) {
 		return 1;
 	}
-	uint32_t now = exe_timeGetTime();
+	uint32_t now = Plat_Ticks();
 	if (!waiting) {
 		waiting = 1;
 		start = now;

@@ -5,7 +5,7 @@
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
 #include "scrap/render.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 #define ERR_COUNT 200
 #define ERR_FIRST_FREE 50

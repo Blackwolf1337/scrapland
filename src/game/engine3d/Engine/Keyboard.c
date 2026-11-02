@@ -5,20 +5,20 @@
 #include <string.h>
 
 #include "scrap/e3dinput.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 uint32_t Time_Get(void) {
-	return exe_timeGetTime() - g_TimePaused;
+	return Plat_Ticks() - g_TimePaused;
 }
 
 void Time_Pause(int on) {
 	if (on) {
 		if (!g_TimePause) {
-			g_TimePause = exe_timeGetTime();
+			g_TimePause = Plat_Ticks();
 		}
 	} else if (g_TimePause) {
 		g_TimeResumed = 1;
-		g_TimePaused += exe_timeGetTime() - g_TimePause;
+		g_TimePaused += Plat_Ticks() - g_TimePause;
 		g_TimePause = 0;
 	}
 }

@@ -29,13 +29,13 @@
 	})
 #define GAME_GLOBAL(type, name) \
 	(*({ \
-		extern typeof(type) sd_obj_##name __asm__("_" #name); \
+		extern typeof(type) sd_obj_##name __asm__(SD_CPFX #name); \
 		&sd_obj_##name; \
 	}))
-#define GAME_ARRAY(type, name) ((typeof(type) *)SD_REF_(sd_##name, "_" #name))
-#define GAME_GLOBAL_IN(type, owner, off) (*(typeof(type) *)((char *)SD_REF_(sd_##owner, "_" #owner) + (off)))
-#define GAME_ARRAY_IN(type, owner, off) ((typeof(type) *)((char *)SD_REF_(sd_##owner, "_" #owner) + (off)))
-#define GAME_PTR(owner, off) ((void *)((char *)SD_REF_(sd_##owner, "_" #owner) + (off)))
+#define GAME_ARRAY(type, name) ((typeof(type) *)SD_REF_(sd_##name, SD_CPFX #name))
+#define GAME_GLOBAL_IN(type, owner, off) (*(typeof(type) *)((char *)SD_REF_(sd_##owner, SD_CPFX #owner) + (off)))
+#define GAME_ARRAY_IN(type, owner, off) ((typeof(type) *)((char *)SD_REF_(sd_##owner, SD_CPFX #owner) + (off)))
+#define GAME_PTR(owner, off) ((void *)((char *)SD_REF_(sd_##owner, SD_CPFX #owner) + (off)))
 
 /* a vtable of a game class (void *), the C object of src/game/Global/Vtables.c */
 #define GAME_VFTABLE(name) \
@@ -50,22 +50,6 @@
 		extern char name[]; \
 		(char *)name; \
 	})
-
-/*
- * A function of a DLL the game imports, as a pointer of type (an lvalue that is read only): the cell of the import
- * address table, which the import library names __imp_<symbol> (the mingw-w64 ones, and for fmod the one of
- * src/standalone/fmod.def), so the call goes through an import slot as in the original.
- *	GAME_IMPORT(type, name, argbytes)	a __stdcall function, the symbol _name@argbytes
- *	GAME_IMPORT_CDECL(type, name)		a __cdecl function, the symbol _name
- * The names are pasted, never expanded. The symbol is quoted for the assembler.
- */
-#define SD_IMP_(type, id, sym) \
-	(*({ \
-		extern typeof(type) const id __asm__("\"__imp_" sym "\""); \
-		&id; \
-	}))
-#define GAME_IMPORT(type, name, argbytes) SD_IMP_(type, sd_imp_##name, "_" #name "@" #argbytes)
-#define GAME_IMPORT_CDECL(type, name) SD_IMP_(type, sd_imp_##name, "_" #name)
 
 /* weapon and ammo descriptors of the world tables (defined in include/scrap/world.h) */
 typedef struct cWeapInfo cWeapInfo;

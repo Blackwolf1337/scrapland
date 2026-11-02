@@ -21,7 +21,7 @@
 #include "scrap/groundportal.h"
 #include "scrap/utild3d.h"
 #include "scrap/scrapmain.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 #define CGROUND_VFTABLE GAME_VFTABLE(CGround_vftable)
 #define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable)
@@ -1534,9 +1534,9 @@ void CGround_AddMesh(CGround *self, CCollideMesh *mesh, CTriMesh *tm, uint32_t *
 	}
 	CHECK(b->max.x >= b->min.x && b->max.y >= b->min.y && b->max.z >= b->min.z);
 	int mem = g_MemStats->bytes;
-	uint32_t t0 = exe_timeGetTime();
+	uint32_t t0 = Plat_Ticks();
 	CHeights_QuadAddMesh(&self->heights, mesh, nt);
-	uint32_t t1 = exe_timeGetTime();
+	uint32_t t1 = Plat_Ticks();
 	E3D_LogWhite(g_FileLog, "QuadAddMesh: %d Kb  [%d tri, %d vtx]  [sector: %d]  [%.2f sec.]",
 		(g_MemStats->bytes - mem) / 1024, tm->nTri, tm->nVert, mesh->sector - 1, (double)(t1 - t0) / 1000.0);
 }
@@ -1749,7 +1749,7 @@ static CTriMesh *Ground_NodeMesh(CNode3D *node) {
 }
 
 static void Ground_LogMemory(int mem, uint32_t t0) {
-	uint32_t t1 = exe_timeGetTime();
+	uint32_t t1 = Plat_Ticks();
 	Con_Verbosef("Map collision memory: %d Kb  [Quads: %d]  [%.2f sec.]\n", (g_MemStats->bytes - mem) / 1024,
 		g_CollisionQuadCount, (double)(t1 - t0) / 1000.0);
 }
@@ -1811,7 +1811,7 @@ void CGround_Build(CGround *self, CScene *scn) {
 
 	if (scn->fromAmc) {
 		int mem = g_MemStats->bytes;
-		uint32_t t0 = exe_timeGetTime();
+		uint32_t t0 = Plat_Ticks();
 		if (CGround_LoadCollision(self, name)) {
 			CheckFailed("!LoadCollision( Escena->Nombre )", __FILE__, __TIMESTAMP__, __LINE__);
 		}
@@ -1912,7 +1912,7 @@ void CGround_Build(CGround *self, CScene *scn) {
 	CHECK(ce->max.x >= ce->min.x && ce->max.y >= ce->min.y && ce->max.z >= ce->min.z);
 	Box_Widen(ce, g_CollisionEpsilon * 10.0f);
 	int mem = g_MemStats->bytes;
-	uint32_t t0 = exe_timeGetTime();
+	uint32_t t0 = Plat_Ticks();
 	if (CGround_LoadCollision(self, name)) {
 		CGround_CreateQuadCollision(self);
 		CGround_SaveCollision(self, name);
@@ -2260,7 +2260,7 @@ void CGround_DrawDebug(CGround *self) {
 		g_ShowMapSolid = 1;
 	} else if (show == 7 || g_ShowMapSolid == 2) {
 		g_ShowMapSolid = 2;
-		Render_Clear(NULL, 1, ((exe_timeGetTime() & 0x3fc) | 0x20000) >> 2, 1.0f, 0);
+		Render_Clear(NULL, 1, ((Plat_Ticks() & 0x3fc) | 0x20000) >> 2, 1.0f, 0);
 	}
 	if (g_ShowMapQuads) {
 		Ground_ShowQuads(self);

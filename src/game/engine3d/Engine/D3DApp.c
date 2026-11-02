@@ -16,7 +16,7 @@
 #include "scrap/texture.h"
 #include "scrap/misc.h"
 #include "scrap/platform.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 #define CD3DAPPLICATION_VFTABLE GAME_VFTABLE(CD3DApplication_vftable)
 #define D3DAPP_TIMER_START 1

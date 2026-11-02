@@ -13,7 +13,7 @@
 #include "scrap/rendertarget.h"
 #include "scrap/scrapmain.h"
 #include "scrap/misc.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 extern char g_ShotPath[260];	/* MAX_FILEPATH */
 extern int g_ShotNum;

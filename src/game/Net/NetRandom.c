@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "scrap/net.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 #define NETRAND_MM 156
 #define NETRAND_UM 0xffffffff80000000ull

@@ -7,7 +7,7 @@
 #include "scrap/global.h"
 #include "scrap/graphic2d.h"
 #include "scrap/text.h"
-#include "scrap/win32.h"
+#include "scrap/platform.h"
 
 #define TEXT_BUF 0x400
 #define TEXT_STACK_MAX 5
@@ -42,9 +42,9 @@ void Text_DrawStack(void) {
 		return;
 	}
 	if (!g_TextStack->start) {
-		g_TextStack->start = exe_timeGetTime();
+		g_TextStack->start = Plat_Ticks();
 	}
-	if (exe_timeGetTime() > g_TextStack->duration + g_TextStack->start) {
+	if (Plat_Ticks() > g_TextStack->duration + g_TextStack->start) {
 		Text_Pop();
 	}
 	const TextMsg *m = g_TextStack;
