@@ -286,8 +286,8 @@ byte CNode3D_DebugDraw(CNode3D *self, CRenderNode *r) {
 		return 0;
 	}
 	if (self->parent) {
-		b = *(vec3_t *)&self->parent->m.m[12];
-		a = *(vec3_t *)&self->m.m[12];
+		b = self->parent->m.pos;
+		a = self->m.pos;
 		Debug_DrawLine(&a, &b, self->parent->parent ? 0xffff00 : 0x808080);
 	}
 	if (r && r->look && *(int *)r->look) {
@@ -310,7 +310,7 @@ byte CNode3D_DebugDraw(CNode3D *self, CRenderNode *r) {
 	Debug_DrawAxes(&self->m, &a, 5.0f);
 	if (g_ShowLocalBox == 3) {
 		class = self->obj3D ? self->obj3D->class : 0;
-		a = *(vec3_t *)&self->m.m[12];
+		a = self->m.pos;
 		Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &a, 0xffffff, "%s [%04X]", self->name, class & 0xffffff);
 	}
 	if (g_ShowLocalBox > 1) {
@@ -345,19 +345,19 @@ byte CNode3D_DebugDraw(CNode3D *self, CRenderNode *r) {
 		kRot = CAnimNode_TrackKind(track, c->frame, k, 2);
 		kCam = CAnimNode_TrackKind(track, c->frame, k, 4);
 	}
-	a = *(vec3_t *)&self->m.m[12];
+	a = self->m.pos;
 	Debug_Text3D(g_FntTerm8, 0.0f, 0.0f, &a, kindColors[kPos % 5], "%d", kPos);
-	a = *(vec3_t *)&self->m.m[12];
+	a = self->m.pos;
 	Debug_Text3D(g_FntTerm8, 10.0f, 0.0f, &a, kindColors[kRot % 5], "%d", kRot);
 	if (self->obj3D && self->obj3D->class == CLASS_OBJ3D_CAMERA) {
-		a = *(vec3_t *)&self->m.m[12];
+		a = self->m.pos;
 		Debug_Text3D(g_FntTerm8, 20.0f, 0.0f, &a, kindColors[kCam % 5], "%d", kCam);
 	}
 	if (kPos < kRot) {
 		kRot = kPos;
 	}
 	if (g_ShowLocalBox > 5) {
-		a = *(vec3_t *)&self->m.m[12];
+		a = self->m.pos;
 		Debug_Text3D(g_FntTerm8, 30.0f, 0.0f, &a, kindColors[(uint32_t)kRot % 5], "%s", self->name);
 	}
 	return 1;

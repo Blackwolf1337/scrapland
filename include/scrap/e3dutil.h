@@ -91,7 +91,7 @@ typedef struct cDynList {
 	uint32_t elemSize;		/* 0x10 */
 	uint16_t blockSize;		/* 0x14 */
 	byte changed;			/* 0x16 set by every change */
-	byte pad_17;
+	byte unused17;			/* 0x17 cleared by the constructor */
 } cDynList;
 SD_SIZE(cDynList, 0x18);
 

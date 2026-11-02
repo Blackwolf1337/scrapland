@@ -315,7 +315,7 @@ int CNodeFX_Spring_Apply(INodeFX *base, matrix_t *m, CNode3D *node, CRenderNode 
 		p.z = self->next.z * t + self->prev.z * u;
 	}
 	vec3_t mp = { m->m[12], m->m[13], m->m[14] };
-	vec3_t o = parent ? *(vec3_t *)&parent->m.m[12] : mp;
+	vec3_t o = parent ? parent->m.pos : mp;
 	if (parent) {
 		vec3_t a = { mp.x + (p.x - mp.x) * damp2, mp.y + (p.y - mp.y) * damp2, mp.z + (p.z - mp.z) * damp2 };
 		float d = Vec3_Dist(&mp, &o);

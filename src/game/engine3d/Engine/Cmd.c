@@ -124,7 +124,7 @@ int Cmd_GetVec(byte next, vec3_t *out, int unused) {
 			CmdLex_Next();
 			return -1;
 		}
-		*out = *(const vec3_t *)&n->m.m[12];
+		*out = n->m.pos;
 		CmdLex_Next();
 		return 0;
 	}

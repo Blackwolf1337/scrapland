@@ -84,7 +84,8 @@ void ChType_FXRustyHit(cAbstractFile *params) {
 	p->sizeEnd = FxElem_Rand(10.0, 140.0);
 	float lt = FxElem_Rand(0.02000001072883606, 0.41999998688697815);
 	p->sizeLife = 0.200000003f;
-	*(uint16_t *)&p->spriteIni = 0x101;
+	p->spriteIni = 1;
+	p->spriteEnd = 1;
 	p->lifeTime = lt;
 	CGameParticles_Apply(p);
 	CGameParticles_EmitN(p, 1, 1);
@@ -95,7 +96,8 @@ void ChType_FXRustyHit(cAbstractFile *params) {
 	p->sizeEnd = FxElem_Rand(50.0, 350.0);
 	lt = FxElem_Rand(0.019999995827674866, 0.2199999988079071);
 	p->sizeLife = 0.200000003f;
-	*(uint16_t *)&p->spriteIni = 0x202;
+	p->spriteIni = 2;
+	p->spriteEnd = 2;
 	p->lifeTime = lt;
 	CGameParticles_Apply(p);
 	CGameParticles_EmitN(p, 1, 1);
@@ -106,7 +108,8 @@ void ChType_FXRustyHit(cAbstractFile *params) {
 	p->sizeEnd = FxElem_Rand(50.0, 700.0);
 	lt = FxElem_Rand(0.03999999165534973, 0.20000000298023224);
 	p->sizeLife = 0.150000006f;
-	*(uint16_t *)&p->spriteIni = 0x505;
+	p->spriteIni = 5;
+	p->spriteEnd = 5;
 	p->lifeTime = lt;
 	float rot = FxElem_Rand(RUSTY_TWO_PI, 0.0);
 	p->rotIni = rot;

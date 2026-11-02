@@ -22,7 +22,7 @@
 cGVar GVar_ShowVehWeapAI;
 
 /* the engine variables */
-#define g_ShowVehWeapAI (&(*(cString *)&GVar_ShowVehWeapAI.value))
+#define g_ShowVehWeapAI (&GVar_ShowVehWeapAI.value.s)
 cGVar GVar_TimeShootAI;
 
 #define g_TimeShootAI (GVar_TimeShootAI.value.f)

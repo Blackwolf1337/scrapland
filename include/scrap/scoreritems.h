@@ -264,7 +264,7 @@ extern cGVar GVar_IsAutoUpdatable;
 #define g_BarAutoUpdate (GVar_IsAutoUpdatable.value.i)	/* IsAutoUpdatable */
 extern cGVar GVar_BlinkTime;
 #define g_BarBlinkTime (GVar_BlinkTime.value.f)	/* BlinkTime */
-#define g_BarOnFinish (&(*(cPy_Function *)&GVar_OnFinishAutoUpdate.func))	/* OnFinishAutoUpdate */
+#define g_BarOnFinish (&GVar_OnFinishAutoUpdate.func)	/* OnFinishAutoUpdate */
 
 cBarScorer *cBarScorer_ctor(cBarScorer *self);
 void cBarScorer_dtor(cBarScorer *self);
@@ -980,7 +980,7 @@ extern cGVar GVar_MotionBlurEndTime;
 #define g_MotionBlurEndTime (GVar_MotionBlurEndTime.value.f)	/* MotionBlurEndTime */
 extern cGVar GVar_MotionBlurOffVar;
 #define g_MotionBlurOffVar (GVar_MotionBlurOffVar.value.f)	/* MotionBlurOffVar */
-#define g_FullScreenConsoleCallback (&(*(cPy_Function *)&GVar_FullScreenConsoleCallback.func))	/* FullScreenConsoleCallback */
+#define g_FullScreenConsoleCallback (&GVar_FullScreenConsoleCallback.func)	/* FullScreenConsoleCallback */
 extern cGVar GVar_CurrentWaypointName;
 #define g_CurrentWaypointName (GVar_CurrentWaypointName.value.s)	/* CurrentWaypointName */
 extern cGVar GVar_CurrentWaypointName2;

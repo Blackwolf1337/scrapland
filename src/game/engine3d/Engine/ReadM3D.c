@@ -2606,7 +2606,7 @@ enum { M3D_GEOMETRY = 1, M3D_CAMERA, M3D_LIGHT, M3D_TARGET, M3D_DUMMY, M3D_PORTA
 #define ANIM_INTENS 0x10
 #define ANIM_VIS 0x80
 
-static const matrix_t g_M3DIdentity = { { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+static const matrix_t g_M3DIdentity = { .m = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
 	0.0f, 0.0f, 1.0f } };
 
 /* the vertex animation of a morph node: the vertices of each frame through the pivot */

@@ -192,9 +192,10 @@ SD_OFFSET(NodeLook, r2, 0x28);
 
 /* the render instance of a node (Engine/NodoR.cpp, 0xa8 bytes) */
 typedef struct CRenderNode {
-	byte pad_0[4];
+	int unused0;			/* 0x00 kept 0, checked at the destruction */
 	byte flags;			/* 0x04 2: a render node of a model */
-	byte pad_5[3];
+	byte unused5;			/* 0x05 cleared by the constructor */
+	byte pad_6[2];
 	struct CModel *owner;		/* 0x08 look 2 turns to the negated angles of its rot */
 	NodeLook *look;			/* 0x0c */
 	matrix_t m;			/* 0x10 world */

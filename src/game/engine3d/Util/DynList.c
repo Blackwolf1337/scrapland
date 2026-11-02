@@ -28,7 +28,7 @@ static cDynList *DynList_Alloc(uint16_t elemSize, uint16_t blockSize) {
 	dyn->elemSize = elemSize;
 	dyn->blockSize = blockSize;
 	dyn->changed = 0;
-	dyn->pad_17 = 0;
+	dyn->unused17 = 0;
 	return dyn;
 }
 

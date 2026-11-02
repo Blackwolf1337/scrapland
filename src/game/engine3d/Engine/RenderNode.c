@@ -46,10 +46,10 @@ NodeLook *NodeLook_ctor(NodeLook *self) {
 }
 
 CRenderNode *CRenderNode_ctor(CRenderNode *self) {
-	*(int *)self->pad_0 = 0;
+	self->unused0 = 0;
 	g_RenderNodeCount++;
 	self->flags = 0;
-	self->pad_5[0] = 0;
+	self->unused5 = 0;
 	self->owner = NULL;
 	self->look = NULL;
 	Matrix_LoadIdentity(&self->m);
@@ -83,7 +83,7 @@ void CRenderNode_dtor(CRenderNode *self) {
 		self->node->Refs--;
 		self->node = NULL;
 	}
-	CHECK(!*(int *)self->pad_0);
+	CHECK(!self->unused0);
 }
 
 /* the node effect on the world matrix m; -1 without one, 0 for a LOD model */

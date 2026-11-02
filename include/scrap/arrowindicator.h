@@ -84,8 +84,8 @@ extern cGVar GVar_ArrowViewRadius;
 #define g_ArrowNearDist (GVar_ArrowViewRadius.value.f)	/* shown nearer */
 extern cGVar GVar_ArrowActiveHorizontal;
 #define g_ArrowYMargin (GVar_ArrowActiveHorizontal.value.f)	/* the height difference allowed over both radii */
-#define g_MissionArrowOn (&(*(cString *)&GVar_ArrowMissionFile.value))	/* the models of MissionArrows_Switch */
-#define g_MissionArrowOff (&(*(cString *)&GVar_ArrowTargetFile.value))
+#define g_MissionArrowOn (&GVar_ArrowMissionFile.value.s)	/* the models of MissionArrows_Switch */
+#define g_MissionArrowOff (&GVar_ArrowTargetFile.value.s)
 extern cGVar GVar_ArrowUseFile;
 #define g_ArrowUseModel (GVar_ArrowUseFile.value.s)
 extern cGVar GVar_FXArrowIndicatorFlash_DistGrow;

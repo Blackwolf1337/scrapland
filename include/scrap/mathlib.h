@@ -75,7 +75,14 @@ float *Matrix3_RotFromTo(const vec3_t *from, const vec3_t *to, float *m);
 /* row vectors: v * M, translation in m[12..14]. Like the original the functions return a pointer (mostly the output),
  * callers in the exe use it */
 typedef struct {
-	float m[16];
+	union {
+		float m[16];
+		struct {
+			float rot[12];
+			vec3_t pos;	/* the translation, m[12..14] */
+			float w;
+		};
+	};
 } matrix_t;
 SD_SIZE(matrix_t, 64);
 

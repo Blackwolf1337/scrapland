@@ -45,7 +45,8 @@ static void Nurse_Start(CGameParticles *p, float rotVar, uint16_t sprites) {
 	float r = FxElem_Rand(NURSE_TWO_PI, 0.0);
 
 	p->rotVar = rotVar;
-	*(uint16_t *)&p->spriteIni = sprites;
+	p->spriteIni = (byte)sprites;
+	p->spriteEnd = (byte)(sprites >> 8);
 	p->rotIni = r;
 	p->rotEnd = r;
 	CGameParticles_Apply(p);

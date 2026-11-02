@@ -31,7 +31,7 @@ extern cGVar GVar_DepthPathRouteOutDoorAI;
 #define g_DepthPathRouteOutDoorAI (GVar_DepthPathRouteOutDoorAI.value.i)
 cGVar GVar_ShowVehAI;
 
-#define g_ShowVehAI (&(*(cString *)&GVar_ShowVehAI.value))
+#define g_ShowVehAI (&GVar_ShowVehAI.value.s)
 cGVar GVar_LimVelTurnObjectiveAI;
 
 #define g_LimVelTurnObjectiveAI (GVar_LimVelTurnObjectiveAI.value.f)
