@@ -52,7 +52,7 @@ Never use a literal size or offset for something that holds a pointer. Use `size
 
 Never keep a pointer in an int. Use `intptr_t` or the pointer type. A typical symptom in the debugger is a pointer whose upper half is 1, from an int written at a 32-bit offset.
 
-The vtables in `src/game/Global/Vtables.c` are arrays of `void (*)(void)`, so the compiler checks nothing. On i386 every argument is a stack word. On x86_64 float arguments travel in other registers than integers, so a slot implemented with `int` where the vtable has `float` shifts all later arguments. `tools/test/vtcheck.py` compares every slot with the typed `*Vtbl` structs (parameter and return classes) and must report 0 differences.
+The vtables are typed `*Vtbl` structs with designated initializers, so the compiler checks every slot. This matters on x86_64: float arguments travel in other registers than integers, so a slot implemented with `int` where the caller passes `float` would shift all later arguments. On i386 every argument is a stack word, so the same mistake went unnoticed. GCC now reports such a mismatch.
 
 `long` differs between the 64-bit targets. Linux x86_64 is LP64 (`long` is 64 bits), Windows x64 is LLP64 (`long` is 32 bits). The Python 1.5.2 config follows that (`src/python/config.h`): Python ints are 64 bits on Linux x86_64 and 32 bits on Windows x64. The pointer-to-long casts of Python itself are only in repr strings and hashes.
 

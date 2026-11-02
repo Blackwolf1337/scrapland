@@ -28,7 +28,7 @@ Until 2026-11-01 the work was done with a hook DLL (the re3 method: a proxy `din
 | `third_party/python-1.5.2/` | Python 1.5.2 headers, `COPYRIGHT` |
 | `tools/git/pre-commit` | size check hook |
 | `tools/codecmp.sh` | compares two builds of the C code |
-| `tools/test/` | `prefix.sh`, `wine.sh`, `headless.sh`, `install.sh` (copies `build/ScrapC.exe` and the FFmpeg DLLs to `game/Bin`), `mkgame.sh` (a game and prefix copy for a slot or worktree), `difftest.sh` (current ScrapC.exe against the reference ScrapC.exe, scenarios sdtest, sdcall, sdlevel), `native.sh` (runs the Linux build headless), `vtcheck.py` (checks the parameter types of all vtable slots against the typed vtable structs), `vkcheck.sh` (a run with the Vulkan validation layer, prints the errors of ours) |
+| `tools/test/` | `prefix.sh`, `wine.sh`, `headless.sh`, `install.sh` (copies `build/ScrapC.exe` and the FFmpeg DLLs to `game/Bin`), `mkgame.sh` (a game and prefix copy for a slot or worktree), `difftest.sh` (current ScrapC.exe against the reference ScrapC.exe, scenarios sdtest, sdcall, sdlevel), `native.sh` (runs the Linux build headless), `vkcheck.sh` (a run with the Vulkan validation layer, prints the errors of ours) |
 | `tools/ffmpeg.sh` | builds FFmpeg (DLLs or shared libraries) for the video player |
 | `tools/sdl3.sh` | builds SDL3 for the Windows builds |
 | `tools/mcp/` | the scrap MCP server, headless game tests for an AI assistant, see [tools/mcp/README.md](tools/mcp/README.md) |
@@ -118,7 +118,7 @@ The current build renders with Vulkan, the reference with Direct3D 8 through Win
 
 On Linux, `tools/test/native.sh` runs the Linux build headless (`SCRAP_BUILD=build-linux64` for the 64 bit one). `DIFFTEST_NATIVE=1 tools/test/difftest.sh` compares the Linux i686 build with the reference.
 
-`tools/test/vtcheck.py` checks the parameter types of all vtable slots against the typed vtable structs. This matters for 64 bit, where float and integer arguments travel in different registers.
+The vtables are typed structs with designated initializers next to their classes, so GCC checks every slot. This matters for 64 bit, where float and integer arguments travel in different registers.
 
 Against the old reference these differences are accepted: the text of NaN, "1d5" is no longer read as a number, `%.0f` rounds half to even, trig of huge arguments, and the float hash.
 
