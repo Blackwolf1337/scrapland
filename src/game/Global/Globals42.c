@@ -312,7 +312,6 @@ SD_SYM(cPyEntity_GetTgAng);
 SD_SYM(cPyEntity_IsType);
 SD_SYM(cPyEntity_SetFX);
 SD_SYM(cPyEntity_SetModel);
-SD_SYM(g_PythonReady);
 SD_SYM(str_3a3954);
 SD_SYM(str_3a395c);
 SD_SYM(str_3ad2f4);
@@ -1074,8 +1073,8 @@ uint32_t g_DevColorRamps[36] = {
 	0x80ffc080, 0x80ffc080, 0x80ffaf80, 0x80ffa480, 0x80ff9a6a, 0x80ff8c5c, 0xc0807840, 0xff000000, 0xff000000,
 };
 int *g_SwarmSlotData[4] = {
-	(void *)(sd_GVar_SwarmNumber1 + 16), (void *)(sd_GVar_SwarmNumber2 + 16), (void *)(sd_GVar_SwarmNumber3 + 16),
-	(void *)(sd_GVar_SwarmNumber4 + 16),
+	&((cGVar *)sd_GVar_SwarmNumber1)->value.i, &((cGVar *)sd_GVar_SwarmNumber2)->value.i,
+	&((cGVar *)sd_GVar_SwarmNumber3)->value.i, &((cGVar *)sd_GVar_SwarmNumber4)->value.i,
 };
 uint32_t g_VulcanRamps[3][9] = {
 	{ 0x80fff696, 0x20ffb45a, 0x40e68211, 0x80ab5e0d, 0x964c4408, 0xa4380f03, 0xc0280700, 0xff190200, 0xff000000 },
@@ -1388,7 +1387,7 @@ PyMethodDef SAI_methods[23] = {
 		.ml_name = (void *)sd_str_PyMethod_SAI_GetOD,
 		.ml_meth = (void *)sd_SAI_GetOD,
 		.ml_flags = 1,
-		.ml_doc = (void *)(sd_g_PythonReady + 1),
+		.ml_doc = "",
 	},
 };
 PyMethodDef Scrap_methods[115] = {
