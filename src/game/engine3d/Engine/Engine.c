@@ -48,7 +48,8 @@
 
 extern const CD3DApplicationVtbl CEngineApp_vftable;
 #define CMOTORAPP_VFTABLE (&CEngineApp_vftable)
-#define CNULLINPUT_VFTABLE GAME_VFTABLE(CNullInput_vftable)
+extern const IInputVtbl CNullInput_vftable;
+#define CNULLINPUT_VFTABLE (&CNullInput_vftable)
 #define CNULLINPUT_SIZE 0x114
 
 #define g_Engine3D GAME_GLOBAL(CEngineApp *, g_Engine3D)
@@ -176,7 +177,7 @@ int CEngineApp_OneTimeSceneInit(CD3DApplication *base) {
 	mem = operator_new(sizeof(CNullInput));
 	if (mem) {
 		IInput_ctor(mem);
-		*(void **)mem = CNULLINPUT_VFTABLE;
+		((IInput *)mem)->vftable = CNULLINPUT_VFTABLE;
 	}
 	g_Input = mem;
 	mem = operator_new(sizeof(CGraphic2DList));
@@ -932,4 +933,16 @@ const CD3DApplicationVtbl CEngineApp_vftable = {
 	.Run = NULL,
 	.msgProc = NULL,
 	.Pause = CD3DApp_Pause,
+};
+
+/* the vtable of CNullInput */
+const IInputVtbl CNullInput_vftable = {
+	.Delete = CNullInput_Delete,
+	.Init = IInput_InitFalse,
+	.Release = IInput_ReleaseFalse,
+	.ReadMouse = IInput_ReadMouseFalse,
+	.ReadKeys = IInput_ReadKeysFalse,
+	.AcquireMouse = IInput_AcquireMouseFalse,
+	.AcquireKeys = IInput_AcquireKeysFalse,
+	.WndProc = IInput_WndProcNop,
 };

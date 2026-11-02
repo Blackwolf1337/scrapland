@@ -13,7 +13,8 @@
 #include "scrap/nodesworld2d.h"
 #include "scrap/scrapmain.h"
 
-#define CBINARYHEAP_VFTABLE GAME_VFTABLE(cBinaryHeap_ElemAStar_vftable)
+extern const cBinaryHeapVtbl cBinaryHeap_ElemAStar_vftable;
+#define CBINARYHEAP_VFTABLE (&cBinaryHeap_ElemAStar_vftable)
 extern const CAStarVtbl CAStarSup_vftable;
 #define CASTARSUP_VFTABLE (&CAStarSup_vftable)
 extern const CAStarVtbl CAStar_vftable;
@@ -1017,4 +1018,20 @@ const CAStarVtbl CAStarSup_vftable = {
 	.CloseRemove = CAStarSup_CloseRemove,
 	.TableGet = CAStarSup_TableGet,
 	.Reset = CAStarSup_Reset,
+};
+
+/* the vtable of cBinaryHeap_ElemAStar */
+const cBinaryHeapVtbl cBinaryHeap_ElemAStar_vftable = {
+	.Delete = cBinaryHeap_Delete,
+	.Clear = cBinaryHeap_Clear,
+	.Push = cBinaryHeap_Push,
+	.Top = cBinaryHeap_Top,
+	.Pop = cBinaryHeap_Pop,
+	.Get = cBinaryHeap_Get,
+	.Find = cBinaryHeap_Find,
+	.Set = cBinaryHeap_Set,
+	.Count = cBinaryHeap_Count,
+	.Fix = cBinaryHeap_Fix,
+	.SiftUp = cBinaryHeap_SiftUp,
+	.SiftDown = cBinaryHeap_SiftDown,
 };

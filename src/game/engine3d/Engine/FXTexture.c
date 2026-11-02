@@ -95,12 +95,13 @@ void CFXTexLava_dtor(CFXTexLava *self) {
 	IFXTexture_dtor(&self->base);
 }
 
-CFXTexLava *CFXTexLava_Delete(CFXTexLava *self, byte flags) {
+IFXTexture *CFXTexLava_Delete(IFXTexture *base, byte flags) {
+	CFXTexLava *self = (CFXTexLava *)base;
 	CFXTexLava_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 /* the time for the next step reached: then the time of now kept */
@@ -122,7 +123,8 @@ static int Lava_Fistp(float f) {
 	return (int)llrint((double)f);
 }
 
-int CFXTexLava_Update(CFXTexLava *self, CMap *map) {
+int CFXTexLava_Update(IFXTexture *base, CMap *map) {
+	CFXTexLava *self = (CFXTexLava *)base;
 	if (!FXTex_Due(&self->lastTime)) {
 		return 0;
 	}
@@ -167,15 +169,17 @@ void CFXTexScroll_dtor(CFXTexScroll *self) {
 	IFXTexture_dtor(&self->base);
 }
 
-CFXTexScroll *CFXTexScroll_Delete(CFXTexScroll *self, byte flags) {
+IFXTexture *CFXTexScroll_Delete(IFXTexture *base, byte flags) {
+	CFXTexScroll *self = (CFXTexScroll *)base;
 	CFXTexScroll_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
-int CFXTexScroll_Update(CFXTexScroll *self, CMap *map) {
+int CFXTexScroll_Update(IFXTexture *base, CMap *map) {
+	CFXTexScroll *self = (CFXTexScroll *)base;
 	if (!FXTex_Due(&self->lastTime)) {
 		return 0;
 	}
@@ -199,21 +203,24 @@ CFXNewsPanel *CFXNewsPanel_ctor(CFXNewsPanel *self) {
 	return self;
 }
 
-CFXNewsPanel *CFXNewsPanel_Delete(CFXNewsPanel *self, byte flags) {
+IFXTexture *CFXNewsPanel_Delete(IFXTexture *elem, byte flags) {
+	CFXNewsPanel *self = (CFXNewsPanel *)elem;
 	IFXTexture_dtor(&self->base);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return elem;
 }
 
-int CFXNewsPanel_Update(CFXNewsPanel *self, CMap *map) {
+int CFXNewsPanel_Update(IFXTexture *base, CMap *map) {
+	CFXNewsPanel *self = (CFXNewsPanel *)base;
 	(void)map;
 	self->time = g_TimeMsInt;
 	return 0;
 }
 
-void *CFXNewsPanel_GetTexture(CFXNewsPanel *self) {
+void *CFXNewsPanel_GetTexture(IFXTexture *base) {
+	CFXNewsPanel *self = (CFXNewsPanel *)base;
 	(void)self;
 	return NewsPanel_GetTarget();
 }
@@ -251,3 +258,31 @@ byte FXTexture_Kind(const char *name) {
 	}
 	return 0;
 }
+
+/* the vtable of IFXTexture */
+const IFXTextureVtbl IFXTexture_vftable = {
+	.Delete = IFXTexture_Delete,
+	.Update = (void *)crt_purecall,
+	.GetTexture = IFXTexture_GetTexture,
+};
+
+/* the vtable of CFXTexLava */
+const IFXTextureVtbl CFXTexLava_vftable = {
+	.Delete = CFXTexLava_Delete,
+	.Update = CFXTexLava_Update,
+	.GetTexture = IFXTexture_GetTexture,
+};
+
+/* the vtable of CFXTexScroll */
+const IFXTextureVtbl CFXTexScroll_vftable = {
+	.Delete = CFXTexScroll_Delete,
+	.Update = CFXTexScroll_Update,
+	.GetTexture = IFXTexture_GetTexture,
+};
+
+/* the vtable of CFXNewsPanel */
+const IFXTextureVtbl CFXNewsPanel_vftable = {
+	.Delete = CFXNewsPanel_Delete,
+	.Update = CFXNewsPanel_Update,
+	.GetTexture = CFXNewsPanel_GetTexture,
+};

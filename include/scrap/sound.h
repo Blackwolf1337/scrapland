@@ -301,18 +301,30 @@ SD_SIZE(cSndItem, 0xa0);
 SD_OFFSET(cSndItem, ints, 0x88);
 
 typedef struct cEntity cEntity;
-typedef struct cSndInterface {
-	const void *vftable;		/* 0x00 */
+typedef struct cSndInterface cSndInterface;
+
+/* the deleting destructor and the variables of the sounds */
+typedef struct cSndInterfaceVtbl {
+	cSndInterface *(*Delete)(cSndInterface *self, byte flags);					/* 0x00 */
+	byte(*VarI)(cSndInterface *self, const char *name, int *i, int set);				/* 0x04 */
+	byte(*VarF)(cSndInterface *self, const char *name, double *d, int set);			/* 0x08 */
+	byte(*VarS)(cSndInterface *self, const char *name, char **s, int set);			/* 0x0c */
+	byte(*VarV)(cSndInterface *self, const char *name, double *x, double *y, double *z, int set);	/* 0x10 */
+} cSndInterfaceVtbl;
+
+struct cSndInterface {
+	const cSndInterfaceVtbl *vftable;	/* 0x00 */
 	int nsnd;			/* 0x04 */
 	cSndItem **snds;		/* 0x08 Mem_Alloc */
 	struct cSndInterface *next;	/* 0x0c g_SndInterfaces */
 	struct cSndInterface **link;	/* 0x10 the next field that points here */
 	char id[4];			/* 0x14 three characters and 0 */
 	cEntity *owner;			/* 0x18 */
-} cSndInterface;
+};
 SD_SIZE(cSndInterface, 0x1c);
 
-#define CSNDINTERFACE_VFTABLE GAME_VFTABLE(cSndInterface_vftable)
+extern const cSndInterfaceVtbl cSndInterface_vftable;
+#define CSNDINTERFACE_VFTABLE (&cSndInterface_vftable)
 extern cSndInterface *g_SndInterfaces;
 
 /* Sound/SndInterface.cpp (src/game/Sound/SndInterface.c) */
@@ -323,21 +335,14 @@ void cSndInterface_StopAll(cSndInterface *self, int unused);
 void cSndInterface_Tick(cSndInterface *self, float dt);
 /* the three characters of the id ("sdd") */
 void cSndInterface_SetId(cSndInterface *self, const char *id);
+byte cSndInterface_VarVFalse(cSndInterface *self, const char *name, double *x, double *y, double *z, int set);
 /* 0 stops it, else it starts when it does not play */
 void cSndItem_SetVolume(cSndItem *self, cEntity *e, float volume);
 byte cSndItem_Play(cSndItem *self, cEntity *e);
 
 /* the variable methods of the sounds (cSndInterface::vftable from slot 1) */
-typedef struct cSndInterfaceVtbl {
-	void *vf00;
-	byte(*VarI)(cSndInterface *self, const char *name, int *i, int set);
-	byte(*VarF)(cSndInterface *self, const char *name, double *d, int set);
-	byte(*VarS)(cSndInterface *self, const char *name, char **s, int set);
-	byte(*VarV)(cSndInterface *self, const char *name, double *x, double *y, double *z, int set);
-} cSndInterfaceVtbl;
-
 static inline const cSndInterfaceVtbl *Snd_Vtbl(cSndInterface *snd) {
-	return (const cSndInterfaceVtbl *)snd->vftable;
+	return snd->vftable;
 }
 
 void Sound_UpdatePaused(void);

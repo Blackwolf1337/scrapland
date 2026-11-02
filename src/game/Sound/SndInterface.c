@@ -216,7 +216,7 @@ byte cSndInterface_ParseName(cSndInterface *self, const char *name, int *idx, co
 }
 
 /* "<id>_n" the count, "loop", "int0".."int4" */
-byte cSndInterface_IntVar(cSndInterface *self, const char *name, uint32_t *v, byte set) {
+byte cSndInterface_IntVar(cSndInterface *self, const char *name, int *v, int set) {
 	char count[6];
 	const char *rest;
 	int idx;
@@ -269,7 +269,7 @@ static byte SndItem_Float(float *f, double *v, byte set) {
 }
 
 /* "ini", "end", "dopp", "vol", "time", "pitch" and "vol0".."vol4", "pitch0".."pitch4", "time0".."time4" */
-byte cSndInterface_FloatVar(cSndInterface *self, const char *name, double *v, byte set) {
+byte cSndInterface_FloatVar(cSndInterface *self, const char *name, double *v, int set) {
 	const char *rest;
 	int idx;
 
@@ -320,7 +320,7 @@ byte cSndInterface_FloatVar(cSndInterface *self, const char *name, double *v, by
 }
 
 /* "name": the sound name */
-byte cSndInterface_StrVar(cSndInterface *self, const char *name, const char **v, byte set) {
+byte cSndInterface_StrVar(cSndInterface *self, const char *name, char **v, int set) {
 	const char *rest;
 	int idx;
 
@@ -332,7 +332,7 @@ byte cSndInterface_StrVar(cSndInterface *self, const char *name, const char **v,
 		return 1;
 	}
 	cSndItem *it = PtrArray_Get(self, idx);
-	*v = it ? cSound_GetName(&it->sound) : GAME_STR(str_Empty);
+	*v = (char *)(it ? cSound_GetName(&it->sound) : GAME_STR(str_Empty));
 	return 1;
 }
 
@@ -360,3 +360,23 @@ void Sound_UpdatePaused(void) {
 	}
 	SndPS_StopAll();
 }
+
+/* the slot VarV of a class that does only return 0 */
+byte cSndInterface_VarVFalse(cSndInterface *self, const char *name, double *x, double *y, double *z, int set) {
+	(void)self;
+	(void)name;
+	(void)x;
+	(void)y;
+	(void)z;
+	(void)set;
+	return 0;
+}
+
+/* the vtable of cSndInterface */
+const cSndInterfaceVtbl cSndInterface_vftable = {
+	.Delete = cSndInterface_Destroy,
+	.VarI = cSndInterface_IntVar,
+	.VarF = cSndInterface_FloatVar,
+	.VarS = cSndInterface_StrVar,
+	.VarV = cSndInterface_VarVFalse,
+};

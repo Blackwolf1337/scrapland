@@ -9,20 +9,31 @@
 #include "scrap/bmp.h"
 #include "scrap/material.h"
 
-#define IFXTEXTURE_VFTABLE GAME_VFTABLE(IFXTexture_vftable)
-#define CFXTEXLAVA_VFTABLE GAME_VFTABLE(CFXTexLava_vftable)
-#define CFXTEXSCROLL_VFTABLE GAME_VFTABLE(CFXTexScroll_vftable)
-#define CFXNEWSPANEL_VFTABLE GAME_VFTABLE(CFXNewsPanel_vftable)
 #define FXTEX_SIZE 128
 #define FXTEX_PERIOD 50
 
 /* the kinds of FXTexture_Create (CMap fx) */
 enum { FXTEX_LAVA = 1, FXTEX_SCROLL = 2, FXTEX_NEWSPANEL = 3 };
 
-/* the vftable of IFXTexture: [0] the deleting destructor, [1] int Update(CMap *), [2] void *GetTexture() */
-typedef struct IFXTexture {
-	void **vftable;			/* 0x0 */
-} IFXTexture;
+typedef struct IFXTexture IFXTexture;
+
+typedef struct IFXTextureVtbl {
+	IFXTexture *(*Delete)(IFXTexture *self, byte flags);	/* 0x0 */
+	int(*Update)(IFXTexture *self, CMap *map);		/* 0x4 */
+	void *(*GetTexture)(IFXTexture *self);			/* 0x8 */
+} IFXTextureVtbl;
+extern const IFXTextureVtbl CFXNewsPanel_vftable;
+#define CFXNEWSPANEL_VFTABLE (&CFXNewsPanel_vftable)
+extern const IFXTextureVtbl CFXTexScroll_vftable;
+#define CFXTEXSCROLL_VFTABLE (&CFXTexScroll_vftable)
+extern const IFXTextureVtbl CFXTexLava_vftable;
+#define CFXTEXLAVA_VFTABLE (&CFXTexLava_vftable)
+extern const IFXTextureVtbl IFXTexture_vftable;
+#define IFXTEXTURE_VFTABLE (&IFXTexture_vftable)
+
+struct IFXTexture {
+	const IFXTextureVtbl *vftable;	/* 0x0 */
+};
 
 typedef struct CFXTexLava {
 	IFXTexture base;
@@ -58,16 +69,16 @@ IFXTexture *IFXTexture_Delete(IFXTexture *self, byte flags);
 void *IFXTexture_GetTexture(IFXTexture *self);
 CFXTexLava *CFXTexLava_ctor(CFXTexLava *self, const char *file);
 void CFXTexLava_dtor(CFXTexLava *self);
-CFXTexLava *CFXTexLava_Delete(CFXTexLava *self, byte flags);
-int CFXTexLava_Update(CFXTexLava *self, CMap *map);
+IFXTexture *CFXTexLava_Delete(IFXTexture *base, byte flags);
+int CFXTexLava_Update(IFXTexture *base, CMap *map);
 CFXTexScroll *CFXTexScroll_ctor(CFXTexScroll *self, const char *file);
 void CFXTexScroll_dtor(CFXTexScroll *self);
-CFXTexScroll *CFXTexScroll_Delete(CFXTexScroll *self, byte flags);
-int CFXTexScroll_Update(CFXTexScroll *self, CMap *map);
+IFXTexture *CFXTexScroll_Delete(IFXTexture *base, byte flags);
+int CFXTexScroll_Update(IFXTexture *base, CMap *map);
 CFXNewsPanel *CFXNewsPanel_ctor(CFXNewsPanel *self);
-CFXNewsPanel *CFXNewsPanel_Delete(CFXNewsPanel *self, byte flags);
-int CFXNewsPanel_Update(CFXNewsPanel *self, CMap *map);
-void *CFXNewsPanel_GetTexture(CFXNewsPanel *self);
+IFXTexture *CFXNewsPanel_Delete(IFXTexture *elem, byte flags);
+int CFXNewsPanel_Update(IFXTexture *base, CMap *map);
+void *CFXNewsPanel_GetTexture(IFXTexture *base);
 /* the effect of kind for the file of map, NULL for an unknown kind */
 void *FXTexture_Create(byte kind, CMap *map);
 /* the kind of the first "(...)" tag of the name that is one, 0 for none */

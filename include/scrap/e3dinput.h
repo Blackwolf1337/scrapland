@@ -32,31 +32,34 @@ void Keyboard_KeyDown(uint16_t ch, uint32_t lparam);
 void Keyboard_KeyUp(uint32_t wparam, uint32_t lparam);
 
 /* entrada.cpp */
-#define IINPUT_VFTABLE GAME_VFTABLE(IInput_vftable)
 extern byte g_InputInit;
 /* the mouse axes inverted */
 extern int g_InputInvX;
 extern int g_InputInvY;
 extern int g_InputInvZ;
 
-/* the vftable of IInput */
-enum {
-	INPUT_VF_DELETE = 0,		/* (byte flags) */
-	INPUT_VF_INIT = 1,		/* int (void *hwnd, void *hinst, byte exclusive) */
-	INPUT_VF_RELEASE = 2,		/* int () */
-	INPUT_VF_READMOUSE = 3,	/* int (int *out) dx, dy, dz and the buttons */
-	INPUT_VF_READKEYS = 4,	/* int () */
-	INPUT_VF_ACQUIREMOUSE = 5,	/* int (byte on) */
-	INPUT_VF_ACQUIREKEYS = 6,	/* int (byte on) */
-	INPUT_VF_WNDPROC = 7,		/* (void *hwnd, uint32_t msg, uint32_t wparam, uint32_t lparam) */
-};
+typedef struct IInput IInput;
 
-typedef struct IInput {
-	void **vftable;			/* 0x000 */
+/* the slots of IInput; only the null input is made (the platform layer reads the devices) */
+typedef struct IInputVtbl {
+	IInput *(*Delete)(IInput *self, byte flags);						/* 0x00 */
+	int(*Init)(IInput *self, void *hwnd, void *hinst, byte exclusive);			/* 0x04 */
+	int(*Release)(IInput *self);								/* 0x08 */
+	int(*ReadMouse)(IInput *self, int *out);						/* 0x0c dx, dy, dz and the buttons */
+	int(*ReadKeys)(IInput *self);								/* 0x10 */
+	int(*AcquireMouse)(IInput *self, byte on);						/* 0x14 */
+	int(*AcquireKeys)(IInput *self, byte on);						/* 0x18 */
+	void(*WndProc)(IInput *self, void *hwnd, uint32_t msg, uint32_t wparam, uint32_t lparam);	/* 0x1c */
+} IInputVtbl;
+extern const IInputVtbl IInput_vftable;
+#define IINPUT_VFTABLE (&IInput_vftable)
+
+struct IInput {
+	const IInputVtbl *vftable;	/* 0x000 */
 	int32_t mouse[3];		/* 0x004 dx, dy, dz */
 	byte buttons[4];		/* 0x010 */
 	byte keys[256];			/* 0x014 0x80 while held */
-} IInput;
+};
 SD_SIZE(IInput, 0x114);
 
 /* CEntradaNula: the input that reads nothing (g_Input before the real one), no members of its own */
@@ -65,5 +68,12 @@ typedef IInput CNullInput;
 IInput *IInput_ctor(IInput *self);
 void IInput_dtor(IInput *self);
 IInput *IInput_Delete(IInput *self, byte flags);
+int IInput_AcquireKeysFalse(IInput *self, byte on);
+int IInput_AcquireMouseFalse(IInput *self, byte on);
+int IInput_InitFalse(IInput *self, void *hwnd, void *hinst, byte exclusive);
+int IInput_ReadKeysFalse(IInput *self);
+int IInput_ReadMouseFalse(IInput *self, int *out);
+int IInput_ReleaseFalse(IInput *self);
+void IInput_WndProcNop(IInput *self, void *hwnd, uint32_t msg, uint32_t wparam, uint32_t lparam);
 
 #endif

@@ -634,3 +634,9 @@ const cGVarListVtbl cFuncGvarDevices_vftable = {
 	.Save = cFuncGvarDevices_Save,
 	.Load = cFuncGvarDevices_Load,
 };
+
+/* the vtable of cFuncGvar */
+const cGVarListVtbl cFuncGvar_vftable = {
+	.Save = (void *)crt_purecall,
+	.Load = (void *)crt_purecall,
+};

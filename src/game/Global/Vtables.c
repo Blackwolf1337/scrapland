@@ -1814,20 +1814,6 @@ void (*const cAIVehicleShootControl_vftable[1])(void) = {
 /* .?AVCAStar@@ */
 
 /* .?AV?$cBinaryHeap@PAUElemAStar@@@@ */
-void (*const cBinaryHeap_ElemAStar_vftable[12])(void) = {
-	cBinaryHeap_Delete,	/* 0x00 0x099520 */
-	cBinaryHeap_Clear,	/* 0x04 0x099810 */
-	cBinaryHeap_Push,	/* 0x08 0x0996a0 */
-	cBinaryHeap_Top,	/* 0x0c 0x099a60 */
-	cBinaryHeap_Pop,	/* 0x10 0x099840 */
-	cBinaryHeap_Get,	/* 0x14 0x099a30 */
-	cBinaryHeap_Find,	/* 0x18 0x099a80 */
-	cBinaryHeap_Set,	/* 0x1c 0x09a0b0 */
-	cBinaryHeap_Count,	/* 0x20 0x099b20 */
-	cBinaryHeap_Fix,	/* 0x24 0x09a100 */
-	cBinaryHeap_SiftUp,	/* 0x28 0x09a130 */
-	cBinaryHeap_SiftDown,	/* 0x2c 0x09a1f0 */
-};
 
 /* .?AVCAStar2D@@ */
 
@@ -1955,10 +1941,6 @@ void (*const cWeaponManager_vftable[1])(void) = {
 /* .?AVcRndSlotController@@ */
 
 /* .?AVcFuncGvar@@ */
-void (*const cFuncGvar_vftable[2])(void) = {
-	crt_purecall,	/* 0x00 0x31951a */
-	crt_purecall,	/* 0x04 0x31951a */
-};
 
 /* .?AVcFuncGvarDevices@@ */
 
@@ -2121,13 +2103,6 @@ void (*const cScorer_vftable[1])(void) = {
 /* .?AVcUserNetManager@@ */
 
 /* .?AVcSndInterface@@ */
-void (*const cSndInterface_vftable[5])(void) = {
-	cSndInterface_Destroy,	/* 0x00 0x1a1fe0 */
-	cSndInterface_IntVar,	/* 0x04 0x1a2740 */
-	cSndInterface_FloatVar,	/* 0x08 0x1a21e0 */
-	cSndInterface_StrVar,	/* 0x0c 0x1a2df0 */
-	cSndInterface_Null,	/* 0x10 0x1a2ec0 */
-};
 
 /* .?AVCSoundSys@@ */
 
@@ -2300,16 +2275,6 @@ void (*const cWorld_vftable[1])(void) = {
 /* .?AVCWinApp@@ */
 
 /* .?AVCEntradaNula@@ */
-void (*const CNullInput_vftable[8])(void) = {
-	CNullInput_Delete,	/* 0x00 0x22d9e0 */
-	CNullInput_Nothing3,	/* 0x04 0x230430 */
-	CNullInput_Nothing,	/* 0x08 0x231170 */
-	CNullInput_Nothing1,	/* 0x0c 0x230870 */
-	CNullInput_Nothing,	/* 0x10 0x230880 */
-	CNullInput_Nothing1,	/* 0x14 0x22fe40 */
-	CNullInput_Nothing1,	/* 0x18 0x22fe50 */
-	CNullInput_Nothing4,	/* 0x1c 0x22f430 */
-};
 
 /* .?AVCMotorApp@@ */
 
@@ -2351,25 +2316,10 @@ void (*const CModel_vftable[1])(void) = {
 /* .?AVCObjBase3D@@ */
 
 /* .?AVCParticulaBase@@ */
-void (*const CParticleBase_vftable[3])(void) = {
-	crt_purecall,	/* 0x00 0x31951a */
-	crt_purecall,	/* 0x04 0x31951a */
-	crt_purecall,	/* 0x08 0x31951a */
-};
 
 /* .?AVCParticulaStatic@@ */
-void (*const CParticleStatic_vftable[3])(void) = {
-	CParticleStatic_Type,	/* 0x00 0x27a990 */
-	CParticleStatic_Init,	/* 0x04 0x27aaf0 */
-	Stub_Nop3,	/* 0x08 0x27c8a0 */
-};
 
 /* .?AVCParticulaActive@@ */
-void (*const CParticleActive_vftable[3])(void) = {
-	CParticleActive_Type,	/* 0x00 0x27a980 */
-	CParticleActive_Init,	/* 0x04 0x27a9c0 */
-	CParticleActive_Update,	/* 0x08 0x27c2e0 */
-};
 
 /* .?AVCSistPart@@ */
 
@@ -2378,44 +2328,14 @@ void (*const CParticleActive_vftable[3])(void) = {
 /* .?AVCCamara@@ */
 
 /* .?AVIEntrada@@ */
-void (*const IInput_vftable[8])(void) = {
-	IInput_Delete,	/* 0x00 0x2a3ab0 */
-	crt_purecall,	/* 0x04 0x31951a */
-	crt_purecall,	/* 0x08 0x31951a */
-	crt_purecall,	/* 0x0c 0x31951a */
-	crt_purecall,	/* 0x10 0x31951a */
-	crt_purecall,	/* 0x14 0x31951a */
-	crt_purecall,	/* 0x18 0x31951a */
-	crt_purecall,	/* 0x1c 0x2a3b90 */
-};
 
 /* .?AVIFXTextura@@ */
-void (*const IFXTexture_vftable[3])(void) = {
-	IFXTexture_Delete,	/* 0x00 0x2a81a0 */
-	crt_purecall,	/* 0x04 0x31951a */
-	IFXTexture_GetTexture,	/* 0x08 0x2a82e0 */
-};
 
 /* .?AVCFXTexLava@@ */
-void (*const CFXTexLava_vftable[3])(void) = {
-	CFXTexLava_Delete,	/* 0x00 0x2a8140 */
-	CFXTexLava_Update,	/* 0x04 0x2a8380 */
-	IFXTexture_GetTexture,	/* 0x08 0x2a82e0 */
-};
 
 /* .?AVCFXTexScroll@@ */
-void (*const CFXTexScroll_vftable[3])(void) = {
-	CFXTexScroll_Delete,	/* 0x00 0x2a8170 */
-	CFXTexScroll_Update,	/* 0x04 0x2a8640 */
-	IFXTexture_GetTexture,	/* 0x08 0x2a82e0 */
-};
 
 /* .?AVCFXNewsPanel@@ */
-void (*const CFXNewsPanel_vftable[3])(void) = {
-	CFXNewsPanel_Delete,	/* 0x00 0x2a8110 */
-	CFXNewsPanel_Update,	/* 0x04 0x2a8370 */
-	CFXNewsPanel_GetTexture,	/* 0x08 0x2a82d0 */
-};
 
 /* .?AVCMallaD3D@@ */
 

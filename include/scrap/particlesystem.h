@@ -16,8 +16,6 @@
 
 extern const IObject3DVtbl CParticleSystem_vftable;
 #define CSISTPART_VFTABLE (&CParticleSystem_vftable)
-#define CPARTICLEACTIVE_VFTABLE GAME_VFTABLE(CParticleActive_vftable)
-#define CPARTICLESTATIC_VFTABLE GAME_VFTABLE(CParticleStatic_vftable)
 extern const IObject3DVtbl CObjBase3D_vftable;
 #define COBJBASE3D_VFTABLE (&CObjBase3D_vftable)
 
@@ -37,12 +35,23 @@ SD_SIZE(CObjBase3D, 0xc);
 #define PARTICLESYSTEM_COLORRAMP 0x20
 #define PARTICLESYSTEM_MIPMAP 0x40
 
-/* the slots of the vftable of the particles */
-enum { PARTICLE_VF_TYPE = 0, PARTICLE_VF_INIT = 1, PARTICLE_VF_UPDATE = 2 };
 enum { PARTICLE_STATIC = 1, PARTICLE_ACTIVE = 2 };
 
-typedef struct CParticle {
-	void **vftable;			/* 0x00 PARTICULA_VF_* */
+typedef struct CParticle CParticle;
+struct CParticleSystem;
+
+typedef struct CParticleVtbl {
+	int(*Type)(CParticle *self);								/* 0x0 PARTICLE_ */
+	void(*Init)(CParticle *self);								/* 0x4 */
+	void(*Update)(CParticle *self, struct CParticleSystem *sp, float dt, void *multiSpr);	/* 0x8 */
+} CParticleVtbl;
+extern const CParticleVtbl CParticleActive_vftable;
+#define CPARTICLEACTIVE_VFTABLE (&CParticleActive_vftable)
+extern const CParticleVtbl CParticleStatic_vftable;
+#define CPARTICLESTATIC_VFTABLE (&CParticleStatic_vftable)
+
+struct CParticle {
+	const CParticleVtbl *vftable;	/* 0x00 */
 	byte active;			/* 0x04 */
 	byte pad_5[3];
 	vec3_t pos;			/* 0x08 */
@@ -52,10 +61,11 @@ typedef struct CParticle {
 	float rot;			/* 0x20 */
 	float uv0[2];			/* 0x24 the sprite rectangle */
 	float uv1[2];			/* 0x2c */
-} CParticle;
+};
+
+void CParticle_UpdateNop(CParticle *self, struct CParticleSystem *sp, float dt, void *multiSpr);
 SD_SIZE(CParticle, 0x34);
-typedef int(*partType_t)(CParticle *self);
-#define PARTICLE_TYPE(p) (((partType_t)(p)->vftable[PARTICLE_VF_TYPE])(p))
+#define PARTICLE_TYPE(p) ((p)->vftable->Type(p))
 /* CParticle is the abstract CParticulaBase (vftable rva 0x3ddc3c, all pure); the static particle adds no members */
 typedef CParticle CParticleBase;
 typedef CParticle CParticleStatic;
@@ -198,7 +208,7 @@ int CParticleStatic_Type(CParticleStatic *self);
 void CParticleActive_Init(CParticle *self);
 void CParticleStatic_Init(CParticleStatic *self);
 /* dt seconds on; at the end of its life the particle goes out */
-void CParticleActive_Update(CParticleActive *self, CParticleSystem *sp, float dt, void *multiSpr);
+void CParticleActive_Update(CParticle *base, struct CParticleSystem *sp, float dt, void *multiSpr);
 
 CParticleSystem *CParticleSystem_ctorCopy(CParticleSystem *self, const CParticleSystem *orig);
 CParticleSystem *CParticleSystem_ctorParams(CParticleSystem *self, CNode3D *node, const char *type, float scale, float alpha,

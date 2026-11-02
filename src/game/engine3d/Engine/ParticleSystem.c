@@ -17,7 +17,7 @@
 #define PARTICLESYSTEM_DEFAULT_COLOR 0xffffff
 
 typedef void(*partUpdate_t)(CParticle *self, CParticleSystem *sp, float dt, void *multiSpr);
-#define PARTICLE_UPDATE(p, sp, dt, ms) (((partUpdate_t)(p)->vftable[PARTICLE_VF_UPDATE])((p), (sp), (dt), (ms)))
+#define PARTICLE_UPDATE(p, sp, dt, ms) ((p)->vftable->Update((p), (sp), (dt), (ms)))
 
 /* a random value between a and b, the way the exe computes it */
 static float ParticleSystem_RandLerp(float a, float b) {
@@ -714,7 +714,7 @@ void CParticleSystem_CreateParticles(CParticleSystem *self) {
 	CParticleActive_Init(&tmp.p);
 	for (int i = 0; i < pa->nParticles; i++) {
 		CParticleSystem_GenParticle(self, &tmp.p);
-		CParticleActive_Update(&tmp, self, ((float)i / (float)(double)(uint32_t)pa->nParticles) * pa->lifeTime,
+		CParticleActive_Update(&tmp.p, self, ((float)i / (float)(double)(uint32_t)pa->nParticles) * pa->lifeTime,
 			self->MultiSpr);
 		CParticle *p = self->Particles[i];
 		CParticleSystem_GenParticle(self, p);
@@ -825,7 +825,8 @@ static byte Color_Mix(uint32_t c0, uint32_t c1, int k, uint32_t w) {
 	return (byte)((((c1 >> (8 * k)) & 0xff) * w + ((c0 >> (8 * k)) & 0xff) * (0x100 - w)) >> 8);
 }
 
-void CParticleActive_Update(CParticleActive *self, CParticleSystem *sp, float dt, void *multiSpr) {
+void CParticleActive_Update(CParticle *base, struct CParticleSystem *sp, float dt, void *multiSpr) {
+	CParticleActive *self = (CParticleActive *)base;
 	if (self->delay > 0.0f) {
 		float d = self->delay - dt;
 		self->delay = d;
@@ -962,6 +963,14 @@ void CParticleSystem_Update(IObject3D *base, CRenderNode *r) {
 	self->lastPos = (vec3_t){ m->m[12], m->m[13], m->m[14] };
 }
 
+/* the slot Update of a class that does nothing there */
+void CParticle_UpdateNop(CParticle *self, struct CParticleSystem *sp, float dt, void *multiSpr) {
+	(void)self;
+	(void)sp;
+	(void)dt;
+	(void)multiSpr;
+}
+
 /* the vtable of IObject3D */
 const IObject3DVtbl IObject3D_vftable = {
 	.Delete = IObject3D_Delete,
@@ -993,4 +1002,25 @@ const IObject3DVtbl CParticleSystem_vftable = {
 	.ReleaseD3D = IObject3D_ReleaseD3DNop,
 	.Write = CParticleSystem_Write,
 	.Read = CParticleSystem_Read,
+};
+
+/* the vtable of CParticleBase */
+const CParticleVtbl CParticleBase_vftable = {
+	.Type = (void *)crt_purecall,
+	.Init = (void *)crt_purecall,
+	.Update = (void *)crt_purecall,
+};
+
+/* the vtable of CParticleStatic */
+const CParticleVtbl CParticleStatic_vftable = {
+	.Type = CParticleStatic_Type,
+	.Init = CParticleStatic_Init,
+	.Update = CParticle_UpdateNop,
+};
+
+/* the vtable of CParticleActive */
+const CParticleVtbl CParticleActive_vftable = {
+	.Type = CParticleActive_Type,
+	.Init = CParticleActive_Init,
+	.Update = CParticleActive_Update,
 };
