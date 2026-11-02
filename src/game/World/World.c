@@ -450,7 +450,7 @@ int cWeapInfo_SetS(cWeapInfo *weap, const char *var, const char *value) {
 }
 
 cWorld *cWorld_ctor(cWorld *self) {
-	cScheduledFuncStack *sched = (cScheduledFuncStack *)self->scheduler;
+	cScheduledFuncStack *sched = &self->scheduler;
 	box_t box;
 	vec3_t cell;
 
@@ -464,12 +464,12 @@ cWorld *cWorld_ctor(cWorld *self) {
 	HashTable_ctor(&self->lists, 0x1f, 1);
 	cTimer_ctor(&self->timer);
 	Floor_ctor(&self->floor);
-	Elements_ctor(self->elements);
+	Elements_ctor(&self->elements);
 	self->weapons.items = NULL;
 	self->weapons.count = 0;
 	self->ammo.items = NULL;
 	self->ammo.count = 0;
-	Grid_ctor(self->grid);
+	Grid_ctor(&self->grid);
 	Alarm_ctor(&self->alarm);
 	cStrMoney_ctor(self->strMoney);
 	Logic_ctor(&self->logic);
@@ -481,7 +481,7 @@ cWorld *cWorld_ctor(cWorld *self) {
 	cell.x = g_GridScaleX;
 	cell.y = g_GridScaleY;
 	cell.z = g_GridScaleZ;
-	Grid_Init(self->grid, &box.min, &box.max, &cell);
+	Grid_Init(&self->grid, &box.min, &box.max, &cell);
 	self->checkInput = 1;
 	self->debrisList = NULL;
 	self->firstWeapon = 0;
@@ -539,14 +539,14 @@ void cWorld_dtor(cWorld *self) {
 	self->vftable = CWORLD_VFTABLE;
 	cWorld_Clear(self);
 	Logic_dtor(&self->logic);
-	Grid_dtor(self->grid);
+	Grid_dtor(&self->grid);
 	AmmoTable_Free(&self->ammo);
 	WeapTable_Free(&self->weapons);
-	Elements_dtor(self->elements);
+	Elements_dtor(&self->elements);
 	Floor_dtor(&self->floor);
 	PtrTable_Clear(&self->lists);
 	PtrTable_Clear(&self->debris);
-	cScheduledFuncStack_dtor(self->scheduler);
+	cScheduledFuncStack_dtor(&self->scheduler);
 	Nto1Node_Done(&self->deadList);
 	Nto1Node_Done(&self->entityList);
 	PtrTable_Clear(&self->entities);
@@ -581,9 +581,9 @@ byte cWorld_LineCallF(cWorld *self, uint32_t mask, const vec3_t *from, const vec
 	vec3_t ext, closest, pos, pos2;
 
 	self->testing = 1;
-	CHECK(Grid_IsOk(self->grid));
+	CHECK(Grid_IsOk(&self->grid));
 	ext.x = ext.y = ext.z = g_MaxRadObj + radius;
-	for (cEntity *e = Grid_FirstOnSegment(self->grid, from, to, &ext); e; e = Grid_NextOnSegment(self->grid)) {
+	for (cEntity *e = Grid_FirstOnSegment(&self->grid, from, to, &ext); e; e = Grid_NextOnSegment(&self->grid)) {
 		if (!(Entity_Mask(e) & mask)) {
 			continue;
 		}
@@ -625,9 +625,9 @@ byte cWorld_LineFirst(cWorld *self, cEntity *exclude, uint32_t mask, const vec3_
 		*target = NULL;
 	}
 	self->testing = 1;
-	CHECK(Grid_IsOk(self->grid));
+	CHECK(Grid_IsOk(&self->grid));
 	ext.x = ext.y = ext.z = g_MaxRadObj + radius;
-	for (cEntity *e = Grid_FirstOnSegment(self->grid, from, to, &ext); e; e = Grid_NextOnSegment(self->grid)) {
+	for (cEntity *e = Grid_FirstOnSegment(&self->grid, from, to, &ext); e; e = Grid_NextOnSegment(&self->grid)) {
 		if (!(Entity_Mask(e) & mask)) {
 			continue;
 		}
@@ -705,13 +705,13 @@ cEntity *cWorld_CreateEntity(cWorld *world, const char *className, float x, floa
 	if (!crt_stricmp(type, TYEN_WALKCHAR)) {
 		mem = operator_new(sizeof(cWalkCharEntity));
 		e = mem ? cWalkCharEntity_ctor(mem, className, x, y, z) : NULL;
-		Grid_Add(g_pWorld->grid, e);
+		Grid_Add(&g_pWorld->grid, e);
 		return e;
 	}
 	if (!crt_stricmp(type, TYEN_CAR)) {
 		mem = operator_new(sizeof(cVehicleEntity));
 		e = mem ? cVehicleEntity_ctor(mem, className, x, y, z) : NULL;
-		Grid_Add(g_pWorld->grid, e);
+		Grid_Add(&g_pWorld->grid, e);
 		return e;
 	}
 	if (!crt_stricmp(type, "Cam")) {
@@ -745,7 +745,7 @@ cEntity *cWorld_CreateEntity(cWorld *world, const char *className, float x, floa
 void cWorld_Clear(cWorld *self) {
 	Nto1Node *n;
 
-	Scheduler_Clear((cScheduledFuncStack *)self->scheduler);
+	Scheduler_Clear(&self->scheduler);
 	for (n = self->entityList.next; n->data && n; n = n->next) {
 		cEntity *e = n->data;
 		if (e->vftable->IsType(e, "Cam")) {
@@ -796,15 +796,14 @@ void cWorld_DeleteLists(cWorld *self) {
 		if (!it) {
 			return;
 		}
-		byte *list = it->value;
+		cEntityList *list = it->value;
 		CHECK(PtrTable_Delete(t, it->key));
 		if (list) {
-			/* name (string object), two functions, the entities */
-			EntityDList_dtor(list + 0x30);
-			cPy_Function_dtor((cPy_Function *)(list + 0x18));
-			cPy_Function_dtor((cPy_Function *)(list + 0x4));
-			cString_dtor((cString *)list);
-			operator_delete_sized(list, 0x44);
+			EntityDList_dtor(&list->ring);
+			cPy_Function_dtor(&list->onDamage);
+			cPy_Function_dtor(&list->onDeath);
+			cString_dtor((cString *)&list->name);
+			operator_delete_sized(list, sizeof(*list));
 		}
 	}
 }
@@ -1012,10 +1011,8 @@ byte World_IsHardSingle(void) {
 }
 
 /* the nearest hit of the segment on the entities of mask (not exclude, not ignored); the ignore list is emptied */
-byte cWorld_TestLineEntities(cWorld *world, int arg, void *list, const vec3_t *from, const vec3_t *to,
+byte cWorld_TestLineEntities(cWorld *world, cEntity *exclude, uint32_t mask, const vec3_t *from, const vec3_t *to,
 	vec3_t *hit, cEntity **target, int flag) {
-	cEntity *exclude = (cEntity *)arg;
-	uint32_t mask = (uint32_t)list;
 	byte found = 0;
 	vec3_t ext;
 
@@ -1026,9 +1023,9 @@ byte cWorld_TestLineEntities(cWorld *world, int arg, void *list, const vec3_t *f
 	if (target) {
 		*target = NULL;
 	}
-	CHECK(Grid_IsOk(world->grid));
+	CHECK(Grid_IsOk(&world->grid));
 	ext.x = ext.y = ext.z = g_MaxRadObj * 2.0f;
-	for (cEntity *e = Grid_FirstOnSegment(world->grid, from, to, &ext); e; e = Grid_NextOnSegment(world->grid)) {
+	for (cEntity *e = Grid_FirstOnSegment(&world->grid, from, to, &ext); e; e = Grid_NextOnSegment(&world->grid)) {
 		if (e == exclude || !(Entity_Mask(e) & mask) || World_IsIgnoredInline(world, e)) {
 			continue;
 		}
@@ -1157,7 +1154,7 @@ void cWorld_Update(cWorld *self, float dt) {
 	}
 	if (cTimer_GetSpeed(timer) > 0.0f) {
 		cTimer_Advance(timer, dt);
-		Scheduler_Run((cScheduledFuncStack *)self->scheduler, Timer_GetTime(timer));
+		Scheduler_Run(&self->scheduler, Timer_GetTime(timer));
 		for (n = self->entityList.next; n->data && n; n = n->next) {
 			cEntity *e = n->data;
 			if (e->active) {
@@ -1169,7 +1166,7 @@ void cWorld_Update(cWorld *self, float dt) {
 		for (cDebrisSys *d = self->debrisList; d; d = d->next) {
 			cDebrisSys_Update(d, cTimer_GetDelta(timer));
 		}
-		Grid_EndFrame(self->grid);
+		Grid_EndFrame(&self->grid);
 		for (;;) {
 			n = self->deadList.next;
 			if (!n->data || !n) {
@@ -1210,7 +1207,7 @@ void cWorld_Update(cWorld *self, float dt) {
 			AIGroup_Update(g_CharGroup, cTimer_GetDelta(timer));
 		}
 		Logic_Update(&self->logic, cTimer_GetDelta(timer));
-		Elements_Update(self->elements, cTimer_GetDelta(timer));
+		Elements_Update(&self->elements, cTimer_GetDelta(timer));
 	} else {
 		Sound_UpdatePaused();
 	}
@@ -1226,9 +1223,9 @@ byte cWorld_SphereCallF(cWorld *self, uint32_t mask, const vec3_t *center, float
 	vec3_t lo, hi, pos;
 
 	self->testing = 1;
-	CHECK(Grid_IsOk(self->grid));
+	CHECK(Grid_IsOk(&self->grid));
 	World_SphereBox(center, radius, &lo, &hi);
-	for (cEntity *e = Grid_FirstInBox(self->grid, &lo, &hi); e; e = Grid_NextInBox(self->grid)) {
+	for (cEntity *e = Grid_FirstInBox(&self->grid, &lo, &hi); e; e = Grid_NextInBox(&self->grid)) {
 		if (!(Entity_Mask(e) & mask) || !e->vftable->TestSphere(e, NULL, center, radius, 0)) {
 			continue;
 		}
@@ -1242,21 +1239,20 @@ byte cWorld_SphereCallF(cWorld *self, uint32_t mask, const vec3_t *center, float
 	return found;
 }
 
-byte cWorld_SphereCall(cWorld *world, void *list, const vec3_t *center, float radius, const char *func,
+byte cWorld_SphereCall(cWorld *world, uint32_t mask, const vec3_t *center, float radius, const char *func,
 	int flag) {
 	cPy_Function f;
 
 	cPy_Function_ctor(&f);
 	cPy_Function_SetFunc(&f, func);
-	byte r = cWorld_SphereCallF(world, (uint32_t)list, center, radius, &f, flag);
+	byte r = cWorld_SphereCallF(world, mask, center, radius, &f, flag);
 	cPy_Function_dtor(&f);
 	return r;
 }
 
 /* the entities of mask (not exclude, not ignored) in the sphere, the last one in *target; the ignore list is emptied */
-byte cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, void *list, const vec3_t *center,
+byte cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, uint32_t mask, const vec3_t *center,
 	float radius, cEntity **target, int a, const vec3_t *prev) {
-	uint32_t mask = (uint32_t)list;
 	byte found = 0;
 	vec3_t lo, hi;
 
@@ -1264,9 +1260,9 @@ byte cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, void *list, cons
 	if (target) {
 		*target = NULL;
 	}
-	CHECK(Grid_IsOk(world->grid));
+	CHECK(Grid_IsOk(&world->grid));
 	World_SphereBox(center, radius, &lo, &hi);
-	for (cEntity *e = Grid_FirstInBox(world->grid, &lo, &hi); e; e = Grid_NextInBox(world->grid)) {
+	for (cEntity *e = Grid_FirstInBox(&world->grid, &lo, &hi); e; e = Grid_NextInBox(&world->grid)) {
 		if (!(Entity_Mask(e) & mask) || e == exclude || World_IsIgnoredInline(world, e)) {
 			continue;
 		}

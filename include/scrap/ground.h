@@ -42,12 +42,24 @@ typedef struct CCollideMesh {
 	byte Param;			/* 0x0a index in the .amc file, a mark while the quads are walked */
 	byte outSector;			/* 0x0b of the outside sector: one quad for the whole mesh */
 	box_t Ext;			/* 0x0c */
-	int nVert;			/* 0x24 CTable of vec3_t */
-	vec3_t *pVert;			/* 0x28 */
-	int nTri;			/* 0x2c CTable of CCollideTri */
-	CCollideTri *pTri;		/* 0x30 */
+	union {				/* a CTable: the casts (CTable *)&nVert hold on every platform */
+		CTable t_nVert;
+		struct {
+			int nVert;			/* 0x24 CTable of vec3_t */
+			vec3_t *pVert;			/* 0x28 */
+		};
+	};
+	union {				/* a CTable: the casts (CTable *)&nTri hold on every platform */
+		CTable t_nTri;
+		struct {
+			int nTri;			/* 0x2c CTable of CCollideTri */
+			CCollideTri *pTri;		/* 0x30 */
+		};
+	};
 } CCollideMesh;
 SD_SIZE(CCollideMesh, 0x34);
+/* the size the files keep: the 32 bit one (the fields are read one by one) */
+#define CCOLLIDEMESH_FILESIZE 0x34
 /* the tables freed, CHECK(!Refs) (an inline of ground.h, rva 0x20eb70) */
 void CCollideMesh_dtor(CCollideMesh *self);
 
@@ -55,8 +67,13 @@ typedef struct CCollideQuad {
 	float gapTop;			/* 0x00 the largest vertical gap without triangles */
 	float gapBottom;		/* 0x04 */
 	CCollideMesh *Mesh;		/* 0x08 */
-	int nTri;			/* 0x0c CTable of the triangle indices */
-	uint16_t *pTri;			/* 0x10 */
+	union {				/* a CTable: the casts (CTable *)&nTri hold on every platform */
+		CTable t_nTri;
+		struct {
+			int nTri;			/* 0x0c CTable of the triangle indices */
+			uint16_t *pTri;			/* 0x10 */
+		};
+	};
 	float maxY;			/* 0x14 */
 	float minY;			/* 0x18 */
 	uint32_t dwParam;		/* 0x1c the triangles counted while the quads are built */
@@ -73,8 +90,13 @@ typedef struct CHeights {
 	CCollideMesh CollideMesh2;	/* 0x3438 */
 	box_t ext;			/* 0x346c of the grid */
 	vec3_t dim;			/* 0x3484 */
-	int nQuads;			/* 0x3490 CTable of CCollideQuad, nx * nz */
-	CCollideQuad *quads;		/* 0x3494 */
+	union {				/* a CTable: the casts (CTable *)&nQuads hold on every platform */
+		CTable t_nQuads;
+		struct {
+			int nQuads;			/* 0x3490 CTable of CCollideQuad, nx * nz */
+			CCollideQuad *quads;		/* 0x3494 */
+		};
+	};
 	int nx;				/* 0x3498 */
 	int nz;				/* 0x349c */
 	float sizeX;			/* 0x34a0 of a cell */
@@ -89,15 +111,27 @@ SD_OFFSET(CHeights, nQuads, 0x3490);
 SD_OFFSET(CHeights, outSector, 0x34b0);
 SD_SIZE(CHeights, 0x34b4);
 
+/* the triangle a segment hit (CGround_TraceSeg): quad->pTri[tri] in the mesh of the quad */
+typedef struct CGroundHit {
+	int queryId;		/* 0x0 g_QuadTriCacheID when it was found */
+	int tri;			/* 0x4 */
+	CCollideQuad *quad;	/* 0x8 */
+} CGroundHit;
+
 typedef struct CGround {
 	void *vftable;			/* 0x00 */
 	uint32_t class;			/* 0x04 CLASS_OBJ3D_GROUND */
 	int traceStats[3];		/* 0x08 CGround_Trace: triangles tested, cache hits, cache misses */
-	int cache[3];			/* 0x14 a CGroundHit, the last hit of CGround_Trace; cleared whenever the meshes change */
+	CGroundHit cache;		/* 0x14 the last hit of CGround_Trace; cleared whenever the meshes change */
 	int nx;				/* 0x20 grid of the floor nodes */
 	int nz;				/* 0x24 */
-	int nNodes;			/* 0x28 CTable of CNode3D (0xfc bytes each) */
-	CNode3D *nodes;			/* 0x2c */
+	union {				/* a CTable: the casts (CTable *)&nNodes hold on every platform */
+		CTable t_nNodes;
+		struct {
+			int nNodes;			/* 0x28 CTable of CNode3D (0xfc bytes each) */
+			CNode3D *nodes;			/* 0x2c */
+		};
+	};
 	box_t Ext;			/* 0x30 */
 	vec3_t Dim;			/* 0x48 */
 	box_t CollideExt;		/* 0x54 */
@@ -292,13 +326,6 @@ byte Ground_SegPlane(const vec3_t *a, const vec3_t *b, float r, const plane_t *p
 byte Ground_SegEdge(const vec3_t *a, const vec3_t *b, const vec3_t *p, const vec3_t *q, float r, float *t);
 /* the point of the triangle nearest to the sphere center c, if it is within r */
 byte Ground_SphereTri(const vec3_t *c, float r, const CCollideTri *tri, const CCollideMesh *mesh, vec3_t *res);
-/* the triangle a segment hit (CGround_TraceSeg): quad->pTri[tri] in the mesh of the quad */
-typedef struct CGroundHit {
-	int queryId;		/* 0x0 g_QuadTriCacheID when it was found */
-	int tri;
-	CCollideQuad *quad;
-} CGroundHit;
-
 /* the query of checkbbox.cpp ("colis"): the box min/max (use_minmax 1) or min2/max2 (2), moved by pos */
 typedef struct CCollisionBBox {
 	byte pad_0[0x18];
@@ -319,6 +346,9 @@ SD_SIZE(CCollisionBBox, 0x80);
 /* rva 0x26ed30: 1 if the segment from a to b hits a triangle */
 byte CGround_TestSeg(CGround *self, const vec3_t *a, const vec3_t *b, int flags);
 /* rva 0x26df80 and 0x26f120: also the first hit point, the hit triangle */
+/* 1 if the segment from-to hits the floor; res must be NULL; threshold > 0: not when from lies less than it behind the
+ * plane; cache: the last hit to try first (NULL: the one of the floor) */
+byte CGround_Trace(CGround *self, const vec3_t *from, const vec3_t *to, vec3_t *res, float threshold, CGroundHit *cache);
 byte CGround_TraceSegPos(CGround *self, const vec3_t *a, const vec3_t *b, vec3_t *hit, int flags);
 byte CGround_TraceSeg(CGround *self, const vec3_t *a, const vec3_t *b, vec3_t *hit, CGroundHit *tri,
 	int flags);

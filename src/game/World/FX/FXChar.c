@@ -2277,10 +2277,11 @@ void FX_Character(cEntity *e, const char *name) {
 		if (!CGameModel_IsLoaded(Obj_Vtbl(e)->GetModel(e))) {
 			return;
 		}
-		byte *el = FX_DropNew(g_FXFunctionarySpecialActionFile, g_FunctionarySpecialActionTime + 3.5f);
+		cObjElementFXFunctionarySpecialAction *el = FX_DropNew(g_FXFunctionarySpecialActionFile,
+			g_FunctionarySpecialActionTime + 3.5f);
 		if (el) {
-			if (!el[0x1a8]) {
-				el[0x1a8] = 1;
+			if (!el->started) {
+				el->started = 1;
 			}
 			cObjElementFXFunctionarySpecialAction_Start(el, e);
 		}

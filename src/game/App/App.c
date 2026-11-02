@@ -396,7 +396,7 @@ void Loading_Start(void *unused) {
 	g_XLoadIconFrame = 0;
 	g_XLoadStart = 0.0f;
 	g_XLoadLastStep = 0.0f;
-	void *img = operator_new(PSAIMAGE_SIZE);
+	void *img = operator_new(sizeof(CPsaImage));
 	if (img) {
 		g_XLoadIcon = CPsaImage_ctorFlags(img, "2D/Loading/00Icon.alpha.dds", 0, 3, 0x40024);
 		return;
@@ -480,7 +480,7 @@ byte Loading_DrawXbox(void) {
 	CPsaImage_ctorFlags(tabs, "2D/Menu/Tabs.alpha.tga", 0, 3, 0x10060);
 	Str_Copy(text, *g_LoadMsgString, 0x400);
 	int n = Str_WrapText(text, lines, 500.0f, 0x10, "Horatio");
-	PSAIMAGE_COLOR(tabs) = 0xa4d7e7ff;
+	((CPsaImage *)tabs)->color = 0xa4d7e7ff;
 	float h = (float)(n + 1) * 22.0f;
 	Menu_DrawFrame(tabs, 1, 52.0f, 420.0f - h, 536.0f, h);
 	for (int i = 0, k = n; i < n; i++, k--) {
@@ -877,7 +877,7 @@ byte Loading_Draw(void) {
 		CPsaImage_ctorFlags(tabs, "2D/Menu/Tabs.alpha.tga", 0, 6, 0x10060);
 		float w = dim[0] + 30.0f;
 		float h = dim[1] + 95.0f;
-		PSAIMAGE_COLOR(tabs) = 0xc06b737f;
+		((CPsaImage *)tabs)->color = 0xc06b737f;
 		Menu_DrawFrame(tabs, 1, 320.0f - w * 0.5f, 382.0f - h * 0.5f, w, h);
 		CPsaImage_dtor((CPsaImage *)tabs);
 	}
@@ -911,7 +911,7 @@ byte Loading_Draw(void) {
 			pos[i * 2] = r[0] + 320.0f;
 			pos[i * 2 + 1] = r[1] + 370.0f;
 		}
-		PSAIMAGE_COLOR(g_XLoadIcon) = 0xffffffff;
+		((CPsaImage *)g_XLoadIcon)->color = 0xffffffff;
 		CPsaImage_DrawPoly(g_XLoadIcon, pos, uv, 0, 4, 6);
 	}
 	return 1;

@@ -114,7 +114,10 @@ CModel *CModel_ctor(CModel *self) {
 	String_Set(&self->name, "Modelo");
 	self->scene = NULL;
 	self->mainLOD = NULL;
-	Table_Alloc10Z(&self->slots, MAX_ANIM_CHANNEL);
+	Table_AllocN(&self->slots, MAX_ANIM_CHANNEL, sizeof(CAnimSlot));
+	for (int i = 0; i < MAX_ANIM_CHANNEL; i++) {
+		memset(&((CAnimSlot *)self->slots.p)[i], 0, offsetof(CAnimSlot, pad_e));
+	}
 	Vec3_Zero(&self->pos);
 	Vec3_Zero(&self->rot);
 	Vec3_One(&self->scale);
@@ -373,7 +376,7 @@ byte CModel_AddAnimEvents(CModel *self, const char *name, float start, float end
 	first = AnimEvents_Add(&a->events, ev);
 	ev = operator_new(sizeof(CAnimEvent));
 	if (ev) {
-		CAnimEvent_ctor(ev, end, 0xc, (int)first);
+		CAnimEvent_ctor(ev, end, 0xc, (intptr_t)first);
 	}
 	AnimEvents_Add(&a->events, ev);
 	return 1;
@@ -758,7 +761,7 @@ static int Model_AddRenderNodes(CModel *self, int k, uint32_t pass) {
 		if ((n->flags >> 22 & 1) == pass) {
 			CHECK(n->slot == k);
 			CRenderNode *e = &((CRenderNode *)self->renderNodes->p)[k++];
-			e->owner = (byte *)self;
+			e->owner = self;
 			CRenderNode_SetNode(e, n);
 			e->flags |= 2;
 		}

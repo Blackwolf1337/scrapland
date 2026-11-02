@@ -29,7 +29,7 @@ cBinaryHeap *cBinaryHeap_ctor(cBinaryHeap *self, int capacity, binHeapLess_t les
 	self->equals = equals;
 	self->setIndex = setIndex;
 	self->less = less;
-	self->elems = Mem_Alloc(capacity * 4 + 4);
+	self->elems = Mem_Alloc((capacity + 1) * sizeof(*self->elems));
 	if (!self->elems) {
 		Con_FatalErrorf("ERROR: cBinaryHeap - Insuficiente memoria Binary Heap.\n");
 	}
@@ -197,7 +197,7 @@ void AStar_ElemSetIndex(void **elem, int index) {
 	}
 }
 
-uint32_t AStarTable_Slot(HashTable *self, uint32_t key) {
+uint32_t AStarTable_Slot(HashTable *self, uintptr_t key) {
 	uint32_t h = 0;
 
 	CHECK(self->numSlots);
@@ -207,7 +207,7 @@ uint32_t AStarTable_Slot(HashTable *self, uint32_t key) {
 	return h % self->numSlots;
 }
 
-cAStarItem *AStarTable_Find(HashTable *self, int key, uint32_t slot) {
+cAStarItem *AStarTable_Find(HashTable *self, intptr_t key, uint32_t slot) {
 	for (cAStarItem *it = (cAStarItem *)self->slots[slot]; it; it = it->next) {
 		if (it->key == key) {
 			return it;
@@ -216,7 +216,7 @@ cAStarItem *AStarTable_Find(HashTable *self, int key, uint32_t slot) {
 	return NULL;
 }
 
-cAStarItem *AStarTable_Insert(HashTable *self, int key, uint32_t slot, const cAStarInfo *v) {
+cAStarItem *AStarTable_Insert(HashTable *self, intptr_t key, uint32_t slot, const cAStarInfo *v) {
 	CHECK(!self->locked);
 	cAStarItem *it = HashItem_Alloc(sizeof(*it));
 	if (it) {
@@ -229,7 +229,7 @@ cAStarItem *AStarTable_Insert(HashTable *self, int key, uint32_t slot, const cAS
 	return it;
 }
 
-byte AStarTable_Add(HashTable *self, int key, const cAStarInfo *v, byte warn) {
+byte AStarTable_Add(HashTable *self, intptr_t key, const cAStarInfo *v, byte warn) {
 	CHECK(!self->locked);
 	uint32_t slot = AStarTable_Slot(self, key);
 	if (AStarTable_Find(self, key, slot)) {
@@ -242,7 +242,7 @@ byte AStarTable_Add(HashTable *self, int key, const cAStarInfo *v, byte warn) {
 	return 1;
 }
 
-byte AStarTable_Get(HashTable *self, int key, cAStarItem **out) {
+byte AStarTable_Get(HashTable *self, intptr_t key, cAStarItem **out) {
 	cAStarItem *it = AStarTable_Find(self, key, AStarTable_Slot(self, key));
 
 	if (!it) {
@@ -275,7 +275,7 @@ void AStarTable_dtor(HashTable *self) {
 }
 
 /* the item of key added unless it is there (the inline Add of the callers, without the warning) */
-static void AStarTable_AddNew(HashTable *t, int key, const cAStarInfo *v) {
+static void AStarTable_AddNew(HashTable *t, intptr_t key, const cAStarInfo *v) {
 	CHECK(!t->locked);
 	uint32_t slot = AStarTable_Slot(t, key);
 	if (!AStarTable_Find(t, key, slot)) {
@@ -596,7 +596,7 @@ byte CAStarSup_CloseRemove(CAStarSup *self, int i) {
 
 byte CAStarSup_TableGet(CAStarSup *self, const vec3_t *node, cAStarItem **out) {
 	HashTable *t = self->table;
-	cAStarItem *it = AStarTable_Find(t, (int)node, AStarTable_Slot(t, (uint32_t)node));
+	cAStarItem *it = AStarTable_Find(t, (intptr_t)node, AStarTable_Slot(t, (uintptr_t)node));
 
 	if (!it) {
 		return 0;
@@ -658,7 +658,7 @@ static void AStar_Alloc(CAStar *self) {
 	nw = AS_NODES(self);
 	n = nw->sup.vftable->NumVisPoints(nw);
 	self->base.capClosed = n + 1;
-	self->base.closed = Mem_Alloc((n + 1) * 4);
+	self->base.closed = Mem_Alloc((n + 1) * sizeof(*self->base.closed));
 	if (!self->base.closed) {
 		Con_FatalErrorf("ERROR AI: AStar - Error al crear lista Closed.\n");
 	}
@@ -751,7 +751,7 @@ void CAStar_InitList(CAStar *self) {
 		info.index = -1;
 		info.state = 2;
 		info.elem = self->base.numList - 1;
-		AStarTable_AddNew(self->base.table, (int)e.node, &info);
+		AStarTable_AddNew(self->base.table, (intptr_t)e.node, &info);
 		self->base.vftable->TableGet(&self->base, e.node, &it);
 		self->base.list[self->base.numList - 1].info = &it->value;
 		nw = AS_NODES(self);

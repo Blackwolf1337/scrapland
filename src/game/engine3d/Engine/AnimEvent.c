@@ -6,7 +6,7 @@
 
 #define ANIMEVENT_INSERTED 1		/* flags: in a list */
 
-CAnimEvent *CAnimEvent_ctor(CAnimEvent *self, float t, int id, int arg) {
+CAnimEvent *CAnimEvent_ctor(CAnimEvent *self, float t, int id, intptr_t arg) {
 	self->id = id;
 	self->arg = arg;
 	self->t = t;

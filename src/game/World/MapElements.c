@@ -1,6 +1,6 @@
 /*
  * World/MapElements.cpp of the game: cMapElement, a model of the level, and the list of the elements in
- * g_pWorld->elements (Elements), made at the level start from the dummies DM_Element_* (see
+ * &g_pWorld->elements (Elements), made at the level start from the dummies DM_Element_* (see
  * include/scrap/fxelements.h).
  */
 #include <string.h>
@@ -212,7 +212,7 @@ void Elements_Load(cAbstractFile *f) {
 	f->vftable->Read(f, &pos.z, 4);
 	f->vftable->Read(f, &maxDist, 4);
 	f->vftable->Read(f, &on, 4);
-	e = Elements_Find(g_pWorld->elements, name, pos, maxDist);
+	e = Elements_Find(&g_pWorld->elements, name, pos, maxDist);
 	if (!e) {
 		return;
 	}

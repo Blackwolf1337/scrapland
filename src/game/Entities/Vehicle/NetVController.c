@@ -223,7 +223,7 @@ base:
 		q.x = (float)lx * NETV_POINT_STEP + q.x;
 		q.y = (float)ly * NETV_POINT_STEP + q.y;
 		q.z = (float)lz * NETV_POINT_STEP + q.z;
-		q = *Grid_ClampPos(g_pWorld->grid, &clamped, &q);
+		q = *Grid_ClampPos(&g_pWorld->grid, &clamped, &q);
 		cWeaponManager_LockPoint(&NETV_VEH(self)->weapons, &q);
 	}
 	if ((signed char)self->base.flags < 0) {
@@ -359,7 +359,7 @@ void cNetVController_Write(cNetVController *self, byte flags, cEntity *e, void *
 					t = cCamEntity_GetTarget(cam);
 				} else {
 					t = NULL;
-					if (!cWorld_TestSphereEntities(g_pWorld, NULL, (void *)1, &((cCamControl *)cam)->cam.pos,
+					if (!cWorld_TestSphereEntities(g_pWorld, NULL, 1, &((cCamControl *)cam)->cam.pos,
 						    NETV_CAM_TARGET_RADIUS, &t, 1, 0) || !t) {
 						goto target;
 					}

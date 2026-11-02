@@ -1267,7 +1267,7 @@ void Scene_UsedMats(CScene *scn) {
 			g_M3DLMat = NULL;
 		}
 	}
-	Table_Resize4(mats, included);
+	Table_ResizeN(mats, included, sizeof(CMaterial *));
 }
 
 
@@ -1298,7 +1298,7 @@ void M3D_ReadCamera(CNode3D *node, byte anim, int frame) {
 	matrix_t m;
 	Quat_ToMatrixD3D(&m, &node->rot);
 	Vec3_TransformDir0(&dir, &dir, &m);
-	CCamera_SetNode(cam, (CNodeRef *)node);
+	CCamera_SetNode(cam, node);
 	cam->pos = node->pos;
 	cam->target.x = dir.x + node->pos.x;
 	cam->target.y = node->pos.y + dir.y;
@@ -1811,7 +1811,7 @@ typedef struct M3DNodeParent {
 
 /* table.h at rva 0x2bc1b0 */
 static M3DNodeParent *M3DNodeParent_Get(CTable *t, uint32_t i) {
-	return Table_Get8(t, i);
+	return Table_GetN(t, i, sizeof(M3DNodeParent));
 }
 
 /* the nodes ordered so that the parents come first, when one is not */
@@ -1919,7 +1919,7 @@ void Scene_Hierarchy(CScene *scn) {
 	}
 	Scene_Clear(scn, "1");
 	CTable t = { 0, NULL };
-	Table_Alloc8(&t, CScene_NumNodes(scn));
+	Table_AllocN(&t, CScene_NumNodes(scn), sizeof(M3DNodeParent));
 	CNode3D *n = scn->Node3D;
 	int num = t.n;
 	for (int i = 0; i < num; i++, n = n->next) {

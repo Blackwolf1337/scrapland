@@ -40,29 +40,18 @@ TABLE_ALLOC(1C)
 TABLE_ALLOC(2C)
 TABLE_ALLOC(38)
 
-void Table_Alloc10Z(CTable *t, int num) {
-	CHECK(!t->p && num > 0);
-	t->n = num;
-	byte *p = New_Array(num, 0x10);
-	if (p) {
-		for (int i = 0; i < num; i++) {
-			memset(p + i * 0x10, 0, 14);
-		}
-	}
-	t->p = p;
-	CHECK(t->p);
-}
-
-#define TABLE_NEW(sz, ctor, dtor) \
+/* the object tables: the element size of the type (0x<sz> on 32 bit builds) */
+#define TABLE_NEW(sz, type, ctor, dtor) \
+	static_assert(!SD_32BIT || sizeof(type) == 0x##sz, #type); \
 	void Table_New##sz(CTable *t, int num) { \
-		Table_NewObjs(t, num, 0x##sz, ctor, dtor); \
+		Table_NewObjs(t, num, sizeof(type), ctor, dtor); \
 	}
-TABLE_NEW(8, (void *)CLod_ctor, (void *)CLod_dtor)
-TABLE_NEW(1C, (void *)M3DSkinVert_ctor, (void *)M3DSkinVert_dtor)
-TABLE_NEW(24, (void *)CCollideQuad_ctor, (void *)CCollideQuad_dtor)
-TABLE_NEW(A8, (void *)CRenderNode_ctor, (void *)CRenderNode_dtor)
-TABLE_NEW(B4, (void *)BspZone_ctor, (void *)BspZone_dtor)
-TABLE_NEW(FC, (void *)CNode3D_ctor, (void *)CNode3D_dtor)
+TABLE_NEW(8, CLod, (void *)CLod_ctor, (void *)CLod_dtor)
+TABLE_NEW(1C, M3DSkinVert, (void *)M3DSkinVert_ctor, (void *)M3DSkinVert_dtor)
+TABLE_NEW(24, CCollideQuad, (void *)CCollideQuad_ctor, (void *)CCollideQuad_dtor)
+TABLE_NEW(A8, CRenderNode, (void *)CRenderNode_ctor, (void *)CRenderNode_dtor)
+TABLE_NEW(B4, BspZone, (void *)BspZone_ctor, (void *)BspZone_dtor)
+TABLE_NEW(FC, CNode3D, (void *)CNode3D_ctor, (void *)CNode3D_dtor)
 
 #define TABLE_READ(sz) \
 	void Table_Read##sz(CFileIO *f, CTable *t) { \
@@ -119,13 +108,10 @@ ARRAY_WRITE(8)
 ARRAY_WRITE(C)
 ARRAY_WRITE(10)
 
-#define TABLE_GET(sz) \
-	void *Table_Get##sz(CTable *t, uint32_t i) { \
-		TABLE_CHECK(t->p, i, t->n); \
-		return (byte *)t->p + i * 0x##sz; \
-	}
-TABLE_GET(8)
-TABLE_GET(50)
+void *Table_GetN(CTable *t, uint32_t i, uint32_t size) {
+	TABLE_CHECK(t->p, i, t->n);
+	return (byte *)t->p + i * size;
+}
 
 void Table_Free(CTable *t) {
 	if (t->p) {
@@ -151,6 +137,30 @@ static void Table_Resize(CTable *t, int n, uint32_t size, void(*alloc)(CTable *,
 	void *old = t->p;
 	if (!old) {
 		alloc(t, n);
+		return;
+	}
+	t->p = New_Array((uint32_t)n, size);
+	memcpy(t->p, old, (uint32_t)(t->n < n ? t->n : n) * size);
+	operator_delete_array(old);
+	t->n = n;
+}
+
+/* n elements of size bytes, the sizeof of the element type at the call: the tables whose elements hold pointers */
+void Table_AllocN(CTable *t, int num, uint32_t size) {
+	Table_New(t, num, size);
+}
+
+void Table_ResizeN(CTable *t, int n, uint32_t size) {
+	if (n < 1) {
+		Table_Free(t);
+		return;
+	}
+	if (n == t->n) {
+		return;
+	}
+	void *old = t->p;
+	if (!old) {
+		Table_New(t, n, size);
 		return;
 	}
 	t->p = New_Array((uint32_t)n, size);

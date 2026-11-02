@@ -60,14 +60,15 @@ void ChType_FXDesktopFallEnd(cAbstractFile *params) {
 	CGameModel_SetPos(Debris_Model(dbr), Obj_Vtbl(v)->GetViewPos(v, &tmp));
 	dbr->life = 1.0f;
 	cDebrisSys_Drop(sys, dbr);
-	byte *el = Debris_Element(dbr);
+	cObjElementFXParticleSystem *el = Debris_Element(dbr);
 	if (!el) {
 		return;
 	}
-	if (!el[0xb5]) {
-		*(uint16_t *)(el + 0xb4) = 0x100;
+	if (!el->on) {
+		el->move = 0;
+		el->on = 1;
 	}
-	CGameParticles *pt = (CGameParticles *)(el + 4);
+	CGameParticles *pt = &el->particles;
 	float bx = ax + 0.0f;
 	float by = ay - 5.0f;
 	float bz = az + 0.0f;
@@ -240,7 +241,7 @@ void ChType_DesktopActionPress(cAbstractFile *params) {
 	target = NULL;
 	float radius = WLife(v)->prim.radius;
 	p = v->vftable->GetPos(v, &t3);
-	if (!cWorld_TestSphereEntities(g_pWorld, v, (void *)0x10, p, radius, &target, 1, &c) || !target ||
+	if (!cWorld_TestSphereEntities(g_pWorld, v, 0x10, p, radius, &target, 1, &c) || !target ||
 		!target->vftable->IsType(target, TYEN_WALKCHAR) || !ChType_ActCtrl(target)) {
 		return;
 	}

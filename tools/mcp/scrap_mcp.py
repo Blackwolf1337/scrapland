@@ -51,6 +51,10 @@ def sockets(since=0.0):
     return out
 
 
+# the native Linux builds by their exe name
+NATIVE_BUILDS = {'native': 'build-linux', 'native64': 'build-linux64'}
+
+
 class Game:
     def __init__(self, name):
         self.name = name
@@ -66,20 +70,21 @@ class Game:
     def running(self):
         return self.proc is not None and self.proc.poll() is None
 
-    def prepare_native(self):
-        """The native Linux build in a game folder of its own (mkgame.sh --native, no prefix)."""
-        self.game = os.path.join(self.dir, 'native-game')
+    def prepare_native(self, exe):
+        """A native Linux build in a game folder of its own (mkgame.sh --native, no prefix)."""
+        build = NATIVE_BUILDS[exe]
+        self.game = os.path.join(self.dir, exe + '-game')
         binDir = os.path.join(self.game, 'Bin')
         if not os.path.isdir(binDir):
             r = subprocess.run([os.path.join(ROOT, 'tools', 'test', 'mkgame.sh'), '--native', self.game, ROOT],
                                capture_output=True, text=True)
             if r.returncode:
                 raise RuntimeError('mkgame.sh failed: %s' % (r.stderr or r.stdout))
-        src = os.path.join(ROOT, 'build-linux', 'ScrapC')
+        src = os.path.join(ROOT, build, 'ScrapC')
         if not os.path.isfile(src):
-            raise RuntimeError('%s is missing (cmake --build build-linux first)' % src)
+            raise RuntimeError('%s is missing (cmake --build %s first)' % (src, build))
         shutil.copy2(src, binDir)
-        lib = os.path.join(ROOT, 'build-linux', 'ffmpeg', 'install', 'lib')
+        lib = os.path.join(ROOT, build, 'ffmpeg', 'install', 'lib')
         for n in os.listdir(lib):
             if '.so' in n:
                 p = os.path.join(lib, n)
@@ -100,8 +105,8 @@ class Game:
 
     def prepare(self, exe):
         self.game = os.path.join(self.dir, 'game')
-        if exe == 'native':
-            return self.prepare_native()
+        if exe in NATIVE_BUILDS:
+            return self.prepare_native(exe)
         if not os.path.isdir(os.path.join(self.game, 'Bin')) or not os.path.isdir(self.prefix):
             r = subprocess.run([os.path.join(ROOT, 'tools', 'test', 'mkgame.sh'), '--into', self.dir, ROOT],
                                capture_output=True, text=True)
@@ -129,8 +134,8 @@ class Game:
         if self.running():
             raise RuntimeError('game %s runs already; quit it first' % self.name)
         exe = a.get('exe', 'c')
-        if exe not in ('c', 'ref', 'native'):
-            raise RuntimeError("exe is 'c', 'ref' or 'native'")
+        if exe not in ('c', 'ref') and exe not in NATIVE_BUILDS:
+            raise RuntimeError("exe is 'c', 'ref', 'native' or 'native64'")
         self.prepare(exe)
         self.opts = dict(a)
         env = dict(os.environ)
@@ -145,7 +150,7 @@ class Game:
             env['SCRAP_VK_TRACE'] = str(a['trace'])
         env.update({k: str(v) for k, v in (a.get('env') or {}).items()})
         script = 'mcpgame.py'
-        args = [] if exe == 'native' else ['ScrapC.exe' if exe == 'c' else 'ScrapRef.exe']
+        args = [] if exe in NATIVE_BUILDS else ['ScrapC.exe' if exe == 'c' else 'ScrapRef.exe']
         args.append('-fullscreen:0')
         if a.get('map'):
             m = a['map']
@@ -153,9 +158,10 @@ class Game:
         args += list(a.get('args') or [])
         args.append('-PythonExecute:execfile(%s)' % '+'.join('chr(%d)' % ord(c) for c in script))
         before = time.time() - 0.5
-        runner = 'native.sh' if exe == 'native' else 'wine.sh'
-        if exe == 'native':
+        runner = 'native.sh' if exe in NATIVE_BUILDS else 'wine.sh'
+        if exe in NATIVE_BUILDS:
             env['NATIVE_LOG'] = self.wine_log
+            env['SCRAP_BUILD'] = os.path.join(ROOT, NATIVE_BUILDS[exe])
         self.proc = subprocess.Popen([os.path.join(ROOT, 'tools', 'test', runner)] + args, env=env,
                                      stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                      start_new_session=True)
@@ -222,7 +228,7 @@ class Game:
     def stop(self):
         if not self.proc:
             return 'game %s does not run' % self.name
-        if self.opts.get('exe') == 'native':
+        if self.opts.get('exe') in NATIVE_BUILDS:
             return self.stop_native()
         env = dict(os.environ, WINEPREFIX=self.prefix)
         subprocess.run(['wineserver', '-k'], env=env, capture_output=True)
@@ -387,9 +393,9 @@ TOOLS = [
     {'name': 'launch', 'description': 'Start a game in its own slot (no window, muted, AMD 610M). Returns at once; '
      'then wait kind=ready.', 'inputSchema': schema({
          'name': NAME,
-         'exe': {'type': 'string', 'enum': ['c', 'ref', 'native'], 'description': 'c: build/ScrapC.exe (default), ref: '
-                 'the frozen reference build-ref-noexact/ScrapC.exe (Direct3D 8 through Wine), native: the Linux build '
-                 'build-linux/ScrapC'},
+         'exe': {'type': 'string', 'enum': ['c', 'ref', 'native', 'native64'], 'description': 'c: build/ScrapC.exe '
+                 '(default), ref: the frozen reference build-ref-noexact/ScrapC.exe (Direct3D 8 through Wine), native: '
+                 'the Linux build build-linux/ScrapC (i686), native64: build-linux64/ScrapC (x86_64)'},
          'map': {'type': 'string', 'description': 'a level for -imap: (FZ or Levels/FZ)'},
          'args': {'type': 'array', 'items': {'type': 'string'}, 'description': 'more arguments of the game'},
          'env': {'type': 'object', 'description': 'more environment variables (SCRAP_VK_DEBUG, SCRAP_RD_DUMP, ...)'},

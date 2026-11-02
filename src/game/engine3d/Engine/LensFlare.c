@@ -14,7 +14,7 @@
 #include "scrap/texture.h"
 
 CLensFlare *CLensFlare_ctor(CLensFlare *self) {
-	self->hit = (vec3_t){ 0.0f, 0.0f, 0.0f };
+	self->hit = (CGroundHit){ 0, 0, NULL };
 	self->pos = (vec3_t){ 0.0f, 0.0f, 0.0f };
 	self->on = 0;
 	self->RenderIndex = -1;

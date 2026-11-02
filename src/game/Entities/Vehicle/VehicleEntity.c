@@ -3,6 +3,7 @@
  */
 #include <string.h>
 
+#include "scrap/aivehicle.h"
 #include "scrap/gvar.h"
 #include "scrap/ai.h"
 #include "scrap/autoaim.h"
@@ -158,7 +159,7 @@ cEntity *cVehicleEntity_ctor(void *mem, const char *name, float x, float y, floa
 	self->netCtrl = NULL;
 	if (Veh_Net(self)) {
 		operator_delete_sized(self->wl.obj.net, 0x5c);
-		void *n = operator_new(CNETVCONTROLLER_SIZE);
+		void *n = operator_new(sizeof(cNetVController));
 		self->wl.obj.net = n ? (cNetController *)cNetVController_ctor(n, Veh_Ent(self)) : NULL;
 	}
 	self->pilotNode = -1;
@@ -596,14 +597,14 @@ void cVehicleEntity_Collide(cVehicleEntity *self, vec3_t *from, float dt) {
 		}
 	}
 	if (cVehicleTraffic_CollideEntities(&self->traffic) &&
-		cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), (void *)1, from, self->wl.prim.radius, NULL, 0,
+		cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), 1, from, self->wl.prim.radius, NULL, 0,
 			pos)) {
 		self->hitTime = Timer_GetTime(&self->wl.obj.timer);
 		to.x = from->x + self->wl.obj.vel.x * dt;
 		to.y = from->y + self->wl.obj.vel.y * dt;
 		to.z = from->z + self->wl.obj.vel.z * dt;
 		cVehicleTraffic_Move(&self->traffic, from, &to, self->wRadius, pos, self->speed, (CSphereBox *)self->collision);
-		if (cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), (void *)1, pos, self->wl.prim.radius, NULL, 1, 0)) {
+		if (cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), 1, pos, self->wl.prim.radius, NULL, 1, 0)) {
 			*pos = *from;
 		}
 	}
@@ -657,7 +658,7 @@ void cVehicleEntity_ServerMove(cVehicleEntity *self, float dt) {
 	cNetVController *net = Veh_Net(self);
 
 	if (net->base.age == 0.5f) {
-		if (cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), (void *)1, &net->base.pos, self->wl.prim.radius, NULL, 1, 0)) {
+		if (cWorld_TestSphereEntities(g_pWorld, Veh_Ent(self), 1, &net->base.pos, self->wl.prim.radius, NULL, 1, 0)) {
 			self->netCtrl->force = 2;
 		}
 		cNetVController *nc = self->netCtrl;
@@ -888,7 +889,7 @@ void cVehicleEntity_UpdateSounds(cVehicleEntity *self, float dt) {
 
 void cVehicleEntity_NetCreate(cVehicleEntity *self) {
 	if (!self->netCtrl) {
-		void *mem = operator_new(CNETVCONTROLLER_SIZE);
+		void *mem = operator_new(sizeof(cNetVController));
 		self->netCtrl = mem ? cNetVController_ctor(mem, Veh_Ent(self)) : NULL;
 	}
 }
@@ -960,7 +961,7 @@ void cVehicleEntity_EnableAI(cVehicleEntity *self, byte enable, void *p1, void *
 		return;
 	}
 	if (!self->wl.obj.base.ai) {
-		void *mem = operator_new(CAIVEHICLE_SIZE);
+		void *mem = operator_new(sizeof(cAIVehicle));
 		self->wl.obj.base.ai = mem ? cAIVehicle_ctor(mem, Veh_Ent(self), p1, p2, p3) : NULL;
 	}
 }
@@ -1222,7 +1223,7 @@ void cVehicleEntity_SetEmbeddedFX(cVehicleEntity *self, const char *fxType) {
 				self->wl.obj.fx = NULL;
 			}
 		}
-		void *mem = operator_new(CEMBEDDEDFXVEHICLE_SIZE);
+		void *mem = operator_new(sizeof(cEmbeddedFXVehicle));
 		fx = mem ? cEmbeddedFXVehicle_ctor(mem) : NULL;
 		self->wl.obj.fx = (struct cEmbeddedFX *)fx;
 		cEmbeddedFXVehicle_SetTraffic(fx, self->typeName[0] == 'T');

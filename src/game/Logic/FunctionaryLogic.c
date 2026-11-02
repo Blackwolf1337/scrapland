@@ -214,7 +214,7 @@ static void Func_SitDown(cFunctionaryLocalLogic *self, cEntity *p) {
 	pos.x = (float)x;
 	pos.y = (float)y;
 	pos.z = (float)z;
-	if (cWorld_TestSphereEntities(g_pWorld, p, (void *)0x10, &pos, WLife(p)->prim.radius, NULL, 1, 0)) {
+	if (cWorld_TestSphereEntities(g_pWorld, p, 0x10, &pos, WLife(p)->prim.radius, NULL, 1, 0)) {
 		return;
 	}
 	o->move.movePos.x = (float)x;

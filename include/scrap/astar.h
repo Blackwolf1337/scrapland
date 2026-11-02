@@ -85,17 +85,17 @@ void AStar_ElemSetIndex(void **elem, int index);
 /* the table of the searched nodes, by point */
 typedef struct cAStarItem {
 	cAStarInfo value;		/* 0x00 */
-	int key;			/* 0x0c */
+	intptr_t key;			/* 0x0c the node */
 	struct cAStarItem *next;	/* 0x10 */
 } cAStarItem;
 SD_SIZE(cAStarItem, 0x14);
 
 /* the number hash of HashTable.h: the nibbles from the low end */
-uint32_t AStarTable_Slot(HashTable *self, uint32_t key);
-cAStarItem *AStarTable_Find(HashTable *self, int key, uint32_t slot);
-cAStarItem *AStarTable_Insert(HashTable *self, int key, uint32_t slot, const cAStarInfo *v);
-byte AStarTable_Add(HashTable *self, int key, const cAStarInfo *v, byte warn);
-byte AStarTable_Get(HashTable *self, int key, cAStarItem **out);
+uint32_t AStarTable_Slot(HashTable *self, uintptr_t key);
+cAStarItem *AStarTable_Find(HashTable *self, intptr_t key, uint32_t slot);
+cAStarItem *AStarTable_Insert(HashTable *self, intptr_t key, uint32_t slot, const cAStarInfo *v);
+byte AStarTable_Add(HashTable *self, intptr_t key, const cAStarInfo *v, byte warn);
+byte AStarTable_Get(HashTable *self, intptr_t key, cAStarItem **out);
 /* the items freed, the slots kept */
 void AStarTable_Clear(HashTable *self);
 void AStarTable_dtor(HashTable *self);

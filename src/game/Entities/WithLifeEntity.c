@@ -385,7 +385,7 @@ void cWithLifeEntity_Tick(cEntity *self, float dt) {
 	WithLife_Vtbl(self)->CheckLife(self);
 	cWithLifeEntity_Burn(self, dt);
 	cWithLifeEntity_FadeSounds(self, dt);
-	Grid_Add(g_pWorld->grid, self);
+	Grid_Add(&g_pWorld->grid, self);
 	cObjEntity_Tick(self, dt);
 }
 
@@ -494,7 +494,7 @@ void cWithLifeEntity_SetEmbeddedFX(cEntity *self, const char *fxType) {
 
 void cWithLifeEntity_SetPos(cEntity *self, const vec3_t *pos) {
 	cObjEntity_SetPos(self, pos);
-	Grid_Add(g_pWorld->grid, self);
+	Grid_Add(&g_pWorld->grid, self);
 }
 
 /* the burner node (CHECK line 0x4e of Nto1Links.h) linked to the attacker */

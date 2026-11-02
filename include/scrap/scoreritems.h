@@ -901,8 +901,9 @@ void cRadarScorer_Draw(cRadarScorer *self, int player);
 #define SCORER_MAX_HEAD_ANIMS 8
 
 /* the flags and the default of an engine variable by its value (cGVar of include/scrap/scrap.h) */
-#define GVAR_FLAGS(v) (*((byte *)&(v) - 4))
-#define GVAR_DEF(type, v) (*(type *)((byte *)&(v) + 4))
+#define GVAR_OF_VALUE(v) ((cGVar *)((byte *)&(v) - offsetof(cGVar, value)))
+#define GVAR_FLAGS(v) (GVAR_OF_VALUE(v)->base.flags)
+#define GVAR_DEF(type, v) (*(type *)&GVAR_OF_VALUE(v)->def)
 
 extern cScorer *g_Scorers;		/* new cScorer[4] */
 extern CPsaImage *g_ScorerWhite;	/* 2D/white.tga */

@@ -1024,7 +1024,7 @@ static int AICC2D_ArcFloor(cAICharControl *self, const vec3_t *p, vec3_t *out) {
 		DListVec3_Add(&self->debugStrafeInner, out);
 	}
 	float r = WChar(self->ent)->wl.prim.radius + 1.0f - g_MarginCollCharAI;
-	return !cWorld_TestSphereEntities(g_pWorld, self->ent, (void *)0x10, out, r, &hit, 1, 0);
+	return !cWorld_TestSphereEntities(g_pWorld, self->ent, 0x10, out, r, &hit, 1, 0);
 }
 
 /* StrafeBack on the floor in half steps: each point of the circle on the floor and free of the other characters */

@@ -171,7 +171,7 @@ int CEngineApp_OneTimeSceneInit(CEngineApp *self) {
 		return (int)0x80004005;
 	}
 	CHECK(g_World);
-	mem = operator_new(CNULLINPUT_SIZE);
+	mem = operator_new(sizeof(CNullInput));
 	if (mem) {
 		IInput_ctor(mem);
 		*(void **)mem = CNULLINPUT_VFTABLE;

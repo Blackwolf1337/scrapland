@@ -178,8 +178,8 @@ void Menu_DrawFrame(void *img, int arg, float x, float y, float w, float h);
 void Menu_DrawBar(void *img, float x, float y, float frac, int mode, float f, float u0, float v0, float u1, float v1,
 	float bu0, float bv0, float bu1, float bv1, uint32_t color, uint32_t black);
 void Font_SetLanguage(const char *lang);
-void *CPsaImage_ctorTex(void *self, const char *name, int a, int b);
-void *CPsaImage_ctorFlags(void *self, const char *name, int a, int b, int flags);
+void *CPsaImage_ctorTex(void *self, const char *name, const char *a, int b);
+void *CPsaImage_ctorFlags(void *self, const char *name, const char *a, int b, int flags);
 /* a polygon of n corners (pos, uv and colors optional, NULL for the image ones); mode 6 */
 void CPsaImage_DrawPoly(void *self, const float *pos, const float *uv, const uint32_t *colors, int n,
 	int mode);

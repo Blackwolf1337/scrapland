@@ -108,7 +108,7 @@ PyObject *cPyEntity_IsType(PyObject *self, PyObject *args) {
 	return Py_BuildValue("i", Entity_IsType(e, type) ? 1 : 0);
 }
 
-/* type functions of cPyEntity (type object rva 0x428e18, tp_basicsize 0xc) */
+/* type functions of cPyEntity (type object rva 0x428e18) */
 
 PyObject *PyEntity_New(const char *name) {
 	cEntity *e = World_FindEntity(name);

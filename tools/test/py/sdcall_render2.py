@@ -30,11 +30,6 @@ rn2now = SDTest.Peek('g_TimeMs', 'i')
 
 # the table.h instances
 rn2t = rn2new(8)
-rn2pk(rn2t, 3)
-rn2pk(rn2t + 4, rn2new(0x100))
-for i in (0, 1, 2):
-	check('Table_Get8' + fmt((i,)), lambda i=i: SDTest.Call('Table_Get8', 'tiii', rn2t, i)[0] - rn2i(rn2t + 4))
-	check('Table_Get50' + fmt((i,)), lambda i=i: SDTest.Call('Table_Get50', 'tiii', rn2t, i)[0] - rn2i(rn2t + 4))
 for rva in ('Table_Free@2b8dd0', 'Table_Free@2bbcf0', 'Table_Free@2bbd20'):
 	rn2pk(rn2t, 4)
 	rn2pk(rn2t + 4, SDTest.Call('operator_new_array', 'ii', 32)[0])

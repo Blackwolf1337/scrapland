@@ -291,8 +291,8 @@ void Bsp2_Split(byte countOnly, Bsp2Node *node, const plane_t *pl, int *outFront
 		node->front = f ? Bsp2Node_ctor(f) : NULL;
 		Bsp2Node *b = operator_new(sizeof(Bsp2Node));
 		node->back = b ? Bsp2Node_ctor(b) : NULL;
-		Table_Alloc38(&node->front->tris, n * 2);
-		Table_Alloc38(&node->back->tris, n * 2);
+		Table_AllocN(&node->front->tris, n * 2, sizeof(Bsp2Tri));
+		Table_AllocN(&node->back->tris, n * 2, sizeof(Bsp2Tri));
 	}
 	uint32_t nf = 0, nb = 0;
 	for (int i = 0; i < n; i++) {
@@ -332,8 +332,8 @@ void Bsp2_Split(byte countOnly, Bsp2Node *node, const plane_t *pl, int *outFront
 	}
 	if (!countOnly) {
 		Table_Free(&node->tris);
-		Table_Resize38(&node->front->tris, nf);
-		Table_Resize38(&node->back->tris, nb);
+		Table_ResizeN(&node->front->tris, nf, sizeof(Bsp2Tri));
+		Table_ResizeN(&node->back->tris, nb, sizeof(Bsp2Tri));
 	}
 	if (outFront) {
 		*outFront = nf;

@@ -203,10 +203,9 @@ void Vulcan_HudNative(cAbstractFile *f);
 void AICtrl_Police2GearEnd(cAbstractFile *params);
 void MemPools_PrintAll(void);
 
-/* the objects of the lines: SI_REF(name) its address, SI_AT(name, off) an address inside it (the value of a cGVar at
- * 16); through the assembler name, so a header macro of the same name does not get in the way */
+/* the objects of the lines: SI_REF(name) its address,
+ * through the assembler name, so a header macro of the same name does not get in the way */
 #define SI_REF(name) SD_REF_(sd_##name, SD_CPFX #name)
-#define SI_AT(name, off) ((void *)((char *)SI_REF(name) + (off)))
 #define SI_OBJ(p) (p)
 #define SI_GVAR(p) ((cGVar *)(p))
 #define SI_STR(s) (s)
@@ -322,8 +321,9 @@ void MemPools_PrintAll(void);
 	void fini(void); \
 	void fn(void) { \
 		HashTable *t = SI_OBJ(table); \
-		t->slots = New_Array(count, size); \
-		memset(t->slots, 0, clear); \
+		(void)(size), (void)(clear);	/* the 32 bit slot size and bytes of the original's call */ \
+		t->slots = New_Array(count, sizeof(*t->slots)); \
+		memset(t->slots, 0, (count) * sizeof(*t->slots)); \
 		t->locked = lock; \
 		t->caseSensitive = cs; \
 		crt_atexit(fini); \

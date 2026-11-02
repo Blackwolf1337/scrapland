@@ -88,8 +88,8 @@ void cSndItem_Tick(cSndItem *self, cEntity *e, float dt) {
 void cSndInterface_Alloc(cSndInterface *self, int n) {
 	CHECK(n > 0);
 	self->nsnd = n;
-	self->snds = Mem_Alloc(n * 4);
-	memset(self->snds, 0, self->nsnd * 4);
+	self->snds = Mem_Alloc(n * sizeof(*self->snds));
+	memset(self->snds, 0, self->nsnd * sizeof(*self->snds));
 }
 
 void cSndInterface_Free(cSndInterface *self) {

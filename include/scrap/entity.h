@@ -105,7 +105,8 @@ typedef struct cVehicleEntity cVehicleEntity;
 /* Global/DList.h: node of the entity lists of the world; the list ends at a node without data */
 typedef struct DListNode {
 	struct DListNode *next;		/* 0x0 */
-	byte pad_4[0x8];
+	struct DListNode *prev;		/* 0x4 */
+	void *target;			/* 0x8 */
 	cEntity *data;			/* 0xc */
 } DListNode;
 

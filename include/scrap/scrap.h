@@ -47,8 +47,6 @@ typedef struct cGVarListVtbl {
 	void(*Save)(void *self, void *f);	/* 0x0 */
 	void(*Load)(void *self, void *f);	/* 0x4 */
 } cGVarListVtbl;
-#define GVar_ListObj(v) ((void *)((byte *)(v) - 4))
-#define GVar_ListVtbl(v) (*(const cGVarListVtbl **)GVar_ListObj(v))
 
 /* cFuncGvar, 0x14 bytes: the abstract base of the GVAR_FUNCTION variables (cFuncGvar::vftable rva 0x3bc2c8, Save and
  * Load pure) */
@@ -57,6 +55,8 @@ typedef struct cFuncGvar {
 	cGvar gvar;			/* 0x04 g_GVars points here */
 } cFuncGvar;
 SD_SIZE(cFuncGvar, 0x14);
+#define GVar_ListObj(v) ((void *)((byte *)(v) - offsetof(cFuncGvar, gvar)))
+#define GVar_ListVtbl(v) (*(const cGVarListVtbl **)GVar_ListObj(v))
 
 /* the object of a GVAR_SCRIPT_FUNCTION variable (INIT_GVAR_FUNCTION of StaticInit.inc): its function in place of value
  * and def */
@@ -158,12 +158,12 @@ void cDebrisSys_Drop(cDebrisSys *sys, cDebris *debris);
 byte cDebris_Update(cDebris *self, cDebrisSys *sys);
 
 /* entity list by name for the collision tests */
-void *EntityLists_Get(const char *name);
-byte cWorld_TestLineEntities(cWorld *world, int arg, void *list, const vec3_t *from, const vec3_t *to,
+uint32_t EntityLists_Get(const char *name);
+byte cWorld_TestLineEntities(cWorld *world, cEntity *exclude, uint32_t mask, const vec3_t *from, const vec3_t *to,
 	vec3_t *hit, cEntity **target, int flag);
-byte cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, void *list, const vec3_t *center,
+byte cWorld_TestSphereEntities(cWorld *world, cEntity *exclude, uint32_t mask, const vec3_t *center,
 	float radius, cEntity **target, int a, const vec3_t *prev);
-byte cWorld_SphereCall(cWorld *world, void *list, const vec3_t *center, float radius, const char *func,
+byte cWorld_SphereCall(cWorld *world, uint32_t mask, const vec3_t *center, float radius, const char *func,
 	int flag);
 byte DummySearch_Next(char *buf, int size, vec3_t *pos, float *ang, byte *flag);
 void Object3D_Preload(const char *name, const vec3_t *scale);

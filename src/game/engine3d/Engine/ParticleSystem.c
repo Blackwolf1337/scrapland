@@ -684,7 +684,7 @@ void CParticleSystem_CreateParticles(CParticleSystem *self) {
 	ParticleSystemParams *pa = &self->params;
 
 	CHECK(!self->Particles);
-	self->Particles = operator_new_array((uint32_t)pa->nParticles << 2);
+	self->Particles = operator_new_array((uint32_t)pa->nParticles * sizeof(*self->Particles));
 	for (int i = 0; i < pa->nParticles; i++) {
 		CParticle *p;
 		if (!(pa->flags & PARTICLESYSTEM_STATIC)) {

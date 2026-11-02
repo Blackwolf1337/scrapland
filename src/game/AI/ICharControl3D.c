@@ -859,7 +859,7 @@ static byte AICC3D_ArcFree(cAICharControl *self, const vec3_t *p) {
 	cEntity *hit;
 
 	float r = WChar(self->ent)->wl.prim.radius + 1.0f - g_MarginCollCharAI;
-	return !cWorld_TestSphereEntities(g_pWorld, self->ent, (void *)0x10, p, r, &hit, 1, 0);
+	return !cWorld_TestSphereEntities(g_pWorld, self->ent, 0x10, p, r, &hit, 1, 0);
 }
 
 /* StrafeBack in half steps with only the other characters tested at each point of the circle */

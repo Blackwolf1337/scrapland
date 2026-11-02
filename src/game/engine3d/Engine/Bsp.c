@@ -2786,7 +2786,7 @@ float Bsp_Occlusion(const vec3_t *p, const vec3_t *n, float r, int samples, cons
 	float dist = (float)__builtin_sqrt((double)(dy * dy + dx * dx + dz * dz));
 	float rad = dist * 0.004638f * 4.0f;
 	int hits = 0;
-	int info[3] = { 0, 0, 0 };
+	CGroundHit info = { 0, 0, NULL };
 
 	if (samples > 0) {
 		float fn = Uint_ToFloat((uint32_t)samples);
@@ -2801,7 +2801,7 @@ float Bsp_Occlusion(const vec3_t *p, const vec3_t *n, float r, int samples, cons
 			Bsp_DirSphere(d, z2, s1);
 			vec3_t to = { d[0] * rad + lp.x, d[1] * rad + lp.y, d[2] * rad + lp.z };
 			float threshold = 0.8f / (g_ShadowMapRes * g_ShadowMapScale);
-			if (CGround_Trace(ground, &from, &to, NULL, threshold, info)) {
+			if (CGround_Trace(ground, &from, &to, NULL, threshold, &info)) {
 				hits++;
 			}
 		}
@@ -3075,7 +3075,7 @@ void CBsp_Prepare(CBsp *self) {
 				}
 			}
 			if (i == tab.n) {
-				Table_Resize14(&tab, i + 1);
+				Table_ResizeN(&tab, i + 1, sizeof(BspMatStat));
 				memset(&((BspMatStat *)tab.p)[i], 0, sizeof(BspMatStat));
 			}
 			BspMatStat *e = BspMatStat_Get(&tab, i);
@@ -3176,8 +3176,6 @@ void CBsp_InitD3D(CBsp *self) {
 /* the static initializer: the trace caches of the lights cleared */
 void Bsp_InitLights(void) {
 	for (int i = 0; i < BSP_MAX_LIGHTS; i++) {
-		g_BspLights[i].cache[0] = 0;
-		g_BspLights[i].cache[1] = 0;
-		g_BspLights[i].cache[2] = 0;
+		g_BspLights[i].cache = (CGroundHit){ 0, 0, NULL };
 	}
 }

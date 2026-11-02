@@ -196,7 +196,7 @@ void cEntity_AimWeapon(cEntity *self, float ax, float ay, float *dist, vec3_t *o
 	end.z = self->pos.z + r->z;
 	Engine_TestLine(&self->pos, &end, out, NULL);
 	end = *out;
-	cWorld_TestLineEntities(g_pWorld, (int)self, (void *)flags, &self->pos, &end, out, target, 1);
+	cWorld_TestLineEntities(g_pWorld, self, flags, &self->pos, &end, out, target, 1);
 	float dy = self->pos.y - out->y;
 	float dx = self->pos.x - out->x;
 	float dz = self->pos.z - out->z;
@@ -347,7 +347,7 @@ void cEntity_Render(cEntity *self, void *arg) {
 void cEntity_SetActive(cEntity *self, byte on) {
 	self->active = on;
 	if (!on) {
-		Grid_Add(g_pWorld->grid, self);
+		Grid_Add(&g_pWorld->grid, self);
 	}
 }
 

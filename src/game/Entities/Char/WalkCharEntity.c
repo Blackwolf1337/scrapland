@@ -303,7 +303,7 @@ void cWalkCharEntity_UnlinkCollide(cEntity *self) {
 #define WCE_MAX_FALL 10000.0f			/* rva 0x3a5ac0, 0x3b0898 */
 
 /* the WithLife entity hit test of the walk */
-#define WCE_HIT_LISTS ((void *)0x11)
+#define WCE_HIT_LISTS 0x11u
 
 /* the name of the action of layer 0 starts with s (n characters) */
 static inline byte WCE_Action0Is(const cWalkCharEntity *w, const char *s, size_t n) {
@@ -583,18 +583,18 @@ static const struct {
 	uint32_t size;
 	wceAICtor_t ctor;
 } wce_ais[] = {
-	{"Sentinel", 0x380, cAISentinel_ctor},
-	{"Gear", 0x390, cAIGear_ctor},
-	{"Nurse", 0x384, cAINurse_ctor},
-	{"BankDirector", 0x384, cAIBankDirector_ctor},
-	{"Mayor", 0x380, cAIMayor_ctor},
-	{"Police", 0x380, cAIPolice_ctor},
-	{"Bishop", 0x398, cAIBishop_ctor},
-	{"Messenger", 0x390, cAIMessenger_ctor},
-	{"BankMaster", 0x384, cAIBankMaster_ctor},
-	{"Desktop", 0x380, cAIDesktop_ctor},
-	{"Human", 0x380, cAIHuman_ctor},
-	{NULL, 0x380, cAIChar_ctor}
+	{"Sentinel", sizeof(cAISentinel), cAISentinel_ctor},
+	{"Gear", sizeof(cAIGear), cAIGear_ctor},
+	{"Nurse", sizeof(cAINurse), cAINurse_ctor},
+	{"BankDirector", sizeof(cAIBankDirector), cAIBankDirector_ctor},
+	{"Mayor", sizeof(cAIMayor), cAIMayor_ctor},
+	{"Police", sizeof(cAIPolice), cAIPolice_ctor},
+	{"Bishop", sizeof(cAIBishop), cAIBishop_ctor},
+	{"Messenger", sizeof(cAIMessenger), cAIMessenger_ctor},
+	{"BankMaster", sizeof(cAIBankMaster), cAIBankMaster_ctor},
+	{"Desktop", sizeof(cAIDesktop), cAIDesktop_ctor},
+	{"Human", sizeof(cAIHuman), cAIHuman_ctor},
+	{NULL, sizeof(cAIChar), cAIChar_ctor}
 };
 
 void cWalkCharEntity_EnableAI(cEntity *self, byte on, int *arg) {
@@ -1050,7 +1050,7 @@ void cWalkCharEntity_Tick(cEntity *self, float dt) {
 		WChar_Vtbl(self)->UpdateSelect(self, dt);
 		WChar_Vtbl(self)->Idle(self, dt);
 	}
-	Grid_Add(g_pWorld->grid, self);
+	Grid_Add(&g_pWorld->grid, self);
 tick:
 	cWithLifeEntity_Tick(self, dt);
 	w->abortOpt = w->wl.arrow.iOpt;

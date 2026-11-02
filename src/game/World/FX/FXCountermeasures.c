@@ -732,7 +732,7 @@ static void EMI_NewBolt(cObjElementFXEMI *self, int i, const vec3_t *pos, float 
 		hit.z = hit.z + tri.plane.n.z * 50.0f;
 	}
 	found = NULL;
-	byte sphere = cWorld_TestSphereEntities(g_pWorld, self->entity, (void *)FXEMI_ENTITIES, pos,
+	byte sphere = cWorld_TestSphereEntities(g_pWorld, self->entity, FXEMI_ENTITIES, pos,
 		radius / g_EMILowRadiusFactor, &found, 1, 0);
 	if (sphere) {
 		int m;

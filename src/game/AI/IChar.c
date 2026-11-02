@@ -146,10 +146,10 @@ void *cAIChar_ctor(void *mem, cEntity *e, int *arg) {
 	self->ent = e;
 	self->ctrl = &WChar(e)->control;
 	if (!self->base.flying) {
-		m = operator_new(CAICHARCONTROL_SIZE);
+		m = operator_new(sizeof(cAICharControl));
 		self->control = m ? cAICharControl2D_ctor(m, e, self, arg) : NULL;
 	} else {
-		m = operator_new(CAICHARCONTROL_SIZE);
+		m = operator_new(sizeof(cAICharControl));
 		self->control = m ? cAICharControl3D_ctor(m, e, self, arg) : NULL;
 	}
 	CHECK(self->control);

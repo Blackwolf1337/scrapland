@@ -9,6 +9,7 @@
 #include "scrap/e3dutil.h"
 #include "scrap/trimesh.h"
 #include "scrap/misc.h"
+#include "scrap/model.h"
 
 #define IOBJECT3D_VFTABLE GAME_VFTABLE(IObject3D_vftable)
 
@@ -28,12 +29,6 @@ typedef struct MeshD3D_RenderNode {
 	int16_t s9a;			/* 0x9a */
 } MeshD3D_RenderNode;
 SD_OFFSET(MeshD3D_RenderNode, s9a, 0x9a);
-
-/* an entry of the animation channels of a node: the animation first */
-typedef struct MeshD3D_Channel {
-	byte *anim;			/* 0x0 bytes 0xc and 0xd: whether it moves the vertices */
-	int i4;				/* 0x4 */
-} MeshD3D_Channel;
 
 typedef CMeshD3D *(*meshD3DDelete_t)(CMeshD3D *self, byte flags);
 typedef int(*meshD3DRestore_t)(CMeshD3D *self, void *dev);
@@ -379,10 +374,12 @@ void CMeshD3D_SetRender(CMeshD3D *self, void *renderNode) {
 	if (!eva) {
 		return;
 	}
-	MeshD3D_Channel *c = (MeshD3D_Channel *)CNode3D_Channel(self->node, channel);
+	NodeAnimChannel *c = CNode3D_Channel(self->node, channel);
+	/* the channel's animation is a model slot (RenderCtx_SetChannel); its morph targets move the vertices */
+	const CAnimSlot *slot = (const CAnimSlot *)c->anim;
 	r->channel = channel;
-	r->s9a = (int16_t)c->i4;
-	if (!c->anim[0xc] && !c->anim[0xd]) {
+	r->s9a = (int16_t)c->frame;
+	if (!slot->subset && !slot->prevSubset) {
 		r->eva = NULL;
 	}
 	CHECK(!self->next);

@@ -11,7 +11,7 @@ if(CCACHE)
 	set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE})
 endif()
 
-if(NOT CMAKE_SIZEOF_VOID_P EQUAL 4 OR NOT (WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux"))
+if(NOT (CMAKE_SIZEOF_VOID_P EQUAL 4 OR CMAKE_SYSTEM_NAME STREQUAL "Linux") OR NOT (WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux"))
 	message(FATAL_ERROR "ScrapC is 32 bit for now: cmake -B build -DCMAKE_TOOLCHAIN_FILE=cmake/mingw-i686.cmake (Windows) "
 		"or cmake -B build-linux -DCMAKE_TOOLCHAIN_FILE=cmake/linux-i686.cmake")
 endif()

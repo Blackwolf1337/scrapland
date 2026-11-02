@@ -111,7 +111,7 @@ static inline cInfItemList *InfItem_AmmoList(cInfItem *self, int kind) {
 	case 2:
 		return &self->ammo2;
 	}
-	return (cInfItemList *)kind;
+	return (cInfItemList *)(intptr_t)kind;
 }
 
 static cItemDesc *InfItemList_First(cInfItemList *list, void **iter) {
@@ -162,7 +162,7 @@ void cInfItem_AddAmmo(cInfItem *self, int kind, cItemDesc *item) {
 		break;
 	default:
 		CHECK(0);
-		l = (cInfItemList *)kind;
+		l = (cInfItemList *)(intptr_t)kind;
 		break;
 	}
 	CHECK(l);

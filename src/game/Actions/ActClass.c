@@ -2,6 +2,7 @@
  * Actions/ActClass.cpp of the game: the variables, sounds, model and camera of an action class, with the instance of
  * Global/DList.h for its sound names. See include/scrap/actions.h.
  */
+#include <stddef.h>
 #include <string.h>
 
 #include "scrap/actions.h"
@@ -448,24 +449,44 @@ typedef struct {
 } cActVarF;
 
 static const cActVarI g_ClsInts[] = {
-	{ "SkipInitOnChange", 0x18a, 0 }, { "DinaShip", 0x208, 0 }, { "Discardable", 0x185, 0 },
-	{ "CanBePossessed", 0x184, 0 }, { "RelaxAlarm", 0x18b, 0 }, { "FireAsSelect", 0x189, 0 },
-	{ "StrafeChar", 0x188, 0 }, { "PretransformChan", 0x148, 1 }, { "CanFly", 0x186, 0 }, { "CanJump", 0x187, 0 },
+	{ "SkipInitOnChange", offsetof(cActClass, skipInitOnChange), 0 },
+	{ "DinaShip", offsetof(cActClass, dynShip), 0 },
+	{ "Discardable", offsetof(cActClass, discardable), 0 },
+	{ "CanBePossessed", offsetof(cActClass, canBePossessed), 0 },
+	{ "RelaxAlarm", offsetof(cActClass, relaxAlarm), 0 },
+	{ "FireAsSelect", offsetof(cActClass, fireAsSelect), 0 },
+	{ "StrafeChar", offsetof(cActClass, strafeChar), 0 },
+	{ "PretransformChan", offsetof(cActClass, pretransformChan), 1 },
+	{ "CanFly", offsetof(cActClass, canFly), 0 },
+	{ "CanJump", offsetof(cActClass, canJump), 0 },
 };
 
 static const cActVarF g_ClsFloats1[] = {
-	{ "InitEndWalkInterpFactor", 0x18c }, { "YModelDisp", 0x180 }, { "MinTimeWalking", 0x14c },
+	{ "InitEndWalkInterpFactor", offsetof(cActClass, initEndWalkInterpFactor) },
+	{ "YModelDisp", offsetof(cActClass, yModelDisp) },
+	{ "MinTimeWalking", offsetof(cActClass, minTimeWalking) },
 };
 
 static const cActVarF g_ClsFloats2[] = {
-	{ "FlyFallAccel", 0x17c }, { "FlySpeed", 0x178 }, { "FlyFric", 0x174 }, { "FlyAccel", 0x170 },
-	{ "SRadius", 0x16c }, { "VRadius", 0x168 }, { "WRadius", 0x164 }, { "MinFallDist", 0x158 },
-	{ "MaxTimeToExtraRelax", 0x150 }, { "MinTimeToExtraRelax", 0x154 },
+	{ "FlyFallAccel", offsetof(cActClass, flyFallAccel) },
+	{ "FlySpeed", offsetof(cActClass, flySpeed) },
+	{ "FlyFric", offsetof(cActClass, flyFric) },
+	{ "FlyAccel", offsetof(cActClass, flyAccel) },
+	{ "SRadius", offsetof(cActClass, sRadius) },
+	{ "VRadius", offsetof(cActClass, vRadius) },
+	{ "WRadius", offsetof(cActClass, wRadius) },
+	{ "MinFallDist", offsetof(cActClass, minFallDist) },
+	{ "MaxTimeToExtraRelax", offsetof(cActClass, maxTimeToExtraRelax) },
+	{ "MinTimeToExtraRelax", offsetof(cActClass, minTimeToExtraRelax) },
 };
 
 static const cActVarF g_ClsFuncs[] = {
-	{ "OnCreate", 0x1e0 }, { "PossessionPress", 0x1cc }, { "PhotoPress", 0x1b8 }, { "ActionRelease", 0x1a4 },
-	{ "ActionPress", 0x190 }, { "OnFreeResources", 0x1f4 },
+	{ "OnCreate", offsetof(cActClass, onCreate) },
+	{ "PossessionPress", offsetof(cActClass, possessionPress) },
+	{ "PhotoPress", offsetof(cActClass, photoPress) },
+	{ "ActionRelease", offsetof(cActClass, actionRelease) },
+	{ "ActionPress", offsetof(cActClass, actionPress) },
+	{ "OnFreeResources", offsetof(cActClass, onFreeResources) },
 };
 
 /* a float variable of a table: 1 if name is one of them */
@@ -516,7 +537,8 @@ int cActClass_Var(cActClass *cls, const char *name, int set, char **s, double *d
 		}
 	}
 	if (d) {
-		static const cActVarF disp[] = { { "SoundDispX", 0x13c }, { "SoundDispY", 0x140 }, { "SoundDispZ", 0x144 } };
+		static const cActVarF disp[] = { { "SoundDispX", offsetof(cActClass, soundDisp.x) },
+			{ "SoundDispY", offsetof(cActClass, soundDisp.y) }, { "SoundDispZ", offsetof(cActClass, soundDisp.z) } };
 		if (ActVar_Float(cls, disp, 3, name, set, d)) {
 			return ACTVAR_DOUBLE;
 		}

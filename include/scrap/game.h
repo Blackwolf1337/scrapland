@@ -11,6 +11,7 @@
 #include "scrap/nto1links.h"
 #include "scrap/timer.h"
 #include "scrap/worldlogic.h"
+#include "scrap/worldparts.h"
 
 /*
  * The globals and tables of src/game/Global/Globals*.c, declared inside the macro, so no header lists them. Each
@@ -83,7 +84,7 @@ typedef struct cWorld {
 	Nto1Node entityList;		/* 0x0010 head of the entities (their node at +8), target the world */
 	Nto1Node deadList;		/* 0x0020 entities to delete after the frame */
 	int nameCount;			/* 0x0030 suffix of the next generated name */
-	byte scheduler[0x0050 - 0x0034]; /* 0x0034 scheduled Python functions (Scrap.AddScheduledFunc) */
+	cScheduledFuncStack scheduler;	/* 0x0034 scheduled Python functions (Scrap.AddScheduledFunc) */
 	int curCam;			/* 0x0050 index into camPos */
 	char camName[4][0x80];		/* 0x0054 camera entity of each view, "" for none */
 	vec3_t camPos[4];		/* 0x0254 camera positions (Scrap.GetNearestParked) */
@@ -98,11 +99,11 @@ typedef struct cWorld {
 	byte pad_02c5[3];
 	cTimer timer;			/* 0x02c8 world time (Scrap.GetTime, GetTimeSpeed) */
 	MapFloors floor;		/* 0x02f0 Scrap.GetFloor */
-	byte elements[0x1bb8 - 0x1bb4]; /* 0x1bb4 map elements (Scrap.CreateElements, CallElements) */
+	struct cMapElement *elements;	/* 0x1bb4 map elements, newest first (Scrap.CreateElements, CallElements) */
 	TABLE(cWeapInfo) weapons;	/* 0x1bb8 SWeap.InitWeap, GetNWeap */
 	int firstWeapon;		/* 0x1bc0 SWeap.GetFirstiWeap */
 	TABLE(cAmmoInfo) ammo;		/* 0x1bc4 SWeap.InitAmmo, GetNAmmo */
-	byte grid[0x1c68 - 0x1bcc];	/* 0x1bcc Scrap.SetGrid */
+	cCollisionGrid grid;		/* 0x1bcc Scrap.SetGrid */
 	cAlarm alarm;			/* 0x1c68 Scrap.GetAlarm, GetLockAlarm */
 	byte strMoney[0x2090 - 0x2078];	/* 0x2078 the digits of the money (cStrMoney, logic.h), its int is money */
 	int money;			/* 0x2090 Scrap.GetMoney */

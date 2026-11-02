@@ -12,12 +12,6 @@
 
 #define CAMERA_LOOKAT 0x463		/* mode: the angles follow the target */
 
-typedef struct CNodeRef {
-	void **vftable;			/* 0x0 [0] the deleting destructor */
-	int pad_4;
-	int Refs;			/* 0x8 */
-} CNodeRef;
-
 typedef struct CCamera {
 	void *vftable;			/* 0x00 */
 	uint32_t class;			/* 0x04 CLASS_OBJ3D_CAMERA */
@@ -35,8 +29,8 @@ typedef struct CCamera {
 	vec3_t viewPos;			/* 0x4c set with dir and up */
 	vec3_t dir;			/* 0x58 */
 	vec3_t up;			/* 0x64 */
-	CNodeRef *node;			/* 0x70 */
-	CNodeRef *nodeTarget;		/* 0x74 */
+	CNode3D *node;			/* 0x70 */
+	CNode3D *nodeTarget;		/* 0x74 */
 } CCamera;
 SD_SIZE(CCamera, 0x78);
 
@@ -46,8 +40,8 @@ void CCamera_dtor(CCamera *self);
 CCamera *CCamera_Delete(CCamera *self, byte flags);
 /* the members after the copied ones cleared, the nodes forgotten (not released) */
 void CCamera_Clear(CCamera *self);
-void CCamera_SetNode(CCamera *self, CNodeRef *node);
-void CCamera_SetNodeTarget(CCamera *self, CNodeRef *node);
+void CCamera_SetNode(CCamera *self, CNode3D *node);
+void CCamera_SetNodeTarget(CCamera *self, CNode3D *node);
 /* the "CAM" block; ctx holds the node at 0x4 */
 int CCamera_Read(CCamera *self, CFileIO *f, void *ctx);
 int CCamera_Write(CCamera *self, CFileIO *f, void *ctx);

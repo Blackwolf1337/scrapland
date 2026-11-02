@@ -8,6 +8,7 @@
 #ifndef SCRAP_TEXTURE_H
 #define SCRAP_TEXTURE_H
 
+#include "scrap/table.h"
 #include "scrap/gvar.h"
 #include "scrap/bmp.h"
 
@@ -37,8 +38,13 @@ SD_SIZE(MSprite, 0x8);
 typedef struct CMultiSprite {
 	int width;			/* 0x0 of the texture */
 	int height;			/* 0x4 */
-	int n;				/* 0x8 the sprites (CTable) */
-	MSprite *p;			/* 0xc */
+	union {				/* a CTable: the casts (CTable *)&n hold on every platform */
+		CTable t_n;
+		struct {
+			int n;				/* 0x8 the sprites (CTable) */
+			MSprite *p;			/* 0xc */
+		};
+	};
 } CMultiSprite;
 SD_SIZE(CMultiSprite, 0x10);
 

@@ -74,10 +74,10 @@ void *cAIVehicle_ctor(void *mem, cEntity *v, void *p1, void *p2, void *p3) {
 	self->vehicle = v;
 	self->params = *(const cAIVehicleParams1 *)p1;
 	self->paramsInit = *(const cAIVehicleParams1 *)p1;
-	void *m = operator_new(CAIVEHICLECONTROL_SIZE);
+	void *m = operator_new(sizeof(cAIVehicleControl));
 	self->control = m ? cAIVehicleControl_ctor(m, v, self, p2) : NULL;
 	CHECK(self->control);
-	m = operator_new(CAIVEHICLESHOOT_SIZE);
+	m = operator_new(sizeof(cAIVehicleShoot));
 	self->shoot = m ? cAIVehicleShoot_ctor(m, v, self, p3) : NULL;
 	CHECK(self->shoot);
 	self->state = AIV_STATE_NONE;
@@ -1100,7 +1100,7 @@ byte cAIVehicle_PlaceOnTrack(cAIVehicle *ai, int type, const vec3_t *pos, int tr
 	vec3_t np, d, ang, tmp;
 
 	self->trackType = type;
-	if (cWorld_TestSphereEntities(g_pWorld, v, (void *)1, pos, Veh(v)->wl.prim.radius * 3.0f, &hit, 1, 0)) {
+	if (cWorld_TestSphereEntities(g_pWorld, v, 1, pos, Veh(v)->wl.prim.radius * 3.0f, &hit, 1, 0)) {
 		return 0;
 	}
 	cAIVehicleControl_ClearDest(self->control);
@@ -1520,7 +1520,7 @@ byte cAIVehicle_ReposTraffic(cAIVehicle *self, vec3_t *out, float minVis, float 
 		}
 	}
 	cEntity *hit;
-	if (cWorld_TestSphereEntities(g_pWorld, self->vehicle, (void *)0x11, &p, Veh(self->vehicle)->wl.prim.radius *
+	if (cWorld_TestSphereEntities(g_pWorld, self->vehicle, 0x11, &p, Veh(self->vehicle)->wl.prim.radius *
 			AIV_REPOS_SPHERE, &hit, 1, 0)) {
 		return 0;
 	}
@@ -1588,7 +1588,7 @@ byte cAIVehicle_Repos(cAIVehicle *self) {
 		}
 	}
 	cEntity *hit;
-	if (cWorld_TestSphereEntities(g_pWorld, self->vehicle, (void *)0x11, &p, Veh(self->vehicle)->wl.prim.radius *
+	if (cWorld_TestSphereEntities(g_pWorld, self->vehicle, 0x11, &p, Veh(self->vehicle)->wl.prim.radius *
 			AIV_REPOS_SPHERE_W, &hit, 1, 0)) {
 		return 0;
 	}

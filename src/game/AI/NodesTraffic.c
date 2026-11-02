@@ -55,7 +55,7 @@ cGridElements *cGridElements_Init(cGridElements *self, void *vftable, const vec3
 	self->numCells = nx * ny * nz;
 	self->cell.y = (self->max.y - self->min.y) / (float)ny;
 	self->cell.z = (self->max.z - self->min.z) / (float)nz;
-	self->cells = Mem_Alloc(self->numCells * 4);
+	self->cells = Mem_Alloc(self->numCells * sizeof(*self->cells));
 	if (!self->cells) {
 		Con_FatalErrorf("ERROR: cGridElements - Insuficiente memoria Grid.\n");
 	}

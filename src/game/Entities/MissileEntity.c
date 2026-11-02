@@ -786,7 +786,7 @@ void cMissileEntity_SetEmbeddedFX(cMissileEntity *self, const char *name) {
 		if (!el->started) {
 			el->started = 1;
 		}
-		FXChar_SetI4(el, (int)self);
+		((cObjElementFXGearMissile *)el)->entity = (cEntity *)self;
 		cObjElementFXGearMissile_Run(el, d);
 		return;
 	}
@@ -902,7 +902,7 @@ static void Missile_InOut(cMissileEntity *self, const vec3_t *old, const vec3_t 
 		g_MissileHits[k][0] = 0;
 	}
 	/* the Touch of the entities in the sphere fills g_MissileHits */
-	cWorld_TestSphereEntities(g_pWorld, Missile_Ent(self), (void *)MISSILE_ENTLIST, old, self->radius, NULL, 0,
+	cWorld_TestSphereEntities(g_pWorld, Missile_Ent(self), MISSILE_ENTLIST, old, self->radius, NULL, 0,
 		pos);
 	for (int i = 0; i < 4; i++) {
 		char *h = self->hits[i];
@@ -1004,7 +1004,7 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 	switch (self->hitType) {
 	case MISSILE_HIT_HIT:
 		cWorld_AddIgnore(g_pWorld, World_FindEntity(self->parent));
-		if (cWorld_TestSphereEntities(g_pWorld, Missile_Ent(self), (void *)MISSILE_ENTLIST, &old, self->radius,
+		if (cWorld_TestSphereEntities(g_pWorld, Missile_Ent(self), MISSILE_ENTLIST, &old, self->radius,
 			&found, 1, pos)) {
 			Str_Copy(self->target, found->name, 0x80);
 			if (Missile_Vtbl(self)->Hit(self, self->swarmCount + 1, dt)) {
@@ -1016,7 +1016,7 @@ static byte Missile_LocalTick(cMissileEntity *self, float dt) {
 		Missile_InOut(self, &old, pos);
 		break;
 	case MISSILE_HIT_INSIDE:
-		if (cWorld_TestSphereEntities(g_pWorld, Missile_Ent(self), (void *)MISSILE_ENTLIST, &old, self->radius,
+		if (cWorld_TestSphereEntities(g_pWorld, Missile_Ent(self), MISSILE_ENTLIST, &old, self->radius,
 			&found, 1, pos)) {
 			Missile_CallHit(self, found->name);
 			cPy_Function_Execute(&self->onHit, 0);

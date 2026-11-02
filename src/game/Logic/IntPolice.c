@@ -171,7 +171,7 @@ byte AICtrl_CanFuse(void *ctrl, cEntity *e) {
 	if (Engine_TestSphere(&c, &c, 180.0f, NULL, NULL)) {
 		return 0;
 	}
-	return !cWorld_TestSphereEntities(g_pWorld, e, (void *)0x10, &c, 180.0f, &hit, 1, 0);
+	return !cWorld_TestSphereEntities(g_pWorld, e, 0x10, &c, 180.0f, &hit, 1, 0);
 }
 
 /* the gear may become a police again: no police of its number */

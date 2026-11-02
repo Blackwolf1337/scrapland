@@ -60,7 +60,7 @@ cEntity *cItemEntity_ctor(void *mem, const char *name, float x, float y, float z
 	self->base.mask |= 4;
 	self->radius = 1000.0f;
 	self->respawn = 0.0f;
-	*(float *)(self->obj140 + 0xc) = 0.05f;
+	self->obj.slot->minDiff = 0.05f;
 	self->syncTicks = 5;
 	self->owner[0] = 0;
 	self->origin.x = x;
@@ -240,8 +240,8 @@ byte cItemEntity_IsType(cItemEntity *self, const char *type) {
 
 void cItemEntity_NetRead(cItemEntity *self, void *msg, int unused) {
 	(void)unused;
-	self->net->vftable->Read(self->net, msg);
-	if (self->net->flags & 1) {
+	self->obj.net->vftable->Read(self->obj.net, msg);
+	if (self->obj.net->flags & 1) {
 		cItemEntity_SetRespawn(self, 0.0f);
 	} else {
 		cItemEntity_SetRespawn(self, 3600.0f);
@@ -251,7 +251,7 @@ void cItemEntity_NetRead(cItemEntity *self, void *msg, int unused) {
 void cItemEntity_NetWrite(cItemEntity *self, int unused, void *msg, byte full) {
 	(void)unused;
 	byte all = (0.0f >= (float)self->syncTicks) | full;
-	self->net->vftable->Write(self->net, (0.0f >= self->respawn) + 2, Item_Ent(self), msg, all);
+	self->obj.net->vftable->Write(self->obj.net, (0.0f >= self->respawn) + 2, Item_Ent(self), msg, all);
 	if (self->syncTicks > 0) {
 		self->syncTicks--;
 	}
@@ -261,7 +261,7 @@ void cItemEntity_Tick(cItemEntity *self, float dt) {
 	vec3_t to, hit;
 
 	if (Net_IsNetEntity(Item_Ent(self))) {
-		cNetController *net = self->net;
+		cNetController *net = self->obj.net;
 		if (self->base.pos.x != net->pos.x || self->base.pos.y != net->pos.y || self->base.pos.z != net->pos.z) {
 			self->base.pos.x = net->pos.x;
 			self->base.pos.y = net->pos.y;
@@ -276,35 +276,35 @@ void cItemEntity_Tick(cItemEntity *self, float dt) {
 		}
 	} else {
 		if (!(self->backTime > 0.0f)) {
-			self->vel.x = 0.0f;
-			self->vel.y = 0.0f;
-			self->vel.z = 0.0f;
-		} else if (self->vel.x != 0.0f || self->vel.y != 0.0f || self->vel.z != 0.0f) {
+			self->obj.vel.x = 0.0f;
+			self->obj.vel.y = 0.0f;
+			self->obj.vel.z = 0.0f;
+		} else if (self->obj.vel.x != 0.0f || self->obj.vel.y != 0.0f || self->obj.vel.z != 0.0f) {
 			/* pushed: slowed down and moved as a sphere */
 			float f = dt * 0.5f;
-			float mx = self->vel.x * f;
-			float my = self->vel.y * f;
-			float mz = self->vel.z * f;
-			self->vel.x = self->vel.x - mx;
-			self->vel.y = self->vel.y - my;
-			self->vel.z = self->vel.z - mz;
-			to.x = self->vel.x + self->base.pos.x;
-			to.y = self->base.pos.y + self->vel.y;
-			to.z = self->base.pos.z + self->vel.z;
+			float mx = self->obj.vel.x * f;
+			float my = self->obj.vel.y * f;
+			float mz = self->obj.vel.z * f;
+			self->obj.vel.x = self->obj.vel.x - mx;
+			self->obj.vel.y = self->obj.vel.y - my;
+			self->obj.vel.z = self->obj.vel.z - mz;
+			to.x = self->obj.vel.x + self->base.pos.x;
+			to.y = self->base.pos.y + self->obj.vel.y;
+			to.z = self->base.pos.z + self->obj.vel.z;
 			self->syncTicks = Net_GetSendRate() * 5;
 			Engine_TestSphere(&self->base.pos, &to, self->radius, &hit, NULL);
 			if ((byte)Vec3_Differ(&to.x, &hit.x)) {
-				self->vel.x = 0.0f;
-				self->vel.y = 0.0f;
-				self->vel.z = 0.0f;
+				self->obj.vel.x = 0.0f;
+				self->obj.vel.y = 0.0f;
+				self->obj.vel.z = 0.0f;
 			} else {
 				self->base.pos.x = hit.x;
 				self->base.pos.y = hit.y;
 				self->base.pos.z = hit.z;
-				if (200.0f > self->vel.x * self->vel.x + self->vel.y * self->vel.y + self->vel.z * self->vel.z) {
-					self->vel.x = 0.0f;
-					self->vel.y = 0.0f;
-					self->vel.z = 0.0f;
+				if (200.0f > self->obj.vel.x * self->obj.vel.x + self->obj.vel.y * self->obj.vel.y + self->obj.vel.z * self->obj.vel.z) {
+					self->obj.vel.x = 0.0f;
+					self->obj.vel.y = 0.0f;
+					self->obj.vel.z = 0.0f;
 				}
 			}
 		}
@@ -319,12 +319,12 @@ void cItemEntity_Tick(cItemEntity *self, float dt) {
 			self->backTime = 0.0f;
 		}
 		if (self->respawn <= 0.0f) {
-			cWorld_TestSphereEntities(g_pWorld, Item_Ent(self), (void *)0x11, &self->base.pos, self->radius, NULL, 0,
+			cWorld_TestSphereEntities(g_pWorld, Item_Ent(self), 0x11, &self->base.pos, self->radius, NULL, 0,
 				0);
 		} else {
 			float t = self->respawn - dt;
 			if (self->appearsIfFree && t <= 0.0f &&
-				cWorld_TestSphereEntities(g_pWorld, Item_Ent(self), (void *)0x11, &self->base.pos, self->radius, NULL,
+				cWorld_TestSphereEntities(g_pWorld, Item_Ent(self), 0x11, &self->base.pos, self->radius, NULL,
 					1, 0)) {
 				/* somebody is on it: one second more */
 				cItemEntity_SetRespawn(self, 1.0f);
@@ -333,7 +333,7 @@ void cItemEntity_Tick(cItemEntity *self, float dt) {
 			}
 		}
 	}
-	Grid_Add(g_pWorld->grid, Item_Ent(self));
+	Grid_Add(&g_pWorld->grid, Item_Ent(self));
 	cObjEntity_Tick(Item_Ent(self), dt);
 	self->noFx = 0;
 }
@@ -373,9 +373,9 @@ void cItemEntity_SetRespawn(cItemEntity *self, float t) {
 	if (t > 0.0f) {
 		if (self->respawn <= 0.0f) {
 			self->syncTicks = Net_GetSendRate() * 5;
-			if (CGameModel_IsLoaded(&self->model)) {
+			if (CGameModel_IsLoaded(&self->obj.model)) {
 				byte hide = 1;
-				if (self->fadeOut && !self->noFx && (CGameModel_IsVisible(&self->model) || self->blink) &&
+				if (self->fadeOut && !self->noFx && (CGameModel_IsVisible(&self->obj.model) || self->blink) &&
 					Item_FxVisible(self)) {
 					/* the take effect towards the player that took it */
 					cEntity *taker = self->taker.target;
@@ -391,7 +391,7 @@ void cItemEntity_SetRespawn(cItemEntity *self, float t) {
 					}
 				}
 				if (hide) {
-					CGameModel_Disable(&self->model);
+					CGameModel_Disable(&self->obj.model);
 				}
 			}
 			if (self->takeSoundVol > 0.0f && self->takeSound[0]) {
@@ -404,7 +404,7 @@ void cItemEntity_SetRespawn(cItemEntity *self, float t) {
 	} else {
 		if (self->respawn > 0.0f) {
 			self->syncTicks = Net_GetSendRate() * 5;
-			if (CGameModel_IsLoaded(&self->model)) {
+			if (CGameModel_IsLoaded(&self->obj.model)) {
 				byte show = 1;
 				if (self->fadeIn && !self->noFx && Item_FxVisible(self)) {
 					show = 0;
@@ -416,7 +416,7 @@ void cItemEntity_SetRespawn(cItemEntity *self, float t) {
 					}
 				}
 				if (show) {
-					CGameModel_Enable(&self->model);
+					CGameModel_Enable(&self->obj.model);
 				}
 			}
 		}
@@ -476,7 +476,7 @@ void cItemEntity_Update(cItemEntity *self) {
 		ang.x = 0.0f;
 		ang.y = (float)atan2(dx, dz);
 		ang.z = 0.0f;
-		CGameModel_SetRot(&self->model, &ang);
+		CGameModel_SetRot(&self->obj.model, &ang);
 	}
 	if (self->blink && self->respawn == 0.0f) {
 		float t = Timer_GetTime(&g_pWorld->timer);
@@ -484,14 +484,14 @@ void cItemEntity_Update(cItemEntity *self) {
 		/* five blink phases a second of game time */
 		int phase = (int)(float)(t / s * 5.0f);
 		if (phase & 1) {
-			if (!CGameModel_IsEnabled(&self->model)) {
-				CGameModel_Enable(&self->model);
+			if (!CGameModel_IsEnabled(&self->obj.model)) {
+				CGameModel_Enable(&self->obj.model);
 			}
-		} else if (CGameModel_IsEnabled(&self->model)) {
-			if (CGameModel_IsVisible(&self->model)) {
+		} else if (CGameModel_IsEnabled(&self->obj.model)) {
+			if (CGameModel_IsVisible(&self->obj.model)) {
 				FX_ItemBlink(Item_Ent(self));
 			}
-			CGameModel_Disable(&self->model);
+			CGameModel_Disable(&self->obj.model);
 		}
 	}
 }

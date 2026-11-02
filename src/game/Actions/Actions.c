@@ -2,6 +2,7 @@
  * Actions/Actions.cpp of the game: an action (cActionMove) of a class with its timed events. See
  * include/scrap/actions.h.
  */
+#include <stddef.h>
 #include <string.h>
 
 #include "scrap/actions.h"
@@ -176,20 +177,21 @@ static int ActionVar_F(cAction *self, int set, double *d, const cActionVarF *v) 
 
 int cAction_Var(cAction *act, const char *name, int set, char **s, double *d, int *i) {
 	static const cActionVarF autoFace[] = {
-		{ "AutoFaceOffsetV", 0x58, 1 }, { "AutoFaceOffsetH", 0x54, 1 }, { "AutoFaceSpeed", 0x50, 1 },
+		{ "AutoFaceOffsetV", offsetof(cAction, autoFaceOffsetV), 1 }, { "AutoFaceOffsetH", offsetof(cAction, autoFaceOffsetH), 1 },
+		{ "AutoFaceSpeed", offsetof(cAction, autoFaceSpeed), 1 },
 	};
 	static const cActionVarF rot[] = {
-		{ "AngRotLimit", 0x3c, 1 }, { "AngleModifierSpeed", 0x30, 0 },
+		{ "AngRotLimit", offsetof(cAction, angRotLimit), 1 }, { "AngleModifierSpeed", offsetof(cAction, angleModifierSpeed), 0 },
 	};
 	static const cActionVarF speeds[] = {
-		{ "MaxSpeed", 0x40, 0 }, { "MinSpeed", 0x44, 0 },
+		{ "MaxSpeed", offsetof(cAction, maxSpeed), 0 }, { "MinSpeed", offsetof(cAction, minSpeed), 0 },
 	};
 	static const struct {
 		const char *name;
 		uint16_t off;
 	} flags[] = {
-		{ "anmConeView", 0x60 }, { "isLoop", 0x34 }, { "SlideAsFly", 0x4c }, { "UseFlyFall", 0x4a },
-		{ "UseFlyDisp", 0x49 }, { "UseDisp", 0x48 },
+		{ "anmConeView", offsetof(cAction, anmConeView) }, { "isLoop", offsetof(cAction, isLoop) }, { "SlideAsFly", offsetof(cAction, slideAsFly) },
+		{ "UseFlyFall", offsetof(cAction, useFlyFall) }, { "UseFlyDisp", offsetof(cAction, useFlyDisp) }, { "UseDisp", offsetof(cAction, useDisp) },
 	};
 	byte *base = (byte *)act;
 
@@ -318,7 +320,7 @@ ints:
 			if (crt_stricmp(name, flags[k].name)) {
 				continue;
 			}
-			if (flags[k].off == 0x4c) {
+			if (flags[k].off == offsetof(cAction, slideAsFly)) {
 				/* SlideAsFly is an int */
 				if ((byte)set) {
 					act->slideAsFly = *i;
@@ -334,7 +336,7 @@ ints:
 		}
 	}
 	if (d && !crt_stricmp(name, "RotSpeed")) {
-		static const cActionVarF rs = { "RotSpeed", 0x38, 1 };
+		static const cActionVarF rs = { "RotSpeed", offsetof(cAction, rotSpeed), 1 };
 		return ActionVar_F(act, set, d, &rs);
 	}
 	return 0;

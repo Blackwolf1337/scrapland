@@ -58,12 +58,13 @@ typedef void(*objDev_t)(IObject3D *self, void *dev);
 typedef byte(*objFile_t)(IObject3D *self, CFileIO *f, void *ctx);
 #define OBJ3D_CALL(o, slot, type, ...) ((type)(o)->vftable[slot])((o), ##__VA_ARGS__)
 
-/* a counted reference (objref.h): the deleting destructor first, the count at 0x8 */
+/* a counted reference (objref.h): the head of CNode3D and CScene, the deleting destructor first */
 typedef struct ObjRef {
 	void **vftable;			/* 0x0 */
-	int i4;
+	char *name;			/* 0x4 */
 	int Refs;			/* 0x8 */
 } ObjRef;
+SD_OFFSET(ObjRef, Refs, 0x8);
 
 /* *slot released (objref.h): counted down, deleted when nobody holds it any more */
 static inline void ObjRef_Release(void *slot) {
@@ -181,7 +182,7 @@ typedef struct CRenderNode {
 	byte pad_0[4];
 	byte flags;			/* 0x04 2: a render node of a model */
 	byte pad_5[3];
-	byte *owner;			/* 0x08 the CModel; look 2 turns to the negated angles at 0x14 */
+	struct CModel *owner;		/* 0x08 look 2 turns to the negated angles of its rot */
 	NodeLook *look;			/* 0x0c */
 	matrix_t m;			/* 0x10 world */
 	matrix_t mObj;			/* 0x50 mObj of the node times m */

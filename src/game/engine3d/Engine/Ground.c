@@ -258,7 +258,7 @@ void CHeights_dtor(CHeights *self) {
 CGround *CGround_ctor(CGround *self) {
 	self->class = 0;
 	self->vftable = CGROUND_VFTABLE;
-	memset(self->cache, 0, sizeof(self->cache));
+	memset(&self->cache, 0, sizeof(self->cache));
 	self->nodes = NULL;
 	self->nNodes = 0;
 	memset(&self->Ext, 0, sizeof(self->Ext));
@@ -267,7 +267,7 @@ CGround *CGround_ctor(CGround *self) {
 	self->class = CLASS_OBJ3D_GROUND;
 	memset(self->traceStats, 0, sizeof(self->traceStats));
 	g_QuadTriCacheID = 1;
-	memset(self->cache, 0, sizeof(self->cache));
+	memset(&self->cache, 0, sizeof(self->cache));
 	memset(g_CollisionStats, 0, 6 * sizeof(uint32_t));
 	g_CollisionNComp = 0;
 	memset(g_CollisionCache2, 0, 2 * sizeof(uint32_t));
@@ -368,7 +368,7 @@ void CCollideMesh_Read(CCollideMesh *self, CFileIO *f) {
 
 	CFileIO_BeginBlock(f, "CMSH");
 	CHECK(CFileIO_ReadInt(f) == 2);
-	CHECK(CFileIO_ReadInt(f) == sizeof(CCollideMesh));
+	CHECK(CFileIO_ReadInt(f) == CCOLLIDEMESH_FILESIZE);
 	CFileIO_ReadString(f, name, sizeof(name));
 	int zone = Sector_Find(name);
 	CFileIO_Read(f, &self->flags, 2);
@@ -391,7 +391,7 @@ void CCollideMesh_Write(CCollideMesh *self, CFileIO *f) {
 	self->Param = (byte)g_SaveCollideMeshParam++;
 	CFileIO_BeginBlockWrite(f, "CMSH");
 	CFileIO_WriteInt(f, 2);
-	CFileIO_WriteInt(f, sizeof(CCollideMesh));
+	CFileIO_WriteInt(f, CCOLLIDEMESH_FILESIZE);
 	CFileIO_WriteString(f, Sector_GetName(self->sector - 1));
 	CFileIO_Write(f, &self->flags, 2);
 	CFileIO_Write(f, &self->sector, 2);
@@ -1451,7 +1451,7 @@ void CHeights_QuadAddMesh(CHeights *self, CCollideMesh *mesh, int initTri) {
 static void Ground_NewCacheID(CGround *self) {
 	g_QuadTriCacheID++;
 	CHECK(g_QuadTriCacheID != 0);
-	memset(self->cache, 0, sizeof(self->cache));
+	memset(&self->cache, 0, sizeof(self->cache));
 }
 
 /* through the import table of the exe (winmm) */
@@ -1728,16 +1728,8 @@ void Ground_DrawDebug(void) {
 #define NODE_FLAG_HIDDEN (1u << 25)
 #define NODE_FLAG_EMPTY (1u << 1)
 #define NODE_FLAG_GROUND (1u << 3)	/* taken into the floor */
-/* the material bits that make a triangle not collide or mark it (material.h) */
-#define MAT_FLAGS 0x3c
-#define MAT_B38 0x38
-#define MAT_B3A 0x3a
-#define MAT_B3B 0x3b
-#define MAT_A0 0xa0
 /* the triangles per floor node */
 extern int g_GroundTrisPerNode;
-
-#define Ground_Field(p, off, type) (*(type *)((byte *)(p) + (off)))
 
 /* the mesh of a scene node: its own collision mesh at 0x30 when it has one */
 static CTriMesh *Ground_NodeMesh(CNode3D *node) {
@@ -1778,7 +1770,7 @@ static void Box_Widen(box_t *b, float e) {
 }
 
 /* the collision flags of a triangle of node with the material mat */
-static uint32_t Ground_TriFlags(uint32_t nodeFlags, const void *mat, byte opt) {
+static uint32_t Ground_TriFlags(uint32_t nodeFlags, const CMaterial *mat, byte opt) {
 	uint32_t fl = 0;
 	if (opt && !(nodeFlags & NODE_FLAG_NOCOLLIDE)) {
 		fl = 1;
@@ -1789,14 +1781,14 @@ static uint32_t Ground_TriFlags(uint32_t nodeFlags, const void *mat, byte opt) {
 	if (nodeFlags & NODE_FLAG_NOCOLLIDE2) {
 		fl |= 1;
 	}
-	uint16_t mf = Ground_Field(mat, MAT_FLAGS, uint16_t);
+	uint16_t mf = mat->params.attrib;
 	if (mf & 1) {
 		fl |= 1;
 	}
-	if (Ground_Field(mat, MAT_B38, byte)) {
+	if (mat->params.twoSided) {
 		fl |= 0x10;
 	}
-	if (Ground_Field(mat, MAT_B3A, byte) || (Ground_Field(mat, MAT_A0, void *) && !Ground_Field(mat, MAT_B3B, byte))) {
+	if (mat->params.transp || (mat->map[1] && !mat->params.reflection)) {
 		fl |= 0x20;
 	}
 	if (mf & 2) {

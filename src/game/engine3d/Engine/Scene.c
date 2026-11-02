@@ -217,7 +217,7 @@ void CScene_Read(CScene *self, CFileIO *f, byte bAnim) {
 	CFileIO_Read(f, &self->vertWeldThreshold, 4);
 	IniFile_Read(f, &self->userProp);
 	CHECK(!self->CollideMesh);
-	Table_Resize4(&self->mats, CFileIO_ReadInt(f));
+	Table_ResizeN(&self->mats, CFileIO_ReadInt(f), sizeof(CMaterial *));
 	for (int i = 0; i < self->mats.n; i++) {
 		void *p = operator_new(sizeof(CMaterial));
 		CMaterial *mat = p ? CMaterial_ctor(p) : NULL;
@@ -445,7 +445,7 @@ void CScene_CompactMats(CScene *self) {
 			j++;
 		}
 	}
-	Table_Resize4(&self->mats, j);
+	Table_ResizeN(&self->mats, j, sizeof(CMaterial *));
 }
 
 void CScene_DeleteNodes(CScene *self) {

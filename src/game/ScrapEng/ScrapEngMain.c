@@ -678,9 +678,9 @@ byte Engine_FrameMove(void) {
 		Engine_DebugKeys();
 	}
 	if (g_Watermark && g_ShowSplashScreen == 100) {
-		PSAIMAGE_COLOR(g_Watermark) = 0;
+		g_Watermark->color = 0;
 		CPsaImage_Draw(g_Watermark, 321.0f, 11.0f);
-		PSAIMAGE_COLOR(g_Watermark) = 0xffffff;
+		g_Watermark->color = 0xffffff;
 		CPsaImage_Draw(g_Watermark, 320.0f, 10.0f);
 	}
 	return 1;

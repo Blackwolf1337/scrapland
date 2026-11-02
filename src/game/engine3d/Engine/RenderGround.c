@@ -31,7 +31,7 @@ void Batch_AddMesh(void *mesh, void *dev) {
 		Batch_Entry(i)->mesh = m;
 		uint32_t tex = 0;
 		if (mat && mat->map[MAP_DIFFUSE]) {
-			tex = (uint32_t)CMap_GetTexture(mat->map[MAP_DIFFUSE], 0) >> 1;
+			tex = (uint32_t)((uintptr_t)CMap_GetTexture(mat->map[MAP_DIFFUSE], 0) >> 1);	/* a sort key */
 		}
 		Batch_Entry(g_BatchUsed)->tex = tex;
 		uint32_t u = g_BatchUsed;

@@ -370,7 +370,7 @@ void CBspQ3_Render(CBspQ3 *self) {
 	const uint32_t *at = g_BspQ3Attrib;
 	for (uint32_t i = 0; i < num; i++) {
 		uint32_t id = *at;
-		Render_SetMaterial((void *)id, 0);
+		Render_SetMaterial((void *)(uintptr_t)id, 0);	/* the subset number as the material, as the original */
 		Rd_XMeshDrawSubset(self->pMesh, id);
 		at += 5;
 	}

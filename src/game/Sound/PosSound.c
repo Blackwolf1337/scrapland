@@ -3,6 +3,7 @@
  * dynamic music of the levels (relax music, action music while enemies are on the radar or the alarm is on, with a
  * fade between them) and the timing of the talk voice. See include/scrap/sound.h.
  */
+#include <stddef.h>
 #include <string.h>
 
 #include "scrap/gvar.h"
@@ -139,8 +140,16 @@ int cSoundPS_Var(cSoundPS *ps, const char *name, int set, char **s, double *d, i
 		const char *name;
 		uint32_t off;
 	} floats[] = {
-		{ "MaxInterval", 0x60 }, { "MinInterval", 0x64 }, { "AttenEnd", 0x1c }, { "AttenIni", 0x18 },
-		{ "Doppler", 0x14 }, { "Volume", 0x44 }, { "Pitch", 0x48 }, { "X", 0x4c }, { "Y", 0x50 }, { "Z", 0x54 },
+		{ "MaxInterval", offsetof(cSoundPS, maxInterval) },
+		{ "MinInterval", offsetof(cSoundPS, minInterval) },
+		{ "AttenEnd", offsetof(cSoundPS, sound.desc.param2) },
+		{ "AttenIni", offsetof(cSoundPS, sound.desc.param1) },
+		{ "Doppler", offsetof(cSoundPS, sound.desc.param3) },
+		{ "Volume", offsetof(cSoundPS, volume) },
+		{ "Pitch", offsetof(cSoundPS, pitch) },
+		{ "X", offsetof(cSoundPS, pos.x) },
+		{ "Y", offsetof(cSoundPS, pos.y) },
+		{ "Z", offsetof(cSoundPS, pos.z) },
 	};
 
 	if (s && !crt_stricmp(name, "Sound")) {

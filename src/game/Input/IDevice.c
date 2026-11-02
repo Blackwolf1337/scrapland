@@ -527,9 +527,9 @@ void cAbstractIDevice_SetValue(cAbstractIDevice *self, int entry, float value) {
 		return;
 	}
 	/* player -1 with an action reads before value[], as the original */
-	float *v = (float *)((byte *)TABLE_AT(TABLE_AT(g_ActionSets, set)->actions, action) + 0x18) + player;
+	float *v = TABLE_AT(TABLE_AT(g_ActionSets, set)->actions, action)->value + player;
 	if (value > *v) {
-		v = (float *)((byte *)TABLE_AT(TABLE_AT(g_ActionSets, set)->actions, action) + 0x18) + player;
+		v = TABLE_AT(TABLE_AT(g_ActionSets, set)->actions, action)->value + player;
 		*v = value;
 	}
 }

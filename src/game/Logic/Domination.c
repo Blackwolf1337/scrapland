@@ -190,7 +190,7 @@ void cDominationLogic_UpdateShip(cDominationLogic *self, cEntity *v, cEntity *ta
 			DominZone *z = &g_DominZones[i];
 			Domin_Chase(ai, z->zone);
 			z->state = going;
-			byte added = NameTable_Add(&self->assigned, v->name, (const int *)&z->zone, 0);
+			byte added = NameTable_Add(&self->assigned, v->name, (const intptr_t *)&z->zone, 0);
 			CHECK(added && "assignedZones.Add(v->GetName(), dominationZones[i].zone)");
 		}
 	}

@@ -51,7 +51,7 @@ typedef struct cPackIndexItem {
 SD_SIZE(cPackIndexItem, 0x14);
 
 typedef struct cNameItem {
-	int value;			/* 0x0 */
+	intptr_t value;			/* 0x0 a number, the bits of a float or a pointer */
 	char *key;			/* 0x4 cString */
 	struct cNameItem *next;		/* 0x8 */
 } cNameItem;
@@ -59,9 +59,9 @@ SD_SIZE(cNameItem, 0xc);
 
 /* the cNameItem instance of HashTable.h (FilePak.c, also the assigned zones of Logic/Domination.c) */
 cNameItem *NameTable_Find(HashTable *self, const char *key, uint32_t slot);
-byte NameTable_Add(HashTable *self, const char *key, const int *v, byte warn);
-cNameItem *NameTable_Insert(HashTable *self, const char *key, uint32_t slot, const int *v);
-byte NameTable_Set(HashTable *self, const char *key, const int *v);
+byte NameTable_Add(HashTable *self, const char *key, const intptr_t *v, byte warn);
+cNameItem *NameTable_Insert(HashTable *self, const char *key, uint32_t slot, const intptr_t *v);
+byte NameTable_Set(HashTable *self, const char *key, const intptr_t *v);
 byte NameTable_Delete(HashTable *self, const char *key);
 void NameTable_Clear(HashTable *self);
 

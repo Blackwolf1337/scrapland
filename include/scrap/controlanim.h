@@ -27,7 +27,7 @@ enum {
 /* an entry of the sorted event list of a group (constructor rva 0x2bb8e0) */
 typedef struct CAnimEvent {
 	int id;				/* 0x00 EVENTO_* */
-	int arg;			/* 0x04 */
+	intptr_t arg;			/* 0x04 a number or an event or condition */
 	struct CAnimEvent *next;		/* 0x08 */
 	float t;			/* 0x0c the frame */
 	uint32_t flags;			/* 0x10 1: in a list */
@@ -35,7 +35,7 @@ typedef struct CAnimEvent {
 SD_SIZE(CAnimEvent, 0x14);
 
 /* Engine/EventoAnim.cpp: an event of the time t; ctorAdd puts it into the list */
-CAnimEvent *CAnimEvent_ctor(CAnimEvent *self, float t, int id, int arg);
+CAnimEvent *CAnimEvent_ctor(CAnimEvent *self, float t, int id, intptr_t arg);
 /* the rest of the chain deleted */
 void CAnimEvent_dtor(CAnimEvent *self);
 CAnimEvent *CAnimEvent_Delete(CAnimEvent *self, byte flags);

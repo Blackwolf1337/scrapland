@@ -156,7 +156,5 @@ box_t *Box_Zero(box_t *self);
 /* other modules, called from luz.cpp (src/imports.inc) */
 /* rva 0x2682d0, the light of the shadows (NULL: none); the second argument is 0 here */
 void E3D_SetShadowLight(CLight *l, int arg);
-/* rva 0x26e490, gMundo->obtSuelo(): 1 if the segment from-to hits the ground */
-byte CGround_Trace(void *self, const vec3_t *from, const vec3_t *to, void *a, float b, void *c);
 
 #endif

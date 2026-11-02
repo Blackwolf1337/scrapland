@@ -250,9 +250,9 @@ int Proc_ReadField(va_list *ap, const char **psrc, const char **pfmt) {
 	}
 	case 'd':
 	case 'l': {
-		long *out = va_arg(*ap, long *);
+		int32_t *out = va_arg(*ap, int32_t *);	/* the long of the original: 32 bits */
 		if (out) {
-			*out = v;
+			*out = (int32_t)v;
 		}
 		break;
 	}

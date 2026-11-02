@@ -8,6 +8,7 @@
 #define SCRAP_LENSFLARE_H
 
 #include "scrap/gvar.h"
+#include "scrap/ground.h"
 #include "scrap/material.h"
 #include "scrap/mathlib.h"
 
@@ -30,7 +31,7 @@ typedef struct CLensFlare {
 	float transp;			/* 0x38 1, the fade of the traces 0..1 */
 	byte visible;			/* 0x3c the floor did not hide it at the last trace */
 	byte pad_3d[3];
-	vec3_t hit;			/* 0x40 of the trace */
+	CGroundHit hit;			/* 0x40 the hit cache of the trace */
 	uint32_t lastTime;		/* 0x4c g_TimeMsF of the last render */
 } CLensFlare;
 SD_SIZE(CLensFlare, 0x50);

@@ -1349,7 +1349,7 @@ static void GM_NewBolt(cObjElementFXGearMissile *self, int i, const vec3_t *pos,
 		hit.z = hit.z + tri.plane.n.z * 30.0f;
 	}
 	found = NULL;
-	if (cWorld_TestSphereEntities(g_pWorld, self->entity, (void *)FXGEAR_ENTITIES, pos, R, &found, 1, 0)) {
+	if (cWorld_TestSphereEntities(g_pWorld, self->entity, FXGEAR_ENTITIES, pos, R, &found, 1, 0)) {
 		kind = 2;
 		d = FX_RandomDir(&tmp);
 		float r = Obj_Vtbl(found)->GetRadius(found);

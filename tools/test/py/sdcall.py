@@ -1052,15 +1052,6 @@ for rva, sz in (('Table_Alloc4', 4), ('Table_Alloc2', 2), ('Table_Alloc1C', 0x1c
 		('Table_Alloc8', 8), ('Table_Alloc38', 0x38)):
 	for num in (1, 7):
 		check('Table_Alloc' + fmt((rva, sz, num)), lambda rva=rva, num=num: tnew(rva, num, 0))
-# the last 2 bytes of each element stay as new[] left them
-def tzero(num):
-	r = tnew(sym('Table_Alloc10Z'), num, num * 4)
-	v = r[2]
-	for i in range(3, len(v), 4):
-		v[i] = v[i] & 0xffff
-	return r
-for num in (1, 5):
-	check('Table_Alloc10Z' + fmt((num,)), lambda num=num: tzero(num))
 # objects: the count before them and the first word of each (the constructors leave other fields as they are; the
 # one of 0x2c2c60 sets no first word, there only the count)
 def tobjs(rva, num, sz, first):

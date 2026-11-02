@@ -92,7 +92,7 @@ PyObject *Scrap_AddScheduledFunc(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "dOO|s", &time, &func, &params, &name)) {
 		return NULL;
 	}
-	Scheduler_Add((cScheduledFuncStack *)g_pWorld->scheduler, (float)time, func, params, name);
+	Scheduler_Add(&g_pWorld->scheduler, (float)time, func, params, name);
 	return Py_ReturnNone();
 }
 
@@ -117,7 +117,7 @@ PyObject *Scrap_CallElements(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "s", &name)) {
 		return NULL;
 	}
-	Elements_Call(g_pWorld->elements, name);
+	Elements_Call(&g_pWorld->elements, name);
 	return Py_ReturnNone();
 }
 
@@ -161,7 +161,7 @@ PyObject *Scrap_CreateElements(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "")) {
 		return NULL;
 	}
-	Elements_Create(g_pWorld->elements);
+	Elements_Create(&g_pWorld->elements);
 	return Py_ReturnNone();
 }
 
@@ -237,7 +237,7 @@ PyObject *Scrap_DeleteScheduledFuncs(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "s", &name)) {
 		return NULL;
 	}
-	Scheduler_Delete((cScheduledFuncStack *)g_pWorld->scheduler, name);
+	Scheduler_Delete(&g_pWorld->scheduler, name);
 	return Py_ReturnNone();
 }
 
@@ -1307,7 +1307,7 @@ PyObject *Scrap_SetGrid(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 	vec3_t size = { (float)x, (float)y, (float)z };
-	Grid_Set(g_pWorld->grid, &size);
+	Grid_Set(&g_pWorld->grid, &size);
 	return Py_BuildValue("i", 1);
 }
 

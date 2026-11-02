@@ -17,15 +17,10 @@
 #define CITEMENTITY_SIZE 0x398
 
 typedef struct cItemEntity {
-	cEntity base;			/* 0x000 */
-	byte pad_7c[0xb8 - 0x7c];
-	CGameModel model;		/* 0x0b8 of the cObjEntity */
-	vec3_t vel;			/* 0x0d4 */
-	byte pad_e0[0xf4 - 0xe0];
-	cNetController *net;		/* 0x0f4 the flags bit 0: the item is there */
-	byte pad_f8[0x140 - 0xf8];
-	byte *obj140;			/* 0x140 a float at 0xc is set to 0.05 */
-	byte pad_144[0x228 - 0x144];
+	union {
+		cEntity base;		/* 0x000 */
+		cObjEntity obj;		/* 0x000 the flags bit 0 of obj.net: the item is there */
+	};
 	float respawn;			/* 0x228 "rTime": > 0 while taken (hidden) */
 	int syncTicks;			/* 0x22c sent while > 0 */
 	char owner[0x80];		/* 0x230 "Owner": not taken while that entity is active */
@@ -50,8 +45,6 @@ typedef struct cItemEntity {
 	cPy_Function onTake;		/* 0x370 (item, taker) */
 	cPy_Function onReset;		/* 0x384 (item) */
 } cItemEntity;
-SD_OFFSET(cItemEntity, model, 0xb8);
-SD_OFFSET(cItemEntity, net, 0xf4);
 SD_OFFSET(cItemEntity, respawn, 0x228);
 SD_OFFSET(cItemEntity, origin, 0x2b0);
 SD_OFFSET(cItemEntity, takeSound, 0x2c8);

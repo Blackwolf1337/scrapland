@@ -784,7 +784,7 @@ void Pack_Build(const char *dir, const char *outName, int mode) {
 /* the duplicate check of Pack_CheckDuplicates: base names without extension */
 void Pack_AddFileName(const char *path) {
 	char name[0x100];
-	int value = 0;
+	intptr_t value = 0;
 	HashTable *t = g_NameTable;
 
 	Path_Split(path + g_PackDirLen, name, NULL, NULL);

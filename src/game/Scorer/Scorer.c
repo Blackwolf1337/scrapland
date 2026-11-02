@@ -393,38 +393,38 @@ cScorerItem *cScorer_AddItem(cScorer *scorer, const char *name, const char *type
 		uint32_t size;
 		void *ctor;
 	} s_ItemTypes[] = {
-		{"Hint", 0xd0, (void *)cHintScorer_ctor},
-		{"Label", 0xd0, (void *)cLabelScorer_ctor},
-		{"Msg", 0xc8, (void *)cMsgScorer_ctor},
-		{"Timer", 0xf0, (void *)cTimerScorer_ctor},
-		{"Talk", 0x1a80, (void *)cTalkScorer_ctor},
-		{"Chat", 0xbc, (void *)cChatScorer_ctor},
-		{"WindFx", 0x100, (void *)cWindFxScorer_ctor},
-		{"Bar", 0x108, (void *)cBarScorer_ctor},
-		{"Cannon", 0xec, (void *)cCannonScorer_ctor},
-		{"Monitor", 0x354, (void *)cMonitorScorer_ctor},
-		{"Target", 0x148, (void *)cTargetScorer_ctor},
-		{"Waypoint", 0xc4, (void *)cWaypointScorer_ctor},
-		{"Radar", 0x94c, (void *)cRadarScorer_ctor},
-		{"Sprite", 0xc4, (void *)cSpriteScorer_ctor},
-		{"Text", 0xdc, (void *)cTextScorer_ctor},
-		{"NetStats", 0x230, (void *)cNetStatsScorer_ctor},
-		{"Weapon", 0x1c4, (void *)cWeaponScorer_ctor},
-		{"Status", 0x1fc, (void *)cStatusScorer_ctor},
-		{"CopMeter", 0xf0, (void *)cCopMeterScorer_ctor},
-		{"Button", 0x168, (void *)cButtonScorer_ctor},
-		{"SpecialAction", 0x138, (void *)cSpecialActionScorer_ctor},
-		{"HangarShip", 0xf0, (void *)cHangarShipScorer_ctor},
-		{"Circuit", 0xc8, (void *)cCircuitScorer_ctor},
-		{"Tab", 0xf0, (void *)cTabScorer_ctor},
-		{"Slider", 0xf8, (void *)cSliderScorer_ctor},
-		{"Head", 0xc4, (void *)cHeadScorer_ctor},
-		{"Mission", 0xec, (void *)cMissionScorer_ctor},
-		{"Credits", 0x32dc, (void *)cCreditsScorer_ctor},
-		{"TextTyping", 0xf4, (void *)cTextTypingScorer_ctor},
-		{"ScraplandMainMenu", 0xc8, (void *)cScraplandMainMenuScorer_ctor},
-		{"ScraplandSubMenu", 0xd8, (void *)cScraplandSubMenuScorer_ctor},
-		{"Gradient", 0xd8, (void *)cGradientScorer_ctor},
+		{"Hint", sizeof(cHintScorer), (void *)cHintScorer_ctor},
+		{"Label", sizeof(cLabelScorer), (void *)cLabelScorer_ctor},
+		{"Msg", sizeof(cMsgScorer), (void *)cMsgScorer_ctor},
+		{"Timer", sizeof(cTimerScorer), (void *)cTimerScorer_ctor},
+		{"Talk", sizeof(cTalkScorer), (void *)cTalkScorer_ctor},
+		{"Chat", sizeof(cChatScorer), (void *)cChatScorer_ctor},
+		{"WindFx", sizeof(cWindFxScorer), (void *)cWindFxScorer_ctor},
+		{"Bar", sizeof(cBarScorer), (void *)cBarScorer_ctor},
+		{"Cannon", sizeof(cCannonScorer), (void *)cCannonScorer_ctor},
+		{"Monitor", sizeof(cMonitorScorer), (void *)cMonitorScorer_ctor},
+		{"Target", sizeof(cTargetScorer), (void *)cTargetScorer_ctor},
+		{"Waypoint", sizeof(cWaypointScorer), (void *)cWaypointScorer_ctor},
+		{"Radar", sizeof(cRadarScorer), (void *)cRadarScorer_ctor},
+		{"Sprite", sizeof(cSpriteScorer), (void *)cSpriteScorer_ctor},
+		{"Text", sizeof(cTextScorer), (void *)cTextScorer_ctor},
+		{"NetStats", sizeof(cNetStatsScorer), (void *)cNetStatsScorer_ctor},
+		{"Weapon", sizeof(cWeaponScorer), (void *)cWeaponScorer_ctor},
+		{"Status", sizeof(cStatusScorer), (void *)cStatusScorer_ctor},
+		{"CopMeter", sizeof(cCopMeterScorer), (void *)cCopMeterScorer_ctor},
+		{"Button", sizeof(cButtonScorer), (void *)cButtonScorer_ctor},
+		{"SpecialAction", sizeof(cSpecialActionScorer), (void *)cSpecialActionScorer_ctor},
+		{"HangarShip", sizeof(cHangarShipScorer), (void *)cHangarShipScorer_ctor},
+		{"Circuit", sizeof(cCircuitScorer), (void *)cCircuitScorer_ctor},
+		{"Tab", sizeof(cTabScorer), (void *)cTabScorer_ctor},
+		{"Slider", sizeof(cSliderScorer), (void *)cSliderScorer_ctor},
+		{"Head", sizeof(cHeadScorer), (void *)cHeadScorer_ctor},
+		{"Mission", sizeof(cMissionScorer), (void *)cMissionScorer_ctor},
+		{"Credits", sizeof(cCreditsScorer), (void *)cCreditsScorer_ctor},
+		{"TextTyping", sizeof(cTextTypingScorer), (void *)cTextTypingScorer_ctor},
+		{"ScraplandMainMenu", sizeof(cScraplandMainMenuScorer), (void *)cScraplandMainMenuScorer_ctor},
+		{"ScraplandSubMenu", sizeof(cScraplandSubMenuScorer), (void *)cScraplandSubMenuScorer_ctor},
+		{"Gradient", sizeof(cGradientScorer), (void *)cGradientScorer_ctor},
 	};
 	cScorerItem *it = NULL;
 	uint32_t k;
@@ -614,7 +614,7 @@ CPsaImage *Scorer_GetNoise(void) {
 }
 
 /* a new image of the sheet name (CPsaImage_ctorTex), NULL if the allocation fails */
-static CPsaImage *Scorer_NewTex(const char *name, int a, int flags) {
+static CPsaImage *Scorer_NewTex(const char *name, const char *a, int flags) {
 	CPsaImage *img = operator_new(sizeof(CPsaImage));
 	return img ? CPsaImage_ctorTex(img, name, a, flags) : NULL;
 }
@@ -1769,7 +1769,7 @@ static void Dbg_DrawEntities(void) {
 void Scorer_DrawDebug(void) {
 	switch (g_CShow) {
 	case CSHOW_GRID:
-		Grid_Draw(g_pWorld->grid);
+		Grid_Draw(&g_pWorld->grid);
 		break;
 	case CSHOW_ENTITIES:
 		Dbg_DrawEntities();

@@ -95,10 +95,10 @@ int Taunts_PoliceKind(cEntity *ship) {
 	cNameItem *it = NameTable_Find(s_TauntRaceCounts, race, HashTable_Slot(s_TauntRaceCounts, race));
 	if (it) {
 		old = it->value;
-		int v = (old + 1) % 3;
+		intptr_t v = (old + 1) % 3;
 		NameTable_Set(s_TauntRaceCounts, race, &v);
 	} else {
-		int v = 1;
+		intptr_t v = 1;
 		NameTable_Add(s_TauntRaceCounts, race, &v, 0);
 	}
 	for (int i = 0; i < 4; i++) {

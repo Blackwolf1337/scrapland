@@ -46,15 +46,15 @@ void CPsaImage_Init(CPsaImage *self) {
 	self->flip = 0;
 }
 
-void *CPsaImage_ctorTex(void *self, const char *name, int a, int b) {
+void *CPsaImage_ctorTex(void *self, const char *name, const char *a, int b) {
 	CPsaImage_Init(self);
-	CPsaImage_Load(self, name, (const char *)a, 3, (uint32_t)b);
+	CPsaImage_Load(self, name, a, 3, (uint32_t)b);
 	return self;
 }
 
-void *CPsaImage_ctorFlags(void *self, const char *name, int a, int b, int flags) {
+void *CPsaImage_ctorFlags(void *self, const char *name, const char *a, int b, int flags) {
 	CPsaImage_Init(self);
-	CPsaImage_Load(self, name, (const char *)a, b, (uint32_t)flags);
+	CPsaImage_Load(self, name, a, b, (uint32_t)flags);
 	return self;
 }
 

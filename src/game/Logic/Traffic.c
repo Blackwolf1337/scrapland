@@ -65,8 +65,15 @@ static inline float Traffic_Dist2(const vec3_t *a, float x, float y, float z) {
 	return dy * dy + dx * dx + dz * dz;
 }
 
+/* the idle time of a car: the bits of a float in the low word of the value (x86 is little endian) */
 static inline float *Traffic_Idle(cNameItem *it) {
 	return (float *)&it->value;
+}
+
+static inline intptr_t Traffic_IdleValue(float t) {
+	int32_t bits;
+	memcpy(&bits, &t, sizeof(bits));
+	return bits;
 }
 
 cEnemiesTraffic *cEnemiesTraffic_ctor(cEnemiesTraffic *self) {
@@ -187,17 +194,18 @@ static Nto1Node *Traffic_UpdateFighter(cEnemiesTraffic *self, Nto1Node *n, cEnti
 			const char *name = e->name;
 			cNameItem *it = NameTable_Find(&self->idle, name, HashTable_Slot(&self->idle, name));
 			if (!it) {
-				float t = 0.0f;
+				intptr_t t = Traffic_IdleValue(0.0f);
 				CHECK(!self->idle.locked);
 				uint32_t slot = HashTable_Slot(&self->idle, name);
 				if (!NameTable_Find(&self->idle, name, slot)) {
-					NameTable_Insert(&self->idle, name, slot, (const int *)&t);
+					NameTable_Insert(&self->idle, name, slot, &t);
 				}
 				return next;
 			}
 			float t = self->timer + *Traffic_Idle(it);
 			if (!(t >= 2.0f)) {
-				NameTable_Set(&self->idle, name, (const int *)&t);
+				intptr_t v = Traffic_IdleValue(t);
+				NameTable_Set(&self->idle, name, &v);
 				return next;
 			}
 			Traffic_Patrol(ai);

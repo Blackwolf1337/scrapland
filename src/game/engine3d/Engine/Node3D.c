@@ -21,6 +21,7 @@
 #include "scrap/utild3d.h"
 #include "scrap/ground.h"
 #include "scrap/misc.h"
+#include "scrap/model.h"
 
 #define CNODO3D_VFTABLE GAME_VFTABLE(CNode3D_vftable)
 #define MESHD3D_SIZE 200
@@ -419,8 +420,7 @@ static void CNode3D_Look(CNode3D *self, CRenderNode *r, NodeLook *l, matrix_t *m
 
 	switch (l->type) {
 	case 2:
-		v = (vec3_t){ -((vec3_t *)(r->owner + 0x14))->x, -((vec3_t *)(r->owner + 0x14))->y,
-			-((vec3_t *)(r->owner + 0x14))->z };
+		v = (vec3_t){ -r->owner->rot.x, -r->owner->rot.y, -r->owner->rot.z };
 		CRotation_SetEuler(&l->r1, &v);
 		conj = Quat_Conj(CRotation_GetQuat(&l->r1, &q1));
 		Quat_ToMatrixD3D(&mt, Quat_Mul(&q3, Rot_Combine2(&q2, &l->r1, &l->r2), &conj));
@@ -602,7 +602,7 @@ byte CNode3D_BuildD3D(CNode3D *self, uint32_t flags) {
 	uint32_t class = CNode3D_Class(self);
 
 	if (class == CLASS_OBJ3D_TRIMESH) {
-		p = operator_new(MESHD3D_SIZE);
+		p = operator_new(sizeof(CMeshD3D));
 		obj = p ? CMeshD3D_ctorMesh(p, (CTriMesh *)self->obj3D, flags, self) : NULL;
 		CHECK((void *)self->obj3D == obj);
 		return 1;

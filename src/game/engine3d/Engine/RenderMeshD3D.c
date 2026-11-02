@@ -48,7 +48,7 @@ int MeshD3D_Render(CMeshD3D *self, void *ctx) {
 			((RenderMeshEntry *)g_TabMesh.p)[i].world = world;
 			uint32_t tex = 0;
 			if (mat && mat->map[MAP_DIFFUSE]) {
-				tex = (uint32_t)CMap_GetTexture(mat->map[MAP_DIFFUSE], 0) >> 1;
+				tex = (uint32_t)((uintptr_t)CMap_GetTexture(mat->map[MAP_DIFFUSE], 0) >> 1);	/* a sort key */
 			}
 			TABLE_CHECK(g_TabMesh.p, i, g_TabMesh.n);
 			((RenderMeshEntry *)g_TabMesh.p)[i].tex = tex;
@@ -107,7 +107,11 @@ int RenderMesh_Compare(const void *a, const void *b) {
 	if (d) {
 		return d;
 	}
-	d = (int)((uint32_t)ea->mesh->mat - (uint32_t)eb->mesh->mat);
+#if SD_32BIT
+	d = (int)((uint32_t)ea->mesh->mat - (uint32_t)eb->mesh->mat);	/* the difference of the addresses, as the original */
+#else
+	d = (ea->mesh->mat > eb->mesh->mat) - (ea->mesh->mat < eb->mesh->mat);
+#endif
 	if (d) {
 		return d;
 	}
@@ -126,20 +130,20 @@ int RenderMeshD3D_AddTransp(CMeshD3D *m, const matrix_t *world, byte cont, CRend
 		if (g_UsedTransp == g_TabTransp.n) {
 			RenderMeshD3D_Flush2();
 		}
-		RenderTranspEntry *e = Table_Get50(&g_TabTransp, (uint32_t)g_UsedTransp);
+		RenderTranspEntry *e = Table_GetN(&g_TabTransp, (uint32_t)g_UsedTransp, sizeof(RenderTranspEntry));
 		e->mesh = m;
 		matrix_t w = *world;
-		e = Table_Get50(&g_TabTransp, (uint32_t)g_UsedTransp);
+		e = Table_GetN(&g_TabTransp, (uint32_t)g_UsedTransp, sizeof(RenderTranspEntry));
 		e->world = w;
 		int group = g_TranspGroup;
 		if (world == g_MatIdentity) {
 			group = 0;
 		}
-		e = Table_Get50(&g_TabTransp, (uint32_t)g_UsedTransp);
+		e = Table_GetN(&g_TabTransp, (uint32_t)g_UsedTransp, sizeof(RenderTranspEntry));
 		e->group = group;
-		e = Table_Get50(&g_TabTransp, (uint32_t)g_UsedTransp);
+		e = Table_GetN(&g_TabTransp, (uint32_t)g_UsedTransp, sizeof(RenderTranspEntry));
 		e->r = r;
-		e = Table_Get50(&g_TabTransp, (uint32_t)g_UsedTransp);
+		e = Table_GetN(&g_TabTransp, (uint32_t)g_UsedTransp, sizeof(RenderTranspEntry));
 		g_TranspList[g_UsedTransp] = e;
 		g_UsedTransp++;
 	}

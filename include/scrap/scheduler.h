@@ -6,6 +6,7 @@
 #define SCRAP_SCHEDULER_H
 
 #include "scrap/dlist.h"
+#include "scrap/worldparts.h"
 #include "scrap/python.h"
 
 typedef struct cScheduledFunc {
@@ -18,20 +19,6 @@ typedef struct cScheduledFunc {
 } cScheduledFunc;
 SD_SIZE(cScheduledFunc, 0x90);
 
-typedef struct cSchedNode {
-	struct cSchedNode *next;	/* 0x0 */
-	struct cSchedNode *prev;	/* 0x4 */
-	cScheduledFunc *func;		/* 0x8 */
-} cSchedNode;
-SD_SIZE(cSchedNode, 0xc);
-
-typedef DLIST(cSchedNode) cSchedList;
-
-typedef struct cScheduledFuncStack {
-	void *vftable;			/* 0x00 */
-	cSchedList list;		/* 0x04 */
-} cScheduledFuncStack;
-SD_SIZE(cScheduledFuncStack, 0x1c);
 #define CSCHEDULEDFUNCSTACK_VFTABLE GAME_VFTABLE(cScheduledFuncStack_vftable)
 
 void cScheduledFunc_dtor(cScheduledFunc *self);

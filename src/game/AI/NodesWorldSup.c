@@ -353,7 +353,7 @@ byte CNodesWorldSup_LoadGraph(CNodesWorld *self, const char *path) {
 		for (int k = first; k < n + first; k++) {
 			cNWNode *node = &self->sup.nodes[k];
 			cFilePack_Read(&f, &node->numLinks, 4);
-			node->links = Mem_Alloc(node->numLinks * 4);
+			node->links = Mem_Alloc(node->numLinks * sizeof(*node->links));
 			if (!node->links) {
 				Con_Bluef("ERROR: LoadPathAI - Insuficiente memoria Buffer Links Points Vis.\n");
 				CHECK(!"cNodesWorldSup_LoadPathAI_new_BufferPointVis_Fail");

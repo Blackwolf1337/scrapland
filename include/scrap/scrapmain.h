@@ -46,7 +46,6 @@ SD_SIZE(CEngineApp, 0x2a600);
 
 /* the watermark drawn with ShowSplashScreen 100 (0x44 bytes, a .psa image) */
 typedef struct CPsaImage CPsaImage;
-#define PSAIMAGE_COLOR(p) (*(uint32_t *)((byte *)(p) + 0x34))
 
 /* an image of a .psa sprite sheet (0x44 bytes): the state of the next draw */
 struct CPsaImage {

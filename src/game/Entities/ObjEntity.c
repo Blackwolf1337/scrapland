@@ -90,7 +90,7 @@ cEntity *cObjEntity_ctor(void *mem, const char *name, float x, float y, float z)
 	self->slotPos = self->base.pos;
 	self->renderAng = self->ang;
 	self->renderPos = self->base.pos;
-	cSlotController *slot = operator_new(CSLOTCONTROLLER_SIZE);
+	cSlotController *slot = operator_new(sizeof(cSlotController));
 	self->slot = slot ? cSlotController_ctor(slot, OBJ_SLOT_INTERVAL) : NULL;
 	if (!g_pApp->flags) {
 		self->net = NULL;
@@ -182,7 +182,7 @@ void cObjEntity_UpdateTimer(cEntity *self) {
 }
 
 void cObjEntity_NewSlot(cEntity *self) {
-	cSlotController *slot = operator_new(CSLOTCONTROLLER_SIZE);
+	cSlotController *slot = operator_new(sizeof(cSlotController));
 
 	Obj(self)->slot = slot ? cSlotController_ctor(slot, OBJ_SLOT_INTERVAL) : NULL;
 }
@@ -317,7 +317,7 @@ void cObjEntity_GetTargetAngle(cEntity *self, float *ang, float dist, cEntity **
 	end.z = b->z + pos.z;
 	Engine_TestLine(&pos, &end, &hit, NULL);
 	end = hit;
-	cWorld_TestLineEntities(g_pWorld, (int)self, (void *)8, &pos, &end, &hit, target, 1);
+	cWorld_TestLineEntities(g_pWorld, self, 8, &pos, &end, &hit, target, 1);
 	d.x = self->pos.x - hit.x;
 	d.y = self->pos.y - hit.y;
 	d.z = self->pos.z - hit.z;
@@ -1227,7 +1227,7 @@ void cNetController_Read(cNetController *self, void *m) {
 			self->pos.y = g_NetOrigin.y + py;
 			self->pos.z = g_NetOrigin.z + pz;
 		}
-		self->pos = *Grid_ClampPos(g_pWorld->grid, &clamped, &self->pos);
+		self->pos = *Grid_ClampPos(&g_pWorld->grid, &clamped, &self->pos);
 	}
 	if (self->flags & NETC_ANG) {
 		byte full = self->flags & NETC_FULL;

@@ -243,8 +243,7 @@ static int Trace_Crosses(float da, byte useThreshold, float threshold) {
 	return !useThreshold || -threshold > da || da >= 0.0f;
 }
 
-byte CGround_Trace(void *ground, const vec3_t *from, const vec3_t *to, void *res, float threshold, void *cache) {
-	CGround *self = ground;
+byte CGround_Trace(CGround *self, const vec3_t *from, const vec3_t *to, vec3_t *res, float threshold, CGroundHit *cache) {
 	CGroundHit *c = cache;
 	vec3_t *out = res;
 
@@ -252,7 +251,7 @@ byte CGround_Trace(void *ground, const vec3_t *from, const vec3_t *to, void *res
 	byte useThreshold = threshold > 0.0f;
 	CGround_NewQuery(self);
 	if (!c) {
-		c = (CGroundHit *)self->cache;
+		c = &self->cache;
 	}
 	if (c->quad && c->queryId == g_QuadTriCacheID && !out) {
 		CCollideMesh *mesh = c->quad->Mesh;

@@ -10,6 +10,7 @@
 
 #include "scrap/global.h"
 #include "scrap/python.h"
+#include "scrap/pyentity.h"
 #include "scrap/scoreritems.h"
 
 SD_SYM(GVar_SwarmNumber1);
@@ -1082,7 +1083,9 @@ uint32_t g_VulcanRamps[3][9] = {
 	{ 0xff808080, 0x80808080, 0x5c808080, 0x80808080, 0xa4808080, 0xc0808080, 0xde808080, 0xff000000, 0xff000000 },
 };
 HashTable g_PackIndex = { .numSlots = 457 };
-uint32_t g_HashItemValues;
+/* the block counts of the HashItem pool per size class: none, every item comes from Mem_Alloc (the original's
+ * array had one named word; the pool reads all 32) */
+uint32_t g_HashItemValues[32];
 HashTable g_LangTable = { .numSlots = 457 };
 HashTable g_SaveVarTable = { .numSlots = 457 };
 uint32_t g_CurActionSet = 0xffffffff;
@@ -1158,7 +1161,7 @@ PyTypeObject cPyEntity_Type = {
 	.ob_refcnt = 1,
 	.ob_type = (void *)sd_PyType_Type,
 	.tp_name = (void *)sd_str_3c7284,
-	.tp_basicsize = 12,
+	.tp_basicsize = sizeof(cPyEntity),
 	.tp_dealloc = (void *)sd_PyEntity_Dealloc,
 	.tp_print = (void *)sd_PyEntity_Print,
 	.tp_getattr = (void *)sd_PyEntity_GetAttr,
@@ -1192,7 +1195,7 @@ PyTypeObject cPyMenuEntity_Type = {
 	.ob_refcnt = 1,
 	.ob_type = (void *)sd_PyType_Type,
 	.tp_name = (void *)sd_str_3c75a8,
-	.tp_basicsize = 16,
+	.tp_basicsize = sizeof(cPyMenuEntity),
 	.tp_dealloc = (void *)sd_PyMenuEntity_Dealloc,
 	.tp_print = (void *)sd_PyMenuEntity_Print,
 	.tp_getattr = (void *)sd_PyMenuEntity_GetAttr,

@@ -13,8 +13,6 @@
 #define NEWS_FOV 0.87266463f				/* 50 degrees */
 #define g_NewsRandRange GAME_GLOBAL(double, g_HeadRandRange)	/* 2 pi as a float */
 #define g_NewsRandOfs GAME_GLOBAL(double, g_NewsRandOfs)	/* pi as a float */
-/* the three watched entity lists of the world */
-#define World_WatchedList(off) (*(cEntityList **)((byte *)g_pWorld + (off)))
 /* the model of an entity with life (slot 0x98) */
 /* its render (slot 0xb8) */
 
@@ -56,11 +54,11 @@ cEntity *cNewsPanel_GetWatched(cNewsPanel *self, int list) {
 	(void)self;
 	switch (list) {
 	case 0:
-		return cEntityList_GetFirst(World_WatchedList(0x21fc));
+		return cEntityList_GetFirst(g_pWorld->logic.aiCtrl.sentinels);
 	case 1:
-		return cEntityList_GetFirst(World_WatchedList(0x2200));
+		return cEntityList_GetFirst(g_pWorld->logic.aiCtrl.gears);
 	default:
-		return cEntityList_GetFirst(World_WatchedList(0x2248));
+		return cEntityList_GetFirst(g_pWorld->logic.genChars.police);
 	}
 }
 
@@ -113,7 +111,7 @@ void cNewsPanel_Update(cNewsPanel *self) {
 					Render_ClearRect(0.0f, 0.0f, 640.0f, 480.0f, 1, ((uint32_t)v | 0xff00) << 8);
 					cEntity *e = cNewsPanel_GetWatched(self, (int)(t * 0.5f) % 3);
 					if (!e) {
-						cEntityList_GetFirst(World_WatchedList(0x21fc));
+						cEntityList_GetFirst(g_pWorld->logic.aiCtrl.sentinels);
 					}
 					cNewsPanel_DrawEntity(self, e);
 				}

@@ -119,7 +119,7 @@ void cRustyLocalLogic_Update(cRustyLocalLogic *self, float dt) {
 		/* the original uses the buffer, not the returned pointer */
 		self->junk->vftable->GetPos(self->junk, &jp);
 		jp.y = p->vftable->GetPos(p, &t2)->y;
-		if (cWorld_TestSphereEntities(g_pWorld, p, (void *)0x10, &jp, WLife(p)->prim.radius, NULL, 1, 0)) {
+		if (cWorld_TestSphereEntities(g_pWorld, p, 0x10, &jp, WLife(p)->prim.radius, NULL, 1, 0)) {
 			return;
 		}
 		Rusty_StartWork(p, self->junk, 0.25f);

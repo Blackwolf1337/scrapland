@@ -343,13 +343,14 @@ void Vulcan_CreateNative(cAbstractFile *f) {
 	if (!cDebrisSys_IsIdle(sys, d)) {
 		cDebrisSys_Drop(sys, d);
 	}
-	byte *fx = Debris_Element(d);
+	cObjElementFXParticleSystem *fx = Debris_Element(d);
 	if (!fx) {
 		goto target;
 	}
-	CGameParticles *p = (CGameParticles *)(fx + 4);
-	if (!fx[0xb5]) {
-		WFIELD(fx, uint16_t, 0xb4) = 0x100;
+	CGameParticles *p = &fx->particles;
+	if (!fx->on) {
+		fx->move = 0;
+		fx->on = 1;
 		CGameModel_SetSortZ(Debris_Model(d), -0x1.47ae14p-7f, 0.0f);
 	}
 	float k = 1.0f;

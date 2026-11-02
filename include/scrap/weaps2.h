@@ -41,7 +41,6 @@
 #define Mis_Size(m) ((void *)&Missile(m)->wl.prim)	/* Primitive.cpp: the collision size */
 
 /* a field of an effect element of the debris by offset (Vulcan and Laser), until the elements have a struct */
-#define WFIELD(e, type, off) (*(type *)((byte *)(e) + (off)))
 
 /* engine variables (Gvars, the value at +0x10 of the variable object) */
 extern cGVar GVar_SwarmIDWeap;

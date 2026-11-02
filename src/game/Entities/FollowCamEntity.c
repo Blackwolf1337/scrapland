@@ -185,7 +185,7 @@ void cFollowCamEntity_Lerp(cEntity *self, float f) {
 		fc->dist = (float)__builtin_sqrt((double)(ey * ey + ex * ex + ez * ez));
 	}
 	CollisionEpsilon_Set(1);
-	if (walk && cWorld_TestLineEntities(g_pWorld, (int)fc->target, (void *)0x11, &fc->center, &cam->pos, &hit, NULL,
+	if (walk && cWorld_TestLineEntities(g_pWorld, fc->target, 0x11, &fc->center, &cam->pos, &hit, NULL,
 		1)) {
 		float ex = hit.x - fc->center.x;
 		float ey = hit.y - fc->center.y;

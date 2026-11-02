@@ -429,7 +429,7 @@ void DummySearch_Start(const char *name, int flag) {
 	WorldInfo_Begin(name, (byte)flag);
 }
 
-void *EntityLists_Get(const char *name) {
+uint32_t EntityLists_Get(const char *name) {
 	uint32_t mask = 0;
 
 	for (; *name; name++) {
@@ -459,7 +459,7 @@ void *EntityLists_Get(const char *name) {
 			break;
 		}
 	}
-	return (void *)(uintptr_t)mask;
+	return mask;
 }
 
 /* the entity lists */

@@ -57,9 +57,7 @@ void Bsp_TakeLights(CScene *scn) {
 			d.z = k * d.z;
 		}
 		l->dir = d;
-		l->cache[0] = 0;
-		l->cache[1] = 0;
-		l->cache[2] = 0;
+		l->cache = (CGroundHit){ 0, 0, NULL };
 		CLight_FillD3D(light, &l->illum.d3d);
 		l->illum.rangeIni = light->rangeStart;
 		l->illum.d3d.Position = l->pos;
@@ -337,7 +335,8 @@ extern cGVar GVar_LightmapLinearAtten;
 #define g_LightmapLinearAtten (GVar_LightmapLinearAtten.value.i)	/* gvar */
 
 /* the segment from c (moved back along the light direction d) to the light at dest blocked by the floor */
-static byte Bsp_Shadow(CGround *ground, const vec3_t *c, const vec3_t *d, const vec3_t *dest, vec3_t *hit, int *cache) {
+static byte Bsp_Shadow(CGround *ground, const vec3_t *c, const vec3_t *d, const vec3_t *dest, vec3_t *hit,
+	CGroundHit *cache) {
 	float off = 0.3f / g_ShadowMapScale;
 	vec3_t from = { c->x - off * d->x, c->y - off * d->y, c->z - off * d->z };
 
@@ -436,7 +435,7 @@ static void BspTri_DirectLight(BspTri *list, CScene *scn, CGround *ground, float
 						float d2 = 0.0f;
 						vec3_t d, dest;
 						Bsp_LightDir(l, &p, diag, &d, &dest);
-						if (Bsp_Shadow(ground, &p, &d, &dest, phit, l->cache)) {
+						if (Bsp_Shadow(ground, &p, &d, &dest, phit, &l->cache)) {
 							w = 0.0f;
 							d2 = Bsp_Dist2(&p, &hit);
 						}
@@ -450,7 +449,7 @@ static void BspTri_DirectLight(BspTri *list, CScene *scn, CGround *ground, float
 							Bsp_TexelToWorld(&q[2], fx, fy1, axis, scale, &t->plane);
 							Bsp_TexelToWorld(&q[3], fx1, fy1, axis, scale, &t->plane);
 							for (int i = 0; i < 4; i++) {
-								if (Bsp_Shadow(ground, &q[i], &d, &dest, phit, l->cache)) {
+								if (Bsp_Shadow(ground, &q[i], &d, &dest, phit, &l->cache)) {
 									d2 = Bsp_Dist2(&p, &hit);
 								}
 							}
@@ -1295,7 +1294,7 @@ static void BspTri_ColorVert(BspTri *list, const float *mc, const float *amb, CG
 				if (l->shadow && !(t->node->flags >> 6 & 1)) {
 					vec3_t d, dest;
 					Bsp_LightDir(l, &p, diag, &d, &dest);
-					if (Bsp_Shadow(ground, &p, &d, &dest, NULL, l->cache)) {
+					if (Bsp_Shadow(ground, &p, &d, &dest, NULL, &l->cache)) {
 						w = 0.0f;
 					}
 				}

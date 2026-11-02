@@ -241,7 +241,7 @@ typedef struct BspLight {
 	byte noLmap;			/* 0x1b node flag 27 */
 	float rad;			/* 0x1c */
 	IllumLight illum;			/* 0x20 the position and direction of its D3D light from pos and dir */
-	int cache[3];			/* 0x8c the last hit of the shadow traces (CGround_Trace) */
+	CGroundHit cache;		/* 0x8c the last hit of the shadow traces (CGround_Trace) */
 	char name[0x80];		/* 0x98 of the node */
 } BspLight;
 SD_OFFSET(BspLight, illum, 0x20);

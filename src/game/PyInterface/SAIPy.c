@@ -6,14 +6,17 @@
 #include <string.h>
 
 #include "scrap/ai.h"
+#include "scrap/aichar.h"
+#include "scrap/astar.h"
 #include "scrap/console.h"
 #include "scrap/global.h"
 #include "scrap/nodestraffic.h"
+#include "scrap/nodesworld2d.h"
 #include "scrap/vehicleentity.h"
 #include "scrap/walkcharentity.h"
 
 /* new T, NULL if the memory is not there (the original wraps the constructor in an EH frame for the delete) */
-#define NEW_OBJ(size, ctor, ...) ({ void *mem_ = operator_new(size); mem_ ? ctor(mem_, ##__VA_ARGS__) : NULL; })
+#define NEW_OBJ(type, ctor, ...) ({ void *mem_ = operator_new(sizeof(type)); mem_ ? ctor(mem_, ##__VA_ARGS__) : NULL; })
 
 /* an entity that is a Car or WalkChar with active set, else NULL */
 static cEntity *FindAIEntity(const char *name, const char *type) {
@@ -32,37 +35,37 @@ PyObject *SAI_IniAI(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "si", &name, &g_IsMapOutDoor)) {
 		return NULL;
 	}
-	g_NodesWorld = NEW_OBJ(0x3f0, CNodesWorld_ctor);
+	g_NodesWorld = NEW_OBJ(CNodesWorld, CNodesWorld_ctor);
 	CHECK(g_NodesWorld);
 	vec3_t zero = { 0.0f, 0.0f, 0.0f };
 	CNodesWorld_Load(g_NodesWorld, -1, name, &zero);
 	CNodesTraffic *traffic;
 	if (!g_IsMapOutDoor) {
-		g_NodesWorld2D = NEW_OBJ(0x378, CNodesWorld2D_ctor);
+		g_NodesWorld2D = NEW_OBJ(CNodesWorld2D, CNodesWorld2D_ctor);
 		CHECK(g_NodesWorld2D);
 		CNodesWorld2D_Load(g_NodesWorld2D, -1, name, &zero);
 	}
 	if (!g_IsMapOutDoor) { /* read again: loading the 2D graph may change it */
-		g_NodesTrafficInDoor = NEW_OBJ(0xfa4, CNodesTrafficInDoor_ctor);
+		g_NodesTrafficInDoor = NEW_OBJ(CNodesTrafficInDoor, CNodesTrafficInDoor_ctor);
 		CHECK(g_NodesTrafficInDoor);
 		traffic = g_NodesTrafficInDoor;
 	}
 	else {
-		g_NodesTraffic = NEW_OBJ(0x70, CNodesTraffic_ctor);
+		g_NodesTraffic = NEW_OBJ(CNodesTraffic, CNodesTraffic_ctor);
 		CHECK(g_NodesTraffic);
 		traffic = g_NodesTraffic;
 	}
 	traffic->vftable->Init(traffic);
-	g_AStar = NEW_OBJ(0x48, CAStar_ctor, g_NodesWorld);
+	g_AStar = NEW_OBJ(CAStar, CAStar_ctor, g_NodesWorld);
 	CHECK(g_AStar);
 	if (!g_IsMapOutDoor) {
-		g_AStar2D = NEW_OBJ(0x50, CAStar2D_ctor, g_NodesWorld2D);
+		g_AStar2D = NEW_OBJ(CAStar2D, CAStar2D_ctor, g_NodesWorld2D);
 		CHECK(g_AStar2D);
 	}
-	g_VehicleGroup = NEW_OBJ(0xf4, cAIVehicleGroup_ctor);
+	g_VehicleGroup = NEW_OBJ(cAIVehicleGroup, cAIVehicleGroup_ctor);
 	CHECK(g_VehicleGroup);
 	if (!g_IsMapOutDoor) {
-		g_CharGroup = NEW_OBJ(0x68, cAICharGroup_ctor);
+		g_CharGroup = NEW_OBJ(cAICharGroup, cAICharGroup_ctor);
 		CHECK(g_CharGroup);
 	}
 	return Py_ReturnNone();
@@ -92,7 +95,7 @@ PyObject *SAI_AnalyzeMap(PyObject *self, PyObject *args) {
 	}
 	vec3_t cube = { size, size, size };
 	if (!g_NodesWorld) {
-		g_NodesWorld = NEW_OBJ(0x3f0, CNodesWorld_ctor);
+		g_NodesWorld = NEW_OBJ(CNodesWorld, CNodesWorld_ctor);
 		CHECK(g_NodesWorld);
 	}
 	CNodesWorld_Analyze(g_NodesWorld, &cube);

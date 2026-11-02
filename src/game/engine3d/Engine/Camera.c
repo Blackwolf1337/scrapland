@@ -12,16 +12,16 @@
 /* the limit of the projection, a float constant widened */
 #define CAMERA_EPS ((double)0.01f)
 
-typedef void(*nodeDelete_t)(CNodeRef *self, int flags);
+typedef void(*nodeDelete_t)(CNode3D *self, int flags);
 
 /* the reference to n in *slot, the old one released */
-static void Camera_Link(CNodeRef **slot, CNodeRef *n) {
+static void Camera_Link(CNode3D **slot, CNode3D *n) {
 	if (n) {
 		n->Refs++;
 	}
 	CHECK(!*slot || (*slot)->Refs > 1);
 	if (*slot) {
-		CNodeRef *old = *slot;
+		CNode3D *old = *slot;
 		old->Refs--;
 		if (!old->Refs && old) {
 			((nodeDelete_t)old->vftable[0])(old, 1);
@@ -87,11 +87,11 @@ void CCamera_Clear(CCamera *self) {
 	self->nodeTarget = NULL;
 }
 
-void CCamera_SetNode(CCamera *self, CNodeRef *node) {
+void CCamera_SetNode(CCamera *self, CNode3D *node) {
 	Camera_Link(&self->node, node);
 }
 
-void CCamera_SetNodeTarget(CCamera *self, CNodeRef *node) {
+void CCamera_SetNodeTarget(CCamera *self, CNode3D *node) {
 	Camera_Link(&self->nodeTarget, node);
 }
 
@@ -106,7 +106,7 @@ static const struct {
 };
 
 int CCamera_Read(CCamera *self, CFileIO *f, void *ctx) {
-	CCamera_SetNode(self, (CNodeRef *)((MeshD3D_FileCtx *)ctx)->node);
+	CCamera_SetNode(self, ((MeshD3D_FileCtx *)ctx)->node);
 	CFileIO_BeginBlock(f, "CAM");
 	CHECK(CFileIO_ReadInt(f) == 1);
 	for (size_t i = 0; i < sizeof(cameraFields) / sizeof(cameraFields[0]); i++) {
@@ -117,7 +117,7 @@ int CCamera_Read(CCamera *self, CFileIO *f, void *ctx) {
 }
 
 int CCamera_Write(CCamera *self, CFileIO *f, void *ctx) {
-	CHECK(self->node == (CNodeRef *)((MeshD3D_FileCtx *)ctx)->node);
+	CHECK(self->node == ((MeshD3D_FileCtx *)ctx)->node);
 	CFileIO_BeginBlockWrite(f, "CAM");
 	CFileIO_WriteInt(f, 1);
 	CHECK(!self->nodeTarget);
@@ -251,11 +251,11 @@ void CCamera_Strafe(CCamera *self, float side, float rise) {
 /* OBJ3D_VF_UPDATE: with CamaraNodos the fov and the position from the animated node */
 void CCamera_Update(CCamera *self, CRenderNode *r) {
 	(void)r;
-	if (!g_CameraNodes || !self->node || !CNode3D_Track((CNode3D *)self->node, 0)) {
+	if (!g_CameraNodes || !self->node || !CNode3D_Track(self->node, 0)) {
 		return;
 	}
-	CNode3D_AnimFloat((CNode3D *)self->node, &self->fov);
-	const CNode3D *n = (const CNode3D *)self->node;
+	CNode3D_AnimFloat(self->node, &self->fov);
+	const CNode3D *n = self->node;
 	self->pos = (vec3_t){ n->m.m[12], n->m.m[13], n->m.m[14] };
 	CCamera_UpdateVectors(self);
 }

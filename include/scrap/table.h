@@ -29,8 +29,6 @@ void Table_Alloc18(CTable *t, int num);
 void Table_Alloc1C(CTable *t, int num);
 void Table_Alloc2C(CTable *t, int num);
 void Table_Alloc38(CTable *t, int num);
-/* 16 byte elements whose first 14 bytes are cleared */
-void Table_Alloc10Z(CTable *t, int num);
 /* objects: new[] with the count before them and the constructor of the exe on each */
 void Table_New8(CTable *t, int num);
 void Table_New1C(CTable *t, int num);
@@ -57,13 +55,16 @@ void Array_Write8(CFileIO *f, const void *p, uint32_t n);
 void Array_WriteC(CFileIO *f, const void *p, uint32_t n);
 void Array_Write10(CFileIO *f, const void *p, uint32_t n);
 /* element i, TABLE_CHECK */
-void *Table_Get8(CTable *t, uint32_t i);
-void *Table_Get50(CTable *t, uint32_t i);
+/* element i of size bytes, with the index check */
+void *Table_GetN(CTable *t, uint32_t i, uint32_t size);
 /* the delete[] of the elements, empty after (three copies in the exe) */
 void Table_Free(CTable *t);
 /* n elements, the old ones kept as far as they fit; n < 1 frees */
 void Table_Resize2(CTable *t, int n);
 void Table_Resize4(CTable *t, int n);
+/* n elements of size bytes (the sizeof of the element type): for the elements that hold pointers */
+void Table_AllocN(CTable *t, int num, uint32_t size);
+void Table_ResizeN(CTable *t, int n, uint32_t size);
 void Table_ResizeC(CTable *t, int n);
 void Table_Resize14(CTable *t, int n);
 void Table_Resize1C(CTable *t, int n);
