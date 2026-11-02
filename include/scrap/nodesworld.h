@@ -66,13 +66,11 @@ typedef struct cNWTriNode {
 SD_SIZE(cNWTriNode, 0x44);
 typedef DLIST(cNWTriNode) cNWTriList;
 
-/* three words: a pair of points with their distance (InsertPair), a word and a pair (HasPair) */
-typedef union cNWPair {
-	int w[3];
-	struct {
-		int a, b;
-		float dist;
-	};
+/* a pair of points (the positions in their cNWPointNode) with the square of their distance */
+typedef struct cNWPair {
+	const vec3_t *a;		/* 0x0 */
+	const vec3_t *b;		/* 0x4 */
+	float dist;			/* 0x8 */
 } cNWPair;
 SD_SIZE(cNWPair, 0xc);
 

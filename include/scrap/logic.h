@@ -845,7 +845,7 @@ void cSentinelLocalLogic_UpdateState(cSentinelLocalLogic *self, cEntity *p, floa
 byte cSentinelLocalLogic_RestartState(cSentinelLocalLogic *self);
 byte cSentinelLocalLogic_SetState(cSentinelLocalLogic *self, int state, cEntity *target);
 /* the voice event of the character of that name (Sound/, rva 0x1a1090) */
-byte Sound_PlayVoice(const char *name, const char *event, int arg, int force);
+byte Sound_PlayVoice(const char *name, const char *event, const char *arg, int force);
 /* GearLogic.cpp */
 cGearLocalLogic *cGearLocalLogic_ctor(cGearLocalLogic *self, cEntity *parent);
 byte cGearLocalLogic_Call(cGearLocalLogic *self, cEntity *e);

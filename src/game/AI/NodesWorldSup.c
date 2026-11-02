@@ -968,6 +968,41 @@ byte CNodesWorldSup_FindSorted(CNodesWorld *self, cNWIntList *list, const void *
 	return 0;
 }
 
+/* the pair list: the vector list functions with the node of a pair */
+static void NWPairList_Add(cNWPairList *list, const cNWPair *pair) {
+	cNWPairNode *node = DList_NewNode(list, sizeof(*node));
+	node->p = *pair;
+	DList_LinkFirst(list, node);
+}
+
+static void NWPairList_AddBefore(cNWPairList *list, const cNWPair *pair) {
+	cNWPairNode *head = list->head;
+
+	if (list->iter == head) {
+		NWPairList_Add(list, pair);
+		return;
+	}
+	CHECK(head != NULL);
+	CHECK(list->iter != NULL);
+	list->head = list->iter;
+	NWPairList_Add(list, pair);
+	list->head = head;
+}
+
+static void NWPairList_Append(cNWPairList *list, const cNWPair *pair) {
+	cNWPairNode *node = DList_NewNode(list, sizeof(*node));
+
+	node->p = *pair;
+	DList_LinkLast(list, node);
+}
+
+/* word 1 or 2 of the original's three words of a pair (b, the bits of dist): HasPair compares those */
+static uintptr_t NWPair_Word(const cNWPair *p, int i) {
+	union { float f; uint32_t u; } d = { p->dist };
+
+	return i == 1 ? (uintptr_t)p->b : d.u;
+}
+
 byte CNodesWorldSup_HasPair(CNodesWorld *self, cNWPairList *list, const cNWPair *pair) {
 	(void)self;
 	cNWPairNode *saved = list->iter;
@@ -975,8 +1010,9 @@ byte CNodesWorldSup_HasPair(CNodesWorld *self, cNWPairList *list, const cNWPair 
 	cNWPairNode *it = list->iter = head;
 
 	while (it) {
-		if ((pair->w[1] == it->p.w[1] || pair->w[1] == it->p.w[2]) &&
-			(pair->w[2] == it->p.w[1] || pair->w[2] == it->p.w[2])) {
+		uintptr_t k1 = NWPair_Word(pair, 1), k2 = NWPair_Word(pair, 2);
+		uintptr_t w1 = NWPair_Word(&it->p, 1), w2 = NWPair_Word(&it->p, 2);
+		if ((k1 == w1 || k1 == w2) && (k2 == w1 || k2 == w2)) {
 			list->iter = saved;
 			return 1;
 		}
@@ -997,7 +1033,7 @@ void CNodesWorldSup_InsertPair(CNodesWorld *self, cNWPairList *list, const cNWPa
 
 	while (it) {
 		if (it->p.dist > pair->dist) {
-			NWVecList_AddBefore((cNWVecList *)list, (const vec3_t *)pair);
+			NWPairList_AddBefore(list, pair);
 			list->iter = saved;
 			return;
 		}
@@ -1011,7 +1047,7 @@ void CNodesWorldSup_InsertPair(CNodesWorld *self, cNWPairList *list, const cNWPa
 			break;
 		}
 	}
-	NWVecList_Append((cNWVecList *)list, (const vec3_t *)pair);
+	NWPairList_Append(list, pair);
 	list->iter = saved;
 }
 
@@ -1542,7 +1578,7 @@ void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops) {
 
 		if (first) {
 			pairs.iter = pairs.head;
-			pp = pairs.head ? (const vec3_t *const *)&pairs.head->p : NULL;
+			pp = pairs.head ? &pairs.head->p.a : NULL;
 		}
 		const cNWPointNode *a = NW_POINT(pp[0]), *b = NW_POINT(pp[1]);
 		box.a.x = Float_MaxSS(a->boxA.x, b->boxA.x);
@@ -1559,7 +1595,7 @@ void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops) {
 		}
 		if (!found) {
 			first = 1;
-			NWVecList_RemoveHead((cNWVecList *)&pairs);
+			DList_RemoveHead(&pairs, sizeof(cNWPairNode));
 			Con_Printf("Num. Total Pairs PVis Remain: %d of %d\n", pairs.count, total);
 			if (!ops->is2D) {
 				Con_Printf("Mem. used: %d bytes\n", g_MemStats->bytes);
@@ -1604,7 +1640,7 @@ void NWSup_InterRegion(CNodesWorld *self, const nwGenOps *ops) {
 		NWIntList_Free(&tmp.links);
 	}
 	Con_Printf("Num. Points Visibility Inter-Region No Linked: %d\n", made);
-	NWVecList_Clear((cNWVecList *)&pairs);
+	DList_Clear(&pairs, sizeof(cNWPairNode));
 	DList_FreePool(&pairs, sizeof(cNWPairNode));
 }
 
@@ -1691,8 +1727,11 @@ void NWSup_DrawFound(CNodesWorld *self, cNWVecList *list, float r, uint32_t colo
 		vec3_t c;
 		self->sup.vftable->BufferPos(self, &c, d[0]);
 		DebugUtils_DrawSphere(&c, r, color, 2, 2);
+#if SD_32BIT
+		/* the found entry keeps the pair as two pointers in its words (NWSup_LinkFound); they do not fit on 64 bit */
 		DebugUtils_DrawLine(&c, (const vec3_t *)(uintptr_t)d[1], color);
 		DebugUtils_DrawLine(&c, (const vec3_t *)(uintptr_t)d[2], color);
+#endif
 		n = list->iter = list->iter->next;
 		if (n == list->head) {
 			break;

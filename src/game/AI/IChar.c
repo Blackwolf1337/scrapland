@@ -50,20 +50,6 @@ static inline Nto1Node *AIC_Head(cEntity *e) {
 	return &WLife(e)->targets;
 }
 
-/* the slots of the move control without a name in aicharcontrol.h */
-static inline void *AIC_CtlSlot(cAICharControl *c, int ofs) {
-	return ((void *const *)c->vftable)[ofs / 4];
-}
-
-static inline byte AIC_CtlByte(cAICharControl *c, int ofs) {
-	return ((byte(*)(cAICharControl *))AIC_CtlSlot(c, ofs))(c);
-}
-
-/* 0x34 the end of the move, 0x44 and 0x48 the two avoid points (out returned) */
-static inline vec3_t *AIC_CtlVec(cAICharControl *c, int ofs, vec3_t *out) {
-	return ((vec3_t *(*)(cAICharControl *, vec3_t *))AIC_CtlSlot(c, ofs))(c, out);
-}
-
 /* rand() of the exe in [-1, 1] */
 static inline float AIC_RandSigned(void) {
 	double r = (double)(crt_rand() & 0x7fff) * RAND_SCALE;
@@ -267,11 +253,11 @@ byte cAIChar_CanTalk(cAIChar *self) {
 }
 
 byte cAIChar_GetDirect(cAIChar *self) {
-	return AIC_CtlByte(self->control, 0x28);
+	return AICC_Vtbl(self->control)->IsDirect(self->control);
 }
 
 byte cAIChar_GetDirect2(cAIChar *self) {
-	return AIC_CtlByte(self->control, 0x2c);
+	return AICC_Vtbl(self->control)->IsDirect2(self->control);
 }
 
 void cAIChar_Draw(cAIChar *self) {
@@ -482,7 +468,7 @@ void cAIChar_Update(cAIChar *self, float dt) {
 	if (self->base.base.changed) {
 		return;
 	}
-	((void(*)(cAICharControl *, float))AIC_CtlSlot(self->control, 0x14))(self->control, dt);
+	AICC_Vtbl(self->control)->Update(self->control, dt);
 	if (self->base.base.changed) {
 		return;
 	}
@@ -543,7 +529,7 @@ void cAIChar_CheckActDist(cAIChar *self) {
 	cActCtrl *ac = AIC_ActCtrl(self->ent);
 	byte act = 0;
 
-	if (ac->layers[0].action->priority <= 0x65 && AIC_CtlByte(self->control, 0x2c)) {
+	if (ac->layers[0].action->priority <= 0x65 && AICC_Vtbl(self->control)->IsDirect2(self->control)) {
 		cEntity *t = AIC_Target(self);
 		vec3_t a, b;
 		const vec3_t *p = AIC_Pos(self->ent, &a);
@@ -1362,7 +1348,8 @@ byte cAIChar_EventLostPath(cAIChar *self, int ev) {
 	if (ev != 2) {
 		return 0;
 	}
-	g = AIC_CtlVec(self->control, 0x34, &buf);
+	AICC_Vtbl(self->control)->GetDest(self->control, &buf);
+	g = &buf;
 	if (self->lostPoint.x == g->x && self->lostPoint.y == g->y && self->lostPoint.z == g->z) {
 		return 1;
 	}
@@ -1722,8 +1709,9 @@ byte cAIChar_ChangeStateMore(cAIChar *self, int state, int allowed, va_list ap) 
 	(void)ap;
 	switch (state) {
 	case AIC_LOST_PATH:
-		AIC_CtlVec(self->control, 0x44, &a);
-		self->lostPoint = *AIC_CtlVec(self->control, 0x48, &b);
+		AICC_Vtbl(self->control)->GetAvoidA(self->control, &a);
+		AICC_Vtbl(self->control)->GetAvoidB(self->control, &b);
+		self->lostPoint = b;
 		none.x = -FLT_MAX;
 		none.y = -FLT_MAX;
 		none.z = -FLT_MAX;
@@ -1862,7 +1850,7 @@ byte cAIChar_IsMoving(cAIChar *self) {
 	case AIC_CHASE_WITH_ACTION:
 	case AIC_CHASE_WITHOUT_ACTION:
 	case AIC_CHASE_WITH_ACTION_BACK:
-		if (AIC_CtlByte(self->control, 0x2c)) {
+		if (AICC_Vtbl(self->control)->IsDirect2(self->control)) {
 			return 0;
 		}
 		/* fall through */

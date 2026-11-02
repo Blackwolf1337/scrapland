@@ -461,7 +461,7 @@ void Sound_UpdateVoice(int voice) {
 /* the talk voice of the character name for event (in an alarm, or "AnmStr" and "Abort" always): the file arg (in
  * VoicePath with force, else StreamPath) or a warning of its type (Gear, Police, the generic ones) picked by the count;
  * not while another one talks, in slow motion, for the player itself (but "AnmStr") or too far away. 1 if it opens */
-byte Sound_PlayVoice(const char *name, const char *event, int arg, int force) {
+byte Sound_PlayVoice(const char *name, const char *event, const char *arg, int force) {
 	char file[0x80], buf[0x80];
 	vec3_t t1, t2;
 
@@ -503,7 +503,7 @@ byte Sound_PlayVoice(const char *name, const char *event, int arg, int force) {
 	g_VoiceCount++;
 	const char *type = Logic_TypeName(sp);
 	if (arg) {
-		crt_sprintf(file, "%s%s.mp3", (byte)force ? g_VoicePath : g_StreamPath, (const char *)(uintptr_t)arg);
+		crt_sprintf(file, "%s%s.mp3", (byte)force ? g_VoicePath : g_StreamPath, arg);
 	} else {
 		if (!strcmp(type, "Boss")) {
 			return 0;

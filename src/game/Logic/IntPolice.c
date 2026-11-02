@@ -231,7 +231,7 @@ void AICtrl_Think(void *ctrl) {
 		if ((float)(Weap_Rand01() * 4.5 - 3.5) > 0.0f) {
 			cEntity *g = cEntityList_Nearest(self->gears, self->usr->vftable->GetPos(self->usr, &t), NULL, NULL);
 			if (g) {
-				Sound_PlayVoice(g->name, "Chase", 0, 1);
+				Sound_PlayVoice(g->name, "Chase", NULL, 1);
 			}
 		}
 		self->chased = 0;
@@ -242,7 +242,7 @@ void AICtrl_Think(void *ctrl) {
 			g = cEntityList_Nearest(g_pWorld->logic.genChars.police, self->usr->vftable->GetPos(self->usr, &t), NULL,
 				NULL);
 		}
-		if (g && Sound_PlayVoice(g->name, "Abort", 0, 1)) {
+		if (g && Sound_PlayVoice(g->name, "Abort", NULL, 1)) {
 			self->chased = 0;
 		}
 	}

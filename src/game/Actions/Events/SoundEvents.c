@@ -148,7 +148,7 @@ void Event_StreamingVoice(cAbstractFile *params) {
 		dist = (float)crt_atof(p);
 	}
 	/* the text goes where the voice functions of the logic pass an int */
-	if (Sound_PlayVoice(name, "AnmStr", (int)(uintptr_t)str, 0)) {
+	if (Sound_PlayVoice(name, "AnmStr", str, 0)) {
 		g_WarnVoiceVolume = volume;
 		g_MaxPoliceWarnDist = dist;
 	}
@@ -159,5 +159,5 @@ void Event_WarningPolice(cAbstractFile *params) {
 	float t;
 
 	Event_Read(params, name, str, &t);
-	Sound_PlayVoice(name, str, 0, 1);
+	Sound_PlayVoice(name, str, NULL, 1);
 }

@@ -34,7 +34,7 @@ struct cMapElement {
 SD_OFFSET(cMapElement, next, 0x28);
 SD_SIZE(cMapElement, 0x2c);
 
-#define World_Elements(w) (*(cMapElement **)(w)->elements)
+#define World_Elements(w) ((w)->elements)
 
 /* a new element initialized and put first into the list of the world */
 static inline void MapElement_Add(cMapElement *e) {

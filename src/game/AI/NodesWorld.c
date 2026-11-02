@@ -1385,8 +1385,8 @@ void CNodesWorld_GetPairs(CNodesWorld *self, cNWPairList *list) {
 			if (self->sup.pairRange + self->sup.pairRange > d && !self->sup.vftable->Linked(self, p, q)) {
 				cNWPair pair;
 				float ex = p->x - q->x, ey = p->y - q->y, ez = p->z - q->z;
-				pair.a = (int)(uintptr_t)p;
-				pair.b = (int)(uintptr_t)q;
+				pair.a = p;
+				pair.b = q;
 				pair.dist = ey * ey + ex * ex + ez * ez;
 				self->sup.vftable->InsertPair(self, list, &pair);
 			}
