@@ -48,7 +48,7 @@ typedef struct VkImg {
 typedef struct VkFrame {
 	VkCommandBuffer cmd;
 	VkFence done;
-	VkSemaphore acquired, rendered;
+	VkSemaphore acquired;
 	VkBuf ring;
 	VkDeviceSize ringUsed;
 	uint64_t serial;			/* the frame counter when it was submitted */
@@ -68,6 +68,7 @@ typedef struct VkCore {
 	VkExtent2D swapExtent;
 	uint32_t swapCount;
 	VkImage swapImages[VK_MAX_SWAP_IMAGES];
+	VkSemaphore swapRendered[VK_MAX_SWAP_IMAGES];	/* per image: a present may still wait on it */
 	byte vsync;
 	VkCommandPool pool;
 	VkFrame frames[VK_FRAMES];
@@ -77,6 +78,7 @@ typedef struct VkCore {
 	byte recording;
 	VkFormat depthFormat;			/* D24S8 or D32S8, what the GPU has */
 	void *hwnd;
+	void (*endPass)(void);			/* ends an open render pass before a submit */
 } VkCore;
 
 extern VkCore vk;
@@ -106,8 +108,13 @@ void Vk_DestroyImage(VkImg *im);
 void Vk_DeferBuffer(VkBuf *b);
 void Vk_DeferImage(VkImg *im);
 
-/* room in the ring of the current frame: the mapped pointer, the buffer and offset; NULL when it is full */
+/*
+ * Room in the ring of the current frame: the mapped pointer, the buffer and offset. A full ring submits what is
+ * recorded and goes on in the next frame, so take the command buffer after it. NULL when size does not fit at all.
+ */
 void *Vk_RingAlloc(VkDeviceSize size, VkDeviceSize align, VkBuffer *buf, VkDeviceSize *off);
+/* makes sure that size bytes (with the alignments of the allocations) fit into the ring without a submit */
+int Vk_RingReserve(VkDeviceSize size);
 
 /* a barrier that moves all levels of im to layout */
 void Vk_Transition(VkCommandBuffer cmd, VkImg *im, VkImageLayout layout);

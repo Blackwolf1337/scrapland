@@ -41,6 +41,24 @@ target_compile_options(scrapcode PUBLIC -Wall -Wextra -O2 -g -fno-omit-frame-poi
 	-finput-charset=UTF-8 -fexec-charset=CP1252)
 target_link_options(scrapcode PUBLIC -static-libgcc -Wl,--enable-stdcall-fixup)
 
+# the GLSL shaders of the Vulkan backend (shaders/), as SPIR-V words for #include
+find_program(GLSLANG glslangValidator REQUIRED)
+set(SHADER_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders)
+file(MAKE_DIRECTORY ${SHADER_DIR})
+file(GLOB SHADER_HEADERS CONFIGURE_DEPENDS shaders/*.glsl)
+set(SHADER_INCS)
+foreach(s ff.vert ff.frag)
+	string(REPLACE "." "_" n ${s})
+	add_custom_command(OUTPUT ${SHADER_DIR}/${n}.inc
+		COMMAND ${GLSLANG} -V --target-env vulkan1.3 -x -o ${SHADER_DIR}/${n}.inc ${CMAKE_SOURCE_DIR}/shaders/${s}
+		DEPENDS shaders/${s} ${SHADER_HEADERS}
+		COMMENT "SPIR-V of ${s}")
+	list(APPEND SHADER_INCS ${SHADER_DIR}/${n}.inc)
+endforeach()
+add_custom_target(shaders DEPENDS ${SHADER_INCS})
+add_dependencies(scrapcode shaders)
+target_include_directories(scrapcode PRIVATE ${SHADER_DIR})
+
 # Python 1.5.2 for ScrapC.exe from third_party/python-1.5.2 (unchanged), configured like the one in Scrap.exe: our
 # config.h and inittab, pyshim.h for its libc (the exe's C runtime and the engine's Python pool) and the files of
 # src/python that add the engine's changes around the vendored ones (docs/standalone.md)

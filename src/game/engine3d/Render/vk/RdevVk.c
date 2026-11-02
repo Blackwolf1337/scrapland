@@ -208,6 +208,9 @@ static uint32_t Vk_Release(void *obj) {
 	case VKO_IB: {
 		VkoBuf *b = obj;
 		Vk_DeferBuffer(&b->mem);
+		for (int i = 0; i < b->numSpares; i++) {
+			Vk_DeferBuffer(&b->spare[i]);
+		}
 		free(b);
 		break;
 	}
@@ -602,7 +605,7 @@ static int Vk_DevPresent(void *dev, const void *src, const void *dst, void *hwnd
 
 	(void)src, (void)dst, (void)hwnd, (void)dirty;
 	Vkd_End();
-	Vkd_DumpFrame(d->backBuffer->img);
+	Vkd_FrameDone();
 	return Vk_Present(d->backBuffer->img) ? D3D_OK : D3DERR_INVALIDCALL;
 }
 
@@ -640,6 +643,10 @@ static int Vk_DevSetRenderTarget(void *dev, void *rt, void *zs) {
 		d->rt = rt;
 	}
 	d->zs = zs;
+	if (Vkd_Tracing()) {
+		Com_Printf("target %ux%u fmt %u tex %p zs %p\n", d->rt->width, d->rt->height, d->rt->format,
+			(void *)d->rt->tex, zs);
+	}
 	VkoSurf *t = d->rt;
 	float zmax = 1.0f;
 	d->viewport[0] = d->viewport[1] = 0;
@@ -652,6 +659,9 @@ static int Vk_DevSetRenderTarget(void *dev, void *rt, void *zs) {
 
 static int Vk_DevClear(void *dev, uint32_t count, const void *rects, uint32_t flags, uint32_t color, float z,
 	uint32_t stencil) {
+	if (Vkd_Tracing()) {
+		Com_Printf("clear %u rects flags %x color %08x z %g\n", count, flags, color, (double)z);
+	}
 	return Vkd_Clear(dev, count, rects, flags, color, z, stencil) ? D3D_OK : D3DERR_INVALIDCALL;
 }
 
@@ -773,6 +783,9 @@ static int Vk_DevDeletePixelShader(void *dev, uint32_t handle) {
 }
 
 static int Vk_DevSetPixelShader(void *dev, uint32_t handle) {
+	if (Vkd_Tracing()) {
+		Com_Printf("ps %u\n", handle);
+	}
 	((VkoDev *)dev)->ps = handle;
 	return D3D_OK;
 }
@@ -902,6 +915,21 @@ static int Vk_TexGetSurfaceLevel(void *tex, uint32_t level, void **surf) {
 		s->format = t->format;
 		s->width = Vko_Dim(t->width, level);
 		s->height = Vko_Dim(t->height, level);
+		if (t->pool == D3DPOOL_SYSTEMMEM) {
+			/* a level in memory: copies to and from it go through its lock memory, as for an image surface */
+			VkoFormat f = Vko_Format(t->format);
+			s->pitch = Vko_Pitch(&f, s->width);
+			if (!t->lock[level]) {
+				t->lock[level] = calloc(Vko_Rows(&f, s->height), s->pitch);
+				t->lockPitch[level] = s->pitch;
+			}
+			s->img = NULL;
+			s->mem = t->lock[level];
+			if (!s->mem) {
+				free(s);
+				return D3DERR_INVALIDCALL;
+			}
+		}
 		t->surf[level] = s;
 	}
 	Vk_AddRef(t);
@@ -921,14 +949,19 @@ static void Vko_Upload(VkImg *im, uint32_t level, uint32_t fmt, const byte *data
 	VkBuffer buf;
 	VkDeviceSize off;
 
+	VkDeviceSize bytes = (VkDeviceSize)rowBytes * rows;
+	VkBuf big = { 0 };
+
 	Vkd_End();
-	byte *dst = Vk_RingAlloc((VkDeviceSize)rowBytes * rows, 16, &buf, &off);
+	byte *dst = bytes <= VK_RING_SIZE / 4 ? Vk_RingAlloc(bytes, 16, &buf, &off) : NULL;
 	if (!dst) {
-		Vk_Flush();
-		dst = Vk_RingAlloc((VkDeviceSize)rowBytes * rows, 16, &buf, &off);
-		if (!dst) {
+		/* too large for the ring: a staging buffer of its own */
+		if (!Vk_CreateBuffer(&big, bytes, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1)) {
 			return;
 		}
+		dst = big.map;
+		buf = big.buf;
+		off = 0;
 	}
 	for (uint32_t r = 0; r < rows; r++) {
 		const byte *s = data + (size_t)r * pitch;
@@ -967,6 +1000,9 @@ static void Vko_Upload(VkImg *im, uint32_t level, uint32_t fmt, const byte *data
 		.imageExtent = { w, h, 1 },
 	};
 	vkCmdCopyBufferToImage(cmd, buf, im->img, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+	if (big.buf) {
+		Vk_DeferBuffer(&big);
+	}
 	Vk_Transition(cmd, im, keep == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ? keep
 		: VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
@@ -1030,10 +1066,14 @@ static int Vk_TexUnlockRect(void *tex, uint32_t level) {
 	if (level >= t->levels || !t->lock[level]) {
 		return D3DERR_INVALIDCALL;
 	}
+	/* a system memory texture is only a source for UpdateTexture: it keeps its memory and never draws */
+	if (t->pool == D3DPOOL_SYSTEMMEM) {
+		return D3D_OK;
+	}
 	Vko_Upload(&t->img, level, t->format, t->lock[level], t->lockPitch[level], 0, 0, Vko_Dim(t->width, level),
 		Vko_Dim(t->height, level));
 	/* the memory of a managed texture stays for the next lock of its level, the others' goes */
-	if (t->pool != 1) {
+	if (t->pool != D3DPOOL_MANAGED) {
 		free(t->lock[level]);
 		t->lock[level] = NULL;
 	}
@@ -1190,6 +1230,10 @@ static void Vko_CopyRect(VkoSurf *src, const RECT *r, VkoSurf *dst, int dx, int 
 static int Vk_DevCopyRects(void *dev, void *src, const void *rects, uint32_t n, void *dst, const void *points) {
 	VkoSurf *s = src, *d = dst;
 	(void)dev;
+	if (Vkd_Tracing()) {
+		Com_Printf("copyrects %ux%u fmt %u -> %ux%u fmt %u n %u\n", s->width, s->height, s->format, d->width,
+			d->height, d->format, n);
+	}
 	if (!rects || !n) {
 		RECT all = { 0, 0, (LONG)s->width, (LONG)s->height };
 		const POINT *p = points;
@@ -1206,6 +1250,10 @@ static int Vk_DevCopyRects(void *dev, void *src, const void *rects, uint32_t n, 
 
 /* ---- vertex and index buffers ---- */
 
+static VkBufferUsageFlags Vko_BufUsage(const VkoBuf *b) {
+	return b->o.kind == VKO_VB ? VK_BUFFER_USAGE_VERTEX_BUFFER_BIT : VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+}
+
 static int Vko_NewBuf(uint32_t kind, uint32_t len, uint32_t usage, uint32_t fvf, int fmt, int pool, void **out) {
 	VkoBuf *b = Vko_New(sizeof(VkoBuf), kind);
 	if (!b) {
@@ -1216,13 +1264,10 @@ static int Vko_NewBuf(uint32_t kind, uint32_t len, uint32_t usage, uint32_t fvf,
 	b->fvf = fvf;
 	b->format = (uint32_t)fmt;
 	b->pool = (uint32_t)pool;
-	if (!Vk_CreateBuffer(&b->mem, len, kind == VKO_VB ? VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-		: VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 1)) {
+	if (!Vk_CreateBuffer(&b->mem, len, Vko_BufUsage(b), 1)) {
 		free(b);
 		return D3DERR_INVALIDCALL;
 	}
-	b->cur = b->mem.buf;
-	b->curMap = b->mem.map;
 	*out = b;
 	return D3D_OK;
 }
@@ -1238,36 +1283,34 @@ static int Vk_DevCreateIndexBuffer(void *dev, uint32_t len, uint32_t usage, int 
 }
 
 /*
- * A DISCARD lock moves the buffer into the ring of the frame (the old data may still be drawn); NOOVERWRITE writes
- * where it is; another lock of a buffer the GPU may still read waits for it.
+ * A DISCARD lock of a buffer the GPU may still read swaps in a spare version that it does not (a new one up to
+ * VKO_BUF_SPARES, then it waits); NOOVERWRITE writes where it is; another lock of a busy buffer waits for the GPU.
  */
 static int Vk_BufLock(void *buf, uint32_t off, uint32_t size, void *data, uint32_t flags) {
 	VkoBuf *b = buf;
+	int busy = b->used > vk.completed;
 
-	if (flags & D3DLOCK_DISCARD) {
-		VkBuffer rb;
-		VkDeviceSize ro;
-		byte *p = Vk_RingAlloc(b->size, 16, &rb, &ro);
-		if (p) {
-			b->cur = rb;
-			b->curOff = ro;
-			b->curMap = p;
+	if (busy && (flags & D3DLOCK_DISCARD)) {
+		int i;
+		for (i = 0; i < b->numSpares && b->spareUsed[i] > vk.completed; i++) {
+		}
+		if (i == b->numSpares && i < VKO_BUF_SPARES && Vk_CreateBuffer(&b->spare[i], b->size, Vko_BufUsage(b), 1)) {
+			b->spareUsed[i] = 0;
+			b->numSpares++;
+		}
+		if (i < b->numSpares) {
+			VkBuf t = b->mem;
+			b->mem = b->spare[i];
+			b->spare[i] = t;
+			b->spareUsed[i] = b->used;
+			b->used = 0;
 		} else {
 			Vk_Flush();
-			b->cur = b->mem.buf;
-			b->curOff = 0;
-			b->curMap = b->mem.map;
 		}
-	} else if (!(flags & D3DLOCK_NOOVERWRITE) && !(flags & D3DLOCK_READONLY) && b->used > vk.completed) {
+	} else if (busy && !(flags & (D3DLOCK_NOOVERWRITE | D3DLOCK_READONLY))) {
 		Vk_Flush();
-		if (b->curMap != b->mem.map) {
-			memcpy(b->mem.map, b->curMap, b->size);
-			b->cur = b->mem.buf;
-			b->curOff = 0;
-			b->curMap = b->mem.map;
-		}
 	}
-	*(byte **)data = b->curMap + off;
+	*(byte **)data = b->mem.map + off;
 	(void)size;
 	return D3D_OK;
 }

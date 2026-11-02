@@ -180,11 +180,13 @@ int Vk_CreateDevice(void *hwnd, uint32_t width, uint32_t height, byte vsync) {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
 		.dynamicRendering = 1,
 		.synchronization2 = 1,
+		.shaderDemoteToHelperInvocation = f13.shaderDemoteToHelperInvocation,
 	};
 	VkPhysicalDeviceFeatures2 want = {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
 		.pNext = &want13,
 		.features = {
+			.robustBufferAccess = f2.features.robustBufferAccess,
 			.fillModeNonSolid = f2.features.fillModeNonSolid,
 			.samplerAnisotropy = f2.features.samplerAnisotropy,
 			.textureCompressionBC = f2.features.textureCompressionBC,
@@ -238,11 +240,16 @@ int Vk_CreateDevice(void *hwnd, uint32_t width, uint32_t height, byte vsync) {
 		VkSemaphoreCreateInfo si = { .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 		if (vkAllocateCommandBuffers(vk.device, &ai, &f->cmd) < 0 || vkCreateFence(vk.device, &fi, NULL, &f->done) < 0
 			|| vkCreateSemaphore(vk.device, &si, NULL, &f->acquired) < 0
-			|| vkCreateSemaphore(vk.device, &si, NULL, &f->rendered) < 0
 			|| !Vk_CreateBuffer(&f->ring, VK_RING_SIZE, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
 				| VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
 				| VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 1)) {
 			Com_Printf("vulkan: the frame resources failed\n");
+			return 0;
+		}
+	}
+	for (int i = 0; i < VK_MAX_SWAP_IMAGES; i++) {
+		VkSemaphoreCreateInfo si = { .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+		if (vkCreateSemaphore(vk.device, &si, NULL, &vk.swapRendered[i]) < 0) {
 			return 0;
 		}
 	}
@@ -358,6 +365,9 @@ static void Vk_Submit(VkSemaphore wait, VkSemaphore signal) {
 	VkFrame *f = &vk.frames[vk.frame];
 	VkPipelineStageFlags stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 
+	if (vk.endPass) {
+		vk.endPass();
+	}
 	vkEndCommandBuffer(f->cmd);
 	VkSubmitInfo si = {
 		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -415,7 +425,7 @@ int Vk_Present(VkImg *image) {
 	vkCmdBlitImage(cmd, image->img, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, swap.img,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
 	Vk_Transition(cmd, &swap, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-	VkSemaphore rendered = f->rendered;
+	VkSemaphore rendered = vk.swapRendered[index];
 	Vk_Submit(f->acquired, rendered);
 	VkPresentInfoKHR pi = {
 		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -441,8 +451,10 @@ void Vk_DestroyDevice(void) {
 		VkFrame *f = &vk.frames[i];
 		Vk_DestroyBuffer(&f->ring);
 		vkDestroySemaphore(vk.device, f->acquired, NULL);
-		vkDestroySemaphore(vk.device, f->rendered, NULL);
 		vkDestroyFence(vk.device, f->done, NULL);
+	}
+	for (int i = 0; i < VK_MAX_SWAP_IMAGES; i++) {
+		vkDestroySemaphore(vk.device, vk.swapRendered[i], NULL);
 	}
 	vkDestroyCommandPool(vk.device, vk.pool, NULL);
 	if (vk.swapchain) {
@@ -599,14 +611,25 @@ void Vk_DeferImage(VkImg *im) {
 	memset(im, 0, sizeof(*im));
 }
 
-void *Vk_RingAlloc(VkDeviceSize size, VkDeviceSize align, VkBuffer *buf, VkDeviceSize *off) {
+int Vk_RingReserve(VkDeviceSize size) {
 	Vk_Cmd();
-	VkFrame *f = &vk.frames[vk.frame];
-	VkDeviceSize at = (f->ringUsed + align - 1) & ~(align - 1);
-	if (at + size > f->ring.size) {
-		Com_Printf("vulkan: the frame ring is full (%u bytes)\n", (unsigned)(at + size));
+	if (size > VK_RING_SIZE) {
+		return 0;
+	}
+	if (vk.frames[vk.frame].ringUsed + size > VK_RING_SIZE) {
+		/* the other frame's ring is free once its fence is done, which Vk_Cmd waits for */
+		Vk_Submit(VK_NULL_HANDLE, VK_NULL_HANDLE);
+		Vk_Cmd();
+	}
+	return 1;
+}
+
+void *Vk_RingAlloc(VkDeviceSize size, VkDeviceSize align, VkBuffer *buf, VkDeviceSize *off) {
+	if (!Vk_RingReserve(size + align)) {
 		return NULL;
 	}
+	VkFrame *f = &vk.frames[vk.frame];
+	VkDeviceSize at = (f->ringUsed + align - 1) & ~(align - 1);
 	f->ringUsed = at + size;
 	*buf = f->ring.buf;
 	*off = at;

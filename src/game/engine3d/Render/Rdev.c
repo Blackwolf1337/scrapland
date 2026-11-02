@@ -3,6 +3,7 @@
  * the D3D log first (RdevLog.c), then every call goes to the backend.
  */
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -328,6 +329,64 @@ int Rd_DevLightEnable(void *dev, uint32_t idx, int enable) {
 	return rd->DevLightEnable(dev, idx, enable);
 }
 
+/* the back buffer as a 32 bit BMP (bottom up) through a copy in system memory, as the game's screenshots do it */
+static void Rd_DumpFrame(void *dev) {
+	static uint32_t frame;
+	const char *dir = getenv("SCRAP_RD_DUMP");
+	const char *every = getenv("SCRAP_RD_DUMP_EVERY");
+	uint32_t n = every ? (uint32_t)atoi(every) : 100;
+	void *back, *img;
+	uint32_t desc[8];
+	struct {
+		int pitch;
+		byte *bits;
+	} lr;
+
+	frame++;
+	if (!dir || !n || frame % n || rd->DevGetBackBuffer(dev, 0, 0, &back) < 0) {
+		return;
+	}
+	rd->SurfGetDesc(back, desc);
+	uint32_t fmt = desc[0], w = desc[6], h = desc[7];
+	if (rd->DevCreateImageSurface(dev, w, h, (int)fmt, &img) >= 0) {
+		if (rd->DevCopyRects(dev, back, NULL, 0, img, NULL) >= 0 && rd->SurfLockRect(img, &lr, NULL, 0x10) >= 0) {
+			char path[512];
+			snprintf(path, sizeof(path), "%s/%s%05u.bmp", dir, rd->name, frame);
+			FILE *f = fopen(path, "wb");
+			if (f) {
+				byte hdr[54] = { 'B', 'M' };
+				uint32_t v[] = { 54 + w * h * 4, 54, 40, w, h };
+				memcpy(hdr + 2, &v[0], 4);
+				memcpy(hdr + 10, &v[1], 4);
+				memcpy(hdr + 14, &v[2], 4);
+				memcpy(hdr + 18, &v[3], 4);
+				memcpy(hdr + 22, &v[4], 4);
+				hdr[26] = 1;
+				hdr[28] = 32;
+				fwrite(hdr, 1, 54, f);
+				for (uint32_t y = h; y-- > 0;) {
+					const byte *row = lr.bits + (size_t)y * (uint32_t)lr.pitch;
+					for (uint32_t x = 0; x < w; x++) {
+						uint32_t c;
+						if (fmt == 23) {	/* R5G6B5 */
+							uint32_t p = (uint32_t)(row[2 * x] | row[2 * x + 1] << 8);
+							c = (p >> 11) * 255 / 31 << 16 | (p >> 5 & 63) * 255 / 63 << 8 | (p & 31) * 255 / 31;
+						} else {
+							memcpy(&c, row + 4 * x, 4);
+						}
+						c |= 0xff000000u;
+						fwrite(&c, 4, 1, f);
+					}
+				}
+				fclose(f);
+			}
+			rd->SurfUnlockRect(img);
+		}
+		rd->Release(img);
+	}
+	rd->Release(back);
+}
+
 int Rd_DevPresent(void *dev, const void *src, const void *dst, void *hwnd, const void *dirty) {
 	if (rd_logDevice && dev == rd_logDevice) {
 		const uint32_t a[] = { (uint32_t)(uintptr_t)src, (uint32_t)(uintptr_t)dst, (uint32_t)(uintptr_t)hwnd,
@@ -335,6 +394,7 @@ int Rd_DevPresent(void *dev, const void *src, const void *dst, void *hwnd, const
 		RdLog_Call(0x3c / 4, a);
 		dev = rd_logReal;
 	}
+	Rd_DumpFrame(dev);
 	return rd->DevPresent(dev, src, dst, hwnd, dirty);
 }
 

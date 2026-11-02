@@ -20,9 +20,11 @@ int Vkd_Draw(VkoDev *d, int type, uint32_t primCount, uint32_t start, const void
 	const void *idx, int idxFmt, int indexed);
 int Vkd_DrawIndexedUP(VkoDev *d, int type, uint32_t primCount, uint32_t numVertices, const void *idx, int idxFmt,
 	const void *data, uint32_t stride);
+/* the end of a frame, for SCRAP_VK_TRACE */
+void Vkd_FrameDone(void);
+/* this frame is the one of SCRAP_VK_TRACE: the calls go into the log */
+int Vkd_Tracing(void);
 /* a handle for the ps.1.1 tokens (the GLSL port of that shader) */
 uint32_t Vkd_CreatePixelShader(const void *code);
-/* SCRAP_VK_DUMP=dir: every SCRAP_VK_DUMP_EVERY (100) frames the back buffer as a BMP into dir */
-void Vkd_DumpFrame(VkImg *back);
 
 #endif

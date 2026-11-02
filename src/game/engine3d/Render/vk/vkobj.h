@@ -44,15 +44,17 @@ struct VkoTex {
 	uint32_t lockPitch[VKO_MAX_LEVELS];
 };
 
-/* a vertex or index buffer in host visible memory; a lock with D3DLOCK_DISCARD moves it into the frame ring */
+#define VKO_BUF_SPARES 7
+
+/* a vertex or index buffer; a DISCARD lock while the GPU still reads mem swaps in a spare version */
 typedef struct VkoBuf {
 	VkoObj o;
 	uint32_t size, usage, fvf, format, pool;
 	VkBuf mem;
-	VkBuffer cur;			/* where the data is now: mem or a part of a frame ring */
-	VkDeviceSize curOff;
-	byte *curMap;
-	uint64_t used;			/* the frame serial of the last draw from it */
+	uint64_t used;			/* the frame serial of the last draw from mem */
+	VkBuf spare[VKO_BUF_SPARES];
+	uint64_t spareUsed[VKO_BUF_SPARES];
+	int numSpares;
 } VkoBuf;
 
 #define VKO_STAGES 8
