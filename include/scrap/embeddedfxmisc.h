@@ -17,22 +17,38 @@
 
 #define TYEN_OBJECT "Obj"
 
-#define VT_EFX_DATAPACK GAME_VFTABLE(cEmbeddedFXDataPack_vftable)
-#define VT_EFX_DATACUBE GAME_VFTABLE(cEmbeddedFXDataCube_vftable)
-#define VT_EFX_CAPSULE GAME_VFTABLE(cEmbeddedFXCapsule_vftable)
-#define VT_EFX_MATRIX GAME_VFTABLE(cEmbeddedFXMatrix_vftable)
-#define VT_EFX_AMPLIFIER GAME_VFTABLE(cEmbeddedFXAmplifier_vftable)
-#define VT_EFX_MEETINGPOINT GAME_VFTABLE(cEmbeddedFXMeetingPoint_vftable)
-#define VT_EFX_EXTRALIFE GAME_VFTABLE(cEmbeddedFXExtraLife_vftable)
-#define VT_EFX_BATTERY GAME_VFTABLE(cEmbeddedFXBattery_vftable)
-#define VT_EFX_TREASURE GAME_VFTABLE(cEmbeddedFXTreasure_vftable)
-#define VT_EFX_FLAG GAME_VFTABLE(cEmbeddedFXFlag_vftable)
-#define VT_EFX_DTRITUSDESKTOP GAME_VFTABLE(cEmbeddedFXDTritusDesktop_vftable)
-#define VT_EFX_BIKE GAME_VFTABLE(cEmbeddedFXBike_vftable)
-#define VT_EFX_BOSSSHIELD GAME_VFTABLE(cEmbeddedFXBossShield_vftable)
-#define VT_EFX_CONVERSOR GAME_VFTABLE(cEmbeddedFXConversor_vftable)
-#define VT_EFX_COIN GAME_VFTABLE(cEmbeddedFXCoin_vftable)
-#define VT_EFX_ITEM GAME_VFTABLE(cEmbeddedFXItem_vftable)
+extern const cEmbeddedFXVtbl cEmbeddedFXDataPack_vftable;
+#define VT_EFX_DATAPACK (&cEmbeddedFXDataPack_vftable)
+extern const cEmbeddedFXVtbl cEmbeddedFXDataCube_vftable;
+#define VT_EFX_DATACUBE (&cEmbeddedFXDataCube_vftable)
+extern const cEmbeddedFXVtbl cEmbeddedFXCapsule_vftable;
+#define VT_EFX_CAPSULE (&cEmbeddedFXCapsule_vftable)
+extern const cEmbeddedFXVtbl cEmbeddedFXMatrix_vftable;
+#define VT_EFX_MATRIX (&cEmbeddedFXMatrix_vftable)
+extern const cEmbeddedFXVtbl cEmbeddedFXAmplifier_vftable;
+#define VT_EFX_AMPLIFIER (&cEmbeddedFXAmplifier_vftable)
+extern const cEmbeddedFXVtbl cEmbeddedFXMeetingPoint_vftable;
+#define VT_EFX_MEETINGPOINT (&cEmbeddedFXMeetingPoint_vftable)
+extern const cEmbeddedFXVtbl cEmbeddedFXExtraLife_vftable;
+#define VT_EFX_EXTRALIFE (&cEmbeddedFXExtraLife_vftable)
+extern const cEmbeddedFXVtbl cEmbeddedFXBattery_vftable;
+#define VT_EFX_BATTERY (&cEmbeddedFXBattery_vftable)
+extern const cEmbeddedFXVtbl cEmbeddedFXTreasure_vftable;
+#define VT_EFX_TREASURE (&cEmbeddedFXTreasure_vftable)
+extern const cEmbeddedFXVtbl cEmbeddedFXFlag_vftable;
+#define VT_EFX_FLAG (&cEmbeddedFXFlag_vftable)
+extern const cEmbeddedFXVtbl cEmbeddedFXDTritusDesktop_vftable;
+#define VT_EFX_DTRITUSDESKTOP (&cEmbeddedFXDTritusDesktop_vftable)
+extern const cEmbeddedFXVtbl cEmbeddedFXBike_vftable;
+#define VT_EFX_BIKE (&cEmbeddedFXBike_vftable)
+extern const cEmbeddedFXVtbl cEmbeddedFXBossShield_vftable;
+#define VT_EFX_BOSSSHIELD (&cEmbeddedFXBossShield_vftable)
+extern const cEmbeddedFXVtbl cEmbeddedFXConversor_vftable;
+#define VT_EFX_CONVERSOR (&cEmbeddedFXConversor_vftable)
+extern const cEmbeddedFXVtbl cEmbeddedFXCoin_vftable;
+#define VT_EFX_COIN (&cEmbeddedFXCoin_vftable)
+extern const cEmbeddedFXVtbl cEmbeddedFXItem_vftable;
+#define VT_EFX_ITEM (&cEmbeddedFXItem_vftable)
 
 typedef struct cEmbeddedFXAmplifier {
 	cEmbeddedFX base;

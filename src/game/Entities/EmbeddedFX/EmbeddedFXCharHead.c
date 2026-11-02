@@ -7,7 +7,8 @@
 #include "scrap/global.h"
 #include "scrap/timer.h"
 
-#define VT_HEADCRAZYGAMBLER GAME_VFTABLE(cEmbeddedFXHeadCrazyGambler_vftable)
+extern const cEmbeddedFXVtbl cEmbeddedFXHeadCrazyGambler_vftable;
+#define VT_HEADCRAZYGAMBLER (&cEmbeddedFXHeadCrazyGambler_vftable)
 #define HEAD_GLOWS 12
 
 cEmbeddedFXHeadCrazyGambler *cEmbeddedFXHeadCrazyGambler_ctor(cEmbeddedFXHeadCrazyGambler *self) {
@@ -27,17 +28,18 @@ void cEmbeddedFXHeadCrazyGambler_dtor(cEmbeddedFXHeadCrazyGambler *self) {
 	cEmbeddedFX_dtor((cEmbeddedFX *)self);
 }
 
-cEmbeddedFXHeadCrazyGambler *cEmbeddedFXHeadCrazyGambler_Delete(cEmbeddedFXHeadCrazyGambler *self,
-	byte flags) {
+cEmbeddedFX *cEmbeddedFXHeadCrazyGambler_Delete(cEmbeddedFX *base, byte flags) {
+	cEmbeddedFXHeadCrazyGambler *self = (cEmbeddedFXHeadCrazyGambler *)base;
 	cEmbeddedFXHeadCrazyGambler_dtor(self);
 	if (flags & 1) {
 		operator_delete_sized(self, sizeof(*self));
 	}
-	return self;
+	return base;
 }
 
 /* every 0.02 s two glows on 12 vertices of the hair node */
-void cEmbeddedFXHeadCrazyGambler_Tick(cEmbeddedFXHeadCrazyGambler *self) {
+void cEmbeddedFXHeadCrazyGambler_Tick(cEmbeddedFX *base) {
+	cEmbeddedFXHeadCrazyGambler *self = (cEmbeddedFXHeadCrazyGambler *)base;
 	CGameModel *model = self->owner;
 	vec3_t pos[HEAD_GLOWS];
 	int index[HEAD_GLOWS];
@@ -60,7 +62,8 @@ void cEmbeddedFXHeadCrazyGambler_Tick(cEmbeddedFXHeadCrazyGambler *self) {
 	}
 }
 
-void cEmbeddedFXHeadCrazyGambler_Release(cEmbeddedFXHeadCrazyGambler *self) {
+void cEmbeddedFXHeadCrazyGambler_Release(cEmbeddedFX *base) {
+	cEmbeddedFXHeadCrazyGambler *self = (cEmbeddedFXHeadCrazyGambler *)base;
 	CGameParticles_Release(&self->particles);
 }
 
@@ -101,3 +104,13 @@ cEmbeddedFX *EmbeddedFXCharHead_Create(CGameModel *head) {
 	}
 	return NULL;
 }
+
+/* the vtable of cEmbeddedFXHeadCrazyGambler */
+const cEmbeddedFXVtbl cEmbeddedFXHeadCrazyGambler_vftable = {
+	.Delete = cEmbeddedFXHeadCrazyGambler_Delete,
+	.Reset = cEmbeddedFX_ResetTrue,
+	.Release = cEmbeddedFXHeadCrazyGambler_Release,
+	.Update = cEmbeddedFX_UpdateNop,
+	.Tick = cEmbeddedFXHeadCrazyGambler_Tick,
+	.Stop = cEmbeddedFX_StopNop,
+};

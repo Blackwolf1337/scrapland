@@ -418,13 +418,13 @@ def stubs(files):
                 cls = ptype(wp[0])[0].replace('const ', '').replace('*', '').strip() if wp else 'Vtbl'
                 name = '%s_%s%s' % (cls, field, kind[0])
                 if name not in made:
-                    made[name] = (cls, field, wret, wp, kind)
+                    made[name] = (cls, field, wret, wp, kind, f)
                 newbody = re.sub(r'^\t\.%s = %s,$' % (re.escape(des), fn), '\t.%s = %s,' % (des, name), newbody, flags=re.M)
             out = out.replace(body, newbody)
         if out != src:
             open(f, 'w').write(out)
     # the defaults next to the functions of their class, the prototypes next to the class's prototypes
-    for name, (cls, field, wret, wp, kind) in sorted(made.items()):
+    for name, (cls, field, wret, wp, kind, vtfile) in sorted(made.items()):
         if name in defs:
             continue
         names = [ptype(p)[1] or 'arg%d' % i for i, p in enumerate(wp)]
@@ -439,7 +439,7 @@ def stubs(files):
             lines.append('\treturn %s;' % (names[0] if kind[1] == 'SELF' else kind[1]))
         lines.append('}')
         fn_text = '\n'.join(lines) + '\n'
-        home = next((d[0] for n, d in defs.items() if n.startswith(cls + '_')), None)
+        home = next((d[0] for n, d in defs.items() if n.startswith(cls + '_')), None) or vtfile
         if not home:
             print('report: no module for', name)
             continue
@@ -453,6 +453,16 @@ def stubs(files):
             if g.endswith('.h') and re.search(r'^[\w \*]*\b%s_\w+\(' % cls, open(g, errors='replace').read(), re.M):
                 hdr = g
                 break
+        if not hdr:
+            hdr = next((g for g in v.sources() if g.endswith('.h') and
+                        re.search(r'^struct %s \{' % cls, open(g, errors='replace').read(), re.M)), None)
+            if hdr:
+                t = open(hdr).read()
+                m = re.search(r'^struct %s \{.*?\n\};\n' % cls, t, re.M | re.S)
+                t = t[:m.end()] + '\n' + proto + '\n' + t[m.end():]
+                open(hdr, 'w').write(t)
+                print('%-48s %s %s' % (name, v.rel(home), v.rel(hdr)))
+                continue
         if hdr:
             t = open(hdr).read()
             ms = list(re.finditer(r'^[\w \*]*\b%s_\w+\([^;{]*\);\n' % cls, t, re.M))

@@ -1217,9 +1217,9 @@ void cVehicleEntity_SetEmbeddedFX(cVehicleEntity *self, const char *fxType) {
 	if (!strcmp(fxType, "EmbeddedFX")) {
 		cEmbeddedFXVehicle *fx = Veh_FX(self);
 		if (fx) {
-			fx->vftable->Done(fx);
+			fx->vftable->Done(&fx->sub);
 			if (Veh_FX(self)) {
-				Veh_FX(self)->vftable->Delete(Veh_FX(self), 1);
+				Veh_FX(self)->vftable->Delete(&(Veh_FX(self))->sub, 1);
 				self->wl.obj.fx = NULL;
 			}
 		}
@@ -1227,7 +1227,7 @@ void cVehicleEntity_SetEmbeddedFX(cVehicleEntity *self, const char *fxType) {
 		fx = mem ? cEmbeddedFXVehicle_ctor(mem) : NULL;
 		self->wl.obj.fx = (struct cEmbeddedFX *)fx;
 		cEmbeddedFXVehicle_SetTraffic(fx, self->typeName[0] == 'T');
-		Veh_FX(self)->vftable->Init(Veh_FX(self));
+		Veh_FX(self)->vftable->Init(&(Veh_FX(self))->sub);
 		cEmbeddedFXVehicle_SetOwner(Veh_FX(self), Veh_Ent(self));
 	}
 	cVehicleEffects_Start(&self->effects, fxType);
@@ -2034,6 +2034,6 @@ void cVehicleEntity_UpdateModel(cVehicleEntity *self) {
 		}
 	}
 	if (Veh_FX(self) && !self->rendering) {
-		Veh_FX(self)->vftable->Update(Veh_FX(self));
+		Veh_FX(self)->vftable->Update(&(Veh_FX(self))->sub);
 	}
 }

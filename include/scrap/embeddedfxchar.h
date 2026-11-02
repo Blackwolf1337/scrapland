@@ -37,6 +37,11 @@ struct cEmbeddedFX {
 };
 SD_SIZE(cEmbeddedFX, 8);
 
+/* stores the vtable of a class of the family */
+static inline void EFX_SetVtbl(void *self, const cEmbeddedFXVtbl *vt) {
+	((cEmbeddedFX *)self)->vftable = vt;
+}
+
 /* the embedded effect of an entity with life */
 
 /* the blinking alarm light of the police, the gears and the sentinels (no vtable, a member) */
@@ -246,6 +251,10 @@ SD_SIZE(cEmbeddedFXHeadCrazyGambler, 0xc4);
 /* the constructors and destructors (EmbeddedFXChar.c) */
 void cEmbeddedFX_dtor(cEmbeddedFX *self);
 cEmbeddedFX *cEmbeddedFX_Delete(cEmbeddedFX *self, byte flags);
+byte cEmbeddedFX_ResetTrue(cEmbeddedFX *self);
+void cEmbeddedFX_StopNop(cEmbeddedFX *self, byte keep);
+void cEmbeddedFX_TickNop(cEmbeddedFX *self);
+void cEmbeddedFX_UpdateNop(cEmbeddedFX *self, float dt);
 cEmbeddedFX *cEmbeddedFXBankDirector_ctor(void *self);
 cEmbeddedFX *cEmbeddedFXBankMaster_ctor(void *self);
 cEmbeddedFX *cEmbeddedFXCrazyGambler_ctor(void *self);
