@@ -24,8 +24,8 @@ cBettyLocalLogic *cBettyLocalLogic_Delete(cBettyLocalLogic *self, byte flags) {
 }
 
 /* vf40 */
-void cBettyLocalLogic_AssignDesktop(cBettyLocalLogic *self, int arg) {
-	(void)arg;
+void cBettyLocalLogic_AssignDesktop(cBettyLocalLogic *self, float maxDist) {
+	(void)maxDist;
 	Logic_LinkDesktop(&self->base, "BettyDesktop");
 }
 

@@ -58,7 +58,7 @@ typedef struct CSoundSys CSoundSys;
 /* the interface (CSoundSys at rva 0x3c9f3c, slots 0x10..0x40 pure, CSoundXBox at 0x3ca718) */
 typedef struct CSoundSysVtbl {
 	CSoundSys *(*Destroy)(CSoundSys *self, byte flags);			/* 0x00 */
-	int(*Init)(CSoundSys *self);						/* 0x04 */
+	void(*Init)(CSoundSys *self);						/* 0x04 */
 	void(*Close)(CSoundSys *self);					/* 0x08 */
 	void(*Update)(CSoundSys *self);					/* 0x0c */
 	void(*LoadSound2)(CSoundSys *self, const char *name);		/* 0x10 CHECK(0) */

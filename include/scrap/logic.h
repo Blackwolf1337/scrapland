@@ -75,7 +75,7 @@ typedef struct cLocalLogicVtbl {
 	void(*SetActionRadius)(void *self, float radius);				/* 0x54 */
 	void(*SetOrigin)(void *self, float x, float y, float z);			/* 0x58 */
 	void(*SetOriginAng)(void *self, float x, float y, float z);		/* 0x5c */
-	byte(*RestartState)(void *self);						/* 0x60 */
+	void(*RestartState)(void *self);						/* 0x60 the return value of some is not used */
 } cLocalLogicVtbl;
 
 static inline const cLocalLogicVtbl *Logic_Vtbl(const void *l) {

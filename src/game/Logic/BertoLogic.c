@@ -34,8 +34,8 @@ void Logic_LinkDesktop(cFunctionaryLocalLogic *self, const char *name) {
 }
 
 /* vf40 */
-void cBertoLocalLogic_AssignDesktop(cBertoLocalLogic *self, int arg) {
-	(void)arg;
+void cBertoLocalLogic_AssignDesktop(cBertoLocalLogic *self, float maxDist) {
+	(void)maxDist;
 	Logic_LinkDesktop(&self->base, "BertoDesktop");
 }
 

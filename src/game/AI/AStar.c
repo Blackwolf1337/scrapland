@@ -234,7 +234,7 @@ byte AStarTable_Add(HashTable *self, intptr_t key, const cAStarInfo *v, byte war
 	uint32_t slot = AStarTable_Slot(self, key);
 	if (AStarTable_Find(self, key, slot)) {
 		if (warn) {
-			Con_Warnf("CHashTable2: Symbol already defined: '%08X'\n", key);
+			Con_Warnf("CHashTable2: Symbol already defined: '%08X'\n", (uint32_t)key);
 		}
 		return 0;
 	}
