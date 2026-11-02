@@ -543,7 +543,7 @@ typedef struct cScorerModel {
 	struct cScorerModel *next;	/* 0x60 */
 	float radius;			/* 0x64 */
 	float height;			/* 0x68 the eyes */
-	void *extra;			/* 0x6c drawn after the model through its slot 0x10 */
+	struct cEmbeddedFX *extra;	/* 0x6c its Tick draws after the model */
 } cScorerModel;
 SD_OFFSET(cScorerModel, numAnims, 0x3c);
 SD_OFFSET(cScorerModel, extra, 0x6c);

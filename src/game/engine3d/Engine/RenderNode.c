@@ -56,8 +56,7 @@ CRenderNode *CRenderNode_ctor(CRenderNode *self) {
 	self->frame = 0;
 	self->skin = NULL;
 	self->slot = 0;
-	self->pad_9a[0] = 0;
-	self->pad_9a[1] = 0;
+	self->skinFrame = 0;
 	self->obj3D = NULL;
 	self->obj3D2 = NULL;
 	self->node = NULL;

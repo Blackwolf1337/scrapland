@@ -48,7 +48,7 @@ def vmostrat(p):
 # a cVehicleMotorsEffects: the owners as != 0, then every field
 def vmoeff(e):
 	return (vmonz(e, 3), vmob(e + 0xc), vmoi(e + 0x10), vmoints(e + 0x14, 4), vmonz(e + 0x24, 4), vmob(e + 0x34),
-		vmonz(e + 0x38, 2), vmofl(e + 0x40, 10), vmob(e + 0x68), vmoints(e + 0x6c, 2), vmofl(e + 0x74, 2),
+		vmonz(e + 0x38, 2), vmofl(e + 0x40, 10), vmob(e + 0x68), plain(vmoints(e + 0x6c, 2)), vmofl(e + 0x74, 2),
 		vmoi(e + 0x7c), vmofl(e + 0x80, 6), vmoints(e + 0x98, 2), vmob(e + 0xa0), vmofl(e + 0xa4, 1))
 # a cVehicleMotor: models loaded, nodes, name, animation fields, effects
 def vmomotor(m):
@@ -95,11 +95,11 @@ vmoe = vmoz(0xa8)
 check('cVehicleMotorsEffects_ctor', lambda: (SDTest.Call('cVehicleMotorsEffects_ctor', 'tii', vmoe)[0] == vmoe, vmoeff(vmoe)))
 for vmoc in (0, 0xffffff, 0x123456, 0x80ff01, -0x1000000, 0x7f7f7f):
 	check('cVehicleMotorsEffects_SetColor' + fmt((vmoc,)), lambda c=vmoc: (SDTest.Call('cVehicleMotorsEffects_SetColor', 'tvii', vmoe, c),
-		vmoints(vmoe + 0x6c, 2)))
+		plain(vmoints(vmoe + 0x6c, 2))))
 for vmot in (0, 1, 9, 10, 11, 12, 13, 14, 15, 16, 20, 21, 25, 26, 27, 30, 35, 36, 40, 45, 50, 55, 60, 61, -3):
 	SDTest.Call('cVehicleMotorsEffects_SetColor', 'tvii', vmoe, 0x010203)
 	check('cVehicleMotorsEffects_SetType' + fmt((vmot,)), lambda t=vmot: (SDTest.Call('cVehicleMotorsEffects_SetType', 'tvii', vmoe, t),
-		vmoi(vmoe + 0x10), vmoints(vmoe + 0x6c, 2)))
+		vmoi(vmoe + 0x10), plain(vmoints(vmoe + 0x6c, 2))))
 check('cVehicleMotorsEffects_SetOffset', lambda: (SDTest.Call('cVehicleMotorsEffects_SetOffset', 'tvif', vmoe, -12.5), vmofl(vmoe + 0x74, 2)))
 check('cVehicleMotorsEffects_SetScale', lambda: (SDTest.Call('cVehicleMotorsEffects_SetScale', 'tvif', vmoe, 2.25), vmofl(vmoe + 0x74, 2)))
 vmofakem = vmoz(0x11c)

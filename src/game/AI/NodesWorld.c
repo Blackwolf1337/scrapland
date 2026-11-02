@@ -903,8 +903,10 @@ static void NW_FlatDir(vec3_t *d) {
 byte CNodesWorld_BuildPath(CNodesWorld *self, cNWVecList *path, int depth, const vec3_t *dir,
 	const vec3_t *start, byte direct, cNWNode **node, float radius, byte flat) {
 	cNWNode *cand[7], *list[20], *cur;
-	/* one stack slot of the original: the count of the search, its loop index, then the chosen node */
+	/* the original keeps the count of the search, its loop index and the chosen node in one stack slot; the node
+	 * chosen last stays when an iteration chooses none */
 	int slot = 0;
+	cNWNode *chosen = NULL;
 	int ncand;
 	vec3_t s, d, e, p;
 
@@ -973,19 +975,19 @@ byte CNodesWorld_BuildPath(CNodesWorld *self, cNWVecList *path, int depth, const
 			e.z = v->pos.z - prev->pos.z;
 			double ang = Vec3_Angle(&d, &e);
 			if (0.7853981633974483 > ang) {
-				slot = (int)(intptr_t)v;
+				chosen = v;
 				near = 1;
 				break;
 			}
 			if (best > ang) {
-				slot = (int)(intptr_t)v;
+				chosen = v;
 				best = ang;
 			}
 		}
 		if (!near && inList) {
 			break;
 		}
-		cNWNode *next = (cNWNode *)(intptr_t)slot;
+		cNWNode *next = chosen;
 		p = next->pos;
 		NWVecList_Add(path, &p);
 		if (flat) {

@@ -4,6 +4,7 @@
  */
 #include <string.h>
 
+#include "scrap/embeddedfxchar.h"
 #include "scrap/console.h"
 #include "scrap/fxmisc.h"
 #include "scrap/mathlib.h"
@@ -374,9 +375,9 @@ static void Monitor_DrawHead(cMonitorScorer *self, float frameTime) {
 	CGameModel_RootMotion(&self->model->model, frameTime, NULL, NULL);
 	CGameModel_Enable(&self->model->model);
 	CGameModel_RenderNow(&self->model->model, 2);
-	void *extra = self->model->extra;
+	cEmbeddedFX *extra = self->model->extra;
 	if (extra) {
-		(*(void(**)(void *))(*(byte **)extra + 0x10))(extra);
+		extra->vftable->Tick(extra);
 	}
 	CGameModel_Disable(&self->model->model);
 	Camera_SetCurrent(cur);

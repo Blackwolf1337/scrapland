@@ -903,10 +903,7 @@ void cWorld_FillWeapPriority(cWorld *world) {
 }
 
 const char *cWorld_GetCamName(cWorld *world, int i) {
-	/* the original tests the address of the name for NULL */
-	uintptr_t p = (uintptr_t)world + 0x54 + ((uint32_t)i << 7);
-
-	return p ? (const char *)p : "";
+	return world->camName[i];
 }
 
 cEntityList *cWorld_GetList(cWorld *world, const char *name) {

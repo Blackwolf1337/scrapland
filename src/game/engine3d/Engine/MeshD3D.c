@@ -21,15 +21,6 @@
 /* params.attrib: no back faces for two sided materials */
 #define MAT_ONESIDED 0x4000
 
-/* the render node of RenderCtx.h as CMeshD3D_SetRender fills it */
-typedef struct MeshD3D_RenderNode {
-	byte pad_0[0x94];
-	void *eva;			/* 0x94 the vertex animation data, NULL for none */
-	int16_t channel;			/* 0x98 its channel */
-	int16_t s9a;			/* 0x9a */
-} MeshD3D_RenderNode;
-SD_OFFSET(MeshD3D_RenderNode, s9a, 0x9a);
-
 typedef CMeshD3D *(*meshD3DDelete_t)(CMeshD3D *self, byte flags);
 typedef int(*meshD3DRestore_t)(CMeshD3D *self, void *dev);
 typedef void(*meshD3DInvalidate_t)(CMeshD3D *self, void *dev);
@@ -358,7 +349,7 @@ byte CMeshD3D_Write(CMeshD3D *self, CFileIO *f, MeshD3D_FileCtx *ctx) {
 }
 
 void CMeshD3D_SetRender(CMeshD3D *self, void *renderNode) {
-	MeshD3D_RenderNode *r = renderNode;
+	CRenderNode *r = renderNode;
 	int channel = 3;
 	void *eva = CNode3D_TrackData(self->node, 3);
 
@@ -370,17 +361,17 @@ void CMeshD3D_SetRender(CMeshD3D *self, void *renderNode) {
 		CHECK(!eva || r);
 		return;
 	}
-	r->eva = eva;
+	r->skin = eva;
 	if (!eva) {
 		return;
 	}
 	NodeAnimChannel *c = CNode3D_Channel(self->node, channel);
 	/* the channel's animation is a model slot (RenderCtx_SetChannel); its morph targets move the vertices */
 	const CAnimSlot *slot = (const CAnimSlot *)c->anim;
-	r->channel = channel;
-	r->s9a = (int16_t)c->frame;
+	r->slot = (uint16_t)channel;
+	r->skinFrame = (int16_t)c->frame;
 	if (!slot->subset && !slot->prevSubset) {
-		r->eva = NULL;
+		r->skin = NULL;
 	}
 	CHECK(!self->next);
 }

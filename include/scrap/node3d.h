@@ -189,7 +189,7 @@ typedef struct CRenderNode {
 	int frame;			/* 0x90 g_FrameCount of the last update */
 	void *skin;			/* 0x94 the CEVA (vertex animation) of the meshes of this node (RenderEVA.cpp) */
 	uint16_t slot;			/* 0x98 the animation slot of the owner model for the vertex animation */
-	byte pad_9a[2];
+	int16_t skinFrame;		/* 0x9a the frame of that channel when CMeshD3D_SetRender set skin */
 	IObject3D *obj3D;		/* 0x9c instead of the node's, the same class */
 	IObject3D *obj3D2;		/* 0xa0 owned */
 	struct CNode3D *node;		/* 0xa4 a reference */

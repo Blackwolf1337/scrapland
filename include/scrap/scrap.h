@@ -15,6 +15,7 @@
 
 #include "scrap/scheduler.h"
 #include "scrap/scorer.h"
+#include "scrap/scrapmodel.h"
 
 /* the function of Scrap.SetCallFunc with its parameters (AddParamX) for Scrap.Execute */
 #define g_CallFunc (GAME_ARRAY(cPy_Function, g_CallFunc))
@@ -135,7 +136,7 @@ SD_OFFSET(cDebrisSys, maxIdle, 0x2c);
 SD_SIZE(cDebrisSys, 0x38);
 
 struct cDebris {
-	byte Mod[0x1c];			/* 0x00 CGameModel (scrapmodel.h) */
+	CGameModel Mod;			/* 0x00 first: Debris_Model casts the debris */
 	vec3_t drop[4];			/* 0x1c copy of g_DebrisDrop */
 	float life;			/* 0x4c the time left, counts down by 0.05 a step and ends at 0 */
 	cDebris *next;			/* 0x50 in the idle or active list */
@@ -143,7 +144,7 @@ struct cDebris {
 };
 SD_OFFSET(cDebris, life, 0x4c);
 SD_SIZE(cDebris, 0x58);
-#define Debris_Mod(d) ((CGameModel *)(d)->Mod)
+#define Debris_Mod(d) (&(d)->Mod)
 
 extern vec3_t g_DebrisDrop[4];	/* [4]: position, angles (rad), velocity, angle speed (rad) */
 extern cGVar GVar_Gravity;

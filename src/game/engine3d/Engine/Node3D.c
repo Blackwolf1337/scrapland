@@ -10,6 +10,7 @@
 #include "scrap/camera.h"
 #include "scrap/console.h"
 #include "scrap/e3dutil.h"
+#include "scrap/flare.h"
 #include "scrap/fonts.h"
 #include "scrap/light.h"
 #include "scrap/meshd3d.h"
@@ -24,10 +25,6 @@
 #include "scrap/model.h"
 
 #define CNODO3D_VFTABLE GAME_VFTABLE(CNode3D_vftable)
-#define MESHD3D_SIZE 200
-#define MESHD3D_SKIN 0x94		/* the CMeshD3D member that puts the object into mObj */
-#define A6000080_ALPHA 0x28
-#define PARTICLESYSTEM_VISIBLE 0x140
 
 extern cGVar GVar_R_Node3D_Count;
 #define g_Node3DCount (GVar_R_Node3D_Count.value.i)	/* R_Nodo3D_Count */
@@ -176,7 +173,7 @@ byte CNode3D_GetBBox(CNode3D *self, matrix_t *m, box_t *bbox, byte recalc) {
 	switch (o ? o->class : 0) {
 	case CLASS_OBJ3D_MESHD3D:
 		o = Obj3D_Cast(o, CLASS_OBJ3D_MESHD3D);
-		skin = *(int *)((byte *)o + MESHD3D_SKIN) != 0;
+		skin = ((CMeshD3D *)o)->pSkin != NULL;
 		CMeshD3D_GetBox(Obj3D_Cast(self->obj3D, CLASS_OBJ3D_MESHD3D), bbox, recalc);
 		break;
 	case CLASS_OBJ3D_TRIMESH:
@@ -394,12 +391,12 @@ void CNode3D_Render(CNode3D *self, void *arg, CRenderNode *r) {
 				return;
 			}
 			o = Obj3D_Cast(o, CLASS_OBJ3D_FLARE);
-			*(float *)((byte *)o + A6000080_ALPHA) = (float)((double)alpha * (1.0 / 255.0));
+			((CFlare *)o)->intens = (float)((double)alpha * (1.0 / 255.0));
 		} else if (o && o->class == CLASS_OBJ3D_PARTICLESYSTEM) {
 			if (alpha <= 2) {
 				return;
 			}
-			*((byte *)CParticleSystem_Cast(CNode3D_GetObj3D(self, r)) + PARTICLESYSTEM_VISIBLE) = alpha >= 0x80;
+			((CParticleSystem *)CParticleSystem_Cast(CNode3D_GetObj3D(self, r)))->enabled = alpha >= 0x80;
 		} else if (alpha < 0x80) {
 			return;
 		}

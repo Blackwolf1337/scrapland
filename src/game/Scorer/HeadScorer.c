@@ -2,6 +2,7 @@
  * HeadScorer.cpp of the game (Menu/): cHeadScorer, a talking head of the scorer models. See
  * include/scrap/scoreritems.h.
  */
+#include "scrap/embeddedfxchar.h"
 #include "scrap/console.h"
 #include "scrap/scoreritems.h"
 #include "scrap/scrapcamera.h"
@@ -104,9 +105,9 @@ void cHeadScorer_Draw(cHeadScorer *self, int player) {
 		CGameModel_RootMotion(&self->model->model, ft, NULL, NULL);
 		CGameModel_Enable(&self->model->model);
 		CGameModel_RenderNow(&self->model->model, 2);
-		void *extra = self->model->extra;
+		cEmbeddedFX *extra = self->model->extra;
 		if (extra) {
-			(*(void(**)(void *))(*(byte **)extra + 0x10))(extra);
+			extra->vftable->Tick(extra);
 		}
 		CGameModel_Disable(&self->model->model);
 		Camera_SetCurrent(cur);

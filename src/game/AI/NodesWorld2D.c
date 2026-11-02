@@ -1071,8 +1071,10 @@ byte CNodesWorld2D_BuildPath(CNodesWorld2D *self, cNWVecList *path, int depth, c
 	const vec3_t *start, byte direct, cNWNode **node, float r, float h1, float h2, byte flat) {
 	CNodesWorld *w = NW2D_SUP(self);
 	cNWNode *cand[7], *list[20], *cur;
-	/* one stack slot of the original: the count of the search, its loop index, then the chosen node */
+	/* the original keeps the count of the search, its loop index and the chosen node in one stack slot; the node
+	 * chosen last stays when an iteration chooses none */
 	int slot = 0;
+	cNWNode *chosen = NULL;
 	int ncand;
 	vec3_t s, d, e, p;
 
@@ -1141,19 +1143,19 @@ byte CNodesWorld2D_BuildPath(CNodesWorld2D *self, cNWVecList *path, int depth, c
 			e.z = v->pos.z - prev->pos.z;
 			double ang = Vec3_Angle(&d, &e);
 			if (0.7853981633974483 > ang) {
-				slot = (int)(intptr_t)v;
+				chosen = v;
 				near = 1;
 				break;
 			}
 			if (best > ang) {
-				slot = (int)(intptr_t)v;
+				chosen = v;
 				best = ang;
 			}
 		}
 		if (!near && inList) {
 			break;
 		}
-		cNWNode *next = (cNWNode *)(intptr_t)slot;
+		cNWNode *next = chosen;
 		p = next->pos;
 		NWVecList_Add(path, &p);
 		if (flat) {

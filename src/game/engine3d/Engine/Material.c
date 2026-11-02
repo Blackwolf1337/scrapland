@@ -664,7 +664,7 @@ char *CMap_ResolvePath(CMap *self, byte load, CMap *alpha) {
 	self->frames = 0;
 	Path_Copy(path, self->Name, MAX_FILEPATH);
 	/* the alpha map as a flag: the DDS with both */
-	if (load && !Tex_FindDDS(path, found, (int)(intptr_t)alpha)) {
+	if (load && !Tex_FindDDS(path, found, alpha != NULL)) {
 		Mat_LogOlder(found, path);
 		if (alpha && alpha->path) {
 			Mat_LogOlder(found, alpha->path);
