@@ -22,7 +22,7 @@ Until 2026-11-01 the work was done with a hook DLL (the re3 method: a proxy `din
 
 | Path | Content |
 |------|---------|
-| `docs/` | `binary.md`, triage report of Scrap.exe; `ghidra.md`, Ghidra database and symbols; `packed.md`, the .packed archives; `standalone.md`, history of the stages to the standalone exe; `rename.md`, the English names of stage 4; `vulkan.md`, the Vulkan renderer |
+| `docs/` | `binary.md`, triage report of Scrap.exe; `ghidra.md`, Ghidra database and symbols; `packed.md`, the .packed archives; `standalone.md`, history of the stages to the standalone exe; `rename.md`, the English names of stage 4; `vulkan.md`, the Vulkan renderer; `platform.md`, the platforms, the platform layer and the 64-bit rules |
 | `symbols/` | `functions.tsv`, `globals.tsv`, `comments.tsv`, `rtti_classes.txt` (see `docs/ghidra.md`) |
 | `tools/ghidra/` | `rebuild.sh`, `headless.sh`, export/import and naming scripts (Java), `include/` (parse stand-ins) |
 | `third_party/python-1.5.2/` | Python 1.5.2 headers, `COPYRIGHT` |
