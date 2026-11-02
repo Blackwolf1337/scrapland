@@ -47,6 +47,25 @@ SD_OFFSET(cNetVController, hit, 0x64);
 SD_OFFSET(cNetVController, keys, 0x74);
 SD_SIZE(cNetVController, CNETVCONTROLLER_SIZE);
 
+#define VEH_TARGETS 16
+
+typedef struct cVehicleTargetList {
+	int count;			/* 0x000 */
+	float wait;			/* 0x004 3 s after a choice, then a new choice when the target is gone */
+	char names[VEH_TARGETS][0x80];	/* 0x008 the nearest first */
+	float time;			/* 0x808 the world time of the last choice */
+	int cur;			/* 0x80c */
+} cVehicleTargetList;
+SD_OFFSET(cVehicleTargetList, time, 0x808);
+SD_SIZE(cVehicleTargetList, 0x810);
+
+typedef struct cVehicleTargets {
+	cEntity *owner;			/* 0x00 */
+	cVehicleTargetList *list;	/* 0x04 only for the player slots */
+	char target[0x80];		/* 0x08 the "Target" of the vehicle */
+} cVehicleTargets;
+SD_SIZE(cVehicleTargets, 0x88);
+
 struct cVehicleEntity {
 	cWithLifeEntity wl;		/* 0x000 */
 	/* cVehicleEntity */
@@ -115,8 +134,13 @@ struct cVehicleEntity {
 	int maxLife;			/* 0x640 "MaxLife" */
 	byte isInit;			/* 0x644 "isInit" */
 	byte pad_645[3];
-	byte o648[0x650 - 0x648];	/* 0x648 updated for player ships */
-	char target[0x80];		/* 0x650 "Target" */
+	union {
+		cVehicleTargets o648;	/* 0x648 updated for player ships, with the target */
+		struct {
+			byte pad_648[offsetof(cVehicleTargets, target)];
+			char target[0x80];	/* 0x650 "Target" */
+		};
+	};
 	cAutoAim autoAim;		/* 0x6d0 */
 	cVehicleMotors motors;		/* 0x720 */
 	float vertBalance;		/* 0x7e8 "VerticalBalance" */
@@ -222,24 +246,6 @@ void cVehicleControls_Tick(cVehicleControls *c, cEntity *v, float dt);
  * Controls.c): a list of the 16 nearest enemies (the attacker of the last TgtRegenerationTime first) the controls
  * cycle through, made new when the selected one is gone or the list is older than TgtRegenerationTime.
  */
-#define VEH_TARGETS 16
-
-typedef struct cVehicleTargetList {
-	int count;			/* 0x000 */
-	float wait;			/* 0x004 3 s after a choice, then a new choice when the target is gone */
-	char names[VEH_TARGETS][0x80];	/* 0x008 the nearest first */
-	float time;			/* 0x808 the world time of the last choice */
-	int cur;			/* 0x80c */
-} cVehicleTargetList;
-SD_OFFSET(cVehicleTargetList, time, 0x808);
-SD_SIZE(cVehicleTargetList, 0x810);
-
-typedef struct cVehicleTargets {
-	cEntity *owner;			/* 0x00 */
-	cVehicleTargetList *list;	/* 0x04 only for the player slots */
-	char target[0x80];		/* 0x08 the "Target" of the vehicle */
-} cVehicleTargets;
-SD_SIZE(cVehicleTargets, 0x88);
 
 extern cGVar GVar_TgtRegenerationTime;
 #define g_TgtRegenerationTime (GVar_TgtRegenerationTime.value.f)

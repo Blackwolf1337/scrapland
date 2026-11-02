@@ -71,7 +71,7 @@ float cItemEntity_GetRadius(cItemEntity *self);
 byte cItemEntity_VarI(cItemEntity *self, const char *name, int *i, int set);
 byte cItemEntity_IsType(cItemEntity *self, const char *type);
 void cItemEntity_NetRead(cItemEntity *self, void *msg, int unused);
-void cItemEntity_NetWrite(cItemEntity *self, int unused, void *msg, byte full);
+void cItemEntity_NetWrite(cItemEntity *self, float dist2, void *msg, int full);
 void cItemEntity_Tick(cItemEntity *self, float dt);
 void cItemEntity_SetOrigin(cItemEntity *self, const vec3_t *v);
 void cItemEntity_SetOwner(cItemEntity *self, const char *name);

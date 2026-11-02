@@ -135,7 +135,7 @@ cEntity *cVehicleEntity_ctor(void *mem, const char *name, float x, float y, floa
 	crt_eh_vector_ctor(&self->pilot, sizeof(CGameModel), 1, (void *)CGameModel_ctorDefault, (void *)CGameModel_Reset);
 	cVehicleTraffic_ctor(&self->traffic);
 	cWeaponManager_ctor(&self->weapons);
-	cVehicleO648_ctor(self->o648);
+	cVehicleO648_ctor(&self->o648);
 	cAutoAim_ctor(&self->autoAim);
 	cVehicleMotors_ctor(&self->motors);
 	cVehicleEffects_ctor(&self->effects);
@@ -168,7 +168,7 @@ cEntity *cVehicleEntity_ctor(void *mem, const char *name, float x, float y, floa
 	for (int i = 0; i < VEH_PILOT_ANIMS; i++) {
 		*Veh_PilotAnim(self, i, 0) = -1;
 	}
-	*(cVehicleEntity **)self->o648 = self;
+	self->o648.owner = (cEntity *)self;
 	self->minLife = 100;
 	self->maxLife = 150;
 	self->acMass = self->wl.mass;
@@ -242,7 +242,7 @@ void cVehicleEntity_dtor(cVehicleEntity *self) {
 	cVehicleEffects_dtor(&self->effects);
 	cVehicleMotors_dtor(&self->motors);
 	cAutoAim_dtor(&self->autoAim);
-	cVehicleO648_dtor(self->o648);
+	cVehicleO648_dtor(&self->o648);
 	cWeaponManager_dtor(&self->weapons);
 	crt_eh_vector_dtor(&self->pilot, sizeof(CGameModel), 1, (void *)CGameModel_Reset);
 	cWithLifeEntity_dtor(&self->wl.obj.base);
@@ -749,7 +749,7 @@ void cVehicleEntity_Tick(cVehicleEntity *self, float dt) {
 	cVehicleEntity_UpdateTrust(self);
 	cWeaponManager_Update(&self->weapons, dt);
 	if (self->slot != -1) {
-		cVehicleO648_Update(self->o648, dt);
+		cVehicleO648_Update(&self->o648, dt);
 	}
 	self->boost = self->boost - dt;
 	if (0.0f >= self->boost) {
@@ -944,7 +944,7 @@ void cVehicleEntity_SetUsrControl(cVehicleEntity *self, int slot) {
 		sc->minDiff = 0x1.111112p-6f;	/* 1 / 60 */
 		g_pWorld->owners[self->slot] = Veh_Ent(self);
 	}
-	cVehicleO648_SetSlot(self->o648, slot);
+	cVehicleO648_SetSlot(&self->o648, slot);
 	if (Net_IsNetEntity(Veh_Ent(self)) && Veh_IsPlayerSlot(self->slot)) {
 		cVehicleEntity_NetCreate(self);
 		return;

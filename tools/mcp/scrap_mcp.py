@@ -52,7 +52,7 @@ def sockets(since=0.0):
 
 
 # the native Linux builds by their exe name
-NATIVE_BUILDS = {'native': 'build-linux', 'native64': 'build-linux64'}
+NATIVE_BUILDS = {'native': 'build-linux', 'native64': 'build-linux64', 'native64asan': 'build-linux64-asan'}
 
 
 class Game:
@@ -162,6 +162,8 @@ class Game:
         if exe in NATIVE_BUILDS:
             env['NATIVE_LOG'] = self.wine_log
             env['SCRAP_BUILD'] = os.path.join(ROOT, NATIVE_BUILDS[exe])
+            if exe == 'native64asan':
+                env.setdefault('ASAN_OPTIONS', 'detect_leaks=0')
         self.proc = subprocess.Popen([os.path.join(ROOT, 'tools', 'test', runner)] + args, env=env,
                                      stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                      start_new_session=True)
@@ -393,9 +395,10 @@ TOOLS = [
     {'name': 'launch', 'description': 'Start a game in its own slot (no window, muted, AMD 610M). Returns at once; '
      'then wait kind=ready.', 'inputSchema': schema({
          'name': NAME,
-         'exe': {'type': 'string', 'enum': ['c', 'ref', 'native', 'native64'], 'description': 'c: build/ScrapC.exe '
+         'exe': {'type': 'string', 'enum': ['c', 'ref', 'native', 'native64', 'native64asan'], 'description': 'c: build/ScrapC.exe '
                  '(default), ref: the frozen reference build-ref-noexact/ScrapC.exe (Direct3D 8 through Wine), native: '
-                 'the Linux build build-linux/ScrapC (i686), native64: build-linux64/ScrapC (x86_64)'},
+                 'the Linux build build-linux/ScrapC (i686), native64: build-linux64/ScrapC (x86_64), native64asan: '
+                 'build-linux64-asan/ScrapC (AddressSanitizer, its report in the log, which=wine)'},
          'map': {'type': 'string', 'description': 'a level for -imap: (FZ or Levels/FZ)'},
          'args': {'type': 'array', 'items': {'type': 'string'}, 'description': 'more arguments of the game'},
          'env': {'type': 'object', 'description': 'more environment variables (SCRAP_VK_DEBUG, SCRAP_RD_DUMP, ...)'},

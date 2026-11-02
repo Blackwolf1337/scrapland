@@ -484,7 +484,7 @@ static uint32_t Monitor_DrawLooked(cMonitorScorer *self, cEntity *target, cEntit
 	if (!isCar) {
 		return textColor;
 	}
-	uint32_t c = cVehicleO648_IsStale(Veh(target)->o648) ? textColor : lifeColor;
+	uint32_t c = cVehicleO648_IsStale(&Veh(target)->o648) ? textColor : lifeColor;
 	CFont_PrintfColorShadow(self->bigFont, self->base.x + 8.0f, self->base.y + 6.0f, c, "%d", WLife(e)->life);
 	if (!eIsCar) {
 		return textColor;

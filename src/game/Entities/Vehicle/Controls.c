@@ -639,7 +639,7 @@ static void Ctl_Axes(cVehicleControls *c, cEntity *v, cActionSet *set, int slot,
 		return;
 	}
 	cEntity *t = NULL;
-	if (!cVehicleO648_IsBlocked(Veh(v)->o648)) {
+	if (!cVehicleO648_IsBlocked(&Veh(v)->o648)) {
 		t = World_FindEntity(Veh(v)->target);
 	}
 	byte attack = 0;
@@ -772,14 +772,14 @@ void cVehicleControls_Tick(cVehicleControls *c, cEntity *v, float dt) {
 	c->fire = Ctl_Value(set, CTL_FIRE, slot) > 0.5f;
 	Ctl_Weapons(c, v, set, slot);
 	if (Ctl_Pressed(set, CTL_NEXT_TARGET, slot)) {
-		cVehicleO648_Cycle(Veh(v)->o648, 1);
+		cVehicleO648_Cycle(&Veh(v)->o648, 1);
 	}
 	if (Ctl_Pressed(set, CTL_PREV_TARGET, slot)) {
-		cVehicleO648_Cycle(Veh(v)->o648, 0);
+		cVehicleO648_Cycle(&Veh(v)->o648, 0);
 	}
 	c->viewTarget = Ctl_Value(set, CTL_VIEW_TARGET, slot) > 0.5f;
 	if (c->viewTarget) {
-		cVehicleO648_PickInView(Veh(v)->o648);
+		cVehicleO648_PickInView(&Veh(v)->o648);
 	}
 	c->viewTarget = c->viewTarget || Ctl_Value(set, CTL_NEXT_TARGET, slot) > 0.5f;
 	c->cm = Ctl_Value(set, CTL_CM, slot) > 0.5f;

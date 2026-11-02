@@ -683,7 +683,7 @@ void cRadarScorer_DrawRadar(cRadarScorer *self, cEntity *target, cEntity *cam) {
 	if (isCar && Veh(target)->target[0]) {
 		cEntity *e = World_FindEntity(Veh(target)->target);
 		if (e && Entity_IsType(e, TYEN_WITH_LIFE)) {
-			uint32_t c = cVehicleO648_IsStale(Veh(target)->o648) ? 0xffffff00 : 0xffc0c000;
+			uint32_t c = cVehicleO648_IsStale(&Veh(target)->o648) ? 0xffffff00 : 0xffc0c000;
 			Radar_Icon(self, e, 1, g_RadarAngle, 3, 1, c, c, 1);
 		}
 	}

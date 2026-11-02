@@ -248,9 +248,9 @@ void cItemEntity_NetRead(cItemEntity *self, void *msg, int unused) {
 	}
 }
 
-void cItemEntity_NetWrite(cItemEntity *self, int unused, void *msg, byte full) {
-	(void)unused;
-	byte all = (0.0f >= (float)self->syncTicks) | full;
+void cItemEntity_NetWrite(cItemEntity *self, float dist2, void *msg, int full) {
+	(void)dist2;
+	byte all = (0.0f >= (float)self->syncTicks) | (byte)full;
 	self->obj.net->vftable->Write(self->obj.net, (0.0f >= self->respawn) + 2, Item_Ent(self), msg, all);
 	if (self->syncTicks > 0) {
 		self->syncTicks--;
