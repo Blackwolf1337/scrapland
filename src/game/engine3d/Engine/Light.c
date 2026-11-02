@@ -316,6 +316,9 @@ int Light_Select(const vec3_t *pos, int sector, const vec3_t *center, float radi
 	return n;
 }
 
+extern const color4_t colorRva_3d7bf0;
+extern const color4_t colorRva_3d7c00;
+extern const color4_t colorRva_3d7c10;
 int Light_SetDefault(byte on) {
 	/* the directions of the three lights of EnableMonitorLights */
 	static const uint32_t dirBits[3][3] = {
@@ -324,8 +327,8 @@ int Light_SetDefault(byte on) {
 		{ 0xb99a05ae, 0xbe807faa, 0xbf77ce74 },
 	};
 	/* their colors, constants of the exe */
-	const color4_t *colors[3] = { GAME_ARRAY(color4_t, colorRva_3d7c10), GAME_ARRAY(color4_t, colorRva_3d7c00),
-		GAME_ARRAY(color4_t, colorRva_3d7bf0) };
+	const color4_t *colors[3] = { (&colorRva_3d7c10), (&colorRva_3d7c00),
+		(&colorRva_3d7bf0) };
 
 	E3D_FlushBatch();
 	E3D_SetShadowLight(NULL, 0);

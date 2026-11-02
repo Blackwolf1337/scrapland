@@ -26,7 +26,8 @@ SD_SIZE(cSaveGameInfo, 0x48);
 #define SAVE_MAGIC "Scrapland savegame"
 #define SAVE_SLOTS 7
 
-#define g_SaveVarTable (&GAME_GLOBAL(HashTable, g_SaveVarTable))	/* of cPtrItem, 457 slots */
+extern HashTable g_SaveVarTable;
+#define g_SaveVarTable (&g_SaveVarTable)	/* of cPtrItem, 457 slots */
 extern cSaveVar *g_SaveVars;
 extern int g_SaveVarCount;
 #define g_SaveDesc (((cString *)&GVar_LastSaveGameName.value))	/* the description of the save loaded last */

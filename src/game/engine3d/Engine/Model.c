@@ -34,7 +34,7 @@ extern cGVar GVar_R_SkipAnimInterp;
 #define g_AnimPause (GVar_R_SkipAnimInterp.value.i)	/* the animations stand still */
 extern cGVar GVar_R_AnimInterpMult;
 #define g_AnimSpeed (GVar_R_AnimInterpMult.value.f)	/* the speed of all animations */
-#define g_FrameTime GAME_GLOBAL(float, g_FrameMs)	/* the time of the frame */
+#define g_FrameTime g_FrameMs	/* the time of the frame */
 
 static CAnimSlot *Model_Slot(CModel *self, uint32_t i) {
 	CHECK(self->slots.p && i < (uint32_t)self->slots.n);

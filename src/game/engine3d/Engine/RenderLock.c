@@ -24,9 +24,9 @@ extern cGVar GVar_R_VideoLockBuf;
 extern cGVar GVar_R_VideoLockShow;
 #define g_RenderLockNoise (GVar_R_VideoLockShow.value.i)
 extern void * g_TextLock[7];	/* RENDERLOCK_MAX render targets */
-#define g_TextMem (GAME_ARRAY(void *, g_TextLock)[3])		/* system memory */
-#define g_TextBack (GAME_ARRAY(void *, g_TextLock)[4])		/* in the format of the back buffer */
-#define g_TextLockIdx (*(int *)&GAME_ARRAY(void *, g_TextLock)[5])
+#define g_TextMem (g_TextLock[3])		/* system memory */
+#define g_TextBack (g_TextLock[4])		/* in the format of the back buffer */
+#define g_TextLockIdx (*(int *)&g_TextLock[5])
 extern const int32_t g_RenderLockRect[4];	/* 0, 0, 4, 4 */
 
 /* D3DLOCKED_RECT */

@@ -1185,13 +1185,20 @@ extern int g_ShadowMapBounces;
 extern float g_ShadowMapCoefRad;
 extern int g_ShadowMapUseTxf;
 extern int g_ShadowsDestAlpha;
-#define g_FlaresSizeDef GAME_GLOBAL(float, g_FlareSize)
-#define g_FlaresAttenDist GAME_GLOBAL(int, g_FlareAttenDist)
-#define g_FlaresAttenIni GAME_GLOBAL(float, g_FlareAttenDistIni)
-#define g_FlaresAttenEnd GAME_GLOBAL(float, g_FlareAttenDistEnd)
-#define g_FlaresFadeIn GAME_GLOBAL(float, g_FlareFadeIn)
-#define g_FlaresFadeOut GAME_GLOBAL(float, g_FlareFadeOut)
-#define g_FlaresShowInfo GAME_GLOBAL(int, g_FlareShowInfo)
+extern float g_FlareSize;
+#define g_FlaresSizeDef g_FlareSize
+extern int g_FlareAttenDist;
+#define g_FlaresAttenDist g_FlareAttenDist
+extern float g_FlareAttenDistIni;
+#define g_FlaresAttenIni g_FlareAttenDistIni
+extern float g_FlareAttenDistEnd;
+#define g_FlaresAttenEnd g_FlareAttenDistEnd
+extern float g_FlareFadeIn;
+#define g_FlaresFadeIn g_FlareFadeIn
+extern float g_FlareFadeOut;
+#define g_FlaresFadeOut g_FlareFadeOut
+extern int g_FlareShowInfo;
+#define g_FlaresShowInfo g_FlareShowInfo
 
 void Engine_LoadIni(const char *name, const char *dir) {
 	static const char *const paths[4] = { "ruta1", "ruta2", "ruta3", "ruta4" };

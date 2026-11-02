@@ -24,8 +24,8 @@
 #define MAX_ZONES 0x80
 
 /* the sector counts by their name tags (the sky ones are g_PortalUnion) */
-#define g_NumEndSectors (*(int *)&GAME_ARRAY(void *, g_Zones)[130])
-#define g_NumOutSectors (*(int *)&GAME_ARRAY(void *, g_Zones)[131])
+#define g_NumEndSectors (*(int *)&((void * *)g_Zones)[130])
+#define g_NumOutSectors (*(int *)&((void * *)g_Zones)[131])
 /* the projection and the viewport narrowed to the rectangle of each seen sector */
 extern cGVar GVar_R_PortalClip;
 #define g_PortalClip (GVar_R_PortalClip.value.i)

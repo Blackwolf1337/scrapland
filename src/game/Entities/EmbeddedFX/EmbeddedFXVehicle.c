@@ -462,6 +462,10 @@ static int Sirens_IsPolice(cEntity *v) {
 	return Str_EqualW(((vehicleName_t)(*(void ***)v)[0xf4 / 4])(v, 0), "P_Police");
 }
 
+extern uint32_t data_428550[9];
+extern uint32_t data_428574[9];
+extern uint32_t data_428598[9];
+extern uint32_t data_4285bc[9];
 void cFXVehicleSirens_Update(cFXVehicleSirens *self) {
 	cEntity *v = self->owner->owner;
 	vec3_t pos, rot;
@@ -489,11 +493,11 @@ void cFXVehicleSirens_Update(cFXVehicleSirens *self) {
 	}
 	if (((0.1f > self->lastTime && self->time > 0.1f) || (0.2f > self->lastTime && self->time > 0.2f)) &&
 		Sirens_IsPolice(v)) {
-		Sirens_Flash(self, &self->pos[0], alarm, GAME_ARRAY(uint32_t, data_428574), GAME_ARRAY(uint32_t, data_428550));
+		Sirens_Flash(self, &self->pos[0], alarm, data_428574, data_428550);
 	}
 	if (((0.6f > self->lastTime && self->time > 0.6f) || (0.7f > self->lastTime && self->time > 0.7f)) &&
 		Sirens_IsPolice(v)) {
-		Sirens_Flash(self, &self->pos[1], alarm, GAME_ARRAY(uint32_t, data_4285bc), GAME_ARRAY(uint32_t, data_428598));
+		Sirens_Flash(self, &self->pos[1], alarm, data_4285bc, data_428598);
 	}
 	self->lastTime = self->time;
 }
@@ -612,6 +616,7 @@ static void Probe_Flash(CGameParticles *p, int src, int i1, int i2, float frac, 
 		((uint32_t)c << 24) | 0xff0000, 5, 0.0f);
 }
 
+extern uint32_t cEmbeddedFXVehicleProbe_Update_4285e0[18];
 void cEmbeddedFXVehicleProbe_Update(cEmbeddedFXVehicleSub *base) {
 	cEmbeddedFXVehicleProbe *self = (cEmbeddedFXVehicleProbe *)base;
 	CGameModel *model = Obj_Vtbl(self->fx->owner)->GetModel(self->fx->owner);
@@ -670,7 +675,7 @@ void cEmbeddedFXVehicleProbe_Update(cEmbeddedFXVehicleSub *base) {
 				p->spriteIni = 2;
 				p->spriteEnd = 2;
 				CGameParticles_SetColorRampOn(p, 1);
-				CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, cEmbeddedFXVehicleProbe_Update_4285e0));
+				CGameParticles_SetColorRamp(p, cEmbeddedFXVehicleProbe_Update_4285e0);
 				CGameParticles_Apply(p);
 				CGameParticles_EmitDt(p, 1, 0, (float)j / 3.0f);
 			}

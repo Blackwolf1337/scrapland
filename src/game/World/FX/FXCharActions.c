@@ -1901,6 +1901,7 @@ static void FXA_Jitter(vec3_t *p, float r) {
 	p->z = p->z + d->z * r;
 }
 
+extern uint32_t cObjElementFXBettyAttack_Emit_4307d0[18];
 void cObjElementFXBettyAttack_Emit(cObjElementFXBettyAttack *self, float x, float y, float z) {
 	CGameParticles *sp = &self->particles;
 	vec3_t v, ang, out;
@@ -2150,7 +2151,7 @@ void cObjElementFXBettyAttack_Update(cObjElementFX *base, cDebris *d, float dt) 
 			sp->spriteEnd = 0x33;
 			sp->lifeTime = FXA_Rand(0.04999995231628418, 0.85000002384185791);
 			CGameParticles_SetColorRampOn(sp, 1);
-			CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXBettyAttack_Emit_4307d0) + (crt_rand() & 1) * 9);
+			CGameParticles_SetColorRamp(sp, cObjElementFXBettyAttack_Emit_4307d0 + (crt_rand() & 1) * 9);
 			CGameParticles_Apply(sp);
 			CGameParticles_EmitN(sp, 1, 0);
 		}
@@ -2216,6 +2217,7 @@ static void FXA_Brake(CGameParticles *sp, float k) {
 	sp->initAccMax = sp->initAccMin;
 }
 
+extern uint32_t cObjElementFXPoliceGearConversion_Start_4305d8[27];
 void cObjElementFXPoliceGearConversion_Update(cObjElementFX *base, cDebris *d, float dt) {
 	cObjElementFXPoliceGearConversion *self = (cObjElementFXPoliceGearConversion *)base;
 	vec3_t p, rot, v, dir, o, ang, tmp, verts[6];
@@ -2379,7 +2381,7 @@ void cObjElementFXPoliceGearConversion_Update(cObjElementFX *base, cDebris *d, f
 				sp->rotVar = FXA_Rand(1.0471975803375244, -0.52359879016876221);
 				CGameParticles_Apply(sp);
 				CGameParticles_SetColorRampOn(sp, 1);
-				CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXPoliceGearConversion_Start_4305d8) + crt_rand() % 3 * 9);
+				CGameParticles_SetColorRamp(sp, cObjElementFXPoliceGearConversion_Start_4305d8 + crt_rand() % 3 * 9);
 				CGameParticles_EmitDt(sp, 1, 1, FXA_Rand(0.019999999552965164, 0.0));
 			}
 		}
@@ -2413,7 +2415,7 @@ void cObjElementFXPoliceGearConversion_Update(cObjElementFX *base, cDebris *d, f
 				sp->spriteEnd = sprite;
 				CGameParticles_Apply(sp);
 				CGameParticles_SetColorRampOn(sp, 1);
-				CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXPoliceGearConversion_Start_4305d8) + crt_rand() % 3 * 9);
+				CGameParticles_SetColorRamp(sp, cObjElementFXPoliceGearConversion_Start_4305d8 + crt_rand() % 3 * 9);
 				CGameParticles_EmitDt(sp, 1, 0, FXA_Rand(0.10000000894069672, 0.05000000074505806));
 			}
 		}
@@ -2438,7 +2440,7 @@ void cObjElementFXPoliceGearConversion_Update(cObjElementFX *base, cDebris *d, f
 				float rad = 0.0f;
 				for (int j = 0; j < 6; j++) {
 					const vec3_t *vv = &verts[j];
-					CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXPoliceGearConversion_Start_4305d8) + (crt_rand() & 1) * 9);
+					CGameParticles_SetColorRamp(sp, cObjElementFXPoliceGearConversion_Start_4305d8 + (crt_rand() & 1) * 9);
 					sp->initPosMin = *vv;
 					sp->initPosMax = sp->initPosMin;
 					float kv = FXA_Rand(15.0, 15.0);
@@ -2650,7 +2652,7 @@ void cObjElementFXPoliceGearConversion_Start(cObjElementFXPoliceGearConversion *
 		sp->rotVar = rv;
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXPoliceGearConversion_Start_4305d8) + crt_rand() % 3 * 9);
+		CGameParticles_SetColorRamp(sp, cObjElementFXPoliceGearConversion_Start_4305d8 + crt_rand() % 3 * 9);
 		CGameParticles_EmitDt(sp, 1, 1, FXA_Rand((double)0.02f, 0.0) + 0.6f);
 	}
 	/* the sparks around */
@@ -2687,7 +2689,7 @@ void cObjElementFXPoliceGearConversion_Start(cObjElementFXPoliceGearConversion *
 		sp->rotVar = rv;
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXPoliceGearConversion_Start_4305d8) + (crt_rand() & 1) * 9);
+		CGameParticles_SetColorRamp(sp, cObjElementFXPoliceGearConversion_Start_4305d8 + (crt_rand() & 1) * 9);
 		CGameParticles_EmitDt(sp, 1, 1, FXA_Rand((double)0.01f, (double)0.01f) + 0.6f);
 		a = a + 0.157079637f;
 	} while (6.28318548f > a);
@@ -3742,6 +3744,7 @@ void cObjElementFXMessengerTakeDataPack_Update(cObjElementFX *base, cDebris *d, 
 #define FXA_RAMP_MERCURY 0x430668		/* [2] */
 
 /* a drop of mercury: the sprite and size, the rotation, the ramp and the emission */
+extern uint32_t FXMercenary_Drop_430668[18];
 static void FXMercenary_Drop(CGameParticles *sp, float life, byte second) {
 	sp->lifeTime = life;
 	sp->sizeLife = 1.0f;
@@ -3771,7 +3774,7 @@ static void FXMercenary_Drop(CGameParticles *sp, float life, byte second) {
 	}
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, FXMercenary_Drop_430668) + (crt_rand() & 1) * 9);
+	CGameParticles_SetColorRamp(sp, FXMercenary_Drop_430668 + (crt_rand() & 1) * 9);
 	CGameParticles_EmitDt(sp, 1, 0, FXA_Rand((double)0.05f, 0.0));
 }
 

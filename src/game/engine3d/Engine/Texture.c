@@ -43,7 +43,8 @@ extern int g_TexPurgeFrame;
 /* keep the CBmp pixels after the device texture is made */
 extern int g_TexKeepBitmaps;
 /* the [video] settings Sharpen, ErrDif, TextBPP, TextOpBPP */
-#define g_TexSharpen GAME_GLOBAL(int, g_Sharpen)
+extern int g_Sharpen;
+#define g_TexSharpen g_Sharpen
 extern int g_TexErrDif;
 extern int g_TextBPP;
 extern int g_TextOpBPP;

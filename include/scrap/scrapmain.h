@@ -86,14 +86,15 @@ extern CPsaImage *g_Watermark;
 extern typeof(void (*)(void)) g_EngCallbacks[4];	/* [4], 2 and 3 are g_LoadingDraw2 and g_LoadingDraw */
 #define g_DrawProgressBar GAME_GLOBAL_IN(byte, group_4a8324, 0)
 #define g_ResetPending GAME_GLOBAL_IN(byte, group_4a8324, 1)	/* Video_SetCurrentMode: reset the device at the next frame */
-#define g_ProgressBarCount GAME_GLOBAL(int, g_LoadingCount)
+#define g_ProgressBarCount g_LoadingCount
 extern void *g_MapTextDataFile;	/* FILE of the exe's CRT */
 extern int g_MapTextSaving;
 extern int g_VideoBufferSize;
 extern byte g_CallbacksOn;
 extern char g_ScreenshotName[256];	/* 0x100 */
 extern char g_DVFName[256];		/* 0x100 */
-#define g_VideoStatus GAME_GLOBAL(int, g_BspSectorSeen)
+extern int g_BspSectorSeen;
+#define g_VideoStatus g_BspSectorSeen
 extern int g_LoadingScreen;	/* the last random loading screen */
 #define g_M3dIni GAME_STR(str_431bf0)		/* "m3d.ini" */
 /* the video to play at the start and after a level ("" when played, unless bit 0 of its flags) */

@@ -137,7 +137,7 @@ SD_OFFSET(CD3DApplication, vsync, 0x2a5c8);
 SD_SIZE(CD3DApplication, 0x2a5dc);
 
 /* g_pD3DApp of d3dapp.cpp: the application of the engine3d (a CMotorApp, g_Engine3D of Engine.c) */
-#define g_Engine GAME_GLOBAL(CD3DApplication *, g_Engine)
+extern struct CD3DApplication *g_Engine;
 
 /* dxutil.cpp */
 /* the counter of the engine advanced by 1/fps seconds per call (frames of a fixed length), 0: the real counter

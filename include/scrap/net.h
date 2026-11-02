@@ -346,8 +346,10 @@ extern uint32_t g_NetWaitTime;	/* 5000: no answer that long, NETCLIENT_WAITING *
 extern uint32_t g_NetCloseTime;	/* 2000: after the goodbye */
 extern uint32_t g_NetSendDelay;	/* 100 */
 extern netuserfactory_t g_NetUserFactory;
-#define g_NetMsg (&GAME_GLOBAL(cFileMem, g_NetMsg))	/* the memory file messages are built and read in */
-#define g_NetStaticBuffer (&GAME_ARRAY(cStaticBuffer, cStaticBuffer_PyStaticBuffer)[1])
+extern cFileMem g_NetMsg;
+#define g_NetMsg (&g_NetMsg)	/* the memory file messages are built and read in */
+extern cStaticBuffer cStaticBuffer_PyStaticBuffer[2];
+#define g_NetStaticBuffer (&cStaticBuffer_PyStaticBuffer[1])
 #define g_PyStaticBuffer (&GAME_GLOBAL_IN(cStaticBuffer, cStaticBuffer_PyStaticBuffer, 0))
 extern vec3_t g_NetOrigin;
 extern const float g_NetMaxDist2;	/* the distance (squared) of the near entities */
@@ -370,9 +372,12 @@ extern int g_NetStatRecv;
 extern int g_NetStatRecvSlot;
 /* transport.cpp */
 extern uint32_t g_NetSocket;
-#define g_NetRandom (&GAME_GLOBAL(cNetRandom, g_NetRandom))
-#define g_NetLocalAddr (&GAME_GLOBAL(NetAddr, g_NetLocalAddr))
-#define g_NetServerAddr (&GAME_GLOBAL(NetAddr, g_NetServerAddr))
+extern cNetRandom g_NetRandom;
+#define g_NetRandom (&g_NetRandom)
+extern NetAddr g_NetLocalAddr;
+#define g_NetLocalAddr (&g_NetLocalAddr)
+extern NetAddr g_NetServerAddr;
+#define g_NetServerAddr (&g_NetServerAddr)
 extern int g_NetMode;		/* NETMODE_ */
 extern int g_NetMasterOn;
 extern int g_NetMaxClients;
@@ -380,7 +385,8 @@ extern int g_NetNumClients;
 extern NetAddr *g_NetClientAddrs;	/* [g_NetMaxClients], family 0: free */
 extern NetPingServer *g_NetPingServers;
 extern uint32_t g_NetBrowseStart;
-#define g_NetMasterAddr (&GAME_GLOBAL(NetAddr, g_NetMasterAddr))
+extern NetAddr g_NetMasterAddr;
+#define g_NetMasterAddr (&g_NetMasterAddr)
 extern byte g_NetServerFullPkt[5];	/* 5 bytes: 0, 0, 0, 0, 8 */
 extern byte g_NetNeedPasswordPkt[5];	/* 5 bytes: 0, 0, 0, 0, 9 */
 

@@ -2438,6 +2438,7 @@ static void Bsp_LogNodes(CScene *scn, const char *fmt, byte done) {
 	}
 }
 
+extern float g_ShadowMapBrightness;
 void Bsp_Create(void) {
 	char buf[0x104];
 
@@ -2449,8 +2450,8 @@ void Bsp_Create(void) {
 		Bprintf(buf, sizeof(buf), "Compile the light maps?\n\n calculate = %d\n scale = %.3f\n resolution = %.3f\n"
 			" brightness = %.2f\n gamma = %.2f\n textures = %d x %d\n bounces = %d\n radiosity = %d\n",
 			g_ShadowMapCalculate, (double)g_ShadowMapScale, (double)g_ShadowMapRes,
-			(double)GAME_GLOBAL(float, g_ShadowMapBrightness), (double)GAME_GLOBAL(float, g_ShadowMapGamma),
-			g_ShadowMapTexX, g_ShadowMapTexY, GAME_GLOBAL(int, g_ShadowMapBounces), g_ShadowMapRadiosity);
+			(double)g_ShadowMapBrightness, (double)g_ShadowMapGamma,
+			g_ShadowMapTexX, g_ShadowMapTexY, g_ShadowMapBounces, g_ShadowMapRadiosity);
 		if (Plat_MessageBox(buf, "Light maps", 0x24) != 6) {
 			g_ShadowMapUse = 0;
 			return;
@@ -2538,7 +2539,7 @@ void Bsp_Create(void) {
 
 extern cGVar GVar_LightmapDebugTex;
 #define g_LightmapDebugTex (GVar_LightmapDebugTex.value.i)	/* gvar */
-#define g_BspLinks GAME_GLOBAL(int, g_BspNumLinks)		/* the region links (radiosity code) */
+#define g_BspLinks g_BspNumLinks		/* the region links (radiosity code) */
 
 /* exe functions of other files with their prototypes there */
 
@@ -2551,11 +2552,11 @@ void CBsp_AdjustGamma(CBsp *self) {
 		E3D_DebugPrintf("ajustar gamma:  %d / %d  \r", ++i, n);
 		if (list->light2.img) {
 			CBmpFlt2_Blend(&list->light2, 0, 0, &list->light, 0, 0, list->light2.width, list->light2.height, 0x100, -0x100);
-			CBmpFlt2_Scale(&list->light2, GAME_GLOBAL(float, g_ShadowMapBrightness));
-			CBmpFlt2_Gamma(&list->light2, GAME_GLOBAL(float, g_ShadowMapGamma), 1.0f);
+			CBmpFlt2_Scale(&list->light2, g_ShadowMapBrightness);
+			CBmpFlt2_Gamma(&list->light2, g_ShadowMapGamma, 1.0f);
 		}
-		CBmpFlt2_Scale(&list->light, GAME_GLOBAL(float, g_ShadowMapBrightness));
-		CBmpFlt2_Gamma(&list->light, GAME_GLOBAL(float, g_ShadowMapGamma), 1.0f);
+		CBmpFlt2_Scale(&list->light, g_ShadowMapBrightness);
+		CBmpFlt2_Gamma(&list->light, g_ShadowMapGamma, 1.0f);
 		if (g_LightmapDebugTex) {
 			Img_Free(&list->light2, 0xc);
 			CBmpFlt2_Resample(&list->light2, &list->light, 0xf);
@@ -2874,19 +2875,19 @@ void CBsp_SaveIni(CBsp *self) {
 	CIniFile_ctorLoad(&ini, name, NULL);
 	int n = CIniFile_SetFloat(&ini, s, "escala", g_ShadowMapScale, 3);
 	n += CIniFile_SetFloat(&ini, s, "resolucion", g_ShadowMapRes, 3);
-	n += CIniFile_SetFloat(&ini, s, "gamma", GAME_GLOBAL(float, g_ShadowMapGamma), 2);
-	n += CIniFile_SetFloat(&ini, s, "brillo", GAME_GLOBAL(float, g_ShadowMapBrightness), 2);
-	n += CIniFile_SetBool(&ini, s, "sombras_suaves", GAME_GLOBAL(int, g_ShadowMapSoft));
+	n += CIniFile_SetFloat(&ini, s, "gamma", g_ShadowMapGamma, 2);
+	n += CIniFile_SetFloat(&ini, s, "brillo", g_ShadowMapBrightness, 2);
+	n += CIniFile_SetBool(&ini, s, "sombras_suaves", g_ShadowMapSoft);
 	n += CIniFile_SetInt(&ini, s, "text_tam_x", g_ShadowMapTexX);
 	n += CIniFile_SetInt(&ini, s, "text_tam_y", g_ShadowMapTexY);
 	n += CIniFile_SetBool(&ini, s, "radiosidad", g_ShadowMapRadiosity);
-	n += CIniFile_SetBool(&ini, s, "ilum_global", GAME_GLOBAL(int, g_ShadowMapIllumGlobal));
-	n += CIniFile_SetBool(&ini, s, "no_luz_amb", GAME_GLOBAL(int, g_ShadowMapNoLightAmb));
+	n += CIniFile_SetBool(&ini, s, "ilum_global", g_ShadowMapIllumGlobal);
+	n += CIniFile_SetBool(&ini, s, "no_luz_amb", g_ShadowMapNoLightAmb);
 	n += CIniFile_SetBool(&ini, s, "modulate4x", g_ShadowMapModulate4x);
 	n += CIniFile_SetFloat(&ini, s, "modulate_coef", g_ShadowMapModulate4x ? 0.25f : 1.0f, 3);
 	n += CIniFile_SetFloat(&ini, s, "modulate_max", g_ShadowMapModulate4x ? 1.0f : 1.2f, 3);
-	n += CIniFile_SetInt(&ini, s, "rebotes", GAME_GLOBAL(int, g_ShadowMapBounces));
-	n += CIniFile_SetFloat(&ini, s, "coef_rad", GAME_GLOBAL(float, g_ShadowMapCoefRad), 3);
+	n += CIniFile_SetInt(&ini, s, "rebotes", g_ShadowMapBounces);
+	n += CIniFile_SetFloat(&ini, s, "coef_rad", g_ShadowMapCoefRad, 3);
 	n += CIniFile_SetBool(&ini, s, "calc_lmap2", g_CalcLmap2);
 	n += CIniFile_SetBool(&ini, s, "usar_txf", g_ShadowMapUseTxf);
 	if (n) {

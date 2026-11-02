@@ -1894,7 +1894,7 @@ done:
 
 }
 
-#define g_RadiusShipGraph GAME_GLOBAL(float, g_NWNodeRadius)			/* RADIUS_SHIP_GRAPH */
+#define g_RadiusShipGraph g_NWNodeRadius			/* RADIUS_SHIP_GRAPH */
 extern cGVar GVar_DepthPathRouteOutDoorAI;
 #define g_DepthPathRouteOutDoorAI (GVar_DepthPathRouteOutDoorAI.value.i)
 #define g_DepthPathRouteOutDoorAIInit (GVar_DepthPathRouteOutDoorAI.def.i)	/* its default */

@@ -10,7 +10,7 @@
 #include "scrap/misc.h"
 
 #define BSP2_EPS 1e-4f
-#define BSP2_COLORS (GAME_ARRAY(const uint32_t, g_BspColors))	/* 16 */
+#define BSP2_COLORS (g_BspColors)	/* 16 */
 
 static uint32_t Bsp2_Bits(float f) {
 	uint32_t u;

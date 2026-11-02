@@ -18,9 +18,22 @@ for f, names in need.items():
     names = [n for n in sorted(names) if not re.search(r'^extern [^;]*\b%s\b' % n, s, re.M)]
     if not names:
         continue
-    incs = list(re.finditer(r'^#include [^\n]*\n', s, re.M))
-    at = incs[-1].end() if incs else 0
-    block = ''.join(d.extern_of(objs[n]) + '\n' for n in names)
-    s = s[:at] + ('\n' if incs else '') + block + s[at:]
+    # before the top-level construct (a #define line or a declaration) of the first use, so its types are known
+    decls = d.top_decls(s)
+    c = d.strip_comments(s)
+    for n in names:
+        m = re.search(r'\b%s\b' % n, c)
+        if not m:
+            continue
+        at = m.start()
+        top = next((a for a, b, t in decls if a <= at < b), None)
+        if top is None:
+            top = c.rfind('\n', 0, at) + 1
+            while top > 0 and c[top - 2] == '\\':
+                top = c.rfind('\n', 0, top - 1) + 1
+        decl = d.extern_of(objs[n]) + '\n'
+        s = s[:top] + decl + s[top:]
+        c = c[:top] + ' ' * len(decl) + c[top:]
+        decls = d.top_decls(s)
     open(f, 'w').write(s)
     print(d.rel(f), ' '.join(names))

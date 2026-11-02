@@ -12,7 +12,8 @@
 #include "scrap/weapons.h"
 
 /* the draw handler of each character action: (item, player) */
-#define g_SpecialActionDraw (GAME_ARRAY(void (*)(cSpecialActionScorer *, int), g_SpecialActionDraw))
+extern typeof(void (*)(cSpecialActionScorer *, int)) g_SpecialActionDraw[15];
+#define g_SpecialActionDraw (g_SpecialActionDraw)
 
 static const char *const s_InactiveColors[4] = {"InactiveColorRed", "InactiveColorGreen", "InactiveColorBlue",
 	"InactiveColorAlpha"};

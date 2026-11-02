@@ -56,10 +56,10 @@ extern cGVar GVar_ShowProgressBar;
 extern int g_LoadingCount;		/* the steps of Loading_Step(-1) */
 extern cGVar GVar_ProgressBar;
 #define g_LoadingTotal (GVar_ProgressBar.value.i)
-#define g_LoadingDrawOn GAME_GLOBAL(byte, g_CallbacksOn)
+#define g_LoadingDrawOn g_CallbacksOn
 typedef void (*loadingDraw_t)(void);
-#define g_LoadingDraw (*(loadingDraw_t *)&GAME_ARRAY(void (*)(void), g_EngCallbacks)[3])	/* draws the loading screen without the bar */
-#define g_LoadingDraw2 (*(loadingDraw_t *)&GAME_ARRAY(void (*)(void), g_EngCallbacks)[2])
+#define g_LoadingDraw (*(loadingDraw_t *)&g_EngCallbacks[3])	/* draws the loading screen without the bar */
+#define g_LoadingDraw2 (*(loadingDraw_t *)&g_EngCallbacks[2])
 
 /* the world node info */
 void WorldInfo_FromDummy(WorldNodeInfo *info, const WorldDummy *dummy);

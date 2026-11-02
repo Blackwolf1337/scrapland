@@ -542,6 +542,8 @@ static void FXConversion_Spark(CGameParticles *sp, const vec3_t *v, double range
 #define FXCONVERSION_SPARK_T 0.005000000353902578f
 #define FXCONVERSION_SPARK_VERTS 12
 
+extern uint32_t cObjElementFXCharacterConversion_Emit_4303f8[18];
+extern uint32_t cObjElementFXCharacterConversion_Emit_430464[19];
 void cObjElementFXCharacterConversion_Update(cObjElementFX *base, cDebris *d, float dt) {
 	cObjElementFXCharacterConversion *self = (cObjElementFXCharacterConversion *)base;
 	vec3_t tmp, tmp2, pa, pb, D, nOut, verts[FXCONVERSION_SPARK_VERTS];
@@ -693,7 +695,7 @@ void cObjElementFXCharacterConversion_Update(cObjElementFX *base, cDebris *d, fl
 				sp->spriteEnd = sprite;
 				CGameParticles_Apply(sp);
 				CGameParticles_SetColorRampOn(sp, 1);
-				CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXCharacterConversion_Emit_4303f8) + 9 * (crt_rand() & 1));
+				CGameParticles_SetColorRamp(sp, cObjElementFXCharacterConversion_Emit_4303f8 + 9 * (crt_rand() & 1));
 				CGameParticles_EmitDt(sp, 1, 0, FXC_Rand(0.10000000149011612, 0.0));
 			}
 		}
@@ -1229,6 +1231,7 @@ static void FXDeath_Dust(CGameParticles *sp, const vec3_t *v, float ox, float oy
 }
 
 /* a glow at the hand of the dead character */
+extern uint32_t FXDeath_Glow_430288[36];
 static void FXDeath_Glow(CGameParticles *sp, const vec3_t *v, float r, double iniRange, double iniAdd, double endRange,
 	double endAdd, byte sprite) {
 	FXC_Still(sp, v->x, v->y, v->z);
@@ -1242,7 +1245,7 @@ static void FXDeath_Glow(CGameParticles *sp, const vec3_t *v, float r, double in
 	sp->spriteEnd = sprite;
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, FXC_Ramp(GAME_ARRAY(uint32_t, FXDeath_Glow_430288), 0));
+	CGameParticles_SetColorRamp(sp, FXC_Ramp(FXDeath_Glow_430288, 0));
 	CGameParticles_EmitN(sp, 1, 0);
 }
 
@@ -1396,7 +1399,7 @@ void cObjElementFXCharacterDeath_Update(cObjElementFX *base, cDebris *d, float d
 			sp->spriteEnd = sprite;
 			CGameParticles_Apply(sp);
 			CGameParticles_SetColorRampOn(sp, 1);
-			CGameParticles_SetColorRamp(sp, FXC_Ramp(GAME_ARRAY(uint32_t, FXDeath_Glow_430288), crt_rand() & 1));
+			CGameParticles_SetColorRamp(sp, FXC_Ramp(FXDeath_Glow_430288, crt_rand() & 1));
 			CGameParticles_EmitN(sp, 1, 0);
 			sp = &self->particles2;
 			FXDeath_Dust(sp, v, ox, oy, oz, 4.0, 0.0, 0.95f, q);
@@ -1407,7 +1410,7 @@ void cObjElementFXCharacterDeath_Update(cObjElementFX *base, cDebris *d, float d
 			sp->rotVar = FXC_Rand(1.5707963705062866, -0.78539818525314331);
 			CGameParticles_Apply(sp);
 			CGameParticles_SetColorRampOn(sp, 1);
-			CGameParticles_SetColorRamp(sp, FXC_Ramp(GAME_ARRAY(uint32_t, FXDeath_Glow_430288), 0));
+			CGameParticles_SetColorRamp(sp, FXC_Ramp(FXDeath_Glow_430288, 0));
 			CGameParticles_EmitN(sp, 1, 0);
 		}
 	}
@@ -1441,7 +1444,7 @@ void cObjElementFXCharacterDeath_Update(cObjElementFX *base, cDebris *d, float d
 			sp->spriteEnd = 0x28;
 			CGameParticles_Apply(sp);
 			CGameParticles_SetColorRampOn(sp, 1);
-			CGameParticles_SetColorRamp(sp, FXC_Ramp(GAME_ARRAY(uint32_t, FXDeath_Glow_430288), crt_rand() % 4));
+			CGameParticles_SetColorRamp(sp, FXC_Ramp(FXDeath_Glow_430288, crt_rand() % 4));
 			CGameParticles_EmitN(sp, 1, 0);
 		}
 	}
@@ -1495,7 +1498,7 @@ void cObjElementFXCharacterDeath_Update(cObjElementFX *base, cDebris *d, float d
 		sp->sparkVelScale = 10.0f;
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, FXC_Ramp(GAME_ARRAY(uint32_t, FXDeath_Glow_430288), 0));
+		CGameParticles_SetColorRamp(sp, FXC_Ramp(FXDeath_Glow_430288, 0));
 		CGameParticles_EmitDt(sp, 1, 0, FXC_Rand(0.039999999105930328, 0.0));
 	}
 	CGameParticles_SetSparksOn(sp, 0);
@@ -1512,6 +1515,7 @@ static inline int FXC_Clamp(int v, int lo) {
 }
 
 /* the two glows of the conversor on the character at x y z, their life limited by the debris */
+extern uint32_t FXConversor_Glow_4304b0[28];
 static void FXConversor_Glow(CGameParticles *sp, cDebris *d, float x, float y, float z, float r) {
 	CGameParticles_SetSparksOn(sp, 0);
 	sp->birthRate = 0;
@@ -1526,7 +1530,7 @@ static void FXConversor_Glow(CGameParticles *sp, cDebris *d, float x, float y, f
 	sp->sizeIni = sp->sizeEnd = FXC_Rand(0.099999904632568359, 1.2000000476837158) * r;
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, FXC_Ramp(GAME_ARRAY(uint32_t, FXConversor_Glow_4304b0), crt_rand() % 3));
+	CGameParticles_SetColorRamp(sp, FXC_Ramp(FXConversor_Glow_4304b0, crt_rand() % 3));
 	CGameParticles_EmitN(sp, 1, 0);
 	CGameParticles_SetSparksOn(sp, 0);
 	sp->birthRate = 0;
@@ -1541,7 +1545,7 @@ static void FXConversor_Glow(CGameParticles *sp, cDebris *d, float x, float y, f
 	sp->sizeIni = sp->sizeEnd = FXC_Rand(0.10000002384185791, 1.0) * r;
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, FXC_Ramp(GAME_ARRAY(uint32_t, FXConversor_Glow_4304b0), crt_rand() % 3));
+	CGameParticles_SetColorRamp(sp, FXC_Ramp(FXConversor_Glow_4304b0, crt_rand() % 3));
 	CGameParticles_EmitDt(sp, 1, 0, FXC_Rand(0.23999999463558197, 0.0099999997764825821));
 }
 
@@ -2036,6 +2040,7 @@ static void FXC_EmitRamp(CGameParticles *sp, uint32_t *ramp, float dt) {
 
 #define FXC_EMIT_VERTS 128
 
+extern uint32_t cObjElementFXCharacterConversion_Emit_430440[9];
 void cObjElementFXCharacterConversion_Emit(cObjElementFXCharacterConversion *self) {
 	vec3_t verts[FXC_EMIT_VERTS], pa, pb;
 
@@ -2069,7 +2074,7 @@ void cObjElementFXCharacterConversion_Emit(cObjElementFXCharacterConversion *sel
 		sp->spriteIni = 5;
 		sp->spriteEnd = 5;
 		sp->rotVar = (float)(FXC_Rnd() * 1.0471975803375244 - 0.5235987901687622);
-		FXC_EmitRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXCharacterConversion_Emit_430440), 0.07f);
+		FXC_EmitRamp(sp, cObjElementFXCharacterConversion_Emit_430440, 0.07f);
 	}
 	for (int i = 8; i < 32; i++) {
 		FXC_SetEmitPoint(sp, &verts[i]);
@@ -2085,7 +2090,7 @@ void cObjElementFXCharacterConversion_Emit(cObjElementFXCharacterConversion *sel
 		sp->spriteIni = 20;
 		sp->spriteEnd = 20;
 		sp->rotVar = (float)(FXC_Rnd() * 1.5707963705062866 - 0.7853981852531433);
-		FXC_EmitRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXCharacterConversion_Emit_4303f8), 0.07f);
+		FXC_EmitRamp(sp, cObjElementFXCharacterConversion_Emit_4303f8, 0.07f);
 	}
 	/* the flight of every vertex to the same place on the attacked, scaled by the radii */
 	float ratio = rb / ra;
@@ -2109,7 +2114,7 @@ void cObjElementFXCharacterConversion_Emit(cObjElementFXCharacterConversion *sel
 		byte sprite = (byte)(crt_rand() % 8 + 1);
 		sp2->spriteIni = sprite;
 		sp2->spriteEnd = sprite;
-		FXC_EmitRamp(sp2, GAME_ARRAY(uint32_t, cObjElementFXCharacterConversion_Emit_430464), 0.08f);
+		FXC_EmitRamp(sp2, cObjElementFXCharacterConversion_Emit_430464, 0.08f);
 
 		FXC_SetEmitPoint(sp, v);
 		FXC_SetFlight(sp, v, &o, &pb, 4.0f, 0.2999999523162842, 1.2000000476837158);
@@ -2123,7 +2128,7 @@ void cObjElementFXCharacterConversion_Emit(cObjElementFXCharacterConversion *sel
 		sp->rotVar = (float)(FXC_Rnd() * 1.5707963705062866 - 0.7853981852531433);
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXCharacterConversion_Emit_4303f8) + 9 * (crt_rand() & 1));
+		CGameParticles_SetColorRamp(sp, cObjElementFXCharacterConversion_Emit_4303f8 + 9 * (crt_rand() & 1));
 		CGameParticles_EmitDt(sp, 1, 0, 0.08f);
 	}
 }

@@ -11,7 +11,8 @@
 #include "scrap/weapons.h"
 
 #define NEWS_FOV 0.87266463f				/* 50 degrees */
-#define g_NewsRandRange GAME_GLOBAL(double, g_HeadRandRange)	/* 2 pi as a float */
+extern const double g_HeadRandRange;
+#define g_NewsRandRange g_HeadRandRange	/* 2 pi as a float */
 extern const double g_NewsRandOfs;	/* pi as a float */
 /* the model of an entity with life (slot 0x98) */
 /* its render (slot 0xb8) */

@@ -26,7 +26,8 @@
 #define g_DoorUsrBack GAME_GLOBAL_IN(byte, group_447600, 3)
 extern float g_DoorAngY;		/* the y angle of the door */
 extern vec3_t g_DoorPos;
-#define g_DoorSphereFunc (&GAME_GLOBAL(cPy_Function, g_ChTypeSphereFunc))	/* Doors_SphereEntity for the sphere test */
+extern cPy_Function g_ChTypeSphereFunc;
+#define g_DoorSphereFunc (&g_ChTypeSphereFunc)	/* Doors_SphereEntity for the sphere test */
 #define DOORS_SPHEREENTITY 0x0f0570
 
 

@@ -253,7 +253,8 @@ typedef struct cSoundPS {
 SD_SIZE(cSoundPS, 0x6c);
 SD_OFFSET(cSoundPS, loop, 0x58);
 
-#define g_SndPSTable (&GAME_GLOBAL(HashTable, g_SndPSTable))	/* cPtrItem of cSoundPS by name */
+extern HashTable g_SndPSTable;
+#define g_SndPSTable (&g_SndPSTable)	/* cPtrItem of cSoundPS by name */
 extern byte g_SndPSEnabled;
 extern cSoundPS *g_SndPSList;
 

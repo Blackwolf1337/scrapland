@@ -273,9 +273,10 @@ static inline uint32_t *Press_Ramp(uint32_t *ramps, int i) {
 }
 
 /* one flash glow at the emitter: sizes and life random, scaled by s */
+extern uint32_t DamageFX_Glow_430a68[28];
 static void DamageFX_Glow(CGameParticles *p, float s, double iniRange, double iniAdd, double endRange, double endAdd,
 	byte sprite, double lifeRange, double lifeAdd) {
-	CGameParticles_SetColorRamp(p, Press_Ramp(GAME_ARRAY(uint32_t, DamageFX_Glow_430a68), 0));
+	CGameParticles_SetColorRamp(p, Press_Ramp(DamageFX_Glow_430a68, 0));
 	p->sizeIni = FxElem_Rand(iniRange, iniAdd) * s;
 	p->sizeEnd = FxElem_Rand(endRange, endAdd) * s;
 	float lt = FxElem_Rand(lifeRange, lifeAdd);
@@ -287,6 +288,7 @@ static void DamageFX_Glow(CGameParticles *p, float s, double iniRange, double in
 	CGameParticles_EmitN(p, 1, 1);
 }
 
+extern uint32_t cFXElementsMentalControllerDamageFX_Update_4309f8[28];
 void cFXElementsMentalControllerDamageFX_Update(cMapElement *elem, float dt) {
 	cFXElementsMentalControllerDamageFX *self = (cFXElementsMentalControllerDamageFX *)elem;
 	CGameModel *model = &self->base.base.Mod;
@@ -319,7 +321,7 @@ void cFXElementsMentalControllerDamageFX_Update(cMapElement *elem, float dt) {
 		CGameParticles *sm = &self->smoke;
 		sm->birthRate = 0;
 		CGameParticles_SetColorRampOn(sm, 1);
-		CGameParticles_SetColorRamp(sm, Press_Ramp(GAME_ARRAY(uint32_t, cFXElementsMentalControllerDamageFX_Update_4309f8), crt_rand() % 3));
+		CGameParticles_SetColorRamp(sm, Press_Ramp(cFXElementsMentalControllerDamageFX_Update_4309f8, crt_rand() % 3));
 		for (int k = 0; k < FXMENTALDAMAGEEMITTERS; k++) {
 			if (self->smokeNode[k] <= -1) {
 				break;
@@ -399,7 +401,7 @@ void cFXElementsMentalControllerDamageFX_Update(cMapElement *elem, float dt) {
 		int n = lo2 + crt_rand() % (self->flashSparksMax[k] - lo2);
 		CGameParticles_SetSparksOn(fl, 1);
 		for (; n > 0; n--) {
-			CGameParticles_SetColorRamp(fl, Press_Ramp(GAME_ARRAY(uint32_t, DamageFX_Glow_430a68), crt_rand() % 3));
+			CGameParticles_SetColorRamp(fl, Press_Ramp(DamageFX_Glow_430a68, crt_rand() % 3));
 			float az = FxElem_Rand(3.1415927410125732, -1.5707963705062866);
 			float ay = FxElem_Rand(3.1415927410125732, -1.5707963705062866);
 			ang.x = 0.0f;

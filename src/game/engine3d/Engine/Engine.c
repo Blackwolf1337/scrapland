@@ -54,7 +54,7 @@ extern const IInputVtbl CNullInput_vftable;
 #define CNULLINPUT_VFTABLE (&CNullInput_vftable)
 #define CNULLINPUT_SIZE 0x114
 
-#define g_Engine3D GAME_GLOBAL(CEngineApp *, g_Engine3D)
+extern struct CEngineApp *g_Engine3D;
 /* the callbacks of Engine3D_Create: once after the device, each frame, at the end */
 extern void *g_EngineInit;
 extern void *g_EngineFrame;
@@ -74,7 +74,7 @@ extern char g_ColorStr[64];	/* 0x40 */
 #define ENGINE_CMDPROC 0x22eda0
 extern void *g_Input;	/* the input of the engine, a CEntradaNula */
 /* the clock of the engine */
-#define g_FrameDelta GAME_GLOBAL(float, g_FrameMs)
+#define g_FrameDelta g_FrameMs
 extern float g_RealFrameSecs;
 extern double g_TimeD;
 extern int g_TimeMsInt;

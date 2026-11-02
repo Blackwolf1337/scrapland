@@ -91,9 +91,12 @@ SD_SIZE(cStringNode, 0xc);
 typedef DLIST(cPackEntryNode) cPackEntryList;
 typedef DLIST(cStringNode) cStringList;
 
-#define g_PackIndex (&GAME_GLOBAL(HashTable, g_PackIndex))	/* of cPackIndexItem, 457 slots */
-#define g_PackEntries (&GAME_GLOBAL(cPackEntryList, g_PackEntries))	/* build list */
-#define g_PackNames (&GAME_GLOBAL(cStringList, g_PackNames))	/* packs being recorded */
+extern HashTable g_PackIndex;
+#define g_PackIndex (&g_PackIndex)	/* of cPackIndexItem, 457 slots */
+extern cPackEntryList g_PackEntries;
+#define g_PackEntries (&g_PackEntries)	/* build list */
+extern cStringList g_PackNames;
+#define g_PackNames (&g_PackNames)	/* packs being recorded */
 extern int g_NumPackFiles;
 #define g_PackFiles (&GAME_GLOBAL_IN(cFile2, g_PackFiles, 0))		/* PACK_MAX_FILES */
 extern HashTable *g_NameTable;	/* of cNameItem, while Python_CompileAll collects */

@@ -659,10 +659,11 @@ static void FX_StillAt(CGameParticles *sp, const vec3_t *pos) {
 }
 
 /* the particles applied and one emitted with one of the three fade ramps */
+extern uint32_t FX_EmitFade_430ad8[27];
 static void FX_EmitFade(CGameParticles *sp) {
 	CGameParticles_Apply(sp);
 	CGameParticles_SetColorRampOn(sp, 1);
-	CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, FX_EmitFade_430ad8) + crt_rand() % 3 * 9);
+	CGameParticles_SetColorRamp(sp, FX_EmitFade_430ad8 + crt_rand() % 3 * 9);
 	CGameParticles_EmitN(sp, 1, 1);
 }
 
@@ -762,6 +763,7 @@ void cObjElementFXItemTake_Start(cObjElementFXItemTake *self, cEntity *e) {
 	}
 }
 
+extern uint32_t cObjElementFXItemTake_Update_430b68[56];
 void cObjElementFXItemTake_Update(cObjElementFX *base, cDebris *d, float dt) {
 	cObjElementFXItemTake *self = (cObjElementFXItemTake *)base;
 	CGameParticles *sp = &self->particles;
@@ -925,7 +927,7 @@ void cObjElementFXItemTake_Update(cObjElementFX *base, cDebris *d, float dt) {
 		sp->spriteEnd = sp->spriteIni;
 		CGameParticles_Apply(sp);
 		CGameParticles_SetColorRampOn(sp, 1);
-		CGameParticles_SetColorRamp(sp, GAME_ARRAY(uint32_t, cObjElementFXItemTake_Update_430b68) + crt_rand() % 3 * 9);
+		CGameParticles_SetColorRamp(sp, cObjElementFXItemTake_Update_430b68 + crt_rand() % 3 * 9);
 		CGameParticles_EmitDt(sp, 1, 1, FX_RandF((double)0.100000001f, 0.0));
 	}
 }

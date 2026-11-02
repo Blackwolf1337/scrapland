@@ -23,11 +23,13 @@
 /* the statics of the police taunts: the count per race, the races, the last race and the time */
 extern HashTable s_TauntRaceCounts;	/* of cNameItem, 0x1c9 slots, case sensitive */
 extern char * s_TauntRaces[5];		/* "SBi", "SBa", "SFu", "SPo" */
-#define s_TauntLastRace (GAME_ARRAY(char *, s_TauntRaces)[4])
+#define s_TauntLastRace (s_TauntRaces[4])
 extern int s_TauntPoliceCount;		/* -1 at the start */
 extern float s_TauntLastTime;
-#define s_TauntCountsGuard (&GAME_GLOBAL(int, s_TauntCountsGuard))
-#define s_TauntTimeGuard (&GAME_GLOBAL(int, s_TauntTimeGuard))
+extern int s_TauntCountsGuard;
+#define s_TauntCountsGuard (&s_TauntCountsGuard)
+extern int s_TauntTimeGuard;
+#define s_TauntTimeGuard (&s_TauntTimeGuard)
 
 /* the atexit destructor of the count table */
 void Taunts_FiniCounts(void) {

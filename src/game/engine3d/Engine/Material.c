@@ -38,7 +38,8 @@ extern cGVar GVar_DDS_UseTextures;
 extern char g_TexturePaths[10][MAX_FILEPATH];
 extern char g_TextureExts[10][MAX_FILEPATH];
 extern char g_MatStr[256];
-#define g_LightmapsHigh GAME_GLOBAL(int, g_ShadowsStencil)
+extern int g_ShadowsStencil;
+#define g_LightmapsHigh g_ShadowsStencil
 extern float g_AnimFpsDefault;
 extern uint32_t g_BlendTable[6];
 extern int g_MaxLightmap;
@@ -176,7 +177,7 @@ void Mat_ConvertBlend(uint32_t *mode, byte toFile, byte legacy) {
 		CHECK(*mode - 1 < BLEND_MODES);
 		/* the original reads the word at 0x431d30 + 4 * mode: g_BlendTable[mode - 1], for 0 (after the CHECK) the last
 		 * word of (&g_MatList) before it, a separate C object since stage 3c2 */
-		*mode = *mode ? g_BlendTable[*mode - 1] : (uint32_t)(uintptr_t)GAME_GLOBAL(CMatList, g_MatList).last;	/* the word after the table: the last material of the list, as in the original */
+		*mode = *mode ? g_BlendTable[*mode - 1] : (uint32_t)(uintptr_t)g_MatList.last;	/* the word after the table: the last material of the list, as in the original */
 		return;
 	}
 	if (toFile) {

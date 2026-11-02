@@ -2169,9 +2169,10 @@ static void EFXM_SparkPos(CGameParticles *p, float s, const vec3_t *c) {
 }
 
 /* a flash of the sparks: the sizes and the life from the random ranges */
+extern uint32_t EFXM_SparkFlash_428450[9];
 static void EFXM_SparkFlash(CGameParticles *p, double ini, double iniAdd, double endAdd, byte sprite, double life,
 	double lifeAdd) {
-	CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, EFXM_SparkFlash_428450));
+	CGameParticles_SetColorRamp(p, EFXM_SparkFlash_428450);
 	p->sizeIni = (float)(EFXM_Rnd() * ini + iniAdd);
 	p->sizeEnd = (float)(EFXM_Rnd() * 15.0 + endAdd);
 	int r = crt_rand() & 0x7fff;
@@ -2184,6 +2185,7 @@ static void EFXM_SparkFlash(CGameParticles *p, double ini, double iniAdd, double
 }
 
 /* three rays that jump between random points now and then, a burst of sparks at the top */
+extern uint32_t EFXM_SparkFlash_428474[19];
 void cEmbeddedFXBattery_Update(cEmbeddedFX *elem, float dt) {
 	cEmbeddedFXBattery *self = (cEmbeddedFXBattery *)elem;
 	CGameParticles *p = &self->glow;
@@ -2349,7 +2351,7 @@ void cEmbeddedFXBattery_Update(cEmbeddedFX *elem, float dt) {
 		p->spriteEnd = 0x44;
 		CGameParticles_Apply(p);
 		CGameParticles_SetColorRampOn(p, 1);
-		CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, EFXM_SparkFlash_428474) + 9 * (crt_rand() & 1));
+		CGameParticles_SetColorRamp(p, EFXM_SparkFlash_428474 + 9 * (crt_rand() & 1));
 		CGameParticles_EmitDt(p, 1, 0, (float)(EFXM_Rnd() * 0.10000000149011612 + 0.0));
 	}
 }

@@ -533,14 +533,14 @@ typedef struct RenderObjEntry {
 SD_SIZE(RenderObjEntry, 0x4c);
 extern CTable g_TabMesh;		/* TabMallaD3D: RenderMeshEntry */
 extern RenderMeshEntry * g_MeshList[1026];
-#define g_UsedMesh (*(int *)&GAME_ARRAY(void *, g_MeshList)[1024])
+#define g_UsedMesh (*(int *)&((void * *)g_MeshList)[1024])
 extern CTable g_TabTransp;		/* RenderTranspEntry */
 extern RenderTranspEntry * g_TranspList[1026];
-#define g_UsedTransp (*(int *)&GAME_ARRAY(void *, g_TranspList)[1024])
+#define g_UsedTransp (*(int *)&((void * *)g_TranspList)[1024])
 extern int g_TranspGroup;		/* counted up for each mesh list, 1 after a flush */
 extern CTable g_TabObj;		/* TabObjBase3D: RenderObjEntry */
 extern RenderObjEntry * g_ObjList[1026];
-#define g_UsedObj (*(int *)&GAME_ARRAY(void *, g_ObjList)[1024])
+#define g_UsedObj (*(int *)&((void * *)g_ObjList)[1024])
 extern cGVar GVar_R_MeshCache;
 #define g_MeshCache (GVar_R_MeshCache.value.i)		/* R_MeshCache, 10 logs the batches */
 extern cGVar GVar_R_ShowTranspBox;

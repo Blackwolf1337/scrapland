@@ -22,7 +22,8 @@ typedef struct cLangItem {
 } cLangItem;
 SD_SIZE(cLangItem, 0x10);
 
-#define g_LangTable (&GAME_GLOBAL(HashTable, g_LangTable))	/* 457 slots, case-insensitive */
+extern HashTable g_LangTable;
+#define g_LangTable (&g_LangTable)	/* 457 slots, case-insensitive */
 #define g_LangName (((cString *)&GVar_SelectedLanguage.value))		/* the language asked for */
 extern cGVar GVar_SelectedLanguage;
 #define g_LangDefault (GVar_SelectedLanguage.def.s)	/* the language when that file is missing */

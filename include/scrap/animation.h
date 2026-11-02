@@ -88,7 +88,8 @@ extern cGVar GVar_OptAnimFovErr;
 /* the name of the node an animation is loaded for, in the log lines */
 extern char g_AnimNodeName[256];
 /* the memory statistics of the animations */
-#define g_AnimMemStats (&GAME_GLOBAL(cMemStats, g_AnimMemStats))
+extern cMemStats g_AnimMemStats;
+#define g_AnimMemStats (&g_AnimMemStats)
 
 /* a track: Mem_Free unless it is in the active block; CHECK that it is when flags has OPT_INBLOCK */
 void AnimBlock_Free(void *ptr, uint32_t flags);

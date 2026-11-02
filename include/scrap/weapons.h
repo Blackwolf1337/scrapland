@@ -252,7 +252,8 @@ extern cGVar GVar_FXDevastatorRadius;
 #define g_FXDevastatorRadius (GVar_FXDevastatorRadius.value.f)
 extern cGVar GVar_FXDevastatorScale;
 #define g_FXDevastatorScale (GVar_FXDevastatorScale.value.f)
-#define g_DevXplosionNative (GAME_GLOBAL(cPy_NativeFunc, NativeFunc_DevastatorXplosionCall).func)	/* the function of "!DevastatorXplosionCall" */
+extern cPy_NativeFunc NativeFunc_DevastatorXplosionCall;
+#define g_DevXplosionNative (NativeFunc_DevastatorXplosionCall.func)	/* the function of "!DevastatorXplosionCall" */
 extern uint32_t g_DevColorRamps[36];	/* three color ramps of 9 words */
 #define g_CreateEMIFunc (((cPy_Function *)&GVar_CreateEMIFunc.func))
 extern cGVar GVar_EMIRechargeTime;

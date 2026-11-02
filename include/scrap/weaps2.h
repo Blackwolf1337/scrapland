@@ -98,7 +98,8 @@ extern cGVar GVar_InfernoEngineSound;
 #define g_InfernoEngineSound (GVar_InfernoEngineSound.value.s)
 extern cGVar GVar_InfernoNormSpeed;
 #define g_InfernoNormSpeed (GVar_InfernoNormSpeed.value.f)
-#define g_InfernoXplosionCall (GAME_GLOBAL(cPy_NativeFunc, NativeFunc_InfernoXplosionCall).func)	/* the function of the native "InfernoXplosionCall" */
+extern cPy_NativeFunc NativeFunc_InfernoXplosionCall;
+#define g_InfernoXplosionCall (NativeFunc_InfernoXplosionCall.func)	/* the function of the native "InfernoXplosionCall" */
 extern cGVar GVar_InfernoMissileFile;
 #define g_InfernoMissileFile (GVar_InfernoMissileFile.value.s)
 extern cGVar GVar_FXInfernoExplosionMaxDist;

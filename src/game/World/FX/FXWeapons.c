@@ -295,6 +295,7 @@ static void FXW_RingPoint(vec3_t *out, float a, const vec3_t *ang) {
 
 /* the beam: the line fades in, while the shot lasts the core, the turning rings (endRing,
  * rings and ringsDuDv for the dudv pass) and the glow particles at both ends */
+extern uint32_t cObjElementFXATPC_Update_4317a0[18];
 void cObjElementFXATPC_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	cObjElementFXATPC *self = (cObjElementFXATPC *)base;
 	(void)dt;
@@ -394,7 +395,7 @@ void cObjElementFXATPC_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	int a = (int)(s1 * 255.0f);
 	CGameTrail_SetTransp(&self->core, (byte)a);
 	float k16 = u * -16.0f;
-	const uint32_t *ramp = GAME_ARRAY(const uint32_t, cObjElementFXATPC_Update_4317a0) - (int)k16;
+	const uint32_t *ramp = cObjElementFXATPC_Update_4317a0 - (int)k16;
 	float rs2 = 0.75f;
 	float w = w0 * 0.75f;
 	CGameTrail_Add(&self->core, self->from, w, *ramp);
@@ -1475,6 +1476,7 @@ static void FXW_TeslaBack(vec3_t *tpos, const vec3_t *n, float r) {
 
 /* the ray of each mounted slot from its weapon node to the target (or the aim point), drawn as four trails through
  * the points that move to new random offsets every FXTeslaStepTime, the glow at both ends */
+extern uint32_t cObjElementFXTesla_Update_431930[18];
 void cObjElementFXTesla_Update(cObjElementFX *base, cDebris *debris, float dt) {
 	cObjElementFXTesla *self = (cObjElementFXTesla *)base;
 	(void)dt;
@@ -1677,7 +1679,7 @@ void cObjElementFXTesla_Update(cObjElementFX *base, cDebris *debris, float dt) {
 					CGameParticles_Apply(p);
 					CGameParticles_SetColorRampOn(p, 1);
 					CGameParticles_SetColorRamp(p,
-						GAME_ARRAY(uint32_t, cObjElementFXTesla_Update_431930) + 9 * (crt_rand() % 2));
+						cObjElementFXTesla_Update_431930 + 9 * (crt_rand() % 2));
 					CGameParticles_EmitDt(p, 1, 0, FXW_Rand(0.05000000074505806, 0.0));
 					CGameParticles_SetSparksOn(p, 0);
 				}
@@ -1950,6 +1952,8 @@ static void FXW_Moving(CGameParticles *p, const vec3_t *pos, const vec3_t *vel) 
 	p->initAccMax = p->initAccMin;
 }
 
+extern uint32_t FXSwarm_BeeDeath_431978[18];
+extern uint32_t FXSwarm_BeeDeath_4319c0[27];
 void FXSwarm_BeeDeath(float x, float y, float z, float vx, float vy, float vz, float size, float time, int n) {
 	CHECK(size >= 0.01f);
 	CHECK(time >= 0.01f);
@@ -1984,7 +1988,7 @@ void FXSwarm_BeeDeath(float x, float y, float z, float vx, float vy, float vz, f
 	p->rotIni = r;
 	p->rotEnd = r;
 	p->rotVar = FXW_Rand(1.5707963705062866, -0.7853981852531433);
-	CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, FXSwarm_BeeDeath_431978));
+	CGameParticles_SetColorRamp(p, FXSwarm_BeeDeath_431978);
 	FXW_SetSprite(p, 0x72);
 	CGameParticles_Apply(p);
 	CGameParticles_EmitN(p, 1, 1);
@@ -2048,7 +2052,7 @@ void FXSwarm_BeeDeath(float x, float y, float z, float vx, float vy, float vz, f
 		p->rotVar = FXW_Rand(1.0471975803375244, -0.5235987901687622);
 		FXW_SetSprite(p, (byte)((crt_rand() & 1) + 0x7b));
 		CGameParticles_Apply(p);
-		CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, FXSwarm_BeeDeath_4319c0) + 9 * (crt_rand() % 3));
+		CGameParticles_SetColorRamp(p, FXSwarm_BeeDeath_4319c0 + 9 * (crt_rand() % 3));
 		float t = FXW_Rand(0.10000000149011612, 0.0);
 		CGameParticles_EmitDt(p, 1, 1, FXW_Rand(0.25, 0.10000000149011612) * time + t);
 
@@ -2120,6 +2124,7 @@ static void FXW_HitSpark(CGameParticles *p, const vec3_t *pos, const vec3_t *o, 
 }
 
 /* the end of the sizes, life and rotation of a spark of the hit and its emission */
+extern uint32_t FXSwarm_Hit_431858[54];
 static void FXW_HitSparkEmit(CGameParticles *p, float size, double irange, double iadd, double erange, double eadd,
 	double lrange, double ladd, double trange, double tadd) {
 	p->sizeIni = FXW_Rand(irange, iadd) * size;
@@ -2133,12 +2138,13 @@ static void FXW_HitSparkEmit(CGameParticles *p, float size, double irange, doubl
 	p->rotEnd = r;
 	CGameParticles_Apply(p);
 	CGameParticles_SetColorRampOn(p, 1);
-	CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, FXSwarm_Hit_431858) + 9 * (crt_rand() & 1));
+	CGameParticles_SetColorRamp(p, FXSwarm_Hit_431858 + 9 * (crt_rand() & 1));
 	CGameParticles_EmitDt(p, 1, 1, FXW_Rand(trange, tadd));
 }
 
 /* the hit of a swarm at x y z (moving with v, the shot along d): smoke debris flying off, the bees, the explosion
  * moved out from the wall next to it and its sparks */
+extern uint32_t FXSwarm_Hit_431810[18];
 void FXSwarm_Hit(float x, float y, float z, float vx, float vy, float vz, float size, float time, float dx, float dy,
 	float dz) {
 	CHECK(size >= 0.01f);
@@ -2263,7 +2269,7 @@ void FXSwarm_Hit(float x, float y, float z, float vx, float vy, float vz, float 
 	p->rotIni = rr;
 	p->rotEnd = rr;
 	p->rotVar = FXW_Rand(1.5707963705062866, -0.7853981852531433);
-	CGameParticles_SetColorRamp(p, GAME_ARRAY(uint32_t, FXSwarm_Hit_431810) + 9 * (crt_rand() & 1));
+	CGameParticles_SetColorRamp(p, FXSwarm_Hit_431810 + 9 * (crt_rand() & 1));
 	FXW_SetSprite(p, 5);
 	CGameParticles_Apply(p);
 	CGameParticles_EmitN(p, 1, 1);

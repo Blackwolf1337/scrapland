@@ -40,9 +40,16 @@ def top_decls(s):
             while k < n and c[k] != q:
                 k += 2 if c[k] == '\\' else 1
         elif ch == '{':
+            if depth == 0:
+                brace = k
             depth += 1
         elif ch == '}':
             depth -= 1
+            if depth == 0 and start is not None:
+                head = c[start:brace].strip()
+                if head.endswith(')') and '=' not in head:	# a function definition ends at its brace
+                    out.append((start, k + 1, s[start:k + 1]))
+                    start = None
         elif ch == ';' and depth == 0:
             out.append((start, k + 1, s[start:k + 1]))
             start = None
@@ -67,8 +74,10 @@ def objects():
     for f in DATA:
         s = open(f).read()
         for a, b, t in top_decls(s):
-            if t.lstrip().startswith(('typedef', 'extern', 'struct ', 'enum ', 'union ')) and '=' not in t and not re.search(r'\}\s*\w', t):
+            if t.lstrip().startswith(('typedef', 'extern')):
                 continue
+            if re.match(r'\s*(struct|enum|union)\s+\w+\s*\{', t) and re.search(r'\}\s*;\s*$', t):
+                continue	# a type only
             name, head = decl_name(t)
             if not name:
                 continue

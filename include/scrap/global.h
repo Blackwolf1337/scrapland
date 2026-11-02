@@ -37,7 +37,8 @@ typedef struct cMemStats {
 } cMemStats;
 SD_SIZE(cMemStats, 0x18);
 
-#define g_MemStats (&GAME_GLOBAL(cMemStats, g_MemStats))
+extern cMemStats g_MemStats;
+#define g_MemStats (&g_MemStats)
 extern cMemStats *g_MemStatsContext;
 
 /* the engine's operator new and sized delete (rva 0x1334d0, 0x313634; the plain delete is 0x1334e0), with its memory statistics */
