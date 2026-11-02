@@ -1,21 +1,20 @@
 # Platforms and 64 bit
 
-ScrapC.exe builds for Windows and Linux, 32 and 64 bit, from the same sources. This file describes the platform layer, the rules the 64-bit port taught and how the builds are tested.
+ScrapC.exe builds for Windows and Linux, 64 bit, from the same sources. CMake refuses a 32-bit build (`CMAKE_SIZEOF_VOID_P` 4 is a fatal error). This file describes the platform layer, the rules the 64-bit port taught and how the builds are tested.
 
 ## Builds
 
 | Folder | Toolchain file | Target |
 |--------|----------------|--------|
-| `build` | `cmake/mingw-i686.cmake` | Windows i686 |
 | `build-win64` | `cmake/mingw-x86_64.cmake` | Windows x86_64 |
-| `build-linux` | `cmake/linux-i686.cmake` | Linux i686 |
 | `build-linux64` | `cmake/linux-x86_64.cmake` | Linux x86_64 |
+| `build-linux64-asan` | `cmake/linux-x86_64.cmake` | Linux x86_64 with `CMAKE_C_FLAGS=-fsanitize=address -fno-omit-frame-pointer`, for the level test |
 
-The 64-bit builds are the ones to play. The i686 builds stay because the difftest needs them. `SDTest.Call` passes all arguments as 32-bit words, and only the i386 calling conventions take that. On the 64-bit builds `SDTest.Call` and `SDTest.D3DLog` raise an error.
+The i686 builds and the i686 difftest are retired. The tag `difftest-final` keeps the last state with them. The Linux binary is position independent again, the fixed load address 0x400000 was only for the test scripts.
 
 ## Platform layer
 
-`include/scrap/platform.h` and `src/game/App/Platform.c` sit on SDL3 3.4.18. `tools/sdl3.sh` builds SDL3.dll for mingw, Linux uses the system SDL3. The layer provides:
+`include/scrap/platform.h` and `src/game/App/Platform.c` sit on SDL3 3.4.18. `tools/sdl3.sh [build dir]` builds the x86_64 SDL3.dll for mingw (default `build-win64/sdl3`), Linux uses the system SDL3. The layer provides:
 
 - The window (`SDL_WINDOW_VULKAN`) and the event pump that replaced the Win32 message loop, with focus, resize and minimize.
 - Text input, converted from UTF-8 to CP1252.
@@ -38,7 +37,7 @@ The `crt_*` layer (`include/scrap/crt.h`) is split in three files. `src/standalo
 
 These are for anyone who changes structs or adds code.
 
-`SD_OFFSET` and `SD_SIZE` (`include/scrap/shared.h`) check the layout of the original only when `SD_32BIT` is 1. On 64 bit they are skipped. Every 64-bit fix keeps the 32-bit layout, so the difftest stays valid.
+The layout checks `SD_OFFSET`, `SD_SIZE` and `SD_32BIT` (1525 checks of the 32-bit layout) are gone. The offset comments in the structs stay as a reference to the original, they are not checked.
 
 Never use a literal size or offset for something that holds a pointer. Use `sizeof` and `offsetof`. The port found these bugs:
 
@@ -56,23 +55,21 @@ The vtables are typed `*Vtbl` structs with designated initializers, so the compi
 
 `long` differs between the 64-bit targets. Linux x86_64 is LP64 (`long` is 64 bits), Windows x64 is LLP64 (`long` is 32 bits). The Python 1.5.2 config follows that (`src/python/config.h`): Python ints are 64 bits on Linux x86_64 and 32 bits on Windows x64. The pointer-to-long casts of Python itself are only in repr strings and hashes.
 
-The asm name prefix `SD_CPFX` is an underscore only on 32-bit Windows.
-
-Save games are name/value strings plus a count, so they work between 32 and 64 bit. An i686 server and an x86_64 client play together.
+Save games are name/value strings plus a count, so they do not depend on the pointer size.
 
 ## Testing on Linux
 
-`tools/test/native.sh` runs the Linux build headless in gamescope. `SCRAP_BUILD=build-linux64` selects the 64-bit build, `SCRAP_GAME_DIR` another game folder.
-
-`DIFFTEST_NATIVE=1 tools/test/difftest.sh` compares the Linux i686 build with the Wine reference. It accepts only the checks listed in `tools/test/native-accepted/<scenario>.txt`.
+`tools/test/native.sh` runs the Linux build headless in gamescope. `SCRAP_BUILD` selects the build folder (default `build-linux64`), `SCRAP_GAME_DIR` another game folder.
 
 ## Testing 64 bit
 
-The 64-bit builds have no difftest. They are checked with AddressSanitizer runs, one per level. The build folder is `build-linux64-asan`, configured with `CMAKE_C_FLAGS=-fsanitize=address -fno-omit-frame-pointer`. Run with `ASAN_OPTIONS=detect_leaks=0` and `-imap:Levels/<name>`.
+`tools/test/levels.sh` runs every playable level (29, Nano has no map in the packs) in `build-linux64-asan` headless for `LEVELS_TIME` seconds (default 120) and prints one line per level. A level fails on an ASan error, a fatal error (the message box text in `scrapdecomp.log`) or a Python traceback. The exit code is 0 when all pass. Levels can be given as arguments.
+
+`tools/test/golden.sh` runs `tools/test/golden/sdtest.py` (the script functions of the game and the Python interpreter in `sdpy.py`, 9961 checks, in the main menu) on the Linux build and compares the output with `tools/test/golden/sdtest.out`. `GOLDEN_UPDATE=1` stores a new expected output. The stored output was checked against the frozen i686 reference before it was stored. It equals it except where 64 bit differs on purpose: Python ints are 64 bits on Linux x86_64 (overflows, `%x` of negative numbers, literal sizes, string hashes), the text of NaN, and there is no SDTest module.
 
 A failed `CHECK` of the game traps, which shows as an `UNKNOWN SIGNAL` at address 0x1. To debug, run gdb only as a child of `tools/test/headless.sh`, because ptrace of other processes is blocked in the container. A hardware watchpoint on a corrupted field finds the writer.
 
-The scrap MCP server (`tools/mcp`) launches every build with the `exe` argument: `c` (Windows i686), `c64` (Windows x64), `native` (Linux i686), `native64` and `native64asan`.
+The scrap MCP server (`tools/mcp`) launches every build with the `exe` argument: `native64` (default), `native64asan`, `c64` (`build-win64` under Wine) and `ref` (the frozen reference exe, for visual comparisons). Its slots are in `build-mcp/`.
 
 ## State on 2026-11-02
 

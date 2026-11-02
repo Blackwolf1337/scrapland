@@ -10,7 +10,7 @@ Until 2026-11-01 the work was done with a hook DLL (the re3 method: a proxy `din
 
 - Get the mod SDK back: headers with structs and offsets, Python script API, `.packed` tools, model and map tools.
 - A readable C code base that builds and runs without the original exe.
-- Builds for Windows and Linux, 32 and 64 bit, from the same sources.
+- Builds for Windows and Linux, 64 bit, from the same sources.
 
 ## Rules
 
@@ -28,14 +28,14 @@ Until 2026-11-01 the work was done with a hook DLL (the re3 method: a proxy `din
 | `third_party/python-1.5.2/` | Python 1.5.2 headers, `COPYRIGHT` |
 | `tools/git/pre-commit` | size check hook |
 | `tools/codecmp.sh` | compares two builds of the C code |
-| `tools/test/` | `prefix.sh`, `wine.sh`, `headless.sh`, `install.sh` (copies `build/ScrapC.exe` and the FFmpeg DLLs to `game/Bin`), `mkgame.sh` (a game and prefix copy for a slot or worktree), `difftest.sh` (current ScrapC.exe against the reference ScrapC.exe, scenarios sdtest, sdcall, sdlevel), `native.sh` (runs the Linux build headless), `vkcheck.sh` (a run with the Vulkan validation layer, prints the errors of ours) |
+| `tools/test/` | `prefix.sh`, `wine.sh`, `headless.sh`, `install.sh` (copies `build-win64/ScrapC.exe` and the FFmpeg and SDL3 DLLs to `game/Bin`), `mkgame.sh` (a game and prefix copy for a slot or worktree), `golden.sh` (script functions and Python interpreter against a stored output), `levels.sh` (every playable level in the ASan build), `native.sh` (runs the Linux build headless), `vkcheck.sh` (a run with the Vulkan validation layer, prints the errors of ours) |
 | `tools/ffmpeg.sh` | builds FFmpeg (DLLs or shared libraries) for the video player |
-| `tools/sdl3.sh` | builds SDL3 for the Windows builds |
+| `tools/sdl3.sh` | builds SDL3 for the Windows 64 bit build |
 | `tools/mcp/` | the scrap MCP server, headless game tests for an AI assistant, see [tools/mcp/README.md](tools/mcp/README.md) |
 | `shaders/` | GLSL of the renderer: the fixed function (`ff.*`), the present pass (`present.*`), the 30 pixel shaders in `shaders/ps` |
 | `include/scrap/` | engine structs and Python headers |
-| `src/` | `standalone/` (entry point `main.c`), `core/`, `game/`, `lib/`, `python/`; `core/testsyms.inc`, `testaddrs.inc` and `testfuncs.inc` keep the rvas of the original as test data only |
-| `CMakeLists.txt`, `cmake/` | build of ScrapC.exe, toolchain files for mingw-w64 i686 and x86_64 and Linux i686 and x86_64 |
+| `src/` | `standalone/` (entry point `main.c`), `core/`, `game/`, `lib/`, `python/` |
+| `CMakeLists.txt`, `cmake/` | build of ScrapC.exe, toolchain files for mingw-w64 x86_64 and Linux x86_64 |
 
 ## Setup
 
@@ -46,27 +46,19 @@ tools/test/prefix.sh                          # creates prefix/ (own Wine prefix
 
 ## Build and run
 
-There are four builds, each in its own folder, all from the same sources. The 64 bit builds are the ones to play. The i686 builds stay for the difftest (see Test), which compares a 32 bit ScrapC.exe with the frozen reference build.
+There are two builds to play, each in its own folder, from the same sources: Windows 64 bit and Linux 64 bit. CMake refuses a 32 bit build. A third folder, `build-linux64-asan`, is the Linux build with AddressSanitizer for the level test (see Test).
 
 The build needs `glslangValidator` (Arch package `glslang`) for the shaders, SDL3 and an FFmpeg. cmake stops without them. Running needs a Vulkan 1.3 driver (under Wine: winevulkan).
 
 Windows 64 bit:
 
 ```
-tools/sdl3.sh build-win64/sdl3 win64
-tools/ffmpeg.sh build-win64/ffmpeg win64
+tools/sdl3.sh                                 # build-win64/sdl3
+tools/ffmpeg.sh                               # build-win64/ffmpeg, win64
 cmake -B build-win64 -DCMAKE_TOOLCHAIN_FILE=cmake/mingw-x86_64.cmake && cmake --build build-win64
 ```
 
 Put `SDL3.dll` and the FFmpeg DLLs from `build-win64/sdl3/install/bin` and `build-win64/ffmpeg/install/bin` next to `ScrapC.exe`.
-
-Windows 32 bit (i686):
-
-```
-tools/sdl3.sh                                 # build/sdl3
-tools/ffmpeg.sh                               # build/ffmpeg
-cmake -B build -DCMAKE_TOOLCHAIN_FILE=cmake/mingw-i686.cmake && cmake --build build
-```
 
 Linux 64 bit (system SDL3):
 
@@ -77,19 +69,12 @@ cmake -B build-linux64 -DCMAKE_TOOLCHAIN_FILE=cmake/linux-x86_64.cmake && cmake 
 
 The binary is `build-linux64/ScrapC`. Put the FFmpeg `.so` files from `build-linux64/ffmpeg/install/lib` next to it.
 
-Linux 32 bit (i686, system `lib32-sdl3`):
-
-```
-tools/ffmpeg.sh build-linux/ffmpeg linux
-cmake -B build-linux -DCMAKE_TOOLCHAIN_FILE=cmake/linux-i686.cmake && cmake --build build-linux
-```
-
 The game data are the packs of an installed Scrapland Remastered. The binary runs from the game's `Bin` folder, as the original `Scrap.exe`. On Linux the config and saves go to the SDL user data folder (`XDG_DATA_HOME`).
 
-Under Wine, with the Windows 32 bit build:
+Under Wine, with the Windows 64 bit build:
 
 ```
-tools/test/install.sh                         # copies build/ScrapC.exe to game/Bin
+tools/test/install.sh                         # copies build-win64/ScrapC.exe to game/Bin
 tools/test/wine.sh ScrapC.exe -fullscreen:0   # hidden (gamescope headless) and muted
 ```
 
@@ -106,21 +91,22 @@ Environment variables of the renderer (see `docs/vulkan.md`):
 
 ## Test
 
-The difftest compares a 32 bit ScrapC.exe with a frozen reference ScrapC.exe. It must be 32 bit because the test functions (`SDTest.Call`) only work there. The reference is built from the tag `ref-noexact` and put into `build-ref-noexact/`, which `DIFFTEST_REF` defaults to. The old `build-ref/` (tag `hooked-final`) is only for comparing with the state of the hook era. The script copies the reference to `ScrapRef.exe` in each slot.
+Two tests run on the 64 bit Linux build, headless in gamescope.
 
 ```
-tools/test/difftest.sh
+tools/test/golden.sh
+tools/test/levels.sh [level ...]
 ```
 
-The scenarios (sdtest, sdcall, sdlevel) run at the same time, each in a game of its own in `build/difftest/slot-<scenario>`. The outputs of the reference are cached by the hashes of the reference exe and the test scripts, so after the first run only the current build runs. `DIFFTEST_NOCACHE=1` forces a run of the reference. A full run takes about 40 seconds.
+`golden.sh` runs `tools/test/golden/sdtest.py` in the main menu: the script functions of the game and the Python interpreter (`sdpy.py`), 9961 checks. The output is compared with `tools/test/golden/sdtest.out`. `GOLDEN_UPDATE=1` stores a new expected output, `SCRAP_BUILD` selects the build folder (default `build-linux64`). The stored output was checked against the frozen i686 reference before it was stored. It equals the reference except where 64 bit differs on purpose: Python ints are 64 bits on Linux x86_64 (overflows, `%x` of negative numbers, literal sizes, string hashes), the text of NaN, and there is no SDTest module.
 
-The current build renders with Vulkan, the reference with Direct3D 8 through Wine. The differences that follow from that are masked in `tools/test/py/sdlib.py`: `rdcall` (the calls on the device objects), the pixel shader handles in the D3D logs, and the driver name in `R_LastDevice`.
+`levels.sh` runs every playable level (29, Nano has no map in the packs) in the ASan build (`build-linux64-asan`) for `LEVELS_TIME` seconds (default 120) and prints one line per level. A level fails on an ASan error, a fatal error (the message box text in `scrapdecomp.log`) or a Python traceback. The exit code is 0 when all levels pass. Levels can be given as arguments.
 
-On Linux, `tools/test/native.sh` runs the Linux build headless (`SCRAP_BUILD=build-linux64` for the 64 bit one). `DIFFTEST_NATIVE=1 tools/test/difftest.sh` compares the Linux i686 build with the reference.
+The old difftest (i686 build against a frozen reference build, with the test module SDTest) is retired. The tag `difftest-final` keeps the last state with it. The reference builds are not used by a test any more. The scrap MCP server can still start the reference exe for visual comparisons (`exe=ref`).
+
+On Linux, `tools/test/native.sh` runs the Linux build headless (`SCRAP_BUILD=build-linux64`, the default).
 
 The vtables are typed structs with designated initializers next to their classes, so GCC checks every slot. This matters for 64 bit, where float and integer arguments travel in different registers.
-
-Against the old reference these differences are accepted: the text of NaN, "1d5" is no longer read as a number, `%.0f` rounds half to even, trig of huge arguments, and the float hash.
 
 ## Roadmap
 

@@ -8,7 +8,6 @@ ScrapC.exe renders with Vulkan only. The Direct3D 8 backend, the device dialog a
 |------|---------|
 | `include/scrap/rdev.h`, `Render/Rdev.c` | the render device: `Rd_*` functions, the interface the game calls |
 | `Render/rdevbackend.h` | one `Vk_*` function for each `Rd_*` function |
-| `Render/RdevLog.c` | the D3D log of the tests |
 | `Render/vk/RdevVk.c`, `vkobj.h` | the objects of Direct3D 8 on Vulkan resources |
 | `Render/vk/VkDraw.c`, `vkdraw.h` | state, pipelines, draws, present |
 | `Render/vk/VkCore.c`, `vkcore.h` | instance, device, swapchain, frames, memory |
@@ -18,7 +17,7 @@ ScrapC.exe renders with Vulkan only. The Direct3D 8 backend, the device dialog a
 
 The game was written against Direct3D 8, so `Rd_*` keeps its shape: the first argument is an opaque object (the IDirect3D8, the device, a texture, a surface, a buffer, a D3DX mesh), the other arguments and the return values are those of the COM method. There is one function per method the game uses. `Rd_Direct3DCreate8` returns the object of the backend, or NULL when Vulkan cannot start.
 
-`Rdev.c` forwards every call to the `Vk_*` function of the same name. For device calls it checks first whether the device is the stand-in of the D3D log (`rd_logDevice`). The tests (`SDTest`) switch the log on. `RdevLog.c` then writes each device call as text, with the vertices of draw calls and the values of state calls as hex words, and passes the call to the real device (`rd_logReal`). The test scripts compare these logs between two builds.
+`Rdev.c` forwards every call to the `Vk_*` function of the same name. The D3D log (`RdevLog.c`, switched on by the SDTest module) and the comparison of Direct3D 8 with Vulkan belonged to the i686 difftest. It is retired (tag `difftest-final`).
 
 Every object starts with `VkoObj` (kind, reference count), so `Rd_AddRef` and `Rd_Release` work on any of them. The device is created with `D3DCREATE_FPU_PRESERVE` by the game, so the x87 state is not touched by the backend.
 
@@ -83,14 +82,14 @@ The game draws into the back buffer image. `Vkd_Present` ends the pass, uploads 
 
 ## Videos
 
-`Engine/Video.c` plays the `.vds` and `.avi` files of the game (AVI with XviD video and PCM sound) with FFmpeg. `tools/ffmpeg.sh` builds FFmpeg 7.1.1 as shared LGPL DLLs for mingw i686 with only the AVI demuxer, the MPEG-4 part 2 and PCM decoders and swscale. CMake links the import libraries and stops without them.
+`Engine/Video.c` plays the `.vds` and `.avi` files of the game (AVI with XviD video and PCM sound) with FFmpeg. `tools/ffmpeg.sh [build dir [win64|linux64]]` builds FFmpeg 7.1.1 as shared LGPL libraries (DLLs for mingw x86_64 by default) with only the AVI demuxer, the MPEG-4 part 2 and PCM decoders and swscale. CMake links the import libraries and stops without them.
 
 `Video_Step` is called once per pass of the message loop and never waits. It reads up to 32 packets, decodes the pictures that are due by the clock (started with the first picture) and draws the last due one. Video packets go to the decoder. Sound packets are decoded and written into a 1 MB ring. The sound mixer (`Snd_StreamPcm`, include/scrap/snd.h) plays that ring as a stream: its callback (on the mixer thread) copies from the ring and fills the rest with silence. The intro videos run before the sound system, so the video player starts the mixer itself. The ring uses atomic head and tail, so there is no lock. `sws_scale` converts the picture to BGRA straight into the locked X8R8G8B8 texture of the render device, with the mirror flags of `PlayVideoFX`. `Video_Draw` clears the back buffer and draws the texture with bars that keep the ratio, through the same `Rd_*` calls as the rest.
 
 ## Debug aids
 
 - `SCRAP_VK_VALIDATION=1` turns on `VK_LAYER_KHRONOS_validation` at instance creation. `tools/test/vkcheck.sh` runs the game with it and prints the validation errors that are not from gamescope or Wine (`tools/test/vk-foreign-vuids.txt` lists those).
-- `SCRAP_VK_TRACE=<seconds>` writes every draw of one frame into `scrapdecomp.log`: target size and format, vertex format, state values and the texture stages. The frame is the first one that starts that many seconds after the device was created. From a test script, `SDTest.Call('Vkd_TraceStart', 'v')` traces the frames up to the next present.
+- `SCRAP_VK_TRACE=<seconds>` writes every draw of one frame into `scrapdecomp.log`: target size and format, vertex format, state values and the texture stages. The frame is the first one that starts that many seconds after the device was created.
 - `SCRAP_RD_DUMP=<dir>` and `SCRAP_RD_DUMP_EVERY=<n>` (default 100) write every nth presented frame as `vulkan<frame>.bmp`, read back from the back buffer.
 - The scrap MCP server (`tools/mcp/`, see [its README](../tools/mcp/README.md)) runs the game headless, takes screenshots, shows the trace and runs the validation check.
 

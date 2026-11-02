@@ -7,7 +7,7 @@
 root=$(cd "$(dirname "$0")/../.." && pwd)
 secs=${1:-40}
 shift
-log=$root/build/vkcheck.log
+log=$root/build-win64/vkcheck.log
 mkdir -p "$root/build"
 "$root/tools/test/install.sh" > /dev/null || exit 1
 SCRAP_VK_VALIDATION=1 WINE_LOG="$log" HEADLESS_TIMEOUT=$secs \

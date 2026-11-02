@@ -7,7 +7,7 @@
 # usage: tools/codecmp.sh [base ref, default HEAD]
 root=$(cd "$(dirname "$0")/.." && pwd)
 base=${1:-HEAD}
-out=$root/build/codecmp
+out=$root/build-codecmp
 flags="-DSD_CODECMP -Wno-builtin-macro-redefined -D__FILE__=\\\"\\\" -D__TIMESTAMP__=\\\"\\\" -D__LINE__=0"
 
 # build <source dir> <build dir>
