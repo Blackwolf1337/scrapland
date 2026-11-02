@@ -954,11 +954,11 @@ static void FXV_EMIClear(cObjElementFXVehicleEMI *self, int i) {
 
 /* point idx of the flat array of all rays (the original reads the one before a ray too) */
 static inline vec3_t *FXV_EMIPt(cObjElementFXVehicleEMI *self, int idx) {
-	return (vec3_t *)((byte *)self->pts + idx * (int)sizeof(vec3_t));
+	return &self->pts[0][0] + idx;
 }
 
 static inline int *FXV_EMIVidx(cObjElementFXVehicleEMI *self, int idx) {
-	return (int *)((byte *)self->vidx + idx * 4);
+	return &self->vidx[0][0] + idx;
 }
 
 static inline uint16_t *FXV_EMIMark(cObjElementFXVehicleEMI *self, int i, int vi) {
