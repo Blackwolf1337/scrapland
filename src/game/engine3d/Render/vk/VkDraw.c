@@ -19,6 +19,13 @@ static const uint32_t vkd_ffFrag[] = {
 #include "ff_frag.inc"
 };
 
+static const uint32_t vkd_presentVert[] = {
+#include "present_vert.inc"
+};
+static const uint32_t vkd_presentFrag[] = {
+#include "present_frag.inc"
+};
+
 typedef struct VkdPsCode {
 	const char *name;
 	const uint32_t *code;
@@ -80,6 +87,17 @@ static struct {
 static int vkd_numSamplers;
 static VkImg vkd_white;			/* the texture of a stage without one */
 static VkBuf vkd_defaults;		/* the attributes a vertex format lacks, read with stride 0 */
+/* the present pass: the back buffer through the gamma ramp into the swapchain image */
+static struct {
+	VkDescriptorSetLayout setLayout;
+	VkPipelineLayout layout;
+	VkShaderModule vert, frag;
+	VkPipeline pipe;
+	VkFormat format;		/* the swapchain format of pipe */
+	VkSampler linear, nearest;
+	VkImg ramp;
+	uint16_t rampData[3][256];	/* what ramp holds */
+} vkd_pr;
 static int vkd_traceState;		/* 0 not yet, 1 this frame, 2 done */
 static DWORD vkd_traceAt;
 
@@ -90,6 +108,59 @@ static VkShaderModule Vkd_Module(const uint32_t *code, size_t size) {
 	VkShaderModule m = VK_NULL_HANDLE;
 	vkCreateShaderModule(vk.device, &ci, NULL, &m);
 	return m;
+}
+
+static int Vkd_InitPresent(void) {
+	VkDescriptorSetLayoutBinding b[2] = {
+		{ 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, NULL },
+		{ 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, NULL },
+	};
+	VkDescriptorSetLayoutCreateInfo sci = {
+		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+		.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR,
+		.bindingCount = 2,
+		.pBindings = b,
+	};
+	VkPipelineLayoutCreateInfo lci = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+		.setLayoutCount = 1,
+		.pSetLayouts = &vkd_pr.setLayout,
+	};
+	VkSamplerCreateInfo si = {
+		.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+		.magFilter = VK_FILTER_LINEAR,
+		.minFilter = VK_FILTER_LINEAR,
+		.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+		.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+		.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+	};
+	if (vkCreateDescriptorSetLayout(vk.device, &sci, NULL, &vkd_pr.setLayout) < 0
+		|| vkCreatePipelineLayout(vk.device, &lci, NULL, &vkd_pr.layout) < 0
+		|| vkCreateSampler(vk.device, &si, NULL, &vkd_pr.linear) < 0) {
+		return 0;
+	}
+	si.magFilter = si.minFilter = VK_FILTER_NEAREST;
+	if (vkCreateSampler(vk.device, &si, NULL, &vkd_pr.nearest) < 0) {
+		return 0;
+	}
+	vkd_pr.vert = Vkd_Module(vkd_presentVert, sizeof(vkd_presentVert));
+	vkd_pr.frag = Vkd_Module(vkd_presentFrag, sizeof(vkd_presentFrag));
+	VkComponentMapping id = { 0 };
+	memset(vkd_pr.rampData, 0, sizeof(vkd_pr.rampData));	/* never a ramp of the game: the first present uploads */
+	return vkd_pr.vert && vkd_pr.frag && Vk_CreateImage(&vkd_pr.ramp, VK_FORMAT_R16G16B16A16_UNORM, 256, 1, 1,
+		VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, id);
+}
+
+static void Vkd_ShutdownPresent(void) {
+	vkDestroyPipeline(vk.device, vkd_pr.pipe, NULL);
+	vkDestroySampler(vk.device, vkd_pr.linear, NULL);
+	vkDestroySampler(vk.device, vkd_pr.nearest, NULL);
+	vkDestroyShaderModule(vk.device, vkd_pr.vert, NULL);
+	vkDestroyShaderModule(vk.device, vkd_pr.frag, NULL);
+	vkDestroyPipelineLayout(vk.device, vkd_pr.layout, NULL);
+	vkDestroyDescriptorSetLayout(vk.device, vkd_pr.setLayout, NULL);
+	Vk_DestroyImage(&vkd_pr.ramp);
+	memset(&vkd_pr, 0, sizeof(vkd_pr));
 }
 
 int Vkd_Init(VkoDev *d) {
@@ -141,7 +212,7 @@ int Vkd_Init(VkoDev *d) {
 	VkImageSubresourceRange all = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 	vkCmdClearColorImage(cmd, vkd_white.img, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &white, 1, &all);
 	Vk_Transition(cmd, &vkd_white, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	return 1;
+	return Vkd_InitPresent();
 }
 
 void Vkd_Shutdown(void) {
@@ -156,6 +227,7 @@ void Vkd_Shutdown(void) {
 	vkd_numPipes = vkd_numSamplers = 0;
 	Vk_DestroyImage(&vkd_white);
 	Vk_DestroyBuffer(&vkd_defaults);
+	Vkd_ShutdownPresent();
 	vkDestroyShaderModule(vk.device, vkd_vert, NULL);
 	vkDestroyShaderModule(vk.device, vkd_frag, NULL);
 	for (size_t i = 0; i < VKD_NUM_PS; i++) {
@@ -541,7 +613,7 @@ static VkSampler Vkd_Sampler(const uint32_t *tss) {
 
 /* ---- trace: every call of the first frame that starts SCRAP_VK_TRACE seconds after the device into the log ---- */
 
-void Vkd_FrameDone(void) {
+static void Vkd_FrameDone(void) {
 	if (vkd_traceState == 1) {
 		vkd_traceState = 2;
 	} else if (!vkd_traceState && vkd_traceAt && GetTickCount() >= vkd_traceAt) {
@@ -939,4 +1011,168 @@ uint32_t Vkd_CreatePixelShader(const char *name) {
 	}
 	Com_Printf("vulkan: no GLSL port of the pixel shader %s\n", name);
 	return 0;
+}
+
+/* ---- the present ---- */
+
+static VkPipeline Vkd_PresentPipeline(void) {
+	if (vkd_pr.pipe && vkd_pr.format == vk.swapFormat) {
+		return vkd_pr.pipe;
+	}
+	if (vkd_pr.pipe) {
+		Vk_Flush();
+		vkDestroyPipeline(vk.device, vkd_pr.pipe, NULL);
+		vkd_pr.pipe = VK_NULL_HANDLE;
+	}
+	VkPipelineVertexInputStateCreateInfo vi = { .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
+	VkPipelineInputAssemblyStateCreateInfo ia = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+		.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+	};
+	VkPipelineViewportStateCreateInfo vp = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+		.viewportCount = 1,
+		.scissorCount = 1,
+	};
+	VkPipelineRasterizationStateCreateInfo rs = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+		.polygonMode = VK_POLYGON_MODE_FILL,
+		.lineWidth = 1.0f,
+	};
+	VkPipelineMultisampleStateCreateInfo ms = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+		.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+	};
+	VkPipelineColorBlendAttachmentState cba = { .colorWriteMask = 15 };
+	VkPipelineColorBlendStateCreateInfo cb = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+		.attachmentCount = 1,
+		.pAttachments = &cba,
+	};
+	static const VkDynamicState dyn[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+	VkPipelineDynamicStateCreateInfo dy = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+		.dynamicStateCount = 2,
+		.pDynamicStates = dyn,
+	};
+	VkPipelineShaderStageCreateInfo st[2] = {
+		{ .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, .stage = VK_SHADER_STAGE_VERTEX_BIT,
+			.module = vkd_pr.vert, .pName = "main" },
+		{ .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+			.module = vkd_pr.frag, .pName = "main" },
+	};
+	VkPipelineRenderingCreateInfo pr = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+		.colorAttachmentCount = 1,
+		.pColorAttachmentFormats = &vk.swapFormat,
+	};
+	VkGraphicsPipelineCreateInfo ci = {
+		.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+		.pNext = &pr,
+		.stageCount = 2,
+		.pStages = st,
+		.pVertexInputState = &vi,
+		.pInputAssemblyState = &ia,
+		.pViewportState = &vp,
+		.pRasterizationState = &rs,
+		.pMultisampleState = &ms,
+		.pColorBlendState = &cb,
+		.pDynamicState = &dy,
+		.layout = vkd_pr.layout,
+	};
+	if (vkCreateGraphicsPipelines(vk.device, VK_NULL_HANDLE, 1, &ci, NULL, &vkd_pr.pipe) < 0) {
+		vkd_pr.pipe = VK_NULL_HANDLE;
+		return VK_NULL_HANDLE;
+	}
+	vkd_pr.format = vk.swapFormat;
+	return vkd_pr.pipe;
+}
+
+/* the gamma ramp of the device into the ramp texture when it changed */
+static void Vkd_UploadRamp(const VkoDev *d) {
+	if (!memcmp(vkd_pr.rampData, d->gamma, sizeof(vkd_pr.rampData))) {
+		return;
+	}
+	VkBuffer buf;
+	VkDeviceSize off;
+	uint16_t *p = Vk_RingAlloc(256 * 8, 16, &buf, &off);
+	if (!p) {
+		return;
+	}
+	for (int i = 0; i < 256; i++) {
+		p[4 * i] = d->gamma[0][i];
+		p[4 * i + 1] = d->gamma[1][i];
+		p[4 * i + 2] = d->gamma[2][i];
+		p[4 * i + 3] = 0xffff;
+	}
+	VkCommandBuffer cmd = Vk_Cmd();
+	Vk_Transition(cmd, &vkd_pr.ramp, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	VkBufferImageCopy copy = {
+		.bufferOffset = off,
+		.imageSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
+		.imageExtent = { 256, 1, 1 },
+	};
+	vkCmdCopyBufferToImage(cmd, buf, vkd_pr.ramp.img, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+	Vk_Transition(cmd, &vkd_pr.ramp, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	memcpy(vkd_pr.rampData, d->gamma, sizeof(vkd_pr.rampData));
+}
+
+int Vkd_Present(VkoDev *d) {
+	VkImg *bb = d->backBuffer->img;
+	uint32_t index;
+
+	Vkd_End();
+	Vkd_FrameDone();
+	Vkd_UploadRamp(d);
+	VkPipeline pipe = Vkd_PresentPipeline();
+	if (!Vk_Acquire(&index)) {
+		return 1;
+	}
+	VkCommandBuffer cmd = Vk_Cmd();
+	if (!pipe) {
+		return Vk_QueuePresent(index);
+	}
+	VkImg swap = {
+		.img = vk.swapImages[index],
+		.aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+		.levels = 1,
+		.layout = VK_IMAGE_LAYOUT_UNDEFINED,
+	};
+	Vk_Transition(cmd, bb, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	Vk_Transition(cmd, &swap, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	VkRenderingAttachmentInfo color = {
+		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+		.imageView = vk.swapViews[index],
+		.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+		.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+	};
+	VkRenderingInfo ri = {
+		.sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+		.renderArea = { { 0, 0 }, vk.swapExtent },
+		.layerCount = 1,
+		.colorAttachmentCount = 1,
+		.pColorAttachments = &color,
+	};
+	vkCmdBeginRendering(cmd, &ri);
+	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+	VkViewport v = { 0, 0, (float)vk.swapExtent.width, (float)vk.swapExtent.height, 0, 1 };
+	VkRect2D sc = { { 0, 0 }, vk.swapExtent };
+	vkCmdSetViewport(cmd, 0, 1, &v);
+	vkCmdSetScissor(cmd, 0, 1, &sc);
+	VkDescriptorImageInfo img[2] = {
+		{ vkd_pr.linear, bb->view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
+		{ vkd_pr.nearest, vkd_pr.ramp.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
+	};
+	VkWriteDescriptorSet w[2] = {
+		{ .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, .dstBinding = 0, .descriptorCount = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .pImageInfo = &img[0] },
+		{ .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, .dstBinding = 1, .descriptorCount = 1,
+			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .pImageInfo = &img[1] },
+	};
+	vkCmdPushDescriptorSetKHR(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, vkd_pr.layout, 0, 2, w);
+	vkCmdDraw(cmd, 3, 1, 0, 0);
+	vkCmdEndRendering(cmd);
+	Vk_Transition(cmd, &swap, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+	return Vk_QueuePresent(index);
 }

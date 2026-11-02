@@ -68,6 +68,7 @@ typedef struct VkCore {
 	VkExtent2D swapExtent;
 	uint32_t swapCount;
 	VkImage swapImages[VK_MAX_SWAP_IMAGES];
+	VkImageView swapViews[VK_MAX_SWAP_IMAGES];
 	VkSemaphore swapRendered[VK_MAX_SWAP_IMAGES];	/* per image: a present may still wait on it */
 	byte vsync;
 	VkCommandPool pool;
@@ -92,8 +93,10 @@ int Vk_ResizeSwapchain(uint32_t width, uint32_t height, byte vsync);
 
 /* the command buffer of the frame being recorded, started on demand */
 VkCommandBuffer Vk_Cmd(void);
-/* submits the frame and presents image (the back buffer, blitted to the swapchain); 0 on failure */
-int Vk_Present(VkImg *image);
+/* the swapchain image to present into; 0 when there is none now (what is recorded is submitted then) */
+int Vk_Acquire(uint32_t *index);
+/* submits the frame, which has drawn into swapchain image index, and presents it; 0 on failure */
+int Vk_QueuePresent(uint32_t index);
 /* submits what is recorded and waits until the GPU is done (for a readback) */
 void Vk_Flush(void);
 

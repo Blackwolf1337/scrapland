@@ -57,7 +57,7 @@ foreach(s ${PS_SOURCES})
 endforeach()
 file(CONFIGURE OUTPUT ${SHADER_DIR}/ps_all.inc CONTENT "${PS_ALL}${PS_TABLE}};\n")
 set(SHADER_INCS)
-foreach(s ff.vert ff.frag ${PS_SOURCES})
+foreach(s ff.vert ff.frag present.vert present.frag ${PS_SOURCES})
 	string(REPLACE "." "_" n ${s})
 	string(REPLACE "/" "_" n ${n})
 	add_custom_command(OUTPUT ${SHADER_DIR}/${n}.inc

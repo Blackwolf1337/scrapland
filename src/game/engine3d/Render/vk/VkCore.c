@@ -256,6 +256,15 @@ int Vk_CreateDevice(void *hwnd, uint32_t width, uint32_t height, byte vsync) {
 	return Vk_ResizeSwapchain(width, height, vsync);
 }
 
+static void Vk_DestroySwapViews(void) {
+	for (uint32_t i = 0; i < VK_MAX_SWAP_IMAGES; i++) {
+		if (vk.swapViews[i]) {
+			vkDestroyImageView(vk.device, vk.swapViews[i], NULL);
+			vk.swapViews[i] = VK_NULL_HANDLE;
+		}
+	}
+}
+
 int Vk_ResizeSwapchain(uint32_t width, uint32_t height, byte vsync) {
 	VkSurfaceCapabilitiesKHR caps;
 	VkSurfaceFormatKHR fmts[32];
@@ -294,6 +303,7 @@ int Vk_ResizeSwapchain(uint32_t width, uint32_t height, byte vsync) {
 	if (caps.maxImageCount && count > caps.maxImageCount) {
 		count = caps.maxImageCount;
 	}
+	Vk_DestroySwapViews();
 	VkSwapchainKHR old = vk.swapchain;
 	VkSwapchainCreateInfoKHR ci = {
 		.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
@@ -303,7 +313,7 @@ int Vk_ResizeSwapchain(uint32_t width, uint32_t height, byte vsync) {
 		.imageColorSpace = space,
 		.imageExtent = ext,
 		.imageArrayLayers = 1,
-		.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+		.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
 		.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
 		.preTransform = caps.currentTransform,
 		.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
@@ -322,6 +332,18 @@ int Vk_ResizeSwapchain(uint32_t width, uint32_t height, byte vsync) {
 	vk.vsync = vsync;
 	vk.swapCount = VK_MAX_SWAP_IMAGES;
 	vkGetSwapchainImagesKHR(vk.device, vk.swapchain, &vk.swapCount, vk.swapImages);
+	for (uint32_t i = 0; i < vk.swapCount; i++) {
+		VkImageViewCreateInfo vi = {
+			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+			.image = vk.swapImages[i],
+			.viewType = VK_IMAGE_VIEW_TYPE_2D,
+			.format = vk.swapFormat,
+			.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
+		};
+		if (!Vk_Check(vkCreateImageView(vk.device, &vi, NULL, &vk.swapViews[i]), "vkCreateImageView")) {
+			return 0;
+		}
+	}
 	return 1;
 }
 
@@ -363,7 +385,7 @@ VkCommandBuffer Vk_Cmd(void) {
 
 static void Vk_Submit(VkSemaphore wait, VkSemaphore signal) {
 	VkFrame *f = &vk.frames[vk.frame];
-	VkPipelineStageFlags stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	VkPipelineStageFlags stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
 	if (vk.endPass) {
 		vk.endPass();
@@ -394,39 +416,27 @@ void Vk_Flush(void) {
 	Vk_ReleaseDeferred();
 }
 
-int Vk_Present(VkImg *image) {
-	VkCommandBuffer cmd = Vk_Cmd();
-	VkFrame *f = &vk.frames[vk.frame];
-	uint32_t index;
-
+int Vk_Acquire(uint32_t *index) {
+	Vk_Cmd();
 	if (!vk.swapchain) {
 		Vk_Submit(VK_NULL_HANDLE, VK_NULL_HANDLE);
-		return 1;
+		return 0;
 	}
-	VkResult r = vkAcquireNextImageKHR(vk.device, vk.swapchain, UINT64_MAX, f->acquired, VK_NULL_HANDLE, &index);
-	if (r == VK_ERROR_OUT_OF_DATE_KHR) {
+	VkResult r = vkAcquireNextImageKHR(vk.device, vk.swapchain, UINT64_MAX, vk.frames[vk.frame].acquired,
+		VK_NULL_HANDLE, index);
+	if (r < 0) {
 		Vk_Submit(VK_NULL_HANDLE, VK_NULL_HANDLE);
-		return Vk_ResizeSwapchain(vk.swapExtent.width, vk.swapExtent.height, vk.vsync);
+		if (r == VK_ERROR_OUT_OF_DATE_KHR) {
+			Vk_ResizeSwapchain(vk.swapExtent.width, vk.swapExtent.height, vk.vsync);
+		}
+		return 0;
 	}
-	VkImg swap = {
-		.img = vk.swapImages[index],
-		.aspect = VK_IMAGE_ASPECT_COLOR_BIT,
-		.levels = 1,
-		.layout = VK_IMAGE_LAYOUT_UNDEFINED,
-	};
-	Vk_Transition(cmd, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-	Vk_Transition(cmd, &swap, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	VkImageBlit blit = {
-		.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
-		.srcOffsets = { { 0, 0, 0 }, { (int32_t)image->width, (int32_t)image->height, 1 } },
-		.dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
-		.dstOffsets = { { 0, 0, 0 }, { (int32_t)vk.swapExtent.width, (int32_t)vk.swapExtent.height, 1 } },
-	};
-	vkCmdBlitImage(cmd, image->img, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, swap.img,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
-	Vk_Transition(cmd, &swap, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+	return 1;
+}
+
+int Vk_QueuePresent(uint32_t index) {
 	VkSemaphore rendered = vk.swapRendered[index];
-	Vk_Submit(f->acquired, rendered);
+	Vk_Submit(vk.frames[vk.frame].acquired, rendered);
 	VkPresentInfoKHR pi = {
 		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 		.waitSemaphoreCount = 1,
@@ -435,7 +445,7 @@ int Vk_Present(VkImg *image) {
 		.pSwapchains = &vk.swapchain,
 		.pImageIndices = &index,
 	};
-	r = vkQueuePresentKHR(vk.queue, &pi);
+	VkResult r = vkQueuePresentKHR(vk.queue, &pi);
 	if (r == VK_ERROR_OUT_OF_DATE_KHR || r == VK_SUBOPTIMAL_KHR) {
 		return Vk_ResizeSwapchain(vk.swapExtent.width, vk.swapExtent.height, vk.vsync);
 	}
@@ -457,6 +467,7 @@ void Vk_DestroyDevice(void) {
 		vkDestroySemaphore(vk.device, vk.swapRendered[i], NULL);
 	}
 	vkDestroyCommandPool(vk.device, vk.pool, NULL);
+	Vk_DestroySwapViews();
 	if (vk.swapchain) {
 		vkDestroySwapchainKHR(vk.device, vk.swapchain, NULL);
 	}

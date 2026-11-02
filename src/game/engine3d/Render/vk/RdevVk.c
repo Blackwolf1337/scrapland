@@ -604,9 +604,7 @@ static int Vk_DevPresent(void *dev, const void *src, const void *dst, void *hwnd
 	VkoDev *d = dev;
 
 	(void)src, (void)dst, (void)hwnd, (void)dirty;
-	Vkd_End();
-	Vkd_FrameDone();
-	return Vk_Present(d->backBuffer->img) ? D3D_OK : D3DERR_INVALIDCALL;
+	return Vkd_Present(d) ? D3D_OK : D3DERR_INVALIDCALL;
 }
 
 static int Vk_DevGetBackBuffer(void *dev, uint32_t i, int type, void **surf) {
